@@ -47,7 +47,7 @@ the original field. In particular it is reductive.
 
 public section
 
-open CategoryTheory WithConv
+open CategoryTheory
 
 namespace TauCeti.SpecialOrthogonal
 
@@ -57,17 +57,11 @@ noncomputable section
 
 variable (R : Type u) [CommRing R]
 
-/-- Evaluation at the unique coordinate identifies a one-entry family of units with the unit
-group. -/
-private def rankOneCoordinatesMulEquiv (A : Type v) [CommRing A] :
-    (ULift.{u} (Fin 1) → Aˣ) ≃* Aˣ :=
-  MulEquiv.piUnique (fun _ : ULift.{u} (Fin 1) ↦ Aˣ)
-
 /-- A one-entry family of units determines a two-dimensional special orthogonal matrix. -/
 private def rankOneCoordinatesSpecialOrthogonalMulEquiv
     (A : Type v) [CommRing A] (i half : A) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) :
     (ULift.{u} (Fin 1) → Aˣ) ≃* Matrix.specialOrthogonalGroup (Fin 2) A :=
-  (rankOneCoordinatesMulEquiv A).trans
+  (MulEquiv.piUnique (fun _ : ULift.{u} (Fin 1) ↦ Aˣ)).trans
     (Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits i half hi hhalf).symm
 
 /-- The rank-one-coordinate matrix equivalence commutes with a ring morphism which preserves
@@ -82,8 +76,7 @@ private theorem map_rankOneCoordinatesSpecialOrthogonalMulEquiv
         (by simpa only [map_pow, map_neg, map_one] using congrArg f hi)
         (by simpa only [map_ofNat, map_mul, map_one] using congrArg f hhalf)
         (fun j ↦ Units.map f (c j)) := by
-  simp only [rankOneCoordinatesSpecialOrthogonalMulEquiv, MulEquiv.trans_apply,
-    rankOneCoordinatesMulEquiv]
+  simp only [rankOneCoordinatesSpecialOrthogonalMulEquiv, MulEquiv.trans_apply]
   rw [Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits_symm_apply,
     Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits_symm_apply,
     Matrix.SpecialOrthogonalGroup.map_finTwoOfUnit]
@@ -93,7 +86,7 @@ variable (i half : R) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1)
 
 /-- **The points of the rank-one split torus are naturally the points of `SO₂`** when the base
 contains a square root of `-1` and a half. -/
-noncomputable def splitTorusPointsMulEquiv (A : Type v) [CommRing A] [Algebra R A] :
+def splitTorusPointsMulEquiv (A : Type v) [CommRing A] [Algebra R A] :
     WithConv ((DiagonalizableGroup.coordinateRing R
       (SplitTorus.characterGroup (ULift.{u} (Fin 1)))) →ₐ[R] A) ≃*
       WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A) :=
@@ -157,8 +150,7 @@ theorem splitTorusPointsMulEquiv_symm_apply
   rw [splitTorusPointsMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_trans_apply,
     rankOneCoordinatesSpecialOrthogonalMulEquiv, MulEquiv.symm_trans_apply]
   simp only [MulEquiv.symm_symm]
-  rw [
-    Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits_apply]
+  rw [Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits_apply]
   rfl
 
 /-- The rank-one split-torus point equivalence is natural in the commutative value algebra. -/
@@ -183,7 +175,7 @@ theorem splitTorusPointsMulEquiv_mapValue
 
 /-- The natural isomorphism between the group-valued functors of points of the rank-one split
 torus and `SO₂`. -/
-noncomputable def splitTorusPointsNatIso :
+def splitTorusPointsNatIso :
     HopfAlgebra.pointsFunctor.{u} (R := R) (H := (DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) ≅
       HopfAlgebra.pointsFunctor.{u} (R := R) (H := coordinateHopfAlgebra R 2) :=
@@ -204,8 +196,8 @@ theorem splitTorusPointsNatIso_hom_app_apply
       (H := (DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) A) :
     (splitTorusPointsNatIso R i half hi hhalf).hom.app A t =
-      splitTorusPointsMulEquiv R i half hi hhalf A t :=
-  by unfold splitTorusPointsNatIso; rfl
+      splitTorusPointsMulEquiv R i half hi hhalf A t := by
+  unfold splitTorusPointsNatIso; rfl
 
 /-- The inverse component of the natural split-torus identification is the inverse pointwise
 equivalence `splitTorusPointsMulEquiv`. -/
@@ -214,12 +206,12 @@ theorem splitTorusPointsNatIso_inv_app_apply
     (A : CommAlgCat.{u} R)
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
     (splitTorusPointsNatIso R i half hi hhalf).inv.app A s =
-      (splitTorusPointsMulEquiv R i half hi hhalf A).symm s :=
-  by unfold splitTorusPointsNatIso; rfl
+      (splitTorusPointsMulEquiv R i half hi hhalf A).symm s := by
+  unfold splitTorusPointsNatIso; rfl
 
 /-- **The coordinate Hopf algebra of `SO₂` is the coordinate Hopf algebra of the rank-one split
 torus** when the base contains a square root of `-1` and a half. -/
-noncomputable def splitTorusCoordinateIso :
+def splitTorusCoordinateIso :
     (DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj ≅
       coordinateHopfAlgebra R 2 :=
@@ -232,10 +224,10 @@ inverse pointwise split-torus equivalence. -/
 theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app_apply
     (A : CommAlgCat.{u} R)
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
-    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
       (splitTorusPointsMulEquiv R i half hi hhalf A).symm s := by
   have hmap :
-      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
+      CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
         (splitTorusPointsNatIso R i half hi hhalf).inv := by
     -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
     -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.
@@ -260,10 +252,10 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app_apply
     (t : HopfAlgebra.points (R := R)
       (H := (DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) A) :
-    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
       splitTorusPointsMulEquiv R i half hi hhalf A t := by
   have hmap :
-      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
+      CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
         (splitTorusPointsNatIso R i half hi hhalf).hom := by
     -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
     -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.
@@ -282,7 +274,7 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app_apply
 
 /-- The finite-type coordinate Hopf algebra of `SO₂` is isomorphic to the standard rank-one
 split-torus coordinate Hopf algebra under the same splitting hypotheses. -/
-noncomputable def finiteTypeSplitTorusCoordinateIso :
+def finiteTypeSplitTorusCoordinateIso :
     DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1))) ≅
       finiteTypeCoordinateHopfAlgebra R 2 :=

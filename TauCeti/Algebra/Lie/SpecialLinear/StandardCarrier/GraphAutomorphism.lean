@@ -75,12 +75,6 @@ def graphRootPerm : Equiv.Perm (Fin r ⊕ Fin r) :=
     graphRootPerm r (graphRootPerm r k) = k := by
   cases k <;> simp [graphRootPerm]
 
-private theorem weight_rev_rev (k : Fin (r + 1)) (i : Fin r) :
-    weight r k.rev i.rev = -weight r k i := by
-  rw [weight_def, weight_def]
-  simp only [← Fin.rev_succ, ← Fin.rev_castSucc, Fin.rev_injective.eq_iff]
-  ring
-
 private theorem torusCharacter_weight_rev_reindex {A : Type*} [CommRing A]
     (s : Fin r → Aˣ) (k : Fin (r + 1)) :
     (TauCeti.torusCharacter s (weight r k.rev))⁻¹ =
@@ -235,8 +229,8 @@ private theorem ambientGraphCoordinateIso_hom_comp_weightTorusCoordinateMap :
         diagGL fun i => TauCeti.torusCharacter (SplitTorus.pointsMulEquiv q) (weight r i) := by
       calc
         _ = GeneralLinear.pointsMulEquiv (r + 1)
-            ((CommHopfAlgCat.mapPointsFunctor x).app (CommAlgCat.of ℤ T) q) := by
-          rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+            ((CommHopfAlgCat.Hom.mapPointsFunctor x).app (CommAlgCat.of ℤ T) q) := by
+          rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
         _ = _ := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
           (weight r) (CommAlgCat.of ℤ T) q
     have hy : GeneralLinear.pointsMulEquiv (r + 1)
@@ -245,8 +239,8 @@ private theorem ambientGraphCoordinateIso_hom_comp_weightTorusCoordinateMap :
           (weight r i ∘ Fin.revPerm) := by
       calc
         _ = GeneralLinear.pointsMulEquiv (r + 1)
-            ((CommHopfAlgCat.mapPointsFunctor y).app (CommAlgCat.of ℤ T) q) := by
-          rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+            ((CommHopfAlgCat.Hom.mapPointsFunctor y).app (CommAlgCat.of ℤ T) q) := by
+          rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
         _ = _ := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
           (fun i => weight r i ∘ Fin.revPerm) (CommAlgCat.of ℤ T) q
     rw [← GeneralLinear.pointsMulEquiv_apply, ← GeneralLinear.pointsMulEquiv_apply,
@@ -463,7 +457,7 @@ private theorem groupSchemePointMulEquiv_comp_graphAutomorphism
     (q : WithConv (carrierCoordinateHopfAlgebra r →ₐ[ℤ] A)) :
     groupSchemePointMulEquiv r A q ≫ (graphAutomorphism r).hom.hom.hom =
       groupSchemePointMulEquiv r A
-        ((CommHopfAlgCat.mapPointsFunctor (graphCoordinateIso r).hom).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (graphCoordinateIso r).hom).app
           (CommAlgCat.of ℤ A) q) := by
   rw [graphAutomorphism, Functor.mapIso_hom, Iso.op_hom]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
@@ -477,7 +471,7 @@ private theorem groupSchemePointMulEquiv_comp_carrierι
     (q : WithConv (carrierCoordinateHopfAlgebra r →ₐ[ℤ] A)) :
     groupSchemePointMulEquiv r A q ≫ (carrierι r).hom.hom =
       GeneralLinear.groupSchemePointMulEquiv (r + 1) A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
             (definingIdeal r))).app (CommAlgCat.of ℤ A) q) := by
   rw [carrierι_def, kostantToralGroupSchemeι_def, CommHopfAlgCat.quotientSpecι_def]
@@ -503,11 +497,11 @@ theorem generalLinearSchemePointsMulEquiv_graphAutomorphism_comp_carrierι
   have hinclusion := groupSchemePointMulEquiv_comp_carrierι r q
   have hgraphCarrier := congrArg (fun f => f ≫ (carrierι r).hom.hom) hgraph
   have hinclusionGraph := groupSchemePointMulEquiv_comp_carrierι (A := A) r
-    ((CommHopfAlgCat.mapPointsFunctor (graphCoordinateIso r).hom).app (CommAlgCat.of ℤ A) q)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (graphCoordinateIso r).hom).app (CommAlgCat.of ℤ A) q)
   rw [← Category.assoc, hgraphCarrier, hinclusionGraph,
-    CommHopfAlgCat.mapPointsFunctor_app_apply, CommHopfAlgCat.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
-    hinclusion, CommHopfAlgCat.mapPointsFunctor_app_apply,
+    hinclusion, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
     WithConv.ofConv_toConv]
   let qambient : HopfAlgebra.points

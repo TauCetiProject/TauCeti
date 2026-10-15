@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 
 /-!
 # Outer actions on balanced tensor products
@@ -101,6 +101,16 @@ theorem map_smul_left (f : M →ₗ[k] M') (g : N →ₗ[k] N')
     rw [smul_tmul_left, map_tmul _ _ hf hg, map_tmul _ _ hf hg, hfs, smul_tmul_left]
   | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
 
+/-- Tensor congruence respects an outer left action when the first equivalence does. -/
+theorem congr_smul_left (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hfs : ∀ (s : S) m, f (s • m) = s • f m)
+    (s : S) (z : BalancedTensorProduct k A M N) :
+    congr f g hf hg (s • z) = s • congr f g hf hg z := by
+  rw [congr_apply, congr_apply]
+  exact map_smul_left S f.toLinearMap g.toLinearMap hf hg hfs s z
+
 end Map
 
 section Lift
@@ -190,6 +200,16 @@ theorem map_smul_right (f : M →ₗ[k] M') (g : N →ₗ[k] N')
     rw [smul_tmul_right, map_tmul _ _ hf hg, map_tmul _ _ hf hg, hgt, smul_tmul_right]
   | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
 
+/-- Tensor congruence respects an outer right action when the second equivalence does. -/
+theorem congr_smul_right (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hgt : ∀ (t : T) n, g (t • n) = t • g n)
+    (t : T) (z : BalancedTensorProduct k A M N) :
+    congr f g hf hg (t • z) = t • congr f g hf hg z := by
+  rw [congr_apply, congr_apply]
+  exact map_smul_right T f.toLinearMap g.toLinearMap hf hg hgt t z
+
 end Map
 
 section Lift
@@ -271,5 +291,49 @@ theorem gradedSMul_right (T : Type*) [Semiring T] [Module k T] [Module T N]
     using h.map_mem hz
 
 end Grading
+
+section Iterated
+
+attribute [local instance 100] rightModule rightSMulCommClass outerSMulCommClass
+
+variable {k B C M N P : Type*} [CommRing k] [Semiring B] [Semiring C]
+  [AddCommGroup M] [Module k M] [Module Bᵐᵒᵖ M]
+  [AddCommGroup N] [Module k N] [Module B N] [Module Cᵐᵒᵖ N]
+  [AddCommGroup P] [Module k P] [Module C P]
+  [SMulCommClass B k N] [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass B Cᵐᵒᵖ N]
+
+omit [SMulCommClass B k N] in
+/-- Linear maps out of a left-associated triple balanced tensor product are determined by
+their values on nested pure tensors. -/
+theorem ext_threefold {Q : Type*} [AddCommGroup Q] [Module k Q]
+    {f g : BalancedTensorProduct k C (BalancedTensorProduct k B M N) P →ₗ[k] Q}
+    (h : ∀ m n p, f (tmul k C (tmul k B m n) p) = g (tmul k C (tmul k B m n) p)) :
+    f = g := by
+  apply hom_ext
+  intro x p
+  induction x using induction_on with
+  | ht m n => exact h m n p
+  | ha x y hx hy => simp only [add_tmul, map_add, hx, hy]
+
+variable {D Q : Type*} [Semiring D]
+  [Module Dᵐᵒᵖ P] [SMulCommClass C k P] [SMulCommClass Dᵐᵒᵖ k P]
+  [SMulCommClass C Dᵐᵒᵖ P]
+  [AddCommGroup Q] [Module k Q] [Module D Q]
+
+omit [SMulCommClass B k N] [SMulCommClass C k P] in
+/-- Linear maps out of a left-associated fourfold balanced tensor product are determined by
+their values on nested pure tensors. -/
+theorem ext_fourfold {T : Type*} [AddCommGroup T] [Module k T]
+    {f g : BalancedTensorProduct k D
+      (BalancedTensorProduct k C (BalancedTensorProduct k B M N) P) Q →ₗ[k] T}
+    (h : ∀ m n p q, f (tmul k D (tmul k C (tmul k B m n) p) q) =
+      g (tmul k D (tmul k C (tmul k B m n) p) q)) : f = g := by
+  apply ext_threefold
+  intro x p q
+  induction x using induction_on with
+  | ht m n => exact h m n p q
+  | ha x y hx hy => simp only [add_tmul, map_add, hx, hy]
+
+end Iterated
 
 end TauCeti.BalancedTensorProduct

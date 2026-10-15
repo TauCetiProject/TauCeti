@@ -200,9 +200,6 @@ theorem isCompact_integralOrthogonalSubgroup :
 
 section Rational
 
-/-- Two is invertible over the rational coefficients used for scalar extension. -/
-local instance invertibleTwoRat : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
-
 variable {W : Type*} [AddCommGroup W] [Module ℚ W]
   (Q₀ : QuadraticForm ℚ W) (b₀ : Basis ι ℚ W)
 

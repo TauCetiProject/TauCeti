@@ -31,7 +31,7 @@ endomorphism of `N`. Reduction of endomorphisms is onto because `N` is projectiv
 (`Ideal.endMapQ_surjective`), and its kernel is `r • End_A(N)`
 (`Ideal.endMapQ_span_algebraMap_eq_zero_iff`). The results only assume that the ring
 `End_A(N)` is `(r)`-adically complete, which holds in the setting above because `End_A(N)` is
-then finite over `R`; `TauCeti.IsAdicComplete.exists_isIdempotentElem_eq` then lifts the
+then finite over `R`; `IsAdicComplete.exists_isIdempotentElem_eq` then lifts the
 idempotent. Over a semiprimary ring the same lifting needs no completeness, the kernel being nil;
 that case is used in `TauCeti/Algebra/Module/ProjectiveCover/Existence.lean`.
 
@@ -115,9 +115,9 @@ theorem exists_projective_quotient_smul_top_linearEquiv {Y : Type*}
     have hx' : q (Submodule.Quotient.mk (x : N)) = 0 := by simpa [φ] using hx
     have hx0 : (x : N) ∈ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N) := by
       rw [← Submodule.Quotient.mk_eq_zero, ← hfix x, ← hred, hx', map_zero]
-    obtain ⟨w, hw⟩ := (Submodule.mem_span_algebraMap_smul_top_iff r).mp hx0
-    refine (Submodule.mem_span_algebraMap_smul_top_iff r).mpr
-      ⟨⟨e w, LinearMap.mem_range_self e w⟩, Subtype.ext ?_⟩
+    obtain ⟨w, _, hw⟩ := (Submodule.mem_span_algebraMap_smul_iff ⊤ r).mp hx0
+    refine (Submodule.mem_span_algebraMap_smul_iff ⊤ r).mpr
+      ⟨⟨e w, LinearMap.mem_range_self e w⟩, Submodule.mem_top, Subtype.ext ?_⟩
     rw [Submodule.coe_smul_of_tower, ← LinearMap.map_smul_of_tower, hw, hfix]
   have hsurj : Function.Surjective φ := fun y ↦ by
     obtain ⟨n, hn⟩ := Submodule.Quotient.mk_surjective _ (i y)

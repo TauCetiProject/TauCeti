@@ -33,9 +33,6 @@ dimension of every intertwiner space. The reconstruction theorem in
 * J.-P. Serre, *Linear Representations of Finite Groups*, Part I, §§2.3 and 2.5.
 * C. W. Curtis and I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*,
   §§25 and 30.
-
-This is the object-level input to the injectivity target in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`.
 -/
 
 public section

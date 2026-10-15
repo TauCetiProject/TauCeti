@@ -19,9 +19,6 @@ This file relates group-valued presheaves and sheaves on the affine fppf site to
 type-valued presheaves and sheaves. In particular, it presents the convolution-points sheaf of a
 commutative Hopf algebra as a group object, functorially in the Hopf algebra through
 `pointsFppfGroupObjectMap`, and exposes the group-object sheafification adjunction.
-
-This is infrastructure for the fppf-sheaf-quotient step of Layer 3, "Normality and quotients", in
-the ReductiveGroups roadmap.
 -/
 
 @[expose] public section
@@ -232,14 +229,14 @@ points presheaves regarded as group objects in type-valued presheaves. -/
 noncomputable def pointsPresheafGrpMap {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
     pointsPresheafGrp K ⟶ pointsPresheafGrp H :=
   groupFunctorGrpMap <| Functor.whiskerRight
-    (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R)) (mapPointsFunctor f))
+    (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R)) (CommHopfAlgCat.Hom.mapPointsFunctor f))
     GrpCat.uliftFunctor.{u + 1, u}
 
 /-- The identity Hopf algebra morphism induces the identity on points presheaves. -/
 @[simp]
 theorem pointsPresheafGrpMap_id (H : _root_.CommHopfAlgCat.{u} R) :
     pointsPresheafGrpMap (𝟙 H) = 𝟙 _ := by
-  rw [pointsPresheafGrpMap, mapPointsFunctor_id]
+  rw [pointsPresheafGrpMap, CommHopfAlgCat.Hom.mapPointsFunctor_id]
   rfl
 
 /-- Formation of the induced morphism on points presheaves reverses composition. -/
@@ -247,7 +244,7 @@ theorem pointsPresheafGrpMap_id (H : _root_.CommHopfAlgCat.{u} R) :
 theorem pointsPresheafGrpMap_comp {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K)
     (g : K ⟶ L) :
     pointsPresheafGrpMap (f ≫ g) = pointsPresheafGrpMap g ≫ pointsPresheafGrpMap f := by
-  rw [pointsPresheafGrpMap, mapPointsFunctor_comp]
+  rw [pointsPresheafGrpMap, CommHopfAlgCat.Hom.mapPointsFunctor_comp]
   rfl
 
 /-- The morphism of fppf points group objects induced by a morphism `f : H ⟶ K` of commutative

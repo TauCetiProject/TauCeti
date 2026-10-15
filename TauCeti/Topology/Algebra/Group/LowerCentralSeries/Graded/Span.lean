@@ -246,8 +246,7 @@ theorem span_range_gradedPow_union_range_gradedBracket_eq_top {k : ℕ}
         rw [gradedPow_gradedMk, gradedPieceInclusion_gradedMk]⟩
     · refine ⟨_, subset_span (Or.inr ⟨(gradedMk p G k ⟨g, hg⟩, gradedMkZero p G h), rfl⟩), ?_⟩
       dsimp only
-      rw [← gradedMk_zero ⟨h, mem_pLowerCentralSeries_zero p h⟩, gradedBracket_gradedMk,
-        gradedPieceInclusion_gradedMk]
+      rw [gradedBracket_gradedMk_gradedMkZero, gradedPieceInclusion_gradedMk]
   rw [eq_top_iff]
   rintro y -
   obtain ⟨y, rfl⟩ := gradedMk_surjective (k + 1) y
@@ -327,7 +326,7 @@ theorem gradedMap_degreeOneFamily (f : G →* H) (hf : Continuous f)
       gradedMap_gradedPow]
   · rw [degreeOneFamily_inr, degreeOneFamily_inr, Function.comp_apply, Function.comp_apply,
       ← gradedMap_gradedMkZero, ← gradedMap_gradedMkZero]
-    exact gradedMap_gradedBracket f hf (j := 0) (k := 0) _ _
+    exact gradedMap_gradedBracket_zero_zero f hf _ _
 
 end DegreeOneFamily
 

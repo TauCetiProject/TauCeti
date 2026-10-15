@@ -106,6 +106,12 @@ theorem mk_vadd (φ : F ≃ₜ F) (n : ℤ) (x : F) (t : ℝ) :
   apply Quotient.sound
   exact AddAction.orbitRel_apply.mpr ⟨n, rfl⟩
 
+/-- The quotient identifies φ x at height t + 1 with x at height t: the simp-normal form of
+`mk_vadd` at `n = 1`. -/
+@[simp]
+theorem mk_apply_add_one (φ : F ≃ₜ F) (x : F) (t : ℝ) : mk φ (φ x) (t + 1) = mk φ x t := by
+  simpa using mk_vadd φ 1 x t
+
 /-- Two cylinder points represent the same mapping-torus point exactly when they differ
 by an integer translate in the monodromy orbit and the corresponding height translate. -/
 theorem mk_eq_iff (φ : F ≃ₜ F) {x y : F} {t s : ℝ} :
@@ -217,6 +223,16 @@ lemma map_comp_incl (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
     (map φ ψ g h).comp (incl φ) = (incl ψ).comp g := by
   ext x
   simp
+
+/-- A map of mapping tori carries the canonical cylinder homotopy to the canonical cylinder
+homotopy of the image point. -/
+-- Rewrite before simplification unfolds the homotopy track to a cylinder representative.
+@[simp↓]
+lemma map_monodromyHomotopy (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
+    (h : Function.Semiconj g φ ψ) (t : unitInterval) (x : F) :
+    map φ ψ g h (monodromyHomotopy φ (t, x)) =
+      monodromyHomotopy ψ (t, g x) := by
+  simpa using congrArg (fun y ↦ mk ψ y (t : ℝ)) (h x)
 
 /-- The map of a mapping torus induced by the identity map is the identity. -/
 @[simp]

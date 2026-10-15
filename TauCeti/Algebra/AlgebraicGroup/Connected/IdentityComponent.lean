@@ -26,7 +26,7 @@ multiplication.
 
 The component here is the ordinary connected component over the ground field. The geometric
 identity component is obtained by applying the construction after base change to an algebraic
-closure; its descent and the component group are later parts of Layer 3.
+closure.
 
 ## Main declarations
 
@@ -41,10 +41,6 @@ closure; its descent and the component group are later parts of Layer 3.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This advances Layer 3, "Identity component `G°` and component group `π₀(G)`", of the
-ReductiveGroups roadmap. The next step is comultiplication closure and the resulting quotient
-Hopf algebra; geometric connectedness and the finite étale component group then remain.
 -/
 
 public section

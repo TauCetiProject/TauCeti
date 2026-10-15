@@ -16,6 +16,7 @@ path-product table on every nontrivial component. On a singleton component,
 the vertex vector is the unit and the volume vector is the square-zero
 generator of the dual numbers. This file gives a single table valid for
 both kinds of component, and for disconnected graphs.
+In particular, each vertex basis element is idempotent.
 
 In Tau Ceti's later-factor-first convention, the product of a dart with
 its reverse is the volume at the head of the first dart.
@@ -167,5 +168,11 @@ theorem zigzagAlgebraBasis_mul (b c : ZigzagBasisIndex G) :
       simp
     · rw [zigzagComponentProjection_zigzagAlgebraBasis_of_ne G k C E hEC b', zero_mul]
       simp
+
+/-- Each vertex basis element of the componentwise zigzag algebra is idempotent. -/
+theorem isIdempotentElem_zigzagAlgebraBasis_inl (k : Type w) [CommRing k] {V : Type u}
+    (G : SimpleGraph V) [Finite V] (i : V) :
+    IsIdempotentElem (zigzagAlgebraBasis k G (Sum.inl i)) := by
+  simp [IsIdempotentElem]
 
 end TauCeti

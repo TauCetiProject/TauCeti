@@ -176,7 +176,7 @@ private theorem chartHom_add (f g : Z ⟶ Over.mk E.structureMap) :
       rw [reassoc_of% this, pullbackMap_addition]
     · simp [hP, chartHom]
   rw [chartHom_left, key, Category.assoc, addition_modelIso_hom, ← Category.assoc]
-  simp only [Hom.mul_def, Over.comp_left, Over.lift_left, WeierstrassCurve.mul_projModel_left]
+  simp only [Hom.mul_def, Over.comp_left, Over.lift_left, WeierstrassCurve.mul_projModelOver_left]
   congr 1
   apply pullback.hom_ext <;> simp [hP, chartHom]
 

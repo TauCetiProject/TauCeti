@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 public import Mathlib.RingTheory.Polynomial.Quotient
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 public import Mathlib.Tactic.Algebra.Basic
 public import Mathlib.Tactic.ComputeDegree
@@ -61,6 +62,13 @@ what makes the corrected element a unit. Both branches are packaged in `μX`, an
 * `WeierstrassCurve.Affine.normM`, `WeierstrassCurve.Affine.range_μ_le_ker_normM`: the norm map
   on square classes, and **the norm condition on the image of the descent map** — every square
   class in the image of `μ` has square norm. This is what the `2`-descent tests a class against.
+* `WeierstrassCurve.Affine.normM_neg_one`: the class of `-1` has norm class that of `-1`, since
+  `W.A` has odd degree.
+* `WeierstrassCurve.Affine.discr_f` and `WeierstrassCurve.Affine.Δ_eq_sixteen_mul_discr_f`: the
+  discriminant of the cubic `f`, and `Δ = 16 · disc f`.
+* `WeierstrassCurve.Affine.norm_mk_derivative_f`: the norm of `f'(T)` is `-disc f`.
+* `WeierstrassCurve.Affine.discr_f_eq_mul_sq_of_eval_eq_zero`: at a root `x` of `f`, `disc f` is the
+  discriminant of the cofactor `f / (X - x)` times `(f' x)²`.
 * `WeierstrassCurve.Affine.norm_mk_C_sub_X_add_fCofactor`: at a root of `f`, the corrected
   representative `x - T + fCofactor x` has norm `(f' x) ^ 2`. This is the value the norm condition
   on the image of the descent map is read off from at the `2`-torsion.
@@ -99,7 +107,12 @@ the induced norm map on square classes and the containment of the image of `μ` 
 `WeakMordellWeil.lean` lines 873-919. It is adapted rather than copied: Stoll builds the map as
 `Units.modPow.map (Algebra.norm K) 2` through his local square-class abbreviation, and the single
 spelling this repo carries makes it a `QuotientGroup.map` into `Kˣ ⧸ (powMonoidHom 2).range`
-instead.
+instead. `discr_f` and `Δ_eq_sixteen_mul_discr_f` are the source's `discr_f` and `Δ_eq_discr_f` at
+its later revision `3bfe124`; `norm_mk_derivative_f` and `discr_f_eq_mul_sq_of_eval_eq_zero` are
+that revision's `norm_mk_derivative_f` (`SelmerGroup.lean`, there assuming `3 ≠ 0`) and
+`discr_f_eq_discr_fCofactor_mul_sq` (`WeakMordellWeil.lean`, there through a discriminant
+formula for products; here with the cofactor's discriminant written out and proved directly).
+`normM_neg_one` is that revision's lemma of the same name (`SelmerGroup.lean`).
 -/
 
 public section
@@ -335,6 +348,45 @@ lemma natDegree_f : W.f.natDegree = 3 := by
   compute_degree!
 
 lemma f_ne_zero : W.f ≠ 0 := W.monic_f.ne_zero
+
+lemma degree_f : W.f.degree = 3 := by
+  rw [degree_eq_natDegree W.f_ne_zero, natDegree_f]
+  rfl
+
+/-- The discriminant of the cubic `f`, in terms of the coefficients of `W`. -/
+lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆
+    - 27 * W.a₆ ^ 2 + 18 * W.a₂ * W.a₄ * W.a₆ := by
+  rw [discr_of_degree_eq_three W.degree_f]
+  simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
+  norm_num
+
+/-- At a root `x` of `f`, the discriminant of `f` is the discriminant
+`(x + a₂)² - 4 (x² + a₂x + a₄)` of the cofactor `fCofactor x` times the square of the derivative
+`f' x = 3x² + 2a₂x + a₄`. -/
+lemma discr_f_eq_mul_sq_of_eval_eq_zero {x : K} (hx : W.f.eval x = 0) :
+    W.f.discr = ((x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄)) *
+      (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) ^ 2 := by
+  rw [W.discr_f]
+  rw [eval_f] at hx
+  linear_combination (18 * W.a₂ * W.a₄ - 4 * W.a₂ ^ 3
+    - 27 * (W.a₆ - (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x))) * hx
+
+/-- The norm of `f'(T)` in `K[X] ⧸ (f)` is `-disc f`. This holds in every characteristic: the norm
+is the resultant of `f` and `f'`, and since `f` is monic that resultant does not depend on the
+degree at which `f'` is read. -/
+lemma norm_mk_derivative_f :
+    Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
+  rw [AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le W.monic_f (n := W.f.natDegree - 1)
+    (by rw [natDegree_f, derivative_f]; compute_degree),
+    resultant_deriv (by rw [degree_f]; norm_num), W.monic_f.leadingCoeff, natDegree_f]
+  norm_num
+
+/-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
+`f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if
+`a₂`, `a₄` and `a₆` are integral, `Δ` is never a unit while `disc f` can be. -/
+lemma Δ_eq_sixteen_mul_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
+  rw [Δ_of_isCharNeTwoNF W, W.discr_f]
+  ring
 
 /-- A polynomial of degree at most `2` has degree less than that of `f`, which has degree `3`.
 Supplies the degree side conditions of `AdjoinRoot.mk_eq_mk_iff_of_degree_lt` for the relator
@@ -1003,6 +1055,18 @@ lemma normM_mk (u : W.Aˣ) :
     W.normM (u : W.M) =
       (Units.map (Algebra.norm K : W.A →* K) u : Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) := by
   simp [normM]
+
+omit [W.IsCharNeTwoNF] [DecidableEq K] [W.IsElliptic] in
+/-- The norm class of the class of `-1` is the class of `-1`: the étale algebra `W.A` has odd
+degree `3` over `K`. -/
+lemma normM_neg_one : W.normM (QuotientGroup.mk (-1 : W.Aˣ)) = QuotientGroup.mk (-1 : Kˣ) := by
+  rw [normM_mk]
+  congr 1
+  ext
+  rw [Units.coe_map, Units.val_neg, Units.val_one, Units.val_neg, Units.val_one,
+    ← map_one (algebraMap K W.A), ← map_neg, Algebra.norm_algebraMap,
+    (AdjoinRoot.powerBasis W.f_ne_zero).finrank, AdjoinRoot.powerBasis_dim, natDegree_f]
+  norm_num
 
 omit [DecidableEq K] in
 /-- **Every value of `μX` has trivial norm class.** On the branch where `f x ≠ 0` the norm of

@@ -11,12 +11,21 @@ public import TauCeti.Algebra.Homology.Contraction.ThreeTerm
 /-!
 # The inverse graded braid complex followed by the braid complex
 
-This tensor order has the same three graded terms as the forward product. Here the
-second-factor differential has the negative cochain sign, so the Ui{−2} coordinate
-of the middle term is negated. The actual two differential blocks are then identities,
-and the three-term cancellation criterion contracts the totalization to the regular
-graded bimodule in degree zero. The result includes arbitrary finite graphs and
-commutative coefficient rings, including isolated vertices.
+The cochain tensor product `Bᵢ' ⊗ Bᵢ` has the same three graded terms as `Bᵢ ⊗ Bᵢ'`
+(`TauCeti.zigzagBraidComplexTensorInverseHomotopyEquiv`). The second-factor differential
+carries the cochain sign `(-1) ^ p`, which is `-1` on the block out of the `(1, -1)` summand,
+so the Ui{−2} coordinate of the middle term is negated. The two differential blocks are then
+identities, and the three-term cancellation criterion contracts the totalization to the regular
+graded bimodule in degree zero: `TauCeti.zigzagBraidInverseTensorComplexHomotopyEquiv`. The
+result includes arbitrary finite graphs and commutative coefficient rings, including isolated
+vertices.
+
+## References
+
+* M. Khovanov and P. Seidel, *Quivers, Floer cohomology, and braid group actions*, J. Amer. Math.
+  Soc. 15 (2002) (the complexes `R_i` and `R_i'` of the zigzag algebra `A_m`).
+* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, J. Algebra 246
+  (2001) (zigzag algebras of arbitrary graphs and the same complexes).
 -/
 
 public section
@@ -25,15 +34,12 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits MulOpposite
-open scoped TensorProduct
+open CategoryTheory CategoryTheory.Limits
 
 universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
-local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
-local notation "E" => Z ⊗[k] Zᵐᵒᵖ
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
 local notation "F" => zigzagBimoduleTensor k G
@@ -61,8 +67,7 @@ private theorem isZero_reverseInverseProduct_X (i : V) (n : ℤ)
   apply (IsZero.iff_id_eq_zero _).2
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
-  -- Cochain totalization assigns the tensor pair the sum of its two indices.
-  change p + q = n at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   exact (isZero_reverseInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
 
 private def reverseMinusPairIso (i : V) :
@@ -81,97 +86,21 @@ private def reverseOnePairIso (i : V) :
     ((F).obj ((U i).shiftObj (-2))).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
       zigzagBimoduleRightUnitor k G ((U i).shiftObj (-2))
 
-private def reverseMinusMap (i : V) (p q : ℤ) :
-    ((F).obj ((zigzagBraidInverseComplex k G i).X p)).obj
-      ((zigzagBraidComplex k G i).X q) ⟶ U i := by
-  by_cases hp : p = (0)
-  · subst p
-    by_cases hq : q = (-1)
-    · subst q
-      exact (reverseMinusPairIso k G i).hom
-    · exact 0
-  · exact 0
+private def reverseMinusIso (i : V) : (reverseInverseProduct k G i).X (-1) ≅ U i :=
+  HomologicalComplex.mapBifunctorSingleSummandIso (zigzagBraidInverseComplex k G i)
+      (zigzagBraidComplex k G i) F (ComplexShape.up ℤ) 0 (-1) (-1) (by simp)
+      (fun p q hpq _ ↦ isZero_reverseInversePair_of_not_support k G i p q (by
+        rw [ComplexShape.π_eq_add] at hpq
+        omega)) ≪≫
+    reverseMinusPairIso k G i
 
-private def reverseMinusHom (i : V) : (reverseInverseProduct k G i).X (-1) ⟶ U i :=
-  HomologicalComplex.mapBifunctorDesc (fun p q _ ↦ reverseMinusMap k G i p q)
-
-private def reverseMinusInv (i : V) : U i ⟶ (reverseInverseProduct k G i).X (-1) :=
-  (reverseMinusPairIso k G i).inv ≫ HomologicalComplex.ιMapBifunctor
-    (zigzagBraidInverseComplex k G i) (zigzagBraidComplex k G i) F (ComplexShape.up ℤ)
-    (0) (-1) (-1) (by simp)
-
-private theorem reverseMinusMap_supported (i : V) :
-    reverseMinusMap k G i (0) (-1) = (reverseMinusPairIso k G i).hom := by
-  simp only [reverseMinusMap, dite_true]
-
-private def reverseMinusIso (i : V) : (reverseInverseProduct k G i).X (-1) ≅ U i where
-  hom := reverseMinusHom k G i
-  inv := reverseMinusInv k G i
-  hom_inv_id := by
-    apply HomologicalComplex.mapBifunctor.hom_ext
-    intro p q hpq
-    -- The total degree is the sum of the pair of cochain indices.
-    change p + q = (-1) at hpq
-    by_cases hp : p = (0)
-    · subst p
-      have hq : q = (-1) := by omega
-      subst q
-      simp only [reverseMinusHom, reverseMinusInv,
-        HomologicalComplex.ι_mapBifunctorDesc_assoc, reverseMinusMap_supported,
-        Iso.hom_inv_id_assoc, Category.comp_id]
-    · exact (isZero_reverseInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
-  inv_hom_id := by
-    simp only [reverseMinusHom, reverseMinusInv, Category.assoc,
-      HomologicalComplex.ι_mapBifunctorDesc, reverseMinusMap_supported, Iso.inv_hom_id]
-
-private def reverseOneMap (i : V) (p q : ℤ) :
-    ((F).obj ((zigzagBraidInverseComplex k G i).X p)).obj
-      ((zigzagBraidComplex k G i).X q) ⟶ (U i).shiftObj (-2) := by
-  by_cases hp : p = (1)
-  · subst p
-    by_cases hq : q = (0)
-    · subst q
-      exact (reverseOnePairIso k G i).hom
-    · exact 0
-  · exact 0
-
-private def reverseOneHom (i : V) : (reverseInverseProduct k G i).X (1) ⟶ (U i).shiftObj (-2) :=
-  HomologicalComplex.mapBifunctorDesc (fun p q _ ↦ reverseOneMap k G i p q)
-
-private def reverseOneInv (i : V) : (U i).shiftObj (-2) ⟶ (reverseInverseProduct k G i).X (1) :=
-  (reverseOnePairIso k G i).inv ≫ HomologicalComplex.ιMapBifunctor
-    (zigzagBraidInverseComplex k G i) (zigzagBraidComplex k G i) F (ComplexShape.up ℤ)
-    (1) (0) (1) (by simp)
-
-private theorem reverseOneMap_supported (i : V) :
-    reverseOneMap k G i (1) (0) = (reverseOnePairIso k G i).hom := by
-  simp only [reverseOneMap, dite_true]
-
-private def reverseOneIso (i : V) : (reverseInverseProduct k G i).X (1) ≅ (U i).shiftObj (-2) where
-  hom := reverseOneHom k G i
-  inv := reverseOneInv k G i
-  hom_inv_id := by
-    apply HomologicalComplex.mapBifunctor.hom_ext
-    intro p q hpq
-    -- The total degree is the sum of the pair of cochain indices.
-    change p + q = (1) at hpq
-    by_cases hp : p = (1)
-    · subst p
-      have hq : q = (0) := by omega
-      subst q
-      simp only [reverseOneHom, reverseOneInv,
-        HomologicalComplex.ι_mapBifunctorDesc_assoc, reverseOneMap_supported,
-        Iso.hom_inv_id_assoc, Category.comp_id]
-    · exact (isZero_reverseInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
-  inv_hom_id := by
-    simp only [reverseOneHom, reverseOneInv, Category.assoc,
-      HomologicalComplex.ι_mapBifunctorDesc, reverseOneMap_supported, Iso.inv_hom_id]
-
-private def negativeShiftIso (i : V) : (U i).shiftObj (-2) ≅ (U i).shiftObj (-2) where
-  hom := -𝟙 _
-  inv := -𝟙 _
-  hom_inv_id := by simp
-  inv_hom_id := by simp
+private def reverseOneIso (i : V) : (reverseInverseProduct k G i).X 1 ≅ (U i).shiftObj (-2) :=
+  HomologicalComplex.mapBifunctorSingleSummandIso (zigzagBraidInverseComplex k G i)
+      (zigzagBraidComplex k G i) F (ComplexShape.up ℤ) 1 0 1 (by simp)
+      (fun p q hpq _ ↦ isZero_reverseInversePair_of_not_support k G i p q (by
+        rw [ComplexShape.π_eq_add] at hpq
+        omega)) ≪≫
+    reverseOnePairIso k G i
 
 private def reverseRegularPairIso (i : V) :
     ((F).obj ((zigzagBraidInverseComplex k G i).X 0)).obj
@@ -187,83 +116,19 @@ private def reverseMiddlePairIso (i : V) :
   ((F).flip.obj ((zigzagBraidComplex k G i).X (-1))).mapIso
       (zigzagBraidInverseComplexXIso₁ k G i) ≪≫
     ((F).obj ((U i).shiftObj (-2))).mapIso (zigzagBraidComplexXIso₀ k G i) ≪≫
-      zigzagBraidSelfTensorShiftLeftIso k G i ≪≫ biprod.mapIso (negativeShiftIso k G i) (Iso.refl _)
-
-private def reverseZeroMap (i : V) (p q : ℤ) :
-    ((F).obj ((zigzagBraidInverseComplex k G i).X p)).obj
-      ((zigzagBraidComplex k G i).X q) ⟶
-        zigzagGradedBimodule k G ⊞ ((U i).shiftObj (-2) ⊞ U i) := by
-  by_cases hp : p = 0
-  · subst p
-    by_cases hq : q = 0
-    · subst q
-      exact (reverseRegularPairIso k G i).hom ≫ biprod.inl
-    · exact 0
-  · by_cases hp' : p = 1
-    · subst p
-      by_cases hq : q = -1
-      · subst q
-        exact (reverseMiddlePairIso k G i).hom ≫ biprod.inr
-      · exact 0
-    · exact 0
-
-private def reverseZeroHom (i : V) : (reverseInverseProduct k G i).X 0 ⟶
-    zigzagGradedBimodule k G ⊞ ((U i).shiftObj (-2) ⊞ U i) :=
-  HomologicalComplex.mapBifunctorDesc (fun p q _ ↦ reverseZeroMap k G i p q)
-
-private theorem reverseZeroMap_regular (i : V) :
-    reverseZeroMap k G i 0 0 = (reverseRegularPairIso k G i).hom ≫ biprod.inl := by
-  simp only [reverseZeroMap, dite_true]
-
-private theorem reverseZeroMap_middle (i : V) :
-    reverseZeroMap k G i 1 (-1) = (reverseMiddlePairIso k G i).hom ≫ biprod.inr := by
-  simp only [reverseZeroMap, show (1 : ℤ) ≠ 0 by decide, dite_false, dite_true]
-
-private def reverseZeroInv (i : V) :
-    zigzagGradedBimodule k G ⊞ ((U i).shiftObj (-2) ⊞ U i) ⟶
-      (reverseInverseProduct k G i).X 0 :=
-  biprod.desc
-    ((reverseRegularPairIso k G i).inv ≫ HomologicalComplex.ιMapBifunctor
-      (zigzagBraidInverseComplex k G i) (zigzagBraidComplex k G i) F (ComplexShape.up ℤ)
-      0 0 0 (by simp))
-    ((reverseMiddlePairIso k G i).inv ≫ HomologicalComplex.ιMapBifunctor
-      (zigzagBraidInverseComplex k G i) (zigzagBraidComplex k G i) F (ComplexShape.up ℤ)
-      1 (-1) 0 (by simp))
+      zigzagBraidSelfTensorShiftLeftIso k G i ≪≫
+        biprod.mapIso (-Iso.refl ((U i).shiftObj (-2))) (Iso.refl _)
 
 private def reverseZeroIso (i : V) : (reverseInverseProduct k G i).X 0 ≅
-    zigzagGradedBimodule k G ⊞ ((U i).shiftObj (-2) ⊞ U i) where
-  hom := reverseZeroHom k G i
-  inv := reverseZeroInv k G i
-  hom_inv_id := by
-    apply HomologicalComplex.mapBifunctor.hom_ext
-    intro p q hpq
-    -- Degree zero has precisely the regular pair and the internally shifted middle pair.
-    change p + q = 0 at hpq
-    by_cases hp : p = 0
-    · subst p
-      have hq : q = 0 := by omega
-      subst q
-      simp only [reverseZeroHom, reverseZeroInv, Category.assoc,
-        HomologicalComplex.ι_mapBifunctorDesc_assoc, reverseZeroMap_regular,
-        biprod.inl_desc, Iso.hom_inv_id_assoc, Category.comp_id]
-    · by_cases hp' : p = 1
-      · subst p
-        have hq : q = -1 := by omega
-        subst q
-        simp only [reverseZeroHom, reverseZeroInv, Category.assoc,
-          HomologicalComplex.ι_mapBifunctorDesc_assoc, reverseZeroMap_middle,
-          biprod.inr_desc, Iso.hom_inv_id_assoc, Category.comp_id]
-      · exact (isZero_reverseInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
-  inv_hom_id := by
-    apply biprod.hom_ext'
-    · simp only [reverseZeroHom, reverseZeroInv, Category.assoc, biprod.inl_desc_assoc,
-        HomologicalComplex.ι_mapBifunctorDesc, reverseZeroMap_regular,
-        Iso.inv_hom_id_assoc, Category.comp_id]
-    · simp only [reverseZeroHom, reverseZeroInv, Category.assoc, biprod.inr_desc_assoc,
-        HomologicalComplex.ι_mapBifunctorDesc, reverseZeroMap_middle,
-        Iso.inv_hom_id_assoc, Category.comp_id]
+    zigzagGradedBimodule k G ⊞ ((U i).shiftObj (-2) ⊞ U i) :=
+  HomologicalComplex.mapBifunctorTwoSummandIso (zigzagBraidInverseComplex k G i)
+      (zigzagBraidComplex k G i) F (ComplexShape.up ℤ) 0 0 1 (-1) 0 (by simp) (by simp) (by simp)
+      (fun p q hpq _ ↦ isZero_reverseInversePair_of_not_support k G i p q (by
+        rw [ComplexShape.π_eq_add] at hpq
+        omega)) ≪≫
+    biprod.mapIso (reverseRegularPairIso k G i) (reverseMiddlePairIso k G i)
 
-private theorem reverseCoevaluationProjection (i : V) :
+private theorem reverse_coevaluation_projection (i : V) :
     ((F).map ((zigzagBraidInverseComplex k G i).d 0 1)).app
         ((zigzagBraidComplex k G i).X (-1)) ≫
       ((F).map (zigzagBraidInverseComplexXIso₁ k G i).hom).app
@@ -312,9 +177,9 @@ private theorem reverseMiddlePair_coevaluation (i : V) :
     ((F).obj ((U i).shiftObj (-2))).map (zigzagBraidComplexXIso₀ k G i).hom ≫
     (zigzagBraidSelfTensorShiftLeftIso k G i).hom ≫ biprod.map (-𝟙 _) (𝟙 _) ≫ biprod.snd = _
   simp only [biprod.map_snd, Category.comp_id]
-  exact reverseCoevaluationProjection k G i
+  exact reverse_coevaluation_projection k G i
 
-private theorem reverseEvaluationTransport (i : V) :
+private theorem reverse_evaluation_transport (i : V) :
     ((F).obj ((zigzagBraidInverseComplex k G i).X 1)).map
         ((zigzagBraidComplex k G i).d (-1) 0) ≫ (reverseOnePairIso k G i).hom =
       ((F).map (zigzagBraidInverseComplexXIso₁ k G i).hom).app
@@ -346,7 +211,7 @@ private theorem reverseMiddlePair_evaluation (i : V) :
       ((F).obj ((zigzagBraidInverseComplex k G i).X 1)).map
         ((zigzagBraidComplex k G i).d (-1) 0) ≫ (reverseOnePairIso k G i).hom =
           -𝟙 ((U i).shiftObj (-2)) := by
-  rw [reverseEvaluationTransport]
+  rw [reverse_evaluation_transport]
   -- Expand the inverse component identification to expose its sign and cancel
   -- the transported isomorphisms.
   change biprod.inl ≫ biprod.map (-𝟙 _) (𝟙 _) ≫ (zigzagBraidSelfTensorShiftLeftIso k G i).inv ≫
@@ -383,16 +248,13 @@ private theorem reverseMiddlePair_evaluation (i : V) :
     zigzagBraidSelfTensorShiftLeftIso_inl_inv]
   exact zigzagBraidSelfTensorShiftLeftInl_evaluation k G i
 
-private theorem reverse_d_third (i : V) :
+private theorem reverse_d_snd_snd (i : V) :
     (reverseInverseProduct k G i).d (-1) 0 ≫ (reverseZeroIso k G i).hom ≫
       biprod.snd ≫ biprod.snd = (reverseMinusIso k G i).hom := by
-  -- The component isomorphisms use the totalization desc maps just constructed.
-  change (reverseInverseProduct k G i).d (-1) 0 ≫ reverseZeroHom k G i ≫
-    biprod.snd ≫ biprod.snd = reverseMinusHom k G i
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
   -- Only the pair (0,-1) can contribute to total degree -1.
-  change p + q = -1 at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   by_cases hp : p = 0
   · subst p
     have hq : q = -1 := by omega
@@ -411,24 +273,25 @@ private theorem reverse_d_third (i : V) :
         (ComplexShape.up ℤ) (0, -1) = 1 from rfl,
       show ComplexShape.ε₂ (ComplexShape.up ℤ) (ComplexShape.up ℤ)
         (ComplexShape.up ℤ) (0, -1) = 1 from rfl,
-      one_smul, reverseZeroHom, reverseMinusHom, Category.assoc,
-      HomologicalComplex.ι_mapBifunctorDesc, HomologicalComplex.ι_mapBifunctorDesc_assoc,
-      reverseZeroMap_regular, reverseZeroMap_middle, reverseMinusMap_supported,
-      biprod.inl_snd_assoc, biprod.inr_snd_assoc, comp_zero, zero_comp, add_zero]
+      one_smul, reverseZeroIso, reverseMinusIso, Iso.trans_hom, biprod.mapIso_hom,
+      Category.assoc, HomologicalComplex.ι_mapBifunctorTwoSummandIso_hom_left_assoc,
+      HomologicalComplex.ι_mapBifunctorTwoSummandIso_hom_right_assoc,
+      HomologicalComplex.ι_mapBifunctorSingleSummandIso_hom_assoc, biprod.inl_map_assoc,
+      biprod.inr_map_assoc, biprod.inl_snd_assoc, biprod.inr_snd_assoc, comp_zero, zero_comp,
+      add_zero]
     exact reverseMiddlePair_coevaluation k G i
   · exact (isZero_reverseInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
 
-private theorem reverse_d_middle (i : V) :
+private theorem reverse_inl_inr_d (i : V) :
     (biprod.inl : (U i).shiftObj (-2) ⟶ (U i).shiftObj (-2) ⊞ U i) ≫
       biprod.inr ≫ (reverseZeroIso k G i).inv ≫
       (reverseInverseProduct k G i).d 0 1 ≫ (reverseOneIso k G i).hom =
         𝟙 ((U i).shiftObj (-2)) := by
-  -- The inverse components are defined by binary and totalization desc maps.
-  change biprod.inl ≫ biprod.inr ≫ reverseZeroInv k G i ≫
-    (reverseInverseProduct k G i).d 0 1 ≫ reverseOneHom k G i = _
-  simp only [reverseZeroInv, biprod.inr_desc_assoc]
+  simp only [reverseZeroIso, Iso.trans_inv, biprod.mapIso_inv,
+    HomologicalComplex.mapBifunctorTwoSummandIso_inv, Category.assoc, biprod.inr_map_assoc,
+    biprod.inr_desc_assoc]
   rw [HomologicalComplex.mapBifunctor.d_eq]
-  simp only [Preadditive.comp_add, Preadditive.add_comp, Category.assoc,
+  simp only [Preadditive.comp_add, Preadditive.add_comp,
     HomologicalComplex.mapBifunctor.ι_D₁_assoc,
     HomologicalComplex.mapBifunctor.ι_D₂_assoc]
   rw [HomologicalComplex.mapBifunctor.d₁_eq (zigzagBraidInverseComplex k G i)
@@ -442,8 +305,8 @@ private theorem reverse_d_middle (i : V) :
       (ComplexShape.up ℤ) (1, -1) = -1 from rfl,
     Functor.map_zero, NatTrans.app_zero, zero_comp, smul_zero, comp_zero, zero_add,
     Units.neg_smul, Preadditive.comp_neg, Preadditive.neg_comp, one_smul,
-    reverseOneHom, Category.assoc, HomologicalComplex.ι_mapBifunctorDesc,
-    reverseOneMap_supported]
+    reverseOneIso, Iso.trans_hom, Category.assoc,
+    HomologicalComplex.ι_mapBifunctorSingleSummandIso_hom_assoc]
   rw [reverseMiddlePair_evaluation, neg_neg]
 
 private def reverseCancellationData (i : V) :
@@ -453,10 +316,10 @@ private def reverseCancellationData (i : V) :
   zeroIso := reverseZeroIso k G i
   oneIso := reverseOneIso k G i
   vanish := isZero_reverseInverseProduct_X k G i
-  d_snd_snd := reverse_d_third k G i
-  inl_inr_d := reverse_d_middle k G i
+  d_snd_snd := reverse_d_snd_snd k G i
+  inl_inr_d := reverse_inl_inr_d k G i
 
-/-- The actual inverse graded braid complex followed by the braid complex is homotopy
+/-- The inverse graded braid complex followed by the braid complex is homotopy
 equivalent to the regular graded zigzag bimodule in cochain degree zero. -/
 def zigzagBraidInverseTensorComplexHomotopyEquiv (i : V) :
     HomotopyEquiv

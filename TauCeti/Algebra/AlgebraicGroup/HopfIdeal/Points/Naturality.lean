@@ -19,9 +19,9 @@ The quotient-points inclusion commutes with post-composition along a morphism
 `I` is preserved by the functor-of-points map, and the value-algebra map restricts to a
 homomorphism between these subgroups.
 
-This is a small Layer 3 prerequisite for the ReductiveGroups roadmap target "Hopf ideals ↔
-closed subgroup schemes": the closed-subgroup functor represented by `H ⧸ I` must be a
-subfunctor of the ambient points functor, not just a subgroup at each individual algebra.
+This is a prerequisite for the correspondence between Hopf ideals and closed subgroup schemes: the
+closed-subgroup functor represented by `H ⧸ I` must be a subfunctor of the ambient points functor,
+not just a subgroup at each individual algebra.
 -/
 
 public section
@@ -43,7 +43,7 @@ lemma mapPoints_quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
     HopfAlgebra.mapPoints (H := H) χ (quotientPointsHom H I A f) =
       quotientPointsHom H I B (HopfAlgebra.mapPoints (H := quotient H I) χ f) := by
-  exact mapPointsFunctor_naturality_apply (R := R) (mkQuotient H I) χ f
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_naturality_apply (R := R) (mkQuotient H I) χ f
 
 /-- The quotient-points inclusion commutes with post-composition, including when the source and
 target value algebras lie in different universes. -/

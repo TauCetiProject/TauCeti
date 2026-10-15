@@ -19,7 +19,8 @@ one full turn about the first vertex.
 Together with the vertex stabilizer theorem, this identifies the finite vertex cycles and their
 cycle orders with the corresponding orbits and stabilizer orders in the coarse quotient. It does
 not assert that every elliptic orbit meets a vertex: a self-paired side can also have an elliptic
-midpoint. Neither discreteness nor local finiteness is needed for the finite vertex result.
+midpoint. `EllipticVertexCycle` restricts the finite cycles to those with nonidentity cycle
+transformation. Neither discreteness nor local finiteness is needed for the finite vertex result.
 
 ## References
 
@@ -73,6 +74,12 @@ theorem finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle
   simp only [← Equiv.Perm.coe_pow]
   exact ⟨fun ⟨m, hm⟩ ↦ hm ▸ Equiv.Perm.sameCycle_pow_right.2 (.refl _ _),
     Equiv.Perm.SameCycle.exists_nat_pow_eq⟩
+
+/-- The same-cycle quotient of the finite vertices whose cycle transformation is nonidentity.
+It is independent of the ambient subgroup and of the fundamental-polygon hypotheses. -/
+abbrev EllipticVertexCycle : Type :=
+  Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+    Setoid {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1})
 
 /-- Finite vertex cycles correspond bijectively to the coarse quotient orbits meeting a finite
 vertex of `P`. The domain is Mathlib's same-cycle quotient, restricted to finite vertices; the

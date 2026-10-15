@@ -24,7 +24,8 @@ sequence of representations of `Aut(L/K)`
 ```
 
 (`sIdeleShortComplex_shortExact`): `I_L = Lˣ · I_{L,S}` because the primes above `S` generate the
-class group, and `Lˣ ∩ I_{L,S} = U_{L,S}`.
+class group, and `Lˣ ∩ I_{L,S} = U_{L,S}`. On all of `I_L` the same maps give the exact sequence
+`0 → Lˣ → I_L → C_L → 0` (`principalIdeleShortComplex_shortExact`), with no condition on `S`.
 
 For a cyclic extension this computes the Herbrand quotient of the idele classes from those of the
 `S`-ideles and the `S`-units (`herbrandQuotient_ideleClassRep`):
@@ -41,15 +42,22 @@ together with the archimedean places, with `S` containing the ramified primes, t
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.sUnitsRep L S`, `TauCeti.ClassFieldTheory.sIdelesRep L S` and
-  `TauCeti.ClassFieldTheory.ideleClassRep K L`: the `S`-units, the `S`-ideles and the idele classes
-  of `L` as integral representations of `Aut(L/K)`.
+* `TauCeti.ClassFieldTheory.sUnitsRep L S`, `TauCeti.ClassFieldTheory.sIdelesRep L S`,
+  `TauCeti.ClassFieldTheory.idelesRep K L` and `TauCeti.ClassFieldTheory.ideleClassRep K L`: the
+  `S`-units, the `S`-ideles, the ideles and the idele classes of `L` as integral representations of
+  `Aut(L/K)`.
+* `TauCeti.ClassFieldTheory.unitsToIdeles K L`: the principal ideles `Lˣ → I_L`.
+* `TauCeti.ClassFieldTheory.sIdelesToIdeles L S`: the inclusion `I_{L,S} → I_L`.
+* `TauCeti.ClassFieldTheory.idelesToIdeleClass K L`: the quotient map `I_L → C_L`.
 * `TauCeti.ClassFieldTheory.sIdeleShortComplex L S`: the sequence `U_{L,S} → I_{L,S} → C_L`.
+* `TauCeti.ClassFieldTheory.principalIdeleShortComplex K L`: the sequence `Lˣ → I_L → C_L`.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.sIdeleShortComplex_shortExact`: `0 → U_{L,S} → I_{L,S} → C_L → 0` is
   exact when the primes above `S` generate the class group.
+* `TauCeti.ClassFieldTheory.principalIdeleShortComplex_shortExact`: `0 → Lˣ → I_L → C_L → 0` is
+  exact.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_ideleClassRep`: `h(C_L) = h(I_{L,S}) / h(U_{L,S})`
   for a cyclic extension.
 
@@ -73,7 +81,7 @@ open GlobalNumberFields
 variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
   (S : Set (HeightOneSpectrum (𝓞 K)))
 
-/-! ### The three representations -/
+/-! ### The representations -/
 
 /-- The `S`-units of `L`, the units at every finite place not above `S`, as an integral
 representation of `Aut(L/K)`. -/
@@ -86,9 +94,25 @@ abbrev sIdelesRep : Rep ℤ (L ≃ₐ[K] L) :=
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (sIdeles L S)
 
 variable (K) in
+/-- The ideles of `L`, as an integral representation of `Aut(L/K)`. -/
+abbrev idelesRep : Rep ℤ (L ≃ₐ[K] L) :=
+  Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (IdeleGroup (𝓞 L) L)
+
+variable (K) in
 /-- The idele class group `C_L` of `L`, as an integral representation of `Aut(L/K)`. -/
 abbrev ideleClassRep : Rep ℤ (L ≃ₐ[K] L) :=
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (IdeleClassGroup (𝓞 L) L)
+
+omit [NumberField K] in
+/-- `σ ∈ Aut(L/K)` acts on the class of an idele `a` in `ideleClassRep K L` as the class of the
+image of `a` under the ring automorphism `adeleEquiv L L σ` of the adele ring of `L`. -/
+theorem ideleClassRep_ρ_mk (σ : L ≃ₐ[K] L) (a : IdeleGroup (𝓞 L) L) :
+    (ideleClassRep K L).ρ σ (Additive.ofMul (a : IdeleClassGroup (𝓞 L) L)) =
+      Additive.ofMul ((Units.map (adeleEquiv L L σ.toRingEquiv).toMonoidHom a :
+        IdeleGroup (𝓞 L) L) : IdeleClassGroup (𝓞 L) L) :=
+  (Rep.ofMulDistribMulAction_ρ_apply_apply σ _).trans <|
+    congrArg (fun x : IdeleGroup (𝓞 L) L ↦ Additive.ofMul (x : IdeleClassGroup (𝓞 L) L))
+      (Units.ext ((coe_idele_smul σ a).trans (adeleGaloisAction_apply K L σ a)))
 
 /-! ### The maps -/
 
@@ -118,14 +142,59 @@ theorem sUnitsToSIdeles_hom_apply (a : Additive ((primesAbove (𝓞 K) (𝓞 L) 
       (unitEmbedding_mem_sIdeles_iff S _).2 a.toMul.2⟩ :=
   (rfl)
 
-/-- The quotient map `I_{L,S} → C_L` sending an `S`-idele to its idele class, as a morphism of
+variable (K) in
+/-- The inclusion `Lˣ → I_L` of the units of `L` as principal ideles, as a morphism of
 representations of `Aut(L/K)`. -/
-def sIdelesToIdeleClass : sIdelesRep L S ⟶ ideleClassRep K L :=
+def unitsToIdeles : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ idelesRep K L :=
   Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
-    ((QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 L) L)).comp
-      (sIdeles L S).subtype).toAdditive.toIntLinearMap fun σ x ↦
-      congrArg Additive.ofMul <| by
+    (IdeleGroup.unitEmbedding (𝓞 L) L).toAdditive.toIntLinearMap fun σ a ↦
+      congrArg Additive.ofMul (smul_unitEmbedding σ a.toMul).symm
+
+omit [NumberField K] in
+/-- `unitsToIdeles` sends a unit of `L` to its principal idele. -/
+@[simp]
+theorem unitsToIdeles_hom_apply (a : Additive Lˣ) :
+    (unitsToIdeles K L).hom a = Additive.ofMul (IdeleGroup.unitEmbedding (𝓞 L) L a.toMul) :=
+  (rfl)
+
+/-- The inclusion `I_{L,S} → I_L` of the `S`-ideles, as a morphism of representations of
+`Aut(L/K)`. -/
+def sIdelesToIdeles : sIdelesRep L S ⟶ idelesRep K L :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (sIdeles L S).subtype.toAdditive.toIntLinearMap fun _ _ ↦ rfl
+
+/-- `sIdelesToIdeles` sends an `S`-idele to itself. -/
+@[simp]
+theorem sIdelesToIdeles_hom_apply (x : Additive (sIdeles L S)) :
+    (sIdelesToIdeles L S).hom x = Additive.ofMul (x.toMul : IdeleGroup (𝓞 L) L) :=
+  (rfl)
+
+/-- The inclusion of the `S`-ideles into the ideles is injective. -/
+theorem sIdelesToIdeles_hom_injective : Function.Injective (sIdelesToIdeles L S).hom :=
+  fun x y h ↦ Additive.toMul.injective <| Subtype.ext <| Additive.ofMul.injective <|
+    (sIdelesToIdeles_hom_apply L S x).symm.trans (h.trans (sIdelesToIdeles_hom_apply L S y))
+
+variable (K) in
+/-- The quotient map `I_L → C_L` sending an idele to its idele class, as a morphism of
+representations of `Aut(L/K)`. -/
+def idelesToIdeleClass : idelesRep K L ⟶ ideleClassRep K L :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 L) L)).toAdditive.toIntLinearMap
+      fun σ x ↦ congrArg Additive.ofMul <| by
         simp
+
+omit [NumberField K] in
+/-- `idelesToIdeleClass` sends an idele to its idele class. -/
+@[simp]
+theorem idelesToIdeleClass_hom_apply (x : Additive (IdeleGroup (𝓞 L) L)) :
+    (idelesToIdeleClass K L).hom x =
+      Additive.ofMul ((x.toMul : IdeleGroup (𝓞 L) L) : IdeleClassGroup (𝓞 L) L) :=
+  (rfl)
+
+/-- The quotient map `I_{L,S} → C_L` sending an `S`-idele to its idele class, as a morphism of
+representations of `Aut(L/K)`: the inclusion into the ideles followed by `idelesToIdeleClass`. -/
+def sIdelesToIdeleClass : sIdelesRep L S ⟶ ideleClassRep K L :=
+  sIdelesToIdeles L S ≫ idelesToIdeleClass K L
 
 /-- `sIdelesToIdeleClass` sends an `S`-idele to its idele class. -/
 @[simp]
@@ -172,6 +241,42 @@ theorem sIdeleShortComplex_shortExact
     intro c
     obtain ⟨x, hx, hxc⟩ := exists_mem_sIdeles_mk_eq hS c.toMul
     exact ⟨Additive.ofMul ⟨x, hx⟩, congrArg Additive.ofMul hxc⟩
+
+variable (K) in
+/-- **The sequence `Lˣ → I_L → C_L`** of representations of `Aut(L/K)`, given by the principal
+ideles and the quotient map onto the idele classes. -/
+-- The body is exposed so that the terms of the sequence unfold to `Lˣ`, `idelesRep K L` and
+-- `ideleClassRep K L`: the connecting map of the sequence and the maps it induces are only typed
+-- as maps between the cohomology of these representations through that unfolding.
+@[expose]
+def principalIdeleShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) :=
+  ShortComplex.mk (unitsToIdeles K L) (idelesToIdeleClass K L) <| by
+    ext a
+    exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul, rfl⟩)
+
+omit [NumberField K] in
+variable (K) in
+/-- **The sequence `0 → Lˣ → I_L → C_L → 0` is exact**: the idele classes are the quotient of the
+ideles by the principal ideles, and a unit of `L` is determined by its principal idele. -/
+theorem principalIdeleShortComplex_shortExact : (principalIdeleShortComplex K L).ShortExact where
+  exact := by
+    rw [Rep.exact_iff_function_exact]
+    intro (x : Additive (IdeleGroup (𝓞 L) L))
+    refine ⟨fun hx ↦ ?_, ?_⟩
+    · obtain ⟨a, ha⟩ := (QuotientGroup.eq_one_iff _).1 (congrArg Additive.toMul hx)
+      exact ⟨Additive.ofMul a, congrArg Additive.ofMul ha⟩
+    · rintro ⟨a, rfl⟩
+      exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul, rfl⟩)
+  mono_f := by
+    rw [Rep.mono_iff_injective]
+    intro (a : Additive Lˣ) b hab
+    exact Additive.toMul.injective <|
+      Units.map_injective (AdeleRing.algebraMap_injective (𝓞 L) L) (congrArg Additive.toMul hab)
+  epi_g := by
+    rw [Rep.epi_iff_surjective]
+    intro c
+    obtain ⟨x, hx⟩ := QuotientGroup.mk_surjective (Additive.toMul c)
+    exact ⟨Additive.ofMul x, congrArg Additive.ofMul hx⟩
 
 /-! ### The Herbrand quotient -/
 

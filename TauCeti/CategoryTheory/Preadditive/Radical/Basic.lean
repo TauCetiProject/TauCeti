@@ -16,9 +16,10 @@ public import Mathlib.RingTheory.LocalRing.Defs
 -- Non-public: the local-ring API, and the Tau Ceti extension of it to a noncommutative base, are
 -- used only inside the proofs of the statements about objects with local endomorphism rings.
 import TauCeti.RingTheory.LocalRing.Basic
--- Non-public: the trivial-idempotent criterion and the elementwise description of the Jacobson
--- radical of a noncommutative ring are used only inside proofs.
+-- Non-public: the trivial-idempotent criterion, categorical Jacobson's lemma and the elementwise
+-- description of the Jacobson radical of a noncommutative ring are used only inside proofs.
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
+import TauCeti.CategoryTheory.Preadditive.Jacobson
 import TauCeti.RingTheory.Jacobson.MulOpposite
 
 /-!
@@ -59,7 +60,7 @@ category, their submodule views, and
 them.
 
 The engine of the whole development is **Jacobson's lemma** in its categorical form
-(`TauCeti.isIso_id_sub_comp_comm`): for `a : X ⟶ Y` and `b : Y ⟶ X`, the endomorphism
+(`CategoryTheory.isIso_id_sub_comp_comm`): for `a : X ⟶ Y` and `b : Y ⟶ X`, the endomorphism
 `𝟙 X - a ≫ b` of `X` is invertible exactly when `𝟙 Y - b ≫ a` is, by the same formula
 `(𝟙 Y - b ≫ a)⁻¹ = 𝟙 Y + b ≫ (𝟙 X - a ≫ b)⁻¹ ≫ a` that proves it for rings. It is what makes
 the definition of the radical left-right symmetric, and it is what makes the radical closed under
@@ -76,7 +77,6 @@ addition, exactly as in the ring case.
 
 ## Main results
 
-* `TauCeti.isIso_id_sub_comp_comm`: Jacobson's lemma for a preadditive category.
 * `TauCeti.mem_jacobsonRadical_iff_isIso_id_sub_comp_left`: the radical is left-right symmetric,
   the defining condition `TauCeti.mem_jacobsonRadical_iff_isIso_id_sub_comp_right` being readable
   with the composite taken in either order.
@@ -122,10 +122,6 @@ symmetry to be proved. Where a proof does pass through the ring — to use the l
 `End X` — it crosses between the two spellings by rewriting with `CategoryTheory.End.one_def` and
 `CategoryTheory.End.mul_def` rather than by definitional unfolding.
 
-Jacobson's lemma is proved as a private one-directional helper carrying the explicit inverse and
-exposed as the equivalence `isIso_id_sub_comp_comm`; an instance form is impossible, since the two
-hypotheses `IsIso (𝟙 X - a ≫ b)` and `IsIso (𝟙 Y - b ≫ a)` each imply the other and would loop.
-
 The identification of `jacobsonRadical X X` with Mathlib's `Ring.jacobson (End X)` goes through
 `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left`: `Ring.jacobson` is defined as the infimum
 of the maximal left ideals, and Mathlib's quasi-regularity characterization of it
@@ -144,10 +140,6 @@ the radical would be everything.
   ("the radical of a category").
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), A.3 and IV.1.
-* [Quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md),
-  Layer 6, sublayer 6A: "the radical of the module category and irreducible morphisms. ... The
-  **radical** of the module category (maps that are non-isomorphisms between indecomposables) and
-  its square; the irreducible maps are `rad / rad²`."
 -/
 
 public section
@@ -159,44 +151,6 @@ open CategoryTheory
 universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
-
-/-! ### Jacobson's lemma -/
-
-/-- **Jacobson's lemma in a preadditive category**: if `𝟙 X - a ≫ b` is invertible, so is
-`𝟙 Y - b ≫ a`, with inverse `𝟙 Y + b ≫ (𝟙 X - a ≫ b)⁻¹ ≫ a`.
-
-This is the categorical form of the ring identity behind the left-right symmetry of the Jacobson
-radical, and the reason the radical of a category can be defined by a one-sided condition. It is
-the implementation of `TauCeti.isIso_id_sub_comp_comm`, which is the form to use. -/
-private theorem isIso_id_sub_comp_swap {X Y : C} (a : X ⟶ Y) (b : Y ⟶ X)
-    (h : IsIso (𝟙 X - a ≫ b)) : IsIso (𝟙 Y - b ≫ a) := by
-  obtain ⟨w, hw₁, hw₂⟩ := h.out
-  rw [Preadditive.sub_comp, Category.id_comp, Category.assoc] at hw₁
-  rw [Preadditive.comp_sub, Category.comp_id] at hw₂
-  -- `hw₁ : w - a ≫ b ≫ w = 𝟙 X` and `hw₂ : w - w ≫ a ≫ b = 𝟙 X`
-  have key₁ : a ≫ b ≫ w ≫ a = w ≫ a - a := by
-    have h₁ : a ≫ b ≫ w = w - 𝟙 X := by
-      rw [eq_sub_iff_add_eq, ← hw₁]; abel
-    have := congrArg (fun t : X ⟶ X => t ≫ a) h₁
-    simpa [Preadditive.sub_comp] using this
-  have key₂ : w ≫ a ≫ b ≫ a = w ≫ a - a := by
-    have h₂ : w ≫ a ≫ b = w - 𝟙 X := by
-      rw [eq_sub_iff_add_eq, ← hw₂]; abel
-    have := congrArg (fun t : X ⟶ X => t ≫ a) h₂
-    simpa [Preadditive.sub_comp] using this
-  refine ⟨⟨𝟙 Y + b ≫ w ≫ a, ?_, ?_⟩⟩
-  · simp only [Preadditive.sub_comp, Preadditive.comp_add, Category.id_comp, Category.comp_id,
-      Category.assoc, key₁, Preadditive.comp_sub]
-    abel
-  · simp only [Preadditive.add_comp, Preadditive.comp_sub, Category.id_comp, Category.comp_id,
-      Category.assoc, key₂, Preadditive.comp_sub]
-    abel
-
-/-- **Jacobson's lemma**, as an equivalence: `𝟙 X - a ≫ b` is invertible exactly when the
-composite taken in the other order gives an invertible `𝟙 Y - b ≫ a`. -/
-theorem isIso_id_sub_comp_comm {X Y : C} (a : X ⟶ Y) (b : Y ⟶ X) :
-    IsIso (𝟙 X - a ≫ b) ↔ IsIso (𝟙 Y - b ≫ a) :=
-  ⟨isIso_id_sub_comp_swap a b, isIso_id_sub_comp_swap b a⟩
 
 /-! ### The radical -/
 
@@ -429,7 +383,7 @@ theorem mem_jacobsonRadical_iff_not_isIso {f : X ⟶ Y} :
     -- multiplication of `End Y` is one for composition, `CategoryTheory.End.mul_def`, and the
     -- ring `1` it is compared to is the identity, `CategoryTheory.End.one_def`.
     have hY : ∀ e : Y ⟶ Y, e ≫ e = e → e = 0 ∨ e = 𝟙 Y := fun e he => by
-      simpa only [End.one_def] using IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem (R := End Y)
+      simpa only [End.one_def] using IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing (R := End Y)
         ((End.mul_def e e).trans he)
     exact isIso_of_isIso_comp (id_ne_zero X) hY f (retraction f)
       (by rw [IsSplitMono.id]; infer_instance)
@@ -595,18 +549,11 @@ theorem smul_mem_jacobsonRadical {X Y : C} (c : k) {f : X ⟶ Y}
     (hf : f ∈ jacobsonRadical X Y) : c • f ∈ jacobsonRadical X Y := fun g => by
   simpa using hf (c • g)
 
-/-- **Scaling preserves the square of the radical**, the generating composites being scaled in
-their first factor. -/
+/-- **Scaling preserves the square of the radical.** -/
 theorem smul_mem_jacobsonRadicalSq {X Y : C} (c : k) {f : X ⟶ Y}
     (hf : f ∈ jacobsonRadicalSq X Y) : c • f ∈ jacobsonRadicalSq X Y := by
-  induction hf using AddSubgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨Z, a, b, ha, hb, rfl⟩ := hx
-    rw [← Linear.smul_comp]
-    exact comp_mem_jacobsonRadicalSq (smul_mem_jacobsonRadical c ha) hb
-  | zero => rw [smul_zero]; exact zero_mem _
-  | add x y _ _ hx hy => rw [smul_add]; exact add_mem hx hy
-  | neg x _ hx => rw [smul_neg]; exact neg_mem hx
+  simpa only [Linear.smul_comp, Category.id_comp] using
+    comp_mem_jacobsonRadicalSq_left (c • 𝟙 X) hf
 
 variable (k) in
 /-- **The radical of a `k`-linear category as a submodule**, the same subgroup as

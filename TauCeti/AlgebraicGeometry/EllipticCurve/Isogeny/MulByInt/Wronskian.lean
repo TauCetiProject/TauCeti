@@ -233,7 +233,7 @@ private theorem universal_wronskian_Φ_ΨSq (n : ℤ) :
   simp only [pointedCurve, WeierstrassCurve.baseChange, WeierstrassCurve.map_Φ,
     WeierstrassCurve.map_ΨSq, WeierstrassCurve.map_preΨ] at h
   refine Polynomial.map_injective (algebraMap (MvPolynomial Coeff ℤ) Universal.Field)
-    algebraMap_field_injective ?_
+    (FaithfulSMul.algebraMap_injective _ _) ?_
   simpa only [Polynomial.map_sub, Polynomial.map_mul, Polynomial.derivative_map, Polynomial.map_C,
     map_intCast, Polynomial.map_intCast] using h
 

@@ -104,23 +104,7 @@ theorem gradedMap_symplecticTransvection_gradedMk_demushkinWordNeTwo {q : ℕ} (
   rw [gradedMk_demushkinWordNeTwo hq, map_add, map_nsmul, map_sum, gradedMap_gradedPow,
     gradedMap_gradedMkZero, hσ 0 (by omega) (by omega)]
   congr 1
-  -- The bracket lands in `gr_{0+0+1}`, which is `gr_1` only up to defeq; restate naturality
-  -- at the degree `1` the sum is written in.
-  have key (x y : gradedPiece p (freeProP p (Fin n)) 0) :
-      gradedMap p
-        (symplecticTransvection hn3 c : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
-        (symplecticTransvection hn3 c : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1
-        (gradedBracket p (freeProP p (Fin n)) 0 0 x y) =
-      gradedBracket p (freeProP p (Fin n)) 0 0
-        (gradedMap p
-          (symplecticTransvection hn3 c : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
-          (symplecticTransvection hn3 c : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 0 x)
-        (gradedMap p
-          (symplecticTransvection hn3 c : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
-          (symplecticTransvection hn3 c : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 0
-          y) :=
-    gradedMap_gradedBracket _ _ x y
-  simp only [key, gradedMap_gradedMkZero]
+  simp only [gradedMap_gradedBracket_zero_zero, gradedMap_gradedMkZero]
   rw [hk, Finset.sum_range_succ', Finset.sum_range_succ', Finset.sum_range_succ',
     Finset.sum_range_succ']
   have hrest : ∀ i ∈ Finset.range k,

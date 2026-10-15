@@ -64,10 +64,6 @@ hypothesis.
 
 ## References
 
-This is the local-nilpotence half of the "maximal integrable quotient and local nilpotence"
-milestone of Layer 4, "the classification of finite-dimensional irreducibles", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2.
 * V. G. Kac, *Infinite Dimensional Lie Algebras*, 3rd ed., §3.6.
 -/

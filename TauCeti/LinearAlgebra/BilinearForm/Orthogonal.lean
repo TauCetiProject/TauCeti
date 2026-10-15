@@ -8,28 +8,36 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
+import Mathlib.LinearAlgebra.QuadraticForm.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Orthogonal complements of bilinear forms
 
 This file records facts about the orthogonal complement `LinearMap.BilinForm.orthogonal`
-that Mathlib lacks. A vector lies in the orthogonal complement of the span of one or two vectors
-exactly when it is orthogonal to each of them. Adjoining a vector `x` whose self-pairing is a
-non-zero-divisor dividing all its pairings (over a field: a non-isotropic vector) to an orthogonal
-basis of the orthogonal complement of `x` gives an orthogonal basis of the whole module, for a
-reflexive form; this is the inductive step of every diagonalization argument, over a field as over
-a valuation ring.
+that Mathlib lacks. Adjoining a vector `x` whose self-pairing is a non-zero-divisor dividing all
+its pairings (over a field: a non-isotropic vector) to an orthogonal basis of the orthogonal
+complement of `x` gives an orthogonal basis of the whole module, for a reflexive form; this is the
+inductive step of every diagonalization argument, over a field as over a valuation ring.
+Over a field in which `2` is invertible, a prescribed anisotropic vector or orthogonal pair
+extends to an orthogonal basis; no regularity of the ambient form is needed. Three mutually
+orthogonal anisotropic vectors also supply anisotropic vectors in the intersections of
+orthogonal complements used to compare bases.
 Adjoining an orthogonal vector whose self-pairing is a right non-zero-divisor to a left-separating
 subspace of a reflexive bilinear space produces a nondegenerate restriction; this is the
 structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace.
 
 ## Main results
 
-* `LinearMap.BilinForm.mem_orthogonal_span_singleton_iff`,
-  `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: membership in the orthogonal complement of
-  the span of one or two vectors.
+* `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
+  which the form is right-separating are independent.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
+  `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_one_eq`: extend a prescribed
+  anisotropic vector or orthogonal pair to an orthogonal basis.
+* `LinearMap.BilinForm.exists_apply_self_ne_zero_isOrtho_pair`: find an anisotropic vector
+  orthogonal to a given vector and to one member of an anisotropic orthogonal triple.
 * `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
   to a left-separating subspace produces a nondegenerate restriction.
 * `LinearMap.BilinForm.isCompl_orthogonal_of_flip_restrict_bijective`: a perfect flipped
@@ -44,6 +52,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   self-pairing splits off.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
+
+## References
+
+* J.-P. Serre, *A Course in Arithmetic*, Chapter IV, §1.3 (orthogonal bases).
 -/
 
 public section
@@ -52,20 +64,15 @@ namespace LinearMap.BilinForm
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
-/-- A vector is orthogonal to the span of a vector `x` exactly when it is orthogonal to `x`. -/
-theorem mem_orthogonal_span_singleton_iff (B : LinearMap.BilinForm K V) {x y : V} :
-    y ∈ B.orthogonal (K ∙ x) ↔ B x y = 0 := by
-  rw [orthogonal, Submodule.orthogonalBilin_span_singleton, LinearMap.mem_ker]
-
-/-- A vector is orthogonal to the span of two vectors exactly when it is orthogonal to both. -/
-theorem mem_orthogonal_span_pair_iff (B : LinearMap.BilinForm K V) {x y z : V} :
-    z ∈ B.orthogonal (Submodule.span K {x, y}) ↔ B x z = 0 ∧ B y z = 0 := by
-  constructor
-  · intro hz
-    exact ⟨hz x (Submodule.subset_span (by simp)), hz y (Submodule.subset_span (by simp))⟩
-  · rintro ⟨hx, hy⟩ n hn
-    obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hn
-    simp [hx, hy]
+/-- A family of pairwise orthogonal submodules, on each of which the form is right-separating, is
+independent. -/
+theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι : Type*}
+    {N : ι → Submodule K V} (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    (hN : ∀ i, (B.restrict (N i)).SeparatingRight) : iSupIndep N := by
+  refine fun i ↦ Submodule.disjoint_def.mpr fun x hxi hx ↦ ?_
+  have hle : ⨆ (j) (_ : j ≠ i), N j ≤ B.orthogonal (N i) :=
+    iSup₂_le fun j hj y hy z hz ↦ hO i j (Ne.symm hj) z hz y hy
+  exact congrArg Subtype.val (hN i ⟨x, hxi⟩ fun z ↦ hle hx z z.2)
 
 end LinearMap.BilinForm
 
@@ -242,12 +249,14 @@ theorem isCompl_span_singleton_orthogonal_of_dvd (B : LinearMap.BilinForm R M) {
 
 /-- Adjoining a vector `x` to an orthogonal basis of the orthogonal complement of `x` gives an
 orthogonal basis of the whole module, for a reflexive form, provided the self-pairing `B x x` is a
-non-zero-divisor dividing every pairing `B x y`. Over a field this says `B x x ≠ 0`. -/
+non-zero-divisor dividing every pairing `B x y`. Over a field this says `B x x ≠ 0`.
+The resulting basis starts with `x`, followed by the supplied basis of its complement. -/
 theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearMap.BilinForm R M}
     (hB : B.IsRefl) {x : M} (hx : B x x ∈ nonZeroDivisors R) (hdvd : ∀ y, B x x ∣ B x y)
     {d : ℕ} {v : Basis (Fin d) R (B.orthogonal (R ∙ x))}
     (hv : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho v) :
-    ∃ b : Basis (Fin (d + 1)) R M, B.iIsOrtho b := by
+    ∃ b : Basis (Fin (d + 1)) R M, B.iIsOrtho b ∧
+      b 0 = x ∧ ∀ i, b i.succ = (v i : M) := by
   have hc := B.isCompl_span_singleton_orthogonal_of_dvd hx hdvd
   have hli : ∀ c : R, ∀ y ∈ B.orthogonal (R ∙ x), c • x + y = 0 → c = 0 := fun c y hy hcy ↦ by
     have hcx : c • x ∈ B.orthogonal (R ∙ x) := by
@@ -264,14 +273,18 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
       (hc.sup_eq_top ▸ (Submodule.mem_top : z ∈ (⊤ : Submodule R M)))
     obtain ⟨k, rfl⟩ := Submodule.mem_span_singleton.mp hw
     exact ⟨-k, by simpa [← hwy, add_comm, add_left_comm, add_assoc] using hy⟩
-  refine ⟨Basis.mkFinCons x v hli hsp, ?_⟩
+  refine ⟨Basis.mkFinCons x v hli hsp, ?_, ?_, ?_⟩
+  rotate_left
+  · simp [Basis.coe_mkFinCons]
+  · intro i
+    simp [Basis.coe_mkFinCons]
   rw [iIsOrtho_def, Basis.coe_mkFinCons]
   intro i j
   refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
     simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
   · exact (hij rfl).elim
-  · exact (mem_orthogonal_span_singleton_iff B).1 (v j).2
-  · exact hB.eq_zero ((mem_orthogonal_span_singleton_iff B).1 (v i).2)
+  · simpa [orthogonal] using (v j).2
+  · exact hB.eq_zero (by simpa [orthogonal] using (v i).2)
   · simpa using iIsOrtho_def.1 hv i j fun h => hij (congrArg Fin.succ h)
 
 /-- A vector with unit self-pairing spans an orthogonal direct summand. -/
@@ -279,5 +292,109 @@ theorem isCompl_span_singleton_orthogonal_of_isUnit
     (B : LinearMap.BilinForm R M) (x : M) (hx : IsUnit (B x x)) :
     IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
   B.isCompl_span_singleton_orthogonal_of_dvd hx.mem_nonZeroDivisors fun _ ↦ hx.dvd
+
+end LinearMap.BilinForm
+
+namespace LinearMap.BilinForm
+
+open Module
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
+
+/-- The orthogonal complement of a vector with nonzero self-pairing has codimension one,
+without any symmetry or characteristic assumption on the bilinear form. -/
+theorem finrank_orthogonal_span_singleton_add_one (B : LinearMap.BilinForm K V) {x : V}
+    (hx : B x x ≠ 0) : finrank K (B.orthogonal (K ∙ x)) + 1 = finrank K V := by
+  simpa only [finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx), add_comm] using
+    Submodule.finrank_add_eq_of_isCompl (B.isCompl_span_singleton_orthogonal hx)
+
+variable [Invertible (2 : K)]
+
+/-- A vector with nonzero self-pairing extends to an orthogonal basis of a symmetric bilinear
+space, with that vector in the first position. -/
+theorem IsSymm.exists_orthogonal_basis_apply_zero_eq (hB : B.IsSymm) {x : V}
+    (hx : B x x ≠ 0) {n : ℕ} (hdim : finrank K V = n + 1) :
+    ∃ b : Basis (Fin (n + 1)) K V, B.IsOrthoᵢ b ∧ b 0 = x := by
+  have hN : finrank K (B.orthogonal (K ∙ x)) = n := by
+    have h := B.finrank_orthogonal_span_singleton_add_one hx
+    omega
+  obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp (hB.restrict (B.orthogonal (K ∙ x))))
+  let v' := v.reindex (finCongr hN)
+  have hv' : (B.restrict (B.orthogonal (K ∙ x))).IsOrthoᵢ v' := by
+    intro i j hij
+    simpa only [Function.onFun, v', Basis.reindex_apply] using
+      hv ((finCongr hN).symm.injective.ne hij)
+  obtain ⟨b, hb, hzero, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+    (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ hx.isUnit.dvd) hv'
+  exact ⟨b, hb, hzero⟩
+
+/-- An orthogonal pair with nonzero self-pairings extends to an orthogonal basis of a symmetric
+bilinear space, with the pair in the first two positions. -/
+theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : V}
+    (hx : B x x ≠ 0) (hy : B y y ≠ 0) (hxy : B x y = 0) {n : ℕ}
+    (hdim : finrank K V = n + 2) :
+    ∃ b : Basis (Fin (n + 2)) K V, B.IsOrthoᵢ b ∧ b 0 = x ∧ b 1 = y := by
+  let N := B.orthogonal (K ∙ x)
+  let y' : N := ⟨y, by simpa [N, orthogonal] using hxy⟩
+  have hN : finrank K N = n + 1 := by
+    have h := B.finrank_orthogonal_span_singleton_add_one hx
+    dsimp only [N]
+    omega
+  obtain ⟨v, hv, hvzero⟩ := (hB.restrict N).exists_orthogonal_basis_apply_zero_eq
+    (x := y') hy hN
+  obtain ⟨b, hb, hbzero, hbsucc⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+    (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ hx.isUnit.dvd) hv
+  exact ⟨b, hb, hbzero, (hbsucc 0).trans (congrArg Subtype.val hvzero)⟩
+
+end LinearMap.BilinForm
+
+namespace LinearMap.BilinForm
+
+variable {K V : Type*} [CommRing K] [IsDomain K] [NeZero (2 : K)]
+  [AddCommGroup V] [Module K V]
+
+/-- Given three mutually orthogonal vectors with nonzero self-pairings, every vector is
+orthogonal to a vector with nonzero self-pairing which is also orthogonal to one of the three.
+This supplies the shared vector in comparisons of orthogonal bases in dimension at least three. -/
+theorem exists_apply_self_ne_zero_isOrtho_pair (B : LinearMap.BilinForm K V)
+    (v : Fin 3 → V) (hv : B.IsOrthoᵢ v) (hvv : ∀ i, B (v i) (v i) ≠ 0) (u : V) :
+    ∃ z : V, B z z ≠ 0 ∧ B u z = 0 ∧ ∃ k : Fin 3, B (v k) z = 0 := by
+  let a : Fin 3 → K := fun i ↦ B (v i) (v i)
+  let c : Fin 3 → K := fun i ↦ B u (v i)
+  have pair (i j k : Fin 3) (hij : i ≠ j) (hki : k ≠ i) (hkj : k ≠ j)
+      (h : a i * c j ^ 2 + a j * c i ^ 2 ≠ 0) :
+      ∃ z : V, B z z ≠ 0 ∧ B u z = 0 ∧ ∃ k : Fin 3, B (v k) z = 0 := by
+    refine ⟨c j • v i - c i • v j, ?_, ?_, k, ?_⟩
+    · have heq : B (c j • v i - c i • v j) (c j • v i - c i • v j) =
+          a i * c j ^ 2 + a j * c i ^ 2 := by
+        simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
+          hv hij, hv hij.symm, a]
+        ring
+      exact heq ▸ h
+    · simp only [map_sub, map_smul, smul_eq_mul, c]
+      ring
+    · simp [hv hki, hv hkj]
+  by_cases h01 : a 0 * c 1 ^ 2 + a 1 * c 0 ^ 2 ≠ 0
+  · exact pair 0 1 2 (by decide) (by decide) (by decide) h01
+  by_cases h02 : a 0 * c 2 ^ 2 + a 2 * c 0 ^ 2 ≠ 0
+  · exact pair 0 2 1 (by decide) (by decide) (by decide) h02
+  by_cases h12 : a 1 * c 2 ^ 2 + a 2 * c 1 ^ 2 ≠ 0
+  · exact pair 1 2 0 (by decide) (by decide) (by decide) h12
+  -- If all three binary combinations are isotropic, their equations force all three pairings
+  -- with `u` to vanish. The factor `2` is the reason characteristic two is excluded.
+  have heq01 := not_ne_iff.mp h01
+  have heq02 := not_ne_iff.mp h02
+  have heq12 := not_ne_iff.mp h12
+  have hzero : 2 * a 1 * a 2 * c 0 ^ 2 = 0 := by
+    linear_combination a 2 * heq01 + a 1 * heq02 - a 0 * heq12
+  have hc0 : c 0 = 0 := by
+    have hcoeff : 2 * a 1 * a 2 ≠ 0 :=
+      mul_ne_zero (mul_ne_zero (two_ne_zero' K) (hvv 1)) (hvv 2)
+    exact (pow_eq_zero_iff two_ne_zero).mp ((mul_eq_zero.mp hzero).resolve_left hcoeff)
+  have hc1 : c 1 = 0 := by
+    rw [hc0, zero_pow two_ne_zero, mul_zero, add_zero] at heq01
+    exact (pow_eq_zero_iff two_ne_zero).mp ((mul_eq_zero.mp heq01).resolve_left (hvv 0))
+  exact ⟨v 1, hvv 1, hc1, 0, hv (by decide : (0 : Fin 3) ≠ 1)⟩
 
 end LinearMap.BilinForm

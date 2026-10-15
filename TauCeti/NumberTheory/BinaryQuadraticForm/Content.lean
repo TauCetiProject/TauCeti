@@ -6,16 +6,24 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
+public import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.LinearCombination
 
 /-!
-# Content and primitive parts of integral binary quadratic forms
+# Content and primitive forms of fixed discriminant
 
 The content of an integral binary quadratic form is the nonnegative gcd of its three
 coefficients. Dividing by it gives a primitive form whenever the original form is nonzero.
 The content is also the gcd of all represented values, which makes it invariant under
 proper integral changes of variables. Scaling the form multiplies its content by the
 absolute value of the scalar and its discriminant by the scalar's square.
+Dividing a nonzero integer vector by its gcd gives coprime coordinates and divides
+every represented value by the square of that gcd.
+
+The invariance of discriminant and primitivity packages primitive forms of a fixed
+discriminant in the subaction `primitiveForms D`, stable under `SL(2, ℤ)`. This gives the
+carrier for proper-equivalence and orbit constructions among forms of that discriminant.
 
 ## References
 
@@ -27,6 +35,24 @@ public section
 open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
+
+/-- Dividing a nonzero integer vector by its gcd gives coprime coordinates and scales
+its represented value by the square of the gcd. -/
+theorem exists_isCoprime_eval_eq_gcd_sq_mul (f : BinaryQuadraticForm ℤ) (x y : ℤ)
+    (hxy : x ≠ 0 ∨ y ≠ 0) :
+    ∃ u v : ℤ, IsCoprime u v ∧ x = u * Int.gcd x y ∧ y = v * Int.gcd x y ∧
+      f.eval x y = (Int.gcd x y : ℤ) ^ 2 * f.eval u v := by
+  have hgcd : 0 < Int.gcd x y := by
+    rcases hxy with hx | hy
+    · exact Int.gcd_pos_of_ne_zero_left y hx
+    · exact Int.gcd_pos_of_ne_zero_right x hy
+  obtain ⟨u, v, huv, hx, hy⟩ := Int.exists_gcd_one hgcd
+  refine ⟨u, v, Int.isCoprime_iff_gcd_eq_one.mpr huv, hx, hy, ?_⟩
+  calc
+    f.eval x y = f.eval (u * Int.gcd x y) (v * Int.gcd x y) := congrArg₂ f.eval hx hy
+    _ = (Int.gcd x y : ℤ) ^ 2 * f.eval u v := by
+      simp only [eval_def]
+      ring
 
 /-- The nonnegative gcd of the three coefficients of an integral binary quadratic form. -/
 def content (f : BinaryQuadraticForm ℤ) : ℕ :=
@@ -54,6 +80,23 @@ theorem isPrimitive_iff (f : BinaryQuadraticForm ℤ) : f.IsPrimitive ↔ f.cont
 theorem IsPrimitive.ne_zero {f : BinaryQuadraticForm ℤ} (hf : f.IsPrimitive) : f ≠ 0 := by
   rintro rfl
   exact not_isPrimitive_zero hf
+
+/-- The coefficients of an integral form have a Bézout relation for its content. -/
+theorem exists_linearCombination_eq_content (f : BinaryQuadraticForm ℤ) :
+    ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = (f.content : ℤ) := by
+  have h₁ := Int.gcd_eq_gcd_ab f.a (Int.gcd f.b f.c)
+  have h₂ := Int.gcd_eq_gcd_ab f.b f.c
+  rw [← content_def] at h₁
+  refine ⟨Int.gcdA f.a (Int.gcd f.b f.c),
+    Int.gcdB f.a (Int.gcd f.b f.c) * Int.gcdA f.b f.c,
+    Int.gcdB f.a (Int.gcd f.b f.c) * Int.gcdB f.b f.c, ?_⟩
+  linear_combination -h₁ - Int.gcdB f.a (Int.gcd f.b f.c) * h₂
+
+/-- The coefficients of a primitive form have an integral Bézout relation. -/
+theorem IsPrimitive.exists_linearCombination_eq_one {f : BinaryQuadraticForm ℤ}
+    (hf : f.IsPrimitive) : ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = 1 := by
+  simpa only [(isPrimitive_iff f).mp hf, Nat.cast_one] using
+    exists_linearCombination_eq_content f
 
 /-- A natural number divides the content exactly when it divides all three coefficients. -/
 theorem dvd_content_iff (f : BinaryQuadraticForm ℤ) (n : ℕ) :
@@ -243,6 +286,19 @@ theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
 @[simp] theorem isPrimitive_smul_iff (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) : (γ • f).IsPrimitive ↔ f.IsPrimitive := by
   rw [isPrimitive_iff, isPrimitive_iff, content_smul]
+
+/-- Primitive forms of fixed discriminant, with the proper special-linear action. -/
+def primitiveForms (D : ℤ) :
+    SubMulAction (Matrix.SpecialLinearGroup (Fin 2) ℤ) (BinaryQuadraticForm ℤ) where
+  carrier := {f | f.discrim = D ∧ f.IsPrimitive}
+  smul_mem' γ f := by
+    rintro ⟨hf, hprim⟩
+    exact ⟨(discrim_smul γ f).trans hf, (isPrimitive_smul_iff f γ).mpr hprim⟩
+
+/-- Membership in the primitive fixed-discriminant forms. -/
+@[simp] theorem mem_primitiveForms (D : ℤ) (f : BinaryQuadraticForm ℤ) :
+    f ∈ primitiveForms D ↔ f.discrim = D ∧ f.IsPrimitive := by
+  rfl
 
 /-- Taking primitive parts commutes with proper integral changes of variables. -/
 theorem primPart_smul (f : BinaryQuadraticForm ℤ)

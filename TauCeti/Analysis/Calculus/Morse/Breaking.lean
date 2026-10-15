@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.Convergence
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Dynamics.Flow.Breaking
+public import Mathlib.Data.List.Chain
 -- Private: used only to compare the gradient with the differential.
 import TauCeti.Analysis.Calculus.Gradient
 -- Private: used for index drop and discreteness of trajectory slices.
@@ -20,8 +21,8 @@ import TauCeti.Analysis.Calculus.Morse.TrajectorySpace
 
 A negative gradient trajectory trapped, in forward time, in a closed ball containing no critical
 point other than its centre `x` converges to `x`; the same holds in backward time. So the radius of
-such a ball isolates `x` in the sense of `TauCeti.Dynamics.Flow.Breaking`, and every sufficiently
-small radius about a nondegenerate critical point does.
+such a ball satisfies the trapping hypotheses of `TauCeti.Dynamics.Flow.Breaking`, and every
+sufficiently small radius about a nondegenerate critical point does.
 
 Feeding this into `Flow.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet` gives the
 elementary step of the compactness theorem for spaces of Morse trajectories. If trajectories
@@ -43,6 +44,9 @@ unstable sets.
   and its time reversal
   `TauCeti.IsNondegenerateCriticalPoint.eventually_exists_mem_closure_unstableSet_inter_stableSet`:
   limits of trajectories break at a nondegenerate critical point.
+* `TauCeti.IsNondegenerateCriticalPoint.exists_isChain_of_mem_closure_stableSet_inter_stableSet`
+  and its time reversal: finite chains of nonconstant connecting orbits, with length bounded by
+  the index drop.
 * `TauCeti.IsNondegenerateCriticalPoint.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet`
   and its time reversal: iterating breaks through convergent Morse--Smale trajectories strictly
   lowers the Morse index.
@@ -150,7 +154,8 @@ theorem eventually_exists_mem_closure_stableSet_inter_unstableSet
     h.eventually_forall_mem_stableSet_of_forall_mem_closedBall hφ,
     h.eventually_forall_mem_unstableSet_of_forall_mem_closedBall hφ] with r hr hfwd hbwd
   exact Flow.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet (mem_Ioi.1 hr)
-    hfwd hbwd (Flow.isInvariant_stableSet φ q) (Flow.disjoint_stableSet hqx) hy
+    (isCompact_sphere x r) hfwd hbwd (Flow.isInvariant_stableSet φ q)
+    (Flow.disjoint_stableSet hqx) hy
 
 /-- **Limits of trajectories break at a nondegenerate critical point, in backward time.** Let `x` be
 a nondegenerate critical point and `p ≠ x`. If a point `y` of the unstable set of `x` is a limit of
@@ -165,7 +170,8 @@ theorem eventually_exists_mem_closure_unstableSet_inter_stableSet
     h.eventually_forall_mem_stableSet_of_forall_mem_closedBall hφ,
     h.eventually_forall_mem_unstableSet_of_forall_mem_closedBall hφ] with r hr hfwd hbwd
   exact Flow.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet (mem_Ioi.1 hr)
-    hfwd hbwd (Flow.isInvariant_unstableSet φ p) (Flow.disjoint_unstableSet hpx) hy
+    (isCompact_sphere x r) hfwd hbwd (Flow.isInvariant_unstableSet φ p)
+    (Flow.disjoint_unstableSet hpx) hy
 
 end IsNondegenerateCriticalPoint
 
@@ -173,9 +179,9 @@ end IsNondegenerateCriticalPoint
 
 variable {K : ℝ≥0}
 
-/-- Find the next critical point after a break in a forward limit. The positive-distance
-condition furnished by the breaking theorem and the absence of nonconstant homoclinic gradient
-trajectories ensure that it differs from the point where the break occurred. -/
+/-- If the closure of `Wˢ(q)` meets `Wˢ(x)` for `x ≠ q`, and every forward orbit in that
+closure converges to a nondegenerate critical point, then there is a nonconstant connecting orbit
+from `x` to another nondegenerate critical point `a`, with a point in the closure of `Wˢ(q)`. -/
 private theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) {q y : E} (hqx : q ≠ x)
@@ -236,6 +242,75 @@ private theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstab
 
 namespace IsNondegenerateCriticalPoint
 
+/-- Suppose every point in the closure of `Wˢ(q)` converges forward to a nondegenerate critical
+point, and connecting stable and unstable manifolds meet transversally. If that closure meets
+`Wˢ(x)` for `x ≠ q`, then `x :: l` is a finite chain from `x` to `q` of nondegenerate critical
+points. Each consecutive pair `a ≠ b` has a connecting orbit in `Wᵘ(a) ∩ Wˢ(b)`, and the number
+of components `l.length` is at most `morseIndex f x - morseIndex f q`. -/
+theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
+    (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hqx : q ≠ x)
+    (hy : (closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
+      Flow.stableSet (negativeGradientFlow f hf) x).Nonempty)
+    (hconv : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
+      ∃ a, IsNondegenerateCriticalPoint f a ∧
+        z ∈ Flow.stableSet (negativeGradientFlow f hf) a)
+    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
+      IsNondegenerateCriticalPoint f b →
+      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
+      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
+      Submodule.span ℝ (tangentConeAt ℝ
+          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
+        Submodule.span ℝ (tangentConeAt ℝ
+          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    ∃ l : List E,
+      (x :: l).IsChain (fun a b ↦ a ≠ b ∧
+        (Flow.unstableSet (negativeGradientFlow f hf) a ∩
+          Flow.stableSet (negativeGradientFlow f hf) b).Nonempty) ∧
+      (x :: l).getLast (List.cons_ne_nil _ _) = q ∧
+      (∀ a ∈ x :: l, IsNondegenerateCriticalPoint f a) ∧
+      l.length + morseIndex f q ≤ morseIndex f x := by
+  -- Extract one nonconstant component at a time. Its strict index drop gives a well-founded
+  -- induction and also accounts for one unit in the final bound on the number of components.
+  have H : ∀ n x, morseIndex f x = n → IsNondegenerateCriticalPoint f x → q ≠ x →
+      (closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
+        Flow.stableSet (negativeGradientFlow f hf) x).Nonempty →
+      ∃ l : List E,
+        (x :: l).IsChain (fun a b ↦ a ≠ b ∧
+          (Flow.unstableSet (negativeGradientFlow f hf) a ∩
+            Flow.stableSet (negativeGradientFlow f hf) b).Nonempty) ∧
+        (x :: l).getLast (List.cons_ne_nil _ _) = q ∧
+        (∀ a ∈ x :: l, IsNondegenerateCriticalPoint f a) ∧
+        l.length + morseIndex f q ≤ morseIndex f x := by
+    intro n
+    induction n using Nat.strong_induction_on with
+    | h n ih =>
+        intro x hxn hx hqx hy
+        obtain ⟨y, hy⟩ := hy
+        obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
+          exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
+            hx hfs hf hqx hy hconv
+        have hdrop := hx.morseIndex_lt_of_mem_unstableSet_inter_stableSet ha hfs hf
+          hax.symm hzq.2 hza (htr hx ha hzq.2 hza)
+        have hedge : x ≠ a ∧
+            (Flow.unstableSet (negativeGradientFlow f hf) x ∩
+              Flow.stableSet (negativeGradientFlow f hf) a).Nonempty :=
+          ⟨hax.symm, z, hzq.2, hza⟩
+        by_cases haq : a = q
+        · subst a
+          refine ⟨[q], List.isChain_pair.mpr hedge, by simp, ?_, ?_⟩
+          · simpa using And.intro hx ha
+          · simp only [List.length_cons, List.length_nil]
+            omega
+        · obtain ⟨l, hl, hlast, hcrit, hlen⟩ :=
+            ih (morseIndex f a) (hxn ▸ hdrop) a rfl ha (Ne.symm haq) ⟨z, hzq.1, hza⟩
+          refine ⟨a :: l, List.IsChain.cons_cons hedge hl, ?_, ?_, ?_⟩
+          · simpa using hlast
+          · simpa only [List.mem_cons, forall_eq_or_imp] using And.intro hx hcrit
+          · simp only [List.length_cons]
+            omega
+  exact H (morseIndex f x) x rfl hx hqx hy
+
 /-- **Morse index drops along a broken forward limit.** Suppose every point in the closure of
 `Wˢ(q)` converges forward to a nondegenerate critical point, and all connecting stable and
 unstable manifolds meet transversally. If that closure meets `Wˢ(x)` for `x ≠ q`, then the
@@ -257,29 +332,88 @@ theorem morseIndex_lt_of_mem_closure_stableSet_inter_stableSet
         Submodule.span ℝ (tangentConeAt ℝ
           (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
     morseIndex f q < morseIndex f x := by
-  -- Iterate the one-break theorem. At every new limiting critical point, Morse--Smale
-  -- transversality strictly lowers the index, so strong induction on the index forces the chain
-  -- to terminate at `q`.
-  have H : ∀ n x, morseIndex f x = n → IsNondegenerateCriticalPoint f x → q ≠ x →
-      (closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
-        Flow.stableSet (negativeGradientFlow f hf) x).Nonempty →
-      morseIndex f q < morseIndex f x := by
+  obtain ⟨l, -, hlast, -, hlen⟩ :=
+    hx.exists_isChain_of_mem_closure_stableSet_inter_stableSet hfs hf hqx hy hconv htr
+  cases l with
+  | nil => exact (hqx (by simpa using hlast.symm)).elim
+  | cons a l =>
+      simp only [List.length_cons] at hlen
+      omega
+
+/-- Suppose every point in the closure of `Wᵘ(p)` converges backward to a nondegenerate
+critical point, and connecting stable and unstable manifolds meet transversally. If that closure
+meets `Wᵘ(x)` for `x ≠ p`, then `p :: l` is a finite chain from `p` to `x` of nondegenerate
+critical points. Each consecutive pair `a ≠ b` has a connecting orbit in `Wᵘ(a) ∩ Wˢ(b)`, and
+`l.length` is at most `morseIndex f p - morseIndex f x`. -/
+theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
+    (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hpx : p ≠ x)
+    (hy : (closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
+      Flow.unstableSet (negativeGradientFlow f hf) x).Nonempty)
+    (hconv : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
+      ∃ a, IsNondegenerateCriticalPoint f a ∧
+        z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
+    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
+      IsNondegenerateCriticalPoint f b →
+      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
+      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
+      Submodule.span ℝ (tangentConeAt ℝ
+          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
+        Submodule.span ℝ (tangentConeAt ℝ
+          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    ∃ l : List E,
+      (p :: l).IsChain (fun a b ↦ a ≠ b ∧
+        (Flow.unstableSet (negativeGradientFlow f hf) a ∩
+          Flow.stableSet (negativeGradientFlow f hf) b).Nonempty) ∧
+      (p :: l).getLast (List.cons_ne_nil _ _) = x ∧
+      (∀ a ∈ p :: l, IsNondegenerateCriticalPoint f a) ∧
+      l.length + morseIndex f x ≤ morseIndex f p := by
+  -- Induct on the codimension of the unstable manifold, which decreases at every preceding
+  -- critical point. Append the final component to the chain obtained by induction.
+  let d := Module.finrank ℝ E
+  have H : ∀ n x, d - morseIndex f x = n → IsNondegenerateCriticalPoint f x → p ≠ x →
+      (closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
+        Flow.unstableSet (negativeGradientFlow f hf) x).Nonempty →
+      ∃ l : List E,
+        (p :: l).IsChain (fun a b ↦ a ≠ b ∧
+          (Flow.unstableSet (negativeGradientFlow f hf) a ∩
+            Flow.stableSet (negativeGradientFlow f hf) b).Nonempty) ∧
+        (p :: l).getLast (List.cons_ne_nil _ _) = x ∧
+        (∀ a ∈ p :: l, IsNondegenerateCriticalPoint f a) ∧
+        l.length + morseIndex f x ≤ morseIndex f p := by
     intro n
     induction n using Nat.strong_induction_on with
     | h n ih =>
-        intro x hxn hx hqx hy
+        intro x hxn hx hpx hy
         obtain ⟨y, hy⟩ := hy
-        obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
-          exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
-            hx hfs hf hqx hy hconv
-        have hxa : morseIndex f a < morseIndex f x :=
-          hx.morseIndex_lt_of_mem_unstableSet_inter_stableSet ha hfs hf hax.symm
-            hzq.2 hza (htr hx ha hzq.2 hza)
-        by_cases haq : a = q
-        · simpa only [haq] using hxa
-        · exact (ih (morseIndex f a) (hxn ▸ hxa) a rfl ha (fun h ↦ haq h.symm)
-            ⟨z, hzq.1, hza⟩).trans hxa
-  exact H (morseIndex f x) x rfl hx hqx hy
+        obtain ⟨a, z, ha, hax, hzp, hza⟩ :=
+          exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
+            hx hfs hf hpx hy hconv
+        have hxa := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hx hfs hf hax
+          hza hzp.2 (htr ha hx hza hzp.2)
+        have hcodim : d - morseIndex f a < d - morseIndex f x := by
+          have hxa' := morseIndex_le_finrank (f := f) (x := a)
+          omega
+        have hedge : a ≠ x ∧
+            (Flow.unstableSet (negativeGradientFlow f hf) a ∩
+              Flow.stableSet (negativeGradientFlow f hf) x).Nonempty :=
+          ⟨hax, z, hza, hzp.2⟩
+        by_cases hap : a = p
+        · subst a
+          refine ⟨[x], List.isChain_pair.mpr hedge, by simp, ?_, ?_⟩
+          · simpa using And.intro ha hx
+          · simp only [List.length_cons, List.length_nil]
+            omega
+        · obtain ⟨l, hl, hlast, hcrit, hlen⟩ :=
+            ih (d - morseIndex f a) (hxn ▸ hcodim) a rfl ha (Ne.symm hap) ⟨z, hzp.1, hza⟩
+          refine ⟨l ++ [x], ?_, by simp, ?_, ?_⟩
+          · simpa only [List.cons_append] using hl.append (List.IsChain.singleton x)
+              (by simpa [List.getLast?_eq_some_getLast, hlast] using hedge)
+          · simpa only [← List.cons_append, List.forall_mem_append,
+              List.forall_mem_singleton] using And.intro hcrit hx
+          · simp only [List.length_append, List.length_cons, List.length_nil]
+            omega
+  exact H (d - morseIndex f x) x rfl hx hpx hy
 
 /-- **Morse index drops along a broken backward limit.** Suppose every point in the closure of
 `Wᵘ(p)` converges backward to a nondegenerate critical point, and all connecting stable and
@@ -303,33 +437,13 @@ theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
         Submodule.span ℝ (tangentConeAt ℝ
           (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
     morseIndex f x < morseIndex f p := by
-  -- Induct on the codimension of the unstable manifold, which decreases at every preceding
-  -- critical point.
-  let d := Module.finrank ℝ E
-  have H : ∀ n x, d - morseIndex f x = n → IsNondegenerateCriticalPoint f x → p ≠ x →
-      (closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
-        Flow.unstableSet (negativeGradientFlow f hf) x).Nonempty →
-      morseIndex f x < morseIndex f p := by
-    intro n
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-        intro x hxn hx hpx hy
-        obtain ⟨y, hy⟩ := hy
-        obtain ⟨a, z, ha, hax, hzp, hza⟩ :=
-          exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
-            hx hfs hf hpx hy hconv
-        have hxa : morseIndex f x < morseIndex f a :=
-          ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hx hfs hf hax
-            hza hzp.2 (htr ha hx hza hzp.2)
-        have hcodim : d - morseIndex f a < d - morseIndex f x := by
-          have hxa' := morseIndex_le_finrank (f := f) (x := a)
-          omega
-        by_cases hap : a = p
-        · simpa only [hap] using hxa
-        · exact hxa.trans (ih (d - morseIndex f a) (hxn ▸ hcodim) a rfl ha
-            (fun h ↦ hap h.symm)
-            ⟨z, hzp.1, hza⟩)
-  exact H (d - morseIndex f x) x rfl hx hpx hy
+  obtain ⟨l, -, hlast, -, hlen⟩ :=
+    hx.exists_isChain_of_mem_closure_unstableSet_inter_unstableSet hfs hf hpx hy hconv htr
+  cases l with
+  | nil => exact (hpx (by simpa using hlast)).elim
+  | cons a l =>
+      simp only [List.length_cons] at hlen
+      omega
 
 /-- **An index-one Morse trajectory slice is closed.** Assume that points in the closures of the
 relevant stable and unstable manifolds converge to nondegenerate critical points, and that all

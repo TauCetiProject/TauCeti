@@ -250,8 +250,8 @@ theorem cartanMap_comp_finiteProjectiveModulesK0Equiv :
   apply ExactK0.hom_ext
   rintro ⟨M, hM⟩
   simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    finiteProjectiveModulesK0Equiv_of, cartanMap_of A hM, finiteModulesK0Equiv_of]
-  rw [cartanMap_of B (e.finiteProjectiveModulesEquivalence.functor.obj ⟨M, hM⟩).property]
+    finiteProjectiveModulesK0Equiv_of, cartanMap_of A ⟨M, hM⟩, finiteModulesK0Equiv_of]
+  rw [cartanMap_of B (e.finiteProjectiveModulesEquivalence.functor.obj ⟨M, hM⟩)]
   exact congrArg ExactK0.of (FullSubcategory.ext (by simp))
 
 /-- Pointwise form of `CategoryTheory.Equivalence.cartanMap_comp_finiteProjectiveModulesK0Equiv`:
@@ -265,7 +265,7 @@ theorem cartanMap_finiteProjectiveModulesK0Equiv
   DFunLike.congr_fun e.cartanMap_comp_finiteProjectiveModulesK0Equiv x
 
 include e in
-/-- **The resolution-theorem hypothesis is a Morita invariant**: for rings with equivalent module
+/-- **Bijectivity of the Cartan map is a Morita invariant**: for rings with equivalent module
 categories, the Cartan map of `A` is bijective if and only if the Cartan map of `B` is. -/
 theorem cartanMap_bijective_iff :
     Function.Bijective (cartanMap A) ↔ Function.Bijective (cartanMap B) := by

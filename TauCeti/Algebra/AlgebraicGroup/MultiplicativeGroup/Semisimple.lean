@@ -16,8 +16,6 @@ bialgebra isomorphism proves that every point of the multiplicative group `𝔾�
 ## Main declarations
 
 * `TauCeti.MultiplicativeGroup.isSemisimplePoint`: every point of `𝔾ₘ` is semisimple.
-
-This is the `𝔾ₘ = D(ℤ)` example from Layer 4 of the ReductiveGroups roadmap.
 -/
 
 public section

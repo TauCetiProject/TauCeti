@@ -24,10 +24,12 @@ The spanning argument descends the corresponding decomposition for `Γ(N)` by th
 every coset, the slash transformation formula sends the series with residue `a` to the series
 whose residue is the right translate of `a`. Tracing a cusp form remains cuspidal
 (`ModularForm.traceₗ_mem_cuspFormSubmodule`), while tracing a restricted `Γ`-form multiplies it
-by the finite relative index (`ModularForm.traceₗ_ofLe`).
+by the finite relative index (`ModularForm.traceₗ_restrict`).
 
 ## Main results
 
+* `TauCeti.EisensteinSeries.translateₗ_eisensteinSeriesMF`: integral slash operators permute the
+  primitive residue-class Eisenstein generators.
 * `TauCeti.EisensteinSeries.congruenceEisensteinSubspace`: the Eisenstein subspace of `M_k(Γ)`
   detected after restriction to `Γ(N)`.
 * `TauCeti.EisensteinSeries.isCompl_congruenceEisensteinSubspace_cuspFormSubmodule`: the
@@ -43,11 +45,44 @@ public noncomputable section
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
 open UpperHalfPlane
 open _root_.EisensteinSeries
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise
 
 namespace TauCeti.EisensteinSeries
 
+/-- The real image of `Γ(N)` is invariant under conjugation by every integral determinant-one
+matrix. This identifies the carrier of its translated modular forms with the original level. -/
+theorem Gamma_map_inv_conjAct_eq (N : ℕ) (γ : SL(2, ℤ)) :
+    ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Gamma N).map (mapGL ℝ) =
+      (Gamma N).map (mapGL ℝ) := by
+  let := Gamma_normal N
+  apply Subgroup.conjAct_pointwise_smul_eq_self
+  apply Subgroup.inv_mem
+  exact Subgroup.le_normalizer_map (H := Gamma N) (mapGL ℝ)
+    (Subgroup.mem_map.mpr ⟨γ, by simp [Subgroup.normalizer_eq_top], rfl⟩)
+
+/-- Slashing a primitive residue-class Eisenstein series by an integral determinant-one matrix
+permutes its residue class, with the matrix viewed in the real general linear group. -/
+theorem eisensteinSeries_slash_mapGL {N : ℕ} (a : Fin 2 → ZMod N) (k : ℤ)
+    (γ : SL(2, ℤ)) :
+    eisensteinSeries a k ∣[k] mapGL ℝ γ =
+      eisensteinSeries (a ᵥ* SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) k := by
+  exact (ModularForm.SL_slash (eisensteinSeries a k) γ).symm.trans
+    (eisensteinSeries_slash_apply a k γ)
+
 variable {N : ℕ} {k : ℤ} [NeZero N] {Γ : Subgroup SL(2, ℤ)}
+
+/-- The principal-level slash operator sends a bundled primitive Eisenstein generator to the
+generator with right-translated residue. Restriction identifies the translated level using
+the normality of `Γ(N)`. -/
+theorem translateₗ_eisensteinSeriesMF (hk : 3 ≤ k) (a : Fin 2 → ZMod N) (γ : SL(2, ℤ)) :
+    ((ModularForm.restrictₗ _ ℂ (Gamma_map_inv_conjAct_eq N γ).ge).comp
+      (ModularForm.translateₗ (mapGL ℝ γ) (by simp))) (eisensteinSeriesMF hk a) =
+        eisensteinSeriesMF hk
+          (a ᵥ* SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) := by
+  apply DFunLike.coe_injective
+  rw [LinearMap.comp_apply, ModularForm.restrictₗ_apply, ModularForm.coe_restrict,
+    ModularForm.translateₗ_apply, ModularForm.coe_translate, coe_eisensteinSeriesMF,
+    coe_eisensteinSeriesMF, eisensteinSeries_slash_mapGL]
 
 private abbrev gammaMap (N : ℕ) : Subgroup (GL (Fin 2) ℝ) :=
   (Gamma N).map (mapGL ℝ)
@@ -63,25 +98,22 @@ private lemma quotientFunc_eisensteinSeriesMF (Γ : Subgroup SL(2, ℤ)) (hk : 3
       obtain ⟨γ, -, hmap⟩ := h.property
       refine ⟨a ᵥ* (SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ⁻¹), ?_⟩
       rw [SlashInvariantForm.quotientFunc_mk, coe_eisensteinSeriesMF, ← hmap, ← map_inv]
-      have hslash : eisensteinSeries a k ∣[k] mapGL ℝ γ⁻¹ =
-          eisensteinSeries a k ∣[k] γ⁻¹ :=
-        (ModularForm.SL_slash (eisensteinSeries a k) γ⁻¹).symm
-      rw [hslash, eisensteinSeries_slash_apply]
+      rw [eisensteinSeries_slash_mapGL]
 
 private lemma traceₗ_eisensteinSeriesMF_mem (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k)
     (a : Fin 2 → ZMod N) :
-    ModularForm.ofLe (Subgroup.map_mono hΓ)
+    ModularForm.restrict (Subgroup.map_mono hΓ)
         (traceₗ (Γ.map (mapGL ℝ)) (eisensteinSeriesMF hk a)) ∈
       primitiveEisensteinSubspace N hk := by
   classical
   let _ := Fintype.ofFinite
     (Γ.map (mapGL ℝ) ⧸ (gammaMap N).subgroupOf (Γ.map (mapGL ℝ)))
   choose b hb using fun q ↦ quotientFunc_eisensteinSeriesMF Γ hk a q
-  have htrace : ModularForm.ofLe (Subgroup.map_mono hΓ)
+  have htrace : ModularForm.restrict (Subgroup.map_mono hΓ)
       (traceₗ (Γ.map (mapGL ℝ)) (eisensteinSeriesMF hk a)) =
         ∑ q, eisensteinSeriesMF hk (b q) := by
     apply DFunLike.coe_injective
-    rw [ModularForm.coe_ofLe, traceₗ_apply, ModularForm.coe_trace, FunLike.coe_sum]
+    rw [ModularForm.coe_restrict, traceₗ_apply, ModularForm.coe_trace, FunLike.coe_sum]
     funext z
     rw [Finset.sum_apply]
     simp_rw [hb]
@@ -93,29 +125,29 @@ private lemma traceₗ_eisensteinSeriesMF_mem (hΓ : Gamma N ≤ Γ) (hk : 3 ≤
 
 private lemma traceₗ_mem_primitiveEisensteinSubspace (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k)
     {f : ModularForm (gammaMap N) k} (hf : f ∈ primitiveEisensteinSubspace N hk) :
-    ModularForm.ofLe (Subgroup.map_mono hΓ) (traceₗ (Γ.map (mapGL ℝ)) f) ∈
+    ModularForm.restrict (Subgroup.map_mono hΓ) (traceₗ (Γ.map (mapGL ℝ)) f) ∈
       primitiveEisensteinSubspace N hk := by
   have hle : primitiveEisensteinSubspace N hk ≤
       (primitiveEisensteinSubspace N hk).comap
-        ((ModularForm.ofLeₗ (Subgroup.map_mono hΓ)).comp (traceₗ (Γ.map (mapGL ℝ)))) := by
+        ((ModularForm.restrictₗ _ ℂ (Subgroup.map_mono hΓ)).comp (traceₗ (Γ.map (mapGL ℝ)))) := by
     apply primitiveEisensteinSubspace_le hk
     intro a
-    rw [Submodule.mem_comap, LinearMap.comp_apply, ModularForm.ofLeₗ_apply]
+    rw [Submodule.mem_comap, LinearMap.comp_apply, ModularForm.restrictₗ_apply]
     exact traceₗ_eisensteinSeriesMF_mem hΓ hk a
   have hmem := hle hf
-  simpa only [Submodule.mem_comap, LinearMap.comp_apply, ModularForm.ofLeₗ_apply] using hmem
+  simpa only [Submodule.mem_comap, LinearMap.comp_apply, ModularForm.restrictₗ_apply] using hmem
 
 /-- The Eisenstein subspace of `M_k(Γ)`, for a subgroup `Γ` of `SL(2, ℤ)` containing `Γ(N)`, in
 weight at least three: a form belongs to it exactly when its restriction to `Γ(N)` belongs to the
 primitive residue-class Eisenstein span. -/
 def congruenceEisensteinSubspace (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k) :
     Submodule ℂ (ModularForm (Γ.map (mapGL ℝ)) k) :=
-  (primitiveEisensteinSubspace N hk).comap (ModularForm.ofLeₗ (Subgroup.map_mono hΓ))
+  (primitiveEisensteinSubspace N hk).comap (ModularForm.restrictₗ _ ℂ (Subgroup.map_mono hΓ))
 
 /-- The defining pullback of the primitive Eisenstein span along restriction to `Γ(N)`. -/
 theorem congruenceEisensteinSubspace_def (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k) :
     congruenceEisensteinSubspace hΓ hk =
-      (primitiveEisensteinSubspace N hk).comap (ModularForm.ofLeₗ (Subgroup.map_mono hΓ)) :=
+      (primitiveEisensteinSubspace N hk).comap (ModularForm.restrictₗ _ ℂ (Subgroup.map_mono hΓ)) :=
   (rfl)
 
 /-- Membership in the Eisenstein subspace of `M_k(Γ)` is detected after restriction to the
@@ -123,8 +155,8 @@ principal congruence subgroup. -/
 theorem mem_congruenceEisensteinSubspace_iff (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k)
     (f : ModularForm (Γ.map (mapGL ℝ)) k) :
     f ∈ congruenceEisensteinSubspace hΓ hk ↔
-      ModularForm.ofLe (Subgroup.map_mono hΓ) f ∈ primitiveEisensteinSubspace N hk := by
-  rw [congruenceEisensteinSubspace_def, Submodule.mem_comap, ModularForm.ofLeₗ_apply]
+      ModularForm.restrict (Subgroup.map_mono hΓ) f ∈ primitiveEisensteinSubspace N hk := by
+  rw [congruenceEisensteinSubspace_def, Submodule.mem_comap, ModularForm.restrictₗ_apply]
 
 /-- The Eisenstein subspace of `M_k(Γ)` and the cusp-form submodule have zero intersection in
 weight at least three. -/
@@ -134,12 +166,11 @@ theorem disjoint_congruenceEisensteinSubspace_cuspFormSubmodule (hΓ : Gamma N �
       (cuspFormSubmodule (Γ.map (mapGL ℝ)) k) := by
   rw [Submodule.disjoint_def]
   intro f hfE hfS
-  apply ModularForm.ofLe_injective (Subgroup.map_mono hΓ)
   have hzero := (Submodule.disjoint_def.mp
     (disjoint_primitiveEisensteinSubspace_cuspFormSubmodule hk)) _
       ((mem_congruenceEisensteinSubspace_iff hΓ hk f).mp hfE)
-      (ModularForm.ofLe_mem_cuspFormSubmodule _ hfS)
-  simpa only [← ModularForm.ofLeₗ_apply, map_zero] using hzero
+      (ModularForm.restrict_mem_cuspFormSubmodule _ hfS)
+  exact (ModularForm.restrict_eq_zero_iff _).mp hzero
 
 /-- In weight at least three, the Eisenstein subspace of `M_k(Γ)` and the cusp forms together
 span all modular forms on `Γ`. -/
@@ -148,13 +179,13 @@ theorem sup_congruenceEisensteinSubspace_cuspFormSubmodule_eq_top (hΓ : Gamma N
     congruenceEisensteinSubspace hΓ hk ⊔ cuspFormSubmodule (Γ.map (mapGL ℝ)) k = ⊤ := by
   apply eq_top_iff.mpr
   intro f _
-  have hf : ModularForm.ofLe (Subgroup.map_mono hΓ) f ∈
+  have hf : ModularForm.restrict (Subgroup.map_mono hΓ) f ∈
       primitiveEisensteinSubspace N hk ⊔ cuspFormSubmodule (gammaMap N) k := by
     rw [sup_primitiveEisensteinSubspace_cuspFormSubmodule_eq_top hk]
     exact Submodule.mem_top
   obtain ⟨e, he, s, hs, hes⟩ := Submodule.mem_sup.mp hf
   have htrace := congrArg (traceₗ (Γ.map (mapGL ℝ))) hes
-  rw [map_add, traceₗ_ofLe] at htrace
+  rw [map_add, traceₗ_restrict] at htrace
   have he' : traceₗ (Γ.map (mapGL ℝ)) e ∈ congruenceEisensteinSubspace hΓ hk :=
     (mem_congruenceEisensteinSubspace_iff hΓ hk _).mpr
       (traceₗ_mem_primitiveEisensteinSubspace hΓ hk he)

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.SingularValues
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
+public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
@@ -49,7 +50,17 @@ singular vectors are `uᵢ = σᵢ⁻¹ A vᵢ = A.leftSingularVector i`, using 
 that `uᵢ = 0` when `σᵢ = 0`. The singular relations hold at every index, which lets the expansion
 of `A` run over the whole basis without splitting off the kernel.
 
+* `LinearMap.sq_singularValues_antitone`: the squared singular values are nonincreasing.
+* `LinearMap.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis`: any sorted orthonormal
+  Gram eigenbasis recovers the squared singular values, with a zero tail.
+* `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
+  for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
+* `LinearMap.singularValues_eq_single_of_finrank_eq_one`: on a one-dimensional source the only
+  singular value is `‖A x‖` for a unit vector `x`.
+* `LinearMap.singularValues_mul_norm_le_norm_apply`,
+  `LinearMap.norm_apply_le_singularValues_mul_norm`: `σₙ ‖x‖ ≤ ‖A x‖` on the span of the `vᵢ`
+  with `i ≤ n`, and `‖A x‖ ≤ σₙ ‖x‖` on the span of the `vᵢ` with `n ≤ i`.
 * `LinearMap.apply_rightSingularBasis`: `A vᵢ = σᵢ uᵢ`.
 * `LinearMap.adjoint_leftSingularVector`: `A† uᵢ = σᵢ vᵢ`.
 * `LinearMap.self_comp_adjoint_leftSingularVector`: `A A† uᵢ = σᵢ² uᵢ`.
@@ -64,15 +75,22 @@ of `A` run over the whole basis without splitting off the kernel.
 
 ## Comparison of singular values
 
-The last section compares the singular values of two maps with the same source through the
+The comparison section compares the singular values of two maps with the same source through the
 Courant–Fischer min–max principle for their source Gram operators.
 
 * `LinearMap.singularValues_le_mul_of_norm_apply_le`: if `‖B x‖ ≤ c ‖A x‖` for every `x`, then
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_le_of_norm_apply_le`: if `‖A x‖ ≤ c ‖x‖` for every `x`, with
+  `c ≥ 0`, then `σᵢ(A) ≤ c` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
   `B` have the same singular values.
+* `LinearMap.singularValues_operatorAbs`: the modulus `|A| = √(A† A)` has the same singular values
+  as `A`.
+* `LinearMap.singularValues_linearIsometry_comp`,
+  `LinearMap.singularValues_comp_adjoint_linearIsometry`: composing on the left with a linear
+  isometry, or on the right with the adjoint of one, leaves the singular values unchanged.
 * `LinearMap.singularValues_linearIsometryEquiv_comp`,
   `LinearMap.singularValues_comp_linearIsometryEquiv`: composing with isometric isomorphisms on
   either side leaves the singular values unchanged.
@@ -84,12 +102,18 @@ eigenvectors and diagonal entries `dᵢ` is Mathlib's
 `Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)`. Its additivity in `d`
 (`Matrix.diagonal_add`), its adjoint (`Matrix.toLin_conjTranspose` with
 `Matrix.diagonal_conjTranspose`) and its symmetry for real entries (`Matrix.isSymmetric_toLin_iff`)
-are in Mathlib. The last section computes its singular values and shows that every map is a
+are in Mathlib. The diagonal section computes its singular values and shows that every map is a
 diagonal map up to isometries on both sides.
 
 * `Matrix.toLin_diagonal_apply_self`: the diagonal operator sends `eᵢ` to `dᵢ eᵢ`.
+* `Matrix.adjoint_comp_self_toLin_diagonal_apply`: the Gram operator sends `eᵢ` to
+  `‖dᵢ‖² eᵢ`.
+* `OrthonormalBasis.adjoint_comp_self_toLin_diagonal_reindex_apply`: the same Gram relation
+  in a reordered diagonal basis.
 * `Matrix.singularValues_toLin_diagonal`: the singular values of the diagonal operator are the
   norms `‖dᵢ‖` listed in nonincreasing order.
+* `Matrix.toLin_of_ite_val_eq_apply`: the rectangular diagonal map with entries `dₖ` sends `eᵢ` to
+  `dᵢ fᵢ` when `i` is also an index of `(fⱼ)`, and to `0` otherwise.
 * `LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_comp`: every map `A : E →ₗ[𝕜] F` is `U D V`
   for linear isometric equivalences `U` of `F` and `V` of `E` and the rectangular diagonal map `D`
   with the singular values of `A` on its diagonal, in any prescribed orthonormal bases.
@@ -99,6 +123,15 @@ diagonal map up to isometries on both sides.
 * `LinearMap.exists_orthonormal_eq_sum_singularValues_smul_rankOne`: the compact singular value
   decomposition `A = ∑_{i < p} σᵢ wᵢ ⊗ vᵢ`, with `p = min (dim E) (dim F)` and both families
   orthonormal.
+
+## Orthogonal-tail bound for bounded maps
+
+The final section transfers the Gram-eigenbasis estimate to bounded maps, supplying the tail
+bound used in the Eckart–Young and attainment theorems.
+
+* `ContinuousLinearMap.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis`:
+  the norm on the orthogonal complement of the first `n` vectors of a sorted Gram eigenbasis
+  is at most the `n`-th singular value, including indices beyond the source dimension.
 
 ## Source
 
@@ -166,6 +199,15 @@ theorem singularValues_of_finrank_le_right (A : E →ₗ[𝕜] F) {i : ℕ} (hi 
   rw [← singularValues_adjoint]
   exact (adjoint A).singularValues_of_finrank_le hi
 
+/-- A sum `∑ᵢ f(σᵢ(A))` over the first `dim E` singular values is the `Finsupp` sum of `f` over
+all singular values, provided `f 0 = 0`. -/
+theorem sum_fin_singularValues {M : Type*} [AddCommMonoid M] (A : E →ₗ[𝕜] F) (f : ℝ → M)
+    (hf : f 0 = 0) :
+    ∑ i : Fin (finrank 𝕜 E), f (A.singularValues i) = A.singularValues.sum fun _ s ↦ f s := by
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ f (A.singularValues i)),
+    Finsupp.sum_of_support_subset _ (A.support_singularValues ▸
+      Finset.range_subset_range.mpr A.finrank_range_le) _ fun _ _ ↦ hf]
+
 /-- The squared singular values of `A` are the sorted eigenvalues of the target Gram operator
 `A A†`, at every index below the dimension of the target. -/
 theorem sq_singularValues_eq_eigenvalues_self_comp_adjoint (A : E →ₗ[𝕜] F) {n : ℕ}
@@ -206,6 +248,11 @@ variable (A : E →ₗ[𝕜] F)
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
+/-- The squared singular values are nonincreasing, including the zero tail. -/
+theorem sq_singularValues_antitone : Antitone fun i : ℕ ↦ A.singularValues i ^ 2 :=
+  fun _ _ hij ↦ pow_le_pow_left₀ (A.singularValues_nonneg _)
+    (A.singularValues_antitone hij) 2
+
 /-- The **right singular basis** of `A`: the orthonormal eigenbasis `(vᵢ)` of the source Gram
 operator `A† A`, ordered so that `A† A vᵢ = σᵢ² vᵢ` for the singular values
 `σᵢ = A.singularValues i` of `A`, listed in nonincreasing order. -/
@@ -244,12 +291,71 @@ theorem norm_apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
   norm_cast at h
   exact (sq_eq_sq₀ (norm_nonneg _) (A.singularValues_nonneg _)).mp h
 
+/-- On a one-dimensional source, the singular values of `A` are `‖A x‖` for any unit vector `x`,
+followed by zeros. -/
+theorem singularValues_eq_single_of_finrank_eq_one (hE : finrank 𝕜 E = 1) {x : E}
+    (hx : ‖x‖ = 1) : A.singularValues = Finsupp.single 0 ‖A x‖ := by
+  ext i
+  rcases Nat.eq_zero_or_pos i with rfl | hi
+  · have h0 : 0 < finrank 𝕜 E := hE ▸ one_pos
+    -- The right singular vector `v₀` is a unit multiple `c • x` of `x`.
+    obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' x (norm_ne_zero_iff.mp (by simp [hx]))).mp
+      hE (A.rightSingularBasis ⟨0, h0⟩)
+    have hc1 : ‖c‖ = 1 := by
+      simpa [← hc, norm_smul, hx] using A.rightSingularBasis.norm_eq_one ⟨0, h0⟩
+    have h := A.norm_apply_rightSingularBasis ⟨0, h0⟩
+    rw [Fin.val_mk, ← hc, map_smul, norm_smul, hc1, one_mul] at h
+    rw [Finsupp.single_eq_same, h]
+  · rw [Finsupp.single_eq_of_ne (by omega), A.singularValues_of_finrank_le (by omega)]
+
 /-- A right singular vector lies in the kernel of `A` exactly when its singular value
 vanishes. -/
 @[simp]
 theorem apply_rightSingularBasis_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
     A (A.rightSingularBasis i) = 0 ↔ A.singularValues i = 0 := by
   rw [← norm_eq_zero, norm_apply_rightSingularBasis]
+
+/-- On the span of the right singular vectors `vᵢ` with `i ≤ n`, `A` stretches every vector by at
+least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
+theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
+    (hx : x ∈ A.rightSingularBasis.spanIndices {i | (i : ℕ) ≤ n}) :
+    A.singularValues n * ‖x‖ ≤ ‖A x‖ := by
+  have h := A.isSymmetric_adjoint_comp_self.le_re_inner_of_eigenbasis A.rightSingularBasis
+    A.adjoint_comp_self_rightSingularBasis (c := A.singularValues n ^ 2)
+    (fun i hi ↦ A.sq_singularValues_antitone hi) hx
+  rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
+  exact (pow_le_pow_iff_left₀ (mul_nonneg (A.singularValues_nonneg n) (norm_nonneg x))
+    (norm_nonneg _) two_ne_zero).mp h
+
+/-- An upper bound on the Gram eigenvalues of a selected span bounds the norm of `A` there. -/
+theorem norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
+    (A : E →ₗ[𝕜] F) {m : ℕ} (e : OrthonormalBasis (Fin m) 𝕜 E) {μ : Fin m → ℝ}
+    (he : ∀ i, (adjoint A ∘ₗ A) (e i) = (μ i : 𝕜) • e i)
+    {s : Set (Fin m)} {c : ℝ} (hc : 0 ≤ c) (hμ : ∀ i ∈ s, μ i ≤ c ^ 2)
+    {x : E} (hx : x ∈ e.spanIndices s) : ‖A x‖ ≤ c * ‖x‖ := by
+  have h := A.isSymmetric_adjoint_comp_self.re_inner_le_of_eigenbasis e he hμ hx
+  rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _)
+    (mul_nonneg hc (norm_nonneg x)) two_ne_zero).mp h
+
+/-- A sorted orthonormal eigenbasis of the Gram operator computes the squared singular values. -/
+theorem sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (A : E →ₗ[𝕜] F) {m : ℕ}
+    (e : OrthonormalBasis (Fin m) 𝕜 E) {μ : Fin m → ℝ} (hμ : Antitone μ)
+    (he : ∀ i, (adjoint A ∘ₗ A) (e i) = (μ i : 𝕜) • e i) (k : Fin m) :
+    A.singularValues k ^ 2 = μ k := by
+  have hm : finrank 𝕜 E = m := by
+    rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
+  rw [A.sq_singularValues_fin hm k,
+    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e hμ he]
+
+/-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
+most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
+theorem norm_apply_le_singularValues_mul_norm {n : ℕ} {x : E}
+    (hx : x ∈ A.rightSingularBasis.spanIndices {i | n ≤ (i : ℕ)}) :
+    ‖A x‖ ≤ A.singularValues n * ‖x‖ := by
+  exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
+    A.rightSingularBasis A.adjoint_comp_self_rightSingularBasis (A.singularValues_nonneg n)
+    (fun i hi ↦ A.sq_singularValues_antitone hi) hx
 
 /-- A right singular vector with singular value zero lies in the kernel, so `A vᵢ` is fixed by
 the scalar `σᵢ⁻² σᵢ²` (with total field inversion) even when `σᵢ = 0`. -/
@@ -435,6 +541,15 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
     (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
 
+/-- If `‖A x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `A` has operator norm at most `c`), then
+every singular value of `A` is at most `c`. -/
+theorem singularValues_le_of_norm_apply_le {A : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ x, ‖A x‖ ≤ c * ‖x‖) (i : ℕ) : A.singularValues i ≤ c := by
+  rcases lt_or_ge i (finrank 𝕜 E) with hi | hi
+  · simpa [norm_apply_rightSingularBasis] using h (A.rightSingularBasis ⟨i, hi⟩)
+  · rw [A.singularValues_of_finrank_le hi]
+    exact hc
+
 /-- Two maps with the same source and `‖B x‖ = ‖A x‖` for every `x` have the same singular
 values. -/
 theorem singularValues_eq_of_norm_apply_eq {A : E →ₗ[𝕜] F} {B : E →ₗ[𝕜] G}
@@ -444,11 +559,31 @@ theorem singularValues_eq_of_norm_apply_eq {A : E →ₗ[𝕜] F} {B : E →ₗ[
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
 
+/-- The modulus `|A| = √(A† A)` of a map has the same singular values as the map itself. -/
+@[simp]
+theorem singularValues_operatorAbs (A : E →ₗ[𝕜] F) :
+    A.operatorAbs.singularValues = A.singularValues :=
+  singularValues_eq_of_norm_apply_eq A.norm_operatorAbs_apply
+
+/-- Composing on the left with a linear isometry leaves the singular values unchanged. -/
+@[simp]
+theorem singularValues_linearIsometry_comp (W : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    (W.toLinearMap ∘ₗ A).singularValues = A.singularValues :=
+  singularValues_eq_of_norm_apply_eq fun x ↦ by simp
+
+/-- Composing on the right with the adjoint of a linear isometry leaves the singular values
+unchanged. -/
+@[simp]
+theorem singularValues_comp_adjoint_linearIsometry (A : E →ₗ[𝕜] F) (W : E →ₗᵢ[𝕜] G) :
+    (A ∘ₗ adjoint W.toLinearMap).singularValues = A.singularValues := by
+  rw [← singularValues_adjoint, adjoint_comp, adjoint_adjoint, singularValues_linearIsometry_comp,
+    singularValues_adjoint]
+
 /-- Composing on the left with an isometric isomorphism leaves the singular values unchanged. -/
 @[simp]
 theorem singularValues_linearIsometryEquiv_comp (U : F ≃ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
     ((U : F →ₗ[𝕜] G) ∘ₗ A).singularValues = A.singularValues :=
-  singularValues_eq_of_norm_apply_eq fun x ↦ by simp
+  singularValues_linearIsometry_comp U.toLinearIsometry A
 
 /-- Composing on the right with an isometric isomorphism leaves the singular values unchanged. -/
 @[simp]
@@ -456,6 +591,20 @@ theorem singularValues_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : G �
     (A ∘ₗ (V : G →ₗ[𝕜] E)).singularValues = A.singularValues := by
   rw [← singularValues_adjoint, adjoint_comp, V.adjoint_coe_eq_symm,
     singularValues_linearIsometryEquiv_comp, singularValues_adjoint]
+
+/-- Scaling a map by `c` scales its singular values by `‖c‖`. -/
+@[simp]
+theorem singularValues_smul (c : 𝕜) (A : E →ₗ[𝕜] F) :
+    (c • A).singularValues = ‖c‖ • A.singularValues := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  have hc' : 0 < ‖c‖ := norm_pos_iff.mpr hc
+  ext i
+  rw [Finsupp.smul_apply, smul_eq_mul]
+  refine le_antisymm (singularValues_le_mul_of_norm_apply_le (fun x ↦ by simp [norm_smul]) i) ?_
+  have h := singularValues_le_mul_of_norm_apply_le (A := c • A) (B := A) (c := ‖c‖⁻¹)
+    (fun x ↦ by simp [norm_smul, inv_mul_cancel_left₀ hc'.ne']) i
+  rwa [le_inv_mul_iff₀ hc'] at h
 
 end Comparison
 
@@ -471,6 +620,33 @@ theorem _root_.Matrix.toLin_diagonal_apply_self (e : OrthonormalBasis ι 𝕜 E)
     (i : ι) : Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d) (e i) = d i • e i := by
   simpa using (hasEigenvector_toLin_diagonal d i e.toBasis).apply_eq_smul
 
+omit [FiniteDimensional 𝕜 E] in
+/-- The Gram operator of a diagonal map has eigenvalues equal to the squared diagonal norms. -/
+@[simp]
+theorem _root_.Matrix.adjoint_comp_self_toLin_diagonal_apply
+    (e : OrthonormalBasis ι 𝕜 E) (d : ι → 𝕜) (i : ι) :
+    let := Module.Finite.of_basis e.toBasis
+    let D := Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)
+    (adjoint D ∘ₗ D) (e i) = ((‖d i‖ ^ 2 : ℝ) : 𝕜) • e i := by
+  let := Module.Finite.of_basis e.toBasis
+  have hDadj : adjoint (Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)) =
+      Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal (star d)) := by
+    rw [← Matrix.toLin_conjTranspose, Matrix.diagonal_conjTranspose]
+  simp [hDadj, smul_smul, RCLike.mul_conj]
+
+omit [FiniteDimensional 𝕜 E] in
+/-- Reindexing a diagonal basis preserves the Gram eigenvector equations, with the squared
+diagonal norms reindexed by the same equivalence. -/
+theorem _root_.OrthonormalBasis.adjoint_comp_self_toLin_diagonal_reindex_apply
+    (e : OrthonormalBasis ι 𝕜 E) (d : ι → 𝕜) {κ : Type*} [Fintype κ]
+    (π : κ ≃ ι) (i : κ) :
+    let := Module.Finite.of_basis e.toBasis
+    let D := Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)
+    (adjoint D ∘ₗ D) ((e.reindex π.symm) i) =
+      ((‖d (π i)‖ ^ 2 : ℝ) : 𝕜) • (e.reindex π.symm) i := by
+  simpa only [OrthonormalBasis.reindex_apply, Equiv.symm_symm] using
+    Matrix.adjoint_comp_self_toLin_diagonal_apply e d (π i)
+
 /-- **Singular values of a diagonal operator.** If `π` lists the indices so that the norms
 `‖d (π k)‖` are nonincreasing, then the `k`-th singular value of the diagonal operator with entries
 `d` in an orthonormal basis is `‖d (π k)‖`. The singular values from `Fintype.card ι` on vanish
@@ -479,18 +655,26 @@ theorem _root_.Matrix.singularValues_toLin_diagonal (e : OrthonormalBasis ι �
     {n : ℕ} (π : Fin n ≃ ι) (hπ : Antitone fun k ↦ ‖d (π k)‖) (k : Fin n) :
     (Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)).singularValues k = ‖d (π k)‖ := by
   set D := Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)
-  have hn : finrank 𝕜 E = n := by
-    rw [finrank_eq_card_basis e.toBasis, Fintype.card_congr π.symm, Fintype.card_fin]
-  have hDadj : adjoint D = Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal (star d)) := by
-    rw [← Matrix.toLin_conjTranspose, Matrix.diagonal_conjTranspose]
-  -- The reindexed basis `e ∘ π` diagonalizes `D† D` with the nonincreasing entries `‖d (π k)‖²`,
-  -- so these are the sorted eigenvalues of `D† D`.
-  have hGram (k : Fin n) : (adjoint D ∘ₗ D) ((e.reindex π.symm) k) =
-      ((‖d (π k)‖ ^ 2 : ℝ) : 𝕜) • (e.reindex π.symm) k := by
-    simp [D, hDadj, smul_smul, RCLike.mul_conj]
-  have heig := D.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hn (e.reindex π.symm)
-    (fun i j hij ↦ pow_le_pow_left₀ (norm_nonneg _) (hπ hij) 2) hGram
-  rw [← sq_eq_sq₀ (D.singularValues_nonneg _) (norm_nonneg _), D.sq_singularValues_fin hn k, heig]
+  rw [← sq_eq_sq₀ (D.singularValues_nonneg _) (norm_nonneg _)]
+  exact D.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (e.reindex π.symm)
+    (fun i j hij ↦ pow_le_pow_left₀ (norm_nonneg _) (hπ hij) 2)
+    (e.adjoint_comp_self_toLin_diagonal_reindex_apply d π) k
+
+omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
+/-- The rectangular diagonal map with entries `d` in orthonormal bases `(eᵢ)_{i < m}` and
+`(fⱼ)_{j < n}` sends `eᵢ` to `dᵢ fᵢ` when `i < n`, and to `0` otherwise. -/
+theorem _root_.Matrix.toLin_of_ite_val_eq_apply {m n : ℕ} (e : OrthonormalBasis (Fin m) 𝕜 E)
+    (f : OrthonormalBasis (Fin n) 𝕜 F) (d : ℕ → 𝕜) (i : Fin m) :
+    Matrix.toLin e.toBasis f.toBasis (Matrix.of fun (j : Fin n) (i : Fin m) ↦
+      if (j : ℕ) = i then d i else 0) (e i) =
+      if h : (i : ℕ) < n then d i • f ⟨i, h⟩ else 0 := by
+  rw [← e.coe_toBasis, Matrix.toLin_self]
+  split_ifs with h
+  · rw [Finset.sum_eq_single ⟨i, h⟩ (fun j _ hj ↦ by
+      simp [show (j : ℕ) ≠ i from fun h' ↦ hj (Fin.ext h')]) (by simp)]
+    simp
+  · refine Finset.sum_eq_zero fun j _ ↦ ?_
+    simp [show (j : ℕ) ≠ i from fun h' ↦ h (h' ▸ j.isLt)]
 
 /-- **Rectangular singular-value factorization.** Every linear map `A : E →ₗ[𝕜] F` between
 finite-dimensional inner product spaces factors as `A = U D V`, where `U` and `V` are linear
@@ -516,15 +700,12 @@ theorem exists_linearIsometryEquiv_eq_comp_toLin_comp (A : E →ₗ[𝕜] F) {m 
     LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv, OrthonormalBasis.equiv_apply_basis,
     Equiv.refl_apply]
-  rw [← e.coe_toBasis, Matrix.toLin_self]
-  simp only [Matrix.of_apply]
-  rcases lt_or_ge (i : ℕ) (finrank 𝕜 F) with hi | hi
-  · rw [Finset.sum_eq_single ⟨i, hi⟩
-      (fun j _ hj ↦ by simp [show (j : ℕ) ≠ i from fun h ↦ hj (Fin.ext h)]) (by simp)]
-    rcases eq_or_ne (A.singularValues i) 0 with hσ | hσ
+  rw [Matrix.toLin_of_ite_val_eq_apply (d := fun i ↦ (A.singularValues i : 𝕜))]
+  split_ifs with hi
+  · rcases eq_or_ne (A.singularValues i) 0 with hσ | hσ
     · simp [hσ]
     · simp [hw i ⟨i, hi⟩ rfl hσ]
-  · simp [A.singularValues_of_finrank_le_right hi]
+  · simp [A.singularValues_of_finrank_le_right (not_lt.mp hi)]
 
 /-- **Singular-value diagonal factorization.** Every endomorphism `A` of a finite-dimensional
 inner product space factors as `A = U D V`, where `U` and `V` are linear isometric equivalences
@@ -576,20 +757,50 @@ theorem exists_orthonormal_eq_sum_singularValues_smul_rankOne (A : E →ₗ[𝕜
     Finset.sum_apply, Pi.smul_apply, InnerProductSpace.rankOne_apply,
     LinearIsometryEquiv.inner_map_map, orthonormal_iff_ite.mp e.orthonormal, ite_smul, one_smul,
     zero_smul, smul_ite, smul_zero]
-  rw [← e.coe_toBasis, Matrix.toLin_self]
-  simp only [Matrix.of_apply]
+  rw [Matrix.toLin_of_ite_val_eq_apply (d := fun i ↦ (A.singularValues i : 𝕜))]
   have hiE (i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F))) : iE i = k ↔ (i : ℕ) = k := Fin.ext_iff
-  rcases lt_or_ge (k : ℕ) (finrank 𝕜 F) with hk | hk
-  · rw [Finset.sum_eq_single ⟨k, hk⟩
-        (fun j _ hj ↦ by simp [show (j : ℕ) ≠ k from fun h ↦ hj (Fin.ext h)]) (by simp),
-      Finset.sum_eq_single ⟨k, lt_min k.2 hk⟩
-        (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
+  split_ifs with hk
+  · rw [Finset.sum_eq_single ⟨k, lt_min k.2 hk⟩
+      (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
     simp [hiE, iF, f]
-  · rw [Finset.sum_eq_zero fun j _ ↦ by simp [show (j : ℕ) ≠ k from fun h ↦ (h ▸ j.2).not_ge hk],
-      Finset.sum_eq_zero fun i _ ↦ by
-        simp [hiE, show (i : ℕ) ≠ k from fun h ↦ (h ▸ i.2).not_ge (min_le_right _ _ |>.trans hk)]]
+  · rw [Finset.sum_eq_zero fun i _ ↦ by
+      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.2.trans_le (min_le_right _ _))]]
     simp
 
 end Diagonal
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- For a sorted orthonormal eigenbasis of `T† T`, the norm on the orthogonal complement
+of its first `n` vectors is at most the `n`-th singular value, including the zero tail. -/
+theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
+    (T : E →L[𝕜] F) {m : ℕ} (e : OrthonormalBasis (Fin m) 𝕜 E) {μ : Fin m → ℝ}
+    (hμ : Antitone μ)
+    (he : ∀ i, (LinearMap.adjoint (T : E →ₗ[𝕜] F) ∘ₗ (T : E →ₗ[𝕜] F)) (e i) =
+      (μ i : 𝕜) • e i) (n : ℕ) :
+    ‖T ∘L (e.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin m)))ᗮ.subtypeL‖ ≤
+      (T : E →ₗ[𝕜] F).singularValues n := by
+  let A : E →ₗ[𝕜] F := T
+  refine opNorm_le_bound _ (A.singularValues_nonneg n) fun x ↦ ?_
+  have hx := e.mem_spanIndices_le_of_mem_orthogonal x.2
+  by_cases hn : n < m
+  · exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis e he
+      (A.singularValues_nonneg n) (fun i hi ↦ by
+        rw [A.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis e hμ he ⟨n, hn⟩]
+        exact hμ hi) hx
+  · have htail : {i : Fin m | n ≤ (i : ℕ)} = ∅ := by
+      ext i
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
+      exact not_le.mpr (i.2.trans_le (le_of_not_gt hn))
+    have hx0 : (x : E) = 0 := by
+      simpa only [htail, e.spanIndices_eq_span, Set.image_empty, Submodule.span_empty,
+        Submodule.mem_bot] using hx
+    simp [hx0]
+
+end ContinuousLinearMap

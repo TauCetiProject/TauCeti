@@ -16,7 +16,7 @@ public import TauCeti.CategoryTheory.Products.Preadditive
 If two categories `C` and `D` carry shifts by the same additive monoid `A`, their product carries
 the componentwise shift `(X, Y)⟦a⟧ = (X⟦a⟧, Y⟦a⟧)`, whose structure isomorphisms are taken
 coordinatewise. This file constructs that shift and the commutation isomorphisms making the
-projections, products of shift-compatible functors, and (when `A` is a group) the two
+projections, products and pairings of shift-compatible functors, and (when `A` is a group) the two
 zero-section functors compatible with it. When the factors are preadditive with additive shift
 functors, the componentwise shift functors are additive. It is the shift underlying the
 pretriangulated structure on a product of pretriangulated categories.
@@ -26,7 +26,7 @@ pretriangulated structure on a product of pretriangulated categories.
 * `TauCeti.instHasShiftProd`: the componentwise shift on `C × D`.
 * `TauCeti.instAdditiveShiftFunctorProd`: the componentwise shift functors are additive.
 * `CategoryTheory.Functor.CommShift` instances for `CategoryTheory.Prod.fst C D`,
-  `CategoryTheory.Prod.snd C D`, `F.prod G`, `CategoryTheory.Prod.sectL C 0` and
+  `CategoryTheory.Prod.snd C D`, `F.prod G`, `F.prod' G`, `CategoryTheory.Prod.sectL C 0` and
   `CategoryTheory.Prod.sectR 0 D`.
 
 ## Main results
@@ -236,6 +236,57 @@ lemma commShiftIso_prod_inv_app_snd (a : A) (X : C × D) :
   rfl
 
 end CommShift
+
+section Pairing
+
+variable {B : Type*} [Category* B] {C : Type u₁} [Category.{v₁} C]
+  {D : Type u₂} [Category.{v₂} D] (A : Type*) [AddMonoid A]
+  [HasShift B A] [HasShift C A] [HasShift D A]
+  (F : B ⥤ C) (G : B ⥤ D) [F.CommShift A] [G.CommShift A]
+
+/-- Pairing two functors with the same source preserves their compatibility with shifts. -/
+noncomputable instance instCommShiftFunctorProd' : (F.prod' G).CommShift A where
+  commShiftIso a := NatIso.ofComponents
+    (fun X => Iso.prod ((F.commShiftIso a).app X) ((G.commShiftIso a).app X))
+    (fun f => by apply Prod.hom_ext <;> simp)
+  commShiftIso_zero := by ext <;> simp [Functor.commShiftIso_zero]
+  commShiftIso_add a b := by ext <;> simp [Functor.commShiftIso_add]
+
+/-- The first component of the shift comparison for a pairing is the comparison for `F`. -/
+@[simp]
+lemma commShiftIso_prod'_hom_app_fst (a : A) (X : B) :
+    (((F.prod' G).commShiftIso a).hom.app X).1 = (F.commShiftIso a).hom.app X :=
+  (rfl)
+
+/-- The second component of the shift comparison for a pairing is the comparison for `G`. -/
+@[simp]
+lemma commShiftIso_prod'_hom_app_snd (a : A) (X : B) :
+    (((F.prod' G).commShiftIso a).hom.app X).2 = (G.commShiftIso a).hom.app X :=
+  (rfl)
+
+/-- The first component of the inverse shift comparison for a pairing is that for `F`. -/
+@[simp]
+lemma commShiftIso_prod'_inv_app_fst (a : A) (X : B) :
+    (((F.prod' G).commShiftIso a).inv.app X).1 = (F.commShiftIso a).inv.app X :=
+  (rfl)
+
+/-- The second component of the inverse shift comparison for a pairing is that for `G`. -/
+@[simp]
+lemma commShiftIso_prod'_inv_app_snd (a : A) (X : B) :
+    (((F.prod' G).commShiftIso a).inv.app X).2 = (G.commShiftIso a).inv.app X :=
+  (rfl)
+
+/-- Projecting a pairing onto its first functor respects the shift comparisons. -/
+instance instCommShiftProd'CompFstHom :
+    NatTrans.CommShift (Functor.prod'CompFst F G).hom A :=
+  ⟨fun a => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
+
+/-- Projecting a pairing onto its second functor respects the shift comparisons. -/
+instance instCommShiftProd'CompSndHom :
+    NatTrans.CommShift (Functor.prod'CompSnd F G).hom A :=
+  ⟨fun a => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
+
+end Pairing
 
 section ZeroSection
 

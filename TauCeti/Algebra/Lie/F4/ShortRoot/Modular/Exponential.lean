@@ -230,7 +230,7 @@ theorem f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul
     -- The imported adjoint matrix is opaque here; use its public coordinate equality.
     _ = _ :=
       (Module.Basis.toMatrix_baseChange_baseChange (S := A) f4ShortRootLieIdealBasis
-        (f4ShortRootAdjoint x)).trans
+        f4ShortRootLieIdealBasis (f4ShortRootAdjoint x)).trans
         (congrArg (fun m : Matrix (Fin 26) (Fin 26) (ZMod 2) =>
           m.map (algebraMap (ZMod 2) A))
           (f4ShortRootAdjointMatrix_eq_toMatrix x).symm)
@@ -385,7 +385,8 @@ theorem f4ShortRootExponential_toMatrix {A : Type*} [CommRing A]
           (algebraMap (ZMod 2) A) := by
     -- Here `B` abbreviates the scalar-extended basis.
     change LinearMap.toMatrix B B (f.baseChange A) = _
-    exact Module.Basis.toMatrix_baseChange_baseChange (S := A) f4ShortRootLieIdealBasis f
+    exact Module.Basis.toMatrix_baseChange_baseChange (S := A)
+      f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis f
   -- This imported matrix is opaque, so compare entries using its public evaluation lemma.
   have hd1matrix : LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
       (f4ShortRootSignedSimpleAdjoint k) = f4ShortRootSignedSimpleAdjointMatrix k := by

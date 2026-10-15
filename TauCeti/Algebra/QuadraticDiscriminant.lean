@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -31,14 +31,14 @@ quantification needed.
 
 Together with the reverse implication this gives the upgrade that motivates the file: a form known
 to be non-negative only on some sparse subset of `ℤ ⨯ ℤ` — the locus where a fixed prime divides
-neither coordinate, which is all that the degree form on an elliptic curve is directly known to
-satisfy — is non-negative everywhere. `Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd` pins
-the discriminant from that locus alone, and `nonneg_of_discrim_le_zero` then propagates the
-conclusion to every `(x, y)`.
+neither coordinate — is non-negative everywhere.
+`Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd` pins the discriminant from that locus alone,
+and `nonneg_of_discrim_le_zero` then propagates the conclusion to every `(x, y)`.
 
 ## Main results
 
 * `nonneg_of_discrim_le_zero`: `0 < a` and `discrim a b c ≤ 0` give `0 ≤ a x² + b x y + c y²`.
+* `discrim_pos_of_exists_pos_of_exists_neg`: representing both signs forces positive discriminant.
 * `Int.discrim_le_zero_of_nonneg_of_lt_abs`: for `a < |y|`, and with no sign condition on `a`,
   non-negativity of `a x² + b x y + c y²` in `x` alone forces `discrim a b c ≤ 0`.
 * `Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd`: the same conclusion from non-negativity
@@ -47,6 +47,10 @@ conclusion to every `(x, y)`.
   `0 < a`.
 * `Int.discrim_emod_four`: `discrim a b c % 4 = b % 2`, so an integral discriminant is `0` or `1`
   modulo `4`.
+* `TauCeti.not_dvd_two_mul_mul_add_of_not_dvd_discrim`: a root modulo `p` of a quadratic whose
+  discriminant is not divisible by `p` is simple, that is `p ∤ 2 a x + b`;
+  `TauCeti.not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul` is the case of the monic quadratic
+  `x² + b x − c`.
 
 The two `Int.discrim_le_zero_…` results are proved from a common lemma in which `x` runs over an
 arithmetic progression rather than all of `ℤ`. Only one `x` is ever used — the member of the
@@ -89,6 +93,30 @@ theorem nonneg_of_discrim_le_zero {R : Type*} [CommRing R] [LinearOrder R]
   -- The completed square `4a·Q = (2ax + by)² + (4ac − b²)y²` uses no division.
   have hb : 0 ≤ 4 * a * c - b ^ 2 := by rw [discrim] at hd; linarith
   nlinarith [sq_nonneg (2 * a * x + b * y), mul_nonneg hb (sq_nonneg y)]
+
+/-- A homogeneous binary quadratic form which represents both a positive and a negative value
+has positive discriminant. The statement needs no division or nondegeneracy hypothesis. -/
+theorem discrim_pos_of_exists_pos_of_exists_neg {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a b c : R}
+    (hpos : ∃ x y, 0 < a * x ^ 2 + b * x * y + c * y ^ 2)
+    (hneg : ∃ x y, a * x ^ 2 + b * x * y + c * y ^ 2 < 0) : 0 < discrim a b c := by
+  by_contra! hd
+  obtain ⟨xp, yp, hp⟩ := hpos
+  obtain ⟨xn, yn, hn⟩ := hneg
+  rcases lt_trichotomy a 0 with ha | ha | ha
+  · have h := nonneg_of_discrim_le_zero (neg_pos.mpr ha)
+      ((discrim_neg a b c).symm ▸ hd) xp yp
+    nlinarith
+  · subst a
+    have hb : b = 0 := by
+      rw [discrim] at hd
+      nlinarith [sq_nonneg b]
+    subst b
+    simp only [zero_mul, zero_add] at hp hn
+    rcases le_or_gt c 0 with hc | hc
+    · exact hp.not_ge (mul_nonpos_of_nonpos_of_nonneg hc (sq_nonneg yp))
+    · exact hn.not_ge (mul_nonneg hc.le (sq_nonneg yn))
+  · exact hn.not_ge (nonneg_of_discrim_le_zero ha hd xn yn)
 
 /-- A quadratic of negative discriminant with a non-negative leading coefficient has a positive
 one: at `a = 0` the discriminant is `b ^ 2`, which is not negative. -/
@@ -296,3 +324,28 @@ division by `4`, so it is `0` or `1` modulo `4`. -/
 @[simp]
 theorem Int.discrim_emod_four (a b c : ℤ) : discrim a b c % 4 = b % 2 := by
   rw [discrim, mul_assoc, Int.sub_mul_emod_self_left, Int.sq_emod_four]
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R]
+
+/-- A root modulo `p` of a quadratic whose discriminant is not divisible by `p` is simple: the
+derivative `2 a x + b` is not divisible by `p`, since
+`(2 a x + b)² = 4 a (a x² + b x + c) + discrim a b c`. -/
+theorem not_dvd_two_mul_mul_add_of_not_dvd_discrim {p a b c x : R}
+    (hd : ¬ p ∣ discrim a b c) (hx : p ∣ a * (x * x) + b * x + c) : ¬ p ∣ 2 * a * x + b :=
+  fun h ↦ hd <| by
+    rw [show discrim a b c = (2 * a * x + b) ^ 2 - 4 * a * (a * (x * x) + b * x + c) by
+      rw [discrim]; ring]
+    exact dvd_sub (dvd_pow h two_ne_zero) (hx.mul_left _)
+
+/-- A root modulo `p` of the monic quadratic `x² + b x − c` is simple when `p ∤ b² + 4 c`: the
+derivative `2 x + b` is not divisible by `p`. This is
+`TauCeti.not_dvd_two_mul_mul_add_of_not_dvd_discrim` for the monic quadratic, whose discriminant
+is `b² + 4 c`. -/
+theorem not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul {p b c x : R} (hd : ¬ p ∣ b ^ 2 + 4 * c)
+    (hx : p ∣ x ^ 2 + b * x - c) : ¬ p ∣ 2 * x + b := by
+  simpa using not_dvd_two_mul_mul_add_of_not_dvd_discrim (a := 1) (c := -c)
+    (by rwa [discrim, mul_neg, sub_neg_eq_add, mul_one]) (by rwa [one_mul, ← sq, ← sub_eq_add_neg])
+
+end TauCeti

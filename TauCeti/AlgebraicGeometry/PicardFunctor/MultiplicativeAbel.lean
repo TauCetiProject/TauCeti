@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel
+public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Basic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Monoid
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 

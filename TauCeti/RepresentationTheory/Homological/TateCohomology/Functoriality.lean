@@ -71,6 +71,8 @@ invariants of its conjugate through the resulting map in degree two.
   with the connecting maps of short exact sequences.
 * `TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map_res`: every compatible pair factors
   as a morphism into the restriction of its target followed by the pair `Res(e)(N) → N`.
+* `TauCeti.TateCohomology.isZero_of_forall_isZero_res`: vanishing on every subgroup includes
+  vanishing on `G` itself.
 
 ## References
 
@@ -592,6 +594,15 @@ def resIso (e : G ≃* H) (n : ℤ) :
   rw [resIso]
   -- As above for `NatIso.ofComponents_inv_app`.
   rfl
+
+/-- Tate cohomology vanishing on every subgroup of `G` vanishes on `G` itself. -/
+theorem isZero_of_forall_isZero_res (A : Rep R G)
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
+      Limits.IsZero (tateCohomology (Rep.res S.subtype A) n))
+    (n : ℤ) : Limits.IsZero (tateCohomology A n) :=
+  have := Fintype.ofFinite (⊤ : Subgroup G)
+  -- `Subgroup.topEquiv` is `(⊤ : Subgroup G).subtype` by definition.
+  (hA ⊤ n).of_iso ((resIso (Subgroup.topEquiv : (⊤ : Subgroup G) ≃* G) n).app A).symm
 
 /-- Tate cohomology groups matched by a compatible pair whose linear part is an equivalence have
 the same cardinality. -/

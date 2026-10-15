@@ -39,9 +39,6 @@ linearly spans the even Clifford algebra, provided `2` is nonzero.
 
 ## References
 
-This supplies the reflection-lift prerequisite for Layer 2's double-cover target and the
-Spin-group spanning prerequisite for Layer 4's irreducibility target in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`.
 See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
