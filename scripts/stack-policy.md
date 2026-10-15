@@ -82,8 +82,9 @@ resubmitted PR. Such a match is unknown, not landed or proved safe. This avoids
 closing legitimate replacements of closed PRs, including policy-closed children
 resubmitted after their prerequisite lands.
 
-An empty or landed aggregate does not skip individually retained commits: a
-child might retain work reverted on the parent's branch. An aggregate match
+An empty or landed aggregate does not skip individually retained commits, but
+every selected patch must remain in both current trees. Parent-side removals
+cannot authorize closure. An aggregate match
 alone cannot authorize closure; parts might have landed separately. For
 canonical-base content matches without the original commit identity, equivalent
 content must also be absent at the child's main fork point. Old main content is
@@ -117,6 +118,10 @@ not a proved-safe result. Undetected forms include:
 - Historical direct forks or merge histories without the supported first-parent
   relationship and canonical PR-event binding, and histories whose selected complete patches no longer
   apply to both current parent and child. Shared ancestry can remain ambiguous.
+  Ordinary forks from an older parent revision that later merge its current head
+  are only partly covered: their earlier shared prefix cannot establish ownership
+  without stronger historical evidence. A canonical current parent base establishes
+  direction independently, including after GitHub's Update branch merge.
 - Partial, split or edited inherited content without complete patch identity.
   No semantic equivalence or Lean declaration parsing is attempted.
 - Cross-repository or different/unknown-author relationships without a verified

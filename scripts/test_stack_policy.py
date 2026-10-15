@@ -170,6 +170,40 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "provenance unproved"):
             self.detector().detect(child)
 
+    def test_canonical_base_update_branch_retains_older_parent_work(self):
+        parent, child = self.parent_child()
+        git(self.root, "checkout", "main")
+        self.write("new-main", "landed independently\n")
+        self.commit("advance main")
+        git(self.root, "checkout", "parent")
+        git(self.root, "merge", "--no-ff", "main", "-m", "parent updates main")
+        self.prs = []
+        self.pr(1, fork=False)
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "Update branch")
+        child = self.pr(2, base="branch-1")
+        evidence, _ = self.detector().detect(child)
+        self.assertEqual(evidence.commit, parent.head)
+
+    def test_current_parent_reverted_source_cannot_close_child_restoring_it(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("A", "old parent work\n")
+        added = self.commit("add A")
+        git(self.root, "revert", "--no-edit", added)
+        self.write("B", "current parent work\n")
+        self.commit("add B")
+        self.pr(1)
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("own", "own child work\n")
+        self.commit("child work")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge current parent")
+        git(self.root, "rm", "B")
+        self.write("A", "old parent work\n")
+        self.commit("restore removed A and remove B")
+        child = self.pr(2)
+        self.assertIsNone(self.detector().detect(child)[0])
+
     def test_independent_cross_principal_cherry_pick_has_no_direction(self):
         git(self.root, "checkout", "-b", "victim")
         self.write("copied", "victim contribution\n")
@@ -512,9 +546,7 @@ class GitFixtures(unittest.TestCase):
             with self.assertRaises(sp.Gap):
                 self.detector().detect(child)
             return
-        evidence, _ = self.detector().detect(child)
-        self.assertEqual(evidence.kind, "retained-unmerged-commit")
-        self.assertEqual(evidence.commit, added)
+        self.assertIsNone(self.detector().detect(child)[0])
 
     def test_empty_parent_aggregate_still_checks_retained_commits(self):
         self.retained_then_reverted_parent(False)

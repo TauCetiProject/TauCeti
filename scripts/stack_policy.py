@@ -581,15 +581,14 @@ class Detector:
                 graph_direction = parent.head in commits or canonical_base
                 imported_commits = {}
                 constrain_imports = not graph_direction
-                if parent.head in commits:
+                if parent.head in commits and not canonical_base:
                     child_line = {row[0] for row in self.source.first_parent_history(child.head)}
                     constrain_imports = parent.head not in child_line
                 if constrain_imports:
                     imported_commits = self.source.historical_commits(child.head, parent.head)
                     if not imported_commits:
                         if graph_direction:
-                            reasons.append(f"#{number}: no distinct parent-line work newly imported")
-                            continue
+                            raise Gap("current parent import has no supported newly introduced parent-line work")
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
                 # Only a current canonical base choice bypasses provenance guards.
                 provenance_gap = None
@@ -627,7 +626,7 @@ class Detector:
                         unsupported = True
                         continue
                     if (delta and self.source.contains(child.head, cp, delta)
-                            and (not historical or self.source.contains(parent.head, cp, delta))
+                            and self.source.contains(parent.head, cp, delta)
                             and not self.source.landed(parent, cb, cp, delta, head=commit)):
                         if commit not in commits and self.source.present_at_fork(child, cb, cp, delta, commit):
                             raise Gap("matched content already present at child's main fork point; base drift")
