@@ -101,7 +101,7 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
     refine (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k M 0).mpr ?_
     exact Module.Finite.equiv (cohomologyZeroBaseLinearEquiv k I.subscheme M).symm
   have hvan : Subsingleton (Cohomology S.X₃ 1) := by
-    have := subsingleton_cohomology_succ_of_isFinite k M 0
+    have := subsingleton_cohomology_succ_of_isFinite (I.subscheme ↘ Spec (.of k)) M 0
     dsimp only [S]
     exact (cohomologyPushforwardIso I.subschemeι M 1).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
   -- `H¹(X, I)` sits between `H⁰(ι_* 𝒪_{V(I)})` and `H¹(X, 𝒪_X)`, so it is finite-dimensional.

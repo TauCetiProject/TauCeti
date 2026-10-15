@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
-public import TauCeti.AlgebraicGeometry.Cohomology.FiniteOverField
+public import TauCeti.AlgebraicGeometry.Cohomology.FiniteMorphism
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
 /-!
@@ -164,7 +164,7 @@ theorem eulerCharBelow_pushforward_structureSheaf [IsFinite (X ↘ Spec (.of k))
     induction n with
     | zero => rfl
     | succ n ih =>
-      have := subsingleton_cohomology_succ_of_isFinite k M n
+      have := subsingleton_cohomology_succ_of_isFinite (X ↘ Spec (.of k)) M n
       rw [eulerCharBelow_succ, ih, Module.finrank_zero_of_subsingleton (M := Cohomology M (n + 1)),
         Nat.cast_zero, mul_zero, add_zero]
   refine (eulerCharBelow_pushforward f k M (n + 1)).trans ?_
