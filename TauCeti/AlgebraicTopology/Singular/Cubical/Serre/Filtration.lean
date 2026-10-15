@@ -51,6 +51,8 @@ homology of `E` by `TauCeti.singularCubicalHomologyIso`.
   filtration on chains, as submodules.
 * `TauCeti.serreFiltration R p s`: the Serre filtration of the cubical cochain complex of `E`, by
   subcomplexes.
+* `TauCeti.normalizedCubicalChainComplexXEquiv R E n`: the term of the normalized cubical chain
+  complex in degree `n`, identified with the normalized `n`-chains.
 * `TauCeti.serreSpectralSequence R p`: the Serre spectral sequence, with its first page
   `TauCeti.serreSpectralSequenceFirstPageXIsoCokernel`.
 
@@ -290,10 +292,49 @@ universe u
 
 variable (R : Type u) [Ring R] {E B E' : TopCat.{u}} (p : E ⟶ B)
 
+variable (E) in
+/-- The term in degree `n` of the normalized cubical chain complex of `E` is the module of
+normalized cubical `n`-chains. -/
+def normalizedCubicalChainComplexXEquiv (n : ℕ) :
+    ((normalizedCubicalChainComplex R).obj E).X n ≃ₗ[R] NormalizedCubicalChain E R n :=
+  LinearEquiv.refl R _
+
+variable {R} in
+/-- Under `normalizedCubicalChainComplexXEquiv`, the differential of the complex is the boundary of
+normalized chains. -/
+theorem normalizedCubicalChainComplexXEquiv_d (n : ℕ)
+    (x : ((normalizedCubicalChainComplex R).obj E).X (n + 1)) :
+    normalizedCubicalChainComplexXEquiv R E n
+        (((normalizedCubicalChainComplex R).obj E).d (n + 1) n x) =
+      NormalizedCubicalChain.boundary E R n
+        (normalizedCubicalChainComplexXEquiv R E (n + 1) x) := by
+  -- `normalizedCubicalChainComplexXEquiv` is the identity of the underlying modules.
+  unfold normalizedCubicalChainComplexXEquiv
+  exact normalizedCubicalChainComplex_obj_d_apply E n x
+
+variable {R} in
+/-- Under `normalizedCubicalChainComplexXEquiv`, the chain map of a continuous map is its
+push-forward of normalized chains. -/
+theorem normalizedCubicalChainComplexXEquiv_map_f (f : E ⟶ E') (n : ℕ)
+    (x : ((normalizedCubicalChainComplex R).obj E).X n) :
+    normalizedCubicalChainComplexXEquiv R E' n (((normalizedCubicalChainComplex R).map f).f n x) =
+      NormalizedCubicalChain.map R f.hom n (normalizedCubicalChainComplexXEquiv R E n x) := by
+  -- `normalizedCubicalChainComplexXEquiv` is the identity of the underlying modules.
+  unfold normalizedCubicalChainComplexXEquiv
+  exact normalizedCubicalChainComplex_map_f_apply f n x
+
 /-- The Serre filtration in chain degree `n`, as a submodule of the term of the chain complex. -/
 private def serreSubmodule (s : ℤ) (n : ℕ) :
     Submodule R (((normalizedCubicalChainComplex R).obj E).X n) :=
-  NormalizedCubicalChain.serreFiltration R p.hom s n
+  (NormalizedCubicalChain.serreFiltration R p.hom s n).comap
+    (normalizedCubicalChainComplexXEquiv R E n).toLinearMap
+
+private theorem mem_serreSubmodule_iff (s : ℤ) (n : ℕ)
+    (x : ((normalizedCubicalChainComplex R).obj E).X n) :
+    x ∈ serreSubmodule R p s n ↔
+      normalizedCubicalChainComplexXEquiv R E n x ∈
+        NormalizedCubicalChain.serreFiltration R p.hom s n := by
+  rw [serreSubmodule, Submodule.mem_comap, LinearEquiv.coe_coe]
 
 /-- The Serre filtration of the normalized cubical chain complex of `E`, indexed by `ℕ`, by
 subcomplexes. -/
@@ -301,9 +342,9 @@ def serreChainFiltration (s : ℤ) : Subobject ((normalizedCubicalChainComplex R
   HomologicalComplex.subobjectOfSubmodules _ (serreSubmodule R p s)
     fun i j (hij : (ComplexShape.down ℕ).Rel i j) x hx ↦ by
       obtain rfl : j + 1 = i := hij
-      exact (congrArg (· ∈ NormalizedCubicalChain.serreFiltration R p.hom s j)
-        (normalizedCubicalChainComplex_obj_d_apply E j x)).mpr
-          (NormalizedCubicalChain.boundary_mem_serreFiltration hx)
+      rw [mem_serreSubmodule_iff] at hx ⊢
+      rw [normalizedCubicalChainComplexXEquiv_d]
+      exact NormalizedCubicalChain.boundary_mem_serreFiltration hx
 
 /-- The **Serre filtration** of the cubical chains of `E`, as a filtration by subcomplexes of the
 normalized cubical chain complex placed in nonpositive cochain degrees: its `s`-th piece is
@@ -317,17 +358,15 @@ def serreFiltration (s : ℤ) :
 variable {R p}
 
 /-- In chain degree `n`, the `s`-th piece of the Serre filtration of the chain complex consists
-of the elements of `NormalizedCubicalChain.serreFiltration`. -/
+of the chains whose image under `normalizedCubicalChainComplexXEquiv` lies in
+`NormalizedCubicalChain.serreFiltration`. -/
 theorem mem_range_serreChainFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
     (x : ((normalizedCubicalChainComplex R).obj E).X n) :
     x ∈ LinearMap.range ((serreChainFiltration R p s).arrow.f n).hom ↔
-      x ∈ NormalizedCubicalChain.serreFiltration R p.hom s n := by
+      normalizedCubicalChainComplexXEquiv R E n x ∈
+        NormalizedCubicalChain.serreFiltration R p.hom s n := by
   rw [serreChainFiltration, HomologicalComplex.mem_range_subobjectOfSubmodules_arrow_f_iff,
-    serreSubmodule]
-  -- The two memberships differ only in the module instances: those of the term
-  -- `ModuleCat.of R (NormalizedCubicalChain E R n)` of the complex
-  -- (`normalizedCubicalChainComplex_obj_X`) and those of the normalized chains, which agree.
-  exact Iff.rfl
+    mem_serreSubmodule_iff]
 
 /-- In cochain degree `-n`, the `s`-th piece of the Serre filtration consists of the elements whose
 image in the normalized cubical `n`-chains, under the identification of the extended complex with
@@ -336,9 +375,10 @@ theorem mem_range_serreFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
     (x : (((normalizedCubicalChainComplex R).obj E).extend
       (ComplexShape.embeddingUpIntLE 0)).X (-n)) :
     x ∈ LinearMap.range ((serreFiltration R p s).arrow.f (-n)).hom ↔
-      (((normalizedCubicalChainComplex R).obj E).extendXIso _
-        (by simp : (ComplexShape.embeddingUpIntLE 0).f n = -n)).hom x ∈
-          NormalizedCubicalChain.serreFiltration R p.hom s n := by
+      normalizedCubicalChainComplexXEquiv R E n
+        ((((normalizedCubicalChainComplex R).obj E).extendXIso _
+          (by simp : (ComplexShape.embeddingUpIntLE 0).f n = -n)).hom x) ∈
+            NormalizedCubicalChain.serreFiltration R p.hom s n := by
   rw [serreFiltration, Subobject.mem_range_extend_arrow_f_iff _ _ (i := n) (by simp)]
   rw [mem_range_serreChainFiltration_arrow_f_iff]
 
@@ -346,13 +386,13 @@ variable (R p) in
 /-- The Serre filtration is increasing. -/
 theorem monotone_serreFiltration : Monotone (serreFiltration R p) := fun _ _ hst ↦
   Subobject.extend_mono _ (HomologicalComplex.subobjectOfSubmodules_mono fun n ↦
-    NormalizedCubicalChain.serreFiltration_mono hst n)
+    Submodule.comap_mono (NormalizedCubicalChain.serreFiltration_mono hst n))
 
 /-- Below `0`, the Serre filtration is zero. -/
 theorem serreFiltration_eq_bot {s : ℤ} (hs : s < 0) : serreFiltration R p s = ⊥ := by
   rw [serreFiltration, serreChainFiltration, HomologicalComplex.subobjectOfSubmodules_eq_bot _ _ _
-    fun n ↦ NormalizedCubicalChain.serreFiltration_eq_bot (R := R) (p := p.hom) hs n,
-    Subobject.extend_bot]
+    fun n ↦ by rw [serreSubmodule, NormalizedCubicalChain.serreFiltration_eq_bot hs,
+      Submodule.comap_bot, LinearEquiv.ker], Subobject.extend_bot]
 
 /-- In cochain degrees `m ≥ -s`, that is in chain degrees at most `s`, the `s`-th piece of the
 Serre filtration is everything. -/
@@ -361,8 +401,9 @@ theorem epi_serreFiltration_arrow_f {s m : ℤ} (hm : -s ≤ m) :
   by_cases h : ∃ n : ℕ, (ComplexShape.embeddingUpIntLE 0).f n = m
   · obtain ⟨n, hn⟩ := h
     have : Epi ((serreChainFiltration R p s).arrow.f n) :=
-      HomologicalComplex.epi_subobjectOfSubmodules_arrow_f _ _ _
-        (NormalizedCubicalChain.serreFiltration_eq_top (by simp at hn; lia))
+      HomologicalComplex.epi_subobjectOfSubmodules_arrow_f _ _ _ (by
+        rw [serreSubmodule, NormalizedCubicalChain.serreFiltration_eq_top (by simp at hn; lia),
+          Submodule.comap_top])
     exact Subobject.epi_extend_arrow_f _ _ hn
   · exact Subobject.epi_extend_arrow_f_of_notMem _ _ fun n hn ↦ h ⟨n, hn⟩
 
@@ -372,8 +413,11 @@ theorem serreFiltration_factors (f : E ⟶ E') {p' : E' ⟶ B} (hf : f ≫ p' = 
     (serreFiltration R p' s).Factors ((serreFiltration R p s).arrow ≫
       HomologicalComplex.extendMap ((normalizedCubicalChainComplex R).map f) _) :=
   Subobject.extend_factors _ _ (HomologicalComplex.subobjectOfSubmodules_factors _
-    fun _ _ hx ↦ NormalizedCubicalChain.map_mem_serreFiltration f.hom
-      (congrArg (fun g : E ⟶ B ↦ ⇑g.hom) hf) hx)
+    fun n x hx ↦ by
+      rw [mem_serreSubmodule_iff] at hx ⊢
+      rw [normalizedCubicalChainComplexXEquiv_map_f]
+      exact NormalizedCubicalChain.map_mem_serreFiltration f.hom
+        (congrArg (fun g : E ⟶ B ↦ ⇑g.hom) hf) hx)
 
 variable (R p) in
 /-- The **Serre spectral sequence** of `p : E ⟶ B`: the spectral sequence of the Serre filtration
