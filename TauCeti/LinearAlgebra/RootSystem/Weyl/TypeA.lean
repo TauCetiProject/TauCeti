@@ -7,8 +7,8 @@ module
 
 public import Mathlib.GroupTheory.Perm.Sign
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.BaseChange
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
+import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 
 /-!
 # Weyl groups of type A
@@ -20,9 +20,10 @@ reflection is the diagonal action of a transposition. Conversely, transpositions
 symmetric group. Faithfulness of the action on roots then identifies the Weyl group with the full
 symmetric group.
 
-The computation is first made on the pinned integral datum. Entrywise base change carries it to
-the pinned rational root system, and Cartan-type rigidity transports the result to every finite
-reduced crystallographic root system of type `Aₙ`.
+The comparison only uses the reflection permutations and the faithfulness of the action on root
+indices, so it applies verbatim to the pinned integral datum and to the pinned rational root
+system, which share their reflection permutations. Cartan-type rigidity transports the rational
+result to every finite reduced crystallographic root system of type `Aₙ`.
 
 ## Main definitions
 
@@ -35,9 +36,9 @@ reduced crystallographic root system of type `Aₙ`.
 
 ## Main results
 
-* `TauCeti.weylGroup_equiv_perm_of_typeA`: **the Weyl group of every finite
+* `RootPairing.weylGroup_equiv_perm_of_typeA`: **the Weyl group of every finite
   reduced crystallographic root system of type `Aₙ` is the symmetric group on `n + 1` letters.**
-* `TauCeti.card_weylGroup_of_hasCartanType_A`: its order is `(n + 1)!`.
+* `RootPairing.card_weylGroup_of_hasCartanType_A`: its order is `(n + 1)!`.
 
 ## References
 
@@ -58,28 +59,11 @@ noncomputable section
 variable (n : ℕ)
 
 /-- The diagonal action of a permutation of the `n + 1` classical coordinates on the ordered
-pairs indexing the roots of type `Aₙ`, transported to the pinned root enumeration. -/
-def typeARootPermHom : Equiv.Perm (Fin (n + 1)) →* Equiv.Perm (Fin (n * (n + 1))) where
-  toFun σ := ((typeAIndexEquiv n).symm.trans
-    ((σ.prodCongr σ).subtypeEquiv
-      (p := fun p ↦ p.1 ≠ p.2) (q := fun p ↦ p.1 ≠ p.2)
-      (fun p ↦ σ.injective.ne_iff.symm))).trans (typeAIndexEquiv n)
-  map_one' := by
-    apply Equiv.ext
-    intro k
-    obtain ⟨p, rfl⟩ := (typeAIndexEquiv n).surjective k
-    simp only [ne_eq, Equiv.trans_apply, Equiv.symm_apply_apply, Equiv.Perm.coe_one, id_eq,
-      EmbeddingLike.apply_eq_iff_eq]
-    apply Subtype.ext
-    rfl
-  map_mul' σ τ := by
-    apply Equiv.ext
-    intro k
-    obtain ⟨p, rfl⟩ := (typeAIndexEquiv n).surjective k
-    simp only [ne_eq, Equiv.trans_apply, Equiv.symm_apply_apply, Equiv.Perm.coe_mul,
-      Equiv.coe_trans, comp_apply, EmbeddingLike.apply_eq_iff_eq]
-    apply Subtype.ext
-    rfl
+pairs indexing the roots of type `Aₙ`, transported to the pinned root enumeration. This is
+`TauCeti.SplitTorus.coordinatePermRootIndexHom` read through `TauCeti.DynkinType.typeAIndexEquiv`.
+-/
+def typeARootPermHom : Equiv.Perm (Fin (n + 1)) →* Equiv.Perm (Fin (n * (n + 1))) :=
+  (typeAIndexEquiv n).permCongrHom.toMonoidHom.comp SplitTorus.coordinatePermRootIndexHom
 
 /-- The diagonal action applies the same coordinate permutation to both entries of a root index. -/
 @[simp]
@@ -87,26 +71,13 @@ theorem typeAIndexEquiv_symm_typeARootPermHom_apply (σ : Equiv.Perm (Fin (n + 1
     (p : TypeAIndex n) :
     ((typeAIndexEquiv n).symm (typeARootPermHom n σ (typeAIndexEquiv n p))).val =
       (σ p.val.1, σ p.val.2) := by
-  simp only [typeARootPermHom, MonoidHom.coe_mk, OneHom.coe_mk, Equiv.trans_apply,
-    Equiv.symm_apply_apply]
-  rfl
+  rw [typeARootPermHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe,
+    Equiv.permCongr_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
+    SplitTorus.coordinatePermRootIndexHom_apply, SplitTorus.coordinatePermRootIndex_coe]
 
 /-- The diagonal action on type-`Aₙ` root indices is faithful. -/
-theorem typeARootPermHom_injective : Function.Injective (typeARootPermHom n) := by
-  intro σ τ hστ
-  apply Equiv.ext
-  intro i
-  by_cases hn : n = 0
-  · apply Fin.ext
-    omega
-  · have hcard : 1 < Fintype.card (Fin (n + 1)) := by
-      simp only [Fintype.card_fin]
-      omega
-    obtain ⟨j, hji⟩ := Fintype.exists_ne_of_one_lt_card hcard i
-    let p : TypeAIndex n := ⟨(i, j), hji.symm⟩
-    have h := congrArg (fun e : Equiv.Perm (Fin (n * (n + 1))) ↦
-      ((typeAIndexEquiv n).symm (e (typeAIndexEquiv n p))).val.1) hστ
-    simpa [p] using h
+theorem typeARootPermHom_injective : Function.Injective (typeARootPermHom n) :=
+  (typeAIndexEquiv n).permCongrHom.injective.comp SplitTorus.coordinatePermRootIndexHom_injective
 
 private theorem typeARootPermHom_swap (p : TypeAIndex n) :
     typeARootPermHom n (Equiv.swap p.val.1 p.val.2) =
@@ -116,47 +87,72 @@ private theorem typeARootPermHom_swap (p : TypeAIndex n) :
   obtain ⟨q, rfl⟩ := (typeAIndexEquiv n).surjective k
   apply (typeAIndexEquiv n).symm.injective
   apply Subtype.ext
-  simpa using typeAIndexEquiv_symm_reflectionPerm p q |>.symm
+  rw [typeAIndexEquiv_symm_typeARootPermHom_apply, typeAIndexEquiv_symm_reflectionPerm]
 
-private theorem exists_typeARootPermHom_eq_weylGroupToPerm
-    (σ : Equiv.Perm (Fin (n + 1))) :
-    ∃ w : (typeASimplyConnectedRootDatum n).weylGroup,
-      typeARootPermHom n σ = (typeASimplyConnectedRootDatum n).weylGroupToPerm w := by
-  induction σ using Equiv.Perm.swap_induction_on with
-  | one => exact ⟨1, (map_one (typeARootPermHom n)).trans (map_one _).symm⟩
-  | swap_mul σ a b hab ih =>
-      obtain ⟨w, hw⟩ := ih
-      let p : TypeAIndex n := ⟨(a, b), hab⟩
-      refine ⟨weylGroup.ofIdx (typeASimplyConnectedRootDatum n) (typeAIndexEquiv n p) * w, ?_⟩
-      change typeARootPermHom n (Equiv.swap p.val.1 p.val.2 * σ) = _
-      rw [map_mul, map_mul, hw, typeARootPermHom_swap]
-      exact congrArg (fun e : Equiv.Perm (Fin (n * (n + 1))) ↦
-        e * (typeASimplyConnectedRootDatum n).weylGroupToPerm w)
-        (Equiv.ext fun k ↦ (weylGroupToPerm_ofIdx_apply
-          (typeASimplyConnectedRootDatum n) (typeAIndexEquiv n p) k).symm)
+section Realization
 
-private theorem exists_typeARootPermHom_of_weylGroup
-    (w : (typeASimplyConnectedRootDatum n).weylGroup) :
-    ∃ σ : Equiv.Perm (Fin (n + 1)),
-      typeARootPermHom n σ = (typeASimplyConnectedRootDatum n).weylGroupToPerm w := by
-  obtain ⟨w, hw⟩ := w
-  induction hw using weylGroup.induction with
-  | mem k =>
-      let p := (typeAIndexEquiv n).symm k
-      refine ⟨Equiv.swap p.val.1 p.val.2, ?_⟩
-      have hk : typeAIndexEquiv n p = k := (typeAIndexEquiv n).apply_symm_apply k
-      rw [typeARootPermHom_swap, hk]
-      exact Equiv.ext fun j ↦ (weylGroupToPerm_ofIdx_apply
-        (typeASimplyConnectedRootDatum n) k j).symm
-  | one => exact ⟨1, (map_one (typeARootPermHom n)).trans (map_one _).symm⟩
-  | mul w₁ w₂ hw₁ hw₂ ih₁ ih₂ =>
-      obtain ⟨σ₁, hσ₁⟩ := ih₁
-      obtain ⟨σ₂, hσ₂⟩ := ih₂
-      refine ⟨σ₁ * σ₂, ?_⟩
-      change typeARootPermHom n (σ₁ * σ₂) =
-        (typeASimplyConnectedRootDatum n).weylGroupToPerm
-          (⟨w₁, hw₁⟩ * ⟨w₂, hw₂⟩)
-      rw [map_mul, map_mul, hσ₁, hσ₂]
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (Q : RootPairing (Fin (n * (n + 1))) R M N)
+  (hQ : Q.reflectionPerm = (typeASimplyConnectedRootDatum n).reflectionPerm)
+  (hinj : Function.Injective Q.weylGroupToPerm)
+
+include hQ
+
+/-- A root pairing with the type-`Aₙ` reflection permutations permutes its roots by exactly the
+diagonal actions of coordinate permutations: reflections are transpositions, and transpositions
+generate the symmetric group. -/
+private theorem range_weylGroupToPerm_eq_range_typeARootPermHom :
+    Q.weylGroupToPerm.range = (typeARootPermHom n).range := by
+  rw [range_weylGroupToPerm, hQ]
+  apply le_antisymm
+  · rw [Subgroup.closure_le]
+    rintro _ ⟨k, rfl⟩
+    obtain ⟨p, rfl⟩ := (typeAIndexEquiv n).surjective k
+    exact ⟨Equiv.swap p.val.1 p.val.2, typeARootPermHom_swap n p⟩
+  · rintro _ ⟨σ, rfl⟩
+    induction σ using Equiv.Perm.swap_induction_on with
+    | one =>
+        rw [map_one]
+        exact Subgroup.one_mem _
+    | swap_mul σ a b hab ih =>
+        rw [map_mul]
+        refine Subgroup.mul_mem _ ?_ ih
+        rw [typeARootPermHom_swap n ⟨(a, b), hab⟩]
+        exact Subgroup.subset_closure ⟨_, rfl⟩
+
+include hinj in
+/-- The coordinate-permutation model of the Weyl group of a faithful root pairing with the
+type-`Aₙ` reflection permutations, obtained by comparing the ranges of the two faithful actions on
+root indices. -/
+private noncomputable def typeAWeylGroupEquivOf : Q.weylGroup ≃* Equiv.Perm (Fin (n + 1)) :=
+  (MonoidHom.ofInjective hinj).trans <|
+    (MulEquiv.subgroupCongr (range_weylGroupToPerm_eq_range_typeARootPermHom n Q hQ)).trans
+      (MonoidHom.ofInjective (typeARootPermHom_injective n)).symm
+
+include hinj in
+private theorem typeARootPermHom_typeAWeylGroupEquivOf (w : Q.weylGroup) :
+    typeARootPermHom n (typeAWeylGroupEquivOf n Q hQ hinj w) = Q.weylGroupToPerm w := by
+  rw [typeAWeylGroupEquivOf, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    MonoidHom.apply_ofInjective_symm, MulEquiv.subgroupCongr_apply, MonoidHom.ofInjective_apply]
+
+include hinj in
+private theorem typeAWeylGroupEquivOf_ofIdx_typeAIndexEquiv (p : TypeAIndex n) :
+    typeAWeylGroupEquivOf n Q hQ hinj (weylGroup.ofIdx Q (typeAIndexEquiv n p)) =
+      Equiv.swap p.val.1 p.val.2 := by
+  apply typeARootPermHom_injective n
+  rw [typeARootPermHom_typeAWeylGroupEquivOf, typeARootPermHom_swap, ← hQ]
+  exact Equiv.ext fun k ↦ weylGroupToPerm_ofIdx_apply Q (typeAIndexEquiv n p) k
+
+include hinj in
+private theorem typeAWeylGroupEquivOf_ofIdx_typeASimpleIndex (i : Fin n) :
+    typeAWeylGroupEquivOf n Q hQ hinj (weylGroup.ofIdx Q (typeASimpleIndex n i)) =
+      Equiv.swap i.castSucc i.succ := by
+  rw [← (typeAIndexEquiv n).apply_symm_apply (typeASimpleIndex n i),
+    typeAWeylGroupEquivOf_ofIdx_typeAIndexEquiv, typeAIndexEquiv_symm_typeASimpleIndex]
+  -- The entries of the explicit pair are `i.castSucc` and `i.succ` by definition of `Fin`.
+  rfl
+
+end Realization
 
 private theorem weylGroupToPerm_typeASimplyConnectedRootDatum_injective :
     Function.Injective (typeASimplyConnectedRootDatum n).weylGroupToPerm :=
@@ -164,74 +160,21 @@ private theorem weylGroupToPerm_typeASimplyConnectedRootDatum_injective :
     (typeASimplyConnectedRootDatum n) (corootSpan_typeASimplyConnectedRootDatum_eq_top n)).comp
       Subtype.val_injective
 
-/-- Recover the coordinate permutation represented by a Weyl-group element of the pinned type-`A`
-datum. Existence comes from induction on root reflections, and faithfulness of the diagonal action
-makes the choice multiplicative. -/
-private noncomputable def typeAWeylGroupToPerm :
-    (typeASimplyConnectedRootDatum n).weylGroup →* Equiv.Perm (Fin (n + 1)) where
-  toFun w := (exists_typeARootPermHom_of_weylGroup n w).choose
-  map_one' := by
-    apply typeARootPermHom_injective n
-    calc
-      typeARootPermHom n (exists_typeARootPermHom_of_weylGroup n 1).choose =
-          (typeASimplyConnectedRootDatum n).weylGroupToPerm 1 :=
-        (exists_typeARootPermHom_of_weylGroup n 1).choose_spec
-      _ = 1 := map_one _
-      _ = typeARootPermHom n 1 := (map_one _).symm
-  map_mul' w₁ w₂ := by
-    apply typeARootPermHom_injective n
-    calc
-      typeARootPermHom n (exists_typeARootPermHom_of_weylGroup n (w₁ * w₂)).choose =
-          (typeASimplyConnectedRootDatum n).weylGroupToPerm (w₁ * w₂) :=
-        (exists_typeARootPermHom_of_weylGroup n (w₁ * w₂)).choose_spec
-      _ = (typeASimplyConnectedRootDatum n).weylGroupToPerm w₁ *
-          (typeASimplyConnectedRootDatum n).weylGroupToPerm w₂ := map_mul _ _ _
-      _ = typeARootPermHom n (exists_typeARootPermHom_of_weylGroup n w₁).choose *
-          typeARootPermHom n (exists_typeARootPermHom_of_weylGroup n w₂).choose :=
-        congrArg₂ (fun x y ↦ x * y)
-          (exists_typeARootPermHom_of_weylGroup n w₁).choose_spec.symm
-          (exists_typeARootPermHom_of_weylGroup n w₂).choose_spec.symm
-      _ = typeARootPermHom n
-          ((exists_typeARootPermHom_of_weylGroup n w₁).choose *
-            (exists_typeARootPermHom_of_weylGroup n w₂).choose) := (map_mul _ _ _).symm
-
-private theorem typeARootPermHom_typeAWeylGroupToPerm
-    (w : (typeASimplyConnectedRootDatum n).weylGroup) :
-    typeARootPermHom n (typeAWeylGroupToPerm n w) =
-      (typeASimplyConnectedRootDatum n).weylGroupToPerm w := by
-  change typeARootPermHom n (exists_typeARootPermHom_of_weylGroup n w).choose = _
-  exact (exists_typeARootPermHom_of_weylGroup n w).choose_spec
-
-private theorem typeAWeylGroupToPerm_injective :
-    Function.Injective (typeAWeylGroupToPerm n) := by
-  intro w₁ w₂ h
-  apply weylGroupToPerm_typeASimplyConnectedRootDatum_injective n
-  rw [← typeARootPermHom_typeAWeylGroupToPerm,
-    ← typeARootPermHom_typeAWeylGroupToPerm, h]
-
-private theorem typeAWeylGroupToPerm_surjective :
-    Function.Surjective (typeAWeylGroupToPerm n) := by
-  intro σ
-  obtain ⟨w, hw⟩ := exists_typeARootPermHom_eq_weylGroupToPerm n σ
-  refine ⟨w, typeARootPermHom_injective n ?_⟩
-  rw [typeARootPermHom_typeAWeylGroupToPerm, ← hw]
-
 /-- **The Weyl group of the pinned integral datum of type `Aₙ` is the symmetric group on
 `n + 1` letters.** Under this equivalence the reflection in `e_a - e_b` is the transposition
 of `a` and `b`; see `typeAWeylGroupEquiv_ofIdx_typeAIndexEquiv`. -/
 noncomputable def typeAWeylGroupEquiv :
     (typeASimplyConnectedRootDatum n).weylGroup ≃* Equiv.Perm (Fin (n + 1)) :=
-  MulEquiv.ofBijective (typeAWeylGroupToPerm n)
-    ⟨typeAWeylGroupToPerm_injective n, typeAWeylGroupToPerm_surjective n⟩
+  typeAWeylGroupEquivOf n (typeASimplyConnectedRootDatum n) rfl
+    (weylGroupToPerm_typeASimplyConnectedRootDatum_injective n)
 
 /-- The coordinate permutation attached to a Weyl-group element induces its permutation of the
 type-`A` roots by the diagonal action. -/
 theorem typeARootPermHom_typeAWeylGroupEquiv
     (w : (typeASimplyConnectedRootDatum n).weylGroup) :
     typeARootPermHom n (typeAWeylGroupEquiv n w) =
-      (typeASimplyConnectedRootDatum n).weylGroupToPerm w := by
-  change typeARootPermHom n (typeAWeylGroupToPerm n w) = _
-  exact typeARootPermHom_typeAWeylGroupToPerm n w
+      (typeASimplyConnectedRootDatum n).weylGroupToPerm w :=
+  typeARootPermHom_typeAWeylGroupEquivOf n _ _ _ w
 
 /-- Under the type-`A` Weyl-group equivalence, reflection in the root `e_a - e_b` is the
 transposition of the two coordinate indices. -/
@@ -239,49 +182,64 @@ transposition of the two coordinate indices. -/
 theorem typeAWeylGroupEquiv_ofIdx_typeAIndexEquiv (p : TypeAIndex n) :
     typeAWeylGroupEquiv n
         (weylGroup.ofIdx (typeASimplyConnectedRootDatum n) (typeAIndexEquiv n p)) =
-      Equiv.swap p.val.1 p.val.2 := by
-  apply typeARootPermHom_injective n
-  rw [typeARootPermHom_typeAWeylGroupEquiv, typeARootPermHom_swap]
-  exact Equiv.ext fun k ↦
-    weylGroupToPerm_ofIdx_apply (typeASimplyConnectedRootDatum n) (typeAIndexEquiv n p) k
+      Equiv.swap p.val.1 p.val.2 :=
+  typeAWeylGroupEquivOf_ofIdx_typeAIndexEquiv n _ _ _ p
 
 /-- The `i`-th simple reflection of type `Aₙ` is the adjacent transposition `(i, i + 1)`. -/
 @[simp]
 theorem typeAWeylGroupEquiv_ofIdx_typeASimpleIndex (i : Fin n) :
     typeAWeylGroupEquiv n
         (weylGroup.ofIdx (typeASimplyConnectedRootDatum n) (typeASimpleIndex n i)) =
-      Equiv.swap i.castSucc i.succ := by
-  let p := (typeAIndexEquiv n).symm (typeASimpleIndex n i)
-  have hp : typeAIndexEquiv n p = typeASimpleIndex n i :=
-    (typeAIndexEquiv n).apply_symm_apply _
-  rw [← hp, typeAWeylGroupEquiv_ofIdx_typeAIndexEquiv]
-  have hp' := typeAIndexEquiv_symm_typeASimpleIndex i
-  change Equiv.swap p.val.1 p.val.2 = _
-  dsimp only [p]
-  rw [hp']
-  congr 2
+      Equiv.swap i.castSucc i.succ :=
+  typeAWeylGroupEquivOf_ofIdx_typeASimpleIndex n _ _ _ i
 
 /-- The Weyl group of the pinned integral type-`Aₙ` datum has order `(n + 1)!`. -/
 theorem card_weylGroup_typeASimplyConnectedRootDatum :
     Nat.card (typeASimplyConnectedRootDatum n).weylGroup = Nat.factorial (n + 1) := by
   rw [Nat.card_congr (typeAWeylGroupEquiv n).toEquiv, Nat.card_perm, Nat.card_fin]
 
+variable {n} in
+private theorem reflectionPerm_rationalRootSystem_A (hn : 1 ≤ n) :
+    ((DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn)).reflectionPerm =
+      (typeASimplyConnectedRootDatum n).reflectionPerm := by
+  rw [reflectionPerm_rationalRootSystem, simplyConnectedRootDatum_A]
+
 /-- The pinned rational root system of type `Aₙ` has Weyl group the symmetric group on
-`n + 1` letters. This is the integral computation transported through entrywise base change. -/
+`n + 1` letters. It has the same reflection permutations as the integral datum, so the same
+comparison of permutation actions on root indices applies. -/
 noncomputable def typeARationalWeylGroupEquiv (hn : 1 ≤ n) :
     ((DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn)).weylGroup ≃*
-      Equiv.Perm (Fin (n + 1)) := by
-  let hdot : ∀ x y : Fin n → ℤ,
-      (typeASimplyConnectedRootDatum n).toLinearMap x y = x ⬝ᵥ y :=
-    fun x y ↦ toLinearMap_typeASimplyConnectedRootDatum x y
-  have hQ : (DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn) =
-      rootPairingBaseChange ℚ (typeASimplyConnectedRootDatum n) hdot := by
-    rw [rationalRootSystem_def]
-    congr
-    exact simplyConnectedRootDatum_A n _
-  rw [hQ]
-  exact (weylGroupBaseChangeEquiv ℚ (typeASimplyConnectedRootDatum n) hdot).symm.trans
-    (typeAWeylGroupEquiv n)
+      Equiv.Perm (Fin (n + 1)) :=
+  typeAWeylGroupEquivOf n _ (reflectionPerm_rationalRootSystem_A hn)
+    (weylGroupToPerm_injective ((DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn)))
+
+/-- The coordinate permutation attached to a rational Weyl-group element induces its permutation
+of the type-`A` roots by the diagonal action. -/
+theorem typeARootPermHom_typeARationalWeylGroupEquiv (hn : 1 ≤ n)
+    (w : ((DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn)).weylGroup) :
+    typeARootPermHom n (typeARationalWeylGroupEquiv n hn w) =
+      ((DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn)).weylGroupToPerm w :=
+  typeARootPermHom_typeAWeylGroupEquivOf n _ _ _ w
+
+/-- Under the rational type-`A` Weyl-group equivalence, reflection in the root `e_a - e_b` is the
+transposition of the two coordinate indices. -/
+@[simp]
+theorem typeARationalWeylGroupEquiv_ofIdx_typeAIndexEquiv (hn : 1 ≤ n) (p : TypeAIndex n) :
+    typeARationalWeylGroupEquiv n hn
+        (weylGroup.ofIdx ((DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn))
+          (typeAIndexEquiv n p)) =
+      Equiv.swap p.val.1 p.val.2 :=
+  typeAWeylGroupEquivOf_ofIdx_typeAIndexEquiv n _ _ _ p
+
+/-- The `i`-th simple reflection of the rational root system of type `Aₙ` is the adjacent
+transposition `(i, i + 1)`. -/
+@[simp]
+theorem typeARationalWeylGroupEquiv_ofIdx_typeASimpleIndex (hn : 1 ≤ n) (i : Fin n) :
+    typeARationalWeylGroupEquiv n hn
+        (weylGroup.ofIdx ((DynkinType.A n).rationalRootSystem (DynkinType.valid_A.mpr hn))
+          (typeASimpleIndex n i)) =
+      Equiv.swap i.castSucc i.succ :=
+  typeAWeylGroupEquivOf_ofIdx_typeASimpleIndex n _ _ _ i
 
 end
 
@@ -300,7 +258,7 @@ variable {ι M N : Type*} [AddCommGroup M] [Module ℚ M] [AddCommGroup N] [Modu
 The equivalence is noncanonical for an arbitrary root system because `HasCartanType` records only
 the existence of a labelling of the simple roots. It is obtained by transporting the explicit
 coordinate equivalence for the pinned rational root system through Cartan-type rigidity. -/
-theorem weylGroup_equiv_perm_of_typeA {n : ℕ} (hn : 1 ≤ n)
+theorem _root_.RootPairing.weylGroup_equiv_perm_of_typeA {n : ℕ} (hn : 1 ≤ n)
     (h : HasCartanType P b (.A n)) :
     Nonempty (P.weylGroup ≃* Equiv.Perm (Fin (n + 1))) := by
   let ht : (DynkinType.A n).Valid := DynkinType.valid_A.mpr hn
@@ -310,13 +268,12 @@ theorem weylGroup_equiv_perm_of_typeA {n : ℕ} (hn : 1 ≤ n)
   exact ⟨e.trans (DynkinType.typeARationalWeylGroupEquiv n hn)⟩
 
 /-- The Weyl group of a root system of type `Aₙ` has order `(n + 1)!`. -/
-theorem card_weylGroup_of_hasCartanType_A {n : ℕ} (hn : 1 ≤ n)
+theorem _root_.RootPairing.card_weylGroup_of_hasCartanType_A {n : ℕ} (hn : 1 ≤ n)
     (h : HasCartanType P b (.A n)) :
     Nat.card P.weylGroup = Nat.factorial (n + 1) := by
-  obtain ⟨e⟩ := weylGroup_equiv_perm_of_typeA P b hn h
+  obtain ⟨e⟩ := P.weylGroup_equiv_perm_of_typeA b hn h
   rw [Nat.card_congr e.toEquiv, Nat.card_perm, Nat.card_fin]
 
 end
-
 
 end TauCeti

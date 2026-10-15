@@ -61,16 +61,13 @@ theorem diagonalPermMulEquivWeylGroup_indexEquiv_apply
     (e : Equiv.Perm (Fin (r + 1))) (p : CoordinateRootIndex (Fin (r + 1))) :
     (diagonalPermMulEquivWeylGroup.{u} r e).1.indexEquiv p =
       coordinatePermRootIndex e p := by
-  let w := (DynkinType.typeAWeylGroupEquiv r).symm e
-  have hw := DynkinType.typeARootPermHom_typeAWeylGroupEquiv r w
-  have ht := (diagonalRootDatumEquiv.{u} r).weylGroupToPerm_weylGroupEquiv w
-  have hp := congrArg (fun f : Equiv.Perm (CoordinateRootIndex (Fin (r + 1))) ↦ f p) ht
-  simp only [w, MulEquiv.apply_symm_apply] at hw hp
-  rw [← hw] at hp
-  change ((diagonalRootDatum.{u} r).weylGroupToPerm
-    ((diagonalRootDatumEquiv.{u} r).weylGroupEquiv w)) p = _
-  dsimp only [w]
-  rw [hp]
+  have h := congrArg (fun f : Equiv.Perm (CoordinateRootIndex (Fin (r + 1))) ↦ f p)
+    ((diagonalRootDatumEquiv.{u} r).weylGroupToPerm_weylGroupEquiv
+      ((DynkinType.typeAWeylGroupEquiv r).symm e))
+  rw [← DynkinType.typeARootPermHom_typeAWeylGroupEquiv, MulEquiv.apply_symm_apply] at h
+  simp only [RootPairing.weylGroupToPerm, MonoidHom.domRestrict_apply,
+    RootPairing.Equiv.indexHom_apply] at h
+  rw [diagonalPermMulEquivWeylGroup, MulEquiv.trans_apply, h]
   apply Subtype.ext
   simpa only [diagonalRootDatumEquiv_indexEquiv, Equiv.permCongr_apply,
     Equiv.symm_apply_apply, Equiv.symm_symm, coordinatePermRootIndex_coe] using
@@ -81,15 +78,10 @@ theorem diagonalPermMulEquivWeylGroup_indexEquiv_apply
 theorem diagonalPermMulEquivWeylGroup_swap (i j : Fin (r + 1)) (hij : i ≠ j) :
     diagonalPermMulEquivWeylGroup.{u} r (Equiv.swap i j) =
       RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r) ⟨(i, j), hij⟩ := by
-  let p : DynkinType.TypeAIndex r := ⟨(i, j), hij⟩
-  rw [diagonalPermMulEquivWeylGroup]
-  change (diagonalRootDatumEquiv.{u} r).weylGroupEquiv
-      ((DynkinType.typeAWeylGroupEquiv r).symm (Equiv.swap p.val.1 p.val.2)) = _
-  rw [← DynkinType.typeAWeylGroupEquiv_ofIdx_typeAIndexEquiv,
-    MulEquiv.symm_apply_apply, RootPairing.Equiv.weylGroupEquiv_ofIdx]
-  apply congrArg (RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r))
-  rw [diagonalRootDatumEquiv_indexEquiv]
-  exact (DynkinType.typeAIndexEquiv r).symm_apply_apply p
+  rw [diagonalPermMulEquivWeylGroup, MulEquiv.trans_apply,
+    ← DynkinType.typeAWeylGroupEquiv_ofIdx_typeAIndexEquiv r ⟨(i, j), hij⟩,
+    MulEquiv.symm_apply_apply, RootPairing.Equiv.weylGroupEquiv_ofIdx,
+    diagonalRootDatumEquiv_indexEquiv, Equiv.symm_apply_apply]
 
 /-- A root reflection corresponds to the transposition of its two coordinate indices. -/
 @[simp]
