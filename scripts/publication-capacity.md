@@ -33,9 +33,10 @@ exact sandbox SHA (or the immutable dispatch SHA after early sandbox failure).
 The publisher has a 15-minute execution limit. Once the finalizer starts its
 observer, missing/unassigned/unobservable publication has a five-minute observation
 budget; acquired publication has a twenty-minute observation budget. Deadline
-checks occur between polls, so either budget can incur bounded polling/API
-overhead (up to a thirty-second poll sleep plus a fifteen-second request). HTTP
-requests and status retries are separately bounded; status posting retries for up to three
+checks use elapsed time sampled before each API request, so wall time includes
+polling/API overhead: polls sleep thirty seconds and requests use fifteen-second
+socket timeouts. HTTP requests and status retries are separately bounded; status
+posting retries for up to three
 minutes, honoring `Retry-After` within that budget. The finalizer's thirty-minute
 execution limit leaves room for bounded HTTP
 overruns, authority retries and terminal-status recovery after the publication
