@@ -261,6 +261,20 @@ def appendToRow (a : α) : ℕ → List (List α) → List (List α)
   | 0, row :: rows => (row ++ [a]) :: rows
   | k + 1, row :: rows => row :: appendToRow a k rows
 
+/-- Appending to a row of the empty list of rows starts a new row. -/
+@[simp]
+theorem appendToRow_nil (a : α) (k : ℕ) : appendToRow a k [] = [[a]] := by cases k <;> rfl
+
+/-- Appending to row `0` appends the letter to the first row. -/
+@[simp]
+theorem appendToRow_zero_cons (a : α) (row : List α) (rows : List (List α)) :
+    appendToRow a 0 (row :: rows) = (row ++ [a]) :: rows := (rfl)
+
+/-- Appending to row `k + 1` appends to row `k` of the remaining rows. -/
+@[simp]
+theorem appendToRow_succ_cons (a : α) (k : ℕ) (row : List α) (rows : List (List α)) :
+    appendToRow a (k + 1) (row :: rows) = row :: appendToRow a k rows := (rfl)
+
 /-- **The rows of `TauCeti.appendToRow a k`**: row `k` gains the letter `a` at its end, and every
 other row is unchanged. Rows beyond the last one are read as empty. -/
 theorem getD_appendToRow (a : α) {k : ℕ} {rows : List (List α)} (hk : k ≤ rows.length) (i : ℕ) :
@@ -295,7 +309,7 @@ theorem length_appendToRow (a : α) {k : ℕ} {rows : List (List α)} (hk : k �
 theorem flatten_appendToRow_perm (a : α) (k : ℕ) (rows : List (List α)) :
     (appendToRow a k rows).flatten.Perm (rows.flatten ++ [a]) := by
   induction rows generalizing k with
-  | nil => simp [appendToRow]
+  | nil => simp
   | cons row rows ih =>
     cases k with
     | zero =>
@@ -346,17 +360,35 @@ def dropLastOfRow : ℕ → List (List α) → List (List α)
   | 0, row :: rows => if row.dropLast = [] then rows else row.dropLast :: rows
   | k + 1, row :: rows => row :: dropLastOfRow k rows
 
+/-- Removing a letter from the empty list of rows does nothing. -/
+@[simp]
+theorem dropLastOfRow_nil (k : ℕ) : dropLastOfRow k ([] : List (List α)) = [] := by
+  cases k <;> rfl
+
+/-- Removing the last letter of row `0` drops the last letter of the first row, deleting that row
+if it becomes empty. -/
+@[simp]
+theorem dropLastOfRow_zero_cons (row : List α) (rows : List (List α)) :
+    dropLastOfRow 0 (row :: rows) = if row.dropLast = [] then rows else row.dropLast :: rows :=
+  (rfl)
+
+/-- Removing the last letter of row `k + 1` removes the last letter of row `k` of the remaining
+rows. -/
+@[simp]
+theorem dropLastOfRow_succ_cons (k : ℕ) (row : List α) (rows : List (List α)) :
+    dropLastOfRow (k + 1) (row :: rows) = row :: dropLastOfRow k rows := (rfl)
+
 /-- Removing the letter just appended to a row of a list of nonempty rows recovers the rows. -/
 theorem dropLastOfRow_appendToRow (a : α) {k : ℕ} {rows : List (List α)}
     (hne : [] ∉ rows) (hk : k ≤ rows.length) : dropLastOfRow k (appendToRow a k rows) = rows := by
   induction rows generalizing k with
   | nil =>
     obtain rfl : k = 0 := by simpa using hk
-    simp [appendToRow, dropLastOfRow]
+    simp [appendToRow]
   | cons row rows ih =>
     have hrow : row ≠ [] := fun h => hne (h ▸ mem_cons_self)
     cases k with
-    | zero => simp [appendToRow, dropLastOfRow, hrow]
+    | zero => simp [appendToRow, hrow]
     | succ k =>
       simpa [appendToRow, dropLastOfRow] using
         ih (fun h => hne (mem_cons_of_mem _ h)) (by simpa using hk)
@@ -397,8 +429,8 @@ theorem appendToRow_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)
       by_cases hd : ys = []
       · subst hd
         obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) (by simp)
-        simp [appendToRow, dropLastOfRow]
-      · simp [appendToRow, dropLastOfRow, hd]
+        simp [dropLastOfRow]
+      · simp [dropLastOfRow, hd]
     | succ k =>
       simpa [appendToRow, dropLastOfRow] using ih h.tail (by simpa using hk) (by simpa using ha)
 
