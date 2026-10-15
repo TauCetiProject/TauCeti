@@ -17,6 +17,10 @@ The resulting continuous root functions form one global delineation. No finitene
 on the family or continuity assumption on its coefficients is needed: local delineations
 already provide finite root lists and local sign-invariance.
 
+The gluing of the ordered root lists, `TauCeti.exists_roots_of_locally`, uses only local
+continuous increasing enumerations of an intrinsic root set, so it also glues the root
+functions of local Lazard delineations.
+
 This gives the passage from local analytic root constructions to a global stack. Analyticity
 of its root functions can then be obtained from the analytic root-section API.
 
@@ -58,59 +62,60 @@ private theorem invariants_of_local_delineations [PreconnectedSpace X] [Nonempty
     · exact .inr fun x hx ↦ h ((hz.apply_eq_of_preconnectedSpace x a₀).mp hx)
   exact ⟨hdeg, hnull⟩
 
-private theorem roots_of_local_delineations [PreconnectedSpace X] [Nonempty X]
-    {U : X → Set X} (hU : ∀ x, IsOpen (U x)) (hxU : ∀ x, x ∈ U x)
-    (D : ∀ x, Delineation fun k (y : U x) ↦ P k y) :
-    ∃ (n : ℕ) (hc : ∀ x, (D x).count = n) (r : Fin n → X → ℝ) (m : ι → Fin n → ℕ),
+/-- Local continuous strictly increasing enumerations `θ a` of an intrinsic set `Z y ⊆ ℝ` on
+open neighborhoods `U a` glue over a nonempty preconnected base. The local counts are globally
+constant, the glued root functions are continuous, strictly increasing and enumerate `Z`, and
+they agree with every local enumeration. If every local enumeration has constant root
+multiplicities in a family `P`, so do the glued roots. -/
+theorem exists_roots_of_locally [PreconnectedSpace X] [Nonempty X] {Z : X → Set ℝ}
+    {U : X → Set X} (hU : ∀ x, IsOpen (U x)) (hxU : ∀ x, x ∈ U x) {c : X → ℕ}
+    {θ : ∀ a, Fin (c a) → U a → ℝ} {μ : ∀ a, ι → Fin (c a) → ℕ}
+    (hθc : ∀ a i, Continuous (θ a i)) (hθmono : ∀ a (y : U a), StrictMono fun i ↦ θ a i y)
+    (hθrange : ∀ a (y : U a), range (fun i ↦ θ a i y) = Z y)
+    (hθmult : ∀ a k i (y : U a), (P k y).rootMultiplicity (θ a i y) = μ a k i) :
+    ∃ (n : ℕ) (hc : ∀ x, c x = n) (r : Fin n → X → ℝ) (m : ι → Fin n → ℕ),
       (∀ i, Continuous (r i)) ∧ (∀ x, StrictMono fun i ↦ r i x) ∧
-      (∀ x, range (fun i ↦ r i x) = {t | ∃ k, P k x ≠ 0 ∧ (P k x).IsRoot t}) ∧
+      (∀ x, range (fun i ↦ r i x) = Z x) ∧
       (∀ k i x, (P k x).rootMultiplicity (r i x) = m k i) ∧
-      ∀ a (y : U a) i, r i y = (D a).root (Fin.cast (hc a).symm i) y := by
+      ∀ a (y : U a) i, r i y = θ a (Fin.cast (hc a).symm i) y := by
   classical
   let a₀ : X := Classical.arbitrary X
-  let Z (x : X) : Set ℝ := {t | ∃ k, P k x ≠ 0 ∧ (P k x).IsRoot t}
-  let c (x : X) := Nat.card (Z x)
-  have hcard (a : X) (y : U a) : c y = (D a).count := by
-    dsimp only [c, Z]
-    rw [← (D a).range_root y,
-      Nat.card_range_of_injective ((D a).strictMono_root y).injective]
+  have hcard (a : X) (y : U a) : Nat.card (Z y) = c a := by
+    rw [← hθrange a y, Nat.card_range_of_injective (hθmono a y).injective]
     simp
   -- The number of roots is locally constant, hence globally constant.
-  have hclocal : IsLocallyConstant c := by
+  have hclocal : IsLocallyConstant fun x ↦ Nat.card (Z x) := by
     refine (IsLocallyConstant.iff_eventually_eq _).2 fun a ↦ ?_
     filter_upwards [(hU a).mem_nhds (hxU a)] with y hy
     exact (hcard a ⟨y, hy⟩).trans (hcard a ⟨a, hxU a⟩).symm
-  let n := c a₀
-  have hc (a : X) : (D a).count = n :=
+  let n := Nat.card (Z a₀)
+  have hc (a : X) : c a = n :=
     (hcard a ⟨a, hxU a⟩).symm.trans (hclocal.apply_eq_of_preconnectedSpace a a₀)
-  let r (i : Fin n) (x : X) :=
-    (D x).root (Fin.cast (hc x).symm i) ⟨x, hxU x⟩
+  let r (i : Fin n) (x : X) := θ x (Fin.cast (hc x).symm i) ⟨x, hxU x⟩
   have hrmono (x : X) : StrictMono fun i ↦ r i x :=
-    ((D x).strictMono_root ⟨x, hxU x⟩).comp (Fin.cast_strictMono (hc x).symm)
+    (hθmono x ⟨x, hxU x⟩).comp (Fin.cast_strictMono (hc x).symm)
   have hrrange (x : X) : range (fun i ↦ r i x) = Z x := by
     exact ((Fin.castOrderIso (hc x).symm).surjective.range_comp _).trans
-      ((D x).range_root ⟨x, hxU x⟩)
+      (hθrange x ⟨x, hxU x⟩)
   -- Increasing complete lists agree on overlaps. This identifies the pointwise
   -- choice with each local continuous root function, including its multiplicity.
-  have hrU (a : X) (y : U a) (i : Fin n) :
-      r i y = (D a).root (Fin.cast (hc a).symm i) y := by
-    have hmono := ((D a).strictMono_root y).comp (Fin.cast_strictMono (hc a).symm)
+  have hrU (a : X) (y : U a) (i : Fin n) : r i y = θ a (Fin.cast (hc a).symm i) y := by
+    have hmono := (hθmono a y).comp (Fin.cast_strictMono (hc a).symm)
     apply congrFun (((hrmono y).range_inj_of_wellFoundedLT hmono).1 ?_) i
     exact (hrrange y).trans (((Fin.castOrderIso (hc a).symm).surjective.range_comp _).trans
-      ((D a).range_root y)).symm
+      (hθrange a y)).symm
   have hrc (i : Fin n) : Continuous (r i) := by
     refine continuous_iff_continuousAt.2 fun a ↦ ?_
     have hcont : ContinuousOn (r i) (U a) := by
       rw [continuousOn_iff_continuous_domRestrict]
-      exact ((D a).continuous_root _).congr fun y ↦ (hrU a y i).symm
+      exact (hθc a _).congr fun y ↦ (hrU a y i).symm
     exact (hU a).continuousOn_iff.mp hcont (hxU a)
   let m (k : ι) (i : Fin n) := (P k a₀).rootMultiplicity (r i a₀)
   have hm (k : ι) (i : Fin n) (x : X) : (P k x).rootMultiplicity (r i x) = m k i := by
     have hmult : IsLocallyConstant fun y ↦ (P k y).rootMultiplicity (r i y) := by
       refine (IsLocallyConstant.iff_eventually_eq _).2 fun a ↦ ?_
       filter_upwards [(hU a).mem_nhds (hxU a)] with y hy
-      rw [hrU a ⟨y, hy⟩ i, hrU a ⟨a, hxU a⟩ i,
-        (D a).rootMultiplicity_root, (D a).rootMultiplicity_root]
+      rw [hrU a ⟨y, hy⟩ i, hrU a ⟨a, hxU a⟩ i, hθmult, hθmult]
     exact hmult.apply_eq_of_preconnectedSpace x a₀
   exact ⟨n, hc, r, m, hrc, hrmono, hrrange, hm, hrU⟩
 
@@ -171,7 +176,10 @@ theorem nonempty_delineation_of_locally [PreconnectedSpace X]
   let D (x : X) := (hD x).some
   obtain ⟨hdeg, hnull⟩ := invariants_of_local_delineations hU hxU D
   obtain ⟨n, hc, r, m, hrc, hrmono, hrrange, hm, hrU⟩ :=
-    roots_of_local_delineations hU hxU D
+    exists_roots_of_locally (Z := fun x ↦ {t | ∃ k, P k x ≠ 0 ∧ (P k x).IsRoot t}) hU hxU
+      (fun a ↦ (D a).continuous_root)
+      (fun a ↦ (D a).strictMono_root) (fun a ↦ (D a).range_root)
+      (fun a ↦ (D a).rootMultiplicity_root)
   obtain ⟨hsection, hsector⟩ := signs_of_local_delineations hU hxU D hc hrc hrmono hrU
   refine ⟨{
     count := n
