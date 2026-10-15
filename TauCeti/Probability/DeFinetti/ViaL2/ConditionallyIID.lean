@@ -9,7 +9,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 import TauCeti.Probability.DeFinetti.ViaL2.BlockFactorization
 import TauCeti.Probability.DeFinetti.ConditionalCommonEnding
-import TauCeti.Probability.DeFinetti.DirectingMeasure.BlockCylinder
+import TauCeti.Probability.Process.Tail.ConditionalLaw.BlockCylinder
 
 /-!
 # Conditional i.i.d.-ness of a contractable process, via `L²`
@@ -21,29 +21,15 @@ A contractable process on a standard Borel state space is conditionally i.i.d. w
 ConditionallyIIDWith μ X (tailConditionalProbabilityMeasure μ X).
 ```
 
-This is where the `L²` route meets the common ending. `ViaL2/BlockFactorization.lean` supplies the
-conditional factorization of an indicator block given `tailProcess X`, and
-`conditionallyIIDWith_of_measure_inter_blockCylinder_eq_setLIntegral` asks for that identity
-integrated over a directing-measure event. The integration itself is not done here: it is
-`measure_inter_blockCylinder_eq_setLIntegral_of_condExp`, which takes the factorization as a
-hypothesis and is shared with the martingale route. This file only supplies the `L²` factorization
-to it, for an arbitrary strictly monotone selection.
+The `L²` block factorization gives the conditional expectation of an indicator block given
+`tailProcess X`, for an arbitrary strictly monotone selection. Testing it on a directing-measure
+event uses `measure_inter_blockCylinder_eq_setLIntegral_of_condExp` from
+`Process/Tail/ConditionalLaw/BlockCylinder.lean`, which applies to every tail-measurable event.
+The resulting measure identity supplies the joint-rectangle criterion
+`conditionallyIIDWith_of_measure_inter_blockCylinder_eq_setLIntegral`.
 
 The witness is preserved: the conclusion names `tailConditionalProbabilityMeasure μ X` itself rather
 than asserting an unnamed existential.
-
-Like the factorization it consumes, this file reaches conditional i.i.d.-ness without a reverse
-martingale: neither `DeFinetti.BlockFactorization` nor `TailFactorization`, `JointRectangle`,
-`DeFinetti.Theorem` or anything under `Probability.Martingale` is in its transitive imports. The
-shared integration lemma is neutral for the same reason — it proves no factorization, only
-consumes one.
-
-## References
-
-* The integration step is shared, not route-specific:
-  `measure_inter_blockCylinder_eq_setLIntegral_of_condExp` in
-  `DeFinetti/DirectingMeasure/BlockCylinder.lean` serves both this route and the prefix selection
-  in `DeFinetti/JointRectangle.lean`.
 -/
 
 public section
@@ -82,7 +68,7 @@ theorem conditionallyIIDWith_directingProbabilityMeasure [StandardBorelSpace α]
   simpa only [tailConditionalProbabilityMeasure_toMeasure] using
     measure_inter_blockCylinder_eq_setLIntegral_of_condExp hX_meas hB
       (hX.condExp_blockIndicatorProd_strictMono_tailProcess_ae_eq_prod_directingMeasure
-        hX_meas hk hB) hS
+        hX_meas hk hB) (measurable_tailProcess_tailConditionalProbabilityMeasure hS)
 
 end Contractable
 

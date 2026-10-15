@@ -294,7 +294,7 @@ theorem isPrimitiveIdempotent_one_iff [Nontrivial A] :
 complement, and in either case it is `1` or `0`. -/
 theorem isPrimitiveIdempotent_one [IsLocalRing A] : IsPrimitiveIdempotent (1 : A) :=
   isPrimitiveIdempotent_one_iff.2 fun _ hf ↦
-    IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem hf
+    IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hf
 
 end Ring
 

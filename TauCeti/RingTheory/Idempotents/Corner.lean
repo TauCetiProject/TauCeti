@@ -30,6 +30,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   `R`-algebra is a unital `R`-algebra.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
   agrees with the corner submodule `TauCeti.cornerSubmodule R e e`.
+* `IsIdempotentElem.cornerMap`: a homomorphism of nonunital semirings restricts to a unital
+  homomorphism of corners; a surjective homomorphism remains surjective on corners.
 
 ## Main results
 
@@ -189,6 +191,37 @@ theorem val_algebraMap (r : R) : (algebraMap R he.Corner r).1 = r • e := (rfl)
 end Algebra
 
 end Corner
+
+section Map
+
+variable {A B : Type*} [NonUnitalSemiring A] [NonUnitalSemiring B]
+  {e : A} (he : IsIdempotentElem e)
+
+/-- A nonunital homomorphism restricts to a unital homomorphism between idempotent corners.
+The unit in the source is `e`, and the unit in the target is its image. -/
+def cornerMap (f : A →ₙ+* B) : he.Corner →+* (he.map f).Corner where
+  toFun x := ⟨f x.1, (Subsemigroup.mem_corner_iff (he.map f)).mpr
+    ⟨by rw [← map_mul, he.mul_corner_val], by rw [← map_mul, he.corner_val_mul]⟩⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' x y := Subtype.ext (map_mul f x.1 y.1)
+  map_zero' := Subtype.ext (by simp)
+  map_add' x y := Subtype.ext (map_add f x.1 y.1)
+
+@[simp]
+theorem val_cornerMap (f : A →ₙ+* B) (x : he.Corner) : (he.cornerMap f x).1 = f x.1 :=
+  (rfl)
+
+/-- A surjective homomorphism is surjective on every idempotent corner. -/
+theorem cornerMap_surjective (f : A →ₙ+* B) (hf : Function.Surjective f) :
+    Function.Surjective (he.cornerMap f) := by
+  intro y
+  obtain ⟨x, hx⟩ := hf y.1
+  refine ⟨⟨e * x * e, x, rfl⟩, ?_⟩
+  apply Subtype.ext
+  exact (map_mul f (e * x) e).trans (by
+    rw [map_mul, hx, (he.map f).mul_corner_val, (he.map f).corner_val_mul])
+
+end Map
 
 variable {A : Type u} [NonUnitalSemiring A] {e : A} (he : IsIdempotentElem e)
   {R : Type v} [Semiring R] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]

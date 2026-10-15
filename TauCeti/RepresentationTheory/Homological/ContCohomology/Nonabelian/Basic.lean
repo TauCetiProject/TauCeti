@@ -117,6 +117,7 @@ theorem apply_one (f : Cocycle G A) : f 1 = 1 := by
   simpa using f.apply_mul 1 1
 
 /-- The value of a cocycle at an inverse. -/
+@[simp]
 theorem apply_inv (f : Cocycle G A) (g : G) : f g⁻¹ = g⁻¹ • (f g)⁻¹ := by
   have h := f.apply_mul g⁻¹ g
   rw [inv_mul_cancel, apply_one, eq_comm, mul_eq_one_iff_eq_inv] at h
@@ -263,6 +264,23 @@ theorem Cocycle.map_one (ψ : G' →ₜ* G) (φ : A →ₜ* A')
   ext
   simp
 
+/-- The identity pair preserves every cocycle. -/
+@[simp]
+theorem Cocycle.map_id (f : Cocycle G A) :
+    f.map (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id A) (fun _ _ ↦ rfl) = f :=
+  Cocycle.ext fun _ ↦ rfl
+
+/-- Mapping a cocycle twice agrees with mapping along the composite compatible pair. -/
+theorem Cocycle.map_map {G'' A'' : Type*} [Group G''] [TopologicalSpace G''] [Group A'']
+    [TopologicalSpace A''] [MulDistribMulAction G'' A''] (f : Cocycle G A)
+    (ψ : G' →ₜ* G) (φ : A →ₜ* A') (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a)
+    (ψ' : G'' →ₜ* G') (φ' : A' →ₜ* A'')
+    (h' : ∀ (g : G'') (a : A'), φ' (ψ' g • a) = g • φ' a) :
+    (f.map ψ φ h).map ψ' φ' h' =
+      f.map (ψ.comp ψ') (φ'.comp φ) (fun g a ↦ by simp [h, h']) := by
+  ext
+  simp
+
 /-- The map `H¹(G, A) → H¹(G', A')` induced by a compatible pair `(ψ, φ)`. -/
 def map (ψ : G' →ₜ* G) (φ : A →ₜ* A') (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) :
     NonabelianH1 G A → NonabelianH1 G' A' :=
@@ -286,8 +304,8 @@ theorem map_id :
     map (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id A) (fun _ _ ↦ rfl) =
       (id : NonabelianH1 G A → NonabelianH1 G A) := by
   funext c
-  induction c using induction_on
-  rfl
+  induction c using induction_on with | mk f =>
+  exact (map_mk _ _ _ f).trans (congrArg mk (Cocycle.map_id f))
 
 /-- The maps induced by compatible pairs compose. -/
 theorem map_map {G'' A'' : Type*} [Group G''] [TopologicalSpace G''] [Group A'']
@@ -297,28 +315,23 @@ theorem map_map {G'' A'' : Type*} [Group G''] [TopologicalSpace G''] [Group A'']
     map ψ' φ' h' (map ψ φ h c) =
       map (ψ.comp ψ') (φ'.comp φ) (fun g a ↦ by simp [h, h']) c := by
   induction c using induction_on
-  rfl
+  simpa only [map_mk] using congrArg mk (Cocycle.map_map _ ψ φ h ψ' φ' h')
 
 end Map
 
 section Res
 
-/-- The inclusion of a subgroup and the identity of `A` form a compatible pair. -/
-theorem id_subgroupSubtype_smul (S : Subgroup G) (s : S) (a : A) :
-    ContinuousMonoidHom.id A (ContinuousMonoidHom.subgroupSubtype S s • a) =
-      s • ContinuousMonoidHom.id A a :=
-  (rfl)
-
 /-- **Restriction** `H¹(G, A) → H¹(S, A)` to a subgroup `S`, carrying the subspace topology: the
 map induced by the inclusion of `S` and the identity of `A`. -/
 def res (S : Subgroup G) : NonabelianH1 G A → NonabelianH1 S A :=
-  map (ContinuousMonoidHom.subgroupSubtype S) (ContinuousMonoidHom.id A) (id_subgroupSubtype_smul S)
+  map (ContinuousMonoidHom.subgroupSubtype S) (ContinuousMonoidHom.id A)
+    (fun s a ↦ by simp [Subgroup.smul_def])
 
 /-- Restriction restricts a representing cocycle. -/
 theorem res_mk (S : Subgroup G) (f : Cocycle G A) :
     res S (mk f) =
       mk (f.map (ContinuousMonoidHom.subgroupSubtype S) (ContinuousMonoidHom.id A)
-        (id_subgroupSubtype_smul S)) :=
+        (fun s a ↦ by simp [Subgroup.smul_def])) :=
   map_mk _ _ _ f
 
 /-- Restriction preserves the base point. -/

@@ -91,7 +91,7 @@ private theorem exists_pos_zmultiples_eq_cuspPeriods [DiscreteTopology Γ] {c : 
     rw [mem_cuspPeriods, ← hpx]
     simp [mul_assoc]
   have := discreteTopology_cuspPeriods (Γ := Γ) σ
-  have := AddSubgroup.discrete_iff_addCyclic.mpr this
+  have := AddSubgroup.isAddCyclic_iff_discreteTopology.mpr this
   have : Nontrivial (cuspPeriods Γ σ) := ⟨⟨⟨x, hxP⟩, 0, fun h ↦ hx (congrArg Subtype.val h)⟩⟩
   obtain ⟨a, ha, haP⟩ := LinearOrderedAddCommGroup.Subgroup.exists_neg_generator
     (cuspPeriods Γ σ)
