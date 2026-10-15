@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.CochainComplex.DirectSum
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Discrete
-public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 
 /-!
 # The graded module of the coinduced resolution
@@ -218,29 +218,6 @@ section Maps
 
 variable {X} {Y : TopRep.{max v w} R G}
 
-private theorem resolutionMap_d_apply (f : X ⟶ Y) (n : ℕ)
-    (x : (resolutionX X n).V) :
-    (d Y n).hom
-        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
-      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
-        ((d X n).hom x) := by
-  have h := congrArg (fun g ↦ g.hom.toContinuousLinearMap x)
-    (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f n)
-  simpa only [hom_comp, hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
-    ContinuousLinearMap.comp_apply, resFunctor_map_hom,
-    ContIntertwiningMap.toContinuousLinearMap_apply, ContIntertwiningMap.restrict_apply] using h
-
-private theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
-    (x : (resolutionX X n).V) :
-    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom
-        ((resolutionX X n).ρ g x) =
-      (resolutionX Y n).ρ g
-        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) := by
-  have h := hom_comm_apply
-    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n) g x
-  simpa only [res, ContRepresentation.restrict_apply_apply,
-    MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq] using h
-
 private def resolutionModuleMap (f : X ⟶ Y) :
     resolutionModuleComplex X ⟶ resolutionModuleComplex Y :=
   CochainComplex.ofHom (fun n ↦
@@ -257,7 +234,7 @@ private def resolutionModuleMap (f : X ⟶ Y) :
       (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1 + 1)).hom
         (((resolutionModuleComplex X).d n (n + 1)).hom x)
     erw [resolutionModuleComplex_d_apply, resolutionModuleComplex_d_apply]
-    exact resolutionMap_d_apply f (n + 1) x
+    exact TauCeti.ContinuousCohomology.resolutionMap_d_apply f (n + 1) x
 
 private theorem resolutionModuleMap_f_apply (f : X ⟶ Y) (n : ℕ)
     (x : (resolutionModuleComplex X).X n) :
@@ -295,7 +272,7 @@ theorem gradedResolutionMap_augmentation (f : X ⟶ Y) (x : X.V) :
   rw [gradedResolutionAugmentation_apply, gradedResolutionMap_lof,
     gradedResolutionAugmentation_apply]
   apply congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) 0)
-  have h := (resolutionMap_d_apply f 0 x).symm
+  have h := (TauCeti.ContinuousCohomology.resolutionMap_d_apply f 0 x).symm
   erw [_root_.ContinuousCohomology.resolutionMap_zero] at h
   exact h
 
@@ -319,7 +296,7 @@ theorem gradedResolutionMap_equivariant (f : X ⟶ Y) (g : G) (x : X.gradedResol
     rw [gradedResolutionRepresentation_lof, gradedResolutionMap_lof,
       gradedResolutionMap_lof, gradedResolutionRepresentation_lof]
     exact congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) n)
-      (resolutionMap_ρ_apply f (n + 1) g x)
+      (TauCeti.ContinuousCohomology.resolutionMap_ρ_apply f (n + 1) g x)
   exact DFunLike.congr_fun h x
 
 /-- Identity coefficients induce the identity on the total resolution. -/
