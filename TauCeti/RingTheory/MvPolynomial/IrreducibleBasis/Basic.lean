@@ -36,7 +36,6 @@ open MvPolynomial Polynomial
 namespace Finset.IsIrreducibleBasis
 
 variable {R : Type*} [CommRing R] {n : ℕ}
-  [UniqueFactorizationMonoid (MvPolynomial (Fin n) R)]
   [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) R))}
 
