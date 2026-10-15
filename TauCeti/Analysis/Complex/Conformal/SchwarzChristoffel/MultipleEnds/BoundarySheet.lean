@@ -22,9 +22,8 @@ regular boundary value must have a unique parameter. In particular, logarithmic 
 all map to infinity, and other boundary values may have several parameters. Boundary
 avoidance is still necessary and is not inferred from the local edge geometry.
 
-The boundary-sheet argument extends the regular-edge method used in
-`TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SimpleMapping` to sphere-valued
-boundary extensions.
+Local injectivity comes from `exists_injOn_schwarzChristoffelPrimitive_continuation` in
+`TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.RegularEdge`.
 
 ## References
 
@@ -125,11 +124,7 @@ theorem exists_schwarzChristoffelPrimitive_fiber_eq_singleton_of_unique_boundary
       schwarzChristoffelSphereBoundary a e z₀ (x : OnePoint ℝ) → t = (x : OnePoint ℝ)) :
     ∃ τ : ℍ, ((fun z : ℍ => schwarzChristoffelPrimitive a e z₀ z) ⁻¹'
       {schwarzChristoffelPrimitive a e z₀ τ}) = {τ} := by
-  have hxsum : ∑ i with a i = x, e i = 0 := by
-    apply Finset.sum_eq_zero
-    intro i hi
-    by_contra he
-    exact ha i he (by simpa only [(Finset.mem_filter.mp hi).2] using hx)
+  have hxsum := sum_filter_eq_zero_of_mem_Ioo a e ha hx
   have hxint : -1 < ∑ i with a i = x, e i := by rw [hxsum]; norm_num
   obtain ⟨U, hUopen, hxU, G, hGF, hGinj, _, _⟩ :=
     exists_injOn_schwarzChristoffelPrimitive_continuation a e z₀ ha hx
@@ -169,11 +164,7 @@ theorem injOn_schwarzChristoffelPrimitive_of_unique_boundary_value
     (hunique : ∀ t : OnePoint ℝ, schwarzChristoffelSphereBoundary a e z₀ t =
       schwarzChristoffelSphereBoundary a e z₀ (x : OnePoint ℝ) → t = (x : OnePoint ℝ)) :
     InjOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet := by
-  have hxsum : ∑ i with a i = x, e i = 0 := by
-    apply Finset.sum_eq_zero
-    intro i hi
-    by_contra he
-    exact ha i he (by simpa only [(Finset.mem_filter.mp hi).2] using hx)
+  have hxsum := sum_filter_eq_zero_of_mem_Ioo a e ha hx
   have hxB : schwarzChristoffelBoundary a e z₀ x ∈
       schwarzChristoffelFiniteBoundary a e z₀ :=
     (mem_schwarzChristoffelFiniteBoundary a e z₀ _).mpr
@@ -207,17 +198,16 @@ theorem bijOn_schwarzChristoffelPrimitive_connectedComponentIn_of_unique_boundar
   have hFW : F '' upperHalfPlaneSet ⊆ W :=
     hconn.subset_connectedComponentIn (mem_image_of_mem _ z₀.im_pos)
       (subset_compl_iff_disjoint_right.mpr havoid)
-  have hWB : Disjoint (((↑) : ℂ → OnePoint ℂ) '' W)
-      (range (schwarzChristoffelSphereBoundary a e z₀)) := by
-    rw [disjoint_left]
-    rintro _ ⟨w, hw, rfl⟩ hwB
-    have hw' := connectedComponentIn_subset (schwarzChristoffelFiniteBoundary a e z₀)ᶜ
-      (F z₀) hw
-    exact hw' (by rwa [schwarzChristoffelFiniteBoundary_eq_preimage_range a e z₀ hfinite])
-  have himage := image_schwarzChristoffelPrimitive_eq_of_subset_of_neg_one_le_prevertex_sum
-    a e z₀ hfinite isPreconnected_connectedComponentIn hWB hFW
-  exact ⟨himage ▸ mapsTo_image F _,
-    injOn_schwarzChristoffelPrimitive_of_unique_boundary_value a e z₀ hfinite havoid ha hx hunique,
-    himage ▸ surjOn_image F _⟩
+  have hxB : schwarzChristoffelBoundary a e z₀ x ∈
+      schwarzChristoffelFiniteBoundary a e z₀ :=
+    (mem_schwarzChristoffelFiniteBoundary a e z₀ _).mpr
+      (Or.inl ⟨x, by rw [sum_filter_eq_zero_of_mem_Ioo a e ha hx]; norm_num, rfl⟩)
+  obtain ⟨τ, hτ⟩ :=
+    exists_schwarzChristoffelPrimitive_fiber_eq_singleton_of_unique_boundary_value a e z₀
+      hfinite ha hx (fun hw => disjoint_left.mp havoid hw hxB) hunique
+  exact (bijOn_schwarzChristoffelPrimitive_iff_fiber_ncard_eq_one a e z₀ hfinite
+    isPreconnected_connectedComponentIn
+    (disjoint_compl_left.mono_left (connectedComponentIn_subset _ _)) hFW
+    (hFW (mem_image_of_mem _ τ.im_pos))).mpr (by rw [hτ, ncard_singleton])
 
 end TauCeti
