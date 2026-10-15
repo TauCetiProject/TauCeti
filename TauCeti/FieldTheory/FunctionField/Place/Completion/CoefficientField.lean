@@ -23,6 +23,10 @@ uniformizer `t` have coefficients in `k`. At a place of higher degree the coeffi
 `P`-adic expansion `∑ aᵢ tⁱ` of a completed function are taken in the image of this embedding,
 which is what makes them, and the residue `a₋₁`, elements of `F_P`.
 
+Without separability `𝒪̂_P` still has a coefficient field, by Cohen's theorem for complete local
+rings containing a field, but it is only linear over the prime field: there may be no `k`-algebra
+embedding of `F_P` into `𝒪̂_P` at all.
+
 ## Main definitions
 
 * `TauCeti.Place.completionResidueFieldSection`: the coefficient field `F_P →ₐ[k] 𝒪̂_P`.
@@ -37,6 +41,8 @@ which is what makes them, and the residue `a₋₁`, elements of `F_P`.
   `TauCeti.Place.completionEmbedding_sub_completionResidueFieldSection_mem_filtration_one`: every
   integral completed function, in particular every function regular at `P`, agrees with the
   coefficient-field lift of its value at `P` up to a function vanishing at `P`.
+* `TauCeti.Place.exists_completionResidueFieldSection`: at every place, separable residue field or
+  not, `𝒪̂_P` has a coefficient field, in general not `k`-linear.
 
 ## References
 
@@ -52,7 +58,20 @@ namespace TauCeti.Place
 open IsLocalRing
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F)
-  [Algebra.IsSeparable k P.ResidueField]
+
+/-- **The completion at any place has a coefficient field**: a ring embedding of the residue field
+`F_P` into the completed valuation ring `𝒪̂_P` which reduces to the identification of `F_P` with
+the residue field of the completion. No separability of `F_P` over `k` is assumed (Cohen's theorem,
+`TauCeti.exists_residueFieldSection`). When `F_P / k` is separable,
+`TauCeti.Place.completionResidueFieldSection` is a `k`-linear one. Otherwise there may be no
+`k`-linear one (`TauCeti.Place.isEmpty_algHom_residueField_completion`). -/
+theorem exists_completionResidueFieldSection :
+    ∃ s : P.ResidueField →+* P.completionPlace.integers,
+      ∀ a, residue P.completionPlace.integers (s a) = P.residueFieldEquivCompletion a := by
+  obtain ⟨s, hs⟩ := exists_residueFieldSection k P.completionPlace.integers
+  exact ⟨s.comp P.residueFieldEquivCompletion.toRingHom, fun a ↦ hs _⟩
+
+variable [Algebra.IsSeparable k P.ResidueField]
 
 /-- Completion does not change the residue field, so it preserves its separability over the
 constants. -/

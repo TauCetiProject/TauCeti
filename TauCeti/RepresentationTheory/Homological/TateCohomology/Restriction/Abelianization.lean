@@ -115,7 +115,7 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoRes (S : Subgroup G)
         (Abelianization.of : S →* Abelianization S).transfer).toAdditive
         (HNegTwoAddEquivAbelianization x) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes,
-    TauCeti.tensorProduct_rid_rTensor_apply, HNegTwoAddEquivAbelianization_apply,
+    LinearMap.rid_rTensor_apply, HNegTwoAddEquivAbelianization_apply,
     AddMonoidHom.coe_toIntLinearMap]
 
 /-- Under the integral degree-`-2` identification, corestriction along a homomorphism is the
@@ -132,7 +132,7 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoCor {H : Type} [Group H] [Fintype H
             (Rep.res f (Rep.trivial ℤ G ℤ)) y)) := by
   rw [HNegTwoAddEquivAbelianization_apply,
     HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor,
-    TauCeti.tensorProduct_rid_rTensor_apply, AddMonoidHom.coe_toIntLinearMap]
+    LinearMap.rid_rTensor_apply, AddMonoidHom.coe_toIntLinearMap]
 
 /-- **The integral degree-`-2` identification is natural along isomorphisms of groups**: Tate
 cohomology along an isomorphism `e : G ≃* H` of finite groups, with integral coefficients, is the

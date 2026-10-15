@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 
 /-!
 # Complete models of affinoid pre-adic spaces

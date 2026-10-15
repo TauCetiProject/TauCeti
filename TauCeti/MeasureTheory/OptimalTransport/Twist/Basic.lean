@@ -39,7 +39,9 @@ almost-everywhere differentiability hypotheses. The Euclidean quadratic cost sat
 twist condition since `Dₓ c (x, y) = x - y` up to the Riesz identification. Differentiable,
 strictly convex displacement costs `c (x, y) = h (x - y)` also fit when `h` is nonnegative,
 its sections are differentiable at contact partners, and the potential is differentiable
-`μ`-almost everywhere; then `Dₓ c (x, y) = D h (x - y)`.
+`μ`-almost everywhere; then `Dₓ c (x, y) = D h (x - y)`. For strictly convex `h` that need not be
+differentiable, `TauCeti.subsingleton_setOf_mem_contactSet_of_strictConvexOn` replaces `D h` by
+the subgradients of `h`.
 
 The potential `φ` is extended-real valued, as the `c`-concave potentials of
 `TauCeti.cTransformSymm` are. It is differentiated through `EReal.toReal`, and the statements
@@ -56,6 +58,8 @@ of `φ` is a hypothesis, to be supplied by a Rademacher-type theorem for the pot
 
 ## Main statements
 
+* `TauCeti.isLocalMin_sub_toReal_of_mem_contactSet` — at a contact point `(x, y)`, the function
+  `x' ↦ c (x', y) - φ x'` has a local minimum at `x`;
 * `TauCeti.hasFDerivAt_eq_of_mem_contactSet` — the first-order condition `D φ (x) = Dₓ c (x, y)`
   at a contact point, and `TauCeti.fderiv_eq_of_mem_contactSet` its `fderiv` form;
 * `TauCeti.subsingleton_setOf_mem_contactSet` — under the twist condition, a point where the
@@ -88,10 +92,34 @@ open scoped Topology ENNReal
 
 namespace TauCeti
 
+/-! ### The first-order condition at a contact point -/
+
+section Topological
+
+variable {X Y : Type*} [TopologicalSpace X] {c : X × Y → ℝ} {φ : X → EReal} {ψ : Y → EReal}
+  {x : X} {y : Y}
+
+/-- **Contact points minimise the cost minus the potential.** If the dual constraint
+`φ x' + ψ y ≤ c (x', y)` holds for `x'` near `x` and is an equality at `x`, and `φ` does not take
+the value `⊥` near `x`, then `x' ↦ c (x', y) - (φ x').toReal` has a local minimum at `x`. -/
+theorem isLocalMin_sub_toReal_of_mem_contactSet
+    (hfeas : ∀ᶠ x' in 𝓝 x, φ x' + ψ y ≤ (c (x', y) : EReal))
+    (hfin : ∀ᶠ x' in 𝓝 x, φ x' ≠ ⊥) (hxy : (x, y) ∈ contactSet c φ ψ) :
+    IsLocalMin (fun x' ↦ c (x', y) - (φ x').toReal) x := by
+  obtain ⟨a, b, ha, hb, hab⟩ := exists_coe_of_mem_contactSet hxy
+  filter_upwards [hfeas, hfin] with x' hle hbot
+  have htop : φ x' ≠ ⊤ := by
+    rintro h
+    rw [h, hb, EReal.top_add_coe] at hle
+    exact EReal.coe_ne_top _ (top_le_iff.1 hle)
+  rw [hb, ← EReal.coe_toReal htop hbot, ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
+  rw [ha, EReal.toReal_coe]
+  linarith
+
+end Topological
+
 variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {c : E × Y → ℝ} {φ : E → EReal} {ψ : Y → EReal} {x : E} {y : Y}
-
-/-! ### The first-order condition at a contact point -/
 
 /-- **The first-order condition at a contact point.** If the dual constraint
 `φ x' + ψ y ≤ c (x', y)` holds for `x'` near `x` and is an equality at `x`, then the derivative
@@ -101,18 +129,9 @@ theorem hasFDerivAt_eq_of_mem_contactSet {φ' c' : E →L[ℝ] ℝ}
     (hfeas : ∀ᶠ x' in 𝓝 x, φ x' + ψ y ≤ (c (x', y) : EReal))
     (hfin : ∀ᶠ x' in 𝓝 x, φ x' ≠ ⊥) (hxy : (x, y) ∈ contactSet c φ ψ)
     (hφ : HasFDerivAt (fun x' ↦ (φ x').toReal) φ' x)
-    (hc : HasFDerivAt (fun x' ↦ c (x', y)) c' x) : φ' = c' := by
-  obtain ⟨a, b, ha, hb, hab⟩ := exists_coe_of_mem_contactSet hxy
-  have hmin : IsLocalMin (fun x' ↦ c (x', y) - (φ x').toReal) x := by
-    filter_upwards [hfeas, hfin] with x' hle hbot
-    have htop : φ x' ≠ ⊤ := by
-      rintro h
-      rw [h, hb, EReal.top_add_coe] at hle
-      exact EReal.coe_ne_top _ (top_le_iff.1 hle)
-    rw [hb, ← EReal.coe_toReal htop hbot, ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
-    rw [ha, EReal.toReal_coe]
-    linarith
-  exact (sub_eq_zero.1 (hmin.hasFDerivAt_eq_zero (hc.sub hφ))).symm
+    (hc : HasFDerivAt (fun x' ↦ c (x', y)) c' x) : φ' = c' :=
+  (sub_eq_zero.1 ((isLocalMin_sub_toReal_of_mem_contactSet hfeas hfin hxy).hasFDerivAt_eq_zero
+    (hc.sub hφ))).symm
 
 /-- The `fderiv` form of `TauCeti.hasFDerivAt_eq_of_mem_contactSet`: at a contact point, the
 derivative of the potential is the `x`-derivative of the cost. -/
