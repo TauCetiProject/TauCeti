@@ -122,6 +122,7 @@ theorem valuation_completionExtension (x : P.Completion) :
   simp [valuation_algebraMap_restrict k F P', hP]
 
 /-- Completion preserves the ramification scaling of additive orders, including at zero. -/
+@[simp]
 theorem ord_completionExtension (x : P.Completion) :
     P'.completionPlace.ord (P.completionExtension P' hP x) =
       ramificationIdx F P' * P.completionPlace.ord x := by
