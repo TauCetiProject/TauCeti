@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.House
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Siegel's lemma over a number field with rational integer unknowns
@@ -30,6 +31,9 @@ most `2 / 3` in absolute value, because then every conjugate has modulus at most
 
 * `NumberField.mixedEmbedding.abs_stdBasis_repr_le_house`: every `stdBasis` coordinate of the
   mixed embedding of `x` is bounded by the house of `x`.
+* `NumberField.mixedEmbedding.stdBasis_repr_mulVec_intCast`: the `stdBasis` coordinates of the
+  mixed embedding of `a *ᵥ x`, for an integer vector `x`, are `ℤ`-linear combinations of those of
+  the entries of `a`.
 * `NumberField.RingOfIntegers.eq_zero_of_abs_stdBasis_repr_le`: an algebraic integer whose
   `stdBasis` coordinates are all at most `2 / 3` in absolute value is zero.
 * `NumberField.RingOfIntegers.eq_zero_of_abs_re_le_of_abs_im_le`: an algebraic integer whose
@@ -73,6 +77,21 @@ theorem abs_stdBasis_repr_le_house (x : K) (r : index K) :
     fin_cases j
     · exact (Complex.abs_re_le_norm _).trans h
     · exact (Complex.abs_im_le_norm _).trans h
+
+variable {α β : Type*} [Fintype α] [Fintype β]
+
+omit [Fintype α] in
+/-- The `stdBasis` coordinates of the mixed embedding of `a *ᵥ x` are the corresponding `ℤ`-linear
+combinations of the coordinates of the entries of `a`. -/
+theorem stdBasis_repr_mulVec_intCast (a : Matrix α β (𝓞 K)) (x : β → ℤ) (i : α)
+    (r : index K) :
+    (stdBasis K).repr (mixedEmbedding K ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K)) r =
+      ∑ j, (x j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r := by
+  have : ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K) = ∑ j, x j • (a i j : K) := by
+    simp [Matrix.mulVec, dotProduct, zsmul_eq_mul, mul_comm]
+  rw [this, map_sum, map_sum, Finsupp.finsetSum_apply]
+  congr 1 with j
+  rw [map_zsmul, map_zsmul, Finsupp.smul_apply, zsmul_eq_mul]
 
 end mixedEmbedding
 
@@ -122,39 +141,6 @@ theorem eq_zero_of_abs_re_le_of_abs_im_le {x : 𝓞 K}
 end RingOfIntegers
 
 variable {α β : Type*} [Fintype α] [Fintype β]
-
-omit [Fintype α] in
-/-- The `stdBasis` coordinates of the mixed embedding of `a *ᵥ x` are the corresponding `ℤ`-linear
-combinations of the coordinates of the entries of `a`. -/
-private theorem stdBasis_repr_mulVec_intCast (a : Matrix α β (𝓞 K)) (x : β → ℤ) (i : α)
-    (r : index K) :
-    (stdBasis K).repr (mixedEmbedding K ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K)) r =
-      ∑ j, (x j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r := by
-  have : ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K) = ∑ j, x j • (a i j : K) := by
-    simp [Matrix.mulVec, dotProduct, zsmul_eq_mul, mul_comm]
-  rw [this, map_sum, map_sum, Finsupp.finsetSum_apply]
-  congr 1 with j
-  rw [map_zsmul, map_zsmul, Finsupp.smul_apply, zsmul_eq_mul]
-
-/-- The counting estimate of Siegel's lemma: if `C ≥ 1`, `D < n` and `C ^ (D / (n - D)) < B + 1`,
-then the `(B + 1) ^ n` integer points of the box `[0, B]^n` outnumber the `(⌊C B⌋₊ + 1) ^ D`
-cells of a partition of `[0, C B]^D` into cubes of side less than one. -/
-private theorem floor_mul_add_one_pow_lt {C : ℝ} (hC : 1 ≤ C) {D n B : ℕ} (hDn : D < n)
-    (hB : C ^ ((D : ℝ) / (n - D)) < B + 1) :
-    (⌊C * B⌋₊ + 1) ^ D < (B + 1) ^ n := by
-  have hnD : (D : ℝ) < n := by exact_mod_cast hDn
-  rw [← Nat.cast_lt (α := ℝ)]
-  push_cast
-  calc ((⌊C * B⌋₊ : ℝ) + 1) ^ D ≤ (C * (B + 1)) ^ D := by
-        gcongr
-        linarith [Nat.floor_le (by positivity : 0 ≤ C * B)]
-    _ = (C ^ ((D : ℝ) / (n - D))) ^ ((n : ℝ) - D) * (B + 1) ^ D := by
-        rw [mul_pow, ← Real.rpow_mul (by positivity), div_mul_cancel₀ _ (by linarith),
-          Real.rpow_natCast]
-    _ < (B + 1) ^ ((n : ℝ) - D) * (B + 1) ^ D := by gcongr
-    _ = (B + 1) ^ n := by
-        rw [← Real.rpow_natCast _ D, ← Real.rpow_add (by positivity), sub_add_cancel,
-          Real.rpow_natCast]
 
 /-- **Siegel's lemma over a number field, with rational integer unknowns** (Evertse,
 Theorem 3.20). Let `K` be a number field of degree `d` and `a` a matrix over `𝓞 K` with `M` rows
@@ -210,7 +196,7 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
       simp [S, Fintype.card_piFinset, Fintype.card_prod, this, hD_def, mul_comm]
     have hT : #T = (B + 1) ^ n := by simp [T, Pi.card_Icc, n]
     rw [hS, hT]
-    exact floor_mul_add_one_pow_lt hnA hcard (Nat.lt_floor_add_one _)
+    exact Real.floor_mul_add_one_pow_lt hnA hcard (Nat.lt_floor_add_one _)
   obtain ⟨x, hx, y, hy, hne, hxy⟩ := exists_ne_map_eq_of_card_lt_of_maps_to hlt hmaps
   refine ⟨x - y, sub_ne_zero.mpr hne, ?_, fun j ↦ ?_⟩
   · -- Two points in the same cell differ by an integer vector on which every form is `< 2 / 3`.
