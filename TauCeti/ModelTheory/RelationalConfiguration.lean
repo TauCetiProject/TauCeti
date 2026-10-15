@@ -89,6 +89,34 @@ theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
 theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
     a.map (g ∘ f) = (a.map f).map g := (rfl)
 
+/-- The atoms relabelled from `Fin m` are relabelled from `Fin n` for every `n ≥ m`. -/
+private theorem Atom.exists_map_val_of_le {m n : ℕ} (hmn : m ≤ n) {a : Atom L ℕ}
+    (ha : ∃ b : Atom L (Fin m), b.map Fin.val = a) : ∃ b : Atom L (Fin n), b.map Fin.val = a := by
+  obtain ⟨b, rfl⟩ := ha
+  -- `Fin.val ∘ Fin.castLE hmn` is `Fin.val` by definition; no rewrite lemma states it.
+  exact ⟨b.map (Fin.castLE hmn), by rw [← Atom.map_comp]; rfl⟩
+
+/-- Every finite set of atoms over `ℕ` has its vertices below some bound `n`, so its atoms are
+relabelled from atoms of `Fin n`. -/
+theorem Atom.exists_forall_map_val (J : Finset (Atom L ℕ)) :
+    ∃ n, ∀ a ∈ J, ∃ b : Atom L (Fin n), b.map Fin.val = a := by
+  classical
+  induction J using Finset.induction_on with
+  | empty => exact ⟨0, by simp⟩
+  | insert a J _ ih =>
+    obtain ⟨m, hm⟩ := ih
+    -- The single atom `a` has its finitely many vertices below some bound `k`.
+    obtain ⟨k, hk⟩ : ∃ k, ∃ b : Atom L (Fin k), b.map Fin.val = a := by
+      induction a using Atom.induction_atom with
+      | h R x =>
+        obtain ⟨k, hk⟩ := Finset.exists_nat_subset_range (Finset.univ.image x)
+        exact ⟨k, atom R fun i => ⟨x i, Finset.mem_range.1 (hk (Finset.mem_image_of_mem _
+          (Finset.mem_univ i)))⟩, by rw [Atom.map_atom]; rfl⟩
+    refine ⟨max k m, fun b hb => ?_⟩
+    rcases Finset.mem_insert.1 hb with rfl | hb
+    · exact exists_map_val_of_le (le_max_left k m) hk
+    · exact exists_map_val_of_le (le_max_right k m) (hm b hb)
+
 /-! ### Configurations -/
 
 /-- The value of a configuration at the atom `R(x)`. -/

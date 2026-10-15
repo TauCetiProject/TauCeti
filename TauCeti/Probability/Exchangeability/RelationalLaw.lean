@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Logic.Equiv.Fintype
 import Mathlib.MeasureTheory.Constructions.Projective
 import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
+import TauCeti.MeasureTheory.Measure.RelationalConfiguration
 
 /-!
 # Exchangeable relational laws
@@ -41,13 +42,6 @@ windows (`measure_ext_of_map_restrict_val`).
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.measure_ext_of_forall_finset` — a finite measure on
-  configurations is determined by the laws of its values at finite sets of atoms;
-* `TauCeti.RelationalConfiguration.map_restrict_eq_of_forall_finset` — the restriction of a
-  finite measure along a vertex map is determined by the laws of the finite sets of atoms that are
-  relabelled from the source;
-* `TauCeti.RelationalConfiguration.measure_ext_of_map_restrict_val` — a finite measure on
-  configurations over `ℕ` is determined by its windows;
 * `TauCeti.Probability.exchangeableRelationalLawEquivInfinite_law_map_restrict` — the windows of
   the infinite law attached to consistent marginals are those marginals.
 
@@ -56,6 +50,13 @@ windows (`measure_ext_of_map_restrict_val`).
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 7.
 * P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
   (2008), 33--61, Section 5, for the case of graphs.
+* The proof route adapts the graph case
+  `TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Basic`
+  (`exchangeableGraphLawEquivInfinite`), which follows C. Freer, `cameronfreer/graphon` at commit
+  `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0, `Graphon/InfiniteLaw.lean` and
+  `Graphon/InfiniteExchangeability.lean`. Here the Boolean edge coordinates of a graph are replaced
+  by the Boolean atom coordinates of a configuration, and the extension of a window by `false`
+  along `Fin.val` replaces the embedding of a finite graph into `ℕ`.
 -/
 
 public section
@@ -67,115 +68,6 @@ open MeasureTheory
 open _root_.FirstOrder (Language)
 
 namespace TauCeti
-
-/-! ### Measures on configurations -/
-
-namespace RelationalConfiguration
-
-variable {L : Language} {V W : Type*}
-
-/-- Reading off a finite set of atoms is measurable. -/
-private theorem measurable_restrict_eval (J : Finset (Atom L V)) :
-    Measurable fun c : RelationalConfiguration L V => J.restrict c.eval := by
-  fun_prop
-
-/-- **A finite measure on configurations is determined by its finite-dimensional laws**, the laws
-of the values at finite sets of atoms. -/
-theorem measure_ext_of_forall_finset {μ ν : Measure (RelationalConfiguration L V)}
-    [IsFiniteMeasure μ]
-    (h : ∀ J : Finset (Atom L V),
-      μ.map (fun c => J.restrict c.eval) = ν.map (fun c => J.restrict c.eval)) : μ = ν := by
-  have heval : Measurable fun c : RelationalConfiguration L V => c.eval :=
-    measurable_pi_iff.2 measurable_eval
-  -- The laws of the atom values are projective limits of the same family.
-  have hcoord : μ.map (fun c => c.eval) = ν.map (fun c => c.eval) :=
-    IsProjectiveLimit.unique (P := fun J => μ.map fun c => J.restrict c.eval)
-      (fun J => by rw [Measure.map_map (Finset.measurable_restrict J) heval]; rfl)
-      fun J => by rw [Measure.map_map (Finset.measurable_restrict J) heval]; exact (h J).symm
-  have hmk : ∀ ρ : Measure (RelationalConfiguration L V), (ρ.map fun c => c.eval).map mk = ρ :=
-    fun ρ => by
-      have hid : (mk ∘ fun c : RelationalConfiguration L V => c.eval) = id :=
-        funext fun c => ext fun a => eval_mk _ a
-      rw [Measure.map_map measurable_mk heval, hid, Measure.map_id]
-  rw [← hmk μ, hcoord, hmk]
-
-/-- Two finite measures on configurations have the same restriction along a vertex map `f` as soon
-as they give the same law to every finite set of atoms relabelled along `f`. -/
-theorem map_restrict_eq_of_forall_finset {μ ν : Measure (RelationalConfiguration L W)}
-    [IsFiniteMeasure μ] (f : V → W)
-    (h : ∀ J : Finset (Atom L W), (∀ a ∈ J, ∃ b : Atom L V, b.map f = a) →
-      μ.map (fun c => J.restrict c.eval) = ν.map (fun c => J.restrict c.eval)) :
-    μ.map (restrict f) = ν.map (restrict f) := by
-  classical
-  refine measure_ext_of_forall_finset fun J => ?_
-  -- Reading the atoms of `J` after restricting along `f` reads the atoms of `J.image (map f)`.
-  have hread : (fun c : RelationalConfiguration L W => J.restrict (c.restrict f).eval) =
-      (fun x j => x ⟨j.1.map f, Finset.mem_image_of_mem _ j.2⟩) ∘
-        fun c => (J.image (Atom.map f)).restrict c.eval := by
-    funext c
-    ext j
-    simp
-  have hlaw : ∀ ρ : Measure (RelationalConfiguration L W),
-      (ρ.map (restrict f)).map (fun d => J.restrict d.eval) =
-        (ρ.map fun c => (J.image (Atom.map f)).restrict c.eval).map
-          fun x j => x ⟨j.1.map f, Finset.mem_image_of_mem _ j.2⟩ := fun ρ => by
-    rw [Measure.map_map (measurable_restrict_eval J) (measurable_restrict f),
-      Measure.map_map (measurable_of_countable _) (measurable_restrict_eval _)]
-    exact congrArg ρ.map hread
-  refine (hlaw μ).trans ((congrArg (Measure.map _) (h _ fun a ha => ?_)).trans (hlaw ν).symm)
-  obtain ⟨b, -, hb⟩ := Finset.mem_image.1 ha
-  exact ⟨b, hb⟩
-
-/-- The atoms relabelled from `Fin m` are relabelled from `Fin n` for every `n ≥ m`. -/
-private theorem exists_map_val_of_le {m n : ℕ} (hmn : m ≤ n) {a : Atom L ℕ}
-    (ha : ∃ b : Atom L (Fin m), b.map Fin.val = a) : ∃ b : Atom L (Fin n), b.map Fin.val = a := by
-  obtain ⟨b, rfl⟩ := ha
-  -- `Fin.val ∘ Fin.castLE hmn` is `Fin.val` by definition; no rewrite lemma states it.
-  exact ⟨b.map (Fin.castLE hmn), by rw [← Atom.map_comp]; rfl⟩
-
-/-- Every finite set of atoms over `ℕ` has its vertices below some bound `n`, so its atoms are
-relabelled from atoms of `Fin n`. -/
-private theorem exists_forall_map_val (J : Finset (Atom L ℕ)) :
-    ∃ n, ∀ a ∈ J, ∃ b : Atom L (Fin n), b.map Fin.val = a := by
-  classical
-  induction J using Finset.induction_on with
-  | empty => exact ⟨0, by simp⟩
-  | insert a J _ ih =>
-    obtain ⟨m, hm⟩ := ih
-    -- The single atom `a` has its finitely many vertices below some bound `k`.
-    obtain ⟨k, hk⟩ : ∃ k, ∃ b : Atom L (Fin k), b.map Fin.val = a := by
-      induction a using Atom.induction_atom with
-      | h R x =>
-        obtain ⟨k, hk⟩ := Finset.exists_nat_subset_range (Finset.univ.image x)
-        exact ⟨k, atom R fun i => ⟨x i, Finset.mem_range.1 (hk (Finset.mem_image_of_mem _
-          (Finset.mem_univ i)))⟩, by rw [Atom.map_atom]; rfl⟩
-    refine ⟨max k m, fun b hb => ?_⟩
-    rcases Finset.mem_insert.1 hb with rfl | hb
-    · exact exists_map_val_of_le (le_max_left k m) hk
-    · exact exists_map_val_of_le (le_max_right k m) (hm b hb)
-
-/-- **A finite measure on configurations over `ℕ` is determined by its windows**, the
-restrictions along `Fin.val : Fin n → ℕ`: every finite set of atoms lies in some window, where
-the configuration is recovered by extending its restriction. -/
-theorem measure_ext_of_map_restrict_val {μ ν : Measure (RelationalConfiguration L ℕ)}
-    [IsFiniteMeasure μ]
-    (h : ∀ n, μ.map (restrict (Fin.val : Fin n → ℕ)) = ν.map (restrict Fin.val)) : μ = ν := by
-  refine measure_ext_of_forall_finset fun J => ?_
-  obtain ⟨n, hn⟩ := exists_forall_map_val J
-  -- The atoms of `J` are read off the extension of the window below `n`.
-  have hread : (fun c : RelationalConfiguration L ℕ => J.restrict c.eval) =
-      (fun d => J.restrict (d.extend Fin.val).eval) ∘ restrict (Fin.val : Fin n → ℕ) := by
-    funext c
-    ext a
-    obtain ⟨b, hb⟩ := hn a a.2
-    simp [← hb, Fin.val_injective]
-  have hm : Measurable fun d : RelationalConfiguration L (Fin n) =>
-      J.restrict (d.extend Fin.val).eval :=
-    (measurable_restrict_eval J).comp (measurable_extend _)
-  rw [hread, ← Measure.map_map hm (measurable_restrict _), h, Measure.map_map hm
-    (measurable_restrict _)]
-
-end RelationalConfiguration
 
 namespace Probability
 
@@ -247,11 +139,11 @@ private theorem coordLaw_eq_of_le {J : Finset (Atom L ℕ)} {m n : ℕ}
 
 /-- A level bounding the vertices of the atoms in `J`. -/
 private def level (J : Finset (Atom L ℕ)) : ℕ :=
-  (exists_forall_map_val J).choose
+  (Atom.exists_forall_map_val J).choose
 
 private theorem level_spec (J : Finset (Atom L ℕ)) :
     ∀ a ∈ J, ∃ b : Atom L (Fin (level J)), b.map Fin.val = a :=
-  (exists_forall_map_val J).choose_spec
+  (Atom.exists_forall_map_val J).choose_spec
 
 /-- The marginals prescribe the law of every finite set of atoms. -/
 private def coordFamily (J : Finset (Atom L ℕ)) : Measure (∀ _ : J, Bool) :=
