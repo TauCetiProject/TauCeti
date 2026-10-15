@@ -302,8 +302,8 @@ theorem windowPreAdicSpaceIso_inv_base_apply
   change (f.hom.base (f.inv.base y)).val = _ at hforward
   rw [hy] at hforward
   have h := congrArg (comap
-    (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ :
-      _ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) hforward
+    (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂).toRingHom)
+    hforward
   simpa only [← Function.comp_apply (f := comap _), ← comap_comp, RingEquiv.symm_comp,
     comap_id, id_eq] using h.symm
 
