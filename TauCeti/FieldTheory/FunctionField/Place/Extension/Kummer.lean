@@ -511,11 +511,8 @@ omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- Under monogenicity, `𝒪'_P` is a finite `𝒪_P`-module. -/
 private theorem moduleFinite_integralClosure_of_adjoin_eq
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
-    Module.Finite P.integers (integralClosure P.integers F') := by
-  refine ⟨?_⟩
-  rw [← Algebra.top_toSubmodule, ← adjoin_eq_top_of_adjoin_eq hy]
-  exact (integralClosure.isIntegral
-    ⟨y, mem_integralClosure_of_adjoin_eq hy⟩).fg_adjoin_singleton
+    Module.Finite P.integers (integralClosure P.integers F') :=
+  hy ▸ Algebra.finite_adjoin_simple_of_isIntegral (mem_integralClosure_of_adjoin_eq hy)
 
 omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- The monic polynomial `φ` over `𝒪_P` lifting the minimal polynomial of `y` over `F` is the
@@ -525,7 +522,7 @@ private theorem minpoly_eq_of_adjoin_eq {φ : P.integers[X]}
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
     minpoly P.integers
         (⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F') = φ := by
-  rw [← minpoly.algHom_eq (integralClosure P.integers F').val Subtype.val_injective]
+  rw [← minpoly.algebraMap_eq Subtype.val_injective]
   refine Polynomial.map_injective _ (IsFractionRing.injective P.integers F) ?_
   rw [hmin]
   exact (minpoly.isIntegrallyClosed_eq_field_fractions' F
@@ -611,6 +608,7 @@ open scoped Classical in
 /-- **The relative degree of a Kummer factor is its degree** (Stichtenoth, Corollary 3.3.8): under
 monogenicity, the place of `F' / k'` over `P` attached to a normalized irreducible factor `γ` of
 the reduction of `φ` has relative degree `deg γ`. -/
+@[simp]
 theorem relativeDegree_restrictEquivNormalizedFactors_symm_apply {φ : P.integers[X]}
     (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F')
@@ -629,6 +627,7 @@ open scoped Classical in
 Corollary 3.3.8): under monogenicity, the place of `F' / k'` over `P` attached to a normalized
 irreducible factor `γ` of the reduction of `φ` has ramification index the multiplicity of `γ` in
 that reduction. -/
+@[simp]
 theorem ramificationIdx_restrictEquivNormalizedFactors_symm_apply {φ : P.integers[X]}
     (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F')
