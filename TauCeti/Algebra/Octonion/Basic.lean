@@ -50,6 +50,8 @@ nothing more.
   involution.
 * `TauCeti.Octonion.trace` and `TauCeti.Octonion.norm`: the trace `a + b` and the norm
   `a * b - v ⬝ᵥ w` of the composition algebra.
+* `TauCeti.Octonion.trialityTrilinearForm`: the trace of a triple octonion product as a bundled
+  trilinear form.
 * `TauCeti.Octonion.imaginary`: the imaginary octonions, the kernel of the trace.
 
 ## Main results
@@ -356,6 +358,19 @@ def trace : Octonion R →ₗ[R] R where
   map_smul' _ _ := by simp [smul_eq_mul, mul_add]
 
 @[simp] theorem trace_apply (x : Octonion R) : trace x = x.a + x.b := (rfl)
+
+/-- The trace of a triple octonion product, bundled as a trilinear form. -/
+def trialityTrilinearForm (R : Type*) [CommRing R] :
+    Octonion R →ₗ[R] Octonion R →ₗ[R] Octonion R →ₗ[R] R := by
+  let m := LinearMap.mul R (Octonion R)
+  exact m.compr₂ (m.compr₂ trace)
+
+/-- The octonion triality form evaluates as the trace of a triple product. -/
+@[simp]
+theorem trialityTrilinearForm_apply (R : Type*) [CommRing R]
+    (x y z : Octonion R) :
+    trialityTrilinearForm R x y z = trace (x * y * z) :=
+  by simp [trialityTrilinearForm]
 
 /-- The trace of `1` is `2`, not `1`: the identity vector matrix has two diagonal entries. Not a
 `simp` lemma, because `TauCeti.Octonion.trace_apply` already takes its left-hand side apart. -/

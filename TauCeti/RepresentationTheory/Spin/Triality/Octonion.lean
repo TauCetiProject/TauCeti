@@ -15,7 +15,7 @@ The three coordinate blocks of the type-`D₄` triality table can each be identi
 split octonions. The identifications differ by signed coordinate permutations: these signs pin
 the integral normalization of the existing triality coefficient table.
 
-Under these identifications, the triality trilinear form is
+Under these identifications, the triality trilinear form is the intrinsic octonion form
 
 `(x, y, z) ↦ Octonion.trace ((x * y) * z)`.
 
@@ -52,39 +52,11 @@ universe u
 
 /-! ## Signed coordinate identifications -/
 
-/-- The position of a coordinate inside one of the three consecutive eight-coordinate blocks. -/
-def blockLocalIndexEquiv (j : Fin 3) : Block j ≃ Fin 8 where
-  toFun a := ⟨a.1.val % 8, Nat.mod_lt _ (by omega)⟩
-  invFun i := ⟨⟨8 * j.val + i.val, by omega⟩, by
-    fin_cases j <;> fin_cases i <;> decide +kernel⟩
-  left_inv a := by
-    apply Subtype.ext
-    apply Fin.ext
-    simp only
-    have ha := a.2
-    simp only [d4TripledSummand] at ha
-    omega
-  right_inv i := by
-    apply Fin.ext
-    simp
-
-/-- The local coordinate of a block index is its table index modulo eight. -/
-@[simp]
-theorem blockLocalIndexEquiv_apply_val (j : Fin 3) (a : Block j) :
-    (blockLocalIndexEquiv j a).val = a.1.val % 8 :=
-  by simp [blockLocalIndexEquiv]
-
-/-- The table index at local position `i` in block `j` is `8 * j + i`. -/
-@[simp]
-theorem blockLocalIndexEquiv_symm_val (j : Fin 3) (i : Fin 8) :
-    ((blockLocalIndexEquiv j).symm i).1.val = 8 * j.val + i.val :=
-  by simp [blockLocalIndexEquiv]
-
 private def blockCoordinateEquiv (R : Type u) [Semiring R] (j : Fin 3) :
     (Block j → R) ≃ₗ[R] (Fin 8 → R) :=
   LinearEquiv.piCongrLeft' R (fun _ ↦ R) (blockLocalIndexEquiv j)
 
-private def zeroCoordinatesOctonionEquiv (R : Type u) [CommRing R] :
+private def zeroCoordinatesOctonionEquiv (R : Type u) [Ring R] :
     (Fin 8 → R) ≃ₗ[R] TauCeti.Octonion R where
   toFun x := ⟨x 0, x 7, ![x 3, x 6, -x 5], ![x 4, x 1, x 2]⟩
   invFun x := ![x.a, x.w 1, x.w 2, x.v 0, x.w 0, -x.v 2, x.v 1, x.b]
@@ -102,7 +74,7 @@ private def zeroCoordinatesOctonionEquiv (R : Type u) [CommRing R] :
   map_smul' r x := by
     apply TauCeti.Octonion.ext <;> simp
 
-private def oneCoordinatesOctonionEquiv (R : Type u) [CommRing R] :
+private def oneCoordinatesOctonionEquiv (R : Type u) [Ring R] :
     (Fin 8 → R) ≃ₗ[R] TauCeti.Octonion R where
   toFun x := ⟨x 7, x 0, ![-x 3, -x 6, x 5], ![-x 4, -x 1, -x 2]⟩
   invFun x := ![x.b, -x.w 1, -x.w 2, -x.v 0, -x.w 0, x.v 2, -x.v 1, x.a]
@@ -120,7 +92,7 @@ private def oneCoordinatesOctonionEquiv (R : Type u) [CommRing R] :
   map_smul' r x := by
     apply TauCeti.Octonion.ext <;> simp
 
-private def twoCoordinatesOctonionEquiv (R : Type u) [CommRing R] :
+private def twoCoordinatesOctonionEquiv (R : Type u) [Ring R] :
     (Fin 8 → R) ≃ₗ[R] TauCeti.Octonion R where
   toFun x := ⟨x 3, -x 4, ![-x 0, -x 2, x 1], ![x 7, x 5, x 6]⟩
   invFun x := ![-x.v 0, x.v 2, -x.v 1, x.a, -x.b, x.w 1, x.w 2, x.w 0]
@@ -140,25 +112,25 @@ private def twoCoordinatesOctonionEquiv (R : Type u) [CommRing R] :
 
 /-- The natural coordinate block, identified with the split octonions in the normalization used
 by the triality coefficient table. -/
-def blockZeroOctonionEquiv (R : Type u) [CommRing R] :
+def blockZeroOctonionEquiv (R : Type u) [Ring R] :
     (Block 0 → R) ≃ₗ[R] TauCeti.Octonion R :=
   (blockCoordinateEquiv R 0).trans (zeroCoordinatesOctonionEquiv R)
 
 /-- The odd half-spin coordinate block, identified with the split octonions in the normalization
 used by the triality coefficient table. -/
-def blockOneOctonionEquiv (R : Type u) [CommRing R] :
+def blockOneOctonionEquiv (R : Type u) [Ring R] :
     (Block 1 → R) ≃ₗ[R] TauCeti.Octonion R :=
   (blockCoordinateEquiv R 1).trans (oneCoordinatesOctonionEquiv R)
 
 /-- The even half-spin coordinate block, identified with the split octonions in the normalization
 used by the triality coefficient table. -/
-def blockTwoOctonionEquiv (R : Type u) [CommRing R] :
+def blockTwoOctonionEquiv (R : Type u) [Ring R] :
     (Block 2 → R) ≃ₗ[R] TauCeti.Octonion R :=
   (blockCoordinateEquiv R 2).trans (twoCoordinatesOctonionEquiv R)
 
 /-- The natural block-to-octonion equivalence as a signed coordinate formula. -/
 @[simp]
-theorem blockZeroOctonionEquiv_apply (R : Type u) [CommRing R] (x : Block 0 → R) :
+theorem blockZeroOctonionEquiv_apply (R : Type u) [Ring R] (x : Block 0 → R) :
     blockZeroOctonionEquiv R x =
       ⟨x ((blockLocalIndexEquiv 0).symm 0), x ((blockLocalIndexEquiv 0).symm 7),
         ![x ((blockLocalIndexEquiv 0).symm 3), x ((blockLocalIndexEquiv 0).symm 6),
@@ -169,7 +141,7 @@ theorem blockZeroOctonionEquiv_apply (R : Type u) [CommRing R] (x : Block 0 → 
 
 /-- The odd half-spin block-to-octonion equivalence as a signed coordinate formula. -/
 @[simp]
-theorem blockOneOctonionEquiv_apply (R : Type u) [CommRing R] (x : Block 1 → R) :
+theorem blockOneOctonionEquiv_apply (R : Type u) [Ring R] (x : Block 1 → R) :
     blockOneOctonionEquiv R x =
       ⟨x ((blockLocalIndexEquiv 1).symm 7), x ((blockLocalIndexEquiv 1).symm 0),
         ![-x ((blockLocalIndexEquiv 1).symm 3), -x ((blockLocalIndexEquiv 1).symm 6),
@@ -180,7 +152,7 @@ theorem blockOneOctonionEquiv_apply (R : Type u) [CommRing R] (x : Block 1 → R
 
 /-- The even half-spin block-to-octonion equivalence as a signed coordinate formula. -/
 @[simp]
-theorem blockTwoOctonionEquiv_apply (R : Type u) [CommRing R] (x : Block 2 → R) :
+theorem blockTwoOctonionEquiv_apply (R : Type u) [Ring R] (x : Block 2 → R) :
     blockTwoOctonionEquiv R x =
       ⟨x ((blockLocalIndexEquiv 2).symm 3), -x ((blockLocalIndexEquiv 2).symm 4),
         ![-x ((blockLocalIndexEquiv 2).symm 0), -x ((blockLocalIndexEquiv 2).symm 2),
@@ -190,57 +162,6 @@ theorem blockTwoOctonionEquiv_apply (R : Type u) [CommRing R] (x : Block 2 → R
   by simp [blockTwoOctonionEquiv, blockCoordinateEquiv, twoCoordinatesOctonionEquiv]
 
 /-! ## The octonion triality form -/
-
-end TauCeti.D4Tripled
-
-namespace TauCeti.Octonion
-
-/-- The trace of a triple octonion product, bundled as a trilinear form. -/
-def trialityTrilinearForm (R : Type u) [CommRing R] :
-    Octonion R →ₗ[R] Octonion R →ₗ[R] Octonion R →ₗ[R] R where
-  toFun x :=
-    { toFun := fun y =>
-        { toFun := fun z => trace (x * y * z)
-          map_add' := by
-            intro z₁ z₂
-            rw [mul_add, map_add]
-          map_smul' := by
-            intro r z
-            rw [mul_smul_comm, map_smul]
-            rfl }
-      map_add' := by
-        intro y₁ y₂
-        ext z
-        simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.add_apply]
-        rw [mul_add, add_mul, map_add]
-      map_smul' := by
-        intro r y
-        ext z
-        simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.smul_apply, smul_eq_mul]
-        rw [mul_smul_comm, smul_mul_assoc, map_smul]
-        rfl }
-  map_add' := by
-    intro x₁ x₂
-    ext y z
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.add_apply]
-    rw [add_mul, add_mul, map_add]
-  map_smul' := by
-    intro r x
-    ext y z
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.smul_apply, smul_eq_mul]
-    rw [smul_mul_assoc, smul_mul_assoc, map_smul]
-    rfl
-
-/-- The octonion triality form evaluates as the trace of a triple product. -/
-@[simp]
-theorem trialityTrilinearForm_apply (R : Type u) [CommRing R]
-    (x y z : Octonion R) :
-    trialityTrilinearForm R x y z = trace (x * y * z) :=
-  by simp [trialityTrilinearForm]
-
-end TauCeti.Octonion
-
-namespace TauCeti.D4Tripled
 
 /-- The octonion triality form pulled back to the natural and two half-spin coordinate blocks. -/
 def octonionBlockTrilinearForm (R : Type u) [CommRing R] :
@@ -274,21 +195,71 @@ private theorem trialityCoefficient_eq_octonion_int
   revert a b c
   decide +kernel
 
+private def intCastOctonion (R : Type u) [Ring R]
+    (x : TauCeti.Octonion ℤ) : TauCeti.Octonion R :=
+  ⟨x.a, x.b, fun i ↦ x.v i, fun i ↦ x.w i⟩
+
+private theorem intCastOctonion_mul (R : Type u) [CommRing R]
+    (x y : TauCeti.Octonion ℤ) :
+    intCastOctonion R (x * y) = intCastOctonion R x * intCastOctonion R y := by
+  apply TauCeti.Octonion.ext
+  · simp [intCastOctonion, TauCeti.Octonion.mul_a, Matrix.vec3_dotProduct]
+  · simp [intCastOctonion, TauCeti.Octonion.mul_b, Matrix.vec3_dotProduct]
+  · funext i
+    fin_cases i <;>
+      simp [intCastOctonion, TauCeti.Octonion.mul_v, cross_apply]
+  · funext i
+    fin_cases i <;>
+      simp [intCastOctonion, TauCeti.Octonion.mul_w, cross_apply]
+
+private theorem trace_intCastOctonion (R : Type u) [CommRing R]
+    (x : TauCeti.Octonion ℤ) :
+    TauCeti.Octonion.trace (R := R) (intCastOctonion R x) =
+      (TauCeti.Octonion.trace (R := ℤ) x : R) := by
+  simp [intCastOctonion, TauCeti.Octonion.trace_apply]
+
 private theorem trialityCoefficient_eq_octonion (R : Type u) [CommRing R]
     (a : Block 0) (b : Block 1) (c : Block 2) :
     (trialityCoefficient a b c : R) =
       octonionBlockTrilinearForm R (Pi.single a 1) (Pi.single b 1) (Pi.single c 1) := by
   classical
+  have hzero :
+      blockZeroOctonionEquiv R (Pi.single a 1) =
+        intCastOctonion R (blockZeroOctonionEquiv ℤ (Pi.single a 1)) := by
+    apply TauCeti.Octonion.ext
+    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · funext i
+      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · funext i
+      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+  have hone :
+      blockOneOctonionEquiv R (Pi.single b 1) =
+        intCastOctonion R (blockOneOctonionEquiv ℤ (Pi.single b 1)) := by
+    apply TauCeti.Octonion.ext
+    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · funext i
+      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · funext i
+      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+  have htwo :
+      blockTwoOctonionEquiv R (Pi.single c 1) =
+        intCastOctonion R (blockTwoOctonionEquiv ℤ (Pi.single c 1)) := by
+    apply TauCeti.Octonion.ext
+    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · funext i
+      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · funext i
+      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
   have hcast :
       octonionBlockTrilinearForm R (Pi.single a 1) (Pi.single b 1) (Pi.single c 1) =
         (octonionBlockTrilinearForm ℤ (Pi.single a 1) (Pi.single b 1)
           (Pi.single c 1) : R) := by
-    simp [octonionBlockTrilinearForm, blockZeroOctonionEquiv,
-      blockOneOctonionEquiv, blockTwoOctonionEquiv, blockCoordinateEquiv,
-      TauCeti.Octonion.trialityTrilinearForm, zeroCoordinatesOctonionEquiv,
-      oneCoordinatesOctonionEquiv, twoCoordinatesOctonionEquiv,
-      Pi.single_apply, Matrix.vec3_dotProduct, cross_apply, Matrix.vecHead,
-      Matrix.vecTail]
+    simp only [octonionBlockTrilinearForm_apply]
+    rw [hzero, hone, htwo, ← intCastOctonion_mul R, ← intCastOctonion_mul R,
+      trace_intCastOctonion R]
   rw [hcast]
   exact congrArg (fun z : ℤ ↦ (z : R)) (trialityCoefficient_eq_octonion_int a b c)
 
