@@ -73,7 +73,7 @@ private theorem root_generator_point (k : Fin 4 ⊕ Fin 4) :
   refine ⟨AdditiveGroup.gaPointsMulEquiv q, ?_⟩
   have h := (coe_rootSubgroupPoints_gaPointsMulEquiv k _ q).symm.trans
     (coe_rootSubgroupPoints k _ _)
-  -- The generator point is the universal additive-group point in coordinate form.
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   change GeneralLinear.pointsMulEquiv 26
     (WithConv.toConv ((AlgHom.id 𝔽₂ _).comp (generator (.inl k)).hom.toAlgHom)) = _ at h
   simpa only [AlgHom.id_comp] using h
@@ -91,7 +91,7 @@ private theorem torus_generator_point : ∃ s : Fin 4 → (generatorCodomain (.i
     WithConv.toConv (AlgHom.id 𝔽₂ _)
   refine ⟨SplitTorus.pointsMulEquiv q, ?_⟩
   have h := (coe_weightTorusPoints_pointsMulEquiv _ q).symm.trans (coe_weightTorusPoints_eq _ _)
-  -- The generator point is the universal split-torus point in coordinate form.
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   change GeneralLinear.pointsMulEquiv 26
     (WithConv.toConv ((AlgHom.id 𝔽₂ _).comp (generator (.inr ())).hom.toAlgHom)) = _ at h
   simpa only [AlgHom.id_comp] using h
@@ -333,6 +333,7 @@ theorem specialIsogeny_coordinatePointsEquiv (A : Type*) [CommRing A] [Algebra �
     groupSchemePointMulEquiv_comp_coordinateMap,
     schemePointsMulEquiv_groupSchemePointMulEquiv,
     schemePointsMulEquiv_groupSchemePointMulEquiv]
+  rw [BialgHom.mapDomain_apply]
   exact (specialIsogeny_coordinatePointsEquiv A q).symm
 
 /-- On scheme-valued points, the carrier Frobenius is the named pointwise Frobenius. -/

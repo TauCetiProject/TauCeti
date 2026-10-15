@@ -88,7 +88,7 @@ theorem exists_basePointsRepresentation_eq_smul
         x.ofConv (q a) • v := by
       rw [Comodule.basePointsRepresentation_apply, Comodule.endOfPoint_tmul, hva]
       simp [q]
-    rw [Comodule.basePointsRepresentation_corestrict q] at hxv
+    rw [Comodule.basePointsRepresentation_corestrict q, BialgHom.mapDomain_apply] at hxv
     exact hxv
   let χ := (ρ.comp N.subtype).unitHomOfJointEigenvector
     (fun n : N ↦ n.val.ofConv a) v hv

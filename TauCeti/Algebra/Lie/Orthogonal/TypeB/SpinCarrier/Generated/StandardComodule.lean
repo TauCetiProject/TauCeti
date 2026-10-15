@@ -96,6 +96,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
         (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap n R j).hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    simp only [BialgHom.mapDomain_apply_apply]
     exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
   have hcarrier := mapPointsFunctor_coordinateMap_app n R
     ((CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)

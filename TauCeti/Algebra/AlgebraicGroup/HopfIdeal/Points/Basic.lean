@@ -255,6 +255,7 @@ theorem _root_.BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_i
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.comapOfSurjective f hsurj) A ↔
       g ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
+  simp only [BialgHom.mapDomain_apply_apply]
   constructor
   · intro hg y hy
     obtain ⟨x, rfl⟩ := hsurj y

@@ -175,7 +175,7 @@ theorem isSemisimplePoint_mapDomain_iff_of_surjective
       exact hg
     exact hmap.trans (map_one _).symm
   · intro hg
-    exact hg.mapDomain f
+    simpa only [BialgHom.mapDomain_apply] using hg.mapDomain f
 
 end HopfAlgebra
 end TauCeti

@@ -98,7 +98,9 @@ theorem piScalarRight_comp_endOfPoint
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 56) (baseChangeDefiningIdeal R)
           (CommAlgCat.of R A) g).ofConv := by
-    exact congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    have he := congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at he
+    exact he
   rw [hpoint]
   exact GeneralLinear.piScalarRight_comp_endOfPoint R 56 _
 

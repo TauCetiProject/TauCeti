@@ -306,6 +306,9 @@ theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_
       rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
       e7MinusculeWeight A definingIdeal_def i B q using 1
   congr 1
+  erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+  rfl
 
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/

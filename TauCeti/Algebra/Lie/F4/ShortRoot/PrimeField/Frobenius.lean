@@ -200,9 +200,7 @@ theorem coordinatePointsEquiv_map_frobeniusCoordinateMap
     simp only [frobeniusCoordinateMap_def, CommHopfAlgCat.hom_ofHom,
       AlgHom.comp_apply, BialgHom.coe_toAlgHom, TauCeti.frobeniusBialgHom_apply,
       FiniteField.coe_frobeniusAlgHom, map_pow]
-  -- Unfold point evaluation through the quotient to use the coordinate Frobenius identity.
-  change GeneralLinear.pointsMulEquiv 26 (WithConv.toConv
-    ((q.ofConv.comp frobeniusCoordinateMap.hom.toAlgHom).comp _)) = _
+  rw [BialgHom.mapDomain_apply, WithConv.ofConv_toConv]
   rw [h]
   simp only [pow_one]
   rw [← AlgHom.mapValue_apply]

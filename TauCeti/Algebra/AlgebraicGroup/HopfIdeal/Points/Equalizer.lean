@@ -56,9 +56,14 @@ theorem mem_quotientPointsSubgroup_equalizerHopfIdeal_iff (f g : H ⟶ K) (A : C
   rw [hker]
   constructor
   · intro h
-    exact ofConv_injective (AlgHom.ext fun a => h a)
+    apply ofConv_injective
+    ext a
+    simpa only [BialgHom.mapDomain_apply_apply, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom] using h a
   · intro h a
-    exact congrArg (fun m : WithConv (H →ₐ[R] A) => m.ofConv a) h
+    simpa only [BialgHom.mapDomain_apply_apply, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom] using
+      congrArg (fun m : WithConv (H →ₐ[R] A) => m.ofConv a) h
 
 end CommHopfAlgCat
 

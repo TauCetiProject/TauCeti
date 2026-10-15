@@ -90,7 +90,11 @@ theorem derivationComp_adDerivation (φ : A' →ₐc[R] A)
       (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)⁻¹ =
         BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ (g⁻¹) :=
     ((BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ).map_inv g).symm
-  simp only [BialgHom.mapDomain_apply] at mapDomain_inv ⊢
+  have mapDomain_toLinearMap :
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g).ofConv.toLinearMap =
+        g.ofConv.toLinearMap.comp φ.toLinearMap := by
+    ext x
+    exact BialgHom.mapDomain_apply_apply (A := Bialgebra.CounitAlgebra R A' B) φ g x
   apply Derivation.ext
   intro a
   apply (Bialgebra.CounitAlgebra.algEquivSelf R A' B).injective
@@ -99,6 +103,7 @@ theorem derivationComp_adDerivation (φ : A' →ₐc[R] A)
     Bialgebra.CounitAlgebra.algEquivSelf_apply,
     Bialgebra.CounitAlgebra.algEquivSelf_apply, convTriple_comp_apply,
     mapDomain_inv, derivationComp_toLinearMap]
+  rw [mapDomain_toLinearMap]
   simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_toLinearMap]
   rfl
 

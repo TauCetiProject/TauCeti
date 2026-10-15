@@ -135,12 +135,11 @@ theorem pointInCounitAlgebra_comp {L : Type x} [CommRing L] [HopfAlgebra R L]
     pointInCounitAlgebra (H := H) A (toConv (g.comp (φ : H →ₐ[R] L))) =
       BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R H A) φ
         (pointInCounitAlgebra (H := L) A (toConv g)) := by
+  erw [BialgHom.mapDomain_apply]
   apply WithConv.ofConv_injective
   ext h
   have h₁ := pointInCounitAlgebra_apply (H := H) A (toConv (g.comp (φ : H →ₐ[R] L))) h
   have h₂ := pointInCounitAlgebra_apply (H := L) A (toConv g) (φ h)
-  -- `BialgHom.mapDomain` evaluates by precomposition; its two counit-algebra codomains are
-  -- definitionally the same value algebra.
   exact h₁.trans h₂.symm
 
 /-- The adjoint action at a coefficient algebra, transported from coefficient-valued derivations

@@ -87,6 +87,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
         (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap R i).hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    simp only [BialgHom.mapDomain_apply_apply]
     exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
   rw [hpoint]
   have h := congrArg (fun g : points B ↦
@@ -99,6 +100,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
   erw [← mapPointsFunctor_coordinateMap_app, GeneralLinear.pointsMulEquiv_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
+  rw [BialgHom.mapDomain_apply]
   exact h
 
 /-- The standard right comodule of the generated tripled type-D₄ subgroup. -/

@@ -654,6 +654,10 @@ theorem schemePointsMulEquiv_kostantToralNumberedSymmetryIso (A : Type) [CommRin
             (kostantToralDefiningIdeal e h ρ M hM hnil b wt))).app (CommAlgCat.of ℤ A) q) := by
     apply WithConv.ofConv_injective
     ext z
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply]
     exact congrArg (fun f => q.ofConv (f.hom z))
       (mkQuotient_comp_kostantToralCoordinateNumberedSymmetryIso_hom
         e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt)

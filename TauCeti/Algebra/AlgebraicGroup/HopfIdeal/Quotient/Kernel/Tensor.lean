@@ -51,6 +51,7 @@ private def kernelPairRight (f : H ⟶ K) :
     Algebra.TensorProduct.includeRight.comp (Ideal.Quotient.mkₐ R _)
   have hr : BialgHom.mapDomain f.hom (toConv r) = 1 := by
     apply ofConv_injective
+    rw [BialgHom.mapDomain_apply, ofConv_toConv]
     exact (kernelHopfIdeal_toIdeal_le_ker_iff f r).mp (by
       intro x hx
       have hz : (Ideal.Quotient.mkₐ R (kernelHopfIdeal f).toIdeal) x = 0 :=
@@ -62,7 +63,7 @@ private def kernelPairRight (f : H ⟶ K) :
         BialgHom.mapDomain f.hom (toConv l) := by
       rw [map_mul, hr]
       exact mul_one (BialgHom.mapDomain f.hom (toConv l))
-    exact congrArg ofConv he
+    simpa only [BialgHom.mapDomain_apply, ofConv_toConv] using congrArg ofConv he
   exact
     { (ofConv (toConv l * toConv r)).toRingHom with
       commutes' h := AlgHom.congr_fun he h }
@@ -88,6 +89,7 @@ private def kernelPairRatio (f : H ⟶ K) :
       BialgHom.mapDomain f.hom (toConv r) := by
     apply ofConv_injective
     ext h
+    simp only [BialgHom.mapDomain_apply_apply]
     exact RingHom.congr_fun
       (Algebra.TensorProduct.includeLeftRingHom_comp_algebraMap (R := H)
         (A := K) (B := K)) h
@@ -95,7 +97,9 @@ private def kernelPairRatio (f : H ⟶ K) :
     rw [map_mul, map_inv, he, inv_mul_cancel]
   apply Ideal.Quotient.liftₐ _ (ofConv ((toConv l)⁻¹ * toConv r))
   intro x hx
-  apply (kernelHopfIdeal_toIdeal_le_ker_iff f _).mpr (congrArg ofConv hratio) hx
+  apply (kernelHopfIdeal_toIdeal_le_ker_iff f _).mpr ?_ hx
+  simpa only [BialgHom.mapDomain_apply, AlgHom.convOne_def, ofConv_toConv] using
+    congrArg ofConv hratio
 
 /-- The coordinate map of `(g,h) ↦ (g,g⁻¹h)`. -/
 private def kernelPairBackward (f : H ⟶ K) :

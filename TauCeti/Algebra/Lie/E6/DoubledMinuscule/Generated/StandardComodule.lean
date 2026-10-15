@@ -91,6 +91,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
         (toConv (q.ofConv.comp f.hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    erw [BialgHom.mapDomain_apply_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
     exact congrArg (fun g ↦ q.ofConv (g.hom x)) hcomp
   have h := pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
     (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
@@ -98,8 +99,10 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
     matrixWeight R definingIdeal_def i B q
   -- The point functor's component uses the indexed presentation of the same points.
-  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, coe_rootSubgroupPoints]
+  erw [CommHopfAlgCat.quotientPointsHom_apply]
   exact h
 
 /-- The standard right comodule of the generated doubled minuscule subgroup on `R⁵⁴`. -/

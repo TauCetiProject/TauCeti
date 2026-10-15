@@ -151,8 +151,9 @@ theorem typeAGraphCoordinateIso_hom_comp_self :
   -- underlying algebra-homomorphism type before applying point computations.
   change WithConv (coordinateHopfAlgebra R (r + 1) →ₐ[R] A) at f
   apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
-  -- Opposite composition acts by nested precomposition; use the direct algebra-hom
-  -- presentation so point computations do not unfold the categorical functor.
+  simp only [CommHopfAlgCat.pointsFunctor_map]
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   change pointsMulEquiv (R := R) (A := A) (r + 1)
       (toConv ((f.ofConv.comp (typeAGraphCoordinateIso R r).hom.hom.toAlgHom).comp
         (typeAGraphCoordinateIso R r).hom.hom.toAlgHom)) =
@@ -191,7 +192,9 @@ private theorem typeAGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap_of_tr
   have hy : toConv (f.ofConv.comp y.hom.toAlgHom) = rootSubgroupPoints hkl f :=
     (CommHopfAlgCat.Hom.mapPointsFunctor_app_apply y (CommAlgCat.of R A) f).symm.trans
       (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
-  -- The opposite composite acts by precomposition of its algebra-homomorphism components.
+  simp only [CommHopfAlgCat.pointsFunctor_map]
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   change pointsMulEquiv (R := R) (A := A) (r + 1)
       (toConv ((f.ofConv.comp x.hom.toAlgHom).comp
         (typeAGraphCoordinateIso R r).hom.hom.toAlgHom)) =

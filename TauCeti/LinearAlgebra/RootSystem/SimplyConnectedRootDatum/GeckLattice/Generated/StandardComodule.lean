@@ -111,6 +111,7 @@ theorem pointToGeneralLinear_mapDomain_geckGeneratedCoordinateLift_inl
           (q.ofConv.comp (t.geckRootSubgroupToBaseChangeCoordinateMap ht R i).hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    simp only [BialgHom.mapDomain_apply_apply]
     exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
   rw [hpoint, pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap]
 

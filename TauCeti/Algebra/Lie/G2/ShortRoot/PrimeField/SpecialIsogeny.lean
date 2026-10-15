@@ -514,7 +514,7 @@ private theorem pointsMulEquiv_map_specialIsogenyCoordinateMap
           carrierAlgebra →ₐ[ZMod 3] B) : carrierAlgebra → B) =
         q.ofConv ∘ specialIsogenyCoordinateMap.hom := by
     funext x
-    rfl
+    exact BialgHom.mapDomain_apply_apply specialIsogenyCoordinateMap.hom q x
   rw [hmap]
   simpa only [Matrix.map_map, Function.comp_apply, BialgHom.coe_toAlgHom,
     g2SpecialIsogeny_map] using h

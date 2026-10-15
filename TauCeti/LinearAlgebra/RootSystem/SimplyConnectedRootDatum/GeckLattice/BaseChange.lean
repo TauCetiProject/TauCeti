@@ -377,6 +377,8 @@ theorem pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A (t.geckDefiningIdeal_def ht) i B q
       using 1
   congr 1
+  erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
 
 /-- Under the Geck coordinate isomorphism, the factored `i`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/

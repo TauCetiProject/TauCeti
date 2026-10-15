@@ -109,16 +109,18 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
   -- at a point `φ a`, the norm of `b` over `Q` is the product of `b` over the coset `a A₁`
   have hnorm (a : A) : (φ₂ (q a)).ofConv (Algebra.projectiveNorm Q b) =
       ∏ a₁, (φ (a * j a₁)).ofConv b := by
-    have hpa : (φ₂ (q a)).ofConv = (φ a).ofConv.comp p.hom.toAlgHom :=
-      congrArg ofConv (DFunLike.congr_fun h₂ a).symm
+    have hpa : (φ₂ (q a)).ofConv = (φ a).ofConv.comp p.hom.toAlgHom := by
+      simpa only [MonoidHom.comp_apply, BialgHom.mapDomain_apply, ofConv_toConv] using
+        congrArg ofConv (DFunLike.congr_fun h₂ a).symm
     rw [hpa, AlgHom.comp_apply]
     -- `p` is the structure map of the `Q`-algebra `G`
     change (φ a).ofConv (algebraMap Q G (Algebra.projectiveNorm Q b)) = _
     rw [← Algebra.projectiveNorm_baseChange_tmul, ← Algebra.projectiveNorm_eq_of_algEquiv e,
       Algebra.projectiveNorm_eq_norm, (isAGenerator_iff.mp hφ₁).norm_eq, map_prod, he]
     refine Finset.prod_congr rfl fun a₁ _ ↦ ?_
-    have ha₁ : toConv ((φ₁ a₁).ofConv.comp i.hom.toAlgHom) = φ (j a₁) :=
-      DFunLike.congr_fun h₁ a₁
+    have ha₁ : toConv ((φ₁ a₁).ofConv.comp i.hom.toAlgHom) = φ (j a₁) := by
+      simpa only [MonoidHom.comp_apply, BialgHom.mapDomain_apply] using
+        DFunLike.congr_fun h₁ a₁
     rw [apply_sectionBaseChange_map_comul, map_mul, ha₁, toConv_ofConv]
   -- sum over `A` as a double sum over `A₂` and the cosets of `A₁`
   classical
