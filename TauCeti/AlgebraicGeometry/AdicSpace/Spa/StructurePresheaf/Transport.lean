@@ -752,8 +752,8 @@ noncomputable def presentationLimitPresheafCompletionIso
     presentationLimitPresheaf P Aplus ≅ (TopCat.Presheaf.pushforward _
       (spaCompletionTopHom Aplus)).obj (presentationLimitPresheaf P' (completionPlus Aplus)) :=
   have hAplus' : ∀ ⦃a⦄, a ∈ completionPlus Aplus → IsPowerBounded a := fun _ ha ↦
-    mem_powerBoundedSubring.mp <| completionPlus_le_powerBoundedSubring
-      (fun _ hb ↦ mem_powerBoundedSubring.mpr (hAplus hb)) ha
+    mem_powerBoundedSubring.mp <| topologicalClosure_map_coeRingHom_le_powerBoundedSubring
+      (fun _ hb ↦ mem_powerBoundedSubring.mpr (hAplus hb)) (completionPlus_def Aplus ▸ ha)
   NatIso.ofComponents
     (fun W ↦ eqToIso (presentationLimitPresheaf_obj P Aplus W) ≪≫
       Iso.mk (presentationLimitDescendHom P' hAplus hAplus' W.unop)

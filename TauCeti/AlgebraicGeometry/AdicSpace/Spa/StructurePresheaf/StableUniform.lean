@@ -115,7 +115,8 @@ theorem isStablyUniform_completion_iff {A : Type v} [CommRing A] [UniformSpace A
   -- compare the rational opens of `Spa(A, A°)` with those of `Spa(Â, Â⁺)`, `Â⁺` the closure of `A°`
   have hAplus ⦃a : A⦄ : a ∈ powerBoundedSubring A → IsPowerBounded a := mem_powerBoundedSubring.mp
   have hAplus' ⦃a⦄ (ha : a ∈ completionPlus (powerBoundedSubring A)) : IsPowerBounded a :=
-    mem_powerBoundedSubring.mp (completionPlus_le_powerBoundedSubring le_rfl ha)
+    mem_powerBoundedSubring.mp (topologicalClosure_map_coeRingHom_le_powerBoundedSubring le_rfl
+      (completionPlus_def (powerBoundedSubring A) ▸ ha))
   rw [isStablyUniform_iff_forall_isUniform_presentationLimit P' hAplus',
     isStablyUniform_iff_forall_isUniform_presentationLimit P hAplus]
   -- the open `V` of `Spa(A, A°)` and its preimage have isomorphic presentation limits
