@@ -70,8 +70,10 @@ theorem isInternal_bigradedUnblockedCyclesPiece :
       G.bigradedUnblockedCyclesPiece R := by
     funext g
     ext z
-    exact (G.bigradedChainMinusGrading R).mem_ker_piece
-      (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
+    simpa only [bigradedChainMinusGrading_piece, mem_bigradedUnblockedCyclesPiece] using
+      (G.bigradedChainMinusGrading R).mem_ker_piece
+        (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
+        (p := g) (z := z)
   rw [← hpieces]
   exact ((G.bigradedChainMinusGrading R).ker
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)).isInternal
@@ -105,6 +107,7 @@ theorem mem_bigradedUnblockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.unblock
           G.1.unblockedHomologyClass R z = y := by
   rw [bigradedUnblockedHomologyPiece, bigradedUnblockedHomologyGrading,
     InternalGrading.mem_map_piece_iff, InternalGrading.mem_homology_piece_iff]
+  simp only [bigradedChainMinusGrading_piece]
   constructor
   · rintro ⟨z, hz, hzy⟩
     refine ⟨z, hz, ?_⟩
@@ -156,7 +159,7 @@ theorem monomial_smul_mem_bigradedUnblockedHomologyPiece (d : Fin n →₀ ℕ) 
   refine (G.bigradedChainMinusGrading R).smul_mem_homology_piece
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
     (G.1.unblockedDifferential_comp_self_eq_zero R) (fun p c hc ↦ ?_) hy
-  simp only [bigradedChainMinusGrading] at hc ⊢
+  simp only [bigradedChainMinusGrading_piece] at hc ⊢
   simpa only [sub_eq_add_neg] using G.monomial_smul_mem_bigradedChainMinusPiece d a hc
 
 /-- Multiplication by a grid variable lowers homology bidegree by `(2, 1)`. -/
