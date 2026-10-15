@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Inertia
+public import TauCeti.RingTheory.IntegralClosure.GaloisGroup
 -- Proof-only: integral closures over finite extensions of Dedekind fraction fields are Dedekind.
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 
@@ -31,6 +32,8 @@ separability; the separate ramification-index formula assumes it explicitly.
 
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk`: the class of `σ` maps to the
   contraction of `σ • Q`.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_smul_mk`: indexing through `τ • Q`
+  sends the class of `σ` to the prime that indexing through `Q` attaches to `σ * τ`.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural`: enlarging the subgroup
   agrees with contraction between the corresponding integral closures.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_smul_of_isIntegralClosure_eq_relIndex`: the
@@ -79,34 +82,6 @@ variable (H : Subgroup (M ≃ₐ[K] M))
   [IsIntegralClosure C A ↥(fixedField H)]
   [Algebra C B] [IsScalarTower C B M]
 
-/-- The subgroup fixing an intermediate field is a Galois group for the corresponding
-integral-closure extension. The action is the restriction of `Gal(M/K)` on `B`. -/
-private theorem isGaloisGroup_integralClosure_fixedField :
-    letI := IsIntegralClosure.MulSemiringAction A K M B
-    IsGaloisGroup H C B := by
-  let _ := IsIntegralClosure.MulSemiringAction A K M B
-  let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
-  let _ : IsFractionRing C ↥(fixedField H) :=
-    isFractionRing_of_isIntegralClosure (A := A) (K := K) ↥(fixedField H) C
-  let _ : IsDedekindDomain C :=
-    TauCeti.IsIntegralClosure.isDedekindDomain A K ↥(fixedField H) C
-  let _ : Algebra.IsIntegral A C :=
-    IsIntegralClosure.isIntegral_algebra A ↥(fixedField H)
-  let _ : IsIntegralClosure B C M :=
-    IsIntegralClosure.tower_top (R := A) (A := C) (B := M) (C := B)
-  let _ : Algebra.IsIntegral C B := IsIntegralClosure.isIntegral_algebra C M
-  let hsmall := IsIntegralClosure.MulSemiringAction C ↥(fixedField H) M B
-  let _ := hsmall
-  let _ : IsGaloisGroup (M ≃ₐ[↥(fixedField H)] M) C B :=
-    IsGaloisGroup.of_isFractionRing (M ≃ₐ[↥(fixedField H)] M) C B ↥(fixedField H) M
-  exact IsGaloisGroup.of_mulEquiv (subgroupEquivAlgEquiv H) fun h x ↦ by
-    apply IsFractionRing.injective B M
-    -- Expose the two integral-closure actions so their restrictions can be compared in `M`.
-    change algebraMap B M (galRestrict C ↥(fixedField H) M B (subgroupEquivAlgEquiv H h) x) =
-      algebraMap B M (galRestrict A K M B h.1 x)
-    rw [algebraMap_galRestrict_apply, algebraMap_galRestrict_apply]
-    rfl
-
 omit [Algebra A B] [IsScalarTower A B M] [IsFractionRing A K] [IsIntegralClosure B A M]
   [IsDedekindDomain A] [IsGalois K M] [FiniteDimensional K M]
   [Algebra A C] [IsScalarTower A C ↥(fixedField H)] [IsScalarTower A C M] in
@@ -144,7 +119,7 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
   let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
-  let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
+  let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C
 
 /-- The Dedekind double-coset law sends the class of `σ` to the contraction of `σ • Q`. -/
@@ -160,7 +135,7 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk (σ : M ≃ₐ[
   let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
-  let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
+  let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk p H C σ
 
 /-- The inverse of the Dedekind double-coset bijection sends a prime to the class of `σ`
@@ -181,8 +156,22 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_i
   let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
-  let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
+  let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff p H C q σ
+
+/-- **The Dedekind double-coset law is compatible with the action of `Gal(M/K)`.** Indexing the
+primes of `C` above `p` through the translate `τ • Q` instead of `Q` sends the class of `σ` to the
+prime that the indexing through `Q` attaches to the class of `σ * τ`. -/
+theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_smul_mk (τ σ : M ≃ₐ[K] M) :
+    letI := IsIntegralClosure.MulSemiringAction A K M B
+    haveI := TauCeti.IsIntegralClosure.smulCommClass A K M B
+    (Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure
+      (A := A) (B := B) (C := C) (K := K) (M := M) H p (τ • Q)
+      (DoubleCoset.mk H _ σ) : Ideal C) =
+    Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure
+      (A := A) (B := B) (C := C) (K := K) (M := M) H p Q (DoubleCoset.mk H _ (σ * τ)) := by
+  let _ := IsIntegralClosure.MulSemiringAction A K M B
+  simp only [doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk, mul_smul]
 
 /-- Enlarging the subgroup and contracting to the corresponding integral closure give the same
 prime under the Dedekind double-coset splitting bijection. -/
@@ -210,8 +199,8 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural
   let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
-  let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
-  let _ : IsGaloisGroup H' C' B := isGaloisGroup_integralClosure_fixedField H'
+  let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
+  let _ : IsGaloisGroup H' C' B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C' H'
   intro q
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural p H C h C' q
 
@@ -242,7 +231,7 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_of_isIntegralClosure_eq_relInd
   let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
-  let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
+  let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   let _ : (σ • Q).IsMaximal := by
     rw [pointwise_smul_eq_comap]
     infer_instance
@@ -292,7 +281,7 @@ theorem ramificationIdx_under_smul_of_isIntegralClosure_eq_relIndex_inertia
   let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
-  let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
+  let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   exact Q.ramificationIdx_under_smul_eq_relIndex_inertia H C σ
 
 /-- Under residue separability, the ramification index of the prime attached to a double coset is
