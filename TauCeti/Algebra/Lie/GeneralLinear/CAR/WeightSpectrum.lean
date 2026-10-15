@@ -62,7 +62,7 @@ variable [h2 : Invertible (2 : K)]
 
 section Diagonal
 
-variable [decEq : DecidableEq n]
+variable [DecidableEq n]
 
 /-- If a nonzero vector is a simultaneous eigenvector for the diagonal matrix units indexed by
 `s`, the sum of their eigenvalues is `m + |s|² / 2`, where `m` is a natural number bounded by the
@@ -75,8 +75,6 @@ theorem exists_sum_eq_natCast_add_card_sq_div_two_of_lie_single_self_eq_smul
     (hdiag : ∀ i ∈ s, ⁅Matrix.single i i (1 : K), v⁆ = μ i • v) :
     ∃ m : ℕ, m ≤ s.card * (Fintype.card n - s.card) ∧
       (∑ i ∈ s, μ i) = (m : K) + (s.card : K) ^ 2 / 2 := by
-  cases Subsingleton.elim decEq (Classical.decEq n)
-  classical
   let t := s.product (Finset.univ \ s)
   let p : n × n → CliffordAlgebra (traceQuadraticForm K n) :=
     fun ij => carOccupationElement (K := K) ij.1 ij.2
