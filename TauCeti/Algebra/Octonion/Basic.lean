@@ -373,7 +373,46 @@ def intCast (S : Type*) [Ring S] (x : Octonion ℤ) : Octonion S :=
 @[simp] theorem intCast_w (S : Type*) [Ring S] (x : Octonion ℤ) (i : Fin 3) :
     (intCast S x).w i = x.w i := (rfl)
 
+/-- Coordinatewise integer casting preserves zero. -/
+@[simp]
+theorem intCast_zero (S : Type*) [Ring S] : intCast S 0 = 0 := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves one. -/
+@[simp]
+theorem intCast_one (S : Type*) [Ring S] : intCast S 1 = 1 := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves addition. -/
+@[simp]
+theorem intCast_add (S : Type*) [Ring S] (x y : Octonion ℤ) :
+    intCast S (x + y) = intCast S x + intCast S y := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves negation. -/
+@[simp]
+theorem intCast_neg (S : Type*) [Ring S] (x : Octonion ℤ) :
+    intCast S (-x) = -intCast S x := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
 /-- Coordinatewise integer casting preserves octonion multiplication. -/
+@[simp]
 theorem intCast_mul (S : Type*) [CommRing S] (x y : Octonion ℤ) :
     intCast S (x * y) = intCast S x * intCast S y := by
   apply Octonion.ext
