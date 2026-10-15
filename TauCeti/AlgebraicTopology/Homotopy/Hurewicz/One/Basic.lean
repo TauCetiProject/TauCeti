@@ -240,7 +240,6 @@ variable (X) in
 abbrev H₁ : ModuleCat ℤ := (sc₁ X).moduleCatLeftHomologyData.H
 
 /-- A `1`-chain is a cycle when its boundary vanishes. -/
-@[simp]
 lemma mem_cycles₁_iff {c : ((singularChains ℤ).obj X).X 1} :
     c ∈ cycles₁ X ↔ ((singularChains ℤ).obj X).d 1 0 c = 0 :=
   -- The differential `(sc₁ X).g` of the short complex is `d 1 0` by definition of `sc'`.
