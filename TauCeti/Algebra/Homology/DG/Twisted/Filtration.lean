@@ -175,6 +175,18 @@ theorem twistedDifferential_apply_of_mem_twistedIndexFiltration
   rw [twistedDifferential_apply,
     twistingSum_eq_zero_of_mem_twistedIndexFiltration m hm hf hy.ge, add_zero]
 
+/-- Restriction to generators of index `p` intertwines the differential on `F_p` with the
+coefficient differential, which is the twisted differential of the zero cocycle. -/
+theorem twistedDifferential_funLeft_val {p : ℤ} {f : P → M}
+    (hf : ∀ x, p < ind x → f x = 0) :
+    twistedDifferential (0 : {x // ind x = p} → {x // ind x = p} → A) ℳ dM
+        (LinearMap.funLeft R M Subtype.val f) =
+      LinearMap.funLeft R M Subtype.val (twistedDifferential m ℳ dM f) := by
+  funext y
+  rw [LinearMap.funLeft_apply, twistedDifferential_apply_of_mem_twistedIndexFiltration m hm dM
+    ((mem_twistedIndexFiltration_iff ind).mpr hf) y.2]
+  simp
+
 end Differential
 
 section AssociatedGraded
@@ -401,6 +413,15 @@ theorem TwistingCocycle.twistedIndexCochainComplexMap_apply {p q : ℤ} (hpq : p
       (((m.twistedIndexCochainComplexMap hM hpq).f n).hom f) : P → M) =
       m.twistedIndexCochainComplexXEquiv hM p n f := by
   exact gradedCochainComplexInclusion_apply (fun _ ↦ twistedIndexGrading_mono hpq) n f
+
+/-- The inclusion `F_p ⟶ F_q` is injective in each degree. -/
+theorem TwistingCocycle.injective_twistedIndexCochainComplexMap_f {p q : ℤ} (hpq : p ≤ q) (n : ℤ) :
+    Function.Injective ((m.twistedIndexCochainComplexMap hM hpq).f n) := by
+  intro x y hxy
+  apply (m.twistedIndexCochainComplexXEquiv hM p n).injective
+  apply Subtype.ext
+  have he := congrArg (fun z ↦ (m.twistedIndexCochainComplexXEquiv hM q n z : P → M)) hxy
+  simpa only [m.twistedIndexCochainComplexMap_apply] using he
 
 /-- The canonical inclusion of an index-filtration stage into the twisted complex. -/
 noncomputable def TwistingCocycle.twistedIndexCochainComplexι (p : ℤ) :

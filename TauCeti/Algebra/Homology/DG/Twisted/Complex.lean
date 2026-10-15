@@ -205,31 +205,6 @@ theorem twistedDifferential_apply (f : P → M) (y : P) :
   rw [twistedDifferential]
   rfl
 
-/-- The twisted differential of a one-sided matrix vanishes, at a generator `y`, on the
-functions supported on the generators of index at most `ind y`, apart from the term `dM (f y)`. -/
-theorem twistedDifferential_apply_of_one_sided {ind : P → ℤ}
-    (hm : ∀ x y, ind x ≤ ind y → m x y = 0) {f : P → M} {y : P}
-    (hf : ∀ x, ind y < ind x → f x = 0) :
-    twistedDifferential m ℳ dM f y = dM (f y) := by
-  rw [twistedDifferential_apply, Finset.sum_eq_zero fun x _ ↦ ?_, add_zero]
-  rcases le_or_gt (ind x) (ind y) with hx | hx
-  · rw [hm x y hx, MulOpposite.op_zero, zero_smul]
-  · rw [hf x hx, map_zero, smul_zero]
-
-/-- The restriction to the generators of index `p` of a function supported on the generators of
-index at most `p` intertwines the twisted differential of a one-sided matrix with that of the zero
-matrix, which is `dM` on each generator. -/
-theorem twistedDifferential_funLeft_val {ind : P → ℤ}
-    (hm : ∀ x y, ind x ≤ ind y → m x y = 0) {p : ℤ} {f : P → M}
-    (hf : ∀ x, p < ind x → f x = 0) :
-    twistedDifferential (0 : {x // ind x = p} → {x // ind x = p} → A) ℳ dM
-        (LinearMap.funLeft R M Subtype.val f) =
-      LinearMap.funLeft R M Subtype.val (twistedDifferential m ℳ dM f) := by
-  funext y
-  rw [LinearMap.funLeft_apply, twistedDifferential_apply_of_one_sided m dM hm
-    fun x hx ↦ hf x (y.2.symm.trans_lt hx)]
-  simp
-
 end AddCommMonoid
 
 variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]

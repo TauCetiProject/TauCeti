@@ -75,7 +75,7 @@ noncomputable def twistedIndexCochainComplexProj (p : ℤ) :
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
       twistedCochainComplexXEquiv_d, twistedIndexCochainComplexXEquiv_d, LinearEquiv.coe_coe,
       LinearEquiv.apply_symm_apply, LinearMap.restrict_apply]
-    exact twistedDifferential_funLeft_val m.m dM m.one_sided
+    exact twistedDifferential_funLeft_val m.m m.one_sided dM
       (mem_twistedIndexGrading_iff.mp (m.twistedIndexCochainComplexXEquiv hM p i f).2).1
 
 @[simp]
@@ -139,15 +139,6 @@ theorem twistedIndexShortComplex_g (p : ℤ) :
   unfold twistedIndexShortComplex
   rfl
 
-/-- The inclusion `F_p ⟶ F_q` is injective in each degree. -/
-theorem injective_twistedIndexCochainComplexMap_f {p q : ℤ} (hpq : p ≤ q) (n : ℤ) :
-    Function.Injective ((m.twistedIndexCochainComplexMap hM hpq).f n) := by
-  intro x y hxy
-  apply (m.twistedIndexCochainComplexXEquiv hM p n).injective
-  apply Subtype.ext
-  have he := congrArg (fun z ↦ (m.twistedIndexCochainComplexXEquiv hM q n z : P → M)) hxy
-  simpa only [m.twistedIndexCochainComplexMap_apply] using he
-
 /-- The restriction `F_p ⟶ ℳ ⊗ ⟨P_p⟩` is surjective in each degree: a function on the generators
 of index `p` extends by zero to a function supported on the generators of index at most `p`. -/
 theorem surjective_twistedIndexCochainComplexProj_f (p n : ℤ) :
@@ -201,7 +192,7 @@ theorem twistedIndexShortComplex_shortExact (p : ℤ) :
       ((ShortComplex.moduleCat_exact_iff _).mpr
         (m.exists_twistedIndexCochainComplexMap_f_eq dM hM p n))
       ((ModuleCat.mono_iff_injective _).mpr
-        (m.injective_twistedIndexCochainComplexMap_f dM hM (Int.le_add_one le_rfl) n))
+        (m.injective_twistedIndexCochainComplexMap_f hM (Int.le_add_one le_rfl) n))
       ((ModuleCat.epi_iff_surjective _).mpr
         (m.surjective_twistedIndexCochainComplexProj_f dM hM (p + 1) n))
 
