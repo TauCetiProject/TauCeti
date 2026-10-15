@@ -62,6 +62,7 @@ theorem finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
   rwa [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right,
     ← Module.finrank_eq_nat_card_basis b] at hdegree
 
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
 private theorem span_range_basis_of_finite_constantCompositum
     (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
     [FiniteDimensional C F] {ι : Type*} (b : Module.Basis ι C F) :
