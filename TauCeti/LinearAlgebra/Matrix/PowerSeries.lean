@@ -14,13 +14,13 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 Let `A` be a square matrix over a nontrivial ring `R`, indexed by a finite type `ι`, and let
 `M = (1 + X²) I - X A` in the ring of matrices of formal power series over `R`. This file proves
 that `M` has no right inverse whose entries are polynomials unless `ι` is empty
-(`TauCeti.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`). Indeed the coefficient matrices of
+(`Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`). Indeed the coefficient matrices of
 a right inverse `N` satisfy `N_{n+2} = A N_{n+1} - N_n`, so if they vanish from some degree on, then
 they vanish in every degree by descending induction, against `N_0 = I`.
 
 ## Main results
 
-* `TauCeti.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`: no polynomial matrix is a right
+* `Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`: no polynomial matrix is a right
   inverse of `(1 + X²) I - X A` over a nonempty index type.
 
 ## References
@@ -32,7 +32,7 @@ they vanish in every degree by descending induction, against `N_0 = I`.
 
 public section
 
-namespace TauCeti
+namespace Matrix
 
 open PowerSeries
 
@@ -80,4 +80,4 @@ theorem isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one {R ι : Type*} [Ring 
   rw [← coeff_zero_eq_constantCoeff_apply, hzero d 0 (by omega)] at h
   exact zero_ne_one h
 
-end TauCeti
+end Matrix

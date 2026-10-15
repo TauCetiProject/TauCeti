@@ -24,7 +24,7 @@ finite-dimensional, its graded corners `e_j Π_n e_i` vanish in all large degree
 * the inverse `M⁻¹` has a negative coefficient.
 
 Both statements rest on one observation: when `Q` is nonempty, no matrix `N` whose entries are
-polynomials satisfies `M N = I` (`TauCeti.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`).
+polynomials satisfies `M N = I` (`Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`).
 For the second statement, the Koszul defect formula
 gives `M H = I + D` where `D` has nonnegative coefficients
 (`TauCeti.coeff_one_le_coeff_mul_preprojectiveHilbertSeries`). If every coefficient of `M⁻¹` were
@@ -114,7 +114,7 @@ theorem mul_preprojectiveHilbertSeries_ne_one [FiniteDimensional k (preprojectiv
           (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧)) *
         preprojectiveHilbertSeries k Q ≠ 1 := fun h => by
   obtain ⟨d, hd⟩ := exists_forall_le_coeff_preprojectiveHilbertSeries_eq_zero k Q
-  refine not_isEmpty_of_nonempty Q (isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
+  refine not_isEmpty_of_nonempty Q (Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
     (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ)) ?_ hd)
   convert h using 4
   ext v w
@@ -175,7 +175,7 @@ theorem exists_coeff_inv_lt_zero_of_finiteDimensional
   obtain ⟨d, hd⟩ := exists_forall_le_coeff_preprojectiveHilbertSeries_eq_zero k Q
   have hN (n : ℕ) (hn : d ≤ n) (v i : Q) : coeff n (M⁻¹ v i) = 0 :=
     le_antisymm ((hle n v i).trans (hd n hn v i).le) (hpos n v i)
-  refine not_isEmpty_of_nonempty Q (isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
+  refine not_isEmpty_of_nonempty Q (Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
     (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ)) ?_ hN)
   convert Matrix.mul_nonsing_inv M hdet using 2
   rw [hM]
