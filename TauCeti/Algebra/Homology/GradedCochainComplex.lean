@@ -143,6 +143,8 @@ noncomputable def gradedCochainComplexInclusion (h : ∀ n, ℳ n ≤ 𝒩 n) :
       apply Subtype.ext
       dsimp [gradedCochainComplex, ModuleCat.hom_comp, LinearMap.comp_apply]
       simp only [CochainComplex.of_d]
+      -- Both sides have ambient value `dM x`: inclusion preserves values, and the
+      -- restricted differential applies the same ambient map `dM`.
       rfl)
 
 /-- The cochain inclusion preserves the underlying homogeneous element. -/

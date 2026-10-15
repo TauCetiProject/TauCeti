@@ -472,6 +472,12 @@ noncomputable def TwistingCocycle.twistedIndexSubobject (p : ℤ) :
     Subobject (m.twistedCochainComplex dM hM) :=
   Subobject.mk (m.twistedIndexCochainComplexι hM p)
 
+/-- The filtration subobject is represented by the canonical stage inclusion. -/
+@[simp]
+theorem TwistingCocycle.twistedIndexSubobject_eq_mk (p : ℤ) :
+    m.twistedIndexSubobject hM p = Subobject.mk (m.twistedIndexCochainComplexι hM p) := by
+  rfl
+
 /-- The subobjects of the twisted complex form an increasing filtration. -/
 theorem TwistingCocycle.twistedIndexSubobject_mono :
     Monotone (m.twistedIndexSubobject hM) := fun _ _ hpq ↦
