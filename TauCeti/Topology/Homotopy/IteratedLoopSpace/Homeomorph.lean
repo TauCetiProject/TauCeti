@@ -103,7 +103,7 @@ theorem iteratedLoopSpaceHomeomorph_map :
     rw [Hom.iteratedLoopSpace_succ]
     exact (congrArg (GenLoop.genLoopLoopHomeomorph _ k)
       (iteratedLoopSpaceHomeomorph_map k f.loopSpace γ)).trans
-        (GenLoop.genLoopLoopHomeomorph_map f.toContinuousMap f.map_basepoint
+        (ContinuousMap.genLoopLoopHomeomorph_map f.toContinuousMap f.map_basepoint
           f.loopSpace.toContinuousMap (fun γ t => Hom.loopSpace_apply' f γ t) k _)
 
 end BasedTopologicalSpace

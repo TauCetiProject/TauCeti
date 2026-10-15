@@ -97,8 +97,9 @@ theorem genLoopLoopSumHomeomorph_symm_apply (M : Type*) (q : Ω^ (M ⊕ Fin 1) X
 /-- **Naturality of the currying homeomorphism**: `genLoopLoopSumHomeomorph` commutes with the maps
 induced on cube loops by a based continuous map `f : X → Y`, and by any map `F` of loop spaces
 that postcomposes loops with `f`, for any index type of cube directions. -/
-theorem genLoopLoopSumHomeomorph_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
-    (hFf : ∀ γ t, F γ t = f (γ t)) (M : Type*) (p : Ω^ M (Ω X x) (Path.refl x)) :
+theorem _root_.ContinuousMap.genLoopLoopSumHomeomorph_map (f : C(X, Y)) (hf : f x = y)
+    (F : C(Ω X x, Ω Y y)) (hFf : ∀ γ t, F γ t = f (γ t)) (M : Type*)
+    (p : Ω^ M (Ω X x) (Path.refl x)) :
     genLoopLoopSumHomeomorph y M
         (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
       map f hf (genLoopLoopSumHomeomorph x M p) := by
@@ -213,13 +214,15 @@ theorem genLoopGenLoopEquiv_transAt (i : M) (p q : Ω^ M (Ω^ N X x) _root_.GenL
 end Transport
 
 /-- **Naturality of the currying homeomorphism** for `k` cube directions: the specialization of
-`genLoopLoopSumHomeomorph_map` to `Fin k`. -/
-theorem genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
-    (hFf : ∀ γ t, F γ t = f (γ t)) (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x)) :
+`ContinuousMap.genLoopLoopSumHomeomorph_map` to `Fin k`. -/
+theorem _root_.ContinuousMap.genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x = y)
+    (F : C(Ω X x, Ω Y y)) (hFf : ∀ γ t, F γ t = f (γ t)) (k : ℕ)
+    (p : Ω^ (Fin k) (Ω X x) (Path.refl x)) :
     genLoopLoopHomeomorph y k (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
       map f hf (genLoopLoopHomeomorph x k p) := by
   exact (genLoopLoopHomeomorph_apply_eq y k _).trans
-    ((congrArg (GenLoop.congr y finSumFinEquiv) (genLoopLoopSumHomeomorph_map f hf F hFf _ p)).trans
+    ((congrArg (GenLoop.congr y finSumFinEquiv)
+      (ContinuousMap.genLoopLoopSumHomeomorph_map f hf F hFf _ p)).trans
       ((GenLoop.ext _ _ fun _ => by simp only [congr_apply, map_apply]).trans
         (congrArg (map f hf) (genLoopLoopHomeomorph_apply_eq x k p).symm)))
 
