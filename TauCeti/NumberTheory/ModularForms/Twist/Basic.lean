@@ -54,6 +54,8 @@ becomes the classical expression of the twist through Gauss sums.
   `γ'` and any `a' ≡ a d² (mod M)`.
 * `TauCeti.Gamma1_map_le_conjAct_upperRightHom`: `Γ₁(L) ≤ [1, a/M; 0, 1]⁻¹ Γ₁(N) [1, a/M; 0, 1]`.
 * `ModularForm.twist_apply`: `(f ⊗ Φ)(τ) = M⁻¹ ∑ₐ 𝓕Φ(a) f(τ + a / M)`.
+* `ModularForm.twist_coe_cuspForm`: twisting commutes with the inclusion of cusp forms into
+  modular forms.
 * `ModularForm.qExpansion_twist_coeff`, `CuspForm.qExpansion_twist_coeff`:
   `aₙ(f ⊗ Φ) = Φ(n) aₙ(f)`.
 * `ModularForm.twist_mem_modFormCharSpace`,
@@ -253,6 +255,15 @@ lemma _root_.CuspForm.coe_twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M �
     (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     ⇑(CuspForm.twist Φ hNL hML f) =
       ⇑(ModularForm.twist Φ hNL hML (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) := by
+  ext τ
+  simp
+
+/-- The twist of a cusp form, regarded as a modular form, is the twist of the underlying
+modular form. -/
+theorem _root_.ModularForm.twist_coe_cuspForm [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L) (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    ModularForm.twist Φ hNL hML (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      (CuspForm.twist Φ hNL hML f : _root_.ModularForm ((Gamma1 L).map (mapGL ℝ)) k) := by
   ext τ
   simp
 

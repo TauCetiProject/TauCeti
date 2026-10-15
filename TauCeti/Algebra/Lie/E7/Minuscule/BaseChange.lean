@@ -109,6 +109,12 @@ public noncomputable def coordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 56 ⟶ coordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient _ _
 
+/-- The carrier's ambient coordinate morphism is the quotient by its transported defining ideal. -/
+theorem coordinateMap_def :
+    coordinateMap A = CommHopfAlgCat.mkQuotient
+      (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A) :=
+  (rfl)
+
 /-- The specialized carrier coordinate morphism is surjective. -/
 theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom := by
   unfold coordinateMap
