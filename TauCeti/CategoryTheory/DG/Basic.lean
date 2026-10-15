@@ -165,6 +165,16 @@ theorem dgComp_smul {X Y Z : C} {p q n : ℤ} (r : R) (f : DGHom R p X Y) (g : D
     (h : p + q = n) : dgComp R f (r • g) h = r • dgComp R f g h := by
   rw [dgComp, dgComp, TensorProduct.tmul_smul, map_smul]
 
+/-- Composition commutes with a sign `u : ℤˣ` on its first factor. -/
+theorem units_smul_dgComp {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) : dgComp R (u • f) g h = u • dgComp R f g h := by
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, smul_dgComp]
+
+/-- Composition commutes with a sign `u : ℤˣ` on its second factor. -/
+theorem dgComp_units_smul {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) : dgComp R f (u • g) h = u • dgComp R f g h := by
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, dgComp_smul]
+
 /-! ### The Leibniz rule -/
 
 /- Composition is a chain map out of the tensor product of the two Hom complexes; restricting
@@ -194,6 +204,16 @@ theorem dgDifferential_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y) (g :
     ModuleCat.hom_add, ModuleCat.hom_smul, LinearMap.add_apply,
     ModuleCat.MonoidalCategory.whiskerRight_apply, LinearMap.smul_apply,
     ModuleCat.MonoidalCategory.whiskerLeft_apply] using key
+
+/-- The graded Leibniz rule for the differentials of the Hom complexes between arbitrary consecutive
+indices `p ⟶ p'`, `q ⟶ q'` and `n ⟶ n'`, so that the degrees need not be written as `p + 1`. -/
+theorem dgHomComplex_d_dgComp {X Y Z : C} {p q n p' q' n' : ℤ} (hp : p + 1 = p')
+    (hq : q + 1 = q') (hn : n + 1 = n') (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p + q = n) :
+    ((dgHomComplex R X Z).d n n').hom (dgComp R f g h) =
+      dgComp R (((dgHomComplex R X Y).d p p').hom f) g (by omega) +
+        p.negOnePow • dgComp R f (((dgHomComplex R Y Z).d q q').hom g) (by omega) := by
+  subst hp hq hn
+  exact dgDifferential_dgComp R f g h
 
 /-! ### Associativity -/
 
