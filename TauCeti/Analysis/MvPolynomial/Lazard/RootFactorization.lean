@@ -16,8 +16,9 @@ import Mathlib.Algebra.Polynomial.Bivariate
 A complete Laurent splitting along an evaluator's monomial curve determines the roots of
 the Lazard evaluation, counted with multiplicity. Divide out the lowest monomial-curve
 power using the uniform Taylor expansion, then specialize the resulting analytic family.
-Its central fiber is the nonzero Lazard evaluation. The central-fiber factorization theorem
-discards the branches with poles and retains exactly the finite branch limits. The same
+Its central fiber is the nonzero Lazard evaluation. In the central-fiber factorization,
+pole branches contribute a nonzero scalar factor but no finite roots; the other branches
+contribute exactly their finite limits, counted with multiplicity. The same
 normalization identifies the evaluator weight of the removed base exponent as the scalar
 Laurent exponent plus the sum of the negative root exponents.
 
