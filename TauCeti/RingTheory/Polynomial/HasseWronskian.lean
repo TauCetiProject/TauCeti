@@ -96,6 +96,11 @@ theorem hasseWronskian_fin_two (g : Fin 2 → R[X]) :
   simp only [of_apply, Fin.val_zero, Fin.val_one, hasseDeriv_zero', hasseDeriv_one']
   ring
 
+/-- The derivation `derivative'` is the ordinary derivative as a function; rewriting with this
+lets iterates `derivative'^[k]` be compared with `derivative^[k]`. -/
+private theorem coe_derivative' : ⇑(derivative' : Derivation R R[X] R[X]) = derivative :=
+  _root_.funext derivative'_apply
+
 /-- Multiplying the Hasse Wronskian by `∏ k < m, k!` gives the classical Wronskian, the
 determinant of the iterated ordinary derivatives `derivative^[k] gₗ`. -/
 theorem prod_factorial_mul_hasseWronskian (g : Fin m → R[X]) :
@@ -105,9 +110,7 @@ theorem prod_factorial_mul_hasseWronskian (g : Fin m → R[X]) :
   congr 1
   ext1 k l
   simp only [of_apply]
-  rw [show ⇑(derivative' : Derivation R R[X] R[X]) = derivative from
-      _root_.funext derivative'_apply,
-    ← factorial_smul_hasseDeriv, LinearMap.smul_apply, nsmul_eq_mul]
+  rw [coe_derivative', ← factorial_smul_hasseDeriv, LinearMap.smul_apply, nsmul_eq_mul]
 
 /-- Permuting the family multiplies the Hasse Wronskian by the sign of the permutation. -/
 theorem hasseWronskian_comp_perm (g : Fin m → R[X]) (σ : Equiv.Perm (Fin m)) :
@@ -189,8 +192,7 @@ theorem hasseWronskian_ne_zero_of_injective_natDegree [IsDomain R] [CharZero R]
   have hA : A.det = (∏ k : Fin m, X ^ (k : ℕ)) *
       ((∏ k : Fin m, ((k : ℕ).factorial : R[X])) * hasseWronskian g) := by
     rw [prod_factorial_mul_hasseWronskian, Derivation.wronskian_def, ← det_mul_column]
-    simp [A, show ⇑(derivative' : Derivation R R[X] R[X]) = derivative from
-      _root_.funext derivative'_apply]
+    simp [A, coe_derivative']
   intro hW
   exact htop (by rw [hA, hW, mul_zero, mul_zero, coeff_zero])
 
