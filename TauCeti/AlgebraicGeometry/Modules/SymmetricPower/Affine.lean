@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Localization
+public import TauCeti.AlgebraicGeometry.Modules.Tilde.Presheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Basic
 
 /-!
@@ -39,12 +40,6 @@ variable {R : CommRingCat.{u}}
 private abbrev symmetricPresheaf (M : ModuleCat.{u} R) (n : ℕ) :=
   (PresheafOfModulesOfCommRing.symmetricPower (R := (Spec R).presheaf) n).obj (tilde M).val
 
-private abbrev specPresheaf (P : PresheafOfModules.{u} (Spec R).ringCatSheaf.obj) :
-    (Spec R).Opensᵒᵖ ⥤ ModuleCat.{u} R :=
-  (PresheafOfModules.forgetToPresheafModuleCat (.op ⊤)
-    (Limits.initialOpOfTerminal Limits.isTerminalTop)).obj P ⋙
-    ModuleCat.restrictScalars (Scheme.ΓSpecIso R).inv.hom
-
 private def symmetricToOpenSemilinear (M : ModuleCat.{u} R) (U : (Spec R).Opens) :
     M →ₛₗ[algebraMap R ((Spec R).presheaf.obj (.op U))]
       PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U) :=
@@ -53,10 +48,10 @@ private def symmetricToOpenSemilinear (M : ModuleCat.{u} R) (U : (Spec R).Opens)
     map_smul' := (tilde.toOpen M U).hom.map_smul }
 
 private def symmetricToOpen (M : ModuleCat.{u} R) (n : ℕ) (U : (Spec R).Opens) :
-    M.symmetricPower n ⟶ (specPresheaf (symmetricPresheaf M n)).obj (.op U) := by
+    M.symmetricPower n ⟶ (specPresheafFunctor.obj (symmetricPresheaf M n)).obj (.op U) := by
   let A := (Spec R).presheaf.obj (.op U)
   let N := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U)
-  let E := (specPresheaf (symmetricPresheaf M n)).obj (.op U)
+  let E := (specPresheafFunctor.obj (symmetricPresheaf M n)).obj (.op U)
   let AE : Module A E := (TauCeti.SymmetricAlgebra.homogeneousSubmodule A N n).module
   let : @IsScalarTower R A E _ AE.toSMul E.isModule.toSMul :=
     IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
@@ -78,7 +73,7 @@ private lemma coe_symmetricToOpen (M : ModuleCat.{u} R) (n : ℕ) (U : (Spec R).
 
 private lemma symmetricToOpen_res (M : ModuleCat.{u} R) (n : ℕ)
     {U V : (Spec R).Opens} (i : V ⟶ U) :
-    symmetricToOpen M n U ≫ (specPresheaf (symmetricPresheaf M n)).map i.op =
+    symmetricToOpen M n U ≫ (specPresheafFunctor.obj (symmetricPresheaf M n)).map i.op =
       symmetricToOpen M n V := by
   let ψ := (ModuleCat.semilinearMapAddEquiv
     ((Spec R).presheaf.map i.op).hom _ _).symm
@@ -107,7 +102,7 @@ private instance symmetricToOpen_isLocalized (M : ModuleCat.{u} R) (n : ℕ) (f 
   let φ : M →ₗ[R] N := (tilde.toOpen M U).hom
   let : IsLocalizedModule (.powers f) φ := inferInstanceAs
     (IsLocalizedModule (.powers f) (tilde.toOpen M (PrimeSpectrum.basicOpen f)).hom)
-  let E := (specPresheaf (symmetricPresheaf M n)).obj (.op U)
+  let E := (specPresheafFunctor.obj (symmetricPresheaf M n)).obj (.op U)
   let AE : Module A E := (TauCeti.SymmetricAlgebra.homogeneousSubmodule A N n).module
   let ET : @IsScalarTower R A E _ AE.toSMul E.isModule.toSMul :=
     IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
@@ -126,7 +121,7 @@ private instance symmetricTildeToOpen_isLocalized (M : ModuleCat.{u} R) (n : ℕ
   exact h (M.symmetricPower n)
 
 private def symmetricBasicIso (M : ModuleCat.{u} R) (n : ℕ) (f : R) :
-    (specPresheaf (symmetricPresheaf M n)).obj (.op (PrimeSpectrum.basicOpen f)) ≅
+    (specPresheafFunctor.obj (symmetricPresheaf M n)).obj (.op (PrimeSpectrum.basicOpen f)) ≅
       (modulesSpecToSheaf.obj (tilde (M.symmetricPower n))).obj.obj
         (.op (PrimeSpectrum.basicOpen f)) :=
   (IsLocalizedModule.linearEquiv (.powers f)
@@ -145,7 +140,7 @@ private lemma symmetricBasicIso_comp (M : ModuleCat.{u} R) (n : ℕ) (f : R) :
 
 private def symmetricBasisComparison (M : ModuleCat.{u} R) (n : ℕ) :
     (inducedFunctor (PrimeSpectrum.basicOpen (R := R))).op ⋙
-        specPresheaf (symmetricPresheaf M n) ⟶
+        specPresheafFunctor.obj (symmetricPresheaf M n) ⟶
       (inducedFunctor (PrimeSpectrum.basicOpen (R := R))).op ⋙
         (modulesSpecToSheaf.obj (tilde (M.symmetricPower n))).obj where
   app f := (symmetricBasicIso M n f.unop).hom
@@ -161,7 +156,7 @@ private def symmetricBasisComparison (M : ModuleCat.{u} R) (n : ℕ) :
         f.unop i.unop.hom.le
     · -- Convert composition of linear maps to composition in `ModuleCat`.
       change (symmetricToOpen M n (PrimeSpectrum.basicOpen f.unop) ≫
-        (specPresheaf (symmetricPresheaf M n)).map
+        (specPresheafFunctor.obj (symmetricPresheaf M n)).map
           ((inducedFunctor (PrimeSpectrum.basicOpen (R := R))).op.map i) ≫
         (symmetricBasicIso M n g.unop).hom).hom =
         (symmetricToOpen M n (PrimeSpectrum.basicOpen f.unop) ≫
@@ -173,7 +168,7 @@ private def symmetricBasisComparison (M : ModuleCat.{u} R) (n : ℕ) :
       exact congrArg ModuleCat.Hom.hom (tilde.toOpen_res (M.symmetricPower n) _ _ i.unop.hom).symm
 
 private def symmetricComparisonR (M : ModuleCat.{u} R) (n : ℕ) :
-    specPresheaf (symmetricPresheaf M n) ⟶
+    specPresheafFunctor.obj (symmetricPresheaf M n) ⟶
       (modulesSpecToSheaf.obj (tilde (M.symmetricPower n))).obj :=
   TopCat.Sheaf.restrictHomEquivHom _ _ PrimeSpectrum.isBasis_basic_opens
     (symmetricBasisComparison M n)
@@ -218,7 +213,8 @@ private def symmetricComparison (M : ModuleCat.{u} R) (n : ℕ) :
       let : IsLocalization (.powers f) A := inferInstanceAs
         (IsLocalization (.powers f)
           ((Spec.structureSheaf R).presheaf.obj (.op (PrimeSpectrum.basicOpen f))))
-      let E := (specPresheaf (symmetricPresheaf M n)).obj (.op (PrimeSpectrum.basicOpen f))
+      let E := (specPresheafFunctor.obj (symmetricPresheaf M n)).obj
+        (.op (PrimeSpectrum.basicOpen f))
       let F := (modulesSpecToSheaf.obj (tilde (M.symmetricPower n))).obj.obj
         (.op (PrimeSpectrum.basicOpen f))
       let EA : Module A E :=
@@ -241,16 +237,10 @@ private lemma symmetricComparison_basic_bijective (M : ModuleCat.{u} R) (n : ℕ
 
 private def symmetricToOpenNatTrans (M : ModuleCat.{u} R) (n : ℕ) :
     (Functor.const (Spec R).Opensᵒᵖ).obj (M.symmetricPower n) ⟶
-      specPresheaf (symmetricPresheaf M n) where
+      specPresheafFunctor.obj (symmetricPresheaf M n) where
   app U := symmetricToOpen M n U.unop
   naturality _ _ i :=
     (Category.id_comp _).trans (symmetricToOpen_res M n i.unop).symm
-
-private def tildeToOpenNatTrans (M : ModuleCat.{u} R) :
-    (Functor.const (Spec R).Opensᵒᵖ).obj M ⟶ (modulesSpecToSheaf.obj (tilde M)).obj where
-  app U := tilde.toOpen M U.unop
-  naturality _ _ i :=
-    (Category.id_comp _).trans (tilde.toOpen_res M _ _ i.unop).symm
 
 private lemma symmetricComparisonR_comp_toOpen (M : ModuleCat.{u} R) (n : ℕ) :
     symmetricToOpenNatTrans M n ≫ symmetricComparisonR M n =
@@ -260,7 +250,7 @@ private lemma symmetricComparisonR_comp_toOpen (M : ModuleCat.{u} R) (n : ℕ) :
   -- These components are the two maps on basic opens used to define the comparison.
   change symmetricToOpen M n (PrimeSpectrum.basicOpen f) ≫
     (symmetricComparisonR M n).app (.op (PrimeSpectrum.basicOpen f)) = _
-  rw [symmetricComparisonR_app_basic]
+  rw [symmetricComparisonR_app_basic, tildeToOpenNatTrans_app]
   exact symmetricBasicIso_comp M n f
 
 private instance symmetricComparison_locallyInjective (M : ModuleCat.{u} R) (n : ℕ) :
@@ -293,19 +283,13 @@ private instance symmetricComparison_locallySurjective (M : ModuleCat.{u} R) (n 
 private lemma symmetricComparisonR_toOpen (M : ModuleCat.{u} R) (n : ℕ)
     (U : (Spec R).Opens) :
     symmetricToOpen M n U ≫ (symmetricComparisonR M n).app (.op U) =
-      tilde.toOpen (M.symmetricPower n) U :=
-  congrArg (fun α ↦ α.app (.op U)) (symmetricComparisonR_comp_toOpen M n)
-
-private def specPresheafMap {P Q : PresheafOfModules.{u} (Spec R).ringCatSheaf.obj}
-    (φ : P ⟶ Q) : specPresheaf P ⟶ specPresheaf Q :=
-  Functor.whiskerRight
-    ((PresheafOfModules.forgetToPresheafModuleCat (.op ⊤)
-      (Limits.initialOpOfTerminal Limits.isTerminalTop)).map φ)
-    (ModuleCat.restrictScalars (Scheme.ΓSpecIso R).inv.hom)
+      tilde.toOpen (M.symmetricPower n) U := by
+  simpa only [NatTrans.comp_app, symmetricToOpenNatTrans, tildeToOpenNatTrans_app] using
+    congrArg (fun α ↦ α.app (.op U)) (symmetricComparisonR_comp_toOpen M n)
 
 private lemma symmetricToOpen_map (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N)
     (U : (Spec R).Opens) :
-    symmetricToOpen M n U ≫ (specPresheafMap
+    symmetricToOpen M n U ≫ (specPresheafFunctor.map
       ((PresheafOfModulesOfCommRing.symmetricPower (R := (Spec R).presheaf) n).map
         (tilde.map φ).val)).app (.op U) =
       ModuleCat.symmetricPower.map φ n ≫ symmetricToOpen N n U := by
@@ -332,7 +316,7 @@ private lemma symmetricToOpen_map (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ 
   exact RingHom.congr_fun h x.1
 
 private lemma symmetricComparisonR_naturality (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N) :
-    specPresheafMap ((PresheafOfModulesOfCommRing.symmetricPower
+    specPresheafFunctor.map ((PresheafOfModulesOfCommRing.symmetricPower
       (R := (Spec R).presheaf) n).map (tilde.map φ).val) ≫ symmetricComparisonR N n =
       symmetricComparisonR M n ≫ (modulesSpecToSheaf.map (tilde.map
         (ModuleCat.symmetricPower.map φ n))).hom := by
@@ -340,7 +324,7 @@ private lemma symmetricComparisonR_naturality (n : ℕ) {M N : ModuleCat.{u} R} 
   intro f
   simp only [NatTrans.comp_app]
   have h : symmetricToOpen M n (PrimeSpectrum.basicOpen f) ≫
-      (specPresheafMap ((PresheafOfModulesOfCommRing.symmetricPower
+      (specPresheafFunctor.map ((PresheafOfModulesOfCommRing.symmetricPower
         (R := (Spec R).presheaf) n).map (tilde.map φ).val)).app
           (.op (PrimeSpectrum.basicOpen f)) ≫
         (symmetricComparisonR N n).app (.op (PrimeSpectrum.basicOpen f)) =
