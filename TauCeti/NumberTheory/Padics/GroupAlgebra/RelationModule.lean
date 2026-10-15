@@ -7,9 +7,13 @@ module
 
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.Cancellation
+import Mathlib.LinearAlgebra.TensorProduct.Prod
+import TauCeti.Algebra.MonoidAlgebra.RelationModule.FractionRing
+import TauCeti.NumberTheory.Padics.GroupAlgebra.Swan
+import TauCeti.RingTheory.KrullSchmidt.FractionRing
 
 /-!
-# Relation modules mapping onto the kernel of an extension of the augmentation ideal
+# Surjections from relation modules over `ℤ_p[G]`
 
 Let `G` be a finite group, `Λ = ℤ_p[G]` and `I_G ⊆ Λ` the augmentation ideal. Let
 `0 → A → Y → I_G → 0` be an exact sequence of `Λ`-modules, and `φ : Λ^ι → Y` a surjection from a
@@ -25,19 +29,35 @@ For `A` the `p`-adic completion of `Lˣ` of a finite Galois layer `L/K` of `p`-a
 the Tate module of the layer, this gives the surjection `R^ab(p) ↠ A(L)` with kernel `ℤ_p[G]` in
 the proof of NSW (7.4.1).
 
+Conversely, a surjection `β` from the relation module of a generating family of size `n + 2` onto a
+module `A` with `A ⊗ ℚ_p ≃ ℚ_p[G]^n ⊕ ℚ_p` has a kernel whose rationalization is `ℚ_p[G]`: the
+rationalized relation module is `ℚ_p[G]^(n + 1) ⊕ ℚ_p`
+(`TauCeti.MonoidAlgebra.nonempty_relationModule_tensor_linearEquiv`), and rational
+representations cancel. If that kernel is projective, Swan's theorem
+(`TauCeti.nonempty_linearEquiv_of_projective_of_tensorRat`) identifies it with `ℤ_p[G]`. For
+`n = [K : ℚ_p]` and `A` the `p`-adic completion of `Lˣ`, whose rationalization is
+`ℚ_p[G]^n ⊕ ℚ_p` (`TauCeti.nonempty_padicCompletionUnits_tensorRat_linearEquiv`), this is the
+step of NSW (7.4.2)(i) that identifies the kernel of `R^ab(p) ↠ A(L)` with `ℤ_p[G]` once it is
+known to be projective.
+
 ## Main results
 
 * `TauCeti.exists_relationModule_surjective_of_exact`: the relation module of a generating family
   maps onto the kernel `A` of an extension `0 → A → Y → I_G → 0`, with kernel isomorphic to that of
   a given surjection `Λ^ι → Y`.
+* `TauCeti.nonempty_ker_linearEquiv_of_relationModule_surjective`: a surjection from the relation
+  module of `n + 2` generators onto a module with rationalization `ℚ_p[G]^n ⊕ ℚ_p` and projective
+  kernel has kernel isomorphic to `ℤ_p[G]`.
 
 ## References
 
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition, (5.6.6)
-  and the proof of (7.4.1).
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition, (5.6.6),
+  (5.6.10)(ii), and the proofs of (7.4.1) and (7.4.2).
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -91,5 +111,43 @@ theorem exists_relationModule_surjective_of_exact {A Y : Type*} [AddCommGroup A]
   · exact ⟨E.ofSubmodules _ _ (by rw [LinearMap.ker_comp E.toLinearMap β₀,
       Submodule.map_comap_eq_of_surjective E.surjective]) ≪≫ₗ .ofEq _ _ hkerβ₀ ≪≫ₗ
       Submodule.comapSubtypeEquivOfLe (LinearMap.ker_le_ker_comp φ π)⟩
+
+/-- **A projective kernel of a relation-module surjection is free of rank one.** Let `G` be a finite
+group, `g` a generating family of `G` with `n + 2` members, and `β` a surjection from the relation
+module of `g` onto a `ℤ_p[G]`-module `A` whose rationalization is
+`(ℤ_p[G]^n × ℤ_p[G] ⧸ I_G) ⊗ ℚ_p`, that is, `ℚ_p[G]^n ⊕ ℚ_p`. If the kernel of `β` is projective,
+then it is isomorphic to `ℤ_p[G]`. -/
+theorem nonempty_ker_linearEquiv_of_relationModule_surjective {A : Type*} [AddCommGroup A]
+    [Module ℤ_[p] A] [Module Λ A] [IsScalarTower ℤ_[p] Λ A] {g : ι → G}
+    (hg : Subgroup.closure (Set.range g) = ⊤) {n : ℕ} (hι : Fintype.card ι = n + 2)
+    {β : relationModule ℤ_[p] G g →ₗ[Λ] A} (hβ : Function.Surjective β)
+    [Module.Projective Λ (LinearMap.ker β)]
+    (hA : Nonempty ((A ⊗[ℤ_[p]] ℚ_[p]) ≃ₗ[Λ]
+      (((Fin n → Λ) × (Λ ⧸ RingHom.ker (augmentation ℤ_[p] G))) ⊗[ℤ_[p]] ℚ_[p]))) :
+    Nonempty (LinearMap.ker β ≃ₗ[Λ] Λ) := by
+  obtain ⟨eA⟩ := hA
+  have : NeZero (Nat.card G : ℤ_[p]) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
+  -- Rationally, `relationModule ℤ_[p] G g ≃ ker β ⊕ A`, and it is `ℚ_p[G]^(n + 1) ⊕ ℚ_p`.
+  obtain ⟨e₁⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p]
+    (LinearMap.exact_subtype_ker_map β) (Submodule.injective_subtype _) hβ
+  obtain ⟨e₂⟩ := nonempty_relationModule_tensor_linearEquiv (R := ℤ_[p]) ℚ_[p] hg hι
+  let e₃ : ((Fin (n + 1) → Λ) × (Λ ⧸ RingHom.ker (augmentation ℤ_[p] G))) ≃ₗ[Λ]
+      Λ × ((Fin n → Λ) × (Λ ⧸ RingHom.ker (augmentation ℤ_[p] G))) :=
+    (Fin.consLinearEquiv Λ fun _ : Fin (n + 1) ↦ Λ).symm.prodCongr (.refl Λ _) ≪≫ₗ
+      LinearEquiv.prodAssoc Λ _ _ _
+  -- So `(ker β × X) ⊗ ℚ_p ≃ (ℤ_p[G] × X) ⊗ ℚ_p` for `X = ℤ_p[G]^n × ℤ_p[G] ⧸ I_G`, and
+  -- `X ⊗ ℚ_p` cancels, as `X` is finitely generated over `ℤ_p`.
+  obtain ⟨e⟩ := IsFractionRing.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv ℚ_[p]
+    (M := LinearMap.ker β) (N := Λ)
+    ⟨TensorProduct.prodLeft _ _ _ _ _ ≪≫ₗ (LinearEquiv.refl Λ _).prodCongr eA.symm ≪≫ₗ
+      (TensorProduct.prodLeft _ _ _ _ _).symm ≪≫ₗ e₁.symm ≪≫ₗ e₂ ≪≫ₗ
+      TensorProduct.AlgebraTensorModule.congr e₃ (.refl ℤ_[p] ℚ_[p])⟩
+  -- `ker β` is finitely generated, as a submodule of `ℤ_p[G]^ι`, so Swan's theorem applies.
+  have : Module.Finite ℤ_[p] (LinearMap.ker β) := .of_injective
+    ((relationModule ℤ_[p] G g).subtype.restrictScalars ℤ_[p] ∘ₗ
+      (LinearMap.ker β).subtype.restrictScalars ℤ_[p])
+    ((Submodule.injective_subtype _).comp (Submodule.injective_subtype _))
+  have : Module.Finite Λ (LinearMap.ker β) := .of_restrictScalars_finite ℤ_[p] Λ _
+  exact nonempty_linearEquiv_of_projective_of_tensorRat p (G := G) (LinearMap.ker β) Λ ⟨e⟩
 
 end TauCeti
