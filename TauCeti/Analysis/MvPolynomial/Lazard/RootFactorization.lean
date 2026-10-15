@@ -11,18 +11,16 @@ import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Algebra.Polynomial.Bivariate
 
 /-!
-# Lazard exponents and root multisets from Laurent branches
+# Lazard evaluations from Laurent branches
 
 A complete Laurent splitting along an evaluator's monomial curve determines the roots of
 the Lazard evaluation, counted with multiplicity. Divide out the lowest monomial-curve
 power using the uniform Taylor expansion, then specialize the resulting analytic family.
-Its central fiber is the nonzero Lazard evaluation. The central-fiber factorization theorem
-discards the branches with poles and retains exactly the finite branch limits.
-
-The same factorization also determines the evaluator-weight of the removed Lazard exponent:
-it is the exponent of the leading scalar plus the sum of the negative root exponents. Since an
-evaluator's weight is injective on the exponents it controls, this identity is the bridge from
-global Laurent exponents to a constant removed base-exponent vector in Lazard lifting.
+Its central fiber is the nonzero Lazard evaluation. In the central-fiber factorization,
+pole branches contribute a nonzero scalar factor but no finite roots; the other branches
+contribute exactly their finite limits, counted with multiplicity. The same
+normalization identifies the evaluator weight of the removed base exponent as the scalar
+Laurent exponent plus the sum of the negative root exponents.
 
 No nonnullification or preservation of ordinary fiber degree is assumed. This supplies
 root coverage and multiplicities when descending a Puiseux Laurent splitting to Lazard
@@ -43,7 +41,11 @@ namespace MvPolynomial
 
 variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] {n : ℕ}
 
-private theorem lazardExponent_weight_and_roots_of_laurent
+/-- A complete Laurent splitting along a Lazard evaluator determines the evaluator weight
+of the removed base exponent and the full Lazard evaluation. The removed weight is the scalar
+exponent plus the sum of the negative branch exponents. Pole branches contribute nonzero
+scalar factors; the other branches contribute their finite limits, with repetitions. -/
+theorem lazardEval_eq_C_mul_prod_of_laurent
     (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
     (x : Fin n → 𝕜) (c : Fin n → ℕ)
     (hc : TauCeti.IsLazardEvaluator {p.lazardExponent (Polynomial.C ∘ x)} c)
@@ -54,11 +56,12 @@ private theorem lazardExponent_weight_and_roots_of_laurent
       (aeval (monomialCurve (Polynomial.C ∘ x) c) p).eval (Polynomial.C y) =
         Polynomial.C (y ^ a * u y) *
           ∏ i, (Polynomial.X - Polynomial.C (y ^ e i * w i y))) :
-    (Finsupp.weight c (p.lazardExponent (Polynomial.C ∘ x)) : ℤ) =
+    (weight c (p.lazardExponent (Polynomial.C ∘ x)) : ℤ) =
         a + ∑ i, min (e i) 0 ∧
-      (p.lazardEval (Polynomial.C ∘ x)).roots =
-        (Finset.univ.filter (fun i ↦ 0 ≤ e i)).val.map
-          (fun i ↦ if e i = 0 then w i 0 else 0) := by
+      p.lazardEval (Polynomial.C ∘ x) =
+        Polynomial.C (u 0 * ∏ i ∈ Finset.univ.filter (fun i ↦ e i < 0), -(w i 0)) *
+          ∏ i ∈ Finset.univ.filter (fun i ↦ 0 ≤ e i),
+            (Polynomial.X - Polynomial.C (if e i = 0 then w i 0 else 0)) := by
   classical
   -- Divide out the lowest Taylor weight, leaving the Lazard evaluation at the center.
   let v := p.lazardExponent (Polynomial.C ∘ x)
@@ -102,15 +105,12 @@ private theorem lazardExponent_weight_and_roots_of_laurent
     simpa only [hfactor, Polynomial.eval_mul, Polynomial.eval_pow,
       Polynomial.eval_X, ← Polynomial.C_pow,
       q, T, F] using hy
-  have hdata := TauCeti.eq_C_mul_prod_of_laurent
+  obtain ⟨hbalance, hcentral⟩ := TauCeti.eq_C_mul_prod_of_laurent
     (fun j _ ↦ hFcoeff j) hFdeg (hF0 ▸ lazardEval_ne_zero hp _) hu hu0 hw hw0 hsplit
-  constructor
-  · have hbalance : a - (weight c (p.lazardExponent (Polynomial.C ∘ x)) : ℤ) +
-        ∑ i, min (e i) 0 = 0 := by
-      simpa only [v] using hdata.1
+  refine ⟨?_, ?_⟩
+  · dsimp only [v] at hbalance
     omega
-  · simpa only [hF0, q] using TauCeti.roots_eq_map_of_laurent
-      (fun j _ ↦ hFcoeff j) hFdeg (hF0 ▸ lazardEval_ne_zero hp _) hu hu0 hw hw0 hsplit
+  · simpa only [hF0, q] using hcentral
 
 /-- A complete Laurent splitting along a Lazard evaluator determines the evaluator-weight of the
 removed Lazard exponent. It is the exponent of the leading scalar plus the sum of the negative
@@ -129,7 +129,7 @@ theorem weight_lazardExponent_eq_of_laurent
           ∏ i, (Polynomial.X - Polynomial.C (y ^ e i * w i y))) :
     (Finsupp.weight c (p.lazardExponent (Polynomial.C ∘ x)) : ℤ) =
       a + ∑ i, min (e i) 0 :=
-  (lazardExponent_weight_and_roots_of_laurent p hp x c hc hu hu0 hw hw0 hfac).1
+  (lazardEval_eq_C_mul_prod_of_laurent p hp x c hc hu hu0 hw hw0 hfac).1
 
 /-- **Constant removed exponents from global Laurent exponents.** Suppose one evaluator controls
 the removed Lazard exponents of `p` on `S`, and at every point of `S` the monomial-curve
@@ -182,7 +182,13 @@ theorem roots_lazardEval_eq_map_of_laurent
           ∏ i, (Polynomial.X - Polynomial.C (y ^ e i * w i y))) :
     (p.lazardEval (Polynomial.C ∘ x)).roots =
       (Finset.univ.filter (fun i ↦ 0 ≤ e i)).val.map
-        (fun i ↦ if e i = 0 then w i 0 else 0) :=
-  (lazardExponent_weight_and_roots_of_laurent p hp x c hc hu hu0 hw hw0 hfac).2
+        (fun i ↦ if e i = 0 then w i 0 else 0) := by
+  classical
+  rw [(p.lazardEval_eq_C_mul_prod_of_laurent hp x c hc hu hu0 hw hw0 hfac).2,
+    Polynomial.roots_C_mul _ (mul_ne_zero hu0 (Finset.prod_ne_zero_iff.mpr
+      fun i hi ↦ neg_ne_zero.mpr (hw0 i (Finset.mem_filter.mp hi).2))),
+    Polynomial.roots_prod _ _ (Finset.prod_ne_zero_iff.mpr
+      fun i _ ↦ Polynomial.X_sub_C_ne_zero _)]
+  simp only [Polynomial.roots_X_sub_C, Multiset.bind_singleton]
 
 end MvPolynomial
