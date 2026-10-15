@@ -25,7 +25,7 @@ algebra are needed.
   form a finite-dimensional space.
 * `TauCeti.GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj`: graded maps from a finitely
   generated graded module into the shifts of a finite-dimensional one have finite Laurent support.
-* `TauCeti.GradedModuleCat.homShiftDirectSumEquiv`: for finite-dimensional graded modules, the
+* `TauCeti.GradedModuleCat.homShiftDirectSumEquiv`: for a finitely generated graded source, the
   direct sum of the graded maps into all shifts is the space of ungraded module maps.
 
 ## References
@@ -100,23 +100,12 @@ private theorem isHomogeneous_hom_to_shift {j : ℤ} (f : M ⟶ N.shiftObj j) :
   rw [mem_shiftObj_piece_iff] at h
   simpa only [add_zero, sub_eq_add_neg] using h
 
-private theorem homogeneousPartOfGradedSMul_eq_zero_of_ne
-    (f : M →ₗ[A] N) {r s : ℤ}
-    (hf : LinearMap.IsHomogeneous f M.grading.piece N.grading.piece s) (hrs : r ≠ s) :
-    M.grading.homogeneousPartOfGradedSMul N.grading 𝒜 f r = 0 := by
-  refine M.grading.linearMap_ext fun p x hx ↦ ?_
-  rw [M.grading.homogeneousPartOfGradedSMul_apply_of_mem N.grading 𝒜 f r hx,
-    LinearMap.zero_apply]
-  exact DirectSum.decompose_of_mem_ne N.grading.piece (hf.map_mem hx) fun h ↦
-    hrs (add_left_cancel h.symm)
-
 private theorem homShiftDirectSumMap_injective :
     Function.Injective (homShiftDirectSumMap M N) := by
   intro z z' h
   apply DirectSum.ext
   intro j
   apply hom_ext
-  change (z j).hom = (z' j).hom
   have hpart := congrArg
     (fun f : M →ₗ[A] N ↦ M.grading.homogeneousPartOfGradedSMul N.grading 𝒜 f (-j)) h
   suffices key : ∀ y : DirectSum ℤ (fun j ↦ (M ⟶ N.shiftObj j)),
@@ -128,90 +117,83 @@ private theorem homShiftDirectSumMap_injective :
   | zero => simp
   | of i f =>
       classical
+      rw [homShiftDirectSumMap_of]
       by_cases hij : i = j
       · subst i
-        rw [homShiftDirectSumMap_of]
         simp only [DirectSum.of_apply, dite_true]
         exact M.grading.homogeneousPartOfGradedSMul_eq_self N.grading 𝒜 f.hom (-j)
           (isHomogeneous_hom_to_shift M N f)
-      · rw [homShiftDirectSumMap_of]
-        simp only [DirectSum.of_apply, hij, dite_false]
-        rw [homogeneousPartOfGradedSMul_eq_zero_of_ne M N f.hom
-          (isHomogeneous_hom_to_shift M N f) (by omega : -j ≠ -i)]
-        rfl
+      · simp only [DirectSum.of_apply, hij, dite_false, hom_zero]
+        exact M.grading.homogeneousPartOfGradedSMul_eq_zero_of_ne N.grading 𝒜 f.hom
+          (isHomogeneous_hom_to_shift M N f) (by omega)
   | add x y hx hy =>
       rw [map_add, M.grading.homogeneousPartOfGradedSMul_add, hx, hy, DirectSum.add_apply,
         hom_add]
 
-private theorem homShiftDirectSumMap_surjective [Module.Finite k M] [Module.Finite k N] :
+/-- An ungraded map out of a finitely generated graded module has only finitely many nonzero
+homogeneous parts. -/
+private theorem exists_finset_homogeneousPartOfGradedSMul_eq_zero [Module.Finite A M]
+    (f : M →ₗ[A] N) :
+    ∃ d : Finset ℤ, ∀ r ∉ d, M.grading.homogeneousPartOfGradedSMul N.grading 𝒜 f r = 0 := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
+  -- The degree-`r` part vanishes on each component `xₚ` of a generator `x` unless `p + r` is in
+  -- the support of `f xₚ`.
+  refine ⟨s.biUnion fun x ↦ (DirectSum.decompose M.grading.piece x).support.biUnion fun p ↦
+      (DirectSum.decompose N.grading.piece
+        (f (DirectSum.decompose M.grading.piece x p))).support.image (· - p),
+    fun r hr ↦ LinearMap.ext_on hs fun x hx ↦ ?_⟩
+  rw [LinearMap.zero_apply, ← DirectSum.sum_support_decompose M.grading.piece x, map_sum]
+  refine Finset.sum_eq_zero fun p hp ↦ ?_
+  rw [M.grading.homogeneousPartOfGradedSMul_apply_of_mem N.grading 𝒜 f r
+    (DirectSum.decompose M.grading.piece x p).property]
+  by_contra hne
+  exact hr (Finset.mem_biUnion.2 ⟨x, Finset.mem_coe.1 hx, Finset.mem_biUnion.2 ⟨p, hp,
+    Finset.mem_image.2 ⟨p + r, DFinsupp.mem_support_iff.2 fun h ↦ hne (by simp [h]),
+      add_sub_cancel_left p r⟩⟩⟩)
+
+private theorem homShiftDirectSumMap_surjective [Module.Finite A M] :
     Function.Surjective (homShiftDirectSumMap M N) := by
   classical
   intro f
-  let sM := M.grading.finite_piece_ne_bot.toFinset
-  let sN := N.grading.finite_piece_ne_bot.toFinset
-  let d : Finset ℤ := (sM ×ˢ sN).image fun pq ↦ pq.2 - pq.1
-  let z : DirectSum ℤ (fun j ↦ (M ⟶ N.shiftObj j)) :=
-    ∑ r ∈ d, DirectSum.of (fun j : ℤ ↦ M ⟶ N.shiftObj j) (-r)
-      (homogeneousPartToShift M N f r)
-  refine ⟨z, LinearMap.ext fun x ↦ ?_⟩
-  rw [← M.grading.sum_decompose_toFinset M.grading.finite_piece_ne_bot x]
-  rw [map_sum, map_sum]
-  conv_rhs => rw [map_sum]
-  apply Finset.sum_congr rfl
-  intro p hp
-  have hp' : M.grading.piece p ≠ ⊥ := M.grading.finite_piece_ne_bot.mem_toFinset.mp hp
-  simp only [homShiftDirectSumMap_of, homogeneousPartToShift_hom, LinearMap.sum_apply,
-    M.grading.homogeneousPartOfGradedSMul_apply_of_mem N.grading 𝒜 f _
-      (DirectSum.decompose M.grading.piece x p).property]
-  let t : Finset ℤ := sN.image fun q ↦ q - p
+  obtain ⟨d, hd⟩ := exists_finset_homogeneousPartOfGradedSMul_eq_zero M N f
+  refine ⟨∑ r ∈ d, DirectSum.of (fun j : ℤ ↦ M ⟶ N.shiftObj j) (-r)
+      (homogeneousPartToShift M N f r), M.grading.linearMap_ext fun p x hx ↦ ?_⟩
+  simp only [map_sum, homShiftDirectSumMap_of, homogeneousPartToShift_hom, LinearMap.sum_apply,
+    M.grading.homogeneousPartOfGradedSMul_apply_of_mem N.grading 𝒜 f _ hx]
+  -- Every nonzero component `(f x)_q` is the value of the degree-`(q - p)` part, so `q - p ∈ d`.
+  have hsub : (DirectSum.decompose N.grading.piece (f x)).support ⊆ d.image (p + ·) := by
+    intro q hq
+    refine Finset.mem_image.2 ⟨q - p, ?_, add_sub_cancel p q⟩
+    by_contra hqd
+    have h := LinearMap.congr_fun (hd (q - p) hqd) x
+    rw [M.grading.homogeneousPartOfGradedSMul_apply_of_mem N.grading 𝒜 f _ hx, add_sub_cancel,
+      LinearMap.zero_apply] at h
+    exact DFinsupp.mem_support_iff.1 hq (Subtype.ext h)
   calc
-    ∑ r ∈ d, (DirectSum.decompose N.grading.piece
-        (f (DirectSum.decompose M.grading.piece x p)) (p + r) : N) =
-        ∑ r ∈ t, (DirectSum.decompose N.grading.piece
-          (f (DirectSum.decompose M.grading.piece x p)) (p + r) : N) := by
-      refine (Finset.sum_subset ?_ fun r hr hrt ↦ ?_).symm
-      · intro r hr
-        change r ∈ sN.image (fun q ↦ q - p) at hr
-        obtain ⟨q, hq, rfl⟩ := Finset.mem_image.mp hr
-        change q - p ∈ (sM ×ˢ sN).image (fun pq ↦ pq.2 - pq.1)
-        exact Finset.mem_image.mpr ⟨(p, q), Finset.mem_product.mpr ⟨hp, hq⟩, rfl⟩
-      · have hbot : N.grading.piece (p + r) = ⊥ := by
-          by_contra hn
-          apply hrt
-          change r ∈ sN.image (fun q ↦ q - p)
-          exact Finset.mem_image.mpr
-            ⟨p + r, by simpa [sN] using
-              N.grading.finite_piece_ne_bot.mem_toFinset.mpr hn, by omega⟩
-        exact (Submodule.eq_bot_iff _).mp hbot _
-          (DirectSum.decompose N.grading.piece
-            (f (DirectSum.decompose M.grading.piece x p)) (p + r)).property
-    _ = ∑ q ∈ sN, (DirectSum.decompose N.grading.piece
-          (f (DirectSum.decompose M.grading.piece x p)) q : N) := by
-      change (∑ r ∈ sN.image (fun q ↦ q - p), (DirectSum.decompose N.grading.piece
-        (f (DirectSum.decompose M.grading.piece x p)) (p + r) : N)) = _
-      rw [Finset.sum_image]
-      · apply Finset.sum_congr rfl
-        intro q hq
-        rw [show p + (q - p) = q by omega]
-      · intro q hq q' hq' heq
-        exact sub_left_injective heq
-    _ = f (DirectSum.decompose M.grading.piece x p) :=
-      N.grading.sum_decompose_toFinset N.grading.finite_piece_ne_bot _
+    ∑ r ∈ d, (DirectSum.decompose N.grading.piece (f x) (p + r) : N) =
+        ∑ q ∈ d.image (p + ·), (DirectSum.decompose N.grading.piece (f x) q : N) :=
+      (Finset.sum_image (f := fun q ↦ (DirectSum.decompose N.grading.piece (f x) q : N))
+        fun _ _ _ _ ↦ add_left_cancel).symm
+    _ = ∑ q ∈ (DirectSum.decompose N.grading.piece (f x)).support,
+          (DirectSum.decompose N.grading.piece (f x) q : N) :=
+      (Finset.sum_subset hsub fun q _ hq ↦ by simp [DFinsupp.notMem_support_iff.1 hq]).symm
+    _ = f x := DirectSum.sum_support_decompose N.grading.piece (f x)
 
-/-- **An ungraded map between finite-dimensional graded modules is the finite sum of its
+/-- **An ungraded map out of a finitely generated graded module is the finite sum of its
 homogeneous parts.** Equivalently, the direct sum of the graded morphism spaces `M ⟶ N{j}` over
 all internal shifts is linearly equivalent to the space of underlying module maps `M →ₗ[A] N`.
+No finiteness is needed on the target.
 
 The shift convention means that a morphism to `N{j}` has underlying homogeneous degree `-j`. -/
-noncomputable def homShiftDirectSumEquiv [Module.Finite k M] [Module.Finite k N] :
+noncomputable def homShiftDirectSumEquiv [Module.Finite A M] :
     DirectSum ℤ (fun j ↦ (M ⟶ N.shiftObj j)) ≃ₗ[k] (M →ₗ[A] N) :=
   LinearEquiv.ofBijective (homShiftDirectSumMap M N)
     ⟨homShiftDirectSumMap_injective M N, homShiftDirectSumMap_surjective M N⟩
 
 /-- On a single homogeneous summand, `homShiftDirectSumEquiv` forgets the grading. -/
 @[simp]
-theorem homShiftDirectSumEquiv_of [Module.Finite k M] [Module.Finite k N]
-    (j : ℤ) (f : M ⟶ N.shiftObj j) :
+theorem homShiftDirectSumEquiv_of [Module.Finite A M] (j : ℤ) (f : M ⟶ N.shiftObj j) :
     homShiftDirectSumEquiv M N
         (DirectSum.of (fun j : ℤ ↦ M ⟶ N.shiftObj j) j f) = f.hom :=
   homShiftDirectSumMap_of M N j f

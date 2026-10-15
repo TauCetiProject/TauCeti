@@ -231,6 +231,15 @@ theorem homogeneousPartOfGradedSMul_eq_self (f : M →ₗ[A] N) (r : ℤ)
   rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx]
   exact DirectSum.decompose_of_mem_same H.piece (hf.map_mem hx)
 
+/-- A homogeneous graded-scalar map has no component away from its degree. -/
+theorem homogeneousPartOfGradedSMul_eq_zero_of_ne (f : M →ₗ[A] N) {r s : ℤ}
+    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece s) (hrs : r ≠ s) :
+    G.homogeneousPartOfGradedSMul H 𝒜 f r = 0 := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx, LinearMap.zero_apply]
+  exact DirectSum.decompose_of_mem_ne H.piece (hf.map_mem hx) fun h ↦
+    hrs (add_left_cancel h.symm)
+
 /-- A graded-scalar map is fixed by its degree-`r` component exactly when it has degree `r`. -/
 @[simp]
 theorem homogeneousPartOfGradedSMul_eq_self_iff (f : M →ₗ[A] N) (r : ℤ) :
