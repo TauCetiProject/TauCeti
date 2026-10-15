@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
-public import TauCeti.Algebra.Homology.Subobject
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 
 /-!

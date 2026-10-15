@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.Extend
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.CategoryTheory.Subobject.Lattice
 public import TauCeti.Algebra.Homology.ModuleCat.Subcomplex
 
 /-!
@@ -28,8 +27,9 @@ complex is set up.
 ## Main results
 
 * `HomologicalComplex.mono_extendMap`: extension preserves degreewise monomorphisms.
-* `CategoryTheory.Subobject.extend_mono`, `CategoryTheory.Subobject.extend_bot`: extension of
-  subcomplexes is monotone and preserves `⊥`.
+* `CategoryTheory.Subobject.extend_mono`, `CategoryTheory.Subobject.extend_bot`,
+  `CategoryTheory.Subobject.extend_top`: extension of subcomplexes is monotone and preserves `⊥`
+  and `⊤`.
 * `CategoryTheory.Subobject.epi_extend_arrow_f`,
   `CategoryTheory.Subobject.epi_extend_arrow_f_of_notMem`: the degrees in which the extended
   subcomplex is everything.
@@ -93,6 +93,17 @@ theorem extend_mono {S T : Subobject K} (h : S ≤ T) : S.extend e ≤ T.extend 
 theorem extend_bot : (⊥ : Subobject K).extend e = ⊥ := by
   rw [extend_eq_mk, Subobject.mk_eq_bot_iff_zero, Subobject.bot_arrow,
     HomologicalComplex.extendMap_zero]
+
+/-- The extension of the whole complex is the whole extended complex. -/
+@[simp]
+theorem extend_top : (⊤ : Subobject K).extend e = ⊤ := by
+  have : IsIso (HomologicalComplex.extendMap (⊤ : Subobject K).arrow e) :=
+    ⟨⟨HomologicalComplex.extendMap (inv (⊤ : Subobject K).arrow) e, by
+      rw [← HomologicalComplex.extendMap_comp, IsIso.hom_inv_id, HomologicalComplex.extendMap_id],
+      by rw [← HomologicalComplex.extendMap_comp, IsIso.inv_hom_id,
+        HomologicalComplex.extendMap_id]⟩⟩
+  rw [extend_eq_mk]
+  exact Subobject.mk_eq_top_of_isIso _
 
 /-- In the degree `e.f i`, the extended subcomplex is everything as soon as `S` is everything in
 degree `i`. -/

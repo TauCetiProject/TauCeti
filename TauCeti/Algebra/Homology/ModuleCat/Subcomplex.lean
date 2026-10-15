@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.HomologicalComplex
-public import Mathlib.CategoryTheory.Subobject.Lattice
-import Mathlib.Algebra.Category.ModuleCat.EpiMono
+import Mathlib.Algebra.Homology.HomologicalComplexLimits
 
 /-!
 # Subcomplexes of a complex of modules cut out by submodules
@@ -38,8 +37,9 @@ the spectral sequence of a filtered complex.
   family into those of another restricts to the subcomplexes; in particular
   (`HomologicalComplex.subobjectOfSubmodules_mono`) the construction is monotone.
 * `HomologicalComplex.subobjectOfSubmodules_eq_bot`,
-  `HomologicalComplex.epi_subobjectOfSubmodules_arrow_f`: the subcomplex is `⊥` when every `N i`
-  is, and is everything in degree `i` when `N i` is.
+  `HomologicalComplex.subobjectOfSubmodules_eq_top`,
+  `HomologicalComplex.epi_subobjectOfSubmodules_arrow_f`: the subcomplex is `⊥` or `⊤` when every
+  `N i` is, and is everything in degree `i` when `N i` is.
 -/
 
 public section
@@ -130,12 +130,23 @@ theorem epi_subobjectOfSubmodules_arrow_f {i : ι} (h : N i = ⊤) :
   exact Submodule.mem_top
 
 /-- When every `N i` is zero, the subcomplex is zero. -/
+@[simp]
 theorem subobjectOfSubmodules_eq_bot (h : ∀ i, N i = ⊥) : K.subobjectOfSubmodules N hN = ⊥ := by
   rw [subobjectOfSubmodules_eq_mk, Subobject.mk_eq_bot_iff_zero]
   ext i x
   have hx : (x : N i).1 = 0 := by simpa [h i] using (x : N i).2
   rw [zero_f, ModuleCat.hom_zero, LinearMap.zero_apply]
   exact hx
+
+/-- When every `N i` is everything, the subcomplex is the whole complex. -/
+@[simp]
+theorem subobjectOfSubmodules_eq_top (h : ∀ i, N i = ⊤) : K.subobjectOfSubmodules N hN = ⊤ := by
+  have (i : ι) : IsIso ((K.subobjectOfSubmodules N hN).arrow.f i) :=
+    have : Epi ((K.subobjectOfSubmodules N hN).arrow.f i) :=
+      K.epi_subobjectOfSubmodules_arrow_f N hN (h i)
+    isIso_of_mono_of_epi _
+  have := Hom.isIso_of_components (K.subobjectOfSubmodules N hN).arrow
+  exact Subobject.eq_top_of_isIso_arrow _
 
 end Construction
 
