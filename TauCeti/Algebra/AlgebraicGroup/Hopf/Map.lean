@@ -56,7 +56,7 @@ variable [CommSemiring A] [Algebra R A]
 /-- Contravariant functoriality of convolution algebra homomorphisms in the source
 bialgebra. A bialgebra morphism `φ : H₁ →ₐc[R] H₂` sends an `A`-valued point of `H₂` to an
 `A`-valued point of `H₁` by pre-composition. -/
-@[expose] noncomputable def _root_.BialgHom.mapDomain (φ : H₁ →ₐc[R] H₂) :
+noncomputable def _root_.BialgHom.mapDomain (φ : H₁ →ₐc[R] H₂) :
     WithConv (H₂ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A) where
   toFun f := toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂))
   map_one' := by
@@ -70,12 +70,12 @@ bialgebra. A bialgebra morphism `φ : H₁ →ₐc[R] H₂` sends an `A`-valued 
 @[simp]
 lemma _root_.BialgHom.mapDomain_apply (φ : H₁ →ₐc[R] H₂)
     (f : WithConv (H₂ →ₐ[R] A)) :
-    mapDomain φ f = toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂)) := rfl
+    mapDomain φ f = toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂)) := (rfl)
 
 /-- Pointwise form of `mapDomain_apply`. -/
 lemma _root_.BialgHom.mapDomain_apply_apply (φ : H₁ →ₐc[R] H₂)
     (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
-    mapDomain φ f h = f.ofConv (φ h) := rfl
+    mapDomain φ f h = f.ofConv (φ h) := (rfl)
 
 /-- Pre-composition by a surjective bialgebra morphism is injective on points. -/
 lemma _root_.BialgHom.mapDomain_injective_of_surjective (φ : H₁ →ₐc[R] H₂)
@@ -137,7 +137,7 @@ variable [CommSemiring A] [Algebra R A]
 /-- A bialgebra isomorphism `e : H₁ ≃ₐc[R] H₂` induces a multiplicative equivalence of the
 convolution monoids of points, by pre-composition: the equiv-version of the contravariant
 functoriality `mapDomain`. -/
-@[expose] noncomputable def _root_.BialgEquiv.mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
+noncomputable def _root_.BialgEquiv.mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
     WithConv (H₂ →ₐ[R] A) ≃* WithConv (H₁ →ₐ[R] A) where
   toFun := mapDomain (A := A) (e : H₁ →ₐc[R] H₂)
   invFun := mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)
@@ -157,14 +157,14 @@ functoriality `mapDomain`. -/
 @[simp]
 lemma _root_.BialgEquiv.mapDomainMulEquiv_apply (e : H₁ ≃ₐc[R] H₂)
     (f : WithConv (H₂ →ₐ[R] A)) :
-    mapDomainMulEquiv e f = mapDomain (e : H₁ →ₐc[R] H₂) f := rfl
+    mapDomainMulEquiv e f = mapDomain (e : H₁ →ₐc[R] H₂) f := (rfl)
 
 /-- `mapDomainMulEquiv` acts by pre-composition with the inverse bialgebra equivalence in the
 reverse direction. -/
 @[simp]
 lemma _root_.BialgEquiv.mapDomainMulEquiv_symm_apply (e : H₁ ≃ₐc[R] H₂)
     (f : WithConv (H₁ →ₐ[R] A)) :
-    (mapDomainMulEquiv (A := A) e).symm f = mapDomain (e.symm : H₂ →ₐc[R] H₁) f := rfl
+    (mapDomainMulEquiv (A := A) e).symm f = mapDomain (e.symm : H₂ →ₐc[R] H₁) f := (rfl)
 
 end BialgebraEquiv
 
