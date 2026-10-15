@@ -249,6 +249,7 @@ theorem linearDisjoint_fieldRange_of_forall_finiteDimensional [Algebra.IsAlgebra
       (IsScalarTower.toAlgHom k M E).fieldRange.LinearDisjoint F) :
     (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
   let f := IsScalarTower.toAlgHom k k' E
+  have : Algebra.IsAlgebraic k f.fieldRange := f.equivFieldRange.isAlgebraic
   change f.fieldRange.toSubalgebra.LinearDisjoint (IsScalarTower.toAlgHom k F E).range
   apply Subalgebra.LinearDisjoint.of_linearDisjoint_finite_left
   intro A hA hfinite
