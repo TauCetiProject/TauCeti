@@ -46,6 +46,9 @@ statements that use it.
   its elements of a given degree, from the hom modules.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
+* `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem_of_mem_totalGrading_piece`: on elements of
+  given degrees, a multilinear map out of the total module takes values in a submodule when it
+  does so on morphisms of those degrees, each in a single hom module.
 * `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem`: a multilinear map of positive arity out
   of the total module takes values in a submodule when it does so on composable strings and
   vanishes on the other strings.
@@ -191,6 +194,26 @@ theorem homInclusion_mem_totalGrading_piece_iff {X Y : C} (n : ℤ) (f : homModu
     simpa using h
   · rw [homProjection_homInclusion_of_ne hXY]
     exact zero_mem _
+
+/-- **Multilinear maps on homogeneous elements are controlled by homogeneous morphisms.** A
+multilinear map out of the total module of morphisms sends every tuple of elements of degrees `d`
+into a submodule `S` as soon as it does so on every tuple of morphisms of degrees `d`, each lying
+in a single hom module. -/
+theorem multilinearMap_apply_mem_of_mem_totalGrading_piece {M : Type*} [AddCommMonoid M]
+    [Module R M] {n : ℕ} {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) M}
+    {S : Submodule R M} {d : Fin n → ℤ}
+    (h : ∀ (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)),
+      (∀ i, x i ∈ (grading (R := R) (s i) (t i)).piece (d i)) →
+        f (fun i ↦ homInclusion (s i) (t i) (x i)) ∈ S)
+    {y : Fin n → TotalHom R C} (hy : ∀ i, y i ∈ (totalGrading R C).piece (d i)) : f y ∈ S := by
+  classical
+  have e : y = fun i ↦ ∑ p ∈ (y i).support, homInclusion p.1 p.2 (homProjection p.1 p.2 (y i)) :=
+    funext fun i ↦ by
+      simp only [homProjection_apply, homInclusion_eq_lof, DirectSum.lof_eq_of,
+        DirectSum.sum_support_of]
+  rw [e, MultilinearMap.map_sum_finset]
+  exact Submodule.sum_mem _ fun p _ ↦
+    h (fun i ↦ (p i).1) (fun i ↦ (p i).2) _ fun i ↦ homProjection_mem_piece (hy i) _ _
 
 /-- A multilinear operation on the total module of morphisms is **path-compatible** when it is an
 operation on composable strings of morphisms.  Inputs are ordered `aₙ, …, a₁` with
