@@ -133,7 +133,7 @@ theorem irrational_of_one_lt_irrationalityExponent {ξ : ℝ}
 
 /-- If infinitely many rational numbers `r` satisfy `|ξ - r| < r.den ^ (-p)`, then `ξ` is a
 Liouville number with exponent `p`. -/
-theorem liouvilleWith_of_infinite_setOf_abs_sub_lt_rpow_neg {p ξ : ℝ}
+theorem _root_.Set.Infinite.liouvilleWith_of_abs_sub_lt_rpow_neg {p ξ : ℝ}
     (h : {r : ℚ | |ξ - r| < (r.den : ℝ) ^ (-p)}.Infinite) : LiouvilleWith p ξ := by
   refine ⟨1, Nat.frequently_atTop_iff_infinite.2 fun hfin ↦ h ?_⟩
   obtain ⟨N, hN⟩ := hfin.bddAbove
@@ -150,8 +150,8 @@ theorem liouvilleWith_of_infinite_setOf_abs_sub_lt_rpow_neg {p ξ : ℝ}
     calc |ξ - r| < (r.den : ℝ) ^ (-p) := hr
       _ ≤ (r.den : ℝ) ^ |p| := Real.rpow_le_rpow_of_exponent_le hd (neg_le_abs p)
       _ ≤ (N : ℝ) ^ |p| := by gcongr
-  have hfin' := (Rat.finite_setOf_den_le_of_isBounded
-    (Metric.isBounded_ball (x := ξ) (r := (N : ℝ) ^ |p|)) N).union
+  have hfin' := ((Metric.isBounded_ball (x := ξ) (r := (N : ℝ) ^ |p|)).finite_setOf_rat_den_le
+    N).union
     ((Set.subsingleton_singleton (a := ξ)).preimage Rat.cast_injective).finite
   refine hfin'.subset ?_
   intro r hr
@@ -206,7 +206,7 @@ theorem irrationalityExponent_eq_iSup_infinite (ξ : ℝ) :
       ⨆ (p : ℝ) (_ : {r : ℚ | |ξ - r| < (r.den : ℝ) ^ (-p)}.Infinite), ENNReal.ofReal p := by
   refine le_antisymm (iSup₂_le fun p hp ↦ le_of_forall_lt fun c hc ↦ ?_)
     (iSup₂_le fun p hp ↦ le_irrationalityExponent_of_liouvilleWith
-      (liouvilleWith_of_infinite_setOf_abs_sub_lt_rpow_neg hp))
+      hp.liouvilleWith_of_abs_sub_lt_rpow_neg)
   have hc' : c.toReal < p := (ENNReal.lt_ofReal_iff_toReal_lt hc.ne_top).mp hc
   obtain ⟨q, hcq, hqp⟩ := exists_between hc'
   exact ((ENNReal.lt_ofReal_iff_toReal_lt hc.ne_top).mpr hcq).trans_le <|
@@ -217,11 +217,12 @@ theorem irrationalityExponent_eq_iSup_infinite (ξ : ℝ) :
 /-- Every irrational number is a Liouville number with exponent `2`, by Dirichlet's
 approximation theorem. -/
 theorem _root_.Irrational.liouvilleWith_two {ξ : ℝ} (hξ : Irrational ξ) : LiouvilleWith 2 ξ := by
-  refine liouvilleWith_of_infinite_setOf_abs_sub_lt_rpow_neg ?_
+  refine Set.Infinite.liouvilleWith_of_abs_sub_lt_rpow_neg ?_
   convert Real.infinite_rat_abs_sub_lt_one_div_den_sq_of_irrational hξ using 4 with r
   rw [Real.rpow_neg (Nat.cast_nonneg _), one_div, Real.rpow_two]
 
 /-- A real number has irrationality exponent at least two exactly when it is irrational. -/
+@[simp]
 theorem two_le_irrationalityExponent_iff (ξ : ℝ) :
     2 ≤ irrationalityExponent ξ ↔ Irrational ξ := by
   refine ⟨fun h ↦ irrational_of_one_lt_irrationalityExponent (ENNReal.one_lt_two.trans_le h),

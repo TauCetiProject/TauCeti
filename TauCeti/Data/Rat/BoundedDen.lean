@@ -18,17 +18,17 @@ approximations to a real number must have unbounded denominators.
 
 ## Main results
 
-* `Rat.finite_setOf_den_le_of_isBounded`: for a bounded `s ⊆ ℝ` and `N : ℕ`, the rationals
+* `Bornology.IsBounded.finite_setOf_rat_den_le`: for a bounded `s ⊆ ℝ` and `N : ℕ`, the rationals
   `r` with `r.den ≤ N` and `(r : ℝ) ∈ s` form a finite set.
 -/
 
 public section
 
-namespace Rat
+namespace Bornology.IsBounded
 
 /-- A bounded set of real numbers contains only finitely many rational numbers of denominator
 at most `N`. -/
-theorem finite_setOf_den_le_of_isBounded {s : Set ℝ} (hs : Bornology.IsBounded s) (N : ℕ) :
+theorem finite_setOf_rat_den_le {s : Set ℝ} (hs : Bornology.IsBounded s) (N : ℕ) :
     {r : ℚ | r.den ≤ N ∧ (r : ℝ) ∈ s}.Finite := by
   obtain ⟨C, hC⟩ := hs.exists_norm_le
   set M : ℤ := ⌈C * N⌉
@@ -46,4 +46,4 @@ theorem finite_setOf_den_le_of_isBounded {s : Set ℝ} (hs : Bornology.IsBounded
     constructor <;> linarith [abs_le.mp habs, Int.le_ceil (C * N)]
   exact ⟨⟨by exact_mod_cast hM.2, by exact_mod_cast hM.1⟩, hden⟩
 
-end Rat
+end Bornology.IsBounded
