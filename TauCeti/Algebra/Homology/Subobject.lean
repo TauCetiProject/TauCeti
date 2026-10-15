@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.CategoryTheory.Subobject.Lattice
 
@@ -14,7 +15,9 @@ public import Mathlib.CategoryTheory.Subobject.Lattice
 The bottom subobject of a homological complex and the quotient by its top subobject have
 vanishing homology. These facts apply to any complex shape, assuming only that the homology
 in the requested degree exists. They supply the vanishing conditions at the ends of a finite
-filtration.
+filtration. For a filtration which is finite only degreewise, the degreewise forms apply: a
+complex has vanishing homology in a degree where its term vanishes, and the quotient by a
+subcomplex vanishes in a degree where the subcomplex is everything.
 -/
 
 public section
@@ -41,5 +44,13 @@ lemma isZero_homology_cokernel_of_eq_top (S : Subobject K) (hS : S = ⊤)
     IsZero ((cokernel S.arrow).homology i) := by
   have : IsIso S.arrow := by rw [hS]; infer_instance
   exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) i).isZero_homology
+
+/-- The quotient by a subcomplex has vanishing homology in a degree where the subcomplex is
+everything. -/
+lemma isZero_homology_cokernel_of_epi_arrow_f {C : Type*} [Category* C] [Abelian C]
+    {K : HomologicalComplex C c} (S : Subobject K) (i : ι) [Epi (S.arrow.f i)] :
+    IsZero ((cokernel S.arrow).homology i) :=
+  (HomologicalComplex.ExactAt.of_isZero ((isZero_cokernel_of_epi (S.arrow.f i)).of_iso
+    (PreservesCokernel.iso (HomologicalComplex.eval C c i) S.arrow))).isZero_homology
 
 end CategoryTheory.Subobject
