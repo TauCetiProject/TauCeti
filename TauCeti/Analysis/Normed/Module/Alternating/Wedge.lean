@@ -11,8 +11,6 @@ public import Mathlib.LinearAlgebra.Alternating.DomCoprod
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
-import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Wedge products of continuous alternating maps

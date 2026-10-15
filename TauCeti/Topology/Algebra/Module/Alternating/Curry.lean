@@ -101,6 +101,7 @@ theorem curryLeftTopological_smul {n : ℕ} (c : R) (f : M [⋀^Fin (n + 1)]→L
   ext x v
   simp
 
+/-- Inserting the same vector twice into an alternating map gives zero. -/
 @[simp]
 theorem curryLeftTopological_curryLeftTopological {n : ℕ}
     (f : M [⋀^Fin (n + 2)]→L[R] N) (x : M) :
