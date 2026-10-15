@@ -140,15 +140,15 @@ theorem mem_definingPointsSubgroup_iff
         (CommAlgCat.of R A) ↔
       Symplectic.pointsMulEquiv R m (A := A) g ∈ matrixSubgroup m := by
   have hpullback :
-      (CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
+      (CommHopfAlgCat.Hom.mapPointsFunctor (Symplectic.coordinateMap R m)).app
           (CommAlgCat.of R A) g =
         CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R (m + m)) (Symplectic.definingHopfIdeal R m)
           (CommAlgCat.of R A) g := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, Symplectic.coordinateMap_def,
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, Symplectic.coordinateMap_def,
       CommHopfAlgCat.quotientPointsHom_apply]
   calc
-    _ ↔ (CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
+    _ ↔ (CommHopfAlgCat.Hom.mapPointsFunctor (Symplectic.coordinateMap R m)).app
           (CommAlgCat.of R A) g ∈ CommHopfAlgCat.quotientPointsSubgroup
             (GeneralLinear.coordinateHopfAlgebra R (m + m))
             (GeneralLinear.weightParabolicDefiningHopfIdeal R (weights m))
@@ -157,7 +157,7 @@ theorem mem_definingPointsSubgroup_iff
       exact CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
         (Symplectic.coordinateMap R m) _ _ g
     _ ↔ (GeneralLinear.pointsMulEquiv (m + m)
-          ((CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (Symplectic.coordinateMap R m)).app
             (CommAlgCat.of R A) g) : Matrix _ _ A).BlockTriangular
           (OrderDual.toDual ∘ weights m) :=
       GeneralLinear.mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular _ _ _

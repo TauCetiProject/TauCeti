@@ -60,7 +60,7 @@ noncomputable section
 
 namespace TauCeti
 
-open PadicTateTwist ValuativeRel
+open PadicTateTwist _root_.ValuativeRel
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {ℓ : ℕ}

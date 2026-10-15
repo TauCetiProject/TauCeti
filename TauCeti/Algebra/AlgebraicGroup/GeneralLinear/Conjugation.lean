@@ -78,7 +78,7 @@ theorem pointsMulEquiv_mapPointsFunctor_conjCoordinateIso
     (P : Matrix.GeneralLinearGroup (Fin n) R) (A : CommAlgCat.{v} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) A) :
     pointsMulEquiv n
-        ((CommHopfAlgCat.mapPointsFunctor (conjCoordinateIso P).hom).app A f) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (conjCoordinateIso P).hom).app A f) =
       Matrix.GeneralLinearGroup.map (algebraMap R A) P * pointsMulEquiv n f *
         (Matrix.GeneralLinearGroup.map (algebraMap R A) P)⁻¹ := by
   rw [conjCoordinateIso, CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
@@ -96,7 +96,7 @@ theorem pointsMulEquiv_toConv_comp_conjCoordinateIso
             coordinateHopfAlgebra R n))) =
       Matrix.GeneralLinearGroup.map (algebraMap R A) P * pointsMulEquiv n f *
         (Matrix.GeneralLinearGroup.map (algebraMap R A) P)⁻¹ := by
-  simpa only [CommHopfAlgCat.mapPointsFunctor_app_apply] using
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] using
     pointsMulEquiv_mapPointsFunctor_conjCoordinateIso P (CommAlgCat.of R A) f
 
 /-- Conjugation by the inverse matrix is the inverse coordinate automorphism. -/

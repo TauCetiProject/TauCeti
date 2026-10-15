@@ -91,7 +91,7 @@ variable {K : Type*} [CommRing K] [TopologicalSpace K] [NonarchimedeanRing K]
 /-- **The holed disc `D(a, |c|) ∖ ⋃ᵢ D⁻(bᵢ, |dᵢ|)`** in the closed unit disc: the points of the
 closed subdisc `D(a, |c|)` with `v(dᵢ) ≤ v(T - bᵢ)` for every `i`. For a nonarchimedean normed
 field `K` this removes from `D(a, |c|)` the open discs of radius `‖dᵢ‖` about the `bᵢ`. -/
-def holedDisc (a c : K) (b d : ι → K) : Set (closedPolydisc 1 K) :=
+noncomputable def holedDisc (a c : K) (b d : ι → K) : Set (closedPolydisc 1 K) :=
   closedSubdisc a c ∩ ⋂ i, {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))}
 
 /-- Membership in a holed disc is membership in its outer disc together with the defining

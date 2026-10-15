@@ -158,7 +158,7 @@ theorem convPow_finrank_eq_one [Module.Free R H] [Module.Finite R H] {A : Type*}
     apply toConv_injective
     rw [_root_.AlgHom.toLinearMap_convPow, _root_.AlgHom.toLinearMap_convOne]
     exact convPow_id_eq_one
-  have hx : x = mapValue x.ofConv (toConv (_root_.AlgHom.id R H)) := by simp
+  have hx : x = AlgHom.mapValue x.ofConv (toConv (_root_.AlgHom.id R H)) := by simp
   rw [hx, ← map_pow, hid, map_one]
 
 end Free
@@ -192,14 +192,14 @@ theorem convPow_eq_one_of_rankAtStalk [Module.Finite R H] [Module.Projective R H
     rw [Module.rankAtStalk_eq_finrank_tensorProduct] at hP
     have hj := convPow_eq_one_of_baseChange (S := Localization.AtPrime P) (toConv j)
     rw [hP] at hj
-    have key : mapValue j (toConv (_root_.AlgHom.id R H) ^ n) = 1 := by
+    have key : AlgHom.mapValue j (toConv (_root_.AlgHom.id R H) ^ n) = 1 := by
       rw [map_pow]
       simpa using hj
     have := congrArg (fun y => y.ofConv h) key
-    simp only [mapValue_apply, ofConv_toConv, _root_.AlgHom.comp_apply,
+    simp only [AlgHom.mapValue_apply, ofConv_toConv, _root_.AlgHom.comp_apply,
       _root_.AlgHom.convOne_apply, j, Algebra.TensorProduct.includeRight_apply] at this
     simp [this, Algebra.algebraMap_eq_smul_one, Algebra.TensorProduct.one_def]
-  have hx : x = mapValue x.ofConv (toConv (_root_.AlgHom.id R H)) := by simp
+  have hx : x = AlgHom.mapValue x.ofConv (toConv (_root_.AlgHom.id R H)) := by simp
   rw [hx, ← map_pow, hid, map_one]
 
 end TauCeti.AlgHom

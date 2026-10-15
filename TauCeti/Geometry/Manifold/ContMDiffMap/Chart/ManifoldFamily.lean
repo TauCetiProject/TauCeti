@@ -141,9 +141,10 @@ theorem ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt {g : P × M → N
     · rw [← hU'] at hz; exact hz
   have hd : ContinuousOn d (O ×ˢ U) := by
     refine (hcont.comp ?_ hmapsTo2).congr ?_
-    · exact ((continuousOn_extChartAt p₀).mono (fun p hp ↦ by
+    · exact ((continuousOn_extChartAt p₀).mono (fun p (hp : p ∈ O) ↦ by
         rw [extChartAt_source]; exact hp.1)).comp continuousOn_fst
-        (fun z hz ↦ hz.1) |>.prodMk (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+        (fun z (hz : z ∈ O ×ˢ U) ↦ hz.1) |>.prodMk
+          (continuous_subtype_val.comp_continuousOn continuousOn_snd)
     · rintro ⟨p, z⟩ ⟨hp, hz⟩
       have hpsource : p ∈ (extChartAt I' p₀).source := by rw [extChartAt_source]; exact hp.1
       have hzU' : (↑z : E) ∈ U' := by rw [← hU'] at hz; exact hz

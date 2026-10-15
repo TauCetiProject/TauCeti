@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 
 /-!
@@ -47,5 +48,16 @@ theorem IsCurveOver.isFunctionField [X.IsCurveOver k] :
     TauCeti.IsFunctionField k X.functionField := by
   exact (TauCeti.AlgebraicGeometry.isFunctionField_functionField_iff k).2
     (IsCurveOver.topologicalKrullDim_eq_one k)
+
+variable (k X) in
+/-- **The local rings of a regular proper curve are valuation rings**: for a curve `X` over `k`
+whose codimension-one local rings are discrete valuation rings, the local ring at the generic point
+is the function field, and every other point has codimension one. -/
+theorem IsCurveOver.valuationRing_stalk [X.IsCurveOver k]
+    [∀ y : TauCeti.AlgebraicGeometry.CodimensionOnePoint X,
+      IsDiscreteValuationRing (X.presheaf.stalk (y : X))] (p : X) :
+    ValuationRing (X.presheaf.stalk p) :=
+  TauCeti.AlgebraicGeometry.Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
+    (IsCurveOver.topologicalKrullDim_eq_one k).le p
 
 end AlgebraicGeometry.Scheme

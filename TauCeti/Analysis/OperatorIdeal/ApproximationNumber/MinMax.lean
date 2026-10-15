@@ -53,6 +53,8 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   bound checked on unit vectors.
 * `ContinuousLinearMap.le_singularValue_of_linearIndependent`: the same, for the span of `n + 1`
   linearly independent vectors.
+* `ContinuousLinearMap.singularValue_id`: the approximation numbers of the identity are `1`
+  below the rank of the space and `0` from it on.
 * `ContinuousLinearMap.singularValue_le_nnnorm_comp_orthogonal`: `aₙ(T) ≤ ‖T|_{Vᗮ}‖` for every
   subspace `V` of rank at most `n`.
 * `ContinuousLinearMap.singularValue_eq_iInf_nnnorm_comp_orthogonal`: on a complete inner product
@@ -64,6 +66,9 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
 * `TauCeti.hasMinMaxLowerBound_iff_forall_isLUB`: a pair has this property exactly when, for every
   `T` and `n`, `aₙ(T)` is the least upper bound of the coercivity constants of `T` on spans of
   `n + 1` linearly independent vectors.
+* `TauCeti.HasMinMaxLowerBound.exists_rank_eq_coercive`: on a pair with the property, a strict
+  lower bound for the first `i` approximation numbers of `T` is a coercivity constant of `T` on a
+  subspace of rank `i`.
 * `TauCeti.HasMinMaxLowerBound.of_completeSpace`: a complete inner product space has the
   converse min–max localization property towards every inner product space.
 * `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`: on a pair with the property,
@@ -123,6 +128,26 @@ theorem le_singularValue_of_linearIndependent (T : E →L[𝕜] F) {n : ℕ} {v 
   have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
   exact_mod_cast n.lt_succ_self
+
+/-- **Approximation numbers of the identity.** On a normed space of rank `r`, a possibly infinite
+cardinal, `aₙ(id) = 1` for `n < r` and `aₙ(id) = 0` for `r ≤ n`. -/
+@[simp]
+theorem singularValue_id (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if (n : Cardinal) < Module.rank 𝕜 E then 1 else 0 := by
+  split_ifs with hn
+  · refine le_antisymm (((ContinuousLinearMap.id 𝕜 E).singularValue_le_nnnorm n).trans ?_) ?_
+    · exact_mod_cast norm_id_le
+    · exact_mod_cast (ContinuousLinearMap.id 𝕜 E).le_singularValue_of_lt_rank
+        (V := ⊤) (by rwa [rank_top]) (c := 1) (by simp)
+  · exact singularValue_eq_zero_of_rank_domain_le _ (le_of_not_gt hn)
+
+/-- **Approximation numbers of a finite-dimensional identity.** `aₙ(id) = 1` below the dimension
+and `aₙ(id) = 0` at and above it. -/
+theorem singularValue_id_of_finiteDimensional [FiniteDimensional 𝕜 E] (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if n < Module.finrank 𝕜 E then 1 else 0 := by
+  simp [← Module.finrank_eq_rank]
 
 end Coercive
 
@@ -378,6 +403,20 @@ theorem HasMinMaxLowerBound.isLUB_singularValue (h : HasMinMaxLowerBound 𝕜 E 
     IsLUB {s : ℝ≥0 | ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
       ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖} (T.singularValue n) :=
   hasMinMaxLowerBound_iff_forall_isLUB.mp h T n
+
+/-- **Coercive subspaces of a prescribed rank.** On a pair with the converse min–max localization
+property, if `0 ≤ t` lies strictly below the first `i` approximation numbers of `T`, then `T` is
+`t`-coercive on a subspace of rank `i`. -/
+theorem HasMinMaxLowerBound.exists_rank_eq_coercive (h : HasMinMaxLowerBound 𝕜 E F)
+    (T : E →L[𝕜] F) {i : ℕ} {t : ℝ} (ht : 0 ≤ t) (hi : ∀ k < i, t < T.singularValue k) :
+    ∃ V : Submodule 𝕜 E, Module.rank 𝕜 V = i ∧ ∀ x ∈ V, t * ‖x‖ ≤ ‖T x‖ := by
+  rcases i with _ | i
+  · exact ⟨⊥, by simp, fun x hx ↦ by simp [(Submodule.mem_bot 𝕜).mp hx]⟩
+  obtain ⟨s, hts, v, hv, hs⟩ := hasMinMaxLowerBound_iff.mp h T i ht (hi i i.lt_succ_self)
+  refine ⟨Submodule.span 𝕜 (Set.range v), ?_, fun x hx ↦
+    (mul_le_mul_of_nonneg_right hts.le (norm_nonneg x)).trans (hs x hx)⟩
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
 
 section CompleteSpace
 

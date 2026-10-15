@@ -100,7 +100,7 @@ private theorem pointwiseQuotientPresheafGrpProjection_comp_kernelPointwiseQuoti
         (isNormal_kernelHopfIdeal f)) GrpCat.uliftFunctor.{u + 1, u} ≫
       kernelPointwiseQuotientPresheafNatTrans f =
       Functor.whiskerRight (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R))
-        (mapPointsFunctor f)) GrpCat.uliftFunctor.{u + 1, u} := by
+        (CommHopfAlgCat.Hom.mapPointsFunctor f)) GrpCat.uliftFunctor.{u + 1, u} := by
     rw [← Functor.whiskerRight_comp, ← Functor.whiskerLeft_comp,
       pointwiseQuotientProjection_comp_kernelPointwiseQuotientNatTrans]
   -- The presentations of the presheaf group objects agree only up to unfolding, so the
@@ -201,7 +201,7 @@ theorem isIso_kernelFppfQuotientHom_of_exists_lift (f : H ⟶ K)
     have key := congrArg (fun α ↦ α.app B zB)
       (pointwiseQuotientProjection_comp_kernelPointwiseQuotientNatTrans f)
     refine key.trans ?_
-    rw [mapPointsFunctor_app_apply, ofConv_toConv, hz]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ofConv_toConv, hz]
     exact (HopfAlgebra.mapPoints_apply (H := H) φ s).symm
   have hβ : IsIso (F.map β) :=
     (J.W_iff β).1 (J.W_of_isLocallyBijective β)

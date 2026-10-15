@@ -124,7 +124,7 @@ theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
   obtain ⟨p, hp⟩ := hA
   -- The difference quotient extends analytically across the center.
   have hD : AnalyticAt ℂ (dslope A (e x)) (e x) :=
-    ⟨p.fslope, hp.has_fpower_series_dslope_fslope⟩
+    ⟨p.fslope, hp.dslope_fslope⟩
   have hDnear : ∀ᶠ y in 𝓝 x, AnalyticAt ℂ (dslope A (e x)) (e y) :=
     (e.continuousAt hx).tendsto.eventually hD.eventually_analyticAt
   have hnear : ∀ᶠ y in 𝓝 x,
