@@ -130,6 +130,14 @@ theorem _root_.Representation.baseChange_apply (ρ : _root_.Representation R G V
     rw [_root_.Representation.baseChange, MonoidHom.comp_apply]
     rfl
 
+/-- Scalar extension commutes with precomposition of a representation. -/
+@[simp]
+theorem _root_.Representation.baseChange_comp {H : Type*} [Monoid H]
+    (ρ : _root_.Representation R G V) (φ : H →* G) :
+    _root_.Representation.baseChange A (ρ.comp φ) =
+      (_root_.Representation.baseChange A ρ).comp φ := by
+  simp only [_root_.Representation.baseChange, MonoidHom.comp_assoc]
+
 end BaseChange
 
 section Invariants

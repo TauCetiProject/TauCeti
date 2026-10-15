@@ -199,10 +199,10 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
   | intro τ hτ =>
   -- The unramified extension `E_v` of `K_v` of degree `n` contains `τ ζ`.
   let Ev := unramifiedExtension (v.adicCompletion K) (SeparableClosure (v.adicCompletion K)) n
-  let := finiteExtensionValuativeRel (v.adicCompletion K) Ev
-  let := finiteExtensionNormedFieldTopology (v.adicCompletion K) Ev
+  let := algebraicExtensionValuativeRel (v.adicCompletion K) Ev
+  let := algebraicExtensionNormedFieldTopology (v.adicCompletion K) Ev
   have := finiteExtension_isNonarchimedeanLocalField (v.adicCompletion K) Ev
-  have := finiteExtension_valuativeExtension (v.adicCompletion K) Ev
+  have := algebraicExtension_valuativeExtension (v.adicCompletion K) Ev
   have : IsUnramified (v.adicCompletion K) Ev := isUnramified_unramifiedExtension hn
   have hτζ : τ ζ ^ Nat.card 𝓀[v.adicCompletion K] ^ n = τ ζ := by
     rw [← map_pow, ← Nat.sub_add_cancel (Nat.one_le_pow _ _ (by omega) : 1 ≤ _), pow_succ,

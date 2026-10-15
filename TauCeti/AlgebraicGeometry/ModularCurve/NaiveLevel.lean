@@ -55,6 +55,20 @@ Mazur only over a base on which `N` is invertible, where `E[N]` is finite étale
 the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`, `ModuliProblem.gamma`
 for `[Γ(N)]`).
 
+**Relative representability.** For a finite group `A`, suppose that the homomorphisms
+`A →* E(T)`, for schemes `T` over `S`, are represented by a scheme `H` over `S` with a universal
+homomorphism `u : A →* E(H)`. Then the naive `A`-structures on the base changes `E_T` are
+represented by the open subscheme of `H` on which `u` is injective on fibres, the naive locus of
+`u` (`ModuliProblem.naiveLevelRepresentableBy`): a `T`-point of `E_T` is the same as a point of `E`
+with values in `T` (`EllObj.baseChangePointsEquiv`), and such a point meets the zero section of
+`E_T` exactly where its image meets the zero section of `E`. For `A = (ℤ/Nℤ)²`, `N ≠ 0`, the
+fibre product `E[N] ×_S E[N]` with the universal pair of points of `E[N]` is such an `H`
+(`EllipticCurveGeom.existsUnique_comp_torsionPairHom`), so the naive problem `[Γ(N)]` is
+relatively representable over every base (`ModuliProblem.gammaNaiveRelRepData`). Its representing
+schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every property stable
+under base change and composition which open immersions have
+(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevel B A`: the moduli problem of naive
@@ -74,6 +88,12 @@ for `[Γ(N)]`).
   `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveEquiv`: for `N ≠ 0`, the naive
   `[Γ₁(N)]`-structures are the `S`-points of `E[N]` of exact order `N` in every fibre, and the
   naive `[Γ(N)]`-structures are the pairs of `S`-points of `E[N]` independent in every fibre.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLocusEquiv`: for a universal homomorphism `u`, the
+  points of the naive locus of `u` with values in `T` are the naive structures on `E_T`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevelRepresentableBy`: the naive locus represents
+  the fibre of the problem of naive `A`-structures.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveRelRepData`: relative-representability data
+  for the naive problem `[Γ(N)]`.
 
 ## Main results
 
@@ -98,11 +118,17 @@ for `[Γ(N)]`).
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneNaiveEquiv_map_torsionι` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveEquiv_map_fst_torsionι`: the points of `E[N]`
   of a pulled-back naive structure are the base changes of the original points.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.isFiberwiseInjective_baseChange_iff`: injectivity on
+  the fibres of a base change `E_T`, read on the points of `E` with values in `T`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_gammaNaiveRelRepData`: the representing
+  morphisms of `[Γ(N)]` inherit the properties of `E[N]` stable under base change and composition
+  and holding for open immersions.
 
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, §3.7 (naive level structures
-  where `N` is invertible), Chapter 4, and §7.1 (the action of `GL₂(ℤ/Nℤ)` on `[Γ(N)]`).
+  where `N` is invertible), 3.7.1 (relative representability of naive full level `N`),
+  Chapter 4, and §7.1 (the action of `GL₂(ℤ/Nℤ)` on `[Γ(N)]`).
 -/
 
 public section
@@ -512,6 +538,172 @@ theorem gammaNaiveEquiv_gammaNaiveAction_hom_app_snd_torsionι (g : GL (Fin 2) (
   simp
 
 end GeneralLinear
+
+/-! ### Relative representability -/
+
+section Representable
+
+open EllipticCurveGeom
+
+variable {B} {X : EllObj B} {A : Type} [Group A] {H : Over X.base}
+  (u : A →* (H ⟶ Over.mk X.curve.structureMap))
+
+/-- **Injectivity on fibres of a base change, read on the original curve.** For an object
+`X = (E/S)` of `Ell/B` and a scheme `T` over `S`, a homomorphism `φ : A →* E_T(T)` is injective on
+every fibre of the base change `E_T` exactly when, for every `a ≠ 1`, the point of `E` with values
+in `T` given by `φ a` (`EllObj.baseChangePointsEquiv`) misses the zero section of `E` at every
+point of `T`. -/
+theorem isFiberwiseInjective_baseChange_iff {T : Over X.base}
+    {φ : A →* (𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+      Over.mk (X.baseChangeFunctor.obj T).curve.structureMap)} :
+    (X.baseChangeFunctor.obj T).curve.IsFiberwiseInjective φ ↔
+      ∀ a, a ≠ 1 → ∀ t, (X.baseChangePointsEquiv T (φ a)).left t ≠ X.curve.zero (T.hom t) := by
+  rw [EllipticCurveGeom.isFiberwiseInjective_iff]
+  refine forall₂_congr fun a _ ↦ forall_congr' fun t ↦ Iff.not ?_
+  refine (EllipticCurveGeom.left_apply_eq_zero_iff_of_isPullback
+    (X.baseChangeFunctorHom T).isPullback (X.baseChangeFunctorHom T).zero_total (φ a) t).trans ?_
+  rw [← Scheme.Hom.comp_apply, ← EllObj.baseChangePointsEquiv_apply_left,
+    EllObj.baseChangeFunctorHom_base]
+  -- the two sides differ only in the type of `t`: the base `(X.baseChangeFunctor.obj T).base` of
+  -- the base change is `T.left` by definition
+  exact Iff.rfl
+
+variable [Finite A]
+
+/-- **The naive structure of a point of the naive locus.** For a point `y` of the naive locus of
+`u` with values in a scheme `T` over `S`, the homomorphism `A →* E_T(T)` sending `a` to the
+`T`-point of the base change `E_T` given by the point `y ≫ u a` of `E` with values in `T`. It is
+injective on every fibre (`isFiberwiseInjective_naiveLocusHom`). -/
+noncomputable def naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLocusOver u) :
+    A →* (𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+      Over.mk (X.baseChangeFunctor.obj T).curve.structureMap) :=
+  { toFun a := (X.baseChangePointsEquiv T).symm (y ≫ naiveLocusι u ≫ u a)
+    map_one' := by simp
+    map_mul' a b := by simp [MonObj.comp_mul] }
+
+@[simp]
+theorem baseChangePointsEquiv_naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLocusOver u) (a : A) :
+    X.baseChangePointsEquiv T (naiveLocusHom u y a) = y ≫ naiveLocusι u ≫ u a :=
+  MulEquiv.apply_symm_apply _ _
+
+/-- The naive structure of a point of the naive locus is injective on every fibre. -/
+theorem isFiberwiseInjective_naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLocusOver u) :
+    (X.baseChangeFunctor.obj T).curve.IsFiberwiseInjective (naiveLocusHom u y) := by
+  rw [isFiberwiseInjective_baseChange_iff]
+  simp_rw [baseChangePointsEquiv_naiveLocusHom, ← Category.assoc]
+  refine (range_left_subset_naiveLocus_iff u _).mp ?_
+  rintro _ ⟨t, rfl⟩
+  rw [Over.comp_left, Scheme.Hom.comp_apply, naiveLocusι_left, ← coe_naiveLocusOpens u,
+    ← Scheme.Opens.range_ι]
+  exact ⟨_, rfl⟩
+
+variable (hu : ∀ (T : Over X.base) (φ : A →* (T ⟶ Over.mk X.curve.structureMap)),
+  ∃! x : T ⟶ H, ∀ a, x ≫ u a = φ a)
+
+include hu in
+private theorem bijective_naiveLocusHom (T : Over X.base) :
+    Function.Bijective fun y : T ⟶ naiveLocusOver u ↦ (naiveLevelEquiv _).symm
+      ⟨naiveLocusHom u y, isFiberwiseInjective_naiveLocusHom u y⟩ := by
+  refine ⟨fun y y' h ↦ ?_, fun α ↦ ?_⟩
+  · have h' := congrArg (fun α ↦ (naiveLevelEquiv _ α).1) h
+    simp only [Equiv.apply_symm_apply] at h'
+    have hyy' : ∀ a, (y' ≫ naiveLocusι u) ≫ u a = (y ≫ naiveLocusι u) ≫ u a := fun a ↦ by
+      simpa using (congrArg (X.baseChangePointsEquiv T) (DFunLike.congr_fun h' a)).symm
+    rw [← cancel_mono (naiveLocusι u)]
+    exact (hu T ((X.baseChangePointsEquiv T).toMonoidHom.comp (naiveLocusHom u y))).unique
+      (fun a ↦ by simp) (fun a ↦ by simpa using hyy' a)
+  · obtain ⟨⟨ψ, hψ⟩, rfl⟩ := (naiveLevelEquiv _).symm.surjective α
+    obtain ⟨x, hx, -⟩ := hu T ((X.baseChangePointsEquiv T).toMonoidHom.comp ψ)
+    have hrange : Set.range x.left ⊆ naiveLocus u := by
+      rw [range_left_subset_naiveLocus_iff]
+      simpa [hx] using isFiberwiseInjective_baseChange_iff.mp hψ
+    let y : T ⟶ naiveLocusOver u := Over.homMk (IsOpenImmersion.lift (naiveLocusOpens u).ι
+      x.left (by rwa [Scheme.Opens.range_ι, coe_naiveLocusOpens])) (by simp)
+    have hy : y ≫ naiveLocusι u = x := by
+      ext1
+      simp [y]
+    refine ⟨y, congrArg _ (Subtype.ext (MonoidHom.ext fun a ↦ ?_))⟩
+    apply (X.baseChangePointsEquiv T).injective
+    simpa [reassoc_of% hy] using hx a
+
+/-- **The naive structures given by the naive locus.** For a universal homomorphism `u`, the points
+of the naive locus of `u` with values in a scheme `T` over `S` correspond to the naive
+`A`-structures on the base change `E_T`, a point `y` corresponding to `naiveLocusHom u y`. -/
+noncomputable def naiveLocusEquiv (T : Over X.base) :
+    (T ⟶ naiveLocusOver u) ≃ (naiveLevel B A).obj (op (X.baseChangeFunctor.obj T)) :=
+  Equiv.ofBijective _ (bijective_naiveLocusHom u hu T)
+
+@[simp]
+theorem naiveLevelEquiv_naiveLocusEquiv {T : Over X.base} (y : T ⟶ naiveLocusOver u) :
+    (naiveLevelEquiv _ (naiveLocusEquiv u hu T y)).1 = naiveLocusHom u y := by
+  simp [naiveLocusEquiv]
+
+/-- The correspondence `naiveLocusEquiv` is natural in the scheme `T` over `S`. -/
+theorem naiveLocusEquiv_comp {T' T : Over X.base} (f : T' ⟶ T) (y : T ⟶ naiveLocusOver u) :
+    naiveLocusEquiv u hu T' (f ≫ y) =
+      (naiveLevel B A).map (X.baseChangeFunctor.map f).op (naiveLocusEquiv u hu T y) := by
+  refine (naiveLevelEquiv _).injective (Subtype.ext (MonoidHom.ext fun a ↦ ?_))
+  apply (X.baseChangePointsEquiv T').injective
+  simp only [naiveLevelEquiv_map, naiveLevelEquiv_naiveLocusEquiv, MonoidHom.coe_comp,
+    Function.comp_apply]
+  rw [EllObj.baseChangePointsEquiv_pointsPullback]
+  simp
+
+/-- **Naive structures are represented by the naive locus.** Let `X = (E/S)` be an object of
+`Ell/B`, `A` a finite group, and `u : A →* E(H)` a universal homomorphism to the points of `E` with
+values in a scheme `H` over `S`: every homomorphism `φ : A →* E(T)`, for `T` over `S`, is
+`a ↦ x ≫ u a` for a unique point `x` of `H` with values in `T`. Then the naive `A`-structures on the
+base changes `E_T` are represented by the open subscheme of `H` on which `u` is injective on
+fibres (`naiveLocusEquiv`). -/
+noncomputable def naiveLevelRepresentableBy :
+    ((naiveLevel B A).fibre X).RepresentableBy (naiveLocusOver u) where
+  homEquiv {T} := naiveLocusEquiv u hu T
+  homEquiv_comp f y := naiveLocusEquiv_comp u hu f y
+
+end Representable
+
+/-! ### Relative representability of the naive problem `[Γ(N)]` -/
+
+section GammaNaive
+
+variable {B N} [NeZero N]
+
+/-- **The naive moduli problem `[Γ(N)]` is relatively representable.** For an object `X = (E/S)`
+of `Ell/B`, the naive `[Γ(N)]`-structures on the base changes `E_T` of `E` are represented by the
+open subscheme of `E[N] ×_S E[N]` of pairs `(P, Q)` none of whose combinations `aP + bQ` with
+`(a, b) ≠ 0` meets the zero section: the naive locus of the universal pair of points of `E[N]`
+(`EllipticCurveGeom.torsionPairHom`). This holds over every base `B`; over a base on which `N` is
+invertible these are the naive full level `N` structures of Katz and Mazur. -/
+noncomputable def gammaNaiveRelRepData : (gammaNaive B N).RelRepData where
+  rep X := EllipticCurveGeom.naiveLocusOver (X.curve.torsionPairHom N)
+  representableBy X :=
+    naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPairHom N
+
+@[simp]
+theorem gammaNaiveRelRepData_rep (X : EllObj B) :
+    (gammaNaiveRelRepData (B := B) (N := N)).rep X =
+      EllipticCurveGeom.naiveLocusOver (X.curve.torsionPairHom N) :=
+  (rfl)
+
+/-- The representing morphisms of the naive problem `[Γ(N)]` have every property of morphisms of
+schemes which is stable under base change and composition, holds for open immersions, and holds
+for the `N`-torsion of every elliptic curve: each representing scheme is an open subscheme of
+`E[N] ×_S E[N]`, whose structure morphism is the composite of that open immersion with the
+morphism from `E[N] ×_S E[N]` to the base. -/
+theorem hasProperty_gammaNaiveRelRepData {W : MorphismProperty Scheme.{u}}
+    [W.IsStableUnderBaseChange] [W.IsStableUnderComposition] (hW : @IsOpenImmersion ≤ W)
+    (h : ∀ X : EllObj B, W (X.curve.torsion N).X.hom) :
+    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty W :=
+  (RelRepData.hasProperty_iff _).mpr fun X ↦
+    EllipticCurveGeom.naiveLocusOver_hom_mem _ hW
+      (W.comp_mem _ _ (W.pullback_fst _ _ (h X)) (h X))
+
+/-- The naive problem `[Γ(N)]` is locally of finite presentation over `Ell/B`. -/
+theorem hasProperty_gammaNaiveRelRepData_locallyOfFinitePresentation :
+    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
+  hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
+
+end GammaNaive
 
 end ModuliProblem
 

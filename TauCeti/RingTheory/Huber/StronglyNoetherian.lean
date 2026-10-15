@@ -12,7 +12,7 @@ public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 public import Mathlib.RingTheory.Polynomial.Basic
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Surjective
 import TauCeti.Topology.Algebra.Ring.Ideal
@@ -50,7 +50,7 @@ discrete case below is proved through it.
 * `TauCeti.Huber.IsStronglyNoetherian.restrictedMvPowerSeriesCompletion`: over a Huber base the
   predicate passes to `A⟨X₁,…,Xₖ⟩`, so a strongly noetherian ring stays strongly noetherian under
   the construction. This is the iteration isomorphism `A⟨X⟩⟨Y⟩ ≅ A⟨X,Y⟩` of
-  `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` read as a statement about the
+  `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic` read as a statement about the
   predicate; `[IsHuberRing A]` is what that isomorphism asks of the base, and the predicate itself
   does not.
 * `TauCeti.Huber.IsStronglyNoetherian.weightedRestrictedSubring_one_weight`: when the ordinary
@@ -226,7 +226,7 @@ power-series algebra over a strongly noetherian ring is again strongly noetheria
 construction can be iterated without leaving the class.
 
 `[IsHuberRing A]` is asked here and not by the predicate: it is what the iteration isomorphism
-of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` requires of the base. -/
+of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic` requires of the base. -/
 instance IsStronglyNoetherian.restrictedMvPowerSeriesCompletion [IsHuberRing A]
     [IsStronglyNoetherian A] (k : ℕ) :
     IsStronglyNoetherian (restrictedMvPowerSeriesCompletion k A) where
@@ -345,7 +345,7 @@ homomorphism is decided at zero. `IsOpenQuotientMap.isStronglyNoetherian` is the
 holding the bundled open-quotient structure.
 
 Openness of `π` is what carries the hypothesis: it is what makes `A⟨Y₁,…,Yₖ⟩ → B⟨Y₁,…,Yₖ⟩`
-surjective, by `TauCeti.Huber.weightedMap_one_weight_surjective`. Completeness and
+surjective, by `TauCeti.Huber.weightedMap_surjective`. Completeness and
 separation of both rings are what let `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` read
 that surjection back as one of the completed algebras. Countable generation of `𝓝 (0 : A)` is a
 further hypothesis, carried by the section: it is what supplies the shrinking family the lifted
@@ -368,7 +368,8 @@ theorem IsStronglyNoetherian.of_surjective [IsStronglyNoetherian A] {π : A →+
         fun _ ↦ by simp)).comp (restrictedMvPowerSeriesCompletionEquiv k A).toRingHom) ?_
   simp only [RingHom.coe_comp]
   exact ((restrictedMvPowerSeriesCompletionEquiv k B).symm.surjective.comp
-    (weightedMap_one_weight_surjective hπ hsurj hnhds)).comp
+    (weightedMap_surjective hπ hsurj hnhds isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ by simp))).comp
     (restrictedMvPowerSeriesCompletionEquiv k A).surjective
 
 /-- **The open-quotient form of `TauCeti.Huber.IsStronglyNoetherian.of_surjective`**, for a caller
