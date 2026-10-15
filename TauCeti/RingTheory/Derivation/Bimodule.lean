@@ -34,12 +34,14 @@ universe u v w
 
 /-- A derivation from an associative unital algebra into a bimodule.
 
-The left action is the `A`-action and the right action is the `Aᵐᵒᵖ`-action.  We include
-`D 1 = 0` in the data so that the definition works over semirings and non-cancellative additive
-targets as well as over rings. -/
+The left action is the `A`-action and the right action is the `Aᵐᵒᵖ`-action; the two actions
+commute and are compatible with the ground-semiring action, so `M` is a `k`-linear bimodule.  We
+include `D 1 = 0` in the data so that the definition works over semirings and non-cancellative
+additive targets as well as over rings. -/
 structure BimoduleDerivation (k : Type u) (A : Type v) (M : Type w)
     [CommSemiring k] [Semiring A] [AddCommMonoid M] [Algebra k A]
-    [Module k M] [Module A M] [Module Aᵐᵒᵖ M] extends A →ₗ[k] M where
+    [Module k M] [Module A M] [Module Aᵐᵒᵖ M] [SMulCommClass A Aᵐᵒᵖ M]
+    [IsScalarTower k A M] [IsScalarTower k Aᵐᵒᵖ M] extends A →ₗ[k] M where
   protected map_one_eq_zero' : toLinearMap 1 = 0
   protected leibniz' (a b : A) :
     toLinearMap (a * b) = a • toLinearMap b + op b • toLinearMap a
@@ -48,7 +50,8 @@ namespace BimoduleDerivation
 
 variable {k : Type u} {A : Type v} {M : Type w}
   [CommSemiring k] [Semiring A] [AddCommMonoid M] [Algebra k A]
-  [Module k M] [Module A M] [Module Aᵐᵒᵖ M]
+  [Module k M] [Module A M] [Module Aᵐᵒᵖ M] [SMulCommClass A Aᵐᵒᵖ M]
+  [IsScalarTower k A M] [IsScalarTower k Aᵐᵒᵖ M]
 
 instance : FunLike (BimoduleDerivation k A M) A M where
   coe D := D.toLinearMap
@@ -106,6 +109,7 @@ variable {k : Type u} {A : Type v} {M : Type w} [CommSemiring k] [NonUnitalSemir
   [Module k A] [IsScalarTower k A A] [SMulCommClass k A A] [AddCommMonoid M] [Module k M]
   [Module (Unitization k A) M] [Module (Unitization k A)ᵐᵒᵖ M]
   [IsScalarTower k (Unitization k A) M] [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
+  [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M]
 
 namespace BimoduleDerivation
 

@@ -248,14 +248,10 @@ private def tensorLift (D : BimoduleDerivation k (Unitization k A) M) :
     Unitization k A ⊗[k] Unitization k A →ₗ[k] M :=
   TensorProduct.lift ((Algebra.lsmul k k M).toLinearMap.compl₂ D.toLinearMap)
 
-omit [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
-    [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M] in
 @[simp]
 private theorem tensorLift_tmul (D : BimoduleDerivation k (Unitization k A) M)
     (x y : Unitization k A) : tensorLift k A D (x ⊗ₜ[k] y) = x • D y := rfl
 
-omit [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
-    [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M] in
 private theorem tensorLift_leftAction (D : BimoduleDerivation k (Unitization k A) M)
     (a : Unitization k A) (t : Unitization k A ⊗[k] Unitization k A) :
     tensorLift k A D (leftAction k A a t) = a • tensorLift k A D t := by
@@ -263,7 +259,6 @@ private theorem tensorLift_leftAction (D : BimoduleDerivation k (Unitization k A
   | tmul x y => simp [mul_smul]
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
 
-omit [IsScalarTower k (Unitization k A)ᵐᵒᵖ M] in
 private theorem tensorLift_rightAction (D : BimoduleDerivation k (Unitization k A) M)
     (b : Unitization k A) (t : Unitization k A ⊗[k] Unitization k A) :
     tensorLift k A D (rightAction k A b t) =
