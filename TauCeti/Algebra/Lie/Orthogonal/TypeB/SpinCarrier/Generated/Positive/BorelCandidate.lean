@@ -168,6 +168,19 @@ def upperTriangularCoordinateMap :
     CommHopfAlgCat.quotientMapOfLe (GeneralLinear.coordinateHopfAlgebra A (dimension n))
       (upperTriangular_comap_le_definingIdeal n ht A)
 
+/-- The coordinate map from the upper-triangular subgroup onto the positive subgroup is induced
+by conjugation by the permutation matrix of `weightOrderEquiv`: precomposed with the
+upper-triangular quotient map, it is that conjugation followed by the positive quotient map. -/
+@[reassoc (attr := simp)]
+theorem coordinateMap_comp_upperTriangularCoordinateMap :
+    GeneralLinear.UpperTriangular.coordinateMap A (dimension n) ≫
+        upperTriangularCoordinateMap n ht A =
+      (GeneralLinear.conjCoordinateIso (permutationGL (k := A) (weightOrderEquiv n ht))).hom ≫
+        CommHopfAlgCat.mkQuotient _ (definingIdeal n A) := by
+  rw [GeneralLinear.UpperTriangular.coordinateMap_def, upperTriangularCoordinateMap,
+    ← Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfIso_inv, Iso.symm_inv,
+    Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
+
 /-- The coordinate map from the upper-triangular subgroup onto the positive subgroup is
 surjective, so it embeds the positive subgroup into the upper-triangular subgroup. -/
 theorem upperTriangularCoordinateMap_surjective :
