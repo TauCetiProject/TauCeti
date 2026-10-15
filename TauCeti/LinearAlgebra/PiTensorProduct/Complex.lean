@@ -301,7 +301,9 @@ theorem cochainComplexMap_id :
   intro n
   simp only [cochainComplexMap_f, _root_.PiTensorProduct.map_id, HomologicalComplex.id_f]
   have h : ModuleCat.ofHom ((LinearMap.id : Module.End R (⨂[R] i, M i)).restrict
-      (p := degreePiece ℳ n) (q := degreePiece ℳ n) (fun _ hz ↦ hz)) = 𝟙 _ := rfl
+      (p := degreePiece ℳ n) (q := degreePiece ℳ n) (fun _ hz ↦ hz)) = 𝟙 _ := by
+    ext z
+    simp
   rw [h]
   simp
 
