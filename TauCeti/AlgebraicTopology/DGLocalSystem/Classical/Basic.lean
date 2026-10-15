@@ -316,6 +316,14 @@ theorem op_loopChainToGroupAlgebra_smul (L : LocalCoefficientSystem.{u, u, w} R 
     op (loopChainToGroupAlgebra X x R a) • v = op a • v := by
   rw [op_smul_eq_classicalAction, classicalAction_op_eq, op_smul_eq_classicalGroupAlgebraAction]
 
+/-- The fiber of a classical local system is a DG right module over the group ring, trivially
+graded with the zero differential. -/
+theorem isDGRightModule_fiber_groupAlgebra (L : LocalCoefficientSystem.{u, u, w} R X) :
+    IsDGRightModule (isDGAlgebra_zero (trivialGrading R (MonoidAlgebra R (FundamentalGroup X x))))
+      (trivialGrading R (L.obj (FundamentalGroupoid.mk x)))
+      (0 : L.obj (FundamentalGroupoid.mk x) →ₗ[R] L.obj (FundamentalGroupoid.mk x)) :=
+  isDGRightModule_zero _
+
 end GroupAlgebraAction
 
 end TauCeti

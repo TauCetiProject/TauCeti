@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.RankOne
-public import TauCeti.RingTheory.GradedAlgebra.Trivial
 
 /-!
 # Twisted complexes of classical local systems
@@ -63,14 +62,6 @@ universe u w
 section Action
 
 variable {R : Type u} [CommRing R] {X : TopCat.{u}} {x : X}
-
-/-- The fiber of a classical local system is a DG right module over the group ring, trivially
-graded with the zero differential. -/
-theorem isDGRightModule_fiber_groupAlgebra (L : LocalCoefficientSystem.{u, u, w} R X) :
-    IsDGRightModule (isDGAlgebra_zero (trivialGrading R (MonoidAlgebra R (FundamentalGroup X x))))
-      (trivialGrading R (L.obj (FundamentalGroupoid.mk x)))
-      (0 : L.obj (FundamentalGroupoid.mk x) →ₗ[R] L.obj (FundamentalGroupoid.mk x)) :=
-  isDGRightModule_zero _
 
 /-- On the fiber, the twisted differential of a matrix of chains is the twisted differential of
 its degree-zero truncation. -/
