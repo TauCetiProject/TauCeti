@@ -63,6 +63,7 @@ private theorem relationModuleComparison_eq (p : ℕ) [Fact p.Prime]
   intro ψ hψ heq
   subst ψ
   dsimp only [freeProfiniteGroup.explicitH2EquivRelationModule]
+  rfl
 
 private theorem padicCompletionUnitsComparison_eq (p : ℕ) [Fact p.Prime]
     (K L : Type) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [Normal K L]
@@ -87,6 +88,7 @@ private theorem padicCompletionUnitsComparison_eq (p : ℕ) [Fact p.Prime]
   intro χ hχ heq
   subst χ
   dsimp only [explicitH2EquivPadicCompletionUnits]
+  rfl
 
 variable (p : ℕ) [Fact p.Prime] (K L : Type) [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [Normal K L] [ValuativeRel L] [TopologicalSpace L]
@@ -171,6 +173,7 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     exact congrArg ofMul (eR.symm_apply_apply _)
   have hL := relationModuleComparison_eq p hg ψ hψ rfl
   have hR := padicCompletionUnitsComparison_eq p K L j χ hχ rfl
+  dsimp only
   intro x
   calc
     _ = explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ
