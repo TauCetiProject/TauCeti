@@ -139,17 +139,22 @@ variable {R : Type u} [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
   (U : Subgroup G) (hU : IsOpen (U : Set G)) (s t : U.LeftTransversal) [U.FiniteIndex]
 
 /-- Changing the transversal gives an isomorphism between the corresponding smooth tensor-induced
-representations. -/
+representations.
+
+The objects are written in the simp-normal form produced by `smoothTensorInductionFunctor_obj`,
+so that the pure-tensor computation rules below can be simp lemmas. -/
 noncomputable def smoothTensorInducedChangeTransversalIso
     (A : SmoothDiscreteTopRep.{u, v, w} R U) :
-    (smoothTensorInductionFunctor R G U hU t).obj A ≅
-      (smoothTensorInductionFunctor R G U hU s).obj A :=
+    (toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU t ((ofSmoothDiscrete R U).obj A)) ≅
+      (toSmoothDiscrete R G).obj
+        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A)) :=
   (toSmoothDiscrete R G).mapIso
     (DiscreteRep.tensorInducedChangeTransversalIso U hU s t
       ((ofSmoothDiscrete R U).obj A))
 
 /-- On a pure tensor, the smooth comparison applies the difference of the two transversal
 representatives in every coset coordinate. -/
+@[simp]
 theorem smoothTensorInducedChangeTransversalIso_hom_apply_tprod
     (A : SmoothDiscreteTopRep.{u, v, w} R U) (m : G ⧸ U → A.obj.V) :
     (smoothTensorInducedChangeTransversalIso U hU s t A).hom.hom.hom
@@ -161,6 +166,7 @@ theorem smoothTensorInducedChangeTransversalIso_hom_apply_tprod
 
 /-- The smooth comparison sends the named pure tensor for trivial `𝔽₂` coefficients to the
 corresponding named pure tensor for the new transversal. -/
+@[simp]
 theorem smoothTensorInducedChangeTransversalIso_hom_apply_trivialF2Tprod
     (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     (U : Subgroup G) (hU : IsOpen (U : Set G)) (s t : U.LeftTransversal) [U.FiniteIndex]
@@ -204,7 +210,8 @@ theorem smoothTensorInductionChangeTransversalNatIso_app
     (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     (smoothTensorInductionChangeTransversalNatIso U hU s t).app A =
       smoothTensorInducedChangeTransversalIso U hU s t A := by
-  simp only [smoothTensorInductionChangeTransversalNatIso, NatIso.ofComponents.app]
+  rw [smoothTensorInductionChangeTransversalNatIso]
+  exact NatIso.ofComponents.app _ _ A
 
 /-- On pure tensors, changing the transversal does not change the canonical identification of
 tensor-induced trivial `𝔽₂` coefficients with ambient trivial `𝔽₂` coefficients. -/
