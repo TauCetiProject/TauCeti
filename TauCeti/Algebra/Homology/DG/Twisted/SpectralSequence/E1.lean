@@ -17,11 +17,22 @@ Let `m` be a twisting cocycle on `(P, ind)` and `(ℳ, dM)` a differential grade
 of index at most `p`, the twisting part of the differential only reaches generators of index
 smaller than `p`, because the cocycle is one-sided.
 
+Consequently the first page of the index spectral sequence (page `2` in Mathlib's numbering, where
+the object at `(p, q)` is the cohomology in degree `p + q` of `F_{q+1} / F_q`) is the cohomology
+of `⊕_{ind x = q + 1} ℳ ⊗ ⟨x⟩` with the differential `dM`.
+
 ## Main definitions
 
 * `TauCeti.indexGradedPieceSubmodule ind p`: the families `P → M` supported on the generators of
   index `p`.
-* `TauCeti.indexRestrict ind p`: the restriction of a family to the generators of index `p`.
+* `TauCeti.indexRestrict R M ind p`: the restriction of a family to the generators of index `p`.
+* `TauCeti.indexGradedPieceComplex ind hM p`: the complex `⊕_{ind x = p} ℳ ⊗ ⟨x⟩` with the
+  differential `dM` applied to every component.
+* `TauCeti.TwistingCocycle.indexGradedPieceProj`: the projection `F_p ⟶ indexGradedPieceComplex`.
+* `TauCeti.TwistingCocycle.indexFiltrationCokernelIso`: the graded piece `F_{q+1} / F_q`, as the
+  cokernel of the functor of the index filtration, is `indexGradedPieceComplex ind hM (q + 1)`.
+* `TauCeti.TwistingCocycle.indexSpectralSequenceFirstPageXIso`: the first page of the index
+  spectral sequence.
 
 ## Main results
 
@@ -29,6 +40,8 @@ smaller than `p`, because the cocycle is one-sided.
   restriction to the generators of index `p` intertwines the twisted differential with `dM`.
 * `TauCeti.indexRestrict_eq_zero_iff`: on the `p`-th piece, the restriction vanishes exactly on
   the `(p - 1)`-st piece.
+* `TauCeti.TwistingCocycle.indexGradedPieceShortComplex_shortExact`: the short complex
+  `F_q ⟶ F_{q+1} ⟶ indexGradedPieceComplex ind hM (q + 1)` is short exact.
 
 ## References
 
@@ -57,6 +70,7 @@ def indexGradedPieceSubmodule (p : ℤ) : Submodule R (P → M) :=
 
 variable {ind}
 
+/-- Membership in `indexGradedPieceSubmodule`: vanishing on the generators of index `≠ p`. -/
 @[simp]
 theorem mem_indexGradedPieceSubmodule_iff {p : ℤ} {f : P → M} :
     f ∈ indexGradedPieceSubmodule (R := R) ind p ↔ ∀ x, ind x ≠ p → f x = 0 := by
@@ -74,11 +88,13 @@ variable (R M ind) in
 def indexRestrict (p : ℤ) : (P → M) →ₗ[R] (P → M) :=
   LinearMap.pi fun x ↦ if ind x = p then LinearMap.proj x else 0
 
+/-- The restriction to the generators of index `p` keeps the components of index `p`. -/
 @[simp]
 theorem indexRestrict_apply (p : ℤ) (f : P → M) (x : P) :
     indexRestrict R M ind p f x = if ind x = p then f x else 0 := by
   by_cases hx : ind x = p <;> simp [indexRestrict, hx]
 
+/-- A restriction to the generators of index `p` is supported on them. -/
 theorem indexRestrict_mem_indexGradedPieceSubmodule (p : ℤ) (f : P → M) :
     indexRestrict R M ind p f ∈ indexGradedPieceSubmodule (R := R) ind p :=
   mem_indexGradedPieceSubmodule_iff.2 fun x hx ↦ by simp [hx]
@@ -125,6 +141,7 @@ def indexGradedPieceGrading (ℳ : ℤ → Submodule R M) (ind : P → ℤ) (p n
     Submodule R (P → M) :=
   twistedTotalGrading ℳ ind n ⊓ indexGradedPieceSubmodule ind p
 
+/-- Membership in `indexGradedPieceGrading`. -/
 theorem mem_indexGradedPieceGrading_iff {ℳ : ℤ → Submodule R M} {p n : ℤ} {f : P → M} :
     f ∈ indexGradedPieceGrading ℳ ind p n ↔
       f ∈ twistedTotalGrading ℳ ind n ∧ f ∈ indexGradedPieceSubmodule (R := R) ind p :=
@@ -233,6 +250,7 @@ noncomputable def indexRestrictX (p n : ℤ) :
           ⟨indexRestrict_mem_twistedTotalGrading (twistedCochainComplexXEquiv _ _ hM n f).2,
             indexRestrict_mem_indexGradedPieceSubmodule p _⟩)
 
+/-- `indexRestrictX` is `indexRestrict` on the underlying families. -/
 @[simp]
 theorem indexGradedPieceComplexXEquiv_indexRestrictX (p n : ℤ)
     (f : (m.twistedCochainComplex dM hM).X n) :
@@ -433,6 +451,14 @@ noncomputable def indexSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (n : ℤ)
       (indexGradedPieceComplex ind hM (pq.2 + 1)).homology n :=
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl n hn ≪≫
     (HomologicalComplex.homologyFunctor _ _ n).mapIso (m.indexFiltrationCokernelIso hM pq.2)
+
+/-- `indexSpectralSequenceFirstPageXIso` is the identification of the first page with the
+cohomology of the graded pieces, followed by `indexFiltrationCokernelIso`. -/
+theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    m.indexSpectralSequenceFirstPageXIso hM pq n hn =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl n hn ≪≫
+        (HomologicalComplex.homologyFunctor _ _ n).mapIso (m.indexFiltrationCokernelIso hM pq.2) :=
+  (rfl)
 
 end FirstPage
 
