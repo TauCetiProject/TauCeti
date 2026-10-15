@@ -52,10 +52,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-section Manifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → ℝ} {x : M}
 
 variable (E) in
@@ -98,56 +96,54 @@ noncomputable def restr (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx 
 
 variable (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx : x ∈ s)
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The chart of a restricted Morse chart is the restricted chart. -/
 @[simp]
 theorem restr_toChart : (φ.restr hs hx).toChart = φ.toChart.restr s := by
   rw [restr]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- Restricting a Morse chart does not change its coordinates. -/
 @[simp]
 theorem restr_coord : (φ.restr hs hx).coord = φ.coord := by
   rw [restr]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- Restricting a Morse chart does not change its weights. -/
 @[simp]
 theorem restr_weight : (φ.restr hs hx).weight = φ.weight := by
   rw [restr]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The source of a restricted Morse chart. -/
 theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s :=
   φ.toChart.restr_source' s hs
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- A point of the chart is the point with its own coordinates. -/
 theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
     φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
   rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The chart sends `0` back to the critical point. -/
 @[simp]
 theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
   rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The centre is the only point of the source sent to `0`. -/
+theorem toChart_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) : φ.toChart y = 0 ↔ y = x := by
+  refine ⟨fun h ↦ φ.toChart.injOn hy φ.mem_source ?_, fun h ↦ h ▸ φ.apply_self⟩
+  rw [h, φ.apply_self]
+
 /-- The critical point is the point with coordinates `0`. -/
 theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
   rw [map_zero, toChart_symm_zero]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The chart of a Morse chart lies in the maximal atlas of class `C¹`. -/
 theorem mem_maximalAtlas_one : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
   IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The chart of a Morse chart is differentiable on its source. -/
 theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
     MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
   mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
+
+variable [FiniteDimensional ℝ E]
 
 /-- A Morse chart for `f` at a nondegenerate critical point is a Morse chart for `-f`, with the
 opposite weights. -/
@@ -175,21 +171,18 @@ noncomputable def neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x
     simp only [Pi.neg_apply, neg_mul, Finset.sum_neg_distrib]
     ring
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The negated Morse chart has the same chart. -/
 @[simp]
 theorem neg_toChart (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).toChart = φ.toChart := by
   rw [neg]
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The negated Morse chart has the same coordinates. -/
 @[simp]
 theorem neg_coord (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).coord = φ.coord := by
   rw [neg]
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The negated Morse chart has the opposite weights. -/
 @[simp]
 theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
@@ -197,6 +190,18 @@ theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
   rw [neg]
 
 end MorseChart
+
+variable [IsManifold 𝓘(ℝ, E) ∞ M]
+
+/-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
+point. -/
+theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero (hf : IsMorse 𝓘(ℝ, E) f)
+    {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
+  hf.isManifoldNondegenerateCriticalPoint
+    ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1 hx)
+
+variable [FiniteDimensional ℝ E]
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
 that is smooth at every point of a neighbourhood of `x`, on a manifold modelled on a
@@ -259,21 +264,10 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     rw [← hQ, QuadraticMap.weightedSumSquares_apply]
     simp [sq]
 
-omit [FiniteDimensional ℝ E] in
-/-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
-point. -/
-theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero (hf : IsMorse 𝓘(ℝ, E) f)
-    {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
-    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
-  hf.isManifoldNondegenerateCriticalPoint
-    ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1 hx)
-
 /-- Every critical point of a Morse function has a Morse chart. -/
 theorem IsMorse.nonempty_morseChart (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : Nonempty (MorseChart E f x) :=
-  ((isMorse_iff.1 hf).2 x ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1
-    hx)).nonempty_morseChart (Filter.Eventually.of_forall fun _ ↦ hf.contMDiff.contMDiffAt)
-
-end Manifold
+  (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx).nonempty_morseChart
+    (Filter.Eventually.of_forall fun _ ↦ hf.contMDiff.contMDiffAt)
 
 end TauCeti

@@ -65,11 +65,6 @@ section Basic
 
 variable (φ : MorseChart E f x)
 
-/-- The centre is the only point of the source sent to `0`. -/
-theorem toChart_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) : φ.toChart y = 0 ↔ y = x := by
-  refine ⟨fun h ↦ φ.toChart.injOn hy φ.mem_source ?_, fun h ↦ h ▸ φ.apply_self⟩
-  rw [h, φ.apply_self]
-
 /-- The quadratic normal form of a Morse chart, as a function on the model space. -/
 noncomputable def quadratic (z : E) : ℝ :=
   f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2
