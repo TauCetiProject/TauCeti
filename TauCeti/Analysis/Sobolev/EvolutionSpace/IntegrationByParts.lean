@@ -20,9 +20,6 @@ equations and their adjoints. Both time derivatives take values in `V*`, while t
 pairings take place in the pivot space `H`; no `H`-valued time derivative is assumed.
 The pivot map need not be injective or have dense range.
 
-The proof uses the mixed weak product rule for symmetric bilinear forms and the fundamental
-theorem of calculus for weak derivatives on an interval.
-
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, second edition, §5.9.2, Theorem 3.
