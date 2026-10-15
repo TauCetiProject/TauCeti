@@ -107,7 +107,7 @@ theorem exists_analytic_monic_reciprocal_normalization
     rw [discr_map_reverse g _ (hlocal x hx).2]
     simp [g]
   refine ⟨by rw [← hv]; exact (hlocal x hx).2, (hQ x).1, (hQ x).2, hQeq x (hdeg x hx) hFx, ?_⟩
-  rw [hQeq x (hdeg x hx) hFx, TauCeti.discr_integralNormalization,
+  rw [hQeq x (hdeg x hx) hFx, discr_integralNormalization,
     hlc, hdeg x hx, hd, hv]
 
 end Polynomial

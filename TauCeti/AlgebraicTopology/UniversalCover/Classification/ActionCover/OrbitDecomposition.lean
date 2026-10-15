@@ -37,7 +37,7 @@ onto the base. -/
 theorem actionCoverProj_orbitHomeomorph
     (o : MulAction.orbitRel.Quotient (FundamentalGroup X x) A)
     (z : ActionCover x o.orbit) :
-    actionCoverProj x A (BalancedProduct.orbitHomeomorph ⟨o, z⟩) =
+    actionCoverProj x A (BalancedProduct.orbitHomeomorph (fun _ => isOpen_discrete _) ⟨o, z⟩) =
       actionCoverProj x o.orbit z := by
   induction z using Quotient.inductionOn with
   | h p =>
