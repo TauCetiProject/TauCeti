@@ -12,14 +12,13 @@ import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 /-!
 # Bernoulli constant coefficients of character Eisenstein series
 
-The normalized character Eisenstein series has constant coefficient `-Bₖ,φ / (2k)` when
-the first character has modulus one, and zero otherwise. Together with its twisted-divisor
-positive coefficients this gives the full Fourier expansion. A positive level raise preserves
-the constant coefficient.
+For weight `k ≥ 3` and characters satisfying `ψ(-1) φ(-1) = (-1)ᵏ`, the normalized character
+Eisenstein series has constant coefficient `-Bₖ,φ / (2k)` when the first character has modulus
+one, and zero otherwise. The second character `φ` must be primitive; the first character `ψ`
+need not be primitive.
 
-The identification uses the integer-indexed character sum evaluated in
-`DirichletCharacter.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli`, together with the
-primitive Gauss-sum product. The parity condition cancels the signs in the normalization.
+Together with the twisted-divisor positive coefficients, this identifies the full Fourier
+expansion. A positive level raise preserves the constant coefficient.
 
 ## References
 
@@ -86,7 +85,8 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff_zero
         (mul_ne_zero hf (pow_ne_zero _ hv))) hτinv
     rw [inv_mul_eq_iff_eq_mul₀ hC]
     apply mul_left_cancel₀ hτ
-    -- Evaluate the integer row sum before simplifying the normalization scalar.
+    -- TauCeti's gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli evaluates the integer
+    -- row sum; the primitive Gauss-sum product and parity then cancel the normalization.
     rw [φ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hφ (by omega)]
     have hfac : (k.factorial : ℂ) = (k : ℂ) * (k - 1).factorial := by
       exact_mod_cast (Nat.mul_factorial_pred (by omega : k ≠ 0)).symm

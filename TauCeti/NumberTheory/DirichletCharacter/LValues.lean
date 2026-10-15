@@ -13,14 +13,15 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 /-!
 # Generalized Bernoulli numbers and primitive character sums
 
-The integer-indexed critical-value sum of a primitive Dirichlet character is evaluated using
-its Gauss sum and its generalized Bernoulli number. The formula includes both parities and
-modulus one: the integer sum is zero when the character and weight have opposite parities.
+For a primitive complex Dirichlet character `χ` modulo `N` and a natural weight `k ≥ 2`,
+the integer-indexed critical-value sum has the normalization
+`τ(χ) ∑' n : ℤ, χ⁻¹(n) n⁻ᵏ = -(2πi)ᵏ Bₖ,χ / (k! Nᵏ⁻¹)`.
+Here `τ(χ)` uses the standard additive character, and `Bₖ,χ` is the generalized Bernoulli
+number defined using residue representatives in `{1, …, N}`.
 
-The proof applies Mathlib's Fourier expansion
-`hasSum_one_div_pow_mul_fourier_mul_bernoulliFun` to each residue and uses
-`DirichletCharacter.gaussSum_mulShift_of_isPrimitive` for the finite character sum.
-These special values give the constant coefficients of normalized Eisenstein series.
+The formula includes both parities and modulus one: the integer sum is zero when the
+character and weight have opposite parities. These special values give the constant
+coefficients of normalized Eisenstein series.
 
 ## References
 
@@ -49,7 +50,8 @@ theorem gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli (hχ : χ.IsPrimitive)
   classical
   have hNk : (N : ℂ) ^ (k - 1) ≠ 0 :=
     pow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne N))
-  -- Apply the Bernoulli Fourier expansion at each residue, using its value in [0, 1).
+  -- Apply Mathlib's hasSum_one_div_pow_mul_fourier_mul_bernoulliFun at each residue,
+  -- using its value in [0, 1).
   have hfourier (a : ZMod N) (n : ℤ) :
       fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle) =
         ZMod.stdAddChar ((n : ZMod N) * a) := by
@@ -67,7 +69,8 @@ theorem gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli (hχ : χ.IsPrimitive)
   have hs (a : ZMod N) :=
     (hasSum_one_div_pow_mul_fourier_mul_bernoulliFun hk (hx a)).mul_left (χ a)
   have hsum := hasSum_sum (s := Finset.univ) fun a _ ↦ hs a
-  -- The finite Fourier coefficient is the shifted Gauss sum, also at nonunit frequencies.
+  -- Mathlib's gaussSum_mulShift_of_isPrimitive evaluates the finite Fourier coefficient,
+  -- also at nonunit frequencies.
   have hterm (n : ℤ) :
       (∑ a : ZMod N, χ a *
         (1 / (n : ℂ) ^ k * fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle))) =
