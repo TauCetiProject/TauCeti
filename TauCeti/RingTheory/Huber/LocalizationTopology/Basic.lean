@@ -44,6 +44,8 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
   `nonarchimedeanRing_locTopology`: the contract of `locTopology`, to be used in place of
   unfolding the construction.
 * `HasDenominatorPower.mono`: the standing hypothesis is monotone in the numerators.
+* `hasDenominatorPower_denom_one`: at the denominator `1` the standing hypothesis is automatic,
+  for every numerator set and every localisation.
 * `HasDenominatorPower.of_coe_eq_image_mul_left`: it also survives rescaling the
   whole presentation by a unit — the second step of a change of presentation.
 * `hasDenominatorPower_of_idealOfDefinition_le_span`: numerators containing a subset of `A₀`
@@ -316,6 +318,16 @@ theorem HasDenominatorPower.mono {P : PairOfDefinition A} {T U : Finset A} {s : 
     (h : HasDenominatorPower P T s S) (hTU : T ⊆ U) : HasDenominatorPower P U s S := by
   rw [hasDenominatorPower_iff] at h ⊢
   exact h.imp fun _ hN b hb ↦ locSubring_mono P s S hTU (hN b hb)
+
+/-- **At the denominator `1` the standing hypothesis is automatic.** Every `b/1` is the image of
+`b`, and the elements of `I` already lie in `A₀ ⊆ D`, so `N = 1` works — for every numerator set
+and every localisation away from `1`. -/
+theorem hasDenominatorPower_denom_one (P : PairOfDefinition A) (T : Finset A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away (1 : A) S] :
+    HasDenominatorPower P T 1 S := by
+  refine (hasDenominatorPower_iff P T 1 S).mpr ⟨1, fun b _ ↦ ?_⟩
+  rw [← one_mul (b : A), divBy_mul_cancel_left]
+  exact algebraMap_mem_locSubring P T 1 S b.2
 
 /-- **The standing hypothesis survives a change of presentation by a unit.** Rescaling both the
 numerators and the denominator by a unit `u` carries `HasDenominatorPower` from `(T, s)` to
