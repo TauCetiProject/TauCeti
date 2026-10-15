@@ -351,19 +351,19 @@ theorem pullback_transport {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
 /-- The monodromy representation of a local coefficient system at a basepoint. -/
 @[expose] def monodromyRepresentation (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
     Representation R (FundamentalGroup X x) (L.obj (FundamentalGroupoid.mk x)) where
-  toFun g := (L.map g).hom
+  toFun g := (L.map g.asHom).hom
   map_one' := by
     ext a
     simp
   map_mul' g h := by
     ext a
-    exact L.map_comp_apply h g a
+    exact L.map_comp_apply h.asHom g.asHom a
 
 @[simp]
 theorem monodromyRepresentation_apply
     (L : LocalCoefficientSystem.{u, v, w} R X) (x : X)
     (g : FundamentalGroup X x) (a : L.obj (FundamentalGroupoid.mk x)) :
-    monodromyRepresentation L x g a = L.map g a :=
+    monodromyRepresentation L x g a = L.map g.asHom a :=
   rfl
 
 /-- The monodromy representation of a constant local coefficient system is trivial. -/
@@ -391,7 +391,7 @@ representations on each fibre. -/
   toLinearMap := (η.app (FundamentalGroupoid.mk x)).hom
   isIntertwining' g := by
     ext a
-    exact η.naturality_apply g a
+    exact η.naturality_apply g.asHom a
 
 @[simp]
 theorem monodromyMap_apply {L K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K)
@@ -446,9 +446,10 @@ theorem monodromyFunctor_map_hom (x : X) {L K : LocalCoefficientSystem.{u, v, w}
     -- expression is not type-correct under the `implicit` transparency level".  This single
     -- `change` states the same goal purely in terms of `L.map`, after which `Functor.map_conj`
     -- and ordinary rewriting finish it.
-    change L.map α.hom (L.map g a) = L.map (α.conj g) (L.map α.hom a)
+    change L.map α.hom (L.map g.asHom a) = L.map (α.conj g).asHom (L.map α.hom a)
     rw [L.map_conj]
-    simp only [Iso.conj_apply, ModuleCat.comp_apply, Functor.mapIso_hom, Functor.mapIso_inv]
+    simp only [Iso.conj_apply_asHom, ModuleCat.comp_apply, Functor.mapIso_hom, Functor.mapIso_inv,
+      Functor.mapEnd_apply_asHom]
     have h : L.map α.inv (L.map α.hom a) = a := by
       rw [← L.map_comp_apply, α.hom_inv_id]
       exact L.map_id_apply _ a

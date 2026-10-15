@@ -564,7 +564,8 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
       refine (edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent (hU k)
         (hτ k) (hττ' k) (hAk k) (hEk k) s.2 hst').trans (ENNReal.ofReal_le_ofReal ?_)
       have : 0 ≤ (t : ℝ) - s + τ k := by positivity
-      exact mul_le_mul_of_nonneg_left (by linarith [hexpk k t]) (mul_nonneg (by positivity) hEA)
+      exact mul_le_mul_of_nonneg_left (by linarith [hexpk k t])
+        (mul_nonneg (mul_nonneg zero_le_two this) hEA)
     calc limsup (fun k ↦ edist (v k s) (v k t)) atTop
         ≤ limsup (fun k ↦ g (τ k)) atTop := limsup_le_limsup (Eventually.of_forall hle)
       _ = g 0 := ((hg.tendsto 0).comp (NNReal.tendsto_coe.2 hτ0)).limsup_eq

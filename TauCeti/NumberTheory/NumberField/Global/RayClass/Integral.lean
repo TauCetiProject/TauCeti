@@ -242,8 +242,8 @@ theorem idealClass_eq_one_iff_exists_integral {𝔪 : Modulus K} (I : integralId
       rw [← FractionalIdeal.coeIdeal_span_singleton, ← FractionalIdeal.coeIdeal_mul, hab,
         FractionalIdeal.coeIdeal_span_singleton]
     rw [Units.val_mul, Units.val_inv_eq_inv_val, hxa, hyb,
-      ← FractionalIdeal.spanSingleton_mul_spanSingleton, ← hcoe, mul_assoc,
-      FractionalIdeal.spanSingleton_mul_spanSingleton, mul_inv_cancel₀ hb0,
-      FractionalIdeal.spanSingleton_one, mul_one]
+      map_mul (FractionalIdeal.spanSingleton _), ← hcoe, mul_assoc,
+      ← map_mul (FractionalIdeal.spanSingleton _), mul_inv_cancel₀ hb0,
+      map_one (FractionalIdeal.spanSingleton _), mul_one]
 
 end TauCeti.GlobalNumberFields

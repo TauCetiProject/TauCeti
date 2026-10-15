@@ -811,8 +811,9 @@ private theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_
   have hK : 0 < K := by
     have : 0 < (n : ℝ)⁻¹ - δ := sub_pos.2 hδn
     have : 0 < 1 - δ := by linarith
-    have := ENNReal.toReal_pos (Metric.measure_ball_pos mu
-      (0 : EuclideanSpace ℝ ι) one_pos).ne' measure_ball_lt_top.ne
+    have : 0 < mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1) :=
+      ENNReal.toReal_pos (Metric.measure_ball_pos mu
+        (0 : EuclideanSpace ℝ ι) one_pos).ne' measure_ball_lt_top.ne
     positivity
   refine ⟨D₀ * K ^ (2 * δ)⁻¹, by positivity, ?_⟩
   intro Omega u k A B x₀ R hΩ hA hB hR hcacc

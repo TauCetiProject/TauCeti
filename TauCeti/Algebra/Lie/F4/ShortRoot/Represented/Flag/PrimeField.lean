@@ -40,7 +40,7 @@ theorem f4ShortRootPrimeField_weightTorus_blockTriangular :
         (OrderDual.toDual ∘ f4ShortRootCotangentFlagWeight) := by
   let q : HopfAlgebra.points (R := 𝔽₂) (H := T₄) (CommAlgCat.of 𝔽₂ T₄) :=
     WithConv.toConv (AlgHom.id 𝔽₂ T₄)
-  let g := (CommHopfAlgCat.mapPointsFunctor
+  let g := (CommHopfAlgCat.Hom.mapPointsFunctor
     (GeneralLinear.weightTorusCoordinateMap (R := 𝔽₂) f4ShortRootWeight)).app
       (CommAlgCat.of 𝔽₂ T₄) q
   have hg : GeneralLinear.pointsMulEquiv 26 g =
@@ -70,7 +70,7 @@ theorem f4ShortRootPrimeField_root_blockTriangular (k : Fin 4 ⊕ Fin 4) :
         (OrderDual.toDual ∘ f4ShortRootCotangentFlagWeight) := by
   let q : HopfAlgebra.points (R := 𝔽₂) (H := Gₐ) (CommAlgCat.of 𝔽₂ Gₐ) :=
     WithConv.toConv (AlgHom.id 𝔽₂ Gₐ)
-  let g := (CommHopfAlgCat.mapPointsFunctor
+  let g := (CommHopfAlgCat.Hom.mapPointsFunctor
     (F4ShortRoot.PrimeField.generator (.inl k))).app (CommAlgCat.of 𝔽₂ Gₐ) q
   let u := AdditiveGroup.gaPointsMulEquiv (R := 𝔽₂) q
   have hg : GeneralLinear.pointsMulEquiv 26 g = rootSubgroupPoints k Gₐ u := by

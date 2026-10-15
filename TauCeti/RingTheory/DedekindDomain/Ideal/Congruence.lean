@@ -74,7 +74,7 @@ def congruenceSubgroup (m : Ideal R) (K : Type*) [Field K] [Algebra R K]
     v.valuation K ((x : K) - 1) ≤
       WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ))
   exact {
-    carrier := P
+    carrier := {x | P x}
     one_mem' := by intro v hv; simp
     mul_mem' := by
       intro x y hx hy v hv

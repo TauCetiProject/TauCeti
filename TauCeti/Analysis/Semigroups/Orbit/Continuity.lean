@@ -49,7 +49,7 @@ theorem preserves_closed_convexHull (S : StronglyContinuousSemigroup X) {K : Set
     (hx : x ∈ closure (convexHull ℝ K)) :
     S t x ∈ closure (convexHull ℝ K) := by
   have hconv : MapsTo (S t) (convexHull ℝ K) (convexHull ℝ K) :=
-    convexHull_min (fun y hy ↦ subset_convexHull ℝ K (hK y hy))
+    convexHull_min (fun y hy ↦ Set.mem_preimage.2 (subset_convexHull ℝ K (hK y hy)))
       ((convex_convexHull ℝ K).linear_preimage (S t).toLinearMap)
   exact hconv.closure (S t).continuous hx
 
