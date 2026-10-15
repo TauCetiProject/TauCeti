@@ -20,8 +20,8 @@ lies in an additive subgroup it suffices to show that every `a * e * b` does.
 
 A surjective ring homomorphism with kernel contained in the Jacobson radical reflects
 generation of the whole ring as a two-sided ideal. In particular, fullness of an element
-can be checked in a quotient by an ideal contained in the radical. The reflection uses
-`TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left` to turn a lift of the unit into a unit.
+can be checked in a quotient by an ideal contained in the radical, such as the radical
+quotient itself, where idempotents are easier to select.
 
 ## Main results
 

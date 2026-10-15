@@ -20,8 +20,10 @@ This permits a full idempotent selected in a semisimple radical quotient to defi
 equivalence with its lifted corner ring. In particular it applies to finite-dimensional
 algebras, which are semiperfect. No choice of matrix decomposition or base field is needed.
 
-The construction uses `TauCeti.IsSemiperfectRing.exists_isIdempotentElem_eq` and
-`RingHom.twoSidedIdeal_span_image_eq_top_iff`.
+## Main results
+
+* `TauCeti.IsSemiperfectRing.exists_isIdempotentElem_full_eq`: a full idempotent of the
+  radical quotient of a semiperfect ring lifts to a full idempotent of the ring.
 
 ## References
 
