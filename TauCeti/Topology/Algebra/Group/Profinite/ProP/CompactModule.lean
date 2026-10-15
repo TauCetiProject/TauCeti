@@ -153,7 +153,9 @@ theorem isTopologicallyFinitelyGenerated_of_isClosed (hA : IsProP p A)
     IsTopologicallyFinitelyGenerated K := by
   obtain ⟨t, ht, htK, hle⟩ := hA.exists_finite_subset_le_topologicalClosure_closure hfg hK
   refine (ht.preimage Subtype.val_injective.injOn).isTopologicallyFinitelyGenerated ?_
-  rw [← Subgroup.dense_iff_topologicalClosure_eq_top, Subgroup.closure_coe_preimage_of_subset htK,
+  rw [← Subgroup.dense_iff_topologicalClosure_eq_top, ← Subgroup.coe_subtype K,
+    K.subtype.closure_preimage_eq_of_injective K.subtype_injective (s := t)
+      (fun x hx ↦ ⟨⟨x, htK hx⟩, rfl⟩),
     Subgroup.coe_comap, Subgroup.coe_subtype,
     Subgroup.dense_preimage_val_iff_le_topologicalClosure ((Subgroup.closure_le K).2 htK)]
   exact hle
