@@ -161,8 +161,8 @@ variable {I : HopfIdeal R H} {h : H}
 theorem mem_coinvariants_iff_comul_sub_mem_rightTensorIdeal :
     h ∈ I.coinvariants ↔
       Coalgebra.comul (R := R) h - h ⊗ₜ[R] (1 : H) ∈
-        rightTensorIdeal (R := R) (H := H) I.toIdeal := by
-  rw [← ker_tensorProduct_map_id_quotient, RingHom.mem_ker, mem_coinvariants_iff]
+        Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal := by
+  rw [← Ideal.ker_tensorProduct_map_id_quotient, RingHom.mem_ker, mem_coinvariants_iff]
   simp [sub_eq_zero]
 
 /-- A coinvariant minus its counit lies in the Hopf ideal: the augmentation ideal of the

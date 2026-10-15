@@ -236,9 +236,9 @@ private theorem centerCoefficientIdeal_antipode_mem {x : H}
 private theorem centerCoefficientIdeal_comul_mem {x : H}
     (hx : x ∈ centerCoefficientIdeal (k := k) (H := H)) :
     Coalgebra.comul (R := k) x ∈
-      HopfIdeal.leftTensorIdeal (R := k) (H := H)
+      Ideal.leftTensorIdeal (R := k) (H := H)
           (centerCoefficientIdeal (k := k) (H := H)) ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H)
+        Ideal.rightTensorIdeal (R := k) (H := H)
           (centerCoefficientIdeal (k := k) (H := H)) := by
   let I := centerCoefficientIdeal (k := k) (H := H)
   let Q := H ⧸ I
@@ -273,11 +273,11 @@ private theorem centerCoefficientIdeal_comul_mem {x : H}
     rw [AlgHom.convMul_apply, hproduct] at hconvzero
     exact hconvzero
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
-      HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
+      Ideal.leftTensorIdeal (R := k) (H := H) I ⊔
+        Ideal.rightTensorIdeal (R := k) (H := H) I := by
     have hqker : RingHom.ker q = I := Ideal.Quotient.mkₐ_ker k I
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
-      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
+      AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
         (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
   rw [← hker, RingHom.mem_ker]
   exact hmapzero

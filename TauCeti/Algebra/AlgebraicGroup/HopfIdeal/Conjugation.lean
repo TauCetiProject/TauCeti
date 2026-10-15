@@ -205,8 +205,8 @@ theorem IsNormal.le_conjugate {I : HopfIdeal R H} (hI : I.IsNormal)
     apply WithConv.toConv_injective
     rw [HopfAlgebra.toConv_pointConjugationAlgHom, HopfAlgebra.productMap_comp_conjugationAlgHom,
       WithConv.toConv_ofConv]
-  have hker : rightTensorIdeal (R := R) (H := H) I.toIdeal ≤ I.toIdeal.comap f.toRingHom := by
-    rw [rightTensorIdeal_le_iff]
+  have hker : Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal ≤ I.toIdeal.comap f.toRingHom := by
+    rw [Ideal.rightTensorIdeal_le_iff]
     intro y hy
     simpa [f] using hy
   intro x hx

@@ -206,7 +206,7 @@ theorem isNormal_identityComponentHopfIdeal :
   -- Unfold the Hopf-ideal carrier and the local abbreviation `I` to state the elementwise
   -- conjugation condition in the ideal expected by the kernel lemma below.
   change conjugationAlgHom (R := k) (H := H) x ∈
-    HopfIdeal.rightTensorIdeal (R := k) (H := H) I
+    Ideal.rightTensorIdeal (R := k) (H := H) I
   obtain ⟨a, rfl⟩ :=
     (PrimeSpectrum.mem_connectedComponentIdeal_iff (x := z) (r := x)).mp hxI
   rw [map_mul]
@@ -219,10 +219,10 @@ theorem isNormal_identityComponentHopfIdeal :
   have hmem : conjugationAlgHom (R := k) (H := H) (1 - e) ∈ RingHom.ker F.toRingHom :=
     RingHom.mem_ker.mpr hker
   have hker_eq : RingHom.ker F.toRingHom =
-      HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
+      Ideal.rightTensorIdeal (R := k) (H := H) I := by
     -- Unfold `F` and its ring-hom coercion to match the tensor-product quotient kernel API.
     change RingHom.ker (Algebra.TensorProduct.map (AlgHom.id k H) q) = _
-    rw [HopfIdeal.ker_tensorProduct_map_id_quotient]
+    rw [Ideal.ker_tensorProduct_map_id_quotient]
   rw [hker_eq] at hmem
   exact hmem
 

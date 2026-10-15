@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.DFinsupp
-public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-public import Mathlib.RingTheory.HopfAlgebra.Basic
 public import Mathlib.RingTheory.HopfAlgebra.Quotient
-public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.Algebra.TensorProduct.Ideal
 
 /-!
 # Hopf ideals
@@ -25,10 +23,6 @@ closure conditions.
 ## Main definitions
 
 * `TauCeti.HopfIdeal`: a Hopf ideal in a Hopf algebra over a commutative semiring.
-* `TauCeti.HopfIdeal.leftTensorIdeal` and `TauCeti.HopfIdeal.rightTensorIdeal`: the two
-  summands `I ⊗ H` and `H ⊗ I` inside `H ⊗ H`.
-* `TauCeti.HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal`: the
-  tensor product of two surjective algebra maps has the expected kernel in tensor-ideal notation.
 * `⊥ : HopfIdeal R H`: the zero Hopf ideal.
 * `I ⊔ J : HopfIdeal R H`: the sum of two Hopf ideals.
 * `sSup S : HopfIdeal R H` and `⨆ i, I i : HopfIdeal R H`: arbitrary suprema of Hopf ideals,
@@ -54,196 +48,6 @@ namespace TauCeti
 
 universe u v
 
-section TensorIdeals
-
-variable (R : Type u) (H : Type v)
-variable [CommSemiring R] [Semiring H] [Algebra R H]
-
-namespace HopfIdeal
-
-/-- The image of an ideal `I ≤ H` under the left inclusion `H → H ⊗[R] H`, representing
-`I ⊗ H` inside the tensor product algebra. -/
-@[expose] def leftTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
-  Ideal.map (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
-
-/-- The image of an ideal `I ≤ H` under the right inclusion `H → H ⊗[R] H`, representing
-`H ⊗ I` inside the tensor product algebra. -/
-@[expose] def rightTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
-  Ideal.map (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
-
-theorem leftTensorIdeal_def (I : Ideal H) :
-    leftTensorIdeal (R := R) (H := H) I =
-      Ideal.map
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        I :=
-  rfl
-
-theorem rightTensorIdeal_def (I : Ideal H) :
-    rightTensorIdeal (R := R) (H := H) I =
-      Ideal.map
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
-  rfl
-
-/-- The left tensor inclusion sends elements of `I` into `I ⊗ H`. -/
-theorem includeLeft_mem_leftTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) :
-    Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x ∈
-      leftTensorIdeal (R := R) (H := H) I :=
-  Ideal.mem_map_of_mem _ hx
-
-/-- The right tensor inclusion sends elements of `I` into `H ⊗ I`. -/
-theorem includeRight_mem_rightTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) :
-    Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) x ∈
-      rightTensorIdeal (R := R) (H := H) I :=
-  Ideal.mem_map_of_mem _ hx
-
-/-- A pure tensor `x ⊗ₜ y` with `x ∈ I` lies in `I ⊗ H`. -/
-theorem tmul_mem_leftTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) (y : H) :
-    x ⊗ₜ[R] y ∈ leftTensorIdeal (R := R) (H := H) I := by
-  have h : x ⊗ₜ[R] y =
-      Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) y *
-        Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x := by
-    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-  rw [h]
-  exact Ideal.mul_mem_left _ _ (includeLeft_mem_leftTensorIdeal (R := R) (H := H) hx)
-
-/-- A pure tensor `x ⊗ₜ y` with `y ∈ I` lies in `H ⊗ I`. -/
-theorem tmul_mem_rightTensorIdeal {I : Ideal H} (x : H) {y : H} (hy : y ∈ I) :
-    x ⊗ₜ[R] y ∈ rightTensorIdeal (R := R) (H := H) I := by
-  have h : x ⊗ₜ[R] y =
-      Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x *
-        Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) y := by
-    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-  rw [h]
-  exact Ideal.mul_mem_left _ _ (includeRight_mem_rightTensorIdeal (R := R) (H := H) hy)
-
-theorem mem_leftTensorIdeal {I : Ideal H} {x : H ⊗[R] H} :
-    x ∈ leftTensorIdeal (R := R) (H := H) I ↔
-      x ∈ Ideal.map
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        I :=
-  Iff.rfl
-
-theorem mem_rightTensorIdeal {I : Ideal H} {x : H ⊗[R] H} :
-    x ∈ rightTensorIdeal (R := R) (H := H) I ↔
-      x ∈ Ideal.map
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
-  Iff.rfl
-
-/-- The order universal property for `I ⊗ H`. -/
-theorem leftTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    leftTensorIdeal (R := R) (H := H) I ≤ J ↔
-      I ≤ Ideal.comap
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        J :=
-  Ideal.map_le_iff_le_comap
-
-/-- The order universal property for `H ⊗ I`. -/
-theorem rightTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    rightTensorIdeal (R := R) (H := H) I ≤ J ↔
-      I ≤ Ideal.comap
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom J :=
-  Ideal.map_le_iff_le_comap
-
-/-- The construction `I ↦ I ⊗ H` is monotone. -/
-theorem leftTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
-    leftTensorIdeal (R := R) (H := H) I ≤ leftTensorIdeal (R := R) (H := H) J :=
-  Ideal.map_mono hIJ
-
-/-- The construction `I ↦ H ⊗ I` is monotone. -/
-theorem rightTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
-    rightTensorIdeal (R := R) (H := H) I ≤ rightTensorIdeal (R := R) (H := H) J :=
-  Ideal.map_mono hIJ
-
-/-- The construction `I ↦ I ⊗ H` distributes over arbitrary suprema of ideals. -/
-@[simp]
-theorem leftTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
-    leftTensorIdeal (R := R) (H := H) (⨆ i, I i) =
-      ⨆ i, leftTensorIdeal (R := R) (H := H) (I i) :=
-  Ideal.map_iSup
-    (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
-
-/-- The construction `I ↦ H ⊗ I` distributes over arbitrary suprema of ideals. -/
-@[simp]
-theorem rightTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
-    rightTensorIdeal (R := R) (H := H) (⨆ i, I i) =
-      ⨆ i, rightTensorIdeal (R := R) (H := H) (I i) :=
-  Ideal.map_iSup
-    (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
-
-/-- The construction `I ↦ I ⊗ H` distributes over joins of ideals. -/
-@[simp]
-theorem leftTensorIdeal_sup (I J : Ideal H) :
-    leftTensorIdeal (R := R) (H := H) (I ⊔ J) =
-      leftTensorIdeal (R := R) (H := H) I ⊔ leftTensorIdeal (R := R) (H := H) J :=
-  Ideal.map_sup
-    (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I J
-
-/-- The construction `I ↦ H ⊗ I` distributes over joins of ideals. -/
-@[simp]
-theorem rightTensorIdeal_sup (I J : Ideal H) :
-    rightTensorIdeal (R := R) (H := H) (I ⊔ J) =
-      rightTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) J :=
-  Ideal.map_sup
-    (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I J
-
-/-- TauCeti's `leftTensorIdeal I` (`I ⊗ H`), viewed as an `R`-submodule, is the range of
-`rTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeLeft_eq`. -/
-private theorem leftTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
-    (leftTensorIdeal (R := R) (H := H) I).restrictScalars R =
-      LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) :=
-  Ideal.map_includeLeft_eq (R := R) (A := H) (B := H) I
-
-/-- TauCeti's `rightTensorIdeal I` (`H ⊗ I`), viewed as an `R`-submodule, is the range of
-`lTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeRight_eq`. -/
-private theorem rightTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
-    (rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
-      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) :=
-  Ideal.map_includeRight_eq (R := R) (A := H) (B := H) I
-
-/-- The bridge to Mathlib's coideal target: TauCeti's `I ⊗ H + H ⊗ I` (a sup of ideals of
-`H ⊗[R] H`), viewed as an `R`-submodule, equals `range (lTensor …) ⊔ range (rTensor …)`. -/
-private theorem comul_mem_sup_restrictScalars_eq_range (I : Ideal H) :
-    (leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
-      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) ⊔
-        LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) := by
-  rw [Submodule.restrictScalars_sup, leftTensorIdeal_restrictScalars_eq_range,
-    rightTensorIdeal_restrictScalars_eq_range, sup_comm]
-
-end HopfIdeal
-
-end TensorIdeals
-
-section TensorIdealQuotient
-
-variable {R : Type u} {H : Type v}
-variable [CommRing R] [Ring H] [Algebra R H]
-
-namespace HopfIdeal
-
-/-- The kernel of tensoring the quotient map on the right is the right tensor ideal. -/
-theorem ker_tensorProduct_map_id_quotient (I : Ideal H) [I.IsTwoSided] :
-    RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I)) =
-      rightTensorIdeal (R := R) (H := H) I := by
-  simpa only [rightTensorIdeal_def, AlgHom.coe_ideal_map, AlgHom.toRingHom_eq_coe,
-    AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] using
-    Algebra.TensorProduct.lTensor_ker (A := H) (Ideal.Quotient.mkₐ R I)
-      (Ideal.Quotient.mkₐ_surjective R I)
-
-/-- The kernel of tensoring the quotient map on the left is the left tensor ideal. -/
-theorem ker_tensorProduct_map_quotient_id (I : Ideal H) [I.IsTwoSided] :
-    RingHom.ker (Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I) (AlgHom.id R H)) =
-      leftTensorIdeal (R := R) (H := H) I := by
-  simpa only [leftTensorIdeal_def, AlgHom.coe_ideal_map, AlgHom.toRingHom_eq_coe,
-    AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] using
-    Algebra.TensorProduct.rTensor_ker (C := H) (Ideal.Quotient.mkₐ R I)
-      (Ideal.Quotient.mkₐ_surjective R I)
-
-end HopfIdeal
-
-end TensorIdealQuotient
-
 variable (R : Type u) (H : Type v)
 variable [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
@@ -262,8 +66,8 @@ structure HopfIdeal where
   comul_mem' :
     ∀ ⦃x : H⦄, x ∈ carrier →
       Coalgebra.comul (R := R) x ∈
-        HopfIdeal.leftTensorIdeal (R := R) (H := H) carrier ⊔
-          HopfIdeal.rightTensorIdeal (R := R) (H := H) carrier
+        Ideal.leftTensorIdeal (R := R) (H := H) carrier ⊔
+          Ideal.rightTensorIdeal (R := R) (H := H) carrier
   /-- The counit vanishes on the ideal. -/
   counit_eq_zero' : ∀ ⦃x : H⦄, x ∈ carrier → Coalgebra.counit (R := R) x = 0
   /-- The antipode preserves the ideal. -/
@@ -329,7 +133,7 @@ theorem ext {I J : HopfIdeal R H} (h : ∀ x : H, x ∈ I ↔ x ∈ J) : I = J :
     (hcomul :
       ∀ ⦃x : H⦄, x ∈ I →
         Coalgebra.comul (R := R) x ∈
-          leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I)
+          Ideal.leftTensorIdeal (R := R) (H := H) I ⊔ Ideal.rightTensorIdeal (R := R) (H := H) I)
     (hcounit : ∀ ⦃x : H⦄, x ∈ I → Coalgebra.counit (R := R) x = 0)
     (hantipode : ∀ ⦃x : H⦄, x ∈ I → HopfAlgebra.antipode R x ∈ I) :
     HopfIdeal R H where
@@ -354,8 +158,8 @@ closure conditions only on those generators. -/
 def ofSpan (S : Set H) [hS : (Ideal.span S).IsTwoSided]
     (hcomul : ∀ x ∈ S,
       Coalgebra.comul (R := R) x ∈
-        leftTensorIdeal (R := R) (H := H) (Ideal.span S) ⊔
-          rightTensorIdeal (R := R) (H := H) (Ideal.span S))
+        Ideal.leftTensorIdeal (R := R) (H := H) (Ideal.span S) ⊔
+          Ideal.rightTensorIdeal (R := R) (H := H) (Ideal.span S))
     (hcounit : ∀ x ∈ S, Coalgebra.counit (R := R) x = 0)
     (hantipode : ∀ x ∈ S, HopfAlgebra.antipode R x ∈ Ideal.span S) :
     HopfIdeal R H :=
@@ -393,8 +197,8 @@ theorem ofSpan_toIdeal (S : Set H) [hS : (Ideal.span S).IsTwoSided]
 /-- The comultiplication of an element of a Hopf ideal lies in `I ⊗ H + H ⊗ I`. -/
 theorem comul_mem (I : HopfIdeal R H) {x : H} (hx : x ∈ I) :
     Coalgebra.comul (R := R) x ∈
-      leftTensorIdeal (R := R) (H := H) I.toIdeal ⊔
-        rightTensorIdeal (R := R) (H := H) I.toIdeal :=
+      Ideal.leftTensorIdeal (R := R) (H := H) I.toIdeal ⊔
+        Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal :=
   I.comul_mem' hx
 
 /-- The counit vanishes on a Hopf ideal. -/
@@ -465,16 +269,16 @@ instance instMax : Max (HopfIdeal R H) where
         refine add_mem ?_ ?_
         · exact
             (sup_le_sup
-                (leftTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
+                (Ideal.leftTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_left)
-                (rightTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
+                (Ideal.rightTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_left))
               (I.comul_mem hy)
         · exact
             (sup_le_sup
-                (leftTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
+                (Ideal.leftTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_right)
-                (rightTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
+                (Ideal.rightTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_right))
               (J.comul_mem hz)
       counit_eq_zero' := by
@@ -535,9 +339,9 @@ instance instSupSet : SupSet (HopfIdeal R H) where
         rw [Finsupp.sum, map_sum]
         refine Submodule.sum_mem _ fun I _ => ?_
         exact sup_le_sup
-          (leftTensorIdeal_mono (R := R) (H := H)
+          (Ideal.leftTensorIdeal_mono (R := R) (H := H)
             (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-          (rightTensorIdeal_mono (R := R) (H := H)
+          (Ideal.rightTensorIdeal_mono (R := R) (H := H)
             (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
           ((I : HopfIdeal R H).comul_mem (hf I))
       counit_eq_zero' := fun _ hx => by
@@ -613,7 +417,11 @@ instance instIsCoideal (I : HopfIdeal R H) :
   rw [Submodule.isCoideal_iff_comul_mem]
   refine ⟨fun _ hx => I.counit_eq_zero hx, fun _ hx => ?_⟩
   have := I.comul_mem hx
-  rwa [← Submodule.restrictScalars_mem R, comul_mem_sup_restrictScalars_eq_range] at this
+  rw [← Submodule.restrictScalars_mem R, Submodule.restrictScalars_sup,
+    Ideal.leftTensorIdeal_def, Ideal.rightTensorIdeal_def] at this
+  simp only [AlgHom.toRingHom_eq_coe, ← AlgHom.coe_ideal_map] at this
+  rw [Ideal.map_includeLeft_eq, Ideal.map_includeRight_eq] at this
+  simpa only [sup_comm] using this
 
 /-- A `HopfIdeal` gives Mathlib's `Ideal.IsHopfIdeal`, so that Mathlib's quotient
 `HopfAlgebra` instance fires on `H ⧸ I.toIdeal`. -/
@@ -624,23 +432,5 @@ instance instIsHopfIdeal (I : HopfIdeal R H) : I.toIdeal.IsHopfIdeal R where
 end HopfIdeal
 
 end Bridge
-
-namespace HopfIdeal
-
-variable {R : Type u} {H : Type v}
-variable [CommRing R] [Ring H]
-
-/-- The tensor-kernel exactness theorem in the tensor-ideal notation used by `HopfIdeal`. -/
-theorem ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal [Algebra R H]
-    {A B : Type*} [Ring A] [Ring B] [Algebra R A] [Algebra R B]
-    (f : H →ₐ[R] A) (g : H →ₐ[R] B)
-    (hf : Function.Surjective f) (hg : Function.Surjective g) :
-    RingHom.ker (Algebra.TensorProduct.map f g) =
-      leftTensorIdeal (R := R) (H := H) (RingHom.ker f) ⊔
-        rightTensorIdeal (R := R) (H := H) (RingHom.ker g) := by
-  simpa only [leftTensorIdeal_def, rightTensorIdeal_def, AlgHom.coe_ideal_map,
-    AlgHom.toRingHom_eq_coe] using Algebra.TensorProduct.map_ker f g hf hg
-
-end HopfIdeal
 
 end TauCeti

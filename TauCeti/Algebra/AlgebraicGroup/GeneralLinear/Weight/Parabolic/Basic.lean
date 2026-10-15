@@ -84,20 +84,20 @@ private theorem comul_X_mem (w : Fin N → ℤ) {i j : Fin N}
     Coalgebra.comul (R := R)
         (coordinateHopfAlgebraAlgEquiv R N
           (coordinateRingMap R N (MvPolynomial.X (i, j)))) ∈
-      HopfIdeal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
+      Ideal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
           (Ideal.span (weightParabolicRelationSet R w)) ⊔
-        HopfIdeal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
+        Ideal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
           (Ideal.span (weightParabolicRelationSet R w)) := by
   rw [coordinateHopfAlgebra_comul_X]
   apply Submodule.sum_mem
   intro k _
   by_cases hik : w i < w k
   · exact Ideal.mem_sup_left <|
-      HopfIdeal.tmul_mem_leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
+      Ideal.tmul_mem_leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
         (Ideal.subset_span (X_mem_weightParabolicRelationSet R w hik)) _
   · have hkj : w k < w j := (not_lt.mp hik).trans_lt hij
     exact Ideal.mem_sup_right <|
-      HopfIdeal.tmul_mem_rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) _
+      Ideal.tmul_mem_rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) _
         (Ideal.subset_span (X_mem_weightParabolicRelationSet R w hkj))
 
 private theorem counit_forbidden_X (w : Fin N → ℤ) {i j : Fin N} (hij : w i < w j) :

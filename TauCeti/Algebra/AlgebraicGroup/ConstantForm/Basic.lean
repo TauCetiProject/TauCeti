@@ -187,10 +187,10 @@ private theorem relationMatrix_map_comul :
 ideals of the span of the relations. -/
 private theorem comul_relationMatrix_mem (i j : Fin n) :
     Coalgebra.comul (R := R) (relationMatrix R n C i j) ∈
-      HopfIdeal.leftTensorIdeal (R := R)
+      Ideal.leftTensorIdeal (R := R)
           (H := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) ⊔
-        HopfIdeal.rightTensorIdeal (R := R)
+        Ideal.rightTensorIdeal (R := R)
           (H := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
   have h := congrFun (congrFun (relationMatrix_map_comul R n C) i) j
@@ -199,11 +199,11 @@ private theorem comul_relationMatrix_mem (i j : Fin n) :
   refine Ideal.add_mem _ (Ideal.mem_sup_right ?_) (Ideal.mem_sup_left ?_)
   · refine Matrix.mul_mul_apply_mem (fun k l => ?_) _ _ i j
     rw [Matrix.map_apply]
-    exact HopfIdeal.includeRight_mem_rightTensorIdeal (R := R)
+    exact Ideal.includeRight_mem_rightTensorIdeal (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C k l))
   · rw [Matrix.map_apply]
-    exact HopfIdeal.includeLeft_mem_leftTensorIdeal (R := R)
+    exact Ideal.includeLeft_mem_leftTensorIdeal (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
 
