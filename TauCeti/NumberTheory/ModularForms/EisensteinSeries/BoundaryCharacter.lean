@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Span
+public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Projection
 
 /-!
 # Nebentypus from Eisenstein boundary values

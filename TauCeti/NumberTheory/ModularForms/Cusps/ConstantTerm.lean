@@ -266,18 +266,6 @@ theorem constantTermAt_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
   rw [constantTermAt_eq_valueAtInfty, constantTermAt_eq_valueAtInfty, coe_translate,
     coe_translate, coe_diamondOp k d g hg, map_mul, SlashAction.slash_mul]
 
-/-- The collection of all cusp constant terms after applying a diamond operator is obtained by
-left-multiplying every cusp representative by a lift of the indexing unit. -/
-theorem constantTerms_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
-    (g : ↥(CongruenceSubgroup.Gamma0 N))
-    (hg : (CongruenceSubgroup.Gamma0Map N).toHomUnits g = d)
-    (f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k) :
-    constantTerms (diamondOp k d f) =
-      fun γ ↦ constantTerms f ((g : SL(2, ℤ)) * γ) := by
-  funext γ
-  simp only [constantTerms_apply]
-  exact constantTermAt_diamondOp k d g hg γ f
-
 /-- The subspace of functions on cusp representatives that transform with nebentypus `chi`
 under left multiplication by `Γ₀(N)`. This is the natural codomain for the constant terms of
 forms in `M_k(N, chi)`; no right-translation or cusp-orbit relation is imposed on arbitrary
