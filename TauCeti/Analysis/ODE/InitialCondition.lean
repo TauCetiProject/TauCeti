@@ -14,7 +14,9 @@ public import TauCeti.Analysis.ODE.SmoothParameter
 Picard iteration produces a solution of `γ' = v ∘ γ` continuously, indeed Lipschitzly, in the
 initial condition. It says nothing about differentiability: the contraction argument is metric.
 This file upgrades continuity to smoothness of the same order as the field, jointly in the initial
-condition and in time, near time `0`.
+condition and in time. The local argument first gives this near time `0`. The flow law then
+propagates the result to every time, at every finite order: for a fixed initial condition, the set
+of times where the solution is smooth is both open and closed.
 
 The mechanism is a change of variables that turns the initial condition into a *parameter* of a
 new equation, so that `ODE.exists_contDiffAt_picard_solution_of_contDiff` applies. Writing a
@@ -34,8 +36,9 @@ therefore smooth directions.
 
 * `ODE.contDiffAt_globalSolution`: the global solution of a globally Lipschitz `C^(n+1)` field is
   `C^(n+1)` in time and initial condition near time `0`, for `n` finite or infinite.
-* `ODE.eventually_contDiffAt_globalSolution`: at every small time, the time-`t` map of such a
-  field is `C^(n+1)` in the initial condition.
+* `ODE.contDiff_globalSolution`: the global solution is `C^(n+1)` jointly in its initial condition
+  and time, for every finite `n`.
+* `ODE.contDiff_globalSolution_apply`: every time-`t` map is `C^(n+1)`.
 * `ODE.exists_contDiffAt_localFlow`: a vector field which is `C^(n+1)` on a neighbourhood of a
   point has a local flow through the nearby points which is `C^(n+1)` in time and initial
   condition near that point at time `0`, and which obeys the flow law
@@ -124,17 +127,80 @@ theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv :
     (by simpa [projIcc_left] using congrArg (fun w : E ↦ p.1 + w) hbase) hcont hderiv
   simpa [projIcc_right] using this.symm
 
-/-- **`C^(n+1)` dependence on the initial condition.** For every small time the time-`t` map of a
-globally Lipschitz `C^(n+1)` field is `C^(n+1)` at the base point. The order is finite here
-because smoothness of infinite order at one point does not propagate to a neighbourhood. -/
-theorem eventually_contDiffAt_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
-    (hvs : ContDiff ℝ (n + 1) v) (a : E) :
-    ∀ᶠ t in nhds (0 : ℝ), ContDiffAt ℝ (n + 1) (fun x ↦ globalSolution v hv x t) a := by
-  have hev := (contDiffAt_globalSolution (n := (n : ℕ∞)) v hv
-    (by exact_mod_cast hvs) a).eventually (by simp)
-  have hslice := (continuousAt_const.prodMk continuousAt_id).eventually hev
-  filter_upwards [hslice] with t ht
-  exact ht.comp a (contDiffAt_id.prodMk contDiffAt_const)
+/-- **The global solution of a globally Lipschitz `C^(n+1)` field is `C^(n+1)` jointly in its
+initial condition and time.**
+
+For every finite positive regularity order, the global solution has the same joint regularity as
+the vector field. -/
+theorem contDiff_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
+    (hvs : ContDiff ℝ (n + 1) v) :
+    ContDiff ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) := by
+  -- For a fixed initial condition, the smooth times form a nonempty clopen subset of `ℝ`:
+  -- the flow law propagates smoothness locally, including at limit points.
+  let G : E × ℝ → E := fun p ↦ globalSolution v hv p.1 p.2
+  have hlocal (a : E) : ContDiffAt ℝ (n + 1) G (a, 0) := by
+    exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv (by exact_mod_cast hvs) a
+  have hfinite : (n + 1 : ℕ∞) ≠ ∞ := by simp
+  have propagate (a : E) {s t : ℝ} (hs : ContDiffAt ℝ (n + 1) G (a, s))
+      (hout : ContDiffAt ℝ (n + 1) G (globalSolution v hv a s, t - s)) :
+      ContDiffAt ℝ (n + 1) G (a, t) := by
+    have hfixed : ContDiffAt ℝ (n + 1) (fun x ↦ globalSolution v hv x s) a :=
+      hs.comp a (contDiffAt_id.prodMk contDiffAt_const)
+    have hinner : ContDiffAt ℝ (n + 1)
+        (fun p : E × ℝ ↦ (globalSolution v hv p.1 s, p.2 - s)) (a, t) :=
+      (hfixed.comp (a, t) contDiffAt_fst).prodMk (contDiffAt_snd.sub contDiffAt_const)
+    apply (hout.comp (a, t) hinner).congr_of_eventuallyEq
+    filter_upwards [] with p
+    dsimp only [G, Function.comp_apply]
+    rw [← globalSolution_add]
+    congr 2
+    ring
+  apply contDiff_iff_contDiffAt.2
+  rintro ⟨a, t⟩
+  let S : Set ℝ := {s | ContDiffAt ℝ (n + 1) G (a, s)}
+  have hopen : IsOpen S := by
+    rw [isOpen_iff_mem_nhds]
+    intro s hs
+    have houter : ∀ᶠ u in nhds s,
+        ContDiffAt ℝ (n + 1) G (globalSolution v hv a s, u - s) := by
+      have hevent := (hlocal (globalSolution v hv a s)).eventually hfinite
+      have htend : Tendsto (fun u : ℝ ↦ (globalSolution v hv a s, u - s)) (nhds s)
+          (nhds (globalSolution v hv a s, 0)) := by
+        have hconst : ContinuousAt (fun _ : ℝ ↦ globalSolution v hv a s) s := continuousAt_const
+        have hsub : ContinuousAt (fun u : ℝ ↦ u - s) s :=
+          continuousAt_id.sub continuousAt_const
+        have htend' := hconst.prodMk hsub
+        simpa only [ContinuousAt, sub_self] using htend'
+      exact htend.eventually hevent
+    exact houter.mono fun u hu ↦ propagate a hs hu
+  have hclosed : IsClosed S := by
+    apply isClosed_of_closure_subset
+    intro s hs
+    have houter : ∀ᶠ u in nhds s,
+        ContDiffAt ℝ (n + 1) G (globalSolution v hv a u, s - u) := by
+      have hevent := (hlocal (globalSolution v hv a s)).eventually hfinite
+      have htend : Tendsto (fun u ↦ (globalSolution v hv a u, s - u)) (nhds s)
+          (nhds (globalSolution v hv a s, 0)) := by
+        have hsub : ContinuousAt (fun u : ℝ ↦ s - u) s :=
+          continuousAt_const.sub continuousAt_id
+        have htend' := (continuous_globalSolution_apply v hv a).continuousAt.prodMk hsub
+        simpa only [ContinuousAt, sub_self] using htend'
+      exact htend.eventually hevent
+    obtain ⟨u, hu⟩ := (mem_closure_iff_nhds').1 hs _ houter
+    exact propagate a u.property hu
+  have hSuniv : S = Set.univ :=
+    IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨0, hlocal a⟩
+  have ht : t ∈ S := by
+    rw [hSuniv]
+    exact Set.mem_univ t
+  exact ht
+
+/-- At every fixed time, the global solution of a globally Lipschitz `C^(n+1)` field is a
+`C^(n+1)` function of its initial condition. -/
+theorem contDiff_globalSolution_apply (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
+    (hvs : ContDiff ℝ (n + 1) v) (t : ℝ) :
+    ContDiff ℝ (n + 1) fun x ↦ globalSolution v hv x t :=
+  (contDiff_globalSolution n v hv hvs).comp (contDiff_id.prodMk contDiff_const)
 
 end
 

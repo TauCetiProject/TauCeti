@@ -159,7 +159,6 @@ theorem typeD4QuaternaryQuadraticModule_pairing [Algebra (ZMod 2) F] (hF : Nat.c
   by_cases hy : y = 0
   · subst hy
     simp [QuadraticMap.polar_zero_right]
-  have hx3 := hcube x hx
   have hy3 := hcube y hy
   -- `x y² + (x y²)² = x y (x + y)` once `x³ = y³ = 1`.
   have hsum : x * y ^ 2 + (x * y ^ 2) ^ 2 = x * y * (x + y) := by

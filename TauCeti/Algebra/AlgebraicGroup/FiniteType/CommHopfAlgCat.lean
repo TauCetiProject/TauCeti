@@ -11,10 +11,10 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 /-!
 # Finite-type commutative Hopf algebras
 
-This file packages finite-type commutative Hopf algebras over a commutative ring `R`.
-These are the coordinate Hopf algebras for affine group schemes of finite type in the
-reductive-groups roadmap: the Hopf algebra structure carries the group law, while
-`Algebra.FiniteType R H` records the finite-type coordinate-ring hypothesis separately.
+This file packages finite-type commutative Hopf algebras over a commutative ring `R`. These are the
+coordinate Hopf algebras of affine group schemes of finite type: the Hopf algebra structure carries
+the group law, while `Algebra.FiniteType R H` records the finite-type coordinate-ring hypothesis
+separately.
 
 ## Main declarations
 
@@ -33,12 +33,10 @@ reductive-groups roadmap: the Hopf algebra structure carries the group law, whil
 
 ## References
 
-This is the finite-type coordinate-Hopf-algebra wrapper requested by
-`ReductiveGroups/README.md` in TauCetiRoadmap, in the standing hypotheses and Layer 0
-three-way dictionary: an affine group scheme of finite type over `k` is modeled by a
-commutative Hopf `k`-algebra finitely generated as a `k`-algebra. The finite-type algebra
-infrastructure is Mathlib's `FGAlgCat` and `Algebra.FiniteType`; the Hopf algebra category
-is Mathlib's bundled `CommHopfAlgCat`, on top of which Tau Ceti adds the points functor.
+An affine group scheme of finite type over `k` is modeled by a commutative Hopf `k`-algebra finitely
+generated as a `k`-algebra. The finite-type algebra infrastructure is Mathlib's `FGAlgCat` and
+`Algebra.FiniteType`; the Hopf algebra category is Mathlib's bundled `CommHopfAlgCat`, on top of
+which Tau Ceti adds the points functor.
 -/
 
 public section
@@ -196,7 +194,7 @@ lemma pointsFunctor_obj (H : (FiniteTypeCommHopfAlgCat.{u, v} R)ᵒᵖ) :
 /-- The morphism part of `pointsFunctor` is pre-composition in the coordinate commutative
 Hopf algebra. -/
 lemma pointsFunctor_map {H K : (FiniteTypeCommHopfAlgCat.{u, v} R)ᵒᵖ} (φ : H ⟶ K) :
-    (pointsFunctor (R := R)).map φ = CommHopfAlgCat.mapPointsFunctor φ.unop.hom :=
+    (pointsFunctor (R := R)).map φ = CommHopfAlgCat.Hom.mapPointsFunctor φ.unop.hom :=
   rfl
 
 /-- Pointwise form of the morphism part of `pointsFunctor`: the image of a point `f` under `φ`
@@ -211,7 +209,7 @@ lemma pointsFunctor_map_app_apply_apply {H K : (FiniteTypeCommHopfAlgCat.{u, v} 
       (((pointsFunctor (R := R)).map φ).app A f).ofConv) h =
       f.ofConv (toBialgHom φ.unop (h : K.unop.obj)) := by
   rw [pointsFunctor_map]
-  exact CommHopfAlgCat.mapPointsFunctor_app_apply_apply (R := R) φ.unop.hom A f h
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (R := R) φ.unop.hom A f h
 
 end FiniteTypeCommHopfAlgCat
 

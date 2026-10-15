@@ -85,6 +85,15 @@ theorem coeff_ofCoeffList (l : List R) (i : ℕ) :
     | zero => simp
     | succ i => simpa using ih i
 
+/-- Evaluating `TauCeti.Polynomial.ofCoeffList l` is Horner's rule run directly on the list. -/
+theorem eval₂_ofCoeffList {S : Type*} [Semiring S] (f : R →+* S) (r : S) (l : List R) :
+    (ofCoeffList l).eval₂ f r = l.foldl (fun y a => y * r + f a) 0 := by
+  induction l using List.reverseRecOn with
+  | nil => simp
+  | append_singleton l a ih =>
+    rw [ofCoeffList_concat, eval₂_add, eval₂_mul_X, eval₂_C, List.foldl_append, ih]
+    rfl
+
 /-- A list of `n` coefficients defines a polynomial of degree less than `n`. -/
 theorem degree_ofCoeffList_lt (l : List R) : (ofCoeffList l).degree < l.length := by
   rw [degree_lt_iff_coeff_zero]
@@ -188,10 +197,11 @@ theorem coeffList_ofCoeffList {l : List R} (h : l = [] ∨ l.headD 0 ≠ 0) :
   have hlen : (ofCoeffList l).coeffList.length = l.length := by
     rw [Polynomial.length_coeffList_eq_ite, ite_eq_right hne, natDegree_ofCoeffList (Or.inr h)]
     omega
-  have hdeg : (ofCoeffList l).degree.succ = l.length := by
-    rw [← Polynomial.length_coeffList_eq_withBotSucc_degree]; exact hlen
+  have hdeg : (ofCoeffList l).natDegree + 1 = l.length := by
+    rw [← hlen, Polynomial.length_coeffList_eq_ite, ite_eq_right hne]
+  rw [Polynomial.coeffList_of_ne_zero hne] at hlen ⊢
   refine List.ext_getElem hlen fun i hi hi' => ?_
-  simp only [Polynomial.coeffList, List.getElem_map, List.getElem_reverse, List.length_range,
+  simp only [List.getElem_map, List.getElem_reverse, List.length_range,
     List.getElem_range, hdeg, coeff_ofCoeffList]
   rw [List.getD_eq_getElem _ _ (by simp; omega), List.getElem_reverse]
   congr 1
@@ -203,13 +213,13 @@ polynomial is recovered from its coefficient list. -/
 theorem ofCoeffList_coeffList (p : R[X]) : ofCoeffList p.coeffList = p := by
   rcases eq_or_ne p 0 with rfl | hp
   · simp
-  have hsucc : p.degree.succ = p.natDegree + 1 := withBotSucc_degree_eq_natDegree_add_one hp
   ext i
-  rw [coeff_ofCoeffList, Polynomial.coeffList, List.map_reverse, List.reverse_reverse]
+  rw [coeff_ofCoeffList, Polynomial.coeffList_of_ne_zero hp, List.map_reverse,
+    List.reverse_reverse]
   rcases lt_or_ge i (p.natDegree + 1) with h | h
-  · rw [List.getD_eq_getElem _ _ (by simp [hsucc]; omega)]
+  · rw [List.getD_eq_getElem _ _ (by simp; omega)]
     simp
-  · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simp [hsucc]; omega),
+  · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simp; omega),
       Option.getD_none]
     exact (coeff_eq_zero_of_natDegree_lt (by omega)).symm
 

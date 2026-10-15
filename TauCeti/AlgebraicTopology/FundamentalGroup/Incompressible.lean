@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Maps.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
@@ -72,7 +73,7 @@ theorem comp {T : Type*} [TopologicalSpace T] {g : C(M, T)}
   have hcomp (γ : FundamentalGroup S s) :
       FundamentalGroup.map (g.comp f) s γ =
         FundamentalGroup.map g (f s) (FundamentalGroup.map f s γ) := by
-    exact FundamentalGroupoid.map_comp_map g f γ
+    exact CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map g f γ.asHom)
   rw [hcomp γ₁, hcomp γ₂] at hγ
   exact hγ
 
@@ -104,5 +105,11 @@ theorem isIncompressible_prodMk (y₀ : M) :
     (r := ContinuousMap.fst)
   ext x
   rfl
+
+/-- A map from a space with a nontrivial fundamental group into a simply connected space is not
+incompressible. -/
+theorem not_isIncompressible_of_simplyConnectedSpace [SimplyConnectedSpace M] (f : C(S, M))
+    (s : S) [Nontrivial (FundamentalGroup S s)] : ¬ IsIncompressible f := fun h ↦
+  not_subsingleton (FundamentalGroup S s) (h.fundamentalGroup_injective s).subsingleton
 
 end TauCeti

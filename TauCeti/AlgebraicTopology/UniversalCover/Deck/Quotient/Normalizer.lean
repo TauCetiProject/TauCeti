@@ -316,7 +316,7 @@ theorem deckHomOfNormal_symm_apply (γ : Γ) (e : E) :
 
 /-- **For a normal subgroup, the deck group of the intermediate covering is `Γ ⧸ H`.** This is
 the general normalizer-quotient identification, read through the algebraic comparison
-`TauCeti.Subgroup.normalizerQuotientEquivQuotientOfNormal` between `N(H) ⧸ H` and `Γ ⧸ H`. -/
+`Subgroup.normalizerQuotientEquivQuotientOfNormal` between `N(H) ⧸ H` and `Γ ⧸ H`. -/
 def quotientDeckMulEquivOfNormal [PreconnectedSpace E] [Nonempty E] (hrc : IsCoveringMap r) :
     Γ ⧸ H ≃* deck r :=
   (Subgroup.normalizerQuotientEquivQuotientOfNormal H).symm.trans

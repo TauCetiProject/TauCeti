@@ -343,7 +343,7 @@ end Basis
 
 /-- The set of defining relations: the entries of the relation matrices of the generic
 matrix. -/
-def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range fun p : Fin n × Fin n × Fin n =>
     relationMatrix R n C (GeneralLinear.genericMatrix R n) p.1 p.2.1 p.2.2
 
@@ -537,8 +537,8 @@ theorem coordinateMap_relationMatrix (k i j : Fin n) :
       (relationMatrix R n C (GeneralLinear.genericMatrix R n) k i j) = 0 := by
   rw [coordinateMap_def]
   exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
-    (definingHopfIdeal_toIdeal R n C ▸
-      Ideal.subset_span (relationMatrix_genericMatrix_mem_relationSet R n C k i j))
+    (HopfIdeal.mem_toIdeal.mp (definingHopfIdeal_toIdeal R n C ▸
+      Ideal.subset_span (relationMatrix_genericMatrix_mem_relationSet R n C k i j)))
 
 /-- **The generic matrix of the quotient preserves the multiplication**: transporting the generic
 matrix of `GL n` along the quotient coordinate morphism gives a matrix over the quotient

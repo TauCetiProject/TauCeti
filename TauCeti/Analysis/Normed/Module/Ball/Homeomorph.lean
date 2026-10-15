@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convex.GaugeRescale
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.UnitInterval
 
 /-!
 # Homeomorphisms onto the unit balls of normed spaces
@@ -22,7 +24,7 @@ ball, the closed unit ball and the unit sphere of `E` onto those of `F`.
 The typical use compares the closed unit ball of the sup norm on `Fin n → ℝ`, which is the domain
 of the characteristic maps of a CW complex, with the Euclidean unit disk.
 
-Mathlib's radial homeomorphism `Homeomorph.unitBall : E ≃ₜ ball 0 1` of a real normed space onto
+Mathlib's radial homeomorphism `Homeomorph.unitBall : E ≃ₜ ball 0 1` of a real seminormed space onto
 its open unit ball, followed by the inclusion of the open unit ball in the closed unit ball, is an
 open embedding of `E` into the closed unit ball. It lets a chart valued in `E` be read as a chart
 valued in the closed unit ball.
@@ -34,7 +36,16 @@ valued in the closed unit ball.
   `ContinuousLinearEquiv.image_unitBallHomeomorph_ball` and
   `ContinuousLinearEquiv.image_unitBallHomeomorph_sphere`: it matches the closed unit balls, the
   open unit balls and the unit spheres.
+* `ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff` and its variants: the same
+  statements read pointwise on norms, for the homeomorphism and its inverse.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
+* `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
+* `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
+  `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
+* `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
+  finite dimension `k` is homeomorphic to the cube `Iᵏ`.
+* `TauCeti.sphereHomeomorphOfFinrankEq`: the unit spheres of two finite-dimensional real normed
+  spaces of the same dimension are homeomorphic.
 -/
 
 public section
@@ -42,6 +53,17 @@ public section
 noncomputable section
 
 open Metric Set Topology
+
+variable {W : Type*} [SeminormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- The inverse of `unitBall` in explicit radial coordinates. -/
+theorem _root_.Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
+    (Homeomorph.unitBall.symm y : W) =
+      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := by
+  exact (Homeomorph.unitBall_symm_apply y).trans
+    ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
+      (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
+      (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
 
 namespace ContinuousLinearEquiv
 
@@ -99,6 +121,48 @@ theorem image_unitBallHomeomorph_sphere :
   simpa only [frontier_closedBall _ one_ne_zero, image_unitBallHomeomorph_closedBall] using
     L.unitBallHomeomorph.image_frontier (closedBall 0 1)
 
+/-- `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition `‖x‖ ≤ 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_le_one_iff {x : E} :
+    ‖L.unitBallHomeomorph x‖ ≤ 1 ↔ ‖x‖ ≤ 1 := by
+  simpa using (L.unitBallHomeomorph.injective.mem_set_image.symm.trans
+    (Set.ext_iff.1 L.image_unitBallHomeomorph_closedBall (L.unitBallHomeomorph x))).symm
+
+/-- `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition `‖x‖ < 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_lt_one_iff {x : E} :
+    ‖L.unitBallHomeomorph x‖ < 1 ↔ ‖x‖ < 1 := by
+  simpa using (L.unitBallHomeomorph.injective.mem_set_image.symm.trans
+    (Set.ext_iff.1 L.image_unitBallHomeomorph_ball (L.unitBallHomeomorph x))).symm
+
+/-- `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition `‖x‖ = 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_eq_one_iff {x : E} :
+    ‖L.unitBallHomeomorph x‖ = 1 ↔ ‖x‖ = 1 := by
+  simpa using (L.unitBallHomeomorph.injective.mem_set_image.symm.trans
+    (Set.ext_iff.1 L.image_unitBallHomeomorph_sphere (L.unitBallHomeomorph x))).symm
+
+/-- The inverse of `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition
+`‖y‖ ≤ 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_symm_le_one_iff {y : F} :
+    ‖L.unitBallHomeomorph.symm y‖ ≤ 1 ↔ ‖y‖ ≤ 1 := by
+  simpa using (L.norm_unitBallHomeomorph_le_one_iff (x := L.unitBallHomeomorph.symm y)).symm
+
+/-- The inverse of `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition
+`‖y‖ < 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_symm_lt_one_iff {y : F} :
+    ‖L.unitBallHomeomorph.symm y‖ < 1 ↔ ‖y‖ < 1 := by
+  simpa using (L.norm_unitBallHomeomorph_lt_one_iff (x := L.unitBallHomeomorph.symm y)).symm
+
+/-- The inverse of `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition
+`‖y‖ = 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_symm_eq_one_iff {y : F} :
+    ‖L.unitBallHomeomorph.symm y‖ = 1 ↔ ‖y‖ = 1 := by
+  simpa using (L.norm_unitBallHomeomorph_eq_one_iff (x := L.unitBallHomeomorph.symm y)).symm
+
 end ContinuousLinearEquiv
 
 namespace TauCeti
@@ -113,5 +177,84 @@ theorem isOpenEmbedding_inclusion_comp_unitBall :
       Homeomorph.unitBall) :=
   (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtype_val)).comp
     Homeomorph.unitBall.isOpenEmbedding
+
+section Cube
+
+open unitInterval
+
+variable (N : Type*) [Fintype N]
+
+/-- The cube `I^N` is the closed unit ball of the sup norm on `N → ℝ`, through the affine
+homeomorphism `t ↦ 2 * t - 1` of `I` onto `[-1, 1]` in every coordinate
+(`TauCeti.coe_cubeHomeomorphClosedBall_apply`). -/
+def cubeHomeomorphClosedBall : (N → I) ≃ₜ closedBall (0 : N → ℝ) 1 :=
+  -- Apply the affine interval homeomorphism coordinatewise, then identify the product of
+  -- intervals with the closed unit ball of the sup norm.
+  let a : (N → I) ≃ₜ (N → Icc (-1 : ℝ) 1) :=
+    Homeomorph.piCongrRight fun _ ↦ (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
+  let b : (N → Icc (-1 : ℝ) 1) ≃ₜ univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) :=
+    { toEquiv := (Equiv.Set.univPi _).symm
+      continuous_toFun := by fun_prop
+      continuous_invFun := continuous_pi fun i ↦
+        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _ }
+  have h : univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) = closedBall (0 : N → ℝ) 1 := by
+    simp [closedBall_pi _ zero_le_one, Real.closedBall_eq_Icc]
+  a.trans <| b.trans <| Homeomorph.setCongr h
+
+variable {N}
+
+@[simp]
+theorem coe_cubeHomeomorphClosedBall_apply (y : N → I) (i : N) :
+    (cubeHomeomorphClosedBall N y : N → ℝ) i = 2 * (y i : ℝ) - 1 := by
+  -- The last two homeomorphisms only forget the coordinatewise interval membership proofs.
+  have h : (cubeHomeomorphClosedBall N y : N → ℝ) i =
+      ((iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm (y i) : ℝ) :=
+    rfl
+  rw [h, iccHomeoI_symm_apply_coe]
+  ring
+
+@[simp]
+theorem coe_cubeHomeomorphClosedBall_symm_apply (z : closedBall (0 : N → ℝ) 1) (i : N) :
+    (((cubeHomeomorphClosedBall N).symm z i : I) : ℝ) = ((z : N → ℝ) i + 1) / 2 := by
+  have h := coe_cubeHomeomorphClosedBall_apply ((cubeHomeomorphClosedBall N).symm z) i
+  rw [Homeomorph.apply_symm_apply] at h
+  linarith
+
+open unitInterval in
+/-- **The closed unit ball of a finite-dimensional real normed space is a cube.** The closed unit
+ball of a real normed space of finite dimension `k` is homeomorphic to the cube `Iᵏ`. -/
+theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] :
+    Nonempty ((Fin (Module.finrank ℝ F) → I) ≃ₜ closedBall (0 : F) 1) := by
+  set k := Module.finrank ℝ F
+  let L : (Fin k → ℝ) ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq (by simp [k])
+  exact ⟨(cubeHomeomorphClosedBall (Fin k)).trans <| (L.unitBallHomeomorph.image _).trans
+    (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall)⟩
+
+end Cube
+
+section Sphere
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- The unit spheres of two finite-dimensional real normed spaces of the same dimension are
+homeomorphic, through `ContinuousLinearEquiv.unitBallHomeomorph` applied to
+`ContinuousLinearEquiv.ofFinrankEq`. -/
+def sphereHomeomorphOfFinrankEq (hEF : Module.finrank ℝ E = Module.finrank ℝ F) :
+    sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1 :=
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hEF
+  (L.unitBallHomeomorph.image _).trans (Homeomorph.setCongr L.image_unitBallHomeomorph_sphere)
+
+/-- `TauCeti.sphereHomeomorphOfFinrankEq` is the restriction of
+`ContinuousLinearEquiv.unitBallHomeomorph` to the unit sphere. -/
+@[simp]
+theorem coe_sphereHomeomorphOfFinrankEq_apply (hEF : Module.finrank ℝ E = Module.finrank ℝ F)
+    (x : sphere (0 : E) 1) :
+    (sphereHomeomorphOfFinrankEq hEF x : F) =
+      (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
+  (rfl)
+
+end Sphere
 
 end TauCeti

@@ -162,8 +162,8 @@ theorem topologicalClosure_normalClosure_eq_proPFrattini
   -- `Φ(F)` maps into `Φ(G) = 1`, so it dies in `⟨X ∣ rels⟩`, hence lies in the relation subgroup.
   have hmem := (mk p rels : _ →* presentedProP p X rels).map_proPFrattini_le
     (map_continuous (mk p rels)) (mk_surjective p rels) ⟨x, hx, rfl⟩
-  have hmem' := Subgroup.mem_map_of_mem e.toMulEquiv.toMonoidHom hmem
-  rw [e.map_proPFrattini_eq, hΦ, Subgroup.mem_bot] at hmem'
+  have hmem' : e ((mk p rels) x) = 1 := by
+    simpa [hΦ] using Subgroup.mem_map_of_mem e.toMulEquiv.toMonoidHom hmem
   exact (mk_eq_one_iff x).mp (e.injective (by simpa using hmem'))
 
 end presentedProP

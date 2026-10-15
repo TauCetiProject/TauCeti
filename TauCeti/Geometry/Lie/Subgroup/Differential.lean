@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Functor
+public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 
 /-!
@@ -24,7 +25,11 @@ one-parameter-subgroup description inside the ambient Lie algebra.
 
 ## Main results
 
+* `TauCeti.Lie.range_lieMap_le_lieSubalgebraOfSubgroup`: a smooth homomorphism whose image lies in
+  a subgroup has Lie-map range in that subgroup's ambient Lie algebra.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal`: the Lie map induced by inclusion.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.coe_lieExp_smul`: the subgroup exponential, coerced to an
+  ambient algebra, is its Banach-algebra exponential.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.injective_lieMapSubtypeVal`: this Lie map is injective.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.range_lieMapSubtypeVal_le`: its range lies in
   `lieSubalgebraOfSubgroup K`.
@@ -45,6 +50,35 @@ noncomputable section
 open scoped ContDiff Manifold
 
 universe u v w
+
+namespace TauCeti.Lie
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type v} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
+
+attribute [local instance] ContMDiffMul.boundarylessManifold
+attribute [local instance] LieGroup.minSmoothnessThree
+
+/-- If the image of a smooth homomorphism lies in a subgroup, then the range of its Lie map lies
+in the ambient Lie algebra associated to that subgroup. -/
+theorem range_lieMap_le_lieSubalgebraOfSubgroup {K : Subgroup G'} [T2Space G']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (hφ : MonoidHom.range φ.toMonoidHom ≤ K) :
+    (lieMap φ).range ≤ lieSubalgebraOfSubgroup (I := I') K := by
+  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  rintro _ ⟨X, rfl⟩
+  apply mem_lieSubalgebraOfSubgroup_of_forall
+  intro t
+  have hmap : φ (lieExp (t • X)) = lieExp (t • lieMap φ X) := by
+    simpa only [map_smul] using map_lieExp φ (t • X)
+  exact hmap ▸ hφ ⟨lieExp (t • X), rfl⟩
+
+end TauCeti.Lie
 
 namespace TauCeti.Lie.EmbeddedLieSubgroupData
 
@@ -98,6 +132,39 @@ theorem lieMapSubtypeVal_apply (d : EmbeddedLieSubgroupData I K E') :
   intro X
   rfl
 
+section Units
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
+  {K : Subgroup Rˣ} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [FiniteDimensional ℝ R] [FiniteDimensional ℝ E']
+
+/-- Coercing the exponential of an embedded subgroup of algebra units to the ambient algebra gives
+the Banach-algebra exponential of its inclusion differential. -/
+theorem coe_lieExp_smul
+    (d : EmbeddedLieSubgroupData (modelWithCornersSelf ℝ R) K E') :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    let _ : LieGroup (modelWithCornersSelf ℝ E') ∞ K := d.lieGroup
+    ∀ (X : LeftInvariantDerivation (modelWithCornersSelf ℝ E') K) (t : ℝ),
+      (((d.subtypeVal (lieExp (t • X)) : Rˣ) : R)) =
+        NormedSpace.exp (t • unitsLieAlgebraEquiv (d.lieMapSubtypeVal X)) := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup (modelWithCornersSelf ℝ E') ∞ K := d.lieGroup
+  dsimp only
+  intro X t
+  have hmap : d.subtypeVal (lieExp (t • X)) =
+      lieExp (d.lieMapSubtypeVal (t • X)) := by
+    simpa only [lieMapSubtypeVal_apply] using map_lieExp d.subtypeVal (t • X)
+  calc
+    _ = ((lieExp (d.lieMapSubtypeVal (t • X)) : Rˣ) : R) := congrArg Units.val hmap
+    _ = NormedSpace.exp (unitsLieAlgebraEquiv (d.lieMapSubtypeVal (t • X))) := by
+      simpa only [TauCeti.expUnit_coe] using congrArg Units.val
+        (lieExp_eq_expUnit (d.lieMapSubtypeVal (t • X)))
+    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv (d.lieMapSubtypeVal X)) := by
+      congr 2
+      rw [map_smul, map_smul]
+
+end Units
+
 omit [T2Space G] in
 /-- The Lie map induced by an embedded subgroup inclusion is injective. -/
 theorem injective_lieMapSubtypeVal (d : EmbeddedLieSubgroupData I K E') :
@@ -107,21 +174,13 @@ theorem injective_lieMapSubtypeVal (d : EmbeddedLieSubgroupData I K E') :
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
-  intro X Y hXY
-  let sourceEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E')) (n := ∞) (by simp) (1 : K))
-  let targetEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  have h := congrArg targetEquiv hXY
-  rw [lieMapSubtypeVal_apply, lieMapSubtypeVal_apply,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap] at h
+  apply lieMap_injective_of_mfderiv_injective
   have hderiv :
       mfderiv 𝓘(ℝ, E') I d.subtypeVal 1 =
         mfderiv 𝓘(ℝ, E') I (fun k : K ↦ (k : G)) 1 :=
     mfderiv_congr (funext fun k ↦ d.subtypeVal_apply k)
-  rw [hderiv] at h
-  exact sourceEquiv.injective (d.injective_mfderiv_subtypeVal 1 h)
+  rw [hderiv]
+  exact d.injective_mfderiv_subtypeVal 1
 
 /-- The differential of an embedded subgroup inclusion takes values in the ambient Lie
 subalgebra associated to the subgroup. -/
@@ -135,10 +194,12 @@ theorem lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
   intro X
-  apply mem_lieSubalgebraOfSubgroup_of_forall
-  intro t
-  rw [lieMapSubtypeVal_apply, ← map_smul, ← map_lieExp d.subtypeVal]
-  exact (lieExp (t • X)).property
+  apply range_lieMap_le_lieSubalgebraOfSubgroup d.subtypeVal
+  · rintro _ ⟨k, rfl⟩
+    -- Expose the bundled morphism's underlying function so the inclusion formula applies.
+    change d.subtypeVal k ∈ K
+    simpa only [subtypeVal_apply] using k.property
+  · exact ⟨X, rfl⟩
 
 /-- The range of the differential of an embedded subgroup inclusion is contained in the ambient
 Lie subalgebra associated to the subgroup. -/
@@ -149,8 +210,11 @@ theorem range_lieMapSubtypeVal_le (d : EmbeddedLieSubgroupData I K E') :
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
-  rintro _ ⟨X, rfl⟩
-  exact d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup X
+  apply range_lieMap_le_lieSubalgebraOfSubgroup d.subtypeVal
+  rintro _ ⟨k, rfl⟩
+  -- Expose the bundled morphism's underlying function so the inclusion formula applies.
+  change d.subtypeVal k ∈ K
+  simpa only [subtypeVal_apply] using k.property
 
 section CanonicalModel
 

@@ -28,6 +28,10 @@ Dedekind domain, the places of the localization's finite chart are its height on
   of a set `S` of places and `x ∈ A`, then the localization `A[1/x] ⊆ F` is the holomorphy ring of
   the places of `S` at which `x⁻¹` is regular; `TauCeti.mem_ofField_powers_iff_forall_mem_integers`
   is the membership form.
+* `TauCeti.isLocalization_away_holomorphyRing_inter`: the same statement with the localization
+  realized as a holomorphy ring rather than inside `Localization.subalgebra.ofField`: the
+  holomorphy ring of the places of `S` at which `x⁻¹` is regular is a localization of `𝒪_S` away
+  from `x`, for any algebra structure compatible with the inclusions into `F`.
 * `TauCeti.forall_algebraMap_mem_integers_ofField_powers_iff`: the finite chart of `A[1/x]` is the
   set of places of `S` at which `x⁻¹` is regular.
 * `TauCeti.ofFieldPowersHeightOneSpectrumEquiv`: for a Dedekind `A`, the places of that chart are
@@ -102,6 +106,35 @@ theorem forall_algebraMap_mem_integers_ofField_powers_iff (hF : IsFunctionField 
   rw [← coe_holomorphyRing_subset_integers_iff hF,
     ← coe_ofField_powers_eq_holomorphyRing hF hA x hx]
   exact ⟨fun h a ha ↦ h ⟨a, ha⟩, fun h a ↦ h a.2⟩
+
+/-- **`𝒪_S[1/x]` is a holomorphy ring, as a localization**: for a nonzero `x ∈ 𝒪_S`, the
+holomorphy ring of the places of `S` at which `x⁻¹` is regular is the localization of `𝒪_S` away
+from `x`. The algebra structure may be any one compatible with the inclusions into `F`, which
+forces it to be the inclusion. The set `T` is a parameter so that the statement applies to sets
+of places that are only propositionally of the form `S ∩ {P | x⁻¹ ∈ 𝒪_P}`. -/
+theorem isLocalization_away_holomorphyRing_inter (hF : IsFunctionField k F)
+    {S T : Set (Place k F)} (x : holomorphyRing S) (hx : (x : F) ≠ 0)
+    (hT : T = S ∩ {P : Place k F | (x : F)⁻¹ ∈ P.integers})
+    [Algebra (holomorphyRing S) (holomorphyRing T)]
+    [IsScalarTower (holomorphyRing S) (holomorphyRing T) F] :
+    IsLocalization.Away x (holomorphyRing T) := by
+  have hcoe (a : holomorphyRing S) :
+      (algebraMap (holomorphyRing S) (holomorphyRing T) a : F) = a :=
+    (IsScalarTower.algebraMap_apply (holomorphyRing S) (holomorphyRing T) F a).symm
+  subst hT
+  refine ⟨?_, fun z ↦ ?_, fun {a b} h ↦ ⟨1, ?_⟩⟩
+  · -- `x⁻¹` is regular at every place of `T`, so `x` is a unit of `𝒪_T`.
+    rintro ⟨_, n, rfl⟩
+    refine IsUnit.of_mul_eq_one
+      (⟨(x : F)⁻¹, mem_holomorphyRing_iff.mpr fun P hP ↦ hP.2⟩ ^ n) (Subtype.ext ?_)
+    simp [hcoe, mul_inv_cancel₀ (pow_ne_zero n hx)]
+  · obtain ⟨n, hn⟩ := exists_pow_mul_mem_holomorphyRing hF x.2 (z := z)
+      fun P hP hPx ↦ mem_holomorphyRing_iff.mp z.2 P ⟨hP, hPx⟩
+    refine ⟨⟨⟨_, hn⟩, ⟨x ^ n, n, rfl⟩⟩, Subtype.ext ?_⟩
+    simp [hcoe, mul_comm]
+  · have := congrArg (fun z : holomorphyRing _ ↦ (z : F)) h
+    simp only [hcoe] at this
+    simp [Subtype.ext this]
 
 variable [Algebra k A] [IsScalarTower k A F] [IsDedekindDomain A]
 

@@ -60,7 +60,7 @@ from the spectrum of the affine blowup algebra `R[I/a]` onto the standard open `
 blowup `Proj R[It]` of `Spec R` along `V(I)`. -/
 noncomputable def affineBlowupι (ha : a ∈ I) :
     Spec (.of (I.affineBlowup a S)) ⟶ Proj (grade I) :=
-  Spec.map (awayEquivAffineBlowup S ha).toCommRingCatIso.hom ≫
+  Spec.map (awayEquivAffineBlowup S ha).toRingEquiv.toCommRingCatIso.hom ≫
     Proj.awayι (grade I) (monomialDegreeOne ha) (monomialDegreeOne_mem_grade ha) one_pos
 
 instance (ha : a ∈ I) : IsOpenImmersion (affineBlowupι S ha) :=
@@ -92,6 +92,7 @@ theorem affineBlowupι_toSpecZero (ha : a ∈ I) :
     ← Spec.map_comp]
   congr 1
   ext r
-  simp
+  simpa [gradeZeroEquiv_apply, HomogeneousLocalization.algebraMap_eq_comp] using
+    congr_arg Subtype.val ((awayEquivAffineBlowup S ha).commutes r)
 
 end TauCeti.AlgebraicGeometry

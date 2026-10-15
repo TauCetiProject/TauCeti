@@ -9,8 +9,12 @@ public import TauCeti.Algebra.AddCircle
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.Frobenius
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Unramified
+import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
 
 /-!
 # The local invariant of an unramified layer
@@ -73,6 +77,8 @@ Thus restriction preserves the representing unit and multiplies the invariant by
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.unramifiedClass_eq_cyclicClass`: the unramified class is the cyclic
+  class `TauCeti.cyclicClass` at arithmetic Frobenius.
 * `TauCeti.ClassFieldTheory.unramifiedClass_apply`: the unramified class is the explicit
   Frobenius-periodicity class of the embedded ground-field unit.
 * `TauCeti.ClassFieldTheory.unramifiedClass_eq_zero_iff`: the class of `a` vanishes exactly when
@@ -92,6 +98,13 @@ Thus restriction preserves the representing unit and multiplies the invariant by
   multiplies the invariant by `[K' : K]`.
 * `TauCeti.ClassFieldTheory.map_baseChange_eq_zero_of_finrank_dvd`: base change along an
   extension `K'/K` of degree a multiple of `[L : K]` kills `H²(Gal(L/K), Lˣ)`.
+* `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: a `2`-cocycle with
+  values in the units `U(L,0)` of valuation one represents the zero class of `H²(Gal(L/K), Lˣ)`,
+  since `U(L,0)` has no Tate cohomology.
+* `TauCeti.ClassFieldTheory.mk_eq_zero_of_forall_mem_unitFiltration_zero`: the same for a
+  continuous `2`-cocycle on `G_K` read off `Gal(L/K)` with values in `U(L,0)`.
+* `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl_eq_zero`: a Brauer class inflated from a
+  cocycle whose values are units of an unramified layer `L/K` vanishes after base change to `K`.
 
 ## References
 
@@ -126,6 +139,13 @@ Frobenius, under two-periodicity of the cohomology of the cyclic group `Gal(L/K)
 generator, arithmetic Frobenius. -/
 def unramifiedClass : Additive Kˣ →+ H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :=
   cyclicClass (mem_zpowers_frobeniusAlgEquiv K L)
+
+/-- The unramified class is the cyclic class at arithmetic Frobenius, for any proof that Frobenius
+generates `Gal(L/K)`. -/
+theorem unramifiedClass_eq_cyclicClass
+    (hg : ∀ σ : L ≃ₐ[K] L, σ ∈ Subgroup.zpowers (frobeniusAlgEquiv (K := K) (L := L))) :
+    unramifiedClass K L = cyclicClass hg :=
+  (rfl)
 
 /-- The unramified class of a ground-field unit is its image under Frobenius periodicity. -/
 theorem unramifiedClass_apply (a : Kˣ) :
@@ -357,5 +377,69 @@ theorem map_baseChange_eq_zero_of_finrank_dvd (h : Module.finrank K L ∣ Module
   rw [unramifiedInv_map_baseChange, hd, mul_nsmul, hx, nsmul_zero]
 
 end BaseChange
+
+/-! ### Cocycles with unit values -/
+
+/-- **A unit-valued cocycle of an unramified layer is a coboundary.** If a `2`-cocycle of
+`Gal(L/K)` with values in `Lˣ` takes all its values in the units `U(L,0)` of valuation one, its
+class in `H²(Gal(L/K), Lˣ)` vanishes. -/
+theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
+    (c : cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))
+    (hc : ∀ g h, (Rep.toAdditive (c (g, h))).toMul ∈ unitFiltration L 0) :
+    H2π _ c = 0 := by
+  set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
+  -- The cocycle `c`, read in `U(L,0)`.
+  let c' : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) → A := fun p ↦ Additive.ofMul ⟨_, hc p.1 p.2⟩
+  -- Up to the identifications `Additive.ofMul`, `Rep.toAdditive` and the coercion from `U(L,0)`,
+  -- which are all identities, the inclusion sends `c' p` to `c p`.
+  have hc' (p) : (unitFiltrationZeroIncl K L).hom (c' p) = c p :=
+    (unitFiltrationZeroIncl_apply K L (c' p)).trans (ofMul_toMul (Rep.toAdditive (c p)))
+  have hmem : c' ∈ cocycles₂ A := by
+    rw [mem_cocycles₂_iff]
+    intro g h j
+    apply unitFiltrationZeroIncl_injective K L
+    simp only [map_add, hc']
+    rw [Rep.hom_comm_apply, hc']
+    exact (mem_cocycles₂_iff (c : _ → _)).1 c.2 g h j
+  have hmap : mapCocycles₂ (MonoidHom.id _) (unitFiltrationZeroIncl K L) ⟨c', hmem⟩ = c :=
+    cocycles₂_ext fun g h ↦ hc' (g, h)
+  -- `H²(Gal(L/K), U(L,0))` vanishes, since `U(L,0)` has no Tate cohomology.
+  have : Subsingleton (H2 A) := ModuleCat.isZero_iff_subsingleton.1 <|
+    (TauCeti.TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified
+      (K := K) (L := L) 2).of_iso ((_root_.TateCohomology.isoGroupCohomology 2).app _).symm
+  rw [← hmap, ← H2π_comp_map_apply, Subsingleton.elim (H2π A ⟨c', hmem⟩) 0, map_zero]
+
+/-- **A continuous cocycle read off an unramified layer with unit values is a coboundary.** If a
+continuous `2`-cocycle `z` on `G_K` with values in `(Kˢ)ˣ` takes at `(g, h)` the value
+`σ (u (g|_L, h|_L))`, for a function `u` on `Gal(L/K) × Gal(L/K)` with values in the units `U(L,0)`
+of valuation one, then the class of `z` in `H²(G_K, (Kˢ)ˣ)` vanishes. -/
+theorem mk_eq_zero_of_forall_mem_unitFiltration_zero (σ : L →ₐ[K] SeparableClosure K)
+    (z : ContCohomology.Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) (u : Gal(L/K) × Gal(L/K) → Lˣ)
+    (hu : ∀ p, u p ∈ unitFiltration L 0)
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (.ofMul (u (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
+    (z : ContCohomology.H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) = 0 := by
+  obtain ⟨c, hcu, rfl⟩ := exists_relBrCocycle_eq K L σ z u hz
+  apply (unitsRepH2Equiv K).injective
+  rw [map_zero, ← relBrInfl_H2π,
+    H2π_eq_zero_of_forall_mem_unitFiltration_zero K L c fun g h ↦ (hcu _).symm ▸ hu _, map_zero]
+
+/-- **A class inflated along an unramified layer with unit values vanishes locally.** Let `E/F`
+be a finite normal extension, embedded in `Fˢ` by `σ`, and let `K` be an `F`-algebra with a finite
+unramified Galois extension `L/K` receiving `E`. If a `2`-cocycle `c` of `Gal(E/F)` with values in
+`Eˣ` takes all its values in the units `U(L,0)` of valuation one after the inclusion `Eˣ → Lˣ`, then
+the base change to `K` of the class inflated from `c` vanishes. -/
+theorem brBaseChange_relBrInfl_eq_zero (F : Type) [Field F] [Algebra F K] [Algebra F L]
+    [IsScalarTower F K L] (E : Type) [Field E] [Algebra F E] [FiniteDimensional F E] [Normal F E]
+    [Algebra E L] [IsScalarTower F E L] (σ : E →ₐ[F] SeparableClosure F)
+    (c : cocycles₂ (Rep.ofMulDistribMulAction Gal(E/F) Eˣ))
+    (hc : ∀ g h, Units.map (algebraMap E L : E →* L) (Rep.toAdditive (c (g, h))).toMul ∈
+      unitFiltration L 0) :
+    brBaseChange F K (relBrInfl F E σ (H2π _ c)) = 0 := by
+  rw [brBaseChange_relBrInfl F K E L σ IsSepClosed.lift, H2π_comp_map_apply,
+    H2π_eq_zero_of_forall_mem_unitFiltration_zero K L _ fun g h ↦ ?_, map_zero]
+  rw [toMul_mapCocycles₂_unitsBaseChangeHom]
+  exact hc _ _
 
 end TauCeti.ClassFieldTheory

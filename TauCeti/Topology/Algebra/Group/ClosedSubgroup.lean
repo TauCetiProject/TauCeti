@@ -32,6 +32,8 @@ intersection are nonempty, and Zorn's lemma supplies a minimal such subgroup bel
 
 * `ContinuousMulEquiv.closedSubgroupOrderIso`: transport of closed subgroups along an isomorphism
   of topological groups.
+* `ContinuousMulEquiv.subgroupMap`: a subgroup is topologically isomorphic to its image under an
+  isomorphism of topological groups.
 * `ContinuousMulEquiv.quotientCongr`: the induced isomorphism of quotient topological groups.
 
 ## Main results
@@ -120,6 +122,27 @@ instance _root_.ContinuousMulEquiv.instNormalClosedSubgroupOrderIso
     (e.closedSubgroupOrderIso K).toSubgroup.Normal :=
   Subgroup.Normal.map inferInstance e.toMulEquiv.toMonoidHom e.surjective
 
+/-- A subgroup is topologically isomorphic to its image under a topological group isomorphism,
+for the subspace topologies. This is `MulEquiv.subgroupMap` together with the continuity of both
+directions. -/
+def _root_.ContinuousMulEquiv.subgroupMap (e : G ≃ₜ* H) (K : Subgroup G) :
+    K ≃ₜ* K.map ((e : G ≃* H) : G →* H) where
+  toMulEquiv := (e : G ≃* H).subgroupMap K
+  continuous_toFun := (e.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun := (e.symm.continuous.comp continuous_subtype_val).subtype_mk _
+
+/-- `ContinuousMulEquiv.subgroupMap` applies the isomorphism. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.coe_subgroupMap_apply (e : G ≃ₜ* H) (K : Subgroup G) (g : K) :
+    (e.subgroupMap K g : H) = e g :=
+  (rfl)
+
+/-- The inverse of `ContinuousMulEquiv.subgroupMap` applies the inverse isomorphism. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.coe_subgroupMap_symm_apply (e : G ≃ₜ* H) (K : Subgroup G)
+    (h : K.map ((e : G ≃* H) : G →* H)) : ((e.subgroupMap K).symm h : G) = e.symm h :=
+  (rfl)
+
 /-- A topological group isomorphism carrying a normal subgroup onto a normal subgroup induces an
 isomorphism of the quotient topological groups.  This is `QuotientGroup.congr` together with the
 continuity of both directions, which follows from the quotient-map property of the two projections.
@@ -186,7 +209,9 @@ theorem _root_.Subgroup.exists_minimal_isClosed_le (R : Subgroup (A × G))
     (hclosed : IsClosed (R : Set (A × G))) (hsurj : ∀ g : G, ∃ a : A, (a, g) ∈ R) :
     ∃ H : Subgroup (A × G), Minimal (fun H : Subgroup (A × G) ↦
       H ≤ R ∧ IsClosed (H : Set (A × G)) ∧ ∀ g : G, ∃ a : A, (a, g) ∈ H) H := by
-  refine zorn_ge₀ _ fun c hcs hchain ↦ ?_
+  refine zorn_ge₀ {H : Subgroup (A × G) |
+    H ≤ R ∧ IsClosed (H : Set (A × G)) ∧ ∀ g : G, ∃ a : A, (a, g) ∈ H}
+    fun c hcs hchain ↦ ?_
   rcases c.eq_empty_or_nonempty with rfl | hne
   · exact ⟨R, ⟨le_rfl, hclosed, hsurj⟩, by simp⟩
   obtain ⟨K, hK⟩ := hne

@@ -66,7 +66,7 @@ theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :
       (1 / a) ^ (n + 1) * n.factorial := by
     rw [← h]
     apply MeasureTheory.setIntegral_congr_fun measurableSet_Ioi
-    intro t ht
+    intro t _
     dsimp
     rw [Real.rpow_natCast t n]
   rw [h', one_div, div_eq_mul_inv, inv_pow]

@@ -38,6 +38,8 @@ functoriality API.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_mul_self` and
   `CliffordAlgebra.evenUnitaryGroup.self_mul_reverse` give its two norm equations.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
+* `CliffordAlgebra.rightIotaEven_spinGroup_smul` transports the Spin action after right
+  multiplication by a vector of quadratic value `-1`.
 -/
 
 public section
@@ -598,5 +600,55 @@ theorem range_spinGroup_toUnits :
     refine ⟨⟨(x : CliffordAlgebra Q), hPin, hEven⟩, ?_⟩
     apply Units.ext
     rfl
+
+/-! ### Spin action after right multiplication by a negative vector -/
+
+variable [Invertible (2 : R)]
+
+/-- Multiplication by a negative generating vector transports the Spin action into multiplication
+in the even Clifford algebra. -/
+theorem rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
+    (s : spinGroup Q) (m : M) :
+    rightIotaEven Q e (s • m) =
+      evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s) *
+        rightIotaEven Q e m *
+          conjugateNegativeIotaEven Q e he
+            (reverseEven Q (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s))) := by
+  apply Subtype.ext
+  rw [coe_rightIotaEven, spinGroup_smul_apply, ι_spinVectorAction_apply]
+  simp only [Subalgebra.coe_mul, coe_rightIotaEven, coe_conjugateNegativeIotaEven]
+  rw [coe_evenUnitaryGroupEvenPart, coe_reverseEven_apply,
+    coe_evenUnitaryGroupEvenPart, coe_spinGroupToEvenUnitary_apply]
+  -- All terms now lie in the ambient Clifford algebra; this exposes associativity and the
+  -- cancellation `ι(e) * -ι(e) = 1` used below.
+  change ((s : CliffordAlgebra Q) * ι Q m * star (s : CliffordAlgebra Q)) * ι Q e =
+    (s : CliffordAlgebra Q) * (ι Q m * ι Q e) *
+      ((-ι Q e * reverse (s : CliffordAlgebra Q)) * ι Q e)
+  rw [reverse_eq_star_of_mem_even ⟨(s : CliffordAlgebra Q), spinGroup.mem_even s.2⟩]
+  symm
+  calc
+    (s : CliffordAlgebra Q) * (ι Q m * ι Q e) *
+          ((-ι Q e * star (s : CliffordAlgebra Q)) * ι Q e) =
+      (s : CliffordAlgebra Q) * ι Q m * (ι Q e * -ι Q e) *
+        star (s : CliffordAlgebra Q) * ι Q e := by
+      noncomm_ring
+    _ = (s : CliffordAlgebra Q) * ι Q m *
+        star (s : CliffordAlgebra Q) * ι Q e := by
+      rw [mul_neg, ι_sq_scalar, he, map_neg, map_one, neg_neg]
+      simp
+    _ = ((s : CliffordAlgebra Q) * ι Q m *
+        star (s : CliffordAlgebra Q)) * ι Q e := by
+      noncomm_ring
+
+/-- The negated right-vector embedding satisfies the same Spin transport identity. -/
+theorem neg_rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
+    (s : spinGroup Q) (m : M) :
+    (-rightIotaEven Q e) (s • m) =
+      evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s) *
+        (-rightIotaEven Q e) m *
+          conjugateNegativeIotaEven Q e he
+            (reverseEven Q (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s))) := by
+  have h := congrArg Neg.neg (rightIotaEven_spinGroup_smul Q e he s m)
+  simpa [neg_mul, mul_neg] using h
 
 end CliffordAlgebra

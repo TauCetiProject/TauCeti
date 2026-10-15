@@ -69,10 +69,10 @@ private theorem exists_restrict_step (hU : U ≤ Omega) (k : ℕ)
             (by simpa only [one_smul] using
               Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
       simpa only [one_mul] using r.le_of_opNorm_le hop (iteratedGradient (k + 1) u)
-    have ht := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
+    have ht := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
     have hn := sq_le_sq₀ (norm_nonneg v) (norm_nonneg _) |>.2 hnorm
     have hd := sq_le_sq₀ (norm_nonneg D) (norm_nonneg _) |>.2 hDn
-    have heq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k
+    have heq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
       (mk k v D hweak)
     simp only [lowerOrder_mk, iteratedGradient_mk] at heq
     nlinarith [norm_nonneg (mk k v D hweak), norm_nonneg u]

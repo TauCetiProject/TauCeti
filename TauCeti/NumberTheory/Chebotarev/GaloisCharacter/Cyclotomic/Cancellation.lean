@@ -22,7 +22,7 @@ character.
 
 ## Main results
 
-* `MonoidHom.hasCancellation_restrict_galoisCharacterUnitaryWeight`: the weight restricted away
+* `MonoidHom.hasCancellation_restrictAway_galoisCharacterUnitaryWeight`: the weight restricted away
   from the primes dividing `m` has cancellation.
 -/
 
@@ -38,9 +38,9 @@ variable {K : Type*} [Field K] [NumberField K] {F : Type*} [Field F] [NumberFiel
 
 -- The ideal partial sums of the Galois weight with the Euler factors at the primes dividing `m`
 -- deleted are the partial sums of the ray class character `χ ∘ cyclotomicArtin K F m`.
-private theorem idealSummatory_restrict_galoisCharacterUnitaryWeight (χ : (F ≃ₐ[K] F) →* ℂˣ)
+private theorem idealSummatory_restrictAway_galoisCharacterUnitaryWeight (χ : (F ≃ₐ[K] F) →* ℂˣ)
     (x : ℝ) :
-    idealSummatory K ((galoisCharacterUnitaryWeight (L := F) χ).restrict
+    idealSummatory K ((galoisCharacterUnitaryWeight (L := F) χ).restrictAway
         ((cyclotomicModulus K m).support : Set (HeightOneSpectrum (𝓞 K)))
         (cyclotomicModulus K m).support.finite_toSet).toIdealArithmeticFunction x =
       rayClassCharacterPartialSum (cyclotomicModulus K m) (χ.comp (cyclotomicArtin K F m)) x := by
@@ -55,7 +55,8 @@ private theorem idealSummatory_restrict_galoisCharacterUnitaryWeight (χ : (F �
         (RayClassCharacter.onIdeals (χ.comp (cyclotomicArtin K F m)) I : ℂ) := by
     rw [rayClassCharacterPartialSum_def, ← finsum_mem_coe_finset, coe_normLE]
     exact finsum_set_coe_eq_finsum_mem
-      (f := fun I ↦ (RayClassCharacter.onIdeals (χ.comp (cyclotomicArtin K F m)) I : ℂ)) _
+      (f := fun I ↦ (RayClassCharacter.onIdeals (χ.comp (cyclotomicArtin K F m)) I : ℂ))
+      {I : integralIdealsPrimeTo 𝔪 | Ideal.absNorm (I : Ideal (𝓞 K)) ≤ x}
   rw [hsum, idealSummatory_apply]
   refine (Finset.sum_of_injOn e (fun I _ J _ h ↦ Subtype.ext (by simpa [e] using h))
     (fun I hI ↦ by simpa [e] using hI) (fun J hJ hJe ↦ ?_) (fun I _ ↦ ?_)).symm
@@ -66,12 +67,12 @@ private theorem idealSummatory_restrict_galoisCharacterUnitaryWeight (χ : (F �
 and a character `χ` of `Gal(F/K)` whose ray class character `χ ∘ cyclotomicArtin K F m` is
 nontrivial, the ideal weight of `χ` with the Euler factors at the primes dividing `m` deleted has
 cancellation. -/
-theorem hasCancellation_restrict_galoisCharacterUnitaryWeight (χ : (F ≃ₐ[K] F) →* ℂˣ)
+theorem hasCancellation_restrictAway_galoisCharacterUnitaryWeight (χ : (F ≃ₐ[K] F) →* ℂˣ)
     (hχ : χ.comp (cyclotomicArtin K F m) ≠ 1) :
-    HasCancellation ((galoisCharacterUnitaryWeight (L := F) χ).restrict
+    HasCancellation ((galoisCharacterUnitaryWeight (L := F) χ).restrictAway
       ((cyclotomicModulus K m).support : Set (HeightOneSpectrum (𝓞 K)))
       (cyclotomicModulus K m).support.finite_toSet) := by
-  simpa [hasCancellation_iff_isBigO, idealSummatory_restrict_galoisCharacterUnitaryWeight] using
+  simpa [hasCancellation_iff_isBigO, idealSummatory_restrictAway_galoisCharacterUnitaryWeight] using
     isBigO_rayClassCharacterPartialSum _ _ hχ
 
 end MonoidHom

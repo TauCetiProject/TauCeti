@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
@@ -67,10 +68,12 @@ recording: a nonzero ideal has absolute norm at least `1`, and a height-one prim
 `TauCeti.idealsLE_one` isolates the unit ideal and `TauCeti.primesLE_eq_empty_of_lt_two` empties the
 prime carrier below `2`.
 
-Modifying a weight on a finite set, or a prime set on a finite symmetric difference, changes a
-summatory function by a quantity that is eventually the *constant* total discrepancy; this is
-`TauCeti.eventually_summatory_sub_eq` and its two prime specializations. Layer 7 uses these to
-show that finite changes do not affect a density. In the same spirit,
+The counts are additive over a finite pairwise disjoint family of prime sets, as recorded by
+`TauCeti.primeTheta_biUnion_finset` and `TauCeti.primeCount_biUnion_finset`. Modifying a weight on a
+finite set, or a prime set on a finite symmetric difference, changes a summatory function by a
+quantity that is eventually the *constant* total discrepancy; this is
+`TauCeti.eventually_summatory_sub_eq` and its two prime specializations. These results show that
+finite changes do not affect a density. In the same spirit,
 `TauCeti.primeTheta_isLittleO_of_finite` records that a finite set of primes contributes an
 eventually constant amount to `ϑ_K`, hence `o(x)`: an exceptional set can be discarded from a
 counting argument outright, not merely from a density. Its `ψ` companion is
@@ -538,32 +541,32 @@ variable (χ : MultiplicativeIdealWeight K)
 `χ` and a prime `𝔭 ∉ S`, the partial sums of `χ` over the ideals prime to `insert 𝔭 S` are those
 over the ideals prime to `S`, minus `χ(𝔭)` times the same partial sum at the cutoff divided by
 `N(𝔭)`: the ideals prime to `S` and divisible by `𝔭` are `𝔭` times the ideals prime to `S`. -/
-theorem idealSummatory_restrict_insert
+theorem idealSummatory_restrictAway_insert
     {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Finite)
     {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∉ S) (x : ℝ) :
-    idealSummatory K (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
-      idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction x -
-        χ 𝔭.asIdeal * idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction
+    idealSummatory K (χ.restrictAway (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K (χ.restrictAway S hS).toIdealArithmeticFunction x -
+        χ 𝔭.asIdeal * idealSummatory K (χ.restrictAway S hS).toIdealArithmeticFunction
           (x / Ideal.absNorm 𝔭.asIdeal) := by
   classical
-  set f := (χ.restrict S hS).toIdealArithmeticFunction with hf
+  set f := (χ.restrictAway S hS).toIdealArithmeticFunction with hf
   set P : (Ideal (𝓞 K))⁰ := ⟨𝔭.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩ with hPdef
   -- on the multiples `𝔭 * J` the restricted weight factors, because `𝔭` is prime to `S`
   have hstep : ∀ J : (Ideal (𝓞 K))⁰, f (P * J) = χ 𝔭.asIdeal * f J := by
     intro J
     simp only [hf, MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, Submonoid.coe_mul,
-      hPdef, MultiplicativeIdealWeight.restrict_apply, Ideal.isPrimeTo_mul_iff,
+      hPdef, MultiplicativeIdealWeight.restrictAway_apply, Ideal.isPrimeTo_mul_iff,
       Ideal.isPrimeTo_asIdeal_iff, h𝔭, not_false_eq_true, true_and]
     split_ifs <;> simp [_root_.map_mul]
   have hsplit : idealSummatory K
-      (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      (χ.restrictAway (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
       idealSummatory K f x -
         idealSummatory K (fun I ↦ if 𝔭.asIdeal ∣ (I : Ideal (𝓞 K)) then f I else 0) x := by
     rw [idealSummatory_apply, idealSummatory_apply, idealSummatory_apply,
       ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun I _ ↦ ?_
     rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
-      MultiplicativeIdealWeight.restrict_insert_apply χ hS]
+      MultiplicativeIdealWeight.restrictAway_insert_apply χ hS]
     split_ifs <;> simp [hf]
   rw [hsplit, idealSummatory_ite_dvd K P f x]
   congr 1
@@ -689,15 +692,9 @@ theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
   let _ : Infinite (HeightOneSpectrum ℤ) :=
     Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
       Rat.HeightOneSpectrum.primesEquiv.surjective
-  have hsurj : Function.Surjective (HeightOneSpectrum.under ℤ :
-      HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ) := by
-    intro p
-    let Q := Classical.choice (Ideal.nonempty_primesOver (S := 𝓞 K) p.asIdeal)
-    refine ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_mem_primesOver p.ne_bot Q.2⟩,
-      HeightOneSpectrum.ext ?_⟩
-    exact Q.2.2.over.symm
   let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
-    Infinite.of_surjective (HeightOneSpectrum.under ℤ) hsurj
+    Infinite.of_surjective (HeightOneSpectrum.under ℤ)
+      (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
   have hcarrier : Tendsto (primesLE K) atTop atTop := by
     rw [Filter.tendsto_atTop]
     intro s
@@ -843,6 +840,21 @@ theorem primeCount_union (hST : Disjoint S T) (x : ℝ) :
     primeCount K (S ∪ T) x = primeCount K S x + primeCount K T x := by
   rw [primeCount, Set.indicator_union_of_disjoint hST]
   exact summatory_add _ _ _ x
+
+/-- The logarithmically weighted prime count is additive along a finite pairwise disjoint family
+of prime sets. -/
+theorem primeTheta_biUnion_finset {ι : Type*} (s : Finset ι)
+    (f : ι → Set (HeightOneSpectrum (𝓞 K))) (hdisj : (s : Set ι).PairwiseDisjoint f) (x : ℝ) :
+    primeTheta K (⋃ i ∈ s, f i) x = ∑ i ∈ s, primeTheta K (f i) x := by
+  simp only [primeTheta]
+  exact summatory_indicator_biUnion_finset _ s f hdisj _ x
+
+/-- The unweighted prime count is additive along a finite pairwise disjoint family of prime sets. -/
+theorem primeCount_biUnion_finset {ι : Type*} (s : Finset ι)
+    (f : ι → Set (HeightOneSpectrum (𝓞 K))) (hdisj : (s : Set ι).PairwiseDisjoint f) (x : ℝ) :
+    primeCount K (⋃ i ∈ s, f i) x = ∑ i ∈ s, primeCount K (f i) x := by
+  simp only [primeCount]
+  exact summatory_indicator_biUnion_finset _ s f hdisj _ x
 
 /-- The logarithmically weighted count of `S` exceeds that of `T` by at most the weighted count
 of their symmetric difference. -/

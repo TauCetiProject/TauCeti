@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
 # Metric balls and spheres in normed spaces
@@ -25,6 +26,16 @@ scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
 centered at zero lie on the same line exactly when they are equal or antipodal.
+
+The normalization lemmas compute the norm of `R⁻¹ • z` when `R ≥ 0` and characterize the unit
+norm conditions for `R⁻¹ • z` when `R > 0`.
+They need only a norm homogeneous under real scalar multiplication; no additive structure
+or metric on the vector type is required.
+
+In a nontrivial real normed space, one ball lies in another exactly when its radius plus the
+distance between the centres is at most the radius of the other. The sufficiency holds in every
+pseudometric space (`Metric.closedBall_subset_closedBall'`, `Metric.ball_subset_ball'`); the
+necessity uses a point of the smaller ball on the far side of its centre.
 -/
 
 public section
@@ -96,24 +107,76 @@ theorem coe_mem_span_singleton_iff {r : ℝ} (hr : r ≠ 0) {x p : Metric.sphere
     · rw [coe_neg_sphere]
       exact Submodule.neg_mem _ (Submodule.mem_span_singleton_self _)
 
+/-- The unit sphere minus `p` and `-p` is the set of its points off the line through `p`. -/
+theorem compl_singleton_inter_compl_singleton_neg_eq (p : Metric.sphere (0 : E) 1) :
+    ({p}ᶜ ∩ {-p}ᶜ : Set (Metric.sphere (0 : E) 1)) =
+      ({x | (x : E) ∉ ℝ ∙ (p : E)} : Set (Metric.sphere (0 : E) 1)) := by
+  ext x
+  simp [not_or]
+
 end Sphere
 
 section Normalization
 
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [Norm E] [SMul ℝ E] [NormSMulClass ℝ E]
 
-/-- A point inside a ball of positive radius has normalized coordinate in the unit ball. -/
-theorem norm_inv_smul_sub_lt_one {c z : E} {R : ℝ} (hR : 0 < R)
-    (hz : ‖z - c‖ < R) : ‖R⁻¹ • (z - c)‖ < 1 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
-  exact (inv_mul_lt_iff₀ hR).2 (by simpa using hz)
+/-- Scaling a vector by the inverse of a positive radius puts it inside the unit norm bound
+exactly when its original norm is less than that radius. -/
+@[simp]
+theorem norm_inv_smul_lt_one_iff {z : E} {R : ℝ} (hR : 0 < R) :
+    ‖R⁻¹ • z‖ < 1 ↔ ‖z‖ < R := by
+  simp [norm_smul, Real.norm_of_nonneg hR.le, inv_mul_lt_iff₀ hR]
 
-/-- A boundary point of a ball of positive radius has unit norm in normalized coordinates. -/
-theorem norm_inv_smul_sub_eq_one_of_norm_sub_eq {c z : E} {R : ℝ}
-    (hR : 0 < R) (hz : ‖z - c‖ = R) : ‖R⁻¹ • (z - c)‖ = 1 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
-  exact inv_mul_cancel₀ hR.ne'
+/-- Scaling a vector by the inverse of a positive radius gives unit norm exactly when its
+original norm equals that radius. -/
+@[simp]
+theorem norm_inv_smul_eq_one_iff {z : E} {R : ℝ} (hR : 0 < R) :
+    ‖R⁻¹ • z‖ = 1 ↔ ‖z‖ = R := by
+  simp [norm_smul, Real.norm_of_nonneg hR.le, inv_mul_eq_iff_eq_mul₀ hR.ne']
+
+/-- Scaling a vector by the inverse of a nonnegative real divides its norm by that real. -/
+theorem norm_inv_smul_of_nonneg {z : E} {R : ℝ} (hR : 0 ≤ R) : ‖R⁻¹ • z‖ = ‖z‖ / R := by
+  rw [norm_smul, norm_inv, Real.norm_of_nonneg hR, inv_mul_eq_div]
 
 end Normalization
+
+section Subset
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E] {x y : E} {r s : ℝ}
+
+/-- In a nontrivial real normed space, the closed ball of nonnegative radius `r` about `x` lies in
+the closed ball of radius `s` about `y` exactly when `r + dist x y ≤ s`. -/
+theorem closedBall_subset_closedBall_iff (hr : 0 ≤ r) :
+    Metric.closedBall x r ⊆ Metric.closedBall y s ↔ r + dist x y ≤ s := by
+  refine ⟨fun h => ?_, Metric.closedBall_subset_closedBall'⟩
+  -- A vector `v` of norm `r` pointing away from `y`, so that `x + v` is as far from `y` as
+  -- the closed ball about `x` allows.
+  obtain ⟨v, hv, hxyv⟩ : ∃ v : E, ‖v‖ = r ∧ ‖x - y + v‖ = ‖x - y‖ + r := by
+    rcases eq_or_ne x y with rfl | hxy
+    · obtain ⟨v, hv⟩ := exists_norm_eq E hr
+      exact ⟨v, hv, by simp [hv]⟩
+    · have hpos : 0 < ‖x - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hxy)
+      refine ⟨(r / ‖x - y‖) • (x - y), ?_, ?_⟩
+      · rw [norm_smul, Real.norm_of_nonneg (by positivity), div_mul_cancel₀ _ hpos.ne']
+      · nth_rw 1 [← one_smul ℝ (x - y)]
+        rw [← add_smul, norm_smul, Real.norm_of_nonneg (by positivity)]
+        field_simp
+  have hmem := h (Metric.mem_closedBall.2 (by rw [dist_eq_norm, add_sub_cancel_left, hv]))
+  rw [Metric.mem_closedBall, dist_eq_norm, add_sub_right_comm, hxyv] at hmem
+  rwa [dist_eq_norm, add_comm]
+
+/-- In a nontrivial real normed space, the ball of positive radius `r` about `x` lies in the ball
+of radius `s` about `y` exactly when `r + dist x y ≤ s`. -/
+theorem ball_subset_ball_iff (hr : 0 < r) :
+    Metric.ball x r ⊆ Metric.ball y s ↔ r + dist x y ≤ s := by
+  refine ⟨fun h => ?_, Metric.ball_subset_ball'⟩
+  -- Every closed ball of radius `t < r` about `x` lies in the closed ball of radius `s`.
+  suffices ∀ t < r, t ≤ s - dist x y by linarith [le_of_forall_lt_imp_le_of_dense this]
+  intro t ht
+  have hsub : Metric.closedBall x (max t 0) ⊆ Metric.closedBall y s :=
+    (Metric.closedBall_subset_ball (max_lt ht hr)).trans (h.trans Metric.ball_subset_closedBall)
+  linarith [le_max_left t 0, (closedBall_subset_closedBall_iff (le_max_right t 0)).1 hsub]
+
+end Subset
 
 end TauCeti

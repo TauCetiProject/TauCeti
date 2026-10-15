@@ -56,11 +56,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- The Borel measurable space on the model vector space, used for chart volume. -/
-local instance chartVolumeMeasurableSpaceE : MeasurableSpace E := borel E
-
-/-- The model vector space's measurable space is its Borel measurable space. -/
-local instance chartVolumeBorelSpaceE : BorelSpace E := ⟨rfl⟩
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
 /-- The coordinate density in a chart, extended measurably by zero off the chart target. -/
 private structure ChartVolumeDensityData (I : ModelWithCorners ℝ E H) (M : Type*)
@@ -140,6 +136,47 @@ theorem chartRiemannianVolume_apply
   intro y hy
   exact (chartVolumeDensityData (I := I) α).eq_on_target
     ((extChartAt I α).image_source_eq_target.subset (Set.image_mono inter_subset_right hy))
+
+/-- A chart volume gives positive mass to the source of a boundaryless chart. -/
+theorem chartRiemannianVolume_pos [I.Boundaryless]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) :
+    0 < chartRiemannianVolume (I := I) α (chartAt H α).source := by
+  let e := extChartAt I α
+  let t := e.target
+  let d := chartVolumeDensityData (I := I) α
+  have ht : IsOpen t := by
+    exact isOpen_extChartAt_target α
+  have htn : t.Nonempty := by
+    exact ⟨e α, mem_extChartAt_target α⟩
+  have hmeasure : 0 < (Module.finBasis ℝ E).addHaar t :=
+    ht.measure_pos (Module.finBasis ℝ E).addHaar htn
+  have hsupport : t ⊆ Function.support d.toFun := by
+    intro y hy
+    have hbase : e.symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+      rw [TangentBundle.trivializationAt_baseSet α, ← extChartAt_source I α]
+      exact e.map_target hy
+    have hpos : 0 < chartVolumeDensity (I := I) α (e.symm y) :=
+      chartVolumeDensity_pos α hbase
+    -- Unfold `Function.support` so the density's nonvanishing is explicit.
+    change d.toFun y ≠ 0
+    rw [d.eq_on_target hy]
+    exact (ENNReal.ofReal_pos.mpr hpos).ne'
+  have hpos : 0 < ∫⁻ y in t, d.toFun y ∂(Module.finBasis ℝ E).addHaar := by
+    rw [setLIntegral_pos_iff d.measurable_toFun]
+    rw [inter_eq_right.mpr hsupport]
+    exact hmeasure
+  rw [chartRiemannianVolume_apply α (chartAt H α).open_source.measurableSet]
+  have himage : e '' ((chartAt H α).source ∩ e.source) = t := by
+    rw [← extChartAt_source I α, inter_self, e.image_source_eq_target]
+  rw [himage]
+  have heq : (∫⁻ y in t, d.toFun y ∂(Module.finBasis ℝ E).addHaar) =
+      ∫⁻ y in t, ENNReal.ofReal (chartVolumeDensity (I := I) α (e.symm y))
+        ∂(Module.finBasis ℝ E).addHaar := by
+    apply setLIntegral_congr_fun ht.measurableSet
+    intro y hy
+    simpa [e] using d.eq_on_target hy
+  rw [← heq]
+  exact hpos
 
 /-- A chart volume measure is supported on the source of its chart. -/
 @[simp]

@@ -81,7 +81,7 @@ private theorem dartBacktrack_injective : Function.Injective (dartBacktrack G) :
   have h1 : a = a' := by simpa using congrArg Sigma.fst hxy
   subst h1
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at hxy
-  have h2 : b = b' := eq_of_backtrackPath_eq G hxy
+  have h2 : b = b' := (backtrackPath_inj G).1 hxy
   subst h2
   rfl
 

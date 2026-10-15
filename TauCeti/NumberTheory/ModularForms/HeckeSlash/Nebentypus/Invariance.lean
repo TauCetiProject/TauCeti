@@ -244,12 +244,7 @@ private lemma nebentypusWeight_smul_slash_slash_eq_char_smul (f : ℍ → ℂ)
 
 variable [NeZero N]
 
-/-- The enumeration `∑` needs, chosen exactly as in `HeckeSlash/Nebentypus/Basic.lean` so that the
-two sums are the same term. -/
-noncomputable local instance :
-    Fintype (DecompQuotient ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ))
-      (D.out : GL (Fin 2) ℚ)⁻¹) :=
-  Fintype.ofFinite _
+attribute [local instance] fintypeDecompQuotientGamma0
 
 /-- **The twisted slash sum of a `χ`-invariant function is `χ`-invariant.** This is the pay-off of
 the weighting, which `HeckeSlash/Nebentypus/Basic.lean` and `HeckeSlash/Nebentypus/Ring.lean` both

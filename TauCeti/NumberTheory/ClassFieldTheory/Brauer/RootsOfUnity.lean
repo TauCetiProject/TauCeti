@@ -51,6 +51,8 @@ unity `ζ`, the root identifies the trivial coefficients `ℤ/n` with `μₙ`, a
 * `toRatAddCircle_h2FpEquivZMod`, `h2FpEquivZMod_eq_iff`: the normalization with trivial
   coefficients.
 * `natCard_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot`: `H²(F, ℤ/n)` has `n` elements.
+* `finrank_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot`: `H²(F, ℤ/n)` has rank one over
+  `ℤ/n` when `1 < n`.
 
 ## References
 
@@ -237,6 +239,14 @@ theorem natCard_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot {ζ : F}
     (hζ : IsPrimitiveRoot ζ n) :
     Nat.card (cohomFp n (Field.absoluteGaloisGroup F) 2) = n :=
   (Nat.card_congr (h2FpEquivZMod hζ).toEquiv).trans (Nat.card_zmod n)
+
+/-- If `F` contains a primitive `n`th root of unity with `1 < n`, then `H²(F, ℤ/n)` with trivial
+coefficients is free of rank one over `ℤ/n`. -/
+theorem finrank_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot [Fact (1 < n)] {ζ : F}
+    (hζ : IsPrimitiveRoot ζ n) :
+    Module.finrank (ZMod n) (cohomFp n (Field.absoluteGaloisGroup F) 2) = 1 :=
+  (LinearEquiv.ofBijective ((h2FpEquivZMod hζ).toAddMonoidHom.toZModLinearMap n)
+    (h2FpEquivZMod hζ).bijective).finrank_eq.trans (Module.finrank_self (ZMod n))
 
 end TrivialFp
 

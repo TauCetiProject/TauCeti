@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Projective
 public import TauCeti.LinearAlgebra.Graded.Shift
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Radical
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # Vertex projectives of a zigzag algebra
@@ -38,16 +37,16 @@ of paths which begin at `i`.
 
 ## Main results
 
+* `TauCeti.completeOrthogonalIdempotents_zigzagVertexIdempotent`: the vertex idempotents are a
+  complete family of orthogonal idempotents.
 * `TauCeti.zigzagProjective_projective`: `Z e_i` is projective as a left `Z`-module.
 * `TauCeti.isIndecomposableModule_zigzagProjective`: `Z e_i` is indecomposable.
 * `TauCeti.finrank_zigzagProjective`: `dim_k Z e_i = 2 + deg(i)`.
 
 ## References
 
-This is the vertex-projective part of Layer 3 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section
@@ -72,6 +71,16 @@ noncomputable abbrev zigzagVertexIdempotent (i : V) : nonisolatedZigzagQuotient 
 theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
     IsIdempotentElem (zigzagVertexIdempotent k G i) :=
   zigzagMk_vertexIdempotent_mul_self k G i
+
+/-- **The vertex idempotents of the zigzag relation quotient are a complete orthogonal family of
+idempotents**: they are idempotent, pairwise orthogonal, and sum to `1`. -/
+theorem completeOrthogonalIdempotents_zigzagVertexIdempotent [Fintype V] :
+    CompleteOrthogonalIdempotents (zigzagVertexIdempotent k G) := by
+  convert (CompleteOrthogonalIdempotents.equiv (vertexEquiv G)).2
+    ((completeOrthogonalIdempotents_vertexIdempotent k (DoubledQuiver G)).map
+      (zigzagMk k G).toRingHom) using 1
+  funext i
+  simp
 
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/
@@ -125,43 +134,11 @@ theorem zigzagProjectiveShiftGrade_apply (i : V) (d p : ℤ) :
     zigzagProjectiveShiftGrade k G i d p = zigzagProjectiveGrade k G i (p - d) := by
   simp [zigzagProjectiveShiftGrade, sub_eq_add_neg]
 
-/-! ### Projectivity -/
-
-/-- Right multiplication by `e_i`, corestricted to `Z e_i`. -/
-noncomputable def zigzagProjectiveProjection (i : V) :
-    nonisolatedZigzagQuotient k G →ₗ[nonisolatedZigzagQuotient k G]
-      zigzagProjective k G i where
-  toFun x := ⟨x * zigzagVertexIdempotent k G i,
-    Ideal.mem_span_singleton'.2 ⟨x, rfl⟩⟩
-  map_add' x y := Subtype.ext (add_mul x y _)
-  map_smul' x y := Subtype.ext (mul_assoc x y _)
-
-@[simp]
-theorem coe_zigzagProjectiveProjection (i : V) (x : nonisolatedZigzagQuotient k G) :
-    (zigzagProjectiveProjection k G i x : nonisolatedZigzagQuotient k G) =
-      x * zigzagVertexIdempotent k G i :=
-  (rfl)
-
-/-- Projecting an element of `Z e_i` back onto `Z e_i` fixes it. -/
-@[simp]
-theorem zigzagProjectiveProjection_coe (i : V) (x : zigzagProjective k G i) :
-    zigzagProjectiveProjection k G i (x : nonisolatedZigzagQuotient k G) = x := by
-  apply Subtype.ext
-  rw [coe_zigzagProjectiveProjection]
-  exact (mem_zigzagProjective_iff k G).mp x.2
-
-/-- The projection onto `Z e_i` splits its inclusion into the regular module. -/
-theorem zigzagProjectiveProjection_comp_subtype (i : V) :
-    (zigzagProjectiveProjection k G i).comp (zigzagProjective k G i).subtype = LinearMap.id := by
-  apply LinearMap.ext
-  intro x
-  exact zigzagProjectiveProjection_coe k G i x
-
 /-- The vertex ideal `Z e_i` is a projective left module over the zigzag relation quotient. -/
 theorem zigzagProjective_projective (i : V) :
-    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) :=
-  Module.Projective.of_split (zigzagProjective k G i).subtype
-    (zigzagProjectiveProjection k G i) (zigzagProjectiveProjection_comp_subtype k G i)
+    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) := by
+  rw [zigzagProjective_def]
+  exact (isIdempotentElem_zigzagVertexIdempotent k G i).projective_span_singleton
 
 end CommRing
 
@@ -212,66 +189,35 @@ theorem isPrimitiveIdempotent_zigzagVertexIdempotent
       ne_zero := zigzagVertexIdempotent_ne_zero k G i
       eq_zero_or_eq_zero_of_add := ?_ }
   intro e₁ e₂ he₁ he₂ he₁₂ he₂₁ hsum
-  let φ := zigzagTrivialCoeff k G
-  have hφe₁ : IsIdempotentElem (φ e₁) := he₁.map φ.toRingHom
-  have hφe₂ : IsIdempotentElem (φ e₂) := he₂.map φ.toRingHom
-  have hφ₁₂ : φ e₁ * φ e₂ = 0 := by rw [← map_mul, he₁₂, map_zero]
-  have hφ₂₁ : φ e₂ * φ e₁ = 0 := by rw [← map_mul, he₂₁, map_zero]
-  have hφsum : φ e₁ + φ e₂ = φ (zigzagVertexIdempotent k G i) := by
-    rw [← map_add, hsum]
-  have hvalue₁ (j : V) :
-      IsIdempotentElem (zigzagTrivialCoeff k G e₁ (vertex G j)) := by
-    -- Unfold the pointwise idempotence hidden by the `IsIdempotentElem` wrapper.
-    change zigzagTrivialCoeff k G e₁ (vertex G j) *
-        zigzagTrivialCoeff k G e₁ (vertex G j) = zigzagTrivialCoeff k G e₁ (vertex G j)
-    simpa only [φ, Pi.mul_apply] using congrArg (fun f => f (vertex G j)) hφe₁.eq
-  have hvalue₂ (j : V) :
-      IsIdempotentElem (zigzagTrivialCoeff k G e₂ (vertex G j)) := by
-    -- Unfold the pointwise idempotence hidden by the `IsIdempotentElem` wrapper.
-    change zigzagTrivialCoeff k G e₂ (vertex G j) *
-        zigzagTrivialCoeff k G e₂ (vertex G j) = zigzagTrivialCoeff k G e₂ (vertex G j)
-    simpa only [φ, Pi.mul_apply] using congrArg (fun f => f (vertex G j)) hφe₂.eq
-  have hmul₁₂ (j : V) : zigzagTrivialCoeff k G e₁ (vertex G j) *
-      zigzagTrivialCoeff k G e₂ (vertex G j) = 0 := by
-    simpa only [φ, Pi.mul_apply, Pi.zero_apply] using
-      congrArg (fun f => f (vertex G j)) hφ₁₂
-  have hmul₂₁ (j : V) : zigzagTrivialCoeff k G e₂ (vertex G j) *
-      zigzagTrivialCoeff k G e₁ (vertex G j) = 0 := by
-    simpa only [φ, Pi.mul_apply, Pi.zero_apply] using
-      congrArg (fun f => f (vertex G j)) hφ₂₁
-  have hsum_ne {j : V} (hji : j ≠ i) :
-      zigzagTrivialCoeff k G e₁ (vertex G j) +
-        zigzagTrivialCoeff k G e₂ (vertex G j) = 0 := by
-    have h := congrArg (fun f => f (vertex G j)) hφsum
-    simpa only [Pi.add_apply, φ, zigzagVertexIdempotent,
-      zigzagTrivialCoeff_vertexIdempotent, ite_eq_right hji.symm] using h
-  have hsumi : zigzagTrivialCoeff k G e₁ (vertex G i) +
-      zigzagTrivialCoeff k G e₂ (vertex G i) = 1 := by
-    have h := congrArg (fun f => f (vertex G i)) hφsum
-    simpa [φ, zigzagVertexIdempotent] using h
-  have hi : zigzagTrivialCoeff k G e₁ (vertex G i) = 0 ∨
-      zigzagTrivialCoeff k G e₂ (vertex G i) = 0 :=
-    (isPrimitiveIdempotent_one (A := k)).eq_zero_or_eq_zero_of_add
-      (hvalue₁ i) (hvalue₂ i) (hmul₁₂ i) (hmul₂₁ i) hsumi
-  rcases hi with hi₁ | hi₂
-  · left
-    apply eq_zero_of_isIdempotentElem_of_zigzagTrivialCoeff_eq_zero k G hns he₁
+  -- `c j x` is the coefficient of `x` at the vertex `j`, a ring homomorphism to `k`.
+  let c (j : V) := (Pi.evalRingHom (fun _ => k) (vertex G j)).comp
+    (zigzagTrivialCoeff k G).toRingHom
+  have hc (j : V) : c j e₁ + c j e₂ = if i = j then 1 else 0 := by
+    rw [← (c j).map_add, hsum]
+    exact zigzagTrivialCoeff_vertexIdempotent k G i j
+  -- An idempotent summand whose coefficient at `i` vanishes has every coefficient zero, so it
+  -- lies in the radical and is zero.
+  have eq_zero_of_coeff_eq_zero {a b : nonisolatedZigzagQuotient k G} (ha : IsIdempotentElem a)
+      (hab : a * b = 0)
+      (hcoeff : ∀ j, c j a + c j b = if i = j then 1 else 0) (hai : c i a = 0) : a = 0 := by
+    apply eq_zero_of_isIdempotentElem_of_zigzagTrivialCoeff_eq_zero k G hns ha
     funext v
     obtain ⟨j, rfl⟩ := (vertexEquiv G).surjective v
-    simp only [vertexEquiv_apply, Pi.zero_apply]
+    -- The coefficient of `a` at `vertex G j` is `c j a` by definition.
+    rw [vertexEquiv_apply]
+    change c j a = 0
     rcases eq_or_ne j i with rfl | hji
-    · exact hi₁
-    · exact eq_zero_of_isIdempotentElem_of_add_eq_zero_of_mul_eq_zero (k := k)
-        (hvalue₁ j) (hsum_ne hji) (hmul₁₂ j)
-  · right
-    apply eq_zero_of_isIdempotentElem_of_zigzagTrivialCoeff_eq_zero k G hns he₂
-    funext v
-    obtain ⟨j, rfl⟩ := (vertexEquiv G).surjective v
-    simp only [vertexEquiv_apply, Pi.zero_apply]
-    rcases eq_or_ne j i with rfl | hji
-    · exact hi₂
-    · exact eq_zero_of_isIdempotentElem_of_add_eq_zero_of_mul_eq_zero (k := k)
-        (hvalue₂ j) (by simpa only [add_comm] using hsum_ne hji) (hmul₂₁ j)
+    · exact hai
+    · exact eq_zero_of_isIdempotentElem_of_add_eq_zero_of_mul_eq_zero (k := k) (ha.map (c j))
+        ((hcoeff j).trans (ite_eq_right hji.symm)) (by rw [← (c j).map_mul, hab, (c j).map_zero])
+  -- At `i` the two coefficients are orthogonal idempotents of `k` summing to `1`.
+  have hi : c i e₁ = 0 ∨ c i e₂ = 0 :=
+    (isPrimitiveIdempotent_one (A := k)).eq_zero_or_eq_zero_of_add (he₁.map (c i))
+      (he₂.map (c i)) (by rw [← (c i).map_mul, he₁₂, (c i).map_zero])
+      (by rw [← (c i).map_mul, he₂₁, (c i).map_zero]) ((hc i).trans (ite_eq_left rfl))
+  rcases hi with h | h
+  · exact .inl (eq_zero_of_coeff_eq_zero he₁ he₁₂ hc h)
+  · exact .inr (eq_zero_of_coeff_eq_zero he₂ he₂₁ (fun j => (add_comm _ _).trans (hc j)) h)
 
 /-- The vertex projective `Z e_i` is indecomposable as a left module over the zigzag relation
 quotient. -/

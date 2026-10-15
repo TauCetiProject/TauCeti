@@ -120,6 +120,13 @@ noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
     (MulEquiv.subgroupCongr (by
       simpa only [definingIdeal_def] using points_eq_hopfIdealPointsSubgroup A)).symm
 
+/-- The extended carrier's points identified with its matrix-valued prime-field points. -/
+noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMod 3) k] :
+    HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) carrierAlgebra)
+      (CommAlgCat.of k k) ≃* points k :=
+  (AlgHom.baseChangePointsMulEquiv (k := ZMod 3) (K := k) (A := carrierAlgebra)
+    (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
+
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
 private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
@@ -204,7 +211,7 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap {B : Type} [CommRing B] [Alg
     (groupSchemePointMulEquiv_apply_left B)
     (groupSchemePointMulEquiv_apply_left B) phi q
   have heval :
-      ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of (ZMod 3) B)) q =
+      ((CommHopfAlgCat.Hom.mapPointsFunctor phi).app (CommAlgCat.of (ZMod 3) B)) q =
         AlgHom.mapDomain phi.hom q := rfl
   rw [heval] at h
   exact h
@@ -291,7 +298,7 @@ private lemma groupSchemePointMulEquiv_comp_rootSubgroup (k : Fin 2 ⊕ Fin 2)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) (CommAlgCat.of (ZMod 3) A)) :
     AdditiveGroup.groupSchemePointMulEquiv A q ≫ (rootSubgroup k).hom.hom =
       groupSchemePointMulEquiv A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
             (CommAlgCat.of (ZMod 3) A) q) := by
   rw [rootSubgroup_def, TauCeti.GeneralLinear.generatorToGeneratedGroupScheme_def]
@@ -313,7 +320,7 @@ private lemma groupSchemePointMulEquiv_comp_weightTorus
         (R := ZMod 3) (A := A) (SplitTorus.characterGroup (Fin 2))).symm q ≫
         weightTorus.hom.hom =
       groupSchemePointMulEquiv A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app
             (CommAlgCat.of (ZMod 3) A) q) := by
   rw [weightTorus_def, TauCeti.GeneralLinear.generatorToGeneratedGroupScheme_def]
@@ -332,7 +339,7 @@ private lemma groupSchemePointMulEquiv_comp_weightTorus
 
 /-- A matrix is a point of the carrier exactly when its associated convolution point kills the
 carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
@@ -357,7 +364,7 @@ noncomputable def rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRin
     [Algebra (ZMod 3) A] : Multiplicative A →* points A :=
   MonoidHom.codRestrict
     (((TauCeti.GeneralLinear.pointsMulEquiv (R := ZMod 3) 7).toMonoidHom.comp
-        ((CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app
           (CommAlgCat.of (ZMod 3) A)).hom).comp
       (AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) (A := A)).symm.toMonoidHom)
     (points A)
@@ -373,7 +380,7 @@ theorem coe_rootSubgroupPoints_gaPointsMulEquiv (k : Fin 2 ⊕ Fin 2) (A : Type 
     (rootSubgroupPoints k A (AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q) :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) =
       TauCeti.GeneralLinear.pointsMulEquiv 7
-        ((CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app
           (CommAlgCat.of (ZMod 3) A) q) := by
   rw [rootSubgroupPoints]
   exact congrArg _ (congrArg _ (MulEquiv.symm_apply_apply _ q))
@@ -397,14 +404,14 @@ theorem coe_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRing A]
     (CommAlgCat.of (ZMod 3) A) q
   rw [hu] at hq
   have hcomp :
-      (CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app (CommAlgCat.of (ZMod 3) A) q =
+      (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app (CommAlgCat.of (ZMod 3) A) q =
         CommHopfAlgCat.quotientPointsHom
           (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
           (kostantToralBaseChangePresentationIdeal rootGen cartanGen rep lattice.toAddSubgroup
             rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis weight
             (ZMod 3))
           (CommAlgCat.of (ZMod 3) A)
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantRootSubgroupToralBaseChangePresentationCoordinateMap rootGen cartanGen rep
               lattice.toAddSubgroup rep_kostantForm_mem_lattice
               isNilpotent_rep_serreRootGenerator latticeBasis weight (ZMod 3) k)).app
@@ -422,7 +429,7 @@ noncomputable def weightTorusPoints (A : Type v) [CommRing A] [Algebra (ZMod 3) 
     (Fin 2 → Aˣ) →* points A :=
   MonoidHom.codRestrict
     (((TauCeti.GeneralLinear.pointsMulEquiv (R := ZMod 3) 7).toMonoidHom.comp
-        ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app
           (CommAlgCat.of (ZMod 3) A)).hom).comp
       (SplitTorus.pointsMulEquiv (R := ZMod 3) (A := CommAlgCat.of (ZMod 3) A)
         (σ := Fin 2)).symm.toMonoidHom)
@@ -439,7 +446,7 @@ theorem coe_weightTorusPoints_pointsMulEquiv (A : Type v) [CommRing A] [Algebra 
     (weightTorusPoints A (SplitTorus.pointsMulEquiv q) :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) =
       TauCeti.GeneralLinear.pointsMulEquiv 7
-        ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app
           (CommAlgCat.of (ZMod 3) A) q) := by
   rw [weightTorusPoints]
   exact congrArg _ (congrArg _ (MulEquiv.symm_apply_apply _ q))
@@ -449,7 +456,7 @@ private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
     (q : HopfAlgebra.points (R := ZMod 3)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) (CommAlgCat.of (ZMod 3) A)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
             (CommAlgCat.of (ZMod 3) A) q) =
       rootSubgroupPoints k A (AdditiveGroup.gaPointsMulEquiv q) := by
@@ -459,12 +466,12 @@ private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
         (CommHopfAlgCat.quotientPointsHom
           (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
           (CommHopfAlgCat.commonKernelHopfIdeal generator) (CommAlgCat.of (ZMod 3) A)
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
               (CommAlgCat.of (ZMod 3) A) q)) :=
       coe_pointsMulEquiv_apply _ _
     _ = TauCeti.GeneralLinear.pointsMulEquiv 7
-        ((CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app
           (CommAlgCat.of (ZMod 3) A) q) := congrArg _
       (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
         (CommHopfAlgCat.commonKernelHopfIdeal generator)
@@ -473,13 +480,15 @@ private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
         (CommAlgCat.of (ZMod 3) A) q).symm
     _ = _ := (coe_rootSubgroupPoints_gaPointsMulEquiv k A q).symm
 
-private theorem pointsMulEquiv_commonKernelLift_weightTorus
+/-- The coordinate lift of the weight-torus generator induces the named weight-torus map
+under the carrier and split-torus point equivalences. -/
+theorem pointsMulEquiv_commonKernelLift_weightTorus
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
         (SplitTorus.characterGroup (Fin 2))).obj) (CommAlgCat.of (ZMod 3) A)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app
             (CommAlgCat.of (ZMod 3) A) q) =
       weightTorusPoints A (SplitTorus.pointsMulEquiv q) := by
@@ -489,12 +498,12 @@ private theorem pointsMulEquiv_commonKernelLift_weightTorus
         (CommHopfAlgCat.quotientPointsHom
           (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
           (CommHopfAlgCat.commonKernelHopfIdeal generator) (CommAlgCat.of (ZMod 3) A)
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app
               (CommAlgCat.of (ZMod 3) A) q)) :=
       coe_pointsMulEquiv_apply _ _
     _ = TauCeti.GeneralLinear.pointsMulEquiv 7
-        ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app
           (CommAlgCat.of (ZMod 3) A) q) := congrArg _
       (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
         (CommHopfAlgCat.commonKernelHopfIdeal generator)
@@ -516,7 +525,7 @@ theorem schemePointsMulEquiv_comp_rootSubgroup (k : Fin 2 ⊕ Fin 2)
   rw [groupSchemePointMulEquiv_comp_rootSubgroup]
   calc
     _ = pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
             (CommAlgCat.of (ZMod 3) A) q) :=
       schemePointsMulEquiv_groupSchemePointMulEquiv A _
@@ -540,7 +549,7 @@ theorem schemePointsMulEquiv_comp_weightTorus
   rw [groupSchemePointMulEquiv_comp_weightTorus]
   calc
     _ = pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app
             (CommAlgCat.of (ZMod 3) A) q) :=
       schemePointsMulEquiv_groupSchemePointMulEquiv A _
@@ -573,14 +582,14 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] [Algebra (ZMod 3) A] (s 
     (CommAlgCat.of (ZMod 3) A) q
   rw [hs] at hq
   have hcomp :
-      (CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app (CommAlgCat.of (ZMod 3) A) q =
+      (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app (CommAlgCat.of (ZMod 3) A) q =
         CommHopfAlgCat.quotientPointsHom
           (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
           (kostantToralBaseChangePresentationIdeal rootGen cartanGen rep lattice.toAddSubgroup
             rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis weight
             (ZMod 3))
           (CommAlgCat.of (ZMod 3) A)
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantWeightTorusToralBaseChangePresentationCoordinateMap rootGen cartanGen rep
               lattice.toAddSubgroup rep_kostantForm_mem_lattice
               isNilpotent_rep_serreRootGenerator latticeBasis weight (ZMod 3))).app
@@ -612,7 +621,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Typ
 /-- **The torus-conjugation equation on scheme-valued points of the carrier**: conjugation by a
 point of the weight torus rescales the parameter of each numbered simple root subgroup by the
 corresponding type-`G₂` root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 2 ⊕ Fin 2)
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶

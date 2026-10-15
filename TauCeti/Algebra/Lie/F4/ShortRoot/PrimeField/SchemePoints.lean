@@ -60,7 +60,7 @@ matrix point under the scheme-point equivalence. -/
   simp only [schemePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
 
 /-- The inverse comparison presents a matrix point as a quotient-coordinate scheme point. -/
-@[simp] theorem schemePointsMulEquiv_symm_apply (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+theorem schemePointsMulEquiv_symm_apply (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (g : points A) :
     (schemePointsMulEquiv A).symm g =
       groupSchemePointMulEquiv A ((coordinatePointsEquiv A).symm g) := by
@@ -74,19 +74,11 @@ theorem schemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
         ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
           (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
       pointsMap φ (schemePointsMulEquiv A p) := by
-  let q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A) :=
-    (groupSchemePointMulEquiv A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
-        HopfAlgebra.mapPoints (H := Q) (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue Q φ
-        (GeneralLinear.generatedGroupScheme_def 26 generator) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply]
-  exact coordinatePointsEquiv_mapPoints φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue Q φ
+    (GeneralLinear.generatedGroupScheme_def 26 generator) _ _ (pointsMap φ)
+    (fun q ↦ (congrArg _ (AlgHom.mapValue_apply φ q)).trans
+      (coordinatePointsEquiv_mapPoints φ q)) p
 
 /-- A coordinate endomorphism acts on scheme-valued points by precomposition. -/
 theorem groupSchemePointMulEquiv_comp_coordinateMap
@@ -102,9 +94,9 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap
       (groupSchemePointMulEquiv A) (groupSchemePointMulEquiv A)
       (groupSchemePointMulEquiv_apply_left A)
       (groupSchemePointMulEquiv_apply_left A) phi q
-  have heval : ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of 𝔽₂ A)) q =
+  have heval : ((CommHopfAlgCat.Hom.mapPointsFunctor phi).app (CommAlgCat.of 𝔽₂ A)) q =
         AlgHom.mapDomain phi.hom q := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
   rw [heval] at h
   exact h
 
@@ -113,7 +105,8 @@ private theorem groupSchemePointMulEquiv_comp_rootSubgroup (k : Fin 4 ⊕ Fin 4)
     (q : HopfAlgebra.points (H := AdditiveGroup.coordinateHopfAlgebra 𝔽₂) (CommAlgCat.of 𝔽₂ A)) :
     AdditiveGroup.groupSchemePointMulEquiv A q ≫ (rootSubgroup k).hom.hom =
       groupSchemePointMulEquiv A
-        ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inl
+          k))).app
             (CommAlgCat.of 𝔽₂ A) q) := by
   rw [rootSubgroup_def, GeneralLinear.generatorToGeneratedGroupScheme_def]
   simpa only [Category.assoc, eqToHom_trans] using
@@ -130,7 +123,7 @@ private theorem groupSchemePointMulEquiv_comp_weightTorus (A : Type) [CommRing A
         (SplitTorus.characterGroup (Fin 4))).obj) (CommAlgCat.of 𝔽₂ A)) :
     (DiagonalizableGroup.groupSchemePointsMulEquiv
       (R := 𝔽₂) (A := A) (SplitTorus.characterGroup (Fin 4))).symm q ≫ weightTorus.hom.hom =
-      groupSchemePointMulEquiv A ((CommHopfAlgCat.mapPointsFunctor
+      groupSchemePointMulEquiv A ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app (CommAlgCat.of 𝔽₂ A) q) := by
   rw [weightTorus_def, GeneralLinear.generatorToGeneratedGroupScheme_def]
   simpa only [Category.assoc, eqToHom_trans] using
@@ -145,26 +138,6 @@ private theorem groupSchemePointMulEquiv_comp_weightTorus (A : Type) [CommRing A
         (R := 𝔽₂) (A := A) (SplitTorus.characterGroup (Fin 4)))
       (CommHopfAlgCat.commonKernelLift generator (.inr ())) q
 
-private theorem coe_coordinatePointsEquiv_commonKernelLift
-    (j : (Fin 4 ⊕ Fin 4) ⊕ Unit) (A : Type) [CommRing A] [Algebra 𝔽₂ A]
-    (q : HopfAlgebra.points (H := generatorCodomain j) (CommAlgCat.of 𝔽₂ A)) :
-    (coordinatePointsEquiv A ((CommHopfAlgCat.mapPointsFunctor
-        (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q) :
-        GL (Fin 26) A) =
-      GeneralLinear.pointsMulEquiv 26
-        ((CommHopfAlgCat.mapPointsFunctor (generator j)).app (CommAlgCat.of 𝔽₂ A) q) := by
-  calc
-    _ = GeneralLinear.pointsMulEquiv 26
-        (CommHopfAlgCat.quotientPointsHom H₂₆ J (CommAlgCat.of 𝔽₂ A)
-          ((CommHopfAlgCat.mapPointsFunctor
-            (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q)) := by
-      exact (coe_coordinatePointsEquiv A _).trans (congrArg (GeneralLinear.pointsMulEquiv 26)
-          (CommHopfAlgCat.quotientPointsHom_apply H₂₆ J (CommAlgCat.of 𝔽₂ A) _).symm)
-    _ = _ := congrArg _ (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-        J (CommHopfAlgCat.commonKernelLift generator j) (generator j)
-        (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator j)
-        (CommAlgCat.of 𝔽₂ A) q).symm
-
 /-- The public root-subgroup scheme morphism induces the named root points. -/
 @[simp] theorem schemePointsMulEquiv_comp_rootSubgroup (k : Fin 4 ⊕ Fin 4)
     (A : Type) [CommRing A] [Algebra 𝔽₂ A]
@@ -175,13 +148,15 @@ private theorem coe_coordinatePointsEquiv_commonKernelLift
   obtain ⟨q, rfl⟩ := (AdditiveGroup.groupSchemePointMulEquiv A).surjective p
   rw [groupSchemePointMulEquiv_comp_rootSubgroup]
   calc _ = coordinatePointsEquiv A
-        ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inl
+          k))).app
             (CommAlgCat.of 𝔽₂ A) q) :=
       schemePointsMulEquiv_groupSchemePointMulEquiv A _
     _ = rootSubgroupPoints k A (AdditiveGroup.gaPointsMulEquiv q) := by
       apply Subtype.ext
       calc _ = GeneralLinear.pointsMulEquiv 26
-            ((CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app (CommAlgCat.of 𝔽₂ A) q) :=
+            ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app (CommAlgCat.of 𝔽₂ A)
+              q) :=
           coe_coordinatePointsEquiv_commonKernelLift (.inl k) A q
         _ = _ := (coe_rootSubgroupPoints_gaPointsMulEquiv k A q).symm
     _ = _ := congrArg (rootSubgroupPoints k A)
@@ -197,13 +172,15 @@ private theorem coe_coordinatePointsEquiv_commonKernelLift
     (R := 𝔽₂) (A := A) (SplitTorus.characterGroup (Fin 4))).symm.surjective p
   rw [groupSchemePointMulEquiv_comp_weightTorus]
   calc _ = coordinatePointsEquiv A
-        ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inr
+          ()))).app
             (CommAlgCat.of 𝔽₂ A) q) :=
       schemePointsMulEquiv_groupSchemePointMulEquiv A _
     _ = weightTorusPoints A (SplitTorus.pointsMulEquiv q) := by
       apply Subtype.ext
       calc _ = GeneralLinear.pointsMulEquiv 26
-            ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app (CommAlgCat.of 𝔽₂ A) q) :=
+            ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app (CommAlgCat.of 𝔽₂ A)
+              q) :=
           coe_coordinatePointsEquiv_commonKernelLift (.inr ()) A q
         _ = _ := (coe_weightTorusPoints_pointsMulEquiv A q).symm
     _ = _ := by

@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# The product decomposition along a linear isometry
+# Linear isometries, orthogonal complements, and product decompositions
 
 A linear isometry `f : E →ₗᵢ[ℝ] F` into a finite-dimensional inner product space identifies `F`
 with the product of `E` and the orthogonal complement of the range of `f`, by
@@ -25,18 +26,37 @@ complement of its image; this is how it transports the stereographic charts of u
 Euclidean spaces, a linear isometry matching a pair of standard basis vectors matches the
 corresponding coordinates; this is how it transports the half-space charts of closed balls.
 
+An isometry between the orthogonal complements of two unit vectors extends uniquely to
+an ambient isometry sending one vector to the other. This extension works over both real
+and complex inner product spaces, without completeness or dimension assumptions.
+
+Orthogonal line coordinates associated with a unit vector identify the ambient space with
+the product of its orthogonal hyperplane and the scalar line. The `L²` product version is
+isometric; the ordinary product version is a continuous linear equivalence used for line
+sections and product integration.
+
 ## Main definitions
 
+* `TauCeti.orthogonalLineIsometry` and `TauCeti.orthogonalLineEquiv`: orthogonal line coordinates.
 * `LinearIsometry.prodOrthogonalRangeEquiv`: the continuous linear equivalence
   `E × (range f)ᗮ ≃L[ℝ] F` given by `(u, w) ↦ f u + w`.
 * `LinearIsometry.orthogonalComplementSingletonMap`: the restriction of a linear isometry to a map
   `(ℝ ∙ v)ᗮ →ₗᵢ[ℝ] (ℝ ∙ w)ᗮ`, where `w` is the image of `v`.
+
+* `LinearIsometryEquiv.extendOrthogonalComplement`: extend an isometry of orthogonal
+  complements by its prescribed action on the radial line.
 
 ## Main results
 
 * `LinearIsometry.apply_eq_of_map_single`: a linear isometry of Euclidean spaces sending the `i`-th
   standard basis vector to the `j`-th one reads the `i`-th coordinate off as the `j`-th coordinate
   of the image.
+* `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
+  its orthogonal complement are equal, without a unit-norm assumption.
+* `LinearIsometryEquiv.eq_extendOrthogonalComplement`: a linear isometry equals the
+  extension if it agrees on the unit vector and its orthogonal complement.
+* `LinearIsometryEquiv.eq_refl_or_eq_neg`: the only real linear isometry equivalences of `ℝ`
+  are the identity and negation.
 -/
 
 public section
@@ -111,3 +131,166 @@ theorem apply_eq_of_map_single {L : EuclideanSpace 𝕜 ι →ₗᵢ[𝕜] Eucli
 end EuclideanSpace
 
 end LinearIsometry
+
+namespace LinearMap
+
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [AddCommMonoid F] [Module 𝕜 F] {x : E}
+
+/-- Linear maps are determined by their value on a vector and their restriction to its
+orthogonal complement. The vector need not be a unit vector or even nonzero. -/
+theorem eq_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g x)
+    (h : ∀ v : (𝕜 ∙ x)ᗮ, f v = g v) : f = g := by
+  apply ext_on_codisjoint (𝕜 ∙ x).isCompl_orthogonal.codisjoint
+  · exact eqOn_span' (by simpa only [Set.eqOn_singleton] using hx)
+  · intro v hv
+    exact h ⟨v, hv⟩
+
+end LinearMap
+
+namespace LinearIsometryEquiv
+
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {x : E} {y : F}
+
+/-- Extend an isometry between the orthogonal complements of two unit vectors by sending
+one unit vector to the other. The extension uses Mathlib's
+`Submodule.orthogonalDecomposition` and `LinearIsometryEquiv.toSpanUnitSingleton`. -/
+noncomputable def extendOrthogonalComplement
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) :
+    E ≃ₗᵢ[𝕜] F :=
+  (𝕜 ∙ x).orthogonalDecomposition.trans
+    (((toSpanUnitSingleton x hx).symm.trans (toSpanUnitSingleton y hy)).withLpProdCongr 2 e |>.trans
+      (𝕜 ∙ y).orthogonalDecomposition.symm)
+
+/-- On the orthogonal direct sum, the extension acts on the radial and transverse
+components separately. -/
+@[simp]
+theorem extendOrthogonalComplement_apply_smul_add
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
+    (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
+    e.extendOrthogonalComplement hx hy (r • x + v) = r • y + e v := by
+  have h := (𝕜 ∙ x).orthogonalDecomposition.apply_symm_apply
+    (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v))
+  conv_lhs at h =>
+    simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
+      WithLp.toLp_snd, toSpanUnitSingleton_apply]
+  simp only [extendOrthogonalComplement, trans_apply, h, withLpProdCongr_apply,
+    WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
+  simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
+    WithLp.toLp_snd, toSpanUnitSingleton_apply]
+
+/-- The extension sends the distinguished unit vector to the distinguished target vector. -/
+@[simp]
+theorem extendOrthogonalComplement_apply_self
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) :
+    e.extendOrthogonalComplement hx hy x = y := by
+  simpa using e.extendOrthogonalComplement_apply_smul_add hx hy 1 0
+
+/-- The extension agrees with the original isometry on the orthogonal complement. -/
+@[simp]
+theorem extendOrthogonalComplement_apply_coe
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
+    (v : (𝕜 ∙ x)ᗮ) : e.extendOrthogonalComplement hx hy v = e v := by
+  simpa using e.extendOrthogonalComplement_apply_smul_add hx hy 0 v
+
+/-- An ambient linear isometry is uniquely determined by its value on a unit vector and
+its restriction to the orthogonal complement. -/
+theorem eq_extendOrthogonalComplement
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
+    (f : E →ₗᵢ[𝕜] F) (hfx : f x = y)
+    (hf : ∀ v : (𝕜 ∙ x)ᗮ, f v = e v) :
+    f = (e.extendOrthogonalComplement hx hy).toLinearIsometry := by
+  apply LinearIsometry.toLinearMap_injective
+  apply LinearMap.eq_of_apply_eq_of_eqOn_orthogonal (x := x)
+  · simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
+      extendOrthogonalComplement_apply_self] using hfx
+  · intro v
+    simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
+      extendOrthogonalComplement_apply_coe] using hf v
+
+/-- The only real linear isometry equivalences of the real line are the identity and negation. -/
+theorem eq_refl_or_eq_neg (A : ℝ ≃ₗᵢ[ℝ] ℝ) : A = .refl ℝ ℝ ∨ A = .neg ℝ := by
+  have hsq : (A 1) ^ 2 = 1 := by
+    simpa only [RCLike.inner_apply, conj_trivial, mul_one, one_mul, pow_two]
+      using A.inner_map_map (1 : ℝ) 1
+  -- By linearity, `A` is multiplication by `A 1`.
+  have hA (x : ℝ) : A x = x * A 1 := by simpa using _root_.map_smul A x (1 : ℝ)
+  rcases sq_eq_one_iff.mp hsq with h | h
+  · exact .inl (ext fun x ↦ by simp [hA x, h])
+  · exact .inr (ext fun x ↦ by simp [hA x, h])
+
+end LinearIsometryEquiv
+
+namespace TauCeti
+
+open scoped RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The isometric form of orthogonal line coordinates, using the `L²` norm on the product.
+Constructed from Mathlib's `Submodule.orthogonalDecomposition` and
+`LinearIsometryEquiv.toSpanUnitSingleton`. -/
+def orthogonalLineIsometry (e : E) (he : ‖e‖ = 1) :
+    WithLp 2 ((ℝ ∙ e)ᗮ × ℝ) ≃ₗᵢ[ℝ] E :=
+  (LinearIsometryEquiv.withLpProdCongr 2 (.refl ℝ _) (.toSpanUnitSingleton e he)).trans
+    ((LinearIsometryEquiv.withLpProdComm 2 ℝ _ _).trans
+      (ℝ ∙ e).orthogonalDecomposition.symm)
+
+@[simp]
+theorem orthogonalLineIsometry_apply (e : E) (he : ‖e‖ = 1)
+    (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    orthogonalLineIsometry e he (WithLp.toLp 2 (y, t)) = (y : E) + t • e := by
+  simp [orthogonalLineIsometry, add_comm]
+
+/-- Orthogonal line coordinates: the transverse coordinate lies in `eᗮ` and the longitudinal
+coordinate is real. This version uses the ordinary product norm;
+`orthogonalLineIsometry` supplies the isometric version on the `L²` product. -/
+def orthogonalLineEquiv (e : E) (he : ‖e‖ = 1) : ((ℝ ∙ e)ᗮ × ℝ) ≃L[ℝ] E :=
+  (WithLp.prodContinuousLinearEquiv 2 ℝ (ℝ ∙ e)ᗮ ℝ).symm.trans
+    (orthogonalLineIsometry e he).toContinuousLinearEquiv
+
+/-- The ordinary product coordinates are the isometric coordinates after changing the
+product norm to the `L²` norm. -/
+theorem orthogonalLineEquiv_def (e : E) (he : ‖e‖ = 1) :
+    orthogonalLineEquiv e he =
+      (WithLp.prodContinuousLinearEquiv 2 ℝ (ℝ ∙ e)ᗮ ℝ).symm.trans
+        (orthogonalLineIsometry e he).toContinuousLinearEquiv := (rfl)
+
+@[simp]
+theorem orthogonalLineEquiv_apply (e : E) (he : ‖e‖ = 1)
+    (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    orthogonalLineEquiv e he (y, t) = (y : E) + t • e :=
+  orthogonalLineIsometry_apply e he y t
+
+/-- The longitudinal inverse coordinate is the inner product with the unit direction. -/
+@[simp]
+theorem orthogonalLineEquiv_symm_snd (e : E) (he : ‖e‖ = 1) (x : E) :
+    ((orthogonalLineEquiv e he).symm x).2 = ⟪e, x⟫ := by
+  obtain ⟨⟨y, t⟩, rfl⟩ := (orthogonalLineEquiv e he).surjective x
+  have hy : ⟪e, (y : E)⟫ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.property
+  rw [ContinuousLinearEquiv.symm_apply_apply, orthogonalLineEquiv_apply]
+  simp [inner_add_right, inner_smul_right, hy, inner_self_eq_norm_sq_to_K, he]
+
+/-- The transverse inverse coordinate is obtained by subtracting the longitudinal component. -/
+@[simp]
+theorem orthogonalLineEquiv_symm_fst (e : E) (he : ‖e‖ = 1) (x : E) :
+    (((orthogonalLineEquiv e he).symm x).1 : E) = x - ⟪e, x⟫ • e := by
+  have h := (orthogonalLineEquiv e he).apply_symm_apply x
+  rw [← Prod.eta (p := (orthogonalLineEquiv e he).symm x),
+    orthogonalLineEquiv_apply, orthogonalLineEquiv_symm_snd] at h
+  exact eq_sub_iff_add_eq.mpr h
+
+/-- Pythagoras in orthogonal line coordinates. -/
+theorem norm_add_smul_sq (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    ‖(y : E) + t • e‖ ^ 2 = ‖y‖ ^ 2 + t ^ 2 := by
+  rw [← orthogonalLineIsometry_apply e he y t,
+    (orthogonalLineIsometry e he).norm_map, WithLp.prod_norm_sq_eq_of_L2]
+  simp
+
+end TauCeti

@@ -18,7 +18,9 @@ For comodules `M` and `N` over a Hopf algebra, with `M` finite projective,
 On algebra-valued points its action is `f ↦ g_N ∘ f ∘ g_M⁻¹`. In particular, taking
 `N = M` gives the conjugation representation on endomorphisms, used to construct
 representations with prescribed normal kernels. For a commutative Hopf algebra, the fixed
-vectors are exactly the comodule morphisms.
+vectors are exactly the comodule morphisms. Postcomposition by a comodule morphism
+is colinear on these Hom spaces. Surjectivity on its invariant vectors lifts the identity
+to an equivariant section, connecting exactness of invariants with splitting.
 
 The order `M* ⊗ N` is part of this construction. Over a noncommutative Hopf algebra,
 swapping it to `N ⊗ M*` need not be colinear, and the identity endomorphism need not be
@@ -124,6 +126,83 @@ theorem baseChangeTensorHom_endOfPoint_linearHom
             LinearMap.smul_apply] at heval
           rw [heval, map_smul]
 
+/-- A scalar-extended linear map is fixed by a point in the Hom comodule exactly when it
+intertwines the point actions on its source and target. -/
+theorem endOfPoint_linearHom_one_tmul_eq_iff
+    (g : WithConv (H →ₐ[R] A)) (f : M →ₗ[R] N) :
+    endOfPoint (M →ₗ[R] N) g.ofConv (1 ⊗ₜ[R] f) = 1 ⊗ₜ[R] f ↔
+      f.baseChange A ∘ₗ endOfPoint M g.ofConv =
+        endOfPoint N g.ofConv ∘ₗ f.baseChange A := by
+  have hpoint := baseChangeTensorHom_endOfPoint_linearHom g (1 ⊗ₜ[R] f)
+  simp only [LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
+  constructor
+  · intro hf
+    rw [hf, LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
+    have h := congrArg (fun q ↦ q ∘ₗ endOfPoint M g.ofConv) hpoint
+    simpa only [LinearMap.comp_assoc, endOfPoint_inv_comp, LinearMap.comp_id] using h
+  · intro hf
+    apply (LinearMap.baseChangeTensorHomEquiv
+      (R := R) (A := A) (M := M) (N := N)).injective
+    simp only [LinearMap.baseChangeTensorHomEquiv_apply,
+      LinearMap.baseChangeTensorHom_tmul, one_smul]
+    rw [hpoint, ← LinearMap.comp_assoc, ← hf, LinearMap.comp_assoc,
+      endOfPoint_comp_inv, LinearMap.comp_id]
+
+variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R H P]
+
+/-- Postcomposition by a comodule morphism is a morphism of linear Hom comodules.
+The source of the linear maps must be finite projective; their targets need not be. -/
+def Hom.linearHomPostcomp (f : Hom R H N P) :
+    Hom R H (M →ₗ[R] N) (M →ₗ[R] P) :=
+  transportHom (dualTensorHomEquiv R M N) (dualTensorHomEquiv R M P)
+    (Hom.tensorMap (Hom.id R H (Module.Dual R M)) f)
+
+/-- The underlying map on linear Hom spaces is ordinary postcomposition. -/
+@[simp]
+theorem Hom.linearHomPostcomp_toLinearMap (f : Hom R H N P) :
+    (f.linearHomPostcomp (M := M)).toLinearMap = f.toLinearMap.compRight R := by
+  rw [Hom.linearHomPostcomp, transportHom_toLinearMap, Hom.tensorMap_toLinearMap,
+    Hom.id_toLinearMap, toLinearMap_dualTensorHomEquiv,
+    ← LinearMap.lTensor_def, ← LinearMap.comp_assoc, dualTensorHom_comp_lTensor]
+  ext q m
+  simp
+
+/-- Postcomposition on the Hom comodule acts by composition of linear maps. -/
+@[simp]
+theorem Hom.linearHomPostcomp_apply (f : Hom R H N P) (q : M →ₗ[R] N) :
+    f.linearHomPostcomp q = f.toLinearMap.comp q := by
+  rw [← Hom.coe_toLinearMap, Hom.linearHomPostcomp_toLinearMap]
+  rfl
+
+/-- A surjective comodule morphism induces surjective postcomposition on linear Hom
+comodules from a finite projective source. No projectivity of the targets is required. -/
+theorem Hom.linearHomPostcomp_surjective (f : Hom R H N P)
+    (hf : Function.Surjective f) :
+    Function.Surjective (f.linearHomPostcomp (M := M)) := by
+  intro q
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property f.toLinearMap q hf
+  exact ⟨g, (Hom.linearHomPostcomp_apply f g).trans hg⟩
+
+/-- Postcomposition by the identity is the identity on the linear Hom comodule. -/
+-- Keep this untagged, as for `Hom.tensorMap_id`: categorical simplification rewrites
+-- the inner `Hom.id` before this identity can apply.
+theorem Hom.linearHomPostcomp_id :
+    (Hom.id R H N).linearHomPostcomp (M := M) = Hom.id R H (M →ₗ[R] N) := by
+  ext q m
+  simp only [Hom.linearHomPostcomp_apply, Hom.id_toLinearMap,
+    LinearMap.id_comp, Hom.id_apply]
+
+variable {P' : Type*} [AddCommMonoid P'] [Module R P'] [Comodule R H P']
+
+/-- Postcomposition on Hom comodules respects composition. -/
+@[simp]
+theorem Hom.linearHomPostcomp_comp (f : Hom R H N P) (g : Hom R H P P') :
+    (g.comp f).linearHomPostcomp (M := M) =
+      (g.linearHomPostcomp (M := M)).comp (f.linearHomPostcomp (M := M)) := by
+  ext q m
+  simp only [Hom.linearHomPostcomp_apply, Hom.comp_apply, Hom.comp_toLinearMap,
+    LinearMap.comp_assoc]
+
 end Hom
 
 section Fixed
@@ -141,24 +220,13 @@ theorem mem_fixedSubcomodule_linearHom_iff (f : M →ₗ[R] N) :
         coact (R := R) (C := H) ∘ₗ f := by
   -- The universal point detects coaction identities without reducedness assumptions.
   let g : WithConv (H →ₐ[R] H) := toConv (AlgHom.id R H)
-  have hcancel : endOfPoint M (g⁻¹).ofConv ∘ₗ endOfPoint M g.ofConv = LinearMap.id := by
-    simpa only [inv_mul_cancel, endOfPoint_convOne] using
-      (endOfPoint_convMul M g⁻¹ g).symm
-  have hcancel' : endOfPoint M g.ofConv ∘ₗ endOfPoint M (g⁻¹).ofConv = LinearMap.id := by
-    simpa only [mul_inv_cancel, endOfPoint_convOne] using
-      (endOfPoint_convMul M g g⁻¹).symm
-  have hpoint := baseChangeTensorHom_endOfPoint_linearHom g (1 ⊗ₜ[R] f)
-  simp only [LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
   constructor
   · intro hf
     rw [mem_fixedSubcomodule] at hf
     have hfixed : endOfPoint (M →ₗ[R] N) g.ofConv (1 ⊗ₜ[R] f) = 1 ⊗ₜ[R] f := by
       simp only [endOfPoint_tmul, hf, one_smul, LinearMap.lTensor_tmul,
         AlgHom.toLinearMap_apply, g, AlgHom.id_apply, TensorProduct.comm_tmul]
-    rw [hfixed, LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
-    -- Cancel the inverse source action, then recover the colinearity square.
-    have hintertwine := congrArg (fun q ↦ q ∘ₗ endOfPoint M g.ofConv) hpoint
-    simp only [LinearMap.comp_assoc, hcancel, LinearMap.comp_id] at hintertwine
+    have hintertwine := (endOfPoint_linearHom_one_tmul_eq_iff g f).mp hfixed
     apply LinearMap.ext
     intro m
     apply (TensorProduct.comm R N H).injective
@@ -166,22 +234,14 @@ theorem mem_fixedSubcomodule_linearHom_iff (f : M →ₗ[R] N) :
     simp only [LinearMap.comp_apply, endOfPoint_tmul, one_smul, g,
       AlgHom.toLinearMap_id, LinearMap.lTensor_id, LinearMap.id_apply,
       LinearMap.baseChange_tmul] at h
-    rw [LinearMap.baseChange_eq_ltensor, LinearMap.lTensor_comm, LinearMap.rTensor_def] at h
+    rw [LinearMap.baseChange_eq_lTensor, LinearMap.lTensor_comm, LinearMap.rTensor_def] at h
     exact h
   · intro hf
     -- Naturality of a comodule morphism makes its conjugation action trivial.
     let q : Hom R H M N := ⟨f, hf⟩
     have hintertwine : f.baseChange H ∘ₗ endOfPoint M g.ofConv =
         endOfPoint N g.ofConv ∘ₗ f.baseChange H := baseChange_comp_endOfPoint q g.ofConv
-    have hconj : endOfPoint N g.ofConv ∘ₗ f.baseChange H ∘ₗ
-        endOfPoint M (g⁻¹).ofConv = f.baseChange H := by
-      rw [← LinearMap.comp_assoc, ← hintertwine, LinearMap.comp_assoc,
-        hcancel', LinearMap.comp_id]
-    rw [hconj] at hpoint
-    have hfixed : endOfPoint (M →ₗ[R] N) g.ofConv (1 ⊗ₜ[R] f) = 1 ⊗ₜ[R] f :=
-      (LinearMap.baseChangeTensorHomEquiv (R := R) (A := H) (M := M) (N := N)).injective
-        (by simpa only [LinearMap.baseChangeTensorHomEquiv_apply,
-          LinearMap.baseChangeTensorHom_tmul, one_smul] using hpoint)
+    have hfixed := (endOfPoint_linearHom_one_tmul_eq_iff g f).mpr hintertwine
     rw [mem_fixedSubcomodule]
     apply (TensorProduct.comm R (M →ₗ[R] N) H).injective
     simpa only [endOfPoint_tmul, one_smul, g, AlgHom.toLinearMap_id,
@@ -209,6 +269,21 @@ theorem fixedLinearHomEquiv_toLinearMap (f : fixedSubcomodule R H (M →ₗ[R] N
 theorem fixedLinearHomEquiv_symm_coe (f : Hom R H M N) :
     ((fixedLinearHomEquiv (R := R) (H := H)).symm f : M →ₗ[R] N) = f.toLinearMap :=
   (rfl)
+
+/-- Surjectivity on invariant vectors of postcomposition lifts the identity to an
+equivariant section. The codomain must be finite projective; the source may be arbitrary. -/
+theorem Hom.exists_rightInverse_of_linearHomPostcomp_fixedMap_surjective
+    (f : Hom R H N M)
+    (hfixed : Function.Surjective (f.linearHomPostcomp (M := M)).fixedMap) :
+    ∃ s : Hom R H M N, f.comp s = Hom.id R H M := by
+  let e := fixedLinearHomEquiv (R := R) (H := H) (M := M) (N := M)
+  obtain ⟨s, hs⟩ := hfixed (e.symm (Hom.id R H M))
+  refine ⟨fixedLinearHomEquiv s, ?_⟩
+  apply Hom.toLinearMap_injective
+  have h := congrArg Subtype.val hs
+  simpa only [e, Hom.fixedMap_apply, Hom.linearHomPostcomp_apply,
+    Hom.comp_toLinearMap, fixedLinearHomEquiv_toLinearMap,
+    fixedLinearHomEquiv_symm_coe] using h
 
 end Fixed
 

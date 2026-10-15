@@ -168,6 +168,19 @@ theorem mem_carrier_iff (z : ℍ) :
     z ∈ P.carrier ↔ ∀ i, z ∈ closure (leftHalfPlane (P.sideGeodesic i)) :=
   Set.mem_iInter
 
+/-- The polygon lies in the closed left half-plane of each side. -/
+theorem carrier_subset_closure_leftHalfPlane (i : Fin n) :
+    P.carrier ⊆ closure (leftHalfPlane (P.sideGeodesic i)) :=
+  fun _ hz ↦ (P.mem_carrier_iff _).mp hz i
+
+/-- The carrier contains the geodesic segment between any two of its points. -/
+theorem geodesicSegment_subset_carrier {z w : ℍ} (hz : z ∈ P.carrier) (hw : w ∈ P.carrier) :
+    geodesicSegment z w ⊆ P.carrier := by
+  intro v hv
+  exact (P.mem_carrier_iff v).mpr fun i ↦ geodesicSegment_subset_closure_leftHalfPlane
+    (P.carrier_subset_closure_leftHalfPlane i hz)
+    (P.carrier_subset_closure_leftHalfPlane i hw) hv
+
 /-- The carrier is cut out by the side forms of the edges. -/
 theorem mem_carrier_iff_sideForm_nonpos (z : ℍ) :
     z ∈ P.carrier ↔ ∀ i, sideForm (P.sideGeodesic i) z ≤ 0 :=
@@ -182,11 +195,27 @@ theorem isClosed_carrier : IsClosed P.carrier :=
 theorem measurableSet_carrier : MeasurableSet P.carrier :=
   P.isClosed_carrier.measurableSet
 
+/-- The interior is the intersection of the open left half-planes of the sides. -/
+theorem interior_carrier :
+    interior P.carrier = ⋂ i, leftHalfPlane (P.sideGeodesic i) := by
+  simp_rw [carrier_def, interior_iInter_of_finite, interior_closure_leftHalfPlane]
+
+/-- A point is in the polygon interior exactly when it is strictly left of every side. -/
+@[simp]
+theorem mem_interior_carrier_iff (z : ℍ) :
+    z ∈ interior P.carrier ↔ ∀ i, z ∈ leftHalfPlane (P.sideGeodesic i) := by
+  rw [interior_carrier, Set.mem_iInter]
+
+/-- A point is in the polygon interior exactly when every side form is strictly negative. -/
+theorem mem_interior_carrier_iff_sideForm_neg (z : ℍ) :
+    z ∈ interior P.carrier ↔ ∀ i, sideForm (P.sideGeodesic i) z < 0 := by
+  simp_rw [mem_interior_carrier_iff, mem_leftHalfPlane_iff_sideForm_neg]
+
 /-- A vertex other than `∞` and off an edge lies strictly to its left: the side form of the edge is
 negative there. -/
 theorem sideForm_sideGeodesic_toComplex_neg {i j : Fin n} (hj : P.vertex j ≠ .inr ∞) (hji : j ≠ i)
     (hji' : j ≠ i + 1) : sideForm (P.sideGeodesic i) (toComplex (P.vertex j)) < 0 :=
-  sideForm_toComplex_neg_of_mem_extLeftHalfPlane hj
+  (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hj).1
     (P.vertex_mem_extLeftHalfPlane_sideGeodesic hji hji')
 
 /-- Every vertex other than `∞` lies in the closed left half-plane of every edge: the side form of
@@ -244,6 +273,16 @@ theorem side_subset_carrier (i : Fin n) : P.side i ⊆ P.carrier := by
     (P.vertex_mem_extClosedLeftHalfPlane_sideGeodesic j i)
     (P.vertex_mem_extClosedLeftHalfPlane_sideGeodesic j (i + 1))
 
+/-- Every side belongs to the topological boundary of the polygon. -/
+theorem side_subset_frontier_carrier (i : Fin n) : P.side i ⊆ frontier P.carrier := by
+  intro z hz
+  rw [P.isClosed_carrier.frontier_eq]
+  refine ⟨P.side_subset_carrier i hz, ?_⟩
+  intro hzi
+  have hleft := (P.mem_interior_carrier_iff z).mp hzi i
+  exact Set.disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine (P.sideGeodesic i))
+    hleft (P.side_subset_range_sideGeodesic i hz)
+
 /-! ### Interior angles -/
 
 /-- The interior angle of a convex polygon at `vertex i`: the angle between the edges to
@@ -267,6 +306,46 @@ theorem interiorAngle_eq_zero_of_vertex_eq_inr {i : Fin n} {ξ : OnePoint ℝ}
 theorem interiorAngle_nonneg (i : Fin n) : 0 ≤ P.interiorAngle i := by
   rw [interiorAngle_def]
   exact vertexAngle_nonneg _ _ _
+
+/-- The interior angle at a finite vertex is positive. -/
+theorem interiorAngle_pos_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft) :
+    0 < P.interiorAngle i := by
+  obtain ⟨A, hA⟩ := Sum.isLeft_iff.mp hi
+  have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
+    (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
+    (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
+  rw [hA] at hleft
+  have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
+  have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
+  rw [hray.extLeftHalfPlane_eq hg] at hleft
+  rw [interiorAngle_def, hA, vertexAngle_comm]
+  exact vertexAngle_pos_of_mem_extLeftHalfPlane hleft
+
+/-- The interior angle of a convex polygon vanishes exactly at its ideal vertices. -/
+@[simp]
+theorem interiorAngle_eq_zero_iff (i : Fin n) :
+    P.interiorAngle i = 0 ↔ (P.vertex i).isRight := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · cases hv : P.vertex i with
+    | inl A => exact absurd h (P.interiorAngle_pos_of_isLeft_vertex (by rw [hv]; rfl)).ne'
+    | inr ξ => rfl
+  · obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.1 h
+    exact P.interiorAngle_eq_zero_of_vertex_eq_inr hξ
+
+/-- Every interior angle of a convex polygon is less than `π`, including ideal vertices. -/
+theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π := by
+  rcases hA : P.vertex i with A | ξ
+  · have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
+      (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
+      (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
+    rw [hA] at hleft
+    have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
+    have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
+    rw [hray.extLeftHalfPlane_eq hg] at hleft
+    rw [interiorAngle_def, hA, vertexAngle_comm]
+    exact vertexAngle_lt_pi_of_mem_extLeftHalfPlane hleft
+  · rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hA]
+    exact Real.pi_pos
 
 /-- The interior angles are at most `π`. -/
 theorem interiorAngle_le_pi (i : Fin n) : P.interiorAngle i ≤ π := by

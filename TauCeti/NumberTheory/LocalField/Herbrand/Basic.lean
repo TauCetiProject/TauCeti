@@ -77,6 +77,8 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
   `TauCeti.LocalFieldsRamification.psiNat_eq_iff`: `ψℕ(n) = m ↔ #G_1 + ⋯ + #G_m = n · #G_0`.
 * `TauCeti.LocalFieldsRamification.psiNat_strictMono`,
   `TauCeti.LocalFieldsRamification.self_le_psiNat`: `ψℕ` is strictly increasing and `n ≤ ψℕ(n)`.
+* `TauCeti.LocalFieldsRamification.psiNat_le_iff_le_floor_herbrand`:
+  `ψℕ(n) ≤ i ↔ n ≤ ⌊φ(i)⌋`.
 * `TauCeti.LocalFieldsRamification.psiNat_eq_self_iff`,
   `TauCeti.LocalFieldsRamification.psiNat_eq_add_card_mul_sub`: `ψℕ(v) = v` exactly when
   `G_v = G_0`, and `ψℕ(v) = t + #G_0 (v - t)` for `v ≥ t` when the filtration is
@@ -482,7 +484,6 @@ private theorem inverseHerbrand_natCast_eq_floor (n : ℕ) :
     eq_div_iff (by exact_mod_cast Nat.card_pos.ne')] at hφ
   set g : ℤ → ℕ := fun i ↦ Nat.card (lowerRamificationGroup K L i)
   -- `hφ` restated through the abbreviation `g`.
-  have hφ' : (n : ℝ) * g 0 = ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) + (u - m) * g (m + 1 : ℕ) := hφ
   -- `#G_{m+1}` divides `n #G_0 - (#G_1 + ⋯ + #G_m)`.
   have hdvd : ∀ i : ℤ, i ≤ (m + 1 : ℕ) → g (m + 1 : ℕ) ∣ g i := fun i hi ↦
     Subgroup.card_dvd_of_le (lowerRamificationGroup_antitone K L hi)
@@ -568,6 +569,28 @@ theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
   exact (psiNat_strictMono K L).id_le n
 
+/-- `ψℕ_{L/K}(n) ≤ i` exactly when `n ≤ ⌊φ_{L/K}(i)⌋`: on natural numbers the integral inverse
+Herbrand function is the lower adjoint of `i ↦ ⌊φ_{L/K}(i)⌋`. In particular
+`ψℕ_{L/K}(⌊φ_{L/K}(i)⌋) ≤ i`, which converts the Herbrand-shifted depths `ψℕ_{L/K}(n)` back into
+unshifted ones. -/
+@[simp]
+theorem psiNat_le_iff_le_floor_herbrand {n i : ℕ} :
+    psiNat K L n ≤ i ↔
+      n ≤ ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ := by
+  have h0 : (0 : ℝ) ≤ herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ := by
+    have hle : (⟨(0 : ℕ), Nat.cast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
+        ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ :=
+      Subtype.mk_le_mk.2 (Nat.cast_le.2 i.zero_le)
+    have h := (herbrand_strictMono K L).monotone hle
+    rw [herbrand_of_coe_le_zero K L (by simp)] at h
+    simpa using Subtype.coe_le_coe.2 h
+  have h := (herbrandOrderIso K L).symm_apply_le (y := ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩)
+    (x := ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩)
+  rw [herbrandOrderIso_apply, herbrandOrderIso_symm_apply, ← Subtype.coe_le_coe,
+    ← Subtype.coe_le_coe] at h
+  rw [Nat.le_floor_iff h0, ← Nat.cast_le (α := ℝ), coe_psiNat]
+  exact h
+
 /-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
 through `v`. -/
 @[simp]
@@ -620,5 +643,14 @@ theorem psiNat_eq_add_card_mul_sub {t v : ℕ}
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hv
   simp only [Nat.add_sub_cancel_left]
   ring
+
+/-- At a natural number `n`, the upper ramification group is the lower ramification group at the
+natural number `ψℕ_{L/K}(n)`: `G^n = G_{ψ(n)}`. -/
+@[simp]
+theorem upperRamificationGroup_natCast (n : ℕ) :
+    upperRamificationGroup K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ =
+      lowerRamificationGroup K L (psiNat K L n) := by
+  rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
+    lowerRamificationGroupReal_intCast]
 
 end TauCeti.LocalFieldsRamification

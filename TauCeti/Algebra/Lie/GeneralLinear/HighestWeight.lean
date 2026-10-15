@@ -396,17 +396,14 @@ theorem isGlDominantIntegral_glHalfStaircase_sub_single {F : Type*} [Field F] [C
   rw [isGlDominantIntegral_iff]
   intro i j hij
   have hji : ((j : ℕ) : F) = ((i : ℕ) : F) + 1 := by exact_mod_cast hij.symm
+  refine ⟨if i = t then 0 else if j = t then 2 else 1, ?_⟩
+  simp only [Pi.sub_apply, Pi.single_apply, glHalfStaircase_apply, hji]
   by_cases hi : i = t <;> by_cases hj : j = t
-  · subst j
-    omega
   · subst i
-    simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hj]
-    exact ⟨0, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
-  · subst j
-    simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hi]
-    exact ⟨2, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
-  · simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hi, ite_eq_right hj]
-    exact ⟨1, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
+    subst j
+    omega
+  all_goals simp [hi, hj]
+  all_goals ring
 
 /-- **No entry of the staircase weight is an integer.** Together with
 `TauCeti.isGlDominantIntegral_glStaircase` this pins the difference between dominance for `gl n`

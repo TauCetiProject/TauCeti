@@ -193,7 +193,6 @@ theorem bourbakiNode_ne_affineNode {t : AffineDynkinType} (ht : t.Valid)
       omega
   | D n =>
       have hn : 4 ≤ n := valid_D.mp ht
-      have hi : (i : ℕ) < n := i.isLt
       rw [affineNode_D, Ne, Fin.ext_iff, bourbakiNode_D_val, Fin.val_zero]
       split_ifs <;> omega
   | E6 =>

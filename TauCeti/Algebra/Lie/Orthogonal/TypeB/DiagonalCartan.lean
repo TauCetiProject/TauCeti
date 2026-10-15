@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
-public import Mathlib.Algebra.Lie.Classical
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basic
 
 /-!
 # The diagonal Cartan subalgebra of the split orthogonal Lie algebra of type B
@@ -24,6 +24,9 @@ Its standard Cartan subalgebra consists of the matrices `diag(0, d, -d)`. This f
 subalgebra, proves that it is abelian and self-normalizing, and gives its coordinate basis and
 dual coordinates. The regularity of `2` is needed only for self-normalization: it distinguishes
 the two opposite coordinate weights.
+
+The coordinate-value map only needs zero and negation. Constructing the ambient diagonal matrix
+also needs decidable equality on the index type; neither construction needs a finite index type.
 
 ## Main definitions
 
@@ -46,8 +49,7 @@ the two opposite coordinate weights.
 
 The construction follows Fulton--Harris, *Representation Theory*, Lecture 20. Its declaration
 order and coordinate API follow `TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan` and the type-D
-analogue in [TauCeti#4356](https://github.com/TauCetiProject/TauCeti/pull/4356). This is the
-split type-`B` Cartan prerequisite for Layer 5 of the Spin-representations roadmap.
+analogue in [TauCeti#4356](https://github.com/TauCetiProject/TauCeti/pull/4356).
 -/
 
 public section
@@ -60,43 +62,64 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u
 
-variable {K : Type u} [CommRing K]
-variable {ι : Type*} [DecidableEq ι] [Fintype ι]
-
 /-! ### The diagonal matrices of type B -/
+
+section Elementary
+
+variable {K : Type u} {ι : Type*}
+
+section ZeroNeg
+
+variable [Zero K] [Neg K]
 
 /-- The weight of a coordinate in the standard type-`B` module: zero on the middle coordinate,
 `d i` on the first copy of `ι`, and `-d i` on the second. -/
 def typeBDiagonalValue (d : ι → K) : Unit ⊕ ι ⊕ ι → K :=
   Sum.elim 0 (Sum.elim d (-d))
 
-omit [DecidableEq ι] [Fintype ι] in
 @[simp]
 theorem typeBDiagonalValue_inl (d : ι → K) (i : Unit) :
     typeBDiagonalValue d (.inl i) = 0 :=
   (rfl)
 
-omit [DecidableEq ι] [Fintype ι] in
 @[simp]
 theorem typeBDiagonalValue_inr_inl (d : ι → K) (i : ι) :
     typeBDiagonalValue d (.inr (.inl i)) = d i :=
   (rfl)
 
-omit [DecidableEq ι] [Fintype ι] in
 @[simp]
 theorem typeBDiagonalValue_inr_inr (d : ι → K) (i : ι) :
     typeBDiagonalValue d (.inr (.inr i)) = -d i :=
   (rfl)
 
+variable [DecidableEq ι]
+
 /-- The ambient matrix `diag(0, d, -d)` in the split type-`B` model. -/
 def typeBDiagonalMatrix (d : ι → K) : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
   diagonal (typeBDiagonalValue d)
 
-omit [Fintype ι] in
 @[simp]
 theorem typeBDiagonalMatrix_apply (d : ι → K) (i j : Unit ⊕ ι ⊕ ι) :
     typeBDiagonalMatrix d i j = if i = j then typeBDiagonalValue d i else 0 :=
   (rfl)
+
+end ZeroNeg
+
+section NegZeroClass
+
+variable [NegZeroClass K] [DecidableEq ι]
+
+/-- The type-`B` diagonal matrix of zero coordinates is zero. -/
+@[simp]
+theorem typeBDiagonalMatrix_zero : typeBDiagonalMatrix (0 : ι → K) = 0 := by
+  ext (a | (a | a)) b <;> simp
+
+end NegZeroClass
+
+end Elementary
+
+variable {K : Type u} [CommRing K]
+variable {ι : Type*} [DecidableEq ι] [Fintype ι]
 
 /-- Every `diag(0, d, -d)` lies in the ambient diagonal Cartan subalgebra of matrices. -/
 theorem typeBDiagonalMatrix_mem_diagonalCartan (d : ι → K) :
@@ -153,7 +176,10 @@ type `B`. -/
 def typeBDiagonalCartan : LieSubalgebra K (LieAlgebra.Orthogonal.typeB ι K) where
   carrier := {A | ∃ d : ι → K,
     (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix d}
-  zero_mem' := ⟨0, by ext a b; simp [typeBDiagonalMatrix, typeBDiagonalValue]⟩
+  zero_mem' := ⟨0, by
+    -- The zero inherited by `typeB` coerces definitionally to the ambient zero matrix.
+    change (0 : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix 0
+    rw [typeBDiagonalMatrix_zero]⟩
   add_mem' := by
     rintro A B ⟨d, hd⟩ ⟨e, he⟩
     refine ⟨d + e, ?_⟩
@@ -185,9 +211,8 @@ def typeBDiagonalCartan : LieSubalgebra K (LieAlgebra.Orthogonal.typeB ι K) whe
     change (⁅(A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K),
       (B : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K)⁆ :
         Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix 0
-    rw [lie_eq_zero_of_isDiag (hd ▸ isDiag_diagonal _) (he ▸ isDiag_diagonal _)]
-    ext a b
-    simp [typeBDiagonalMatrix, typeBDiagonalValue]
+    rw [lie_eq_zero_of_isDiag (hd ▸ isDiag_diagonal _) (he ▸ isDiag_diagonal _),
+      typeBDiagonalMatrix_zero]
 
 variable {K ι}
 
@@ -320,42 +345,6 @@ theorem lie_typeBDiagonalEquiv_apply (X : LieAlgebra.Orthogonal.typeB ι K) (d :
   simp only [diagonal_apply_eq]
   ring
 
-private theorem typeB_apply_inr_inr (A : LieAlgebra.Orthogonal.typeB ι K) (i : ι) :
-    (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inr i)) (.inr (.inr i)) =
-      -(A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl i)) (.inr (.inl i)) := by
-  have hA := A.2
-  -- The subtype witness is the skew-adjoint equation for Mathlib's matrix `JB`.
-  change (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JB ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  have h := congr_fun (congr_fun hA (.inr (.inl i))) (.inr (.inr i))
-  exact neg_eq_iff_eq_neg.mp (by
-    simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
-      Matrix.one_apply] using h.symm)
-
-private theorem typeB_apply_inl_inl_eq_zero (h2 : IsRegular (2 : K))
-    (A : LieAlgebra.Orthogonal.typeB ι K) (i : Unit) :
-    (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl i) (.inl i) = 0 := by
-  cases i
-  have hA := A.2
-  -- The subtype witness is the skew-adjoint equation for Mathlib's matrix `JB`.
-  change (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JB ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  have h := congr_fun (congr_fun hA (.inl ())) (.inl ())
-  apply h2.left
-  apply h2.left
-  simp only [mul_zero]
-  have h' :
-      (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ()) * 2 =
-        -(2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ())) := by
-    simpa [LieAlgebra.Orthogonal.JB, Matrix.mul_apply, Matrix.one_apply] using h
-  calc
-    2 * (2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ())) =
-        (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ()) * 2 -
-          (-(2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ()))) := by ring
-    _ = 0 := sub_eq_zero.mpr h'
-
 /-- When multiplication by `2` is injective, membership in the type-`B` diagonal Cartan is
 equivalent to being diagonal as an ambient matrix. Skew-adjointness then forces the middle entry
 to vanish and the two remaining diagonal blocks to be opposite. -/
@@ -374,9 +363,9 @@ theorem mem_typeBDiagonalCartan_iff_isDiag (h2 : IsRegular (2 : K))
     by_cases hab : a = b
     · subst b
       rcases a with a | (a | a)
-      · simpa [typeBDiagonalMatrix] using (typeB_apply_inl_inl_eq_zero h2 A a)
+      · simpa [typeBDiagonalMatrix] using (LieAlgebra.Orthogonal.typeB.apply_inl_inl A h2 a)
       · simp [typeBDiagonalMatrix]
-      · simpa [typeBDiagonalMatrix] using (typeB_apply_inr_inr A a)
+      · simp [typeBDiagonalMatrix]
     · simpa [typeBDiagonalMatrix_apply, hab] using hdiag hab
 
 variable (K ι)

@@ -247,7 +247,7 @@ theorem exists_sub_relativeRepartitionPullback_mem_adeleFiltration
     simp only [Set.mem_union, Set.mem_ofPred_eq, Finset.mem_coe,
       AlgebraicGeometry.WeilDivisor.mem_support_iff, not_or, not_not] at hnot
     exact hP' (by rw [hnot.2, WithZero.exp_zero]; exact hnot.1)
-  set S : Set (Place k F) := (fun P' : Place k' F' ↦ P'.restrict k F) '' T with hS
+  set S : Set (Place k F) := (fun P' : Place k' F' ↦ P'.restrict k F) '' T
   have hSfin : S.Finite := hTfin.image _
   -- on the fibre over each place of `F`, one function of `F'` approximates `a`
   have happrox (P : Place k F) : ∃ z : F', ∀ P' ∈ (Place.finite_setOf_restrict_eq

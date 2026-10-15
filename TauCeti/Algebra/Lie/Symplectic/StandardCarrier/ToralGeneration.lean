@@ -174,6 +174,7 @@ instance isIso_kostantGeneratedToToral :
 
 /-- **A morphism out of the standard type-`C_(n+1)` carrier is determined by the numbered root
 subgroups**, with no hypothesis on the weight torus. -/
+@[ext high]
 theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (φ ψ : groupScheme n ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))

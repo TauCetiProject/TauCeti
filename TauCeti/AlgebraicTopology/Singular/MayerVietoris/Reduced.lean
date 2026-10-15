@@ -34,6 +34,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
 * `TopCat.eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion`: for open subsets `A`
   and `B` of a space with `H_redₖ₊₁(A ∪ B) = 0`, a class of `A ∩ B` in degree `k` vanishing in
   `A` and in `B` is zero, by exactness of the Mayer–Vietoris sequence at `Hₖ(A ∩ B)`.
+* `TopCat.reducedMayerVietorisIsoOfIsZero`: for open subsets `A` and `B` of a space with vanishing
+  reduced homology in degrees `k` and `k + 1`, the isomorphism `H_redₖ₊₁(A ∪ B) ≅ H_redₖ(A ∩ B)`.
 
 ## References
 
@@ -269,5 +271,46 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
       (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_right (s := U) (t := V))))) k),
       hx, zero_comp]
   rw [hx0, zero_comp]
+
+open Set Topology in
+/-- **The reduced Mayer–Vietoris isomorphism of two acyclic open sets.** Let `A` and `B` be open
+subsets of a space, and suppose that the reduced homology of `A` and of `B` vanishes in degrees `k`
+and `k + 1`. Then the reduced Mayer–Vietoris connecting morphism of the cover of `A ∪ B` by `A`
+and `B` (`TopCat.reducedMayerVietorisδ`) is an isomorphism `H_redₖ₊₁(A ∪ B) ≅ H_redₖ(A ∩ B)`.
+
+The intersection and the union are allowed to be given by any sets `D` and `E` equal to them. -/
+def reducedMayerVietorisIsoOfIsZero {Y : TopCat.{w}} {A B D E : Set Y} (hA : IsOpen A)
+    (hB : IsOpen B) (hD : A ∩ B = D) (hE : A ∪ B = E) {k : ℕ}
+    (hA₁ : IsZero ((reducedSingularHomologyFunctor R (k + 1)).obj (of A)))
+    (hB₁ : IsZero ((reducedSingularHomologyFunctor R (k + 1)).obj (of B)))
+    (hA₀ : IsZero ((reducedSingularHomologyFunctor R k).obj (of A)))
+    (hB₀ : IsZero ((reducedSingularHomologyFunctor R k).obj (of B))) :
+    (reducedSingularHomologyFunctor R (k + 1)).obj (of E) ≅
+      (reducedSingularHomologyFunctor R k).obj (of D) :=
+  -- The Mayer–Vietoris sequence is stated for an open cover of a space, here `E`, by the
+  -- preimages `A'` and `B'` of `A` and `B`; these are homeomorphic to `A` and `B` over `Y`.
+  have hAE : A ⊆ range (Subtype.val : E → Y) := hE ▸ subset_union_left.trans Subtype.range_coe.ge
+  have hBE : B ⊆ range (Subtype.val : E → Y) := hE ▸ subset_union_right.trans Subtype.range_coe.ge
+  let A' : Set (of ↥E) := Subtype.val ⁻¹' A
+  let B' : Set (of ↥E) := Subtype.val ⁻¹' B
+  have hA' : IsOpen A' := hA.preimage continuous_subtype_val
+  have hB' : IsOpen B' := hB.preimage continuous_subtype_val
+  have hAB' : A' ∪ B' = univ := eq_univ_of_forall fun y ↦ (hE ▸ y.2 : (y : Y) ∈ A ∪ B)
+  let iA : of ↥A' ≅ of ↥A := isoOfHomeo (IsEmbedding.subtypeVal.homeomorphOfSubsetRange hAE)
+  let iB : of ↥B' ≅ of ↥B := isoOfHomeo (IsEmbedding.subtypeVal.homeomorphOfSubsetRange hBE)
+  -- `A' ∩ B'` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.
+  let iAB : of ↥(A' ∩ B') ≅ of ↥D := isoOfHomeo
+    ((IsEmbedding.subtypeVal.homeomorphOfSubsetRange (inter_subset_left.trans hAE)).trans
+      (Homeomorph.setCongr hD))
+  -- `TopCat.isIso_reducedMayerVietorisδ` is a theorem with hypotheses rather than an instance, so
+  -- it is supplied to `asIso` explicitly.
+  (reducedSingularHomologySuccIso R k).app (of ↥E) ≪≫
+    @asIso _ _ _ _ (reducedMayerVietorisδ R hA' hB' hAB' k)
+      (isIso_reducedMayerVietorisδ R hA' hB' hAB'
+        (hA₁.of_iso ((reducedSingularHomologyFunctor R (k + 1)).mapIso iA))
+        (hB₁.of_iso ((reducedSingularHomologyFunctor R (k + 1)).mapIso iB))
+        (hA₀.of_iso ((reducedSingularHomologyFunctor R k).mapIso iA))
+        (hB₀.of_iso ((reducedSingularHomologyFunctor R k).mapIso iB))) ≪≫
+    (reducedSingularHomologyFunctor R k).mapIso iAB
 
 end TopCat

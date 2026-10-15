@@ -18,7 +18,8 @@ induces an algebra equivalence of universal enveloping algebras.
 
 The split-morphism results avoid any freeness or Poincare--Birkhoff--Witt hypothesis: a chosen
 one-sided inverse of a Lie homomorphism lifts to the same one-sided inverse on enveloping algebras.
-In particular, the equivalence construction is available over an arbitrary commutative ring.
+In particular, the equivalence construction is available over an arbitrary commutative ring. No
+Poincare--Birkhoff--Witt theorem or injectivity of the canonical Lie map is asserted here.
 
 ## Main definitions
 
@@ -38,18 +39,6 @@ In particular, the equivalence construction is available over an arbitrary commu
 * `TauCeti.UniversalEnvelopingAlgebra.map_injective_of_leftInverse` and
   `TauCeti.UniversalEnvelopingAlgebra.map_surjective_of_rightInverse`: split morphisms remain split
   after passing to enveloping algebras.
-
-## Roadmap
-
-This supplies functoriality needed by the explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. That construction forms the Kostant integral form inside
-the universal enveloping algebra of a Chevalley Lie algebra. Isomorphisms of the pinned root data
-act first on the Chevalley generators; `map` and `mapEquiv` lift those actions to the enveloping
-algebra, where preservation of the Kostant form can be stated and proved. The pinned isomorphism
-theorem then consumes that construction, and `TauCetiRoadmap/CFSGStatement/README.md` milestone L1
-uses it to realize diagram permutations as graph automorphisms of the pinned group.
-
-No Poincare--Birkhoff--Witt theorem or injectivity of the canonical Lie map is asserted here.
 -/
 
 public section
@@ -131,6 +120,15 @@ theorem map_comp (f : LieHom R L M) (g : LieHom R M N) :
   apply LieHom.ext
   intro x
   simp only [map_ι, LieHom.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply]
+
+/-- For Lie subalgebras `A ≤ B` of `L`, mapping `U(A)` into `U(B)` and then into `U(L)` is the map
+induced by the inclusion of `A` in `L`. -/
+@[simp]
+theorem map_incl_comp_map_inclusion {A B : LieSubalgebra R L} (h : A ≤ B) :
+    (map R B.incl).comp (map R (LieSubalgebra.inclusion h)) = map R A.incl := by
+  rw [← map_comp]
+  -- `B.incl ∘ inclusion h` and `A.incl` are both the coercion `A → L`
+  rfl
 
 /-- A left inverse of Lie homomorphisms induces a left inverse of the corresponding
 enveloping-algebra maps. -/

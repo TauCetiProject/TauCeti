@@ -156,8 +156,7 @@ theorem conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
     (by
       intro x hx
       rw [BialgHom.coe_toAlgHom] at hx
-      exact HopfIdeal.mem_toIdeal.mp
-        ((CommHopfAlgCat.mkQuotient_eq_zero_iff (CommHopfAlgCat.of R H) I x).mp hx)) hmem
+      exact (CommHopfAlgCat.mkQuotient_eq_zero_iff (CommHopfAlgCat.of R H) I x).mp hx) hmem
 
 /-- Conjugation preserves and reflects containment of Hopf ideals. -/
 @[simp]
@@ -268,24 +267,12 @@ theorem mapDomain_pointConjugation_mem_conjugate_iff
     AlgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) A ↔
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
-  have hinj : Function.Injective
-      (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom := by
-    simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-      EquivLike.injective (HopfAlgebra.pointConjugationBialgEquiv g)
   have hsurj : Function.Surjective
       (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom := by
     simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
       EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g)
-  have he : BialgEquiv.ofBijective
-      (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom ⟨hinj, hsurj⟩ =
-      HopfAlgebra.pointConjugationBialgEquiv g := by
-    ext z
-    simp only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.ofBijective_apply, BialgHom.coe_coe]
-  have h := mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
-    (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom hinj hsurj I A x
-  rw [he, AlgHom.mapDomainMulEquiv_apply, ← BialgEquiv.toBialgHom_eq_coe] at h
   rw [HopfIdeal.conjugate_eq_comapOfSurjective]
-  exact h
+  exact BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff _ hsurj I A x
 
 /-- In explicit pointwise terms, conjugating a point by `g` carries the points of `I` exactly
 onto the points of the conjugated ideal. -/

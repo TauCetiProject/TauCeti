@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Congruence
 
 import TauCeti.Analysis.Normed.Algebra.NoSmallSubgroups
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
+import TauCeti.RingTheory.DedekindDomain.Factorization
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -184,7 +185,8 @@ theorem finiteComponent_eq_one_of_mem_unitFiltration (χ : HeckeCharacter K)
     {v : HeightOneSpectrum (𝓞 K)} {u : (v.adicCompletion K)ˣ}
     (hu : u ∈ TauCeti.unitFiltration (v.adicCompletion K) (χ.conductorExponent v)) :
     χ.finiteComponent v u = 1 :=
-  Nat.sInf_mem (χ.exists_finiteComponent_eq_one v) u hu
+  Nat.sInf_mem (s := {n | ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
+    χ.finiteComponent v u = 1}) (χ.exists_finiteComponent_eq_one v) u hu
 
 /-- **The characterizing property of the conductor exponent**: `a_v(χ) ≤ n` exactly when the
 component of `χ` at `v` is trivial on `U(K_v, n)`. -/
@@ -275,16 +277,8 @@ theorem finiteConductor_ne_bot (χ : HeckeCharacter K) : χ.finiteConductor ≠ 
 theorem count_finiteConductor (χ : HeckeCharacter K) (v : HeightOneSpectrum (𝓞 K)) :
     (Associates.mk v.asIdeal).count (Associates.mk χ.finiteConductor).factors =
       χ.conductorExponent v := by
-  have hcoe : ((χ.finiteConductor : Ideal (𝓞 K)) : FractionalIdeal (nonZeroDivisors (𝓞 K)) K) =
-      ∏ᶠ w : HeightOneSpectrum (𝓞 K),
-        (w.asIdeal : FractionalIdeal (nonZeroDivisors (𝓞 K)) K) ^ (χ.conductorExponent w : ℤ) := by
-    rw [finiteConductor_def, FractionalIdeal.coeIdeal_finprod (nonZeroDivisors (𝓞 K)) K le_rfl]
-    simp [FractionalIdeal.coeIdeal_pow]
-  have h := FractionalIdeal.count_finprod K v (fun w ↦ (χ.conductorExponent w : ℤ))
-    (χ.eventually_conductorExponent_eq_zero.mono fun w hw ↦ by simp [hw])
-  rw [← hcoe, FractionalIdeal.count_coe K v (by
-    rw [Ideal.zero_eq_bot]; exact χ.finiteConductor_ne_bot)] at h
-  exact_mod_cast h
+  rw [finiteConductor_def]
+  exact Ideal.count_finprod_asIdeal_pow χ.hasFiniteMulSupport_pow_conductorExponent v
 
 /-- **The characterizing property of the finite conductor**: `v ^ n` divides the finite conductor
 exactly when `n` is at most the conductor exponent at `v`. -/
@@ -365,7 +359,10 @@ theorem finitePart_eq_one_of_forall_mem_unitFiltration (χ : HeckeCharacter K)
     apply IdeleGroup.ext
     · intro w
       simp [y, z]
-    · simp
+    · intro v
+      apply Units.ext
+      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
+        IdeleGroup.coe_toFiniteIdele]
   rw [hyfin] at hyχ
   dsimp only [y] at hyχ
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, map_mul, map_inv, hzχ,

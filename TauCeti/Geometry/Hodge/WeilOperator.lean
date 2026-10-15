@@ -59,6 +59,8 @@ public section
 
 namespace TauCeti.Hodge
 
+open IsBaseChange
+
 universe u v
 
 namespace HodgeStructureOn
@@ -102,7 +104,7 @@ by `i^{2p-n}`. -/
 theorem weilOperator_unique (hs : HodgeStructureOn W ω n) (f : W →ₗ[ℂ] W)
     (hf : ∀ p : ℤ, ∀ x ∈ hs.piece p, f x = Complex.I ^ (2 * p - n) • x) :
     f = hs.weilOperator :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [hf p x hx, hs.weilOperator_apply_of_mem hx]
 
 /-- The Weil operator preserves every Hodge component. -/
@@ -177,7 +179,7 @@ theorem eigenspace_weilOperator (hs : HodgeStructureOn W ω n) (μ : ℂ) :
 /-- **The Weil operator squares to the weight sign:** `C ∘ C = (-1)^n`. -/
 theorem weilOperator_comp_weilOperator (hs : HodgeStructureOn W ω n) :
     hs.weilOperator ∘ₗ hs.weilOperator = ((-1 : ℂ) ^ n) • LinearMap.id :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [LinearMap.comp_apply, hs.weilOperator_apply_of_mem hx, map_smul,
       hs.weilOperator_apply_of_mem hx, smul_smul, I_zpow_mul_self,
       negOne_zpow_two_mul_sub, LinearMap.smul_apply, LinearMap.id_apply]
@@ -397,10 +399,10 @@ variable {Q : LinearMap.BilinForm ℤ V}
 zero unless their degrees add up to the weight, and on a pair of components that do, the two
 scalars `i^(2p-n)` and `i^(2p'-n)` by which the Weil operator acts are inverse to each other. -/
 theorem isOrthogonal_weilOperator (h : IsPolarization hℂ hs Q) :
-    (integralFormBaseChange hℂ Q).IsOrthogonal hs.weilOperator := by
-  have key : ((integralFormBaseChange hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
-      integralFormBaseChange hℂ Q := by
-    refine hs.linearMap_ext_of_piece fun p x hx ↦ hs.linearMap_ext_of_piece fun p' y hy ↦ ?_
+    (bilinForm hℂ Q).IsOrthogonal hs.weilOperator := by
+  have key : ((bilinForm hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
+      bilinForm hℂ Q := by
+    refine hs.addHom_ext_of_piece fun p x hx ↦ hs.addHom_ext_of_piece fun p' y hy ↦ ?_
     simp only [LinearMap.compl₂_apply, LinearMap.comp_apply]
     by_cases hpp : p + p' = n
     · rw [hs.weilOperator_apply_of_mem hx, hs.weilOperator_apply_of_mem hy]

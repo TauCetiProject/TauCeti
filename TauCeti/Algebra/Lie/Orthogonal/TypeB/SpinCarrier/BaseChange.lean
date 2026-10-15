@@ -192,7 +192,7 @@ theorem coordinateMap_ker :
 of the ambient general linear group. -/
 theorem mapPointsFunctor_coordinateMap_app {B : Type w} [CommRing B] [Algebra A B]
     (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra n A) (CommAlgCat.of A B)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap n A)).app (CommAlgCat.of A B) g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap n A)).app (CommAlgCat.of A B) g =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n A)
         (CommAlgCat.of A B) g := by
@@ -338,10 +338,10 @@ theorem mulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
     (q : HopfAlgebra.points
       (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ) B) :
     (pointsPresentation n B).mulEquiv
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (rootSubgroupIntegralCoordinateMap n k)).app B q) =
       rootSubgroupPoints n k B (AdditiveGroup.gaPointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_rootSubgroupPoints]
   have h := pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
@@ -349,7 +349,7 @@ theorem mulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n) (definingIdeal_def n) k B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   simpa only [rootSubgroupIntegralCoordinateMap] using h
 
 /-- The integral factored root-subgroup coordinate map represents the carrier's `k`th numbered
@@ -399,6 +399,20 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap
     (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n) A k
 
+/-- The factored `k`th root-subgroup map composed with the carrier coordinate morphism recovers
+its ambient transported coordinate map. -/
+@[simp]
+theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap
+    (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    coordinateMap n A ≫ rootSubgroupToBaseChangeCoordinateMap n A k =
+      kostantRootSubgroupBaseChangePresentationCoordinateMap
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+        (latticeBasis n) A k := by
+  unfold coordinateMap
+  exact mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap n A k
+
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/
 @[simp]
@@ -424,10 +438,10 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
     (q : HopfAlgebra.points
       (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
     baseChangePointsMulEquiv n A B
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (rootSubgroupToBaseChangeCoordinateMap n A k)).app B q) =
       rootSubgroupPoints n k B (AdditiveGroup.gaPointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [coe_baseChangePointsMulEquiv_apply, coe_rootSubgroupPoints]
   -- The generic matrix theorem uses the canonical integer-algebra instance; this spelling makes
@@ -444,7 +458,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
       (latticeBasis n) (basisWeight n) A (definingIdeal_def n) k B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h
 
@@ -498,10 +512,10 @@ theorem mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
       (H := (DiagonalizableGroup.coordinateRing ℤ
         (SplitTorus.characterGroup (Fin (n + 1)))).obj) B) :
     (pointsPresentation n B).mulEquiv
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (weightTorusIntegralCoordinateMap n)).app B q) =
       weightTorusPoints n B (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_weightTorusPoints]
   have h := pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
@@ -509,7 +523,7 @@ theorem mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
       (latticeBasis n) (basisWeight n) (definingIdeal_def n) B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   simpa only [weightTorusIntegralCoordinateMap] using h
 
 /-- The integral factored weight-torus coordinate map represents the carrier's weight torus. -/
@@ -591,10 +605,10 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordin
       (H := (DiagonalizableGroup.coordinateRing A
         (SplitTorus.characterGroup (Fin (n + 1)))).obj) B) :
     baseChangePointsMulEquiv n A B
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (weightTorusToBaseChangeCoordinateMap n A)).app B q) =
       weightTorusPoints n B (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [coe_baseChangePointsMulEquiv_apply, coe_weightTorusPoints]
   have h := pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap
@@ -602,7 +616,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordin
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
       (latticeBasis n) (basisWeight n) A (definingIdeal_def n) B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
   exact h
 

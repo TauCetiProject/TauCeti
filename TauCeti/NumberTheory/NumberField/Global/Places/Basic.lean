@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.NumberField.ProductFormula
 public import TauCeti.Algebra.BigOperators.Finprod
 
+import TauCeti.NumberTheory.NumberField.FinitePlace
+
 /-!
 # Places of a number field and their normalized absolute values
 
@@ -109,6 +111,11 @@ theorem normalizedAbsValue_inr_eq_norm_embedding (w : InfinitePlace K) (x : K) :
     normalizedAbsValue (Sum.inr w) x = ‖w.embedding x‖ ^ w.mult := by
   rw [normalizedAbsValue_inr, InfinitePlace.norm_embedding_eq]
 
+/-- The normalized absolute value at a finite place `v` is the norm in the `v`-adic completion. -/
+theorem normalizedAbsValue_inl_eq_norm_coe (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    normalizedAbsValue (Sum.inl v) x = ‖(x : v.adicCompletion K)‖ := by
+  rw [normalizedAbsValue_inl, ← FinitePlace.norm_embedding, FinitePlace.embedding_apply]
+
 theorem normalizedAbsValue_nonneg (v : Place K) (x : K) : 0 ≤ normalizedAbsValue v x := by
   cases v with
   | inl v => exact (NumberField.HeightOneSpectrum.adicAbv K v).nonneg x
@@ -143,10 +150,8 @@ theorem normalizedAbsValue_inl_algebraMap_eq_one_iff :
 at most `1`. -/
 theorem normalizedAbsValue_inl_le_one_iff (y : K) :
     normalizedAbsValue (Sum.inl v) y ≤ 1 ↔ v.valuation K y ≤ 1 := by
-  rw [normalizedAbsValue_inl, NumberField.HeightOneSpectrum.adicAbv_def]
-  norm_cast
-  exact WithZeroMulInt.toNNReal_le_one_iff
-    (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v)
+  simpa only [normalizedAbsValue_inl, FinitePlace.mk_apply, FinitePlace.norm_embedding]
+    using FinitePlace.mk_apply_le_one_iff v y
 
 /-- An element of a number field is an algebraic integer exactly when its normalized absolute
 value is at most `1` at every finite place. -/

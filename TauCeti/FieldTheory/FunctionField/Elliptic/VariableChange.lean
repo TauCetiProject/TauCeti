@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
-public import TauCeti.FieldTheory.FunctionField.Elliptic.WeierstrassEquation
+public import TauCeti.FieldTheory.FunctionField.Elliptic.Weierstrass.Equation
 
 /-!
 # Admissible changes of Weierstrass coordinates

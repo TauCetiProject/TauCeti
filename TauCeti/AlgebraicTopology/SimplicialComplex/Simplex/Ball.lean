@@ -1,0 +1,282 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
+public import TauCeti.Analysis.Convex.CoordinateSimplex
+
+/-!
+# A simplex and its boundary as a ball and its sphere
+
+The weak realization of the standard `n`-simplex is homeomorphic to the Euclidean closed
+`n`-ball. The same homeomorphism takes exactly the proper faces to the unit sphere, so it
+identifies the pair consisting of a simplex and its boundary with the ball and sphere pair.
+This supplies compatible geometric models for combinatorial balls and their boundaries.
+Dimension zero is included: the simplex and ball are singletons and their boundaries empty.
+
+Dropping the last barycentric coordinate gives an explicit homeomorphism to the coordinate
+simplex. The omitted coordinate is one minus the sum of the others. The subsequent ball
+identification uses Mathlib's convex-body gauge rescaling through
+`TauCeti.exists_homeomorph_coordinateSimplex`. The first comparison reuses
+`realizationTopHomeomorphStdSimplex` and Mathlib's `Convexity.StdSimplex`.
+
+`simplexCoordinateReindex` distinguishes the last retained coordinate, and
+`simplexBoundaryCoordinateMap` gives the shared ambient linear coordinates for the solid
+and boundary simplex comparisons.
+
+Reference: C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
+Chapter 2 (simplices and polyhedra).
+-/
+
+public section
+
+noncomputable section
+
+open Set Metric TauCeti
+
+namespace AbstractSimplicialComplex
+
+/-- Reindex the retained simplex coordinates, distinguishing the last coordinate with
+`none`. This ambient homeomorphism is shared by the solid and boundary comparisons. -/
+def simplexCoordinateReindex (n : ℕ) :
+    (Fin (n + 1) → ℝ) ≃ₜ (Option (Fin n) → ℝ) :=
+  Homeomorph.piCongrLeft (Y := fun _ : Option (Fin n) => ℝ) finSuccEquivLast
+
+/-- The reindexing reads the corresponding retained barycentric coordinate. -/
+@[simp] theorem simplexCoordinateReindex_apply (n : ℕ) (x : Fin (n + 1) → ℝ)
+    (i : Option (Fin n)) :
+    simplexCoordinateReindex n x i = x (finSuccEquivLast.symm i) := by
+  simp only [simplexCoordinateReindex, Homeomorph.piCongrLeft_apply,
+    Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply, Equiv.symm_symm]
+
+/-- Reindexing preserves the coordinate simplex, so it restricts to both the solid
+simplex and its frontier. -/
+theorem simplexCoordinateReindex_mem_iff (n : ℕ) (x : Fin (n + 1) → ℝ) :
+    simplexCoordinateReindex n x ∈ coordinateSimplex (Option (Fin n)) ↔
+      x ∈ coordinateSimplex (Fin (n + 1)) := by
+  have hsum : ∑ i, simplexCoordinateReindex n x i = ∑ i, x i := by
+    simp only [simplexCoordinateReindex_apply]
+    exact finSuccEquivLast.symm.sum_comp x
+  rw [mem_coordinateSimplex, mem_coordinateSimplex, hsum]
+  constructor
+  · rintro ⟨h, hs⟩
+    refine ⟨fun i => ?_, hs⟩
+    simpa only [simplexCoordinateReindex_apply, Equiv.symm_apply_apply] using
+      h (finSuccEquivLast i)
+  · rintro ⟨h, hs⟩
+    exact ⟨fun i => (simplexCoordinateReindex_apply n x i).symm ▸
+      h (finSuccEquivLast.symm i), hs⟩
+
+/-- The affine coordinates of a realized simplex boundary: discard the last coordinate,
+then apply `simplexCoordinateReindex` to distinguish the last retained coordinate using
+`none`. -/
+def simplexBoundaryCoordinateMap (n : ℕ) :
+    (Fin (n + 2) → ℝ) →L[ℝ] (Option (Fin n) → ℝ) :=
+  ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj
+    ((finSuccEquivLast.symm i : Fin (n + 1)).castSucc)
+
+/-- Each coordinate is the corresponding retained barycentric coordinate. -/
+@[simp] theorem simplexBoundaryCoordinateMap_apply (n : ℕ)
+    (x : Fin (n + 2) → ℝ) (i : Option (Fin n)) :
+    simplexBoundaryCoordinateMap n x i = x (finSuccEquivLast.symm i).castSucc := (rfl)
+
+private def topToCoordinateSimplex (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    coordinateSimplex (Fin n) := by
+  let y : Fin n → ℝ := fun i => x.1 i.castSucc
+  have hsum : (∑ i, y i) + x.1 (Fin.last n) = 1 := by
+    have h := Realization.sum_eq_one _ x
+    rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
+    exact h
+  refine ⟨y, (mem_coordinateSimplex _ _).mpr ⟨fun i => Realization.nonneg _ x i.castSucc, ?_⟩⟩
+  have := Realization.nonneg _ x (Fin.last n)
+  linarith
+
+private theorem topToCoordinateSimplex_apply (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) (i : Fin n) :
+    (topToCoordinateSimplex n x).1 i = x.1 i.castSucc := (rfl)
+
+private def coordinateSimplexToTop (n : ℕ) (y : coordinateSimplex (Fin n)) :
+    Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) := by
+  have hy := (mem_coordinateSimplex _ _).mp y.2
+  let z : Fin (n + 1) →₀ ℝ := Finsupp.equivFunOnFinite.symm
+    (Fin.snoc y.1 (1 - ∑ i, y.1 i))
+  refine (realizationTopHomeomorphStdSimplex (ι := Fin (n + 1))).symm ⟨z, ?_, ?_⟩
+  · intro i
+    refine Fin.lastCases ?_ (fun j => ?_) i
+    · simpa [z] using sub_nonneg.mpr hy.2
+    · simpa [z] using hy.1 j
+  · simp [z, Finsupp.sum_fintype, Fin.sum_univ_castSucc]
+
+private theorem coordinateSimplexToTop_castSucc (n : ℕ) (y : coordinateSimplex (Fin n))
+    (i : Fin n) : (coordinateSimplexToTop n y).1 i.castSucc = y.1 i := by
+  simp [coordinateSimplexToTop, realizationTopHomeomorphStdSimplex_symm_apply_val]
+
+private theorem coordinateSimplexToTop_last (n : ℕ) (y : coordinateSimplex (Fin n)) :
+    (coordinateSimplexToTop n y).1 (Fin.last n) = 1 - ∑ i, y.1 i := by
+  simp [coordinateSimplexToTop, realizationTopHomeomorphStdSimplex_symm_apply_val]
+
+/-- Dropping the last barycentric coordinate identifies the weak realization of a standard
+`n`-simplex with the full-dimensional coordinate simplex. -/
+def realizationTopHomeomorphCoordinateSimplex (n : ℕ) :
+    Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) ≃ₜ coordinateSimplex (Fin n) := by
+  let e : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) ≃
+      coordinateSimplex (Fin n) := {
+    toFun := topToCoordinateSimplex n
+    invFun := coordinateSimplexToTop n
+    left_inv x := by
+      apply Subtype.ext
+      ext i
+      refine Fin.lastCases ?_ (fun j => ?_) i
+      · rw [coordinateSimplexToTop_last]
+        have h := Realization.sum_eq_one _ x
+        rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
+        simp only [topToCoordinateSimplex_apply]
+        linarith
+      · simp only [coordinateSimplexToTop_castSucc, topToCoordinateSimplex_apply]
+    right_inv y := by
+      apply Subtype.ext
+      funext i
+      simp only [topToCoordinateSimplex_apply, coordinateSimplexToTop_castSucc] }
+  have hc : Continuous e := by
+    apply Continuous.subtype_mk
+    exact continuous_pi fun i =>
+      (continuous_apply i.castSucc).comp (continuous_realization_coe _)
+  exact e.toHomeomorphOfContinuousClosed hc hc.isClosedMap
+
+/-- The coordinate-simplex comparison reads the first barycentric coordinates. -/
+@[simp]
+theorem realizationTopHomeomorphCoordinateSimplex_apply (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) (i : Fin n) :
+    (realizationTopHomeomorphCoordinateSimplex n x).1 i = x.1 i.castSucc := (rfl)
+
+/-- The inverse comparison restores the last coordinate as the missing mass. -/
+@[simp]
+theorem realizationTopHomeomorphCoordinateSimplex_symm_last (n : ℕ)
+    (y : coordinateSimplex (Fin n)) :
+    ((realizationTopHomeomorphCoordinateSimplex n).symm y).1 (Fin.last n) =
+      1 - ∑ i, y.1 i :=
+  coordinateSimplexToTop_last n y
+
+/-- In the standard `n`-simplex, the open star of the last vertex is described in the
+dropped barycentric coordinates by the strict sum inequality. -/
+theorem mem_openStarRealization_top_last_iff_sum_lt_one (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    x ∈ openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))
+      (Fin.last n) ↔
+      ∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).1 i < 1 := by
+  have h := Realization.sum_eq_one
+    (⊤ : AbstractSimplicialComplex (Fin (n + 1))) x
+  rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
+  have hsum : (∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).1 i) +
+      x.1 (Fin.last n) = 1 := by
+    simpa only [realizationTopHomeomorphCoordinateSimplex_apply] using h
+  rw [mem_openStarRealization]
+  constructor <;> intro hx <;> linarith
+
+/-- The coordinate homeomorphism maps the open star of the last vertex of the standard
+`n`-simplex onto the points of the coordinate simplex whose coordinate sum is less than one. -/
+theorem image_openStarRealization_top_last (n : ℕ) :
+    realizationTopHomeomorphCoordinateSimplex n ''
+        openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) (Fin.last n) =
+      {y : coordinateSimplex (Fin n) | ∑ i, y.1 i < 1} := by
+  ext y
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact (mem_openStarRealization_top_last_iff_sum_lt_one n x).mp hx
+  · intro hy
+    refine ⟨(realizationTopHomeomorphCoordinateSimplex n).symm y, ?_, ?_⟩
+    · rw [mem_openStarRealization, realizationTopHomeomorphCoordinateSimplex_symm_last]
+      simp only [Set.mem_ofPred_eq] at hy
+      linarith
+    · simp
+
+/-- The inverse comparison preserves the retained coordinates. -/
+@[simp]
+theorem realizationTopHomeomorphCoordinateSimplex_symm_castSucc (n : ℕ)
+    (y : coordinateSimplex (Fin n)) (i : Fin n) :
+    ((realizationTopHomeomorphCoordinateSimplex n).symm y).1 i.castSucc = y.1 i :=
+  coordinateSimplexToTop_castSucc n y i
+
+/-- A simplex point maps to the geometric frontier exactly when its support is a proper
+face. This includes the empty boundary of the zero-simplex. -/
+@[simp 1100]
+theorem realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    (realizationTopHomeomorphCoordinateSimplex n x).1 ∈ frontier (coordinateSimplex (Fin n)) ↔
+      x.1.support ≠ Finset.univ := by
+  rw [mem_frontier_coordinateSimplex]
+  rw [iff_true_intro ((mem_coordinateSimplex _ _).mp
+    (realizationTopHomeomorphCoordinateSimplex n x).2), true_and]
+  simp only [realizationTopHomeomorphCoordinateSimplex_apply]
+  have hsum : (∑ i : Fin n, x.1 i.castSucc) + x.1 (Fin.last n) = 1 := by
+    have h := Realization.sum_eq_one _ x
+    rwa [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
+  have hmissing : x.1.support ≠ Finset.univ ↔ ∃ i, x.1 i = 0 := by
+    simp [Finset.eq_univ_iff_forall, Finsupp.mem_support_iff]
+  rw [hmissing]
+  constructor
+  · rintro (⟨i, hi⟩ | hs)
+    · exact ⟨i.castSucc, hi⟩
+    · exact ⟨Fin.last n, by linarith⟩
+  · rintro ⟨i, hi⟩
+    refine Fin.lastCases ?_ (fun j hj => Or.inl ⟨j, hj⟩) i hi
+    intro hl
+    exact Or.inr (by linarith)
+
+/-- The weak realization of the standard `n`-simplex is homeomorphic to the Euclidean unit
+closed `n`-ball. Its proper-face boundary is taken to the sphere. -/
+def realizationTopHomeomorphClosedBall (n : ℕ) :
+    Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) ≃ₜ
+      closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 :=
+  let h := Classical.choose (exists_homeomorph_coordinateSimplex (Fin n))
+  (realizationTopHomeomorphCoordinateSimplex n).trans
+    ((h.image (coordinateSimplex (Fin n))).trans
+      (Homeomorph.setCongr (Classical.choose_spec
+        (exists_homeomorph_coordinateSimplex (Fin n))).1))
+
+/-- Under the simplex-to-ball homeomorphism, exactly the proper faces land on the sphere. -/
+@[simp]
+theorem realizationTopHomeomorphClosedBall_norm_eq_one_iff (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    ‖(realizationTopHomeomorphClosedBall n x).1‖ = 1 ↔
+      x.1.support ≠ Finset.univ := by
+  rw [← mem_sphere_zero_iff_norm]
+  let h := Classical.choose (exists_homeomorph_coordinateSimplex (Fin n))
+  have hfr : h '' frontier (coordinateSimplex (Fin n)) =
+      sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
+    (Classical.choose_spec (exists_homeomorph_coordinateSimplex (Fin n))).2.2
+  have he : (realizationTopHomeomorphClosedBall n x).1 =
+      h (realizationTopHomeomorphCoordinateSimplex n x).1 := (rfl)
+  rw [he, ← hfr]
+  simpa only [h.injective.mem_set_image] using
+    realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff n x
+
+end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+open AbstractSimplicialComplex
+
+variable {ι : Type*} {A : AbstractSimplicialComplex ι} {n : ℕ}
+
+/-- The polyhedron of a simplex with `n + 1` vertices is homeomorphic to the Euclidean closed
+`n`-ball, inside any ambient realization containing it. -/
+theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
+    (hV : V.card = n + 1) (hA : simplex V ≤ A.toPreAbstractSimplicialComplex) :
+    Nonempty ({x : Realization A // x.1.support ∈ simplex V} ≃ₜ
+      Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
+  classical
+  let P := simplex (Finset.univ : Finset (Fin (n + 1)))
+  have hP : P = (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex := by
+    simp only [P, simplex_univ, AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex]
+  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
+      rw [map_simplex, himage]) hP hA
+  exact ⟨r.trans (AbstractSimplicialComplex.realizationTopHomeomorphClosedBall n)⟩
+
+end PreAbstractSimplicialComplex

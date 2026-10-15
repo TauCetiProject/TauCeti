@@ -17,7 +17,7 @@ name: Pages
 # time, straight from git history (see scripts/loc_graph.py) — they are not committed
 # state. The per-roadmap chart (scripts/loc_roadmap_graph.py) is regenerated the same
 # way, but from the PR labels rather than git, since roadmap attribution lives in the
-# `roadmap/<Area>` labels; it reads them via gh (hence pull-requests: read below). The
+# `roadmap/<Area>` labels; it reuses the bors-aware PR snapshot below. The
 # participation snapshot likewise reads GitHub through gh, but deduplicates the current
 # human actors instead of reconstructing a historical series. Pull-request queue, review-cycle,
 # throughput, and contributor charts come from scripts/pr_stats_graphs.py. The three-hour
@@ -31,8 +31,10 @@ on:
     branches: [main]
     paths:
       - 'web/**'
+      - 'scripts/arxiv_categories.py'
       - 'scripts/chart_style.py'
       - 'scripts/loc_graph.py'
+      - 'scripts/roadmap_completion.py'
       - 'scripts/loc_roadmap_graph.py'
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
@@ -41,7 +43,6 @@ on:
       - 'scripts/ci_daily_graphs.py'
       - 'scripts/generated_assets.py'
       - 'scripts/roadmap_progress.py'
-      - 'scripts/roadmap_topics.json'
       - 'scripts/roadmap_coverage.json'
       - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'
@@ -129,22 +130,11 @@ jobs:
           key: site-data-v1-${{ github.run_id }}
           restore-keys: site-data-v1-
 
-      # The per-roadmap chart and the participation snapshot each spend minutes querying GitHub
-      # and depend on nothing else in this job, so they run in the background while the steps
-      # below proceed, and "Wait for the background generators" collects them before the assets
-      # are gathered. Run one after another, they made this job take three times as long as its
-      # longest chain. Started right after the restore above, which would otherwise overwrite
-      # what they write.
-      #
-      # The per-roadmap chart is built from the PR labels (roadmap attribution is not in git), so
-      # it queries gh rather than walking commits. The participation snapshot is a current count
-      # rather than a historical series: participants are deduplicated across PRs, issues,
-      # comments/reviews, and default-branch commits in all four repos.
-      #
-      # Each runs under `timeout`, so a hung query is killed rather than left writing into
-      # static_files while later steps collect and cache it, and it always ends up marked done.
-      # A failure is not recorded here: the wait step retries it first (see there).
-      - name: Start the per-roadmap chart and the participation snapshot in the background
+      # Participation scans GitHub independently of PR history, so start it while
+      # the other generators run. The per-roadmap chart below instead reuses the
+      # bors-aware PR snapshot, including each PR's title and diff size.
+      # Timeout bounds a hung query; the wait step retries failures once.
+      - name: Start the participation snapshot in the background
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -161,10 +151,6 @@ jobs:
               touch "$bg/$name.done"
             ) > "$bg/$name.log" 2>&1 &
           }
-          start per-roadmap python3 scripts/loc_roadmap_graph.py \
-            --repo "${{ github.repository }}" \
-            --title "Tau Ceti — lines of Lean per roadmap" \
-            --out web/static_files/loc-per-roadmap.svg
           start participation python3 scripts/participant_graph.py \
             --out web/static_files/participation.svg
 
@@ -183,12 +169,16 @@ jobs:
             --repo . --ref HEAD \
             --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-tauceti.svg \
+            --dump-data "$RUNNER_TEMP/library-loc.json" \
             TauCeti TauCeti.lean
-          python3 scripts/loc_graph.py \
-            --repo /tmp/roadmap --ref HEAD \
-            --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
-            --out web/static_files/loc-roadmap.svg \
-            TauCetiRoadmap TauCetiRoadmap.lean
+          python3 scripts/roadmap_completion.py \
+            --roadmap-repo /tmp/roadmap --code-repo . \
+            --code-data "$RUNNER_TEMP/library-loc.json" \
+            --out-dir web/static_files \
+          || {
+            echo "::warning::roadmap completion generation failed; keeping the previous assets"
+            echo "roadmap completion" >> "$RUNNER_TEMP/data-failures"
+          }
 
       # Walking every pull request's label timeline costs one GraphQL request each, against a
       # budget of 5000 an hour. At ~4600 open-or-recently-closed pull requests that no longer
@@ -221,12 +211,27 @@ jobs:
           # it fully before writing anything, so naming one path for both is safe.
           python3 scripts/pr_stats_graphs.py \
             --repo "${{ github.repository }}" \
+            --roadmap-dir /tmp/roadmap \
             --out-dir web/static_files \
             --since-data "$RUNNER_TEMP/pr-snapshot.json" \
             --dump-data "$RUNNER_TEMP/pr-snapshot.json" \
           || {
             echo "::warning::PR statistics generation failed; keeping the committed fallback assets"
             echo "pull-request statistics" >> "$RUNNER_TEMP/data-failures"
+          }
+
+      # Read exactly the same normalized merge history as the contributor charts.
+      # A separate `gh pr list --state merged` loses bors squash merges.
+      - name: Regenerate the per-roadmap chart from the pull-request snapshot
+        working-directory: ${{ github.workspace }}
+        run: |
+          python3 scripts/loc_roadmap_graph.py \
+            --data "$RUNNER_TEMP/pr-snapshot.json" \
+            --title "Tau Ceti — lines of Lean per roadmap" \
+            --out web/static_files/loc-per-roadmap.svg \
+          || {
+            echo "::warning::per-roadmap chart generation failed; keeping the last published SVG"
+            echo "per-roadmap chart" >> "$RUNNER_TEMP/data-failures"
           }
 
       # Gated on the file existing, because actions/cache/save errors on a missing path and this
@@ -313,14 +318,25 @@ jobs:
             "${data_arg[@]}" \
             --out web/static_files/progress.json \
           || {
-            echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
             echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+            # What is in static_files now is the last published snapshot, restored from the cache
+            # above. Keep it only if it validates in the current topic scheme: one from before the switch
+            # to arXiv categories carries the old hand-assigned topics, and the board would show
+            # them under its "by arXiv category" label. Otherwise publish the committed fallback.
+            # The cache also restores front-end files; validate with this commit's board code.
+            git checkout -- web/static_files/progress.js
+            if python3 scripts/roadmap_progress.py --check-snapshot web/static_files/progress.json; then
+              echo "::warning::roadmap progress generation failed; keeping the last published JSON"
+            else
+              git checkout -- web/static_files/progress.json
+              echo "::warning::roadmap progress generation failed, and the cached JSON could not be validated in the current topic scheme; publishing the committed fallback"
+            fi
           }
 
       # TauCetiCI records every Actions run in the organisation and publishes a SQLite database
-      # daily; the CI page's fleet timelines are drawn from it. The release is public, so the
+      # after collection; the CI charts use independent source coverage. The release is public, so the
       # download needs no credentials beyond the token gh wants to have.
-      - name: Regenerate the CI fleet charts into static_files
+      - name: Regenerate the CI charts into static_files
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -328,29 +344,26 @@ jobs:
           python3 scripts/ci_stats_graphs.py --download --db "$RUNNER_TEMP/ci.sqlite" \
             --out-dir web/static_files \
           || {
-            echo "::warning::CI chart generation failed; keeping the last published SVGs"
-            echo "CI fleet charts" >> "$RUNNER_TEMP/data-failures"
+            echo "::warning::Some CI chart groups are stale or failed; dated daily charts refresh through their coverage, other stale groups retain their previous SVGs; see static/ci-freshness.json for errors"
+            echo "CI chart groups (see static/ci-freshness.json)" >> "$RUNNER_TEMP/data-failures"
           }
 
       # Every background generator is marked done once it has exited, killed by its timeout at
       # the latest, so this cannot wait forever and nothing is still writing once it finishes.
       #
-      # A generator that failed is run once more here, in the foreground. They share this job's
-      # GraphQL budget with the pull-request statistics, which on a cold start (no snapshot to
-      # reuse) spends all of it and then waits for the reset. Run first, as they once were, the
-      # two always had the budget to themselves; in the background they can lose that race, and
-      # the retry, after the statistics have finished, gives them a second chance on the same
-      # terms as before. Only a failed retry leaves the last published SVG in place.
+      # A failed participation scan gets one foreground retry after the PR
+      # statistics finish, so it no longer competes for their GraphQL budget.
+      # A failed retry keeps the last published SVG and records a data failure.
       - name: Wait for the background generators
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           bg="$RUNNER_TEMP/background"
-          until [ -e "$bg/per-roadmap.done" ] && [ -e "$bg/participation.done" ]; do
+          until [ -e "$bg/participation.done" ]; do
             sleep 10
           done
-          for name in per-roadmap participation; do
+          for name in participation; do
             echo "::group::$name"
             cat "$bg/$name.log"
             echo "::endgroup::"
@@ -358,9 +371,6 @@ jobs:
             echo "$name failed in the background; retrying it now"
             eval "timeout --kill-after=30s 40m $(cat "$bg/$name.cmd")" && continue
             case $name in
-              per-roadmap)
-                echo "::warning::per-roadmap chart generation failed; keeping the last published SVG"
-                echo "per-roadmap chart" >> "$RUNNER_TEMP/data-failures" ;;
               participation)
                 echo "::warning::participation graph generation failed; keeping the last published SVG"
                 echo "participation snapshot" >> "$RUNNER_TEMP/data-failures" ;;

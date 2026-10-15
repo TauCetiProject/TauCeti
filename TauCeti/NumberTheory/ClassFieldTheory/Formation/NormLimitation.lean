@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbelianLayer
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.TrivialLayer
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # Norms along a refinement and the norm limitation theorem
@@ -24,7 +26,15 @@ N_{L/F} = N_{K/F} ∘ N_{L/K},
 
 where `N_{L/K} : A^{V'} → A^V` is the norm between the two top levels
 (`LayerRefinement.topNorm`). Consequently every norm from the larger layer is a norm from the
-smaller one (`LayerRefinement.normSubgroup_le_map`).
+smaller one (`LayerRefinement.normSubgroup_le_map`). The same factorization through the norm
+`Formation.levelNorm` from an intermediate level, which need not be normal, shows that a norm from
+`L` is a norm from every intermediate field `F ⊆ E ⊆ L`
+(`NormalLayer.normSubgroup_le_range_levelNorm`).
+
+The layers `V ◁ G` of the open normal subgroups `V` of `G` all have the ground level `A^G`, the
+level of the ground field. Reading their norm subgroups there gives one family
+`Formation.normSubgroup F V` of subgroups of `A^G`, indexed by `V`, which is monotone in `V`
+(`Formation.normSubgroup_mono`) and equal to `A^G` for `V = G` (`Formation.normSubgroup_top`).
 
 For a class formation the two norm subgroups have finite index equal to the orders of the
 abelianized Galois groups (`ClassFormation.natCard_normQuotient_eq_natCard_abelianization`), so
@@ -34,18 +44,19 @@ maximal abelian sublayer `V · closure [G, G]`, whose Galois group `G ⧸ (V · 
 the same order as `(G ⧸ V)^ab`
 (`OpenNormalSubgroup.natCard_abelianization_gal_eq_degree_maximalAbelianLayer`), this
 is the **norm limitation theorem** (`ClassFormation.normSubgroup_maximalAbelianLayer`): a layer and
-its maximal abelian sublayer have the same norm subgroup. It is a consequence of reciprocity, not of
-an existence theorem, and it is why a norm subgroup can only determine an abelian layer.
+its maximal abelian sublayer have the same norm subgroup in `A^G`. It is a consequence of
+reciprocity, not of an existence theorem, and it is why a norm subgroup can only determine an
+abelian layer.
 
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.LayerRefinement.topNorm`: the norm `A^{V'} → A^V` between the top
   levels of a refinement.
+* `TauCeti.ClassFieldTheory.Formation.normSubgroup`: the norm subgroup of the layer `V ◁ G`, read
+  in the level `A^G`.
 
 ## Main statements
 
-* `TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`: the norm of a layer is the norm
-  `Formation.levelNorm` between its top and ground levels.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm_apply_coe_eq_explicitCor0Le`: the norm of a layer
   is relative degree-zero corestriction from its top subgroup to its ground subgroup.
 * `TauCeti.ClassFieldTheory.LayerRefinement.topNorm_trans`: top-level norms compose along a
@@ -54,6 +65,13 @@ an existence theorem, and it is why a norm subgroup can only determine an abelia
   along a refinement.
 * `TauCeti.ClassFieldTheory.LayerRefinement.normSubgroup_le_map`: refining a layer shrinks its
   norm subgroup.
+* `TauCeti.ClassFieldTheory.Formation.mem_normSubgroup_iff_mem_map`: the norm subgroup of `V ◁ G`
+  read in the ground level of a refinement `V' ◁ G`.
+* `TauCeti.ClassFieldTheory.Formation.normSubgroup_mono`: the norm subgroup of `V ◁ G` is monotone
+  in `V`.
+* `TauCeti.ClassFieldTheory.NormalLayer.normSubgroup_le_range_levelNorm` and
+  `TauCeti.ClassFieldTheory.Formation.normSubgroup_le_range_levelNorm`: a norm from a layer is a
+  norm from every intermediate level, normal or not.
 * `TauCeti.ClassFieldTheory.ClassFormation.map_normSubgroup_eq_iff`: in a class formation a
   refinement keeps the norm subgroup exactly when it keeps the order of the abelianized Galois
   group.
@@ -81,18 +99,6 @@ namespace NormalLayer
 
 variable (L : NormalLayer G) (F : Formation G)
 
-/-- The norm `N_{U/V} : A^V → A^U` of a layer is the norm `Formation.levelNorm` between its top
-and ground levels. -/
-theorem toAddMonoidHom_norm : (L.norm F).toAddMonoidHom = F.levelNorm L.top_le_ground := by
-  ext x
-  rw [LinearMap.toAddMonoidHom_coe, norm_apply_coe, Formation.levelNorm_apply_coe,
-    finsum_eq_sum_of_fintype]
-  -- Both sides sum over the cosets `U ⧸ V`, which is the Galois group of the layer; the term of a
-  -- coset is the action of any of its representatives.
-  refine Fintype.sum_equiv (Equiv.refl _) _ _ fun γ ↦ ?_
-  conv_lhs => rw [← QuotientGroup.out_eq' γ]
-  rw [Equiv.refl_apply, NormalLayer.rep_ρ_mk_apply_coe]
-
 -- `dsimp% only` on the left-hand side, as explained in the implementation notes of
 -- `Formation/Basic.lean`.
 /-- The norm `N_{U/V} : A^V → A^U` of a layer is Tau Ceti's relative degree-zero corestriction
@@ -104,6 +110,17 @@ theorem norm_apply_coe_eq_explicitCor0Le (x : F.level L.top) :
         (OpenSubgroup.toSubgroup_le.2 L.top_le_ground) (F.levelEquivH0 L.top x) : F.toRep.V) := by
   rw [← F.levelEquivH0_levelNorm L.top_le_ground, ← toAddMonoidHom_norm,
     Formation.levelEquivH0_apply_coe, LinearMap.toAddMonoidHom_coe]
+
+/-- **A norm from a layer is a norm from every intermediate level.** If `V ≤ W ≤ U` for the layer
+`V ◁ U`, then `N_{U/V}(A^V) ⊆ N_{U/W}(A^W)`, the subgroup `W` not being required to be normal in
+`U`: in field notation, for `F ⊆ E ⊆ K` with `K/F` Galois, a norm from `K` is a norm from `E`. -/
+theorem normSubgroup_le_range_levelNorm {W : OpenSubgroup G} (hT : L.top ≤ W)
+    (hW : W ≤ L.ground) : (L.normSubgroup F).toAddSubgroup ≤ (F.levelNorm hW).range := by
+  intro y hy
+  obtain ⟨x, rfl⟩ := (L.mem_normSubgroup F).1 hy
+  refine ⟨F.levelNorm hT x, ?_⟩
+  rw [← AddMonoidHom.comp_apply, ← F.levelNorm_trans, ← toAddMonoidHom_norm,
+    LinearMap.toAddMonoidHom_coe]
 
 end NormalLayer
 
@@ -169,6 +186,83 @@ theorem normSubgroup_le_map :
 
 end LayerRefinement
 
+/-! ### The norm subgroups of the layers of open normal subgroups -/
+
+namespace Formation
+
+variable (F : Formation G)
+
+/-- The **norm subgroup** of the layer `V ◁ G` of an open normal subgroup `V`, read in the level
+`A^G` of the whole group through `NormalLayer.groundEquivOfOpenNormal`. In field notation it is
+`N_{L/K}(A_L) ⊆ A_K` for the finite Galois extension `L/K` cut out by `V`. Unlike
+`NormalLayer.normSubgroup`, which lives in the ground level of its own layer, these subgroups share
+one carrier, so the norm subgroups of different `V` can be compared. -/
+def normSubgroup (V : OpenNormalSubgroup G) : Submodule ℤ (F.level ⊤) :=
+  ((NormalLayer.ofOpenNormal V).normSubgroup F).comap
+    (NormalLayer.groundEquivOfOpenNormal F V).toLinearMap
+
+variable {F} in
+/-- An element of `A^G` lies in the norm subgroup of `V` exactly when, read in the ground level of
+the layer `V ◁ G`, it lies in the norm subgroup of that layer. -/
+theorem mem_normSubgroup {V : OpenNormalSubgroup G} {a : F.level ⊤} :
+    a ∈ F.normSubgroup V ↔
+      NormalLayer.groundEquivOfOpenNormal F V a ∈ (NormalLayer.ofOpenNormal V).normSubgroup F :=
+  Iff.rfl
+
+variable {F} in
+/-- For `V' ≤ V`, an element of `A^G` lies in the norm subgroup of `V` exactly when, read in the
+ground level of the finer layer `V' ◁ G`, it lies in the norm subgroup of `V ◁ G` moved there by
+the ground-level identification of the refinement. -/
+theorem mem_normSubgroup_iff_mem_map {V V' : OpenNormalSubgroup G} (h : V' ≤ V)
+    {a : F.level ⊤} :
+    a ∈ F.normSubgroup V ↔ NormalLayer.groundEquivOfOpenNormal F V' a ∈
+      ((NormalLayer.ofOpenNormal V).normSubgroup F).map
+        ((LayerRefinement.ofOpenNormal h).groundEquiv F).toLinearMap := by
+  rw [mem_normSubgroup, ← LayerRefinement.groundEquiv_groundEquivOfOpenNormal F h a]
+  exact ⟨fun ha ↦ ⟨_, ha, rfl⟩,
+    fun ⟨_, hy, hya⟩ ↦ (LayerRefinement.groundEquiv _ F).injective hya ▸ hy⟩
+
+/-- **Norm subgroups are monotone in the open normal subgroup.** If `V' ≤ V`, then the extension
+cut out by `V'` contains the one cut out by `V`, and every norm from the larger extension is a norm
+from the smaller one. -/
+theorem normSubgroup_mono : Monotone F.normSubgroup := fun _ _ h _ ha ↦
+  (mem_normSubgroup_iff_mem_map h).2 ((LayerRefinement.ofOpenNormal h).normSubgroup_le_map F ha)
+
+/-- **The layer of the whole group has the whole level `A^G` as its norm subgroup**: it cuts out the
+ground field itself, whose norm to itself is the identity. -/
+@[simp]
+theorem normSubgroup_top : F.normSubgroup (openNormalSubgroupTop G) = ⊤ := by
+  have hV : (NormalLayer.ofOpenNormal (openNormalSubgroupTop G)).top =
+      (NormalLayer.ofOpenNormal (openNormalSubgroupTop G)).ground := by
+    rw [NormalLayer.top_ofOpenNormal, NormalLayer.ground_ofOpenNormal]
+    exact OpenSubgroup.toSubgroup_injective (openNormalSubgroupTop_toSubgroup G)
+  rw [normSubgroup, NormalLayer.normSubgroup_eq_top_of_top_eq_ground _ F hV, Submodule.comap_top]
+
+/-- **A norm from the layer of `V` is a norm from every open subgroup containing `V`.** For an open
+subgroup `W ≥ V`, not necessarily normal, the norm subgroup of `V ◁ G` lies in the image of the
+norm `N_{G/W} : A^W → A^G`: in field notation, for a finite extension `E/K` inside the Galois
+extension `L/K` cut out by `V`, `N_{L/K}(A_L) ⊆ N_{E/K}(A_E)`. -/
+theorem normSubgroup_le_range_levelNorm {V : OpenNormalSubgroup G} {W : OpenSubgroup G}
+    (h : V.toOpenSubgroup ≤ W) :
+    (F.normSubgroup V).toAddSubgroup ≤ (F.levelNorm (le_top : W ≤ ⊤)).range := by
+  intro a ha
+  have hW : W ≤ (NormalLayer.ofOpenNormal V).ground := by
+    rw [NormalLayer.ground_ofOpenNormal]
+    exact le_top
+  obtain ⟨y, hy⟩ := NormalLayer.normSubgroup_le_range_levelNorm _ F
+    (by rwa [NormalLayer.top_ofOpenNormal]) hW (mem_normSubgroup.1 ha)
+  refine ⟨y, Subtype.ext ?_⟩
+  -- The ground subgroup of `V ◁ G` is `⊤` only propositionally, so the norm from `A^W` to it and
+  -- the norm from `A^W` to `A^G` are compared on the ambient module after substituting.
+  have key : ∀ {U U' : OpenSubgroup G} (_ : U = U') (hU : W ≤ U) (hU' : W ≤ U'),
+      (F.levelNorm hU y : F.toRep.V) = (F.levelNorm hU' y : F.toRep.V) := by
+    rintro U _ rfl hU hU'
+    rfl
+  rw [key (NormalLayer.ground_ofOpenNormal V).symm le_top hW, hy,
+    NormalLayer.groundEquivOfOpenNormal_apply_coe]
+
+end Formation
+
 /-! ### Norm limitation -/
 
 namespace ClassFormation
@@ -204,17 +298,21 @@ theorem map_normSubgroup_eq_iff (T : LayerRefinement old new) :
 
 include cf in
 /-- **Norm limitation.** In a class formation, the layer `V ◁ G` of an open normal subgroup and
-its maximal abelian sublayer `V · closure [G, G]` have the same norm subgroup in the common ground
-level `A^G` (identified by `LayerRefinement.groundEquiv`, which moves no element): the norm group
-of a finite Galois extension is the norm group of its maximal abelian subextension. -/
+its maximal abelian sublayer `V · closure [G, G]` have the same norm subgroup in `A^G`: the norm
+group of a finite Galois extension is the norm group of its maximal abelian subextension. -/
 theorem normSubgroup_maximalAbelianLayer (V : OpenNormalSubgroup G) :
-    ((NormalLayer.ofOpenNormal V.maximalAbelianLayer).normSubgroup F).map
-        ((LayerRefinement.ofOpenNormal V.le_maximalAbelianLayer).groundEquiv F).toLinearMap =
-      (NormalLayer.ofOpenNormal V).normSubgroup F := by
-  refine (cf.map_normSubgroup_eq_iff _).2 ?_
-  rw [V.natCard_abelianization_gal_eq_degree_maximalAbelianLayer,
-    Nat.card_congr (abelianizationGalEquiv V.isAbelianClassFieldLayer_maximalAbelianLayer).toEquiv,
-    NormalLayer.degree_eq_natCard_gal]
+    F.normSubgroup V.maximalAbelianLayer = F.normSubgroup V := by
+  let T := LayerRefinement.ofOpenNormal V.le_maximalAbelianLayer
+  have hlim : ((NormalLayer.ofOpenNormal V.maximalAbelianLayer).normSubgroup F).map
+      (T.groundEquiv F).toLinearMap = (NormalLayer.ofOpenNormal V).normSubgroup F := by
+    refine (cf.map_normSubgroup_eq_iff T).2 ?_
+    rw [V.natCard_abelianization_gal_eq_degree_maximalAbelianLayer,
+      Nat.card_congr
+        (abelianizationGalEquiv V.isAbelianClassFieldLayer_maximalAbelianLayer).toEquiv,
+      NormalLayer.degree_eq_natCard_gal]
+  ext a
+  rw [Formation.mem_normSubgroup_iff_mem_map V.le_maximalAbelianLayer, hlim,
+    Formation.mem_normSubgroup]
 
 end ClassFormation
 

@@ -31,6 +31,9 @@ simple-root elements then move a coordinate vector across the connected minuscul
   identified with concrete carrier points.
 * `TauCeti.E7Minuscule.points_mulVec_mem`: invariant submodules are stable under concrete carrier
   points.
+* `TauCeti.E7Minuscule.isSimpleOrder_of_minusculeWeights_of_rootSubgroupPoints`: a comodule
+  with the minuscule weight decomposition whose subcomodules are stable under the numbered root
+  matrices is simple.
 * `TauCeti.E7Minuscule.instIsSimpleOrderSubcomodule`: simplicity over a field.
 
 ## References
@@ -174,7 +177,7 @@ private theorem rootSubgroupPoints_mulVec_mem
   exact points_mulVec_mem k N (rootSubgroupPoints i k (Multiplicative.ofAdd 1)) hw
 
 /-- The character of the weight torus corresponding to a minuscule-basis index. -/
-private noncomputable abbrev minusculeCharacter (a : Fin 56) :
+noncomputable abbrev minusculeCharacter (a : Fin 56) :
     Multiplicative (Fin 7 →₀ ℤ) :=
   SplitTorus.weightCharacter (DynkinType.e7MinusculeWeight a)
 
@@ -231,31 +234,52 @@ private theorem negativeRoot_mulVec_single_sub (i : Fin 7) (a : Fin 56)
 /-- Invariance under the two simple-root points makes membership of coordinate basis vectors
 stable under every simple reflection. -/
 private theorem single_reflection_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 56 → k))
+    (N : Submodule k (Fin 56 → k))
+    (hroot : ∀ (i : Fin 7 ⊕ Fin 7) (w : Fin 56 → k), w ∈ N →
+      ((rootSubgroupPoints i k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 56) k) : Matrix (Fin 56) (Fin 56) k) *ᵥ w ∈ N)
     (a : Fin 56) (i : Fin 7) (ha : Pi.single a 1 ∈ N) :
     Pi.single (DynkinType.e7MinusculeReflection i a) 1 ∈ N := by
   rcases DynkinType.e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with
     hneg | hzero | hpos
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inl i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inl i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
   · rw [(DynkinType.e7MinusculeReflection_eq_self_iff i a).2 hzero]
     exact ha
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inr i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inr i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [negativeRoot_mulVec_single_sub k i a hpos] at hsub
+
+/-- A comodule with the type-`E₇` minuscule weight decomposition is simple if its subcomodules
+are stable under the numbered positive and negative minuscule root matrices at parameter one.
+This applies both to the integral carrier's specialization and to the subgroup generated directly
+over the field. -/
+theorem isSimpleOrder_of_minusculeWeights_of_rootSubgroupPoints
+    {H : Type*} [AddCommGroup H] [Module k H] [Coalgebra k H]
+    [Comodule k H (Fin 56 → k)]
+    (f : H →ₗc[k] MonoidAlgebra k (Multiplicative (Fin 7 →₀ ℤ)))
+    (hweights : Comodule.Corestrict f =
+      Comodule.ofWeights (Pi.basisFun k (Fin 56)) minusculeCharacter)
+    (hroot : ∀ (N : Subcomodule k H (Fin 56 → k)) (i : Fin 7 ⊕ Fin 7)
+      (w : Fin 56 → k), w ∈ N →
+      ((rootSubgroupPoints i k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 56) k) : Matrix (Fin 56) (Fin 56) k) *ᵥ w ∈ N) :
+    IsSimpleOrder (Subcomodule k H (Fin 56 → k)) :=
+  Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights f minusculeCharacter
+    minusculeCharacter_injective hweights
+    (fun i a ↦ DynkinType.e7MinusculeReflection i a)
+    (fun i ↦ DynkinType.e7MinusculeReflection_apply_apply i)
+    (fun N a i ↦ single_reflection_mem k N.toSubmodule (hroot N) a i) 0
+    DynkinType.exists_e7MinusculeReflections_eq
 
 /-- **The standard comodule of the specialized type-`E₇` minuscule carrier is simple over
 every field.** -/
 instance instIsSimpleOrderSubcomodule :
-    IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 56 → k)) := by
-  exact Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights
-    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom minusculeCharacter
-    minusculeCharacter_injective (torusCorestrict_eq_ofWeights k)
-    (fun i a ↦ DynkinType.e7MinusculeReflection i a)
-    (fun i ↦ DynkinType.e7MinusculeReflection_apply_apply i)
-    (fun N a i ↦ single_reflection_mem k N a i) 0
-    DynkinType.exists_e7MinusculeReflections_eq
+    IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 56 → k)) :=
+  isSimpleOrder_of_minusculeWeights_of_rootSubgroupPoints k
+    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom (torusCorestrict_eq_ofWeights k)
+    (fun N i _ hw ↦ rootSubgroupPoints_mulVec_mem k N i hw)
 
 end Simple
 

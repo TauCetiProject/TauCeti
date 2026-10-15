@@ -19,7 +19,7 @@ def fleetGraphs : Html := {{
   </figure>
 }}
 
-/-- One daily chart, full width. -/
+/-- One chart, full width. -/
 def dailyChart (file alt caption : String) : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src={{s!"static/{file}"}} alt={{alt}} loading="lazy"/>
@@ -43,8 +43,14 @@ def minutesGraph : Html := dailyChart "ci-runner-minutes.svg"
   "Build minutes per day on Namespace and on GitHub-hosted runners, and cancelled PR builds"
   "Build minutes per day."
 def queueGraph : Html := dailyChart "ci-merge-queue.svg"
-  "Merge-queue builds per day by outcome, and PRs landed"
-  "Merge-queue builds by outcome; the dashed line is PRs landed on main."
+  "GitHub merge-queue and bors builds per day by outcome, and PRs landed"
+  "GitHub merge-queue and bors staging builds by outcome; the dashed line is PR arrivals on main."
+def queueSizeGraph : Html := dailyChart "ci-queue-size.svg"
+  "Ready-to-merge pull-request backlog over time, with gaps where observations are missing"
+  "Observed ready-to-merge PR backlog. Gaps indicate missing observations."
+def stagingGraph : Html := dailyChart "ci-bors-staging.svg"
+  "Bors staging runs over time, with PRs per batch on the vertical axis and green success or red failure dots"
+  "Each dot is one staging run: green for success, red for failure, grey for cancelled or other outcomes."
 def pickerGraph : Html := dailyChart "ci-picker.svg"
   "Share of PR builds run on GitHub-hosted runners per day"
   "Share of PR builds the runner picker sent to GitHub-hosted runners."
@@ -56,8 +62,8 @@ is built in a sandbox, on one of two kinds of runner. GitHub-hosted runners cost
 public repository, but the organisation may run only twenty GitHub-hosted jobs at once, across
 all of its repositories. Namespace runners are faster and have no such cap, but every minute is
 paid for. So a pull-request build takes a GitHub runner while one is free and overflows to
-Namespace when they are all taken; the merge queue, which every pull request must pass to land,
-always builds on Namespace.
+Namespace when they are all taken. Merge validation through the GitHub queue or bors runs on
+Namespace; human-reviewed infrastructure changes can land directly.
 
 The timeline below has three panels on one time axis. The top panel shows how many jobs were
 running, averaged over each bin and stacked by runner and kind, against the twenty-job cap on
@@ -69,12 +75,42 @@ the most jobs waiting for a runner at any moment in each bin. The bottom panel s
 wait for a runner among jobs that started in the previous thirty minutes (or the previous bin,
 when bins are longer), for builds and for other jobs separately.
 
+GitHub merge-queue entries also run a performance-gate job, which bors staging builds do not.
+That difference affects the fleet and runner-minute totals across the transition. Pilot and
+unidentified bors builds remain in the other-job and cost totals.
+
 :::blob fleetGraphs
+:::
+
+# Merge queue and staging runs
+
+How many pull requests are waiting to land, and how large are the batches bors tests?
+These timelines show up to the last thirty days, including the current partial UTC day.
+The backlog counts distinct PRs in the recorded ready-to-merge snapshots, including PRs
+being tested. The label is a readiness hint; admission still checks the current head's CI,
+reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
+Initial candidate scans after a bot restart are omitted when their incompleteness is recorded.
+Older snapshots without that marker can briefly undercount.
+
+:::blob queueSizeGraph
+:::
+
+Each staging dot is placed at the run's creation time, with the number of distinct PRs in its
+batch on the vertical axis. The colour records the overall workflow result, including cache
+publication, using the latest recorded attempt if the run was retried. Separate runs of the
+same batch have separate dots. Only production main-branch staging runs with known batch
+membership and a terminal result are shown; pilot and unidentified dispatches are excluded.
+Shaded intervals mark incomplete run inventory: recorded dots are shown there, but missing dots
+do not establish that no runs occurred.
+
+:::blob stagingGraph
 :::
 
 # Day by day
 
 The charts below give one point per complete UTC day, for up to the last ninety days.
+Each uses its own continuous coverage interval and stops at the first gap; partially covered
+days are omitted.
 
 How long does a build take, and how long does it wait before starting? A pull-request build
 restores what it can from the artifact cache and compiles the rest, then runs the audits and lints.
@@ -112,10 +148,16 @@ newer push to the same pull request replaced before it finished, whose minutes b
 :::blob pickerGraph
 :::
 
-How is the merge queue doing? The queue builds each pull request together with those ahead of it,
-and lands them only if that combined build passes. When one fails, its pull request leaves the queue
-and the entries behind it, whose builds included it, are built again. The bars count build jobs,
-including retries.
+How is merge validation doing? The chart includes both GitHub's merge queue and bors staging builds.
+Both test combined changes before they land on main. GitHub rebuilds the entries behind a failed
+entry; bors splits failed batches to isolate the failing pull requests. The bars count build jobs,
+including retries, so a bors batch containing several PRs is one build. Pilot batches and bors
+builds whose target branch is unknown are excluded from this chart.
+
+The dashed line counts each PR once, on the date of the earliest recorded main-push event proving
+its commit reached main. The event time is an upper bound on arrival; coalesced pushes can
+make that bound looser for ancestor commits. The staging commit's creation time is not used. PRs without arrival evidence are excluded from that
+line. Direct merges of human-reviewed infrastructure PRs are included.
 
 :::blob queueGraph
 :::
@@ -125,8 +167,17 @@ including retries.
 The data comes from [TauCetiCI](https://github.com/TauCetiProject/TauCetiCI), which records
 every GitHub Actions run in the organisation: the commits each build tested, the runner, the
 queue and run times of its jobs, and why failed builds failed. Its database is published as a
-release there for anyone who wants to ask their own questions. The charts end where that record
-is complete, which can be a few hours behind the present.
+release there for anyone who wants to ask their own questions. Each chart uses its own source
+coverage: fleet charts require organisation-wide job history, daily build charts require Tau Ceti
+build jobs, failure and phase charts require detailed enrichment, and the merge timelines use
+the latest observations and recorded runs. Explicitly unavailable records are reported as source
+gaps. A backlog in one stream does not stop the others. The
+[freshness report](static/ci-freshness.json) distinguishes source coverage from the coverage
+used for published charts. Dated daily charts can incorporate historical corrections even while
+their coverage is stale; the freshness check still reports that lag. Stale fleet and merge timelines
+retain their previous assets. When source data cannot be read or rendered, the previous charts
+are retained. A fallback's
+published cutoff may be unknown when no earlier report recorded it.
 
 Builds are recorded job by job. The label, notification and merge-bot workflows run thousands of
 times a day, so for them only one run in four is recorded job by job, and each of those stands

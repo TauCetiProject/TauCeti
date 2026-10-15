@@ -51,9 +51,9 @@ open SimpleGraph
 
 namespace IsFiniteType
 
-variable {B : Type*} [Fintype B] [DecidableEq B] {A : Matrix B B ℤ}
+variable {B : Type*} [DecidableEq B] {A : Matrix B B ℤ}
 
-omit [Fintype B] [DecidableEq B] in
+omit [DecidableEq B] in
 /-- Transposing a matrix does not change its unoriented diagram. -/
 private lemma diagramGraph_transpose (A : Matrix B B ℤ) :
     diagramGraph A.transpose = diagramGraph A := by
@@ -75,7 +75,7 @@ private def forkedPathEmbedding {u v x : B} {n : ℕ} (r : (diagramGraph A).Walk
   | none => x
   | some i => r.getVert i
 
-omit [Fintype B] [DecidableEq B] in
+omit [DecidableEq B] in
 /-- The forked-path indexing is injective when the extra vertex lies off the path. -/
 private lemma forkedPathEmbedding_injective {u v x : B} {n : ℕ}
     {r : (diagramGraph A).Walk u v} (hr : r.IsPath) (hlen : r.length = n + 2)
@@ -149,7 +149,7 @@ private lemma submatrix_forkedPath_le_affineBCartanMatrix
       exact fun hEq ↦ hij (congrArg Fin.val (Option.some.inj (he hEq)))
 
 /-- A branch vertex and a directed double edge produce a forbidden affine dominated submatrix. -/
-private lemma false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
+private lemma false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two [Fintype B]
     (h : IsFiniteType A) {c near far : B} (hreach : (diagramGraph A).Reachable c near)
     (hc : (diagramGraph A).degree c = 3) (hnf : (diagramGraph A).Adj near far)
     (hdist : (diagramGraph A).dist c far = (diagramGraph A).dist c near + 1)
@@ -223,7 +223,7 @@ private lemma false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
 /-- **A finite-type component containing a double edge has maximum degree two.**
 
 Every vertex reachable from the double edge has degree at most two. -/
-theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two (h : IsFiniteType A)
+theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : IsFiniteType A)
     {u v c : B} (hreach : (diagramGraph A).Reachable c u) (huv : A u v * A v u = 2) :
     (diagramGraph A).degree c ≤ 2 := by
   by_contra hdeg
@@ -249,7 +249,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two (h : IsFiniteType A
   rcases h.isAcyclic_diagramGraph.dist_eq_dist_add_one_of_adj_of_reachable
       c huvAdj hreach with hdist | hdist
   · rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
-      ⟨huvEntry, hvuEntry⟩ | ⟨huvEntry, hvuEntry⟩
+      ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
         (c := c) (near := v) (far := u) h hreachV hc huvAdj.symm hdist hvuEntry
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
@@ -258,7 +258,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two (h : IsFiniteType A
         (by rw [hgraph]; exact huvAdj.symm) (by rw [hgraph]; exact hdist)
         (by simpa using huvEntry)
   · rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
-      ⟨huvEntry, hvuEntry⟩ | ⟨huvEntry, hvuEntry⟩
+      ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two h.transpose
         (c := c) (near := u) (far := v)
         (by rw [hgraph]; exact hreach) (by rw [hdegree]; exact hc)
@@ -271,7 +271,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two (h : IsFiniteType A
 
 Thus the component has no branch vertex.  This is the extraction step that makes the branchless
 double-edge classification apply without an extra shape hypothesis. -/
-theorem degree_le_two_of_apply_mul_apply_eq_two (h : IsFiniteType A)
+theorem degree_le_two_of_apply_mul_apply_eq_two [Fintype B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) {u v : B} (huv : A u v * A v u = 2) (c : B) :
     (diagramGraph A).degree c ≤ 2 :=
   h.degree_le_two_of_reachable_of_apply_mul_apply_eq_two (hconn c u) huv
@@ -289,6 +289,8 @@ theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_apply_mul_apply_eq_two
         ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) :=
   by
     classical
+    have := h.finite
+    have : Fintype B := Fintype.ofFinite B
     exact h.exists_equiv_forall_eq_doubleEdgeCartanMatrix_eq_one_or_eq_one_or_eq_two_two
       hconn (h.degree_le_two_of_apply_mul_apply_eq_two hconn huv) huv
 

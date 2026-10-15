@@ -124,6 +124,61 @@ theorem vertexAngle_inl_eq_interiorAngle (A : ℍ) (q r : ℍ ⊕ OnePoint ℝ) 
   rw [vertexAngle_inl, interiorAngle_def, ← rayToward_eq_geodesicBetween,
     ← rayToward_eq_geodesicBetween]
 
+/-- A ray towards a point strictly in the other ray's left half-plane is not on its line. -/
+private theorem rayToward_one_notMem_geodesicBetween_of_mem_extLeftHalfPlane
+    {A : ℍ} {q r : ℍ ⊕ OnePoint ℝ} (hr : r ∈ extLeftHalfPlane (rayToward A q)) :
+    geodesicLine (rayToward A r) 1 ∉
+      Set.range (geodesicLine (geodesicBetween A (geodesicLine (rayToward A q) 1))) := by
+  have hAr : (.inl A : ℍ ⊕ OnePoint ℝ) ≠ r := by
+    intro h
+    rw [← h, inl_mem_extLeftHalfPlane_iff] at hr
+    exact notMem_range_geodesicLine_of_mem_leftHalfPlane hr
+      ⟨0, geodesicLine_rayToward_zero A q⟩
+  rw [← rayToward_eq_geodesicBetween]
+  rintro ⟨t, ht⟩
+  have ht₀ : t ≠ 0 := by
+    intro h
+    rw [h, geodesicLine_rayToward_zero] at ht
+    exact zero_ne_one (geodesicLine_injective _
+      ((geodesicLine_rayToward_zero A r).trans ht))
+  have hline := rayToward_eq_geodesicBetween A r
+  rcases ht₀.lt_or_gt with hneg | hpos
+  · have hrev : rayToward A r = rayToward A q * pslS := by
+      calc
+        rayToward A r = geodesicBetween (geodesicLine (rayToward A q * pslS) 0)
+            (geodesicLine (rayToward A q * pslS) (-t)) := by
+          simpa only [geodesicLine_mul_pslS, neg_zero, neg_neg,
+            geodesicLine_rayToward_zero, ht] using hline
+        _ = rayToward A q * pslS := by
+          rw [geodesicBetween_geodesicLine_of_lt _ (neg_pos.2 hneg)]
+          simp
+    have hg := isGeodesicFromTo_mul_pslS_iff.1
+      (hrev ▸ isGeodesicFromTo_rayToward hAr)
+    exact hg.left_notMem_extLeftHalfPlane hr
+  · have heq : rayToward A r = rayToward A q := by
+      calc
+        rayToward A r = geodesicBetween (geodesicLine (rayToward A q) 0)
+            (geodesicLine (rayToward A q) t) := by
+          simpa only [geodesicLine_rayToward_zero, ht] using hline
+        _ = rayToward A q := by
+          rw [geodesicBetween_geodesicLine_of_lt _ hpos]
+          simp
+    exact (heq ▸ isGeodesicFromTo_rayToward hAr).right_notMem_extLeftHalfPlane hr
+
+/-- The angle at a finite vertex is positive when the second target lies strictly to the left
+of the ray towards the first target. -/
+theorem vertexAngle_pos_of_mem_extLeftHalfPlane {A : ℍ} {q r : ℍ ⊕ OnePoint ℝ}
+    (hr : r ∈ extLeftHalfPlane (rayToward A q)) : 0 < vertexAngle (.inl A) q r := by
+  rw [vertexAngle_inl_eq_interiorAngle]
+  exact interiorAngle_pos (rayToward_one_notMem_geodesicBetween_of_mem_extLeftHalfPlane hr)
+
+/-- The angle at a finite vertex is less than `π` when the second target lies strictly to the
+left of the ray towards the first target. -/
+theorem vertexAngle_lt_pi_of_mem_extLeftHalfPlane {A : ℍ} {q r : ℍ ⊕ OnePoint ℝ}
+    (hr : r ∈ extLeftHalfPlane (rayToward A q)) : vertexAngle (.inl A) q r < π := by
+  rw [vertexAngle_inl_eq_interiorAngle]
+  exact interiorAngle_lt_pi (rayToward_one_notMem_geodesicBetween_of_mem_extLeftHalfPlane hr)
+
 /-- Angles at a vertex are invariant under the action. -/
 theorem vertexAngle_smul (h : PSL(2, ℝ)) {p q r : ℍ ⊕ OnePoint ℝ} (hpq : p ≠ q) (hpr : p ≠ r) :
     vertexAngle (h • p) (h • q) (h • r) = vertexAngle p q r := by

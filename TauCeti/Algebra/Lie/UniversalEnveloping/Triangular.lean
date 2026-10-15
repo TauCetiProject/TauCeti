@@ -21,7 +21,12 @@ For the Borel algebra, the sharper tensor decomposition is available:
 `borelMulEquiv` is the linear equivalence `U(H) ⊗ U(n⁺) ≃ U(𝔟)` given by multiplication.
 It has forward and inverse computation rules on products. This factorization separates the
 Cartan part from the positive root operators in triangular decomposition and highest weight
-constructions. The three-factor tensor equivalence with `U(L)` is not asserted here.
+constructions.
+
+Combined with the decomposition `L = n⁻ ⊕ 𝔟`, it gives the **triangular decomposition**
+`triangularMulEquiv : U(n⁻) ⊗ (U(H) ⊗ U(n⁺)) ≃ U(L)`, `f ⊗ h ⊗ e ↦ f h e`: every element of `U(L)`
+is uniquely a sum of such ordered products, up to the relations of the tensor product. Its inverse
+is what the Harish-Chandra projection `U(L) → U(H)` is built from.
 
 ## References
 
@@ -126,5 +131,39 @@ theorem borelMulEquiv_symm_mul (h : U H) (n : U (positiveNilradical H b)) :
         UniversalEnvelopingAlgebra.map K
           (LieSubalgebra.inclusion (positiveNilradical_le_borelSubalgebra H b)) n) = h ⊗ₜ n := by
   rw [← borelMulEquiv_tmul H b, LinearEquiv.symm_apply_apply]
+
+/-- **The triangular decomposition of `U(L)`**: multiplication identifies
+`U(n⁻) ⊗ (U(H) ⊗ U(n⁺))` with `U(L)`, sending `f ⊗ h ⊗ e` to the ordered product `f h e` of the
+images of the three factors (`TauCeti.UniversalEnvelopingAlgebra.triangularMulEquiv_tmul`). It is
+the Borel decomposition `TauCeti.UniversalEnvelopingAlgebra.borelMulEquiv` followed by the
+decomposition of `U(L)` along `L = n⁻ ⊕ 𝔟`. -/
+noncomputable def triangularMulEquiv :
+    U (negativeNilradical H b) ⊗[K] (U H ⊗[K] U (positiveNilradical H b)) ≃ₗ[K] U L :=
+  (TensorProduct.congr (LinearEquiv.refl K _) (borelMulEquiv H b)).trans
+    (LieSubalgebra.mulEquiv _ _ (isCompl_negativeNilradical_borelSubalgebra H b))
+
+/-- The triangular decomposition sends a pure tensor to the ordered product of its three
+images. -/
+@[simp]
+theorem triangularMulEquiv_tmul (f : U (negativeNilradical H b)) (h : U H)
+    (e : U (positiveNilradical H b)) :
+    triangularMulEquiv H b (f ⊗ₜ (h ⊗ₜ e)) =
+      UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
+        UniversalEnvelopingAlgebra.map K H.incl h *
+          UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e := by
+  simp only [triangularMulEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
+    LinearEquiv.refl_apply, borelMulEquiv_tmul, LieSubalgebra.mulEquiv_tmul, map_mul,
+    ← AlgHom.comp_apply, map_incl_comp_map_inclusion, mul_assoc]
+
+/-- The inverse triangular decomposition recovers the three factors of an ordered product. -/
+@[simp]
+theorem triangularMulEquiv_symm_mul_mul (f : U (negativeNilradical H b)) (h : U H)
+    (e : U (positiveNilradical H b)) :
+    (triangularMulEquiv H b).symm
+        (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
+          UniversalEnvelopingAlgebra.map K H.incl h *
+            UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e) =
+      f ⊗ₜ (h ⊗ₜ e) := by
+  rw [← triangularMulEquiv_tmul H b, LinearEquiv.symm_apply_apply]
 
 end TauCeti.UniversalEnvelopingAlgebra

@@ -77,11 +77,11 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.ModularForm.levelRaise_mem_modFormCharSpace`,
   `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace`: the `N = d * M` case, the transport to
   exactly the raised level.
-* `TauCeti.ModularForm.ofLe_mem_modFormCharSpace`,
-  `TauCeti.CuspForm.ofLe_mem_cuspFormCharSpace`: the same transport for the degeneracy map
+* `TauCeti.ModularForm.restrict_mem_modFormCharSpace`,
+  `TauCeti.CuspForm.restrict_mem_cuspFormCharSpace`: the same transport for the degeneracy map
   `V₁` at a divisor. Reading a form of level `M` as a form of level `N` for any `M ∣ N` carries
   `M_k(Γ₁(M), χ)` into `M_k(Γ₁(N), χ ∘ ZMod.unitsMap)`, and likewise for `S_k`. These are the
-  `d = 1` case of the two theorems above, restated for the subgroup inclusion `ofLe`; the
+  `d = 1` case of the two theorems above, restated for Mathlib's restriction `restrict`; the
   restatement is exactly `ModularForm.levelRaise_one` and `CuspForm.levelRaise_one`, so no
   nebentypus argument is repeated for them.
 * `TauCeti.slash_conjScale_eq_smul_of_slash_scaleGL`,
@@ -284,7 +284,7 @@ lemma le_conjAct_inv_scaleGL_mul {d e : ℕ} [NeZero d] [NeZero e]
 
 /-- At `d = 1` the conjugation condition *is* the subgroup inclusion: `diag(1, 1)` is the
 identity, so `𝒢' ≤ diag(1, 1)⁻¹ 𝒢 diag(1, 1)` says no more than `𝒢' ≤ 𝒢`. This is what lets
-`levelRaise_one` name its `ofLe` without carrying a second inclusion hypothesis. -/
+`levelRaise_one` name its `restrict` without carrying a second inclusion hypothesis. -/
 lemma le_of_le_conjAct_inv_scaleGL_one (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢) :
     𝒢' ≤ 𝒢 := by
   simpa using h
@@ -295,13 +295,13 @@ namespace ModularForm
 forms for `𝒢` to modular forms for a group `𝒢'` conjugated into `𝒢` by `diag(d, 1)`. -/
 def levelRaise [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) : ModularForm 𝒢' k :=
-  ((d : ℂ) ^ (1 - k)) • _root_.ModularForm.ofLe h (_root_.ModularForm.translate f (scaleGL d))
+  ((d : ℂ) ^ (1 - k)) • _root_.ModularForm.restrict h (_root_.ModularForm.translate f (scaleGL d))
 
 lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     ⇑(levelRaise d h f) = (d : ℂ) ^ (1 - k) • (⇑f ∣[k] scaleGL d) := by
   unfold levelRaise
-  rw [FunLike.coe_smul, _root_.ModularForm.coe_ofLe, _root_.ModularForm.coe_translate]
+  rw [FunLike.coe_smul, _root_.ModularForm.coe_restrict, _root_.ModularForm.coe_translate]
 
 /-- **The defining formula for `V_d`**: `(V_d f) τ = f (d τ)`, with no stray power of `d`.
 The algebraic properties of `V_d` all follow from this by `ext`. -/
@@ -350,20 +350,21 @@ lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (s
 
 /-- **`V₁` is the restriction map, as forms.** The pointwise statement of
 `TauCeti.ModularForm.levelRaise_one_apply`, packaged as an equality of modular forms: at `d = 1`
-the level-raising operator *is* `ofLe`. This is what lets a statement about `V_d` be specialised
+the level-raising operator *is* `restrict`. This is what lets a statement about `V_d` be specialised
 to one about restriction along `𝒢' ≤ 𝒢`, rather than reproved for it.
 
-It is stated in the root `ModularForm` namespace, beside `ModularForm.ofLe`, so that dot
+It is stated in the root `ModularForm` namespace, beside `ModularForm.restrict`, so that dot
 notation on a `ModularForm` resolves. -/
 @[simp]
 lemma _root_.ModularForm.levelRaise_one [𝒢'.HasDetOne]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
-    levelRaise 1 h f = _root_.ModularForm.ofLe (le_of_le_conjAct_inv_scaleGL_one h) f :=
+    levelRaise 1 h f = _root_.ModularForm.restrict (le_of_le_conjAct_inv_scaleGL_one h) f :=
   _root_.ModularForm.ext fun τ ↦ (levelRaise_one_apply h f τ).trans
-    (congrFun (_root_.ModularForm.coe_ofLe _ f) τ).symm
+    (congrFun (_root_.ModularForm.coe_restrict _ f) τ).symm
 
--- Not `@[simp]`: `ModularForm.levelRaise_one` already rewrites the left-hand side to `ofLe _ f`,
--- so the `simpNF` linter reports that the left-hand side is not in simp normal form.
+-- Not `@[simp]`: `ModularForm.levelRaise_one` already rewrites the left-hand side to
+-- `restrict _ f`, so the `simpNF` linter reports that the left-hand side is not in simp normal
+-- form.
 /-- **`V₁` at an unchanged level is the identity.** When the invariance group stays `𝒢`, the
 level-raising operator at `d = 1` fixes every modular form. -/
 lemma _root_.ModularForm.levelRaise_one_self [𝒢.HasDetOne]
@@ -387,13 +388,13 @@ namespace CuspForm
 /-- The level-raising (degeneracy) operator `V_d` on cusp forms, `(V_d f) τ = f (d τ)`. -/
 def levelRaise [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) : CuspForm 𝒢' k :=
-  ((d : ℂ) ^ (1 - k)) • _root_.CuspForm.ofLe h (_root_.CuspForm.translate f (scaleGL d))
+  ((d : ℂ) ^ (1 - k)) • _root_.CuspForm.restrict h (_root_.CuspForm.translate f (scaleGL d))
 
 lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(levelRaise d h f) = (d : ℂ) ^ (1 - k) • (⇑f ∣[k] scaleGL d) := by
   unfold levelRaise
-  rw [FunLike.coe_smul, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate_gl]
+  rw [FunLike.coe_smul, _root_.CuspForm.coe_restrict, _root_.CuspForm.coe_translate]
 
 /-- **The defining formula for `V_d` on cusp forms**: `(V_d f) τ = f (d τ)`, with no stray
 power of `d`. -/
@@ -443,20 +444,21 @@ lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (s
 
 /-- **`V₁` is the restriction map, as forms.** The pointwise statement of
 `TauCeti.CuspForm.levelRaise_one_apply`, packaged as an equality of cusp forms: at `d = 1` the
-level-raising operator *is* `ofLe`. This is what lets a statement about `V_d` be specialised to
+level-raising operator *is* `restrict`. This is what lets a statement about `V_d` be specialised to
 one about restriction along `𝒢' ≤ 𝒢`, rather than reproved for it.
 
-It is stated in the root `CuspForm` namespace, beside `CuspForm.ofLe`, so that dot notation
+It is stated in the root `CuspForm` namespace, beside `CuspForm.restrict`, so that dot notation
 on a `CuspForm` resolves. -/
 @[simp]
 lemma _root_.CuspForm.levelRaise_one [𝒢'.HasDetOne]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
-    levelRaise 1 h f = _root_.CuspForm.ofLe (le_of_le_conjAct_inv_scaleGL_one h) f :=
+    levelRaise 1 h f = _root_.CuspForm.restrict (le_of_le_conjAct_inv_scaleGL_one h) f :=
   _root_.CuspForm.ext fun τ ↦ (levelRaise_one_apply h f τ).trans
-    (congrFun (_root_.CuspForm.coe_ofLe _ f) τ).symm
+    (congrFun (_root_.CuspForm.coe_restrict _ f) τ).symm
 
--- Not `@[simp]`: `CuspForm.levelRaise_one` already rewrites the left-hand side to `ofLe _ f`, so
--- the `simpNF` linter reports that the left-hand side is not in simp normal form.
+-- Not `@[simp]`: `CuspForm.levelRaise_one` already rewrites the left-hand side to
+-- `restrict _ f`, so the `simpNF` linter reports that the left-hand side is not in simp normal
+-- form.
 /-- **`V₁` at an unchanged level is the identity.** When the invariance group stays `𝒢`, the
 level-raising operator at `d = 1` fixes every cusp form. -/
 lemma _root_.CuspForm.levelRaise_one_self [𝒢.HasDetOne]
@@ -642,7 +644,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) [NeZero l] (hlN : 
     (ZMod.coe_int_isUnit_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
   obtain ⟨j₀, k, hk⟩ :=
     ZMod.exists_dvd_sub_val_mul l (γ' 0 1 - i * γ' 1 1) (γ' 0 0 - i * γ' 1 0) hunit
-  set j : ℤ := (j₀.val : ℤ) with hj
+  set j : ℤ := (j₀.val : ℤ) with _
   have hdetM : (!![γ' 0 0 - i * γ' 1 0, k; (l : ℤ) * γ' 1 0, γ' 1 1 - γ' 1 0 * j]).det = 1 := by
     rw [Matrix.det_fin_two_of]
     linear_combination hdet + γ' 1 0 * hk
@@ -954,9 +956,9 @@ to exactly `d * M`, the target level here is an arbitrary multiple of `M`.
 Follows `restrictSubgroup_mem_modFormCharSpace` of the AINTLIB `LeanModularForms` project
 (`Eigenforms/MainLemma.lean`, <https://github.com/CBirkbeck/AINTLIB>, commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache-2.0). -/
-theorem ModularForm.ofLe_mem_modFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
+theorem ModularForm.restrict_mem_modFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
     {f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
-    _root_.ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
+    _root_.ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
       modFormCharSpace k (χ.comp (ZMod.unitsMap h)) := by
   have hdvd : 1 * M ∣ N := by rwa [one_mul]
   have := levelRaise_mem_modFormCharSpace_of_dvd hdvd χ hf
@@ -964,12 +966,12 @@ theorem ModularForm.ofLe_mem_modFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* 
 
 /-- **The nebentypus of a level restriction (cusp forms).** For `M ∣ N`, reading a cusp form of
 level `M` as a cusp form of level `N` carries `S_k(Γ₁(M), χ)` into
-`S_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`. Together with `TauCeti.ofLe_mem_cuspFormsOld` this
+`S_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`. Together with `TauCeti.restrict_mem_cuspFormsOld` this
 places the restriction of a `χ`-form of proper divisor level inside the old subspace, with a
 known character. -/
-theorem CuspForm.ofLe_mem_cuspFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
+theorem CuspForm.restrict_mem_cuspFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
     {f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
-    _root_.CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
+    _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
       cuspFormCharSpace k (χ.comp (ZMod.unitsMap h)) := by
   have hdvd : 1 * M ∣ N := by rwa [one_mul]
   have := levelRaise_mem_cuspFormCharSpace_of_dvd hdvd χ hf

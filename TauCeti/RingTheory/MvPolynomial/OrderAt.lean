@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Taylor
+public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 
 /-!
@@ -24,10 +28,13 @@ of order-invariant cylindrical algebraic decompositions in McCallum's projection
 each polynomial is required to have constant order on each cell, which is stronger than constant
 sign.
 
-Over a ring without additive torsion, such as `ℝ`, the order is detected by partial derivatives:
+Over a commutative semiring without additive torsion, the order is detected by partial derivatives:
 `p` has order at least `n` at `a` exactly when every iterated partial derivative of `p` of order
-less than `n` vanishes at `a`. Substituting polynomials into `p` can only increase the order
-at corresponding points, and renaming the variables along an injective map does not change it.
+less than `n` vanishes at `a`. Over a ring, a nonzero polynomial vanishes to order at most its
+total degree, so finitely many derivatives suffice. Over a ring, substituting polynomials into `p`
+can only increase the order at corresponding points. Renaming the variables along an injective map
+does not change it.
+The Taylor shift itself preserves the degree in each variable (`MvPolynomial.degreeOf_taylor`).
 
 ## Main definitions
 
@@ -44,8 +51,23 @@ at corresponding points, and renaming the variables along an injective map does 
   `p` vanishes at `a` and every partial derivative of `p` has order at least `n` there.
 * `MvPolynomial.le_orderAt_iff_eval_foldl_pderiv`: the order is at least `n` if and only if
   every iterated partial derivative of order less than `n` vanishes at `a`.
+* `MvPolynomial.orderAt_le_totalDegree`: a nonzero polynomial vanishes to order at most its
+  total degree.
+* `MvPolynomial.orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff`: the order at a point is
+  determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
+* `MvPolynomial.orderAt_taylor`, `MvPolynomial.orderAt_map`: the order is unchanged by Taylor
+  shifts, after translating the point, and by injective coefficient maps.
+* `Polynomial.orderAt_comp_X_add_C`: translating the distinguished variable of a polynomial
+  family translates its ambient order.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
+* `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
+  variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
+  the Taylor shift at the remaining coordinates.
+* `MvPolynomial.optionEquivRight_rename_finSuccEquivLast_taylor`,
+  `MvPolynomial.coeff_taylor_snoc`: moving the last variable `Xₙ` into the coefficients turns the
+  Taylor shift at `Fin.snoc α β` into the Taylor shift at the first coordinates `α`, followed by
+  the univariate Taylor shift at `β` of each coefficient.
 
 ## References
 
@@ -83,6 +105,26 @@ theorem taylor_X (a : σ → R) (i : σ) : taylor a (X i) = X i + C (a i) :=
 theorem taylor_C (a : σ → R) (r : R) : taylor a (C r) = C r :=
   aeval_C _ _
 
+/-- Taylor shifts commute with coefficient maps, with the center mapped along the same
+homomorphism. -/
+@[simp]
+theorem map_taylor {S : Type*} [CommSemiring S] (p : MvPolynomial σ R) (a : σ → R)
+    (f : R →+* S) :
+    map f (taylor a p) = taylor (fun i ↦ f (a i)) (map f p) := by
+  induction p using MvPolynomial.induction_on <;> simp_all
+
+/-- Taylor coefficients depend polynomially on the center. Evaluate the formal center in
+`taylor X (map C p)` at `a` to recover each coefficient of `taylor a p`. -/
+@[simp]
+theorem eval_coeff_taylor_map_C (p : MvPolynomial σ R) (a : σ → R) (v : σ →₀ ℕ) :
+    eval a ((taylor (X : σ → MvPolynomial σ R) (map C p)).coeff v) =
+      (taylor a p).coeff v := by
+  rw [← coeff_map, map_taylor, map_map]
+  have h : (eval a).comp (C : R →+* MvPolynomial σ R) = RingHom.id R := by
+    ext r
+    simp
+  simp [h, map_id]
+
 @[simp]
 theorem eval_taylor (a x : σ → R) (p : MvPolynomial σ R) :
     eval x (taylor a p) = eval (x + a) p := by
@@ -102,6 +144,21 @@ theorem taylor_taylor (a b : σ → R) (p : MvPolynomial σ R) :
     taylor a (taylor b p) = taylor (a + b) p := by
   induction p using MvPolynomial.induction_on <;> simp_all [add_assoc]
 
+/-- The Taylor shift does not increase the total degree. -/
+theorem totalDegree_taylor_le (a : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).totalDegree ≤ p.totalDegree := by
+  conv_lhs => rw [p.as_sum, map_sum]
+  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun d hd ↦ ?_)
+  rw [taylor_apply, aeval_monomial, algebraMap_eq]
+  refine (totalDegree_mul _ _).trans ?_
+  rw [totalDegree_C, zero_add]
+  refine (totalDegree_finsetProd _ _).trans (le_trans ?_ (le_totalDegree hd))
+  refine Finset.sum_le_sum fun i _ ↦ (totalDegree_pow _ _).trans ?_
+  refine (Nat.mul_le_mul_left _ ((totalDegree_add _ _).trans (max_le ?_ ?_))).trans_eq
+    (mul_one _)
+  · exact (totalDegree_monomial_le _ _).trans_eq (by simp)
+  · simp
+
 /-- Partial differentiation commutes with the Taylor shift. -/
 @[simp]
 theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
@@ -114,6 +171,83 @@ theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
     · simp [hp]
     · simp [hp, pderiv_X_of_ne hj]
 
+/-- The Taylor shift does not increase the degree in any variable. -/
+theorem degreeOf_taylor_le (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
+    (taylor a p).degreeOf i ≤ p.degreeOf i := by
+  classical
+  cases subsingleton_or_nontrivial R
+  · simp [Subsingleton.elim (taylor a p) 0]
+  conv_lhs => rw [p.as_sum, map_sum]
+  refine (degreeOf_sum_le i _ _).trans (Finset.sup_le fun m hm ↦ ?_)
+  rw [taylor_apply, aeval_monomial, algebraMap_eq]
+  refine (degreeOf_C_mul_le _ i _).trans ((degreeOf_prod_le i _ _).trans ?_)
+  calc ∑ j ∈ m.support, ((X j + C (a j)) ^ m j).degreeOf i
+      ≤ ∑ j ∈ m.support, if i = j then m j else 0 := by
+        refine Finset.sum_le_sum fun j _ ↦ (degreeOf_pow_le i _ _).trans ?_
+        have : (X j + C (a j) : MvPolynomial σ R).degreeOf i ≤ if i = j then 1 else 0 :=
+          (degreeOf_add_le i _ _).trans (by simp [degreeOf_X, degreeOf_C])
+        split_ifs at this ⊢ <;> simpa using Nat.mul_le_mul_left (m j) this
+    _ ≤ m i := by rw [Finset.sum_ite_eq]; split_ifs <;> simp
+    _ ≤ p.degreeOf i := monomial_le_degreeOf i hm
+
+/-- Singling out the variable `X₀` commutes with the Taylor shift: shifting `X₀` by `a₀` is the
+Taylor shift of the resulting univariate polynomial at `a₀`, and the remaining variables are
+shifted coefficientwise. -/
+theorem finSuccEquiv_taylor {n : ℕ} (a : Fin (n + 1) → R) (p : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv R n (taylor a p) =
+      (Polynomial.taylor (C (a 0)) (finSuccEquiv R n p)).map
+        (taylor (Fin.tail a) : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R) := by
+  have hC (r : R) : finSuccEquiv R n (C r) = Polynomial.C (C r) := by simp [finSuccEquiv_apply]
+  induction p using MvPolynomial.induction_on with
+  | C r => simp [hC]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp =>
+    cases i using Fin.cases with
+    | zero => simp [hp, hC, finSuccEquiv_X_zero, Polynomial.taylor_mul, Polynomial.map_mul]
+    | succ j =>
+      simp [hp, hC, finSuccEquiv_X_succ, Polynomial.taylor_mul, Polynomial.map_mul, Fin.tail]
+
+/-- The Taylor coefficients of `p` at `a`, read off after singling out the variable `X₀`: the
+coefficient of `X₀ ^ i * Xᵘ` is the coefficient of `Xᵘ` in the Taylor shift at `Fin.tail a` of
+the `i`-th coefficient of the univariate Taylor expansion at `a₀`. -/
+theorem coeff_taylor_cons {n : ℕ} (a : Fin (n + 1) → R) (p : MvPolynomial (Fin (n + 1)) R)
+    (i : ℕ) (u : Fin n →₀ ℕ) :
+    (taylor a p).coeff (u.cons i) =
+      (taylor (Fin.tail a)
+        ((Polynomial.taylor (C (a 0)) (finSuccEquiv R n p)).coeff i)).coeff u := by
+  rw [← finSuccEquiv_coeff_coeff, finSuccEquiv_taylor, Polynomial.coeff_map]
+  rfl
+
+/-- Moving the last variable `Xₙ` into the coefficients commutes with the Taylor shift: shifting
+at `Fin.snoc α β` becomes the Taylor shift at the constant polynomials `α`, followed by the
+univariate Taylor shift at `β` of every coefficient. -/
+theorem optionEquivRight_rename_finSuccEquivLast_taylor {n : ℕ} (α : Fin n → R) (β : R)
+    (f : MvPolynomial (Fin (n + 1)) R) :
+    optionEquivRight R (Fin n) (rename finSuccEquivLast (taylor (Fin.snoc α β) f)) =
+      map (Polynomial.taylorAlgHom β : Polynomial R →+* Polynomial R)
+        (taylor (Polynomial.C ∘ α) (optionEquivRight R (Fin n) (rename finSuccEquivLast f))) := by
+  induction f using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p i hp =>
+    simp only [map_mul, hp, taylor_X, rename_X]
+    congr 1
+    cases i using Fin.lastCases with
+    | last => simp [Polynomial.taylor_X]
+    | cast j => simp
+
+/-- The Taylor coefficients of `f` at `Fin.snoc α β`, read off after moving the last variable
+`Xₙ` into the coefficients: the coefficient of `Xᵘ * Xₙ ^ k` is the coefficient of `Xₙ ^ k` in
+the univariate Taylor expansion at `β` of the coefficient of `Xᵘ` in the Taylor shift at `α`. -/
+theorem coeff_taylor_snoc {n : ℕ} (α : Fin n → R) (β : R) (f : MvPolynomial (Fin (n + 1)) R)
+    (u : Fin n →₀ ℕ) (k : ℕ) :
+    (taylor (Fin.snoc α β) f).coeff (u.snoc k) =
+      (Polynomial.taylor β ((taylor (Polynomial.C ∘ α)
+        (optionEquivRight R (Fin n) (rename finSuccEquivLast f))).coeff u)).coeff k := by
+  rw [← optionEquivRight_rename_finSuccEquivLast_coeff_coeff,
+    optionEquivRight_rename_finSuccEquivLast_taylor, coeff_map]
+  simp
+
 end Taylor
 
 section TaylorRing
@@ -124,12 +258,25 @@ variable [CommRing R]
 theorem taylor_neg_taylor (a : σ → R) (p : MvPolynomial σ R) : taylor (-a) (taylor a p) = p := by
   rw [taylor_taylor, neg_add_cancel, taylor_zero]
 
+/-- The Taylor shift preserves the total degree. -/
+@[simp]
+theorem totalDegree_taylor (a : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).totalDegree = p.totalDegree :=
+  (totalDegree_taylor_le a p).antisymm <| by simpa using totalDegree_taylor_le (-a) (taylor a p)
+
 theorem taylor_injective (a : σ → R) : Function.Injective (taylor a) :=
   Function.LeftInverse.injective (taylor_neg_taylor a)
 
 @[simp]
 theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 ↔ p = 0 :=
   map_eq_zero_iff _ (taylor_injective a)
+
+/-- The Taylor shift preserves the degree in each variable. -/
+@[simp]
+theorem degreeOf_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
+    (taylor a p).degreeOf i = p.degreeOf i :=
+  (degreeOf_taylor_le a i p).antisymm <| by
+    simpa using degreeOf_taylor_le (-a) i (taylor a p)
 
 end TaylorRing
 
@@ -227,6 +374,105 @@ theorem le_orderAt_mul (p q : MvPolynomial σ R) (a : σ → R) :
     p.orderAt a + q.orderAt a ≤ (p * q).orderAt a := by
   simpa [orderAt_def] using MvPowerSeries.le_order_mul
 
+/-- The order of the Taylor shift of `p` at `a` is the order of `p` at the translated point. -/
+@[simp]
+theorem orderAt_taylor (a b : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).orderAt b = p.orderAt (b + a) := by
+  rw [orderAt_def, orderAt_def, taylor_taylor]
+
+/-- Mapping the coefficients along an injective ring homomorphism does not change the order, at
+the image of the point. -/
+theorem orderAt_map {S : Type*} [CommSemiring S] {f : R →+* S} (hf : Function.Injective f)
+    (p : MvPolynomial σ R) (a : σ → R) :
+    (map f p).orderAt (fun i ↦ f (a i)) = p.orderAt a := by
+  refine eq_of_forall_le_iff fun n ↦ ?_
+  simp only [le_orderAt_iff, ← map_taylor, coeff_map, map_eq_zero_iff f hf]
+
+/-- Translating the distinguished variable of a polynomial family by `r` translates its ambient
+order: with the distinguished variable as the coordinate `0`, the order of `p(X + r)` at `(t, a)`
+is the order of `p` at `(t + r, a)`. -/
+@[simp]
+theorem _root_.Polynomial.orderAt_comp_X_add_C {n : ℕ} (p : Polynomial (MvPolynomial (Fin n) R))
+    (r t : R) (a : Fin n → R) :
+    ((finSuccEquiv R n).symm (p.comp (Polynomial.X + Polynomial.C (C r)))).orderAt
+        (Fin.cons t a) =
+      ((finSuccEquiv R n).symm p).orderAt (Fin.cons (t + r) a) := by
+  have hid : (taylor (0 : Fin n → R) : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R) =
+      RingHom.id _ :=
+    RingHom.ext taylor_zero
+  have hshift : (finSuccEquiv R n).symm (p.comp (Polynomial.X + Polynomial.C (C r))) =
+      taylor (Fin.cons r 0) ((finSuccEquiv R n).symm p) := by
+    apply (finSuccEquiv R n).injective
+    rw [AlgEquiv.apply_symm_apply, finSuccEquiv_taylor, AlgEquiv.apply_symm_apply, Fin.cons_zero,
+      Fin.tail_cons, hid, Polynomial.map_id, Polynomial.taylor_apply]
+  rw [hshift, orderAt_taylor]
+  congr 1
+  ext i
+  cases i using Fin.cases <;> simp
+
+/-- Over a semiring without zero divisors, the order of a product is the sum of the orders. -/
+theorem orderAt_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) (a : σ → R) :
+    (p * q).orderAt a = p.orderAt a + q.orderAt a := by
+  simp [orderAt_def, MvPowerSeries.order_mul]
+
+/-- Over a nontrivial semiring without zero divisors, the order of `p ^ n` at `a` is `n` times
+its order at `a`. -/
+theorem orderAt_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial σ R) (a : σ → R)
+    (n : ℕ) : (p ^ n).orderAt a = n • p.orderAt a := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, orderAt_mul, ih, succ_nsmul]
+
+/-- Over a nontrivial semiring without zero divisors, the order of a finite product is the sum of
+the orders of its factors. -/
+theorem orderAt_prod [NoZeroDivisors R] [Nontrivial R] {ι : Type*}
+    (p : ι → MvPolynomial σ R) (s : Finset ι) (a : σ → R) :
+    (∏ i ∈ s, p i).orderAt a = ∑ i ∈ s, (p i).orderAt a := by
+  simpa only [orderAt_def, ← coeToMvPowerSeries.ringHom_apply, map_prod] using
+    MvPowerSeries.order_prod (fun i ↦ (taylor a (p i) : MvPowerSeries σ R)) s
+
+/-- Renaming the variables along an injective map does not change the order. -/
+theorem orderAt_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolynomial σ R)
+    (b : τ → R) : (rename f p).orderAt b = p.orderAt (b ∘ f) := by
+  have htaylor : taylor b (rename f p) = rename f (taylor (b ∘ f) p) := by
+    induction p using MvPolynomial.induction_on <;> simp_all
+  refine eq_of_forall_le_iff fun n ↦ ?_
+  rw [le_orderAt_iff, le_orderAt_iff, htaylor]
+  refine ⟨fun h d hd ↦ ?_, fun h d hd ↦ ?_⟩
+  · simpa only [coeff_rename_mapDomain f hf] using
+      h (d.mapDomain f) (by simpa only [degree_mapDomain] using hd)
+  · exact coeff_rename_eq_zero f _ d fun u hu ↦ h u (by
+      simpa only [← hu, degree_mapDomain] using hd)
+
+/-- A zero at which some partial derivative is nonzero has ambient order one. -/
+theorem orderAt_eq_one_of_eval_pderiv_ne_zero (hp : eval a p = 0) {i : σ}
+    (hi : eval a (pderiv i p) ≠ 0) : p.orderAt a = 1 := by
+  classical
+  have hcoeff : (taylor a p).coeff (single i 1) = eval a (pderiv i p) := by
+    rw [← constantCoeff_taylor, ← pderiv_taylor, constantCoeff_eq, coeff_pderiv]
+    simp
+  refine le_antisymm ?_ (by simpa only [Order.one_le_iff_pos, orderAt_pos_iff] using hp)
+  simpa only [degree_single, Nat.cast_one] using
+    orderAt_le (d := single i 1) (hcoeff ▸ hi)
+
+open Classical in
+/-- If the fiber through a point is separable, its ambient order is one at a zero
+and zero otherwise. No degree preservation in nearby fibers is needed. -/
+@[simp]
+theorem orderAt_eq_ite_of_separable_map_finSuccEquiv [Nontrivial R] {n : ℕ}
+    (p : MvPolynomial (Fin (n + 1)) R) (a : Fin (n + 1) → R)
+    (hsep : ((finSuccEquiv R n p).map (eval (Fin.tail a))).Separable) :
+    p.orderAt a = if eval a p = 0 then 1 else 0 := by
+  classical
+  split_ifs with hp
+  · apply orderAt_eq_one_of_eval_pderiv_ne_zero hp (i := 0)
+    rw [← Fin.cons_self_tail a, eval_eq_eval_mv_eval', ← finSuccEquiv'_zero,
+      finSuccEquiv'_pderiv, finSuccEquiv'_zero, ← Polynomial.derivative_map]
+    have hroot : ((finSuccEquiv R n p).map (eval (Fin.tail a))).eval (a 0) = 0 := by
+      rwa [← eval_eq_eval_mv_eval', Fin.cons_self_tail]
+    simpa using hsep.eval₂_derivative_ne_zero (RingHom.id R) hroot
+  · exact orderAt_eq_zero_iff.mpr hp
+
 end CommSemiring
 
 section CommRing
@@ -238,6 +484,13 @@ variable [CommRing R] {p q : MvPolynomial σ R} {a : σ → R}
 theorem orderAt_eq_top_iff : p.orderAt a = ⊤ ↔ p = 0 := by
   simp [orderAt_def, MvPowerSeries.order_eq_top_iff, coe_eq_zero_iff]
 
+/-- A nonzero polynomial vanishes at each point to order at most its total degree. -/
+theorem orderAt_le_totalDegree (hp : p ≠ 0) (a : σ → R) : p.orderAt a ≤ p.totalDegree := by
+  obtain ⟨d, hd⟩ := ne_zero_iff.1 (taylor_eq_zero.not.2 hp : taylor a p ≠ 0)
+  calc p.orderAt a ≤ d.degree := orderAt_le hd
+    _ ≤ p.totalDegree := by
+      exact_mod_cast totalDegree_taylor a p ▸ le_totalDegree (mem_support_iff.2 hd)
+
 @[simp]
 theorem orderAt_neg (p : MvPolynomial σ R) (a : σ → R) : (-p).orderAt a = p.orderAt a := by
   simp only [orderAt_def, map_neg, ← coeToMvPowerSeries.ringHom_apply, MvPowerSeries.order_neg]
@@ -246,18 +499,6 @@ theorem orderAt_neg (p : MvPolynomial σ R) (a : σ → R) : (-p).orderAt a = p.
 theorem orderAt_X_sub_C [Nontrivial R] (a : σ → R) (i : σ) : (X i - C (a i)).orderAt a = 1 := by
   rw [orderAt_def, map_sub, taylor_X, taylor_C, add_sub_cancel_right, coe_X, MvPowerSeries.X_def,
     MvPowerSeries.order_monomial_of_ne_zero one_ne_zero, degree_single, Nat.cast_one]
-
-/-- Over a domain, the order of a product is the sum of the orders. -/
-theorem orderAt_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) (a : σ → R) :
-    (p * q).orderAt a = p.orderAt a + q.orderAt a := by
-  simp [orderAt_def, MvPowerSeries.order_mul]
-
-/-- Over a domain, the order of `p ^ n` at `a` is `n` times the order of `p` at `a`. -/
-theorem orderAt_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial σ R) (a : σ → R)
-    (n : ℕ) : (p ^ n).orderAt a = n • p.orderAt a := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, orderAt_mul, ih, succ_nsmul]
 
 /-- Substitution does not decrease the order: if `g` maps the point `b` to `a`, that is,
 `eval b (g i) = a i` for every `i`, then the order of `aeval g p` at `b` is at least the order
@@ -276,52 +517,31 @@ theorem orderAt_le_orderAt_aeval (g : σ → MvPolynomial τ R) (b : τ → R)
   rw [orderAt_def, orderAt_def, key]
   exact order_coe_le_order_coe_aeval (fun i ↦ by simp [h, a]) _
 
-/-- Renaming the variables along an injective map does not change the order. -/
-theorem orderAt_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolynomial σ R)
-    (b : τ → R) : (rename f p).orderAt b = p.orderAt (b ∘ f) := by
-  refine le_antisymm ?_ ?_
-  · -- Undo the renaming by substituting `Xᵢ` for `X_{f i}` and `b j` for the other variables.
-    let g : τ → MvPolynomial σ R := Function.extend f X (fun j ↦ C (b j))
-    have hg : (fun j ↦ eval (b ∘ f) (g j)) = b := by
-      funext j
-      by_cases hj : ∃ i, f i = j
-      · obtain ⟨i, rfl⟩ := hj
-        simp [g, hf.extend_apply]
-      · simp [g, Function.extend_apply' _ _ _ hj]
-    have hgf : aeval g (rename f p) = p := by
-      rw [aeval_rename]
-      convert aeval_X_left_apply p
-      funext i
-      simp [g, hf.extend_apply]
-    simpa [hg, hgf] using orderAt_le_orderAt_aeval g (b ∘ f) (rename f p)
-  · have := orderAt_le_orderAt_aeval (X ∘ f) b p
-    simp only [Function.comp_apply, eval_X] at this
-    rwa [rename_eq_aeval]
-
 end CommRing
 
 section Derivative
 
-variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
+variable [CommSemiring R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
 
-/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a` if and only if
-`p` vanishes at `a` and every partial derivative of `p` has order at least `n` at `a`. -/
-theorem succ_le_orderAt_iff {n : ℕ} :
-    ((n + 1 : ℕ) : ℕ∞) ≤ p.orderAt a ↔
-      eval a p = 0 ∧ ∀ i, (n : ℕ∞) ≤ (pderiv i p).orderAt a := by
+/-- Over a commutative semiring without additive torsion, `p` has order at least `n + 1` at `a`,
+for `n : ℕ∞`, if and only if `p` vanishes at `a` and every partial derivative has order at least
+`n` there. -/
+theorem succ_le_orderAt_iff {n : ℕ∞} :
+    n + 1 ≤ p.orderAt a ↔
+      eval a p = 0 ∧ ∀ i, n ≤ (pderiv i p).orderAt a := by
   rw [orderAt_def, MvPowerSeries.succ_le_order_iff, constantCoeff_coe, constantCoeff_taylor]
   simp only [orderAt_def, MvPowerSeries.pderiv_coe, pderiv_taylor]
 
-/-- Over a ring without additive torsion, `p` has order at least `n` at `a` if and only if, for
-every list `l` of fewer than `n` variables, the iterated partial derivative of `p` along `l`
-vanishes at `a`. -/
+/-- Over a commutative semiring without additive torsion, `p` has order at least `n` at `a` if and
+only if, for every list `l` of fewer than `n` variables, the iterated partial derivative of `p`
+along `l` vanishes at `a`. -/
 theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
     (n : ℕ∞) ≤ p.orderAt a ↔
       ∀ l : List σ, l.length < n → eval a (l.foldl (fun q i ↦ pderiv i q) p) = 0 := by
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
-    simp only [succ_le_orderAt_iff, ih]
+    simp only [Nat.cast_add, Nat.cast_one, succ_le_orderAt_iff, ih]
     refine ⟨fun ⟨h0, h⟩ l hl ↦ ?_, fun h ↦ ⟨h [] (by simp), fun i l hl ↦
       h (i :: l) (by simpa using hl)⟩⟩
     cases l with
@@ -329,6 +549,35 @@ theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
     | cons i l => exact h i l (by simpa using hl)
 
 end Derivative
+
+section DerivativeRing
+
+variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
+
+/-- Over a ring without additive torsion, the order of `p` at a point is determined by which
+iterated partial derivatives of `p`, of order at most the total degree of `p`, vanish there: if
+the same ones vanish at `a` and at `b`, then `p` has the same order at `a` and at `b`. -/
+theorem orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff {b : σ → R}
+    (h : ∀ l : List σ, l.length ≤ p.totalDegree →
+      (eval a (l.foldl (fun q i ↦ pderiv i q) p) = 0 ↔
+        eval b (l.foldl (fun q i ↦ pderiv i q) p) = 0)) :
+    p.orderAt a = p.orderAt b := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  -- Up to the total degree, the order is detected by the iterated derivatives in `h`, and the
+  -- order of a nonzero polynomial never exceeds its total degree.
+  have key {m : ℕ} (hm : m ≤ p.totalDegree) :
+      (m : ℕ∞) ≤ p.orderAt a ↔ (m : ℕ∞) ≤ p.orderAt b := by
+    simp only [le_orderAt_iff_eval_foldl_pderiv]
+    exact forall_congr' fun l ↦ forall_congr' fun hl ↦ h l (by omega)
+  obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.1 (orderAt_eq_top_iff.not.2 hp : p.orderAt a ≠ ⊤)
+  obtain ⟨k', hk'⟩ := ENat.ne_top_iff_exists.1 (orderAt_eq_top_iff.not.2 hp : p.orderAt b ≠ ⊤)
+  have hka : k ≤ p.totalDegree := by exact_mod_cast hk ▸ orderAt_le_totalDegree hp a
+  have hkb : k' ≤ p.totalDegree := by exact_mod_cast hk' ▸ orderAt_le_totalDegree hp b
+  rw [← hk, ← hk'] at key ⊢
+  exact le_antisymm ((key hka).1 le_rfl) ((key hkb).2 le_rfl)
+
+end DerivativeRing
 
 end OrderAt
 

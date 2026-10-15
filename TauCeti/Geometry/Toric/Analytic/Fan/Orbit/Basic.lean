@@ -146,7 +146,7 @@ theorem analyticAffineChartι_distinguishedPoint {τ σ : Φ.cones} (h : τ ≤ 
 /-- The torus orbit of a cone `σ` of a regular fan: the image in the analytic realization of the
 stratum of the top face of `σ` in the affine chart of `σ`. By `analyticConeOrbit_eq_orbit`, it is
 the torus orbit of the distinguished point of `σ`. -/
-def analyticConeOrbit (σ : Φ.cones) : Set (Φ.analyticRealization hΦ) :=
+noncomputable def analyticConeOrbit (σ : Φ.cones) : Set (Φ.analyticRealization hΦ) :=
   Φ.analyticAffineChartι hΦ σ '' affineConeOrbit Φ.lattice (⊤ : σ.1.Face)
 
 /-- The orbit of a cone is the image of the stratum of its top face. -/
@@ -168,6 +168,13 @@ theorem analyticConeOrbit_eq_orbit (σ : Φ.cones) :
   · rintro ⟨t, rfl⟩
     exact ⟨t • distinguishedPoint Φ.lattice (⊤ : σ.1.Face), ⟨t, rfl⟩,
       (Φ.smul_analyticAffineChartι hΦ t σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face))).symm⟩
+
+/-- The torus preserves the orbit of every cone. -/
+theorem smul_mem_analyticConeOrbit {σ : Φ.cones} (T : ComplexTorus N)
+    {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
+    T • x ∈ Φ.analyticConeOrbit hΦ σ := by
+  rw [analyticConeOrbit_eq_orbit] at hx ⊢
+  exact MulAction.mem_orbit_of_mem_orbit T hx
 
 /-- The distinguished point of a cone lies in its orbit. -/
 theorem analyticDistinguishedPoint_mem_analyticConeOrbit (σ : Φ.cones) :

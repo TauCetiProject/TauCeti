@@ -33,14 +33,15 @@ Injectivity is `Measure.ext_of_bind_infinitePi_eq`, surjectivity is
 `deFinettiEquiv.symm` is therefore a genuine construction: it reads the mixing law off an
 exchangeable law.
 
-The correspondence is affine, `deFinettiBarycenter_add` and `deFinettiBarycenter_smul` giving
-the mixture identity on the barycenter side and `deFinettiEquiv_convexComb` /
+The correspondence is affine, `Measure.deFinettiBarycenter_add` and
+`Measure.deFinettiBarycenter_smul` giving the mixture identity on the barycenter side and
+`deFinettiEquiv_convexComb` /
 `deFinettiEquiv_symm_convexComb` stating it for the bundled objects on both sides of the
 equivalence; and it takes the point masses of
 `ProbabilityMeasure α` exactly to the extreme exchangeable laws
 (`deFinettiBarycenter_mem_extremePoints_iff`, `deFinettiEquiv_dirac`). Reading
-`deFinettiBarycenter` as `deFinettiBarycenter_eq_join_map` does, this is the canonical
-decomposition of an exchangeable law over the extreme — equivalently the
+`Measure.deFinettiBarycenter` as `Measure.deFinettiBarycenter_eq_join_map` does, this is the
+canonical decomposition of an exchangeable law over the extreme — equivalently the
 i.i.d. — exchangeable laws: the mixing law is unique, and the path laws it averages are extreme.
 
 This settles the Layer 8 bullet "the affine and ergodic decomposition of exchangeable laws" in
@@ -95,7 +96,8 @@ variable {α : Type*} [MeasurableSpace α]
 barycenter is a bijection from mixing laws — probability measures on `ProbabilityMeasure α` — onto
 exchangeable probability measures on `ℕ → α`.
 
-The forward map is `deFinettiBarycenter`; the inverse sends an exchangeable law to its mixing law.
+The forward map is `Measure.deFinettiBarycenter`; the inverse sends an exchangeable law to its
+mixing law.
 Injectivity is uniqueness of the mixing law and surjectivity is de Finetti's theorem, so the
 equivalence is exactly the content of `ExchangeableLaw.existsUnique_mixingLaw` in bijective
 form. -/
@@ -104,12 +106,14 @@ def deFinettiEquiv [StandardBorelSpace α] :
       {ρ : ProbabilityMeasure (ℕ → α) // ExchangeableLaw (ρ : Measure (ℕ → α))} :=
   Equiv.ofBijective
     (fun π : ProbabilityMeasure (ProbabilityMeasure α) =>
-      ⟨⟨deFinettiBarycenter π.toMeasure, inferInstance⟩, exchangeableLaw_deFinettiBarycenter⟩)
+      ⟨⟨Measure.deFinettiBarycenter π.toMeasure, inferInstance⟩,
+        exchangeableLaw_deFinettiBarycenter⟩)
     ⟨fun π₁ π₂ h => by
-      have h' : deFinettiBarycenter π₁.toMeasure = deFinettiBarycenter π₂.toMeasure :=
+      have h' : Measure.deFinettiBarycenter π₁.toMeasure =
+          Measure.deFinettiBarycenter π₂.toMeasure :=
         congrArg (fun r : {ρ : ProbabilityMeasure (ℕ → α) // ExchangeableLaw ρ.toMeasure} =>
           ProbabilityMeasure.toMeasure r.1) h
-      simp only [deFinettiBarycenter_def] at h'
+      simp only [Measure.deFinettiBarycenter_def] at h'
       exact ProbabilityMeasure.toMeasure_injective
         (TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq h'),
       fun ρ => by
@@ -120,7 +124,7 @@ def deFinettiEquiv [StandardBorelSpace α] :
 theorem deFinettiEquiv_apply_coe [StandardBorelSpace α]
     (π : ProbabilityMeasure (ProbabilityMeasure α)) :
     ((deFinettiEquiv π : ProbabilityMeasure (ℕ → α)) : Measure (ℕ → α)) =
-      deFinettiBarycenter (π : Measure (ProbabilityMeasure α)) :=
+      Measure.deFinettiBarycenter (π : Measure (ProbabilityMeasure α)) :=
   (rfl)
 
 /-- The inverse of the correspondence really is the mixing law: the barycenter of the mixing law
@@ -128,7 +132,8 @@ of an exchangeable law recovers that law. -/
 @[simp]
 theorem deFinettiBarycenter_deFinettiEquiv_symm [StandardBorelSpace α]
     (ρ : {ρ : ProbabilityMeasure (ℕ → α) // ExchangeableLaw (ρ : Measure (ℕ → α))}) :
-    deFinettiBarycenter ((deFinettiEquiv.symm ρ : ProbabilityMeasure (ProbabilityMeasure α)) :
+    Measure.deFinettiBarycenter
+      ((deFinettiEquiv.symm ρ : ProbabilityMeasure (ProbabilityMeasure α)) :
         Measure (ProbabilityMeasure α)) = (ρ : ProbabilityMeasure (ℕ → α)) := by
   rw [← deFinettiEquiv_apply_coe, deFinettiEquiv.apply_symm_apply]
 
@@ -138,7 +143,7 @@ theorem deFinettiEquiv_symm_eq [StandardBorelSpace α]
     {ρ : {ρ : ProbabilityMeasure (ℕ → α) // ExchangeableLaw (ρ : Measure (ℕ → α))}}
     {π : ProbabilityMeasure (ProbabilityMeasure α)}
     (h : ((ρ : ProbabilityMeasure (ℕ → α)) : Measure (ℕ → α)) =
-      deFinettiBarycenter (π : Measure (ProbabilityMeasure α))) :
+      Measure.deFinettiBarycenter (π : Measure (ProbabilityMeasure α))) :
     deFinettiEquiv.symm ρ = π :=
   deFinettiEquiv.symm_apply_eq.2 (Subtype.ext (Subtype.ext h))
 
@@ -148,7 +153,7 @@ the i.i.d. law `P^{⊗ℕ}`. -/
 theorem deFinettiEquiv_dirac [StandardBorelSpace α] (P : ProbabilityMeasure α) :
     ((deFinettiEquiv ⟨Measure.dirac P, inferInstance⟩ : ProbabilityMeasure (ℕ → α)) :
         Measure (ℕ → α)) = Measure.infinitePi fun _ : ℕ => (P : Measure α) :=
-  deFinettiBarycenter_dirac P
+  Measure.deFinettiBarycenter_dirac P
 
 /-- **The mixing law of an i.i.d. law is a point mass**, the inverse reading of
 `deFinettiEquiv_dirac`: an exchangeable law that happens to be `P^{⊗ℕ}` has `δ_P` as its mixing
@@ -159,7 +164,7 @@ theorem deFinettiEquiv_symm_eq_dirac [StandardBorelSpace α] (P : ProbabilityMea
       = Measure.infinitePi fun _ : ℕ => (P : Measure α)) :
     deFinettiEquiv.symm ρ = ⟨Measure.dirac P, inferInstance⟩ :=
   deFinettiEquiv_symm_eq (π := ⟨Measure.dirac P, inferInstance⟩)
-    (by rw [hρ]; exact (deFinettiBarycenter_dirac P).symm)
+    (by rw [hρ]; exact (Measure.deFinettiBarycenter_dirac P).symm)
 
 /-! ### Affinity
 
@@ -174,7 +179,8 @@ they live outside this module. Affinity is then two equations between bundled ob
 
 Weights are arbitrary elements of `ℝ≥0∞` summing to `1`. Normalization is not decorative: without
 it the combination is not a probability measure, so neither side of either equation would typecheck.
-The unbundled statements without it are `deFinettiBarycenter_add` and `deFinettiBarycenter_smul`. -/
+The unbundled statements without it are `Measure.deFinettiBarycenter_add` and
+`Measure.deFinettiBarycenter_smul`. -/
 
 /-- **The correspondence is affine.** It carries the convex combination of two mixing laws to the
 convex combination, with the same weights, of their exchangeable path laws. -/
@@ -185,8 +191,8 @@ theorem deFinettiEquiv_convexComb [StandardBorelSpace α] {a b : ℝ≥0∞} (ha
       = exchangeableLawConvexComb hab (deFinettiEquiv π₁) (deFinettiEquiv π₂) :=
   Subtype.ext (ProbabilityMeasure.toMeasure_injective (by
     simp only [deFinettiEquiv_apply_coe, toMeasure_exchangeableLawConvexComb,
-      ProbabilityMeasure.toMeasure_convexComb, deFinettiBarycenter_add,
-      deFinettiBarycenter_smul]))
+      ProbabilityMeasure.toMeasure_convexComb, Measure.deFinettiBarycenter_add,
+      Measure.deFinettiBarycenter_smul]))
 
 /-- **The inverse correspondence is affine**: decomposing an exchangeable law as a convex
 combination decomposes its mixing law the same way.
@@ -207,20 +213,20 @@ theorem deFinettiEquiv_symm_convexComb [StandardBorelSpace α] {a b : ℝ≥0∞
 barycenter of a mixing law is an extreme exchangeable probability law if and only if that mixing
 law is a Dirac mass.
 
-Combined with `deFinettiBarycenter_eq_join_map`, this is the canonical decomposition an
+Combined with `Measure.deFinettiBarycenter_eq_join_map`, this is the canonical decomposition an
 exchangeable law admits: it is the barycenter of a unique law on path laws, and that law is
 carried by the extreme — equivalently i.i.d. — exchangeable laws
 (`infinitePi_mem_extremePoints_exchangeable`), degenerating exactly on the extreme points
 themselves. -/
 theorem deFinettiBarycenter_mem_extremePoints_iff [StandardBorelSpace α]
     {π : Measure (ProbabilityMeasure α)} [IsProbabilityMeasure π] :
-    deFinettiBarycenter π ∈ extremePoints ℝ≥0∞ (exchangeableProbabilityMeasures α) ↔
+    Measure.deFinettiBarycenter π ∈ extremePoints ℝ≥0∞ (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α, π = Measure.dirac P := by
   rw [exchangeable_extreme_iff_iid]
   refine ⟨fun ⟨P, hP⟩ => ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq ?_⟩,
     fun ⟨P, hP⟩ => ⟨P, ?_⟩⟩
-  · simp only [← deFinettiBarycenter_def, hP, deFinettiBarycenter_dirac]
-  · rw [hP, deFinettiBarycenter_dirac]
+  · simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac]
+  · rw [hP, Measure.deFinettiBarycenter_dirac]
 
 end Probability
 

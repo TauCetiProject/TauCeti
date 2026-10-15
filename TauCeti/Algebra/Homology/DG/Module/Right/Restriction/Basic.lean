@@ -315,4 +315,53 @@ theorem restrictScalars_comp (g : DGRightModuleHom hN hP) (k : DGRightModuleHom 
 
 end DGRightModuleHom
 
+section Transport
+
+variable {M : Type uM} [AddCommGroup M] [Module R M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (f : DGAlgHom hA hB)
+
+/-- The Koszul twist of a restricted module is the Koszul twist of the original module. -/
+theorem val_koszulTwist_restrictScalars (q : ℤ) (x : DGRightModule.RestrictScalars f M) :
+    ((InternalGrading.ofDecomposition
+        (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f)).koszulTwist q x).val =
+      (InternalGrading.ofDecomposition ℳ).koszulTwist q x.val := by
+  have hG :
+      InternalGrading.ofDecomposition (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) =
+      (InternalGrading.ofDecomposition ℳ).map
+        (DGRightModule.RestrictScalars.linearEquiv f M).symm :=
+    InternalGrading.ext fun p ↦ by
+      ext y
+      rw [InternalGrading.ofDecomposition_piece, IsDGRightModule.mem_restrictScalarsGrading_iff,
+        InternalGrading.mem_map_piece_iff, LinearEquiv.symm_symm,
+        InternalGrading.ofDecomposition_piece]
+  have h := LinearMap.congr_fun
+    (((InternalGrading.ofDecomposition ℳ).isHomogeneous_map_symm
+      (DGRightModule.RestrictScalars.linearEquiv f M).symm).koszulTwist_comp q) x
+  simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_symm,
+    DGRightModule.RestrictScalars.linearEquiv_apply] at h
+  rw [hG]
+  exact h.symm
+
+/-- The restricted action of a DG algebra morphism respects degrees, as a named statement. -/
+theorem gradedSMul_restrictScalarsGrading [Module Bᵐᵒᵖ M]
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
+      (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) :=
+  inferInstance
+
+variable {P : Type uP}
+
+/-- The identification of `P → f^* M` with `P → M`, coordinatewise. -/
+def restrictScalarsPiEquiv :
+    (P → DGRightModule.RestrictScalars f M) ≃ₗ[R] (P → M) :=
+  LinearEquiv.piCongrRight fun _ ↦ DGRightModule.RestrictScalars.linearEquiv f M
+
+@[simp]
+theorem restrictScalarsPiEquiv_apply (g : P → DGRightModule.RestrictScalars f M) (x : P) :
+    restrictScalarsPiEquiv (M := M) (P := P) f g x = (g x).val := by
+  simp [restrictScalarsPiEquiv]
+
+end Transport
+
 end TauCeti

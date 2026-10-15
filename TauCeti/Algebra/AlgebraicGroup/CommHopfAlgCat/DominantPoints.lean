@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Translation
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 public import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
-public import TauCeti.Topology.Constructible
+public import TauCeti.Topology.Constructible.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 import Mathlib.RingTheory.FiniteStability
 import TauCeti.RingTheory.Spectrum.Prime.Topology
@@ -49,7 +49,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 field is surjective on rational points, without a flatness or reducedness hypothesis. -/
 theorem mapPointsFunctor_app_surjective_of_dominant (f : H ⟶ K)
     (hf : DenseRange (PrimeSpectrum.comap f.hom.toAlgHom.toRingHom)) :
-    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of k k)) := by
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of k k)) := by
   have hft : f.hom.toAlgHom.FiniteType := by
     exact RingHom.FiniteType.of_comp_finiteType (f := algebraMap k H)
       (g := f.hom.toAlgHom.toRingHom)
@@ -68,7 +68,7 @@ theorem mapPointsFunctor_app_surjective_of_dominant (f : H ⟶ K)
   let t : PrimeSpectrum H ≃ₜ PrimeSpectrum H := HopfAlgebra.rightTranslationHomeomorph p
   obtain ⟨q, hq⟩ := hd.exists_mem_open
     (hUopen.preimage t.continuous) (t.surjective.nonempty_preimage.mpr hUne)
-  let φ := (mapPointsFunctor f).app (CommAlgCat.of k k)
+  let φ := (CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of k k)
   have he : t (PrimeSpectrum.comap f.hom.toAlgHom.toRingHom (AlgHom.kernelPoint q)) =
       AlgHom.kernelPoint (φ (toConv q) * p).ofConv := by
     exact (congrArg t (AlgHom.comap_kernelPoint q f.hom.toAlgHom)).trans
@@ -85,7 +85,7 @@ theorem mapPointsFunctor_app_surjective_of_dominant (f : H ⟶ K)
     f.hom.toAlgHom hft (φ (toConv q) * p).ofConv P hP'
   have hr' : φ (toConv r) = φ (toConv q) * p := by
     apply ofConv_injective
-    simpa only [φ, mapPointsFunctor_app_apply, ofConv_toConv] using hr
+    simpa only [φ, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ofConv_toConv] using hr
   refine ⟨(toConv q)⁻¹ * toConv r, ?_⟩
   exact (map_mul φ.hom _ _).trans
     ((congrArg₂ (· * ·) (map_inv φ.hom _) hr').trans (inv_mul_cancel_left _ _))
@@ -96,7 +96,7 @@ surjective contravariantly on points valued in any algebraically closed extensio
 theorem mapPointsFunctor_app_surjective_of_injective
     (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] (f : H ⟶ K)
     (hf : Function.Injective f.hom) :
-    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of k L)) := by
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of k L)) := by
   have hd : DenseRange (PrimeSpectrum.comap
       (baseChangeMap (K := L) f).hom.toAlgHom.toRingHom) :=
     RingHom.denseRange_comap_of_injective _ (baseChangeMap_injective f hf)
@@ -106,7 +106,7 @@ theorem mapPointsFunctor_app_surjective_of_injective
   obtain ⟨q, hq⟩ := mapPointsFunctor_app_surjective_of_dominant
     (baseChangeMap (K := L) f) hd (eH p)
   refine ⟨eK.symm q, eH.injective ?_⟩
-  rw [mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply,
     AlgHom.baseChangePointsMulEquiv_mapDomain]
   exact (congrArg (AlgHom.mapDomain (baseChangeMap (K := L) f).hom)
     (eK.apply_symm_apply q)).trans hq

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
-public import TauCeti.Analysis.Fredholm.Index
+public import TauCeti.Analysis.Fredholm.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
@@ -123,30 +124,9 @@ theorem sectionLinearization_eq_symmL_comp
     Trivialization.symm_apply_apply_mk _ (mem_baseSet_trivializationAt F E (b x)),
     Trivialization.symmL_apply _ he]
 
-/-- At a zero, the kernel inclusion composed with the inverse of a kernel-model equivalence
-has range equal to the kernel of the intrinsic section linearization. -/
-theorem range_subtypeL_comp_eq_ker_sectionLinearization {T : TangentSpace IM x →L[𝕜] F}
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
-    (hf : HasMFDerivAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x T) (hz : s x = 0)
-    (K : T.ker ≃L[𝕜] G) :
-    (T.ker.subtypeL.comp (K.symm : G →L[𝕜] T.ker)).range =
-      (sectionLinearization (F := F) IM b s x).ker := by
-  have hT : mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x = T := by
-    rw [hf.mdifferentiableAt.mvfderiv]
-    exact hf.2.fderivWithin IM.uniqueDiffWithinAt_image
-  rw [sectionLinearization_eq_symmL_comp hb he hf.mdifferentiableAt hz,
-    hT, ← e.symm_continuousLinearEquivAt_eq' he]
-  simp only [ContinuousLinearMap.toLinearMap_comp, Submodule.toLinearMap_subtypeL,
-    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-  rw [LinearMap.range_comp_of_range_eq_top T.ker.subtype
-    (f := K.symm.toLinearEquiv.toLinearMap) K.symm.toLinearEquiv.range,
-    LinearMap.ker_comp_of_ker_eq_bot T.toLinearMap
-      (LinearMap.ker_eq_bot.2 (e.continuousLinearEquivAt 𝕜 (b x) he).symm.injective)]
-  exact Submodule.range_subtype _
-
 /-- Reading the intrinsic linearization in a trivialization recovers the derivative of the
 section's fiber coordinates. -/
+@[simp]
 theorem continuousLinearMapAt_comp_sectionLinearization
     (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
@@ -179,6 +159,24 @@ theorem ker_sectionLinearization
   ext v
   simp
 
+/-- At a zero, the kernel inclusion composed with the inverse of a kernel-model equivalence
+has range equal to the kernel of the intrinsic section linearization. -/
+theorem range_subtypeL_comp_eq_ker_sectionLinearization {T : TangentSpace IM x →L[𝕜] F}
+    {G : Type*} [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
+    (hf : HasMFDerivAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x T) (hz : s x = 0)
+    (K : T.ker ≃L[𝕜] G) :
+    (T.ker.subtypeL.comp (K.symm : G →L[𝕜] T.ker)).range =
+      (sectionLinearization (F := F) IM b s x).ker := by
+  have hT : mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x = T := by
+    rw [hf.mdifferentiableAt.mvfderiv]
+    exact hf.2.fderivWithin IM.uniqueDiffWithinAt_image
+  rw [ker_sectionLinearization hb he hf.mdifferentiableAt hz, hT]
+  simp only [ContinuousLinearMap.toLinearMap_comp, Submodule.toLinearMap_subtypeL,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  rw [LinearMap.range_comp_of_range_eq_top T.ker.subtype K.symm.toLinearEquiv.range]
+  exact Submodule.range_subtype _
+
 /-- At a zero, the intrinsic linearization and any differentiable fiber-coordinate
 expression have the same Fredholm index. -/
 theorem index_sectionLinearization
@@ -201,26 +199,12 @@ theorem isFredholm_sectionLinearization_iff
   rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
     ← e.symm_continuousLinearEquivAt_eq' he]
   let A := e.continuousLinearEquivAt 𝕜 (b x) he
-  -- Transport a norm to the fiber while retaining its given topology and module structure.
-  let : NormedAddCommGroup (E (b x)) :=
-    { (NormedAddCommGroup.induced (E (b x)) F A.toLinearEquiv A.injective).replaceTopology
-        A.toHomeomorph.isInducing.eq_induced with
-      toAddCommGroup := inferInstance
-      norm := fun v ↦ ‖A v‖
-      dist_eq := (NormedAddCommGroup.induced (E (b x)) F A.toLinearEquiv A.injective).dist_eq }
-  let : NormedSpace 𝕜 (E (b x)) :=
-    { norm_smul_le c v := by simpa only [← map_smul A c v] using! norm_smul_le c (A v) }
-  -- Read the derivative as an operator on the model space, which carries the norm.
-  suffices h : ∀ D : EM →L[𝕜] F, ContinuousLinearMap.IsFredholm
-      ((A.symm : F →L[𝕜] E (b x)).comp D) ↔ ContinuousLinearMap.IsFredholm D from
-    h (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x)
-  intro D
   constructor
   · intro h
-    simpa only [← ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
-      ContinuousLinearMap.id_comp] using h.equiv_comp (F := E (b x)) (G := F) A
+    simpa only [A, ← ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
+      ContinuousLinearMap.id_comp] using h.equiv_comp A
   · intro h
-    exact h.equiv_comp (G := E (b x)) A.symm
+    exact h.equiv_comp A.symm
 
 /-- The Fredholm index of a section's coordinate derivative at a zero is independent of
 the bundle trivialization. No Fredholm hypothesis is needed for this equality of indices. -/
@@ -244,13 +228,8 @@ theorem isFredholm_mvfderiv_section_coordChange_iff_of_eq_zero
       ContinuousLinearMap.IsFredholm (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
   rw [mvfderiv_section_coordChange_of_eq_zero hb he he' hs hzero]
   let A := e.coordChangeL 𝕜 e' (b x)
-  -- Read the derivative as an operator on the model space, which carries the norm.
-  suffices h : ∀ D : EM →L[𝕜] F, ContinuousLinearMap.IsFredholm ((A : F →L[𝕜] F).comp D) ↔
-      ContinuousLinearMap.IsFredholm D from
-    h (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x)
-  intro D
   refine ⟨fun h ↦ ?_, fun h ↦ h.equiv_comp A⟩
-  simpa only [← ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_symm_comp_coe,
+  simpa only [A, ← ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_symm_comp_coe,
     ContinuousLinearMap.id_comp] using h.equiv_comp A.symm
 
 /-- Surjectivity of a section's coordinate derivative at a zero is independent of

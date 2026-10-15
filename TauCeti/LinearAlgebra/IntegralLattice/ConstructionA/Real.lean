@@ -107,7 +107,6 @@ instance isLattice_realLattice [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
     apply top_unique
     rw [← (Pi.basisFun ℝ ι).span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
-    have hsqrt : Real.sqrt (m : ℝ) ≠ 0 := Real.sqrt_ne_zero'.mpr (by exact_mod_cast m.pos)
     have h := (Submodule.span ℝ (realLattice m C : Set (ι → ℝ))).smul_mem
       (Real.sqrt (m : ℝ) / m) (Submodule.subset_span (Submodule.mem_map_of_mem
         (f := (realEmbedding m).restrictScalars ℤ) (single_mem_lattice m C i)))

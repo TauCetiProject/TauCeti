@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
@@ -94,6 +95,8 @@ corresponding cardinality equality.
   coefficient object.
 * `TauCeti.ClassFieldTheory.muNRep_ρ_apply_eq_self`: `G_F` acts trivially on `muNRep n F` when `F`
   contains a primitive `n`th root of unity.
+* `TauCeti.ClassFieldTheory.baer_muNRep`: `muNRep n F` is an injective `ZMod n`-module when `n` is
+  invertible in `F`.
 * `TauCeti.ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`: the Kummer class of
   `a` is the transported class of `g ↦ g α / α`, for any `n`th root `α` of `a`.
 * `TauCeti.ClassFieldTheory.kummerClass_eq_zero_iff`: the Kummer class of `a` vanishes exactly
@@ -187,6 +190,17 @@ theorem muNRep_ρ_apply_eq_self [NeZero n] {ζ : F} (hζ : IsPrimitiveRoot ζ n)
     (g : Field.absoluteGaloisGroup F) (x : (muNRep n F).V) : (muNRep n F).ρ g x = x := by
   have h := kummerCoeffEquivMuNRep_smul n F g ((kummerCoeffEquivMuNRep n F).symm x)
   rwa [smul_kummerCoeff_eq_self hζ, AddEquiv.apply_symm_apply, eq_comm] at h
+
+variable {n F} in
+/-- **`μₙ` is an injective `ZMod n`-module** for `n` invertible in `F`, in the form of Baer's
+criterion: `μₙ` is then cyclic of order `n` (`TauCeti.kummerCoeffAddEquivZMod`), and `ℤ/nℤ` is
+self-injective (`Module.Baer.zmod_self`). Consequently `Hom(-, μₙ)` is exact on the modules killed
+by `n` (`TauCeti.InternalHom.precomp_surjective_of_baer`). -/
+theorem baer_muNRep (hn : IsUnit (n : F)) : Module.Baer (ZMod n) (muNRep n F).V :=
+  have : NeZero (n : F) := ⟨hn.ne_zero⟩
+  have : NeZero n := .of_neZero_natCast F
+  Module.Baer.of_addEquiv_zmod
+    ((kummerCoeffEquivMuNRep n F).symm.trans (kummerCoeffAddEquivZMod hn))
 
 /-! ### Transport of `H¹` -/
 

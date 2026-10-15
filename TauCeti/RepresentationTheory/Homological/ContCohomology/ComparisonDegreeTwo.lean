@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.InnerConjugation
 
 /-!
 # Naturality of the degree-two comparison
@@ -19,7 +20,9 @@ index-two Evens graph class.
 The additive comparison and its compatible-pair naturality are in `CohomologyComparison.lean`.
 Here the equations are stated on the discrete carriers of the explicit groups and the
 `TopModuleCat ℤ` isomorphisms. For restriction the subgroup has to be compact, so the degree-two
-comparison exists on both sides.
+comparison exists on both sides. Read through the comparison, the triviality of inner
+conjugation on canonical cohomology, `TauCeti.ContinuousCohomology.map_eq_id_of_inner`, becomes
+the triviality of inner conjugation on explicit `H²` (`explicitMap2_eq_self_of_inner`).
 
 The identification of inhomogeneous and homogeneous continuous cohomology follows
 J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Ch. I, §2.
@@ -97,5 +100,25 @@ theorem explicitIso_coeffMap2
   rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff2_eq_explicitMap2, ← hpair]
   exact explicitIso_map2 G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
     (fun g m ↦ map_smul f g m) x
+
+omit [CompactSpace G] in
+/-- **Inner automorphisms act trivially on explicit `H²`.** For `g : G`, pullback along the
+compatible pair of the inner automorphism `x ↦ g⁻¹ * x * g` and the action of `g` on the
+coefficients is the identity of `H²(G, M)`. This is
+`TauCeti.ContinuousCohomology.map_eq_id_of_inner`, read through the degree-two comparison. -/
+theorem explicitMap2_eq_self_of_inner [LocallyCompactSpace G] (g : G) (φ : G →ₜ* G)
+    (hφ : ∀ x, φ x = g⁻¹ * x * g)
+    (f : M →+ M) (hf : ∀ m, f m = g • m) (hfc : Continuous f)
+    (hequiv : ∀ (h : G) (m : M), f (φ h • m) = h • f m) (x : H2 G M) :
+    explicitMap2 G M G M φ f hfc hequiv x = x := by
+  have hF (m : M) : (ofDiscreteModulePair (φ : G →* G) f.toIntLinearMap
+      fun h m ↦ hequiv h m).hom m = (ofDiscreteModule ℤ G M).ρ g m :=
+    (ofDiscreteModulePair_hom_apply (φ : G →* G) f.toIntLinearMap (fun h m ↦ hequiv h m) m).trans
+      ((hf m).trans (ofDiscreteModule_ρ_apply_apply g m).symm)
+  apply (explicitH2AddEquivContinuousCohomology G M).injective
+  rw [← explicitH2AddEquivContinuousCohomology_map G M G M φ f hequiv x,
+    TauCeti.ContinuousCohomology.map_eq_id_of_inner g φ hφ _ hF
+      (ofDiscreteModule_isSmoothDiscrete ℤ G M) 2]
+  rfl
 
 end TauCeti.ContCohomology

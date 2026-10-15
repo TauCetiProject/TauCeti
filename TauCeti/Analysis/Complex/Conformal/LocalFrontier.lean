@@ -13,8 +13,10 @@ public import Mathlib.Analysis.Complex.Angle
 When a domain agrees locally with an open half-plane, its frontier lies on the bounding line.
 When it agrees locally with an open sector, its frontier away from the vertex lies on the
 bounding rays, and the vertex itself lies on the frontier. When it agrees far out with an open
-sector of opening less than `2π`, some point lies outside its closure. These facts supply the
-boundary conditions for polygonal conformal maps.
+sector of opening less than `2π`, some point lies outside its closure. When it agrees far out with
+an open half-strip, its frontier far out lies on the two bounding rays, and again some point lies
+outside its closure; the same holds when far out it misses an open half-strip. These facts supply
+the boundary conditions for polygonal conformal maps.
 -/
 
 public section
@@ -127,6 +129,111 @@ theorem exists_notMem_closure_of_forall_mem_iff_abs_arg_lt {c b : ℂ} {ρ α : 
   filter_upwards [(continuous_norm.comp (continuous_sub_right c)).continuousAt.eventually
     (lt_mem_nhds hρ), hφ.eventually (lt_mem_nhds harg)] with z hzρ hzα hzU
   exact lt_asymm ((hU z hzρ).mp hzU) hzα
+
+/-! ### A half-strip at infinity -/
+
+/-- If a set `U` coincides far from `c` with the open half-strip
+`{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`, then far from `c` the frontier of `U` lies on
+the two bounding rays `im ((z - c) / b) ∈ {0, π}`, with `0 ≤ re ((z - c) / b)`.  Here "far" also
+excludes the short side `re ((z - c) / b) = 0` of the half-strip, which lies within distance
+`π * ‖b‖` of `c`. -/
+theorem re_div_nonneg_and_im_div_eq_zero_or_eq_pi_of_mem_frontier {c b z : ℂ} {ρ : ℝ}
+    (hU : ∀ y : ℂ, ρ < ‖y - c‖ →
+      (y ∈ U ↔ 0 < ((y - c) / b).re ∧ ((y - c) / b).im ∈ Ioo 0 Real.pi))
+    (hzρ : ρ < ‖z - c‖) (hzb : Real.pi * ‖b‖ < ‖z - c‖) (hzU : z ∈ frontier U) :
+    0 ≤ ((z - c) / b).re ∧ (((z - c) / b).im = 0 ∨ ((z - c) / b).im = Real.pi) := by
+  set V := {y : ℂ | ρ < ‖y - c‖}
+  have hV : IsOpen V := isOpen_lt continuous_const (by fun_prop)
+  set S := {y : ℂ | 0 < ((y - c) / b).re ∧ ((y - c) / b).im ∈ Ioo 0 Real.pi}
+  have hζ : Continuous fun y : ℂ => (y - c) / b := by fun_prop
+  have hS : IsOpen S := (isOpen_lt continuous_const (continuous_re.comp hζ)).inter
+    (isOpen_Ioo.preimage (continuous_im.comp hζ))
+  have hUV : U ∩ V = S ∩ V := Set.ext fun y => and_congr_left (hU y)
+  have hzS : z ∈ frontier S ∩ V := by
+    rw [← frontier_inter_open_inter hV, ← hUV, frontier_inter_open_inter hV]
+    exact ⟨hzU, hzρ⟩
+  rw [hS.frontier_eq] at hzS
+  obtain ⟨⟨hcl, hzS⟩, -⟩ := hzS
+  -- the closure of the half-strip lies in the closed half-strip
+  have hT : IsClosed {y : ℂ | 0 ≤ ((y - c) / b).re ∧ ((y - c) / b).im ∈ Icc 0 Real.pi} :=
+    (isClosed_le continuous_const (continuous_re.comp hζ)).inter
+      (isClosed_Icc.preimage (continuous_im.comp hζ))
+  obtain ⟨hre, him₀, himπ⟩ := closure_minimal
+    (fun y (hy : y ∈ S) => (⟨hy.1.le, Ioo_subset_Icc_self hy.2⟩ :
+      0 ≤ ((y - c) / b).re ∧ ((y - c) / b).im ∈ Icc 0 Real.pi)) hT hcl
+  -- for `b = 0` the half-strip is empty
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp [S] at hcl
+  -- the short side `re = 0` is within distance `π * ‖b‖` of `c`
+  have hre' : 0 < ((z - c) / b).re := by
+    refine hre.lt_of_ne fun h => ?_
+    have hnorm : ‖(z - c) / b‖ ≤ Real.pi := by
+      calc ‖(z - c) / b‖ ≤ |((z - c) / b).re| + |((z - c) / b).im| := norm_le_abs_re_add_abs_im _
+        _ ≤ Real.pi := by rw [← h, abs_zero, zero_add, abs_of_nonneg him₀]; exact himπ
+    rw [norm_div, div_le_iff₀ (norm_pos_iff.mpr hb)] at hnorm
+    exact hnorm.not_gt hzb
+  refine ⟨hre, ?_⟩
+  by_contra h
+  rw [not_or] at h
+  exact hzS ⟨hre', him₀.lt_of_ne (Ne.symm h.1), himπ.lt_of_ne h.2⟩
+
+/-- If, far from `c`, every point `z` of a set `U` has `0 < re ((z - c) / b)` (as for a set that
+coincides far out with a half-strip or a half-plane), then some point lies outside the closure of
+`U`, far out in the direction `-b`. -/
+theorem exists_notMem_closure_of_forall_mem_re_div_pos {c b : ℂ} {ρ : ℝ} (hb : b ≠ 0)
+    (hU : ∀ z : ℂ, ρ < ‖z - c‖ → z ∈ U → 0 < ((z - c) / b).re) : ∃ q, q ∉ closure U := by
+  -- the point `q = c - t * b`, at distance `|ρ| + 1` from `c`, has `re ((q - c) / b) = -t < 0`
+  have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  set t : ℝ := (|ρ| + 1) / ‖b‖ with ht_def
+  have ht : 0 < t := by positivity
+  have hρ : ρ < ‖c - (t : ℂ) * b - c‖ := by
+    rw [sub_sub_cancel_left, norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.le,
+      ht_def, div_mul_cancel₀ _ hb'.ne']
+    linarith [le_abs_self ρ]
+  have hre : ((c - (t : ℂ) * b - c) / b).re < 0 := by
+    rw [sub_sub_cancel_left, neg_div, mul_div_cancel_right₀ _ hb]
+    simpa using ht
+  refine ⟨c - (t : ℂ) * b, ?_⟩
+  rw [← mem_compl_iff, ← interior_compl, mem_interior_iff_mem_nhds]
+  filter_upwards [(continuous_norm.comp (continuous_sub_right c)).continuousAt.eventually
+    (lt_mem_nhds hρ), ((continuous_re.comp ((continuous_sub_right c).div_const b)).continuousAt
+      (x := c - (t : ℂ) * b)).eventually (gt_mem_nhds hre)] with z hzρ hzre hzU
+  exact lt_asymm (hU z hzρ hzU) hzre
+
+/-! ### The exterior of a half-strip at infinity -/
+
+/-- If, far from `c`, no point `z` of a set `U` lies in the open half-strip
+`{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}` (as for a set that coincides far out with the
+exterior of the closed half-strip), then some point lies outside the closure of `U`. -/
+theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : ℝ} (hb : b ≠ 0)
+    (hU : ∀ z : ℂ, ρ < ‖z - c‖ → z ∈ U →
+      ¬(0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
+    ∃ q, q ∉ closure U := by
+  -- the point `q = c + (t + π / 2 * I) * b` has `(q - c) / b = t + π / 2 * I`
+  have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  set t : ℝ := (|ρ| + 1) / ‖b‖ with ht_def
+  have ht : 0 < t := by positivity
+  set ζ : ℂ := t + (Real.pi / 2 : ℝ) * I
+  have hdiv : (c + ζ * b - c) / b = ζ := by
+    rw [add_sub_cancel_left, mul_div_cancel_right₀ _ hb]
+  have hρ : ρ < ‖c + ζ * b - c‖ := by
+    rw [add_sub_cancel_left, norm_mul]
+    calc ρ < t * ‖b‖ := by rw [ht_def, div_mul_cancel₀ _ hb'.ne']; linarith [le_abs_self ρ]
+      _ ≤ ‖ζ‖ * ‖b‖ := by
+        gcongr
+        simpa [ζ, abs_of_pos ht] using abs_re_le_norm ζ
+  have hre : 0 < ((c + ζ * b - c) / b).re := by rw [hdiv]; simpa [ζ] using ht
+  have him : ((c + ζ * b - c) / b).im ∈ Ioo 0 Real.pi := by
+    rw [hdiv]
+    simp [ζ, Real.pi_pos]
+  refine ⟨c + ζ * b, ?_⟩
+  rw [← mem_compl_iff, ← interior_compl, mem_interior_iff_mem_nhds]
+  have hζc : Continuous fun z : ℂ => (z - c) / b := by fun_prop
+  filter_upwards [(continuous_norm.comp (continuous_sub_right c)).continuousAt.eventually
+    (lt_mem_nhds hρ), (continuous_re.comp hζc).continuousAt.eventually (lt_mem_nhds hre),
+    (continuous_im.comp hζc).continuousAt.eventually (isOpen_Ioo.mem_nhds him)]
+    with z hzρ hzre hzim hzU
+  exact hU z hzρ hzU ⟨hzre, hzim⟩
 
 end TauCeti
 

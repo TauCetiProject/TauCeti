@@ -71,6 +71,8 @@ invariants of its conjugate through the resulting map in degree two.
   with the connecting maps of short exact sequences.
 * `TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map_res`: every compatible pair factors
   as a morphism into the restriction of its target followed by the pair `Res(e)(N) → N`.
+* `TauCeti.TateCohomology.isZero_of_forall_isZero_res`: vanishing on every subgroup includes
+  vanishing on `G` itself.
 
 ## References
 
@@ -101,15 +103,12 @@ theorem chainsMap_comp_d₀
       (tateComplexConnectData N).d₀ =
       (tateComplexConnectData M).d₀ ≫
         (groupCohomology.cochainsMap (e.symm : H →* G) (IsIntertwiningMap.ofRes hφ)).f 0 := by
-  simp only [tateComplexConnectData_d₀]
-  ext x m y
-  simp only [groupHomology.lsingle_comp_chainsMap_f_assoc, MonoidHom.coe_ofClass,
-    ModuleCat.ofHom_comp, Category.assoc, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom,
-    LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply, Rep.tateNorm_eq,
-    groupCohomology.cochainsMap_f, IsIntertwiningMap.toRes_hom_toLinearMap,
-    IsIntertwiningMap.ofRes_hom_toLinearMap, Finsupp.lsum_single, LinearMap.pi_apply,
-    LinearMap.compLeft_apply, LinearMap.funLeft_apply]
-  exact congr($(IsIntertwiningMap.comp_norm hφ) m).symm
+  have hnorm : ModuleCat.ofHom φ ≫ N.norm.asHom.toModuleCatHom =
+      M.norm.asHom.toModuleCatHom ≫ ModuleCat.ofHom φ :=
+    ModuleCat.hom_ext (IsIntertwiningMap.comp_norm hφ).symm
+  rw [← cancel_mono (groupCohomology.cochainsIso₀ N).hom]
+  simpa [tateComplexConnectData_d₀, Rep.tateNorm, Category.assoc, Rep.Hom.toModuleCatHom]
+    using hnorm
 
 /-- **The map of Tate complexes attached to a compatible pair.** On the chain half it is
 `groupHomology.chainsMap` along `e`, on the cochain half `groupCohomology.cochainsMap` along
@@ -344,7 +343,7 @@ compatible coefficient map. -/
 theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     H0π M ≫ map hφ 0 = ModuleCat.ofHom (mapInvariants hφ) ≫ H0π N := by
-  rw [H0π_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ, map_def]
+  rw [H0π_eq_H0CyclesIso_inv_comp_homologyπ, H0π_eq_H0CyclesIso_inv_comp_homologyπ, map_def]
   -- `H0π` lands in `tateCohomology M 0`, which is `(tateComplex M).homology 0` only by unfolding
   -- the semireducible `tateCohomologyFunctor`. `rw` cannot match across that unfolding, not even
   -- `Category.assoc`, so the squares are composed, and reassociated, as terms.
@@ -412,8 +411,8 @@ under the compatible coefficient map. -/
 theorem HNegOneπ_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     HNegOneπ M ≫ map hφ (-1) = ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N := by
-  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ, HNegOneπ_eq_cyclesIso_inv_comp_homologyπ,
-    map_def]
+  rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ,
+    HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ, map_def]
   -- `HNegOneπ` lands in `tateCohomology M (-1)`, which is `(tateComplex M).homology (-1)` only by
   -- unfolding the semireducible `tateCohomologyFunctor`. `rw` cannot match across that unfolding,
   -- not even `Category.assoc`, so the squares are composed, and reassociated, as terms.
@@ -592,6 +591,15 @@ def resIso (e : G ≃* H) (n : ℤ) :
   rw [resIso]
   -- As above for `NatIso.ofComponents_inv_app`.
   rfl
+
+/-- Tate cohomology vanishing on every subgroup of `G` vanishes on `G` itself. -/
+theorem isZero_of_forall_isZero_res (A : Rep R G)
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
+      Limits.IsZero (tateCohomology (Rep.res S.subtype A) n))
+    (n : ℤ) : Limits.IsZero (tateCohomology A n) :=
+  have := Fintype.ofFinite (⊤ : Subgroup G)
+  -- `Subgroup.topEquiv` is `(⊤ : Subgroup G).subtype` by definition.
+  (hA ⊤ n).of_iso ((resIso (Subgroup.topEquiv : (⊤ : Subgroup G) ≃* G) n).app A).symm
 
 /-- Tate cohomology groups matched by a compatible pair whose linear part is an equivalence have
 the same cardinality. -/

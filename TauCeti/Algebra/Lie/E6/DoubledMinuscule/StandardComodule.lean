@@ -96,7 +96,7 @@ theorem summandSubcomodule_toSubmodule (dual : Bool) :
   Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
 
 /-- Membership in a minuscule summand means vanishing outside its coordinate block. -/
-@[simp]
+@[simp↓]
 theorem mem_summandSubcomodule (dual : Bool) (v : Fin 54 → R) :
     v ∈ summandSubcomodule R dual ↔
       ∀ a, matrixSummand a ≠ (if dual then 1 else 0) → v a = 0 := by

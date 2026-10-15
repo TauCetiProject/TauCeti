@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Product
 public import TauCeti.Geometry.Toric.Algebraic.Regular
 
 /-!
@@ -26,6 +27,8 @@ combinatorial product operation used by products of toric realizations.
 * `TauCeti.Toric.Fan.isComplete_prod_iff`: a product fan is complete exactly when both factors
   are complete.
 * `TauCeti.Toric.Fan.IsRegular.prod`: products preserve regularity.
+* `TauCeti.Toric.Fan.mem_dualSemigroup_prod_of_comp_inl_of_comp_inr`: a character of the product
+  lattice is nonnegative on a product fan when both of its restrictions are nonnegative.
 * `TauCeti.Toric.FanHom.fst`, `TauCeti.Toric.FanHom.snd`, and `TauCeti.Toric.FanHom.prod`: the
   projections and common-source pairing for product fans.
 * `TauCeti.Toric.FanHom.prodMap`: the componentwise product of two fan morphisms.
@@ -105,6 +108,13 @@ theorem coe_prodCone (σ : Φ.cones) (τ : Ψ.cones) :
     (Φ.prodCone Ψ σ τ : PointedCone ℝ (V × V')) = σ.1.prod τ.1 :=
   rfl
 
+/-- Intersections of product cones are computed componentwise. -/
+@[simp]
+theorem prodCone_inf_prodCone (σ σ' : Φ.cones) (τ τ' : Ψ.cones) :
+    Φ.prodCone Ψ σ τ ⊓ Φ.prodCone Ψ σ' τ' = Φ.prodCone Ψ (σ ⊓ σ') (τ ⊓ τ') := by
+  apply Subtype.ext
+  simp only [coe_inf, Submodule.prod_inf_prod]
+
 /-- Every cone of a product fan is the product cone of a pair of factor cones. -/
 theorem exists_prodCone_eq (ξ : (Φ.prod Ψ).cones) :
     ∃ (σ : Φ.cones) (τ : Ψ.cones), Φ.prodCone Ψ σ τ = ξ := by
@@ -160,6 +170,17 @@ theorem IsRegular.prod (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegular) : (Φ.prod Ψ).
   intro ξ hξ
   obtain ⟨σ, hσ, τ, hτ, rfl⟩ := (Φ.mem_prod_cones Ψ).1 hξ
   exact ((isRegular_iff.mp hΦ) σ hσ).prod ((isRegular_iff.mp hΨ) τ hτ)
+
+/-- A character of the product lattice is nonnegative on every cone of a product fan when its
+restrictions to the two lattice factors are nonnegative on every cone of the corresponding
+factor fans. The converse needs both fans to be nonempty: a product with an empty fan has no
+cones. -/
+theorem mem_dualSemigroup_prod_of_comp_inl_of_comp_inr {m : N × N' →+ ℤ}
+    (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.1)
+    (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.1)
+    (ξ : (Φ.prod Ψ).cones) : m ∈ dualSemigroup (Φ.prod Ψ).lattice ξ.1 := by
+  obtain ⟨σ, τ, rfl⟩ := Φ.exists_prodCone_eq Ψ ξ
+  exact (mem_dualSemigroup_prod Φ.lattice Ψ.lattice σ.1 τ.1 m).2 ⟨h₁ σ, h₂ τ⟩
 
 end Fan
 
@@ -330,6 +351,24 @@ theorem prodMap_latticeMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
 theorem prodMap_realMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
     (f.prodMap g).realMap = f.realMap.prodMap g.realMap := by
   rw [prodMap]
+
+/-- The first projection commutes with componentwise products of fan morphisms. -/
+@[simp]
+theorem fst_comp_prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (fst Ψ₁ Ψ₂).comp (f.prodMap g) = f.comp (fst Φ₁ Φ₂) := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, fst_latticeMap, prodMap_latticeMap]
+  ext x
+  rfl
+
+/-- The second projection commutes with componentwise products of fan morphisms. -/
+@[simp]
+theorem snd_comp_prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (snd Ψ₁ Ψ₂).comp (f.prodMap g) = g.comp (snd Φ₁ Φ₂) := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, snd_latticeMap, prodMap_latticeMap]
+  ext x
+  rfl
 
 /-- Products of identity fan morphisms are identity fan morphisms. -/
 @[simp]

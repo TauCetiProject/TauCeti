@@ -26,6 +26,7 @@ public section
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
 open CategoryTheory
 open YoungTableau
 open scoped BigOperators
@@ -98,7 +99,7 @@ private theorem transportedColumnAntisymmetrizer_single_eq_zero
       (MonoidAlgebra.single q (1 : ℚ)) = MonoidAlgebra.single q 1 := by
     rw [Representation.ofMulAction_single, hfix]
   -- the permutation module is a `ℚ`-vector space, so doubling is injective on it
-  have : IsAddTorsionFree (permutationModule (shapePartition m)) := .of_module_rat _
+  have : HasUniqueDiv (permutationModule (shapePartition m)) := .of_module_rat _
   exact Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg
     (nsmul_right_injective two_ne_zero) _ hfix'
     (transportedColumnAntisymmetrizer_mul_single_swap e t hxy hcol)
@@ -183,16 +184,16 @@ private theorem sum_take_rowLens_le_of_intertwiningMap_ne_zero
 
 private noncomputable def spechtIntertwiningMapOfIso {n : ℕ} {μ ν : n.Partition}
     (i : spechtModule μ ≅ spechtModule ν) :
-    Representation.IntertwiningMap (spechtSubrepresentation (diagramOf μ)).toRepresentation
-      ((spechtSubrepresentation (diagramOf ν)).toRepresentation.comp
+    Representation.IntertwiningMap (spechtSubrepresentation (ofPartition μ)).toRepresentation
+      ((spechtSubrepresentation (ofPartition ν)).toRepresentation.comp
         (finCongr
-          ((card_diagramOf μ).trans (card_diagramOf ν).symm)).permCongrHom.toMonoidHom) := by
+          ((card_ofPartition μ).trans (card_ofPartition ν).symm)).permCongrHom.toMonoidHom) := by
   let f : Representation.Equiv (spechtModule μ).ρ (spechtModule ν).ρ :=
     Representation.equivOfIso
     ((forget₂ (FDRep ℚ (Equiv.Perm (Fin n))) (Rep ℚ (Equiv.Perm (Fin n)))).mapIso i)
-  let eμ := (finCongr (card_diagramOf μ).symm).permCongrHom
-  let eν := (finCongr (card_diagramOf ν).symm).permCongrHom
-  let e := (finCongr ((card_diagramOf μ).trans (card_diagramOf ν).symm)).permCongrHom
+  let eμ := (finCongr (card_ofPartition μ).symm).permCongrHom
+  let eν := (finCongr (card_ofPartition ν).symm).permCongrHom
+  let e := (finCongr ((card_ofPartition μ).trans (card_ofPartition ν).symm)).permCongrHom
   refine ⟨f.toLinearMap, fun g => ?_⟩
   have hf := f.toIntertwiningMap.isIntertwining' (eμ.symm g)
   have he : eν (eμ.symm g) = e g := by
@@ -211,9 +212,10 @@ private theorem spechtIntertwiningMapOfIso_injective {n : ℕ} {μ ν : n.Partit
 
 private noncomputable def spechtToPermutationIntertwiningMapOfIso {n : ℕ}
     {μ ν : n.Partition} (i : spechtModule μ ≅ spechtModule ν) :
-    Representation.IntertwiningMap (spechtSubrepresentation (diagramOf μ)).toRepresentation
-      ((permutationModule (shapePartition (diagramOf ν))).ρ.comp
-        (finCongr ((card_diagramOf μ).trans (card_diagramOf ν).symm)).permCongrHom.toMonoidHom) :=
+    Representation.IntertwiningMap (spechtSubrepresentation (ofPartition μ)).toRepresentation
+      ((permutationModule (shapePartition (ofPartition ν))).ρ.comp
+        (finCongr ((card_ofPartition μ).trans
+          (card_ofPartition ν).symm)).permCongrHom.toMonoidHom) :=
   { toLinearMap := (Submodule.subtype _).comp (spechtIntertwiningMapOfIso i).toLinearMap
     isIntertwining' := fun g => by
       apply LinearMap.ext
@@ -226,24 +228,24 @@ private noncomputable def spechtToPermutationIntertwiningMapOfIso {n : ℕ}
 
 private theorem spechtToPermutationIntertwiningMapOfIso_apply {n : ℕ}
     {μ ν : n.Partition} (i : spechtModule μ ≅ spechtModule ν)
-    (v : (spechtSubrepresentation (diagramOf μ)).toSubmodule) :
+    (v : (spechtSubrepresentation (ofPartition μ)).toSubmodule) :
     spechtToPermutationIntertwiningMapOfIso i v =
       ((spechtIntertwiningMapOfIso i v :
-        (spechtSubrepresentation (diagramOf ν)).toSubmodule) :
-          (permutationModule (shapePartition (diagramOf ν))).V) :=
+        (spechtSubrepresentation (ofPartition ν)).toSubmodule) :
+          (permutationModule (shapePartition (ofPartition ν))).V) :=
   rfl
 
 /-- An isomorphism from `S^μ` to `S^ν` forces `μ` to dominate `ν`. -/
 private theorem dominates_of_spechtModule_iso {n : ℕ} {μ ν : n.Partition}
     (i : spechtModule μ ≅ spechtModule ν) : Dominates μ ν := by
   refine dominates_iff.mpr fun k => ?_
-  simpa only [rowLens_diagramOf] using
+  simpa only [YoungDiagram.rowLens_ofPartition_eq_sort_parts] using
     sum_take_rowLens_le_of_intertwiningMap_ne_zero
-      (finCongr ((card_diagramOf μ).trans (card_diagramOf ν).symm))
+      (finCongr ((card_ofPartition μ).trans (card_ofPartition ν).symm))
       (f := spechtToPermutationIntertwiningMapOfIso i) (k := k) (by
         intro hzero
-        obtain ⟨t⟩ := YoungTableau.nonempty (diagramOf μ)
-        let v : (spechtSubrepresentation (diagramOf μ)).toSubmodule :=
+        obtain ⟨t⟩ := YoungTableau.nonempty (ofPartition μ)
+        let v : (spechtSubrepresentation (ofPartition μ)).toSubmodule :=
           ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩
         have hv : v ≠ 0 := by
           intro h

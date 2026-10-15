@@ -298,14 +298,8 @@ variable {R : Type v} [Ring R] [TopologicalSpace R]
   {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   (U : Subgroup G)
 
-local instance instDiscreteTopologyTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) :
-    DiscreteTopology A.obj.V := A.property.discreteTopology
-
 local instance instContinuousSMulTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) :
     ContinuousSMul U A.obj.V := A.property.continuousSMul
-
-local instance instDiscreteTopologyTopRepAmbient (A : SmoothDiscreteTopRep.{v, u, u} R G) :
-    DiscreteTopology A.obj.V := A.property.discreteTopology
 
 /-- The Shapiro cochain map for a smooth discrete topological representation over any ring: the
 cochain map `σ ↦ ev₁ ∘ σ ∘ ι` of the compatible pair of the inclusion `ι : U ↪ G` and the

@@ -17,7 +17,8 @@ degree two. Mathlib's generic `QuadraticMap.polar` therefore gives the expressio
     polar degree f g = deg (f + g) - deg f - deg g.
 
 This file records the values at zero and on the diagonal. Bilinearity is the substantive isogeny
-theorem; the separable case is proved in `Isogeny/Dual/Degree.lean` from additivity of the dual.
+theorem, proved in `Isogeny/Dual/Degree.lean` from additivity of the dual, where the degree is
+packaged as the quadratic form `TauCeti.Isogeny.Hom.degreeForm`.
 
 ## Main results
 

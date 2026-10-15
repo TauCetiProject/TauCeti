@@ -43,9 +43,6 @@ cohomological operations along `L/K` are indexed by.
 * `TauCeti.absoluteGaloisGroupEquivFixingSubgroup_apply`: the isomorphism conjugates by
   `separableClosureRingEquiv K L σ`, so it intertwines the actions of `G_L` on `Lˢ` and of `G_K`
   on `Kˢ`.
-* `TauCeti.restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup`: for normal extensions
-  `E/K` and `M/L` with embeddings compatible under `separableClosureRingEquiv K L σ`, restricting
-  `g : G_L` to `E` through `G_K` agrees with restricting it to `M` and then to `E`.
 
 ## References
 
@@ -210,45 +207,5 @@ theorem absoluteGaloisGroupEquivFixingSubgroup_symm_apply (h : ↥σ.fieldRange.
   conv_rhs => rw [← (absoluteGaloisGroupEquivFixingSubgroup K L σ).apply_symm_apply h]
   rw [absoluteGaloisGroupEquivFixingSubgroup_apply, RingEquiv.symm_apply_apply,
     RingEquiv.symm_apply_apply]
-
-/-! ### Restriction along a compatible base change of normal extensions -/
-
-section BaseChangeRestriction
-
-variable (E M : Type*) [Field E] [Field M] [Algebra K E] [Algebra K M] [Algebra L M]
-  [Algebra E M] [IsScalarTower K L M] [IsScalarTower K E M] [Normal K E] [Normal L M]
-  (ρ : E →ₐ[K] SeparableClosure K) (τ : M →ₐ[L] SeparableClosure L)
-
-/-- **Restriction to `M` is compatible with the embedded Galois groups.** If the embeddings of `E`
-and `M` are compatible under `separableClosureRingEquiv K L σ`, then restricting
-`g : G_L`, viewed in `G_K` through `σ`, to `E` agrees with restricting it first to `M` and then
-to `E`. -/
-theorem restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup
-    (hcompat : ∀ x : E, separableClosureRingEquiv K L σ (τ (algebraMap E M x)) = ρ x)
-    (g : AbsoluteGaloisGroup L) :
-    ρ.restrictNormalHom
-        (absoluteGaloisGroupEquivFixingSubgroup K L σ g : AbsoluteGaloisGroup K) =
-      ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K))
-        (τ.restrictNormalHom g) := by
-  apply ρ.restrictNormalHom_eq_iff.2
-  intro y
-  let e := separableClosureRingEquiv K L σ
-  calc
-    _ = (absoluteGaloisGroupEquivFixingSubgroup K L σ g : AbsoluteGaloisGroup K)
-          (e (τ (algebraMap E M y))) :=
-        congrArg _ (hcompat y).symm
-    _ = e (g (τ (algebraMap E M y))) := by
-        simpa only [e, RingEquiv.symm_apply_apply] using
-          absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g (e (τ (algebraMap E M y)))
-    _ = e (τ (τ.restrictNormalHom g (algebraMap E M y))) :=
-        congrArg e (τ.restrictNormalHom_commutes g _).symm
-    _ = e (τ (algebraMap E M
-          (((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K))
-            (τ.restrictNormalHom g) y))) :=
-        congrArg (fun z => e (τ z))
-          (AlgEquiv.restrictNormal_commutes ((τ.restrictNormalHom g).restrictScalars K) E y).symm
-    _ = _ := hcompat _
-
-end BaseChangeRestriction
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Maps induced on presented quotients in `ModuleCat`
@@ -21,6 +22,11 @@ This file records the one fact such an induced map is used through: it sends the
 representative to the class `π₂ (f x)`, which is Mathlib's `Submodule.mapQ_mkQ` transported along
 the two presentations. Since the presentations are only given up to isomorphism, this
 characterisation — rather than a definitional unfolding — is how the induced map is computed.
+
+The canonical short complex `S → M → M / S` and its short exactness are also
+packaged here. Its extension class computes degree-one extensions when `M` is
+projective. The abbreviation keeps the three modules and the two linear maps
+available to the categorical exactness and extension APIs.
 
 ## Main statements
 
@@ -53,3 +59,20 @@ theorem comp_conj_mapQ {X₁ X₂ : Type u} [AddCommGroup X₁] [Module R X₁] 
     ← ModuleCat.ofHom_comp, Submodule.mapQ_mkQ]
 
 end ModuleCat
+
+namespace Submodule
+
+variable {A : Type u} [Ring A] {M : Type v} [AddCommGroup M] [Module A M]
+
+/-- The canonical short complex `S → M → M / S`, with the inclusion and quotient maps. -/
+abbrev quotientShortComplex (S : Submodule A M) : ShortComplex (ModuleCat.{v} A) :=
+  ModuleCat.shortComplexOfCompEqZero S.subtype S.mkQ
+    (LinearMap.exact_subtype_mkQ S).linearMap_comp_eq_zero
+
+/-- The inclusion of a submodule and its quotient map form a short exact sequence. -/
+theorem shortExact_quotientShortComplex (S : Submodule A M) :
+    S.quotientShortComplex.ShortExact :=
+  ModuleCat.shortComplex_shortExact _ (LinearMap.exact_subtype_mkQ S)
+    S.injective_subtype S.mkQ_surjective
+
+end Submodule

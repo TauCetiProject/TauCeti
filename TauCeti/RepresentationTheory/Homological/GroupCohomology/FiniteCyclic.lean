@@ -7,8 +7,9 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
 import TauCeti.Data.Nat.Carry
-import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
 
@@ -52,7 +53,8 @@ Frobenius.
 
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective`: in positive even degree every class is
   represented by an element fixed by the generator.
-* `Rep.FiniteCyclicGroup.carryCocycle_apply_pow`: the values of the carry cocycle.
+* `Rep.FiniteCyclicGroup.carryCocycle_apply`,
+  `Rep.FiniteCyclicGroup.carryCocycle_apply_pow`: the values of the carry cocycle.
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_two`,
   `Rep.FiniteCyclicGroup.groupCohomologyπEven_two_apply`: in degree `2`, `groupCohomologyπEven`
   sends a fixed element to the class of its carry cocycle.
@@ -79,8 +81,14 @@ open TauCeti (cyclicLog pow_cyclicLog cyclicLog_lt cyclicLog_pow cyclicLog_mul c
 
 namespace Rep.FiniteCyclicGroup
 
-variable {k G : Type u} [CommRing k] [CommGroup G] [Fintype G] (A : Rep k G) (g : G)
+open groupCohomology
+
+variable {k G : Type u} [CommRing k] [CommGroup G] (A : Rep k G) (g : G)
   (hg : ∀ x, x ∈ Subgroup.zpowers g)
+
+section PeriodicComparison
+
+variable [Fintype G]
 
 /-- In positive even degree, every class in the cohomology of a finite cyclic group is
 represented by an element fixed by the generator. -/
@@ -116,20 +124,6 @@ private noncomputable def barToPeriodic₂ : free k G (Fin 2 → G) ⟶ leftRegu
   freeLift k G (leftRegular k G) fun x =>
     if orderOf g ≤ cyclicLog g hg (x 0) + cyclicLog g hg (x 1) then MonoidAlgebra.single 1 1 else 0
 
-omit [Fintype G] in
-private theorem leftRegular_ρ_single (h x : G) (r : k) :
-    (leftRegular k G).ρ h (MonoidAlgebra.single x r) = MonoidAlgebra.single (h * x) r :=
-  (Representation.ofMulAction_single (k := k) h x r).trans (by rw [smul_eq_mul])
-
-omit [Fintype G] in
-/-- `leftRegular_ρ_single` for `ρ(h)` written as `applyAsHom`, whose representation carries the
-`CommMonoid` instance path of `G`; it agrees with the `Group` path only up to unfolding instances,
-so `leftRegular_ρ_single` does not rewrite this form. -/
-private theorem applyAsHom_leftRegular_single (h x : G) (r : k) :
-    (applyAsHom (leftRegular k G) h).hom (MonoidAlgebra.single x r) =
-      MonoidAlgebra.single (h * x) r :=
-  leftRegular_ρ_single k h x r
-
 private theorem barToPeriodic₁_comm :
     barToPeriodic₁ k g hg ≫ (applyAsHom (leftRegular k G) g - 𝟙 (leftRegular k G)) =
       Rep.barComplex.d k G 0 ≫ barToPeriodic₀ k := by
@@ -140,7 +134,13 @@ private theorem barToPeriodic₁_comm :
     Pi.sub_apply, Rep.hom_id, Rep.hom_ofHom, Representation.IntertwiningMap.id_apply, map_add,
     map_sum, Representation.freeLift_single_single, one_smul, map_one, Module.End.one_apply,
     Representation.ofMulAction_single, smul_eq_mul, mul_one]
-  rw [Finset.sum_congr rfl fun l _ => by rw [applyAsHom_leftRegular_single]]
+  -- Equality of the two instance paths is definitional, so the action formula is applied as a
+  -- proof term rather than used as a rewrite rule.
+  have hρ (l : ℕ) : (applyAsHom (leftRegular k G) g).hom (MonoidAlgebra.single (g ^ l) 1) =
+      MonoidAlgebra.single (g * g ^ l) 1 :=
+    (Representation.ofMulAction_single (k := k) g (g ^ l) (1 : k)).trans
+      (by rw [smul_eq_mul])
+  rw [Finset.sum_congr rfl fun l _ => by rw [hρ]]
   simp only [← pow_succ']
   rw [Finset.sum_range_sub (fun l => MonoidAlgebra.single (g ^ l) (1 : k)), pow_cyclicLog, pow_zero,
     Fin.sum_univ_one]
@@ -163,7 +163,7 @@ private theorem geomSum_add_sub_geomSum_mod (i j : ℕ) (hi : i < orderOf g) (hj
   · rw [Nat.mod_eq_of_lt (not_le.1 h), sub_self]
 
 private theorem barToPeriodic₂_comm :
-    barToPeriodic₂ k g hg ≫ (leftRegular k G).norm =
+    barToPeriodic₂ k g hg ≫ (leftRegular k G).norm.asHom =
       Rep.barComplex.d k G 1 ≫ barToPeriodic₁ k g hg := by
   refine free_ext _ _ _ _ _ fun x => ?_
   rw [Rep.hom_comp, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
@@ -175,7 +175,7 @@ private theorem barToPeriodic₂_comm :
   have h₀ : Fin.contractNth 0 (· * ·) x 0 = x 0 * x 1 := rfl
   have h₁ : Fin.contractNth 1 (· * ·) x 0 = x 0 := rfl
   set i := cyclicLog g hg (x 0) with hi
-  set j := cyclicLog g hg (x 1) with hj
+  set j := cyclicLog g hg (x 1) with _
   have hmul : cyclicLog g hg (x 0 * x 1) = (i + j) % orderOf g := cyclicLog_mul g hg _ _
   -- As in `barToPeriodic₁_comm`, left multiplication is matched up to the instance path.
   simp only [Representation.ofMulAction_single, smul_eq_mul]
@@ -185,7 +185,7 @@ private theorem barToPeriodic₂_comm :
   have hS : geomSum k g (i + j) =
       geomSum k g i + ∑ l ∈ Finset.range j, MonoidAlgebra.single (g ^ (i + l)) 1 :=
     Finset.sum_range_add _ _ _
-  have hN : (leftRegular k G).norm.hom
+  have hN : (leftRegular k G).norm.asHom.hom
       (if orderOf g ≤ i + j then MonoidAlgebra.single 1 1 else 0) =
       if orderOf g ≤ i + j then ∑ x : G, MonoidAlgebra.single x (1 : k) else 0 := by
     split_ifs
@@ -255,8 +255,6 @@ end Comparison
 
 /-! ### The periodicity class in degree two -/
 
-open groupCohomology
-
 /-- The comparison map on cochains: `Hom(periodic, A) ⟶ Hom(bar, A) ≅ Fun(Gⁿ, A)`. -/
 private noncomputable abbrev barToPeriodicCochains :
     (resolution k g hg).complex.linearYonedaObj k A ⟶ inhomogeneousCochains A :=
@@ -264,12 +262,11 @@ private noncomputable abbrev barToPeriodicCochains :
     ((((linearYoneda k (Rep k G)).obj A).rightOp.mapHomologicalComplex _).map
       (barToPeriodic k g hg)).op ≫ (inhomogeneousCochainsIso A).inv
 
-omit [Fintype G] in
-private theorem ρ_apply_of_mem_ker (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
-    A.ρ g x.1 = x.1 := by
-  have := x.2
-  rw [LinearMap.mem_ker] at this
-  simpa [sub_hom, sub_eq_zero] using this
+end PeriodicComparison
+
+section CarryCocycle
+
+variable [Finite G]
 
 /-- The carry cochain `(x, y) ↦ a` if the exponents of `x` and `y` carry, and `0` otherwise. -/
 private noncomputable def carryCochain : A →ₗ[k] G × G → A :=
@@ -300,11 +297,25 @@ order `n`: the `2`-cocycle `(gⁱ, gʲ) ↦ a` if `i + j ≥ n` and `0` otherwis
 noncomputable def carryCocycle :
     LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap →ₗ[k] cocycles₂ A :=
   LinearMap.codRestrict (cocycles₂ A) ((carryCochain A g hg).comp (Submodule.subtype _))
-    fun x => carryCochain_mem_cocycles₂ A g hg x.1 (ρ_apply_of_mem_ker A g x)
+    fun x => carryCochain_mem_cocycles₂ A g hg x.1 (Rep.ρ_apply_of_mem_ker A g x)
 
-private theorem coe_carryCocycle (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
-    (carryCocycle A g hg x : G × G → A) = carryCochain A g hg x.1 :=
-  rfl
+/-- The underlying function of the carry cocycle is its defining carry cochain. -/
+private theorem coe_carryCocycle
+    (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
+    (carryCocycle A g hg x : G × G → A) = carryCochain A g hg x.1 := by
+  rw [← cocycles₂.val_eq_coe]
+  calc
+    (carryCocycle A g hg x).1 = ((carryCochain A g hg).comp (Submodule.subtype _)) x :=
+      LinearMap.codRestrict_apply _ _ x
+    _ = carryCochain A g hg x.1 := by rw [LinearMap.comp_apply, Submodule.subtype_apply]
+
+/-- The carry cocycle at an arbitrary pair, computed using their reduced exponents. -/
+@[simp low]
+theorem carryCocycle_apply (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap)
+    (p : G × G) :
+    (carryCocycle A g hg x : G × G → A) p =
+      if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then x.1 else 0 := by
+  rw [coe_carryCocycle, carryCochain_apply]
 
 /-- The values of the carry cocycle: on `(gⁱ, gʲ)` with `i, j < n` it is `a` if `i + j ≥ n` and
 `0` otherwise. -/
@@ -312,8 +323,12 @@ private theorem coe_carryCocycle (x : LinearMap.ker (applyAsHom A g - 𝟙 A).ho
 theorem carryCocycle_apply_pow (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap)
     {i j : ℕ} (hi : i < orderOf g) (hj : j < orderOf g) :
     (carryCocycle A g hg x : G × G → A) (g ^ i, g ^ j) = if orderOf g ≤ i + j then x.1 else 0 := by
-  rw [coe_carryCocycle, carryCochain_apply, cyclicLog_pow, cyclicLog_pow, Nat.mod_eq_of_lt hi,
+  rw [carryCocycle_apply, cyclicLog_pow, cyclicLog_pow, Nat.mod_eq_of_lt hi,
     Nat.mod_eq_of_lt hj]
+
+end CarryCocycle
+
+variable [Fintype G]
 
 /-- The comparison map on cochains in degree `2` sends `k[G] ⟶ A, 1 ↦ a` to the carry cochain of
 `a`: it evaluates the map on the image `barToPeriodic₂ [v₀ | v₁]` of a basis element, which is the
@@ -383,26 +398,13 @@ theorem groupCohomologyπEven_two_apply
 
 /-! ### Change of group between finite cyclic groups -/
 
-/-- In `ℕ`, for `i, j < N` and `d N = m n`: `⌊d i/n⌋ + ⌊d j/n⌋ + c' = ⌊d ((i + j) mod N)/n⌋ + m c`,
-where `c'` and `c` are the carries of `d i + d j` modulo `n` and of `i + j` modulo `N`. -/
-private theorem mul_div_add_mul_div_add_carry {n N d m i j : ℕ} (hn : 0 < n) (hd : d * N = m * n)
-    (hi : i < N) (hj : j < N) :
-    d * i / n + d * j / n + (if n ≤ d * i % n + d * j % n then 1 else 0) =
-      d * ((i + j) % N) / n + m * (if N ≤ i + j then 1 else 0) := by
-  rw [← Nat.add_div hn, ← mul_add]
-  split_ifs with h
-  · obtain ⟨r, hr⟩ := Nat.exists_eq_add_of_le h
-    rw [hr, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega), mul_one, mul_add, hd,
-      add_comm (m * n), Nat.add_mul_div_right _ _ hn]
-  · rw [Nat.mod_eq_of_lt (not_le.1 h), mul_zero, add_zero]
-
 variable {G' : Type u} [CommGroup G'] [Fintype G'] {B : Rep k G'} (f : G →* G')
 
-omit [Fintype G] in
+omit [Fintype G] [Fintype G'] in
 /-- The pullback of the carry cocycle of `y` along `f`, where `f g = g' ^ d`, at `(x₁, x₂)`:
 `φ y` if `d` times the exponents of `x₁` and `x₂` carry modulo the order of `g'`, and `0`
 otherwise. -/
-private theorem mapCocycles₂_carryCocycle_apply [Finite G] {g' : G'}
+private theorem mapCocycles₂_carryCocycle_apply [Finite G] [Finite G'] {g' : G'}
     (hg' : ∀ x, x ∈ Subgroup.zpowers g') {d : ℕ} (hfg : f g = g' ^ d) (φ : res f B ⟶ A)
     (y : LinearMap.ker (applyAsHom B g' - 𝟙 B).hom.toLinearMap) (p : G × G) :
     ((mapCocycles₂ f φ).hom (carryCocycle B g' hg' y) : G × G → A) p =
@@ -410,7 +412,7 @@ private theorem mapCocycles₂_carryCocycle_apply [Finite G] {g' : G'}
         φ.hom y.1 else 0 := by
   rw [coe_mapCocycles₂, cochainsMap₂, ModuleCat.ofHom_apply, LinearMap.comp_apply,
     LinearMap.compLeft_apply, Function.comp_apply, LinearMap.funLeft_apply, Prod.map_apply,
-    coe_carryCocycle, carryCochain_apply, cyclicLog_map g hg f hg' hfg,
+    carryCocycle_apply, cyclicLog_map g hg f hg' hfg,
     cyclicLog_map g hg f hg' hfg]
   split_ifs
   · rfl
@@ -431,23 +433,22 @@ theorem map_groupCohomologyπEven_two {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpo
   rw [groupCohomologyπEven_two_apply, groupCohomologyπEven_two_apply,
     ← LinearMap.comp_apply (groupCohomology.map f φ 2).hom, ← ModuleCat.hom_comp, H2π_comp_map,
     ModuleCat.hom_comp, LinearMap.comp_apply, H2π_eq_iff]
+  have hy := Rep.ρ_apply_of_mem_ker B g' y
   have hfix : ∀ x : G, A.ρ x (φ.hom y.1) = φ.hom y.1 := by
-    have hfixg : A.ρ g (φ.hom y.1) = φ.hom y.1 := by
-      have hy : B.ρ (f g) y.1 = y.1 := by
-        rw [hfg, map_pow, Module.End.pow_apply, Function.iterate_fixed (ρ_apply_of_mem_ker B g' y)]
-      rw [← Rep.hom_comm_apply]
-      exact congrArg φ.hom hy
-    exact fun x => (Representation.mem_invariants_iff_of_forall_mem_zpowers A.ρ g hg _).2 hfixg x
+    intro x
+    rw [← Rep.hom_comm_apply]
+    exact congrArg φ.hom
+      ((Representation.mem_invariants_iff_of_forall_mem_zpowers B.ρ g' hg' _).2 hy (f x))
   -- The difference of the two cocycles is the coboundary of `x ↦ -⌊d i(x)/n⌋ • φ y`, where `i(x)`
   -- is the exponent of `x` and `n` is the order of `G'`.
   refine ⟨fun x => -((d * cyclicLog g hg x / orderOf g') • φ.hom y.1), funext fun p => ?_⟩
-  rw [Pi.sub_apply, mapCocycles₂_carryCocycle_apply A g hg f hg' hfg φ y, coe_carryCocycle,
-    carryCochain_apply, hz]
+  rw [Pi.sub_apply, mapCocycles₂_carryCocycle_apply A g hg f hg' hfg φ y,
+    carryCocycle_apply, hz]
   simp only [d₁₂, ModuleCat.hom_ofHom, LinearMap.coe_mk, AddHom.coe_mk, map_neg, map_nsmul, hfix,
     cyclicLog_mul]
   have hn : d * orderOf g = m * orderOf g' := by
     rw [orderOf_eq_card_of_forall_mem_zpowers hg, orderOf_eq_card_of_forall_mem_zpowers hg', hm]
-  have hk := mul_div_add_mul_div_add_carry (orderOf_pos g') hn (cyclicLog_lt g hg p.1)
+  have hk := Nat.mul_div_add_mul_div_add_carry (orderOf_pos g') hn (cyclicLog_lt g hg p.1)
     (cyclicLog_lt g hg p.2)
   have key := congrArg (· • φ.hom y.1) hk
   simp only [add_smul, mul_smul] at key

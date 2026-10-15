@@ -48,11 +48,10 @@ namespace TauCeti.Semigroups
 
 namespace StronglyContinuousSemigroup
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 variable (S T : StronglyContinuousSemigroup X)
 
-omit [CompleteSpace X] in
 /-- The operators of mutually inverse semigroups commute, also when their time parameters differ.
 This is the cancellation step needed for the mixed-sign cases in the group law. -/
 theorem comp_comm_of_inverse
@@ -77,19 +76,16 @@ theorem comp_comm_of_inverse
 private def inverseGluingFun (t : ℝ) : X →L[ℝ] X :=
   if 0 ≤ t then S.realOperator t else T.realOperator (-t)
 
-omit [CompleteSpace X] in
 private theorem inverseGluingFun_of_nonneg {t : ℝ} (ht : 0 ≤ t) :
     inverseGluingFun S T t = S.realOperator t := by
   simp [inverseGluingFun, ht]
 
-omit [CompleteSpace X] in
 private theorem inverseGluingFun_of_nonpos {t : ℝ} (ht : t ≤ 0) :
     inverseGluingFun S T t = T.realOperator (-t) := by
   rcases ht.eq_or_lt with rfl | ht
   · simp [inverseGluingFun]
   · simp [inverseGluingFun, not_le.mpr ht]
 
-omit [CompleteSpace X] in
 /-- The real-time, pointwise form of the inverse hypothesis. Negative times are covered too, both
 operators then being the identity. -/
 private theorem realOperator_apply_realOperator_of_inverse
@@ -98,7 +94,6 @@ private theorem realOperator_apply_realOperator_of_inverse
   have h := congrArg (fun A : X →L[ℝ] X => A x) (hST a.toNNReal)
   simpa [S.realOperator_def, T.realOperator_def] using h
 
-omit [CompleteSpace X] in
 /-- The real-time form of `comp_comm_of_inverse`. -/
 private theorem realOperator_comp_comm_of_inverse
     (hST : ∀ t, (S t).comp (T t) = ContinuousLinearMap.id ℝ X)
@@ -107,7 +102,6 @@ private theorem realOperator_comp_comm_of_inverse
   rw [S.realOperator_def, T.realOperator_def]
   exact S.comp_comm_of_inverse T hST hTS a.toNNReal b.toNNReal
 
-omit [CompleteSpace X] in
 /-- Mixed-sign cancellation when the forward time is the longer one: the backward operator eats
 part of the forward one and leaves the forward operator at the difference. -/
 private theorem realOperator_comp_realOperator_of_le
@@ -121,7 +115,6 @@ private theorem realOperator_comp_realOperator_of_le
   rw [ContinuousLinearMap.comp_apply, hsplit, ContinuousLinearMap.comp_apply,
     realOperator_apply_realOperator_of_inverse S T hST b]
 
-omit [CompleteSpace X] in
 /-- Mixed-sign cancellation when the backward time is the longer one: the forward operator is
 absorbed and leaves the backward operator at the difference. -/
 private theorem realOperator_comp_realOperator_of_ge
@@ -139,7 +132,6 @@ private theorem realOperator_comp_realOperator_of_ge
     ContinuousLinearMap.comp_apply,
     realOperator_apply_realOperator_of_inverse S T hST a]
 
-omit [CompleteSpace X] in
 private theorem inverseGluingFun_map_add
     (hST : ∀ t, (S t).comp (T t) = ContinuousLinearMap.id ℝ X)
     (hTS : ∀ t, (T t).comp (S t) = ContinuousLinearMap.id ℝ X)
@@ -183,7 +175,6 @@ private theorem inverseGluingFun_map_add
         inverseGluingFun_of_nonpos S T (add_nonpos hs' ht'), neg_add,
         T.realOperator_add (-s) (-t) (neg_nonneg.mpr hs') (neg_nonneg.mpr ht')]
 
-omit [CompleteSpace X] in
 private theorem continuousAt_inverseGluingFun_apply (x : X) :
     ContinuousAt (fun t : ℝ => inverseGluingFun S T t x) 0 := by
   rw [continuousAt_iff_continuous_left_right]
@@ -207,7 +198,6 @@ private theorem continuousAt_inverseGluingFun_apply (x : X) :
       rw [inverseGluingFun_of_nonneg S T ht]
     · simp [inverseGluingFun]
 
-omit [CompleteSpace X] in
 /-- Glue two strongly continuous semigroups whose equal-time operators are mutual inverses into a
 strongly continuous group. The first semigroup supplies nonnegative times and the second supplies
 negative times, with time reflected at zero. -/
@@ -220,7 +210,6 @@ def toGroupOfInverse
   map_add' := inverseGluingFun_map_add S T hST hTS
   continuousAt_zero' x := continuousAt_inverseGluingFun_apply S T x
 
-omit [CompleteSpace X] in
 /-- At nonnegative time, the group obtained by gluing inverse semigroups is the first semigroup. -/
 @[simp]
 theorem toGroupOfInverse_apply_of_nonneg
@@ -230,7 +219,6 @@ theorem toGroupOfInverse_apply_of_nonneg
     S.toGroupOfInverse T hST hTS t = S.realOperator t :=
   inverseGluingFun_of_nonneg S T ht
 
-omit [CompleteSpace X] in
 /-- At nonpositive time, the group obtained by gluing inverse semigroups is the second semigroup
 at the reflected time. -/
 @[simp]
@@ -241,7 +229,6 @@ theorem toGroupOfInverse_apply_of_nonpos
     S.toGroupOfInverse T hST hTS t = T.realOperator (-t) :=
   inverseGluingFun_of_nonpos S T ht
 
-omit [CompleteSpace X] in
 /-- The forward semigroup of the group obtained by gluing inverse semigroups is the first
 semigroup. -/
 @[simp]
@@ -254,7 +241,6 @@ theorem toGroupOfInverse_toSemigroup
     toGroupOfInverse_apply_of_nonneg S T hST hTS t.coe_nonneg,
     S.realOperator_coe]
 
-omit [CompleteSpace X] in
 /-- The forward semigroup of the reflected group obtained by gluing inverse semigroups is the
 second semigroup. -/
 @[simp]

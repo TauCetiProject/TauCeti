@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
 import TauCeti.MeasureTheory.Function.Lp.Const
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
@@ -51,6 +52,10 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball`: the constant on a ball of radius `R`
   is `2 ^ (n + 1) * R`.
+* `TauCeti.W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset`: the same bound in `L²`,
+  for a ball contained in `Ω`, with both sides written as integrals over the ball.
+* `TauCeti.W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset`: the same bound in `L¹`,
+  for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 
 ## References
 
@@ -331,5 +336,93 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
     Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans
     (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) le_rfl)
+
+/-- **The Poincaré–Wirtinger inequality on a ball inside the domain, in `L²`.**  If
+`u ∈ H¹(Ω)` and `B(c, R) ⊆ Ω`, then `∫_{B(c, R)} |u - ⨍_{B(c, R)} u|²` is at most
+`(2 ^ (n + 1) * R)²` times `∫_{B(c, R)} ‖∇u‖²`.  This is
+`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball` for the restriction of `u` to the ball,
+with both sides written as integrals. -/
+theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : ℝ} (hR : 0 < R)
+    (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega 2) :
+    ∫ x in ball c R, (W1p.value u x - ⨍ y in ball c R, W1p.value u y ∂mu) ^ 2 ∂mu ≤
+      (2 ^ (finrank ℝ E + 1) * R) ^ 2 * ∫ x in ball c R, ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+  -- Restrict `u` to the ball `B = B(c, R)`, viewed as a domain of its own.
+  set B : Opens E := ⟨ball c R, isOpen_ball⟩
+  have hB : B ≤ Omega := hball
+  set uB := W1p.restrictL hB u
+  set m := ⨍ y in ball c R, W1p.value u y ∂mu
+  have hval : W1p.value uB =ᵐ[mu.restrict (ball c R)] W1p.value u := W1p.value_restrictL_ae hB u
+  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 2) (by simp) hR
+    (rfl : (B : Set E) = ball c R) uB
+  have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
+  rw [havg] at hP
+  have hcongr : (fun x ↦ W1p.value uB x - m) =ᵐ[mu.restrict (ball c R)]
+      fun x ↦ W1p.value u x - m := hval.mono fun x hx ↦ congrArg (· - m) hx
+  have : IsFiniteMeasure (mu.restrict (ball c R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hmem : MemLp (fun x ↦ W1p.value uB x - m) 2 (mu.restrict (ball c R)) :=
+    (Lp.memLp (W1p.value uB)).sub (memLp_const m)
+  -- Convert the `eLpNorm` bound into a bound on integrals of squares.
+  have hnorm : ‖hmem.toLp _‖ ≤ 2 ^ (finrank ℝ E + 1) * R * ‖W1p.gradient uB‖ := by
+    rw [Lp.norm_toLp, ← toReal_enorm (W1p.gradient uB),
+      ← ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 ^ (finrank ℝ E + 1) * R),
+      ← ENNReal.toReal_mul]
+    exact ENNReal.toReal_mono (by finiteness) hP
+  have hsq : ∫ x in ball c R, (W1p.value u x - m) ^ 2 ∂mu = ‖hmem.toLp _‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [hmem.coeFn_toLp, hcongr] with x hx hx'
+    rw [hx, hx', Real.norm_eq_abs, sq_abs]
+  have hgrad : ‖W1p.gradient uB‖ ^ 2 = ∫ x in ball c R, ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+    rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.gradient_restrictL_ae hB u] with x hx
+    rw [hx]
+  rw [hsq, ← hgrad, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) hnorm 2
+
+/-- **The Poincaré–Wirtinger inequality on a ball inside the domain, in `L¹`.**  If
+`u ∈ W^{1,p}(Ω)` and `B(c, R) ⊆ Ω`, then `∫_{B(c, R)} |u - ⨍_{B(c, R)} u|` is at most
+`2 ^ (n + 1) * R` times `∫_{B(c, R)} ‖∇u‖`.  This is
+`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball` at exponent one, for the restriction of
+`u` to the ball, which lies in `W^{1,1}` because the ball has finite measure. -/
+theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : ℝ} (hR : 0 < R)
+    (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega p) :
+    ∫ x in ball c R, |W1p.value u x - ⨍ y in ball c R, W1p.value u y ∂mu| ∂mu ≤
+      2 ^ (finrank ℝ E + 1) * R * ∫ x in ball c R, ‖W1p.gradient u x‖ ∂mu := by
+  -- Restrict `u` to the ball `B = B(c, R)`, viewed as a domain of its own, and lower the
+  -- exponent to one.
+  set B : Opens E := ⟨ball c R, isOpen_ball⟩
+  have hB : B ≤ Omega := hball
+  have : IsFiniteMeasure (mu.restrict (B : Set E)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  set uB : W1p mu B 1 := W1p.ofExponentLE (Fact.out : 1 ≤ p) (W1p.restrictL hB u)
+  set m := ⨍ y in ball c R, W1p.value u y ∂mu
+  have hval : W1p.value uB =ᵐ[mu.restrict (ball c R)] W1p.value u :=
+    (W1p.value_ofExponentLE_ae _ _).trans (W1p.value_restrictL_ae hB u)
+  have hgrad : W1p.gradient uB =ᵐ[mu.restrict (ball c R)] W1p.gradient u :=
+    (W1p.gradient_ofExponentLE_ae _ _).trans (W1p.gradient_restrictL_ae hB u)
+  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 1) ENNReal.one_ne_top hR
+    (rfl : (B : Set E) = ball c R) uB
+  have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
+  rw [havg] at hP
+  have hle : mu.restrict (ball c R) ≤ mu.restrict Omega := Measure.restrict_mono hball le_rfl
+  have hint : IntegrableOn (W1p.value u) (ball c R) mu :=
+    ((Lp.memLp (W1p.value u)).mono_measure hle).integrable Fact.out
+  have hgint : IntegrableOn (W1p.gradient u) (ball c R) mu :=
+    ((Lp.memLp (W1p.gradient u)).mono_measure hle).integrable Fact.out
+  -- Both sides of `hP` are the integrals in the statement.
+  rw [eLpNorm_one_eq_lintegral_enorm (f := fun x ↦ W1p.value uB x - m)
+      ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const),
+    Lp.enorm_def, eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _)] at hP
+  simp_rw [← Real.norm_eq_abs]
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (by positivity),
+    ofReal_integral_norm_eq_lintegral_enorm (f := fun x ↦ W1p.value u x - m)
+      (hint.sub (integrable_const m)), ofReal_integral_norm_eq_lintegral_enorm hgint]
+  refine le_of_eq_of_le (lintegral_congr_ae ?_) (hP.trans_eq ?_)
+  · filter_upwards [hval] with x hx
+    rw [hx]
+  · congr 1
+    exact lintegral_congr_ae (hgrad.mono fun x hx ↦ by simp only [hx])
 
 end TauCeti

@@ -184,6 +184,15 @@ theorem mul_mem_riemannRochSpace_add {A B : Divisor k F} {f g : F}
   have hgP := (mem_riemannRochSpace_iff_neg_le_ord hg0).mp hg P
   omega
 
+/-- The `n`-th power of a section of `L(A)` is a section of `L(n A)`. -/
+theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ riemannRochSpace A)
+    (n : ℕ) : f ^ n ∈ riemannRochSpace ((n : ℤ) • A) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
+    exact mul_mem_riemannRochSpace_add ih hf
+
 namespace Divisor
 
 /-- A section of `L(D)` outside `L(D-P)` has order exactly `-D(P)` at `P`. -/

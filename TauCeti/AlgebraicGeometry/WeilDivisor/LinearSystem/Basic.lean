@@ -10,26 +10,24 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 /-!
 # Complete linear systems of Weil divisors
 
-This file adds the **complete linear system** `|D|` of a Weil divisor to the Jacobian roadmap's
-Layer A, on top of the formal Weil divisor group
-(`TauCeti.AlgebraicGeometry.WeilDivisor.Basic`) and the principal divisors and divisor class group
-of an order system (`TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic`).
+This file adds the **complete linear system** `|D|` of a Weil divisor, on top of the formal Weil
+divisor group (`TauCeti.AlgebraicGeometry.WeilDivisor.Basic`) and the principal divisors and divisor
+class group of an order system (`TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic`).
 
 For an `OrderSystem S` on a type of points `X`, the complete linear system of a divisor `D` is
 the set of *effective* divisors linearly equivalent to `D`:
 
 `|D| = { E | E effective and E ∼ D }`.
 
-Classically `|D|` is the set of effective divisors of the form `D + div f` for a rational
-function `f` with `D + div f ≥ 0`; its members are the effective divisors in the linear
-equivalence class of `D`, and the associated projective space is `ℙ(L(D))` for the
-Riemann–Roch space `L(D)`. The vector-space structure of `L(D)` is Layer B and needs coherent
-cohomology, so it is deliberately not built here; this file supplies the set `|D|`, its
-description in terms of principal divisors, and the facts that make it well behaved: it depends
-only on the divisor class of `D`, every member shares the class and hence — when principal
-divisors have weighted degree zero — the weighted degree of `D`, a divisor of negative weighted
-degree has empty linear system, and a weighted-degree-zero divisor has only the zero effective
-representative.
+Classically `|D|` is the set of effective divisors of the form `D + div f` for a rational function
+`f` with `D + div f ≥ 0`; its members are the effective divisors in the linear equivalence class of
+`D`, and the associated projective space is `ℙ(L(D))` for the Riemann–Roch space `L(D)`. The
+vector-space structure of `L(D)` needs coherent cohomology, so it is not built here; this file
+supplies the set `|D|`, its description in terms of principal divisors, and the facts that make it
+well behaved: it depends only on the divisor class of `D`, every member shares the class and hence —
+when principal divisors have weighted degree zero — the weighted degree of `D`, a divisor of
+negative weighted degree has empty linear system, and a weighted-degree-zero divisor has only the
+zero effective representative.
 
 Those facts are stated at the weighted level, for a weight `w : X → ℤ`, and are not restated for
 the unweighted `degree`. The unweighted statements are the constant weight `w = fun _ => 1`, where
@@ -37,10 +35,8 @@ the unweighted `degree`. The unweighted statements are the constant weight `w = 
 `degree`, so a `degree`-shaped goal is reached from the weighted lemma by supplying that weight and
 normalising with it.
 
-This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve" and "Degree":
-`TauCetiRoadmap/JacobianChallenge/README.md`. It reuses Tau Ceti's existing `WeilDivisor` and
-`OrderSystem` API and Mathlib's `Set` and quotient-group machinery; no external mathematics is
-vendored.
+This file reuses Tau Ceti's `WeilDivisor` and `OrderSystem` API and Mathlib's `Set` and
+quotient-group machinery; no external mathematics is vendored.
 -/
 
 public section

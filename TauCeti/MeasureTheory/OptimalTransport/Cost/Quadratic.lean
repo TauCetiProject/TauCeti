@@ -19,7 +19,8 @@ cyclically monotone in the classical sense `∑ i, ⟪x i, y (σ i)⟫ ≤ ∑ i
 `c`-transform vocabulary of the quadratic cost is the Legendre–Fenchel vocabulary of the inner
 product; that dictionary is recorded in
 `TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic`. Every statement in this file
-accounts for the factor `1 / 2` in the cost.
+accounts for the factor `1 / 2` in the cost. The same factor connects a minimizer of the
+half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
 
 ## Main statements
 
@@ -29,6 +30,10 @@ accounts for the factor `1 / 2` in the cost.
   quadratic cost is cyclical monotonicity for the inner-product pairing, with
   `TauCeti.isCyclicallyMonotone_norm_sub_sq_div_two_iff_forall_sum_inner_le` its classical
   sum form.
+* `TauCeti.edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two`,
+  `TauCeti.isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two` and
+  `TauCeti.isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two` — convert between the
+  half-squared Brenier cost and the squared-distance cost without changing optimal couplings.
 
 ## References
 
@@ -73,6 +78,50 @@ theorem isCyclicallyMonotone_norm_sub_sq_div_two_iff_forall_sum_inner_le {S : Se
         ∀ σ : Equiv.Perm (Fin n), ∑ i, ⟪x i, y (σ i)⟫ ≤ ∑ i, ⟪x i, y i⟫ := by
   rw [isCyclicallyMonotone_norm_sub_sq_div_two_iff, isCyclicallyMonotone_pairingCost_iff]
   simp only [innerₗ_apply_apply]
+
+end TauCeti
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {F : Type*} [NormedAddCommGroup F] [MeasurableSpace F]
+
+omit [MeasurableSpace F] in
+/-- Squared distance is twice the half-squared-displacement cost. This identity accounts for
+the factor `1 / 2` in the quadratic Brenier cost when reading a plan as a `W₂` plan. -/
+theorem edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two (z : F × F) :
+    edist z.1 z.2 ^ (2 : ℝ) =
+      (2 : ℝ≥0∞) * ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
+  rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg (by norm_num), dist_eq_norm]
+  rw [Real.rpow_ofNat]
+  calc
+    ENNReal.ofReal (‖z.1 - z.2‖ ^ 2) =
+        ENNReal.ofReal (2 * (‖z.1 - z.2‖ ^ 2 / 2)) := congrArg _ (by ring)
+    _ = _ := by rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
+
+/-- A coupling optimal for the half-squared-displacement cost is optimal for squared distance.
+The factor of two is positive, so it preserves the minimizing plans even when the value is
+infinite. -/
+theorem isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two
+    {μ ν : Measure F} {π : Measure (F × F)}
+    (hπ : IsOptimalCoupling
+      (fun z ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν) :
+    IsOptimalCoupling (fun z ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν := by
+  simpa only [← edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two] using
+    hπ.const_mul (a := 2) ENNReal.ofNat_ne_top
+
+/-- A coupling optimal for squared distance is optimal for the half-squared-displacement cost.
+The factor of one half is positive and finite, so it preserves the minimizing plans even when the
+value is infinite. -/
+theorem isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two
+    {μ ν : Measure F} {π : Measure (F × F)}
+    (hπ : IsOptimalCoupling (fun z ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν) :
+    IsOptimalCoupling (fun z ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν := by
+  simpa only [edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two,
+    ENNReal.inv_mul_cancel_left two_ne_zero ENNReal.ofNat_ne_top] using
+    hπ.const_mul (a := 2⁻¹) (ENNReal.inv_ne_top.2 two_ne_zero)
 
 end TauCeti
 

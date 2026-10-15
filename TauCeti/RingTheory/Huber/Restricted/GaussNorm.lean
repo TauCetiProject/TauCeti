@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 /-!
 # The Gauss norm topology on restricted multivariate series
@@ -21,6 +22,9 @@ base it identifies the completed Huber Tate algebra with the Banach algebra of r
 This allows normed-ring results, including Weierstrass division, to be transported to the completed
 topological algebra without changing its topology.
 
+Over a nontrivially normed field the Gauss-normed algebra is itself a Tate ring, at any positive
+polyradii: a constant of norm strictly between `0` and `1` is a pseudouniformiser.
+
 The normed series are Mathlib's `MvPowerSeries.IsRestricted.subring`, with the Gauss norm
 constructed using William Coram's `MvPowerSeries.gaussNorm` infrastructure; no second series
 type or norm is introduced here.
@@ -34,6 +38,8 @@ type or norm is introduced here.
 * `TauCeti.Huber.restrictedMvPowerSeriesGaussAlgEquiv` and
   `TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussAlgEquiv`: the same comparisons as
   coefficient-algebra equivalences.
+* `TauCeti.Huber.IsTateRing.isRestricted_subring`: over a nontrivially normed field with an
+  ultrametric norm, the Gauss-normed algebra of restricted series is a Tate ring.
 
 ## References
 
@@ -224,5 +230,24 @@ theorem continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm :
     continuous_restrictedMvPowerSeriesGaussEquiv_symm
 
 end Complete
+
+section Tate
+
+variable {σ K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] {c : σ → ℝ}
+  [∀ i, Fact (0 < c i)]
+
+/-- **The Gauss-normed Tate algebra over a nontrivially normed field is a Tate ring.** Over a
+field `K` with a nontrivial ultrametric norm, the ring `K⟨X/c⟩` of restricted power series with
+its Gauss norm at positive polyradii `c` is a Tate ring; every constant `ϖ` with `0 < ‖ϖ‖ < 1` is
+a pseudouniformiser. -/
+instance IsTateRing.isRestricted_subring :
+    IsTateRing (MvPowerSeries.IsRestricted.subring (R := K) c) := by
+  -- a constant keeps its norm and stays a unit
+  obtain ⟨ϖ, h0, h1⟩ := NormedField.exists_norm_lt_one K
+  refine IsTateRing.of_isUnit_norm_lt_one
+    ((isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)).map (algebraMap K _)) ?_
+  rwa [norm_algebraMap']
+
+end Tate
 
 end TauCeti.Huber

@@ -57,7 +57,7 @@ variable {K : Type u} [Field K]
 
 namespace CrossedProduct
 
-variable {L : Type v} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+variable {L : Type v} [Field L] [Algebra K L]
 
 /-- Decidable equality on the finite Galois group, used to form its matrix algebra. -/
 noncomputable local instance : DecidableEq (L ≃ₐ[K] L) := Classical.decEq _
@@ -84,7 +84,6 @@ private noncomputable def rightGenerator (c d : TwoCocycle K L) (σ : L ≃ₐ[K
   (Matrix.ofLinearEquiv K).toLinearMap ∘ₗ LinearMap.pi fun ρ ↦ LinearMap.pi fun τ ↦
     if ρ = σ * τ then rightEntry c d σ τ else 0
 
-omit [FiniteDimensional K L] [IsGalois K L] in
 @[simp]
 private theorem leftGenerator_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
     (ρ τ : L ≃ₐ[K] L) :
@@ -94,7 +93,6 @@ private theorem leftGenerator_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) 
     Function.comp_apply, Matrix.of_apply, LinearMap.pi_apply]
   split_ifs <;> simp [leftEntry]
 
-omit [FiniteDimensional K L] [IsGalois K L] in
 @[simp]
 private theorem rightGenerator_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
     (ρ τ : L ≃ₐ[K] L) :
@@ -104,7 +102,69 @@ private theorem rightGenerator_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L)
     Function.comp_apply, Matrix.of_apply, LinearMap.pi_apply]
   split_ifs <;> simp [rightEntry]
 
-omit [IsGalois K L] in
+private noncomputable def leftLinear (c d : TwoCocycle K L) :
+    CrossedProduct c →ₗ[K]
+      Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
+  (Finsupp.lsum K (leftGenerator c d)).comp ((basis c).repr.toLinearMap.restrictScalars K)
+
+private noncomputable def rightLinear (c d : TwoCocycle K L) :
+    CrossedProduct d →ₗ[K]
+      Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
+  (Finsupp.lsum K (rightGenerator c d)).comp ((basis d).repr.toLinearMap.restrictScalars K)
+
+@[simp]
+private theorem leftLinear_smul_basis (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L) :
+    leftLinear c d (x • basis c σ) = leftGenerator c d σ x := by
+  simp [leftLinear]
+
+@[simp]
+private theorem rightLinear_smul_basis (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L) :
+    rightLinear c d (x • basis d σ) = rightGenerator c d σ x := by
+  simp [rightLinear]
+
+private theorem leftLinear_one (c d : TwoCocycle K L) : leftLinear c d 1 = 1 := by
+  classical
+  rw [one_def, leftLinear_smul_basis]
+  apply Matrix.ext
+  intro ρ τ
+  rw [leftGenerator_apply, Matrix.one_apply]
+  by_cases h : τ = ρ
+  · subst τ
+    simp only [mul_one, ite_true]
+    rw [c.toFun_one_right]
+    simp [Units.val_inv_eq_inv_val]
+  · have h' : τ ≠ ρ * 1 := by simpa using h
+    rw [ite_eq_right h', ite_eq_right (Ne.symm h)]
+
+private theorem rightLinear_one (c d : TwoCocycle K L) : rightLinear c d 1 = 1 := by
+  classical
+  rw [one_def, rightLinear_smul_basis]
+  apply Matrix.ext
+  intro ρ τ
+  rw [rightGenerator_apply, Matrix.one_apply]
+  by_cases h : ρ = τ
+  · subst ρ
+    simp only [one_mul, c.toFun_one_left, ite_true]
+    rw [basis_one, ← map_mul]
+    simp only [TwoCocycle.toFun_mul, Units.val_mul, Units.val_inv_eq_inv_val]
+    field_simp
+    ring_nf
+    exact map_one (inc (c * d))
+  · have h' : ρ ≠ 1 * τ := by simpa using h
+    rw [ite_eq_right h', ite_eq_right h]
+
+/-- The scalar identity behind the commutation of the two actions, at the entry in row `τ * κ` and
+column `κ * σ`: it is the cocycle identity for `(τ, κ, σ)`. -/
+private theorem comm_scalar (c : TwoCocycle K L) (σ τ κ : L ≃ₐ[K] L) (x y : L) :
+    (τ * κ) x * c.toFun (τ * κ) σ * (y * ↑(c.toFun τ (κ * σ))⁻¹) =
+      y * ↑(c.toFun τ κ)⁻¹ * τ (κ x * c.toFun κ σ) := by
+  have hc := c.map_toFun_mul_toFun τ κ σ
+  rw [AlgEquiv.mul_apply, map_mul, Units.val_inv_eq_inv_val, Units.val_inv_eq_inv_val]
+  field_simp
+  linear_combination -τ (κ x) * y * hc
+
+variable [FiniteDimensional K L]
+
 /-- Left multiplication by `leftGenerator c d σ x` selects rows: row `ρ` of the product is row
 `ρ * σ` of `M`, scaled on the left by `ρ(x) · c(ρ, σ)`. -/
 private theorem leftGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
@@ -116,7 +176,6 @@ private theorem leftGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K]
     simp [hκ]
   · simp
 
-omit [IsGalois K L] in
 /-- Left multiplication by `rightGenerator c d σ x` selects rows: row `ρ` of the product is row
 `σ⁻¹ * ρ` of `M`, scaled on the left by `(x · c(σ, σ⁻¹ * ρ)⁻¹) · u_σ`. -/
 private theorem rightGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
@@ -132,7 +191,6 @@ private theorem rightGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K
     rw [rightGenerator_apply, ite_eq_right hρ, zero_mul]
   · simp
 
-omit [IsGalois K L] in
 private theorem leftGenerator_mul (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) (x y : L) :
     leftGenerator c d σ x * leftGenerator c d τ y =
       leftGenerator c d (σ * τ) (x * σ y * c.toFun σ τ) := by
@@ -165,7 +223,6 @@ private theorem leftGenerator_mul (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L)
         simp [hυ, mul_assoc]
       · simp [hκ]
 
-omit [IsGalois K L] in
 private theorem rightGenerator_mul (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) (x y : L) :
     rightGenerator c d σ x * rightGenerator c d τ y =
       rightGenerator c d (σ * τ) (x * σ y * d.toFun σ τ) := by
@@ -205,62 +262,6 @@ private theorem rightGenerator_mul (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L
           exact ite_eq_right hκ
         rw [hz, mul_zero]
 
-private noncomputable def leftLinear (c d : TwoCocycle K L) :
-    CrossedProduct c →ₗ[K]
-      Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
-  (Finsupp.lsum K (leftGenerator c d)).comp ((basis c).repr.toLinearMap.restrictScalars K)
-
-private noncomputable def rightLinear (c d : TwoCocycle K L) :
-    CrossedProduct d →ₗ[K]
-      Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
-  (Finsupp.lsum K (rightGenerator c d)).comp ((basis d).repr.toLinearMap.restrictScalars K)
-
-omit [FiniteDimensional K L] [IsGalois K L] in
-@[simp]
-private theorem leftLinear_smul_basis (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L) :
-    leftLinear c d (x • basis c σ) = leftGenerator c d σ x := by
-  simp [leftLinear]
-
-omit [FiniteDimensional K L] [IsGalois K L] in
-@[simp]
-private theorem rightLinear_smul_basis (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L) :
-    rightLinear c d (x • basis d σ) = rightGenerator c d σ x := by
-  simp [rightLinear]
-
-omit [FiniteDimensional K L] [IsGalois K L] in
-private theorem leftLinear_one (c d : TwoCocycle K L) : leftLinear c d 1 = 1 := by
-  classical
-  rw [one_def, leftLinear_smul_basis]
-  apply Matrix.ext
-  intro ρ τ
-  rw [leftGenerator_apply, Matrix.one_apply]
-  by_cases h : τ = ρ
-  · subst τ
-    simp only [mul_one, ite_true]
-    rw [c.toFun_one_right]
-    simp [Units.val_inv_eq_inv_val]
-  · have h' : τ ≠ ρ * 1 := by simpa using h
-    rw [ite_eq_right h', ite_eq_right (Ne.symm h)]
-
-omit [FiniteDimensional K L] [IsGalois K L] in
-private theorem rightLinear_one (c d : TwoCocycle K L) : rightLinear c d 1 = 1 := by
-  classical
-  rw [one_def, rightLinear_smul_basis]
-  apply Matrix.ext
-  intro ρ τ
-  rw [rightGenerator_apply, Matrix.one_apply]
-  by_cases h : ρ = τ
-  · subst ρ
-    simp only [one_mul, c.toFun_one_left, ite_true]
-    rw [basis_one, ← map_mul]
-    simp only [TwoCocycle.toFun_mul, Units.val_mul, Units.val_inv_eq_inv_val]
-    field_simp
-    ring_nf
-    exact map_one (inc (c * d))
-  · have h' : ρ ≠ 1 * τ := by simpa using h
-    rw [ite_eq_right h', ite_eq_right h]
-
-omit [IsGalois K L] in
 private theorem leftLinear_mul (c d : TwoCocycle K L) (a b : CrossedProduct c) :
     leftLinear c d (a * b) = leftLinear c d a * leftLinear c d b := by
   induction a using induction_on with
@@ -274,7 +275,6 @@ private theorem leftLinear_mul (c d : TwoCocycle K L) (a b : CrossedProduct c) :
       simp only [smul_basis_mul_smul_basis, leftLinear_smul_basis]
       exact (leftGenerator_mul c d σ τ x y).symm
 
-omit [IsGalois K L] in
 private theorem rightLinear_mul (c d : TwoCocycle K L) (a b : CrossedProduct d) :
     rightLinear c d (a * b) = rightLinear c d a * rightLinear c d b := by
   induction a using induction_on with
@@ -298,18 +298,6 @@ private noncomputable def rightAlgHom (c d : TwoCocycle K L) :
       Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
   AlgHom.ofLinearMap (rightLinear c d) (rightLinear_one c d) (rightLinear_mul c d)
 
-omit [FiniteDimensional K L] [IsGalois K L] in
-/-- The scalar identity behind the commutation of the two actions, at the entry in row `τ * κ` and
-column `κ * σ`: it is the cocycle identity for `(τ, κ, σ)`. -/
-private theorem comm_scalar (c : TwoCocycle K L) (σ τ κ : L ≃ₐ[K] L) (x y : L) :
-    (τ * κ) x * c.toFun (τ * κ) σ * (y * ↑(c.toFun τ (κ * σ))⁻¹) =
-      y * ↑(c.toFun τ κ)⁻¹ * τ (κ x * c.toFun κ σ) := by
-  have hc := c.map_toFun_mul_toFun τ κ σ
-  rw [AlgEquiv.mul_apply, map_mul, Units.val_inv_eq_inv_val, Units.val_inv_eq_inv_val]
-  field_simp
-  linear_combination -τ (κ x) * y * hc
-
-omit [IsGalois K L] in
 private theorem leftGenerator_comm_rightGenerator (c d : TwoCocycle K L)
     (σ τ : L ≃ₐ[K] L) (x y : L) :
     leftGenerator c d σ x * rightGenerator c d τ y =
@@ -329,7 +317,6 @@ private theorem leftGenerator_comm_rightGenerator (c d : TwoCocycle K L)
   · have hne : τ * κ * σ ≠ τ * υ := fun h ↦ hυ (by simpa [mul_assoc] using h.symm)
     rw [ite_eq_right hne, ite_eq_right hυ, mul_zero, mul_zero]
 
-omit [IsGalois K L] in
 private theorem leftAlgHom_comm_rightAlgHom (c d : TwoCocycle K L)
     (a : CrossedProduct c) (b : CrossedProduct d) :
     leftAlgHom c d a * rightAlgHom c d b = rightAlgHom c d b * leftAlgHom c d a := by
@@ -349,6 +336,8 @@ private noncomputable def tensorProductToMatrix (c d : TwoCocycle K L) :
       Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
   Algebra.TensorProduct.lift (leftAlgHom c d) (rightAlgHom c d) fun a b ↦
     leftAlgHom_comm_rightAlgHom c d a b
+
+variable [IsGalois K L]
 
 private theorem finrank_tensorProduct_eq_matrix (c d : TwoCocycle K L) :
     Module.finrank K (CrossedProduct c ⊗[K] CrossedProduct d) =

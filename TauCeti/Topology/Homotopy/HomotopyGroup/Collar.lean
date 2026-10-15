@@ -53,9 +53,8 @@ homotopy relative to the boundary.
 
 ## References
 
-This is the analytic core of the base-point-change isomorphisms of higher homotopy groups
-requested in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 3, item 9. The construction is
-the classical one; see Hatcher, *Algebraic Topology*, Section 4.1.
+This is the analytic core of the base-point-change isomorphisms of higher homotopy groups. The
+construction is the classical one; see Hatcher, *Algebraic Topology*, Section 4.1.
 -/
 
 public section

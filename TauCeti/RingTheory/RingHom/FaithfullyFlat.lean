@@ -6,7 +6,11 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
+public import Mathlib.RingTheory.Localization.Away.Basic
 
+import Mathlib.RingTheory.Flat.Localization
+import Mathlib.RingTheory.Localization.Ideal
+import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.RingTheory.Flat.Pi
 
 /-!
@@ -22,6 +26,8 @@ under some `f i`.
 
 * `RingHom.FaithfullyFlat.lTensor`: scalar extension preserves faithful flatness.
 * `RingHom.FaithfullyFlat.pi_of_exists_map_ne_top`: the criterion above.
+* `RingHom.FaithfullyFlat.pi_algebraMap_localizationAway`: in particular, the product of the
+  localizations away from finitely many elements generating the unit ideal is faithfully flat.
 -/
 
 public section
@@ -65,6 +71,21 @@ theorem pi_of_exists_map_ne_top {R ι : Type*} [CommRing R] [_root_.Finite ι] {
   change Module.FaithfullyFlat R (∀ i, S i)
   refine Module.FaithfullyFlat.pi_of_exists_submodule_ne_top fun m hm ↦ (h m hm).imp fun i hi ↦ ?_
   rwa [Ideal.smul_top_eq_map, Ne, Submodule.restrictScalars_eq_top_iff]
+
+/-- **A finite Zariski cover is faithfully flat.** If finitely many elements `f i` generate the
+unit ideal of `R`, the ring homomorphism `R →+* ∏ i, R[1/f i]` is faithfully flat. -/
+theorem pi_algebraMap_localizationAway {R ι : Type*} [CommRing R] [_root_.Finite ι] (f : ι → R)
+    (hf : Ideal.span (Set.range f) = ⊤) :
+    (RingHom.pi fun i ↦ algebraMap R (Localization.Away (f i))).FaithfullyFlat := by
+  refine pi_of_exists_map_ne_top (fun i ↦ RingHom.flat_algebraMap_iff.2 inferInstance)
+    fun m hm ↦ ?_
+  obtain ⟨i, hi⟩ : ∃ i, f i ∉ m := by
+    by_contra! h
+    exact hm.ne_top (top_le_iff.1 (hf ▸ Ideal.span_le.2 (Set.range_subset_iff.2 h)))
+  have := hm.isPrime
+  exact ⟨i, (IsLocalization.map_algebraMap_ne_top_iff_disjoint (Submonoid.powers (f i))
+    (Localization.Away (f i)) m).2
+    ((Ideal.disjoint_powers_iff_notMem_of_isPrime _).2 hi)⟩
 
 end RingHom.FaithfullyFlat
 

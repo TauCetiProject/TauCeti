@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Ring.Real
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Basic
 
 import TauCeti.Order.Chain
@@ -80,7 +80,7 @@ private theorem barycentricSubdivisionLinearMap_mem_closedSimplex
       convexHull ℝ (σ.1.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) := by
   rw [barycentricSubdivisionLinearMap, Finsupp.linearCombination_apply, Finsupp.sum]
   apply (convex_convexHull ℝ _).sum_mem
-  · intro τ hτ
+  · intro τ _
     exact StandardSimplex.nonneg x τ
   · exact StandardSimplex.sum_eq_one x
   · intro τ hτ
@@ -102,7 +102,7 @@ private theorem barycentricSubdivisionLinearMap_mem (K : AbstractSimplicialCompl
   have hρ : ρ.1 ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex := ρ.2
   have hρ' := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp hρ
-  obtain ⟨σ, hσρ, hσmax⟩ := hρ'.2.exists_isGreatest ρ.1.finite_toSet hρ'.1
+  obtain ⟨σ, _, hσmax⟩ := hρ'.2.exists_isGreatest ρ.1.finite_toSet hρ'.1
   rw [mem_realization_iff]
   refine ⟨σ.1, σ.2, ?_⟩
   let x' : StandardSimplex ρ.1 := ⟨x.1, mem_convexHull_carrier _ x⟩
@@ -143,7 +143,7 @@ theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialC
   apply continuous_iff_faceInclusion.2
   intro ρ
   have hρ := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
-  obtain ⟨σ, hσρ, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
+  obtain ⟨σ, _, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
   let toFace : StandardSimplex ρ.1 → StandardSimplex σ.1 := fun x =>
     ⟨barycentricSubdivisionLinearMap K x.1,
       barycentricSubdivisionLinearMap_mem_closedSimplex K σ x hσmax⟩

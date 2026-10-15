@@ -17,7 +17,9 @@ A family `f : E × F → (E →L[𝕜] F)` of linear maps defines a distribution
 distribution* `TauCeti.graphDistribution f`: at `p` it is the graph `{(v, f p v) | v : E}` of
 `f p`. A smooth distribution on `E × F` whose subspace at a point `p₀` is a complement of `0 × F`
 is, near `p₀`, the graph distribution of a smooth family `f`, so graph distributions are the local
-normal form in which the Frobenius theorem is proved; that reduction is not carried out here.
+normal form in which the Frobenius theorem is proved; that reduction is
+`TauCeti.IsContMDiffDistribution.exists_eventually_eq_graphDistribution`, in
+`TauCeti/Geometry/Manifold/Distribution/Transverse.lean`.
 
 This file identifies involutivity of a graph distribution with the Frobenius integrability
 condition `TauCeti.IsFrobeniusIntegrableAt` of the total differential equation `D u x = f (x, u x)`,
@@ -80,6 +82,10 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 it is the graph `{(v, f p v) | v : E}` of `f p`, a subspace of `E × F`. -/
 def graphDistribution (f : E × F → E →L[𝕜] F) (p : E × F) : Submodule 𝕜 (E × F) :=
   (f p : E →ₗ[𝕜] F).graph
+
+theorem graphDistribution_def (f : E × F → E →L[𝕜] F) (p : E × F) :
+    graphDistribution f p = (f p : E →ₗ[𝕜] F).graph :=
+  (rfl)
 
 @[simp]
 theorem mem_graphDistribution {f : E × F → E →L[𝕜] F} {p v : E × F} :
@@ -169,28 +175,30 @@ theorem lieBracket_mem_graphDistribution {f : E × F → E →L[𝕜] F}
   rw [lieBracket_mem_graphDistribution_iff hf hV hW hVD hWD, ← hVp, ← hWp]
   exact isFrobeniusIntegrableAt_iff.1 hint _ _
 
-/-- An involutive graph distribution satisfies the Frobenius integrability condition at every point
-near which `f` is differentiable. The condition is the tangency of the brackets of the vector
-fields `q ↦ (v, f q v)`, which are tangent to the distribution. -/
-theorem IsInvolutiveDistribution.isFrobeniusIntegrableAt {f : E × F → E →L[𝕜] F} {p : E × F}
-    (hD : IsInvolutiveDistribution 𝓘(𝕜, E × F) (graphDistribution f))
+/-- An involutive distribution that agrees near `p` with the graph distribution of `f`, where `f`
+is differentiable near `p`, makes `f` satisfy the Frobenius integrability condition at `p`. The
+condition is the tangency of the brackets of the vector fields `q ↦ (v, f q v)`, which are tangent
+to the distribution near `p`. -/
+theorem IsInvolutiveDistribution.isFrobeniusIntegrableAt {D : E × F → Submodule 𝕜 (E × F)}
+    {f : E × F → E →L[𝕜] F} {p : E × F} (hD : IsInvolutiveDistribution 𝓘(𝕜, E × F) D)
+    (hDf : ∀ᶠ q in 𝓝 p, D q = graphDistribution f q)
     (hf : ∀ᶠ q in 𝓝 p, DifferentiableAt 𝕜 f q) : IsFrobeniusIntegrableAt f p := by
-  obtain ⟨U, hUf, hU, hpU⟩ := eventually_nhds_iff.1 hf
+  obtain ⟨U, hUf, hU, hpU⟩ := eventually_nhds_iff.1 (hDf.and hf)
   refine isFrobeniusIntegrableAt_iff.2 fun v w ↦ ?_
   -- The vector field `q ↦ (v, f q v)`, tangent to the graph distribution everywhere.
   let V (v : E) : Π q : E × F, TangentSpace 𝓘(𝕜, E × F) q := fun q ↦ (v, f q v)
   have hVdiff (v : E) {q : E × F} (hq : q ∈ U) : DifferentiableAt 𝕜 (V v) q :=
-    (differentiableAt_const v).prodMk ((hUf q hq).clm_apply (differentiableAt_const v))
+    (differentiableAt_const v).prodMk ((hUf q hq).2.clm_apply (differentiableAt_const v))
   have hVD (v : E) (q : E × F) : V v q ∈ graphDistribution f q := mem_graphDistribution.2 rfl
   have hmem := hD.mlieBracket_mem hU
     (mdifferentiableOn_vectorSpace_iff_differentiableOn.2 fun q hq ↦
       (hVdiff v hq).differentiableWithinAt)
     (mdifferentiableOn_vectorSpace_iff_differentiableOn.2 fun q hq ↦
       (hVdiff w hq).differentiableWithinAt)
-    (fun q _ ↦ hVD v q) (fun q _ ↦ hVD w q) hpU
-  rw [mlieBracket_eq_lieBracket] at hmem
+    (fun q hq ↦ (hUf q hq).1 ▸ hVD v q) (fun q hq ↦ (hUf q hq).1 ▸ hVD w q) hpU
+  rw [mlieBracket_eq_lieBracket, (hUf p hpU).1] at hmem
   -- The tangent spaces of the model space `E × F` are `E × F` itself, by definition.
-  exact (lieBracket_mem_graphDistribution_iff (hUf p hpU) (hVdiff v hpU) (hVdiff w hpU)
+  exact (lieBracket_mem_graphDistribution_iff (hUf p hpU).2 (hVdiff v hpU) (hVdiff w hpU)
     (Eventually.of_forall (hVD v)) (Eventually.of_forall (hVD w))).1 hmem
 
 /-- **Involutivity of a graph distribution is the Frobenius integrability condition.** For a
@@ -200,7 +208,8 @@ theorem isInvolutiveDistribution_graphDistribution_iff {f : E × F → E →L[�
     (hf : Differentiable 𝕜 f) :
     IsInvolutiveDistribution 𝓘(𝕜, E × F) (graphDistribution f) ↔
       ∀ p, IsFrobeniusIntegrableAt f p := by
-  refine ⟨fun hD p ↦ hD.isFrobeniusIntegrableAt (Eventually.of_forall hf), fun hint ↦ ?_⟩
+  refine ⟨fun hD p ↦ hD.isFrobeniusIntegrableAt (.of_forall fun _ ↦ rfl) (.of_forall hf),
+    fun hint ↦ ?_⟩
   refine isInvolutiveDistribution_iff.2 fun U hU V W hV hW hVD hWD x hx ↦ ?_
   rw [mlieBracket_eq_lieBracket]
   have hV' := mdifferentiableOn_vectorSpace_iff_differentiableOn.1 hV
@@ -231,7 +240,7 @@ theorem IsInvolutiveDistribution.exists_eventually_hasFDerivAt {n : ℕ∞}
       ∀ᶠ x in 𝓝 x₀, HasFDerivAt u (f (x, u x)) x := by
   refine exists_eventually_hasFDerivAt_of_isFrobeniusIntegrableAt hf hs ?_
   filter_upwards [eventually_eventually_nhds.2 (eventually_mem_nhds_iff.2 hs)] with p hp
-  exact hD.isFrobeniusIntegrableAt <| hp.mono fun q hq ↦
+  exact hD.isFrobeniusIntegrableAt (.of_forall fun _ ↦ rfl) <| hp.mono fun q hq ↦
     (hf.contDiffAt hq).differentiableAt (by simp)
 
 /-- **The Frobenius theorem for graph distributions.** For a `C¹` family `f` over

@@ -96,6 +96,14 @@ theorem induction {motive : IntegralSquareMatrix → IntegralSquareMatrix → Pr
   | symm _ _ hVW ih => exact symm hVW ih
   | trans _ _ _ hUV hVW ihUV ihVW => exact trans hUV hVW ihUV ihVW
 
+/-- S-equivalence preserves size parity, since each enlargement adds two indices. -/
+theorem size_mod_two_eq {V W : IntegralSquareMatrix} (h : SEquivalent V W) :
+    V.1 % 2 = W.1 % 2 := by
+  apply Relation.EqvGen.eqvGen_le
+    (r' := Setoid.ker fun X : IntegralSquareMatrix => X.1 % 2) ?_ V W h
+  intro X Y hmove
+  cases hmove <;> simp
+
 end SEquivalent
 
 /-- One elementary S-equivalence move gives an S-equivalence. -/

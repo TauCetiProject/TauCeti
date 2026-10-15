@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.SuccPredOrder
+public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Order.SuccPred.Relation
 public import TauCeti.KnotTheory.Grid.Move.Basic
 

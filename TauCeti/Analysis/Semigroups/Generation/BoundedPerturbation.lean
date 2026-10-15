@@ -51,7 +51,7 @@ namespace TauCeti.Semigroups
 
 open scoped BoundedContinuousFunction NNReal
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   {A : X →ₗ.[ℝ] X}
 
 /-! ### The equivalent growth norm -/
@@ -72,7 +72,6 @@ private def equiv : GrowthRenorm S hb ≃ X where
   left_inv _ := rfl
   right_inv _ := rfl
 
-omit [CompleteSpace X] in
 @[simp] private theorem equiv_apply (x : GrowthRenorm S hb) : equiv S hb x = x.val := rfl
 
 private instance : AddCommGroup (GrowthRenorm S hb) :=
@@ -88,16 +87,12 @@ private def addEquiv : GrowthRenorm S hb ≃+ X where
 private instance : Module ℝ (GrowthRenorm S hb) :=
   (addEquiv S hb).module ℝ
 
-omit [CompleteSpace X] in
 @[simp] private theorem val_zero : (0 : GrowthRenorm S hb).val = 0 := rfl
 
-omit [CompleteSpace X] in
 @[simp] private theorem val_add (x y : GrowthRenorm S hb) : (x + y).val = x.val + y.val := rfl
 
-omit [CompleteSpace X] in
 @[simp] private theorem val_sub (x y : GrowthRenorm S hb) : (x - y).val = x.val - y.val := rfl
 
-omit [CompleteSpace X] in
 @[simp] private theorem val_smul (c : ℝ) (x : GrowthRenorm S hb) :
     (c • x).val = c • x.val := rfl
 
@@ -106,27 +101,79 @@ private def linearEquiv : GrowthRenorm S hb ≃ₗ[ℝ] X where
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-omit [CompleteSpace X] in
 @[simp] private theorem linearEquiv_apply (x : GrowthRenorm S hb) :
     linearEquiv S hb x = x.val := rfl
 
-omit [CompleteSpace X] in
 @[simp] private theorem linearEquiv_symm_apply (x : X) :
     (linearEquiv S hb).symm x = (⟨x⟩ : GrowthRenorm S hb) := rfl
 
-private theorem continuous_weightedOrbit (x : X) :
-    Continuous (fun t : ℝ≥0 => Real.exp (-(omega * (t : ℝ))) • S t x) := by
-  have hS : Continuous (fun t : ℝ≥0 => S t x) := by
-    have h := (S.realOperator_continuousOn_Ici x).comp_continuous
-      continuous_subtype_val (fun t => t.property)
-    exact h.congr fun t => by
-      exact congrArg (fun f : X →L[ℝ] X => f x) (S.realOperator_coe t)
-  exact (Real.continuous_exp.comp
-    ((continuous_const.mul continuous_subtype_val).neg)).smul hS
+private def liftPMap (A : X →ₗ.[ℝ] X) :
+    GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb where
+  domain := A.domain.comap (linearEquiv S hb).toLinearMap
+  toFun :=
+    { toFun := fun x => ⟨A ⟨x.val.val, x.property⟩⟩
+      map_add' x y := by
+        apply (equiv S hb).injective
+        simp only [equiv_apply, val_add]
+        convert A.map_add ⟨x.val.val, x.property⟩ ⟨y.val.val, y.property⟩ using 1
+        all_goals rfl
+      map_smul' c x := by
+        apply (equiv S hb).injective
+        simp only [equiv_apply]
+        convert A.map_smul c ⟨x.val.val, x.property⟩ using 1
+        all_goals rfl }
 
-include hb
+private def unliftPMap (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb) :
+    X →ₗ.[ℝ] X where
+  domain := A.domain.comap (linearEquiv S hb).symm.toLinearMap
+  toFun :=
+    { toFun := fun x => (A ⟨(linearEquiv S hb).symm x.val, x.property⟩).val
+      map_add' x y := by
+        convert congrArg val (A.map_add
+          ⟨(linearEquiv S hb).symm x.val, x.property⟩
+          ⟨(linearEquiv S hb).symm y.val, y.property⟩) using 1 <;> rfl
+      map_smul' c x := by
+        convert congrArg val (A.map_smul c
+          ⟨(linearEquiv S hb).symm x.val, x.property⟩) using 1 <;> rfl }
 
-omit [CompleteSpace X] in
+@[simp] private theorem liftPMap_apply (A : X →ₗ.[ℝ] X)
+    (x : (liftPMap S hb A).domain) :
+    (liftPMap S hb A x).val = A ⟨x.val.val, x.property⟩ := rfl
+
+@[simp] private theorem unliftPMap_apply (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb)
+    (x : (unliftPMap S hb A).domain) :
+    unliftPMap S hb A x = (A ⟨(linearEquiv S hb).symm x.val, x.property⟩).val := rfl
+
+@[simp] private theorem mem_unliftPMap_domain
+    (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb) (x : X) :
+    x ∈ (unliftPMap S hb A).domain ↔ (linearEquiv S hb).symm x ∈ A.domain := Iff.rfl
+
+private theorem liftPMap_unliftPMap (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb) :
+    liftPMap S hb (unliftPMap S hb A) = A := by
+  refine LinearPMap.ext ?_ ?_
+  · ext x
+    simp [liftPMap, unliftPMap]
+  · intro x hx _
+    apply (equiv S hb).injective
+    simp only [equiv_apply, liftPMap_apply, unliftPMap_apply, linearEquiv_symm_apply]
+
+private theorem unliftPMap_liftPMap (A : X →ₗ.[ℝ] X) :
+    unliftPMap S hb (liftPMap S hb A) = A := by
+  refine LinearPMap.ext ?_ ?_
+  · ext x
+    simp [liftPMap, unliftPMap]
+  · intro x hx _
+    simp only [unliftPMap_apply, liftPMap_apply, linearEquiv_symm_apply]
+
+private def liftLinearMap (B : X →L[ℝ] X) :
+    GrowthRenorm S hb →ₗ[ℝ] GrowthRenorm S hb :=
+  (linearEquiv S hb).symm.toLinearMap.comp
+    (B.toLinearMap.comp (linearEquiv S hb).toLinearMap)
+
+@[simp] private theorem liftLinearMap_apply (B : X →L[ℝ] X) (x : GrowthRenorm S hb) :
+    liftLinearMap S hb B x = (⟨B x.val⟩ : GrowthRenorm S hb) := rfl
+
+include hb in
 private theorem norm_weightedOrbit_le (x : X)
     (t : ℝ≥0) : ‖Real.exp (-(omega * (t : ℝ))) • S t x‖ ≤ M * ‖x‖ := by
   have ht : 0 ≤ (t : ℝ) := t.property
@@ -146,6 +193,26 @@ private theorem norm_weightedOrbit_le (x : X)
       mul_le_mul_of_nonneg_left hSx (Real.exp_nonneg _)
     _ = M * (Real.exp (-(omega * (t : ℝ))) * Real.exp (omega * (t : ℝ))) * ‖x‖ := by ring
     _ = M * ‖x‖ := by rw [← Real.exp_add]; simp
+
+end GrowthRenorm
+
+variable [CompleteSpace X]
+
+namespace GrowthRenorm
+
+variable (S : StronglyContinuousSemigroup X) {omega M : ℝ} (hb : S.HasGrowthBound omega M)
+
+private theorem continuous_weightedOrbit (x : X) :
+    Continuous (fun t : ℝ≥0 => Real.exp (-(omega * (t : ℝ))) • S t x) := by
+  have hS : Continuous (fun t : ℝ≥0 => S t x) := by
+    have h := (S.realOperator_continuousOn_Ici x).comp_continuous
+      continuous_subtype_val (fun t => t.property)
+    exact h.congr fun t => by
+      exact congrArg (fun f : X →L[ℝ] X => f x) (S.realOperator_coe t)
+  exact (Real.continuous_exp.comp
+    ((continuous_const.mul continuous_subtype_val).neg)).smul hS
+
+include hb
 
 private noncomputable def weightedOrbit (x : GrowthRenorm S hb) : ℝ≥0 →ᵇ X :=
   BoundedContinuousFunction.ofNormedAddCommGroup
@@ -253,69 +320,6 @@ private noncomputable def shiftedContractionSemigroup :
       exact norm_shifted_le S hb t x
     exact h
 
-private def liftPMap (A : X →ₗ.[ℝ] X) :
-    GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb where
-  domain := A.domain.comap (linearEquiv S hb).toLinearMap
-  toFun :=
-    { toFun := fun x => ⟨A ⟨x.val.val, x.property⟩⟩
-      map_add' x y := by
-        apply (equiv S hb).injective
-        simp only [equiv_apply, val_add]
-        convert A.map_add ⟨x.val.val, x.property⟩ ⟨y.val.val, y.property⟩ using 1
-        all_goals rfl
-      map_smul' c x := by
-        apply (equiv S hb).injective
-        simp only [equiv_apply]
-        convert A.map_smul c ⟨x.val.val, x.property⟩ using 1
-        all_goals rfl }
-
-private def unliftPMap (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb) :
-    X →ₗ.[ℝ] X where
-  domain := A.domain.comap (linearEquiv S hb).symm.toLinearMap
-  toFun :=
-    { toFun := fun x => (A ⟨(linearEquiv S hb).symm x.val, x.property⟩).val
-      map_add' x y := by
-        convert congrArg val (A.map_add
-          ⟨(linearEquiv S hb).symm x.val, x.property⟩
-          ⟨(linearEquiv S hb).symm y.val, y.property⟩) using 1 <;> rfl
-      map_smul' c x := by
-        convert congrArg val (A.map_smul c
-          ⟨(linearEquiv S hb).symm x.val, x.property⟩) using 1 <;> rfl }
-
-omit [CompleteSpace X] in
-@[simp] private theorem liftPMap_apply (A : X →ₗ.[ℝ] X)
-    (x : (liftPMap S hb A).domain) :
-    (liftPMap S hb A x).val = A ⟨x.val.val, x.property⟩ := rfl
-
-omit [CompleteSpace X] in
-@[simp] private theorem unliftPMap_apply (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb)
-    (x : (unliftPMap S hb A).domain) :
-    unliftPMap S hb A x = (A ⟨(linearEquiv S hb).symm x.val, x.property⟩).val := rfl
-
-omit [CompleteSpace X] in
-@[simp] private theorem mem_unliftPMap_domain
-    (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb) (x : X) :
-    x ∈ (unliftPMap S hb A).domain ↔ (linearEquiv S hb).symm x ∈ A.domain := Iff.rfl
-
-omit [CompleteSpace X] in
-private theorem liftPMap_unliftPMap (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRenorm S hb) :
-    liftPMap S hb (unliftPMap S hb A) = A := by
-  refine LinearPMap.ext ?_ ?_
-  · ext x
-    simp [liftPMap, unliftPMap]
-  · intro x hx hy
-    apply (equiv S hb).injective
-    simp only [equiv_apply, liftPMap_apply, unliftPMap_apply, linearEquiv_symm_apply]
-
-omit [CompleteSpace X] in
-private theorem unliftPMap_liftPMap (A : X →ₗ.[ℝ] X) :
-    unliftPMap S hb (liftPMap S hb A) = A := by
-  refine LinearPMap.ext ?_ ?_
-  · ext x
-    simp [liftPMap, unliftPMap]
-  · intro x hx hy
-    simp only [unliftPMap_apply, liftPMap_apply, linearEquiv_symm_apply]
-
 /-- The semigroup on the renormed space, read back on `X`: the transport of `T` along
 `toOriginal S hb`. -/
 private noncomputable def unliftSemigroup
@@ -371,15 +375,6 @@ private theorem norm_lift_le (B : X →L[ℝ] X) (x : GrowthRenorm S hb) :
       simpa only [mul_assoc] using mul_le_mul_of_nonneg_left
         (mul_le_mul_of_nonneg_left (norm_val_le S hb x) (norm_nonneg B))
         (zero_le_one.trans hb.one_le)
-
-private def liftLinearMap (B : X →L[ℝ] X) :
-    GrowthRenorm S hb →ₗ[ℝ] GrowthRenorm S hb :=
-  (linearEquiv S hb).symm.toLinearMap.comp
-    (B.toLinearMap.comp (linearEquiv S hb).toLinearMap)
-
-omit [CompleteSpace X] in
-@[simp] private theorem liftLinearMap_apply (B : X →L[ℝ] X) (x : GrowthRenorm S hb) :
-    liftLinearMap S hb B x = (⟨B x.val⟩ : GrowthRenorm S hb) := rfl
 
 private noncomputable def liftContinuousLinearMap (B : X →L[ℝ] X) :
     GrowthRenorm S hb →L[ℝ] GrowthRenorm S hb :=

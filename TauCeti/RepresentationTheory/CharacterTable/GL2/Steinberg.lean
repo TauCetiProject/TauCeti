@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
-public import TauCeti.RepresentationTheory.Augmentation
+public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Basic
 public import TauCeti.RepresentationTheory.Induction.Character
 public import TauCeti.RepresentationTheory.Induction.DoubleCosetPairing
@@ -23,8 +23,8 @@ which `GL₂` acts trivially. The complement of that line is the **Steinberg rep
 `TauCeti.GL2Steinberg`, of dimension `q`.
 
 This file builds it as the augmentation subrepresentation of `ℂ[GL₂ ⧸ B]` — the elements whose
-coefficients sum to zero, of `TauCeti/RepresentationTheory/Augmentation.lean` — and computes its
-dimension and its character. The character values are the fixed-coset counts less one, and the
+coefficients sum to zero, of `TauCeti/RepresentationTheory/Augmentation/Basic.lean` — and computes
+its dimension and its character. The character values are the fixed-coset counts less one, and the
 Bruhat decomposition then gives the character-theoretic form of irreducibility: the Steinberg
 character has norm `1` for the character pairing of
 `TauCeti/RepresentationTheory/CharacterTable/Pairing.lean`. Everything proved here is an identity
@@ -80,8 +80,6 @@ this foundational module.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The boundary: linear and Steinberg constituents", whose target `GL2Steinberg` this is.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 5.2.
 -/
@@ -160,8 +158,8 @@ theorem character_GL2PrincipalSeries_one_one_eq_character_ofMulAction (g : GL (F
     funext b
     rw [character_GL2BorelRep, FDRep.character_of_trivial]
     simp
-  rw [GL2PrincipalSeries_def, ← indClassFun_ofFDRep_character, hchar,
-    indClassFun_ofFDRep_character, character_indFDRep, FDRep.of_ρ', char_ind_trivial,
+  rw [GL2PrincipalSeries_def, ← Subgroup.indClassFun_ofFDRep_character, hchar,
+    Subgroup.indClassFun_ofFDRep_character, character_indFDRep, FDRep.of_ρ', char_ind_trivial,
     char_ofMulAction]
 
 /-- **The character of the boundary principal series is `1` plus the Steinberg character.** The

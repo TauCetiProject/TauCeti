@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Chebotarev
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NaturalDensity
+import TauCeti.Algebra.Group.ConjFinite
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Transfer
 
@@ -17,7 +18,8 @@ For a finite Galois extension `L/K` of number fields, the primes of `K` in a con
 `C`, counted by `NumberField.Chebotarev.frobeniusPrimeCount`, have count asymptotic to
 `(#C / #Gal(L/K)) Li(x)`. The weighted Chebotarev theorem gives the corresponding result for
 `ψ_C`; removing higher prime powers and Abel summation give the count.
-Comparison with the prime ideal theorem for all primes then gives natural density.
+The count for the trivial extension gives the all-prime denominator, and comparison with it
+then gives natural density.
 
 ## Main results
 
@@ -92,13 +94,23 @@ theorem tendsto_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) :
   Real.tendsto_div_div_log_of_isLittleO_logIntegral
     (frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C)
 
+/-- The trivial-extension counting theorem gives the all-prime denominator
+`π_K(x) / (x / log x) → 1`. -/
+private theorem _root_.TauCeti.NumberField.Chebotarev.tendsto_primeCount_univ :
+    Tendsto (fun x : ℝ ↦ primeCount K Set.univ x / (x / Real.log x)) atTop (𝓝 1) := by
+  simpa only [natCast_frobeniusPrimeCount, TauCeti.NumberField.Chebotarev.frobeniusPrimeSet_self,
+    ConjClasses.one_eq_mk_one,
+    TauCeti.ConjClasses.card_carrier_mk_one, Nat.card_unique, Nat.cast_one, div_one] using
+    tendsto_frobeniusPrimeCount K K 1
+
 /-- Natural-density Chebotarev: among the primes of `K`, the primes with arithmetic Frobenius
 class `C` have density `#C / #Gal(L/K)`. -/
 theorem hasNaturalDensity_frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) :
     NumberField.Set.HasNaturalDensity (frobeniusPrimeSet K L C)
-      ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) :=
-  NumberField.Set.hasNaturalDensity_iff_isLittleO_logIntegral.2 <| by
-    simpa only [natCast_frobeniusPrimeCount] using
-      frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C
+      ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) := by
+  rw [NumberField.Set.hasNaturalDensity_def]
+  apply (IsEquivalent.refl.div (isEquivalent_of_tendsto_one
+    (TauCeti.NumberField.Chebotarev.tendsto_primeCount_univ K))).tendsto_nhds_iff.mpr
+  simpa only [natCast_frobeniusPrimeCount, Pi.div_def] using tendsto_frobeniusPrimeCount K L C
 
 end NumberField.Chebotarev

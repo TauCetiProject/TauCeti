@@ -28,13 +28,13 @@ representation by integrating its character
 first is the theorem.
 
 For a **unitary** `π` the character at an inverse is the conjugate of the character
-(`TauCeti.ContRepresentation.character_apply_inv`), so the integrand becomes `conj χ_π · χ_ρ`, the
+(`ContRepresentation.character_apply_inv`), so the integrand becomes `conj χ_π · χ_ρ`, the
 `L²` pairing of the two characters. In that form the theorem is the quantitative statement behind
 Schur orthogonality: the pairing of the characters of two irreducibles is the dimension of the
 space of intertwiners between them. That dimension is `0` when the two admit no nonzero
 intertwiner, and for an irreducible against itself it is the dimension of its endomorphism
 division algebra — which Schur's lemma makes `1` only over algebraically closed scalars, and which
-over `ℝ` is `1`, `2` or `4`. This is why `TauCeti.ContRepresentation.character_orthonormal_self`
+over `ℝ` is `1`, `2` or `4`. This is why `ContRepresentation.character_orthonormal_self`
 carries `[IsAlgClosed 𝕜]` while `character_orthonormal_distinct` does not.
 
 ## Main statements
@@ -50,15 +50,15 @@ carries `[IsAlgClosed 𝕜]` while `character_orthonormal_distinct` does not.
 
 ## References
 
-This supplies the counting theorem that Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md)
-reads off the character orthogonality relations, the compact analogue of Mathlib's
+This counting theorem is the compact analogue of Mathlib's
 `FDRep.scalar_product_char_eq_finrank_equivariant`. The mathematical development follows Daniel
 Bump, *Lie Groups*, second edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of
 Compact Lie Groups*, Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory TauCeti TauCeti.ContRepresentation
 open scoped InnerProductSpace
@@ -100,7 +100,7 @@ theorem integral_character_mul_eq_finrank_contIntertwiningMap :
 
 /-- **The character integral vanishes exactly when there is no nonzero intertwiner.** This is the
 hypothesis under which the second Schur orthogonality relation
-(`TauCeti.ContRepresentation.schur_orthogonality_distinct`) is stated, now detected by the
+(`ContRepresentation.schur_orthogonality_distinct`) is stated, now detected by the
 characters. -/
 theorem integral_character_mul_eq_zero_iff :
     ∫ g, character π hπ g⁻¹ * character ρ hρ g ∂haarProb G = 0

@@ -127,7 +127,8 @@ theorem exists_forall_rationalSubset_eq_of_sub_mem_idealImage (P : PairOfDefinit
       s - s' ∈ P.idealImage n →
       rationalSubset Aplus T' s' = rationalSubset Aplus T s := by
   classical
-  obtain ⟨n, hn⟩ := P.exists_forall_mem_idealImage_exists_sum_eq T hT
+  obtain ⟨n, hn⟩ :=
+    P.exists_forall_mem_idealImage_exists_sum_eq T (hT.mem_nhds (Ideal.span _).zero_mem) 1
   refine ⟨n, fun T' s' hTT' hT'T hss' ↦ ?_⟩
   choose! u hu hδ using hTT'
   ext v

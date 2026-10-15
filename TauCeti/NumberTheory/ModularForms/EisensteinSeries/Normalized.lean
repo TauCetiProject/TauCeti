@@ -24,8 +24,8 @@ The raised series `E_k^(psi,phi,t)(z) = E_k^(psi,phi)(t z)` has coefficients sup
 multiples of `t`; at `n = t m > 0`, its coefficient is `sigma_(k-1)^(psi,phi)(m)`. These are the
 canonical generators used for the Eisenstein subspace of a fixed nebentypus space.
 
-The constant coefficient is intentionally left in terms of the raw lattice sum. Identifying it
-with a generalized Bernoulli number is a separate special-value theorem for Dirichlet L-series.
+The generalized Bernoulli formula for the constant coefficient is proved in
+`TauCeti.NumberTheory.ModularForms.EisensteinSeries.Bernoulli`.
 
 ## Main definitions
 
@@ -65,6 +65,16 @@ def normalizedCharEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) 
   exact
     (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹ •
       charEisensteinSeriesMF psi phi hk huv
+
+/-- The normalized series is the raw character Eisenstein series multiplied by the inverse
+of its expected first Fourier coefficient. -/
+theorem normalizedCharEisensteinSeriesMF_def (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) :
+    haveI : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
+    normalizedCharEisensteinSeriesMF psi phi hk huv =
+      (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹ •
+        charEisensteinSeriesMF psi phi hk huv := by
+  unfold normalizedCharEisensteinSeriesMF
+  rfl
 
 /-- The positive Fourier coefficients of the normalized character Eisenstein series are the
 twisted divisor sums `sigma_(k-1)^(psi,phi)`. -/
@@ -143,6 +153,26 @@ def normalizedCharEisensteinSeriesMFRaise (t : ℕ) (hk : 3 ≤ (k : ℤ))
   exact ModularForm.levelRaise t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)
     (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl)
 
+/-- The normalized raised series is the raw raised character series multiplied by the
+inverse of its expected first coefficient. -/
+theorem normalizedCharEisensteinSeriesMFRaise_eq_smul (hk : 3 ≤ (k : ℤ))
+    (htuv : t * (u * v) ∣ N) :
+    haveI : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans
+      ((dvd_mul_left (u * v) t).trans htuv))
+    normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv =
+      (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹ •
+        charEisensteinSeriesMFRaise psi phi t hk htuv := by
+  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+  let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
+  let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans
+    ((dvd_mul_left (u * v) t).trans htuv))
+  rw [normalizedCharEisensteinSeriesMFRaise, normalizedCharEisensteinSeriesMF,
+    charEisensteinSeriesMFRaise_eq_levelRaise]
+  simpa only [ModularForm.levelRaiseₗ_apply] using
+    (ModularForm.levelRaiseₗ t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)).map_smul
+      (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹
+      (charEisensteinSeriesMF psi phi hk dvd_rfl)
+
 /-- The raised normalized character Eisenstein series is the base series evaluated at `t z`. -/
 @[simp]
 theorem normalizedCharEisensteinSeriesMFRaise_apply (hk : 3 ≤ (k : ℤ))
@@ -162,7 +192,7 @@ theorem normalizedCharEisensteinSeriesMFRaise_one (hk : 3 ≤ (k : ℤ))
     (huv : u * v ∣ N) :
     haveI : NeZero (u * v) := NeZero.of_dvd huv
     normalizedCharEisensteinSeriesMFRaise psi phi 1 hk (by simpa using huv) =
-      ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd huv)
+      ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd huv)
         (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl) := by
   rw [normalizedCharEisensteinSeriesMFRaise, ModularForm.levelRaise_one]
 

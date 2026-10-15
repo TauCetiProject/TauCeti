@@ -7,10 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
+public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 public import Mathlib.Algebra.Field.ZMod
 
 import TauCeti.LinearAlgebra.IntegralLattice.Index
-import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 
 /-!
 # The discriminant of a Construction A lattice
@@ -66,17 +66,15 @@ theorem relIndex_lattice (C D : AddSubgroup (ι → ZMod m)) :
 
 variable [Fintype ι]
 
-private theorem map_standardLattice_carrier [DecidableEq ι] :
-    (IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι) (1 : Matrix ι ι ℤ)
-          Matrix.isSymm_one).carrier.map
+private theorem map_unitLattice_carrier :
+    (IntegralLattice.unitLattice ι).carrier.map
         ((LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ)
           (NeZero.ne _)).restrictScalars ℤ).toLinearMap =
       lattice m (⊥ : AddSubgroup (ι → ZMod m)) := by
-  classical
   have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
   ext x
   rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
-    IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff, mem_lattice]
+    IntegralLattice.mem_unitLattice_carrier_iff, mem_lattice]
   simp only [LinearEquiv.smulOfNeZero_symm_apply, Units.smul_def, Units.val_inv_eq_inv_val,
     Units.val_mk0, Pi.smul_apply, smul_eq_mul]
   constructor
@@ -101,30 +99,22 @@ private theorem map_standardLattice_carrier [DecidableEq ι] :
 /-- Multiplying every coordinate by `m` is an isometry from the standard coordinate lattice `ℤ^ι`,
 with its dot product scaled by `m`, onto the Construction A lattice of the zero code.  It exhibits
 the zero-code lattice as `m ℤ^ι` carrying the normalized form. -/
-noncomputable def scaledStandardIsometry :=
-  letI := Classical.decEq ι
-  ({
-    toIsometryEquiv :=
-      { toLinearEquiv := LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ) (NeZero.ne _)
-        map_app' x y := by
-          have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
-          have hrow (i : ι) : ∑ j, (((1 : Matrix ι ι ℤ) i j : ℤ) : ℚ) * y j = y i := by
-            simp [Matrix.one_apply]
-          rw [integralLattice_form, form_apply, IntegralLattice.smul_form,
-            LinearMap.smul_apply, LinearMap.smul_apply,
-            IntegralLattice.form_ofGramMatrix_basisFun_apply]
-          simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-            LinearEquiv.smulOfNeZero_apply, hrow, dotProduct, Pi.smul_apply, smul_eq_mul,
-            Int.cast_natCast]
-          rw [div_eq_iff hm, Finset.mul_sum, Finset.sum_mul]
-          exact Finset.sum_congr rfl fun i _ ↦ by ring }
-    map_carrier := by
-      rw [IntegralLattice.smul_carrier, integralLattice_carrier]
-      exact map_standardLattice_carrier (m := m)
-  } : IntegralLattice.Isometry
-    ((m : ℤ) • IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι)
-      (1 : Matrix ι ι ℤ) Matrix.isSymm_one)
-    (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)))
+noncomputable def scaledStandardIsometry :
+    IntegralLattice.Isometry ((m : ℤ) • IntegralLattice.unitLattice ι)
+      (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)) where
+  toLinearEquiv := LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ) (NeZero.ne _)
+  map_app' x y := by
+    have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
+    rw [integralLattice_form, form_apply, IntegralLattice.smul_form,
+      LinearMap.smul_apply, LinearMap.smul_apply, IntegralLattice.unitLattice_form_apply]
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+      LinearEquiv.smulOfNeZero_apply, dotProduct, Pi.smul_apply, smul_eq_mul,
+      Int.cast_natCast]
+    rw [div_eq_iff hm, Finset.mul_sum, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun i _ ↦ by ring
+  map_carrier := by
+    rw [IntegralLattice.smul_carrier, integralLattice_carrier]
+    exact map_unitLattice_carrier (m := m)
 
 /-- The scaled-standard isometry acts by multiplying every coordinate by `m`. -/
 @[simp]
@@ -138,10 +128,9 @@ theorem scaledStandardIsometry_apply (x : ι → ℚ) :
 theorem integralLattice_discriminant_bot :
     (integralLattice m (⊥ : AddSubgroup (ι → ZMod m))
       (by simp)).discriminant = (m : ℕ) ^ Fintype.card ι := by
-  classical
   rw [← (scaledStandardIsometry m).discriminant_eq, IntegralLattice.discriminant_smul,
-    IntegralLattice.finrank_carrier, Module.finrank_fintype_fun_eq_card]
-  rw [IntegralLattice.discriminant_ofGramMatrix, Matrix.det_one]
+    IntegralLattice.finrank_carrier, Module.finrank_fintype_fun_eq_card,
+    IntegralLattice.unitLattice_discriminant]
   simp
 
 /-- **The discriminant formula for Construction A, with its divisibility visible:** the

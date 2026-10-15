@@ -50,6 +50,10 @@ rank is additive.
 * `TauCeti.exists_presentedForm_equivalent`: every regular form has a diagonal presentation.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
+* `TauCeti.formClass_lift_radical_eq_of_equivalent`: equivalent forms have equal regular quotient
+  classes.
+* `TauCeti.formClass_lift_radical_eq`: a zero-plus-regular splitting computes the regular quotient
+  class.
 * `TauCeti.RegularFormPresentation.prod_append`: concatenation multiplies the weight products.
 * `TauCeti.presentedFormAppendIsometryEquiv`: concatenating weights presents the orthogonal sum.
 * `TauCeti.presentedFormConsIsometryEquiv`: peeling the first weight off presents the form as a
@@ -60,6 +64,9 @@ rank is additive.
 * `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
   rank is the rank-one class of its first weight plus the class of the remaining weights.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
+* `TauCeti.RegularFormClass.exists_eq_add_mk_rankOne` and
+  `TauCeti.RegularFormClass.exists_eq_mk_binary_add`: a class of positive rank splits off a line,
+  and one of rank at least two splits off a binary plane.
 
 ## References
 
@@ -596,6 +603,39 @@ theorem RegularFormClass.induction_on_rankOne {motive : RegularFormClass K → P
       exact zero
     | succ n ih => exact RegularFormClass.mk_succ w ▸ add_rankOne _ _ (ih (Fin.init w))
 
+/-- **A class of positive rank splits off a line**: it is `y + ⟨a⟩` for some unit `a` and a
+class `y` of rank one less. -/
+theorem RegularFormClass.exists_eq_add_mk_rankOne {x : RegularFormClass K} (hx : 1 ≤ x.rank) :
+    ∃ (a : Kˣ) (y : RegularFormClass K), y.rank + 1 = x.rank ∧
+      x = y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    obtain ⟨n, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by simp at hx; omega⟩
+    exact ⟨w 0, Quotient.mk _ ⟨n, fun i => w i.succ⟩, by simp,
+      (mk_succ_eq_mk_rankOne_add w).trans (add_comm _ _)⟩
+
+/-- **A class of rank at least two splits off a binary plane**: it is `⟨a, b⟩ + y` for some
+units `a, b` and a class `y` of rank two less. -/
+theorem RegularFormClass.exists_eq_mk_binary_add {x : RegularFormClass K} (hx : 2 ≤ x.rank) :
+    ∃ (a b : Kˣ) (y : RegularFormClass K), y.rank + 2 = x.rank ∧
+      x = Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    obtain ⟨n, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by simp at hx; omega⟩
+    refine ⟨w 0, w 1, Quotient.mk _ ⟨n, fun i => w i.succ.succ⟩, by simp, ?_⟩
+    have h2 : (Quotient.mk (regularFormSetoid K) ⟨2, ![w 0, w 1]⟩ : RegularFormClass K) =
+        Quotient.mk _ ⟨1, fun _ => w 0⟩ + Quotient.mk _ ⟨1, fun _ => w 1⟩ := by
+      rw [mk_succ_eq_mk_rankOne_add]
+      congr 3
+      funext i
+      fin_cases i
+      rfl
+    rw [h2, add_assoc, mk_succ_eq_mk_rankOne_add w,
+      mk_succ_eq_mk_rankOne_add (fun i : Fin (n + 1) => w i.succ)]
+    rfl
+
 /-! ### The class of a regular form -/
 
 variable [Invertible (2 : K)] {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
@@ -629,6 +669,23 @@ theorem formClass_eq_iff (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (R : Qua
   obtain ⟨q, hq⟩ := exists_presentedForm_equivalent R hR
   rw [formClass_mk Q hQ p hp, formClass_mk R hR q hq, RegularFormClass.mk_eq_mk_iff]
   exact ⟨fun h => hp.trans (h.trans hq.symm), fun h => hp.symm.trans (h.trans hq)⟩
+
+/-- Isometric forms, including degenerate ones, have the same isometry class after quotienting
+by their radicals. -/
+theorem formClass_lift_radical_eq_of_equivalent {Q : QuadraticForm K V} {R : QuadraticForm K W}
+    (h : Q.Equivalent R) :
+    formClass (Q.lift Q.radical le_rfl) Q.nondegenerate_lift_radical =
+      formClass (R.lift R.radical le_rfl) R.nondegenerate_lift_radical :=
+  (formClass_eq_iff _ _ _ _).2 h.lift_radical
+
+/-- The class of the regular part of `Q` is the class of the regular summand in any splitting of
+`Q` as the orthogonal sum of a zero form and a regular form. -/
+theorem formClass_lift_radical_eq {T : Type*} [AddCommGroup T] [Module K T]
+    {Q : QuadraticForm K V} {R : QuadraticForm K W} (hR : R.Nondegenerate)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod R)) :
+    formClass _ Q.nondegenerate_lift_radical = formClass R hR :=
+  (formClass_eq_iff _ _ _ _).mpr
+    (Q.equivalent_lift_radical_of_equivalent_zero_prod h hR.radical_eq_bot)
 
 /-- The class of a presented form is the class of its presentation. -/
 @[simp]

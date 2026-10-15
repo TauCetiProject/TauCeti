@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen
+public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.GroupTheory.CoprodI
 public import TauCeti.Topology.WedgeSum
@@ -275,10 +275,12 @@ theorem fundamentalGroupLift_bijective :
   have hfac : fundamentalGroupLift x = (vanKampenWideEquiv hU hUp hC hCU hUC hx).toMonoidHom.comp
       (MulEquiv.coprodICongr fun i => MulEquiv.ofBijective (ψ i) (hψ i)).toMonoidHom := by
     refine CoprodI.ext_hom _ _ fun i => MonoidHom.ext fun g => ?_
+    obtain ⟨g⟩ := g
     induction g using Path.Homotopic.Quotient.ind with | mk γ =>
+    refine CategoryTheory.End.ext ?_
     simp only [MonoidHom.comp_apply, fundamentalGroupLift_of, MulEquiv.coe_toMonoidHom,
       MulEquiv.coprodICongr_apply_of, MulEquiv.ofBijective_apply, vanKampenWideEquiv_apply,
-      vanKampenWideLift_of, ψ, FundamentalGroup.mapOfEq_apply, FundamentalGroup.map_apply]
+      vanKampenWideLift_of, ψ, FundamentalGroup.mapOfEq_apply, FundamentalGroup.map_apply_asHom]
     simp only [← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
     congr 1
     ext t

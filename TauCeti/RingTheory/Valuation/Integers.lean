@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Hom.InjSurj
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Valuation.Integers
 
 /-!
-# Perfection of rings of integers
+# Rings of integers: domains and perfection
+
+A ring of integers `O` for a valuation `v` on a domain `R` (in the sense of `Valuation.Integers`)
+embeds into `R`, so it is a domain.
 
 If `O` is a ring of integers for a valuation `v` on a ring `R` (in the sense of
 `Valuation.Integers`) and `R` is perfect, then so is `O`: a `p`-th root of an integral element is
@@ -17,9 +21,15 @@ integral, since `v y ^ p ≤ 1` forces `v y ≤ 1`. For instance the ring of int
 perfect valued field `F` of characteristic `p` is perfect, as is needed to form the Witt vectors
 `W(𝒪_F)` with their Teichmüller expansions.
 
+A domain is the ring of integers of its trivial valuation, so constructions taking a ring of
+integers, such as the Gauss valuations on Witt vectors, apply to a perfect field with its trivial
+valuation.
+
 ## Main results
 
+* `Valuation.Integers.isDomain`: the ring of integers of a domain is a domain.
 * `Valuation.Integers.perfectRing`: the ring of integers of a perfect ring is perfect.
+* `Valuation.integers_one`: a domain is the ring of integers of its trivial valuation.
 -/
 
 public section
@@ -28,6 +38,10 @@ namespace Valuation.Integers
 
 variable {R Γ₀ O : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation R Γ₀}
   [CommRing O] [Algebra O R]
+
+/-- **The ring of integers of a domain is a domain**, as it embeds into it. -/
+theorem isDomain [IsDomain R] (hv : v.Integers O) : IsDomain O :=
+  Function.Injective.isDomain _ hv.hom_inj
 
 /-- **The ring of integers of a perfect ring is perfect.** If `O` is a ring of integers for a
 valuation on a ring `R` that is perfect for the exponent `p`, then `O` is perfect for `p`. -/
@@ -50,3 +64,15 @@ theorem perfectRing (hv : v.Integers O) (p : ℕ) [PerfectRing R p] : PerfectRin
     exact ⟨z, hv.hom_inj (by simpa only [map_pow] using hy)⟩
 
 end Valuation.Integers
+
+namespace Valuation
+
+variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀] [Nontrivial R]
+  [NoZeroDivisors R] [DecidablePred fun x : R ↦ x = 0]
+
+/-- **A domain is the ring of integers of its trivial valuation**, which is at most `1`
+everywhere. -/
+theorem integers_one : (1 : Valuation R Γ₀).Integers R :=
+  ⟨Function.injective_id, one_apply_le_one, fun r _ ↦ ⟨r, rfl⟩⟩
+
+end Valuation

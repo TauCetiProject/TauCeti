@@ -66,46 +66,6 @@ namespace FiniteBilinearModule
 
 variable {A : FiniteBilinearModule.{u}}
 
-/-- The pairing is `ℕ`-linear in its first argument. -/
-private theorem pairing_nsmul_left (n : ℕ) (x y : A) :
-    A.pairing (n • x) y = n • A.pairing x y := by
-  rw [A.pairing_comm, map_nsmul, A.pairing_comm]
-
-/-- If `p^{k+1}` kills `z` but not `p^k b(z, z)`, then `z` has order `p^{k+1}` and generates a
-nondegenerate cyclic subgroup. -/
-private theorem addOrderOf_eq_and_isNondegenerate_of_pairing {p k : ℕ} [Fact p.Prime] {z : A}
-    (hz : p ^ (k + 1) • z = 0) (hzz : p ^ k • A.pairing z z ≠ 0) :
-    addOrderOf z = p ^ (k + 1) ∧ (A.restrict (zmultiples z)).IsNondegenerate := by
-  have horder : addOrderOf z = p ^ (k + 1) := addOrderOf_eq_prime_pow
-    (fun h ↦ hzz (by rw [← map_nsmul, h, map_zero])) hz
-  refine ⟨horder, (A.isNondegenerate_restrict_zmultiples_iff z).2 ?_⟩
-  rw [horder]
-  exact addOrderOf_eq_prime_pow hzz (by rw [← map_nsmul, hz, map_zero])
-
-/-- An element `y` can be replaced by an element of `p`-power order with the same pairing against
-a given `x` killed by `p^k`: write `#⟨y⟩ = p^e r` with `p ∤ r` and take the multiple of `y` by an
-inverse of `r` modulo `p^k`. -/
-private theorem exists_pairing_eq_of_addOrderOf_eq_prime_pow {p k : ℕ} [hp : Fact p.Prime]
-    {x : A} (hx : p ^ k • x = 0) (y : A) :
-    ∃ y' : A, (∃ e, addOrderOf y' = p ^ e) ∧ A.pairing x y' = A.pairing x y := by
-  obtain ⟨e, r, hr, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (addOrderOf_pos y).ne' p
-    hp.out.one_lt.ne'
-  obtain ⟨s, t, hst⟩ : IsCoprime (r : ℤ) ((p ^ k : ℕ) : ℤ) := Nat.isCoprime_iff_coprime.2
-    (Nat.Coprime.pow_right _ ((Nat.Prime.coprime_iff_not_dvd hp.out).2 hr).symm)
-  refine ⟨(s * r) • y, ?_, ?_⟩
-  · -- `p^e` kills `(s r) • y`, so its order is a power of `p`.
-    have hdvd : addOrderOf ((s * r) • y) ∣ p ^ e := by
-      rw [← Int.natCast_dvd_natCast, addOrderOf_dvd_iff_zsmul_eq_zero, smul_smul,
-        show ((p ^ e : ℕ) : ℤ) * (s * r) = s * (addOrderOf y : ℤ) by rw [hn]; push_cast; ring,
-        mul_zsmul, natCast_zsmul, addOrderOf_nsmul_eq_zero, smul_zero]
-    obtain ⟨e', -, he'⟩ := (Nat.dvd_prime_pow hp.out).1 hdvd
-    exact ⟨e', he'⟩
-  · -- `s r ≡ 1` modulo `p^k`, which kills `b(x, y)`.
-    have hpk : ((p ^ k : ℕ) : ℤ) • A.pairing x y = 0 := by
-      rw [natCast_zsmul, ← pairing_nsmul_left, hx, pairing_zero_left]
-    rw [map_zsmul, show s * r = 1 - t * ((p ^ k : ℕ) : ℤ) by rw [← hst]; ring, sub_smul,
-      one_smul, mul_smul, hpk, smul_zero, sub_zero]
-
 /-- For an odd prime `p`, if `p^{k+1}` kills `x` and `y` but not `p^k b(x, y)`, then one of `x`,
 `y` and `x + y` has `p^k b(z, z) ≠ 0`, since `b(x + y, x + y) = b(x, x) + 2 b(x, y) + b(y, y)`. -/
 private theorem exists_nsmul_pairing_self_ne_zero {p k : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) {x y : A}
@@ -132,38 +92,9 @@ element is isotropic, so no cyclic subgroup is nondegenerate. -/
 theorem exists_isNondegenerate_restrict_zmultiples {p : ℕ} [hp : Fact p.Prime] (hp2 : p ≠ 2)
     (hA : A.IsNondegenerate) (hpA : p ∣ Nat.card A) :
     ∃ z : A, ∃ k, 0 < k ∧ addOrderOf z = p ^ k ∧ (A.restrict (zmultiples z)).IsNondegenerate := by
-  classical
-  have : Fintype A := Fintype.ofFinite A
-  -- Choose `x` of the largest order `p^k` among elements of `p`-power order.
-  obtain ⟨x, hxS, hmax⟩ := (Finset.univ.filter fun x : A ↦ ∃ k, addOrderOf x = p ^ k)
-    |>.exists_max_image addOrderOf ⟨0, Finset.mem_filter.2 ⟨Finset.mem_univ _, 0, by simp⟩⟩
-  obtain ⟨k, hk⟩ := (Finset.mem_filter.1 hxS).2
-  have hkill : ∀ y : A, (∃ e, addOrderOf y = p ^ e) → p ^ k • y = 0 := by
-    rintro y ⟨e, he⟩
-    have hle : p ^ e ≤ p ^ k :=
-      he ▸ hk ▸ hmax y (Finset.mem_filter.2 ⟨Finset.mem_univ _, e, he⟩)
-    rw [← addOrderOf_dvd_iff_nsmul_eq_zero, he]
-    exact Nat.pow_dvd_pow p ((Nat.pow_le_pow_iff_right hp.out.one_lt).1 hle)
-  -- By Cauchy's theorem there is an element of order `p`, so `k ≥ 1`.
-  obtain ⟨y₀, hy₀⟩ := exists_prime_addOrderOf_dvd_card' p hpA
-  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := by
-    refine Nat.exists_eq_succ_of_ne_zero fun hk0 ↦ hp.out.one_lt.ne' ?_
-    have := hkill y₀ ⟨1, by rw [hy₀, pow_one]⟩
-    rw [hk0, pow_zero, one_smul] at this
-    rw [← hy₀, this, addOrderOf_zero]
-  have hxk : p ^ (k + 1) • x = 0 := by rw [← hk, addOrderOf_nsmul_eq_zero]
-  -- The character `b(x, ·)` has order `p^{k+1}`, so `p^k b(x, y) ≠ 0` for some `y`, which may
-  -- be taken of `p`-power order.
-  obtain ⟨y, hy⟩ : ∃ y, p ^ k • A.pairing x y ≠ 0 := by
-    by_contra! h
-    refine nsmul_ne_zero_of_lt_addOrderOf (pow_ne_zero _ hp.out.ne_zero)
-      (hk ▸ Nat.pow_lt_pow_right hp.out.one_lt k.lt_succ_self) ?_
-    exact IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ hA fun y ↦ by
-      rw [pairing_nsmul_left, h y]
-  obtain ⟨y', hy'p, hxy'⟩ := exists_pairing_eq_of_addOrderOf_eq_prime_pow hxk y
-  rw [← hxy'] at hy
-  obtain ⟨z, hz, hzz⟩ := exists_nsmul_pairing_self_ne_zero hp.out hp2 hxk (hkill y' hy'p) hy
-  obtain ⟨horder, hnd⟩ := addOrderOf_eq_and_isNondegenerate_of_pairing hz hzz
+  obtain ⟨x, y, k, hx, hy, hxy⟩ := A.exists_nsmul_pairing_ne_zero_of_dvd_card hA hpA
+  obtain ⟨z, hz, hzz⟩ := exists_nsmul_pairing_self_ne_zero hp.out hp2 hx hy hxy
+  obtain ⟨horder, hnd⟩ := A.addOrderOf_eq_and_isNondegenerate_of_pairing hz hzz
   exact ⟨z, k + 1, k.succ_pos, horder, hnd⟩
 
 end FiniteBilinearModule

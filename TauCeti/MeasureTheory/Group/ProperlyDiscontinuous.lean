@@ -123,7 +123,7 @@ theorem exists_isFundamentalDomain_of_properlyDiscontinuousSMul (μ : Measure X)
     · exact hn m hmn _ (ha' ▸ smul_mem_smul_set hbm)
   have hmeas : MeasurableSet (firstHitSet (G := G) V) :=
     MeasurableSet.iUnion fun n ↦ (hVo n).measurableSet.diff <|
-      MeasurableSet.biUnion (to_countable _) fun k _ ↦
+      MeasurableSet.iUnion fun k ↦ MeasurableSet.iUnion fun _ ↦
         MeasurableSet.iUnion fun g ↦ ((hVo k).smul g).measurableSet
   refine ⟨firstHitSet V, hmeas, hdisj,
     ⟨hmeas.nullMeasurableSet, ?_, fun g h hgh ↦ (hdisj hgh).aedisjoint⟩⟩

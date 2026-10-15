@@ -112,8 +112,7 @@ private theorem integralDividedPower_one_apply_basis (i s : Fin 2) :
           (kostantForm_apply_mem_integralLattice 1) i 1 hv) (b s) =
       if s = i.rev then b i else 0 := by
   apply Subtype.ext
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_one, Module.End.smul_def,
-    repEnveloping_root_apply_basis]
+  rw [coe_integralDividedPower_one_apply, Module.End.smul_def, repEnveloping_root_apply_basis]
   split <;> simp
 
 /-- A rank-one Kostant root-subgroup point acts on the base-changed integral basis by the

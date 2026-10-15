@@ -46,6 +46,15 @@ theorem ne_f4OppositeRootIndex_comm (α β : Fin 48) :
   simpa only [ne_eq, eq_comm] using
     not_congr ((Function.Involutive.eq_iff hinv (x := β) (y := α)).symm)
 
+/-- In the pinned F₄ table the root opposite to a simple root is the corresponding entry in the
+second half of the table. -/
+@[simp] theorem f4OppositeRootIndex_castAdd (i : Fin 4) :
+    f4OppositeRootIndex (Fin.castAdd 44 i) =
+      Fin.addNat (Fin.castAdd 20 i) 24 := by
+  rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm]
+  revert i
+  decide
+
 /-- The tabulated F4 root length is quadratic along every integral root relation. -/
 theorem f4Length_of_root_eq_add_zsmul (α β γ : Fin 48) (n : ℤ)
     (h : f4SimplyConnectedRootDatum.root γ =

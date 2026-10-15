@@ -112,7 +112,7 @@ theorem rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last (i : Fin (n
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inl i) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
-      ((GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne
+      ((GLSymplecticFin.differenceShortRootUnit (Order.lt_succ_iff_ne_top.2 hi).ne
         (Multiplicative.toAdd u) : GLSymplecticFin (n + 1) A) :
           GL (Fin ((n + 1) + (n + 1))) A) := by
   apply Units.ext
@@ -133,7 +133,7 @@ theorem rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last (i : Fin (n
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inr i) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
-      ((GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne'
+      ((GLSymplecticFin.differenceShortRootUnit (Order.lt_succ_iff_ne_top.2 hi).ne'
         (Multiplicative.toAdd u) : GLSymplecticFin (n + 1) A) :
           GL (Fin ((n + 1) + (n + 1))) A) := by
   apply Units.ext
@@ -165,7 +165,7 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
           have := j.isLt
           simp only [Fin.val_last] at hadj
           omega
-        have hj : j = next n i hi := Fin.ext (by rw [val_next]; omega)
+        have hj : j = Order.succ i := Fin.ext (by rw [Fin.val_orderSucc_of_lt (by omega)]; omega)
         subst hj
         have hmem := (rootSubgroupPoints n (.inl i) K (Multiplicative.ofAdd c)).2
         rwa [rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last n i hi
@@ -176,7 +176,7 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
           have := i.isLt
           simp only [Fin.val_last] at hadj
           omega
-        have hi : i = next n j hj := Fin.ext (by rw [val_next]; omega)
+        have hi : i = Order.succ j := Fin.ext (by rw [Fin.val_orderSucc_of_lt (by omega)]; omega)
         subst hi
         have hmem := (rootSubgroupPoints n (.inr j) K (Multiplicative.ofAdd c)).2
         rwa [rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last n j hj
@@ -255,7 +255,7 @@ difference-root subgroup of the symplectic group. -/
 theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last
     (i : Fin (n + 1)) (hi : i ≠ Fin.last n) (u : Multiplicative K) :
     pointsMulEquivGLSymplecticFin n K (rootSubgroupPoints n (.inl i) K u) =
-      GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne
+      GLSymplecticFin.differenceShortRootUnit (Order.lt_succ_iff_ne_top.2 hi).ne
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin_apply,
@@ -267,7 +267,7 @@ adjacent difference-root subgroup of the symplectic group. -/
 theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last
     (i : Fin (n + 1)) (hi : i ≠ Fin.last n) (u : Multiplicative K) :
     pointsMulEquivGLSymplecticFin n K (rootSubgroupPoints n (.inr i) K u) =
-      GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne'
+      GLSymplecticFin.differenceShortRootUnit (Order.lt_succ_iff_ne_top.2 hi).ne'
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin_apply,
@@ -292,20 +292,12 @@ theorem pointsMulEquivGLSymplecticFin_weightTorusPoints
   obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
   · rw [finSumFinEquiv_apply_left, GLSymplecticFin.diagonalCoordinates_castAdd,
       basisWeight_apply, finSumFinEquiv_symm_apply_castAdd]
-    have hweight :
-        weight n (.inl i) = DynkinType.TypeC.weight (n + 1) i := by
-      funext j
-      exact weight_inl n i j
-    rw [hweight]
+    rw [weight_inl]
   · rw [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
       GLSymplecticFin.diagonalCoordinates_addNat, basisWeight_apply,
       ← Fin.natAdd_eq_addNat,
       finSumFinEquiv_symm_apply_natAdd]
-    have hweight :
-        weight n (.inr i) = -DynkinType.TypeC.weight (n + 1) i := by
-      funext j
-      exact weight_inr n i j
-    rw [hweight, torusCharacter_neg]
+    rw [weight_inr, torusCharacter_neg]
 
 end Field
 

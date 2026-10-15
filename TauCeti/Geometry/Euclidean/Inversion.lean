@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Inversion commutes with isometries and reverses orientation
+# Analytic inversion, its isometry compatibility, and orientation
+
+Inversion is analytic away from its centre (`EuclideanGeometry.contDiffAt_inversion`). This
+extends the smooth regularity provided by Mathlib's `ContDiffAt.inversion` to the analytic order.
 
 Inversion in a sphere (`EuclideanGeometry.inversion c R`) is defined from the distance to the
 centre and the vector from the centre, both of which an affine isometry preserves. So an affine
@@ -28,6 +32,8 @@ of one orientation class give an oriented atlas.
 
 ## Main results
 
+* `EuclideanGeometry.contDiffAt_inversion`: inversion is analytic away from its centre.
+* `TauCeti.snd_inversion`: the last coordinate of inversion about a centre in `E × {0}`.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
@@ -38,6 +44,20 @@ of one orientation class give an oriented atlas.
 public section
 
 open EuclideanGeometry
+open scoped ContDiff
+
+namespace EuclideanGeometry
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Inversion in a sphere is `C^n`, including analytic, away from its centre. -/
+theorem contDiffAt_inversion {c x : E} {R : ℝ} {n : ℕ∞ω} (hx : x ≠ c) :
+    ContDiffAt ℝ n (inversion c R) x := by
+  have h : ContDiffAt ℝ n (fun y : E ↦ R / dist y c) x :=
+    contDiffAt_const.div (contDiffAt_id.dist ℝ contDiffAt_const hx) (dist_ne_zero.2 hx)
+  exact ((h.pow 2).smul (contDiffAt_id.sub contDiffAt_const)).add contDiffAt_const
+
+end EuclideanGeometry
 
 variable {V V₂ P P₂ : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MetricSpace P]
   [NormedAddTorsor V P] [NormedAddCommGroup V₂] [InnerProductSpace ℝ V₂] [MetricSpace P₂]
@@ -78,3 +98,15 @@ theorem det_fderiv_inversion_neg {c x : F} {R : ℝ} (hR : R ≠ 0) (hx : x ≠ 
   exact pow_pos hpos _
 
 end EuclideanGeometry
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The last coordinate of the inversion in a sphere centred on the boundary hyperplane. -/
+theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
+    (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
+      (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
+  simp [EuclideanGeometry.inversion]
+
+end TauCeti

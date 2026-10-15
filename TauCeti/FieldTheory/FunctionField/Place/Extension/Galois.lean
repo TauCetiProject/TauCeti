@@ -12,7 +12,6 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- function field nonempty, hence its ramification index positive.
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
-public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.RingTheory.Valuation.RamificationGroup
 
@@ -240,10 +239,8 @@ variable [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F')
 /-- **The action preserves the fibres of restriction**: `σ • P` lies over the same place of
 `F / k` as `P` does, because `σ` fixes `F` pointwise. -/
 @[simp]
-theorem restrict_smul : (σ • P).restrict k F = P.restrict k F := by
-  rw [restrict_eq_iff_exists_ord_eq]
-  refine ⟨ramificationIdx F P, ramificationIdx_pos F P, fun f ↦ ?_⟩
-  rw [ord_smul, AlgEquiv.commutes, ord_algebraMap_restrict k F P f]
+theorem restrict_smul : (σ • P).restrict k F = P.restrict k F :=
+  restrict_map_restrictScalars P σ
 
 /-- The ramification index is invariant under the action. -/
 @[simp]
@@ -285,7 +282,7 @@ theorem exists_smul_eq_of_restrict_eq {P Q : Place k F'} (h : P.restrict k F = Q
   have hcon' : ∀ σ : F' ≃ₐ[F] F', σ • P ≠ Q := fun σ hσ ↦ hcon ⟨σ, hσ⟩
   set s : Finset (Place k F') :=
     (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • P) ∪
-      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q) with hs
+      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q)
   obtain ⟨z, hz⟩ := exists_forall_mem_ord_eq s fun X ↦ if X = Q then 1 else 0
   have hQmem : Q ∈ s :=
     Finset.mem_union_right _ (Finset.mem_image.mpr ⟨1, Finset.mem_univ _, one_smul _ Q⟩)

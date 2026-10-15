@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Analysis.Calculus.Morse.LocalInvariantManifold
+public import TauCeti.Dynamics.Flow.Graph
 
 /-!
 # From local invariant disks to global stable sets
@@ -36,6 +37,11 @@ manifold structures and intersected to form Morse trajectory spaces.
 * `IsNondegenerateCriticalPoint.exists_stableSet_eq_biUnion_orbit_localStableSet` and
   `IsNondegenerateCriticalPoint.exists_unstableSet_eq_biUnion_orbit_localUnstableSet`: positive
   radii for which the local sets generate the global stable and unstable sets.
+* `IsNondegenerateCriticalPoint.isEmbedding_stableGraph_orbit` and
+  `IsNondegenerateCriticalPoint.isEmbedding_unstableGraph_orbit`: flowing a graph over the stable
+  or unstable spectral subspace gives another topological embedding.
+* `contDiffAt_negativeGradientFlow_graph`: when a graph and the function are `C¹` and `C²`
+  respectively, its transported parameterization is `C¹`.
 
 ## References
 
@@ -238,7 +244,38 @@ theorem unstableSet_eq_biUnion_orbit_localInvariantSet_Iic
 
 variable [FiniteDimensional ℝ E]
 
+omit [FiniteDimensional ℝ E] in
+/-- A `C¹` graph remains `C¹` after transport by any fixed time of a globally defined
+negative-gradient flow of a `C²` function. This applies to both the stable and unstable graph maps
+at a Morse critical point. -/
+theorem contDiffAt_negativeGradientFlow_graph (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) {g : E → E} {v : E} (hg : ContDiffAt ℝ 1 g v) (t : ℝ) :
+    ContDiffAt ℝ 1 (fun w ↦ negativeGradientFlow f hf t (x + (w + g w))) v :=
+  (contDiff_negativeGradientFlow_apply f hf hfs t).contDiffAt.comp v
+    (contDiffAt_const.add (contDiffAt_id.add hg))
+
 namespace IsNondegenerateCriticalPoint
+
+/-- Flowing an embedded graph over the stable spectral subspace gives another embedding, providing
+the topological half of transporting a local stable disk along an orbit. -/
+theorem isEmbedding_stableGraph_orbit (h : IsNondegenerateCriticalPoint f x)
+    (hf : LipschitzWith K (∇ f)) (g : E → E)
+    (hPg : ∀ v ∈ h.stableProjection.range, h.stableProjection (g v) = 0)
+    (hg : ContinuousOn g h.stableProjection.range) (t : ℝ) :
+    IsEmbedding (fun v : h.stableProjection.range ↦
+      negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) :=
+  (negativeGradientFlow f hf).isEmbedding_graph h.stableProjection
+    h.isIdempotentElem_stableProjection g hPg hg x t
+
+/-- Flowing an embedded graph over the unstable spectral subspace gives another embedding. -/
+theorem isEmbedding_unstableGraph_orbit (h : IsNondegenerateCriticalPoint f x)
+    (hf : LipschitzWith K (∇ f)) (g : E → E)
+    (hPg : ∀ v ∈ h.unstableProjection.range, h.unstableProjection (g v) = 0)
+    (hg : ContinuousOn g h.unstableProjection.range) (t : ℝ) :
+    IsEmbedding (fun v : h.unstableProjection.range ↦
+      negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) :=
+  (negativeGradientFlow f hf).isEmbedding_graph h.unstableProjection
+    h.isIdempotentElem_unstableProjection g hPg hg x t
 
 /-- Membership in the local stable set is equivalent to confinement of the global
 negative-gradient orbit together with the stable-projection cutoff. -/

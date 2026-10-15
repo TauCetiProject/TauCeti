@@ -24,9 +24,9 @@ points, we package that equalizer as an algebra equivalence and precompose algeb
 `H`. The resulting equivalence respects convolution because it is induced by postcomposition in
 the value algebra.
 
-This is the affine, group-valued faithfully flat descent statement needed by the fppf sheaf and
-quotient lane of the reductive-groups roadmap. The finite-presentation part of an fppf cover is
-not needed for descent itself, so the result is stated at the natural faithfully flat level.
+This is the affine, group-valued faithfully flat descent statement. The finite-presentation part of
+an fppf cover is not needed for descent itself, so the result is stated at the natural faithfully
+flat level.
 
 ## Main declarations
 
@@ -74,13 +74,13 @@ A point `f : H →ₐ[R] B` belongs to this subgroup exactly when its two postco
 convolution in the value algebra. -/
 noncomputable def descentSubgroup :
     Subgroup (WithConv (H →ₐ[R] B)) :=
-  MonoidHom.eqLocus (mapValue (H := H) (faithfullyFlatDescentLeft (R := R) A (B := B)))
-    (mapValue (H := H) (faithfullyFlatDescentRight (R := R) A (B := B)))
+  MonoidHom.eqLocus (AlgHom.mapValue (H := H) (faithfullyFlatDescentLeft (R := R) A (B := B)))
+    (AlgHom.mapValue (H := H) (faithfullyFlatDescentRight (R := R) A (B := B)))
 
 private theorem mem_descentSubgroup_iff_maps (f : WithConv (H →ₐ[R] B)) :
     f ∈ descentSubgroup (R := R) (H := H) A B ↔
-      mapValue (H := H) (faithfullyFlatDescentLeft (R := R) A (B := B)) f =
-        mapValue (H := H) (faithfullyFlatDescentRight (R := R) A (B := B)) f :=
+      AlgHom.mapValue (H := H) (faithfullyFlatDescentLeft (R := R) A (B := B)) f =
+        AlgHom.mapValue (H := H) (faithfullyFlatDescentRight (R := R) A (B := B)) f :=
   Iff.rfl
 
 /-- Pointwise form of the descent equalizer condition. -/
@@ -156,7 +156,7 @@ private theorem descentEqualizerEquiv_apply_val (a : A) :
 
 private noncomputable def faithfullyFlatDescentHom :
     WithConv (H →ₐ[R] A) →* descentSubgroup (R := R) (H := H) A B :=
-  (mapValue (H := H) (IsScalarTower.toAlgHom R A B)).codRestrict _ fun f => by
+  (AlgHom.mapValue (H := H) (IsScalarTower.toAlgHom R A B)).codRestrict _ fun f => by
     rw [mem_descentSubgroup_iff_apply]
     intro h
     simp
@@ -164,7 +164,7 @@ private noncomputable def faithfullyFlatDescentHom :
 omit [Module.FaithfullyFlat A B] in
 private theorem faithfullyFlatDescentHom_apply (f : WithConv (H →ₐ[R] A)) :
     (faithfullyFlatDescentHom (R := R) (H := H) A B f : WithConv (H →ₐ[R] B)) =
-      mapValue (H := H) (IsScalarTower.toAlgHom R A B) f :=
+      AlgHom.mapValue (H := H) (IsScalarTower.toAlgHom R A B) f :=
   rfl
 
 omit [Module.FaithfullyFlat A B] in
@@ -173,7 +173,7 @@ private theorem faithfullyFlatDescentHom_apply_apply (f : WithConv (H →ₐ[R] 
     (faithfullyFlatDescentHom (R := R) (H := H) A B f :
       descentSubgroup (R := R) (H := H) A B).1.ofConv h =
         algebraMap A B (f.ofConv h) := by
-  rw [faithfullyFlatDescentHom_apply, mapValue_apply, toConv_ofConv]
+  rw [faithfullyFlatDescentHom_apply, AlgHom.mapValue_apply, toConv_ofConv]
   rfl
 
 private theorem faithfullyFlatDescentHom_bijective :
@@ -220,7 +220,7 @@ noncomputable def faithfullyFlatDescentMulEquiv :
 @[simp]
 theorem faithfullyFlatDescentMulEquiv_apply (f : WithConv (H →ₐ[R] A)) :
     (faithfullyFlatDescentMulEquiv (R := R) (H := H) A B f : WithConv (H →ₐ[R] B)) =
-      mapValue (H := H) (IsScalarTower.toAlgHom R A B) f :=
+      AlgHom.mapValue (H := H) (IsScalarTower.toAlgHom R A B) f :=
   by
     rw [faithfullyFlatDescentMulEquiv, MulEquiv.ofBijective_apply]
     exact faithfullyFlatDescentHom_apply (R := R) A B f
@@ -232,7 +232,7 @@ theorem mapValue_faithfullyFlatDescentMulEquiv_symm_apply
     (f : descentSubgroup (R := R) (H := H) A B) :
     WithConv.toConv ((IsScalarTower.toAlgHom R A B).comp
       ((faithfullyFlatDescentMulEquiv (R := R) (H := H) A B).symm f).ofConv) = f.1 := by
-  rw [← mapValue_apply]
+  rw [← AlgHom.mapValue_apply]
   rw [← faithfullyFlatDescentMulEquiv_apply]
   exact congr_arg Subtype.val
     ((faithfullyFlatDescentMulEquiv (R := R) (H := H) A B).apply_symm_apply f)
