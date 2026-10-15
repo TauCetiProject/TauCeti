@@ -156,7 +156,7 @@ theorem IsJordanSplitting.pow_dvd_apply {π : R} {N : ℕ → Submodule R M}
 /-- A Jordan splitting of a finitely generated module has finitely many nonzero constituents. -/
 theorem IsJordanSplitting.hasFiniteSupport [Module.Finite R M] {π : R}
     {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) : {i | N i ≠ ⊥}.Finite := by
-  exact TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg h.isInternal.submodule_iSupIndep
+  exact h.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
     (by rw [h.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
 
 end Basic

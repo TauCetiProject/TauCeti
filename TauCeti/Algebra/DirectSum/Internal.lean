@@ -35,7 +35,7 @@ part of its kernel in the span is spanned by its intersections with the summands
 
 The file also specializes the compactness bound
 `iSupIndep.finite_ne_bot_of_isCompactElement` to submodules,
-`TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
+`iSupIndep.finite_ne_bot_of_fg`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
 
@@ -293,18 +293,12 @@ theorem DirectSum.isInternal_of_lof {R ι M : Type*} [Semiring R] [DecidableEq �
 -- `DirectSum.IsInternal.submodule_iSup_eq_top`; the converse implication, and with it
 -- `DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top`, needs `[Ring R]` and
 -- `[AddCommGroup M]`.
-private theorem Submodule.finite_ne_bot_of_iSupIndep_of_fg_aux
-    {R ι M : Type*} [Semiring R] [AddCommMonoid M]
+/-- An independent family of submodules spanning a finitely generated submodule has only finitely
+many nonzero members. -/
+theorem _root_.iSupIndep.finite_ne_bot_of_fg {R ι M : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] {A : ι → Submodule R M} (hAi : iSupIndep A) (hAf : (⨆ i, A i).FG) :
     {i | A i ≠ ⊥}.Finite :=
   hAi.finite_ne_bot_of_isCompactElement ((Submodule.fg_iff_compact _).mp hAf)
-
-/-- An independent family of submodules spanning a finitely generated submodule has only finitely
-many nonzero members. -/
-theorem Submodule.finite_ne_bot_of_iSupIndep_of_fg {R ι M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {A : ι → Submodule R M} (hAi : iSupIndep A) (hAf : (⨆ i, A i).FG) :
-    {i | A i ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep_of_fg_aux hAi hAf
 
 /-- **The kernel of a map compatible with a decomposition is spanned by its homogeneous parts.**
 If the submodules `A i` span the source, the submodules `A' i` are independent, and `g` carries

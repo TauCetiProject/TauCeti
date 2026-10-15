@@ -369,7 +369,7 @@ variable {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
 
 private theorem InternalGrading.finite_piece_ne_bot_aux (G : InternalGrading R M)
     [Module.Finite R M] : {p | G.piece p ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep_of_fg G.isInternal.submodule_iSupIndep
+  G.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
     (by rw [G.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
 
 /-- A finitely generated internally graded module has only finitely many nonzero homogeneous

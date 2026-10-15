@@ -538,7 +538,7 @@ theorem range_weightProj (g : G) :
 
 private theorem finite_setOf_weightSpace_ne_bot_aux [Module.Finite R V] :
     {g : G | weightSpace R G V g ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep_of_fg (iSupIndep_weightSpace R G V)
+  (iSupIndep_weightSpace R G V).finite_ne_bot_of_fg
     (by rw [iSup_weightSpace_eq_top R G V]; exact Module.Finite.fg_top)
 
 /-- **A comodule over `R[G]` that is finitely generated as a module has only finitely many

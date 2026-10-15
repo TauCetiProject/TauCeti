@@ -272,7 +272,7 @@ theorem iSupIndep_groupLikeWeightSpace :
 theorem finite_setOf_groupLikeWeightSpace_ne_bot_of_fg
     (hfg : (⨆ c : GroupLike k C, _root_.GroupLike.weightSpace (M := M) c).FG) :
     {c : GroupLike k C | _root_.GroupLike.weightSpace (M := M) c ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep_of_fg iSupIndep_groupLikeWeightSpace hfg
+  iSupIndep_groupLikeWeightSpace.finite_ne_bot_of_fg hfg
 
 /-- A Noetherian comodule has only finitely many nonzero group-like weight spaces. -/
 theorem finite_setOf_groupLikeWeightSpace_ne_bot [IsNoetherian k M] :
