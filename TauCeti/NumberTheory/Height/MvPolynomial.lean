@@ -183,7 +183,7 @@ variable {K σ : Type*} [Field K] [Height.AdmissibleAbsValues K]
 @[simp]
 theorem mulHeight_toMvPolynomial (p : K[X]) (i : σ) :
     (p.toMvPolynomial i).mulHeight = p.mulHeight := by
-  rw [MvPolynomial.mulHeight_eq_finsupp, MvPolynomial.coeff_toMvPolynomial_eq_embDomain,
+  rw [MvPolynomial.mulHeight_eq_finsupp, coeff_toMvPolynomial_eq_embDomain,
     Finsupp.mulHeight_embDomain, mulHeight_eq_finsupp]
 
 @[simp]

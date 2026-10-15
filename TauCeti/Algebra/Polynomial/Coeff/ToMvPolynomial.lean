@@ -18,9 +18,9 @@ Injective variable renaming similarly reindexes the multivariate coefficient vec
 
 public section
 
-namespace MvPolynomial
+namespace Polynomial
 
-variable {R σ τ : Type*} [CommSemiring R]
+variable {R σ : Type*} [CommSemiring R]
 
 /-- Placement in one coordinate reindexes the native coefficient vector by the
 corresponding single-coordinate exponent embedding. -/
@@ -30,12 +30,18 @@ theorem coeff_toMvPolynomial_eq_embDomain (p : Polynomial R) (i : σ) :
   classical
   induction p using Polynomial.induction_on' with
   | add p q hp hq =>
-    simp only [map_add, AddMonoidAlgebra.coeff_add, Polynomial.toFinsupp_add, Finsupp.embDomain_add,
-      hp, hq]
+    simp only [_root_.map_add, AddMonoidAlgebra.coeff_add, Polynomial.toFinsupp_add,
+      Finsupp.embDomain_add, hp, hq]
   | monomial n c =>
     simp [← Polynomial.C_mul_X_pow_eq_monomial, MvPolynomial.C_mul_X_pow_eq_monomial,
       ← MvPolynomial.single_eq_monomial,
       AddMonoidAlgebra.coeff_single, Finsupp.embDomain_single]
+
+end Polynomial
+
+namespace MvPolynomial
+
+variable {R σ τ : Type*} [CommSemiring R]
 
 /-- Injective variable renaming reindexes the native coefficient vector by the induced
 embedding of exponent vectors. -/
@@ -51,6 +57,9 @@ theorem coeff_rename_eq_embDomain (p : MvPolynomial σ R) {f : σ → τ}
   by_cases hd : ∃ a, e a = d
   · obtain ⟨a, rfl⟩ := hd
     rw [Finsupp.embDomain_apply_self]
+    -- Since `MvPolynomial` abbreviates `AddMonoidAlgebra`, `.coeff` is its native coefficient
+    -- evaluation, and `e a` reduces to `a.mapDomain f`. Expose this form to apply
+    -- `coeff_rename_embDomain`.
     change (rename f p).coeff (a.mapDomain f) = p.coeff a
     simpa only [Finsupp.embDomain_eq_mapDomain, Function.Embedding.coeFn_mk] using
       coeff_rename_embDomain ⟨f, hf⟩ p a
