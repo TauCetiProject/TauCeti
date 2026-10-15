@@ -198,7 +198,8 @@ private def macbeathSetoid : Setoid (Σ _ : PresentedGroup (macbeathRels G U), U
           refine ⟨x.2, ⟨x.2.2, ?_⟩, ?_⟩
           · rw [h₂]; exact smul_mem_smul_set y.2.2
           · rw [h₂, h₄, mul_smul]; exact smul_mem_smul_set (smul_mem_smul_set z.2.2)
-        have hmem : (s : G) * t ∈ macbeathGenerators G U := hst.mono fun w hw ↦ ⟨hw.1.1, hw.2⟩
+        have hmem : (s : G) * t ∈ macbeathGenerators G U :=
+          hst.mono fun w (hw : w ∈ U ∩ (s : G) • U ∩ ((s : G) * t) • U) ↦ ⟨hw.1.1, hw.2⟩
         refine ⟨⟨_, hmem⟩, ?_, by simp [h₂, h₄, mul_smul]⟩
         rw [h₃, h₁, mul_assoc, macbeath_of_mul_of (u := ⟨_, hmem⟩) rfl hst] }
 

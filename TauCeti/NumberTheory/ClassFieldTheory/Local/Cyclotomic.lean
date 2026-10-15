@@ -136,10 +136,10 @@ private theorem absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_sel
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K π)
     {f : ℕ} (hf : f ≠ 0) {x : SeparableClosure K} (hx : x ^ Nat.card 𝓀[K] ^ f = x) :
     absoluteGaloisGroupRestrictEquiv K σ x = x ^ Nat.card 𝓀[K] := by
-  let := finiteExtensionValuativeRel K (𝓤 f)
-  let := finiteExtensionNormedFieldTopology K (𝓤 f)
+  let := algebraicExtensionValuativeRel K (𝓤 f)
+  let := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-  have := finiteExtension_valuativeExtension K (𝓤 f)
+  have := algebraicExtension_valuativeExtension K (𝓤 f)
   have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension hf
   let : CommGroup Gal(𝓤 f/K) := IsCyclic.commGroup
   have hmem : x ∈ 𝓤 f := rootSet_subset_unramifiedExtension K _ f <| by
@@ -328,7 +328,7 @@ private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_
   have hm : 2 ^ 2 ≤ m :=
     (Nat.pow_le_pow_left hp.two_le 2).trans (Nat.pow_le_pow_right hp.pos (by omega))
   have : NeZero m := ⟨pow_ne_zero _ hp.ne_zero⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure ℚ_[p]) m
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure ℚ_[p]) m
   let E := IntermediateField.adjoin ℚ_[p] {ζ}
   have := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ_[p]
   have := IsCyclotomicExtension.finiteDimensional {m} ℚ_[p] E

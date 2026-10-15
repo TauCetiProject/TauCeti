@@ -364,6 +364,16 @@ theorem ord_algebraMap_restrict (f : F) :
   rw [← ord_comap F P' f, ramificationIdx, key,
     ← Valuation.ord_normalization_mul_ordIndex _ f, mul_comm]
 
+/-- Restriction scales the multiplicative valuation by the ramification index. -/
+theorem valuation_algebraMap_restrict (f : F) :
+    P'.valuation (algebraMap F F' f) =
+      (P'.restrict k F).valuation f ^ ramificationIdx F P' := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [(ramificationIdx_pos F P').ne']
+  rw [P'.valuation_eq_exp_neg_ord ((map_ne_zero (algebraMap F F')).mpr hf),
+    (P'.restrict k F).valuation_eq_exp_neg_ord hf, ord_algebraMap_restrict k F P' f,
+    ← WithZero.exp_nsmul, Int.nsmul_eq_mul, mul_neg]
+
 /-- An element of `F` is integral at the restriction exactly when it is integral at `P'`. -/
 theorem mem_integers_restrict_iff (f : F) :
     f ∈ (P'.restrict k F).integers ↔ algebraMap F F' f ∈ P'.integers := by
@@ -586,7 +596,8 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
         rw [hm, hm₀]
         exact fun hcontra ↦ hj.2 (eq_of_mul_add_natCast_eq hcontra)
       have hge := hj₀ j (by simp [hJdef, hAj])
-      apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation hj₀A hAj).mp
+      apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation
+        (P'.valuation.ne_zero_iff.mpr hj₀A) (P'.valuation.ne_zero_iff.mpr hAj)).mp
       simpa only [Valuation.ord_def, ord_def] using lt_of_le_of_ne hge hne.symm
   exact ⟨j₀, hj₀A, hj₀ j₁ (by simp [hJdef, hj₁]),
     P'.valuation.map_sum_eq_of_lt (Finset.mem_univ j₀) hlt⟩

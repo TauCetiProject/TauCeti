@@ -51,7 +51,7 @@ theorem mapPointsFunctor_app_eq_one_iff (f : H ⟶ K) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
     toConv (g.ofConv.comp (f.hom : ↥H →ₐ[R] ↥K)) = 1 ↔
       g ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A := by
-  rw [← mapPointsFunctor_app_apply, mem_quotientPointsSubgroup_iff]
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, mem_quotientPointsSubgroup_iff]
   have hbridge : (∀ h : ↥K, h ∈ kernelHopfIdeal f → g.ofConv h = 0) ↔
       (kernelHopfIdeal f).toIdeal ≤ RingHom.ker g.ofConv.toRingHom := by
     constructor
@@ -65,10 +65,10 @@ theorem mapPointsFunctor_app_eq_one_iff (f : H ⟶ K) (A : CommAlgCat.{w} R)
     ext a
     have hval := congrArg
       (fun ψ : HopfAlgebra.points (R := R) (H := H) A => ψ.ofConv a) h1
-    rw [mapPointsFunctor_app_apply_apply] at hval
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hval
     simpa [Algebra.ofId_apply] using hval.trans (AlgHom.convOne_apply a)
   · intro heq
-    rw [mapPointsFunctor_app_apply, heq]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, heq]
     refine ofConv_injective ?_
     ext a
     simp only [AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply]
@@ -78,7 +78,8 @@ theorem mapPointsFunctor_app_eq_one_iff (f : H ⟶ K) (A : CommAlgCat.{w} R)
 ideal of `f` is the kernel of the induced map on `A`-points. -/
 theorem quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor (f : H ⟶ K)
     (A : CommAlgCat.{w} R) :
-    quotientPointsSubgroup K (kernelHopfIdeal f) A = ((mapPointsFunctor f).app A).hom.ker := by
+    quotientPointsSubgroup K (kernelHopfIdeal f) A = ((CommHopfAlgCat.Hom.mapPointsFunctor f).app
+      A).hom.ker := by
   ext g
   -- Kernel membership is stated on the functor-object type of points, which is only
   -- definitionally equal to `HopfAlgebra.points`; `MonoidHom.mem_ker` cannot be rewritten here.

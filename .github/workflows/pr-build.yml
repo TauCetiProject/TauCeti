@@ -71,7 +71,8 @@ jobs:
   # The merge queue and bors staging always build on Namespace: they are the path every PR must
   # pass through to land, so they get the faster machine and never wait for a GitHub slot.
   # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
-  # Bors staging has scheduling priority over PR overflow and a run-specific assignment.
+  # Bors staging uses 16CPU/32GB, scheduling priority over PR overflow and a run-specific assignment.
+  # Other Namespace builds retain 8CPU/16GB; rollback is the staging shape expression below.
   # https://namespace.so/docs/solutions/github-actions/runner-controls/job-ordering
   pick-runner:
     if: github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging')
@@ -104,9 +105,9 @@ jobs:
     # queue and bors staging on Namespace should that ever change.
     runs-on: >-
       ${{ github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
-        "nscloud-ubuntu-24.04-amd64-8x16-with-features{0}",
-        "namespace-features:container.privileged=true{1}"
-      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
+        "nscloud-ubuntu-24.04-amd64-{0}-with-features{1}",
+        "namespace-features:container.privileged=true{2}"
+      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && '16x32' || '8x16', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -141,12 +142,25 @@ jobs:
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       # --- Trusted setup: no PR code runs until the sandboxed build phase ---
+      # This is the commit that supplied the pull_request_target / merge_group workflow. All
+      # executable audit, watchdog, cache, and bump-validation tooling comes from here.
+      - name: Checkout workflow-pinned trusted build tooling
+        if: ${{ env.INFRA != '1' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: gate
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Resolve PR head
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
           BORS_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
           BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
+          BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
+          BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}
           REQUESTED_PR: ${{ inputs.pr || github.event.client_payload.pr }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
@@ -174,9 +188,15 @@ jobs:
             [[ "$SHA" =~ ^[0-9a-f]{40}$ && "$BASE_REF" =~ ^[0-9a-f]{40}$ ]] || {
               echo "::error::bors dispatch did not contain two commit SHAs"; exit 1;
             }
-            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/staging" --jq .object.sha)
+            # Train batches use immutable generation refs so a queued predecessor
+            # survives publication of its successor. Legacy serial batches still
+            # use the mutable staging ref. The bors authority selects the ref.
+            # Payload fields never choose a ref, URL, executable or authority.
+            STAGING_REF=$(python3 gate/scripts/bors_train_identity.py \
+              --head "$SHA" --base "$BASE_REF" --batch-id "$BORS_BATCH_ID" --branch "$BORS_BASE_REF")
+            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/$STAGING_REF" --jq .object.sha)
             [ "$STAGING_SHA" = "$SHA" ] || {
-              echo "::error::bors staging moved since this dispatch"; exit 1;
+              echo "::error::bors candidate ref differs from this dispatch"; exit 1;
             }
             relation=$(gh api "repos/${{ github.repository }}/compare/$BASE_REF...$SHA" --jq .status)
             [ "$relation" = ahead ] || {
@@ -240,17 +260,6 @@ jobs:
             echo "author=$AUTHOR"
           } >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO (author=${AUTHOR:-merge-group}, status -> $STATUS_SHA, bump delta vs merge-base $MB)"
-
-      # This is the commit that supplied the pull_request_target / merge_group workflow. All
-      # executable audit, watchdog, cache, and bump-validation tooling comes from here.
-      - name: Checkout workflow-pinned trusted build tooling
-        if: ${{ env.INFRA != '1' }}
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.workflow_sha }}
-          path: gate
-          persist-credentials: false
-          fetch-depth: 1
 
       # Full history is intentional. lake cache get walks ancestors until it reaches a published
       # main commit, then Lake's input hashes invalidate only changed modules and their downstream
@@ -626,6 +635,15 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
+      # Restore-only and after config/bump validation. The isolated main-defined warmer
+      # writes official release snapshots; candidate code sees .elan only read-only below.
+      - name: Restore or install the exact official Lean toolchain
+        if: ${{ env.INFRA != '1' }}
+        uses: ./gate/.github/actions/restore-lean-toolchain
+        with:
+          project-dir: pr
+          tooling-dir: gate
+
       # Workflow-pinned driver, candidate data only: run before package/cache setup and
       # compilation. The complete exact source inventory is essential even on a one-file PR:
       # deletions can break unchanged importers; a batch can add its own new dependencies.
@@ -635,7 +653,6 @@ jobs:
         id: import_headers
         if: ${{ env.INFRA != '1' }}
         run: |
-          elan toolchain install "$(cat pr/lean-toolchain)"
           python3 gate/scripts/check-imports.py --root pr \
             --lean "$(cd pr && elan which lean)"
 
@@ -698,8 +715,8 @@ jobs:
               '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
               '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
               '' \
-              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all three of' \
-              '.github/workflows/{pr-build,pr-profile,nightly-verify}.yml. They must agree;' \
+              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all four of' \
+              '.github/workflows/{pr-build,pr-profile,nightly-verify,warm-dependencies}.yml. They must agree;' \
               'scripts/test_bwrap_pin.py fails if they do not.' \
               '' \
               'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \
@@ -1389,11 +1406,21 @@ jobs:
   # The merge queue's required `build` status is posted only here. In a configured installation,
   # green therefore means both that the combined commit passed every sandboxed audit and that a
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
+  # Priority zero puts terminal reporting ahead of compiler jobs (priority one). Run-specific
+  # assignment prevents other runs from taking its runner. No candidate checkout, privileged
+  # container or persistent cache is needed here. See Namespace's job-ordering documentation.
   finalize-merge-group-build:
-    needs: [sandboxed-build, publish-merge-group-cache]
+    # Start beside publication so an unacquired publisher cannot suppress terminal reporting.
+    # Finalizer (2x4) + publisher (4x8) fit within the freed compiler allocation (8x16).
+    needs: sandboxed-build
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 30
     permissions:
+      contents: read  # sparse immutable finalization tools only
+      actions: read   # current-attempt publisher acquisition and exact-map evidence
       statuses: write
     env:
       GH_TOKEN: ${{ github.token }}
@@ -1402,41 +1429,21 @@ jobs:
       BUILD_STATE: ${{ needs.sandboxed-build.outputs.build-state }}
       BUILD_DESCRIPTION: ${{ needs.sandboxed-build.outputs.build-description }}
       PUBLICATION_REQUIRED: ${{ needs.sandboxed-build.outputs.publication-required }}
-      PUBLISH_JOB_RESULT: ${{ needs.publish-merge-group-cache.result }}
-      PUBLISHED: ${{ needs.publish-merge-group-cache.outputs.published }}
+      BORS_STAGING: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+      BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
+      BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
+      BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}
     steps:
-      - name: Post the terminal merge-group build status
-        run: |
-          set -uo pipefail
-          [[ "$STATUS_SHA" =~ ^[0-9a-f]{40}$ ]] || {
-            echo "::error::cannot post a batch status without a commit SHA"
-            exit 1
-          }
-          if [ "$BUILD_JOB_RESULT" != "success" ] || [ "$BUILD_STATE" != "success" ]; then
-            state=failure
-            description="${BUILD_DESCRIPTION:-sandboxed merge-group build did not complete}"
-          elif [ "$PUBLICATION_REQUIRED" = "true" ] \
-               && { [ "$PUBLISH_JOB_RESULT" != "success" ] || [ "$PUBLISHED" != "true" ]; }; then
-            state=failure
-            description="build passed, but its exact Lake cache was not published"
-          elif [ "$PUBLICATION_REQUIRED" = "true" ]; then
-            state=success
-            description="sandboxed build passed; exact revision cache is public"
-          else
-            state=success
-            description="sandboxed build passed (cache upload is not configured)"
-          fi
+      - name: Check out workflow-pinned finalization tools
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: |
+            scripts/finalize_batch.py
+            scripts/bors_observation.py
+            scripts/bors_train_identity.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
 
-          posted=0
-          for attempt in 1 2 3; do
-            if gh api -X POST "repos/${{ github.repository }}/statuses/$STATUS_SHA" \
-                 -f state="$state" -f context=build -f description="$description" \
-                 -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; then
-              posted=1
-              break
-            fi
-            echo "::warning::posting the build status failed (attempt $attempt/3)"
-            [ "$attempt" = 3 ] || sleep $((attempt * 5))
-          done
-          [ "$posted" = 1 ] || { echo "::error::could not post the merge-group build status"; exit 1; }
-          [ "$state" = success ]
+      - name: Post the terminal merge-group build status
+        run: python3 scripts/finalize_batch.py

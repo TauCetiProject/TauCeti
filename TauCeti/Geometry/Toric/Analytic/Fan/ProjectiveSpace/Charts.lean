@@ -123,7 +123,7 @@ noncomputable def projectiveSpacePointDiffeomorph (n : ℕ∞ω) :
   let hσ := (isRegularCone_projectiveSpaceCone b hi (by simp : {k}ᶜ ≠ univ)).toIsToricCone
   let _ := coneChartedSpace hi hσ hB κ g
   refine ⟨(projectiveSpacePointHomeomorph b hi k g).toEquiv, ?_, ?_⟩
-  · rw [contMDiff_pi_space]
+  · rw [contMDiff_pi_module_iff]
     intro j
     exact (contMDiff_apply_single hi hσ hB κ g
       (projectiveSpaceChartCharacter b hi k j) n).congr fun x ↦
@@ -131,7 +131,7 @@ noncomputable def projectiveSpacePointDiffeomorph (n : ℕ∞ω) :
   · apply (contMDiff_iff_forall_contMDiff_apply_single hi hσ hB κ g).2
     intro m
     simp only [Homeomorph.coe_symm_toEquiv, projectiveSpacePointHomeomorph_symm_apply_single]
-    exact (contDiff_prod fun j _ ↦ (contDiff_apply ℂ ℂ j).pow _).contMDiff
+    exact (contDiff_prod fun j _ ↦ (contDiff_apply ℂ (fun _ ↦ ℂ) j).pow _).contMDiff
 
 open Classical in
 /-- The biholomorphic homogeneous-coordinate chart has the specified underlying homeomorphism. -/

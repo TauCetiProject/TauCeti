@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.MaximalUnramified
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Restriction
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
-import TauCeti.NumberTheory.LocalField.FiniteExtension.Tower
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
 
 /-!
@@ -130,20 +130,20 @@ private theorem range_relBrInfl_unramifiedExtension_le
   -- structures, so the splitting criterion applies to the inflations along these inclusions.
   refine (relBrInfl_mem_range_relBrInfl_iff K (𝓤 n) E M M.val y).2 ?_
   -- The canonical structures of nonarchimedean local field on `Kₙ`, `E` and `M`.
-  let _ := finiteExtensionValuativeRel K (𝓤 n)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 n)
+  let _ := algebraicExtensionValuativeRel K (𝓤 n)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
-  have := finiteExtension_valuativeExtension K (𝓤 n)
+  have := algebraicExtension_valuativeExtension K (𝓤 n)
   have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
-  have := finiteExtension_valuativeExtension K E
-  let _ := finiteExtensionValuativeRel K M
-  let _ := finiteExtensionNormedFieldTopology K M
+  have := algebraicExtension_valuativeExtension K E
+  let _ := algebraicExtensionValuativeRel K M
+  let _ := algebraicExtensionNormedFieldTopology K M
   have := finiteExtension_isNonarchimedeanLocalField K M
-  have : ValuativeExtension (𝓤 n) M := finiteExtension_valuativeExtension_tower K (𝓤 n) M
-  have : ValuativeExtension E M := finiteExtension_valuativeExtension_tower K E M
+  have : ValuativeExtension (𝓤 n) M := algebraicExtension_valuativeExtension_tower K (𝓤 n) M
+  have : ValuativeExtension E M := algebraicExtension_valuativeExtension_tower K E M
   -- `M/E` is unramified, being generated over `E` by the unramified extension `Kₙ`, and
   -- `[Kₙ : K] = [E : K]`.
   have : IsUnramified E M := IsUnramified.of_adjoin_range_eq_top (K := K) (L := 𝓤 n) _ hadj
@@ -160,15 +160,15 @@ theorem range_relBrInfl_eq_range_relBrInfl_unramifiedExtension
       (relBrInfl K (𝓤 (Module.finrank K E)) (𝓤 _).val).range := by
   set n := Module.finrank K E
   have hn : n ≠ 0 := Module.finrank_pos.ne'
-  let _ := finiteExtensionValuativeRel K (𝓤 n)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 n)
+  let _ := algebraicExtensionValuativeRel K (𝓤 n)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
-  have := finiteExtension_valuativeExtension K (𝓤 n)
+  have := algebraicExtension_valuativeExtension K (𝓤 n)
   have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
-  have := finiteExtension_valuativeExtension K E
+  have := algebraicExtension_valuativeExtension K E
   have : Algebra.IsSeparable K E := Algebra.IsSeparable.of_algHom K _ E.val
   have : IsGalois K E := {}
   -- The two groups have orders dividing `n` and equal to `n`.
@@ -231,10 +231,10 @@ theorem invMap_relBrInfl_unramified (L : Type) [Field L] [ValuativeRel L] [Topol
   let E := ι.fieldRange
   let e : L ≃ₐ[K] E := ι.equivFieldRange
   let _ : FiniteDimensional K E := e.toLinearEquiv.finiteDimensional
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
-  have := finiteExtension_valuativeExtension K E
+  have := algebraicExtension_valuativeExtension K E
   have : IsGalois K E := IsGalois.of_algEquiv e
   have : IsUnramified K E := IsUnramified.of_algEquiv e
   let _ : Algebra L E := e.toAlgHom.toRingHom.toAlgebra
@@ -254,10 +254,10 @@ theorem range_invMap_comp_relBrInfl (E : IntermediateField K (SeparableClosure K
         Set (AddCircle (1 : ℚ))) := by
   set n := Module.finrank K E
   have hn : n ≠ 0 := Module.finrank_pos.ne'
-  let _ := finiteExtensionValuativeRel K (𝓤 n)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 n)
+  let _ := algebraicExtensionValuativeRel K (𝓤 n)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
-  have := finiteExtension_valuativeExtension K (𝓤 n)
+  have := algebraicExtension_valuativeExtension K (𝓤 n)
   have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
   have h := range_unramifiedInv K (𝓤 n)
   rw [finrank_unramifiedExtension hn] at h
@@ -299,15 +299,15 @@ theorem invMap_brRes (x : Br K) :
   let _ : Algebra (𝓤 f) (𝓥 f) := ι.toAlgebra
   have : IsScalarTower K (𝓤 f) (𝓥 f) := .of_algebraMap_eq fun c => (ι.commutes c).symm
   -- The canonical structures of nonarchimedean local field on `K_f` and `L_f`.
-  let _ := finiteExtensionValuativeRel K (𝓤 f)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 f)
+  let _ := algebraicExtensionValuativeRel K (𝓤 f)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-  have := finiteExtension_valuativeExtension K (𝓤 f)
+  have := algebraicExtension_valuativeExtension K (𝓤 f)
   have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
-  let _ := finiteExtensionValuativeRel L (𝓥 f)
-  let _ := finiteExtensionNormedFieldTopology L (𝓥 f)
+  let _ := algebraicExtensionValuativeRel L (𝓥 f)
+  let _ := algebraicExtensionNormedFieldTopology L (𝓥 f)
   have := finiteExtension_isNonarchimedeanLocalField L (𝓥 f)
-  have := finiteExtension_valuativeExtension L (𝓥 f)
+  have := algebraicExtension_valuativeExtension L (𝓥 f)
   have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension f.ne_zero
   have : ValuativeExtension K (𝓥 f) := ValuativeExtension.trans K L (𝓥 f)
   have : ValuativeExtension (𝓤 f) (𝓥 f) := ι.valuativeExtension
@@ -365,10 +365,10 @@ theorem brBaseChange_eq_zero_of_isPrimitiveRoot
     {n : ℕ} (hn : n ≠ 0) {ζ : L} (hζ : IsPrimitiveRoot ζ (Nat.card 𝓀[F] ^ n - 1))
     (x : Br F) (hx : n • x = 0) : brBaseChange F L x = 0 := by
   let E := unramifiedExtension F L n
-  let _ := finiteExtensionValuativeRel F E
-  let _ := finiteExtensionNormedFieldTopology F E
+  let _ := algebraicExtensionValuativeRel F E
+  let _ := algebraicExtensionNormedFieldTopology F E
   have := finiteExtension_isNonarchimedeanLocalField F E
-  have := finiteExtension_valuativeExtension F E
+  have := algebraicExtension_valuativeExtension F E
   have hE : brBaseChange F E x = 0 :=
     brBaseChange_eq_zero_of_dvd_finrank F E
       (finrank_unramifiedExtension_of_isPrimitiveRoot hn hζ).symm.dvd x hx

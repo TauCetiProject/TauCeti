@@ -152,7 +152,7 @@ theorem not_anisotropic_of_isLocallyIsotropic_quaternary
   have : NumberField E := NumberField.of_module_finite K E
   have : Algebra.IsQuadraticExtension K E := ⟨QuadraticAlgebra.finrank_eq_two _ _⟩
   have hs : (QuadraticAlgebra.omega : E) * QuadraticAlgebra.omega = algebraMap K E d := by
-    rw [QuadraticAlgebra.omega_mul_omega_eq_mk, QuadraticAlgebra.algebraMap_eq]
+    rw [QuadraticAlgebra.omega_mul_omega_eq_mk, QuadraticAlgebra.algebraMap_eq]; rfl
   rw [← anisotropic_baseChange_iff_quaternary Q hQ hrank d hd hsq _ hs]
   exact not_anisotropic_of_isLocallyIsotropic_quaternary_of_discr_eq_zero
     (Nondegenerate.baseChange hQ) (by simpa using hrank)

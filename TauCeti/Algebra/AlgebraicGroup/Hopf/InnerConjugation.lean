@@ -64,8 +64,7 @@ noncomputable def innerConjugationPointNatIso
       MulEquiv.toGrpIso_hom]
     simp only [GrpCat.hom_ofHom, MulEquiv.coe_toMonoidHom]
     rw [MulAut.conj_apply, MulAut.conj_apply]
-    rw [HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_inv,
-      HopfAlgebra.mapPoints_extendPoint]
+    rw [map_mul, map_mul, map_inv, HopfAlgebra.mapPoints_extendPoint]
 
 /-- The forward component of the natural inner-conjugation isomorphism acts by conjugation. -/
 @[simp]

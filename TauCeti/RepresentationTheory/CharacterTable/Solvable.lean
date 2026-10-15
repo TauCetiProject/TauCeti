@@ -167,7 +167,7 @@ private theorem isSolvable_of_isSimpleGroup {G : Type u} [Group G] [Finite G] [I
   by_cases hqdvd : q ∣ Nat.card G
   · -- a nontrivial `g` centralizing a Sylow `q`-subgroup `Q` has class size dividing `[G : Q]`
     obtain ⟨Q⟩ : Nonempty (Sylow q G) := inferInstance
-    obtain ⟨g, -, hg1, hle⟩ := Q.isPGroup'.exists_ne_one_le_centralizer fun h =>
+    obtain ⟨g, -, hg1, hle⟩ := Q.isPGroup.exists_ne_one_le_centralizer fun h =>
       Q.not_dvd_index (by rwa [h, Subgroup.index_bot])
     obtain ⟨k, -, hk⟩ := (Nat.dvd_prime_pow hp).1 <| (Subgroup.index_dvd_of_le hle).trans <|
       ((hq.coprime_iff_not_dvd.2 Q.not_dvd_index).symm.pow_right b).dvd_of_dvd_mul_right

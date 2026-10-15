@@ -22,9 +22,10 @@ with composition of functions, and is preserved by every linear map intertwining
 operators. In particular `f(T)` commutes with every endomorphism commuting with `T`. A bound on
 `|f|` at the eigenvalues of `T` bounds the norm of `f(T)`.
 
-No continuity of `f` is required, and the construction works uniformly over `RCLike` scalars, so
-it applies to real inner product spaces, where Mathlib's continuous functional calculus for
-self-adjoint operators is not available. For a positive operator, whose eigenvalues are
+No continuity of `f` is required, and the construction works uniformly over `RCLike` scalars by
+finite sums, without any `C⋆`-algebra structure. It agrees with Mathlib's continuous functional
+calculus of the corresponding bounded operator: see
+`LinearMap.IsSymmetric.toContinuousLinearMap_cfc`. For a positive operator, whose eigenvalues are
 nonnegative, `cfc_mul`, `cfc_congr` and `cfc_id` show that applying it to `Real.sqrt` gives a
 square root.
 

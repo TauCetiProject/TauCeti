@@ -16,9 +16,33 @@ values on tuples of vectors of an orthonormal basis `b`, and its operator norm i
 them: `‖M‖ ≤ ∑_r ‖M (b ∘ r)‖`, the sum running over all tuples `r` of basis indices
 (`ContinuousMultilinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`). For a second derivative,
 this bounds the norm of the Hessian by the sum of the absolute values of its matrix entries.
+The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
+`ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`; for a first derivative it bounds
+the norm of the gradient by the sum of the absolute values of the partial derivatives.
 -/
 
 public section
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E G ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι]
+
+/-- The operator norm of a continuous linear map on an inner product space is at most the sum of
+the norms of its values on the vectors of an orthonormal basis. -/
+theorem opNorm_le_sum_norm_apply_orthonormalBasis (L : E →L[𝕜] G) (b : OrthonormalBasis ι 𝕜 E) :
+    ‖L‖ ≤ ∑ i, ‖L (b i)‖ := by
+  refine L.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun x => ?_
+  -- Expand the argument in the basis and use linearity.
+  conv_lhs => rw [← b.sum_repr x]
+  rw [map_sum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+  rw [map_smul, norm_smul, mul_comm]
+  gcongr
+  rw [b.repr_apply_apply]
+  simpa [b.orthonormal.1 i] using norm_inner_le_norm (𝕜 := 𝕜) (b i) x
+
+end ContinuousLinearMap
 
 namespace ContinuousMultilinearMap
 

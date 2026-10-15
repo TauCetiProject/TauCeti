@@ -330,7 +330,7 @@ lemma singularChain_subdivision_iterate {m k n : ℕ}
     (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
     singularChain R σ k ((subdivision _ k)^[n] c) =
       singularChain R σ k c ≫
-        ((CategoryTheory.End.of (singularSubdivisionChainMap R X)) ^ n).f k := by
+        ((CategoryTheory.End.of (singularSubdivisionChainMap R X)) ^ n).asHom.f k := by
   induction n with
   | zero => simp
   | succ n ih =>

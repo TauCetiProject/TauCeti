@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Matrix.Order
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 
@@ -22,7 +25,8 @@ Let `A` be a constant `n × n` coefficient matrix whose quadratic form satisfies
 controlled by `λ` and `Λ`, so that `C²` solutions of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` become harmonic
 functions in the new coordinates. This reduces questions about constant-coefficient elliptic
 equations, such as decay estimates on balls, to the corresponding questions for harmonic
-functions.
+functions. The same holds for the gradient of a solution, so that its decay on balls also
+follows from that of harmonic functions.
 
 ## The argument
 
@@ -38,6 +42,8 @@ map `T` stretches lengths by at most `√Λ` and its inverse by at most `1 / √
   operator is the Laplacian after a linear change of variables with controlled condition number.
 * `TauCeti.PDE.harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero`: after such a change of
   variables, a `C²` solution on an open set becomes a harmonic function.
+* `TauCeti.PDE.harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero`: so does the
+  gradient of a scalar `C²` solution.
 
 ## References
 
@@ -49,7 +55,7 @@ map `T` stretches lengths by at most `√Λ` and its inverse by at most `1 / √
 public section
 
 open InnerProductSpace Laplacian Matrix
-open scoped Topology MatrixOrder
+open scoped Gradient Topology MatrixOrder
 
 namespace TauCeti
 
@@ -150,6 +156,36 @@ theorem harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero
   refine ⟨(hu.contDiffAt (hs.mem_nhds hy)).comp y e.contDiff.contDiffAt, ?_⟩
   filter_upwards [(hs.preimage e.continuous).mem_nhds hy] with z hz
   rw [he u z (hu.contDiffAt (hs.mem_nhds hz)), hLu _ hz, Pi.zero_apply]
+
+/-- **The gradient of a solution becomes harmonic after the change of variables.** If `e` is a
+continuous linear automorphism with `Δ (u ∘ e) = (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu) ∘ e` for every scalar `u` that is
+`C²` at the relevant point, as provided by `exists_continuousLinearEquiv_laplacian_comp_eq`, and
+`u` is a scalar `C²` solution of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on an open set `s`, then `∇u ∘ e` is
+harmonic on `e ⁻¹' s`. Its coordinates are directional derivatives of the harmonic `u ∘ e`. -/
+theorem harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero
+    {e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι}
+    (he : ∀ (u : EuclideanSpace ℝ ι → ℝ) (y : EuclideanSpace ℝ ι), ContDiffAt ℝ 2 u (e y) →
+      Δ (u ∘ e) y = ∑ i, ∑ j, A i j •
+        fderiv ℝ (fderiv ℝ u) (e y) (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
+    {s : Set (EuclideanSpace ℝ ι)} (hs : IsOpen s) {u : EuclideanSpace ℝ ι → ℝ}
+    (hu : ContDiffOn ℝ 2 u s)
+    (hLu : ∀ x ∈ s, ∑ i, ∑ j, A i j •
+      fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0) :
+    HarmonicOnNhd (∇ u ∘ e) (e ⁻¹' s) := by
+  set b := EuclideanSpace.basisFun ι ℝ
+  have hh := harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he hs hu hLu
+  have hH : HarmonicOnNhd (fun y => ∑ i, fderiv ℝ (u ∘ e) y (e.symm (b i)) • b i) (e ⁻¹' s) :=
+    HarmonicOnNhd.sum _ fun i _ =>
+      (hh.fderiv_apply (e.symm (b i))).comp_CLM ((1 : ℝ →L[ℝ] ℝ).smulRight (b i))
+  intro y hy
+  refine (harmonicAt_congr_nhds ?_).2 (hH y hy)
+  filter_upwards [(hs.preimage e.continuous).mem_nhds hy] with z hz
+  have hdz : DifferentiableAt ℝ u (e z) :=
+    (hu.differentiableOn (by norm_num)).differentiableAt (hs.mem_nhds hz)
+  rw [Function.comp_apply, ← b.sum_repr' (∇ u (e z))]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [fderiv_comp z hdz e.differentiableAt, e.fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, e.apply_symm_apply, real_inner_comm, inner_gradient_left]
 
 end PDE
 
