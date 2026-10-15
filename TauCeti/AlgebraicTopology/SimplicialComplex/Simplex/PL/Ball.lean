@@ -54,22 +54,26 @@ private def realizationTopHomeomorphOptionCoordinateSimplex (n : ℕ) :
     (y : coordinateSimplex (Option (Fin n))) (i : Fin (n + 1)) :
     ((realizationTopHomeomorphOptionCoordinateSimplex n).symm y).1 i.castSucc =
       y.1 (finSuccEquivLast i) := by
-  have h := congrArg (fun z : coordinateSimplex (Option (Fin n)) => z.1 (finSuccEquivLast i))
-    ((realizationTopHomeomorphOptionCoordinateSimplex n).apply_symm_apply y)
-  simpa only [realizationTopHomeomorphOptionCoordinateSimplex_apply,
-    simplexBoundaryCoordinateMap_apply, Equiv.symm_apply_apply] using h
+  simp only [realizationTopHomeomorphOptionCoordinateSimplex, Homeomorph.symm_trans_apply,
+    realizationTopHomeomorphCoordinateSimplex_symm_castSucc]
+  -- Expose the subtype inverse's ambient value to use the public reindexing equation.
+  change (simplexCoordinateReindex n).symm y.1 i = y.1 (finSuccEquivLast i)
+  simpa only [Homeomorph.apply_symm_apply, Equiv.symm_apply_apply] using
+    (simplexCoordinateReindex_apply n ((simplexCoordinateReindex n).symm y.1)
+      (finSuccEquivLast i)).symm
 
 /-- The omitted barycentric coordinate is the missing mass. -/
 @[simp] private theorem realizationTopHomeomorphOptionCoordinateSimplex_symm_last (n : ℕ)
     (y : coordinateSimplex (Option (Fin n))) :
     ((realizationTopHomeomorphOptionCoordinateSimplex n).symm y).1 (Fin.last (n + 1)) =
       1 - ∑ i, y.1 i := by
-  have h := Realization.sum_eq_one _
-    ((realizationTopHomeomorphOptionCoordinateSimplex n).symm y)
-  rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
-  simp only [realizationTopHomeomorphOptionCoordinateSimplex_symm_castSucc] at h
-  rw [finSuccEquivLast.sum_comp] at h
-  linarith
+  simp only [realizationTopHomeomorphOptionCoordinateSimplex, Homeomorph.symm_trans_apply,
+    realizationTopHomeomorphCoordinateSimplex_symm_last]
+  -- Expose the subtype inverse's ambient value to reindex the sum with the public equation.
+  change 1 - ∑ i, (simplexCoordinateReindex n).symm y.1 i = 1 - ∑ i, y.1 i
+  have h := finSuccEquivLast.symm.sum_comp ((simplexCoordinateReindex n).symm y.1)
+  simp only [← simplexCoordinateReindex_apply, Homeomorph.apply_symm_apply] at h
+  exact congrArg (1 - ·) h.symm
 
 /-- The solid simplex vertex chart, expressed on the actual weak realization. -/
 def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
@@ -90,16 +94,15 @@ def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
   cases v with
   | none =>
     simp only [coordinateSimplexHalfSpaceChartSource_none, mem_preimage, mem_ofPred_eq,
-      mem_openStarRealization, Option.elim_none]
-    have hsum := Realization.sum_eq_one (⊤ : AbstractSimplicialComplex (Fin (n + 2))) x
-    rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at hsum
+      Option.elim_none]
     have hret : (∑ i, (realizationTopHomeomorphOptionCoordinateSimplex n x).1 i) =
         ∑ j : Fin (n + 1), x.1 j.castSucc := by
       simp only [realizationTopHomeomorphOptionCoordinateSimplex_apply,
         simplexBoundaryCoordinateMap_apply]
       exact finSuccEquivLast.symm.sum_comp (fun j => x.1 j.castSucc)
     rw [hret]
-    constructor <;> intro h <;> linarith
+    simpa only [realizationTopHomeomorphCoordinateSimplex_apply] using
+      (mem_openStarRealization_top_last_iff_sum_lt_one (n + 1) x).symm
   | some i =>
     simp only [coordinateSimplexHalfSpaceChartSource_some, mem_preimage, mem_ofPred_eq,
       mem_openStarRealization, Option.elim_some,
