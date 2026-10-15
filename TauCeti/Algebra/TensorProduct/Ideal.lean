@@ -64,14 +64,6 @@ theorem tmul_mem_leftTensorIdeal {I : Ideal A} {x : A} (hx : x ∈ I) (y : B) :
   rw [h]
   exact Ideal.mul_mem_left _ _ (includeLeft_mem_leftTensorIdeal R B hx)
 
-/-- Membership in `I.leftTensorIdeal R B` is membership in the ideal map along the left tensor
-inclusion. -/
-theorem mem_leftTensorIdeal {I : Ideal A} {x : A ⊗[R] B} :
-    x ∈ leftTensorIdeal R B I ↔
-      x ∈ Ideal.map
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := A) (B := B)).toRingHom I :=
-  Iff.rfl
-
 /-- The order universal property for `I ⊗ B`. -/
 theorem leftTensorIdeal_le_iff {I : Ideal A} {J : Ideal (A ⊗[R] B)} :
     leftTensorIdeal R B I ≤ J ↔
@@ -130,14 +122,6 @@ theorem tmul_mem_rightTensorIdeal {I : Ideal B} (x : A) {y : B} (hy : y ∈ I) :
     simp
   rw [h]
   exact Ideal.mul_mem_left _ _ (includeRight_mem_rightTensorIdeal R A hy)
-
-/-- Membership in `I.rightTensorIdeal R A` is membership in the ideal map along the right tensor
-inclusion. -/
-theorem mem_rightTensorIdeal {I : Ideal B} {x : A ⊗[R] B} :
-    x ∈ rightTensorIdeal R A I ↔
-      x ∈ Ideal.map
-        (Algebra.TensorProduct.includeRight (R := R) (A := A) (B := B)).toRingHom I :=
-  Iff.rfl
 
 /-- The order universal property for `A ⊗ I`. -/
 theorem rightTensorIdeal_le_iff {I : Ideal B} {J : Ideal (A ⊗[R] B)} :
