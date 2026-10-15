@@ -16,7 +16,7 @@ of the base field after a finite separable extension. The isomorphism is over th
 base, so it labels all points as rational points, including their scheme structures.
 The empty scheme corresponds to the product indexed by `Fin 0`.
 
-This is the scheme form of `Algebra.Etale.exists_isFiniteSplit_tensorProduct`, transported
+This is the scheme form of `TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorProduct`, transported
 through `TauCeti.FiniteEtaleScheme.spec` and Mathlib's affine pullback comparison.
 
 ## References
@@ -57,7 +57,7 @@ theorem exists_split_of_isFinite_of_etale {K : Type u} [Field K] {X : Scheme.{u}
     TauCeti.FiniteEtaleScheme.ofHom_obj] at e'
   let e₀ : Over.mk (Spec.algebraMap K A.unop.obj) ≅ Over.mk f := eSpec.symm ≪≫ e'
   obtain ⟨L, _, _, _, _, hL⟩ :=
-    Algebra.Etale.exists_isFiniteSplit_tensorProduct K A.unop.obj
+    TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorProduct K A.unop.obj
   obtain ⟨n, ⟨a⟩⟩ := hL.nonempty_algEquiv_fun
   let e₁ : Over.mk (pullback.snd (Spec.algebraMap K A.unop.obj) (Spec.algebraMap K L)) ≅
       Over.mk (Spec.algebraMap L (L ⊗[K] A.unop.obj)) :=

@@ -28,7 +28,7 @@ public section
 
 open scoped TensorProduct
 
-namespace Algebra.Etale
+namespace TauCeti.Algebra.Etale
 
 universe u
 
@@ -53,4 +53,4 @@ theorem exists_isFiniteSplit_tensorProduct (K A : Type u) [Field K] [CommRing A]
     Algebra.IsFiniteSplit.of_algEquiv
       (Algebra.TensorProduct.cancelBaseChange K B (B ⧸ m) (B ⧸ m) A)⟩
 
-end Algebra.Etale
+end TauCeti.Algebra.Etale
