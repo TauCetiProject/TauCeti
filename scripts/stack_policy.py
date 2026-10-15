@@ -495,8 +495,8 @@ def comment_text(evidence, parent_state="open"):
     return (
         f"<!-- tauceti-no-stack:v1 child={e.child_head} -->\n"
         f"Stacked PRs are not allowed in Tau Ceti. This PR includes unmerged work from #{e.parent}: "
-        f"{detail}the source patch from `{e.patch_base}` "
-        f"at parent head [`{e.parent_head}`](https://github.com/{REPO}/commit/{e.parent_head}) "
+        f"{detail}the source patch from `{e.patch_base}` to `{e.commit}` "
+        f"(parent PR's current head: [`{e.parent_head}`](https://github.com/{REPO}/commit/{e.parent_head})) "
         f"is reverse-applicable to child `{e.child_head}`, but not to the inspected main source history "
         f"ending at `{e.main}` (patch SHA-256 `{e.patch_sha256}`).\n\n"
         f"{next_step}Rebase onto current main so the diff contains only "

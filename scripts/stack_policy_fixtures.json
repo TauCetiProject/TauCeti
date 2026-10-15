@@ -141,16 +141,7 @@
       "head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
       "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
       "pr": 16099,
-      "reasons": [
-        "#15975: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9",
-        "#15975: no complete unlanded parent delta/commit retained",
-        "#16003: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9",
-        "#16003: no complete unlanded parent delta/commit retained",
-        "#16110: descendant of this child, not a parent",
-        "#16123: descendant of this child, not a parent",
-        "#16132: descendant of this child, not a parent",
-        "#16139: descendant of this child, not a parent"
-      ]
+      "reasons": ["#15975: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9", "#15975: no complete unlanded parent delta/commit retained", "#16003: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9", "#16003: no complete unlanded parent delta/commit retained", "#16110: descendant of this child, not a parent", "#16123: descendant of this child, not a parent", "#16132: descendant of this child, not a parent", "#16139: descendant of this child, not a parent"]
     },
     {
       "classification": "confirmed-stack",
@@ -208,10 +199,7 @@
       "head": "34bf92e3ee88334e8731e954766a742f61ea2177",
       "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
       "pr": 16129,
-      "reasons": [
-        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
-        "#16082: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9"
-      ]
+      "reasons": ["#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d", "#16082: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9"]
     },
     {
       "classification": "unknown",
@@ -394,9 +382,7 @@
       "head": "f891f3a74b3bbf475dbb644a94ca4e9a8fe003a6",
       "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
       "pr": 16784,
-      "reasons": [
-        "#16786: descendant of this child, not a parent"
-      ]
+      "reasons": ["#16786: descendant of this child, not a parent"]
     },
     {
       "classification": "no-confirmed-stack",
