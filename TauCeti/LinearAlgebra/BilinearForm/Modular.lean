@@ -188,7 +188,9 @@ theorem IsModular.scaleIdeal_eq_span [Free R M] [Nontrivial M] (h : B.IsModular 
   · exact (scaleIdeal_le_iff _ _).mpr fun x y ↦
       Ideal.mem_span_singleton.mpr ⟨C x y, by simp⟩
   · apply Ideal.span_le.mpr (Set.singleton_subset_iff.mpr ?_)
-    simpa [hx] using (a • C).apply_mem_scaleIdeal x (b i)
+    convert (a • C).apply_mem_scaleIdeal x (b i) using 1
+    simp only [SetLike.mem_coe, LinearMap.smul_apply, hx, Basis.coord_apply, Basis.repr_self,
+      Finsupp.single_eq_same, smul_eq_mul, mul_one]
 
 /-- For a modular form on a free module, norm containment relative to its actual scale is
 equivalent to containment in the product of the modularity factor and the given factor.
