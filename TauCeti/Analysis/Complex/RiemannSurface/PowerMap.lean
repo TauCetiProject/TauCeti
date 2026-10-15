@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.BranchValues
 public import TauCeti.Geometry.Manifold.Instances.OnePoint
 
-import TauCeti.Analysis.Analytic.Order
-
 /-!
 # The power maps of the Riemann sphere
 
