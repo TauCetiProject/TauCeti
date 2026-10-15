@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Fppf
-public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero
+public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.Basic
 public import Mathlib.Algebra.Category.Grp.EpiMono
 
 /-!
