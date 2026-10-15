@@ -107,13 +107,8 @@ private theorem iUnion_nat {s : ℕ → Set X} (hs : ∀ n, CountablyRectifiable
   apply ae_le_set.mp
   have hc : ∀ n, s n ≤ᵐ[μHE[k]] ⋃ i, Set.range (f n i) :=
     fun n ↦ ae_le_set.mpr (hcover n)
-  filter_upwards [ae_all_iff.mpr hc] with x hx
-  intro hxs
-  obtain ⟨n, hn⟩ := mem_iUnion.mp hxs
-  obtain ⟨i, hi⟩ := mem_iUnion.mp (hx n hn)
-  refine mem_iUnion.mpr ⟨Nat.pair n i, ?_⟩
-  rw [Nat.unpair_pair]
-  exact hi
+  rw [Set.iUnion_unpair (fun n i ↦ Set.range (f n i))]
+  exact Filter.EventuallySubset.countable_iUnion hc
 
 /-- A countable collection of rectifiable sets has rectifiable union. -/
 theorem sUnion {S : Set (Set X)} (hS : S.Countable)
@@ -148,12 +143,10 @@ theorem image (hs : CountablyRectifiable k s) {g : X → Y} {K : ℝ≥0}
   have hp (i : ℕ) (x : B i) : f i (p i x) ∈ s := x.property.choose_spec
   let F (i : ℕ) : B i → Y := fun x ↦ g (f i (p i x))
   have hF (i : ℕ) : LipschitzWith (K * L i) (F i) := by
-    intro x y
-    calc
-      edist (F i x) (F i y) ≤ K * edist (f i (p i x)) (f i (p i y)) := hg (hp i x) (hp i y)
-      _ ≤ K * (L i * edist (p i x) (p i y)) := mul_le_mul_right (hL i _ _) _
-      _ = (K * L i : ℝ≥0) * edist x y := by
-        simp only [p, Subtype.edist_eq, ENNReal.coe_mul, mul_assoc]
+    have hpi : LipschitzWith 1 (p i) :=
+      (LipschitzWith.subtype_val (B i)).subtype_mk (fun x ↦ x.property.choose)
+    simpa only [mul_one, Function.comp_def, Set.domRestrict_apply, F] using
+      hg.to_restrict.comp (((hL i).comp hpi).subtype_mk (hp i))
   refine ⟨B, F, fun i ↦ ⟨K * L i, hF i⟩, ?_⟩
   have hnull : μHE[k] (g '' (s \ ⋃ i, Set.range (f i))) = 0 := by
     have h := LipschitzOnWith.euclideanHausdorffMeasure_image_le
