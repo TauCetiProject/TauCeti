@@ -94,6 +94,19 @@ theorem genLoopLoopSumHomeomorph_symm_apply (M : Type*) (q : Ω^ (M ⊕ Fin 1) X
   rw [Homeomorph.apply_symm_apply] at h
   simpa using h.symm
 
+/-- **Naturality of the currying homeomorphism**: `genLoopLoopSumHomeomorph` commutes with the maps
+induced on cube loops by a based continuous map `f : X → Y`, and by any map `F` of loop spaces
+that postcomposes loops with `f`, for any index type of cube directions. -/
+theorem _root_.ContinuousMap.genLoopLoopSumHomeomorph_map (f : C(X, Y)) (hf : f x = y)
+    (F : C(Ω X x, Ω Y y)) (hFf : ∀ γ t, F γ t = f (γ t)) (M : Type*)
+    (p : Ω^ M (Ω X x) (Path.refl x)) :
+    genLoopLoopSumHomeomorph y M
+        (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
+      map f hf (genLoopLoopSumHomeomorph x M p) := by
+  refine GenLoop.ext _ _ fun t => ?_
+  rw [genLoopLoopSumHomeomorph_apply, map_apply, map_apply]
+  exact (hFf _ _).trans (congrArg f (genLoopLoopSumHomeomorph_apply x M p t).symm)
+
 variable (x) in
 /-- Currying the last cube direction: cube loops in `k` directions of the loop space `Ω X x`,
 based at the constant loop, are cube loops of `X` in `k + 1` directions. This is
@@ -154,5 +167,63 @@ theorem genLoopLoopHomeomorph_symm_apply (k : ℕ) (q : Ω^ (Fin (k + 1)) X x)
   simpa using h.symm
 
 end Loop
+
+/-! ### Concatenation under reindexing and currying -/
+
+section Transport
+
+variable [DecidableEq M] [DecidableEq N]
+
+/-- Reindexing carries a concatenation in the cube direction `i` to a concatenation in the
+direction `e i`. -/
+@[simp]
+theorem congr_transAt (e : M ≃ N) (i : M) (p q : Ω^ M X x) :
+    _root_.GenLoop.congr x e (_root_.GenLoop.transAt i p q) =
+      _root_.GenLoop.transAt (e i) (_root_.GenLoop.congr x e p)
+        (_root_.GenLoop.congr x e q) := by
+  refine _root_.GenLoop.ext _ _ fun t => ?_
+  simp only [congr_apply, _root_.GenLoop.transAt, _root_.GenLoop.coe_copy]
+  have hupd : ∀ s : I, (fun m => Function.update t (e i) s (e m)) =
+      Function.update (fun m => t (e m)) i s := by
+    intro s
+    funext m
+    simp [Function.update_apply]
+  split_ifs <;> rw [hupd]
+
+/-- Currying carries a concatenation in the cube direction `i` of the outer cube to a
+concatenation in the direction `Sum.inl i`. -/
+@[simp]
+theorem genLoopGenLoopEquiv_transAt (i : M) (p q : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
+    _root_.GenLoop.genLoopGenLoopEquiv x (_root_.GenLoop.transAt i p q) =
+      _root_.GenLoop.transAt (Sum.inl i) (_root_.GenLoop.genLoopGenLoopEquiv x p)
+        (_root_.GenLoop.genLoopGenLoopEquiv x q) := by
+  refine _root_.GenLoop.ext _ _ fun y => ?_
+  simp only [genLoopGenLoopEquiv_apply, _root_.GenLoop.transAt, _root_.GenLoop.coe_copy]
+  have hinl : ∀ s : I, (fun m => Function.update y (Sum.inl i) s (Sum.inl m)) =
+      Function.update (fun m => y (Sum.inl m)) i s := by
+    intro s
+    funext m
+    simp [Function.update_apply]
+  have hinr : ∀ s : I, (fun n => Function.update y (Sum.inl i) s (Sum.inr n)) =
+      fun n => y (Sum.inr n) := by
+    intro s
+    funext n
+    simp
+  split_ifs <;> rw [hinl, hinr]
+
+end Transport
+
+/-- **Naturality of the currying homeomorphism** for `k` cube directions: the specialization of
+`ContinuousMap.genLoopLoopSumHomeomorph_map` to `Fin k`. -/
+theorem _root_.ContinuousMap.genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x = y)
+    (F : C(Ω X x, Ω Y y)) (hFf : ∀ γ t, F γ t = f (γ t)) (k : ℕ)
+    (p : Ω^ (Fin k) (Ω X x) (Path.refl x)) :
+    genLoopLoopHomeomorph y k (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
+      map f hf (genLoopLoopHomeomorph x k p) := by
+  exact (genLoopLoopHomeomorph_apply_eq y k _).trans
+    ((congrArg (GenLoop.congr y finSumFinEquiv)
+      (ContinuousMap.genLoopLoopSumHomeomorph_map f hf F hFf _ p)).trans
+      ((GenLoop.ext _ _ fun _ => by simp only [congr_apply, map_apply]).trans
+        (congrArg (map f hf) (genLoopLoopHomeomorph_apply_eq x k p).symm)))
 
 end GenLoop

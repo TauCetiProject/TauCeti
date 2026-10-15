@@ -12,8 +12,8 @@ public import TauCeti.Topology.Category.BasedTopologicalSpace
 # Iterated loop spaces
 
 The loop space of a based topological space, as Mathlib's `Path x x` based at the constant loop,
-and its `k`-fold iterate. Iterated loop spaces are the based mapping spaces out of spheres,
-`Map_*(S^k, X) ≅ Ω^[k] X`; the constructions here do not involve homotopy groups.
+and its `k`-fold iterate, the fixed-interval model `Ω^[k] X = Ω (Ω^[k-1] X)`. The constructions
+here do not involve homotopy groups.
 
 ## Main declarations
 

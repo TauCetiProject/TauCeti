@@ -28,13 +28,25 @@ variable {N X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topologica
   {x : X} {y : Y} {z : Z}
 
 /-- A based continuous map sends generalized loops to generalized loops by postcomposition. -/
-@[expose] def map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) : Ω^ N Y y :=
+def map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) : Ω^ N Y y :=
   ⟨f.comp p.1, fun t ht => by simpa [hf] using congrArg f (_root_.GenLoop.boundary p t ht)⟩
 
 @[simp]
 theorem map_apply (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) (t : I^N) :
-    map f hf p t = f (p t) :=
-  rfl
+    map f hf p t = f (p t) := by
+  rw [map]; rfl
+
+/-- The underlying continuous map of `GenLoop.map f hf p` is the composite `f ∘ p`. -/
+theorem coe_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
+    ((map f hf p : Ω^ N Y y) : C(I^N, Y)) = f.comp (p : C(I^N, X)) := by
+  rw [map]
+
+/-- Postcomposition `GenLoop.map f` is continuous for the compact-open topologies on spaces of
+generalized loops. -/
+theorem continuous_map (f : C(X, Y)) (hf : f x = y) :
+    Continuous (map (N := N) f hf) := by
+  refine Continuous.subtype_mk ?_ _
+  exact (ContinuousMap.continuous_postcomp f).comp continuous_subtype_val
 
 @[simp]
 theorem map_const (f : C(X, Y)) (hf : f x = y) :
@@ -44,11 +56,10 @@ theorem map_const (f : C(X, Y)) (hf : f x = y) :
   intro t
   simp [hf]
 
-/-- Postcomposition by a constant continuous map gives the constant generalized loop.
-
-This is not a `simp` lemma: baking the basepoint proof `rfl` into the statement forces the
-target basepoint to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close
-even its own statement. Use it as an explicit rewrite. -/
+-- Not `simp`: baking the basepoint proof `rfl` into the statement forces the target basepoint
+-- to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close even its own
+-- statement. Use it as an explicit rewrite.
+/-- Postcomposition by a constant map yields the constant generalized loop. -/
 theorem map_continuousMap_const (y : Y) (p : Ω^ N X x) :
     map (ContinuousMap.const X y) rfl p = (_root_.GenLoop.const : Ω^ N Y y) := by
   apply _root_.GenLoop.ext

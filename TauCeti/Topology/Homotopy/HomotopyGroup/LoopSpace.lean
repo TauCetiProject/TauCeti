@@ -36,7 +36,7 @@ concatenation in the matching direction.
 
 ## Main declarations
 
-* `GenLoop.homotopic_homeomorph_iff`: a homeomorphism of generalized-loop spaces preserves and
+* `Homeomorph.genLoopHomotopic_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
 * `HomotopyGroup.congrEquiv`, `HomotopyGroup.congrMulEquiv`: reindexing the cube directions
   along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv`.
@@ -60,76 +60,6 @@ public section
 open scoped unitInterval Topology Topology.Homotopy
 open Topology.Homotopy
 
-namespace GenLoop
-
-variable {M N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
-
-/-- A homeomorphism between spaces of generalized loops preserves and reflects homotopy
-relative to the cube boundary: both are path connectedness, which a homeomorphism transports
-in both directions. -/
-@[simp]
-theorem homotopic_homeomorph_iff (φ : Ω^ M X x ≃ₜ Ω^ N Y y) {p q : Ω^ M X x} :
-    _root_.GenLoop.Homotopic (φ p) (φ q) ↔ _root_.GenLoop.Homotopic p q := by
-  rw [homotopic_iff_joined, homotopic_iff_joined]
-  refine ⟨fun h => ?_, fun h => h.map φ.continuous⟩
-  simpa using h.map φ.symm.continuous
-
-/-! ### Reindexing the cube directions -/
-
-section Congr
-
-variable [DecidableEq M] [DecidableEq N]
-
-/-- Reindexing carries a concatenation in the cube direction `i` to a concatenation in the
-direction `e i`. -/
-@[simp]
-theorem congr_transAt (e : M ≃ N) (i : M) (p q : Ω^ M X x) :
-    _root_.GenLoop.congr x e (_root_.GenLoop.transAt i p q) =
-      _root_.GenLoop.transAt (e i) (_root_.GenLoop.congr x e p)
-        (_root_.GenLoop.congr x e q) := by
-  refine _root_.GenLoop.ext _ _ fun t => ?_
-  simp only [congr_apply, _root_.GenLoop.transAt, _root_.GenLoop.coe_copy]
-  have hupd : ∀ s : I, (fun m => Function.update t (e i) s (e m)) =
-      Function.update (fun m => t (e m)) i s := by
-    intro s
-    funext m
-    simp [Function.update_apply]
-  split_ifs <;> rw [hupd]
-
-end Congr
-
-/-! ### Currying the cube directions -/
-
-section Sum
-
-variable [DecidableEq M] [DecidableEq N]
-
-/-- Currying carries a concatenation in the cube direction `i` of the outer cube to a
-concatenation in the direction `Sum.inl i`. -/
-@[simp]
-theorem genLoopGenLoopEquiv_transAt (i : M) (p q : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
-    _root_.GenLoop.genLoopGenLoopEquiv x (_root_.GenLoop.transAt i p q) =
-      _root_.GenLoop.transAt (Sum.inl i) (_root_.GenLoop.genLoopGenLoopEquiv x p)
-        (_root_.GenLoop.genLoopGenLoopEquiv x q) := by
-  refine _root_.GenLoop.ext _ _ fun y => ?_
-  simp only [genLoopGenLoopEquiv_apply, _root_.GenLoop.transAt, _root_.GenLoop.coe_copy]
-  have hinl : ∀ s : I, (fun m => Function.update y (Sum.inl i) s (Sum.inl m)) =
-      Function.update (fun m => y (Sum.inl m)) i s := by
-    intro s
-    funext m
-    simp [Function.update_apply]
-  have hinr : ∀ s : I, (fun n => Function.update y (Sum.inl i) s (Sum.inr n)) =
-      fun n => y (Sum.inr n) := by
-    intro s
-    funext n
-    simp
-  split_ifs <;> rw [hinl, hinr]
-
-end Sum
-
-
-end GenLoop
-
 namespace HomotopyGroup
 
 variable {M N X : Type*} [TopologicalSpace X] {x : X}
@@ -140,7 +70,7 @@ variable {M N X : Type*} [TopologicalSpace X] {x : X}
 homotopy groups indexed by `M` and by `N`. -/
 def congrEquiv (e : M ≃ N) : HomotopyGroup M X x ≃ HomotopyGroup N X x :=
   Quotient.congr (_root_.GenLoop.congr x e).toEquiv fun _ _ =>
-    (GenLoop.homotopic_homeomorph_iff _).symm
+    (Homeomorph.genLoopHomotopic_iff _).symm
 
 @[simp]
 theorem congrEquiv_mk (e : M ≃ N) (p : Ω^ M X x) :
@@ -159,9 +89,9 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
     map f hf (congrEquiv e a) = congrEquiv e (map f hf a) := by
   induction a using Quotient.inductionOn
   rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk]
-  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`; they differ only in the order in which
-  -- the two compositions are bundled.
-  rfl
+  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`
+  refine congrArg _ (_root_.GenLoop.ext _ _ fun t => ?_)
+  simp only [_root_.GenLoop.congr_apply, _root_.GenLoop.map_apply]
 
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
@@ -291,7 +221,7 @@ indexed by `M ⊕ N`. -/
 def loopSpaceEquiv :
     HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const ≃ HomotopyGroup (M ⊕ N) X x :=
   Quotient.congr (_root_.GenLoop.genLoopGenLoopEquiv x).toEquiv fun _ _ =>
-    (GenLoop.homotopic_homeomorph_iff _).symm
+    (Homeomorph.genLoopHomotopic_iff _).symm
 
 @[simp]
 theorem loopSpaceEquiv_mk (p : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
@@ -476,14 +406,13 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
   -- the loop space `Ω X x` is `Ω^ (Fin 1) X x` through `homeomorphOfUnique`, under which `F`
   -- becomes the postcomposition with `f` on cube loops
   let F' : C(Ω^ (Fin 1) X x, Ω^ (Fin 1) Y y) :=
-    ⟨_root_.GenLoop.map f hf,
-      continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp f).comp continuous_subtype_val)⟩
+    ⟨_root_.GenLoop.map f hf, _root_.GenLoop.continuous_map f hf⟩
   rw [pathLoopSpaceMulEquiv_apply, pathLoopSpaceMulEquiv_apply]
   have key : (homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
       (GenLoop.homeomorphOfUnique_const (Fin 1))).symm
         (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
       map (y := (_root_.GenLoop.const : Ω^ (Fin 1) Y y)) F'
-        (GenLoop.ext _ _ fun _ => hf)
+        (_root_.GenLoop.map_const f hf)
         ((homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
           (GenLoop.homeomorphOfUnique_const (Fin 1))).symm a) := by
     induction a using Quotient.inductionOn with
@@ -491,7 +420,7 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
       refine congrArg (Quotient.mk _) (GenLoop.ext _ _ fun t => GenLoop.ext _ _ fun s => ?_)
       simp [F', hFf]
   rw [key]
-  exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun _ _ => rfl) _
+  exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun p t => _root_.GenLoop.map_apply f hf p t) _
 
 end Natural
 
