@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.Inverse
 public import TauCeti.Analysis.Complex.BranchLogRoot
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
-public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 
 /-!
 # Local power coordinates for a holomorphic germ
@@ -59,43 +58,14 @@ theorem exists_openPartialHomeomorph_sub_eq_pow {f : ℂ → ℂ} {z₀ : ℂ} {
     filter_upwards [hfg, hgh] with z hz hz'
     simp only [Pi.sub_apply] at hz
     simp only [hz, hz', smul_eq_mul, ψ, Pi.mul_apply, mul_pow]
-  let e₀ := (hψ.hasStrictDerivAt.hasStrictFDerivAt_equiv hψd).toOpenPartialHomeomorph ψ
-  have he₀ : (e₀ : ℂ → ℂ) = ψ :=
-    HasStrictFDerivAt.toOpenPartialHomeomorph_coe _
-  have hz₀ : z₀ ∈ e₀.source := HasStrictFDerivAt.mem_toOpenPartialHomeomorph_source _
-  have hinv : AnalyticAt ℂ e₀.symm (ψ z₀) := by
-    rw [← he₀]
-    apply e₀.analyticAt_symm' hz₀ (he₀ ▸ hψ)
-    simpa only [he₀] using
-      (hψ.hasStrictDerivAt.hasStrictFDerivAt_equiv hψd).hasFDerivAt.fderiv
-  -- Shrink simultaneously for the power identity and analyticity of both coordinate directions.
-  have hnhds : ∀ᶠ z in 𝓝 z₀,
-      AnalyticAt ℂ ψ z ∧ AnalyticAt ℂ e₀.symm (ψ z) ∧ f z - f z₀ = ψ z ^ m :=
-    hψ.eventually_analyticAt.and
-      ((hψ.continuousAt.eventually hinv.eventually_analyticAt).and hpow)
-  obtain ⟨U, hUsub, hUopen, hzU⟩ := mem_nhds_iff.mp (inter_mem hnhds hW)
-  let e := e₀.restr U
-  have hes : e.source = e₀.source ∩ U := e₀.restr_source' U hUopen
-  have he : (e : ℂ → ℂ) = ψ := by
-    funext z
-    rw [OpenPartialHomeomorph.restr_apply]
-    exact congrFun he₀ z
-  have hei : (e.symm : ℂ → ℂ) = e₀.symm := by simp [e]
-  refine ⟨e, by rw [hes]; exact ⟨hz₀, hzU⟩, ?_, ?_, ?_, ?_, ?_⟩
+  obtain ⟨e, he, hz₀, hesub, hea, hei⟩ := hψ.exists_openPartialHomeomorph
+    (hψ.hasStrictDerivAt.hasStrictFDerivAt_equiv hψd).hasFDerivAt.fderiv
+    (inter_mem hpow hW)
+  refine ⟨e, hz₀, ?_, fun z hz ↦ (hesub hz).2, ?_, hei, ?_⟩
   · rw [he, hψ0]
-  · intro z hz
-    exact (hUsub ((hes ▸ hz).2)).2
-  · intro z hz
-    rw [he]
-    exact (hUsub ((hes ▸ hz).2)).1.1
-  · intro w hw
-    have hz := e.map_target hw
-    have hza := (hUsub ((hes ▸ hz).2)).1.2.1
-    rw [← he, e.right_inv hw] at hza
-    rw [hei]
-    exact hza
+  · rwa [he]
   · intro z hz
     rw [he]
-    exact (hUsub ((hes ▸ hz).2)).1.2.2
+    exact (hesub hz).1
 
 end AnalyticAt
