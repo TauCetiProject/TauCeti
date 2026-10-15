@@ -373,8 +373,9 @@ theorem gradedCochainComplexInclusion_f_injective (p : ℤ) :
       ((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg').f p).hom := by
   intro x y h
   apply (gradedCochainComplexXEquiv p).injective
+  apply Submodule.inclusion_injective (hle p)
   apply Subtype.ext
-  simpa only [gradedCochainComplexXEquiv_inclusion_f] using
+  simpa only [gradedCochainComplexXEquiv_inclusion_f, Submodule.coe_inclusion] using
     congrArg (fun z ↦ (gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) p z : M)) h
 
 instance : Mono (gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg') :=
@@ -409,14 +410,26 @@ theorem mem_range_gradedCochainComplexSubobject_arrow_f_iff (N : Submodule R M)
       (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
   constructor
   · rintro ⟨y, rfl⟩
-    rw [gradedCochainComplexXEquiv_inclusion_f]
-    exact ((gradedCochainComplexXEquiv p y).2 : _ ∈ ℳ p ⊓ N).2
+    have hy : (gradedCochainComplexXEquiv p
+        (((gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ N) (hdeg := hdeg)
+          (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p).hom y)) ∈
+        LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ N ≤ ℳ p)) := by
+      refine ⟨gradedCochainComplexXEquiv p y, ?_⟩
+      apply Subtype.ext
+      rw [gradedCochainComplexXEquiv_inclusion_f, Submodule.coe_inclusion]
+    rw [Submodule.range_inclusion] at hy
+    exact hy.2
   · intro hx
-    refine ⟨(gradedCochainComplexXEquiv p).symm
-      ⟨gradedCochainComplexXEquiv p x, (gradedCochainComplexXEquiv p x).2, hx⟩, ?_⟩
+    have hx' : gradedCochainComplexXEquiv p x ∈
+        LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ N ≤ ℳ p)) := by
+      rw [Submodule.range_inclusion]
+      exact ⟨(gradedCochainComplexXEquiv p x).2, hx⟩
+    rcases hx' with ⟨y, hy⟩
+    refine ⟨(gradedCochainComplexXEquiv p).symm y, ?_⟩
     apply (gradedCochainComplexXEquiv p).injective
     apply Subtype.ext
     rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
+    exact congrArg Subtype.val hy
 
 /-- The subcomplex cut out by a submodule is monotone in the submodule. -/
 theorem gradedCochainComplexSubobject_mono {N N' : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
@@ -437,12 +450,16 @@ theorem gradedCochainComplexSubobject_eq_top {N : Submodule R M} (hN : ∀ x ∈
       (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p) := by
     apply (ConcreteCategory.isIso_iff_bijective _).2
     refine ⟨gradedCochainComplexInclusion_f_injective _ _ p, fun y ↦ ?_⟩
-    refine ⟨(gradedCochainComplexXEquiv p).symm
-      ⟨gradedCochainComplexXEquiv p y, (gradedCochainComplexXEquiv p y).2, Submodule.mem_top⟩, ?_⟩
+    have hy : gradedCochainComplexXEquiv p y ∈
+        LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ ⊤ ≤ ℳ p)) := by
+      rw [Submodule.range_inclusion, inf_top_eq]
+      exact (gradedCochainComplexXEquiv p y).2
+    rcases hy with ⟨x, hx⟩
+    refine ⟨(gradedCochainComplexXEquiv p).symm x, ?_⟩
     apply (gradedCochainComplexXEquiv p).injective
     apply Subtype.ext
-    rw [gradedCochainComplexXEquiv_inclusion_f,
-      LinearEquiv.apply_symm_apply]
+    rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
+    exact congrArg Subtype.val hx
   have := HomologicalComplex.Hom.isIso_of_components
     (gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg) (hsq := hsq)
       (fun _ ↦ inf_le_left) (hdeg.inf hN))
