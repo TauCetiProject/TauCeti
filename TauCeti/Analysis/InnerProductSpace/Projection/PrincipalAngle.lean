@@ -404,6 +404,7 @@ theorem norm_starProjection_orthogonal_comp (hX : Isometry X) [X.range.HasOrthog
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
+omit [CompleteSpace E] [CompleteSpace F] in
 /-- The principal cosines of the range of an isometry `X` and of `V` are the singular values of
 the cosine embedding `P_V X`. -/
 theorem principalCosines_range_eq_singularValues (hX : Isometry X) :
@@ -411,6 +412,7 @@ theorem principalCosines_range_eq_singularValues (hX : Isometry X) :
       ((V.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
   rw [principalCosines_def, cosThetaMap_def, singularValues_comp_starProjection_range hX]
 
+omit [CompleteSpace E] [CompleteSpace F] in
 /-- The principal sines of the range of an isometry `X` and of `V` are the singular values of the
 sine embedding `P_{Vᗮ} X`. -/
 theorem principalSines_range_eq_singularValues (hX : Isometry X) :
