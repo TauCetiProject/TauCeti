@@ -142,7 +142,9 @@ end SingularCube
 
 namespace CubicalChain
 
-variable (R : Type*) [Ring R] (p : E → B)
+section Semiring
+
+variable (R : Type*) [Semiring R] (p : E → B)
 
 /-- The **Serre filtration** of the unnormalized cubical `n`-chains: the chains supported on the
 cubes of Serre weight at most `s`. -/
@@ -169,20 +171,6 @@ theorem serreFiltration_mono {s t : ℤ} (hst : s ≤ t) (n : ℕ) :
     serreFiltration R p s n ≤ serreFiltration R p t n :=
   Finsupp.supported_mono fun _ hc ↦ SingularCube.IsSerreWeightLE.mono hc hst
 
-/-- The boundary preserves the Serre filtration. -/
-theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : CubicalChain E R (n + 1)}
-    (hf : f ∈ serreFiltration R p s (n + 1)) : boundary E R n f ∈ serreFiltration R p s n := by
-  rw [serreFiltration, Finsupp.supported_eq_span_single] at hf
-  induction hf using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨c, hc, rfl⟩ := hf
-    rw [boundary_single]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.sub_mem _
-      (single_mem_serreFiltration (hc.face i 0) 1) (single_mem_serreFiltration (hc.face i 1) 1))
-  | zero => simp
-  | add f g _ _ hf hg => rw [map_add]; exact Submodule.add_mem _ hf hg
-  | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
-
 /-- A map over `B` preserves the Serre filtration. -/
 theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → B}
     (hf : p' ∘ f = p) {g : CubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
@@ -207,6 +195,28 @@ theorem serreFiltration_eq_top {s : ℤ} {n : ℕ} (hs : (n : ℤ) ≤ s) :
   rw [serreFiltration, ← Finsupp.supported_univ]
   congr 1
   exact Set.eq_univ_of_forall fun c ↦ c.isSerreWeightLE_of_le hs
+
+end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R] {p : E → B}
+
+/-- The boundary preserves the Serre filtration. -/
+theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : CubicalChain E R (n + 1)}
+    (hf : f ∈ serreFiltration R p s (n + 1)) : boundary E R n f ∈ serreFiltration R p s n := by
+  rw [serreFiltration, Finsupp.supported_eq_span_single] at hf
+  induction hf using Submodule.span_induction with
+  | mem f hf =>
+    obtain ⟨c, hc, rfl⟩ := hf
+    rw [boundary_single]
+    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.sub_mem _
+      (single_mem_serreFiltration (hc.face i 0) 1) (single_mem_serreFiltration (hc.face i 1) 1))
+  | zero => simp
+  | add f g _ _ hf hg => rw [map_add]; exact Submodule.add_mem _ hf hg
+  | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
+
+end Ring
 
 end CubicalChain
 
