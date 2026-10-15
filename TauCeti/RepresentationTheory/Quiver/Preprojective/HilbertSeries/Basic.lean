@@ -170,6 +170,24 @@ theorem preprojectiveMk_ofArrow_mul_mem_preprojectiveCorner {n : ℕ} {i j l : S
       mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner hx, ← mul_assoc, ← map_mul,
       ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
 
+/-- **Distinct graded corners meet only in `0`**: `e_j Π_m e_i` and `e_{j'} Π_n e_{i'}` are disjoint
+unless `m = n`, `i = i'` and `j = j'`. -/
+theorem disjoint_preprojectiveCorner {m n : ℕ} {i i' j j' : Symmetrify Q}
+    (h : m ≠ n ∨ i ≠ i' ∨ j ≠ j') :
+    Disjoint (preprojectiveCorner k Q m i j) (preprojectiveCorner k Q n i' j') := by
+  rw [Submodule.disjoint_def]
+  intro x hx hx'
+  rcases h with hmn | hi | hj
+  · exact Submodule.disjoint_def.1
+      ((isInternal_preprojectiveGrade k Q).submodule_iSupIndep.pairwiseDisjoint hmn) x
+      (mem_preprojectiveCorner_iff.1 hx).1 (mem_preprojectiveCorner_iff.1 hx').1
+  · rw [← mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner hx',
+      ← mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner hx, mul_assoc, ← map_mul,
+      vertexIdempotent_mul_vertexIdempotent_of_ne hi, map_zero, mul_zero]
+  · rw [← preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hx,
+      ← preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hx', ← mul_assoc, ← map_mul,
+      vertexIdempotent_mul_vertexIdempotent_of_ne hj, map_zero, zero_mul]
+
 end Corner
 
 /-- The sign `ε_b = ±1` of an arrow of the doubled quiver is nonzero. -/
