@@ -201,6 +201,30 @@ theorem optionEquivRight_optionEquivLeft_symm_C {σ : Type*} (g : MvPolynomial �
     simp only [map_mul, optionEquivLeft_symm_C_X,
       optionEquivRight_X_some, hp, map_X]
 
+/-- Moving the univariate variable into the coefficient ring commutes with specializing the
+multivariate variables, while retaining the univariate variable as a polynomial variable. -/
+theorem eval₂Hom_optionEquivRight_optionEquivLeft_symm {σ S : Type*} [CommSemiring S]
+    (f : R →+* S) (x : σ → S) (p : Polynomial (MvPolynomial σ R)) :
+    eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)
+        (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) p) =
+      p.map (eval₂Hom f x) := by
+  have hC (g : MvPolynomial σ R) :
+      eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)
+          (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) (Polynomial.C g)) =
+        Polynomial.C (eval₂Hom f x g) := by
+    rw [optionEquivRight_optionEquivLeft_symm_C, eval₂Hom_map_hom,
+      Polynomial.mapRingHom_comp_C]
+    exact (map_eval₂Hom f x Polynomial.C g).symm
+  have h : (eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)).comp
+      ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) =
+        Polynomial.mapRingHom (eval₂Hom f x) := by
+    apply Polynomial.ringHom_ext
+    · intro g
+      simpa only [RingHom.comp_apply, RingHom.coe_coe, Polynomial.coe_mapRingHom,
+        Polynomial.map_C] using hC g
+    · simp
+  exact RingHom.congr_fun h p
+
 section Last
 
 open Finsupp
