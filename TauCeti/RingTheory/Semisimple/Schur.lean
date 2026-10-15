@@ -234,9 +234,10 @@ variable [FiniteDimensional k S]
 variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N] [IsSimpleModule A N]
 
 /-- The hom space from a finite-dimensional module into a simple module is finite-dimensional
-over any field. If there is a nonzero map, its surjectivity makes the target finite-dimensional;
-otherwise the hom space is trivial. -/
+over any field. -/
 theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
+  -- A nonzero map is surjective and makes the target finite-dimensional;
+  -- otherwise the hom space is trivial.
   by_cases h : ∃ f : S →ₗ[A] N, f ≠ 0
   · obtain ⟨f, hf⟩ := h
     have : FiniteDimensional k N :=
