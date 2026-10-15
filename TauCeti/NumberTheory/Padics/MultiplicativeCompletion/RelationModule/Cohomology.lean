@@ -59,6 +59,7 @@ private theorem relationModuleComparison_eq (p : ℕ) [Fact p.Prime]
     exact dense_univ
   let := freeProfiniteGroup.presentationClassModuleAction p hd
   let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
+  dsimp only
   intro ψ hψ heq
   subst ψ
   dsimp only [freeProfiniteGroup.explicitH2EquivRelationModule]
@@ -82,6 +83,7 @@ private theorem padicCompletionUnitsComparison_eq (p : ℕ) [Fact p.Prime]
         explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ := by
   let := galoisClassModuleAction p K L j
   let := continuousSMul_galoisClassModuleAction p K L j
+  dsimp only
   intro χ hχ heq
   subst χ
   dsimp only [explicitH2EquivPadicCompletionUnits]
@@ -170,9 +172,18 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   have hL := relationModuleComparison_eq p hg ψ hψ rfl
   have hR := padicCompletionUnitsComparison_eq p K L j χ hχ rfl
   intro x
-  rw [hR, hL, _root_.groupCohomology.functor_map]
-  exact explicitH2AddEquivGroupCohomology_explicitCoeff2
-    (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
+  calc
+    _ = explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ
+        (explicitCoeff2 (L ≃ₐ[K] L) _ f.toAdditive hf x) :=
+      congrArg (fun e => e (explicitCoeff2 (L ≃ₐ[K] L) _ f.toAdditive hf x)) hR
+    _ = groupCohomology.map (MonoidHom.id (L ≃ₐ[K] L)) F 2
+        (explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) ψ hψ x) :=
+      explicitH2AddEquivGroupCohomology_explicitCoeff2
+        (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
+    _ = _ := by
+      rw [_root_.groupCohomology.functor_map]
+      exact congrArg (groupCohomology.map (MonoidHom.id (L ≃ₐ[K] L)) F 2)
+        (congrArg (fun e => e x) hL).symm
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
 on explicit second cohomology after transport through Lyndon and local reciprocity. -/
