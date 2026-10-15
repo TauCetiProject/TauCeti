@@ -29,9 +29,6 @@ resolutions; tensor products can apply the differential on one carrier while tra
   Transactions of the American Mathematical Society 108 (1963), §§2–5.
 * Mathlib's `TopRep.resolution'`, `ContinuousCohomology.resolutionMap`, and
   `Representation.directSum` supply the resolution, coefficient maps, and total action.
-
-The canonical inclusion equations are named rewrites: automatic simplification of the iterated
-function-space presentations need not retain the caller's scalar-instance presentation.
 -/
 
 public section
@@ -52,9 +49,13 @@ private abbrev resolutionModuleComplex : CochainComplex (ModuleCat R) ℕ :=
     forget₂ (TopModuleCat R) (ModuleCat R)).mapHomologicalComplex (ComplexShape.up ℕ)).obj
       (resolution' X)
 
-private theorem resolutionModuleComplex_d (n : ℕ) :
-    ((resolutionModuleComplex X).d n (n + 1)).hom =
-      (d X (n + 1)).hom.toContinuousLinearMap.toLinearMap := by
+private theorem resolutionModuleComplex_lof [DecidableEq ℕ] (n : ℕ) :
+    DirectSum.lof R ℕ (fun n ↦ (resolutionModuleComplex X).X n) n =
+      DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n := rfl
+
+private theorem resolutionModuleComplex_d_apply (n : ℕ)
+    (x : (resolutionModuleComplex X).X n) :
+    ((resolutionModuleComplex X).d n (n + 1)).hom x = (d X (n + 1)).hom x := by
   dsimp only [resolutionModuleComplex, Functor.mapHomologicalComplex, resolution']
   rw [CochainComplex.of_d, resolution'd_eq]
   rfl
@@ -72,13 +73,10 @@ theorem gradedResolutionDifferential_lof [DecidableEq ℕ] (n : ℕ) (x : (resol
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) =
       DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1)
         ((d X (n + 1)).hom x) := by
-  -- The mapped complex retains the original term instances; `convert` identifies its
-  -- bundled terms with the raw resolution carriers before using the differential equation.
-  convert (resolutionModuleComplex X).directSumDifferential_lof n x using 1
-  · rfl
-  · rfl
-  · rw [resolutionModuleComplex_d]
-    rfl
+  have h := (resolutionModuleComplex X).directSumDifferential_lof n x
+  erw [resolutionModuleComplex_lof, resolutionModuleComplex_lof,
+    resolutionModuleComplex_d_apply] at h
+  exact h
 
 /-- The differential of the total shifted resolution squares to zero. -/
 theorem gradedResolutionDifferential_sq (x : X.gradedResolutionModule) :
@@ -107,10 +105,10 @@ theorem lof_mem_gradedResolutionPiece [DecidableEq ℕ] (n : ℕ) (x : (resoluti
   (resolutionModuleComplex X).lof_mem_directSumPiece n x
 
 /-- The total resolution differential has degree one. -/
-theorem gradedResolutionDifferential_isHomogeneous :
+theorem isHomogeneous_gradedResolutionDifferential :
     TauCeti.LinearMap.IsHomogeneous X.gradedResolutionDifferential X.gradedResolutionPiece
       X.gradedResolutionPiece 1 :=
-  (resolutionModuleComplex X).directSumDifferential_isHomogeneous
+  (resolutionModuleComplex X).isHomogeneous_directSumDifferential
 
 /-- The componentwise group representation on the total shifted coinduced resolution. -/
 noncomputable def gradedResolutionRepresentation : Representation R G X.gradedResolutionModule :=
@@ -142,7 +140,7 @@ theorem gradedResolutionDifferential_equivariant (g : G) (x : X.gradedResolution
   exact DFunLike.congr_fun h x
 
 /-- The componentwise action preserves the homogeneous pieces. -/
-theorem gradedResolutionRepresentation_isHomogeneous (g : G) :
+theorem isHomogeneous_gradedResolutionRepresentation (g : G) :
     TauCeti.LinearMap.IsHomogeneous (X.gradedResolutionRepresentation g) X.gradedResolutionPiece
       X.gradedResolutionPiece 0 := by
   rw [TauCeti.LinearMap.isHomogeneous_def]
@@ -205,6 +203,35 @@ section Maps
 
 variable {X} {Y : TopRep.{max v w} R G}
 
+private theorem resolutionMap_d_apply (f : X ⟶ Y) (n : ℕ)
+    (x : (resolutionX X n).V) :
+    (d Y n).hom
+        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
+      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
+        ((d X n).hom x) := by
+  have h := congrArg (fun g ↦ g.hom x)
+    (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f n)
+  change (d Y n).hom
+      ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
+      ((d X n).hom x) at h
+  exact h
+
+private theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
+    (x : (resolutionX X n).V) :
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom
+        ((resolutionX X n).ρ g x) =
+      (resolutionX Y n).ρ g
+        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) := by
+  have h := hom_comm_apply
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n) g x
+  change
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom
+        ((resolutionX X n).ρ g x) =
+      (resolutionX Y n).ρ g
+        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) at h
+  exact h
+
 private def resolutionModuleMap (f : X ⟶ Y) :
     resolutionModuleComplex X ⟶ resolutionModuleComplex Y :=
   CochainComplex.ofHom (fun n ↦
@@ -213,16 +240,17 @@ private def resolutionModuleMap (f : X ⟶ Y) :
     apply ModuleCat.hom_ext
     apply LinearMap.ext
     intro x
-    dsimp only [resolutionModuleComplex, Functor.mapHomologicalComplex, resolution']
-    rw [CochainComplex.of_d, CochainComplex.of_d, resolution'd_eq, resolution'd_eq]
-    -- The forgetful functors retain the actual resolution module structures and linear maps.
-    change (d Y (n + 1)).hom
+    change ((resolutionModuleComplex Y).d n (n + 1)).hom
         ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom x) =
       (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1 + 1)).hom
-        ((d X (n + 1)).hom x)
-    have h := congrArg (fun g ↦ g.hom x)
-      (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f (n + 1))
-    convert h using 1 <;> rfl
+        (((resolutionModuleComplex X).d n (n + 1)).hom x)
+    erw [resolutionModuleComplex_d_apply, resolutionModuleComplex_d_apply]
+    exact resolutionMap_d_apply f (n + 1) x
+
+private theorem resolutionModuleMap_f_apply (f : X ⟶ Y) (n : ℕ)
+    (x : (resolutionModuleComplex X).X n) :
+    ((resolutionModuleMap f).f n).hom x =
+      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom x := rfl
 
 /-- The degreewise coefficient map on the total shifted resolution. -/
 def gradedResolutionMap (f : X ⟶ Y) : X.gradedResolutionModule →ₗ[R] Y.gradedResolutionModule :=
@@ -236,11 +264,10 @@ theorem gradedResolutionMap_lof [DecidableEq ℕ] (f : X ⟶ Y) (n : ℕ)
       DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) n
         ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G)
           f (n + 1)).hom x) := by
-  -- As for the differential, the generic map uses the mapped complex's bundled term carriers.
-  convert CochainComplex.directSumMap_lof (resolutionModuleMap f) n x using 1
-  · rfl
-  · rfl
-  · rfl
+  have h := CochainComplex.directSumMap_lof (resolutionModuleMap f) n x
+  erw [resolutionModuleComplex_lof, resolutionModuleComplex_lof,
+    resolutionModuleMap_f_apply] at h
+  exact h
 
 /-- Coefficient maps commute with the total differential. -/
 theorem gradedResolutionMap_differential (f : X ⟶ Y) (x : X.gradedResolutionModule) :
@@ -255,16 +282,16 @@ theorem gradedResolutionMap_augmentation (f : X ⟶ Y) (x : X.V) :
       Y.gradedResolutionAugmentation (f.hom x) := by
   rw [gradedResolutionAugmentation_apply, gradedResolutionMap_lof,
     gradedResolutionAugmentation_apply]
-  have h := congrArg (fun g ↦ g.hom x)
-    (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f 0)
-  convert congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) 0) h.symm using 1 <;>
-    rfl
+  apply congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) 0)
+  have h := (resolutionMap_d_apply f 0 x).symm
+  erw [_root_.ContinuousCohomology.resolutionMap_zero] at h
+  exact h
 
 /-- Coefficient maps preserve the homogeneous degrees of the total resolution. -/
-theorem gradedResolutionMap_isHomogeneous (f : X ⟶ Y) :
+theorem isHomogeneous_gradedResolutionMap (f : X ⟶ Y) :
     TauCeti.LinearMap.IsHomogeneous (gradedResolutionMap f) X.gradedResolutionPiece
       Y.gradedResolutionPiece 0 :=
-  CochainComplex.directSumMap_isHomogeneous (resolutionModuleMap f)
+  CochainComplex.isHomogeneous_directSumMap (resolutionModuleMap f)
 
 /-- Coefficient maps on the total resolution are equivariant. -/
 theorem gradedResolutionMap_equivariant (f : X ⟶ Y) (g : G) (x : X.gradedResolutionModule) :
@@ -279,10 +306,8 @@ theorem gradedResolutionMap_equivariant (f : X ⟶ Y) (g : G) (x : X.gradedResol
     simp only [LinearMap.comp_apply]
     rw [gradedResolutionRepresentation_lof, gradedResolutionMap_lof,
       gradedResolutionMap_lof, gradedResolutionRepresentation_lof]
-    have h := hom_comm_apply
-      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)) g x
-    convert congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) n) h using 1
-    rfl
+    exact congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) n)
+      (resolutionMap_ρ_apply f (n + 1) g x)
   exact DFunLike.congr_fun h x
 
 /-- Identity coefficients induce the identity on the total resolution. -/
@@ -317,8 +342,7 @@ section Discrete
 
 variable [DiscreteTopology R]
 
-/-- The total resolution with its discrete topology. The body is exposed to retain the actual
-direct-sum carrier and its module instances in statements about the action and tensor powers. -/
+/-- The total resolution with its discrete topology and componentwise group action. -/
 @[expose] noncomputable def gradedResolutionTopRep : TopRep.{max v w} R G :=
   TauCeti.discreteTopRep R G (Rep.of X.gradedResolutionRepresentation)
 
@@ -327,14 +351,12 @@ direct-sum carrier and its module instances in statements about the action and t
 theorem gradedResolutionTopRep_V : X.gradedResolutionTopRep.V = X.gradedResolutionModule :=
   (rfl)
 
-/-- The bundled action is the componentwise resolution action. This is a named rewrite:
-rewriting before the homogeneous-inclusion equation can leave incompatible scalar presentations. -/
+/-- The bundled action is the componentwise resolution action. -/
 theorem gradedResolutionTopRep_ρ_apply (g : G) (x : X.gradedResolutionModule) :
     X.gradedResolutionTopRep.ρ g x = X.gradedResolutionRepresentation g x :=
   (rfl)
 
-/-- The bundled discrete action on a homogeneous inclusion is the original resolution action.
-This named equation retains the caller's scalar and resolution-term presentations. -/
+/-- The bundled discrete action on an included term is the original resolution action. -/
 theorem gradedResolutionTopRep_ρ_lof [DecidableEq ℕ] (n : ℕ) (g : G)
     (x : (resolutionX X (n + 1)).V) :
     X.gradedResolutionTopRep.ρ g
@@ -350,7 +372,7 @@ instance : DiscreteTopology X.gradedResolutionTopRep.V := by
 
 /-- Over a compact group, the total coinduced resolution of smooth discrete coefficients is
 smooth: each element has finitely many components, whose open stabilizers have open intersection. -/
-theorem gradedResolutionTopRep_isSmoothDiscrete [CompactSpace G]
+theorem isSmoothDiscrete_gradedResolutionTopRep [CompactSpace G]
     (hX : TauCeti.IsSmoothDiscrete R X) :
     TauCeti.IsSmoothDiscrete R X.gradedResolutionTopRep := by
   let : DistribMulAction G X.gradedResolutionModule :=

@@ -87,7 +87,7 @@ theorem lof_mem_directSumPiece [DecidableEq ℕ] (n : ℕ) (x : K.X n) :
   exact ⟨x, rfl⟩
 
 /-- The total differential is homogeneous of degree one. -/
-theorem directSumDifferential_isHomogeneous :
+theorem isHomogeneous_directSumDifferential :
     TauCeti.LinearMap.IsHomogeneous K.directSumDifferential K.directSumPiece
       K.directSumPiece 1 := by
   rw [TauCeti.LinearMap.isHomogeneous_def]
@@ -142,7 +142,7 @@ theorem directSumMap_differential (f : K ⟶ L) (x : K.directSumModule) :
   exact DFunLike.congr_fun h x
 
 /-- A cochain morphism preserves the homogeneous pieces in the total module. -/
-theorem directSumMap_isHomogeneous (f : K ⟶ L) :
+theorem isHomogeneous_directSumMap (f : K ⟶ L) :
     TauCeti.LinearMap.IsHomogeneous (directSumMap f) K.directSumPiece L.directSumPiece 0 := by
   rw [TauCeti.LinearMap.isHomogeneous_def]
   intro p x hx
