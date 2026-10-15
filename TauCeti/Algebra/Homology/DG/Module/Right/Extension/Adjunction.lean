@@ -29,7 +29,7 @@ grading and differential conditions of DG modules.  Both functors are underived.
   restriction attached to a morphism `g` out of the extension.
 * `TauCeti.DGRightModuleHom.fromExtendScalars`: the morphism `m ⊗ b ↦ φ(m) b` out of the
   extension attached to a morphism `φ` into the restriction.
-* `TauCeti.DGRightModuleHom.extendRestrictScalarsEquiv`: the resulting bijection.
+* `TauCeti.DGRightModuleHom.extendRestrictScalarsEquiv`: the resulting `R`-linear bijection.
 * `TauCeti.DGRightModuleCat.extendScalars`: extension of scalars as a functor.
 * `TauCeti.DGRightModuleCat.extendRestrictScalarsAdj`: extension of scalars is left adjoint to
   restriction of scalars.
@@ -207,11 +207,18 @@ theorem toRestrictScalars_comp {Q : Type*} [AddCommGroup Q] [Module R Q] [Module
 
 /-- **The extension–restriction bijection.**  Morphisms of right DG `B`-modules
 `M ⊗_A B ⟶ P` correspond to morphisms of right DG `A`-modules `M ⟶ f^* P`, by restricting
-along `m ↦ m ⊗ 1`. -/
+along `m ↦ m ⊗ 1`.  The correspondence is `R`-linear. -/
 noncomputable def extendRestrictScalarsEquiv (hM : IsDGRightModule hA ℳ dM)
     (hP : IsDGRightModule hB ℳP dP) :
-    DGRightModuleHom (hM.extendScalars f) hP ≃ DGRightModuleHom hM (hP.restrictScalars f) where
+    DGRightModuleHom (hM.extendScalars f) hP ≃ₗ[R]
+      DGRightModuleHom hM (hP.restrictScalars f) where
   toFun g := g.toRestrictScalars f
+  map_add' g g' := by
+    ext m
+    simp
+  map_smul' r g := by
+    ext m
+    simp
   invFun φ := φ.fromExtendScalars f hP
   left_inv g := by
     refine toLinearMap_injective <| LinearMap.restrictScalars_injective R <|
@@ -289,6 +296,31 @@ theorem extendScalarsEquiv_differential (f : DGAlgHom hA hB)
       M.isDGRightModule.extendScalarsDifferential f (extendScalarsEquiv f M x) := by
   rfl
 
+instance (f : DGAlgHom hA hB) : (extendScalars.{uR, uA, uB, uM} f).Additive where
+  map_add {M N} g k := by
+    apply hom_ext
+    intro x
+    apply (extendScalarsEquiv f N).injective
+    simp only [add_apply, map_add, extendScalarsEquiv_map]
+    induction extendScalarsEquiv f M x using BalancedTensorProduct.induction_on with
+    | ht m y =>
+      rw [DGRightModuleHom.extendScalars_tmul, DGRightModuleHom.extendScalars_tmul,
+        DGRightModuleHom.extendScalars_tmul, DGRightModuleHom.add_apply,
+        BalancedTensorProduct.add_tmul]
+    | ha y z hy hz => simp only [map_add, hy, hz]; abel
+
+instance (f : DGAlgHom hA hB) : (extendScalars.{uR, uA, uB, uM} f).Linear R where
+  map_smul {M N} g r := by
+    apply hom_ext
+    intro x
+    apply (extendScalarsEquiv f N).injective
+    simp only [smul_apply, map_smul, extendScalarsEquiv_map]
+    induction extendScalarsEquiv f M x using BalancedTensorProduct.induction_on with
+    | ht m y =>
+      rw [DGRightModuleHom.extendScalars_tmul, DGRightModuleHom.extendScalars_tmul,
+        DGRightModuleHom.smul_apply, BalancedTensorProduct.smul_tmul]
+    | ha y z hy hz => simp only [map_add, hy, hz, smul_add]
+
 /-- The bundled extended object is the object obtained by bundling the unbundled balanced tensor
 product. This is the identity isomorphism; it is named because `extendScalars` is not exposed, so
 the identification is only visible inside this module. -/
@@ -331,8 +363,42 @@ private noncomputable def extendRestrictScalarsHomEquiv (f : DGAlgHom hA hB)
     (P : DGRightModuleCat.{uR, uB, max uB uM} hB) :
     ((extendScalars f).obj M ⟶ P) ≃ (M ⟶ (restrictScalars f).obj P) :=
   ((extendScalarsObjIso f M).homCongr (Iso.refl P)).trans <|
-    (DGRightModuleHom.extendRestrictScalarsEquiv f M.isDGRightModule P.isDGRightModule).trans <|
+    (DGRightModuleHom.extendRestrictScalarsEquiv f M.isDGRightModule
+      P.isDGRightModule).toEquiv.trans <|
       (Iso.refl M).homCongr (restrictScalarsObjIso f P).symm
+
+/-- The transported bijection sends a morphism `g` out of the bundled extension to its
+restriction along `m ↦ m ⊗ 1`. -/
+private theorem extendRestrictScalarsHomEquiv_apply (f : DGAlgHom hA hB)
+    {M : DGRightModuleCat.{uR, uA, max uB uM} hA} {P : DGRightModuleCat.{uR, uB, max uB uM} hB}
+    (g : (extendScalars f).obj M ⟶ P) :
+    extendRestrictScalarsHomEquiv f M P g =
+      ((extendScalarsObjIso f M).inv ≫ g).toRestrictScalars f ≫
+        (restrictScalarsObjIso f P).inv := by
+  unfold extendRestrictScalarsHomEquiv
+  rw [Equiv.trans_apply, Equiv.trans_apply, Iso.homCongr_apply, Iso.homCongr_apply]
+  simp only [Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id, Iso.symm_hom,
+    LinearEquiv.coe_toEquiv]
+  -- The bundled hom-module instances unfold to the unbundled ones, so apply the evaluation
+  -- lemma up to instance unfolding rather than by syntactic rewriting.
+  exact congrArg (· ≫ _) (DGRightModuleHom.extendRestrictScalarsEquiv_apply f _)
+
+/-- The inverse transported bijection sends a morphism `φ` into the bundled restriction to
+`m ⊗ b ↦ φ(m) b`. -/
+private theorem extendRestrictScalarsHomEquiv_symm_apply (f : DGAlgHom hA hB)
+    {M : DGRightModuleCat.{uR, uA, max uB uM} hA} {P : DGRightModuleCat.{uR, uB, max uB uM} hB}
+    (φ : M ⟶ (restrictScalars f).obj P) :
+    (extendRestrictScalarsHomEquiv f M P).symm φ =
+      (extendScalarsObjIso f M).hom ≫ DGRightModuleHom.fromExtendScalars f
+        P.isDGRightModule (φ ≫ (restrictScalarsObjIso f P).hom) := by
+  unfold extendRestrictScalarsHomEquiv
+  rw [Equiv.symm_trans_apply, Equiv.symm_trans_apply, Iso.homCongr_symm,
+    Iso.homCongr_symm, Iso.homCongr_apply, Iso.homCongr_apply]
+  simp only [Iso.symm_symm_eq, Iso.refl_symm, Iso.refl_hom, Iso.refl_inv,
+    Category.id_comp, Category.comp_id, Iso.symm_inv, LinearEquiv.coe_toEquiv_symm]
+  -- The bundled hom-module instances unfold to the unbundled ones, so apply the evaluation
+  -- lemma up to instance unfolding rather than by syntactic rewriting.
+  exact congrArg _ (DGRightModuleHom.extendRestrictScalarsEquiv_symm_apply f _)
 
 /-- **Extension of scalars is left adjoint to restriction of scalars** along a DG algebra
 morphism. -/
@@ -341,59 +407,19 @@ noncomputable def extendRestrictScalarsAdj (f : DGAlgHom hA hB) :
   Adjunction.mkOfHomEquiv
     { homEquiv M P := extendRestrictScalarsHomEquiv f M P
       homEquiv_naturality_left_symm {X'} {X} {Y} g k := by
-        unfold extendRestrictScalarsHomEquiv
-        rw [Equiv.symm_trans_apply, Equiv.symm_trans_apply, Iso.homCongr_symm,
-          Iso.homCongr_symm, Iso.homCongr_apply, Iso.homCongr_apply]
-        simp only [Equiv.symm_trans_apply, Iso.homCongr_symm, Iso.homCongr_apply,
-          Iso.symm_symm_eq, Iso.refl_symm, Iso.refl_hom, Category.id_comp,
-          Category.comp_id, Iso.symm_inv, Iso.refl_inv]
-        rw [Iso.homCongr_symm, Iso.homCongr_apply]
-        simp only [Iso.refl_symm, Iso.refl_inv, Category.id_comp]
-        change (extendScalarsObjIso f X').hom ≫
-            (DGRightModuleHom.extendRestrictScalarsEquiv f X'.isDGRightModule
-              Y.isDGRightModule).symm ((g ≫ k) ≫ (restrictScalarsObjIso f Y).hom) =
-          (extendScalars f).map g ≫ (extendScalarsObjIso f X).hom ≫
-            (DGRightModuleHom.extendRestrictScalarsEquiv f X.isDGRightModule
-              Y.isDGRightModule).symm (k ≫ (restrictScalarsObjIso f Y).hom)
-        rw [← Category.assoc, extendScalarsObjIso_hom_naturality, Category.assoc]
-        simp only [DGRightModuleHom.extendRestrictScalarsEquiv_symm_apply]
+        rw [extendRestrictScalarsHomEquiv_symm_apply, extendRestrictScalarsHomEquiv_symm_apply,
+          ← Category.assoc, extendScalarsObjIso_hom_naturality, Category.assoc]
         simp only [comp_eq_comp]
         rw [DGRightModuleHom.fromExtendScalars_comp, DGRightModuleHom.comp_assoc]
       homEquiv_naturality_right {X} {Y} {Y'} g k := by
-        unfold extendRestrictScalarsHomEquiv
-        rw [Equiv.trans_apply, Equiv.trans_apply, Iso.homCongr_apply, Iso.homCongr_apply]
-        simp only [Equiv.trans_apply, Iso.homCongr_apply, Iso.refl_hom, Iso.refl_inv,
-          Category.id_comp, Category.comp_id, Iso.symm_hom]
-        rw [Iso.homCongr_apply]
-        simp only [Iso.refl_inv, Category.id_comp, Iso.symm_hom]
-        change DGRightModuleHom.extendRestrictScalarsEquiv f X.isDGRightModule
-              Y'.isDGRightModule ((extendScalarsObjIso f X).inv ≫ (g ≫ k)) ≫
-            (restrictScalarsObjIso f Y').inv =
-          (DGRightModuleHom.extendRestrictScalarsEquiv f X.isDGRightModule
-              Y.isDGRightModule ((extendScalarsObjIso f X).inv ≫ g) ≫
-            (restrictScalarsObjIso f Y).inv) ≫ (restrictScalars f).map k
-        simp only [DGRightModuleHom.extendRestrictScalarsEquiv_apply]
+        rw [extendRestrictScalarsHomEquiv_apply, extendRestrictScalarsHomEquiv_apply]
         simp only [comp_eq_comp]
-        rw [DGRightModuleHom.toRestrictScalars_comp]
-        rw [DGRightModuleHom.restrictScalars_comp,
+        rw [DGRightModuleHom.toRestrictScalars_comp, DGRightModuleHom.restrictScalars_comp,
           DGRightModuleHom.toRestrictScalars_comp]
         simp only [← DGRightModuleHom.comp_assoc]
         have hn := restrictScalarsObjIso_inv_naturality f k
         simp only [comp_eq_comp] at hn
         rw [← hn] }
-
-/-- The adjunction sends a morphism `g` out of `M ⊗_A B` to `m ↦ g(m ⊗ 1)`. -/
-private theorem extendRestrictScalarsAdj_homEquiv_apply (f : DGAlgHom hA hB)
-    {M : DGRightModuleCat.{uR, uA, max uB uM} hA} {P : DGRightModuleCat.{uR, uB, max uB uM} hB}
-    (g : (extendScalars f).obj M ⟶ P) :
-    (extendRestrictScalarsAdj f).homEquiv M P g =
-      ((extendScalarsObjIso f M).inv ≫ g).toRestrictScalars f ≫
-        (restrictScalarsObjIso f P).inv := by
-  rw [extendRestrictScalarsAdj, Adjunction.mkOfHomEquiv_homEquiv]
-  unfold extendRestrictScalarsHomEquiv
-  rw [Equiv.trans_apply, Equiv.trans_apply, Iso.homCongr_apply, Iso.homCongr_apply]
-  simp only [Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id, Iso.symm_hom]
-  rw [DGRightModuleHom.extendRestrictScalarsEquiv_apply]
 
 /-- Pointwise, the adjunction sends `g` to evaluation on `m ⊗ 1`. -/
 @[simp]
@@ -404,24 +430,10 @@ theorem extendRestrictScalarsAdj_homEquiv_apply_apply (f : DGAlgHom hA hB)
     restrictScalarsEquiv f P ((extendRestrictScalarsAdj f).homEquiv M P g m) =
       g ((extendScalarsEquiv f M).symm
         (BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1))) := by
-  rw [extendRestrictScalarsAdj_homEquiv_apply, comp_apply,
+  rw [extendRestrictScalarsAdj, Adjunction.mkOfHomEquiv_homEquiv,
+    extendRestrictScalarsHomEquiv_apply, comp_apply,
     restrictScalarsObjIso_inv_apply, LinearEquiv.apply_symm_apply]
   rw [DGRightModuleHom.val_toRestrictScalars, comp_apply, extendScalarsObjIso_inv_apply]
-
-/-- The inverse of the adjunction sends a morphism `φ` into `f^* P` to `m ⊗ b ↦ φ(m) b`. -/
-private theorem extendRestrictScalarsAdj_homEquiv_symm_apply (f : DGAlgHom hA hB)
-    {M : DGRightModuleCat.{uR, uA, max uB uM} hA} {P : DGRightModuleCat.{uR, uB, max uB uM} hB}
-    (φ : M ⟶ (restrictScalars f).obj P) :
-    ((extendRestrictScalarsAdj f).homEquiv M P).symm φ =
-      (extendScalarsObjIso f M).hom ≫ DGRightModuleHom.fromExtendScalars f
-        P.isDGRightModule (φ ≫ (restrictScalarsObjIso f P).hom) := by
-  rw [extendRestrictScalarsAdj, Adjunction.mkOfHomEquiv_homEquiv]
-  unfold extendRestrictScalarsHomEquiv
-  rw [Equiv.symm_trans_apply, Equiv.symm_trans_apply, Iso.homCongr_symm,
-    Iso.homCongr_symm, Iso.homCongr_apply, Iso.homCongr_apply]
-  simp only [Iso.symm_symm_eq, Iso.refl_symm, Iso.refl_hom, Iso.refl_inv,
-    Category.id_comp, Category.comp_id, Iso.symm_inv]
-  rw [DGRightModuleHom.extendRestrictScalarsEquiv_symm_apply]
 
 /-- Pointwise, the inverse adjunction bijection sends `m ⊗ b` to `φ(m)b`. -/
 @[simp]
@@ -433,7 +445,8 @@ theorem extendRestrictScalarsAdj_homEquiv_symm_apply_tmul (f : DGAlgHom hA hB)
     ((extendRestrictScalarsAdj f).homEquiv M P).symm φ
         ((extendScalarsEquiv f M).symm (BalancedTensorProduct.tmul R A m x)) =
       op x.val • restrictScalarsEquiv f P (φ m) := by
-  rw [extendRestrictScalarsAdj_homEquiv_symm_apply, comp_apply,
+  rw [extendRestrictScalarsAdj, Adjunction.mkOfHomEquiv_homEquiv,
+    extendRestrictScalarsHomEquiv_symm_apply, comp_apply,
     extendScalarsObjIso_hom_apply, LinearEquiv.apply_symm_apply]
   rw [DGRightModuleHom.fromExtendScalars_tmul, comp_apply,
     restrictScalarsObjIso_hom_apply]
