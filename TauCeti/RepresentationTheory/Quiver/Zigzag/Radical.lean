@@ -38,6 +38,8 @@ second radical layer is exactly the volume span.
 * `TauCeti.restrictScalars_jacobson_sq_nonisolatedZigzagQuotient_eq_zigzagVolumeSpan`: its square
   is the volume span.
 * `TauCeti.jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot`: its third power is zero.
+* `TauCeti.mem_zigzagPositiveSpan_of_zigzagVolume_mul_eq_zero`: an element of `e_u Z` killed by
+  the volume class `x_u` lies in the positive-length span.
 
 ## References
 
@@ -424,5 +426,22 @@ theorem jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot
       exact hz
     exact mul_eq_zero_of_mem_zigzagVolumeSpan_of_mem_zigzagPositiveSpan hyv hzp
   · exact Submodule.add_mem _ hx hy
+
+/-- **An element of `e_u Z` annihilated by the volume class `x_u` lies in the radical.** Its
+coefficient at `e_u` vanishes because `x_u c` is that coefficient times `x_u ≠ 0`, and its other
+vertex coefficients vanish because `c = e_u c`. -/
+theorem mem_zigzagPositiveSpan_of_zigzagVolume_mul_eq_zero (hns : ∀ i : V, ∃ j, G.Adj i j)
+    {u : V} {c : nonisolatedZigzagQuotient k G}
+    (hc : zigzagMk k G (vertexIdempotent k (vertex G u)) * c = c)
+    (h : zigzagVolume k G u * c = 0) : c ∈ zigzagPositiveSpan k G := by
+  classical
+  rw [mem_zigzagPositiveSpan_iff hns]
+  intro i
+  rcases eq_or_ne i u with rfl | hne
+  · rw [zigzagVolume_mul hns, smul_eq_zero] at h
+    obtain ⟨j, hij⟩ := hns i
+    exact h.resolve_right (zigzagVolume_ne_zero k G hij)
+  · rw [← zigzagTrivialCoeff_apply_eq_repr hns, ← hc, map_mul, Pi.mul_apply,
+      zigzagTrivialCoeff_vertexIdempotent, ite_eq_right (Ne.symm hne), zero_mul]
 
 end TauCeti
