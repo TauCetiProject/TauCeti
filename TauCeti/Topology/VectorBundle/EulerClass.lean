@@ -18,15 +18,16 @@ Let `E → B` be a real vector bundle with finite-dimensional model fibre `F` of
 `E₀ ⊆ E` be the complement of the zero section (`TauCeti.zeroSectionCompl`). The *Thom pair* of
 the bundle is the topological pair `(E, E₀)` (`TauCeti.thomPair`). A *Thom class* is a relative
 class `u ∈ Hʳ(E, E₀)` whose restriction to every fibre pair `(E_b, E_b ∖ {0})` generates the
-cohomology of that pair (`TauCeti.IsThomClass`). With integral coefficients this is a cohomological
-orientation of the bundle; by the Thom isomorphism theorem, which is not formalized here, every
-orientation determines a unique Thom class, and `-u` belongs to the opposite orientation.
+cohomology of that pair (`TauCeti.IsThomClass`). With ordinary integral coefficients (specified
+below) this is a cohomological orientation of the bundle; by the Thom isomorphism theorem, which
+is not formalized here, every orientation determines a unique Thom class, and `-u` belongs to the
+opposite orientation.
 
 The *Euler class* of a relative class `u ∈ Hⁿ(E, E₀)` is its image in `Hⁿ(B)` under the
 restriction `Hⁿ(E, E₀) ⟶ Hⁿ(E)` followed by pullback along the zero section
-(`TauCeti.eulerClass`). For a Thom class this is the Euler class of the oriented bundle, the
-characteristic class whose evaluation on surfaces appears in the Euler class inequalities for
-foliations.
+(`TauCeti.eulerClass`). With ordinary integral coefficients, for a Thom class this is the Euler
+class of the oriented bundle, the characteristic class whose evaluation on surfaces appears in
+the Euler class inequalities for foliations.
 
 The Euler class is natural under maps of Thom pairs covering a map of bases
 (`TauCeti.eulerClass_naturality`), in particular under pullback of bundles
@@ -39,7 +40,7 @@ through `t • s`, to a section with values in `E₀`, and every relative class 
 
 Cohomology is the singular cohomology of `TauCeti/AlgebraicTopology/Cohomology/`, with the same
 general coefficients: `Hom(C(X; R), M)` in a `k`-linear abelian category `C`. Integral cohomology
-is `C := ModuleCat ℤ`.
+uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 ## Main definitions
 
@@ -129,8 +130,9 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- A Thom class of a real vector bundle with finite-dimensional model fibre `F` of rank
 `r = finrank ℝ F`: a relative class `u ∈ Hʳ(E, E₀)` whose restriction to the fibre pair
-`(E_b, E_b ∖ {0})` over every point `b` generates the `k`-module `Hʳ(E_b, E_b ∖ {0})`. With integral
-coefficients this is the notion of a cohomological orientation of the bundle.
+`(E_b, E_b ∖ {0})` over every point `b` generates the `k`-module `Hʳ(E_b, E_b ∖ {0})`. With ordinary
+integral coefficients (`C := ModuleCat ℤ`, `k := ℤ`, `R = M = ModuleCat.of ℤ ℤ`) this is the notion
+of a cohomological orientation of the bundle.
 
 Finite-dimensionality of `F` is part of the predicate: otherwise `finrank ℝ F = 0` and the
 degree-zero condition would hold vacuously, so a bundle with infinite-dimensional fibres has no
@@ -146,7 +148,8 @@ theorem isThomClass_iff {u : (thomPair F E).singularCohomology R k M (finrank �
   Iff.rfl
 
 variable {F E} in
-/-- The negative of a Thom class, the Thom class of the opposite orientation, is a Thom class. -/
+/-- Negation preserves the fibrewise generator condition, so the negative of a Thom class is a
+Thom class. -/
 theorem IsThomClass.neg {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)}
     (hu : IsThomClass F E u) : IsThomClass F E (-u) := by
   refine ⟨hu.1, fun b ↦ ?_⟩
@@ -158,8 +161,11 @@ end ThomClass
 section Pullback
 
 variable {B : Type w} [TopologicalSpace B] (F : Type*) (E : B → Type w)
-  [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] {B' : Type w}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)] {B' : Type w}
   [TopologicalSpace B'] (f : C(B', B))
+
+local instance (b' : B') : Zero (((⇑f) *ᵖ E) b') :=
+  inferInstanceAs (Zero (E (f b')))
 
 /-- The map `(f*E, (f*E)₀) ⟶ (E, E₀)` of Thom pairs covering a continuous map `f : B' → B`. -/
 def pullbackThomPairMap : thomPair F ((⇑f) *ᵖ E) ⟶ thomPair F E :=
@@ -212,8 +218,9 @@ theorem zeroSectionHom_apply (b : B) : zeroSectionHom F E b = zeroSection F E b 
 variable (R k M) in
 /-- The Euler class `e(u) ∈ Hⁿ(B)` of a relative class `u ∈ Hⁿ(E, E₀)` of a real vector bundle, as
 a morphism `Hⁿ(E, E₀) ⟶ Hⁿ(B)`: restriction from the Thom pair to the total space, followed by
-pullback along the zero section. The Euler class of an oriented bundle is the image of its Thom
-class (`TauCeti.IsThomClass`). -/
+pullback along the zero section. With ordinary integral coefficients (`C := ModuleCat ℤ`,
+`k := ℤ`, `R = M = ModuleCat.of ℤ ℤ`), the Euler class of an oriented bundle is the image of its
+Thom class (`TauCeti.IsThomClass`). -/
 def eulerClass (n : ℕ) :
     (thomPair F E).singularCohomology R k M n ⟶ (TopCat.of B).singularCohomology R k M n :=
   (thomPair F E).singularCohomologyπ R k M n ≫ TopCat.singularCohomologyMap (zeroSectionHom F E) n
