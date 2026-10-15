@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Data.Matrix.Scaling.Basic
+public import TauCeti.Data.Matrix.SupportGraph
 
 /-!
 # The component ambiguity of matrix scaling factors
@@ -37,39 +38,6 @@ public section
 namespace Matrix
 
 variable {ι κ : Type*}
-
-section SupportGraph
-
-variable {R : Type*} [Zero R]
-
-/-- The bipartite support graph of a matrix: a row and a column are adjacent exactly when
-their matrix entry is nonzero. Rows and columns are separate vertex types even for a square
-matrix. -/
-def supportGraph (K : Matrix ι κ R) : SimpleGraph (ι ⊕ κ) where
-  Adj
-    | .inl i, .inr j => K i j ≠ 0
-    | .inr j, .inl i => K i j ≠ 0
-    | _, _ => False
-  symm := ⟨by rintro (_ | _) (_ | _) <;> simp_all⟩
-  loopless := ⟨by rintro (_ | _) <;> simp⟩
-
-@[simp]
-theorem supportGraph_adj_inl_inr (K : Matrix ι κ R) (i : ι) (j : κ) :
-    K.supportGraph.Adj (.inl i) (.inr j) ↔ K i j ≠ 0 := (Iff.rfl)
-
-@[simp]
-theorem supportGraph_adj_inr_inl (K : Matrix ι κ R) (j : κ) (i : ι) :
-    K.supportGraph.Adj (.inr j) (.inl i) ↔ K i j ≠ 0 := (Iff.rfl)
-
-@[simp]
-theorem supportGraph_not_adj_inl_inl (K : Matrix ι κ R) (i i' : ι) :
-    ¬K.supportGraph.Adj (.inl i) (.inl i') := by simp [supportGraph]
-
-@[simp]
-theorem supportGraph_not_adj_inr_inr (K : Matrix ι κ R) (j j' : κ) :
-    ¬K.supportGraph.Adj (.inr j) (.inr j') := by simp [supportGraph]
-
-end SupportGraph
 
 /-- Rescaling the row factors by one nonzero scalar per support component, and the column
 factors by the inverse scalar, preserves a diagonal scaling. -/
