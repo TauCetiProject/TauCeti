@@ -157,7 +157,7 @@ partial derivatives vanish. -/
 private lemma two_le_orderAt_nullificationExample {y : Fin 4 → ℝ} (h0 : y 0 = -1) (h1 : y 1 = 0)
     (h2 : y 2 = 0) (h3 : y 3 = 0) :
     2 ≤ (X 2 * (X 0 + 1) + X 3 * X 1 : MvPolynomial (Fin 4) ℝ).orderAt y := by
-  rw [show (2 : ℕ∞) = 1 + 1 from rfl, succ_le_orderAt_iff]
+  rw [← one_add_one_eq_two (R := ℕ∞), succ_le_orderAt_iff]
   refine ⟨by simp [h0, h1, h2, h3], fun i ↦ ?_⟩
   rw [Order.one_le_iff_pos, orderAt_pos_iff]
   simp only [pderiv_X, Pi.single_apply, map_add, Derivation.leibniz]
@@ -173,8 +173,10 @@ private lemma orderAt_nullificationExample_eq_one {y : Fin 4 → ℝ} (h1 : y 1 
 private lemma finSuccEquiv_nullificationExample :
     finSuccEquiv ℝ 3 (X 2 * (X 0 + 1) + X 3 * X 1) =
       Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0) := by
-  rw [show (2 : Fin 4) = (1 : Fin 3).succ from rfl, show (3 : Fin 4) = (2 : Fin 3).succ from rfl,
-    show (1 : Fin 4) = (0 : Fin 3).succ from rfl]
+  -- `Fin.succ_one_eq_two'` and `Fin.succ_zero_eq_one'` write `2` and `1` as successors; Mathlib
+  -- has no such lemma for `3`, which is `(2 : Fin 3).succ` by `rfl`.
+  have h3 : (3 : Fin 4) = (2 : Fin 3).succ := rfl
+  rw [← Fin.succ_one_eq_two' (n := 2), h3, ← Fin.succ_zero_eq_one' (n := 3)]
   simp only [map_add, map_mul, finSuccEquiv_X_zero, finSuccEquiv_X_succ, map_one]
   ring
 
@@ -280,8 +282,7 @@ theorem exists_nullified_mcCallumProjection_orderAt_ne :
     have h₃ : y 3 = 0 := by simpa [Fin.tail] using congrFun hy 2
     refine ⟨E, hE, _, hy₀E, y, hyE, ne_of_gt ?_⟩
     rw [orderAt_nullificationExample_eq_one (by simp [h₁]) h₂ h₃]
-    exact (show (1 : ℕ∞) < 2 by norm_num).trans_le
-      (two_le_orderAt_nullificationExample rfl rfl rfl rfl)
+    exact Nat.one_lt_ofNat.trans_le (two_le_orderAt_nullificationExample rfl rfl rfl rfl)
 
 end Nullification
 
