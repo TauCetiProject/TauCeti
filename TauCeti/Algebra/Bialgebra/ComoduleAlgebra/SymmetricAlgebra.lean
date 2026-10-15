@@ -72,35 +72,35 @@ end SymmetricAlgebra
 
 section Lift
 
-variable {k : Type u} [Field k] {H : Type v} [CommSemiring H] [Bialgebra k H]
-  {A : Type w} [CommRing A] [Algebra k A] [ComoduleAlgebra k H A]
+variable {R : Type u} [CommSemiring R] {H : Type v} [CommSemiring H] [Bialgebra R H]
+  {A : Type w} [CommSemiring A] [Algebra R A] [ComoduleAlgebra R H A]
 
 attribute [local instance] symmetricAlgebra
 
 /-- The algebra homomorphism from the symmetric algebra of a subcomodule of a comodule algebra,
 extending the inclusion, is a comodule morphism. -/
-noncomputable def liftSubcomoduleHom [Module.Flat k H] (V : Subcomodule k H A) :
-    Comodule.Hom k H (SymmetricAlgebra k V) A where
+noncomputable def liftSubcomoduleHom [Module.Flat R H] (V : Subcomodule R H A) :
+    Comodule.Hom R H (SymmetricAlgebra R V) A where
   toLinearMap := (SymmetricAlgebra.lift (SMulMemClass.subtype V)).toLinearMap
   map_coact := by
     have h : (Algebra.TensorProduct.map (SymmetricAlgebra.lift (SMulMemClass.subtype V))
-        (AlgHom.id k H)).comp (Comodule.symmetricAlgebraCoact k H V) =
-        (coactAlgHom k H A).comp (SymmetricAlgebra.lift (SMulMemClass.subtype V)) := by
+        (AlgHom.id R H)).comp (Comodule.symmetricAlgebraCoact R H V) =
+        (coactAlgHom R H A).comp (SymmetricAlgebra.lift (SMulMemClass.subtype V)) := by
       apply SymmetricAlgebra.algHom_ext
       ext v
       simp only [← AlgHom.toLinearMap_eq_coe, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
         AlgHom.comp_apply, Comodule.symmetricAlgebraCoact_ι, SymmetricAlgebra.lift_ι_apply,
         coactAlgHom_apply]
       rw [SMulMemClass.coe_subtype, ← Subcomodule.subtype_rTensor_coact V v]
-      induction Comodule.coact (R := k) (C := H) v using TensorProduct.inductionOn with
+      induction Comodule.coact (R := R) (C := H) v using TensorProduct.inductionOn with
       | tmul w h => simp
       | add x y hx hy => simp only [map_add, hx, hy]
     simpa [TensorProduct.AlgebraTensorModule.map_eq] using congrArg AlgHom.toLinearMap h
 
 /-- The underlying map of the equivariant lift is the symmetric-algebra lift. -/
 @[simp]
-theorem liftSubcomoduleHom_apply [Module.Flat k H] (V : Subcomodule k H A)
-    (x : SymmetricAlgebra k V) :
+theorem liftSubcomoduleHom_apply [Module.Flat R H] (V : Subcomodule R H A)
+    (x : SymmetricAlgebra R V) :
     liftSubcomoduleHom V x = SymmetricAlgebra.lift (SMulMemClass.subtype V) x :=
   (rfl)
 
