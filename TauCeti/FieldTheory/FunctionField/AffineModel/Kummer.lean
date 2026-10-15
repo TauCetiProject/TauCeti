@@ -23,10 +23,12 @@ factorization
 determines the places of `F' / k'` over the place of `𝔭` completely: they are in bijection with
 the monic irreducible factors `γᵢ`, and the place attached to `γᵢ` has relative degree `deg γᵢ`
 and ramification index `εᵢ`.  This is Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed.,
-Corollary 3.3.8 — the conclusion that
-`TauCeti/FieldTheory/FunctionField/Place/Extension/Kummer.lean` deliberately does not draw: its
-Theorem 3.3.7 bounds the splitting of a place without the monogenicity hypothesis, and neither
-computes the ramification indices nor rules out further places over `P`.
+Corollary 3.3.8.  Theorem 3.3.7, in
+`TauCeti/FieldTheory/FunctionField/Place/Extension/Kummer.lean`, only bounds the splitting of a
+place without the monogenicity hypothesis: it neither computes the ramification indices nor rules
+out further places over `P`.  That file also derives the form of Corollary 3.3.8 at an arbitrary
+place, `TauCeti.Place.restrictEquivNormalizedFactors`, by applying this one to the local model
+`𝒪_P ⊆ 𝒪'_P`.
 
 The proof is the affine-model dictionary of
 `TauCeti/FieldTheory/FunctionField/AffineModel/Extension.lean` — the places over the place of `𝔭`
