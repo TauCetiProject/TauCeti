@@ -254,11 +254,6 @@ theorem dgHomEquiv_ιHomEquiv {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
       ((dgHomComplex R X Y).XIsoOfEq (by rw [sub_self, add_zero])).hom f := by
   simp [ιHomEquiv]
 
-private theorem dgHomEquiv_ιHomEquiv' {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
-    dgHomEquiv R ⟨X, 0⟩ ⟨Y, 0⟩ n (ιHomEquiv R X Y n f) =
-      castDeg R (by rw [sub_self, add_zero]) f :=
-  dgHomEquiv_ιHomEquiv R f
-
 /-- The DG functor `X ↦ X[0]` from a differential graded category to its shift closure. -/
 -- The body is exposed so that `(ι R).obj X` is definitionally `⟨X, 0⟩`, as for
 -- `CategoryTheory.EnrichedFunctor.ofDGMap`.
@@ -267,15 +262,17 @@ noncomputable def ι : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C 
   EnrichedFunctor.ofDGMap (fun X ↦ ⟨X, 0⟩) (fun {X Y} n ↦ (ιHomEquiv R X Y n).toLinearMap)
     (fun {X Y} n f ↦ (dgHomEquiv R _ _ (n + 1)).injective <| by
       rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, dgHomEquiv_dgDifferential,
-        dgHomEquiv_ιHomEquiv', dgHomEquiv_ιHomEquiv', d_castDeg R _ (by rw [sub_self, add_zero])]
-      simp only [sub_self, Int.negOnePow_zero, one_smul])
+        dgHomEquiv_ιHomEquiv, dgHomEquiv_ιHomEquiv]
+      simp only [sub_self, Int.negOnePow_zero, one_smul]
+      exact (d_castDeg R _ _ f).symm)
     (fun X ↦ (dgHomEquiv R _ _ 0).injective <| by
       rw [LinearEquiv.coe_coe, dgHomEquiv_ιHomEquiv, dgHomEquiv_dgId])
     (fun {X Y Z p q n} f g h ↦ (dgHomEquiv R _ _ n).injective <| by
       rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.coe_coe, dgHomEquiv_dgComp,
-        dgHomEquiv_ιHomEquiv', dgHomEquiv_ιHomEquiv', dgHomEquiv_ιHomEquiv',
-        castDeg_dgComp R _ (by rw [sub_self, add_zero]), dgComp_castDeg R _ rfl, castDeg_self]
-      simp only [sub_self, zero_mul, Int.negOnePow_zero, one_smul])
+        dgHomEquiv_ιHomEquiv, dgHomEquiv_ιHomEquiv, dgHomEquiv_ιHomEquiv]
+      simp only [sub_self, zero_mul, Int.negOnePow_zero, one_smul]
+      exact ((castDeg_dgComp R _ (by rw [sub_self, add_zero]) f _ _).trans
+        (congrArg _ ((dgComp_castDeg R _ rfl f g _).trans (castDeg_self R _ _)))).symm)
 
 /-- The inclusion sends `X` to `X[0]`. -/
 @[simp]

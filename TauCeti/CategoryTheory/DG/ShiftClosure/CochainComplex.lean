@@ -132,11 +132,6 @@ private theorem δ_shiftCochainEquiv {X Y : DGShiftClosure (CochainComplex V ℤ
   (congrArg (shiftCochainEquivAux R X.obj Y.obj X.shift Y.shift (n + 1))
     (dgHomEquiv_dgDifferential R n f)).trans (δ_shiftCochainEquivAux R _ _ _ _ _ _).symm
 
-private theorem dgHom_units_smul_v {K L : CochainComplex V ℤ} {a : ℤ} (u : ℤˣ)
-    (z : DGHom R a K L) (x y : ℤ) (hxy : x + a = y) :
-    ((u • z : DGHom R a K L) : Cochain K L a).v x y hxy = u • (z : Cochain K L a).v x y hxy :=
-  rfl
-
 private theorem dgComp_v {K L M : CochainComplex V ℤ} {a b c : ℤ} (z₁ : DGHom R a K L)
     (z₂ : DGHom R b L M) (h : a + b = c) (x y w : ℤ) (h₁ : x + a = y) (h₂ : y + b = w) :
     (dgComp R z₁ z₂ h : Cochain K M c).v x w (by omega) =
@@ -166,8 +161,9 @@ noncomputable def toCochainComplex :
     (fun {X Y Z p q n} f g h ↦ by
       rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.coe_coe]
       refine Cochain.ext _ _ fun i j hij ↦ ?_
-      rw [shiftCochainEquiv_v, dgHomEquiv_dgComp, dgHom_units_smul_v,
-        dgComp_v R _ _ _ (i + X.shift) (i + p + Y.shift) (j + Z.shift) (by omega) (by omega),
+      rw [shiftCochainEquiv_v, dgHomEquiv_dgComp]
+      refine (congrArg _ (Cochain.units_smul_v _ _ _ _ _)).trans ?_
+      rw [dgComp_v R _ _ _ (i + X.shift) (i + p + Y.shift) (j + Z.shift) (by omega) (by omega),
         dgComp_v R _ _ h i (i + p) j rfl (by omega), shiftCochainEquiv_v, shiftCochainEquiv_v]
       simp only [Linear.units_smul_comp, Linear.comp_units_smul, smul_smul, ← Int.negOnePow_add]
       congr 1
