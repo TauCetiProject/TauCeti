@@ -132,6 +132,7 @@ Multiplication in `End A` is composition, in the order of `Function.comp` rather
 
 /-- The additive reindexing of an abelian variety's endomorphisms is equivalent to its
 categorical endomorphisms. This equivalence transports the composition monoid and conjugation. -/
+-- The generated projection lemmas have exported `rfl` proofs, which require an exposed body.
 @[expose, simps]
 def categoryEndEquiv (A : AbelianVariety K) : End A ≃ CategoryTheory.End A where
   toFun x := CategoryTheory.End.of (toHom x)
