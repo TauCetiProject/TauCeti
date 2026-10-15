@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.RootDatum
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Normalizer
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.TypeA
 
 /-!
 # The Weyl group of the diagonal torus of the special linear group
@@ -33,7 +33,8 @@ without cancellation or separation assumptions.
 
 The normalizer comparison follows the general-linear comparison in
 `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.WeylGroup`. The root-datum computation uses
-Mathlib's `RootPairing.range_weylGroupToPerm` and the existing coordinate-index action.
+`TauCeti.DynkinType.typeAWeylGroupEquiv`, transported along
+`TauCeti.SpecialLinear.diagonalRootDatumEquiv`.
 -/
 
 public section
@@ -48,46 +49,11 @@ noncomputable section
 
 variable {r : ℕ}
 
-private theorem diagonalWeylGroupToPerm_injective :
-    Function.Injective (diagonalRootDatum.{u} r).weylGroupToPerm :=
-  (RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top _
-    (corootSpan_diagonalRootDatum_eq_top r)).comp Subtype.val_injective
-
-private theorem diagonalWeylGroupToPerm_range :
-    (diagonalRootDatum.{u} r).weylGroupToPerm.range =
-      (coordinatePermRootIndexHom (σ := Fin (r + 1))).range := by
-  rw [RootPairing.range_weylGroupToPerm]
-  apply le_antisymm
-  · rw [Subgroup.closure_le]
-    rintro _ ⟨p, rfl⟩
-    refine ⟨Equiv.swap p.1.1 p.1.2, ?_⟩
-    apply Equiv.ext
-    intro q
-    simpa only [coordinatePermRootIndexHom_apply] using
-      (diagonalRootDatum_reflectionPerm p q).symm
-  · rintro _ ⟨e, rfl⟩
-    induction e using Equiv.Perm.swap_induction_on with
-    | one => simp
-    | swap_mul e i j hij he =>
-      rw [map_mul]
-      refine Subgroup.mul_mem _ ?_ he
-      have hswap : coordinatePermRootIndexHom (Equiv.swap i j) =
-          (diagonalRootDatum.{u} r).reflectionPerm ⟨(i, j), hij⟩ := by
-        apply Equiv.ext
-        intro q
-        simpa only [coordinatePermRootIndexHom_apply] using
-          (diagonalRootDatum_reflectionPerm ⟨(i, j), hij⟩ q).symm
-      rw [hswap]
-      exact Subgroup.subset_closure ⟨⟨(i, j), hij⟩, rfl⟩
-
 /-- The Weyl group of the diagonal root datum of `SL_{r+1}` is the permutation group of the
 coordinate lines. A permutation acts simultaneously on both entries of a root index. -/
 def diagonalPermMulEquivWeylGroup (r : ℕ) :
     Equiv.Perm (Fin (r + 1)) ≃* (diagonalRootDatum.{u} r).weylGroup :=
-  (MonoidHom.ofInjective (f := coordinatePermRootIndexHom)
-    coordinatePermRootIndexHom_injective).trans <|
-      (MulEquiv.subgroupCongr diagonalWeylGroupToPerm_range.symm).trans
-        (MonoidHom.ofInjective diagonalWeylGroupToPerm_injective).symm
+  (DynkinType.typeAWeylGroupEquiv r).symm.trans (diagonalRootDatumEquiv r).weylGroupEquiv
 
 /-- The Weyl element attached to a coordinate permutation acts componentwise on root indices. -/
 @[simp]
@@ -95,26 +61,35 @@ theorem diagonalPermMulEquivWeylGroup_indexEquiv_apply
     (e : Equiv.Perm (Fin (r + 1))) (p : CoordinateRootIndex (Fin (r + 1))) :
     (diagonalPermMulEquivWeylGroup.{u} r e).1.indexEquiv p =
       coordinatePermRootIndex e p := by
-  have h := MonoidHom.apply_ofInjective_symm diagonalWeylGroupToPerm_injective
-    (MulEquiv.subgroupCongr diagonalWeylGroupToPerm_range.symm
-      (MonoidHom.ofInjective (f := coordinatePermRootIndexHom)
-        coordinatePermRootIndexHom_injective e))
-  simpa only [diagonalPermMulEquivWeylGroup, MulEquiv.trans_apply,
-    MulEquiv.subgroupCongr_apply, MonoidHom.ofInjective_apply,
-    coordinatePermRootIndexHom_apply, RootPairing.weylGroupToPerm,
-    MonoidHom.domRestrict_apply, RootPairing.Equiv.indexHom_apply] using
-    congrArg (fun f : Equiv.Perm (CoordinateRootIndex (Fin (r + 1))) => f p) h
+  let w := (DynkinType.typeAWeylGroupEquiv r).symm e
+  have hw := DynkinType.typeARootPermHom_typeAWeylGroupEquiv r w
+  have ht := (diagonalRootDatumEquiv.{u} r).weylGroupToPerm_weylGroupEquiv w
+  have hp := congrArg (fun f : Equiv.Perm (CoordinateRootIndex (Fin (r + 1))) ↦ f p) ht
+  simp only [w, MulEquiv.apply_symm_apply] at hw hp
+  rw [← hw] at hp
+  change ((diagonalRootDatum.{u} r).weylGroupToPerm
+    ((diagonalRootDatumEquiv.{u} r).weylGroupEquiv w)) p = _
+  dsimp only [w]
+  rw [hp]
+  apply Subtype.ext
+  simpa only [diagonalRootDatumEquiv_indexEquiv, Equiv.permCongr_apply,
+    Equiv.symm_apply_apply, Equiv.symm_symm, coordinatePermRootIndex_coe] using
+    DynkinType.typeAIndexEquiv_symm_typeARootPermHom_apply r e p
 
 /-- A transposition of coordinate lines is the reflection in their difference root. -/
 @[simp]
 theorem diagonalPermMulEquivWeylGroup_swap (i j : Fin (r + 1)) (hij : i ≠ j) :
     diagonalPermMulEquivWeylGroup.{u} r (Equiv.swap i j) =
       RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r) ⟨(i, j), hij⟩ := by
-  apply diagonalWeylGroupToPerm_injective
-  apply Equiv.ext
-  intro p
-  rw [RootPairing.weylGroupToPerm_ofIdx_apply, diagonalRootDatum_reflectionPerm]
-  exact diagonalPermMulEquivWeylGroup_indexEquiv_apply _ _
+  let p : DynkinType.TypeAIndex r := ⟨(i, j), hij⟩
+  rw [diagonalPermMulEquivWeylGroup]
+  change (diagonalRootDatumEquiv.{u} r).weylGroupEquiv
+      ((DynkinType.typeAWeylGroupEquiv r).symm (Equiv.swap p.val.1 p.val.2)) = _
+  rw [← DynkinType.typeAWeylGroupEquiv_ofIdx_typeAIndexEquiv,
+    MulEquiv.symm_apply_apply, RootPairing.Equiv.weylGroupEquiv_ofIdx]
+  apply congrArg (RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r))
+  rw [diagonalRootDatumEquiv_indexEquiv]
+  exact (DynkinType.typeAIndexEquiv r).symm_apply_apply p
 
 /-- A root reflection corresponds to the transposition of its two coordinate indices. -/
 @[simp]
