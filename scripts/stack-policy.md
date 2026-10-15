@@ -11,8 +11,9 @@ It does not read or interpret PR descriptions, rendered HTML, keywords, links or
 claimed dependencies. Descriptions cannot supply a candidate, establish a
 relationship, affect classification or authorize closure.
 
-Historical event metadata requires Actions read permission only in the trusted
-main-defined job; candidate code receives no token.
+Historical event metadata uses the workflow GitHub token with Actions read
+permission in the trusted main-defined job. The App token retains its existing
+PR/issue/content permissions; candidate code receives neither token.
 
 Candidate source is never checked out or executed. No Lean build, candidate
 script, compiled artifact, publication credential or persistent cache is used to
@@ -46,8 +47,10 @@ Fork run associations can be empty; the binding uses server-recorded branch/head
 identity and PR lifetime. Only pull_request/pull_request_target events qualify.
 The run lookup is cached per parent/pin and bounded at 100 results; incomplete
 results, missing timestamps or unavailable event evidence are unknown.
-Only commits on the pinned parent's own line are searched; a precursor imported
-through merges by both PRs does not establish a direction between them. For this
+Only commits on the pinned parent's own line are searched, excluding the child's
+own first-parent line. Work the child already owned before merging the parent
+cannot be attributed to that parent. A precursor imported through merges by
+both PRs does not establish a direction between them. For this
 historical relationship, the complete selected patch must also remain in the
 CURRENT parent tree. Content moved out of a parent cannot authorize closure of
 its new owner merely because an old parent commit once contained it.
@@ -65,8 +68,11 @@ Actual main source history is checked for the complete patch, including normal
 merges, combined bors squashes and later changes/reverts. Common main ancestors
 are excluded before graph work. Context-free possible landing matches veto
 closure as unknown; they do not establish landing. A closed parent claiming
-landing without verifiable source equivalence is also unknown. Closed unlanded
-parents remain eligible source candidates within the bounded recent index.
+landing without verifiable source equivalence is also unknown. Closed parents in the bounded recent index supply source observations, but
+cannot authorize closure: unlanded source might instead belong to an absorbed or
+resubmitted PR. Such a match is unknown, not landed or proved safe. This avoids
+closing legitimate replacements of closed PRs, including policy-closed children
+resubmitted after their prerequisite lands.
 
 An empty or landed aggregate does not skip individually retained commits: a
 child might retain work reverted on the parent's branch. An aggregate match
@@ -107,8 +113,11 @@ not a proved-safe result. Undetected forms include:
   No semantic equivalence or Lean declaration parsing is attempted.
 - Cross-repository or different/unknown-author relationships without a verified
   open canonical parent base branch.
-- Older closed parents outside the 64-entry index, inaccessible/deleted/mismatched
-  refs and source/API/graph histories beyond the stated bounds.
+- Closed-but-unlanded source relationships: dependency versus legitimate
+  absorption/resubmission is unknown without a stronger trusted signal; no
+  description is interpreted to resolve it. Older closed parents outside the
+  64-entry index and inaccessible/deleted/mismatched refs remain outside coverage.
+  Source/API/graph histories beyond the bounds also remain gaps.
 - Possible landing after context drift, arbitrary semantic integration rewrites,
   or a closed landing claim without source equality.
 - Repository-owned heads with a bors merged-title marker: confirmed stacks are
@@ -147,9 +156,9 @@ remain. No waiting PR rebuild/rebase loop is started.
 
 A previous policy block can be removed only after a no-proof result, complete
 index, current child/main identities and a latest label event owned by the bot.
-A full 64-entry closed page leaves older parents uninspected and therefore cannot
-authorize automatic unlabeling. Source gaps also retain a prior block; human
-labels are never removed. Reviewed manual label removal remains available. These
+The bounded closed index alone does not permanently veto unlabeling, but any
+observed unresolved source/metadata gap retains a prior block. Human labels are
+never removed. Reviewed manual label removal remains available. These
 retained blocks are coverage gaps, not proofs of current stacking.
 
 Immediately before every label, explanation and close, fresh child/parent

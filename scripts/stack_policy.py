@@ -74,7 +74,7 @@ class API:
         self.child_calls, self.child_bytes = self.calls + 256, self.bytes + 16 * 1024 * 1024
         self.child_deadline = time.monotonic() + 120
 
-    def request(self, url, method="GET", data=None):
+    def request(self, url, method="GET", data=None, *, token=None):
         self.calls += 1
         if self.calls > 4000 or self.bytes > 64 * MAX_BYTES or time.monotonic() > self.deadline:
             raise BudgetGap("sweep API/time budget exhausted")
@@ -82,7 +82,7 @@ class API:
             raise ChildGap("child API/time budget exhausted")
         req = Request(url, method=method,
                       data=None if data is None else json.dumps(data).encode(),
-                      headers={"Authorization": f"Bearer {self.token}",
+                      headers={"Authorization": f"Bearer {token or self.token}",
                                "Accept": "application/vnd.github+json",
                                "X-GitHub-Api-Version": "2022-11-28",
                                "Content-Type": "application/json"})
@@ -155,7 +155,9 @@ class API:
             try:
                 start = timestamp(parent.created_at)
                 end = timestamp(parent.closed_at) if parent.state == "closed" else None
-                data = self.call(f"actions/runs?head_sha={oid(head)}&per_page=100&page=1")
+                data = self.request(
+                    f"https://api.github.com/repos/{REPO}/actions/runs?head_sha={oid(head)}&per_page=100&page=1",
+                    token=os.environ.get("STACK_HISTORY_TOKEN"))
                 runs = data.get("workflow_runs")
                 count = data.get("total_count")
                 if (not isinstance(runs, list) or type(count) is not int or count < 0
@@ -604,6 +606,9 @@ class Detector:
                     # still retain the complete selected source patch below.
                     eligible = ({row[0] for row in self.source.first_parent_history(parent.head)}
                                 & self.source.commits(preferred))
+                    # The child can already own a prefix that the parent later
+                    # imports. Never cite the child's own first-parent commits.
+                    eligible -= {row[0] for row in self.source.first_parent_history(child.head)}
                 ordered = sorted(eligible - {preferred})
                 if preferred in eligible:
                     ordered.insert(0, preferred)
@@ -619,16 +624,18 @@ class Detector:
                             and not self.source.landed(parent, cb, cp, delta, head=commit)):
                         if commit not in commits and self.source.present_at_fork(child, cb, cp, delta, commit):
                             raise Gap("matched content already present at child's main fork point; base drift")
-                        if parent.state == "closed" and parent.landing_claim:
-                            raise Gap("closed parent reports landing but exact source equivalence is unproved")
+                        if provenance_gap:
+                            raise Gap(provenance_gap)
+                        if parent.state == "closed":
+                            if parent.landing_claim:
+                                raise Gap("closed parent reports landing but exact source equivalence is unproved")
+                            raise Gap("closed parent has unlanded source; prerequisite versus supersession/resubmission is unproved")
                         kind = ("retained-unmerged-commit" if commit in commits
                                 else "canonical-base-commit-content")
                         if aggregate_retained:
                             kind = ("ancestor-head" if commit == parent.head and commit in commits
                                     else "shared-unmerged-commit" if commit in commits
                                     else "canonical-base-content")
-                        if provenance_gap:
-                            raise Gap(provenance_gap)
                         if historical:
                             kind = "merged-historical-parent-commit"
                         return Evidence(number, parent.head, child.head, self.source.main,
@@ -806,9 +813,6 @@ def main():
     recent_closed = api.call("pulls?state=closed&sort=updated&direction=desc&per_page=64&page=1")
     if not isinstance(recent_closed, list) or len(recent_closed) > 64:
         raise Gap("invalid bounded recent-closed PR index")
-    # A full page leaves older closed parents uninspected, so it cannot
-    # authorize clearing an existing policy block from a no-proof result.
-    incomplete_index |= len(recent_closed) == 64
     indexed = {p.number for p in prs}
     for raw in recent_closed:
         try:

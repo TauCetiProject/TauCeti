@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 # Coalesce repeated events for one PR/fork branch before the global job queue.
 # Backlog runs have unique groups and cannot replace each other here.
@@ -61,12 +62,12 @@ jobs:
           owner: TauCetiProject
           repositories: TauCeti
           permission-contents: read
-          permission-actions: read
           permission-issues: read
           permission-pull-requests: write
       - name: Inspect current source and enforce confirmed stacks
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          STACK_HISTORY_TOKEN: ${{ github.token }}
           STACK_ACTOR: ${{ steps.app-token.outputs.app-slug }}[bot]
           REQUESTED_PR: ${{ inputs.pr || 0 }}
           APPLY_ENABLED: ${{ (vars.NO_STACK_APPLY == 'true' || (vars.NO_STACK_APPLY == 'dispatch' && github.event_name == 'workflow_dispatch' && inputs.pr > 0)) && (github.event_name != 'workflow_dispatch' || !inputs.dry-run) }}

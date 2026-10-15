@@ -287,16 +287,46 @@ class GitFixtures(unittest.TestCase):
         self.assertEqual(evidence.parent_head, parent.head)
         self.assertIn("both current PR trees", sp.comment_text(evidence))
 
-    def test_closed_unlanded_historical_parent_is_source_candidate(self):
-        _, child, pinned, _ = self.historical_parent(closed=True)
-        evidence, _ = self.detector().detect(child)
-        self.assertEqual(evidence.commit, pinned)
+    def test_closed_unlanded_historical_parent_remains_unknown(self):
+        _, child, _, _ = self.historical_parent(closed=True)
+        with self.assertRaisesRegex(sp.Gap, "prerequisite versus supersession"):
+            self.detector().detect(child)
 
     def test_historical_relationship_without_event_binding_stays_unknown(self):
         _, child, _, _ = self.historical_parent()
         api = SimpleNamespace(historical_head=lambda *_: None)
         with self.assertRaisesRegex(sp.Gap, "canonical PR-event binding"):
             self.detector(api).detect(child)
+
+    def test_historical_parent_cannot_claim_childs_own_prefix(self):
+        git(self.root, "checkout", "-b", "child")
+        self.write("C", "child's own original work\n")
+        self.commit("child owns C first")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent contribution\n")
+        self.commit("parent change")
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge parent")
+        self.write("P", "child independently rewrites parent contribution\n")
+        self.commit("rewrite inherited P")
+        child = self.pr(2)
+        git(self.root, "checkout", "parent")
+        self.write("future", "parent advances\n")
+        self.commit("parent next")
+        self.pr(1)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_closed_submission_cannot_close_its_own_resubmission(self):
+        parent, old_child = self.parent_child()
+        self.prs[-1] = sp.PR(**{**sp.asdict(old_child), "state": "closed"})
+        git(self.root, "checkout", "main")
+        git(self.root, "merge", "--squash", "parent")
+        self.commit("prerequisite lands under different hash")
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "main", "-m", "merge landed prerequisite")
+        child = self.pr(3)
+        with self.assertRaisesRegex(sp.Gap, "prerequisite versus supersession"):
+            self.detector().detect(child)
 
     def test_historical_source_moved_out_of_parent_is_not_closed(self):
         _, child, _, _ = self.historical_parent(remove_source=True)
@@ -450,7 +480,8 @@ class GitFixtures(unittest.TestCase):
     def test_closed_but_unlanded_parent(self):
         parent, child = self.parent_child()
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed"})
-        self.assertIsNotNone(self.detector().detect(child)[0])
+        with self.assertRaisesRegex(sp.Gap, "prerequisite versus supersession"):
+            self.detector().detect(child)
 
     def test_closed_landing_claim_without_source_proof_is_unknown_not_assumed_landed(self):
         parent, child = self.parent_child()
@@ -678,16 +709,16 @@ class APITests(unittest.TestCase):
                                   ({"created_at": "2026-10-13T00:00:00Z"}, None)):
             with self.subTest(changes=changes):
                 api = object.__new__(sp.API)
-                api.call = MagicMock(return_value={"total_count": 1,
+                api.request = MagicMock(return_value={"total_count": 1,
                                                    "workflow_runs": [{**event, **changes}]})
                 self.assertEqual(api.historical_head(parent, "a" * 40), expected)
                 self.assertEqual(api.historical_head(parent, "a" * 40), expected)
-                api.call.assert_called_once()
+                api.request.assert_called_once()
         for data in ({"total_count": 101, "workflow_runs": [event]},
                      {"total_count": 2, "workflow_runs": [event]},
                      {"total_count": 1, "workflow_runs": [{}]}):
             api = object.__new__(sp.API)
-            api.call = MagicMock(return_value=data)
+            api.request = MagicMock(return_value=data)
             if data["workflow_runs"] == [{}]:
                 self.assertIsNone(api.historical_head(parent, "a" * 40))
             else:
@@ -919,14 +950,14 @@ class MainTests(unittest.TestCase):
         read.assert_not_called()
         self.assertEqual(visited, [2, 1])
 
-    def test_recent_closed_index_is_bounded_and_incomplete_blocks_unlabeling(self):
+    def test_full_recent_closed_index_does_not_disable_obsolete_label_removal(self):
         self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
         self.api.closed = [{**self.raw[0], "number": n, "state": "closed"}
                            for n in range(100, 164)]
         self.api.events = [{"id": 1, "event": "labeled", "label": {"name": sp.BLOCK_LABEL},
                             "actor": {"login": "trusted[bot]"}}]
         self.assertFalse(self.main("--apply", "--pr", "2"))
-        self.assertFalse(any(method == "DELETE" for _, method, _ in self.api.calls))
+        self.assertTrue(any(method == "DELETE" for _, method, _ in self.api.calls))
         self.assertEqual(len(self.last_constructor.call_args.args[2]), 66)
 
     def test_incomplete_index_and_human_label_retain_prior_block(self):
