@@ -17,8 +17,8 @@ import Mathlib.Analysis.Complex.IsIntegral
 For an element `x` of a field of characteristic zero, the Mahler measure `M(x)` is the Mahler
 measure of its primitive minimal polynomial `F_x ∈ ℤ[X]`, mapped to `ℂ[X]`. For algebraic `x` of
 degree `d` with conjugates `x⁽¹⁾, …, x⁽ᵈ⁾ ∈ ℂ` this is
-`M(x) = a₀ ∏ᵢ max(1, |x⁽ⁱ⁾|)`, where `a₀ > 0` is the leading coefficient of `F_x`; the leading
-coefficient is kept, so that `M(x)` is a positive integer combination of the conjugates and
+`M(x) = a₀ ∏ᵢ max(1, |x⁽ⁱ⁾|)`: the positive integer leading coefficient `a₀` of `F_x` times the
+product of `max(1, |x⁽ⁱ⁾|)` over the conjugates. Keeping the leading coefficient gives
 `M(p/q) = max(|p|, q)` for a rational number in lowest terms. For transcendental `x` the value is
 `1`.
 
@@ -40,8 +40,8 @@ estimates and in Northcott finiteness.
 * `TauCeti.mahlerMeasure_ratCast`: `M(p/q) = max(|p|, q)`, the multiplicative height of `p/q`.
 * `TauCeti.mahlerMeasure_map`, `TauCeti.mahlerMeasure_eq_of_minpoly_eq`: invariance under field
   embeddings and conjugation.
-* `TauCeti.mahlerMeasure_eq_one_iff`: Kronecker's theorem, `M(x) = 1` exactly when `x` is zero or
-  a root of unity.
+* `TauCeti.mahlerMeasure_eq_one_iff`: Kronecker's theorem, for algebraic `x`, `M(x) = 1` exactly
+  when `x` is zero or a root of unity.
 * `TauCeti.finite_setOf_mahlerMeasure_le`: Northcott's theorem for the Mahler measure; in every
   field of characteristic zero there are only finitely many algebraic elements of bounded degree
   and bounded Mahler measure.
@@ -95,8 +95,8 @@ private lemma map_primitiveMinpoly_complex {x : F} (hx : IsAlgebraic ℚ x) :
       C ((primitiveMinpoly x).leadingCoeff : ℂ) * (minpoly ℚ x).map (algebraMap ℚ ℂ) := by
   have hcomp : Int.castRingHom ℂ = (algebraMap ℚ ℂ).comp (Int.castRingHom ℚ) :=
     RingHom.ext_int _ _
-  rw [hcomp, ← Polynomial.map_map, map_primitiveMinpoly hx, Polynomial.map_mul, map_C,
-    eq_ratCast, Rat.cast_intCast]
+  rw [hcomp, ← Polynomial.map_map, map_primitiveMinpoly hx]
+  simp
 
 /-- The Mahler measure of `x` is `a₀ ∏ max(1, |z|)`, the product running over the complex roots
 `z` of `minpoly ℚ x` counted with multiplicity, where `a₀` is the leading coefficient of `F_x`.
@@ -105,14 +105,12 @@ theorem mahlerMeasure_eq_leadingCoeff_mul_prod (x : F) :
     mahlerMeasure x = (primitiveMinpoly x).leadingCoeff *
       (((minpoly ℚ x).aroots ℂ).map fun z ↦ max 1 ‖z‖).prod := by
   by_cases hx : IsAlgebraic ℚ x
-  · have ha : ((primitiveMinpoly x).leadingCoeff : ℂ) ≠ 0 := by
-      exact_mod_cast (leadingCoeff_primitiveMinpoly_pos x).ne'
-    have hmon : ((minpoly ℚ x).map (algebraMap ℚ ℂ)).Monic :=
+  · have hmon : ((minpoly ℚ x).map (algebraMap ℚ ℂ)).Monic :=
       (minpoly.monic (isAlgebraic_iff_isIntegral.mp hx)).map _
-    rw [mahlerMeasure_def, map_primitiveMinpoly_complex hx,
-      Polynomial.mahlerMeasure_eq_leadingCoeff_mul_prod_roots, leadingCoeff_mul, leadingCoeff_C,
-      hmon.leadingCoeff, mul_one, roots_C_mul _ ha, aroots_def, Complex.norm_intCast,
-      abs_of_pos (by exact_mod_cast leadingCoeff_primitiveMinpoly_pos x)]
+    -- `M(C a₀ * p) = |a₀| M(p)`, and `M(p)` is the product over the roots for monic `p`.
+    rw [mahlerMeasure_def, map_primitiveMinpoly_complex hx, mahlerMeasure_mul, mahlerMeasure_const,
+      Polynomial.mahlerMeasure_eq_leadingCoeff_mul_prod_roots, hmon.leadingCoeff]
+    simp [aroots_def, (leadingCoeff_primitiveMinpoly_pos x).le]
   · rw [mahlerMeasure_of_not_isAlgebraic hx, primitiveMinpoly_of_not_isAlgebraic hx,
       minpoly.eq_zero (isAlgebraic_iff_isIntegral.not.mp hx)]
     simp
@@ -134,10 +132,11 @@ numerator and its denominator, independently of the field containing `q`. -/
 theorem mahlerMeasure_ratCast (q : ℚ) :
     mahlerMeasure (q : F) = max (q.num.natAbs : ℝ) q.den := by
   have hden : (q.den : ℂ) ≠ 0 := by exact_mod_cast q.den_nz
-  rw [mahlerMeasure_def, primitiveMinpoly_ratCast, Polynomial.map_sub, Polynomial.map_mul,
-    map_C, map_C, map_X, eq_intCast, eq_intCast, Int.cast_natCast, sub_eq_add_neg, ← C_neg,
-    Polynomial.mahlerMeasure_C_mul_X_add_C hden, norm_neg, Complex.norm_natCast,
-    Complex.norm_intCast, Nat.cast_natAbs, Int.cast_abs, max_comm]
+  have hmap : (C (q.den : ℤ) * X - C q.num).map (Int.castRingHom ℂ) =
+      C (q.den : ℂ) * X + C (-(q.num : ℂ)) := by simp [sub_eq_add_neg]
+  rw [mahlerMeasure_def, primitiveMinpoly_ratCast, hmap,
+    Polynomial.mahlerMeasure_C_mul_X_add_C hden]
+  simp [max_comm]
 
 /-- On rational numbers the Mahler measure is the multiplicative Weil height. -/
 theorem mahlerMeasure_ratCast_eq_mulHeight₁ (q : ℚ) :
@@ -174,9 +173,9 @@ theorem mahlerMeasure_eq_one_iff {x : F} (hx : IsAlgebraic ℚ x) :
       obtain ⟨n, hn, hdvd⟩ := cyclotomic_dvd_of_mahlerMeasure_eq_one h hX hdeg
       have hroot := (primitiveMinpoly_dvd_iff hx).mp
         ((cyclotomic.irreducible hn).dvd_symm hirr hdvd)
-      rw [aeval_def, eval₂_eq_eval_map, map_cyclotomic, ← IsRoot.def,
-        isRoot_cyclotomic_iff_charZero hn] at hroot
-      exact ⟨n, hn, hroot.pow_eq_one⟩
+      have hprim : IsPrimitiveRoot x n := (isRoot_cyclotomic_iff_charZero hn).mp
+        (by simpa [aeval_def, eval₂_eq_eval_map] using hroot)
+      exact ⟨n, hn, hprim.pow_eq_one⟩
   · rintro (rfl | ⟨n, hn, hxn⟩)
     · exact mahlerMeasure_zero
     · obtain ⟨m, hm, hprim⟩ := IsPrimitiveRoot.exists_pos hxn hn.ne'
@@ -201,15 +200,13 @@ theorem finite_setOf_mahlerMeasure_le (d : ℕ) (B : ℝ) :
 
 /- `M(1/2) = 2`. -/
 example : mahlerMeasure (((1 : ℚ) / 2 : ℚ) : ℝ) = 2 := by
-  rw [mahlerMeasure_ratCast, show ((1 : ℚ) / 2).num = 1 by norm_num,
-    show ((1 : ℚ) / 2).den = 2 by norm_num]
+  rw [mahlerMeasure_ratCast]
   norm_num
 
 /- The Mahler measure keeps the leading coefficient: `M(1/2) = 2`, whereas the norm of `1/2`
 is `1/2`. -/
 example : mahlerMeasure (((1 : ℚ) / 2 : ℚ) : ℝ) ≠ |Algebra.norm ℚ ((1 : ℚ) / 2)| := by
-  rw [mahlerMeasure_ratCast, show ((1 : ℚ) / 2).num = 1 by norm_num,
-    show ((1 : ℚ) / 2).den = 2 by norm_num, Algebra.norm_self]
+  rw [mahlerMeasure_ratCast, Algebra.norm_self]
   norm_num
 
 /- The root of unity `i` has Mahler measure `1`. -/
