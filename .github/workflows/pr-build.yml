@@ -81,6 +81,7 @@ jobs:
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
     permissions:
       actions: read
+      contents: read  # immutable fleet selector checkout
     secrets:
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
       APP_ID: ${{ secrets.APP_ID }}
