@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+public import Mathlib.AlgebraicGeometry.Morphisms.Preimmersion
 public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.RingTheory.KrullDimension.Equidimensional
 public import TauCeti.Topology.KrullDimension
@@ -39,10 +40,19 @@ has the dimension of the scheme. On an affine chart `Spec A` this is the stateme
 maximal ideal of the finitely generated irreducible algebra `A` has height `dim A`
 (`TauCeti.height_eq_ringKrullDim_of_isMaximal`), and the chart has the dimension of the scheme.
 
+A quasi-compact scheme locally of finite type over a field, for instance a projective space,
+has finite Krull dimension: it is covered by finitely many spectra of finitely generated
+algebras (`TauCeti.finiteRingKrullDim_of_finiteType`). A preimmersion is a homeomorphism onto
+its image, so it identifies the Krull dimension of its source with that of its image.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_iSup_openCover`: the Krull dimension of a
   scheme is the supremum of the Krull dimensions of the members of an open cover.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion`: the image of a
+  preimmersion has the Krull dimension of its source.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_ne_top_of_locallyOfFiniteType`: a quasi-compact
+  scheme locally of finite type over a field has finite Krull dimension.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_pullback_Spec_map_of_field`: the Krull dimension
   of a scheme locally of finite type over a field is invariant under extension of the base field.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType`: on a scheme
@@ -79,6 +89,45 @@ theorem topologicalKrullDim_eq_iSup_openCover {X : Scheme.{u}} (𝒰 : X.OpenCov
     topologicalKrullDim X = ⨆ i, topologicalKrullDim (𝒰.X i) :=
   topologicalKrullDim_eq_iSup_of_isOpenEmbedding (fun i ↦ 𝒰.f i)
     (fun i ↦ (𝒰.f i).isOpenEmbedding) fun x ↦ (𝒰.exists_eq x).imp fun _ ↦ id
+
+/-- A preimmersion, in particular an immersion, is a homeomorphism onto its image, so its source
+has the Krull dimension of its image. -/
+theorem topologicalKrullDim_range_of_isPreimmersion {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsPreimmersion f] : topologicalKrullDim (Set.range f) = topologicalKrullDim X :=
+  f.isEmbedding.toHomeomorph.symm.isHomeomorph.topologicalKrullDim_eq
+
+/-- A quasi-compact scheme locally of finite type over a field has finite Krull dimension. -/
+theorem topologicalKrullDim_ne_top_of_locallyOfFiniteType {K : Type u} [Field K]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [LocallyOfFiniteType f] [CompactSpace X] :
+    topologicalKrullDim X ≠ ⊤ := by
+  let 𝒰 := X.affineOpenCover.openCover.finiteSubcover
+  -- Each member of the finite cover is the spectrum of a finitely generated `K`-algebra.
+  have hchart (i : 𝒰.I₀) : topologicalKrullDim (𝒰.X i) ≠ ⊤ := by
+    let j := X.affineOpenCover.openCover.idx i.1
+    have hft : LocallyOfFiniteType (X.affineOpenCover.openCover.f j ≫ f) := inferInstance
+    obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = X.affineOpenCover.openCover.f j ≫ f :=
+      ⟨_, Spec.map_preimage _⟩
+    let := φ.hom.toAlgebra
+    have : Algebra.FiniteType K (X.affineOpenCover.X j) :=
+      (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp (hφ ▸ hft)
+    rw [show 𝒰.X i = X.affineOpenCover.openCover.X j from
+      X.affineOpenCover.openCover.finiteSubcover_X i]
+    -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
+    rw [show topologicalKrullDim (X.affineOpenCover.openCover.X j) =
+      ringKrullDim (X.affineOpenCover.X j) from
+        PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _]
+    cases subsingleton_or_nontrivial (X.affineOpenCover.X j)
+    · rw [ringKrullDim_eq_bot_of_subsingleton]
+      exact bot_ne_top
+    · have := finiteRingKrullDim_of_finiteType K (X.affineOpenCover.X j)
+      exact ringKrullDim_ne_top
+  rw [topologicalKrullDim_eq_iSup_openCover 𝒰]
+  cases isEmpty_or_nonempty 𝒰.I₀
+  · rw [iSup_of_empty]
+    exact bot_ne_top
+  · obtain ⟨i, hi⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ topologicalKrullDim (𝒰.X i))
+    rw [← hi]
+    exact hchart i
 
 /-- For a finitely generated algebra `A` over a field `K` and a field extension `L / K`, the fibre
 product `Spec A ×_{Spec K} Spec L` has the Krull dimension of `A`. -/
