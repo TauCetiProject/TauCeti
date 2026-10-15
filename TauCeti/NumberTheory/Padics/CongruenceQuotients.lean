@@ -22,7 +22,7 @@ and these kernels form a neighbourhood basis of `1`. This file records the conse
 the finite groups `(ℤ/p^nℤ)ˣ` a complete system of finite coordinates for `ℤ_pˣ`:
 
 * the quotient `ℤ_pˣ ⧸ U^(n)` is identified with `(ℤ/p^nℤ)ˣ`
-  (`TauCeti.unitToZModPowQuotient`), so two units have the same truncation modulo `p ^ n`
+  (`TauCeti.unitsToZModPowQuotient`), so two units have the same truncation modulo `p ^ n`
   exactly when they lie in the same coset of `U^(n)` (`TauCeti.unitsToZModPow_eq_iff`);
 * a function on `ℤ_pˣ` factors through truncation modulo `p ^ n` exactly when it is invariant
   under translation by `U^(n)` (`TauCeti.exists_comp_unitsToZModPow_eq_iff`), and a factorisation
@@ -46,6 +46,8 @@ some `(ℤ/p^nℤ)ˣ`, and such test functions are dense among all continuous on
 
 * J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Ann. Math. Qué.
   (2024), Definitions 3.7–3.8, Remarks 3.11–3.12 and Proposition 3.16.
+* D. Loeffler, Mathlib's `Mathlib.Topology.Separation.DisjointCover`, for finite approximation of
+  continuous maps on profinite spaces.
 -/
 
 public section
@@ -61,22 +63,22 @@ variable {p : ℕ} [hp : Fact p.Prime]
 variable (p) in
 /-- The **congruence quotient** `ℤ_pˣ ⧸ U^(n) ≃* (ℤ/p^nℤ)ˣ`, induced by the surjective
 truncation `PadicInt.unitsToZModPow n`, whose kernel is the principal unit group `U^(n)`. -/
-noncomputable def unitToZModPowQuotient (n : ℕ) :
+noncomputable def unitsToZModPowQuotient (n : ℕ) :
     ℤ_[p]ˣ ⧸ unitsPrincipal p n ≃* (ZMod (p ^ n))ˣ :=
   (QuotientGroup.quotientMulEquivOfEq (ker_unitsToZModPow p n).symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective _ (PadicInt.unitsToZModPow_surjective n))
 
 /-- The congruence quotient sends the coset of `u` to the truncation of `u` modulo `p ^ n`. -/
 @[simp]
-theorem unitToZModPowQuotient_mk (n : ℕ) (u : ℤ_[p]ˣ) :
-    unitToZModPowQuotient p n (u : ℤ_[p]ˣ ⧸ unitsPrincipal p n) =
+theorem unitsToZModPowQuotient_mk (n : ℕ) (u : ℤ_[p]ˣ) :
+    unitsToZModPowQuotient p n (u : ℤ_[p]ˣ ⧸ unitsPrincipal p n) =
       PadicInt.unitsToZModPow n u :=
   (rfl)
 
 /-- The congruence quotient is the native first-isomorphism-theorem equivalence for truncation,
 after identifying its kernel with the principal unit group. -/
-theorem unitToZModPowQuotient_def (n : ℕ) :
-    unitToZModPowQuotient p n =
+theorem unitsToZModPowQuotient_def (n : ℕ) :
+    unitsToZModPowQuotient p n =
       (QuotientGroup.quotientMulEquivOfEq (ker_unitsToZModPow p n).symm).trans
         (QuotientGroup.quotientKerEquivOfSurjective _
           (PadicInt.unitsToZModPow_surjective n)) :=
@@ -85,16 +87,16 @@ theorem unitToZModPowQuotient_def (n : ℕ) :
 /-- The inverse of the congruence quotient sends the truncation of `u` modulo `p ^ n` to the coset
 of `u`. -/
 @[simp]
-theorem unitToZModPowQuotient_symm_apply (n : ℕ) (u : ℤ_[p]ˣ) :
-    (unitToZModPowQuotient p n).symm (PadicInt.unitsToZModPow n u) =
+theorem unitsToZModPowQuotient_symm_apply (n : ℕ) (u : ℤ_[p]ˣ) :
+    (unitsToZModPowQuotient p n).symm (PadicInt.unitsToZModPow n u) =
       (u : ℤ_[p]ˣ ⧸ unitsPrincipal p n) := by
-  rw [MulEquiv.symm_apply_eq, unitToZModPowQuotient_mk]
+  rw [MulEquiv.symm_apply_eq, unitsToZModPowQuotient_mk]
 
 /-- Two units have the same truncation modulo `p ^ n` exactly when they differ by an element of
 `U^(n)`. -/
 theorem unitsToZModPow_eq_iff {n : ℕ} {u v : ℤ_[p]ˣ} :
     PadicInt.unitsToZModPow n u = PadicInt.unitsToZModPow n v ↔ u⁻¹ * v ∈ unitsPrincipal p n := by
-  rw [← unitToZModPowQuotient_mk, ← unitToZModPowQuotient_mk, EquivLike.apply_eq_iff_eq,
+  rw [← unitsToZModPowQuotient_mk, ← unitsToZModPowQuotient_mk, EquivLike.apply_eq_iff_eq,
     QuotientGroup.eq]
 
 /-! ### Functions factoring through a congruence quotient -/
@@ -152,7 +154,7 @@ theorem exists_monoidHom_comp_unitsToZModPow_eq [Monoid A] {q : ℤ_[p]ˣ →* A
   obtain ⟨n, hn⟩ := exists_unitsPrincipal_le_of_isOpen (isOpen_rightTranslationStabilizer hq)
   have hker : unitsPrincipal p n ≤ q.ker := fun k hk ↦ by
     simpa using mem_rightTranslationStabilizer.mp (hn hk) 1
-  refine ⟨n, (QuotientGroup.lift _ q hker).comp (unitToZModPowQuotient p n).symm.toMonoidHom, ?_⟩
+  refine ⟨n, (QuotientGroup.lift _ q hker).comp (unitsToZModPowQuotient p n).symm.toMonoidHom, ?_⟩
   ext u
   simp
 
