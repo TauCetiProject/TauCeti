@@ -12,7 +12,8 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 /-!
 # Smooth maps composed with absolutely continuous curves
 
-Locally Lipschitz maps preserve the absolute continuity of metric-valued curves under composition.
+Locally Lipschitz maps preserve the absolute continuity of metric-valued curves under composition,
+and isometries moreover reflect it.
 In particular, a map that is continuously differentiable near every point of the compact trace of
 an absolutely continuous curve preserves absolute continuity.
 -/
@@ -31,6 +32,14 @@ theorem LocallyLipschitzOn.comp_absolutelyContinuousOnInterval
   obtain ⟨K, hK⟩ := (hφ.mono hmap.image_subset).exists_lipschitzOnWith_of_compact
     (isCompact_uIcc.image_of_continuousOn hγ.continuousOn')
   exact hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
+
+/-- Post-composition with an isometry preserves and reflects the absolute continuity of a
+metric-valued curve. -/
+theorem Isometry.absolutelyContinuousOnInterval_comp_iff
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} (hf : Isometry f)
+    {γ : ℝ → X} {a b : ℝ} :
+    AbsolutelyContinuousOnInterval (f ∘ γ) a b ↔ AbsolutelyContinuousOnInterval γ a b := by
+  simp only [absolutelyContinuousOnInterval_iff, Function.comp_apply, hf.dist_eq]
 
 namespace AbsolutelyContinuousOnInterval
 

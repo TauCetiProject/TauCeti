@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Rigidity
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.TateNormalForm
 
 /-!
@@ -62,12 +64,17 @@ homomorphism `u : A →* E(H)`. Then the naive `A`-structures on the base change
 represented by the open subscheme of `H` on which `u` is injective on fibres, the naive locus of
 `u` (`ModuliProblem.naiveLevelRepresentableBy`): a `T`-point of `E_T` is the same as a point of `E`
 with values in `T` (`EllObj.baseChangePointsEquiv`), and such a point meets the zero section of
-`E_T` exactly where its image meets the zero section of `E`. For `A = (ℤ/Nℤ)²`, `N ≠ 0`, the
-fibre product `E[N] ×_S E[N]` with the universal pair of points of `E[N]` is such an `H`
-(`EllipticCurveGeom.existsUnique_comp_torsionPairHom`), so the naive problem `[Γ(N)]` is
-relatively representable over every base (`ModuliProblem.gammaNaiveRelRepData`). Its representing
-schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every property stable
-under base change and composition which open immersions have
+`E_T` exactly where its image meets the zero section of `E`. For `A = ℤ/Nℤ`, `N ≠ 0`, the
+`N`-torsion `E[N]` with its universal point is such an `H`
+(`EllipticCurveGeom.existsUnique_comp_torsionPointHom`), so the naive problem `[Γ₁(N)]` is
+relatively representable by the open subscheme of `E[N]` of points of exact order `N` in every
+fibre (`ModuliProblem.gammaOneNaiveRelRepData`); when `N` is invertible on `B`, `E[N]` is étale,
+so `[Γ₁(N)]` is étale over `Ell/B` (`ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData`).
+For `A = (ℤ/Nℤ)²`, `N ≠ 0`, the fibre product `E[N] ×_S E[N]` with the universal pair of points
+of `E[N]` is such an `H` (`EllipticCurveGeom.existsUnique_comp_torsionPairHom`), so the naive
+problem `[Γ(N)]` is relatively representable over every base (`ModuliProblem.gammaNaiveRelRepData`).
+Its representing schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every
+property stable under base change and composition which open immersions have
 (`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation.
 
 ## Main definitions
@@ -93,8 +100,9 @@ under base change and composition which open immersions have
   points of the naive locus of `u` with values in `T` are the naive structures on `E_T`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevelRepresentableBy`: the naive locus represents
   the fibre of the problem of naive `A`-structures.
-* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveRelRepData`: relative-representability data
-  for the naive problem `[Γ(N)]`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneNaiveRelRepData` and
+  `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveRelRepData`: relative-representability data
+  for the naive problems `[Γ₁(N)]` and `[Γ(N)]`.
 
 ## Main results
 
@@ -121,15 +129,20 @@ under base change and composition which open immersions have
   of a pulled-back naive structure are the base changes of the original points.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.isFiberwiseInjective_baseChange_iff`: injectivity on
   the fibres of a base change `E_T`, read on the points of `E` with values in `T`.
-* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_gammaNaiveRelRepData`: the representing
-  morphisms of `[Γ(N)]` inherit the properties of `E[N]` stable under base change and composition
-  and holding for open immersions.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_gammaOneNaiveRelRepData` and
+  `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_gammaNaiveRelRepData`: the representing
+  morphisms of `[Γ₁(N)]` and `[Γ(N)]` inherit the properties of `E[N]` stable under base change
+  and composition and holding for open immersions.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData`: if `N` is
+  invertible on `B`, the naive problem `[Γ₁(N)]` is étale over `Ell/B`.
 
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, §3.7 (naive level structures
   where `N` is invertible), 3.7.1 (relative representability of naive full level `N`),
   Chapter 4, and §7.1 (the action of `GL₂(ℤ/Nℤ)` on `[Γ(N)]`).
+* D. Loeffler, *Modular curves*, lecture notes, Proposition 3.8.2 (naive level structures are
+  relatively representable and étale over `Ell/ℤ[1/N]`).
 -/
 
 public section
@@ -673,6 +686,53 @@ noncomputable def naiveLevelRepresentableBy :
   homEquiv_comp f y := naiveLocusEquiv_comp u hu f y
 
 end Representable
+
+/-! ### Relative representability of the naive problem `[Γ₁(N)]` -/
+
+section GammaOneNaive
+
+variable {B N} [NeZero N]
+
+/-- **The naive moduli problem `[Γ₁(N)]` is relatively representable.** For an object
+`X = (E/S)` of `Ell/B`, the naive `[Γ₁(N)]`-structures on the base changes `E_T` of `E` are
+represented by the open subscheme of `E[N]` of points `P` none of whose multiples `aP` with
+`a ≠ 0` meets the zero section, the points of exact order `N` in every fibre: the naive locus of
+the universal point of `E[N]` (`EllipticCurveGeom.torsionPointHom`). -/
+noncomputable def gammaOneNaiveRelRepData : (gammaOneNaive B N).RelRepData where
+  rep X := EllipticCurveGeom.naiveLocusOver (X.curve.torsionPointHom N)
+  representableBy X :=
+    naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPointHom N
+
+@[simp]
+theorem gammaOneNaiveRelRepData_rep (X : EllObj B) :
+    (gammaOneNaiveRelRepData (B := B) (N := N)).rep X =
+      EllipticCurveGeom.naiveLocusOver (X.curve.torsionPointHom N) :=
+  (rfl)
+
+/-- The representing morphisms of the naive problem `[Γ₁(N)]` have every property of morphisms of
+schemes which is stable under composition, holds for open immersions, and holds for the
+`N`-torsion of every elliptic curve: each representing scheme is an open subscheme of `E[N]`. -/
+theorem hasProperty_gammaOneNaiveRelRepData {W : MorphismProperty Scheme.{u}}
+    [W.IsStableUnderComposition] (hW : @IsOpenImmersion ≤ W)
+    (h : ∀ X : EllObj B, W (X.curve.torsion N).X.hom) :
+    (gammaOneNaiveRelRepData (B := B) (N := N)).HasProperty W :=
+  (RelRepData.hasProperty_iff _).mpr fun X ↦ EllipticCurveGeom.naiveLocusOver_hom_mem _ hW (h X)
+
+/-- **The naive moduli problem `[Γ₁(N)]` is étale over `Ell/B` when `N` is invertible on `B`**:
+if `N` is invertible in every residue field of `B`, every representing scheme is étale over its
+base, as an open subscheme of the étale `N`-torsion. -/
+theorem hasProperty_etale_gammaOneNaiveRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
+    (gammaOneNaiveRelRepData (B := B) (N := N)).HasProperty @Etale :=
+  -- instance search does not reach composition stability of étale morphisms by itself
+  have : MorphismProperty.IsStableUnderComposition @Etale :=
+    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+  hasProperty_gammaOneNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun X ↦
+    X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun s hs ↦
+      hN (X.structureMap s) <| (X.structureMap.residueFieldMap s).hom.injective <| by
+        rw [map_natCast, map_zero]
+        simpa using hs
+
+end GammaOneNaive
 
 /-! ### Relative representability of the naive problem `[Γ(N)]` -/
 

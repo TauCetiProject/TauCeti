@@ -104,6 +104,12 @@ theorem curveAction_def (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
     curveAction p γ a b = ∫⁻ t in Ι a b, metricDerivative γ t ^ p :=
   (rfl)
 
+/-- Post-composing a curve with an isometry leaves its `p`-action unchanged. -/
+theorem _root_.Isometry.curveAction_comp {Y : Type*} [PseudoEMetricSpace Y] {f : X → Y}
+    (hf : Isometry f) (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
+    curveAction p (f ∘ γ) a b = curveAction p γ a b := by
+  simp only [curveAction_def, hf.metricDerivative_comp]
+
 /-- The `p`-action does not depend on the orientation of the interval. -/
 theorem curveAction_comm (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
     curveAction p γ a b = curveAction p γ b a := by
