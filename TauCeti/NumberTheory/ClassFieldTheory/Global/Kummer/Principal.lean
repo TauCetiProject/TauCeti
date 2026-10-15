@@ -119,9 +119,8 @@ theorem comap_kummerIdeleSubgroup_unitEmbedding_unit :
         ((IdeleGroup.unitEmbedding (𝓞 K) K).comp
           ((S : Set (HeightOneSpectrum (𝓞 K))).unit K).subtype) =
       (powMonoidHom n).range := by
-  rw [← Subgroup.comap_comap, comap_kummerIdeleSubgroup_unitEmbedding (S := S) (n := n) hcl hnS,
-    Subgroup.comap_inf, Subgroup.comap_subtype, Subgroup.subgroupOf_self, top_inf_eq,
-    Subgroup.comap_subtype]
-  exact Set.range_powMonoidHom_subgroupOf_unit (S : Set (HeightOneSpectrum (𝓞 K))) K n
+  rw [← Subgroup.comap_comap, comap_kummerIdeleSubgroup_unitEmbedding (S := S) (n := n) hcl hnS]
+  simpa [Subgroup.comap_inf, Subgroup.comap_subtype] using
+    Set.range_powMonoidHom_subgroupOf_unit (S : Set (HeightOneSpectrum (𝓞 K))) K n
 
 end TauCeti.ClassFieldTheory
