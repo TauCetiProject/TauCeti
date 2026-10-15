@@ -60,8 +60,7 @@ theorem tmul_mem_leftTensorIdeal {I : Ideal A} {x : A} (hx : x ∈ I) (y : B) :
   have h : x ⊗ₜ[R] y =
       Algebra.TensorProduct.includeRight (R := R) (A := A) (B := B) y *
         Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := A) (B := B) x := by
-    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+    simp
   rw [h]
   exact Ideal.mul_mem_left _ _ (includeLeft_mem_leftTensorIdeal R B hx)
 
@@ -128,8 +127,7 @@ theorem tmul_mem_rightTensorIdeal {I : Ideal B} (x : A) {y : B} (hy : y ∈ I) :
   have h : x ⊗ₜ[R] y =
       Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := A) (B := B) x *
         Algebra.TensorProduct.includeRight (R := R) (A := A) (B := B) y := by
-    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+    simp
   rw [h]
   exact Ideal.mul_mem_left _ _ (includeRight_mem_rightTensorIdeal R A hy)
 
