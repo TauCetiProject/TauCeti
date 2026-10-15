@@ -69,39 +69,12 @@ variable {A B C K M : Type*}
 
 variable [FiniteDimensional K M]
 
-/-- An integral closure of `A` in a finite extension `L / K` has fraction field `L`. -/
-private theorem isFractionRing_of_isIntegralClosure (L S : Type*) [Field L] [CommRing S]
-    [Algebra K L] [Algebra A L] [IsScalarTower A K L] [FiniteDimensional K L]
-    [Algebra A S] [Algebra S L] [IsScalarTower A S L] [IsIntegralClosure S A L] :
-    IsFractionRing S L :=
-  have : IsDomain A := (IsFractionRing.injective A K).isDomain
-  have : IsDomain S := (IsIntegralClosure.algebraMap_injective S A L).isDomain (algebraMap S L)
-  IsIntegralClosure.isFractionRing_of_finite_extension A K L S
-
 variable (H : Subgroup (M ≃ₐ[K] M))
   [Algebra A C] [Algebra C ↥(fixedField H)] [Algebra C M]
   [IsScalarTower A C ↥(fixedField H)] [IsScalarTower C ↥(fixedField H) M]
   [IsScalarTower A C M]
   [IsIntegralClosure C A ↥(fixedField H)]
   [Algebra C B] [IsScalarTower C B M]
-
-omit [Algebra A B] [IsScalarTower A B M] [IsFractionRing A K] [IsIntegralClosure B A M]
-  [IsGalois K M] [FiniteDimensional K M]
-  [Algebra A C] [IsScalarTower A C ↥(fixedField H)] [IsScalarTower A C M] in
-include A H in
-/-- The map from the integral closure in a fixed field to the integral closure upstairs is
-injective. -/
-private theorem faithfulSMul_integralClosure_fixedField : FaithfulSMul C B := by
-  rw [faithfulSMul_iff_algebraMap_injective]
-  intro x y h
-  apply IsIntegralClosure.algebraMap_injective C A ↥(fixedField H)
-  apply (algebraMap ↥(fixedField H) M).injective
-  rw [← IsScalarTower.algebraMap_apply C ↥(fixedField H) M,
-    ← IsScalarTower.algebraMap_apply C ↥(fixedField H) M]
-  have h' := congrArg (algebraMap B M) h
-  rw [← IsScalarTower.algebraMap_apply C B M,
-    ← IsScalarTower.algebraMap_apply C B M] at h'
-  exact h'
 
 variable (p : Ideal A) (Q : Ideal B) [Q.LiesOver p]
 
@@ -117,9 +90,13 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
     DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
         (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)) ≃ p.primesOver C := by
   let _ := IsIntegralClosure.MulSemiringAction A K M B
-  let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField (A := A) H
+  have : FaithfulSMul C ↥(fixedField H) := IsIntegralClosure.faithfulSMul A C _
+  have : FaithfulSMul C M := .trans C ↥(fixedField H) M
+  have : FaithfulSMul C B := .tower_bot C B M
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
-  let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
+  have : IsDomain A := (IsFractionRing.injective A K).isDomain
+  have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain (algebraMap B M)
+  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_finite_extension A K M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
@@ -134,9 +111,13 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk (σ : M ≃ₐ[
       (A := A) (B := B) (C := C) (K := K) (M := M) H p Q
       (DoubleCoset.mk H _ σ) : Ideal C) = (σ • Q).under C := by
   let _ := IsIntegralClosure.MulSemiringAction A K M B
-  let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField (A := A) H
+  have : FaithfulSMul C ↥(fixedField H) := IsIntegralClosure.faithfulSMul A C _
+  have : FaithfulSMul C M := .trans C ↥(fixedField H) M
+  have : FaithfulSMul C B := .tower_bot C B M
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
-  let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
+  have : IsDomain A := (IsFractionRing.injective A K).isDomain
+  have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain (algebraMap B M)
+  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_finite_extension A K M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
@@ -153,9 +134,13 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_i
         DoubleCoset.mk H _ σ ↔
       q.1 = (σ • Q).under C := by
   let _ := IsIntegralClosure.MulSemiringAction A K M B
-  let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField (A := A) H
+  have : FaithfulSMul C ↥(fixedField H) := IsIntegralClosure.faithfulSMul A C _
+  have : FaithfulSMul C M := .trans C ↥(fixedField H) M
+  have : FaithfulSMul C B := .tower_bot C B M
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
-  let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
+  have : IsDomain A := (IsFractionRing.injective A K).isDomain
+  have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain (algebraMap B M)
+  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_finite_extension A K M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
@@ -195,10 +180,16 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural
         (Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure
           (A := A) (B := B) (C := C) (K := K) (M := M) H p Q q).1.under C' := by
   let _ := IsIntegralClosure.MulSemiringAction A K M B
-  let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField (A := A) H
-  let _ : FaithfulSMul C' B := faithfulSMul_integralClosure_fixedField (A := A) H'
+  have : FaithfulSMul C ↥(fixedField H) := IsIntegralClosure.faithfulSMul A C _
+  have : FaithfulSMul C M := .trans C ↥(fixedField H) M
+  have : FaithfulSMul C B := .tower_bot C B M
+  have : FaithfulSMul C' ↥(fixedField H') := IsIntegralClosure.faithfulSMul A C' _
+  have : FaithfulSMul C' M := .trans C' ↥(fixedField H') M
+  have : FaithfulSMul C' B := .tower_bot C' B M
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
-  let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
+  have : IsDomain A := (IsFractionRing.injective A K).isDomain
+  have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain (algebraMap B M)
+  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_finite_extension A K M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
@@ -224,13 +215,15 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_of_isIntegralClosure_eq_relInd
     TauCeti.IsIntegralClosure.isDedekindDomain A K M B
   let _ : IsDedekindDomain C :=
     TauCeti.IsIntegralClosure.isDedekindDomain A K ↥(fixedField H) C
-  let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField (A := A) H
+  have : FaithfulSMul C ↥(fixedField H) := IsIntegralClosure.faithfulSMul A C _
+  have : FaithfulSMul C M := .trans C ↥(fixedField H) M
+  have : FaithfulSMul C B := .tower_bot C B M
   let _ : Module.Finite A B := IsIntegralClosure.finite A K M B
   let _ : Module.IsTorsionFree A M := .trans_faithfulSMul A K M
   let _ : Module.IsTorsionFree A B := IsIntegralClosure.isTorsionFree A M
   let _ : Module.IsTorsionFree C B := inferInstance
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
-  let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
+  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_finite_extension A K M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
@@ -274,13 +267,15 @@ theorem ramificationIdx_under_smul_of_isIntegralClosure_eq_relIndex_inertia
     TauCeti.IsIntegralClosure.isDedekindDomain A K M B
   let _ : IsDedekindDomain C :=
     TauCeti.IsIntegralClosure.isDedekindDomain A K ↥(fixedField H) C
-  let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField (A := A) H
+  have : FaithfulSMul C ↥(fixedField H) := IsIntegralClosure.faithfulSMul A C _
+  have : FaithfulSMul C M := .trans C ↥(fixedField H) M
+  have : FaithfulSMul C B := .tower_bot C B M
   let _ : Module.Finite A B := IsIntegralClosure.finite A K M B
   let _ : Module.IsTorsionFree A M := .trans_faithfulSMul A K M
   let _ : Module.IsTorsionFree A B := IsIntegralClosure.isTorsionFree A M
   let _ : Module.IsTorsionFree C B := inferInstance
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
-  let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
+  have : IsFractionRing B M := IsIntegralClosure.isFractionRing_of_finite_extension A K M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
     IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
