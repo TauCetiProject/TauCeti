@@ -761,11 +761,7 @@ functional represented by its classical gradient. Only differentiability inside 
 is used. -/
 theorem hasWeakFDerivOn_gradient_of_contDiffOn {u : E → ℝ} (hu : ContDiffOn ℝ 1 u Ω) :
     HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (∇ u x) := by
-  have hcoe : (fun x => innerSL ℝ (∇ u x)) = fderiv ℝ u := by
-    funext x
-    ext y
-    simp [inner_gradient_left (𝕜 := ℝ) (f := u) (x := x) (y := y)]
-  rw [hcoe]
+  rw [show (fun x => innerSL ℝ (∇ u x)) = fderiv ℝ u from funext fun _ => toDual_gradient]
   exact hasWeakFDerivOn_of_differentiableOn
     (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
     ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn

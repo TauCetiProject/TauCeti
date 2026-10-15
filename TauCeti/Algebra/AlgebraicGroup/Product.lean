@@ -121,12 +121,10 @@ theorem mapDomain_projectLeft (g : WithConv (H₁ →ₐ[R] A)) :
     toConv (g.ofConv.comp (Bialgebra.TensorProduct.projectLeft
       (R := R) (H₁ := H₁) (H₂ := H₂)).toAlgHom) =
       pointsMulEquiv.symm (g, 1) := by
-  rw [pointsMulEquiv_symm_apply]
   apply WithConv.ofConv_injective
   apply Algebra.TensorProduct.ext'
   intro x y
-  simp [Algebra.TensorProduct.productMap_apply_tmul, AlgHom.convOne_apply,
-    Algebra.smul_def, mul_comm]
+  simp [AlgHom.convOne_apply, Algebra.smul_def, mul_comm]
 
 /-- Precomposition with the right tensor-product projection inserts a point as the right factor of
 the product, with the identity in the left factor. -/
@@ -135,12 +133,10 @@ theorem mapDomain_projectRight (g : WithConv (H₂ →ₐ[R] A)) :
     toConv (g.ofConv.comp (Bialgebra.TensorProduct.projectRight
       (R := R) (H₁ := H₁) (H₂ := H₂)).toAlgHom) =
       pointsMulEquiv.symm ((1 : WithConv (H₁ →ₐ[R] A)), g) := by
-  rw [pointsMulEquiv_symm_apply]
   apply WithConv.ofConv_injective
   apply Algebra.TensorProduct.ext'
   intro x y
-  simp [Algebra.TensorProduct.productMap_apply_tmul, AlgHom.convOne_apply,
-    Algebra.smul_def]
+  simp [AlgHom.convOne_apply, Algebra.smul_def]
 
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
@@ -198,30 +194,6 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
         (AlgHom.mapValue (H := H₁) φ p.1, AlgHom.mapValue (H := H₂) φ p.2) := by
   simp only [pointsMulEquiv_symm_apply, AlgHom.mapValue_apply]
   rw [_root_.AlgHom.comp_productMap]
-
-/-- On pure tensors, naturality of the inverse product-points map says that post-composition
-by `φ` evaluates as applying `φ` to the product of the two factor values. -/
-theorem mapValue_pointsMulEquiv_symm_apply_tmul (φ : A →ₐ[R] B)
-    (p : WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A)) (x : H₁) (y : H₂) :
-    (AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ
-        ((pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := A)).symm p)).ofConv
-        (x ⊗ₜ[R] y) =
-      φ (p.1.ofConv x * p.2.ofConv y) := by
-  rw [mapValue_pointsMulEquiv_symm_apply, pointsMulEquiv_symm_apply]
-  simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
-    Algebra.TensorProduct.productMap_apply_tmul, map_mul]
-
-/-- On pure tensors, assembling after post-composing both factor points multiplies the two
-post-composed factor values. -/
-theorem pointsMulEquiv_symm_mapValue_apply_tmul (φ : A →ₐ[R] B)
-    (p : WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A)) (x : H₁) (y : H₂) :
-    ((pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := B)).symm
-        (AlgHom.mapValue (H := H₁) φ p.1, AlgHom.mapValue (H := H₂) φ p.2)).ofConv
-        (x ⊗ₜ[R] y) =
-      φ (p.1.ofConv x) * φ (p.2.ofConv y) := by
-  rw [pointsMulEquiv_symm_apply]
-  simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
-    Algebra.TensorProduct.productMap_apply_tmul]
 
 end AffineGroup.Product
 
