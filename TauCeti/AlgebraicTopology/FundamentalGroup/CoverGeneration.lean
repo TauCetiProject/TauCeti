@@ -149,6 +149,8 @@ theorem iSup_range_map_subtypeVal_eq_top (hU : ∀ y, ∃ i, U i ∈ 𝓝 y) (hx
         simpa [Groupoid.inv_eq_inv] using h
       mul := fun {c d e f} hf {g} hg ↦ by
         have h := H.mul_mem hg hf
+        -- This constructs `S`, so no membership lemma for its arrow predicate exists yet.
+        -- Expose that predicate on the composite before comparing it with the product in `H`.
         change (End.of (τ c ≫ (f ≫ g) ≫ inv (τ e)) : _root_.FundamentalGroup X x) ∈ H
         convert h using 1
         ext

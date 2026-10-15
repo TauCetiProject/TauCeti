@@ -161,7 +161,8 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
     have hsq : ‖W1p.gradient z‖ ^ 2 ≤ (2 * √2 * c * (1 + K) / (ρ - r) * √I) ^ 2 := by
       have hG : G = 2 * c / (ρ - r) := by
         simp only [G, ρ']
-        rw [show (r + ρ) / 2 - r = (ρ - r) / 2 by ring, div_div_eq_mul_div]
+        have hmid : (r + ρ) / 2 - r = (ρ - r) / 2 := by ring
+        rw [hmid, div_div_eq_mul_div]
         ring
       have h2 : (√2) ^ 2 = 2 := Real.sq_sqrt (by norm_num)
       have hI' : (√I) ^ 2 = I := Real.sq_sqrt hI0

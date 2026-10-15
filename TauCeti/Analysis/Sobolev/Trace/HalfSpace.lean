@@ -56,9 +56,9 @@ variable [MeasurableSpace E] [InnerProductSpace ℝ E]
 private theorem norm_hyperplaneTrace_ofTestFunction_le (a : ℝ)
     (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
     ‖W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ≤
-      ‖W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
+      ‖W1p.restrictL (le_top (a := normalHalfSpace (E := E) a))
         (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ := by
-  let v := W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
+  let v := W1p.restrictL (le_top (a := normalHalfSpace (E := E) a))
     (W1p.ofTestFunctionₗ volume ⊤ 2 φ)
   have hv : W1p.value v =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] φ := by
     apply (W1p.value_restrictL_ae le_top _).trans
@@ -97,12 +97,12 @@ private theorem norm_hyperplaneTrace_ofTestFunction_le (a : ℝ)
 theorem W1p.norm_hyperplaneTrace_le_norm_restrictL (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) :
     ‖W1p.hyperplaneTrace a u‖ ≤
-      ‖W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) u‖ := by
+      ‖W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) u‖ := by
   refine (W1p.denseRange_ofTestFunctionₗ_top
     (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)).induction_on u
       (isClosed_le (W1p.hyperplaneTrace a).continuous.norm
         (W1p.restrictL (mu := volume) (p := 2)
-          (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)).continuous.norm)
+          (le_top (a := normalHalfSpace (E := E) a))).continuous.norm)
       (norm_hyperplaneTrace_ofTestFunction_le a)
 
 /-- Whole-space extensions whose values agree almost everywhere on the right-hand half-space
@@ -111,14 +111,14 @@ theorem W1p.hyperplaneTrace_eq_of_value_ae_eq (a : ℝ)
     {u v : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2}
     (hvalue : W1p.value u =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] W1p.value v) :
     W1p.hyperplaneTrace a u = W1p.hyperplaneTrace a v := by
-  have h : W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) u =
-      W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) v := by
+  have h : W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) u =
+      W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) v := by
     apply W1p.ext_value
     apply Lp.ext
     exact ((W1p.value_restrictL_ae le_top u).trans hvalue).trans
       (W1p.value_restrictL_ae le_top v).symm
   have hsub :
-      W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) (u - v) = 0 := by
+      W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) (u - v) = 0 := by
     rw [map_sub, h, sub_self]
   have hb := W1p.norm_hyperplaneTrace_le_norm_restrictL (E := E) a (u - v)
   rw [hsub, norm_zero] at hb

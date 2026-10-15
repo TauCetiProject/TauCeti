@@ -181,9 +181,9 @@ theorem cauchyIndex_union (p q : R[X]) {s t : Set R} (h : Disjoint s t) :
 theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b < c) :
     cauchyIndex p q (Ioo a c) =
       cauchyIndex p q (Ioo a b) + cauchyJump p q b + cauchyIndex p q (Ioo b c) := by
-  rw [← Ioc_union_Ioo_eq_Ioo hab.le hbc,
-    cauchyIndex_union _ _ (show Disjoint (Ioc a b) (Ioo b c) from
-      disjoint_left.mpr fun _ hx hx' => hx'.1.not_ge hx.2),
+  have hdisj : Disjoint (Ioc a b) (Ioo b c) :=
+    disjoint_left.mpr fun _ hx hx' ↦ hx'.1.not_ge hx.2
+  rw [← Ioc_union_Ioo_eq_Ioo hab.le hbc, cauchyIndex_union _ _ hdisj,
     ← Ioo_insert_right hab, insert_eq, union_comm,
     cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton]
 

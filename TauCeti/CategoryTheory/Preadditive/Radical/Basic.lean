@@ -257,8 +257,7 @@ theorem mem_jacobsonRadical_self_iff_mem_jacobson {X : C} {f : End X} :
     f.asHom ∈ jacobsonRadical X X ↔ f ∈ Ring.jacobson (End X) := by
   have key : ∀ y : End X, ((1 : End X) + y * f).asHom =
       𝟙 X - f.asHom ≫ (-y.asHom) := fun y => by
-    change 𝟙 X + f.asHom ≫ y.asHom = _
-    rw [Preadditive.comp_neg, sub_neg_eq_add]
+    rw [End.add_asHom, End.one_asHom, End.mul_asHom, Preadditive.comp_neg, sub_neg_eq_add]
   rw [Ring.mem_jacobson_iff_isUnit_one_add_mul_left,
     mem_jacobsonRadical_iff_isIso_id_sub_comp_right]
   refine ⟨fun h y => ?_, fun h g => ?_⟩

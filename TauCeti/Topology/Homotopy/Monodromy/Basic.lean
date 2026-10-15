@@ -133,6 +133,8 @@ theorem _root_.IsCoveringMap.monodromy_eq_self_iff_mem_range (hp : IsCoveringMap
     hp.monodromy γ.toPath e = e ↔
       γ ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
   have he : p (e : E) = x := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.2
+  -- Rewriting `mapOfEq_apply` cannot type-check the fibre-membership proof `e.2` at implicit
+  -- transparency. Use the explicit equality `he` so the map's basepoint argument is visible.
   change hp.monodromy γ.toPath e = e ↔
     γ ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he).range
   constructor

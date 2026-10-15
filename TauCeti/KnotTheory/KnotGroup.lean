@@ -220,7 +220,7 @@ theorem compl_range_greatCircle :
     ((range (greatCircle (n := 3) ι))ᶜ : Set (sphere (0 : F) 1)) =
       ({x | (x : F) ∉ LinearMap.range ι.toLinearMap} : Set (sphere (0 : F) 1)) := by
   ext x
-  change x ∉ range _ ↔ (x : F) ∉ LinearMap.range ι.toLinearMap
+  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
   rw [not_iff_not, LinearMap.mem_range]
   constructor
   · rintro ⟨z, hz⟩

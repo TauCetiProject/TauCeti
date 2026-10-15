@@ -238,7 +238,8 @@ theorem mem_connectedComponentIn_of_locally_subset_line_of_im_pos
   exact hS.isPreconnected.subset_connectedComponentIn ⟨hx, hx'⟩
     (by
       rintro z ⟨hz₁, hz₂⟩ hzC
-      exact (show 0 < (v * (z - p)).im from hz₂).ne' (hline z hz₁ hzC)) ⟨hy, hy'⟩
+      have hz₂' : 0 < (v * (z - p)).im := hz₂
+      exact hz₂'.ne' (hline z hz₁ hzC)) ⟨hy, hy'⟩
 
 /-- For `0 < s < r * ‖v‖`, the point `p + I * s / v` lies in `ball p r`, on the positive side of
 the line `{z | (v * (z - p)).im = 0}`. -/

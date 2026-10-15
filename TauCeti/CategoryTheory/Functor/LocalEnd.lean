@@ -43,8 +43,8 @@ theorem isIso_of_map_eq_id_of_isLocalRing_end [IsLocalRing (End X)]
     have hunit := hu.map (F.mapEnd X)
     have hzero : F.mapEnd X (1 - End.of f) = 0 := by
       apply End.ext
-      change F.map (𝟙 X - f) = 0
-      rw [F.map_sub, F.map_id, hf, sub_self]
+      simp only [mapEnd_apply_asHom, End.sub_asHom, End.one_asHom, F.map_sub,
+        F.map_id, hf, sub_self, End.zero_asHom]
     rw [hzero] at hunit
     exact (not_isUnit_zero hunit).elim
 

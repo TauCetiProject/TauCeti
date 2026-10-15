@@ -138,6 +138,8 @@ lemma toHom_zsmul (n : ℤ) (x : End A) : toHom (n • x) = toHom x ^ n :=
 Multiplication in `End A` is composition, in the order of `Function.comp` rather than of
 `CategoryTheory.CategoryStruct.comp`, matching Mathlib's `CategoryTheory.End.monoid`. -/
 
+-- These laws construct the monoid itself, so `toHom_one` and `toHom_mul` are not available yet.
+-- Expose the constructor fields before using `toHom_ofHom` in the three laws below.
 instance instMonoid (A : AbelianVariety K) : Monoid (End A) where
   one := ofHom (𝟙 A)
   mul x y := ofHom (toHom y ≫ toHom x)
