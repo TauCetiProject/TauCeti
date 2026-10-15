@@ -375,11 +375,12 @@ private theorem anharmonic_swap_zero_one_mul (τ : Equiv.Perm (Fin 3)) :
   · rfl
   · exact (mob01_mob01 z).symm
   · rfl
-  · change mobRotInv z = mob01 (mob0Inf z)
-    rw [← mob01_mob1Inf_mob01, mob01_mob01]
-    rfl
-  · change mob1Inf z = mob01 (mobRot z)
-    rw [mobRot_apply, mob01_mob01]
+  · have h : swap (0 : Fin 3) 1 * swap 0 2 = (finRotate 3)⁻¹ := by decide
+    rw [h, anharmonic_finRotate_inv, Homeomorph.trans_apply, anharmonic_swap_zero_two,
+      ← mob01_mob1Inf_mob01, mob01_mob01, mobRotInv_apply]
+  · have h : swap (0 : Fin 3) 1 * finRotate 3 = swap 1 2 := by decide
+    rw [h, anharmonic_swap_one_two, Homeomorph.trans_apply, anharmonic_finRotate,
+      mobRot_apply, mob01_mob01]
   · rfl
 
 /-- Left multiplication by the transposition of `1` and `∞` composes with `mob1Inf`. -/
@@ -390,12 +391,13 @@ private theorem anharmonic_swap_one_two_mul (τ : Equiv.Perm (Fin 3)) :
   · rfl
   · rfl
   · exact (mob1Inf_mob1Inf z).symm
-  · change mobRot z = mob1Inf (mob0Inf z)
-    rw [← mob1Inf_mob01_mob1Inf, mob1Inf_mob1Inf]
-    rfl
+  · have h : swap (1 : Fin 3) 2 * swap 0 2 = finRotate 3 := by decide
+    rw [h, anharmonic_finRotate, Homeomorph.trans_apply, anharmonic_swap_zero_two,
+      ← mob1Inf_mob01_mob1Inf, mob1Inf_mob1Inf, mobRot_apply]
   · exact (mob1Inf_mob01_mob1Inf z).symm
-  · change mob01 z = mob1Inf (mobRotInv z)
-    rw [mobRotInv_apply, mob1Inf_mob1Inf]
+  · have h : swap (1 : Fin 3) 2 * (finRotate 3)⁻¹ = swap 0 1 := by decide
+    rw [h, anharmonic_swap_zero_one, Homeomorph.trans_apply, anharmonic_finRotate_inv,
+      mobRotInv_apply, mob1Inf_mob1Inf]
 
 /-- Composition of anharmonic maps agrees with composition of puncture permutations. -/
 theorem anharmonic_mul (ρ τ : Equiv.Perm (Fin 3)) :
