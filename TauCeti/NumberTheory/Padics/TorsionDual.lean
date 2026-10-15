@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
+public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.Module
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.BilinearMap
-import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -23,7 +23,9 @@ import Mathlib.Tactic.LinearCombination
 Let `0 → P₁ → P₀ → M → 0` be an exact sequence of `ℤ_p`-modules, with first map `f`. Applying
 `Hom_{ℤ_p}(-, ℤ_p)` gives `Hom(P₀, ℤ_p) → Hom(P₁, ℤ_p)`, whose cokernel is `Ext¹_{ℤ_p}(M, ℤ_p)` when
 `P₀` is projective. For `M` finitely generated this cokernel is the Pontryagin dual
-`Hom_{ℤ_p}(M[p^∞], ℚ_p / ℤ_p)` of the `p`-power torsion `M[p^∞]` of `M`.
+`Hom_{ℤ_p}(M[p^∞], ℚ_p / ℤ_p)` of the `p`-power torsion `M[p^∞]` of `M`. More generally,
+the comparison holds whenever `M / M[p^∞]` is projective over `ℤ_p`; finite generation guarantees
+this because the quotient is torsion-free.
 
 The comparison is the connecting map of the long exact sequence for
 `0 → ℤ_p → ℚ_p → ℚ_p / ℤ_p → 0`, written out by hand: a torsion element `t` lifts to `x ∈ P₀` with
@@ -31,10 +33,10 @@ The comparison is the connecting map of the long exact sequence for
 `ψ k / p ^ n`. Its kernel consists of the functionals extending along `f`, because `M[p^∞]` is a
 direct summand of `M` over `ℤ_p`, and it is surjective because `P₀` is projective.
 
-The modules may carry an action of a `ℤ_p`-algebra `A` for which the maps are `A`-linear; the
-connecting map is then compatible with the contragredient actions of `A`: precomposing a functional
-on `P₁` with the action of `a ∈ A` corresponds to precomposing a character of `M[p^∞]` with the
-action of `a`. Applied to the group algebra `A = ℤ_p[G]` of a finite group,
+The modules may carry an action of a ring `A`, compatible with that of `ℤ_p`, for which the maps
+are `A`-linear; the connecting map is then compatible with the contragredient actions of `A`:
+precomposing a functional on `P₁` with the action of `a ∈ A` corresponds to precomposing a character
+of `M[p^∞]` with the action of `a`. Applied to the group algebra `A = ℤ_p[G]` of a finite group,
 this identifies `E¹(M) = Ext¹_{ℤ_p[G]}(M, ℤ_p[G])` of a module of projective dimension one with the
 Pontryagin dual of its `p`-power torsion.
 
@@ -67,14 +69,14 @@ open Module
 
 namespace TauCeti
 
-variable {p : ℕ} [Fact p.Prime] {A : Type*} [Ring A] [Algebra ℤ_[p] A]
+variable {p : ℕ} [Fact p.Prime] {A : Type*} [Ring A] [SMul ℤ_[p] A]
   {P₁ P₀ M : Type*} [AddCommGroup P₁] [Module A P₁] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁]
   [AddCommGroup P₀] [Module A P₀] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀]
   [AddCommGroup M] [Module A M] {f : P₁ →ₗ[A] P₀} {π : P₀ →ₗ[A] M}
 
 section Extension
 
-omit [Fact p.Prime] [Algebra ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
+omit [Fact p.Prime] [SMul ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
   [IsScalarTower ℤ_[p] A P₀] in
 /-- Some power of `p` carries an element of the preimage of the `p`-power torsion into the range
 of `f`. -/
@@ -89,7 +91,7 @@ private def extendDualFun (hf : Function.Exact f π) (ψ : Dual ℤ_[p] P₁)
     (y : (pPowerTorsion p A M).comap π) : ℚ_[p] :=
   (ψ (exists_nsmul_eq hf y).choose.2 : ℚ_[p]) / (p : ℚ_[p]) ^ (exists_nsmul_eq hf y).choose.1
 
-omit [Algebra ℤ_[p] A] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀] in
+omit [SMul ℤ_[p] A] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀] in
 private theorem extendDualFun_eq (hf : Function.Exact f π) (hfi : Function.Injective f)
     (ψ : Dual ℤ_[p] P₁) (y : (pPowerTorsion p A M).comap π) {n : ℕ} {k : P₁}
     (h : p ^ n • (y : P₀) = f k) : extendDualFun hf ψ y = ψ k / (p : ℚ_[p]) ^ n := by
@@ -156,7 +158,7 @@ section TorsionDual
 
 variable (hf : Function.Exact f π) (hfi : Function.Injective f) (hπ : Function.Surjective π)
 
-omit [Fact p.Prime] [Algebra ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
+omit [Fact p.Prime] [SMul ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
   [IsScalarTower ℤ_[p] A P₀] in
 private theorem exists_lift (hπ : Function.Surjective π) (t : pPowerTorsion p A M) :
     ∃ y : (pPowerTorsion p A M).comap π, ⟨π y, y.2⟩ = t := by
@@ -212,7 +214,7 @@ private theorem torsionDualMap_eq (ψ : Dual ℤ_[p] P₁) (y : (pPowerTorsion p
     torsionDualMap p hf hfi hπ ψ ⟨π y, y.2⟩ = Submodule.Quotient.mk (extendDual hf hfi ψ y) :=
   torsionDualFun_eq hf hfi hπ ψ y
 
-omit [Fact p.Prime] [Algebra ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
+omit [Fact p.Prime] [SMul ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
   [IsScalarTower ℤ_[p] A P₀] in
 /-- Every `p`-power torsion element of `M` has a lift `x ∈ P₀` with `p ^ n • x` in the range of
 `f`. -/
@@ -248,6 +250,7 @@ theorem torsionDualMap_apply_of_extension (ψ : Dual ℤ_[p] P₁) (Φ : P₀ �
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   simp [← hk, hp]
 
+variable [SMulCommClass A ℤ_[p] P₁] in
 /-- The connecting map is compatible with the contragredient actions of `A`: precomposing a
 functional with the action of `a ∈ A` on `P₁` corresponds to evaluating its image at `a • t`. -/
 @[simp]
@@ -275,27 +278,33 @@ end TorsionDual
 
 section Bijective
 
+/-!
+## Kernel and cokernel of the connecting map
+
+Throughout this section, the quotient `M / M[p^∞]` is assumed projective over `ℤ_p`. Under this
+hypothesis, the kernel consists of the functionals extending along `f`. When `P₀` is also
+projective, the connecting map induces the cokernel equivalence. Finite generation of `M`
+implies the common quotient-projectivity hypothesis.
+-/
+
 variable [Module ℤ_[p] M] [IsScalarTower ℤ_[p] A M]
 
-variable [Module.Finite ℤ_[p] M] (hf : Function.Exact f π) (hfi : Function.Injective f)
-  (hπ : Function.Surjective π)
+variable [Module.Projective ℤ_[p] (M ⧸ pPowerTorsion p A M)]
+  (hf : Function.Exact f π) (hfi : Function.Injective f) (hπ : Function.Surjective π)
 
 omit [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] in
-/-- Modulo its `p`-power torsion, a finitely generated `ℤ_p`-module is free, so `P₀ → M` has a
-section over it. -/
+/-- The surjection `P₀ → M` has a section over the projective quotient by `p`-power torsion. -/
 private theorem exists_section (hπ : Function.Surjective π) :
     ∃ σ : (M ⧸ pPowerTorsion p A M) →ₗ[ℤ_[p]] P₀,
       ∀ z, Submodule.Quotient.mk (π (σ z)) = z := by
-  have : Module.Finite ℤ_[p] (M ⧸ pPowerTorsion p A M) :=
-    .of_surjective ((pPowerTorsion p A M).mkQ.restrictScalars ℤ_[p]) <| by
-      rw [LinearMap.coe_restrictScalars]
-      exact Submodule.mkQ_surjective _
   obtain ⟨σ, hσ⟩ := projective_lifting_property
     (((pPowerTorsion p A M).mkQ ∘ₗ π).restrictScalars ℤ_[p]) LinearMap.id
     ((Submodule.mkQ_surjective _).comp hπ)
   exact ⟨σ, fun z ↦ LinearMap.congr_fun hσ z⟩
 
-/-- The kernel of the connecting map consists exactly of the functionals that extend along `f`. -/
+/-- If the quotient of `M` by its `p`-power torsion is projective over `ℤ_p`, the kernel of the
+connecting map consists exactly of the functionals that extend along `f`. In particular, this holds
+when `M` is finitely generated over `ℤ_p`. -/
 theorem ker_torsionDualMap :
     LinearMap.ker (torsionDualMap p hf hfi hπ) =
       LinearMap.range (f.restrictScalars ℤ_[p]).dualMap := by
@@ -357,9 +366,10 @@ theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
 
 variable (p) in
 /-- **`Ext¹_{ℤ_p}(M, ℤ_p)` is the Pontryagin dual of the `p`-power torsion of `M`.** For an exact
-sequence `0 → P₁ → P₀ → M → 0` with `P₀` projective over `ℤ_p` and `M` finitely generated over
-`ℤ_p`, the cokernel of `Hom(P₀, ℤ_p) → Hom(P₁, ℤ_p)` is isomorphic to
-`Hom_{ℤ_p}(M[p^∞], ℚ_p / ℤ_p)`, through the connecting map `TauCeti.torsionDualMap`. -/
+sequence `0 → P₁ → P₀ → M → 0` with `P₀` and `M / M[p^∞]` projective over `ℤ_p`, the cokernel
+of `Hom(P₀, ℤ_p) → Hom(P₁, ℤ_p)` is isomorphic to
+`Hom_{ℤ_p}(M[p^∞], ℚ_p / ℤ_p)`, through the connecting map `TauCeti.torsionDualMap`. The
+projectivity of `M / M[p^∞]` holds in particular when `M` is finitely generated over `ℤ_p`. -/
 def torsionDualEquiv [Module.Projective ℤ_[p] P₀] :
     (Dual ℤ_[p] P₁ ⧸ LinearMap.range (f.restrictScalars ℤ_[p]).dualMap) ≃ₗ[ℤ_[p]]
       (pPowerTorsion p A M →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
