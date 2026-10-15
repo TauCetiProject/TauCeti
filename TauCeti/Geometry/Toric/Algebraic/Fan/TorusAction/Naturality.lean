@@ -97,13 +97,9 @@ theorem algebraicActionMap_comp_algebraicRealizationAction :
       Φ.algebraicRealizationAction ≫ f.algebraicMap := by
   apply Fan.algebraicRealizationActionChartMap_hom_ext
   intro σ
-  rw [← Category.assoc, algebraicRealizationActionChartMap_comp_algebraicActionMap]
-  rw [Category.assoc,
-    Fan.algebraicRealizationActionChartMap_comp_algebraicRealizationAction]
-  rw [← Category.assoc, affineToricSchemeActionMap_comp_action]
-  rw [Category.assoc]
-  rw [Fan.algebraicRealizationActionChartMap_comp_algebraicRealizationAction_assoc,
-    affineToricChartι_comp_algebraicMap]
-  rw [affineToricChartMap_def]
+  simp [algebraicRealizationActionChartMap_comp_algebraicActionMap_assoc,
+    affineToricSchemeActionMap_comp_action_assoc,
+    Fan.algebraicRealizationActionChartMap_comp_algebraicRealizationAction_assoc,
+    affineToricChartι_comp_algebraicMap, affineToricChartMap_def]
 
 end TauCeti.Toric.FanHom

@@ -133,6 +133,31 @@ theorem affineToricSchemeActionMap_comp_snd
       pullback.snd _ _ ≫ affineToricSchemeMap hi hi' f g hfg hστ := by
   simp [affineToricSchemeActionMap]
 
+/-- In tensor-product coordinates, the product map on action domains is `Spec` of the tensor
+product of the two coordinate-ring maps. -/
+@[reassoc]
+theorem pullbackSpecIso_inv_comp_affineToricSchemeActionMap
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi' : IsIntegralLattice i') {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    (pullbackSpecIso ℂ (affineCoordinateRing hi ⊥) (affineCoordinateRing hi σ)).inv ≫
+        affineToricSchemeActionMap hi σ hi' f g hfg hστ =
+      Spec.map (CommRingCat.ofHom (Algebra.TensorProduct.map
+          (affineCoordinateRingMap hi hi' f g hfg (by simp [Set.MapsTo]))
+          (affineCoordinateRingMap hi hi' f g hfg hστ)).toRingHom) ≫
+        (pullbackSpecIso ℂ (affineCoordinateRing hi' ⊥) (affineCoordinateRing hi' τ)).inv := by
+  apply pullback.hom_ext <;>
+  · simp only [Category.assoc, affineToricSchemeActionMap_comp_fst,
+      affineToricSchemeActionMap_comp_snd, pullbackSpecIso_inv_fst_assoc,
+      pullbackSpecIso_inv_snd_assoc, pullbackSpecIso_inv_fst, pullbackSpecIso_inv_snd,
+      affineToricSchemeMap_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    congr 1
+    apply CommRingCat.hom_ext
+    apply RingHom.ext
+    intro x
+    simp
+
 /-- Affine toric morphisms intertwine the dense-torus actions induced by their lattice maps. -/
 @[reassoc]
 theorem affineToricSchemeActionMap_comp_action
@@ -143,41 +168,11 @@ theorem affineToricSchemeActionMap_comp_action
     affineToricSchemeActionMap hi σ hi' f g hfg hστ ≫
         affineToricSchemeAction hi' τ =
       affineToricSchemeAction hi σ ≫ affineToricSchemeMap hi hi' f g hfg hστ := by
-  rw [← cancel_epi (pullbackSpecIso ℂ _ _).inv]
-  have hmap :
-      (pullbackSpecIso ℂ (affineCoordinateRing hi ⊥)
-          (affineCoordinateRing hi σ)).inv ≫
-          affineToricSchemeActionMap hi σ hi' f g hfg hστ =
-        Spec.map (CommRingCat.ofHom (Algebra.TensorProduct.map
-          (affineCoordinateRingMap hi hi' f g hfg
-            (mapsTo_bot f g hfg))
-          (affineCoordinateRingMap hi hi' f g hfg hστ)).toRingHom) ≫
-          (pullbackSpecIso ℂ (affineCoordinateRing hi' ⊥)
-            (affineCoordinateRing hi' τ)).inv := by
-    apply pullback.hom_ext
-    · rw [Category.assoc, affineToricSchemeActionMap_comp_fst]
-      rw [← Category.assoc, pullbackSpecIso_inv_fst]
-      rw [Category.assoc, pullbackSpecIso_inv_fst]
-      simp only [affineToricSchemeMap_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-      congr 1
-      apply CommRingCat.hom_ext
-      apply RingHom.ext
-      intro x
-      simp
-    · rw [Category.assoc, affineToricSchemeActionMap_comp_snd]
-      rw [← Category.assoc, pullbackSpecIso_inv_snd]
-      rw [Category.assoc, pullbackSpecIso_inv_snd]
-      simp only [affineToricSchemeMap_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-      congr 1
-      apply CommRingCat.hom_ext
-      apply RingHom.ext
-      intro x
-      simp
-  rw [← Category.assoc, hmap, Category.assoc,
-    pullbackSpecIso_inv_comp_affineToricSchemeAction]
-  rw [← Category.assoc, pullbackSpecIso_inv_comp_affineToricSchemeAction]
-  rw [affineToricSchemeMap_def]
-  simp only [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  rw [← cancel_epi (pullbackSpecIso ℂ _ _).inv,
+    pullbackSpecIso_inv_comp_affineToricSchemeActionMap_assoc]
+  simp only [pullbackSpecIso_inv_comp_affineToricSchemeAction,
+    pullbackSpecIso_inv_comp_affineToricSchemeAction_assoc, affineToricSchemeMap_def,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
   exact congrArg (fun k ↦ Spec.map (CommRingCat.ofHom k.toRingHom))
     (affineCoordinateRingCoaction_comp_map hi hi' f g hfg hστ).symm
 
