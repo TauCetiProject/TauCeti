@@ -53,6 +53,9 @@ of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq
   of `p` at `a`, and the Lazard evaluation is that Taylor coefficient.
 * `MvPolynomial.lazardEval_mul`, `MvPolynomial.lazardExponent_mul`: without zero divisors, Lazard
   evaluation is multiplicative and the removed exponents add.
+* `MvPolynomial.lazardEval_add_of_lazardValuation_lt`,
+  `MvPolynomial.lazardExponent_add_of_lazardValuation_lt`: a summand of strictly smaller Lazard
+  valuation determines the Lazard evaluation and the removed exponents of a sum.
 
 ## References
 
@@ -243,6 +246,30 @@ theorem lazardExponent_eq_zero_iff {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) {
   refine ⟨fun h ↦ ?_, lazardExponent_eq_zero_of_eval_ne_zero⟩
   rw [← constantCoeff_taylor, constantCoeff_eq, ← h, coeff_taylor_lazardExponent]
   exact lazardEval_ne_zero hp a
+
+/-- If `p` has strictly smaller Lazard valuation at `a` than `q`, then Lazard evaluation removes
+the same powers from `p + q` as from `p`. -/
+theorem lazardExponent_add_of_lazardValuation_lt {p q : MvPolynomial (Fin n) S} {a : Fin n → S}
+    (h : p.lazardValuation a < q.lazardValuation a) :
+    (p + q).lazardExponent a = p.lazardExponent a := by
+  have hp : p ≠ 0 := by simpa using h.ne_top
+  have hv := lazardValuation_add_of_lt h
+  have hpq : p + q ≠ 0 := by
+    rw [Ne, ← lazardValuation_eq_top_iff (a := a), hv]
+    exact h.ne_top
+  rw [lazardValuation_eq_lazardExponent hpq, lazardValuation_eq_lazardExponent hp] at hv
+  exact toLex.injective (WithTop.coe_injective hv)
+
+/-- If `p` has strictly smaller Lazard valuation at `a` than `q`, then `p + q` has the Lazard
+evaluation of `p` at `a`. -/
+theorem lazardEval_add_of_lazardValuation_lt {p q : MvPolynomial (Fin n) S} {a : Fin n → S}
+    (h : p.lazardValuation a < q.lazardValuation a) :
+    (p + q).lazardEval a = p.lazardEval a := by
+  have hp : p ≠ 0 := by simpa using h.ne_top
+  have hq : (taylor a q).coeff (p.lazardExponent a) = 0 :=
+    coeff_taylor_eq_zero_of_lt_lazardValuation (by rwa [← lazardValuation_eq_lazardExponent hp])
+  rw [← coeff_taylor_lazardExponent, lazardExponent_add_of_lazardValuation_lt h]
+  simp [hq, coeff_taylor_lazardExponent]
 
 /-- Lazard evaluation removes exactly one power of `Xᵢ - aᵢ` from `Xᵢ - aᵢ`. -/
 @[simp]
