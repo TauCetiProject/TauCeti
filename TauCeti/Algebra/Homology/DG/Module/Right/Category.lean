@@ -272,6 +272,7 @@ theorem mem_grading_zero (hM : M.IsConcentratedInDegreeZero) (x : M) : x ∈ M.g
 
 /-- In a DG module concentrated in degree zero, an element has degree `q` exactly when `q = 0` or
 the element is zero. -/
+@[simp]
 theorem mem_grading_iff (hM : M.IsConcentratedInDegreeZero) {q : ℤ} {x : M} :
     x ∈ M.grading q ↔ q = 0 ∨ x = 0 := by
   by_cases hq : q = 0
@@ -282,6 +283,7 @@ theorem mem_grading_iff (hM : M.IsConcentratedInDegreeZero) {q : ℤ} {x : M} :
 
 /-- The differential of a DG module concentrated in degree zero vanishes, as it raises the degree
 by one. -/
+@[simp]
 theorem differential_eq_zero (hM : M.IsConcentratedInDegreeZero) : M.differential = 0 := by
   ext x
   have hx := M.isDGRightModule.isHomogeneous.map_mem (hM.mem_grading_zero x)
