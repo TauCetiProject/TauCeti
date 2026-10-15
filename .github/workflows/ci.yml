@@ -153,6 +153,7 @@ jobs:
           python3 scripts/test_lake_cache_get.py
           python3 scripts/test_lake_cache_reuse.py
           python3 scripts/test_lake_cache_publish.py
+          python3 scripts/test_finalize_batch.py
           PYTHONPATH=. python3 scripts/perf/test_perf.py
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
