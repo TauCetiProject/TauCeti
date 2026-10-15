@@ -29,6 +29,7 @@ polar decomposition.
 * `LinearMap.operatorAbs`: the modulus `sqrt (A† A)` of a rectangular linear map.
 * `LinearMap.norm_operatorAbs_apply`: `‖|A|x‖ = ‖Ax‖`.
 * `LinearMap.ker_operatorAbs`, `LinearMap.range_operatorAbs`: the kernel and range of the modulus.
+* `LinearMap.operatorAbs_injective_iff`: the modulus is injective exactly when the map is.
 * `LinearMap.commute_operatorAbs_of_commute`: an endomorphism commuting with `A† A` commutes
   with `|A|`.
 * `LinearMap.commute_operatorAbs`: a normal endomorphism commutes with its modulus.
@@ -176,6 +177,12 @@ theorem norm_operatorAbs_apply (A : E →ₗ[𝕜] F) (x : E) :
 @[simp]
 theorem ker_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.ker = A.ker := by
   rw [operatorAbs, (isPositive_adjoint_comp_self A).ker_sqrt, ker_adjoint_comp_self]
+
+/-- The modulus of a map is injective exactly when the map is. -/
+@[simp]
+theorem operatorAbs_injective_iff {A : E →ₗ[𝕜] F} :
+    Function.Injective A.operatorAbs ↔ Function.Injective A := by
+  rw [← ker_eq_bot, ← ker_eq_bot, ker_operatorAbs]
 
 /-- The range of the modulus is the orthogonal complement of the original map's kernel. -/
 @[simp]

@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 /-!
 # The rational basis of the adic spectrum
 
-**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.29, Remark 7.30(5),
+**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.29, Remark 7.30(4) and (5),
 and Theorem 7.35.**
 
 Let `P = (A₀,I)` be a pair of definition of a Huber ring. The rational subsets
@@ -49,6 +49,10 @@ the basis arguments uses it.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit`: a
+  rational subset `R(T/s)` with unit denominator belongs to the family for every finite `T`, which
+  is Wedhorn Remark 7.30(4); `TauCeti.ValuationSpectrum.setOf_vle_one_mem_spaRationalFamily` is
+  its case `R(f/1) = {v : v(f) ≤ 1}`.
 * `TauCeti.ValuationSpectrum.inter_mem_spaRationalFamily`: the family is closed under binary
   intersections, which is Wedhorn Remark 7.30(5).
 * `TauCeti.ValuationSpectrum.biInter_mem_spaRationalFamily`: the family is closed under *finite*
@@ -166,6 +170,28 @@ theorem univ_mem_spaRationalFamily (Aplus : Subring A) :
     exact isOpen_univ
   · rw [rationalSubset_singleton_one]
     exact (Subtype.coe_preimage_self (spa Aplus)).symm
+
+/-- **Wedhorn Remark 7.30(4).** If the denominator `s` is a unit, then `R(T/s)` is a rational
+subset for every finite `T`, whether or not `T · A` is open: it is also `R((T ∪ {s})/s)`, and the
+numerator ideal of that presentation is the unit ideal. -/
+theorem val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit (Aplus : Subring A)
+    (T : Finset A) {s : A} (hs : IsUnit s) :
+    Subtype.val ⁻¹' rationalSubset Aplus T s ∈ spaRationalFamily Aplus := by
+  classical
+  refine ⟨insert s T, s, ?_, by rw [rationalSubset_insert_self]⟩
+  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr
+    (Finset.mem_insert_self s T))) hs]
+  exact isOpen_univ
+
+/-- **Wedhorn Remark 7.30(4)** for the denominator `1`: for every `f : A`, the locus
+`{v : v(f) ≤ 1}` of `Spa(A, A⁺)` is the rational subset `R(f/1)`. -/
+theorem setOf_vle_one_mem_spaRationalFamily (Aplus : Subring A) (f : A) :
+    {v : spa Aplus | v.1.toValuativeRel.vle f 1} ∈ spaRationalFamily Aplus := by
+  have h : {v : spa Aplus | v.1.toValuativeRel.vle f 1} =
+      Subtype.val ⁻¹' rationalSubset Aplus {f} 1 := by
+    ext v
+    simp [v.1.toValuativeRel.not_vle_one_zero]
+  exact h ▸ val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit Aplus {f} isUnit_one
 
 section TopologicalRing
 

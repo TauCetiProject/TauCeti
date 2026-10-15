@@ -20,6 +20,41 @@ prose identifying local prerequisite PRs. A label, author, import, shared file,
 branch name, non-main base alone, or mention in code/quoted/negative prose does
 not prove stacking. Discovery by prose never suffices for closure.
 
+Explicit declarations use GitHub's rendered body, read through the canonical PR
+API with matching raw body and head identity, then cached within the sweep.
+The HTML is parsed as data: code, blockquotes, quotation/retracted elements and link labels
+cannot provide declarations. Canonical local PR links identify parents only when
+their complete text label is exactly the matching #N or canonical PR URL.
+Descriptive, qualified, alternative or mismatched labels remain opaque, including
+formatted labels; removing their wording cannot manufacture unconditional claims.
+Visible link-label text can still veto negated/retracted claims; deleting a
+negative label must not turn its surrounding prose into an affirmative claim.
+Suppressed markup also participates in these conservative vetoes, so formatting
+negation as code inside a link cannot remove it; this may decline other valid
+body-only declarations alongside quoted/code examples.
+Only complete affirmative declarations beginning a rendered sentence (optionally
+with this PR or this branch) qualify. Their tail must contain only the contiguous
+parent-reference list and closing punctuation, without questions, conditions or
+extra qualifying prose. Questions/conditional context elsewhere in the body also
+decline body-only inference. Example-prefixed prose does not qualify. Literal quoted
+prose or explicit negative/example/historical context conservatively disables body-only
+inference for that body, including quotations spanning paragraphs. Whitespace
+within paragraphs is normalized and excluded inline elements retain opaque
+placeholders, so removing them cannot manufacture a sentence start.
+These restrictions may miss valid declarations;
+exact ancestry/base evidence remains available independently. Inaccessible or
+changed rendered metadata is an unknown result, never closure authority.
+The entire rendered body must use this closed declaration language, optionally
+with an exact Roadmap attribution or canonical Refs field. Mixed narrative,
+headings with other text, task checkboxes, images and unsupported markup decline
+body-only authority: their context cannot be interpreted reliably from keywords.
+This intentionally leaves ordinary mixed descriptions to independent graph/base
+proofs, and preserves simple explicit declarations for rebased/cherry-picked work.
+Supported wording is stacked on, depends on, prerequisites/dependencies/parent PR,
+or carries (unmerged/prerequisite) commits from. Based on and built on alone do
+not establish a current dependency. A declined declaration also retains any
+existing policy-owned blocking label until the uncertainty is resolved.
+
 A confirmed stack must have a current parent identity and a complete individual
 parent commit patch reverse-applicable to the child's current source tree.
 It must also have an exact unmerged ancestor head or a canonical parent branch
