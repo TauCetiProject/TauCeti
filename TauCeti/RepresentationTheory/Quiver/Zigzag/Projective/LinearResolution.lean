@@ -24,8 +24,8 @@ Let `P` be a graded `Z`-module whose underlying module is projective and which i
 its homogeneous piece `P_n`. Then `P` is determined degreewise by the vertex parts `e_u • P_n`:
 
 ```text
-e_u • P_{n+2} ≅ e_u • P_n,                 x ↦ x_u • x,
-e_u • P_{n+1} ≅ ⨁_{w ∼ u} e_w • P_n,         (x_w)_w ↦ ∑_w a_{w → u} • x_w,
+e_u • P_n ≅ e_u • P_{n+2},                 x ↦ x_u • x,
+⨁_{w ∼ u} e_w • P_n ≅ e_u • P_{n+1},         (x_w)_w ↦ ∑_w a_{w → u} • x_w,
 ```
 
 and `P` vanishes in all other degrees. The maps are onto because `Z` is spanned by idempotents,
@@ -114,20 +114,6 @@ private theorem zigzagPositiveSpan_le_iSup :
     exact Submodule.smul_mem _ _ (le_iSup₂ (f := fun (i : ℤ) (_ : 0 < i) =>
       zigzagIntegerGrade k G i) 2 two_pos (zigzagVolume_mem_zigzagIntegerGrade_two k G i))
 
-/-- An element `c` of `e_u Z` with `x_u c = 0` lies in the radical. -/
-private theorem mem_zigzagPositiveSpan_of_zigzagVolume_mul_eq_zero {u : V}
-    {c : nonisolatedZigzagQuotient k G} (hc : zigzagVertexIdempotent k G u * c = c)
-    (h : zigzagVolume k G u * c = 0) : c ∈ zigzagPositiveSpan k G := by
-  classical
-  rw [mem_zigzagPositiveSpan_iff hns]
-  intro i
-  rcases eq_or_ne i u with rfl | hne
-  · rw [zigzagVolume_mul hns, smul_eq_zero] at h
-    obtain ⟨j, hij⟩ := hns i
-    exact h.resolve_right (zigzagVolume_ne_zero k G hij)
-  · rw [← zigzagTrivialCoeff_apply_eq_repr hns, ← hc, map_mul, Pi.mul_apply,
-      zigzagTrivialCoeff_vertexIdempotent, ite_eq_right (Ne.symm hne), zero_mul]
-
 /-! ### Graded projectives generated in one degree -/
 
 variable {P : GradedModuleCat.{v} (zigzagIntegerGrade k G)}
@@ -207,7 +193,7 @@ private theorem bijective_zigzagVolumeSMulPiece
     exact ⟨⟨x, hx⟩, Subtype.ext (hxz.trans hz.2)⟩
   intro y hy
   rw [add_comm, hP.piece_add_eq_smul (zigzagIntegerGrade k G),
-    show (2 : ℤ) = ((2 : ℕ) : ℤ) from rfl, zigzagIntegerGrade_ofNat,
+    ← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
     zigzagGrade_two_eq_span_range_zigzagVolume] at hy
   refine Submodule.smul_induction_on hy (fun a ha w hw => ?_) (fun y₁ y₂ h₁ h₂ => ?_)
   · induction ha using Submodule.span_induction with
@@ -327,7 +313,7 @@ private theorem bijective_zigzagArrowSumPiece
       exact ⟨f, Subtype.ext (hf.trans hz.2)⟩
     intro y hy
     rw [add_comm, hP.piece_add_eq_smul (zigzagIntegerGrade k G),
-      show (1 : ℤ) = ((1 : ℕ) : ℤ) from rfl, zigzagIntegerGrade_ofNat,
+      ← Nat.cast_one (R := ℤ), zigzagIntegerGrade_ofNat,
       zigzagGrade_one_eq_span_range_ofArrow] at hy
     refine Submodule.smul_induction_on hy (fun a ha w hw => ?_) (fun y₁ y₂ h₁ h₂ => ?_)
     · induction ha using Submodule.span_induction with
@@ -479,18 +465,17 @@ private theorem finiteDimensional_smul_piece [Module.Finite k M] (hr : r.IsLinea
 
 variable [Fintype V] [DecidableRel G.Adj]
 
-/-- **Degree one of a linear resolution** of a module concentrated in degree `0`: the multiplicity
+/-- **Degree one of a linear resolution** of a module `M` with `e_u • M₁ = 0`: the multiplicity
 of `P_u{1}` in `X₁` is the sum of the multiplicities in `X₀` over the neighbours of `u`. -/
 theorem finrank_zigzagVertexIdempotent_smul_piece_one_of_isLinear [Module.Finite k M]
-    (hM : ∀ (u : V) (p : ℤ), p ≠ 0 → zigzagVertexIdempotent k G u • M.grading.piece p = ⊥)
-    (hr : r.IsLinear) (u : V) :
+    (hr : r.IsLinear) {u : V} (hM : zigzagVertexIdempotent k G u • M.grading.piece 1 = ⊥) :
     Module.finrank k ↥(zigzagVertexIdempotent k G u • (r.grading 1).piece 1) =
       ∑ w ∈ G.neighborFinset u,
         Module.finrank k ↥(zigzagVertexIdempotent k G w • (r.grading 0).piece 0) := by
   have := r.projective 0
   have := finiteDimensional_smul_piece hns hr 0
   have hM₁ : Subsingleton ↥(zigzagVertexIdempotent k G u • M.grading.piece 1) := by
-    rw [hM u 1 one_ne_zero]
+    rw [hM]
     infer_instance
   have hsurj : Function.Surjective (GradedModuleCat.smulPieceMap (zigzagVertexIdempotent k G u)
       (r.differential 0) 1) := fun x => (exact_smulPieceMap_augmentation u 1 x).1
@@ -502,14 +487,13 @@ theorem finrank_zigzagVertexIdempotent_smul_piece_one_of_isLinear [Module.Finite
   exact h₁.trans h₂
 
 /-- **The multiplicity recursion of a linear resolution.** Let `X` be a linear graded projective
-resolution of a finite-dimensional graded module concentrated in degree `0` over the zigzag algebra
-of a finite graph without isolated vertices. Then the multiplicities
+resolution of a finite-dimensional graded module `M` over the zigzag algebra of a finite graph
+without isolated vertices, and let `u` be a vertex with `e_u • M₂ = 0`. Then the multiplicities
 `m_n(u) = dim_k (e_u • (X_n)_n)` of the shifted projectives `P_u{n}` in `X_n` satisfy
 `m_{p+2}(u) + m_p(u) = ∑_{w ∼ u} m_{p+1}(w)`. -/
 theorem finrank_zigzagVertexIdempotent_smul_piece_add_two_add_finrank_of_isLinear
-    [Module.Finite k M]
-    (hM : ∀ (u : V) (p : ℤ), p ≠ 0 → zigzagVertexIdempotent k G u • M.grading.piece p = ⊥)
-    (hr : r.IsLinear) (p : ℕ) (u : V) :
+    [Module.Finite k M] (hr : r.IsLinear) (p : ℕ) {u : V}
+    (hM : zigzagVertexIdempotent k G u • M.grading.piece 2 = ⊥) :
     Module.finrank k ↥(zigzagVertexIdempotent k G u • (r.grading (p + 2)).piece (p + 2 : ℕ)) +
         Module.finrank k ↥(zigzagVertexIdempotent k G u • (r.grading p).piece p) =
       ∑ w ∈ G.neighborFinset u,
@@ -527,11 +511,10 @@ theorem finrank_zigzagVertexIdempotent_smul_piece_add_two_add_finrank_of_isLinea
   have hfg : Function.Exact f g := exact_smulPieceMap_differential u p _
   have hg : Function.Surjective g := by
     rcases p with _ | q
-    · have : Subsingleton
-          ↥(zigzagVertexIdempotent k G u • M.grading.piece ((0 + 2 : ℕ) : ℤ)) := by
-        rw [hM u _ (by omega)]
+    · have : Subsingleton ↥(zigzagVertexIdempotent k G u • M.grading.piece 2) := by
+        rw [hM]
         infer_instance
-      exact fun x => (exact_smulPieceMap_augmentation u _ x).1 (Subsingleton.elim _ _)
+      exact fun x => (exact_smulPieceMap_augmentation u 2 x).1 (Subsingleton.elim _ _)
     · have := subsingleton_smul_piece_of_add_two_lt hr u (n := q) (p := ((q + 1 + 2 : ℕ) : ℤ))
         (by omega)
       exact fun x => (exact_smulPieceMap_differential u q _ x).1 (Subsingleton.elim _ _)
@@ -607,12 +590,13 @@ theorem zigzagGradedCartanMatrix_map_aeval_neg_X_mulVec_eq [Module.Finite k M]
   ext n
   rcases n with _ | _ | p
   · simp [finrank_zigzagVertexIdempotent_smul_piece_zero_of_isLinear hr u]
-  · have h := finrank_zigzagVertexIdempotent_smul_piece_one_of_isLinear hns hM hr u
+  · have h := finrank_zigzagVertexIdempotent_smul_piece_one_of_isLinear hns hr (hM u 1 one_ne_zero)
     simp only [map_sub, add_mul, one_mul, map_add, coeff_X_pow_mul', coeff_succ_X_mul, map_sum,
       coeff_mk, coeff_C]
     simp [h]
   · have h :=
-      finrank_zigzagVertexIdempotent_smul_piece_add_two_add_finrank_of_isLinear hns hM hr p u
+      finrank_zigzagVertexIdempotent_smul_piece_add_two_add_finrank_of_isLinear hns hr p
+        (hM u 2 two_ne_zero)
     simp only [map_sub, add_mul, one_mul, map_add, coeff_X_pow_mul', coeff_succ_X_mul, map_sum,
       coeff_mk, coeff_C]
     simp only [show 2 ≤ p + 2 by omega, show p + 1 + 1 = p + 2 from rfl,

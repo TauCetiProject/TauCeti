@@ -367,6 +367,7 @@ instance (i : V) : Module.Finite k (zigzagGradedSimple k G i) :=
 /-- **The graded dimension of `e_j • S_i` is `δ_{ji}`**: the graded vertex simple `S_i` is
 one-dimensional, concentrated in degree zero, and the vertex idempotent `e_j` acts on it by
 `δ_{ji}`. -/
+@[simp]
 theorem smulGradedDimension_zigzagGradedSimple [DecidableEq V] (j i : V) :
     (zigzagGradedSimple k G i).smulGradedDimension (zigzagVertexIdempotent k G j) =
       if j = i then 1 else 0 :=
