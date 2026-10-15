@@ -54,7 +54,9 @@ theorem logHeight_eq_finsupp (p : MvPolynomial σ K) :
 
 /-- Multivariate height is the height of the tuple indexed by its nonzero coefficients. -/
 theorem mulHeight_eq_support (p : MvPolynomial σ K) :
-    p.mulHeight = Height.mulHeight (fun i : p.support ↦ p.coeff i) := (rfl)
+    p.mulHeight = Height.mulHeight (fun i : p.support ↦ p.coeff i) := by
+  -- The native coefficient vector has definitionally the same support and evaluations.
+  rfl
 
 /-- Padding a finite coefficient tuple with zeroes does not change multivariate height. -/
 theorem mulHeight_eq_coeff (p : MvPolynomial σ K) (s : Finset (σ →₀ ℕ))
@@ -73,7 +75,7 @@ theorem one_le_mulHeight (p : MvPolynomial σ K) : 1 ≤ p.mulHeight :=
   Finsupp.one_le_mulHeight _
 
 theorem mulHeight_pos (p : MvPolynomial σ K) : 0 < p.mulHeight :=
-  lt_of_lt_of_le zero_lt_one (one_le_mulHeight p)
+  Finsupp.mulHeight_pos _
 
 theorem logHeight_nonneg (p : MvPolynomial σ K) : 0 ≤ p.logHeight := by
   rw [logHeight_eq_log_mulHeight]
@@ -143,7 +145,16 @@ theorem mulHeight_C_mul (p : MvPolynomial σ K) {c : K} (hc : c ≠ 0) :
 @[simp]
 theorem logHeight_smul (p : MvPolynomial σ K) {c : K} (hc : c ≠ 0) :
     (c • p).logHeight = p.logHeight := by
-  rw [logHeight_eq_log_mulHeight, mulHeight_smul p hc, logHeight_eq_log_mulHeight]
+  simpa only [logHeight_eq_finsupp, AddMonoidAlgebra.coeff_smul] using
+    Finsupp.logHeight_smul (AddMonoidAlgebra.coeff p) hc
+
+@[simp]
+theorem mulHeight_neg (p : MvPolynomial σ K) : (-p).mulHeight = p.mulHeight := by
+  simpa only [neg_one_smul] using mulHeight_smul p (neg_ne_zero.mpr one_ne_zero)
+
+@[simp]
+theorem logHeight_neg (p : MvPolynomial σ K) : (-p).logHeight = p.logHeight := by
+  simpa only [neg_one_smul] using logHeight_smul p (neg_ne_zero.mpr one_ne_zero)
 
 @[simp]
 theorem logHeight_C_mul (p : MvPolynomial σ K) {c : K} (hc : c ≠ 0) :
@@ -151,20 +162,13 @@ theorem logHeight_C_mul (p : MvPolynomial σ K) {c : K} (hc : c ≠ 0) :
   rw [logHeight_eq_log_mulHeight, mulHeight_C_mul p hc, logHeight_eq_log_mulHeight]
 
 /-- Injective renaming of variables preserves projective coefficient height. -/
+@[simp]
 theorem mulHeight_rename (p : MvPolynomial σ K) {f : σ → τ} (hf : Function.Injective f) :
     (rename f p).mulHeight = p.mulHeight := by
-  let e : (σ →₀ ℕ) ↪ (τ →₀ ℕ) := ⟨Finsupp.mapDomain f, Finsupp.mapDomain_injective hf⟩
-  have hcoeff : AddMonoidAlgebra.coeff (rename f p) =
-      (AddMonoidAlgebra.coeff p).embDomain e := by
-    ext d
-    by_cases hd : ∃ a, e a = d
-    · obtain ⟨a, rfl⟩ := hd
-      rw [Finsupp.embDomain_apply_self]
-      exact coeff_rename_mapDomain f hf p a
-    · rw [Finsupp.embDomain_of_notMem_range e _ d hd]
-      exact coeff_rename_eq_zero f p d (fun a ha ↦ (hd ⟨a, ha⟩).elim)
-  rw [mulHeight_eq_finsupp, hcoeff, Finsupp.mulHeight_embDomain, mulHeight_eq_finsupp]
+  rw [mulHeight_eq_finsupp, coeff_rename_eq_embDomain p hf, Finsupp.mulHeight_embDomain,
+    mulHeight_eq_finsupp]
 
+@[simp]
 theorem logHeight_rename (p : MvPolynomial σ K) {f : σ → τ} (hf : Function.Injective f) :
     (rename f p).logHeight = p.logHeight := by
   rw [logHeight_eq_log_mulHeight, mulHeight_rename p hf, logHeight_eq_log_mulHeight]
@@ -179,8 +183,8 @@ variable {K σ : Type*} [Field K] [Height.AdmissibleAbsValues K]
 @[simp]
 theorem mulHeight_toMvPolynomial (p : K[X]) (i : σ) :
     (p.toMvPolynomial i).mulHeight = p.mulHeight := by
-  rw [MvPolynomial.mulHeight_eq_finsupp, coeff_toMvPolynomial, Finsupp.mulHeight_embDomain,
-    mulHeight_eq_finsupp]
+  rw [MvPolynomial.mulHeight_eq_finsupp, MvPolynomial.coeff_toMvPolynomial_eq_embDomain,
+    Finsupp.mulHeight_embDomain, mulHeight_eq_finsupp]
 
 @[simp]
 theorem logHeight_toMvPolynomial (p : K[X]) (i : σ) :

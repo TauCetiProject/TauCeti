@@ -47,10 +47,14 @@ theorem logHeight_zero : (0 : α →₀ K).logHeight = 0 := by
 theorem one_le_mulHeight (x : α →₀ K) : 1 ≤ x.mulHeight :=
   Height.one_le_mulHeight _
 
+theorem mulHeight_pos (x : α →₀ K) : 0 < x.mulHeight :=
+  zero_lt_one.trans_le (one_le_mulHeight x)
+
 /-- The full coefficient function and its nonzero support have the same projective height,
 even when the index type is infinite. -/
 theorem mulHeight_eq_mulHeight_coe (x : α →₀ K) : x.mulHeight = Height.mulHeight ⇑x := by
   classical
+  -- Mathlib's support-restriction theorem requires a finite index type; here α is arbitrary.
   rcases eq_or_ne x 0 with rfl | hx
   · simp [Finsupp.mulHeight]
   have hfun : (⇑x : α → K) ≠ 0 := by simpa using hx
@@ -85,14 +89,26 @@ theorem mulHeight_single (i : α) (c : K) : (single i c).mulHeight = 1 := by
   rw [mulHeight_eq_of_support_subset _ {i} support_single_subset]
   exact Height.mulHeight_eq_one_of_subsingleton _
 
+@[simp]
+theorem logHeight_single (i : α) (c : K) : (single i c).logHeight = 0 := by
+  simp [logHeight_eq_log_mulHeight_support]
+
 /-- Multiplication by a nonzero scalar preserves projective coefficient height. -/
+@[simp]
 theorem mulHeight_smul (x : α →₀ K) {c : K} (hc : c ≠ 0) :
     (c • x).mulHeight = x.mulHeight := by
   classical
   rw [mulHeight_eq_of_support_subset _ x.support (support_smul_eq hc).subset]
   exact Height.mulHeight_smul_eq_mulHeight (fun i : x.support ↦ x i) hc
 
+@[simp]
+theorem logHeight_smul (x : α →₀ K) {c : K} (hc : c ≠ 0) :
+    (c • x).logHeight = x.logHeight := by
+  rw [logHeight_eq_log_mulHeight_support, mulHeight_smul x hc,
+    logHeight_eq_log_mulHeight_support]
+
 /-- Injective reindexing preserves the height of a finitely supported coefficient vector. -/
+@[simp]
 theorem mulHeight_embDomain (x : α →₀ K) (f : α ↪ β) :
     (x.embDomain f).mulHeight = x.mulHeight := by
   classical
@@ -101,5 +117,11 @@ theorem mulHeight_embDomain (x : α →₀ K) (f : α ↪ β) :
   congr 1
   ext i
   exact embDomain_apply_self f x i
+
+@[simp]
+theorem logHeight_embDomain (x : α →₀ K) (f : α ↪ β) :
+    (x.embDomain f).logHeight = x.logHeight := by
+  rw [logHeight_eq_log_mulHeight_support, mulHeight_embDomain,
+    logHeight_eq_log_mulHeight_support]
 
 end Finsupp

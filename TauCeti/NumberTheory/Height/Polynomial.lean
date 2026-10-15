@@ -52,7 +52,9 @@ theorem logHeight_eq_finsupp (p : K[X]) : p.logHeight = p.toFinsupp.coeff.logHei
 
 /-- Polynomial height is the height of the tuple indexed by its nonzero coefficients. -/
 theorem mulHeight_eq_support (p : K[X]) :
-    p.mulHeight = Height.mulHeight (fun i : p.support ↦ p.coeff i) := (rfl)
+    p.mulHeight = Height.mulHeight (fun i : p.support ↦ p.coeff i) := by
+  -- The native coefficient vector has definitionally the same support and evaluations.
+  rfl
 
 /-- Any finite coefficient tuple extending past the degree gives the polynomial height. -/
 theorem mulHeight_eq_coeff (p : K[X]) {n : ℕ} (hn : p.natDegree < n) :
@@ -62,6 +64,7 @@ theorem mulHeight_eq_coeff (p : K[X]) {n : ℕ} (hn : p.natDegree < n) :
     (Equiv.subtypeEquivProp (by ext; simp))
   rw [mulHeight_eq_finsupp, Finsupp.mulHeight_eq_of_support_subset _ (Finset.range n)
     (by rw [support_toFinsupp]; exact p.supp_subset_range hn), ← Height.mulHeight_comp_equiv e]
+  -- Reindexing along `e` is definitionally the usual finite coefficient tuple.
   rfl
 
 /-- The finite coefficient-tuple description of logarithmic polynomial height. -/
@@ -74,7 +77,7 @@ theorem one_le_mulHeight (p : K[X]) : 1 ≤ p.mulHeight :=
   Finsupp.one_le_mulHeight _
 
 theorem mulHeight_pos (p : K[X]) : 0 < p.mulHeight :=
-  lt_of_lt_of_le zero_lt_one (one_le_mulHeight p)
+  Finsupp.mulHeight_pos _
 
 theorem logHeight_nonneg (p : K[X]) : 0 ≤ p.logHeight := by
   rw [logHeight_eq_log_mulHeight]
@@ -142,7 +145,16 @@ theorem mulHeight_C_mul (p : K[X]) {c : K} (hc : c ≠ 0) :
 @[simp]
 theorem logHeight_smul (p : K[X]) {c : K} (hc : c ≠ 0) :
     (c • p).logHeight = p.logHeight := by
-  rw [logHeight_eq_log_mulHeight, mulHeight_smul p hc, logHeight_eq_log_mulHeight]
+  simpa [logHeight_eq_finsupp, toFinsupp_smul] using
+    Finsupp.logHeight_smul p.toFinsupp.coeff hc
+
+@[simp]
+theorem mulHeight_neg (p : K[X]) : (-p).mulHeight = p.mulHeight := by
+  simpa only [neg_one_smul] using mulHeight_smul p (neg_ne_zero.mpr one_ne_zero)
+
+@[simp]
+theorem logHeight_neg (p : K[X]) : (-p).logHeight = p.logHeight := by
+  simpa only [neg_one_smul] using logHeight_smul p (neg_ne_zero.mpr one_ne_zero)
 
 @[simp]
 theorem logHeight_C_mul (p : K[X]) {c : K} (hc : c ≠ 0) :
@@ -163,6 +175,47 @@ theorem mulHeight_X_sub_C (a : K) : (X - C a).mulHeight = Height.mulHeight₁ a 
 theorem logHeight_X_sub_C (a : K) : (X - C a).logHeight = Height.logHeight₁ a := by
   rw [logHeight_eq_log_mulHeight, mulHeight_X_sub_C, Height.logHeight₁_eq_log_mulHeight₁]
 
+/-- The coefficient matrix for multiplication by `g`, with columns indexed by the
+coefficients of `f`; entries outside the convolution range are padded by zeroes. -/
+private def convolutionMatrix (f g : K[X]) :
+    Fin (f.natDegree + g.natDegree + 1) × Fin (f.natDegree + 1) → K :=
+  fun ji ↦ if ji.2.val ≤ ji.1.val then g.coeff (ji.1.val - ji.2.val) else 0
+
+omit [Height.AdmissibleAbsValues K] in
+private theorem coeff_mul_eq_convolution (f g : K[X]) :
+    (fun j : Fin (f.natDegree + g.natDegree + 1) ↦ (f * g).coeff j) =
+      (fun j ↦ ∑ i : Fin (f.natDegree + 1), convolutionMatrix f g (j, i) * f.coeff i) := by
+  classical
+  ext j
+  rw [congrArg (fun p : K[X] ↦ (p * g).coeff j.val) f.as_sum_range_C_mul_X_pow]
+  simp only [Finset.sum_mul, finsetSum_coeff, mul_assoc, coeff_C_mul,
+    coeff_X_pow_mul', convolutionMatrix]
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦
+    (if i ≤ j.val then g.coeff (j.val - i) else 0) * f.coeff i)]
+  apply Finset.sum_congr rfl
+  intro i hi
+  split_ifs <;> ring
+
+private theorem mulHeight_convolutionMatrix_le (f g : K[X]) :
+    Height.mulHeight (convolutionMatrix f g) ≤ g.mulHeight := by
+  classical
+  let x : Fin (g.natDegree + 1) ⊕ Unit → K :=
+    Sum.elim (fun i ↦ g.coeff i) 0
+  let r : Fin (f.natDegree + g.natDegree + 1) × Fin (f.natDegree + 1) →
+      Fin (g.natDegree + 1) ⊕ Unit := fun ji ↦
+    if h : ji.2.val ≤ ji.1.val ∧ ji.1.val - ji.2.val < g.natDegree + 1 then
+      .inl ⟨ji.1.val - ji.2.val, h.2⟩ else .inr ()
+  have hr : convolutionMatrix f g = x ∘ r := by
+    ext ji
+    simp only [convolutionMatrix, x, r, Function.comp_apply]
+    split_ifs with h₁ h₂ h₂
+    · rfl
+    · exact coeff_eq_zero_of_natDegree_lt (by omega)
+    · simp_all
+    · rfl
+  rw [hr, mulHeight_eq_coeff g (Nat.lt_succ_self _)]
+  simpa [x, Height.mulHeight_sumElim_zero_eq] using Height.mulHeight_comp_le r x
+
 /-- The height of a product is bounded by the product of coefficient heights,
 with the archimedean convolution factor given by the smaller degree plus one. -/
 theorem mulHeight_mul_le (f g : K[X]) :
@@ -172,43 +225,25 @@ theorem mulHeight_mul_le (f g : K[X]) :
   classical
   wlog hfg : f.natDegree ≤ g.natDegree generalizing f g
   · simpa [mul_comm, mul_left_comm, mul_assoc, min_comm] using this g f (le_of_not_ge hfg)
-  let A : Fin (f.natDegree + g.natDegree + 1) × Fin (f.natDegree + 1) → K :=
-    fun ji ↦ if ji.2.val ≤ ji.1.val then g.coeff (ji.1.val - ji.2.val) else 0
-  have hc : (fun j : Fin (f.natDegree + g.natDegree + 1) ↦ (f * g).coeff j) =
-      (fun j ↦ ∑ i : Fin (f.natDegree + 1), A (j, i) * f.coeff i) := by
-    ext j
-    rw [congrArg (fun p : K[X] ↦ (p * g).coeff j.val) f.as_sum_range_C_mul_X_pow]
-    simp only [Finset.sum_mul, finsetSum_coeff, mul_assoc, coeff_C_mul,
-      coeff_X_pow_mul', A]
-    rw [Fin.sum_univ_eq_sum_range (fun i ↦
-      (if i ≤ j.val then g.coeff (j.val - i) else 0) * f.coeff i)]
-    apply Finset.sum_congr rfl
-    intro i hi
-    split_ifs <;> ring
-  let x : Fin (g.natDegree + 1) ⊕ Unit → K :=
-    Sum.elim (fun i ↦ g.coeff i) 0
-  let r : Fin (f.natDegree + g.natDegree + 1) × Fin (f.natDegree + 1) →
-      Fin (g.natDegree + 1) ⊕ Unit := fun ji ↦
-    if h : ji.2.val ≤ ji.1.val ∧ ji.1.val - ji.2.val < g.natDegree + 1 then
-      .inl ⟨ji.1.val - ji.2.val, h.2⟩ else .inr ()
-  have hr : A = x ∘ r := by
-    ext ji
-    simp only [A, x, r, Function.comp_apply]
-    split_ifs with h₁ h₂ h₂
-    · rfl
-    · exact coeff_eq_zero_of_natDegree_lt (by omega)
-    · simp_all
-    · rfl
-  have hA : Height.mulHeight A ≤ g.mulHeight := by
-    rw [hr, mulHeight_eq_coeff g (Nat.lt_succ_self _)]
-    simpa [x, Height.mulHeight_sumElim_zero_eq] using Height.mulHeight_comp_le r x
-  rw [mulHeight_eq_coeff _ (lt_of_le_of_lt (natDegree_mul_le ..) (Nat.lt_succ_self _)), hc,
-    min_eq_left hfg, mul_assoc _ f.mulHeight g.mulHeight,
-    mul_comm f.mulHeight g.mulHeight, ← mul_assoc,
-    mulHeight_eq_coeff f (Nat.lt_succ_self _)]
-  exact (Height.mulHeight_linearMap_apply_le A (fun i ↦ f.coeff i)).trans <| by
-    simp only [Nat.card_fin]
-    gcongr
+  calc
+    (f * g).mulHeight = Height.mulHeight
+        (fun j : Fin (f.natDegree + g.natDegree + 1) ↦ (f * g).coeff j) :=
+      mulHeight_eq_coeff _ (lt_of_le_of_lt (natDegree_mul_le ..) (Nat.lt_succ_self _))
+    _ ≤ ((f.natDegree + 1 : ℕ) : ℝ) ^ Height.totalWeight K *
+        Height.mulHeight (convolutionMatrix f g) *
+          Height.mulHeight (fun i : Fin (f.natDegree + 1) ↦ f.coeff i) := by
+      rw [coeff_mul_eq_convolution]
+      simpa only [Nat.card_fin] using
+        Height.mulHeight_linearMap_apply_le (convolutionMatrix f g) (fun i ↦ f.coeff i)
+    _ ≤ ((f.natDegree + 1 : ℕ) : ℝ) ^ Height.totalWeight K * g.mulHeight * f.mulHeight := by
+      rw [← mulHeight_eq_coeff f (Nat.lt_succ_self _)]
+      exact mul_le_mul_of_nonneg_right
+        (mul_le_mul_of_nonneg_left (mulHeight_convolutionMatrix_le f g) (by positivity))
+        (le_of_lt (mulHeight_pos f))
+    _ = ((min f.natDegree g.natDegree + 1 : ℕ) : ℝ) ^ Height.totalWeight K *
+        f.mulHeight * g.mulHeight := by
+      rw [min_eq_left hfg]
+      ring
 
 open Real in
 /-- The logarithmic form of the coefficient convolution estimate. -/
