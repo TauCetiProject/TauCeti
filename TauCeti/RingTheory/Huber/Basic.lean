@@ -71,8 +71,9 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   ring.
 * `TauCeti.Huber.IsHuberRing.quotient` and `TauCeti.Huber.IsTateRing.quotient`: a quotient of a
   Huber ring is a Huber ring, and a quotient of a Tate ring is a Tate ring.
-* `TauCeti.Huber.PairOfDefinition.quotient_idealImage`: the neighbourhood basis of zero of the
-  quotient pair of definition is the image of that of the original pair.
+* `TauCeti.Huber.PairOfDefinition.map_idealImage` and
+  `TauCeti.Huber.PairOfDefinition.quotient_idealImage`: the neighbourhood basis of zero of the
+  image (resp. quotient) pair of definition is the image of that of the original pair.
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
@@ -540,6 +541,49 @@ def map [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B] [IsT
     obtain ⟨x, hx, rfl⟩ := Ideal.mem_map_iff_of_surjective f₀ hf₀_surj |>.mp hy
     exact hn hx
 
+/-- The ring of definition of the image of a pair of definition along an open quotient map is the
+image of the original one. -/
+@[simp]
+theorem map_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
+    (P.map f hf).ringOfDefinition = P.ringOfDefinition.map f :=
+  (rfl)
+
+/-- The ideal of definition of the image pair of definition is the image of the original one,
+under the map `A₀ → f(A₀)` induced by `f`. -/
+private theorem map_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B)
+    (hf : IsOpenQuotientMap f) :
+    (P.map f hf).idealOfDefinition = P.idealOfDefinition.map
+      ((f.comp P.ringOfDefinition.subtype).codRestrict
+        (P.map f hf).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
+  (rfl)
+
+/-- **The neighbourhood basis of the image pair is the image of the original one**: the image in
+`B` of the `n`-th power of the ideal of definition of `P.map f hf` is the image of
+`P.idealImage n` under `f`. -/
+@[simp]
+theorem map_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
+    (n : ℕ) :
+    (P.map f hf).idealImage n = (P.idealImage n).map (f : A →+ B) := by
+  set f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=
+    (f.comp P.ringOfDefinition.subtype).codRestrict
+      (P.map f hf).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+  have hf₀ : Function.Surjective f₀ := by
+    rintro ⟨x, hx⟩
+    obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
+    exact ⟨⟨a, ha⟩, rfl⟩
+  ext x
+  simp only [mem_idealImage, AddSubgroup.mem_map, AddMonoidHom.coe_ofClass]
+  rw [map_idealOfDefinition, ← Ideal.map_pow]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    obtain ⟨a, ha, rfl⟩ := (Ideal.mem_map_iff_of_surjective f₀ hf₀).mp hy
+    exact ⟨a, ⟨a, ha, rfl⟩, rfl⟩
+  · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+    exact ⟨f₀ a, Ideal.mem_map_of_mem f₀ ha, rfl⟩
+
 /-- The image of a pair of definition in a quotient ring `A ⧸ J`, with the quotient topology: its
 ring of definition is the image of `A₀` (`TauCeti.Huber.PairOfDefinition.quotient_ringOfDefinition`)
 and its ideal of definition is the image of `I`. -/
@@ -550,40 +594,15 @@ def quotient [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A) :
 /-- The ring of definition of the quotient pair of definition is the image of the original one. -/
 theorem quotient_ringOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A) :
     (P.quotient J).ringOfDefinition = P.ringOfDefinition.map (Ideal.Quotient.mk J) :=
-  (rfl)
-
-/-- The ideal of definition of the quotient pair of definition is the image of the original one,
-under the map `A₀ → (A ⧸ J)₀` induced by the quotient map. -/
-private theorem quotient_idealOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
-    (J : Ideal A) :
-    (P.quotient J).idealOfDefinition = P.idealOfDefinition.map
-      (((Ideal.Quotient.mk J).comp P.ringOfDefinition.subtype).codRestrict
-        (P.quotient J).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
-  (rfl)
+  P.map_ringOfDefinition _ _
 
 /-- **The neighbourhood basis of the quotient pair is the image of the original one**: the image
 in `A ⧸ J` of the `n`-th power of the ideal of definition of the quotient pair is the image of
 `P.idealImage n` under the quotient map. -/
 theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A)
     (n : ℕ) :
-    (P.quotient J).idealImage n = (P.idealImage n).map (Ideal.Quotient.mk J).toAddMonoidHom := by
-  set q₀ : P.ringOfDefinition →+* (P.quotient J).ringOfDefinition :=
-    ((Ideal.Quotient.mk J).comp P.ringOfDefinition.subtype).codRestrict
-      (P.quotient J).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩
-  have hq₀ : Function.Surjective q₀ := by
-    rintro ⟨x, hx⟩
-    obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
-    exact ⟨⟨a, ha⟩, rfl⟩
-  ext x
-  simp only [mem_idealImage, AddSubgroup.mem_map, RingHom.toAddMonoidHom_eq_coe,
-    AddMonoidHom.coe_ofClass]
-  rw [quotient_idealOfDefinition, ← Ideal.map_pow]
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    obtain ⟨a, ha, rfl⟩ := (Ideal.mem_map_iff_of_surjective q₀ hq₀).mp hy
-    exact ⟨a, ⟨a, ha, rfl⟩, rfl⟩
-  · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
-    exact ⟨q₀ a, Ideal.mem_map_of_mem q₀ ha, rfl⟩
+    (P.quotient J).idealImage n = (P.idealImage n).map (Ideal.Quotient.mk J).toAddMonoidHom :=
+  P.map_idealImage _ _ n
 
 
 end PairOfDefinition
