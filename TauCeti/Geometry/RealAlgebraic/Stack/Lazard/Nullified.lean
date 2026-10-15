@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
-import TauCeti.Algebra.Polynomial.LinearFactor
 
 /-!
 # A nullified polynomial with a nonzero Lazard evaluation
@@ -134,17 +133,12 @@ theorem lazardExponent_optionEquivRight_rename_lazardNullifiedExample {x : Fin 3
     (h0 : x 0 = 0) (h1 : x 1 = 0) :
     (optionEquivRight ℝ (Fin 3) (rename finSuccEquivLast lazardNullifiedExample)).lazardExponent
       (Polynomial.C ∘ x) = Finsupp.single 1 1 := by
+  have hX1 : (X 1 - C ((Polynomial.C ∘ x) 1) : MvPolynomial (Fin 3) ℝ[X]) ≠ 0 := by
+    simp [h1, X_ne_zero]
   have hX : (Polynomial.X + 1 : ℝ[X]) ≠ 0 := Polynomial.X_add_C_ne_zero 1
-  have hne : optionEquivRight ℝ (Fin 3) (rename finSuccEquivLast lazardNullifiedExample) ≠ 0 :=
-    fun h ↦ hX <| by
-      rw [← lazardEval_optionEquivRight_rename_lazardNullifiedExample h0 h1, h, lazardEval_zero]
-  have hv : (optionEquivRight ℝ (Fin 3) (rename finSuccEquivLast lazardNullifiedExample)
-      ).lazardValuation (Polynomial.C ∘ x) = ↑(toLex (Finsupp.single (1 : Fin 3) 1)) := by
-    rw [optionEquivRight_rename_lazardNullifiedExample h1, lazardValuation_add_of_lt
-      ((lazardValuation_X_sub_C_mul_C x).trans_lt (lt_lazardValuation_X_mul_X h0)),
-      lazardValuation_X_sub_C_mul_C]
-  rw [lazardValuation_eq_lazardExponent hne] at hv
-  exact toLex.injective (WithTop.coe_injective hv)
+  rw [optionEquivRight_rename_lazardNullifiedExample h1, lazardExponent_add_of_lazardValuation_lt
+    ((lazardValuation_X_sub_C_mul_C x).trans_lt (lt_lazardValuation_X_mul_X h0)),
+    lazardExponent_mul hX1 (C_ne_zero.2 hX), lazardExponent_X_sub_C, lazardExponent_C, add_zero]
 
 /-- **The Lazard delineation of a nullified polynomial.** Over the line `x₀ = x₁ = 0`, where all
 ordinary fibres of `x₁ (z + 1) + x₀ x₂` vanish, the polynomial has the Lazard delineation with
@@ -164,7 +158,7 @@ noncomputable def lazardDelineationNullifiedExample :
   multiplicity _ _ := 1
   rootMultiplicity_root _ _ x := by
     rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.2.1 x.2.2,
-      ← Polynomial.C_1, Polynomial.rootMultiplicity_X_add_C]
+      ← Polynomial.C_1, ← sub_neg_eq_add, ← Polynomial.C_neg, Polynomial.rootMultiplicity_X_sub_C]
     simp
   exists_root_eq _ x _ t ht := by
     rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.2.1 x.2.2] at ht
@@ -205,6 +199,6 @@ theorem lazardValuation_lazardNullifiedExample_snoc {x : Fin 3 → ℝ} (h0 : x 
   rw [lazardValuation_snoc lazardNullifiedExample_ne_zero,
     lazardExponent_optionEquivRight_rename_lazardNullifiedExample h0 h1,
     lazardEval_optionEquivRight_rename_lazardNullifiedExample h0 h1, ← Polynomial.C_1,
-    Polynomial.rootMultiplicity_X_add_C]
+    ← sub_neg_eq_add, ← Polynomial.C_neg, Polynomial.rootMultiplicity_X_sub_C]
 
 end TauCeti
