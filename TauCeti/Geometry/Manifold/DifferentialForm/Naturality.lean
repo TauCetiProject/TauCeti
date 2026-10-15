@@ -14,9 +14,11 @@ import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 For a twice continuously differentiable map `f : M → M'` and a continuously differentiable
 differential form `phi` on `M'`, pulling back commutes with exterior differentiation:
-`f^* (d phi) = d (f^* phi)`. This is the naturality of the exterior derivative, which makes
-pullback by `f` a map of de Rham cochain complexes and hence is what induces the maps
-`f^* : H^k_dR(M') → H^k_dR(M)` on de Rham cohomology.
+`f^* (d phi) = d (f^* phi)`. This is the naturality of the exterior derivative. For a smooth
+map `f`, where pullback preserves smooth forms, it is the identity that makes pullback by `f` a
+map of de Rham cochain complexes and so induces `f^* : H^k_dR(M') → H^k_dR(M)`. The theorem
+itself needs only the `C²` and `C¹` hypotheses above, which alone do not make pullback preserve
+smooth forms.
 
 The local coordinate comparison follows the chart-transport pattern used for vector fields in
 Mathlib's `Geometry.Manifold.VectorField.LieBracket`.
@@ -89,14 +91,7 @@ theorem mpullback_mextDeriv {f : M → M'} (hf : ContMDiff I I' 2 f)
     simpa only [preimage_univ, univ_inter] using phi.differentiableWithinAt_inChartAt
       (((isSmoothBundleForm_def 1 phi).mp hphi (f x)).mdifferentiableWithinAt one_ne_zero)
   have hg : ContDiffWithinAt ℝ 2 g (range I) (extChartAt I x x) := by
-    have hs := contMDiffWithinAt_extChartAt_symm_range (I := I) (n := 2) x
-      (mem_extChartAt_target x)
-    have hfs := (hf x).comp_contMDiffWithinAt_of_eq hs (extChartAt_to_inv (I := I) x)
-    have ht := contMDiffAt_extChartAt' (I := I') (n := 2) (x := f x)
-      (ChartedSpace.mem_chart_source (f x))
-    have htotal := ht.comp_contMDiffWithinAt_of_eq hfs (by
-      simp only [Function.comp_apply, extChartAt_to_inv])
-    simpa only [g, writtenInExtChartAt, Function.comp_assoc] using htotal.contDiffWithinAt
+    simpa only [g, writtenInExtChartAt] using (contMDiffAt_iff.mp (hf x)).2
   have hfx : f ((extChartAt I x).symm (extChartAt I x x)) ∈ (extChartAt I' (f x)).source := by
     simpa only [extChartAt_to_inv] using mem_extChartAt_source (I := I') (f x)
   have hpreTarget := writtenInExtChartAt_preimage_target_mem_nhdsWithin
