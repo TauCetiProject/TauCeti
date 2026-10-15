@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.FourPoint
-public import TauCeti.MeasureTheory.OptimalTransport.Finite.Uncrossing.Termination
+public import TauCeti.MeasureTheory.OptimalTransport.Finite.Monotone
 
 /-!
 # Finite monotone transport for power-distance costs
@@ -17,9 +17,10 @@ real support locations. The monotone transportation matrix minimizes the expecte
 matrix by finitely many minimum-mass uncrossing steps. The same sequence and endpoint work
 for all such exponents, and every uncrossing step weakly decreases each power-distance cost.
 
-The four-point inequality is `TauCeti.abs_sub_rpow_add_abs_sub_rpow_le`; the construction of
-the terminating sequence and the generic Monge-cost comparison are reused from the finite
-uncrossing API. Rectangular matrices, zero weights, and repeated support locations are allowed.
+The four-point inequality is `TauCeti.abs_sub_rpow_add_abs_sub_rpow_le`; the generic Monge-cost
+comparison is reused from the finite uncrossing API. The terminating sequence is supplied
+separately by `TauCeti.MeasureTheory.OptimalTransport.Finite.Uncrossing.Termination`.
+Rectangular matrices, zero weights, and repeated support locations are allowed.
 No uniqueness of power-cost optimizers is asserted: in particular `p = 1` can have other
 optimizers even at strictly ordered support locations.
 
