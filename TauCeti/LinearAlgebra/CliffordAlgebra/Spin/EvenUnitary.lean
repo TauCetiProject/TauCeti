@@ -572,7 +572,6 @@ theorem coe_spinGroupToEvenUnitary_apply (x : spinGroup Q) :
   rfl
 
 /-- The even part of a Spin element is unchanged by the map to the even-unitary carrier. -/
-@[simp]
 theorem evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply (x : spinGroup Q) :
     evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q x) = spinGroupToEven Q x := by
   apply Subtype.ext

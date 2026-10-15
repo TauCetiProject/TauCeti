@@ -359,7 +359,6 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
       ((hyperbolicSix_finrank K).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
-@[simp]
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =
       (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
@@ -382,30 +381,6 @@ theorem coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply
     (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K) =
       (hyperbolicSixEvenEquivMatrixProd K (evenUnitaryGroupEvenPart (splitEvenForm K 3) x)).1 := by
   simp [hyperbolicSixEvenUnitaryEquivGeneralLinear]
-
-/-! ### The Spin subgroup -/
-
-/-- The first half-spin matrix of an element of the Spin group of three hyperbolic planes.
-
-This is the restriction to Spin of the existing equivalence between the reverse-unitary group of
-the even Clifford algebra and `GL₄`. -/
-noncomputable def hyperbolicSixSpinToGeneralLinear :
-    spinGroup (splitEvenForm K 3) →* Matrix.GeneralLinearGroup (Fin 4) K :=
-  (hyperbolicSixEvenUnitaryEquivGeneralLinear K).toMonoidHom.comp
-    (spinGroupToEvenUnitary (splitEvenForm K 3))
-
-/-- The underlying matrix of `hyperbolicSixSpinToGeneralLinear` is the first factor of the
-half-spin matrix-product model. -/
-@[simp]
-theorem coe_hyperbolicSixSpinToGeneralLinear_apply
-    (g : spinGroup (splitEvenForm K 3)) :
-    (hyperbolicSixSpinToGeneralLinear K g : Matrix (Fin 4) (Fin 4) K) =
-      (hyperbolicSixEvenEquivMatrixProd K
-        (spinGroupToEven (splitEvenForm K 3) g)).1 := by
-  rw [hyperbolicSixSpinToGeneralLinear, MonoidHom.comp_apply]
-  simp only [MulEquiv.coe_toMonoidHom]
-  rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
 
 /-- Reconstructing a hyperbolic even unitary element recovers the given first matrix component.
 The rule precedes simplification of the full inverse Clifford value. -/
