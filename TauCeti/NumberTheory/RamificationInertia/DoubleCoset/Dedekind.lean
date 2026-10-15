@@ -20,13 +20,15 @@ integral closure of `A` in the fixed field `M ^ H`. Then the primes of `C` over 
 `A` are indexed by `H \ Gal(M/K) / D(Q)`.
 
 Unlike the specialization to rings of integers of number fields, these results do not assume
-finite residue fields. The prime bijection and local-degree formula require no residue
-separability; the separate ramification-index formula assumes it explicitly.
+finite residue fields. The prime bijection only requires that the base be integrally closed; the
+local-degree formulas use the Dedekind hypothesis. Neither the bijection nor the local-degree
+formula requires residue separability; the separate ramification-index formula assumes it
+explicitly.
 
 ## Main definitions
 
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure`: the double-coset bijection for
-  integral closures over a Dedekind base.
+  integral closures over an integrally closed base.
 
 ## Main results
 
@@ -63,7 +65,7 @@ variable {A B C K M : Type*}
   [Algebra A B] [Algebra B M] [IsScalarTower A B M]
   [IsFractionRing A K]
   [IsIntegralClosure B A M]
-  [IsDedekindDomain A] [IsGalois K M]
+  [IsGalois K M]
 
 variable [FiniteDimensional K M]
 
@@ -72,6 +74,7 @@ private theorem isFractionRing_of_isIntegralClosure (L S : Type*) [Field L] [Com
     [Algebra K L] [Algebra A L] [IsScalarTower A K L] [FiniteDimensional K L]
     [Algebra A S] [Algebra S L] [IsScalarTower A S L] [IsIntegralClosure S A L] :
     IsFractionRing S L :=
+  have : IsDomain A := (IsFractionRing.injective A K).isDomain
   have : IsDomain S := (IsIntegralClosure.algebraMap_injective S A L).isDomain (algebraMap S L)
   IsIntegralClosure.isFractionRing_of_finite_extension A K L S
 
@@ -83,7 +86,7 @@ variable (H : Subgroup (M ≃ₐ[K] M))
   [Algebra C B] [IsScalarTower C B M]
 
 omit [Algebra A B] [IsScalarTower A B M] [IsFractionRing A K] [IsIntegralClosure B A M]
-  [IsDedekindDomain A] [IsGalois K M] [FiniteDimensional K M]
+  [IsGalois K M] [FiniteDimensional K M]
   [Algebra A C] [IsScalarTower A C ↥(fixedField H)] [IsScalarTower A C M] in
 include A H in
 /-- The map from the integral closure in a fixed field to the integral closure upstairs is
@@ -104,11 +107,11 @@ variable (p : Ideal A) (Q : Ideal B) [Q.LiesOver p]
 
 section Equivalence
 
-variable [Q.IsPrime] [IsScalarTower A C B]
+variable [IsIntegrallyClosed A] [Q.IsPrime] [IsScalarTower A C B]
 
-/-- **The double-coset splitting law over a Dedekind base.** For integral closures `B/A` and
-`C/A` in `M/K` and `M^H/K`, respectively, the primes of `C` above `p` are indexed by the double
-cosets of `H` and the decomposition group of `Q`. -/
+/-- **The double-coset splitting law over an integrally closed base.** For integral closures
+`B/A` and `C/A` in `M/K` and `M^H/K`, respectively, the primes of `C` above `p` are indexed by
+the double cosets of `H` and the decomposition group of `Q`. -/
 noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
     letI := IsIntegralClosure.MulSemiringAction A K M B
     DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
@@ -122,7 +125,8 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C
 
-/-- The Dedekind double-coset law sends the class of `σ` to the contraction of `σ • Q`. -/
+/-- The integral-closure double-coset law sends the class of `σ` to the contraction of
+`σ • Q`. -/
 @[simp]
 theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk (σ : M ≃ₐ[K] M) :
     letI := IsIntegralClosure.MulSemiringAction A K M B
@@ -138,7 +142,7 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk (σ : M ≃ₐ[
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk p H C σ
 
-/-- The inverse of the Dedekind double-coset bijection sends a prime to the class of `σ`
+/-- The inverse of the integral-closure double-coset bijection sends a prime to the class of `σ`
 exactly when that prime is the contraction of `σ • Q`. -/
 @[simp]
 theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_iff
@@ -150,8 +154,6 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_i
       q.1 = (σ • Q).under C := by
   let _ := IsIntegralClosure.MulSemiringAction A K M B
   let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField (A := A) H
-  let _ : IsDedekindDomain C :=
-    TauCeti.IsIntegralClosure.isDedekindDomain A K ↥(fixedField H) C
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
   let _ : IsFractionRing B M := isFractionRing_of_isIntegralClosure (A := A) (K := K) M B
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
@@ -159,9 +161,9 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_i
   let _ : IsGaloisGroup H C B := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField A K M B C H
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff p H C q σ
 
-/-- **The Dedekind double-coset law is compatible with the action of `Gal(M/K)`.** Indexing the
-primes of `C` above `p` through the translate `τ • Q` instead of `Q` sends the class of `σ` to the
-prime that the indexing through `Q` attaches to the class of `σ * τ`. -/
+/-- **The integral-closure double-coset law is compatible with the action of `Gal(M/K)`.**
+Indexing the primes of `C` above `p` through the translate `τ • Q` instead of `Q` sends the class
+of `σ` to the prime that the indexing through `Q` attaches to the class of `σ * τ`. -/
 theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_smul_mk (τ σ : M ≃ₐ[K] M) :
     letI := IsIntegralClosure.MulSemiringAction A K M B
     haveI := TauCeti.IsIntegralClosure.smulCommClass A K M B
@@ -174,7 +176,7 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_smul_mk (τ σ : M
   simp only [doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk, mul_smul]
 
 /-- Enlarging the subgroup and contracting to the corresponding integral closure give the same
-prime under the Dedekind double-coset splitting bijection. -/
+prime under the integral-closure double-coset splitting bijection. -/
 theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural
     {H' : Subgroup (M ≃ₐ[K] M)} (h : H ≤ H')
     (C' : Type*) [CommRing C']
@@ -208,7 +210,7 @@ end Equivalence
 
 section Invariants
 
-variable [Q.IsMaximal] [IsScalarTower A C B]
+variable [IsDedekindDomain A] [Q.IsMaximal] [IsScalarTower A C B]
 
 /-- The local degree of the contraction of `σ • Q` is the relative index of the
 corresponding conjugate decomposition group. -/
