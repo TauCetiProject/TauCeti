@@ -19,10 +19,11 @@ coboundary
 `(bφ)(a₀, …, aₙ₊₁) = ∑_{j ≤ n} (-1)ʲ φ(a₀, …, aⱼaⱼ₊₁, …, aₙ₊₁) + (-1)ⁿ⁺¹ φ(aₙ₊₁a₀, a₁, …, aₙ)`,
 proves `b ∘ b = 0` when the multiplication is associative, and shows that `b` preserves the cyclic
 cochains, those with
-`φ(aₙ, a₀, …, aₙ₋₁) = (-1)ⁿ φ(a₀, …, aₙ)`. For unital `A` and `M = R` these are the Hochschild
-cochain complex of `A` with coefficients in its dual `A*` and Connes' cyclic subcomplex, whose
-cohomology is the cyclic cohomology of `A`. The formulas make sense for nonunital `A`, so they also
-apply to unitizations and their relative complexes.
+`φ(aₙ, a₀, …, aₙ₋₁) = (-1)ⁿ φ(a₀, …, aₙ)`. For unital `A` and `M = R` these are the data from
+which the Hochschild cochain complex of `A` with coefficients in its dual `A*` and Connes' cyclic
+subcomplex can be assembled; the complexes themselves and their cohomology are not constructed
+here. The formulas make sense for nonunital `A`, so they also apply to unitizations and their
+relative complexes.
 
 The coboundary is the alternating sum of the cofaces `φ ↦ φ ∘ dᵢ`, where `dᵢ` are face maps
 on tuples. For unital `A`, these faces and the rotation are part of the Hochschild cyclic module;
@@ -43,6 +44,8 @@ identities between faces and the cyclic rotation
 
 * `TauCeti.hochschildCoboundary_hochschildCoboundary`: `b (b φ) = 0`.
 * `TauCeti.hochschildCoboundary_mem_cyclicCochains`: `b` maps cyclic cochains to cyclic cochains.
+* `TauCeti.cyclicHochschildCoboundary_cyclicHochschildCoboundary`: the restriction of `b` to
+  cyclic cochains also squares to zero.
 * `TauCeti.hochschildCoboundary_zero_eq_zero_iff`: the degree-zero cocycles are the traces.
 
 ## References
@@ -358,6 +361,7 @@ def hochschildCoface (i : Fin (n + 2)) :
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
+/-- The `i`-th coface evaluates a cochain on the `i`-th Hochschild face of the tuple. -/
 @[simp]
 theorem hochschildCoface_apply (i : Fin (n + 2))
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (a : Fin (n + 2) → A) :
@@ -382,6 +386,7 @@ def cyclicCochains (n : ℕ) : Submodule R (MultilinearMap R (fun _ : Fin (n + 1
   smul_mem' c φ hφ a := by simp [hφ a, smul_comm c]
 
 variable {R A M} in
+/-- A cochain is cyclic exactly when rotating its arguments multiplies its value by `(-1)ⁿ`. -/
 @[simp]
 theorem mem_cyclicCochains_iff {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} :
     φ ∈ cyclicCochains R A M n ↔
@@ -416,6 +421,7 @@ def hochschildCoboundary (n : ℕ) :
 
 variable {R A M} {n : ℕ}
 
+/-- The Hochschild coboundary evaluates as the alternating sum of `φ` on the faces of the tuple. -/
 @[simp]
 theorem hochschildCoboundary_apply (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
     (a : Fin (n + 2) → A) :
@@ -522,6 +528,28 @@ theorem coe_cyclicHochschildCoboundary_apply (φ : cyclicCochains R A M n) :
   simp [cyclicHochschildCoboundary]
 
 end NonAssoc
+
+section Assoc
+
+variable (R A M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  {n : ℕ}
+
+/-- The restricted coboundary on cyclic cochains squares to zero. -/
+@[simp]
+theorem cyclicHochschildCoboundary_cyclicHochschildCoboundary (φ : cyclicCochains R A M n) :
+    cyclicHochschildCoboundary R A M (n + 1) (cyclicHochschildCoboundary R A M n φ) = 0 := by
+  ext a
+  simp
+
+/-- The restricted coboundary on cyclic cochains squares to zero, as a composite of linear
+maps. -/
+theorem cyclicHochschildCoboundary_comp_cyclicHochschildCoboundary :
+    cyclicHochschildCoboundary R A M (n + 1) ∘ₗ cyclicHochschildCoboundary R A M n = 0 :=
+  LinearMap.ext fun φ ↦
+    cyclicHochschildCoboundary_cyclicHochschildCoboundary (R := R) (A := A) (M := M) φ
+
+end Assoc
 
 end Coboundary
 
