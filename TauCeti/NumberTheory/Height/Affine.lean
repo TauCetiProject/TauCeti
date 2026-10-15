@@ -21,14 +21,15 @@ appended:
 
 `Height.mulHeightAff x = Height.mulHeight fun o : Option ι ↦ o.elim 1 x`,
 
-and its logarithm `Height.logHeightAff`. At each place the local factor is
-`max (⨆ i, v (x i)) 1` (`Height.mulHeightAff_eq`), so the affine height is the tuple analogue
-of `Height.mulHeight₁` and agrees with it on a one-element tuple
+and its logarithm `Height.logHeightAff`. For a finite index type `ι`, the local factor at each
+place is `max (⨆ i, v (x i)) 1` (`Height.mulHeightAff_eq`), so the affine height is the tuple
+analogue of `Height.mulHeight₁` and agrees with it on a one-element tuple
 (`Height.mulHeightAff_unique`, `Height.mulHeightAff_fin_one`).
 
 The affine height is deliberately not invariant under scaling
-(`Height.exists_mulHeightAff_smul_ne`). What it gains is domination: it bounds the projective
-height of the tuple and the height of every coordinate, and it can only drop under re-indexing.
+(`Height.exists_mulHeightAff_smul_ne`). What it gains is domination: for finite index types, it
+bounds the projective height of the tuple and the height of every coordinate, and it can only
+drop under re-indexing.
 
 ## Main definitions
 
@@ -37,14 +38,14 @@ height of the tuple and the height of every coordinate, and it can only drop und
 
 ## Main results
 
-* `Height.mulHeightAff_eq`: the affine height as a product of the local factors
+* `Height.mulHeightAff_eq`: for finite `ι`, the affine height as a product of the local factors
   `max (⨆ i, v (x i)) 1`.
-* `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: the affine height
-  dominates the projective height of the tuple and the height of each coordinate. The second
-  fails for `Height.mulHeight`.
+* `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
+  affine height dominates the projective height of the tuple and the height of each coordinate.
+  The second fails for `Height.mulHeight`.
 * `Height.mulHeightAff_comp_le`, `Height.mulHeightAff_comp_equiv`: monotonicity under
-  re-indexing, with equality for a bijection.
-* `Height.mulHeightAff_zero`: the zero tuple has affine height `1`.
+  re-indexing between finite index types, and equality for a bijection between arbitrary ones.
+* `Height.mulHeightAff_zero`: for finite `ι`, the zero tuple has affine height `1`.
 * `Height.mulHeightAff_unique`, `Height.mulHeightAff_fin_one`: on a one-element tuple the
   affine height is `Height.mulHeight₁`.
 * `Height.exists_mulHeightAff_smul_ne`: the affine height is not invariant under scaling.
@@ -76,7 +77,7 @@ variable {K : Type*} [Field K] [AdmissibleAbsValues K] {ι ι' : Type*}
 the tuple with a coordinate `1` appended.
 
 Unlike `Height.mulHeight` it is not invariant under scaling
-(`Height.exists_mulHeightAff_smul_ne`); it dominates the projective height
+(`Height.exists_mulHeightAff_smul_ne`); for finite `ι` it dominates the projective height
 (`Height.mulHeight_le_mulHeightAff`) and the height of every coordinate
 (`Height.mulHeight₁_le_mulHeightAff`). -/
 noncomputable def mulHeightAff (x : ι → K) : ℝ :=
@@ -86,10 +87,12 @@ noncomputable def mulHeightAff (x : ι → K) : ℝ :=
 noncomputable def logHeightAff (x : ι → K) : ℝ :=
   log (mulHeightAff x)
 
+/-- The defining formula of `Height.mulHeightAff`, to unfold it into `Height.mulHeight`. -/
 lemma mulHeightAff_def (x : ι → K) :
     mulHeightAff x = mulHeight fun o : Option ι ↦ o.elim 1 x :=
   (rfl)
 
+/-- The defining formula of `Height.logHeightAff` as the logarithm of `Height.mulHeightAff`. -/
 lemma logHeightAff_eq_log_mulHeightAff (x : ι → K) : logHeightAff x = log (mulHeightAff x) :=
   (rfl)
 
@@ -130,15 +133,19 @@ lemma mulHeightAff_eq (x : ι → K) :
   have hx : (fun o : Option ι ↦ o.elim 1 x) ≠ 0 := fun h ↦ one_ne_zero (congrFun h none)
   simp only [mulHeightAff_def, mulHeight_eq hx, key]
 
+/-- The affine height of a tuple is at least `1`. -/
 lemma one_le_mulHeightAff (x : ι → K) : 1 ≤ mulHeightAff x :=
   one_le_mulHeight _
 
+/-- The affine height of a tuple is positive. -/
 lemma mulHeightAff_pos (x : ι → K) : 0 < mulHeightAff x :=
   mulHeight_pos _
 
+/-- The affine height of a tuple is nonzero. -/
 lemma mulHeightAff_ne_zero (x : ι → K) : mulHeightAff x ≠ 0 :=
   mulHeight_ne_zero _
 
+/-- The affine logarithmic height of a tuple is nonnegative. -/
 lemma logHeightAff_nonneg (x : ι → K) : 0 ≤ logHeightAff x :=
   logHeight_nonneg _
 
@@ -170,6 +177,7 @@ lemma logHeightAff_comp_le (f : ι → ι') (x : ι' → K) :
 lemma mulHeightAff_zero : mulHeightAff (0 : ι → K) = 1 := by
   simp [mulHeightAff_eq]
 
+/-- The zero tuple has affine logarithmic height `0`. -/
 @[simp]
 lemma logHeightAff_zero : logHeightAff (0 : ι → K) = 0 := by
   simp [logHeightAff_eq_log_mulHeightAff]
@@ -185,9 +193,8 @@ lemma mulHeightAff_unique [Unique ι] (x : ι → K) : mulHeightAff x = mulHeigh
 lemma logHeightAff_unique [Unique ι] (x : ι → K) : logHeightAff x = logHeight₁ (x default) := by
   rw [logHeightAff_eq_log_mulHeightAff, logHeight₁_eq_log_mulHeight₁, mulHeightAff_unique]
 
-/-- The affine height of `![x]` is `Height.mulHeight₁ x`. This is the check that the appended
-coordinate is the right one: appending another constant, or normalizing by a degree, would break
-it. -/
+/-- The affine height of `![x]` is `Height.mulHeight₁ x`: with the appended coordinate `1`, the
+affine height of a one-element tuple recovers the height of its entry. -/
 @[simp]
 lemma mulHeightAff_fin_one (x : K) : mulHeightAff ![x] = mulHeight₁ x :=
   mulHeightAff_unique _
