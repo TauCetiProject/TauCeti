@@ -60,8 +60,10 @@ private theorem fromPath_mem_iSup_range (hx : ∀ i, x ∈ U i) {i : ι} (γ : P
         Subgroup (_root_.FundamentalGroup X x)) := by
   refine Subgroup.mem_iSup_of_mem i ⟨_root_.FundamentalGroup.fromPath
     ⟦γ.codRestrict (x := ⟨x, hx i⟩) (y := ⟨x, hx i⟩) fun t ↦ hγ (mem_range_self t)⟧, ?_⟩
+  simp only [Path.Homotopic.Quotient.mk''_eq_mk]
   rw [FundamentalGroup.map_fromPath]
-  exact congrArg (fun q : Path x x ↦ (_root_.FundamentalGroup.fromPath ⟦q⟧ :
+  exact congrArg (fun q : Path x x ↦ (_root_.FundamentalGroup.fromPath
+    (Path.Homotopic.Quotient.mk q) :
     _root_.FundamentalGroup X x)) (Path.map_codRestrict (x := ⟨x, hx i⟩) (y := ⟨x, hx i⟩) γ _)
 
 /-- The loop `p ≫ q⁻¹`, for paths `p` and `q` from `x` to `c` inside a single `U i`, lies in the

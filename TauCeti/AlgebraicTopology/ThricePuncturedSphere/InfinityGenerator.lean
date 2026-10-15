@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.LoopAtInfinity
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
@@ -196,9 +197,7 @@ theorem transport_δInf_eq_periphInf :
       (FundamentalGroup.map
         (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodInf, _)) infBasePt
         (FundamentalGroup.fromPath (.mk δInf))) = periphInf := by
-  rw [show FundamentalGroup.map (⟨Subtype.val, continuous_subtype_val⟩ :
-        C(puncturedNeighborhoodInf, _)) infBasePt (FundamentalGroup.fromPath (.mk δInf)) =
-      FundamentalGroup.fromPath (.mk (δInf.map continuous_subtype_val)) from rfl, map_val_δInf,
+  rw [FundamentalGroup.map_fromPath _ _ δInf, map_val_δInf,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periphInf_eq_fromPath]
   -- The imported identity uses generic quotient notation, whereas the transport API uses
   -- `Path.Homotopic.Quotient.mk`; both denote the same homotopy class.

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
@@ -228,9 +229,7 @@ theorem transport_δZero_eq_periph0 :
     (αZero.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
     ⟨Subtype.val, continuous_subtype_val⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
-  rw [show FundamentalGroup.map (⟨Subtype.val, continuous_subtype_val⟩ :
-        C(puncturedNeighborhoodZero, _)) zeroBasePt (FundamentalGroup.fromPath (.mk δZero)) =
-      FundamentalGroup.fromPath (.mk (δZero.map continuous_subtype_val)) from rfl,
+  rw [FundamentalGroup.map_fromPath _ _ δZero,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph0_def,
     ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
     ← Path.Homotopic.Quotient.mk_trans]
@@ -334,9 +333,7 @@ theorem transport_δOne_eq_periph1 :
     (αOne.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
     ⟨Subtype.val, continuous_subtype_val⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
-  rw [show FundamentalGroup.map (⟨Subtype.val, continuous_subtype_val⟩ :
-        C(puncturedNeighborhoodOne, _)) oneBasePt (FundamentalGroup.fromPath (.mk δOne)) =
-      FundamentalGroup.fromPath (.mk (δOne.map continuous_subtype_val)) from rfl,
+  rw [FundamentalGroup.map_fromPath _ _ δOne,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph1_def,
     ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
     ← Path.Homotopic.Quotient.mk_trans]

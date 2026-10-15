@@ -83,8 +83,10 @@ variable {A : Type*} [TopologicalSpace A]
 /-- Mapping a loop class represented by a path is represented by mapping that path. -/
 theorem FundamentalGroup.map_fromPath {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (base : X)
     (q : Path base base) :
-    _root_.FundamentalGroup.map f base (_root_.FundamentalGroup.fromPath ⟦q⟧) =
-      _root_.FundamentalGroup.fromPath ⟦q.map f.continuous⟧ := by
+    _root_.FundamentalGroup.map f base
+        (_root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk q)) =
+      _root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (q.map f.continuous)) := by
+  simp only [← Path.Homotopic.Quotient.mk''_eq_mk]
   rfl
 
 /-- **The induced map is trivial exactly loop by loop.** The map on fundamental groups induced by
@@ -99,9 +101,10 @@ theorem FundamentalGroup.map_range_eq_bot_iff {Y : Type*} [TopologicalSpace Y] (
   · intro h γ
     have h_map : _root_.FundamentalGroup.fromPath ⟦γ.map f.continuous⟧ =
         _root_.FundamentalGroup.fromPath ⟦Path.refl (f base)⟧ := by
+      simp only [Path.Homotopic.Quotient.mk''_eq_mk]
       rw [← FundamentalGroup.map_fromPath f base γ, h]
-      -- the identity of the fundamental groupoid is the class of the constant path
-      exact congrArg End.of (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base)))
+      simp only [MonoidHom.one_apply, _root_.FundamentalGroup.one_def,
+        Path.Homotopic.Quotient.mk_refl]
     exact (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp (congrArg End.asHom h_map)
   · intro h
     ext ⟨p⟩ : 1
@@ -109,9 +112,10 @@ theorem FundamentalGroup.map_range_eq_bot_iff {Y : Type*} [TopologicalSpace Y] (
     have hnull : _root_.FundamentalGroup.fromPath ⟦γ.map f.continuous⟧ =
         _root_.FundamentalGroup.fromPath ⟦Path.refl (f base)⟧ :=
       congrArg End.of ((FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr (h γ))
+    simp only [Path.Homotopic.Quotient.mk''_eq_mk] at hnull ⊢
     rw [FundamentalGroup.map_fromPath f base γ, hnull]
-    exact congrArg End.of
-      (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base))).symm
+    simp only [MonoidHom.one_apply, _root_.FundamentalGroup.one_def,
+      Path.Homotopic.Quotient.mk_refl]
 
 /-- If the source fundamental group is subsingleton, the range of any induced map from it is
 trivial. -/

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
@@ -426,9 +427,7 @@ theorem zpowers_fromPath_eq_top_of_degree_map_eq_one {x : X}
   have h : fundamentalGroupMulEquiv _
       (FundamentalGroup.map d x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) =
         Multiplicative.ofAdd 1 := by
-    rw [show FundamentalGroup.map d x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
-        FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (γ.map d.continuous)) from rfl,
-      fundamentalGroupMulEquiv_fromPath, hγ]
+    rw [FundamentalGroup.map_fromPath d x γ, fundamentalGroupMulEquiv_fromPath, hγ]
   refine (Subgroup.eq_top_iff' _).mpr fun g =>
     ⟨(fundamentalGroupMulEquiv _ (FundamentalGroup.map d x g)).toAdd,
       hd ((fundamentalGroupMulEquiv _).injective ?_)⟩
