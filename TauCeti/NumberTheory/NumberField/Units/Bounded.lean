@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.NumberTheory.Height.NumberField
+public import TauCeti.NumberTheory.NumberField.Units.Basic
 
 /-!
 # Bounded families of units
@@ -43,9 +44,6 @@ namespace TauCeti.NumberField.Units
 variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### Finiteness at bounded height -/
-
-private instance : Filter.TendstoCofinite (fun u : (𝓞 K)ˣ ↦ (u : K)) :=
-  Filter.tendstoCofinite_of_injective (Units.coe_injective K)
 
 /-- The relative multiplicative height has the Northcott property when restricted to the units
 of a number field. -/
