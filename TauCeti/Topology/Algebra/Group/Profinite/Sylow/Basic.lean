@@ -217,7 +217,7 @@ variable [Fact p.Prime]
 subgroup. -/
 theorem _root_.Sylow.isProPSylow (Q : Sylow p G) [Q.FiniteIndex] :
     IsProPSylow p (Q : Subgroup G) :=
-  isProPSylow_iff_isPGroup_and_not_dvd_index.mpr ⟨Q.isPGroup', Q.not_dvd_index⟩
+  isProPSylow_iff_isPGroup_and_not_dvd_index.mpr ⟨Q.isPGroup, Q.not_dvd_index⟩
 
 section FiniteIndex
 

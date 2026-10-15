@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.GradientFlow.MaximalSlope.Basic
 import Mathlib.Topology.Instances.EReal.Lemmas
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Limits of curves of maximal slope
@@ -93,19 +94,7 @@ theorem dissipation_le_liminf (hp : 1 < p) (hq : 0 < q)
         liminf (fun i ↦ ∫⁻ t in Ι a b, gs i (us i t) ^ q) l / ENNReal.ofReal q :=
       add_le_add (ENNReal.div_le_div_right hA _) (ENNReal.div_le_div_right hG _)
     _ = _ := by rw [hdiv p (zero_lt_one.trans hp), hdiv q hq]
-    _ ≤ _ := by
-      -- `EReal.le_liminf_add` applies to nonnegative extended reals after the continuous
-      -- order embedding; the generic ordered-group lemma does not apply to `ENNReal`.
-      have hcast (v : ι → ℝ≥0∞) :
-          (↑(liminf v l) : EReal) = liminf (fun i ↦ (v i : EReal)) l :=
-        EReal.coe_ennreal_strictMono.monotone.map_liminf_of_continuousAt _
-          continuous_coe_ennreal_ereal.continuousAt
-      apply EReal.coe_ennreal_le_coe_ennreal_iff.1
-      rw [EReal.coe_ennreal_add, hcast, hcast, hcast]
-      simpa only [Function.comp_apply, EReal.coe_ennreal_add, Pi.add_def] using
-        (EReal.le_liminf_add (f := l)
-          (u := fun i ↦ (↑(curveAction p (us i) a b / ENNReal.ofReal p) : EReal))
-          (v := fun i ↦ (↑((∫⁻ t in Ι a b, gs i (us i t) ^ q) / ENNReal.ofReal q) : EReal)))
+    _ ≤ _ := ENNReal.le_liminf_add _ _
 
 /-- **The Sandier–Serfaty limit argument on a fixed carrier.** Let the approximating curves
 eventually be curves of maximal slope and converge pointwise on `[a,b]`, with initial

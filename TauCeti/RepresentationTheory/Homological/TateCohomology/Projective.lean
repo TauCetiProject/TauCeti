@@ -186,7 +186,7 @@ theorem projective_of_isZero_res_sylow [Finite G]
   have := Fact.mk hp
   obtain ⟨P, _, hP⟩ := h p hp (by rwa [Nat.card_eq_fintype_card])
   refine ⟨P, inferInstance, P.not_dvd_index, ?_⟩
-  obtain ⟨m, hm⟩ := IsPGroup.iff_card.1 P.isPGroup'
+  obtain ⟨m, hm⟩ := IsPGroup.iff_card.1 P.isPGroup
   have hcard : Fintype.card P = p ^ m := by rw [← hm, Nat.card_eq_fintype_card]
   -- The conjugation action of `G` restricted to `P` is, by definition, the conjugation action
   -- of the restriction `A.ρ.comp P.subtype`, the form the norm-splitting lemmas are stated in.
@@ -209,7 +209,7 @@ theorem projective_of_isZero_res_sylow [Finite G]
         (Ideal.span_singleton_eq_top.2 hu))
     exact Representation.id_mem_range_norm_linHom_of_baseChange (A.ρ.comp (P : Subgroup G).subtype)
       hcard hreg
-      (Representation.id_mem_range_norm_linHom_of_ker_norm_le p P.isPGroup' _
+      (Representation.id_mem_range_norm_linHom_of_ker_norm_le p P.isPGroup _
         (ker_norm_baseChange_le_coinvariantsKer (res (P : Subgroup G).subtype A) (p : k) hreg h0
           h1))
 

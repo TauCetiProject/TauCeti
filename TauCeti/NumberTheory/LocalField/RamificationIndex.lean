@@ -501,7 +501,7 @@ theorem isTamelyRamified_tower_iff (M : Type*) [Field M] [ValuativeRel M]
     [IsScalarTower K L M] [ValuativeExtension L M] :
     IsTamelyRamified K M ↔ IsTamelyRamified K L ∧ IsTamelyRamified L M := by
   have hp : (ringChar 𝓀[K]).Prime := CharP.prime_ringChar 𝓀[K]
-  simp only [isTamelyRamified_iff, ramificationIndex_tower (K := K) (L := L),
+  simp only [isTamelyRamified_iff, ramificationIndex_tower (K := K) (L := L) M,
     ← Algebra.ringChar_eq 𝓀[K] 𝓀[L], hp.dvd_mul, not_or]
 
 /-- An intermediate extension of a tamely ramified tower of nonarchimedean local fields is

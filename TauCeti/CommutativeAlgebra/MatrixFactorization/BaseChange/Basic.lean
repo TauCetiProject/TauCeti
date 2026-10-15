@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
-public import TauCeti.Algebra.Homology.Periodic.Duplex
+public import TauCeti.Algebra.Homology.Periodic.Duplex.Basic
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 

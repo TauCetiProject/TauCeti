@@ -1,0 +1,17 @@
+name: Stack Policy Wake
+
+# Non-main bases can contain candidate-controlled workflows. This workflow has
+# no write token/secrets and executes no repository code. Its completion wakes
+# the main-defined privileged observer, including when retargeting a fork PR.
+on:
+  pull_request:
+    branches-ignore: [main]
+    types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft]
+
+permissions: {}
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'true'

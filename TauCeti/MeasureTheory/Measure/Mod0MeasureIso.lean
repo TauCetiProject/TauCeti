@@ -115,7 +115,7 @@ def Mod0MeasureIso.trans {α β γ} [MeasurableSpace α] [MeasurableSpace β]
   map_invFun := by
     rw [← Measure.map_map e.measurable_invFun f.measurable_invFun, f.map_invFun, e.map_invFun]
   left_inv_ae := by
-    have hqmp : Measure.QuasiMeasurePreserving e.toFun μ ν := by
+    have hqmp : QuasiMeasurePreserving e.toFun μ ν := by
       refine ⟨e.measurable_toFun, ?_⟩
       rw [e.map_toFun]
     have h1 := hqmp.ae_eq_comp f.left_inv_ae
@@ -124,7 +124,7 @@ def Mod0MeasureIso.trans {α β γ} [MeasurableSpace α] [MeasurableSpace β]
     rw [hx1]
     exact hx2
   right_inv_ae := by
-    have hqmp : Measure.QuasiMeasurePreserving f.invFun ξ ν := by
+    have hqmp : QuasiMeasurePreserving f.invFun ξ ν := by
       refine ⟨f.measurable_invFun, ?_⟩
       rw [f.map_invFun]
     have h2 := hqmp.ae_eq_comp e.right_inv_ae

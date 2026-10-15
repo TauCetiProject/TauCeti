@@ -72,6 +72,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact`: a function of class
   `C¹` on an open set `U` is an element of `W^{1,p}(Ω)` for every `Ω` inside a compact subset
   of `U`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_continuousLinearMap`: on a bounded `Ω`, a continuous
+  linear functional is an element of `W^{1,p}(Ω)` whose weak gradient is its dual vector.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
   `p ≤ q`.
 
@@ -390,6 +392,23 @@ def W1p.gradient (u : W1p mu Omega p) : Lp E p (mu.restrict Omega) :=
 @[simp]
 theorem W1p.gradientL_apply (u : W1p mu Omega p) : W1p.gradientL u = W1p.gradient u := (rfl)
 
+/-- The weak gradient of a sum is the sum of the weak gradients. -/
+@[simp]
+theorem W1p.gradient_add (u v : W1p mu Omega p) :
+    W1p.gradient (u + v) = W1p.gradient u + W1p.gradient v :=
+  map_add W1p.gradientL u v
+
+/-- The weak gradient of a negation is the negation of the weak gradient. -/
+@[simp]
+theorem W1p.gradient_neg (u : W1p mu Omega p) : W1p.gradient (-u) = -W1p.gradient u :=
+  map_neg W1p.gradientL u
+
+/-- The weak gradient of a difference is the difference of the weak gradients. -/
+@[simp]
+theorem W1p.gradient_sub (u v : W1p mu Omega p) :
+    W1p.gradient (u - v) = W1p.gradient u - W1p.gradient v :=
+  map_sub W1p.gradientL u v
+
 /-- `W1p.valueL` is the ambient jet projection precomposed with the inclusion, so the Sobolev
 value component *is* the value component of the underlying ambient jet. -/
 theorem W1p.value_coe (u : W1p mu Omega p) :
@@ -416,6 +435,23 @@ value. -/
 theorem W1p.value_neg_ae (u : W1p mu Omega p) :
     ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -⇑(W1p.value u) := by
   simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+
+/-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
+theorem W1p.value_add_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.value (u + v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) + ⇑(W1p.value v) := by
+  simpa only [← W1p.valueL_apply, map_add] using Lp.coeFn_add (W1p.value u) (W1p.value v)
+
+/-- The value of a difference of two Sobolev functions is almost everywhere the difference of
+their values. -/
+theorem W1p.value_sub_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.value (u - v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) - ⇑(W1p.value v) := by
+  simpa only [← W1p.valueL_apply, map_sub] using Lp.coeFn_sub (W1p.value u) (W1p.value v)
+
+/-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
+of its value. -/
+theorem W1p.value_smul_ae (c : ℝ) (u : W1p mu Omega p) :
+    ⇑(W1p.value (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(W1p.value u) := by
+  simpa only [← W1p.valueL_apply, map_smul] using Lp.coeFn_smul c (W1p.value u)
 
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
@@ -644,11 +680,9 @@ theorem W1p.value_add_const_ae (u : W1p mu Omega p) (c : ℝ) :
   rw [h1, Pi.add_apply, h2, Function.const_apply]
 
 /-- Adding a constant to a Sobolev function does not change its weak gradient. -/
-@[simp]
 theorem W1p.gradient_add_const (u : W1p mu Omega p) (c : ℝ) :
     W1p.gradient (u + W1p.const c) = W1p.gradient u := by
-  rw [← W1p.gradientL_apply, map_add, W1p.gradientL_apply, W1p.gradientL_apply,
-    W1p.gradient_const, add_zero]
+  rw [W1p.gradient_add, W1p.gradient_const, add_zero]
 
 end Const
 
@@ -687,6 +721,19 @@ theorem W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact {u : E → �
     ((hu.continuousOn.mono hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet
       hΩK p)
     ((hgrad.mono hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p)
+
+open scoped Gradient in
+/-- **A continuous linear functional is a Sobolev function on a bounded domain.** If `Ω` is
+bounded, then `ℓ : E →L[ℝ] ℝ` is represented by an element of `W^{1,p}(Ω)` whose weak gradient is
+the constant vector `(InnerProductSpace.toDual ℝ E).symm ℓ` dual to `ℓ`. -/
+theorem W1p.exists_value_gradient_ae_eq_continuousLinearMap
+    (hΩ : Bornology.IsBounded (Omega : Set E)) (ℓ : StrongDual ℝ E) :
+    ∃ v : W1p mu Omega p, W1p.value v =ᵐ[mu.restrict Omega] ℓ ∧
+      W1p.gradient v =ᵐ[mu.restrict Omega] fun _ => (InnerProductSpace.toDual ℝ E).symm ℓ := by
+  have hgrad : ∇ (ℓ : E → ℝ) = fun _ => (InnerProductSpace.toDual ℝ E).symm ℓ :=
+    gradient_eq fun _ => hasGradientAt_iff_hasFDerivAt.2 (by simpa using ℓ.hasFDerivAt)
+  simpa only [hgrad] using W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact isOpen_univ
+    ℓ.contDiff.contDiffOn hΩ.isCompact_closure subset_closure (Set.subset_univ _)
 
 end
 

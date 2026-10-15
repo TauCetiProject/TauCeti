@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.HopfAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
+import TauCeti.Algebra.HopfAlgebra.Basic
 
 /-!
 # Base change of the general linear coordinate Hopf algebra

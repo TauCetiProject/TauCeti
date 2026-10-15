@@ -276,7 +276,7 @@ private theorem normalizerIdeal_le_ker_iff
       (RingHom.ker g.ofConv) = RingHom.ker g⁻¹.ofConv := by
     ext x
     simp only [Ideal.mem_comap, RingHom.mem_ker,
-      _root_.HopfAlgebra.antipodeAlgHom_apply, AlgHom.convInv_apply]
+      _root_.HopfAlgebra.antipodeAlgHom_apply, WithConv.algHom_inv_apply]
   rw [hker]
   exact normalizer_equations_iff π hπ A g
 
