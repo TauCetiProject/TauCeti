@@ -22,8 +22,9 @@ divided powers `x⁽ⁱ⁾ = xⁱ / i!` of `TauCeti/RingTheory/DividedPowers/Ass
 exp (t • x) = ∑ i, tⁱ • x⁽ⁱ⁾
 ```
 
-has *integer* coefficients when `t` is an integer. Consequently `exp (t • x)` lies in any
-additive subgroup containing the divided powers of `x`, and it preserves any additive subgroup of a
+holds for any monoid acting additively by central scalars. When `t` is an integer it has *integer*
+coefficients. Consequently `exp (t • x)` lies in any additive subgroup containing the divided powers
+of `x`, and it preserves any additive subgroup of a
 module that the divided powers of `x` preserve. The map `t ↦ exp (t • x)` is a homomorphism from the
 additive group of integers to `Aˣ`, whose values lie in such an additive subgroup.
 
@@ -74,8 +75,9 @@ theorem unop_exp_op {x : A} (hx : IsNilpotent x) :
   rw [exp_eq_sum hk, exp_eq_sum hk_op]
   simp
 
-variable {R : Type*} [CommRing R] [Algebra R A]
+variable {R : Type*} [Semiring R] [Module R A]
 
+variable [SMulCommClass R A A] in
 /-- The exponential of left multiplication is left multiplication by the exponential. -/
 @[simp]
 theorem exp_mulLeft_apply {x : A} (hx : IsNilpotent x) (a : A) :
@@ -85,6 +87,7 @@ theorem exp_mulLeft_apply {x : A} (hx : IsNilpotent x) (a : A) :
     simp [LinearMap.pow_mulLeft, hk]
   simp [exp_eq_sum hk_left, exp_eq_sum hk, sum_mul, smul_mul_assoc]
 
+variable [IsScalarTower R A A] in
 /-- The exponential of right multiplication is right multiplication by the exponential. -/
 @[simp]
 theorem exp_mulRight_apply {x : A} (hx : IsNilpotent x) (a : A) :
@@ -112,25 +115,24 @@ variable {A : Type*} [Ring A] [Algebra ℚ A]
 
 /-! ## The divided-power expansion -/
 
-/-- The exponential of a rational multiple of a nilpotent element, expanded in divided powers.
+/-- The exponential of a scalar multiple of a nilpotent element, expanded in divided powers.
 
-The divided powers themselves do not depend on the scalar: rescaling `x` only rescales the
-coefficients. -/
-theorem exp_smul_eq_sum_smul_dividedPower {x : A} {k : ℕ} (hk : x ^ k = 0) (r : ℚ) :
+The scalars act additively and commute with multiplication in `A`. The divided powers themselves
+do not depend on the scalar: rescaling `x` only rescales the coefficients. -/
+theorem exp_smul_eq_sum_smul_dividedPower {M : Type*} [Monoid M] [DistribMulAction M A]
+    [IsScalarTower M A A] [SMulCommClass M A A]
+    {x : A} {k : ℕ} (hk : x ^ k = 0) (r : M) :
     exp (r • x) = ∑ i ∈ range k, r ^ i • Associative.dividedPower i x := by
   have hk' : (r • x) ^ k = 0 := by rw [smul_pow, hk, smul_zero]
   rw [exp_eq_sum hk']
-  exact sum_congr rfl fun i _ =>
-    (Associative.dividedPower_def i (r • x)).symm.trans
-      (Associative.dividedPower_smul r i x)
+  exact sum_congr rfl fun i _ => by
+    rw [smul_pow, Associative.dividedPower_def, smul_comm]
 
 /-- The exponential of an integer multiple of a nilpotent element has integer coefficients on the
 divided powers. This is the integrality that lets a root subgroup map be defined over `ℤ`. -/
 theorem exp_zsmul_eq_sum_zsmul_dividedPower {x : A} {k : ℕ} (hk : x ^ k = 0) (t : ℤ) :
-    exp (t • x) = ∑ i ∈ range k, t ^ i • Associative.dividedPower i x := by
-  rw [← Int.cast_smul_eq_zsmul ℚ t x, exp_smul_eq_sum_smul_dividedPower hk]
-  refine sum_congr rfl fun i _ => ?_
-  rw [← Int.cast_pow, Int.cast_smul_eq_zsmul]
+    exp (t • x) = ∑ i ∈ range k, t ^ i • Associative.dividedPower i x :=
+  exp_smul_eq_sum_smul_dividedPower hk t
 
 /-- An additive subgroup containing every divided power of a nilpotent element contains every
 integral exponential of it. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.CentralPoint
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
 # Central closed subgroup schemes
@@ -44,6 +45,12 @@ producing a Hopf ideal from the cocommutativity defect of `H`.
   when the points it cuts out are central points over every value algebra.**
 * `TauCeti.HopfIdeal.IsCentral.comapOfSurjective_of_bijective`: centrality is preserved by
   pullback along a bijective bialgebra morphism.
+* `TauCeti.HopfIdeal.IsCentral.comap_of_injective`: over a commutative ring, the image of a central
+  closed subgroup under a schematically dominant homomorphism is central in the target when
+  the target coordinate algebra, source subgroup coordinate algebra, and image coordinate
+  algebra are flat. The proof
+  uses the conjugation-defect version of the tensor-kernel argument in
+  `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Image`.
 * `TauCeti.HopfIdeal.IsCentral.isNormal`: a central Hopf ideal is normal.
 * `TauCeti.HopfIdeal.IsCentral.isCocomm_quotient`: the coordinate Hopf algebra of a central
   closed subgroup is cocommutative.
@@ -317,6 +324,57 @@ theorem IsCentral.isCocomm_quotient {H : _root_.CommHopfAlgCat.{v} R}
     ((HopfAlgebra.mem_center.mp
       (CommHopfAlgCat.quotientPointsSubgroup_le_center H I hI A
         (CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H I A _))).commute _).eq
+
+end HopfIdeal
+
+namespace HopfIdeal
+
+variable {k : Type u} [CommRing k] {H : Type v} {K : Type w}
+variable [CommRing H] [CommRing K] [HopfAlgebra k H] [HopfAlgebra k K]
+variable [Module.Flat k H]
+
+/-- The scheme-theoretic image of a central closed subgroup under a schematically dominant
+affine-group homomorphism is central in the target. Coordinate morphisms run in the opposite
+direction, so dominance is injectivity of the bialgebra map. The target coordinate algebra,
+source subgroup coordinate algebra, and image coordinate algebra are assumed flat over the
+base; over a field this is automatic. -/
+theorem IsCentral.comap_of_injective {I : HopfIdeal k K} (hI : I.IsCentral)
+    (f : H →ₐc[k] K) (hf : Function.Injective f) [Module.Flat k (K ⧸ I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) I.toIdeal)] :
+    (I.comap f).IsCentral := by
+  let q : K →ₐ[k] K ⧸ I.toIdeal := Ideal.Quotient.mkₐ k I.toIdeal
+  let g : H →ₐ[k] K ⧸ I.toIdeal := q.comp f.toAlgHom
+  have hgker : RingHom.ker g = (I.comap f).toIdeal := by
+    ext x
+    simp [g, q, comap_toIdeal, Ideal.Quotient.eq_zero_iff_mem]
+  have hmaps :
+      (Algebra.TensorProduct.map q (AlgHom.id k K)).comp
+          (Algebra.TensorProduct.map f.toAlgHom f.toAlgHom) =
+        Algebra.TensorProduct.map g f.toAlgHom := by
+    rw [← Algebra.TensorProduct.map_comp, AlgHom.id_comp]
+  have : Module.Flat k (H ⧸ RingHom.ker f.toAlgHom) := by
+    rw [(RingHom.injective_iff_ker_eq_bot f.toAlgHom).mp hf]
+    exact Module.Flat.of_linearEquiv (AlgEquiv.quotientBot k H).toLinearEquiv
+  have hker : RingHom.ker (Algebra.TensorProduct.map g f.toAlgHom) =
+      leftTensorIdeal (R := k) (H := H) (I.comap f).toIdeal := by
+    rw [Algebra.TensorProduct.map_ker_of_flat_flat,
+      (RingHom.injective_iff_ker_eq_bot f.toAlgHom).mp hf,
+      Ideal.map_bot, sup_bot_eq, hgker, leftTensorIdeal_def,
+      AlgHom.toRingHom_eq_coe, Ideal.map_coe]
+  rw [isCentral_iff_conjugation_sub_mem]
+  intro x
+  rw [← hker, RingHom.mem_ker]
+  have hzero : Algebra.TensorProduct.map q (AlgHom.id k K)
+      (HopfAlgebra.conjugationAlgHom (R := k) (H := K) (f x) -
+        Algebra.TensorProduct.includeRight (f x)) = 0 := by
+    rw [← RingHom.mem_ker, ker_tensorProduct_map_quotient_id]
+    exact hI (f x)
+  -- Naturality transports the conjugation defect to the source subgroup's quotient.
+  have hnatural := AlgHom.congr_fun (HopfAlgebra.tensorProduct_map_comp_conjugationAlgHom f) x
+  simp only [AlgHom.comp_apply] at hnatural
+  rw [← hmaps, AlgHom.comp_apply, map_sub, hnatural]
+  simpa only [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.map_tmul,
+    map_one, BialgHom.coe_toAlgHom] using hzero
 
 end HopfIdeal
 

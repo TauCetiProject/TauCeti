@@ -75,10 +75,10 @@ theorem forall_localSymbol_kummerClass_eq_zero_iff (b : Kˣ) :
   have hnorm : normGroup K K⟮s⟯ = ⊤ := eq_top_iff.2 fun a _ ↦
     (localSymbol_eq_zero_iff_mem_normGroup hζ tr hn a b ht htop).1 (h a)
   -- `E/K` is a cyclic extension of local fields, so its degree is the norm index `1`
-  let _ := finiteExtensionValuativeRel K K⟮s⟯
-  let _ := finiteExtensionNormedFieldTopology K K⟮s⟯
+  let _ := algebraicExtensionValuativeRel K K⟮s⟯
+  let _ := algebraicExtensionNormedFieldTopology K K⟮s⟯
   have := finiteExtension_isNonarchimedeanLocalField K K⟮s⟯
-  have := finiteExtension_valuativeExtension K K⟮s⟯
+  have := algebraicExtension_valuativeExtension K K⟮s⟯
   have := isGalois_of_pow_eq_of_adjoin_eq_top hζ b.ne_zero ht htop
   have := isCyclic_of_pow_eq_of_adjoin_eq_top hζ b.ne_zero ht htop
   have h1 : finrank K K⟮s⟯ = 1 := by

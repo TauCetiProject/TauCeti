@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Basic
 public import Mathlib.LinearAlgebra.Dual.Basis
 
 /-!

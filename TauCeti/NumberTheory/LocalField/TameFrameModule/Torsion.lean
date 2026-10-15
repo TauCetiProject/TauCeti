@@ -450,7 +450,7 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv [Finite G] {σ τ : G}
       ⟨hinj, MonoidAlgebra.toSpanSingleton_mk_one_surjective hgen'⟩)).symm
   obtain ⟨k, hk⟩ := PadicInt.ideal_eq_span_pow_p hne
   exact nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective hgen
-    (IsSMulRegular.nat_of_isAddTorsionFree (M := ℤ_[p]) (Fact.out : p.Prime).ne_zero)
+    (IsSMulRegular.nat_of_hasUniqueDiv (M := ℤ_[p]) (Fact.out : p.Prime).ne_zero)
     (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
       (isOfFinOrder_of_finite τ) hcard) hk
 

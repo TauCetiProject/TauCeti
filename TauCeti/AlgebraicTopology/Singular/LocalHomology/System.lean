@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Glue
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # The local homology system of a manifold
@@ -149,7 +150,7 @@ theorem isIso_localHomologyRestriction_symm_image [T2Space M] (φ : OpenPartialH
     IsIso (localHomologyRestriction R
       (singleton_subset_iff.2 ⟨φ x, hxK, φ.left_inv hx⟩ : {x} ⊆ φ.symm '' K) k) :=
   isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKc.isBounded
-    hKc.isClosed (hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ)).isClosed hKφ k
+    hKc.isClosed (φ.isClosed_image_symm_of_isCompact hKc hKφ) hKφ k
 
 /-- An open, bounded, convex subset of the target of a chart whose closure also lies in the
 target. These patches index the cover over which the local homology system is glued. -/

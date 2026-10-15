@@ -24,7 +24,7 @@ whose monomials are units along the orbit of `σ`.
 ## Main declarations
 
 * `TauCeti.Toric.coneSublattice`: the sublattice `N_σ` of lattice vectors in the span of `σ`.
-* `TauCeti.Toric.isAddTorsionFree_quotient_coneSublattice`: the quotient `N ⧸ N_σ` is torsion
+* `TauCeti.Toric.hasUniqueDiv_quotient_coneSublattice`: the quotient `N ⧸ N_σ` is torsion
   free.
 * `TauCeti.Toric.free_quotient_coneSublattice`: for finitely generated `N`, the quotient
   `N ⧸ N_σ` is free.
@@ -59,9 +59,9 @@ theorem mem_coneSublattice {n : N} :
   (Iff.rfl)
 
 /-- The sublattice of a cone is saturated: the quotient lattice `N ⧸ N_σ` is torsion free. -/
-instance isAddTorsionFree_quotient_coneSublattice :
-    IsAddTorsionFree (N ⧸ coneSublattice i σ) := by
-  rw [← Module.isTorsionFree_int_iff_isAddTorsionFree, Module.isTorsionFree_iff_smul_eq_zero]
+instance hasUniqueDiv_quotient_coneSublattice :
+    HasUniqueDiv (N ⧸ coneSublattice i σ) := by
+  rw [← Module.isTorsionFree_int_iff_hasUniqueDiv, Module.isTorsionFree_iff_smul_eq_zero]
   intro k x hkx
   induction x using QuotientAddGroup.induction_on with
   | H n =>

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.NumberTheory.RamificationInertia.ResidueSeparable
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 
 /-!
@@ -21,6 +23,8 @@ The division-free tower formula needs only that `H` is the Galois group of `B/C`
 that its residue extension is separable; the base ring need not be a domain. The index
 formula additionally uses the invariant extension `B/A`. Residue separability is essential:
 without it the inertia order is the ramification index times the inseparable residue degree.
+The translated formulas apply the same description throughout the group orbit of a selected
+prime, while requiring separability only at that prime.
 
 ## References
 
@@ -31,6 +35,8 @@ without it the inertia order is the ramification index times the inseparable res
 -/
 
 public section
+
+open scoped Pointwise
 
 namespace Ideal
 
@@ -94,5 +100,36 @@ theorem ramificationIdx_under_eq_one_iff_inertia_le (P : Ideal B) [P.IsMaximal]
     (P.under C).ramificationIdx A = 1 ↔ P.inertia G ≤ H := by
   have : Finite G := IsGaloisGroup.finite G A B
   rw [ramificationIdx_under_eq_relIndex_inertia P H C, Subgroup.relIndex_eq_one]
+
+variable [SMulCommClass G A B]
+
+/-- The ramification index below a translate of `Q` is the relative index of the conjugate
+inertia group. Separability is required only for the selected residue extension at `Q`; the
+group action transports it to every translate. -/
+theorem ramificationIdx_under_smul_eq_relIndex_inertia (Q : Ideal B) [Q.IsMaximal]
+    (H : Subgroup G) (C : Type*) [CommRing C] [IsDomain C]
+    [Algebra A C] [Algebra C B] [IsScalarTower A C B]
+    [IsGaloisGroup H C B] [Module.Flat C B]
+    [Algebra.IsSeparable (A ⧸ Q.under A) (B ⧸ Q)] (σ : G) :
+    ((σ • Q).under C).ramificationIdx A =
+      H.relIndex (MulAut.conj σ • Q.inertia G) := by
+  let : Algebra.IsSeparable (A ⧸ (σ • Q).under A) (B ⧸ σ • Q) :=
+    Quotient.isSeparable_smul Q σ
+  let _ : (σ • Q).IsMaximal := by
+    rw [pointwise_smul_eq_comap]
+    infer_instance
+  rw [ramificationIdx_under_eq_relIndex_inertia (σ • Q) H C, inertia_smul,
+    TauCeti.map_conj_eq_conj_smul]
+
+/-- The contraction of a translated prime has ramification index one exactly when its conjugate
+inertia group is contained in the subgroup fixing the intermediate ring. -/
+theorem ramificationIdx_under_smul_eq_one_iff_inertia_le (Q : Ideal B) [Q.IsMaximal]
+    (H : Subgroup G) (C : Type*) [CommRing C] [IsDomain C]
+    [Algebra A C] [Algebra C B] [IsScalarTower A C B]
+    [IsGaloisGroup H C B] [Module.Flat C B]
+    [Algebra.IsSeparable (A ⧸ Q.under A) (B ⧸ Q)] (σ : G) :
+    ((σ • Q).under C).ramificationIdx A = 1 ↔
+      MulAut.conj σ • Q.inertia G ≤ H := by
+  rw [Q.ramificationIdx_under_smul_eq_relIndex_inertia H C σ, Subgroup.relIndex_eq_one]
 
 end Ideal
