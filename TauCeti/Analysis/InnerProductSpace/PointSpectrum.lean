@@ -72,6 +72,11 @@ of two operators `A` on `E` and `B` on `F`: a *separation* `δ ≤ |μ - ν|` wi
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
+* `LinearMap.IsSymmetric.norm_apply_sub_smul_le_of_pointSpectrumIn`,
+  `LinearMap.IsSymmetric.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn`: on a
+  finite-dimensional invariant subspace, if every eigenvalue lies within `r` of `c` then
+  `‖T x - c x‖ ≤ r ‖x‖`, and if every eigenvalue is at distance at least `r` from `c` then
+  `r ‖x‖ ≤ ‖T x - c x‖`.
 * `Module.End.PointOrderedGap.pointSpectraSeparated`,
   `Module.End.PointIntervalExteriorGap.pointSpectraSeparated`: ordered and interval/exterior gaps
   are separations.
@@ -425,6 +430,74 @@ theorem pointSpectrumIn_Ici_iff (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ 
     A.PointSpectrumIn U (Set.Ici a) ↔ ∀ x ∈ U, a * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜 :=
   ⟨fun h _ hx ↦ hA.le_re_inner_apply_self_of_pointSpectrumIn hU h hx,
     Module.End.pointSpectrumIn_Ici_of_le_re_inner_apply_self⟩
+
+end LinearMap.IsSymmetric
+
+/-! ### Norm bounds -/
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  {T : Module.End 𝕜 E} {U : Submodule 𝕜 E} [FiniteDimensional 𝕜 U] {c r : ℝ}
+
+/-- `‖T x - c x‖²` and `‖x‖²` in an ordered eigenbasis of a symmetric `T`. -/
+private theorem sq_norm_apply_sub_smul_eq_sum [FiniteDimensional 𝕜 E] (hT : T.IsSymmetric) (c : ℝ)
+    (x : E) :
+    ‖T x - (c : 𝕜) • x‖ ^ 2 = ∑ i, (hT.eigenvalues rfl i - c) ^ 2 *
+      ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 ∧
+    ‖x‖ ^ 2 = ∑ i, ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 := by
+  have hw (i) : (T - (c : 𝕜) • LinearMap.id : E →ₗ[𝕜] E) (hT.eigenvectorBasis rfl i) =
+      ((hT.eigenvalues rfl i - c : ℝ) : 𝕜) • hT.eigenvectorBasis rfl i := by
+    simp [sub_smul]
+  have h := LinearMap.sq_norm_apply_eq_sum_of_eigenbasis _ _ hw x
+  simp only [RCLike.norm_ofReal, sq_abs] at h
+  refine ⟨by simpa using h, ?_⟩
+  rw [← (hT.eigenvectorBasis rfl).repr.norm_map, EuclideanSpace.norm_sq_eq]
+
+/-- **Norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant under a
+symmetric operator `T`, and every eigenvalue of `T` on `U` lies within `r` of `c`, then
+`‖T x - c x‖ ≤ r ‖x‖` for every `x ∈ U`. -/
+theorem norm_apply_sub_smul_le_of_pointSpectrumIn (hT : T.IsSymmetric) (hU : ∀ x ∈ U, T x ∈ U)
+    (h : T.PointSpectrumIn U (Metric.closedBall c r)) {x : E} (hxU : x ∈ U) :
+    ‖T x - (c : 𝕜) • x‖ ≤ r * ‖x‖ := by
+  set hB := hT.restrict_invariant hU
+  suffices ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ ≤ r * ‖(⟨x, hxU⟩ : U)‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : |hB.eigenvalues rfl i - c| ≤ r := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
+  -- Without eigenvalues the space is trivial; otherwise `r ≥ 0`.
+  have hr : 0 ≤ r * ‖x‖ := by
+    rcases isEmpty_or_nonempty (Fin (Module.finrank 𝕜 U)) with hι | hι
+    · rw [Finset.univ_eq_empty, Finset.sum_empty, sq_eq_zero_iff, norm_eq_zero] at hx
+      simp [hx]
+    · obtain ⟨i⟩ := hι
+      exact mul_nonneg ((abs_nonneg _).trans (hev i)) (norm_nonneg x)
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) hr two_ne_zero).mp ?_
+  rw [hTx, mul_pow, hx, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+  simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg _) (hev i) 2
+
+/-- **Lower norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant
+under a symmetric operator `T`, and every eigenvalue of `T` on `U` is at distance at least `r`
+from `c`, then `r ‖x‖ ≤ ‖T x - c x‖` for every `x ∈ U`. -/
+theorem mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn (hT : T.IsSymmetric)
+    (hU : ∀ x ∈ U, T x ∈ U) (h : T.PointSpectrumIn U (Metric.ball c r)ᶜ) {x : E} (hxU : x ∈ U) :
+    r * ‖x‖ ≤ ‖T x - (c : 𝕜) • x‖ := by
+  rcases le_or_gt r 0 with hr | hr
+  · exact (mul_nonpos_of_nonpos_of_nonneg hr (norm_nonneg x)).trans (norm_nonneg _)
+  set hB := hT.restrict_invariant hU
+  suffices r * ‖(⟨x, hxU⟩ : U)‖ ≤ ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : r ≤ |hB.eigenvalues rfl i - c| := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
+  refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp ?_
+  rw [hTx, mul_pow, hx, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+  simpa only [sq_abs] using pow_le_pow_left₀ hr.le (hev i) 2
 
 end LinearMap.IsSymmetric
 

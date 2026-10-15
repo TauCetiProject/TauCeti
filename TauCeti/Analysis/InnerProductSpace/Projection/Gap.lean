@@ -38,6 +38,8 @@ plane.
 * `Submodule.projectionGap_eq_max`: the gap is the larger of the two directed gaps.
 * `Submodule.directedProjectionGap_le_iff`: the directed gap from `U` to `V` is the least
   `s ≥ 0` with `‖P_{Vᗮ} u‖ ≤ s ‖u‖` for every `u ∈ U`.
+* `Submodule.disjoint_orthogonal_of_directedProjectionGap_lt_one`: if the directed gap from `U`
+  to `V` is less than `1`, then `U ⊓ Vᗮ = ⊥`.
 * `Submodule.directedProjectionGap_le_directedProjectionGap_of_finrank_le`: for
   finite-dimensional subspaces, the directed gap from the lower-dimensional one is at most the
   directed gap from the other.
@@ -208,6 +210,16 @@ theorem directedProjectionGap_le_iff {s : ℝ} (hs : 0 ≤ s) :
   · simpa [starProjection_eq_self_iff.mpr hu] using h u
   · exact (h _ (U.starProjection_apply_mem x)).trans
       (mul_le_mul_of_nonneg_left (U.norm_starProjection_apply_le x) hs)
+
+/-- If the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1`, then no nonzero vector of
+`U` is orthogonal to `V`. -/
+theorem disjoint_orthogonal_of_directedProjectionGap_lt_one (h : directedProjectionGap U V < 1) :
+    Disjoint U Vᗮ := by
+  refine disjoint_def.2 fun x hxU hxV ↦ ?_
+  -- `x = P_{Vᗮ} x`, so `‖x‖ ≤ s ‖x‖` with `s < 1`.
+  have hx := (directedProjectionGap_le_iff U V (directedProjectionGap_nonneg U V)).1 le_rfl x hxU
+  rw [starProjection_eq_self_iff.2 hxV] at hx
+  exact norm_eq_zero.1 <| le_antisymm (by nlinarith [norm_nonneg x]) (norm_nonneg x)
 
 /-- For finite-dimensional subspaces with `dim V ≤ dim U`, the directed gap from `V` to `U` is at
 most the directed gap from `U` to `V`: `‖P_{Uᗮ} P_V‖ ≤ ‖P_{Vᗮ} P_U‖`. -/

@@ -60,7 +60,7 @@ lemma rigidifiedPicardPoint_map {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
     (rigidifiedPicardFunctor f x₀ hx₀).map φ (rigidifiedPicardPoint f x₀ hx₀ T) =
       rigidifiedPicardPoint f x₀ hx₀ T' := by
   rw [rigidifiedPicardPoint_eq, rigidifiedPicardPoint_eq,
-    rigidifiedPicardFunctor_map]
+    rigidifiedPicardFunctor_map_apply]
   exact RigidifiedLineBundleClass.pullback_trivial _
 
 end
