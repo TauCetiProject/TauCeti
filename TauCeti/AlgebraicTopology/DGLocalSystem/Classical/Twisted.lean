@@ -26,15 +26,11 @@ the action of a chain is the action of its truncation (`TauCeti.op_loopChainToGr
 So for a twisting cocycle `m` with values in `C_*(Ω_x X; R)`, the twisted complex of
 `classicalDGLocalSystem x L` with `m` is the twisted complex of `L_x` over `R[π₁(X, x)]` with the
 truncated cocycle (`TauCeti.classicalTwistedCochainComplexIso`), through the identity of the
-underlying modules.  This is the twisted complex of a classical local system: the Morse or Floer
-complex with coefficients in `L`, whose differential counts the trajectories of index one weighted
-by the monodromy of `L` along them.
-
-For a single generator `p` the cocycle vanishes (`TwistingCocycle.one_sided`), and the twisted
-complex is the fiber `L_x` itself, in degree `-ind p` with the zero differential.
-
-The identification of these complexes with the cubical chains with local coefficients is not done
-here.
+underlying modules, and likewise for their homology (`TauCeti.classicalTwistedHomologyIso`).
+When the twisting cocycle comes from Morse or Floer trajectory data, as in the source, the
+complex over the group ring is the Morse or Floer complex with coefficients in `L`. This file
+works with an arbitrary twisting cocycle and does not construct that data. It also does not
+compare these complexes with cubical chains with local coefficients.
 
 ## Main definitions
 
@@ -42,7 +38,7 @@ here.
   algebras.
 * `TauCeti.classicalGroupAlgebraAction`: the right action of the group ring on the fiber.
 * `TauCeti.classicalTwistedCochainComplexIso`: the twisted complex of a classical local system is
-  the twisted complex of its fiber over the group ring with the truncated cocycle.
+  isomorphic to the twisted complex of its fiber over the group ring with the truncated cocycle.
 
 ## References
 
