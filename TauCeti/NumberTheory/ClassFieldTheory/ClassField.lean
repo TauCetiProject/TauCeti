@@ -123,8 +123,8 @@ theorem classField_eq_bot_iff {V : OpenNormalSubgroup (AbsoluteGaloisGroup F)} :
 /-- The class field of `V` is finite over `F`, because `V` is open. -/
 instance finiteDimensional_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     FiniteDimensional F (classField F V) :=
-  (InfiniteGalois.isOpen_iff_finite (classField F V)).1
-    (by simpa only [fixingSubgroup_classField] using V.isOpen')
+  -- `classField F V` is defined as the fixed field of `V`.
+  finiteDimensional_fixedField_toSubgroup V.toOpenSubgroup
 
 /-- The class field of `V` is Galois over `F`, because `V` is normal. -/
 instance isGalois_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :

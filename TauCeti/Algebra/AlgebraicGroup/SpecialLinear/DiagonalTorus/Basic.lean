@@ -152,17 +152,17 @@ theorem toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap
       (CommAlgCat.of R A)) :
     Matrix.SpecialLinearGroup.toGL
         (pointsMulEquiv (R := R) (A := A) (r + 1)
-          ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app
             (CommAlgCat.of R A) p)) =
       diagGL fun k ↦ torusCharacter (SplitTorus.pointsMulEquiv p) (diagonalTorusWeight r k) := by
   -- `quotientPointsHom` is by definition the point map of the quotient coordinate morphism.
   have hquot : CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R (r + 1))
       (definingHopfIdeal R (r + 1)) (CommAlgCat.of R A)
-        ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app
           (CommAlgCat.of R A) p) =
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (coordinateMap R (r + 1) ≫ diagonalTorusCoordinateMap r R)).app (CommAlgCat.of R A) p :=
-    by rw [CommHopfAlgCat.mapPointsFunctor_comp_app_apply]; rfl
+    by rw [CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply]; rfl
   refine (pointsMulEquiv_toGL R (r + 1) _).symm.trans ?_
   rw [hquot, coordinateMap_comp_diagonalTorusCoordinateMap]
   exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap _ _ p
@@ -172,13 +172,14 @@ theorem toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap
 noncomputable def diagonalTorusPoints (A : Type w) [CommRing A] [Algebra R A] :
     WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A) →*
       WithConv (coordinateHopfAlgebra R (r + 1) →ₐ[R] A) :=
-  ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app (CommAlgCat.of R A)).hom
+  ((CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app (CommAlgCat.of R
+    A)).hom
 
 /-- `diagonalTorusPoints` is the component of the point map of `diagonalTorusCoordinateMap`. -/
 theorem diagonalTorusPoints_apply (A : Type w) [CommRing A] [Algebra R A]
     (p : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A)) :
     diagonalTorusPoints r R A p =
-      (CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app
+      (CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app
         (CommAlgCat.of R A) p :=
   (rfl)
 

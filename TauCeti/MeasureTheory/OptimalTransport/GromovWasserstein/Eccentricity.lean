@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Constructions.BorelSpace.Real
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Size
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 
 /-!
 # Eccentricity of measured kernels and its Gromov–Wasserstein lower bound
@@ -167,6 +168,19 @@ private theorem ae_edist_kernelEccentricity_le [SFinite μ] [SFinite ν] {π : M
   · refine (eLpNorm_mono_enorm hG fun q' ↦ ?_).trans (eLpNorm_add_le hp)
     simpa [add_comm] using edist_triangle_left (ωY (q.2, q'.2)) z₀ (ωX (q.1, q'.1))
 
+/-- The difference of the eccentricities at the two ends of a coupling is almost everywhere
+strongly measurable. -/
+theorem IsCoupling.aestronglyMeasurable_edist_kernelEccentricity [SFinite μ] [SFinite ν]
+    {π : Measure (X × Y)} (hπ : IsCoupling π μ ν) (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν)) (z₀ : Z) :
+    AEStronglyMeasurable (fun q : X × Y ↦
+      edist (kernelEccentricity p μ ωX z₀ q.1) (kernelEccentricity p ν ωY z₀ q.2)) π :=
+  (ENNReal.measurable_edist.comp_aemeasurable
+    (((aestronglyMeasurable_kernelEccentricity hωX z₀).aemeasurable.comp_quasiMeasurePreserving
+      hπ.measurePreserving_fst.quasiMeasurePreserving).prodMk
+    ((aestronglyMeasurable_kernelEccentricity hωY z₀).aemeasurable.comp_quasiMeasurePreserving
+      hπ.measurePreserving_snd.quasiMeasurePreserving))).aestronglyMeasurable
+
 /-- The eccentricities at the two ends of a coupling `π` differ in `Lᵖ(π)` by at most the
 distortion of `π`. -/
 theorem eLpNorm_edist_kernelEccentricity_le_gromovWassersteinDistortion [SFinite μ] [SFinite ν]
@@ -178,14 +192,9 @@ theorem eLpNorm_edist_kernelEccentricity_le_gromovWassersteinDistortion [SFinite
       gromovWassersteinDistortion p ωX ωY π := by
   rw [gromovWassersteinDistortion_def,
     eLpNorm_prod_eq_eLpNorm_eLpNorm (hπ.aestronglyMeasurable_edist hωX hωY)]
-  refine eLpNorm_mono_enorm_ae ?_ ?_
-  · exact (ENNReal.measurable_edist.comp_aemeasurable
-      (((aestronglyMeasurable_kernelEccentricity hωX z₀).aemeasurable.comp_quasiMeasurePreserving
-        hπ.measurePreserving_fst.quasiMeasurePreserving).prodMk
-      ((aestronglyMeasurable_kernelEccentricity hωY z₀).aemeasurable.comp_quasiMeasurePreserving
-        hπ.measurePreserving_snd.quasiMeasurePreserving))).aestronglyMeasurable
-  · filter_upwards [ae_edist_kernelEccentricity_le hπ hp hωX hωY z₀] with q hq
-    simpa only [enorm_eq_self] using hq
+  refine eLpNorm_mono_enorm_ae (hπ.aestronglyMeasurable_edist_kernelEccentricity hωX hωY z₀) ?_
+  filter_upwards [ae_edist_kernelEccentricity_le hπ hp hωX hωY z₀] with q hq
+  simpa only [enorm_eq_self] using hq
 
 /-- The Wasserstein distance between the two eccentricity distributions is at most the
 distortion of any coupling of the source measures. -/
@@ -195,22 +204,11 @@ theorem wassersteinEDist_map_kernelEccentricity_le_gromovWassersteinDistortion [
     (z₀ : Z) :
     wassersteinEDist p (μ.map (kernelEccentricity p μ ωX z₀))
         (ν.map (kernelEccentricity p ν ωY z₀)) ≤
-      gromovWassersteinDistortion p ωX ωY π := by
-  refine le_trans ?_
+      gromovWassersteinDistortion p ωX ωY π :=
+  (wassersteinEDist_map_le_eLpNorm_of_measurable_edist hπ ENNReal.measurable_edist
+    (aestronglyMeasurable_kernelEccentricity hωX z₀).aemeasurable
+    (aestronglyMeasurable_kernelEccentricity hωY z₀).aemeasurable).trans
     (eLpNorm_edist_kernelEccentricity_le_gromovWassersteinDistortion hπ hp hωX hωY z₀)
-  -- Push `π` forward along measurable representatives of the two eccentricities.
-  have hX := (aestronglyMeasurable_kernelEccentricity (p := p) hωX z₀).aemeasurable
-  have hY := (aestronglyMeasurable_kernelEccentricity (p := p) hωY z₀).aemeasurable
-  have hσ := hπ.map hX.measurable_mk hY.measurable_mk
-  rw [Measure.map_congr hX.ae_eq_mk, Measure.map_congr hY.ae_eq_mk]
-  refine (wassersteinEDist_le hσ p).trans_eq ?_
-  rw [eLpNorm_map_measure ENNReal.measurable_edist.aestronglyMeasurable
-    (hX.measurable_mk.prodMap hY.measurable_mk).aemeasurable]
-  refine eLpNorm_congr_ae ?_
-  filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hX.ae_eq_mk,
-    hπ.measurePreserving_snd.quasiMeasurePreserving.ae_eq_comp hY.ae_eq_mk] with q h₁ h₂
-  simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd] at h₁ h₂ ⊢
-  rw [h₁, h₂]
 
 /-- **The eccentricity lower bound.** For `1 ≤ p`, the Wasserstein distance between the
 outgoing eccentricity distributions of two measured kernels is at most their
