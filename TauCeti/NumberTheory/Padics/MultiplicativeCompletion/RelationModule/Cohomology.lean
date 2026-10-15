@@ -35,6 +35,57 @@ namespace TauCeti
 
 open Additive CategoryTheory ContCohomology _root_.Rep
 
+-- These two private facts identify the existing comparisons by their coefficient coordinates.
+-- Keeping their normalization separate makes the naturality proof use only the generic API.
+private theorem relationModuleComparison_eq (p : ℕ) [Fact p.Prime]
+    {G ι : Type} [Group G] [Finite G] [TopologicalSpace G] [DiscreteTopology G]
+    [Fintype ι] [DecidableEq ι] {g : ι → G} (hg : Subgroup.closure (Set.range g) = ⊤) :
+    letI := freeProfiniteGroup.presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
+    letI := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
+    let B : Rep ℤ_[p] G := ofModuleMonoidAlgebra.obj
+      (ModuleCat.of (MonoidAlgebra ℤ_[p] G) (MonoidAlgebra.relationModule ℤ_[p] G g))
+    ∀ (ψ : Additive (abelianizationProP p (freeProfiniteGroup ι)
+        (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* G).ker) ≃+ B)
+      (hψ : ∀ t x, ψ (t • x) = B.ρ t (ψ x)),
+      ψ = (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg).trans
+        (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] G)
+          (MonoidAlgebra.relationModule ℤ_[p] G g)).symm →
+      freeProfiniteGroup.explicitH2EquivRelationModule p hg =
+        explicitH2AddEquivGroupCohomology (.refl G) ψ hψ := by
+  have hd : Dense (Subgroup.closure (Set.range g) : Set G) := by
+    rw [hg, Subgroup.coe_top]
+    exact dense_univ
+  let := freeProfiniteGroup.presentationClassModuleAction p hd
+  let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
+  intro ψ hψ heq
+  subst ψ
+  dsimp only [freeProfiniteGroup.explicitH2EquivRelationModule]
+
+private theorem padicCompletionUnitsComparison_eq (p : ℕ) [Fact p.Prime]
+    (K L : Type) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [Normal K L]
+    [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
+    [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+    [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] (j : L →ₐ[K] SeparableClosure K) :
+    letI := galoisClassModuleAction p K L j
+    letI := continuousSMul_galoisClassModuleAction p K L j
+    let C : Rep ℤ_[p] (L ≃ₐ[K] L) := ofModuleMonoidAlgebra.obj
+      (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (Additive ↑(padicCompletionUnits p L)))
+    ∀ (χ : Additive (abelianizationProP p (AbsoluteGaloisGroup K)
+        (galoisSubgroup K L j).toSubgroup) ≃+ C)
+      (hχ : ∀ t x, χ (t • x) = C.ρ t (χ x)),
+      χ = (padicCompletionUnitsEquivAbelianizationProP p K L j).symm.toMulEquiv.toAdditive.trans
+        (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+          (Additive ↑(padicCompletionUnits p L))).symm →
+      explicitH2EquivPadicCompletionUnits p K L j =
+        explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ := by
+  let := galoisClassModuleAction p K L j
+  let := continuousSMul_galoisClassModuleAction p K L j
+  intro χ hχ heq
+  subst χ
+  dsimp only [explicitH2EquivPadicCompletionUnits]
+
 variable (p : ℕ) [Fact p.Prime] (K L : Type) [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [Normal K L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [CharZero L]
@@ -90,9 +141,11 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
       (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
         (Additive ↑(padicCompletionUnits p L))).symm
   have hψ : ∀ t x, ψ (t • x) = B.ρ t (ψ x) := fun t x => by
+    -- The group-algebra representation acts by `single t 1` on the unchanged scalar carrier.
     change eL (t • x) = MonoidAlgebra.single t (1 : ℤ_[p]) • eL x
     exact freeProfiniteGroup.abelianizationProPEquivRelationModule_presentation_smul p hg t x
   have hχ : ∀ t x, χ (t • x) = C.ρ t (χ x) := fun t x => by
+    -- Inverse reciprocity intertwines the action after reading its carrier additively.
     change ofMul (eR.symm (t • x.toMul)) =
       MonoidAlgebra.single t (1 : ℤ_[p]) • ofMul (eR.symm x.toMul)
     rw [padicCompletionUnits_single_smul, one_smul]
@@ -109,20 +162,13 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv,
       MulEquiv.toAdditive]
     simp only [MulDistribMulActionHom.toAdditive_apply, ModuleCat.hom_ofHom]
+    -- The representation morphism has underlying map β; scalar restriction keeps its carrier.
     change ofMul (eR.symm (f x.toMul)) = β (eL x)
     rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
     exact congrArg ofMul (eR.symm_apply_apply _)
-  -- Both comparisons use these coefficient coordinates. Identify them separately so the
-  -- naturality argument does not unfold both large cohomology equivalences at once.
-  have hL : freeProfiniteGroup.explicitH2EquivRelationModule p hg =
-      explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) ψ hψ := by
-    dsimp only [freeProfiniteGroup.explicitH2EquivRelationModule, ψ, eL, B]
-    rfl
-  have hR : explicitH2EquivPadicCompletionUnits p K L j =
-      explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ := by
-    dsimp only [explicitH2EquivPadicCompletionUnits, χ, eR, C]
-    rfl
+  have hL := relationModuleComparison_eq p hg ψ hψ rfl
+  have hR := padicCompletionUnitsComparison_eq p K L j χ hχ rfl
   intro x
   rw [hR, hL, _root_.groupCohomology.functor_map]
   exact explicitH2AddEquivGroupCohomology_explicitCoeff2
@@ -168,9 +214,11 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
       (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
         (Additive ↑(padicCompletionUnits p L))).symm
   have hψ : ∀ t x, ψ (t • x) = B.ρ t (ψ x) := fun t x => by
+    -- The group-algebra representation acts by `single t 1` on the unchanged scalar carrier.
     change eL (t • x) = MonoidAlgebra.single t (1 : ℤ_[p]) • eL x
     exact freeProfiniteGroup.abelianizationProPEquivRelationModule_presentation_smul p hg t x
   have hχ : ∀ t x, χ (t • x) = C.ρ t (χ x) := fun t x => by
+    -- Inverse reciprocity intertwines the action after reading its carrier additively.
     change ofMul (eR.symm (t • x.toMul)) =
       MonoidAlgebra.single t (1 : ℤ_[p]) • ofMul (eR.symm x.toMul)
     rw [padicCompletionUnits_single_smul, one_smul]
@@ -187,6 +235,7 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
     dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv,
       MulEquiv.toAdditive]
     simp only [MulDistribMulActionHom.toAdditive_apply, ModuleCat.hom_ofHom]
+    -- The representation morphism has underlying map β; scalar restriction keeps its carrier.
     change ofMul (eR.symm (f x.toMul)) = β (eL x)
     rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
