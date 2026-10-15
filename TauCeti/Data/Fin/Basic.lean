@@ -608,15 +608,14 @@ theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin 
     exact (not_lt_of_ge (ha hik)) hk.2
 
 /-- A point between the first and last values of a `Fin` family with at least two entries lies
-between consecutive values. The family need not be monotone.
-
-The least-index construction uses Mathlib's `Fin.find` API. -/
+between consecutive values. The family need not be monotone. -/
 theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
     (a : Fin (n + 1) → β) (hn : n ≠ 0)
     {x : β} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
     ∃ i : Fin n, x ∈ Set.Icc (a i.castSucc) (a i.succ) := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   have h : ∃ i : Fin (n + 1), x ≤ a i.succ := ⟨Fin.last n, hx.2⟩
+  -- Formal source: Mathlib's Fin.find least-index API.
   refine ⟨Fin.find _ h, ?_, Fin.find_spec h⟩
   cases hi : Fin.find _ h using Fin.cases with
   | zero => exact hx.1
