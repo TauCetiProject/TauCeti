@@ -7,8 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Integral
 public import TauCeti.RingTheory.Huber.Pair
+public import Mathlib.Topology.Algebra.UniformRing
 
 import TauCeti.RingTheory.Huber.OpenIdeal
+import TauCeti.Topology.UniformSpace.Completion
 
 /-!
 # Emptiness of the adic spectrum
@@ -29,12 +31,20 @@ For a Hausdorff Huber ring the closure of zero is `{0}`, giving the familiar cri
 adic spectrum is empty exactly when the ring is trivial. In this form the criteria are the usual
 way to produce a point of `Spa(A, A⁺)`, hence a continuous valuation on `A`.
 
+The same criterion governs the whole space `Cont A` of continuous valuations, which contains every
+adic spectrum of `A`, and the separated completion `Â`: both are trivial exactly when the adic
+spectrum is empty. The completion statement holds because `0` and `1` have the same image in `Â`
+precisely when they are topologically indistinguishable in `A`.
+
 ## Main results
 
 * `TauCeti.ValuationSpectrum.spa_eq_empty_iff_one_mem_closure_zero`: the closure-of-zero form.
 * `TauCeti.ValuationSpectrum.spa_eq_empty_iff_subsingleton_quotient_closure_zero`: the separated
   quotient form.
 * `TauCeti.ValuationSpectrum.spa_eq_empty_iff_subsingleton`: the Hausdorff specialization.
+* `TauCeti.ValuationSpectrum.cont_eq_empty_iff_one_mem_closure_zero`: the form for `Cont A`.
+* `TauCeti.ValuationSpectrum.spa_eq_empty_iff_subsingleton_completion`: the adic spectrum is empty
+  exactly when the completion `Â` is the zero ring.
 
 ## References
 
@@ -110,6 +120,32 @@ theorem spa_eq_empty_iff_subsingleton [T2Space A] (Aplus : Subring A)
   rw [spa_eq_empty_iff_one_mem_closure_zero Aplus hplus, isClosed_singleton.closure_eq]
   simp only [Set.mem_singleton_iff]
   simpa only [eq_comm] using (subsingleton_iff_zero_eq_one (M₀ := A))
+
+/-- **Wedhorn Proposition 7.49(1), form for `Cont A`.** A Huber ring has no continuous valuation
+exactly when `1` belongs to the closure of zero. -/
+theorem cont_eq_empty_iff_one_mem_closure_zero :
+    cont A = ∅ ↔ (1 : A) ∈ closure ({0} : Set A) := by
+  refine ⟨fun h ↦ one_mem_closure_zero_of_spa_eq_empty _
+    (Pair.powerBounded A).isRingOfIntegralElements ?_, cont_eq_empty_of_one_mem_closure_zero⟩
+  exact Set.subset_eq_empty (spa_bot (A := A) ▸ spa_antitone bot_le) h
+
+end TauCeti.ValuationSpectrum
+
+namespace TauCeti.ValuationSpectrum
+
+open Topology TauCeti.Huber UniformSpace
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [IsHuberRing A]
+
+/-- **The completion half of Wedhorn Proposition 7.49(1).** The adic spectrum of a Huber pair is
+empty exactly when the separated completion `Â` of the Huber ring is the zero ring. -/
+theorem spa_eq_empty_iff_subsingleton_completion (Aplus : Subring A)
+    (hplus : IsRingOfIntegralElements Aplus) :
+    spa Aplus = ∅ ↔ Subsingleton (Completion A) := by
+  rw [spa_eq_empty_iff_one_mem_closure_zero Aplus hplus, ← specializes_iff_mem_closure,
+    specializes_iff_inseparable, ← Completion.coe_eq_coe_iff_inseparable, Completion.coe_zero,
+    Completion.coe_one, subsingleton_iff_zero_eq_one]
 
 end TauCeti.ValuationSpectrum
 
