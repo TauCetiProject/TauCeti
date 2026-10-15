@@ -518,7 +518,7 @@ private theorem pointwiseQuotientProjection_app'
 
 private theorem mapPointsFunctor_componentCoordinateHom_app
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) (A : CommAlgCat.{u} k) :
-    (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)).app A =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)).app A =
       eqToHom (HopfAlgebra.pointsFunctor_obj (H := H) A) ≫
         GrpCat.ofHom (componentPointsHom H A) ≫
           eqToHom (HopfAlgebra.pointsFunctor_obj
@@ -532,7 +532,7 @@ private theorem pointwiseQuotientProjection_comp_componentNatIso_hom
         (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
         (isNormal_identityComponentHopfIdeal H) ≫
       (componentPointwiseQuotientNatIso H).hom =
-        CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H) := by
+        CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H) := by
   apply NatTrans.ext
   funext A
   rw [NatTrans.comp_app, pointwiseQuotientProjection_app',
@@ -566,7 +566,7 @@ private noncomputable def componentCoordinatePresheafGrpHom
   eqToHom (CommHopfAlgCat.pointsPresheafGrp.eq_1 H.obj) ≫
     CommHopfAlgCat.groupFunctorGrpMap (Functor.whiskerRight
       (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
-        (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)))
+        (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)))
       GrpCat.uliftFunctor.{u + 1, u}) ≫
     eqToHom (CommHopfAlgCat.pointsPresheafGrp.eq_1
       (CommHopfAlgCat.of k
@@ -597,7 +597,7 @@ private theorem pointwiseQuotientPresheafGrpProjection_comp_componentIso_hom
           GrpCat.uliftFunctor.{u + 1, u})).hom =
       CommHopfAlgCat.groupFunctorGrpMap (Functor.whiskerRight
         (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
-          (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)))
+          (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)))
         GrpCat.uliftFunctor.{u + 1, u}) := by
     rw [CommHopfAlgCat.groupFunctorGrpIso_hom,
       groupFunctorGrpMap_comp]

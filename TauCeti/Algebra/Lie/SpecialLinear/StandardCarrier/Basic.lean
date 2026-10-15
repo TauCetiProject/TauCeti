@@ -365,7 +365,7 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin r ⊕ Fin r) (j : Fin r) :
 
 /-- **The standard `ℤ`-lattice of the standard `sl_{r+1}`-module**, spanned by the coordinate
 vectors. -/
-def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
+noncomputable def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
   TauCeti.coordinateLattice (Fin (r + 1))
 
 /-- A vector lies in the standard lattice exactly when all of its coordinates are integers. -/
@@ -489,6 +489,10 @@ theorem definingIdeal_def :
         (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) := by
   rw [definingIdeal]
+
+/-- The coordinate Hopf algebra of the existing integral full-weight type `A_r` carrier. -/
+noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat ℤ :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (definingIdeal r)
 
 /-- **The full-weight Chevalley carrier of type `A_r`**: the smallest closed subgroup scheme of
 `GL_{r+1}` over `ℤ` containing the divided-power exponential root subgroups of the numbered

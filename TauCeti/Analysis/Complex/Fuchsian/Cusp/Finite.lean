@@ -80,7 +80,8 @@ theorem horodiscStrip_subset_horodisc (A : ℝ) : horodiscStrip D A ⊆ horodisc
 theorem horodiscStrip_eq_inv_smul (A : ℝ) :
     horodiscStrip D A = D.scaling⁻¹ • {z : ℍ | z.re ∈ Ico 0 D.width ∧ A < z.im} := by
   ext z
-  rw [mem_inv_smul_set_iff, mem_horodiscStrip, mem_ofPred_eq]
+  rw [mem_inv_smul_set_iff, mem_horodiscStrip]
+  exact Iff.rfl
 
 /-- The translates of one horodisc strip by powers of the cusp generator cover the whole
 horodisc. -/

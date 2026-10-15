@@ -78,10 +78,7 @@ factorizations of `g`. -/
     structureConstant Cᵢ Cⱼ (ConjClasses.mk g) =
         Fintype.card {p : Cᵢ.carrier × Cⱼ.carrier //
           (p.1.1 : G) * p.2.1 = g} := rfl
-    _ = _ := Fintype.card_ofFinset _ (by
-      intro p
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      rfl)
+    _ = _ := Fintype.card_of_subtype _ (by simp)
 
 /-- Multiplication of class sums is governed by the structure constants. -/
 theorem classSum_mul (k : Type*) [Semiring k] (Cᵢ Cⱼ : ConjClasses G) :
