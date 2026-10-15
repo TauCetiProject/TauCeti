@@ -14,7 +14,8 @@ Mathlib's `Height.mulHeight` is a height on projective space: it is invariant un
 (`Height.mulHeight_smul_eq_mulHeight`), so it is a function of the line through a tuple rather
 than of the tuple. Quantities that are not homogeneous in the tuple, such as the value
 `∑ i, a i * x i` of a linear form or the determinant of a matrix, scale with their arguments, so
-no bound on their height can be stated with `Height.mulHeight`. This file defines the **affine
+no bound on their height can be stated in terms of the projective heights of the arguments, which
+are scale-invariant. This file defines the **affine
 height** of a tuple `x : ι → K`, the projective height of the tuple with a coordinate `1`
 appended:
 
@@ -149,8 +150,7 @@ lemma mulHeight_le_mulHeightAff (x : ι → K) : mulHeight x ≤ mulHeightAff x 
 lemma logHeight_le_logHeightAff (x : ι → K) : logHeight x ≤ logHeightAff x :=
   log_le_log (mulHeight_pos _) (mulHeight_le_mulHeightAff x)
 
-/-- The affine height can only drop under re-indexing: the appended coordinate is common to
-both tuples, so re-indexing along `f` is re-indexing along `Option.map f`. -/
+/-- The affine height of `x ∘ f` is at most that of `x`, for any re-indexing `f`. -/
 lemma mulHeightAff_comp_le (f : ι → ι') (x : ι' → K) :
     mulHeightAff (x ∘ f) ≤ mulHeightAff x := by
   have h : (fun o : Option ι ↦ o.elim 1 (x ∘ f)) =
@@ -165,8 +165,7 @@ lemma logHeightAff_comp_le (f : ι → ι') (x : ι' → K) :
     logHeightAff (x ∘ f) ≤ logHeightAff x :=
   log_le_log (mulHeightAff_pos _) (mulHeightAff_comp_le f x)
 
-/-- The affine height of the zero tuple is `1`: the tuple whose projective height is taken is
-`(1, 0, …, 0)`, and this is not a junk value. -/
+/-- The zero tuple has affine height `1`. -/
 @[simp]
 lemma mulHeightAff_zero : mulHeightAff (0 : ι → K) = 1 := by
   simp [mulHeightAff_eq]
