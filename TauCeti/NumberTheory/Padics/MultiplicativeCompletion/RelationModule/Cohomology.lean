@@ -77,12 +77,8 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   rw [_root_.groupCohomology.functor_map]
   apply explicitH2AddEquivGroupCohomology_explicitCoeff2
   intro m
-  change ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm
-      (relationModuleToAbelianizationProPEquivariant p K L hg β j m.toMul)) =
-    β (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg m)
-  rw [relationModuleToAbelianizationProPEquivariant_apply,
-    relationModuleToAbelianizationProP_apply, ContinuousMulEquiv.symm_apply_apply]
-  rfl
+  simp [ofModuleMonoidAlgebra, RestrictScalars.addEquiv,
+    relationModuleToAbelianizationProP_apply]
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
 on explicit second cohomology after transport through Lyndon and local reciprocity. -/
