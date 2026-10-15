@@ -72,7 +72,7 @@ theorem mem_unitaryTorus_iff_toUnits_mem {g : unitaryGroup (Fin n) ℂ} :
 
 /-- A unitary matrix normalizing the diagonal torus of `GL_n(ℂ)` normalizes the diagonal torus of
 `U(n)`. -/
-theorem mem_normalizer_unitaryTorus_of_toUnits_mem {g : unitaryGroup (Fin n) ℂ}
+private theorem mem_normalizer_unitaryTorus_of_toUnits_mem {g : unitaryGroup (Fin n) ℂ}
     (hg : Unitary.toUnits g ∈
       Subgroup.normalizer (diagonalTorus ℂ n : Set (GL (Fin n) ℂ))) :
     g ∈ Subgroup.normalizer (unitaryTorus (Fin n) : Set (unitaryGroup (Fin n) ℂ)) := by
