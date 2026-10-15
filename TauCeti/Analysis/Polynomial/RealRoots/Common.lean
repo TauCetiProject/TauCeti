@@ -28,8 +28,14 @@ the multiplicity of each listed root in each member is the same at every paramet
 membership of a listed root in the root set of each member does not depend on the parameter. This
 is the common ordered list of real roots over which a delineable family is stacked.
 
+The underlying topological gluing argument is provided separately for any local continuous,
+strictly increasing enumerations of an intrinsic set of real roots. It does not require the
+coefficient hypotheses used to construct such enumerations.
+
 ## Main results
 
+* `TauCeti.exists_roots_of_locally`: glue local ordered real-root enumerations over a nonempty
+  preconnected base.
 * `Polynomial.eventually_card_aroots_prod_eq`: the product of the members has locally constant
   number of distinct complex roots.
 * `Polynomial.exists_continuous_ordered_common_roots_of_preconnectedSpace`: the common ordered list
@@ -43,7 +49,70 @@ is the common ordered list of real roots over which a delineable family is stack
 
 public section
 
-open Filter Metric Topology TauCeti
+open Filter Function Metric Polynomial Set Topology TauCeti
+
+namespace TauCeti
+
+variable {X ι : Type*} [TopologicalSpace X] {P : ι → X → ℝ[X]}
+
+/-- Local continuous strictly increasing enumerations `θ a` of an intrinsic set `Z y ⊆ ℝ` on
+open neighborhoods `U a` glue over a nonempty preconnected base. The local counts are globally
+constant, the glued root functions are continuous, strictly increasing and enumerate `Z`, and
+they agree with every local enumeration. If every local enumeration has constant root
+multiplicities in a family `P`, so do the glued roots. -/
+theorem exists_roots_of_locally [PreconnectedSpace X] [Nonempty X] {Z : X → Set ℝ}
+    {U : X → Set X} (hU : ∀ x, IsOpen (U x)) (hxU : ∀ x, x ∈ U x) {c : X → ℕ}
+    {θ : ∀ a, Fin (c a) → U a → ℝ} {μ : ∀ a, ι → Fin (c a) → ℕ}
+    (hθc : ∀ a i, Continuous (θ a i)) (hθmono : ∀ a (y : U a), StrictMono fun i ↦ θ a i y)
+    (hθrange : ∀ a (y : U a), range (fun i ↦ θ a i y) = Z y)
+    (hθmult : ∀ a k i (y : U a), (P k y).rootMultiplicity (θ a i y) = μ a k i) :
+    ∃ (n : ℕ) (hc : ∀ x, c x = n) (r : Fin n → X → ℝ) (m : ι → Fin n → ℕ),
+      (∀ i, Continuous (r i)) ∧ (∀ x, StrictMono fun i ↦ r i x) ∧
+      (∀ x, range (fun i ↦ r i x) = Z x) ∧
+      (∀ k i x, (P k x).rootMultiplicity (r i x) = m k i) ∧
+      ∀ a (y : U a) i, r i y = θ a (Fin.cast (hc a).symm i) y := by
+  classical
+  let a₀ : X := Classical.arbitrary X
+  have hcard (a : X) (y : U a) : Nat.card (Z y) = c a := by
+    rw [← hθrange a y, Nat.card_range_of_injective (hθmono a y).injective]
+    simp
+  -- The number of roots is locally constant, hence globally constant.
+  have hclocal : IsLocallyConstant fun x ↦ Nat.card (Z x) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun a ↦ ?_
+    filter_upwards [(hU a).mem_nhds (hxU a)] with y hy
+    exact (hcard a ⟨y, hy⟩).trans (hcard a ⟨a, hxU a⟩).symm
+  let n := Nat.card (Z a₀)
+  have hc (a : X) : c a = n :=
+    (hcard a ⟨a, hxU a⟩).symm.trans (hclocal.apply_eq_of_preconnectedSpace a a₀)
+  let r (i : Fin n) (x : X) := θ x (Fin.cast (hc x).symm i) ⟨x, hxU x⟩
+  have hrmono (x : X) : StrictMono fun i ↦ r i x :=
+    (hθmono x ⟨x, hxU x⟩).comp (Fin.cast_strictMono (hc x).symm)
+  have hrrange (x : X) : range (fun i ↦ r i x) = Z x := by
+    exact ((Fin.castOrderIso (hc x).symm).surjective.range_comp _).trans
+      (hθrange x ⟨x, hxU x⟩)
+  -- Increasing complete lists agree on overlaps. This identifies the pointwise
+  -- choice with each local continuous root function, including its multiplicity.
+  have hrU (a : X) (y : U a) (i : Fin n) : r i y = θ a (Fin.cast (hc a).symm i) y := by
+    have hmono := (hθmono a y).comp (Fin.cast_strictMono (hc a).symm)
+    apply congrFun (((hrmono y).range_inj_of_wellFoundedLT hmono).1 ?_) i
+    exact (hrrange y).trans (((Fin.castOrderIso (hc a).symm).surjective.range_comp _).trans
+      (hθrange a y)).symm
+  have hrc (i : Fin n) : Continuous (r i) := by
+    refine continuous_iff_continuousAt.2 fun a ↦ ?_
+    have hcont : ContinuousOn (r i) (U a) := by
+      rw [continuousOn_iff_continuous_domRestrict]
+      exact (hθc a _).congr fun y ↦ (hrU a y i).symm
+    exact (hU a).continuousOn_iff.mp hcont (hxU a)
+  let m (k : ι) (i : Fin n) := (P k a₀).rootMultiplicity (r i a₀)
+  have hm (k : ι) (i : Fin n) (x : X) : (P k x).rootMultiplicity (r i x) = m k i := by
+    have hmult : IsLocallyConstant fun y ↦ (P k y).rootMultiplicity (r i y) := by
+      refine (IsLocallyConstant.iff_eventually_eq _).2 fun a ↦ ?_
+      filter_upwards [(hU a).mem_nhds (hxU a)] with y hy
+      rw [hrU a ⟨y, hy⟩ i, hrU a ⟨a, hxU a⟩ i, hθmult, hθmult]
+    exact hmult.apply_eq_of_preconnectedSpace x a₀
+  exact ⟨n, hc, r, m, hrc, hrmono, hrrange, hm, hrU⟩
+
+end TauCeti
 
 namespace Polynomial
 
