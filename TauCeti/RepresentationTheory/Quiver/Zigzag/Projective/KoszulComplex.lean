@@ -418,42 +418,32 @@ private theorem projBasis_repr_inl_eq_zero (hf : zigzagKoszulDifferential k G v 
 
 /-- Left multiplication by the arrows into `u`, as a map out of the direct sum of the graded
 corners at the neighbours of `u`. -/
-private noncomputable def incomingArrowSum (v : V) (n : ℕ) (u : V) :
+private noncomputable def incomingArrowSum [DecidableEq V] (v : V) (n : ℕ) (u : V) :
     (∀ l : G.neighborSet u, C n (vertex G v) (vertex G l)) →ₗ[k]
       C (n + 1) (vertex G v) (vertex G u) :=
-  ∑ l : G.neighborSet u,
-    cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.2).symm ∘ₗ LinearMap.proj l
+  LinearMap.lsum k _ k fun l => cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.2).symm
 
-private theorem coe_incomingArrowSum_apply (v : V) (n : ℕ) (u : V)
+private theorem coe_incomingArrowSum_apply [DecidableEq V] (v : V) (n : ℕ) (u : V)
     (z : ∀ l : G.neighborSet u, C n (vertex G v) (vertex G l)) :
     (incomingArrowSum v n u z : Π) = ∑ l : G.neighborSet u,
       σ (ofArrow (arrow G ((G.mem_neighborSet u l).1 l.2).symm)) * z l := by
-  simp only [incomingArrowSum, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply,
-    Submodule.coe_sum, coe_cornerArrowMul_apply]
-
-private theorem incomingArrowSum_single [DecidableEq V] (v : V) (n : ℕ) (u : V)
-    (l : G.neighborSet u) (z : C n (vertex G v) (vertex G l)) :
-    incomingArrowSum v n u (Pi.single l z) =
-      cornerArrowMul k G v n ((G.mem_neighborSet u l).1 l.2).symm z := by
-  refine Subtype.ext ?_
-  rw [coe_incomingArrowSum_apply, Finset.sum_eq_single l (fun l' _ hl' => by
-    rw [Pi.single_eq_of_ne hl', ZeroMemClass.coe_zero, mul_zero])
-    (fun h => absurd (Finset.mem_univ l) h), Pi.single_eq_same, coe_cornerArrowMul_apply]
+  simp only [incomingArrowSum, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply,
+    LinearMap.proj_apply, Submodule.coe_sum, coe_cornerArrowMul_apply]
 
 /-- The arrow coordinates of a would-be lift of `f` at `u`, as a functional on the direct sum of
 the graded corners at the neighbours of `u`. -/
-private noncomputable def arrowCoordSum (f : ZigzagKoszulTerm k G v (n + 1)) (u : V) :
+private noncomputable def arrowCoordSum [DecidableEq V] (f : ZigzagKoszulTerm k G v (n + 1))
+    (u : V) :
     (∀ l : G.neighborSet u, C (n + 1) (vertex G v) (vertex G l)) →ₗ[k] k :=
-  ∑ l : G.neighborSet u, (projBasis k hns l).coord
-    (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩)) ∘ₗ
-      f l ∘ₗ LinearMap.proj l
+  LinearMap.lsum k _ k fun l => (projBasis k hns l).coord
+    (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩)) ∘ₗ f l
 
-private theorem arrowCoordSum_apply (u : V)
+private theorem arrowCoordSum_apply [DecidableEq V] (u : V)
     (z : ∀ l : G.neighborSet u, C (n + 1) (vertex G v) (vertex G l)) :
     arrowCoordSum hns f u z = ∑ l : G.neighborSet u, (projBasis k hns l).repr (f l (z l))
       (.inr (.inl ⟨u, (G.mem_neighborSet l u).2 ((G.mem_neighborSet u l).1 l.2).symm⟩)) := by
-  simp only [arrowCoordSum, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply,
-    Module.Basis.coord_apply]
+  simp only [arrowCoordSum, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply,
+    LinearMap.proj_apply, Module.Basis.coord_apply]
 
 /-- **Step 2.** On a cycle `f`, the arrow coordinates of `f` along the arrows into `u` factor
 through the multiplication `⨁_{l ∼ u} e_l Π_{n+1} e_v → e_u Π_{n+2} e_v`, by exactness of the
@@ -480,10 +470,11 @@ private theorem exists_arrowLift (hf : zigzagKoszulDifferential k G v n f = 0) (
   refine ⟨(incomingArrowSum v (n + 1) u).liftOfSurjective hM
     ⟨arrowCoordSum hns f u, fun z hz =>
       LinearMap.mem_ker.2 (hker z (LinearMap.mem_ker.1 hz))⟩, fun l z => ?_⟩
-  rw [← incomingArrowSum_single, LinearMap.equivOfSurjective_apply, arrowCoordSum_apply,
-    Finset.sum_eq_single l (fun l' _ hl' => by
-      rw [Pi.single_eq_of_ne hl', map_zero, map_zero, Finsupp.coe_zero, Pi.zero_apply])
-      (fun h => absurd (Finset.mem_univ l) h), Pi.single_eq_same]
+  have hl : incomingArrowSum v (n + 1) u (Pi.single l z) =
+      cornerArrowMul k G v (n + 1) ((G.mem_neighborSet u l).1 l.2).symm z :=
+    by rw [incomingArrowSum, LinearMap.lsum_piSingle]
+  rw [← hl, LinearMap.equivOfSurjective_apply, arrowCoordSum, LinearMap.lsum_piSingle,
+    LinearMap.comp_apply, Module.Basis.coord_apply]
 
 /-- Left multiplication by the arrows out of `w`, as a map into the direct sum of the graded
 corners at the neighbours of `w`. -/
