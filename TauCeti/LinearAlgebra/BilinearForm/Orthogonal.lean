@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
+import Mathlib.Algebra.DirectSum.Module
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
@@ -50,6 +51,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   restriction splits a bilinear module over a commutative ring.
 * `LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective`: a perfect symmetric
   restriction splits a bilinear module over a commutative ring.
+* `LinearMap.BilinForm.map_dualAnnihilator_toPerfPair_symm`: identify a dual annihilator with
+  the orthogonal complement under a symmetric perfect pairing.
+* `LinearMap.BilinForm.IsRefl.isInternal_orthogonal_finCons`: adjoin an orthogonal summand
+  to an internal orthogonal decomposition of its complement.
 * `LinearMap.BilinForm.isPerfPair_restrict_of_isCompl_orthogonal`: a symmetric perfect pairing
   remains perfect on a submodule complementary to its orthogonal complement.
 * `LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl`: double orthogonality for an
@@ -213,32 +218,86 @@ theorem isCompl_orthogonal_of_restrict_bijective
       (hB.eq y x)
   exact B.isCompl_orthogonal_of_flip_restrict_bijective S (hflip ▸ h)
 
+/-- The perfect-pairing identification with the dual sends the dual annihilator of a
+submodule to its orthogonal complement for a symmetric form. -/
+theorem map_dualAnnihilator_toPerfPair_symm (B : LinearMap.BilinForm R M) [B.IsPerfPair]
+    (hB : B.IsSymm) (S : Submodule R M) :
+    S.dualAnnihilator.map B.toPerfPair.symm.toLinearMap = B.orthogonal S := by
+  ext x
+  constructor
+  · rintro ⟨f, hf, rfl⟩ y hy
+    rw [hB.eq]
+    exact congrArg (fun g : Module.Dual R M ↦ g y)
+      (B.apply_symm_toPerfPair_self f) |>.trans (((Submodule.mem_dualAnnihilator f).mp hf) y hy)
+  · intro hx
+    refine ⟨B x, (Submodule.mem_dualAnnihilator (B x)).mpr fun y hy ↦ ?_,
+      B.toPerfPair.symm_apply_apply x⟩
+    rw [hB.eq]
+    exact hx y hy
+
 /-- A symmetric perfect pairing restricts to a perfect pairing on any submodule complementary
 to its orthogonal complement. No field or finite generation hypothesis is needed. -/
 theorem isPerfPair_restrict_of_isCompl_orthogonal
     (B : LinearMap.BilinForm R M) [B.IsPerfPair] (hB : B.IsSymm)
     (S : Submodule R M) (hS : IsCompl S (B.orthogonal S)) :
     (B.restrict S).IsPerfPair := by
-  have hmap (C : LinearMap.BilinForm R M) [C.IsPerfPair] (hC : C.IsSymm) :
-      S.dualAnnihilator.map C.toPerfPair.symm.toLinearMap = C.orthogonal S := by
-    ext x
-    constructor
-    · rintro ⟨f, hf, rfl⟩ y hy
-      rw [hC.eq]
-      exact congrArg (fun g : Module.Dual R M ↦ g y)
-        (C.apply_symm_toPerfPair_self f) |>.trans (((Submodule.mem_dualAnnihilator f).mp hf) y hy)
-    · intro hx
-      refine ⟨C x, (Submodule.mem_dualAnnihilator (C x)).mpr fun y hy ↦ ?_,
-        C.toPerfPair.symm_apply_apply x⟩
-      rw [hC.eq]
-      exact hx y hy
   have hflip : LinearMap.flip B = B := LinearMap.ext₂ fun x y ↦ hB.eq y x
   have : (LinearMap.flip B).IsPerfPair := LinearMap.IsPerfPair.flip inferInstance
   have hp : B.IsPerfectCompl S S :=
-    ⟨by rwa [hmap B hB], by rwa [hmap (LinearMap.flip B) (hflip.symm ▸ hB), hflip]⟩
-  have h := LinearMap.IsPerfPair.restrict B S.subtype S.subtype
+    ⟨by rwa [B.map_dualAnnihilator_toPerfPair_symm hB],
+      by rwa [map_dualAnnihilator_toPerfPair_symm (LinearMap.flip B) (hflip.symm ▸ hB), hflip]⟩
+  exact LinearMap.IsPerfPair.restrict B S.subtype S.subtype
     S.injective_subtype S.injective_subtype (by simpa using hp)
-  exact h
+
+/-- Adjoining an orthogonal summand to an internal orthogonal decomposition of its complement
+gives an internal orthogonal decomposition of the ambient module. -/
+theorem IsRefl.isInternal_orthogonal_finCons {B : LinearMap.BilinForm R M} (hB : B.IsRefl)
+    (S : Submodule R M) (hc : IsCompl S (B.orthogonal S)) {k : ℕ}
+    (N : Fin k → Submodule R (B.orthogonal S)) (hN : DirectSum.IsInternal N)
+    (horth : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0) :
+    let P := Fin.cons S (fun i ↦ (N i).map (B.orthogonal S).subtype)
+    DirectSum.IsInternal P ∧
+      ∀ i j, i ≠ j → ∀ x ∈ P i, ∀ y ∈ P j, B x y = 0 := by
+  classical
+  let T := B.orthogonal S
+  let Q := fun i ↦ (N i).map T.subtype
+  let P : Fin (k + 1) → Submodule R M := Fin.cons S Q
+  have hQle : ∀ i, Q i ≤ T := by
+    rintro i _ ⟨x, hx, rfl⟩
+    exact x.2
+  have hT : iSup Q = T := by
+    rw [← Submodule.map_iSup, hN.submodule_iSup_eq_top,
+      Submodule.map_top, Submodule.range_subtype]
+  have hQ := T.subtype.iSupIndep_map T.injective_subtype hN.submodule_iSupIndep
+  have hind : iSupIndep P := by
+    intro i
+    refine Fin.cases ?_ (fun i ↦ ?_) i
+    · apply hc.disjoint.mono_right
+      refine iSup_le (Fin.cases (by simp [P]) (fun j ↦ ?_))
+      exact iSup_le fun _ ↦ hQle j
+    · have hother : (⨆ j ≠ i.succ, P j) = S ⊔ ⨆ j ≠ i, Q j := by
+        apply eq_of_forall_ge_iff
+        intro U
+        simp [iSup_le_iff, Fin.forall_fin_succ, P, (Fin.succ_ne_zero i).symm]
+      rw [hother]
+      apply Disjoint.symm
+      exact (hQ i).symm.disjoint_sup_left_of_disjoint_sup_right
+        (hc.disjoint.mono_right (sup_le (iSup_le fun j ↦ iSup_le fun _ ↦ hQle j) (hQle i)))
+  refine ⟨(DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
+    ⟨hind, ?_⟩, ?_⟩
+  · apply eq_top_iff.mpr
+    rw [← hc.sup_eq_top]
+    exact sup_le (le_iSup P 0) (hT.symm.trans_le (iSup_le fun i ↦ le_iSup P i.succ))
+  · intro i j
+    refine Fin.cases ?_ (fun i ↦ ?_) i <;> refine Fin.cases ?_ (fun j ↦ ?_) j
+    all_goals intro hij
+    · exact (hij rfl).elim
+    · rintro x hx _ ⟨y, hy, rfl⟩
+      exact y.2 x hx
+    · rintro _ ⟨x, hx, rfl⟩ y hy
+      exact hB.eq_zero (x.2 y hy)
+    · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+      exact horth i j (fun h ↦ hij (congrArg Fin.succ h)) x hx y hy
 
 /-- For a right-separating reflexive form, a submodule complementary to its orthogonal complement
 equals its double orthogonal complement, over an arbitrary commutative semiring. -/

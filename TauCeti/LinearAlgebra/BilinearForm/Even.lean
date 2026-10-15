@@ -7,17 +7,17 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Modular
 public import Mathlib.Algebra.DirectSum.Module
-import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import Mathlib.RingTheory.LocalRing.Module
+import TauCeti.LinearAlgebra.Submodule.Compl
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # Binary decomposition of even unimodular forms
 
-Over a local ring where two is not a unit, an even symmetric perfect pairing on a finite free
-module is an orthogonal sum of binary perfect pairings. Each summand comes with a two-element
-basis, so this is a decomposition of the actual module, not just an equality of ranks. In
+Over a local ring, a symmetric perfect pairing on a finite free module whose diagonal values
+are all nonunits is an orthogonal sum of binary perfect pairings. This includes even forms
+when two is not a unit. Each summand comes with a two-element basis, so this is a decomposition
+of the actual module, not just an equality of ranks. In
 particular its rank is even. The empty decomposition covers the zero module.
 
 These binary constituents are the inputs to the classification of even unimodular dyadic
@@ -42,42 +42,28 @@ open Module
 variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
   (B : LinearMap.BilinForm R M) [B.IsPerfPair]
 
-/-- A positive-rank even symmetric perfect pairing splits off a binary perfect pairing.
-The summand is supplied with a basis and is complementary to its orthogonal complement. -/
+/-- A symmetric perfect pairing with nonunit diagonal values splits off a binary perfect
+pairing if some linear functional takes the value one. The summand is supplied with a basis
+and is complementary to its orthogonal complement. -/
 theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal (hB : B.IsSymm)
-    (heven : ∀ x, (2 : R) ∣ B x x) (h2 : ¬ IsUnit (2 : R))
-    {n : ℕ} (b : Basis (Fin (n + 1)) R M) :
+    (hdiag : ∀ x, ¬ IsUnit (B x x)) (x : M) (f : Module.Dual R M) (hfx : f x = 1) :
     ∃ S : Submodule R M, Nonempty (Basis (Fin 2) R S) ∧
       (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
   classical
-  -- Represent the first coordinate functional, giving a pair with cross-pairing one.
-  obtain ⟨w, hw⟩ := (LinearMap.IsPerfPair.bijective_left B).surjective (b.coord 0)
-  have huw : B (b 0) w = 1 := by
-    rw [hB.eq, hw]
-    simp
-  have hdiag : ∀ x, ¬ IsUnit (B x x) := fun x hx ↦ h2 (isUnit_of_dvd_unit (heven x) hx)
-  have hunit : IsUnit (B (b 0) (b 0) * B w w - 1) := by
-    rw [← neg_sub]
-    exact (IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _
-      (mem_nonunits_iff.mpr fun h ↦ hdiag _ (isUnit_of_mul_isUnit_left h))).neg
-  let v : Fin 2 → M := ![b 0, w]
-  let G : Matrix (Fin 2) (Fin 2) R := !![B (b 0) (b 0), 1; 1, B w w]
-  have hG : ∀ i j, B (v i) (v j) = 1 * G i j := by
-    intro i j
-    fin_cases i <;> fin_cases j <;> simp [v, G, huw, hB.eq w (b 0)]
-  have hdet : IsUnit G.det := by simpa [G, Matrix.det_fin_two] using hunit
-  let c := Basis.span (linearIndependent_of_isUnit_det (B := B)
-    (a := 1) (one_mem _) hG hdet)
-  have hp : (B.restrict (Submodule.span R (Set.range v))).IsPerfPair :=
-    isModular_one_iff.mp (isModular_restrict_span_range (one_mem _) hG hdet)
-  exact ⟨_, ⟨c⟩, hp,
+  obtain ⟨w, hw⟩ := (LinearMap.IsPerfPair.bijective_left B).surjective f
+  have hxw : B x w = 1 := by rw [hB.eq, hw, hfx]
+  obtain ⟨hli, hmod⟩ := hB.linearIndependent_and_isModular_restrict_span_pair (one_mem _)
+    hxw (one_mul (B x x)).symm (one_mul (B w w)).symm
+    (fun h ↦ hdiag x (isUnit_of_mul_isUnit_left h))
+  have hp := isModular_one_iff.mp hmod
+  exact ⟨_, ⟨Basis.span hli⟩, hp,
     B.isCompl_orthogonal_of_restrict_bijective _ (hB.restrict _)
       (LinearMap.IsPerfPair.bijective_left _)⟩
 
-/-- An even symmetric perfect pairing over a local ring with two noninvertible is an internal
+/-- A symmetric perfect pairing with nonunit diagonal values over a local ring is an internal
 orthogonal sum of binary perfect pairings. Each constituent has a two-element basis. -/
 theorem IsSymm.exists_binary_orthogonal_decomposition [Free R M] [Module.Finite R M]
-    (hB : B.IsSymm) (heven : ∀ x, (2 : R) ∣ B x x) (h2 : ¬ IsUnit (2 : R)) :
+    (hB : B.IsSymm) (hdiag : ∀ x, ¬ IsUnit (B x x)) :
     ∃ k : ℕ, ∃ N : Fin k → Submodule R M,
       DirectSum.IsInternal N ∧
       (∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0) ∧
@@ -92,15 +78,13 @@ theorem IsSymm.exists_binary_orthogonal_decomposition [Free R M] [Module.Finite 
       exact ⟨by simp [iSupIndep], Subsingleton.elim _ _⟩
     have hpos : 0 < finrank R M := by omega
     let b := Module.finBasisOfFinrankEq R M (Nat.succ_pred_eq_of_pos hpos).symm
-    obtain ⟨S, ⟨c⟩, hS, hc⟩ := hB.exists_binary_isPerfPair_isCompl_orthogonal B heven h2 b
+    obtain ⟨S, ⟨c⟩, hS, hc⟩ := hB.exists_binary_isPerfPair_isCompl_orthogonal B hdiag
+      (b 0) (b.coord 0) (by simp)
     -- The complement is finite free because it is a retract over a local ring.
     let T := B.orthogonal S
     have : Module.Finite R S := .of_basis c
     have : Free R S := .of_basis c
-    have : Module.Finite R T := .equiv (Submodule.quotientEquivOfIsCompl _ _ hc)
-    have : Module.Flat R T := Module.Flat.of_retract T.subtype
-      (T.projectionOnto S hc.symm) (by ext; simp)
-    have : Free R T := free_of_flat_of_isLocalRing
+    obtain ⟨hfinite, hfree⟩ := T.finite_free_of_isCompl hc.symm
     have hdouble := B.orthogonal_orthogonal_of_isCompl hB.isRefl
       (LinearMap.IsPerfPair.separatingRight (p := B) inferInstance) S hc
     have : (B.restrict T).IsPerfPair :=
@@ -112,20 +96,9 @@ theorem IsSymm.exists_binary_orthogonal_decomposition [Free R M] [Module.Finite 
       omega
     -- Remove the binary summand and apply induction to the smaller perfect complement.
     obtain ⟨k, N, hN, horth, hperf⟩ := ih _ hsmall (B := B.restrict T)
-      (hB.restrict T) (fun x ↦ heven x) rfl
+      (hB.restrict T) (fun x ↦ hdiag x) rfl
     let P : Fin (k + 1) → Submodule R M := Fin.cons S (fun i ↦ (N i).map T.subtype)
-    have hST : ∀ x ∈ S, ∀ y ∈ T, B x y = 0 := fun x hx y hy ↦ hy x hx
-    have horthP : ∀ i j, i ≠ j → ∀ x ∈ P i, ∀ y ∈ P j, B x y = 0 := by
-      intro i j
-      refine Fin.cases ?_ (fun i ↦ ?_) i <;> refine Fin.cases ?_ (fun j ↦ ?_) j
-      all_goals intro hij
-      · exact (hij rfl).elim
-      · rintro x hx _ ⟨y, hy, rfl⟩
-        exact hST x hx y y.2
-      · rintro _ ⟨x, hx, rfl⟩ y hy
-        exact hB.isRefl.eq_zero (hST y hy x x.2)
-      · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-        exact horth i j (fun h ↦ hij (congrArg Fin.succ h)) x hx y hy
+    obtain ⟨hP, horthP⟩ := hB.isRefl.isInternal_orthogonal_finCons S hc N hN horth
     have hperfP : ∀ i, Nonempty (Basis (Fin 2) R (P i)) ∧
         (B.restrict (P i)).IsPerfPair := by
       refine Fin.cases ⟨⟨c⟩, hS⟩ fun i ↦ ?_
@@ -134,27 +107,15 @@ theorem IsSymm.exists_binary_orthogonal_decomposition [Free R M] [Module.Finite 
       refine ⟨⟨d.map e⟩, ?_⟩
       exact isModular_one_iff.mp (isModular_restrict_map_subtype_iff.mpr
         (isModular_one_iff.mpr hd))
-    have htop : iSup P = ⊤ := by
-      have hT : (⨆ i, (N i).map T.subtype) = T := by
-        rw [← Submodule.map_iSup, hN.submodule_iSup_eq_top,
-          Submodule.map_top, Submodule.range_subtype]
-      apply eq_top_iff.mpr
-      rw [← hc.sup_eq_top]
-      refine sup_le (le_iSup P 0) ?_
-      exact hT.symm.trans_le (iSup_le fun i ↦ le_iSup P i.succ)
-    -- Orthogonality and separation make the spanning family an internal direct sum.
-    refine ⟨k + 1, P, ?_, horthP, hperfP⟩
-    exact (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
-      ⟨B.iSupIndep_of_restrict_separatingRight horthP
-        (fun i ↦ (LinearMap.IsPerfPair.nondegenerate (hperfP i).2).2), htop⟩
+    exact ⟨k + 1, P, hP, horthP, hperfP⟩
 
-/-- An even symmetric perfect pairing on a finite free module over a local ring where two is
-not a unit has even rank. -/
+/-- A symmetric perfect pairing with nonunit diagonal values on a finite free module over a
+local ring has even rank. In particular this holds for even forms when two is not a unit. -/
 theorem IsSymm.even_finrank_of_isPerfPair [Free R M] [Module.Finite R M]
-    (hB : B.IsSymm) (heven : ∀ x, (2 : R) ∣ B x x) (h2 : ¬ IsUnit (2 : R)) :
+    (hB : B.IsSymm) (hdiag : ∀ x, ¬ IsUnit (B x x)) :
     Even (finrank R M) := by
   classical
-  obtain ⟨k, N, hN, -, hc⟩ := hB.exists_binary_orthogonal_decomposition B heven h2
+  obtain ⟨k, N, hN, -, hc⟩ := hB.exists_binary_orthogonal_decomposition B hdiag
   let c : ∀ i, Basis (Fin 2) R (N i) := fun i ↦ Classical.choice (hc i).1
   have hrank := Module.finrank_eq_card_basis (hN.collectedBasis c)
   refine ⟨k, ?_⟩
