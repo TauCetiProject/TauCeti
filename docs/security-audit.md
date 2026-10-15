@@ -48,6 +48,19 @@ explicit `attest --through SHA --reason ...` command for an oversized range or t
 resolve a finding. It records human evidence and repeats the same ancestry and
 authority checks. A model re-roll is not a substitute for that review.
 
+An unexplained `incomplete` answer with an empty findings list may receive bounded
+output repair in the same retained Luna conversation. Its source digest, ordered
+commits and remaining schema must validate; paged input must have complete receipt
+coverage and the correct final token. Earlier source findings and explained
+incomplete verdicts remain binding. The repair preserves all notes and uncertainty;
+only a new complete passing answer can approve the original batch. Service retries
+and repairs share at most three launches per invocation. Each batch permits one
+explicit admin `repair-output --state DIR --reason ...` invocation. Failed answers,
+repair counts and recovery kinds are retained in the evidence and ledger. Exhausted
+repairs remain blocked. The original pre-profile incident has a narrowly pinned
+compatibility continuation for its exact reader-context failure; it does not permit
+other explained incomplete verdicts to be retried.
+
 Local blocks are not a shared authorization service. Administrators must not evade
 a finding by changing worker IDs, and should keep admin credentials out of ordinary
 authoring/review agents. Recovering an accidental off-main admin push requires a
