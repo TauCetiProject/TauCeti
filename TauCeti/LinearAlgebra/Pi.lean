@@ -170,7 +170,10 @@ namespace TauCeti
 /-- The finite rank of maps between two finite dependent products is the sum of the ranks
 of the component hom spaces, provided those hom spaces are finite free. The scalar semiring
 `R` need only act on the target modules, commuting with their `A`-actions; no algebra structure
-on `A` is required. -/
+on `A` is required.
+
+The underlying Hom-space decompositions are Mathlib's `LinearMap.lsum` and
+`LinearEquiv.linearMapPi`. -/
 public theorem finrank_linearMap_pi_eq_sum {R A ι κ : Type*} [Semiring R] [StrongRankCondition R]
     [Semiring A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
     [∀ i, AddCommMonoid (S i)] [∀ i, Module A (S i)]
