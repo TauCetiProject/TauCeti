@@ -19,9 +19,10 @@ function-space layers. Its external direct sum carries the canonical square-zero
 of degree one and the componentwise `G`-action. The augmentation includes `X` as constant
 functions in degree zero. Coefficient morphisms act degreewise through Mathlib's resolution maps.
 
-For a compact group and smooth discrete coefficients, the total module with its discrete topology
-is again smooth. This provides a graded coefficient module for finite tensor induction of
-resolutions; tensor products can apply the differential on one carrier while tracking its degree.
+For a compact group, a discrete scalar ring `R`, and smooth discrete coefficients, the total
+module with its discrete topology is again smooth. This provides a graded coefficient module for
+finite tensor induction of resolutions; tensor products can apply the differential on one carrier
+while tracking its degree.
 
 ## Main results
 
@@ -471,16 +472,31 @@ theorem gradedResolutionTopRepMap_augmentation [DiscreteTopology X.V] [DiscreteT
 
 variable (X)
 
-/-- Over a compact group, the total coinduced resolution of smooth discrete coefficients is
-smooth: each element has finitely many components, whose open stabilizers have open intersection. -/
+/-- For a compact group, a discrete scalar ring `R`, and smooth discrete coefficients, the total
+coinduced resolution is smooth: each element has finitely many components, whose open
+stabilizers have open intersection. -/
 theorem isSmoothDiscrete_gradedResolutionTopRep [CompactSpace G]
     (hX : TauCeti.IsSmoothDiscrete R X) :
     TauCeti.IsSmoothDiscrete R X.gradedResolutionTopRep := by
   let : DistribMulAction G X.gradedResolutionModule :=
     X.gradedResolutionTopRep.distribMulAction
+  have haction (g : G) (z : X.gradedResolutionModule) :
+      g • z = X.gradedResolutionRepresentation g z :=
+    (distribMulAction_smul X.gradedResolutionTopRep g z).trans
+      (gradedResolutionTopRep_ρ_apply X g z)
+  have hstabilizer (z : X.gradedResolutionModule) :
+      (MulAction.stabilizer G z : Set G) =
+        {g : G | X.gradedResolutionRepresentation g z = z} := by
+    ext g
+    exact MulAction.mem_stabilizer_iff.trans
+      (iff_of_eq (congrArg (fun y ↦ y = z) (haction g z)))
   refine ⟨inferInstance, fun z ↦ ?_⟩
-  -- The induction is on the raw direct-sum carrier, with the bundled object's action.
-  change IsOpen {g : G | X.gradedResolutionRepresentation g z = z}
+  have hfixed : {g : G | X.gradedResolutionTopRep.ρ g z = z} =
+      {g : G | X.gradedResolutionRepresentation g z = z} := by
+    ext g
+    exact iff_of_eq (congrArg (fun y ↦ y = z) (X.gradedResolutionTopRep_ρ_apply g z))
+  rw [hfixed]
+  clear hfixed
   induction z using DirectSum.induction_on with
   | zero =>
     simpa only [map_zero, Set.ofPred_true] using (isOpen_univ : IsOpen (Set.univ : Set G))
@@ -495,14 +511,12 @@ theorem isSmoothDiscrete_gradedResolutionTopRep [CompactSpace G]
     rw [h]
     exact (hX.resolutionX (n + 1)).stabilizer_isOpen x
   | add x y hx hy =>
-    -- Express the raw action as a stabilizer subgroup so openness passes to a larger subgroup.
-    change IsOpen (MulAction.stabilizer G (x + y) : Set G)
+    rw [← hstabilizer]
     apply Subgroup.isOpen_mono (H₁ := MulAction.stabilizer G x ⊓ MulAction.stabilizer G y)
     · intro g hg
       simp only [Subgroup.mem_inf, MulAction.mem_stabilizer_iff] at hg ⊢
       simp [smul_add, hg.1, hg.2]
-    · -- The action is installed on the raw carrier to avoid changing its scalar instances.
-      change IsOpen ({g : G | g • x = x} ∩ {g : G | g • y = y})
+    · rw [Subgroup.coe_inf, hstabilizer, hstabilizer]
       exact hx.inter hy
 
 end Discrete
