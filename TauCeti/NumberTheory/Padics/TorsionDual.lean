@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.Module
+import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.BilinearMap
 import Mathlib.LinearAlgebra.Isomorphisms
@@ -31,7 +32,8 @@ The comparison is the connecting map of the long exact sequence for
 `0 → ℤ_p → ℚ_p → ℚ_p / ℤ_p → 0`, written out by hand: a torsion element `t` lifts to `x ∈ P₀` with
 `p ^ n • x = f k` for some `k ∈ P₁`, and a functional `ψ` on `P₁` sends `t` to the class of
 `ψ k / p ^ n`. Its kernel consists of the functionals extending along `f`, because `M[p^∞]` is a
-direct summand of `M` over `ℤ_p`, and it is surjective because `P₀` is projective.
+direct summand of `M` over `ℤ_p`. Surjectivity needs only projectivity of `P₀`, since
+`ℚ_p / ℤ_p` is injective over `ℤ_p` and every character of the torsion extends to `M`.
 
 The modules may carry an action of a ring `A`, compatible with that of `ℤ_p`, for which the maps
 are `A`-linear; the connecting map is then compatible with the contragredient actions of `A`:
@@ -188,9 +190,10 @@ variable (p) in
 `0 → P₁ → P₀ → M → 0`: for `t` in the `p`-power torsion of `M`, choose `x ∈ P₀` over `t` and
 `p ^ n • x = f k`; then `ψ` sends `t` to the class of `ψ k / p ^ n`. When `M` is finitely generated
 over `ℤ_p`, its kernel consists of the functionals extending along `f`
-(`TauCeti.ker_torsionDualMap`), and when moreover `P₀` is projective it is surjective
-(`TauCeti.torsionDualMap_surjective`); so it identifies `Ext¹_{ℤ_p}(M, ℤ_p)` with the Pontryagin
-dual of the `p`-power torsion of `M` (`TauCeti.torsionDualEquiv`). -/
+(`TauCeti.ker_torsionDualMap`). It is surjective whenever `P₀` is projective, without assuming
+finite generation (`TauCeti.torsionDualMap_surjective`). Together these identify
+`Ext¹_{ℤ_p}(M, ℤ_p)` with the Pontryagin dual of the `p`-power torsion of `M`
+(`TauCeti.torsionDualEquiv`). -/
 def torsionDualMap :
     Dual ℤ_[p] P₁ →ₗ[ℤ_[p]] pPowerTorsion p A M →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p]) :=
   LinearMap.mk₂ ℤ_[p] (torsionDualFun hf hfi hπ)
@@ -274,6 +277,26 @@ theorem torsionDualMap_dualMap (φ : Dual ℤ_[p] P₀) :
     (fun _ ↦ rfl) t hx, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
   exact Submodule.mem_one.mpr ⟨φ x, rfl⟩
 
+/-- The connecting map is surjective when `P₀` is projective over `ℤ_p`: every character of the
+`p`-power torsion of `M` comes from a functional on `P₁`, without a finite-generation assumption
+on `M`. -/
+theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
+    Function.Surjective (torsionDualMap p hf hfi hπ) := by
+  intro χ
+  obtain ⟨χ', hχ'⟩ := Module.Injective.extension_property ℤ_[p] _ _ _
+    ((pPowerTorsion p A M).subtype.restrictScalars ℤ_[p]) (Submodule.subtype_injective _) χ
+  obtain ⟨Φ, hΦ⟩ := projective_lifting_property (1 : Submodule ℤ_[p] ℚ_[p]).mkQ
+    (χ' ∘ₗ π.restrictScalars ℤ_[p]) (Submodule.mkQ_surjective _)
+  have hΦx (x : P₀) : Submodule.Quotient.mk (Φ x) = χ' (π x) := LinearMap.congr_fun hΦ x
+  have hint (k : P₁) : (Φ ∘ₗ f.restrictScalars ℤ_[p]) k ∈ (1 : Submodule ℤ_[p] ℚ_[p]) := by
+    rw [← Submodule.Quotient.mk_eq_zero, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      hΦx, hf.apply_apply_eq_zero, map_zero]
+  refine ⟨LinearMap.padicIntCodRestrict _ hint, LinearMap.ext fun t ↦ ?_⟩
+  obtain ⟨x, hx⟩ := hπ t
+  rw [torsionDualMap_apply_of_extension hf hfi hπ _ Φ
+    (LinearMap.coe_padicIntCodRestrict_apply _ hint) t hx, hΦx, hx]
+  exact LinearMap.congr_fun hχ' t
+
 end TorsionDual
 
 section Bijective
@@ -332,37 +355,6 @@ theorem ker_torsionDualMap :
     LinearMap.coe_padicIntCodRestrict_apply, LinearMap.comp_apply]
   exact extendDual_eq_of_eq hf hfi ψ (pr (f k)) (k := k) (by
     simp [pr, hf.apply_apply_eq_zero])
-
-/-- The connecting map is surjective when `P₀` is projective over `ℤ_p`: every character of the
-`p`-power torsion of `M` comes from a functional on `P₁`. -/
-theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
-    Function.Surjective (torsionDualMap p hf hfi hπ) := by
-  intro χ
-  obtain ⟨σ, hσ⟩ := exists_section (p := p) (A := A) hπ
-  -- Subtracting the section retracts `M` onto its `p`-power torsion.
-  have hr (m : M) : m - π (σ (Submodule.Quotient.mk m)) ∈ pPowerTorsion p A M := by
-    rw [← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_sub, hσ, sub_self]
-  let r : M →ₗ[ℤ_[p]] pPowerTorsion p A M :=
-    { toFun m := ⟨_, hr m⟩
-      map_add' x y := Subtype.ext <| by
-        simp only [map_add, Submodule.Quotient.mk_add, Submodule.coe_add]
-        abel
-      map_smul' c x := Subtype.ext <| by
-        simp only [Submodule.Quotient.mk_smul, map_smul, LinearMap.map_smul_of_tower,
-          Submodule.coe_smul_of_tower, RingHom.id_apply, smul_sub] }
-  have hrt (t : pPowerTorsion p A M) : r t = t := Subtype.ext (by
-    simp [r, (Submodule.Quotient.mk_eq_zero _).mpr t.2])
-  obtain ⟨Φ, hΦ⟩ := projective_lifting_property (1 : Submodule ℤ_[p] ℚ_[p]).mkQ
-    (χ ∘ₗ r ∘ₗ π.restrictScalars ℤ_[p]) (Submodule.mkQ_surjective _)
-  have hΦx (x : P₀) : Submodule.Quotient.mk (Φ x) = χ (r (π x)) := LinearMap.congr_fun hΦ x
-  have hint (k : P₁) : (Φ ∘ₗ f.restrictScalars ℤ_[p]) k ∈ (1 : Submodule ℤ_[p] ℚ_[p]) := by
-    rw [← Submodule.Quotient.mk_eq_zero, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-      hΦx, hf.apply_apply_eq_zero, map_zero, map_zero]
-  refine ⟨LinearMap.padicIntCodRestrict _ hint, LinearMap.ext fun t ↦ ?_⟩
-  obtain ⟨x, hx⟩ := hπ t
-  rw [torsionDualMap_apply_of_extension hf hfi hπ _ Φ
-    (LinearMap.coe_padicIntCodRestrict_apply _ hint) t hx, hΦx, ← hrt t]
-  rw [hx]
 
 variable (p) in
 /-- **`Ext¹_{ℤ_p}(M, ℤ_p)` is the Pontryagin dual of the `p`-power torsion of `M`.** For an exact
