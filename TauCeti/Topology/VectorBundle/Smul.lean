@@ -28,7 +28,7 @@ variable {𝕜 B F X : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B
   [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
   [FiberBundle F E] [VectorBundle 𝕜 F E] [TopologicalSpace X]
 
-namespace VectorBundle
+namespace TauCeti.VectorBundle
 
 variable (𝕜 F E) in
 /-- Fibrewise scalar multiplication on the total space of a topological vector bundle is jointly
@@ -50,10 +50,10 @@ theorem continuous_smul :
   have hb : p.2.proj ∈ e.baseSet := e.mem_source.1 hp
   simp only [TotalSpace.mk', e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hb, map_smul]
 
-end VectorBundle
+end TauCeti.VectorBundle
 
 /-- A continuous map into the total space of a vector bundle, rescaled fibrewise by a continuous
 scalar function, is continuous. -/
 theorem Continuous.smul_totalSpace {c : X → 𝕜} {φ : X → TotalSpace F E} (hc : Continuous c)
     (hφ : Continuous φ) : Continuous fun x ↦ TotalSpace.mk' F (φ x).proj (c x • (φ x).2) :=
-  (VectorBundle.continuous_smul 𝕜 F E).comp (hc.prodMk hφ)
+  (TauCeti.VectorBundle.continuous_smul 𝕜 F E).comp (hc.prodMk hφ)
