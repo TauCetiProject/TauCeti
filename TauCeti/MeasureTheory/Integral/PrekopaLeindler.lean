@@ -18,9 +18,9 @@ stable under taking sections.
 
 The main result is tensorization: if two measures have the Prékopa–Leindler property at the same
 weight, then their product measure has it as well.  Tonelli's theorem first applies the inequality
-in the first variable and then applies it to the resulting marginal integrals in the second
-variable.  Thus a one-dimensional proof can be iterated to obtain the inequality in finite product
-spaces.
+in the second variable and then applies it to the resulting marginal integrals in the first
+variable, so only the second factor needs to be s-finite.  Thus a one-dimensional proof can be
+iterated to obtain the inequality in finite product spaces.
 
 The property is also transported by measure-preserving maps which preserve the weighted affine
 combination.  This makes tensorization usable after changing linear coordinates or projecting to a
@@ -71,12 +71,12 @@ theorem hasPrekopaLeindler_def (mu : Measure E) (theta : ℝ) :
           ∫⁻ x, h x ∂mu :=
   Iff.rfl
 
-/-- A Dirac mass at the origin has the Prékopa–Leindler property at every weight. -/
-theorem hasPrekopaLeindler_dirac_zero (theta : ℝ) :
-    (Measure.dirac (0 : E)).HasPrekopaLeindler theta := by
+/-- A Dirac mass has the Prékopa–Leindler property at every weight. -/
+theorem hasPrekopaLeindler_dirac (a : E) (theta : ℝ) :
+    (Measure.dirac a).HasPrekopaLeindler theta := by
   intro f g h hf hg hh hfg
   rw [lintegral_dirac' _ hf, lintegral_dirac' _ hg, lintegral_dirac' _ hh]
-  simpa using hfg 0 0
+  simpa only [← add_smul, sub_add_cancel, one_smul] using hfg a a
 
 /-- Transport the Prékopa–Leindler property through a measure-preserving map
 which preserves the weighted affine combination. -/
@@ -93,26 +93,27 @@ theorem HasPrekopaLeindler.map {mu : Measure E} {nu : Measure F} {theta : ℝ}
 
 /-- **Tensorization of Prékopa–Leindler.** If `mu` and `nu` satisfy the inequality at the same
 weight, then so does their product measure. -/
-theorem HasPrekopaLeindler.prod {mu : Measure E} {nu : Measure F} [SFinite mu] [SFinite nu]
+theorem HasPrekopaLeindler.prod {mu : Measure E} {nu : Measure F} [SFinite nu]
     {theta : ℝ} (hmu : mu.HasPrekopaLeindler theta) (hnu : nu.HasPrekopaLeindler theta) :
     (mu.prod nu).HasPrekopaLeindler theta := by
   intro f g h hf hg hh hfg
-  let fMarginal : F → ENNReal := fun y => ∫⁻ x, f (x, y) ∂mu
-  let gMarginal : F → ENNReal := fun y => ∫⁻ x, g (x, y) ∂mu
-  let hMarginal : F → ENNReal := fun y => ∫⁻ x, h (x, y) ∂mu
-  have hfMarginal : Measurable fMarginal := hf.lintegral_prod_left'
-  have hgMarginal : Measurable gMarginal := hg.lintegral_prod_left'
-  have hhMarginal : Measurable hMarginal := hh.lintegral_prod_left'
-  have hmarginal (x y : F) :
+  let fMarginal : E → ENNReal := fun x => ∫⁻ y, f (x, y) ∂nu
+  let gMarginal : E → ENNReal := fun x => ∫⁻ y, g (x, y) ∂nu
+  let hMarginal : E → ENNReal := fun x => ∫⁻ y, h (x, y) ∂nu
+  have hfMarginal : Measurable fMarginal := hf.lintegral_prod_right'
+  have hgMarginal : Measurable gMarginal := hg.lintegral_prod_right'
+  have hhMarginal : Measurable hMarginal := hh.lintegral_prod_right'
+  have hmarginal (x y : E) :
       (fMarginal x).rpow (1 - theta) * (gMarginal y).rpow theta ≤
         hMarginal ((1 - theta) • x + theta • y) := by
-    apply hmu (hf.comp (measurable_id.prodMk measurable_const))
-      (hg.comp (measurable_id.prodMk measurable_const))
-      (hh.comp (measurable_id.prodMk measurable_const))
+    apply hnu (hf.comp (measurable_const.prodMk measurable_id))
+      (hg.comp (measurable_const.prodMk measurable_id))
+      (hh.comp (measurable_const.prodMk measurable_id))
     intro a b
-    simpa only [Function.comp_apply, id_eq, Prod.smul_mk, Prod.add_def] using hfg (a, x) (b, y)
-  have hresult := hnu hfMarginal hgMarginal hhMarginal hmarginal
-  rw [lintegral_prod_symm' f hf, lintegral_prod_symm' g hg, lintegral_prod_symm' h hh]
+    simpa only [Function.comp_apply, id_eq, Prod.smul_mk, Prod.add_def] using hfg (x, a) (y, b)
+  have hresult := hmu hfMarginal hgMarginal hhMarginal hmarginal
+  rw [lintegral_prod f hf.aemeasurable, lintegral_prod g hg.aemeasurable,
+    lintegral_prod h hh.aemeasurable]
   exact hresult
 
 end MeasureTheory.Measure
