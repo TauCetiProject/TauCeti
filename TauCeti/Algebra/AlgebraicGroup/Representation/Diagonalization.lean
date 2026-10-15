@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
-import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
+import TauCeti.Algebra.AlgebraicGroup.Solvable.Trigonalizable
 
 /-!
 # Diagonalizing commuting semisimple point actions
@@ -51,21 +51,12 @@ theorem exists_groupLike_coact_eq_tmul_of_basePointsRepresentation_eq_smul
     {m : M} (hm : m ≠ 0) (χ : WithConv (H →ₐ[k] k) → k)
     (hχ : ∀ g, basePointsRepresentation (H := H) M g m = χ g • m) :
     ∃ c : GroupLike k H, coact (R := k) (C := H) m = m ⊗ₜ[k] c.val := by
-  have hstable : ∀ (g : H →ₐ[k] k) {x : M}, x ∈ k ∙ m →
-      endOfPoint M g (1 ⊗ₜ[k] x) ∈ (k ∙ m).baseChange k := by
-    intro g x hx
-    rw [endOfPoint_tmul, one_smul,
-      endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-    apply Submodule.tmul_mem_baseChange_of_mem
-    rw [Submodule.mem_span_singleton] at hx
-    obtain ⟨a, rfl⟩ := hx
-    rw [map_smul, hχ]
-    exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
-      (Submodule.mem_span_singleton_self m))
-  let L := Subcomodule.ofEndOfPointStable (K := k) (k ∙ m) hstable
-  obtain ⟨c, hc, hcoact⟩ := exists_isGroupLikeElem_coact_eq_tmul_of_toSubmodule_eq_span
-    L hm (Subcomodule.ofEndOfPointStable_toSubmodule _ hstable)
-  exact ⟨⟨c, hc⟩, hcoact⟩
+  apply exists_groupLike_coact_eq_tmul_of_basePointsRepresentation_stable (k ∙ m) m hm rfl
+  intro g x hx
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
+  rw [map_smul, hχ]
+  exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
+    (Submodule.mem_span_singleton_self m))
 
 /-- The group-like weight spaces span a finite-dimensional comodule when its rational point
 actions commute and are semisimple. The ambient group need not be connected or commutative. -/

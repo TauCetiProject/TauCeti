@@ -37,7 +37,7 @@ variable {k : Type u} {C : Type v} [Field k] [AddCommGroup C] [Module k C] [Coal
 
 /-- A coalgebra is spanned by group-like elements if every finite-dimensional comodule is
 spanned by its group-like weight spaces. No finite-dimensionality of the coalgebra is needed. -/
-theorem groupLikeSetSpan_eq_top_of_finite_weightSpaces_span
+theorem groupLikeSetSpan_eq_top_of_forall_iSup_groupLikeWeightSpace_eq_top
     (hspan : ∀ M : FGComoduleCat.{u, v, v} k C,
       ⨆ c : GroupLike k C, c.weightSpace (M := M) = ⊤) :
     groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤ := by

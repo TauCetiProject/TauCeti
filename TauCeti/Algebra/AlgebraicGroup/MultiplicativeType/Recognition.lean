@@ -5,30 +5,28 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Basic
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Recognition
-public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
+public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint.BaseChange
 import TauCeti.Algebra.Coalgebra.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
 
 /-!
-# Recognizing groups of multiplicative type and tori from geometric points
+# Recognizing groups of multiplicative type from geometric points
 
 For a geometrically reduced finite-type affine group, being of multiplicative type is
 equivalent to commutativity together with semisimplicity of every point of its geometric
-fibre. Adding geometric connectedness characterizes tori. Neither result requires the
-original field to be perfect or the torus to split there.
+fibre. The original field need not be perfect.
 
-The points in the statements are base-valued points of the geometric fibre, and semisimplicity
-is tested on its finite-dimensional representations. This is the usual geometric criterion:
+The statement uses `geometricallySemisimplePointsCommHopfAlgProperty`, testing points
+with values in the algebraic closure on the original group's finite-dimensional representations.
+This is the usual geometric criterion:
 after passage to an algebraic closure, commuting semisimple points give a diagonalizable group.
 The reducedness assumption keeps infinitesimal groups visible; without it even `αₚ` would
 pass the point test.
 
 The recognition argument uses
 `DiagonalizableGroup.groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint`.
-The torus criterion uses the existing connected and geometrically reduced multiplicative-type
-characterization in `TauCeti.Algebra.AlgebraicGroup.Torus.Characterization`.
 
 ## References
 
@@ -48,43 +46,28 @@ variable {k : Type u} [Field k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k) [Algebra.IsGeometricallyReduced k H]
 
 /-- A geometrically reduced finite-type affine group is of multiplicative type exactly when
-it is commutative and every algebraic-closure-valued point of its geometric fibre is semisimple.
+it is commutative and every algebraic-closure-valued point is semisimple.
 Connectedness is not required. -/
-theorem multiplicativeTypeCommHopfAlgProperty_iff_isCocomm_and_forall_isSemisimplePoint :
+theorem multiplicativeTypeCommHopfAlgProperty_iff_isCocomm_and_geometricallySemisimplePoints :
     multiplicativeTypeCommHopfAlgProperty k H ↔
       Coalgebra.IsCocomm k H ∧
-        ∀ g : WithConv
-          (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H →ₐ[AlgebraicClosure k]
-            AlgebraicClosure k), HopfAlgebra.IsSemisimplePoint g := by
+        geometricallySemisimplePointsCommHopfAlgProperty k H.obj := by
   let K := AlgebraicClosure k
   let G := FiniteTypeCommHopfAlgCat.baseChange (K := K) H
   have hrecognition :=
     DiagonalizableGroup.groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint G
-  rw [multiplicativeTypeCommHopfAlgProperty_iff, hrecognition]
+  rw [multiplicativeTypeCommHopfAlgProperty_iff, hrecognition,
+    geometricallySemisimplePointsCommHopfAlgProperty_iff]
+  let e := AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := K)
   constructor
   · rintro ⟨hc, hss⟩
-    exact ⟨Coalgebra.IsCocomm.of_baseChange (K := K) (h := hc), hss⟩
+    refine ⟨Coalgebra.IsCocomm.of_baseChange (K := K) (h := hc), fun g ↦ ?_⟩
+    exact (HopfAlgebra.isSemisimplePoint_baseChangePointsMulEquiv_iff g).mp (hss (e g))
   · rintro ⟨hc, hss⟩
     let _ := hc
-    exact ⟨inferInstance, hss⟩
-
-open torusCommHopfAlgProperty in
-/-- A smooth geometrically connected affine group is a torus exactly when it is commutative
-and all points of its geometric fibre are semisimple. More generally, geometric reducedness
-suffices in place of smoothness. -/
-theorem torusCommHopfAlgProperty_iff_isCocomm_and_forall_isSemisimplePoint
-    (hconn : geometricallyConnectedCommHopfAlgProperty k H.obj) :
-    torusCommHopfAlgProperty k H ↔
-      Coalgebra.IsCocomm k H ∧
-        ∀ g : WithConv
-          (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H →ₐ[AlgebraicClosure k]
-            AlgebraicClosure k), HopfAlgebra.IsSemisimplePoint g := by
-  rw [iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced,
-    multiplicativeTypeCommHopfAlgProperty_iff_isCocomm_and_forall_isSemisimplePoint]
-  refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, hconn, ?_⟩⟩
-  apply geometricallyReducedCommHopfAlgProperty.of_baseChange (AlgebraicClosure k) H.obj
-  exact (geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed
-    (AlgebraicClosure k) (CommHopfAlgCat.baseChange (K := AlgebraicClosure k) H.obj)).mpr
-      inferInstance
+    refine ⟨inferInstance, fun g ↦ ?_⟩
+    have h := (HopfAlgebra.isSemisimplePoint_baseChangePointsMulEquiv_iff (e.symm g)).mpr
+      (hss (e.symm g))
+    exact e.apply_symm_apply g ▸ h
 
 end TauCeti

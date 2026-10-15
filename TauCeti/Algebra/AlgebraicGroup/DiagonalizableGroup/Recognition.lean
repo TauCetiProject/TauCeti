@@ -69,11 +69,13 @@ theorem groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint :
   · rintro ⟨hc, hss⟩
     let _ := hc
     rw [groupLikeSpannedProperty_iff]
-    apply Subcoalgebra.groupLikeSetSpan_eq_top_of_finite_weightSpaces_span
+    apply Subcoalgebra.groupLikeSetSpan_eq_top_of_forall_iSup_groupLikeWeightSpace_eq_top
     intro M
     apply Comodule.iSup_groupLikeWeightSpace_eq_top_of_commute_of_isSemisimple
     · exact fun g h _ ↦ (Commute.all g h).map (Comodule.basePointsRepresentation M)
-    · exact fun g ↦ (hss g).isSemisimple_basePointsRepresentation M
+    · intro g
+      exact (HopfAlgebra.isSemisimplePoint_iff_forall_isSemisimple_basePointsRepresentation g).mp
+        (hss g) M
 
 end DiagonalizableGroup
 

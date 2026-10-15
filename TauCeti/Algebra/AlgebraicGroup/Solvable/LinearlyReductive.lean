@@ -52,7 +52,7 @@ group over an algebraically closed field is spanned by its group-like elements. 
 theorem groupLikeSetSpan_eq_top_of_isLinearlyReductive_of_isSolvable
     (hlr : Coalgebra.IsLinearlyReductive.{u, v, u} k H) :
     Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ = ⊤ := by
-  apply Subcoalgebra.groupLikeSetSpan_eq_top_of_finite_weightSpaces_span
+  apply Subcoalgebra.groupLikeSetSpan_eq_top_of_forall_iSup_groupLikeWeightSpace_eq_top
   intro M
   apply Comodule.iSup_groupLikeWeightSpace_eq_top_of_isCompletelyReducible
     hlr.isCompletelyReducible

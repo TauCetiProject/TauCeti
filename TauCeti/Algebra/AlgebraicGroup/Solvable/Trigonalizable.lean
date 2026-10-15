@@ -66,21 +66,34 @@ variable [AddCommGroup M] [Module k M] [Comodule k H M]
 
 /-- A nonzero vector spanning a submodule preserved by every base-valued point is a weight
 vector. -/
-theorem hasNonzeroWeightVector_of_basePointsRepresentation_stable
+theorem exists_groupLike_coact_eq_tmul_of_basePointsRepresentation_stable
     [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
     (p : Submodule k M) (v : M) (hv : v ≠ 0) (hspan : p = k ∙ v)
     (hact : ∀ (g : WithConv (H →ₐ[k] k)) {m : M}, m ∈ p →
       basePointsRepresentation (R := k) (H := H) M g m ∈ p) :
-    HasNonzeroWeightVector k H M := by
+    ∃ c : GroupLike k H, coact (R := k) (C := H) v = v ⊗ₜ[k] c.val := by
   have hstable : ∀ (g : H →ₐ[k] k) {m : M}, m ∈ p →
       Comodule.endOfPoint M g ((1 : k) ⊗ₜ[k] m) ∈ p.baseChange k := by
     intro g m hm
     rw [endOfPoint_tmul, one_smul,
       endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
     exact Submodule.tmul_mem_baseChange_of_mem _ (hact (toConv g) hm)
-  exact hasNonzeroWeightVector_of_toSubmodule_eq_span
+  obtain ⟨c, hc, hcoact⟩ := exists_isGroupLikeElem_coact_eq_tmul_of_toSubmodule_eq_span
     (Subcomodule.ofEndOfPointStable (K := k) p hstable) hv
     ((Subcomodule.ofEndOfPointStable_toSubmodule (K := k) p hstable).trans hspan)
+  exact ⟨⟨c, hc⟩, hcoact⟩
+
+/-- A nonzero vector spanning a submodule preserved by every base-valued point gives a
+nonzero weight vector. -/
+theorem hasNonzeroWeightVector_of_basePointsRepresentation_stable
+    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
+    (p : Submodule k M) (v : M) (hv : v ≠ 0) (hspan : p = k ∙ v)
+    (hact : ∀ (g : WithConv (H →ₐ[k] k)) {m : M}, m ∈ p →
+      basePointsRepresentation (R := k) (H := H) M g m ∈ p) :
+    HasNonzeroWeightVector k H M := by
+  obtain ⟨c, hc⟩ :=
+    exists_groupLike_coact_eq_tmul_of_basePointsRepresentation_stable p v hv hspan hact
+  exact hasNonzeroWeightVector_iff.mpr ⟨v, c.val, hv, c.isGroupLikeElem_val, hc⟩
 
 /-- If the base-valued points of a reduced finite-type commutative Hopf algebra over an
 algebraically closed field act on a nonzero finite-dimensional comodule by pairwise-commuting
