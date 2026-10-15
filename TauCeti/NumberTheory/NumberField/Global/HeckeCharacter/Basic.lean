@@ -83,8 +83,8 @@ abbrev IsFiniteOrder (χ : HeckeCharacter K) : Prop := IsOfFinOrder χ
 exponent equal to one. -/
 theorem isFiniteOrder_iff (χ : HeckeCharacter K) :
     χ.IsFiniteOrder ↔ ∃ n, 0 < n ∧ ∀ c, χ c ^ n = 1 := by
-  rw [IsFiniteOrder, ← χ.isOfFinOrder_coe, ← χ.coe_toMonoidHom]
-  exact χ.isOfFinOrder_toMonoidHom_iff_exists_pow_apply_eq_one
+  simpa only [IsFiniteOrder, ContinuousMonoidHom.isOfFinOrder_coe, MonoidHom.coe_ofClass] using
+    (χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).isOfFinOrder_iff_exists_pow_apply_eq_one
 
 /-- A pulled-back ray class character kills the ray subgroup. -/
 private theorem raySubgroup_le_ker_comp_rayClassQuotient (χ : RayClassCharacter 𝔪) :
