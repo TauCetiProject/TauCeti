@@ -79,6 +79,25 @@ class GitFixtures(unittest.TestCase):
         }}}}
         self.assertIsNone(self.detector(api).detect(child)[0])
 
+    def test_questions_and_conditions_cannot_bind_independent_content(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "independent identical content\n")
+        self.commit("parent")
+        self.pr(1)
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("P", "independent identical content\n")
+        self.write("C", "own work\n")
+        self.commit("independent child")
+        child = self.pr(2)
+        detector = self.detector()
+        for body in ("Stacked on #1?", "Depends on #1 if necessary.",
+                     "Prerequisites: #1?", "If needed. Stacked on #1.",
+                     "Based on #1 perhaps.", "Parent PR: #1 when required."):
+            with self.subTest(body=body):
+                changed = sp.PR(**{**sp.asdict(child), "body": body})
+                self.assertIsNone(detector.detect(changed)[0])
+
     def parent_child(self, *, draft=False, explicit=False):
         git(self.root, "checkout", "-b", "parent")
         self.write("parent", "prerequisite\n")
@@ -526,6 +545,14 @@ class ProseTests(unittest.TestCase):
         self.assertEqual(sp.rendered_parents("<p>`Template:` Stacked on #12</p>"), set())
         self.assertEqual(sp.rendered_parents("<p>&lt;!-- x --&gt; Stacked on #12</p>"), set())
         self.assertEqual(sp.rendered_parents("<p>`x. Stacked on #12`</p>"), set())
+
+    def test_all_declaration_forms_require_unqualified_affirmation(self):
+        for claim in ("Stacked on", "Depends on", "Based on", "Built on",
+                      "Prerequisite:", "Dependencies:", "Parent PR:",
+                      "This PR carries prerequisite commits from"):
+            for suffix in ("?", " if necessary.", " when required.", "; only conditionally"):
+                with self.subTest(claim=claim, suffix=suffix):
+                    self.assertEqual(sp.rendered_parents(f"<p>{claim} #12{suffix}</p>"), set())
 
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,

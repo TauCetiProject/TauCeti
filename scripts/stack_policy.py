@@ -255,17 +255,21 @@ def rendered_prose_parents(body):
                     continue
                 # Identities must belong to this particular declaration. Other
                 # sentences may discuss superseded source or mathematical uses.
-                tail = sentence[claim.end():].split(";", 1)[0]
+                tail = sentence[claim.end():]
                 first = re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#([1-9]\d*)\b", tail, re.I)
                 if not first:
                     continue
-                result.add(int(first[1]))
+                declared = {int(first[1])}
                 tail = tail[first.end():]
                 # Only a contiguous reference list belongs to this declaration.
                 # Later clauses (e.g. supersedes #N) cannot acquire parenthood.
                 while match := re.match(r"[\s,\[\]()/&+]*(?:(?:and|or)\s+)?#([1-9]\d*)\b", tail, re.I):
-                    result.add(int(match[1]))
+                    declared.add(int(match[1]))
                     tail = tail[match.end():]
+                # A body-only declaration must be complete, rather than a
+                # question, condition or fragment followed by qualifying prose.
+                if re.fullmatch(r"[\s\])]*\.?\s*", tail):
+                    result.update(declared)
     return result
 
 
@@ -355,6 +359,8 @@ def rendered_parents(html):
     if re.search(r'''["“”‘’«»‹›„‟「」『』]|(?<!\w)'|'(?!\w)''', visible):
         return set()
     if "`" in visible or "<!--" in visible:
+        return set()
+    if "?" in visible or re.search(r"\b(?:if|unless|would|could|should|might|maybe|perhaps|hypothetical\w*)\b", visible, re.I):
         return set()
     if re.search(r"\b(?:examples?|for reference|not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t|supersed\w*)\b", visible, re.I):
         return set()

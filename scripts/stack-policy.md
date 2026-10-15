@@ -29,8 +29,11 @@ negative label must not turn its surrounding prose into an affirmative claim.
 Suppressed markup also participates in these conservative vetoes, so formatting
 negation as code inside a link cannot remove it; this may decline other valid
 body-only declarations alongside quoted/code examples.
-Only affirmative declarations beginning a rendered sentence (optionally with
-this PR or this branch) qualify; example-prefixed prose does not. Literal quoted
+Only complete affirmative declarations beginning a rendered sentence (optionally
+with this PR or this branch) qualify. Their tail must contain only the contiguous
+parent-reference list and closing punctuation, without questions, conditions or
+extra qualifying prose. Questions/conditional context elsewhere in the body also
+decline body-only inference. Example-prefixed prose does not qualify. Literal quoted
 prose or explicit negative/example/historical context conservatively disables body-only
 inference for that body, including quotations spanning paragraphs. Whitespace
 within paragraphs is normalized and excluded inline elements retain opaque
