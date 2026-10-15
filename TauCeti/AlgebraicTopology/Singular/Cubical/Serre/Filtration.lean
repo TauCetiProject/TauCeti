@@ -69,6 +69,15 @@ homology of `E` by `TauCeti.singularCubicalHomologyIso`.
   `TauCeti.isIso_serreAbutmentFiltrationι`, `TauCeti.serreAbutmentIso`: strong convergence to
   the homology of the cubical chains of `E`.
 
+## Implementation notes
+
+The spectral sequence is Tau Ceti's spectral sequence of a filtered complex
+(`CochainComplex.filtrationFunctor`, `CochainComplex.spectralSequence` and their convergence
+lemmas in `TauCeti.Algebra.Homology.SpectralSequence.Filtered`, developed under
+TauCetiRoadmap#808). The filtration is packaged for it in the same way as the index filtration of
+a twisted complex in TauCeti PR #16305 (by roed-math), through a subcomplex cut out by submodules
+(`TauCeti.Algebra.Homology.ModuleCat.Subcomplex`).
+
 ## References
 
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),

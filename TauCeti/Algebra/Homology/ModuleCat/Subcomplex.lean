@@ -20,6 +20,15 @@ filtration of a complex of chains on elements, for instance by the cubes satisfy
 and this file turns such a family into a subobject, the form in which filtered complexes enter
 the spectral sequence of a filtered complex.
 
+## Implementation notes
+
+The construction of a subcomplex from degreewise submodules is modelled on
+`gradedCochainComplexSubobject` in the index filtration of twisted complexes, TauCeti PR #16305 (by
+roed-math): the complex of the submodules with the restricted differentials, its inclusion as a
+monomorphism, the subobject it defines, and its membership, monotonicity and endpoint lemmas.
+Here the ambient complex is an arbitrary homological complex of modules rather than one assembled
+from a graded module.
+
 ## Main definitions
 
 * `HomologicalComplex.ofSubmodules K N hN`: the complex with terms `N i`, identified with them by
