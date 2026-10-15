@@ -137,8 +137,9 @@ private lemma card_eq_seven_of_affineE6 (c : Fin 7 → T.Component)
     (hadj 3 4 (by simp)) (hadj 0 5 (by simp))
   exact (hadj 5 6 (by simp)).ne' hz
 
-/-- The affine E₆ configuration forces the whole numerical type, preserving the supplied
-labels. All weights agree; the multiplicities are `(3m, 2m, m, 2m, m, 2m, m)` and the
+/-- The affine E₆ configuration exhausts the component set and determines its weights,
+multiplicities, and intersections, preserving the supplied labels. All weights agree;
+the multiplicities are `(3m, 2m, m, 2m, m, 2m, m)` and the
 intersection matrix is minus the common weight times the affine E₆ Cartan matrix. -/
 theorem exists_equiv_affineE6 (c : Fin 7 → T.Component) (hc : Function.Injective c)
     (hself : ∀ i, T.intersection (c i) (c i) = -(2 * (T.weight (c i) : ℤ)))
@@ -156,7 +157,7 @@ theorem exists_equiv_affineE6 (c : Fin 7 → T.Component) (hc : Function.Injecti
   have hbij : Function.Bijective c :=
     (Fintype.bijective_iff_injective_and_card c).mpr ⟨hc, by rw [hdim]; exact hcard.symm⟩
   let e := Equiv.ofBijective c hbij
-  have he : ∀ i, e i = c i := fun _ ↦ rfl
+  have he : ∀ i, e i = c i := congrFun (Equiv.coe_ofBijective c hbij)
   obtain ⟨hw, ha⟩ := affineE6_weights_intersections c hc hself hpos
   -- Transport the affine marks to the components. The intersection-form kernel criterion
   -- identifies them with the multiplicity vector, without solving the seven rows again.
