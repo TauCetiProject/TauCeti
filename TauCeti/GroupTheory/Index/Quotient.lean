@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.QuotientGroup.Index
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # The image index before and after quotienting
@@ -58,23 +59,7 @@ theorem index_range_mul_card_comap_mul {f : A →* B} {S : Subgroup B} [S.Normal
     rw [← hcard]
     exact Subgroup.index_mul_card _
   have hidx : f.range.index = f.range.relIndex S * (f.range ⊔ S).index := by
-    -- The image need not be normal: compare its cosets in `S` and in `f.range ⊔ S`.
-    let i : S →* (f.range ⊔ S : Subgroup B) := Subgroup.inclusion le_sup_right
-    have key (x y : S) :
-        QuotientGroup.leftRel (f.range.subgroupOf S) x y ↔
-          QuotientGroup.leftRel (f.range.subgroupOf (f.range ⊔ S)) (i x) (i y) := by
-      simp [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf, i]
-    have hrel : f.range.relIndex S = f.range.relIndex (f.range ⊔ S) := by
-      refine Nat.card_congr (Equiv.ofBijective
-        (Quotient.map' i fun x y ↦ (key x y).mp) ⟨?_, ?_⟩)
-      · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
-        exact Quotient.sound ((key x y).mpr (Quotient.exact h))
-      · refine Quotient.ind' fun ⟨x, hx⟩ ↦ ?_
-        rw [← SetLike.mem_coe, sup_comm, Subgroup.normal_mul] at hx
-        obtain ⟨s, hs, h, hh, rfl⟩ := hx
-        refine ⟨Quotient.mk'' (⟨s, hs⟩ : S), Quotient.sound ?_⟩
-        simpa [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf, i] using hh
-    rw [hrel]
+    rw [← Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal]
     exact (Subgroup.relIndex_mul_index le_sup_left).symm
   rw [Subgroup.index_map_mk'_eq_index_sup, hidx, hT]
   calc
