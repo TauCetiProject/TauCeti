@@ -173,14 +173,14 @@ theorem subgroupCoverFiberEquivSubgroupQuotient_apply_monodromy
     (x₀ : X) (H : Subgroup (FundamentalGroup X x₀)) (g : FundamentalGroup X x₀)
     (e : ⇑(subgroupCover x₀ H).proj ⁻¹' {x₀}) :
     subgroupCoverFiberEquivSubgroupQuotient x₀ H
-        ((subgroupCover x₀ H).isCoveringMap_proj.monodromy g e) =
-      (isCoveringMap_subgroupQuotientProj x₀ H).monodromy g
+        ((subgroupCover x₀ H).isCoveringMap_proj.monodromy g.toPath e) =
+      (isCoveringMap_subgroupQuotientProj x₀ H).monodromy g.toPath
         (subgroupCoverFiberEquivSubgroupQuotient x₀ H e) := by
   have hmonodromy := IsCoveringMap.fiberMap_monodromy
     (subgroupCover x₀ H).isCoveringMap_proj
     (isCoveringMap_subgroupQuotientProj x₀ H)
     (subgroupCoverTotalSpaceHomeomorph x₀ H)
-    (funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)) g e
+    (funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)) g.toPath e
   have hfiberMap (e' : ⇑(subgroupCover x₀ H).proj ⁻¹' {x₀}) :
       Function.fiberMap (subgroupCoverTotalSpaceHomeomorph x₀ H : C(_, _))
           (funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)) x₀ e' =

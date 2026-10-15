@@ -119,7 +119,7 @@ theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq_map_conj
       (mapOfEq ⟨p, hp.continuous⟩ hpe).range.map (MulAut.conj γ).toMonoidHom) :
     ∃ h : E ≃ₜ F, q ∘ h = p := by
   let e : p ⁻¹' {x} := ⟨e₀, Set.mem_singleton_iff.mpr hpe⟩
-  let e₁ : p ⁻¹' {x} := hp.monodromy γ e
+  let e₁ : p ⁻¹' {x} := hp.monodromy γ.toPath e
   have hpe₁ : p (e₁ : E) = x := Set.mem_singleton_iff.mp e₁.2
   have hrange₁ :
       (mapOfEq ⟨p, hp.continuous⟩ hpe₁).range =

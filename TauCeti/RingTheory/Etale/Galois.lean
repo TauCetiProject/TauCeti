@@ -217,7 +217,7 @@ noncomputable def galoisFiberAction :
 @[simp]
 theorem galoisFiberAction_obj_ρ_apply (A : (FiniteEtale.{u} K)ᵒᵖ) (σ : Gal(Ω/K))
     (φ : A.unop →ₐ[K] Ω) :
-    ConcreteCategory.hom (((galoisFiberAction K Ω).obj A).ρ σ) φ = σ • φ :=
+    ConcreteCategory.hom (((galoisFiberAction K Ω).obj A).ρ σ).asHom φ = σ • φ :=
   (rfl)
 
 /-- The map of points induced by a morphism of finite étale `K`-algebras is precomposition. -/
@@ -236,6 +236,7 @@ theorem isContinuous_galoisFiberAction_obj (A : (FiniteEtale.{u} K)ᵒᵖ) :
   let H : OpenSubgroup Gal(Ω/K) := OpenSubgroup.iInfOfFinite fun φ : A.unop →ₐ[K] Ω ↦
     ⟨MulAction.stabilizer _ φ, φ.stabilizer_isOpen⟩
   refine Action.trivialOnSet_le_isContinuous H _ fun σ hσ ↦ ?_
+  apply CategoryTheory.End.ext
   refine ConcreteCategory.hom_ext _ _ fun φ ↦ ?_
   exact OpenSubgroup.iInfOfFinite_le _ φ hσ
 
@@ -258,7 +259,7 @@ theorem galoisFiber_comp_forget₂ :
 @[simp]
 theorem galoisFiber_obj_ρ_apply (A : (FiniteEtale.{u} K)ᵒᵖ) (σ : Gal(Ω/K))
     (φ : A.unop →ₐ[K] Ω) :
-    ConcreteCategory.hom (((galoisFiber K Ω).obj A).obj.ρ σ) φ = σ • φ :=
+    ConcreteCategory.hom (((galoisFiber K Ω).obj A).obj.ρ σ).asHom φ = σ • φ :=
   (rfl)
 
 /-- The map of points induced by a morphism of finite étale `K`-algebras is precomposition. -/

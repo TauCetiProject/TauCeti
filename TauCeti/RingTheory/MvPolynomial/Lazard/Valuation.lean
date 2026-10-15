@@ -119,6 +119,15 @@ theorem weight_lt_weight (hc : IsLazardEvaluator V c) {v u : σ →₀ ℕ} (hv 
     _ ≤ u i * c i := Nat.mul_le_mul_right _ hlt
     _ ≤ u i * c i + weight c (u.filter (i < ·)) := Nat.le_add_right _ _
 
+/-- The weight of an evaluator is injective on the set of exponents it evaluates. -/
+theorem weight_injOn (hc : IsLazardEvaluator V c) : Set.InjOn (weight c) V := by
+  intro v hv u hu hweight
+  apply toLex.injective
+  rcases lt_trichotomy (toLex v) (toLex u) with h | h | h
+  · exact ((hc.weight_lt_weight hv h).ne hweight).elim
+  · exact h
+  · exact ((hc.weight_lt_weight hu h).ne hweight.symm).elim
+
 end IsLazardEvaluator
 
 /-- Every finite set of exponents has an evaluator. -/
