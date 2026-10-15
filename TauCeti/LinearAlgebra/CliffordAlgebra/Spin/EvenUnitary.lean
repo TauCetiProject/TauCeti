@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.Star.Subsemiring
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 
 /-!
@@ -40,9 +41,8 @@ functoriality API.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
 * `CliffordAlgebra.rightIotaEven_spinGroup_smul` transports the Spin action after right
   multiplication by a vector of quadratic value `-1`.
-* `CliffordAlgebra.spinGroupToEven` includes Spin in the even Clifford subalgebra, with
-  `CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary` identifying this map with
-  the even-unitary carrier map.
+* `CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary` identifies the even-unitary
+  carrier map with the basic inclusion of Spin in the even Clifford subalgebra.
 -/
 
 public section
@@ -562,17 +562,6 @@ end TransportToPredicate
 /-- Forget a Spin element to the same Clifford unit in the even unitary carrier. -/
 def spinGroupToEvenUnitary : spinGroup Q →* evenUnitaryGroup Q :=
   spinGroup.toUnits.codRestrict (evenUnitaryGroup Q) fun x ↦ ⟨x.2.2, x.2.1.2⟩
-
-/-- **The inclusion of the Spin group into the even Clifford subalgebra**, the Spin group
-consisting of even elements by `spinGroup.mem_even`. -/
-def spinGroupToEven : spinGroup Q →* even Q :=
-  Submonoid.inclusion fun _ hx => spinGroup.mem_even hx
-
-/-- A Spin-group element sits in the even subalgebra as itself. -/
-@[simp]
-theorem coe_spinGroupToEven_apply (x : spinGroup Q) :
-    (spinGroupToEven Q x : CliffordAlgebra Q) = x :=
-  (rfl)
 
 /-- The canonical map from Spin to the even unitary carrier does not change the underlying
 Clifford unit. -/
