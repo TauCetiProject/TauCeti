@@ -232,7 +232,8 @@ theorem toAdjoinRoot_add (x y : Cyclotomic e) :
 @[simp]
 theorem toAdjoinRoot_neg (x : Cyclotomic e) :
     toAdjoinRoot (-x) = -toAdjoinRoot x := by
-  rw [neg_def, toAdjoinRoot_ofCoeffList, toAdjoinRoot, toPolynomial, ofCoeffList_map_neg, map_neg]
+  rw [neg_def, toAdjoinRoot_ofCoeffList, toAdjoinRoot, toPolynomial,
+    TauCeti.Polynomial.ofCoeffList_map_neg, map_neg]
 
 @[simp]
 theorem toAdjoinRoot_mul (x y : Cyclotomic e) :

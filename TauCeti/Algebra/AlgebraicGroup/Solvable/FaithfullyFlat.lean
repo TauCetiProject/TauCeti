@@ -78,7 +78,7 @@ theorem isSolvable_points_of_faithfullyFlat (f : H ⟶ K)
   exact Group.isSolvable_of_surjective
     (G := HopfAlgebra.points (R := R) (H := K) (CommAlgCat.of R L))
     (G' := HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R L))
-    (f := ((mapPointsFunctor f).app (CommAlgCat.of R L)).hom)
+    (f := ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R L)).hom)
     (mapPointsFunctor_app_surjective_of_faithfullyFlat L f hfinite hflat)
 
 end CommHopfAlgCat

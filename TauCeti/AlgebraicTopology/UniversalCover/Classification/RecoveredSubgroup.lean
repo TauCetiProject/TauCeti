@@ -84,7 +84,7 @@ theorem SubgroupQuotient.fundamentalGroupEquiv_unop_smul
       (SubgroupQuotient.basepoint x₀ H)) :
     (SubgroupQuotient.fundamentalGroupEquiv x₀ H g).unop •
         mk x₀ (Path.Homotopic.Quotient.refl x₀) =
-      (isQuotientCoveringMap_subgroupQuotientMap x₀ H).isCoveringMap.monodromy g
+      (isQuotientCoveringMap_subgroupQuotientMap x₀ H).isCoveringMap.monodromy g.toPath
         (SubgroupQuotient.basepointLift x₀ H) := by
   rw [← TauCeti.UniversalCover.basepointLift_coe,
     ← SubgroupQuotient.basepointLift_coe]
@@ -117,9 +117,9 @@ private theorem monodromy_mapOfEq_subgroupQuotientProj
     ((isCoveringMap x₀).monodromy
         (FundamentalGroup.mapOfEq
           ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩
-          (subgroupQuotientProj_basepoint x₀ H) g)
+          (subgroupQuotientProj_basepoint x₀ H) g).toPath
         (TauCeti.UniversalCover.basepointLift x₀) : UniversalCover x₀) =
-      ((isQuotientCoveringMap_subgroupQuotientMap x₀ H).isCoveringMap.monodromy g
+      ((isQuotientCoveringMap_subgroupQuotientMap x₀ H).isCoveringMap.monodromy g.toPath
         (SubgroupQuotient.basepointLift x₀ H) : UniversalCover x₀) := by
   let hq := isQuotientCoveringMap_subgroupQuotientMap x₀ H
   let e := SubgroupQuotient.basepointLift x₀ H
@@ -127,7 +127,7 @@ private theorem monodromy_mapOfEq_subgroupQuotientProj
       (TauCeti.UniversalCover.basepointLift x₀ : UniversalCover x₀) := by
     dsimp only [e]
     rw [SubgroupQuotient.basepointLift_coe]
-  let e' := hq.isCoveringMap.monodromy g e
+  let e' := hq.isCoveringMap.monodromy g.toPath e
   let e'' : (proj : UniversalCover x₀ → X) ⁻¹' {x₀} :=
     ⟨e', proj_eq_of_mem_fiber_subgroupQuotientMap x₀ H e'⟩
   -- Lift `g` through the quotient map, then map that same lifted path through the descended
@@ -135,18 +135,19 @@ private theorem monodromy_mapOfEq_subgroupQuotientProj
   have hmon : (isCoveringMap x₀).monodromy
       (FundamentalGroup.mapOfEq
         ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩
-        (subgroupQuotientProj_basepoint x₀ H) g)
+        (subgroupQuotientProj_basepoint x₀ H) g).toPath
       (TauCeti.UniversalCover.basepointLift x₀) = e'' := by
-    let Γ := (hq.isCoveringMap.liftPathQuotient g e).cast he.symm rfl
+    let Γ := (hq.isCoveringMap.liftPathQuotient g.toPath e).cast he.symm rfl
     apply (isCoveringMap x₀).monodromy_eq_of_map_eq
       Γ
     rw [FundamentalGroup.mapOfEq_apply]
+    dsimp only [FundamentalGroup.toPath, FundamentalGroup.toArrow]
     let r : C(SubgroupQuotient x₀ H, X) :=
       ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩
     dsimp only [Γ]
     rw [Path.Homotopic.Quotient.map_cast]
     have hmapped := congrArg (fun δ ↦ δ.map r)
-      (hq.isCoveringMap.map_liftPathQuotient g e)
+      (hq.isCoveringMap.map_liftPathQuotient g.toPath e)
     rw [← Path.Homotopic.Quotient.map_comp] at hmapped
     erw [Path.Homotopic.Quotient.map_cast] at hmapped
     -- The four conversion goals reconcile the dependent endpoint casts; their pointwise
@@ -159,7 +160,7 @@ private theorem monodromy_mapOfEq_subgroupQuotientProj
         _ = subgroupQuotientProj x₀ H (subgroupQuotientMap x₀ H e) :=
           congrFun (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H) e |>.symm
     · exact congrFun (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H) e' |>.symm
-    · induction hΓ : hq.isCoveringMap.liftPathQuotient g e using Quotient.inductionOn with
+    · induction hΓ : hq.isCoveringMap.liftPathQuotient g.toPath e using Quotient.inductionOn with
       | h Γ =>
         apply Path.Homotopic.hpath_hext
         intro t
@@ -190,10 +191,10 @@ theorem mapOfEq_subgroupQuotientProj_apply
     (TauCeti.UniversalCover.basepointLift x₀ : UniversalCover x₀)
   calc
     f⁻¹ • (TauCeti.UniversalCover.basepointLift x₀ : UniversalCover x₀) =
-        ((isCoveringMap x₀).monodromy f (TauCeti.UniversalCover.basepointLift x₀) :
+        ((isCoveringMap x₀).monodromy f.toPath (TauCeti.UniversalCover.basepointLift x₀) :
           UniversalCover x₀) :=
       (monodromy_basepointLift x₀ f).symm
-    _ = ((isQuotientCoveringMap_subgroupQuotientMap x₀ H).isCoveringMap.monodromy g
+    _ = ((isQuotientCoveringMap_subgroupQuotientMap x₀ H).isCoveringMap.monodromy g.toPath
         (SubgroupQuotient.basepointLift x₀ H) : UniversalCover x₀) :=
       monodromy_mapOfEq_subgroupQuotientProj x₀ H g
     _ = h • mk x₀ (Path.Homotopic.Quotient.refl x₀) := by

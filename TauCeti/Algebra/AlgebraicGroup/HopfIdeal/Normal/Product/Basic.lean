@@ -60,7 +60,8 @@ an action of affine group objects. -/
 @[expose] noncomputable def quotientNormalConjugation
     (H : _root_.CommHopfAlgCat.{u} R) (I J : HopfIdeal R H)
     (hI : I.IsNormal) :
-    GrpObj.Action (grpObj (quotient H J)) (grpObj (quotient H I)) := by
+    GrpObj.Action (CommHopfAlgCat.grpObj (quotient H J)) (CommHopfAlgCat.grpObj (quotient H I))
+      := by
   let i := quotientGrpObjInclusion H I
   let j := quotientGrpObjInclusion H J
   letI : IsMonHom.Normal i := (quotientGrpObjInclusion_normal_iff H I).2 hI
@@ -215,11 +216,11 @@ private theorem grpObjMap_normalSemidirectMultiplicationCoordinateMap
     let i := quotientGrpObjInclusion H I
     let j := quotientGrpObjInclusion H J
     let _ : IsMonHom.Normal i := (quotientGrpObjInclusion_normal_iff H I).2 hI
-    grpObjMap (normalSemidirectMultiplicationCoordinateMap H I J hI) =
+    CommHopfAlgCat.Hom.grpObjMap (normalSemidirectMultiplicationCoordinateMap H I J hI) =
       (GrpObj.Action.normalSemidirectMul i j).hom.hom := by
   apply Quiver.Hom.unop_inj
   apply CommAlgCat.hom_ext
-  rw [grpObjMap_unop_hom]
+  rw [CommHopfAlgCat.Hom.grpObjMap_unop_hom]
   exact normalSemidirectMultiplicationCoordinateMap_hom_toAlgHom H I J hI
 
 /-- After the canonical comparison, the represented group-object map of `productMapOfNormal`
@@ -230,10 +231,10 @@ theorem grpObjMap_productMapOfNormal
     let i := quotientGrpObjInclusion H I
     let j := quotientGrpObjInclusion H J
     let _ : IsMonHom.Normal i := (quotientGrpObjInclusion_normal_iff H I).2 hI
-    grpObjMap (normalSemidirectProductIso H I J hI).hom ≫
-      grpObjMap (productMapOfNormal H I J hI) =
+    CommHopfAlgCat.Hom.grpObjMap (normalSemidirectProductIso H I J hI).hom ≫
+      CommHopfAlgCat.Hom.grpObjMap (productMapOfNormal H I J hI) =
       (GrpObj.Action.normalSemidirectMul i j).hom.hom := by
-  rw [← grpObjMap_comp]
+  rw [← CommHopfAlgCat.Hom.grpObjMap_comp]
   rw [productMapOfNormal_comp_normalSemidirectProductIso_hom]
   exact grpObjMap_normalSemidirectMultiplicationCoordinateMap H I J hI
 
@@ -250,7 +251,7 @@ affine group. -/
 noncomputable abbrev productOfNormalGrpObjInclusion
     (H : _root_.CommHopfAlgCat.{u} k) (I J : HopfIdeal k H)
     (hI : I.IsNormal) :
-    grpObj (productOfNormal H I J hI) ⟶ grpObj H :=
+    CommHopfAlgCat.grpObj (productOfNormal H I J hI) ⟶ CommHopfAlgCat.grpObj H :=
   quotientGrpObjInclusion H (HopfIdeal.ker (productMapOfNormal H I J hI).hom)
 
 end TauCeti.CommHopfAlgCat

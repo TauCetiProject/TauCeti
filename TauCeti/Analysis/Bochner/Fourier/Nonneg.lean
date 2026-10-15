@@ -469,7 +469,8 @@ private theorem fejer_indicator_form (ψ : V → ℂ) (R : ℝ) :
       rw [← indicator_closedBall_inter ψ R x v, Set.indicator_of_mem hx]
     · rw [Set.indicator_of_notMem hx]
       have hzero : (fun v => (B ∩ Metric.closedBall v R).indicator (fun _ => ψ v) x) = 0 :=
-        funext fun v => Set.indicator_of_notMem (fun h => hx h.1) _
+        funext fun v => Set.indicator_of_notMem
+          (fun (h : x ∈ B ∩ Metric.closedBall v R) => hx h.1) _
       rw [hzero]
       simp
 

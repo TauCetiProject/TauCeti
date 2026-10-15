@@ -102,8 +102,10 @@ theorem exists_relationModule_surjective_of_tameFrame
       Function.Surjective β ∧ Nonempty (LinearMap.ker β ≃ₗ[Λ] Λ) := by
   have := Module.Finite.right ℚ_[p] K L
   -- The `p`-power roots of unity of the local field `L` form a finite group.
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
+  have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
+  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
   have hpL : (p : L) ≠ 0 := by
     rw [← map_natCast (algebraMap ℚ_[p] L)]

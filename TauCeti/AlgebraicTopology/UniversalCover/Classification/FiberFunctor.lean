@@ -105,7 +105,7 @@ monodromy along that loop. -/
 @[simp]
 theorem endFiberFunctorMulEquiv_app_apply (g : FundamentalGroup X x₀) (p : CoveringSpace X)
     (e : ⇑p.proj ⁻¹' {x₀}) :
-    (endFiberFunctorMulEquiv x₀ g).app p e = p.isCoveringMap_proj.monodromy g e :=
+    (endFiberFunctorMulEquiv x₀ g).asHom.app p e = p.isCoveringMap_proj.monodromy g.toPath e :=
   endCompForgetActionMulEquiv_app_apply (fiberActionFunctor x₀) g p e
 
 variable (x₀)
@@ -126,7 +126,8 @@ monodromy along that loop. -/
 @[simp]
 theorem autFiberFunctorMulEquiv_hom_app_apply (g : FundamentalGroup X x₀) (p : CoveringSpace X)
     (e : ⇑p.proj ⁻¹' {x₀}) :
-    (autFiberFunctorMulEquiv x₀ g).hom.app p e = p.isCoveringMap_proj.monodromy g e :=
+    (autFiberFunctorMulEquiv x₀ g).asIso.hom.app p e =
+      p.isCoveringMap_proj.monodromy g.toPath e :=
   autCompForgetActionMulEquiv_hom_app_apply (fiberActionFunctor x₀) g p e
 
 /-- The inverse of the automorphism attached to a loop class is monodromy along the inverse loop
@@ -134,17 +135,18 @@ class. -/
 @[simp]
 theorem autFiberFunctorMulEquiv_inv_app_apply (g : FundamentalGroup X x₀)
     (p : CoveringSpace X) (e : ⇑p.proj ⁻¹' {x₀}) :
-    (autFiberFunctorMulEquiv x₀ g).inv.app p e =
-      p.isCoveringMap_proj.monodromy (g⁻¹ : FundamentalGroup X x₀) e :=
+    (autFiberFunctorMulEquiv x₀ g).asIso.inv.app p e =
+      p.isCoveringMap_proj.monodromy (g⁻¹ : FundamentalGroup X x₀).toPath e :=
   autCompForgetActionMulEquiv_inv_app_apply (fiberActionFunctor x₀) g p e
 
 /-- Every natural automorphism of the fibre functor is monodromy along a unique loop class. -/
 theorem existsUnique_monodromy_eq (η : Aut (fiberFunctor x₀)) :
     ∃! g : FundamentalGroup X x₀, ∀ (p : CoveringSpace X) (e : ⇑p.proj ⁻¹' {x₀}),
-      p.isCoveringMap_proj.monodromy g e = η.hom.app p e := by
+      p.isCoveringMap_proj.monodromy g.toPath e = η.asIso.hom.app p e := by
   refine ⟨(autFiberFunctorMulEquiv x₀).symm η, fun p e => ?_, fun g hg => ?_⟩
   · rw [← autFiberFunctorMulEquiv_hom_app_apply, MulEquiv.apply_symm_apply]
-  · refine (autFiberFunctorMulEquiv x₀).injective (Aut.ext (NatTrans.ext (funext fun p => ?_)))
+  · refine (autFiberFunctorMulEquiv x₀).injective
+      (Aut.ext (Iso.ext (NatTrans.ext (funext fun p => ?_))))
     ext e
     rw [MulEquiv.apply_symm_apply]
     exact (autFiberFunctorMulEquiv_hom_app_apply g p e).trans (hg p e)
@@ -153,11 +155,12 @@ theorem existsUnique_monodromy_eq (η : Aut (fiberFunctor x₀)) :
 trivial. This is the faithfulness condition that
 `CategoryTheory.PreGaloisCategory.IsFundamentalGroup` calls `non_trivial'`. -/
 theorem forall_monodromy_eq_self_iff_eq_one (g : FundamentalGroup X x₀) :
-    (∀ (p : CoveringSpace X) (e : ⇑p.proj ⁻¹' {x₀}), p.isCoveringMap_proj.monodromy g e = e) ↔
+    (∀ (p : CoveringSpace X) (e : ⇑p.proj ⁻¹' {x₀}),
+        p.isCoveringMap_proj.monodromy g.toPath e = e) ↔
       g = 1 := by
   refine ⟨fun hg => ?_, fun hg p e => ?_⟩
   · rw [← (autFiberFunctorMulEquiv x₀).map_eq_one_iff]
-    refine Aut.ext (NatTrans.ext (funext fun p => ?_))
+    refine Aut.ext (Iso.ext (NatTrans.ext (funext fun p => ?_)))
     ext e
     exact (autFiberFunctorMulEquiv_hom_app_apply g p e).trans (hg p e)
   · subst hg

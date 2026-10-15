@@ -267,7 +267,8 @@ theorem sIdeles_hom_decomp :
   -- the two summands, computed on the `S`-idele `a`
   let a : sIdeles L (S : Set (HeightOneSpectrum (𝓞 K))) := Additive.toMul x
   have h₁ : (infiniteIdelesToSIdeles L S).hom
-      ((idelesToInfiniteIdeles K L).hom ((sIdelesToIdeles L S).hom x)) =
+      ((idelesToInfiniteIdeles K L).hom
+        ((sIdelesToIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))).hom x)) =
       Additive.ofMul ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
         (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
         ofInfiniteIdele_mem_sIdeles _ _⟩ :=
@@ -301,6 +302,39 @@ theorem sIdeles_hom_decomp :
         IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele]
       exact (one_mul _).symm
   exact (congrArg Additive.ofMul ha).trans (congrArg₂ (· + ·) h₁ h₂).symm
+
+/-- The finite part of the idele `(1, a)` of a finite `S`-idele `a` is `a`. -/
+@[reassoc (attr := simp)]
+theorem finiteSIdelesToSIdeles_comp_sIdelesToFiniteSIdeles :
+    finiteSIdelesToSIdeles (K := K) L S ≫ sIdelesToFiniteSIdeles L S = 𝟙 _ := by
+  ext a
+  exact congrArg Additive.ofMul (Subtype.ext (IdeleGroup.toFiniteIdele_ofFiniteIdele _ _ _))
+
+/-- The infinite part of the idele `(1, a)` of a finite `S`-idele `a` is trivial. -/
+@[reassoc (attr := simp)]
+theorem finiteSIdelesToSIdeles_comp_idelesToInfiniteIdeles :
+    finiteSIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L = 0 := by
+  ext a
+  refine (congrArg (idelesToInfiniteIdeles K L).hom (sIdelesToIdeles_hom_apply L _ _)).trans ?_
+  -- `Units.map (MonoidHom.fst _ _)` takes the infinite component of the underlying adele
+  exact congrArg Additive.ofMul
+    (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofFiniteIdele (𝓞 L) L _)))
+
+/-- The infinite part of the idele `(x, 1)` of an infinite idele `x` is `x`. -/
+@[reassoc (attr := simp)]
+theorem infiniteIdelesToSIdeles_comp_idelesToInfiniteIdeles :
+    infiniteIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L =
+      𝟙 _ := by
+  ext a
+  refine (congrArg (idelesToInfiniteIdeles K L).hom (sIdelesToIdeles_hom_apply L _ _)).trans ?_
+  exact congrArg Additive.ofMul
+    (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofInfiniteIdele (𝓞 L) L _)))
+
+/-- The finite part of the idele `(x, 1)` of an infinite idele `x` is trivial. -/
+@[reassoc (attr := simp)]
+theorem infiniteIdelesToSIdeles_comp_sIdelesToFiniteSIdeles :
+    infiniteIdelesToSIdeles (K := K) L S ≫ sIdelesToFiniteSIdeles L S = 0 :=
+  (sIdelesInfiniteShortComplex L S).zero
 
 /-! ### The Herbrand quotient -/
 

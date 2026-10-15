@@ -397,7 +397,7 @@ has `-n = p`. -/
 theorem mem_negDegreeGrading_piece {p : ℤ} {x : k[X]} :
     x ∈ (negDegreeGrading k).piece p ↔ ∀ n, x.coeff n ≠ 0 → -(n : ℤ) = p := by
   rw [negDegreeGrading, InternalGrading.mem_map_piece_iff]
-  simp [AddMonoidAlgebra.mem_gradeBy_iff, Set.subset_def, toFinsupp_apply]
+  simp [toFinsupp_apply]
 
 /-- Multiplication by `X` lowers the degree of `negDegreeGrading` by one. -/
 theorem X_smul_mem_negDegreeGrading_piece {p : ℤ} {x : k[X]}
