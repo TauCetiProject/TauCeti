@@ -57,6 +57,12 @@ equal exactly when their radii agree and each centre lies in the other disc. If
   when `c` is a unit), a member of the rational family and quasi-compact.
 * `TauCeti.ValuationSpectrum.closedSubdisc_zero_one`: `D(0, 1)` is the whole closed unit disc,
   and `TauCeti.ValuationSpectrum.closedSubdisc_zero_right`: `D(a, |0|)` is empty.
+* `TauCeti.ValuationSpectrum.closure_closedSubdisc_subset_closedSubdisc`: strictly enlarging
+  a radius contains the closure of the smaller disc.
+* `TauCeti.ValuationSpectrum.isClosed_iInter_closedSubdisc`: an intersection of discs is closed
+  when every disc contains a member of the family with strictly smaller radius.
+* `TauCeti.ValuationSpectrum.isClosed_iInter_closedSubdisc_of_no_common_point`: a decreasing
+  sequence with no common point in `K` has closed intersection in the adic unit disc.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.gaussPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.discPoint_mem_closedSubdisc_iff`,
@@ -183,6 +189,68 @@ theorem closedSubdisc_subset_closedSubdisc {a b c d : K} (hab : ‖a - b‖ ≤ 
   -- `T - b = (T - a) + (a - b)`, and both summands are dominated by `d`
   rw [← valuation_le_iff, show T - C b = (T - C a) + C (a - b) by rw [map_sub]; ring]
   exact (Valuation.map_add _ _ _).trans (max_le (h₁.trans h₂) h₃)
+
+/-- Strict enlargement of the radius contains the closure of a closed subdisc. -/
+theorem closure_closedSubdisc_subset_closedSubdisc {a c d : K} (hcd : ‖c‖ < ‖d‖) :
+    closure (closedSubdisc a c) ⊆ closedSubdisc a d := by
+  let F : Set (closedPolydisc 1 K) :=
+    (Subtype.val ⁻¹' basicOpen (C d) (T - C a))ᶜ
+  have hF : IsClosed F :=
+    ((isOpen_basicOpen _ _).preimage continuous_subtype_val).isClosed_compl
+  have hsub : closedSubdisc a c ⊆ F := by
+    intro x hx hmem
+    have h₁ := (mem_closedSubdisc a c x).mp hx
+    have h₂ := (mem_basicOpen_iff _ _ _).mp hmem
+    exact hcd.not_ge ((closedPolydisc_vle_weightedC_iff x d c).mp
+      (x.1.toValuativeRel.vle_trans h₂.1 h₁.1))
+  intro x hx
+  have hxF := closure_minimal hsub hF hx
+  have hd : ¬ x.1.toValuativeRel.vle (C d) 0 := by
+    rw [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero]
+    exact not_le.mpr ((norm_nonneg c).trans_lt hcd)
+  refine (mem_closedSubdisc a d x).mpr ⟨?_, hd⟩
+  by_contra hn
+  have hrev := x.1.toValuativeRel.vle_total (T - C a) (C d)
+  have hda := hrev.resolve_left hn
+  exact hxF ((mem_basicOpen_iff _ _ _).mpr ⟨hda,
+    fun hzero ↦ hd (x.1.toValuativeRel.vle_trans hda hzero)⟩)
+
+/-- An intersection of discs is closed if each disc contains a disc of the family with
+strictly smaller radius. The centres may vary, and the family need not be a sequence. -/
+theorem isClosed_iInter_closedSubdisc {ι : Sort*} (a c : ι → K)
+    (hrefine : ∀ i, ∃ j, ‖a j - a i‖ ≤ ‖c i‖ ∧ ‖c j‖ < ‖c i‖) :
+    IsClosed (⋂ i, closedSubdisc (a i) (c i)) := by
+  refine isClosed_of_closure_subset fun x hx ↦ Set.mem_iInter.mpr fun i ↦ ?_
+  obtain ⟨j, hji, hrad⟩ := hrefine i
+  exact closedSubdisc_subset_closedSubdisc hji le_rfl
+    (closure_closedSubdisc_subset_closedSubdisc hrad
+      (closure_mono (Set.iInter_subset _ j) hx))
+
+/-- A decreasing sequence of discs with no common point in the ground field has closed
+intersection in the adic unit disc. Its adic intersection need not be empty. -/
+theorem isClosed_iInter_closedSubdisc_of_no_common_point (a c : ℕ → K)
+    (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
+    (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖)
+    (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) :
+    IsClosed (⋂ n, closedSubdisc (a n) (c n)) := by
+  -- Use classical closed balls to extract strict refinements, without Gauss points or
+  -- completeness. In an ultrametric space every point of a ball is also a centre.
+  have hanti : Antitone fun n ↦ Metric.closedBall (a n) ‖c n‖ :=
+    antitone_nat_of_succ_le fun n ↦ by
+      rw [IsUltrametricDist.closedBall_eq_of_mem (x := a n) (y := a (n + 1))
+        (by simpa only [Metric.mem_closedBall, dist_eq_norm] using hac n)]
+      exact Metric.closedBall_subset_closedBall (hcc n)
+  apply isClosed_iInter_closedSubdisc
+  intro n
+  obtain ⟨m, hm⟩ := hempty (a n)
+  have hnm : n ≤ m := by
+    by_contra! hmn
+    have h := hanti hmn.le (Metric.mem_closedBall_self (norm_nonneg (c n)))
+    exact hm.not_ge (by simpa only [Metric.mem_closedBall, dist_eq_norm] using h)
+  have h := hanti hnm (Metric.mem_closedBall_self (norm_nonneg (c m)))
+  have hdist : ‖a m - a n‖ ≤ ‖c n‖ := by
+    simpa only [Metric.mem_closedBall, dist_eq_norm] using h
+  exact ⟨m, hdist, hm.trans_le (by simpa only [norm_sub_rev] using hdist)⟩
 
 /-- A disc whose radius parameter has norm at least one, about a centre in the closed unit disc,
 is the whole closed unit disc. -/
