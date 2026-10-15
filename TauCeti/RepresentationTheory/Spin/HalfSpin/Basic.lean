@@ -382,8 +382,9 @@ theorem coe_spinPlusAction_spinGroupToEven_apply (hline : P.line = ⊥) (g : spi
     (spinPlusAction Q P hline (spinGroupToEven Q g) s : ExteriorAlgebra K P.W) =
       ((spinPlusSubrep P hline).toRepresentation g
         ⟨s, (mem_spinPlusSubrep P hline).2 s.2⟩ : ExteriorAlgebra K P.W) := by
-  rw [show spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ from
-    Subtype.ext (coe_spinGroupToEven_apply Q g)]
+  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
+    Subtype.ext (coe_spinGroupToEven_apply Q g)
+  rw [hspinGroupToEven]
   exact coe_spinPlusAction_spinGroup_apply P hline g s
 
 /-- The even-subalgebra action on `S⁻`, restricted along `spinGroupToEven`, is the representation
@@ -393,8 +394,9 @@ theorem coe_spinMinusAction_spinGroupToEven_apply (hline : P.line = ⊥) (g : sp
     (spinMinusAction Q P hline (spinGroupToEven Q g) s : ExteriorAlgebra K P.W) =
       ((spinMinusSubrep P hline).toRepresentation g
         ⟨s, (mem_spinMinusSubrep P hline).2 s.2⟩ : ExteriorAlgebra K P.W) := by
-  rw [show spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ from
-    Subtype.ext (coe_spinGroupToEven_apply Q g)]
+  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
+    Subtype.ext (coe_spinGroupToEven_apply Q g)
+  rw [hspinGroupToEven]
   exact coe_spinMinusAction_spinGroup_apply P hline g s
 
 /-- **The spin representation is the sum of its two half-spin subrepresentations.** This is
