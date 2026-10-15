@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Naive
-public import TauCeti.AlgebraicGeometry.ModularCurve.GammaOne
+public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.One
 public import TauCeti.AlgebraicGeometry.ModularCurve.NaiveLevel
 import TauCeti.AlgebraicGeometry.ResidueField
 
