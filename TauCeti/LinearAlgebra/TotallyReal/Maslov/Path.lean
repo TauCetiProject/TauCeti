@@ -194,18 +194,7 @@ continuous path `B` of complex-linear automorphisms. -/
 noncomputable def map (Λ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
     (hB : Continuous fun t => (B t : E →L[ℂ] E)) : TotallyRealPath E where
   toFun t := (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)
-  exists_frame := by
-    obtain ⟨L₀, hL₀, A, hA, hΛ⟩ := Λ.exists_frame
-    refine ⟨L₀, hL₀, fun t => (A t).trans (B t), ?_, fun t => ?_⟩
-    · have h : (fun t => ((A t).trans (B t) : E →L[ℂ] E)) =
-          fun t => (B t : E →L[ℂ] E) ∘L (A t : E →L[ℂ] E) := by
-        funext t
-        ext x
-        simp
-      rw [h]
-      exact hB.clm_comp hA
-    · rw [hΛ t, ← Submodule.map_comp]
-      rfl
+  exists_frame := exists_frame_map Λ.exists_frame B hB
 
 @[simp]
 theorem map_apply (Λ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
