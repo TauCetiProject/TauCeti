@@ -39,6 +39,9 @@ statement holds for `x = 0` as well, where all the terms vanish.
   `2 * logHeight₁ x = ∑ᶠ v, |log ‖x‖_v|`.
 * `TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁`:
   `|log ‖x‖_v| ≤ logHeight₁ x`.
+* `TauCeti.GlobalNumberFields.finsum_comp_log_normalizedAbsValue_eq_sum`: for `f` with `f 0 = 0`
+  and `x` a unit outside a finite set `S` of finite places, `∑ᶠ v, f (log ‖x‖_v)` is a finite sum
+  over `S` and the infinite places.
 * `TauCeti.GlobalNumberFields.sum_log_adicAbv_add_sum_mult_mul_log_eq_zero` and
   `TauCeti.GlobalNumberFields.two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log`:
   the same identities as finite sums over the infinite places and a finite set `S` of finite
@@ -132,7 +135,7 @@ variable (S : Finset (HeightOneSpectrum (𝓞 K))) {x : K}
 /-- If `x` is a unit outside a finite set `S` of finite places and `f 0 = 0`, then the sum of
 `f (log ‖x‖_v)` over all places is a sum over the places of `S` plus a sum over the infinite
 places. -/
-private theorem finsum_comp_log_normalizedAbsValue_eq_sum {f : ℝ → ℝ} (hf : f 0 = 0)
+theorem finsum_comp_log_normalizedAbsValue_eq_sum {f : ℝ → ℝ} (hf : f 0 = 0)
     (hS : ∀ v ∉ S, HeightOneSpectrum.adicAbv K v x = 1) :
     ∑ᶠ v : Place K, f (log (normalizedAbsValue v x)) =
       ∑ v ∈ S, f (log (HeightOneSpectrum.adicAbv K v x)) +
