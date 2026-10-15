@@ -18,10 +18,10 @@ public section
 
 open TopologicalSpace
 
-namespace TauCeti.TopologicalSpace.Clopens
+namespace TopologicalSpace.Clopens
 
 /-- A clopen subset of a compact space is compact. -/
 instance instCompactSpace [TopologicalSpace X] [CompactSpace X] (s : Clopens X) : CompactSpace s :=
   isCompact_iff_compactSpace.mp s.isClosed.isCompact
 
-end TauCeti.TopologicalSpace.Clopens
+end TopologicalSpace.Clopens

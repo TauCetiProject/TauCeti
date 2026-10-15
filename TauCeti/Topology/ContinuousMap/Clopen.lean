@@ -28,7 +28,7 @@ public section
 
 open Set TopologicalSpace ContinuousMap
 
-namespace TauCeti.ContinuousMap
+namespace ContinuousMap
 
 variable {X R : Type*} [TopologicalSpace X] [CompactSpace X] [NormedRing R]
 
@@ -165,4 +165,4 @@ example : zeroExtendClopen (⊥ : Clopens (Fin 2)) (0 : C((⊥ : Clopens (Fin 2)
   ext x
   simp
 
-end TauCeti.ContinuousMap
+end ContinuousMap
