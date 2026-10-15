@@ -383,81 +383,84 @@ theorem indexFiltrationFunctorObjIso_hom_arrow (n : ℤ) :
   rw [indexFiltrationFunctorObjIso, Iso.trans_hom, eqToIso.hom, Category.assoc,
     Subobject.arrow_congr _ _ (CochainComplex.filtrationEInt_coe _ n)]
 
-variable (q : ℤ)
+variable (q p : ℤ) (hqp : q + 1 = p)
 
 private theorem indexFiltrationFunctor_map_comp_objIso_hom :
     (CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
         (m.monotone_indexFiltration dM hM)).map
-          (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) rfl)) ≫
-        (m.indexFiltrationFunctorObjIso hM (q + 1)).hom =
-      (m.indexFiltrationFunctorObjIso hM q).hom ≫
-        m.indexFiltrationOfLE hM q (q + 1) rfl := by
-  rw [← cancel_mono (m.indexFiltration dM hM (q + 1)).arrow, Category.assoc,
+          (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm)) ≫
+        (m.indexFiltrationFunctorObjIso hM p).hom =
+      (m.indexFiltrationFunctorObjIso hM q).hom ≫ m.indexFiltrationOfLE hM q p hqp := by
+  rw [← cancel_mono (m.indexFiltration dM hM p).arrow, Category.assoc,
     indexFiltrationFunctorObjIso_hom_arrow, Category.assoc, Subobject.ofLE_arrow,
     indexFiltrationFunctorObjIso_hom_arrow, ← Category.assoc,
     CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc, Subobject.ofLE_arrow]
 
-/-- The short complex `F_q ⟶ F_{q+1} ⟶ indexGradedPieceComplex ind hM (q + 1)` written with the
-transition map of the functor of the index filtration. -/
+/-- The short complex `F_q ⟶ F_p ⟶ indexGradedPieceComplex ind hM p` written with the transition
+map of the functor of the index filtration. -/
 private noncomputable def indexGradedPieceShortComplex' :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   ShortComplex.mk ((CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
       (m.monotone_indexFiltration dM hM)).map
-        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) rfl)))
-    ((m.indexFiltrationFunctorObjIso hM (q + 1)).hom ≫ m.indexGradedPieceProj hM (q + 1)) (by
-      rw [← Category.assoc, indexFiltrationFunctor_map_comp_objIso_hom, Category.assoc]
-      exact (congrArg _
-        (m.indexGradedPieceShortComplex hM q (q + 1) rfl).zero).trans comp_zero)
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm)))
+    ((m.indexFiltrationFunctorObjIso hM p).hom ≫ m.indexGradedPieceProj hM p) (by
+      rw [← Category.assoc, indexFiltrationFunctor_map_comp_objIso_hom m hM q p hqp,
+        Category.assoc]
+      exact (congrArg _ (m.indexGradedPieceShortComplex hM q p hqp).zero).trans comp_zero)
 
 private noncomputable def indexGradedPieceShortComplexIso :
-    m.indexGradedPieceShortComplex' hM q ≅
-      m.indexGradedPieceShortComplex hM q (q + 1) rfl :=
+    m.indexGradedPieceShortComplex' hM q p hqp ≅ m.indexGradedPieceShortComplex hM q p hqp :=
   ShortComplex.isoMk (m.indexFiltrationFunctorObjIso hM q)
-    (m.indexFiltrationFunctorObjIso hM (q + 1)) (Iso.refl _)
-    (m.indexFiltrationFunctor_map_comp_objIso_hom hM q).symm
+    (m.indexFiltrationFunctorObjIso hM p) (Iso.refl _)
+    (m.indexFiltrationFunctor_map_comp_objIso_hom hM q p hqp).symm
     (Category.comp_id _).symm
 
 private theorem indexGradedPieceShortComplex'_shortExact :
-    (m.indexGradedPieceShortComplex' hM q).ShortExact :=
-  ShortComplex.shortExact_of_iso (m.indexGradedPieceShortComplexIso hM q).symm
-    (m.indexGradedPieceShortComplex_shortExact hM q (q + 1) rfl)
+    (m.indexGradedPieceShortComplex' hM q p hqp).ShortExact :=
+  ShortComplex.shortExact_of_iso (m.indexGradedPieceShortComplexIso hM q p hqp).symm
+    (m.indexGradedPieceShortComplex_shortExact hM q p hqp)
 
-/-- **The graded pieces of the index filtration**: the cokernel of the inclusion
-`F_q ⟶ F_{q+1}` of the functor of the index filtration is `indexGradedPieceComplex ind hM (q + 1)`,
-the families supported on the generators of index `q + 1` with the differential `dM`. -/
+/-- **The graded pieces of the index filtration**: for `q + 1 = p`, the cokernel of the inclusion
+`F_q ⟶ F_p` of the functor of the index filtration is `indexGradedPieceComplex ind hM p`, the
+families supported on the generators of index `p` with the differential `dM`. -/
 noncomputable def indexFiltrationCokernelIso :
     cokernel ((CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
       (m.monotone_indexFiltration dM hM)).map
-        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) rfl))) ≅
-      indexGradedPieceComplex ind hM (q + 1) :=
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm))) ≅
+      indexGradedPieceComplex ind hM p :=
   IsColimit.coconePointUniqueUpToIso (cokernelIsCokernel _)
-    (m.indexGradedPieceShortComplex'_shortExact hM q).gIsCokernel
+    (m.indexGradedPieceShortComplex'_shortExact hM q p hqp).gIsCokernel
 
 /-- Under `indexFiltrationCokernelIso`, the projection onto the cokernel is the restriction to the
-generators of index `q + 1`. -/
+generators of index `p`. -/
 @[reassoc (attr := simp)]
 theorem cokernel_π_indexFiltrationCokernelIso_hom :
-    cokernel.π _ ≫ (m.indexFiltrationCokernelIso hM q).hom =
-      (m.indexFiltrationFunctorObjIso hM (q + 1)).hom ≫ m.indexGradedPieceProj hM (q + 1) :=
+    cokernel.π _ ≫ (m.indexFiltrationCokernelIso hM q p hqp).hom =
+      (m.indexFiltrationFunctorObjIso hM p).hom ≫ m.indexGradedPieceProj hM p :=
   IsColimit.comp_coconePointUniqueUpToIso_hom (cokernelIsCokernel _)
-    (m.indexGradedPieceShortComplex'_shortExact hM q).gIsCokernel WalkingParallelPair.one
+    (m.indexGradedPieceShortComplex'_shortExact hM q p hqp).gIsCokernel WalkingParallelPair.one
 
 /-- **The first page of the index spectral sequence** (page `2` in Mathlib's numbering): the
 object at `(p, q)` is the cohomology in degree `n = p + q` of the graded piece of the generators
-of index `q + 1`, that is of `⊕_{ind x = q + 1} ℳ ⊗ ⟨x⟩` with the differential `dM`. -/
-noncomputable def indexSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (n : ℤ)
-    (hn : n = pq.1 + pq.2) :
+of index `q + 1`, that is of `⊕_{ind x = q + 1} ℳ ⊗ ⟨x⟩` with the differential `dM`.  The indices
+`q`, `q + 1` and `p + q` are given as `i₁`, `i₂` and `n` with equations, as in
+`CochainComplex.spectralSequenceFirstPageXIsoCokernel`. -/
+noncomputable def indexSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2)
+    (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
     ((m.indexSpectralSequence dM hM).page 2).X pq ≅
-      (indexGradedPieceComplex ind hM (pq.2 + 1)).homology n :=
-  CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl n hn ≪≫
-    (HomologicalComplex.homologyFunctor _ _ n).mapIso (m.indexFiltrationCokernelIso hM pq.2)
+      (indexGradedPieceComplex ind hM i₂).homology n :=
+  CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
+    (HomologicalComplex.homologyFunctor _ _ n).mapIso
+      (m.indexFiltrationCokernelIso hM i₁ i₂ (by rw [hi₁, hi₂]))
 
 /-- `indexSpectralSequenceFirstPageXIso` is the identification of the first page with the
 cohomology of the graded pieces, followed by `indexFiltrationCokernelIso`. -/
-theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) (n : ℤ) (hn : n = pq.1 + pq.2) :
-    m.indexSpectralSequenceFirstPageXIso hM pq n hn =
-      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl n hn ≪≫
-        (HomologicalComplex.homologyFunctor _ _ n).mapIso (m.indexFiltrationCokernelIso hM pq.2) :=
+theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2)
+    (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    m.indexSpectralSequenceFirstPageXIso hM pq i₁ i₂ hi₁ hi₂ n hn =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
+        (HomologicalComplex.homologyFunctor _ _ n).mapIso
+          (m.indexFiltrationCokernelIso hM i₁ i₂ (by rw [hi₁, hi₂])) :=
   (rfl)
 
 end FirstPage
