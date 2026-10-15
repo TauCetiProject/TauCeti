@@ -108,7 +108,7 @@ def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
       mem_openStarRealization, Option.elim_some,
       realizationTopHomeomorphOptionCoordinateSimplex_apply, simplexBoundaryCoordinateMap_apply]
 
-/-- All solid simplex vertex charts have the same open half-space target. -/
+/-- All solid simplex vertex charts share the same open subset of the half-space model as target. -/
 @[simp] theorem simplexHalfSpacePLChart_target (n : ℕ) (v : Option (Option (Fin n))) :
     (simplexHalfSpacePLChart n v).target =
       {q | ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.1 i < 1} := by
