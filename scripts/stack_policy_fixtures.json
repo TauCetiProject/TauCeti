@@ -11,12 +11,16 @@
     {
       "classification": "unknown",
       "gap": "head changed while fetching",
-      "index_pr": 15977
+      "head": "ea2d269c192a7aa8d45fb188201daf24674d4351",
+      "index_pr": 15977,
+      "main": "1844920e9c82791e848e12fd5313fa212e542731"
     },
     {
       "classification": "unknown",
       "gap": "head changed while fetching",
-      "index_pr": 16035
+      "head": "3cde2c44ac9f27377784ff050e5e5aa1c422906b",
+      "index_pr": 16035,
+      "main": "1844920e9c82791e848e12fd5313fa212e542731"
     },
     {
       "classification": "no-confirmed-stack",
@@ -47,26 +51,43 @@
     {
       "classification": "unknown",
       "gap": "#13110: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "e133b109a01eb4a39d998d2bd84dad3164824d37",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 13100
     },
     {
       "classification": "unknown",
       "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "c54e8dc9c70bc3f154d29a20b62fa7d816134dbd",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 13110
     },
     {
       "classification": "unknown",
       "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13110: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "9d6b35008872fdb7e3022a3530f9dd992dff148a",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 13117
     },
     {
       "classification": "unknown",
       "gap": "head changed while fetching",
+      "head": "ea2d269c192a7aa8d45fb188201daf24674d4351",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 15977
     },
     {
       "classification": "unknown",
+      "gap": "#15476: commit patch requires exactly one parent",
+      "head": "5dc90616fb01cedf149eb69126eb9e7dd9e87d44",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 15995
+    },
+    {
+      "classification": "unknown",
       "gap": "head changed while fetching",
+      "head": "3cde2c44ac9f27377784ff050e5e5aa1c422906b",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16035
     },
     {
@@ -76,8 +97,10 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16099,
       "reasons": [
-        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
-        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#15975: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#15975: no complete unlanded parent delta/commit retained",
+        "#16003: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: no complete unlanded parent delta/commit retained",
         "#16110: descendant of this child, not a parent",
         "#16123: descendant of this child, not a parent",
         "#16132: descendant of this child, not a parent",
@@ -100,13 +123,17 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16110,
       "reasons": [
-        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
-        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15975: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#15975: no complete unlanded parent delta/commit retained",
+        "#16003: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: no complete unlanded parent delta/commit retained"
       ]
     },
     {
       "classification": "unknown",
-      "gap": "#16137: shared ancestry without a confirmed direction/complete parent delta; #16143: shared ancestry without a confirmed direction/complete parent delta; #16147: shared ancestry without a confirmed direction/complete parent delta; #16155: shared ancestry without a confirmed direction/complete parent delta; #16168: shared ancestry without a confirmed direction/complete parent delta",
+      "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16137: shared ancestry without a confirmed direction/complete parent delta; #16143: shared ancestry without a confirmed direction/complete parent delta; #16147: shared ancestry without a confirmed direction/complete parent delta; #16155: shared ancestry without a confirmed direction/complete parent delta; #16168: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16112
     },
     {
@@ -125,8 +152,10 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16123,
       "reasons": [
-        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
-        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15975: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#15975: no complete unlanded parent delta/commit retained",
+        "#16003: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: no complete unlanded parent delta/commit retained"
       ]
     },
     {
@@ -145,13 +174,15 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16129,
       "reasons": [
-        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
-        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
       ]
     },
     {
       "classification": "unknown",
       "gap": "#16035: head changed while fetching",
+      "head": "c8897d521d6448a721fde38841661cb1e41645a6",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16130
     },
     {
@@ -170,9 +201,12 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16132,
       "reasons": [
-        "#877: source equivalent landed at bdd17cbba209934bea19abf2d1c8905fbb7c37ee",
-        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
-        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#877: aggregate source equivalent landed at bdd17cbba209934bea19abf2d1c8905fbb7c37ee",
+        "#877: no complete unlanded parent delta/commit retained",
+        "#15975: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#15975: no complete unlanded parent delta/commit retained",
+        "#16003: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: no complete unlanded parent delta/commit retained"
       ]
     },
     {
@@ -191,8 +225,8 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16137,
       "reasons": [
-        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
-        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
       ]
     },
     {
@@ -211,8 +245,10 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16139,
       "reasons": [
-        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
-        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15975: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#15975: no complete unlanded parent delta/commit retained",
+        "#16003: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: no complete unlanded parent delta/commit retained"
       ]
     },
     {
@@ -231,8 +267,8 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16143,
       "reasons": [
-        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
-        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
       ]
     },
     {
@@ -251,8 +287,8 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16147,
       "reasons": [
-        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
-        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
       ]
     },
     {
@@ -271,8 +307,8 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16155,
       "reasons": [
-        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
-        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
       ]
     },
     {
@@ -291,7 +327,8 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16164,
       "reasons": [
-        "#15967: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15967: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#15967: no complete unlanded parent delta/commit retained"
       ]
     },
     {
@@ -310,13 +347,15 @@
       "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16168,
       "reasons": [
-        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
-        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: aggregate source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
       ]
     },
     {
       "classification": "unknown",
-      "gap": "#16236: explicit parent absent from bounded index",
+      "gap": "#16236: explicit parent absent from bounded index; #16269: commit patch requires exactly one parent",
+      "head": "3a6e07d3b1a92f59ee42fb59a7936bd19785e2ae",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
       "pr": 16434
     },
     {
@@ -415,11 +454,11 @@
       ]
     },
     {
-      "api_bytes": 13943079,
-      "api_calls": 130,
-      "failures": 8,
+      "api_bytes": 14043085,
+      "api_calls": 133,
+      "failures": 9,
       "mode": "dry-run",
-      "selected": 613,
+      "selected": 614,
       "summary": true
     }
   ],
@@ -448,5 +487,7 @@
         "This PR is stacked on https://github.com/TauCetiProject/TauCeti/pull/15856 \"feat: present rational subsets of the closed disc by polynomials\" and https://github.com/TauCetiProject/TauCeti/pull/16035, both approved and labelled `ready-to-merge`. Until they land, the branch carries their commits rebased onto `main`. The commit specific to this PR is the last one, \"feat: every rational subset of the closed unit disc is a finite union of holed discs\"."
       ]
     }
-  }
+  },
+  "detector_revision": "97c5a0d3213314eb1536d504f3e068e7a90282af",
+  "detector_sha256": "7b69451de574e02b24d8c1a8c95577e8a94b2a5f1883b2b1cebb43775c85bf97"
 }

@@ -440,9 +440,12 @@ def unchanged(api, child, parent, main):
     return api.pr(parent.number) == parent and api.pr(child.number) == child and api.main() == main
 
 
-def comment_text(evidence):
+def comment_text(evidence, parent_state="open"):
     e = evidence
     detail = (f"[{e.kind} `{e.commit}`](https://github.com/{REPO}/commit/{e.commit}); " if e.commit else "")
+    next_step = ("The prerequisite PR is closed without this source landing. Remove the inherited work, "
+                 "or resubmit the prerequisite separately and wait for it to land. " if parent_state == "closed"
+                 else "Wait for the prerequisite to land. ")
     return (
         f"<!-- tauceti-no-stack:v1 child={e.child_head} -->\n"
         f"Stacked PRs are not allowed in Tau Ceti. This PR includes unmerged work from #{e.parent}: "
@@ -450,19 +453,20 @@ def comment_text(evidence):
         f"at parent head [`{e.parent_head}`](https://github.com/{REPO}/commit/{e.parent_head}) "
         f"is reverse-applicable to child `{e.child_head}`, but not to the inspected main source history "
         f"ending at `{e.main}` (patch SHA-256 `{e.patch_sha256}`).\n\n"
-        "Wait for the prerequisite to land, then rebase onto current main so the diff contains only "
+        f"{next_step}Rebase onto current main so the diff contains only "
         "this PR's own changes and reopen or submit it as a standalone PR. Closing this PR under the "
         "no-stacking policy; its branch is preserved. Drafts and keep/hold/human labels do not exempt stacks."
     )
 
 
 def enforce(api, child, parent, evidence, actor):
-    body = comment_text(evidence)
+    body = comment_text(evidence, parent.state)
     marker = body.splitlines()[0]
     comments = api.pages(f"issues/{child.number}/comments", 1000)
     # Trust only our installation/account's exact marker; candidate authors cannot
     # suppress the explanation by posting an imitation comment.
-    existing = next((c for c in comments if c["user"]["login"] == actor and marker in c["body"]), None)
+    existing = next((c for c in comments if c["user"]["login"] == actor
+                     and c["body"].startswith(marker + "\nStacked PRs are not allowed in Tau Ceti.")), None)
     if not unchanged(api, child, parent, evidence.main):
         raise Gap("identities changed before comment; retry with fresh observations")
     if not existing:
@@ -483,6 +487,41 @@ def status(api, child, state, description):
         "context": CONTEXT, "state": state, "description": description[:140],
         "target_url": os.environ.get("STACK_RUN_URL", f"https://github.com/{REPO}/issues/16791"),
     })
+
+
+def membership(data, child):
+    """Read-only verification; a successful GitHub close alone proves no withdrawal."""
+    if (not isinstance(data, dict) or data.get("schema") != "tauceti-bors.observation/v1"
+            or data.get("repo") != REPO or data.get("base") != "main"
+            or not isinstance(data.get("batches"), list) or not isinstance(data.get("held"), list)
+            or data.get("batch_ids") != [b.get("id") for b in data["batches"]]):
+        raise Gap("incomplete bors membership observation")
+    active = []
+    for member in [*data["held"], *(m for b in data["batches"] for m in b.get("members", []))]:
+        if (not isinstance(member, dict) or type(member.get("pr")) is not int
+                or not isinstance(member.get("head_sha"), str) or not SHA.fullmatch(member["head_sha"])):
+            raise Gap("incomplete bors member identity")
+    for batch in data["batches"]:
+        if batch.get("state") not in {"waiting", "running"} or not isinstance(batch.get("members"), list):
+            raise Gap("incomplete bors batch membership")
+        if any(m.get("pr") == child.number and m.get("head_sha") == child.head for m in batch["members"]):
+            active.append(batch["id"])
+    held = any(m.get("pr") == child.number and m.get("head_sha") == child.head for m in data["held"])
+    return {"batches": active, "held": held}
+
+
+def verify_withdrawal(child, before, observe, sleep=time.sleep):
+    """Three bounded observations after close, allowing webhook delivery latency."""
+    for attempt in range(3):
+        after = membership(observe(), child)
+        emit(pr=child.number, head=child.head, bors_before=before, bors_after=after,
+             withdrawal="observed" if before and (before["batches"] or before["held"])
+             and not (after["batches"] or after["held"]) else "not-proved")
+        if not (after["batches"] or after["held"]):
+            return
+        if attempt < 2:
+            sleep(2)
+    raise Gap("closed child still admitted in bors; withdrawal pending, inspect close webhook/reconciliation")
 
 
 def main():
@@ -554,9 +593,19 @@ def main():
                         parent = detector.prs[evidence.parent]
                         if not unchanged(api, child, parent, main_sha):
                             raise Gap("identities changed before blocking status")
+                        from bors_observation import observation
+                        before = None
+                        try:
+                            before = membership(observation(), child)
+                            emit(pr=child.number, head=child.head, bors_before=before)
+                        except Exception as error:
+                            emit(pr=child.number, bors_gap=str(error))
+                        if not unchanged(api, child, parent, main_sha):
+                            raise Gap("identities changed during bors observation")
                         status(api, child, "failure", f"Unmerged work from #{parent.number}; stack closure pending")
                         enforce(api, child, parent, evidence, actor)
                         emit(pr=child.number, mutation="closed", withdrawal="pull_request.closed webhook")
+                        verify_withdrawal(child, before, observation)
                     else:
                         if api.main() != main_sha or api.pr(child.number) != child:
                             raise Gap("identities changed before result status")

@@ -1,6 +1,8 @@
 """Real Git fixtures and mutation/race tests; no network or Lean execution."""
 
 import copy
+from contextlib import redirect_stdout
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -307,6 +309,9 @@ class MutationTests(unittest.TestCase):
         self.assertEqual([c[1] for c in self.api.calls], ["POST", "PATCH"])
         self.assertEqual(self.api.calls[-1][2], {"state": "closed"})
 
+    def test_closed_unlanded_parent_gets_actionable_advice(self):
+        self.assertIn("Remove the inherited work", sp.comment_text(self.evidence, "closed"))
+
     def test_comment_failure_does_not_close(self):
         self.api.fail_comment = True
         with self.assertRaises(sp.Gap):
@@ -376,6 +381,38 @@ class APITests(unittest.TestCase):
             api.request = lambda *args: {"data": {"repository": {"pullRequest": {"headRef": ref}}}}
             with self.assertRaises(sp.Gap):
                 api.pr(2)
+
+
+class WithdrawalTests(unittest.TestCase):
+    def setUp(self):
+        output = redirect_stdout(io.StringIO())
+        output.__enter__()
+        self.addCleanup(output.__exit__, None, None, None)
+        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, "", False)
+        self.data = {"schema": "tauceti-bors.observation/v1", "repo": sp.REPO, "base": "main",
+                     "batch_ids": [7], "batches": [{"id": 7, "state": "waiting", "members": [
+                         {"pr": 2, "head_sha": self.child.head}]}], "held": []}
+
+    def test_queued_child_withdrawal_after_close_webhook(self):
+        before = sp.membership(self.data, self.child)
+        self.assertEqual(before["batches"], [7])
+        withdrawn = copy.deepcopy(self.data)
+        withdrawn["batches"][0]["members"] = []
+        observations = iter([self.data, withdrawn])
+        sp.verify_withdrawal(self.child, before, lambda: next(observations), sleep=lambda _: None)
+
+    def test_still_queued_is_observable_failure(self):
+        with self.assertRaises(sp.Gap):
+            sp.verify_withdrawal(self.child, sp.membership(self.data, self.child),
+                                 lambda: self.data, sleep=lambda _: None)
+
+    def test_missing_or_truncated_membership_is_not_withdrawal(self):
+        for data in [{}, {**self.data, "batch_ids": []}]:
+            with self.assertRaises(sp.Gap):
+                sp.membership(data, self.child)
+        self.data["batches"][0]["members"] = [{"pr": 2}]
+        with self.assertRaises(sp.Gap):
+            sp.membership(self.data, self.child)
 
 
 class IntegrationContractTests(unittest.TestCase):

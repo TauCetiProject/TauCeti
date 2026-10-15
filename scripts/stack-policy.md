@@ -40,7 +40,8 @@ an explicit current parent/base relationship.
 Bounds are 256 non-main commits per head, 16 individual commit patches per parent
 when the aggregate diff does not apply, 128 parent files, 128 relevant
 first-parent main-history changes per parent, 64 candidates per child, 1 MiB per
-blob, 2 MiB per patch/command output, 16 MiB per API response, 128 MiB total API
+blob, 2 MiB per patch/command output (8 MiB for the bounded main commit index),
+16 MiB per API response, 128 MiB total API
 responses, 4,000 API calls, 30,000 Git operations, 20 minutes per source/API sweep
 and a 30-minute workflow limit.
 Depth-limited canonical PR fetches are checked for shallow boundaries. Main's
@@ -72,8 +73,9 @@ or coalesced events. The workflow checks out main-defined tooling explicitly;
 candidate-defined code never receives its app token. Manual dispatch defaults
 to dry-run. Every run publishes JSONL in logs, a job summary and an artifact.
 
-The required `no-stack` PR status is pending while inspecting and failure for a
-confirmed stack **before** the explanation/close transaction. Observation gaps
+Event/single-PR runs set the required `no-stack` PR status pending while inspecting.
+Backlog sweeps write only the final result. A confirmed stack sets failure
+**before** the explanation/close transaction. Observation gaps
 give an error status. A bounded no-proof result gives success with that stated
 limitation. Bors reads this additional PR admission status from main's bors.toml;
 the existing build, bump-guard, scope, review and publication gates remain.
@@ -96,20 +98,22 @@ bors's existing handler marks the patch closed and cancels its waiting/running
 batch and try work, the same withdrawal route as bors r-. Rollout must verify
 an actual admitted child's removal using the bors observation endpoint, not just
 infer it from a successful GitHub API response.
+The apply audit records read-only bors membership before the blocking status and
+close, then makes at most three observations (two-second gaps) after close. A
+still-admitted child fails the run visibly. Missing pre-close observations are
+reported as unproved withdrawal, never as a successful production verification.
 
-## Validation and rollout
+## Running the policy
 
 Run `python3 scripts/test_stack_policy.py` for real Git and API/mutation fixtures.
 `stack_policy_fixtures.json` records read-only historical PR identities, source
-evidence and literal stacking prose, including declined/stale/ambiguous cases.
+evidence and literal stacking prose at its named detector/main revisions, including
+declined/stale/ambiguous cases. These are observations, not a claim about later heads.
 Run `python3 scripts/stack_policy.py --pr NUMBER --report audit.jsonl` for a
 read-only source audit; omit --pr for the bounded backlog. `--apply` explicitly
 enables statuses/comments/closure and requires `STACK_ACTOR` to authenticate
 prior marker comments. Production uses the app installation bot login.
 
-Before rollout, publish the historical example classifications with exact main,
-child and parent identities and content hashes. Review all confirmed closures
-before the first destructive dispatch. After ordinary infrastructure review and
-merge, a **new main-defined workflow dispatch** must exercise actual detection,
-comment, close and queued-child withdrawal. Keep #16791 open until that evidence
-is linked in its rollout-verified comment; no 24-hour baseline is required.
+To verify deployment, issue a new main-defined workflow dispatch and inspect its
+audit artifact. Production verification requires actual detection, explanation,
+closure, preserved branch and observed removal of a previously admitted child.
