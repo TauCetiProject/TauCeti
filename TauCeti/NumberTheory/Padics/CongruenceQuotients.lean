@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.Topology.Separation.DisjointCover
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 -- Supplies compact and totally disconnected instances; `PrincipalUnits` imports it privately.
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.Group.LocallyConstant
@@ -48,6 +47,9 @@ some `(ℤ/p^nℤ)ˣ`, and such test functions are dense among all continuous on
   (2024), Definitions 3.7–3.8, Remarks 3.11–3.12 and Proposition 3.16.
 * D. Loeffler, Mathlib's `Mathlib.Topology.Separation.DisjointCover`, for finite approximation of
   continuous maps on profinite spaces.
+* Tau Ceti's `TauCeti.Topology.Algebra.Group.LocallyConstant`, whose open right-translation
+  stabilizer (`TauCeti.isOpen_rightTranslationStabilizer`) drives the descent of locally constant
+  functions.
 -/
 
 public section
