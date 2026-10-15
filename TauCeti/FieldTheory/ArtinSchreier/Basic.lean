@@ -34,6 +34,19 @@ public section
 open Polynomial
 open scoped IntermediateField
 
+namespace Polynomial
+
+/-- An Artin–Schreier polynomial with exponent greater than one has that natural degree. -/
+@[simp]
+theorem natDegree_X_pow_sub_X_sub_C {R : Type*} [Ring R] [Nontrivial R]
+    {p : ℕ} (u : R) (hp : 1 < p) : (X ^ p - X - C u : R[X]).natDegree = p := by
+  rw [sub_sub, natDegree_sub_eq_left_of_natDegree_lt] <;>
+    rw [natDegree_X_pow]
+  rw [natDegree_X_add_C]
+  exact hp
+
+end Polynomial
+
 namespace TauCeti.ArtinSchreier
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
@@ -46,12 +59,6 @@ private theorem monic_polynomial (u : K) : (X ^ p - X - C u : K[X]).Monic := by
     exact_mod_cast (Fact.out : p.Prime).one_lt
   convert monic_X_pow_sub h using 1
   ring
-
-private theorem natDegree_polynomial (u : K) : (X ^ p - X - C u : K[X]).natDegree = p := by
-  rw [sub_sub, natDegree_sub_eq_left_of_natDegree_lt] <;>
-    rw [natDegree_X_pow]
-  rw [natDegree_X_add_C]
-  exact (Fact.out : p.Prime).one_lt
 
 section Root
 
@@ -230,7 +237,7 @@ the form `w ^ p - w`, then `X ^ p - X - u` is irreducible. -/
 theorem irreducible_X_pow_sub_X_sub_C (hu : ∀ w : K, w ^ p - w ≠ u) :
     Irreducible (X ^ p - X - C u : K[X]) := by
   have hne := (monic_polynomial (p := p) u).ne_zero
-  have hdeg := natDegree_polynomial (p := p) u
+  have hdeg := natDegree_X_pow_sub_X_sub_C u (Fact.out : p.Prime).one_lt
   have hnu : ¬ IsUnit (X ^ p - X - C u : K[X]) := by
     rw [isUnit_iff_degree_eq_zero, degree_eq_natDegree hne, hdeg, Nat.cast_eq_zero]
     exact (Fact.out : p.Prime).ne_zero
@@ -247,7 +254,8 @@ theorem irreducible_X_pow_sub_X_sub_C_iff :
     Irreducible (X ^ p - X - C u : K[X]) ↔ ∀ w : K, w ^ p - w ≠ u := by
   refine ⟨fun h w hw ↦ ?_, irreducible_X_pow_sub_X_sub_C p⟩
   have hdeg := degree_eq_one_of_irreducible_of_root h (x := w) (by simp [hw])
-  rw [degree_eq_natDegree h.ne_zero, natDegree_polynomial (p := p) u, Nat.cast_eq_one] at hdeg
+  rw [degree_eq_natDegree h.ne_zero,
+    natDegree_X_pow_sub_X_sub_C u (Fact.out : p.Prime).one_lt, Nat.cast_eq_one] at hdeg
   exact (Fact.out : p.Prime).ne_one hdeg
 
 end Irreducible

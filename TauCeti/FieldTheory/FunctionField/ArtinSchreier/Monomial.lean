@@ -60,6 +60,8 @@ genus.
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Theorem 3.5.1 and Proposition 3.7.8.
+* `TauCeti/FieldTheory/FunctionField/Hyperelliptic/Genus/Two.lean` (`TauCeti.GenusTwo`):
+  the function-field construction via `AdjoinRoot` is adapted from this worked example.
 -/
 
 public section
