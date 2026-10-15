@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.Kummer.Degree
 public import TauCeti.NumberTheory.NumberField.Kummer.Ramification
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
-public import TauCeti.NumberTheory.NumberField.Units.SUnit
+public import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
 import TauCeti.NumberTheory.RamificationInertia.Unramified

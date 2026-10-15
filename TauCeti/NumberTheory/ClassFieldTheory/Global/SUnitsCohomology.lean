@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SIdeles
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.PlacePermutation.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.FiniteGeneration
 import Mathlib.NumberTheory.NumberField.ClassNumber
-import TauCeti.NumberTheory.NumberField.Units.SUnit
+import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 
 /-!
 # Tate cohomology of `S`-units
