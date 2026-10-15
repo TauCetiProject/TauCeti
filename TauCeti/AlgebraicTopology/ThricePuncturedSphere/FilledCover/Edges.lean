@@ -121,6 +121,56 @@ private def radialPath (w : 𝔻*) (k : ℕ) : Path (radialPoint w k) w where
     ext
     simp
 
+/-- A filling-chart centre is in the closure of an included connected component when the chart
+meets that component, provided radial paths stay over the base set. -/
+private theorem center_mem_closure_component_iff (hp : IsCoveringMap p)
+    (hfin : Finite (p ⁻¹' {basePt})) (j : FilledPoint p) (V : Set ThricePuncturedSphere)
+    (c : ConnectedComponents (p ⁻¹' V))
+    (hradial : ∀ (w : 𝔻*) (_ : p (chart p j w) ∈ V) (k : ℕ) (t : unitInterval),
+      p (chart p j (radialPath w k t)) ∈ V) :
+    PunctureFilling.center (chart p) j ∈
+        closure (PunctureFilling.incl (chart p) ''
+          {x | ∃ hx : p x ∈ V, ConnectedComponents.mk ⟨x, hx⟩ = c}) ↔
+      ∃ (w : 𝔻*) (hw : p (chart p j w) ∈ V),
+        ConnectedComponents.mk ⟨chart p j w, hw⟩ = c := by
+  constructor
+  · intro hclosure
+    let U := PunctureFilling.disc (chart p) j '' {z : 𝔻 | ‖(z : ℂ)‖ < 1}
+    have hU : U ∈ 𝓝 (PunctureFilling.center (chart p) j) := by
+      apply (PunctureFilling.hasBasis_nhds_center
+        (fun i ↦ (isOpenEmbedding_chart hp hfin i).continuous)
+        (isOpenEmbedding_chart hp hfin j)).mem_iff.2
+      exact ⟨1, zero_lt_one, Subset.rfl⟩
+    obtain ⟨z, hzU, x, ⟨hx, hc⟩, hzx⟩ := (mem_closure_iff_nhds.1 hclosure U hU)
+    obtain ⟨d, -, rfl⟩ := hzU
+    obtain ⟨w, -, hchart⟩ := PunctureFilling.disc_eq_incl_iff.1 hzx.symm
+    subst x
+    exact ⟨w, hx, hc⟩
+  · rintro ⟨w, hw, hc⟩
+    let f : ℕ → FilledCover p := PunctureFilling.disc (chart p) j ∘
+      fun k ↦ (⟨radialPoint w k, (radialPoint w k).2.1⟩ : 𝔻)
+    refine mem_closure_of_tendsto (f := f) (b := atTop) ?_ (.of_forall fun k ↦ ?_)
+    · have hlim := (PunctureFilling.continuous_disc (φ := chart p) j).continuousAt.tendsto.comp
+        (tendsto_radialPoint_zero w)
+      simpa only [f, PunctureFilling.disc_zero] using hlim
+    · have hfk : f k = PunctureFilling.incl (chart p) (chart p j (radialPoint w k)) := by
+        simp only [f, Function.comp_apply]
+        exact PunctureFilling.disc_inclusion j (radialPoint w k)
+      rw [hfk]
+      have hy : p (chart p j (radialPoint w k)) ∈ V := by
+        simpa using hradial w hw k 0
+      refine ⟨_, ⟨hy, ?_⟩, rfl⟩
+      calc
+        ConnectedComponents.mk ⟨chart p j (radialPoint w k), hy⟩ =
+            ConnectedComponents.mk ⟨chart p j w, hw⟩ := by
+          rw [ConnectedComponents.coe_eq_coe]
+          have hjoined : JoinedIn (p ⁻¹' V) (chart p j (radialPoint w k)) (chart p j w) :=
+            ⟨(radialPath w k).map (isOpenEmbedding_chart hp hfin j).continuous,
+              fun t ↦ hradial w hw k t⟩
+          exact connectedComponent_eq
+            (pathComponent_subset_component _ hjoined.joined_subtype)
+        _ = c := hc
+
 private theorem coe_coord_of_eq_zero {q : Puncture} (hq : q = Puncture.zero)
     (z : q.neighborhood) : (q.coord z : ℂ) = 2 * (z : ThricePuncturedSphere) := by
   subst q
@@ -254,24 +304,16 @@ theorem center_overZero_mem_closure_edge_iff {n : ℕ} (hp : IsCoveringMap p)
     PunctureFilling.center (chart p) (overZero p b) ∈ closure (edge hp ν i) ↔
       b = hp.sameCycleQuotientσ0EquivConnectedComponents ν (Quotient.mk _ i) := by
   let hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
+  rw [edge, center_mem_closure_component_iff hp hfin (overZero p b) unitSegment
+    (hp.finEquivConnectedComponentsUnitSegment ν i)
+    (chart_radialPath_mem_unitSegment_zero hp hfin b)]
   constructor
-  · intro hclosure
-    let U := PunctureFilling.disc (chart p) (overZero p b) ''
-      {z : 𝔻 | ‖(z : ℂ)‖ < 1}
-    have hU : U ∈ 𝓝 (PunctureFilling.center (chart p) (overZero p b)) := by
-      apply (PunctureFilling.hasBasis_nhds_center
-        (fun j ↦ (isOpenEmbedding_chart hp hfin j).continuous)
-        (isOpenEmbedding_chart hp hfin (overZero p b))).mem_iff.2
-      exact ⟨1, zero_lt_one, Subset.rfl⟩
-    obtain ⟨z, hzU, hzedge⟩ := (mem_closure_iff_nhds.1 hclosure U hU)
-    obtain ⟨d, -, rfl⟩ := hzU
-    obtain ⟨x, hx, hi, hdisc⟩ := (mem_edge_iff hp ν i _).1 hzedge
-    obtain ⟨w, -, hchart⟩ := PunctureFilling.disc_eq_incl_iff.1 hdisc.symm
-    have hxrange : x ∈ range (chart p (overZero p b)) := ⟨w, hchart⟩
+  · rintro ⟨w, hx, hi⟩
+    have hxrange : chart p (overZero p b) w ∈ range (chart p (overZero p b)) := ⟨w, rfl⟩
     rw [range_chart hp hfin, sigmaEquiv_overZero] at hxrange
     obtain ⟨hx0, hb⟩ := hxrange
     exact (hp.exists_common_point_iff_eq_sameCycleQuotientσ0 ν i b).1
-      ⟨x, hx, hx0, hi, hb⟩
+      ⟨chart p (overZero p b) w, hx, hx0, hi, hb⟩
   · intro hb
     obtain ⟨x, hx, hx0, hi, hb'⟩ :=
       (hp.exists_common_point_iff_eq_sameCycleQuotientσ0 ν i b).2 hb
@@ -279,32 +321,7 @@ theorem center_overZero_mem_closure_edge_iff {n : ℕ} (hp : IsCoveringMap p)
       rw [range_chart hp hfin, sigmaEquiv_overZero]
       exact ⟨hx0, hb'⟩
     obtain ⟨w, rfl⟩ := hxrange
-    let f : ℕ → FilledCover p := PunctureFilling.disc (chart p) (overZero p b) ∘
-      fun k ↦ (⟨radialPoint w k, (radialPoint w k).2.1⟩ : 𝔻)
-    refine mem_closure_of_tendsto (f := f) (b := atTop) ?_ (.of_forall fun k ↦ ?_)
-    · have hlim := (PunctureFilling.continuous_disc (φ := chart p)
-        (overZero p b)).continuousAt.tendsto.comp (tendsto_radialPoint_zero w)
-      simpa only [f, PunctureFilling.disc_zero] using hlim
-    · have hfk : f k = PunctureFilling.incl (chart p)
-          (chart p (overZero p b) (radialPoint w k)) := by
-        simp only [f, Function.comp_apply]
-        exact PunctureFilling.disc_inclusion (overZero p b) (radialPoint w k)
-      rw [hfk]
-      apply (mem_edge_iff hp ν i _).2
-      have hy : p (chart p (overZero p b) (radialPoint w k)) ∈ unitSegment := by
-        simpa using chart_radialPath_mem_unitSegment_zero hp hfin b w hx k 0
-      refine ⟨_, hy, ?_, rfl⟩
-      have hjoined : JoinedIn (p ⁻¹' unitSegment)
-          (chart p (overZero p b) (radialPoint w k)) (chart p (overZero p b) w) :=
-        ⟨(radialPath w k).map (isOpenEmbedding_chart hp hfin _).continuous,
-          fun t ↦ chart_radialPath_mem_unitSegment_zero hp hfin b w hx k t⟩
-      have hcomponent : ConnectedComponents.mk
-          (⟨chart p (overZero p b) (radialPoint w k), hy⟩ : p ⁻¹' unitSegment) =
-          ConnectedComponents.mk ⟨chart p (overZero p b) w, hx⟩ := by
-        rw [ConnectedComponents.coe_eq_coe]
-        exact connectedComponent_eq
-          (pathComponent_subset_component _ hjoined.joined_subtype)
-      exact hcomponent.trans hi
+    exact ⟨w, hx, hi⟩
 
 /-- An added point over `1` is a white endpoint of an edge exactly when its punctured-neighborhood
 component is the cycle of that edge under `σ1`. -/
@@ -314,24 +331,16 @@ theorem center_overOne_mem_closure_edge_iff {n : ℕ} (hp : IsCoveringMap p)
     PunctureFilling.center (chart p) (overOne p b) ∈ closure (edge hp ν i) ↔
       b = hp.sameCycleQuotientσ1EquivConnectedComponents ν (Quotient.mk _ i) := by
   let hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
+  rw [edge, center_mem_closure_component_iff hp hfin (overOne p b) unitSegment
+    (hp.finEquivConnectedComponentsUnitSegment ν i)
+    (chart_radialPath_mem_unitSegment_one hp hfin b)]
   constructor
-  · intro hclosure
-    let U := PunctureFilling.disc (chart p) (overOne p b) ''
-      {z : 𝔻 | ‖(z : ℂ)‖ < 1}
-    have hU : U ∈ 𝓝 (PunctureFilling.center (chart p) (overOne p b)) := by
-      apply (PunctureFilling.hasBasis_nhds_center
-        (fun j ↦ (isOpenEmbedding_chart hp hfin j).continuous)
-        (isOpenEmbedding_chart hp hfin (overOne p b))).mem_iff.2
-      exact ⟨1, zero_lt_one, Subset.rfl⟩
-    obtain ⟨z, hzU, hzedge⟩ := (mem_closure_iff_nhds.1 hclosure U hU)
-    obtain ⟨d, -, rfl⟩ := hzU
-    obtain ⟨x, hx, hi, hdisc⟩ := (mem_edge_iff hp ν i _).1 hzedge
-    obtain ⟨w, -, hchart⟩ := PunctureFilling.disc_eq_incl_iff.1 hdisc.symm
-    have hxrange : x ∈ range (chart p (overOne p b)) := ⟨w, hchart⟩
+  · rintro ⟨w, hx, hi⟩
+    have hxrange : chart p (overOne p b) w ∈ range (chart p (overOne p b)) := ⟨w, rfl⟩
     rw [range_chart hp hfin, sigmaEquiv_overOne] at hxrange
     obtain ⟨hx1, hb⟩ := hxrange
     exact (hp.exists_common_point_iff_eq_sameCycleQuotientσ1 ν i b).1
-      ⟨x, hx, hx1, hi, hb⟩
+      ⟨chart p (overOne p b) w, hx, hx1, hi, hb⟩
   · intro hb
     obtain ⟨x, hx, hx1, hi, hb'⟩ :=
       (hp.exists_common_point_iff_eq_sameCycleQuotientσ1 ν i b).2 hb
@@ -339,32 +348,7 @@ theorem center_overOne_mem_closure_edge_iff {n : ℕ} (hp : IsCoveringMap p)
       rw [range_chart hp hfin, sigmaEquiv_overOne]
       exact ⟨hx1, hb'⟩
     obtain ⟨w, rfl⟩ := hxrange
-    let f : ℕ → FilledCover p := PunctureFilling.disc (chart p) (overOne p b) ∘
-      fun k ↦ (⟨radialPoint w k, (radialPoint w k).2.1⟩ : 𝔻)
-    refine mem_closure_of_tendsto (f := f) (b := atTop) ?_ (.of_forall fun k ↦ ?_)
-    · have hlim := (PunctureFilling.continuous_disc (φ := chart p)
-        (overOne p b)).continuousAt.tendsto.comp (tendsto_radialPoint_zero w)
-      simpa only [f, PunctureFilling.disc_zero] using hlim
-    · have hfk : f k = PunctureFilling.incl (chart p)
-          (chart p (overOne p b) (radialPoint w k)) := by
-        simp only [f, Function.comp_apply]
-        exact PunctureFilling.disc_inclusion (overOne p b) (radialPoint w k)
-      rw [hfk]
-      apply (mem_edge_iff hp ν i _).2
-      have hy : p (chart p (overOne p b) (radialPoint w k)) ∈ unitSegment := by
-        simpa using chart_radialPath_mem_unitSegment_one hp hfin b w hx k 0
-      refine ⟨_, hy, ?_, rfl⟩
-      have hjoined : JoinedIn (p ⁻¹' unitSegment)
-          (chart p (overOne p b) (radialPoint w k)) (chart p (overOne p b) w) :=
-        ⟨(radialPath w k).map (isOpenEmbedding_chart hp hfin _).continuous,
-          fun t ↦ chart_radialPath_mem_unitSegment_one hp hfin b w hx k t⟩
-      have hcomponent : ConnectedComponents.mk
-          (⟨chart p (overOne p b) (radialPoint w k), hy⟩ : p ⁻¹' unitSegment) =
-          ConnectedComponents.mk ⟨chart p (overOne p b) w, hx⟩ := by
-        rw [ConnectedComponents.coe_eq_coe]
-        exact connectedComponent_eq
-          (pathComponent_subset_component _ hjoined.joined_subtype)
-      exact hcomponent.trans hi
+    exact ⟨w, hx, hi⟩
 
 end FilledCover
 
