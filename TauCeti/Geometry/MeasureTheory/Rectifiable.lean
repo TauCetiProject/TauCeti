@@ -177,7 +177,7 @@ theorem isometry_image_iff {f : X → Y} (hf : Isometry f) :
 
 /-- Isometric equivalences preserve countable rectifiability in both directions. -/
 @[simp]
-theorem isometryEquiv_image_iff (e : X ≃ᵢ Y) :
+theorem isometryEquiv_image_iff {e : X ≃ᵢ Y} :
     CountablyRectifiable k (e '' s) ↔ CountablyRectifiable k s :=
   isometry_image_iff e.isometry
 
