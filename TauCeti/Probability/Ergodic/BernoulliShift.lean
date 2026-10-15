@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Probability.Process.Tail.ShiftInvariant
 public import Mathlib.Dynamics.Ergodic.Ergodic
-public import Mathlib.Probability.ProductMeasure
-import Mathlib.Probability.Independence.InfinitePi
+public import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Independence.ZeroOne
 
 /-!
@@ -25,8 +24,10 @@ null or conull. No hypothesis on `α` is needed.
 
 ## Main results
 
-* `TauCeti.Probability.ergodic_shift_infinitePi_const` — an i.i.d. product law is ergodic for the
-  one-sided shift.
+* `TauCeti.MeasureTheory.Measure.ergodic_shift_of_iIndepFun` — a shift-preserving path law with
+  independent coordinates is ergodic for the one-sided shift;
+* `TauCeti.MeasureTheory.Measure.ergodic_shift_infinitePi_const` — an i.i.d. product law is
+  ergodic for the one-sided shift.
 
 ## References
 
@@ -40,9 +41,26 @@ open Filter MeasureTheory ProbabilityTheory
 
 namespace TauCeti
 
-namespace Probability
+open Probability
+
+namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α]
+
+/-- A shift-preserving probability law on one-sided paths with independent coordinates is
+ergodic for the shift. -/
+theorem ergodic_shift_of_iIndepFun (m : Measure (ℕ → α)) [IsProbabilityMeasure m]
+    (hindep : iIndepFun (fun n (x : ℕ → α) => x n) m)
+    (hmp : MeasurePreserving (shift α) m m) : Ergodic (shift α) m := by
+  refine Ergodic.of_preimage_eq hmp fun s hs hs_shift => ?_
+  -- A shift-invariant event lies in the tail of the coordinate process, which is trivial by
+  -- Kolmogorov's zero-one law since the coordinates are independent.
+  have htail := invariants_shift_le_pathTail s ⟨hs, hs_shift⟩
+  rw [pathTail_eq_tailProcess, tailProcess_eq_limsup] at htail
+  rcases measure_zero_or_one_of_measurableSet_limsup_atTop
+      (fun n => (measurable_pi_apply n).comap_le) hindep.iIndep htail with hzero | hone
+  · exact eventuallyEmptyOrUniv_iff.2 (Or.inr (ae_iff.mpr (by simpa using hzero)))
+  · exact eventuallyEmptyOrUniv_iff.2 (Or.inl ((mem_ae_iff_prob_eq_one hs).2 hone))
 
 /-- **The Bernoulli shift is ergodic.** For a probability measure `μ` on `α`, the one-sided left
 shift on `ℕ → α` is ergodic for the i.i.d. product law `μ^{⊗ℕ}`. -/
@@ -56,18 +74,9 @@ theorem ergodic_shift_infinitePi_const (μ : Measure α) [IsProbabilityMeasure �
     refine ⟨measurable_shift, ?_⟩
     rw [hshift]
     exact Measure.map_infinitePi_infinitePi_of_inj (P := fun _ : ℕ => μ) (add_left_injective 1)
-  refine Ergodic.of_preimage_eq hmp fun s hs hs_shift => ?_
-  -- A shift-invariant event lies in the tail of the coordinate process, which is trivial by
-  -- Kolmogorov's zero-one law since the coordinates are independent.
-  have htail := invariants_shift_le_pathTail s ⟨hs, hs_shift⟩
-  rw [pathTail_eq_tailProcess, tailProcess_eq_limsup] at htail
-  have hindep : iIndepFun (fun n (x : ℕ → α) => x n) (Measure.infinitePi fun _ : ℕ => μ) :=
-    iIndepFun_infinitePi (X := fun _ => id) fun _ => measurable_id
-  rcases measure_zero_or_one_of_measurableSet_limsup_atTop
-      (fun n => (measurable_pi_apply n).comap_le) hindep.iIndep htail with hzero | hone
-  · exact eventuallyEmptyOrUniv_iff.2 (Or.inr (ae_iff.mpr (by simpa using hzero)))
-  · exact eventuallyEmptyOrUniv_iff.2 (Or.inl ((mem_ae_iff_prob_eq_one hs).2 hone))
+  exact ergodic_shift_of_iIndepFun (Measure.infinitePi fun _ : ℕ => μ)
+    (iIndepFun_infinitePi (X := fun _ => id) fun _ => measurable_id) hmp
 
-end Probability
+end MeasureTheory.Measure
 
 end TauCeti

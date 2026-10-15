@@ -31,8 +31,9 @@ almost invariant event agrees almost everywhere with an exchangeable one
 
 ⚠ The permutation action here is the one on the *time index*, and ergodicity for it is a different
 statement from ergodicity of the one-sided shift, which concerns the smaller σ-algebra of
-shift-invariant events.  For an i.i.d. product law both hold: `ergodic_shift_infinitePi_const` is
-the shift form and `ergodicSMul_infinitePi_const` below is the permutation form.
+shift-invariant events.  For an i.i.d. product law both hold:
+`TauCeti.MeasureTheory.Measure.ergodic_shift_infinitePi_const` is the shift form and
+`ergodicSMul_infinitePi_const` below is the permutation form.
 
 ## Main declarations
 
@@ -223,7 +224,8 @@ ergodically on an i.i.d. product law `P^{⊗ℕ}`.
 
 This is the zero-one law `exchangeableSigma_trivial_of_infinitePi` read through
 `exchangeableSigma_trivial_iff_ergodicSMul`.  It is the permutation-action counterpart of the
-shift ergodicity recorded by `ergodic_shift_infinitePi_const`. -/
+shift ergodicity recorded by
+`TauCeti.MeasureTheory.Measure.ergodic_shift_infinitePi_const`. -/
 theorem ergodicSMul_infinitePi_const (P : ProbabilityMeasure α) :
     ErgodicSMul FinitaryPerm (ℕ → α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
   (exchangeableSigma_trivial_iff_ergodicSMul (exchangeableLaw_infinitePi_const P)).mp
