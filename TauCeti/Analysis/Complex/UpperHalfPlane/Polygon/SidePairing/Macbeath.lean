@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Neighbours
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Basic
 public import TauCeti.Topology.Algebra.GroupAction.Macbeath.LocallyFinite
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Tessellation
