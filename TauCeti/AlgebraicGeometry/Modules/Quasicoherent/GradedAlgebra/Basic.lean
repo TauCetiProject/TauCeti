@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.GradedObject.Braiding
 public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import Mathlib.CategoryTheory.Monoidal.CommMon_
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
+public import TauCeti.CategoryTheory.GradedObject.MonObj
 
 /-!
 # Nonnegatively graded quasicoherent algebras
@@ -21,6 +22,12 @@ algebra morphisms, since they are morphisms of commutative monoid objects in gra
 The functor `GradedQuasicoherentAlgebra.degree` extracts any homogeneous component as a
 quasicoherent sheaf. In particular, `degreeOne` is the coefficient object from which freely
 generated graded algebras and their associated linear schemes are recovered.
+
+Conversely, `GradedQuasicoherentAlgebra.ofHomogeneous` builds a graded quasicoherent algebra from
+its homogeneous components, unit and homogeneous multiplications, and
+`GradedQuasicoherentAlgebra.homMk` builds morphisms from componentwise maps. These are the
+constructors through which graded algebras that are described degree by degree, such as
+symmetric algebras of quasicoherent sheaves, enter this category.
 
 ## Main declarations
 
@@ -35,7 +42,13 @@ generated graded algebras and their associated linear schemes are recovered.
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.degreeOne`: the degree-one functor;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.mul` and
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one`: homogeneous multiplication and the
-  unit, with their associativity, commutativity, and unit laws.
+  unit, with their associativity, commutativity, and unit laws;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ofHomogeneous`: conversely, the graded
+  quasicoherent algebra with given quasicoherent components, unit and homogeneous
+  multiplications satisfying these laws;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.homMk`: the morphism of graded
+  quasicoherent algebras given by componentwise maps preserving the unit and the homogeneous
+  multiplications.
 -/
 
 public section
@@ -59,6 +72,13 @@ quasicoherent when each of its homogeneous components is a quasicoherent `𝒪_X
 def isGradedQuasicoherentAlgebra :
     ObjectProperty (CommMon (GradedObject ℕ X.Modules)) :=
   fun A ↦ ∀ n, (A.X n).IsQuasicoherent
+
+variable {X} in
+/-- A commutative algebra object in graded modules is graded quasicoherent exactly when each of
+its homogeneous components is quasicoherent. -/
+theorem isGradedQuasicoherentAlgebra_iff (A : CommMon (GradedObject ℕ X.Modules)) :
+    isGradedQuasicoherentAlgebra X A ↔ ∀ n, (A.X n).IsQuasicoherent :=
+  Iff.rfl
 
 /-- The category of commutative nonnegatively graded quasicoherent `𝒪_X`-algebras. Its morphisms
 are morphisms of commutative monoid objects in graded modules, hence preserve the unit,
@@ -277,6 +297,70 @@ theorem mul_one (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
   rw [← Iso.inv_comp_eq, ← cancel_mono (eqToHom (congrArg A.obj.X (add_zero n)))]
   simpa only [one, GradedObject.categoryOfGradedObjects_id, id_tensorHom, whiskerLeft_comp,
     Category.assoc, Category.comp_id, eqToHom_trans, eqToHom_refl] using h
+
+section Homogeneous
+
+variable (M : ℕ → X.Modules) [∀ n, (M n).IsQuasicoherent] (one : 𝟙_ X.Modules ⟶ M 0)
+  (mul : ∀ i j, M i ⊗ M j ⟶ M (i + j))
+  (one_mul : ∀ n, (one ▷ M n) ≫ mul 0 n = (λ_ (M n)).hom ≫ eqToHom (congrArg M (zero_add n).symm))
+  (mul_one : ∀ n, (M n ◁ one) ≫ mul n 0 = (ρ_ (M n)).hom ≫ eqToHom (congrArg M (add_zero n).symm))
+  (mul_assoc : ∀ i j k, (mul i j ▷ M k) ≫ mul (i + j) k =
+    (α_ _ _ _).hom ≫ (M i ◁ mul j k) ≫ mul i (j + k) ≫
+      eqToHom (congrArg M (add_assoc i j k).symm))
+  (mul_comm : ∀ i j, (β_ (M i) (M j)).hom ≫ mul j i =
+    mul i j ≫ eqToHom (congrArg M (add_comm i j)))
+
+/-- The graded quasicoherent algebra with quasicoherent homogeneous components `M n`, unit
+`one : 𝒪_X ⟶ M 0` and homogeneous multiplications `mul i j : M i ⊗ M j ⟶ M (i + j)`, which are
+required to be unital, associative and commutative up to the identifications of degrees. -/
+-- The body is exposed so that the components of `ofHomogeneous` are definitionally `M`, as the
+-- statements of `mul_ofHomogeneous` and `one_ofHomogeneous` require.
+@[expose] def ofHomogeneous : GradedQuasicoherentAlgebra X :=
+  letI := GradedObject.monObjOfHomogeneous M one mul one_mul mul_one mul_assoc
+  haveI := GradedObject.isCommMonObj_monObjOfHomogeneous M one mul one_mul mul_one mul_assoc
+    mul_comm
+  ⟨CommMon.mk M, (isGradedQuasicoherentAlgebra_iff _).2 inferInstance⟩
+
+/-- The underlying graded module of `ofHomogeneous` is the given family of components. -/
+@[simp]
+theorem ofHomogeneous_obj_X :
+    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.X = M :=
+  (rfl)
+
+/-- The homogeneous multiplication of `ofHomogeneous` is the given one. -/
+@[simp]
+theorem mul_ofHomogeneous (i j : ℕ) :
+    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).mul i j = mul i j :=
+  (GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous M mul i j (i + j) rfl).trans
+    (Category.comp_id _)
+
+/-- The unit of `ofHomogeneous` is the given one. -/
+@[simp]
+theorem one_ofHomogeneous :
+    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).one = one :=
+  (congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
+    (GradedObject.Monoidal.oneOfDegreeZero_zero M one)).trans (Iso.inv_hom_id_assoc _ _)
+
+end Homogeneous
+
+/-- A family of morphisms between the homogeneous components of two graded quasicoherent
+algebras which preserves the unit and the homogeneous multiplications is a morphism of graded
+quasicoherent algebras. -/
+def homMk {A B : GradedQuasicoherentAlgebra X} (f : ∀ n, A.obj.X n ⟶ B.obj.X n)
+    (one_f : A.one ≫ f 0 = B.one)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ B.mul i j = A.mul i j ≫ f (i + j)) : A ⟶ B :=
+  have hf := GradedObject.isMonHom_of_homogeneous (X := A.obj.X) (Y := B.obj.X) f
+    (by simpa [one] using one_f) (fun i j ↦ by simpa [mul] using (mul_f i j).symm)
+  ObjectProperty.homMk (CommMon.homMk (Mon.Hom.mk' (M := A.obj.toMon) (N := B.obj.toMon) f
+    hf.one_hom hf.mul_hom))
+
+/-- The components of `homMk f` are the given morphisms. -/
+@[simp]
+theorem homMk_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : ∀ n, A.obj.X n ⟶ B.obj.X n)
+    (one_f : A.one ≫ f 0 = B.one)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ B.mul i j = A.mul i j ≫ f (i + j)) :
+    (homMk f one_f mul_f).hom.hom.hom = f :=
+  (rfl)
 
 end GradedQuasicoherentAlgebra
 
