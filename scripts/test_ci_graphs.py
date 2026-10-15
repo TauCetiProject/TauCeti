@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Regression tests for merge-engine classification and PR arrival dates."""
+"""Regression tests for merge-engine classification, arrival dates and merge timelines."""
 import datetime as dt
+import json
 import sqlite3
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import ci_daily_graphs as daily
 import ci_stats_graphs as fleet
+import generated_assets
 
 
 class MergeQueueChartsTest(unittest.TestCase):
@@ -128,6 +132,155 @@ class MergeQueueChartsTest(unittest.TestCase):
                          ("ns-other", "build"))
         self.assertEqual(fleet.classify(daily.BUILD, "github", "pr"),
                          ("gh-build-pr", "build"))
+
+
+class MergeTimelinesTest(unittest.TestCase):
+    def setUp(self):
+        self.db = sqlite3.connect(":memory:")
+        self.addCleanup(self.db.close)
+        self.db.executescript("""
+            CREATE TABLE merge_observations (observed_at TEXT, eligible_json TEXT);
+            CREATE TABLE runs (repo TEXT, run_id INTEGER, run_attempt INTEGER, workflow TEXT,
+                               trigger TEXT, conclusion TEXT, created_at TEXT);
+            CREATE TABLE merge_builds (repo TEXT, run_id INTEGER, engine TEXT,
+                                       batch_id INTEGER, members_json TEXT);
+        """)
+        self.since = daily.ts("2026-10-06T00:00:00Z")
+        self.until = daily.ts("2026-10-08T12:00:00Z")
+
+    def sample(self, stamp, prs):
+        self.db.execute("INSERT INTO merge_observations VALUES (?,?)",
+                        (stamp, json.dumps([{"pr": p, "queued": p == 42} for p in prs])))
+
+    def staging(self, number, prs, conclusion="success", *, repo="TauCeti", attempt=1,
+                trigger="bors_staging", engine="bors", workflow=daily.PR_BUILD,
+                stamp="2026-10-07T10:00:00Z"):
+        self.db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?)",
+                        (repo, number, attempt, workflow, trigger, conclusion, stamp))
+        self.db.execute("INSERT INTO merge_builds VALUES (?,?,?,?,?)",
+                        (repo, number, engine, number+100, json.dumps([{"pr": p} for p in prs])))
+
+    def history(self):
+        return daily.merge_history(self.db, self.since, self.until)
+
+    def svg(self, name):
+        return ET.fromstring(daily.merge_charts(self.db, self.until)[name])
+
+    def test_backlog_counts_distinct_ready_prs_including_those_queued(self):
+        self.sample("2026-10-07T10:00:00Z", [42, 43, 42])
+        self.sample("2026-10-07T10:01:00Z", [])  # Observed zero is a real value.
+        self.assertEqual(self.history()["queue"],
+                         [(daily.ts("2026-10-07T10:00:00Z"), 2),
+                          (daily.ts("2026-10-07T10:01:00Z"), 0)])
+
+    def test_fractional_timestamps_and_partial_day_respect_window(self):
+        for stamp in ("2026-10-05T23:59:59.999999Z", "2026-10-06T00:00:00Z",
+                      "2026-10-08T11:59:59.999000Z", "2026-10-08T12:00:00Z"):
+            self.sample(stamp, [42])
+            self.staging(len(self.db.execute("SELECT * FROM runs").fetchall()), [42], stamp=stamp)
+        m = self.history()
+        self.assertEqual(len(m["queue"]), 2)
+        self.assertEqual(len(m["runs"]), 2)
+        self.assertGreater(m["queue"][-1][0], daily.ts("2026-10-08T00:00:00Z"))
+
+    def test_production_runs_use_batch_membership_and_latest_overall_result(self):
+        self.staging(1, [42, 43, 42], "failure", attempt=2)
+        self.staging(2, [42, 43], stamp="2026-10-07T11:00:00Z")  # Same PRs, separate run.
+        self.staging(3, [99], trigger="bors_pilot")
+        self.staging(4, [99], trigger="bors_unknown")
+        self.staging(5, [99], engine="queue", trigger="merge_queue")
+        self.staging(6, [99], repo="TauCetiReview")
+        self.staging(7, [99], workflow=".github/workflows/other.yml")
+        self.staging(8, [])
+        m = self.history()
+        self.assertEqual([(r["run_id"], r["prs"], r["conclusion"], r["attempt"]) for r in m["runs"]],
+                         [(1, 2, "failure", 2), (2, 2, "success", 1)])
+        self.assertEqual(m["missing_members"], 1)
+        self.assertIn("1 runs omitted", daily.merge_charts(self.db, self.until)["ci-bors-staging.svg"])
+
+    def test_staging_dots_use_elapsed_time_batch_size_and_outcome(self):
+        self.staging(1, [41], stamp="2026-10-07T01:00:00Z")
+        self.staging(2, [41, 42, 43], "failure", stamp="2026-10-07T03:00:00Z")
+        self.staging(3, [41], "cancelled", stamp="2026-10-07T09:00:00Z")
+        dots = list(self.svg("ci-bors-staging.svg").iter("{http://www.w3.org/2000/svg}circle"))
+        self.assertEqual([p.attrib["fill"] for p in dots], [daily.PALETTE[5], daily.PALETTE[3], daily.MUTED])
+        xs = [float(p.attrib["cx"]) for p in dots]
+        self.assertAlmostEqual((xs[2]-xs[1])/(xs[1]-xs[0]), 3, delta=0.02)
+        self.assertLess(float(dots[1].attrib["cy"]), float(dots[0].attrib["cy"]))
+        self.assertIn("3 PRs, failure", dots[1][0].text)
+
+    def test_queue_gaps_are_not_zeroes_or_connected_and_last_sample_is_not_extended(self):
+        for stamp, prs in [("2026-10-07T10:00:00Z", [42]), ("2026-10-07T10:01:00Z", []),
+                           ("2026-10-07T11:00:00Z", [42]), ("2026-10-07T11:01:00Z", [42])]:
+            self.sample(stamp, prs)
+        root = self.svg("ci-queue-size.svg")
+        lines = list(root.iter("{http://www.w3.org/2000/svg}polyline"))
+        self.assertEqual(len(lines), 2)
+        self.assertIn(f",{daily.BOTTOM:.1f}", lines[0].attrib["points"])
+        end_x = float(lines[-1].attrib["points"].split()[-1].split(",")[0])
+        self.assertLess(end_x, daily.W-daily.R)
+
+    def test_non_failure_terminal_outcomes_are_grey(self):
+        for number, conclusion in enumerate(("stale", "action_required", "neutral"), 1):
+            self.staging(number, [42], conclusion)
+        dots = list(self.svg("ci-bors-staging.svg").iter("{http://www.w3.org/2000/svg}circle"))
+        self.assertEqual([p.attrib["fill"] for p in dots], [daily.MUTED] * 3)
+
+    def test_eleven_pr_maximum_has_whole_pr_ticks_on_both_graphs(self):
+        self.sample("2026-10-07T10:00:00Z", list(range(1, 12)))
+        self.staging(1, list(range(1, 12)))
+        for name in ("ci-queue-size.svg", "ci-bors-staging.svg"):
+            ticks = [node.text for node in self.svg(name).iter("{http://www.w3.org/2000/svg}text")
+                     if node.attrib.get("text-anchor") == "end"]
+            self.assertTrue(all(float(t).is_integer() for t in ticks), ticks)
+            self.assertGreaterEqual(float(ticks[-1]), 11)
+
+    def test_short_multiday_window_has_distinct_time_tick_labels(self):
+        self.staging(1, [42], stamp="2026-10-06T10:00:00Z")
+        labels = [node.text for node in self.svg("ci-bors-staging.svg").iter("{http://www.w3.org/2000/svg}text")
+                  if node.attrib.get("y") == str(daily.BOTTOM+18)]
+        self.assertGreater(len(labels), 1)
+        self.assertEqual(len(labels), len(set(labels)))
+        self.assertTrue(all(":" in label for label in labels))
+
+    def test_empty_history_has_explicit_messages_and_whole_pr_ticks(self):
+        charts = daily.merge_charts(self.db, self.until)
+        self.assertIn("No queue observations", charts["ci-queue-size.svg"])
+        self.assertIn("No staging runs", charts["ci-bors-staging.svg"])
+        for name, svg in charts.items():
+            root = ET.fromstring(svg)
+            self.assertIn(name, generated_assets.GENERATED_ASSETS)
+            ticks = [node.text for node in root.iter("{http://www.w3.org/2000/svg}text")
+                     if node.attrib.get("text-anchor") == "end"]
+            self.assertTrue(all(float(t).is_integer() for t in ticks))
+
+    def test_generator_writes_new_assets_with_the_existing_charts(self):
+        # Exercise the public entry point and generated-asset list together.
+        schema = MergeQueueChartsTest()
+        schema.setUp()
+        self.addCleanup(schema.doCleanups)
+        schema.db.executescript("""
+            ALTER TABLE runs ADD COLUMN run_attempt INTEGER;
+            ALTER TABLE runs ADD COLUMN conclusion TEXT;
+            ALTER TABLE runs ADD COLUMN jobs_fetched INTEGER;
+            ALTER TABLE runs ADD COLUMN updated_at TEXT;
+            ALTER TABLE jobs ADD COLUMN completed_at TEXT;
+            CREATE TABLE merge_observations (observed_at TEXT, eligible_json TEXT);
+            CREATE TABLE merge_builds (repo TEXT, run_id INTEGER, engine TEXT,
+                                       batch_id INTEGER, members_json TEXT);
+            CREATE TABLE coverage (complete_to TEXT);
+            INSERT INTO coverage VALUES ('2026-10-08T12:00:00Z');
+        """)
+        schema.db.execute("INSERT INTO runs (repo,run_id,workflow,trigger,created_at) VALUES (?,?,?,?,?)",
+                          ("TauCeti", 1, daily.PR_BUILD, "pr", "2026-10-06T10:00:00Z"))
+        schema.db.commit()
+        with tempfile.TemporaryDirectory() as directory:
+            dbpath = Path(directory) / "ci.sqlite"
+            with sqlite3.connect(dbpath) as disk:
+                schema.db.backup(disk)
+            fleet.main(["--db", str(dbpath), "--until", "2026-10-08T12:00:00Z", "--out-dir", directory])
+            for name in daily.ASSET_NAMES:
+                ET.parse(Path(directory) / name)
 
 
 if __name__ == "__main__":

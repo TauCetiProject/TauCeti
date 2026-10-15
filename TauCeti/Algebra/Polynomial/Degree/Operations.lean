@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 
 /-!
-# Degree bounds for products and sums of products of polynomials
+# Degrees of polynomial sums and products
 
 Mathlib's `Polynomial.degree_mul_le` bounds the degree of a product by the sum of the degrees.
 This file records the strict form with one factor of degree below a natural number `a` and the
@@ -18,9 +18,23 @@ coefficient window of prescribed length needs when it is read off polynomials th
 
 `TauCeti.degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le` combines two such product bounds
 into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`.
+The simp lemma `Polynomial.natDegree_X_pow_sub_X` computes the degree of `X ^ p - X` for
+any ring and any exponent `p > 1`.
 -/
 
 public section
+
+namespace Polynomial
+
+/-- The nonconstant part of an Artin–Schreier polynomial has its expected natural degree. -/
+@[simp]
+theorem natDegree_X_pow_sub_X {R : Type*} [Ring R] [Nontrivial R]
+    {p : ℕ} (hp : 1 < p) : (X ^ p - X : R[X]).natDegree = p := by
+  rw [natDegree_sub_eq_left_of_natDegree_lt] <;> rw [natDegree_X_pow]
+  rw [natDegree_X]
+  exact hp
+
+end Polynomial
 
 namespace TauCeti
 
