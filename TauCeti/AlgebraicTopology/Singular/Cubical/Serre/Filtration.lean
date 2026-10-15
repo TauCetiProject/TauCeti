@@ -87,46 +87,42 @@ open CategoryTheory Limits unitInterval
 
 namespace TauCeti
 
-variable {E B E' : Type*} [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace E']
+variable {E B E' : Type*} [TopologicalSpace E] [TopologicalSpace E']
 
 namespace SingularCube
 
 /-- A singular cube `c` of `E` has **Serre weight at most `s`** over `p : E → B` when `s ≥ 0` and
 `p ∘ c` depends only on the coordinates of index less than `s`. -/
-def IsSerreWeightLE (p : C(E, B)) (s : ℤ) {n : ℕ} (c : SingularCube E n) : Prop :=
-  0 ≤ s ∧ ∀ x y : Fin n → I, (∀ i : Fin n, (i : ℤ) < s → x i = y i) → p (c x) = p (c y)
+structure IsSerreWeightLE (p : E → B) (s : ℤ) {n : ℕ} (c : SingularCube E n) : Prop where
+  /-- The weight bound is nonnegative. -/
+  nonneg : 0 ≤ s
+  /-- `p ∘ c` takes the same value at two points which agree in their coordinates of index less
+  than `s`. -/
+  factors : ∀ x y : Fin n → I, (∀ i : Fin n, (i : ℤ) < s → x i = y i) → p (c x) = p (c y)
 
-variable {p : C(E, B)} {s t : ℤ} {n : ℕ}
-
-/-- The characterization of a cube of Serre weight at most `s`: `s ≥ 0`, and `p ∘ c` takes the
-same value at two points which agree in their coordinates of index less than `s`. -/
-theorem isSerreWeightLE_iff {c : SingularCube E n} : c.IsSerreWeightLE p s ↔
-    0 ≤ s ∧ ∀ x y : Fin n → I, (∀ i : Fin n, (i : ℤ) < s → x i = y i) → p (c x) = p (c y) := by
-  rw [IsSerreWeightLE]
+variable {p : E → B} {s t : ℤ} {n : ℕ}
 
 /-- The Serre weight bound is monotone in the bound. -/
 theorem IsSerreWeightLE.mono {c : SingularCube E n} (h : c.IsSerreWeightLE p s) (hst : s ≤ t) :
-    c.IsSerreWeightLE p t := by
-  rw [isSerreWeightLE_iff] at h ⊢
-  exact ⟨h.1.trans hst, fun x y hxy ↦ h.2 x y fun i hi ↦ hxy i (hi.trans_le hst)⟩
+    c.IsSerreWeightLE p t :=
+  ⟨h.nonneg.trans hst, fun x y hxy ↦ h.factors x y fun i hi ↦ hxy i (hi.trans_le hst)⟩
 
 /-- No cube has negative Serre weight. -/
 theorem not_isSerreWeightLE_of_neg (c : SingularCube E n) (hs : s < 0) : ¬ c.IsSerreWeightLE p s :=
-  fun h ↦ ((isSerreWeightLE_iff.1 h).1.trans_lt hs).false
+  fun h ↦ (h.nonneg.trans_lt hs).false
 
 /-- Every `n`-cube has Serre weight at most `s` for `s ≥ n`. -/
 theorem isSerreWeightLE_of_le (c : SingularCube E n) (hs : (n : ℤ) ≤ s) :
     c.IsSerreWeightLE p s :=
-  isSerreWeightLE_iff.2 ⟨(Int.natCast_nonneg n).trans hs, fun _ _ hxy ↦
+  ⟨(Int.natCast_nonneg n).trans hs, fun _ _ hxy ↦
     congrArg (p ∘ c) (funext fun i ↦ hxy i ((Int.ofNat_lt.2 i.2).trans_le hs))⟩
 
 /-- A face of a cube of Serre weight at most `s` has Serre weight at most `s`. -/
 theorem IsSerreWeightLE.face {c : SingularCube E (n + 1)} (h : c.IsSerreWeightLE p s)
     (i : Fin (n + 1)) (t : I) : (face i t c).IsSerreWeightLE p s := by
-  rw [isSerreWeightLE_iff] at h ⊢
-  refine ⟨h.1, fun x y hxy ↦ ?_⟩
+  refine ⟨h.nonneg, fun x y hxy ↦ ?_⟩
   rw [face_apply, face_apply]
-  refine h.2 _ _ fun j hj ↦ ?_
+  refine h.factors _ _ fun j hj ↦ ?_
   rcases Fin.eq_self_or_eq_succAbove i j with rfl | ⟨k, rfl⟩
   · rw [Fin.insertNth_apply_same, Fin.insertNth_apply_same]
   · rw [Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
@@ -138,16 +134,15 @@ theorem IsSerreWeightLE.face {c : SingularCube E (n + 1)} (h : c.IsSerreWeightLE
 
 /-- A map `f` over `B` preserves the Serre weight. -/
 theorem IsSerreWeightLE.comp {c : SingularCube E n} (h : c.IsSerreWeightLE p s) (f : C(E, E'))
-    {p' : C(E', B)} (hf : p'.comp f = p) : IsSerreWeightLE p' s (f.comp c) := by
-  subst hf
-  rw [isSerreWeightLE_iff] at h ⊢
-  exact h
+    {p' : E' → B} (hf : p' ∘ f = p) : IsSerreWeightLE p' s (f.comp c) :=
+  ⟨h.nonneg, fun x y hxy ↦ (congrFun hf (c x)).trans
+    ((h.factors x y hxy).trans (congrFun hf (c y)).symm)⟩
 
 end SingularCube
 
 namespace CubicalChain
 
-variable (R : Type*) [Ring R] (p : C(E, B))
+variable (R : Type*) [Ring R] (p : E → B)
 
 /-- The **Serre filtration** of the unnormalized cubical `n`-chains: the chains supported on the
 cubes of Serre weight at most `s`. -/
@@ -189,8 +184,8 @@ theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : CubicalChain E R (
   | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
 
 /-- A map over `B` preserves the Serre filtration. -/
-theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : C(E', B)}
-    (hf : p'.comp f = p) {g : CubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
+theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → B}
+    (hf : p' ∘ f = p) {g : CubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
     map R f n g ∈ serreFiltration R p' s n := by
   -- `map R f n` is `lmapDomain R R f.comp` by definition, but its body is not exposed outside
   -- its defining module, so the two are identified on single cubes.
@@ -219,7 +214,7 @@ namespace NormalizedCubicalChain
 
 open CubicalChain
 
-variable (R : Type*) [Ring R] (p : C(E, B))
+variable (R : Type*) [Ring R] (p : E → B)
 
 /-- The **Serre filtration** of the normalized cubical `n`-chains: the image of the chains
 supported on the cubes of Serre weight at most `s`. -/
@@ -254,8 +249,8 @@ theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : NormalizedCubicalC
   exact ⟨_, CubicalChain.boundary_mem_serreFiltration hg, (boundary_mk R g).symm⟩
 
 /-- A map over `B` preserves the Serre filtration. -/
-theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : C(E', B)}
-    (hf : p'.comp f = p) {g : NormalizedCubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
+theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → B}
+    (hf : p' ∘ f = p) {g : NormalizedCubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
     map R f n g ∈ serreFiltration R p' s n := by
   obtain ⟨g, hg, rfl⟩ := hg
   exact ⟨_, CubicalChain.map_mem_serreFiltration f hf hg, (map_mk R f g).symm⟩
@@ -360,7 +355,7 @@ theorem serreFiltration_factors (f : E ⟶ E') {p' : E' ⟶ B} (hf : f ≫ p' = 
       HomologicalComplex.extendMap ((normalizedCubicalChainComplex R).map f) _) :=
   Subobject.extend_factors _ _ (HomologicalComplex.subobjectOfSubmodules_factors _
     fun _ _ hx ↦ NormalizedCubicalChain.map_mem_serreFiltration f.hom
-      (congrArg TopCat.Hom.hom hf) hx)
+      (congrArg (fun g : E ⟶ B ↦ ⇑g.hom) hf) hx)
 
 variable (R p) in
 /-- The **Serre spectral sequence** of `p : E ⟶ B`: the spectral sequence of the Serre filtration
