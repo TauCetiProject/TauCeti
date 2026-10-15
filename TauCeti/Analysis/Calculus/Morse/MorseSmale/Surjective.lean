@@ -143,7 +143,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   have hm0 : m σ₀ = 0 := by
     have hF : Continuous fun σ ↦ f (φ σ x) := hfs.continuous.comp hγ
     have h0 := eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
-      (a := fun σ ↦ θ (φ σ x) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ))
+      (g := fun σ ↦ θ (φ σ x) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ))
       ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
         ((continuous_const.inner hγ).mul
           ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply

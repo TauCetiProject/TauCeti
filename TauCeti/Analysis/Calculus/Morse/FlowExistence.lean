@@ -128,6 +128,7 @@ theorem isNegativeGradient_negativeGradientFlow (f : E → ℝ) (hf : LipschitzW
 
 /-- **The derivative of the negative-gradient flow carries the gradient along**:
 `Dφₜ(x) (∇f x) = ∇f (φₜ x)`. -/
+@[simp]
 theorem fderiv_negativeGradientFlow_apply_gradient (f : E → ℝ) (hf : LipschitzWith K (∇ f))
     (hfs : ContDiff ℝ 2 f) (t : ℝ) (x : E) :
     fderiv ℝ (negativeGradientFlow f hf t) x (∇ f x) = ∇ f (negativeGradientFlow f hf t x) := by
