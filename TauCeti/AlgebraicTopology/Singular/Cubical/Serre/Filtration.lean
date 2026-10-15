@@ -53,7 +53,8 @@ homology of `E` by `TauCeti.singularCubicalHomologyIso`.
   filtration on chains, as submodules.
 * `TauCeti.serreFiltration R p s`: the Serre filtration of the cubical cochain complex of `E`, by
   subcomplexes.
-* `TauCeti.serreSpectralSequence R p`: the Serre spectral sequence.
+* `TauCeti.serreSpectralSequence R p`: the Serre spectral sequence, with its first page
+  `TauCeti.serreSpectralSequenceFirstPageXIsoCokernel`.
 
 ## Main results
 
@@ -220,10 +221,12 @@ variable {R p}
 
 /-- A normalized chain lies in the `s`-th piece of the Serre filtration exactly when it is the
 class of an unnormalized chain supported on cubes of Serre weight at most `s`. -/
+@[simp]
 theorem mem_serreFiltration_iff {s : ℤ} {n : ℕ} (x : NormalizedCubicalChain E R n) :
-    x ∈ serreFiltration R p s n ↔
-      ∃ g ∈ CubicalChain.serreFiltration R p s n, Submodule.Quotient.mk g = x :=
-  Submodule.mem_map
+    x ∈ serreFiltration R p s n ↔ ∃ g : CubicalChain E R n,
+      (∀ c, g c ≠ 0 → c.IsSerreWeightLE p s) ∧ Submodule.Quotient.mk g = x := by
+  simp only [serreFiltration, Submodule.mem_map, CubicalChain.mem_serreFiltration_iff,
+    Submodule.mkQ_apply]
 
 /-- The class of a cube of Serre weight at most `s` lies in the `s`-th piece of the filtration. -/
 theorem ofCube_mem_serreFiltration {s : ℤ} {n : ℕ} {c : SingularCube E n}
@@ -341,10 +344,29 @@ variable (R p) in
 /-- The **Serre spectral sequence** of `p : E ⟶ B`: the spectral sequence of the Serre filtration
 of the cubical chains of `E`.  On its first page, numbered `2`, the object at `(p, q)` is the
 cohomology `H^{p+q}(F_{q+1} / F_q)` of a graded piece of the filtration
-(`CochainComplex.spectralSequenceFirstPageXIsoCokernel`). -/
-abbrev serreSpectralSequence :=
+(`TauCeti.serreSpectralSequenceFirstPageXIsoCokernel`). -/
+def serreSpectralSequence :=
   CochainComplex.spectralSequence
     (CochainComplex.filtrationFunctor (serreFiltration R p) (monotone_serreFiltration R p))
+
+variable (R p) in
+/-- The Serre spectral sequence is the spectral sequence of the filtration functor of the Serre
+filtration. -/
+theorem serreSpectralSequence_eq : serreSpectralSequence R p =
+    CochainComplex.spectralSequence
+      (CochainComplex.filtrationFunctor (serreFiltration R p) (monotone_serreFiltration R p)) := by
+  rw [serreSpectralSequence]
+
+/-- The first page of the Serre spectral sequence, numbered `2`: at `pq = (p, q)` it is the
+cohomology `H^{p+q}(F_{q+1} / F_q)` of a graded piece of the Serre filtration. -/
+def serreSpectralSequenceFirstPageXIsoCokernel (pq : ℤ × ℤ) :
+    ((serreSpectralSequence R p).page 2).X pq ≅
+      (cokernel ((CochainComplex.filtrationFunctor (serreFiltration R p)
+        (monotone_serreFiltration R p)).map (homOfLE
+          (CochainComplex.coe_le_coe_of_eq_add_one (rfl : pq.2 = pq.2) rfl)))).homology
+            (pq.1 + pq.2) :=
+  eqToIso (by rw [serreSpectralSequence_eq]) ≪≫
+    CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq _ _ rfl rfl _ rfl
 
 /-- **Strong convergence of the Serre spectral sequence.** On every page `r ≥ 2` with
 `q - r + 2 < 0` and `-(q + r - 1) ≤ p + q - 1`, the object at `pq = (p, q)` is the graded piece
@@ -358,6 +380,7 @@ def serreSpectralSequencePageXIsoGraded (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × �
           (pq.1 + pq.2)) :=
   have : Epi ((serreFiltration R p (pq.2 + r - 1)).arrow.f (pq.1 + pq.2 - 1)) :=
     epi_serreFiltration_arrow_f h₃
+  eqToIso (by rw [serreSpectralSequence_eq]) ≪≫
   CochainComplex.filtrationSpectralSequencePageXIsoEInfty _ _ r hr pq _ rfl
     ((serreFiltration R p _).isZero_homology_of_eq_bot (serreFiltration_eq_bot h₀) _)
     ((serreFiltration R p _).isZero_homology_cokernel_of_epi_arrow_f _) ≪≫
