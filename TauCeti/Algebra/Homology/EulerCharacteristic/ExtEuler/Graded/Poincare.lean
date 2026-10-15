@@ -13,10 +13,12 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 # The diagonal Ext Poincaré polynomial
 
 For graded modules `M` and `N`, the **diagonal Ext Poincaré polynomial**
-`TauCeti.diagonalExtPoincarePolynomial` is `∑ n < b, dim_k Extⁿ(M,N{n}) tⁿ`, truncated below a
-cohomological degree `b`. It records only the diagonal bigraded pieces `Ext^{n,n}(M,N)`. For a
-family `S` of graded modules, `TauCeti.diagonalExtPoincareMatrix` collects these polynomials
-into a matrix with `(i, j)` entry the polynomial of `(Sᵢ, Sⱼ)`.
+`TauCeti.diagonalExtPoincarePolynomial` is `∑ n < b, finrank_k Extⁿ(M,N{n}) tⁿ`, truncated below
+a cohomological degree `b`. It records only the diagonal bigraded pieces `Ext^{n,n}(M,N)`. The
+coefficients use the `Module.finrank` convention: they are the dimensions `dim_k Extⁿ(M,N{n})`
+when these Ext spaces are finite-dimensional, and an infinite-dimensional Ext group contributes
+`0`. For a family `S` of graded modules, `TauCeti.diagonalExtPoincareMatrix` collects these
+polynomials into a matrix with `(i, j)` entry the polynomial of `(Sᵢ, Sⱼ)`.
 
 Both are defined for arbitrary graded modules, and neither depends on `b` once `b` bounds the
 cohomological support (`TauCeti.diagonalExtPoincarePolynomial_eq_of_le` and
@@ -42,17 +44,18 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {I : Type*}
 
 variable (k) in
-/-- The **diagonal Ext Poincaré polynomial** `∑ n < b, dim_k Extⁿ(M,N{n}) tⁿ` of two graded
-modules, truncated below the cohomological degree `b`. It records only the diagonal bigraded
-pieces `Ext^{n,n}(M,N)`; when `M` has a linear resolution and `N` is concentrated in degree zero,
-these are the only nonzero pieces. -/
+/-- The **diagonal Ext Poincaré polynomial** `∑ n < b, finrank_k Extⁿ(M,N{n}) tⁿ` of two graded
+modules, truncated below the cohomological degree `b`. Its coefficients are `Module.finrank`, so
+they are the dimensions `dim_k Extⁿ(M,N{n})` when these are finite-dimensional and `0` otherwise.
+It records only the diagonal bigraded pieces `Ext^{n,n}(M,N)`; when `M` has a linear resolution
+and `N` is concentrated in degree zero, these are the only nonzero pieces. -/
 noncomputable def diagonalExtPoincarePolynomial (M N : GradedModuleCat.{v} 𝒜) (b : ℕ) :
     Polynomial ℤ :=
   ∑ n ∈ Finset.range b, Polynomial.monomial n (Module.finrank k (Ext.{w} M (N.shiftObj n) n) : ℤ)
 
 variable (k) in
 /-- The diagonal Ext Poincaré polynomial is the truncated sum of the monomials
-`dim_k Extⁿ(M,N{n}) tⁿ`. -/
+`finrank_k Extⁿ(M,N{n}) tⁿ`. -/
 theorem diagonalExtPoincarePolynomial_def (M N : GradedModuleCat.{v} 𝒜) (b : ℕ) :
     diagonalExtPoincarePolynomial.{w} k M N b =
       ∑ n ∈ Finset.range b,
@@ -60,8 +63,9 @@ theorem diagonalExtPoincarePolynomial_def (M N : GradedModuleCat.{v} 𝒜) (b : 
   rw [diagonalExtPoincarePolynomial]
 
 variable (k) in
-/-- The coefficient of `tⁿ` in the diagonal Ext Poincaré polynomial is `dim_k Extⁿ(M,N{n})`
-below the truncation degree, and zero from it on. -/
+/-- The coefficient of `tⁿ` in the diagonal Ext Poincaré polynomial is `finrank_k Extⁿ(M,N{n})`
+(the dimension when this Ext space is finite-dimensional, `0` otherwise) below the truncation
+degree, and zero from it on. -/
 @[simp]
 theorem coeff_diagonalExtPoincarePolynomial (M N : GradedModuleCat.{v} 𝒜) (b n : ℕ) :
     (diagonalExtPoincarePolynomial.{w} k M N b).coeff n =
@@ -84,7 +88,8 @@ theorem diagonalExtPoincarePolynomial_eq_of_le {b b' : ℕ}
 variable (k) in
 /-- The **diagonal Ext Poincaré matrix** of a family `S` of graded modules, truncated below the
 cohomological degree `b`: its `(i, j)` entry is the diagonal Ext Poincaré polynomial
-`∑ n < b, dim_k Extⁿ(Sᵢ, Sⱼ{n}) tⁿ`. -/
+`∑ n < b, finrank_k Extⁿ(Sᵢ, Sⱼ{n}) tⁿ`, whose coefficients are Ext dimensions when these are
+finite-dimensional (`Module.finrank` convention). -/
 noncomputable def diagonalExtPoincareMatrix (S : I → GradedModuleCat.{v} 𝒜) (b : ℕ) :
     Matrix I I (Polynomial ℤ) :=
   Matrix.of fun i j ↦ diagonalExtPoincarePolynomial.{w} k (S i) (S j) b
