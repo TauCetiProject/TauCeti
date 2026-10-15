@@ -13,4 +13,5 @@ max_batch_size = 128
 timeout_sec = 36000
 prerun_timeout_sec = 10800
 
-block_labels = ["keep", "hold", "wip", "human", "do-not-close"]
+# The source-confirmed stack policy applies this label before comment/closure.
+block_labels = ["keep", "hold", "wip", "human", "do-not-close", "stacked-pr"]

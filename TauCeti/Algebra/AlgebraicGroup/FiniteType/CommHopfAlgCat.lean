@@ -194,7 +194,7 @@ lemma pointsFunctor_obj (H : (FiniteTypeCommHopfAlgCat.{u, v} R)ᵒᵖ) :
 /-- The morphism part of `pointsFunctor` is pre-composition in the coordinate commutative
 Hopf algebra. -/
 lemma pointsFunctor_map {H K : (FiniteTypeCommHopfAlgCat.{u, v} R)ᵒᵖ} (φ : H ⟶ K) :
-    (pointsFunctor (R := R)).map φ = CommHopfAlgCat.mapPointsFunctor φ.unop.hom :=
+    (pointsFunctor (R := R)).map φ = CommHopfAlgCat.Hom.mapPointsFunctor φ.unop.hom :=
   rfl
 
 /-- Pointwise form of the morphism part of `pointsFunctor`: the image of a point `f` under `φ`
@@ -209,7 +209,7 @@ lemma pointsFunctor_map_app_apply_apply {H K : (FiniteTypeCommHopfAlgCat.{u, v} 
       (((pointsFunctor (R := R)).map φ).app A f).ofConv) h =
       f.ofConv (toBialgHom φ.unop (h : K.unop.obj)) := by
   rw [pointsFunctor_map]
-  exact CommHopfAlgCat.mapPointsFunctor_app_apply_apply (R := R) φ.unop.hom A f h
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (R := R) φ.unop.hom A f h
 
 end FiniteTypeCommHopfAlgCat
 

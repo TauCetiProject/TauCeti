@@ -147,7 +147,7 @@ dual `X`: both `F.obj (Y ⟶[C] B)` and `F.obj Y ⟶[D] F.obj B` are identified 
 `F.obj X ⊗ F.obj B`, through the pairing and its image. -/
 theorem ihomComparison_isIso_of_exactPairing (X Y : C) [ExactPairing X Y] [Closed Y]
     [Closed (F.obj Y)] :
-    IsIso (F.ihomComparison Y).natTrans := by
+    IsIso (F.ihomComparison Y) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro B
   let := F.mapExactPairing X Y
@@ -170,9 +170,9 @@ comparison of `F.obj Y` at `F.obj Z`, preceded by the tensor comparison of `F` a
 `F.obj (Y ⟶[C] 𝟙_ C) ⟶ (F.obj Y ⟶[D] 𝟙_ D)` of the duals. -/
 @[reassoc]
 theorem map_dualTensorIhom_app_comp_ihomComparison (Y Z : C) [Closed Y] [Closed (F.obj Y)] :
-    F.map ((TauCeti.dualTensorIhom Y).app Z) ≫ (F.ihomComparison Y).natTrans.app Z =
+    F.map ((TauCeti.dualTensorIhom Y).app Z) ≫ (F.ihomComparison Y).app Z =
       δ F (Y ⟶[C] 𝟙_ C) Z ≫
-        ((F.ihomComparison Y).natTrans.app (𝟙_ C) ≫ (ihom (F.obj Y)).map (η F)) ▷ F.obj Z ≫
+        ((F.ihomComparison Y).app (𝟙_ C) ≫ (ihom (F.obj Y)).map (η F)) ▷ F.obj Z ≫
         (TauCeti.dualTensorIhom (F.obj Y)).app (F.obj Z) := by
   apply uncurry_injective
   simp only [uncurry_eq, MonoidalCategory.whiskerLeft_comp, Category.assoc,
@@ -188,14 +188,14 @@ theorem map_dualTensorIhom_app_comp_ihomComparison (Y Z : C) [Closed Y] [Closed 
 and at the unit, and the dual-tensor comparison of `F.obj Y` is invertible at `F.obj Z`, then the
 image of the dual-tensor comparison of `Y` at `Z` is invertible. -/
 theorem isIso_map_dualTensorIhom_app (Y Z : C) [Closed Y] [Closed (F.obj Y)]
-    [IsIso ((F.ihomComparison Y).natTrans.app Z)]
-    [IsIso ((F.ihomComparison Y).natTrans.app (𝟙_ C))]
+    [IsIso ((F.ihomComparison Y).app Z)]
+    [IsIso ((F.ihomComparison Y).app (𝟙_ C))]
     [IsIso ((TauCeti.dualTensorIhom (F.obj Y)).app (F.obj Z))] :
     IsIso (F.map ((TauCeti.dualTensorIhom Y).app Z)) := by
   have : IsIso (F.map ((TauCeti.dualTensorIhom Y).app Z) ≫
-      (F.ihomComparison Y).natTrans.app Z) := by
+      (F.ihomComparison Y).app Z) := by
     rw [map_dualTensorIhom_app_comp_ihomComparison]
     infer_instance
-  exact IsIso.of_isIso_comp_right _ ((F.ihomComparison Y).natTrans.app Z)
+  exact IsIso.of_isIso_comp_right _ ((F.ihomComparison Y).app Z)
 
 end CategoryTheory.Functor

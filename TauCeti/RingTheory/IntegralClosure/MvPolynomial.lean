@@ -212,6 +212,20 @@ theorem finite_adjoin_of_transcendental {E : Type*} [Field E] [Algebra k E] {x :
   have : Module.Finite k[X] C := finite_polynomial k k⟮x⟯ L C
   exact Module.Finite.of_restrictScalars_finite k[X] (Algebra.adjoin k {x}) C
 
+/-- For `x` transcendental over `k`, the integral closure in `L` of the integral closure `R` of
+`k[x]` in `E` is a finite `R`-module: it is also the integral closure of `k[x]` in `L`, which
+is finite over `k[x]` with no separability hypothesis. -/
+theorem finite_integralClosure_integralClosure_adjoin {E : Type*} [Field E] [Algebra k E]
+    {x : E} (hx : Transcendental k x) (L : Type*) [Field L] [Algebra E L]
+    [FiniteDimensional k⟮x⟯ L] :
+    Module.Finite (integralClosure (Algebra.adjoin k {x}) E)
+      (integralClosure (integralClosure (Algebra.adjoin k {x}) E) L) := by
+  let R := integralClosure (Algebra.adjoin k {x}) E
+  let S := integralClosure R L
+  have : IsIntegralClosure S (Algebra.adjoin k {x}) L := IsIntegralClosure.tower_bot (A := R)
+  have : Module.Finite (Algebra.adjoin k {x}) S := finite_adjoin_of_transcendental k hx L S
+  exact Module.Finite.of_restrictScalars_finite (Algebra.adjoin k {x}) R S
+
 end Adjoin
 
 end IsIntegralClosure
