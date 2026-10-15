@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
 /-!
 # Linear splitting coordinates for distributions
@@ -76,7 +75,8 @@ end ModelFiber
 
 section Splitting
 
-variable {𝕜 E : Type*} [RCLike 𝕜]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
 
 /-- A smooth involutive distribution on a finite-dimensional normed space admits linear product
@@ -148,6 +148,8 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {k : ℕ}
     have hq := (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).apply_symm_apply q
     exact congrArg
       (fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e (e.symm p))).symm (e x)) hq
+  -- Unfold the two model-fibre memberships to expose their canonical tangent-space
+  -- identifications; no interface lemma rewrites both dependent fibres at once.
   change mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
       e.toDiffeomorph (e.symm p)
         ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).symm q) ∈
