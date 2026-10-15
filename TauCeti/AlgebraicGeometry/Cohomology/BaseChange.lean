@@ -7,9 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
-public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
 public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
-public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
@@ -167,14 +166,6 @@ private lemma isBaseChange_sectionsBaseChange [Module.Flat R R'] {W : X.Opens}
 lets instance search find the module structures on its cohomology. -/
 private abbrev structureModule (Z : Scheme.{u}) : Z.Modules := SheafOfModules.unit Z.ringCatSheaf
 
-variable (R) (X) in
-/-- The cohomology of the trivial line bundle is that of the structure sheaf. -/
-private def trivialCohomologyLinearEquiv (i : ℕ) :
-    Cohomology (InvertibleSheaf.trivial X).obj i ≃ₗ[R] Cohomology (structureModule X) i :=
-  cohomologyBaseLinearEquivOfIso R (M := (InvertibleSheaf.trivial X).obj)
-    (N := structureModule X) (eqToIso (InvertibleSheaf.trivial_obj X) ≪≫
-      TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf) i
-
 section TwoOpens
 
 section Instances
@@ -295,25 +286,17 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_trivial [Module.Flat R R']
     (Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hV 0)
     (Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hU' 0)
     (Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hV' 0)
-  exact ⟨((trivialCohomologyLinearEquiv R X 1).baseChange R R' _ _).trans
-    (e.trans (trivialCohomologyLinearEquiv R' Y 1).symm)⟩
+  let MX : X.Modules := structureModule X
+  let MY : Y.Modules := structureModule Y
+  let eX : Cohomology (InvertibleSheaf.trivial X).obj 1 ≃ₗ[R] Cohomology MX 1 :=
+    trivialCohomologyBaseLinearEquiv R X 1
+  let eY : Cohomology (InvertibleSheaf.trivial Y).obj 1 ≃ₗ[R'] Cohomology MY 1 :=
+    trivialCohomologyBaseLinearEquiv R' Y 1
+  exact ⟨(eX.baseChange R R' _ _).trans (e.trans eY.symm)⟩
 
 end CohomologyOne
 
 end TwoOpens
-
-variable (R) (X) in
-/-- The global sections of the structure sheaf as a module are its ring of global functions, as
-modules over the base ring. -/
-private def globalSectionsLinearEquiv : Γ(structureModule X, ⊤) ≃ₗ[R] Γ(X, ⊤) where
-  toFun s := s
-  invFun s := s
-  map_add' _ _ := rfl
-  -- Both actions multiply by the global function `baseRingToGlobalSections R X r`.
-  map_smul' r s := (congrArg (· * (show Γ(X, ⊤) from s))
-    (ConcreteCategory.congr_hom (Scheme.baseRingToStructurePresheaf_app_top R X) r)).symm
-  left_inv _ := rfl
-  right_inv _ := rfl
 
 include H in
 /-- **Flat base change for `H⁰(X, 𝒪_X)`.** For a quasi-compact quasi-separated scheme `X` over
@@ -327,10 +310,12 @@ theorem nonempty_linearEquiv_tensor_cohomology_zero_trivial [Module.Flat R R'] [
   have : IsScalarTower R R' Γ(Y, ⊤) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have h := isBaseChange_sectionsBaseChange H (W := ⊤) isCompact_univ isQuasiSeparated_univ
     (W' := ⊤) (Scheme.Hom.preimage_top g).symm
-  let eX := (trivialCohomologyLinearEquiv R X 0).trans
-    ((cohomologyZeroBaseLinearEquiv R X _).trans (globalSectionsLinearEquiv R X))
-  let eY := (trivialCohomologyLinearEquiv R' Y 0).trans
-    ((cohomologyZeroBaseLinearEquiv R' Y _).trans (globalSectionsLinearEquiv R' Y))
+  let eX := (trivialCohomologyBaseLinearEquiv R X 0).trans
+    ((cohomologyZeroBaseLinearEquiv R X (structureModule X)).trans
+      (structureSheafSectionsBaseLinearEquiv R X))
+  let eY := (trivialCohomologyBaseLinearEquiv R' Y 0).trans
+    ((cohomologyZeroBaseLinearEquiv R' Y (structureModule Y)).trans
+      (structureSheafSectionsBaseLinearEquiv R' Y))
   exact ⟨(eX.baseChange R R' _ _).trans (h.equiv.trans eY.symm)⟩
 
 end FlatBaseChange
