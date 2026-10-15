@@ -89,7 +89,9 @@ theorem exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
         exact Finset.mem_filter.mpr ⟨hb, fun y hy ↦
           (hnull b hb y hy x hx).not.mpr hne⟩
       refine (TauCeti.signInvariant_const 0).congr fun y hy ↦ ?_
-      exact (TauCeti.eval_finSuccEquiv_symm_eq_zero_of_map_eval_tail_eq_zero
-        (hvanish _ (htail y hy))).symm
+      symm
+      conv_lhs => rw [← Fin.cons_self_tail y]
+      rw [eval_eq_eval_mv_eval', AlgEquiv.apply_symm_apply, hvanish _ (htail y hy),
+        Polynomial.eval_zero]
 
 end Finset.IsIrreducibleBasis
