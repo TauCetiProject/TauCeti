@@ -166,13 +166,12 @@ noncomputable def homComplexData : DGCategoryData R (DGShiftClosure C) where
     ring
   id_comp {X Y q} g := by
     rw [comp_apply, castDeg_dgComp R (p := 0) (q := q + (Y.shift - X.shift))
-      (n := q + (Y.shift - X.shift)) (by rw [sub_self, add_zero]) rfl, dgId_dgComp, castDeg_self,
-      compSign, show (Y.shift - X.shift) * (0 + (X.shift - X.shift)) = 0 by ring,
-      Int.negOnePow_zero, one_smul]
+      (n := q + (Y.shift - X.shift)) (by rw [sub_self, add_zero]) rfl, dgId_dgComp, castDeg_self]
+    simp [compSign]
   comp_id {X Y p} f := by
     rw [comp_apply, dgComp_castDeg R (p := p + (Y.shift - X.shift)) (q := 0)
-      (n := p + (Y.shift - X.shift)) (by rw [sub_self, add_zero]) rfl, dgComp_dgId, castDeg_self,
-      compSign, sub_self, zero_mul, Int.negOnePow_zero, one_smul]
+      (n := p + (Y.shift - X.shift)) (by rw [sub_self, add_zero]) rfl, dgComp_dgId, castDeg_self]
+    simp [compSign]
 
 /-- The **shift closure** of a differential graded category: the objects `X[r]`, with Hom
 complexes `Hom(X[r], Y[s]) = Hom(X, Y)[s - r]`. -/
