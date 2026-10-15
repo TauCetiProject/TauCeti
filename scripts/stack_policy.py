@@ -164,6 +164,9 @@ class API:
                     if not p or (p["body"] or "") != child.body or p["headRefOid"] != child.head:
                         raise Gap("rendered PR prose/head identity changed; retry fresh metadata")
                     cache[key] = rendered_parents(p["bodyHTML"])
+                    if not cache[key]:
+                        emit(declaration_pr=child.number,
+                             gap="no complete unqualified rendered parent declaration; body-only inference declined")
             except BudgetGap:
                 raise
             except Exception as error:
