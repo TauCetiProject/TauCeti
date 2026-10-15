@@ -97,13 +97,9 @@ theorem ramificationIdx_restrict_mul (P : Place k₂ F₂) :
   apply Valuation.ordIndex_eq_mul_of_forall_ord_eq _ _
     (e := Valuation.ordIndex (P.valuation.comap (algebraMap F₁ F₂)))
   intro x
-  have hP (y : F₂) : Valuation.ord P.valuation y = P.ord y := by
-    rw [Valuation.ord_def, P.ord_def]
-  have hP₁ (y : F₁) : Valuation.ord (P.restrict k₁ F₁).valuation y =
-      (P.restrict k₁ F₁).ord y := by
-    rw [Valuation.ord_def, (P.restrict k₁ F₁).ord_def]
   rw [Valuation.ord_comap, Valuation.ord_comap,
-    IsScalarTower.algebraMap_apply F₀ F₁ F₂, hP, hP₁, ord_algebraMap_restrict k₁ F₁ P,
+    IsScalarTower.algebraMap_apply F₀ F₁ F₂, ord_valuation, ord_valuation,
+    ord_algebraMap_restrict k₁ F₁ P,
     ramificationIdx_def]
 
 /-- Read through the identification `(P ∩ F₁) ∩ F₀ = P ∩ F₀` of `TauCeti.Place.restrict_restrict`,

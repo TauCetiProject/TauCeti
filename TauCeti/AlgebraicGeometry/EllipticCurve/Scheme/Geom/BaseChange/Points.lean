@@ -37,6 +37,8 @@ through divisors of points, such as points of exact order `N`, pull back along b
   `E ×_S E`, as a point of the base change of `E` to `E`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.toBaseChangeSelf hg P'`: the morphism from `E'` to
   the base change of `E` to `E`, lying over the morphism `S' ⟶ E` given by an `S'`-point `P'`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsEquivOfIsPullback hg h0`: the `S'`-points of
+  `E'` are the points of `E` with values in `S'`, as groups.
 
 ## Main results
 
@@ -51,9 +53,13 @@ through divisors of points, such as points of exact order `N`, pull back along b
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_universalPoint`: every point of
   every base change of `E` is the base change of the universal point, along the pullback square
   `isPullback_toBaseChangeSelf`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_left_apply_eq_zero_iff`: the base
-  change `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the
-  zero section at `f s'`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_zero_of_isPullback`: the zero section of
+  `E'` is the base change of the zero section of `E`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.left_apply_eq_zero_iff_of_isPullback`: an
+  `S'`-point of `E'` meets the zero section at `s'` exactly when its image in `E` meets the zero
+  section of `E` there; in particular (`pointsPullback_left_apply_eq_zero_iff`) the base change
+  `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the zero
+  section at `f s'`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_pointsPullback_left`: the ideal sheaf of `P'`
   is the inverse image of the ideal sheaf of `P` along `g`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`: the inverse image of
@@ -266,6 +272,33 @@ theorem comp_pointsPullback_left_eq_comp_zero_iff (P : 𝟙_ (Over S) ⟶ Over.m
   ⟨fun h ↦ by simpa [h0] using congr($h ≫ g),
     fun h ↦ hg.hom_ext (by simpa [h0] using h) (by simp)⟩
 
+include hg h0 in
+/-- **The zero section of a base change is the base change of the zero section.** For a pullback
+square of elliptic curves over `f : S' ⟶ S`, the square formed by the zero sections, `f` and `g`
+is a pullback square. -/
+theorem isPullback_zero_of_isPullback : IsPullback E'.zero f g E.zero := by
+  refine IsPullback.of_right ?_ h0 hg.flip
+  rw [zero_comp_structureMap, zero_comp_structureMap]
+  exact IsPullback.of_horiz_isIso ⟨by simp⟩
+
+include hg h0 in
+/-- **A section of a base change meets the zero section where its image does.** For a pullback
+square of elliptic curves over `f : S' ⟶ S`, an `S'`-point `P` of `E'` meets the zero section of
+`E'` at a point `s'` of `S'` exactly when `g` sends `P s'` to the value of the zero section of `E`
+at `f s'`. -/
+theorem left_apply_eq_zero_iff_of_isPullback (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap)
+    (s' : S') : P.left s' = E'.zero s' ↔ g (P.left s') = E.zero (f s') := by
+  refine ⟨fun h ↦ by rw [h, ← Scheme.Hom.comp_apply, h0, Scheme.Hom.comp_apply], fun h ↦ ?_⟩
+  -- `P s'` lies in the fibre product `E' ×_E S` of `g` and the zero section, which is `S'`
+  have hP := isPullback_zero_of_isPullback hg h0
+  obtain ⟨z, hz, -⟩ := Scheme.Pullback.exists_preimage_pullback (P.left s') (f s') h
+  have hw : E'.zero (hP.isoPullback.inv z) = P.left s' := by
+    rw [← Scheme.Hom.comp_apply, IsPullback.isoPullback_inv_fst, hz]
+  have hs : hP.isoPullback.inv z = s' := by
+    rw [← section_apply E'.zero_comp_structureMap (hP.isoPullback.inv z), hw,
+      section_apply (left_comp_structureMap P)]
+  rw [← hw, hs]
+
 /-- **A base-changed point meets the zero section exactly over the points where the original
 point does.** For a pullback square of elliptic curves over `f : S' ⟶ S` and an `S`-point `P` of
 `E`, the base change `P'` of `P` agrees with the zero section of `E'` at a point `s'` of `S'` if and
@@ -273,19 +306,8 @@ only if `P` agrees with the zero section of `E` at `f s'`. -/
 theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
     (s' : S') :
     (pointsPullback hg h0 P).left s' = E'.zero s' ↔ P.left (f s') = E.zero (f s') := by
-  -- both sides are read at the point `t : Spec κ(s') ⟶ S'`, where they become equalities of
-  -- morphisms; they are chained with `Iff.trans` since the point `p` of `Spec κ(s')` is typed in
-  -- `Spec (.of _)` by `comp_eq_comp_iff_of_section`, which blocks `rw`
-  obtain ⟨p⟩ : Nonempty (Spec (S'.residueField s')) := inferInstance
-  have key {T : Scheme.{u}} {X : Scheme.{u}} (a b : T ⟶ X) (z y : T) (hz : z = y) :
-      a z = b z ↔ a y = b y := by
-    rw [hz]
-  refine (key _ _ _ _ (Scheme.fromSpecResidueField_apply s' p)).symm.trans
-    ((comp_eq_comp_iff_of_section (left_comp_structureMap _) E'.zero_comp_structureMap
-      (S'.fromSpecResidueField s') p).symm.trans
-        ((comp_pointsPullback_left_eq_comp_zero_iff hg h0 P _).trans ((comp_eq_comp_iff_of_section
-          (left_comp_structureMap P) E.zero_comp_structureMap (S'.fromSpecResidueField s' ≫ f)
-            p).trans (key _ _ _ _ (congrArg f (Scheme.fromSpecResidueField_apply s' p))))))
+  rw [left_apply_eq_zero_iff_of_isPullback hg h0, ← Scheme.Hom.comp_apply,
+    pointsPullback_left_comp, Scheme.Hom.comp_apply]
 
 /-- **The divisor of a base-changed point.** The ideal sheaf of the base change `P'` of an
 `S`-point `P` of `E`, which cuts out the divisor `[P']` on `E'`, is the inverse image along `g` of
@@ -358,6 +380,38 @@ theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
       simp [i, i', neg_comp_of_isPullback hg h0, reassoc_of% hρ]
     rw [key]
     exact hj.trans (Scheme.Hom.le_ker_comp _ _)
+
+/-! ### Points of a base change as points of the original curve -/
+
+/-- **Points of a base change are points of the original curve.** For a morphism `g : E' ⟶ E` of
+elliptic curves lying over `f : S' ⟶ S`, forming a pullback square with the structure morphisms
+and carrying the zero section of `E'` to that of `E`, composing with `g` identifies the group of
+`S'`-points of `E'` with the group of points of `E` with values in `S'`, viewed as a scheme over
+`S` through `f`. -/
+noncomputable def pointsEquivOfIsPullback :
+    (𝟙_ (Over S') ⟶ Over.mk E'.structureMap) ≃* (Over.mk f ⟶ Over.mk E.structureMap) where
+  toFun P := Over.homMk (P.left ≫ g) (by simp [hg.w])
+  invFun x := Over.homMk (hg.lift x.left (𝟙 S') (by simpa using Over.w x)) (by simp)
+  left_inv P := point_ext hg (by simp)
+  right_inv x := by ext1; simp
+  map_mul' P Q := by
+    ext1
+    simp only [Over.homMk_left]
+    rw [mul_left_comp_of_isPullback hg h0, hom_mul_left]
+    congr 1
+
+/-- The point of `E` given by an `S'`-point `P` of `E'` is `P ≫ g`. -/
+@[simp]
+theorem pointsEquivOfIsPullback_apply_left (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    (pointsEquivOfIsPullback hg h0 P).left = P.left ≫ g :=
+  (rfl)
+
+/-- The `S'`-point of `E'` given by a point `x` of `E` with values in `S'` is the unique section
+`P` of `E'` with `P ≫ g = x`. -/
+@[reassoc (attr := simp)]
+theorem pointsEquivOfIsPullback_symm_apply_left_comp (x : Over.mk f ⟶ Over.mk E.structureMap) :
+    ((pointsEquivOfIsPullback hg h0).symm x).left ≫ g = x.left :=
+  hg.lift_fst _ _ _
 
 end EllipticCurveGeom
 

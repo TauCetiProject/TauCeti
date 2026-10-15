@@ -140,8 +140,10 @@ jobs:
           python3 scripts/test_lint_scope.py
           python3 scripts/test_bors_scope_approval.py
           python3 scripts/test_bors_staging_identity.py
+          python3 scripts/test_bors_train_identity.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
+          python3 scripts/test_dependency_warm.py
           python3 scripts/test_duplicate_audit_workflow.py
           python3 scripts/test_ci_host_resources.py
           python3 scripts/test_web_pins.py
@@ -220,6 +222,27 @@ jobs:
             lake exe cache get!
           fi
 
+      # Publish only official Mathlib downloads before TauCeti source executes, so a cold
+      # root compilation cannot delay warming for other jobs. PR builds remain restore-only.
+      # GitHub cache keys are immutable; an exact restore needs no redundant save, while a
+      # prefix restore is extended with the newly downloaded hashes under the exact current key.
+      # Pruning is essential: without it, every prefix restore would carry all old pins forward
+      # and each immutable snapshot would grow monotonically. If pruning itself breaks, leave main
+      # green but skip publication rather than saving an unbounded snapshot.
+      - name: Prune Mathlib's download cache to the current pin
+        id: mathlib_ltar_prune
+        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        run: lake exe cache clean
+
+      - name: Save Mathlib's compressed download cache
+        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' && steps.mathlib_ltar_prune.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
+          key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
       # --- Lake artifact-cache restore (dormant until configured) --------------------
       # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without
       # this, the post-merge run recompiled the whole library from scratch on every push,
@@ -290,28 +313,6 @@ jobs:
           # sandboxed build in pr-build.yml and as the publish step below.
           LAKE_NO_CACHE: "true"
         run: lake build
-
-      # Main and already-audited merge-group commits publish TauCeti's Lake artifacts through the
-      # same secret-isolated workflow. Ordinary PR heads remain restore-only and cannot populate
-      # a cache consumed by later builds.
-      # GitHub cache keys are immutable; an exact restore needs no redundant save, while a
-      # prefix restore is extended with the newly downloaded hashes under the exact current key.
-      # Pruning is essential: without it, every prefix restore would carry all old pins forward
-      # and each immutable snapshot would grow monotonically. If pruning itself breaks, leave main
-      # green but skip publication rather than saving an unbounded snapshot.
-      - name: Prune Mathlib's download cache to the current pin
-        id: mathlib_ltar_prune
-        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' }}
-        continue-on-error: true
-        run: lake exe cache clean
-
-      - name: Save Mathlib's compressed download cache
-        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' && steps.mathlib_ltar_prune.outcome == 'success' }}
-        continue-on-error: true
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
-          key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
 
       # The same shared checks as trusted PR builds, compiled from merged main's sources.
       - name: Shared ownership and axiom audits

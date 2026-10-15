@@ -47,6 +47,8 @@ second-order terms differ by a quadratic form that is `o(‖x' - x‖ ^ 2)`, hen
 
 ## Main statements
 
+* `TauCeti.mul_norm_sub_le_norm_smul_add_smul_sub_of_mem_subdifferential` — the interpolation
+  `x ↦ (1 - t) • x + t • y`, `y ∈ ∂f(x)`, expands distances by at least the factor `1 - t`;
 * `TauCeti.norm_sub_le_norm_add_sub_add_of_mem_subdifferential` — the resolvent of the
   subdifferential is nonexpansive;
 * `TauCeti.isLittleO_of_forall_mem_subdifferential_norm_sub_le` — a first-order expansion of the
@@ -96,21 +98,46 @@ section InnerProduct
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {f : E → EReal}
 
+/-- **The interpolation towards the subdifferential is expanding.** If `y₁ ∈ ∂f(x₁)`,
+`y₂ ∈ ∂f(x₂)` and `0 ≤ t`, then
+`(1 - t) * ‖x₁ - x₂‖ ≤ ‖((1 - t) • x₁ + t • y₁) - ((1 - t) • x₂ + t • y₂)‖`. In particular, for
+`t < 1` the interpolating map `x ↦ (1 - t) • x + t • y`, `y ∈ ∂f(x)`, is injective. -/
+theorem mul_norm_sub_le_norm_smul_add_smul_sub_of_mem_subdifferential {x₁ x₂ y₁ y₂ : E} {t : ℝ}
+    (ht : 0 ≤ t) (h₁ : y₁ ∈ subdifferential (innerₗ E) f x₁)
+    (h₂ : y₂ ∈ subdifferential (innerₗ E) f x₂) :
+    (1 - t) * ‖x₁ - x₂‖ ≤ ‖(1 - t) • x₁ + t • y₁ - ((1 - t) • x₂ + t • y₂)‖ := by
+  have hmono := apply_le_apply_of_mem_subdifferential (innerₗ E) h₁ h₂
+  rw [innerₗ_apply_apply, innerₗ_apply_apply] at hmono
+  have hpos : 0 ≤ ⟪x₁ - x₂, y₁ - y₂⟫_ℝ := by
+    rw [← neg_sub x₂ x₁, inner_neg_left, inner_sub_right]
+    linarith
+  have hinner : ⟪(1 - t) • x₁ + t • y₁ - ((1 - t) • x₂ + t • y₂), x₁ - x₂⟫_ℝ =
+      (1 - t) * ‖x₁ - x₂‖ ^ 2 + t * ⟪x₁ - x₂, y₁ - y₂⟫_ℝ := by
+    rw [show (1 - t) • x₁ + t • y₁ - ((1 - t) • x₂ + t • y₂) =
+        (1 - t) • (x₁ - x₂) + t • (y₁ - y₂) by simp only [smul_sub]; abel,
+      inner_add_left, inner_smul_left, inner_smul_left, real_inner_self_eq_norm_sq,
+      real_inner_comm (y₁ - y₂)]
+    simp
+  rcases (norm_nonneg (x₁ - x₂)).eq_or_lt with h0 | h0
+  · rw [← h0, mul_zero]
+    exact norm_nonneg _
+  refine le_of_mul_le_mul_right ?_ h0
+  calc (1 - t) * ‖x₁ - x₂‖ * ‖x₁ - x₂‖ ≤ (1 - t) * ‖x₁ - x₂‖ ^ 2 + t * ⟪x₁ - x₂, y₁ - y₂⟫_ℝ := by
+        nlinarith [mul_nonneg ht hpos]
+    _ ≤ _ := by rw [← hinner]; exact real_inner_le_norm _ _
+
 /-- **The resolvent of the subdifferential is nonexpansive.** If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`,
 then `‖x₁ - x₂‖ ≤ ‖(x₁ + y₁) - (x₂ + y₂)‖`. Thus `x + y ↦ x`, for `y ∈ ∂f(x)`, is a well-defined
 `1`-Lipschitz map, the resolvent `(I + ∂f)⁻¹`. -/
 theorem norm_sub_le_norm_add_sub_add_of_mem_subdifferential {x₁ x₂ y₁ y₂ : E}
     (h₁ : y₁ ∈ subdifferential (innerₗ E) f x₁) (h₂ : y₂ ∈ subdifferential (innerₗ E) f x₂) :
     ‖x₁ - x₂‖ ≤ ‖x₁ + y₁ - (x₂ + y₂)‖ := by
-  have hmono := apply_le_apply_of_mem_subdifferential (innerₗ E) h₁ h₂
-  rw [innerₗ_apply_apply, innerₗ_apply_apply] at hmono
-  have hpos : 0 ≤ ⟪x₁ - x₂, y₁ - y₂⟫_ℝ := by
-    rw [← neg_sub x₂ x₁, inner_neg_left, inner_sub_right]
-    linarith
-  have hsq : ‖x₁ + y₁ - (x₂ + y₂)‖ ^ 2 =
-      ‖x₁ - x₂‖ ^ 2 + 2 * ⟪x₁ - x₂, y₁ - y₂⟫_ℝ + ‖y₁ - y₂‖ ^ 2 := by
-    rw [show x₁ + y₁ - (x₂ + y₂) = (x₁ - x₂) + (y₁ - y₂) by abel, norm_add_sq_real]
-  exact le_of_pow_le_pow_left₀ two_ne_zero (norm_nonneg _) (by nlinarith [sq_nonneg ‖y₁ - y₂‖])
+  have h := mul_norm_sub_le_norm_smul_add_smul_sub_of_mem_subdifferential (t := 1 / 2)
+    (by norm_num) h₁ h₂
+  rw [show (1 - 1 / 2 : ℝ) • x₁ + (1 / 2 : ℝ) • y₁ - ((1 - 1 / 2 : ℝ) • x₂ + (1 / 2 : ℝ) • y₂) =
+      (1 / 2 : ℝ) • (x₁ + y₁ - (x₂ + y₂)) by module, norm_smul] at h
+  norm_num at h
+  linarith
 
 /-- **A first-order expansion of the subdifferential gives a second-order expansion of the
 function.** Suppose `f : E → EReal` has subgradients at every point near `x`, and that these
