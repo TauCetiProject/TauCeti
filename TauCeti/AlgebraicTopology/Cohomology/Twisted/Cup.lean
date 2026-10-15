@@ -145,9 +145,8 @@ lemma twistedCup_space_naturality (p q n : ℕ) (h : p + q = n)
       twistedChainComplexMap f (L ⊗ K)) ≫ twistedAlexanderWhitneyDiagonal L K =
         twistedAlexanderWhitneyDiagonal ((pullback f.hom).obj L) ((pullback f.hom).obj K) ≫
           (twistedChainComplexMap f L ⊗ₘ twistedChainComplexMap f K) := by
-    rw [Category.assoc, twistedAlexanderWhitneyDiagonal_space_naturality,
-      ← Category.assoc, ← Category.assoc, ← twistedChainComplexCoefficientMap_comp,
-      Iso.inv_hom_id, twistedChainComplexCoefficientMap_id, Category.id_comp]
+    rw [Category.assoc, twistedAlexanderWhitneyDiagonal_space_naturality]
+    simp [← Category.assoc, ← twistedChainComplexCoefficientMap_comp]
   have hcup := TauCeti.ChainComplex.cup_naturality
     (twistedAlexanderWhitneyDiagonal L K) μ
     (twistedAlexanderWhitneyDiagonal ((pullback f.hom).obj L) ((pullback f.hom).obj K))

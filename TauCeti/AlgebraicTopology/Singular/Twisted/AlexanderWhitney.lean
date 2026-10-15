@@ -113,11 +113,12 @@ lemma twistedAlexanderWhitneyDiagonal_naturality (η : L ⟶ L') (θ : K ⟶ K')
     (twistedChainComplexIsoAlternatingFaceMapComplex K').hom)).1
   simp only [Category.assoc, twistedAlexanderWhitneyDiagonal_comp_comparison,
     twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality_assoc]
-  rw [← Functor.map_comp_assoc,
-    twistedChainsTensorDiagonal_naturality, Functor.map_comp, Category.assoc,
-    SimplicialObject.alexanderWhitney_naturality]
-  rw [tensorHom_comp_tensorHom, twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality, ← tensorHom_comp_tensorHom,
+  rw [← Functor.map_comp_assoc, twistedChainsTensorDiagonal_naturality]
+  simp only [Functor.map_comp, Category.assoc]
+  rw [SimplicialObject.alexanderWhitney_naturality]
+  simp only [tensorHom_comp_tensorHom,
+    twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality]
+  simp only [← tensorHom_comp_tensorHom,
     twistedAlexanderWhitneyDiagonal_comp_comparison_assoc]
 
 section Space
@@ -136,13 +137,13 @@ lemma twistedAlexanderWhitneyDiagonal_space_naturality :
     (twistedChainComplexIsoAlternatingFaceMapComplex K).hom)).1
   simp only [Category.assoc, twistedAlexanderWhitneyDiagonal_comp_comparison,
     twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality_assoc]
-  rw [← Functor.map_comp_assoc, twistedChainsTensorDiagonal_space_naturality,
-    Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc,
-    SimplicialObject.alexanderWhitney_naturality]
-  rw [tensorHom_comp_tensorHom,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality,
-    ← tensorHom_comp_tensorHom, twistedAlexanderWhitneyDiagonal_comp_comparison_assoc,
+  rw [← Functor.map_comp_assoc, twistedChainsTensorDiagonal_space_naturality]
+  simp only [Functor.map_comp, Category.assoc]
+  rw [SimplicialObject.alexanderWhitney_naturality]
+  simp only [tensorHom_comp_tensorHom,
+    twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality]
+  simp only [← tensorHom_comp_tensorHom,
+    twistedAlexanderWhitneyDiagonal_comp_comparison_assoc,
     twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality_assoc]
 
 end Space
