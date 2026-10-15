@@ -58,59 +58,6 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-/-- Encoding commutes with restriction, as an identity of maps. -/
-private theorem toRelationalConfiguration_comp_comap {V W : Type*} (f : V → W) :
-    SimpleGraph.toRelationalConfiguration ∘ SimpleGraph.comap f =
-      restrict f ∘ (SimpleGraph.toRelationalConfiguration : SimpleGraph W → _) :=
-  funext fun G => SimpleGraph.toRelationalConfiguration_comap f G
-
-/-- A law on configurations concentrated on simple graphs is the encoding of its pullback to
-simple graphs. -/
-private theorem map_comap_toRelationalConfiguration {V : Type*} [Countable V]
-    {μ : Measure (RelationalConfiguration Language.graph V)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
-    (μ.comap SimpleGraph.toRelationalConfiguration).map SimpleGraph.toRelationalConfiguration =
-      μ := by
-  rw [SimpleGraph.measurableEmbedding_toRelationalConfiguration.map_comap,
-    SimpleGraph.range_toRelationalConfiguration]
-  exact Measure.restrict_eq_self_of_ae_mem hμ
-
-/-- The pullback to simple graphs of a probability law concentrated on simple graphs is a
-probability law. -/
-private theorem isProbabilityMeasure_comap_toRelationalConfiguration {V : Type*} [Countable V]
-    {μ : Measure (RelationalConfiguration Language.graph V)} [IsProbabilityMeasure μ]
-    (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
-    IsProbabilityMeasure (μ.comap SimpleGraph.toRelationalConfiguration) :=
-  SimpleGraph.measurableEmbedding_toRelationalConfiguration.isProbabilityMeasure_comap <| by
-    rwa [SimpleGraph.range_toRelationalConfiguration]
-
-/-- Restricting a law concentrated on simple graphs gives a law concentrated on simple graphs. -/
-private theorem ae_isSimpleGraph_map_restrict {V W : Type*} [Countable V] (f : V → W)
-    {μ : Measure (RelationalConfiguration Language.graph W)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
-    ∀ᵐ c ∂μ.map (restrict f), IsSimpleGraph c := by
-  rw [ae_map_iff (measurable_restrict f).aemeasurable measurableSet_setOf_isSimpleGraph]
-  filter_upwards [hμ] with c hc using hc.restrict f
-
-/-- For laws concentrated on simple graphs, pulling back to simple graphs commutes with
-restriction. -/
-private theorem map_comap_comap_toRelationalConfiguration {V W : Type*} [Countable V]
-    [Countable W] (f : V → W) {μ : Measure (RelationalConfiguration Language.graph W)}
-    (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
-    (μ.comap SimpleGraph.toRelationalConfiguration).map (SimpleGraph.comap f) =
-      (μ.map (restrict f)).comap SimpleGraph.toRelationalConfiguration := by
-  refine SimpleGraph.measurableEmbedding_toRelationalConfiguration.map_injective ?_
-  rw [Measure.map_map SimpleGraph.measurable_toRelationalConfiguration
-      (SimpleGraph.measurable_comap _), toRelationalConfiguration_comp_comap,
-    ← Measure.map_map (measurable_restrict _) SimpleGraph.measurable_toRelationalConfiguration,
-    map_comap_toRelationalConfiguration hμ,
-    map_comap_toRelationalConfiguration (ae_isSimpleGraph_map_restrict f hμ)]
-
-/-- The encoding of a law on simple graphs is concentrated on simple graphs. -/
-private theorem ae_isSimpleGraph_map_toRelationalConfiguration {V : Type*} [Countable V]
-    (μ : Measure (SimpleGraph V)) :
-    ∀ᵐ c ∂μ.map SimpleGraph.toRelationalConfiguration, IsSimpleGraph c :=
-  SimpleGraph.measurableEmbedding_toRelationalConfiguration.ae_map_iff.2
-    (ae_of_all _ SimpleGraph.isSimpleGraph_toRelationalConfiguration)
-
 namespace ExchangeableGraphLaw
 
 /-- The **exchangeable relational law of an exchangeable graph law**: its marginals, encoded as
@@ -120,7 +67,7 @@ def toRelationalLaw (L : ExchangeableGraphLaw) : ExchangeableRelationalLaw Langu
   prob _ := inferInstance
   consistent f := by
     rw [Measure.map_map (measurable_restrict _) SimpleGraph.measurable_toRelationalConfiguration,
-      ← toRelationalConfiguration_comp_comap,
+      ← SimpleGraph.toRelationalConfiguration_comp_comap,
       ← Measure.map_map SimpleGraph.measurable_toRelationalConfiguration
         (SimpleGraph.measurable_comap _), L.consistent]
 
@@ -132,7 +79,7 @@ theorem toRelationalLaw_law (L : ExchangeableGraphLaw) (n : ℕ) :
 graphs. -/
 theorem ae_isSimpleGraph_toRelationalLaw_law (L : ExchangeableGraphLaw) (n : ℕ) :
     ∀ᵐ c ∂L.toRelationalLaw.law n, IsSimpleGraph c :=
-  ae_isSimpleGraph_map_toRelationalConfiguration _
+  SimpleGraph.ae_isSimpleGraph_map_toRelationalConfiguration _
 
 /-- **Exchangeable graph laws are the exchangeable relational laws of the language of graphs whose
 marginals are concentrated on simple graphs**, that is, on symmetric irreflexive configurations.
@@ -142,13 +89,13 @@ def relationalLawEquiv : ExchangeableGraphLaw ≃
   toFun L := ⟨L.toRelationalLaw, L.ae_isSimpleGraph_toRelationalLaw_law⟩
   invFun μ :=
     { law n := (μ.1.law n).comap SimpleGraph.toRelationalConfiguration
-      prob n := isProbabilityMeasure_comap_toRelationalConfiguration (μ.2 n)
+      prob n := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration (μ.2 n)
       consistent {_ l} f := by
-        rw [map_comap_comap_toRelationalConfiguration _ (μ.2 l), μ.1.consistent] }
+        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ (μ.2 l), μ.1.consistent] }
   left_inv L := ext fun n =>
     SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_map (L.law n)
   right_inv μ := Subtype.ext <| ExchangeableRelationalLaw.ext fun n =>
-    map_comap_toRelationalConfiguration (μ.2 n)
+    SimpleGraph.map_comap_toRelationalConfiguration (μ.2 n)
 
 @[simp]
 theorem coe_relationalLawEquiv (L : ExchangeableGraphLaw) :
@@ -177,7 +124,7 @@ def toRelationalLaw (L : InfiniteExchangeableGraphLaw) :
   prob := inferInstance
   exchangeable σ := by
     rw [Measure.map_map (measurable_restrict _) SimpleGraph.measurable_toRelationalConfiguration,
-      ← toRelationalConfiguration_comp_comap,
+      ← SimpleGraph.toRelationalConfiguration_comp_comap,
       ← Measure.map_map SimpleGraph.measurable_toRelationalConfiguration
         (SimpleGraph.measurable_comap _), L.exchangeable]
 
@@ -189,7 +136,7 @@ theorem toRelationalLaw_law (L : InfiniteExchangeableGraphLaw) :
 graphs. -/
 theorem ae_isSimpleGraph_toRelationalLaw_law (L : InfiniteExchangeableGraphLaw) :
     ∀ᵐ c ∂L.toRelationalLaw.law, IsSimpleGraph c :=
-  ae_isSimpleGraph_map_toRelationalConfiguration _
+  SimpleGraph.ae_isSimpleGraph_map_toRelationalConfiguration _
 
 /-- **Exchangeable laws on infinite graphs are the exchangeable relational laws of the language of
 graphs on `ℕ` concentrated on simple graphs**, that is, on symmetric irreflexive configurations.
@@ -199,12 +146,12 @@ def relationalLawEquiv : InfiniteExchangeableGraphLaw ≃
   toFun L := ⟨L.toRelationalLaw, L.ae_isSimpleGraph_toRelationalLaw_law⟩
   invFun μ :=
     { law := μ.1.law.comap SimpleGraph.toRelationalConfiguration
-      prob := isProbabilityMeasure_comap_toRelationalConfiguration μ.2
+      prob := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration μ.2
       exchangeable σ := by
-        rw [map_comap_comap_toRelationalConfiguration _ μ.2, μ.1.exchangeable] }
+        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ μ.2, μ.1.exchangeable] }
   left_inv L := ext <| SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_map L.law
   right_inv μ := Subtype.ext <| InfiniteExchangeableRelationalLaw.ext <|
-    map_comap_toRelationalConfiguration μ.2
+    SimpleGraph.map_comap_toRelationalConfiguration μ.2
 
 @[simp]
 theorem coe_relationalLawEquiv (L : InfiniteExchangeableGraphLaw) :
