@@ -7,14 +7,17 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
 # The spectral sequence of the twisted complex
 
 The canonical index filtration `TwistingCocycle.twistedIndexSubobject` gives a spectral sequence
-of the twisted cochain complex. Finite bounds on the generator indices identify its stable pages
-with the graded pieces of the filtered cohomology, proving strong convergence.
+of the twisted cochain complex. Strong convergence follows from the generic
+`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite` in
+`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence`, using
+`TwistingCocycle.twistedIndexSubobject_eq_bot` and
+`TwistingCocycle.twistedIndexSubobject_eq_top` to supply the finite filtration bounds.
 
 ## References
 
@@ -50,20 +53,5 @@ noncomputable abbrev indexSpectralSequence :=
   CochainComplex.spectralSequence
     (CochainComplex.filtrationFunctor
       (m.twistedIndexSubobject hM) (m.twistedIndexSubobject_mono hM))
-
-/-- **Strong convergence of the index spectral sequence.** If every index lies in the interval
-`(a, b]`, then on every page `r ≥ 2` with `q - r + 2 ≤ a` and `b ≤ q + r - 1`, the object at
-`pq = (p, q)` is the graded piece `F_{q+1} H^{p+q} / F_q H^{p+q}` of the filtration of the
-cohomology `H^{p+q}` of the twisted complex (identified with the abutment by
-`CochainComplex.filtrationAbutmentIso`). -/
-noncomputable def indexSpectralSequencePageXIsoGraded {a b : ℤ} (ha : ∀ x, a < ind x)
-    (hb : ∀ x, ind x ≤ b) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a)
-    (hrb : b ≤ pq.2 + r - 1) :
-    ((m.indexSpectralSequence dM hM).page r).X pq ≅
-      cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor
-        (m.twistedIndexSubobject hM) (m.twistedIndexSubobject_mono hM))).abutmentFiltrationMap pq.2
-          (pq.1 + pq.2)) :=
-  CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite _ _
-    (m.twistedIndexSubobject_eq_bot hM ha) (m.twistedIndexSubobject_eq_top hM hb) r hr pq hra hrb
 
 end TauCeti.TwistingCocycle
