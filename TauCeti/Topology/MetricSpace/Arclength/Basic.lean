@@ -17,8 +17,9 @@ variation. The resulting curve is 1-Lipschitz on its length interval and has var
 the parameter difference on every subinterval. The construction collapses constant pieces;
 it does not require an inverse to cumulative variation. It also applies to constant curves,
 whose length interval is a singleton.
-For injective arcs, cumulative variation induces an increasing homeomorphism between the
-original parameter interval and the length interval.
+For curves injective on the interior of their parameter interval, cumulative variation induces
+an increasing homeomorphism between the original parameter interval and the length interval.
+This includes injective arcs and simple closed curves.
 
 We use Mathlib's `variationOnFromTo`, its continuity criterion, and the exact variation formula
 for composition with a monotone map. Length is always `eVariationOn`; its conversion to a real
@@ -95,10 +96,11 @@ theorem exists_arclength_factorization (hγ : BoundedVariationOn γ (Icc a b))
         rw [variationOnFromTo.eq_of_le _ _ hp, inter_eq_right.mpr hsub]
   rw [hdiff, ENNReal.ofReal_toReal (hγ.mono hsub), hvar]
 
-/-- For an injective continuous rectifiable arc, cumulative variation is an increasing
-homeomorphism onto the length interval. The singleton interval case is included. -/
+/-- For a continuous rectifiable curve injective on the interior of its parameter interval,
+cumulative variation is an increasing homeomorphism onto the length interval. The endpoint
+values may coincide, and the singleton interval case is included. -/
 theorem exists_arclength_homeomorph (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Icc a b)) (hab : a ≤ b) :
+    (hcont : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) (hab : a ≤ b) :
     ∃ e : Icc a b ≃ₜ Icc 0 (eVariationOn γ (Icc a b)).toReal,
       StrictMono e ∧ ∀ t, (e t : ℝ) = variationOnFromTo γ (Icc a b) a t := by
   let s := variationOnFromTo γ (Icc a b) a
@@ -107,7 +109,7 @@ theorem exists_arclength_homeomorph (hγ : BoundedVariationOn γ (Icc a b))
   have hs : ContinuousOn s (Icc a b) := fun t ht ↦
     (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht)
   have hm : StrictMonoOn s (Icc a b) :=
-    hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo ha hinj
+    hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo ha hinj
   have hsa : s a = 0 := variationOnFromTo.self _ _ _
   have hsb : s b = L := by
     simp only [s, variationOnFromTo.eq_of_le _ _ hab, inter_self, L]
