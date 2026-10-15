@@ -9,6 +9,10 @@ The database is the `ci.sqlite.gz` asset of https://github.com/TauCetiProject/Ta
   ci-fleet-72h.svg   the fleet timeline for the last 72 hours in 10-minute bins
   ci-fleet-30d.svg   the same for the last 30 days in 2-hour bins
   ci-stats.json      the binned series behind both, for anyone who wants the numbers
+  ci-freshness.json  group status, available-source cutoffs, known published cutoffs and gaps
+
+A stale or failed group preserves its existing assets. Published cutoffs are null when no
+previous freshness report establishes the fallback coverage; source cutoffs remain separate.
 
 and the charts of ci_daily_graphs.py (daily build duration, waits, phases, failures, runner-minutes,
 merge validation and runner picker, plus timestamped merge backlog and bors staging runs).

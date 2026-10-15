@@ -1,6 +1,9 @@
 """CI charts for the CI page, from the TauCetiCI database. Called by ci_stats_graphs.py.
 
-The daily charts have one point (or bar) per complete UTC day, up to the coverage watermark:
+The daily charts have one point (or bar) per complete UTC day within contiguous source
+coverage. Build-job coverage bounds duration, waits, minutes, validation and picker charts;
+detailed enrichment separately bounds phases and failure causes. Other-job waits stop at the
+last complete UTC day of organisation-wide job coverage. Writes:
 
   ci-build-duration.svg   median and 90th-percentile build time, by where the build ran
   ci-build-wait.svg       median and 90th-percentile wait for a runner, by where the job ran

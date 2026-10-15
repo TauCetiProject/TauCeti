@@ -171,9 +171,10 @@ release there for anyone who wants to ask their own questions. Each chart uses i
 coverage: fleet charts require organisation-wide job history, daily build charts require Tau Ceti
 build jobs, failure and phase charts require detailed enrichment, and the merge timelines use
 the latest observations and recorded runs. Explicitly unavailable records are reported as source
-gaps. A backlog in
-one stream does not stop the others. The [freshness report](static/ci-freshness.json) gives each
-group's cutoff and reports preserved fallbacks when that source is stale.
+gaps. A backlog in one stream does not stop the others. The
+[freshness report](static/ci-freshness.json) distinguishes source coverage from the coverage
+used for published charts and reports preserved fallbacks when a source is stale. A fallback's
+published cutoff may be unknown when no earlier report recorded it.
 
 Builds are recorded job by job. The label, notification and merge-bot workflows run thousands of
 times a day, so for them only one run in four is recorded job by job, and each of those stands
