@@ -360,7 +360,7 @@ def rendered_parents(html):
         return set()
     if "`" in visible or "<!--" in visible:
         return set()
-    if "?" in visible or re.search(r"\b(?:if|unless|would|could|should|might|maybe|perhaps|hypothetical\w*)\b", visible, re.I):
+    if "?" in visible or re.search(r"\b(?:if|when|in case|unless|would|could|should|might|maybe|perhaps|hypothetical\w*)\b", visible, re.I):
         return set()
     if re.search(r"\b(?:examples?|for reference|not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t|supersed\w*)\b", visible, re.I):
         return set()

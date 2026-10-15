@@ -568,6 +568,9 @@ class ProseTests(unittest.TestCase):
             with self.subTest(separator=separator):
                 self.assertEqual(sp.rendered_parents(
                     f"<p>Depends on #12{separator}#13.</p>"), set())
+        for introduction in ("When necessary:", "In case it is needed:"):
+            self.assertEqual(sp.rendered_parents(
+                f"<p>{introduction}</p><p>Stacked on #12.</p>"), set())
 
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
@@ -607,9 +610,9 @@ class ProseTests(unittest.TestCase):
     def test_read_only_historical_rendered_examples(self):
         fixtures = json.loads((Path(__file__).with_name("stack_policy_fixtures.json")).read_text())
         # Current captured bodies are separate from the immutable audit heads.
-        # Quoted/negative context conservatively declines three declarations;
+        # Quoted/negative/conditional context declines these declarations;
         # exact ancestry may still establish their stacks independently.
-        expected = {"16755": set(), "16656": {16643, 16632, 15253},
+        expected = {"16755": set(), "16656": set(),
                     "16613": set(), "16130": set()}
         for number, parents in expected.items():
             item = fixtures["explicit_prose"][number]
