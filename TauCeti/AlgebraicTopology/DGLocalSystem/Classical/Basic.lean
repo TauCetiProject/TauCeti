@@ -27,6 +27,8 @@ source's Definition 1.8 in degree zero).
   system.
 * `TauCeti.classicalDGLocalSystem`: the DG local system of a classical local system.
 * `TauCeti.classicalDGLocalSystemFunctor`: the functor from classical local systems.
+* `TauCeti.classicalGroupAlgebraAction`: the right action of the group ring `R[π₁(X, x)]` on the
+  fiber, through which `classicalAction` factors (`TauCeti.op_loopChainToGroupAlgebra_smul`).
 
 ## Main results
 
@@ -256,5 +258,64 @@ instance [PathConnectedSpace X] : (classicalDGLocalSystemFunctor R x).Faithful w
     exact classicalDGLocalSystemMap_injective h
 
 end Action
+
+section GroupAlgebraAction
+
+open CategoryTheory
+
+variable {R : Type u} [CommRing R] {X : TopCat.{u}} {x : X}
+
+/-- **The action of the group ring on the fiber of a local system**: the algebra map from the
+opposite of `R[π₁(X, x)]` to the endomorphisms of the fiber at `x`, a class acting by the
+monodromy of its inverse.  The action of the chain algebra, `classicalAction`, factors through
+it. -/
+def classicalGroupAlgebraAction (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (MonoidAlgebra R (FundamentalGroup X x))ᵐᵒᵖ →ₐ[R]
+      Module.End R (L.obj (FundamentalGroupoid.mk x)) :=
+  ((AlgEquiv.opOp R (Module.End R (L.obj (FundamentalGroupoid.mk x)))).symm :
+      _ ≃ₐ[R] _).toAlgHom.comp
+    (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+      (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L)).op
+
+/-- A group ring element acts on the fiber through the lifted right action of `π₁(X, x)`. -/
+theorem classicalGroupAlgebraAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
+    (y : MonoidAlgebra R (FundamentalGroup X x)) :
+    classicalGroupAlgebraAction L (op y) =
+      (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+        (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L) y).unop := by
+  simp [classicalGroupAlgebraAction]
+
+/-- The action of a chain on the fiber is the action of its degree-zero truncation. -/
+theorem classicalAction_op_eq (L : LocalCoefficientSystem.{u, u, w} R X)
+    (a : loopChainAlgebra X x R) :
+    classicalAction L (op a) =
+      classicalGroupAlgebraAction L (op (loopChainToGroupAlgebra X x R a)) := by
+  rw [classicalAction_op_apply, classicalGroupAlgebraAction_op_apply]
+
+/-- The right action of the group ring on the fiber of a classical local system. -/
+instance instModuleGroupAlgebraOpFiber (L : LocalCoefficientSystem.{u, u, w} R X) :
+    Module (MonoidAlgebra R (FundamentalGroup X x))ᵐᵒᵖ (L.obj (FundamentalGroupoid.mk x)) :=
+  Module.compHom _ (classicalGroupAlgebraAction L).toRingHom
+
+/-- The right action of the group ring on the fiber is `classicalGroupAlgebraAction`. -/
+@[simp]
+theorem op_smul_eq_classicalGroupAlgebraAction (L : LocalCoefficientSystem.{u, u, w} R X)
+    (y : MonoidAlgebra R (FundamentalGroup X x)) (v : L.obj (FundamentalGroupoid.mk x)) :
+    op y • v = classicalGroupAlgebraAction L (op y) v :=
+  (rfl)
+
+/-- The action of the group ring on the fiber is compatible with the `R`-module structure. -/
+instance (L : LocalCoefficientSystem.{u, u, w} R X) :
+    IsScalarTower R (MonoidAlgebra R (FundamentalGroup X x))ᵐᵒᵖ
+      (L.obj (FundamentalGroupoid.mk x)) where
+  smul_assoc r y v := congrArg (fun f ↦ f v) (map_smul (classicalGroupAlgebraAction L) r y)
+
+/-- **A chain acts on the fiber as its degree-zero truncation.** -/
+theorem op_loopChainToGroupAlgebra_smul (L : LocalCoefficientSystem.{u, u, w} R X)
+    (a : loopChainAlgebra X x R) (v : L.obj (FundamentalGroupoid.mk x)) :
+    op (loopChainToGroupAlgebra X x R a) • v = op a • v := by
+  rw [op_smul_eq_classicalAction, classicalAction_op_eq, op_smul_eq_classicalGroupAlgebraAction]
+
+end GroupAlgebraAction
 
 end TauCeti
