@@ -96,7 +96,7 @@ lemma fundamentalGroupMulEquiv_apply_eq_iff (hn : 2 ≤ n)
     {x : RealProjectiveSpace n} (e : (mk n) ⁻¹' {x})
     (γ : FundamentalGroup (RealProjectiveSpace n) x) (u : ℤˣ) :
     fundamentalGroupMulEquiv n hn e γ = u ↔
-      ((isCoveringMap_mk n).monodromy γ e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
+      ((isCoveringMap_mk n).monodromy γ.toPath e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
         u • (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=by
   have := simplyConnectedSpace_sphere_euclideanSpace hn
   rw [fundamentalGroupMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_eq,
@@ -108,7 +108,7 @@ translates the chosen lift by `u`. -/
 @[simp]
 lemma monodromy_fundamentalGroupMulEquiv_symm (hn : 2 ≤ n)
     {x : RealProjectiveSpace n} (e : (mk n) ⁻¹' {x}) (u : ℤˣ) :
-    ((isCoveringMap_mk n).monodromy ((fundamentalGroupMulEquiv n hn e).symm u) e :
+    ((isCoveringMap_mk n).monodromy ((fundamentalGroupMulEquiv n hn e).symm u).toPath e :
       sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
         u • (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
   exact (fundamentalGroupMulEquiv_apply_eq_iff n hn e
@@ -121,13 +121,13 @@ lemma fundamentalGroupMulEquiv_eq_one_iff (hn : 2 ≤ n)
     {x : RealProjectiveSpace n} (e : (mk n) ⁻¹' {x})
     (γ : FundamentalGroup (RealProjectiveSpace n) x) :
     fundamentalGroupMulEquiv n hn e γ = 1 ↔
-      (isCoveringMap_mk n).monodromy γ e = e := by
+      (isCoveringMap_mk n).monodromy γ.toPath e = e := by
   rw [fundamentalGroupMulEquiv_apply_eq_iff]
   simpa using (Iff.symm Subtype.ext_iff :
-    (((isCoveringMap_mk n).monodromy γ e :
+    (((isCoveringMap_mk n).monodromy γ.toPath e :
           sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
         (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ↔
-      (isCoveringMap_mk n).monodromy γ e = e))
+      (isCoveringMap_mk n).monodromy γ.toPath e = e))
 
 /-- **The fundamental group of real projective space `RPⁿ` (for `2 ≤ n`) is isomorphic to `ℤˣ`
 for any basepoint `x`**: `FundamentalGroup (RealProjectiveSpace n) x ≃* ℤˣ`. -/

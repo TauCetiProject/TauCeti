@@ -17,8 +17,8 @@ and on general topological vector bundles. Joint continuity of each pairing is s
 separate continuity alone does not suffice.
 
 The iterated evaluation formulas flatten the nested alternatizations into a single signed
-permutation sum with coefficient `1 / (k! l! m!)`. They generalize the normed-space formulas in
-`TauCeti.Analysis.Normed.Module.Alternating.Wedge`, using the same signed-sum reindexing theorem.
+permutation sum with coefficient `1 / (k! l! m!)`. They use signed-sum reindexing for the nested
+alternatizations.
 The normalization follows John M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 14.
 -/
@@ -46,8 +46,8 @@ variable {E F₁ F₂ F₃ F₁₂ F₂₃ G : Type*}
 permutations of `k + l + m` slots, divided by `k! l! m!`. -/
 theorem pairedWedge_pairedWedge_left_apply (mu₁₂ : F₁ →L[ℝ] F₂ →L[ℝ] F₁₂)
     (mu₁₂₃ : F₁₂ →L[ℝ] F₃ →L[ℝ] G)
-    (h₁₂ : Continuous (fun p : F₁ × F₂ ↦ mu₁₂ p.1 p.2))
-    (h₁₂₃ : Continuous (fun p : F₁₂ × F₃ ↦ mu₁₂₃ p.1 p.2))
+    (h₁₂ : Continuous (Function.uncurry fun x y ↦ mu₁₂ x y))
+    (h₁₂₃ : Continuous (Function.uncurry fun x y ↦ mu₁₂₃ x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
     (chi : E [⋀^Fin m]→L[ℝ] F₃) (v : Fin (k + l + m) → E) :
     pairedWedge mu₁₂₃ h₁₂₃ (pairedWedge mu₁₂ h₁₂ phi psi) chi v =
@@ -79,8 +79,8 @@ theorem pairedWedge_pairedWedge_left_apply (mu₁₂ : F₁ →L[ℝ] F₂ →L[
 permutations of `k + (l + m)` slots, divided by `k! l! m!`. -/
 theorem pairedWedge_pairedWedge_right_apply (mu₂₃ : F₂ →L[ℝ] F₃ →L[ℝ] F₂₃)
     (mu₁₂₃' : F₁ →L[ℝ] F₂₃ →L[ℝ] G)
-    (h₂₃ : Continuous (fun p : F₂ × F₃ ↦ mu₂₃ p.1 p.2))
-    (h₁₂₃' : Continuous (fun p : F₁ × F₂₃ ↦ mu₁₂₃' p.1 p.2))
+    (h₂₃ : Continuous (Function.uncurry fun x y ↦ mu₂₃ x y))
+    (h₁₂₃' : Continuous (Function.uncurry fun x y ↦ mu₁₂₃' x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
     (chi : E [⋀^Fin m]→L[ℝ] F₃) (v : Fin (k + (l + m)) → E) :
     pairedWedge mu₁₂₃' h₁₂₃' phi (pairedWedge mu₂₃ h₂₃ psi chi) v =
@@ -112,10 +112,10 @@ theorem pairedWedge_pairedWedge_right_apply (mu₂₃ : F₂ →L[ℝ] F₃ →L
 hypothesis is `mul_assoc`; for a Lie bracket it does not hold in general. -/
 theorem pairedWedge_assoc (mu₁₂ : F₁ →L[ℝ] F₂ →L[ℝ] F₁₂) (mu₁₂₃ : F₁₂ →L[ℝ] F₃ →L[ℝ] G)
     (mu₂₃ : F₂ →L[ℝ] F₃ →L[ℝ] F₂₃) (mu₁₂₃' : F₁ →L[ℝ] F₂₃ →L[ℝ] G)
-    (h₁₂ : Continuous (fun p : F₁ × F₂ ↦ mu₁₂ p.1 p.2))
-    (h₁₂₃ : Continuous (fun p : F₁₂ × F₃ ↦ mu₁₂₃ p.1 p.2))
-    (h₂₃ : Continuous (fun p : F₂ × F₃ ↦ mu₂₃ p.1 p.2))
-    (h₁₂₃' : Continuous (fun p : F₁ × F₂₃ ↦ mu₁₂₃' p.1 p.2))
+    (h₁₂ : Continuous (Function.uncurry fun x y ↦ mu₁₂ x y))
+    (h₁₂₃ : Continuous (Function.uncurry fun x y ↦ mu₁₂₃ x y))
+    (h₂₃ : Continuous (Function.uncurry fun x y ↦ mu₂₃ x y))
+    (h₁₂₃' : Continuous (Function.uncurry fun x y ↦ mu₁₂₃' x y))
     (h : ∀ a b c, mu₁₂₃ (mu₁₂ a b) c = mu₁₂₃' a (mu₂₃ b c))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (chi : E [⋀^Fin m]→L[ℝ] F₃)
     (v : Fin (k + l + m) → E) :

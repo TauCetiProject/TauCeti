@@ -156,12 +156,23 @@ theorem δ_comp_δ_eq_neg (D : ShortComplex (ShortComplex (Rep k G)))
   let D' := ShortComplex.mk (F.map D.f) (F.map D.g) (by
     rw [← F.map_comp, D.zero]
     apply ShortComplex.hom_ext <;> exact (tateComplexFunctor k G).map_zero _ _)
-  exact HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg D'
-    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₁)
-    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₂)
-    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₃)
-    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₁')
-    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₂')
-    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₃') n (n + 1) (n + 1 + 1) rfl rfl
+  have hh₁ : D'.X₁.ShortExact := _root_.TateCohomology.map_tateComplexFunctor_shortExact h₁
+  have hh₂ : D'.X₂.ShortExact := _root_.TateCohomology.map_tateComplexFunctor_shortExact h₂
+  have hh₃ : D'.X₃.ShortExact := _root_.TateCohomology.map_tateComplexFunctor_shortExact h₃
+  have hh₁' : (D'.map ShortComplex.π₁).ShortExact :=
+    _root_.TateCohomology.map_tateComplexFunctor_shortExact h₁'
+  have hh₂' : (D'.map ShortComplex.π₂).ShortExact :=
+    _root_.TateCohomology.map_tateComplexFunctor_shortExact h₂'
+  have hh₃' : (D'.map ShortComplex.π₃).ShortExact :=
+    _root_.TateCohomology.map_tateComplexFunctor_shortExact h₃'
+  -- Restate each Tate connecting map as the one of `D'`, so that matching the two statements does
+  -- not have to unfold the Tate complex functor through the composites.
+  have e₃ : _root_.TateCohomology.δ h₃ n = hh₃.δ n (n + 1) rfl := rfl
+  have e₁' : _root_.TateCohomology.δ h₁' (n + 1) = hh₁'.δ (n + 1) (n + 1 + 1) rfl := rfl
+  have e₃' : _root_.TateCohomology.δ h₃' n = hh₃'.δ n (n + 1) rfl := rfl
+  have e₁ : _root_.TateCohomology.δ h₁ (n + 1) = hh₁.δ (n + 1) (n + 1 + 1) rfl := rfl
+  rw [e₃, e₁', e₃', e₁]
+  exact HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg D' hh₁ hh₂ hh₃ hh₁' hh₂' hh₃'
+    n (n + 1) (n + 1 + 1) rfl rfl
 
 end TauCeti.TateCohomology

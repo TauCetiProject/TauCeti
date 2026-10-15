@@ -64,7 +64,8 @@ theorem infinitePi_map_none_some {ι : Type*} {X : Option ι → Type*}
       ((iIndepFun_infinitePi (X := fun _ y => y) fun _ => measurable_id).precomp
         Subtype.val_injective)
       (fun i _ => measurable_pi_apply i)
-      (Set.disjoint_singleton_left.mpr fun h => Option.some_ne_none _ h.choose_spec)
+      (Set.disjoint_singleton_left.mpr fun h : none ∈ Set.range (some : ι → Option ι) =>
+        Option.some_ne_none _ h.choose_spec)
       (TauCeti.Probability.measurable_blockSigma_of_mem rfl) hsome
   rw [hind.map_prod_eq_prod_map_map (measurable_pi_apply _).aemeasurable
       (Measurable.of_eval fun i => measurable_pi_apply (some i)).aemeasurable,

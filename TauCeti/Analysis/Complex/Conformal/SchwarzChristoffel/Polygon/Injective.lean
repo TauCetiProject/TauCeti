@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Clos
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.BoundedArcInjective
 
-import Mathlib.Data.Fin.SuccPredOrder
+import Mathlib.Order.SuccPred.Fin
 
 /-!
 # Simplicity of the convex Schwarz--Christoffel boundary

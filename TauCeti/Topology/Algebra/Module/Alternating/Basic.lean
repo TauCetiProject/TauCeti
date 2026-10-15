@@ -8,13 +8,11 @@ module
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 
 /-!
-# Underlying multilinear maps and continuous alternatization
+# Underlying multilinear maps of alternating pullbacks
 
 The underlying continuous multilinear map of an alternating pullback is the
 multilinear pullback. This identity allows consumers to move between the two APIs
-without unfolding their implementations. Alternatization multiplies an already alternating map
-by the arity factorial, which supplies the retraction used to transfer smoothness from multilinear
-maps when the factorial is invertible.
+without unfolding their implementations.
 -/
 
 public section
@@ -30,17 +28,5 @@ namespace ContinuousAlternatingMap
     (φ : F [⋀^ι]→L[R] G) (f : E →L[R] F) :
     (φ.compContinuousLinearMap f).toContinuousMultilinearMap =
       φ.toContinuousMultilinearMap.compContinuousLinearMap (fun _ ↦ f) := (rfl)
-
-/-- Alternatization multiplies an alternating map by the factorial of its arity. -/
-@[simp] theorem alternatization_toContinuousMultilinearMap
-    {R E F ι : Type*} [Semiring R] [AddCommMonoid E] [Module R E] [TopologicalSpace E]
-    [AddCommGroup F] [Module R F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-    [Fintype ι] [DecidableEq ι] (f : E [⋀^ι]→L[R] F) :
-    ContinuousMultilinearMap.alternatization f.toContinuousMultilinearMap =
-      (Fintype.card ι).factorial • f := by
-  apply ContinuousAlternatingMap.toAlternatingMap_injective
-  simp only [ContinuousMultilinearMap.alternatization_apply_toAlternatingMap,
-    ContinuousAlternatingMap.toAlternatingMap_smul]
-  exact AlternatingMap.coe_alternatization f.toAlternatingMap
 
 end ContinuousAlternatingMap

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # Schur's lemma for simple modules
@@ -30,15 +31,8 @@ equivalence.
 Both forms are then read as statements about dimensions, for a `k`-algebra `A` acting on modules
 that are `k`-modules compatibly: the hom space between inequivalent simple modules has dimension
 `0`, and between equivalent finite-dimensional simple modules it is a line. Transporting a hom
-space along an isomorphism of its target, `TauCeti.homCongrRight`, is what carries the endomorphism
+space along an isomorphism of its target, `LinearEquiv.homCongrRight`, carries the endomorphism
 computation to an arbitrary equivalent target.
-
-## Main definitions
-
-* `TauCeti.homCongrRight`: isomorphic `A`-modules have `k`-isomorphic hom spaces out of a fixed
-  module. This is `LinearEquiv.congrRight` for a noncommutative `A`, with the auxiliary scalars
-  `k` supplying the linear structure that `A` cannot; it is assembled from Mathlib's
-  `LinearMap.compRight`.
 
 ## Main results
 
@@ -57,7 +51,7 @@ computation to an arbitrary equivalent target.
   of the structure map; `TauCeti.nonempty_end_algEquiv_self_of_isSimpleModule` is its existence
   form.
 * `TauCeti.finrank_linearMap_eq_zero_of_isEmpty_linearEquiv` and
-  `TauCeti.finrank_linearMap_eq_one_of_nonempty_linearEquiv`: the two forms of Schur's lemma in
+  `LinearEquiv.finrank_linearMap_eq_one`: the two forms of Schur's lemma in
   dimensions, with `TauCeti.finiteDimensional_linearMap_of_isSimpleModule` recording that the hom
   space is finite-dimensional either way.
 
@@ -198,39 +192,6 @@ theorem nonempty_end_algEquiv_self_of_isSimpleModule : Nonempty (Module.End A S 
 
 end SimpleEnd
 
-/-! ### Transporting a hom space along an isomorphism of the target -/
-
-section CongrRight
-
-variable (k : Type*) {A : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
-variable {S : Type*} [AddCommMonoid S] [Module A S]
-variable {N : Type*} [AddCommMonoid N] [Module A N] [Module k N] [IsScalarTower k A N]
-variable {P : Type*} [AddCommMonoid P] [Module A P] [Module k P] [IsScalarTower k A P]
-
-/-- **Isomorphic targets give isomorphic hom spaces.**  An `A`-linear isomorphism `e : N ≃ₗ[A] P`
-carries `S →ₗ[A] N` to `S →ₗ[A] P` by postcomposition, `k`-linearly.
-
-This is `LinearEquiv.congrRight` with the auxiliary scalars `k` in place of a commutativity
-assumption on `A`: since `A` is not assumed commutative the hom spaces are not `A`-modules, and
-`k`, acting on the targets compatibly with `A`, supplies the linear structure instead.  The two
-directions are `LinearMap.compRight`. -/
-def homCongrRight (e : N ≃ₗ[A] P) : (S →ₗ[A] N) ≃ₗ[k] (S →ₗ[A] P) :=
-  LinearEquiv.ofLinearMap (LinearMap.compRight (M := S) k (e : N →ₗ[A] P))
-    (LinearMap.compRight (M := S) k (e.symm : P →ₗ[A] N))
-    (by ext f s; simp) (by ext f s; simp)
-
-@[simp]
-theorem homCongrRight_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] N) (s : S) :
-    homCongrRight k (S := S) e f s = e (f s) :=
-  (rfl)
-
-@[simp]
-theorem homCongrRight_symm_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] P) (s : S) :
-    (homCongrRight k (S := S) e).symm f s = e.symm (f s) :=
-  (rfl)
-
-end CongrRight
-
 /-! ### Schur's lemma in dimension form -/
 
 section Vanishing
@@ -280,7 +241,7 @@ theorem finrank_linearMap_comm_of_isSimpleModule
     Module.finrank k (S →ₗ[A] N) = Module.finrank k (N →ₗ[A] S) := by
   by_cases h : Nonempty (S ≃ₗ[A] N)
   · obtain ⟨e⟩ := h
-    exact ((homCongrRight k e.symm).trans (LinearEquiv.congrLeft S k e)).finrank_eq
+    exact ((LinearEquiv.homCongrRight k e.symm).trans (LinearEquiv.congrLeft S k e)).finrank_eq
   · rw [finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp h),
       finrank_linearMap_eq_zero_of_isEmpty_linearEquiv
         ⟨fun e ↦ h ⟨e.symm⟩⟩]
@@ -299,12 +260,12 @@ omit [IsSimpleModule A N] in
 /-- **Schur's lemma over an algebraically closed field, in dimensions.**  Between equivalent
 finite-dimensional simple modules the hom space is a line: every map is a scalar multiple of a
 fixed isomorphism. -/
-theorem finrank_linearMap_eq_one_of_nonempty_linearEquiv (e : S ≃ₗ[A] N) :
+theorem _root_.LinearEquiv.finrank_linearMap_eq_one (e : S ≃ₗ[A] N) :
     Module.finrank k (S →ₗ[A] N) = 1 := by
   have hend : Module.finrank k (Module.End A S) = 1 := by
     rw [(endAlgEquivSelfOfIsSimpleModule (k := k) (A := A) (S := S)).toLinearEquiv.finrank_eq,
       Module.finrank_self]
-  rw [← (homCongrRight k (S := S) e).finrank_eq]
+  rw [← (LinearEquiv.homCongrRight k (S := S) e).finrank_eq]
   exact hend
 
 omit [IsAlgClosed k] in
@@ -314,7 +275,7 @@ or is trivial. -/
 theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
   by_cases h : Nonempty (S ≃ₗ[A] N)
   · have hend : FiniteDimensional k (S →ₗ[A] S) := inferInstance
-    exact Module.Finite.equiv (homCongrRight k (S := S) h.some)
+    exact Module.Finite.equiv (LinearEquiv.homCongrRight k (S := S) h.some)
   · exact finiteDimensional_linearMap_of_isEmpty_linearEquiv (not_nonempty_iff.mp h)
 
 end SchurDimension

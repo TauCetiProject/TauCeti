@@ -117,7 +117,6 @@ theorem convergesToOne_iff {s : Set G} :
   refine forall₂_congr fun U _ ↦ ?_
   rw [mem_cofinite, ← Set.finite_image_iff Subtype.val_injective.injOn]
   congr!
-  ext x
   simp
 
 /-- Every finite subset converges to one. -/
@@ -744,7 +743,7 @@ private theorem mul_notMem_of_mem_reps (a : ConvergingGenData G) (U : OpenNormal
       ((a.K ⊔ U.toSubgroup).mul_mem h2 ((a.K ⊔ U.toSubgroup).inv_mem h1))
 
 /-- The set kept by the refinement. -/
-private def refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G) : Set G :=
+private noncomputable def refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G) : Set G :=
   a.S ∩ ((a.K : Set G) ∪ U.toSubgroup ∪ a.reps U)
 
 /-- Every point of `S` is congruent modulo `K` to a point kept by the refinement. -/
