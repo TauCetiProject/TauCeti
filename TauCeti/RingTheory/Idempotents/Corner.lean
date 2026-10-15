@@ -251,13 +251,15 @@ end Map
 
 section Pi
 
-variable {ι : Type*} {A : ι → Type*} [∀ i, NonUnitalSemiring (A i)] {e : ∀ i, A i}
+variable {ι : Type*} {A : ι → Type*}
 
 /-- An element of a product is idempotent exactly when each of its components is. -/
-theorem _root_.Pi.isIdempotentElem_iff : IsIdempotentElem e ↔ ∀ i, IsIdempotentElem (e i) :=
+@[simp]
+theorem _root_.Pi.isIdempotentElem_iff [∀ i, Mul (A i)] {e : ∀ i, A i} :
+    IsIdempotentElem e ↔ ∀ i, IsIdempotentElem (e i) :=
   funext_iff
 
-variable (he : IsIdempotentElem e)
+variable [∀ i, NonUnitalSemiring (A i)] {e : ∀ i, A i} (he : IsIdempotentElem e)
 
 /-- **The corner of an idempotent in a product is the product of the corners** of its
 components. -/

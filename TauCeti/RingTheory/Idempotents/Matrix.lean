@@ -44,6 +44,7 @@ section Semiring
 variable [Semiring α]
 
 /-- The diagonal matrix unit `Eᵢᵢ` is idempotent. -/
+@[simp]
 theorem isIdempotentElem_single_one (i : n) : IsIdempotentElem (single i i (1 : α)) := by
   simp [IsIdempotentElem]
 
