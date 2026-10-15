@@ -195,29 +195,6 @@ private theorem trialityCoefficient_eq_octonion_int
   revert a b c
   decide +kernel
 
-private def intCastOctonion (R : Type u) [Ring R]
-    (x : TauCeti.Octonion ℤ) : TauCeti.Octonion R :=
-  ⟨x.a, x.b, fun i ↦ x.v i, fun i ↦ x.w i⟩
-
-private theorem intCastOctonion_mul (R : Type u) [CommRing R]
-    (x y : TauCeti.Octonion ℤ) :
-    intCastOctonion R (x * y) = intCastOctonion R x * intCastOctonion R y := by
-  apply TauCeti.Octonion.ext
-  · simp [intCastOctonion, TauCeti.Octonion.mul_a, Matrix.vec3_dotProduct]
-  · simp [intCastOctonion, TauCeti.Octonion.mul_b, Matrix.vec3_dotProduct]
-  · funext i
-    fin_cases i <;>
-      simp [intCastOctonion, TauCeti.Octonion.mul_v, cross_apply]
-  · funext i
-    fin_cases i <;>
-      simp [intCastOctonion, TauCeti.Octonion.mul_w, cross_apply]
-
-private theorem trace_intCastOctonion (R : Type u) [CommRing R]
-    (x : TauCeti.Octonion ℤ) :
-    TauCeti.Octonion.trace (R := R) (intCastOctonion R x) =
-      (TauCeti.Octonion.trace (R := ℤ) x : R) := by
-  simp [intCastOctonion, TauCeti.Octonion.trace_apply]
-
 private theorem trialityCoefficient_eq_octonion (R : Type u) [CommRing R]
     (a : Block 0) (b : Block 1) (c : Block 2) :
     (trialityCoefficient a b c : R) =
@@ -225,41 +202,41 @@ private theorem trialityCoefficient_eq_octonion (R : Type u) [CommRing R]
   classical
   have hzero :
       blockZeroOctonionEquiv R (Pi.single a 1) =
-        intCastOctonion R (blockZeroOctonionEquiv ℤ (Pi.single a 1)) := by
+        TauCeti.Octonion.intCast R (blockZeroOctonionEquiv ℤ (Pi.single a 1)) := by
     apply TauCeti.Octonion.ext
-    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
-    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · simp [Pi.single_apply]
+    · simp [Pi.single_apply]
     · funext i
-      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+      fin_cases i <;> simp [Pi.single_apply]
     · funext i
-      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+      fin_cases i <;> simp [Pi.single_apply]
   have hone :
       blockOneOctonionEquiv R (Pi.single b 1) =
-        intCastOctonion R (blockOneOctonionEquiv ℤ (Pi.single b 1)) := by
+        TauCeti.Octonion.intCast R (blockOneOctonionEquiv ℤ (Pi.single b 1)) := by
     apply TauCeti.Octonion.ext
-    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
-    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · simp [Pi.single_apply]
+    · simp [Pi.single_apply]
     · funext i
-      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+      fin_cases i <;> simp [Pi.single_apply]
     · funext i
-      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+      fin_cases i <;> simp [Pi.single_apply]
   have htwo :
       blockTwoOctonionEquiv R (Pi.single c 1) =
-        intCastOctonion R (blockTwoOctonionEquiv ℤ (Pi.single c 1)) := by
+        TauCeti.Octonion.intCast R (blockTwoOctonionEquiv ℤ (Pi.single c 1)) := by
     apply TauCeti.Octonion.ext
-    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
-    · simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+    · simp [Pi.single_apply]
+    · simp [Pi.single_apply]
     · funext i
-      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+      fin_cases i <;> simp [Pi.single_apply]
     · funext i
-      fin_cases i <;> simp [intCastOctonion, Pi.single_apply, Int.cast_ite]
+      fin_cases i <;> simp [Pi.single_apply]
   have hcast :
       octonionBlockTrilinearForm R (Pi.single a 1) (Pi.single b 1) (Pi.single c 1) =
         (octonionBlockTrilinearForm ℤ (Pi.single a 1) (Pi.single b 1)
           (Pi.single c 1) : R) := by
     simp only [octonionBlockTrilinearForm_apply]
-    rw [hzero, hone, htwo, ← intCastOctonion_mul R, ← intCastOctonion_mul R,
-      trace_intCastOctonion R]
+    rw [hzero, hone, htwo, ← TauCeti.Octonion.intCast_mul R,
+      ← TauCeti.Octonion.intCast_mul R, TauCeti.Octonion.trace_intCast R]
   rw [hcast]
   exact congrArg (fun z : ℤ ↦ (z : R)) (trialityCoefficient_eq_octonion_int a b c)
 

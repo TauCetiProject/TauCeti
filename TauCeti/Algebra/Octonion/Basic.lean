@@ -50,6 +50,7 @@ nothing more.
   involution.
 * `TauCeti.Octonion.trace` and `TauCeti.Octonion.norm`: the trace `a + b` and the norm
   `a * b - v ⬝ᵥ w` of the composition algebra.
+* `TauCeti.Octonion.intCast`: coordinatewise transport of integral octonions to another ring.
 * `TauCeti.Octonion.trialityTrilinearForm`: the trace of a triple octonion product as a bundled
   trilinear form.
 * `TauCeti.Octonion.imaginary`: the imaginary octonions, the kernel of the trace.
@@ -358,6 +359,35 @@ def trace : Octonion R →ₗ[R] R where
   map_smul' _ _ := by simp [smul_eq_mul, mul_add]
 
 @[simp] theorem trace_apply (x : Octonion R) : trace x = x.a + x.b := (rfl)
+
+/-- Transport an integral octonion coordinatewise to a ring. -/
+def intCast (S : Type*) [Ring S] (x : Octonion ℤ) : Octonion S :=
+  ⟨x.a, x.b, fun i ↦ x.v i, fun i ↦ x.w i⟩
+
+@[simp] theorem intCast_a (S : Type*) [Ring S] (x : Octonion ℤ) :
+    (intCast S x).a = x.a := (rfl)
+@[simp] theorem intCast_b (S : Type*) [Ring S] (x : Octonion ℤ) :
+    (intCast S x).b = x.b := (rfl)
+@[simp] theorem intCast_v (S : Type*) [Ring S] (x : Octonion ℤ) (i : Fin 3) :
+    (intCast S x).v i = x.v i := (rfl)
+@[simp] theorem intCast_w (S : Type*) [Ring S] (x : Octonion ℤ) (i : Fin 3) :
+    (intCast S x).w i = x.w i := (rfl)
+
+/-- Coordinatewise integer casting preserves octonion multiplication. -/
+theorem intCast_mul (S : Type*) [CommRing S] (x y : Octonion ℤ) :
+    intCast S (x * y) = intCast S x * intCast S y := by
+  apply Octonion.ext
+  · simp [intCast, mul_a, Matrix.vec3_dotProduct]
+  · simp [intCast, mul_b, Matrix.vec3_dotProduct]
+  · funext i
+    fin_cases i <;> simp [intCast, mul_v, cross_apply]
+  · funext i
+    fin_cases i <;> simp [intCast, mul_w, cross_apply]
+
+/-- The trace of an integral octonion commutes with coordinatewise integer casting. -/
+theorem trace_intCast (S : Type*) [CommRing S] (x : Octonion ℤ) :
+    trace (R := S) (intCast S x) = (trace (R := ℤ) x : S) := by
+  simp [intCast, trace_apply]
 
 /-- The trace of a triple octonion product, bundled as a trilinear form. -/
 def trialityTrilinearForm (R : Type*) [CommRing R] :
