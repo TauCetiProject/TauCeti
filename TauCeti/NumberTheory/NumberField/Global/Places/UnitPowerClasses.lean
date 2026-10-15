@@ -70,13 +70,7 @@ theorem card_unitPowerClasses_adicCompletion (v : HeightOneSpectrum (𝓞 K)) {n
       (powMonoidHom n : (v.adicCompletionIntegers K)ˣ →* _).range) =
       Nat.card (rootsOfUnity n (v.adicCompletion K)) := by
   let e := Units.mapEquiv (v.integerEquivAdicCompletionIntegers (K := K)).toMulEquiv
-  have hu : IsUnit (n : v.adicCompletionIntegers K) := by
-    rw [adicCompletionIntegers.isUnit_iff_valued_eq_one]
-    simpa using
-      (v.valuedAdicCompletion_eq_valuation (n : 𝓞 K)).trans
-        (v.valuation_eq_one_iff_notMem.mpr hnv)
-  have hu' : IsUnit (n : 𝒪[v.adicCompletion K]) := by
-    simpa using hu.map (v.integerEquivAdicCompletionIntegers (K := K)).symm
+  have hu' := (v.isUnit_natCast_integer_adicCompletion_iff (K := K) n).mpr hnv
   rw [← Subgroup.index_eq_card, ← e.map_range_powMonoidHom n,
     Subgroup.index_map_equiv, Subgroup.index_eq_card,
     TauCeti.card_integerUnitPowerClasses_of_isUnit hu']

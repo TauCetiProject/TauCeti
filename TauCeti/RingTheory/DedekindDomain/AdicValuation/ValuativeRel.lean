@@ -34,7 +34,8 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   the valuative relation is `𝒪_v`; `mem_adicCompletionIntegers_iff_valuation_le_one` is the
   membership form, `valuation_integers_adicCompletionIntegers` packages it as
   `Valuation.Integers`, and `mem_maximalIdeal_integer_pow_iff` reads the powers of its maximal
-  ideal as valuation bounds.
+  ideal as valuation bounds. `isUnit_natCast_integer_adicCompletion_iff` says a natural number is
+  a unit of that ring exactly when it lies outside `v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
@@ -164,6 +165,17 @@ theorem algebraMap_mem_integer_adicCompletion (a : R) :
     algebraMap R (v.adicCompletion K) a ∈ 𝒪[v.adicCompletion K] := by
   rw [integer_eq_adicCompletionIntegers, ValuationSubring.mem_toSubring]
   exact coe_mem_adicCompletionIntegers v a
+
+/-- A natural number is a unit in the ring of integers of `K_v` exactly when it lies outside `v`. -/
+theorem isUnit_natCast_integer_adicCompletion_iff (n : ℕ) :
+    IsUnit (n : 𝒪[v.adicCompletion K]) ↔ (n : R) ∉ v.asIdeal := by
+  have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
+    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
+  rw [(Valuation.integer.integers _).isUnit_iff_valuation_eq_one, hequiv.eq_one_iff_eq_one]
+  push_cast
+  rw [← map_natCast (algebraMap K (v.adicCompletion K)) n, algebraMap_adicCompletion,
+    Function.comp_apply, valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply,
+    ← map_natCast (algebraMap R K), valuation_of_algebraMap, intValuation_eq_one_iff]
 
 /-- The residue field of the valuative relation on `K_v` is the residue field `R ⧸ v` of `v`. -/
 noncomputable def residueFieldEquivAdicCompletion :
