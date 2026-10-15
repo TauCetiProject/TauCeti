@@ -46,8 +46,8 @@ companion), through the annihilator criterion of Ikeda and Nakayama
   would all be killed by `e_v`, and right self-injectivity would write `e_v` as a combination
   `∑ c_b b*` of those arrows, which has no component in degree zero.
 * Every `r ∈ Π` acts on all of `K_v` by one scalar, the coefficient of `e_v` in `r`, since paths
-  of positive length kill `K_v`. So `y` and `z` in `K_v`, with `y ≠ 0`, have the same left
-  annihilator, and left self-injectivity gives `z ∈ y Π`.
+  of positive length kill `K_v`. So for `y` and `z` in `K_v`, with `y ≠ 0`, the left annihilator
+  of `y` is contained in that of `z`, and left self-injectivity gives `z ∈ y Π`.
 * For a nonzero homogeneous `y ∈ K_v` of largest degree, cut down to a single vertex on the right,
   every arrow kills `y` on the right too, so `y Π` is the line `k y`.
 
@@ -177,7 +177,7 @@ private theorem exists_eq_mul_of_ne_zero [Module.Injective Π Π] {z : Π}
     (hzb : ∀ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
       π (ofArrow (Quiver.reverse b)) * z = 0) :
     ∃ c : Π, z = y * c := by
-  -- `y` and `z` have the same left annihilator, since `Π` acts on both by the same scalars.
+  -- Every scalar killing `y` kills `z`, since `Π` acts on both by the same scalars and `y ≠ 0`.
   obtain ⟨c, hc⟩ := exists_eq_sum_mul_of_forall_mul_eq_zero (ι := Unit) (a := fun _ => y)
     (x := z) fun r hr => by
       obtain ⟨t, ht⟩ := exists_forall_mul_eq_smul k v r

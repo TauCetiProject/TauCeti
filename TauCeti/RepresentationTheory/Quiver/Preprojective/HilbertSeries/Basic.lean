@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex
 
 /-!
 # The matrix Hilbert series of a preprojective algebra
@@ -22,7 +22,7 @@ H(t)_{j,i} = ∑_n dim (e_j Π_n e_i) tⁿ        (TauCeti.preprojectiveHilbertS
 ```
 
 Restricting the Koszul complex of the vertex module `S_v` (see
-`TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex`) to degree `m + 2` and cutting it
+`TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex`) to degree `m + 2` and cutting it
 down on the right by `e_i` gives the sequence
 
 ```text

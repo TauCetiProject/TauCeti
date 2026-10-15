@@ -21,7 +21,7 @@ Consequently the left-hand map `y ↦ (ε_b b* y)_b` of the Koszul complex
 0 ⟶ e_v Π ⟶ ⨁_{b : i ⟶ v} e_i Π ⟶ e_v Π ⟶ S_v ⟶ 0
 ```
 
-of `TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex` is injective. Together with
+of `TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex` is injective. Together with
 the exactness at the other terms proved there, the complex is a projective resolution of the vertex
 module `S_v`, for every vertex `v` and every commutative ring `k`.
 
