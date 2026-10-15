@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
 public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.RestrictScalars
-public import Mathlib.CategoryTheory.Adjunction.Mates
 
 /-!
 # The symmetric-power pullback comparison for module presheaves
