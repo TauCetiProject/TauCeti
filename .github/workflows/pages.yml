@@ -344,7 +344,7 @@ jobs:
           python3 scripts/ci_stats_graphs.py --download --db "$RUNNER_TEMP/ci.sqlite" \
             --out-dir web/static_files \
           || {
-            echo "::warning::Some CI chart groups are stale or failed; dated daily charts refresh through their coverage, other stale or failed groups retain their previous SVGs"
+            echo "::warning::Some CI chart groups are stale or failed; dated daily charts refresh through their coverage, other stale groups retain their previous SVGs; see static/ci-freshness.json for errors"
             echo "CI chart groups (see static/ci-freshness.json)" >> "$RUNNER_TEMP/data-failures"
           }
 

@@ -175,7 +175,8 @@ gaps. A backlog in one stream does not stop the others. The
 [freshness report](static/ci-freshness.json) distinguishes source coverage from the coverage
 used for published charts. Dated daily charts can incorporate historical corrections even while
 their coverage is stale; the freshness check still reports that lag. Stale fleet and merge timelines
-retain their previous assets, as do charts whose generation fails. A fallback's
+retain their previous assets. When source data cannot be read or rendered, the previous charts
+are retained. A fallback's
 published cutoff may be unknown when no earlier report recorded it.
 
 Builds are recorded job by job. The label, notification and merge-bot workflows run thousands of

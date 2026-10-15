@@ -15,9 +15,11 @@ Also writes the charts of ci_daily_graphs.py (daily build duration, waits, phase
 runner-minutes, merge validation and runner picker, plus timestamped backlog and staging runs).
 
 Stale daily charts redraw through their dated coverage so historical corrections can publish;
-stale relative-time groups and failed groups preserve their assets. All stale groups still fail
-the freshness check. Published cutoffs are null when no previous freshness report establishes
-the fallback coverage; source cutoffs remain separate.
+stale relative-time groups preserve their assets. Query, rendering and SVG-validation failures
+leave existing assets intact. Validated files are replaced sequentially; filesystem errors during
+replacement may leave a partial group, reported as an error. All stale groups still fail the
+freshness check. Published cutoffs are null when no previous freshness report establishes the
+fallback coverage; source cutoffs remain separate.
 
 The fleet timeline has three panels on one time axis, after Marcelo Lynch's mathlib4 fleet graph:
 
