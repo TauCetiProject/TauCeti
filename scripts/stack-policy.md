@@ -27,7 +27,11 @@ as its base. For a body-only rebase/cherry-pick link, both the complete current
 parent aggregate and its head commit patch must be present; a shared precursor
 alone cannot establish direction. Content-only evidence must also be absent at
 the child's main fork point; old main content is base drift, not inherited work.
-The source diff and its SHA-256 are reported.
+An ancestry-only relationship additionally requires the same head repository.
+Cross-repository ancestry needs the child's explicit parent declaration or a
+canonical parent base branch; an outsider's copied prefix cannot condemn its
+original PR. Repository identity alone never proves stacking. The source diff
+and its SHA-256 are reported.
 Before confirming, the detector checks actual main source history for the same
 complete content, including combined bors squashes and later modifications or
 reverts. GitHub PR closure/mergedAt is never proof of landing. Closed but
@@ -57,12 +61,18 @@ Depth-limited canonical PR fetches are checked for shallow boundaries. Main's
 complete trusted history is retained (up to 64,000 commits). Missing metadata,
 deleted repositories, pagination overflow, rate limits, races, unsupported source
 or exceeded bounds produce `unknown` with an explicit gap and no closure.
+Each child additionally has a 256-call/16-MiB API budget, 2,500 Git operations
+and 120-second budget checked before operations. A child exceeding these limits
+becomes unknown while other PRs continue. Cheap direction/ownership checks
+precede expensive content checks; summary records Git operations and elapsed time.
 
 `no-confirmed-stack` means only that these bounded checks found no proof. It is
 **not** a claim that arbitrary dependencies have been ruled out. Undetected forms:
 
 - Unmentioned, independently rebased/cherry-picked inherited work with no shared
   unmerged commit and no matching canonical parent base branch.
+- Cross-repository ancestry without a child-declared parent or canonical base
+  relationship, because a copied commit prefix cannot establish ownership.
 - Work whose parent diff and individual commit patches were partially edited,
   split, rewritten or only partly inherited so that no complete reverse patch
   applies, and body-only links whose current parent content is incomplete.

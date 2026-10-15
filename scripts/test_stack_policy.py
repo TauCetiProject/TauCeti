@@ -77,6 +77,25 @@ class GitFixtures(unittest.TestCase):
         parent, _ = self.parent_child()
         self.assertIsNone(self.detector().detect(parent)[0])
 
+    def test_outsider_copied_prefix_cannot_close_victim(self):
+        git(self.root, "checkout", "-b", "victim")
+        self.write("prefix", "victim's first contribution\n")
+        prefix = self.commit("victim first")
+        self.write("own", "victim's next contribution\n")
+        self.commit("victim next")
+        victim = self.pr(2)
+        git(self.root, "checkout", "--detach", prefix)
+        attacker = self.pr(3)
+        self.prs[-1] = sp.PR(**{**sp.asdict(attacker), "head_repo": "outsider/TauCeti"})
+        with self.assertRaisesRegex(sp.Gap, "possible copied prefix"):
+            self.detector().detect(victim)
+
+    def test_child_declared_cross_fork_stack_still_requires_and_gets_source_proof(self):
+        _, child = self.parent_child(explicit=True)
+        child = sp.PR(**{**sp.asdict(child), "head_repo": "another/TauCeti"})
+        self.prs[-1] = child
+        self.assertIsNotNone(self.detector().detect(child)[0])
+
     def test_nested_stack(self):
         self.parent_child()
         self.write("third", "third\n")
@@ -393,6 +412,9 @@ class FakeAPI:
     def main(self):
         return self.sha
 
+    def begin_child(self):
+        pass
+
     def pr(self, n):
         return self.prs[n]
 
@@ -501,6 +523,19 @@ class MutationTests(unittest.TestCase):
 
 
 class APITests(unittest.TestCase):
+    def test_child_budget_declines_before_io_then_next_child_can_continue(self):
+        api = object.__new__(sp.API)
+        api.token, api.calls, api.bytes, api.deadline = "fixture", 0, 0, sp.time.monotonic() + 60
+        api.begin_child()
+        api.calls = api.child_calls
+        with patch.object(sp, "urlopen") as request:
+            with self.assertRaises(sp.ChildGap):
+                api.request("https://api.github.com/repos/TauCetiProject/TauCeti/pulls")
+            request.assert_not_called()
+            api.begin_child()
+            request.return_value.__enter__.return_value.read.return_value = b"[]"
+            self.assertEqual(api.request("https://api.github.com/repos/TauCetiProject/TauCeti/pulls"), [])
+
     def test_empty_delete_response_is_success(self):
         api = object.__new__(sp.API)
         api.token, api.calls, api.bytes, api.deadline = "fixture", 0, 0, sp.time.monotonic() + 60
@@ -555,7 +590,8 @@ class MainTests(unittest.TestCase):
     def main(self, *args):
         empty_bors = {"schema": "tauceti-bors.observation/v1", "repo": sp.REPO, "base": "main",
                       "batch_ids": [], "batches": [], "held": []}
-        with patch.object(sp, "API", return_value=self.api), patch.object(sp, "Source"), \
+        source = SimpleNamespace(fetch=lambda _: None, begin_child=lambda: None, calls=0, started=sp.time.monotonic())
+        with patch.object(sp, "API", return_value=self.api), patch.object(sp, "Source", return_value=source), \
                 patch.object(sp, "Detector", return_value=self.detector), \
                 patch.object(sp, "run", return_value=SimpleNamespace(stdout=b"/tmp/policy-fixture")), \
                 patch("bors_observation.observation", return_value=empty_bors), \

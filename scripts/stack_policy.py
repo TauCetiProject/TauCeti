@@ -45,6 +45,10 @@ class BudgetGap(Gap):
     """The sweep cannot continue observing within its global budget."""
 
 
+class ChildGap(Gap):
+    """One child's cost limit does not prevent auditing other PRs."""
+
+
 def emit(**record):
     print(json.dumps(record, sort_keys=True), flush=True)
 
@@ -65,10 +69,16 @@ class API:
         self.bytes = 0
         self.deadline = time.monotonic() + 1200
 
+    def begin_child(self):
+        self.child_calls, self.child_bytes = self.calls + 256, self.bytes + 16 * 1024 * 1024
+        self.child_deadline = time.monotonic() + 120
+
     def request(self, url, method="GET", data=None):
         self.calls += 1
         if self.calls > 4000 or self.bytes > 64 * MAX_BYTES or time.monotonic() > self.deadline:
             raise BudgetGap("sweep API/time budget exhausted")
+        if hasattr(self, "child_calls") and (self.calls > self.child_calls or time.monotonic() > self.child_deadline):
+            raise ChildGap("child API/time budget exhausted")
         req = Request(url, method=method,
                       data=None if data is None else json.dumps(data).encode(),
                       headers={"Authorization": f"Bearer {self.token}",
@@ -77,7 +87,8 @@ class API:
                                "Content-Type": "application/json"})
         try:
             with urlopen(req, timeout=45) as response:
-                raw = response.read(min(8 * MAX_BYTES, 64 * MAX_BYTES - self.bytes) + 1)
+                raw = response.read(min(8 * MAX_BYTES, 64 * MAX_BYTES - self.bytes,
+                                        getattr(self, "child_bytes", 64 * MAX_BYTES) - self.bytes) + 1)
         except HTTPError as error:
             if error.code in (403, 429):
                 raise BudgetGap("API permission/rate limit refused; sweep stopped") from error
@@ -85,6 +96,8 @@ class API:
         self.bytes += len(raw)
         if self.bytes > 64 * MAX_BYTES:
             raise BudgetGap("sweep API byte budget exhausted")
+        if self.bytes > getattr(self, "child_bytes", 64 * MAX_BYTES):
+            raise ChildGap("child API byte budget exhausted")
         if len(raw) > 8 * MAX_BYTES:
             raise Gap("API response truncated by byte bound")
         return json.loads(raw) if raw else None
@@ -220,14 +233,21 @@ class Source:
         self.parent_patch_cache = {}
         self.zero_cache = {}
         self.index = str(self.root / "policy-index")
-        self.deadline = time.monotonic() + 1200
+        self.started = time.monotonic()
+        self.deadline = self.started + 1200
         self.calls = 0
+
+    def begin_child(self):
+        self.child_calls = self.calls + 2500
+        self.child_deadline = time.monotonic() + 120
 
     def git(self, *args, data=None, check=True, limit=MAX_BYTES):
         if hasattr(self, "deadline"):
             self.calls += 1
             if self.calls > 30000 or time.monotonic() > self.deadline:
                 raise BudgetGap("source operation/time budget exhausted")
+            if hasattr(self, "child_calls") and (self.calls > self.child_calls or time.monotonic() > self.child_deadline):
+                raise ChildGap("child source operation/time budget exhausted")
         return run(["git", "--git-dir", str(self.root), *args], data=data,
                    env={**self.env, "GIT_INDEX_FILE": self.index} if hasattr(self, "index") else self.env,
                    check=check, limit=limit)
@@ -243,7 +263,7 @@ class Source:
             try:
                 self.git("fetch", "--no-tags", "--filter=blob:none", f"--depth={MAX_COMMITS}", "origin",
                          *(f"+refs/pull/{p.number}/head:refs/policy/{p.number}" for p in batch))
-            except BudgetGap:
+            except (BudgetGap, ChildGap):
                 raise
             except (Gap, subprocess.TimeoutExpired):
                 for p in batch:
@@ -421,7 +441,7 @@ class Detector:
                 if p.state == "open":
                     for commit in source.commits(p.head):
                         self.index[commit].add(p.number)
-            except BudgetGap:
+            except (BudgetGap, ChildGap):
                 raise
             except Gap as e:
                 self.gaps[p.number] = str(e)
@@ -466,6 +486,12 @@ class Detector:
                 relationship = (number in explicit or (parent.head_repo == REPO and child.base == parent.branch))
                 if not shared and not relationship:
                     continue
+                graph_direction = parent.head in commits or (parent.head_repo == REPO and child.base == parent.branch)
+                if not relationship:
+                    if not graph_direction:
+                        raise Gap("shared ancestry without a confirmed direction/complete parent delta")
+                    if parent.head_repo != child.head_repo:
+                        raise Gap("cross-repository ancestry without a child-declared parent; possible copied prefix")
                 base, paths, patch = self.source.patch(parent)
                 if not patch:
                     reasons.append(f"#{number}: empty parent delta")
@@ -476,9 +502,6 @@ class Detector:
                 # A descendant can edit part of the parent's aggregate diff while
                 # retaining another complete, individually unlanded commit. Check
                 # exact commit patches, with the same main-history exclusion.
-                if not relationship and parent.head not in commits:
-                    raise Gap("shared ancestry without a confirmed direction/complete parent delta")
-                graph_direction = parent.head in commits or (parent.head_repo == REPO and child.base == parent.branch)
                 if not graph_direction and not aggregate_retained:
                     raise Gap("body-only direction without complete current parent content")
                 # Body-only links can establish whole-parent patch identity for
@@ -514,7 +537,7 @@ class Detector:
                 if unsupported:
                     raise Gap("individual merge/root commit unsupported; no alternative retained commit proof")
                 reasons.append(f"#{number}: no complete unlanded parent delta/commit retained")
-            except BudgetGap:
+            except (BudgetGap, ChildGap):
                 raise
             except (Gap, KeyError, ValueError) as e:
                 gaps.append(f"#{number}: {e}")
@@ -698,6 +721,8 @@ def main():
         for child in selected:
             mutation_started = False
             try:
+                api.begin_child()
+                source.begin_child()
                 evidence, reasons = detector.detect(child)
                 emit(pr=child.number, head=child.head, main=main_sha,
                      classification="confirmed-stack" if evidence else "no-confirmed-stack",
@@ -708,7 +733,6 @@ def main():
                     emit(pr=child.number, preflight="current child/parent/main identities and live branches verified")
                 if args.apply:
                     if evidence:
-                        mutation_started = True
                         parent = detector.prs[evidence.parent]
                         if not unchanged(api, child, parent, main_sha):
                             raise Gap("identities changed before blocking label")
@@ -721,6 +745,7 @@ def main():
                             emit(pr=child.number, bors_gap=str(error))
                         if not unchanged(api, child, parent, main_sha):
                             raise Gap("identities changed during bors observation")
+                        mutation_started = True
                         block(api, child)
                         enforce(api, child, parent, evidence, actor)
                         emit(pr=child.number, mutation="closed", withdrawal="pull_request.closed webhook")
@@ -742,7 +767,8 @@ def main():
                 failures += int(mutation_started)
                 emit(pr=child.number, head=child.head, main=main_sha, classification="unknown", gap=str(e))
         emit(summary=True, selected=len(selected), failures=failures, unknowns=unknowns, api_calls=api.calls,
-             api_bytes=api.bytes, mode="apply" if args.apply else "dry-run")
+             api_bytes=api.bytes, git_operations=source.calls,
+             elapsed_seconds=round(time.monotonic() - source.started, 3), mode="apply" if args.apply else "dry-run")
     return bool(failures)
 
 
