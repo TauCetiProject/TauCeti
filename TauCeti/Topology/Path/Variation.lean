@@ -20,10 +20,10 @@ Binary and finite concatenations add lengths, and restriction to a subpath recov
 on its parameter interval. Reversal and increasing continuous reparametrizations preserve length.
 All length identities are extended nonnegative identities, allowing paths of infinite length.
 In particular, concatenation is rectifiable exactly when both constituent paths are rectifiable.
-
-The proofs use Mathlib's monotone and antitone variation transport and interval additivity;
-no new path or length carrier is introduced.
 -/
+
+-- Central Mathlib inputs: `eVariationOn.comp_eq_of_monotoneOn`,
+-- `eVariationOn.comp_eq_of_antitoneOn`, and `eVariationOn.Icc_add_Icc`.
 
 public section
 
@@ -32,7 +32,14 @@ open scoped unitInterval ENNReal
 
 namespace Path
 
-variable {X : Type*} [TopologicalSpace X] [WeakPseudoEMetricSpace X] {x y z : X}
+variable {X : Type*} [TopologicalSpace X] {x y z : X}
+
+/-- The function underlying a subpath is composition with the affine parameter map. -/
+@[simp]
+theorem coe_subpath (γ : Path x y) (s t : I) :
+    ⇑(γ.subpath s t) = γ ∘ Icc.convexComb s t := (rfl)
+
+variable [WeakPseudoEMetricSpace X]
 
 /-- Extending a path to the real line preserves its variation on every subset of its original
 parameter interval. -/
@@ -63,6 +70,12 @@ theorem eVariationOn_symm (γ : Path x y) :
   rw [heq, eVariationOn.comp_eq_of_antitoneOn γ unitInterval.symm
     (unitInterval.strictAnti_symm.antitone.antitoneOn univ), image_univ,
     unitInterval.symm_bijective.surjective.range_eq]
+
+/-- Reversing a path preserves rectifiability. -/
+@[simp]
+theorem boundedVariationOn_symm_iff (γ : Path x y) :
+    BoundedVariationOn γ.symm univ ↔ BoundedVariationOn γ univ := by
+  simp only [BoundedVariationOn, eVariationOn_symm]
 
 /-- The length of a concatenation is the sum of the two path lengths. No rectifiability
 hypothesis is required. -/
@@ -117,7 +130,7 @@ theorem eVariationOn_concat {n : ℕ} (p : Fin (n + 1) → X)
 
 /-- The length of a subpath is the variation on the corresponding unordered parameter interval.
 This includes reversed and constant subpaths. -/
-@[simp]
+@[simp↓]
 theorem eVariationOn_subpath (γ : Path x y) (s t : I) :
     eVariationOn (γ.subpath s t) univ = eVariationOn γ (uIcc s t) := by
   wlog hst : s ≤ t
@@ -130,8 +143,7 @@ theorem eVariationOn_subpath (γ : Path x y) (s t : I) :
     have huv' : (u : ℝ) ≤ v := huv
     have hst' : (s : ℝ) ≤ t := hst
     nlinarith [mul_nonneg (sub_nonneg.mpr huv') (sub_nonneg.mpr hst')]
-  have heq : ⇑(γ.subpath s t) = γ ∘ Icc.convexComb s t := (rfl)
-  rw [heq, eVariationOn.comp_eq_of_monotoneOn γ _ (hm.monotoneOn univ),
+  rw [coe_subpath, eVariationOn.comp_eq_of_monotoneOn γ _ (hm.monotoneOn univ),
     image_univ, range_subpathAux]
 
 /-- Every subpath of a rectifiable path is rectifiable. -/
@@ -150,5 +162,13 @@ theorem eVariationOn_reparam (γ : Path x y) {f : I → I} (hf : Monotone f)
       ← hc.continuousOn.image_Icc_of_monotoneOn zero_le_one (hf.monotoneOn _),
       ← unitInterval.univ_eq_Icc, image_univ]
   rw [coe_reparam, eVariationOn.comp_eq_of_monotoneOn γ f (hf.monotoneOn univ), image_univ, hrange]
+
+/-- Increasing continuous reparametrization fixing the endpoints preserves rectifiability.
+Pauses in the reparametrization are allowed. -/
+@[simp↓]
+theorem boundedVariationOn_reparam_iff (γ : Path x y) {f : I → I} (hf : Monotone f)
+    (hc : Continuous f) (h0 : f 0 = 0) (h1 : f 1 = 1) :
+    BoundedVariationOn (γ.reparam f hc h0 h1) univ ↔ BoundedVariationOn γ univ := by
+  simp only [BoundedVariationOn, eVariationOn_reparam γ hf hc h0 h1]
 
 end Path
