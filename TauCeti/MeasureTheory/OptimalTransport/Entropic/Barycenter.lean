@@ -112,6 +112,7 @@ theorem entropicBarycenterCost_mono (h : ε ≤ ε') :
 
 /-- **At zero temperature the entropic barycenter cost is the weighted Wasserstein cost**
 `∑ i, w i * W_p(ν, μ i) ^ p`, whose minimizers are the Wasserstein barycenters of the `μ i`. -/
+@[simp]
 theorem entropicBarycenterCost_zero (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp0 : p ≠ 0)
     (hp : p ≠ ∞) :
     entropicBarycenterCost p 0 w μ ν =

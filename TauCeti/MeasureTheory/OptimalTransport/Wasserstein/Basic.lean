@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
+public import TauCeti.Topology.EMetricSpace.Rpow
 
 /-!
 # The Wasserstein distance of two measures
@@ -364,19 +365,6 @@ theorem wassersteinEDist_add_smul_dirac_le
     _ = eLpNorm (fun x ↦ edist x x₀) p τ :=
         eLpNorm_map_measure hd.aestronglyMeasurable hpair.aemeasurable
 
-omit [MeasurableSpace X] in
-/-- **The split bound for a power of the distance.** For a nonnegative exponent `r`, the cost
-`edist x y ^ r` is bounded by `K * edist x₀ x ^ r + K * edist x₀ y ^ r` about any basepoint `x₀`,
-with the finite constant `K = ENNReal.LpAddConst (ENNReal.ofReal r)⁻¹`. -/
-theorem edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow {r : ℝ} (hr : 0 ≤ r) (x₀ x y : X) :
-    edist x y ^ r ≤ ENNReal.LpAddConst (ENNReal.ofReal r)⁻¹ * edist x₀ x ^ r +
-      ENNReal.LpAddConst (ENNReal.ofReal r)⁻¹ * edist x₀ y ^ r :=
-  calc edist x y ^ r ≤ (edist x₀ x + edist x₀ y) ^ r := by
-        gcongr
-        exact edist_triangle_left _ _ _
-    _ ≤ ENNReal.LpAddConst (ENNReal.ofReal r)⁻¹ * (edist x₀ x ^ r + edist x₀ y ^ r) :=
-        ENNReal.rpow_add_le_mul_rpow_add_rpow' _ _ hr
-    _ = _ := mul_add _ _ _
 
 end Perturbation
 
