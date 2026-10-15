@@ -74,8 +74,7 @@ theorem macbeathHom_bijective (hmap : ∀ i, σ.map i ∈ Γ)
   obtain ⟨hlf', hcover⟩ := σ.locallyFinite_and_iUnion_eq_univ hmap hlf
   exact ⟨macbeathHom_injective_of_locallyFinite P.isClosed_carrier P.isPathConnected_carrier
       hlf' hcover,
-    macbeathHom_surjective_of_locallyFinite P.isClosed_carrier P.isPathConnected_carrier
-      hlf' hcover⟩
+    macbeathHom_surjective_of_locallyFinite P.isClosed_carrier hlf' hcover⟩
 
 /-- **Macbeath's presentation of the group of a polygon**, as a description of the relations:
 the words in the Macbeath generators of the polygon that evaluate to the identity in `Γ` form the

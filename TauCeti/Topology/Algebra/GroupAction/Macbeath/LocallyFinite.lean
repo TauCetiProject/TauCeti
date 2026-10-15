@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.GroupAction.Macbeath.Basic
+public import TauCeti.Topology.LocallyFinite
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 public import Mathlib.Topology.Connected.LocallyPathConnected
 
@@ -96,9 +97,52 @@ private theorem exists_pos_forall_mem_smul_of_mem_ball (hPc : IsClosed P)
     (hlf : LocallyFinite fun g : G ↦ g • P) (z : X) :
     ∃ r > 0, ∀ (g : G), ∀ y ∈ ball z (2 * r), y ∈ g • P → z ∈ g • P := by
   obtain ⟨ε, hε, hball⟩ :=
-    eventually_nhds_iff_ball.1 (hlf.eventually_subset (fun g ↦ hPc.smul g) z)
-  exact ⟨ε / 2, half_pos hε, fun g y hy hyg ↦ hball y (by rwa [mul_div_cancel₀ _ two_ne_zero] at hy)
-    hyg⟩
+    exists_pos_forall_mem_of_mem_ball (fun g ↦ hPc.smul g) hlf z
+  exact ⟨ε / 2, half_pos hε, fun g y hy hyg ↦
+    hball g y (by rwa [mul_div_cancel₀ _ two_ne_zero] at hy) hyg⟩
+
+/-- A closed set with locally finite translates has an open neighbourhood whose Macbeath
+generators are already Macbeath generators of the original set. -/
+private theorem exists_isOpen_superset_macbeathGenerators_of_locallyFinite (hPc : IsClosed P)
+    (hlf : LocallyFinite fun g : G ↦ g • P) :
+    ∃ U : Set X, IsOpen U ∧ P ⊆ U ∧ macbeathGenerators G U ⊆ macbeathGenerators G P := by
+  choose r hr hball using exists_pos_forall_mem_smul_of_mem_ball hPc hlf
+  let U := ⋃ z ∈ P, ball z (r z)
+  refine ⟨U, isOpen_biUnion fun _ _ ↦ isOpen_ball,
+    fun z hz ↦ mem_biUnion hz (mem_ball_self (hr z)), ?_⟩
+  intro g hg
+  rw [mem_macbeathGenerators] at hg ⊢
+  obtain ⟨x, hxU, hxgU⟩ := hg
+  obtain ⟨z, hzP, hxz⟩ := mem_iUnion₂.1 hxU
+  obtain ⟨w, hwP, hxw⟩ :=
+    mem_iUnion₂.1 (mem_smul_set_iff_inv_smul_mem.1 hxgU)
+  have hxz' : dist x z < r z := mem_ball.1 hxz
+  have hxw' : dist (g⁻¹ • x) w < r w := mem_ball.1 hxw
+  rcases le_total (r w) (r z) with hwz | hzw
+  · refine ⟨z, hzP, hball z g (g • w) (mem_ball.2 ?_) (smul_mem_smul_set hwP)⟩
+    have hxgw : dist x (g • w) < r w := by
+      calc
+        dist x (g • w) = dist (g⁻¹ • x) (g⁻¹ • (g • w)) := (dist_smul g⁻¹ x (g • w)).symm
+        _ = dist (g⁻¹ • x) w := by rw [inv_smul_smul]
+        _ < r w := hxw'
+    rw [two_mul]
+    calc
+      dist (g • w) z ≤ dist x (g • w) + dist x z := dist_triangle_left _ _ _
+      _ < r w + r z := add_lt_add hxgw hxz'
+      _ ≤ r z + r z := add_le_add hwz le_rfl
+  · have hzinv : dist (g⁻¹ • x) (g⁻¹ • z) < r z := by
+      rw [dist_smul]
+      exact hxz'
+    have hw : w ∈ g⁻¹ • P := hball w g⁻¹ (g⁻¹ • z) (mem_ball.2 <| by
+      rw [two_mul]
+      calc
+        dist (g⁻¹ • z) w ≤
+            dist (g⁻¹ • x) (g⁻¹ • z) + dist (g⁻¹ • x) w :=
+          dist_triangle_left _ _ _
+        _ < r z + r w := add_lt_add hzinv hxw'
+        _ ≤ r w + r w := add_le_add hzw le_rfl)
+      (smul_mem_smul_set hzP)
+    exact ⟨g • w, mem_inv_smul_set_iff.1 hw, smul_mem_smul_set hwP⟩
 
 /-- **The thickening of a tile.** Let `G` act isometrically on a locally path-connected metric
 space, and let `P` be closed and path-connected with locally finite translates. Then `P` has a
@@ -182,16 +226,20 @@ private theorem exists_macbeathCongr [LocallyPathConnectedSpace X] (hPc : IsClos
       (PresentedGroup.ext fun s ↦ by simp [macbeathMap_of]),
     macbeathHom_comp_macbeathMap hgen.subset fun s u ↦ (hrel s u).1⟩
 
-/-- **The Macbeath generators of a tile generate the group.** If the translates of a closed
-path-connected set `P` are locally finite and cover a connected, locally path-connected metric
-space on which `G` acts isometrically, then the elements `g` with `g • P` meeting `P` generate
-`G`. -/
-theorem macbeathHom_surjective_of_locallyFinite [LocallyPathConnectedSpace X] [ConnectedSpace X]
-    (hPc : IsClosed P) (hP : IsPathConnected P) (hlf : LocallyFinite fun g : G ↦ g • P)
+/-- **The Macbeath generators of a tile generate the group.** If the translates of a closed set
+`P` are locally finite and cover a connected metric space on which `G` acts isometrically, then
+the elements `g` with `g • P` meeting `P` generate `G`. -/
+theorem macbeathHom_surjective_of_locallyFinite [ConnectedSpace X]
+    (hPc : IsClosed P) (hlf : LocallyFinite fun g : G ↦ g • P)
     (hcover : ⋃ g : G, g • P = univ) : Surjective (macbeathHom G P) := by
-  obtain ⟨U, hUo, -, hUcover, e, he⟩ := exists_macbeathCongr hPc hP hlf hcover
-  rw [← he]
-  exact (macbeathHom_surjective hUo hUcover).comp e.surjective
+  obtain ⟨U, hUo, hPU, hgen⟩ :=
+    exists_isOpen_superset_macbeathGenerators_of_locallyFinite hPc hlf
+  have hUcover : ⋃ g : G, g • U = univ :=
+    eq_univ_of_univ_subset (hcover ▸ iUnion_mono fun g ↦ smul_set_mono hPU)
+  rw [← MonoidHom.range_eq_top, range_macbeathHom]
+  apply top_unique
+  rw [← closure_macbeathGenerators_eq_top hUo hUcover]
+  exact Subgroup.closure_mono hgen
 
 /-- **Macbeath's theorem for a tile.** If the translates of a closed path-connected set `P` are
 locally finite and cover a simply connected, locally path-connected metric space on which `G`
