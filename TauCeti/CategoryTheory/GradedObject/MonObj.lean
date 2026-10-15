@@ -31,8 +31,8 @@ monoid objects in graded objects.
   morphism `𝟙_ C ⟶ X 0`;
 * `CategoryTheory.GradedObject.monObjOfHomogeneous`: the monoid object structure defined by
   homogeneous data satisfying the graded associativity and unit laws;
-* `CategoryTheory.GradedObject.isCommMonObjOfHomogeneous`: commutativity of that monoid object
-  from graded commutativity of the homogeneous multiplications;
+* `CategoryTheory.GradedObject.isCommMonObj_monObjOfHomogeneous`: commutativity of that monoid
+  object from graded commutativity of the homogeneous multiplications;
 * `CategoryTheory.GradedObject.isMonHom_of_homogeneous`: a morphism of graded objects between
   monoid objects is a monoid morphism once it preserves the unit in degree zero and the
   multiplication of homogeneous components.
@@ -117,37 +117,6 @@ variable
   [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ (X₁ X₂ X₃ X₄ : GradedObject I C), HasTensor₄ObjExt X₁ X₂ X₃ X₄]
 
-/-- On the summand `X₁ i ⊗ Y j`, right whiskering a morphism of graded objects is the
-whiskering of its degree-`i` component. -/
-@[reassoc (attr := simp)]
-lemma ιTensorObj_whiskerRight {X₁ X₂ : GradedObject I C} (f : X₁ ⟶ X₂) (Y : GradedObject I C)
-    (i j n : I) (h : i + j = n) :
-    Monoidal.ιTensorObj X₁ Y i j n h ≫ (f ▷ Y) n =
-      (f i ▷ Y j) ≫ Monoidal.ιTensorObj X₂ Y i j n h := by
-  -- Right whiskering in the monoidal structure on graded objects is `Monoidal.tensorHom f (𝟙 Y)`.
-  change Monoidal.ιTensorObj X₁ Y i j n h ≫ Monoidal.tensorHom f (𝟙 Y) n = _
-  simp
-
-/-- On the summand `X i ⊗ Y₁ j`, left whiskering a morphism of graded objects is the
-whiskering of its degree-`j` component. -/
-@[reassoc (attr := simp)]
-lemma ιTensorObj_whiskerLeft (X : GradedObject I C) {Y₁ Y₂ : GradedObject I C} (f : Y₁ ⟶ Y₂)
-    (i j n : I) (h : i + j = n) :
-    Monoidal.ιTensorObj X Y₁ i j n h ≫ (X ◁ f) n =
-      (X i ◁ f j) ≫ Monoidal.ιTensorObj X Y₂ i j n h := by
-  -- Left whiskering in the monoidal structure on graded objects is `Monoidal.tensorHom (𝟙 X) f`.
-  change Monoidal.ιTensorObj X Y₁ i j n h ≫ Monoidal.tensorHom (𝟙 X) f n = _
-  simp
-
-/-- On the summand `X₁ i ⊗ Y₁ j`, the tensor product of two morphisms of graded objects is the
-tensor product of their components. -/
-@[reassoc (attr := simp)]
-lemma ιTensorObj_tensorHom {X₁ X₂ Y₁ Y₂ : GradedObject I C} (f : X₁ ⟶ X₂) (g : Y₁ ⟶ Y₂)
-    (i j n : I) (h : i + j = n) :
-    Monoidal.ιTensorObj X₁ Y₁ i j n h ≫ (f ⊗ₘ g) n =
-      (f i ⊗ₘ g j) ≫ Monoidal.ιTensorObj X₂ Y₂ i j n h :=
-  Monoidal.ι_tensorHom f g i j n h
-
 /-- A morphism of graded objects between monoid objects is a morphism of monoid objects as soon
 as it preserves the unit in degree zero and commutes with multiplication on every pair of
 homogeneous components. -/
@@ -161,6 +130,9 @@ lemma isMonHom_of_homogeneous {X Y : GradedObject I C} [MonObj X] [MonObj Y] (f 
     ext n
     refine Monoidal.tensorObj_ext _ _ fun i j h ↦ ?_
     subst h
+    -- The tensor product of morphisms of graded objects is `Monoidal.tensorHom`.
+    change Monoidal.ιTensorObj X X i j (i + j) rfl ≫ (μ[X] ≫ f) (i + j) =
+      Monoidal.ιTensorObj X X i j (i + j) rfl ≫ (Monoidal.tensorHom f f ≫ μ[Y]) (i + j)
     simpa using mul_f i j
 
 variable (X : GradedObject I C) (one : 𝟙_ C ⟶ X 0) (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j))
@@ -181,21 +153,32 @@ abbrev monObjOfHomogeneous :
   one_mul := by
     rw [← cancel_epi (λ_ X).inv, Iso.inv_hom_id]
     ext n
-    -- The inverse left unitor of graded objects includes `𝟙_ C ⊗ X n` as the summand `(0, n)`.
-    change ((Monoidal.leftUnitor X).inv ≫ _) n = 𝟙 _
+    -- The inverse left unitor of graded objects includes `𝟙_ C ⊗ X n` as the summand `(0, n)`,
+    -- and right whiskering of graded objects is `Monoidal.tensorHom`.
+    change ((Monoidal.leftUnitor X).inv ≫
+      Monoidal.tensorHom (Monoidal.oneOfDegreeZero X one) (𝟙 X) ≫
+        Monoidal.mulOfHomogeneous X mul) n = 𝟙 _
     simp [Monoidal.leftUnitor_inv_apply, reassoc_of% one_mul n]
   mul_one := by
     rw [← cancel_epi (ρ_ X).inv, Iso.inv_hom_id]
     ext n
-    -- The inverse right unitor of graded objects includes `X n ⊗ 𝟙_ C` as the summand `(n, 0)`.
-    change ((Monoidal.rightUnitor X).inv ≫ _) n = 𝟙 _
+    -- The inverse right unitor of graded objects includes `X n ⊗ 𝟙_ C` as the summand `(n, 0)`,
+    -- and left whiskering of graded objects is `Monoidal.tensorHom`.
+    change ((Monoidal.rightUnitor X).inv ≫
+      Monoidal.tensorHom (𝟙 X) (Monoidal.oneOfDegreeZero X one) ≫
+        Monoidal.mulOfHomogeneous X mul) n = 𝟙 _
     simp [Monoidal.rightUnitor_inv_apply, reassoc_of% mul_one n]
   mul_assoc := by
     ext n
     refine Monoidal.tensorObj₃'_ext _ _ fun i j k h ↦ ?_
     -- The associator of graded objects is `Monoidal.associator`, which sends the summand
-    -- `(X i ⊗ X j) ⊗ X k` to `X i ⊗ (X j ⊗ X k)` by the associator of `C`.
-    change _ = Monoidal.ιTensorObj₃' X X X i j k n h ≫ (Monoidal.associator X X X).hom n ≫ _
+    -- `(X i ⊗ X j) ⊗ X k` to `X i ⊗ (X j ⊗ X k)` by the associator of `C`; whiskering of
+    -- graded objects is `Monoidal.tensorHom`.
+    change Monoidal.ιTensorObj₃' X X X i j k n h ≫ (Monoidal.tensorHom
+        (Monoidal.mulOfHomogeneous X mul) (𝟙 X) ≫ Monoidal.mulOfHomogeneous X mul) n =
+      Monoidal.ιTensorObj₃' X X X i j k n h ≫ (Monoidal.associator X X X).hom n ≫
+        (Monoidal.tensorHom (𝟙 X) (Monoidal.mulOfHomogeneous X mul) ≫
+          Monoidal.mulOfHomogeneous X mul) n
     rw [Monoidal.ιTensorObj₃'_associator_hom_assoc,
       Monoidal.ιTensorObj₃'_eq X X X i j k n h (i + j) rfl,
       Monoidal.ιTensorObj₃_eq X X X i j k n h (j + k) rfl]
