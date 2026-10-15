@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Algebra.Polynomial.Derivation
 import Mathlib.Algebra.Polynomial.Eval.Degree
 
 /-!
-# Degrees of derivatives under coefficient maps
+# Polynomial derivatives
+
+This file records auxiliary results relating Mathlib's polynomial derivative APIs and controlling
+degrees of derivatives under coefficient maps.
+
+The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function.
 
 A coefficient map can lower the degree of a polynomial, and in positive characteristic it can
 lower the degree of a derivative even when it preserves the degree of the polynomial itself.
@@ -23,7 +28,15 @@ namespace TauCeti
 
 open Polynomial
 
-variable {R S : Type*} [Semiring R] [Semiring S] [IsAddTorsionFree S]
+variable {R S : Type*}
+
+/-- The derivation `derivative'` has the ordinary polynomial derivative as its underlying
+function. -/
+theorem _root_.Polynomial.coe_derivative' [CommSemiring R] :
+    ⇑(derivative' : Derivation R R[X] R[X]) = derivative :=
+  _root_.funext derivative'_apply
+
+variable [Semiring R] [Semiring S] [IsAddTorsionFree S]
 
 /-- A coefficient map into an additively torsion-free semiring which preserves the degree of a
 polynomial also preserves the degree of its derivative. -/

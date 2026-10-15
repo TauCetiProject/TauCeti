@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Polynomial.Wronskian
+public import TauCeti.Algebra.Polynomial.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.LinearAlgebra.Vandermonde
@@ -95,11 +95,6 @@ theorem hasseWronskian_fin_two (g : Fin 2 → R[X]) :
   rw [hasseWronskian_def, det_fin_two, wronskian]
   simp only [of_apply, Fin.val_zero, Fin.val_one, hasseDeriv_zero', hasseDeriv_one']
   ring
-
-/-- The derivation `derivative'` is the ordinary derivative as a function; rewriting with this
-lets iterates `derivative'^[k]` be compared with `derivative^[k]`. -/
-private theorem coe_derivative' : ⇑(derivative' : Derivation R R[X] R[X]) = derivative :=
-  _root_.funext derivative'_apply
 
 /-- Multiplying the Hasse Wronskian by `∏ k < m, k!` gives the classical Wronskian, the
 determinant of the iterated ordinary derivatives `derivative^[k] gₗ`. -/
