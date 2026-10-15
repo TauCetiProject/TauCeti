@@ -60,12 +60,16 @@ noncomputable local instance hyperbolicSixSpinPlusFinite :
     FiniteDimensional K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
   Module.finite_of_finrank_pos (by rw [hyperbolicSix_spinPlus_finrank]; norm_num)
 
-private theorem hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix
+private theorem hyperbolicSixSpinToGeneralLinear_eq_toMatrix
     (g : spinGroup (splitEvenForm K 3)) :
     (hyperbolicSixSpinToGeneralLinear K g : Matrix (Fin 4) (Fin 4) K) =
-      Algebra.endAlgEquivMatrix K
-        (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3))
-        (hyperbolicSix_spinPlus_finrank K)
+      LinearMap.toMatrix
+        (Module.finBasisOfFinrankEq K
+          (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3))
+          (hyperbolicSix_spinPlus_finrank K))
+        (Module.finBasisOfFinrankEq K
+          (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3))
+          (hyperbolicSix_spinPlus_finrank K))
         (spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
           (splitEvenPolarization_line K 3)
           (spinGroupToEven (splitEvenForm K 3) g)) := by
@@ -78,6 +82,7 @@ private theorem hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix
       coe_hyperbolicSixSpinToGeneralLinear_apply K g
     _ = ((splitEvenPolarization K 3).evenCliffordEquivProdMatrix hW hV x).1 :=
       congrArg Prod.fst (hyperbolicSixEvenEquivMatrixProd_apply K x)
+    -- `endAlgEquivMatrix` uses exactly this `finBasisOfFinrankEq`; keep that reduction here.
     _ = _ := congrArg Prod.fst
       ((splitEvenPolarization K 3).evenCliffordEquivProdMatrix_apply hW hV x)
 
@@ -103,13 +108,7 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdRep :
       (coe_spinPlusAction_spinGroupToEven_apply P hline g (ep.symm s)).symm
   · intro g s
     simp only [MonoidHom.comp_apply, stdRep_apply_apply]
-    rw [hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix]
-    change Matrix.mulVec
-      (LinearMap.toMatrix b b
-        (spinPlusAction (splitEvenForm K 3) P hline
-          (spinGroupToEven (splitEvenForm K 3) g))) (b.repr s) =
-        b.repr (spinPlusAction (splitEvenForm K 3) P hline
-          (spinGroupToEven (splitEvenForm K 3) g) s)
+    rw [hyperbolicSixSpinToGeneralLinear_eq_toMatrix]
     exact LinearMap.toMatrix_mulVec_repr b b
       (spinPlusAction (splitEvenForm K 3) P hline
         (spinGroupToEven (splitEvenForm K 3) g)) s
