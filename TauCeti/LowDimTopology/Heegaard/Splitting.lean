@@ -232,18 +232,17 @@ theorem hemisphereHeegaardSplitting_right (p : sphere (0 : E) 1) :
   ext x
   simp [hemisphereHeegaardSplitting, inner_neg_right]
 
-private theorem nonempty_sphere_of_finrank_eq_four : Nonempty (sphere (0 : E) 1) := by
+instance : Nonempty (HeegaardSplitting (sphere (0 : E) 1)) := by
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : Module.finrank ℝ E = 4)
-  exact ((NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one).to_subtype
-
-instance : Nonempty (HeegaardSplitting (sphere (0 : E) 1)) :=
-  nonempty_sphere_of_finrank_eq_four.map hemisphereHeegaardSplitting
+  exact ((NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one).to_subtype.map
+    hemisphereHeegaardSplitting
 
 /-- **The `3`-sphere has Heegaard genus zero.** -/
-theorem heegaardGenus_sphere : heegaardGenus (sphere (0 : E) 1) = 0 :=
-  heegaardGenus_eq_zero_iff.2
-    (nonempty_sphere_of_finrank_eq_four.elim fun p ↦
-      ⟨hemisphereHeegaardSplitting p, hemisphereHeegaardSplitting_genus p⟩)
+theorem heegaardGenus_sphere : heegaardGenus (sphere (0 : E) 1) = 0 := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : Module.finrank ℝ E = 4)
+  obtain ⟨p, hp⟩ := (NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one
+  exact heegaardGenus_eq_zero_iff.2
+    ⟨hemisphereHeegaardSplitting ⟨p, hp⟩, hemisphereHeegaardSplitting_genus _⟩
 
 end Sphere
 

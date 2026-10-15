@@ -49,6 +49,8 @@ valued in the closed unit ball.
   dimension are homeomorphic.
 * `TauCeti.nonempty_homeomorph_closedBall_of_convex`: a compact convex set with nonempty interior
   is homeomorphic to a closed ball of the same dimension.
+* `TauCeti.nonempty_homeomorph_Icc_prod_closedBall`: a nondegenerate closed rectangle is
+  homeomorphic to the closed unit ball of any two-dimensional real normed space.
 -/
 
 public section
@@ -289,5 +291,17 @@ theorem nonempty_homeomorph_closedBall_of_convex {s : Set E} (hc : Convex ℝ s)
     (closedBallHomeomorphOfFinrankEq hEF)⟩
 
 end FinrankEq
+
+/-- A product of two nondegenerate closed real intervals is homeomorphic to the closed unit ball
+of any two-dimensional real normed space. -/
+theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {a b c d : ℝ} (hab : a < b) (hcd : c < d)
+    (hF : Module.finrank ℝ F = 2) :
+    Nonempty ((Icc a b ×ˢ Icc c d) ≃ₜ closedBall (0 : F) 1) :=
+  nonempty_homeomorph_closedBall_of_convex ((convex_Icc _ _).prod (convex_Icc _ _))
+    (isCompact_Icc.prod isCompact_Icc)
+    (by rw [interior_prod_eq, interior_Icc, interior_Icc]
+        exact (nonempty_Ioo.mpr hab).prod (nonempty_Ioo.mpr hcd))
+    (by simp [hF])
 
 end TauCeti

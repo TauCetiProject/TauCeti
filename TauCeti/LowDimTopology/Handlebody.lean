@@ -127,28 +127,22 @@ private theorem pos_of_mem_Icc_inv_two_two {r : ℝ} (hr : r ∈ Icc (2⁻¹ : �
 
 /-- Polar coordinates, restricted from `homeomorphUnitSphereProd ℂ`, identify the closed disc with
 one hole with the product of the interval `[1 / 2, 2]` and the circle. -/
-private def planarSurfaceOneHomeomorph : planarSurface 1 ≃ₜ Icc (2⁻¹ : ℝ) 2 × Circle where
-  toFun z :=
-    (⟨homeomorphUnitSphereProd ℂ ⟨z, ne_zero_of_mem_planarSurface_one z.2⟩ |>.2,
-      by simpa [planarSurface_one] using z.2⟩,
-      homeomorphUnitSphereProd ℂ ⟨z, ne_zero_of_mem_planarSurface_one z.2⟩ |>.1)
-  invFun y := ⟨(homeomorphUnitSphereProd ℂ).symm (y.2, ⟨y.1, pos_of_mem_Icc_inv_two_two y.1.2⟩),
-    by
-      have hr := abs_of_pos (pos_of_mem_Icc_inv_two_two y.1.2)
-      rw [planarSurface_one, homeomorphUnitSphereProd_symm_apply_coe]
-      exact ⟨by simpa [norm_smul, hr] using y.1.2.1, by simpa [norm_smul, hr] using y.1.2.2⟩⟩
-  left_inv z := by
-    ext
-    exact congrArg (fun w : ({0}ᶜ : Set ℂ) ↦ (w : ℂ)) <|
-      (homeomorphUnitSphereProd ℂ).symm_apply_apply ⟨z, ne_zero_of_mem_planarSurface_one z.2⟩
-  right_inv y := by
-    have h := (homeomorphUnitSphereProd ℂ).apply_symm_apply
-      (y.2, ⟨y.1, pos_of_mem_Icc_inv_two_two y.1.2⟩)
-    ext1
-    · exact Subtype.ext (congrArg (fun w ↦ (w.2 : ℝ)) h)
-    · exact congrArg Prod.fst h
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
+private def planarSurfaceOneHomeomorph : planarSurface 1 ≃ₜ Icc (2⁻¹ : ℝ) 2 × Circle :=
+  let e : {z : ({0}ᶜ : Set ℂ) | (z : ℂ) ∈ planarSurface 1} ≃ₜ planarSurface 1 :=
+    Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange <| by
+      intro z hz
+      exact ⟨⟨z, ne_zero_of_mem_planarSurface_one hz⟩, rfl⟩
+  let r : {r : Ioi (0 : ℝ) | (r : ℝ) ∈ Icc (2⁻¹ : ℝ) 2} ≃ₜ Icc (2⁻¹ : ℝ) 2 :=
+    Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange <| by
+      intro r hr
+      exact ⟨⟨r, pos_of_mem_Icc_inv_two_two hr⟩, rfl⟩
+  e.symm.trans <|
+    ((homeomorphUnitSphereProd ℂ).subtype
+      (q := fun y ↦ y ∈ (univ : Set (sphere (0 : ℂ) 1)) ×ˢ
+        {r : Ioi (0 : ℝ) | (r : ℝ) ∈ Icc (2⁻¹ : ℝ) 2})
+      (by intro z; simp [planarSurface_one, homeomorphUnitSphereProd_apply_snd_coe])).trans <|
+      (Homeomorph.Set.prod _ _).trans <|
+        ((Homeomorph.Set.univ (sphere (0 : ℂ) 1)).prodCongr r).trans (Homeomorph.prodComm _ _)
 
 /-- Polar coordinates on the annulus, and the identity on the interval, identify the genus-one
 handlebody with the product of a rectangle and the circle. -/
@@ -161,18 +155,11 @@ private def handlebodyOneHomeomorphProd :
           (Homeomorph.prodAssoc _ _ _).symm.trans <|
             (Homeomorph.Set.prod _ _).symm.prodCongr (.refl _)
 
-/-- The rectangle `[1 / 2, 2] × [-1, 1]` is a closed disc. -/
-private theorem nonempty_homeomorph_rectangle_closedBall :
-    Nonempty ((Icc (2⁻¹ : ℝ) 2 ×ˢ Icc (-1 : ℝ) 1 : Set (ℝ × ℝ)) ≃ₜ closedBall (0 : ℂ) 1) :=
-  nonempty_homeomorph_closedBall_of_convex ((convex_Icc _ _).prod (convex_Icc _ _))
-    (isCompact_Icc.prod isCompact_Icc)
-    (by rw [interior_prod_eq, interior_Icc, interior_Icc]; exact ⟨(1, 0), by norm_num⟩)
-    (by simp)
-
 /-- **The genus-one handlebody is a solid torus.** The standard handlebody of genus one is
 homeomorphic to the solid torus `D² × S¹`. -/
 theorem nonempty_homeomorph_handlebody_one : Nonempty (handlebody 1 ≃ₜ SolidTorus) :=
-  nonempty_homeomorph_rectangle_closedBall.map fun e ↦
+  (nonempty_homeomorph_Icc_prod_closedBall (F := ℂ) (by norm_num : (2⁻¹ : ℝ) < 2)
+    (by norm_num : (-1 : ℝ) < 1) (by simp)).map fun e ↦
     handlebodyOneHomeomorphProd.trans (e.prodCongr (.refl Circle))
 
 end TauCeti
