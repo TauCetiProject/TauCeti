@@ -65,7 +65,7 @@ and restriction along a monoid isomorphism is an equivalence of representation c
 
 public noncomputable section
 
-universe u uG uH uK uL uV uW uU
+universe u uG uH uK uL uV uW uU uV₁ uV₂ uW₁ uW₂
 
 namespace Representation
 
@@ -235,19 +235,27 @@ end RepMorphisms
 
 section Tensor
 
-open CategoryTheory MonoidalCategory
-
-variable {R : Type u} {G : Type uG} {H : Type uH} [CommRing R] [Monoid G] [Monoid H]
+variable {R : Type u} {G : Type uG} {H : Type uH} [CommSemiring R] [Monoid G] [Monoid H]
 
 /-- The tensor product of two intertwining maps along one homomorphism of monoids `f` is
 intertwining along `f`. This is Mathlib's `Representation.IntertwiningMap.tensor`, stated for
-intertwining maps along a homomorphism. -/
-theorem Representation.IsIntertwiningMap.tensor {f : G →* H} {M₁ M₂ : Rep.{u} R G}
-    {N₁ N₂ : Rep.{u} R H} {φ₁ : M₁.V →ₗ[R] N₁.V} {φ₂ : M₂.V →ₗ[R] N₂.V}
-    (h₁ : M₁.ρ.IsIntertwiningMap (N₁.ρ.comp f) φ₁) (h₂ : M₂.ρ.IsIntertwiningMap (N₂.ρ.comp f) φ₂) :
-    (M₁ ⊗ M₂).ρ.IsIntertwiningMap ((N₁ ⊗ N₂).ρ.comp f) (TensorProduct.map φ₁ φ₂) :=
+intertwining maps along a homomorphism, over a commutative semiring and with no restriction on
+the universes of the four modules. -/
+theorem Representation.IsIntertwiningMap.tensor
+    {V₁ : Type uV₁} {V₂ : Type uV₂} {W₁ : Type uW₁} {W₂ : Type uW₂}
+    [AddCommMonoid V₁] [Module R V₁] [AddCommMonoid V₂] [Module R V₂]
+    [AddCommMonoid W₁] [Module R W₁] [AddCommMonoid W₂] [Module R W₂]
+    {f : G →* H} {ρ₁ : Representation R G V₁} {ρ₂ : Representation R G V₂}
+    {σ₁ : Representation R H W₁} {σ₂ : Representation R H W₂}
+    {φ₁ : V₁ →ₗ[R] W₁} {φ₂ : V₂ →ₗ[R] W₂}
+    (h₁ : ρ₁.IsIntertwiningMap (σ₁.comp f) φ₁) (h₂ : ρ₂.IsIntertwiningMap (σ₂.comp f) φ₂) :
+    (ρ₁.tprod ρ₂).IsIntertwiningMap ((σ₁.tprod σ₂).comp f) (TensorProduct.map φ₁ φ₂) :=
   ⟨((φ₁.intertwiningMap_of_isIntertwiningMap _ _ h₁.isIntertwining).tensor
     (φ₂.intertwiningMap_of_isIntertwiningMap _ _ h₂.isIntertwining)).isIntertwining⟩
+
+variable {R : Type u} [CommRing R]
+
+open CategoryTheory MonoidalCategory
 
 /-- Restriction and tensor products are compatible: the tensor product of the identity maps
 from the restricted representations to their originals intertwines the actions along `f`. -/
