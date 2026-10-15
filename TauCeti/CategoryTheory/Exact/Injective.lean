@@ -26,6 +26,8 @@ inflation has a retraction.
 
 The bundled `TauCeti.ExactStructure.InjectivePresentation` records a conflation into a relatively
 injective object, and `TauCeti.ExactStructure.EnoughInjectives` says that every object admits one.
+A conflation-exact functor maps such a presentation when it preserves relative injectives, while
+right adjoints preserve relative injectives when their left adjoints preserve inflations.
 A morphism of the presented objects extends to the injective middle terms and hence induces a
 morphism of the cokernel terms; both are recorded as
 `TauCeti.ExactStructure.InjectivePresentation.middleMap` and
@@ -46,7 +48,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C]
@@ -170,6 +172,50 @@ theorem abelian_isInjective_iff {A : Type u} [Category.{v} A] [Abelian A] (X : A
     have : Mono i := (abelian_isInflation_iff i).mp hi
     exact h.factors f i
 
+section Functor
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D]
+variable {F : C ⥤ D} {G : D ⥤ C} [F.Additive] [G.Additive]
+
+omit [F.Additive] [G.Additive] in
+/-- A right adjoint carries relative injectives to relative injectives when its left adjoint
+carries inflations to inflations. -/
+theorem isInjective_map_adjoint_of_map_isInflation (E : ExactStructure C)
+    (E' : ExactStructure D) (adj : F ⊣ G)
+    (hF : ∀ ⦃X Y : C⦄ (i : X ⟶ Y), E.IsInflation i → E'.IsInflation (F.map i))
+    {I : D} (hI : E'.isInjective I) :
+    E.isInjective (G.obj I) := by
+  intro X Y i hi f
+  obtain ⟨g, hg⟩ := hI (hF i hi) ((adj.homEquiv X I).symm f)
+  refine ⟨adj.homEquiv Y I g, ?_⟩
+  rw [← adj.homEquiv_naturality_left, hg]
+  exact Equiv.apply_symm_apply (adj.homEquiv X I) f
+
+omit [G.Additive] in
+/-- A right adjoint carries relative injectives to relative injectives when its left adjoint is
+conflation-exact. -/
+theorem isInjective_map_adjoint (E : ExactStructure C) (E' : ExactStructure D)
+    (adj : F ⊣ G) (hF : E.IsConflationExact E' F) {I : D} (hI : E'.isInjective I) :
+    E.isInjective (G.obj I) :=
+  E.isInjective_map_adjoint_of_map_isInflation E' adj
+    (fun ⦃_⦄ ⦃_⦄ _ hi ↦ hF.map_isInflation hi) hI
+
+/-- A conflation-exact equivalence preserves and reflects relative injectivity. -/
+theorem isInjective_map_equivalence_iff (E : ExactStructure C) (E' : ExactStructure D)
+    (e : C ≌ D) [e.functor.Additive]
+    (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) (I : C) :
+    E'.isInjective (e.functor.obj I) ↔ E.isInjective I := by
+  let _ : e.symm.functor.Additive := inferInstanceAs e.inverse.Additive
+  constructor
+  · intro hI
+    exact E.isInjective.prop_of_iso (e.unitIso.app I).symm
+      (E.isInjective_map_adjoint E' e.toAdjunction hF hI)
+  · exact E'.isInjective_map_adjoint E e.symm.toAdjunction hG
+
+end Functor
+
 /-- An injective presentation of `X` relative to `E` is a conflation `X → I → K` whose
 middle term is `E`-injective. -/
 structure InjectivePresentation (E : ExactStructure C) (X : C) where
@@ -194,6 +240,47 @@ structure EnoughInjectives (E : ExactStructure C) : Prop where
   presentation : ∀ X : C, Nonempty (E.InjectivePresentation X)
 
 namespace InjectivePresentation
+
+section Functor
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D]
+variable {E' : ExactStructure D} {X : C} {F : C ⥤ D} [F.Additive]
+
+/-- The image of a relative injective presentation under a conflation-exact functor that carries
+relative injectives to relative injectives. -/
+def map (P : E.InjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hII' : E.isInjective ≤ E'.isInjective.inverseImage F) :
+    E'.InjectivePresentation (F.obj X) where
+  I := F.obj P.I
+  K := F.obj P.K
+  i := F.map P.i
+  p := F.map P.p
+  zero := by rw [← F.map_comp, P.zero, F.map_zero]
+  conflation := hF.map_conflation P.conflation
+  isInjective := (E'.isInjective.prop_inverseImage_iff F _).mp (hII' _ P.isInjective)
+
+@[simp] theorem map_I (P : E.InjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hII' : E.isInjective ≤ E'.isInjective.inverseImage F) :
+    (P.map hF hII').I = F.obj P.I := by
+  simp [map]
+
+@[simp] theorem map_K (P : E.InjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hII' : E.isInjective ≤ E'.isInjective.inverseImage F) :
+    (P.map hF hII').K = F.obj P.K := by
+  simp [map]
+
+@[simp] theorem map_i (P : E.InjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hII' : E.isInjective ≤ E'.isInjective.inverseImage F) :
+    HEq (P.map hF hII').i (F.map P.i) := by
+  simp [map]
+
+@[simp] theorem map_p (P : E.InjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hII' : E.isInjective ≤ E'.isInjective.inverseImage F) :
+    HEq (P.map hF hII').p (F.map P.p) := by
+  simp [map]
+
+end Functor
 
 /-- The tautological injective presentation in the split exact structure. -/
 noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation X where

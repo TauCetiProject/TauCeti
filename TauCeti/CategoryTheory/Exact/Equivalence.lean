@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.CategoryTheory.Exact.Frobenius
 public import TauCeti.CategoryTheory.Exact.Functor
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Square
@@ -28,9 +29,14 @@ shows that both functors of the equivalence preserve and reflect conflations.
 * `TauCeti.ExactStructure.isConflationExact_functor_transport` and
   `TauCeti.ExactStructure.reflectsConflations_functor_transport`: the forward equivalence
   preserves and reflects conflations.
+* `TauCeti.ExactStructure.transport_isProjective_iff` and
+  `TauCeti.ExactStructure.transport_isInjective_iff`: relative projectivity and injectivity are
+  detected by the inverse equivalence.
 * `TauCeti.ExactStructure.isConflationExact_inverse_iff_reflectsConflations`: for an equivalence
   between two *given* exact structures, conflation-exactness of the inverse is the same
   condition as reflection of conflations by the forward functor.
+* `TauCeti.ExactStructure.IsFrobenius.transport`: Frobenius exact structures remain Frobenius
+  after transport along an additive equivalence.
 
 ## References
 
@@ -289,6 +295,104 @@ transported exact structure. -/
 theorem reflectsConflations_inverse_transport (E : ExactStructure C) (e : C ≌ D)
     [e.functor.Additive] : (transport E e).ReflectsConflations E e.inverse where
   reflects_conflation {S} hS := (transport_conflation_iff E e S).mpr hS
+
+/-- Relative projectivity in a transported exact structure is detected by the inverse
+equivalence. -/
+@[simp]
+theorem transport_isProjective_iff (E : ExactStructure C) (e : C ≌ D)
+    [e.functor.Additive] (X : D) :
+    (ExactStructure.transport E e).isProjective X ↔ E.isProjective (e.inverse.obj X) := by
+  let E' := ExactStructure.transport E e
+  have hF : E.IsConflationExact E' e.functor :=
+    isConflationExact_functor_transport E e
+  have hG : E'.IsConflationExact E e.inverse :=
+    isConflationExact_inverse_transport E e
+  constructor
+  · intro hX
+    exact (E.isProjective_map_equivalence_iff E' e hF hG (e.inverse.obj X)).mp
+      (E'.isProjective.prop_of_iso (e.counitIso.app X).symm hX)
+  · intro hX
+    exact E'.isProjective.prop_of_iso (e.counitIso.app X)
+      ((E.isProjective_map_equivalence_iff E' e hF hG (e.inverse.obj X)).mpr hX)
+
+/-- Relative injectivity in a transported exact structure is detected by the inverse
+equivalence. -/
+@[simp]
+theorem transport_isInjective_iff (E : ExactStructure C) (e : C ≌ D)
+    [e.functor.Additive] (X : D) :
+    (ExactStructure.transport E e).isInjective X ↔ E.isInjective (e.inverse.obj X) := by
+  let E' := ExactStructure.transport E e
+  have hF : E.IsConflationExact E' e.functor :=
+    isConflationExact_functor_transport E e
+  have hG : E'.IsConflationExact E e.inverse :=
+    isConflationExact_inverse_transport E e
+  constructor
+  · intro hX
+    exact (E.isInjective_map_equivalence_iff E' e hF hG (e.inverse.obj X)).mp
+      (E'.isInjective.prop_of_iso (e.counitIso.app X).symm hX)
+  · intro hX
+    exact E'.isInjective.prop_of_iso (e.counitIso.app X)
+      ((E.isInjective_map_equivalence_iff E' e hF hG (e.inverse.obj X)).mpr hX)
+
+/-- Transporting a Frobenius exact structure along an additive equivalence gives a Frobenius
+exact structure. -/
+theorem IsFrobenius.transport {E : ExactStructure C} (hE : E.IsFrobenius) (e : C ≌ D)
+    [e.functor.Additive] : (ExactStructure.transport E e).IsFrobenius := by
+  let E' := ExactStructure.transport E e
+  have hF : E.IsConflationExact E' e.functor :=
+    isConflationExact_functor_transport E e
+  have hG : E'.IsConflationExact E e.inverse :=
+    isConflationExact_inverse_transport E e
+  have hP : E.isProjective ≤ E'.isProjective.inverseImage e.functor := by
+    intro X hX
+    exact (E.isProjective_map_equivalence_iff E' e hF hG X).mpr hX
+  have hI : E.isInjective ≤ E'.isInjective.inverseImage e.functor := by
+    intro X hX
+    exact (E.isInjective_map_equivalence_iff E' e hF hG X).mpr hX
+  refine
+    { enoughProjectives := ⟨fun X ↦ ?_⟩
+      enoughInjectives := ⟨fun X ↦ ?_⟩
+      projective_iff_injective := fun X ↦ ?_ }
+  · let P := (hE.enoughProjectives.presentation (e.inverse.obj X)).some
+    let P' := P.map hF hP
+    let zero : P'.i ≫ (P'.p ≫ e.counitIso.hom.app X) = 0 := by
+      rw [← Category.assoc, P'.zero, zero_comp]
+    let S := ShortComplex.mk P'.i (P'.p ≫ e.counitIso.hom.app X) zero
+    let S' := ShortComplex.mk P'.i P'.p P'.zero
+    have hS : E'.Conflation S := by
+      let eS : S' ≅ S := ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
+        (e.counitIso.app X) (by simp [S', S]) (by simp [S', S])
+      exact E'.conflation_of_iso eS P'.conflation
+    let Q : E'.ProjectivePresentation X :=
+      { K := P'.K
+        P := P'.P
+        i := P'.i
+        p := P'.p ≫ e.counitIso.hom.app X
+        zero := zero
+        conflation := hS
+        isProjective := P'.isProjective }
+    exact ⟨Q⟩
+  · let P := (hE.enoughInjectives.presentation (e.inverse.obj X)).some
+    let P' := P.map hF hI
+    let zero : (e.counitIso.inv.app X ≫ P'.i) ≫ P'.p = 0 := by
+      rw [Category.assoc, P'.zero, comp_zero]
+    let S := ShortComplex.mk (e.counitIso.inv.app X ≫ P'.i) P'.p zero
+    let S' := ShortComplex.mk P'.i P'.p P'.zero
+    have hS : E'.Conflation S := by
+      let eS : S' ≅ S := ShortComplex.isoMk (e.counitIso.app X) (Iso.refl _)
+        (Iso.refl _) (by simp [S', S]) (by simp [S', S])
+      exact E'.conflation_of_iso eS P'.conflation
+    let Q : E'.InjectivePresentation X :=
+      { I := P'.I
+        K := P'.K
+        i := e.counitIso.inv.app X ≫ P'.i
+        p := P'.p
+        zero := zero
+        conflation := hS
+        isInjective := P'.isInjective }
+    exact ⟨Q⟩
+  · rw [transport_isProjective_iff, transport_isInjective_iff]
+    exact hE.projective_iff_injective _
 
 /-- Transporting an exact structure along an equivalence and then along its inverse recovers the
 original exact structure. -/

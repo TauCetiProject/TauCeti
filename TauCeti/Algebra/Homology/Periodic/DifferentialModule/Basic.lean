@@ -281,6 +281,7 @@ def ofOnePeriodicComplex :
 variable (C) in
 /-- Differential modules are equivalent to one-periodic complexes, that is to homological
 complexes of shape `ComplexShape.up (ZMod 1)`. -/
+@[expose]
 def onePeriodicComplexEquivalence :
     DifferentialModule C ≌ HomologicalComplex C (ComplexShape.up (ZMod 1)) where
   functor := toOnePeriodicComplex C
@@ -320,6 +321,10 @@ variable [Preadditive C]
 
 instance : (toOnePeriodicComplex C).Additive where
 instance : (ofOnePeriodicComplex C).Additive where
+
+instance : (onePeriodicComplexEquivalence C).inverse.Additive := by
+  rw [onePeriodicComplexEquivalence_inverse]
+  infer_instance
 
 variable {R : Type w'} [Semiring R] [Linear R C]
 
