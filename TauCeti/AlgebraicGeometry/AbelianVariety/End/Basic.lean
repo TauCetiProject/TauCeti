@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AbelianVariety.MorphismGroup
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Algebra.Ring.Equiv
 public import Mathlib.CategoryTheory.Conj
+import Mathlib.Algebra.Group.TransferInstance
 import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
@@ -138,21 +139,17 @@ lemma toHom_zsmul (n : ℤ) (x : End A) : toHom (n • x) = toHom x ^ n :=
 Multiplication in `End A` is composition, in the order of `Function.comp` rather than of
 `CategoryTheory.CategoryStruct.comp`, matching Mathlib's `CategoryTheory.End.monoid`. -/
 
--- These laws construct the monoid itself, so `toHom_one` and `toHom_mul` are not available yet.
--- Expose the constructor fields before using `toHom_ofHom` in the three laws below.
-instance instMonoid (A : AbelianVariety K) : Monoid (End A) where
-  one := ofHom (𝟙 A)
-  mul x y := ofHom (toHom y ≫ toHom x)
-  one_mul x := toHom_injective <| by
-    change toHom (ofHom (toHom x ≫ toHom (ofHom (𝟙 A)))) = toHom x
-    simp only [toHom_ofHom, Category.comp_id]
-  mul_one x := toHom_injective <| by
-    change toHom (ofHom (toHom (ofHom (𝟙 A)) ≫ toHom x)) = toHom x
-    simp only [toHom_ofHom, Category.id_comp]
-  mul_assoc x y z := toHom_injective <| by
-    change toHom (ofHom (toHom z ≫ toHom (ofHom (toHom y ≫ toHom x))))
-      = toHom (ofHom (toHom (ofHom (toHom z ≫ toHom y)) ≫ toHom x))
-    simp only [toHom_ofHom, Category.assoc]
+/-- The additive reindexing of an abelian variety's endomorphisms is equivalent to its
+categorical endomorphisms. This equivalence transports the composition monoid and conjugation. -/
+@[expose, simps]
+def categoryEndEquiv (A : AbelianVariety K) : End A ≃ CategoryTheory.End A where
+  toFun x := CategoryTheory.End.of (toHom x)
+  invFun x := ofHom x.asHom
+  left_inv := ofHom_toHom
+  right_inv x := CategoryTheory.End.ext (toHom_ofHom x.asHom)
+
+instance instMonoid (A : AbelianVariety K) : Monoid (End A) :=
+  fast_instance% (categoryEndEquiv A).monoid
 
 @[simp] lemma toHom_one : toHom (1 : End A) = 𝟙 A := toHom_ofHom _
 
@@ -204,16 +201,12 @@ lemma toHom_intCast (n : ℤ) : toHom (n : End A) = 𝟙 A ^ n := by
 /-- Conjugation by an isomorphism `e : A ≅ B` of abelian varieties, as an isomorphism of
 endomorphism rings `End A ≃+* End B`.
 
-This is the endomorphism-ring counterpart of Mathlib's `CategoryTheory.Iso.conj`: multiplicativity
-is the usual cancellation of `e.hom ≫ e.inv`, and additivity, that conjugation respects the
-pointwise group law, follows from `Hom.mul_comp` and `Hom.comp_mul`. -/
-def congr (e : A ≅ B) : End A ≃+* End B where
-  toFun x := ofHom (e.inv ≫ toHom x ≫ e.hom)
-  invFun y := ofHom (e.hom ≫ toHom y ≫ e.inv)
-  left_inv x := by ext; simp
-  right_inv y := by ext; simp
-  map_mul' x y := by ext; simp
-  map_add' x y := by ext; simp
+The multiplicative equivalence transports Mathlib's `CategoryTheory.Iso.conj` through
+`categoryEndEquiv`. Additivity, that conjugation respects the pointwise group law, follows from
+`Hom.mul_comp` and `Hom.comp_mul`. -/
+def congr (e : A ≅ B) : End A ≃+* End B :=
+  { ((categoryEndEquiv A).mulEquiv.trans e.conj).trans (categoryEndEquiv B).mulEquiv.symm with
+    map_add' x y := by ext; simp }
 
 @[simp] lemma toHom_congr (e : A ≅ B) (x : End A) :
     toHom (congr e x) = e.inv ≫ toHom x ≫ e.hom :=
