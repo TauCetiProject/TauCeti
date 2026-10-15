@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
-public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing
 
 /-!
