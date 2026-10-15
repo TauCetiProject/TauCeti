@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.LinearAlgebra.BilinearForm.Modular
 public import Mathlib.RingTheory.LocalRing.Basic
-import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 
