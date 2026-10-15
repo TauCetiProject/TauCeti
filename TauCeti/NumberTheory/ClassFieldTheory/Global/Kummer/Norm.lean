@@ -36,11 +36,11 @@ control the local power classes at `T`, as in Milne's Proposition 6.10.
 
 ## Main statements
 
-* `TauCeti.ClassFieldTheory.kummerIdeleSubgroup_le_range_ideleNormMap`: the Kummer idele subgroup
-  is contained in the idele norm group.
-* `TauCeti.ClassFieldTheory.kummerIdeleClassSubgroup_le_range_ideleClassNormMap`: the corresponding
-  inclusion after passage to idele classes.
-* `TauCeti.ClassFieldTheory.index_range_ideleClassNormMap_dvd_index_kummerIdeleClassSubgroup`:
+* `auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport`:
+  the Kummer idele subgroup with no auxiliary places is contained in the idele norm group.
+* `auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap_of_ramifiedSupport`:
+  the corresponding inclusion after passage to idele classes.
+* The index divisibility theorem with suffix `_of_ramifiedSupport`.
   the resulting divisibility of indices.
 
 * `TauCeti.ClassFieldTheory.ideleClassNormMap_kummerField_surjective`: surjectivity for radicands
@@ -68,13 +68,13 @@ variable (L : Type*) [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
 /-- **The Kummer idele subgroup consists of norms.** If the exponent of `Gal(L/K)` divides `n`
 and `S` contains every finite place ramified in `L`, then every idele in the Kummer subgroup
 `E_S` is the norm of an idele of `L`. -/
-theorem kummerIdeleSubgroup_le_range_ideleNormMap {n : ℕ}
+theorem auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport {n : ℕ}
     (hn : Monoid.exponent Gal(L/K) ∣ n) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
-    kummerIdeleSubgroup S n ≤
+    auxiliaryKummerIdeleSubgroup S ∅ n ≤
       (GlobalNumberFields.ideleNormMap K L).toMonoidHom.range := by
   intro x hx
-  rw [mem_kummerIdeleSubgroup_iff] at hx
+  rw [mem_auxiliaryKummerIdeleSubgroup_iff] at hx
   refine mem_range_ideleNormMap_of_exponent_dvd K L hn (S := (S : Set _)) (T := ∅)
     (by simp) ?_ ?_ ?_ ?_
   · intro v hvS _
@@ -85,23 +85,24 @@ theorem kummerIdeleSubgroup_le_range_ideleNormMap {n : ℕ}
     rw [powerSubgroup_eq_range_powMonoidHom]
     exact hx.1 v hvS
   · intro v hvS _
-    exact hx.2.2 v hvS
+    exact hx.2.2 v hvS (by simp)
   · intro v
     rw [powerSubgroup_eq_range_powMonoidHom]
     exact hx.2.1 v
 
 /-- **The Kummer idele-class subgroup consists of norms.** Under the same hypotheses as
-`kummerIdeleSubgroup_le_range_ideleNormMap`, every class represented by a Kummer idele is in
-`N_{L/K}(C_L)`. -/
-theorem kummerIdeleClassSubgroup_le_range_ideleClassNormMap {n : ℕ}
+`auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport`, every class represented
+by a Kummer idele is in `N_{L/K}(C_L)`. -/
+theorem auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap_of_ramifiedSupport {n : ℕ}
     (hn : Monoid.exponent Gal(L/K) ∣ n) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
-    kummerIdeleClassSubgroup S n ≤
+    auxiliaryKummerIdeleClassSubgroup S ∅ n ≤
       (GlobalNumberFields.ideleClassNormMap K L :
         IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
   intro c hc
-  obtain ⟨x, hx, rfl⟩ := (mem_kummerIdeleClassSubgroup_iff S n c).mp hc
-  obtain ⟨y, hy⟩ := kummerIdeleSubgroup_le_range_ideleNormMap K L hn S hram hx
+  obtain ⟨x, hx, rfl⟩ := (mem_auxiliaryKummerIdeleClassSubgroup_iff S ∅ n c).mp hc
+  obtain ⟨y, hy⟩ :=
+    auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport K L hn S hram hx
   refine ⟨(y : IdeleClassGroup (𝓞 L) L), ?_⟩
   exact (GlobalNumberFields.ideleClassNormMap_mk y).trans
     (congrArg (fun z : IdeleGroup (𝓞 K) K ↦ (z : IdeleClassGroup (𝓞 K) K)) hy)
@@ -109,14 +110,16 @@ theorem kummerIdeleClassSubgroup_le_range_ideleClassNormMap {n : ℕ}
 /-- **The idele-class norm index divides the Kummer subgroup index.** If `S` contains the
 ramified places and `n` is divisible by the exponent of `Gal(L/K)`, then
 `[C_K : N_{L/K}(C_L)]` divides `[C_K : E_S]`. -/
-theorem index_range_ideleClassNormMap_dvd_index_kummerIdeleClassSubgroup {n : ℕ}
+theorem index_range_ideleClassNormMap_dvd_index_auxiliaryKummerIdeleClassSubgroup_of_ramifiedSupport
+    {n : ℕ}
     (hn : Monoid.exponent Gal(L/K) ∣ n) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
     (GlobalNumberFields.ideleClassNormMap K L :
         IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.index ∣
-      (kummerIdeleClassSubgroup S n).index :=
+      (auxiliaryKummerIdeleClassSubgroup S ∅ n).index :=
   Subgroup.index_dvd_of_le
-    (kummerIdeleClassSubgroup_le_range_ideleClassNormMap K L hn S hram)
+    (auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap_of_ramifiedSupport
+      K L hn S hram)
 
 end TauCeti.ClassFieldTheory
 
@@ -183,15 +186,17 @@ theorem ideleClassNormMap_kummerField_surjective (S : Finset (HeightOneSpectrum 
     (hcl : Subgroup.closure
       (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤)
     (hnS : ∀ v : HeightOneSpectrum (𝓞 K), (n : 𝓞 K) ∈ v.asIdeal → v ∈ S)
-    (hΔ : ∀ a ∈ Δ, IdeleGroup.unitEmbedding (𝓞 K) K a ∈ kummerIdeleSubgroup S n) :
+    (hΔ : ∀ a ∈ Δ,
+      IdeleGroup.unitEmbedding (𝓞 K) K a ∈ auxiliaryKummerIdeleSubgroup S ∅ n) :
     Function.Surjective (ideleClassNormMap K (kummerField E n Δ)) := by
-  have hmem (a) (ha : a ∈ Δ) := (mem_kummerIdeleSubgroup_iff S n _).mp (hΔ a ha)
+  have hmem (a) (ha : a ∈ Δ) :=
+    (mem_auxiliaryKummerIdeleSubgroup_iff S ∅ n _).mp (hΔ a ha)
   refine ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit S ∅
     (Finset.disjoint_empty_right S) hcl hnS (fun a ha ↦ ?_) (fun v hv a ha ↦ ?_)
     (fun w a ha ↦ ?_) dvd_rfl fun _ _ ↦ ⟨1, one_mem _, fun v ↦ (Finset.notMem_empty _ v.2).elim⟩
   · rw [Finset.coe_empty, Set.union_empty,
       ← IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K)]
-    exact (hmem a ha).2.2
+    exact fun v hvS ↦ (hmem a ha).2.2 v hvS (by simp)
   · obtain ⟨c, hc⟩ := (hmem a ha).1 v hv
     exact ⟨c, by simpa using congrArg Units.val hc⟩
   · obtain ⟨c, hc⟩ := (hmem a ha).2.1 w
