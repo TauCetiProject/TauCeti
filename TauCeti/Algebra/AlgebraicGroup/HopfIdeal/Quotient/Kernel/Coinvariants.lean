@@ -48,12 +48,13 @@ over a value algebra in any universe. -/
 theorem ofConv_apply_eq_of_mem_coinvariants_kernelHopfIdeal (f : H ⟶ K) {x : K}
     (hx : x ∈ (kernelHopfIdeal f).coinvariants) {A : CommAlgCat.{w} R}
     (g g' : HopfAlgebra.points (R := R) (H := K) A)
-    (hgg' : (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g') :
+    (hgg' : (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g =
+      (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g') :
     g.ofConv x = g'.ofConv x := by
   have hn : g⁻¹ * g' ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A := by
     apply (mapPointsFunctor_app_eq_one_iff f A _).mp
-    rw [← mapPointsFunctor_app_apply]
-    exact ((mapPointsFunctor f).app A).hom.eq_iff.mp hgg'.symm
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+    exact ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A).hom.eq_iff.mp hgg'.symm
   simpa only [mul_inv_cancel_left] using
     (HopfIdeal.ofConv_mul_apply_of_mem_coinvariants hx g hn).symm
 
@@ -62,7 +63,8 @@ points with the same image, over every value algebra in the coordinate algebras'
 theorem mem_coinvariants_kernelHopfIdeal_iff (f : H ⟶ K) (x : K) :
     x ∈ (kernelHopfIdeal f).coinvariants ↔
       ∀ (A : CommAlgCat.{v} R) (g g' : HopfAlgebra.points (R := R) (H := K) A),
-        (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g' →
+        (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g = (CommHopfAlgCat.Hom.mapPointsFunctor
+          f).app A g' →
           g.ofConv x = g'.ofConv x := by
   constructor
   · intro hx A g g' hgg'
@@ -71,7 +73,7 @@ theorem mem_coinvariants_kernelHopfIdeal_iff (f : H ⟶ K) (x : K) :
     apply HopfIdeal.mem_coinvariants_iff_forall_mul.mpr
     intro A g n hn
     apply hx A (g * n) g
-    simp only [mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply]
+    simp only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply]
     apply (BialgHom.mapDomain (A := A) f.hom).eq_iff.mpr
     simpa only [inv_mul_cancel_left, MonoidHom.mem_ker, BialgHom.mapDomain_apply] using
       (mapPointsFunctor_app_eq_one_iff f A n).mpr hn
@@ -90,8 +92,10 @@ theorem coinvariants_kernelHopfIdeal_eq_range_of_isEffective (f : H ⟶ K)
       toConv Algebra.TensorProduct.includeLeft
     let g' : HopfAlgebra.points (R := R) (H := K) A :=
       toConv (Algebra.TensorProduct.includeRight.restrictScalars R)
-    have hgg' : (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g' := by
-      rw [mapPointsFunctor_app_apply, mapPointsFunctor_app_apply]
+    have hgg' : (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g =
+      (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g' := by
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+        CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       apply ofConv_injective
       ext a
       exact RingHom.congr_fun
@@ -110,7 +114,7 @@ theorem coinvariants_kernelHopfIdeal_eq_range_of_isEffective (f : H ⟶ K)
   · rintro ⟨a, rfl⟩
     apply (mem_coinvariants_kernelHopfIdeal_iff f _).mpr
     intro A g g' hgg'
-    simpa only [mapPointsFunctor_app_apply_apply, AlgHom.toRingHom_eq_coe,
+    simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, AlgHom.toRingHom_eq_coe,
       AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom] using
       congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A ↦ p.ofConv a) hgg'
 

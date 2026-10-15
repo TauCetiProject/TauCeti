@@ -149,7 +149,7 @@ theorem mem_quotientPointsSubgroup_map_iff_mem_levi (φ : H ⟶ K)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup K (J.map φ.hom) A ↔ g ∈ levi A l := by
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff φ,
-    CommHopfAlgCat.mapPointsFunctor_app_apply, hJ]
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hJ]
   exact (mem_levi_iff_of_surjective φ.hom hφ l g).symm
 
 /-- The quotient by the image of a Hopf ideal cutting out the ambient Levi represents the

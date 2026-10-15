@@ -141,7 +141,7 @@ theorem rootSubgroupPoints_mulVec_mem
         (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator (.inl i))
   rw [hcomp] at h
   have hmatrix := PrimeField.coe_rootSubgroupPoints_gaPointsMulEquiv (.inl i) k q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply,
     MulEquiv.apply_symm_apply] at hmatrix
   rwa [← hmatrix] at h
 

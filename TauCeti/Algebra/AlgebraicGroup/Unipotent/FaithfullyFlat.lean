@@ -55,7 +55,7 @@ theorem of_faithfullyFlat (f : H ⟶ K) (hfinite : f.hom.toAlgHom.FiniteType)
   have hqunipotent := (hK q).mapDomain f.hom
   have hmap : BialgHom.mapDomain f.hom q = g := by
     rw [BialgHom.mapDomain_apply]
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hq
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hq
     exact hq
   rw [hmap] at hqunipotent
   exact hqunipotent

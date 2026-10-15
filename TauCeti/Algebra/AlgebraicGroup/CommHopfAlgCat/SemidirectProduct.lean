@@ -91,10 +91,10 @@ inclusion of the normal factor. -/
 theorem grpObjMap_coordinateInl
     (A : GrpObj.Action (CommHopfAlgCat.grpObj K) (CommHopfAlgCat.grpObj H)) :
     letI := A.semidirectProductGrpObj
-    CommHopfAlgCat.grpObjMap A.coordinateInl = A.inl.hom.hom := by
+    CommHopfAlgCat.Hom.grpObjMap A.coordinateInl = A.inl.hom.hom := by
   let _ := A.semidirectProductGrpObj
   apply Quiver.Hom.unop_inj
-  rw [CommHopfAlgCat.grpObjMap_unop]
+  rw [CommHopfAlgCat.Hom.grpObjMap_unop]
   rfl
 
 /-- The represented group-object morphism associated to `coordinateInr` is the canonical
@@ -103,21 +103,21 @@ inclusion of the acting factor. -/
 theorem grpObjMap_coordinateInr
     (A : GrpObj.Action (CommHopfAlgCat.grpObj K) (CommHopfAlgCat.grpObj H)) :
     letI := A.semidirectProductGrpObj
-    CommHopfAlgCat.grpObjMap A.coordinateInr = A.inr.hom.hom := by
+    CommHopfAlgCat.Hom.grpObjMap A.coordinateInr = A.inr.hom.hom := by
   let _ := A.semidirectProductGrpObj
   apply Quiver.Hom.unop_inj
-  rw [CommHopfAlgCat.grpObjMap_unop]
+  rw [CommHopfAlgCat.Hom.grpObjMap_unop]
   rfl
 
 private theorem grpObjPointsMulEquiv_symm_mapDomain {B C : _root_.CommHopfAlgCat.{u} k}
     (f : B ⟶ C) (L : CommAlgCat.{u} k) (g : HopfAlgebra.points (R := k) (H := C) L) :
     (CommHopfAlgCat.grpObjPointsMulEquiv B (op L)).symm (BialgHom.mapDomain f.hom g) =
       (CommHopfAlgCat.grpObjPointsMulEquiv C (op L)).symm g ≫
-        CommHopfAlgCat.grpObjMap f := by
+        CommHopfAlgCat.Hom.grpObjMap f := by
   have hnat := CommHopfAlgCat.grpObjPointsMulEquiv_comp_grpObjMap f
     (op L) ((CommHopfAlgCat.grpObjPointsMulEquiv C (op L)).symm g)
   apply (CommHopfAlgCat.grpObjPointsMulEquiv B (op L)).injective
-  simpa only [CommHopfAlgCat.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply,
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply,
     MulEquiv.apply_symm_apply] using hnat.symm
 
 /-- Under the point equivalence for a semidirect product, precomposition with `coordinateInl`

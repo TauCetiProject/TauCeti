@@ -162,7 +162,7 @@ theorem isSolvable_points_geckPositiveGenerated (B : CommAlgCat.{w} A) :
           (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
         (t.geckTorusPositiveBaseChangeIdeal ht A)) B)
     (f := BialgHom.mapDomain (A := B) f.hom)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f
       (t.geckTorusPositiveBaseChangeToGeneratedCoordinateMap_surjective ht A) B)
 
 /-- Over every field, the generated positive Geck subgroup has solvable geometric points. -/

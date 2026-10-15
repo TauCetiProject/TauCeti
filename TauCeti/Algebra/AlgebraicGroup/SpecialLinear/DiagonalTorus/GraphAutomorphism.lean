@@ -118,25 +118,26 @@ theorem typeAGraphCoordinateIso_hom_comp_diagonalTorusCoordinateMap :
   -- exactly the point-level diagonal-torus calculation above.
   rw [NatTrans.comp_app, NatTrans.comp_app]
   erw [GrpCat.comp_apply, GrpCat.comp_apply]
-  -- `mapPointsFunctor_app_apply` is the interface lemma for each map separately, but
+  -- `CommHopfAlgCat.Hom.mapPointsFunctor_app_apply` is the interface lemma for each map
+  -- separately, but
   -- does not normalize their composite through `GrpCat`'s coercions. State that
   -- composite in the point API's form so the four applications below can use the
   -- interface lemma explicitly.
   change pointsMulEquiv (R := R) (A := A) (r + 1)
-      ((CommHopfAlgCat.mapPointsFunctor (typeAGraphCoordinateIso R r).hom).app A
-        ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A p)) =
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (typeAGraphCoordinateIso R r).hom).app A
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A p)) =
     pointsMulEquiv (R := R) (A := A) (r + 1)
-      ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A
-        ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (SplitTorus.relabelCoordinateMap R (diagonalTorusRevPerm r))).app A p))
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   rw [pointsMulEquiv_comp_typeAGraphCoordinateIso]
   have hleft : toConv (p.ofConv.comp (diagonalTorusCoordinateMap r R).hom.toAlgHom) =
       diagonalTorusPoints r R A p :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply (diagonalTorusCoordinateMap r R) A p).symm.trans
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (diagonalTorusCoordinateMap r R) A p).symm.trans
       (diagonalTorusPoints_apply r R A p).symm
   have hright :
       toConv ((p.ofConv.comp (SplitTorus.relabelCoordinateMap R
@@ -144,7 +145,7 @@ theorem typeAGraphCoordinateIso_hom_comp_diagonalTorusCoordinateMap :
           (diagonalTorusCoordinateMap r R).hom.toAlgHom) =
         diagonalTorusPoints r R A q := by
     rw [diagonalTorusPoints_apply,
-      CommHopfAlgCat.mapPointsFunctor_app_apply]
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
     simp only [q, BialgHom.mapDomain_apply, ofConv_toConv]
   rw [hleft, hright, hq]
   exact typeAGraphAutomorphism_diagonalTorusPoints r R A p

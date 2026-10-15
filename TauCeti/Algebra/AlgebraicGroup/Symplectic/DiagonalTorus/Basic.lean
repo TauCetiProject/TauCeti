@@ -195,7 +195,7 @@ noncomputable def diagonalTorusCoordinateMap :
 
 /-- Precomposition by the coordinate morphism is the natural point map already constructed. -/
 theorem mapPointsFunctor_diagonalTorusCoordinateMap :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (diagonalTorusCoordinateMap (R := R) (m := m)) :
       HopfAlgebra.pointsFunctor
           (R := R)
@@ -215,13 +215,13 @@ theorem mapPointsFunctor_diagonalTorusCoordinateMap_app
     (t : HopfAlgebra.points
       (R := R)
       (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (diagonalTorusCoordinateMap (R := R) (m := m))).app A t =
       diagonalTorusPoints t := by
   let K := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))
   let p : WithConv (K →ₐ[R] K) := toConv (AlgHom.id R K)
   have hp :
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (diagonalTorusCoordinateMap (R := R) (m := m))).app (CommAlgCat.of R K) p =
         diagonalTorusPoints p := by
     rw [mapPointsFunctor_diagonalTorusCoordinateMap, diagonalTorusPointsMap_app]
@@ -230,9 +230,9 @@ theorem mapPointsFunctor_diagonalTorusCoordinateMap_app
     simp only [AlgHom.mapValue_apply, p, AlgHom.comp_id, WithConv.toConv_ofConv]
   have hnat :
       AlgHom.mapValue (H := coordinateHopfAlgebra R m) t.ofConv
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (diagonalTorusCoordinateMap (R := R) (m := m))).app (CommAlgCat.of R K) p) =
-        (CommHopfAlgCat.mapPointsFunctor
+        (CommHopfAlgCat.Hom.mapPointsFunctor
           (diagonalTorusCoordinateMap (R := R) (m := m))).app A
             (AlgHom.mapValue (H := K) t.ofConv p) := by
     have h := DFunLike.congr_fun
@@ -271,7 +271,7 @@ private theorem diagonalTorusCoordinateMap_ambient_X_eq_entry (i j : Fin (m + m)
       ((coordinateMap R m).hom
         (GeneralLinear.coordinateHopfAlgebraAlgEquiv R (m + m)
           (GeneralLinear.coordinateRingMap R (m + m) (MvPolynomial.X (i, j)))))) hpoints
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at heval
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at heval
   rw [coordinateMap_def, CommHopfAlgCat.mkQuotient_apply] at heval
   have hcoe := pointsMulEquiv_coe (R := R) (A := K) m (diagonalTorusPoints p)
   have hentry := congrArg (fun g : GL (Fin (m + m)) K ↦ g i j) hcoe
@@ -456,7 +456,7 @@ private lemma groupSchemePointMulEquiv_comp_diagonalTorus
       groupSchemePointMulEquiv m A (diagonalTorusPoints q) := by
   calc
     _ = groupSchemePointMulEquiv m A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (diagonalTorusCoordinateMap (R := R) (m := m))).app (CommAlgCat.of R A) q) := by
       rw [diagonalTorus_def]
       exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain

@@ -105,7 +105,7 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_of_surjective
   let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) := hH
   exact Group.isSolvable_of_isSolvable_injective
     (f := BialgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f hf
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f hf
       (CommAlgCat.of k (AlgebraicClosure k)))
 
 /-- The closed subgroup cut out by a Hopf ideal has solvable geometric points whenever the

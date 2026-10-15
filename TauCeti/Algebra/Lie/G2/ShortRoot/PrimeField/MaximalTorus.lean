@@ -282,7 +282,7 @@ theorem pointsMulEquiv_mapDomain_splitMaximalTorusCoordinateMap
       weightTorusPoints A (fun i ↦ SplitTorus.pointsMulEquiv q (ULift.up i)) := by
   rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, BialgHom.mapDomain_comp,
     MonoidHom.comp_apply, BialgHom.mapDomain_apply,
-    ← CommHopfAlgCat.mapPointsFunctor_app_apply,
+    ← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     pointsMulEquiv_commonKernelLift_weightTorus]
   congr 1
   funext i

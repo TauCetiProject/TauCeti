@@ -464,7 +464,7 @@ theorem pointMulEquivOfPresentation_mapDomain
         (eqToHom hH' ≫
           (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map φ.op ≫
           eqToHom hG.symm).hom.hom =
-      eG ((mapPointsFunctor φ).app (CommAlgCat.of R A) p) := by
+      eG ((CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R A) p) := by
   let hGX : G.X.left = Spec (CommRingCat.of H) :=
     congrArg (fun K : Grp (Over (Spec (CommRingCat.of R))) ↦ K.X.left) hG
   let hH'X : H'.X.left = Spec (CommRingCat.of K) :=
@@ -479,9 +479,9 @@ theorem pointMulEquivOfPresentation_mapDomain
       eqToHom hH'X ≫ Spec.map (CommRingCat.ofHom (φ.hom.toAlgHom : H →+* K)) ≫
         eqToHom hGX.symm =
     Spec.map (CommRingCat.ofHom
-      (((mapPointsFunctor φ).app (CommAlgCat.of R A) p).ofConv : H →+* A)) ≫
+      (((CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R A) p).ofConv : H →+* A)) ≫
         eqToHom hGX.symm
-  rw [mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   rw [← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
   rfl

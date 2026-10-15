@@ -163,7 +163,8 @@ theorem mapComponentGroup_surjective_of_injective (f : H ⟶ K)
   obtain ⟨p, rfl⟩ := rationalComponentMap_surjective H x
   obtain ⟨q, hq⟩ := CommHopfAlgCat.mapPointsFunctor_app_surjective_of_injective k f.hom hf p
   let q' : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k) := q
-  -- `mapPointsFunctor` is constructed with `mapDomain`; specify the rational-point carrier
+  -- `CommHopfAlgCat.Hom.mapPointsFunctor` is constructed with `mapDomain`; specify the
+  -- rational-point carrier
   -- here because its functor-object spelling does not rewrite at implicit transparency.
   have hq' : BialgHom.mapDomain (A := k) f.hom.hom q' = p := hq
   refine ⟨rationalComponentMap K q', ?_⟩
