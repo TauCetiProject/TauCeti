@@ -118,6 +118,12 @@ theorem face_apply {n : ℕ} (i : Fin (n + 1)) (t : I) (c : SingularCube X (n + 
   rw [face]
   rfl
 
+/-- A face of a cube takes its values among those of the cube. -/
+theorem range_face_subset {n : ℕ} (i : Fin (n + 1)) (t : I) (c : SingularCube X (n + 1)) :
+    Set.range (face i t c) ⊆ Set.range c := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨_, (face_apply i t c x).symm⟩
+
 /-- The cubical identity: a face of a face, in the other order. -/
 theorem face_face {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) (a b : I)
     (c : SingularCube X (n + 2)) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Disk
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
+public import TauCeti.AlgebraicTopology.Singular.Cubical.CoherentHomotopy
 
 /-!
 # Deforming singular cubes into a subspace
@@ -49,6 +49,8 @@ it to a homotopy of `c`. The boundary homotopy has reached its end, with values 
 time `a`; at that time the extension is a cube with boundary in `A`, which is then compressed into
 `A` relative to the boundary. To leave room for these compressions, the homotopies of cubes of
 dimension `k` are stationary from the time `(k + 1) / (k + 2)` on.
+The gluing of the face homotopies, the homotopies of degenerate cubes and the coherence of each
+new dimension come from `TauCeti.CoherentCubeHomotopies`.
 
 ## Main definitions and results
 
@@ -82,26 +84,11 @@ open Set unitInterval
 
 namespace TauCeti
 
+open CoherentCubeHomotopies
+
 variable {X : Type*} [TopologicalSpace X] {A : Set X}
 
 /-! ### Extending the deformation over a single cube -/
-
-/-- The time `k / (k + 1)`. The deformation of a cube of dimension `k` is stationary from time
-`threshold (k + 1)` on, strictly before the deformations of the cubes of dimension `k + 1`, which
-leaves room to compress a cube into `A` in between. -/
-private def threshold (k : ℕ) : I :=
-  ⟨k / (k + 1), div_nonneg k.cast_nonneg (by positivity),
-    div_le_one_of_le₀ (by linarith) (by positivity)⟩
-
-private lemma threshold_lt_succ (k : ℕ) : (threshold k : ℝ) < threshold (k + 1) := by
-  simp only [threshold, Nat.cast_add, Nat.cast_one]
-  rw [div_lt_div_iff₀ (by positivity) (by positivity)]
-  nlinarith
-
-private lemma threshold_lt_one (k : ℕ) : (threshold k : ℝ) < 1 := by
-  simp only [threshold]
-  rw [div_lt_one (by positivity)]
-  linarith
 
 variable (hA : ∀ (m : ℕ) (c : SingularCube X m), MapsTo c (Cube.boundary (Fin m)) A →
   ∃ c' : SingularCube X m, c.HomotopicRel c' (Cube.boundary (Fin m)) ∧ range c' ⊆ A)
@@ -155,125 +142,30 @@ private lemma exists_extension {m : ℕ} (c : SingularCube X m)
 
 /-! ### Deforming all cubes of one dimension -/
 
-/-- Deleting the coordinate `i` of the cube, as a continuous map `Iᵐ⁺¹ → Iᵐ`. -/
-private def removeNthCM {m : ℕ} (i : Fin (m + 1)) : C(Fin (m + 1) → I, Fin m → I) :=
-  ⟨i.removeNth, continuous_pi fun _ ↦ continuous_apply _⟩
-
-private lemma range_face_subset {m : ℕ} {c : SingularCube X (m + 1)} (hc : range c ⊆ A)
-    (i : Fin (m + 1)) (t : I) : range (SingularCube.face i t c) ⊆ A := by
-  rintro _ ⟨y, rfl⟩
-  exact hc ⟨_, (SingularCube.face_apply i t c y).symm⟩
-
 variable (A) in
 /-- Homotopies of all singular `m`-cubes into `A`, with the properties maintained by the inductive
-construction. The field `coherent` says that the homotopies of the faces of each `(m + 1)`-cube
-agree where those faces meet, so that they glue to a homotopy of its boundary. -/
-private structure Level (m : ℕ) where
-  H : SingularCube X m → C(I × (Fin m → I), X)
-  apply_zero : ∀ c y, H c (0, y) = c y
-  apply_of_range_subset : ∀ c : SingularCube X m, range c ⊆ A → ∀ s y, H c (s, y) = c y
-  apply_one_mem : ∀ c y, H c (1, y) ∈ A
-  isDegenerateAt : ∀ c i, c.IsDegenerateAt i → ∀ s, SingularCube.IsDegenerateAt ((H c).curry s) i
-  apply_of_le : ∀ c (s : I), threshold (m + 1) ≤ s → ∀ y, H c (s, y) = H c (1, y)
-  coherent : ∀ (c : SingularCube X (m + 1)) (i j : Fin (m + 1)) (t u : I), (t = 0 ∨ t = 1) →
-    (u = 0 ∨ u = 1) → ∀ z z' : Fin m → I, (i.insertNth t z : Fin (m + 1) → I) = j.insertNth u z' →
-      ∀ s, H (SingularCube.face i t c) (s, z) = H (SingularCube.face j u c) (s, z')
+construction on top of coherence. -/
+private structure Level (m : ℕ) extends CoherentCubeHomotopies X m where
+  apply_of_range_subset : ∀ c : SingularCube X m, range c ⊆ A → ∀ s y, homotopy c (s, y) = c y
+  apply_one_mem : ∀ c y, homotopy c (1, y) ∈ A
+  apply_of_le : ∀ c (s : I), threshold (m + 1) ≤ s → ∀ y, homotopy c (s, y) = homotopy c (1, y)
 
 namespace Level
 
 variable {m : ℕ}
 
-/-- The homotopy of the boundary of an `(m + 1)`-cube glued from the homotopies of its faces. -/
-private def bdry (L : Level A m) (c : SingularCube X (m + 1)) :
-    C(I × Cube.boundary (Fin (m + 1)), X) where
-  toFun q := L.H (SingularCube.face q.2.2.choose (q.2.1 q.2.2.choose) c)
-    (q.1, q.2.2.choose.removeNth q.2.1)
-  continuous_toFun := by
-    let e : Bool → I := fun b ↦ if b then 1 else 0
-    let F : Fin (m + 1) × Bool → Set (I × Cube.boundary (Fin (m + 1))) :=
-      fun jb ↦ {q | (q.2 : Fin (m + 1) → I) jb.1 = e jb.2}
-    refine (locallyFinite_of_finite F).continuous ?_ (fun jb ↦ isClosed_eq
-      ((continuous_apply jb.1).comp (continuous_subtype_val.comp continuous_snd))
-      continuous_const) fun jb ↦ ?_
-    · refine Set.eq_univ_of_forall fun q ↦ Set.mem_iUnion.2 ?_
-      obtain ⟨j, hj⟩ := q.2.2
-      rcases hj with hj | hj
-      exacts [⟨(j, false), hj⟩, ⟨(j, true), hj⟩]
-    · have hcont : Continuous fun q : I × Cube.boundary (Fin (m + 1)) ↦
-          L.H (SingularCube.face jb.1 (e jb.2) c) (q.1, jb.1.removeNth (q.2 : Fin (m + 1) → I)) :=
-        (L.H _).continuous.comp (continuous_fst.prodMk
-          ((removeNthCM jb.1).continuous.comp (continuous_subtype_val.comp continuous_snd)))
-      refine hcont.continuousOn.congr ?_
-      intro q hq
-      have hq : (q.2 : Fin (m + 1) → I) jb.1 = e jb.2 := hq
-      refine L.coherent c _ jb.1 _ _ q.2.2.choose_spec (by cases jb.2 <;> simp [e]) _ _ ?_ q.1
-      rw [Fin.insertNth_self_removeNth, ← hq, Fin.insertNth_self_removeNth]
-
-/-- The glued boundary homotopy is read off any face containing the point. -/
-private lemma bdry_apply (L : Level A m) (c : SingularCube X (m + 1)) (s : I)
-    (y : Cube.boundary (Fin (m + 1)))
-    (j : Fin (m + 1)) (hj : (y : Fin (m + 1) → I) j = 0 ∨ (y : Fin (m + 1) → I) j = 1) :
-    L.bdry c (s, y) = L.H (SingularCube.face j ((y : Fin (m + 1) → I) j) c)
-      (s, j.removeNth (y : Fin (m + 1) → I)) :=
-  L.coherent c _ j _ _ y.2.choose_spec hj _ _
-    (by rw [Fin.insertNth_self_removeNth, Fin.insertNth_self_removeNth]) s
-
-private lemma bdry_zero (L : Level A m) (c : SingularCube X (m + 1))
-    (y : Cube.boundary (Fin (m + 1))) : L.bdry c (0, y) = c y := by
-  obtain ⟨j, hj⟩ := y.2
-  rw [L.bdry_apply c 0 y j hj, L.apply_zero, SingularCube.face_apply, Fin.insertNth_self_removeNth]
-
 private lemma bdry_one_mem (L : Level A m) (c : SingularCube X (m + 1))
-    (y : Cube.boundary (Fin (m + 1))) : L.bdry c (1, y) ∈ A := by
+    (y : Cube.boundary (Fin (m + 1))) : L.boundaryHomotopy c (1, y) ∈ A := by
   obtain ⟨j, hj⟩ := y.2
-  rw [L.bdry_apply c 1 y j hj]
+  rw [L.boundaryHomotopy_apply c 1 y j hj]
   exact L.apply_one_mem _ _
 
 private lemma bdry_of_le (L : Level A m) (c : SingularCube X (m + 1)) (s : I)
     (hs : threshold (m + 1) ≤ s) (y : Cube.boundary (Fin (m + 1))) :
-    L.bdry c (s, y) = L.bdry c (1, y) := by
+    L.boundaryHomotopy c (s, y) = L.boundaryHomotopy c (1, y) := by
   obtain ⟨j, hj⟩ := y.2
-  rw [L.bdry_apply c s y j hj, L.bdry_apply c 1 y j hj]
+  rw [L.boundaryHomotopy_apply c s y j hj, L.boundaryHomotopy_apply c 1 y j hj]
   exact L.apply_of_le _ s hs _
-
-/-- The homotopy of a cube `c` not depending on its coordinate `k`, read off its face in that
-coordinate. -/
-private def degH (L : Level A m) (c : SingularCube X (m + 1)) (k : Fin (m + 1)) :
-    C(I × (Fin (m + 1) → I), X) :=
-  (L.H (SingularCube.face k 0 c)).comp ((ContinuousMap.id I).prodMap (removeNthCM k))
-
-private lemma degH_apply (L : Level A m) (c : SingularCube X (m + 1)) (k : Fin (m + 1)) (s : I)
-    (y : Fin (m + 1) → I) : L.degH c k (s, y) = L.H (SingularCube.face k 0 c) (s, k.removeNth y) :=
-  (rfl)
-
-private lemma degH_insertNth (L : Level A m) {c : SingularCube X (m + 1)} {k : Fin (m + 1)}
-    (hk : c.IsDegenerateAt k) (i : Fin (m + 1)) {t : I} (ht : t = 0 ∨ t = 1) (s : I)
-    (z : Fin m → I) :
-    L.degH c k (s, i.insertNth t z) = L.H (SingularCube.face i t c) (s, z) := by
-  rw [degH_apply]
-  rcases eq_or_ne i k with rfl | hik
-  · rw [Fin.removeNth_insertNth, SingularCube.face_eq_of_isDegenerateAt hk 0 t]
-  -- Move the coordinate `k` of the point to `0`, which changes neither side.
-  obtain ⟨k', rfl⟩ := Fin.exists_succAbove_eq hik.symm
-  have hz := SingularCube.isDegenerateAt_iff.1
-    (L.isDegenerateAt _ k' (hk.face_succAbove t) s) z 0
-  simp only [ContinuousMap.curry_apply] at hz
-  rw [← hz, ← Fin.removeNth_update (i.succAbove k') 0, ← Fin.insertNth_update]
-  refine L.coherent c _ i 0 t (Or.inl rfl) ht _ _ ?_ s
-  rw [Fin.insertNth_removeNth, Function.update_eq_self_iff]
-  simp
-
-/-- The homotopy read off a face does not depend on any coordinate the cube does not depend on. -/
-private lemma degH_isDegenerateAt (L : Level A m) {c : SingularCube X (m + 1)}
-    {k j : Fin (m + 1)} (hj : c.IsDegenerateAt j) (s : I) :
-    SingularCube.IsDegenerateAt ((L.degH c k).curry s) j := by
-  refine SingularCube.isDegenerateAt_iff.2 fun y r ↦ ?_
-  simp only [ContinuousMap.curry_apply, degH_apply]
-  rcases eq_or_ne j k with rfl | hjk
-  · rw [Fin.removeNth_update]
-  obtain ⟨j', rfl⟩ := Fin.exists_succAbove_eq hjk
-  rw [Fin.removeNth_update_succAbove]
-  exact SingularCube.isDegenerateAt_iff.1 (L.isDegenerateAt _ j' (hj.face_succAbove 0) s) _ r
 
 include hA
 
@@ -282,8 +174,9 @@ open Classical in
 degenerate cubes, and otherwise extended from the glued homotopies of the faces. -/
 private def nextH (L : Level A m) (c : SingularCube X (m + 1)) : C(I × (Fin (m + 1) → I), X) :=
   if range c ⊆ A then c.comp ContinuousMap.snd
-  else if hd : c.IsDegenerate then L.degH c (SingularCube.isDegenerate_iff.1 hd).choose
-  else (exists_extension hA c (L.bdry c) (L.bdry_zero c) (L.bdry_one_mem c)
+  else if hd : c.IsDegenerate then
+    L.degenerateHomotopy c (SingularCube.isDegenerate_iff.1 hd).choose
+  else (exists_extension hA c (L.boundaryHomotopy c) (L.boundaryHomotopy_zero c) (L.bdry_one_mem c)
     (L.bdry_of_le c)).choose
 
 private lemma nextH_of_range_subset (L : Level A m) {c : SingularCube X (m + 1)}
@@ -292,43 +185,45 @@ private lemma nextH_of_range_subset (L : Level A m) {c : SingularCube X (m + 1)}
 
 private lemma nextH_of_isDegenerate (L : Level A m) {c : SingularCube X (m + 1)}
     (hc : ¬ range c ⊆ A) (hd : c.IsDegenerate) :
-    nextH hA L c = L.degH c (SingularCube.isDegenerate_iff.1 hd).choose := by
+    nextH hA L c = L.degenerateHomotopy c (SingularCube.isDegenerate_iff.1 hd).choose := by
   simp [nextH, hc, hd]
 
 private lemma nextH_spec (L : Level A m) {c : SingularCube X (m + 1)} (hc : ¬ range c ⊆ A)
     (hd : ¬ c.IsDegenerate) :
     let G := nextH hA L c
-    (∀ y, G (0, y) = c y) ∧ (∀ s (y : Cube.boundary (Fin (m + 1))), G (s, y) = L.bdry c (s, y)) ∧
+    (∀ y, G (0, y) = c y) ∧
+      (∀ s (y : Cube.boundary (Fin (m + 1))), G (s, y) = L.boundaryHomotopy c (s, y)) ∧
       (∀ y, G (1, y) ∈ A) ∧ ∀ s : I, threshold (m + 1 + 1) ≤ s → ∀ y, G (s, y) = G (1, y) := by
   simp only [nextH, hc, hd, dite_false, ite_false]
-  exact (exists_extension hA c (L.bdry c) (L.bdry_zero c) (L.bdry_one_mem c)
+  exact (exists_extension hA c (L.boundaryHomotopy c) (L.boundaryHomotopy_zero c) (L.bdry_one_mem c)
     (L.bdry_of_le c)).choose_spec
 
 /-- The homotopies of the `(m + 1)`-cubes restrict on faces to the homotopies of the faces. -/
 private lemma nextH_insertNth (L : Level A m) (c : SingularCube X (m + 1)) (i : Fin (m + 1))
     {t : I} (ht : t = 0 ∨ t = 1) (s : I) (z : Fin m → I) :
-    nextH hA L c (s, i.insertNth t z) = L.H (SingularCube.face i t c) (s, z) := by
+    nextH hA L c (s, i.insertNth t z) = L.homotopy (SingularCube.face i t c) (s, z) := by
   by_cases hr : range c ⊆ A
-  · rw [nextH_of_range_subset hA L hr, L.apply_of_range_subset _ (range_face_subset hr i t),
+  · rw [nextH_of_range_subset hA L hr,
+      L.apply_of_range_subset _ ((SingularCube.range_face_subset i t c).trans hr),
       SingularCube.face_apply]
   by_cases hd : c.IsDegenerate
   · rw [nextH_of_isDegenerate hA L hr hd,
-      L.degH_insertNth (SingularCube.isDegenerate_iff.1 hd).choose_spec i ht]
+      L.degenerateHomotopy_insertNth (SingularCube.isDegenerate_iff.1 hd).choose_spec i ht]
   have hy : (i.insertNth t z : Fin (m + 1) → I) ∈ Cube.boundary (Fin (m + 1)) :=
     ⟨i, by rwa [Fin.insertNth_apply_same]⟩
   rw [(nextH_spec hA L hr hd).2.1 s ⟨_, hy⟩,
-    L.bdry_apply c s ⟨_, hy⟩ i (by simpa using ht)]
+    L.boundaryHomotopy_apply c s ⟨_, hy⟩ i (by simpa using ht)]
   simp
 
 /-- The `(m + 1)`-st level of the construction, built from the `m`-th. -/
 private def next (L : Level A m) : Level A (m + 1) where
-  H := nextH hA L
-  apply_zero c y := by
+  homotopy := nextH hA L
+  homotopy_zero c y := by
     by_cases hr : range c ⊆ A
     · exact nextH_of_range_subset hA L hr 0 y
     by_cases hd : c.IsDegenerate
-    · rw [nextH_of_isDegenerate hA L hr hd, degH_apply, L.apply_zero, SingularCube.face_apply,
-        Fin.insertNth_removeNth]
+    · rw [nextH_of_isDegenerate hA L hr hd, degenerateHomotopy_apply, L.homotopy_zero,
+        SingularCube.face_apply, Fin.insertNth_removeNth]
       exact (SingularCube.isDegenerate_iff.1 hd).choose_spec.apply_update y 0
     · exact (nextH_spec hA L hr hd).1 y
   apply_of_range_subset _ hc s y := nextH_of_range_subset hA L hc s y
@@ -337,61 +232,39 @@ private def next (L : Level A m) : Level A (m + 1) where
     · rw [nextH_of_range_subset hA L hr]
       exact hr ⟨y, rfl⟩
     by_cases hd : c.IsDegenerate
-    · rw [nextH_of_isDegenerate hA L hr hd, degH_apply]
+    · rw [nextH_of_isDegenerate hA L hr hd, degenerateHomotopy_apply]
       exact L.apply_one_mem _ _
     · exact (nextH_spec hA L hr hd).2.2.1 y
-  isDegenerateAt c j hj s := by
+  isDegenerateAt_curry c j hj s := by
     by_cases hr : range c ⊆ A
     · refine SingularCube.isDegenerateAt_iff.2 fun y r ↦ ?_
       simp only [ContinuousMap.curry_apply, nextH_of_range_subset hA L hr]
       exact hj.apply_update y r
     rw [nextH_of_isDegenerate hA L hr hj.isDegenerate]
-    exact L.degH_isDegenerateAt hj s
+    exact L.isDegenerateAt_curry_degenerateHomotopy hj s
   apply_of_le c s hs y := by
     by_cases hr : range c ⊆ A
     · rw [nextH_of_range_subset hA L hr, nextH_of_range_subset hA L hr]
     by_cases hd : c.IsDegenerate
-    · rw [nextH_of_isDegenerate hA L hr hd, degH_apply, degH_apply]
+    · rw [nextH_of_isDegenerate hA L hr hd, degenerateHomotopy_apply, degenerateHomotopy_apply]
       exact L.apply_of_le _ s
         (Subtype.coe_le_coe.1 ((threshold_lt_succ (m + 1)).le.trans hs)) _
     · exact (nextH_spec hA L hr hd).2.2.2 s hs y
-  coherent c i j t u ht hu z z' h s := by
-    rcases eq_or_ne i j with rfl | hij
-    · obtain ⟨rfl, rfl⟩ := Fin.insertNth_injective2 h
-      rfl
-    -- Two distinct faces of `c` meet in a face of codimension two, which is a face of each.
-    obtain ⟨j', rfl⟩ := Fin.exists_succAbove_eq hij.symm
-    obtain ⟨i', hi'⟩ := Fin.exists_succAbove_eq hij
-    have hzj : z j' = u := by simpa using congrFun h (i.succAbove j')
-    have hzi : t = z' i' := by
-      have := congrFun h ((i.succAbove j').succAbove i')
-      rwa [Fin.insertNth_apply_succAbove, hi', Fin.insertNth_apply_same] at this
-    obtain ⟨w, rfl⟩ : ∃ w, z = j'.insertNth u w :=
-      ⟨j'.removeNth z, by rw [← hzj, Fin.insertNth_self_removeNth]⟩
-    obtain ⟨w', rfl⟩ : ∃ w', z' = i'.insertNth t w' :=
-      ⟨i'.removeNth z', by rw [hzi, Fin.insertNth_self_removeNth]⟩
-    rw [nextH_insertNth hA L _ j' hu, nextH_insertNth hA L _ i' ht, SingularCube.face_face]
-    rw [Fin.insertNth_insertNth] at h
-    exact L.coherent _ _ _ t t ht ht _ _ (Fin.insertNth_injective2 h).2 s
+  coherent :=
+    L.coherent_of_homotopy_insertNth (nextH hA L) fun c i _ ht ↦ nextH_insertNth hA L c i ht
 
 end Level
 
-omit [TopologicalSpace X] in
-private lemma not_mem_boundary_zero (y : Fin 0 → I) : y ∉ Cube.boundary (Fin 0) :=
-  fun ⟨i, _⟩ ↦ i.elim0
-
-/-- The empty homotopy of the empty boundary of the `0`-cube. -/
-private def emptyBdry : C(I × Cube.boundary (Fin 0), X) where
-  toFun q := absurd q.2.2 (not_mem_boundary_zero _)
-  continuous_toFun := continuous_iff_continuousAt.2 fun q ↦ absurd q.2.2 (not_mem_boundary_zero _)
-
 include hA in
 private lemma exists_extension_zero (c : SingularCube X 0) :
-    ∃ G : C(I × (Fin 0 → I), X), (∀ y, G (0, y) = c y) ∧
-      (∀ s (y : Cube.boundary (Fin 0)), G (s, y) = emptyBdry (s, y)) ∧ (∀ y, G (1, y) ∈ A) ∧
-      ∀ s : I, threshold (0 + 1) ≤ s → ∀ y, G (s, y) = G (1, y) :=
-  exists_extension hA c emptyBdry (fun y ↦ absurd y.2 (not_mem_boundary_zero _))
-    (fun y ↦ absurd y.2 (not_mem_boundary_zero _)) fun _ _ y ↦ absurd y.2 (not_mem_boundary_zero _)
+    ∃ G : C(I × (Fin 0 → I), X), (∀ y, G (0, y) = c y) ∧ (∀ y, G (1, y) ∈ A) ∧
+      ∀ s : I, threshold (0 + 1) ≤ s → ∀ y, G (s, y) = G (1, y) := by
+  -- The boundary of the `0`-cube is empty, so any homotopy of it will do.
+  have hb (y : Cube.boundary (Fin 0)) : False := by simpa using y.2
+  obtain ⟨G, hG₀, -, hG⟩ := exists_extension hA c
+    ⟨fun q ↦ (hb q.2).elim, continuous_of_const fun q ↦ (hb q.2).elim⟩ (fun y ↦ (hb y).elim)
+    (fun y ↦ (hb y).elim) fun _ _ y ↦ (hb y).elim
+  exact ⟨G, hG₀, hG⟩
 
 open Classical in
 /-- The homotopies of points: constant on the points of `A`, and otherwise a path into `A`
@@ -410,13 +283,12 @@ private lemma baseH_spec {c : SingularCube X 0} (hc : ¬ range c ⊆ A) :
     (∀ y, G (0, y) = c y) ∧ (∀ y, G (1, y) ∈ A) ∧
       ∀ s : I, threshold (0 + 1) ≤ s → ∀ y, G (s, y) = G (1, y) := by
   simp only [baseH, hc, ite_false]
-  have h := (exists_extension_zero hA c).choose_spec
-  exact ⟨h.1, h.2.2⟩
+  exact (exists_extension_zero hA c).choose_spec
 
 /-- The `0`-th level of the construction. -/
 private def base : Level A 0 where
-  H := baseH hA
-  apply_zero c y := by
+  homotopy := baseH hA
+  homotopy_zero c y := by
     by_cases hr : range c ⊆ A
     · exact baseH_of_range_subset hA hr 0 y
     · exact (baseH_spec hA hr).1 y
@@ -426,7 +298,7 @@ private def base : Level A 0 where
     · rw [baseH_of_range_subset hA hr]
       exact hr ⟨y, rfl⟩
     · exact (baseH_spec hA hr).2.1 y
-  isDegenerateAt _ i := i.elim0
+  isDegenerateAt_curry _ i := i.elim0
   apply_of_le c s hs y := by
     by_cases hr : range c ⊆ A
     · rw [baseH_of_range_subset hA hr, baseH_of_range_subset hA hr]
@@ -474,11 +346,11 @@ with boundary in `A` is homotopic, relative to the boundary of the cube, to a cu
 `A`, then there is a deformation of the singular cubes of `X` into `A`, compatible with faces and
 degeneracies and fixing the cubes with values in `A`. -/
 def subspaceCubeDeformation : SubspaceCubeDeformation A where
-  homotopy {m} c := (levels hA m).H c
-  homotopy_zero {m} c y := (levels hA m).apply_zero c y
+  homotopy {m} c := (levels hA m).homotopy c
+  homotopy_zero {m} c y := (levels hA m).homotopy_zero c y
   homotopy_one_mem {m} c y := (levels hA m).apply_one_mem c y
   homotopy_insertNth {m} c i _ ht s z := Level.nextH_insertNth hA (levels hA m) c i ht s z
-  isDegenerateAt_curry {m} c i hc s := (levels hA m).isDegenerateAt c i hc s
+  isDegenerateAt_curry {m} c i hc s := (levels hA m).isDegenerateAt_curry c i hc s
   homotopy_of_range_subset {m} c hc s y := (levels hA m).apply_of_range_subset c hc s y
 
 omit hA
@@ -493,7 +365,7 @@ theorem SubspaceCubeDeformation.homotopicRel (D : SubspaceCubeDeformation A) {m 
   have hbd (s : I) (y : Fin m → I) (hy : y ∈ Cube.boundary (Fin m)) :
       D.homotopy c (s, y) = c y := by
     cases m with
-    | zero => exact absurd hy (not_mem_boundary_zero y)
+    | zero => simp at hy
     | succ _ =>
       obtain ⟨i, hi⟩ := hy
       have hface : range (SingularCube.face i (y i) c) ⊆ A := by
@@ -568,7 +440,7 @@ theorem nonempty_subspaceCubeDeformation_of_relHomotopyGroup
       ⟨{ toFun q := γ q.1
          map_zero_left y := by rw [γ.source]; exact congrArg c (Subsingleton.elim _ _)
          map_one_left _ := γ.target
-         prop' _ y hy := absurd hy (not_mem_boundary_zero y) }⟩, ?_⟩
+         prop' _ y hy := by simp at hy }⟩, ?_⟩
     rintro _ ⟨_, rfl⟩
     exact ha
   | succ n => exact SingularCube.exists_homotopicRel_range_subset_of_subsingleton (h n) c hc
