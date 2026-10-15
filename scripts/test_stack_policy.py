@@ -1,6 +1,7 @@
 """Real Git fixtures and mutation/race tests; no network or Lean execution."""
 
 import copy
+import html
 from contextlib import redirect_stdout
 import io
 import json
@@ -53,9 +54,10 @@ class GitFixtures(unittest.TestCase):
         src = sp.Source(Path(self.tmp.name) / "source", None, main,
                         self.root / ".git/objects", str(self.root))
         src.fetch(self.prs)
-        # These fixtures supply plain declarations; renderer integration has
-        # separate fixtures using API.declared_parents with actual HTML shapes.
-        api = api or SimpleNamespace(declared_parents=lambda p: sp.explicit_parents(p.body))
+        # Plain-text fixtures still exercise the production HTML/prose filters.
+        # API integration tests separately bind actual rendered metadata.
+        api = api or SimpleNamespace(declared_parents=lambda p: sp.rendered_parents(
+            "<p>" + html.escape(p.body) + "</p>"))
         return sp.Detector(api, src, self.prs)
 
     def test_nested_code_fence_cannot_bind_independent_identical_content(self):
@@ -483,6 +485,18 @@ class ProseTests(unittest.TestCase):
             '<p><a href="https://github.com/other/repo/pull/12">Stacked on #12</a></p>',
             "<p>Example: stacked on #12</p>",
             "<q><p>Stacked on #12</p></q>",
+            "<p>Example:\nStacked on #12</p>",
+            "<p>Example:<br>Stacked on #12</p>",
+            "<p><code>Example:</code>Stacked on #12</p>",
+            '<p><a href="https://example.com">Example:</a>Stacked on #12</p>',
+            "<p>Example: <code>ignored</code>Stacked on #12</p>",
+            "<p><del>Stacked on #12</del> Rebased onto main.</p>",
+            "<p><s>Stacked on #12</s></p>",
+            "<p><strike>Stacked on #12</strike></p>",
+            "<p>«Example:</p><p>Stacked on #12</p><p>end»</p>",
+            "<summary>Example</summary><p>Stacked on #12</p>",
+            "<p>Do not write:</p><ul><li>Stacked on #12</li></ul>",
+            '<p>Stacked on <a href="https://githubxcom/TauCetiProject/TauCeti/pull/12">parent</a></p>',
         ]
         for html in cases:
             with self.subTest(html=html):
@@ -494,6 +508,7 @@ class ProseTests(unittest.TestCase):
         html = '<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">first</a>, <a href="/TauCetiProject/TauCeti/pull/13">second</a>.</p>'
         self.assertEqual(sp.rendered_parents(html), {12, 13})
         self.assertEqual(sp.rendered_parents("<p>Dependencies: #12, #13</p>"), {12, 13})
+        self.assertEqual(sp.rendered_parents("<p>This PR is\nstacked on #12</p>"), {12})
 
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
@@ -521,6 +536,15 @@ class ProseTests(unittest.TestCase):
         api.request = lambda *args: {"errors": [{"type": "RATE_LIMITED"}]}
         with self.assertRaises(sp.BudgetGap):
             api.declared_parents(child)
+
+    def test_render_transport_failure_is_cached_gap_for_one_child(self):
+        child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO, "Stacked on #1", False)
+        api = object.__new__(sp.API)
+        api.request = MagicMock(side_effect=TimeoutError("transient rendering timeout"))
+        for _ in range(2):
+            with self.assertRaisesRegex(sp.Gap, "transient rendering timeout"):
+                api.declared_parents(child)
+        self.assertEqual(api.request.call_count, 1)
     def test_read_only_historical_explicit_examples(self):
         fixtures = json.loads((Path(__file__).with_name("stack_policy_fixtures.json")).read_text())
         expected = {"16755": {16515}, "16656": {16643, 16632, 15253},
@@ -555,7 +579,7 @@ class ProseTests(unittest.TestCase):
 
 class FakeAPI:
     def declared_parents(self, child):
-        return sp.explicit_parents(child.body)
+        return sp.rendered_parents("<p>" + html.escape(child.body) + "</p>")
     def __init__(self, child, parent, main):
         self.prs = {child.number: child, parent.number: parent}
         self.sha = main

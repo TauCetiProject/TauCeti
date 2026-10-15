@@ -166,7 +166,7 @@ class API:
                     cache[key] = rendered_parents(p["bodyHTML"])
             except BudgetGap:
                 raise
-            except (Gap, KeyError, TypeError, ValueError) as error:
+            except Exception as error:
                 cache[key] = Gap(f"unverified rendered PR prose: {error}")
         if isinstance(cache[key], Gap):
             raise cache[key]
@@ -253,7 +253,7 @@ def explicit_parents(body, *, current_only=False):
             continue
         line = re.sub(r"(`+).*?\1", "", line)
         line = re.sub(r'''"[^"\n]*"|“[^”\n]*”|(?<!\w)'[^'\n]*'(?!\w)''', "", line)
-        line = re.sub(r"https://github.com/([^\s/)]+/[^\s/)]+)/(?:pull|issues)/(\d+)",
+        line = re.sub(r"https://github\.com/([^\s/)]+/[^\s/)]+)/(?:pull|issues)/(\d+)",
                       lambda m: f"#{m[2]}" if m[1].lower() == REPO.lower() else "", line)
         line = re.sub(r"https?://\S+", "", line)
         for sentence in re.split(r"(?<=[.!?])\s+", line):
@@ -281,8 +281,8 @@ def explicit_parents(body, *, current_only=False):
 class RenderedProse(HTMLParser):
     """Read HTML as data; never execute/fetch it or infer code from Markdown."""
     excluded = {"pre", "code", "blockquote", "q", "kbd", "samp", "tt", "var",
-                "script", "style", "textarea", "template"}
-    blocks = {"p", "div", "li", "br", "hr", "ul", "ol", "table", "tr", "td", "th",
+                "script", "style", "textarea", "template", "del", "s", "strike"}
+    blocks = {"p", "div", "li", "hr", "ul", "ol", "table", "tr", "td", "th",
               "h1", "h2", "h3", "h4", "h5", "h6", "details", "summary"}
 
     def __init__(self):
@@ -292,42 +292,49 @@ class RenderedProse(HTMLParser):
         self.prose, self.quoting = [], []
 
     def boundary(self):
-        self.prose.append("\n")
+        self.prose.append("\x1e")
         self.quoting.append("\n")
+
+    def opaque(self):
+        # Excluding inline markup must not manufacture a fresh sentence start.
+        self.prose.append(" [excluded] ")
 
     def handle_starttag(self, tag, attrs):
         if tag in self.excluded:
             self.hidden[tag] += 1
-            self.boundary()
+            self.opaque()
         elif tag == "a":
             canonical = False
             if not any(self.hidden.values()):
                 href = dict(attrs).get("href") or ""
                 if href.startswith("/"):
                     href = "https://github.com" + href
-                match = re.fullmatch(r"https://github.com/([^/]+/[^/]+)/(?:pull|issues)/([1-9]\d*)(?:[/?#].*)?", href)
+                match = re.fullmatch(r"https://github\.com/([^/]+/[^/]+)/(?:pull|issues)/([1-9]\d*)(?:[/?#].*)?", href)
                 if match and match[1].lower() == REPO.lower():
                     self.prose.append(f" #{match[2]} ")
                     canonical = True
             self.anchors.append(not canonical)
             if not canonical:
-                self.boundary()
+                self.opaque()
             self.hidden[tag] += 1  # Link labels cannot manufacture declarations.
         elif tag in self.blocks:
             self.boundary()
+        elif tag == "br":
+            self.prose.append(" ")
 
     def handle_endtag(self, tag):
         if tag == "a" and self.anchors:
             self.hidden[tag] -= 1
             if self.anchors.pop():
-                self.boundary()
+                self.opaque()
         elif self.hidden[tag]:
             self.hidden[tag] -= 1
-            self.boundary()
+            self.opaque()
         elif tag in self.blocks:
             self.boundary()
 
     def handle_data(self, data):
+        data = data.replace("\x1e", " ")
         if not any(count for tag, count in self.hidden.items() if tag != "a"):
             self.quoting.append(data)
         if not any(self.hidden.values()):
@@ -335,6 +342,15 @@ class RenderedProse(HTMLParser):
 
 
 def rendered_parents(html):
+    """Extract candidate PR identities from canonical GitHub-rendered HTML.
+
+    Code/quotation/retracted elements and link labels cannot declare parents; soft wraps
+    and inline exclusions do not create sentence starts. Literal quoted prose
+    or explicit example/historical context conservatively returns an empty set.
+    Missing/non-string/oversized input is
+    a Gap, distinct from declined inference. Metadata identity must be checked
+    by the caller; even returned identities require independent source proof.
+    """
     if not isinstance(html, str) or len(html.encode()) > MAX_BYTES:
         raise Gap("rendered PR prose missing or exceeds byte bound")
     parser = RenderedProse()
@@ -342,9 +358,13 @@ def rendered_parents(html):
     parser.close()
     # Literal quotation can span paragraphs/inline markup. Conservatively decline
     # body-only inference in such prose; exact ancestry/base evidence still works.
-    if re.search(r'''["“”‘’]|(?<!\w)'|'(?!\w)''', "".join(parser.quoting)):
+    visible = "".join(parser.quoting)
+    if re.search(r'''["“”‘’«»‹›„‟「」『』]|(?<!\w)'|'(?!\w)''', visible):
         return set()
-    return explicit_parents("".join(parser.prose), current_only=True)
+    if re.search(r"\b(?:examples?|for reference|do not write|no longer|previously|formerly)\b", visible, re.I):
+        return set()
+    paragraphs = [" ".join(p.split()) for p in "".join(parser.prose).split("\x1e")]
+    return explicit_parents("\n".join(paragraphs), current_only=True)
 
 
 class Source:
