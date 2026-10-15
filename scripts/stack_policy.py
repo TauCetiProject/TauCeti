@@ -158,6 +158,7 @@ class PR:
     base_head: str = ""
     blocked: bool = field(default=False, compare=False)
     landing_claim: bool = False
+    author_id: int = 0
 
     @classmethod
     def parse(cls, p):
@@ -170,7 +171,9 @@ class PR:
                    h["ref"], h["repo"]["full_name"], p.get("body") or "", bool(p["draft"]),
                    oid(p["base"]["sha"]), any(l.get("name") == BLOCK_LABEL for l in p.get("labels", [])),
                    p.get("merged_at") is not None or bool(re.match(r"^\[Merged by Bors\] - ",
-                                                                  p.get("title") or "", re.I)))
+                                                                  p.get("title") or "", re.I)),
+                   int((p.get("user") or {}).get("id") or 0)
+                   if (p.get("user") or {}).get("login") != "ghost" else 0)
 
 
 def explicit_parents(body):
@@ -492,18 +495,20 @@ class Detector:
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
                     if parent.head_repo != child.head_repo:
                         raise Gap("cross-repository ancestry without a child-declared parent; possible copied prefix")
+                    if not child.author_id or parent.author_id != child.author_id:
+                        raise Gap("ancestry-only parent has unknown/different author; possible third-party branch PR")
                 base, paths, patch = self.source.patch(parent)
                 if not patch:
                     reasons.append(f"#{number}: empty parent delta")
-                landed = self.source.landed(parent, base, paths, patch) if patch else None
-                if landed:
-                    reasons.append(f"#{number}: aggregate source equivalent landed at {landed}")
                 aggregate_retained = bool(patch and self.source.contains(child.head, paths, patch))
                 # A descendant can edit part of the parent's aggregate diff while
                 # retaining another complete, individually unlanded commit. Check
                 # exact commit patches, with the same main-history exclusion.
                 if not graph_direction and not aggregate_retained:
                     raise Gap("body-only direction without complete current parent content")
+                landed = self.source.landed(parent, base, paths, patch) if patch else None
+                if landed:
+                    reasons.append(f"#{number}: aggregate source equivalent landed at {landed}")
                 # Body-only links can establish whole-parent patch identity for
                 # a cherry-pick/rebase. They cannot attribute a shared precursor
                 # commit to a dependent PR whose own current work is absent.
@@ -671,12 +676,16 @@ def main():
         # Never accept an API/PR-supplied report path.
         sys.stdout = args.report.open("w")
     api = API()
+    priority = set()
     if args.github_event and not args.pr:
         event = json.loads(args.github_event.read_text())
+        if event.get("pull_request"):
+            priority.add(int(event["pull_request"]["number"]))
         wake = event.get("workflow_run")
         if wake:
             associated = wake.get("pull_requests") or []
             numbers = {int(p["number"]) for p in associated}
+            priority.update(numbers)
             emit(wake="bounded backlog sweep", associated_prs=sorted(numbers))
     prs = []
     metadata_gaps = 0
@@ -691,6 +700,7 @@ def main():
             incomplete_index = True
     main_sha = api.main()
     selected = [p for p in prs if not args.pr or p.number == args.pr]
+    selected.sort(key=lambda p: (p.number in priority, p.number), reverse=True)
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
     # can still contain unlanded prerequisite work. Never assume closure = landing.
     indexed = {p.number for p in prs}
@@ -724,9 +734,14 @@ def main():
                 api.begin_child()
                 source.begin_child()
                 evidence, reasons = detector.detect(child)
+                api.begin_child()
+                source.begin_child()
                 emit(pr=child.number, head=child.head, main=main_sha,
                      classification="confirmed-stack" if evidence else "no-confirmed-stack",
-                     evidence=asdict(evidence) if evidence else None, reasons=reasons)
+                     evidence=asdict(evidence) if evidence else None, reasons=reasons,
+                     child_repository=child.head_repo, child_author_id=child.author_id,
+                     parent_repository=detector.prs[evidence.parent].head_repo if evidence else None,
+                     parent_author_id=detector.prs[evidence.parent].author_id if evidence else None)
                 if evidence and not args.apply:
                     if not unchanged(api, child, detector.prs[evidence.parent], main_sha):
                         raise Gap("dry-run preflight identities changed; no mutation")

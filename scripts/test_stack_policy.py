@@ -44,7 +44,7 @@ class GitFixtures(unittest.TestCase):
         head = git(self.root, "rev-parse", "HEAD")
         git(self.root, "update-ref", f"refs/pull/{number}/head", head)
         p = sp.PR(number, state, head, base, f"branch-{number}",
-                  "fork/TauCeti" if fork else sp.REPO, body, draft)
+                  "fork/TauCeti" if fork else sp.REPO, body, draft, author_id=1)
         self.prs.append(p)
         return p
 
@@ -92,9 +92,21 @@ class GitFixtures(unittest.TestCase):
 
     def test_child_declared_cross_fork_stack_still_requires_and_gets_source_proof(self):
         _, child = self.parent_child(explicit=True)
-        child = sp.PR(**{**sp.asdict(child), "head_repo": "another/TauCeti"})
+        child = sp.PR(**{**sp.asdict(child), "head_repo": "another/TauCeti", "author_id": 2})
         self.prs[-1] = child
         self.assertIsNotNone(self.detector().detect(child)[0])
+
+    def test_outsider_opening_existing_same_repository_branch_is_unknown(self):
+        parent, child = self.parent_child()
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "author_id": 2})
+        with self.assertRaisesRegex(sp.Gap, "possible third-party branch PR"):
+            self.detector().detect(child)
+
+    def test_unknown_author_cannot_authorize_ancestry_only_closure(self):
+        parent, child = self.parent_child()
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "author_id": 0})
+        with self.assertRaisesRegex(sp.Gap, "unknown/different author"):
+            self.detector().detect(child)
 
     def test_nested_stack(self):
         self.parent_child()
@@ -636,7 +648,7 @@ class MainTests(unittest.TestCase):
             return None, []
         self.detector.detect = result
         self.assertFalse(self.main("--apply"))
-        self.assertEqual(visited, [1, 2])
+        self.assertEqual(visited, [2, 1])
         self.assertEqual(self.api.calls, [])
 
     def test_label_retry_is_idempotent(self):
@@ -651,7 +663,7 @@ class MainTests(unittest.TestCase):
             event = Path(directory) / "event.json"
             event.write_text(json.dumps({"workflow_run": {"pull_requests": [{"number": 2}]}}))
             self.assertFalse(self.main("--github-event", str(event)))
-        self.assertEqual(visited, [1, 2])
+        self.assertEqual(visited, [2, 1])
 
     def test_closed_parent_budget_does_not_abort_unrelated_children(self):
         self.raw[1]["body"] = "Dependencies: " + ", ".join(f"#{n}" for n in range(100, 165))
@@ -660,7 +672,7 @@ class MainTests(unittest.TestCase):
         with patch.object(self.api, "pr", side_effect=sp.Gap("missing prerequisite")) as read:
             self.assertFalse(self.main())
         self.assertEqual(read.call_count, 64)
-        self.assertEqual(visited, [1, 2])
+        self.assertEqual(visited, [2, 1])
 
     def test_incomplete_index_and_human_label_retain_prior_block(self):
         self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
@@ -702,7 +714,7 @@ class MainTests(unittest.TestCase):
             return original(path, method, data)
         self.api.call = fail
         self.assertTrue(self.main("--apply"))
-        self.assertEqual(visited, [1, 2, 3])
+        self.assertEqual(visited, [3, 2, 1])
         self.assertFalse(any(method == "PATCH" for _, method, _ in self.api.calls))
 
 

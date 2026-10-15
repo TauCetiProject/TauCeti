@@ -27,7 +27,9 @@ as its base. For a body-only rebase/cherry-pick link, both the complete current
 parent aggregate and its head commit patch must be present; a shared precursor
 alone cannot establish direction. Content-only evidence must also be absent at
 the child's main fork point; old main content is base drift, not inherited work.
-An ancestry-only relationship additionally requires the same head repository.
+An ancestry-only relationship additionally requires the same head repository
+and the same known PR-author account ID. Deleted/unknown authors cannot authorize
+it; an outsider opening a PR from someone else's existing branch cannot either.
 Cross-repository ancestry needs the child's explicit parent declaration or a
 canonical parent base branch; an outsider's copied prefix cannot condemn its
 original PR. Repository identity alone never proves stacking. The source diff
@@ -61,7 +63,7 @@ Depth-limited canonical PR fetches are checked for shallow boundaries. Main's
 complete trusted history is retained (up to 64,000 commits). Missing metadata,
 deleted repositories, pagination overflow, rate limits, races, unsupported source
 or exceeded bounds produce `unknown` with an explicit gap and no closure.
-Each child additionally has a 256-call/16-MiB API budget, 2,500 Git operations
+Each detection and subsequent validation/mutation phase has a 256-call/16-MiB API budget, 2,500 Git operations
 and 120-second budget checked before operations. A child exceeding these limits
 becomes unknown while other PRs continue. Cheap direction/ownership checks
 precede expensive content checks; summary records Git operations and elapsed time.
@@ -73,6 +75,7 @@ precede expensive content checks; summary records Git operations and elapsed tim
   unmerged commit and no matching canonical parent base branch.
 - Cross-repository ancestry without a child-declared parent or canonical base
   relationship, because a copied commit prefix cannot establish ownership.
+- Ancestry-only links with different/unknown PR authors, for the same reason.
 - Work whose parent diff and individual commit patches were partially edited,
   split, rewritten or only partly inherited so that no complete reverse patch
   applies, and body-only links whose current parent content is incomplete.
@@ -98,6 +101,8 @@ policy directly. Other bases invoke an unprivileged wake workflow, then the
 main-defined workflow_run observer. Every event performs a bounded backlog sweep,
 so coalesced events cannot starve a pending hourly sweep. Manual dispatch can
 select one PR. The workflow checks out main-defined tooling explicitly;
+The triggering PR is classified first, followed by the newest backlog PRs, so
+old costly claims cannot prevent the triggering PR from being checked.
 candidate-defined code never receives its app token. Every run publishes JSONL
 in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables enforcement;
 otherwise all triggers audit only. Manual dispatch additionally defaults to
