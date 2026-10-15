@@ -43,7 +43,8 @@ computation of its fundamental group and the classification of its finite covers
 * `TauCeti.ThricePuncturedSphere.range_coe`, `TauCeti.ThricePuncturedSphere.isOpenEmbedding_coe`:
   the open embedding into `ℂ`, with range `{0, 1}ᶜ`.
 * `TauCeti.ThricePuncturedSphere.toOnePoint`, `isOpenEmbedding_toOnePoint`,
-  `range_toOnePoint`: the open embedding into the Riemann sphere, with range `{0, 1, ∞}ᶜ`.
+  `range_toOnePoint`: the open embedding into the Riemann sphere, whose range is the complement
+  of the three marked points `marked = {0, 1, ∞}`.
 * `TauCeti.ThricePuncturedSphere.basePt`: the basepoint `1/2`.
 * `TauCeti.ThricePuncturedSphere.mob01`: the self-homeomorphism `z ↦ 1 − z`.
 * `TauCeti.ThricePuncturedSphere.leftOpen`, `TauCeti.ThricePuncturedSphere.rightOpen`: the open
@@ -117,11 +118,24 @@ theorem toOnePoint_apply (z : ThricePuncturedSphere) : toOnePoint z = ((z : ℂ)
 theorem isOpenEmbedding_toOnePoint : IsOpenEmbedding toOnePoint :=
   OnePoint.isOpenEmbedding_coe.comp isOpenEmbedding_coe
 
-/-- The range of the inclusion into the Riemann sphere is the complement of the three punctures
+/-- The three **marked points** `0`, `1` and `∞` of the Riemann sphere `OnePoint ℂ`. Their
+complement is the thrice-punctured sphere (`range_toOnePoint`). -/
+def marked : Set (OnePoint ℂ) :=
+  {((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), ∞}
+
+/-- The marked points are `0`, `1` and `∞`. -/
+@[simp]
+theorem mem_marked {w : OnePoint ℂ} :
+    w ∈ marked ↔ w = ((0 : ℂ) : OnePoint ℂ) ∨ w = ((1 : ℂ) : OnePoint ℂ) ∨ w = ∞ :=
+  Iff.rfl
+
+/-- There are finitely many marked points. -/
+theorem finite_marked : marked.Finite := by
+  simp [marked]
+
+/-- The range of the inclusion into the Riemann sphere is the complement of the three marked points
 `0`, `1` and `∞`. -/
-theorem range_toOnePoint :
-    range toOnePoint =
-      ({((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), ∞} : Set (OnePoint ℂ))ᶜ := by
+theorem range_toOnePoint : range toOnePoint = markedᶜ := by
   ext w
   induction w using OnePoint.rec with
   | infty => simp [toOnePoint]
