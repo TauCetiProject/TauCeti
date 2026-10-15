@@ -2,6 +2,7 @@
 """Dedicated placement and same-run fallback are bounded and fail closed."""
 
 import unittest
+import urllib.error
 
 from fleet_recovery import recover
 from fleet_runner import choose
@@ -46,6 +47,50 @@ class Selection(unittest.TestCase):
 
 
 class Recovery(unittest.TestCase):
+    def advance(self, seconds):
+        self.now += seconds
+
+    def test_slow_picker_gets_full_acquisition_window_after_labels_appear(self):
+        fetch = self.fixture()
+        when = []
+        def delayed(path, data=None):
+            if path.endswith("/force-cancel"):
+                when.append(self.now)
+            result = fetch(path, data)
+            if "/jobs?" in path and self.now < 1400:
+                result["jobs"] = [dict(self.job, labels=[])]
+            return result
+        self.assertEqual(recover(42, fetch=delayed, clock=lambda: self.now, sleep=self.advance),
+                         "rerun-on-namespace-requested")
+        self.assertEqual(when, [1520])
+
+    def test_transient_read_failure_is_retried_without_abandoning_recovery(self):
+        fetch = self.fixture()
+        failed = False
+        def transient(path, data=None):
+            nonlocal failed
+            if "/jobs?" in path and not failed:
+                failed = True
+                raise OSError("temporary 502")
+            return fetch(path, data)
+        self.assertEqual(recover(42, fetch=transient, clock=lambda: self.now, sleep=self.advance),
+                         "rerun-on-namespace-requested")
+        self.assertTrue(failed)
+
+    def test_definite_force_cancel_rejection_uses_ordinary_cancellation(self):
+        fetch = self.fixture()
+        def rejected(path, data=None):
+            if path.endswith("/force-cancel"):
+                raise urllib.error.HTTPError(path, 403, "forbidden", {}, None)
+            if path.endswith("/cancel"):
+                self.canceled = True
+                self.calls.append((path, data))
+                return {}
+            return fetch(path, data)
+        self.assertEqual(recover(42, fetch=rejected, clock=lambda: self.now, sleep=self.advance),
+                         "rerun-on-namespace-requested")
+        self.assertTrue(any(p.endswith("/cancel") for p, d in self.calls))
+
     def fixture(self, *, acquired=False):
         self.now = 1000
         self.calls = []
@@ -96,8 +141,7 @@ class Recovery(unittest.TestCase):
             42,
             fetch=fetch,
             clock=lambda: self.now,
-            wall=lambda: self.now,
-            sleep=lambda n: None,
+            sleep=self.advance,
         )
         self.assertEqual(result, "rerun-on-namespace-requested")
         self.assertEqual(
@@ -111,7 +155,7 @@ class Recovery(unittest.TestCase):
         def sleep(seconds):
             self.now += seconds
         with self.assertRaisesRegex(TimeoutError, "placement"):
-            recover(42, fetch=fetch, clock=lambda: self.now, wall=lambda: self.now, sleep=sleep)
+            recover(42, fetch=fetch, clock=lambda: self.now, sleep=sleep)
         self.assertFalse(self.canceled)
 
     def test_rerun_failure_posts_terminal_failure_instead_of_leaving_bors_pending(self):
@@ -126,7 +170,7 @@ class Recovery(unittest.TestCase):
         def sleep(seconds):
             self.now += seconds
         with self.assertRaisesRegex(RuntimeError, "not confirmed"):
-            recover(42, fetch=failing, clock=lambda: self.now, wall=lambda: self.now, sleep=sleep)
+            recover(42, fetch=failing, clock=lambda: self.now, sleep=sleep)
         posts = [(p, d) for p, d in self.calls if "/statuses/" in p]
         self.assertEqual(len(posts), 1)
         self.assertEqual(posts[0][1]["state"], "failure")
@@ -138,7 +182,7 @@ class Recovery(unittest.TestCase):
                 self.run["run_attempt"] = 2
                 raise OSError("lost response")
             return fetch(path, data)
-        self.assertEqual(recover(42, fetch=lost, clock=lambda: self.now, wall=lambda: self.now), "rerun-on-namespace-observed")
+        self.assertEqual(recover(42, fetch=lost, clock=lambda: self.now, sleep=self.advance), "rerun-on-namespace-observed")
         self.assertFalse(any("/statuses/" in p for p, d in self.calls))
 
     def test_cancellation_timeout_posts_failure_and_does_not_start_overlapping_retry(self):
@@ -151,7 +195,7 @@ class Recovery(unittest.TestCase):
         def sleep(seconds):
             self.now += seconds
         with self.assertRaisesRegex(TimeoutError, "cancellation"):
-            recover(42, fetch=stalled, clock=lambda: self.now, wall=lambda: self.now, sleep=sleep)
+            recover(42, fetch=stalled, clock=lambda: self.now, sleep=sleep)
         self.assertFalse(any(p.endswith("/rerun") for p, d in self.calls))
         self.assertTrue(any("/statuses/" in p for p, d in self.calls))
 
@@ -161,7 +205,7 @@ class Recovery(unittest.TestCase):
             if path.endswith("/force-cancel"):
                 self.job["runner_id"] = 12
             return fetch(path, data)
-        self.assertEqual(recover(42, fetch=raced, clock=lambda: self.now, wall=lambda: self.now), "runner-acquired-during-cancellation")
+        self.assertEqual(recover(42, fetch=raced, clock=lambda: self.now, sleep=self.advance), "runner-acquired-during-cancellation")
         self.assertFalse(any(p.endswith("/rerun") for p, d in self.calls))
         self.assertTrue(any("/statuses/" in p for p, d in self.calls))
 

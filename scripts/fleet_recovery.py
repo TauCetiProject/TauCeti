@@ -6,13 +6,13 @@ identity. Attempt two is forced to Namespace by the trusted picker. Force-cancel
 bypasses always() finalizers; failed recovery publishes an infrastructure verdict.
 """
 
-import datetime as dt
 import json
 import os
 import re
 import sys
 import time
 import urllib.request
+import urllib.error
 
 TITLE = re.compile(
     r"^bors branch=[^ ]+ batch=[1-9][0-9]* head=(?P<head>[0-9a-f]{40}) base=[0-9a-f]{40}$"
@@ -69,7 +69,7 @@ def build_job(data):
 
 
 def recover(
-    run_id, *, fetch=api, clock=time.monotonic, sleep=time.sleep, wall=time.time
+    run_id, *, fetch=api, clock=time.monotonic, sleep=time.sleep
 ):
     """Bound first-attempt fleet acquisition and request a same-run Namespace retry.
 
@@ -80,10 +80,36 @@ def recover(
     recover. Acquired jobs retain normal reporting. Incomplete evidence before
     cancellation cannot authorize mutation; unconfirmed handoff raises an error.
     """
+    operation = fetch
+
+    def fetch(path, data=None):
+        # Reads are safe to retry. Never repeat a mutation with a lost reply.
+        for attempt in range(3):
+            try:
+                return operation(path) if data is None else operation(path, data)
+            except OSError:
+                if data is not None or attempt == 2:
+                    raise
+                sleep(5 * (attempt + 1))
+
     run = fetch(f"/actions/runs/{run_id}")
     if not eligible(run):
         return "not-an-initial-bors-attempt"
+    try:
+        return wait_for_fleet(run_id, fetch=fetch, clock=clock, sleep=sleep, run=run)
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError):
+        failure_status(run_id, run, fetch=fetch)
+        raise
+
+
+def wait_for_fleet(run_id, *, fetch, clock, sleep, run):
+    """Allow seven minutes for placement, then two full minutes for acquisition.
+
+    GitHub's job created_at can precede dependency completion. Only the first
+    observed fleet labels start the monotonic acquisition timer.
+    """
     deadline = clock() + 420
+    placed = False
     while clock() < deadline:
         latest = fetch(f"/actions/runs/{run_id}")
         if latest.get("run_attempt") != 1 or latest.get("status") == "completed":
@@ -95,22 +121,13 @@ def recover(
                 return "namespace-selected"
             if job.get("runner_name") or job.get("runner_id") or job["status"] in ("in_progress", "completed"):
                 return "runner-acquired"
-            if not labels:
-                sleep(10)
-                continue
-            created = dt.datetime.fromisoformat(
-                job["created_at"].replace("Z", "+00:00")
-            ).timestamp()
-            if wall() - created >= 120:
-                break
+            if labels and not placed:
+                placed = True
+                deadline = clock() + 120
         sleep(10)
-    else:
+    if not placed:
         raise TimeoutError("Picker placement was not observable within seven minutes")
-    try:
-        return handoff(run_id, run, fetch=fetch, clock=clock, sleep=sleep)
-    except (OSError, ValueError, KeyError, TypeError, RuntimeError):
-        failure_status(run_id, run, fetch=fetch)
-        raise
+    return handoff(run_id, run, fetch=fetch, clock=clock, sleep=sleep)
 
 
 def handoff(run_id, run, *, fetch, clock, sleep):
@@ -122,8 +139,14 @@ def handoff(run_id, run, *, fetch, clock, sleep):
     # Mutations are not automatically retried after an ambiguous HTTP failure.
     try:
         fetch(f"/actions/runs/{run_id}/force-cancel", {})
+    except urllib.error.HTTPError as error:
+        if 400 <= error.code < 500 and error.code != 409:
+            # Definite rejection: ordinary cancellation still has a finalizer
+            # and cannot silently strand bors.
+            fetch(f"/actions/runs/{run_id}/cancel", {})
+        # A conflict or server error may mean it was accepted: reconcile.
     except OSError:
-        pass  # The server may have accepted it: reconcile before any further action.
+        pass  # The server may have accepted it: reconcile before further action.
     deadline = clock() + 120
     while clock() < deadline:
         latest = fetch(f"/actions/runs/{run_id}")
