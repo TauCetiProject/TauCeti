@@ -66,13 +66,13 @@ variable [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
 variable, so the right tensor ideal is the ideal of `G × V(I)`. -/
 def IsNormal (I : HopfIdeal R H) : Prop :=
   Ideal.map (HopfAlgebra.conjugationAlgHom (R := R) (H := H)).toRingHom I.toIdeal ≤
-    rightTensorIdeal (R := R) (H := H) I.toIdeal
+    Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal
 
 /-- Normality restated as the defining ideal inclusion. -/
 theorem isNormal_def (I : HopfIdeal R H) :
     I.IsNormal ↔
       Ideal.map (HopfAlgebra.conjugationAlgHom (R := R) (H := H)).toRingHom I.toIdeal ≤
-        rightTensorIdeal (R := R) (H := H) I.toIdeal :=
+        Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal :=
   Iff.rfl
 
 /-- A Hopf ideal is normal exactly when the coordinate conjugation of each of its elements
@@ -80,14 +80,14 @@ belongs to `H ⊗ I`. -/
 theorem isNormal_iff_conjugation_mem (I : HopfIdeal R H) :
     I.IsNormal ↔ ∀ ⦃x : H⦄, x ∈ I →
       HopfAlgebra.conjugationAlgHom (R := R) (H := H) x ∈
-        rightTensorIdeal (R := R) (H := H) I.toIdeal := by
+        Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal := by
   rw [isNormal_def, Ideal.map_le_iff_le_comap]
   rfl
 
 /-- The coordinate conjugation of an element of a normal Hopf ideal belongs to `H ⊗ I`. -/
 theorem IsNormal.conjugation_mem {I : HopfIdeal R H} (hI : I.IsNormal) {x : H} (hx : x ∈ I) :
     HopfAlgebra.conjugationAlgHom (R := R) (H := H) x ∈
-      rightTensorIdeal (R := R) (H := H) I.toIdeal :=
+      Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal :=
   (isNormal_iff_conjugation_mem I).mp hI hx
 
 /-- The image of a normal Hopf ideal under a morphism of commutative Hopf algebras is normal.
@@ -101,7 +101,7 @@ theorem IsNormal.map {K : Type w} [CommSemiring K] [HopfAlgebra R K]
   have hmap : f.toAlgHom.toRingHom = (f : H →+* K) := by
     ext
     rfl
-  rw [← hmap, ← map_tensor_rightTensorIdeal f.toAlgHom I.toIdeal]
+  rw [← hmap, ← AlgHom.map_tensor_rightTensorIdeal f.toAlgHom f.toAlgHom I.toIdeal]
   rw [Ideal.map_le_iff_le_comap]
   intro x hx
   rw [Ideal.mem_comap]
@@ -128,7 +128,7 @@ theorem isNormal_bot : (⊥ : HopfIdeal R H).IsNormal := by
 /-- An arbitrary supremum of normal Hopf ideals is normal. -/
 theorem isNormal_iSup {i : Sort*} {I : i → HopfIdeal R H} (hI : ∀ j, (I j).IsNormal) :
     (⨆ j, I j).IsNormal := by
-  rw [isNormal_def, iSup_toIdeal, Ideal.map_iSup, rightTensorIdeal_iSup]
+  rw [isNormal_def, iSup_toIdeal, Ideal.map_iSup, Ideal.rightTensorIdeal_iSup]
   exact iSup_le fun j ↦ le_iSup_of_le j (hI j)
 
 /-- The supremum of a set of normal Hopf ideals is normal. -/
@@ -195,9 +195,9 @@ theorem quotientPointsSubgroup_normal (H : _root_.CommHopfAlgCat.{v} R)
   intro x hx
   rw [← HopfAlgebra.productMap_comp_conjugationAlgHom (R := R) (H := H) g n]
   have hker :
-      HopfIdeal.rightTensorIdeal (R := R) (H := H) I.toIdeal ≤
+      Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal ≤
         RingHom.ker (Algebra.TensorProduct.productMap g.ofConv n.ofConv).toRingHom := by
-    rw [HopfIdeal.rightTensorIdeal_le_iff]
+    rw [Ideal.rightTensorIdeal_le_iff]
     intro y hy
     rw [Ideal.mem_comap, RingHom.mem_ker]
     simpa using hn y ((HopfIdeal.mem_toIdeal (I := I)).mp hy)
@@ -246,7 +246,7 @@ private theorem isNormal_of_quotientPointsSubgroup_normal
         (Algebra.TensorProduct.map_comp_includeRight _ _).symm
   rw [hproduct] at heval
   have hmem := RingHom.mem_ker.mpr heval
-  rw [HopfIdeal.ker_tensorProduct_map_id_quotient I.toIdeal] at hmem
+  rw [Ideal.ker_tensorProduct_map_id_quotient I.toIdeal] at hmem
   exact hmem
 
 /-- A Hopf ideal is normal if and only if it cuts out a normal subgroup over every
