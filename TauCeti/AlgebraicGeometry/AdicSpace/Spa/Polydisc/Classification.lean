@@ -61,6 +61,11 @@ point with nonzero support kills some `T - b`
 * `TauCeti.ValuationSpectrum.eq_discPointAbove_iff` and
   `TauCeti.ValuationSpectrum.eq_discPointBelow_iff`: it is `η_{a,r⁺}`, respectively `η_{a,r⁻}`, if
   and only if `x(T - a)` lies just above, respectively just below, the constants of norm `r`.
+* `TauCeti.ValuationSpectrum.forall_lt_and_forall_gt_of_vle_weightedC` and
+  `TauCeti.ValuationSpectrum.forall_lt_and_forall_gt_of_weightedC_vle`: in that case `x(T - a)`
+  is strictly larger or strictly smaller than the value of every constant.
+* `TauCeti.ValuationSpectrum.eq_of_forall_valuation_weightedX_sub_weightedC_eq`: two points that
+  take the value of one and the same nonzero constant on every `T - b` are equal.
 
 ## References
 
@@ -99,22 +104,6 @@ private theorem valuation_weightedX_sub_weightedC {x : closedPolydisc 1 K} {a : 
       (max_le le_rfl ((valuation_le_iff _ _ _).mpr ((hge _).mpr hb)))
   · rw [hsplit, Valuation.map_sub_eq_of_lt_right]
     exact lt_of_not_ge fun h ↦ hb ((hge _).mp ((valuation_le_iff _ _ _).mp h))
-
-/-- If `x(T - a)` is strictly larger than `x(c)` for the constants with `Q c` and strictly smaller
-for the others, then `x(T - b)` is `x(T - a)` when `Q (b - a)` and `x(b - a)` otherwise. -/
-private theorem valuation_weightedX_sub_weightedC_of_lt {x : closedPolydisc 1 K} {a : K}
-    (Q : K → Prop) [DecidablePred Q]
-    (hlt : ∀ c : K, Q c → x.1.valuation (C c) < x.1.valuation (T - C a))
-    (hgt : ∀ c : K, ¬ Q c → x.1.valuation (T - C a) < x.1.valuation (C c)) (b : K) :
-    x.1.valuation (T - C b) =
-      if Q (b - a) then x.1.valuation (T - C a) else x.1.valuation (C (b - a)) := by
-  have hsplit : T - C b = (T - C a) - C (b - a) := by
-    rw [map_sub]
-    ring
-  rw [hsplit]
-  split_ifs with hb
-  · exact Valuation.map_sub_eq_of_lt_left _ (hlt _ hb)
-  · exact Valuation.map_sub_eq_of_lt_right _ (hgt _ hb)
 
 /-- Under the second condition characterising `η_{a,r}`, `x(T - a) ≠ 0`. -/
 private theorem valuation_weightedX_sub_weightedC_ne_zero {x : closedPolydisc 1 K} {a : K}
@@ -247,7 +236,7 @@ private theorem valuation_mul_pow_le_iff [IsAlgClosed K] {x y : closedPolydisc 1
 /-- If `x(T - a) ≤ x(c)` holds for exactly the constants with `r < ‖c‖`, then `x(T - a)` is
 strictly larger than the values of the constants with `‖c‖ ≤ r` and strictly smaller than the
 values of the others, because the norms of `K` are dense. -/
-private theorem forall_lt_and_forall_gt_of_vle_weightedC_iff [IsAlgClosed K]
+theorem forall_lt_and_forall_gt_of_vle_weightedC [IsAlgClosed K]
     {x : closedPolydisc 1 K} {a : K} (hr₀ : 0 < r)
     (h : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖) :
     (∀ c : K, ‖c‖ ≤ r → x.1.valuation (C c) < x.1.valuation (T - C a)) ∧
@@ -262,7 +251,7 @@ private theorem forall_lt_and_forall_gt_of_vle_weightedC_iff [IsAlgClosed K]
 /-- If `x(c) ≤ x(T - a)` holds for exactly the constants with `‖c‖ < r`, then `x(T - a)` is
 strictly larger than the values of the constants with `‖c‖ < r` and strictly smaller than the
 values of the others, because the norms of `K` are dense. -/
-private theorem forall_lt_and_forall_gt_of_weightedC_vle_iff [IsAlgClosed K]
+theorem forall_lt_and_forall_gt_of_weightedC_vle [IsAlgClosed K]
     {x : closedPolydisc 1 K} {a : K}
     (h : ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r) :
     (∀ c : K, ‖c‖ < r → x.1.valuation (C c) < x.1.valuation (T - C a)) ∧
@@ -363,6 +352,61 @@ private theorem eq_of_forall_lt_of_forall_gt [IsAlgClosed K] {x y : closedPolydi
   rw [(hcmp x hx e).1, (hcmp x hx e).2, (hcmp y hy e).1, (hcmp y hy e).2]
   exact ⟨Iff.rfl, Iff.rfl⟩
 
+/-! ### Two points that take the value of a constant on every `T - b` -/
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- If on every `T - b` two points take the value of one and the same constant, then on every
+polynomial they take the value of one and the same constant: over an algebraically closed field,
+a polynomial is a constant times a product of linear factors. -/
+private theorem exists_valuation_eval₂RingHom_eq_valuation_weightedC [IsAlgClosed K]
+    {x y : closedPolydisc 1 K}
+    (h : ∀ b : K, ∃ e : K, x.1.valuation (T - C b) = x.1.valuation (C e) ∧
+      y.1.valuation (T - C b) = y.1.valuation (C e)) (p : Polynomial K) :
+    ∃ u : K, x.1.valuation (Polynomial.eval₂RingHom C T p) = x.1.valuation (C u) ∧
+      y.1.valuation (Polynomial.eval₂RingHom C T p) = y.1.valuation (C u) := by
+  choose e hxe hye using h
+  have hP : Polynomial.eval₂RingHom C T p =
+      C p.leadingCoeff * (p.roots.map fun b ↦ T - C b).prod :=
+    (IsAlgClosed.splits p).eval₂_eq_prod_roots C T
+  exact ⟨p.leadingCoeff * (p.roots.map e).prod,
+    by simp only [hP, map_mul, map_multiset_prod, Multiset.map_map, Function.comp_def, hxe],
+    by simp only [hP, map_mul, map_multiset_prod, Multiset.map_map, Function.comp_def, hye]⟩
+
+/-- **Two points of the closed unit disc that take the value of one and the same nonzero constant on
+every `T - b` are equal**, over an algebraically closed field. Both then have trivial support and
+compare polynomials as the norm compares constants, and polynomials are dense. -/
+theorem eq_of_forall_valuation_weightedX_sub_weightedC_eq [IsAlgClosed K]
+    {x y : closedPolydisc 1 K}
+    (h : ∀ b : K, ∃ e : K, e ≠ 0 ∧ x.1.valuation (T - C b) = x.1.valuation (C e) ∧
+      y.1.valuation (T - C b) = y.1.valuation (C e)) : x = y := by
+  have hcont (z : closedPolydisc 1 K) : z.1.valuation.IsContinuous :=
+    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K z.1).mp z.2).1
+  -- a point with nonzero support kills some `T - b`, so both points have trivial support
+  have h0 (z : closedPolydisc 1 K)
+      (hz : ∀ b : K, ∃ e : K, e ≠ 0 ∧ z.1.valuation (T - C b) = z.1.valuation (C e)) (f : 𝒯) :
+      z.1.valuation f = 0 ↔ f = 0 := by
+    suffices hsupp : z.1.supp = ⊥ by
+      rw [← Valuation.mem_supp_iff, ← supp_eq_valuation_supp, hsupp, Ideal.mem_bot]
+    by_contra hne
+    obtain ⟨b, -, hb⟩ := exists_weightedX_sub_weightedC_mem_supp z hne
+    obtain ⟨e, he, hze⟩ := hz b
+    rw [supp_eq_valuation_supp, Valuation.mem_supp_iff, hze] at hb
+    exact he ((closedPolydisc_valuation_weightedC_eq_zero_iff z e).mp hb)
+  have hequiv : x.1.valuation.IsEquiv y.1.valuation := by
+    refine (hcont x).isEquiv_of_dense (hcont y)
+      (fun f ↦ (h0 x (fun b ↦ (h b).imp fun _ he ↦ ⟨he.1, he.2.1⟩) f).trans
+        (h0 y (fun b ↦ (h b).imp fun _ he ↦ ⟨he.1, he.2.2⟩) f).symm)
+      (denseRange_eval₂RingHom_weightedX isWeightFamily_one_weight) ?_
+    rintro _ ⟨p, rfl⟩ _ ⟨q, rfl⟩
+    have h' (b : K) := (h b).imp fun _ he ↦ he.2
+    obtain ⟨u, hxu, hyu⟩ := exists_valuation_eval₂RingHom_eq_valuation_weightedC h' p
+    obtain ⟨w, hxw, hyw⟩ := exists_valuation_eval₂RingHom_eq_valuation_weightedC h' q
+    rw [hxu, hxw, hyu, hyw, closedPolydisc_valuation_weightedC_le_iff,
+      closedPolydisc_valuation_weightedC_le_iff]
+  exact Subtype.ext (ext' fun f g ↦ by
+    rw [← valuation_le_iff, ← valuation_le_iff]
+    exact hequiv f g)
+
 /-! ### The characterisations -/
 
 /-- **The points `η_{a,r}` among the points of the closed unit disc**, over an algebraically closed
@@ -401,15 +445,11 @@ theorem eq_discPointAbove_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (
     (hr₀ : 0 < r) (hr₁ : r < 1) :
     x = discPointAbove a ha hr₀ hr₁ ↔
       ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖ := by
-  have hη (c : K) :
-      (discPointAbove a ha hr₀ hr₁).1.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖ := by
-    rw [discPointAbove_vle_iff, map_sub, taylorHom_weightedX, taylorHom_weightedC,
-      taylorHom_weightedC, add_sub_cancel_right]
-    exact closedDiscGaussValuationAbove_weightedX_le_iff hr₀ hr₁.le c
+  have hη := discPointAbove_vle_weightedC_iff a ha hr₀ hr₁
   refine ⟨by rintro rfl; exact hη, fun h ↦ ?_⟩
   exact eq_of_forall_lt_of_forall_gt (fun c ↦ ‖c‖ ≤ r) (by simpa using hr₀.le)
-    (forall_lt_and_forall_gt_of_vle_weightedC_iff hr₀ h)
-    (forall_lt_and_forall_gt_of_vle_weightedC_iff hr₀ hη)
+    (forall_lt_and_forall_gt_of_vle_weightedC hr₀ h)
+    (forall_lt_and_forall_gt_of_vle_weightedC hr₀ hη)
 
 /-- **The points `η_{a,r⁻}` among the points of the closed unit disc**, over an algebraically
 closed complete nonarchimedean field: a point `x` is `η_{a,r⁻}` if and only if `x(c) ≤ x(T - a)`
@@ -420,14 +460,10 @@ theorem eq_discPointBelow_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     x = discPointBelow a ha hr₀ hr₁ ↔
       ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r := by
-  have hη (c : K) :
-      (discPointBelow a ha hr₀ hr₁).1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r := by
-    rw [discPointBelow_vle_iff, map_sub, taylorHom_weightedX, taylorHom_weightedC,
-      taylorHom_weightedC, add_sub_cancel_right]
-    exact closedDiscGaussValuationBelow_weightedC_le_iff hr₀ hr₁ c
+  have hη := discPointBelow_weightedC_vle_iff a ha hr₀ hr₁
   refine ⟨by rintro rfl; exact hη, fun h ↦ ?_⟩
   exact eq_of_forall_lt_of_forall_gt (fun c ↦ ‖c‖ < r) (by simpa using hr₀)
-    (forall_lt_and_forall_gt_of_weightedC_vle_iff h)
-    (forall_lt_and_forall_gt_of_weightedC_vle_iff hη)
+    (forall_lt_and_forall_gt_of_weightedC_vle h)
+    (forall_lt_and_forall_gt_of_weightedC_vle hη)
 
 end TauCeti.ValuationSpectrum

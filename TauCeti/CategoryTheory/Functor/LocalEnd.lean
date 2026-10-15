@@ -71,7 +71,7 @@ theorem isIso_of_map_isIso_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRing
     (by simpa only [End.one_def] using one_ne_zero (α := End X))
     (fun e he ↦ ?_) f g inferInstance
   simpa only [End.one_def] using
-    TauCeti.IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem (R := End Y)
+    IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing (R := End Y)
       (a := e) (by simpa only [IsIdempotentElem, End.mul_def] using he)
 
 /-- An additive functor surjective on morphisms in both directions between two objects

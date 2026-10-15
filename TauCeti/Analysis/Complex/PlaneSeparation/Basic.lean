@@ -7,11 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.ContinuousLog.Basic
 import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.Connected.LocallyPathConnected
 import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.Complex.Tietze
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import Mathlib.Topology.Algebra.Module.LocallyConvex
+import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Topology.Piecewise
 
 /-!
@@ -78,6 +81,20 @@ from [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/3350
 human-curated Riemann-mapping-theorem effort. The lifting of a zero-free continuous function
 through `Complex.exp` is supplied by Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp`.
 
+## Janiszewski's second theorem
+
+The same logarithms give the companion statement: if `S` and `T` are closed and connected and their
+intersection is bounded but **not** connected, then `S ∪ T` separates the plane. Split `S ∩ T` into
+two disjoint closed pieces `P ∋ a` and `Q ∋ b`; the frontier `Z` of a thin neighbourhood of `P` is a
+compact set missing `S ∩ T` that separates `a` from `b`, so by Borsuk's theorem the Borsuk map of
+`a` and `b` has no continuous logarithm on `Z`. If the complement of `S ∪ T` were connected, one
+would exist: cut `Z` into the closed part `Z_S` nearer to `T` than to `S`, which misses `S`, and the
+closed part `Z_T` nearer to `S`, which misses `T`; their overlap misses `S ∪ T`, so it lies in a
+compact connected set `L` off `S ∪ T`. Then `Z_S ∪ L` misses the connected set `S` through `a` and
+`b`, so the map has a logarithm there, likewise on `Z_T ∪ L`, and the two logarithms glue along
+their connected overlap `L`. The argument is the Mayer–Vietoris sequence for `Sᶜ` and `Tᶜ`, read in
+degree zero through continuous logarithms.
+
 ## Main results
 
 * `TauCeti.not_hasContinuousLogOn_sub_sphere` — `z ↦ z - a` has no continuous logarithm on a circle
@@ -87,6 +104,11 @@ through `Complex.exp` is supplied by Mathlib's `Complex.exists_continuousOn_eqOn
   component of the complement.
 * `TauCeti.hasContinuousLogOn_sub_div_sub_iff` — the resulting equivalence.
 * `TauCeti.janiszewski` — **Janiszewski's theorem**.
+* `TauCeti.hasContinuousLogOn_sub_div_sub_of_isPreconnected_compl_union` — if two closed connected
+  sets do not together separate the plane, the Borsuk map of two of their common points has a
+  continuous logarithm on every compact set missing their intersection.
+* `TauCeti.not_isPreconnected_compl_union_of_not_isPreconnected_inter` — **Janiszewski's second
+  theorem**: two closed connected sets with bounded disconnected intersection separate the plane.
 
 ## References
 
@@ -266,5 +288,100 @@ theorem janiszewski {S T : Set ℂ} (hS : IsClosed S) (hT : IsClosed T) (hSb : I
   mem_connectedComponentIn_of_hasContinuousLogOn (hS.union hT) (hSb.union hTb)
     ((hasContinuousLogOn_sub_div_sub hS hSsep).union hS hT hST
       (hasContinuousLogOn_sub_div_sub hT hTsep))
+
+/-! ## Janiszewski's second theorem -/
+
+/-- **If two closed connected sets do not separate the plane, logarithms of the Borsuk map of two
+common points exist off their intersection.** Let `S`, `T` be closed and preconnected, both
+containing `a` and `b`, with `(S ∪ T)ᶜ` preconnected. Then `z ↦ (z - a) / (z - b)` has a continuous
+logarithm on every compact `Z` disjoint from `S ∩ T`. -/
+theorem hasContinuousLogOn_sub_div_sub_of_isPreconnected_compl_union {S T Z : Set ℂ}
+    (hS : IsClosed S) (hT : IsClosed T) (hSc : IsPreconnected S) (hTc : IsPreconnected T)
+    (ha : a ∈ S ∩ T) (hb : b ∈ S ∩ T) (hD : IsPreconnected (S ∪ T)ᶜ) (hZ : IsCompact Z)
+    (hZST : Disjoint Z (S ∩ T)) : HasContinuousLogOn (fun z => (z - a) / (z - b)) Z := by
+  -- cut `Z` into the closed part `ZS` nearer to `T`, which misses `S`, and the part `ZT` nearer
+  -- to `S`, which misses `T`
+  set ZS := Z ∩ {z | infDist z T ≤ infDist z S}
+  set ZT := Z ∩ {z | infDist z S ≤ infDist z T}
+  have hZS : IsClosed ZS :=
+    hZ.isClosed.inter (isClosed_le (continuous_infDist_pt T) (continuous_infDist_pt S))
+  have hZT : IsClosed ZT :=
+    hZ.isClosed.inter (isClosed_le (continuous_infDist_pt S) (continuous_infDist_pt T))
+  have hmiss : ∀ {U V : Set ℂ}, IsClosed U → IsClosed V → a ∈ U → a ∈ V → Disjoint Z (U ∩ V) →
+      Disjoint (Z ∩ {z | infDist z V ≤ infDist z U}) U := by
+    intro U V hU hV haU haV hZUV
+    refine disjoint_left.mpr fun z ⟨hzZ, hz⟩ hzU => disjoint_left.mp hZUV hzZ ⟨hzU, ?_⟩
+    have h0 : infDist z U = 0 := (hU.mem_iff_infDist_zero ⟨a, haU⟩).mp hzU
+    exact (hV.mem_iff_infDist_zero ⟨a, haV⟩).mpr (le_antisymm (h0 ▸ hz) infDist_nonneg)
+  have hZSS : Disjoint ZS S := hmiss hS hT ha.1 ha.2 hZST
+  have hZTT : Disjoint ZT T := hmiss hT hS ha.2 ha.1 (inter_comm S T ▸ hZST)
+  -- their overlap misses `S ∪ T`, so it lies in a compact connected set `L` off `S ∪ T`
+  have hE : ZS ∩ ZT ⊆ (S ∪ T)ᶜ := fun z hz hzST =>
+    hzST.elim (disjoint_left.mp hZSS hz.1) (disjoint_left.mp hZTT hz.2)
+  obtain ⟨L, hLc, hLp, hEL, hLD⟩ := exists_isCompact_isPreconnected_between
+    (hZ.of_isClosed_subset (hZS.inter hZT) (inter_subset_left.trans inter_subset_left))
+    (hS.union hT).isOpen_compl hD hE
+  -- on `ZS ∪ L`, which misses the connected set `S` through `a` and `b`, the Borsuk map has a
+  -- logarithm, and likewise on `ZT ∪ L`
+  have hlog : ∀ {U Y : Set ℂ}, IsPreconnected U → a ∈ U → b ∈ U → U ⊆ S ∪ T → IsClosed Y →
+      Disjoint Y U → HasContinuousLogOn (fun z => (z - a) / (z - b)) (Y ∪ L) :=
+    fun {U Y} hUc haU hbU hUST hY hYU => hasContinuousLogOn_sub_div_sub (hY.union hLc.isClosed)
+      (hUc.subset_connectedComponentIn haU (fun z hzU (hz : z ∈ Y ∪ L) => hz.elim
+        (fun h => disjoint_left.mp hYU h hzU) fun h => hLD h (hUST hzU)) hbU)
+  have hinter : (ZS ∪ L) ∩ (ZT ∪ L) = L := by
+    rw [← inter_union_distrib_right]
+    exact union_eq_right.mpr (hEL.trans interior_subset)
+  refine ((hlog hSc ha.1 hb.1 subset_union_left hZS hZSS).union (hZS.union hLc.isClosed)
+    (hZT.union hLc.isClosed) (hinter.symm ▸ hLp)
+    (hlog hTc ha.2 hb.2 subset_union_right hZT hZTT)).mono fun z hz => ?_
+  rcases le_total (infDist z T) (infDist z S) with h | h
+  · exact Or.inl (Or.inl ⟨hz, h⟩)
+  · exact Or.inr (Or.inl ⟨hz, h⟩)
+
+/-- **Janiszewski's second theorem.** If two closed preconnected subsets `S`, `T` of the plane have
+a bounded intersection that is not preconnected, then their union separates the plane: the
+complement of `S ∪ T` is not preconnected. -/
+theorem not_isPreconnected_compl_union_of_not_isPreconnected_inter {S T : Set ℂ}
+    (hS : IsClosed S) (hT : IsClosed T) (hSc : IsPreconnected S) (hTc : IsPreconnected T)
+    (hSTb : IsBounded (S ∩ T)) (hST : ¬ IsPreconnected (S ∩ T)) : ¬ IsPreconnected (S ∪ T)ᶜ := by
+  intro hD
+  -- split `S ∩ T` into disjoint closed pieces `P ∋ a`, compact, and `Q ∋ b`
+  simp only [isPreconnected_iff_subset_of_disjoint_closed, not_forall, not_or] at hST
+  obtain ⟨u, v, hu, hv, hsub, hdisj, hnu, hnv⟩ := hST
+  obtain ⟨a, haST, hav⟩ := not_subset.mp hnv
+  obtain ⟨b, hbST, hbu⟩ := not_subset.mp hnu
+  set P := S ∩ T ∩ u
+  set Q := S ∩ T ∩ v
+  have hP : IsCompact P :=
+    isCompact_of_isClosed_isBounded ((hS.inter hT).inter hu) (hSTb.subset inter_subset_left)
+  have hPQ : Disjoint P Q := disjoint_left.mpr fun z hzP hzQ =>
+    (hdisj ▸ ⟨hzP.1, hzP.2, hzQ.2⟩ : z ∈ (∅ : Set ℂ))
+  obtain ⟨δ, hδ, hthick⟩ := hPQ.exists_thickenings hP ((hS.inter hT).inter hv)
+  -- the frontier `Z` of the open neighbourhood `W` of `P` misses `S ∩ T`
+  set W := thickening δ P
+  have hW : IsOpen W := isOpen_thickening
+  have hWQ : Disjoint (closure W) (thickening δ Q) := hthick.closure_left isOpen_thickening
+  have haW : a ∈ W := self_subset_thickening hδ P ⟨haST, (hsub haST).resolve_right hav⟩
+  have hbW : b ∉ closure W := fun hbW => disjoint_left.mp hWQ hbW
+    (self_subset_thickening hδ Q ⟨hbST, (hsub hbST).resolve_left hbu⟩)
+  set Z := frontier W
+  have hZW : Z = closure W \ W := hW.frontier_eq
+  have hZ : IsCompact Z := isCompact_of_isClosed_isBounded isClosed_frontier
+    (hP.isBounded.thickening.closure.subset frontier_subset_closure)
+  have hZST : Disjoint Z (S ∩ T) := by
+    refine disjoint_left.mpr fun z hzZ hz => ?_
+    rw [hZW] at hzZ
+    rcases hsub hz with hzu | hzv
+    · exact hzZ.2 (self_subset_thickening hδ P ⟨hz, hzu⟩)
+    · exact disjoint_left.mp hWQ hzZ.1 (self_subset_thickening hδ Q ⟨hz, hzv⟩)
+  -- `Z` separates `a ∈ W` from `b ∉ closure W`, so it carries no logarithm of their Borsuk map
+  have haZ : a ∉ Z := fun haZ => (hZW ▸ haZ).2 haW
+  refine hbW (subset_closure (isPreconnected_connectedComponentIn.subset_of_closure_inter_subset hW
+    ⟨a, mem_connectedComponentIn haZ, haW⟩ (fun z ⟨hzW, hz⟩ => ?_)
+    (mem_connectedComponentIn_of_hasContinuousLogOn hZ.isClosed hZ.isBounded
+      (hasContinuousLogOn_sub_div_sub_of_isPreconnected_compl_union hS hT hSc hTc haST hbST hD hZ
+        hZST))))
+  by_contra hzW'
+  exact connectedComponentIn_subset _ _ hz (hZW ▸ ⟨hzW, hzW'⟩)
 
 end TauCeti

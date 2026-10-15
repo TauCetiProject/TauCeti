@@ -361,14 +361,14 @@ noncomputable def affinePlaneBlowUpLowerChart (z : ℂ × ℂ) :
     ⟨affinePlaneBlowUpLowerCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inl (.refl _))⟩
     (affinePlaneBlowUpLowerPointHomeomorph.symm z)
 
-/-- The upper chart is its point parametrization followed by the affine chart inclusion. -/
+/-- The upper parametrization inserts the point with the prescribed upper coordinates. -/
 theorem affinePlaneBlowUpUpperChart_def (z : ℂ × ℂ) :
     affinePlaneBlowUpUpperChart z =
       affinePlaneBlowUpFan.analyticAffineChartι isRegular_affinePlaneBlowUpFan
         ⟨affinePlaneBlowUpUpperCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inr (.refl _))⟩
         (affinePlaneBlowUpUpperPointHomeomorph.symm z) := (rfl)
 
-/-- The lower chart is its point parametrization followed by the affine chart inclusion. -/
+/-- The lower parametrization inserts the point with the prescribed lower coordinates. -/
 theorem affinePlaneBlowUpLowerChart_def (z : ℂ × ℂ) :
     affinePlaneBlowUpLowerChart z =
       affinePlaneBlowUpFan.analyticAffineChartι isRegular_affinePlaneBlowUpFan

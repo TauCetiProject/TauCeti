@@ -14,7 +14,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
 /-!
-# The endomorphism algebra of a finite-dimensional vector space, as matrices of a known size
+# Matrix realizations of endomorphisms and their action on a basis
 
 Mathlib's `algEquivMatrix` turns `Module.End K M` into matrices indexed by the index type of a
 chosen basis of `M`. This file records the form of it that is wanted when the *dimension* of `M` is
@@ -29,11 +29,11 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 
 * `TauCeti.Algebra.endAlgEquivMatrix`: the above, read off the basis
   `Module.finBasisOfFinrankEq`.
-* `TauCeti.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
+* `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
   vectors are equivalent over a commutative semiring.
-* `TauCeti.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
+* `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
 
 The first is used to turn the Azumaya isomorphism of a finite-dimensional central simple algebra
@@ -62,6 +62,10 @@ theorem matrixGeneralLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
     matrixGeneralLinearEquiv, Units.coe_mapEquiv]
   exact Matrix.toLinAlgEquiv'_apply _ _
 
+end TauCeti
+
+namespace Module.Basis
+
 /-- **A matrix unit acts on a basis by a single coordinate.** The endomorphism attached to
 `Matrix.single p q v` sends the basis vector indexed by the column `q` to `v • bas p`, and every
 other basis vector to `0`. -/
@@ -88,7 +92,9 @@ theorem toMatrixAlgEquiv_eq_single_of_apply_basis {R : Type*} [CommSemiring R] {
   rw [toLinAlgEquiv_single_apply_basis]
   exact h c
 
-namespace Algebra
+end Module.Basis
+
+namespace TauCeti.Algebra
 
 variable (K : Type*) [Field K] (M : Type*) [AddCommGroup M] [Module K M] [FiniteDimensional K M]
 
@@ -97,8 +103,8 @@ read off a chosen `K`-basis of `M`.
 
 This is Mathlib's `algEquivMatrix` at the basis `Module.finBasisOfFinrankEq`, named here because it
 is wanted wherever a finite-dimensional endomorphism algebra has to be turned into matrices of a
-known size -- in particular as the second half of the opposite isomorphism
-`TauCeti.Algebra.tensorOpAlgEquivMatrix`, which the roadmap asks for separately.
+known size, including the second half of the opposite isomorphism
+`TauCeti.Algebra.tensorOpAlgEquivMatrix`.
 
 The basis is a choice, and nothing downstream should depend on which one it is; there is
 deliberately no lemma computing the matrix entries. -/
@@ -106,6 +112,4 @@ noncomputable def endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) :
     Module.End K M ≃ₐ[K] Matrix (Fin n) (Fin n) K :=
   algEquivMatrix (Module.finBasisOfFinrankEq K M hn)
 
-end Algebra
-
-end TauCeti
+end TauCeti.Algebra

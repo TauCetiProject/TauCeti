@@ -70,10 +70,11 @@ theorem coact_mem_range_iff_forall_matrixCoefficient_eq_zero (W : Submodule k M)
   · intro h ψ
     rw [← hcontract, h, map_zero, map_zero]
   · intro h
-    apply tensor_eq_zero_of_forall_lid_rTensor_eq_zero (fun ψ : Module.Dual k (M ⧸ W) ↦ ψ)
+    apply tensor_eq_zero_of_forall_rTensor_eq_zero (fun ψ : Module.Dual k (M ⧸ W) ↦ ψ)
       (fun x hx ↦ (Module.forall_dual_apply_eq_zero_iff k x).mp hx)
     intro ψ
-    rw [hcontract, h]
+    apply (TensorProduct.lid k C).injective
+    simpa only [map_zero, hcontract] using h ψ
 
 end Coalgebra
 

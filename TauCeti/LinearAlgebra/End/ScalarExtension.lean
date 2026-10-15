@@ -27,7 +27,7 @@ in the endomorphism, and functorial in the value algebra. It also transports the
 compatibilities needed for monoidal arguments: naturality in `M` and the tensor comparison
 `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)`.
 
-The name follows `TauCeti.AlgHom.mapValue`, which transports an algebra-valued point along a
+The name follows `AlgHom.mapValue`, which transports an algebra-valued point along a
 morphism of value algebras; the two are compatible in
 `TauCeti.Comodule.rTensor_comp_endOfPoint`.
 
