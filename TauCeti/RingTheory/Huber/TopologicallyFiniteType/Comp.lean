@@ -124,14 +124,11 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A] [IsHuberRing B]
         algebraMap B (Completion (weightedRestrictedSubring U hU)) (φ a) * y i :=
       ((continuous_algebraMap_completion_weightedRestrictedSubring m B hU).comp hφ.continuous).mul
         continuous_const
-    rw [show {a : A | IsPowerBounded
-        (algebraMap B (Completion (weightedRestrictedSubring U hU)) (φ a) * y i)} =
-      (fun a : A ↦ algebraMap B (Completion (weightedRestrictedSubring U hU)) (φ a) * y i) ⁻¹'
-        (powerBoundedSubring (Completion (weightedRestrictedSubring U hU)) :
-          Set (Completion (weightedRestrictedSubring U hU))) from
-      Set.ext fun _ ↦ mem_powerBoundedSubring.symm]
-    refine ((isOpen_powerBoundedSubring
-      (Completion (weightedRestrictedSubring U hU))).preimage hc).mem_nhds ?_
+    -- Openness is stated for the subring `powerBoundedSubring`, so pull it back along `hc` and
+    -- read membership back as the predicate `IsPowerBounded` via `mem_powerBoundedSubring`.
+    refine Filter.mem_of_superset (((isOpen_powerBoundedSubring
+      (Completion (weightedRestrictedSubring U hU))).preimage hc).mem_nhds ?_)
+      fun _ ha ↦ mem_powerBoundedSubring.mp ha
     exact mem_powerBoundedSubring.mpr (by
       simpa only [map_zero, zero_mul] using
         (isPowerBounded_zero (M := Completion (weightedRestrictedSubring U hU))))
