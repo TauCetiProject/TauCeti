@@ -1,0 +1,44 @@
+name: publication-capacity-canary
+on:
+  push:
+    branches: [issue-16782-capacity-canary]
+
+# Routing evidence only. No checkout, artifact, cache, token or publication secret.
+permissions: {}
+jobs:
+  finalizer-capacity:
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 2
+    steps:
+      - name: Record fresh finalizer routing
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          printf 'Finalizer runner=%s workflow=%s run=%s\n' "$RUNNER_NAME" "$WORKFLOW_SHA" "$GITHUB_RUN_ID"
+          nproc
+          if mountpoint -q /cache || [ -e .lake ]; then
+            echo '::error::unexpected shared cache or candidate build state'
+            exit 1
+          fi
+          sleep 15
+  publisher-capacity:
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 2
+    steps:
+      - name: Record fresh publisher routing
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          printf 'Publisher runner=%s workflow=%s run=%s\n' "$RUNNER_NAME" "$WORKFLOW_SHA" "$GITHUB_RUN_ID"
+          nproc
+          if mountpoint -q /cache || [ -e .lake ]; then
+            echo '::error::unexpected shared cache or candidate build state'
+            exit 1
+          fi
+          sleep 15
