@@ -244,9 +244,15 @@ def rendered_prose_parents(body):
     """Candidate identities from filtered rendered paragraphs, never raw Markdown."""
     result = set()
     for line in body.splitlines():
+        if not line.strip():
+            continue
+        if re.fullmatch(r"Roadmap:\s*[A-Za-z][A-Za-z0-9_-]*", line):
+            continue
+        if re.fullmatch(r"Refs\s+(?:TauCetiProject/TauCeti)?#[1-9]\d*", line):
+            continue
         for sentence in re.split(r"(?<=[.!?])\s+", line):
             if re.search(r"\b(not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t)\b", sentence, re.I):
-                continue
+                return set()
             claim = re.search(
                 r"\bstack(?:ed|s|ing)?\s+on\b|"
                 r"(?:^\s*(?:[-*]\s*)?|\bthis (?:PR|branch) (?:is )?)"
@@ -256,13 +262,13 @@ def rendered_prose_parents(body):
                 if not re.fullmatch(
                         r"\s*(?:[-*]\s*)?(?:this (?:PR|branch|pull request) (?:is )?)?",
                         sentence[:claim.start()], re.I):
-                    continue
+                    return set()
                 # Identities must belong to this particular declaration. Other
                 # sentences may discuss superseded source or mathematical uses.
                 tail = sentence[claim.end():]
                 first = re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#([1-9]\d*)\b", tail, re.I)
                 if not first:
-                    continue
+                    return set()
                 declared = {int(first[1])}
                 tail = tail[first.end():]
                 # Only a contiguous reference list belongs to this declaration.
@@ -274,6 +280,10 @@ def rendered_prose_parents(body):
                 # question, condition or fragment followed by qualifying prose.
                 if re.fullmatch(r"[\s\])]*\.?\s*", tail):
                     result.update(declared)
+                else:
+                    return set()
+            else:
+                return set()
     return result
 
 
@@ -318,6 +328,10 @@ class RenderedProse(HTMLParser):
             self.boundary()
         elif tag == "br":
             self.prose.append(" ")
+        elif tag not in {"strong", "em", "b", "i"}:
+            # Task checkboxes, images, footnote controls and other unsupported
+            # markup cannot silently qualify an otherwise literal declaration.
+            self.opaque()
 
     def handle_endtag(self, tag):
         if tag == "a" and self.anchors:
@@ -365,6 +379,7 @@ def rendered_parents(html):
     # Literal quotation can span paragraphs/inline markup. Conservatively decline
     # body-only inference in such prose; exact ancestry/base evidence still works.
     visible = "".join(parser.quoting)
+    visible = re.sub(r"(?m)^\s*Roadmap:\s*[A-Za-z][A-Za-z0-9_-]*\s*$", "", visible)
     if re.search(r'''["“”‘’«»‹›„‟「」『』]|(?<!\w)'|'(?!\w)''', visible):
         return set()
     if "`" in visible or "<!--" in visible:

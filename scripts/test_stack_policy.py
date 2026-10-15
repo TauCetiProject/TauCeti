@@ -591,6 +591,17 @@ class ProseTests(unittest.TestCase):
             self.assertEqual(sp.rendered_parents(
                 f'<p>Depends on <a href="/TauCetiProject/TauCeti/pull/12">{label}</a>.</p>'), {12})
 
+    def test_body_only_language_requires_complete_recognized_context(self):
+        for rendered in (
+                "<h2>Wrong statements</h2><p>Stacked on #12.</p>",
+                '<ul><li><input type="checkbox" disabled>Stacked on #12.</li></ul>',
+                "<p>Arbitrary narrative</p><p>Stacked on #12.</p>",
+                '<p>Stacked on #12.</p><img src="example.png" alt="qualified">'):
+            with self.subTest(rendered=rendered):
+                self.assertEqual(sp.rendered_parents(rendered), set())
+        self.assertEqual(sp.rendered_parents(
+            "<p>Stacked on #12.</p><p>Roadmap: none</p><p>Refs TauCetiProject/TauCeti#123</p>"), {12})
+
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
                       "Stacked on #1", False)

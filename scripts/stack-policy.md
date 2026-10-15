@@ -44,6 +44,12 @@ placeholders, so removing them cannot manufacture a sentence start.
 These restrictions may miss valid declarations;
 exact ancestry/base evidence remains available independently. Inaccessible or
 changed rendered metadata is an unknown result, never closure authority.
+The entire rendered body must use this closed declaration language, optionally
+with an exact Roadmap attribution or canonical Refs field. Mixed narrative,
+headings with other text, task checkboxes, images and unsupported markup decline
+body-only authority: their context cannot be interpreted reliably from keywords.
+This intentionally leaves ordinary mixed descriptions to independent graph/base
+proofs, and preserves simple explicit declarations for rebased/cherry-picked work.
 Supported wording is stacked on, depends on, prerequisites/dependencies/parent PR,
 or carries (unmerged/prerequisite) commits from. Based on and built on alone do
 not establish a current dependency. A declined declaration also retains any
