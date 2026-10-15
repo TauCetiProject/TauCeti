@@ -77,7 +77,8 @@ theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) {S : Set X}
   · intro t
     exact (H.apply_one (p.1 t)).trans (map_apply g _ p t).symm
   · intro t u hu
-    refine (H.eq_fst t (show p.1 u ∈ S by rw [p.2 u hu]; exact hx)).trans ?_
+    have hpu : p.1 u ∈ S := by rw [p.2 u hu]; exact hx
+    refine (H.eq_fst t hpu).trans ?_
     exact (map_apply f hf p u).symm
 
 end GenLoop

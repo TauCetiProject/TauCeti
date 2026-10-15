@@ -36,7 +36,7 @@ concatenation in the matching direction.
 
 ## Main declarations
 
-* `GenLoop.homotopic_homeomorph_iff`: a homeomorphism of generalized-loop spaces preserves and
+* `Homeomorph.genLoopHomotopic_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
 * `HomotopyGroup.congrEquiv`, `HomotopyGroup.congrMulEquiv`: reindexing the cube directions
   along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv`.
@@ -70,7 +70,7 @@ variable {M N X : Type*} [TopologicalSpace X] {x : X}
 homotopy groups indexed by `M` and by `N`. -/
 def congrEquiv (e : M ≃ N) : HomotopyGroup M X x ≃ HomotopyGroup N X x :=
   Quotient.congr (_root_.GenLoop.congr x e).toEquiv fun _ _ =>
-    (GenLoop.homotopic_homeomorph_iff _).symm
+    (Homeomorph.genLoopHomotopic_iff _).symm
 
 @[simp]
 theorem congrEquiv_mk (e : M ≃ N) (p : Ω^ M X x) :
@@ -221,7 +221,7 @@ indexed by `M ⊕ N`. -/
 def loopSpaceEquiv :
     HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const ≃ HomotopyGroup (M ⊕ N) X x :=
   Quotient.congr (_root_.GenLoop.genLoopGenLoopEquiv x).toEquiv fun _ _ =>
-    (GenLoop.homotopic_homeomorph_iff _).symm
+    (Homeomorph.genLoopHomotopic_iff _).symm
 
 @[simp]
 theorem loopSpaceEquiv_mk (p : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
