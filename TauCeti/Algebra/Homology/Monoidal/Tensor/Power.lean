@@ -42,7 +42,7 @@ variable {C I : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
 
 /-- The right-associated `n`-fold tensor power of a homological complex.  The zeroth tensor power
 is the tensor unit. -/
-@[expose] noncomputable def tensorPower (K : HomologicalComplex C c) :
+noncomputable def tensorPower (K : HomologicalComplex C c) :
     ℕ → HomologicalComplex C c
   | 0 => tensorUnit C c
   | n + 1 => tensorObj K (tensorPower K n)
@@ -50,12 +50,12 @@ is the tensor unit. -/
 /-- The zeroth tensor power is the tensor unit. -/
 @[simp] theorem tensorPower_zero (K : HomologicalComplex C c) :
     tensorPower K 0 = tensorUnit C c :=
-  rfl
+  (rfl)
 
 /-- A successor tensor power is obtained by tensoring another copy on the left. -/
 @[simp] theorem tensorPower_succ (K : HomologicalComplex C c) (n : ℕ) :
     tensorPower K (n + 1) = tensorObj K (tensorPower K n) :=
-  rfl
+  (rfl)
 
 end HomologicalComplex
 
@@ -76,24 +76,34 @@ noncomputable def tensorPower (e : HomotopyEquiv K L) :
   | 0 => HomotopyEquiv.refl _
   | n + 1 => mapBifunctor (MonoidalCategory.curriedTensor C) c e (tensorPower e n)
 
-/-- The forward map on the zeroth tensor power is the identity of the tensor unit. -/
+/-- The forward map on the zeroth tensor power is the identity of the tensor unit, transported
+along `tensorPower_zero`. -/
 @[simp] theorem tensorPower_hom_zero (e : HomotopyEquiv K L) :
-    (e.tensorPower 0).hom = 𝟙 _ :=
+    (e.tensorPower 0).hom = eqToHom (K.tensorPower_zero.trans L.tensorPower_zero.symm) :=
   (rfl)
 
-/-- The inverse map on the zeroth tensor power is the identity of the tensor unit. -/
+/-- The inverse map on the zeroth tensor power is the identity of the tensor unit, transported
+along `tensorPower_zero`. -/
 @[simp] theorem tensorPower_inv_zero (e : HomotopyEquiv K L) :
-    (e.tensorPower 0).inv = 𝟙 _ :=
+    (e.tensorPower 0).inv = eqToHom (L.tensorPower_zero.trans K.tensorPower_zero.symm) :=
   (rfl)
 
-/-- The forward map on a successor tensor power is the tensor product of the forward maps. -/
+/-- The forward map on a successor tensor power is the tensor product of the forward maps,
+transported along `tensorPower_succ`. -/
 @[simp] theorem tensorPower_hom_succ (e : HomotopyEquiv K L) (n : ℕ) :
-    (e.tensorPower (n + 1)).hom = tensorHom e.hom (e.tensorPower n).hom :=
-  mapBifunctor_hom e (e.tensorPower n)
+    (e.tensorPower (n + 1)).hom = eqToHom (K.tensorPower_succ n) ≫
+      tensorHom e.hom (e.tensorPower n).hom ≫ eqToHom (L.tensorPower_succ n).symm := by
+    change _ = 𝟙 (tensorObj K (K.tensorPower n)) ≫ _ ≫ 𝟙 (tensorObj L (L.tensorPower n))
+    rw [Category.id_comp, Category.comp_id]
+    exact mapBifunctor_hom e (e.tensorPower n)
 
-/-- The inverse map on a successor tensor power is the tensor product of the inverse maps. -/
+/-- The inverse map on a successor tensor power is the tensor product of the inverse maps,
+transported along `tensorPower_succ`. -/
 @[simp] theorem tensorPower_inv_succ (e : HomotopyEquiv K L) (n : ℕ) :
-    (e.tensorPower (n + 1)).inv = tensorHom e.inv (e.tensorPower n).inv :=
-  mapBifunctor_inv e (e.tensorPower n)
+    (e.tensorPower (n + 1)).inv = eqToHom (L.tensorPower_succ n) ≫
+      tensorHom e.inv (e.tensorPower n).inv ≫ eqToHom (K.tensorPower_succ n).symm := by
+    change _ = 𝟙 (tensorObj L (L.tensorPower n)) ≫ _ ≫ 𝟙 (tensorObj K (K.tensorPower n))
+    rw [Category.id_comp, Category.comp_id]
+    exact mapBifunctor_inv e (e.tensorPower n)
 
 end HomotopyEquiv
