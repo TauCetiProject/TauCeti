@@ -10,12 +10,11 @@ public import Mathlib.Data.Nat.Factorial.BigOperators
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
 
 /-!
-# Products involving factorials in ordered fields
+# Products involving factorials in ordered semifields
 
-This file evaluates finite products in ordered fields whose factors stabilize to a simple
+This file evaluates finite products in ordered semifields whose factors stabilize to a simple
 factorial quotient. Such products occur as accumulated losses in lattice basis estimates.
 -/
 
@@ -27,7 +26,7 @@ open scoped BigOperators
 
 /-- The product of the factors `max 1 ((i + 1) / 2)`, indexed from zero, is the factorial
 quotient `n! / 2^(n - 1)`. -/
-theorem prod_max_one_add_one_div_two {K : Type*} [Field K] [LinearOrder K]
+theorem prod_max_one_add_one_div_two {K : Type*} [Semifield K] [LinearOrder K]
     [IsStrictOrderedRing K] (n : ℕ) :
     ∏ i : Fin n, max 1 ((((i : ℕ) : K) + 1) / 2) =
       (n.factorial : K) / 2 ^ (n - 1) := by
@@ -44,8 +43,7 @@ theorem prod_max_one_add_one_div_two {K : Type*} [Field K] [LinearOrder K]
       have hmax : max 1 ((((n + 1 : ℕ) : K) + 1) / 2) = ((n + 2 : ℕ) : K) / 2 := by
         have hle : (1 : K) ≤ (((n + 1 : ℕ) : K) + 1) / 2 := by
           apply (le_div_iff₀ (by norm_num : (0 : K) < 2)).2
-          push_cast
-          linarith [Nat.cast_nonneg (α := K) n]
+          exact_mod_cast (by omega : 1 * 2 ≤ n + 1 + 1)
         rw [max_eq_right hle]
         push_cast
         ring
