@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ForgetGrading
+public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ExtEuler
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.Pairing
 
@@ -16,8 +16,10 @@ Let `Q` be a finite quiver with finite-dimensional path algebra `kQ`, graded by 
 finite-dimensional graded `kQ`-modules `X` and `Y`, evaluating the q-Euler characteristic
 `χ_q(X, Y)` at `q = 1` gives the ordinary Ext-Euler characteristic `χ(X, Y)` of the underlying
 ungraded modules. On Grothendieck groups, the q-Euler form specialized at `q = 1` is the ungraded
-Ext-Euler pairing pulled back along the map `G₀^gr(mod kQ) ⊗ ℤ[q = 1] → G₀(mod kQ)` induced by
-forgetting the grading.
+Ext-Euler pairing pulled back along the isomorphism
+`G₀^gr(mod kQ) ⊗ ℤ[q = 1] ≃ G₀(mod kQ)` induced by forgetting the grading.
+The isomorphism and the vertex-dimension comparison are supplied by
+`TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading`.
 
 Both sides are computed by Ringel formulas, so no comparison of graded and ungraded `Ext` groups
 is used. The graded formula `TauCeti.PathAlgebra.gradedExtEuler_eq_sum_smulGradedDimension` has
@@ -31,8 +33,6 @@ not verified.
 
 ## Main results
 
-* `TauCeti.PathAlgebra.laurentEval_one_smulGradedDimension_vertexIdempotent`: at `q = 1` the
-  idempotent graded dimension at a vertex is the dimension vector of the underlying module.
 * `TauCeti.PathAlgebra.laurentEval_one_gradedExtEuler_eq_extEuler`: `χ_q(X, Y)` at `q = 1` is
   the Ext-Euler characteristic of the underlying modules.
 * `TauCeti.PathAlgebra.laurentSpecialize_gradedExtEulerForm_eq_extEulerPairing`: the q-Euler
@@ -55,41 +55,6 @@ open CategoryTheory LaurentPolynomial
 open scoped ModuleCat Pointwise
 
 universe u v w
-
-section VertexDimension
-
-variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q]
-
-/-- Two `k`-module structures on a `kQ`-module, each compatible with the `kQ`-action, coincide.
-Hence the vertex components have the same dimension for both. This reconciles the `k`-structure
-of a graded module with the one `ModuleCat.moduleOfAlgebraModule` puts on its underlying
-module. -/
-private theorem finrank_vertexComponent_congr [Finite Q] {M : Type*} [AddCommGroup M]
-    [Module (pathAlgebra k Q) M] (m₁ m₂ : Module k M)
-    (t₁ : letI := m₁; IsScalarTower k (pathAlgebra k Q) M)
-    (t₂ : letI := m₂; IsScalarTower k (pathAlgebra k Q) M) (i : Q) :
-    (letI := m₁; haveI := t₁; Module.finrank k (vertexComponent k M i)) =
-      (letI := m₂; haveI := t₂; Module.finrank k (vertexComponent k M i)) := by
-  obtain rfl : m₁ = m₂ := Module.ext' _ _ fun c x => by
-    have e₁ := (letI := m₁; haveI := t₁; algebraMap_smul (pathAlgebra k Q) c x)
-    have e₂ := (letI := m₂; haveI := t₂; algebraMap_smul (pathAlgebra k Q) c x)
-    exact e₁.symm.trans e₂
-  rfl
-
-/-- **At `q = 1` the graded dimension at a vertex is the dimension vector** of the underlying
-`kQ`-module: `gdim(eᵢ • X)` evaluated at `q = 1` is `dim_k(eᵢ X)`. -/
-@[simp]
-theorem laurentEval_one_smulGradedDimension_vertexIdempotent [Finite Q]
-    (X : GradedModuleCat.{max u v w} (integerGrade k Q)) [Module.Finite k X] (i : Q) :
-    laurentEval (1 : ℤˣ) (X.smulGradedDimension (vertexIdempotent k i)) =
-      dimVector ((quiverRepFunctor k Q).obj (GradedModuleCat.toModuleCat.obj X)) i := by
-  rw [GradedModuleCat.laurentEval_one_smulGradedDimension _
-      (vertexIdempotent_mem_integerGrade_zero k Q i), quiverRepFunctor_obj,
-    dimVector_quiverRepOfModule, ← vertexComponent_def]
-  exact congrArg Nat.cast <| finrank_vertexComponent_congr k Q _ _ X.isScalarTower
-    (ModuleCat.isScalarTower_of_algebra_moduleCat (GradedModuleCat.toModuleCat.obj X)) i
-
-end VertexDimension
 
 variable (k : Type (max u v)) (Q : Type u) [Field k] [Quiver.{v} Q]
   [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
