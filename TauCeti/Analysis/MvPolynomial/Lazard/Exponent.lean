@@ -19,8 +19,9 @@ whole vector. Local Laurent forms with fixed integer exponents therefore force t
 base vector to be locally constant, and constant on a preconnected parameter set.
 
 These results apply before ordering the finite branch limits or proving their multiplicities
-constant. Ordinary specialization can be nullified. Only the pole amplitudes must be nonzero;
-no distinctness of branches or analyticity of the moving centers is required.
+constant. Ordinary specialization can be nullified. The scalar factor must be nonzero at the
+central point; among branch amplitudes, only those of pole branches must be nonzero there.
+No distinctness of branches or analyticity of the moving centers is required.
 
 ## References
 
@@ -93,8 +94,9 @@ theorem eventually_lazardExponent_eq_of_laurent
   exact hcy.weight_injOn (by simp) (by simp) heq
 
 /-- On a preconnected parameter set, local complete Laurent forms with locally fixed scalar
-and branch exponents give one removed Lazard base-exponent vector. The local units and integer
-exponents may differ from one neighborhood to another. -/
+and branch exponents give one removed Lazard base-exponent vector, provided a common evaluator
+separates all removed exponents on `U`. The local units and integer exponents may differ from
+one neighborhood to another. -/
 theorem lazardExponent_eq_of_locally_laurent
     (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
     (φ : E → Fin n → 𝕜) (c : Fin n → ℕ) {U : Set E} (hU : IsPreconnected U)
