@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Syntomic.Composition
 public import TauCeti.RingTheory.Syntomic.Localization
 public import TauCeti.RingTheory.Syntomic.Smooth
 public import Mathlib.RingTheory.RingHom.StandardSmooth
@@ -16,7 +17,8 @@ public import Mathlib.RingTheory.RingHom.FinitePresentation
 # Standard syntomic ring homomorphisms
 
 This file expresses standard syntomic algebras as a property of ring homomorphisms.
-Localization on either side and arbitrary base change preserve the relative dimension.
+Localization on either side and arbitrary base change preserve the relative dimension, and
+relative dimensions add under composition.
 Consequently the property of being locally standard syntomic is local on both source and
 base, giving the affine input for syntomic morphisms of schemes. Standard smooth ring maps
 are standard syntomic with the same relative dimension.
@@ -107,6 +109,20 @@ theorem IsStandardSyntomicOfRelativeDimension.finitePresentation {f : R →+* S}
   let := f.toAlgebra
   exact Algebra.IsStandardSyntomicOfRelativeDimension.finitePresentation
     (h := (isStandardSyntomicOfRelativeDimension_iff n f).mp hf)
+
+/-- Standard syntomic ring maps compose, with addition of their relative dimensions. -/
+theorem IsStandardSyntomicOfRelativeDimension.comp {m : ℕ} {T : Type*} [CommRing T]
+    {g : S →+* T} {f : R →+* S} (hg : IsStandardSyntomicOfRelativeDimension n g)
+    (hf : IsStandardSyntomicOfRelativeDimension m f) :
+    IsStandardSyntomicOfRelativeDimension (n + m) (g.comp f) := by
+  let := f.toAlgebra
+  let := g.toAlgebra
+  let := (g.comp f).toAlgebra
+  have : IsScalarTower R S T := .of_algebraMap_eq' rfl
+  have : Algebra.IsStandardSyntomicOfRelativeDimension m R S := hf
+  have : Algebra.IsStandardSyntomicOfRelativeDimension n S T := hg
+  rw [isStandardSyntomicOfRelativeDimension_iff, add_comm]
+  exact Algebra.IsStandardSyntomicOfRelativeDimension.trans (R := R) (S := S) (T := T)
 
 /-- Localizing either side of a standard syntomic map preserves its relative dimension. -/
 theorem isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway
