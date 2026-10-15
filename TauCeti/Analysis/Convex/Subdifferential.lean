@@ -57,7 +57,9 @@ convex.
 * `TauCeti.fenchelConjugate_flip_fenchelConjugate_eq_of_mem_subdifferential` — `f⋆⋆ x = f x`
   wherever `f` has a subgradient;
 * `TauCeti.mem_subdifferential_fenchelConjugate_iff` — where `f⋆⋆ x = f x`, the two subgradient
-  relations are equivalent.
+  relations are equivalent;
+* `TauCeti.mem_subdifferential_fenchelConjugate_flip_of_le` — a subgradient `y` of `f` at `x` is
+  a subgradient of `g⋆` for every `g ≥ f⋆` agreeing with `f⋆` at `y`.
 
 ## References
 
@@ -444,6 +446,32 @@ theorem mem_subdifferential_fenchelConjugate_iff
     x ∈ subdifferential B.flip (fenchelConjugate B f) y ↔ y ∈ subdifferential B f x := by
   rw [mem_subdifferential_iff_add_fenchelConjugate_eq,
     mem_subdifferential_iff_add_fenchelConjugate_eq, hx, LinearMap.flip_apply, add_comm]
+
+end
+
+section
+
+variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [AddCommMonoid F] [Module ℝ F]
+  (B : E →ₗ[ℝ] F →ₗ[ℝ] ℝ) {f : E → EReal} {x : E} {y : F}
+
+/-- **Subgradients survive raising the conjugate away from them.** Let `g ≥ f⋆` agree with `f⋆`
+at `y`. If `y ∈ ∂f(x)`, then `y` is also a subgradient at `x` of the conjugate `g⋆` (for the
+transposed pairing), which lies below `f` and agrees with `f` at `x`. Taking `g = f⋆` on a set
+`K ∋ y` and `g = ⊤` off it gives a function below `f` that keeps the slope `y`; on a Hilbert space
+with `K` closed and convex, all its slopes lie in `K`
+(`TauCeti.subdifferential_fenchelConjugate_subset_of_eq_top`). -/
+theorem mem_subdifferential_fenchelConjugate_flip_of_le {g : F → EReal}
+    (hg : fenchelConjugate B f ≤ g) (hgy : g y ≤ fenchelConjugate B f y)
+    (h : y ∈ subdifferential B f x) :
+    y ∈ subdifferential B (fenchelConjugate B.flip g) x := by
+  -- Reciprocity needs `F` to be a group; every real module is one.
+  let : AddCommGroup F := Module.addCommMonoidToAddCommGroup ℝ
+  -- Reciprocity gives `x ∈ ∂f⋆(y)`; raising `f⋆` to `g` away from `y` keeps this subgradient.
+  have h' := mem_subdifferential_fenchelConjugate_of_mem_subdifferential B h
+  have hx : x ∈ subdifferential B.flip g y := by
+    rw [mem_subdifferential_iff, le_antisymm hgy (hg y)]
+    exact ⟨h'.1, h'.2.1, fun y' => (h'.2.2 y').trans (hg y')⟩
+  simpa using mem_subdifferential_fenchelConjugate_of_mem_subdifferential B.flip hx
 
 end
 

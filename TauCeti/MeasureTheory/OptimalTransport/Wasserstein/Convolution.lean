@@ -107,7 +107,8 @@ common element preserves their Wasserstein distance. -/
 theorem wassersteinEDist_map_add_right [IsIsometricVAdd Gᵃᵒᵖ G]
     (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (a : G) (μ ν : Measure G) :
     wassersteinEDist p (μ.map (· + a)) (ν.map (· + a)) = wassersteinEDist p μ ν :=
-  wassersteinEDist_map_eq (e := MeasurableEquiv.addRight a) hd (isometry_add_right a) μ ν
+  wassersteinEDist_map_eq hd (MeasurableEquiv.addRight a).measurableEmbedding
+    (isometry_add_right a) μ ν
 
 /-- In a group whose ground distance is invariant under left addition, translating two laws by a
 common element preserves their Wasserstein distance. -/
@@ -115,7 +116,8 @@ common element preserves their Wasserstein distance. -/
 theorem wassersteinEDist_map_add_left [IsIsometricVAdd G G]
     (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (a : G) (μ ν : Measure G) :
     wassersteinEDist p (μ.map (a + ·)) (ν.map (a + ·)) = wassersteinEDist p μ ν :=
-  wassersteinEDist_map_eq (e := MeasurableEquiv.addLeft a) hd (isometry_add_left a) μ ν
+  wassersteinEDist_map_eq hd (MeasurableEquiv.addLeft a).measurableEmbedding
+    (isometry_add_left a) μ ν
 
 end Translation
 

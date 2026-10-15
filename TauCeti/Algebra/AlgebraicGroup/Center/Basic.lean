@@ -139,8 +139,7 @@ private theorem tensorMap_comul_eq_convMul
           (Algebra.TensorProduct.includeLeft (R := k) (S := k) (A := A) (B := H)) g *
         toConv (Algebra.TensorProduct.includeRight (R := k) (A := A) (B := H)) := by
   rw [Bialgebra.toConv_comp_comulAlgHom]
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom, AlgHom.mapValue_apply]
+  simp only [AlgHom.mapValue_apply]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
 
