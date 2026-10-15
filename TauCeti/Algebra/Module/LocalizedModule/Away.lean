@@ -65,13 +65,7 @@ theorem isLocalizedModule_id_powers (h : Function.Bijective fun x : M ↦ r • 
   have hr : IsUnit (algebraMap R (Module.End R M) r) := by
     rw [Module.End.isUnit_iff, funext (Module.algebraMap_end_apply R R M r)]
     exact h
-  refine
-    { map_units := fun s ↦ ?_
-      surj := fun x ↦ ⟨(x, 1), by simp⟩
-      exists_of_eq := fun hxy ↦ ⟨1, by simpa using hxy⟩ }
-  obtain ⟨n, hn⟩ := s.property
-  rw [← hn, map_pow]
-  exact hr.pow n
+  exact IsLocalizedModule.Away.mk hr (fun x ↦ ⟨0, x, by simp⟩) fun _ _ hxy ↦ ⟨0, by simpa using hxy⟩
 
 /-- The module structure over `R[r⁻¹]` on an `R`-module on which multiplication by `r` is
 bijective. Its restriction to `R` is the original module structure, as recorded by
