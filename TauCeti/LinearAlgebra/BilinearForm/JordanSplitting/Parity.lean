@@ -15,10 +15,11 @@ a constituent of scale `π ^ j` is even at that scale when its self-pairing lies
 `π ^ (j + 1) R`. In particular, at the dyadic prime a scale-two unary block is odd at its
 own scale, although all its self-pairings are divisible by two.
 
-For free constituents, the condition is that the norm ideal lies in `π` times the constituent's
-own scale ideal. Zero constituents satisfy this condition, giving the even convention at an
-empty scale. For symmetric forms at `π = 2`, this is the usual type II condition on dyadic
-Jordan constituents: polarization gives the reverse containment in twice the scale ideal.
+For free constituents, `LinearMap.BilinForm.IsScaleEven` says that the norm ideal lies in `π`
+times the constituent's own scale ideal. Zero constituents satisfy this condition, giving the
+even convention at an empty scale. For symmetric forms at `π = 2`, this is the usual type II
+condition on dyadic Jordan constituents: polarization gives the reverse containment in twice
+the scale ideal.
 
 The condition on the `j`-th constituent is equivalent to an intrinsic condition on the form:
 every vector pairing into `π ^ j R` has self-pairing in `π ^ (j + 1) R`. It follows that this
@@ -79,15 +80,15 @@ theorem IsJordanSplitting.forall_pow_succ_dvd_self_iff (h : B.IsJordanSplitting 
   · intro hself x
     exact hself x (h.pow_dvd_apply x.2)
 
-/-- Whether the norm ideal lies in `π` times the constituent's own scale is independent of the
-Jordan splitting. At `π = 2` this is invariance of dyadic parity type. Zero constituents satisfy
-the containment. Freeness is only needed for the two constituents being compared. -/
-theorem IsJordanSplitting.normIdeal_le_mul_scaleIdeal_iff
+/-- Scale-relative parity is independent of the Jordan splitting. At `π = 2` this is invariance
+of dyadic parity type. Zero constituents are scale-even. Freeness is only needed for the two
+constituents being compared. -/
+theorem IsJordanSplitting.isScaleEven_iff
     {N' : ℕ → Submodule R M} (h : B.IsJordanSplitting π N)
     (h' : B.IsJordanSplitting π N') (hπ : π ∈ nonZeroDivisors R) (j : ℕ)
     [Module.Free R (N j)] [Module.Free R (N' j)] :
-    (B.restrict (N j)).normIdeal ≤ Ideal.span {π} * (B.restrict (N j)).scaleIdeal ↔
-      (B.restrict (N' j)).normIdeal ≤ Ideal.span {π} * (B.restrict (N' j)).scaleIdeal := by
+    (B.restrict (N j)).IsScaleEven π ↔ (B.restrict (N' j)).IsScaleEven π := by
+  rw [LinearMap.BilinForm.isScaleEven_iff, LinearMap.BilinForm.isScaleEven_iff]
   rw [(h.isModular j).normIdeal_le_mul_scaleIdeal_iff,
     (h'.isModular j).normIdeal_le_mul_scaleIdeal_iff]
   simpa only [mul_comm π, ← pow_succ, normIdeal_le_iff, Ideal.mem_span_singleton,
@@ -97,13 +98,13 @@ theorem IsJordanSplitting.normIdeal_le_mul_scaleIdeal_iff
 
 /-- Parity relative to the constituent's own scale is an isometry invariant. In particular,
 Jordan splittings of isometric dyadic forms have the same type at every scale. -/
-theorem IsJordanSplitting.normIdeal_le_mul_scaleIdeal_iff_of_equivalent
+theorem IsJordanSplitting.isScaleEven_iff_of_equivalent
     {M' : Type*} [AddCommGroup M'] [Module R M'] {B' : BilinForm R M'}
     {N' : ℕ → Submodule R M'} (h : B.IsJordanSplitting π N) (h' : B'.IsJordanSplitting π N')
     (hB : B.Equivalent B') (hπ : π ∈ nonZeroDivisors R) (j : ℕ)
     [Module.Free R (N j)] [Module.Free R (N' j)] :
-    (B.restrict (N j)).normIdeal ≤ Ideal.span {π} * (B.restrict (N j)).scaleIdeal ↔
-      (B'.restrict (N' j)).normIdeal ≤ Ideal.span {π} * (B'.restrict (N' j)).scaleIdeal := by
+    (B.restrict (N j)).IsScaleEven π ↔ (B'.restrict (N' j)).IsScaleEven π := by
+  rw [LinearMap.BilinForm.isScaleEven_iff, LinearMap.BilinForm.isScaleEven_iff]
   rw [(h.isModular j).normIdeal_le_mul_scaleIdeal_iff,
     (h'.isModular j).normIdeal_le_mul_scaleIdeal_iff]
   simp only [mul_comm π, ← pow_succ, normIdeal_le_iff, Ideal.mem_span_singleton,
