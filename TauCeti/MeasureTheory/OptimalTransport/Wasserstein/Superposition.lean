@@ -205,10 +205,11 @@ theorem isProbabilityMeasure_comap_postcomp {T X E : Type*} [TopologicalSpace T]
     (hι : IsClosedEmbedding ι) (η : Measure C(T, E)) (hη : IsProbabilityMeasure η)
     {D : Set T} (hDc : D.Countable) (hDd : Dense D)
     (hD : ∀ t ∈ D, ∀ᵐ γ ∂η, γ t ∈ range ι) :
-    let Φ : C(T, X) → C(T, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
-    IsProbabilityMeasure (η.comap Φ) ∧ (η.comap Φ).map Φ = η := by
+    IsProbabilityMeasure (η.comap (⟨ι, hι.continuous⟩ : C(X, E)).comp) ∧
+      (η.comap (⟨ι, hι.continuous⟩ : C(X, E)).comp).map (⟨ι, hι.continuous⟩ : C(X, E)).comp =
+        η := by
   let _ := hη
-  let Φ : C(T, X) → C(T, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
+  set Φ : C(T, X) → C(T, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
   have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
     (ContinuousMap.postcomp_injective _ hι.injective)
   have hrange : ∀ᵐ γ ∂η, γ ∈ range Φ := by
@@ -258,13 +259,6 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
   obtain ⟨η, hηP, hηAC, hηmarg, hηA⟩ :=
     exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace hp1 hp hab
       (hιW.absolutelyContinuousOnInterval_comp_iff.2 hμ) (by rwa [hιW.curveAction_comp])
-  -- Postcomposition with `ι` embeds the paths in `X` into the paths in `E`.
-  set Φ : C(Icc a b, X) → C(Icc a b, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
-  have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
-    (ContinuousMap.postcomp_injective _ hι.injective)
-  have hΦIcc (γ : C(Icc a b, X)) : IccExtend hab.le (Φ γ) = ι ∘ IccExtend hab.le γ := by
-    ext t
-    simp [Φ, IccExtend_apply]
   -- `η` is concentrated on the paths with values in the closed set `range ι`: it is so at the
   -- times of a countable dense subset of `[a, b]`, because the time marginals of `η` are images
   -- of laws on `X`, hence at all times by continuity of the paths.
@@ -276,12 +270,16 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
       with γ hγ
     rwa [IccExtend_val] at hγ
   obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Icc a b)
-  -- The pullback of `η` to the paths in `X` represents `μ`.
-  set ηX := η.comap Φ
+  -- The pullback of `η` along postcomposition with `ι` to the paths in `X` represents `μ`.
   obtain ⟨hprob, hηX⟩ := isProbabilityMeasure_comap_postcomp ι hι.isClosedEmbedding η hηP
     hDc hDd fun t _ ↦ hD t
-  change IsProbabilityMeasure ηX at hprob
-  change ηX.map Φ = η at hηX
+  set Φ : C(Icc a b, X) → C(Icc a b, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
+  have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
+    (ContinuousMap.postcomp_injective _ hι.injective)
+  have hΦIcc (γ : C(Icc a b, X)) : IccExtend hab.le (Φ γ) = ι ∘ IccExtend hab.le γ := by
+    ext t
+    simp [Φ, IccExtend_apply]
+  set ηX := η.comap Φ
   have hAC : ∀ᵐ γ : C(Icc a b, X) ∂ηX,
       AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b := by
     rw [← hηX, hΦ.ae_map_iff] at hηAC
