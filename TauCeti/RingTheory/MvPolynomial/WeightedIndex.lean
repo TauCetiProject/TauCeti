@@ -136,13 +136,9 @@ theorem weightedIndex_eq_zero_iff (r : σ → ℕ) (a : σ → R) (P : MvPolynom
         simp [← coeff_taylor, ht]
       simp [h] at htop
     obtain ⟨d, hd, he⟩ := exists_weightedIndex_eq_weight (r := r) ht
-    have hz : d = 0 := by
-      have hw : d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) = 0 := he.symm.trans h
-      ext j
-      by_contra hj
-      have hle := Finsupp.le_weight_of_ne_zero' (fun j ↦ (r j : ℝ≥0∞)⁻¹) hj
-      have : (r j : ℝ≥0∞)⁻¹ = 0 := le_zero_iff.mp (hw ▸ hle)
-      simp at this
+    let : Finsupp.NonTorsionWeight ℕ (fun j ↦ (r j : ℝ≥0∞)⁻¹) :=
+      ⟨by intro n j h; simpa [nsmul_eq_mul] using h⟩
+    have hz : d = 0 := (Finsupp.weight_eq_zero_iff_eq_zero _).mp (he.symm.trans h)
     simpa [hz] using hd
   · intro hP
     apply le_antisymm _ zero_le
