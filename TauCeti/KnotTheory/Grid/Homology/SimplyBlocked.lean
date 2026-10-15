@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.KnotTheory.Grid.Chain.Complex
-public import TauCeti.KnotTheory.Grid.Diagram.Components
+public import TauCeti.KnotTheory.Grid.Diagram.Components.Basic
 
 /-!
 # Simply blocked grid homology

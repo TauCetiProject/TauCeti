@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Homology.Linear
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.KnotTheory.Grid.Chain.Complex
-public import TauCeti.KnotTheory.Grid.Diagram.Components
+public import TauCeti.KnotTheory.Grid.Diagram.Components.Basic
 public import TauCeti.KnotTheory.Grid.XHomotopy.Annulus
 
 /-!

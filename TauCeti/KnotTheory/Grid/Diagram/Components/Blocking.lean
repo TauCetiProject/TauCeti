@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Diagram.Components
+public import TauCeti.KnotTheory.Grid.Diagram.Components.Basic
 
 /-!
 # One blocked marking per link component
@@ -13,7 +13,7 @@ public import TauCeti.KnotTheory.Grid.Diagram.Components
 A component blocking is a finite set of columns containing exactly one column from each
 component cycle. It records the `O`-markings whose variables are set to zero in the simply
 blocked link complex. Such selections exist even for the empty grid, and their cardinality
-is the number of link components. On a knot grid every singleton is a selection.
+is the number of link components. A singleton is a selection exactly when the grid is a knot.
 
 The convention follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
 Definition 8.2.7.
@@ -98,16 +98,21 @@ theorem IsComponentBlocking.card {B : Finset (Fin n)} (hB : G.IsComponentBlockin
     exact (G.component_support_disjoint hσ hτ hne).mono
       Finset.inter_subset_right Finset.inter_subset_right
 
-/-- On a knot grid, blocking any single `O`-marking blocks exactly one on every component. -/
-theorem IsKnot.isComponentBlocking_singleton (hG : G.IsKnot) (i : Fin n) :
-    G.IsComponentBlocking {i} := by
-  intro σ hσ
-  have hcycles : G.componentCycles = {G.componentPerm} :=
-    by simpa only [G.componentCycles_def] using
-      (G.isKnot_iff_componentPerm_isCycle.mp hG).cycleFactorsFinset_eq_singleton
-  rw [hcycles, Finset.mem_singleton] at hσ
-  subst σ
-  simp
+/-- Blocking a single `O`-marking blocks exactly one on every component precisely for knots. -/
+@[simp]
+theorem isComponentBlocking_singleton_iff (i : Fin n) :
+    G.IsComponentBlocking {i} ↔ G.IsKnot := by
+  constructor
+  · intro hB
+    rw [G.isKnot_def, ← IsComponentBlocking.card G hB]
+    simp
+  · intro hG σ hσ
+    have hcycles : G.componentCycles = {G.componentPerm} :=
+      by simpa only [G.componentCycles_def] using
+        (G.isKnot_iff_componentPerm_isCycle.mp hG).cycleFactorsFinset_eq_singleton
+    rw [hcycles, Finset.mem_singleton] at hσ
+    subst σ
+    simp
 
 -- Two disjoint transpositions give two components; one selected column comes from each.
 example :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Move
-public import TauCeti.KnotTheory.Grid.Diagram.Components
+public import TauCeti.KnotTheory.Grid.Diagram.Components.Basic
 
 /-!
 # Link components under grid commutation

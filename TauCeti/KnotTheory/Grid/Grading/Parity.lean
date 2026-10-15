@@ -8,7 +8,7 @@ module
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.Ring.NegOnePow
 import TauCeti.GroupTheory.Perm.Inversion
-public import TauCeti.KnotTheory.Grid.Diagram.Components
+public import TauCeti.KnotTheory.Grid.Diagram.Components.Basic
 public import TauCeti.KnotTheory.Grid.Grading.Integer
 
 /-!
