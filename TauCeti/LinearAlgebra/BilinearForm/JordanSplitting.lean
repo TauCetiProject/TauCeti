@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Modular
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.Submodule.Finite
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Nakayama

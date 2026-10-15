@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMulAction
-public import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Order.CompactlyGenerated
 
 /-!
 # Internal direct sums from explicit equivalences
@@ -32,10 +30,6 @@ summand of a spanning family into the corresponding member of an independent fam
 kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely,
 `iSupIndep.map_of_ker_inf_iSup_le` shows that a linear map preserves independence when the
 part of its kernel in the span is spanned by its intersections with the summands.
-
-The file also specializes the compactness bound
-`iSupIndep.finite_ne_bot_of_isCompactElement` to submodules,
-`iSupIndep.finite_ne_bot_of_fg`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
 
@@ -285,20 +279,6 @@ theorem DirectSum.isInternal_of_lof {R ι M : Type*} [Semiring R] [DecidableEq �
     exact (hF i x).symm
   rw [DirectSum.isInternal_iff_bijective_coeLinearMap, hcoe]
   exact F.bijective
-
--- The decomposition is spelled as `iSupIndep A` together with a finiteness hypothesis on
--- `⨆ i, A i` rather than as `DirectSum.IsInternal`, which carries a `DecidableEq` hypothesis on
--- the index type that the proof does not need.  Over a semiring an internal decomposition supplies
--- the two hypotheses through `DirectSum.IsInternal.submodule_iSupIndep` and
--- `DirectSum.IsInternal.submodule_iSup_eq_top`; the converse implication, and with it
--- `DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top`, needs `[Ring R]` and
--- `[AddCommGroup M]`.
-/-- An independent family of submodules spanning a finitely generated submodule has only finitely
-many nonzero members. -/
-theorem _root_.iSupIndep.finite_ne_bot_of_fg {R ι M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {A : ι → Submodule R M} (hAi : iSupIndep A) (hAf : (⨆ i, A i).FG) :
-    {i | A i ≠ ⊥}.Finite :=
-  hAi.finite_ne_bot_of_isCompactElement ((Submodule.fg_iff_compact _).mp hAf)
 
 /-- **The kernel of a map compatible with a decomposition is spanned by its homogeneous parts.**
 If the submodules `A i` span the source, the submodules `A' i` are independent, and `g` carries

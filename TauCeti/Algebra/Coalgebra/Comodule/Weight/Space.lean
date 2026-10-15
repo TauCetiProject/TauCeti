@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Vector
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.Submodule.Finite
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 

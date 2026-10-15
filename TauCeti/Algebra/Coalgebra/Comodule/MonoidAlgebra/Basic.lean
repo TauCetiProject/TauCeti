@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.RingTheory.Coalgebra.MonoidAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.Submodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
