@@ -129,24 +129,29 @@ theorem hessian_zero (x : M) (v w : TangentSpace I x) :
 theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) (v w : TangentSpace I x) :
     hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w := by
-  letI : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I 2 M)
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [hessian, mgradient_add (hf.mdifferentiable (by simp))
       (hg.mdifferentiable (by simp)),
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.add
-      ((contMDiff_mgradient (n := 1) (by simpa using hf)).mdifferentiableAt (by simp))
-      ((contMDiff_mgradient (n := 1) (by simpa using hg)).mdifferentiableAt (by simp)),
+      ((contMDiff_mgradient (n := 1)
+      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
+      ((contMDiff_mgradient (n := 1)
+      (by simpa only [one_add_one_eq_two] using hg)).mdifferentiableAt
+        (by simp)),
     add_apply, inner_add_left]
 
 /-- The Hessian commutes with multiplication of a `C²` function by a real constant. -/
 theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (x : M) (v w : TangentSpace I x) :
     hessian I (c • f) x v w = c * hessian I f x v w := by
-  letI : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I 2 M)
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [hessian, mgradient_smul c (hf.mdifferentiable (by simp)),
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
-      ((contMDiff_mgradient (n := 1) (by simpa using hf)).mdifferentiableAt (by simp)),
+      ((contMDiff_mgradient (n := 1)
+      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt
+        (by simp)),
     smul_apply, real_inner_smul_left]
 
 /-- The Laplace–Beltrami operator vanishes on constants. -/
@@ -164,22 +169,25 @@ theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :
 theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
     laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
-  letI : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I 2 M)
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [laplaceBeltrami,
     mgradient_add (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))]
   exact divergence_add I _ _ x
-    ((contMDiff_mgradient (n := 1) (by simpa using hf)).mdifferentiableAt (by simp))
-    ((contMDiff_mgradient (n := 1) (by simpa using hg)).mdifferentiableAt (by simp))
+    ((contMDiff_mgradient (n := 1)
+      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
+    ((contMDiff_mgradient (n := 1)
+      (by simpa only [one_add_one_eq_two] using hg)).mdifferentiableAt (by simp))
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
 theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
-  letI : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I 2 M)
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
   exact divergence_smul I c _ x
-    ((contMDiff_mgradient (n := 1) (by simpa using hf)).mdifferentiableAt (by simp))
+    ((contMDiff_mgradient (n := 1)
+      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
 
 end OperatorLaws
 
