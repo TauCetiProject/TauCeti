@@ -112,16 +112,11 @@ theorem exists_linearIndependent_comp_finrank_mul {k : ℕ}
   have hbound : finrank F K * (j : ℕ) + 1 ≤ finrank F K * k := by
     have := Nat.mul_le_mul_left (finrank F K) j.isLt
     nlinarith
-  let e : Fin (finrank F K * (j : ℕ) + 1) → Fin (finrank F K * k) :=
-    fun i ↦ ⟨i, lt_of_lt_of_le i.isLt hbound⟩
-  have he : Function.Injective e := by
-    intro a b hab
-    apply Fin.ext
-    exact congrArg (fun i : Fin (finrank F K * k) ↦ i.val) hab
+  let e := Fin.castLEEmb hbound
   have hcount : finrank F K * (j : ℕ) + 1 ≤
       finrank F K * finrank K (span K (Set.range (u ∘ e))) := by
     simpa only [Fintype.card_fin] using
-      (h.comp e he).card_le_finrank_mul (K := K) (u := u ∘ e)
+      (h.comp e e.injective).card_le_finrank_mul (K := K) (u := u ∘ e)
   have hle : span K (Set.range (u ∘ e)) ≤
       span K (u '' {i | (i : ℕ) ≤ finrank F K * (j : ℕ)}) := by
     refine span_mono ?_
