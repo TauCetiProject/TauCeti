@@ -7,9 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
-public import TauCeti.AlgebraicGeometry.Cohomology.FiniteOverField
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
 /-!
 # The Euler characteristic of an ideal sheaf

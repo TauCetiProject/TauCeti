@@ -163,6 +163,26 @@ theorem abelJacobiMapOfDegreeToPicZero_ι (d : ℕ) :
       abelJacobiMapOfDegree f hx₀ d :=
   Subfunctor.lift_ι _ _
 
+-- The source and target are spelled out in simp-normal form, as for
+-- `graphDivisorDegreeOne_app_apply_val`.
+/-- The class underlying the degree-`d` Abel–Jacobi map into `Pic⁰` is its value in the relative
+Picard presheaf. -/
+@[simp]
+lemma abelJacobiMapOfDegreeToPicZero_app_apply_val (d : ℕ) {T : (Over S)ᵒᵖ}
+    (D : ((relativeEffectiveCartierDegreeSubfunctor f d).toFunctor ⋙
+      uliftFunctor.{u + 1}).obj T) :
+    (ConcreteCategory.hom (C := Type (u + 1))
+      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
+      (Y := (relativePicardDegreeZeroSubfunctor f).obj T)
+      ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T) D).1 =
+        (abelJacobiMapOfDegree f hx₀ d).app T D := by
+  have h := ConcreteCategory.congr_hom
+    (NatTrans.congr_app (abelJacobiMapOfDegreeToPicZero_ι f hx₀ d) T) D
+  rw [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
+  change (ConcreteCategory.hom (C := Type (u + 1))
+    ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T) D).1 = _ at h
+  exact h
+
 /-- **The Abel–Jacobi map into `Pic⁰_{X/S}`**: the natural transformation from the functor of
 points `T ↦ Hom_S(T, X)` to the subfunctor `Pic⁰_{X/S}` of classes of degree zero on every
 geometric fibre, sending a `T`-point `x` to the class of `𝒪(Γₓ - x₀_T)`. Followed by the inclusion
@@ -181,6 +201,23 @@ theorem abelJacobiMapToPicZero_ι :
       abelJacobiMap f hx₀ := by
   rw [abelJacobiMapToPicZero, Category.assoc, abelJacobiMapOfDegreeToPicZero_ι,
     whiskerRight_graphDivisorDegreeOne_comp_abelJacobiMapOfDegree_one]
+
+/-- The class underlying the Abel–Jacobi map into `Pic⁰` is its value in the relative Picard
+presheaf. -/
+@[simp]
+lemma abelJacobiMapToPicZero_app_apply_val {T : (Over S)ᵒᵖ}
+    (x : (yoneda.obj (Over.mk f) ⋙ uliftFunctor.{u + 1}).obj T) :
+    (ConcreteCategory.hom (C := Type (u + 1))
+      (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
+      (Y := (relativePicardDegreeZeroSubfunctor f).obj T)
+      ((abelJacobiMapToPicZero f hx₀).app T) x).1 =
+        (abelJacobiMap f hx₀).app T x := by
+  have h := ConcreteCategory.congr_hom
+    (NatTrans.congr_app (abelJacobiMapToPicZero_ι f hx₀) T) x
+  rw [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
+  change (ConcreteCategory.hom (C := Type (u + 1))
+    ((abelJacobiMapToPicZero f hx₀).app T) x).1 = _ at h
+  exact h
 
 end
 
