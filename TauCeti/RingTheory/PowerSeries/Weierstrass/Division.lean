@@ -173,7 +173,7 @@ theorem IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add (hf : IsDistinguished c 
     q = q' ∧ r = r' := by
   have hqq : (q - q').IsRestricted c := by
     simpa only [sub_eq_add_neg] using
-      PowerSeries.isRestricted.add c hq (PowerSeries.isRestricted.neg c hq')
+      hq.add hq'.neg
   have hrr : ∀ m, s ≤ m → (r - r').coeff m = 0 := by
     intro m hm
     rw [map_sub, hr m hm, hr' m hm, sub_zero]
@@ -227,8 +227,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
       = f.gaussNorm norm c := hf.gaussNorm_trunc
   have htailr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
-    exact PowerSeries.isRestricted.add c hfr (PowerSeries.isRestricted.neg c
-      (isRestricted_polynomial _))
+    exact hfr.add (isRestricted_polynomial _).neg
   rcases eq_or_ne g 0 with rfl | hg0
   · exact ⟨0, 0, PowerSeries.isRestricted_zero c, fun m _ ↦ by simp, by simp [hzero],
       by simp [hzero], by simp [hzero]⟩
@@ -265,8 +264,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
       exact hN m (by omega)
   have hsmallr : (g - ((g.trunc N : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
-    exact PowerSeries.isRestricted.add c hg (PowerSeries.isRestricted.neg c
-      (isRestricted_polynomial _))
+    exact hg.add (isRestricted_polynomial _).neg
   -- Divide that truncation by `f⁻`, a polynomial of degree `s` whose leading coefficient is a
   -- unit: after scaling by the inverse of that unit it is monic, so division by it is possible.
   have hPs : (f.trunc (s + 1) : Polynomial R).coeff s = f.coeff s := by
@@ -314,7 +312,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
     rw [hdivPS]; ring
   have hmulr : ((Qp : PowerSeries R)
       * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R))).IsRestricted c :=
-    PowerSeries.isRestricted.mul c hQr htailr
+    hQr.mul htailr
   have hmulbound : ((Qp : PowerSeries R)
       * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R))).gaussNorm norm c
       ≤ θ * g.gaussNorm norm c := by
@@ -329,7 +327,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   rw [hdefect]
   refine le_trans (PowerSeries.gaussNorm_add_le_max norm c _ _ hc.le norm_nonneg
     IsUltrametricDist.isNonarchimedean_norm (hasGaussNorm_of_isRestricted hsmallr)
-    (hasGaussNorm_of_isRestricted (PowerSeries.isRestricted.neg c hmulr)))
+    (hasGaussNorm_of_isRestricted hmulr.neg))
     (max_le hsmall ?_)
   have hneg : (-((Qp : PowerSeries R)
       * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)))).gaussNorm norm c
@@ -392,9 +390,8 @@ theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguishe
     | zero => exact hg
     | succ n ih =>
       rw [hGsucc n, sub_eq_add_neg]
-      exact PowerSeries.isRestricted.add c ih (PowerSeries.isRestricted.neg c
-        (PowerSeries.isRestricted.add c (PowerSeries.isRestricted.mul c (hF (G n) ih).1 hfr)
-          (isRestricted_of_forall_coeff_eq_zero (hF (G n) ih).2.1)))
+      exact ih.add (((hF (G n) ih).1.mul hfr).add
+          (isRestricted_of_forall_coeff_eq_zero (hF (G n) ih).2.1)).neg
   have hGn : ∀ n, (G n).gaussNorm norm c ≤ θ ^ n * g.gaussNorm norm c := by
     intro n
     induction n with

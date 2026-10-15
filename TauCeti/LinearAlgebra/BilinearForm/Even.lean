@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.Modular
+public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 public import Mathlib.Algebra.DirectSum.Module
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Submodule.Compl
@@ -23,7 +23,9 @@ particular its rank is even. The empty decomposition covers the zero module.
 These binary constituents are the inputs to the classification of even unimodular dyadic
 lattices. No inverse of two, domain hypothesis, or completeness assumption is used here.
 
-The splitting construction uses the unit-Gram criterion
+The binary splitting step reuses
+`LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one`
+from the local-ring API. The construction uses the unit-Gram criterion
 `LinearMap.BilinForm.isModular_restrict_span_range` and the perfect-restriction splitting theorem
 `LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective`.
 
@@ -41,24 +43,6 @@ open Module
 
 variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
   (B : LinearMap.BilinForm R M) [B.IsPerfPair]
-
-/-- A symmetric perfect pairing with nonunit diagonal values splits off a binary perfect
-pairing if some linear functional takes the value one. The summand is supplied with a basis
-and is complementary to its orthogonal complement. -/
-theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal (hB : B.IsSymm)
-    (hdiag : ∀ x, ¬ IsUnit (B x x)) (x : M) (f : Module.Dual R M) (hfx : f x = 1) :
-    ∃ S : Submodule R M, Nonempty (Basis (Fin 2) R S) ∧
-      (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
-  classical
-  obtain ⟨w, hw⟩ := (LinearMap.IsPerfPair.bijective_left B).surjective f
-  have hxw : B x w = 1 := by rw [hB.eq, hw, hfx]
-  obtain ⟨hli, hmod⟩ := hB.linearIndependent_and_isModular_restrict_span_pair (one_mem _)
-    hxw (one_mul (B x x)).symm (one_mul (B w w)).symm
-    (fun h ↦ hdiag x (isUnit_of_mul_isUnit_left h))
-  have hp := isModular_one_iff.mp hmod
-  exact ⟨_, ⟨Basis.span hli⟩, hp,
-    B.isCompl_orthogonal_of_restrict_bijective _ (hB.restrict _)
-      (LinearMap.IsPerfPair.bijective_left _)⟩
 
 /-- A symmetric perfect pairing with nonunit diagonal values over a local ring is an internal
 orthogonal sum of binary perfect pairings. Each constituent has a two-element basis. -/
@@ -78,7 +62,8 @@ theorem IsSymm.exists_binary_orthogonal_decomposition [Free R M] [Module.Finite 
       exact ⟨by simp [iSupIndep], Subsingleton.elim _ _⟩
     have hpos : 0 < finrank R M := by omega
     let b := Module.finBasisOfFinrankEq R M (Nat.succ_pred_eq_of_pos hpos).symm
-    obtain ⟨S, ⟨c⟩, hS, hc⟩ := hB.exists_binary_isPerfPair_isCompl_orthogonal B hdiag
+    obtain ⟨S, ⟨c⟩, hS, hc⟩ :=
+      hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B hdiag
       (b 0) (b.coord 0) (by simp)
     -- The complement is finite free because it is a retract over a local ring.
     let T := B.orthogonal S

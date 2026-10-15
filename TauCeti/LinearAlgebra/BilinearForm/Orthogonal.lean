@@ -17,12 +17,10 @@ import Mathlib.Tactic.LinearCombination
 # Orthogonal complements of bilinear forms
 
 This file records facts about the orthogonal complement `LinearMap.BilinForm.orthogonal`
-that Mathlib lacks. A vector lies in the orthogonal complement of the span of one or two vectors
-exactly when it is orthogonal to each of them. Adjoining a vector `x` whose self-pairing is a
-non-zero-divisor dividing all its pairings (over a field: a non-isotropic vector) to an orthogonal
-basis of the orthogonal complement of `x` gives an orthogonal basis of the whole module, for a
-reflexive form; this is the inductive step of every diagonalization argument, over a field as over
-a valuation ring.
+that Mathlib lacks. Adjoining a vector `x` whose self-pairing is a non-zero-divisor dividing all
+its pairings (over a field: a non-isotropic vector) to an orthogonal basis of the orthogonal
+complement of `x` gives an orthogonal basis of the whole module, for a reflexive form; this is the
+inductive step of every diagonalization argument, over a field as over a valuation ring.
 Over a field in which `2` is invertible, a prescribed anisotropic vector or orthogonal pair
 extends to an orthogonal basis; no regularity of the ambient form is needed. Three mutually
 orthogonal anisotropic vectors also supply anisotropic vectors in the intersections of
@@ -33,9 +31,6 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 
 ## Main results
 
-* `LinearMap.BilinForm.mem_orthogonal_span_singleton_iff`,
-  `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: membership in the orthogonal complement of
-  the span of one or two vectors.
 * `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
   which the form is right-separating are independent.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
@@ -78,21 +73,6 @@ public section
 namespace LinearMap.BilinForm
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
-
-/-- A vector is orthogonal to the span of a vector `x` exactly when it is orthogonal to `x`. -/
-theorem mem_orthogonal_span_singleton_iff (B : LinearMap.BilinForm K V) {x y : V} :
-    y ∈ B.orthogonal (K ∙ x) ↔ B x y = 0 := by
-  rw [orthogonal, Submodule.orthogonalBilin_span_singleton, LinearMap.mem_ker]
-
-/-- A vector is orthogonal to the span of two vectors exactly when it is orthogonal to both. -/
-theorem mem_orthogonal_span_pair_iff (B : LinearMap.BilinForm K V) {x y z : V} :
-    z ∈ B.orthogonal (Submodule.span K {x, y}) ↔ B x z = 0 ∧ B y z = 0 := by
-  constructor
-  · intro hz
-    exact ⟨hz x (Submodule.subset_span (by simp)), hz y (Submodule.subset_span (by simp))⟩
-  · rintro ⟨hx, hy⟩ n hn
-    obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hn
-    simp [hx, hy]
 
 /-- A family of pairwise orthogonal submodules, on each of which the form is right-separating, is
 independent. -/
@@ -407,8 +387,8 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
   refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
     simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
   · exact (hij rfl).elim
-  · exact (mem_orthogonal_span_singleton_iff B).1 (v j).2
-  · exact hB.eq_zero ((mem_orthogonal_span_singleton_iff B).1 (v i).2)
+  · simpa [orthogonal] using (v j).2
+  · exact hB.eq_zero (by simpa [orthogonal] using (v i).2)
   · simpa using iIsOrtho_def.1 hv i j fun h => hij (congrArg Fin.succ h)
 
 /-- A vector with unit self-pairing spans an orthogonal direct summand. -/
@@ -460,7 +440,7 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : 
     (hdim : finrank K V = n + 2) :
     ∃ b : Basis (Fin (n + 2)) K V, B.IsOrthoᵢ b ∧ b 0 = x ∧ b 1 = y := by
   let N := B.orthogonal (K ∙ x)
-  let y' : N := ⟨y, (mem_orthogonal_span_singleton_iff B).mpr hxy⟩
+  let y' : N := ⟨y, by simpa [N, orthogonal] using hxy⟩
   have hN : finrank K N = n + 1 := by
     have h := B.finrank_orthogonal_span_singleton_add_one hx
     dsimp only [N]

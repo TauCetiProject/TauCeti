@@ -207,4 +207,53 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_iff_sides
     · exact G.mem_initialPentagonRectangleInitialSelfPairs_of_right_eq_left C D hD hcommon
         hone hturn
 
+open scoped Classical in
+/-- The initial-side self-pairs are their same-side source terms together with their mixed-side
+partners. -/
+theorem initialPentagonRectangleInitialSelfSources_union_filter_hasMixedSideOverlap_eq_selfPairs :
+    G.initialPentagonRectangleInitialSelfSources C x z ∪
+        (G.initialPentagonRectangleInitialSelfPairs C x z).filter
+          (fun D => D.toGridRectangleDecomposition.HasMixedSideOverlap) =
+      G.initialPentagonRectangleInitialSelfPairs C x z := by
+  ext D
+  simp only [Finset.mem_union, Finset.mem_filter]
+  constructor
+  · rintro (hsource | ⟨hpair, -⟩)
+    · exact (G.mem_initialPentagonRectangleInitialSelfPairs C D).2 (Or.inl hsource)
+    · exact hpair
+  · intro hpair
+    obtain ⟨hcounted, hsource | ⟨hcommon, hone, -⟩⟩ :=
+      (G.mem_initialPentagonRectangleInitialSelfPairs_iff_sides C D).1 hpair
+    · exact Or.inl ((G.mem_initialPentagonRectangleInitialSelfSources C D).2 ⟨hcounted, hsource⟩)
+    · exact Or.inr ⟨hpair,
+        (GridRectangleDecomposition.hasMixedSideOverlap_iff _).2 ⟨hone, Or.inr hcommon⟩⟩
+
+open scoped Classical in
+private theorem disjoint_initialPentagonRectangleInitialSelfSources_filter_hasMixedSideOverlap :
+    Disjoint (G.initialPentagonRectangleInitialSelfSources C x z)
+      ((G.initialPentagonRectangleInitialSelfPairs C x z).filter
+        (fun D => D.toGridRectangleDecomposition.HasMixedSideOverlap)) := by
+  refine Finset.disjoint_left.2 fun D hsource hmixed => ?_
+  obtain ⟨-, hcommon, hcol⟩ := (G.mem_initialPentagonRectangleInitialSelfSources C D).1 hsource
+  have hsame : D.toGridRectangleDecomposition.HasSameSideOverlap :=
+    (GridRectangleDecomposition.hasSameSideOverlap_iff _).2
+      ⟨D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol,
+        Or.inl hcommon⟩
+  exact D.toGridRectangleDecomposition.not_hasMixedSideOverlap_of_hasSameSideOverlap hsame
+    (Finset.mem_filter.1 hmixed).2
+
+open scoped Classical in
+/-- An additive weight on the complete initial-side self-pair family is the sum of its same-side
+source contribution and its mixed-side partner contribution. -/
+theorem sum_initialPentagonRectangleInitialSelfPairs_eq_sum_sources_add_sum_mixed
+    {M : Type*} [AddCommMonoid M]
+    (w : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z → M) :
+    ∑ D ∈ G.initialPentagonRectangleInitialSelfPairs C x z, w D =
+      (∑ D ∈ G.initialPentagonRectangleInitialSelfSources C x z, w D) +
+        ∑ D ∈ (G.initialPentagonRectangleInitialSelfPairs C x z).filter
+          (fun D => D.toGridRectangleDecomposition.HasMixedSideOverlap), w D := by
+  rw [← Finset.sum_union
+    (G.disjoint_initialPentagonRectangleInitialSelfSources_filter_hasMixedSideOverlap C),
+    G.initialPentagonRectangleInitialSelfSources_union_filter_hasMixedSideOverlap_eq_selfPairs C]
+
 end TauCeti.GridDiagram

@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.OverClass
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Isomorphism
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Naturality
+public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.TorusAction
 public import TauCeti.Geometry.Toric.Analytic.Fan.Product.Manifold
 
 /-!
@@ -18,7 +19,8 @@ The scheme of a product fan is the fibre product of the factor schemes over `Spe
 toric maps of the two fan projections as its projections. Hence a complex point of the
 product-fan scheme, a morphism from `Spec ℂ` over `Spec ℂ`, is the same as a pair of complex
 points of the factor schemes. This holds for all finite fans and is natural for products of fan
-morphisms.
+morphisms. Under it, the character function of a character of the product lattice is the product
+of the character functions of its restrictions to the two lattice factors.
 
 For regular fans, the algebraic–analytic comparison carries this identification to the
 canonical product comparison of analytic realizations, whose forward map also consists of the
@@ -32,6 +34,9 @@ analytic realizations.
   are pairs of complex points of the factor schemes.
 * `TauCeti.Toric.Fan.algebraicComplexPointProdEquiv_naturality`: compatibility with products of
   fan morphisms.
+* `TauCeti.Toric.Fan.AlgebraicComplexPoint.character_prod`: the character function of a
+  character of the product lattice is the product of the character functions of its two
+  restrictions.
 * `TauCeti.Toric.Fan.analyticProdHomeomorph_algebraicAnalyticEquiv`: the algebraic–analytic
   comparison commutes with the product identifications.
 * `TauCeti.Toric.Fan.algebraicComplexPointProdHomeomorph` and
@@ -133,6 +138,42 @@ theorem algebraicComplexPointProdEquiv_naturality (f : FanHom Φ Φ₁) (g : Fan
     ← FanHom.algebraicComplexPointMap_comp, FanHom.fst_comp_prodMap, FanHom.snd_comp_prodMap]
 
 end Naturality
+
+/-! ### Characters of product fans -/
+
+namespace AlgebraicComplexPoint
+
+variable (m : IntegralCharacter (N × N'))
+  (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.1)
+  (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.1)
+
+/-- Under the product identification of complex points, the character function of a character
+of the product lattice is the product of the character functions of its restrictions to the two
+lattice factors. -/
+-- Not a simp lemma: the factor hypotheses `h₁` and `h₂` enter the left-hand side only through a
+-- proof, so `simp` cannot instantiate them.
+theorem character_prod (p : (Φ.prod Ψ).AlgebraicComplexPoint) :
+    character (Φ.prod Ψ) m (Φ.mem_dualSemigroup_prod_of_comp_inl_of_comp_inr Ψ h₁ h₂) p =
+      character Φ _ h₁ (Φ.algebraicComplexPointProdEquiv Ψ p).1 *
+        character Ψ _ h₂ (Φ.algebraicComplexPointProdEquiv Ψ p).2 := by
+  simp only [algebraicComplexPointProdEquiv_apply, FanHom.character_algebraicComplexPointMap,
+    ← character_add]
+  -- The product character is the sum of its two restrictions pulled back along the projections.
+  congr 2
+  rw [FanHom.fst_latticeMap, FanHom.snd_latticeMap,
+    AddMonoidHom.comp_inl_comp_fst_add_comp_inr_comp_snd]
+
+/-- The character function of a character of the product lattice, at the complex point with
+coordinates `q`, is the product of the character functions of its two restrictions at the two
+coordinates of `q`. -/
+theorem character_algebraicComplexPointProdEquiv_symm
+    (q : Φ.AlgebraicComplexPoint × Ψ.AlgebraicComplexPoint) :
+    character (Φ.prod Ψ) m (Φ.mem_dualSemigroup_prod_of_comp_inl_of_comp_inr Ψ h₁ h₂)
+        ((Φ.algebraicComplexPointProdEquiv Ψ).symm q) =
+      character Φ _ h₁ q.1 * character Ψ _ h₂ q.2 := by
+  rw [character_prod, Equiv.apply_symm_apply]
+
+end AlgebraicComplexPoint
 
 /-! ### Compatibility with the analytic product comparison -/
 

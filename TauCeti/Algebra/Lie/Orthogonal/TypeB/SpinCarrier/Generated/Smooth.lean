@@ -25,6 +25,7 @@ subgroup; it says nothing about the base change of the integral carrier, which c
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
+* Related formalization: `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
 -/
 
 public section
@@ -37,9 +38,9 @@ universe v
 
 variable (n : ℕ) (k : Type v) [Field k]
 
--- The argument follows the sibling smoothness proofs for the other explicit Chevalley
--- carriers, such as `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
-private theorem isGeometricallyReduced_generatorCoordinateAlgebra :
+/-- Each numbered root subgroup and the weight torus of the type-`Bₙ₊₁` spin carrier has a
+geometrically reduced coordinate algebra over every field. -/
+theorem isGeometricallyReduced_generatorCoordinateAlgebra :
     ∀ j, Algebra.IsGeometricallyReduced k (generatorCoordinateAlgebra n k j) := by
   intro j
   cases j with

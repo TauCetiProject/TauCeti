@@ -57,6 +57,8 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   of any function that `σ` preserves.
 * `Equiv.Perm.ncard_setOf_sameCycle`: the cycle through `x` has `Function.minimalPeriod σ x`
   points.
+* `Equiv.Perm.fullCycleType_eq_map_univ`: the full cycle type is the multiset of the cycle
+  lengths, read through any finite type labelling the cycles.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: the classes of `Equiv.Perm.SameCycle`
   are the nontrivial cycle factors together with the fixed points, via the point-level map
   `Equiv.Perm.cycleFactorOrFixedPoint`.
@@ -610,6 +612,28 @@ theorem ncard_setOf_sameCycle [Finite α] (x : α) :
   simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
     Nat.card_eq_fintype_card]
   exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
+
+open scoped Classical in
+/-- **The full cycle type lists the cycle lengths, one for each cycle.** If the cycles of `σ` are
+labelled by a finite type `γ`, through `e : Quotient (SameCycle.setoid σ) ≃ γ`, and `f : γ → ℕ`
+gives the cycle of `x` the length `Function.minimalPeriod σ x`, then the full cycle type of `σ`
+is the multiset of the values of `f`. -/
+theorem fullCycleType_eq_map_univ {γ : Type*} [Fintype γ] (e : Quotient (SameCycle.setoid σ) ≃ γ)
+    {f : γ → ℕ} (hf : ∀ x, f (e (Quotient.mk _ x)) = Function.minimalPeriod σ x) :
+    fullCycleType σ = (Finset.univ : Finset γ).val.map f := by
+  -- `Quotient.eq` produces the relation of `SameCycle.setoid σ`, which is `σ.SameCycle` by
+  -- definition.
+  have hm (x y : α) : σ.SameCycle x y ↔ e (Quotient.mk _ x) = e (Quotient.mk _ y) :=
+    (e.injective.eq_iff.trans Quotient.eq).symm
+  have hs : Function.Surjective fun x => e (Quotient.mk _ x) :=
+    e.surjective.comp Quotient.mk_surjective
+  rw [fullCycleType_eq_map_card_filter σ _ hm, Finset.image_univ_of_surjective hs]
+  refine Multiset.map_congr rfl fun c _ => ?_
+  obtain ⟨x, rfl⟩ := hs c
+  rw [hf, ← ncard_setOf_sameCycle, ← Set.ncard_coe_finset]
+  congr 1
+  ext y
+  simp [hm, eq_comm]
 
 /-- The fixed points of a permutation are the complement of its support. -/
 theorem card_subtype_apply_eq :

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -34,6 +35,15 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   `TauCeti.HasMinMaxLowerBound 𝕜 E F`; it says that `aₙ(T)` is the supremum of the coercivity
   constants of `T` on `(n + 1)`-dimensional subspaces, and it is the input from which the Ky Fan
   triangle inequality for approximation numbers is derived.
+* **Complete source spaces have the localization property.** Over `ℝ` or `ℂ`, let `E` be
+  complete and `c ≥ 0`. Either `T` is `c`-coercive on an `(n + 1)`-dimensional span, or `T` is
+  `c`-contractive on the orthogonal complement of a subspace of rank at most `n`. This is the
+  argument behind Sylvester's law of inertia, applied to the hermitian form `‖T x‖² - c² ‖x‖²`.
+  A maximal subspace on which the form is nonnegative has dimension at most `n`, unless the
+  first alternative holds. The form is nonpositive on the subspace orthogonal to it for the form,
+  and that subspace is the orthogonal complement of a subspace of rank at most `n`, by the Riesz
+  representation of the form. For `r < c < aₙ(T)`, the second alternative would give
+  `aₙ(T) ≤ c` by the orthogonal-tail bound.
 
 ## Main declarations
 
@@ -43,17 +53,27 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   bound checked on unit vectors.
 * `ContinuousLinearMap.le_singularValue_of_linearIndependent`: the same, for the span of `n + 1`
   linearly independent vectors.
+* `ContinuousLinearMap.singularValue_id`: the approximation numbers of the identity are `1`
+  below the rank of the space and `0` from it on.
 * `ContinuousLinearMap.singularValue_le_nnnorm_comp_orthogonal`: `aₙ(T) ≤ ‖T|_{Vᗮ}‖` for every
   subspace `V` of rank at most `n`.
 * `ContinuousLinearMap.singularValue_eq_iInf_nnnorm_comp_orthogonal`: on a complete inner product
   space, `aₙ(T)` is the infimum of `‖T|_{Vᗮ}‖` over subspaces `V` of rank at most `n`.
+* `ContinuousLinearMap.exists_linearIndependent_or_exists_rank_le`: on a complete inner product
+  space, `T` is `c`-coercive on the span of `n + 1` linearly independent vectors or
+  `c`-contractive on the orthogonal complement of a subspace of rank at most `n`.
 * `TauCeti.HasMinMaxLowerBound`: the converse min–max localization property of a pair of spaces.
 * `TauCeti.hasMinMaxLowerBound_iff_forall_isLUB`: a pair has this property exactly when, for every
   `T` and `n`, `aₙ(T)` is the least upper bound of the coercivity constants of `T` on spans of
   `n + 1` linearly independent vectors.
-* `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`: on such a pair, the first `k`
-  approximation numbers of `T` are those of a compression of `T` to finite-dimensional subspaces,
-  up to any `δ > 0`.
+* `TauCeti.HasMinMaxLowerBound.exists_rank_eq_coercive`: on a pair with the property, a strict
+  lower bound for the first `i` approximation numbers of `T` is a coercivity constant of `T` on a
+  subspace of rank `i`.
+* `TauCeti.HasMinMaxLowerBound.of_completeSpace`: a complete inner product space has the
+  converse min–max localization property towards every inner product space.
+* `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`: on a pair with the property,
+  the first `k` approximation numbers of `T` are those of a compression of `T` to
+  finite-dimensional subspaces, up to any `δ > 0`.
 
 ## References
 
@@ -65,7 +85,7 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
 
 public section
 
-open scoped NNReal
+open scoped InnerProductSpace NNReal
 
 namespace ContinuousLinearMap
 
@@ -108,6 +128,26 @@ theorem le_singularValue_of_linearIndependent (T : E →L[𝕜] F) {n : ℕ} {v 
   have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
   exact_mod_cast n.lt_succ_self
+
+/-- **Approximation numbers of the identity.** On a normed space of rank `r`, a possibly infinite
+cardinal, `aₙ(id) = 1` for `n < r` and `aₙ(id) = 0` for `r ≤ n`. -/
+@[simp]
+theorem singularValue_id (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if (n : Cardinal) < Module.rank 𝕜 E then 1 else 0 := by
+  split_ifs with hn
+  · refine le_antisymm (((ContinuousLinearMap.id 𝕜 E).singularValue_le_nnnorm n).trans ?_) ?_
+    · exact_mod_cast norm_id_le
+    · exact_mod_cast (ContinuousLinearMap.id 𝕜 E).le_singularValue_of_lt_rank
+        (V := ⊤) (by rwa [rank_top]) (c := 1) (by simp)
+  · exact singularValue_eq_zero_of_rank_domain_le _ (le_of_not_gt hn)
+
+/-- **Approximation numbers of a finite-dimensional identity.** `aₙ(id) = 1` below the dimension
+and `aₙ(id) = 0` at and above it. -/
+theorem singularValue_id_of_finiteDimensional [FiniteDimensional 𝕜 E] (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if n < Module.finrank 𝕜 E then 1 else 0 := by
+  simp [← Module.finrank_eq_rank]
 
 end Coercive
 
@@ -203,6 +243,99 @@ theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E �
 
 end OrthogonalTail
 
+section Inertia
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+open Submodule
+
+/-- Let `T` be `c`-coercive on the span of a linearly independent family `v`, and let `L`
+represent the hermitian form `⟪T x, T y⟫ - c² ⟪x, y⟫`. A vector `y` orthogonal to every `L (v i)`,
+on which `T` is more than `c`-coercive, extends `v` to a linearly independent family on whose span
+`T` is still `c`-coercive. -/
+private theorem linearIndependent_snoc_of_mem_orthogonal (T : E →L[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+    {L : E →ₗ[𝕜] E} (hL : ∀ x y, ⟪L x, y⟫_𝕜 = ⟪T x, T y⟫_𝕜 - ((c ^ 2 : ℝ) : 𝕜) * ⟪x, y⟫_𝕜)
+    {k : ℕ} {v : Fin k → E} (hv : LinearIndependent 𝕜 v)
+    (hvc : ∀ x ∈ span 𝕜 (Set.range v), c * ‖x‖ ≤ ‖T x‖)
+    {y : E} (hy : y ∈ (span 𝕜 (Set.range (L ∘ v)))ᗮ) (hTy : c * ‖y‖ < ‖T y‖) :
+    LinearIndependent 𝕜 (Fin.snoc v y : Fin (k + 1) → E) ∧
+      ∀ x ∈ span 𝕜 (Set.range (Fin.snoc v y : Fin (k + 1) → E)), c * ‖x‖ ≤ ‖T x‖ := by
+  -- `y` is orthogonal to the span of `v` for the form `⟪T x, T y⟫ - c² ⟪x, y⟫`.
+  have horth : ∀ x ∈ span 𝕜 (Set.range v), ⟪T y, T x⟫_𝕜 = ((c ^ 2 : ℝ) : 𝕜) * ⟪y, x⟫_𝕜 := by
+    intro x hx
+    have hLx : L x ∈ span 𝕜 (Set.range (L ∘ v)) := by
+      rw [Set.range_comp, ← map_span]
+      exact mem_map_of_mem hx
+    have h0 := (mem_orthogonal _ _).mp hy _ hLx
+    rw [hL, sub_eq_zero] at h0
+    rw [← inner_conj_symm, h0, map_mul, inner_conj_symm, RCLike.conj_ofReal]
+  have hsq_y : (c * ‖y‖) ^ 2 < ‖T y‖ ^ 2 := by gcongr
+  have hy_not : y ∉ span 𝕜 (Set.range v) := fun hy' ↦ by
+    have h := congrArg RCLike.re (horth y hy')
+    rw [inner_self_eq_norm_sq, RCLike.re_ofReal_mul, inner_self_eq_norm_sq] at h
+    nlinarith
+  refine ⟨linearIndependent_finSnoc.mpr ⟨hv, hy_not⟩, fun z hz ↦ ?_⟩
+  rw [Fin.range_snoc, mem_span_insert] at hz
+  obtain ⟨a, x, hx, rfl⟩ := hz
+  -- Expanding both squares, the cross terms agree up to the factor `c²`.
+  have hcross : RCLike.re ⟪a • T y, T x⟫_𝕜 = c ^ 2 * RCLike.re ⟪a • y, x⟫_𝕜 := by
+    rw [inner_smul_left, inner_smul_left, horth x hx, mul_left_comm, RCLike.re_ofReal_mul]
+  have hsq_x : (c * ‖x‖) ^ 2 ≤ ‖T x‖ ^ 2 := by gcongr; exact hvc x hx
+  have key : (c * ‖a • y + x‖) ^ 2 ≤ ‖T (a • y + x)‖ ^ 2 := by
+    rw [map_add, map_smul, mul_pow, norm_add_sq (𝕜 := 𝕜), norm_add_sq (𝕜 := 𝕜), hcross,
+      norm_smul, norm_smul]
+    nlinarith [mul_le_mul_of_nonneg_left hsq_y.le (sq_nonneg ‖a‖)]
+  exact (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp key
+
+/-- **Coercive subspace or contractive orthogonal tail.** Let `T : E →L[𝕜] F` be a bounded linear
+map on a complete inner product space, `n : ℕ` and `c ≥ 0`. Either `T` is `c`-coercive,
+`c ‖x‖ ≤ ‖T x‖`, on the span of `n + 1` linearly independent vectors, or there is a subspace
+`U` of rank at most `n` on whose orthogonal complement `‖T x‖ ≤ c ‖x‖`. -/
+theorem exists_linearIndependent_or_exists_rank_le [CompleteSpace E] (T : E →L[𝕜] F) (n : ℕ)
+    {c : ℝ} (hc : 0 ≤ c) :
+    (∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
+      ∀ x ∈ span 𝕜 (Set.range v), c * ‖x‖ ≤ ‖T x‖) ∨
+    ∃ U : Submodule 𝕜 E, Module.rank 𝕜 U ≤ n ∧ ∀ x ∈ Uᗮ, ‖T x‖ ≤ c * ‖x‖ := by
+  classical
+  -- This is the maximality argument behind Sylvester's law of inertia, for the hermitian form
+  -- `‖T x‖² - c² ‖x‖²`: a maximal subspace on which the form is nonnegative has dimension at most
+  -- `n` unless the first alternative holds, and the form is nonpositive on the subspace orthogonal
+  -- to it with respect to the form.
+  -- `P k`: `T` is `c`-coercive on the span of `k` linearly independent vectors.
+  set P : ℕ → Prop := fun k ↦ ∃ v : Fin k → E, LinearIndependent 𝕜 v ∧
+    ∀ x ∈ span 𝕜 (Set.range v), c * ‖x‖ ≤ ‖T x‖
+  by_cases hn : P (n + 1)
+  · exact Or.inl hn
+  refine Or.inr ?_
+  -- Restricting a family keeps the coercivity, so `P` fails beyond `n`.
+  have hle : ∀ m, P m → m ≤ n := by
+    rintro m ⟨v, hv, hvc⟩
+    by_contra! hm
+    exact hn ⟨v ∘ Fin.castLE hm, hv.comp _ (Fin.castLE_injective hm),
+      fun x hx ↦ hvc x (span_mono (Set.range_comp_subset_range _ _) hx)⟩
+  have h0 : P 0 := ⟨Fin.elim0, linearIndependent_empty_type, fun x hx ↦ by
+    rw [Set.range_eq_empty, span_empty, mem_bot] at hx
+    simp [hx]⟩
+  -- Take a family `v` of maximal length.
+  obtain ⟨v, hv, hvc⟩ : P (Nat.findGreatest P n) := Nat.findGreatest_spec (Nat.zero_le n) h0
+  -- `L` represents the hermitian form `⟪T x, T y⟫ - c² ⟪x, y⟫`.
+  set L : E →L[𝕜] E := InnerProductSpace.continuousLinearMapOfBilin
+    ((innerSL 𝕜).bilinearComp T T - ((c ^ 2 : ℝ) : 𝕜) • innerSL 𝕜)
+  have hL : ∀ x y, ⟪L x, y⟫_𝕜 = ⟪T x, T y⟫_𝕜 - ((c ^ 2 : ℝ) : 𝕜) * ⟪x, y⟫_𝕜 := fun x y ↦ by
+    simp [L]
+  refine ⟨span 𝕜 (Set.range ((L : E →ₗ[𝕜] E) ∘ v)), ?_, fun y hy ↦ ?_⟩
+  · have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range ((L : E →ₗ[𝕜] E) ∘ v))
+    rw [← Module.finrank_eq_rank]
+    exact_mod_cast (finrank_range_le_card _).trans
+      ((Fintype.card_fin _).trans_le (hle _ ⟨v, hv, hvc⟩))
+  · by_contra! hTy
+    obtain ⟨hv', hvc'⟩ :=
+      linearIndependent_snoc_of_mem_orthogonal T hc (L := L) hL hv hvc hy hTy
+    exact Nat.findGreatest_is_greatest (Nat.lt_succ_self _) (hle _ ⟨_, hv', hvc'⟩) ⟨_, hv', hvc'⟩
+
+end Inertia
+
 end ContinuousLinearMap
 
 /-! ### The converse min–max localization -/
@@ -270,6 +403,47 @@ theorem HasMinMaxLowerBound.isLUB_singularValue (h : HasMinMaxLowerBound 𝕜 E 
     IsLUB {s : ℝ≥0 | ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
       ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖} (T.singularValue n) :=
   hasMinMaxLowerBound_iff_forall_isLUB.mp h T n
+
+/-- **Coercive subspaces of a prescribed rank.** On a pair with the converse min–max localization
+property, if `0 ≤ t` lies strictly below the first `i` approximation numbers of `T`, then `T` is
+`t`-coercive on a subspace of rank `i`. -/
+theorem HasMinMaxLowerBound.exists_rank_eq_coercive (h : HasMinMaxLowerBound 𝕜 E F)
+    (T : E →L[𝕜] F) {i : ℕ} {t : ℝ} (ht : 0 ≤ t) (hi : ∀ k < i, t < T.singularValue k) :
+    ∃ V : Submodule 𝕜 E, Module.rank 𝕜 V = i ∧ ∀ x ∈ V, t * ‖x‖ ≤ ‖T x‖ := by
+  rcases i with _ | i
+  · exact ⟨⊥, by simp, fun x hx ↦ by simp [(Submodule.mem_bot 𝕜).mp hx]⟩
+  obtain ⟨s, hts, v, hv, hs⟩ := hasMinMaxLowerBound_iff.mp h T i ht (hi i i.lt_succ_self)
+  refine ⟨Submodule.span 𝕜 (Set.range v), ?_, fun x hx ↦
+    (mul_le_mul_of_nonneg_right hts.le (norm_nonneg x)).trans (hs x hx)⟩
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
+
+section CompleteSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- **Converse min–max localization.** If `E` is a complete inner product space, then for every
+bounded `T : E →L[𝕜] F` into an inner product space and every `0 ≤ r < aₙ(T)`, the map `T` is
+`s`-coercive with `r < s` on the span of `n + 1` linearly independent vectors. Thus `aₙ(T)` is the
+supremum of the coercivity constants of `T` on `(n + 1)`-dimensional subspaces
+(`TauCeti.HasMinMaxLowerBound.isLUB_singularValue`). -/
+theorem HasMinMaxLowerBound.of_completeSpace [CompleteSpace E] : HasMinMaxLowerBound 𝕜 E F := by
+  refine hasMinMaxLowerBound_iff.mpr fun T n r hr0 hr ↦ ?_
+  -- For `c` strictly between `r` and `aₙ(T)`, a contractive orthogonal tail would give
+  -- `aₙ(T) ≤ c`, so `T` is `c`-coercive on an `(n + 1)`-dimensional span.
+  set c : ℝ := (r + T.singularValue n) / 2 with hc
+  have hrc : r < c := by rw [hc]; linarith
+  have hca : c < T.singularValue n := by rw [hc]; linarith
+  obtain ⟨v, hv, hvc⟩ | ⟨U, hU, hUc⟩ :=
+    T.exists_linearIndependent_or_exists_rank_le n (c := c) (by positivity)
+  · exact ⟨c, hrc, v, hv, hvc⟩
+  · have hle : (T.singularValue n : ℝ) ≤ c :=
+      (NNReal.coe_le_coe.mpr (T.singularValue_le_nnnorm_comp_orthogonal hU)).trans
+        (ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ hUc x x.2)
+    linarith
+
+end CompleteSpace
 
 section Compression
 

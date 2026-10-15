@@ -166,13 +166,15 @@ private noncomputable def variableChangeB : VariableChange QSqrt65 where
 private theorem variableChangeA_smul :
     variableChangeA • curveSqrt65 = modelA.baseChange QSqrt65 := by
   ext <;> simp [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
-    variableChange_a₆, curveSqrt65, modelA, variableChangeA, baseChange, pow_succ, map_ofNat] <;>
+    variableChange_a₆, curveSqrt65, modelA, variableChangeA,
+      WeierstrassCurve.baseChange, pow_succ, map_ofNat] <;>
     norm_num
 
 private theorem variableChangeB_smul :
     variableChangeB • curveSqrt65 = modelB.baseChange QSqrt65 := by
   ext <;> simp [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
-    variableChange_a₆, curveSqrt65, modelB, variableChangeB, baseChange, pow_succ, map_ofNat] <;>
+    variableChange_a₆, curveSqrt65, modelB, variableChangeB,
+      WeierstrassCurve.baseChange, pow_succ, map_ofNat] <;>
     norm_num
 
 private theorem modelA_Δ_mul :
@@ -285,7 +287,7 @@ theorem not_isUnit_Δ_of_smul_curveSqrt65_eq_baseChange {C : VariableChange QSqr
     ¬ IsUnit W.Δ := by
   intro hu
   have hΔ : algebraMap (𝓞 QSqrt65) QSqrt65 W.Δ = (C.u⁻¹ : QSqrt65ˣ) ^ 12 * curveSqrt65.Δ := by
-    rw [← variableChange_Δ, hC, baseChange, map_Δ]
+    rw [← variableChange_Δ, hC, WeierstrassCurve.baseChange, map_Δ]
   have hN : |(algebraMap (𝓞 QSqrt65) QSqrt65 W.Δ).norm| = 1 := by
     simpa [RingOfIntegers.coe_eq_algebraMap] using NumberField.isUnit_iff_norm.mp hu
   have hNΔ : curveSqrt65.Δ.norm = -72 ^ 12 := by

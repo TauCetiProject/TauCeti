@@ -160,7 +160,7 @@ theorem prod_card_powerClasses (n : ℕ) [NeZero n] [HasEnoughRootsOfUnity K n]
   have hn : n ≠ 0 := NeZero.ne n
   have hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.2 hn
   -- Each completion contains the image of a primitive `n`-th root of unity of `K`.
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have hfin (v : HeightOneSpectrum (𝓞 K)) : Nat.card (rootsOfUnity n (v.adicCompletion K)) = n :=
     (hζ.map_of_injective (algebraMap K (v.adicCompletion K)).injective).card_rootsOfUnity
   have hinf (w : InfinitePlace K) : Nat.card (rootsOfUnity n w.Completion) = n :=
