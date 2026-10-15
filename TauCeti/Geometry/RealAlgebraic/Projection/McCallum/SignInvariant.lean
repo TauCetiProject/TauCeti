@@ -9,8 +9,6 @@ public import TauCeti.Geometry.RealAlgebraic.IrreducibleBasis
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Lifting
 public import TauCeti.Geometry.RealAlgebraic.Stack.Semialgebraic
 
-import TauCeti.Algebra.MvPolynomial.Equiv
-
 /-!
 # Sign-invariant McCallum lifting with nullified members
 
