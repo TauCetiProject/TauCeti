@@ -73,11 +73,12 @@ theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) {S : Set X}
   refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.1 tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
   · fun_prop
   · intro t
-    simpa only [map, ContinuousMap.comp_apply, _root_.GenLoop.mk_apply] using H.apply_zero (p.1 t)
+    exact (H.apply_zero (p.1 t)).trans (map_apply f hf p t).symm
   · intro t
-    simpa only [map, ContinuousMap.comp_apply, _root_.GenLoop.mk_apply] using H.apply_one (p.1 t)
+    exact (H.apply_one (p.1 t)).trans (map_apply g _ p t).symm
   · intro t u hu
-    exact H.eq_fst t (by rw [p.2 u hu]; exact hx)
+    refine (H.eq_fst t (show p.1 u ∈ S by rw [p.2 u hu]; exact hx)).trans ?_
+    exact (map_apply f hf p u).symm
 
 end GenLoop
 

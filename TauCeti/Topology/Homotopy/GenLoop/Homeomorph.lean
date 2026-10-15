@@ -70,11 +70,8 @@ def _root_.Homeomorph.genLoopHomeomorph (e : X ≃ₜ Y) (h : e x = y) : Ω^ N X
     simp only [map_apply, ContinuousMap.coe_mk, Homeomorph.symm_apply_apply]
   right_inv p := _root_.GenLoop.ext _ _ fun t => by
     simp only [map_apply, ContinuousMap.coe_mk, Homeomorph.apply_symm_apply]
-  continuous_toFun :=
-    ((ContinuousMap.continuous_postcomp ⟨e, e.continuous⟩).comp continuous_subtype_val).subtype_mk _
-  continuous_invFun :=
-    ((ContinuousMap.continuous_postcomp ⟨e.symm, e.symm.continuous⟩).comp
-      continuous_subtype_val).subtype_mk _
+  continuous_toFun := continuous_map _ h
+  continuous_invFun := continuous_map _ _
 
 /-- The inverse of `Homeomorph.genLoopHomeomorph e` is `Homeomorph.genLoopHomeomorph e.symm`. -/
 theorem _root_.Homeomorph.genLoopHomeomorph_symm (e : X ≃ₜ Y) (h : e x = y) :

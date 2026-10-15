@@ -27,16 +27,26 @@ namespace GenLoop
 variable {N X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   {x : X} {y : Y} {z : Z}
 
--- exposed: `GenLoop.Homeomorph` proves `Homeomorph.genLoopHomeomorph` continuity goals by
--- unfolding `map`
 /-- A based continuous map sends generalized loops to generalized loops by postcomposition. -/
-@[expose] def map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) : Ω^ N Y y :=
+def map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) : Ω^ N Y y :=
   ⟨f.comp p.1, fun t ht => by simpa [hf] using congrArg f (_root_.GenLoop.boundary p t ht)⟩
 
 @[simp]
 theorem map_apply (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) (t : I^N) :
-    map f hf p t = f (p t) :=
-  rfl
+    map f hf p t = f (p t) := by
+  rw [map]; rfl
+
+/-- The underlying continuous map of `GenLoop.map f hf p` is the composite `f ∘ p`. -/
+theorem coe_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
+    ((map f hf p : Ω^ N Y y) : C(I^N, Y)) = f.comp (p : C(I^N, X)) := by
+  rw [map]
+
+/-- Postcomposition `GenLoop.map f` is continuous for the compact-open topologies on spaces of
+generalized loops. -/
+theorem continuous_map (f : C(X, Y)) (hf : f x = y) :
+    Continuous (map (N := N) f hf) := by
+  refine Continuous.subtype_mk ?_ _
+  exact (ContinuousMap.continuous_postcomp f).comp continuous_subtype_val
 
 @[simp]
 theorem map_const (f : C(X, Y)) (hf : f x = y) :
