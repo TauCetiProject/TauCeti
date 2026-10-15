@@ -96,7 +96,7 @@ variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGro
 /-- Scaling two bilinear forms by the same non-zero-divisor `a` neither creates nor destroys an
 isometry between them. In particular the constituents `a • C` and `a • C'` of two Jordan splittings
 are isometric exactly when their unimodular rescalings `C` and `C'` are. -/
-theorem equivalent_smul_iff (ha : a ∈ nonZeroDivisors R) :
+@[simp] theorem equivalent_smul_iff (ha : a ∈ nonZeroDivisors R) :
     (a • C).Equivalent (a • C') ↔ C.Equivalent C' :=
   ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
       simpa using e.map_app y x)⟩⟩,
