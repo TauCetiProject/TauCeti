@@ -87,6 +87,10 @@ theorem gradedResolutionDifferential_sq (x : X.gradedResolutionModule) :
 def gradedResolutionPiece : ℤ → Submodule R X.gradedResolutionModule :=
   (resolutionModuleComplex X).directSumPiece
 
+/-- The homogeneous resolution terms decompose the total resolution as an internal direct sum. -/
+theorem isInternal_gradedResolutionPiece : DirectSum.IsInternal X.gradedResolutionPiece :=
+  (resolutionModuleComplex X).isInternal_directSumPiece
+
 /-- In a nonnegative degree, the homogeneous piece is the corresponding resolution term's copy. -/
 @[simp]
 theorem gradedResolutionPiece_natCast [DecidableEq ℕ] (n : ℕ) :
@@ -209,13 +213,11 @@ private theorem resolutionMap_d_apply (f : X ⟶ Y) (n : ℕ)
         ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
       (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
         ((d X n).hom x) := by
-  have h := congrArg (fun g ↦ g.hom x)
+  have h := congrArg (fun g ↦ g.hom.toContinuousLinearMap x)
     (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f n)
-  change (d Y n).hom
-      ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
-    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
-      ((d X n).hom x) at h
-  exact h
+  simpa only [hom_comp, hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
+    ContinuousLinearMap.comp_apply, resFunctor_map_hom,
+    ContIntertwiningMap.toContinuousLinearMap_apply, ContIntertwiningMap.restrict_apply] using h
 
 private theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
     (x : (resolutionX X n).V) :
@@ -225,12 +227,8 @@ private theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
         ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) := by
   have h := hom_comm_apply
     (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n) g x
-  change
-    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom
-        ((resolutionX X n).ρ g x) =
-      (resolutionX Y n).ρ g
-        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) at h
-  exact h
+  simpa only [res, ContRepresentation.restrict_apply_apply,
+    MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq] using h
 
 private def resolutionModuleMap (f : X ⟶ Y) :
     resolutionModuleComplex X ⟶ resolutionModuleComplex Y :=
@@ -240,6 +238,9 @@ private def resolutionModuleMap (f : X ⟶ Y) :
     apply ModuleCat.hom_ext
     apply LinearMap.ext
     intro x
+    -- Forgetting to modules preserves the carrier and scalar action definitionally. This
+    -- conversion only evaluates the `ofHom` components and composition on that same carrier;
+    -- the differential itself is rewritten through its characteristic equation below.
     change ((resolutionModuleComplex Y).d n (n + 1)).hom
         ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom x) =
       (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1 + 1)).hom
@@ -343,6 +344,7 @@ section Discrete
 variable [DiscreteTopology R]
 
 /-- The total resolution with its discrete topology and componentwise group action. -/
+-- The raw-carrier action equations require this carrier identity under module abstraction.
 @[expose] noncomputable def gradedResolutionTopRep : TopRep.{max v w} R G :=
   TauCeti.discreteTopRep R G (Rep.of X.gradedResolutionRepresentation)
 

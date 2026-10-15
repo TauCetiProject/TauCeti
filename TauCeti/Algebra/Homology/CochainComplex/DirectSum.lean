@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # The direct-sum module of a nonnegative cochain complex
@@ -68,6 +69,16 @@ theorem directSumDifferential_sq (x : K.directSumModule) :
 def directSumPiece : ℤ → Submodule R K.directSumModule :=
   TauCeti.Graded.extendByZero fun n ↦
     LinearMap.range (DirectSum.lof R ℕ (fun n ↦ K.X n) n)
+
+/-- The homogeneous pieces decompose the total module as an internal direct sum. -/
+theorem isInternal_directSumPiece : DirectSum.IsInternal K.directSumPiece := by
+  apply TauCeti.Graded.isInternal_extendByZero
+  refine TauCeti.DirectSum.isInternal_of_lof
+    (e := fun n ↦ LinearEquiv.ofInjective
+      (DirectSum.lof R ℕ (fun n ↦ K.X n) n) (DirectSum.of_injective n))
+    (E := LinearEquiv.refl R K.directSumModule) ?_
+  intro n x
+  rfl
 
 /-- A nonnegative homogeneous piece is the range of the corresponding inclusion. -/
 @[simp]
