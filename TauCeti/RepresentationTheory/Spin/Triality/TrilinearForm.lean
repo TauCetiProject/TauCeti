@@ -73,16 +73,19 @@ theorem d4TrialityTrilinearForm_apply (v : Fin 4 ⊕ Fin 4 → ℚ)
 /-- The concrete triality trilinear form is nonzero. -/
 theorem d4TrialityTrilinearForm_ne_zero : P.d4TrialityTrilinearForm b ≠ 0 := by
   intro h
+  apply trialityTrilinearForm_ne_zero ℚ
+  apply LinearMap.ext
+  intro v
+  apply LinearMap.ext
+  intro x
+  apply LinearMap.ext
+  intro y
   have hEval := congrArg
-    (fun f => f
-      (D4Tripled.vectorBlockEquiv.symm (Pi.single ⟨0, by decide⟩ 1))
-      ((P.d4SpinMinusBlockEquiv b).symm (Pi.single ⟨11, by decide⟩ 1))
-      ((P.d4SpinPlusBlockEquiv b).symm (Pi.single ⟨23, by decide⟩ 1))) h
-  simp only [d4TrialityTrilinearForm_apply, LinearEquiv.apply_symm_apply,
-    trialityTrilinearForm_single_one_single_one_single_one,
-    trialityCoefficient_normalization, Int.cast_neg, Int.cast_one,
-    LinearMap.zero_apply] at hEval
-  norm_num at hEval
+    (fun f => f (D4Tripled.vectorBlockEquiv.symm v)
+      ((P.d4SpinMinusBlockEquiv b).symm x)
+      ((P.d4SpinPlusBlockEquiv b).symm y)) h
+  simpa only [d4TrialityTrilinearForm_apply, LinearEquiv.apply_symm_apply,
+    LinearMap.zero_apply] using hEval
 
 /-- The concrete triality form is preserved when the vector and half-spin modules are rotated
 by their triality intertwiners. -/
