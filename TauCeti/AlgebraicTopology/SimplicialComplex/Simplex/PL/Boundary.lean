@@ -35,8 +35,40 @@ open scoped Manifold
 
 namespace AbstractSimplicialComplex
 
+/-- Reindex the retained simplex coordinates, distinguishing the last coordinate with
+`none`. This ambient homeomorphism is shared by the solid and boundary comparisons. -/
+def simplexCoordinateReindex (n : ℕ) :
+    (Fin (n + 1) → ℝ) ≃ₜ (Option (Fin n) → ℝ) :=
+  Homeomorph.piCongrLeft (Y := fun _ : Option (Fin n) => ℝ) finSuccEquivLast
+
+/-- The reindexing reads the corresponding retained barycentric coordinate. -/
+@[simp] theorem simplexCoordinateReindex_apply (n : ℕ) (x : Fin (n + 1) → ℝ)
+    (i : Option (Fin n)) :
+    simplexCoordinateReindex n x i = x (finSuccEquivLast.symm i) := by
+  simp only [simplexCoordinateReindex, Homeomorph.piCongrLeft_apply,
+    Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply, Equiv.symm_symm]
+
+/-- Reindexing preserves the coordinate simplex, so it restricts to both the solid
+simplex and its frontier. -/
+theorem simplexCoordinateReindex_mem_iff (n : ℕ) (x : Fin (n + 1) → ℝ) :
+    simplexCoordinateReindex n x ∈ coordinateSimplex (Option (Fin n)) ↔
+      x ∈ coordinateSimplex (Fin (n + 1)) := by
+  have hsum : ∑ i, simplexCoordinateReindex n x i = ∑ i, x i := by
+    simp only [simplexCoordinateReindex_apply]
+    exact finSuccEquivLast.symm.sum_comp x
+  rw [mem_coordinateSimplex, mem_coordinateSimplex, hsum]
+  constructor
+  · rintro ⟨h, hs⟩
+    refine ⟨fun i => ?_, hs⟩
+    simpa only [simplexCoordinateReindex_apply, Equiv.symm_apply_apply] using
+      h (finSuccEquivLast i)
+  · rintro ⟨h, hs⟩
+    exact ⟨fun i => (simplexCoordinateReindex_apply n x i).symm ▸
+      h (finSuccEquivLast.symm i), hs⟩
+
 /-- The affine coordinates of a realized simplex boundary: discard the last coordinate,
-then distinguish the last of the retained coordinates using the `Option` index. -/
+then apply `simplexCoordinateReindex` to distinguish the last retained coordinate using
+`none`. -/
 def simplexBoundaryCoordinateMap (n : ℕ) :
     (Fin (n + 2) → ℝ) →L[ℝ] (Option (Fin n) → ℝ) :=
   ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj
@@ -76,25 +108,9 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
     right_inv := fun _ => rfl
     continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
     continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
-  let a := Homeomorph.piCongrLeft (Y := fun _ : Option (Fin n) => ℝ) finSuccEquivLast
-  have ha_apply (x : Fin (n + 1) → ℝ) (i : Option (Fin n)) :
-      a x i = x (finSuccEquivLast.symm i) := by
-    simp only [a, Homeomorph.piCongrLeft_apply, Equiv.piCongrLeft'_symm,
-      Equiv.piCongrLeft'_apply, Equiv.symm_symm]
-  have ha (x : Fin (n + 1) → ℝ) :
-      a x ∈ coordinateSimplex (Option (Fin n)) ↔ x ∈ coordinateSimplex (Fin (n + 1)) := by
-    have hsum : ∑ i, a x i = ∑ i, x i := by
-      simp only [ha_apply]
-      exact finSuccEquivLast.symm.sum_comp x
-    rw [mem_coordinateSimplex, mem_coordinateSimplex, hsum]
-    constructor
-    · rintro ⟨h, hs⟩
-      refine ⟨fun i => ?_, hs⟩
-      simpa only [ha_apply, Equiv.symm_apply_apply] using h (finSuccEquivLast i)
-    · rintro ⟨h, hs⟩
-      exact ⟨fun i => (ha_apply x i).symm ▸ h (finSuccEquivLast.symm i), hs⟩
+  let a := simplexCoordinateReindex n
   have hpre : a ⁻¹' coordinateSimplex (Option (Fin n)) = coordinateSimplex (Fin (n + 1)) :=
-    Set.ext ha
+    Set.ext (simplexCoordinateReindex_mem_iff n)
   have hf := a.preimage_frontier (coordinateSimplex (Option (Fin n)))
   rw [hpre] at hf
   exact r.trans (b.trans (flat.trans (a.subtype fun x => (Set.ext_iff.mp hf x).symm)))
@@ -106,8 +122,7 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
       simplexBoundaryCoordinateMap n x.1 i := by
   simp [realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex,
     realizationTopHomeomorphCoordinateSimplex_apply, realizationMap_val,
-    simplexBoundaryCoordinateMap, Homeomorph.piCongrLeft_apply,
-    Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply, Equiv.symm_symm]
+    simplexBoundaryCoordinateMap, simplexCoordinateReindex_apply]
 
 /-- The inverse frontier identification restores every retained coordinate. -/
 @[simp] theorem realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_symm_castSucc

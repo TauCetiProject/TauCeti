@@ -36,24 +36,9 @@ namespace AbstractSimplicialComplex
 out to supply the normal direction in its half-space charts. -/
 private def realizationTopHomeomorphOptionCoordinateSimplex (n : ℕ) :
     Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) ≃ₜ
-      coordinateSimplex (Option (Fin n)) := by
-  let a := Homeomorph.piCongrLeft (Y := fun _ : Option (Fin n) => ℝ) finSuccEquivLast
-  have ha (x : Fin (n + 1) → ℝ) :
-      a x ∈ coordinateSimplex (Option (Fin n)) ↔ x ∈ coordinateSimplex (Fin (n + 1)) := by
-    have happly (i : Option (Fin n)) : a x i = x (finSuccEquivLast.symm i) := by
-      simp only [a, Homeomorph.piCongrLeft_apply, Equiv.piCongrLeft'_symm,
-        Equiv.piCongrLeft'_apply, Equiv.symm_symm]
-    have hsum : ∑ i, a x i = ∑ i, x i := by
-      simp only [happly]
-      exact finSuccEquivLast.symm.sum_comp x
-    rw [mem_coordinateSimplex, mem_coordinateSimplex, hsum]
-    constructor
-    · rintro ⟨h, hs⟩
-      refine ⟨fun i => ?_, hs⟩
-      simpa only [happly, Equiv.symm_apply_apply] using h (finSuccEquivLast i)
-    · rintro ⟨h, hs⟩
-      exact ⟨fun i => (happly i).symm ▸ h (finSuccEquivLast.symm i), hs⟩
-  exact (realizationTopHomeomorphCoordinateSimplex (n + 1)).trans (a.subtype fun x => (ha x).symm)
+      coordinateSimplex (Option (Fin n)) :=
+  (realizationTopHomeomorphCoordinateSimplex (n + 1)).trans
+    ((simplexCoordinateReindex n).subtype fun x => (simplexCoordinateReindex_mem_iff n x).symm)
 
 /-- The coordinate comparison reads the ambient barycentric linear map. -/
 @[simp] private theorem realizationTopHomeomorphOptionCoordinateSimplex_apply (n : ℕ)
@@ -62,8 +47,7 @@ private def realizationTopHomeomorphOptionCoordinateSimplex (n : ℕ) :
       simplexBoundaryCoordinateMap n x.1 i := by
   simp [realizationTopHomeomorphOptionCoordinateSimplex,
     realizationTopHomeomorphCoordinateSimplex_apply, simplexBoundaryCoordinateMap_apply,
-    Homeomorph.piCongrLeft_apply, Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply,
-    Equiv.symm_symm]
+    simplexCoordinateReindex_apply]
 
 /-- The inverse comparison restores every retained coordinate. -/
 @[simp] private theorem realizationTopHomeomorphOptionCoordinateSimplex_symm_castSucc (n : ℕ)
