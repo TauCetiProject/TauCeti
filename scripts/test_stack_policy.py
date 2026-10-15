@@ -563,6 +563,12 @@ class ProseTests(unittest.TestCase):
             self.assertEqual(sp.rendered_parents(
                 f"<p>This PR carries {qualifier}commits from #12.</p>"), {12})
 
+    def test_alternative_dependencies_do_not_assert_individual_parents(self):
+        for separator in (" or ", "/", " and/or ", ", or "):
+            with self.subTest(separator=separator):
+                self.assertEqual(sp.rendered_parents(
+                    f"<p>Depends on #12{separator}#13.</p>"), set())
+
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
                       "Stacked on #1", False)

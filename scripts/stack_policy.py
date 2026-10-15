@@ -263,7 +263,7 @@ def rendered_prose_parents(body):
                 tail = tail[first.end():]
                 # Only a contiguous reference list belongs to this declaration.
                 # Later clauses (e.g. supersedes #N) cannot acquire parenthood.
-                while match := re.match(r"[\s,\[\]()/&+]*(?:(?:and|or)\s+)?#([1-9]\d*)\b", tail, re.I):
+                while match := re.match(r"[\s,\[\]()&+]*(?:and\s+)?#([1-9]\d*)\b", tail, re.I):
                     declared.add(int(match[1]))
                     tail = tail[match.end():]
                 # A body-only declaration must be complete, rather than a
