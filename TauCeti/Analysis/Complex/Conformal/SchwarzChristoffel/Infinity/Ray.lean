@@ -175,7 +175,7 @@ theorem range_schwarzChristoffelBoundary_of_neg_one_le_sum {n : ℕ}
       rintro rfl
       simp only [Fin.last_zero] at hright
       exact hright (le_of_not_ge hleft)
-    exact Or.inl (Or.inr (exists_mem_Icc_castSucc_succ a ha hn
+    exact Or.inl (Or.inr (exists_mem_Icc_castSucc_succ a hn
       ⟨(le_of_not_ge hleft), (le_of_not_ge hright)⟩))
   have hbounded (i : Fin n) := schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
     (ha i.castSucc_le_succ) (fun j _ => not_mem_Ioo_castSucc_succ a ha i j)

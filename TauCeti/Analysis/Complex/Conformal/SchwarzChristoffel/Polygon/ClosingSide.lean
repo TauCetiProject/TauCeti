@@ -299,7 +299,7 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
     · have hsum' : e 0 + e 1 = -2 := by simpa [Fin.sum_univ_succ] using hsum
       linarith [(he 0).1, (he 1).1]
   have hn' : n ≠ 0 := by omega
-  obtain ⟨i, hxi⟩ := exists_mem_Icc_castSucc_succ a ha.monotone hn'
+  obtain ⟨i, hxi⟩ := exists_mem_Icc_castSucc_succ a hn'
     ⟨hx.1.le, hx.2.le⟩
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
     fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
