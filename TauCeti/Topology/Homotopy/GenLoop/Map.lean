@@ -56,11 +56,10 @@ theorem map_const (f : C(X, Y)) (hf : f x = y) :
   intro t
   simp [hf]
 
-/-- Postcomposition by a constant continuous map gives the constant generalized loop.
-
-This is not a `simp` lemma: baking the basepoint proof `rfl` into the statement forces the
-target basepoint to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close
-even its own statement. Use it as an explicit rewrite. -/
+-- Not `simp`: baking the basepoint proof `rfl` into the statement forces the target basepoint
+-- to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close even its own
+-- statement. Use it as an explicit rewrite.
+/-- Postcomposition by a constant map yields the constant generalized loop. -/
 theorem map_continuousMap_const (y : Y) (p : Ω^ N X x) :
     map (ContinuousMap.const X y) rfl p = (_root_.GenLoop.const : Ω^ N Y y) := by
   apply _root_.GenLoop.ext
