@@ -276,6 +276,7 @@ theorem windowPreAdicSpaceIso_hom_base_apply (h₁ : ρ₁ ^ q.num = v (algebraM
 
 /-- On points, the inverse window chart is pullback along `𝕎 O⟨T/s⟩ ≃+* B^I`.
 This is the inverse formula to `windowPreAdicSpaceIso_hom_base_apply`. -/
+@[simp]
 theorem windowPreAdicSpaceIso_inv_base_apply
     (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
     (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂)
@@ -299,6 +300,8 @@ theorem windowPreAdicSpaceIso_inv_base_apply
     congrArg (fun φ => φ.base y) f.inv_hom_id
   have hforward := windowPreAdicSpaceIso_hom_base_apply hv hϖ hϖ' hρ₁ hρ₂ hI P hden
     h₁ h₂ h₁₂ P' (f.inv.base y)
+  -- The forward formula uses the full chart term; `f` abbreviates exactly that term.
+  -- This changes only its spelling, so the pointwise inverse identity `hy` can rewrite it.
   change (f.hom.base (f.inv.base y)).val = _ at hforward
   rw [hy] at hforward
   have h := congrArg (comap
