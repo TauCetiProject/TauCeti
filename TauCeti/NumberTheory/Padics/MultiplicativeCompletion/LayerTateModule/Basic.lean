@@ -122,8 +122,8 @@ theorem nonempty_of_isZero {L K : Type} [Field L] [Field K] [Algebra K L]
     Nonempty (LayerTateModule p L K) := by
   have := Fintype.ofFinite (L ≃ₐ[K] L)
   -- `A(L)` is finitely generated: give `L` its local-field structure.
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
   have hpL : (p : L) ≠ 0 := by
     rw [← map_natCast (algebraMap ℚ_[p] L)]

@@ -6,14 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 
 /-!
-# Unit off-diagonal entries in even unimodular local forms
+# Binary summands of even dyadic lattices
 
-An even unimodular symmetric form over a local ring where `2` is not a unit cannot split off a
-rank-one unimodular form: every self-pairing is divisible by `2`. The determinant then forces a
-unit off the diagonal in every basis row. This provides the paired basis vectors used to construct
-binary constituents in the dyadic classification.
+An even integral lattice whose determinant is a unit at `2` has an even unimodular localization.
+It therefore splits off a rank-two perfect summand orthogonally. This is the induction step for
+decomposing an even unimodular dyadic form into binary constituents.
+
+## Main results
+
+* `TauCeti.IntegralLattice.exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm`: an even
+  lattice unimodular at `2` splits off a perfect binary summand after localization.
 
 ## References
 
@@ -22,27 +27,35 @@ binary constituents in the dyadic classification.
 
 public section
 
-namespace LinearMap.BilinForm
+namespace TauCeti.IntegralLattice
 
-open LinearMap (BilinForm)
 open Module
 
-variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
-  (B : BilinForm R M)
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
-/-- In a positive-rank even unimodular form over a local ring where `2` is not a unit, the first
-basis vector pairs to a unit with a distinct basis vector. These two vectors begin a unimodular
-binary constituent. -/
-theorem exists_index_ne_zero_isUnit_apply_of_even_of_isUnit_det
-    {n : ℕ} (b : Basis (Fin (n + 1)) R M)
-    (heven : ∀ x, (2 : R) ∣ B x x) (h2 : ¬ IsUnit (2 : R))
-    (hdet : IsUnit (B.toMatrix b).det) :
-    ∃ i : Fin (n + 1), i.val ≠ 0 ∧
-      IsUnit (B (b 0) (b i)) := by
-  apply exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det B b _ hdet
-  intro hu0
-  exact h2 (isUnit_of_dvd_unit (heven (b 0)) hu0)
+/-- **An even lattice unimodular at `2` splits off a perfect binary summand.** If the rank is at
+least two, the dyadic localization has a rank-two submodule carrying a perfect restriction of the
+local integral form and complementary to its orthogonal complement. -/
+theorem exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm
+    (L : IntegralLattice V) (hrank : 2 ≤ finrank ℤ L) (heven : L.IsEven)
+    (hdet : IsUnit (L.determinant : ℤ_[2])) :
+    ∃ S : Submodule ℤ_[2] (L.LocalCarrier 2),
+      finrank ℤ_[2] S = 2 ∧ ((L.localIntegralForm 2).restrict S).IsPerfPair ∧
+        IsCompl S ((L.localIntegralForm 2).orthogonal S) := by
+  have hrank' : finrank ℤ L = (finrank ℤ L - 2) + 2 := (Nat.sub_add_cancel hrank).symm
+  let c := (Module.finBasis ℤ L).reindex (finCongr hrank')
+  let b := c.baseChange ℤ_[2]
+  have heven' (x : L.LocalCarrier 2) :
+      (2 : ℤ_[2]) ∣ L.localIntegralForm 2 x x := by
+    rw [← Ideal.mem_span_singleton]
+    exact (L.isEven_iff_localNormIdeal_le_span_two.mp heven)
+      ((L.localIntegralForm 2).self_mem_normIdeal x)
+  have hdet' : IsUnit ((L.localIntegralForm 2).toMatrix b).det := by
+    exact L.det_toMatrix_localIntegralForm 2 c ▸ hdet
+  exact LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal
+    (L.localIntegralForm 2) (L.isSymm_localIntegralForm 2) b heven'
+      (mem_nonunits_iff.mp PadicInt.p_nonunit) hdet'
 
-end LinearMap.BilinForm
+end TauCeti.IntegralLattice
 
 end

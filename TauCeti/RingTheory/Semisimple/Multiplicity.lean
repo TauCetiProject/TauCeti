@@ -26,10 +26,10 @@ so that the multiplicity is an invariant of `M` and needs no decomposition to be
 The proof is Schur's lemma plus additivity.  A hom space out of `S` into a finite product splits
 as the product of the hom spaces into the factors, and each factor contributes `1` or `0`
 according as it is or is not isomorphic to `S`.  Those two values are the dimension forms of
-Schur's lemma, `TauCeti.finrank_linearMap_eq_one_of_nonempty_linearEquiv` and
+Schur's lemma, `LinearEquiv.finrank_linearMap_eq_one` and
 `TauCeti.finrank_linearMap_eq_zero_of_isEmpty_linearEquiv`, proved in
-`TauCeti/RingTheory/Semisimple/Schur.lean` alongside the transport of a hom space along an
-isomorphism of its target, `TauCeti.homCongrRight`.
+`TauCeti/RingTheory/Semisimple/Schur.lean`. Transport of a hom space along an isomorphism of its
+target uses `LinearEquiv.homCongrRight`, defined in `TauCeti/Algebra/Module/Equiv/Basic.lean`.
 
 Over an arbitrary field, an isomorphic factor instead contributes
 `finrank k (Module.End A S)`.  The corresponding scaled multiplicity formula is enough to recover
@@ -154,7 +154,7 @@ theorem finrank_linearMap_pi_eq_natCard_mul_finrank_end :
       if Nonempty (S ≃ₗ[A] N i) then Module.finrank k (Module.End A S) else 0 := by
     intro i
     split_ifs with hi
-    · exact (homCongrRight k (S := S) hi.some).finrank_eq.symm
+    · exact (LinearEquiv.homCongrRight k (S := S) hi.some).finrank_eq.symm
     · exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp hi)
   rw [hpi, Finset.sum_congr rfl fun i _ ↦ hval i]
   simp [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.sum_ite]
@@ -166,7 +166,7 @@ theorem _root_.LinearEquiv.finrank_linearMap_eq_natCard_mul_finrank_end {M : Typ
     (e : M ≃ₗ[A] ∀ i, N i) :
     Module.finrank k (S →ₗ[A] M) =
       Nat.card {i // Nonempty (S ≃ₗ[A] N i)} * Module.finrank k (Module.End A S) := by
-  rw [(homCongrRight k (S := S) e).finrank_eq,
+  rw [(LinearEquiv.homCongrRight k (S := S) e).finrank_eq,
     finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k)]
 
 end ArbitraryField
@@ -183,7 +183,7 @@ factors isomorphic to `S`. -/
 theorem finrank_linearMap_pi_eq_natCard :
     Module.finrank k (S →ₗ[A] ∀ i, N i) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
   rw [finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k),
-    finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
+    LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S), mul_one]
 
 /-- **The multiplicity theorem.**  If `M` decomposes as a finite direct sum of simple modules
 `N i`, then the dimension of the space of `A`-linear maps from a simple module `S` into `M` is
@@ -196,19 +196,19 @@ theorem finrank_linearMap_eq_natCard_of_linearEquiv_pi {M : Type*} [AddCommGroup
     [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     Module.finrank k (S →ₗ[A] M) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
-    finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
+    LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S), mul_one]
 
 omit [IsAlgClosed k] in
 /-- A module with a finite decomposition into simple modules has a finite-dimensional space of
 maps from a finite-dimensional simple module into it. -/
-theorem finiteDimensional_linearMap_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module k M]
-    [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
+theorem _root_.LinearEquiv.finiteDimensional_linearMap_of_pi {M : Type*} [AddCommGroup M]
+    [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     FiniteDimensional k (S →ₗ[A] M) := by
   have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
     finiteDimensional_linearMap_of_isSimpleModule
   have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
     Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k)
-  exact Module.Finite.equiv (homCongrRight k (S := S) e).symm
+  exact Module.Finite.equiv (LinearEquiv.homCongrRight k (S := S) e).symm
 
 omit [IsAlgClosed k] in
 /-- **A hom space detects a constituent.**  There is a nonzero `A`-linear map from the simple

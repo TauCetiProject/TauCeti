@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.CoefficientFormula
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.NumberTheory.MulChar.Lemmas
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 
 /-!
 # The conjugate form `f_ρ(τ) = conj (f (-conj τ))`
@@ -135,17 +136,6 @@ end TauCeti
 
 namespace Matrix.SpecialLinearGroup
 
-/-- The `J`-conjugate `!![a, -b; -c, d]` of `!![a, b; c, d] ∈ SL(2, ℤ)`. -/
-def conjJ (γ : SL(2, ℤ)) : SL(2, ℤ) :=
-  ⟨!![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1], by
-    rw [Matrix.det_fin_two_of]
-    linarith [Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ]⟩
-
-@[simp]
-lemma coe_conjJ (γ : SL(2, ℤ)) :
-    ((conjJ γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1] := by
-  rw [conjJ]
-
 /-- Conjugation by `J` realizes `conjJ`. -/
 lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) :
     UpperHalfPlane.J * mapGL ℝ γ * UpperHalfPlane.J = mapGL ℝ (conjJ γ) := by
@@ -204,10 +194,11 @@ private lemma slash_conj_eq {f : ℍ → ℂ}
       (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f) (g : ↥(Gamma0 N)) :
     (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
       (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
-  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ g) * J := by
+  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ (g : SL(2, ℤ))) * J := by
     rw [← J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
   rw [← SlashAction.slash_mul, hJg, SlashAction.slash_mul,
-    hf ⟨conjJ g, conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash, Gamma0Map_conjJ, sigma_J]
+    hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash,
+    Gamma0Map_conjJ, sigma_J]
   congr 1
   rw [Complex.conjCAE_apply, ← MulChar.ofUnitHom_coe, ← MulChar.ofUnitHom_coe,
     MulChar.ofUnitHom_inv_eq_star, MulChar.star_apply, RCLike.star_def]
@@ -225,11 +216,11 @@ modular form for any `𝒢'` conjugated into `𝒢` by `J = !![-1, 0; 0, 1]`. It
 by the determinant `-1` matrix `J`, so its `q`-expansion has the complex-conjugate
 coefficients (`ModularForm.qExpansion_conj`). -/
 def conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularForm 𝒢 k) : ModularForm 𝒢' k :=
-  _root_.ModularForm.ofLe hJ (_root_.ModularForm.translate f J)
+  _root_.ModularForm.restrict hJ (_root_.ModularForm.translate f J)
 
 lemma coe_conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     ⇑(conj hJ f) = ⇑f ∣[k] J := by
-  rw [conj, _root_.ModularForm.coe_ofLe, _root_.ModularForm.coe_translate]
+  rw [conj, _root_.ModularForm.coe_restrict, _root_.ModularForm.coe_translate]
 
 @[simp]
 lemma conj_apply (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularForm 𝒢 k) (τ : ℍ) :
@@ -307,11 +298,11 @@ namespace CuspForm
 /-- **The conjugate cusp form** `f_ρ(τ) = conj (f (-conj τ))`, the cusp-form counterpart of
 `ModularForm.conj`. -/
 def conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) : CuspForm 𝒢' k :=
-  _root_.CuspForm.ofLe hJ (_root_.CuspForm.translate f J)
+  _root_.CuspForm.restrict hJ (_root_.CuspForm.translate f J)
 
 lemma coe_conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(conj hJ f) = ⇑f ∣[k] J := by
-  rw [conj, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate]
+  rw [conj, _root_.CuspForm.coe_restrict, _root_.CuspForm.coe_translate]
 
 @[simp]
 lemma conj_apply (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) (τ : ℍ) :

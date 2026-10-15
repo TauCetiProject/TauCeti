@@ -38,12 +38,16 @@ commutation of two insertions, dual to Mathlib's `Fin.removeNth_removeNth_eq_swa
 * `TauCeti.SingularCube.cast`: reindexing along an equality of dimensions.
 * `TauCeti.SingularCube.point`: the `0`-cube at a point.
 * `TauCeti.SingularCube.face`: the face of a cube in a coordinate, at a parameter `t ∈ I`.
+* `TauCeti.SingularCube.degeneracy`: the cube obtained by forgetting a coordinate.
 * `TauCeti.SingularCube.IsDegenerateAt`, `TauCeti.SingularCube.IsDegenerate`: degeneracy at a
   coordinate, and degeneracy.
 
 ## Main results
 
 * `TauCeti.SingularCube.face_face`: the cubical identity.
+* `TauCeti.SingularCube.face_degeneracy_self`: a degeneracy followed by the matching face.
+* `TauCeti.SingularCube.isDegenerate_iff_exists_eq_degeneracy`: degeneracies exhaust the
+  degenerate cubes.
 * `TauCeti.SingularCube.isDegenerateAt_iff`, `TauCeti.SingularCube.isDegenerate_iff`,
   `TauCeti.SingularCube.IsDegenerateAt.apply_update`: the characterizations of degeneracy.
 * `TauCeti.SingularCube.face_eq_of_isDegenerateAt`, `TauCeti.SingularCube.isDegenerate_face_of_ne`:
@@ -84,6 +88,12 @@ def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
 @[simp]
 theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
   (rfl)
+
+/-- Every `0`-cube is the constant cube at its value. -/
+theorem eq_point (c : SingularCube X 0) : c = point (c fun i ↦ i.elim0) :=
+  ContinuousMap.ext fun t ↦ by
+    simp only [point_apply]
+    exact congrArg c (Subsingleton.elim _ _)
 
 @[simp]
 theorem cast_rfl {n : ℕ} (c : SingularCube X n) : cast rfl c = c := by
@@ -131,6 +141,62 @@ theorem face_cast {n m : ℕ} (h : n = m) (i : Fin (n + 1)) (t : I)
   subst h
   simp
 
+/-- The degeneracy along coordinate `i` forgets that coordinate before applying the cube. -/
+def degeneracy {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) : SingularCube X (n + 1) :=
+  s.comp (ContinuousMap.precomp (X := fun _ : Fin (n + 1) ↦ I) i.succAbove)
+
+/-- Evaluation of a degeneracy. -/
+@[simp]
+theorem degeneracy_apply {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1))
+    (x : Fin (n + 1) → I) : degeneracy s i x = s (Fin.removeNth i x) :=
+  (rfl)
+
+/-- Degeneracies commute with postcomposition by a continuous map. -/
+@[simp]
+theorem degeneracy_comp {n : ℕ} (f : C(X, Y)) (s : SingularCube X n) (i : Fin (n + 1)) :
+    degeneracy (f.comp s) i = f.comp (degeneracy s i) := by
+  ext x
+  simp only [degeneracy_apply, ContinuousMap.comp_apply]
+
+/-- A degeneracy followed by the face in the forgotten coordinate is the original cube. -/
+@[simp]
+theorem face_degeneracy_self {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) (t : I) :
+    face i t (degeneracy s i) = s := by
+  ext x
+  simp
+
+/-- Degeneracies commute with reindexing along an equality of dimensions. -/
+@[simp]
+theorem degeneracy_cast {n m : ℕ} (h : n = m) (s : SingularCube X n) (i : Fin (n + 1)) :
+    degeneracy (cast h s) (Fin.cast (congrArg Nat.succ h) i) =
+      cast (congrArg Nat.succ h) (degeneracy s i) := by
+  subst h
+  simp
+
+/-- Two degeneracies commute after reindexing the forgotten coordinates. -/
+theorem degeneracy_degeneracy {n : ℕ} (s : SingularCube X n)
+    (i : Fin (n + 1)) (j : Fin (n + 2)) :
+    degeneracy (degeneracy s i) j =
+      degeneracy (degeneracy s (i.predAbove j)) (j.succAbove i) := by
+  ext x
+  simp only [degeneracy_apply]
+  rw [Fin.removeNth_removeNth_eq_swap]
+
+/-- A face in a coordinate other than the forgotten coordinate commutes with degeneracy. -/
+@[simp]
+theorem face_degeneracy_succAbove {n : ℕ} (s : SingularCube X (n + 1))
+    (j : Fin (n + 2)) (i : Fin (n + 1)) (t : I) :
+    face (j.succAbove i) t (degeneracy s j) = degeneracy (face i t s) (i.predAbove j) := by
+  ext x
+  simp only [face_apply, degeneracy_apply]
+  congr 1
+  funext k
+  rcases Fin.eq_self_or_eq_succAbove i k with rfl | ⟨k, rfl⟩
+  · simp [Fin.removeNth]
+  · simp only [Fin.removeNth]
+    rw [← Fin.succAbove_succAbove_succAbove_predAbove j i k]
+    simp only [Fin.insertNth_apply_succAbove, Fin.removeNth]
+
 /-- A cube is **degenerate at the coordinate `i`** when it does not depend on it. -/
 def IsDegenerateAt {n : ℕ} (c : SingularCube X n) (i : Fin n) : Prop :=
   ∀ (x : Fin n → I) (t : I), c (Function.update x i t) = c x
@@ -156,6 +222,36 @@ theorem IsDegenerateAt.apply_update {n : ℕ} {c : SingularCube X n} {i : Fin n}
 theorem IsDegenerateAt.isDegenerate {n : ℕ} {c : SingularCube X n} {i : Fin n}
     (h : IsDegenerateAt c i) : IsDegenerate c :=
   ⟨i, h⟩
+
+/-- A degeneracy is independent of the coordinate it forgets. -/
+@[simp]
+theorem isDegenerateAt_degeneracy {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) :
+    IsDegenerateAt (degeneracy s i) i := by
+  intro x t
+  simp only [degeneracy_apply, Fin.removeNth_update]
+
+/-- Every coordinate-forgetting degeneracy is a degenerate singular cube. -/
+@[simp]
+theorem isDegenerate_degeneracy {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) :
+    IsDegenerate (degeneracy s i) :=
+  (isDegenerateAt_degeneracy s i).isDegenerate
+
+/-- The degenerate singular cubes are exactly the images of degeneracy operators. -/
+theorem isDegenerate_iff_exists_eq_degeneracy {n : ℕ} {s : SingularCube X (n + 1)} :
+    IsDegenerate s ↔ ∃ (i : Fin (n + 1)) (t : SingularCube X n), s = degeneracy t i := by
+  refine ⟨fun ⟨i, hi⟩ ↦ ⟨i, face i 0 s, ?_⟩, ?_⟩
+  · ext x
+    simp only [degeneracy_apply, face_apply]
+    rw [Fin.insertNth_removeNth]
+    exact (hi x 0).symm
+  · rintro ⟨i, t, rfl⟩
+    exact (isDegenerateAt_degeneracy t i).isDegenerate
+
+/-- A constant cube of positive dimension is degenerate. -/
+@[simp]
+theorem isDegenerate_const {n : ℕ} (x : X) :
+    IsDegenerate (ContinuousMap.const (Fin (n + 1) → I) x) :=
+  ⟨0, fun _ _ ↦ rfl⟩
 
 /-- A `0`-cube, a point, is never degenerate. -/
 theorem not_isDegenerate_zero (c : SingularCube X 0) : ¬ IsDegenerate c :=

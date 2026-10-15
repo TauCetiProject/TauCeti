@@ -50,8 +50,7 @@ private theorem tensorShearHom_comp_inv :
     change (toConv ((tensorShearHom (R := R) (H := H)).comp includeLeft))⁻¹ *
       toConv (tensorShearHom.comp includeRight) = toConv includeRight
     simpa only [tensorShearHom, lift_comp_includeLeft, lift_comp_includeRight',
-      Bialgebra.comulPoint_eq_include_mul, Bialgebra.TensorProduct.includeLeft_toAlgHom,
-      Bialgebra.TensorProduct.includeRight_toAlgHom] using
+      Bialgebra.comulPoint_eq_include_mul] using
       inv_mul_cancel_left (toConv (includeLeft : H →ₐ[R] H ⊗[R] H)) (toConv includeRight)
 
 private theorem tensorShearInv_comp_hom :
@@ -63,8 +62,7 @@ private theorem tensorShearInv_comp_hom :
     rw [tensorShearHom, lift_comp_includeRight',
       ← ofConv_toConv (Bialgebra.comulAlgHom R H), Bialgebra.comulPoint_eq_include_mul,
       AlgHom.comp_convMul_distrib]
-    simpa only [tensorShearInv, Bialgebra.TensorProduct.includeLeft_toAlgHom,
-      Bialgebra.TensorProduct.includeRight_toAlgHom, lift_comp_includeLeft,
+    simpa only [tensorShearInv, lift_comp_includeLeft,
       lift_comp_includeRight', toConv_ofConv] using congrArg ofConv
         (mul_inv_cancel_left (toConv (includeLeft : H →ₐ[R] H ⊗[R] H)) (toConv includeRight))
 
