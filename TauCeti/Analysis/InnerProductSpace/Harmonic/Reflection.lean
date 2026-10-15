@@ -197,8 +197,9 @@ theorem WeaklyHarmonicOn.sub_comp_normalReflection
   set φρ := reflectTestFunction hU φ
   have hφρ : (φρ : WithLp 2 (ℝ × E) → ℝ) = fun x => φ (ρ x) :=
     funext (reflectTestFunction_apply hU φ)
-  have hΔ (x : WithLp 2 (ℝ × E)) : Δ (φρ : WithLp 2 (ℝ × E) → ℝ) x = Δ (φ : _ → ℝ) (ρ x) :=
-    congrFun (laplacian_comp_affineIsometryEquiv_right ρ φ) x
+  have hΔ (x : WithLp 2 (ℝ × E)) : Δ (φρ : WithLp 2 (ℝ × E) → ℝ) x = Δ (φ : _ → ℝ) (ρ x) := by
+    rw [hφρ]
+    exact congrFun (laplacian_comp_affineIsometryEquiv_right ρ φ) x
   have hint (v : WithLp 2 (ℝ × E) → ℝ) (hv : LocallyIntegrableOn v U volume) (θ : 𝓓(U, ℝ)) :
       Integrable fun x => Δ (θ : WithLp 2 (ℝ × E) → ℝ) x • v x := by
     simpa only [TestFunction.laplacianCLM_apply] using
