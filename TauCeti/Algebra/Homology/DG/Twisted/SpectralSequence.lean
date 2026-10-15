@@ -42,40 +42,6 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
   (m : TwistingCocycle 𝒜 d P ind) (hM : IsDGRightModule h ℳ dM)
 
-/-- In degree `n`, the `p`-th filtration stage consists of the homogeneous families vanishing
-on generators of index greater than `p`. -/
-theorem mem_range_twistedIndexSubobject_arrow_f_iff (p n : ℤ)
-    (f : (m.twistedCochainComplex dM hM).X n) :
-    f ∈ LinearMap.range ((m.twistedIndexSubobject hM p).arrow.f n).hom ↔
-      ∀ x, p < ind x →
-        (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
-  rw [m.twistedIndexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
-    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
-  constructor
-  · rintro ⟨g, rfl⟩
-    rw [m.twistedIndexCochainComplexι_apply]
-    exact (mem_twistedIndexGrading_iff.mp
-      (m.twistedIndexCochainComplexXEquiv hM p n g).property).1
-  · intro hf
-    let g := twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f
-    have hg : (g : P → M) ∈ twistedIndexGrading ℳ ind p n :=
-      mem_twistedIndexGrading_iff.mpr ⟨hf, mem_twistedTotalGrading_iff.mp g.property⟩
-    refine ⟨(m.twistedIndexCochainComplexXEquiv hM p n).symm ⟨g, hg⟩, ?_⟩
-    apply (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
-    apply Subtype.ext
-    simp only [m.twistedIndexCochainComplexι_apply, LinearEquiv.apply_symm_apply]
-    rfl
-
-/-- The range characterization of a filtration stage with range membership unfolded. -/
-@[simp]
-theorem exists_twistedIndexSubobject_arrow_f_apply_eq_iff (p n : ℤ)
-    (f : (m.twistedCochainComplex dM hM).X n) :
-    (∃ g, ((m.twistedIndexSubobject hM p).arrow.f n).hom g = f) ↔
-      ∀ x, p < ind x →
-        (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 :=
-  LinearMap.mem_range.symm.trans (m.mem_range_twistedIndexSubobject_arrow_f_iff dM hM p n f)
-
 /-- The **index spectral sequence** of the twisted complex of a twisting cocycle: the spectral
 sequence of its index filtration.  On its first page, numbered `2`, the object at `(p, q)` is the
 cohomology `H^{p+q}(F_{q+1} / F_q)` of a graded piece of the index filtration

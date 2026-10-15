@@ -472,6 +472,40 @@ theorem TwistingCocycle.twistedIndexSubobject_eq_mk (p : ℤ) :
     m.twistedIndexSubobject hM p = Subobject.mk (m.twistedIndexCochainComplexι hM p) := by
   rfl
 
+/-- In degree `n`, the `p`-th filtration stage consists of the homogeneous families vanishing
+on generators of index greater than `p`. -/
+theorem TwistingCocycle.mem_range_twistedIndexSubobject_arrow_f_iff (p n : ℤ)
+    (f : (m.twistedCochainComplex dM hM).X n) :
+    f ∈ LinearMap.range ((m.twistedIndexSubobject hM p).arrow.f n).hom ↔
+      ∀ x, p < ind x →
+        (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
+  rw [m.twistedIndexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
+    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
+  constructor
+  · rintro ⟨g, rfl⟩
+    rw [m.twistedIndexCochainComplexι_apply]
+    exact (mem_twistedIndexGrading_iff.mp
+      (m.twistedIndexCochainComplexXEquiv hM p n g).property).1
+  · intro hf
+    let g := twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f
+    have hg : (g : P → M) ∈ twistedIndexGrading ℳ ind p n :=
+      mem_twistedIndexGrading_iff.mpr ⟨hf, mem_twistedTotalGrading_iff.mp g.property⟩
+    refine ⟨(m.twistedIndexCochainComplexXEquiv hM p n).symm ⟨g, hg⟩, ?_⟩
+    apply (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
+    apply Subtype.ext
+    simp only [m.twistedIndexCochainComplexι_apply, LinearEquiv.apply_symm_apply]
+    rfl
+
+/-- The range characterization of a filtration stage with range membership unfolded. -/
+@[simp]
+theorem TwistingCocycle.exists_twistedIndexSubobject_arrow_f_apply_eq_iff (p n : ℤ)
+    (f : (m.twistedCochainComplex dM hM).X n) :
+    (∃ g, ((m.twistedIndexSubobject hM p).arrow.f n).hom g = f) ↔
+      ∀ x, p < ind x →
+        (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 :=
+  LinearMap.mem_range.symm.trans (m.mem_range_twistedIndexSubobject_arrow_f_iff hM p n f)
+
 /-- The subobjects of the twisted complex form an increasing filtration. -/
 theorem TwistingCocycle.twistedIndexSubobject_mono :
     Monotone (m.twistedIndexSubobject hM) := fun _ _ hpq ↦
