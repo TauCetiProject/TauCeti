@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Matrix.Scaling
+public import TauCeti.Data.Matrix.Scaling.Basic
 public import TauCeti.InformationTheory.KullbackLeibler.Finite
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
 

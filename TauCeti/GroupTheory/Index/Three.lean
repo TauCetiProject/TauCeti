@@ -17,9 +17,10 @@ one of the left cosets `H`, `g H` and `g⁻¹ H`, then `H` has index three: the 
 rules out each coincidence `H = g H`, `H = g⁻¹ H` and `g H = g⁻¹ H`, so the classes of `1`, `g`
 and `g⁻¹` enumerate `G ⧸ H` without repetition.
 
-For example, at Tate's reduction symbol `IV` the points of an elliptic curve with singular
-reduction reduce to one of the two roots of a residue quadratic, and negation exchanges the roots;
-the subgroup of points with nonsingular reduction then has index three.
+For example, at Tate's reduction symbol `IV*` the points of an elliptic curve with singular
+reduction fall into two classes, one for each root of a residue quadratic, and negation exchanges
+the classes. So if some point has singular reduction, the subgroup of points with nonsingular
+reduction has index three; otherwise it is the whole group.
 
 ## Main results
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelationModule.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelationModule.Extension
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 public import Mathlib.RepresentationTheory.Rep.Iso
 
 /-!

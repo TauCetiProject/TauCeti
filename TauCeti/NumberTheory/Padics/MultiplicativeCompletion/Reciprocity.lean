@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ClassModule
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.ArtinMap
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.ProfiniteCompletion
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 public import Mathlib.RepresentationTheory.Rep.Iso
 
 /-!
@@ -190,6 +190,8 @@ private theorem padicCompletionUnitsEquivAbelianizationProP_of_smul
       (g : AbsoluteGaloisGroup K ⧸ (galoisSubgroup K L ι).toSubgroup) •
         padicCompletionUnitsEquivAbelianizationProP p K L ι
           (padicCompletionUnitsOf p L x) := by
+  have : Nontrivial ℚ_[p] := (Padic.normedField p).toField.toNontrivial
+  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
   set τ := ι.restrictNormalHom g
   set e := conjAlgebraicClosure K L ι g
   have he_symm (c : L) : e.symm (algebraMap L (AlgebraicClosure L) c) =

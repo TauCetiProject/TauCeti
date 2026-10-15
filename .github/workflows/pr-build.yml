@@ -141,12 +141,25 @@ jobs:
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       # --- Trusted setup: no PR code runs until the sandboxed build phase ---
+      # This is the commit that supplied the pull_request_target / merge_group workflow. All
+      # executable audit, watchdog, cache, and bump-validation tooling comes from here.
+      - name: Checkout workflow-pinned trusted build tooling
+        if: ${{ env.INFRA != '1' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: gate
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Resolve PR head
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
           BORS_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
           BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
+          BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
+          BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}
           REQUESTED_PR: ${{ inputs.pr || github.event.client_payload.pr }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
@@ -174,9 +187,15 @@ jobs:
             [[ "$SHA" =~ ^[0-9a-f]{40}$ && "$BASE_REF" =~ ^[0-9a-f]{40}$ ]] || {
               echo "::error::bors dispatch did not contain two commit SHAs"; exit 1;
             }
-            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/staging" --jq .object.sha)
+            # Train batches use immutable generation refs so a queued predecessor
+            # survives publication of its successor. Legacy serial batches still
+            # use the mutable staging ref. The bors authority selects the ref.
+            # Payload fields never choose a ref, URL, executable or authority.
+            STAGING_REF=$(python3 gate/scripts/bors_train_identity.py \
+              --head "$SHA" --base "$BASE_REF" --batch-id "$BORS_BATCH_ID" --branch "$BORS_BASE_REF")
+            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/$STAGING_REF" --jq .object.sha)
             [ "$STAGING_SHA" = "$SHA" ] || {
-              echo "::error::bors staging moved since this dispatch"; exit 1;
+              echo "::error::bors candidate ref differs from this dispatch"; exit 1;
             }
             relation=$(gh api "repos/${{ github.repository }}/compare/$BASE_REF...$SHA" --jq .status)
             [ "$relation" = ahead ] || {
@@ -240,17 +259,6 @@ jobs:
             echo "author=$AUTHOR"
           } >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO (author=${AUTHOR:-merge-group}, status -> $STATUS_SHA, bump delta vs merge-base $MB)"
-
-      # This is the commit that supplied the pull_request_target / merge_group workflow. All
-      # executable audit, watchdog, cache, and bump-validation tooling comes from here.
-      - name: Checkout workflow-pinned trusted build tooling
-        if: ${{ env.INFRA != '1' }}
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.workflow_sha }}
-          path: gate
-          persist-credentials: false
-          fetch-depth: 1
 
       # Full history is intentional. lake cache get walks ancestors until it reaches a published
       # main commit, then Lake's input hashes invalidate only changed modules and their downstream
@@ -1397,10 +1405,16 @@ jobs:
   # The merge queue's required `build` status is posted only here. In a configured installation,
   # green therefore means both that the combined commit passed every sandboxed audit and that a
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
+  # Priority zero puts terminal reporting ahead of compiler jobs (priority one). Run-specific
+  # assignment prevents other runs from taking its runner. No candidate checkout, privileged
+  # container or persistent cache is needed here. See Namespace's job-ordering documentation.
   finalize-merge-group-build:
     needs: [sandboxed-build, publish-merge-group-cache]
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 5
     permissions:
       statuses: write
     env:
