@@ -523,7 +523,8 @@ noncomputable def bigradedChainMinusGrading (R : Type*) [CommRing R] :
 /-- The pieces of the bundled chain grading are the bigraded chain pieces. -/
 @[simp]
 theorem bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ) :
-    (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g := rfl
+    (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g := by
+  rw [bigradedChainMinusGrading]
 
 /-- The unblocked grid differential is homogeneous of bidegree `(-1, 0)`. -/
 theorem isHomogeneous_unblockedDifferential_bigradedChainMinusGrading
