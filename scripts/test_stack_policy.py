@@ -510,6 +510,17 @@ class ProseTests(unittest.TestCase):
         self.assertEqual(sp.rendered_parents("<p>Dependencies: #12, #13</p>"), {12, 13})
         self.assertEqual(sp.rendered_parents("<p>This PR is\nstacked on #12</p>"), {12})
 
+    def test_parent_reference_list_cannot_absorb_supersession_clause(self):
+        for separator in ("<br>\n", "\n", ", ", "; "):
+            with self.subTest(separator=separator):
+                self.assertEqual(sp.rendered_parents(
+                    "<p>Depends on #12" + separator + "Supersedes #13</p>"), {12})
+        self.assertEqual(sp.rendered_parents("<p>Depends on #12, #13 and #14</p>"), {12, 13, 14})
+
+    def test_rendered_literal_markup_is_not_stripped_again(self):
+        self.assertEqual(sp.rendered_parents("<p>`Template:` Stacked on #12</p>"), set())
+        self.assertEqual(sp.rendered_parents("<p>&lt;!-- x --&gt; Stacked on #12</p>"), set())
+
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
                       "Stacked on #1", False)

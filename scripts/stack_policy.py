@@ -242,20 +242,23 @@ def explicit_parents(body, *, current_only=False):
     A mention never authorizes closure. Reject negatives, fenced/inline code, quoted
     lines, HTML comments and foreign URLs (including their trailing issue numbers).
     """
-    body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+    if not current_only:
+        body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
     result = set()
     fenced = False
     for line in body.splitlines():
-        if re.match(r"\s*(```|~~~)", line):
+        if not current_only and re.match(r"\s*(```|~~~)", line):
             fenced = not fenced
             continue
         if fenced or line.lstrip().startswith(">") or line.startswith("    "):
             continue
-        line = re.sub(r"(`+).*?\1", "", line)
-        line = re.sub(r'''"[^"\n]*"|“[^”\n]*”|(?<!\w)'[^'\n]*'(?!\w)''', "", line)
-        line = re.sub(r"https://github\.com/([^\s/)]+/[^\s/)]+)/(?:pull|issues)/(\d+)",
-                      lambda m: f"#{m[2]}" if m[1].lower() == REPO.lower() else "", line)
-        line = re.sub(r"https?://\S+", "", line)
+        if not current_only:
+            line = re.sub(r"(`+).*?\1", "", line)
+            line = re.sub(r'''"[^"\n]*"|“[^”\n]*”|(?<!\w)'[^'\n]*'(?!\w)''', "", line)
+        if not current_only:
+            line = re.sub(r"https://github\.com/([^\s/)]+/[^\s/)]+)/(?:pull|issues)/(\d+)",
+                          lambda m: f"#{m[2]}" if m[1].lower() == REPO.lower() else "", line)
+            line = re.sub(r"https?://\S+", "", line)
         for sentence in re.split(r"(?<=[.!?])\s+", line):
             if re.search(r"\b(not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t)\b", sentence, re.I):
                 continue
@@ -272,9 +275,16 @@ def explicit_parents(body, *, current_only=False):
                 # Identities must belong to this particular declaration. Other
                 # sentences may discuss superseded source or mathematical uses.
                 tail = sentence[claim.end():].split(";", 1)[0]
-                if not re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#", tail, re.I):
+                first = re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#([1-9]\d*)\b", tail, re.I)
+                if not first:
                     continue
-                result.update(int(n) for n in re.findall(r"(?<![\w/])#([1-9]\d*)\b", tail))
+                result.add(int(first[1]))
+                tail = tail[first.end():]
+                # Only a contiguous reference list belongs to this declaration.
+                # Later clauses (e.g. supersedes #N) cannot acquire parenthood.
+                while match := re.match(r"[\s,\[\]()/&+]*(?:(?:and|or)\s+)?#([1-9]\d*)\b", tail, re.I):
+                    result.add(int(match[1]))
+                    tail = tail[match.end():]
     return result
 
 
