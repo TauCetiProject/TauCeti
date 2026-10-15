@@ -26,6 +26,8 @@ while its regularity and involutivity are predicates on that family.
 
 ## Main definitions
 
+* `TauCeti.distributionModelFiber`: a tangent-space fibre of a distribution on a normed space,
+  transported to the model vector space.
 * `TauCeti.IsDistributionFrameOn I n D X U`: the vector fields `X i` form a `C^n` local frame of
   `D` on `U`.
 * `TauCeti.IsContMDiffDistribution I n k D`: `D` is a `C^n` distribution of rank `k`.
@@ -78,6 +80,36 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n m : ℕ∞ω} {k : ℕ} {ι : Type*}
+
+section ModelFiber
+
+/-- The fibre of a distribution on a normed space, transported from the tangent space to the model
+vector space by its canonical identification. -/
+noncomputable def distributionModelFiber
+    (D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)) (p : E) : Submodule 𝕜 E :=
+  (D p).map (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearMap
+
+/-- Membership in `distributionModelFiber`, expressed in the original tangent-space fibre. -/
+@[simp]
+theorem mem_distributionModelFiber
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} {p v : E} :
+    v ∈ distributionModelFiber D p ↔
+      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).symm v ∈ D p := by
+  unfold distributionModelFiber
+  convert Submodule.mem_map_equiv (p := D p)
+    (e := (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearEquiv) (x := v) using 1
+  rfl
+
+/-- On a normed space, transporting a distribution fibre through the canonical tangent-model
+identification leaves the submodule unchanged. Mathlib implements this identification as the
+identity linear map, so the result reduces to `Submodule.map_id`. -/
+theorem distributionModelFiber_eq
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) :
+    distributionModelFiber D p = D p := by
+  unfold distributionModelFiber
+  exact Submodule.map_id (D p)
+
+end ModelFiber
 
 section Frame
 

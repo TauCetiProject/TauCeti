@@ -22,7 +22,6 @@ written locally as a graph distribution.
 
 ## Main results
 
-* TauCeti.distributionModelFiber: a tangent-space fibre transported to the model vector space.
 * TauCeti.IsContMDiffDistribution.exists_splitCoordinates: product coordinates in which the
   pulled-back distribution has horizontal base fibre.
 
@@ -39,44 +38,9 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-section ModelFiber
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- The fibre of a distribution on a normed space, transported from the tangent space to the model
-vector space by its canonical identification. -/
-noncomputable def distributionModelFiber
-    (D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)) (p : E) : Submodule 𝕜 E :=
-  (D p).map (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearMap
-
-/-- Membership in distributionModelFiber expressed in the original tangent-space fibre. -/
-@[simp]
-theorem mem_distributionModelFiber
-    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} {p v : E} :
-    v ∈ distributionModelFiber D p ↔
-      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).symm v ∈ D p := by
-  constructor
-  · rintro ⟨u, hu, rfl⟩
-    simpa using hu
-  · intro hv
-    exact ⟨_, hv, (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).apply_symm_apply v⟩
-
-private theorem distributionModelFiber_eq
-    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) :
-    distributionModelFiber D p = D p := by
-  apply le_antisymm
-  · rintro _ ⟨v, hv, rfl⟩
-    exact hv
-  · intro v hv
-    exact ⟨v, hv, rfl⟩
-
-end ModelFiber
-
 section Splitting
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
 
 /-- A smooth involutive distribution on a finite-dimensional normed space admits linear product
@@ -128,9 +92,15 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {k : ℕ}
     exact hD.comap_mfderiv e.toDiffeomorph (by simp)
   have hinv' : IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' := by
     rw [hD'eq]
-    exact (e.toDiffeomorph.isInvolutiveDistribution_comap_mfderiv_iff (by simp) D).2 hinv
+    let eω : Diffeomorph 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
+        (distributionModelFiber D p × T) E ω :=
+      { contMDiff_toFun := e.contDiff.contMDiff
+        contMDiff_invFun := e.symm.contDiff.contMDiff
+        toEquiv := e.toLinearEquiv.toEquiv }
+    exact (eω.isInvolutiveDistribution_comap_mfderiv_iff le_top D).2 hinv
   have hfinrank : Module.finrank 𝕜 (distributionModelFiber D p) = k := by
-    rw [distributionModelFiber, LinearEquiv.finrank_map_eq, hD.finrank_eq p]
+    exact (congrArg (fun S : Submodule 𝕜 E => Module.finrank 𝕜 S)
+      (distributionModelFiber_eq p)).trans (hD.finrank_eq p)
   refine ⟨hfinrank, hsmooth, hinv', ?_⟩
   ext q
   rw [mem_distributionModelFiber]
@@ -142,12 +112,10 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {k : ℕ}
           ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).symm q) =
         (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.toDiffeomorph (e.symm p))).symm
           (e q) := by
-    rw [mfderiv_eq_fderiv, ContinuousLinearEquiv.coe_toDiffeomorph,
-      e.hasFDerivAt.fderiv]
-    simp only [ContinuousLinearMap.comp_apply]
-    have hq := (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).apply_symm_apply q
-    exact congrArg
-      (fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e (e.symm p))).symm (e x)) hq
+    rw [ContinuousLinearEquiv.coe_toDiffeomorph, e.mfderiv_eq]
+    -- On model normed spaces, `fromTangentSpace` is Mathlib's definitional identity.
+    change e q = e q
+    rfl
   -- Unfold the two model-fibre memberships to expose their canonical tangent-space
   -- identifications; no interface lemma rewrites both dependent fibres at once.
   change mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
