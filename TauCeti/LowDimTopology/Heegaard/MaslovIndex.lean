@@ -20,8 +20,9 @@ Lipshitz's index formula computes the expected dimension of the moduli space of 
 disks in a Whitney class `φ` from its domain `D` alone:
 `μ(φ) = e(D) + n_x(D) + n_y(D)`. This file defines the right-hand side for the abstract region
 incidence data `TauCeti.HeegaardRegionSystem` and proves that it is additive under juxtaposition
-of domains, a property needed for a relative grading once independence of the choice of domain is
-established.
+of domains. Together with the Maslov index two of the whole surface, this makes the relative
+grading `μ(D) - 2 n_z(D)` independent of the choice of domain
+(`TauCeti.LowDimTopology.Heegaard.RelativeGrading`).
 
 Every intersection point `p` is a corner of four regions (with repetition): the regions on the
 two sides of the `α`-arc ending at `p` and of the `α`-arc starting at `p`. The *point measure*
@@ -59,6 +60,9 @@ number of `∂D ∩ α` with `∂E ∩ β`, computed once along the `α`-curves 
   under juxtaposition.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.maslovIndex_self_eq`: a domain whose boundary is
   a sum of whole curves has the same Maslov index at any two generators joined by a domain.
+* `TauCeti.HeegaardRegionSystem.maslovIndex_one`: the Maslov index of the whole surface is
+  `∑ χ(R) - #(α ∩ β) + 2n`, so it is two for a closed surface of genus `n`
+  (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two`).
 
 ## References
 
@@ -137,6 +141,18 @@ def generatorPointMeasure (x : H.Generator) : (Region → ℤ) →+ ℚ where
 theorem generatorPointMeasure_apply (x : H.Generator) (D : Region → ℤ) :
     H.generatorPointMeasure x D = ∑ i, H.pointMeasure D (H.point x i) :=
   (rfl)
+
+/-- The whole surface has multiplicity one at all four corners of every point. -/
+@[simp]
+theorem pointMeasure_one : H.pointMeasure 1 = 1 := by
+  ext p
+  simp only [pointMeasure_apply, Pi.one_apply, Int.cast_one]
+  norm_num
+
+/-- The point measure of the whole surface at a generator is the number of its points. -/
+theorem generatorPointMeasure_one (x : H.Generator) : H.generatorPointMeasure x 1 = n := by
+  simp only [generatorPointMeasure_apply, pointMeasure_one, Pi.one_apply, sum_const, card_univ,
+    Fintype.card_fin, nsmul_eq_mul, mul_one]
 
 /-- The point measure of a generator is the pairing of its `0`-chain with the point
 measures. -/
@@ -287,6 +303,13 @@ theorem eulerMeasure_eq_sub_sum_pointMeasure (χ : Region → ℤ) (D : Region �
   · exact sum_congr rfl fun r _ => mul_comm _ _
   · exact sum_congr rfl fun r _ => by ring
 
+/-- The Euler measure of the whole surface is `∑ χ(R) - #(α ∩ β)`, the Euler characteristic of
+the surface assembled from the regions, the arcs and the intersection points. -/
+theorem eulerMeasure_one (χ : Region → ℤ) :
+    H.eulerMeasure χ 1 = ∑ r, (χ r : ℚ) - Fintype.card Point := by
+  simp only [eulerMeasure_eq_sub_sum_pointMeasure, pointMeasure_one, Pi.one_apply, Int.cast_one,
+    mul_one, sum_const, card_univ, nsmul_eq_mul]
+
 /-- The combinatorial Maslov index `μ(D) = e(D) + n_x(D) + n_y(D)` of a domain `D` from the
 generator `x` to the generator `y`, for the Euler characteristics `χ` of the regions. -/
 def maslovIndex (χ : Region → ℤ) (x y : H.Generator) : (Region → ℤ) →+ ℚ :=
@@ -297,6 +320,12 @@ theorem maslovIndex_apply (χ : Region → ℤ) (x y : H.Generator) (D : Region 
     H.maslovIndex χ x y D =
       H.eulerMeasure χ D + H.generatorPointMeasure x D + H.generatorPointMeasure y D :=
   (rfl)
+
+/-- The Maslov index of the whole surface is `∑ χ(R) - #(α ∩ β) + 2n`, at any two generators. -/
+theorem maslovIndex_one (χ : Region → ℤ) (x y : H.Generator) :
+    H.maslovIndex χ x y 1 = ∑ r, (χ r : ℚ) - Fintype.card Point + 2 * n := by
+  rw [maslovIndex_apply, eulerMeasure_one, generatorPointMeasure_one, generatorPointMeasure_one]
+  ring
 
 /-- Reversing a domain negates its Maslov index. -/
 theorem maslovIndex_neg (χ : Region → ℤ) (x y : H.Generator) (D : Region → ℤ) :
@@ -321,6 +350,22 @@ theorem IsDomainBetween.maslovIndex_self_eq (χ : Region → ℤ) {P : Region �
     (hD : H.IsDomainBetween x y D) (hP : H.IsDomainBetween y y P) :
     H.maslovIndex χ x x P = H.maslovIndex χ y y P := by
   simp [hD.generatorPointMeasure_eq hP]
+
+/-- If every periodic domain has Maslov index zero at `x`, then the same holds at every generator
+`y` joined to `x` by a domain. -/
+theorem IsDomainBetween.forall_mem_periodicDomains_maslovIndex_eq_zero (χ : Region → ℤ)
+    (hD : H.IsDomainBetween x y D) (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) :
+    ∀ P ∈ H.periodicDomains, H.maslovIndex χ y y P = 0 := fun P hPmem => by
+  rw [← hD.maslovIndex_self_eq χ (isDomainBetween_self_iff.mpr hPmem).1, hP P hPmem]
+
+/-- When the region Euler characteristics `χ` are those of a closed surface of genus `n`, that is
+`∑ χ(R) - #(α ∩ β) = 2 - 2n`, the whole surface has Maslov index two. -/
+theorem maslovIndex_one_eq_two {χ : Region → ℤ}
+    (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ)) (x y : H.Generator) :
+    H.maslovIndex χ x y 1 = 2 := by
+  have hχ' : ∑ r, (χ r : ℚ) - Fintype.card Point = 2 - 2 * n := by exact_mod_cast hχ
+  rw [maslovIndex_one]
+  linarith
 
 end EulerMeasure
 
