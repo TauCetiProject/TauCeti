@@ -74,6 +74,7 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   let := continuousSMul_galoisClassModuleAction p K L j
   intro x
   unfold explicitH2EquivPadicCompletionUnits freeProfiniteGroup.explicitH2EquivRelationModule
+  rw [_root_.groupCohomology.functor_map]
   apply explicitH2AddEquivGroupCohomology_explicitCoeff2
   intro m
   change ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm
@@ -137,12 +138,11 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
   let F : B ⟶ C := ofModuleMonoidAlgebra.map (ModuleCat.ofHom β)
   have hF : ∀ x, χ (f.toAdditive x) = F.hom (ψ x) := by
     intro x
-    change ofMul (eR.symm (f x.toMul)) = β (eL x)
-    dsimp only [f, eR]
-    rw [relationModuleToAbelianizationProPEquivariant_apply,
-      relationModuleToAbelianizationProP_apply, ContinuousMulEquiv.symm_apply_apply]
-    rfl
-  have := groupCohomology.isIso_map_of_surjective_of_projective_ker β hβ 1
+    simp [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv, f,
+      relationModuleToAbelianizationProP_apply]
+  haveI : IsIso (_root_.groupCohomology.map (MonoidHom.id (L ≃ₐ[K] L)) F 2) := by
+    simpa only [_root_.groupCohomology.functor_map, F] using
+      (groupCohomology.isIso_map_of_surjective_of_projective_ker β hβ 1)
   exact explicitCoeff2_bijective_of_isIso
     (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF
 

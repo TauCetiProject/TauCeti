@@ -264,6 +264,7 @@ open CategoryTheory ContCohomology _root_.Rep in
 /-- Explicit second cohomology of the arithmetic pro-`p` class module, with the finite
 Galois group's conjugation action, is second cohomology of the completed-units representation.
 The comparison reads coefficient values through the inverse of local reciprocity. -/
+@[expose]
 def explicitH2EquivPadicCompletionUnits
     (j : L →ₐ[K] SeparableClosure K)
     [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]

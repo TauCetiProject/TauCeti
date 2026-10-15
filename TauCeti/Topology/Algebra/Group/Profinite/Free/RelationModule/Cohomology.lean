@@ -40,6 +40,7 @@ variable (p : ℕ) [Fact p.Prime] {G ι : Type} [Group G] [Finite G]
 
 /-- Explicit second cohomology of the pro-`p` relation group, with the presented group's
 conjugation action, is second cohomology of its integral relation-module representation. -/
+@[expose]
 def explicitH2EquivRelationModule :
     letI := presentationClassModuleAction p (g := g)
       (by rw [hg, Subgroup.coe_top]; exact dense_univ)
