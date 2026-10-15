@@ -191,8 +191,12 @@ theorem mpullback_mextDeriv {f : M → M'} (hf : ContMDiff I I' 2 f)
     hphi_g hg (by norm_num) I.uniqueDiffOn
     (I.range_subset_closure_interior (mem_range_self _)) (mem_range_self _) hpre
   ext v
+  -- `MDifferentiableAt.mfderiv` writes `mfderiv I I' f x` as the flat chart derivative of `g`
+  -- conjugated by `tangentSpaceCastModel`, the identification of `TangentSpace I x` with `E`
+  -- (and of `TangentSpace I' (f x)` with `E'`). Both casts are the identity on vectors, since
+  -- tangent fibres are model spaces by definition, so `rfl` closes the remaining goal.
   rw [mpullback_apply, hright, hnatural, hgx, mextDeriv_def,
-    (hf x).mdifferentiableAt two_ne_zero |>.mfderiv_abuse]
+    (hf x).mdifferentiableAt two_ne_zero |>.mfderiv]
   rfl
 
 end TauCeti
