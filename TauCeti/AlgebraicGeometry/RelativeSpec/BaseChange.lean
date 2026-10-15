@@ -80,12 +80,6 @@ theorem baseChangeAffineSchemeOver_obj_hom (f : Y ⟶ X) (V : AffineSchemeOver X
     ((baseChangeAffineSchemeOver f).obj V).hom = pullback.snd V.hom f :=
   (rfl)
 
-/-- The two projections from a base-changed affine scheme form a pullback square. -/
-theorem baseChangeAffineSchemeOver_isPullback (f : Y ⟶ X) (V : AffineSchemeOver X) :
-    IsPullback (pullback.fst V.hom f) ((baseChangeAffineSchemeOver f).obj V).hom V.hom f := by
-  rw [baseChangeAffineSchemeOver_obj_hom]
-  exact IsPullback.of_hasPullback V.hom f
-
 /-- Base change sends a morphism over `X` to the induced morphism of fibre products. -/
 theorem baseChangeAffineSchemeOver_map_left (f : Y ⟶ X) {V W : AffineSchemeOver X}
     (g : V ⟶ W) :
