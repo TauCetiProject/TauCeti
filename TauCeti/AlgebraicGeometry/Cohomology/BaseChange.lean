@@ -64,7 +64,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits TopologicalSpace AlgebraicGeometry TensorProduct Module
+open CategoryTheory Limits TopologicalSpace AlgebraicGeometry TensorProduct Module Opposite
 open AlgebraicGeometry.Scheme.Modules TauCeti.AlgebraicGeometry.Scheme.Modules
 
 universe u
@@ -76,40 +76,19 @@ section FlatBaseChange
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
 
 /-- The `R`-algebra structure on the sections of the structure sheaf over an open `W` of a scheme
-over `R`: the base ring maps to global functions, which restrict to `W`. -/
+over `R`, given by `Scheme.baseRingToStructurePresheaf`. -/
 private abbrev sectionsAlgebra (W : X.Opens) : Algebra R Γ(X, W) :=
-  ((X.presheaf.map W.leTop.op).hom.comp (baseRingToGlobalSections R X)).toAlgebra
+  ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
 
 attribute [local instance] sectionsAlgebra
 
 variable {R X}
 
-/-- The base ring maps to sections over `W` through `R ≅ Γ(Spec R, ⊤)` and the structure
-morphism. -/
-private lemma algebraMap_sections_eq (W : X.Opens) :
-    CommRingCat.ofHom (algebraMap R Γ(X, W)) = (Scheme.ΓSpecIso (.of R)).inv ≫
-      (X ↘ Spec (.of R)).appLE ⊤ W (le_top.trans_eq (Scheme.Hom.preimage_top _).symm) := by
-  ext r
-  simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, baseRingToGlobalSections_apply,
-    CommRingCat.hom_ofHom, CommRingCat.hom_comp]
-  rfl
-
 /-- On global sections, the base-ring algebra structure is `baseRingToGlobalSections`. -/
 private lemma algebraMap_top (r : R) : algebraMap R Γ(X, ⊤) r = baseRingToGlobalSections R X r := by
-  rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app,
     show (TopologicalSpace.Opens.leTop (⊤ : X.Opens)).op = 𝟙 _ from rfl, X.presheaf.map_id]
   rfl
-
-/-- Restriction of sections of the structure sheaf is `R`-linear. -/
-private def restrictLinear {V W : X.Opens} (h : V ≤ W) : Γ(X, W) →ₗ[R] Γ(X, V) where
-  toFun := X.presheaf.map (homOfLE h).op
-  map_add' := map_add _
-  map_smul' r s := by
-    simp only [Algebra.smul_def, map_mul, RingHom.id_apply]
-    congr 1
-    simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, ← CommRingCat.comp_apply,
-      ← Functor.map_comp]
-    rfl
 
 variable {R' : Type u} [CommRing R'] [Algebra R R']
   {Y : Scheme.{u}} [Y.Over (Spec (.of R'))] {g : Y ⟶ X}
@@ -128,11 +107,12 @@ include H in
 private lemma comm_sections {W : X.Opens} {W' : Y.Opens} (hW : W' ≤ g ⁻¹ᵁ W) :
     CommRingCat.ofHom (algebraMap R Γ(X, W)) ≫ g.appLE W W' hW =
       CommRingCat.ofHom (algebraMap R R') ≫ CommRingCat.ofHom (algebraMap R' Γ(Y, W')) := by
-  rw [algebraMap_sections_eq, algebraMap_sections_eq, Category.assoc,
-    Scheme.Hom.appLE_comp_appLE]
-  refine (congrArg _ ((appLE_eq_of_eq H.w _ _ _
+  rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+    CommRingCat.ofHom_hom, Scheme.baseRingToStructurePresheaf_app_eq_appLE R X,
+    Scheme.baseRingToStructurePresheaf_app_eq_appLE R' Y, Category.assoc]
+  refine (congrArg _ ((Scheme.Hom.appLE_comp_appLE _ _ _ _ _ _ _).trans ((appLE_eq_of_eq H.w _ _ _
     (le_top.trans_eq (Scheme.Hom.preimage_top _).symm)).trans
-    (Scheme.Hom.comp_appLE _ _ _ _ (le_top.trans_eq (Scheme.Hom.preimage_top _).symm)))).trans ?_
+    (Scheme.Hom.comp_appLE _ _ _ _ (le_top.trans_eq (Scheme.Hom.preimage_top _).symm))))).trans ?_
   -- The open `Spec.map φ ⁻¹ᵁ ⊤` is `⊤` only up to definitional unfolding.
   exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
     (Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap R R'))).symm).trans
@@ -152,10 +132,14 @@ private lemma isPushout_sections [Module.Flat R R'] {W : X.Opens} (hW : IsCompac
     (isAffineOpen_top _) (isAffineOpen_top _) hW hW'
   refine ((isIso_pushoutSection_iff ..).mp h).of_iso (Scheme.ΓSpecIso _) (Iso.refl _)
     (Scheme.ΓSpecIso _) (Iso.refl _) ?_ ?_ ?_ ?_
-  · simp [algebraMap_sections_eq]
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+      Category.comp_id]
   · exact Category.comp_id _ |>.trans (Scheme.ΓSpecIso_naturality _)
   · simp
-  · simp [algebraMap_sections_eq]
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+      Category.comp_id]
 
 /-- Pulling back sections of the structure sheaf along the base change `g`, as an `R`-linear map
 to the sections of `Y`, which are an `R`-module through `R → R'`. -/
@@ -198,55 +182,41 @@ private def trivialCohomologyLinearEquiv (i : ℕ) :
     (N := structureModule X) (eqToIso (InvertibleSheaf.trivial_obj X) ≪≫
       TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf) i
 
-section Difference
+section TwoOpens
 
-variable {S : Type u} [CommRing S] {Z : Scheme.{u}} [Z.Over (Spec (.of S))] (U V : Z.Opens)
+section Instances
 
-/-- The difference of restrictions `(s, t) ↦ s|_{U ⊓ V} - t|_{U ⊓ V}` of sections of the
-structure sheaf, linear over the base ring. -/
-private def ringDifference : (Γ(Z, U) × Γ(Z, V)) →ₗ[S] Γ(Z, U ⊓ V) :=
-  (restrictLinear inf_le_left).comp (LinearMap.fst _ _ _) -
-    (restrictLinear inf_le_right).comp (LinearMap.snd _ _ _)
+variable {S : Type u} [CommRing S] {Z : Scheme.{u}} [Z.Over (Spec (.of S))]
 
-/-- The ring-level difference map is the Mayer–Vietoris difference map of the structure
-sheaf. -/
-private lemma ringDifference_eq (x : Γ(Z, U) × Γ(Z, V)) :
-    ringDifference (S := S) U V x =
-      mayerVietorisSectionsDifferenceLinear (structureModule Z) U V x :=
-  -- The sections of the structure sheaf as a module are the sections of the structure sheaf.
-  ((mayerVietorisSectionsDifferenceLinear_apply (structureModule Z) U V x.1 x.2).trans
-    (mayerVietorisSectionsDifference_apply (structureModule Z) U V x.1 x.2)).symm
+/-- The sections of the structure sheaf as a module carry the base-ring structure of the ring of
+sections, so that the Mayer–Vietoris maps restrict to the base ring. -/
+private abbrev structureModuleSectionsModule (W : Z.Opens) : Module S Γ(structureModule Z, W) :=
+  inferInstanceAs (Module S Γ(Z, W))
 
-variable (hUV : U ⊔ V = ⊤)
-include hUV
+attribute [local instance] structureModuleSectionsModule
 
-/-- The Mayer–Vietoris boundary of the structure sheaf, linear over the base ring. -/
-private def boundaryBase :
-    Γ(Z, U ⊓ V) →ₗ[S] Cohomology (structureModule Z) 1 where
-  toFun := mayerVietorisBoundaryLinear (structureModule Z) U V hUV
-  map_add' := map_add _
-  map_smul' r s :=
-    (mayerVietorisBoundaryLinear (structureModule Z) U V hUV).map_smul
-      (baseRingToGlobalSections S Z r) s
+/-- Global functions act on sections of the structure sheaf compatibly with the base ring. -/
+private lemma isScalarTower_structureModule_sections (W : Z.Opens) :
+    IsScalarTower S Γ(Z, ⊤) Γ(structureModule Z, W) :=
+  .of_algebraMap_smul fun r x ↦ by
+    rw [sectionsGlobal_smul]
+    change Z.presheaf.map W.leTop.op (algebraMap S Γ(Z, ⊤) r) * (show Γ(Z, W) from x) =
+      algebraMap S Γ(Z, W) r * (show Γ(Z, W) from x)
+    congr 1
+    simp only [RingHom.algebraMap_toAlgebra]
+    rw [← CommRingCat.comp_apply, ← (Z.baseRingToStructurePresheaf S).naturality W.leTop.op]
+    rfl
 
-private lemma exact_ringDifference_boundaryBase :
-    Function.Exact (ringDifference (S := S) U V) (boundaryBase (S := S) U V hUV) := by
-  intro s
-  -- Both maps are the Mayer–Vietoris maps of the structure sheaf, restricted to the base ring.
-  refine LinearMap.mem_ker.symm.trans ((Iff.of_eq
-    congr(s ∈ $(ker_mayerVietorisBoundaryLinear (structureModule Z) U V hUV))).trans ?_)
-  exact ⟨fun ⟨x, hx⟩ ↦ ⟨x, (ringDifference_eq U V x).trans hx⟩,
-    fun ⟨x, hx⟩ ↦ ⟨x, (ringDifference_eq U V x).symm.trans hx⟩⟩
+/-- Global functions act on cohomology compatibly with the base ring. -/
+private lemma isScalarTower_cohomology (M : Z.Modules) (i : ℕ) :
+    IsScalarTower S Γ(Z, ⊤) (Cohomology M i) :=
+  .of_algebraMap_smul fun r x ↦ by
+    rw [algebraMap_top, base_smul_cohomology]
 
-private lemma boundaryBase_surjective
-    (hU : Subsingleton (cohomologyOn (structureModule Z) 1 U))
-    (hV : Subsingleton (cohomologyOn (structureModule Z) 1 V)) :
-    Function.Surjective (boundaryBase (S := S) U V hUV) :=
-  mayerVietorisBoundaryLinear_surjective _ U V hUV hU hV
+end Instances
 
-omit hUV
-
-end Difference
+attribute [local instance] structureModuleSectionsModule isScalarTower_structureModule_sections
+  isScalarTower_cohomology
 
 /-- Restricting and then pulling back sections agrees with pulling back and then restricting. -/
 private lemma appLE_restrict {W₁ W₂ : X.Opens} {W₁' W₂' : Y.Opens} (h₁ : W₁' ≤ g ⁻¹ᵁ W₁)
@@ -283,23 +253,40 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
     IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hUV' := preimage_sup_eq_top (g := g) U V hUV
   have hUVc : IsCompact ((U ⊓ V : X.Opens) : Set X) := hUc.inter_of_isOpen hVc U.2 V.2
-  -- The exact rows `Γ(U) × Γ(V) → Γ(U ⊓ V) → H¹ → 0` on `X` and on `Y`.
-  let δ := boundaryBase (S := R) U V hUV
-  let δ' := boundaryBase (S := R') (g ⁻¹ᵁ U) (g ⁻¹ᵁ V) hUV'
-  have hδ := boundaryBase_surjective (S := R) U V hUV hU hV
-  have hex := exact_ringDifference_boundaryBase (S := R) U V hUV
-  have hex' := exact_ringDifference_boundaryBase (S := R') (g ⁻¹ᵁ U) (g ⁻¹ᵁ V) hUV'
+  -- The exact rows `Γ(U) × Γ(V) → Γ(U ⊓ V) → H¹ → 0` on `X` and on `Y`: the Mayer–Vietoris maps
+  -- of the structure sheaf, restricted to the base ring.
+  let d : (Γ(X, U) × Γ(X, V)) →ₗ[R] Γ(X, U ⊓ V) :=
+    (mayerVietorisSectionsDifferenceLinear (structureModule X) U V).restrictScalars R
+  let d' : (Γ(Y, g ⁻¹ᵁ U) × Γ(Y, g ⁻¹ᵁ V)) →ₗ[R'] Γ(Y, g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V) :=
+    (mayerVietorisSectionsDifferenceLinear (structureModule Y) _ _).restrictScalars R'
+  let δ : Γ(X, U ⊓ V) →ₗ[R] Cohomology (structureModule X) 1 :=
+    (mayerVietorisBoundaryLinear (structureModule X) U V hUV).restrictScalars R
+  let δ' : Γ(Y, g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V) →ₗ[R'] Cohomology (structureModule Y) 1 :=
+    (mayerVietorisBoundaryLinear (structureModule Y) _ _ hUV').restrictScalars R'
+  have hδ : Function.Surjective δ := mayerVietorisBoundaryLinear_surjective _ U V hUV hU hV
+  have hδ' : Function.Surjective δ' := mayerVietorisBoundaryLinear_surjective _ _ _ hUV' hU' hV'
+  have hex : Function.Exact d δ :=
+    (LinearMap.exact_iff (f := mayerVietorisSectionsDifferenceLinear (structureModule X) U V)
+      (g := mayerVietorisBoundaryLinear _ U V hUV)).mpr (ker_mayerVietorisBoundaryLinear _ U V hUV)
+  have hex' : Function.Exact d' δ' :=
+    (LinearMap.exact_iff (f := mayerVietorisSectionsDifferenceLinear (structureModule Y) _ _)
+      (g := mayerVietorisBoundaryLinear _ _ _ hUV')).mpr
+        (ker_mayerVietorisBoundaryLinear _ _ _ hUV')
   -- The vertical maps pull back sections along `g`.
   let σU := sectionsBaseChange H (W := U) (W' := g ⁻¹ᵁ U) le_rfl
   let σV := sectionsBaseChange H (W := V) (W' := g ⁻¹ᵁ V) le_rfl
   let σUV := sectionsBaseChange H (W := U ⊓ V) (W' := g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V)
     (Scheme.Hom.preimage_inf (f := g)).ge
-  have comm₁ : σUV.comp (ringDifference U V) =
-      ((ringDifference (S := R') (g ⁻¹ᵁ U) (g ⁻¹ᵁ V)).restrictScalars R).comp
-        (σU.prodMap σV) := by
+  have comm₁ : σUV.comp d = (d'.restrictScalars R).comp (σU.prodMap σV) := by
     refine LinearMap.ext fun ⟨s, t⟩ ↦ ?_
-    exact (map_sub _ _ _).trans (congrArg₂ (· - ·) (appLE_restrict le_rfl _ _ _ s)
-      (appLE_restrict le_rfl _ _ _ t))
+    -- Both rows are differences of restrictions, which commute with pulling back along `g`.
+    have hX := (mayerVietorisSectionsDifferenceLinear_apply (structureModule X) U V s t).trans
+      (mayerVietorisSectionsDifference_apply (structureModule X) U V s t)
+    have hY := (mayerVietorisSectionsDifferenceLinear_apply (structureModule Y) (g ⁻¹ᵁ U)
+      (g ⁻¹ᵁ V) (σU s) (σV t)).trans (mayerVietorisSectionsDifference_apply _ _ _ _ _)
+    exact (congrArg σUV hX).trans (((map_sub _ _ _).trans (congrArg₂ (· - ·)
+      (appLE_restrict le_rfl _ _ inf_le_left s) (appLE_restrict le_rfl _ _ inf_le_right t))).trans
+        hY.symm)
   -- The induced map on first cohomology.
   have hker : LinearMap.ker δ ≤ LinearMap.ker ((δ'.restrictScalars R).comp σUV) := by
     intro x hx
@@ -314,8 +301,7 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
   have hσUV := isBaseChange_sectionsBaseChange H hUVc (.of_quasiSeparatedSpace _)
     (W' := g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V) (Scheme.Hom.preimage_inf g).symm
   have hb₁ := IsBaseChange.prodMap (S := R') σU σV hσU hσV
-  have key := IsBaseChange.of_right_exact R' _ _ φ comm₁ comm₂ hb₁ hσUV hex hδ hex'
-    (boundaryBase_surjective (S := R') _ _ hUV' hU' hV')
+  have key := IsBaseChange.of_right_exact R' _ _ φ comm₁ comm₂ hb₁ hσUV hex hδ hex' hδ'
   exact ⟨key.equiv⟩
 
 include H in
@@ -346,6 +332,8 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_trivial [Module.Flat R R']
     (e.trans (trivialCohomologyLinearEquiv R' Y 1).symm)⟩
 
 end CohomologyOne
+
+end TwoOpens
 
 variable (R) (X) in
 /-- The global sections of the structure sheaf as a module are its ring of global functions, as
