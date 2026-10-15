@@ -171,11 +171,9 @@ theorem exists_translate_a₃_eq_zero_and_a₄_eq_zero {R : Type*} [CommRing R]
     refine ha₁.mul_right_eq_zero.1 ?_
     linear_combination hr' - 2 * e₄
 
-/-- **A centred nonsplit node of even order has a solution reducing to it.** This is
-`WeierstrassCurve.exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots` for an equation
-with `a₃ = a₄ = 0` and `b₂` a unit. Then `Δ = −a₆ (b₂³ + 432 a₆)`, so `a₆ = z² A` with `A` a unit,
-and the solution is `(z X, z Y)` for a solution `(X, Y)` of `Y² + a₁ X Y − a₂ X² − z X³ = A`,
-lifted from a point of the residue conic `Y² + a₁ X Y − a₂ X² = A`. -/
+/-- Over a Henselian local ring with finite residue field, suppose `a₃ = a₄ = 0`, `a₆ ∈ 𝔪`,
+`b₂` is a unit, and the tangent quadratic has no residue-field root. If the discriminant is
+associated to a square, the Weierstrass equation has a solution with both coordinates in `𝔪`. -/
 theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero {R : Type*}
     [CommRing R] [HenselianLocalRing R] [Finite (ResidueField R)] (W : WeierstrassCurve R)
     (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0) (h₆ : W.a₆ ∈ maximalIdeal R) (hb₂ : IsUnit W.b₂)

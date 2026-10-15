@@ -50,8 +50,8 @@ square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ 
   residue field lifts to a root with the same residue.
 * `TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal`: Hensel's lemma for a polynomial
   that need not be monic.
-* `TauCeti.HenselianLocalRing.exists_conic_eq`: a residue point on a smooth conic perturbed
-  by a cubic in the maximal ideal lifts to a solution over the ring.
+* `TauCeti.HenselianLocalRing.exists_conic_eq`: a smooth conic perturbed by a cubic in the
+  maximal ideal has a solution over the ring whenever its residue equation is solvable.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
 
@@ -198,9 +198,8 @@ theorem exists_isRoot_sub_mem_maximalIdeal {R : Type*} [CommRing R] [HenselianLo
   obtain ⟨b, hb, hgb⟩ := exists_mem_maximalIdeal_eval_eq_zero g hc hu
   refine ⟨b + a₀, by simpa [IsRoot, hg, eval_comp] using hgb, by rwa [add_sub_cancel_right]⟩
 
-/-- **Lifting a point of the residue conic.** Over a Henselian local ring, let `b₂ = a₁² + 4 a₂`
-and `A` be units and `z ∈ 𝔪`. A solution modulo `𝔪` of `Y² + a₁ X Y − a₂ X² − z X³ = A` lifts to
-a solution: the reduction is a smooth conic, so a partial derivative is a unit at the solution. -/
+/-- Over a Henselian local ring, suppose `a₁² + 4 a₂` and `A` are units and `z ∈ 𝔪`.
+If `Y² + a₁ X Y − a₂ X² − z X³ = A` is solvable modulo `𝔪`, it has a solution in the ring. -/
 theorem exists_conic_eq {R : Type*} [CommRing R] [HenselianLocalRing R]
     {a₁ a₂ z A X₀ Y₀ : R} (hb₂ : IsUnit (a₁ ^ 2 + 4 * a₂)) (hz : z ∈ maximalIdeal R)
     (hA : IsUnit A) (h₀ : Y₀ ^ 2 + a₁ * X₀ * Y₀ - a₂ * X₀ ^ 2 - z * X₀ ^ 3 - A ∈ maximalIdeal R) :
