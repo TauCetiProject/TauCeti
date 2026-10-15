@@ -306,13 +306,13 @@ class MergeTimelinesTest(unittest.TestCase):
             (out/'ci-fleet-72h.svg').write_text('preserved fleet')
             (out/'ci-duration.svg').write_text('preserved daily')
             errors = fleet.generate(self.db, out, self.until)
-            self.assertEqual(len(errors), 2)
+            self.assertEqual(len(errors), 3)
             self.assertEqual((out/'ci-fleet-72h.svg').read_text(), 'preserved fleet')
             self.assertEqual((out/'ci-duration.svg').read_text(), 'preserved daily')
             ET.parse(out/'ci-queue-size.svg'); ET.parse(out/'ci-bors-staging.svg')
             status = json.loads((out/'ci-freshness.json').read_text())['groups']
             self.assertEqual({g: s['status'] for g, s in status.items()},
-                             {'fleet': 'stale', 'daily': 'stale', 'queue': 'updated', 'staging': 'updated'})
+                             {'fleet': 'stale', 'daily': 'stale', 'details': 'stale', 'queue': 'updated', 'staging': 'updated'})
             self.assertIn('ci-freshness.json', generated_assets.GENERATED_ASSETS)
 
     def test_missing_staging_schema_does_not_block_queue(self):
@@ -362,6 +362,22 @@ class MergeTimelinesTest(unittest.TestCase):
             fleet.main(["--db", str(dbpath), "--until", "2026-10-08T12:00:00Z", "--out-dir", directory])
             for name in daily.ASSET_NAMES:
                 ET.parse(Path(directory) / name)
+            # Fresh basic jobs cannot overwrite charts that need still-pending
+            # failure/phase enrichment.
+            before = (Path(directory)/'ci-failures.svg').read_bytes()
+            with sqlite3.connect(dbpath) as disk:
+                disk.executescript("""
+                    CREATE TABLE stream_coverage (repo TEXT,stream TEXT,since TEXT,complete_to TEXT);
+                    INSERT INTO stream_coverage VALUES ('TauCeti','build-jobs','2026-10-01','2026-10-08T12:00:00Z');
+                    INSERT INTO stream_coverage VALUES ('TauCeti','details','2026-10-01','2026-10-02');
+                """)
+                fleet.generate(disk,Path(directory),self.until)
+            status=json.loads((Path(directory)/'ci-freshness.json').read_text())['groups']
+            self.assertEqual(status['daily']['status'],'updated')
+            self.assertEqual(status['details']['status'],'stale')
+            self.assertEqual((Path(directory)/'ci-failures.svg').read_bytes(),before)
+            self.assertEqual(status['details']['published_through'],'2026-10-08T12:00:00Z')
+            self.assertEqual(status['details']['source_through'],'2026-10-02T00:00:00Z')
 
 
 if __name__ == "__main__":

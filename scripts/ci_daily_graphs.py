@@ -540,7 +540,7 @@ def merge_charts(db: sqlite3.Connection, until: float, *, queue_until=None, stag
     return result
 
 
-def charts(db: sqlite3.Connection, until: float, other_jobs_until=None) -> dict[str, str]:
+def charts(db: sqlite3.Connection, until: float, other_jobs_until=None, assets=None) -> dict[str, str]:
     """All daily charts, through the last complete UTC day before `until`."""
     last = (dt.datetime.fromtimestamp(until, UTC) - dt.timedelta(days=1)).date()
     first_row = db.execute(f"SELECT MIN(created_at) FROM runs WHERE workflow = '{PR_BUILD}'").fetchone()[0]
@@ -614,4 +614,4 @@ def charts(db: sqlite3.Connection, until: float, other_jobs_until=None) -> dict[
         "PR builds on GitHub-hosted runners", f"Share of PR builds the runner picker sent to GitHub rather "
         f"than Namespace; {span}", days, [("share on GitHub", PALETTE[2], share)], "share",
         fmt=lambda v: f"{v:.0%}")
-    return out
+    return {name: svg for name, svg in out.items() if assets is None or name in assets}

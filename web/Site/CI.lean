@@ -167,7 +167,9 @@ every GitHub Actions run in the organisation: the commits each build tested, the
 queue and run times of its jobs, and why failed builds failed. Its database is published as a
 release there for anyone who wants to ask their own questions. Each chart uses its own source
 coverage: fleet charts require organisation-wide job history, daily build charts require Tau Ceti
-build jobs, and the merge timelines use the latest observations and recorded runs. A backlog in
+build jobs, failure and phase charts require detailed enrichment, and the merge timelines use
+the latest observations and recorded runs. Explicitly unavailable records are reported as source
+gaps. A backlog in
 one stream does not stop the others. The [freshness report](static/ci-freshness.json) gives each
 group's cutoff and reports preserved fallbacks when that source is stale.
 

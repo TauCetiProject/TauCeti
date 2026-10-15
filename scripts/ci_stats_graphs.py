@@ -364,14 +364,18 @@ def chart_cutoffs(db, now, override=None):
         covered = {}
     fleet = min(covered.values()) if covered else None
     builds = one("SELECT MAX(complete_to) FROM stream_coverage WHERE repo='TauCeti' AND stream='build-jobs'")
+    details = one("SELECT MAX(complete_to) FROM stream_coverage WHERE repo='TauCeti' AND stream='details'")
     queue = one('SELECT MAX(observed_at) FROM merge_observations')
     inventory = one("SELECT MAX(complete_to) FROM stream_coverage WHERE repo='TauCeti' AND stream='inventory'")
+    if inventory is None:
+        inventory = covered.get('TauCeti')
     recorded = one("SELECT MAX(created_at) FROM runs WHERE repo='TauCeti' AND workflow=?",
                    (ci_daily_graphs.PR_BUILD,))
-    staging = max((t for t in (inventory, recorded) if t is not None), default=None)
+    staging = max((t for t in (inventory, None if recorded is None else recorded+0.001) if t is not None), default=None)
     ends = {'fleet': fleet, 'daily': builds if builds is not None else covered.get('TauCeti'),
+            'details': details if details is not None else covered.get('TauCeti'),
             'queue': None if queue is None else queue+0.001,
-            'staging': None if staging is None else staging+0.001}
+            'staging': staging}
     return {name: override if override is not None else min(now, end) if end is not None else None
             for name, end in ends.items()}
 
@@ -385,9 +389,15 @@ def generate(db, out, now, override=None):
         annotations = [(ts(a), text) for a, text in db.execute('SELECT at,text FROM annotations')]
     except sqlite3.OperationalError:
         pass
+    try:
+        previous = json.loads((out/'ci-freshness.json').read_text()).get('groups', {})
+    except (OSError,ValueError):
+        previous = {}
+    detail_assets = {'ci-build-phases.svg','ci-failures.svg'}
     status, errors = {}, []
     for group, until in ends.items():
-        status[group] = {'through': iso(until) if until is not None else None}
+        status[group] = {'source_through': iso(until) if until is not None else None,
+                         'published_through': previous.get(group,{}).get('published_through')}
         if until is None or override is None and now-until > MAX_STALENESS:
             reason = 'no coverage' if until is None else f'coverage older than {MAX_STALENESS//3600} hours'
             status[group].update(status='stale', reason=reason, files=[])
@@ -405,11 +415,27 @@ def generate(db, out, now, override=None):
                     subtitle = (f'{step_min}-minute bins, data through {fmt_time(end, True)}; '
                                 'all TauCetiProject repositories')
                     files[f'ci-fleet-{name}.svg'] = render(data, title, subtitle, annotations)
-            elif group == 'daily':
-                files = ci_daily_graphs.charts(db, until, other_jobs_until=ends['fleet'] or 0)
+            elif group in ('daily','details'):
+                assets = detail_assets if group == 'details' else set(ci_daily_graphs.ASSET_NAMES)-detail_assets
+                files = ci_daily_graphs.charts(db, until, other_jobs_until=ends['fleet'] or 0, assets=assets)
             else:
                 files = ci_daily_graphs.merge_charts(db, until, include_queue=group == 'queue',
                                                      include_staging=group == 'staging')
+            gaps = 0
+            if group in ('fleet','daily','details'):
+                try:
+                    streams = ('details','jobs','attempt') if group == 'details' else ('jobs','attempt')
+                    placeholders = ','.join('?' for _ in streams)
+                    gaps = db.execute(f"""SELECT COUNT(*) FROM collection_gaps WHERE stream IN ({placeholders})
+                        AND created_at>=? AND created_at<? AND (?='fleet' OR repo='TauCeti')""",
+                        (*streams,iso(until-(30 if group == 'fleet' else 90)*86400),iso(until),group)).fetchone()[0]
+                except sqlite3.OperationalError:
+                    pass
+                if gaps:
+                    for name, svg in files.items():
+                        height = float(ET.fromstring(svg).attrib['viewBox'].split()[3])
+                        note = f'<text class="note" x="64" y="{height-8:g}">Source gaps: {gaps} unavailable job, attempt or detail records</text>'
+                        files[name] = svg.replace('</svg>',note+'</svg>')
             for svg in files.values():
                 ET.fromstring(svg)
             # A failed group never replaces another group's good data. Parse
@@ -418,7 +444,7 @@ def generate(db, out, now, override=None):
                 (out/name).write_text(svg)
             if group == 'fleet':
                 (out/'ci-stats.json').write_text(json.dumps(stats, separators=(',', ':')))
-            status[group].update(status='updated', files=list(files))
+            status[group].update(status='updated', files=list(files), published_through=iso(until), gaps=gaps)
         except Exception as e:
             status[group].update(status='error', reason=str(e), files=[])
             errors.append(f'{group}: {e}')
