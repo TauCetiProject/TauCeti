@@ -137,8 +137,8 @@ theorem _root_.HasFDerivWithinAt.pairedWedge
       ((pairedWedgeCLM (μ x) (φ x)).comp ψ' +
         ((pairedWedgeCLM (μ x)).comp φ' +
           ((pairedWedgeCLM (E := E) (k := k) (l := l)).comp μ').flip
-            (𝕜 := ℝ) (𝕜₂ := ℝ) (𝕜₃ := ℝ) (E := X) (F := E [⋀^Fin k]→L[ℝ] F₁)
-            (G := (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] E [⋀^Fin (k + l)]→L[ℝ] F₃)
+            (𝕜 := ℝ) (𝕜₂ := ℝ) (𝕜₃ := ℝ) (E' := X) (F' := E [⋀^Fin k]→L[ℝ] F₁)
+            (G' := (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] E [⋀^Fin (k + l)]→L[ℝ] F₃)
             (φ x)).flip (ψ x)) s x := by
   -- Cache canonical operator-space instances for the nested continuous-linear-map calculus.
   let : NormedAddCommGroup
@@ -169,8 +169,8 @@ theorem _root_.HasFDerivAt.pairedWedge
       ((pairedWedgeCLM (μ x) (φ x)).comp ψ' +
         ((pairedWedgeCLM (μ x)).comp φ' +
           ((pairedWedgeCLM (E := E) (k := k) (l := l)).comp μ').flip
-            (𝕜 := ℝ) (𝕜₂ := ℝ) (𝕜₃ := ℝ) (E := X) (F := E [⋀^Fin k]→L[ℝ] F₁)
-            (G := (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] E [⋀^Fin (k + l)]→L[ℝ] F₃)
+            (𝕜 := ℝ) (𝕜₂ := ℝ) (𝕜₃ := ℝ) (E' := X) (F' := E [⋀^Fin k]→L[ℝ] F₁)
+            (G' := (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] E [⋀^Fin (k + l)]→L[ℝ] F₃)
             (φ x)).flip (ψ x)) x := by
   -- Cache canonical operator-space instances for the nested continuous-linear-map calculus.
   let : NormedAddCommGroup

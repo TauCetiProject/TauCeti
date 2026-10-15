@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Henselian
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 -- Proof-only: the chord through two points with singular reduction.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.IndexTwo
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Two
 -- Proof-only: `E₀(F) = W(F)` when no integral solution is divisible by `ϖ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: index three from three covering cosets.

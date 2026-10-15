@@ -103,11 +103,11 @@ private theorem of_isOpen_of_smul_kummerCoeff_eq_self (hn : IsUnit (n : K))
     refine ⟨E, ?_, by rw [IntermediateField.fieldRange_val, hE]⟩
     rw [← InfiniteGalois.isOpen_iff_finite, hE]
     exact hV
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
   -- A primitive `n`th root of unity of `Kˢ` is fixed by `V`, so it lies in `E`.
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) n
   have hζE : ζ ∈ E := by
     rw [← InfiniteGalois.fixedField_fixingSubgroup E, IntermediateField.mem_fixedField_iff]
     intro σ hσ

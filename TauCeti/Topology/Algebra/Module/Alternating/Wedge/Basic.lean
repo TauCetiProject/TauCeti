@@ -172,7 +172,7 @@ theorem pairedWedge_toAlternatingMap {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[
         (ContinuousAlternatingMap.wedgeWithUnalternated mu phi psi).alternatization := by
   ext v
   simp only [ContinuousAlternatingMap.coe_toAlternatingMap, pairedWedge_apply,
-    AlternatingMap.smul_apply, MultilinearMap.alternatization_apply,
+    _root_.smul_apply, MultilinearMap.alternatization_apply,
     MultilinearMap.domDomCongr_apply, ContinuousAlternatingMap.wedgeWithUnalternated_apply]
 
 variable {E' : Type*} [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']

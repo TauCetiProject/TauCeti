@@ -56,7 +56,10 @@ base field here need not be, so the pairing below takes its values in the top fi
   has an `n`-th root in `E`.
 * `TauCeti.exists_eq_algebraMap_mul_of_pow_eq`: over a domain containing the `n`-th roots of
   unity, two elements of a field extension with the same `n`-th power differ by a unit from the
-  base.
+  base; so if `a` has an `n`-th root in a `K`-algebra `R` mapping to `M`, every `n`-th root of
+  `a` in `M` comes from `R` (`TauCeti.mem_range_algebraMap_of_pow_eq`).
+* `TauCeti.adjoin_pow_eq_algebraMap_kummerField_eq_top`: `K(Δ^{1/n})` is generated over `K` by
+  the `n`-th roots of elements of `Δ` that it contains.
 * `AlgEquiv.apply_div_self_eq_of_pow_eq`, `AlgEquiv.apply_div_self_eq_mul_of_pow_eq`,
   `AlgEquiv.mul_apply_div_self_of_pow_eq`: the Kummer pairing `σ y / y` only depends on `y ^ n`,
   and it is multiplicative in `y ^ n` and in `σ`.
@@ -83,7 +86,7 @@ variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ} [NeZero n] [HasEnoughRo
 of `K` with the same `n`-th power differ by a unit from `K`. -/
 theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (h : x ^ n = y ^ n) :
     ∃ z : Kˣ, x = algebraMap K F z * y := by
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have hK : (primitiveRoots n K).Nonempty := ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩
   obtain ⟨ξ, rfl⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).1 h.symm
   refine ⟨((rootsOfUnityEquivOfPrimitiveRoots (FaithfulSMul.algebraMap_injective K F) hK).symm
@@ -147,6 +150,17 @@ theorem _root_.IntermediateField.exists_mem_pow_eq_iff_of_pow_eq
   rw [hc]
   exact L.mul_mem (L.algebraMap_mem c) hβL
 
+/-- If the base field contains the `n`-th roots of unity and `a` has an `n`-th root in a
+`K`-algebra `R` mapping to `M`, then every `n`-th root of `a` in `M` comes from `R`. -/
+theorem mem_range_algebraMap_of_pow_eq {K R M : Type*} [Field K] [CommRing R] [Field M]
+    [Algebra K R] [Algebra K M] [Algebra R M] [IsScalarTower K R M] {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] {a : K} {x : M} (hx : x ^ n = algebraMap K M a) {c : R}
+    (hc : c ^ n = algebraMap K R a) :
+    x ∈ (algebraMap R M).range := by
+  obtain ⟨z, hz⟩ := exists_eq_algebraMap_mul_of_pow_eq (K := K) (x := x) (y := algebraMap R M c)
+    (by rw [hx, ← map_pow, hc, ← IsScalarTower.algebraMap_apply])
+  exact ⟨algebraMap K R z * c, by rw [map_mul, ← IsScalarTower.algebraMap_apply, hz]⟩
+
 variable {K : Type*} [Field K] (E : Type*) [Field E] [Algebra K E] (n : ℕ)
 
 /-- The **Kummer field** `K(Δ^{1/n})`: the subfield of `E` generated over `K` by the `n`-th roots
@@ -166,6 +180,21 @@ theorem kummerField_def :
 theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
     (hx : x ^ n = algebraMap K E a) : x ∈ kummerField E n Δ :=
   subset_adjoin _ _ ⟨a, ha, hx⟩
+
+/-- The Kummer field `K(Δ^{1/n})` is generated over `K` by the `n`-th roots of the elements of `Δ`
+that it contains, viewed as elements of `K(Δ^{1/n})` itself. -/
+theorem adjoin_pow_eq_algebraMap_kummerField_eq_top :
+    adjoin K {y : kummerField E n Δ | ∃ a ∈ Δ, y ^ n = algebraMap K _ a} = ⊤ := by
+  apply lift_injective
+  rw [lift_adjoin, lift_top]
+  refine Eq.trans ?_ kummerField_def.symm
+  congr 1
+  ext x
+  constructor
+  · rintro ⟨y, ⟨a, ha, hy⟩, rfl⟩
+    exact ⟨a, ha, by simpa using congrArg Subtype.val hy⟩
+  · rintro ⟨a, ha, hx⟩
+    exact ⟨⟨x, mem_kummerField_of_pow_eq ha hx⟩, ⟨a, ha, Subtype.ext (by simpa using hx)⟩, rfl⟩
 
 /-- `K(Δ^{1/n})` is the smallest subfield containing the `n`-th roots of the elements of `Δ`. -/
 theorem kummerField_le_iff {F : IntermediateField K E} :
@@ -220,7 +249,7 @@ Each generator is a root of a separable binomial `Xⁿ - a` that splits in `K(Δ
 automorphism multiplies each generator by a constant, so any two automorphisms commute. -/
 instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) := by
   set M := kummerField E n Δ
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have : NeZero (n : K) := hζ.neZero'
   have hdvd {x : E} {a : Kˣ} (hx : x ^ n = algebraMap K E a) :
       minpoly K x ∣ (X : K[X]) ^ n - C (a : K) :=

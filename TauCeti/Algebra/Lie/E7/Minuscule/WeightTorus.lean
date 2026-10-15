@@ -120,8 +120,9 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordinateMap
     (q : HopfAlgebra.points (R := R)
       (H := (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 7))).obj) A) :
     GeneralLinear.pointsMulEquiv 56
-        ((CommHopfAlgCat.mapPointsFunctor (coordinateMap R)).app A
-          ((CommHopfAlgCat.mapPointsFunctor (weightTorusToBaseChangeCoordinateMap R)).app A q)) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R)).app A
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (weightTorusToBaseChangeCoordinateMap R)).app A
+            q)) =
       (weightTorusPoints A (SplitTorus.pointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin 56) A) := by
   -- The categorical weight-torus point formula requires the base ring and torus index in one
@@ -131,10 +132,10 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordinateMap
     rw [← _root_.CommHopfAlgCat.hom_comp,
       coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  have hp := CommHopfAlgCat.mapPointsFunctor_app_apply
+  have hp := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
     (coordinateMap R ≫ weightTorusToBaseChangeCoordinateMap R) A q
   simp only [_root_.CommHopfAlgCat.hom_comp, hcomp] at hp
-  have he := (CommHopfAlgCat.mapPointsFunctor_comp_app_apply
+  have he := (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply
     (coordinateMap R) (weightTorusToBaseChangeCoordinateMap R) A q).symm.trans hp
   apply Units.ext
   rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
@@ -153,7 +154,7 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal (A : CommAlgCat.{v} 
     (CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R)
         (weightTorusDefiningIdeal R) A).map
         ((GeneralLinear.pointsMulEquiv (R := R) 56).toMonoidHom.comp
-          ((CommHopfAlgCat.mapPointsFunctor (coordinateMap R)).app A).hom) =
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R)).app A).hom) =
       ((weightTorusPoints A).range).map (points A).subtype := by
   rw [weightTorusDefiningIdeal,
     HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor]

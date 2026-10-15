@@ -115,7 +115,7 @@ variable {ω : L ≃ₗ⁅ℚ⁆ L} {x : Weight ℚ H L → L} (hx : IsChevalley
 /-- The integral root--coroot span read as an additive subgroup of `L`. This is the shape in which
 the Kostant root-subgroup machinery takes its admissible lattice. It is an abbreviation so the
 finite and free module instances on `rootCorootSpan x` remain available to consumers. -/
-abbrev chevalleyLatticeAddSubgroup (x : Weight ℚ H L → L) : AddSubgroup L :=
+noncomputable abbrev chevalleyLatticeAddSubgroup (x : Weight ℚ H L → L) : AddSubgroup L :=
   (rootCorootSpan x).toAddSubgroup
 
 /-- The additive-subgroup form of the Chevalley lattice agrees with the underlying additive

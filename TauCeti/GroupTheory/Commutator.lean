@@ -13,12 +13,12 @@ public import Mathlib.Tactic.Group
 import Mathlib.Data.Nat.Dist
 
 /-!
-# Normalizers and commutators tested on generating sets
+# Commutator formulas and tests on generating sets
 
-Subgroups presented by generators are controlled by inspecting generators only. Conjugation and
-commutation are not preserved by products, so the first two results below carry an auxiliary
-normalizing hypothesis. The last result uses a commutator relation to propagate membership along
-an ordered finite index set.
+This file gives formulas for commutators of products and powers, together with criteria for
+normalizing subgroups and bounding commutator subgroups by inspecting generators. The commutator
+criteria carry normalizing hypotheses because expanding commutators of products produces
+conjugates. A commutator relation also propagates membership along an ordered finite index set.
 
 Mathlib has `Subgroup.le_normalizer_closure_iff`, which tests the *conjugated* subgroup on
 generators but still quantifies over the whole conjugating subgroup, and `Subgroup.commutator_le`,
@@ -77,23 +77,16 @@ open scoped commutatorElement
 variable {G : Type*} [Group G] {X Y : Set G} {N : Subgroup G}
 
 /-- The commutator of two paired products splits into the product of the same-position
-commutators when the cross terms and the resulting commutators commute as required. -/
+commutators when the cross terms commute and `⁅b, d⁆` commutes with `a` and `c`. -/
 theorem commutatorElement_mul_mul_eq_mul_of_commute {a b c d : G}
     (hbc : Commute b c) (had : Commute a d)
-    (hcbd : Commute c ⁅b, d⁆) (habd : Commute a ⁅b, d⁆)
-    (hcomm : Commute ⁅a, c⁆ ⁅b, d⁆) :
+    (hcbd : Commute c ⁅b, d⁆) (habd : Commute a ⁅b, d⁆) :
     ⁅a * b, c * d⁆ = ⁅a, c⁆ * ⁅b, d⁆ := by
-  have hcbd_conj : c * ⁅b, d⁆ * c⁻¹ = ⁅b, d⁆ := by
-    rw [hcbd.eq]
-    group
-  have habd_conj : a * ⁅b, d⁆ * a⁻¹ = ⁅b, d⁆ := by
-    rw [habd.eq]
-    group
-  rw [commutatorElement_mul_left_eq_conj_mul,
-    commutatorElement_mul_right_eq_mul_conj, hbc.commutator_eq,
-    commutatorElement_mul_right_eq_mul_conj, had.commutator_eq]
-  simp only [one_mul, mul_one, hcbd_conj, habd_conj, mul_inv_cancel_right]
-  exact hcomm.eq.symm
+  rw [commutatorElement_mul_right_eq_mul_conj,
+    commutatorElement_mul_left_eq_conj_mul, hbc.commutator_eq,
+    commutatorElement_mul_left_eq_conj_mul, had.commutator_eq]
+  simp only [mul_one, one_mul, mul_inv_cancel, habd.mul_inv_cancel,
+    mul_assoc, hcbd.mul_inv_cancel_assoc]
 
 /-- **The binomial formula of nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
 `a` and with `b`, for instance when it is central,
@@ -356,11 +349,7 @@ theorem isMulCommutative_of_forall_exists_monoidHom_apply_ne_one {A : Type*} [Co
   refine IsMulCommutative.of_comm fun a b ↦ commutatorElement_eq_one_iff_mul_comm.mp ?_
   by_contra hne
   obtain ⟨φ, hφ⟩ := h _ hne
-  apply hφ
-  -- regroup the four factors of `φ ⁅a, b⁆` into the two products `φ (a * a⁻¹)` and `φ (b * b⁻¹)`
-  calc φ ⁅a, b⁆ = φ a * φ b * φ a⁻¹ * φ b⁻¹ := by simp only [commutatorElement_def, map_mul]
-    _ = φ (a * a⁻¹) * φ (b * b⁻¹) := by simp only [map_mul]; ac_rfl
-    _ = 1 := by simp
+  exact hφ (φ.commutatorElement_mem_ker_iff.mpr (Commute.all _ _))
 
 /-- If the commutator `⁅a, y⁆` commutes with `y` modulo a normal subgroup `N`, then modulo `N` the
 commutator `⁅a, y ^ n⁆` is the power `⁅a, y⁆ ^ n`: one lies in `N` exactly when the other does. -/
