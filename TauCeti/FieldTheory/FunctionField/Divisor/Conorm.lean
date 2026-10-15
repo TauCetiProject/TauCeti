@@ -80,7 +80,7 @@ determines the upper field and the lower one has to be supplied.
 Finiteness is expressed by `Finite` instances on the restriction fibres. For finite extensions
 these are supplied by `TauCeti.Place.finite_restrict_eq`. For an algebraic constant extension,
 `TauCeti.Place.finite_setOf_restrict_eq_of_constantCompositum_eq_top` supplies them locally.
-The degree identities and the tower statement below assume finite field extensions.
+The degree identities below assume finite field extensions.
 
 The conorm is built from its coefficients through `Finsupp.ofSupportFinite` rather than as the
 formal sum `∑_P D(P) · Con(P)`.  The coefficient formula is then definitional and additivity is
@@ -486,7 +486,9 @@ variable [Algebra k₀ F₁] [Algebra k₁ F₂] [Algebra k₀ F₂]
 variable [IsScalarTower k₀ k₁ F₁] [IsScalarTower k₁ k₂ F₂]
 variable [IsScalarTower k₀ F₀ F₁] [IsScalarTower k₁ F₁ F₂]
 variable [IsScalarTower k₀ k₂ F₂] [IsScalarTower k₀ F₀ F₂]
-variable [FiniteDimensional F₀ F₁] [FiniteDimensional F₁ F₂]
+variable [Algebra.IsIntegral F₀ F₁] [Algebra.IsIntegral F₁ F₂]
+variable [hfinite₀ : ∀ P : Place k₀ F₀, Finite {P' : Place k₁ F₁ // P'.restrict k₀ F₀ = P}]
+variable [hfinite₁ : ∀ P : Place k₁ F₁, Finite {P' : Place k₂ F₂ // P'.restrict k₁ F₁ = P}]
 
 variable (k₁ F₁ k₂ F₂)
 
@@ -494,14 +496,21 @@ variable (k₁ F₁ k₂ F₂)
 `F₀ / k₀` to `F₂ / k₂` factors through `F₁ / k₁`.  This is the divisor form of the
 multiplicativity of the ramification indices in a tower.
 
-The finiteness of `F₂ / F₀`, which the direct conorm needs, is supplied by `FiniteDimensional.trans`
-rather than assumed: `FiniteDimensional.trans` is not an instance, so it has to be installed by hand
-in the statement. -/
+Only integrality and finite restriction fibres are assumed for the adjacent extensions.
+For the direct conorm, integrality follows by transitivity, and each restriction fibre is a
+finite union of the fibres over the intermediate places. These instances are supplied in the
+statement. -/
 @[simp]
 theorem conorm_conorm (D : Divisor k₀ F₀) :
-    haveI : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+    haveI : Algebra.IsIntegral F₀ F₂ := Algebra.IsIntegral.trans F₁
+    haveI (P : Place k₀ F₀) : Finite {P' : Place k₂ F₂ // P'.restrict k₀ F₀ = P} := by
+      have hfinite := (@Set.toFinite _ {Q : Place k₁ F₁ | Q.restrict k₀ F₀ = P}
+        (hfinite₀ P)).preimage' (f := fun Q : Place k₂ F₂ ↦ Q.restrict k₁ F₁)
+          (fun Q _ ↦ @Set.toFinite _ {Q' : Place k₂ F₂ | Q'.restrict k₁ F₁ = Q} (hfinite₁ Q))
+      simp only [Set.preimage_ofPred_eq, Place.restrict_restrict] at hfinite
+      exact hfinite.to_subtype
     conorm k₂ F₂ (conorm k₁ F₁ D) = conorm k₂ F₂ D := by
-  have : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+  have : Algebra.IsIntegral F₀ F₂ := Algebra.IsIntegral.trans F₁
   refine WeilDivisor.ext fun P ↦ ?_
   have hres : (P.restrict k₁ F₁).restrict k₀ F₀ = P.restrict k₀ F₀ := Place.restrict_restrict P
   rw [coeff_conorm, coeff_conorm, coeff_conorm, hres,
