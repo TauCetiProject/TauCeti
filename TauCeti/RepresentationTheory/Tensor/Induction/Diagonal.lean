@@ -33,7 +33,7 @@ public section
 
 open scoped TensorProduct
 
-universe u v w
+universe u v w y
 
 namespace Representation
 
@@ -74,14 +74,6 @@ theorem tensorInducedDiagonal_smul (ρ : Representation R U M) (s : U.LeftTransv
   simpa using (PiTensorProduct.tprod R : MultilinearMap R (fun _ : G ⧸ U ↦ M) _).map_smul_univ
     (fun _ ↦ r) (fun _ ↦ (x : M))
 
-/-- Under the one-factor tensor equivalence, the invariant diagonal is the original vector. -/
-theorem subsingletonEquiv_tensorInducedDiagonal (ρ : Representation R U M)
-    (s : U.LeftTransversal) [Subsingleton (G ⧸ U)] (x : ρ.invariants) :
-    PiTensorProduct.subsingletonEquiv (R := R) (s := fun _ : G ⧸ U ↦ M)
-      (QuotientGroup.mk (1 : G))
-      (ρ.tensorInducedDiagonal s x) = (x : M) := by
-  simp
-
 /-- The change-of-transversal comparison fixes the invariant diagonal tensor. -/
 theorem tensorInducedChangeTransversal_tensorInducedDiagonal (ρ : Representation R U M)
     (s t : U.LeftTransversal) (x : ρ.invariants) :
@@ -95,7 +87,7 @@ theorem tensorInducedChangeTransversal_tensorInducedDiagonal (ρ : Representatio
 
 namespace IntertwiningMap
 
-variable {N : Type w} [AddCommGroup N] [Module R N]
+variable {N : Type y} [AddCommGroup N] [Module R N]
   {ρ : Representation R U M} {τ : Representation R U N}
 
 /-- Tensor induction of an intertwining map carries the invariant diagonal to the diagonal
@@ -103,13 +95,11 @@ of its image. The image is read in the target's invariant submodule. -/
 theorem tensorInduced_tensorInducedDiagonal (f : ρ.IntertwiningMap τ)
     (s : U.LeftTransversal) (x : ρ.invariants) :
     f.tensorInduced s (ρ.tensorInducedDiagonal s x) =
-      (τ.tensorInducedDiagonal s
-        (((Rep.invariantsFunctor R U).map (Rep.ofHom f)).hom x) :
+      (τ.tensorInducedDiagonal s ⟨f x, fun g ↦
+        (IntertwiningMap.isIntertwining ρ τ f g x).symm.trans
+          (congrArg f (x.property g))⟩ :
           ⨂[R] _ : G ⧸ U, N) := by
-  simp only [coe_tensorInducedDiagonal, tensorInduced_apply_tprod,
-    Rep.invariantsFunctor_map_hom]
-  -- The canonical invariants map is the codomain restriction of the same underlying map.
-  congr 1
+  simp only [coe_tensorInducedDiagonal, tensorInduced_apply_tprod]
 
 end IntertwiningMap
 
