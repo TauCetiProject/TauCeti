@@ -164,12 +164,9 @@ theorem integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt
     (hgg' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt g (g' t) t) :
     ∫ t in a..b, f t * g' t = f b * g b - f a * g a - ∫ t in a..b, f' t * g t := by
   have hprod : AbsolutelyContinuousOnInterval (fun t ↦ f t * g t) a b := by
-    have hpair : AbsolutelyContinuousOnInterval (fun t ↦ (f t, g t)) a b := hf.prodMk hg
     have hmul : ContDiff ℝ 1 (fun p : A × A ↦ p.1 * p.2) := contDiff_mul
-    obtain ⟨K, hK⟩ := hmul.locallyLipschitz.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
-      (isCompact_uIcc.image_of_continuousOn hpair.continuousOn)
-    exact hK.comp_absolutelyContinuousOnInterval (g := fun t ↦ (f t, g t))
-      (mapsTo_image _ _) hpair
+    exact (hf.prodMk hg).comp_of_contDiffAt (φ := fun p : A × A ↦ p.1 * p.2)
+      (fun _ _ ↦ hmul.contDiffAt)
   have hder : ∀ᵐ t, t ∈ uIoc a b →
       HasDerivAt (fun t ↦ f t * g t) (f' t * g t + f t * g' t) t := by
     filter_upwards [hff', hgg'] with t ht hu hmem
