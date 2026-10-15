@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.Embedding.Extend
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Subobject.Lattice
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+import Mathlib.Algebra.Category.ModuleCat.EpiMono
 
 /-!
 # Extending subcomplexes along an embedding of complex shapes
@@ -33,6 +35,8 @@ complex is set up.
   `CategoryTheory.Subobject.epi_extend_arrow_f_of_notMem`: the degrees in which the extended
   subcomplex is everything.
 * `CategoryTheory.Subobject.extend_factors`: extension is compatible with chain maps.
+* `CategoryTheory.Subobject.mem_range_extend_arrow_f_iff`: for complexes of modules, in the degree
+  `e.f i` the extended subcomplex consists of the elements whose image in degree `i` lies in `S`.
 -/
 
 public section
@@ -122,5 +126,30 @@ theorem extend_factors (φ : K ⟶ L) {S : Subobject K} {T : Subobject L}
   change _ ≫ HomologicalComplex.extendMap T.arrow e = _
   rw [← HomologicalComplex.extendMap_comp, Subobject.factorThru_arrow,
     HomologicalComplex.extendMap_comp]
+
+section ModuleCat
+
+variable {R : Type*} [Ring R] {K : HomologicalComplex (ModuleCat R) c}
+
+/-- For a complex of modules, in the degree `e.f i` the extended subcomplex consists of the
+elements whose image under the identification `K.extendXIso` with degree `i` lies in `S`. -/
+theorem mem_range_extend_arrow_f_iff (S : Subobject K) {i : ι} {i' : ι'} (hi : e.f i = i')
+    (x : (K.extend e).X i') :
+    x ∈ LinearMap.range ((S.extend e).arrow.f i').hom ↔
+      (K.extendXIso e hi).hom x ∈ LinearMap.range (S.arrow.f i).hom := by
+  rw [extend_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk, HomologicalComplex.comp_f,
+    ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance)),
+    HomologicalComplex.extendMap_f _ e hi]
+  constructor
+  · rintro ⟨y, rfl⟩
+    refine ⟨((S : HomologicalComplex (ModuleCat R) c).extendXIso e hi).hom y, ?_⟩
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Iso.inv_hom_id_apply]
+  · rintro ⟨y, hy⟩
+    refine ⟨((S : HomologicalComplex (ModuleCat R) c).extendXIso e hi).inv y, ?_⟩
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Iso.inv_hom_id_apply, hy,
+      Iso.hom_inv_id_apply]
+
+end ModuleCat
 
 end CategoryTheory.Subobject

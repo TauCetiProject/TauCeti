@@ -64,6 +64,8 @@ homology of `E` by `TauCeti.singularCubicalHomologyIso`.
 * `TauCeti.monotone_serreFiltration`, `TauCeti.serreFiltration_eq_bot`,
   `TauCeti.epi_serreFiltration_arrow_f`: the filtration is increasing, zero below `0`, and
   everything in cochain degrees `m ≥ -s`.
+* `TauCeti.mem_range_serreFiltration_arrow_f_iff`: in cochain degree `-n`, the `s`-th piece
+  consists of the normalized `n`-chains in `NormalizedCubicalChain.serreFiltration`.
 * `TauCeti.serreFiltration_factors`: naturality in maps over `B`.
 * `TauCeti.serreSpectralSequencePageXIsoGraded`, `TauCeti.isZero_serreAbutmentFiltration`,
   `TauCeti.isIso_serreAbutmentFiltrationι`, `TauCeti.serreAbutmentIso`: strong convergence to
@@ -306,6 +308,21 @@ theorem mem_range_serreChainFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
   rw [serreChainFiltration]
   exact HomologicalComplex.mem_range_subobjectOfSubmodules_arrow_f_iff
     ((normalizedCubicalChainComplex R).obj E) (serreSubmodule R p s) _ n x
+
+/-- In cochain degree `-n`, the `s`-th piece of the Serre filtration consists of the elements whose
+image in the normalized cubical `n`-chains, under the identification of the extended complex with
+the chain complex, lies in `NormalizedCubicalChain.serreFiltration`. -/
+theorem mem_range_serreFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
+    (x : (((normalizedCubicalChainComplex R).obj E).extend
+      (ComplexShape.embeddingUpIntLE 0)).X (-n)) :
+    x ∈ LinearMap.range ((serreFiltration R p s).arrow.f (-n)).hom ↔
+      (((normalizedCubicalChainComplex R).obj E).extendXIso _
+        (by simp : (ComplexShape.embeddingUpIntLE 0).f n = -n)).hom x ∈
+          NormalizedCubicalChain.serreFiltration R p.hom s n := by
+  rw [serreFiltration, Subobject.mem_range_extend_arrow_f_iff _ _ (i := n) (by simp)]
+  -- The term of the chain complex in degree `n` is the module of normalized chains by
+  -- definition (`normalizedCubicalChainComplex_obj_X`).
+  exact mem_range_serreChainFiltration_arrow_f_iff s n _
 
 variable (R p) in
 /-- The Serre filtration is increasing. -/
