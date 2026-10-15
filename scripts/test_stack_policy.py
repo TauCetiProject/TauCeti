@@ -131,6 +131,33 @@ class GitFixtures(unittest.TestCase):
         self.assertIsNone(evidence)
         self.assertTrue(any("source equivalent landed" in r for r in reasons))
 
+    def retained_then_reverted_parent(self, landed_aggregate):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("A", "unlanded prerequisite\n")
+        added = self.commit("add A")
+        git(self.root, "checkout", "-b", "child")
+        self.write("child", "own work\n")
+        self.commit("child retains A")
+        child = self.pr(2, "Stacked on #1")
+        git(self.root, "checkout", "parent")
+        git(self.root, "revert", "--no-edit", added)
+        if landed_aggregate:
+            self.write("B", "independently landed\n")
+            last = self.commit("add B")
+        self.pr(1)
+        if landed_aggregate:
+            git(self.root, "checkout", "main")
+            git(self.root, "cherry-pick", last)
+        evidence, _ = self.detector().detect(child)
+        self.assertEqual(evidence.kind, "retained-unmerged-commit")
+        self.assertEqual(evidence.commit, added)
+
+    def test_empty_parent_aggregate_still_checks_retained_commits(self):
+        self.retained_then_reverted_parent(False)
+
+    def test_landed_parent_aggregate_still_checks_retained_commits(self):
+        self.retained_then_reverted_parent(True)
+
     def test_closed_but_unlanded_parent(self):
         parent, child = self.parent_child(explicit=True)
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed"})
@@ -252,10 +279,14 @@ class FakeAPI:
         if path.endswith("/comments"):
             if self.fail_comment:
                 raise sp.Gap("comment permission/rate limit")
-            self.comments.append({"user": {"login": "trusted[bot]"}, "body": data["body"]})
+            self.comments.append({"id": len(self.comments) + 1,
+                                  "user": {"login": "trusted[bot]"}, "body": data["body"]})
             if self.race:
                 self.race()
-        if method == "PATCH" and self.fail_close:
+        if path.startswith("issues/comments/"):
+            number = int(path.rsplit("/", 1)[1])
+            next(c for c in self.comments if c["id"] == number)["body"] = data["body"]
+        if path.startswith("pulls/") and method == "PATCH" and self.fail_close:
             raise sp.Gap("close failed")
         return {}
 
@@ -289,6 +320,16 @@ class MutationTests(unittest.TestCase):
         self.api.fail_close = False
         self.enforce()
         self.assertEqual(len(self.api.comments), 1)
+
+    def test_changed_evidence_retry_updates_one_comment(self):
+        self.api.fail_close = True
+        with self.assertRaises(sp.Gap):
+            self.enforce()
+        self.api.fail_close = False
+        self.evidence = sp.Evidence(**{**sp.asdict(self.evidence), "patch_sha256": "e" * 64})
+        self.enforce()
+        self.assertEqual(len(self.api.comments), 1)
+        self.assertIn("e" * 64, self.api.comments[0]["body"])
 
     def test_forged_comment_does_not_suppress_explanation(self):
         self.api.comments.append({"user": {"login": "attacker"}, "body": sp.comment_text(self.evidence)})

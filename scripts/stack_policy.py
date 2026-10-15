@@ -399,12 +399,10 @@ class Detector:
                 base, paths, patch = self.source.patch(parent)
                 if not patch:
                     reasons.append(f"#{number}: empty parent delta")
-                    continue
-                landed = self.source.landed(parent, base, paths, patch)
+                landed = self.source.landed(parent, base, paths, patch) if patch else None
                 if landed:
-                    reasons.append(f"#{number}: source equivalent landed at {landed}")
-                    continue
-                if self.source.contains(child.head, paths, patch):
+                    reasons.append(f"#{number}: aggregate source equivalent landed at {landed}")
+                if patch and not landed and self.source.contains(child.head, paths, patch):
                     kind = "shared-unmerged-commit" if shared else "explicit-parent-content"
                     if parent.head in commits:
                         kind = "ancestor-head"
@@ -446,7 +444,7 @@ def comment_text(evidence):
     e = evidence
     detail = (f"[{e.kind} `{e.commit}`](https://github.com/{REPO}/commit/{e.commit}); " if e.commit else "")
     return (
-        f"<!-- tauceti-no-stack:v1 child={e.child_head} parent={e.parent} patch={e.patch_sha256} -->\n"
+        f"<!-- tauceti-no-stack:v1 child={e.child_head} -->\n"
         f"Stacked PRs are not allowed in Tau Ceti. This PR includes unmerged work from #{e.parent}: "
         f"{detail}the source patch from `{e.patch_base}` "
         f"at parent head [`{e.parent_head}`](https://github.com/{REPO}/commit/{e.parent_head}) "
@@ -464,11 +462,15 @@ def enforce(api, child, parent, evidence, actor):
     comments = api.pages(f"issues/{child.number}/comments", 1000)
     # Trust only our installation/account's exact marker; candidate authors cannot
     # suppress the explanation by posting an imitation comment.
-    existing = any(c["user"]["login"] == actor and marker in c["body"] for c in comments)
+    existing = next((c for c in comments if c["user"]["login"] == actor and marker in c["body"]), None)
     if not unchanged(api, child, parent, evidence.main):
         raise Gap("identities changed before comment; retry with fresh observations")
     if not existing:
         api.call(f"issues/{child.number}/comments", "POST", {"body": body})
+    elif existing["body"] != body:
+        # A previous attempt may have declined closure on a race. Keep one
+        # explanation for this child head while updating its current evidence.
+        api.call(f"issues/comments/{int(existing['id'])}", "PATCH", {"body": body})
     if not unchanged(api, child, parent, evidence.main):
         raise Gap("identities changed before close; explanation retained, closure declined")
     # PATCH closes without deleting the branch. GitHub emits pull_request.closed;

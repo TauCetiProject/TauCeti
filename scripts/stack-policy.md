@@ -30,6 +30,8 @@ complete content, including combined bors squashes and later modifications or
 reverts. GitHub PR closure/mergedAt is never proof of landing. Closed but
 unlanded parents remain candidates. Common main ancestors are excluded before
 graph work; identical heads alone are classified as duplicate identity.
+An empty or landed aggregate does not skip the individual commit search: a
+child may retain prerequisite work subsequently reverted on its parent's branch.
 Candidate descendants of the child are excluded so a standalone prerequisite is
 not closed merely because another PR includes it. Shared ancestry with ambiguous
 direction produces a gap; individual-commit fallback requires an ancestor head or
@@ -86,8 +88,10 @@ identity read and the API mutation. The audit exposes the observed identities.
 
 Global workflow serialization and a marker authenticated by the installation's
 bot identity prevent duplicate explanations on retries. Comment failure prevents
-closure; close failure remains observable/nonzero and can retry using the existing
-comment. No branches are deleted. A successful close emits pull_request.closed;
+closure. A changed proof updates the same explanation for that child head rather
+than posting a second one. Close failure remains observable/nonzero and can retry
+using the existing comment.
+No branches are deleted. A successful close emits pull_request.closed;
 bors's existing handler marks the patch closed and cancels its waiting/running
 batch and try work, the same withdrawal route as bors r-. Rollout must verify
 an actual admitted child's removal using the bors observation endpoint, not just
