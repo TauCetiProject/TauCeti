@@ -22,15 +22,15 @@ in the first variable and then applies it to the resulting marginal integrals in
 variable.  Thus a one-dimensional proof can be iterated to obtain the inequality in finite product
 spaces.
 
-The property is also transported by measure-preserving measurable equivalences which preserve the
-weighted affine combination.  This makes tensorization usable after changing linear coordinates.
+The property is also transported by measure-preserving maps which preserve the weighted affine
+combination.  This makes tensorization usable after changing linear coordinates or projecting to a
+marginal.
 
 ## Main results
 
 * `MeasureTheory.Measure.HasPrekopaLeindler`: the measurable extended-integral inequality.
 * `MeasureTheory.Measure.HasPrekopaLeindler.prod`: tensorization over product measures.
-* `MeasureTheory.Measure.HasPrekopaLeindler.map`: transport by a measure-preserving affine
-  equivalence.
+* `MeasureTheory.Measure.HasPrekopaLeindler.map`: transport by a measure-preserving affine map.
 
 ## References
 
@@ -78,15 +78,15 @@ theorem hasPrekopaLeindler_dirac_zero (theta : ℝ) :
   rw [lintegral_dirac' _ hf, lintegral_dirac' _ hg, lintegral_dirac' _ hh]
   simpa using hfg 0 0
 
-/-- Transport the Prékopa–Leindler property through a measure-preserving measurable equivalence
+/-- Transport the Prékopa–Leindler property through a measure-preserving map
 which preserves the weighted affine combination. -/
 theorem HasPrekopaLeindler.map {mu : Measure E} {nu : Measure F} {theta : ℝ}
-    (hmu : mu.HasPrekopaLeindler theta) (e : E ≃ᵐ F) (he : MeasurePreserving e mu nu)
+    (hmu : mu.HasPrekopaLeindler theta) (e : E → F) (he : MeasurePreserving e mu nu)
     (haffine : ∀ x y, e ((1 - theta) • x + theta • y) =
       (1 - theta) • e x + theta • e y) :
     nu.HasPrekopaLeindler theta := by
   intro f g h hf hg hh hfg
-  have hbound := hmu (hf.comp e.measurable) (hg.comp e.measurable) (hh.comp e.measurable)
+  have hbound := hmu (hf.comp he.measurable) (hg.comp he.measurable) (hh.comp he.measurable)
     fun x y => by simpa only [Function.comp_apply, haffine] using hfg (e x) (e y)
   simpa only [Function.comp_apply, he.lintegral_comp hf, he.lintegral_comp hg,
     he.lintegral_comp hh] using hbound
