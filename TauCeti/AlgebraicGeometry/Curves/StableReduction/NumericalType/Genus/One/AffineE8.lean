@@ -151,32 +151,14 @@ theorem exists_equiv_affineE8 (l : Fin 9 → T.Component)
       ⟨hl, by simpa only [Fintype.card_fin] using hcard.symm⟩
   let e := Equiv.ofBijective l hbij
   have he : ∀ i, e i = l i := fun _ ↦ rfl
-  -- Transport the affine null vector to the whole component set. The intersection form
-  -- vanishes there, so its kernel criterion fixes the multiplicity ratios integrally.
-  let x : T.Component → ℤ := fun v ↦ AffineDynkinType.E8.marks (e.symm v)
-  have hx : ∀ i, x (l i) = AffineDynkinType.E8.marks i := by
-    intro i
-    exact congrArg AffineDynkinType.E8.marks (e.symm_apply_apply i)
-  have hkernel : T.intersection *ᵥ x = 0 := by
-    ext v
-    obtain ⟨i, rfl⟩ := e.surjective v
-    simp only [Pi.zero_apply, Matrix.mulVec, dotProduct]
-    rw [← e.sum_comp]
-    simp only [he, hx, hmatrix, mul_assoc, ← mul_sum]
-    have hnull : ∑ j, AffineDynkinType.E8.cartanMatrix i j * AffineDynkinType.E8.marks j = 0 :=
-      congrFun (AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero AffineDynkinType.valid_E8) i
-    exact mul_eq_zero_of_right (-(T.weight (l 0) : ℤ)) hnull
-  have hratios := (T.dotProduct_intersection_mulVec_eq_zero_iff x).mp (by rw [hkernel]; simp)
   refine ⟨e, he, fun i ↦ he i ▸ hweights i, ?_, fun i j ↦ by simp only [he, hmatrix]⟩
   intro i
-  have h := hratios (l i) (l 8)
-  rw [he]
-  have h8 := AffineDynkinType.marks_affineNode AffineDynkinType.E8
-  rw [AffineDynkinType.affineNode_E8] at h8
-  have hi := h.symm
-  rw [hx, hx] at hi
-  erw [h8, mul_one] at hi
-  exact hi.trans (mul_comm _ _)
+  have hnode : AffineDynkinType.E8.marks 8 = 1 := by
+    simpa only [AffineDynkinType.affineNode_E8] using
+      AffineDynkinType.marks_affineNode AffineDynkinType.E8
+  exact T.multiplicity_eq_mul_of_equiv_intersection e AffineDynkinType.E8.cartanMatrix
+    (-(T.weight (l 0) : ℤ)) hmatrix AffineDynkinType.E8.marks
+    (AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero AffineDynkinType.valid_E8) 8 hnode i
 
 variable {T}
 
