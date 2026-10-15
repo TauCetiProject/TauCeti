@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import urllib.request
+from email.utils import parsedate_to_datetime
 
 from bors_observation import MAX_BYTES, REPO, observation, sha
 from bors_train_identity import candidate_ref
@@ -17,6 +18,7 @@ PUBLISHER = "publish-merge-group-cache / publish"
 CONFIRM = "Confirm the exact revision map on the public endpoint"
 ACQUISITION_SECONDS = 300
 PUBLICATION_SECONDS = 1200
+POST_RETRY_SECONDS = 180
 MACHINE_LABEL = "nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0"
 API_ROOT = "https://api.github.com/repos/" + REPO
 
@@ -78,6 +80,8 @@ def wait_publication(run_id, attempt, *, fetch=api, clock=time.monotonic, sleep=
                     "id", "status", "conclusion", "created_at", "started_at",
                     "completed_at", "runner_name", "labels")}), flush=True)
                 previous = current
+            if job["status"] == "completed" and not job.get("runner_name"):
+                return "failure", "publisher completed without acquiring a runner; inspect run jobs and Namespace routing"
             if job["status"] in {"in_progress", "completed"} and job.get("conclusion") != "skipped":
                 if not isolated_runner(data, job, run_id):
                     return "failure", "publisher runner/labels are not isolated; inspect Namespace routing"
@@ -127,8 +131,12 @@ def main():
         state, description = "failure", "batch finalization failed: " + type(error).__name__
     payload = dict(state=state, context="build", description=description[:140],
                    target_url=f"https://github.com/{REPO}/actions/runs/{env['GITHUB_RUN_ID']}")
-    for attempt in range(3):
+    deadline = time.monotonic() + POST_RETRY_SECONDS
+    delay = 5
+    while time.monotonic() < deadline:
         try:
+            # Defense in depth for completed/canceled/rerun API states. This is a
+            # best-effort check; GitHub does not make the GET and POST atomic.
             latest = api(f"/actions/runs/{env['GITHUB_RUN_ID']}")
             if latest["run_attempt"] != int(env["GITHUB_RUN_ATTEMPT"]):
                 print("::notice::superseded run attempt will not overwrite its successor's status", flush=True)
@@ -141,8 +149,22 @@ def main():
             return 0 if state == "success" else 1
         except (OSError, ValueError, KeyError) as error:
             print(f"::warning::terminal status POST failed: {type(error).__name__}", flush=True)
-            if attempt < 2:
-                time.sleep(5 * (attempt + 1))
+            headers = getattr(error, "headers", None)
+            retry_after = headers.get("Retry-After") if headers else None
+            requested_delay = delay
+            if retry_after:
+                try:
+                    requested_delay = max(0, int(retry_after))
+                except ValueError:
+                    try:
+                        requested_delay = max(0, parsedate_to_datetime(retry_after).timestamp() - time.time())
+                    except (ValueError, TypeError, OverflowError):
+                        pass
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            time.sleep(min(max(1, requested_delay), remaining))
+            delay = min(delay * 2, 30)
     print("::error::terminal status could not be posted; inspect GitHub API availability", file=sys.stderr)
     return 1
 

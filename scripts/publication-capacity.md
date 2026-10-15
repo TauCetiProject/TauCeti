@@ -25,22 +25,33 @@ canceled, skipped or unconfirmed publication cannot produce a green `build`.
 Bors authority revalidation rejects stale batch/generation identities. Immediately
 before each status POST, the writer checks for a newer run attempt and suppresses
 attempts already known to be superseded. This check is best effort: GitHub's GET
-and POST are not atomic, so a successor can start between them. Statuses target the
+and POST are not atomic, so a successor can start between them. The current-attempt
+and whole-run cancellation checks provide defense in depth for API terminal/rerun
+states; normal reruns cannot begin while the finalizer is still running. Statuses target the
 exact sandbox SHA (or the immutable dispatch SHA after early sandbox failure).
 
 The publisher has a 15-minute execution limit. Once the finalizer starts its
 observer, missing/unassigned/unobservable publication fails within five minutes;
 acquired publication has a twenty-minute total observation budget. HTTP requests
-and status retries are separately bounded. Failure descriptions direct operators
+and status retries are separately bounded; status posting retries for up to three
+minutes, honoring `Retry-After` within that budget. Failure descriptions direct operators
 to the run's jobs and Namespace routing/capacity. A delayed publisher may later
 finish uploading the already audited immutable candidate, but cannot turn the
 finalizer's failure green. No second publisher or hosted recovery job starts.
 
 Limits: priority orders pending work under capacity pressure; it does not reserve
 resources or preempt running compilers. Namespace's direct labels support these
-standard shapes, and existing production has exercised this Linux platform and
-priority/run-ID routing. New unprivileged assignment still needs production
-verification. This account cannot read org runner groups (403) and has no
+standard shapes. The [secret-free routing canary](https://github.com/TauCetiProject/TauCeti/actions/runs/38663031807)
+at workflow revision `d596be5aa001a0187cc3a3c7890314d7b0782e4a` acquired distinct
+2x4/4x8 runners in 10s/11s; execution was 18s/17s, including a fifteen-second hold.
+Both reported the exact machine/priority/run-ID label strings expected by the
+isolation matcher, with no mounted `/cache` or candidate build state.
+`publication_capacity_fixture.json` preserves the real jobs-API fields for tests.
+These labels and unique names are routing evidence and defense in depth, not
+proof of provider VM isolation; fresh single-job isolation remains a trust
+property of Namespace's ephemeral runner service. A full credential-bearing
+production publication and finalization must still be verified after landing.
+This account cannot read org runner groups (403) and has no
 Namespace workspace configuration credential, so no reserved-capacity SLA or
 workspace-limit change is claimed. If the finalizer itself cannot acquire a
 runner, its execution timeout cannot fire; the existing external bors batch
@@ -50,6 +61,17 @@ applies only after a finalizer has been acquired and started observing.
 An operator must inspect the queued job's empty runner name and correct provider
 capacity/routing before retrying. A complete Namespace outage cannot be recovered
 by another job on the same unavailable platform.
+
+Recovery means a **new current-candidate dispatch**, not re-running failed jobs:
+attempt-scoped jobs may omit successful jobs from a partial rerun. If the routing
+or reported-label checks halt the queue, preserve the queued job and labels as
+evidence and escalate to a repository admin. A revert PR tested through the same
+broken default-branch workflow cannot repair that dependency. A human must
+restore the last known working workflow routing through the repository's human
+emergency recovery process, then request a fresh audited batch dispatch. An
+implementation agent must not admin-merge a rollback or bypass required build,
+lint, axiom, scope or review gates. Leave #16782 open until production recovers
+and the changed workflow is verified; do not cancel unrelated batches.
 
 Provider references:
 

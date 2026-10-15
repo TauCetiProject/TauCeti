@@ -2,11 +2,13 @@
 import contextlib
 import copy
 import io
+import json
 import os
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from urllib.error import HTTPError
 from unittest.mock import Mock, patch
 
 import yaml
@@ -92,7 +94,7 @@ class FinalizerTests(unittest.TestCase):
                     finalizer.publication_job(response)
 
     def test_reused_sandbox_runner_privileged_cached_or_wrong_run_labels_fail_closed(self):
-        for changes in [dict(runner_name="nsc-sandbox"), dict(runner_name=""),
+        for changes in [dict(runner_name="nsc-sandbox"),
                         dict(labels=["ubuntu-latest"]),
                         dict(labels=[finalizer.MACHINE_LABEL, "namespace-features:github.run-id=13"]),
                         dict(labels=[finalizer.MACHINE_LABEL, "namespace-features:container.privileged=true"]),
@@ -101,6 +103,12 @@ class FinalizerTests(unittest.TestCase):
                 result, _ = self.wait([jobs(dict(job(), **changes))])
                 self.assertEqual(result[0], "failure")
                 self.assertIn("not isolated", result[1])
+
+    def test_canceled_before_runner_assignment_has_an_actionable_acquisition_failure(self):
+        result, elapsed = self.wait([jobs(dict(job(conclusion="cancelled"), runner_name=""))])
+        self.assertEqual(result[0], "failure")
+        self.assertIn("without acquiring", result[1])
+        self.assertEqual(elapsed, 0)
 
     def test_failed_canceled_or_missing_sandbox_never_waits_or_posts_green(self):
         wait = Mock(side_effect=AssertionError("no publisher wait after failed audit"))
@@ -170,8 +178,41 @@ class FinalizerTests(unittest.TestCase):
             self.assertEqual(request.call_args.kwargs["timeout"], 15)
             response.read.assert_called_once_with(finalizer.MAX_BYTES + 1)
 
+    def test_final_post_honors_retry_after_with_a_bounded_recovery_budget(self):
+        for retry_after in ["60", "Thu, 01 Jan 1970 00:01:00 GMT", "600", "invalid"]:
+            with self.subTest(retry_after=retry_after):
+                clock = Clock()
+                error = HTTPError("https://api.github.com", 429, "rate limited", {"Retry-After": retry_after}, None)
+                self.addCleanup(error.close)
+                with patch.dict(os.environ, ENV, clear=True), \
+                     patch.object(finalizer, "terminal_state", return_value=("success", "confirmed")), \
+                     patch.object(finalizer, "api", side_effect=error) as post, \
+                     patch.object(finalizer.time, "monotonic", clock), \
+                     patch.object(finalizer.time, "time", return_value=0), \
+                     patch.object(finalizer.time, "sleep", side_effect=clock.sleep), \
+                     contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(finalizer.main(), 1)
+                    self.assertEqual(clock.now, finalizer.POST_RETRY_SECONDS)
+                    self.assertGreater(post.call_count, 0)
+                    self.assertLessEqual(post.call_count, 10)
+
 
 class WorkflowBoundaryTests(unittest.TestCase):
+    def test_isolation_matcher_accepts_real_namespace_canary_label_encoding(self):
+        fixture = json.loads((ROOT / "scripts/publication_capacity_fixture.json").read_text())
+        self.assertEqual(fixture["workflow_sha"], "d596be5aa001a0187cc3a3c7890314d7b0782e4a")
+        by_name = {item["name"]: item for item in fixture["jobs"]}
+        self.assertEqual(len({item["runner_name"] for item in fixture["jobs"]}), 2)
+        for name, shape in [("finalizer-capacity", "2x4"), ("publisher-capacity", "4x8")]:
+            item = by_name[name]
+            self.assertEqual(item["conclusion"], "success")
+            self.assertEqual(set(item["labels"]), {
+                f"nscloud-ubuntu-24.04-amd64-{shape}-with-features;job.priority=0",
+                f"namespace-features:github.run-id={fixture['run_id']}"})
+        # Only the sandbox identity is synthetic; publisher labels/name are verbatim API evidence.
+        sandbox = dict(name="sandboxed-build", runner_name="fixture-sandbox")
+        self.assertTrue(finalizer.isolated_runner(dict(jobs=[sandbox]), by_name["publisher-capacity"], fixture["run_id"]))
+
     def test_separate_unprivileged_priority_runner_and_scoped_tokens(self):
         report = PR["finalize-merge-group-build"]
         publisher = PUB["jobs"]["publish"]
