@@ -43,6 +43,13 @@ open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
 
+/-- If `c` maps `A` bijectively onto `S` with the point `ζ ∈ S` deleted, then restoring the value
+`g ζ` to the image of `A` under `g ∘ c` recovers the image of `S` under `g`. -/
+private lemma insert_image_comp_of_bijOn_sdiff_singleton {α β γ : Type*} {c : α → β}
+    {g : β → γ} {A : Set α} {S : Set β} {ζ : β} (hc : BijOn c A (S \ {ζ})) (hζ : ζ ∈ S) :
+    insert (g ζ) ((g ∘ c) '' A) = g '' S := by
+  rw [image_comp, hc.image_eq, ← image_insert_eq, insert_sdiff_singleton, insert_eq_of_mem hζ]
+
 /-- **Transport of a continuous closed-disc extension to the upper half-plane.** Suppose `g` is
 continuous on the closed unit disc and conformally maps its interior onto `Ω`. Given a point `p` of
 the frontier of `Ω`, precomposition with a rotated Cayley transform gives a conformal map from the
@@ -96,29 +103,9 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_continuousOn_closedBall
     exact h
   have hH : BijOn (g ∘ c) upperHalfPlaneSet Ω := (hgΩ).comp hcH
   have hK : insert p ((g ∘ c) '' {z : ℂ | 0 ≤ z.im}) = closure Ω := by
-    refine Subset.antisymm ?_ ?_
-    · rintro w (rfl | ⟨z, hz, rfl⟩)
-      · exact frontier_subset_closure hp
-      · exact hgcl ▸ mem_image_of_mem g (hcK.mapsTo hz).1
-    · intro w hw
-      obtain ⟨x, hx, hxw⟩ := hgcl.symm.subset hw
-      by_cases hxζ : x = ζ
-      · exact mem_insert_iff.mpr (Or.inl (hxw.symm.trans ((congrArg g hxζ).trans hζp)))
-      · obtain ⟨z, hz, hzx⟩ := hcK.surjOn ⟨hx, hxζ⟩
-        exact mem_insert_iff.mpr
-          (Or.inr ⟨z, hz, by simpa [Function.comp_def, hzx] using hxw⟩)
+    rw [← hζp, insert_image_comp_of_bijOn_sdiff_singleton hcK (sphere_subset_closedBall hζ), hgcl]
   have hR : insert p ((g ∘ c) '' {z : ℂ | z.im = 0}) = frontier Ω := by
-    refine Subset.antisymm ?_ ?_
-    · rintro w (rfl | ⟨z, hz, rfl⟩)
-      · exact hp
-      · exact hgfr ▸ mem_image_of_mem g (hcR.mapsTo hz).1
-    · intro w hw
-      obtain ⟨x, hx, hxw⟩ := hgfr.symm.subset hw
-      by_cases hxζ : x = ζ
-      · exact mem_insert_iff.mpr (Or.inl (hxw.symm.trans ((congrArg g hxζ).trans hζp)))
-      · obtain ⟨z, hz, hzx⟩ := hcR.surjOn ⟨hx, hxζ⟩
-        exact mem_insert_iff.mpr
-          (Or.inr ⟨z, hz, by simpa [Function.comp_def, hzx] using hxw⟩)
+    rw [← hζp, insert_image_comp_of_bijOn_sdiff_singleton hcR hζ, hgfr]
   refine ⟨g ∘ c, hgc.comp hcd.continuousOn fun z hz => (hcK.mapsTo hz).1,
     hgd.comp (hcd.mono (ofPred_subset_ofPred.mpr fun _ => le_of_lt)) hcH.mapsTo, hH, hK, hR,
     by simpa [hζp] using (hgc ζ (mem_closedBall.mpr hζ.le)).tendsto.comp hct⟩
