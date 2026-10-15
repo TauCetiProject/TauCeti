@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.RingTheory.LocalRing.Module
+import TauCeti.LinearAlgebra.Submodule.Compl
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -260,10 +260,7 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
     have hxx : IsUnit (B x x) := isUnit_of_dvd_unit (hx (b 0) (b j)) hentry
     let N := B.orthogonal (R ∙ x)
     have hc := B.isCompl_span_singleton_orthogonal_of_isUnit x hxx
-    have : Module.Finite R N := .equiv (Submodule.quotientEquivOfIsCompl _ _ hc)
-    have : Flat R N := Flat.of_retract N.subtype
-      (N.projectionOnto (R ∙ x) hc.symm) (by ext; simp)
-    have : Free R N := free_of_flat_of_isLocalRing
+    obtain ⟨hfinite, hfree⟩ := N.finite_free_of_isCompl hc.symm
     have hli : ∀ a : R, ∀ y ∈ N, a • x + y = 0 → a = 0 := by
       intro a y hy hay
       have hxy : B x y = 0 := by simpa [N, orthogonal] using hy
