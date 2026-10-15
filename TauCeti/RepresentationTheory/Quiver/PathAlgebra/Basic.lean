@@ -1078,25 +1078,25 @@ end Arrow
 
 section ArrowCoordinates
 
-variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
+variable {k : Type w} {Q : Type u} [Semiring k] [Quiver.{v} Q]
 
 /-- The coordinates of an arrow times a basis path: the basis path extended by the arrow. This is
 not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
 theorem pathAlgebraBasis_repr_ofArrow_mul_single {i j s : Q} (b : i ⟶ j)
-    (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (ofArrow b * single ⟨s, i, p⟩ c) x =
-      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x := by
-  rw [single_eq_smul_ofPath, mul_smul_comm, ofArrow_mul_ofPath, ← single_eq_smul_ofPath,
-    pathAlgebraBasis_repr_single]
+    (p : _root_.Quiver.Path s i) (c : k) :
+    (pathAlgebraBasis k Q).repr (ofArrow b * single ⟨s, i, p⟩ c) =
+      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c := by
+  rw [ofArrow_eq_ofPath, ofPath_eq_single, single_mul_single_of_comp, one_mul,
+    _root_.Quiver.Path.comp_toPath_eq_cons, pathAlgebraBasis_repr_single]
 
 /-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_single`, in
 which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
 @[simp]
 theorem pathAlgebraBasis_repr_ofPath_toPath_mul_single {i j s : Q} (b : i ⟶ j)
-    (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * single ⟨s, i, p⟩ c) x =
-      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x :=
-  pathAlgebraBasis_repr_ofArrow_mul_single b p c x
+    (p : _root_.Quiver.Path s i) (c : k) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * single ⟨s, i, p⟩ c) =
+      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c :=
+  pathAlgebraBasis_repr_ofArrow_mul_single b p c
 
 /-- **Reading off a coordinate through the last arrow**: the coordinate of `b f` on the path `q`
 followed by `b` is the coordinate of `f` on `q`. -/
@@ -1159,20 +1159,20 @@ theorem pathAlgebraBasis_repr_ofPath_toPath_mul_cons_of_ne {i i' j s : Q} (b : i
 /-- The coordinates of a basis path times an arrow: the arrow followed by the basis path. This is
 not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
 theorem pathAlgebraBasis_repr_single_mul_ofArrow {i j t : Q} (a : i ⟶ j)
-    (p : _root_.Quiver.Path j t) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofArrow a) x =
-      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c x := by
-  rw [single_eq_smul_ofPath, smul_mul_assoc, ofArrow_eq_ofPath, ofPath_mul_ofPath_of_comp,
-    ← single_eq_smul_ofPath, pathAlgebraBasis_repr_single]
+    (p : _root_.Quiver.Path j t) (c : k) :
+    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofArrow a) =
+      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c := by
+  rw [ofArrow_eq_ofPath, ofPath_eq_single, single_mul_single_of_comp, mul_one,
+    pathAlgebraBasis_repr_single]
 
 /-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_single_mul_ofArrow`, in
 which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
 @[simp]
 theorem pathAlgebraBasis_repr_single_mul_ofPath_toPath {i j t : Q} (a : i ⟶ j)
-    (p : _root_.Quiver.Path j t) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofPath ⟨i, j, a.toPath⟩) x =
-      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c x :=
-  pathAlgebraBasis_repr_single_mul_ofArrow a p c x
+    (p : _root_.Quiver.Path j t) (c : k) :
+    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofPath ⟨i, j, a.toPath⟩) =
+      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c :=
+  pathAlgebraBasis_repr_single_mul_ofArrow a p c
 
 /-- **Reading off a coordinate through the first arrow**: the coordinate of `f a` on the arrow `a`
 followed by the path `q` is the coordinate of `f` on `q`. -/

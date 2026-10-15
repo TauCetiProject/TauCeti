@@ -5,15 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
-public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
-public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
-public import TauCeti.AlgebraicTopology.SimplexCategory.Subinterval
+public import TauCeti.AlgebraicTopology.SimplicialObject.AlexanderWhitney
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
-public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # The Alexander–Whitney map
@@ -28,6 +22,10 @@ the front `p`-face of `x` tensored with the back `q`-face of `y`, the faces bein
 `SimplexCategory.subinterval`.  The tensor product of chain complexes is Mathlib's monoidal
 structure on `ChainComplex C ℕ`, whose differential is `d (a ⊗ b) = d a ⊗ b + (-1)^p a ⊗ d b`
 for `a` of degree `p`.
+
+It is the Alexander–Whitney map `CategoryTheory.SimplicialObject.alexanderWhitney` of the
+simplicial objects of chains of `K` and of `L`, precomposed with the map sending the summand
+`R ⊗ S` of a simplex `(x, y)` to the tensor product of the summands of `x` and of `y`.
 
 The Alexander–Whitney map is one half of the Eilenberg–Zilber comparison between chains on a
 product and tensor products of chains, and composing it with the diagonal gives the cup product
@@ -62,159 +60,64 @@ attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 variable {C : Type u} [Category.{v} C] [Preadditive C]
   [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
 
-section Faces
-
-variable (K : SSet.{w})
-
-private lemma δ_map_subinterval_zero {n p : ℕ} (a : K _⦋n + 1⦌) (i : Fin (p + 2))
-    (k : Fin (n + 2)) (hik : (i : ℕ) = k) (h : 0 + (p + 1) ≤ n + 1) :
-    K.δ i (K.map (SimplexCategory.subinterval 0 (p + 1) h).op a) =
-      K.map (SimplexCategory.subinterval 0 p (by omega)).op (K.δ k a) := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp_apply, ← op_comp,
-    SimplexCategory.δ_comp_subinterval_zero i k hik h]
-
-private lemma δ_last_map_subinterval_zero {n p : ℕ} (a : K _⦋n⦌) (h : 0 + (p + 1) ≤ n) :
-    K.δ (Fin.last (p + 1)) (K.map (SimplexCategory.subinterval 0 (p + 1) h).op a) =
-      K.map (SimplexCategory.subinterval 0 p (by omega)).op a := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp_apply, ← op_comp,
-    SimplexCategory.δ_last_comp_subinterval_zero h]
-
-private lemma δ_zero_map_subinterval {n j q : ℕ} (a : K _⦋n⦌) (h : j + (q + 1) ≤ n) :
-    K.δ 0 (K.map (SimplexCategory.subinterval j (q + 1) h).op a) =
-      K.map (SimplexCategory.subinterval (j + 1) q (by omega)).op a := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp_apply, ← op_comp,
-    SimplexCategory.δ_zero_comp_subinterval h]
-
-private lemma δ_succ_map_subinterval {n j q : ℕ} (a : K _⦋n + 1⦌) (i : Fin (q + 1))
-    (k : Fin (n + 2)) (hik : j + 1 + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
-    K.δ i.succ (K.map (SimplexCategory.subinterval j (q + 1) h).op a) =
-      K.map (SimplexCategory.subinterval j q (by omega)).op (K.δ k a) := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp_apply, ← op_comp,
-    SimplexCategory.δ_succ_comp_subinterval i k hik h]
-
-private lemma map_subinterval_δ_of_le {n j q : ℕ} (a : K _⦋n + 1⦌) (k : Fin (n + 2))
-    (hk : (k : ℕ) ≤ j) (h : j + q ≤ n) :
-    K.map (SimplexCategory.subinterval j q h).op (K.δ k a) =
-      K.map (SimplexCategory.subinterval (j + 1) q (by omega)).op a := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp_apply, ← op_comp,
-    SimplexCategory.subinterval_comp_δ_of_le k hk h]
-
-private lemma map_subinterval_zero_δ_of_lt {n p : ℕ} (a : K _⦋n + 1⦌) (k : Fin (n + 2))
-    (hk : p < (k : ℕ)) (h : 0 + p ≤ n) :
-    K.map (SimplexCategory.subinterval 0 p h).op (K.δ k a) =
-      K.map (SimplexCategory.subinterval 0 p (by omega)).op a := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp_apply, ← op_comp,
-    SimplexCategory.subinterval_zero_comp_δ_of_lt k hk h]
-
-end Faces
-
 variable (K L : SSet.{w}) (R S : C)
 
-/-- The summand of the Alexander–Whitney map on the simplex `x` in bidegree `(p, q)`: the front
-`p`-face of `x.1` tensored with the back `q`-face of `x.2`, or zero if `p + q` is not the degree
-of `x`.  Indexing by an arbitrary pair keeps the summands of all bidegrees in one type. -/
-private def alexanderWhitneyTerm {n : ℕ} (x : (K ⊗ L) _⦋n⦌) (p q : ℕ) :
-    R ⊗ S ⟶ (K.chainComplex R ⊗ L.chainComplex S).X n :=
-  if h : p + q = n then
-    (K.ιChainComplex (K.map (SimplexCategory.subinterval 0 p (by omega)).op x.1) ⊗ₘ
-      L.ιChainComplex (L.map (SimplexCategory.subinterval p q (by omega)).op x.2)) ≫
-        ιTensorObj _ _ p q n h
-  else 0
+/-- The comparison of simplicial objects from the chains of `K × L` with coefficients in `R ⊗ S` to
+the degreewise tensor product of the chains of `K` and of `L`: the summand `R ⊗ S` of a simplex
+`(x, y)` goes to the tensor product of the summands of `x` and of `y`. -/
+private def chainsTensorComparison :
+    ((SimplicialObject.whiskering _ _).obj (sigmaConst.obj (R ⊗ S))).obj (K ⊗ L) ⟶
+      ((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj K ⊗
+        ((SimplicialObject.whiskering _ _).obj (sigmaConst.obj S)).obj L where
+  app m := Sigma.desc fun x ↦ Sigma.ι (fun _ : K.obj m ↦ R) x.1 ⊗ₘ Sigma.ι (fun _ : L.obj m ↦ S) x.2
+  naturality m m' φ := Sigma.hom_ext _ _ fun x ↦ by
+    -- The functors are `sigmaConst` after `K`, `L` and `K ⊗ L` only up to unfolding `sigmaConst`,
+    -- so the coproduct lemmas are applied through `Eq.trans` rather than by rewriting.
+    refine ((Sigma.ι_comp_map'_assoc (f := fun _ : (K ⊗ L).obj m' ↦ R ⊗ S)
+      (g := fun _ : (K ⊗ L).obj m ↦ R ⊗ S) _ (fun _ ↦ 𝟙 _) x _).trans ((Category.id_comp _).trans
+      (Sigma.ι_comp_desc (fun y : (K ⊗ L).obj m' ↦
+        Sigma.ι (fun _ : K.obj m' ↦ R) y.1 ⊗ₘ Sigma.ι (fun _ : L.obj m' ↦ S) y.2) _))).trans
+      (Eq.trans ?_ (Sigma.ι_comp_desc_assoc (fun y : (K ⊗ L).obj m ↦
+        Sigma.ι (fun _ : K.obj m ↦ R) y.1 ⊗ₘ Sigma.ι (fun _ : L.obj m ↦ S) y.2) x _).symm)
+    refine Eq.trans ?_ (tensorHom_comp_tensorHom _ _ _ _).symm
+    exact congrArg₂ (· ⊗ₘ ·)
+      ((Sigma.ι_comp_map' (f := fun _ : K.obj m' ↦ R) (g := fun _ : K.obj m ↦ R) _
+        (fun _ ↦ 𝟙 _) x.1).trans (Category.id_comp _)).symm
+      ((Sigma.ι_comp_map' (f := fun _ : L.obj m' ↦ S) (g := fun _ : L.obj m ↦ S) _
+        (fun _ ↦ 𝟙 _) x.2).trans (Category.id_comp _)).symm
 
-private lemma alexanderWhitneyTerm_of_eq {n : ℕ} (x : (K ⊗ L) _⦋n⦌) (p q : ℕ)
-    (h : p + q = n) :
-    alexanderWhitneyTerm K L R S x p q =
-    (K.ιChainComplex (K.map (SimplexCategory.subinterval 0 p (by omega)).op x.1) ⊗ₘ
-      L.ιChainComplex (L.map (SimplexCategory.subinterval p q (by omega)).op x.2)) ≫
-        ιTensorObj _ _ p q n h := by
-  simp only [alexanderWhitneyTerm, h, ↓reduceDIte]
-
-/-- The boundary of the Alexander–Whitney map in the bidegree `(r, s)`: the part of `d ∘ AW` that
-lands in bidegree `(r, s)` is `AW ∘ d`.  The last face of the front `(r + 1)`-face cancels against
-the zeroth face of the back `(s + 1)`-face; every other face of a front or back face is the front
-or back face of a face of the simplex. -/
-private lemma alexanderWhitneyTerm_D {n : ℕ} (x : (K ⊗ L) _⦋n + 1⦌) (r s : ℕ)
-    (h : r + s = n) :
-    alexanderWhitneyTerm K L R S x (r + 1) s ≫
-        mapBifunctor.D₁ _ _ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n +
-      alexanderWhitneyTerm K L R S x r (s + 1) ≫
-        mapBifunctor.D₂ _ _ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n =
-      ∑ k : Fin (n + 2), (-1 : ℤ) ^ (k : ℕ) •
-        alexanderWhitneyTerm K L R S ((K ⊗ L).δ k x) r s := by
-  rw [alexanderWhitneyTerm_of_eq _ _ _ _ _ _ _ (by omega),
-    alexanderWhitneyTerm_of_eq _ _ _ _ _ _ _ (by omega)]
-  simp only [Category.assoc, ChainComplex.ιTensorObj_D₁_succ,
-    ChainComplex.ιTensorObj_D₂_succ, Preadditive.comp_zsmul,
-    tensorHom_comp_whiskerRight_assoc, tensorHom_comp_whiskerLeft_assoc, SSet.ιChainComplex_d,
-    sum_tensor, tensor_sum, zsmul_tensorHom, tensorHom_zsmul, Preadditive.sum_comp,
-    Preadditive.zsmul_comp]
-  have hrs : r + 1 + (s + 1) = n + 2 := by omega
-  conv_rhs =>
-    rw [← Fin.sum_congr' _ hrs, Fin.sum_univ_add]
-  rw [Fin.sum_univ_castSucc (n := r + 1), Fin.sum_univ_succ (n := s + 1)]
-  simp only [alexanderWhitneyTerm_of_eq K L R S _ r s h]
-  simp only [Monoidal.tensorObj_obj, prod_δ_fst, prod_δ_snd]
-  rw [δ_last_map_subinterval_zero, δ_zero_map_subinterval, smul_add, Finset.smul_sum,
-    add_add_add_comm]
-  -- the two sums match termwise, and the two remaining terms cancel
-  have key {M : Type _} [AddCommGroup M] {A A' a b B B' : M} (h₁ : A = A') (h₂ : B = B')
-      (h₃ : a + b = 0) : A + b + (a + B) = A' + B' := by
-    have hadd : A + b + (a + B) = A + B + (a + b) := by abel
-    rw [← h₁, ← h₂, hadd, h₃, add_zero]
-  refine key ?_ ?_ ?_
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have := i.isLt
-    rw [δ_map_subinterval_zero K x.1 i.castSucc
-        (Fin.cast (by omega) (Fin.castAdd (s + 1) i)) (by simp),
-      map_subinterval_δ_of_le L x.2 _ (by simp; omega)]
-    simp
-  · refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [δ_succ_map_subinterval L x.2 j (Fin.cast (by omega) (Fin.natAdd (r + 1) j))
-        (by simp),
-      map_subinterval_zero_δ_of_lt K x.1 _ (by simp; omega), smul_smul]
-    congr 1
-    simp [pow_add]
-  · rw [smul_smul, ← add_smul]
-    simp [pow_succ]
-
-/-- The degree-`n` component of the Alexander–Whitney map. -/
-private def alexanderWhitneyX (n : ℕ) :
-    ((K ⊗ L).chainComplex (R ⊗ S)).X n ⟶ (K.chainComplex R ⊗ L.chainComplex S).X n :=
-  Cofan.IsColimit.desc ((K ⊗ L).isColimitChainComplexXCofan (R ⊗ S) n)
-    fun x ↦ ∑ pq ∈ Finset.antidiagonal n, alexanderWhitneyTerm K L R S x pq.1 pq.2
-
+omit [MonoidalPreadditive C] in
 @[reassoc]
-private lemma ιChainComplex_alexanderWhitneyX {n : ℕ} (x : (K ⊗ L) _⦋n⦌) :
-    (K ⊗ L).ιChainComplex x ≫ alexanderWhitneyX K L R S n =
-      ∑ pq ∈ Finset.antidiagonal n, alexanderWhitneyTerm K L R S x pq.1 pq.2 :=
-  Cofan.IsColimit.fac _ _ x
+private lemma ιChainComplex_chainsTensorComparison {n : ℕ} (x : (K ⊗ L) _⦋n⦌) :
+    (K ⊗ L).ιChainComplex x ≫
+        ((AlgebraicTopology.alternatingFaceMapComplex C).map
+          (chainsTensorComparison K L R S)).f n =
+      K.ιChainComplex x.1 ⊗ₘ L.ιChainComplex x.2 :=
+  Sigma.ι_comp_desc _ _
+
+/-- The inclusion of a summand into the tensor product of the alternating face map complexes of
+the simplicial objects of chains of `K` and of `L` is the inclusion into the tensor product of
+the chain complexes of `K` and of `L`. -/
+private lemma ιTensorObj_chainComplex (p q n : ℕ) (h : p + q = n) :
+    ιTensorObj ((AlgebraicTopology.alternatingFaceMapComplex C).obj
+        (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj K))
+      ((AlgebraicTopology.alternatingFaceMapComplex C).obj
+        (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj S)).obj L)) p q n h =
+      ιTensorObj (K.chainComplex R) (L.chainComplex S) p q n h := by
+  dsimp only [chainComplex, chainComplexFunctor, Functor.postcompose₂_obj_obj_obj_obj,
+    Functor.comp_obj]
 
 /-- The Alexander–Whitney map `C(K × L; R ⊗ S) ⟶ C(K; R) ⊗ C(L; S)`, sending an `n`-simplex
 `(x, y)` of `K × L` to `∑_{p + q = n} x|[0, …, p] ⊗ y|[p, …, n]`, the front `p`-face of `x`
-tensored with the back `q`-face of `y` (`SSet.ιChainComplex_alexanderWhitney_f`).  It is a
-morphism of chain complexes for the Koszul sign convention on the tensor product. -/
+tensored with the back `q`-face of `y` (`SSet.ιChainComplex_alexanderWhitney_f`).  It is the
+Alexander–Whitney map `CategoryTheory.SimplicialObject.alexanderWhitney` of the simplicial objects
+of chains of `K` and of `L`, precomposed with the map sending the summand of `(x, y)` to the tensor
+product of the summands of `x` and of `y`; it is a morphism of chain complexes for the Koszul sign
+convention on the tensor product. -/
 def alexanderWhitney :
-    (K ⊗ L).chainComplex (R ⊗ S) ⟶ K.chainComplex R ⊗ L.chainComplex S where
-  f := alexanderWhitneyX K L R S
-  comm' := by
-    rintro _ n rfl
-    ext x
-    have hd : (K.chainComplex R ⊗ L.chainComplex S).d (n + 1) n =
-        mapBifunctor.D₁ _ _ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n +
-          mapBifunctor.D₂ _ _ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n :=
-      mapBifunctor.d_eq _ _ _ _ _ _
-    rw [ιChainComplex_alexanderWhitneyX_assoc, ιChainComplex_d_assoc, hd]
-    simp only [Preadditive.sum_comp, Preadditive.comp_add,
-      Preadditive.zsmul_comp, ιChainComplex_alexanderWhitneyX]
-    rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ',
-      alexanderWhitneyTerm_of_eq _ _ _ _ _ 0 (n + 1) (by omega),
-      alexanderWhitneyTerm_of_eq _ _ _ _ _ (n + 1) 0 (by omega), Category.assoc, Category.assoc,
-      ChainComplex.ιTensorObj_D₁_zero, ChainComplex.ιTensorObj_D₂_zero, comp_zero, comp_zero,
-      zero_add, zero_add, ← Finset.sum_add_distrib]
-    simp only [Finset.smul_sum]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun pq hpq ↦ ?_
-    exact alexanderWhitneyTerm_D K L R S x pq.1 pq.2 (Finset.mem_antidiagonal.mp hpq)
+    (K ⊗ L).chainComplex (R ⊗ S) ⟶ K.chainComplex R ⊗ L.chainComplex S :=
+  (AlgebraicTopology.alternatingFaceMapComplex C).map (chainsTensorComparison K L R S) ≫
+    SimplicialObject.alexanderWhitney _ _
 
 /-- The Alexander–Whitney map on the summand of an `n`-simplex `x` of `K × L`: the sum over
 `p ≤ n` of the front `p`-face of `x.1` tensored with the back `(n - p)`-face of `x.2`. -/
@@ -225,10 +128,16 @@ lemma ιChainComplex_alexanderWhitney_f {n : ℕ} (x : (K ⊗ L) _⦋n⦌) :
         (K.ιChainComplex (K.map (SimplexCategory.subinterval 0 p (by omega)).op x.1) ⊗ₘ
           L.ιChainComplex (L.map (SimplexCategory.subinterval p (n - p) (by omega)).op x.2)) ≫
             ιTensorObj _ _ (p : ℕ) (n - p) n (by omega) := by
-  rw [alexanderWhitney, ιChainComplex_alexanderWhitneyX,
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ (alexanderWhitneyTerm K L R S x),
-    Finset.sum_range]
-  exact Finset.sum_congr rfl fun p _ ↦ alexanderWhitneyTerm_of_eq _ _ _ _ _ _ _ (by omega)
+  rw [alexanderWhitney, HomologicalComplex.comp_f, ιChainComplex_chainsTensorComparison_assoc,
+    SimplicialObject.alexanderWhitney_f]
+  -- The chains of `K` are the alternating face map complex of the simplicial object of chains
+  -- only up to unfolding, so the sum is distributed by `Eq.trans` rather than by rewriting, and
+  -- the two inclusions of the summand into the tensor product agree by `ιTensorObj_chainComplex`.
+  refine (Preadditive.comp_sum _ _ _).trans (Finset.sum_congr rfl fun p _ ↦ ?_)
+  refine (tensorHom_comp_tensorHom_assoc _ _ _ _ _).trans ?_
+  rw [ιTensorObj_chainComplex]
+  simp only [sigmaConst, Functor.whiskeringRight_obj_obj, Functor.comp_obj, ιChainComplex,
+    Functor.comp_map, Sigma.ι_comp_map', Category.id_comp]
 
 variable {K L} in
 /-- The Alexander–Whitney map is natural in both simplicial sets. -/

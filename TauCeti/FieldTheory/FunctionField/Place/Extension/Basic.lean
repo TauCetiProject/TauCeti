@@ -586,7 +586,8 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
         rw [hm, hm₀]
         exact fun hcontra ↦ hj.2 (eq_of_mul_add_natCast_eq hcontra)
       have hge := hj₀ j (by simp [hJdef, hAj])
-      apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation hj₀A hAj).mp
+      apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation
+        (P'.valuation.ne_zero_iff.mpr hj₀A) (P'.valuation.ne_zero_iff.mpr hAj)).mp
       simpa only [Valuation.ord_def, ord_def] using lt_of_le_of_ne hge hne.symm
   exact ⟨j₀, hj₀A, hj₀ j₁ (by simp [hJdef, hj₁]),
     P'.valuation.map_sum_eq_of_lt (Finset.mem_univ j₀) hlt⟩

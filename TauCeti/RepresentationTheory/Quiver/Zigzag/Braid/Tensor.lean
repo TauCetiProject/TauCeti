@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
+public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 public import TauCeti.Algebra.Homology.Bifunctor.Support

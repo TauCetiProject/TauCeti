@@ -123,7 +123,8 @@ theorem count_span_Δ_eq_ord_Δ (W : WeierstrassCurve K) (v : HeightOneSpectrum 
     ((Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors : ℤ) =
       (v.valuation K).ord W.Δ := by
   symm
-  exact (Valuation.ord_eq_iff_valuation_eq_exp_neg _ W.isUnit_Δ.ne_zero).2
+  exact (Valuation.ord_eq_iff_valuation_eq_exp_neg _
+    ((v.valuation K).ne_zero_iff.mpr W.isUnit_Δ.ne_zero)).2
     (valuation_Δ_eq_exp_neg_count v hd)
 
 /-- **At a prime where the equation is minimal, the exponent of `𝔭ᵥ` in the discriminant is

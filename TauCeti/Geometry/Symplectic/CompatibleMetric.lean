@@ -205,6 +205,27 @@ open scoped RealInnerProductSpace
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
+/-- Identifying the associated metric with a real inner product makes the symplectic form
+invariant under the almost complex structure. -/
+lemma invariant_of_apply_apply_eq_inner
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) : ω.Invariant J := by
+  rw [ω.invariant_iff J]
+  intro v w
+  calc
+    ω (J v) (J w) = ⟪J v, w⟫ := hg _ _
+    _ = ⟪w, J v⟫ := real_inner_comm _ _
+    _ = ω w (J (J v)) := (hg _ _).symm
+    _ = -ω w v := by simp
+    _ = ω v w := ω.neg_eq _ _
+
+/-- The almost complex structure is an isometry for a norm whose inner product is its
+associated symplectic metric. -/
+lemma norm_apply_eq_norm_of_apply_apply_eq_inner
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v : V) : ‖J v‖ = ‖v‖ := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
+    ← real_inner_self_eq_norm_sq, ← hg, ← hg]
+  exact (ω.invariant_of_apply_apply_eq_inner hg).apply _ _
+
 /-- If the inner product of `V` is the metric `ω(·, J ·)` of a symplectic form and an almost
 complex structure, then `ω` is bounded by the inner product norm: `|ω(v, w)| ≤ ‖v‖ ‖w‖`. -/
 theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w : V) :
@@ -213,12 +234,7 @@ theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w 
   have hω : ω v w = -⟪v, J w⟫ := by
     rw [← hg, J.apply_apply]
     simp
-  have hJ : ‖J w‖ = ‖w‖ := by
-    have hskew := ω.neg_eq (J w) w
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-      ← real_inner_self_eq_norm_sq, ← hg, ← hg, J.apply_apply]
-    simp only [map_neg] at hskew ⊢
-    linarith
+  have hJ := ω.norm_apply_eq_norm_of_apply_apply_eq_inner hg w
   rw [hω, abs_neg, ← hJ]
   exact abs_real_inner_le_norm v (J w)
 
