@@ -61,8 +61,8 @@ automorphisms of an algebraic closure are the points over the perfect closure of
 * `WeierstrassCurve.torsionCoeffIncl`: the equivariant inclusion `E(Kˢ)[m] → E(Kˢ)`.
 * `WeierstrassCurve.kummerShortExact`: the Kummer sequence `0 → E[m] → E → E → 0` of `W`.
 * `WeierstrassCurve.basePointCoeff`: the inclusion `E(K) → E(Kˢ)`.
-* `WeierstrassCurve.baseTorsionCoeff`: its restriction `E(K)[m] → E(Kˢ)[m]`.
 * `WeierstrassCurve.basePointEquivInvariants`: the isomorphism `E(K) ≅ H⁰(G_K, E(Kˢ))`.
+* `WeierstrassCurve.baseTorsionCoeff`: the inclusion `E(K)[m] → E(Kˢ)[m]`.
 
 ## Main results
 
