@@ -438,9 +438,8 @@ theorem center_inf_derivedSeries_eq_bot :
     LieAlgebra.center K L ⊓ derivedSeries K L 1 = ⊥ := by
   obtain ⟨J, hJ⟩ := (LieAlgebra.center K L).exists_isCompl_of_le_center le_rfl
   have hD : derivedSeries K L 1 ≤ J := by
-    change ⁅(⊤ : LieIdeal K L), (⊤ : LieIdeal K L)⁆ ≤ J
-    rw [← hJ.sup_eq_top, LieSubmodule.lie_sup, LieModule.ideal_oper_maxTrivSubmodule_eq_bot,
-      bot_sup_eq]
+    rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero, ← hJ.sup_eq_top,
+      LieSubmodule.lie_sup, LieModule.ideal_oper_maxTrivSubmodule_eq_bot, bot_sup_eq]
     exact LieSubmodule.lie_le_right _ _
   exact le_bot_iff.1 ((inf_le_inf_left _ hD).trans hJ.inf_eq_bot.le)
 
