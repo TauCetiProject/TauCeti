@@ -23,6 +23,13 @@ For a compact group and smooth discrete coefficients, the total module with its 
 is again smooth. This provides a graded coefficient module for finite tensor induction of
 resolutions; tensor products can apply the differential on one carrier while tracking its degree.
 
+## Main results
+
+* `gradedResolutionTopRepDifferential` bundles the square-zero differential as a morphism of
+  discrete topological representations.
+* `gradedResolutionTopRepMap` bundles coefficient maps, preserving identities, composition,
+  and the differential.
+
 ## References
 
 * L. Evens, *A generalization of the transfer map in the cohomology of groups*,
@@ -371,6 +378,64 @@ theorem gradedResolutionTopRep_ρ_lof [DecidableEq ℕ] (n : ℕ) (g : G)
 instance : DiscreteTopology X.gradedResolutionTopRep.V := by
   unfold gradedResolutionTopRep
   infer_instance
+
+/-- The total resolution differential as a morphism of discrete topological representations. -/
+noncomputable def gradedResolutionTopRepDifferential :
+    X.gradedResolutionTopRep ⟶ X.gradedResolutionTopRep :=
+  (TauCeti.discreteTopRepFunctor R G).map <| Rep.ofHom <|
+    X.gradedResolutionDifferential.intertwiningMap_of_isIntertwiningMap
+      X.gradedResolutionRepresentation X.gradedResolutionRepresentation
+      X.gradedResolutionDifferential_equivariant
+
+/-- Bundling the total differential preserves its action on the original direct-sum carrier. -/
+theorem gradedResolutionTopRepDifferential_apply (x : X.gradedResolutionModule) :
+    X.gradedResolutionTopRepDifferential.hom x = X.gradedResolutionDifferential x :=
+  (rfl)
+
+/-- The differential of the bundled discrete resolution squares to zero. -/
+theorem gradedResolutionTopRepDifferential_sq :
+    X.gradedResolutionTopRepDifferential ≫ X.gradedResolutionTopRepDifferential = 0 := by
+  ext x
+  exact X.gradedResolutionDifferential_sq x
+
+variable {X} {Y Z : TopRep.{max v w} R G}
+
+/-- A coefficient morphism induces a morphism of discrete total resolutions. -/
+noncomputable def gradedResolutionTopRepMap (f : X ⟶ Y) :
+    X.gradedResolutionTopRep ⟶ Y.gradedResolutionTopRep :=
+  (TauCeti.discreteTopRepFunctor R G).map <| Rep.ofHom <|
+    (gradedResolutionMap f).intertwiningMap_of_isIntertwiningMap
+      X.gradedResolutionRepresentation Y.gradedResolutionRepresentation
+      (gradedResolutionMap_equivariant f)
+
+/-- Bundling a coefficient map preserves its action on the original direct-sum carrier. -/
+theorem gradedResolutionTopRepMap_apply (f : X ⟶ Y) (x : X.gradedResolutionModule) :
+    (gradedResolutionTopRepMap f).hom x = gradedResolutionMap f x :=
+  (rfl)
+
+/-- Identity coefficients induce the identity morphism of the discrete total resolution. -/
+@[simp]
+theorem gradedResolutionTopRepMap_id : gradedResolutionTopRepMap (𝟙 X) =
+    𝟙 X.gradedResolutionTopRep := by
+  ext x
+  exact DFunLike.congr_fun (gradedResolutionMap_id (X := X)) x
+
+/-- Bundled coefficient maps preserve composition. -/
+@[simp]
+theorem gradedResolutionTopRepMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    gradedResolutionTopRepMap (f ≫ g) =
+      gradedResolutionTopRepMap f ≫ gradedResolutionTopRepMap g := by
+  ext x
+  exact DFunLike.congr_fun (gradedResolutionMap_comp f g) x
+
+/-- Bundled coefficient maps commute with the resolution differential. -/
+theorem gradedResolutionTopRepMap_differential (f : X ⟶ Y) :
+    X.gradedResolutionTopRepDifferential ≫ gradedResolutionTopRepMap f =
+      gradedResolutionTopRepMap f ≫ Y.gradedResolutionTopRepDifferential := by
+  ext x
+  exact gradedResolutionMap_differential f x
+
+variable (X)
 
 /-- Over a compact group, the total coinduced resolution of smooth discrete coefficients is
 smooth: each element has finitely many components, whose open stabilizers have open intersection. -/
