@@ -32,6 +32,11 @@ equality is derived here.
 Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree equality, through
 `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`.
 
+The name is justified by extending the constants: if `k'` is relatively algebraically closed in
+`F'` and `K / k'` is separable algebraic, for instance an algebraic closure of a perfect `k'`, then
+the degree of `F' · K` over `F · K` is again `n(F'/F)`. Over a perfect `k`, with `K` an algebraic
+closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] · [k' : k]`.
+
 ## Main definitions
 
 * `TauCeti.constantCompositum`: the compositum `F · k'` inside `F'`.
@@ -63,6 +68,10 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
   equality follows.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`: it also follows from
   `IntermediateField.LinearDisjoint`.
+* `TauCeti.geometricDegree_eq_relfinrank_adjoin`: the geometric degree is the degree
+  `[F' · K : F · K]` after a separable algebraic constant field extension `K / k'`.
+* `TauCeti.finrank_eq_relfinrank_adjoin_mul_finrank`: `[F' : F] = [F' · K : F · K] · [k' : k]`
+  (Stichtenoth, Proposition 3.6.6).
 
 ## References
 
@@ -71,8 +80,9 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
   own statement, the persistence over `k'` of linear independence over `k`, is
   `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`) is
   `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`, the geometric degree
-  `[F' : F·k']` is the factor appearing in Corollary 3.6.4, and the splitting
-  `[F' : F] = n(F'/F) · [k' : k]` is the companion of Proposition 3.6.6.  Section III.1
+  `[F' : F·k']` is the factor appearing in Corollary 3.6.4, the splitting
+  `[F' : F] = n(F'/F) · [k' : k]` is the companion of Proposition 3.6.6, and
+  `TauCeti.finrank_eq_relfinrank_adjoin_mul_finrank` is Proposition 3.6.6 itself.  Section III.1
   (Corollary 3.1.14) is the cross-multiplied conorm identity this feeds, in
   `TauCeti.FieldTheory.FunctionField.Divisor.Conorm`.
 
@@ -354,5 +364,82 @@ theorem finrank_constantCompositum_eq_finrank_of_isSeparable (hex : IsIntegrally
     (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex)
 
 end LinearDisjoint
+
+/-! ### The geometric degree after extending the constants -/
+
+section ConstantExtension
+
+variable [Field k'] [Algebra k' F'] [Algebra F F'] (F k' F')
+variable {Ω : Type*} [Field Ω] [Algebra F Ω] [Algebra F' Ω] [IsScalarTower F F' Ω]
+variable [Algebra k' Ω] [IsScalarTower k' F' Ω]
+
+/-- **The geometric degree survives a separable constant field extension.** Let `k'` be
+relatively algebraically closed in `F'`, and let `K` be a separable algebraic extension of `k'`
+inside a common overfield `Ω` of `F'` and `K`. Then the degree of `F' · K` over `F · K` is the
+geometric degree `n(F'/F) = [F' : F·k']`.
+
+For a perfect `k'` the field `K` can be an algebraic closure of `k'`, and the geometric degree is
+the degree `[F' · K : F · K]` of the extension of function fields over the algebraically closed
+constant field `K`. -/
+theorem geometricDegree_eq_relfinrank_adjoin (hex' : IsIntegrallyClosedIn k' F')
+    (K : IntermediateField k' Ω) [Algebra.IsSeparable k' K] :
+    geometricDegree F k' F' = IntermediateField.relfinrank (adjoin F (K : Set Ω))
+      ((adjoin F' (K : Set Ω)).restrictScalars F) := by
+  let fF : F' →ₐ[F] Ω := IsScalarTower.toAlgHom F F' Ω
+  let fk : F' →ₐ[k'] Ω := IsScalarTower.toAlgHom k' F' Ω
+  -- the images of `F'` and of `F · k'` in `Ω`, as intermediate fields over `k'`
+  let B : IntermediateField k' Ω := fk.fieldRange
+  let C : IntermediateField k' Ω := adjoin k' (Set.range (algebraMap F Ω))
+  have hCB : C ≤ B := adjoin_le_iff.2 <| by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨algebraMap F F' x, (IsScalarTower.algebraMap_apply F F' Ω x).symm⟩
+  have hld : K.LinearDisjoint B := by
+    have h := linearDisjoint_fieldRange_of_isIntegrallyClosedIn (k' := K) (E := Ω) hex'
+    have hKr : (IsScalarTower.toAlgHom k' K Ω).fieldRange = K := by
+      ext x
+      simp [AlgHom.mem_fieldRange]
+    rw [hKr] at h
+    rw [linearDisjoint_iff] at h
+    rw [linearDisjoint_iff', AlgHom.fieldRange_toSubalgebra]
+    exact h
+  -- both relative degrees only depend on the underlying subfields of `Ω`
+  have hKS : ∀ S : Set Ω, Subfield.closure (S ∪ K) = K.toSubfield ⊔ Subfield.closure S := by
+    intro S
+    rw [Set.union_comm, Subfield.closure_union, ← coe_toSubfield, Subfield.closure_eq]
+  have hk' : Subfield.closure (Set.range (algebraMap k' Ω)) ≤ K.toSubfield :=
+    Subfield.closure_le.2 fun _ ⟨c, hc⟩ ↦ hc ▸ K.algebraMap_mem c
+  have hFK : (adjoin F (K : Set Ω)).toSubfield = (K ⊔ C).toSubfield := by
+    simp [C, adjoin_toSubfield, sup_toSubfield, hKS, Subfield.closure_union, ← sup_assoc, hk']
+  have hF'K : ((adjoin F' (K : Set Ω)).restrictScalars F).toSubfield = (K ⊔ B).toSubfield := by
+    simp [B, fk, adjoin_toSubfield, sup_toSubfield, hKS, ← RingHom.coe_fieldRange]
+  have hE : ((constantCompositum F k' F').map fF).toSubfield = C.toSubfield := by
+    simp [C, fF, constantCompositum_def, adjoin_map, adjoin_toSubfield, Set.union_comm,
+      ← Set.range_comp, ← RingHom.coe_comp, ← IsScalarTower.algebraMap_eq]
+  have htop : ((⊤ : IntermediateField F F').map fF).toSubfield = B.toSubfield := by
+    simp [B, fF, fk, ← AlgHom.fieldRange_eq_map]
+  rw [geometricDegree_def, ← relfinrank_top_right, ← relfinrank_map_map _ _ fF,
+    relfinrank_eq_relfinrank_of_toSubfield_eq hE htop,
+    ← K.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint B C hCB hld]
+  exact relfinrank_eq_relfinrank_of_toSubfield_eq hFK.symm hF'K.symm
+
+variable [Field k] [Algebra k k'] [Algebra k F] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
+/-- **The degree of an extension of function fields splits into a geometric and a constant
+part** (Stichtenoth, Proposition 3.6.6): `[F' : F] = [F' · K : F · K] · [k' : k]`.
+
+Here `k` is relatively algebraically closed in `F`, `k'` is relatively algebraically closed in
+`F'`, `k' / k` is separable, and `K` is a separable algebraic extension of `k'` inside a common
+overfield `Ω`. Stichtenoth takes `k` perfect and `K` an algebraic closure of `k`; over a perfect
+`k'` the relative algebraic closure `algebraicClosure k' Ω` is such a `K`. -/
+theorem finrank_eq_relfinrank_adjoin_mul_finrank (hex : IsIntegrallyClosedIn k F)
+    [Algebra.IsSeparable k k'] (hex' : IsIntegrallyClosedIn k' F') (K : IntermediateField k' Ω)
+    [Algebra.IsSeparable k' K] :
+    Module.finrank F F' = IntermediateField.relfinrank (adjoin F (K : Set Ω))
+      ((adjoin F' (K : Set Ω)).restrictScalars F) * Module.finrank k k' := by
+  rw [← geometricDegree_eq_relfinrank_adjoin F k' F' hex' K]
+  exact finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq F k' F'
+    (finrank_constantCompositum_eq_finrank_of_isSeparable F k' F' hex)
+
+end ConstantExtension
 
 end TauCeti

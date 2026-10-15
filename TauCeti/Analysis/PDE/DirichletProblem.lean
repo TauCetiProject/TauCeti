@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.Sobolev.FiniteMeasure
 
 /-!
 # The Dirichlet problem: existence and uniqueness of a weak solution
@@ -101,6 +102,9 @@ the constructed one, so it is available before, and independently of, uniqueness
   `UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball`.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`:
   existence and uniqueness on an arbitrary open domain when the potential absorbs the drift.
+* `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`:
+  existence and uniqueness for `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f`, `c ≥ 0`, on a domain of finite measure
+  with data `f ∈ Lʳ(Ω)`, `r > max 1 (2n/(n+2))`, which need not be square integrable.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
   under the geometric hypotheses that make the energy form coercive.
@@ -123,7 +127,7 @@ namespace TauCeti
 namespace PDE
 
 open MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal InnerProductSpace
+open scoped Distributions ENNReal InnerProductSpace NNReal
 
 section Domain
 
@@ -433,6 +437,58 @@ theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_b
   exact existsUnique_isWeakSolutionDirichlet hcoeff
     (h.isCoercive_energyFormH1L0_of_mass_lower_bound ha hb hc hb_bound hc_bound hc_lower hmass
       hcoeff) f
+
+/-! ### Data in `Lʳ` on a domain of finite measure -/
+
+/-- **Weak solvability of the Dirichlet problem with `Lʳ` data.** Let `n ≥ 1` be the dimension
+and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. On a domain `Ω` of finite
+measure, let `a` be measurable and uniformly elliptic, and let `c` be measurable, bounded and
+nonnegative. For every `f ∈ Lʳ(Ω)` there is exactly one `w ∈ H¹₀(Ω)` with
+
+`a(w, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
+
+the weak solution of `-∂ⱼ(aⁱʲ ∂ᵢw) + c w = f` in `Ω`, `w = 0` on `∂Ω`. Unlike
+`TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`, the data need not be square integrable. The
+range `r > max 1 (2n/(n + 2))` is the one in which `v ↦ ∫_Ω f v` is continuous on `H¹₀(Ω)`
+(`TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`). -/
+theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp
+    [DecidableEq ι] [Nonempty ι] {lam Lam gamma : ℝ} {r : ℝ≥0} {f : EuclideanSpace ℝ ι → ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) (hOmega : mu Omega ≠ ∞)
+    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) * (2 - r) < 2 * r)
+    (hf : MemLp f r (mu.restrict Omega)) :
+    ∃! w : W1p0 mu Omega 2, ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a 0 c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  have hfin : Module.finrank ℝ (EuclideanSpace ℝ ι) = Fintype.card ι := finrank_euclideanSpace
+  set ν := mu.restrict (Omega : Set (EuclideanSpace ℝ ι))
+  obtain ⟨P, hPfin, hP⟩ : ∃ P : ℝ≥0∞, P ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
+      eLpNorm (W1p.value (v : W1p mu Omega 2)) 2 ν ≤ P * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
+    ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by rw [hfin, sub_zero]; positivity) hOmega), fun v =>
+      W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu) (q := 2)
+        ENNReal.ofNat_ne_top hOmega le_rfl (δ := 0) (by simp) (by rw [hfin]; positivity) v.2⟩
+  have hPR : ∀ v : W1p0 mu Omega 2,
+      ‖W1p.value (v : W1p mu Omega 2)‖ ≤ P.toReal * ‖W1p.gradient (v : W1p mu Omega 2)‖ :=
+    fun v => by
+      have := ENNReal.toReal_mono (ENNReal.mul_ne_top hPfin enorm_ne_top) (hP v)
+      rwa [ENNReal.toReal_mul, toReal_enorm, ← Lp.norm_def] at this
+  -- The energy form is coercive on `H¹₀(Ω)`, by the Poincaré inequality.
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0)
+    h.upper_nonneg ha aestronglyMeasurable_const hc
+    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound
+  have hlower : ∀ w : W1p0 mu Omega 2, lam / (P.toReal ^ 2 + 1) * ‖w‖ ^ 2 ≤
+      energyFormH1 a 0 c (w : W1p mu Omega 2) (w : W1p mu Omega 2) := fun w =>
+    h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift (b := 0) ha hc (fun _ _ => rfl)
+      hc_bound hc_nonneg (hPR w)
+  have hcoer : IsCoercive (energyFormH1L0 hcoeff) :=
+    isCoercive_energyFormH1L0 hcoeff (by have := h.pos; positivity) hlower
+  obtain ⟨ℓ, hℓ⟩ := W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp hOmega hr
+    (by rwa [hfin]) hf
+  simpa only [energyFormH1L0_apply, hℓ] using hcoer.existsUnique_forall_eq ℓ
 
 /-! ### The Laplacian model -/
 

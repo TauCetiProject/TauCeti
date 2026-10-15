@@ -264,8 +264,8 @@ theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
   have hneg := ord_neg_of_ord_eq_neg_of_not_dvd hw₀ hdiv
   have hu := ne_pow_sub_self_of_exists_reduced_artinSchreier_pole (v := P.valuation) p
     (Fact.out : p.Prime).one_lt
-    ⟨w₀, by simpa only [Valuation.ord_def, ← P.ord_def] using hneg,
-      by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv⟩
+    ⟨w₀, by simpa only [Place.ord_valuation] using hneg,
+      by simpa only [Place.ord_valuation] using hdiv⟩
   let _ := ArtinSchreier.isSplittingField hy hgen
   let _ := Polynomial.IsSplittingField.finiteDimensional F'
     (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)

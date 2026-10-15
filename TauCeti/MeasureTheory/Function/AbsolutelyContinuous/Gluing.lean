@@ -13,7 +13,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 Absolute continuity on adjacent intervals implies absolute continuity on their union in a
 pseudometric space. This permits splitting and reassembling raw curves with either orientation,
-and gluing finite subdivisions, including subdivisions into affine cells.
+and gluing finite subdivisions, including subdivisions into affine cells. In particular a
+polygonal curve (`TauCeti.IsPolygonalOnInterval`) is absolutely continuous.
 -/
 
 public section
@@ -123,5 +124,22 @@ theorem of_affine_subdivision {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     exact (hsegments i t ht).symm
   simpa only [ha, hb] using of_subdivision hedge
 
-
 end AbsolutelyContinuousOnInterval
+
+/-- A raw curve is polygonal on an interval if a finite increasing subdivision expresses it as
+the affine interpolation of its successive vertex values on every closed cell. -/
+@[expose] def TauCeti.IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (f : ℝ → F) (a b : ℝ) : Prop :=
+  ∃ N : ℕ, 0 < N ∧ ∃ s : Fin (N + 1) → ℝ,
+    StrictMono s ∧ s 0 = a ∧ s (Fin.last N) = b ∧
+      ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
+        f t = f (s i.castSucc) +
+          ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
+            (f (s i.succ) - f (s i.castSucc))
+
+/-- A polygonal curve is absolutely continuous: its finitely many affine cells glue together. -/
+theorem TauCeti.IsPolygonalOnInterval.absolutelyContinuousOnInterval {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {a b : ℝ}
+    (h : TauCeti.IsPolygonalOnInterval f a b) : AbsolutelyContinuousOnInterval f a b := by
+  obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := h
+  exact AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments

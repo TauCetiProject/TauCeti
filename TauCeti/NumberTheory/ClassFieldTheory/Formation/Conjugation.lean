@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Algebra.Group.Subgroup.Map
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!
@@ -101,6 +101,9 @@ conjugation with the resulting map on norm quotients.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient_conjugateTateIso_apply`:
   conjugation commutes with the canonical identification of degree-zero Tate cohomology with the
   norm quotient.
+* `TauCeti.ClassFieldTheory.LayerRefinement.conjugate` and
+  `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_comp_conjugateCohomologyIso_hom`:
+  conjugation carries refinements to refinements and commutes with inflation.
 
 ## Implementation notes
 
@@ -795,5 +798,47 @@ theorem conjugateTateIso_trans_conjugateTateIso (r : ℤ) :
   · simp
 
 end NormalLayer
+
+/-! ### Conjugation of refinements -/
+
+namespace LayerRefinement
+
+variable {old new : NormalLayer G}
+
+/-- **Conjugation carries refinements to refinements**: if `L/F` refines `K/F`, then `gL/gF`
+refines `gK/gF`. -/
+theorem conjugate (T : LayerRefinement old new) (g : G) :
+    LayerRefinement (old.conjugate g) (new.conjugate g) :=
+  ⟨by ext x; simp [T.same_ground], fun _ hx ↦ T.top_le hx⟩
+
+/-- **Conjugation commutes with inflation**: inflating from `K/F` to `L/F` and then conjugating by
+`g` is conjugating by `g` and then inflating from `gK/gF` to `gL/gF`. -/
+@[reassoc, elementwise]
+theorem cohomologyInfl_comp_conjugateCohomologyIso_hom (T : LayerRefinement old new)
+    (F : Formation G) (g : G) (n : ℕ) :
+    T.cohomologyInfl F n ≫ (new.conjugateCohomologyIso F g n).hom =
+      (old.conjugateCohomologyIso F g n).hom ≫ (T.conjugate g).cohomologyInfl F n := by
+  rw [cohomologyInfl_def, cohomologyInfl_def, NormalLayer.conjugateCohomologyIso_def,
+    NormalLayer.conjugateCohomologyIso_def, groupCohomology.mapIso_hom,
+    groupCohomology.mapIso_hom]
+  refine (groupCohomology.map_comp _ _ _ _ n).symm.trans
+    (Eq.trans ?_ (groupCohomology.map_comp _ _ _ _ n))
+  refine groupCohomology.map_congr ?_ ?_ n
+  · refine MonoidHom.ext fun γ ↦ ?_
+    induction γ using QuotientGroup.induction_on with
+    | H w =>
+      rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
+        MonoidHom.coe_ofClass, NormalLayer.conjugateGalEquiv_symm_mk, galHom_mk, galHom_mk,
+        NormalLayer.conjugateGalEquiv_symm_mk]
+      exact congrArg QuotientGroup.mk (Subtype.ext (by simp))
+  -- Both composites act by `g` on an element of `A^V`, read in `A^{gV'g⁻¹}`.
+  refine LinearMap.ext fun x ↦ Subtype.ext ?_
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+    Rep.resMap_hom_toLinearMap, LinearMap.coe_comp,
+    Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply]
+  rw [Rep.hom_ofHom, Rep.hom_ofHom]
+  simp
+
+end LayerRefinement
 
 end TauCeti.ClassFieldTheory

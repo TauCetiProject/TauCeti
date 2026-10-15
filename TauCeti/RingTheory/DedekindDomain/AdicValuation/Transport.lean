@@ -212,9 +212,9 @@ theorem adicCompletionCongr_symm :
 @[simp]
 theorem valued_adicCompletionCongr (x : v.adicCompletion K) :
     Valued.v (adicCompletionCongr v w σ hσ x) = Valued.v x := by
-  rw [← adicCompletion.valued_toCompletion, toCompletion_adicCompletionCongr,
+  rw [← adicCompletion.valued_toCompletion_apply, toCompletion_adicCompletionCongr,
     Valuation.Completion.valued_congr (v.valuation_surjective K),
-    adicCompletion.valued_toCompletion]
+    adicCompletion.valued_toCompletion_apply]
 
 end Completion
 

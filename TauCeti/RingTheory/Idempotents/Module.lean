@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Algebra.Module.Submodule.Pointwise
+public import TauCeti.Algebra.Star.ProjectionFamily
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.RingTheory.Idempotents.Corner
 
@@ -23,6 +24,11 @@ direct sum of the `S`-submodules `eᵢ • M`,
 the component of `x` in position `i` being `eᵢ • x`. This file proves that
 (`TauCeti.isInternal_smul_top`) and records the dimension count `dim M = ∑ᵢ dim (eᵢ M)` that
 follows over a division ring.
+
+For families of module endomorphisms it also records `TauCeti.ProjectionFamilyNondegenerate` and
+`TauCeti.projectionFamilyOverlap_injective`: an orthogonal target family and a source family
+summing to the identity have injective overlap when every matched target map is injective on the
+source range. The source maps need not be idempotent or orthogonal.
 
 Mathlib has the family (`CompleteOrthogonalIdempotents`) and the converse direction — a
 decomposition of `R` itself into left ideals produces such a family
@@ -272,6 +278,37 @@ theorem finrank_eq_sum_finrank_smul_top [Module.Finite S M]
   exact finrank_eq_sum_finrank_of_isInternal (isInternal_smul_top he)
 
 end Finrank
+
+section ProjectionFamily
+
+variable {𝕜 E ι : Type*} [Semiring 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+
+/-- Davis nondegeneracy: every target map is injective on the matching source range. -/
+def ProjectionFamilyNondegenerate (P Q : ι → E →ₗ[𝕜] E) : Prop :=
+  ∀ i, Set.InjOn (Q i) (P i).range
+
+/-- Pointwise characterization of nondegeneracy of matched projection blocks. -/
+theorem projectionFamilyNondegenerate_iff (P Q : ι → E →ₗ[𝕜] E) :
+    ProjectionFamilyNondegenerate P Q ↔ ∀ i, Set.InjOn (Q i) (P i).range := Iff.rfl
+
+variable [Fintype ι] {P Q : ι → E →ₗ[𝕜] E}
+
+/-- Nondegenerate matched overlaps give an injective overlap operator when the source maps
+sum to the identity; source idempotency and orthogonality are not required. -/
+theorem projectionFamilyOverlap_injective (hPsum : ∑ i, P i = 1)
+    (hQ : OrthogonalIdempotents Q) (hPQ : ProjectionFamilyNondegenerate P Q) :
+    Function.Injective (projectionFamilyOverlap P Q : E →ₗ[𝕜] E) := by
+  intro x y hxy
+  have hcomponents (i : ι) : P i x = P i y := by
+    apply hPQ i (LinearMap.mem_range_self _ _) (LinearMap.mem_range_self _ _)
+    rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← hQ.mul_projectionFamilyOverlap P i]
+    simpa only [Module.End.mul_apply] using congrArg (Q i) hxy
+  rw [← sum_smul_eq_self_of_sum_eq_one hPsum x,
+    ← sum_smul_eq_self_of_sum_eq_one hPsum y]
+  simp only [Module.End.smul_def]
+  exact Finset.sum_congr rfl fun i _ ↦ hcomponents i
+
+end ProjectionFamily
 
 end TauCeti
 

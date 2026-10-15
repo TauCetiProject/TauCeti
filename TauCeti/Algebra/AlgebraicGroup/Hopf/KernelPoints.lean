@@ -196,7 +196,7 @@ theorem quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor
     {H K : _root_.CommHopfAlgCat.{v} R} (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (A : CommAlgCat.{x} R) :
     CommHopfAlgCat.quotientPointsSubgroup H (kerOfSurjective f.hom hf) A =
-      ((CommHopfAlgCat.mapPointsFunctor f).app A).hom.range :=
+      ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A).hom.range :=
   quotientPointsSubgroup_kerOfSurjective_eq_range f.hom hf A
 
 end CommSource

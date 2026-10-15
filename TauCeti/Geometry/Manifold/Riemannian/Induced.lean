@@ -50,14 +50,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
 
+/-- Mathlib's derived `IsNormableSpace` instance on `TangentSpace I x` is stated with the model
+space's `Module` instance instead of the tangent space's own one, so instance search never finds
+it; restate it against the tangent space's structure. -/
+local instance (x : M) : IsNormableSpace ℝ (TangentSpace I x) :=
+  instIsNormableSpaceTangentSpace I x
+
 /-- The Riemannian metric induced on `M` by a `C^(n+1)` map `f : M → F` into a real inner product
 space whose differential is injective at every point: the inner product of two tangent vectors is
 the inner product of their images under the differential `mvfderiv I f x` of `f`, read in `F`. -/
 def inducedRiemannianMetric (f : M → F) (hf : ContMDiff I 𝓘(ℝ, F) (n + 1) f)
     (hinj : ∀ x, Function.Injective (mvfderiv I f x)) :
     ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x) where
-  inner x := (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).bilinearComp
-    (E' := E) (F' := E) (mvfderiv I f x) (mvfderiv I f x)
+  inner x := (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).bilinearComp (mvfderiv I f x) (mvfderiv I f x)
   symm _ _ _ := real_inner_comm _ _
   pos x _ hv := real_inner_self_pos.2
     ((map_ne_zero_iff (mvfderiv I f x : E →L[ℝ] F) (hinj x)).2 hv)

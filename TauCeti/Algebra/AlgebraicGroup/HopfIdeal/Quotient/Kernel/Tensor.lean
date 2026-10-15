@@ -18,7 +18,7 @@ its inverse sends `(g, h)` to `(g, g⁻¹ h)`. This file constructs the correspo
 No flatness or surjectivity hypothesis is needed. The isomorphism supplies the kernel-pair
 calculation used to descend properties of affine-group morphisms from their kernels.
 The construction uses `kernelHopfIdeal_toIdeal_le_ker_iff` and the convolution functoriality
-of `TauCeti.AlgHom.mapDomain` and `TauCeti.AlgHom.mapValue`.
+of `TauCeti.AlgHom.mapDomain` and `AlgHom.mapValue`.
 
 ## References
 
@@ -292,7 +292,7 @@ theorem kernelPairTensorEquiv_symm_tmul_mk (f : H ⟶ K) (x y : K) :
         (Algebra.TensorProduct.map (_root_.HopfAlgebra.antipodeAlgHom R K) (AlgHom.id R K)) := by
     apply Algebra.TensorProduct.ext'
     intro a b
-    simp [l, r, AlgHom.convInv_apply, Algebra.TensorProduct.tmul_mul_tmul]
+    simp [l, r, WithConv.algHom_inv_apply, Algebra.TensorProduct.tmul_mul_tmul]
   simp only [kernelPairTensorEquiv, AlgEquiv.ofAlgHom_symm, AlgEquiv.ofAlgHom_apply,
     kernelPairBackward_tmul, kernelPairRatio_mk]
   congr 1
