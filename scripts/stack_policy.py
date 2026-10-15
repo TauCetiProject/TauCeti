@@ -371,7 +371,9 @@ def rendered_parents(html):
     visible = "".join(parser.quoting)
     if re.search(r'''["“”‘’«»‹›„‟「」『』]|(?<!\w)'|'(?!\w)''', visible):
         return set()
-    if re.search(r"\b(?:examples?|for reference|do not write|no longer|previously|formerly)\b", visible, re.I):
+    if "`" in visible or "<!--" in visible:
+        return set()
+    if re.search(r"\b(?:examples?|for reference|do not write|no longer|previously|formerly|supersed\w*)\b", visible, re.I):
         return set()
     paragraphs = [" ".join(p.split()) for p in "".join(parser.prose).split("\x1e")]
     return explicit_parents("\n".join(paragraphs), current_only=True)
