@@ -325,6 +325,10 @@ def structureSheafSectionsBaseLinearEquiv :
       map_add' _ _ := rfl
       map_smul' r s := by
         rw [RingHom.id_apply]
+        -- Both actions are multiplication in `Γ(X, ⊤)`: on `Γ(M, ⊤)` by the image of `r` under
+        -- `baseRingToGlobalSections` (from `Module.compHom`), on `Γ(X, ⊤)` by its image under
+        -- `baseRingToStructurePresheaf` (from `RingHom.toAlgebra`). Unfolding both actions
+        -- reduces the goal to `baseRingToStructurePresheaf_app_top`.
         change baseRingToGlobalSections R X r * (show Γ(X, ⊤) from s) =
           (X.baseRingToStructurePresheaf R).app (op ⊤) r * (show Γ(X, ⊤) from s)
         exact (congrArg (· * (show Γ(X, ⊤) from s))
@@ -338,9 +342,7 @@ lemma structureSheafSectionsBaseLinearEquiv_apply :
     letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
     letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
     ∀ s : Γ(M, ⊤), structureSheafSectionsBaseLinearEquiv R X s = s := by
-  dsimp
-  intro s
-  change s = s
+  intros
   rfl
 
 @[simp]
@@ -349,9 +351,7 @@ lemma structureSheafSectionsBaseLinearEquiv_symm_apply :
     letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
     letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
     ∀ s : Γ(X, ⊤), (structureSheafSectionsBaseLinearEquiv R X).symm s = s := by
-  dsimp
-  intro s
-  change s = s
+  intros
   rfl
 
 @[simp]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
-public import TauCeti.AlgebraicGeometry.LineBundle.Basic
+public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 
 /-!
 # Cohomology of the trivial line bundle and the structure sheaf
@@ -39,16 +39,13 @@ def _root_.AlgebraicGeometry.Scheme.Modules.trivialCohomologyBaseLinearEquiv (i 
   exact
     cohomologyBaseLinearEquivOfIso R (M := (InvertibleSheaf.trivial X).obj)
       (N := M)
-      (eqToIso (InvertibleSheaf.trivial_obj X) ≪≫
-        TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf) i
+      (InvertibleSheaf.trivialObjIsoUnit X) i
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.trivialCohomologyBaseLinearEquiv_apply (i : ℕ)
     (x : Cohomology (InvertibleSheaf.trivial X).obj i) :
     trivialCohomologyBaseLinearEquiv R X i x =
-      cohomologyMapBaseLinear R X
-        (eqToIso (InvertibleSheaf.trivial_obj X) ≪≫
-          TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).hom i x := by
+      cohomologyMapBaseLinear R X (InvertibleSheaf.trivialObjIsoUnit X).hom i x := by
   dsimp [trivialCohomologyBaseLinearEquiv]
   exact cohomologyBaseLinearEquivOfIso_apply R _ i x
 
@@ -56,9 +53,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.trivialCohomologyBaseLinearEquiv_a
 lemma _root_.AlgebraicGeometry.Scheme.Modules.trivialCohomologyBaseLinearEquiv_symm_apply (i : ℕ)
     (x : Cohomology (SheafOfModules.unit X.ringCatSheaf : X.Modules) i) :
     (trivialCohomologyBaseLinearEquiv R X i).symm x =
-      cohomologyMapBaseLinear R X
-        (eqToIso (InvertibleSheaf.trivial_obj X) ≪≫
-          TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).inv i x := by
+      cohomologyMapBaseLinear R X (InvertibleSheaf.trivialObjIsoUnit X).inv i x := by
   dsimp [trivialCohomologyBaseLinearEquiv]
   exact cohomologyBaseLinearEquivOfIso_symm_apply R _ i x
 
