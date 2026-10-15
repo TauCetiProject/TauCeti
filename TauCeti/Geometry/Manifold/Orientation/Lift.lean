@@ -228,6 +228,20 @@ section Tangent
 
 variable [IsManifold I 1 M]
 
+omit [FiniteDimensional ℝ E] in
+/-- Tangent trivializations and chart transitions have the same determinant. The coercion
+normalization uses their shared underlying linear map. -/
+private theorem det_coordChangeL_eq_tangentCoordChange {α β x : M}
+    (hα : x ∈ (chartAt H α).source) (hβ : x ∈ (chartAt H β).source) :
+    LinearMap.det ((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
+      (trivializationAt E (TangentSpace I) β) x).toLinearEquiv.toLinearMap =
+      (tangentCoordChange I α β x).det := by
+  simpa only [ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    tangentBundleCore_indexAt] using!
+    congrArg (fun L : E →L[ℝ] E ↦ L.toLinearMap.det)
+      ((tangentBundleCore I M).trivializationAt_coordChangeL
+        (α := α) (β := β) (x := x) ⟨hα, hβ⟩)
+
 private theorem map_signedOrientation (o : OrientationLift I M ι) {α β x : M}
     (hα : x ∈ (chartAt H α).source) (hβ : x ∈ (chartAt H β).source) :
     _root_.Orientation.map ι
@@ -237,15 +251,7 @@ private theorem map_signedOrientation (o : OrientationLift I M ι) {α β x : M}
         ((Units.map (Int.castRingHom ℝ).toMonoidHom (o.sign β ⟨x, hβ⟩)) • o.modelOrientation) := by
   rw [_root_.Orientation.map_units_smul_eq_iff_det_mul_pos _ _ _ _ o.card_eq]
   have hd := o.compatible α β x hα hβ
-  have hdet : LinearMap.det ((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
-      (trivializationAt E (TangentSpace I) β) x).toLinearEquiv.toLinearMap =
-      (tangentCoordChange I α β x).det := by
-    change LinearMap.det (((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
-      (trivializationAt E (TangentSpace I) β) x : E →L[ℝ] E).toLinearMap) = _
-    exact congrArg (fun f : E →L[ℝ] E ↦ LinearMap.det f.toLinearMap)
-      ((tangentBundleCore I M).trivializationAt_coordChangeL
-        (α := α) (β := β) (x := x) ⟨hα, hβ⟩)
-  rwa [hdet]
+  rwa [det_coordChangeL_eq_tangentCoordChange (I := I) hα hβ]
 
 /-- The signed model orientation read in a preferred chart at a point of its source. -/
 def chartOrientation (o : OrientationLift I M ι) (α : M)
@@ -373,13 +379,7 @@ def ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
   compatible α β x hα hβ := by
     let A := (trivializationAt E (TangentSpace I) α).coordChangeL ℝ
       (trivializationAt E (TangentSpace I) β) x
-    have hdet : LinearMap.det A.toLinearEquiv.toLinearMap =
-        (tangentCoordChange I α β x).det := by
-      change LinearMap.det (((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
-        (trivializationAt E (TangentSpace I) β) x : E →L[ℝ] E).toLinearMap) = _
-      exact congrArg (fun f : E →L[ℝ] E ↦ LinearMap.det f.toLinearMap)
-        ((tangentBundleCore I M).trivializationAt_coordChangeL
-          (α := α) (β := β) (x := x) ⟨hα, hβ⟩)
+    have hdet := det_coordChangeL_eq_tangentCoordChange (I := I) hα hβ
     rw [tangentCoordChange_def] at hdet
     let a := (trivializationAt E (TangentSpace I) α).mapOrientation ι
       (by rwa [TangentBundle.trivializationAt_baseSet (I := I)]) (o x)

@@ -50,9 +50,10 @@ private theorem mapOrientation_orientationOfPositiveAtlasAt (i : κ) (hi : i ∈
   change Orientation.map ι ((Z.localTriv j).coordChangeL ℝ
     (Z.localTriv i) x).toLinearEquiv model = model
   rw [Orientation.map_eq_iff_det_pos _ _ hι]
-  change 0 < LinearMap.det (((Z.localTriv j).coordChangeL ℝ
-    (Z.localTriv i) x : F →L[ℝ] F).toLinearMap)
-  rw [Z.localTriv_coordChangeL ⟨hxj, hxi⟩]
+  have hdet := congrArg (fun L : F →L[ℝ] F ↦ L.toLinearMap.det)
+    (Z.localTriv_coordChangeL ⟨hxj, hxi⟩)
+  simp only [ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap] at hdet
+  rw [hdet]
   exact hpos j hj i hi x ⟨hxj, hxi⟩
 
 /-- A positive subatlas that covers the base defines a vector bundle orientation. -/
