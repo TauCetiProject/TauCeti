@@ -110,11 +110,14 @@ polynomial weight, which is recovered from its Young diagram. -/
 private theorem weightOfShape_shape_shift_neg_detShift (l : DominantWeight (n + 1))
     {m : DominantWeight n} (hm : m ∈ interlacingWeights l) :
     weightOfShape n (m.shift (-l.detShift)).shape = m.shift (-l.detShift) := by
-  ext i
-  have h := ((interlaces_iff.mp (mem_interlacingWeights.mp hm)) i).2
-  have hle := l.detShift_le i.succ
-  rw [weightOfShape_apply, DominantWeight.rowLen_shape, DominantWeight.shift_apply]
-  omega
+  refine weightOfShape_shape ((DominantWeight.isPolynomial_iff_zero_le_detShift _).mpr ?_)
+  cases n with
+  | zero => exact le_rfl
+  | succ n =>
+    have h := ((interlaces_iff.mp (mem_interlacingWeights.mp hm)) (Fin.last n)).2
+    have hle := l.detShift_le (Fin.last n).succ
+    rw [DominantWeight.detShift_shift, DominantWeight.detShift_succ]
+    omega
 
 end Reindex
 
