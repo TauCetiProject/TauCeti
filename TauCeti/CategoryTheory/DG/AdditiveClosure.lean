@@ -364,7 +364,7 @@ private theorem sum_dgComp_dgHomEquiv_dgId (M : DGAdditiveClosure C) (i k : M.ι
       (add_zero 0) = dgHomEquiv R M M 0 (dgId R M) i k := by
   rw [← dgHomEquiv_dgComp, dgComp_dgId]
 
-/-! The entries of `single` and `proj` are entries of the identity of `M`, whose types agree with
+/- The entries of `single` and `proj` are entries of the identity of `M`, whose types agree with
 the types of the entries of `single` and `proj` only after reducing the projections of the
 one-term sum `⟨PUnit, fun _ ↦ M.X i⟩`.  The proofs below therefore close the entrywise goals with
 `exact`, which performs that reduction. -/
@@ -396,6 +396,7 @@ theorem dgComp_single_proj_self (M : DGAdditiveClosure C) (i : M.ι) :
     exact (sum_dgComp_dgHomEquiv_dgId R M i i).trans (dgHomEquiv_dgId_self R M i)
 
 /-- The inclusion of a summand followed by the projection to a different summand vanishes. -/
+@[simp↓]
 theorem dgComp_single_proj_of_ne (M : DGAdditiveClosure C) {i j : M.ι} (h : i ≠ j) :
     dgComp R (single R M i) (proj R M j) (add_zero 0) = 0 :=
   dgHom_ext R fun _ _ ↦ by
