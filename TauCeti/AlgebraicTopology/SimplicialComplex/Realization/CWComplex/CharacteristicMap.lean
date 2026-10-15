@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
-public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Characteristic maps of simplicial cells
@@ -19,9 +18,9 @@ structure on a weak geometric realization, including zero-dimensional cells.
 
 The enumeration is an explicit argument: an ordered enumeration can therefore fix the
 orientation used in cellular boundary formulas. The ambient complex may be infinite.
-The maps use `realizationTopHomeomorphClosedBall`, injective relabeling of polyhedra, and
-`ContinuousLinearEquiv.unitBallHomeomorph` to match the two ball norms. Outside the closed
-ball the characteristic map takes the value at the origin.
+The maps compose `realizationTopHomeomorphPiClosedBall` with the face relabeling
+`realizationTopHomeomorphFace`. Outside the closed ball the characteristic map takes the
+value at the origin.
 
 Reference: C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
 Chapter 2 (simplices and polyhedra); A. Hatcher, *Algebraic Topology*, Chapter 0
@@ -41,84 +40,27 @@ attribute [local instance] Classical.propDecidable
 variable {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι) {n : ℕ}
   (f : Fin (n + 1) ↪ ι) (hf : Finset.univ.image f ∈ K)
 
-private def enumeratedSimplexHomeomorph :
-    Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) ≃ₜ
-      {x : Realization K // x.1.support ⊆ Finset.univ.image f} := by
-  let P := PreAbstractSimplicialComplex.simplex (Finset.univ : Finset (Fin (n + 1)))
-  have hP : P = (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex := by
-    simp [P, PreAbstractSimplicialComplex.simplex_univ,
-      AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex]
-  have hL : P.map f ≤ K.toPreAbstractSimplicialComplex := by
-    rw [PreAbstractSimplicialComplex.map_simplex]
-    exact PreAbstractSimplicialComplex.simplex_le_iff.mpr (fun _ => hf)
-  let r := P.relabelingHomeomorph f hP.le hL
-  have hs : {x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) |
-      x.1.support ∈ P} = univ := by
-    ext x
-    simp only [mem_ofPred_eq, mem_univ, iff_true]
-    rw [hP]
-    exact support_mem _ x
-  have ht : {x : Realization K | x.1.support ∈ P.map f} =
-      {x : Realization K | x.1.support ⊆ Finset.univ.image f} := by
-    ext x
-    simp only [mem_ofPred_eq]
-    rw [PreAbstractSimplicialComplex.map_simplex, PreAbstractSimplicialComplex.mem_simplex]
-    exact and_iff_right (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))
-  exact (Homeomorph.Set.univ _).symm.trans
-    ((Homeomorph.setCongr hs.symm).trans (r.trans (Homeomorph.setCongr ht)))
-
-private theorem enumeratedSimplexHomeomorph_val
-    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
-    (enumeratedSimplexHomeomorph K f hf x).1.1 = Finsupp.mapDomain f x.1 := by
-  -- The set-congruence transports preserve the underlying point.
-  dsimp only [enumeratedSimplexHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.setCongr, Homeomorph.Set.univ, Equiv.Set.univ]
-  exact PreAbstractSimplicialComplex.relabelingHomeomorph_val _ _ _ _ _
-
-private def simplexBallModel (n : ℕ) :
-    closedBall (0 : Fin n → ℝ) 1 ≃ₜ
-      Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) :=
-  let L := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm
-  ((L.unitBallHomeomorph.image _).trans
-    (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall)).trans
-    (realizationTopHomeomorphClosedBall n).symm
-
-private theorem simplexBallModel_support_ne_univ_iff
-    (x : closedBall (0 : Fin n → ℝ) 1) :
-    (simplexBallModel n x).1.support ≠ Finset.univ ↔ ‖x.1‖ = 1 := by
-  rw [← realizationTopHomeomorphClosedBall_norm_eq_one_iff]
-  simp only [simplexBallModel, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
-  exact ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff _
-
 /-- The sup-norm closed unit ball parametrizes the closed simplex on an explicitly
 enumerated face. Its boundary corresponds to the proper faces. -/
 def simplexClosedBallHomeomorph :
     closedBall (0 : Fin n → ℝ) 1 ≃ₜ
       {x : Realization K // x.1.support ⊆ Finset.univ.image f} :=
-  (simplexBallModel n).trans (enumeratedSimplexHomeomorph K f hf)
+  (realizationTopHomeomorphPiClosedBall n).symm.trans (realizationTopHomeomorphFace K f hf)
 
 /-- Barycentric coordinates are obtained from the fixed standard ball model by pushing
 its coordinate vector along the vertex enumeration. -/
 theorem simplexClosedBallHomeomorph_val (x : closedBall (0 : Fin n → ℝ) 1) :
     (simplexClosedBallHomeomorph K f hf x).1.1 =
-      let L := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm
-      Finsupp.mapDomain f
-        (((realizationTopHomeomorphClosedBall n).symm
-          ⟨L.unitBallHomeomorph x.1, by
-            simpa only [mem_closedBall_zero_iff,
-              ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff] using x.2⟩).1) := by
-  rw [simplexClosedBallHomeomorph, Homeomorph.trans_apply, enumeratedSimplexHomeomorph_val]
-  -- The ball-model transports change only membership proofs.
-  rfl
+      Finsupp.mapDomain f ((realizationTopHomeomorphPiClosedBall n).symm x).1 :=
+  realizationTopHomeomorphFace_val K f hf _
 
 /-- The boundary sphere corresponds exactly to barycentric support smaller than the face. -/
 theorem simplexClosedBallHomeomorph_support_ne_iff
     (x : closedBall (0 : Fin n → ℝ) 1) :
     (simplexClosedBallHomeomorph K f hf x).1.1.support ≠ Finset.univ.image f ↔ ‖x.1‖ = 1 := by
-  rw [simplexClosedBallHomeomorph, Homeomorph.trans_apply, enumeratedSimplexHomeomorph_val,
-    Finsupp.mapDomain_support_of_injective f.injective]
-  rw [ne_eq, Finset.image_inj f.injective, ← ne_eq]
-  exact simplexBallModel_support_ne_univ_iff x
+  rw [simplexClosedBallHomeomorph_val, Finsupp.mapDomain_support_of_injective f.injective,
+    ne_eq, Finset.image_inj f.injective, ← ne_eq,
+    ← realizationTopHomeomorphPiClosedBall_norm_eq_one_iff, Homeomorph.apply_symm_apply]
 
 /-- The open ball corresponds exactly to the points with full barycentric support. -/
 @[simp]
@@ -129,6 +71,23 @@ theorem simplexClosedBallHomeomorph_support_eq_iff
   have h := simplexClosedBallHomeomorph_support_ne_iff K f hf x
   grind
 
+/-- The inverse closed-simplex homeomorphism lands in the open ball exactly at the points
+with full barycentric support. -/
+theorem norm_simplexClosedBallHomeomorph_symm_lt_one_iff
+    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
+    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ < 1 ↔
+      y.1.1.support = Finset.univ.image f := by
+  rw [← simplexClosedBallHomeomorph_support_eq_iff K f hf, Homeomorph.apply_symm_apply]
+
+/-- The inverse closed-simplex homeomorphism lands on the sphere exactly at the points of
+proper faces. -/
+theorem norm_simplexClosedBallHomeomorph_symm_eq_one_iff
+    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
+    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ = 1 ↔
+      y.1.1.support ⊂ Finset.univ.image f := by
+  rw [← simplexClosedBallHomeomorph_support_ne_iff K f hf, Homeomorph.apply_symm_apply,
+    Finset.ssubset_iff_subset_ne, and_iff_right y.2]
+
 private def simplexCharacteristicFun (x : Fin n → ℝ) : Realization K :=
   if hx : x ∈ closedBall 0 1 then (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1
   else (simplexClosedBallHomeomorph K f hf ⟨0, by simp⟩).1
@@ -137,6 +96,12 @@ private theorem simplexCharacteristicFun_apply {x : Fin n → ℝ}
     (hx : x ∈ closedBall 0 1) :
     simplexCharacteristicFun K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1 :=
   dite_eq_left hx
+
+private theorem simplexCharacteristicFun_apply_symm
+    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
+    simplexCharacteristicFun K f hf ((simplexClosedBallHomeomorph K f hf).symm y).1 = y.1 := by
+  rw [simplexCharacteristicFun_apply K f hf ((simplexClosedBallHomeomorph K f hf).symm y).2,
+    Subtype.coe_eta, Homeomorph.apply_symm_apply]
 
 private theorem bijOn_simplexCharacteristicFun :
     BijOn (simplexCharacteristicFun K f hf) (ball 0 1)
@@ -152,12 +117,9 @@ private theorem bijOn_simplexCharacteristicFun :
     exact congrArg Subtype.val ((simplexClosedBallHomeomorph K f hf).injective
       (Subtype.ext hxy))
   · intro y hy
-    let z := (simplexClosedBallHomeomorph K f hf).symm ⟨y, hy.le⟩
-    have hz : z.1 ∈ ball 0 1 := by
-      rw [mem_ball_zero_iff]
-      apply (simplexClosedBallHomeomorph_support_eq_iff K f hf z).mp
-      simpa [z] using hy
-    exact ⟨z.1, hz, by simp [simplexCharacteristicFun_apply K f hf z.2, z]⟩
+    exact ⟨_, mem_ball_zero_iff.mpr
+      ((norm_simplexClosedBallHomeomorph_symm_lt_one_iff K f hf ⟨y, hy.le⟩).mpr hy),
+      simplexCharacteristicFun_apply_symm K f hf ⟨y, hy.le⟩⟩
 
 /-- The characteristic map of an enumerated simplicial cell. Its source is the sup-norm
 open unit ball, and its target consists of the points whose support equals the face.
@@ -183,8 +145,16 @@ theorem simplexCharacteristicMap_apply {x : Fin n → ℝ} (hx : x ∈ closedBal
     simplexCharacteristicMap K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1 :=
   simplexCharacteristicFun_apply K f hf hx
 
+/-- The characteristic map sends the inverse closed-simplex homeomorphism of a point back to
+that point. -/
+@[simp]
+theorem simplexCharacteristicMap_apply_symm
+    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
+    simplexCharacteristicMap K f hf ((simplexClosedBallHomeomorph K f hf).symm y).1 = y.1 :=
+  simplexCharacteristicFun_apply_symm K f hf y
+
 /-- Outside the closed ball the characteristic map takes its value at the origin. -/
-theorem simplexCharacteristicMap_apply_of_not_mem_closedBall {x : Fin n → ℝ}
+theorem simplexCharacteristicMap_apply_of_notMem_closedBall {x : Fin n → ℝ}
     (hx : x ∉ closedBall 0 1) :
     simplexCharacteristicMap K f hf x =
       (simplexClosedBallHomeomorph K f hf ⟨0, by simp⟩).1 :=
@@ -195,16 +165,11 @@ homeomorphism followed by the inclusion into the ambient coordinate space. -/
 theorem simplexCharacteristicMap_symm_apply {y : Realization K}
     (hy : y.1.support = Finset.univ.image f) :
     (simplexCharacteristicMap K f hf).symm y =
-      ((simplexClosedBallHomeomorph K f hf).symm ⟨y, hy.le⟩).1 := by
-  let z := (simplexClosedBallHomeomorph K f hf).symm ⟨y, hy.le⟩
-  have hz : z.1 ∈ (simplexCharacteristicMap K f hf).source := by
-    rw [simplexCharacteristicMap_source, mem_ball_zero_iff]
-    apply (simplexClosedBallHomeomorph_support_eq_iff K f hf z).mp
-    simpa [z] using hy
-  have he : simplexCharacteristicMap K f hf z.1 = y := by
-    simp [simplexCharacteristicMap_apply K f hf z.2, z]
-  exact (congrArg (simplexCharacteristicMap K f hf).symm he).symm.trans
-    ((simplexCharacteristicMap K f hf).left_inv hz)
+      ((simplexClosedBallHomeomorph K f hf).symm ⟨y, hy.le⟩).1 :=
+  (((simplexCharacteristicMap K f hf).eq_symm_apply
+    (mem_ball_zero_iff.mpr
+      ((norm_simplexClosedBallHomeomorph_symm_lt_one_iff K f hf ⟨y, hy.le⟩).mpr hy)) hy).mpr
+    (simplexCharacteristicMap_apply_symm K f hf ⟨y, hy.le⟩)).symm
 
 /-- The characteristic map is continuous on its closed cell domain. -/
 theorem continuousOn_simplexCharacteristicMap :
@@ -236,8 +201,8 @@ theorem image_simplexCharacteristicMap_closedBall :
     rw [simplexCharacteristicMap_apply K f hf hx]
     exact (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).2
   · intro hy
-    let z := (simplexClosedBallHomeomorph K f hf).symm ⟨y, hy⟩
-    exact ⟨z.1, z.2, by simp [simplexCharacteristicMap_apply K f hf z.2, z]⟩
+    exact ⟨_, ((simplexClosedBallHomeomorph K f hf).symm ⟨y, hy⟩).2,
+      simplexCharacteristicMap_apply_symm K f hf ⟨y, hy⟩⟩
 
 /-- The sphere maps onto exactly the proper faces of the closed simplex. -/
 @[simp]
@@ -254,11 +219,8 @@ theorem image_simplexCharacteristicMap_sphere :
         (simplexClosedBallHomeomorph_support_ne_iff K f hf _).mpr
           (mem_sphere_zero_iff_norm.mp hx)⟩
   · intro hy
-    let z := (simplexClosedBallHomeomorph K f hf).symm ⟨y, hy.subset⟩
-    have hz : z.1 ∈ sphere 0 1 := by
-      rw [mem_sphere_zero_iff_norm]
-      apply (simplexClosedBallHomeomorph_support_ne_iff K f hf z).mp
-      simpa [z] using hy.ne
-    exact ⟨z.1, hz, by simp [simplexCharacteristicMap_apply K f hf z.2, z]⟩
+    exact ⟨_, mem_sphere_zero_iff_norm.mpr
+      ((norm_simplexClosedBallHomeomorph_symm_eq_one_iff K f hf ⟨y, hy.subset⟩).mpr hy),
+      simplexCharacteristicMap_apply_symm K f hf ⟨y, hy.subset⟩⟩
 
 end AbstractSimplicialComplex

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 public import TauCeti.Analysis.Convex.CoordinateSimplex
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # A simplex and its boundary as a ball and its sphere
@@ -17,6 +18,7 @@ The weak realization of the standard `n`-simplex is homeomorphic to the Euclidea
 `n`-ball. The same homeomorphism takes exactly the proper faces to the unit sphere, so it
 identifies the pair consisting of a simplex and its boundary with the ball and sphere pair.
 This supplies compatible geometric models for combinatorial balls and their boundaries.
+The same holds for the sup-norm closed ball used by Mathlib's classical CW complexes.
 Dimension zero is included: the simplex and ball are singletons and their boundaries empty.
 
 Dropping the last barycentric coordinate gives an explicit homeomorphism to the coordinate
@@ -208,6 +210,27 @@ theorem realizationTopHomeomorphClosedBall_norm_eq_one_iff (n : ℕ)
   rw [he, ← hfr]
   simpa only [h.injective.mem_set_image] using
     realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff n x
+
+/-- The weak realization of the standard `n`-simplex is homeomorphic to the closed unit ball
+of `Fin n → ℝ` with the sup norm, the domain of Mathlib's classical CW characteristic maps.
+Its proper-face boundary is taken to the sphere. -/
+def realizationTopHomeomorphPiClosedBall (n : ℕ) :
+    Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) ≃ₜ
+      closedBall (0 : Fin n → ℝ) 1 :=
+  let L := PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)
+  (realizationTopHomeomorphClosedBall n).trans
+    ((L.unitBallHomeomorph.image _).trans
+      (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall))
+
+/-- Under the simplex-to-sup-norm-ball homeomorphism, exactly the proper faces land on the
+sphere. -/
+@[simp]
+theorem realizationTopHomeomorphPiClosedBall_norm_eq_one_iff (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    ‖(realizationTopHomeomorphPiClosedBall n x).1‖ = 1 ↔
+      x.1.support ≠ Finset.univ := by
+  rw [← realizationTopHomeomorphClosedBall_norm_eq_one_iff]
+  exact ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff _
 
 end AbstractSimplicialComplex
 
