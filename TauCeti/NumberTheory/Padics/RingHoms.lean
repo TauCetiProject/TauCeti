@@ -311,9 +311,7 @@ theorem coe_unitsToZModPow_apply (n : ℕ) (u : ℤ_[p]ˣ) :
   (rfl)
 
 /-- Truncation modulo `p ^ n` on the units of `ℤ_[p]` is surjective: every unit of `ZMod (p ^ n)`
-lifts to a unit of `ℤ_[p]`. For `n > 0` this holds because truncation is a surjective local
-homomorphism out of the local ring `ℤ_[p]`; for `n = 0` the target `ZMod 1` is the trivial ring,
-so there is nothing to lift. -/
+lifts to a unit of `ℤ_[p]`. -/
 theorem unitsToZModPow_surjective (n : ℕ) :
     Function.Surjective (unitsToZModPow (p := p) n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -332,8 +330,7 @@ theorem unitsMap_unitsToZModPow {m n : ℕ} (h : p ^ m ∣ p ^ n) (u : ℤ_[p]ˣ
   rw [ZMod.unitsMap_val, coe_unitsToZModPow_apply, coe_unitsToZModPow_apply,
     cast_toZModPow _ _ ((Nat.pow_dvd_pow_iff_le_right hp.out.one_lt).mp h)]
 
-/-- Truncation modulo `p ^ 0 = 1` sends every unit to `1`. This is not a `simp` lemma, since `simp`
-first rewrites `p ^ 0` to `1` in the type of `unitsToZModPow 0`. -/
+/-- Truncation modulo `p ^ 0 = 1` sends every unit to `1`. -/
 theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
   have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
   exact Subsingleton.elim _ _

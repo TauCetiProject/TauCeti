@@ -39,7 +39,7 @@ The factor of a function through the surjection `unitsToZModPow n` is unique
 or `MonoidHom.cancel_right` for homomorphisms).
 
 These are the statements that let one integrate against a measure on `ℤ_pˣ` through its images
-on the finite groups `(ℤ/p^nℤ)ˣ`: a test function that is locally constant is a finite sum over
+on the finite groups `(ℤ/p^nℤ)ˣ`: a test function that is locally constant factors through
 some `(ℤ/p^nℤ)ˣ`, and such test functions are dense among all continuous ones.
 
 ## References
