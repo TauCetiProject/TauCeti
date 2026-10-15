@@ -48,6 +48,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   `mem_closedPolydisc_iff` as its membership rule.
 * `TauCeti.ValuationSpectrum.evalAtHom`: evaluation of restricted power series at `a ∈ (A°)ᵏ`, as a
   ring homomorphism `A⟨T⟩ →+* A`.
+* `TauCeti.ValuationSpectrum.evalAtAlgHom`: the same evaluation as an algebra homomorphism
+  `A⟨T⟩ →ₐ[A] A`.
 * `TauCeti.ValuationSpectrum.classicalPoint`: the classical point of the closed polydisc attached
   to a point of `Spa (A, A°)` and a tuple `a ∈ (A°)ᵏ`.
 * `TauCeti.ValuationSpectrum.taylorHom`: the translation `Tᵢ ↦ Tᵢ + aᵢ` of `A⟨T⟩` by
@@ -60,6 +62,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
 * `TauCeti.ValuationSpectrum.continuous_evalAtHom` and
   `TauCeti.ValuationSpectrum.evalAtHom_mem_powerBoundedSubring`: evaluation at `a` is a morphism
   of Huber pairs `(A⟨T⟩, A⟨T⟩°) → (A, A°)`.
+* `TauCeti.ValuationSpectrum.evalAtHom_surjective`: evaluation is surjective with closed kernel;
+  over a field this kernel is a maximal ideal with residue field finite over the field.
 * `TauCeti.ValuationSpectrum.classicalPoint_vle`: the classical point compares `f` and `g` as `x`
   compares `f (a)` and `g (a)`.
 * `TauCeti.ValuationSpectrum.classicalPoint_injective`: when `x` has trivial support, the
@@ -85,6 +89,9 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   `TauCeti.ValuationSpectrum.closedPolydisc_valuation_weightedC_le_iff` is the same statement for
   the values of a point, and the lemmas following it are its consequences for equal norms, for
   vanishing and for maxima.
+* `TauCeti.ValuationSpectrum.valuation_weightedX_sub_weightedC_eq_of_lt` and
+  `TauCeti.ValuationSpectrum.norm_sub_le_of_valuation_eq`: comparisons of the values of a point
+  on linear polynomials `Tᵢ - b`, through the constant `b₂ - b₁ = (Tᵢ - b₁) - (Tᵢ - b₂)`.
 
 ## References
 
@@ -172,6 +179,52 @@ theorem evalAtHom_weightedX (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
 theorem evalAtHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (c : A) :
     evalAtHom a ha (weightedC _ isWeightFamily_one_weight c) = c :=
   weightedEvalHom_weightedC _ _ _ c
+
+/-- Evaluation at `a ∈ (A°)ᵏ` as an `A`-algebra map `A⟨T₁, …, Tₖ⟩ → A`. -/
+noncomputable def evalAtAlgHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →ₐ[A] A :=
+  { evalAtHom a ha with commutes' := evalAtHom_weightedC a ha }
+
+/-- `evalAtAlgHom` is `evalAtHom` as a function. -/
+@[simp]
+theorem evalAtAlgHom_apply (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    evalAtAlgHom a ha f = evalAtHom a ha f :=
+  (rfl)
+
+/-- Evaluation at `a` is surjective, since it fixes the constants. -/
+theorem evalAtHom_surjective (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    Function.Surjective (evalAtHom a ha) :=
+  fun c ↦ ⟨weightedC _ isWeightFamily_one_weight c, evalAtHom_weightedC a ha c⟩
+
+/-- The kernel of evaluation at `a` is closed, as the kernel of a continuous map to a Hausdorff
+ring. -/
+theorem isClosed_ker_evalAtHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    IsClosed (RingHom.ker (evalAtHom a ha) : Set (weightedRestrictedSubring
+      (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight)) :=
+  isClosed_singleton.preimage (continuous_evalAtHom a ha)
+
+section Field
+
+variable {K : Type*} [Field K] [UniformSpace K] [IsUniformAddGroup K] [NonarchimedeanRing K]
+  [CompleteSpace K] [T3Space K]
+
+/-- The kernel of evaluation at `a`, the maximal ideal of the `K`-rational point `a` of the closed
+polydisc. -/
+instance isMaximal_ker_evalAtHom (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    (RingHom.ker (evalAtHom a ha)).IsMaximal :=
+  RingHom.ker_isMaximal_of_surjective _ (evalAtHom_surjective a ha)
+
+/-- The residue field of `K⟨T₁, …, Tₖ⟩` at the kernel of evaluation at `a` is `K`, so it is finite
+over `K`. -/
+instance finiteDimensional_quotient_ker_evalAtHom (a : Fin k → K)
+    (ha : ∀ i, IsPowerBounded (a i)) :
+    FiniteDimensional K (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight ⧸ RingHom.ker (evalAtHom a ha)) :=
+  Module.Finite.equiv (Ideal.quotientKerAlgEquivOfSurjective (f := evalAtAlgHom a ha)
+    (evalAtHom_surjective a ha)).symm.toLinearEquiv
+
+end Field
 
 /-- Evaluation at `a` carries `A⟨T⟩°` into `A°`. Together with `continuous_evalAtHom` this makes
 evaluation a morphism of Huber pairs `(A⟨T⟩, A⟨T⟩°) → (A, A°)`. -/
@@ -484,6 +537,7 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K
 
 /-- **Every point of the closed polydisc compares constants by their norms**: its pullback along
 the constant embedding `K → K⟨T⟩` is a point of `Spa (K, K°)`. -/
+@[simp]
 theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
     v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
@@ -495,6 +549,15 @@ theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc 
         v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
 
+/-- The canonical valuation at a point of the closed polydisc strictly compares constants by
+their norms. -/
+-- Not `@[simp]`: `valuation_lt_iff` rewrites the left-hand side.
+@[grind =]
+theorem closedPolydisc_valuation_weightedC_lt_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) <
+        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ < ‖y‖ := by
+  simp only [lt_iff_le_not_ge, closedPolydisc_valuation_weightedC_le_iff]
+
 /-- A point of the closed polydisc gives constants of equal norm equal values. -/
 theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPolydisc k K)
     {x y : K} (h : ‖x‖ = ‖y‖) :
@@ -504,6 +567,7 @@ theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPo
     ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
 
 /-- A point of the closed polydisc vanishes on a constant only at `0`. -/
+@[simp]
 theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
     v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
       x = 0 := by
@@ -519,6 +583,45 @@ theorem closedPolydisc_max_valuation_weightedC {k : ℕ} (v : closedPolydisc k K
   split_ifs with h
   · exact max_eq_right ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h)
   · exact max_eq_left ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr (le_of_not_ge h))
+
+omit [IsUltrametricDist K] in
+/-- The constant `b₂ - b₁` is the difference `(Tᵢ - b₁) - (Tᵢ - b₂)`. -/
+private theorem weightedC_sub_eq_sub_sub {k : ℕ} (i : Fin k) (b₁ b₂ : K) :
+    (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight (b₂ - b₁) :
+        weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) =
+      (weightedX _ isWeightFamily_one_weight i - weightedC _ isWeightFamily_one_weight b₁) -
+        (weightedX _ isWeightFamily_one_weight i - weightedC _ isWeightFamily_one_weight b₂) := by
+  rw [map_sub]
+  ring
+
+omit [IsUltrametricDist K] in
+/-- If `v(Tᵢ - b₂) < v(Tᵢ - b₁)` at a point `v` of the closed polydisc, then `v(Tᵢ - b₁)` is the
+value of the constant `b₂ - b₁`. -/
+theorem valuation_weightedX_sub_weightedC_eq_of_lt {k : ℕ} {v : closedPolydisc k K} {i : Fin k}
+    {b₁ b₂ : K}
+    (h : v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+        weightedC _ isWeightFamily_one_weight b₂) <
+      v.1.valuation (weightedX _ isWeightFamily_one_weight i -
+        weightedC _ isWeightFamily_one_weight b₁)) :
+    v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+        weightedC _ isWeightFamily_one_weight b₁) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight (b₂ - b₁)) := by
+  rw [weightedC_sub_eq_sub_sub i, v.1.valuation.map_sub_eq_of_lt_left h]
+
+/-- If `v(Tᵢ - b₁) = v(e₁)`, `v(Tᵢ - b₂) = v(e₂)` and `‖e₂‖ ≤ ‖e₁‖` at a point `v` of the closed
+polydisc, then `‖b₂ - b₁‖ ≤ ‖e₁‖`. -/
+theorem norm_sub_le_of_valuation_eq {k : ℕ} {v : closedPolydisc k K} {i : Fin k}
+    {b₁ b₂ e₁ e₂ : K}
+    (h₁ : v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+        weightedC _ isWeightFamily_one_weight b₁) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight e₁))
+    (h₂ : v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+        weightedC _ isWeightFamily_one_weight b₂) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight e₂)) (he : ‖e₂‖ ≤ ‖e₁‖) :
+    ‖b₂ - b₁‖ ≤ ‖e₁‖ := by
+  rw [← closedPolydisc_valuation_weightedC_le_iff v, weightedC_sub_eq_sub_sub i]
+  refine (Valuation.map_sub _ _ _).trans (max_le h₁.le ?_)
+  rwa [h₂, closedPolydisc_valuation_weightedC_le_iff]
 
 end NormedField
 

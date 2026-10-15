@@ -54,7 +54,8 @@ action on a finite extension, and its behaviour under a field embedding.
   Mathlib's `ValuationSubring.unitGroup` and `ValuationSubring.principalUnitGroup`.
 * `TauCeti.unitFiltrationGradedZeroEquivResidueFieldUnits`: reduction identifies the
   depth-zero graded piece with the multiplicative group of the residue field.
-* `TauCeti.unitFiltration_antitone`: the filtration is decreasing.
+* `TauCeti.unitFiltration_antitone` and `TauCeti.unitFiltration_succ_lt`: the filtration is
+  decreasing, and strictly so from depth one on.
 * `TauCeti.iInf_unitFiltration`: the filtration separates points, `⨅ i, U(K,i) = ⊥`.
 * `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration` and
   `TauCeti.hasBasis_nhds_one_unitFiltration`: every `U(K,i)` is an open compact subgroup of
@@ -301,6 +302,27 @@ theorem unitFiltration_antitone : Antitone (unitFiltration K) := by
   rw [mem_unitFiltration_iff_exists] at hx ⊢
   obtain ⟨u, hu, hux⟩ := hx
   exact ⟨u, Ideal.pow_le_pow_right hij hu, hux⟩
+
+/-- The unit filtration is strictly decreasing from depth one on: `U(K,i+1) < U(K,i)` for
+`i ≠ 0`, as witnessed by `1 + π ^ i` for a uniformizer `π`. At depth zero the inclusion
+`U(K,1) ≤ U(K,0)` is an equality when the residue field is `𝔽₂`. -/
+theorem unitFiltration_succ_lt {i : ℕ} (hi : i ≠ 0) :
+    unitFiltration K (i + 1) < unitFiltration K i := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
+  have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
+  have hπ0 : 0 < valuation K (π : K) := by
+    rw [zero_lt_iff, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
+    exact hπ.ne_zero
+  have hv : valuation K (1 + (π : K) ^ i) = 1 := (valuation K).map_one_add_of_lt <| by
+    rw [map_pow]
+    exact pow_lt_one₀ zero_le hπ1 hi
+  set x : Kˣ := Units.mk0 (1 + (π : K) ^ i) fun h ↦ by simp [h] at hv
+  have hx : valuation K ((x : K) - 1) = valuation K (π : K) ^ i := by
+    simp [x]
+  refine IsConcreteLE.lt_iff_le_and_exists.2 ⟨unitFiltration_antitone i.le_succ, x, ?_, ?_⟩
+  · rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ, hx]
+  · rw [mem_unitFiltration_iff_valuation_sub_one_le i.succ_ne_zero hπ, hx, not_le]
+    exact pow_lt_pow_right_of_lt_one₀ hπ0 hπ1 i.lt_succ_self
 
 /-- The unit filtration separates points: an element lying in every step is `1`. -/
 theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by

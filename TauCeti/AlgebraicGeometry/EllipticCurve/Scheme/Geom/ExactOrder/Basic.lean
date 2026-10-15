@@ -66,6 +66,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
   `[P] + ⋯ + [NP]` is the divisor of the family of points `P, 2P, …, NP`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isRelativeEffectiveCartier_multiplesDivisor`:
   `[P] + ⋯ + [NP]` is a relative effective Cartier divisor on `E` over `S`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.coe_support_multiplesDivisor`: the support of
+  `[P] + ⋯ + [NP]` is the union of the images of `P, …, NP`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_comap_leftTranslation_hom`: translation by
   `Q` pulls the divisor `[x]` of a point back to `[x - Q]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder.pow_eq_one`: a point of exact order
@@ -118,6 +120,16 @@ def IsOfExactOrder (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) : P
 
 variable {E}
 
+/-- A point `P` has exact order `N` exactly when the closed subscheme of `[P] + ⋯ + [NP]` is a
+subgroup scheme of `E`. -/
+theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} :
+    E.IsOfExactOrder P N ↔
+      ∃ _ : GrpObj (Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap) :=
+  Iff.rfl
+
 /-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
 `N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product
 of two points of `D` and on the inverse of a point of `D`. -/
@@ -169,6 +181,19 @@ theorem multiplesDivisor_le_ker {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} 
     (ha : a < N) : E.multiplesDivisor P N ≤ (P ^ (a + 1)).left.ker := by
   rw [multiplesDivisor_eq_pointsDivisor]
   exact pointsDivisor_le_ker (fun i : Fin N ↦ P ^ (i.val + 1)) ⟨a, ha⟩
+
+/-- The support of the divisor `[P] + [2P] + ⋯ + [NP]` is the union of the images of the sections
+`P, 2P, …, NP`. -/
+theorem coe_support_multiplesDivisor (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
+    ((E.multiplesDivisor P N).support : Set E.carrier) =
+      ⋃ a < N, Set.range (P ^ (a + 1)).left := by
+  induction N with
+  | zero => simp [Scheme.IdealSheafData.support_top]
+  | succ N ih =>
+    have := (P ^ (N + 1)).left.isClosedImmersion_of_comp_eq_id (f := E.structureMap) (Over.w _)
+    rw [multiplesDivisor_succ, Scheme.IdealSheafData.support_mul, TopologicalSpace.Closeds.coe_sup,
+      ih, Set.biUnion_lt_succ, Scheme.Hom.support_ker,
+      (P ^ (N + 1)).left.isClosedEmbedding.isClosed_range.closure_eq]
 
 /-! ### Translating divisors of points -/
 
