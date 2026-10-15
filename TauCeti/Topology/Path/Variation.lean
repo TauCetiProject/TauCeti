@@ -154,6 +154,7 @@ theorem boundedVariationOn_subpath (γ : Path x y) (hγ : BoundedVariationOn γ 
 
 /-- Increasing continuous reparametrization fixing the endpoints preserves path length.
 Pauses in the reparametrization are allowed. -/
+@[simp↓]
 theorem eVariationOn_reparam (γ : Path x y) {f : I → I} (hf : Monotone f)
     (hc : Continuous f) (h0 : f 0 = 0) (h1 : f 1 = 1) :
     eVariationOn (γ.reparam f hc h0 h1) univ = eVariationOn γ univ := by
