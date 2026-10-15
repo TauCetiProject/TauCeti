@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
 import Mathlib.Topology.LocallyConstant.Basic
-import TauCeti.Geometry.RealAlgebraic.Stack.Local
+import TauCeti.Analysis.Polynomial.RealRoots.Common
 
 /-!
 # Gluing local Lazard delineations
@@ -23,9 +23,10 @@ root lists and exponent data already contained in each local Lazard delineation.
 local-to-global step used when analytic preparation constructs roots in charts of a connected
 analytic submanifold.
 
-The root lists are glued by `TauCeti.exists_roots_of_locally`, which is shared with
-`TauCeti.nonempty_delineation_of_locally` in `TauCeti.Geometry.RealAlgebraic.Stack.Local`; the
-gluing of the removed exponent vectors adapts the same locally-constant argument.
+The root lists are glued by `TauCeti.exists_roots_of_locally` from
+`TauCeti.Analysis.Polynomial.RealRoots.Common`, which is shared with
+`TauCeti.nonempty_delineation_of_locally`; the gluing of the removed exponent vectors adapts the
+same locally-constant argument.
 
 ## Main result
 
