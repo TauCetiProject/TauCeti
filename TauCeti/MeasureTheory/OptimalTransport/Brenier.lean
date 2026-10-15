@@ -15,6 +15,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.Convex.MongeAmpere.Decomposition
+import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 
 /-!
@@ -101,6 +102,11 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   are absolutely continuous, with densities `g₀` and `g₁`, the Brenier potential `u` solves the
   Monge–Ampère equation `g₀ x = g₁ (∇ u x) det (D²u x)` almost everywhere, with `D²u` the
   Alexandrov Hessian;
+* `exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq_map_smul_add_smul_gradient` —
+  when only the source law is absolutely continuous, with density `g₀`, the interpolating maps
+  `Tₜ x = (1 - t) • x + t • ∇ u x` push it, for `0 ≤ t < 1`, to absolutely continuous laws with
+  densities `gₜ`, and the Jacobian equation `g₀ x = det ((1 - t) • 1 + t • D²u x) gₜ (Tₜ x)` holds
+  almost everywhere;
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — laws with finite second moment have finite
   quadratic transport cost, so Brenier's theorem applies to them;
 * `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` — for marginals with finite second moments,
@@ -738,6 +744,51 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq
   obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hconv hbot
   refine ⟨u, hconv, hlsc, hbot, hT, H, hH,
     rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_of_mongeAmpereMeasure_eq ρ hconv hbot ?_ hν hMA⟩
+  filter_upwards [hH] with x hx hxD
+  exact ⟨_, (hx (interior_subset hxD)).2⟩
+
+/-- **Displacement interpolants of an absolutely continuous law are absolutely continuous.** Let
+`μ` and `ν` be probability measures on a finite-dimensional real inner product space `E`, with `μ`
+absolutely continuous with respect to an additive Haar measure `ρ`, and suppose the optimal cost
+for `‖x - y‖ ^ 2 / 2` is finite. Then there is a convex, lower semicontinuous `u : E → EReal` that
+never takes the value `⊥`, with `D` the interior of its effective domain, such that:
+
+* the gradient `∇ u` is an optimal transport map from `μ` to `ν`;
+* at `ρ`-almost every point `x` of the effective domain, the subdifferential of `u` has a positive
+  derivative `H x`, the Alexandrov Hessian of `u`;
+* for every `0 ≤ t < 1`, the displacement interpolant `μₜ`, the pushforward of `μ` by
+  `Tₜ x = (1 - t) • x + t • ∇ u x`, is absolutely continuous with respect to `ρ`, and the
+  densities satisfy the **Jacobian equation**
+  `dμ/dρ (x) = det ((1 - t) • 1 + t • H x) * dμₜ/dρ (Tₜ x)` for `ρ`-almost every `x ∈ D`, with
+  `dμ/dρ = 0` almost everywhere off `D`.
+
+The target `ν = μ₁` need not be absolutely continuous. -/
+theorem
+    exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq_map_smul_add_smul_gradient
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν (∇ fun x => (u x).toReal) ∧
+      ∃ H : E → E →L[ℝ] E, (∀ᵐ x ∂ρ, u x ≠ ⊤ → (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+          ∀ y' ∈ subdifferential (innerₗ E) u x',
+            ‖y' - (∇ fun x => (u x).toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
+        ∀ t : ℝ, 0 ≤ t → t < 1 →
+          μ.map (fun x => (1 - t) • x + t • (∇ fun x' => (u x').toReal) x) ≪ ρ ∧
+          μ.rnDeriv ρ =ᵐ[ρ] (interior {x | u x ≠ ⊤}).indicator fun x =>
+            ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det *
+              (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (u x').toReal) x).rnDeriv ρ
+                ((1 - t) • x + t • (∇ fun x' => (u x').toReal) x) := by
+  obtain ⟨u, hconv, hlsc, hbot, hdiff, hT, -⟩ :=
+    exists_isKantorovichOptimalTransportMap_gradient hμ hfin
+  obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hconv hbot
+  have hμD : ∀ᵐ x ∂μ, x ∈ interior {x | u x ≠ ⊤} := by
+    filter_upwards [hdiff] with x hx using mem_interior_iff_mem_nhds.2 hx.1
+  refine ⟨u, hconv, hlsc, hbot, hT, H, hH, fun t ht₀ ht₁ =>
+    ⟨map_smul_add_smul_gradient_absolutelyContinuous ρ hconv hbot hμ hμD ht₀ ht₁,
+      rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradient ρ hconv hbot ?_ hμ
+        hμD ht₀ ht₁⟩⟩
   filter_upwards [hH] with x hx hxD
   exact ⟨_, (hx (interior_subset hxD)).2⟩
 

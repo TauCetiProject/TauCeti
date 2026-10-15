@@ -7,8 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
--- Proof-only: the chord through two points with singular reduction.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.IndexTwo
 -- Proof-only: the residue quadratic at an odd stage of the `Iₙ*` subprocedure.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: index two from sums of outside elements.
@@ -495,11 +493,9 @@ private theorem add_mem_of_notMem_farPoints {ϖ : v.valuationSubring}
   obtain ⟨X₂, Y₂, rfl, rfl, hX₂, ⟨c₂, hc₂⟩⟩ := exists_eq_of_notMem_farPoints v hp hst hA₂ h₂
     ((mem_maximalIdeal_iff_dvd hϖ).1 hx₂) ((mem_maximalIdeal_iff_dvd hϖ).1 hy₂) hQF
   by_contra hPQ
-  obtain ⟨L, x₃, y₃, h₃, -, heq, he₁, -, he₃⟩ :=
-    exists_chord_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hPQ
-  rw [heq] at hPQ
-  obtain ⟨X₃, rfl⟩ := (mem_maximalIdeal_iff_dvd hϖ).1
-    ((some_coe_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ h₃).1 hPQ).1
+  obtain ⟨x₃, -, L, -, -, -, hx₃, -, he₁, -, -, he₃⟩ :=
+    exists_chord_of_add_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hPQ
+  obtain ⟨X₃, rfl⟩ := (mem_maximalIdeal_iff_dvd hϖ).1 hx₃
   -- `ϖ ∣ ℓ`
   obtain ⟨L, rfl⟩ : ϖ ∣ L := hp.dvd_of_dvd_pow (n := 2)
     ⟨X₁ + X₂ + X₃ - α₁ * L + A₂, by rw [hα₁, hA₂] at he₁; linear_combination he₁⟩
@@ -592,8 +588,8 @@ private theorem add_notMem_farPoints {ϖ : v.valuationSubring}
   have hPQb := notMem_of_mem_farPoints v hϖ hm₃ hm₄ hm₆ hPQ
   obtain ⟨x₁, y₁, h₁, rfl, ⟨X₁, rfl⟩, -⟩ := hP
   obtain ⟨x₂, y₂, h₂, rfl, ⟨X₂, rfl⟩, -⟩ := hQ
-  obtain ⟨L, x₃, y₃, h₃, -, heq, he₁, -, -⟩ :=
-    exists_chord_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hPQb
+  obtain ⟨x₃, y₃, L, h₃, heq, -, -, -, he₁, -, -, -⟩ :=
+    exists_chord_of_add_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hPQb
   obtain ⟨x₃', y₃', h₃', he, ⟨X₃, rfl⟩, -⟩ := hPQ
   obtain rfl : x₃ = ϖ ^ 2 * X₃ :=
     Subtype.val_injective (Point.some.inj (heq.symm.trans he)).1
