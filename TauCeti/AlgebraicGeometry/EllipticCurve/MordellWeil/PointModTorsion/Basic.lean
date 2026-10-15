@@ -2,9 +2,6 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
-* `WeierstrassCurve.Affine.posDef_neronTateGramMatrix`: under Northcott finiteness, every
-  finite-basis Gram matrix is positive definite.
-
 -/
 module
 
@@ -48,6 +45,8 @@ regulator is defined.
 * `WeierstrassCurve.Affine.isSymm_neronTateGramMatrix`: the Gram matrix is symmetric. The
   regulator is the determinant of this matrix in a basis of the quotient, and is defined
   separately.
+* `WeierstrassCurve.Affine.posDef_neronTateGramMatrix`: under Northcott finiteness, every
+  finite-basis Gram matrix is positive definite.
 -/
 
 public section
