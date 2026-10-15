@@ -8,7 +8,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 /-!
 # Affine base change of quasicoherent sections
 For a morphism of schemes, if an open and its inverse image are affine, sections of the
@@ -17,8 +16,8 @@ map. The isomorphism is characterized by sending `1 ⊗ s` to the pullback of `s
 For a cartesian square over `Spec S ⟶ Spec R`, the same section map exhibits sections on the
 inverse image as the base change from `R` to `S`. This is the affine-cover input for cohomology
 and base change. The module structures remain caller parameters, including at the top open.
-The construction transports the affine-spectrum comparison to the actual open-section carriers.
-It uses the pullback composition and restriction comparisons through their unit equations.
+Use `pullbackSectionsEquiv` for extension of scalars along the coordinate-ring map, and
+`isBaseChange_pullbackSections` for extension along the original base-ring map `R ⟶ S`.
 ## References
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.2(e).
 * The Stacks Project, Tag 01I9 (pullback of quasicoherent sheaves) and Tag 02KH
@@ -30,40 +29,6 @@ open AlgebraicGeometry.Scheme.Modules
 open scoped ChangeOfRings TensorProduct
 noncomputable section
 universe u
-namespace AlgebraicGeometry.Scheme
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
-  {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of S))]
-  {g : Y ⟶ X}
-/-- In a cartesian square over affine bases, the coordinate rings of an affine open and
-its inverse image form a pushout over the original base rings. -/
-theorem isPushout_baseRingToStructurePresheaf_of_isAffineOpen
-    (H : IsPullback g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
-      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
-    {U : X.Opens} (hU : IsAffineOpen U) :
-    let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-    let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
-      ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-    IsPushout (CommRingCat.ofHom (algebraMap R S))
-      (CommRingCat.ofHom (algebraMap R Γ(X, U)))
-      (CommRingCat.ofHom (algebraMap S Γ(Y, g ⁻¹ᵁ U))) (g.app U) := by
-  have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
-  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
-    ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-  have := isIso_pushoutSection_of_isAffineOpen H (US := ⊤) (UT := ⊤) (UX := U)
-    (UY := g ⁻¹ᵁ U) le_top le_top (by simp) (isAffineOpen_top _) (isAffineOpen_top _) hU
-  refine ((isIso_pushoutSection_iff ..).mp this).flip.of_iso (Scheme.ΓSpecIso (.of R))
-    (Scheme.ΓSpecIso (.of S)) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
-  · rw [← Scheme.ΓSpecIso_naturality]
-    exact congrArg (· ≫ _) (Scheme.Hom.appLE_eq_app _)
-  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
-      Category.comp_id]
-  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
-      Category.comp_id]
-  · simp only [Iso.refl_hom, Category.comp_id, Category.id_comp, Scheme.Hom.appLE_eq_app]
-end AlgebraicGeometry.Scheme
 namespace AlgebraicGeometry.Scheme.Modules
 variable {X Y : Scheme.{u}} (g : Y ⟶ X) (M : X.Modules) (U : X.Opens)
 variable {Z : Scheme.{u}} (f : Z ⟶ Y)
@@ -271,36 +236,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pullbackSectionsEquiv_symm_pullbackSec
   erw [LinearEquiv.symm_apply_apply] at h
   exact h.symm
 end AlgebraicGeometry.Scheme.Modules
-namespace AlgebraicGeometry.Scheme.Modules
-section BaseScalars
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
-  {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of S))]
-  (g : Y ⟶ X) (U : X.Opens)
-private lemma baseRingTower
-    (C : CommSq g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
-      (Spec.map (CommRingCat.ofHom (algebraMap R S)))) :
-    letI : Algebra R Γ(X, U) :=
-      ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-    letI : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
-      ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-    letI : Algebra R Γ(Y, g ⁻¹ᵁ U) :=
-      ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
-    IsScalarTower R S Γ(Y, g ⁻¹ᵁ U) := by
-  let : Algebra R Γ(X, U) :=
-    ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
-    ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-  let : Algebra R Γ(Y, g ⁻¹ᵁ U) :=
-    ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
-  refine IsScalarTower.of_algebraMap_eq' (RingHom.ext fun r ↦ ?_)
-  let : Y.Over (Spec (.of R)) :=
-    ⟨(Y ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S))⟩
-  have : g.IsOver (Spec (.of R)) := ⟨C.w⟩
-  exact (app_baseRingToStructurePresheaf R g U r).trans
-    (Y.baseRingToStructurePresheaf_app_algebraMap
-      (R := R) (S := S) rfl (g ⁻¹ᵁ U) r).symm
-end BaseScalars
-end AlgebraicGeometry.Scheme.Modules
 namespace AlgebraicGeometry.Scheme.Hom
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
   {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of S))]
@@ -329,7 +264,7 @@ def pullbackSectionsBaseLinear
   let : Algebra Γ(X, U) Γ(Y, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
   let : Algebra R Γ(Y, g ⁻¹ᵁ U) :=
     ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
-  have := Scheme.Modules.baseRingTower g U C
+  have := Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U C
   have := IsScalarTower.to₁₃₄ R S Γ(Y, g ⁻¹ᵁ U) Γ((pullback g).obj M, g ⁻¹ᵁ U)
   exact
     { toFun := g.pullbackSections M U
@@ -340,6 +275,7 @@ def pullbackSectionsBaseLinear
             algebraMap R Γ(Y, g ⁻¹ᵁ U) r := rfl
         rw [hr, IsScalarTower.algebraMap_smul Γ(Y, g ⁻¹ᵁ U), RingHom.id_apply] }
 /-- The base-linear pullback has the same values as the canonical semilinear section map. -/
+@[simp]
 lemma pullbackSectionsBaseLinear_apply
     (C : CommSq g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R S)))) :
@@ -379,7 +315,7 @@ theorem isBaseChange_pullbackSections [M.IsQuasicoherent]
   let : Algebra R Γ(Y, g ⁻¹ᵁ U) :=
     ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
   have : IsScalarTower R Γ(X, U) Γ(Y, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have := Scheme.Modules.baseRingTower g U H.toCommSq
+  have := Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U H.toCommSq
   have := IsScalarTower.to₁₃₄ R S Γ(Y, g ⁻¹ᵁ U) Γ((pullback g).obj M, g ⁻¹ᵁ U)
   have : Algebra.IsPushout R S Γ(X, U) Γ(Y, g ⁻¹ᵁ U) :=
     CommRingCat.isPushout_iff_isPushout.mp

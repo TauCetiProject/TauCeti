@@ -12,7 +12,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 The unit of pullback and pushforward gives a semilinear map on sections over every open.
 These maps commute with coefficient maps, restriction, and composition of scheme morphisms.
-The composition equation uses the characteristic mate of the existing pullback comparison.
+The composition equation identifies direct and iterated pullback through the canonical
+pullback-composition isomorphism, so sections can be compared across successive morphisms.
 -/
 
 public section

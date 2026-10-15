@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
