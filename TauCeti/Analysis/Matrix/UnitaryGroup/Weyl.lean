@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
-public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.PermutationGL
 import TauCeti.Algebra.Notation.Pi.Basic
 
 /-!
@@ -144,14 +143,6 @@ theorem unitaryTorusNormalizerPerm_eq_one_iff
     unitaryTorusNormalizerPerm g = 1 ↔ (g : unitaryGroup (Fin n) ℂ) ∈ unitaryTorus (Fin n) := by
   rw [unitaryTorusNormalizerPerm_apply, diagonalNormalizerPerm_eq_one_iff,
     mem_unitaryTorus_iff_toUnits_mem]
-
-/-- As an invertible matrix, the unitary permutation matrix of a permutation is its permutation
-matrix in the general linear group. -/
-@[simp]
-theorem toUnits_permutationUnitary {R : Type*} [CommRing R] [StarRing R] {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (σ : Equiv.Perm ι) :
-    Unitary.toUnits (permutationUnitary (R := R) σ) = permutationGL σ :=
-  Units.ext <| by rw [Unitary.val_toUnits_apply, permutationGL_coe, coe_permutationUnitary]
 
 /-- A permutation matrix normalizes the diagonal torus of `U(n)`. -/
 theorem permutationUnitary_mem_normalizer (σ : Equiv.Perm (Fin n)) :
