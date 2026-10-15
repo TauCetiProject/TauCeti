@@ -242,15 +242,14 @@ theorem kerLiftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K) (hf : Function.Surj
 codomain. -/
 theorem kerLiftBialgHom_bijective (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     Function.Bijective (kerLiftBialgHom f hf) := by
-  have hfun : (kerLiftBialgHom f hf : H ⧸ (kerOfSurjective f hf).toIdeal → K) =
-      (Ideal.quotientKerAlgEquivOfSurjective (f := (f : H →ₐ[R] K)) hf :
-        H ⧸ RingHom.ker (f : H →ₐ[R] K) → K) := by
-    ext q
-    obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (kerOfSurjective f hf).toIdeal q
-    rw [Ideal.Quotient.mkₐ_eq_mk, kerLiftBialgHom_mk]
-    exact (Ideal.quotientKerAlgEquivOfSurjective_mk (f := (f : H →ₐ[R] K)) hf h).symm
-  rw [hfun]
-  exact (Ideal.quotientKerAlgEquivOfSurjective (f := (f : H →ₐ[R] K)) hf).bijective
+  refine ⟨(injective_iff_map_eq_zero (kerLiftBialgHom f hf)).2 ?_, ?_⟩
+  · intro q
+    obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
+    simp only [kerLiftBialgHom_mk, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal,
+      mem_kerOfSurjective, imp_self]
+  · intro k
+    obtain ⟨h, rfl⟩ := hf k
+    exact ⟨Ideal.Quotient.mk _ h, kerLiftBialgHom_mk f hf h⟩
 
 /-- The quotient by the Hopf-ideal kernel of a surjective morphism is bialgebra-equivalent to
 the codomain. -/
@@ -278,8 +277,7 @@ theorem kerLiftBialgEquiv_toBialgHom (f : H →ₐc[R] K) (hf : Function.Surject
 is. -/
 theorem isReduced_quotient_kerOfSurjective [IsReduced K] (f : H →ₐc[R] K)
     (hf : Function.Surjective f) : IsReduced (H ⧸ (kerOfSurjective f hf).toIdeal) :=
-  isReduced_of_injective (kerLiftBialgEquiv f hf).toAlgEquiv.toRingEquiv.toRingHom
-    (kerLiftBialgEquiv f hf).injective
+  isReduced_of_injective (kerLiftBialgHom f hf) (kerLiftBialgHom_bijective f hf).injective
 
 /-- The Hopf-ideal kernel of the quotient morphism by `I` is `I`. -/
 @[simp]
