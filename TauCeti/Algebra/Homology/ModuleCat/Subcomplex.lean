@@ -63,11 +63,14 @@ def ofSubmodules : HomologicalComplex (ModuleCat.{v} R) c where
   d i j := ModuleCat.ofHom ((K.d i j).hom.restrict (hN i j))
   shape i j h := by
     ext x
+    -- The terms are `ModuleCat.of R (N i)` and the differential is `LinearMap.restrict`, whose
+    -- value on `x` has underlying element `K.d i j x` by definition.
     change K.d i j (x : N i).1 = 0
     rw [K.shape i j h]
     rfl
   d_comp_d' i j k _ _ := by
     ext x
+    -- As for `shape`: the restricted differentials act on underlying elements by definition.
     change K.d j k (K.d i j (x : N i).1) = 0
     rw [← ModuleCat.comp_apply, K.d_comp_d]
     rfl
@@ -95,8 +98,7 @@ instance : Mono (K.ofSubmodulesι N hN) :=
 def subobjectOfSubmodules : Subobject K :=
   Subobject.mk (K.ofSubmodulesι N hN)
 
-/-- The subcomplex cut out by `N` is the image of the inclusion of `K.ofSubmodules N hN`. -/
-theorem subobjectOfSubmodules_eq_mk :
+private theorem subobjectOfSubmodules_eq_mk :
     K.subobjectOfSubmodules N hN = Subobject.mk (K.ofSubmodulesι N hN) :=
   (rfl)
 
@@ -140,6 +142,7 @@ def ofSubmodulesMap (φ : K ⟶ L) (h : ∀ i, ∀ x ∈ N i, φ.f i x ∈ N' i)
   comm' i j _ := by
     ext x
     exact Subtype.ext (by
+      -- As in `ofSubmodules`: restricted maps act on underlying elements by definition.
       change L.d i j (φ.f i (x : N i).1) = φ.f j (K.d i j (x : N i).1)
       rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, φ.comm])
 

@@ -47,8 +47,9 @@ lemma isZero_homology_cokernel_of_eq_top (S : Subobject K) (hS : S = ⊤)
 
 /-- The quotient by a subcomplex has vanishing homology in a degree where the subcomplex is
 everything. -/
-lemma isZero_homology_cokernel_of_epi_arrow_f {C : Type*} [Category* C] [Abelian C]
-    {K : HomologicalComplex C c} (S : Subobject K) (i : ι) [Epi (S.arrow.f i)] :
+lemma isZero_homology_cokernel_of_epi_arrow_f [HasZeroObject C]
+    [HasColimitsOfShape WalkingParallelPair C] (S : Subobject K) (i : ι)
+    [(cokernel S.arrow).HasHomology i] [Epi (S.arrow.f i)] :
     IsZero ((cokernel S.arrow).homology i) :=
   (HomologicalComplex.ExactAt.of_isZero ((isZero_cokernel_of_epi (S.arrow.f i)).of_iso
     (PreservesCokernel.iso (HomologicalComplex.eval C c i) S.arrow))).isZero_homology

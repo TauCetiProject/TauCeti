@@ -25,7 +25,8 @@ Hence the chains of the cubes of weight at most `s` form a subcomplex `F_s` of t
 of `E`, and their images form a subcomplex of the normalized cubical chains.  This increasing
 filtration is
 
-* zero for `s < 0`, while `F_0` consists of the chains of the cubes lying in a single fibre;
+* zero for `s < 0`, while `F_0` is spanned by the cubes whose composite with `p` is constant,
+  each lying in some fibre;
 * everything in degrees `n ≤ s`, so it is finite in each degree;
 * natural in maps over `B`.
 
@@ -94,11 +95,6 @@ def IsSerreWeightLE (p : C(E, B)) (s : ℤ) {n : ℕ} (c : SingularCube E n) : P
 
 variable {p : C(E, B)} {s t : ℤ} {n : ℕ}
 
-/-- The defining property of a cube of Serre weight at most `s`. -/
-theorem isSerreWeightLE_iff (c : SingularCube E n) : c.IsSerreWeightLE p s ↔
-    0 ≤ s ∧ ∀ x y : Fin n → I, (∀ i : Fin n, (i : ℤ) < s → x i = y i) → p (c x) = p (c y) :=
-  Iff.rfl
-
 /-- The Serre weight bound is monotone in the bound. -/
 theorem IsSerreWeightLE.mono {c : SingularCube E n} (h : c.IsSerreWeightLE p s) (hst : s ≤ t) :
     c.IsSerreWeightLE p t :=
@@ -150,6 +146,7 @@ variable {R p}
 
 /-- A chain lies in the `s`-th piece of the Serre filtration when every cube in its support has
 Serre weight at most `s`. -/
+@[simp]
 theorem mem_serreFiltration_iff {s : ℤ} {n : ℕ} (f : CubicalChain E R n) :
     f ∈ serreFiltration R p s n ↔ ∀ c, f c ≠ 0 → c.IsSerreWeightLE p s := by
   rw [serreFiltration, Finsupp.mem_supported']
@@ -220,6 +217,13 @@ def serreFiltration (s : ℤ) (n : ℕ) : Submodule R (NormalizedCubicalChain E 
   (CubicalChain.serreFiltration R p s n).map (degenerate E R n).mkQ
 
 variable {R p}
+
+/-- A normalized chain lies in the `s`-th piece of the Serre filtration exactly when it is the
+class of an unnormalized chain supported on cubes of Serre weight at most `s`. -/
+theorem mem_serreFiltration_iff {s : ℤ} {n : ℕ} (x : NormalizedCubicalChain E R n) :
+    x ∈ serreFiltration R p s n ↔
+      ∃ g ∈ CubicalChain.serreFiltration R p s n, Submodule.Quotient.mk g = x :=
+  Submodule.mem_map
 
 /-- The class of a cube of Serre weight at most `s` lies in the `s`-th piece of the filtration. -/
 theorem ofCube_mem_serreFiltration {s : ℤ} {n : ℕ} {c : SingularCube E n}

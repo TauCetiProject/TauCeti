@@ -26,7 +26,7 @@ complex is set up.
 
 ## Main results
 
-* `HomologicalComplex.mono_extendMap`: extension preserves monomorphisms.
+* `HomologicalComplex.mono_extendMap`: extension preserves degreewise monomorphisms.
 * `CategoryTheory.Subobject.extend_mono`, `CategoryTheory.Subobject.extend_bot`: extension of
   subcomplexes is monotone and preserves `⊥`.
 * `CategoryTheory.Subobject.epi_extend_arrow_f`,
@@ -41,19 +41,18 @@ noncomputable section
 
 open CategoryTheory Limits
 
-variable {C : Type*} [Category* C] [Abelian C] {ι ι' : Type*} {c : ComplexShape ι}
-  {c' : ComplexShape ι'} (e : c.Embedding c')
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C] {ι ι' : Type*}
+  {c : ComplexShape ι} {c' : ComplexShape ι'} (e : c.Embedding c')
 
 namespace HomologicalComplex
 
 variable {K L : HomologicalComplex C c}
 
-/-- Extension along an embedding of complex shapes preserves monomorphisms. -/
-instance mono_extendMap (φ : K ⟶ L) [Mono φ] : Mono (extendMap φ e) := by
+/-- Extension along an embedding of complex shapes preserves degreewise monomorphisms. -/
+theorem mono_extendMap (φ : K ⟶ L) [∀ i, Mono (φ.f i)] : Mono (extendMap φ e) := by
   refine mono_of_mono_f _ fun i' ↦ ?_
   by_cases hi' : ∃ i, e.f i = i'
   · obtain ⟨i, hi⟩ := hi'
-    have : Mono (φ.f i) := (eval C c i).map_mono φ
     rw [extendMap_f φ e hi]
     infer_instance
   · simp only [not_exists] at hi'
@@ -63,15 +62,21 @@ end HomologicalComplex
 
 namespace CategoryTheory.Subobject
 
-variable {K L : HomologicalComplex C c}
+-- With pullbacks in `C`, the evaluations preserve monomorphisms, so the inclusion of a
+-- subcomplex is a monomorphism in each degree.
+variable [HasPullbacks C] {K L : HomologicalComplex C c}
+
+/-- The extension of the inclusion of a subcomplex is a monomorphism. -/
+instance (S : Subobject K) : Mono (HomologicalComplex.extendMap S.arrow e) :=
+  have (i : ι) : Mono (S.arrow.f i) := (HomologicalComplex.eval C c i).map_mono S.arrow
+  HomologicalComplex.mono_extendMap e S.arrow
 
 /-- The subcomplex of `K.extend e` extended from a subcomplex `S` of `K`: the image of the
 extension of its inclusion. -/
 def extend (S : Subobject K) : Subobject (K.extend e) :=
   Subobject.mk (HomologicalComplex.extendMap S.arrow e)
 
-/-- The extended subcomplex is the image of the extended inclusion. -/
-theorem extend_eq_mk (S : Subobject K) :
+private theorem extend_eq_mk (S : Subobject K) :
     S.extend e = Subobject.mk (HomologicalComplex.extendMap S.arrow e) :=
   (rfl)
 
@@ -112,6 +117,8 @@ theorem extend_factors (φ : K ⟶ L) {S : Subobject K} {T : Subobject L}
     (Category.assoc _ _ _).trans ((congrArg
       (fun k ↦ (Subobject.underlyingIso (HomologicalComplex.extendMap S.arrow e)).hom ≫ k)
         ?_).trans (Category.assoc _ _ _).symm)⟩
+  -- The arrow of `Subobject.mk f` is `f` up to `underlyingIso`; `mk_factors_iff` states the goal
+  -- with `(MonoOver.mk f).arrow`, which is `f` by definition.
   change _ ≫ HomologicalComplex.extendMap T.arrow e = _
   rw [← HomologicalComplex.extendMap_comp, Subobject.factorThru_arrow,
     HomologicalComplex.extendMap_comp]
