@@ -120,7 +120,7 @@ noncomputable def coordinateMap :
 
 /-- Precomposition by `coordinateMap` is the upper-unitriangular inclusion on points. -/
 theorem mapPointsFunctor_coordinateMap :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u} (coordinateMap R n) :
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} (coordinateMap R n) :
       HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R (Fin n)) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)) =
       inclusionPointsMap.{u, u} (R := R) n :=
@@ -133,7 +133,7 @@ theorem mapPointsFunctor_coordinateMap_app (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R (Fin n)) A) :
     toConv (f.ofConv.comp ↑(CommHopfAlgCat.Hom.hom (coordinateMap R n))) =
       inclusionPoints (R := R) n f := by
-  rw [← CommHopfAlgCat.mapPointsFunctor_app_apply, mapPointsFunctor_coordinateMap]
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, mapPointsFunctor_coordinateMap]
   rfl
 
 private theorem pointsMulEquiv_id_apply (i j : Fin n) :

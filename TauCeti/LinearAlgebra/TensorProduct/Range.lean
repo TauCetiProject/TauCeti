@@ -80,7 +80,7 @@ theorem one_tmul_mem_range_baseChange_iff [Module.FaithfullyFlat R A]
     (1 : A) ⊗ₜ[R] y ∈ range (f.baseChange A) ↔ y ∈ range f := by
   calc
     _ ↔ (1 : A) ⊗ₜ[R] y ∈ range ((range f).subtype.baseChange A) := by
-      simpa only [mem_range, baseChange_eq_ltensor] using
+      simpa only [mem_range, baseChange_eq_lTensor] using
         SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) ((1 : A) ⊗ₜ[R] y)
     _ ↔ y ∈ range f := by
       rw [← Submodule.baseChange, Submodule.one_tmul_mem_baseChange_iff]

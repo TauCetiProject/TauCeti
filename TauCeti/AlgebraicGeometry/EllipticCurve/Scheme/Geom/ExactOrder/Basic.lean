@@ -120,6 +120,16 @@ def IsOfExactOrder (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) : P
 
 variable {E}
 
+/-- A point `P` has exact order `N` exactly when the closed subscheme of `[P] + ⋯ + [NP]` is a
+subgroup scheme of `E`. -/
+theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} :
+    E.IsOfExactOrder P N ↔
+      ∃ _ : GrpObj (Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap) :=
+  Iff.rfl
+
 /-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
 `N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product
 of two points of `D` and on the inverse of a point of `D`. -/

@@ -351,7 +351,7 @@ theorem _root_.Module.Basis.toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis
       (if .inr (.inl j) = c then bas (.inr (.inl i)) else 0) -
         if .inr (.inr i) = c then bas (.inr (.inr j)) else 0 := by
   rw [typeBDifferenceRootMatrix, map_sub, LinearMap.sub_apply,
-    toLinAlgEquiv_single_apply_basis, toLinAlgEquiv_single_apply_basis]
+    Module.Basis.toLinAlgEquiv_single_apply_basis, Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The difference-root matrix is skew-adjoint for the split odd orthogonal form. -/
@@ -445,7 +445,7 @@ theorem _root_.Module.Basis.toLinAlgEquiv_typeBShortRootMatrix_apply_basis
       (if .inl () = c then (2 : K) • bas (.inr (.inl i)) else 0) -
         if .inr (.inr i) = c then bas (.inl ()) else 0 := by
   rw [typeBShortRootMatrix, map_sub, LinearMap.sub_apply,
-    toLinAlgEquiv_single_apply_basis, toLinAlgEquiv_single_apply_basis]
+    Module.Basis.toLinAlgEquiv_single_apply_basis, Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The negative short-root matrix acts on the coordinate basis only through the positive and
@@ -457,7 +457,7 @@ theorem _root_.Module.Basis.toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_bas
       (if .inr (.inl i) = c then bas (.inl ()) else 0) -
         if .inl () = c then (2 : K) • bas (.inr (.inr i)) else 0 := by
   rw [typeBShortNegativeRootMatrix, map_sub, LinearMap.sub_apply,
-    toLinAlgEquiv_single_apply_basis, toLinAlgEquiv_single_apply_basis]
+    Module.Basis.toLinAlgEquiv_single_apply_basis, Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The positive short-root matrix is skew-adjoint for the split odd orthogonal form. -/

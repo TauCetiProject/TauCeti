@@ -84,7 +84,7 @@ theorem iteratedFDerivWithin_prod_right (hf : ContDiffOn 𝕜 n f (s ×ˢ t))
   have hpre : g ⁻¹' (s ×ˢ t) = t := by ext y; simp [g, hp]
   have hg : g.contLinear = ContinuousLinearMap.inr 𝕜 P E := by
     ext y : 1
-    simpa [g] using g.contLinear_map_vsub y 0
+    simpa [g] using g.contLinear_apply_vsub y 0
   have h := ((hf.of_le hm).ftaylorSeriesWithin hst).comp_continuousAffineMap g
   rw [hpre] at h
   simpa only [hg, ftaylorSeriesWithin, g, ContinuousAffineMap.prod_apply,

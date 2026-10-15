@@ -447,9 +447,11 @@ public theorem padicCompletionUnits_quotient_torsion_linearEquiv (L : Type*) [Fi
         Submodule.torsion ℤ_[p] (Additive ↑(padicCompletionUnits p L))) ≃ₗ[ℤ_[p]]
       (Fin (Module.finrank ℚ_[p] L + 1) → ℤ_[p])) := by
   -- Give `L` the local-field structure extending that of `ℚ_[p]`; the statement does not see it.
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
-  have := finiteExtension_valuativeExtension ℚ_[p] L
+  have : Nontrivial ℚ_[p] := (Padic.normedField p).toField.toNontrivial
+  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
+  have := algebraicExtension_valuativeExtension ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
   exact nonempty_quotient_torsion_linearEquiv_of_finitePadicExtension p L
 

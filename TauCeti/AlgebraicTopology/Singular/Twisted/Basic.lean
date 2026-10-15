@@ -185,6 +185,11 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
+/-- Vertex transport is transport inside the simplex between the two initial vertices. -/
+lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
+      (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
+
 /-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
 lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     (q : Path (toTopInitialVertex m.unop)
@@ -275,6 +280,12 @@ def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
     L.obj (initialVertex σ) ⟶ (twistedChains L).obj n :=
   Sigma.ι (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) σ
 
+/-- Twisted chains in a simplicial degree are the coproduct of the coefficient fibres at the
+initial vertices of its singular simplices. -/
+def isColimitCofanTwistedChains (n : SimplexCategoryᵒᵖ) :
+    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) :=
+  coproductIsCoproduct _
+
 /-- Two maps out of a module of twisted chains agree as soon as they agree on every summand. -/
 @[ext]
 lemma twistedChains_hom_ext {A : ModuleCat.{max v w} R} {f g : (twistedChains L).obj n ⟶ A}
@@ -363,6 +374,22 @@ attached to a singular `k`-simplex. -/
 def ιTwistedChainComplex (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     L.obj (initialVertex σ) ⟶ (twistedChainComplex L).X k :=
   ιTwistedChains L σ
+
+/-- Twisted singular chains are the alternating face map complex of their simplicial module.
+The comparison preserves the chosen simplex summands. -/
+def twistedChainComplexIsoAlternatingFaceMapComplex :
+    twistedChainComplex L ≅
+      (AlgebraicTopology.alternatingFaceMapComplex _).obj (twistedChains L) :=
+  Iso.refl _
+
+/-- The alternating-face comparison preserves each simplex inclusion. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫
+        (twistedChainComplexIsoAlternatingFaceMapComplex L).hom.f k =
+      ιTwistedChains L σ :=
+  Category.comp_id _
 
 /-- The cofan exhibiting the degree-`k` term of the twisted chain complex as a family indexed by the
 singular `k`-simplices. -/
@@ -480,6 +507,16 @@ lemma twistedChainsCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
 def twistedChainComplexCoefficientMap (η : L ⟶ K) :
     twistedChainComplex L ⟶ twistedChainComplex K :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsCoefficientMap η)
+
+/-- Changing coefficients commutes with the alternating-face comparison. -/
+@[reassoc]
+lemma twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality (η : L ⟶ K) :
+    twistedChainComplexCoefficientMap η ≫
+        (twistedChainComplexIsoAlternatingFaceMapComplex K).hom =
+      (twistedChainComplexIsoAlternatingFaceMapComplex L).hom ≫
+        (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsCoefficientMap η) := by
+  simp [twistedChainComplexIsoAlternatingFaceMapComplex, twistedChainComplexCoefficientMap,
+    twistedChainComplex]
 
 /-- In each degree, a morphism of local coefficient systems acts on the summand of a simplex `σ`
 through its component at the initial vertex of `σ`. -/
@@ -736,6 +773,15 @@ lemma ιTwistedChains_twistedChainsMap_app (n : SimplexCategoryᵒᵖ)
 def twistedChainComplexMap :
     twistedChainComplex ((pullback f.hom).obj L) ⟶ twistedChainComplex L :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsMap f L)
+
+/-- Continuous maps commute with the alternating-face comparison of twisted chains. -/
+@[reassoc]
+lemma twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality :
+    twistedChainComplexMap f L ≫ (twistedChainComplexIsoAlternatingFaceMapComplex L).hom =
+      (twistedChainComplexIsoAlternatingFaceMapComplex ((pullback f.hom).obj L)).hom ≫
+        (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsMap f L) := by
+  simp [twistedChainComplexIsoAlternatingFaceMapComplex, twistedChainComplexMap,
+    twistedChainComplex]
 
 /-- Equal continuous maps induce the same map on twisted chain complexes, after the canonical
 identification of their pullback coefficient systems. -/
