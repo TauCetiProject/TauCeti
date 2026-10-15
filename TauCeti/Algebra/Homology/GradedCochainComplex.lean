@@ -431,6 +431,15 @@ theorem mem_range_gradedCochainComplexSubobject_arrow_f_iff (N : Submodule R M)
     rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
     exact congrArg Subtype.val hy
 
+/-- The simp-normal form of `mem_range_gradedCochainComplexSubobject_arrow_f_iff`, with range
+membership unfolded by `LinearMap.mem_range`. -/
+@[simp]
+theorem exists_gradedCochainComplexSubobject_arrow_f_apply_eq_iff (N : Submodule R M)
+    (hN : ∀ x ∈ N, dM x ∈ N) (p : ℤ) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    (∃ y, ((gradedCochainComplexSubobject ℳ dM hdeg hsq N hN).arrow.f p).hom y = x) ↔
+      (gradedCochainComplexXEquiv p x : M) ∈ N :=
+  LinearMap.mem_range.symm.trans (mem_range_gradedCochainComplexSubobject_arrow_f_iff N hN p x)
+
 /-- The subcomplex cut out by a submodule is monotone in the submodule. -/
 theorem gradedCochainComplexSubobject_mono {N N' : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
     (hN' : ∀ x ∈ N', dM x ∈ N') (h : N ≤ N') :

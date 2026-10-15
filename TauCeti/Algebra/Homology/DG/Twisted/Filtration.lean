@@ -193,6 +193,16 @@ theorem mem_range_indexFiltration_arrow_f_iff (p n : ℤ)
     mem_range_gradedCochainComplexSubobject_arrow_f_iff, twistedCochainComplexXEquiv_apply,
     mem_indexFiltrationSubmodule_iff]
 
+/-- The simp-normal form of `mem_range_indexFiltration_arrow_f_iff`, with range membership
+unfolded by `LinearMap.mem_range`. -/
+@[simp]
+theorem exists_indexFiltration_arrow_f_apply_eq_iff (p n : ℤ)
+    (f : (m.twistedCochainComplex dM hM).X n) :
+    (∃ g, ((m.indexFiltration dM hM p).arrow.f n).hom g = f) ↔
+      ∀ x, p < ind x →
+        (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 :=
+  LinearMap.mem_range.symm.trans (m.mem_range_indexFiltration_arrow_f_iff dM hM p n f)
+
 /-- The **index spectral sequence** of the twisted complex of a twisting cocycle: the spectral
 sequence of its index filtration.  On its first page, numbered `2`, the object at `(p, q)` is the
 cohomology `H^{p+q}(F_{q+1} / F_q)` of a graded piece of the index filtration
