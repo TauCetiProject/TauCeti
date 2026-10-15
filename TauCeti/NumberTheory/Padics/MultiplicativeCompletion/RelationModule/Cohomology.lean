@@ -53,7 +53,7 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
       (by rw [hg, Subgroup.coe_top]; exact dense_univ)
     letI := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p (g := g)
       (by rw [hg, Subgroup.coe_top]; exact dense_univ)
-    letI := galoisClassModuleAction p K L j
+    let := galoisClassModuleAction p K L j
     letI := continuousSMul_galoisClassModuleAction p K L j
     ∀ x : H2 (L ≃ₐ[K] L) (Additive (abelianizationProP p (freeProfiniteGroup ι)
       (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker)),
@@ -68,9 +68,9 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   have hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)) := by
     rw [hg, Subgroup.coe_top]
     exact dense_univ
-  letI := freeProfiniteGroup.presentationClassModuleAction p hd
+  let := freeProfiniteGroup.presentationClassModuleAction p hd
   let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
-  letI := galoisClassModuleAction p K L j
+  let := galoisClassModuleAction p K L j
   let := continuousSMul_galoisClassModuleAction p K L j
   let B : Rep ℤ_[p] (L ≃ₐ[K] L) :=
     ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
@@ -113,9 +113,18 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
     exact congrArg ofMul (eR.symm_apply_apply _)
+  -- Both comparisons use these coefficient coordinates. Identify them separately so the
+  -- naturality argument does not unfold both large cohomology equivalences at once.
+  have hL : freeProfiniteGroup.explicitH2EquivRelationModule p hg =
+      explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) ψ hψ := by
+    dsimp only [freeProfiniteGroup.explicitH2EquivRelationModule, ψ, eL, B]
+    rfl
+  have hR : explicitH2EquivPadicCompletionUnits p K L j =
+      explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ := by
+    dsimp only [explicitH2EquivPadicCompletionUnits, χ, eR, C]
+    rfl
   intro x
-  unfold explicitH2EquivPadicCompletionUnits freeProfiniteGroup.explicitH2EquivRelationModule
-  rw [_root_.groupCohomology.functor_map]
+  rw [hR, hL, _root_.groupCohomology.functor_map]
   exact explicitH2AddEquivGroupCohomology_explicitCoeff2
     (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
 
@@ -128,7 +137,7 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
       (by rw [hg, Subgroup.coe_top]; exact dense_univ)
     letI := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p (g := g)
       (by rw [hg, Subgroup.coe_top]; exact dense_univ)
-    letI := galoisClassModuleAction p K L j
+    let := galoisClassModuleAction p K L j
     letI := continuousSMul_galoisClassModuleAction p K L j
     Function.Bijective (explicitCoeff2 (L ≃ₐ[K] L) _
       (relationModuleToAbelianizationProPEquivariant p K L hg β j).toAdditive
@@ -137,9 +146,9 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
   have hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)) := by
     rw [hg, Subgroup.coe_top]
     exact dense_univ
-  letI := freeProfiniteGroup.presentationClassModuleAction p hd
+  let := freeProfiniteGroup.presentationClassModuleAction p hd
   let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
-  letI := galoisClassModuleAction p K L j
+  let := galoisClassModuleAction p K L j
   let := continuousSMul_galoisClassModuleAction p K L j
   let B : Rep ℤ_[p] (L ≃ₐ[K] L) :=
     ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
