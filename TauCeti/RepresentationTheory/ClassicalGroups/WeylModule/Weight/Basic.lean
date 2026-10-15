@@ -190,7 +190,8 @@ theorem weylModule_toSubmodule_inf_weightSpace_eq_bot (t : YoungTableau μ)
       refine le_trans (Submodule.map_le_iff_le_comap.mpr ?_) bot_le
       rw [Submodule.comap_bot]
       exact hker
-    · exact (map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le _ l').trans (le_biSup _ hl')
+    · exact (map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le _ l').trans
+        (le_iSup₂_of_le l' hl' le_rfl)
   rw [weylModule_toSubmodule, ← le_bot_iff]
   calc LinearMap.range (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)) ⊓
         weightSpace (tensorPowerRep k n μ.card) l

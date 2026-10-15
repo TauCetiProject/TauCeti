@@ -224,10 +224,10 @@ inverse pointwise split-torus equivalence. -/
 theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app_apply
     (A : CommAlgCat.{u} R)
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
-    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
       (splitTorusPointsMulEquiv R i half hi hhalf A).symm s := by
   have hmap :
-      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
+      CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
         (splitTorusPointsNatIso R i half hi hhalf).inv := by
     -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
     -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.
@@ -252,10 +252,10 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app_apply
     (t : HopfAlgebra.points (R := R)
       (H := (DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) A) :
-    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
       splitTorusPointsMulEquiv R i half hi hhalf A t := by
   have hmap :
-      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
+      CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
         (splitTorusPointsNatIso R i half hi hhalf).hom := by
     -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
     -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.

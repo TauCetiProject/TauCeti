@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Matrix.Frobenius
 public import Mathlib.Analysis.InnerProductSpace.Subspace
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Data.Sym.Card
-public import Mathlib.Data.Sym.Sym2.Order
+public import Mathlib.Order.Sym2
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
@@ -136,7 +136,7 @@ instance symmetricMatrixCompleteSpace :
 
 instance symmetricMatrixContinuousENorm :
     ContinuousENorm (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  SeminormedAddGroup.toContinuousENorm
+  ESeminormedAddMonoid.toContinuousENorm
 
 /-- The measurable structure is the Borel structure of the subtype topology. Declared explicitly
 so that instance search finds it regardless of which (definitionally equal) route it takes to

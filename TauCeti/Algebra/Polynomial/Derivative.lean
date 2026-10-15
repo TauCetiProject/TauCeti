@@ -36,7 +36,7 @@ theorem _root_.Polynomial.coe_derivative' [CommSemiring R] :
     ⇑(derivative' : Derivation R R[X] R[X]) = derivative :=
   _root_.funext derivative'_apply
 
-variable [Semiring R] [Semiring S] [IsAddTorsionFree S]
+variable [Semiring R] [Semiring S] [HasUniqueDiv S]
 
 /-- A coefficient map into an additively torsion-free semiring which preserves the degree of a
 polynomial also preserves the degree of its derivative. -/

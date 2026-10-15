@@ -170,7 +170,7 @@ private theorem realOperator_eq_add_integral_map_generator (S : StronglyContinuo
       MeasureTheory.volume 0 s := by
     apply ContinuousOn.intervalIntegrable
     simpa [Set.uIcc_of_le hs] using
-      (S.realOperator_continuousOn_Ici z).mono (fun _ hu => hu.1)
+      (S.realOperator_continuousOn_Ici z).mono (fun _ (hu : _ ∈ Set.Icc 0 s) => hu.1)
   have hftc := intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hs
     ((S.realOperator_continuousOn_Ici x).mono Set.Icc_subset_Ici_self)
     (fun u hu => (S.realOperator_hasDerivWithinAt_map_generator x hu.1.le).mono

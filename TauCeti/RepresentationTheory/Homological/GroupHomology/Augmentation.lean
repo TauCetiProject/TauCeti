@@ -6,7 +6,7 @@ Authors: Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.LongExactSequence
-public import TauCeti.RepresentationTheory.Homological.Augmentation
+public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 

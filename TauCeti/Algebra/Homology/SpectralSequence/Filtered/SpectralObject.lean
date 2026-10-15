@@ -44,6 +44,8 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
 
 ## Main results
 
+* `CochainComplex.cokernelFiltrationFunctorMapIso`: the cokernel of a transition map of the
+  functor of a filtration is the cokernel of the inclusion of subcomplexes.
 * `CochainComplex.spectralObjectHIso`: `H^n(f)` is the cohomology of the mapping cone of
   `F.map f`.
 * `CochainComplex.spectralObjectHIsoCokernel`: for a monomorphism `F.map f`, `H^n(f)` is the
@@ -290,6 +292,22 @@ lemma filtrationFunctor_map_bot_top :
 
 instance {a b : EInt} (f : a ⟶ b) : Mono ((filtrationFunctor F hF).map f) :=
   inferInstanceAs (Mono (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))))
+
+/-- The cokernel of a transition map of the functor of a filtration is the cokernel of the
+corresponding inclusion of subcomplexes. -/
+noncomputable def cokernelFiltrationFunctorMapIso {a b : EInt} (f : a ⟶ b) :
+    cokernel ((filtrationFunctor F hF).map f) ≅
+      cokernel (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))) :=
+  cokernel.mapIso _ _ (filtrationFunctorObjIso F hF a) (filtrationFunctorObjIso F hF b)
+    (filtrationFunctor_map_comp_objIso_hom F hF f)
+
+/-- The isomorphism `CochainComplex.cokernelFiltrationFunctorMapIso` is induced by the identity of
+the subcomplex. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelFiltrationFunctorMapIso_hom {a b : EInt} (f : a ⟶ b) :
+    cokernel.π _ ≫ (cokernelFiltrationFunctorMapIso F hF f).hom =
+      (filtrationFunctorObjIso F hF b).hom ≫ cokernel.π _ := by
+  simp [cokernelFiltrationFunctorMapIso]
 
 end Filtration
 

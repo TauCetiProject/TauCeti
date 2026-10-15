@@ -384,7 +384,7 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
 theorem mapPointsFunctor_coordinateMap_app
     {B : Type*} [CommRing B] [Algebra A B]
     (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 54) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
