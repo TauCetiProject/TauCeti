@@ -98,24 +98,32 @@ def IsSerreWeightLE (p : C(E, B)) (s : ℤ) {n : ℕ} (c : SingularCube E n) : P
 
 variable {p : C(E, B)} {s t : ℤ} {n : ℕ}
 
+/-- The characterization of a cube of Serre weight at most `s`: `s ≥ 0`, and `p ∘ c` takes the
+same value at two points which agree in their coordinates of index less than `s`. -/
+theorem isSerreWeightLE_iff {c : SingularCube E n} : c.IsSerreWeightLE p s ↔
+    0 ≤ s ∧ ∀ x y : Fin n → I, (∀ i : Fin n, (i : ℤ) < s → x i = y i) → p (c x) = p (c y) := by
+  rw [IsSerreWeightLE]
+
 /-- The Serre weight bound is monotone in the bound. -/
 theorem IsSerreWeightLE.mono {c : SingularCube E n} (h : c.IsSerreWeightLE p s) (hst : s ≤ t) :
-    c.IsSerreWeightLE p t :=
-  ⟨h.1.trans hst, fun x y hxy ↦ h.2 x y fun i hi ↦ hxy i (hi.trans_le hst)⟩
+    c.IsSerreWeightLE p t := by
+  rw [isSerreWeightLE_iff] at h ⊢
+  exact ⟨h.1.trans hst, fun x y hxy ↦ h.2 x y fun i hi ↦ hxy i (hi.trans_le hst)⟩
 
 /-- No cube has negative Serre weight. -/
 theorem not_isSerreWeightLE_of_neg (c : SingularCube E n) (hs : s < 0) : ¬ c.IsSerreWeightLE p s :=
-  fun h ↦ (h.1.trans_lt hs).false
+  fun h ↦ ((isSerreWeightLE_iff.1 h).1.trans_lt hs).false
 
 /-- Every `n`-cube has Serre weight at most `s` for `s ≥ n`. -/
 theorem isSerreWeightLE_of_le (c : SingularCube E n) (hs : (n : ℤ) ≤ s) :
     c.IsSerreWeightLE p s :=
-  ⟨(Int.natCast_nonneg n).trans hs, fun _ _ hxy ↦
+  isSerreWeightLE_iff.2 ⟨(Int.natCast_nonneg n).trans hs, fun _ _ hxy ↦
     congrArg (p ∘ c) (funext fun i ↦ hxy i ((Int.ofNat_lt.2 i.2).trans_le hs))⟩
 
 /-- A face of a cube of Serre weight at most `s` has Serre weight at most `s`. -/
 theorem IsSerreWeightLE.face {c : SingularCube E (n + 1)} (h : c.IsSerreWeightLE p s)
     (i : Fin (n + 1)) (t : I) : (face i t c).IsSerreWeightLE p s := by
+  rw [isSerreWeightLE_iff] at h ⊢
   refine ⟨h.1, fun x y hxy ↦ ?_⟩
   rw [face_apply, face_apply]
   refine h.2 _ _ fun j hj ↦ ?_
@@ -132,6 +140,7 @@ theorem IsSerreWeightLE.face {c : SingularCube E (n + 1)} (h : c.IsSerreWeightLE
 theorem IsSerreWeightLE.comp {c : SingularCube E n} (h : c.IsSerreWeightLE p s) (f : C(E, E'))
     {p' : C(E', B)} (hf : p'.comp f = p) : IsSerreWeightLE p' s (f.comp c) := by
   subst hf
+  rw [isSerreWeightLE_iff] at h ⊢
   exact h
 
 end SingularCube
@@ -183,15 +192,13 @@ theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : CubicalChain E R (
 theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : C(E', B)}
     (hf : p'.comp f = p) {g : CubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
     map R f n g ∈ serreFiltration R p' s n := by
-  rw [serreFiltration, Finsupp.supported_eq_span_single] at hg
-  induction hg using Submodule.span_induction with
-  | mem g hg =>
-    obtain ⟨c, hc, rfl⟩ := hg
-    rw [map_single]
-    exact single_mem_serreFiltration (hc.comp f hf) 1
-  | zero => simp
-  | add g h _ _ hg hh => rw [map_add]; exact Submodule.add_mem _ hg hh
-  | smul a g _ hg => rw [map_smul]; exact Submodule.smul_mem _ a hg
+  -- `map R f n` is `lmapDomain R R f.comp` by definition, but its body is not exposed outside
+  -- its defining module, so the two are identified on single cubes.
+  rw [show map R f n = Finsupp.lmapDomain R R f.comp from
+    Finsupp.lhom_ext fun c a ↦ by simp]
+  have hmap := Submodule.mem_map_of_mem (f := Finsupp.lmapDomain R R f.comp) hg
+  rw [serreFiltration, Finsupp.lmapDomain_supported] at hmap
+  exact Finsupp.supported_mono (Set.image_subset_iff.2 fun _ hc ↦ hc.comp f hf) hmap
 
 /-- Below `0`, the Serre filtration is zero. -/
 theorem serreFiltration_eq_bot {s : ℤ} (hs : s < 0) (n : ℕ) : serreFiltration R p s n = ⊥ := by
