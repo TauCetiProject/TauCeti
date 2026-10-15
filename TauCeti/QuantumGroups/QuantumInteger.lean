@@ -125,13 +125,14 @@ theorem quantumInteger_natCast_eq_sum {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) 
     intro h
     subst q
     simp at hq
-  rw [quantumInteger, div_eq_iff hq, zpow_neg, zpow_natCast, ← inv_pow, ← geom_sum₂_mul]
-  congr 1
-  refine Finset.sum_congr rfl fun j hj => ?_
-  have hj : j < n := Finset.mem_range.mp hj
-  rw [inv_pow, ← zpow_natCast, ← zpow_natCast, ← zpow_neg, ← zpow_add₀ hq0]
-  congr 1
-  omega
+  have hterm : ∀ j ∈ Finset.range n,
+      q ^ (2 * (j : ℤ) + 1 - (n : ℤ)) = q ^ j * q⁻¹ ^ (n - 1 - j) := by
+    intro j hj
+    have hj : j < n := Finset.mem_range.mp hj
+    have hexp : 2 * (j : ℤ) + 1 - (n : ℤ) = (j : ℤ) + -((n - 1 - j : ℕ) : ℤ) := by omega
+    simp only [hexp, zpow_add₀ hq0, zpow_neg, zpow_natCast, inv_pow]
+  rw [Finset.sum_congr rfl hterm, quantumInteger, div_eq_iff hq, geom_sum₂_mul]
+  simp only [zpow_neg, zpow_natCast, inv_pow]
 
 /-- The symmetric quantum integers satisfy the usual three-term recurrence. -/
 theorem quantumInteger_add_one (q : K) (r : ℤ) :
