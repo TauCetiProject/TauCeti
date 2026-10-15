@@ -263,8 +263,8 @@ theorem linearDisjoint_fieldRange_of_forall_finiteDimensional [Algebra.IsAlgebra
   have hfield : (IsScalarTower.toAlgHom k M E).fieldRange = N := by
     change (f.comp M.val).fieldRange = N
     rw [IntermediateField.fieldRange_comp_val, hmap]
-  have hdisj := (IntermediateField.linearDisjoint_iff.mp (h M this))
-  rw [hfield] at hdisj
+  have hdisj := h M this
+  rw [IntermediateField.linearDisjoint_iff, hfield] at hdisj
   exact hdisj
 
 end ExtendScalars
