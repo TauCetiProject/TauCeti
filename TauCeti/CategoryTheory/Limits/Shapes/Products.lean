@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Order.Interval.Finset.SuccPred
 public import Mathlib.Data.Int.Interval
-public import Mathlib.Data.Int.SuccPred
+public import Mathlib.Order.SuccPred.Int
 
 /-!
 # Split maps between coproducts, and cokernels of maps between coproducts

@@ -88,7 +88,7 @@ tensorator it agrees with restricting the evaluation map. -/
 @[reassoc (attr := simp↓)]
 theorem _root_.SheafOfModules.overIhomComparison_ev
     (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    (M.over X) ◁ (M.overIhomComparison R X).natTrans.app N ≫
+    (M.over X) ◁ (M.overIhomComparison R X).app N ≫
         (ihom.ev (M.over X)).app (N.over X) =
       Functor.LaxMonoidal.μ
           (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
@@ -159,10 +159,10 @@ private theorem map_overIhomComparison_app_comp_ihomComparison_app
     (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     letI := (sourceAdjunction).rightAdjointLaxMonoidal
     letI := (targetAdjunction).rightAdjointLaxMonoidal
-    (targetForget).map ((M.overIhomComparison R X).natTrans.app N) ≫
-        ((targetForget).ihomComparison (M.over X)).natTrans.app (N.over X) =
-      (presheafRestriction).map (((sourceForget).ihomComparison M).natTrans.app N) ≫
-        ((presheafRestriction).ihomComparison ((sourceForget).obj M)).natTrans.app
+    (targetForget).map ((M.overIhomComparison R X).app N) ≫
+        ((targetForget).ihomComparison (M.over X)).app (N.over X) =
+      (presheafRestriction).map (((sourceForget).ihomComparison M).app N) ≫
+        ((presheafRestriction).ihomComparison ((sourceForget).obj M)).app
           ((sourceForget).obj N) := by
   let := (sourceAdjunction).rightAdjointLaxMonoidal
   let := (targetAdjunction).rightAdjointLaxMonoidal
@@ -176,28 +176,28 @@ private theorem map_overIhomComparison_app_comp_ihomComparison_app
 invertible. -/
 private theorem isIso_map_overIhomComparison_app
     (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    IsIso ((targetForget).map ((M.overIhomComparison R X).natTrans.app N)) := by
+    IsIso ((targetForget).map ((M.overIhomComparison R X).app N)) := by
   let := (sourceAdjunction).rightAdjointLaxMonoidal
   let := (targetAdjunction).rightAdjointLaxMonoidal
   -- The forgetful functors are the reflective right adjoints of Day reflection.
-  have : IsIso ((targetForget).ihomComparison (M.over X)).natTrans :=
+  have : IsIso ((targetForget).ihomComparison (M.over X)) :=
     Monoidal.Reflective.isIso_ihomComparison (targetAdjunction) (M.over X)
-  have : IsIso ((sourceForget).ihomComparison M).natTrans :=
+  have : IsIso ((sourceForget).ihomComparison M) :=
     Monoidal.Reflective.isIso_ihomComparison (sourceAdjunction) M
-  have : IsIso ((presheafRestriction).ihomComparison ((sourceForget).obj M)).natTrans :=
+  have : IsIso ((presheafRestriction).ihomComparison ((sourceForget).obj M)) :=
     TauCeti.PresheafOfModules.isIso_ihomComparison_pushforward₀_overForget (R := R.obj) X _
-  have : IsIso ((targetForget).map ((M.overIhomComparison R X).natTrans.app N) ≫
-      ((targetForget).ihomComparison (M.over X)).natTrans.app (N.over X)) := by
+  have : IsIso ((targetForget).map ((M.overIhomComparison R X).app N) ≫
+      ((targetForget).ihomComparison (M.over X)).app (N.over X)) := by
     rw [map_overIhomComparison_app_comp_ihomComparison_app]
     exact IsIso.comp_isIso' (Functor.map_isIso _ _) (NatIso.isIso_app_of_isIso _ _)
   exact IsIso.of_isIso_comp_right _
-    (((targetForget).ihomComparison (M.over X)).natTrans.app (N.over X))
+    (((targetForget).ihomComparison (M.over X)).app (N.over X))
 
 /-- Restriction to a slice commutes with internal Hom: the canonical comparison
 `𝓗om(M, N)|_X ⟶ 𝓗om(M|_X, N|_X)` is an isomorphism for every sheaf of modules `M`. -/
 instance _root_.SheafOfModules.isIso_overIhomComparison
     (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    IsIso (M.overIhomComparison R X).natTrans := by
+    IsIso (M.overIhomComparison R X) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro N
   have := isIso_map_overIhomComparison_app R X M N
@@ -207,14 +207,14 @@ instance _root_.SheafOfModules.isIso_overIhomComparison
 def _root_.SheafOfModules.overIhomIso (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     ihom M ⋙ _root_.SheafOfModules.overFunctor (ringCatSheaf R) X ≅
       _root_.SheafOfModules.overFunctor (ringCatSheaf R) X ⋙ ihom (M.over X) :=
-  asIso (M.overIhomComparison R X).natTrans
+  asIso (M.overIhomComparison R X)
 
 /-- The forward map of the internal-Hom restriction isomorphism is the canonical internal-Hom
 comparison. -/
 @[simp]
 theorem _root_.SheafOfModules.overIhomIso_hom_app
     (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    (M.overIhomIso R X).hom.app N = (M.overIhomComparison R X).natTrans.app N := by
+    (M.overIhomIso R X).hom.app N = (M.overIhomComparison R X).app N := by
   simp only [_root_.SheafOfModules.overIhomIso, asIso_hom]
 
 /-- The restriction formula for the internal-Hom dual of `M`. The target is the internal Hom into
@@ -230,7 +230,7 @@ monoidal unit comparison. -/
 @[simp]
 theorem _root_.SheafOfModules.overDualIso_hom (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overDualIso R X).hom =
-      (M.overIhomComparison R X).natTrans.app (_root_.SheafOfModules.unit (ringCatSheaf R)) ≫
+      (M.overIhomComparison R X).app (_root_.SheafOfModules.unit (ringCatSheaf R)) ≫
         (ihom (M.over X)).map (_root_.SheafOfModules.overUnitIso (R := R) X).hom := by
   simp only [_root_.SheafOfModules.overDualIso, Iso.trans_hom, Iso.app_hom,
     _root_.SheafOfModules.overIhomIso_hom_app]

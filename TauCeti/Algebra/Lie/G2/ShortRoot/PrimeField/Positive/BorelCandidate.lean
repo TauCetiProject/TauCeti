@@ -101,10 +101,10 @@ theorem upperTriangular_le_definingIdeal :
       toConv (AlgHom.id (ZMod 3) _)
     have h := isUpperTriangular_rootSubgroupPoints_inl i _
       (AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q)
-    have hq : (CommHopfAlgCat.mapPointsFunctor (PrimeField.generator (.inl (.inl i)))).app _ q =
+    have hq : (CommHopfAlgCat.Hom.mapPointsFunctor (PrimeField.generator (.inl (.inl i)))).app _ q =
         toConv (PrimeField.generator (.inl (.inl i))).hom.toAlgHom := by
       apply WithConv.ofConv_injective
-      exact AlgHom.ext fun x ↦ CommHopfAlgCat.mapPointsFunctor_app_apply_apply _ _ q x
+      exact AlgHom.ext fun x ↦ CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply _ _ q x
     rw [coe_rootSubgroupPoints_gaPointsMulEquiv, hq, GeneralLinear.pointsMulEquiv_apply] at h
     exact h
   · apply GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular
@@ -115,10 +115,10 @@ theorem upperTriangular_le_definingIdeal :
           (SplitTorus.characterGroup (Fin 2))).obj) :=
       toConv (AlgHom.id (ZMod 3) _)
     have h := isUpperTriangular_weightTorusPoints _ (SplitTorus.pointsMulEquiv q)
-    have hq : (CommHopfAlgCat.mapPointsFunctor (PrimeField.generator (.inr ()))).app _ q =
+    have hq : (CommHopfAlgCat.Hom.mapPointsFunctor (PrimeField.generator (.inr ()))).app _ q =
         toConv (PrimeField.generator (.inr ())).hom.toAlgHom := by
       apply WithConv.ofConv_injective
-      exact AlgHom.ext fun x ↦ CommHopfAlgCat.mapPointsFunctor_app_apply_apply _ _ q x
+      exact AlgHom.ext fun x ↦ CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply _ _ q x
     rw [coe_weightTorusPoints_pointsMulEquiv, hq, GeneralLinear.pointsMulEquiv_apply] at h
     exact h
 

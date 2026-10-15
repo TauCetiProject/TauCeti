@@ -305,7 +305,7 @@ instance [NoZeroDivisors R] : NoZeroSMulDivisors R (completedGroupAlgebra R Γ) 
 instance [IsMulCommutative Γ] : IsMulCommutative (completedGroupAlgebra R Γ) where
   is_comm.comm x y := ext fun U ↦ by
     have : IsMulCommutative (Γ ⧸ U.toSubgroup) :=
-      (QuotientGroup.mk'_surjective U.toSubgroup).isMulCommutative inferInstance
+      (QuotientGroup.mk'_surjective U.toSubgroup).isMulCommutative
     rw [map_mul, map_mul, (isMulCommutative_iff.mp inferInstance) (proj R Γ U x)]
 
 /-- The completed group algebra of a commutative group, as a commutative ring: the bundled form of

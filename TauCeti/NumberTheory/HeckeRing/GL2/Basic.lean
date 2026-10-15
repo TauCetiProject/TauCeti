@@ -25,7 +25,7 @@ Chris Birkbeck).
 
 * `HeckeRing.GL2.heckeTDiag`: `T(a, d)`, zero unless `0 < a`, `0 < d`, `a ∣ d`.
 * `HeckeRing.GL2.heckeTScalar`: the scalar operator `T(c, c)`.
-* `HeckeRing.GL2.heckeT`: Shimura's `T(m) = ∑_{a ∣ m} T(a, m / a)`.
+* `HeckeRing.GL2.heckeT`: Shimura's `T(m) = ∑_{a ∣ m} T(a, m / a)`, zero at `m = 0`.
 
 ## Main results
 
@@ -120,23 +120,29 @@ canonical input. -/
   rw [heckeTScalar_def]
   exact heckeTDiag_one_one
 
-/-- Shimura's summed Hecke operator: `T(m) = ∑_{a ∣ m} T(a, m / a)`. -/
-noncomputable def heckeT (m : ℕ+) : IntegralHeckeRing 2 :=
-  ∑ a ∈ (m : ℕ).divisors, heckeTDiag a ((m : ℕ) / a)
+/-- Shimura's summed Hecke operator: `T(m) = ∑_{a ∣ m} T(a, m / a)`.
+
+Like `heckeTDiag` and `heckeTScalar` it is indexed by `ℕ` and zero-extended: `0` has no
+divisors, so `T(0)` is the empty sum `0` (`heckeT_zero`). -/
+noncomputable def heckeT (m : ℕ) : IntegralHeckeRing 2 :=
+  ∑ a ∈ m.divisors, heckeTDiag a (m / a)
 
 /-- The defining equation of `heckeT`. -/
-lemma heckeT_def (m : ℕ+) :
-    heckeT m = ∑ a ∈ (m : ℕ).divisors, heckeTDiag a ((m : ℕ) / a) := (rfl)
+lemma heckeT_def (m : ℕ) : heckeT m = ∑ a ∈ m.divisors, heckeTDiag a (m / a) := (rfl)
+
+/-- `T(0) = 0`: the junk value, the empty divisor sum. -/
+@[simp] lemma heckeT_zero : heckeT 0 = 0 := by
+  rw [heckeT_def, Nat.divisors_zero, Finset.sum_empty]
 
 /-- `T(1) = 1`: the only divisor pair of `1` is `(1,1)`. -/
 @[simp] lemma heckeT_one : heckeT 1 = 1 := by
   rw [heckeT_def]
-  simp only [PNat.one_coe, Nat.divisors_one, Finset.sum_singleton, Nat.div_self one_pos]
+  simp only [Nat.divisors_one, Finset.sum_singleton, Nat.div_self one_pos]
   exact heckeTDiag_one_one
 
 /-- For a prime `p`, the summed operator collapses: `T(p) = T(1, p)`. -/
 @[simp]
-lemma heckeT_prime (p : ℕ) (hp : p.Prime) : heckeT ⟨p, hp.pos⟩ = heckeTDiag 1 p := by
+lemma heckeT_prime (p : ℕ) (hp : p.Prime) : heckeT p = heckeTDiag 1 p := by
   -- `heckeT` is sealed (`public section`, no `@[expose]`), so `rw`/`simp` cannot unfold it;
   -- `change` states the defeq divisor-pair sum directly
   change ∑ a ∈ p.divisors, heckeTDiag a (p / a) = _
@@ -162,7 +168,7 @@ lemma heckeTScalar_pow (hp : 0 < p) (i : ℕ) :
 /-- Expansion of `T(pᵏ)`: only the divisor pairs `(pⁱ, p^(k-i))` with `i ≤ k - i`
 contribute. -/
 lemma heckeT_prime_pow_expansion (hp : p.Prime) (k : ℕ) :
-    heckeT ⟨p ^ k, pow_pos hp.pos k⟩ =
+    heckeT (p ^ k) =
       ∑ i ∈ Finset.range (k / 2 + 1), heckeTDiag (p ^ i) (p ^ (k - i)) := by
   -- `heckeT` is sealed (`public section`, no `@[expose]`), so `rw`/`simp` cannot unfold it;
   -- `change` states the defeq divisor-pair sum directly
@@ -218,14 +224,14 @@ lemma heckeTDiag_mul_of_coprime (a b da db : ℕ)
 open scoped Pointwise in
 /-- **Shimura, Theorem 3.24(3a)** — coprime multiplicativity: `T(m) · T(n) = T(mn)` when
 `m` and `n` are coprime. -/
-theorem heckeT_mul_of_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ)) :
+theorem heckeT_mul_of_coprime (m n : ℕ) (hcop : m.Coprime n) :
     heckeT m * heckeT n = heckeT (m * n) := by
-  simp only [heckeT_def, PNat.mul_coe]
+  simp only [heckeT_def]
   -- `Finset` pointwise multiplication is by definition the image of the product set,
   -- so the divisor-set product can be reindexed as a sum over pairs
   rw [Finset.sum_mul_sum, Nat.divisors_mul,
-    show ((m : ℕ).divisors * (n : ℕ).divisors) =
-      ((m : ℕ).divisors ×ˢ (n : ℕ).divisors).image (fun q ↦ q.1 * q.2) from rfl,
+    show (m.divisors * n.divisors) =
+      (m.divisors ×ˢ n.divisors).image (fun q ↦ q.1 * q.2) from rfl,
     Finset.sum_image hcop.mul_injOn_divisors, ← Finset.sum_product']
   refine Finset.sum_congr rfl fun q hq ↦ ?_
   obtain ⟨a, b⟩ := q

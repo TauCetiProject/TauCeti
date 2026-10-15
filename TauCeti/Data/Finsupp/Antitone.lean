@@ -44,7 +44,8 @@ private theorem false_of_lt_of_ncard_eq {f g : ℕ →₀ α} (hg : Antitone g) 
     (h : ∀ a ≠ 0, {i | f i = a}.ncard = {i | g i = a}.ncard) : False := by
   have hfi : f i ≠ 0 := ((nonneg_of_antitone hg i).trans_lt hi).ne'
   refine (Set.ncard_lt_ncard ⟨fun j hj ↦ ?_, fun h ↦ ?_⟩ <|
-    f.support.finite_toSet.subset fun j (hj : f j = f i) ↦ mem_support_iff.mpr (hj ▸ hfi)).ne
+    f.support.finite_toSet.subset (t := {j | f j = f i}) fun j (hj : f j = f i) ↦
+      mem_support_iff.mpr (hj ▸ hfi)).ne
       (h _ hfi).symm
   · have hji : j < i := lt_of_not_ge fun hij ↦ (hg hij).not_gt (hj ▸ hi)
     exact (hfg j hji).trans hj

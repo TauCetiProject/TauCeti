@@ -27,6 +27,7 @@ OTHER_ASSETS = [
     "ci-fleet-72h.svg",       # scripts/ci_stats_graphs.py
     "ci-fleet-30d.svg",       # scripts/ci_stats_graphs.py
     "ci-stats.json",          # scripts/ci_stats_graphs.py
+    "ci-freshness.json",      # independent CI chart coverage/status
 ]
 
 GENERATED_ASSETS = (list(pr_stats_graphs.ASSET_NAMES) + list(ci_daily_graphs.ASSET_NAMES)
