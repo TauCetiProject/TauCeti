@@ -29,6 +29,9 @@ The analytic input is `exists_dual_vector''`, the norming-functional form of Hah
 applied to the seminormed quotient. In particular, the results also apply to seminormed
 spaces and nonclosed subspaces.
 
+The theorems are in the `TauCeti` namespace. For example, apply the double-annihilator
+theorem as `TauCeti.doubleAnnihilator_eq_topologicalClosure 𝕜 S` for `S : Submodule 𝕜 E`.
+
 ## References
 
 * Megginson, *An Introduction to Banach Space Theory*, §2.6.
