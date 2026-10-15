@@ -334,7 +334,10 @@ end TauCeti
 
 /-- A linear map preserves independence of a family of submodules if the part of its kernel
 in their span is spanned by its intersections with the family. In particular, a quotient by a
-homogeneous submodule preserves independence. -/
+homogeneous submodule preserves independence.
+
+The ring hypothesis is essential: for semimodules, even a map with zero kernel can identify
+independent summands. -/
 theorem iSupIndep.map_of_ker_inf_iSup_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
     [Module R M] [AddCommGroup N] [Module R N] {A : ι → Submodule R M}
     (hA : iSupIndep A) (f : M →ₗ[R] N)
@@ -371,7 +374,7 @@ theorem iSupIndep.map_of_ker_inf_iSup_le {R ι M N : Type*} [Ring R] [AddCommGro
           apply Finset.sum_subset (Finset.subset_union_right)
           simp
   rw [← haf j hj, haj]
-  exact (hc j).1
+  exact LinearMap.mem_ker.mp (hc j).1
 
 namespace DirectSum.IsInternal
 
