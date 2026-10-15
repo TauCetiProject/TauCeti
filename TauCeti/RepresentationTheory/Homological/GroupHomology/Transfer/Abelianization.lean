@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.GroupTheory.Transfer
+public import TauCeti.GroupTheory.Transfer.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Augmentation
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Induced

@@ -72,6 +72,8 @@ at least `2`.
   `a₆` and hence `c₄`.
 * `WeierstrassCurve.IsTateTerminal.ne_zero`: at a symbol other than `I₀`, the uniformiser `ϖ` is
   nonzero.
+* `WeierstrassCurve.IsTateTerminal.prime_and_not_dvd_of_IVStar`: at `IV*`, with `a₃ = ϖ² A₃` and
+  `a₆ = ϖ⁴ A₆`, the uniformiser is prime and `ϖ ∤ A₃² + 4 A₆`.
 * `WeierstrassCurve.IsTateTerminal.dvd_Δ_iff`: the algorithm stops at a symbol other than `I₀`
   exactly when `ϖ ∣ Δ`.
 * `WeierstrassCurve.IsTateTerminal.two_le_algorithmicOggExponent`: at an additive symbol, the
@@ -311,6 +313,20 @@ theorem IsTateTerminal.ne_zero {s : ReductionSymbol} (h : W.IsTateTerminal ϖ s)
   | .IIStar, h =>
     obtain ⟨-, -, -, -, h₆, h₆'⟩ := isTateTerminal_IIStar.1 h
     exact h₆' ((hz (by norm_num)).2 ((hz (by norm_num)).1 h₆))
+
+/-- **At the symbol `IV*`, the residue quadratic has distinct roots.** If `(ϖ)` is a prime ideal,
+`a₃ = ϖ² A₃` and `a₆ = ϖ⁴ A₆`, then the test `ϖ⁵ ∤ b₆ = ϖ⁴ (A₃² + 4 A₆)` says that `ϖ` is prime
+and does not divide the discriminant `A₃² + 4 A₆` of `T² + A₃ T − A₆`. -/
+theorem IsTateTerminal.prime_and_not_dvd_of_IVStar (hϖ : (Ideal.span {ϖ}).IsPrime)
+    (h : W.IsTateTerminal ϖ .IVStar) {A₃ A₆ : R} (h₃ : W.a₃ = ϖ ^ 2 * A₃)
+    (h₆ : W.a₆ = ϖ ^ 4 * A₆) : Prime ϖ ∧ ¬ ϖ ∣ A₃ ^ 2 + 4 * A₆ := by
+  obtain ⟨-, -, -, -, -, hb₆⟩ := isTateTerminal_IVStar.1 h
+  have hb : W.b₆ = ϖ ^ 4 * (A₃ ^ 2 + 4 * A₆) := by
+    rw [b₆, h₃, h₆]
+    ring
+  refine ⟨(Ideal.span_singleton_prime (h.ne_zero nofun)).1 hϖ, fun hd ↦ hb₆ ?_⟩
+  rw [hb, pow_succ]
+  exact mul_dvd_mul_left _ hd
 
 /-- **Tate's algorithm stops at a symbol other than `I₀` exactly when `ϖ` divides the
 discriminant.** -/
