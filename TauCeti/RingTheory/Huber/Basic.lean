@@ -551,12 +551,14 @@ theorem map_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B] [Top
 
 /-- The ideal of definition of the image pair of definition is the image of the original one,
 under the map `A₀ → f(A₀)` induced by `f`. -/
-private theorem map_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
+@[simp]
+theorem map_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
     [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B)
     (hf : IsOpenQuotientMap f) :
     (P.map f hf).idealOfDefinition = P.idealOfDefinition.map
       ((f.comp P.ringOfDefinition.subtype).codRestrict
-        (P.map f hf).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
+        (P.map f hf).ringOfDefinition fun a ↦
+          P.map_ringOfDefinition f hf ▸ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
   (rfl)
 
 /-- **The neighbourhood basis of the image pair is the image of the original one**: the image in
