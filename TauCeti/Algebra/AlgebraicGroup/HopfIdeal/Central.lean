@@ -45,8 +45,10 @@ producing a Hopf ideal from the cocommutativity defect of `H`.
   when the points it cuts out are central points over every value algebra.**
 * `TauCeti.HopfIdeal.IsCentral.comapOfSurjective_of_bijective`: centrality is preserved by
   pullback along a bijective bialgebra morphism.
-* `TauCeti.HopfIdeal.IsCentral.comap_of_injective`: over a field, the image of a central closed
-  subgroup under a schematically dominant homomorphism is central in the target. The proof
+* `TauCeti.HopfIdeal.IsCentral.comap_of_injective`: over a commutative ring, the image of a central
+  closed subgroup under a schematically dominant homomorphism is central in the target when
+  the target coordinate algebra, source subgroup coordinate algebra, and image coordinate
+  algebra are flat. The proof
   uses the conjugation-defect version of the tensor-kernel argument in
   `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Image`.
 * `TauCeti.HopfIdeal.IsCentral.isNormal`: a central Hopf ideal is normal.
@@ -327,14 +329,19 @@ end HopfIdeal
 
 namespace HopfIdeal
 
-variable {k : Type u} [Field k] {H : Type v} {K : Type w}
+variable {k : Type u} [CommRing k] {H : Type v} {K : Type w}
 variable [CommRing H] [CommRing K] [HopfAlgebra k H] [HopfAlgebra k K]
+variable [Module.Flat k H]
 
 /-- The scheme-theoretic image of a central closed subgroup under a schematically dominant
 affine-group homomorphism is central in the target. Coordinate morphisms run in the opposite
-direction, so dominance is injectivity of the bialgebra map. -/
+direction, so dominance is injectivity of the bialgebra map. The target coordinate algebra,
+source subgroup coordinate algebra, and image coordinate algebra are assumed flat over the
+base; over a field this is automatic. -/
 theorem IsCentral.comap_of_injective {I : HopfIdeal k K} (hI : I.IsCentral)
-    (f : H →ₐc[k] K) (hf : Function.Injective f) : (I.comap f).IsCentral := by
+    (f : H →ₐc[k] K) (hf : Function.Injective f) [Module.Flat k (K ⧸ I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) I.toIdeal)] :
+    (I.comap f).IsCentral := by
   let q : K →ₐ[k] K ⧸ I.toIdeal := Ideal.Quotient.mkₐ k I.toIdeal
   let g : H →ₐ[k] K ⧸ I.toIdeal := q.comp f.toAlgHom
   have hgker : RingHom.ker g = (I.comap f).toIdeal := by
@@ -345,6 +352,9 @@ theorem IsCentral.comap_of_injective {I : HopfIdeal k K} (hI : I.IsCentral)
           (Algebra.TensorProduct.map f.toAlgHom f.toAlgHom) =
         Algebra.TensorProduct.map g f.toAlgHom := by
     rw [← Algebra.TensorProduct.map_comp, AlgHom.id_comp]
+  have : Module.Flat k (H ⧸ RingHom.ker f.toAlgHom) := by
+    rw [(RingHom.injective_iff_ker_eq_bot f.toAlgHom).mp hf]
+    exact Module.Flat.of_linearEquiv (AlgEquiv.quotientBot k H).toLinearEquiv
   have hker : RingHom.ker (Algebra.TensorProduct.map g f.toAlgHom) =
       leftTensorIdeal (R := k) (H := H) (I.comap f).toIdeal := by
     rw [Algebra.TensorProduct.map_ker_of_flat_flat,

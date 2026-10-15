@@ -85,7 +85,7 @@ theorem mapCenter_unique (f : H ⟶ K) (hf : Function.Injective f.hom)
 
 /-- The identity homomorphism restricts to the identity on the represented center. -/
 @[simp]
-theorem mapCenter_id (H : _root_.CommHopfAlgCat.{v} k) :
+theorem mapCenter_id :
     mapCenter (𝟙 H) Function.injective_id = 𝟙 _ := by
   symm
   apply mapCenter_unique
