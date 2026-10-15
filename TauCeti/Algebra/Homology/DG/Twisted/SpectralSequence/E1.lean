@@ -301,7 +301,9 @@ noncomputable abbrev indexFiltrationOfLE :
       (m.indexFiltration dM hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   Subobject.ofLE _ _ (m.monotone_indexFiltration dM hM (by omega))
 
-private theorem arrow_f_indexFiltrationOfLE_apply (n : ℤ)
+/-- The inclusion `F_q ⟶ F_p` is compatible with the inclusions into the twisted complex. -/
+@[simp]
+theorem arrow_f_indexFiltrationOfLE_apply (n : ℤ)
     (x : (m.indexFiltration dM hM q : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n) :
     ((m.indexFiltration dM hM p).arrow.f n).hom (((m.indexFiltrationOfLE hM q p hqp).f n).hom x) =
       ((m.indexFiltration dM hM q).arrow.f n).hom x := by
@@ -325,6 +327,31 @@ noncomputable def indexGradedPieceShortComplex :
     rw [show p - 1 = q by omega, mem_indexFiltrationSubmodule_iff]
     exact hq)
 
+/-- Every element of the `p`-th graded piece is the restriction of the element of the `p`-th piece
+of the index filtration with the same underlying family. -/
+theorem exists_indexFiltration_arrow_eq (p n : ℤ) (f : (indexGradedPieceComplex ind hM p).X n) :
+    ∃ s : (m.indexFiltration dM hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n,
+      (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n
+        (((m.indexFiltration dM hM p).arrow.f n).hom s) : P → M) =
+          indexGradedPieceComplexXEquiv ind hM p n f := by
+  have hg := mem_indexGradedPieceGrading_iff.1 (indexGradedPieceComplexXEquiv ind hM p n f).2
+  obtain ⟨t, ht⟩ : ∃ t, twistedCochainComplexXEquiv m.mem_graded m.twisting hM n t =
+      ⟨_, hg.1⟩ := ⟨_, LinearEquiv.apply_symm_apply _ _⟩
+  obtain ⟨s, hs⟩ := (m.mem_range_indexFiltration_arrow_f_iff dM hM p n t).2 (by
+    rw [ht]
+    exact mem_indexFiltrationSubmodule_iff.1
+      (indexGradedPieceSubmodule_le_indexFiltrationSubmodule p hg.2))
+  exact ⟨s, by rw [hs, ht]⟩
+
+/-- The projection onto the `p`-th graded piece is surjective in every degree. -/
+theorem indexGradedPieceProj_f_surjective (p n : ℤ) :
+    Function.Surjective ((m.indexGradedPieceProj hM p).f n).hom := fun f ↦ by
+  obtain ⟨s, hs⟩ := m.exists_indexFiltration_arrow_eq hM p n f
+  refine ⟨s, (indexGradedPieceComplexXEquiv ind hM p n).injective (Subtype.ext ?_)⟩
+  rw [indexGradedPieceComplexXEquiv_indexGradedPieceProj, hs]
+  exact indexRestrict_of_mem
+    (mem_indexGradedPieceGrading_iff.1 (indexGradedPieceComplexXEquiv ind hM p n f).2).2
+
 /-- **The graded pieces of the index filtration**: the short complex
 `F_q ⟶ F_p ⟶ indexGradedPieceComplex ind hM p` is short exact for `q + 1 = p`. -/
 theorem indexGradedPieceShortComplex_shortExact :
@@ -346,19 +373,7 @@ theorem indexGradedPieceShortComplex_shortExact :
   · exact hinj q ((arrow_f_indexFiltrationOfLE_apply m hM q p hqp n x).symm.trans
       ((congrArg ((m.indexFiltration dM hM p).arrow.f n).hom hxy).trans
         (arrow_f_indexFiltrationOfLE_apply m hM q p hqp n y)))
-  · set g := indexGradedPieceComplexXEquiv ind hM p n y with hg_def
-    have hg := mem_indexGradedPieceGrading_iff.1 g.2
-    obtain ⟨t, ht⟩ : ∃ t, twistedCochainComplexXEquiv m.mem_graded m.twisting hM n t =
-        ⟨g, hg.1⟩ := ⟨_, LinearEquiv.apply_symm_apply _ _⟩
-    obtain ⟨s, hs⟩ := (m.mem_range_indexFiltration_arrow_f_iff dM hM p n t).2 (by
-      rw [ht]
-      exact mem_indexFiltrationSubmodule_iff.1
-        (indexGradedPieceSubmodule_le_indexFiltrationSubmodule p hg.2))
-    refine ⟨s, (indexGradedPieceComplexXEquiv ind hM p n).injective (Subtype.ext ?_)⟩
-    change (indexGradedPieceComplexXEquiv ind hM p n
-      (((m.indexGradedPieceProj hM p).f n).hom s) : P → M) = g
-    rw [indexGradedPieceComplexXEquiv_indexGradedPieceProj, hs, ht]
-    exact indexRestrict_of_mem hg.2
+  · exact m.indexGradedPieceProj_f_surjective hM p n y
 
 end ShortExact
 
@@ -385,7 +400,10 @@ theorem indexFiltrationFunctorObjIso_hom_arrow (n : ℤ) :
 
 variable (q p : ℤ) (hqp : q + 1 = p)
 
-private theorem indexFiltrationFunctor_map_comp_objIso_hom :
+/-- Under `indexFiltrationFunctorObjIso`, the transition map `F_q ⟶ F_p` of the functor of the
+index filtration is the inclusion of the pieces, for `q + 1 = p`. -/
+@[reassoc]
+theorem indexFiltrationFunctor_map_comp_objIso_hom :
     (CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
         (m.monotone_indexFiltration dM hM)).map
           (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm)) ≫
