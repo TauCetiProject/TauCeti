@@ -138,7 +138,8 @@ theorem Hom.IsTopologicallyFiniteType.comp [IsTateRing A] {S : Pair A} {U : Pair
     isWeightFamily_one_weight (fun _ ↦ by simp)
   have hβ : β.IsQuotientMapping := hπ.weightedMapCompletion isWeightFamily_one_weight
     isWeightFamily_one_weight (fun _ ↦ by simp)
-    hπ.isOpenQuotientMap.weightedMapCompletion_one_weight
+    (hπ.isOpenQuotientMap.weightedMapCompletion isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ by simp))
   refine isTopologicallyFiniteType_iff.mpr ⟨k + m, fun _ ↦ {1}, fun _ ↦ Set.finite_singleton 1,
     isWeightFamily_one_weight, ρ.comp (β.comp e), hρ.comp (hβ.comp he),
     Hom.ext (RingHom.ext fun a ↦ ?_)⟩
