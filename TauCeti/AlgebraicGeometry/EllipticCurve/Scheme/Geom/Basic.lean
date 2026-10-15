@@ -83,6 +83,8 @@ a ring isomorphism `φ` with `WeierstrassCurve.map`, and identifies `projModel (
 is `WeierstrassCurve.projModel`, and the local model of `EllipticCurveGeom` is a nonempty pointed
 Weierstrass atlas, which is equivalent to `IsLocallyWeierstrass` by
 `nonempty_pointedWeierstrassAtlas_iff`.
+* `EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: for any over-morphism into an elliptic
+  curve, meeting its zero section is a closed condition.
 -/
 
 public section
@@ -585,6 +587,15 @@ theorem zero_comp_structureMap {S : Scheme.{u}} (E : EllipticCurveGeom S) :
     E.zero ≫ E.structureMap = 𝟙 S :=
   E.zero_comp
 
+/-- The zero section of an elliptic curve is a closed immersion, being a section of the separated
+structure morphism. -/
+instance isClosedImmersion_zero {S : Scheme.{u}} (E : EllipticCurveGeom S) :
+    IsClosedImmersion E.zero := by
+  have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
+    rw [zero_comp_structureMap]
+    infer_instance
+  exact .of_comp E.zero E.structureMap
+
 /-- A point `x` of `E` with values in a scheme `Z` over `S` takes a value in the image of the zero
 section at a point `z` of `Z` exactly when it agrees there with the zero section over the image of
 `z` in `S`. -/
@@ -597,6 +608,16 @@ theorem left_apply_mem_range_zero_iff {S : Scheme.{u}} {E : EllipticCurveGeom S}
     simpa using congr($(Over.w x) z)
   rw [← hx, ← hs, ← Scheme.Hom.comp_apply E.zero, zero_comp_structureMap]
   rfl
+
+/-- **Meeting the zero section is a closed condition.** For an over-morphism `x` from a scheme
+`Z` over `S` to an elliptic curve `E`, the points of `Z` at which `x` meets the zero section form
+a closed set: it is the preimage of the image of the zero section, a closed immersion. -/
+theorem isClosed_setOf_left_apply_eq_zero {S : Scheme.{u}} {E : EllipticCurveGeom S}
+    {Z : Over S} (x : Z ⟶ Over.mk E.structureMap) :
+    IsClosed {z | x.left z = E.zero (Z.hom z)} := by
+  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
+  ext z
+  exact (left_apply_mem_range_zero_iff x z).symm
 
 /-- An elliptic curve over `S` satisfies the local-model condition `IsLocallyWeierstrass` for its
 structure morphism and zero section: the pointwise form of the atlas condition `localModel`. -/
