@@ -167,7 +167,7 @@ theorem matrixCochainExtension_injective (ι : Type*) [Fintype ι] [Nonempty ι]
   simpa only [matrixCochainExtension_single] using hx
 
 /-- In degree zero, matrix extension is ordinary trace followed by the unary cochain. -/
-theorem matrixCochainExtension_zero_eq_trace (ι : Type*) [Fintype ι]
+@[simp] theorem matrixCochainExtension_zero_eq_trace (ι : Type*) [Fintype ι]
     (φ : MultilinearMap R (fun _ : Fin 1 => A) M) (a : Matrix ι ι A) :
     matrixCochainExtension ι 0 φ (fun _ => a) = φ (fun _ => Matrix.trace a) := by
   classical
