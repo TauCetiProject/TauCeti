@@ -61,6 +61,7 @@ jobs:
           owner: TauCetiProject
           repositories: TauCeti
           permission-contents: read
+          permission-actions: read
           permission-issues: read
           permission-pull-requests: write
       - name: Inspect current source and enforce confirmed stacks
