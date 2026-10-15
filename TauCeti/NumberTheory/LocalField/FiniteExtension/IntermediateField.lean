@@ -63,20 +63,20 @@ requiring a norm, topology, or valuative relation on the ambient field. -/
 @[implicit_reducible]
 def finiteIntermediateFieldNormedField (M : IntermediateField K Ω) [Module.Finite K M] :
     NormedField M :=
-  finiteExtensionNormedField K M
+  algebraicExtensionNormedField K M
 
 /-- The valuative relation defined by the spectral norm on a finite intermediate field `M/K`.
 It is a named structure so consumers can install it locally without creating instance diamonds. -/
 @[implicit_reducible]
 def finiteIntermediateFieldValuativeRel (M : IntermediateField K Ω) [Module.Finite K M] :
     ValuativeRel M :=
-  finiteExtensionValuativeRel K M
+  algebraicExtensionValuativeRel K M
 
 /-- The topology defined by the spectral norm on a finite intermediate field `M/K`. -/
 @[implicit_reducible]
 def finiteIntermediateFieldTopology (M : IntermediateField K Ω) [Module.Finite K M] :
     TopologicalSpace M :=
-  finiteExtensionNormedFieldTopology K M
+  algebraicExtensionNormedFieldTopology K M
 
 /-- The valuative relation constructed on a finite intermediate field extends the valuative
 relation of the base field. -/
@@ -84,7 +84,7 @@ theorem finiteIntermediateField_valuativeExtension
     (M : IntermediateField K Ω) [Module.Finite K M] :
     letI := finiteIntermediateFieldValuativeRel K Ω M
     ValuativeExtension K M :=
-  finiteExtension_valuativeExtension K M
+  algebraicExtension_valuativeExtension K M
 
 /-- The spectral-norm topology and valuative relation constructed on a finite intermediate field
 are compatible. -/
@@ -92,7 +92,7 @@ theorem finiteIntermediateField_isValuativeTopology
     (M : IntermediateField K Ω) [Module.Finite K M] :
     @IsValuativeTopology M _ (finiteIntermediateFieldValuativeRel K Ω M)
       (finiteIntermediateFieldTopology K Ω M) :=
-  finiteExtension_isValuativeTopology K M
+  algebraicExtension_isValuativeTopology K M
 
 /-- A finite intermediate field, equipped with its spectral-norm topology and valuative relation,
 is a nonarchimedean local field. -/
@@ -103,26 +103,9 @@ theorem finiteIntermediateField_isNonarchimedeanLocalField
   finiteExtension_isNonarchimedeanLocalField K M
 
 variable {K Ω} in
-/-- **The ambient field is a valuative extension of a compatible intermediate field.** If `Ω`
-carries a valuative relation extending that of `K`, and a finite intermediate field `E` of `Ω / K`
-carries one as well, then `Ω` is a valuative extension of `E`: both relations restrict to the
-valuation class of `K`, and the extension of that class to `E` is unique. -/
-theorem _root_.IntermediateField.valuativeExtension [ValuativeRel Ω] [ValuativeExtension K Ω]
-    (E : IntermediateField K Ω) [Module.Finite K E] [ValuativeRel E] [ValuativeExtension K E] :
-    ValuativeExtension E Ω := by
-  have hΩ := ValuativeRel.isEquiv ((ValuativeRel.valuation Ω).comap (algebraMap K Ω))
-    (ValuativeRel.valuation K)
-  rw [IsScalarTower.algebraMap_eq K E Ω, Valuation.comap_comp] at hΩ
-  have h := finiteExtensionValuation_isEquiv hΩ
-    (ValuativeRel.isEquiv ((ValuativeRel.valuation E).comap (algebraMap K E))
-      (ValuativeRel.valuation K))
-  exact ⟨fun a b ↦ (ValuativeRel.valuation Ω).vle_iff_le.trans
-    ((h a b).trans (ValuativeRel.valuation E).vle_iff_le.symm)⟩
-
-variable {K Ω} in
 /-- **A local field is a valuative extension of its compatible intermediate fields.** For an
 extension `Ω / K` of nonarchimedean local fields and an intermediate field `E` carrying a valuative
-relation extending that of `K`, the valuative relation of `Ω` extends that of `E`. The finiteness
+relation extending that of `K`, the valuative relation of `Ω` extends that of `E`. The algebraicity
 of `Ω / K` needed by `IntermediateField.valuativeExtension` is automatic here, so this is an
 instance. -/
 instance _root_.IntermediateField.valuativeExtension_of_isNonarchimedeanLocalField

@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularRe
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import Mathlib.RingTheory.Henselian
 -- Proof-only: the sum of two points with singular reduction at a nonsplit node.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.IndexTwo
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Two
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: the norm of a finite quadratic extension is surjective, and the quadratic algebra.
@@ -17,7 +17,7 @@ import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 -- Proof-only: solutions and the discriminant under a translation.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 -- Proof-only: index two from the sums of points outside a subgroup.
 import TauCeti.GroupTheory.Index.Two
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.

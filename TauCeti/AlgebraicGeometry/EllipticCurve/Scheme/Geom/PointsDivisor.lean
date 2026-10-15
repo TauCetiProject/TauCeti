@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
-import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
 # The divisor of a finite family of points on an elliptic curve
@@ -38,6 +39,8 @@ Particular cases are the divisor `[P] + [2P] + ⋯ + [NP]` of points of exact or
   depend on the indexing.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor_pointsPullback`: `∑_a [x a]`
   commutes with base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finrank_pointsDivisor`: its rank is the number
+  of sections, counted with multiplicity.
 
 ## References
 
@@ -92,6 +95,21 @@ theorem pointsDivisor_comp_equiv {A' : Type*} [Fintype A']
     (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (e : A' ≃ A) :
     E.pointsDivisor (x ∘ e) = E.pointsDivisor x :=
   Fintype.prod_equiv e _ _ fun _ ↦ rfl
+
+/-- A sum of section divisors has rank equal to the number of sections, with multiplicity. -/
+@[simp]
+theorem finrank_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (s : S) :
+    ((E.pointsDivisor x).subschemeι ≫ E.structureMap).finrank s = Fintype.card A := by
+  have (a : A) : IsClosedImmersion (x a).left :=
+    (x a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
+  have := (isRelativeEffectiveCartier_pointsDivisor x).isFinite
+  rw [pointsDivisor_def] at this ⊢
+  rw [finrank_prod_subschemeι_comp Finset.univ (fun a ↦ (x a).left.ker)
+    (fun a _ ↦ Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension
+      (x a).left (left_comp_structureMap _))]
+  have hr (a : A) : ((x a).left.ker.subschemeι ≫ E.structureMap).finrank = 1 :=
+    Scheme.Hom.finrank_ker_comp_eq_one_of_comp_eq_id (x a).left (left_comp_structureMap _)
+  simp [hr]
 
 section BaseChange
 

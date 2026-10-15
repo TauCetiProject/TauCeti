@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 public import Mathlib.Data.Int.GCD
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantIdeal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Semistable
+-- Proof-only: coprimality of `A B (A + B)` and `A² + A B + B²`.
+import TauCeti.RingTheory.Coprime.Lemmas
 
 /-!
 # The Frey–Hellegouarch curve
@@ -53,22 +55,36 @@ the odd entries if necessary puts it in the `a` position. Then `A = aᵖ ≡ -1 
 ## Main results
 
 * `TauCeti.freyCurve_Δ` and `TauCeti.freyCurve_c₄`: `Δ = 16 A² B² (A + B)²` and
-  `c₄ = 16 (A² + A B + B²)`.
+  `c₄ = 16 (A² + A B + B²)`; `TauCeti.freyCurve_Δ_eq_mul_sq` writes `Δ = 16 (A B (A + B))²`.
 * `TauCeti.isElliptic_freyCurve_iff` and `TauCeti.isElliptic_freyCurve_iff_ne_zero`: the curve is
   elliptic exactly when `2`, `A`, `B` and `A + B` are units, respectively, over a field of
   characteristic not `2`, nonzero.
+* `TauCeti.isElliptic_baseChange_freyCurve`: the Frey curve of integers `A` and `B` is elliptic
+  over `ℚ` when `A B (A + B) ≠ 0`.
 * `TauCeti.freyCurve_j`: its `j`-invariant is `256 (A² + A B + B²)³ / (A² B² (A + B)²)`.
 * `TauCeti.smul_freyCurve_eq_freyCurveModel`: the change of variables `x = 4 x'`,
   `y = 8 y' + 4 x'` carries `freyCurve (4 α - 1) (16 β)` to `freyCurveModel α β`.
+* `TauCeti.freyCurve_Δ_notMem_or_c₄_notMem`: for coprime `A` and `B`, a prime not containing `2`
+  does not contain both the discriminant and the `c₄` of the Frey curve.
 * `TauCeti.isGlobalMinimal_baseChange_freyCurveModel`: for coprime `A` and `B`, this model is
   globally minimal over a Dedekind domain, when it is elliptic over the fraction field.
 * `TauCeti.isSemistable_freyCurve` and `TauCeti.minimalDiscriminantIdeal_freyCurve`: if `A` and
   `B` are coprime, `A ≡ -1 (mod 4)`, `16 ∣ B` and the Frey curve is elliptic over the fraction
   field, it is semistable with minimal discriminant ideal `(A² B² (A + B)² / 2⁸)`.
+* `TauCeti.isGlobalMinimal_baseChange_freyCurve` and
+  `TauCeti.minimalDiscriminantIdeal_freyCurve_of_not_dvd`: over `ℤ`, if `A` and `B` are coprime and
+  `16 ∤ A B (A + B)`, the equation `y² = x (x - A) (x + B)` itself is globally minimal, since
+  `2¹²` does not divide its discriminant (`TauCeti.two_pow_twelve_dvd_freyCurve_Δ_iff`), and its
+  minimal discriminant is `16 (A B (A + B))²`.
 * `TauCeti.pow_modEq_neg_one_or_pow_modEq_neg_one`: if `xᵖ + eᵖ + yᵖ = 0` with `e` even, `x`
   coprime to `e` and `p ≥ 2`, then `xᵖ` or `yᵖ` is `-1` modulo `4`.
 * `TauCeti.exists_perm_two_dvd_and_pow_modEq_neg_one`: a solution of `aᵖ + bᵖ + cᵖ = 0` with
   `a` and `b` coprime and `p ≥ 2` can be permuted so that `b` is even and `aᵖ ≡ -1 (mod 4)`.
+* `TauCeti.isCoprime_of_gcd_eq_one_of_add_pow_eq_pow`: if `aⁿ + bⁿ = cⁿ` and `a`, `b`, `c` have
+  no common factor, then `a` and `b` are coprime.
+* `TauCeti.exists_isCoprime_and_mul_mul_add_eq_pow`: a solution of `aⁿ + bⁿ = cⁿ` with `a` and
+  `b` coprime and `n ≥ 5`, of either parity, gives coprime `A ≡ -1 (mod 4)` and `B` with
+  `32 ∣ B` and `A B (A + B) = (a b c)ⁿ`.
 * `TauCeti.isSemistable_freyCurve_pow` and `TauCeti.minimalDiscriminantIdeal_freyCurve_pow`: for
   such a normalised solution with `p ≥ 4`, if the Frey curve of `(aᵖ, bᵖ)` is elliptic over `ℚ`,
   it is semistable over `ℤ` with minimal discriminant `(a b c)^(2 p) / 2⁸`.
@@ -147,6 +163,11 @@ theorem freyCurve_Δ : (freyCurve A B).Δ = 16 * A ^ 2 * B ^ 2 * (A + B) ^ 2 := 
   simp [Δ]
   ring
 
+/-- The discriminant of the Frey curve is `16 (A B (A + B))²`. -/
+theorem freyCurve_Δ_eq_mul_sq : (freyCurve A B).Δ = 16 * (A * B * (A + B)) ^ 2 := by
+  rw [freyCurve_Δ]
+  ring
+
 /-- The image of a Frey curve under a ring homomorphism is the Frey curve of the images. -/
 @[simp]
 theorem map_freyCurve {S : Type*} [CommRing S] (f : R →+* S) :
@@ -205,28 +226,29 @@ theorem map_freyCurveModel {S : Type*} [CommRing S] (f : R →+* S) :
 variable {α β}
 
 /-- **For coprime `A = 4 α - 1` and `B = 16 β`, the discriminant and `c₄` of `freyCurveModel α β`
-are coprime.** A prime dividing `c₄ = A² + A B + B²` and `Δ = (A β (A + B))²` divides `A`, `β` or
-`A + B`, and with `c₄` it then divides both `A` and `B`. -/
+are coprime.** The discriminant `(A β (A + B))²` divides a power of `A B (A + B)`, which is coprime
+to `c₄ = A² + A B + B²` (`IsCoprime.mul_mul_add_sq_add_mul_add_sq`). -/
 theorem isCoprime_freyCurveModel_Δ_c₄ (h : IsCoprime (4 * α - 1) (16 * β)) :
     IsCoprime (freyCurveModel α β).Δ (freyCurveModel α β).c₄ := by
-  set A := 4 * α - 1
+  have := h.mul_mul_add_sq_add_mul_add_sq
+  rw [show (4 * α - 1) * (16 * β) * (4 * α - 1 + 16 * β) =
+    16 * ((4 * α - 1) * β * (4 * α - 1 + 16 * β)) by ring] at this
   rw [freyCurveModel_Δ, freyCurveModel_c₄]
-  refine IsCoprime.symm (IsCoprime.pow_right (IsCoprime.mul_right (IsCoprime.mul_right ?_ ?_) ?_))
-  · -- `c₄ ≡ B² (mod A)`
-    rw [show A ^ 2 + A * (16 * β) + (16 * β) ^ 2 = (16 * β) ^ 2 + A * (A + 16 * β) by ring,
-      IsCoprime.add_mul_left_left_iff]
-    exact h.symm.pow_left
-  · -- `c₄ ≡ A² (mod β)`
-    rw [show A ^ 2 + A * (16 * β) + (16 * β) ^ 2 = A ^ 2 + β * (16 * A + 256 * β) by ring,
-      IsCoprime.add_mul_left_left_iff]
-    exact h.of_mul_right_right.pow_left
-  · -- `c₄ ≡ -A B (mod A + B)`
-    rw [show A ^ 2 + A * (16 * β) + (16 * β) ^ 2 =
-        -(A * (16 * β)) + (A + 16 * β) * (A + 16 * β) by ring,
-      IsCoprime.add_mul_left_left_iff, IsCoprime.neg_left_iff]
-    refine IsCoprime.mul_left ?_ ?_
-    · simpa [add_comm] using h.add_mul_left_right 1
-    · simpa [add_comm] using h.symm.add_mul_left_right 1
+  exact this.of_mul_left_right.pow_left
+
+/-- **Away from `2`, the Frey curve of a coprime pair has its discriminant or its `c₄` outside a
+prime.** Up to the factors `16`, the discriminant `16 (A B (A + B))²` and `c₄ = 16 (A² + A B + B²)`
+are coprime (`IsCoprime.mul_mul_add_sq_add_mul_add_sq`), so a prime not containing `2`
+does not contain both. -/
+theorem freyCurve_Δ_notMem_or_c₄_notMem {A B : R} (hAB : IsCoprime A B) {P : Ideal R}
+    [hP : P.IsPrime] (h2 : (2 : R) ∉ P) : (freyCurve A B).Δ ∉ P ∨ (freyCurve A B).c₄ ∉ P := by
+  have h16 : (16 : R) ∉ P := fun h ↦ h2 (hP.mem_of_pow_mem 4 (by norm_num at h ⊢; exact h))
+  obtain ⟨u, w, huw⟩ := hAB.mul_mul_add_sq_add_mul_add_sq
+  rw [freyCurve_Δ_eq_mul_sq, freyCurve_c₄, or_iff_not_and_not, not_not, not_not]
+  rintro ⟨hΔ, hc₄⟩
+  refine hP.ne_top ((Ideal.eq_top_iff_one P).2 (huw ▸ P.add_mem (P.mul_mem_left u ?_)
+    (P.mul_mem_left w ((hP.mem_or_mem hc₄).resolve_left h16))))
+  exact hP.mem_of_pow_mem 2 ((hP.mem_or_mem hΔ).resolve_left h16)
 
 end CommRing
 
@@ -339,6 +361,55 @@ theorem minimalDiscriminantIdeal_freyCurve {A B d : O} (hA : 4 ∣ A + 1) (hB : 
 
 end Dedekind
 
+section Int
+
+open IsDedekindDomain HeightOneSpectrum
+
+/-- The Frey curve of integers `A` and `B` with `A B (A + B) ≠ 0` is elliptic over `ℚ`. -/
+theorem isElliptic_baseChange_freyCurve {A B : ℤ} (h : A * B * (A + B) ≠ 0) :
+    ((freyCurve A B).baseChange ℚ).IsElliptic := by
+  rw [baseChange, map_freyCurve, isElliptic_freyCurve_iff_ne_zero two_ne_zero]
+  simp only [algebraMap_int_eq, eq_intCast, ne_eq, Int.cast_eq_zero, ← Int.cast_add]
+  exact ⟨left_ne_zero_of_mul (left_ne_zero_of_mul h), right_ne_zero_of_mul (left_ne_zero_of_mul h),
+    right_ne_zero_of_mul h⟩
+
+/-- **`2¹²` divides the discriminant `16 (A B (A + B))²` of the Frey curve over `ℤ` exactly when
+`16` divides `A B (A + B)`**, since `2¹² = 16 · 16²`. -/
+theorem two_pow_twelve_dvd_freyCurve_Δ_iff {A B : ℤ} :
+    2 ^ 12 ∣ (freyCurve A B).Δ ↔ 16 ∣ A * B * (A + B) := by
+  rw [freyCurve_Δ_eq_mul_sq, show (2 : ℤ) ^ 12 = 16 * 16 ^ 2 by norm_num,
+    mul_dvd_mul_iff_left (by norm_num), Int.pow_dvd_pow_iff two_ne_zero]
+
+/-- **The Frey equation is globally minimal over `ℤ` when `16 ∤ A B (A + B)`**, for coprime `A`
+and `B`. At `2` its discriminant `16 (A B (A + B))²` has valuation less than `12`
+(`TauCeti.two_pow_twelve_dvd_freyCurve_Δ_iff`); away from `2` its discriminant or its `c₄` is a
+unit (`TauCeti.freyCurve_Δ_notMem_or_c₄_notMem`). -/
+theorem isGlobalMinimal_baseChange_freyCurve {A B : ℤ} (hAB : IsCoprime A B)
+    (h16 : ¬ 16 ∣ A * B * (A + B)) [((freyCurve A B).baseChange ℚ).IsElliptic] :
+    IsGlobalMinimal ℤ ((freyCurve A B).baseChange ℚ) := by
+  refine IsGlobalMinimal.of_forall_isMinimal fun v ↦ ?_
+  by_cases h2 : (2 : ℤ) ∈ v.asIdeal
+  · -- `v` is the prime `(2)`, at which `v(Δ) < 12`
+    have hv : v.asIdeal = Ideal.span {2} :=
+      (((Ideal.span_singleton_prime two_ne_zero).2 Int.prime_two).isMaximal (by simp)).eq_of_le
+        v.isPrime.ne_top ((Ideal.span_singleton_le_iff_mem _).2 h2) |>.symm
+    refine isMinimal_baseChange_of_not_pow_twelve_dvd_span_Δ _ ?_
+    rwa [hv, Ideal.span_singleton_pow, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
+      two_pow_twelve_dvd_freyCurve_Δ_iff]
+  · exact isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem _ (freyCurve_Δ_notMem_or_c₄_notMem hAB h2)
+
+/-- **The minimal discriminant of the Frey curve is `16 (A B (A + B))²` when
+`16 ∤ A B (A + B)`**, for coprime `A` and `B`: the Frey equation is then globally minimal. -/
+theorem minimalDiscriminantIdeal_freyCurve_of_not_dvd {A B : ℤ} (hAB : IsCoprime A B)
+    (h16 : ¬ 16 ∣ A * B * (A + B)) [((freyCurve A B).baseChange ℚ).IsElliptic] :
+    minimalDiscriminantIdeal ℤ ((freyCurve A B).baseChange ℚ) =
+      Ideal.span {16 * (A * B * (A + B)) ^ 2} := by
+  rw [minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal
+    (isGlobalMinimal_baseChange_freyCurve hAB h16) (d := (freyCurve A B).Δ)
+    (by rw [baseChange, map_Δ]), freyCurve_Δ_eq_mul_sq]
+
+end Int
+
 section Fermat
 
 /-- If `x` is coprime to an even `e`, and `xᵖ + eᵖ + yᵖ = 0` with `p ≥ 2`, then `xᵖ` or `yᵖ` is
@@ -394,6 +465,62 @@ theorem exists_perm_two_dvd_and_pow_modEq_neg_one {p : ℕ} (hp : 2 ≤ p) {a b 
     (by linear_combination h) with h' | h'
   · exact ⟨a, c, b, .cons _ (.swap _ _ _), hc, h'⟩
   · exact ⟨b, c, a, List.rotate_perm [a, b, c] 1, hc, h'⟩
+
+/-- If `aⁿ + bⁿ = cⁿ` and `a`, `b`, `c` have no common factor, then `a` and `b` are coprime: a
+prime dividing both divides `cⁿ`, hence `c`. This is the analogue of Mathlib's
+`isCoprime_of_gcd_eq_one_of_FLT` for the form `aⁿ + bⁿ = cⁿ`, which covers even exponents. -/
+theorem isCoprime_of_gcd_eq_one_of_add_pow_eq_pow {n : ℕ} {a b c : ℤ}
+    (hgcd : Finset.gcd {a, b, c} id = 1) (h : a ^ n + b ^ n = c ^ n) : IsCoprime a b := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · norm_num at h
+  refine isCoprime_of_prime_dvd (fun ⟨ha, hb⟩ ↦ ?_) fun p hp hpa hpb ↦ ?_
+  · subst ha hb
+    obtain rfl : c = 0 := by simpa [zero_pow hn, eq_comm, hn] using h
+    simp at hgcd
+  · have hpc : p ∣ c :=
+      hp.dvd_of_dvd_pow (n := n) (h ▸ dvd_add (dvd_pow hpa hn) (dvd_pow hpb hn))
+    refine hp.not_dvd_one (hgcd ▸ Finset.dvd_gcd fun x hx ↦ ?_)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hx
+    rcases hx with rfl | rfl | rfl <;> assumption
+
+/-- A coprime pair `X`, `Y` with `32 ∣ Y` gives coprime `A` and `B` with `A ≡ -1 (mod 4)` and
+`32 ∣ B`: either `(X, Y)` or `(-(X + Y), Y)`, depending on whether `X ≡ -1` or `X ≡ 1 (mod 4)`,
+and both have `A B (A + B) = X Y (X + Y)`. -/
+private theorem exists_pair_of_isCoprime {X Y : ℤ} (hXY : IsCoprime X Y) (hY : 32 ∣ Y) :
+    ∃ A B : ℤ, IsCoprime A B ∧ 4 ∣ A + 1 ∧ 32 ∣ B ∧ A * B * (A + B) = X * Y * (X + Y) := by
+  -- `X` is odd, being coprime to the even `Y`
+  have hX : ¬ 2 ∣ X := fun h2 ↦ Int.prime_two.not_dvd_one
+    (hXY.isUnit_of_dvd' h2 (dvd_trans ⟨16, by norm_num⟩ hY)).dvd
+  by_cases h4 : 4 ∣ X + 1
+  · exact ⟨X, Y, hXY, h4, hY, rfl⟩
+  refine ⟨-(X + Y), Y, by simpa using (hXY.add_mul_left_left 1).neg_left, by omega, hY, by ring⟩
+
+/-- **The Frey curve of a Fermat triple.** If `aⁿ + bⁿ = cⁿ` with `a` and `b` coprime and `n ≥ 5`,
+there are coprime integers `A` and `B` with `A ≡ -1 (mod 4)`, `32 ∣ B` and
+`A B (A + B) = (a b c)ⁿ`. Here `B` is the even one of `aⁿ`, `bⁿ`, `cⁿ`, up to sign, and `A` is
+one of the other two, up to sign. -/
+theorem exists_isCoprime_and_mul_mul_add_eq_pow {n : ℕ} (hn : 5 ≤ n) {a b c : ℤ}
+    (hab : IsCoprime a b) (h : a ^ n + b ^ n = c ^ n) :
+    ∃ A B : ℤ, IsCoprime A B ∧ 4 ∣ A + 1 ∧ 32 ∣ B ∧ A * B * (A + B) = (a * b * c) ^ n := by
+  have h32 {x : ℤ} (hx : 2 ∣ x) : (32 : ℤ) ∣ x ^ n := by
+    simpa using (pow_dvd_pow_of_dvd hx 5).trans (pow_dvd_pow x hn)
+  have hn₀ : n ≠ 0 := by omega
+  by_cases hb : 2 ∣ b
+  · obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hab.pow (h32 hb)
+    exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, h]; ring⟩
+  by_cases ha : 2 ∣ a
+  · obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hab.symm.pow (h32 ha)
+    exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, add_comm, h]; ring⟩
+  -- otherwise `a` and `b` are odd, so `cⁿ = aⁿ + bⁿ` is even, and `B = -cⁿ`
+  have hc : 2 ∣ c := by
+    refine Int.prime_two.dvd_of_dvd_pow (n := n) (h ▸ ?_)
+    rw [← even_iff_two_dvd] at ha hb ⊢
+    rw [Int.not_even_iff_odd] at ha hb
+    exact (ha.pow).add_odd hb.pow
+  have hac : IsCoprime (a ^ n) (-c ^ n) := by
+    simpa [← h, add_comm] using (hab.pow.add_mul_left_right 1).neg_right
+  obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hac (dvd_neg.2 (h32 hc))
+  exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, mul_pow, mul_pow, ← h]; ring⟩
 
 /-- **The Frey curve of a normalised Fermat triple is semistable.** If `a` and `b` are coprime,
 `b` is even, `aᵖ ≡ -1 (mod 4)`, `p ≥ 4` and `y² = x (x - aᵖ) (x + bᵖ)` is elliptic over `ℚ`, then
