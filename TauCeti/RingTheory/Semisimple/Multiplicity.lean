@@ -28,8 +28,8 @@ as the product of the hom spaces into the factors, and each factor contributes `
 according as it is or is not isomorphic to `S`.  Those two values are the dimension forms of
 Schur's lemma, `LinearEquiv.finrank_linearMap_eq_one` and
 `TauCeti.finrank_linearMap_eq_zero_of_isEmpty_linearEquiv`, proved in
-`TauCeti/RingTheory/Semisimple/Schur.lean` alongside the transport of a hom space along an
-isomorphism of its target, `LinearEquiv.homCongrRight`.
+`TauCeti/RingTheory/Semisimple/Schur.lean`. Transport of a hom space along an isomorphism of its
+target uses `LinearEquiv.homCongrRight`, defined in `TauCeti/Algebra/Module/Equiv/Basic.lean`.
 
 Over an arbitrary field, an isomorphic factor instead contributes
 `finrank k (Module.End A S)`.  The corresponding scaled multiplicity formula is enough to recover
