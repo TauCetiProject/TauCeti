@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-public import TauCeti.NumberTheory.NumberField.Units.LogEmbedding
-public import TauCeti.RingTheory.DedekindDomain.SInteger.UnitOfUnits
+public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit.OfUnits
 
 /-!
 # The logarithmic embedding of S-units
