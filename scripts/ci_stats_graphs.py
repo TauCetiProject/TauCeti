@@ -10,8 +10,8 @@ The database is the `ci.sqlite.gz` asset of https://github.com/TauCetiProject/Ta
   ci-fleet-30d.svg   the same for the last 30 days in 2-hour bins
   ci-stats.json      the binned series behind both, for anyone who wants the numbers
 
-and the daily charts of ci_daily_graphs.py (build duration, waits, phases, failures, runner-minutes,
-merge queue, runner picker).
+and the charts of ci_daily_graphs.py (daily build duration, waits, phases, failures, runner-minutes,
+merge validation and runner picker, plus timestamped merge backlog and bors staging runs).
 
 The fleet timeline has three panels on one time axis, after Marcelo Lynch's mathlib4 fleet graph:
 
@@ -406,6 +406,7 @@ def main(argv=None):
         ET.fromstring(svgs[name])  # refuse to publish a malformed SVG
     files = {f"ci-fleet-{name}.svg": svg for name, svg in svgs.items()}
     files.update(ci_daily_graphs.charts(db, until))
+    files.update(ci_daily_graphs.merge_charts(db, until))
     write_charts(out, files)
     (out / "ci-stats.json").write_text(json.dumps(stats, separators=(",", ":")))
 
