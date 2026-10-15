@@ -93,6 +93,8 @@ transported along `tensorPower_succ`. -/
 @[simp] theorem tensorPower_hom_succ (e : HomotopyEquiv K L) (n : ℕ) :
     (e.tensorPower (n + 1)).hom = eqToHom (K.tensorPower_succ n) ≫
       tensorHom e.hom (e.tensorPower n).hom ≫ eqToHom (L.tensorPower_succ n).symm := by
+    -- The successor recursion reduces the left side to `mapBifunctor`; since
+    -- `tensorPower_succ` is proved by `rfl`, both `eqToHom` transports reduce to identities.
     change _ = 𝟙 (tensorObj K (K.tensorPower n)) ≫ _ ≫ 𝟙 (tensorObj L (L.tensorPower n))
     rw [Category.id_comp, Category.comp_id]
     exact mapBifunctor_hom e (e.tensorPower n)
@@ -102,6 +104,8 @@ transported along `tensorPower_succ`. -/
 @[simp] theorem tensorPower_inv_succ (e : HomotopyEquiv K L) (n : ℕ) :
     (e.tensorPower (n + 1)).inv = eqToHom (L.tensorPower_succ n) ≫
       tensorHom e.inv (e.tensorPower n).inv ≫ eqToHom (K.tensorPower_succ n).symm := by
+    -- The successor recursion reduces the left side to `mapBifunctor`; since
+    -- `tensorPower_succ` is proved by `rfl`, both `eqToHom` transports reduce to identities.
     change _ = 𝟙 (tensorObj L (L.tensorPower n)) ≫ _ ≫ 𝟙 (tensorObj K (K.tensorPower n))
     rw [Category.id_comp, Category.comp_id]
     exact mapBifunctor_inv e (e.tensorPower n)
