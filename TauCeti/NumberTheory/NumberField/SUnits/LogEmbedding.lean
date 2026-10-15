@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-public import TauCeti.NumberTheory.NumberField.SUnits.Basic
 public import TauCeti.NumberTheory.NumberField.Units.LogEmbedding
+public import TauCeti.RingTheory.DedekindDomain.SInteger.UnitOfUnits
 
 /-!
 # The logarithmic embedding of S-units
@@ -29,7 +29,7 @@ to zero in the finite coordinates. These facts are the coordinate foundation for
 public noncomputable section
 
 open Finset IsDedekindDomain NumberField NumberField.InfinitePlace
-  NumberField.Units.dirichletUnitTheorem
+  NumberField.Units.dirichletUnitTheorem TauCeti.SUnit
 
 namespace TauCeti.NumberField.SUnit
 
@@ -108,13 +108,13 @@ theorem sum_mult_mul_log_add_sum_log_finitePlace
     rw [finprod_eq_prod_of_mulSupport_subset _ hsupp]
     rw [← Finset.prod_coe_sort]
     exact Fintype.prod_congr _ _ fun v ↦ hfinite v.1
-  have hnorm : |(Algebra.norm ℚ) ((x : Kˣ) : K)| ≠ 0 := by
-    simp [Algebra.norm_eq_zero_iff, hx]
   have hprod :
       (∏ v : S, FinitePlace.mk v.1 ((x : Kˣ) : K)) *
           ∏ w : InfinitePlace K, w ((x : Kˣ) : K) ^ w.mult = 1 := by
-    rw [← hfinprod, GlobalNumberFields.finprod_normalizedAbsValue_inl hx,
-      InfinitePlace.prod_eq_abs_norm, ← Rat.cast_mul, inv_mul_cancel₀ hnorm, Rat.cast_one]
+    have h := GlobalNumberFields.finprod_normalizedAbsValue_eq_one hx
+    rw [finprod_sum_type (fun v ↦ GlobalNumberFields.normalizedAbsValue v ((x : Kˣ) : K))
+      (S.finite_toSet.subset hsupp) (Set.toFinite _), hfinprod, finprod_eq_prod_of_fintype] at h
+    simpa only [Function.comp_apply, GlobalNumberFields.normalizedAbsValue_inr] using h
   have hposFinite (v : S) : 0 < FinitePlace.mk v.1 ((x : Kˣ) : K) :=
     FinitePlace.pos_iff.mpr hx
   have hposInfinite (w : InfinitePlace K) : 0 < w ((x : Kˣ) : K) :=
@@ -146,7 +146,7 @@ infinite coordinates and zero in the finite coordinates. -/
 @[simp]
 theorem logEmbedding_unitOfUnits (S : Finset (HeightOneSpectrum (𝓞 K))) (u : (𝓞 K)ˣ) :
     logEmbedding S (Additive.ofMul
-      (unitOfUnits (S : Set (HeightOneSpectrum (𝓞 K))) u)) =
+      (unitOfUnits (S : Set (HeightOneSpectrum (𝓞 K))) K u)) =
       Sum.elim (NumberField.Units.logEmbedding K (Additive.ofMul u)) 0 := by
   classical
   ext i
