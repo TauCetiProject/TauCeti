@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Subobject.Lattice
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
-import Mathlib.Order.ConditionallyCompleteLattice.Finset
+import Mathlib.Data.Fintype.Order
 
 /-!
 # The index filtration of a twisted complex
@@ -83,20 +83,14 @@ section FiniteIndexFiltration
 
 variable [Finite P]
 
-private theorem exists_index_bounds :
-    ∃ a b : ℤ, (∀ x, a < ind x) ∧ ∀ x, ind x ≤ b := by
-  obtain ⟨a, ha⟩ := (Set.finite_range ind).bddBelow
-  obtain ⟨b, hb⟩ := (Set.finite_range ind).bddAbove
-  exact ⟨a - 1, b, fun x ↦ by
-    have := ha (Set.mem_range_self x)
-    omega, fun x ↦ hb (Set.mem_range_self x)⟩
-
 /-- A finite index filtration is bounded, including when there are no generators. -/
 theorem twistedIndexFiltration_bounded :
     ∃ a b : ℤ, twistedIndexFiltration (R := R) (M := M) ind a = ⊥ ∧
       twistedIndexFiltration (R := R) (M := M) ind b = ⊤ := by
-  obtain ⟨a, b, ha, hb⟩ := exists_index_bounds ind
-  exact ⟨a, b, twistedIndexFiltration_eq_bot ind ha, twistedIndexFiltration_eq_top ind hb⟩
+  obtain ⟨a, ha⟩ := Finite.exists_ge ind
+  obtain ⟨b, hb⟩ := Finite.exists_le ind
+  exact ⟨a - 1, b, twistedIndexFiltration_eq_bot ind
+    (fun x ↦ lt_of_lt_of_le (by omega) (ha x)), twistedIndexFiltration_eq_top ind hb⟩
 
 /-- Every element lies in some stage of a finite index filtration. -/
 theorem iSup_twistedIndexFiltration_eq_top :
@@ -525,8 +519,10 @@ theorem TwistingCocycle.twistedIndexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < 
 /-- The actual subcomplex filtration is bounded below and exhaustive for finite generators. -/
 theorem TwistingCocycle.twistedIndexSubobject_bounded :
     ∃ a b : ℤ, m.twistedIndexSubobject hM a = ⊥ ∧ m.twistedIndexSubobject hM b = ⊤ := by
-  obtain ⟨a, b, ha, hb⟩ := exists_index_bounds ind
-  exact ⟨a, b, m.twistedIndexSubobject_eq_bot hM ha, m.twistedIndexSubobject_eq_top hM hb⟩
+  obtain ⟨a, ha⟩ := Finite.exists_ge ind
+  obtain ⟨b, hb⟩ := Finite.exists_le ind
+  exact ⟨a - 1, b, m.twistedIndexSubobject_eq_bot hM
+    (fun x ↦ lt_of_lt_of_le (by omega) (ha x)), m.twistedIndexSubobject_eq_top hM hb⟩
 
 end FilteredComplex
 
