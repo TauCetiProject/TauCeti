@@ -87,6 +87,45 @@ theorem poincareHomotopy_self (x₀ : E) (ω : E → E [⋀^Fin (n + 1)]→L[ℝ
     poincareHomotopy x₀ ω x₀ = 0 := by
   simp [poincareHomotopy_apply]
 
+/-- The Poincaré homotopy operator at `x` only depends on the form along the segment `[x₀, x]`. -/
+theorem poincareHomotopy_congr {x₀ x : E} {ω₁ ω₂ : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
+    (h : EqOn ω₁ ω₂ (segment ℝ x₀ x)) : poincareHomotopy x₀ ω₁ x = poincareHomotopy x₀ ω₂ x := by
+  rw [poincareHomotopy_apply, poincareHomotopy_apply]
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  simp only [h (lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht))]
+
+/-- The Poincaré homotopy operator of the zero form is zero. -/
+@[simp]
+theorem poincareHomotopy_zero (x₀ : E) :
+    poincareHomotopy x₀ (0 : E → E [⋀^Fin (n + 1)]→L[ℝ] F) = 0 := by
+  funext x
+  simp [poincareHomotopy_apply]
+
+/-- The Poincaré homotopy operator commutes with real scalar multiplication of forms. -/
+theorem poincareHomotopy_smul (x₀ : E) (c : ℝ) (ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F) :
+    poincareHomotopy x₀ (c • ω) = c • poincareHomotopy x₀ ω := by
+  funext x
+  simp only [poincareHomotopy_apply, Pi.smul_apply, ContinuousAlternatingMap.curryLeft_smul,
+    smul_apply, ← intervalIntegral.integral_smul, smul_comm c]
+
+/-- The Poincaré homotopy operator is additive on forms that are continuous along the segment
+`[x₀, x]`. -/
+theorem poincareHomotopy_add_apply {x₀ x : E} {ω₁ ω₂ : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
+    (h₁ : ContinuousOn ω₁ (segment ℝ x₀ x)) (h₂ : ContinuousOn ω₂ (segment ℝ x₀ x)) :
+    poincareHomotopy x₀ (ω₁ + ω₂) x = poincareHomotopy x₀ ω₁ x + poincareHomotopy x₀ ω₂ x := by
+  have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) (segment ℝ x₀ x) := fun _ ht ↦
+    lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht)
+  have hint {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContinuousOn ω (segment ℝ x₀ x)) :
+      IntervalIntegrable (fun t : ℝ ↦ t ^ n • (ω (lineMap x₀ x t)).curryLeft (x - x₀))
+        volume 0 1 :=
+    ((continuousOn_pow n).smul (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E)
+      (F := F) (n := n)).toContinuousLinearMap.flip (x - x₀)).continuous.comp_continuousOn
+        (hω.comp lineMap_continuous.continuousOn hmaps))).intervalIntegrable
+  rw [poincareHomotopy_apply, poincareHomotopy_apply, poincareHomotopy_apply,
+    ← intervalIntegral.integral_add (hint h₁) (hint h₂)]
+  simp only [Pi.add_apply, ContinuousAlternatingMap.curryLeft_add, add_apply,
+    smul_add]
+
 /-- The integrand of the homotopy operator is as smooth as the form, on the open set of pairs
 `(x, t)` with `x₀ + t (x - x₀) ∈ s`. -/
 private theorem contDiffOn_integrand {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
@@ -261,11 +300,8 @@ theorem extDeriv_poincareHomotopy (hs : StarConvex ℝ x₀ s) (hso : IsOpen s)
     (hω : ContDiffOn ℝ 1 ω s) (hclosed : ∀ y ∈ s, extDeriv ω y = 0) {x : E} (hx : x ∈ s) :
     extDeriv (poincareHomotopy x₀ ω) x = ω x := by
   have h0 : poincareHomotopy x₀ (extDeriv ω) x = 0 := by
-    rw [poincareHomotopy_apply]
-    refine (intervalIntegral.integral_congr (g := fun _ ↦ 0) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    simp [hclosed _ (hs.segment_subset hx
-      (lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht)))]
+    rw [poincareHomotopy_congr (ω₂ := 0) fun y hy ↦ hclosed y (hs.segment_subset hx hy),
+      poincareHomotopy_zero, Pi.zero_apply]
   simpa [h0] using hs.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv hso hω hx
 
 /-- **The Poincaré lemma.** A closed `C^r` form, `r ≥ 1`, on an open star-convex set is the
