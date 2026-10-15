@@ -27,8 +27,9 @@ one narrowly scoped reader exposes only numbered pages of the immutable prepared
 input. Continuation tokens serialize reads. The same conversation may use native
 compaction and re-read pages, then returns one verdict for the entire batch. There
 are no independent partial inspections or combined partial approvals. A pass also
-requires the reader's receipt to cover every page; delivery alone does not prove
-understanding. Findings and unresolved questions must survive compaction, and the
+requires the reader's receipt to cover every page and the verdict to echo the token
+following the last page's contents; delivery alone does not prove understanding.
+Findings and unresolved questions must survive compaction, and the
 reviewer must return incomplete if it cannot finish the inspection.
 
 Individual commits are inspected in order: a later revert cannot conceal an earlier
@@ -36,9 +37,10 @@ dangerous version. Candidate code is never executed. The model has no GitHub
 credential, general filesystem access, shell or editing authority; trusted Worker
 code verifies its structured verdict and updates the ref. A finding, incomplete
 review, client failure or input beyond the workload limits stops the cursor for
-human attention. Local input bundles, transcripts, read receipts, native Codex
+human attention. Local input bundles, actual launchers/environments/prompts,
+transcripts, read receipts, native Codex
 compaction/usage records, verdicts and advancement records are retained by the worker.
-A pre-inspection size-only block from the old 256 KiB planner can be archived and
+A pre-inspection commit-budget block from the old 256 KiB planner can be archived and
 replanned when the exact next commit fits the new limits. That does not attest the
 commit or retry a model verdict; other blocks still require human attention.
 After inspecting every intermediate commit themselves, an admin can use the Worker's
