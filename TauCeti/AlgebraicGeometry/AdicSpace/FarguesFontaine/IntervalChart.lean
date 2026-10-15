@@ -304,8 +304,8 @@ theorem windowPreAdicSpaceIso_inv_base_apply
   have h := congrArg (comap
     (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂).toRingHom)
     hforward
-  simpa only [← Function.comp_apply (f := comap _), ← comap_comp, RingEquiv.symm_comp,
-    comap_id, id_eq] using h.symm
+  simpa only [RingEquiv.toRingHom_eq_coe, ← Function.comp_apply (f := comap _),
+    ← comap_comp, RingEquiv.symm_comp, comap_id, id_eq] using h.symm
 
 /-- **A window of `𝒴` is an adic space**: the window `{q ≤ κ ≤ q'}` of `Spa(𝕎 O, 𝕎 O)`, the
 restriction along the open embedding `j : Spa(𝕎 O⟨T/s⟩, A_U⁺) → Spa(𝕎 O, 𝕎 O)`, is isomorphic to
