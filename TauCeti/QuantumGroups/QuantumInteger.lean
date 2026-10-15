@@ -95,7 +95,8 @@ theorem quantumInteger_def (q : K) (r : ℤ) :
     quantumInteger q⁻¹ r = quantumInteger q r := by
   simp only [quantumInteger, inv_zpow, inv_inv]
   rw [← zpow_neg q r, ← zpow_neg q (-r)]
-  rw [show q⁻¹ - q = -(q - q⁻¹) by ring, div_neg]
+  have hinv_sub : q⁻¹ - q = -(q - q⁻¹) := by ring
+  rw [hinv_sub, div_neg]
   ring_nf
 
 /-- The first-order recurrence used to obtain the Laurent expansion of positive quantum
@@ -108,7 +109,8 @@ theorem quantumInteger_natCast_succ {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
     simp at hq
   simp only [quantumInteger]
   rw [zpow_add₀ hq0]
-  rw [show (-((n : ℤ) + 1)) = -(n : ℤ) + -1 by omega, zpow_add₀ hq0]
+  have hneg_succ : -((n : ℤ) + 1) = -(n : ℤ) + -1 := by omega
+  rw [hneg_succ, zpow_add₀ hq0]
   simp only [zpow_one, zpow_neg, zpow_natCast]
   rw [div_eq_iff hq]
   rw [add_mul, mul_assoc, div_mul_cancel₀ _ hq]
@@ -143,8 +145,10 @@ theorem quantumInteger_add_one (q : K) (r : ℤ) :
     simp at hq
   simp only [quantumInteger]
   rw [zpow_add₀ hq0, zpow_sub₀ hq0]
-  rw [show (-(r + 1)) = -r + -1 by omega, zpow_add₀ hq0]
-  rw [show (-(r - 1)) = -r - -1 by omega, zpow_sub₀ hq0]
+  have hneg_add_one : -(r + 1) = -r + -1 := by omega
+  rw [hneg_add_one, zpow_add₀ hq0]
+  have hneg_sub_one : -(r - 1) = -r - -1 := by omega
+  rw [hneg_sub_one, zpow_sub₀ hq0]
   simp only [zpow_one, zpow_neg]
   field_simp [hq0, hq]
   ring
