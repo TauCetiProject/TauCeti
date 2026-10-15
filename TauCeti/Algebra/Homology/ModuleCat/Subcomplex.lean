@@ -22,12 +22,10 @@ the spectral sequence of a filtered complex.
 
 ## Implementation notes
 
-The construction of a subcomplex from degreewise submodules is modelled on
-`gradedCochainComplexSubobject` in the index filtration of twisted complexes, TauCeti PR #16305 (by
-roed-math): the complex of the submodules with the restricted differentials, its inclusion as a
-monomorphism, the subobject it defines, and its membership, monotonicity and endpoint lemmas.
-Here the ambient complex is an arbitrary homological complex of modules rather than one assembled
-from a graded module.
+The subcomplex is the one spanned, degree by degree, by a family of submodules stable under the
+differentials: its terms are the submodules with the restricted differentials, and its inclusion
+is a monomorphism of complexes, which defines the subobject. Its characterization is through
+`HomologicalComplex.ofSubmodulesXEquiv` and the membership lemma for the ranges of the arrow.
 
 ## Main definitions
 

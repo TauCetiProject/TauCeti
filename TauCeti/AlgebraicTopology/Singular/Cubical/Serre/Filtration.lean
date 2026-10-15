@@ -73,12 +73,11 @@ homology of `E` by `TauCeti.singularCubicalHomologyIso`.
 
 ## Implementation notes
 
-The spectral sequence is Tau Ceti's spectral sequence of a filtered complex
-(`CochainComplex.filtrationFunctor`, `CochainComplex.spectralSequence` and their convergence
-lemmas in `TauCeti.Algebra.Homology.SpectralSequence.Filtered`, developed under
-TauCetiRoadmap#808). The filtration is packaged for it in the same way as the index filtration of
-a twisted complex in TauCeti PR #16305 (by roed-math), through a subcomplex cut out by submodules
-(`TauCeti.Algebra.Homology.ModuleCat.Subcomplex`).
+The spectral sequence is `CochainComplex.spectralSequence` of the filtered complex, with the
+convergence lemmas of `TauCeti.Algebra.Homology.SpectralSequence.Filtered`. The filtration is
+given to it as a subcomplex cut out by submodules
+(`HomologicalComplex.subobjectOfSubmodules`), extended to cochain degrees by
+`CategoryTheory.Subobject.extend`.
 
 ## References
 
@@ -193,12 +192,14 @@ theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → 
   exact Finsupp.supported_mono (Set.image_subset_iff.2 fun _ hc ↦ hc.comp f hf) hmap
 
 /-- Below `0`, the Serre filtration is zero. -/
+@[simp]
 theorem serreFiltration_eq_bot {s : ℤ} (hs : s < 0) (n : ℕ) : serreFiltration R p s n = ⊥ := by
   rw [serreFiltration, Finsupp.supported_eq_span_single, Submodule.span_eq_bot]
   rintro _ ⟨c, hc, rfl⟩
   exact (c.not_isSerreWeightLE_of_neg hs hc).elim
 
 /-- In degrees `n ≤ s`, the Serre filtration is everything. -/
+@[simp]
 theorem serreFiltration_eq_top {s : ℤ} {n : ℕ} (hs : (n : ℤ) ≤ s) :
     serreFiltration R p s n = ⊤ := by
   rw [serreFiltration, ← Finsupp.supported_univ]
@@ -275,10 +276,12 @@ theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → 
   exact ⟨_, CubicalChain.map_mem_serreFiltration f hf hg, (map_mk R f g).symm⟩
 
 /-- Below `0`, the Serre filtration is zero. -/
+@[simp]
 theorem serreFiltration_eq_bot {s : ℤ} (hs : s < 0) (n : ℕ) : serreFiltration R p s n = ⊥ := by
   rw [serreFiltration, CubicalChain.serreFiltration_eq_bot hs, Submodule.map_bot]
 
 /-- In degrees `n ≤ s`, the Serre filtration is everything. -/
+@[simp]
 theorem serreFiltration_eq_top {s : ℤ} {n : ℕ} (hs : (n : ℤ) ≤ s) :
     serreFiltration R p s n = ⊤ := by
   rw [serreFiltration, CubicalChain.serreFiltration_eq_top hs, Submodule.map_top,
@@ -338,7 +341,7 @@ private theorem mem_serreSubmodule_iff (s : ℤ) (n : ℕ)
 
 /-- The Serre filtration of the normalized cubical chain complex of `E`, indexed by `ℕ`, by
 subcomplexes. -/
-def serreChainFiltration (s : ℤ) : Subobject ((normalizedCubicalChainComplex R).obj E) :=
+private def serreChainFiltration (s : ℤ) : Subobject ((normalizedCubicalChainComplex R).obj E) :=
   HomologicalComplex.subobjectOfSubmodules _ (serreSubmodule R p s)
     fun i j (hij : (ComplexShape.down ℕ).Rel i j) x hx ↦ by
       obtain rfl : j + 1 = i := hij
@@ -360,7 +363,7 @@ variable {R p}
 /-- In chain degree `n`, the `s`-th piece of the Serre filtration of the chain complex consists
 of the chains whose image under `normalizedCubicalChainComplexXEquiv` lies in
 `NormalizedCubicalChain.serreFiltration`. -/
-theorem mem_range_serreChainFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
+private theorem mem_range_serreChainFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
     (x : ((normalizedCubicalChainComplex R).obj E).X n) :
     x ∈ LinearMap.range ((serreChainFiltration R p s).arrow.f n).hom ↔
       normalizedCubicalChainComplexXEquiv R E n x ∈
@@ -424,17 +427,9 @@ variable (R p) in
 of the cubical chains of `E`.  On its first page, numbered `2`, the object at `(p, q)` is the
 cohomology `H^{p+q}(F_{q+1} / F_q)` of a graded piece of the filtration
 (`TauCeti.serreSpectralSequenceFirstPageXIsoCokernel`). -/
-def serreSpectralSequence :=
+abbrev serreSpectralSequence :=
   CochainComplex.spectralSequence
     (CochainComplex.filtrationFunctor (serreFiltration R p) (monotone_serreFiltration R p))
-
-variable (R p) in
-/-- The Serre spectral sequence is the spectral sequence of the filtration functor of the Serre
-filtration. -/
-theorem serreSpectralSequence_eq : serreSpectralSequence R p =
-    CochainComplex.spectralSequence
-      (CochainComplex.filtrationFunctor (serreFiltration R p) (monotone_serreFiltration R p)) := by
-  rw [serreSpectralSequence]
 
 /-- The first page of the Serre spectral sequence, numbered `2`: at `pq = (p, q)` it is the
 cohomology `H^{p+q}(F_{q+1} / F_q)` of a graded piece of the Serre filtration. -/
@@ -444,7 +439,7 @@ def serreSpectralSequenceFirstPageXIsoCokernel (pq : ℤ × ℤ) :
         (monotone_serreFiltration R p)).map (homOfLE
           (CochainComplex.coe_le_coe_of_eq_add_one (rfl : pq.2 = pq.2) rfl)))).homology
             (pq.1 + pq.2) :=
-  eqToIso (by rw [serreSpectralSequence_eq]) ≪≫
+  eqToIso (by rw [serreSpectralSequence]) ≪≫
     CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq _ _ rfl rfl _ rfl
 
 /-- **Strong convergence of the Serre spectral sequence.** On every page `r ≥ 2` with
@@ -459,7 +454,7 @@ def serreSpectralSequencePageXIsoGraded (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × �
           (pq.1 + pq.2)) :=
   have : Epi ((serreFiltration R p (pq.2 + r - 1)).arrow.f (pq.1 + pq.2 - 1)) :=
     epi_serreFiltration_arrow_f h₃
-  eqToIso (by rw [serreSpectralSequence_eq]) ≪≫
+  eqToIso (by rw [serreSpectralSequence]) ≪≫
   CochainComplex.filtrationSpectralSequencePageXIsoEInfty _ _ r hr pq _ rfl
     ((serreFiltration R p _).isZero_homology_of_eq_bot (serreFiltration_eq_bot h₀) _)
     ((serreFiltration R p _).isZero_homology_cokernel_of_epi_arrow_f _) ≪≫
