@@ -51,13 +51,27 @@ theorem finrank_cohomology_one_trivial_eq_of_isPullback_of_smooth
   exact finrank_cohomology_one_trivial_eq_of_isPullback H hU hV hUV
 
 include H in
+/-- For a smooth proper connected curve, `H¹(X, 𝒪_X)` stays finite-dimensional under extension of
+the base field. -/
+theorem finiteDimensional_cohomology_one_trivial_of_isPullback_of_smooth
+    [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
+    [ConnectedSpace X]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] :
+    FiniteDimensional K (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 1) := by
+  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
+  obtain ⟨U, V, hU, hV, hUV⟩ := X.exists_two_affine_opens_of_smooth (k := k)
+  exact finiteDimensional_cohomology_one_trivial_of_isPullback H hU hV hUV
+
+include H in
 /-- **The genus of a smooth proper connected curve is invariant under extension of the base
-field**, stated with `Scheme.genus`. -/
+field**, stated with `Scheme.genus`. The finite-dimensionality of `H¹` after base change, needed
+to form the genus of `X_K`, follows from that before, by
+`finiteDimensional_cohomology_one_trivial_of_isPullback_of_smooth`. -/
 theorem genus_eq_of_isPullback_of_smooth
     [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
     [ConnectedSpace X]
-    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
-    [FiniteDimensional K (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 1)] :
+    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] :
+    haveI := finiteDimensional_cohomology_one_trivial_of_isPullback_of_smooth H
     Y.genus K = X.genus k := by
   rw [Scheme.genus_def, Scheme.genus_def,
     finrank_cohomology_one_trivial_eq_of_isPullback_of_smooth H]

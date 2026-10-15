@@ -27,9 +27,10 @@ file proves flat base change for the cohomology of the structure sheaf in degree
   by two affine opens.
 
 Over a field `k` and a field extension `K / k`, these say that `dim_k H⁰(X, 𝒪_X)` and, for `X`
-locally of finite type over `k` and covered by two affine opens, the genus `dim_k H¹(X, 𝒪_X)`
-do not change under base change to `K`. Smooth proper curves are covered by two affine opens, so
-this applies to them (`TauCeti.AlgebraicGeometry.Curves.GenusBaseChange`).
+locally of finite type over `k` and covered by two affine opens, `dim_k H¹(X, 𝒪_X)` do not change
+under base change to `K`; when moreover `H¹(X, 𝒪_X)` is finite-dimensional, so is `H¹` after base
+change, and the genus does not change either. Smooth proper curves are covered by two affine
+opens, so this applies to them (`TauCeti.AlgebraicGeometry.Curves.GenusBaseChange`).
 
 The structure sheaf is written as the trivial line bundle `(InvertibleSheaf.trivial X).obj`, as for
 the genus `Scheme.genus`. The isomorphisms are stated as `Nonempty` linear equivalences: in degree
@@ -84,23 +85,10 @@ attribute [local instance] sectionsAlgebra
 
 variable {R X}
 
-/-- On global sections, the base-ring algebra structure is `baseRingToGlobalSections`. -/
-private lemma algebraMap_top (r : R) : algebraMap R Γ(X, ⊤) r = baseRingToGlobalSections R X r := by
-  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app,
-    show (TopologicalSpace.Opens.leTop (⊤ : X.Opens)).op = 𝟙 _ from rfl, X.presheaf.map_id]
-  rfl
-
 variable {R' : Type u} [CommRing R'] [Algebra R R']
   {Y : Scheme.{u}} [Y.Over (Spec (.of R'))] {g : Y ⟶ X}
   (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
-
-/-- The ring map `h.appLE U W' e` on sections depends only on the morphism `h`, so equal morphisms
-induce equal maps whatever the proofs `e`. -/
-private lemma appLE_eq_of_eq {T : Scheme.{u}} {h₁ h₂ : Y ⟶ T} (e : h₁ = h₂) (U : T.Opens)
-    (W' : Y.Opens) (e₁ : W' ≤ h₁ ⁻¹ᵁ U) (e₂ : W' ≤ h₂ ⁻¹ᵁ U) :
-    h₁.appLE U W' e₁ = h₂.appLE U W' e₂ := by
-  subst e; rfl
 
 include H in
 /-- Pulling back sections along `g` is compatible with the base-ring structures on both sides. -/
@@ -110,7 +98,12 @@ private lemma comm_sections {W : X.Opens} {W' : Y.Opens} (hW : W' ≤ g ⁻¹ᵁ
   rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
     CommRingCat.ofHom_hom, Scheme.baseRingToStructurePresheaf_app_eq_appLE R X,
     Scheme.baseRingToStructurePresheaf_app_eq_appLE R' Y, Category.assoc]
-  refine (congrArg _ ((Scheme.Hom.appLE_comp_appLE _ _ _ _ _ _ _).trans ((appLE_eq_of_eq H.w _ _ _
+  -- The map `appLE` on sections depends only on the morphism, whatever the inclusion proofs.
+  have hw : ∀ e₁ e₂, (g ≫ X ↘ Spec (.of R)).appLE ⊤ W' e₁ =
+      (Y ↘ Spec (.of R') ≫ Spec.map (CommRingCat.ofHom (algebraMap R R'))).appLE ⊤ W' e₂ := by
+    rw [H.w]
+    exact fun _ _ ↦ rfl
+  refine (congrArg _ ((Scheme.Hom.appLE_comp_appLE _ _ _ _ _ _ _).trans ((hw _
     (le_top.trans_eq (Scheme.Hom.preimage_top _).symm)).trans
     (Scheme.Hom.comp_appLE _ _ _ _ (le_top.trans_eq (Scheme.Hom.preimage_top _).symm))))).trans ?_
   -- The open `Spec.map φ ⁻¹ᵁ ⊤` is `⊤` only up to definitional unfolding.
@@ -188,50 +181,20 @@ section Instances
 
 variable {S : Type u} [CommRing S] {Z : Scheme.{u}} [Z.Over (Spec (.of S))]
 
-/-- The sections of the structure sheaf as a module carry the base-ring structure of the ring of
-sections, so that the Mayer–Vietoris maps restrict to the base ring. -/
+/-- The sections of the structure sheaf as a module over the base ring, through
+`Scheme.baseRingToStructurePresheaf` as in `Scheme.Modules.isScalarTower_sections`, so that the
+Mayer–Vietoris maps restrict to the base ring. -/
 private abbrev structureModuleSectionsModule (W : Z.Opens) : Module S Γ(structureModule Z, W) :=
-  inferInstanceAs (Module S Γ(Z, W))
-
-attribute [local instance] structureModuleSectionsModule
-
-/-- Global functions act on sections of the structure sheaf compatibly with the base ring. -/
-private lemma isScalarTower_structureModule_sections (W : Z.Opens) :
-    IsScalarTower S Γ(Z, ⊤) Γ(structureModule Z, W) :=
-  .of_algebraMap_smul fun r x ↦ by
-    rw [sectionsGlobal_smul]
-    change Z.presheaf.map W.leTop.op (algebraMap S Γ(Z, ⊤) r) * (show Γ(Z, W) from x) =
-      algebraMap S Γ(Z, W) r * (show Γ(Z, W) from x)
-    congr 1
-    simp only [RingHom.algebraMap_toAlgebra]
-    rw [← CommRingCat.comp_apply, ← (Z.baseRingToStructurePresheaf S).naturality W.leTop.op]
-    rfl
-
-/-- Global functions act on cohomology compatibly with the base ring. -/
-private lemma isScalarTower_cohomology (M : Z.Modules) (i : ℕ) :
-    IsScalarTower S Γ(Z, ⊤) (Cohomology M i) :=
-  .of_algebraMap_smul fun r x ↦ by
-    rw [algebraMap_top, base_smul_cohomology]
+  Module.compHom _ ((Z.baseRingToStructurePresheaf S).app (op W)).hom
 
 end Instances
 
-attribute [local instance] structureModuleSectionsModule isScalarTower_structureModule_sections
+attribute [local instance] structureModuleSectionsModule isScalarTower_sections
   isScalarTower_cohomology
-
-/-- Restricting and then pulling back sections agrees with pulling back and then restricting. -/
-private lemma appLE_restrict {W₁ W₂ : X.Opens} {W₁' W₂' : Y.Opens} (h₁ : W₁' ≤ g ⁻¹ᵁ W₁)
-    (h₂ : W₂' ≤ g ⁻¹ᵁ W₂) (hW : W₂ ≤ W₁) (hW' : W₂' ≤ W₁') (s : Γ(X, W₁)) :
-    g.appLE W₂ W₂' h₂ (X.presheaf.map (homOfLE hW).op s) =
-      Y.presheaf.map (homOfLE hW').op (g.appLE W₁ W₁' h₁ s) := by
-  simp only [← CommRingCat.comp_apply, Scheme.Hom.map_appLE, Scheme.Hom.appLE_map]
 
 section CohomologyOne
 
 variable (U V : X.Opens) (hUV : U ⊔ V = ⊤)
-
-include hUV in
-private lemma preimage_sup_eq_top : g ⁻¹ᵁ U ⊔ g ⁻¹ᵁ V = ⊤ := by
-  rw [← Scheme.Hom.preimage_sup, hUV, Scheme.Hom.preimage_top]
 
 include H hUV in
 /-- The core comparison: under flat base change, the first cohomology of the structure sheaf of a
@@ -251,7 +214,8 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
   let : Module R (Cohomology (structureModule Y) 1) := Module.compHom _ (algebraMap R R')
   have : IsScalarTower R R' (Cohomology (structureModule Y) 1) :=
     IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  have hUV' := preimage_sup_eq_top (g := g) U V hUV
+  have hUV' : g ⁻¹ᵁ U ⊔ g ⁻¹ᵁ V = ⊤ := by
+    rw [← Scheme.Hom.preimage_sup, hUV, Scheme.Hom.preimage_top]
   have hUVc : IsCompact ((U ⊓ V : X.Opens) : Set X) := hUc.inter_of_isOpen hVc U.2 V.2
   -- The exact rows `Γ(U) × Γ(V) → Γ(U ⊓ V) → H¹ → 0` on `X` and on `Y`: the Mayer–Vietoris maps
   -- of the structure sheaf, restricted to the base ring.
@@ -284,18 +248,21 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
       (mayerVietorisSectionsDifference_apply (structureModule X) U V s t)
     have hY := (mayerVietorisSectionsDifferenceLinear_apply (structureModule Y) (g ⁻¹ᵁ U)
       (g ⁻¹ᵁ V) (σU s) (σV t)).trans (mayerVietorisSectionsDifference_apply _ _ _ _ _)
+    have hres {W₁ W₂ : X.Opens} {W₂' : Y.Opens} (h₂ : W₂' ≤ g ⁻¹ᵁ W₂) (hW : W₂ ≤ W₁)
+        (hW' : W₂' ≤ g ⁻¹ᵁ W₁) (s : Γ(X, W₁)) :
+        g.appLE W₂ W₂' h₂ (X.presheaf.map (homOfLE hW).op s) =
+          Y.presheaf.map (homOfLE hW').op (g.appLE W₁ (g ⁻¹ᵁ W₁) le_rfl s) := by
+      simp only [← CommRingCat.comp_apply, Scheme.Hom.map_appLE, Scheme.Hom.appLE_map]
     exact (congrArg σUV hX).trans (((map_sub _ _ _).trans (congrArg₂ (· - ·)
-      (appLE_restrict le_rfl _ _ inf_le_left s) (appLE_restrict le_rfl _ _ inf_le_right t))).trans
-        hY.symm)
+      (hres _ inf_le_left _ s) (hres _ inf_le_right _ t))).trans hY.symm)
   -- The induced map on first cohomology.
   have hker : LinearMap.ker δ ≤ LinearMap.ker ((δ'.restrictScalars R).comp σUV) := by
     intro x hx
     obtain ⟨y, rfl⟩ := (hex x).mp hx
     exact (congrArg δ' congr($comm₁ y)).trans (hex'.apply_apply_eq_zero _)
-  let φ := ((LinearMap.ker δ).liftQ _ hker).comp (δ.quotKerEquivOfSurjective hδ).symm.toLinearMap
-  have comm₂ : φ.comp δ = (δ'.restrictScalars R).comp σUV := by
-    ext s
-    simp [φ]
+  let φ := δ.liftOfSurjective hδ ⟨(δ'.restrictScalars R).comp σUV, hker⟩
+  have comm₂ : φ.comp δ = (δ'.restrictScalars R).comp σUV :=
+    LinearMap.ext fun _ ↦ LinearMap.equivOfSurjective_apply hδ hker
   have hσU := isBaseChange_sectionsBaseChange H hUc (.of_quasiSeparatedSpace _) (W' := g ⁻¹ᵁ U) rfl
   have hσV := isBaseChange_sectionsBaseChange H hVc (.of_quasiSeparatedSpace _) (W' := g ⁻¹ᵁ V) rfl
   have hσUV := isBaseChange_sectionsBaseChange H hUVc (.of_quasiSeparatedSpace _)
@@ -343,7 +310,8 @@ private def globalSectionsLinearEquiv : Γ(structureModule X, ⊤) ≃ₗ[R] Γ(
   invFun s := s
   map_add' _ _ := rfl
   -- Both actions multiply by the global function `baseRingToGlobalSections R X r`.
-  map_smul' r s := (congrArg (· * (show Γ(X, ⊤) from s)) (algebraMap_top r)).symm
+  map_smul' r s := (congrArg (· * (show Γ(X, ⊤) from s))
+    (ConcreteCategory.congr_hom (Scheme.baseRingToStructurePresheaf_app_top R X) r)).symm
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -410,13 +378,13 @@ theorem finiteDimensional_cohomology_one_trivial_of_isPullback
 
 include H in
 /-- **The genus does not change under extension of the base field**, for a scheme locally of
-finite type over a field and covered by two affine opens. The finite-dimensionality of `H¹`
-after base change follows from that before, by
-`finiteDimensional_cohomology_one_trivial_of_isPullback`. -/
+finite type over a field, covered by two affine opens, and with finite-dimensional `H¹(X, 𝒪_X)`.
+The finite-dimensionality of `H¹` after base change, needed to form the genus of `Y`, follows
+from that before, by `finiteDimensional_cohomology_one_trivial_of_isPullback`. -/
 theorem genus_eq_of_isPullback [LocallyOfFiniteType (X ↘ Spec (.of k))] {U V : X.Opens}
     (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
-    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)]
-    [FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj 1)] :
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] :
+    haveI := finiteDimensional_cohomology_one_trivial_of_isPullback H hU hV hUV
     Y.genus K = X.genus k := by
   rw [Scheme.genus_def, Scheme.genus_def,
     finrank_cohomology_one_trivial_eq_of_isPullback H hU hV hUV]

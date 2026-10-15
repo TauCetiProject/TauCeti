@@ -18,7 +18,9 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 `Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this
 action to the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
-presheaf. Pullback of local functions by a morphism over the base preserves these images
+presheaf, which on the whole scheme is the base-ring map to global functions
+(`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). Pullback of local functions
+by a morphism over the base preserves these images
 (`AlgebraicGeometry.Scheme.Modules.app_baseRingToStructurePresheaf`).
 
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
@@ -243,6 +245,14 @@ lemma baseRingToStructurePresheaf_app_eq_appLE (U : X.Opens) :
   -- Both sides restrict the pullback of `r` from `⊤` to `U`; `appLE ⊤ U` is by definition
   -- `app ⊤` followed by that restriction.
   rfl
+
+/-- On the whole scheme, the base-ring map to sections is `baseRingToGlobalSections`. -/
+lemma baseRingToStructurePresheaf_app_top :
+    (X.baseRingToStructurePresheaf R).app (op ⊤) =
+      CommRingCat.ofHom (Modules.baseRingToGlobalSections R X) := by
+  rw [baseRingToStructurePresheaf_app, Subsingleton.elim (unop (op (⊤ : X.Opens))).leTop.op (𝟙 _),
+    X.presheaf.map_id]
+  exact Category.comp_id _
 
 variable {R} in
 /-- Compatible structure morphisms make the actions of the two base rings on sections
