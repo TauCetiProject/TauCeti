@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.InflationRestriction
 
@@ -32,6 +31,8 @@ restriction to `L/K` vanishes. This is the finite-layer form of the statement th
 
 * `TauCeti.ClassFieldTheory.LayerRefinement.range_cohomologyInfl_eq_ker_cohomologyRes`: the
   inflation-restriction sequence of a refinement is exact.
+* `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_injective`: inflation is injective
+  when the layer of the kernel has no cohomology in lower positive degrees.
 * `TauCeti.ClassFieldTheory.LayerRefinement.exists_cohomologyInfl_eq_of_cohomologyRes_eq_zero`: in
   degree two, if `H¹(V/V', A^{V'})` vanishes, a class restricting to zero on `L/K` is inflated.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_subgroupRestriction_ker`: the
@@ -75,6 +76,12 @@ private theorem range_repHom (T : LayerRefinement old new) (F : Formation G) :
       (T.galHom_mk_eq_one_iff ⟨v, hvU⟩).2 hv
     exact congrArg Subtype.val (hx ⟨_, hker⟩)
 
+/-- The inclusion `A^V ⊆ A^{V'}` of coefficient modules is injective. -/
+private theorem injective_repHom (T : LayerRefinement old new) (F : Formation G) :
+    Function.Injective (T.repHom F).hom := fun x y h =>
+  Subtype.ext ((T.repHom_hom_apply_coe F x).symm.trans
+    ((congrArg Subtype.val h).trans (T.repHom_hom_apply_coe F y)))
+
 /-- **The inflation-restriction sequence of a refinement of layers.** For a refinement
 `T : LayerRefinement old new`, the tower `F ⊆ K ⊆ L` with Galois groups `U/V` and `U/V'`, if
 `Hⁱ(V/V', A^{V'})` vanishes for `0 < i ≤ n`, then a class of `Hⁿ⁺¹(U/V', A^{V'})` is inflated from
@@ -84,17 +91,29 @@ theorem range_cohomologyInfl_eq_ker_cohomologyRes (T : LayerRefinement old new)
     (hH : ∀ i < n, Subsingleton ((new.subgroupLayer T.galHom.ker).H F (i + 1))) :
     LinearMap.range (T.cohomologyInfl F (n + 1)).hom =
       LinearMap.ker ((new.subgroupRestriction T.galHom.ker).cohomologyRes F (n + 1)).hom := by
-  set R := new.subgroupRestriction T.galHom.ker
-  have hφ : Function.Injective (T.repHom F).hom := fun x y h =>
-    Subtype.ext ((T.repHom_hom_apply_coe F x).symm.trans
-      ((congrArg Subtype.val h).trans (T.repHom_hom_apply_coe F y)))
-  have hψ : Function.Bijective (R.repIso F).inv.hom :=
-    Function.bijective_iff_has_inverse.2 ⟨(R.repIso F).hom.hom,
-      fun x => Subtype.ext ((R.repIso_hom_apply_coe F _).trans (R.repIso_inv_apply_coe F x)),
-      fun x => Subtype.ext ((R.repIso_inv_apply_coe F _).trans (R.repIso_hom_apply_coe F x))⟩
   rw [cohomologyInfl_def, LayerRestriction.cohomologyRes_def]
-  exact groupCohomology.range_map_succ_eq_ker_map_succ T.galHom_surjective hφ (range_repHom T F)
-    R.galHom_injective (new.range_galHom_subgroupRestriction T.galHom.ker) hψ n
+  exact groupCohomology.range_map_succ_eq_ker_map_succ T.galHom_surjective (injective_repHom T F)
+    (range_repHom T F) (new.subgroupRestriction T.galHom.ker).galHom_injective
+    (new.range_galHom_subgroupRestriction T.galHom.ker)
+    (CategoryTheory.ConcreteCategory.bijective_of_isIso
+      ((new.subgroupRestriction T.galHom.ker).repIso F).inv) n
+    fun i hi => have := hH i hi; ModuleCat.isZero_of_subsingleton _
+
+/-- **Inflation along a refinement of layers is injective** when the layer of the kernel has no
+cohomology below the degree. For a refinement `T : LayerRefinement old new`, the tower
+`F ⊆ K ⊆ L` with Galois groups `U/V` and `U/V'`, if `Hⁱ(V/V', A^{V'})` vanishes for `0 < i ≤ n`,
+then inflation `Hⁿ⁺¹(U/V, A^V) ⟶ Hⁿ⁺¹(U/V', A^{V'})` is injective. In degree two this needs only
+the vanishing of `H¹` on the layer `L/K`. -/
+theorem cohomologyInfl_injective (T : LayerRefinement old new) (F : Formation G) (n : ℕ)
+    (hH : ∀ i < n, Subsingleton ((new.subgroupLayer T.galHom.ker).H F (i + 1))) :
+    Function.Injective (T.cohomologyInfl F (n + 1)).hom := by
+  rw [cohomologyInfl_def]
+  exact groupCohomology.map_succ_injective_of_extension T.galHom_surjective
+    (injective_repHom T F) (range_repHom T F)
+    (new.subgroupRestriction T.galHom.ker).galHom_injective
+    (new.range_galHom_subgroupRestriction T.galHom.ker)
+    (CategoryTheory.ConcreteCategory.bijective_of_isIso
+      ((new.subgroupRestriction T.galHom.ker).repIso F).inv) n
     fun i hi => have := hH i hi; ModuleCat.isZero_of_subsingleton _
 
 /-- **Degree-two inflation-restriction.** For a refinement `T : LayerRefinement old new`, the tower

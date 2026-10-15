@@ -22,10 +22,11 @@ deviation has second moment `∫ ‖S k l - A k l‖² ≤ v`. Chebyshev's inequ
 
 On a probability space, every deterministic consequence of entrywise `η`-closeness therefore holds
 with probability at least `1 - card m * card n * v / η²`. For square matrices over `ℝ` or `ℂ` the
-entrywise-to-spectral comparisons of `TauCeti.Analysis.Matrix.Eigenvalues` and
-`TauCeti.Analysis.Matrix.EntrywiseOpNorm` turn this into simultaneous high-probability control of
-every sorted eigenvalue and of the Euclidean action of `S - A`, each up to the dimension factor
-`card n`.
+entrywise-to-spectral comparison of `TauCeti.Analysis.Matrix.Eigenvalues` turns this into
+simultaneous high-probability control of every sorted eigenvalue, up to the dimension factor
+`card n`. For rectangular matrices over `ℝ` or `ℂ` the entrywise-to-operator comparison of
+`TauCeti.Analysis.Matrix.EntrywiseOpNorm` bounds the operator norm of the Euclidean action of
+`S - A` by `√(card m) * η * √(card n)`, which is `card n * η` for square matrices.
 
 None of these bounds needs the entries to be measurable: Chebyshev's inequality only uses the
 integrability of the squared deviation, and `1 - μ sᶜ ≤ μ s` holds for every set. Measurability of
@@ -48,7 +49,10 @@ least `c / 2` for the empirical matrix.
   `1 - card m * card n * v / η²`, every consequence of entrywise `η`-closeness holds.
 * `TauCeti.one_sub_le_measure_forall_abs_eigenvalues₀_sub_le`: eigenvalue concentration.
 * `TauCeti.one_sub_le_measure_forall_eigenvalues₀_sub_le`: the one-sided eigenvalue floor.
-* `TauCeti.one_sub_le_measure_forall_norm_toEuclideanLin_sub_le`: operator concentration.
+* `TauCeti.one_sub_le_measure_forall_norm_toEuclideanLin_sub_le`: rectangular operator
+  concentration.
+* `TauCeti.one_sub_le_measure_forall_norm_toEuclideanLin_sub_le_square`: square operator
+  concentration.
 * `TauCeti.integral_sampleSecondMoment_apply_sub_sq_le`: the mean-square error of an entry of the
   empirical second-moment matrix.
 * `TauCeti.one_sub_le_measure_forall_half_le_eigenvalues₀_sampleSecondMoment`: the empirical
@@ -153,10 +157,28 @@ theorem one_sub_le_measure_forall_eigenvalues₀_sub_le (hS : ∀ ω, (S ω).IsH
   (one_sub_le_measure_forall_abs_eigenvalues₀_sub_le hS hA hint hmoment hη).trans <|
     measure_mono fun _ h k ↦ by linarith [(abs_le.1 (h k)).1]
 
-/-- **Operator concentration.** If every entrywise deviation of a random square matrix `S` from a
-fixed matrix `A` has second moment at most `v`, then with probability at least
-`1 - (card n)² v / η²` the Euclidean action of `S - A` has norm at most `card n * η`. -/
+/-- **Operator concentration for rectangular matrices.** If every entrywise deviation of a
+random `m × n` matrix `S` from a fixed matrix `A` has second moment at most `v`, then with
+probability at least `1 - card m * card n * v / η²` the Euclidean action of `S - A` has operator
+norm at most `√(card m) * η * √(card n)`, that is, `‖(S - A) x‖ ≤ √(card m) * η * √(card n) * ‖x‖`
+for every `x`. -/
 theorem one_sub_le_measure_forall_norm_toEuclideanLin_sub_le
+    {S : Ω → Matrix m n 𝕜} {A : Matrix m n 𝕜}
+    (hint : ∀ k l, Integrable (fun ω ↦ ‖S ω k l - A k l‖ ^ 2) μ)
+    (hmoment : ∀ k l, ∫ ω, ‖S ω k l - A k l‖ ^ 2 ∂μ ≤ v) (hη : 0 < η) :
+    1 - ENNReal.ofReal (Fintype.card m * Fintype.card n * v / η ^ 2) ≤
+      μ {ω | ∀ x : EuclideanSpace 𝕜 n,
+        ‖toEuclideanLin (S ω - A) x‖ ≤
+          √(Fintype.card m) * η * √(Fintype.card n) * ‖x‖} :=
+  one_sub_le_measure_of_entry_le hint hmoment hη fun ω h x ↦
+    norm_toEuclideanLin_le_of_entry_le (A := S ω - A) (fun k l ↦ by
+      simpa only [Matrix.sub_apply] using h k l) x
+
+/-- **Operator concentration for square matrices.** If every entrywise deviation of a random
+square matrix `S` from a fixed matrix `A` has second moment at most `v`, then with probability at
+least `1 - (card n)² v / η²` the Euclidean action of `S - A` has operator norm at most
+`card n * η`. -/
+theorem one_sub_le_measure_forall_norm_toEuclideanLin_sub_le_square
     (hint : ∀ k l, Integrable (fun ω ↦ ‖S ω k l - A k l‖ ^ 2) μ)
     (hmoment : ∀ k l, ∫ ω, ‖S ω k l - A k l‖ ^ 2 ∂μ ≤ v) (hη : 0 < η) :
     1 - ENNReal.ofReal (Fintype.card n ^ 2 * v / η ^ 2) ≤
