@@ -16,11 +16,8 @@ degree.  Adding an effective divisor of degree `d` to one of degree `e` gives an
 divisor of degree `d + e`; under the equivalence with Mathlib's symmetric powers, this is
 exactly `Sym.append`.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer C symmetric-power
-lane (`TauCetiRoadmap/JacobianChallenge/README.md`, "Relative effective Cartier divisors and
-symmetric powers `Symᵈ X`").  It supplies the additive compatibility between unordered
-collections of points and the effective-divisor model used by Abel-map statements.  No external
-mathematics is vendored.
+This file supplies the additive compatibility between unordered collections of points and the
+effective-divisor model. No external mathematics is vendored.
 -/
 
 public section

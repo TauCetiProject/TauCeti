@@ -38,6 +38,10 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   restrictions of the curve to the bases of two charts induced by a morphism of bases over `S`, a
   base change square (`isPullback_pullbackCarrierMap`); `projModelMap` is the same morphism between
   the projective models of the equations of the two charts.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.chartPoint` and
+  `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelPoint`: the sections of the restriction
+  of the curve to the base of a chart, and of the projective model of its equation, induced by a
+  section of the curve.
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas π zero`: a family of pointed Weierstrass
   charts whose images cover the base.
 * `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass π zero hzero`: every point of the base has an
@@ -432,6 +436,94 @@ theorem projModelZero_projModelMap : k.equation.projModelZero ≫ projModelMap h
 
 end Map
 
+/-! ### Sections on a chart -/
+
+section Point
+
+variable (c : PointedWeierstrassChart π zero) {P : S ⟶ X} (hP : P ≫ π = 𝟙 S)
+
+/-- The section of the restriction of `X` to the base of a chart `c` induced by a section `P` of
+`π`. -/
+noncomputable def chartPoint : c.base ⟶ c.pullbackCarrier :=
+  c.isPullback.lift (c.baseMap ≫ P) (𝟙 _) (by simp [hP])
+
+/-- The section `chartPoint` lies over the restriction of `P` to the base of the chart. -/
+@[reassoc (attr := simp)]
+theorem chartPoint_toTotal : c.chartPoint hP ≫ c.toTotal = c.baseMap ≫ P :=
+  IsPullback.lift_fst _ _ _ _
+
+/-- The morphism `chartPoint` is a section of the restriction of `π`. -/
+@[reassoc (attr := simp)]
+theorem chartPoint_toBase : c.chartPoint hP ≫ c.toBase = 𝟙 _ :=
+  IsPullback.lift_snd _ _ _ _
+
+/-- The section induced by `zero` on a chart is the section `pulledZero` of the chart. -/
+@[simp]
+theorem chartPoint_zero (hzero : zero ≫ π = 𝟙 S) : c.chartPoint hzero = c.pulledZero :=
+  c.isPullback.hom_ext (by simp) (by simp)
+
+/-- The section of the projective model of the equation of a chart `c` induced by a section `P` of
+`π`: the section `chartPoint` read through `Spec c.ring ≅ c.base` and the isomorphism `modelIso`
+with the projective model. -/
+noncomputable def modelPoint : Spec c.ring ⟶ c.equation.projModel :=
+  c.baseIso.inv ≫ c.chartPoint hP ≫ c.modelIso.hom
+
+/-- The model point is `chartPoint`, read through `baseIso` and `modelIso`. -/
+theorem modelPoint_def : c.modelPoint hP = c.baseIso.inv ≫ c.chartPoint hP ≫ c.modelIso.hom :=
+  (rfl)
+
+/-- Through the isomorphisms `baseIso` and `modelIso`, `modelPoint` is `chartPoint`. -/
+@[reassoc]
+theorem chartPoint_modelIso_hom :
+    c.chartPoint hP ≫ c.modelIso.hom = c.baseIso.hom ≫ c.modelPoint hP := by
+  simp [modelPoint]
+
+/-- The model point of a section is a section of the projective model. -/
+@[reassoc (attr := simp)]
+theorem modelPoint_projModelOver : c.modelPoint hP ≫ c.equation.projModelOver = 𝟙 _ := by
+  simp [modelPoint]
+
+/-- The model point of a section `P`, carried back to `X`, is the restriction of `P` to the base of
+the chart. -/
+@[reassoc (attr := simp)]
+theorem modelPoint_modelIso_inv_toTotal :
+    c.modelPoint hP ≫ c.modelIso.inv ≫ c.toTotal = (c.baseIso.inv ≫ c.baseMap) ≫ P := by
+  simp [modelPoint]
+
+/-- The zero section of the projective model, carried back to `X`, is the restriction of the
+section `zero` to the base of the chart. -/
+@[reassoc]
+theorem projModelZero_modelIso_inv_toTotal :
+    c.equation.projModelZero ≫ c.modelIso.inv ≫ c.toTotal =
+      (c.baseIso.inv ≫ c.baseMap) ≫ zero := by
+  rw [← cancel_epi c.baseIso.hom, ← c.modelIso_zero_assoc]
+  simp
+
+/-- The model point of the section `zero` is the zero section of the projective model. -/
+@[simp]
+theorem modelPoint_zero (hzero : zero ≫ π = 𝟙 S) :
+    c.modelPoint hzero = c.equation.projModelZero := by
+  simp [modelPoint, c.modelIso_zero]
+
+/-- The model point of a section `P` missing the section `zero` at every point misses the zero
+section of the projective model at every point. -/
+theorem modelPoint_apply_ne (h : ∀ s, P s ≠ zero s) (s : Spec c.ring) :
+    c.modelPoint hP s ≠ c.equation.projModelZero s := fun hs ↦
+  h ((c.baseIso.inv ≫ c.baseMap) s) (by
+    simpa only [← Scheme.Hom.comp_apply, modelPoint_modelIso_inv_toTotal,
+      projModelZero_modelIso_inv_toTotal] using congrArg (c.modelIso.inv ≫ c.toTotal) hs)
+
+variable {c} in
+/-- Model points are compatible with the morphisms `projModelMap` between charts. -/
+theorem modelPoint_projModelMap {k : PointedWeierstrassChart π zero} {h : k.base ⟶ c.base}
+    (hh : h ≫ c.baseMap = k.baseMap) :
+    k.modelPoint hP ≫ projModelMap hh = (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ c.modelPoint hP := by
+  have : k.chartPoint hP ≫ pullbackCarrierMap hh = h ≫ c.chartPoint hP :=
+    c.isPullback.hom_ext (by simp [reassoc_of% hh]) (by simp)
+  simp [modelPoint, reassoc_of% this]
+
+end Point
+
 end PointedWeierstrassChart
 
 /-- A morphism `π` with a section `zero` that admits a pointed Weierstrass atlas satisfies the
@@ -492,6 +584,19 @@ namespace EllipticCurveGeom
 theorem zero_comp_structureMap {S : Scheme.{u}} (E : EllipticCurveGeom S) :
     E.zero ≫ E.structureMap = 𝟙 S :=
   E.zero_comp
+
+/-- A point `x` of `E` with values in a scheme `Z` over `S` takes a value in the image of the zero
+section at a point `z` of `Z` exactly when it agrees there with the zero section over the image of
+`z` in `S`. -/
+theorem left_apply_mem_range_zero_iff {S : Scheme.{u}} {E : EllipticCurveGeom S} {Z : Over S}
+    (x : Z ⟶ Over.mk E.structureMap) (z : Z.left) :
+    x.left z ∈ Set.range E.zero ↔ x.left z = E.zero (Z.hom z) := by
+  refine ⟨fun ⟨s, hs⟩ ↦ ?_, fun h ↦ ⟨_, h.symm⟩⟩
+  have hx : E.structureMap (x.left z) = Z.hom z := by
+    rw [← Scheme.Hom.comp_apply]
+    simpa using congr($(Over.w x) z)
+  rw [← hx, ← hs, ← Scheme.Hom.comp_apply E.zero, zero_comp_structureMap]
+  rfl
 
 /-- An elliptic curve over `S` satisfies the local-model condition `IsLocallyWeierstrass` for its
 structure morphism and zero section: the pointwise form of the atlas condition `localModel`. -/

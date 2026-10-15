@@ -224,7 +224,7 @@ theorem affinePlaneBlowUpLowerPartialDiffeomorph_target (n : ℕ∞ω) :
 @[simp]
 theorem affinePlaneBlowUpUpperPartialDiffeomorph_apply (n : ℕ∞ω) (z : ℂ × ℂ) :
     affinePlaneBlowUpUpperPartialDiffeomorph n z = affinePlaneBlowUpUpperChart z := by
-  rw [affinePlaneBlowUpUpperChart_eq_analyticAffineChartι]
+  rw [affinePlaneBlowUpUpperChart_def]
   simp [affinePlaneBlowUpUpperPartialDiffeomorph, upperPointDiffeomorph,
     PartialDiffeomorph.trans_toPartialEquiv, Diffeomorph.toPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.trans_apply]
@@ -234,7 +234,7 @@ theorem affinePlaneBlowUpUpperPartialDiffeomorph_apply (n : ℕ∞ω) (z : ℂ �
 @[simp]
 theorem affinePlaneBlowUpLowerPartialDiffeomorph_apply (n : ℕ∞ω) (z : ℂ × ℂ) :
     affinePlaneBlowUpLowerPartialDiffeomorph n z = affinePlaneBlowUpLowerChart z := by
-  rw [affinePlaneBlowUpLowerChart_eq_analyticAffineChartι]
+  rw [affinePlaneBlowUpLowerChart_def]
   simp [affinePlaneBlowUpLowerPartialDiffeomorph, lowerPointDiffeomorph,
     PartialDiffeomorph.trans_toPartialEquiv, Diffeomorph.toPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.trans_apply]
@@ -292,8 +292,8 @@ theorem affinePlaneBlowUpPartialDiffeomorph_target_cover (n : ℕ∞ω) :
   rcases exists_affinePlaneBlowUpUpperChart_eq_or_exists_affinePlaneBlowUpLowerChart_eq x with
     ⟨z, hz⟩ | ⟨z, hz⟩
   · exact Or.inl ⟨affinePlaneBlowUpUpperPointHomeomorph.symm z,
-      affinePlaneBlowUpUpperChart_eq_analyticAffineChartι z ▸ hz⟩
+      affinePlaneBlowUpUpperChart_def z ▸ hz⟩
   · exact Or.inr ⟨affinePlaneBlowUpLowerPointHomeomorph.symm z,
-      affinePlaneBlowUpLowerChart_eq_analyticAffineChartι z ▸ hz⟩
+      affinePlaneBlowUpLowerChart_def z ▸ hz⟩
 
 end TauCeti.Toric

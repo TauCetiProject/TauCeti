@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Torsion
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Bilinear
 import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
@@ -53,18 +54,11 @@ theorem det_eq_of_weilPairing_eq_smul
     {f : Module.End (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ))} {d : ZMod N}
     (hf : ∀ S T, weilPairing W N hN (f S) (f T) = d • weilPairing W N hN S T) :
     LinearMap.det f = d := by
-  -- the Weil pairing, read as a `ZMod N`-bilinear form
-  let ω := LinearMap.mk₂ (ZMod N)
-    (fun S T : AddSubgroup.torsionBy W.Point (N : ℤ) ↦ weilPairing W N hN S T) (fun _ _ _ ↦ by simp)
-      -- `ZMod N`-linearity in `S` is that of the additive map `e(·, T)`
-      (fun c S T ↦ (AddMonoidHom.flip_apply _ _ _).symm.trans <|
-        (ZMod.map_smul _ c S).trans (congrArg _ (AddMonoidHom.flip_apply _ _ _)))
-      (fun _ _ _ ↦ map_add _ _ _) (fun c S T ↦ ZMod.map_smul (weilPairing W N hN S) c T)
   obtain ⟨b⟩ := WeierstrassCurve.nonempty_basis_torsionBy W N hN
   refine LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft b
-    (ω := ω) (fun S ↦ weilPairing_self W N hN S) (fun S hS ↦ weilPairing_nondegenerate W N hN hS)
+    (isAlt_weilPairingBilin W N hN) (separatingLeft_weilPairingBilin W N hN)
     (LinearMap.ext₂ fun S T ↦ ?_)
-  simp [ω, hf]
+  simp [hf]
 
 namespace Hom
 

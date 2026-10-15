@@ -43,7 +43,6 @@ on:
       - 'scripts/ci_daily_graphs.py'
       - 'scripts/generated_assets.py'
       - 'scripts/roadmap_progress.py'
-      - 'scripts/roadmap_topics.json'
       - 'scripts/roadmap_coverage.json'
       - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'
@@ -319,14 +318,25 @@ jobs:
             "${data_arg[@]}" \
             --out web/static_files/progress.json \
           || {
-            echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
             echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+            # What is in static_files now is the last published snapshot, restored from the cache
+            # above. Keep it only if it validates in the current topic scheme: one from before the switch
+            # to arXiv categories carries the old hand-assigned topics, and the board would show
+            # them under its "by arXiv category" label. Otherwise publish the committed fallback.
+            # The cache also restores front-end files; validate with this commit's board code.
+            git checkout -- web/static_files/progress.js
+            if python3 scripts/roadmap_progress.py --check-snapshot web/static_files/progress.json; then
+              echo "::warning::roadmap progress generation failed; keeping the last published JSON"
+            else
+              git checkout -- web/static_files/progress.json
+              echo "::warning::roadmap progress generation failed, and the cached JSON could not be validated in the current topic scheme; publishing the committed fallback"
+            fi
           }
 
       # TauCetiCI records every Actions run in the organisation and publishes a SQLite database
-      # daily; the CI page's fleet timelines are drawn from it. The release is public, so the
+      # after collection; the CI charts use independent source coverage. The release is public, so the
       # download needs no credentials beyond the token gh wants to have.
-      - name: Regenerate the CI fleet charts into static_files
+      - name: Regenerate the CI charts into static_files
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -334,8 +344,8 @@ jobs:
           python3 scripts/ci_stats_graphs.py --download --db "$RUNNER_TEMP/ci.sqlite" \
             --out-dir web/static_files \
           || {
-            echo "::warning::CI chart generation failed; keeping the last published SVGs"
-            echo "CI fleet charts" >> "$RUNNER_TEMP/data-failures"
+            echo "::warning::Some CI chart groups are stale or failed; dated daily charts refresh through their coverage, other stale groups retain their previous SVGs; see static/ci-freshness.json for errors"
+            echo "CI chart groups (see static/ci-freshness.json)" >> "$RUNNER_TEMP/data-failures"
           }
 
       # Every background generator is marked done once it has exited, killed by its timeout at

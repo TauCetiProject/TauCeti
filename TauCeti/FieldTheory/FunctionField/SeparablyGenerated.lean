@@ -17,6 +17,18 @@ needed for the differential calculus of an algebraic function field in arbitrary
 while keeping the more general results over imperfect fields stated with an explicit separating
 element.
 
+Over an imperfect field a separating element need not exist. An element of `F` outside `k` with a
+`p`-power in `k`, such as `t^{1/p}` in `𝔽_p(t^{1/p})(X)` over `𝔽_p(t)`, would be both separable
+and purely inseparable over `k(x)` for a separating `x`, hence a constant of `k(x)`, which it is
+not.
+
+## Main results
+
+* `TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_of_perfectField`: a
+  function field over a perfect field has a separating element.
+* `TauCeti.not_isSeparable_adjoin_of_pow_mem`: an element outside `k` with a power
+  `α ^ q ^ n` in `k` rules out every separating element.
+
 ## Reference
 
 H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Proposition 3.10.2 and
@@ -48,5 +60,6 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_perfectField [PerfectFie
   exact TauCeti.exists_transcendental_and_isSeparable_adjoin_of_perfectField hF.trdeg_eq_one
 
 end IsFunctionField
+
 
 end TauCeti
