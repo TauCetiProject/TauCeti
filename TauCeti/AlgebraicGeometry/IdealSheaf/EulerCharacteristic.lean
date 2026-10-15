@@ -119,7 +119,7 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
       eulerCharBelow k X (SheafOfModules.unit X.ringCatSheaf) 2 := by
     rw [InvertibleSheaf.trivial_obj]
     exact eulerCharBelow_congr k e 2
-  have h₃ := Scheme.Hom.eulerCharBelow_pushforward_structureSheaf I.subschemeι k s
+  have h₃ := Scheme.Hom.eulerCharBelow_pushforward_structureSheaf I.subschemeι k s 1
   -- `V(I)` lies over `k` through `X`, so its rank is that of `V(I) ⟶ X ⟶ Spec k`.
   rw [comp_over I.subschemeι (Spec (.of k))]
   linarith

@@ -152,16 +152,23 @@ theorem eulerCharBelow_pushforward (M : X.Modules) (n : ℕ) :
   | succ n ih => simp only [eulerCharBelow_succ, finrank_cohomology_pushforward, ih]
 
 /-- The Euler characteristic of the direct image of the structure sheaf of a scheme finite over
-`k` is its rank over `k`. Here the Euler characteristic is truncated at degree two; all positive
-cohomology of the finite scheme vanishes. -/
+`k` is its rank over `k`. Here the Euler characteristic may be truncated at any positive degree
+`n + 1`, since all positive cohomology of the finite scheme vanishes. -/
 theorem eulerCharBelow_pushforward_structureSheaf [IsFinite (X ↘ Spec (.of k))]
-    (s : Spec (.of k)) :
-    eulerCharBelow k Y ((pushforward f).obj (SheafOfModules.unit X.ringCatSheaf)) 2 =
+    (s : Spec (.of k)) (n : ℕ) :
+    eulerCharBelow k Y ((pushforward f).obj (SheafOfModules.unit X.ringCatSheaf)) (n + 1) =
       (X ↘ Spec (.of k)).finrank s := by
   let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
-  have := subsingleton_cohomology_succ_of_isFinite k M 0
-  refine (eulerCharBelow_pushforward f k M 2).trans ?_
-  rw [eulerCharBelow_two, Module.finrank_zero_of_subsingleton (M := Cohomology M 1),
+  -- Truncating above degree zero only adds the vanishing positive-degree terms.
+  have hM : eulerCharBelow k X M (n + 1) = eulerCharBelow k X M 1 := by
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      have := subsingleton_cohomology_succ_of_isFinite k M n
+      rw [eulerCharBelow_succ, ih, Module.finrank_zero_of_subsingleton (M := Cohomology M (n + 1)),
+        Nat.cast_zero, mul_zero, add_zero]
+  refine (eulerCharBelow_pushforward f k M (n + 1)).trans ?_
+  rw [hM, eulerCharBelow_succ, eulerCharBelow_zero, pow_zero, one_mul, zero_add,
     finrank_cohomology_zero_eq_finrank_globalSections]
   let _ : Algebra k Γ(X, ⊤) := (baseRingToGlobalSections k X).toAlgebra
   have h : algebraMap k Γ(X, ⊤) =

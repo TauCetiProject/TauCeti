@@ -179,8 +179,8 @@ lemma abelJacobiMapOfDegreeToPicZero_app_apply_val (d : ℕ) {T : (Over S)ᵒᵖ
   have h := ConcreteCategory.congr_hom
     (NatTrans.congr_app (abelJacobiMapOfDegreeToPicZero_ι f hx₀ d) T) D
   rw [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
-  change (ConcreteCategory.hom (C := Type (u + 1))
-    ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T) D).1 = _ at h
+  -- `Subfunctor.ι` sends a section to its underlying value, so its application in `h` is
+  -- definitionally the subtype projection `.1` of the claim.
   exact h
 
 /-- **The Abel–Jacobi map into `Pic⁰_{X/S}`**: the natural transformation from the functor of
@@ -215,8 +215,8 @@ lemma abelJacobiMapToPicZero_app_apply_val {T : (Over S)ᵒᵖ}
   have h := ConcreteCategory.congr_hom
     (NatTrans.congr_app (abelJacobiMapToPicZero_ι f hx₀) T) x
   rw [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
-  change (ConcreteCategory.hom (C := Type (u + 1))
-    ((abelJacobiMapToPicZero f hx₀).app T) x).1 = _ at h
+  -- `Subfunctor.ι` sends a section to its underlying value, so its application in `h` is
+  -- definitionally the subtype projection `.1` of the claim.
   exact h
 
 end
