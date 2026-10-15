@@ -266,10 +266,10 @@ theorem lazardEval_add_of_lazardValuation_lt {p q : MvPolynomial (Fin n) S} {a :
     (h : p.lazardValuation a < q.lazardValuation a) :
     (p + q).lazardEval a = p.lazardEval a := by
   have hp : p ≠ 0 := by simpa using h.ne_top
-  rw [← coeff_taylor_lazardExponent, lazardExponent_add_of_lazardValuation_lt h, map_add,
-    AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_taylor_lazardExponent,
-    coeff_taylor_eq_zero_of_lt_lazardValuation (by rwa [← lazardValuation_eq_lazardExponent hp]),
-    add_zero]
+  have hq : (taylor a q).coeff (p.lazardExponent a) = 0 :=
+    coeff_taylor_eq_zero_of_lt_lazardValuation (by rwa [← lazardValuation_eq_lazardExponent hp])
+  rw [← coeff_taylor_lazardExponent, lazardExponent_add_of_lazardValuation_lt h]
+  simp [hq, coeff_taylor_lazardExponent]
 
 /-- Lazard evaluation removes exactly one power of `Xᵢ - aᵢ` from `Xᵢ - aᵢ`. -/
 @[simp]

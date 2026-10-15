@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
+import TauCeti.Algebra.Polynomial.LinearFactor
 
 /-!
 # A nullified polynomial with a nonzero Lazard evaluation
@@ -145,12 +146,6 @@ theorem lazardExponent_optionEquivRight_rename_lazardNullifiedExample {x : Fin 3
   rw [lazardValuation_eq_lazardExponent hne] at hv
   exact toLex.injective (WithTop.coe_injective hv)
 
-/-- The root multiplicity of `t` in `z + 1` is one at `t = -1` and zero elsewhere. -/
-private theorem rootMultiplicity_X_add_one (t : ℝ) :
-    (Polynomial.X + 1 : Polynomial ℝ).rootMultiplicity t = if t = -1 then 1 else 0 := by
-  rw [show (Polynomial.X + 1 : Polynomial ℝ) = Polynomial.X - Polynomial.C (-1) by simp,
-    Polynomial.rootMultiplicity_X_sub_C, eq_comm]
-
 /-- **The Lazard delineation of a nullified polynomial.** Over the line `x₀ = x₁ = 0`, where all
 ordinary fibres of `x₁ (z + 1) + x₀ x₂` vanish, the polynomial has the Lazard delineation with
 the single constant section `z = -1`, of multiplicity one, and removed base exponent
@@ -169,7 +164,7 @@ noncomputable def lazardDelineationNullifiedExample :
   multiplicity _ _ := 1
   rootMultiplicity_root _ _ x := by
     rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.2.1 x.2.2,
-      rootMultiplicity_X_add_one]
+      ← Polynomial.C_1, Polynomial.rootMultiplicity_X_add_C]
     simp
   exists_root_eq _ x _ t ht := by
     rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.2.1 x.2.2] at ht
@@ -209,6 +204,7 @@ theorem lazardValuation_lazardNullifiedExample_snoc {x : Fin 3 → ℝ} (h0 : x 
       ↑(toLex (Finsupp.snoc (Finsupp.single (1 : Fin 3) 1) (if t = -1 then 1 else 0))) := by
   rw [lazardValuation_snoc lazardNullifiedExample_ne_zero,
     lazardExponent_optionEquivRight_rename_lazardNullifiedExample h0 h1,
-    lazardEval_optionEquivRight_rename_lazardNullifiedExample h0 h1, rootMultiplicity_X_add_one]
+    lazardEval_optionEquivRight_rename_lazardNullifiedExample h0 h1, ← Polynomial.C_1,
+    Polynomial.rootMultiplicity_X_add_C]
 
 end TauCeti

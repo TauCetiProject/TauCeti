@@ -41,6 +41,8 @@ that does not vanish at the root.
   cofactor nonzero at `x`.
 * `Polynomial.rootMultiplicity_add_eq_left_of_dvd`: adding a multiple of a higher power of
   `X - C x` leaves the root multiplicity at `x` unchanged.
+* `Polynomial.rootMultiplicity_X_add_C`: the root multiplicity of `t` in `X + C a` is one at
+  `t = -a` and zero elsewhere.
 
 ## Provenance
 
@@ -100,6 +102,12 @@ theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [Ring A] {p q : A[X]} {a
     exact pow_rootMultiplicity_not_dvd hp a (by simpa using dvd_sub h hq)
   · apply (le_rootMultiplicity_iff hpq).mpr
     exact dvd_add (pow_rootMultiplicity_dvd p a) ((pow_dvd_pow _ (Nat.le_succ _)).trans hq)
+
+/-- The root multiplicity of `t` in the linear polynomial `X + C a` is one at `t = -a` and zero
+elsewhere. -/
+theorem rootMultiplicity_X_add_C {A : Type*} [CommRing A] [Nontrivial A] [DecidableEq A]
+    (a t : A) : (X + C a).rootMultiplicity t = if t = -a then 1 else 0 := by
+  rw [← sub_neg_eq_add, ← C_neg, rootMultiplicity_X_sub_C]
 
 /-- A polynomial of degree at most one has constant nonzero sign on an interval without a root. -/
 theorem eval_mul_pos_of_natDegree_le_one_of_no_roots {R : Type*} [Field R] [LinearOrder R]
