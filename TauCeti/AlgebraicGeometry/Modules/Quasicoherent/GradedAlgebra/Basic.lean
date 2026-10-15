@@ -313,9 +313,7 @@ variable (M : ℕ → X.Modules) [∀ n, (M n).IsQuasicoherent] (one : 𝟙_ X.M
 /-- The graded quasicoherent algebra with quasicoherent homogeneous components `M n`, unit
 `one : 𝒪_X ⟶ M 0` and homogeneous multiplications `mul i j : M i ⊗ M j ⟶ M (i + j)`, which are
 required to be unital, associative and commutative up to the identifications of degrees. -/
--- The body is exposed so that the components of `ofHomogeneous` are definitionally `M`, as the
--- statements of `mul_ofHomogeneous` and `one_ofHomogeneous` require.
-@[expose] def ofHomogeneous : GradedQuasicoherentAlgebra X :=
+def ofHomogeneous : GradedQuasicoherentAlgebra X :=
   letI := GradedObject.monObjOfHomogeneous M one mul one_mul mul_one mul_assoc
   haveI := GradedObject.isCommMonObj_monObjOfHomogeneous M one mul one_mul mul_one mul_assoc
     mul_comm
@@ -327,17 +325,24 @@ theorem ofHomogeneous_obj_X :
     (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.X = M :=
   (rfl)
 
-/-- The homogeneous multiplication of `ofHomogeneous` is the given one. -/
+/-- The homogeneous multiplication of `ofHomogeneous` is the given one, up to the
+identification `ofHomogeneous_obj_X` of its components with `M`. -/
 @[simp]
 theorem mul_ofHomogeneous (i j : ℕ) :
-    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).mul i j = mul i j :=
+    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).mul i j =
+      eqToHom (by rw [ofHomogeneous_obj_X]) ≫ mul i j ≫
+        eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
+          (i + j)).symm :=
   (GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous M mul i j (i + j) rfl).trans
     (Category.comp_id _)
 
-/-- The unit of `ofHomogeneous` is the given one. -/
+/-- The unit of `ofHomogeneous` is the given one, up to the identification
+`ofHomogeneous_obj_X` of its degree-zero component with `M 0`. -/
 @[simp]
 theorem one_ofHomogeneous :
-    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).one = one :=
+    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).one =
+      one ≫ eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
+        0).symm :=
   (congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
     (GradedObject.Monoidal.oneOfDegreeZero_zero M one)).trans (Iso.inv_hom_id_assoc _ _)
 
