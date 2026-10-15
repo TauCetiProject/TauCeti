@@ -70,7 +70,7 @@ def pathFromBase (y : FundamentalGroupoid X) : FundamentalGroupoid.mk x ⟶ y :=
 theorem pathFromBase_mk : pathFromBase x (FundamentalGroupoid.mk x) = 𝟙 _ :=
   IsIso.inv_hom_id _
 
-variable {R : Type u} [CommRing R] {V : Type w} [AddCommGroup V] [Module R V]
+variable {R : Type u} [Ring R] {V : Type w} [AddCommGroup V] [Module R V]
 
 /-- **The local system of a representation of the fundamental group**: on a path-connected space,
 every fiber is `V`, and a path class from `y` to `z` acts by `ρ` of the loop at `x` closed up by
