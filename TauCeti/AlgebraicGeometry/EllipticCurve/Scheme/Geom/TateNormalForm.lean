@@ -54,6 +54,7 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
 
 ## References
 
+* D. Loeffler, *Modular Curves*, lecture notes, §3.3, for Tate normal form and `Y₁(N)`.
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], Exercise 8.13.
 * D. S. Kubert, *Universal bounds on the torsion of elliptic curves*, Proc. London Math. Soc. (3)
   33 (1976), 193–237.
