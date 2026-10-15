@@ -198,8 +198,8 @@ prime of `R`. The extension need not be integral, and `R` need not be Dedekind. 
 instance finite_liesOver [IsDedekindDomain B] (v : HeightOneSpectrum R) :
     Finite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} := by
   have h := Ideal.finite_factors (Ideal.map_ne_bot_of_ne_bot (S := B) v.ne_bot)
-  exact (h.subset fun w hw ↦ Ideal.dvd_iff_le.mpr
-    (Ideal.map_le_iff_le_comap.mpr (le_of_eq hw.over))).to_subtype
+  exact (h.subset (t := {w : HeightOneSpectrum B | w.asIdeal.LiesOver v.asIdeal}) fun w hw ↦
+    Ideal.dvd_iff_le.mpr (Ideal.map_le_iff_le_comap.mpr (le_of_eq hw.over))).to_subtype
 
 end
 

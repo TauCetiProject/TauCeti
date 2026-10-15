@@ -13,6 +13,7 @@ import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Topology.Algebra.Group.Units
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # No small subgroups in the units of a normed ring

@@ -424,8 +424,9 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   have hK : 0 < K := by
     have : 0 < (n : ℝ)⁻¹ - δ := sub_pos.2 hδn
     have : 0 < 1 - δ := by linarith
-    have := ENNReal.toReal_pos (Metric.measure_ball_pos mu
-      (0 : EuclideanSpace ℝ ι) one_pos).ne' measure_ball_lt_top.ne
+    have : 0 < mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1) :=
+      ENNReal.toReal_pos (Metric.measure_ball_pos mu
+        (0 : EuclideanSpace ℝ ι) one_pos).ne' measure_ball_lt_top.ne
     positivity
   set E : ℝ := ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)
   refine ⟨2 ^ E * K ^ 2, by positivity, fun {Omega a c lam Lam gamma f u k} hk hOmega h ha hc

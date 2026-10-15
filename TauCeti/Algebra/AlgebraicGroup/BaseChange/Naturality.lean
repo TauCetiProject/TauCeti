@@ -111,7 +111,6 @@ lemma _root_.BialgHom.baseChangePointsMulEquiv_mapDomain (φ : A →ₐc[k] B)
   simp [BialgHom.mapDomain_apply]
 
 /-- Pointwise form of `BialgHom.baseChangePointsMulEquiv_mapDomain` on pure tensors. -/
-@[simp]
 lemma _root_.BialgHom.baseChangePointsMulEquiv_mapDomain_apply_tmul (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) (s : K) (a : A) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
@@ -135,7 +134,6 @@ lemma _root_.BialgHom.baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k]
     _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
 
 /-- Pointwise form of `BialgHom.baseChangePointsMulEquiv_symm_mapDomain`. -/
-@[simp]
 lemma _root_.BialgHom.baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) (a : A) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
