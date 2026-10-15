@@ -40,7 +40,6 @@ variable (p : ℕ) [Fact p.Prime] {G ι : Type} [Group G] [Finite G]
 
 /-- Explicit second cohomology of the pro-`p` relation group, with the presented group's
 conjugation action, is second cohomology of its integral relation-module representation. -/
-@[expose]
 def explicitH2EquivRelationModule :
     letI := presentationClassModuleAction p (g := g)
       (by rw [hg, Subgroup.coe_top]; exact dense_univ)
@@ -65,6 +64,36 @@ def explicitH2EquivRelationModule :
       change abelianizationProPEquivRelationModule p hg (t • x) =
         MonoidAlgebra.single t (1 : ℤ_[p]) • abelianizationProPEquivRelationModule p hg x
       exact abelianizationProPEquivRelationModule_presentation_smul p hg t x)
+
+/-- The relation-module comparison is the generic comparison in any equal coefficient
+coordinates. This characterization keeps its construction opaque to consumers. -/
+theorem explicitH2EquivRelationModule_eq_explicitH2AddEquivGroupCohomology (p : ℕ) [Fact p.Prime]
+    {G ι : Type} [Group G] [Finite G] [TopologicalSpace G] [DiscreteTopology G]
+    [Fintype ι] [DecidableEq ι] {g : ι → G} (hg : Subgroup.closure (Set.range g) = ⊤) :
+    letI := freeProfiniteGroup.presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
+    letI := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
+    let B : Rep ℤ_[p] G := ofModuleMonoidAlgebra.obj
+      (ModuleCat.of (MonoidAlgebra ℤ_[p] G) (MonoidAlgebra.relationModule ℤ_[p] G g))
+    ∀ (ψ : Additive (abelianizationProP p (freeProfiniteGroup ι)
+        (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* G).ker) ≃+ B)
+      (hψ : ∀ t x, ψ (t • x) = B.ρ t (ψ x)),
+      ψ = (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg).trans
+        (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] G)
+          (MonoidAlgebra.relationModule ℤ_[p] G g)).symm →
+      freeProfiniteGroup.explicitH2EquivRelationModule p hg =
+        explicitH2AddEquivGroupCohomology (.refl G) ψ hψ := by
+  have hd : Dense (Subgroup.closure (Set.range g) : Set G) := by
+    rw [hg, Subgroup.coe_top]
+    exact dense_univ
+  let := freeProfiniteGroup.presentationClassModuleAction p hd
+  let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
+  dsimp only
+  intro ψ hψ heq
+  subst ψ
+  dsimp only [freeProfiniteGroup.explicitH2EquivRelationModule]
+  rfl
 
 /-- The comparison sends a cocycle class to that same cocycle in Lyndon's coordinates. -/
 theorem explicitH2EquivRelationModule_mk :

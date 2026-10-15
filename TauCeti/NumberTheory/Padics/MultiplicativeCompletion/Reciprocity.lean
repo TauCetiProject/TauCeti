@@ -260,11 +260,27 @@ theorem padicCompletionUnitsEquivAbelianizationProP_galois_smul
   rw [quotientGaloisSubgroupEquiv_mk, galoisClassModuleAction_restrict_smul]
   exact padicCompletionUnitsEquivAbelianizationProP_smul p K L j s z
 
+/-- Inverse reciprocity carries the arithmetic class-module action to the action on units. -/
+theorem padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul
+    (j : L →ₐ[K] SeparableClosure K) (t : L ≃ₐ[K] L)
+    (x : abelianizationProP p (AbsoluteGaloisGroup K) (galoisSubgroup K L j).toSubgroup)
+    [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+    [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] :
+    let := galoisClassModuleAction p K L j
+    (padicCompletionUnitsEquivAbelianizationProP p K L j).symm (t • x) =
+      padicCompletionUnitsAut p L K t
+        ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm x) := by
+  dsimp only
+  let := galoisClassModuleAction p K L j
+  let e := padicCompletionUnitsEquivAbelianizationProP p K L j
+  have h := padicCompletionUnitsEquivAbelianizationProP_galois_smul p K L j t (e.symm x)
+  rw [e.apply_symm_apply] at h
+  exact e.injective ((e.apply_symm_apply _).trans h.symm)
+
 open CategoryTheory ContCohomology _root_.Rep in
 /-- Explicit second cohomology of the arithmetic pro-`p` class module, with the finite
 Galois group's conjugation action, is second cohomology of the completed-units representation.
 The comparison reads coefficient values through the inverse of local reciprocity. -/
-@[expose]
 def explicitH2EquivPadicCompletionUnits
     (j : L →ₐ[K] SeparableClosure K)
     [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
@@ -290,10 +306,37 @@ def explicitH2EquivPadicCompletionUnits
       change Additive.ofMul (e.symm (t • x.toMul)) =
         MonoidAlgebra.single t (1 : ℤ_[p]) • Additive.ofMul (e.symm x.toMul)
       rw [padicCompletionUnits_single_smul, one_smul]
-      have h := padicCompletionUnitsEquivAbelianizationProP_galois_smul p K L j t
-        (e.symm x.toMul)
-      rw [e.apply_symm_apply] at h
-      exact congrArg Additive.ofMul (e.injective ((e.apply_symm_apply _).trans h.symm)))
+      exact congrArg Additive.ofMul
+        (padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul p K L j t x.toMul))
+
+open Additive CategoryTheory ContCohomology _root_.Rep in
+/-- The arithmetic comparison is the generic comparison in any equal inverse-reciprocity
+coordinates. This characterization keeps its construction opaque to consumers. -/
+theorem explicitH2EquivPadicCompletionUnits_eq_explicitH2AddEquivGroupCohomology
+    (p : ℕ) [Fact p.Prime]
+    (K L : Type) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [Normal K L]
+    [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
+    [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+    [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] (j : L →ₐ[K] SeparableClosure K) :
+    letI := galoisClassModuleAction p K L j
+    letI := continuousSMul_galoisClassModuleAction p K L j
+    let C : Rep ℤ_[p] (L ≃ₐ[K] L) := ofModuleMonoidAlgebra.obj
+      (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (Additive ↑(padicCompletionUnits p L)))
+    ∀ (χ : Additive (abelianizationProP p (AbsoluteGaloisGroup K)
+        (galoisSubgroup K L j).toSubgroup) ≃+ C)
+      (hχ : ∀ t x, χ (t • x) = C.ρ t (χ x)),
+      χ = (padicCompletionUnitsEquivAbelianizationProP p K L j).symm.toMulEquiv.toAdditive.trans
+        (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+          (Additive ↑(padicCompletionUnits p L))).symm →
+      explicitH2EquivPadicCompletionUnits p K L j =
+        explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ := by
+  let := galoisClassModuleAction p K L j
+  let := continuousSMul_galoisClassModuleAction p K L j
+  dsimp only
+  intro χ hχ heq
+  subst χ
+  dsimp only [explicitH2EquivPadicCompletionUnits]
+  rfl
 
 open CategoryTheory ContCohomology _root_.Rep in
 /-- The arithmetic second-cohomology comparison sends a cocycle class to the cocycle
