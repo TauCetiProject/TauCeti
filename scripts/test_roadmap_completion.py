@@ -10,7 +10,6 @@ import subprocess
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
-from html.parser import HTMLParser
 
 import roadmap_completion as completion
 import roadmap_progress as progress
@@ -154,7 +153,7 @@ class Presentation(unittest.TestCase):
             path = pathlib.Path(directory) / "forecast.html"
             completion.render_forecasts(data, path)
             content = path.read_text()
-        HTMLParser().feed(content)
+        ET.fromstring(content.split("\n", 1)[1])
         self.assertIn("286", content)
         self.assertIn("About 1 month", content)
         self.assertIn("About 2 months", content)
@@ -252,7 +251,7 @@ class GitHistory(unittest.TestCase):
         self.assertEqual(saved, payload)
         self.assertEqual(saved["history"][-1]["completed_layers"], 1)
         self.assertEqual(len(list(out.glob("*.svg"))), 2)
-        HTMLParser().feed((out / "roadmap-exhaustion.html").read_text())
+        ET.fromstring((out / "roadmap-exhaustion.html").read_text().split("\n", 1)[1])
         self.assertEqual({path.name for path in out.iterdir()}, set(completion.ASSET_NAMES))
 
     def test_cached_loc_data_fixes_the_cutoff_across_midnight(self):

@@ -27,7 +27,7 @@ import tempfile
 
 import loc_graph
 import roadmap_progress as progress
-from chart_style import MUTED, PALETTE, base_css, card_rect
+from chart_style import BAR_BG, BG, FONT_FAMILY, MUTED, PALETTE, PANEL, TEXT, base_css, card_rect
 
 ASSET_NAMES = ("loc-roadmap.svg", "roadmap-layers.svg", "roadmap-exhaustion.html",
                "roadmap-completion.json")
@@ -335,21 +335,21 @@ def render_forecasts(data, out):
 <title>How long until we run out of roadmap work?</title>
 <style>
 * {{ box-sizing: border-box; }}
-body {{ margin: 0; color: #eef2fb; font: 17px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif; }}
-section {{ min-height: 100vh; background: #101936; border: 1px solid #1b2547; border-radius: 12px; padding: 24px; }}
+body {{ margin: 0; color: {TEXT}; font: 17px/1.5 {FONT_FAMILY}; }}
+section {{ min-height: 100vh; background: {BG}; border: 1px solid {PANEL}; border-radius: 12px; padding: 24px; }}
 h1 {{ font-size: 26px; line-height: 1.25; margin: 0 0 12px; }}
 p {{ margin: 8px 0; }}
-.date, .note {{ color: #9aa6c9; font-size: 15px; }}
+.date, .note {{ color: {MUTED}; font-size: 15px; }}
 table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-th, td {{ border-top: 1px solid #27335a; padding: 18px 0; text-align: left; }}
+th, td {{ border-top: 1px solid {BAR_BG}; padding: 18px 0; text-align: left; }}
 th {{ font-weight: 400; width: 65%; padding-right: 24px; }}
-td {{ color: #5eead4; font-size: 24px; font-weight: 600; }}
-.unavailable {{ color: #9aa6c9; font-size: 17px; font-weight: 400; }}
+td {{ color: {PALETTE[0]}; font-size: 24px; font-weight: 600; }}
+.unavailable {{ color: {MUTED}; font-size: 17px; font-weight: 400; }}
 @media (max-width: 600px) {{
   section {{ padding: 20px; }}
   h1 {{ font-size: 24px; }}
   table, tbody, tr, th, td {{ display: block; width: 100%; }}
-  tr {{ border-top: 1px solid #27335a; padding: 16px 0; }}
+  tr {{ border-top: 1px solid {BAR_BG}; padding: 16px 0; }}
   th, td {{ border: 0; padding: 0; }}
   td {{ margin-top: 6px; }}
 }}
@@ -359,7 +359,7 @@ td {{ color: #5eead4; font-size: 24px; font-weight: 600; }}
 <section aria-labelledby="question">
 <h1 id="question">How long until we run out of roadmap work?</h1>
 <p><strong>{estimate['backlog']:,}</strong> {'layer is' if estimate['backlog'] == 1 else 'layers are'} not yet recorded complete.</p>
-<p class="date">Recent pace: seven complete days through {html.escape(data['last_full_day'])}.</p>
+<p class="date">Pace measured over the seven complete days through {html.escape(data['last_full_day'])}.</p>
 <table aria-label="Two scenarios for the remaining roadmap layers">
 <tbody>{rows}</tbody>
 </table>
