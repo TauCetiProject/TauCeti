@@ -35,9 +35,6 @@ from the polygon.
   and relations of the polygon.
 * `ConvexPolygon.SidePairing.ker_lift_eq_normalClosure_macbeathRels`: the same statement as an
   equality of subgroups of the free group on the generators.
-* `ConvexPolygon.SidePairing.mem_macbeathGenerators_iff`: with disjoint translated interiors, the
-  Macbeath generators are the identity, the side-pairing maps, and the inverse partial cycle
-  products at the finite vertices.
 
 ## References
 
@@ -86,21 +83,5 @@ theorem ker_lift_eq_normalClosure_macbeathRels (hmap : ∀ i, σ.map i ∈ Γ)
   obtain ⟨hlf', hcover⟩ := σ.locallyFinite_and_iUnion_eq_univ hmap hlf
   exact ker_lift_eq_normalClosure_macbeathRels_of_locallyFinite P.isClosed_carrier
     P.isPathConnected_carrier hlf' hcover
-
-/-- **The Macbeath generators of a fundamental polygon.** If `Γ` contains the side-pairing maps
-and distinct translates of the interior of the polygon are disjoint, an element of `Γ` is a
-Macbeath generator of the polygon exactly when it is the identity, a side-pairing map, or an
-inverse partial cycle product at a finite vertex before one full turn. -/
-theorem mem_macbeathGenerators_iff (hmap : ∀ i, σ.map i ∈ Γ)
-    (hdisj : ∀ γ : Γ, γ ≠ 1 →
-      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {γ : Γ} :
-    γ ∈ macbeathGenerators Γ P.carrier ↔
-      (γ : PSL(2, ℝ)) = 1 ∨ (∃ i, (γ : PSL(2, ℝ)) = σ.map i) ∨
-        ∃ (j : Fin n) (z : ℍ), P.vertex j = .inl z ∧
-          ∃ m < orderOf (σ.cycleMap j) * σ.cycleLength j,
-            (σ.partialCycleMap j m)⁻¹ = (γ : PSL(2, ℝ)) := by
-  rw [mem_macbeathGenerators, Set.subtype_smul_set]
-  exact σ.inter_smul_carrier_nonempty_iff hmap hdisj γ.2
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
