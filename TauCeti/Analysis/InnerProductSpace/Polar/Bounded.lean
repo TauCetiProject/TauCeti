@@ -200,22 +200,6 @@ theorem polarFactor_adjoint : (T†).polarFactor = T.polarFactor† := by
       rwa [← orthogonal_range, range_polarFactor, Submodule.orthogonal_closure, orthogonal_range]
     exact hy'
 
-/-- The polar decomposition of the adjoint in terms of the adjoint of the polar factor:
-`U† |T†| = T†`. -/
-@[simp]
-theorem adjoint_polarFactor_comp_modulus_adjoint : T.polarFactor† ∘L (T†).modulus = T† := by
-  rw [← polarFactor_adjoint, polarFactor_comp_modulus]
-
-/-- The adjoint of the polar factor has the same kernel as `T†`. -/
-@[simp]
-theorem ker_adjoint_polarFactor : (T.polarFactor†).ker = (T†).ker := by
-  rw [← polarFactor_adjoint, ker_polarFactor]
-
-/-- The range of the adjoint of the polar factor is the closure of the range of `T†`. -/
-@[simp]
-theorem range_adjoint_polarFactor : (T.polarFactor†).range = (T†).range.topologicalClosure := by
-  rw [← polarFactor_adjoint, range_polarFactor]
-
 /-- **Left polar decomposition:** `|T†| U = T`. -/
 @[simp]
 theorem modulus_adjoint_comp_polarFactor : (T†).modulus ∘L T.polarFactor = T := by
