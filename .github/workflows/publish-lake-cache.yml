@@ -39,10 +39,28 @@ permissions:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    # A NEW ephemeral runner for this job, separate from the candidate sandbox.
+    # Direct labels request no privileged container, cache volume, git mirror or tool cache.
+    # Priority zero precedes compiler jobs; run-ID assignment prevents cross-run pickup.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 15
     outputs:
       published: ${{ steps.result.outputs.published }}
     steps:
+      - name: Check publisher isolation before receiving staged data
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          printf 'Publisher runner=%s workflow=%s run=%s attempt=%s\n' \
+            "$RUNNER_NAME" "$WORKFLOW_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
+          # No shared Namespace volume or pre-existing candidate build is permitted.
+          if mountpoint -q /cache || [ -e .lake ]; then
+            echo '::error::publisher has shared cache or candidate build state; check Namespace routing'
+            exit 1
+          fi
       # Candidate configuration/code is never loaded on this runner. Cross-check
       # only the immutable toolchain pin; executable helpers come from the workflow.
       - name: Check out the immutable toolchain pin

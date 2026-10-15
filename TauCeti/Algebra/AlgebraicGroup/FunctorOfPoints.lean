@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.HopfAlgebra.Basic
+public import Mathlib.RingTheory.HopfAlgebra.Convolution
 
 /-!
 # Convolution groups of algebra homomorphisms out of a Hopf algebra
@@ -21,6 +21,8 @@ convolution product `(f * g)(h) = ∑ f(h₍₁₎) * g(h₍₂₎)` and the uni
 `algebraMap ∘ ε`.
 What is added here is the **inverse** and hence the **group** structure, available exactly
 when `H` carries an antipode `S`: the inverse of `f` is `f ∘ S`.
+Mathlib's `AlgHom.convInv` and `AlgHom.convGroup` additionally assume that the source is
+commutative and the value algebra is a bialgebra; the constructions here remove those requirements.
 
 The construction is functorial in the value algebra: post-composition with an `R`-algebra
 homomorphism `φ : A →ₐ[R] B` gives a monoid homomorphism `mapValue φ` between the convolution
@@ -36,10 +38,10 @@ the inverse.
 
 ## Main results
 
-* `AlgHom.convInv_apply`: pointwise, the convolution inverse of `f` sends `h` to `f (S h)`.
-* `AlgHom.instGroup`, `AlgHom.instCommGroup`: for `H` a Hopf algebra over `R` and `A` a
-  commutative `R`-algebra, `WithConv (H →ₐ[R] A)` is a group, commutative when `H` is
-  cocommutative.
+* `WithConv.algHom_inv_apply`: pointwise, the convolution inverse of `f` sends `h` to `f (S h)`.
+* `AlgHom.convGroupOfSemiring`, `AlgHom.convCommGroupOfSemiring`: for `H` a Hopf algebra over `R`
+  and `A` a commutative `R`-algebra, `WithConv (H →ₐ[R] A)` is a group, commutative when `H`
+  is cocommutative.
 * `AlgHom.mapValue`: post-composition with `φ : A →ₐ[R] B` as a monoid homomorphism of
   convolution monoids, with `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
   functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
@@ -57,8 +59,6 @@ Yaël Dillies, Michał Mrugała, and Yunzhou Xie.
 public section
 
 open _root_.Coalgebra HopfAlgebra TensorProduct WithConv
-
-namespace TauCeti
 
 namespace AlgHom
 
@@ -79,62 +79,52 @@ noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
 
 /-- Evaluation of `antipodeComp f` at an element `h : H` is `f (S h)`. -/
 @[simp]
-lemma _root_.AlgHom.antipodeComp_apply (f : H →ₐ[R] A) (h : H) :
+lemma antipodeComp_apply (f : H →ₐ[R] A) (h : H) :
     antipodeComp f h = f (antipode R h) := by
   delta antipodeComp
   rfl
 
 /-- The underlying linear map of `antipodeComp f` is `f.toLinearMap ∘ₗ antipode R`. -/
 @[simp]
-lemma _root_.AlgHom.toLinearMap_antipodeComp (f : H →ₐ[R] A) :
+lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :
     (antipodeComp f).toLinearMap = f.toLinearMap ∘ₗ antipode R := by
   delta antipodeComp
   rfl
 
 /-- The convolution inverse of an `R`-algebra homomorphism `f : H →ₐ[R] A` out of a Hopf
-algebra is `f ∘ S`, where `S` is the antipode. -/
-noncomputable instance instInv : Inv (WithConv (H →ₐ[R] A)) where
+algebra is `f ∘ S`, where `S` is the antipode. The source need only be a semiring, so it can be
+noncommutative, and the value semiring needs only an `R`-algebra structure. -/
+noncomputable instance convInvOfSemiring : Inv (WithConv (H →ₐ[R] A)) where
   inv f := toConv (antipodeComp f.ofConv)
 
 /-- The convolution inverse of `f` is `f ∘ S`, where `S` is the antipode:
 `f⁻¹ = toConv (antipodeComp f.ofConv)`. -/
-lemma _root_.WithConv.convInv_def (f : WithConv (H →ₐ[R] A)) :
+lemma _root_.WithConv.algHom_inv_def (f : WithConv (H →ₐ[R] A)) :
     f⁻¹ = toConv (antipodeComp f.ofConv) := rfl
 
 /-- Pointwise, the convolution inverse of `f` sends `h` to `f (S h)`, where `S` is the
 antipode. -/
 @[simp]
-lemma convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
+lemma _root_.WithConv.algHom_inv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
     f⁻¹ h = f.ofConv (antipode R h) := by
-  -- `convInv_def` exposes `toConv (antipodeComp f.ofConv)`; under the coercion from `WithConv`,
+  -- `algHom_inv_def` exposes `toConv (antipodeComp f.ofConv)`; under the coercion from `WithConv`,
   -- `(toConv g) h` evaluates as `g h`.
-  rw [WithConv.convInv_def, AlgHom.antipodeComp_apply]
+  rw [WithConv.algHom_inv_def, AlgHom.antipodeComp_apply]
 
 /-- For a Hopf algebra `H` over `R` and a commutative `R`-algebra `A`, the convolution
 monoid of `R`-algebra homomorphisms `H →ₐ[R] A` is a group, with inverse `f ↦ f ∘ S`. When
 `H` is moreover commutative, `Spec H` is an affine group scheme and this is the group
 structure on its functor of points evaluated at `A`. -/
-noncomputable instance instGroup : Group (WithConv (H →ₐ[R] A)) where
+noncomputable instance convGroupOfSemiring : Group (WithConv (H →ₐ[R] A)) where
   inv_mul_cancel f := by
-    -- It suffices to check the equality after passing to the convolution ring of linear
-    -- maps, where Mathlib already has the structure; the algebra-hom convolution monoid is
-    -- transported from the linear one along the underlying-linear-map injection.
+    -- Pass to linear maps to use the Sweedler formula for convolution.
     refine WithConv.ofConv_injective (AlgHom.toLinearMap_injective (WithConv.toConv_injective ?_))
-    rw [AlgHom.toLinearMap_convMul, AlgHom.toLinearMap_convOne, convInv_def, toConv_ofConv,
+    rw [AlgHom.toLinearMap_convMul, AlgHom.toLinearMap_convOne, algHom_inv_def, toConv_ofConv,
       AlgHom.toLinearMap_antipodeComp]
-    -- Now in `WithConv (H →ₗ[R] A)`: `(f ∘ S) * f = 1`. Pass to underlying linear maps.
-    refine WithConv.ofConv_injective ?_
-    -- Distribute `f` over the convolution product `S * id`.
-    have key := LinearMap.algHom_comp_convMul_distrib f.ofConv
-      (toConv (antipode R)) (toConv LinearMap.id)
-    -- `key : f ∘ (S * id) = ((f ∘ S) * (f ∘ id)).ofConv`.
-    -- Use `S * id = 1` and `f ∘ id = f`.
-    rw [LinearMap.antipode_mul_id, ofConv_toConv, ofConv_toConv, LinearMap.comp_id] at key
-    -- So `((f ∘ S) * f).ofConv = f ∘ 1`, the linear unit `1` being `algebraMap ∘ counit`.
-    rw [← key, LinearMap.convOne_def, ofConv_toConv]
-    -- Finally `f ∘ (algebraMap ∘ counit) = algebraMap ∘ counit`, since `f` is an algebra hom.
     ext h
-    exact f.ofConv.commutes (counit h)
+    rw [(ℛ R h).convMul_apply]
+    simp only [LinearMap.comp_apply, AlgHom.coe_toLinearMap, LinearMap.convOne_apply,
+      ← map_mul, ← map_sum, sum_antipode_mul_eq_algebraMap_counit, AlgHom.commutes]
 
 end Hopf
 
@@ -146,8 +136,9 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 /-- Functoriality of `A ↦ (H →ₐ[R] A)` in the value algebra: an `R`-algebra homomorphism
 `φ : A →ₐ[R] B` induces, by post-composition, a monoid homomorphism between the convolution
 monoids. This needs only the bialgebra structure on `H`. When `H` is moreover a Hopf algebra,
-these convolution monoids are the convolution groups (`instGroup`); a `MonoidHom` between
-groups is automatically a group homomorphism, so no separate construction is needed there. -/
+these convolution monoids are the convolution groups (`convGroupOfSemiring`); a `MonoidHom`
+between groups is automatically a group homomorphism, so no separate construction is needed
+there. -/
 noncomputable def mapValue (φ : A →ₐ[R] B) :
     WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] B) where
   toFun f := toConv (φ.comp f.ofConv)
@@ -215,11 +206,9 @@ variable [Semiring H] [_root_.HopfAlgebra R H] [IsCocomm R H] [CommSemiring A] [
 
 /-- When `H` is moreover cocommutative, the convolution group of `R`-algebra homomorphisms
 `H →ₐ[R] A` is abelian. -/
-noncomputable instance instCommGroup : CommGroup (WithConv (H →ₐ[R] A)) where
+noncomputable instance convCommGroupOfSemiring : CommGroup (WithConv (H →ₐ[R] A)) where
   mul_comm := mul_comm
 
 end CommHopf
 
 end AlgHom
-
-end TauCeti

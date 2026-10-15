@@ -33,6 +33,8 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
   number coprime to `d`, so a statement about all units may be checked on those.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
+* `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
+  class of `a` modulo a divisor of `n`.
 * `TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
   one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
   modulus. Its consumers are the descent arguments of
@@ -159,6 +161,15 @@ theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Copr
     ZMod.unitOfCoprime (m * n) (Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩)
       = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
   Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)
+
+/-- **Reducing `ZMod.unitOfCoprime` to a divisor of the modulus.** The class of `a` modulo `n`
+reduces to the class of `a` modulo `m` for `m ∣ n`. -/
+@[simp]
+theorem ZMod.unitsMap_unitOfCoprime {m n : ℕ} (hmn : m ∣ n) {a : ℕ} (ha : Nat.Coprime a n) :
+    ZMod.unitsMap hmn (ZMod.unitOfCoprime a ha) =
+      ZMod.unitOfCoprime a (ha.coprime_dvd_right hmn) :=
+  Units.ext (by rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
+    ZMod.cast_natCast hmn])
 
 /-- A unit of `ZMod d` generates `ZMod d` as an additive group. -/
 theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :

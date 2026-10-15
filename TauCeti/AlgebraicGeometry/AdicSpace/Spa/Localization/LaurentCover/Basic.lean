@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.FaithfullyFlat

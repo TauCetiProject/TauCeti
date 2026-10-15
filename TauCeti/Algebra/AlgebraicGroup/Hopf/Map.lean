@@ -179,13 +179,13 @@ algebra. -/
 lemma _root_.BialgHom.mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
     (mapDomain (H₁ := H₁) (H₂ := H₂) φ :
         WithConv (H₂ →ₐ[R] B) →* WithConv (H₁ →ₐ[R] B)).comp
-        (mapValue (H := H₂) χ) =
-      (mapValue (H := H₁) χ).comp
+        (AlgHom.mapValue (H := H₂) χ) =
+      (AlgHom.mapValue (H := H₁) χ).comp
         (mapDomain (H₁ := H₁) (H₂ := H₂) φ :
           WithConv (H₂ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A)) := by
   refine MonoidHom.ext fun f => ?_
-  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapDomain_apply, mapValue_apply,
-    mapDomain_apply, mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapDomain_apply, AlgHom.mapValue_apply,
+    mapDomain_apply, AlgHom.mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
 
 end BialgebraMapValue
 
@@ -202,7 +202,7 @@ lemma _root_.BialgHom.mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithC
     mapDomain (H₁ := H₁) (H₂ := H₂) φ (f⁻¹ : WithConv (H₂ →ₐ[R] A)) h =
       f.ofConv (HopfAlgebra.antipode R (φ h)) := by
   rw [mapDomain_apply_apply]
-  exact convInv_apply f (φ h)
+  exact algHom_inv_apply f (φ h)
 
 end Hopf
 

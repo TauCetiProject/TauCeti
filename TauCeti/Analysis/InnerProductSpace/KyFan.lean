@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.Convex.Majorization
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
@@ -39,6 +40,10 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.kyFanSum`: the Ky Fan `k`-sum of singular values.
 * `LinearMap.norm_sum_inner_le_kyFanSum`: Ky Fan's maximum principle, the upper bound.
 * `LinearMap.exists_orthonormal_sum_inner_eq_kyFanSum`: the leading singular pairs attain it.
+* `LinearMap.norm_trace_comp_linearIsometryEquiv_le_kyFanSum`,
+  `LinearMap.exists_linearIsometryEquiv_trace_comp_eq_kyFanSum`: for an endomorphism `A` of an
+  `n`-dimensional space, `σ₀(A) + ⋯ + σₙ₋₁(A)` is the largest value of `‖tr (A Q)‖` over
+  isometric automorphisms `Q`, and it is attained with `tr (A Q)` real.
 * `LinearMap.kyFanSum_le_iff`: the variational characterization.
 * `LinearMap.kyFanSum_add_le`: the Ky Fan triangle inequality.
 * `LinearMap.isWeaklyMajorizedBy_singularValues_add`: its restatement as the weak majorization
@@ -208,6 +213,32 @@ theorem exists_orthonormal_sum_inner_eq_kyFanSum (A : E →ₗ[𝕜] F) {k : ℕ
     rw [hw (Fin.castLE hkE i) (Fin.castLE hkF i) (by simp) (by simpa using hσ),
       inner_leftSingularVector]
     simp [hσ]
+
+/-- For an endomorphism `A` of an `n`-dimensional inner product space and an isometric automorphism
+`Q`, `‖tr (A Q)‖ ≤ σ₀(A) + ⋯ + σₙ₋₁(A)`, the sum of all singular values of `A`. -/
+theorem norm_trace_comp_linearIsometryEquiv_le_kyFanSum (A : E →ₗ[𝕜] E) (Q : E ≃ₗᵢ[𝕜] E) :
+    ‖trace 𝕜 E (A ∘ₗ (Q : E →ₗ[𝕜] E))‖ ≤ A.kyFanSum (finrank 𝕜 E) := by
+  let b := stdOrthonormalBasis 𝕜 E
+  rw [trace_eq_sum_inner _ b]
+  simpa using A.norm_sum_inner_le_kyFanSum b.orthonormal (b.orthonormal.comp_linearIsometryEquiv Q)
+
+/-- For an endomorphism `A` of an `n`-dimensional inner product space, some isometric automorphism
+`Q` has `tr (A Q) = σ₀(A) + ⋯ + σₙ₋₁(A)`, the sum of all singular values of `A`. By
+`LinearMap.norm_trace_comp_linearIsometryEquiv_le_kyFanSum` this is the largest value of
+`‖tr (A Q)‖` over isometric automorphisms `Q`. -/
+theorem exists_linearIsometryEquiv_trace_comp_eq_kyFanSum (A : E →ₗ[𝕜] E) :
+    ∃ Q : E ≃ₗᵢ[𝕜] E, trace 𝕜 E (A ∘ₗ (Q : E →ₗ[𝕜] E)) = (A.kyFanSum (finrank 𝕜 E) : 𝕜) := by
+  obtain ⟨u, v, hu, hv, h⟩ := A.exists_orthonormal_sum_inner_eq_kyFanSum le_rfl le_rfl
+  have hspan {w : Fin (finrank 𝕜 E) → E} (hw : Orthonormal 𝕜 w) :
+      ⊤ ≤ Submodule.span 𝕜 (Set.range w) :=
+    (hw.linearIndependent.span_eq_top_of_card_eq_finrank' (Fintype.card_fin _)).ge
+  let bu := OrthonormalBasis.mk hu (hspan hu)
+  let Q := bu.equiv (.mk hv (hspan hv)) (.refl _)
+  have hQ (i : Fin (finrank 𝕜 E)) : Q (u i) = v i := by
+    simpa [bu] using bu.equiv_apply_basis (.mk hv (hspan hv)) (.refl _) i
+  refine ⟨Q, ?_⟩
+  rw [trace_eq_sum_inner _ bu, ← h]
+  simp [bu, hQ]
 
 /-- The **variational characterization** of the Ky Fan sums: `A.kyFanSum k ≤ c` exactly when
 `‖∑ᵢ ⟪uᵢ, A vᵢ⟫‖ ≤ c` for all orthonormal families `(uᵢ)` in `F` and `(vᵢ)` in `E` with at most

@@ -32,9 +32,17 @@ both the coupling and the reference measure move.
 
 * `TauCeti.mul_sub_exp_sub_one_le_klFun`: the Fenchel–Young inequality
   `x * y - (exp y - 1) ≤ klFun x` for `x ≥ 0`.
+* `TauCeti.mul_sub_exp_sub_one_eq_klFun_iff`: its equality case, `x = exp y`.
 * `TauCeti.ofReal_integral_sub_integral_exp_sub_one_le_klDiv` and
   `TauCeti.ofReal_integral_sub_log_integral_exp_le_klDiv`: the variational lower bounds, for
   every integrable `f` with integrable `exp ∘ f`.
+* `TauCeti.integral_sub_integral_indicator_exp_sub_one_eq` and
+  `TauCeti.ae_mul_sub_indicator_exp_sub_one_le_klFun`: for `μ ≪ ν`, the truncated objective as a
+  single `ν`-integral against the density, and the pointwise Fenchel–Young bound on its integrand.
+* `TauCeti.ofReal_integral_sub_integral_indicator_exp_sub_one_le_klDiv`: the first bound with
+  `exp ∘ f` truncated to a set carrying `μ`, which reads `f` as `-∞` off that set.
+* `TauCeti.integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff`: the truncated bound
+  is an equality exactly when the truncated `exp ∘ f` is the density of `μ` with respect to `ν`.
 * `TauCeti.klDiv_eq_iSup_integral_sub_integral_exp_sub_one` and
   `TauCeti.klDiv_eq_iSup_integral_sub_log_integral_exp`: the variational formulas over bounded
   measurable functions, on an arbitrary measurable space.
@@ -74,6 +82,22 @@ theorem mul_sub_exp_sub_one_le_klFun {x : ℝ} (hx : 0 ≤ x) (y : ℝ) :
     rw [exp_sub, exp_log hx, mul_div_cancel₀ _ hx.ne'] at h
     linarith
 
+/-- The equality case of the Fenchel–Young inequality for `klFun`:
+`x * y - (exp y - 1) = klFun x` exactly when `x = exp y`. -/
+theorem mul_sub_exp_sub_one_eq_klFun_iff {x : ℝ} (hx : 0 ≤ x) (y : ℝ) :
+    x * y - (exp y - 1) = klFun x ↔ x = exp y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, klFun_apply, log_exp]; ring⟩
+  rw [klFun_apply] at h
+  rcases hx.eq_or_lt with rfl | hx
+  · simp only [zero_mul, zero_sub, log_zero, mul_zero, zero_add] at h
+    exact absurd h (by linarith [exp_pos y])
+  · -- `x * (exp (y - log x) - 1 - (y - log x))` is the gap, which vanishes only at `y = log x`.
+    by_contra hne
+    have hyx : y - log x ≠ 0 := fun h0 ↦ hne (by rw [sub_eq_zero.1 h0, exp_log hx])
+    have h' := mul_lt_mul_of_pos_left (add_one_lt_exp hyx) hx
+    rw [exp_sub, exp_log hx, mul_div_cancel₀ _ hx.ne'] at h'
+    linarith
+
 variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} {f : α → ℝ}
 
 /-- For `μ ≪ ν`, the variational objective is a single `ν`-integral against the density. -/
@@ -100,6 +124,83 @@ theorem ofReal_integral_sub_integral_exp_sub_one_le_klDiv [IsFiniteMeasure μ] [
     (((integrable_toReal_rnDeriv_mul_iff hμν).2 hf).sub hef')
     ((integrable_klFun_rnDeriv_iff hμν).2 hllr) fun x ↦ ?_)
   exact mul_sub_exp_sub_one_le_klFun ENNReal.toReal_nonneg _
+
+/-- For `μ ≪ ν`, the variational objective with the truncated exponential `s.indicator (exp ∘ f)`
+is a single `ν`-integral against the density. -/
+theorem integral_sub_integral_indicator_exp_sub_one_eq [SigmaFinite μ]
+    [IsFiniteMeasure ν] {s : Set α} (hμν : μ ≪ ν) (hf : Integrable f μ)
+    (hef : Integrable (s.indicator fun x ↦ exp (f x)) ν) :
+    ∫ x, f x ∂μ - ∫ x, (s.indicator (fun x ↦ exp (f x)) x - 1) ∂ν =
+      ∫ x, ((μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1)) ∂ν := by
+  have hef' : Integrable (fun x ↦ s.indicator (fun x ↦ exp (f x)) x - 1) ν :=
+    hef.sub (integrable_const 1)
+  rw [integral_sub ((integrable_toReal_rnDeriv_mul_iff hμν).2 hf) hef',
+    integral_toReal_rnDeriv_mul hμν]
+
+/-- Off `s` the density vanishes, so the integrand of the truncated variational objective is
+`1 = klFun 0` there; on `s` it is bounded by the Fenchel–Young inequality. -/
+theorem ae_mul_sub_indicator_exp_sub_one_le_klFun [SigmaFinite μ] [SigmaFinite ν]
+    {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) :
+    ∀ᵐ x ∂ν, (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1) ≤
+      klFun (μ.rnDeriv ν x).toReal := by
+  filter_upwards [Measure.ae_rnDeriv_ne_zero_imp_of_ae ν hs] with x hx
+  by_cases hxs : x ∈ s
+  · rw [Set.indicator_of_mem hxs]
+    exact mul_sub_exp_sub_one_le_klFun ENNReal.toReal_nonneg _
+  · simp [Set.indicator_of_notMem hxs, not_ne_iff.1 (mt hx hxs), klFun_zero]
+
+/-- **Variational lower bound with a truncated exponential.** If `μ` is concentrated on `s`,
+then `∫ f dμ - ∫ (s.indicator (exp ∘ f) - 1) dν ≤ klDiv μ ν`. The truncation reads `f` as `-∞`
+off `s`, where `exp (-∞) = 0`. -/
+theorem ofReal_integral_sub_integral_indicator_exp_sub_one_le_klDiv [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) (hf : Integrable f μ)
+    (hef : Integrable (s.indicator fun x ↦ exp (f x)) ν) :
+    ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, (s.indicator (fun x ↦ exp (f x)) x - 1) ∂ν) ≤
+      klDiv μ ν := by
+  by_cases h : klDiv μ ν = ∞
+  · simp [h]
+  obtain ⟨hμν, hllr⟩ := klDiv_ne_top_iff.1 h
+  rw [klDiv_eq_integral_klFun, ite_eq_left ⟨hμν, hllr⟩,
+    integral_sub_integral_indicator_exp_sub_one_eq hμν hf hef]
+  exact ENNReal.ofReal_le_ofReal (integral_mono_ae
+    (((integrable_toReal_rnDeriv_mul_iff hμν).2 hf).sub (hef.sub (integrable_const 1)))
+    ((integrable_klFun_rnDeriv_iff hμν).2 hllr) (ae_mul_sub_indicator_exp_sub_one_le_klFun hs))
+
+/-- **The equality case of the variational lower bound.** For finite measures with
+`klDiv μ ν < ∞` and `μ` concentrated on `s`, the bound
+`∫ f dμ - ∫ (s.indicator (exp ∘ f) - 1) dν ≤ klDiv μ ν` is an equality exactly when
+`s.indicator (exp ∘ f)` is the density of `μ` with respect to `ν`. Taking `s = Set.univ` gives
+the equality case of `ofReal_integral_sub_integral_exp_sub_one_le_klDiv`. -/
+theorem integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) (hf : Integrable f μ)
+    (hef : Integrable (s.indicator fun x ↦ exp (f x)) ν) (h : klDiv μ ν ≠ ∞) :
+    ∫ x, f x ∂μ - ∫ x, (s.indicator (fun x ↦ exp (f x)) x - 1) ∂ν = (klDiv μ ν).toReal ↔
+      μ = ν.withDensity fun x ↦ ENNReal.ofReal (s.indicator (fun x ↦ exp (f x)) x) := by
+  obtain ⟨hμν, hllr⟩ := klDiv_ne_top_iff.1 h
+  have hlow : Integrable (fun x ↦
+      (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1)) ν :=
+    ((integrable_toReal_rnDeriv_mul_iff hμν).2 hf).sub (hef.sub (integrable_const 1))
+  have hup := (integrable_klFun_rnDeriv_iff hμν).2 hllr
+  rw [klDiv_eq_integral_klFun, ite_eq_left ⟨hμν, hllr⟩,
+    ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ klFun_nonneg ENNReal.toReal_nonneg),
+    integral_sub_integral_indicator_exp_sub_one_eq hμν hf hef, ← sub_eq_zero, ← neg_eq_zero,
+    neg_sub, ← integral_sub hup hlow, integral_eq_zero_iff_of_nonneg_ae
+      ((ae_mul_sub_indicator_exp_sub_one_le_klFun hs).mono fun _ hx ↦ sub_nonneg.2 hx)
+      (hup.sub hlow)]
+  have hdens : μ = ν.withDensity (fun x ↦ ENNReal.ofReal (s.indicator (fun x ↦ exp (f x)) x)) ↔
+      μ.rnDeriv ν =ᵐ[ν] fun x ↦ ENNReal.ofReal (s.indicator (fun x ↦ exp (f x)) x) := by
+    conv_lhs => rw [← Measure.withDensity_rnDeriv_eq μ ν hμν]
+    exact withDensity_eq_iff_of_sigmaFinite (Measure.measurable_rnDeriv μ ν).aemeasurable
+      hef.aemeasurable.ennreal_ofReal
+  rw [hdens]
+  refine Filter.eventually_congr (((Measure.rnDeriv_lt_top μ ν).and
+    (Measure.ae_rnDeriv_ne_zero_imp_of_ae ν hs)).mono fun x ⟨hx, hx0⟩ ↦ ?_)
+  simp only [Pi.zero_apply]
+  by_cases hxs : x ∈ s
+  · rw [Set.indicator_of_mem hxs, sub_eq_zero, eq_comm,
+      mul_sub_exp_sub_one_eq_klFun_iff ENNReal.toReal_nonneg, ← ENNReal.ofReal_eq_ofReal_iff
+        ENNReal.toReal_nonneg (exp_pos _).le, ENNReal.ofReal_toReal hx.ne]
+  · simp [Set.indicator_of_notMem hxs, not_ne_iff.1 (mt hx0 hxs), klFun_zero]
 
 /-- Against a probability measure, the mass-corrected objective is at most the
 Donsker–Varadhan objective, since `log z ≤ z - 1`. -/
