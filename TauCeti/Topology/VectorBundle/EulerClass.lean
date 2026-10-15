@@ -127,16 +127,21 @@ theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- A Thom class of a real vector bundle with model fibre `F` of rank `r = finrank ℝ F`: a relative
-class `u ∈ Hʳ(E, E₀)` whose restriction to the fibre pair `(E_b, E_b ∖ {0})` over every point `b`
-generates the `k`-module `Hʳ(E_b, E_b ∖ {0})`. With integral coefficients this is the notion of a
-cohomological orientation of the bundle. -/
+/-- A Thom class of a real vector bundle with finite-dimensional model fibre `F` of rank
+`r = finrank ℝ F`: a relative class `u ∈ Hʳ(E, E₀)` whose restriction to the fibre pair
+`(E_b, E_b ∖ {0})` over every point `b` generates the `k`-module `Hʳ(E_b, E_b ∖ {0})`. With integral
+coefficients this is the notion of a cohomological orientation of the bundle.
+
+Finite-dimensionality of `F` is part of the predicate: otherwise `finrank ℝ F = 0` and the
+degree-zero condition would hold vacuously, so a bundle with infinite-dimensional fibres has no
+Thom class. -/
 def IsThomClass (u : (thomPair F E).singularCohomology R k M (finrank ℝ F)) : Prop :=
-  ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u} = ⊤
+  FiniteDimensional ℝ F ∧
+    ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u} = ⊤
 
 variable {F E} in
 theorem isThomClass_iff {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)} :
-    IsThomClass F E u ↔
+    IsThomClass F E u ↔ FiniteDimensional ℝ F ∧
       ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u} = ⊤ :=
   Iff.rfl
 
@@ -144,9 +149,9 @@ variable {F E} in
 /-- The negative of a Thom class, the Thom class of the opposite orientation, is a Thom class. -/
 theorem IsThomClass.neg {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)}
     (hu : IsThomClass F E u) : IsThomClass F E (-u) := by
-  intro b
+  refine ⟨hu.1, fun b ↦ ?_⟩
   rw [map_neg, ← Set.neg_singleton, Submodule.span_neg]
-  exact hu b
+  exact hu.2 b
 
 end ThomClass
 
@@ -182,10 +187,10 @@ variable {F E} in
 theorem IsThomClass.pullback {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)}
     (hu : IsThomClass F E u) :
     IsThomClass F ((⇑f) *ᵖ E) (TopPair.singularCohomologyMap (pullbackThomPairMap F E f) _ u) := by
-  intro b'
+  refine ⟨hu.1, fun b' ↦ ?_⟩
   rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
     fiberThomPairMap_comp_pullbackThomPairMap]
-  exact hu (f b')
+  exact hu.2 (f b')
 
 end Pullback
 
