@@ -385,12 +385,18 @@ theorem tendsto_integral_normalCutoff_mul {a : ℝ} {F : WithLp 2 (ℝ × E) →
 when `χ` vanishes on the boundary hyperplane: there `|χ| ≤ M (x.fst - a)`, which compensates the
 size of the derivative of the cutoff. -/
 private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ × E) → ℝ}
-    (hw : LocallyIntegrable w) (hw0 : ∀ x, ¬ a < x.fst → w x = 0)
+    (hw : LocallyIntegrable w)
     {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) (c : ℝ) :
     Tendsto (fun n : ℕ => ∫ x, χ x *
       (deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * c)) * w x)
       atTop (𝓝 0) := by
+  have hneg (n : ℕ) (x : WithLp 2 (ℝ × E)) (hx : ¬ a < x.fst) :
+      cutoffArg a n x < 0 := by
+    have hmul : ((n : ℝ) + 1) * (x.fst - a) ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (le_of_not_gt hx))
+    dsimp only [cutoffArg]
+    linarith
   have hdst : Continuous (deriv Real.smoothTransition) :=
     (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hdst.continuousOn
@@ -422,7 +428,7 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
     · simpa [image_eq_zero_of_notMem_tsupport hxK] using hb0
     by_cases hxa : a < x.fst
     swap
-    · simpa [hw0 x hxa] using hb0
+    · simpa [Real.smoothTransition.deriv_of_neg (hneg n x hxa)] using hb0
     by_cases hs : 1 < cutoffArg a n x
     · simpa [Real.smoothTransition.deriv_of_one_lt hs] using hb0
     push Not at hs
@@ -443,27 +449,26 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
       _ ≤ C * M * |c| * |w x| * 2 := by gcongr
       _ = 2 * (C * M * |c|) * |w x| := by ring
   -- Pointwise limit: inside the half-space the cutoff argument eventually exceeds `1`, where the
-  -- derivative of `smoothTransition` vanishes; outside it `w` vanishes.
+  -- derivative of `smoothTransition` vanishes; outside it the cutoff argument is negative.
   · by_cases hxa : a < x.fst
     · exact tendsto_const_nhds.congr' <| (eventually_lt_cutoffArg hxa 1).mono fun n hn => by
         simp [Real.smoothTransition.deriv_of_one_lt hn]
-    · simp [hw0 x hxa]
+    · exact tendsto_const_nhds.congr fun n => by
+        simp [Real.smoothTransition.deriv_of_neg (hneg n x hxa)]
 
 /-- **The boundary-layer error vanishes in the limit.** Let `G` be a locally integrable vector
-field vanishing off the half-space, and let `χ` be smooth with compact support and vanishing on the
+field, and let `χ` be smooth with compact support and vanishing on the
 boundary hyperplane `{a} × E`. Then `∫ χ ⟪∇η_n, G⟫ → 0` as `n → ∞`, where `η_n` is the boundary
 cutoff of slope `n + 1`, even though `∇η_n` grows like `n` on the boundary layer. -/
 theorem tendsto_integral_mul_fderiv_normalCutoff_apply {a : ℝ}
     {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} (hG : LocallyIntegrable G)
-    (hG0 : ∀ x ∉ normalHalfSpace (E := E) a, G x = 0) {χ : WithLp 2 (ℝ × E) → ℝ}
-    (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) :
     Tendsto (fun n : ℕ => ∫ x, χ x * fderiv ℝ (normalCutoff a ((n : ℝ) + 1)) x (G x)) atTop
       (𝓝 0) := by
   have hGfst : LocallyIntegrable fun x => (G x).fst := locallyIntegrableOn_univ.1 <|
     (WithLp.fstL 2 ℝ ℝ E).locallyIntegrableOn_comp (hG.locallyIntegrableOn univ)
-  refine (tendsto_integral_mul_deriv_cutoff hGfst
-    (fun x hx => by simp [hG0 x (by simpa using hx)]) hχ hχc hχa 1).congr fun n =>
+  refine (tendsto_integral_mul_deriv_cutoff hGfst hχ hχc hχa 1).congr fun n =>
       integral_congr_ae (Eventually.of_forall fun x => ?_)
   simp only [(hasFDerivAt_normalCutoff a _ x).fderiv, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
     WithLp.fstL_apply, cutoffArg]
@@ -524,7 +529,7 @@ private theorem integral_fderiv_mul_eq_neg_of_halfSpace {a : ℝ} {v : WithLp 2 
   have h2 : Tendsto (fun n : ℕ => ∫ x, χ x * D n x * w x) atTop (𝓝 0) := by
     rcases hv with hv | hv
     · simp [hD, hv]
-    · exact tendsto_integral_mul_deriv_cutoff hw hw0 hχ hχc hv v.fst
+    · exact tendsto_integral_mul_deriv_cutoff hw hχ hχc hv v.fst
   have hlim := h1.add h2
   rw [add_zero] at hlim
   exact tendsto_nhds_unique (hlim.congr key) h3.neg

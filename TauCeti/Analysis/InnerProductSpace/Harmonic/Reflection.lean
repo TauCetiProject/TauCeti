@@ -153,7 +153,7 @@ private theorem integral_fderiv_apply_eq_zero
       zero_sub]
   -- The boundary-layer term tends to zero.
   have hlayer := tendsto_integral_mul_fderiv_normalCutoff_apply hGK.locallyIntegrable
-    (fun x hx => by by_cases hxK : x ∈ K <;> simp [hxK, hG0 x hx]) hψ hψc hψa
+    hψ hψc hψa
   have hlayer' : Tendsto (fun n : ℕ => ∫ x, ψ x * fderiv ℝ (η n) x (G x)) atTop (𝓝 0) := by
     refine hlayer.congr fun n => integral_congr_ae (Eventually.of_forall fun x => ?_)
     by_cases hxK : x ∈ K
