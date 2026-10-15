@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Differential
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.BaseChange
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.ClosedRootSubgroup
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.IntegralMatrix
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Tangent
 
@@ -29,8 +28,6 @@ the carrier identified with an independently pinned simply connected group schem
 
 ## Main results
 
-* `TauCeti.TypeDSpinCarrier.rootSubgroupIntegralCoordinateMap_surjective`: every numbered integral
-  root-subgroup coordinate map is surjective.
 * `TauCeti.TypeDSpinCarrier.tangentMatrix_derivationComp_rootSubgroup`: the differential of a
   numbered root subgroup is the tangent parameter times the integral root matrix.
 * `TauCeti.TypeDSpinCarrier.rootVector`: the normalized root vector, with
@@ -63,17 +60,6 @@ noncomputable section
 attribute [local instance high] Algebra.toModule
 
 variable (n : ℕ) (hn : 4 ≤ n) {B : Type v} [CommRing B]
-
-/-- Every numbered integral root-subgroup coordinate map is surjective. In particular, its
-differential is injective over every coefficient algebra. -/
-theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin n ⊕ Fin n) :
-    Function.Surjective (rootSubgroupIntegralCoordinateMap n hn k).hom := by
-  have h := (rootSubgroupCoordinateMap_surjective n hn k).comp
-    (CommHopfAlgCat.mkQuotient_surjective _ _)
-  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
-    mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
-    ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at h
-  exact Function.Surjective.of_comp h
 
 /-- The differential of a numbered integral root subgroup is its integral root matrix multiplied
 by the additive tangent parameter, over every coefficient ring. -/
