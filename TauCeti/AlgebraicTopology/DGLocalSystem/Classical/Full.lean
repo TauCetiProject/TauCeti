@@ -84,18 +84,12 @@ private theorem fiberHom_apply {L L' : LocalCoefficientSystem.{u, u, w} R X}
 
 variable [PathConnectedSpace X]
 
-/-- Every object of the fundamental groupoid of a path-connected space receives a morphism from
-the basepoint. -/
-private theorem nonempty_hom_mk (y : FundamentalGroupoid X) :
-    Nonempty (FundamentalGroupoid.mk x ⟶ y) :=
-  ⟨(⟦PathConnectedSpace.somePath x y.as⟧ : Path.Homotopic.Quotient x y.as)⟩
-
 /-- **The preimage of a morphism of DG local systems**: on a path-connected space, a morphism
 `f : L_x → L'_x` of DG local systems commutes with the monodromy, so it extends to a morphism of
 local systems `L ⟶ L'` by transport along paths from the basepoint. -/
 def classicalDGLocalSystemPreimage {L L' : LocalCoefficientSystem.{u, u, w} R X}
     (f : classicalDGLocalSystem x L ⟶ classicalDGLocalSystem x L') : L ⟶ L' :=
-  Groupoid.natTransOfEnd nonempty_hom_mk (fiberHom f) fun g ↦ by
+  Groupoid.natTransOfEnd (FundamentalGroupoid.nonempty_hom _) (fiberHom f) fun g ↦ by
     ext m
     rw [ModuleCat.comp_apply, ModuleCat.comp_apply, fiberHom_apply, fiberHom_apply]
     exact classicalDGLocalSystem_hom_naturality f g m
