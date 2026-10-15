@@ -10,7 +10,7 @@ import sys
 import time
 import urllib.request
 
-from bors_observation import REPO, observation, sha
+from bors_observation import MAX_BYTES, REPO, observation, sha
 from bors_train_identity import candidate_ref
 
 PUBLISHER = "publish-merge-group-cache / publish"
@@ -19,7 +19,6 @@ ACQUISITION_SECONDS = 300
 PUBLICATION_SECONDS = 1200
 MACHINE_LABEL = "nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0"
 API_ROOT = "https://api.github.com/repos/" + REPO
-MAX_BYTES = 2 * 1024 * 1024
 
 
 def api(path, payload=None):

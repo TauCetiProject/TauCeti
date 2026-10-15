@@ -20,8 +20,10 @@ reads the **current attempt's** jobs API and waits for the publisher's successfu
 conclusion and successful exact-map confirmation step. It also verifies the
 requested publisher labels and a runner name distinct from the sandbox's. Failed,
 canceled, skipped or unconfirmed publication cannot produce a green `build`.
-Bors authority revalidation rejects stale batch/generation identities; a newer
-run attempt suppresses the older attempt's status write. Statuses target the
+Bors authority revalidation rejects stale batch/generation identities. Immediately
+before each status POST, the writer checks for a newer run attempt and suppresses
+attempts already known to be superseded. This check is best effort: GitHub's GET
+and POST are not atomic, so a successor can start between them. Statuses target the
 exact sandbox SHA (or the immutable dispatch SHA after early sandbox failure).
 
 The publisher has a 15-minute execution limit. Once the finalizer starts its
@@ -41,6 +43,8 @@ Namespace workspace configuration credential, so no reserved-capacity SLA or
 workspace-limit change is claimed. If the finalizer itself cannot acquire a
 runner, its execution timeout cannot fire; the existing external bors batch
 timeout remains the outer recovery bound, independent of hosted Actions runners.
+It is ten hours in the current `bors.toml`; the new five-minute publisher bound
+applies only after a finalizer has been acquired and started observing.
 An operator must inspect the queued job's empty runner name and correct provider
 capacity/routing before retrying. A complete Namespace outage cannot be recovered
 by another job on the same unavailable platform.

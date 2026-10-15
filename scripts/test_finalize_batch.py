@@ -148,7 +148,7 @@ class FinalizerTests(unittest.TestCase):
             self.assertEqual(finalizer.main(), 1)
             post.assert_not_called()
 
-    def test_older_attempt_cannot_overwrite_successor_and_canceled_run_cannot_be_green(self):
+    def test_known_superseded_attempt_skips_status_and_canceled_run_cannot_be_green(self):
         for latest, count, posted_state in [(dict(run_attempt=3), 1, None),
                                             (dict(run_attempt=2, conclusion="cancelled"), 2, "failure")]:
             with patch.dict(os.environ, ENV, clear=True), \
