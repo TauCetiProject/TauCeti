@@ -72,14 +72,6 @@ noncomputable def pathClass (f : C(X, Y)) (x y : X) :
     FundamentalGroupoid.mk (f x) ⟶ FundamentalGroupoid.mk (f y) :=
   (FundamentalGroupoid.map f).map (default : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y)
 
-/-- The path class inside the image of `f` is the image under `f` of the unique morphism of the
-fundamental groupoid of its source. -/
-theorem pathClass_def (f : C(X, Y)) (x y : X) :
-    f.pathClass x y =
-      (FundamentalGroupoid.map f).map
-        (default : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :=
-  (rfl)
-
 /-- The path class inside the image of `f` is the image of any path joining the two points. -/
 theorem pathClass_eq_mk (f : C(X, Y)) {x y : X} (q : Path x y) :
     f.pathClass x y = Path.Homotopic.Quotient.mk (q.map f.continuous) := by

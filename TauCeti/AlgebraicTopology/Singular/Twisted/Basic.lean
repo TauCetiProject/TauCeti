@@ -106,19 +106,23 @@ def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop
     (⟨TopCat.simplexMap σ z⟩ : FundamentalGroupoid X) ⟶ ⟨TopCat.simplexMap σ w⟩ :=
   (TopCat.simplexMap σ).pathClass z w
 
-/-- Transport inside a simplex is the image of the unique path class of the topological simplex
-under the map of fundamental groupoids induced by the simplex. -/
-lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
-    pathTransport σ z w = (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
-      (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) :=
-  ContinuousMap.pathClass_def _ z w
-
 /-- Transport inside a simplex is represented by the image of any path joining its endpoints. -/
 lemma pathTransport_eq_mk (σ : (TopCat.toSSet.obj X).obj n)
     {z w : toTop.{v}.obj n.unop} (q : Path z w) :
     pathTransport σ z w = Path.Homotopic.Quotient.mk
       (q.map (TopCat.simplexMap σ).continuous) :=
   (TopCat.simplexMap σ).pathClass_eq_mk q
+
+/-- Transport inside a simplex is the image of the unique path class of the topological simplex
+under the map of fundamental groupoids induced by the simplex. -/
+lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
+    pathTransport σ z w = (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
+      (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) := by
+  obtain ⟨q⟩ := PathConnectedSpace.joined z w
+  rw [pathTransport_eq_mk σ q, Subsingleton.elim
+    (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+    (Path.Homotopic.Quotient.mk q)]
+  exact Path.Homotopic.Quotient.mk_map q (TopCat.simplexMap σ)
 
 /-- Transport inside a simplex from a point to itself is the identity. -/
 @[simp]
