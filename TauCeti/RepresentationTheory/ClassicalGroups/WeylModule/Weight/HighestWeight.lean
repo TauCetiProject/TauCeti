@@ -35,8 +35,8 @@ irreducible rational representation is some `V_λ` is not proved here.
 
 * `TauCeti.eq_of_forall_sum_filter_lt_le`: the dominance order on integer vectors is
   antisymmetric.
-* `TauCeti.eq_of_equiv_of_forall_sum_filter_lt_le`: a weight that occurs in a representation and
-  dominates all of its weights is an isomorphism invariant.
+* `Representation.Equiv.eq_of_forall_sum_filter_lt_le`: a weight that occurs in a representation
+  and dominates all of its weights is an isomorphism invariant.
 * `TauCeti.weightSpace_rationalWeylRep_self_ne_bot` and
   `TauCeti.sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot`: **`λ` is the highest weight of the
   rational Weyl module of `λ`.**
@@ -61,52 +61,6 @@ universe u
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-! ## The dominance order -/
-
-/-- **The dominance order on integer vectors is antisymmetric**: two vectors each of whose partial
-sums `∑_{j < m}` bounds the other's agree. -/
-theorem eq_of_forall_sum_filter_lt_le {a b : Fin n → ℤ}
-    (hab : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j)
-    (hba : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j ≤
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j) :
-    a = b := by
-  have heq (m : ℕ) := le_antisymm (hab m) (hba m)
-  funext i
-  have hset : (Finset.univ.filter fun j : Fin n => (j : ℕ) < i + 1) =
-      insert i (Finset.univ.filter fun j : Fin n => (j : ℕ) < i) := by
-    ext j
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.ext_iff]
-    omega
-  have hi : i ∉ Finset.univ.filter fun j : Fin n => (j : ℕ) < i := by simp
-  have h := heq (i + 1)
-  rw [hset, Finset.sum_insert hi, Finset.sum_insert hi, heq i] at h
-  exact add_right_cancel h
-
-section CommRing
-
-variable {k : Type u} [CommRing k]
-variable {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
-
-/-- **A highest weight is an isomorphism invariant.** If the weight `a` occurs in `ρ` and dominates
-every weight of `ρ`, and `b` plays the same role for `σ`, then a representation equivalence
-`ρ ≃ σ` forces `a = b`. -/
-theorem eq_of_equiv_of_forall_sum_filter_lt_le {ρ : Representation k (GL (Fin n) k) V}
-    {σ : Representation k (GL (Fin n) k) W} (e : ρ.Equiv σ) {a b : Fin n → ℤ}
-    (ha : weightSpace ρ a ≠ ⊥)
-    (hρ : ∀ l, weightSpace ρ l ≠ ⊥ → ∀ m : ℕ,
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
-        ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j)
-    (hb : weightSpace σ b ≠ ⊥)
-    (hσ : ∀ l, weightSpace σ l ≠ ⊥ → ∀ m : ℕ,
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
-        ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j) :
-    a = b :=
-  eq_of_forall_sum_filter_lt_le (hσ a ((e.weightSpace_eq_bot_iff a).not.mp ha))
-    (hρ b ((e.weightSpace_eq_bot_iff b).not.mpr hb))
-
-end CommRing
 
 /-! ## The highest weight of a rational Weyl module -/
 
@@ -151,7 +105,7 @@ is recovered from the representation as its highest weight. -/
 theorem nonempty_equiv_rationalWeylRep_iff {l l' : DominantWeight n} :
     Nonempty ((rationalWeylRep k n l).Equiv (rationalWeylRep k n l')) ↔ l = l' := by
   refine ⟨fun ⟨e⟩ => Subtype.ext ?_, fun h => h ▸ ⟨.refl _⟩⟩
-  exact eq_of_equiv_of_forall_sum_filter_lt_le e (weightSpace_rationalWeylRep_self_ne_bot k l)
+  exact e.eq_of_forall_sum_filter_lt_le (weightSpace_rationalWeylRep_self_ne_bot k l)
     (fun _ ha => sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha)
     (weightSpace_rationalWeylRep_self_ne_bot k l')
     (fun _ ha => sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha)
@@ -177,7 +131,7 @@ theorem nonempty_equiv_weylRepOfShape_iff {μ ν : YoungDiagram} (hμ : μ.colLe
       e.toLinearEquiv.symm.toEquiv.nontrivial
     refine not_lt.mp fun hn => Submodule.nontrivial_iff_ne_bot.mp this ?_
     rw [(weylModuleOfShape_eq_bot_iff k n ν).mpr hn, Subrepresentation.toSubmodule_bot]
-  have h := eq_of_equiv_of_forall_sum_filter_lt_le e
+  have h := e.eq_of_forall_sum_filter_lt_le
     (weightSpace_weylRepOfShape_weightOfShape_ne_bot hμ)
     (fun _ ha => sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot ha)
     (weightSpace_weylRepOfShape_weightOfShape_ne_bot hν)

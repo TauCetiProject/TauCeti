@@ -72,6 +72,9 @@ The definitions themselves need only a commutative ring, and are stated there.
   **intertwining maps preserve weights**, and an equivalence of representations matches their
   weight spaces, so that the weights of a representation are an isomorphism invariant
   (`Representation.Equiv.weightSpace_eq_bot_iff`).
+* `TauCeti.eq_of_forall_sum_filter_lt_le` and
+  `Representation.Equiv.eq_of_forall_sum_filter_lt_le`: the dominance order on integer weights is
+  antisymmetric, and hence a highest weight is an isomorphism invariant.
 
 ## Implementation notes
 
@@ -221,6 +224,30 @@ theorem iSup_weightSpace_eq_top_of_surjective (f : IntertwiningMap ρ σ)
 
 end Representation.IntertwiningMap
 
+namespace TauCeti
+
+/-- **The dominance order on integer vectors is antisymmetric**: two vectors each of whose partial
+sums `∑_{j < m}` bounds the other's agree. -/
+theorem eq_of_forall_sum_filter_lt_le {n : ℕ} {a b : Fin n → ℤ}
+    (hab : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j)
+    (hba : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j ≤
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j) :
+    a = b := by
+  have heq (m : ℕ) := le_antisymm (hab m) (hba m)
+  funext i
+  have hset : (Finset.univ.filter fun j : Fin n => (j : ℕ) < i + 1) =
+      insert i (Finset.univ.filter fun j : Fin n => (j : ℕ) < i) := by
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.ext_iff]
+    omega
+  have hi : i ∉ Finset.univ.filter fun j : Fin n => (j : ℕ) < i := by simp
+  have h := heq (i + 1)
+  rw [hset, Finset.sum_insert hi, Finset.sum_insert hi, heq i] at h
+  exact add_right_cancel h
+
+end TauCeti
+
 namespace Representation.Equiv
 
 open TauCeti
@@ -243,6 +270,23 @@ vanishes exactly when the corresponding weight space of the other does. -/
 theorem weightSpace_eq_bot_iff (e : ρ.Equiv σ) (l : Fin n → ℤ) :
     weightSpace ρ l = ⊥ ↔ weightSpace σ l = ⊥ := by
   rw [← e.map_weightSpace l, Submodule.map_eq_bot_iff]
+
+/-- **A highest weight is an isomorphism invariant.** If the weight `a` occurs in `ρ` and dominates
+every weight of `ρ`, and `b` plays the same role for `σ`, then a representation equivalence
+`e : ρ ≃ σ` forces `a = b`. -/
+theorem eq_of_forall_sum_filter_lt_le (e : ρ.Equiv σ) {a b : Fin n → ℤ}
+    (ha : weightSpace ρ a ≠ ⊥)
+    (hρ : ∀ l, weightSpace ρ l ≠ ⊥ → ∀ m : ℕ,
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
+        ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j)
+    (hb : weightSpace σ b ≠ ⊥)
+    (hσ : ∀ l, weightSpace σ l ≠ ⊥ → ∀ m : ℕ,
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
+        ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j) :
+    a = b :=
+  TauCeti.eq_of_forall_sum_filter_lt_le
+    (hσ a ((e.weightSpace_eq_bot_iff a).not.mp ha))
+    (hρ b ((e.weightSpace_eq_bot_iff b).not.mpr hb))
 
 end Representation.Equiv
 
