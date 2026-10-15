@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.RingTheory.Algebraic.Denominator
 public import Mathlib.RingTheory.Polynomial.GaussLemma
@@ -181,6 +182,16 @@ theorem primitiveMinpoly_dvd_iff {x : F} (hx : IsAlgebraic ℚ x) {P : ℤ[X]} :
   rw [IsPrimitive.Int.dvd_iff_map_cast_dvd_map_cast _ _ (isPrimitive_primitiveMinpoly x),
     (associated_map_primitiveMinpoly hx).dvd_iff_dvd_left]
   exact minpoly.dvd ℚ x (by rw [← algebraMap_int_eq, aeval_map_algebraMap, h])
+
+/-- Reversing a primitive defining polynomial gives a multiple of the primitive
+minimal polynomial of the inverse root. -/
+theorem primitiveMinpoly_inv_dvd_reverse {x : F} (hx : IsAlgebraic ℚ x)
+    (hx0 : x ≠ 0) : primitiveMinpoly x⁻¹ ∣ (primitiveMinpoly x).reverse := by
+  let := invertibleOfNonzero hx0
+  apply (primitiveMinpoly_dvd_iff hx.inv).mpr
+  simpa only [aeval_def, invOf_eq_inv] using
+    (eval₂_reverse_eq_zero_iff (algebraMap ℤ F) x (primitiveMinpoly x)).mpr
+      (aeval_primitiveMinpoly hx)
 
 /-- The uniqueness characterisation: an irreducible `P ∈ ℤ[X]` with positive leading coefficient
 vanishing at `x` is the primitive minimal polynomial of `x`. Such a `P` is automatically

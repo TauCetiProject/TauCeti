@@ -21,7 +21,7 @@ The value at a transcendental element is one.
 
 For rational numbers it agrees with the multiplicative Weil height. For general
 algebraic numbers it instead measures the size of their defining polynomial;
-its bounds control denominators and the moduli of complex roots.
+its bounds control denominators and the norms of real or complex roots.
 
 ## References
 
@@ -141,16 +141,6 @@ theorem naiveHeight_zero : naiveHeight (0 : F) = 1 := by
 theorem naiveHeight_one : naiveHeight (1 : F) = 1 := by
   simpa using (naiveHeight_intCast (F := F) 1)
 
-/-- Reversing a primitive defining polynomial gives a multiple of the primitive
-minimal polynomial of the inverse root. -/
-private theorem primitiveMinpoly_inv_dvd_reverse {x : F} (hx : IsAlgebraic ℚ x)
-    (hx0 : x ≠ 0) : primitiveMinpoly x⁻¹ ∣ (primitiveMinpoly x).reverse := by
-  let := invertibleOfNonzero hx0
-  apply (primitiveMinpoly_dvd_iff hx.inv).mpr
-  simpa only [aeval_def, invOf_eq_inv] using
-    (eval₂_reverse_eq_zero_iff (algebraMap ℤ F) x (primitiveMinpoly x)).mpr
-      (aeval_primitiveMinpoly hx)
-
 /-- Inversion preserves naive height, also at zero and at transcendental elements. -/
 @[simp]
 theorem naiveHeight_inv (x : F) : naiveHeight x⁻¹ = naiveHeight x := by
@@ -172,14 +162,15 @@ theorem naiveHeight_inv (x : F) : naiveHeight x⁻¹ = naiveHeight x := by
   · rw [naiveHeight_of_not_isAlgebraic hx,
       naiveHeight_of_not_isAlgebraic (fun h ↦ hx (by simpa only [inv_inv] using h.inv))]
 
-/-- The modulus of a complex algebraic number is bounded by its naive height plus one. -/
-theorem norm_le_naiveHeight_add_one {x : ℂ} (hx : IsAlgebraic ℚ x) :
+/-- The norm of a real or complex algebraic number is bounded by its naive height plus one. -/
+theorem norm_le_naiveHeight_add_one {K : Type*} [RCLike K] {x : K} (hx : IsAlgebraic ℚ x) :
     ‖x‖ ≤ naiveHeight x + 1 :=
   ((primitiveMinpoly x).norm_lt_supNorm_add_one_of_aeval_eq_zero
     (primitiveMinpoly_ne_zero x) (aeval_primitiveMinpoly hx)).le
 
-/-- A nonzero complex algebraic number is bounded away from zero by its naive height. -/
-theorem inv_naiveHeight_add_one_le_norm {x : ℂ} (hx : IsAlgebraic ℚ x) (hx0 : x ≠ 0) :
+/-- A nonzero real or complex algebraic number is bounded away from zero by its naive height. -/
+theorem inv_naiveHeight_add_one_le_norm {K : Type*} [RCLike K] {x : K}
+    (hx : IsAlgebraic ℚ x) (hx0 : x ≠ 0) :
     (naiveHeight x + 1)⁻¹ ≤ ‖x‖ :=
   ((primitiveMinpoly x).inv_supNorm_add_one_lt_norm_of_aeval_eq_zero
     (primitiveMinpoly_ne_zero x) (aeval_primitiveMinpoly hx) hx0).le
