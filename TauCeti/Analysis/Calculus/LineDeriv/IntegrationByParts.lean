@@ -177,7 +177,8 @@ theorem integral_lineDeriv_mul_eq_neg_of_contDiffOn {U : Set E} (hU : IsOpen U) 
   have hnear : ∀ x ∈ tsupport g, F =ᶠ[𝓝 x] f := fun x hx => by
     filter_upwards [isOpen_interior.mem_nhds (hχ1 hx)] with y hy
     have hy1 : y ∈ χ ⁻¹' {1} := interior_subset hy
-    simp [F, show χ y = 1 from hy1]
+    have hχy : χ y = 1 := Set.mem_singleton_iff.mp (Set.mem_preimage.mp hy1)
+    simp [F, hχy]
   have h1 : ∀ x, lineDeriv ℝ F x v * g x = g x * fderiv ℝ f x v := fun x => by
     by_cases hx : x ∈ tsupport g
     · have hfx : DifferentiableAt ℝ f x :=

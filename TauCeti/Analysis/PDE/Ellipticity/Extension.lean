@@ -104,9 +104,11 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn [DecidableEq ι] {lam Lam 
     ha.smul_add_one_sub_smul (uniformlyEllipticOn_const_smul_one univ ha.pos le_rfl ha.le) hχI
       (fun x hx => hχ0 x fun h => hx (hχs h)), hK', fun x hx => ?_⟩
   · have hx1 : x ∈ χ ⁻¹' {1} := interior_subset hx
-    exact hχs (subset_tsupport _ (by simp [show χ x = 1 from hx1]))
+    have hχx : χ x = 1 := Set.mem_singleton_iff.mp (Set.mem_preimage.mp hx1)
+    exact hχs (subset_tsupport _ (by simp [hχx]))
   · have hx1 : x ∈ χ ⁻¹' {1} := interior_subset hx
-    simp [show χ x = 1 from hx1]
+    have hχx : χ x = 1 := Set.mem_singleton_iff.mp (Set.mem_preimage.mp hx1)
+    simp [hχx]
 
 end PDE
 
