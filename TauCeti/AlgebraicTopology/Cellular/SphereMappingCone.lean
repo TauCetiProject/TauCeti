@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.Topology.CWComplex.Classical.Sphere.MappingCone
 
 /-!
@@ -166,42 +165,28 @@ private def diskBoundaryMap :
     TopCat.diskBoundary.{u} (n + 1 + 1) ⟶ TopCat.of (sphere (0 : EuclideanSpace ℝ ι) 1) :=
   TopCat.ofHom (f.comp ⟨ULift.down, continuous_uliftDown⟩)
 
-/-- A point `(a, 0)` with `a` in the `(n + 1)`-skeleton of `Sⁿ⁺¹` lies in the `(n + 1)`-skeleton
-of `Sⁿ⁺¹ ∪_f Dⁿ⁺²`. -/
-private lemma mem_skeletonLT_sphereMappingCone
-    (p : letI := sphereCWComplex h; skeletonObj (sphere (0 : EuclideanSpace ℝ ι) 1) (n + 1 + 1)) :
-    letI := sphereMappingConeCWComplex h f
-    ((p : EuclideanSpace ℝ ι), (0 : EuclideanSpace ℝ (Fin (n + 1 + 1)))) ∈
-      (skeletonLT (sphereMappingCone f) ((n + 1 + 1 : ℕ) : ℕ∞) : Set _) := by
-  let _ := sphereCWComplex h
-  rw [coe_skeletonLT_sphereMappingCone]
-  exact ⟨p, (skeletonLT _ _).subset_complex p.2, rfl⟩
-
 /-- The `(n + 1)`-skeleton of `Sⁿ⁺¹` included in the `(n + 1)`-skeleton of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` by
-`a ↦ (a, 0)`. -/
+`a ↦ (a, 0)`, through `TauCeti.sphereMappingConeSkeletonHomeomorph`. -/
 private def skeletonToMappingCone :
     letI := sphereCWComplex h
     letI := sphereMappingConeCWComplex h f
     skeletonObj (sphere (0 : EuclideanSpace ℝ ι) 1) (n + 1 + 1) ⟶
       skeletonObj (sphereMappingCone f) (n + 1 + 1) :=
-  letI := sphereCWComplex h
-  letI := sphereMappingConeCWComplex h f
-  TopCat.ofHom ⟨fun p ↦ ⟨((p : EuclideanSpace ℝ ι), 0), mem_skeletonLT_sphereMappingCone h f p⟩,
-    (continuous_subtype_val.prodMk continuous_const).subtype_mk _⟩
+  TopCat.ofHom ((Homeomorph.setCongr (coe_skeletonLT_sphere h)).trans
+    (sphereMappingConeSkeletonHomeomorph h f) : C(_, _))
 
 private lemma coe_skeletonToMappingCone_apply
     (p : letI := sphereCWComplex h; skeletonObj (sphere (0 : EuclideanSpace ℝ ι) 1) (n + 1 + 1)) :
     (skeletonToMappingCone h f p : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1 + 1))) =
       ((p : EuclideanSpace ℝ ι), 0) :=
-  (rfl)
+  coe_sphereMappingConeSkeletonHomeomorph_apply h f _
 
 private lemma injective_skeletonToMappingCone :
     letI := sphereCWComplex h
     letI := sphereMappingConeCWComplex h f
-    Function.Injective (skeletonToMappingCone h f) := fun p q hpq ↦ by
-  have := congrArg (fun z ↦ (z.1 : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1 + 1))).1) hpq
-  rw [coe_skeletonToMappingCone_apply, coe_skeletonToMappingCone_apply] at this
-  exact Subtype.ext this
+    Function.Injective (skeletonToMappingCone h f) :=
+  ((Homeomorph.setCongr (coe_skeletonLT_sphere h)).trans
+    (sphereMappingConeSkeletonHomeomorph h f)).injective
 
 private lemma mapsTo_skeletonToMappingCone_compl
     (x : letI := sphereCWComplex h; skeletonObj (sphere (0 : EuclideanSpace ℝ ι) 1) (n + 1 + 1)) :
@@ -216,7 +201,8 @@ private lemma cellAttachingMap_sphereMappingConeTopCell_eq :
       diskBoundaryMap f ≫ sphereToSkeleton h ≫ skeletonToMappingCone h f := by
   ext x : 1
   rw [cellAttachingMap_sphereMappingConeTopCell_apply]
-  exact Subtype.ext (coe_sphereMappingConeSkeletonHomeomorph_apply h f _)
+  exact Subtype.ext ((coe_sphereMappingConeSkeletonHomeomorph_apply h f _).trans
+    (coe_skeletonToMappingCone_apply h f (sphereToSkeleton h (diskBoundaryMap f x))).symm)
 
 /-- `a ↦ (a, 0)` maps the open `(n + 1)`-cell of `Sⁿ⁺¹` into the corresponding open cell of
 `Sⁿ⁺¹ ∪_f Dⁿ⁺²`. -/
