@@ -138,12 +138,8 @@ theorem comulPoint_eq_include_mul :
         (R := R) (A := H) (B := H)) *
       toConv (Algebra.TensorProduct.includeRight
         (R := R) (A := H) (B := H)) := by
-  apply WithConv.ofConv_injective
-  apply AlgHom.toLinearMap_injective
-  apply WithConv.toConv_injective
-  rw [AlgHom.toLinearMap_convMul]
-  simpa only [Bialgebra.toLinearMap_comulAlgHom] using
-      (Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H))
+  simpa only [AlgHom.id_comp] using
+    toConv_comp_comulAlgHom (phi := AlgHom.id R (H ⊗[R] H))
 
 end Bialgebra
 
