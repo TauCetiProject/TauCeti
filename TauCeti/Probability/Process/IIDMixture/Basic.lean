@@ -95,7 +95,8 @@ theorem iidMixtureLaw_map_directing (hP : Measurable P) :
 independent i.i.d. sequence `r` from `ρ`, and apply a jointly measurable `h t` to each noise
 variable. If `h t` pushes `ρ` forward to `P t`, the resulting pair `(t, (h t (r i))ᵢ)` has the
 canonical law `iidMixtureLaw π P`: given the parameter, the coordinates are i.i.d. `P t`. -/
-theorem map_prod_infinitePi_eq_iidMixtureLaw {R : Type*} [MeasurableSpace R]
+theorem _root_.MeasureTheory.Measure.map_prod_infinitePi_eq_iidMixtureLaw
+    {R : Type*} [MeasurableSpace R]
     (ρ : Measure R) [IsProbabilityMeasure ρ] {h : T → R → α}
     (hh : Measurable (Function.uncurry h)) (hP : ∀ t, ρ.map (h t) = P t) :
     (π.prod (Measure.infinitePi fun _ : ℕ => ρ)).map (fun q => (q.1, fun i => h q.1 (q.2 i)))

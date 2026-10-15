@@ -23,16 +23,24 @@ on:
 permissions:
   contents: read
 
-# Serialize comment/close transactions so retries cannot duplicate comments.
-# Every event also sweeps the backlog, so replacing a pending scheduled run
-# with an event cannot starve enforcement under continuous PR traffic.
+# Coalesce repeated events for one PR/fork branch before the global job queue.
+# Backlog runs have unique groups and cannot replace each other here.
 concurrency:
-  group: tauceti-no-stacking
+  group: >-
+    ${{ github.event_name == 'pull_request_target' && format('no-stack-pr-{0}', github.event.pull_request.number)
+      || github.event_name == 'workflow_run' && format('no-stack-wake-{0}-{1}', github.event.workflow_run.head_repository.id, github.event.workflow_run.head_branch)
+      || format('no-stack-backlog-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
   enforce:
-    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.NO_STACK_APPLY == 'true')
+    # One mutation lock across all PRs and backlog sweeps; retries cannot race
+    # duplicate comments. GitHub rejects new arrivals when all 100 slots are full.
+    concurrency:
+      group: tauceti-no-stacking
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

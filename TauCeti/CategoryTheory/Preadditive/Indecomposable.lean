@@ -127,7 +127,7 @@ theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : 
     Indecomposable X := by
   refine indecomposable_of_idempotent_eq_zero_or_id hX fun e he ↦ ?_
   have hidem : IsIdempotentElem (φ e) := (hsq e).symm.trans (congrArg φ he)
-  rcases IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem hidem with h0 | h1
+  rcases IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hidem with h0 | h1
   · exact Or.inl (hφ (h0.trans hzero.symm))
   · exact Or.inr (hφ (h1.trans hid.symm))
 

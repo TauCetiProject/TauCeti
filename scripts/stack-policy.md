@@ -20,6 +20,41 @@ prose identifying local prerequisite PRs. A label, author, import, shared file,
 branch name, non-main base alone, or mention in code/quoted/negative prose does
 not prove stacking. Discovery by prose never suffices for closure.
 
+Explicit declarations use GitHub's rendered body, read through the canonical PR
+API with matching raw body and head identity, then cached within the sweep.
+The HTML is parsed as data: code, blockquotes, quotation/retracted elements and link labels
+cannot provide declarations. Canonical local PR links identify parents only when
+their complete text label is exactly the matching #N or canonical PR URL.
+Descriptive, qualified, alternative or mismatched labels remain opaque, including
+formatted labels; removing their wording cannot manufacture unconditional claims.
+Visible link-label text can still veto negated/retracted claims; deleting a
+negative label must not turn its surrounding prose into an affirmative claim.
+Suppressed markup also participates in these conservative vetoes, so formatting
+negation as code inside a link cannot remove it; this may decline other valid
+body-only declarations alongside quoted/code examples.
+Only complete affirmative declarations beginning a rendered sentence (optionally
+with this PR or this branch) qualify. Their tail must contain only the contiguous
+parent-reference list and closing punctuation, without questions, conditions or
+extra qualifying prose. Questions/conditional context elsewhere in the body also
+decline body-only inference. Example-prefixed prose does not qualify. Literal quoted
+prose or explicit negative/example/historical context conservatively disables body-only
+inference for that body, including quotations spanning paragraphs. Whitespace
+within paragraphs is normalized and excluded inline elements retain opaque
+placeholders, so removing them cannot manufacture a sentence start.
+These restrictions may miss valid declarations;
+exact ancestry/base evidence remains available independently. Inaccessible or
+changed rendered metadata is an unknown result, never closure authority.
+The entire rendered body must use this closed declaration language, optionally
+with an exact Roadmap attribution or canonical Refs field. Mixed narrative,
+headings with other text, task checkboxes, images and unsupported markup decline
+body-only authority: their context cannot be interpreted reliably from keywords.
+This intentionally leaves ordinary mixed descriptions to independent graph/base
+proofs, and preserves simple explicit declarations for rebased/cherry-picked work.
+Supported wording is stacked on, depends on, prerequisites/dependencies/parent PR,
+or carries (unmerged/prerequisite) commits from. Based on and built on alone do
+not establish a current dependency. A declined declaration also retains any
+existing policy-owned blocking label until the uncertainty is resolved.
+
 A confirmed stack must have a current parent identity and a complete individual
 parent commit patch reverse-applicable to the child's current source tree.
 It must also have an exact unmerged ancestor head or a canonical parent branch
@@ -27,13 +62,23 @@ as its base. For a body-only rebase/cherry-pick link, both the complete current
 parent aggregate and its head commit patch must be present; a shared precursor
 alone cannot establish direction. Content-only evidence must also be absent at
 the child's main fork point; old main content is base drift, not inherited work.
-An ancestry-only relationship additionally requires the same head repository
-and the same known PR-author account ID. Deleted/unknown authors cannot authorize
-it; an outsider opening a PR from someone else's existing branch cannot either.
-Cross-repository ancestry needs the child's explicit parent declaration or a
-canonical parent base branch; an outsider's copied prefix cannot condemn its
-original PR. Repository identity alone never proves stacking. The source diff
-and its SHA-256 are reported.
+Except for a current open canonical parent branch used as the child's base, every
+relationship additionally requires the same head repository and the same known
+PR-author account ID. An unpinned prose reference does not bypass these guards:
+it can remain stale after the original prerequisite lands, while another account
+force-pushes that parent to a copied prefix of the now-standalone child.
+Deleted/unknown authors and an outsider opening a PR from someone else's branch
+also cannot authorize closure. The canonical-base exception relies on the
+child's current explicit base choice and the open parent's live branch identity,
+rechecked before mutation. [GitHub requires write access to the source branch
+to open a PR](https://docs.github.com/en/rest/pulls/pulls#create-a-pull-request);
+the canonical exception therefore trusts repository branch writers. Account
+identity does not distinguish independent agents sharing that account. If one
+opens a prerequisite PR at another PR's prefix, the existing source proof can
+classify the older PR as stacked and close it even when the prerequisite PR was
+opened later. PR numbering does not exempt a current confirmed stack.
+Repository or author identity alone never proves stacking. The source diff and
+its SHA-256 are reported.
 Before confirming, the detector checks actual main source history for the same
 complete content, including combined bors squashes and later modifications or
 reverts. GitHub PR closure/mergedAt is never proof of landing. Closed but
@@ -74,15 +119,21 @@ precede expensive content checks; summary records Git operations and elapsed tim
 
 - Unmentioned, independently rebased/cherry-picked inherited work with no shared
   unmerged commit and no matching canonical parent base branch.
-- Cross-repository ancestry without a child-declared parent or canonical base
-  relationship, because a copied commit prefix cannot establish ownership.
-- Ancestry-only links with different/unknown PR authors, for the same reason.
+- Cross-repository or different/unknown-author relationships without a current
+  canonical parent base branch, even with an unpinned explicit parent reference.
+  Such a reference cannot authenticate a later force-pushed head. Immutable head
+  declarations or trusted changed-parent history are not yet supported.
 - Work whose parent diff and individual commit patches were partially edited,
   split, rewritten or only partly inherited so that no complete reverse patch
   applies, and body-only links whose current parent content is incomplete.
   These relationships are not established by semantic inference.
 - Parents outside the bounded index, inaccessible/deleted source or histories
   beyond the bounds. These are gaps, not proved-safe results.
+- A non-main fork wake without an association or matching current repository,
+  branch identity is unknown until a backlog sweep. Events canceled by
+  GitHub's 100-entry concurrency bound supply no coverage. A full queue also
+  rejects new schedule/manual arrivals; reconciliation requires a backlog job
+  that is actually admitted and completes.
 - Individual merge/root commit patches. The detector skips these while looking
   for a separate supported commit within the same bound, then records a gap if
   none proves inheritance. It never guesses a merge's parent/content identity.
@@ -99,18 +150,33 @@ precede expensive content checks; summary records Git operations and elapsed tim
 
 Main-target PR opened/reopened/edited/synchronize/draft events invoke the trusted
 policy directly. Other bases invoke an unprivileged wake workflow, then the
-main-defined workflow_run observer. Every event performs a bounded backlog sweep,
-so coalesced events cannot starve a pending hourly sweep. Manual dispatch can
-select one PR. The triggering PR is classified first, followed by the newest
-backlog PRs, so
-old costly claims cannot prevent the triggering PR from being checked.
+main-defined workflow_run observer. PR events inspect only the triggering PR
+against the bounded complete parent index. An unassociated fork wake must match
+current canonical PR metadata by head repository and branch. Associations must
+name this base repository and the wake's head. Wake completions can arrive out
+of push order, so even an older wake recomputes the branch's current PR heads;
+all closure evidence and final live checks use that current state. A target
+absent from a complete open index is `superseded` without mutation. Missing or
+incomplete identities are unknown. Neither case initiates a backlog sweep.
+Hourly schedules and manual dispatches inspect the bounded backlog; manual
+dispatch can also select one PR. This avoids repeating every older PR's expensive
+content/landing checks on each ordinary event, preserving App API quota.
+Workflow-level groups coalesce repeated events per PR or
+fork branch, while backlog runs have unique groups. One job-level mutation lock
+then uses GitHub's FIFO `queue: max` (up to 100), bounding queued event jobs by
+distinct active PRs/branches rather than repeated edits. New arrivals do not
+replace already pending jobs. When full, this queue rejects new jobs including
+schedule/manual arrivals. Cancellations are visible in Actions and are not
+coverage; backlog reconciliation requires an admitted, completed sweep.
 The workflow checks out main-defined tooling explicitly; candidate-defined code
 never receives its app token. Every run publishes JSONL
-in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables enforcement;
-otherwise all triggers audit only. Manual dispatch additionally defaults to
-dry-run. Clearing this repository variable pauses mutations while audits continue.
+in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables automatic
+checks/enforcement. Otherwise automatic jobs skip and manual audits remain
+available, preventing background quota consumption during an audit-only rollout.
+Manual dispatch additionally defaults to dry-run. Clearing the repository
+variable pauses automatic jobs and mutations while retaining manual audits.
 `NO_STACK_APPLY=dispatch` permits only a manual apply selecting one positive PR
-number, for a production canary before enabling automatic sweeps. A dry-run also
+number, for a production canary before enabling automatic checks. A dry-run also
 checks current identities and live fork branches for every confirmed result.
 
 Only a confirmed stack receives the `stacked-pr` label **before** its explanation

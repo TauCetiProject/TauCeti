@@ -16,7 +16,9 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 For an elliptic curve `E/S` and a natural number `N` invertible on `S`, the scheme
 `naiveExactOrderOpens E hN` represents points of naive exact order `N`. Its inclusion in
 `E[N]` is both open and closed, so its structural morphism is finite étale. It is also
-surjective: every geometric fibre has a point of exact order `N`.
+surjective: every geometric fibre has a point of exact order `N`. Being closed in `E[N]`, it is
+closed in `E`, so the locus of `S` over which an `S`-point has naive exact order `N` is a closed
+subscheme of `S`.
 
 Thus a point of naive exact order can be chosen after a finite étale surjective base change.
 This cover is the relative parameter scheme for the naive single-point level problem.
@@ -45,6 +47,12 @@ instance isClosedImmersion_naiveExactOrderOpens_ι :
   apply IsClosedImmersion.of_isPreimmersion
   rw [Scheme.Opens.range_ι, coe_naiveExactOrderOpens]
   exact (E.isClopen_naiveExactOrderLocus hN).isClosed
+
+/-- When `N` is invertible on the base, the locus where an `S`-point has naive exact order `N` is
+a closed subscheme of the base. -/
+instance isClosedImmersion_naiveExactOrderPreimageι (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
+    IsClosedImmersion (naiveExactOrderPreimageι hN P) :=
+  MorphismProperty.of_isPullback (isPullback_naiveExactOrderPreimage hN P).flip inferInstance
 
 /-- The scheme of points of naive exact order `N` is finite over the base when `N` is
 invertible on the base. -/
