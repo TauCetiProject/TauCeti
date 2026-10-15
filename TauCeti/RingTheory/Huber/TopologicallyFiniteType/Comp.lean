@@ -116,49 +116,6 @@ variable {A A' B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
 
-/-- A quotient mapping `π : (A', A'⁺) → (B, B⁺)`, applied coefficientwise, induces a quotient
-mapping `(A'⟨Y₁, …, Y_m⟩, A'⟨Y⟩⁺) → (B⟨Y₁, …, Y_m⟩, B⟨Y⟩⁺)` of the completed unweighted pairs. -/
-private theorem exists_isQuotientMapping_weightedMapCompletion {S : Pair A'} {U : Pair B}
-    {π : Hom S U} (hπ : π.IsQuotientMapping) (m : ℕ) :
-    ∃ β : Hom (S.weighted (isWeightFamily_one_weight (k := m))).completion
-      (U.weighted (isWeightFamily_one_weight (k := m))).completion,
-      β.IsQuotientMapping ∧ β.toRingHom = weightedMapCompletion π.continuous_toRingHom
-        isWeightFamily_one_weight isWeightFamily_one_weight fun _ ↦ by simp := by
-  set F := weightedMapCompletion (k := m) π.continuous_toRingHom isWeightFamily_one_weight
-    isWeightFamily_one_weight fun _ ↦ by simp
-  have hFC (a : A') : F ((weightedC (fun _ : Fin m ↦ ({1} : Set A')) isWeightFamily_one_weight a :
-      weightedRestrictedSubring _ _) : restrictedMvPowerSeriesCompletion m A') =
-        (weightedC (fun _ : Fin m ↦ ({1} : Set B)) isWeightFamily_one_weight (π.toRingHom a) :
-          weightedRestrictedSubring _ _) := by
-    rw [weightedMapCompletion_coe, weightedMap_weightedC]
-  have hFX (i : Fin m) (t : A') (ht : t ∈ ({1} : Set A')) :
-      F ((weightedC (fun _ : Fin m ↦ ({1} : Set A')) isWeightFamily_one_weight t *
-        weightedX _ isWeightFamily_one_weight i : weightedRestrictedSubring _ _) :
-          restrictedMvPowerSeriesCompletion m A') =
-        (weightedC (fun _ : Fin m ↦ ({1} : Set B)) isWeightFamily_one_weight 1 *
-          weightedX _ isWeightFamily_one_weight i : weightedRestrictedSubring _ _) := by
-    rw [weightedMapCompletion_coe, map_mul, weightedMap_weightedC, weightedMap_weightedX,
-      Set.mem_singleton_iff.mp ht, map_one]
-  let β : Hom (S.weighted (isWeightFamily_one_weight (k := m))).completion
-      (U.weighted (isWeightFamily_one_weight (k := m))).completion :=
-    { toRingHom := F
-      continuous_toRingHom := continuous_weightedMapCompletion ..
-      map_mem_plus := weighted_completion_plus_le_comap_weightedMapCompletion _ π _ _ }
-  refine ⟨β, Hom.isQuotientMapping_of_isIntegral_weighted β
-    (hπ.isOpenQuotientMap.weightedMapCompletion isWeightFamily_one_weight
-      isWeightFamily_one_weight (fun _ ↦ by simp)) (fun b hb ↦ ?_) (fun i t ht ↦ ?_), rfl⟩
-  · -- `b` is integral over `π(A'⁺)`, so its constant is integral over the constants of `π(A'⁺)`
-    let φ : B →+* restrictedMvPowerSeriesCompletion m B :=
-      Completion.coeRingHom.comp (weightedC _ isWeightFamily_one_weight)
-    let ψ : S.plus.map π.toRingHom →+*
-        (S.weighted (isWeightFamily_one_weight (k := m))).completion.plus.map β.toRingHom :=
-      φ.restrict _ _ fun _ ⟨a, ha, hab⟩ ↦ Subring.mem_map.mpr
-        ⟨_, S.weightedC_mem_weighted_completion_plus _ ha, by rw [← hab]; exact hFC a⟩
-    exact (hπ.mem_plus_iff.mp hb).map_of_comp_eq ψ φ (by ext; rfl)
-  · rw [Set.mem_singleton_iff.mp ht, ← hFX i 1 rfl]
-    exact isIntegral_algebraMap (R := Subring.map _ _) (x := ⟨_, Subring.mem_map.mpr
-      ⟨_, S.weightedC_mul_weightedX_mem_weighted_completion_plus _ rfl, rfl⟩⟩)
-
 /-- **The composite of morphisms of Huber pairs topologically of finite type is topologically of
 finite type**, over a Tate base: for `f : (A, A⁺) → (B, B⁺)` and `g : (B, B⁺) → (C, C⁺)`
 topologically of finite type with `A` Tate, so is `g ∘ f`. This is the composition statement of
@@ -177,12 +134,17 @@ theorem Hom.IsTopologicallyFiniteType.comp [IsTateRing A] {S : Pair A} {U : Pair
     isWeightFamily_one_weight (fun _ ↦ rfl) hUW
   have he := S.isQuotientMapping_iterateSplitHom isWeightFamily_one_weight
     isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ rfl) hUW
-  obtain ⟨β, hβ, hβF⟩ := exists_isQuotientMapping_weightedMapCompletion hπ m
+  let β := π.weightedMapCompletion (isWeightFamily_one_weight (k := m))
+    isWeightFamily_one_weight (fun _ ↦ by simp)
+  have hβ : β.IsQuotientMapping := hπ.weightedMapCompletion isWeightFamily_one_weight
+    isWeightFamily_one_weight (fun _ ↦ by simp)
+    (hπ.isOpenQuotientMap.weightedMapCompletion isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ by simp))
   refine isTopologicallyFiniteType_iff.mpr ⟨k + m, fun _ ↦ {1}, fun _ ↦ Set.finite_singleton 1,
     isWeightFamily_one_weight, ρ.comp (β.comp e), hρ.comp (hβ.comp he),
     Hom.ext (RingHom.ext fun a ↦ ?_)⟩
   -- on a constant each of the three maps acts as the corresponding structure map
-  simp [e, hβF, algebraMap_completion_weightedRestrictedSubring_apply]
+  simp [e, β, algebraMap_completion_weightedRestrictedSubring_apply]
 
 end Pair
 
