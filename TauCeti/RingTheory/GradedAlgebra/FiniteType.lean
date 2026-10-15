@@ -45,7 +45,7 @@ open DirectSum
 
 namespace Subalgebra
 
-variable {k S : Type*} [CommRing k] [CommRing S] [Algebra k S] [IsNoetherianRing S]
+variable {k S : Type*} [CommSemiring k] [CommSemiring S] [Algebra k S] [IsNoetherianRing S]
   (𝒜 : ℕ → Submodule k S) [GradedAlgebra 𝒜]
 
 /-- **Hilbert's finiteness argument.** In a Noetherian `ℕ`-graded algebra whose degree-zero part
