@@ -23,6 +23,7 @@ heights computed over `K` and over `L`.
 
 ## Main results
 
+* `NumberField.InfinitePlace.mem_placesOver`: `w ∈ v.placesOver L ↔ w.LiesOver v`.
 * `NumberField.InfinitePlace.sum_mult_eq_mult_mul_finrank`: `∑_{w ∣ v} m_w = m_v [L : K]`.
 * `NumberField.InfinitePlace.prod_comap_pow_mult`:
   `∏_w g(w|_K) ^ m_w = ∏_v g(v) ^ (m_v [L : K])`.
@@ -38,7 +39,15 @@ open Module
 
 namespace NumberField.InfinitePlace
 
-variable {K L : Type*} [Field K] [Field L] [Algebra K L] [NumberField K] [NumberField L]
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+/-- An infinite place of `L` belongs to `v.placesOver L` exactly when it lies over `v`. -/
+@[simp]
+theorem mem_placesOver {v : InfinitePlace K} {w : InfinitePlace L} :
+    w ∈ v.placesOver L ↔ w.LiesOver v :=
+  Iff.rfl
+
+variable [NumberField K] [NumberField L]
 
 variable (L) in
 open scoped Classical in
@@ -48,7 +57,7 @@ theorem sum_mult_eq_mult_mul_finrank (v : InfinitePlace K) :
     ∑ w ∈ v.placesOver L, w.mult = v.mult * finrank K L := by
   rw [← sum_inertiaDeg_eq_finrank K L v, Finset.mul_sum]
   refine Finset.sum_congr rfl fun w hw ↦ ?_
-  have : w.LiesOver v := (Set.mem_toFinset (s := v.placesOver L)).mp hw
+  have : w.LiesOver v := by simpa using hw
   rw [inertiaDeg_eq_finrank, mult_mul_finrank]
 
 /-- Grouping the infinite places of `L` by their restriction to `K`: a product over the infinite
@@ -63,9 +72,8 @@ theorem prod_comap_pow_mult {M : Type*} [CommMonoid M] (g : InfinitePlace K → 
   rw [← sum_mult_eq_mult_mul_finrank L v, ← Finset.prod_pow_eq_pow_sum]
   refine Finset.prod_congr ?_ fun w hw ↦ ?_
   · ext w
-    rw [Set.mem_toFinset (s := v.placesOver L)]
-    simp [placesOver, liesOver_iff_comap_eq]
-  · have : w.LiesOver v := (Set.mem_toFinset (s := v.placesOver L)).mp hw
+    simp [liesOver_iff_comap_eq]
+  · have : w.LiesOver v := by simpa using hw
     rw [LiesOver.comap_eq w v]
 
 end NumberField.InfinitePlace

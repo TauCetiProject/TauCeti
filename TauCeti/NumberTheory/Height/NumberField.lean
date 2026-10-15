@@ -141,9 +141,9 @@ omit [Field L] [Algebra K L] [NumberField L] in
 theorem mulHeight_ringEquiv (e : K ≃+* K') (x : ι → K) : mulHeight (e ∘ x) = mulHeight x := by
   let _ : Algebra K K' := e.toRingHom.toAlgebra
   have h := mulHeight_algebraMap (L := K') x
+  -- `algebraMap K K'` is `e` by `RingHom.algebraMap_toAlgebra`, so `rwa` closes `h` up to `rfl`.
   rwa [← (AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl).toLinearEquiv.finrank_eq, finrank_self,
-    pow_one, RingHom.algebraMap_toAlgebra, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom] at h
+    pow_one] at h
 
 omit [Field L] [Algebra K L] [NumberField L] in
 /-- A ring isomorphism of number fields preserves the multiplicative height of elements. -/
