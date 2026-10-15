@@ -680,13 +680,15 @@ class MainTests(unittest.TestCase):
     def main(self, *args):
         empty_bors = {"schema": "tauceti-bors.observation/v1", "repo": sp.REPO, "base": "main",
                       "batch_ids": [], "batches": [], "held": []}
-        source = SimpleNamespace(fetch=lambda _: None, begin_child=lambda: None, calls=0, started=sp.time.monotonic())
+        source = SimpleNamespace(fetch=MagicMock(), begin_child=lambda: None, calls=0, started=sp.time.monotonic())
+        self.last_source = source
         with patch.object(sp, "API", return_value=self.api), patch.object(sp, "Source", return_value=source), \
-                patch.object(sp, "Detector", return_value=self.detector), \
+                patch.object(sp, "Detector", return_value=self.detector) as constructor, \
                 patch.object(sp, "run", return_value=SimpleNamespace(stdout=b"/tmp/policy-fixture")), \
                 patch("bors_observation.observation", return_value=empty_bors), \
                 patch.dict(os.environ, {"STACK_ACTOR": "trusted[bot]"}), \
                 patch.object(sp.sys, "argv", ["stack_policy.py", *args]), redirect_stdout(io.StringIO()):
+            self.last_constructor = constructor
             return sp.main()
 
     def test_dry_run_confirmed_has_no_mutations(self):
@@ -743,8 +745,13 @@ class MainTests(unittest.TestCase):
     def test_workflow_run_association_focuses_only_triggered_pr(self):
         visited = []
         self.detector.detect = lambda p: (visited.append(p.number) or None, [])
-        self.assertFalse(self.event({"workflow_run": {"pull_requests": [{"number": 1}]}}))
+        self.assertFalse(self.event({"workflow_run": {"head_sha": self.parent.head, "pull_requests": [{
+            "number": 1, "head": {"sha": self.parent.head},
+            "base": {"repo": {"url": f"https://api.github.com/repos/{sp.REPO}"}},
+        }]}}))
         self.assertEqual(visited, [1])
+        self.assertEqual({p.number for p in self.last_source.fetch.call_args.args[0]}, {1, 2})
+        self.assertEqual({p.number for p in self.last_constructor.call_args.args[2]}, {1, 2})
 
     def test_pr_event_focuses_older_target_and_explicit_pr_overrides_it(self):
         visited = []
@@ -774,15 +781,42 @@ class MainTests(unittest.TestCase):
             with self.subTest(field=field):
                 changed = copy.deepcopy(wake)
                 changed["workflow_run"][field] = value
-                with self.assertRaisesRegex(sp.Gap, "no associated PR/current canonical PR"):
+                with self.assertRaises(sp.Superseded if field == "head_sha" else sp.Gap):
                     sp.event_targets(changed, [fork])
 
     def test_incomplete_wake_or_closed_event_never_broadens_to_backlog(self):
         with self.assertRaises(sp.Gap):
             self.event({"workflow_run": {"pull_requests": []}})
-        with self.assertRaisesRegex(sp.Gap, "not open"):
-            self.event({"pull_request": {"number": 99}})
+        self.assertFalse(self.event({"pull_request": {"number": 99}}))
         self.assertEqual(self.api.calls, [])
+
+    def test_stale_fork_wake_is_superseded_but_missing_identity_is_unknown(self):
+        fork = sp.PR(**{**sp.asdict(self.child), "base": "branch-1", "head_repo": "fork/TauCeti"})
+        self.raw[1] = self.record(fork)
+        wake = {"workflow_run": {"head_sha": "f" * 40, "head_branch": fork.branch,
+                                "head_repository": {"full_name": fork.head_repo}}}
+        self.assertFalse(self.event(wake))
+        self.raw[1]["head"]["repo"] = None
+        with self.assertRaises(sp.Gap):
+            self.event(wake)
+        self.assertEqual(self.api.calls, [])
+
+    def test_malformed_target_is_not_classified_superseded(self):
+        self.raw[1]["head"]["repo"] = None
+        with self.assertRaises(sp.Gap):
+            self.event({"pull_request": {"number": 2}})
+
+    def test_foreign_or_wrong_head_association_does_not_select_unrelated_pr(self):
+        fork = sp.PR(**{**sp.asdict(self.child), "base": "branch-1", "head_repo": "fork/TauCeti"})
+        wake = {"workflow_run": {"head_sha": fork.head, "head_branch": fork.branch,
+            "head_repository": {"full_name": fork.head_repo}, "pull_requests": [{
+                "number": 1, "head": {"sha": fork.head}, "base": {"repo": {"full_name": "other/repo"}},
+            }]}}
+        self.assertEqual(sp.event_targets(wake, [self.parent, fork]), {2})
+        linked = wake["workflow_run"]["pull_requests"][0]
+        linked["base"]["repo"]["full_name"] = sp.REPO
+        linked["head"]["sha"] = "f" * 40
+        self.assertEqual(sp.event_targets(wake, [self.parent, fork]), {2})
 
     def test_closed_parent_budget_does_not_abort_unrelated_children(self):
         self.raw[1]["body"] = "Dependencies: " + ", ".join(f"#{n}" for n in range(100, 165))
@@ -882,7 +916,11 @@ class IntegrationContractTests(unittest.TestCase):
         self.assertEqual(events["pull_request_target"]["branches"], ["main"])
         self.assertTrue(events["workflow_dispatch"]["inputs"]["dry-run"]["default"])
         job = workflow["jobs"]["enforce"]
-        self.assertEqual(workflow["concurrency"]["queue"], "max")
+        self.assertNotIn("queue", workflow["concurrency"])
+        self.assertIn("github.event.pull_request.number", workflow["concurrency"]["group"])
+        self.assertIn("github.run_id", workflow["concurrency"]["group"])
+        self.assertEqual(job["concurrency"], {"group": "tauceti-no-stacking",
+                                           "queue": "max", "cancel-in-progress": False})
         self.assertFalse(workflow["concurrency"]["cancel-in-progress"])
         self.assertIn("vars.NO_STACK_APPLY == 'true'", job["if"])
         self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])

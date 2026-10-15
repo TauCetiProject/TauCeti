@@ -96,8 +96,9 @@ precede expensive content checks; summary records Git operations and elapsed tim
   beyond the bounds. These are gaps, not proved-safe results.
 - A non-main fork wake without an association or matching current repository,
   branch and head identity is unknown until a backlog sweep. Events canceled by
-  GitHub's 100-entry concurrency bound supply no coverage; the next completed
-  scheduled/manual backlog sweep must reconcile them.
+  GitHub's 100-entry concurrency bound supply no coverage. A full queue also
+  rejects new schedule/manual arrivals; reconciliation requires a backlog job
+  that is actually admitted and completes.
 - Individual merge/root commit patches. The detector skips these while looking
   for a separate supported commit within the same bound, then records a gap if
   none proves inheritance. It never guesses a merge's parent/content identity.
@@ -116,15 +117,22 @@ Main-target PR opened/reopened/edited/synchronize/draft events invoke the truste
 policy directly. Other bases invoke an unprivileged wake workflow, then the
 main-defined workflow_run observer. PR events inspect only the triggering PR
 against the bounded complete parent index. An unassociated fork wake must match
-current canonical PR metadata by head, head repository and branch; stale or
-missing identities produce a gap rather than a fallback backlog sweep.
+current canonical PR metadata by head, head repository and branch. Associations
+must name this base repository and the wake's head. A wake with a demonstrably
+newer current branch head, or a target absent from a complete open index, is
+`superseded` without mutation. Missing/incomplete identities are unknown; neither
+case initiates a fallback backlog sweep.
 Hourly schedules and manual dispatches inspect the bounded backlog; manual
 dispatch can also select one PR. This avoids repeating every older PR's expensive
 content/landing checks on each ordinary event. A deployed full audit measured
 382 API calls for 594 PRs; repeating full audits under event traffic exhausted
-the App's rate limit. FIFO serialization uses GitHub's `queue: max` (up to 100),
-so a newly arriving event does not replace an already pending schedule/manual
-run. Queue overflow cancels excess runs visibly in Actions; it is not coverage.
+the App's rate limit. Workflow-level groups coalesce repeated events per PR or
+fork branch, while backlog runs have unique groups. One job-level mutation lock
+then uses GitHub's FIFO `queue: max` (up to 100), bounding queued event jobs by
+distinct active PRs/branches rather than repeated edits. New arrivals do not
+replace already pending jobs. When full, this queue rejects new jobs including
+schedule/manual arrivals. Cancellations are visible in Actions and are not
+coverage; backlog reconciliation requires an admitted, completed sweep.
 The workflow checks out main-defined tooling explicitly; candidate-defined code
 never receives its app token. Every run publishes JSONL
 in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables automatic

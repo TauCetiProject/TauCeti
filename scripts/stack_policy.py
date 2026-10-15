@@ -37,6 +37,10 @@ class Gap(RuntimeError):
     """Observation is incomplete; do not close or claim safety."""
 
 
+class Superseded(Gap):
+    """A complete current index proves this queued event has been replaced."""
+
+
 class UnsupportedCommit(Gap):
     """No unambiguous individual patch; another commit may still prove inheritance."""
 
@@ -185,20 +189,25 @@ def event_targets(event, prs):
     wake = event.get("workflow_run")
     if not wake:
         return None
-    associated = {int(p["number"]) for p in wake.get("pull_requests") or []}
-    if associated:
-        return associated
+    head = oid(wake.get("head_sha"))
+    associated = set()
+    for linked in wake.get("pull_requests") or []:
+        base = (linked.get("base") or {}).get("repo") or {}
+        if ((base.get("full_name") == REPO or base.get("url") == f"https://api.github.com/repos/{REPO}")
+                and (linked.get("head") or {}).get("sha") == head):
+            associated.add(int(linked["number"]))
     # Fork wake runs can omit their PR association. Match their API identities
     # against this repository's current index; never fetch a fork URL or broaden
     # a stale/unmatched wake into another expensive backlog sweep.
-    head = oid(wake.get("head_sha"))
     repo = (wake.get("head_repository") or {}).get("full_name")
     branch = wake.get("head_branch")
     matched = {p.number for p in prs if p.base != "main" and p.head == head
                and p.head_repo == repo and p.branch == branch}
-    if not matched:
-        raise Gap("wake has no associated PR/current canonical PR identity match")
-    return matched
+    if associated or matched:
+        return associated | matched
+    if any(p.base != "main" and p.head_repo == repo and p.branch == branch for p in prs):
+        raise Superseded("wake branch has a newer current head; queued event superseded")
+    raise Gap("wake has no associated PR/current canonical PR identity match")
 
 
 def explicit_parents(body):
@@ -714,7 +723,7 @@ def main():
     api = API()
     event = json.loads(args.github_event.read_text()) if args.github_event else {}
     prs = []
-    metadata_gaps = 0
+    metadata_gaps = set()
     incomplete_index = False
     for raw in api.pages("pulls?state=open&sort=created&direction=asc", MAX_PRS):
         try:
@@ -722,13 +731,22 @@ def main():
         except (Gap, KeyError, ValueError) as error:
             number = raw.get("number")
             emit(index_pr=number, classification="unknown", gap=str(error))
-            metadata_gaps += int(not args.pr or args.pr == number)
+            metadata_gaps.add(number)
             incomplete_index = True
     main_sha = api.main()
-    targets = {args.pr} if args.pr else event_targets(event, prs)
+    try:
+        targets = {args.pr} if args.pr else event_targets(event, prs)
+    except Superseded as error:
+        if incomplete_index:
+            raise Gap("incomplete index cannot establish a superseded wake") from error
+        emit(classification="superseded", reason=str(error), selected=0)
+        return False
     selected = [p for p in prs if targets is None or p.number in targets]
     if targets is not None and not selected:
-        raise Gap("requested/event PR is not open in the bounded index")
+        if incomplete_index:
+            raise Gap("requested/event PR metadata unavailable in the bounded index")
+        emit(classification="superseded", reason="target absent from complete open index", selected=0)
+        return False
     selected.sort(key=lambda p: p.number, reverse=True)
     emit(scope="backlog" if targets is None else "focused", selected=[p.number for p in selected])
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
@@ -750,7 +768,7 @@ def main():
     if args.apply and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?", actor):
         raise Gap("STACK_ACTOR is required to authenticate idempotency comments")
     common = run(["git", "rev-parse", "--git-common-dir"]).stdout.decode().strip()
-    failures, unknowns = 0, metadata_gaps
+    failures, unknowns = 0, len(metadata_gaps if targets is None else targets & metadata_gaps)
     with tempfile.TemporaryDirectory(prefix="no-stack-") as directory:
         source = Source(directory, api, main_sha, Path(common) / "objects")
         source.fetch(prs)
