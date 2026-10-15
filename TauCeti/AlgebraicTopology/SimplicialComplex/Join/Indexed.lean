@@ -131,23 +131,22 @@ theorem mem_indexedJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
     x ∈ (indexedJoin A).standardGeometricComplex.space ↔
       (∀ v, 0 ≤ x v) ∧ x.sum (fun _ r => r) = 1 ∧
         ∀ v w, x v ≠ 0 → x w ≠ 0 → v.1 = w.1 → v = w := by
-  rw [AbstractSimplicialComplex.mem_realization_iff]
   constructor
-  · rintro ⟨σ, hσ, hx⟩
-    rw [Finset.coe_image, AbstractSimplicialComplex.mem_standardSimplex_iff] at hx
-    refine ⟨hx.1, hx.2.1, fun v w hv hw hvw => (mem_indexedJoin_iff.mp hσ).2
-      (hx.2.2 (Finsupp.mem_support_iff.mpr hv))
-      (hx.2.2 (Finsupp.mem_support_iff.mpr hw)) hvw⟩
+  · intro hx
+    let p : (indexedJoin A).Realization := ⟨x, hx⟩
+    exact ⟨Realization.nonneg _ p, Realization.sum_eq_one _ p, fun v w hv hw hvw =>
+      (mem_indexedJoin_iff.mp ((indexedJoin A).support_mem p)).2
+        (Finsupp.mem_support_iff.mpr hv) (Finsupp.mem_support_iff.mpr hw) hvw⟩
   · rintro ⟨hnonneg, hsum, hunique⟩
     have hsupp : x.support.Nonempty := by
       apply Finsupp.support_nonempty_iff.mpr
-      intro hx
-      rw [hx] at hsum
+      rintro rfl
       simp at hsum
     have hinj : Set.InjOn Sigma.fst (x.support : Set (Σ i, A i)) :=
       fun v hv w hw hvw => hunique v w (Finsupp.mem_support_iff.mp hv)
         (Finsupp.mem_support_iff.mp hw) hvw
-    refine ⟨x.support, mem_indexedJoin_iff.mpr ⟨hsupp, hinj⟩, ?_⟩
+    refine AbstractSimplicialComplex.mem_realization_iff.mpr
+      ⟨x.support, mem_indexedJoin_iff.mpr ⟨hsupp, hinj⟩, ?_⟩
     rw [Finset.coe_image, AbstractSimplicialComplex.mem_standardSimplex_iff]
     exact ⟨hnonneg, hsum, Finset.Subset.rfl⟩
 
