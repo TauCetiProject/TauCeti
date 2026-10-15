@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Nodal
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Etale
-import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 
 /-!
 # Source locality of nodal relative curves

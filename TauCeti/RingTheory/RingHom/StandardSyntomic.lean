@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Syntomic.Composition
 public import TauCeti.RingTheory.Syntomic.Localization
 public import TauCeti.RingTheory.Syntomic.Smooth
 public import Mathlib.RingTheory.RingHom.StandardSmooth
