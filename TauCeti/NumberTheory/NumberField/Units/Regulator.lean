@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+public import TauCeti.NumberTheory.NumberField.Units.LogEmbedding
 
 /-!
 # Evaluating and bounding the regulator
@@ -214,17 +215,6 @@ theorem regOfFamily_le_prod_sum_abs_logEmbedding (u : Fin (rank K) → (𝓞 K)�
   rw [regOfFamily_eq_det']
   refine (Matrix.abs_det_le_prod_sum_abs _).trans_eq ?_
   exact Fintype.prod_equiv (equivFinRank K).symm _ _ fun _ => by simp
-
-open scoped Classical in
-/-- The `ℓ¹` norm of the logarithmic embedding of a unit, which omits the distinguished infinite
-place, is at most the sum of the weighted absolute logarithms over all infinite places. -/
-theorem sum_abs_logEmbedding_le_sum_mult_mul_abs_log (u : (𝓞 K)ˣ) :
-    ∑ w, |logEmbedding K (Additive.ofMul u) w| ≤
-      ∑ w : InfinitePlace K, w.mult * |Real.log (w u)| := by
-  simp_rw [dirichletUnitTheorem.logEmbedding_component, abs_mul, Nat.abs_cast]
-  rw [← Finset.sum_subtype {w | w ≠ dirichletUnitTheorem.w₀} (by simp)
-    fun w : InfinitePlace K => (w.mult : ℝ) * |Real.log (w u)|]
-  exact Finset.sum_le_univ_sum_of_nonneg fun _ => by positivity
 
 /-- **Hadamard's bound for the regulator of a family, over all places.** The regulator of a
 family of units is at most the product, over the family, of the sums of the weighted absolute
