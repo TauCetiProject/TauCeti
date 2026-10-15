@@ -32,9 +32,15 @@ either merged or closed — never stranded:
            being re-run, or that goes green and fails again, starts over. Seven days therefore means
            no completed CI cycle and no state change at all, which is abandonment rather than effort.
 
-The one override is a `keep` label (also `hold`/`wip`/`human`/`do-not-close`): a PR with one of those
+Bot dependency bumps are repaired until they land and are exempt from automatic retirement.
+For other PRs, the override is a `keep` label (also `hold`/`wip`/`human`/`do-not-close`): a PR with one of those
 is never auto-closed. By design these jobs do NOT spare human-touched PRs — anyone who wants a PR held
 adds `keep`. A failed close makes the job exit nonzero.
+
+These exemptions apply only to the retirement policies in this file. The
+separate stack_policy.py policy includes drafts, dependency bumps and all labels;
+it has its own evidence, race and idempotency checks before commenting/closing.
+Its close also emits the normal GitHub event consumed by bors withdrawal.
 
 A scoreboard is trusted only if it carries the `tauceti-scoreboard` marker AND its author is
 repo-associated (OWNER/MEMBER/COLLABORATOR). This destructive close policy is deliberately stricter
@@ -86,7 +92,7 @@ TARGET_ID_RE = re.compile(r'"id"\s*:\s*"([^"]+)"')
 # (lifetime review passes) and `states` (per-rubric verdict). A rubric `state` not in {green, stale} is
 # blocking ("stale" is a prior approval carried forward, not a block).
 NONBLOCKING_STATES = {"green", "stale"}
-KEEP_LABELS = {"keep", "hold", "wip", "human", "do-not-close"}
+KEEP_LABELS = core.KEEP_LABELS
 BUDGET_COMMENT = (
     "Closing automatically: this PR was reviewed to the round cap without reaching an all-green review, "
     "so the queue housekeeping is retiring it to keep things moving. The branch is kept, so nothing is "
@@ -228,8 +234,8 @@ def main() -> int:
     # before the close, so a just-pushed PR (now active, or a now-non-empty diff) is never closed.
     quiet_cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=EMPTY_QUIET_MINUTES)
     open_empty = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
-                          "--json", "number,isDraft,labels,body,updatedAt"]) or []
-    cand = [p for p in open_empty if p.get("isDraft") is False and not has_keep_label(p)
+                          "--json", "number,isDraft,labels,body,updatedAt,author,headRefName,headRepositoryOwner,headRepository"]) or []
+    cand = [p for p in open_empty if p.get("isDraft") is False and not has_keep_label(p) and not core.automatic_bump(p)
             and TARGET_MARKER_RE.search((p.get("body") or "").replace("\n", " "))
             and parse_ts(p.get("updatedAt", "")) < quiet_cutoff]
     print(f"empty: {len(cand)} quiet roadmap PR(s) to check for an empty diff{suffix}")
@@ -254,8 +260,8 @@ def main() -> int:
     # been re-reviewed yet is never closed — it gets its re-review first; only a head reviewed to the cap
     # and still blocking is spent. A manual `review-budget-spent` label force-closes regardless.
     open_full = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
-                         "--json", "number,isDraft,headRefOid,labels"]) or []
-    cand = [p for p in open_full if p.get("isDraft") is False and not has_keep_label(p)]
+                         "--json", "number,isDraft,headRefOid,labels,author,headRefName,headRepositoryOwner,headRepository"]) or []
+    cand = [p for p in open_full if p.get("isDraft") is False and not has_keep_label(p) and not core.automatic_bump(p)]
     print(f"budget: scanning {len(cand)} open PR(s) (cap {REVIEW_BUDGET} rounds){suffix}")
     for p in cand:
         n, head = p["number"], p.get("headRefOid", "")
@@ -279,7 +285,7 @@ def main() -> int:
     # List-only (the marker is in the body), so this pages cheaply; the marker is on roadmap PRs only.
     limit = 2000
     prs = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", str(limit),
-                   "--json", "number,isDraft,body,labels"]) or []
+                   "--json", "number,isDraft,body,labels,author,headRefName,headRepositoryOwner,headRepository"]) or []
     if len(prs) >= limit:
         print(f"warning: hit the {limit}-PR list limit; some open PRs may not be de-duplicated",
               file=sys.stderr)
@@ -310,9 +316,9 @@ def main() -> int:
     # never stale; this catches a blocked PR everyone has walked away from.
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=STALE_DAYS)
     open_prs = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
-                        "--json", "number,isDraft,labels,updatedAt"]) or []
+                        "--json", "number,isDraft,labels,updatedAt,author,headRefName,headRepositoryOwner,headRepository"]) or []
     # isDraft must be explicitly False (fail closed: an unknown draft state is never stale-closed).
-    fresh = [p for p in open_prs if p.get("isDraft") is False and not has_keep_label(p)
+    fresh = [p for p in open_prs if p.get("isDraft") is False and not has_keep_label(p) and not core.automatic_bump(p)
              and parse_ts(p.get("updatedAt", "")) < cutoff]
     print(f"stale: {len(fresh)} open PR(s) untouched for >{STALE_DAYS}d to check{suffix}")
     for p in fresh:
@@ -334,7 +340,7 @@ def main() -> int:
     red_cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=CI_FAILED_DAYS)
     # isDraft must be explicitly False, matching stale above: an unknown draft state is never closed.
     red_candidates = [p for p in open_prs
-                      if p.get("isDraft") is False and not has_keep_label(p)
+                      if p.get("isDraft") is False and not has_keep_label(p) and not core.automatic_bump(p)
                       and has_label(p, CI_FAILED_LABEL)]
     print(f"red: {len(red_candidates)} open PR(s) carrying {CI_FAILED_LABEL} to check{suffix}")
     for p in red_candidates:

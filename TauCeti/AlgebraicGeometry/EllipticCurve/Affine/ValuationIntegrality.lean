@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.Algebra.Order.GroupWithZero.Canonical
 public import Mathlib.RingTheory.Valuation.ValuationSubring
@@ -41,12 +42,18 @@ the `IsDedekindDomain.HeightOneSpectrum.valuation` of a varying prime, which can
 
 * `WeierstrassCurve.Affine.valuation_a₁_le_one` and its `a₂`, `a₃`, `a₄`, `a₆` companions: the
   coefficients of a curve with an integral model are integral, over any value group.
+* `WeierstrassCurve.Affine.coe_integralModel_a₁` through `coe_integralModel_a₆`: the coefficients
+  of the integral model, coerced to `F`, are those of `W`.
 * `WeierstrassCurve.Affine.valuation_x_lt_valuation_y`: at a pole of `x`, the `y`-coordinate
   strictly dominates.
 * `WeierstrassCurve.Affine.valuation_y_sq_eq_valuation_x_cube`: at a pole of `x`, the two
   coordinates have poles in ratio two to three, over any value group.
 * `WeierstrassCurve.Affine.valuation_y_le_one_of_valuation_x_le_one`: an integral `x`-coordinate
   forces an integral `y`-coordinate, over any value group.
+* `WeierstrassCurve.Affine.equation_integralModel_iff`: an integral pair solves `W` exactly when it
+  solves the integral model.
+* `WeierstrassCurve.Affine.valuation_le_one_of_valuation_addX_le_one`: a chord whose two points and
+  third intersection point have integral `x`-coordinates has an integral slope.
 * `WeierstrassCurve.Affine.valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two`:
   an affine point whose `x`-coordinate has a pole of order less than two has both coordinates
   integral.
@@ -54,8 +61,10 @@ the `IsDedekindDomain.HeightOneSpectrum.valuation` of a varying prime, which can
 ## Implementation notes
 
 The hypothesis "`W` has a model over `O`" is Mathlib's `WeierstrassCurve.IsIntegral O W`, and the
-model itself is `WeierstrassCurve.integralModel O W`; the coefficient bounds are then Mathlib's
-`WeierstrassCurve.integralModel_aᵢ_eq` composed with membership in `O`.
+model itself is `WeierstrassCurve.integralModel O W`. Its coefficients, coerced to `F`, are those
+of `W` (`WeierstrassCurve.Affine.coe_integralModel_aᵢ`, Mathlib's
+`WeierstrassCurve.integralModel_aᵢ_eq` restated for the coercion out of `O`), and the coefficient
+bounds are these composed with membership in `O`.
 
 The `y`-half of the dichotomy is not reproved by a valuation computation. Once `x` is known to be
 integral, `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` gives that `y` is
@@ -85,7 +94,8 @@ Adapted from the Stoll `EllipticCurves` development
 The main departures are as follows. The source's private `coe_a₁`–`coe_a₆` (:110–:122) are not
 ported: they restate
 the structure map for a model carried in the signature, whereas the model here is Mathlib's
-`integralModel`, so the five coefficient bounds are `integralModel_aᵢ_eq` plus membership in `O`.
+`integralModel`, so the five coefficient bounds are `coe_integralModel_aᵢ` plus membership in
+`O`.
 The setting is more general: the source works over `v.adicCompletion K` and
 `v.adicCompletionIntegers K`, whereas no step uses completeness, the Dedekind hypothesis, or a
 topology, so the results are stated for a bare `(v : Valuation F Γ₀)` and its valuation subring —
@@ -162,25 +172,50 @@ section Integral
 
 variable [WeierstrassCurve.IsIntegral v.valuationSubring W]
 
+/-- The coefficient `a₁` of the integral model, coerced to `F`, is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₁ : ((integralModel v.valuationSubring W).a₁ : F) = W.a₁ := by
+  simpa using integralModel_a₁_eq v.valuationSubring W
+
+/-- The coefficient `a₂` of the integral model, coerced to `F`, is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₂ : ((integralModel v.valuationSubring W).a₂ : F) = W.a₂ := by
+  simpa using integralModel_a₂_eq v.valuationSubring W
+
+/-- The coefficient `a₃` of the integral model, coerced to `F`, is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₃ : ((integralModel v.valuationSubring W).a₃ : F) = W.a₃ := by
+  simpa using integralModel_a₃_eq v.valuationSubring W
+
+/-- The coefficient `a₄` of the integral model, coerced to `F`, is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₄ : ((integralModel v.valuationSubring W).a₄ : F) = W.a₄ := by
+  simpa using integralModel_a₄_eq v.valuationSubring W
+
+/-- The coefficient `a₆` of the integral model, coerced to `F`, is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₆ : ((integralModel v.valuationSubring W).a₆ : F) = W.a₆ := by
+  simpa using integralModel_a₆_eq v.valuationSubring W
+
 /-- The `a₁`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₁_le_one : v W.a₁ ≤ 1 := by
-  rw [← integralModel_a₁_eq v.valuationSubring W]; exact (integralModel v.valuationSubring W).a₁.2
+  rw [← coe_integralModel_a₁ v]; exact (integralModel v.valuationSubring W).a₁.2
 
 /-- The `a₂`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₂_le_one : v W.a₂ ≤ 1 := by
-  rw [← integralModel_a₂_eq v.valuationSubring W]; exact (integralModel v.valuationSubring W).a₂.2
+  rw [← coe_integralModel_a₂ v]; exact (integralModel v.valuationSubring W).a₂.2
 
 /-- The `a₃`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₃_le_one : v W.a₃ ≤ 1 := by
-  rw [← integralModel_a₃_eq v.valuationSubring W]; exact (integralModel v.valuationSubring W).a₃.2
+  rw [← coe_integralModel_a₃ v]; exact (integralModel v.valuationSubring W).a₃.2
 
 /-- The `a₄`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₄_le_one : v W.a₄ ≤ 1 := by
-  rw [← integralModel_a₄_eq v.valuationSubring W]; exact (integralModel v.valuationSubring W).a₄.2
+  rw [← coe_integralModel_a₄ v]; exact (integralModel v.valuationSubring W).a₄.2
 
 /-- The `a₆`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₆_le_one : v W.a₆ ≤ 1 := by
-  rw [← integralModel_a₆_eq v.valuationSubring W]; exact (integralModel v.valuationSubring W).a₆.2
+  rw [← coe_integralModel_a₆ v]; exact (integralModel v.valuationSubring W).a₆.2
 
 /-- For `v(x) > 1`, the right-hand side of the Weierstrass equation has valuation `v(x)³`: the
 `x³` term strictly dominates the rest. This is `Valuation.map_cubic_eq_of_one_lt` at the
@@ -246,6 +281,63 @@ theorem valuation_y_sq_eq_valuation_x_cube {x y : F} (hxy : W.Equation x y) (hx 
   have hlt := valuation_x_lt_valuation_y v hxy hx
   rw [← valuation_lhs_eq (W := W) v hlt (hx.trans hlt), valuation_lhs_eq_rhs v hxy,
     valuation_rhs_eq (W := W) v hx]
+
+/-- **An integral solution of `W` is a solution of its integral model**, and conversely. -/
+@[simp]
+theorem equation_integralModel_iff {x y : v.valuationSubring} :
+    (integralModel v.valuationSubring W).toAffine.Equation x y ↔ W.Equation x y := by
+  have h : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y ↔
+      W.Equation x y := by
+    rw [baseChange_integralModel_eq]
+  exact (map_equation _ Subtype.val_injective x y).symm.trans h
+
+/-- **An integral nonsingular point of `W` is a nonsingular point of its integral model**, and
+conversely. -/
+@[simp]
+theorem nonsingular_integralModel_iff {x y : v.valuationSubring} :
+    (integralModel v.valuationSubring W).toAffine.Nonsingular x y ↔ W.Nonsingular x y := by
+  have h : ((integralModel v.valuationSubring W).baseChange F).toAffine.Nonsingular x y ↔
+      W.Nonsingular x y := by
+    rw [baseChange_integralModel_eq]
+  exact (map_nonsingular _ Subtype.val_injective x y).symm.trans h
+
+/-- The negated `y`-coordinate computed in the integral model is that computed in `W`. -/
+theorem coe_negY_integralModel (x y : v.valuationSubring) :
+    (((integralModel v.valuationSubring W).toAffine.negY x y : v.valuationSubring) : F) =
+      W.negY x y := by
+  conv_rhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
+  exact (map_negY (algebraMap v.valuationSubring F) x y).symm
+
+/-- The `x`-coordinate of a sum computed in the integral model is that computed in `W`. -/
+theorem coe_addX_integralModel (x₁ x₂ ℓ : v.valuationSubring) :
+    (((integralModel v.valuationSubring W).toAffine.addX x₁ x₂ ℓ : v.valuationSubring) : F) =
+      W.addX x₁ x₂ ℓ := by
+  conv_rhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
+  exact (map_addX (algebraMap v.valuationSubring F) x₁ x₂ ℓ).symm
+
+/-- The `y`-coordinate of a sum computed in the integral model is that computed in `W`. -/
+@[simp]
+theorem coe_addY_integralModel (x₁ x₂ y₁ ℓ : v.valuationSubring) :
+    (((integralModel v.valuationSubring W).toAffine.addY x₁ x₂ y₁ ℓ : v.valuationSubring) : F) =
+      W.addY x₁ x₂ y₁ ℓ := by
+  conv_rhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
+  exact (map_addY (algebraMap v.valuationSubring F) x₁ y₁ x₂ ℓ).symm
+
+/-- **The slope of a chord with integral `x`-coordinates is integral.** If `x₁`, `x₂` and the
+`x`-coordinate `x₃ = ℓ² + a₁ ℓ − a₂ − x₁ − x₂` of the third intersection point are integral, then
+so is `ℓ`: otherwise `v(ℓ + a₁) = v(ℓ)`, and `ℓ (ℓ + a₁) = x₃ + a₂ + x₁ + x₂` would have valuation
+`v(ℓ)² > 1`. -/
+theorem valuation_le_one_of_valuation_addX_le_one {x₁ x₂ ℓ : F} (h₁ : v x₁ ≤ 1)
+    (h₂ : v x₂ ≤ 1) (h₃ : v (W.addX x₁ x₂ ℓ) ≤ 1) : v ℓ ≤ 1 := by
+  by_contra! hℓ
+  have hsum : ℓ * (ℓ + W.a₁) = W.addX x₁ x₂ ℓ + W.a₂ + x₁ + x₂ := by
+    rw [addX]
+    ring
+  have hle : v (ℓ * (ℓ + W.a₁)) ≤ 1 := by
+    rw [hsum]
+    exact v.map_add_le (v.map_add_le (v.map_add_le h₃ (valuation_a₂_le_one v)) h₁) h₂
+  rw [map_mul, v.map_add_eq_of_lt_left ((valuation_a₁_le_one v).trans_lt hℓ)] at hle
+  exact hle.not_gt (one_lt_mul_self_iff.mpr hℓ)
 
 /-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any value group. -/
 theorem valuation_y_le_one_of_valuation_x_le_one {x y : F} (hxy : W.Equation x y)

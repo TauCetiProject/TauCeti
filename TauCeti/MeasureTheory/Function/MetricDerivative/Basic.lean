@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
-public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
+public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 public import TauCeti.Topology.Order.Interval
 
@@ -69,6 +69,8 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
 * `LipschitzWith.metricDerivative_le`, `LipschitzOnWith.metricDerivative_le` and
   `LipschitzWith.metricDerivative_comp_le`: Lipschitz bounds on a curve, globally or near a time,
   and under Lipschitz post-composition.
+* `Isometry.metricDerivative_comp`: post-composition with an isometry preserves the metric
+  derivative.
 * `BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOnFromTo`: for a curve of bounded
   variation, the metric derivative is almost everywhere at most the derivative of the variation.
 * `TauCeti.ae_metricDerivative_le`: minimality of the metric derivative among the integrable
@@ -168,6 +170,11 @@ theorem _root_.LipschitzWith.metricDerivative_comp_le {f : X → Y} {K : ℝ≥0
   refine limsup_le_limsup (Eventually.of_forall fun s ↦ ?_)
   rw [← mul_div_assoc]
   exact ENNReal.div_le_div_right (hf _ _) _
+
+/-- Post-composing a curve with an isometry leaves its metric derivative unchanged. -/
+theorem _root_.Isometry.metricDerivative_comp {f : X → Y} (hf : Isometry f) (γ : ℝ → X)
+    (t : ℝ) : metricDerivative (f ∘ γ) t = metricDerivative γ t := by
+  simp only [metricDerivative_def, Function.comp_apply, hf.edist_eq]
 
 /-- **Minimality of the metric derivative.** If `m` has finite integral over `[a, b]` and bounds
 the distances along `γ` by `edist (γ s) (γ u) ≤ ∫⁻ r in Ι s u, m r` for all `s, u ∈ [a, b]`, then

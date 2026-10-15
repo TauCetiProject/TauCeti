@@ -52,18 +52,15 @@ theorem continuous_comp_abelianizationProPEquivRelationModule
   let hA : IsProP p A := isProP_maximalProPQuotient
   let _ := hA.module
   let _ := hA.continuousSMul_module
-  -- The local module structure on `Additive A` is p-adic exponentiation; the existing
-  -- characteristic equation for Lyndon's isomorphism pins its scalar compatibility.
-  let e : Additive A ≃ₗ[ℤ_[p]] MonoidAlgebra.relationModule ℤ_[p] G g :=
-    (abelianizationProPEquivRelationModule p hg).toLinearEquiv fun c x ↦ by
-      rw [hA.module_smul]
-      exact abelianizationProPEquivRelationModule_padicPow p hg x.toMul c
+  let e := abelianizationProPLinearEquivRelationModule p hg
   have : Module.Finite ℤ_[p] (MonoidAlgebra.relationModule ℤ_[p] G g) :=
     Module.Finite.of_injective
       ((MonoidAlgebra.relationModule ℤ_[p] G g).subtype.restrictScalars ℤ_[p])
       Subtype.val_injective
   have : Module.Finite ℤ_[p] (Additive A) :=
     Module.Finite.of_surjective e.symm.toLinearMap e.symm.surjective
-  exact (β.comp e.toLinearMap).continuous_of_finite_of_compactSpace
+  simpa only [LinearMap.coe_comp, LinearEquiv.coe_toLinearMap,
+    Function.comp_def, e, abelianizationProPLinearEquivRelationModule_apply] using
+    (β.comp e.toLinearMap).continuous_of_finite_of_compactSpace
 
 end TauCeti.freeProfiniteGroup

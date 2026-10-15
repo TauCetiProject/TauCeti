@@ -19,7 +19,7 @@ def fleetGraphs : Html := {{
   </figure>
 }}
 
-/-- One daily chart, full width. -/
+/-- One chart, full width. -/
 def dailyChart (file alt caption : String) : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src={{s!"static/{file}"}} alt={{alt}} loading="lazy"/>
@@ -45,6 +45,12 @@ def minutesGraph : Html := dailyChart "ci-runner-minutes.svg"
 def queueGraph : Html := dailyChart "ci-merge-queue.svg"
   "GitHub merge-queue and bors builds per day by outcome, and PRs landed"
   "GitHub merge-queue and bors staging builds by outcome; the dashed line is PR arrivals on main."
+def queueSizeGraph : Html := dailyChart "ci-queue-size.svg"
+  "Ready-to-merge pull-request backlog over time, with gaps where observations are missing"
+  "Observed ready-to-merge PR backlog. Gaps indicate missing observations."
+def stagingGraph : Html := dailyChart "ci-bors-staging.svg"
+  "Bors staging runs over time, with PRs per batch on the vertical axis and green success or red failure dots"
+  "Each dot is one staging run: green for success, red for failure, grey for cancelled or other outcomes."
 def pickerGraph : Html := dailyChart "ci-picker.svg"
   "Share of PR builds run on GitHub-hosted runners per day"
   "Share of PR builds the runner picker sent to GitHub-hosted runners."
@@ -74,6 +80,27 @@ That difference affects the fleet and runner-minute totals across the transition
 unidentified bors builds remain in the other-job and cost totals.
 
 :::blob fleetGraphs
+:::
+
+# Merge queue and staging runs
+
+How many pull requests are waiting to land, and how large are the batches bors tests?
+These timelines show up to the last thirty days, including the current partial UTC day.
+The backlog counts distinct PRs in the recorded ready-to-merge snapshots, including PRs
+being tested. The label is a readiness hint; admission still checks the current head's CI,
+reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
+Snapshots can briefly undercount while the bot rebuilds its candidate scan after a restart.
+
+:::blob queueSizeGraph
+:::
+
+Each staging dot is placed at the run's creation time, with the number of distinct PRs in its
+batch on the vertical axis. The colour records the overall workflow result, including cache
+publication, using the latest recorded attempt if the run was retried. Separate runs of the
+same batch have separate dots. Only production main-branch staging runs with known batch
+membership are shown; pilot and unidentified dispatches are excluded.
+
+:::blob stagingGraph
 :::
 
 # Day by day
