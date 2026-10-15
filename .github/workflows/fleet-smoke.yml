@@ -5,7 +5,6 @@ permissions:
   contents: read
 jobs:
   smoke:
-    if: ${{ vars.FLEET_CI_ENABLED == 'true' }}
     runs-on:
       group: TauCetiFleet
       labels: [self-hosted, linux, x64, tauceti-fleet]
