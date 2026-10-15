@@ -385,7 +385,8 @@ potential**: two representatives with the same image in `kQ / [kQ, kQ]` define t
 differential. -/
 theorem ginzburgThreeDifferential_eq_of_cyclicQuotient_eq
     {W' : pathAlgebra k Q}
-    (h : (commutatorSubmodule k Q).mkQ W = (commutatorSubmodule k Q).mkQ W') :
+    (h : (commutatorSubmodule k (pathAlgebra k Q)).mkQ W =
+      (commutatorSubmodule k (pathAlgebra k Q)).mkQ W') :
     ginzburgThreeDifferential k W = ginzburgThreeDifferential k W' := by
   have hrel : ∀ {i j : Q} (e : GinzburgHom Q i j),
       ginzburgThreeArrowRelator k W e = ginzburgThreeArrowRelator k W' e := by
@@ -408,8 +409,8 @@ Ginzburg differential. -/
 theorem ginzburgThreeDifferential_add_mul_sub_mul (x y : pathAlgebra k Q) :
     ginzburgThreeDifferential k (W + (x * y - y * x)) = ginzburgThreeDifferential k W := by
   apply ginzburgThreeDifferential_eq_of_cyclicQuotient_eq k
-  apply (Submodule.Quotient.eq (commutatorSubmodule k Q)).2
-  simpa only [add_sub_cancel_left] using mul_sub_mul_mem_commutatorSubmodule k Q x y
+  apply (Submodule.Quotient.eq (commutatorSubmodule k (pathAlgebra k Q))).2
+  simpa only [add_sub_cancel_left] using mul_sub_mul_mem_commutatorSubmodule k _ x y
 
 end Differential
 

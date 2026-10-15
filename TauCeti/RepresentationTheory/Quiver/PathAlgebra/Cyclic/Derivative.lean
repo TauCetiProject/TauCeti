@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Cyclic.Quotient
+public import TauCeti.Algebra.Algebra.CyclicQuotient
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
 
 /-!
 # Cyclic derivatives in a path algebra
@@ -433,15 +434,14 @@ variable {k : Type w} [CommRing k] {Q : Type u} [Quiver.{v} Q] {i j : Q} (a : i 
 
 /-- The cyclic derivative kills the commutator submodule. -/
 theorem commutatorSubmodule_le_ker_cyclicDerivative :
-    commutatorSubmodule k Q ≤ LinearMap.ker (cyclicDerivative k a) :=
-  (commutatorSubmodule_le_ker_iff k Q (cyclicDerivative k a)).2
-    (cyclicDerivative_mul_comm a)
+    commutatorSubmodule k (pathAlgebra k Q) ≤ LinearMap.ker (cyclicDerivative k a) :=
+  (commutatorSubmodule_le_ker_iff (cyclicDerivative k a)).2 (cyclicDerivative_mul_comm a)
 
 /-- The cyclic derivative with respect to `a`, descended to the cyclic quotient
 `kQ / [kQ, kQ]`. -/
 noncomputable def cyclicDerivativeCyclicQuotient :
-    cyclicQuotient k Q →ₗ[k] pathAlgebra k Q :=
-  (commutatorSubmodule k Q).liftQ (cyclicDerivative k a)
+    cyclicQuotient k (pathAlgebra k Q) →ₗ[k] pathAlgebra k Q :=
+  (commutatorSubmodule k (pathAlgebra k Q)).liftQ (cyclicDerivative k a)
     (commutatorSubmodule_le_ker_cyclicDerivative a)
 
 @[simp]
