@@ -26,9 +26,9 @@ quasi-coherent sheaves. For a short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃
 with `M₁` quasi-coherent, the map `H¹(X, M₂) ⟶ H¹(X, M₃)` is surjective; in particular an
 epimorphism of quasi-coherent sheaves is surjective on `H¹`, and a quotient of a quasi-coherent
 sheaf with finite-dimensional `H¹` again has finite-dimensional `H¹`. The vanishing of `H²` is also
-the hypothesis under which `Scheme.Modules.finrank_cohomology_zero_sub_one_eq_add` makes the Euler
-characteristic `χ(X, M) = dim H⁰(X, M) - dim H¹(X, M)` additive on a short exact sequence whose
-first term is quasi-coherent.
+the vanishing hypothesis in `Scheme.Modules.finrank_cohomology_zero_sub_one_eq_add`; together with
+finite-dimensional `H¹` of the first term and finite-dimensional `H⁰` and `H¹` of the middle term,
+it makes the Euler characteristic `χ(X, M) = dim H⁰(X, M) - dim H¹(X, M)` additive.
 
 Neither a rational point nor a perfect base field is assumed.
 
@@ -61,18 +61,6 @@ open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 universe u
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-
-/-- A proper scheme over a field which is covered by two affine opens has no quasi-coherent
-cohomology in degrees at least two. -/
-private theorem subsingleton_cohomology_of_two_le_of_isProper [IsProper (X ↘ Spec (.of k))]
-    (hcover : ∃ U V : X.Opens, IsAffineOpen U ∧ IsAffineOpen V ∧ U ⊔ V = ⊤) (M : X.Modules)
-    [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) := by
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
-  obtain ⟨U, V, hU, hV, hUV⟩ := hcover
-  exact subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom M hU hV hUV n hn
 
 section IsCurveOver
 
