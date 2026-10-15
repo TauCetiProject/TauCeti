@@ -69,9 +69,10 @@ variable (K : HomologicalComplex (ModuleCat.{v} R) c) (N : ∀ i, Submodule R (K
   (hN : ∀ i j, c.Rel i j → ∀ x ∈ N i, K.d i j x ∈ N j)
 
 include hN in
-/-- Stability under the differentials also holds between unrelated degrees, where the differential
+/-- A family of submodules carried into each other by the differentials between related degrees is
+carried into each other by all the differentials: between unrelated degrees the differential
 vanishes. -/
-private theorem d_mem (i j : ι) (x : K.X i) (hx : x ∈ N i) : K.d i j x ∈ N j := by
+theorem d_apply_mem_of_rel (i j : ι) (x : K.X i) (hx : x ∈ N i) : K.d i j x ∈ N j := by
   by_cases hij : c.Rel i j
   · exact hN i j hij x hx
   · rw [K.shape i j hij]
@@ -80,7 +81,7 @@ private theorem d_mem (i j : ι) (x : K.X i) (hx : x ∈ N i) : K.d i j x ∈ N 
 /-- The complex with terms the submodules `N i ≤ K.X i` and the restricted differentials. -/
 def ofSubmodules : HomologicalComplex (ModuleCat.{v} R) c where
   X i := ModuleCat.of R (N i)
-  d i j := ModuleCat.ofHom ((K.d i j).hom.restrict (d_mem K N hN i j))
+  d i j := ModuleCat.ofHom ((K.d i j).hom.restrict (d_apply_mem_of_rel K N hN i j))
   shape i j h := by
     ext x
     -- The terms are `ModuleCat.of R (N i)` and the differential is `LinearMap.restrict`, whose
