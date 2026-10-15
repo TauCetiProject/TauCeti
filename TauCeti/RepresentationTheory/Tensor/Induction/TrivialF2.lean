@@ -47,8 +47,11 @@ variable (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 noncomputable local instance quotientFintype : Fintype (G ⧸ U) :=
   U.fintypeQuotientOfFiniteIndex
 
-/-- The pure tensor in the smooth tensor induction of trivial `𝔽₂` coefficients. -/
-noncomputable def smoothTensorInducedTrivialF2Tprod
+/-- The pure tensor in the smooth tensor induction of trivial `𝔽₂` coefficients.
+
+The body is exposed so morphisms defined independently of this coefficient identification can
+use their `PiTensorProduct.tprod` computation rules on this named tensor. -/
+@[expose] noncomputable def smoothTensorInducedTrivialF2Tprod
     (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
     (DiscreteRep.tensorInduced U hU s
       (DiscreteRep.trivialF2 U)).V := by
