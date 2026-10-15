@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step
 public import TauCeti.Topology.Algebra.Group.FrattiniSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 
@@ -36,10 +37,10 @@ generation the terms need not be open: an infinite product of copies of `ℤ ⧸
 
 ## Main results
 
-* `TauCeti.proPFrattiniStep_eq_map_proPFrattini` and
-  `TauCeti.proPFrattiniSeries_succ_eq_map_proPFrattini`: for a prime `p` and a closed subgroup of
-  a profinite group the step is the pro-`p` Frattini subgroup of that subgroup, so the series is
-  the iterated Frattini subgroup; `TauCeti.proPFrattiniSeries_one` is the case `Φ_1 = Φ(G)`, in
+* `TauCeti.proPFrattiniSeries_succ_eq_map_proPFrattini`: for a prime `p` the step is the
+  pro-`p` Frattini subgroup of the previous term (`TauCeti.proPFrattiniStep_eq_map_proPFrattini`,
+  in `TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step`), so the series is the
+  iterated Frattini subgroup; `TauCeti.proPFrattiniSeries_one` is the case `Φ_1 = Φ(G)`, in
   simp-normal form `TauCeti.proPFrattiniStep_top_eq_proPFrattini`.
 * `TauCeti.IsProP.exists_pLowerCentralSeries_le_proPFrattiniSeries`: together with
   `TauCeti.proPFrattiniSeries_le_pLowerCentralSeries` this is the interleaving of the Frattini
@@ -70,27 +71,6 @@ open scoped commutatorElement
 
 variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
-
-/-- **One step of the Frattini series is the pro-`p` Frattini subgroup.** For a prime `p` and a
-closed subgroup `H` of a profinite group, `proPFrattiniStep p H` is the pro-`p` Frattini subgroup
-of `H`, viewed inside the ambient group along the inclusion. -/
-theorem proPFrattiniStep_eq_map_proPFrattini (hp : p.Prime) {H : Subgroup G}
-    (hH : IsClosed (H : Set G)) :
-    proPFrattiniStep p H = (proPFrattini p H).map H.subtype := by
-  have : CompactSpace H := isCompact_iff_compactSpace.mp hH.isCompact
-  -- The `p`-th powers of `H`, computed in `H` and transported, are the `p`-th powers of `H`.
-  have himage : ⇑H.subtype '' (Set.range fun x : H ↦ x ^ p) = (· ^ p) '' (H : Set G) := by
-    rw [← Set.range_comp]
-    refine Set.ext fun x ↦ ⟨?_, ?_⟩
-    · rintro ⟨y, rfl⟩
-      exact ⟨y, y.2, by simp⟩
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨⟨y, hy⟩, by simp⟩
-  rw [proPFrattini_eq_topologicalClosure hp,
-    H.subtype.map_topologicalClosure continuous_subtype_val _
-      (isClosed_topologicalClosure _).isCompact,
-    Subgroup.map_sup, MonoidHom.map_closure, himage, H.map_subtype_commutator,
-    proPFrattiniStep_def]
 
 /-- **The Frattini series is the iterated pro-`p` Frattini subgroup.** For a prime `p` and a
 profinite group, `Φ_{k+1}` is the pro-`p` Frattini subgroup of `Φ_k`, viewed inside the ambient

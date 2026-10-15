@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.Ergodic.Extreme
 public import TauCeti.MeasureTheory.Group.Action
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
+import Mathlib.Dynamics.Ergodic.RadonNikodym
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 
@@ -132,7 +133,7 @@ theorem eq_smul_of_absolutelyContinuous (G : Type*) [SMul G X] [MeasurableConstS
   obtain ⟨c, hc⟩ := ae_eq_const_of_forall_ae_eq_comp_smul₀ G
     (measurable_rnDeriv ν μ).nullMeasurable hinv
   refine ⟨c, ?_⟩
-  ext s hs
+  ext s _
   calc ν s = ∫⁻ a in s, ν.rnDeriv μ a ∂μ := .symm <| setLIntegral_rnDeriv hνμ _
     _ = ∫⁻ _ in s, c ∂μ := lintegral_congr_ae <| hc.filter_mono <| ae_mono restrict_le_self
     _ = (c • μ) s := by simp
@@ -165,7 +166,7 @@ theorem mem_extremePoints_measure_univ_eq {G : Type*} [SMul G X] [MeasurableCons
     μ ∈ extremePoints ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X (μ univ)) := by
   rw [mem_extremePoints_iff_left]
   refine ⟨⟨inferInstance, rfl⟩, ?_⟩
-  rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨hν₂, hν₂u⟩ ⟨a, b, ha, hb, hab, hμ⟩
+  rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨_, _⟩ ⟨a, b, ha, _, _, hμ⟩
   have : IsFiniteMeasure ν₁ := ⟨by rw [hν₁u]; exact measure_lt_top μ _⟩
   have hac : ν₁ ≪ μ := hμ ▸ (absolutelyContinuous_smul ha.ne').add_right _
   exact eq_of_absolutelyContinuous_measure_univ_eq G hac hν₁u
@@ -261,7 +262,7 @@ theorem ae_eq_of_comp_eq [MeasurableSpace.CountablyGenerated X] [IsProbabilityMe
   -- The mixture over a measurable set `B` of parameters is an invariant measure below `μ`, hence
   -- the multiple `π B • μ` of it.
   have hmix : ∀ B, MeasurableSet B → κ ∘ₘ π.restrict B = π B • μ := by
-    intro B hB
+    intro B _
     have happly : ∀ s, MeasurableSet s → (κ ∘ₘ π.restrict B) s = ∫⁻ z in B, κ z s ∂π :=
       fun s hs => Measure.bind_apply hs κ.aemeasurable
     have hle : κ ∘ₘ π.restrict B ≤ μ := by

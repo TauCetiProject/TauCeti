@@ -48,9 +48,12 @@ the degree is part of this file.
   `TauCeti.RiemannSurface.localMultiplicity_pos_iff`: it vanishes exactly at points near which
   `f` is constant; in particular a constant map has local multiplicity `0`
   (`TauCeti.RiemannSurface.localMultiplicity_const`).
-* `TauCeti.RiemannSurface.localMultiplicity_comp`: it multiplies under composition.
+* `TauCeti.RiemannSurface.localMultiplicity_comp_of_eventually_mdifferentiableAt`: it multiplies
+  under composition.
 * `TauCeti.RiemannSurface.localMultiplicity_eq_one_iff`: it is `1` exactly when `f` is
   injective near `x`.
+* `TauCeti.RiemannSurface.eventually_localMultiplicity_eq_one`: near a point where `f` is not
+  locally constant, it is `1` at every other point, so ramification points are isolated.
 * `TauCeti.RiemannSurface.localMultiplicity_pow_zero`: the power map `z ↦ z ^ m` has local
   multiplicity `m` at `0`.
 
@@ -224,7 +227,7 @@ theorem natCast_localMultiplicity (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt �
 
 /-- **Multiplicativity of the local multiplicity.** The local multiplicity of a composition of
 maps holomorphic near the relevant points is the product of the local multiplicities. -/
-theorem localMultiplicity_comp {g : Y → Z}
+theorem localMultiplicity_comp_of_eventually_mdifferentiableAt {g : Y → Z}
     (hg : ∀ᶠ y in 𝓝 (f x), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g y)
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
     localMultiplicity (g ∘ f) x = localMultiplicity g (f x) * localMultiplicity f x := by
@@ -292,6 +295,42 @@ theorem localMultiplicity_eq_one_iff (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt
       fun z₁ hz₁ z₂ hz₂ h ↦ ?_⟩
     exact c.symm.injOn hz₁.1.1 hz₂.1.1 (hinj hz₁.1.2 hz₂.1.2 (c'.injOn hz₁.2 hz₂.2 h))
 
+/-- **Ramification points are isolated.** A map holomorphic and not constant near `x` has local
+multiplicity `1` at every point of a punctured neighbourhood of `x`. -/
+theorem eventually_localMultiplicity_eq_one
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) (hne : ¬ EventuallyConst f (𝓝 x)) :
+    ∀ᶠ y in 𝓝[≠] x, localMultiplicity f y = 1 := by
+  set c := chartAt ℂ x
+  set c' := chartAt ℂ (f x)
+  have hcx : x ∈ c.source := mem_chart_source ℂ x
+  have hc'fx : f x ∈ c'.source := mem_chart_source ℂ (f x)
+  have hFa : AnalyticAt ℂ (fun z ↦ c' (f (c.symm z))) (c x) :=
+    analyticAt_chartAt_comp_comp_chartAt_symm hf
+  -- The recentred representative has finite order at `c x`, so its analytic derivative does too:
+  -- it is not identically zero, so its zeros are isolated and it vanishes nowhere on a punctured
+  -- neighbourhood of `c x`.
+  have htop : analyticOrderAt (fun z ↦ c' (f (c.symm z)) - c' (f (c.symm (c x)))) (c x) ≠ ⊤ := by
+    rw [c.left_inv hcx, ← natCast_localMultiplicity hf hne]
+    exact ENat.natCast_ne_top _
+  have hderiv : ∀ᶠ z in 𝓝[≠] c x, deriv (fun z ↦ c' (f (c.symm z))) z ≠ 0 := by
+    refine hFa.deriv.eventually_eq_zero_or_eventually_ne_zero.resolve_left fun h ↦ htop ?_
+    rw [← hFa.analyticOrderAt_deriv_add_one, analyticOrderAt_eq_top.2 h, top_add]
+  have hc : Tendsto c (𝓝[≠] x) (𝓝[≠] c x) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      ((c.continuousAt hcx).mono_left nhdsWithin_le_nhds) (c.eventually_ne_nhdsWithin hcx)
+  -- At a nearby point `y ≠ x`, compute the local multiplicity in the charts `c` and `c'`.
+  filter_upwards [hc.eventually hderiv,
+    nhdsWithin_le_nhds ((c.continuousAt hcx).eventually hFa.eventually_analyticAt),
+    nhdsWithin_le_nhds (c.open_source.mem_nhds hcx),
+    nhdsWithin_le_nhds (hf.self_of_nhds.continuousAt.preimage_mem_nhds
+      (c'.open_source.mem_nhds hc'fx)),
+    nhdsWithin_le_nhds hf.eventually_nhds] with y hy hya hyc hfyc hfy
+  rw [localMultiplicity_eq_analyticOrderNatAt (chart_mem_maximalAtlas x)
+    (chart_mem_maximalAtlas (f x)) hyc hfyc hfy, analyticOrderNatAt]
+  have h1 := hya.analyticOrderAt_sub_eq_one_of_deriv_ne_zero hy
+  simp only [c.left_inv hyc] at h1
+  rw [h1, ENat.toNat_one]
+
 /-- The identity has local multiplicity `1` everywhere. -/
 @[simp]
 theorem localMultiplicity_id (x : X) : localMultiplicity (id : X → X) x = 1 :=
@@ -320,5 +359,28 @@ theorem localMultiplicity_pow_zero (m : ℕ) : localMultiplicity (fun z : ℂ �
   · simp
   · rw [localMultiplicity_eq_analyticOrderNatAt_sub, analyticOrderNatAt,
       analyticOrderAt_pow_sub_zero_pow hm, ENat.toNat_natCast]
+
+/-- If a holomorphic map has coordinate expression `z ↦ z ^ m` in charts that send the source
+point and its image to zero, then its local multiplicity is `m`. -/
+theorem localMultiplicity_eq_of_coordinate_eventuallyEq_pow_zero
+    {e : OpenPartialHomeomorph X ℂ} {e' : OpenPartialHomeomorph Y ℂ}
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Y)
+    (hx : x ∈ e.source) (hfx : f x ∈ e'.source)
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    {m : ℕ} (hm : 0 < m) (hex : e x = 0) (hefx : e' (f x) = 0)
+    (hpow : (fun z ↦ e' (f (e.symm z))) =ᶠ[𝓝 0] fun z : ℂ ↦ z ^ m) :
+    localMultiplicity f x = m := by
+  rw [localMultiplicity_eq_analyticOrderNatAt he he' hx hfx hf, hex, hefx]
+  have hsub : (fun z ↦ e' (f (e.symm z)) - 0) =ᶠ[𝓝 0]
+      fun z : ℂ ↦ z ^ m - 0 ^ m := by
+    filter_upwards [hpow] with z hz
+    simp [hz, hm.ne']
+  calc
+    analyticOrderNatAt (fun z ↦ e' (f (e.symm z)) - 0) 0 =
+        analyticOrderNatAt (fun z : ℂ ↦ z ^ m - 0 ^ m) 0 :=
+      TauCeti.analyticOrderNatAt_congr hsub
+    _ = localMultiplicity (fun z : ℂ ↦ z ^ m) 0 := by
+      rw [localMultiplicity_eq_analyticOrderNatAt_sub]
+    _ = m := localMultiplicity_pow_zero m
 
 end TauCeti.RiemannSurface

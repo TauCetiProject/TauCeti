@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Closed
@@ -20,7 +19,8 @@ sheaves of `R`-modules, the free sheaf `free I` on a finite type `I` is dualizab
 `free I ⊗ free I ⟶ R` sends `eᵢ ⊗ eⱼ` to `δᵢⱼ`, and the coevaluation `R ⟶ free I ⊗ free I` sends
 `1` to `∑ i, eᵢ ⊗ eᵢ`.
 
-The pairing is obtained from `TauCeti.ExactPairing.biproduct`: `free I` is the biproduct of `I`
+The pairing is obtained from `TauCeti.ExactPairing.biproduct`: the basic free-sheaf API in
+`TauCeti.Algebra.Category.ModuleCat.Sheaf.Free` identifies `free I` with the biproduct of `I`
 copies of the unit `R` (`TauCeti.SheafOfModules.biproductIsoFree`), and the unit is canonically
 self-dual.
 Finite free sheaves are the local models of finite locally free sheaves, so this is the local
@@ -33,8 +33,6 @@ basis sections of `free I` they give `δᵢⱼ`.
 
 ## Main declarations
 
-* `TauCeti.SheafOfModules.biproductIsoFree`: the free sheaf on a finite type is the biproduct of
-  copies of the unit;
 * `TauCeti.SheafOfModules.exactPairingFree`: the exact pairing between `free I` and itself;
 * `TauCeti.SheafOfModules.ιFree_tensorHom_ιFree_evaluation`,
   `TauCeti.SheafOfModules.ιFree_tensorHom_ιFree_evaluation_of_ne` and
@@ -43,12 +41,14 @@ basis sections of `free I` they give `δᵢⱼ`.
   out of `free I`, and the dual sheaf of `free I`;
 * `TauCeti.SheafOfModules.dualFreeι`: the basis sections of the dual sheaf;
 * `TauCeti.SheafOfModules.ιFree_tensorHom_dualFreeι_comp_ev` and its `_of_ne` variant: the
-  dual basis.
+  dual basis;
+* `SheafOfModules.isIso_evaluation_dual_of_iso_freePUnit`: evaluation against the dual is an
+  isomorphism for a sheaf isomorphic to the standard free rank-one sheaf.
 -/
 
 public section
 
-open CategoryTheory Limits MonoidalCategory
+open CategoryTheory Limits MonoidalCategory MonoidalClosed
 
 namespace TauCeti
 
@@ -66,26 +66,7 @@ open _root_.SheafOfModules
 
 variable {R : Sheaf J CommRingCat.{u}} (I : Type u) [Finite I]
 
-/-- The free sheaf of modules on a finite type `I` is the biproduct of `I` copies of the unit. -/
-def biproductIsoFree :
-    ⨁ (fun _ : I ↦ 𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) ≅ free (R := ringCatSheaf R) I :=
-  (biproduct.isColimit _).coconePointUniqueUpToIso (isColimitFreeCofan I)
-
 variable {I}
-
-/-- `biproductIsoFree` sends the `i`-th summand to the `i`-th basis section. -/
-@[reassoc (attr := simp)]
-theorem biproduct_ι_biproductIsoFree_hom (i : I) :
-    biproduct.ι (fun _ : I ↦ unit (ringCatSheaf R)) i ≫
-      (biproductIsoFree (R := R) I).hom = ιFree i :=
-  (biproduct.isColimit _).comp_coconePointUniqueUpToIso_hom (isColimitFreeCofan I) ⟨i⟩
-
-/-- The inverse of `biproductIsoFree` sends the `i`-th basis section to the `i`-th summand. -/
-@[reassoc (attr := simp)]
-theorem ιFree_biproductIsoFree_inv (i : I) :
-    ιFree i ≫ (biproductIsoFree (R := R) I).inv =
-      biproduct.ι (fun _ : I ↦ 𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) i :=
-  (biproduct.isColimit _).comp_coconePointUniqueUpToIso_inv (isColimitFreeCofan I) ⟨i⟩
 
 variable (I) in
 /-- The free sheaf of modules on a finite type is self-dual: the evaluation pairs the basis
@@ -205,6 +186,47 @@ theorem ιFree_tensorHom_dualFreeι_comp_ev_of_ne {i j : I} (h : i ≠ j) :
   simpa only [dualFreeι, dualFreeIso, tensorUnit_eq, SheafOfModules.ihom_obj] using
     (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree j)).trans
       (ιFree_tensorHom_ιFree_evaluation_of_ne (R := R) h)
+
+/-- Evaluation of the standard free rank-one sheaf against its dual is an isomorphism. -/
+instance _root_.SheafOfModules.isIso_evaluation_dual_freePUnit :
+    IsIso ((ihom.ev (free (R := ringCatSheaf R) PUnit)).app
+      (unit (ringCatSheaf R))) := by
+  let ι := ιFree (R := ringCatSheaf R) PUnit.unit
+  have : IsIso ι := by
+    dsimp only [ι]
+    rw [← freePUnitIsoUnit_inv]
+    infer_instance
+  let ιdual := dualFreeι (R := R) PUnit.unit
+  have : IsIso ιdual := by
+    exact IsIso.of_isIso_fac_right (dualFreeι_comp_dualFreeIso_hom (R := R) PUnit.unit)
+  have : IsIso (ι ⊗ₘ ιdual) := inferInstance
+  have hevaluation := ιFree_tensorHom_dualFreeι_comp_ev (R := R) PUnit.unit
+  have : IsIso ((ι ⊗ₘ ιdual) ≫
+      (ihom.ev (free (R := ringCatSheaf R) PUnit)).app (unit (ringCatSheaf R))) :=
+    hevaluation ▸ inferInstance
+  exact IsIso.of_isIso_comp_left (ι ⊗ₘ ιdual)
+    ((ihom.ev (free (R := ringCatSheaf R) PUnit)).app (unit (ringCatSheaf R)))
+
+/-- Evaluation against the dual is an isomorphism for a sheaf isomorphic to the standard free
+rank-one sheaf. -/
+theorem _root_.SheafOfModules.isIso_evaluation_dual_of_iso_freePUnit
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    (e : free (R := ringCatSheaf R) PUnit ≅ M) :
+    IsIso ((ihom.ev M).app (unit (ringCatSheaf R))) := by
+  have h := id_tensor_pre_app_comp_ev e.hom (unit (ringCatSheaf R))
+  have hpre : IsIso (pre e.hom) := by
+    unfold pre
+    infer_instance
+  have : IsIso ((pre e.hom).app (unit (ringCatSheaf R))) :=
+    (NatTrans.isIso_iff_isIso_app (pre e.hom)).1 hpre _
+  have : IsIso (free (R := ringCatSheaf R) PUnit ◁
+      (pre e.hom).app (unit (ringCatSheaf R)) ≫
+        (ihom.ev (free (R := ringCatSheaf R) PUnit)).app (unit (ringCatSheaf R))) :=
+    inferInstance
+  have : IsIso (e.hom ▷ M.dual ≫
+      (ihom.ev M).app (unit (ringCatSheaf R))) := h ▸ inferInstance
+  exact IsIso.of_isIso_comp_left (e.hom ▷ M.dual)
+    ((ihom.ev M).app (unit (ringCatSheaf R)))
 
 end SheafOfModules
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Uniqueness
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Sheaves.LocalPredicate
 public import TauCeti.Topology.Sheaves.EtaleSpace
+import Mathlib.Analysis.Analytic.Constructions
 
 /-!
 # The sheaf of holomorphic functions on `ℂ`, and its étalé space

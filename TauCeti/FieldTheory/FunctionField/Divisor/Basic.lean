@@ -184,6 +184,18 @@ lemma degree_le_degree_of_coeff_ne_zero {D : Divisor k F} (hD : 0 ≤ D) {P : Pl
     _ ≤ D.coeff P * P.degree := mul_le_mul_of_nonneg_right hone (Int.natCast_nonneg _)
     _ ≤ degree D := coeff_mul_degree_le_degree hD P
 
+/-- An effective divisor of a function field is supported at no more places than its degree,
+each place of its support contributing at least one to the degree. -/
+lemma card_support_le_degree (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) :
+    (D.support.card : ℤ) ≤ degree D := by
+  rw [degree_eq_sum_support, Finset.card_eq_sum_ones, Nat.cast_sum]
+  refine Finset.sum_le_sum fun P hP ↦ ?_
+  have hcoeff : 1 ≤ D.coeff P := lt_of_le_of_ne (WeilDivisor.coeff_le_coeff hD P)
+    (Ne.symm (WeilDivisor.mem_support_iff.mp hP))
+  have hdegree : 1 ≤ (P.degree : ℤ) := by
+    exact_mod_cast P.one_le_degree_of_isFunctionField hF
+  exact_mod_cast one_le_mul_of_one_le_of_one_le hcoeff hdegree
+
 /-- An effective divisor of degree one on an algebraic function field contains a rational place.
 
 Indeed, any place in its support contributes at least its positive residue degree to the total

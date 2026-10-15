@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Cyclic
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.KleinFour
 
 /-! # Recognition of the low-degree transitive groups by order
 
@@ -28,6 +30,8 @@ degree four.
   recognizes the label.
 * `TauCeti.transitiveGroupLabel_four_zero_iff`, `TauCeti.transitiveGroupLabel_four_one_iff`: the
   two labels of order four in degree four are exactly distinguished by cyclicity.
+* `TauCeti.transitiveGroupLabel_four_one_iff_isKleinFour`: a transitive subgroup of `S₄` has label
+  `4T2` exactly when it is a Klein four-group.
 * `TauCeti.transitiveGroupLabel_four_iff_natCard_eq_of_two_le`: the order recognizes the labels
   `4T3`, `4T4` and `4T5`.
 
@@ -132,7 +136,7 @@ theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4)))
   constructor
   · intro h
     exact ⟨by rw [h.natCard_eq, natCard_referenceSubgroup_four_zero],
-      h.isCyclic_iff.mpr isCyclic_referenceSubgroup_four_zero⟩
+      h.isCyclic_iff.mpr (isCyclic_referenceSubgroup_index_zero _)⟩
   · rintro ⟨hcard, hcyc⟩
     obtain ⟨k, hk, -⟩ := existsUnique_transitiveGroupLabel_four G
     have hcards : Nat.card (referenceSubgroup 4 k) = 4 := by rw [← hk.natCard_eq, hcard]
@@ -166,7 +170,7 @@ theorem transitiveGroupLabel_four_one_iff (G : Subgroup (Perm (Fin 4)))
     obtain ⟨b, hb⟩ := k
     rw [numTransitiveGroups_four] at hb
     interval_cases b
-    · exact (hcyc (hk.isCyclic_iff.mpr isCyclic_referenceSubgroup_four_zero)).elim
+    · exact (hcyc (hk.isCyclic_iff.mpr (isCyclic_referenceSubgroup_index_zero _))).elim
     · exact hk
     · simp only [natCard_referenceSubgroup_four_two] at hcards
       omega
@@ -174,6 +178,14 @@ theorem transitiveGroupLabel_four_one_iff (G : Subgroup (Perm (Fin 4)))
       omega
     · simp only [natCard_referenceSubgroup_four_four] at hcards
       omega
+
+/-- **`4T2` is recognized as the Klein four-group.** A transitive subgroup of `S₄` has label `4T2`
+exactly when it is a Klein four-group. -/
+theorem transitiveGroupLabel_four_one_iff_isKleinFour (G : Subgroup (Perm (Fin 4)))
+    [IsPretransitive G (Fin 4)] :
+    TransitiveGroupLabel (⟨1, by simp⟩ : TransitiveGroupIndex 4) G ↔ IsKleinFour G :=
+  ⟨TransitiveGroupLabel.isKleinFour_four_one, fun _ ↦ (transitiveGroupLabel_four_one_iff G).mpr
+    ⟨IsKleinFour.card_four, IsKleinFour.not_isCyclic⟩⟩
 
 /-- **Order recognition in degree four away from order four.** A transitive subgroup of `S₄` is
 labelled `4Tj`, `2 ≤ j`, exactly when its order is that of `4Tj`: the orders `8, 12, 24` of

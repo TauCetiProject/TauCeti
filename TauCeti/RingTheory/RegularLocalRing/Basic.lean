@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 
 /-!
 # Regular local rings are domains
@@ -26,8 +27,13 @@ valuation rings.
 * `TauCeti.IsRegularLocalRing.quotient_span_singleton`: for `x ∈ 𝔪 \ 𝔪²`, the quotient `R ⧸ (x)`
   is again a regular local ring, and `TauCeti.IsRegularLocalRing.quotient_span_singleton_iff`: for
   a nonzero `x ∈ 𝔪` this happens exactly when `x ∉ 𝔪²`;
+* `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`: the quotient by such a
+  parameter is a domain, so the ideal the parameter generates is prime, the hypothesis the
+  statements for an irreducible first equation of `TauCeti.RingTheory.Intersection` take;
 * `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`: a regular local
-  ring is a discrete valuation ring exactly when it has dimension one.
+  ring is a discrete valuation ring exactly when it has dimension one;
+* `TauCeti.IsRegularLocalRing.valuationRing_of_ringKrullDim_le_one`: a regular local ring of
+  dimension at most one is a valuation ring.
 
 ## References
 
@@ -146,6 +152,23 @@ theorem quotient_span_singleton_iff {x : R} (hxm : x ∈ maximalIdeal R) (hx0 : 
     at h₂
   exact absurd h₂ (by norm_cast; omega)
 
+/-- **The curve a parameter cuts out is a domain, so its principal ideal is prime.** Let
+`(R, 𝔪)` be a regular local ring and let `f ∈ 𝔪 \ 𝔪²`, so that `f` is a parameter. Then the
+quotient `R ⧸ (f)` is a regular local ring by
+`TauCeti.IsRegularLocalRing.quotient_span_singleton`, hence a domain by
+`TauCeti.IsRegularLocalRing.isDomain`, and `Ideal.Quotient.isDomain_iff_prime` reads that back as
+the primality of `(f)`, the hypothesis the statements for an irreducible first equation of
+`TauCeti.RingTheory.Intersection` take. A consumer needing the domain instance itself obtains it
+from the primality, as `(Ideal.Quotient.isDomain_iff_prime _).mp` of it.
+
+In a ring of Krull dimension two that curve is a discrete valuation ring as well, being a regular
+local ring of dimension one by `TauCeti.ringKrullDim_quotient_span_singleton_eq_one` and therefore
+by `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`. -/
+theorem span_singleton_isPrime_of_notMem_sq {f : R} (hfm : f ∈ maximalIdeal R)
+    (hf2 : f ∉ maximalIdeal R ^ 2) : (span {f}).IsPrime := by
+  let _ : IsRegularLocalRing (R ⧸ span {f}) := quotient_span_singleton hfm hf2
+  exact (Quotient.isDomain_iff_prime (span {f})).mp isDomain
+
 /-- A regular local ring is a discrete valuation ring exactly when it has dimension one. -/
 theorem isDiscreteValuationRing_iff_ringKrullDim_eq_one :
     IsDiscreteValuationRing R ↔ ringKrullDim R = 1 := by
@@ -154,6 +177,18 @@ theorem isDiscreteValuationRing_iff_ringKrullDim_eq_one :
   have := (iff_finrank_cotangentSpace R).mp inferInstance
   rw [h] at this
   exact_mod_cast this
+
+/-- A regular local ring of dimension at most one is a valuation ring: a field in dimension zero
+and a discrete valuation ring in dimension one. -/
+theorem valuationRing_of_ringKrullDim_le_one (h : ringKrullDim R ≤ 1) : ValuationRing R := by
+  by_cases h1 : ringKrullDim R = 1
+  · have := isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr h1
+    infer_instance
+  · have : Ring.KrullDimLE 0 R := by
+      rw [Ring.krullDimLE_iff]
+      exact Order.le_of_lt_succ (lt_of_le_of_ne h h1)
+    let := (Ring.KrullDimLE.isField_of_isDomain (R := R)).toField
+    exact ValuationRing.of_field R
 
 end IsRegularLocalRing
 

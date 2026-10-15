@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
-import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # Spinor norms of isotropic quadratic spaces
@@ -67,31 +66,19 @@ theorem spinorNorm_surjective_of_not_anisotropic (Q : QuadraticForm K V)
   have hy0 : Q y ≠ 0 := by rw [hy]; exact one_ne_zero
   let _ : Invertible (Q x) := invertibleOfNonzero hx0
   let _ : Invertible (Q y) := invertibleOfNonzero hy0
-  let g : QuadraticMap.specialOrthogonalGroup Q :=
-    reflectionPairSpecialOrthogonal Q x y
-  refine ⟨g, ?_⟩
-  rw [spinorNorm_apply]
-  have hg : specialOrthogonalToOrthogonal Q g =
-      reflectionOrthogonal Q x * reflectionOrthogonal Q y := by
-    simpa only [g] using reflectionPairSpecialOrthogonal_toOrthogonal Q x y
-  rw [hg, map_mul, orthogonalSpinorNorm_reflectionOrthogonal,
-    orthogonalSpinorNorm_reflectionOrthogonal]
+  refine ⟨reflectionPairSpecialOrthogonal Q x y, ?_⟩
+  rw [Q.spinorNorm_reflectionPairSpecialOrthogonal hQ]
   have hxa : unitOfInvertible (Q x) = a := Units.ext hx
   have hy1 : unitOfInvertible (Q y) = (1 : Kˣ) := Units.ext hy
-  rw [hxa, hy1]
-  calc
-    squareClassHom a * squareClassHom (1 : Kˣ) = squareClassHom a := by
-      rw [← map_mul, mul_one]
-    _ = b := ha
+  simpa only [hxa, hy1, mul_one] using ha
 
 /-- The spinor norm on the full orthogonal group of a nondegenerate isotropic quadratic space
 is surjective. -/
 theorem orthogonalSpinorNorm_surjective_of_not_anisotropic (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hiso : ¬ Q.Anisotropic) :
     Function.Surjective (orthogonalSpinorNorm Q hQ) := by
-  intro b
-  obtain ⟨g, hg⟩ := spinorNorm_surjective_of_not_anisotropic Q hQ hiso b
-  exact ⟨specialOrthogonalToOrthogonal Q g, by simpa using hg⟩
+  exact Q.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective hQ
+    (spinorNorm_surjective_of_not_anisotropic Q hQ hiso)
 
 /-- For a nondegenerate isotropic quadratic space, the Spin action on the special orthogonal
 group is surjective exactly when every unit of `K` is a square. A nonsquare unit `a` is the

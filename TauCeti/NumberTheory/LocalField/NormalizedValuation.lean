@@ -37,6 +37,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 * `TauCeti.normalizedValuation`: the normalized valuation `v_K^×` of a nonarchimedean local
   field, as a homomorphism from the unit group to `Multiplicative ℤ`.
 * `TauCeti.normalizedValuationWithZero`: its zero-preserving extension to all of the field.
+* `TauCeti.normalizedValuationMod`: the normalized valuation reduced modulo `n`, as an additive
+  homomorphism `Additive Kˣ →+ ZMod n`.
 * `TauCeti.normalizedAbsoluteValue`: the normalized `ℚ≥0`-valued absolute value associated to
   `normalizedValuation`.
 
@@ -45,6 +47,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 * `TauCeti.toAdd_normalizedValuation_eq_neg_log`: the translation between the multiplicative
   convention of `ValuativeRel.valuation` and the additive normalization.
 * `TauCeti.normalizedValuation_surjective`: the normalized value group is all of `ℤ`.
+* `TauCeti.normalizedValuationMod_surjective`: every residue modulo `n` is the normalized
+  valuation of a unit.
 * `TauCeti.normalizedValuation_irreducible`: an irreducible element of `𝒪[K]` has normalized
   valuation `1`; that is, uniformizers are exactly where the normalization is pinned.
 * `TauCeti.toAdd_normalizedValuation_eq_iff_valuation_eq_zpow` and its two one-sided forms: the
@@ -220,14 +224,16 @@ theorem valueGroupWithZeroIsoInt_valuation (x : Kˣ) :
     valueGroupWithZeroIsoInt K (valuation K (x : K))
       = WithZero.exp (-(normalizedValuation K x).toAdd) := by
   rw [toAdd_normalizedValuation_eq_ord]
-  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K)) x.ne_zero
+  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K))
+    ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)
 
 /-- The normalized valuation vanishes exactly on the elements of valuation `1`. -/
 @[simp]
 theorem normalizedValuation_eq_one_iff (x : Kˣ) :
     normalizedValuation K x = 1 ↔ valuation K (x : K) = 1 := by
   rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord,
-    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K)) x.ne_zero]
+    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K))
+      ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)]
   simp [intValuation]
 
 /-- The normalized valuation vanishes on every root of unity: `Multiplicative ℤ` is torsion
@@ -331,6 +337,27 @@ theorem normalizedValuation_surjective : Function.Surjective (normalizedValuatio
     apply Multiplicative.toAdd.injective
     simpa [toAdd_normalizedValuation_eq_ord] using hx
 
+variable (K) in
+/-- The normalized valuation of `K` reduced modulo `n`, as an additive homomorphism
+`Additive Kˣ →+ ZMod n`. -/
+def normalizedValuationMod (n : ℕ) : Additive Kˣ →+ ZMod n :=
+  (Int.castAddHom (ZMod n)).comp (normalizedValuation K).toAdditiveLeft
+
+/-- The normalized valuation modulo `n` of `a ∈ Kˣ` is the residue of `v_K(a)`. -/
+@[simp]
+theorem normalizedValuationMod_ofMul (n : ℕ) (a : Kˣ) :
+    normalizedValuationMod K n (Additive.ofMul a) =
+      ((normalizedValuation K a).toAdd : ZMod n) := by
+  simp [normalizedValuationMod]
+
+/-- The normalized valuation modulo `n` is surjective. -/
+theorem normalizedValuationMod_surjective (n : ℕ) :
+    Function.Surjective (normalizedValuationMod K n) := by
+  intro m
+  obtain ⟨k, rfl⟩ := ZMod.intCast_surjective m
+  obtain ⟨a, ha⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd k)
+  exact ⟨Additive.ofMul a, by rw [normalizedValuationMod_ofMul, ha, toAdd_ofAdd]⟩
+
 /-- An element of the ring of integers is a unit there exactly when its zero-preserving
 normalized valuation is one. -/
 theorem isUnit_iff_normalizedValuationWithZero_eq_one {u : 𝒪[K]} :
@@ -350,7 +377,6 @@ of `𝒪[K]`. -/
 theorem exists_eq_mul_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π) (x : Kˣ) :
     ∃ (u : Kˣ) (n : ℤ), valuation K (u : K) = 1 ∧
       x = u * Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h)) ^ n := by
-  let hπ0 : (π : K) ≠ 0 := fun h => hπ.ne_zero (Subtype.ext h)
   obtain ⟨n, u, hx⟩ :=
     IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible
       (R := 𝒪[K]) hπ x.ne_zero

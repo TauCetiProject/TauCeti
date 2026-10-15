@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
+public import TauCeti.GroupTheory.Perm.Partition
+import Mathlib.GroupTheory.GroupAction.Transitive
 
 /-!
 # Transporting permutation groups along an equivalence
@@ -16,7 +18,8 @@ An equivalence `e : α ≃ β` induces the group isomorphism `Equiv.permCongrHom
 `G.map e.permCongrHom.toMonoidHom ≤ Equiv.Perm β`. The two subgroups are the same permutation
 group written in two numberings of the points. This file records that the invariants of a
 permutation group which do not depend on the numbering are unchanged: containment in the
-alternating group, transitivity, and primitivity. (The order is `Subgroup.card_map_of_injective`.)
+alternating group, transitivity, primitivity, and full cycle types.
+(The order is `Subgroup.card_map_of_injective`.)
 
 The same invariants may also be read off the image of a permutation representation instead of
 the acting group: an action of `G` on `α` and the action of the subgroup
@@ -28,7 +31,11 @@ the acting group: an action of `G` on `α` and the action of the subgroup
 * `Equiv.conj_eq_permCongrHom`: conjugation by a permutation is transport along that
   permutation.
 * `Equiv.isPretransitive_map_permCongrHom_iff`: transport preserves transitivity.
+* `Equiv.map_inf_alternatingGroup_permCongrHom`: transport preserves the even part of a subgroup.
+* `Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff`: transport preserves
+  transitivity of the even part of a subgroup.
 * `Equiv.isPreprimitive_map_permCongrHom_iff`: transport preserves primitivity.
+* `Equiv.image_fullCycleType_map_permCongrHom`: transport preserves the full cycle-type set.
 * `MulAction.isPretransitive_range_toPermHom_iff`, `MulAction.isPreprimitive_range_toPermHom_iff`:
   a group action and its image in the permutations are transitive, respectively primitive,
   together.
@@ -78,6 +85,50 @@ theorem map_permCongrHom_eq_map_conj (e e' : α ≃ β) (G : Subgroup (Perm α))
   simp [Equiv.permCongrHom_coe]
 
 variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
+
+-- Rewrite the complete cycle-type image before the subgroup-map coercion unfolds.
+/-- Transporting a permutation subgroup along a numbering preserves its full cycle types,
+including the parts contributed by fixed points. -/
+@[simp↓]
+theorem image_fullCycleType_map_permCongrHom (e : α ≃ β) (G : Subgroup (Perm α)) :
+    Perm.fullCycleType '' (G.map e.permCongrHom.toMonoidHom : Set (Perm β)) =
+      Perm.fullCycleType '' (G : Set (Perm α)) := by
+  ext t
+  simp only [Set.mem_image]
+  constructor
+  · rintro ⟨_, ⟨σ, hσ, rfl⟩, ht⟩
+    exact ⟨σ, hσ, (Perm.fullCycleType_permCongr e σ).symm.trans ht⟩
+  · rintro ⟨σ, hσ, rfl⟩
+    exact ⟨e.permCongrHom σ, ⟨σ, hσ, rfl⟩, Perm.fullCycleType_permCongr e σ⟩
+
+/-- Transport along an equivalence carries the even part of a permutation subgroup to the
+even part of its transport. -/
+@[simp]
+theorem map_inf_alternatingGroup_permCongrHom (e : α ≃ β) (G : Subgroup (Perm α)) :
+    ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom =
+      G.map e.permCongrHom ⊓ alternatingGroup β := by
+  have hA : (alternatingGroup α).map e.permCongrHom =
+      alternatingGroup β := by
+    simp [Subgroup.ext_iff, Subgroup.map_equiv_eq_comap_symm]
+  simp only [← MulEquiv.toMonoidHom_eq_coe] at hA ⊢
+  rw [Subgroup.map_inf G (alternatingGroup α)
+    e.permCongrHom.toMonoidHom e.permCongrHom.injective, hA]
+
+/-- Transport along an equivalence preserves transitivity of the intersection of a permutation
+subgroup with the alternating group. -/
+@[simp]
+theorem isPretransitive_inf_alternatingGroup_map_permCongrHom_iff (e : α ≃ β)
+    (G : Subgroup (Perm α)) :
+    IsPretransitive ((G.map e.permCongrHom ⊓ alternatingGroup β) :
+      Subgroup (Perm β)) β ↔
+    IsPretransitive ((G ⊓ alternatingGroup α) : Subgroup (Perm α)) α := by
+  rw [← map_inf_alternatingGroup_permCongrHom]
+  have hmap : ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map
+      e.permCongrHom.toMonoidHom =
+      ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom := by
+    simp only [MulEquiv.toMonoidHom_eq_coe]
+  exact hmap ▸ isPretransitive_map_permCongrHom_iff e
+    ((G ⊓ alternatingGroup α) : Subgroup (Perm α))
 
 /-- Transport along an equivalence preserves containment in the alternating group, since it
 preserves the sign of every permutation. -/

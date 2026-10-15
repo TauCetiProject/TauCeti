@@ -49,6 +49,8 @@ quotient converging to `1` lifts to `G`, which is
   `1` and generates topologically — a converging basis of the group.
 * `TauCeti.IsProP.finrank_continuousZModDual_eq_topologicalGeneratorRankNat`: the natural-number
   form of the theorem, for a topologically finitely generated pro-`p` group.
+* `TauCeti.IsProP.finite_continuousZModDual_iff`: the continuous `𝔽_p`-dual is finite-dimensional
+  exactly when the pro-`p` group is topologically finitely generated.
 
 ## References
 
@@ -267,7 +269,7 @@ theorem IsProP.exists_tendsto_cofinite_topologicallyGenerates_coord_eq (hG : IsP
   have hs1' : s 1 = 1 := by
     rw [← QuotientGroup.mk_one]
     exact hs1
-  set g : ι → G := fun i ↦ s (u i) with hg
+  set g : ι → G := fun i ↦ s (u i)
   have hmk : ∀ i, ((g i : G) : G ⧸ proPFrattini p G) = u i := fun i ↦ hsec (u i)
   refine ⟨g, ?_, ?_, fun i x ↦ ?_⟩
   · exact (hs1' ▸ hs.tendsto 1).comp hu
@@ -289,6 +291,13 @@ theorem IsProP.finrank_continuousZModDual_eq_topologicalGeneratorRankNat (hG : I
     Module.finrank (ZMod p) (continuousZModDual p G) = topologicalGeneratorRankNat G hfg := by
   rw [Module.finrank, ← hG.topologicalGeneratorRank_eq_rank_continuousZModDual,
     ← topologicalGeneratorRankNat_eq_topologicalGeneratorRank hfg, Cardinal.toNat_natCast]
+
+/-- **Finiteness of the continuous `𝔽_p`-dual of a profinite pro-`p` group.** The dual is
+finite-dimensional over `𝔽_p` exactly when the group is topologically finitely generated. -/
+theorem IsProP.finite_continuousZModDual_iff (hG : IsProP p G) :
+    Module.Finite (ZMod p) (continuousZModDual p G) ↔ IsTopologicallyFinitelyGenerated G := by
+  rw [← Module.rank_lt_aleph0_iff, ← hG.topologicalGeneratorRank_eq_rank_continuousZModDual,
+    topologicalGeneratorRank_lt_aleph0_iff]
 
 end Burnside
 

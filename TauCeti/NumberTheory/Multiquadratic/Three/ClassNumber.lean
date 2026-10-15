@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.Multiquadratic.Three.Basic
+import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
@@ -19,7 +20,9 @@ Since `3 ≡ 3 (mod 4)` the ring of integers is `ℤ[√3]` and the discriminant
 totally real, so its Minkowski bound is `(2!/2²) · √12 = √3 < 2`: every ideal class has an
 integral representative of norm `1`, that is, the unit ideal. Mathlib's
 `NumberField.RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt` packages exactly this
-comparison, and `12 < 16` is the required numerical inequality.
+comparison, and `12 < 16` is the required numerical inequality, recorded once for all real
+quadratic fields as
+`isPrincipalIdealRing_of_finrank_eq_two_of_nrComplexPlaces_eq_zero_of_natAbs_discr_le_fifteen`.
 
 Total reality is what makes the bound small enough: at absolute discriminant `12`, the
 hypothetical imaginary-signature Minkowski bound would carry the extra factor `4/π`, giving
@@ -81,9 +84,8 @@ theorem classNumber_eq_one_of_minpoly_eq_X_sq_sub_three
     NumberField.IsTotallyReal.nrComplexPlaces_eq_zero K
   have hdisc := discr_eq_twelve_of_minpoly_eq_X_sq_sub_three hmin hgen
   refine NumberField.classNumber_eq_one_iff.mpr ?_
-  apply RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt
-  rw [hdisc, hcomplex, hfin]
-  norm_num [Nat.factorial]
+  exact isPrincipalIdealRing_of_finrank_eq_two_of_nrComplexPlaces_eq_zero_of_natAbs_discr_le_fifteen
+    hfin hcomplex (by rw [hdisc]; norm_num)
 
 /-- **Worked example.** The concrete number field `AdjoinRoot (X² - 3)`, modelling `ℚ(√3)`, has
 class number `1`. -/

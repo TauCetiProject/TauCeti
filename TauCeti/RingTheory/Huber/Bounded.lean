@@ -5,27 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
+public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.Module.Bounded
 
 /-!
-# Bounded subsets of a topological ring
+# Bounded subsets of topological rings and modules
 
 A subset `S` of a topological monoid with zero is *bounded* when every neighbourhood `U` of zero
 absorbs `S`: there is a neighbourhood `V` of zero with `V * S ⊆ U`. This is the notion of
 boundedness underlying Huber's theory of adic spaces (Wedhorn, *Adic Spaces*, Definition 5.27),
 where it is the condition cutting out the rings of definition of a Huber ring.
 
+The same condition makes sense for a subset `S` of a topological `R`-module `M`: every
+neighbourhood `U` of zero in `M` contains `V • S` for some neighbourhood `V` of zero in `R`. This
+is `TauCeti.IsModuleBounded`, developed in `TauCeti.Topology.Algebra.Module.Bounded`. Boundedness
+in a ring is the case of the ring acting on itself (`isModuleBounded_self_iff`), and the shared
+elementary calculus is derived from the module calculus. In a topological `R`-algebra, a bounded
+subset is bounded for the `R`-module structure as soon as the structure map is continuous at zero
+(`IsBounded.isModuleBounded`).
+
 ## Provenance
 
 `IsBounded` and the elementary calculus — `IsBounded.subset`, `isBounded_empty`,
 `isBounded_singleton_zero`, `isBounded_pair_zero_one`, `IsBounded.union`, `IsBounded.mul`,
 `isBounded_singleton` and `isBounded_finite` — follow William Coram's mathlib4#40013, as do
-several of their proofs. Everything else here is new: `isBounded_iUnion`, the nonarchimedean
-`IsBounded.addSubgroupClosure`, `IsBounded.add` and `isBounded_sup`, and the image and transport
-lemmas. The selection and ordering of results follows AINTLIB's `Bounded.lean`; its proofs were
-not used.
+several of their proofs; the ring versions of the shared calculus are derived from the module
+versions in `TauCeti.Topology.Algebra.Module.Bounded`, whose proofs adapt them. Everything else
+here is new: the finite unions `isBounded_iUnion`, the nonarchimedean
+`IsBounded.addSubgroupClosure`, `IsBounded.add` and `isBounded_sup`, the image, transport and
+product lemmas, and the comparison with `IsModuleBounded`. The selection and ordering of the ring
+results follows AINTLIB's `Bounded.lean`; its proofs were not used.
 
 ## Main definitions
 
@@ -36,6 +47,8 @@ not used.
 * `TauCeti.Huber.isBounded_iff`: unfolding lemma for `IsBounded`.
 * `TauCeti.Huber.isBounded_finsetProd`: a finite pointwise product of bounded sets is bounded.
 * `TauCeti.Huber.isBounded_finite`: finite sets are bounded.
+* `TauCeti.Huber.isBounded_of_isLinearTopology`: in a linearly topologized commutative ring, such
+  as an adic ring, every subset is bounded.
 * `TauCeti.Huber.IsBounded.union`, `TauCeti.Huber.IsBounded.mul`: unions and pointwise products
   of bounded sets are bounded.
 * `TauCeti.Huber.IsBounded.add`, `TauCeti.Huber.IsBounded.addSubgroupClosure`: over a ring with a
@@ -46,6 +59,10 @@ not used.
 * `TauCeti.Huber.IsBounded.image`: a morphism continuous at zero which is open at zero preserves
   boundedness, and `TauCeti.Huber.isBounded_image_ringEquiv_iff` transports boundedness along a
   topological ring isomorphism.
+* `TauCeti.Huber.isBounded_prod_iff`: a subset of a product of two topological rings, or more
+  generally monoids with zero, is bounded exactly when both of its projections are.
+* `TauCeti.Huber.IsBounded.smul`: a bounded set of scalars times a bounded subset of a module is
+  bounded.
 
 ## Implementation notes
 
@@ -77,6 +94,7 @@ open Filter Pointwise Topology
 
 namespace TauCeti.Huber
 
+
 section MonoidWithZero
 
 variable {M : Type*} [MonoidWithZero M] [TopologicalSpace M]
@@ -89,6 +107,18 @@ def IsBounded (S : Set M) : Prop := ∀ U ∈ 𝓝 (0 : M), ∃ V ∈ 𝓝 (0 : 
 theorem isBounded_iff {S : Set M} :
     IsBounded S ↔ ∀ U ∈ 𝓝 (0 : M), ∃ V ∈ 𝓝 (0 : M), V * S ⊆ U := (Iff.rfl)
 
+/-- Boundedness in a topological monoid with zero is boundedness for its action on itself. -/
+@[simp]
+theorem isModuleBounded_self_iff {S : Set M} : IsModuleBounded M S ↔ IsBounded S := by
+  simp only [isModuleBounded_iff, isBounded_iff, smul_eq_mul]
+
+/-- A bounded set of scalars times a bounded subset of a module is bounded. This is
+`TauCeti.IsModuleBounded.smul` for the monoid with zero acting on itself. -/
+theorem IsBounded.smul {N : Type*} [TopologicalSpace N] [Zero N] [SMul M N]
+    [IsScalarTower M M N] {S : Set M} {T : Set N} (hS : IsBounded S) (hT : IsModuleBounded M T) :
+    IsModuleBounded M (S • T) :=
+  (isModuleBounded_self_iff.mpr hS).smul hT
+
 /-- Some power of a topologically nilpotent element multiplies a bounded set into any
 neighbourhood of zero. -/
 theorem IsBounded.exists_pow_mul_subset {S U : Set M} {a : M} (hS : IsBounded S)
@@ -100,19 +130,17 @@ theorem IsBounded.exists_pow_mul_subset {S U : Set M} {a : M} (hS : IsBounded S)
 
 /-- Subsets of bounded sets are bounded. -/
 theorem IsBounded.subset {S T : Set M} (hS : IsBounded S) (hTS : T ⊆ S) : IsBounded T :=
-  fun U hU ↦
-    let ⟨V, hV, hVS⟩ := hS U hU
-    ⟨V, hV, (Set.mul_subset_mul_left hTS).trans hVS⟩
+  isModuleBounded_self_iff.mp <| (isModuleBounded_self_iff.mpr hS).subset hTS
 
 /-- The empty set is bounded. -/
 @[simp]
 theorem isBounded_empty : IsBounded (∅ : Set M) :=
-  fun _ _ ↦ ⟨Set.univ, univ_mem, by simp⟩
+  isModuleBounded_self_iff.mp (isModuleBounded_empty M)
 
 /-- The singleton `{0}` is bounded. -/
 @[simp]
 theorem isBounded_singleton_zero : IsBounded ({0} : Set M) :=
-  fun U hU ↦ ⟨Set.univ, univ_mem, fun _ hx ↦ by simp_all [mem_of_mem_nhds hU]⟩
+  isModuleBounded_self_iff.mp (isModuleBounded_singleton_zero M)
 
 /-- The pair `{0, 1}` is bounded. -/
 @[simp]
@@ -125,13 +153,8 @@ theorem isBounded_pair_zero_one : IsBounded ({0, 1} : Set M) :=
 
 /-- A finite union of bounded sets is bounded. -/
 theorem isBounded_iUnion {ι : Sort*} [Finite ι] {S : ι → Set M} (hS : ∀ i, IsBounded (S i)) :
-    IsBounded (⋃ i, S i) := by
-  intro U hU
-  choose V hV hVS using fun i ↦ hS i U hU
-  refine ⟨⋂ i, V i, Filter.iInter_mem.mpr hV, ?_⟩
-  rw [Set.mul_iUnion]
-  exact Set.iUnion_subset fun i ↦
-    (Set.mul_subset_mul_right (Set.iInter_subset _ i)).trans (hVS i)
+    IsBounded (⋃ i, S i) :=
+  isModuleBounded_self_iff.mp <| isModuleBounded_iUnion fun i ↦ isModuleBounded_self_iff.mpr (hS i)
 
 /-- A finite indexed union is bounded exactly when every piece is. -/
 @[simp]
@@ -153,10 +176,8 @@ theorem isBounded_union {S T : Set M} : IsBounded (S ∪ T) ↔ IsBounded S ∧ 
 
 /-- The pointwise product of two bounded sets is bounded. -/
 theorem IsBounded.mul {S T : Set M} (hS : IsBounded S) (hT : IsBounded T) : IsBounded (S * T) := by
-  intro U hU
-  obtain ⟨W, hW, hTW⟩ := hT U hU
-  obtain ⟨V, hV, hSV⟩ := hS W hW
-  exact ⟨V, hV, by simpa [← mul_assoc] using (Set.mul_subset_mul_right hSV).trans hTW⟩
+  rw [← smul_eq_mul, ← isModuleBounded_self_iff]
+  exact hS.smul (isModuleBounded_self_iff.mpr hT)
 
 /-- Every subset of a discrete monoid with zero is bounded. -/
 theorem isBounded_of_discreteTopology [DiscreteTopology M] (S : Set M) : IsBounded S :=
@@ -197,6 +218,21 @@ theorem isBounded_finsetProd {ι : Type*} (s : Finset ι) {S : ι → Set M}
 
 end CommMonoidWithZero
 
+section LinearTopology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsLinearTopology A A]
+
+/-- Every subset of a linearly topologized commutative ring is bounded: a neighbourhood of zero
+contains an open ideal, which absorbs every subset. This covers the adic rings, such as `ℤ_[p]`
+or `W(𝒪_F)` with its `(p, [ϖ])`-adic topology, and in particular the discrete rings. -/
+theorem isBounded_of_isLinearTopology (S : Set A) : IsBounded S := fun U hU ↦ by
+  obtain ⟨I, hI, hIU⟩ := (IsLinearTopology.hasBasis_ideal (R := A)).mem_iff.mp hU
+  exact ⟨I, hI, by
+    rintro _ ⟨i, hi, s, -, rfl⟩
+    exact hIU (I.mul_mem_right s hi)⟩
+
+end LinearTopology
+
 section Nonarchimedean
 
 variable {A : Type*} [Ring A] [TopologicalSpace A] [NonarchimedeanAddGroup A]
@@ -204,25 +240,13 @@ variable {A : Type*} [Ring A] [TopologicalSpace A] [NonarchimedeanAddGroup A]
 /-- The additive subgroup generated by a bounded set is bounded in a nonarchimedean ring
 (the key step of Wedhorn, Proposition 5.30). -/
 theorem IsBounded.addSubgroupClosure {S : Set A} (hS : IsBounded S) :
-    IsBounded (AddSubgroup.closure S : Set A) := by
-  intro U hU
-  obtain ⟨G, hGU⟩ := NonarchimedeanAddGroup.is_nonarchimedean U hU
-  obtain ⟨V, hV, hVS⟩ := hS _ (G.isOpen.mem_nhds G.zero_mem)
-  refine ⟨V, hV, ?_⟩
-  rintro _ ⟨v, hv, x, hx, rfl⟩
-  refine hGU (?_ : v * x ∈ (G : Set A))
-  induction hx using AddSubgroup.closure_induction with
-  | mem s hs => exact hVS (Set.mul_mem_mul hv hs)
-  | zero => simp
-  | add x y _ _ hx hy => rw [mul_add]; exact G.toAddSubgroup.add_mem hx hy
-  | neg x _ hx => rw [mul_neg]; exact G.toAddSubgroup.neg_mem hx
+    IsBounded (AddSubgroup.closure S : Set A) :=
+  isModuleBounded_self_iff.mp (isModuleBounded_self_iff.mpr hS).addSubgroupClosure
 
 /-- The pointwise sum of two bounded sets is bounded in a nonarchimedean ring. -/
-theorem IsBounded.add {S T : Set A} (hS : IsBounded S) (hT : IsBounded T) : IsBounded (S + T) := by
-  refine (hS.union hT).addSubgroupClosure.subset ?_
-  rintro _ ⟨s, hs, t, ht, rfl⟩
-  exact AddSubgroup.add_mem _ (AddSubgroup.subset_closure (.inl hs))
-    (AddSubgroup.subset_closure (.inr ht))
+theorem IsBounded.add {S T : Set A} (hS : IsBounded S) (hT : IsBounded T) : IsBounded (S + T) :=
+  isModuleBounded_self_iff.mp
+    ((isModuleBounded_self_iff.mpr hS).add (isModuleBounded_self_iff.mpr hT))
 
 /-- The join of two bounded subrings of a commutative ring is bounded. -/
 theorem isBounded_sup {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanAddGroup A]
@@ -266,6 +290,59 @@ theorem IsBounded.image_of_isOpenMap {F : Type*} [FunLike F M N] [ZeroHomClass F
   hS.image hf fun _ hV ↦ map_zero f ▸ hf₀.image_mem_nhds hV
 
 end Image
+
+section Prod
+
+variable {M N : Type*} [MonoidWithZero M] [MonoidWithZero N]
+  [TopologicalSpace M] [TopologicalSpace N]
+
+/-- A subset of a product of two topological monoids with zero is bounded exactly when both of its
+projections are. -/
+@[simp]
+theorem isBounded_prod_iff {S : Set (M × N)} :
+    IsBounded S ↔ IsBounded (Prod.fst '' S) ∧ IsBounded (Prod.snd '' S) := by
+  refine ⟨fun hS ↦ ⟨fun U hU ↦ ?_, fun U hU ↦ ?_⟩, fun ⟨h₁, h₂⟩ U hU ↦ ?_⟩
+  · obtain ⟨V, hV, hVS⟩ := hS (U ×ˢ Set.univ) (prod_mem_nhds hU univ_mem)
+    refine ⟨Prod.fst '' V, isOpenMap_fst.image_mem_nhds hV, ?_⟩
+    rintro _ ⟨_, ⟨v, hv, rfl⟩, _, ⟨s, hs, rfl⟩, rfl⟩
+    exact (hVS (Set.mul_mem_mul hv hs)).1
+  · obtain ⟨V, hV, hVS⟩ := hS (Set.univ ×ˢ U) (prod_mem_nhds univ_mem hU)
+    refine ⟨Prod.snd '' V, isOpenMap_snd.image_mem_nhds hV, ?_⟩
+    rintro _ ⟨_, ⟨v, hv, rfl⟩, _, ⟨s, hs, rfl⟩, rfl⟩
+    exact (hVS (Set.mul_mem_mul hv hs)).2
+  · obtain ⟨U₁, hU₁, U₂, hU₂, hU⟩ := mem_nhds_prod_iff.mp hU
+    obtain ⟨V₁, hV₁, hVS₁⟩ := h₁ U₁ hU₁
+    obtain ⟨V₂, hV₂, hVS₂⟩ := h₂ U₂ hU₂
+    refine ⟨V₁ ×ˢ V₂, prod_mem_nhds hV₁ hV₂, ?_⟩
+    rintro _ ⟨v, hv, s, hs, rfl⟩
+    exact hU ⟨hVS₁ (Set.mul_mem_mul hv.1 ⟨s, hs, rfl⟩),
+      hVS₂ (Set.mul_mem_mul hv.2 ⟨s, hs, rfl⟩)⟩
+
+/-- The product of two bounded sets is bounded in the product monoid. -/
+theorem IsBounded.prod {S : Set M} {T : Set N} (hS : IsBounded S) (hT : IsBounded T) :
+    IsBounded (S ×ˢ T) :=
+  isBounded_prod_iff.mpr ⟨hS.subset (Set.fst_image_prod_subset S T),
+    hT.subset (Set.snd_image_prod_subset S T)⟩
+
+end Prod
+
+section Algebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+  [TopologicalSpace R] [TopologicalSpace A]
+
+/-- In a topological `R`-algebra whose structure map is continuous at zero, a bounded subset is
+bounded for the `R`-module structure. -/
+theorem IsBounded.isModuleBounded (h : ContinuousAt (algebraMap R A) 0) {S : Set A}
+    (hS : IsBounded S) : IsModuleBounded R S := by
+  refine isModuleBounded_iff.mpr fun U hU ↦ ?_
+  obtain ⟨V, hV, hVS⟩ := hS U hU
+  refine ⟨algebraMap R A ⁻¹' V, h.preimage_mem_nhds (by rwa [map_zero]),
+    Set.smul_subset_iff.mpr fun r hr s hs ↦ ?_⟩
+  rw [Algebra.smul_def]
+  exact hVS (Set.mul_mem_mul hr hs)
+
+end Algebra
 
 section Transport
 

@@ -10,7 +10,7 @@ public import Mathlib.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.CategoryTheory.Skeletal
-public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.Rep.Subrepresentation
 
 /-!
 # Simple objects of `Rep k G` and `FDRep k G`, and their isomorphism classes
@@ -20,16 +20,15 @@ lattice of subrepresentations of `ρ` has exactly two elements, and it is the no
 representation-theoretic arguments of this repository are phrased.
 `CategoryTheory.Simple X` says that `X` is nonzero and every monomorphism `f` into `X` satisfies
 `IsIso f ↔ f ≠ 0`; it is the notion in which the categorical machinery is phrased -- Schur's lemma
-`FDRep.finrank_hom_simple_simple`, the characters of simple objects, semisimple categories. Neither
-Mathlib nor this repository previously related the two, which is why several files here stopped at
-the `Representation` level. This file supplies the dictionary.
+`FDRep.finrank_hom_simple_simple`, the characters of simple objects, semisimple categories. This
+file supplies the dictionary between them.
 
 Over `Rep k G` the dictionary is bookkeeping. `Rep k G` is equivalent to the category of
 `k[G]`-modules (`Rep.equivalenceModuleMonoidAlgebra`), an equivalence transports simplicity in both
 directions, and a module is a simple object exactly when it is a simple module
 (`simple_iff_isSimpleModule`).
 
-`FDRep k G` is not known to be equivalent to a module category, so it needs an argument in each
+Mathlib does not identify `FDRep k G` with a module category, so it needs an argument in each
 direction. One is formal: the forgetful functor to `Rep k G` is faithful, preserves zero morphisms
 and monomorphisms, and reflects isomorphisms, and such a functor reflects simplicity
 (`CategoryTheory.Functor.simple_of_simple_obj`). The other uses finite-dimensionality, and is where
@@ -46,8 +45,7 @@ One consequence of the converse directions not being instances is that inference
 `Simple X` to the simplicity of the `k[G]`-module `X.ρ.asModule`, even though Mathlib registers
 that module as simple whenever `X.ρ` is irreducible. The single composite
 `FDRep.isSimpleModule_asModule_of_simple` is therefore registered as an instance as well, so that
-`Simple X` alone suffices for the module-level API; it is the third and last instance the file
-exports.
+`Simple X` alone suffices for the module-level API.
 
 A classification statement is valued in a type of *isomorphism classes*, and for simple objects of
 `FDRep k G` that type needs no device: unlike abstract simple modules, which range over every
@@ -86,9 +84,7 @@ open scoped MonoidAlgebra
 universe u v w
 
 /-- **An object of `Rep k G` is simple exactly when the representation it carries is
-irreducible.** Both sides say that the `k[G]`-module the object carries is simple: the left-hand
-side across `Rep.equivalenceModuleMonoidAlgebra`, the right-hand side across
-`Representation.irreducible_iff_isSimpleModule_asModule`. -/
+irreducible.** -/
 theorem Rep.simple_iff_isIrreducible {k : Type u} {G : Type v} [Field k] [Monoid G]
     (A : Rep.{w} k G) : Simple A ↔ Representation.IsIrreducible A.ρ := by
   rw [Representation.irreducible_iff_isSimpleModule_asModule,
@@ -109,33 +105,6 @@ section FDRep
 
 variable {k : Type u} {G : Type v} [Field k] [Monoid G]
 
-section Inclusion
-
-variable {V : Type u} [AddCommGroup V] [Module k V] {ρ : Representation k G V}
-  (W : Subrepresentation ρ)
-
-/-- The inclusion of a subrepresentation is a monomorphism of `Rep k G`, being injective. -/
-private theorem mono_repOfHom_subtype : Mono (Rep.ofHom W.subtype) :=
-  (Rep.mono_iff_injective _).mpr W.subtype_injective
-
-/-- The inclusion of a subrepresentation is the zero morphism of `Rep k G` exactly when the
-subrepresentation is zero. -/
-private theorem repOfHom_subtype_eq_zero_iff : Rep.ofHom W.subtype = 0 ↔ W = ⊥ := by
-  constructor
-  · intro h
-    apply W.subtype_eq_zero_iff.mp
-    simpa using congrArg Rep.Hom.hom h
-  · intro h
-    rw [(W.subtype_eq_zero_iff.mpr h), Rep.ofHom_zero]
-
-/-- The inclusion of a subrepresentation is an epimorphism of `Rep k G` exactly when the
-subrepresentation is everything. -/
-private theorem epi_repOfHom_subtype_iff : Epi (Rep.ofHom W.subtype) ↔ W = ⊤ := by
-  rw [Rep.epi_iff_surjective]
-  exact W.subtype_surjective_iff
-
-end Inclusion
-
 /-- The inclusion of a subrepresentation of a finite-dimensional representation, as a morphism of
 `FDRep k G`: the monomorphism whose behaviour witnesses simplicity of the object. Its image in
 `Rep k G` is `Rep.ofHom W.subtype`, which is where its properties are read off. -/
@@ -149,61 +118,41 @@ private theorem map_subInclusion (X : FDRep k G) (W : Subrepresentation X.ρ) :
     (forget₂ (FDRep k G) (Rep k G)).map (subInclusion X W) = Rep.ofHom W.subtype :=
   (forget₂ (FDRep k G) (Rep k G)).map_preimage _
 
-private theorem mono_map_subInclusion (X : FDRep k G) (W : Subrepresentation X.ρ) :
-    Mono ((forget₂ (FDRep k G) (Rep k G)).map (subInclusion X W)) := by
-  rw [map_subInclusion]
-  exact mono_repOfHom_subtype W
-
 private instance (X : FDRep k G) (W : Subrepresentation X.ρ) : Mono (subInclusion X W) :=
-  (forget₂ (FDRep k G) (Rep k G)).mono_of_mono_map (mono_map_subInclusion X W)
+  (forget₂ (FDRep k G) (Rep k G)).mono_of_mono_map (by
+    rw [map_subInclusion]
+    exact W.mono_ofHom_subtype)
 
 /-- The inclusion of a subrepresentation is the zero morphism exactly when the subrepresentation is
 zero. -/
 private theorem subInclusion_eq_zero_iff (X : FDRep k G) (W : Subrepresentation X.ρ) :
     subInclusion X W = 0 ↔ W = ⊥ := by
   rw [← (forget₂ (FDRep k G) (Rep k G)).map_eq_zero_iff, map_subInclusion]
-  exact repOfHom_subtype_eq_zero_iff W
+  exact W.ofHom_subtype_eq_zero_iff
 
 /-- The inclusion of a subrepresentation is an isomorphism exactly when the subrepresentation is
 everything. -/
 private theorem isIso_subInclusion_iff (X : FDRep k G) (W : Subrepresentation X.ρ) :
     IsIso (subInclusion X W) ↔ W = ⊤ := by
-  constructor
-  · intro h
-    have hepi : Epi ((forget₂ (FDRep k G) (Rep k G)).map (subInclusion X W)) := inferInstance
-    rw [map_subInclusion] at hepi
-    exact (epi_repOfHom_subtype_iff W).mp hepi
-  · rintro rfl
-    have hmono := mono_map_subInclusion X (⊤ : Subrepresentation X.ρ)
-    have hepi : Epi ((forget₂ (FDRep k G) (Rep k G)).map
-        (subInclusion X (⊤ : Subrepresentation X.ρ))) := by
-      rw [map_subInclusion]
-      exact (epi_repOfHom_subtype_iff _).mpr rfl
-    have : IsIso ((forget₂ (FDRep k G) (Rep k G)).map
-        (subInclusion X (⊤ : Subrepresentation X.ρ))) := isIso_of_mono_of_epi _
-    exact isIso_of_reflects_iso _ (forget₂ (FDRep k G) (Rep k G))
+  rw [← isIso_iff_of_reflects_iso _ (forget₂ (FDRep k G) (Rep k G)), map_subInclusion]
+  exact W.isIso_ofHom_subtype_iff
 
 /-- **An object of `FDRep k G` is simple exactly when the representation it carries is
 irreducible.** -/
 theorem FDRep.simple_iff_isIrreducible (X : FDRep k G) :
     Simple X ↔ Representation.IsIrreducible X.ρ := by
   constructor
-  · intro _
+  · intro
     -- A subrepresentation is everything exactly when it is nonzero: this is simplicity of `X`,
     -- read through the inclusion of the subrepresentation.
     have key : ∀ W : Subrepresentation X.ρ, W = ⊤ ↔ ¬W = ⊥ := fun W => by
       rw [← isIso_subInclusion_iff, ← subInclusion_eq_zero_iff]
       exact Simple.mono_isIso_iff_nonzero _
-    have hbot : (⊥ : Subrepresentation X.ρ) ≠ ⊤ := fun h => (key ⊥).mp h rfl
-    have : Nontrivial (Subrepresentation X.ρ) := ⟨⟨⊥, ⊤, hbot⟩⟩
-    exact ⟨fun W => (em (W = ⊥)).imp id (key W).mpr⟩
-  · intro _
-    have hirr : Representation.IsIrreducible
-        ((forget₂ (FDRep k G) (Rep k G)).obj X).ρ := by
-      rw [FDRep.forget₂_ρ]
-      exact ‹Representation.IsIrreducible X.ρ›
-    have : Simple ((forget₂ (FDRep k G) (Rep k G)).obj X) :=
-      (Rep.simple_iff_isIrreducible _).mpr hirr
+    have : Nontrivial (Subrepresentation X.ρ) := ⟨⟨⊥, ⊤, fun h => (key ⊥).mp h rfl⟩⟩
+    exact ⟨fun W => (em (W = ⊥)).imp_right (key W).mpr⟩
+  · intro
+    have : Simple ((forget₂ (FDRep k G) (Rep k G)).obj X) := by
+      rwa [Rep.simple_iff_isIrreducible, FDRep.forget₂_ρ]
     exact Functor.simple_of_simple_obj (forget₂ (FDRep k G) (Rep k G)) X
 
 /-- An irreducible finite-dimensional representation is a simple object of `FDRep k G`. -/
@@ -217,12 +166,10 @@ theorem FDRep.isIrreducible_of_simple (X : FDRep k G) [Simple X] :
   (FDRep.simple_iff_isIrreducible X).mp ‹_›
 
 /-- The module carried by a simple object of `FDRep k G` is a simple module over the group
-algebra. This is Mathlib's instance for an irreducible representation, composed with
-`FDRep.isIrreducible_of_simple`; it is registered so that inference reaches the module-level API
-from `Simple X`, which the composition cannot do on its own because
-`FDRep.isIrreducible_of_simple` is deliberately not an instance. -/
+algebra. Registered so that Mathlib's simple-module API on `X.ρ.asModule` is available from
+`Simple X` alone, since `FDRep.isIrreducible_of_simple` is deliberately not an instance. -/
 instance FDRep.isSimpleModule_asModule_of_simple (X : FDRep k G) [Simple X] :
-    IsSimpleModule k[G] (_root_.Representation.asModule X.ρ) :=
+    IsSimpleModule k[G] (Representation.asModule X.ρ) :=
   haveI := FDRep.isIrreducible_of_simple X
   inferInstance
 
@@ -274,6 +221,7 @@ noncomputable def lift {α : Sort*} (f : ∀ (X : FDRep k G) [Simple X], α)
   ObjectProperty.skeletonLift _ (fun X ↦ @f X.obj X.property)
     fun X Y e ↦ @h X.obj Y.obj X.property Y.property e
 
+/-- The lift of an isomorphism-invariant function, evaluated at the class of a simple object. -/
 @[simp]
 theorem lift_mk {α : Sort*} {f : ∀ (X : FDRep k G) [Simple X], α} {h}
     (X : FDRep k G) [Simple X] : lift f h (mk X) = f X :=

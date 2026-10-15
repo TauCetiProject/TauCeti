@@ -31,9 +31,6 @@ that this object property is invariant under isomorphisms and closed under tenso
 
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 * J. S. Milne, *Algebraic Groups* (2017), §12.c.
-
-This supplies generic geometric semisimple-point infrastructure used by Layer 4 of the
-ReductiveGroups roadmap.
 -/
 
 public section

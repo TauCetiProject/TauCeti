@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Basic
 public import TauCeti.NumberTheory.LSeries.ThreeFourOne
+import TauCeti.Analysis.Asymptotics.InvSubOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
+import TauCeti.NumberTheory.LSeries.Nonvanishing
 
 /-!
 # The 3-4-1 bound for the Euler products of unitary ideal weights
@@ -33,6 +35,8 @@ that is differentiable at `1 + it` does not vanish there, provided `L(χ₀, σ)
   weight `χ` against a weight `χ₀` trivial on its good ideals, with bad primes among those of `χ`.
 * `TauCeti.UnitaryIdealWeight.norm_dedekindZeta_threeFourOne_ge_one`: the case `χ₀ = 1`, where the
   first factor is the Dedekind zeta function.
+* `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries`: the resulting nonvanishing criterion on
+  the line `Re s = 1`, for continuations of the `L`-series of `χ` and of `χ²`.
 
 ## References
 
@@ -147,6 +151,34 @@ theorem norm_dedekindZeta_threeFourOne_ge_one (χ : UnitaryIdealWeight K) {σ : 
   simpa [dedekindZeta_eq_LSeries_normCoeff_one] using
     χ.norm_LSeries_threeFourOne_ge_one MultiplicativeIdealWeight.isTrivialOnGood_one (by simp)
       hσ t
+
+/-- **The `3-4-1` nonvanishing criterion for a unitary weight.** Let `χ` be a unitary weight and
+`s` a point with `Re s = 1`. If `f` is complex differentiable at `s` and `f₂` is continuous at
+`2s - 1`, and they agree on `Re z > 1` with the `L`-series of `χ` and of its pointwise square
+`χ²` respectively, then `f s ≠ 0`. -/
+theorem ne_zero_of_eqOn_LSeries (χ : UnitaryIdealWeight K) {s : ℂ} (hs : s.re = 1)
+    {f f₂ : ℂ → ℂ} (hf : DifferentiableAt ℂ f s)
+    (hfL : Set.EqOn f (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re})
+    (hf₂ : ContinuousAt f₂ (2 * s - 1))
+    (hf₂L : Set.EqOn f₂ (LSeries (normCoeff K (χ ^ 2).toIdealArithmeticFunction))
+      {z | 1 < z.re}) :
+    f s ≠ 0 := by
+  -- Write `s = 1 + it`, so that `2s - 1 = 1 + 2it`. The bound
+  -- `norm_dedekindZeta_threeFourOne_ge_one` and the simple pole of `ζ_K` at `s = 1` are the
+  -- inputs of the analytic criterion `LSeries.ne_zero_of_threeFourOne`.
+  have hs' : s = 1 + I * s.im := by
+    conv_lhs => rw [← re_add_im s, hs, ofReal_one, mul_comm]
+  have hs₂ : 2 * s - 1 = 1 + 2 * I * s.im := by
+    conv_lhs => rw [hs']
+    ring
+  rw [hs'] at hf ⊢
+  rw [hs₂] at hf₂
+  refine LSeries.ne_zero_of_threeFourOne (f₀ := dedekindZeta K) ?_ ?_ hf hf₂
+  · filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
+    rw [hfL (by simpa using hσ), hf₂L (by simpa using hσ)]
+    exact χ.norm_dedekindZeta_threeFourOne_ge_one hσ s.im
+  · exact isBigO_inv_sub_one_of_tendsto_sub_one_mul <| by
+      simpa using tendsto_sub_one_mul_dedekindZeta_nhdsGT K
 
 end UnitaryIdealWeight
 

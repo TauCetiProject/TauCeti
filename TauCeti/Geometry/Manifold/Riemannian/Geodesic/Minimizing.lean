@@ -63,7 +63,7 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+  [IsRiemannianManifold I M]
 
 /- The argument is do Carmo's. Put `r = dist p q`. On a small geodesic sphere about `p`, choose a
 point nearest to `q`, and follow its radial direction as `γ`. The closed set of times

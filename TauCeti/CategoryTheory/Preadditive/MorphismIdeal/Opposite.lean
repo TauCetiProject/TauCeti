@@ -145,6 +145,13 @@ noncomputable def opQuotientFunctor (I : MorphismIdeal C) :
     apply Quiver.Hom.unop_inj
     simpa using (I.quotientFunctor_map_eq_zero_iff).2 ((I.mem_op_hom f).mp hf)
 
+/-- The opposite-quotient comparison is the lift of the opposite quotient functor.
+Any proof that this functor kills the opposite ideal gives the same lift. -/
+theorem opQuotientFunctor_eq_lift (I : MorphismIdeal C)
+    (h : I.op ≤ I.quotientFunctor.op.kerIdeal) :
+    I.opQuotientFunctor = I.op.lift I.quotientFunctor.op h :=
+  (rfl)
+
 /-- The canonical opposite-quotient functor sends the class of an object to the opposite of the
 class of its unopposite. -/
 @[simp]
@@ -195,6 +202,15 @@ instance (I : MorphismIdeal C) : I.opQuotientFunctor.Additive := by
 
 noncomputable instance (I : MorphismIdeal C) : I.opQuotientFunctor.IsEquivalence :=
   CategoryTheory.Functor.IsEquivalence.mk
+
+/-- Lifting the opposite quotient functor gives an equivalence whenever the source ideal is
+the opposite ideal. This formulation permits a different presentation of the source ideal. -/
+theorem isEquivalence_op_lift (I : MorphismIdeal C) (J : MorphismIdeal Cᵒᵖ)
+    (hJ : J = I.op) (h : J ≤ I.quotientFunctor.op.kerIdeal) :
+    (J.lift I.quotientFunctor.op h).IsEquivalence := by
+  subst J
+  rw [← opQuotientFunctor_eq_lift]
+  infer_instance
 
 /-- Quotienting the opposite category by the opposite ideal is canonically equivalent to taking
 the opposite of the quotient category. -/

@@ -117,7 +117,7 @@ irreducible representation, so `TauCeti.Representation.IsInvariantForm.ker_eq_bo
 `Representation.IsIrreducible.injective_or_eq_zero` rather than a hand-built subrepresentation
 argument.  Schur's lemma enters through Mathlib's
 `Representation.IsIrreducible.algebraMap_intertwiningMap_bijective_of_isAlgClosed`, the same
-theorem that `TauCeti.ContRepresentation.exists_eq_smul_one_of_irreducible` rests on for a
+theorem that `ContRepresentation.exists_eq_smul_one_of_isIrreducible` rests on for a
 continuous representation.
 
 ## References

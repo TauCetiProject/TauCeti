@@ -26,7 +26,10 @@ The descent construction uses Mathlib's
 * `SheafOfModules.overFunctorMonoidal`: restriction to a slice is strong monoidal;
 * `SheafOfModules.overFunctorBraided`: restriction preserves the symmetric braiding;
 * `SheafOfModules.overTensorIso`: the resulting tensor comparison;
-* `SheafOfModules.overUnitIso`: the resulting unit comparison.
+* `SheafOfModules.overUnitIso`: the resulting unit comparison;
+* `SheafOfModules.overFunctor_comp_forget_μ`: restriction commutes with forgetting the sheaf
+  condition as a lax monoidal functor, where the forgetful functors carry the lax monoidal
+  structures of right adjoints of sheafification.
 -/
 
 public section
@@ -391,6 +394,256 @@ theorem _root_.SheafOfModules.overUnitIso_inv_eq :
     restrictionSheafification]
   rw [overSheafificationLifting_iso_inv_app R X]
   rfl
+
+/-- The forgetful functor from sheaves of modules to presheaves of modules, as the right adjoint
+of sheafification. -/
+local notation "sourceForget" =>
+  _root_.SheafOfModules.forget (ringCatSheaf R) ⋙
+    PresheafOfModules.restrictScalars (𝟙 (ObjectProperty.FullSubcategory.obj (ringCatSheaf R)))
+
+/-- The forgetful functor on the slice site, as the right adjoint of sheafification. -/
+local notation "targetForget" =>
+  _root_.SheafOfModules.forget (Sheaf.over (ringCatSheaf R) X) ⋙
+    PresheafOfModules.restrictScalars
+      (𝟙 (ObjectProperty.FullSubcategory.obj (Sheaf.over (ringCatSheaf R) X)))
+
+/-- The sheafification adjunction on the site. -/
+local notation "sourceAdjunction" =>
+  PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ObjectProperty.FullSubcategory.obj (ringCatSheaf R)))
+
+/-- The sheafification adjunction on the slice site. -/
+local notation "targetAdjunction" =>
+  PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ObjectProperty.FullSubcategory.obj (Sheaf.over (ringCatSheaf R) X)))
+
+/-- Restriction of sheaves of modules, as the pushforward along `Over.forget X` in terms of which
+the sheafification--restriction comparison is stated. -/
+local notation "sheafRestriction" =>
+  _root_.SheafOfModules.pushforward (J := J.over X) (K := J) (F := Over.forget X) (𝟙 _)
+
+/-- The inverse tensor comparison, expanded through restriction of presheaves and sheafification
+and presented through the counits of the sheafification adjunction. -/
+private theorem overTensorIso_inv_eq_counit (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (M.overTensorIso N X).inv =
+        (((sheafRestriction).map (inv ((sourceAdjunction).counit.app M)) ≫
+            (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+              (ringCatSheaf R) ((sourceForget).obj M)).hom) ⊗ₘ
+          ((sheafRestriction).map (inv ((sourceAdjunction).counit.app N)) ≫
+            (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+              (ringCatSheaf R) ((sourceForget).obj N)).hom)) ≫
+        Functor.LaxMonoidal.μ restrictionSheafification ((sourceForget).obj M)
+          ((sourceForget).obj N) ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) ((sourceForget).obj M ⊗ (sourceForget).obj N)).inv ≫
+        (sheafRestriction).map
+          (Functor.OplaxMonoidal.δ sourceSheafification ((sourceForget).obj M)
+              ((sourceForget).obj N) ≫
+            ((sourceAdjunction).counit.app M ⊗ₘ (sourceAdjunction).counit.app N)) := by
+  rw [_root_.SheafOfModules.overTensorIso_inv]
+  -- As in `SheafOfModules.overTensorIso_inv_eq`, unfold the generated monoidal structure to the
+  -- localization tensorator before applying its expansion lemma.
+  change
+    ((CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost
+      sourceSheafification sourceW
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+      restrictionSheafification).hom.app M).app N = _
+  rw [CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost_hom_app_app'
+    sourceSheafification sourceW
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+    restrictionSheafification (Y₁ := M) (Y₂ := N)
+    (asIso ((sourceAdjunction).counit.app M)).symm
+    (asIso ((sourceAdjunction).counit.app N)).symm]
+  rw [overSheafificationLifting_iso_hom_app R X, overSheafificationLifting_iso_hom_app R X,
+    overSheafificationLifting_iso_inv_app R X]
+  rfl
+
+/-- On the sheafification of the restriction of the underlying presheaf of `M`, the counit at the
+restriction of `M`, the inverse of the restricted counit at `M`, and the sheafification--restriction
+comparison compose to the identity. -/
+private theorem counit_comp_map_inv_counit_comp_hom
+    (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (targetAdjunction).counit.app ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj M) ≫
+        (sheafRestriction).map (inv ((sourceAdjunction).counit.app M)) ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) ((sourceForget).obj M)).hom = 𝟙 _ := by
+  calc _ = ((pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) ((sourceForget).obj M)).inv ≫
+          (sheafRestriction).map ((sourceAdjunction).counit.app M)) ≫
+        (sheafRestriction).map (inv ((sourceAdjunction).counit.app M)) ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) ((sourceForget).obj M)).hom := by
+        rw [pushforwardSheafificationIso_inv_comp_map_counit]
+        -- The two counits differ only by the unfolding of `SheafOfModules.overFunctor`.
+        rfl
+    _ = 𝟙 _ := by
+        rw [Category.assoc, ← Functor.map_comp_assoc, IsIso.hom_inv_id,
+          CategoryTheory.Functor.map_id, Category.id_comp, Iso.inv_hom_id]
+
+/-- The counits at the restrictions of `M` and `N`, followed by the first factor of the expanded
+inverse tensor comparison, cancel. -/
+private theorem counit_tensorHom_comp_map_inv_counit_tensorHom_comp
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    ((targetAdjunction).counit.app
+        ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj M) ⊗ₘ
+      (targetAdjunction).counit.app
+        ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj N)) ≫
+      (((sheafRestriction).map (inv ((sourceAdjunction).counit.app M)) ≫
+          (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+            (ringCatSheaf R) ((sourceForget).obj M)).hom) ⊗ₘ
+        ((sheafRestriction).map (inv ((sourceAdjunction).counit.app N)) ≫
+          (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+            (ringCatSheaf R) ((sourceForget).obj N)).hom)) ≫
+      Functor.LaxMonoidal.μ restrictionSheafification ((sourceForget).obj M)
+        ((sourceForget).obj N) ≫
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+        (ringCatSheaf R) ((sourceForget).obj M ⊗ (sourceForget).obj N)).inv ≫
+      (sheafRestriction).map
+        (Functor.OplaxMonoidal.δ sourceSheafification ((sourceForget).obj M)
+            ((sourceForget).obj N) ≫
+          ((sourceAdjunction).counit.app M ⊗ₘ (sourceAdjunction).counit.app N)) =
+    Functor.LaxMonoidal.μ restrictionSheafification ((sourceForget).obj M)
+        ((sourceForget).obj N) ≫
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+        (ringCatSheaf R) ((sourceForget).obj M ⊗ (sourceForget).obj N)).inv ≫
+      (sheafRestriction).map
+        (Functor.OplaxMonoidal.δ sourceSheafification ((sourceForget).obj M)
+            ((sourceForget).obj N) ≫
+          ((sourceAdjunction).counit.app M ⊗ₘ (sourceAdjunction).counit.app N)) := by
+  have hcancel : ((targetAdjunction).counit.app
+        ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj M) ⊗ₘ
+      (targetAdjunction).counit.app
+        ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj N)) ≫
+      (((sheafRestriction).map (inv ((sourceAdjunction).counit.app M)) ≫
+          (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+            (ringCatSheaf R) ((sourceForget).obj M)).hom) ⊗ₘ
+        ((sheafRestriction).map (inv ((sourceAdjunction).counit.app N)) ≫
+          (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+            (ringCatSheaf R) ((sourceForget).obj N)).hom)) = 𝟙 _ := by
+    refine (tensorHom_comp_tensorHom _ _ _ _).trans ?_
+    rw [counit_comp_map_inv_counit_comp_hom X M,
+      counit_comp_map_inv_counit_comp_hom X N]
+    exact id_tensorHom_id _ _
+  exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) hcancel).trans (Category.id_comp _))
+
+/-- The comparison of the tensorators through the counits of the sheafification adjunctions. -/
+private theorem δ_comp_counit_tensorHom_comp_map_inv_counit_tensorHom_comp
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    Functor.OplaxMonoidal.δ targetSheafification
+        ((targetForget).obj ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj M))
+        ((targetForget).obj ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj N)) ≫
+      ((targetAdjunction).counit.app
+        ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj M) ⊗ₘ
+      (targetAdjunction).counit.app
+        ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj N)) ≫
+      (((sheafRestriction).map (inv ((sourceAdjunction).counit.app M)) ≫
+          (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+            (ringCatSheaf R) ((sourceForget).obj M)).hom) ⊗ₘ
+        ((sheafRestriction).map (inv ((sourceAdjunction).counit.app N)) ≫
+          (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+            (ringCatSheaf R) ((sourceForget).obj N)).hom)) ≫
+      Functor.LaxMonoidal.μ restrictionSheafification ((sourceForget).obj M)
+        ((sourceForget).obj N) ≫
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+        (ringCatSheaf R) ((sourceForget).obj M ⊗ (sourceForget).obj N)).inv ≫
+      (sheafRestriction).map
+        (Functor.OplaxMonoidal.δ sourceSheafification ((sourceForget).obj M)
+            ((sourceForget).obj N) ≫
+          ((sourceAdjunction).counit.app M ⊗ₘ (sourceAdjunction).counit.app N)) =
+      (targetSheafification).map (Functor.LaxMonoidal.μ presheafRestriction
+          ((sourceForget).obj M) ((sourceForget).obj N)) ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) ((sourceForget).obj M ⊗ (sourceForget).obj N)).inv ≫
+        (sheafRestriction).map
+          (Functor.OplaxMonoidal.δ sourceSheafification ((sourceForget).obj M)
+              ((sourceForget).obj N) ≫
+            ((sourceAdjunction).counit.app M ⊗ₘ (sourceAdjunction).counit.app N)) := by
+  rw [counit_tensorHom_comp_map_inv_counit_tensorHom_comp X M N, Functor.LaxMonoidal.comp_μ]
+  exact (congrArg (Functor.OplaxMonoidal.δ targetSheafification _ _ ≫ ·)
+    (Category.assoc _ _ _)).trans (Functor.Monoidal.δ_μ_assoc targetSheafification _ _ _)
+
+/-- The adjoint of the tensorator of restriction followed by forgetting the sheaf condition. -/
+private theorem sheafification_map_μ_overFunctor_comp_forget_comp_counit
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    letI := (targetAdjunction).rightAdjointLaxMonoidal
+    (targetSheafification).map
+        (Functor.LaxMonoidal.μ (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X ⋙
+          targetForget) M N) ≫
+        (targetAdjunction).counit.app ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj
+          (M ⊗ N)) =
+      (targetSheafification).map (Functor.LaxMonoidal.μ presheafRestriction
+          ((sourceForget).obj M) ((sourceForget).obj N)) ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) ((sourceForget).obj M ⊗ (sourceForget).obj N)).inv ≫
+        (sheafRestriction).map
+          (Functor.OplaxMonoidal.δ sourceSheafification ((sourceForget).obj M)
+              ((sourceForget).obj N) ≫
+            ((sourceAdjunction).counit.app M ⊗ₘ (sourceAdjunction).counit.app N)) := by
+  let := (targetAdjunction).rightAdjointLaxMonoidal
+  rw [Functor.LaxMonoidal.comp_μ, Functor.map_comp]
+  refine (Category.assoc _ _ _).trans ((congrArg ((targetSheafification).map
+    (Functor.LaxMonoidal.μ targetForget
+      ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj M)
+      ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj N)) ≫ ·)
+    ((targetAdjunction).counit_naturality
+      (Functor.LaxMonoidal.μ (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N))).trans
+    ?_)
+  rw [← Category.assoc, Adjunction.map_μ_comp_counit_app_tensor (adj := targetAdjunction),
+    Category.assoc, ← SheafOfModules.overTensorIso_inv, overTensorIso_inv_eq_counit]
+  exact δ_comp_counit_tensorHom_comp_map_inv_counit_tensorHom_comp X M N
+
+/-- The adjoint of the tensorator of forgetting the sheaf condition followed by restriction. -/
+private theorem sheafification_map_μ_forget_comp_pushforward_comp_counit
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    letI := (sourceAdjunction).rightAdjointLaxMonoidal
+    (targetSheafification).map
+        (Functor.LaxMonoidal.μ ((sourceForget) ⋙ presheafRestriction) M N) ≫
+        (targetAdjunction).counit.app ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj
+          (M ⊗ N)) =
+      (targetSheafification).map (Functor.LaxMonoidal.μ presheafRestriction
+          ((sourceForget).obj M) ((sourceForget).obj N)) ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) ((sourceForget).obj M ⊗ (sourceForget).obj N)).inv ≫
+        (sheafRestriction).map
+          (Functor.OplaxMonoidal.δ sourceSheafification ((sourceForget).obj M)
+              ((sourceForget).obj N) ≫
+            ((sourceAdjunction).counit.app M ⊗ₘ (sourceAdjunction).counit.app N)) := by
+  let := (sourceAdjunction).rightAdjointLaxMonoidal
+  rw [Functor.LaxMonoidal.comp_μ, Functor.map_comp]
+  refine (Category.assoc _ _ _).trans ((congrArg
+    ((targetSheafification).map (Functor.LaxMonoidal.μ presheafRestriction
+        ((sourceForget).obj M) ((sourceForget).obj N)) ≫ ·)
+    (sheafification_map_pushforward_map_comp_counit (J := J.over X) (K := J)
+      (Over.forget X) (ringCatSheaf R) (Functor.LaxMonoidal.μ sourceForget M N))).trans ?_)
+  rw [Adjunction.rightAdjointLaxMonoidal_μ, Equiv.symm_apply_apply]
+
+/-- The lax monoidal structure maps of restriction followed by forgetting the sheaf condition
+agree with those of forgetting the sheaf condition followed by restriction of presheaves. The
+forgetful functors carry the lax monoidal structures of right adjoints of the monoidal
+sheafification functors. -/
+theorem _root_.SheafOfModules.overFunctor_comp_forget_μ
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    letI := (sourceAdjunction).rightAdjointLaxMonoidal
+    letI := (targetAdjunction).rightAdjointLaxMonoidal
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X ⋙ targetForget)
+        M N =
+      Functor.LaxMonoidal.μ ((sourceForget) ⋙ presheafRestriction) M N := by
+  -- Both sides are maps into the underlying presheaf of a sheaf, so they are determined by their
+  -- adjoint maps out of the sheafification.
+  let := (sourceAdjunction).rightAdjointLaxMonoidal
+  let := (targetAdjunction).rightAdjointLaxMonoidal
+  have key {A : PresheafOfModules.{u} (Sheaf.over (ringCatSheaf R) X).obj}
+      {B : SheafOfModules.{u} (ringCatSheaf R)}
+      (f : A ⟶ (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X ⋙ targetForget).obj B)
+      (g : A ⟶ ((sourceForget) ⋙ presheafRestriction).obj B)
+      (h : (targetSheafification).map f ≫ (targetAdjunction).counit.app
+          ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj B) =
+        (targetSheafification).map g ≫ (targetAdjunction).counit.app
+          ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj B)) : f = g :=
+    -- The inverse hom-equivalence of an adjunction is `homEquiv_counit` by definition.
+    ((targetAdjunction).homEquiv A _).symm.injective h
+  exact key _ _ ((sheafification_map_μ_overFunctor_comp_forget_comp_counit X M N).trans
+    (sheafification_map_μ_forget_comp_pushforward_comp_counit X M N).symm)
 
 end SheafOfModules
 

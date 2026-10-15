@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.RamificationGroup
 public import TauCeti.RingTheory.DedekindDomain.Different
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 
 /-!
 # Tame ramification and the global different exponent
@@ -15,6 +15,9 @@ At a finite prime `w` over `v` of a number-field extension, the coefficient of t
 equals `e(w/v) - 1` exactly when the canonical completed extension `L_w / K_v` is tamely ramified,
 and it is at least `e(w/v)` exactly when `L_w / K_v` is wildly ramified. These criteria read tame
 and wild ramification of the completed extension directly from the global different exponent.
+For `L/K` Galois, the tame criterion is also read on the global wild inertia group: the first
+ramification group `G_1` of `w` is trivial exactly when the different exponent at `w` is
+`e(w/v) - 1`.
 
 ## References
 
@@ -53,6 +56,18 @@ theorem ramificationIdx_le_multiplicity_differentIdeal_iff_isWildlyRamified :
   (TauCeti.ramificationIdx_le_multiplicity_differentIdeal_iff (𝓞 K) v.ne_bot w.asIdeal).trans <|
     (or_iff_right (not_not_intro (by infer_instance))).trans
       (isWildlyRamified_adicCompletion_iff v w).symm
+
+variable [IsGalois K L]
+
+include v in
+/-- For `L/K` Galois, the first ramification group `G_1` of `w` is trivial if and only if the
+different exponent at `w` is `e(w/v) - 1`, the tame value of Dedekind's different theorem. -/
+theorem ramificationGroup_one_eq_bot_iff_multiplicity_differentIdeal_eq :
+    w.asIdeal.ramificationGroup (L ≃ₐ[K] L) 1 = ⊥ ↔
+      multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) =
+        w.asIdeal.ramificationIdx (𝓞 K) - 1 :=
+  (ramificationGroup_one_eq_bot_iff_isTamelyRamified v w).trans
+    (multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamified v w).symm
 
 end IsDedekindDomain.HeightOneSpectrum
 

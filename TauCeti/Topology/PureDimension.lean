@@ -27,6 +27,7 @@ is irreducible of dimension one, while its generic point is an open subspace of 
 ## Main declarations
 
 * `TauCeti.IsPureDimensional`: every irreducible component has the prescribed Krull dimension.
+* `TauCeti.isPureDimensional_iff`: the defining condition on irreducible components.
 * `TauCeti.IsPureDimensional.homeomorph`: invariance under homeomorphisms.
 * `Homeomorph.isPureDimensional_iff`: a homeomorphism preserves pure dimension.
 * `TauCeti.isPureDimensional_zero_of_discreteTopology`: discrete spaces have pure dimension zero.
@@ -50,12 +51,18 @@ topological Krull dimension `d`. -/
 def IsPureDimensional (d : ℕ) (X : Type*) [TopologicalSpace X] : Prop :=
   ∀ Z ∈ irreducibleComponents X, topologicalKrullDim Z = d
 
+/-- A space is pure-dimensional of dimension `d` exactly when each of its irreducible components
+has Krull dimension `d`. -/
+theorem isPureDimensional_iff {d : ℕ} {X : Type*} [TopologicalSpace X] :
+    IsPureDimensional d X ↔ ∀ Z ∈ irreducibleComponents X, topologicalKrullDim Z = d :=
+  Iff.rfl
+
 /-- An empty space is pure-dimensional of every dimension. -/
 @[simp]
 theorem isPureDimensional_of_isEmpty (d : ℕ) (X : Type*) [TopologicalSpace X] [IsEmpty X] :
     IsPureDimensional d X := by
   intro Z hZ
-  obtain ⟨x, hx⟩ := hZ.1.nonempty
+  obtain ⟨x, _⟩ := hZ.1.nonempty
   exact isEmptyElim x
 
 /-- Pure dimension is preserved by a homeomorphism. -/

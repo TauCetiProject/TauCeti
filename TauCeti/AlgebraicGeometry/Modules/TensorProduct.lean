@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Evaluation
 
 /-!
 # The tensor product of `𝒪ₓ`-modules on a scheme
@@ -28,7 +29,10 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_tensorObj` and
   `AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent`: tensor products of
   quasi-coherent `𝒪ₓ`-modules are quasi-coherent, so quasi-coherence is a monoidal property of
-  `𝒪ₓ`-modules.
+  `𝒪ₓ`-modules;
+* `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
+  `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
+  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation.
 
 -/
 
@@ -74,6 +78,71 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent :
     ObjectProperty.IsMonoidal (C := X.Modules)
       (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf) :=
   SheafOfModules.isMonoidal_isQuasicoherent (R := X.sheaf)
+
+/-- The structure sheaf, viewed as a module over itself, is quasicoherent. -/
+instance AlgebraicGeometry.isQuasicoherent_unit :
+    (𝟙_ X.Modules).IsQuasicoherent :=
+  @ObjectProperty.prop_unit X.Modules _ (Scheme.Modules.instMonoidalCategory X)
+    (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf)
+    (Scheme.Modules.isMonoidal_isQuasicoherent X).toContainsUnit
+
+/-- The explicit structure-sheaf module is quasicoherent.
+This instance also supports goals that do not use monoidal-unit notation. -/
+instance AlgebraicGeometry.isQuasicoherent_structureSheaf :
+    (_root_.SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
+  AlgebraicGeometry.isQuasicoherent_unit X
+
+variable {X} in
+/-- The sections over an open `U` of `𝒪ₓ`-modules, as a functor to `Γ(X, U)`-modules. It is the
+evaluation at `U` of the underlying presheaves of modules, and it is lax braided monoidal: its
+tensor map `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) ⟶ Γ(M ⊗ N, U)` is induced by the unit of sheafification
+(`TauCeti.SheafOfModules.forget_μ`). The image of `M` is definitionally `Γ(M, U)`. -/
+@[expose]
+def _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor (U : X.Opens) :
+    X.Modules ⥤ ModuleCat.{v} Γ(X, U) :=
+  (_root_.SheafOfModules.forget _ : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf) ⋙
+    PresheafOfModulesOfCommRing.evaluation (Opposite.op U)
+
+variable {X} in
+/-- Sections over an open are lax braided monoidal, as the composite of the lax braided inclusion
+of sheaves of modules into presheaves of modules with the braided evaluation at the open. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorLaxBraided (U : X.Opens) :
+    (Scheme.Modules.sectionsFunctor U).LaxBraided :=
+  letI F : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf := _root_.SheafOfModules.forget _
+  letI : F.LaxBraided := SheafOfModules.forgetLaxBraided X.sheaf
+  inferInstanceAs (F ⋙ PresheafOfModulesOfCommRing.evaluation (Opposite.op U)).LaxBraided
+
+variable {X} in
+/-- The image of an `𝒪ₓ`-module under the sections functor is its module of sections over `U`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_obj (U : X.Opens) (M : X.Modules) :
+    (Scheme.Modules.sectionsFunctor U).obj M = M.val.obj (Opposite.op U) :=
+  rfl
+
+variable {X} in
+/-- The sections functor sends a morphism of `𝒪ₓ`-modules to its component over `U`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_map (U : X.Opens) {M N : X.Modules}
+    (φ : M ⟶ N) : (Scheme.Modules.sectionsFunctor U).map φ = φ.val.app (Opposite.op U) :=
+  rfl
+
+variable {X} in
+/-- The unit comparison of the sections functor is the identity on regular functions. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_ε
+    (U : X.Opens) :
+    Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) =
+      𝟙 (ModuleCat.of Γ(X, U) Γ(X, U)) := by
+  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf :=
+    _root_.SheafOfModules.forget _
+  let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
+  -- Retype the forgetful functor over the commutative structure presheaf so that its
+  -- monoidal structure is visible to instance search.
+  change Functor.LaxMonoidal.ε
+    (F ⋙ PresheafOfModulesOfCommRing.evaluation (Opposite.op U)) = _
+  have hε : Functor.LaxMonoidal.ε F = 𝟙 _ := SheafOfModules.forget_ε X.sheaf
+  rw [Functor.LaxMonoidal.comp_ε, hε]
+  rfl
 
 end
 

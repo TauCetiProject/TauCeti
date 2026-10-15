@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Units.Hom
 public import Mathlib.Algebra.GroupWithZero.Hom
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
+public import Mathlib.Data.Nat.Cast.Basic
 public import Mathlib.Data.Set.Operations
 -- `Nat.card` occurs in the statement about a group with zero with two elements below.
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -20,7 +21,7 @@ import Mathlib.Algebra.GroupWithZero.Units.Fintype
 /-!
 # Units and powers in groups with zero
 
-Three elementary facts about a group with zero `G₀`.
+Three elementary facts about a group with zero `G₀`, and one about local ring homomorphisms.
 
 A product `a ^ i * a⁻¹ ^ (n - i)`, in which the two exponents are natural numbers adding up to
 `n`, is the integer power `a ^ (2 * i - n)`.  Such a product is what a diagonal matrix
@@ -40,6 +41,10 @@ A group with zero with two elements has a trivial unit group: by `Nat.card_units
 one fewer than the elements, so there is exactly one of them.  This is why a field with two
 elements has no pair of distinct units, hence none of the invariants indexed by such a pair.
 
+A local ring homomorphism reflects units, and it carries the natural number `n` to `n`; so `n` is
+invertible in the source as soon as it is invertible in the target. For an algebra map of fields
+`K → L` this is how invertibility of `n` travels from `L` down to `K`.
+
 ## Main results
 
 * `TauCeti.pow_mul_inv_pow_eq_zpow₀`: `a ^ i * a⁻¹ ^ (n - i) = a ^ (2 * i - n)` for `i ≤ n`.
@@ -47,6 +52,8 @@ elements has no pair of distinct units, hence none of the invariants indexed by 
   homomorphism out of a group with zero exactly when it is `Units.map` of a unit.
 * `TauCeti.subsingleton_units_of_natCard_eq_two`: a group with zero with two elements has a
   trivial unit group.
+* `TauCeti.isUnit_natCast_of_isUnit_natCast`: a natural number invertible in the target of a
+  local ring homomorphism is invertible in its source.
 -/
 
 public section
@@ -78,5 +85,11 @@ its elements, by `Nat.card_units`, so there is exactly one of them. -/
 theorem subsingleton_units_of_natCard_eq_two {G₀ : Type*} [GroupWithZero G₀]
     (h : Nat.card G₀ = 2) : Subsingleton G₀ˣ :=
   (Nat.card_eq_one_iff_unique.1 (by rw [Nat.card_units G₀, h])).1
+
+/-- **A natural number invertible after a local ring homomorphism was already invertible**: `f`
+carries `n` to `n`, and a local homomorphism reflects units. -/
+theorem isUnit_natCast_of_isUnit_natCast {R S F : Type*} [Semiring R] [Semiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) [IsLocalHom f] {n : ℕ} (hn : IsUnit (n : S)) : IsUnit (n : R) :=
+  IsUnit.of_map f (n : R) (by rwa [map_natCast])
 
 end TauCeti

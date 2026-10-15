@@ -197,6 +197,10 @@ theorem primePower_apply_of_ne {p q : Nat.Primes} (h : q ≠ p) (n : ℕ∞) :
 theorem primePower_zero (p : Nat.Primes) : primePower p 0 = 1 :=
   Pi.single_zero p
 
+/-- A prime power determines its exponent: `p ^ m = p ^ n` forces `m = n`. -/
+theorem primePower_injective (p : Nat.Primes) : Function.Injective (primePower p) :=
+  Pi.single_injective (M := fun _ : Nat.Primes ↦ ℕ∞) p
+
 /-- A prime power with a sum of exponents is the product of the two prime powers. -/
 @[simp]
 theorem primePower_add (p : Nat.Primes) (m n : ℕ∞) :
@@ -205,6 +209,30 @@ theorem primePower_add (p : Nat.Primes) (m n : ℕ∞) :
   intro q
   rw [mul_apply]
   exact congrFun (Pi.single_add (f := fun _ : Nat.Primes ↦ ℕ∞) p m n) q
+
+/-- A prime power `p ^ m` is at most a supernatural number exactly when `m` is at most its
+exponent at `p`. -/
+theorem primePower_le_iff (p : Nat.Primes) (m : ℕ∞) (n : Supernatural) :
+    primePower p m ≤ n ↔ m ≤ n p := by
+  rw [le_iff]
+  refine ⟨fun h ↦ by simpa using h p, fun h q ↦ ?_⟩
+  by_cases hq : q = p
+  · subst q
+    simpa using h
+  · simp [hq]
+
+/-- Two prime powers at the same prime compare as their exponents do. -/
+@[simp]
+theorem primePower_le_primePower_iff (p : Nat.Primes) {m n : ℕ∞} :
+    primePower p m ≤ primePower p n ↔ m ≤ n := by
+  rw [primePower_le_iff, primePower_apply_self]
+
+/-- Two prime powers at the same prime compare strictly as their exponents do. -/
+@[simp]
+theorem primePower_lt_primePower_iff (p : Nat.Primes) {m n : ℕ∞} :
+    primePower p m < primePower p n ↔ m < n := by
+  rw [lt_iff_le_not_ge, lt_iff_le_not_ge, primePower_le_primePower_iff,
+    primePower_le_primePower_iff]
 
 /-- A rational prime, regarded as the supernatural number having exponent one at that prime. -/
 instance : Coe Nat.Primes Supernatural :=
@@ -216,16 +244,8 @@ This is the simp-normal form of `coe_prime_dvd_iff`, since `dvd_iff_le` rewrites
 of supernatural numbers to comparison. -/
 @[simp]
 theorem coe_prime_le_iff (p : Nat.Primes) (n : Supernatural) :
-    (p : Supernatural) ≤ n ↔ n p ≠ 0 := by
-  rw [le_iff]
-  constructor
-  · intro h
-    exact Order.one_le_iff_ne_zero.mp (by simpa using h p)
-  · intro h q
-    by_cases hq : q = p
-    · subst q
-      simpa using Order.one_le_iff_ne_zero.mpr h
-    · simp [hq]
+    (p : Supernatural) ≤ n ↔ n p ≠ 0 :=
+  (primePower_le_iff p 1 n).trans Order.one_le_iff_ne_zero
 
 /-- A prime divides a supernatural number exactly when its exponent there is nonzero. -/
 theorem coe_prime_dvd_iff (p : Nat.Primes) (n : Supernatural) :
@@ -244,6 +264,13 @@ theorem primaryPart_apply_self (p : Nat.Primes) (n : Supernatural) : primaryPart
 theorem primaryPart_apply_of_ne {p q : Nat.Primes} (h : q ≠ p) (n : Supernatural) :
     primaryPart p n q = 0 :=
   primePower_apply_of_ne h _
+
+/-- The `p`-primary part of a supernatural number is trivial (equal to `⊥ = 1`) exactly when `p`
+does not divide it. -/
+@[simp]
+theorem primaryPart_eq_bot_iff {p : Nat.Primes} {n : Supernatural} :
+    primaryPart p n = ⊥ ↔ n p = 0 := by
+  rw [← one_eq_bot, primaryPart, ← primePower_zero p, (primePower_injective p).eq_iff]
 
 /-- The prime-to-`p` part of a supernatural number, obtained by deleting its `p`-exponent. -/
 def primeToPart (p : Nat.Primes) (n : Supernatural) : Supernatural :=

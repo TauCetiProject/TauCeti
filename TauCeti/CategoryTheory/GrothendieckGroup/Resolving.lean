@@ -290,7 +290,6 @@ variable (E P)
 private noncomputable def eulerInvariant :
     ExactK0.AdditiveInvariant E (ExactK0 (E.resolvingSubcategory P)) where
   obj X := E.eulerClassOf hP (IsResolving.finiteResolution X)
-  map_iso _ _ e := eulerClassOf_congr e _ _
   map_conflation _ hS := eulerClassOf_eq_add_of_conflation hS _ _ _
 
 /-- **The inverse of the comparison map of the resolution theorem**: the homomorphism sending the

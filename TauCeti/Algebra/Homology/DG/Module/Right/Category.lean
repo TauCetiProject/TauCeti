@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
-public import TauCeti.Algebra.Homology.DG.Module.Right.Hom
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
 
 /-!
 # The category of differential graded right modules
@@ -15,8 +15,9 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.Hom
 `DGRightModuleCat h` bundles internally graded right modules over the DG algebra `h`.
 Its morphisms are the existing `DGRightModuleHom`: degree-preserving module maps commuting
 with differentials, equivalently the closed degree-zero elements of the Hom complex.
-The category is linear over the ground ring. Forgetting the grading, differential, and
-algebra action gives a faithful linear functor to modules over the ground ring.
+The category is linear over the ground ring, and `DGRightModuleCat.isoMk` builds an isomorphism
+from a linear equivalence preserving the grading and the differential. Forgetting the grading,
+differential, and algebra action gives a faithful linear functor to modules over the ground ring.
 
 This is the ordinary category of DG modules, before taking chain-homotopy classes or
 inverting quasi-isomorphisms.
@@ -165,6 +166,40 @@ instance : Linear R (DGRightModuleCat.{uR, uA, uM} h) where
     apply hom_ext
     intro x
     simp
+
+/-- Build an isomorphism of DG right modules from an isomorphism of the underlying right modules
+that preserves the homogeneous pieces and commutes with the differentials. -/
+def isoMk (e : M ≃ₗ[Aᵐᵒᵖ] N) (he : ∀ q x, x ∈ M.grading q ↔ e x ∈ N.grading q)
+    (hd : ∀ x, N.differential (e x) = e (M.differential x)) : M ≅ N where
+  hom :=
+    { toLinearMap := e.toLinearMap
+      map_mem' := fun {q x} hx ↦ (he q x).1 hx
+      map_d' := hd }
+  inv :=
+    { toLinearMap := e.symm.toLinearMap
+      map_mem' := fun {q x} hx ↦ (he q _).2 (by rwa [LinearEquiv.coe_coe, e.apply_symm_apply])
+      map_d' := fun x ↦ e.injective (by
+        rw [LinearEquiv.coe_coe, ← hd, e.apply_symm_apply, e.apply_symm_apply]) }
+  hom_inv_id := hom_ext fun x ↦ by
+    rw [comp_apply, id_apply]
+    exact e.symm_apply_apply x
+  inv_hom_id := hom_ext fun x ↦ by
+    rw [comp_apply, id_apply]
+    exact e.apply_symm_apply x
+
+/-- The isomorphism `isoMk e he hd` acts by `e`. -/
+@[simp]
+theorem isoMk_hom_apply (e : M ≃ₗ[Aᵐᵒᵖ] N)
+    (he : ∀ q x, x ∈ M.grading q ↔ e x ∈ N.grading q)
+    (hd : ∀ x, N.differential (e x) = e (M.differential x)) (x : M) :
+    (isoMk e he hd).hom x = e x := (rfl)
+
+/-- The inverse of `isoMk e he hd` acts by `e.symm`. -/
+@[simp]
+theorem isoMk_inv_apply (e : M ≃ₗ[Aᵐᵒᵖ] N)
+    (he : ∀ q x, x ∈ M.grading q ↔ e x ∈ N.grading q)
+    (hd : ∀ x, N.differential (e x) = e (M.differential x)) (x : N) :
+    (isoMk e he hd).inv x = e.symm x := (rfl)
 
 /-- Forget the grading, differential, and algebra action of a DG right module. -/
 @[expose]

@@ -33,10 +33,9 @@ complement of `TauCeti.Comodule.fixedSubcomodule` can contain no nonzero fixed v
 zero, hence every vector of `V` is fixed. Kolchin's theorem supplies such vectors for a unipotent
 group, so this is the step that makes a linearly reductive unipotent group act trivially.
 
-For an abelian group `G`, `k[G]` is the coordinate Hopf algebra of the diagonalizable group
-`D(G)`. Thus every diagonalizable group, and in particular every split torus, is linearly
-reductive over an arbitrary field. This is the diagonalizable direction of the linear-reductivity
-milestone in Layer 6 of the ReductiveGroups roadmap.
+For an abelian group `G`, `k[G]` is the coordinate Hopf algebra of the diagonalizable group `D(G)`.
+Thus every diagonalizable group, and in particular every split torus, is linearly reductive over an
+arbitrary field.
 
 ## Main declarations
 
@@ -64,6 +63,8 @@ milestone in Layer 6 of the ReductiveGroups roadmap.
 * `TauCeti.Coalgebra.IsLinearlyReductive`: every finite-dimensional comodule is completely
   reducible, with constructor
   `TauCeti.Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible`.
+* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible_sameUniverse`: use linear
+  reductivity for a comodule in the carrier universe named by the hypothesis.
 * `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: testing finite-dimensional
   comodules in the base-field universe suffices for comodules in every universe.
 * `TauCeti.Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv`: complete reducibility
@@ -325,6 +326,16 @@ theorem of_forall_isCompletelyReducible
     IsLinearlyReductive.{u, v, w} k C :=
   h
 
+/-- Apply linear reductivity to a finite-dimensional comodule in the same carrier universe.
+
+Every finite-dimensional comodule whose carrier lies in the universe quantified by the
+hypothesis is completely reducible. -/
+theorem isCompletelyReducible_sameUniverse
+    (h : IsLinearlyReductive.{u, v, w} k C)
+    (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
+    Comodule.IsCompletelyReducible k C V :=
+  h V
+
 /-- If every finite-dimensional comodule whose carrier is in the base-field universe is
 completely reducible, then every finite-dimensional comodule is completely reducible, regardless
 of its carrier universe. -/
@@ -420,7 +431,7 @@ private theorem equivariantProjection_apply_of_mem
   rw [equivariantProjection_apply]
   have hterm : ∀ g ∈ (weightDecomposition k G V v).support,
       weightProj k G V g (p (weightProj k G V g v)) = weightProj k G V g v := by
-    intro g hg
+    intro g _
     rw [hp (weightProj_mem_subcomodule (R := k) (G := G) (V := V) N g hv),
       weightProj_weightProj_self]
   rw [Finsupp.sum]

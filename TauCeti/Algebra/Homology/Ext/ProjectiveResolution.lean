@@ -90,6 +90,17 @@ universe w v u t
 variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
   [HasExt.{w} C] {X Y : C}
 
+omit [Ring k] [Linear k C] in
+/-- If the degree-`n` term of a projective resolution has no nonzero morphism to `Y`, then
+`Extⁿ(X,Y)` vanishes. No condition on the neighboring terms is needed. -/
+theorem subsingleton_ext_of_subsingleton_hom (R : ProjectiveResolution X) (n : ℕ)
+    [Subsingleton (R.complex.X n ⟶ Y)] : Subsingleton (Ext.{w} X Y n) := by
+  apply subsingleton_of_forall_eq 0
+  intro α
+  obtain ⟨f, hf, rfl⟩ := R.extMk_surjective α (n + 1) rfl
+  obtain rfl : f = 0 := Subsingleton.elim _ _
+  simp
+
 /-- If the two differentials of a projective resolution `R` of `X` adjacent to degree `n + 1`
 become zero after applying `Hom(-, Y)`, then `Extⁿ⁺¹(X, Y)` is the degree `n + 1` term of that
 `Hom`-complex, `k`-linearly. The class of `f` is `CategoryTheory.ProjectiveResolution.extMk f`. -/

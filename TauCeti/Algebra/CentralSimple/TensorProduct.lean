@@ -5,22 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `TauCeti.Algebra.Central.TensorProduct` is imported publicly, so that importing this module
--- delivers both halves of the closure statement this file advertises: the centrality instance
--- `TauCeti.Algebra.IsCentral.tensorProduct` as well as the simplicity instance proved here.
--- Downstream inference then recognizes `A ⊗[K] B` as central simple from this import alone (the
--- worked examples at the end of the file need Mathlib's matrix instances on top of that, which is
--- why the matrix modules stay non-public). It also re-exports `Mathlib.Algebra.Central.Basic`
--- and `Mathlib.RingTheory.TensorProduct.Basic`, which is why neither is imported again here.
 public import TauCeti.Algebra.Central.TensorProduct
 public import Mathlib.RingTheory.SimpleRing.Basic
--- Non-public: none of these appears in the type of an exported declaration. `Basis.ofVectorSpace`,
--- flatness, `TwoSidedIdeal.comap`, `Algebra.TensorProduct.comm`, the transport of simplicity along
--- a ring isomorphism and the two `a ⊗ₜ 1` multiplication formulas of
--- `TauCeti.Algebra.TensorProduct.Mul` are used only inside proofs, and the matrix algebras only by
--- the worked examples at the end of the file, so downstream importers of this module do not pay
--- for any of them. The `A`-basis `Algebra.TensorProduct.basis` of `A ⊗[K] B` now arrives with
--- `Mul`, which publicly imports `Mathlib.RingTheory.TensorProduct.Free`.
+
 import TauCeti.Algebra.TensorProduct.Mul
 import Mathlib.Algebra.Central.Matrix
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -100,13 +87,8 @@ avoids ever expanding `1` as an explicit sum `∑ uⱼ a vⱼ`.
 
 ## References
 
-This is the simplicity half of the **Tensor product of central simple is central simple** bullet of
-Layer 4 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
-That bullet also asks for `finrank K (A ⊗ B) = finrank K A * finrank K B`, which needs nothing new
-here: it is Mathlib's `Module.finrank_tensorProduct`, applicable to `A ⊗[K] B` as it stands. See
-R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12, and P. Gille, T. Szamuely, *Central Simple
-Algebras and Galois Cohomology*, Chapter 2.
+R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12, and P. Gille, T. Szamuely,
+*Central Simple Algebras and Galois Cohomology*, Chapter 2.
 -/
 
 public section
@@ -119,24 +101,9 @@ namespace TauCeti
 
 namespace IsSimpleRing
 
-variable {K A B : Type*} [Field K] [Ring A] [Ring B] [Algebra K A] [Algebra K B]
+section Auxiliary
 
--- A nonzero two-sided ideal contains a nonzero element whose coordinate support against the
--- tensor basis is minimal: `Nat.find` on the set of achievable support cardinalities. Neither
--- simplicity nor centrality is used, only that the ideal is nonzero.
-private lemma exists_minimal_support_mem {ι : Type*} (𝓑 : Basis ι K B)
-    {I : TwoSidedIdeal (A ⊗[K] B)} (hI : I ≠ ⊥) :
-    ∃ y ∈ I, y ≠ 0 ∧ ∀ z ∈ I,
-      ((Algebra.TensorProduct.basis A 𝓑).repr z).support.card <
-        ((Algebra.TensorProduct.basis A 𝓑).repr y).support.card → z = 0 := by
-  classical
-  obtain ⟨x, hxI, hx0 : x ≠ 0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hI : ⊥ < I)
-  have hex : ∃ n : ℕ, ∃ y ∈ I, y ≠ 0 ∧
-      ((Algebra.TensorProduct.basis A 𝓑).repr y).support.card = n := ⟨_, x, hxI, hx0, rfl⟩
-  obtain ⟨y₀, hy₀I, hy₀0, hcard⟩ := Nat.find_spec hex
-  refine ⟨y₀, hy₀I, hy₀0, fun z hz hlt => ?_⟩
-  by_contra h0
-  exact Nat.find_min hex (hcard ▸ hlt) ⟨z, hz, h0, rfl⟩
+variable {K A B : Type*} [CommSemiring K] [Ring A] [Semiring B] [Algebra K A] [Algebra K B]
 
 -- Rescale a coordinate to `1`. The `i₀`-th coordinates of the elements of `I` supported in `S`
 -- form a two-sided ideal of `A`; it is nonzero because `y₀` contributes a nonzero one, so
@@ -194,17 +161,20 @@ private lemma commute_tmul_one_of_repr_eq_one {ι : Type*} (𝓑 : Basis ι K B)
   have hsupp : ((Algebra.TensorProduct.basis A 𝓑).repr
       ((a ⊗ₜ[K] (1 : B)) * y - y * (a ⊗ₜ[K] (1 : B)))).support ⊆ S.erase i₀ := by
     intro j hj
-    rw [Finsupp.mem_support_iff, map_sub, Finsupp.sub_apply,
+    simp only [Finsupp.mem_support_iff, map_sub, Finsupp.sub_apply,
       Algebra.TensorProduct.tmul_one_mul_eq_smul, map_smul, Finsupp.smul_apply, smul_eq_mul,
       Algebra.TensorProduct.basis_repr_mul_tmul_one] at hj
-    refine Finset.mem_erase.mpr ⟨?_, not_imp_comm.mp (fun hjS => ?_) hj⟩
-    · rintro rfl
-      exact hj (by rw [hy1, mul_one, one_mul, sub_self])
-    · rw [hyS j hjS, mul_zero, zero_mul, sub_self]
+    by_cases hjS : j ∈ S
+    · exact Finset.mem_erase.mpr ⟨by rintro rfl; simp [hy1] at hj, hjS⟩
+    · simp [hyS j hjS] at hj
   have hz : (a ⊗ₜ[K] (1 : B)) * y - y * (a ⊗ₜ[K] (1 : B)) = 0 :=
     hmin _ (I.sub_mem (I.mul_mem_left _ _ hyI) (I.mul_mem_right _ _ hyI))
       (lt_of_le_of_lt (Finset.card_le_card hsupp) (Finset.card_erase_lt_of_mem hi₀))
   exact sub_eq_zero.mp hz
+
+end Auxiliary
+
+variable {K A B : Type*} [Field K] [Ring A] [Ring B] [Algebra K A] [Algebra K B]
 
 variable (K A B) in
 /-- **The tensor product of a central simple `K`-algebra with a simple `K`-algebra is simple.**
@@ -221,8 +191,11 @@ instance tensorProduct [Algebra.IsCentral K A] [IsSimpleRing A] [IsSimpleRing B]
   refine IsSimpleRing.of_eq_bot_or_eq_top fun I => ?_
   rw [or_iff_not_imp_left, ← I.one_mem_iff]
   intro hI
-  obtain ⟨ι, 𝓑⟩ : Σ ι : Type _, Basis ι K B := ⟨_, Basis.ofVectorSpace K B⟩
-  obtain ⟨y₀, hy₀I, hy₀0, hmin⟩ := exists_minimal_support_mem 𝓑 hI
+  let 𝓑 := Basis.ofVectorSpace K B
+  obtain ⟨x, hxI, hx0 : x ≠ 0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hI : ⊥ < I)
+  obtain ⟨y₀, hmin⟩ := exists_minimalFor_of_wellFoundedLT (fun y => y ∈ I ∧ y ≠ 0)
+    (fun y => ((Algebra.TensorProduct.basis A 𝓑).repr y).support.card) ⟨x, hxI, hx0⟩
+  obtain ⟨hy₀I, hy₀0⟩ := hmin.prop
   set S := ((Algebra.TensorProduct.basis A 𝓑).repr y₀).support
   obtain ⟨i₀, hi₀⟩ : S.Nonempty := Finsupp.support_nonempty_iff.mpr (by simpa using hy₀0)
   -- Rescale the `i₀`-th coordinate to `1`, using simplicity of `A`.
@@ -233,12 +206,10 @@ instance tensorProduct [Algebra.IsCentral K A] [IsSimpleRing A] [IsSimpleRing B]
     simp only [map_zero, Finsupp.coe_zero, Pi.zero_apply] at hy1
     exact zero_ne_one hy1
   -- Every coordinate of `y` commutes with `A`, so `y = 1 ⊗ₜ b`.
-  -- Every coordinate of `y` commutes with `A`, so `y = 1 ⊗ₜ b`.
-  have hcomm := commute_tmul_one_of_repr_eq_one 𝓑 hi₀ hyI hyS hy1 hmin
+  have hcomm := commute_tmul_one_of_repr_eq_one 𝓑 hi₀ hyI hyS hy1
+    (fun z hz hlt => by_contra fun hz0 => hmin.not_lt ⟨hz, hz0⟩ hlt)
   obtain ⟨b, rfl⟩ := Algebra.TensorProduct.forall_commute_tmul_one_iff.mp hcomm
   have hb : b ≠ 0 := by rintro rfl; exact hy0 (by simp)
-  -- The `c : B` with `1 ⊗ₜ c ∈ I` form a two-sided ideal of `B`, namely the preimage of `I` along
-  -- `Algebra.TensorProduct.includeRight`; it contains `b ≠ 0`, hence it is everything.
   -- The `c : B` with `1 ⊗ₜ c ∈ I` form the preimage of `I` along `includeRight`, a two-sided
   -- ideal of the simple ring `B`; it contains `b ≠ 0`, hence it is everything.
   have honeB : (1 : B) ∈

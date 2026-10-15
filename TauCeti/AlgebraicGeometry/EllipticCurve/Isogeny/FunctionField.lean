@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Valuation.Basic
 import Mathlib.RingTheory.Polynomial.IsIntegral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 
 /-!
 # Function-field pullbacks of isogenies

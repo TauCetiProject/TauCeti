@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FractionalIdealDivisor.NthRoot
 public import TauCeti.RingTheory.DedekindDomain.SInteger.ClassGroup
+import TauCeti.RingTheory.DedekindDomain.SInteger.Power
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 /-!
@@ -60,6 +61,10 @@ maps below therefore live in the same `IsDedekindDomain.selmerGroup` namespace a
 * `IsDedekindDomain.selmerGroup.range_toClassGroup`: **exactness on the right** — the image is the
   `n`-torsion of the `S`-class group. (Surjectivity onto the whole class group is false in
   general.) Of the three, only this one needs `n ≠ 0`.
+* `IsDedekindDomain.selmerGroup.fromSUnit_surjective` and
+  `IsDedekindDomain.selmerGroup.exists_mul_pow_mem_unit`: when the classes of the primes in `S`
+  generate the class group of `R`, every Selmer class comes from an `S`-unit, so every
+  representative is an `S`-unit up to an `n`-th power.
 * `IsDedekindDomain.selmerGroup.finite`: **the Selmer group `K⟮S, n⟯` is finite** when the
   `S`-class group is finite, the `S`-units are finitely generated and `n ≠ 0`.
 
@@ -176,9 +181,9 @@ lemma range_fromSUnitLift : (fromSUnitLift K S n).range = (fromSUnit K S n).rang
   | H y => exact ⟨y, (fromSUnitLift_mk K S n y).symm⟩
 
 /-- **Exactness on the left of the fundamental exact sequence.** The left-hand map is injective:
-an `S`-unit that becomes an `n`-th power in `K` is already the `n`-th power of an `S`-unit. What
-makes this work is that an `n`-th root `y` of an `S`-unit is again an `S`-unit: away from `S` the
-relation `n * ord_v(y) = ord_v(x) = 0` forces `ord_v(y) = 0`.
+an `S`-unit that becomes an `n`-th power in `K` is already the `n`-th power of an `S`-unit
+(`Set.range_powMonoidHom_subgroupOf_unit`), because an `n`-th root `y` of an `S`-unit is again an
+`S`-unit: away from `S` the relation `n * ord_v(y) = ord_v(x) = 0` forces `ord_v(y) = 0`.
 
 Like `ker_toClassGroup`, and unlike the exactness on the right, this needs no `n ≠ 0`: for `n = 0`
 both sides divide out the trivial subgroup and the claim degenerates to the injectivity of
@@ -189,23 +194,10 @@ theorem fromSUnitLift_injective : Function.Injective (fromSUnitLift K S n) := by
   induction c using QuotientGroup.induction_on with
   | H x =>
     intro hx
-    obtain ⟨y, hy⟩ := (QuotientGroup.eq_one_iff (x : Kˣ)).mp (congrArg Subtype.val hx)
-    rw [powMonoidHom_apply] at hy
-    rcases eq_or_ne n 0 with rfl | hn
-    · -- For `n = 0` the subgroup divided out is trivial, and `hy` already pins `x` down to `1`.
-      rw [pow_zero] at hy
-      have hx1 : x = 1 := Subtype.ext hy.symm
-      rw [hx1, QuotientGroup.mk_one]
-    · refine (QuotientGroup.eq_one_iff _).mpr ⟨⟨y, fun v hv ↦ ?_⟩, Subtype.ext ?_⟩
-      · refine (valuationOfNeZero_eq_one_iff v y).mp ?_
-        have h1 : v.valuationOfNeZero y ^ n = 1 := by
-          rw [← map_pow, hy]
-          exact (valuationOfNeZero_eq_one_iff v _).mpr (x.property v hv)
-        have h2 : Multiplicative.toAdd (v.valuationOfNeZero y) * (n : ℤ) = 0 := by
-          rw [← Int.toAdd_pow, h1, toAdd_one]
-        exact toAdd_eq_zero.mp <| (mul_eq_zero.mp h2).resolve_right (Nat.cast_ne_zero.mpr hn)
-      · rw [powMonoidHom_apply, SubmonoidClass.coe_pow]
-        exact hy
+    have hx' : x ∈ (powMonoidHom n : Kˣ →* Kˣ).range.subgroupOf (S.unit K) :=
+      (QuotientGroup.eq_one_iff (x : Kˣ)).mp (congrArg Subtype.val hx)
+    rw [Set.range_powMonoidHom_subgroupOf_unit] at hx'
+    exact (QuotientGroup.eq_one_iff x).mpr hx'
 
 /-! ### The surjection from the `n`-divisible units -/
 
@@ -320,6 +312,32 @@ theorem range_toClassGroup [NeZero n] : (toClassGroup K S n).range =
     refine units_eq_of_forall_count_eq _ _ fun v ↦ ?_
     rw [count_nthRootHom, coe_unitsNDivisibleToNDivisible, coe_toPrincipalIdeal, hcount v,
       Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr (NeZero.ne n))]
+
+/-- **Every Selmer class comes from an `S`-unit when `S` generates the class group.** If the
+classes of the primes in `S` generate the class group of `R`, `fromSUnit` is surjective: every
+Selmer class is represented by an `S`-unit. -/
+theorem fromSUnit_surjective
+    (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤) :
+    Function.Surjective (fromSUnit K S n) := by
+  have := (subsingleton_integer_classGroup_iff K S).mpr hS
+  intro x
+  rw [← MonoidHom.mem_range, ← ker_toClassGroup]
+  exact Subsingleton.elim _ _
+
+/-- **A Selmer representative is an `S`-unit up to an `n`-th power** when the classes of the
+primes in `S` generate the class group of `R`: if the class of `a` lies in `K⟮S, n⟯`, then
+`a * c ^ n` is an `S`-unit for some `c ∈ Kˣ`. -/
+theorem exists_mul_pow_mem_unit
+    (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤) {a : Kˣ}
+    (ha : (QuotientGroup.mk a : Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) ∈
+      selmerGroup (R := R) (K := K) (S := S) (n := n)) :
+    ∃ c : Kˣ, a * c ^ n ∈ S.unit K := by
+  obtain ⟨u, hu⟩ := fromSUnit_surjective K S n hS ⟨_, ha⟩
+  obtain ⟨c, hc⟩ := QuotientGroup.eq.mp (congrArg Subtype.val hu)
+  refine ⟨c⁻¹, ?_⟩
+  rw [powMonoidHom_apply] at hc
+  rw [inv_pow, hc, mul_inv_rev, inv_inv, mul_inv_cancel_left]
+  exact u.2
 
 /-! ### Finiteness -/
 

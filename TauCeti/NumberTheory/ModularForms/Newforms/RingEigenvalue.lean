@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.ZMod.Units
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Eigenvector
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Recurrence
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
@@ -30,7 +31,9 @@ at composite good indices be read off the eigenvalues at good primes and the cha
 
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_one`: `λ₁ = 1`.
 * `HeckeRing.GL2.EigenformAwayFromLevel.heckeTCuspNat_eq_eigenvalue_smul`: at a good prime the
-  classical operator `Tₚ` on `S_k(Γ₁(N))` acts on the form by `λₚ`.
+  classical operator `Tₚ` on `S_k(Γ₁(N))` acts on the form by `λₚ`, and
+  `HeckeRing.GL2.EigenformAwayFromLevel.heckeTCuspNat_levelRaise_eq_eigenvalue_smul`: so does
+  `Tₚ` at a level `N` with `d * M ∣ N` on the level-raise `V_d f`.
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_mul`: `λ_{mn} = λ_m λ_n` for coprime good
   indices.
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_prime_pow_add_two`: the recurrence along the
@@ -105,6 +108,23 @@ theorem heckeTCuspNat_eq_eigenvalue_smul {p : ℕ} (hp : p.Prime) (hpN : Nat.Cop
   have : NeZero p := ⟨hp.ne_zero⟩
   heckeTCuspNat_eq_smul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul
     (F := ⟨f.toCuspForm, f.mem_charSpace⟩) hp (f.isEigen ⟨p, hp.pos⟩ hpN)
+
+/-- **`V_d` of a good eigenform is a good eigenvector with the same eigenvalues**: for
+`d * M ∣ N` and a prime `p ∤ N`, `Tₚ (V_d g) = λₚ(g) • V_d g` at level `N`, since `Tₚ` commutes
+with the level-raising operator `V_d` (`heckeTCuspNat_levelRaise`). -/
+theorem heckeTCuspNat_levelRaise_eq_eigenvalue_smul {M d : ℕ} [NeZero M] [NeZero d]
+    (g : EigenformAwayFromLevel M k) (h : d * M ∣ N) {p : ℕ} (hp : p.Prime)
+    (hpN : Nat.Coprime p N) :
+    heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩)
+        (TauCeti.CuspForm.levelRaise d (TauCeti.Gamma1_map_le_conjAct_scaleGL_of_dvd h)
+          g.toCuspForm) =
+      g.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right (dvd_of_mul_left_dvd h)) •
+        TauCeti.CuspForm.levelRaise d (TauCeti.Gamma1_map_le_conjAct_scaleGL_of_dvd h)
+          g.toCuspForm := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  rw [heckeTCuspNat_levelRaise k h hp hpN,
+    g.heckeTCuspNat_eq_eigenvalue_smul hp (hpN.coprime_dvd_right (dvd_of_mul_left_dvd h)),
+    ← TauCeti.CuspForm.levelRaiseₗ_apply, map_smul, TauCeti.CuspForm.levelRaiseₗ_apply]
 
 /-- **Multiplicativity on coprime good indices**: `λ_{mn} = λ_m λ_n`, the image of the coprime
 multiplication rule `heckeTCompositeGamma0_mul_of_coprime` of the Hecke ring. -/

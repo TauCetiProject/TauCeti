@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
 # The Galois action on the unit filtration
@@ -27,6 +29,8 @@ passing to successive quotients in ramification theory.
 * `AlgEquiv.coe_smul_unitFiltration`: the restricted action agrees with the action on `Lˣ`.
 * `AlgEquiv.val_coe_smul_unitFiltration`: the restricted action agrees with applying the
   automorphism on `L`.
+* `AlgEquiv.map_log_of_mem_unitFiltration_one`: on a finite extension of `ℚ_[p]`, the logarithm of
+  principal units commutes with every extension automorphism.
 
 ## References
 
@@ -112,4 +116,48 @@ theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFilt
     (((σ • x : unitFiltration L i) : Lˣ) : L) = σ ((x : Lˣ) : L) :=
   (rfl)
 
+/-- **The logarithm is Galois-equivariant.** On a finite extension `L` of `ℚ_[p]`, every
+automorphism of `L/K` commutes with the logarithm of a principal unit: `σ (log u) = log (σ u)`.
+The logarithm series of `u` converges on `U(L,1)`, and `σ` is continuous and maps it termwise to
+the logarithm series of `σ u`. -/
+theorem map_log_of_mem_unitFiltration_one (σ : L ≃ₐ[K] L) (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension L p] {u : Lˣ} (hu : u ∈ unitFiltration L 1) :
+    σ (NormedSpace.log (u : L)) = NormedSpace.log (σ (u : L)) := by
+  have h := (hasSum_log_of_mem_unitFiltration_one p hu).map σ.toAddMonoidHom
+    σ.continuous_of_valuativeExtension
+  have h' := hasSum_log_of_mem_unitFiltration_one p (σ.unitsMap_mem_unitFiltration_iff.mpr hu)
+  rw [Units.coe_map, MonoidHom.coe_ofClass] at h'
+  refine h.unique (h'.congr_fun fun n ↦ ?_)
+  simp
+
 end AlgEquiv
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u
+
+variable (K L : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+
+/-- Inclusion of the valuation-zero units in the multiplicative group, as a morphism of
+integral Galois representations. -/
+def unitFiltrationZeroIncl :
+    Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0) ⟶
+      Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (unitFiltration L 0).subtype.toAdditive.toIntLinearMap fun σ x ↦
+      congrArg Additive.ofMul (AlgEquiv.coe_smul_unitFiltration σ x.toMul)
+
+/-- The inclusion is the subgroup inclusion, written additively. -/
+@[simp]
+theorem unitFiltrationZeroIncl_apply (x : Additive (unitFiltration L 0)) :
+    (unitFiltrationZeroIncl K L).hom x = Additive.ofMul (x.toMul : Lˣ) := (rfl)
+
+/-- The inclusion of the valuation-zero units in the multiplicative group is injective. -/
+theorem unitFiltrationZeroIncl_injective : Function.Injective (unitFiltrationZeroIncl K L).hom :=
+  fun _ _ h ↦ Additive.toMul.injective (Subtype.ext (congrArg Additive.toMul h))
+
+end TauCeti

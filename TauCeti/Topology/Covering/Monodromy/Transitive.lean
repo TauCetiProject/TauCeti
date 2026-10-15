@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Covering.Monodromy.Connected
+import TauCeti.Topology.Covering.Clopen
 
 /-!
 # Monodromy of connected covers over a path-connected base
@@ -30,7 +31,7 @@ monodromy an equivalence onto the actions, which is proved in
 * `TauCeti.FundamentalGroupoidAction.isFiberwiseTransitive`: fibrewise pretransitive with
   nonempty fibres.
 * `TauCeti.TransitiveFundamentalGroupoidAction`: the corresponding full subcategory.
-* `TauCeti.ConnectedCoveringSpace.nonempty_fiber`: over a path-connected base every fibre of a
+* `TauCeti.ConnectedCoveringSpace.nonempty_fiber`: over a preconnected base every fibre of a
   connected cover is nonempty.
 * `TauCeti.ConnectedCoveringSpace.transitiveMonodromyFunctor`: monodromy of connected covers,
   valued in fibrewise transitive actions.
@@ -141,13 +142,12 @@ namespace ConnectedCoveringSpace
 
 variable {X : TopCat.{u}}
 
-/-- Over a path-connected base, every fibre of a connected covering space is nonempty: a path
-component of the total space maps onto the base. -/
-theorem nonempty_fiber [PathConnectedSpace X] (p : ConnectedCoveringSpace X) (x : X) :
-    Nonempty (⇑p.proj ⁻¹' {x}) := by
-  obtain ⟨e⟩ := (inferInstance : Nonempty (p : TopCat))
-  obtain ⟨f, hf⟩ := p.isCoveringMap_proj.comp_subtypeVal_pathComponent_surjective e x
-  exact ⟨⟨f, hf⟩⟩
+/-- Over a preconnected base, every fibre of a connected covering space is nonempty: its
+projection is surjective (`IsCoveringMap.surjective`). -/
+theorem nonempty_fiber [PreconnectedSpace X] (p : ConnectedCoveringSpace X) (x : X) :
+    Nonempty (⇑p.proj ⁻¹' {x}) :=
+  let ⟨e, he⟩ := p.isCoveringMap_proj.surjective x
+  ⟨⟨e, he⟩⟩
 
 /-- The ordinary monodromy functor of a connected cover over a path-connected base is transitive
 on every fibre. -/

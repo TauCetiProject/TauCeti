@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 /-!
@@ -661,7 +661,7 @@ theorem exists_reflectionOrthogonal_list_prod_eq [FiniteDimensional K V] [NeZero
   let l := v.map (anisotropicReflection Q)
   refine ⟨l, ?_, by simpa only [l, List.length_map] using hvlen, ?_⟩
   · intro r hr
-    obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hr
+    obtain ⟨x, _, rfl⟩ := List.mem_map.mp hr
     let _ : Invertible (Q x) := invertibleOfNonzero x.2
     refine ⟨x, inferInstance, ?_⟩
     unfold anisotropicReflection

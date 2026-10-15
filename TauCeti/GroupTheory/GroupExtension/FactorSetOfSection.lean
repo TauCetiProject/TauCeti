@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupExtension.Basic
+public import TauCeti.GroupTheory.GroupExtension.Basic
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 
 /-!
@@ -57,6 +58,9 @@ bookkeeping (`TauCeti.GroupExtension.factorSetFun`, `TauCeti.GroupExtension.norm
   `TauCeti.GroupExtension.inducesAction_iff_smul_eq_self`: `InducesAction` holds exactly when the
   descended conjugation action is the ambient one, and, for a central extension, exactly when the
   ambient action is trivial.
+* `TauCeti.GroupExtension.factorSet_monoidHomComp`: the factor set of a section transported along a
+  homomorphism of extensions over `G` restricting to `f` on the kernels is the pushforward along
+  `f` of the factor set of the section.
 * `TauCeti.GroupExtension.section_mul`: `σ g * σ h = inl (α (g, h)) * σ (g * h)`, the defining
   property of the factor set.
 * `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv`: the extension is equivalent to the
@@ -130,6 +134,35 @@ compatibility that makes `TauCeti.GroupExtension.factorSet` a `TauCeti.FactorSet
 for a central extension it says the ambient action is trivial. -/
 def InducesAction [MulDistribMulAction G M] : Prop :=
   ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
+
+/-- The pointwise characterization of the action induced by an extension. -/
+@[simp]
+theorem inducesAction_iff [MulDistribMulAction G M] :
+    InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
+  Iff.rfl
+
+/-- Relabelling the quotient transports the induced action on the kernel along the same
+equivalence. -/
+theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
+    (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
+    (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
+    InducesAction (S.relabelQuotient e) := by
+  intro x m
+  simpa only [relabelQuotient_conjAct, GroupExtension.relabelQuotient_rightHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsmul] using hact x m
+
+/-- Relabelling both the kernel and the quotient transports the induced action along the two
+equivalences, provided they identify the ambient actions. -/
+theorem InducesAction.relabel [MulDistribMulAction G M] (hact : InducesAction S)
+    {M' G' : Type*} [Group M'] [Group G'] [MulDistribMulAction G' M'] (eM : M' ≃* M)
+    (eG : G ≃* G') (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    InducesAction (S.relabel eM eG) := by
+  intro x m
+  apply (S.relabel eM eG).inl_injective
+  rw [GroupExtension.inl_conjAct_comm]
+  simp only [GroupExtension.relabel_inl, GroupExtension.relabel_rightHom, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, hsmul]
+  rw [← hact x (eM m), GroupExtension.inl_conjAct_comm]
 
 /-- **A central extension induces exactly the trivial action.** This is the constructor for
 `TauCeti.GroupExtension.InducesAction` in the central case: the hypothesis holds if and only if the
@@ -271,6 +304,24 @@ theorem inl_factorSet (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
   simp only [coe_factorSet]
   exact inl_factorSetFun σ g h
 
+/-- **The factor set of a section transported along a homomorphism of extensions** `φ` over the
+identity of `G` that restricts to the equivariant `f` on the kernels is the pushforward along `f`
+of the factor set of the section. -/
+theorem factorSet_monoidHomComp {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    {E' : Type*} [Group E'] {S' : GroupExtension N E' G} (σ : S.Section) (hσ : σ 1 = 1)
+    (hact : InducesAction S) (hact' : InducesAction S') (f : M →*[G] N) (φ : E →* E')
+    (hinl : φ.comp S.inl = S'.inl.comp f.toMonoidHom) (hright : S'.rightHom.comp φ = S.rightHom) :
+    factorSet (σ.monoidHomComp φ hright) (by rw [σ.monoidHomComp_apply, hσ, map_one]) hact' =
+      (factorSet σ hσ hact).map f := by
+  -- The two factor sets agree after the injective inclusion of the kernel into `E'`, where both
+  -- read `φ (σ g) * φ (σ h) * (φ (σ (g * h)))⁻¹`.
+  ext ⟨g, h⟩
+  refine S'.inl_injective ?_
+  have key : S'.inl (f (factorSet σ hσ hact (g, h))) = φ (S.inl (factorSet σ hσ hact (g, h))) :=
+    (DFunLike.congr_fun hinl _).symm
+  rw [inl_factorSet, FactorSet.map_apply, key, inl_factorSet, map_mul φ, map_mul φ, map_inv φ]
+  simp only [GroupExtension.Section.monoidHomComp_apply]
+
 end FactorSet
 
 section Equiv
@@ -394,21 +445,23 @@ section Coboundary
 variable [CommGroup M] {S : GroupExtension M E G} (σ σ' : S.Section) [MulDistribMulAction G M]
   (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : InducesAction S)
 
-/-- **The factor sets of two normalized sections differ by the coboundary of their difference**,
+omit hσ hσ' in
+/-- **The factor-set functions of two sections differ by the coboundary of their difference**,
 with the coboundary spelled as in `groupCohomology.IsMulCoboundary₂`. This is the identity behind
-`TauCeti.GroupExtension.isMulCoboundary₂_div`, stated with its witness visible so that properties of
-the witness, such as its continuity, can be tracked. -/
-theorem factorSet_div_factorSet (g h : G) :
-    factorSet σ hσ hact (g, h) / factorSet σ' hσ' hact (g, h) =
+the section-independence of extension classes. The sections need not send `1` to `1`, so this
+also compares cocycles obtained from arbitrary choices of quotient representatives. -/
+theorem _root_.GroupExtension.Section.factorSetFun_div_factorSetFun
+    (hact : InducesAction S) (g h : G) :
+    factorSetFun σ (g, h) / factorSetFun σ' (g, h) =
       g • sectionDiff σ σ' h / sectionDiff σ σ' (g * h) * sectionDiff σ σ' g := by
   have e₁ : (σ g : E) * σ h
-      = S.inl (factorSet σ hσ hact (g, h) * sectionDiff σ σ' (g * h)) * σ' (g * h) := by
-    rw [map_mul, inl_factorSet, inl_sectionDiff]
+      = S.inl (factorSetFun σ (g, h) * sectionDiff σ σ' (g * h)) * σ' (g * h) := by
+    rw [map_mul, inl_factorSetFun, inl_sectionDiff]
     group
   have e₂ : (σ g : E) * σ h
-      = S.inl (g • sectionDiff σ σ' h * sectionDiff σ σ' g * factorSet σ' hσ' hact (g, h))
+      = S.inl (g • sectionDiff σ σ' h * sectionDiff σ σ' g * factorSetFun σ' (g, h))
         * σ' (g * h) := by
-    rw [map_mul, map_mul, inl_smul σ hact, inl_sectionDiff, inl_sectionDiff, inl_factorSet]
+    rw [map_mul, map_mul, inl_smul σ hact, inl_sectionDiff, inl_sectionDiff, inl_factorSetFun]
     group
   have key := S.inl_injective (mul_right_cancel (e₁.symm.trans e₂))
   rw [eq_comm, div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul, ← key]
@@ -419,7 +472,8 @@ of extensions, this says the class of the factor set in `H²(G, M)` is an invari
 extension. -/
 theorem isMulCoboundary₂_div :
     IsMulCoboundary₂ fun p : G × G => factorSet σ hσ hact p / factorSet σ' hσ' hact p :=
-  ⟨sectionDiff σ σ', fun g h => (factorSet_div_factorSet σ σ' hσ hσ' hact g h).symm⟩
+  ⟨sectionDiff σ σ', fun g h => by
+    simpa only [coe_factorSet] using (σ.factorSetFun_div_factorSetFun σ' hact g h).symm⟩
 
 end Coboundary
 

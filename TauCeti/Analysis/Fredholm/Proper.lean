@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Analysis.Fredholm.Estimate
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
 # A map with upper semi-Fredholm derivative is proper near the point
@@ -23,8 +24,8 @@ This is Smale's local properness lemma, the geometric half of the input to the S
 (Smale, *An infinite dimensional version of Sard's theorem*, Amer. J. Math. 87 (1965), 861–866;
 McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A). Its consequence
 recorded here is that the preimage `f ⁻¹' L` of a compact set — in particular a level set
-`f ⁻¹' {c}`, the shape every moduli space of the analytic Heegaard Floer roadmap takes — is a
-**locally compact** space, even though the Banach space it sits inside is not.
+`f ⁻¹' {c}`, as occurs for moduli spaces defined by Fredholm equations — is a
+**locally compact** space, even when its ambient Banach space is not locally compact.
 
 The proof is quantitative rather than chart-theoretic. The a priori estimate
 `ContinuousLinearMap.exists_projection_norm_le` supplies a continuous projection `P`
@@ -40,8 +41,6 @@ sends `N ∩ f ⁻¹' L` into a compact box; being anti-Lipschitz, it reflects t
 
 ## Main declarations
 
-* `TauCeti.one_sub_mul_norm_sub_le`: an a priori estimate survives a nonlinear
-  approximation, degraded by its quality — the absorption step behind Peetre's lemma.
 * `HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage`: local properness.
 * `HasStrictFDerivAt.exists_mem_nhds_isCompact_inter_preimage_singleton`: an arbitrary fibre is
   compact near the point of differentiation.
@@ -49,11 +48,10 @@ sends `N ∩ f ⁻¹' L` into a compact box; being anti-Lipschitz, it reflects t
   preimage of a compact set, and in particular a level set, along which the derivative is Fredholm
   is locally compact.
 
-Lane F0 of the analytic Heegaard Floer roadmap asks for the package "a moduli space is the zero
-set of a Fredholm section, and at a regular point a manifold of dimension the index", of which
-`TauCeti.Analysis.Fredholm.LevelSet.Basic` supplies the charts. Local properness is the
-complementary topological half, and it is what will make the critical values of a Fredholm map
-locally closed in the Sard--Smale argument.
+At a regular point, the zero set of a Fredholm map is a manifold of dimension its index;
+`TauCeti.Analysis.Fredholm.LevelSet.Basic` supplies those charts. Local properness complements
+this description at singular points and makes the critical values of a Fredholm map locally
+closed in the Sard--Smale argument.
 -/
 
 public section
@@ -67,79 +65,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 variable {f : E → F} {f' : E →L[𝕜] F} {a : E}
-
-omit [ProperSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-/-- **An a priori estimate survives a nonlinear approximation, degraded by its quality.** Suppose
-every vector is controlled by its image under `f'` together with an auxiliary additive map `P`,
-as `‖z‖ ≤ C * ‖f' z‖ + ‖P z‖`, and `f` approximates `f'` on `N` to within `ε`. Then the same
-control holds for `f` on `N`, with the left side scaled by `1 - C * ε`; it has content exactly
-when `C * ε < 1`, and taking `ε ≤ (2 * C)⁻¹` gives the factor-two form properness uses.
-
-Nothing about `P` beyond `map_sub` enters, so it need only be additive into a seminormed additive
-group — no scalar-linearity, no idempotence, no constraint on its target. Taking it to be the
-projection onto `ker f'` from `ContinuousLinearMap.exists_projection_norm_le` recovers the Peetre
-estimate, which characterises semi-Fredholm operators — see Wendl, *Fredholm operators*,
-Lemma 5.2. -/
-theorem one_sub_mul_norm_sub_le {G : Type*} [SeminormedAddGroup G]
-    {P : E →+ G} {C : ℝ} {N : Set E} {ε : ℝ≥0}
-    (hC : 0 ≤ C) (hest : ∀ z, ‖z‖ ≤ C * ‖f' z‖ + ‖P z‖)
-    (happ : ApproximatesLinearOn f f' N ε) {x : E} (hx : x ∈ N) {y : E} (hy : y ∈ N) :
-    (1 - C * (ε : ℝ)) * ‖x - y‖ ≤ C * ‖f x - f y‖ + ‖P x - P y‖ := by
-  have h1 := hest (x - y)
-  have h2 := happ x hx y hy
-  have h3 : ‖f' (x - y)‖ ≤ ‖f x - f y‖ + (ε : ℝ) * ‖x - y‖ := by
-    have hrw : f' (x - y) = f x - f y - (f x - f y - f' (x - y)) := by abel
-    rw [hrw]
-    exact (norm_sub_le _ _).trans (by linarith)
-  have h4 : C * ‖f' (x - y)‖ ≤ C * (‖f x - f y‖ + (ε : ℝ) * ‖x - y‖) :=
-    mul_le_mul_of_nonneg_left h3 hC
-  rw [map_sub P x y] at h1
-  nlinarith
-
-omit [ProperSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-/-- **The two-sided bound is exactly anti-Lipschitzness of the coordinate `x ↦ (f x, P x)`.**
-The bound of `one_sub_mul_norm_sub_le` controls `‖x - y‖` by the two components separately; since
-the product norm is the maximum, each is at most the distance between the pairs, and the two
-constants add.
-
-The constant `2 * C + 2` is not sharp — the maximum norm is what costs the factor. Sharpness
-would need the weighted norm `‖u‖ + C⁻¹ * ‖v‖`, which mathlib does not instantiate on a product,
-and no consumer here uses it. -/
-private theorem antilipschitzWith_prodMk {G : Type*} [SeminormedAddCommGroup G] {N : Set E}
-    {g : E → F} {P : E → G} {C : ℝ} (hC : 0 ≤ C)
-    (key : ∀ x ∈ N, ∀ y ∈ N, ‖x - y‖ ≤ 2 * (C * ‖g x - g y‖) + 2 * ‖P x - P y‖) :
-    AntilipschitzWith ⟨2 * C + 2, by positivity⟩ fun x : N => (g (x : E), P (x : E)) := by
-  refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
-  have hd1 : ‖g (x : E) - g (y : E)‖ ≤ dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := by
-    rw [Prod.dist_eq, ← dist_eq_norm]
-    exact le_max_left _ _
-  have hd2 : ‖P (x : E) - P (y : E)‖ ≤ dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := by
-    rw [Prod.dist_eq, ← dist_eq_norm]
-    exact le_max_right _ _
-  have hCd := mul_le_mul_of_nonneg_left hd1 hC
-  have hpos : (0 : ℝ) ≤ dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := dist_nonneg
-  rw [Subtype.dist_eq, dist_eq_norm]
-  calc ‖(x : E) - (y : E)‖
-      ≤ 2 * (C * ‖g (x : E) - g (y : E)‖) + 2 * ‖P (x : E) - P (y : E)‖ :=
-        key (x : E) x.2 (y : E) y.2
-    _ ≤ (2 * C + 2) * dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := by nlinarith
-
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- **A continuous linear map into a finite-dimensional subspace sends a bounded set into a
-compact one.** This is where the finite-dimensionality of `ker f'` is spent: in `V` bounded sets
-are relatively compact, so the projection of a ball has compact closure even though the ball
-itself does not. -/
-private theorem exists_isCompact_forall_mem_of_norm_le {V : Submodule 𝕜 E}
-    [FiniteDimensional 𝕜 V] (P : E →L[𝕜] E) (hPV : ∀ x, P x ∈ V) (r : ℝ) :
-    ∃ K : Set E, IsCompact K ∧ ∀ x, ‖x‖ ≤ r → P x ∈ K := by
-  have : ProperSpace V := FiniteDimensional.proper 𝕜 V
-  refine ⟨V.subtypeL '' Metric.closedBall (0 : V) (‖P‖ * r),
-    (isCompact_closedBall _ _).image V.subtypeL.continuous,
-    fun x hx => ⟨⟨P x, hPV x⟩, ?_, V.subtypeL_apply _⟩⟩
-  simp only [Metric.mem_closedBall, dist_zero_right]
-  calc ‖(⟨P x, hPV x⟩ : V)‖ = ‖P x‖ := (Submodule.norm_coe _).symm
-    _ ≤ ‖P‖ * ‖x‖ := P.le_opNorm x
-    _ ≤ ‖P‖ * r := by gcongr
 
 /-- **Local properness of a map with upper semi-Fredholm derivative.** If `f` is strictly
 differentiable at `a` and its derivative there has closed range and finite-dimensional
@@ -163,7 +88,7 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     exact inv_pos.2 hCpos
   obtain ⟨s, hs, happ⟩ := hf.approximates_deriv_on_nhds (Or.inr hεpos)
   obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 hs
-  set N : Set E := Metric.closedBall a (δ / 2) with hNdef
+  set N : Set E := Metric.closedBall a (δ / 2)
   have hNs : N ⊆ s :=
     (Metric.closedBall_subset_ball (by linarith)).trans hball
   have happN : ApproximatesLinearOn f f' N ε := happ.mono_set hNs
@@ -173,7 +98,7 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   have key : ∀ x ∈ N, ∀ y ∈ N,
       ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖P x - P y‖ := by
     intro x hx y hy
-    have h := one_sub_mul_norm_sub_le (P := P.toLinearMap.toAddMonoidHom) hC.le hest happN hx hy
+    have h := happN.one_sub_mul_norm_sub_le (P := P.toLinearMap.toAddMonoidHom) hC.le hest hx hy
     rw [hCε] at h
     simp only [LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe] at h
     linarith
@@ -184,24 +109,29 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     rw [← hPrange]
     exact ⟨x, rfl⟩
   let _ : FiniteDimensional 𝕜 f'.ker := hfinite
-  obtain ⟨Kp, hKpc, hKp⟩ :=
-    exists_isCompact_forall_mem_of_norm_le (V := f'.ker) P hPmem (‖a‖ + δ / 2)
-  have hPN : ∀ x ∈ N, P x ∈ Kp := fun x hx => hKp x <| by
-    have hxa : ‖x - a‖ ≤ δ / 2 := by
-      rw [hNdef, Metric.mem_closedBall, dist_eq_norm] at hx
-      exact hx
-    calc ‖x‖ = ‖a + (x - a)‖ := by rw [add_sub_cancel]
-      _ ≤ ‖a‖ + ‖x - a‖ := norm_add_le _ _
-      _ ≤ ‖a‖ + δ / 2 := by linarith
+  have : ProperSpace f'.ker := FiniteDimensional.proper 𝕜 f'.ker
+  let Pker : E →L[𝕜] f'.ker := P.codRestrict f'.ker hPmem
+  let Kp := closure (Pker '' N)
+  have hKpc : IsCompact Kp :=
+    (Pker.lipschitzWith.isBounded_image Metric.isBounded_closedBall).isCompact_closure
+  have hPN : ∀ x ∈ N, Pker x ∈ Kp := fun x hx => subset_closure ⟨x, hx, rfl⟩
   -- the anti-Lipschitz coordinate on `N`
-  set Θ : N → F × E := fun x => (f (x : E), P (x : E))
-  have hanti : AntilipschitzWith ⟨2 * C + 2, by positivity⟩ Θ :=
-    antilipschitzWith_prodMk hC.le key
-  have hΘlip : LipschitzWith (‖f'‖₊ + ε + ‖P‖₊) Θ := by
-    have h1 : LipschitzWith (‖f'‖₊ + ε) fun x : N => f (x : E) := happN.lipschitz
-    have h2 : LipschitzWith ‖P‖₊ fun x : N => P (x : E) := P.lipschitzWith.restrict N
-    exact (h1.prodMk h2).weaken (by simp)
-  have hind : IsUniformInducing Θ := hanti.isUniformInducing hΘlip.uniformContinuous
+  set Θ : N → F × f'.ker := fun x => (f (x : E), Pker (x : E))
+  have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
+    refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
+    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
+    -- The kernel coordinate has the norm induced from `E`, and `Pker` coerces to `P`.
+    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.snd_sub, Θ, ← Submodule.norm_coe, Submodule.coe_sub, Pker,
+        ContinuousLinearMap.coe_codRestrict_apply] using norm_snd_le (Θ x - Θ y)
+    have hfC := mul_le_mul_of_nonneg_left hf hC.le
+    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
+    nlinarith [key (x : E) x.2 (y : E) y.2]
+  have hΘcont : UniformContinuous Θ :=
+    happN.lipschitzWith.uniformContinuous.prodMk
+      (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
+  have hind : IsUniformInducing Θ := hanti.isUniformInducing hΘcont
   -- total boundedness, then compactness
   have htb : TotallyBounded
       ((Subtype.val : N → E) '' (Subtype.val : N → E) ⁻¹' (f ⁻¹' L)) := by
@@ -214,7 +144,7 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
 
 /-- An arbitrary fibre of `f` is compact near a point where the derivative has closed range and
 finite-dimensional complemented kernel. This is the case `L = {c}` of local properness, and it is
-the local finiteness statement that a moduli space of a Fredholm problem inherits before any
+the local compactness statement that a moduli space of a Fredholm problem inherits before any
 global energy bound is imposed. -/
 theorem _root_.HasStrictFDerivAt.exists_mem_nhds_isCompact_inter_preimage_singleton
     (hf : HasStrictFDerivAt f f' a) (hclosed : IsClosed (f'.range : Set F))

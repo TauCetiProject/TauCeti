@@ -23,7 +23,7 @@ arbitrary module of "coefficients".
 
 The cofree comodule structure is provided as an explicit named definition `Comodule.cofree`,
 not as a global instance: an `R`-module can carry many coactions, and the cofree one (which on
-`M ⊗[R] C` would otherwise clash with a future tensor product of comodules) should be selected
+`M ⊗[R] C` would otherwise clash with a tensor product of comodules) should be selected
 explicitly. This follows the convention already used for `Comodule.trivial` and
 `Comodule.groupLike`.
 
@@ -41,11 +41,8 @@ explicitly. This follows the convention already used for `Comodule.trivial` and
 
 ## References
 
-This is the cofree (coinduced) comodule of a coalgebra; see for example Sweedler, *Hopf
-Algebras*, Chapter 2. It is added for the Layer 1 target "Comodules over a coalgebra/Hopf
-algebra" of the Tau Ceti reductive-groups roadmap,
-`ReductiveGroups/README.md` in TauCetiRoadmap, specifically the regular/cofree representations and
-the adjunction underlying the embedding theorem.
+This is the cofree (coinduced) comodule of a coalgebra; see for example Sweedler, *Hopf Algebras*,
+Chapter 2.
 -/
 
 @[expose] public section
@@ -316,6 +313,59 @@ theorem cofreeEquiv_symm_apply [Comodule R C P] (g : P →ₗ[R] M) :
     (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).symm g = cofreeLift (C := C) g :=
   rfl
 
+/-- Applying the counit to the `C` factor of the cofree lift of `g` recovers `g`. -/
+theorem rid_comp_lTensor_counit_comp_cofreeLift [Comodule R C P] (g : P →ₗ[R] M) :
+    (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ
+        (cofreeLift (C := C) g).toLinearMap = g :=
+  (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).apply_symm_apply g
+
+/-- A comodule morphism into the cofree comodule is the cofree lift of its counit component. -/
+theorem cofreeLift_rid_comp_lTensor_counit_comp [Comodule R C P] (φ : Hom R C P (M ⊗[R] C)) :
+    cofreeLift (C := C) ((TensorProduct.rid R M).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ φ.toLinearMap) = φ :=
+  (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).symm_apply_apply φ
+
+end Hom
+
+end Comodule
+
+end TauCeti
+
+end
+
+public section
+
+open scoped TensorProduct
+
+namespace TauCeti
+
+universe u v w
+
+namespace Comodule
+
+variable {R : Type u} {C : Type v} {M : Type w}
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid M] [Module R M]
+
+attribute [local instance] cofree
+
+namespace Hom
+
+/-- A morphism into a cofree comodule vanishes exactly when its counit component vanishes. -/
+@[simp]
+theorem eq_zero_iff_counit {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+    (f : Hom R C P (M ⊗[R] C)) :
+    f = 0 ↔
+      (TensorProduct.rid R M).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ f.toLinearMap = 0 := by
+  constructor
+  · intro hf
+    subst f
+    simp
+  · intro hf
+    apply (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).injective
+    simpa only [cofreeEquiv_apply, Hom.zero_toLinearMap, LinearMap.comp_zero] using hf
+
 end Hom
 
 end Comodule
@@ -357,3 +407,5 @@ theorem cofree_coact_tmul (m : M) (c : C) :
 end ComoduleCat
 
 end TauCeti
+
+end

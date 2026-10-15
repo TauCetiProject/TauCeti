@@ -374,10 +374,11 @@ private theorem hasNonzeroWeightVector_of_derivedSeries_eq_bot (n : ℕ) :
       simp only [ρ, hinclude, ← basePointsRepresentation_corestrict, basePointsRepresentation_apply,
         endOfPoint_tmul, hvc]
       simp
-    let χ := unitHomOfJointEigenvector (ρ.comp N.subtype) (fun x ↦ x.val.ofConv c) v hv hmem
+    let χ := (ρ.comp N.subtype).unitHomOfJointEigenvector (fun x ↦ x.val.ofConv c) v hv hmem
     have hχ : v ∈ ⨅ x : N, (ρ x).eigenspace (χ x) :=
       (Submodule.mem_iInf _).mpr fun x ↦ by
-        have hχx : (χ x : k) = x.val.ofConv c := unitHomOfJointEigenvector_apply _ _ _ _ _ x
+        have hχx : (χ x : k) = x.val.ofConv c :=
+          MonoidHom.unitHomOfJointEigenvector_apply _ _ _ _ _ x
         rw [hχx]
         exact hmem x
     exact hasNonzeroWeightVector_of_nonzeroJointWeight_commutator

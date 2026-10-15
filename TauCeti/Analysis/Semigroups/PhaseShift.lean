@@ -59,7 +59,7 @@ open scoped NNReal Topology
 
 namespace TauCeti.Semigroups.StronglyContinuousSemigroup
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
 
 /-- The phase shift of a complex-linear C₀-semigroup by `b : ℝ`: the semigroup
 `t ↦ exp (-i b t) • S t`. -/
@@ -84,21 +84,18 @@ def phaseShift (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear) (b :
     have h_orbit := S.continuousAt_zero_tendsto x
     simpa [ContinuousAt, S.map_zero_apply] using h_phase.smul h_orbit
 
-omit [CompleteSpace X] in
 /-- The native nonnegative-time operator of a phase shift. -/
 @[simp]
 theorem phaseShift_apply (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear) (b : ℝ)
     (t : ℝ≥0) : S.phaseShift hS b t = Complex.exp (-(b * (t : ℝ)) * Complex.I) • S t := by
   rw [phaseShift]; rfl
 
-omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.phaseShift_apply`. -/
 theorem phaseShift_apply_apply (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
     (b : ℝ) (t : ℝ≥0) (x : X) :
     S.phaseShift hS b t x = Complex.exp (-(b * (t : ℝ)) * Complex.I) • S t x := by
   rw [phaseShift_apply, smul_apply]
 
-omit [CompleteSpace X] in
 /-- Real-time form of a phase-shifted operator at nonnegative times. -/
 theorem phaseShift_realOperator_of_nonneg (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (b t : ℝ) (ht : 0 ≤ t) :
@@ -107,7 +104,6 @@ theorem phaseShift_realOperator_of_nonneg (S : StronglyContinuousSemigroup X)
   have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht
   rw [← ht_coe, realOperator_coe, realOperator_coe, phaseShift_apply]
 
-omit [CompleteSpace X] in
 /-- Pointwise real-time form of a phase-shifted operator at nonnegative times. -/
 theorem phaseShift_realOperator_apply_of_nonneg (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (b t : ℝ) (ht : 0 ≤ t) (x : X) :
@@ -115,7 +111,6 @@ theorem phaseShift_realOperator_apply_of_nonneg (S : StronglyContinuousSemigroup
       = Complex.exp (-(b * t) * Complex.I) • S.realOperator t x := by
   rw [S.phaseShift_realOperator_of_nonneg hS b t ht, smul_apply]
 
-omit [CompleteSpace X] in
 /-- A phase shift is again complex linear. -/
 theorem IsComplexLinear.phaseShift {S : StronglyContinuousSemigroup X} (hS : S.IsComplexLinear)
     (b : ℝ) : (S.phaseShift hS b).IsComplexLinear := by
@@ -123,7 +118,6 @@ theorem IsComplexLinear.phaseShift {S : StronglyContinuousSemigroup X} (hS : S.I
   intro t z x
   rw [phaseShift_apply_apply, phaseShift_apply_apply, hS.map_smul, smul_comm]
 
-omit [CompleteSpace X] in
 /-- The zero phase shift is the original semigroup. -/
 @[simp]
 theorem phaseShift_zero (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear) :
@@ -131,7 +125,6 @@ theorem phaseShift_zero (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLin
   ext t x
   simp
 
-omit [CompleteSpace X] in
 /-- Successive phase shifts add their parameters. -/
 @[simp]
 theorem phaseShift_phaseShift (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
@@ -146,7 +139,6 @@ theorem phaseShift_phaseShift (S : StronglyContinuousSemigroup X) (hS : S.IsComp
 
 namespace HasGrowthBound
 
-omit [CompleteSpace X] in
 /-- A phase shift multiplies by a unimodular scalar, so it preserves every growth bound. -/
 theorem phaseShift {S : StronglyContinuousSemigroup X} {omega M : ℝ}
     (hb : S.HasGrowthBound omega M) (hS : S.IsComplexLinear) (b : ℝ) :
@@ -165,7 +157,6 @@ end HasGrowthBound
 
 /-! ## The generator of a phase shift -/
 
-omit [CompleteSpace X] in
 /-- Phase shifting a semigroup shifts the limit of a generator difference quotient by `-i b`. -/
 private theorem tendsto_phaseShift_genQuot (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (b : ℝ) {x Ax : X}
@@ -199,7 +190,6 @@ private theorem tendsto_phaseShift_genQuot (S : StronglyContinuousSemigroup X)
   rw [sub_smul, one_smul, smul_sub]
   abel
 
-omit [CompleteSpace X] in
 /-- A vector of the generator domain stays in the domain after a phase shift. -/
 private theorem mem_domain_phaseShift (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (b : ℝ) {x : X} (hx : x ∈ S.domain) :
@@ -207,7 +197,6 @@ private theorem mem_domain_phaseShift (S : StronglyContinuousSemigroup X)
   ((S.phaseShift hS b).mem_domain_iff_tendsto x).mpr
     ⟨_, tendsto_phaseShift_genQuot S hS b (S.generator_tendsto ⟨x, hx⟩)⟩
 
-omit [CompleteSpace X] in
 /-- A phase shift does not change the generator domain. -/
 @[simp]
 theorem phaseShift_domain (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear) (b : ℝ) :
@@ -216,7 +205,6 @@ theorem phaseShift_domain (S : StronglyContinuousSemigroup X) (hS : S.IsComplexL
   have h := mem_domain_phaseShift (S.phaseShift hS b) (hS.phaseShift b) (-b) hx
   rwa [phaseShift_phaseShift, add_neg_cancel, phaseShift_zero] at h
 
-omit [CompleteSpace X] in
 /-- The generator of a phase-shifted semigroup acts as `A - i b`. -/
 theorem generator_phaseShift_apply (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
     (b : ℝ) {x : X} (hx : x ∈ S.domain) :
@@ -225,7 +213,6 @@ theorem generator_phaseShift_apply (S : StronglyContinuousSemigroup X) (hS : S.I
   (S.phaseShift hS b).generator_eq_of_tendsto (by rw [phaseShift_domain]; exact hx)
     (tendsto_phaseShift_genQuot S hS b (S.generator_tendsto ⟨x, hx⟩))
 
-omit [CompleteSpace X] in
 /-- **The generator of a phase shift.** The complex generator of `t ↦ exp (-i b t) • S t` is
 `A - i b`, where `A` is the complex generator of `S`. -/
 theorem complexGenerator_phaseShift (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)

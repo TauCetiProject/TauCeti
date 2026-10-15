@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
+public import Mathlib.LinearAlgebra.Basis.Fin
 import TauCeti.GroupTheory.FiniteAbelian.RankTwo
 import TauCeti.Algebra.Group.Equiv.Pi
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Algebra.Module.Torsion.Decomposition
 import Mathlib.Algebra.DirectSum.Decomposition
+import Mathlib.Algebra.Module.ZMod
 import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.RingTheory.Coprime.Lemmas
 
@@ -19,11 +21,18 @@ import Mathlib.RingTheory.Coprime.Lemmas
 
 Over a separably closed field, the `N`-torsion of an elliptic curve is a product of two cyclic
 groups of order `N`, provided that `N` is invertible in the field. This identifies the finite
-torsion available for studying isogenies and the Weil pairing.
+torsion available for studying isogenies and the Weil pairing. Upgrading this along the canonical
+`ZMod N`-module structure on `E[N]`, the `N`-torsion has a basis of two points over `ZMod N`.
 
-## Main result
+## Main definitions
+
+* `TauCeti.Isogeny.pointTorsionModule`: the canonical `ZMod N`-module structure on `N`-torsion
+  points.
+
+## Main results
 
 * `WeierstrassCurve.torsion_addEquiv_prod`: `E[N] ≃+ ZMod N × ZMod N`.
+* `WeierstrassCurve.nonempty_basis_torsionBy`: `E[N]` has a basis of two points over `ZMod N`.
 
 ## References
 
@@ -31,6 +40,20 @@ torsion available for studying isogenies and the Weil pairing.
 -/
 
 public section
+
+namespace TauCeti.Isogeny
+
+/-- **The canonical `ZMod N`-module structure on the `N`-torsion points** of a Weierstrass curve.
+Mathlib supplies it only as the opt-in definition `AddSubgroup.torsionBy.zmodModule`; it is a
+global instance here, restricted to curve points, so that consumers of the torsion (bases,
+`LinearMap.toMatrix`, `Module.finrank`, and the action `Hom.torsionLinearMap` of morphisms)
+synthesize it. -/
+noncomputable instance pointTorsionModule {F : Type*} [Field F] [DecidableEq F]
+    (W : WeierstrassCurve.Affine F) (N : ℕ) :
+    Module (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ)) :=
+  AddSubgroup.torsionBy.zmodModule
+
+end TauCeti.Isogeny
 
 namespace WeierstrassCurve
 
@@ -117,6 +140,20 @@ theorem torsion_addEquiv_prod (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ) 
     (ZMod.equivPi (n := N) hN0).symm.toAddEquiv
   exact ⟨primary |>.trans (TauCeti.AddEquiv.arrowProdEquivProdArrow _ _) |>.trans
     (crt.prodCongr crt)⟩
+
+/-- **`E[N]` has a basis of two points over `ZMod N`**, over a separably closed field in which `N`
+is invertible. It identifies `E[N]` with the rank-two free module `ZMod N × ZMod N`, so that the
+action of an endomorphism on `E[N]` is a `2 × 2` matrix over `ZMod N` and has a determinant and
+trace. The basis is noncanonical, so the result asserts its existence. -/
+theorem nonempty_basis_torsionBy [DecidableEq K] (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ)
+    [NeZero N] (hN : (N : K) ≠ 0) :
+    Nonempty (Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))) := by
+  -- `torsion_addEquiv_prod` is stated for the classical decidable-equality instance
+  obtain ⟨e⟩ : Nonempty (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
+    convert W.torsion_addEquiv_prod N hN
+  exact ⟨(Module.Basis.finTwoProd (ZMod N)).map
+    ({ e with map_smul' := ZMod.map_smul e } :
+      AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃ₗ[ZMod N] ZMod N × ZMod N).symm⟩
 
 end WeierstrassCurve
 

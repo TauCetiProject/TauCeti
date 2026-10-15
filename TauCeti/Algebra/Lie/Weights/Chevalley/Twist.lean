@@ -84,17 +84,6 @@ Chevalley involution is already visible on a presentation of `L`.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter VIII, §2, no. 4.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.1--4.2.
-
-## Roadmap
-
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` builds the split reductive group scheme over
-`ℤ` "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra", and
-`TauCeti.IsChevalleySystem` is that Chevalley basis. Everything downstream of it —
-`TauCeti.IsChevalleySystem.chevalleyLieLattice`, the adjoint admissible lattice, and the adjoint
-elementary Chevalley group — takes one as a hypothesis, so producing one is the open step. This
-file supplies the route through an automorphism inverting the Cartan subalgebra. Milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md` is the downstream consumer of the assembled pinned group
-scheme.
 -/
 
 public section
@@ -232,7 +221,7 @@ theorem exists_isChevalleySystem_of_forall_exists_sq
     intro α hα
     have h := hx.mul_eq_one_of_map_eq_smul_neg ω hω hα (ht α hα) (hopp α hα)
     linear_combination h
-  set u : Weight K H L → K := fun α ↦ if α ∈ s then (t α)⁻¹ else t (-α) with hu
+  set u : Weight K H L → K := fun α ↦ if α ∈ s then (t α)⁻¹ else t (-α)
   have humem : ∀ α : Weight K H L, α ∈ s → u α = (t α)⁻¹ := fun _ h ↦ ite_eq_left h
   have hunot : ∀ α : Weight K H L, α ∉ s → u α = t (-α) := fun _ h ↦ ite_eq_right h
   have huneg : ∀ α : Weight K H L, α.IsNonZero → α ∈ s → u (-α) = t α := by

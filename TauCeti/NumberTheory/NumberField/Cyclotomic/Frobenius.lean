@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # The arithmetic Frobenius on roots of unity
@@ -36,6 +38,11 @@ it rather than at `Q`.
   of `𝓞 F` over `𝔭` raises an `m`-th root of unity to the power `𝔑𝔭`, when `𝔭 ∤ m`.
 * `AlgHom.IsArithFrobAt.autToPow_eq_absNorm`: equivalently, the cyclotomic character
   `IsPrimitiveRoot.autToPow` sends such a Frobenius to `𝔑𝔭 mod m`.
+* `TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime`: over `ℚ`, an
+  automorphism is an arithmetic Frobenius at a prime above `p` exactly when `galEquivZMod`
+  sends it to `p mod n`.
+* `TauCeti.NumberField.galEquivZMod_arithFrobAt_eq_unitOfCoprime`: the corresponding formula
+  for Mathlib's chosen arithmetic Frobenius.
 
 ## Implementation notes
 
@@ -143,3 +150,94 @@ theorem autToPow_eq_absNorm {m : ℕ} [NeZero m] {ζ : F} (hζ : IsPrimitiveRoot
   exact (ZMod.natCast_eq_natCast_iff _ _ _).mpr h
 
 end AlgHom.IsArithFrobAt
+
+namespace TauCeti.NumberField
+
+open Ideal IsCyclotomicExtension
+open scoped _root_.NumberField
+
+/-- In a cyclotomic extension, an automorphism is an arithmetic Frobenius exactly when its
+cyclotomic exponent is the norm of the prime below. -/
+theorem isArithFrobAt_iff_autToPow_eq_absNorm
+    {m : ℕ} [NeZero m] {K F : Type*} [Field K] [NumberField K]
+    [Field F] [NumberField F] [Algebra K F] [IsCyclotomicExtension {m} K F]
+    {ζ : F} (hζ : IsPrimitiveRoot ζ m)
+    (𝔭 : HeightOneSpectrum (𝓞 K)) (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal)
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
+    (σ : F ≃ₐ[K] F) :
+    IsArithFrobAt (𝓞 K) σ Q ↔
+      (hζ.autToPow K σ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
+  let _ : Finite (𝓞 F ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
+  let _ : IsGalois K F := IsCyclotomicExtension.isGalois {m} K F
+  constructor
+  · intro hσ
+    exact hσ.autToPow_eq_absNorm hζ 𝔭 hm Q
+  · intro hσ
+    let τ := arithFrobAt (𝓞 K) (F ≃ₐ[K] F) Q
+    have hτ : IsArithFrobAt (𝓞 K) τ Q := IsArithFrobAt.arithFrobAt _ _ _
+    have heq : σ = τ := hζ.autToPow_injective K
+      (Units.ext (hσ.trans (hτ.autToPow_eq_absNorm hζ 𝔭 hm Q).symm))
+    exact heq ▸ hτ
+
+variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NumberField F]
+  [IsCyclotomicExtension {n} ℚ F]
+
+/-- In a rational cyclotomic extension, the cyclotomic exponent identifies the arithmetic
+Frobenius at an unramified prime with the norm of the prime below it. -/
+theorem isArithFrobAt_iff_galEquivZMod_eq_absNorm
+    (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
+    (hm : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal)
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
+    (σ : F ≃ₐ[ℚ] F) :
+    IsArithFrobAt (𝓞 ℚ) σ Q ↔
+      ((Rat.galEquivZMod n F σ : (ZMod n)ˣ) : ZMod n) =
+        Ideal.absNorm 𝔭.asIdeal := by
+  rw [isArithFrobAt_iff_autToPow_eq_absNorm (zeta_spec n ℚ F) 𝔭 hm Q σ,
+    (zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+    ZMod.unitsMap_self, MonoidHom.id_apply]
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- **Cyclotomic Frobenius is the residue class of the rational prime.** In a rational
+cyclotomic extension of conductor `n`, an automorphism is an arithmetic Frobenius at a prime
+above `p`, for `p` coprime to `n`, exactly when `galEquivZMod` sends it to the unit represented
+by `p` modulo `n`.
+
+This is the rational-prime form of `isArithFrobAt_iff_galEquivZMod_eq_absNorm`. -/
+theorem isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime
+    (hp : p.Coprime n) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    [Q.LiesOver (Ideal.span {(p : ℤ)})] (σ : F ≃ₐ[ℚ] F) :
+    IsArithFrobAt ℤ σ Q ↔
+      Rat.galEquivZMod n F σ = ZMod.unitOfCoprime p hp := by
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot
+    (p := Ideal.span {(p : ℤ)}) (by simpa using (Fact.out : p.Prime).ne_zero) Q
+  let 𝔭 : HeightOneSpectrum (𝓞 ℚ) :=
+    ⟨Q.under (𝓞 ℚ), inferInstance, Ideal.IsIntegral.under_ne_bot (𝓞 ℚ) hQ⟩
+  let _ : Q.LiesOver 𝔭.asIdeal := Ideal.over_under Q
+  have hnorm : Ideal.absNorm 𝔭.asIdeal = p := by
+    rw [Ideal.absNorm_under_ringOfIntegers_rat, ← Q.over_def (Ideal.span {(p : ℤ)}),
+      Ideal.absNorm_span_singleton]
+    simp
+  have hnmem : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal := by
+    rw [Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd, hnorm]
+    exact (Fact.out : p.Prime).coprime_iff_not_dvd.mp hp
+  rw [← Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q,
+    isArithFrobAt_iff_galEquivZMod_eq_absNorm 𝔭 hnmem Q σ, hnorm]
+  constructor
+  · intro h
+    exact Units.ext (h.trans (ZMod.coe_unitOfCoprime p hp).symm)
+  · intro h
+    exact congrArg Units.val h |>.trans (ZMod.coe_unitOfCoprime p hp)
+
+/-- Mathlib's chosen arithmetic Frobenius at a prime above `p` in a rational cyclotomic
+extension corresponds to the unit `p mod n`. -/
+theorem galEquivZMod_arithFrobAt_eq_unitOfCoprime
+    [IsGalois ℚ F] (hp : p.Coprime n) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    [Q.LiesOver (Ideal.span {(p : ℤ)})] [Finite (𝓞 F ⧸ Q)] :
+    Rat.galEquivZMod n F (arithFrobAt ℤ (F ≃ₐ[ℚ] F) Q) =
+      ZMod.unitOfCoprime p hp :=
+  (isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime hp Q _).mp
+    (IsArithFrobAt.arithFrobAt ℤ (F ≃ₐ[ℚ] F) Q)
+
+end TauCeti.NumberField

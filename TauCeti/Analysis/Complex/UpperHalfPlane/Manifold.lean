@@ -5,21 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
+import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Topology.DiscreteSeparation
 
 /-!
 # Analyticity through `ofComplex`
 
-A function holomorphic on the upper half-plane, extended to `ℂ` by `ofComplex`, is
+Near `τ`, the chart of `ℍ` at `τ` reads a function `f` as its extension `f ∘ ofComplex`. A
+function holomorphic on the upper half-plane, extended to `ℂ` by `ofComplex`, is
 analytic at every point of the open upper half-plane. Holomorphy on `ℍ` is also invariant
 under the Möbius action of a positive-determinant real matrix, the biholomorphism
-`UpperHalfPlane.mdifferentiable_smul` exhibits.
+`UpperHalfPlane.mdifferentiable_smul` exhibits. Polynomial functions of the coordinate, such as
+`z ↦ P(z, 1)` for a binary form `P`, are holomorphic.
 
 ## Main declarations
 
+* `TauCeti.UpperHalfPlane.comp_chartAt_symm_eventuallyEq` — near `τ`, a function read in the
+  chart of `ℍ` at `τ` is its extension by `ofComplex`.
 * `TauCeti.UpperHalfPlane.analyticAt_comp_ofComplex`.
+* `MvPolynomial.mdifferentiable_aeval_coe` — `z ↦ P(z, 1)` is holomorphic for a polynomial `P`
+  in two variables.
 * `TauCeti.UpperHalfPlane.mdifferentiable_comp_smul_iff` — `τ ↦ f (g • τ)` is holomorphic
   exactly when `f` is, for `g : GL (Fin 2) ℝ` of positive determinant.
 * `TauCeti.UpperHalfPlane.not_accPt_zeros_comp_ofComplex` and
@@ -34,11 +42,37 @@ under the Möbius action of a positive-determinant real matrix, the biholomorphi
 
 public section
 
-open UpperHalfPlane
+open Filter Topology UpperHalfPlane
 
 open scoped Manifold MatrixGroups
 
 namespace TauCeti.UpperHalfPlane
+
+/-- The representative of `f` in the chart of `ℍ` at `τ` agrees with `f ∘ ofComplex` near `τ`. -/
+theorem comp_chartAt_symm_eventuallyEq {α : Type*} (f : ℍ → α) (τ : ℍ) :
+    f ∘ (chartAt ℂ τ).symm =ᶠ[𝓝 (τ : ℂ)] f ∘ ofComplex := by
+  filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds τ.im_pos] with w hw
+  have hwt : w ∈ (chartAt ℂ τ).target := by simpa using hw
+  rw [Function.comp_apply, Function.comp_apply, ofComplex_apply_of_im_pos hw]
+  congr 1
+  ext
+  simpa using (chartAt ℂ τ).right_inv hwt
+
+/-- For a polynomial `P` in two variables with coefficients mapping to `ℂ`, the function
+`z ↦ P(z, 1)` is holomorphic on `ℍ`. -/
+lemma _root_.MvPolynomial.mdifferentiable_aeval_coe {R : Type*} [CommSemiring R] [Algebra R ℂ]
+    (P : MvPolynomial (Fin 2) R) : MDiff fun z : ℍ ↦ MvPolynomial.aeval ![(z : ℂ), 1] P := by
+  induction P using MvPolynomial.induction_on with
+  | C a => simpa using mdifferentiable_const
+  | add p q hp hq =>
+    simp only [map_add]
+    exact MDifferentiable.add hp hq
+  | mul_X p i hp =>
+    simp only [map_mul, MvPolynomial.aeval_X]
+    refine MDifferentiable.mul hp ?_
+    fin_cases i
+    · simpa using mdifferentiable_coe
+    · simpa using mdifferentiable_const
 
 /-- A function holomorphic on `ℍ` composes with `ofComplex` to a function analytic at
 every point of the open upper half-plane. -/

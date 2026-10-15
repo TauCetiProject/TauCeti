@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Contraction
+public import TauCeti.Algebra.Homology.Contraction.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
@@ -45,7 +45,7 @@ distinct terms, which is where the finite support of `K` enters.
   with `K₀` of its bounded homotopy category.
 * Bernhard Keller, *Introduction to A-infinity algebras and modules*, Section 3.3, for the
   normalization of a contracting homotopy to one squaring to zero, carried out in
-  `TauCeti/Algebra/Homology/Contraction.lean`.
+  `TauCeti/Algebra/Homology/Contraction/Basic.lean`.
 -/
 
 public section

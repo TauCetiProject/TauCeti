@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import TauCeti.Algebra.Coalgebra.Comodule.Basic
 
 /-!
@@ -15,10 +16,8 @@ The underlying linear maps already have zero, addition, natural-number scalar
 multiplication, and finite sums; the only point to check is that these operations still
 commute with the coactions.
 
-This is basic infrastructure for the reductive-groups roadmap Layer 1 target
-"Comodules over a coalgebra/Hopf algebra": the representation category of an affine group
-scheme should have additive hom-sets before finite-dimensional, tensor, and dual structures
-are built on top.
+The `IsZeroApply` and `IsAddApply` instances give pointwise finite sums via Mathlib's
+`sum_apply` and `FunLike.coe_sum`, also for categorical morphisms in `ComoduleCat`.
 -/
 
 public section
@@ -89,6 +88,12 @@ theorem zero_apply (m : M) : (0 : Hom R C M N) m = 0 :=
 theorem add_apply (f g : Hom R C M N) (m : M) : (f + g) m = f m + g m :=
   rfl
 
+/-- The zero comodule morphism evaluates pointwise, as required by Mathlib's `FunLike` API. -/
+instance : IsZeroApply (Hom R C M N) where
+
+/-- Addition of comodule morphisms evaluates pointwise, as required by Mathlib's `FunLike` API. -/
+instance : IsAddApply (Hom R C M N) where
+
 /-- Scalar multiplication of comodule morphisms is pointwise scalar multiplication. -/
 @[simp]
 theorem smul_apply (r : R) (f : Hom R C M N) (m : M) : (r • f) m = r • f m :=
@@ -144,12 +149,6 @@ theorem sum_toLinearMap {ι : Type*} (s : Finset ι) (f : ι → Hom R C M N) :
     (∑ i ∈ s, f i).toLinearMap = ∑ i ∈ s, (f i).toLinearMap :=
   map_sum toLinearMapAddMonoidHom f s
 
-/-- Finite sums of comodule morphisms are evaluated pointwise. -/
-@[simp]
-theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → Hom R C M N) (m : M) :
-    (∑ i ∈ s, f i) m = ∑ i ∈ s, f i m :=
-  (LinearMap.congr_fun (sum_toLinearMap s f) m).trans (LinearMap.sum_apply _ _ _)
-
 section Comp
 
 variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
@@ -193,7 +192,7 @@ theorem zero_comp (f : Hom R C M N) : comp (0 : Hom R C N P) f = 0 := by
 /-- Composing the zero morphism on the right gives the zero morphism. -/
 @[simp]
 theorem comp_zero (g : Hom R C N P) : comp g (0 : Hom R C M N) = 0 := by
-  ext m
+  ext _
   exact map_zero g.toLinearMap
 
 end Comp

@@ -5,7 +5,9 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.GroupTheory.ArchimedeanDensely
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
+public import Mathlib.Topology.Algebra.ValuativeRel.ValuativeTopology
 public import TauCeti.RingTheory.Valuation.CharacteristicGroup
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
 
@@ -59,6 +61,11 @@ the first.
 * `Valuation.HasFullCharacteristicGroup.cofinalValue_of_isTopologicallyNilpotent` :
   cofinality again, with continuity replaced by a full characteristic group plus the open unit
   ball being a neighbourhood of `0` — the `Γ_v = cΓ_v` branch of Theorem 7.10's converse.
+* `IsTopologicallyNilpotent.valuation_lt_one` : for the canonical valuation of a valuative topology
+  (`IsValuativeTopology`), whose open unit ball is a neighbourhood of `0`, a topologically
+  nilpotent element has valuation `< 1`.
+* `TauCeti.isTopologicallyNilpotent_iff_valuation_lt_one` : when moreover the value group is
+  archimedean, the converse holds too, so topological nilpotence is exactly the open unit ball.
 
 ## References
 
@@ -169,3 +176,40 @@ theorem HasFullCharacteristicGroup.cofinalValue_of_isTopologicallyNilpotent
   exact ⟨n, hemb.trans_le htle⟩
 
 end Valuation
+
+section ValuativeTopology
+
+open Filter ValuativeRel
+
+variable {R : Type*} [Ring R] [ValuativeRel R] [TopologicalSpace R] [IsValuativeTopology R]
+
+/-- **A topologically nilpotent element has valuation `< 1`** in a valuative topology, since the
+open unit ball is a neighbourhood of `0`. -/
+theorem IsTopologicallyNilpotent.valuation_lt_one {x : R} (hx : IsTopologicallyNilpotent x) :
+    valuation R x < 1 := by
+  obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent
+    ((IsValuativeTopology.mem_nhds_zero_iff _).mpr ⟨1, fun _ hz ↦ hz⟩) hx
+  exact not_le.mp fun h ↦ hn.not_ge (one_le_pow₀ h)
+
+namespace TauCeti
+
+/-- **An element of valuation `< 1` is topologically nilpotent** when the value group is
+archimedean: its powers enter every ball `{z | v z < γ}` around `0`. -/
+theorem isTopologicallyNilpotent_of_valuation_lt_one [MulArchimedean (ValueGroupWithZero R)]
+    {x : R} (hx : valuation R x < 1) : IsTopologicallyNilpotent x := by
+  refine (IsValuativeTopology.hasBasis_nhds_zero R).tendsto_right_iff.mpr fun γ _ ↦ ?_
+  obtain ⟨n, hn⟩ := exists_pow_lt₀ hx γ
+  filter_upwards [eventually_ge_atTop n] with m hm
+  rw [map_pow]
+  exact (pow_le_pow_right_of_le_one' hx.le hm).trans_lt hn
+
+/-- **Topological nilpotence is the open unit ball** of a valuative topology with archimedean
+value group. -/
+@[simp]
+theorem isTopologicallyNilpotent_iff_valuation_lt_one [MulArchimedean (ValueGroupWithZero R)]
+    {x : R} : IsTopologicallyNilpotent x ↔ valuation R x < 1 :=
+  ⟨IsTopologicallyNilpotent.valuation_lt_one, isTopologicallyNilpotent_of_valuation_lt_one⟩
+
+end TauCeti
+
+end ValuativeTopology

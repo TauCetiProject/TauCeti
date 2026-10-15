@@ -18,6 +18,8 @@ For a finite field extension, every pair of nonzero functionals differs in this 
 
 This change-of-functional formula controls the dependence on the functional when transfer is
 descended to Witt classes.
+The explicit isometry `TauCeti.QuadraticMap.scharlauTransferChangeFunctional` identifies the
+underlying linear equivalence as the inverse tensor left unit map.
 
 ## Main definitions
 
@@ -99,3 +101,39 @@ theorem exists_unit_scharlauTransfer_equivalent_rankOneTensor [FiniteDimensional
 end Field
 
 end QuadraticMap
+
+namespace TauCeti.QuadraticMap
+
+variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
+  [Invertible (2 : L)] [AddCommGroup V] [Module L V]
+  [Module K V] [IsScalarTower K L V]
+
+/-- Changing the functional by `x ↦ s (a * x)` tensors the form with `⟨a⟩`.
+The isometry acts by the inverse tensor left unit map. -/
+def scharlauTransferChangeFunctional (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) :
+    (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).IsometryEquiv
+      ((QuadraticForm.tmul
+        (a • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q).scharlauTransfer s) where
+  toLinearEquiv :=
+    ((QuadraticMap.rankOneTensorIsometry Q a).symm.toLinearEquiv).restrictScalars K
+  map_app' x := by
+    rw [QuadraticMap.scharlauTransfer_comp_mul]
+    simp only [QuadraticMap.scharlauTransfer_apply]
+    exact congrArg s ((QuadraticMap.rankOneTensorIsometry Q a).symm.map_app x)
+
+@[simp]
+theorem scharlauTransferChangeFunctional_apply (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) (x : V) :
+    scharlauTransferChangeFunctional Q s a x =
+      (TensorProduct.lid L V).symm x := by
+  exact QuadraticMap.rankOneTensorIsometry_symm_apply Q a x
+
+@[simp]
+theorem scharlauTransferChangeFunctional_symm_apply (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) (x : L ⊗[L] V) :
+    (scharlauTransferChangeFunctional Q s a).symm x = TensorProduct.lid L V x := by
+  apply (scharlauTransferChangeFunctional Q s a).injective
+  simp
+
+end TauCeti.QuadraticMap

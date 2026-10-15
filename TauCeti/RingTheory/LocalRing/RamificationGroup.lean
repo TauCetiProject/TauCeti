@@ -54,9 +54,14 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia`: `G_0` is the inertia subgroup of the
   maximal ideal, `TauCeti.IsLocalRing.ramificationGroup_zero_eq_ker_toRingAut` identifies it with
   the kernel of the action on the residue field, and
+  `TauCeti.IsLocalRing.residue_smul_eq_of_mem_ramificationGroup_zero` is its pointwise form, while
   `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` reads that off as Mathlib's
   `ValuationSubring.inertiaSubgroup` for a valuation subring of a field.
 * `TauCeti.IsLocalRing.instNormalRamificationGroup`: each `G_i` is normal in `G`.
+* `TauCeti.IsLocalRing.ramificationGroupGradedSubgroupHom`: subgroup inclusion induces an
+  injective homomorphism `H_i / H_{i+1} → G_i / G_{i+1}` on successive quotients.
+* `TauCeti.IsLocalRing.ramificationGroupGradedConj`: conjugation by an element of the ambient
+  group induces an automorphism of each successive quotient.
 * `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
   `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`: over a Noetherian local ring the
   filtration cuts out the kernel of the action, and reaches it at a finite index once `G_0` is
@@ -77,6 +82,11 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one`:
   **Hilbert's counting identity** `∑_{σ ≠ 1} v (σ ξ - ξ) = ∑_{i ≥ 0} (#G_i - 1)` for a generator
   `ξ` of a discrete valuation ring under a faithful action of a finite group.
+* `TauCeti.IsLocalRing.sum_min_lowerIndex_natCast`: the truncated count
+  `∑_{σ ∈ G} min (i_G(σ), m) = ∑_{k < m} #G_k` for a finite group `G`.
+* `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
+  `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
+  finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
 
 ## References
 
@@ -233,6 +243,14 @@ theorem ramificationGroup_zero_eq_ker_toRingAut :
       exact h (residue S x)
     rwa [residue_eq_zero_iff] at hx
 
+/-- An element of the zeroth ramification group acts trivially on every residue class. -/
+theorem residue_smul_eq_of_mem_ramificationGroup_zero {g : G}
+    (hg : g ∈ ramificationGroup G S 0) (x : S) :
+    residue S (g • x) = residue S x := by
+  have hx := mem_ramificationGroup_zero_iff.mp hg x
+  rw [← residue_eq_zero_iff, map_sub, sub_eq_zero] at hx
+  exact hx
+
 /-- For a valuation subring of a field, the zeroth ramification group of the decomposition
 subgroup is Mathlib's `ValuationSubring.inertiaSubgroup`, which is defined as that same kernel. -/
 theorem ramificationGroup_zero_eq_inertiaSubgroup (K : Type*) {L : Type*} [Field K] [Field L]
@@ -356,6 +374,12 @@ theorem natCast_le_lowerIndex_iff_mem_ramificationGroup {n : ℕ} {σ : G} :
     (n : ℕ∞) ≤ lowerIndex S σ ↔ σ ∈ ramificationGroup G S ((n : ℤ) - 1) := by
   rw [mem_ramificationGroup_iff_le_lowerIndex]
   norm_num
+
+/-- When the lower index of `σ` is the natural number `n`, `σ ∈ G_i` exactly when `i + 1 ≤ n`. -/
+theorem mem_ramificationGroup_iff_of_lowerIndex_eq {i : ℤ} {σ : G} {n : ℕ}
+    (hn : lowerIndex S σ = n) :
+    σ ∈ ramificationGroup G S i ↔ i + 1 ≤ n := by
+  rw [mem_ramificationGroup_iff_le_lowerIndex, hn, Nat.cast_le, Int.toNat_le]
 
 /-- The lower index is unchanged by inversion. -/
 @[simp]
@@ -485,6 +509,42 @@ theorem sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one [Fintype G]
     rw [Function.mem_support, hN i h, Subgroup.card_bot] at hi
     exact hi rfl
 
+open Finset in
+/-- **Counting the filtration by truncated lower indices.** For a finite group `G`,
+`∑_{σ ∈ G} min (i_G(σ), m) = ∑_{k < m} #G_k`: each `σ` lies in exactly `min (i_G(σ), m)` of the
+groups `G_0, …, G_{m-1}`. -/
+theorem sum_min_lowerIndex_natCast [Fintype G] (m : ℕ) :
+    ∑ σ : G, min (lowerIndex S σ) (m : ℕ∞) =
+      ∑ k ∈ range m, (Nat.card (ramificationGroup G S k) : ℕ∞) := by
+  classical
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    -- Passing from `m` to `m + 1` adds `1` exactly for the `σ` with `m + 1 ≤ i_G(σ)`, that is
+    -- for `σ ∈ G_m`.
+    have key : ∀ a : ℕ∞, min a ((m + 1 : ℕ) : ℕ∞) =
+        min a m + if ((m + 1 : ℕ) : ℕ∞) ≤ a then 1 else 0 := by
+      intro a
+      have hm : (m : ℕ∞) ≤ ((m + 1 : ℕ) : ℕ∞) := by exact_mod_cast Nat.le_succ m
+      split_ifs with h
+      · rw [min_eq_right h, min_eq_right (hm.trans h)]
+        push_cast
+        rfl
+      · have h' : a ≤ m := by
+          lift a to ℕ using (not_le.1 h).ne_top
+          exact_mod_cast Nat.le_of_lt_succ (by exact_mod_cast not_le.1 h)
+        rw [min_eq_left h', min_eq_left (h'.trans hm), add_zero]
+    have hcard : (Nat.card (ramificationGroup G S m) : ℕ∞) =
+        #{σ : G | ((m + 1 : ℕ) : ℕ∞) ≤ lowerIndex S σ} := by
+      rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
+      congr 2
+      ext σ
+      rw [mem_filter, mem_filter, natCast_le_lowerIndex_iff_mem_ramificationGroup]
+      push_cast
+      rw [add_sub_cancel_right]
+    simp_rw [key]
+    rw [sum_add_distrib, ih, sum_boole, sum_range_succ, hcard]
+
 end DiscreteValuationRing
 
 section Subgroup
@@ -497,6 +557,117 @@ the ambient group. -/
 theorem subgroupOf_ramificationGroup (H : Subgroup G) (i : ℤ) :
     (ramificationGroup G S i).subgroupOf H = ramificationGroup H S i :=
   AddSubgroup.subgroupOf_inertia _ H
+
+/-- Inclusion of the `i`-th ramification group for a subgroup `H ≤ G` into the `i`-th
+ramification group for `G`. -/
+def ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ) :
+    ramificationGroup H S i →* ramificationGroup G S i where
+  toFun σ := ⟨((σ : H) : G), by
+    have hσ : (σ : H) ∈ (ramificationGroup G S i).subgroupOf H := by
+      rw [subgroupOf_ramificationGroup]
+      exact σ.2
+    exact hσ⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+/-- The inclusion of a subgroup ramification group agrees with the ambient inclusion. -/
+@[simp]
+theorem coe_ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ)
+    (σ : ramificationGroup H S i) :
+    (ramificationGroupSubgroupHom G S H i σ : G) = σ := by
+  simp [ramificationGroupSubgroupHom]
+
+/-- Inclusion `H → G` induces a homomorphism `H_i/H_{i+1} → G_i/G_{i+1}` on every
+successive ramification quotient. -/
+def ramificationGroupGradedSubgroupHom (H : Subgroup G) (i : ℤ) :
+    RamificationGroupGraded H S i →* RamificationGroupGraded G S i :=
+  QuotientGroup.map
+    ((ramificationGroup H S (i + 1)).subgroupOf (ramificationGroup H S i))
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    (ramificationGroupSubgroupHom G S H i) fun σ hσ ↦ by
+      rw [Subgroup.mem_comap, Subgroup.mem_subgroupOf]
+      rw [Subgroup.mem_subgroupOf] at hσ
+      have hσ' : (σ : H) ∈ (ramificationGroup G S (i + 1)).subgroupOf H := by
+        rw [subgroupOf_ramificationGroup]
+        exact hσ
+      exact hσ'
+
+/-- The map on ramification quotients induced by subgroup inclusion sends the class of an element
+to the class of the same element in the ambient group. -/
+@[simp]
+theorem ramificationGroupGradedSubgroupHom_mk (H : Subgroup G) (i : ℤ)
+    (σ : ramificationGroup H S i) :
+    ramificationGroupGradedSubgroupHom G S H i (QuotientGroup.mk σ) =
+      QuotientGroup.mk (ramificationGroupSubgroupHom G S H i σ) :=
+  QuotientGroup.map_mk _ _ _ _ _
+
+/-- The map `H_i/H_{i+1} → G_i/G_{i+1}` induced by subgroup inclusion is injective. -/
+theorem ramificationGroupGradedSubgroupHom_injective (H : Subgroup G) (i : ℤ) :
+    Function.Injective (ramificationGroupGradedSubgroupHom G S H i) := by
+  intro x y hxy
+  induction x using QuotientGroup.induction_on with
+  | _ σ =>
+    induction y using QuotientGroup.induction_on with
+    | _ τ =>
+      rw [ramificationGroupGradedSubgroupHom_mk,
+        ramificationGroupGradedSubgroupHom_mk] at hxy
+      rw [QuotientGroup.eq] at hxy ⊢
+      rw [Subgroup.mem_subgroupOf] at hxy ⊢
+      have hmem : ((σ⁻¹ * τ : ramificationGroup H S i) : H) ∈
+          (ramificationGroup G S (i + 1)).subgroupOf H := by
+        rw [Subgroup.mem_subgroupOf]
+        simpa only [coe_ramificationGroupSubgroupHom, Subgroup.coe_inv,
+          Subgroup.coe_mul] using hxy
+      rw [subgroupOf_ramificationGroup] at hmem
+      exact hmem
+
+/-! ### Conjugation on the graded pieces -/
+
+/-- Conjugation by an element of the ambient group induces an automorphism on every successive
+quotient `G_i/G_{i+1}` of the ramification filtration. -/
+noncomputable def ramificationGroupGradedConj (g : G) (i : ℤ) :
+    RamificationGroupGraded G S i ≃* RamificationGroupGraded G S i :=
+  QuotientGroup.congr
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    (MulAut.conjNormal g) <| by
+      ext x
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact Subgroup.mem_subgroupOf.mpr
+          ((inferInstance : (ramificationGroup G S (i + 1)).Normal).conj_mem y
+            (Subgroup.mem_subgroupOf.mp hy) g)
+      · intro hx
+        refine ⟨(MulAut.conjNormal g).symm x, ?_, (MulAut.conjNormal g).apply_symm_apply x⟩
+        exact Subgroup.mem_subgroupOf.mpr
+          ((inferInstance : (ramificationGroup G S (i + 1)).Normal).conj_mem x
+            (Subgroup.mem_subgroupOf.mp hx) g⁻¹)
+
+/-- On a class represented by `x ∈ G_i`, the induced conjugation is represented by
+`g * x * g⁻¹`. -/
+@[simp]
+theorem ramificationGroupGradedConj_mk (g : G) (i : ℤ)
+    (x : ramificationGroup G S i) :
+    ramificationGroupGradedConj G S g i (QuotientGroup.mk x) =
+      QuotientGroup.mk (MulAut.conjNormal g x) := by
+  exact QuotientGroup.congr_mk _ _ _ _ x
+
+/-- Conjugation by the identity acts trivially on each ramification quotient. -/
+@[simp]
+theorem ramificationGroupGradedConj_one (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S 1 i x = x := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
+
+/-- Conjugation by a product is the composite of the corresponding conjugation automorphisms. -/
+@[simp]
+theorem ramificationGroupGradedConj_mul (g h : G) (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S (g * h) i x =
+      ramificationGroupGradedConj G S g i (ramificationGroupGradedConj G S h i x) := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
 
 end Subgroup
 
@@ -550,6 +721,23 @@ theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft 
   rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
 
 end Real
+
+section RealDiscreteValuationRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+variable [MulSemiringAction G S]
+
+/-- When the lower index of `σ` is the natural number `n`, `σ ∈ G_u` for a real `u` exactly when
+`u ≤ n - 1`. -/
+theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {u : ℝ} {σ : G} {n : ℕ}
+    (hn : lowerIndex S σ = n) :
+    σ ∈ ramificationGroupReal G S u ↔ u ≤ (n : ℝ) - 1 := by
+  rw [ramificationGroupReal_def, mem_ramificationGroup_iff_of_lowerIndex_eq hn, Int.add_one_le_iff,
+    ← Int.le_sub_one_iff, Int.ceil_le]
+  push_cast
+  exact Iff.rfl
+
+end RealDiscreteValuationRing
 
 end IsLocalRing
 

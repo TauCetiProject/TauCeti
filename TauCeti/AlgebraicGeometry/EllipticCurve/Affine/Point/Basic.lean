@@ -21,10 +21,10 @@ the coordinates, the nonsingularity certificate and the identifying equation in 
 separate generalisation to arrange. The accessor form is useful when the coordinates must occur in
 a definition, such as evaluation at a translated generic point.
 
-The junk value `0` is harmless: every result that uses coordinates geometrically assumes the point
-is nonzero. Nothing here needs ellipticity. The two map lemmas need field hypotheses only because
-Mathlib's `Point.map` does, and `cast_some` only because point addition does: it records that
-transporting a point along an equality of curves keeps its coordinates.
+Most coordinate reconstruction results assume the point is nonzero. The descent criterion
+`exists_map_eq_iff` handles infinity separately: both accessors are `0` there, and infinity
+descends along every field embedding. Nothing here needs ellipticity. The map lemmas need field
+hypotheses only because Mathlib's `Point.map` does.
 
 ## Main definitions
 
@@ -40,8 +40,13 @@ transporting a point along an equality of curves keeps its coordinates.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
-* `WeierstrassCurve.Affine.Point.cast_some`: `AddEquiv.cast` along an equality of curves keeps the
-  coordinates of a point.
+* `WeierstrassCurve.Affine.Point.map_eq_self_iff`: a field endomorphism fixes a point exactly
+  when it fixes both coordinates.
+* `WeierstrassCurve.Affine.Point.exists_map_eq_iff`: a point descends along a field embedding
+  exactly when both coordinates do.
+* `WeierstrassCurve.Affine.Point.cast_zero` and `WeierstrassCurve.Affine.Point.cast_some`:
+  transport along an equality of curves, as in `AddEquiv.cast` and `Equiv.cast`, fixes the
+  point at infinity and keeps the coordinates of a point.
 
 The coordinate accessors support `TauCetiRoadmap/EllipticCurves/README.md`, Layer 0.5, whose
 translation-action milestone evaluates functions at translates of the generic point.
@@ -147,22 +152,50 @@ theorem yCoord_map (f : F →ₐ[S] K) (P : (W⁄F).toAffine.Point) :
   | zero => exact f.toRingHom.map_zero.symm
   | some x y h => (rfl)
 
+/-- **An endomorphism of the field fixes a point exactly when it fixes both coordinates.** The
+point at infinity also satisfies the criterion, since its coordinate accessors are zero. -/
+theorem map_eq_self_iff (f : F →ₐ[S] F) (P : (W⁄F).toAffine.Point) :
+    Point.map f P = P ↔ f (xCoord P) = xCoord P ∧ f (yCoord P) = yCoord P := by
+  cases P with
+  | zero => simp [← Point.zero_def]
+  | some x y h => simp [Point.map_some]
+
+/-- A point descends along a field embedding exactly when both coordinates lie in its image.
+The point at infinity also satisfies the criterion, since its coordinate accessors are zero. -/
+@[simp]
+theorem exists_map_eq_iff (P : (W⁄K).toAffine.Point) (f : F →ₐ[S] K) :
+    (∃ Q : (W⁄F).toAffine.Point, Point.map f Q = P) ↔
+      xCoord P ∈ Set.range f ∧ yCoord P ∈ Set.range f := by
+  constructor
+  · rintro ⟨Q, rfl⟩
+    exact ⟨⟨xCoord Q, (xCoord_map f Q).symm⟩, ⟨yCoord Q, (yCoord_map f Q).symm⟩⟩
+  · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
+    by_cases hP : P = 0
+    · exact ⟨0, (Point.map_zero f).trans hP.symm⟩
+    have hns : (W⁄F).toAffine.Nonsingular x y :=
+      (W.baseChange_nonsingular f.injective x y).mp
+        (by simpa only [hx, hy] using nonsingular_coords hP)
+    refine ⟨some x y hns, ?_⟩
+    rw [Point.map_some]
+    exact eq_of_coords (by simp) hP hx hy
+
 section Cast
 
-variable {F : Type*} [Field F] [DecidableEq F]
+variable {R : Type*} [CommRing R]
 
-/-- What Mathlib's `AddEquiv.cast` — transport of the point group along an equality of Weierstrass
-curves — does to a point given by coordinates: it keeps them. The equiv itself is `AddEquiv.cast`
-and is not restated here; only its value needs a name, since Mathlib states `cast` through
-`Equiv.cast` and so gives no equation for it. It is used by the variable-change and quadratic-twist
-point isomorphisms and by the base-change point map `WeierstrassCurve.Affine.pointMap`
-(`MordellWeil/LocalCondition.lean`). -/
--- not `@[simp]`: Mathlib's `AddEquiv.cast_apply` is itself a simp lemma and rewrites this
--- left-hand side to the raw `cast` first, so `simpNF` reports the statement is not in
--- simp-normal form and the lemma could never fire. It is used by `rw`, which is syntactic.
-lemma cast_some {V V' : WeierstrassCurve F} (h : V = V') {x y : F}
+/-- Transport of affine points along an equality of Weierstrass curves fixes the point at
+infinity. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this `cast`. -/
+lemma cast_zero {V V' : WeierstrassCurve R} (h : V = V') :
+    cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) 0 = 0 := by
+  subst h; rfl
+
+/-- Transport of affine points along an equality of Weierstrass curves keeps the coordinates of
+a point. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this `cast`. It is used by
+the variable-change and quadratic-twist point isomorphisms and by the base-change point map
+`WeierstrassCurve.Affine.pointMap` (`Affine/BaseChange.lean`). -/
+lemma cast_some {V V' : WeierstrassCurve R} (h : V = V') {x y : R}
     (hns : V.toAffine.Nonsingular x y) :
-    AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) h (some x y hns)
+    cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) (some x y hns)
       = some x y (h ▸ hns) := by
   subst h; rfl
 

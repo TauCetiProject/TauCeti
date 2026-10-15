@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Order.OfVanishing
 
-public import TauCeti.GroupTheory.DoubleCoset.Orbits
+public import TauCeti.GroupTheory.DoubleCoset.Fiber
 public import TauCeti.NumberTheory.Modular.Stabilizer
 public import TauCeti.NumberTheory.ModularForms.Norm.Order
 
@@ -122,23 +122,20 @@ lemma exists_orbitOfCosetTranslate_eq
     (ho : slOrbitOfSubgroupOrbit o = Quotient.mk'' p) :
     ∃ q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ,
       orbitOfCosetTranslate (𝒢 := (Γ : Subgroup (GL (Fin 2) ℝ))) p q = o := by
-  induction o using Quotient.inductionOn' with
-  | h z =>
-    rw [slOrbitOfSubgroupOrbit_mk, Quotient.eq''] at ho
-    obtain ⟨γ, hγ⟩ := ho
-    have hγ' : γ • p = z := hγ
-    -- the translating coset is the class of `γ⁻¹`, read inside `𝒮ℒ`
-    set σ : 𝒮ℒ := ⟨Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹, ⟨γ⁻¹, rfl⟩⟩ with hσ
-    refine ⟨(σ : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ), ?_⟩
-    -- `QuotientGroup`'s `↑σ` is `⟦σ⟧`, which `orbitOfCosetTranslate_mk` needs `simp` to see
-    have hval : orbitOfCosetTranslate (𝒢 := (Γ : Subgroup (GL (Fin 2) ℝ))) p
-        (σ : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) =
-        Quotient.mk'' ((σ : GL (Fin 2) ℝ)⁻¹ • p) := by
-      simp
-    rw [hval]
-    congr 1
-    rw [← hγ', MulAction.compHom_smul_def, hσ]
-    simp
+  have hle : (Γ : Subgroup (GL (Fin 2) ℝ)) ≤ 𝒮ℒ := Subgroup.map_le_range _ _
+  have hmap : Setoid.map_of_le
+      (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) hle) o =
+        Quotient.mk'' p := by
+    induction o using Quotient.inductionOn' with
+    | h z =>
+      rw [slOrbitOfSubgroupOrbit_mk, Quotient.eq''] at ho
+      obtain ⟨γ, hγ⟩ := ho
+      rw [TauCeti.Setoid.map_of_le_mk]
+      exact Quotient.sound' ⟨⟨Matrix.SpecialLinearGroup.mapGL ℝ γ, ⟨γ, rfl⟩⟩,
+        by simpa [Subgroup.smul_def, MulAction.compHom_smul_def] using hγ⟩
+  obtain ⟨q, hq⟩ := TauCeti.cosetToOrbitRelMapFiber_surjective hle p ⟨o, hmap⟩
+  exact ⟨q, by
+    simpa only [TauCeti.cosetToOrbitRelMapFiber_apply] using congrArg Subtype.val hq⟩
 
 /-- The stabiliser of a point in `𝒮ℒ` has the order the level-one elliptic bookkeeping records:
 twice the elliptic order of its orbit, the extra factor being `±I`. -/

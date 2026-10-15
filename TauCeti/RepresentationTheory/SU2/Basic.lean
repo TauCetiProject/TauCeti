@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import TauCeti.Algebra.Group.Subgroup.Centralizer
-import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
+import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 public import TauCeti.LinearAlgebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
 import TauCeti.Topology.Circle.Basic
@@ -253,6 +253,9 @@ noncomputable def torusContinuousMulEquiv : Circle ≃ₜ* torus where
     (Continuous.homeoOfEquivCompactToT2
       (f := (MonoidHom.ofInjective torusHom_injective).toEquiv)
       (continuous_torusHom.subtype_mk _)).continuous_invFun
+
+/-- The diagonal maximal torus is compact, so it carries Haar probability measure. -/
+instance : CompactSpace torus := torusContinuousMulEquiv.toHomeomorph.compactSpace
 
 @[simp]
 theorem torusContinuousMulEquiv_apply (z : Circle) :

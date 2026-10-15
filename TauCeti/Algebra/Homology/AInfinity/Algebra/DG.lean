@@ -133,14 +133,10 @@ private theorem stasheffSum_operation (h : IsNonUnitalDGAlgebra 𝒜 d) (n : ℕ
     refine Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun s hs ↦ ?_
     rw [Finset.mem_range] at hp
     rw [Finset.mem_Icc] at hs
-    rw [AInfinity.stasheffTerm_def]
     rcases lt_or_ge s 3 with hs3 | hs3
-    · rw [operation_of_three_le d (by omega : 3 ≤ p + 1 + (n + 4 - p - s)),
-        evalNat_def, _root_.zero_apply, smul_zero]
-    · have hinner : evalNat (operation d s) (fun j ↦ x (p + j)) = 0 := by
-        rw [operation_of_three_le d hs3, evalNat_def, _root_.zero_apply]
-      rw [hinner, evalNat_def, (operation d _).map_coord_zero
-        (⟨p, by omega⟩ : Fin (p + 1 + (n + 4 - p - s))) (by simp), smul_zero]
+    · exact AInfinity.stasheffTerm_eq_zero_of_outer_eq_zero _ _ _
+        (operation_of_three_le d (by omega))
+    · exact AInfinity.stasheffTerm_eq_zero_of_inner_eq_zero _ _ _ (operation_of_three_le d hs3)
 
 /-- The `A∞` algebra of a nonunital DG algebra: `m₁ = d`, `m₂` is the product, and `m n = 0` for
 `n ≥ 3`. -/

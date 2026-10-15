@@ -1,0 +1,260 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+public import TauCeti.RingTheory.MvPowerSeries.Rename
+public import Mathlib.RingTheory.PowerSeries.Restricted
+
+/-!
+# The two models of the one-variable restricted power-series ring
+
+This file identifies the two models of the one-variable Tate algebra used in Tau Ceti. The Huber
+development uses restricted multivariate power series indexed by `Fin 1`, while Weierstrass
+division uses Mathlib's univariate `PowerSeries`, whose variable type is `Unit`. Renaming the
+variable along `finOneEquiv` identifies their restrictedness conditions and hence gives an
+equivalence between the two subrings.
+
+Over a complete nonarchimedean normed ring, the Huber completion agrees with the plain restricted
+series ring. Composing that comparison with the variable-renaming equivalence identifies the
+completed Huber algebra with Mathlib's univariate restricted-series ring.
+
+The comparison is stated over commutative normed rings because Mathlib packages variable
+renaming of power series, `MvPowerSeries.rename`, only over a commutative semiring. The
+ultrametric hypothesis is needed only for the target ring: Mathlib defines
+`PowerSeries.IsRestricted.subring` only under `[IsUltrametricDist R]`.
+
+Independently of any norm, the one-variable polynomials `A[T]`, evaluated at the variable, are
+dense in every one-variable weighted ring `A⟨T⟩_T`. This is how facts about `A[T]`, such as
+factorisation into linear factors over an algebraically closed field, reach `A⟨T⟩_T`.
+
+## Main results
+
+* `TauCeti.Huber.denseRange_eval₂RingHom_weightedX`: evaluation of `A[T]` at the variable has
+  dense range in `A⟨T⟩_T`, and keeps coefficients
+  (`TauCeti.Huber.coeff_eval₂_weightedC_weightedX`).
+* `TauCeti.Huber.isRestricted_renameEquiv_finOne_iff`: renaming the sole variable from `Fin 1`
+  to `Unit` identifies the Huber restrictedness predicate with Mathlib's radius-one one.
+* `TauCeti.Huber.restrictedMvPowerSeriesSubringOneEquiv`: the two uncompleted one-variable
+  restricted-series models are equivalent as rings.
+* `TauCeti.Huber.weightedRestrictedSubringOneEquiv`: the same equivalence for the trivially
+  weighted ring `R⟨T⟩`, the coordinate ring of the closed unit disc; it preserves coefficients
+  (`TauCeti.Huber.coeff_weightedRestrictedSubringOneEquiv`).
+* `TauCeti.Huber.restrictedMvPowerSeriesCompletionOneEquiv`: over a complete base, the completed
+  Huber model is equivalent to Mathlib's univariate restricted-series ring.
+
+## References
+
+* T. Wedhorn, *Adic Spaces*, §5.6, for restricted power series and their topology.
+-/
+
+public section
+
+namespace TauCeti.Huber
+
+open Filter
+
+section Polynomial
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+
+/-- **One-variable polynomials are dense in `A⟨T⟩_T`**: evaluating `A[T]` at the variable has
+dense range. See Wedhorn 5.49(1) and `TauCeti.Huber.dense_weightedPolynomials`. -/
+theorem denseRange_eval₂RingHom_weightedX {T : Fin 1 → Set A} (hT : IsWeightFamily T) :
+    DenseRange (Polynomial.eval₂RingHom (weightedC T hT) (weightedX T hT 0)) := by
+  -- the polynomial subring is the image of `MvPolynomial (Fin 1) A`, which factors through `A[T]`
+  have hcomp : weightedPolynomialHom T hT =
+      (Polynomial.eval₂RingHom (weightedC T hT) (weightedX T hT 0)).comp
+        (MvPolynomial.eval₂Hom Polynomial.C fun _ ↦ Polynomial.X) :=
+    MvPolynomial.ringHom_ext (fun c ↦ by simp [weightedPolynomialHom_C])
+      (fun i ↦ by simp [weightedPolynomialHom_X, Subsingleton.elim i 0])
+  refine (dense_weightedPolynomials hT).mono fun f hf ↦ ?_
+  refine ⟨MvPolynomial.eval₂Hom Polynomial.C (fun _ ↦ Polynomial.X)
+    ((weightedPolynomialsEquiv hT).symm ⟨f, hf⟩), ?_⟩
+  rw [← RingHom.comp_apply, ← hcomp, ← coe_weightedPolynomialsEquiv, RingEquiv.apply_symm_apply]
+
+/-- **Evaluating a polynomial at the variable keeps its coefficients**: the coefficient of `Tⁿ` in
+`p(T) ∈ A⟨T⟩_T` is the `n`-th coefficient of `p`. -/
+@[simp]
+theorem coeff_eval₂_weightedC_weightedX {T : Fin 1 → Set A} (hT : IsWeightFamily T)
+    (p : Polynomial A) (n : ℕ) :
+    MvPowerSeries.coeff (Finsupp.single 0 n)
+      ((Polynomial.eval₂ (weightedC T hT) (weightedX T hT 0) p : weightedRestrictedSubring T hT) :
+        MvPowerSeries (Fin 1) A) = p.coeff n := by
+  rw [Polynomial.eval₂_eq_sum_range]
+  simp only [AddSubmonoidClass.coe_finsetSum, Subring.coe_mul, SubmonoidClass.coe_pow,
+    coe_weightedC, coe_weightedX, map_sum, MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow,
+    (Finsupp.single_injective (0 : Fin 1)).eq_iff, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq, Finset.mem_range]
+  split_ifs with h
+  · rfl
+  · exact (Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)).symm
+
+end Polynomial
+
+section Comparison
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NonarchimedeanRing R]
+
+omit [IsUltrametricDist R] [NonarchimedeanRing R] in
+/-- **Renaming the sole variable preserves restrictedness.** The Huber predicate asks directly
+that the coefficients tend to zero, while Mathlib's radius-one predicate asks the same of their
+norms. The exponent sets are identified by the unique-coordinate equivalence. -/
+theorem isRestricted_renameEquiv_finOne_iff {f : MvPowerSeries (Fin 1) R} :
+    IsRestricted f ↔
+      PowerSeries.IsRestricted 1 (MvPowerSeries.renameEquiv R finOneEquiv f) := by
+  rw [isRestricted_iff_coeff, PowerSeries.isRestricted_iff]
+  simp only [one_pow, mul_one]
+  rw [← tendsto_zero_iff_norm_tendsto_zero]
+  constructor
+  · intro hf
+    exact (hf.comp (Finsupp.uniqueEquiv (0 : Fin 1)).symm.injective.tendsto_cofinite).congr'
+      (Filter.Eventually.of_forall fun n ↦ (PowerSeries.coeff_rename finOneEquiv f n).symm)
+  · intro hf
+    refine (hf.comp (Finsupp.uniqueEquiv (0 : Fin 1)).injective.tendsto_cofinite).congr' ?_
+    filter_upwards with n
+    exact (PowerSeries.coeff_rename finOneEquiv f _).trans <|
+      congrArg (fun m ↦ MvPowerSeries.coeff m f) ((Finsupp.uniqueEquiv (0 : Fin 1)).left_inv n)
+
+/-- **The two one-variable restricted-series models are the same ring.** The Huber model uses
+`Fin 1` as its variable type; Mathlib's `PowerSeries` uses `Unit`. The equivalence is variable
+renaming along `finOneEquiv`, restricted to the subrings whose coefficients tend to zero. -/
+noncomputable def restrictedMvPowerSeriesSubringOneEquiv :
+    restrictedMvPowerSeriesSubring 1 R ≃+*
+      PowerSeries.IsRestricted.subring (R := R) 1 where
+  toFun f := ⟨MvPowerSeries.renameEquiv R finOneEquiv f,
+    isRestricted_renameEquiv_finOne_iff.mp (mem_restrictedMvPowerSeriesSubring.mp f.2)⟩
+  invFun f := ⟨(MvPowerSeries.renameEquiv R finOneEquiv).symm f,
+    mem_restrictedMvPowerSeriesSubring.mpr <| isRestricted_renameEquiv_finOne_iff.mpr <| by
+      rw [AlgEquiv.apply_symm_apply]; exact f.2⟩
+  left_inv f := Subtype.ext <| (MvPowerSeries.renameEquiv R finOneEquiv).left_inv f
+  right_inv f := Subtype.ext <| (MvPowerSeries.renameEquiv R finOneEquiv).right_inv f
+  map_mul' f g := Subtype.ext <| map_mul (MvPowerSeries.renameEquiv R finOneEquiv)
+    (f : MvPowerSeries (Fin 1) R) g
+  map_add' f g := Subtype.ext <| map_add (MvPowerSeries.renameEquiv R finOneEquiv)
+    (f : MvPowerSeries (Fin 1) R) g
+
+/-- The one-variable equivalence is variable renaming on underlying power series. -/
+@[simp]
+theorem coe_restrictedMvPowerSeriesSubringOneEquiv
+    (f : restrictedMvPowerSeriesSubring 1 R) :
+    ((restrictedMvPowerSeriesSubringOneEquiv f :
+        PowerSeries.IsRestricted.subring (R := R) 1) : PowerSeries R) =
+      MvPowerSeries.renameEquiv R finOneEquiv
+        (f : MvPowerSeries (Fin 1) R) := by
+  simp [restrictedMvPowerSeriesSubringOneEquiv]
+
+/-- The inverse one-variable equivalence renames the sole variable back from `Unit` to `Fin 1`
+on underlying power series. -/
+@[simp]
+theorem coe_restrictedMvPowerSeriesSubringOneEquiv_symm
+    (f : PowerSeries.IsRestricted.subring (R := R) 1) :
+    ((restrictedMvPowerSeriesSubringOneEquiv.symm f : restrictedMvPowerSeriesSubring 1 R) :
+        MvPowerSeries (Fin 1) R) =
+      MvPowerSeries.renameEquiv R finOneEquiv.symm (f : PowerSeries R) := by
+  simp [restrictedMvPowerSeriesSubringOneEquiv]
+
+/-- **The trivially weighted one-variable restricted-series ring is Mathlib's.** The ring
+`R⟨T⟩ = weightedRestrictedSubring (fun _ : Fin 1 ↦ {1}) _`, the coordinate ring of the closed unit
+disc in the Huber development, is the univariate ring of power series restricted at the unit
+radius, after renaming its variable from `Fin 1` to `Unit`. -/
+noncomputable def weightedRestrictedSubringOneEquiv :
+    weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight ≃+*
+      PowerSeries.IsRestricted.subring (R := R) 1 :=
+  (RingEquiv.subringCongr (weightedRestrictedSubring_one_weight (k := 1) (A := R))).trans
+    restrictedMvPowerSeriesSubringOneEquiv
+
+/-- The trivially weighted one-variable equivalence is variable renaming on underlying power
+series. It is not a `simp` lemma: on constants and on the variable, where `simp` should land on
+Mathlib's univariate `PowerSeries.C` and `PowerSeries.X`, use
+`coe_weightedRestrictedSubringOneEquiv_weightedC` and
+`coe_weightedRestrictedSubringOneEquiv_weightedX`. -/
+theorem coe_weightedRestrictedSubringOneEquiv
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    ((weightedRestrictedSubringOneEquiv f : PowerSeries.IsRestricted.subring (R := R) 1) :
+        PowerSeries R) =
+      MvPowerSeries.renameEquiv R finOneEquiv (f : MvPowerSeries (Fin 1) R) := by
+  simp [weightedRestrictedSubringOneEquiv]
+
+/-- The trivially weighted one-variable equivalence preserves coefficients: the coefficient of
+`Tⁿ` in `f` is the `n`-th coefficient of the corresponding univariate series. -/
+@[simp]
+theorem coeff_weightedRestrictedSubringOneEquiv
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight)
+    (n : ℕ) :
+    PowerSeries.coeff n
+        ((weightedRestrictedSubringOneEquiv f : PowerSeries.IsRestricted.subring (R := R) 1) :
+          PowerSeries R) =
+      MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R) := by
+  simp [coe_weightedRestrictedSubringOneEquiv, Subsingleton.elim (finOneEquiv.symm ()) 0]
+
+/-- The inverse trivially weighted one-variable equivalence renames the sole variable back from
+`Unit` to `Fin 1` on underlying power series. -/
+@[simp]
+theorem coe_weightedRestrictedSubringOneEquiv_symm
+    (f : PowerSeries.IsRestricted.subring (R := R) 1) :
+    ((weightedRestrictedSubringOneEquiv.symm f :
+        weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+        MvPowerSeries (Fin 1) R) =
+      MvPowerSeries.renameEquiv R finOneEquiv.symm (f : PowerSeries R) := by
+  simp [weightedRestrictedSubringOneEquiv]
+
+/-- The trivially weighted one-variable equivalence sends the constant `a` to the constant
+power series `a`. -/
+@[simp]
+theorem coe_weightedRestrictedSubringOneEquiv_weightedC (a : R) :
+    ((weightedRestrictedSubringOneEquiv (weightedC _ isWeightFamily_one_weight a) :
+        PowerSeries.IsRestricted.subring (R := R) 1) : PowerSeries R) = PowerSeries.C a := by
+  simp [coe_weightedRestrictedSubringOneEquiv, PowerSeries.C_apply]
+
+/-- The trivially weighted one-variable equivalence sends the variable `T` to the variable of
+Mathlib's univariate power series. -/
+@[simp]
+theorem coe_weightedRestrictedSubringOneEquiv_weightedX :
+    ((weightedRestrictedSubringOneEquiv (weightedX (fun _ : Fin 1 ↦ ({1} : Set R))
+        isWeightFamily_one_weight 0) : PowerSeries.IsRestricted.subring (R := R) 1) :
+        PowerSeries R) = PowerSeries.X := by
+  simp [coe_weightedRestrictedSubringOneEquiv, PowerSeries.X_apply]
+
+end Comparison
+
+section Complete
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NonarchimedeanRing R]
+  [CompleteSpace R]
+
+/-- **The completed one-variable Huber algebra is the univariate restricted-series ring.**
+Completeness identifies the completion with the trivial-weight restricted-series subring; the
+trivial-weight comparison and variable renaming then give the displayed ring equivalence. -/
+noncomputable def restrictedMvPowerSeriesCompletionOneEquiv :
+    restrictedMvPowerSeriesCompletion 1 R ≃+*
+      PowerSeries.IsRestricted.subring (R := R) 1 :=
+  (restrictedMvPowerSeriesCompletionEquiv 1 R).trans weightedRestrictedSubringOneEquiv
+
+/-- The completed comparison sends a restricted series in the canonical dense subring to the
+same series, with its sole variable renamed from `Fin 1` to `Unit`. -/
+@[simp]
+theorem restrictedMvPowerSeriesCompletionOneEquiv_coe
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R))
+      isWeightFamily_one_weight) :
+    restrictedMvPowerSeriesCompletionOneEquiv
+        (f : restrictedMvPowerSeriesCompletion 1 R) = weightedRestrictedSubringOneEquiv f := by
+  simp [restrictedMvPowerSeriesCompletionOneEquiv, RingEquiv.trans_apply]
+
+/-- The inverse completed comparison renames the sole variable back from `Unit` to `Fin 1` and
+then includes the resulting restricted series in the completion. -/
+@[simp]
+theorem restrictedMvPowerSeriesCompletionOneEquiv_symm_apply
+    (f : PowerSeries.IsRestricted.subring (R := R) 1) :
+    restrictedMvPowerSeriesCompletionOneEquiv.symm f =
+      ((weightedRestrictedSubringOneEquiv.symm f :
+          weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R))
+            isWeightFamily_one_weight) : restrictedMvPowerSeriesCompletion 1 R) := by
+  simp [restrictedMvPowerSeriesCompletionOneEquiv, RingEquiv.symm_trans_apply]
+
+end Complete
+
+end TauCeti.Huber

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Transport
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 
 /-!
 # Realizing a coupling along a source partition
@@ -81,7 +81,6 @@ theorem exists_measurePreserving_map_graphPlan_eq (hπ : IsCoupling π μ ν)
       (graphPlan T μ).map (Prod.map q id) = π.map (Prod.map q id) := by
   obtain ⟨T, hT, hcell⟩ := hπ.exists_measurePreserving_graphPlan_prod_eq
     (fun i ↦ hq (measurableSet_singleton i)) (pairwise_disjoint_fiber q) (by ext; simp)
-  have : IsFiniteMeasure (graphPlan T μ) := (isCoupling_graphPlan hT.hasLaw).isFiniteMeasure
   refine ⟨T, hT, Measure.ext_prod fun {s t} hs ht ↦ ?_⟩
   have hm : Measurable (Prod.map q (id : Y → Y)) := hq.prodMap measurable_id
   rw [Measure.map_apply hm (hs.prod ht), Measure.map_apply hm (hs.prod ht)]

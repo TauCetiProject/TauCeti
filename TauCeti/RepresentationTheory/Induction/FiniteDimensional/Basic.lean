@@ -24,7 +24,14 @@ forgetful functor to `Rep k G`.
 
 That functor is additive (`indFDRepMap_add`); the general fact it rests on, additivity of induced
 intertwiners along an arbitrary group homomorphism, is `Rep.indMap_add` of
-`TauCeti.RepresentationTheory.Induction.Basic`.
+`TauCeti.RepresentationTheory.Induction.Basic`. Read through the functor, induction sends an
+isomorphism of representations to an isomorphism of the induced ones
+(`nonempty_iso_indFDRep`).
+
+Over any commutative ring, the coset model also shows that induction from a finite-index subgroup
+preserves finiteness of the underlying module (`Rep.finite_ind`) and gives the cardinality formula
+`#Ind_S^G A = #A ^ [G : S]` (`Rep.natCard_ind`); with coefficients `ZMod n` this replaces the
+dimension formula when `n` is not prime.
 
 The objectwise construction, dimension theorem, and functor on `FDRep` allow the scalar field and
 group to live in separate universes. It uses a small model of Mathlib's induced carrier, compared by
@@ -234,6 +241,38 @@ theorem indSubtypeEquivPi_ρ_apply [S.FiniteIndex] (A : Rep.{max w u} k S) (g : 
         (indSubtypeEquivPi A x (Quotient.mk'' (q.out * g))) := by
   rw [indSubtypeEquivPi_apply, indSubtypeEquivPi_apply, Rep.hom_comm_apply]
   exact coindSubtypeEquivPi_ρ_apply A g _ q
+
+/-- An induced morphism acts coordinatewise in the right-coset model of induction. -/
+theorem _root_.Rep.indSubtypeEquivPi_indMap [S.FiniteIndex]
+    {V W : Rep.{max w u} k S} (f : V ⟶ W)
+    (x : Rep.ind S.subtype V) (q : Quotient (QuotientGroup.rightRel S)) :
+    indSubtypeEquivPi W ((Rep.indMap S.subtype f).hom x) q =
+      f.hom (indSubtypeEquivPi V x q) := by
+  let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
+  have h := (Rep.indCoindNatIso.{w, u, v} k S).hom.naturality f
+  have hx := congrArg (fun m ↦ (m.hom x).1 q.out) h
+  rw [indSubtypeEquivPi_apply, indSubtypeEquivPi_apply]
+  have hn : ((Rep.indCoindIso W).hom.hom ((Rep.indMap S.subtype f).hom x)).1 q.out =
+      ((Rep.coindMap S.subtype f).hom ((Rep.indCoindIso V).hom.hom x)).1 q.out := by
+    simpa only [Rep.indCoindNatIso_hom_app, Rep.indFunctor_map, Rep.coindFunctor_map,
+      Rep.hom_comp, Representation.IntertwiningMap.comp_apply] using hx
+  exact hn.trans (Representation.coindMap_coe_apply_apply S.subtype V.ρ W.ρ f.hom _ q.out)
+
+/-- **Induction from a finite-index subgroup preserves finiteness** of the underlying module. -/
+instance finite_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [Finite A] :
+    Finite (Rep.ind S.subtype A) :=
+  have : Finite (Quotient (QuotientGroup.rightRel S)) :=
+    .of_equiv _ (QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm
+  .of_equiv _ (indSubtypeEquivPi A).symm.toEquiv
+
+/-- **The cardinality of an induced representation**: induction from a subgroup of finite index
+raises the cardinality of the underlying module to the power of the index. -/
+theorem natCard_ind [S.FiniteIndex] (A : Rep.{max w u} k S) :
+    Nat.card (Rep.ind S.subtype A) = Nat.card A ^ S.index := by
+  have : Finite (Quotient (QuotientGroup.rightRel S)) :=
+    .of_equiv _ (QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm
+  rw [Nat.card_congr (indSubtypeEquivPi A).toEquiv, Nat.card_fun,
+    Nat.card_congr (QuotientGroup.quotientRightRelEquivQuotientLeftRel S), Subgroup.index]
 
 end CosetModel
 
@@ -448,6 +487,13 @@ theorem indFDRepFunctor_map {k : Type u} {G : Type v} [Field k] [Group G]
   -- The transports reconcile the opaque object projections with the types of `indFDRepMap`.
   -- They are not a useful simp normal form, so this projection is intentionally not a simp rule.
   rfl
+
+/-- **Induction from a finite-index subgroup carries isomorphic representations to isomorphic
+ones.** -/
+theorem nonempty_iso_indFDRep {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] {A B : FDRep k S} (e : A ≅ B) : Nonempty (indFDRep A ≅ indFDRep B) :=
+  ⟨(eqToIso (indFDRepFunctor_obj A)).symm ≪≫
+    (indFDRepFunctor (k := k) (S := S)).mapIso e ≪≫ eqToIso (indFDRepFunctor_obj B)⟩
 
 /-- **Induction from a finite-index subgroup is an additive functor**, which is what lets it be
 passed to the split Grothendieck group in

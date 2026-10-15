@@ -228,14 +228,14 @@ end Counting
 namespace GL2NonSplitTorus
 
 variable {F : Type*} [Field F] {E : Type*} [Field E] [Algebra F E]
-  (hE : Module.finrank F E = 2) {x : Eˣ}
+  [Algebra.IsQuadraticExtension F E] {x : Eˣ}
 
 /-- **The centralizer of an element of `GL₂` coming from a quadratic field extension.** An element
-of `TauCeti.GL2NonSplitTorus F E hE`, the unit group of a quadratic extension `E/F` acting on `E`
+of `TauCeti.GL2NonSplitTorus F E`, the unit group of a quadratic extension `E/F` acting on `E`
 by multiplication, that does not come from `F` has that whole group as its centralizer.
 
 When `E/F` is separable — always so over a finite field — such an element is elliptic regular
-semisimple and `TauCeti.GL2NonSplitTorus F E hE` is the maximal torus containing it. Together with
+semisimple and `TauCeti.GL2NonSplitTorus F E` is the maximal torus containing it. Together with
 `TauCeti.centralizer_diagGL` this computes the centralizer of each of the two standard regular
 semisimple normal forms of `GL₂`, split and elliptic; that every regular semisimple element is
 conjugate to one of them, and that a centralizer transports along such a conjugation, are not
@@ -243,17 +243,17 @@ proved here. Separability is not needed below: for a purely inseparable `E/F` in
 two the statement computes the centralizer of an element that is *not* semisimple, and `Eˣ` is then
 not a torus. -/
 theorem centralizer_gl2NonSplitTorusHom (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    Subgroup.centralizer {GL2NonSplitTorusHom F E hE x} = GL2NonSplitTorus F E hE := by
+    Subgroup.centralizer {GL2NonSplitTorusHom F E x} = GL2NonSplitTorus F E := by
   ext h
   rw [mem_centralizer_singleton_iff_commute_val, mem_iff]
   constructor
   · intro hcomm
     obtain ⟨a, b, hab⟩ :=
-      (commute_fin_two_iff (notMem_range_scalar_gl2NonSplitTorusHom hE hx)).mp hcomm
+      (commute_fin_two_iff (notMem_range_scalar_gl2NonSplitTorusHom hx)).mp hcomm
     -- The commuting matrix is multiplication by `a + b x`, which is nonzero as it is invertible.
-    have hmat : (h : Matrix (Fin 2) (Fin 2) F) = Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)
+    have hmat : (h : Matrix (Fin 2) (Fin 2) F) = Algebra.leftMulMatrix (nonSplitTorusBasis F E)
         (algebraMap F E a + b • (x : E)) := by
-      rw [map_add, map_smul, leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom hE]
+      rw [map_add, map_smul, leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
       exact hab
     have hy0 : algebraMap F E a + b • (x : E) ≠ 0 := by
       intro h0
@@ -262,28 +262,28 @@ theorem centralizer_gl2NonSplitTorusHom (hx : (x : E) ∉ Set.range (algebraMap 
       exact Matrix.det_zero
     exact ⟨Units.mk0 _ hy0, Units.ext (by rw [coe_gl2NonSplitTorusHom, Units.val_mk0, hmat])⟩
   · rintro ⟨z, rfl⟩
-    exact Commute.units_val_iff.mpr ((Commute.all x z).map (GL2NonSplitTorusHom F E hE))
+    exact Commute.units_val_iff.mpr ((Commute.all x z).map (GL2NonSplitTorusHom F E))
 
 /-- **The order of the centralizer of an element of `GL₂` coming from a quadratic extension**: the
-centralizer is `TauCeti.GL2NonSplitTorus F E hE`, a copy of `Eˣ`, so over a field with `q` elements
+centralizer is `TauCeti.GL2NonSplitTorus F E`, a copy of `Eˣ`, so over a field with `q` elements
 it has `q² - 1` elements.  As for `TauCeti.GL2NonSplitTorus.natCard_eq`, no finiteness is assumed:
 over an infinite `F` both sides are `0`.  When `E/F` is separable — always so over a finite field —
 this is the order of the elliptic maximal torus containing the element; nothing here needs that
 hypothesis. -/
 theorem natCard_centralizer_gl2NonSplitTorusHom (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    Nat.card (Subgroup.centralizer {GL2NonSplitTorusHom F E hE x}) = Nat.card F ^ 2 - 1 := by
-  rw [centralizer_gl2NonSplitTorusHom hE hx, natCard_eq]
+    Nat.card (Subgroup.centralizer {GL2NonSplitTorusHom F E x}) = Nat.card F ^ 2 - 1 := by
+  rw [centralizer_gl2NonSplitTorusHom hx, natCard_eq]
 
 /-- **The size of an elliptic conjugacy class of `GL₂(𝔽_q)`**: it is `q (q - 1) = [GL₂(𝔽_q) : T]`
 for the non-split torus `T`. -/
 theorem ncard_carrier_mk_gl2NonSplitTorusHom [Fintype F]
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    (ConjClasses.mk (GL2NonSplitTorusHom F E hE x)).carrier.ncard =
+    (ConjClasses.mk (GL2NonSplitTorusHom F E x)).carrier.ncard =
       Fintype.card F * (Fintype.card F - 1) := by
   rw [ConjClasses.ncard_carrier_mk]
   refine index_eq_of_natCard_eq_mul card_sq_sub_one_pos ?_
     (natCard_GL_fin_two_eq_sq_sub_one_mul F)
-  rw [natCard_centralizer_gl2NonSplitTorusHom hE hx, Nat.card_eq_fintype_card]
+  rw [natCard_centralizer_gl2NonSplitTorusHom hx, Nat.card_eq_fintype_card]
 
 end GL2NonSplitTorus
 

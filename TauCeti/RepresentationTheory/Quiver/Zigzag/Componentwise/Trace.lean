@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Decomposition
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Multiplication
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Trace
 
 /-!
@@ -17,7 +18,9 @@ component containing an edge this is `TauCeti.zigzagTrace`, transported from the
 presentation. On a singleton component it is the infinitesimal coordinate of the dual numbers.
 
 The resulting functional is one on every volume basis vector and zero on vertex and arrow basis
-vectors, including at isolated vertices. It is a trace: `tr (x * y) = tr (y * x)`. Its restriction
+vectors, including at isolated vertices. It is a trace: `tr (x * y) = tr (y * x)`, and the
+vertex--arrow--volume basis is dual, for `(x, y) ↦ tr (x * y)`, to its reindexing by
+`TauCeti.zigzagDualIndex`. Its restriction
 to a single embedded factor recovers that factor's trace, giving the trace part of the connected-
 component decomposition.
 
@@ -25,6 +28,13 @@ component decomposition.
 
 * `TauCeti.zigzagComponentTrace`: the trace on one connected-component factor.
 * `TauCeti.zigzagAlgebraTrace`: the sum of the component traces on the public zigzag algebra.
+
+## Main results
+
+* `TauCeti.zigzagAlgebraTrace_zigzagAlgebraBasis_mul`: the Gram matrix of the trace pairing is the
+  permutation matrix of `TauCeti.zigzagDualIndex`.
+* `TauCeti.zigzagAlgebraTrace_mul_zigzagAlgebraBasis_zigzagDualIndex`: pairing against the dual
+  basis vector reads off a coordinate.
 
 ## References
 
@@ -209,5 +219,67 @@ theorem zigzagAlgebraTrace_mul_comm (x y : zigzagAlgebra k G) :
   classical
   simp only [zigzagAlgebraTrace_apply, map_mul]
   exact Finset.sum_congr rfl fun C _ ↦ zigzagComponentTrace_mul_comm k G C _ _
+
+/-! ### The dual basis -/
+
+/-- The public trace vanishes on vertex basis vectors. -/
+@[simp]
+theorem zigzagAlgebraTrace_zigzagAlgebraBasis_inl (i : V) :
+    zigzagAlgebraTrace k G (zigzagAlgebraBasis k G (.inl i)) = 0 := by
+  have h := zigzagAlgebraTrace_zigzagAlgebraBasis k G _
+    ((zigzagComponentBasisIndexEquiv G).symm (.inl i)).2
+  rw [Sigma.eta, Equiv.apply_symm_apply, zigzagComponentBasisIndexEquiv_symm_inl] at h
+  exact h
+
+/-- The public trace vanishes on arrow basis vectors. -/
+@[simp]
+theorem zigzagAlgebraTrace_zigzagAlgebraBasis_inr_inl (d : G.Dart) :
+    zigzagAlgebraTrace k G (zigzagAlgebraBasis k G (.inr (.inl d))) = 0 := by
+  have h := zigzagAlgebraTrace_zigzagAlgebraBasis k G _
+    ((zigzagComponentBasisIndexEquiv G).symm (.inr (.inl d))).2
+  rw [Sigma.eta, Equiv.apply_symm_apply, zigzagComponentBasisIndexEquiv_symm_inr_inl] at h
+  exact h
+
+/-- The public trace is one on volume basis vectors, including at isolated vertices. -/
+@[simp]
+theorem zigzagAlgebraTrace_zigzagAlgebraBasis_inr_inr (i : V) :
+    zigzagAlgebraTrace k G (zigzagAlgebraBasis k G (.inr (.inr i))) = 1 := by
+  have h := zigzagAlgebraTrace_zigzagAlgebraBasis k G _
+    ((zigzagComponentBasisIndexEquiv G).symm (.inr (.inr i))).2
+  rw [Sigma.eta, Equiv.apply_symm_apply, zigzagComponentBasisIndexEquiv_symm_inr_inr] at h
+  exact h
+
+open Classical in
+/-- **The Gram matrix of the public trace pairing is the permutation matrix of
+`TauCeti.zigzagDualIndex`.** The trace of a product of two basis vectors is `1` exactly when the
+second index is the dual of the first, and `0` otherwise. -/
+theorem zigzagAlgebraTrace_zigzagAlgebraBasis_mul (b c : ZigzagBasisIndex G) :
+    zigzagAlgebraTrace k G (zigzagAlgebraBasis k G b * zigzagAlgebraBasis k G c) =
+      if c = zigzagDualIndex G b then 1 else 0 := by
+  rw [zigzagAlgebraBasis_mul]
+  rcases b with i | d | i <;> rcases c with j | e | j <;>
+    simp only [zigzagBasisMul_vertex_vertex, zigzagBasisMul_vertex_dart,
+      zigzagBasisMul_vertex_volume, zigzagBasisMul_dart_vertex, zigzagBasisMul_dart_dart,
+      zigzagBasisMul_dart_volume, zigzagBasisMul_volume_vertex, zigzagBasisMul_volume_dart,
+      zigzagBasisMul_volume_volume, zigzagDualIndex_inl, zigzagDualIndex_inr_inl,
+      zigzagDualIndex_inr_inr] <;>
+    split_ifs <;> simp_all
+
+/-- **The dual basis of the public trace pairing.** Pairing an element against the basis vector of
+the dual index of `b` reads off its `b`-th coordinate. -/
+theorem zigzagAlgebraTrace_mul_zigzagAlgebraBasis_zigzagDualIndex (x : zigzagAlgebra k G)
+    (b : ZigzagBasisIndex G) :
+    zigzagAlgebraTrace k G (x * zigzagAlgebraBasis k G (zigzagDualIndex G b)) =
+      (zigzagAlgebraBasis k G).repr x b := by
+  classical
+  have key : zigzagAlgebraTrace k G ∘ₗ
+      LinearMap.mulRight k (zigzagAlgebraBasis k G (zigzagDualIndex G b)) =
+        (zigzagAlgebraBasis k G).coord b := by
+    refine (zigzagAlgebraBasis k G).ext fun c => ?_
+    rw [LinearMap.comp_apply, LinearMap.mulRight_apply, Module.Basis.coord_apply,
+      Module.Basis.repr_self, Finsupp.single_apply, zigzagAlgebraTrace_zigzagAlgebraBasis_mul]
+    simp only [(zigzagDualIndex_injective G).eq_iff]
+    exact if_congr eq_comm rfl rfl
+  exact LinearMap.congr_fun key x
 
 end TauCeti

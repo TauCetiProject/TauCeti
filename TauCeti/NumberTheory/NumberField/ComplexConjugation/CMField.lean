@@ -17,25 +17,23 @@ place is genuinely part of the input: in a general Galois extension the elements
 different ramified places are conjugate (`complexConjugationAt_smul`), and conjugate elements
 can differ.
 
-A CM field is a case where that dependence disappears. If `K` is CM, with maximal real
-subfield `K⁺`, then `K / K⁺` is a totally complex quadratic extension, so
+An algebraic CM field is a case where that dependence disappears. If `K` is CM and algebraic over
+`ℚ`, with maximal real subfield `K⁺`, then `K / K⁺` is a totally complex quadratic extension, so
 
 * every infinite place of `K` is ramified over `K⁺` — the hypothesis `hw` is automatic
-  (`isRamified_maximalRealSubfield`), and
+  (`NumberField.InfinitePlace.isRamified_maximalRealSubfield_iff`), and
 * the conjugation attached to any place is Mathlib's `IsCMField.complexConj`
-  (`complexConj_eq_complexConjugationAt`),
+  (`complexConjugationAt_eq_complexConj`),
 
 hence any two places give the same element
 (`complexConjugationAt_eq_complexConjugationAt`). This is what lets a CM field carry a
 place-free complex conjugation, and Mathlib's `IsCMField.complexConj` is the element it names:
 on a CM field the place index may simply be dropped, and any statement about
-`complexConjugationAt` there transfers to `complexConj`.
+`complexConjugationAt` there transfers to `complexConj`. The extension over `ℚ` need not be finite.
 
 ## Main results
 
-* `TauCeti.NumberField.isRamified_maximalRealSubfield`: on a CM field every infinite place is
-  ramified over the maximal real subfield.
-* `TauCeti.NumberField.complexConj_eq_complexConjugationAt`: the conjugation at any place is
+* `TauCeti.NumberField.complexConjugationAt_eq_complexConj`: the conjugation at any place is
   `IsCMField.complexConj`.
 * `TauCeti.NumberField.complexConjugationAt_eq_complexConjugationAt`: consequently it does not
   depend on the place.
@@ -51,31 +49,24 @@ open NumberField NumberField.InfinitePlace
 
 namespace TauCeti.NumberField
 
-variable (K : Type*) [Field K] [NumberField K] [NumberField.IsCMField K]
+variable (K : Type*) [Field K] [CharZero K] [Algebra.IsIntegral ℚ K] [NumberField.IsCMField K]
 
 local notation3 "K⁺" => NumberField.maximalRealSubfield K
-
-/-- **On a CM field every infinite place is ramified over the maximal real subfield**, so the
-ramification hypothesis of `complexConjugationAt` is automatic there. -/
-theorem isRamified_maximalRealSubfield (w : InfinitePlace K) : w.IsRamified K⁺ := by
-  rw [isRamified_iff]
-  exact ⟨IsTotallyComplex.isComplex w, IsTotallyReal.isReal _⟩
 
 /-- **On a CM field the conjugation at any place is `IsCMField.complexConj`.** The simp normal
 form is the canonical `complexConj`, so the place-dependent `complexConjugationAt` rewrites to
 it. -/
-@[simp ←]
-theorem complexConj_eq_complexConjugationAt (w : InfinitePlace K) :
-    NumberField.IsCMField.complexConj K =
-      complexConjugationAt K⁺ w (isRamified_maximalRealSubfield K w) :=
-  eq_complexConjugationAt _ _ (NumberField.IsCMField.isConj_complexConj K w.embedding)
+@[simp]
+theorem complexConjugationAt_eq_complexConj (w : InfinitePlace K) (hw : w.IsRamified K⁺) :
+    complexConjugationAt K⁺ w hw = NumberField.IsCMField.complexConj K :=
+  (eq_complexConjugationAt _ _ (NumberField.IsCMField.isConj_complexConj K w.embedding)).symm
 
 /-- **On a CM field the conjugation does not depend on the place.** In general two ramified
 places give conjugate elements, which need not be equal. -/
-theorem complexConjugationAt_eq_complexConjugationAt (w w' : InfinitePlace K) :
-    complexConjugationAt K⁺ w (isRamified_maximalRealSubfield K w) =
-      complexConjugationAt K⁺ w' (isRamified_maximalRealSubfield K w') := by
-  rw [← complexConj_eq_complexConjugationAt, ← complexConj_eq_complexConjugationAt]
+theorem complexConjugationAt_eq_complexConjugationAt (w w' : InfinitePlace K)
+    (hw : w.IsRamified K⁺) (hw' : w'.IsRamified K⁺) :
+    complexConjugationAt K⁺ w hw = complexConjugationAt K⁺ w' hw' := by
+  simp
 
 end TauCeti.NumberField
 

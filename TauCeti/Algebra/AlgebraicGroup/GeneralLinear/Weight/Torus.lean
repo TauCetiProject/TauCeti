@@ -10,9 +10,12 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.GeneralL
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Relabel
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 
 /-!
@@ -47,12 +50,16 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
   coordinate morphism surjective.
 * `TauCeti.GeneralLinear.weightTorusCoordinateBialgHom`: its direct diagonal-representation form,
   allowing the base ring and torus index to live in different universes.
+* `TauCeti.GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights`:
+  restriction of the standard comodule to a weight torus is the corresponding weight comodule.
 * `TauCeti.GeneralLinear.weightTorusBaseChangeCoordinateMap`: that morphism base changed along
   `R → K` and transported into the coordinate Hopf algebras built directly over `K`.
 * `TauCeti.GeneralLinear.hom_weightTorusBaseChangeCoordinateMap`: the transported map's
   underlying bialgebra morphism is the direct construction over `K`.
 * `TauCeti.GeneralLinear.weightTorusBaseChangeCoordinateMap_eq`: the transported map agrees with
   the categorical weight-torus coordinate morphism over `K` when all data share one universe.
+* `TauCeti.GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange`: base change of the
+  transported map along a further extension `A → B` is the transported map over `B`.
 * `TauCeti.GeneralLinear.weightTorus`: the represented morphism `𝔾ₘ^κ → GL_N`.
 * `TauCeti.GeneralLinear.isClosedImmersion_weightTorus`: spanning weights make the represented
   morphism a closed immersion.
@@ -81,11 +88,11 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
 public section
 
 open AlgebraicGeometry CategoryTheory WithConv
-open scoped CategoryTheory.MonObj
+open scoped CategoryTheory.MonObj TensorProduct
 
 namespace TauCeti.GeneralLinear
 
-universe u v
+universe u v w
 
 variable {R κ : Type u} [CommRing R] {N : ℕ}
 
@@ -102,6 +109,20 @@ noncomputable def weightTorusCoordinateBialgHom (wt : Fin N → sigma → ℤ) :
   let _ : Fintype sigma := Fintype.ofFinite sigma
   exact DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
     (fun i => SplitTorus.weightCharacter (wt i))
+
+/-- The direct weight-torus morphism is the diagonal representation with the prescribed
+integral weight characters. -/
+@[simp]
+theorem weightTorusCoordinateBialgHom_def [Fintype sigma] (wt : Fin N → sigma → ℤ) :
+    weightTorusCoordinateBialgHom (S := S) wt =
+      DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
+        (fun i ↦ SplitTorus.weightCharacter (wt i)) := by
+  rw [weightTorusCoordinateBialgHom]
+  congr 1
+  funext i
+  apply Multiplicative.toAdd.injective
+  ext j
+  simp
 
 /-- A generic matrix entry maps under the direct weight-torus bialgebra morphism to the
 prescribed character on the diagonal, and to zero off the diagonal. -/
@@ -126,6 +147,93 @@ theorem weightTorusCoordinateBialgHom_X (wt : Fin N → sigma → ℤ) (i j : Fi
   · simpa only [Matrix.diagonal_apply_eq, ↓reduceIte] using congrArg
       (fun g => MonoidAlgebra.single g (1 : S)) hweight
   · simp [hij]
+
+/-- Corestricting the standard general-linear comodule along a weight-torus coordinate morphism
+is the direct sum of its prescribed one-dimensional weight comodules. -/
+theorem corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
+    (wt : Fin N → sigma → ℤ) :
+    let _ := standardComodule S N
+    Comodule.Corestrict (weightTorusCoordinateBialgHom (S := S) wt).toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun S (Fin N))
+        (fun a ↦ Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) := by
+  let _ := standardComodule S N
+  apply Comodule.ext
+    (rho := Comodule.Corestrict (weightTorusCoordinateBialgHom (S := S) wt).toCoalgHom)
+    (sigma := Comodule.ofWeights (Pi.basisFun S (Fin N))
+      (fun a ↦ Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))))
+  apply (Pi.basisFun S (Fin N)).ext
+  intro a
+  rw [Comodule.ofWeights_coact_basis, Pi.basisFun_apply,
+    Comodule.corestrict_coact_apply, standardComodule_coact,
+    standardCoact_apply_basisFun, map_sum]
+  have hlinear :
+      (weightTorusCoordinateBialgHom (S := S) wt).toCoalgHom.toLinearMap =
+        (weightTorusCoordinateBialgHom (S := S) wt).toAlgHom.toLinearMap :=
+    (_root_.BialgHom.toAlgHom_toLinearMap
+      (weightTorusCoordinateBialgHom (S := S) wt)).symm
+  rw [hlinear]
+  simp only [TensorProduct.map_tmul, LinearMap.id_coe, id_eq,
+    AlgHom.toLinearMap_apply]
+  calc
+    _ = ∑ i, (Pi.single i (1 : S) : Fin N → S) ⊗ₜ[S]
+        (if i = a then MonoidAlgebra.single
+          (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) (1 : S) else 0) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      have hcoordinate :
+          (weightTorusCoordinateBialgHom (S := S) wt)
+              (coordinateHopfAlgebraAlgEquiv S N
+                (coordinateRingMap S N (MvPolynomial.X (i, a)))) =
+            if i = a then MonoidAlgebra.single
+              (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) (1 : S) else 0 := by
+        calc
+          _ = if i = a then MonoidAlgebra.single
+                (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt i))) (1 : S) else 0 :=
+            weightTorusCoordinateBialgHom_X (S := S) wt i a
+          _ = _ := by
+            split_ifs with h
+            · subst i
+              rfl
+            · rfl
+      exact congrArg (fun z ↦ (Pi.single i (1 : S) : Fin N → S) ⊗ₜ[S] z) hcoordinate
+    _ = _ := by
+      rw [Finset.sum_eq_single a]
+      · simp
+      · intro i _ hia
+        simp [hia]
+      · simp
+
+/-- If a weight-torus morphism factors through another coordinate Hopf algebra, restricting the
+corestricted standard comodule along that factor gives the same prescribed weight comodule. -/
+theorem corestrict_corestrict_standardComodule_eq_ofWeights [Fintype sigma]
+    {H : Type*} [CommRing H] [HopfAlgebra S H]
+    (f : coordinateHopfAlgebra S N →ₐc[S] H)
+    (g : H →ₐc[S] MonoidAlgebra S (Multiplicative (sigma →₀ ℤ)))
+    (wt : Fin N → sigma → ℤ) (hcomp : g.comp f = weightTorusCoordinateBialgHom wt) :
+    let _ := standardComodule S N
+    let _ : Comodule S H (Fin N → S) := Comodule.Corestrict f.toCoalgHom
+    Comodule.Corestrict g.toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun S (Fin N))
+        (fun a ↦ SplitTorus.weightCharacter (wt a)) := by
+  let _ := standardComodule S N
+  let _ : Comodule S H (Fin N → S) := Comodule.Corestrict f.toCoalgHom
+  have hcharacters : (fun a ↦ SplitTorus.weightCharacter (wt a)) =
+      (fun a ↦ Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) := by
+    funext a
+    apply Multiplicative.toAdd.injective
+    ext j
+    simp
+  rw [hcharacters]
+  apply Comodule.ext
+  rw [Comodule.corestrict_coact, ← Comodule.corestrictCoact_comp f.toCoalgHom g.toCoalgHom]
+  have hc : g.toCoalgHom.comp f.toCoalgHom = (weightTorusCoordinateBialgHom wt).toCoalgHom := by
+    apply DFunLike.ext _ _
+    intro x
+    exact DFunLike.congr_fun hcomp x
+  rw [hc]
+  simpa only [Comodule.corestrict_coact] using
+    congrArg (fun c : Comodule S _ (Fin N → S) ↦ c.coact)
+      (corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights wt)
 
 end DirectCoordinateMap
 
@@ -348,6 +456,24 @@ theorem weightTorusBaseChangeCoordinateMap_eq
   apply _root_.CommHopfAlgCat.hom_ext
   rw [hom_weightTorusBaseChangeCoordinateMap, hom_weightTorusCoordinateMap]
 
+/-- **The transported weight-torus coordinate map is compatible with towers.** For ring maps
+`R → A → B`, scalar extension along `A → B` of the weight torus transported to `A` is the weight
+torus transported to `B`, once the scalar extensions to `B` of the coordinate Hopf algebras of
+`GL_N` and of the split torus over `A` are identified with those over `B`. -/
+theorem weightTorusBaseChangeCoordinateMap_baseChange
+    (R : Type u) (A : Type max u v) (B : Type max u v w) [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B] (wt : Fin N → κ → ℤ) :
+    (coordinateHopfAlgebraBaseChangeIso.{max u v, w} A B N).inv ≫
+        CommHopfAlgCat.baseChangeMap (weightTorusBaseChangeCoordinateMap.{u, v} R A wt) ≫
+        (_root_.CommHopfAlgCat.isoMk
+          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv A B
+            (G := SplitTorus.characterGroup κ))).hom =
+      weightTorusBaseChangeCoordinateMap.{u, max v w} R B wt := by
+  rw [weightTorusBaseChangeCoordinateMap_def, weightTorusBaseChangeCoordinateMap_def]
+  exact coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower R A B N _ _ _ _
+    fun _ ↦
+      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul A B
+
 end BaseChange
 
 section PointsFunctor
@@ -359,10 +485,10 @@ theorem mapPointsFunctor_weightTorusCoordinateMap_app [Finite κ] (wt : Fin N �
     (A : CommAlgCat.{v} R)
     (p : HopfAlgebra.points
       (R := R) (H := MonoidAlgebra R (SplitTorus.characterGroup κ)) A) :
-    (CommHopfAlgCat.mapPointsFunctor (weightTorusCoordinateMap wt)).app A p =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (weightTorusCoordinateMap wt)).app A p =
       diagonalTorusPoints
         (DiagonalizableGroup.pointsMap (weightCharacterMap wt) p) := by
-  rw [weightTorusCoordinateMap, CommHopfAlgCat.mapPointsFunctor_comp_app_apply,
+  rw [weightTorusCoordinateMap, CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
     DiagonalizableGroup.mapPointsFunctor_coordinateMap_app,
     mapPointsFunctor_diagonalTorusCoordinateMap_app, FGCommGrpCat.toMonoidHom_ofHom]
 
@@ -399,7 +525,7 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap [Fintype κ]
     (p : HopfAlgebra.points
       (R := R) (H := MonoidAlgebra R (SplitTorus.characterGroup κ)) A) :
     pointsMulEquiv N
-        ((CommHopfAlgCat.mapPointsFunctor (weightTorusCoordinateMap (R := R) wt)).app A p) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (weightTorusCoordinateMap (R := R) wt)).app A p) =
       diagGL fun i => torusCharacter (SplitTorus.pointsMulEquiv p) (wt i) := by
   rw [mapPointsFunctor_weightTorusCoordinateMap_app, pointsMulEquiv_diagonalTorusPoints]
   congr 1
@@ -426,7 +552,7 @@ theorem weightTorusCoordinateMap_determinantGroupLike [Finite κ]
   let p : WithConv
       (coordinateHopfAlgebra R N →ₐ[R]
         (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup κ)).obj) :=
-    (CommHopfAlgCat.mapPointsFunctor f).app A q
+    (CommHopfAlgCat.Hom.mapPointsFunctor f).app A q
   have hdet := point_apply_determinantGroupLike (R := R) (n := N) p
   have hpoint : pointToGeneralLinear N p =
       TauCeti.diagGL fun i =>
@@ -443,7 +569,7 @@ theorem weightTorusCoordinateMap_determinantGroupLike [Finite κ]
         Matrix.det (pointToGeneralLinear N p).val := by
           rw [← hdet]
           dsimp only [p]
-          rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply, hq, AlgHom.id_apply]
+          rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, hq, AlgHom.id_apply]
     _ = Matrix.det (TauCeti.diagGL fun i =>
         TauCeti.torusCharacter (SplitTorus.pointsMulEquiv q) (wt i)).val := by
           exact congrArg (fun g => Matrix.det g.val) hpoint
@@ -563,19 +689,19 @@ private theorem rankOneCharacterBialgEquiv_single :
 
 private theorem mapPointsFunctor_weightCocharacterCoordinateMap_app (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R) (f : WithConv (LaurentPolynomial R →ₐ[R] A)) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (weightCocharacterCoordinateMap (R := R) w)).app A f =
       weightCocharacterPoints w f := by
   let q : WithConv
       (MonoidAlgebra R (Multiplicative (ULift.{u} Unit →₀ ℤ)) →ₐ[R] A) :=
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (_root_.CommHopfAlgCat.ofHom
         (rankOneCharacterBialgEquiv (R := R)).toBialgHom)).app A f
   rw [weightCocharacterCoordinateMap,
-    CommHopfAlgCat.mapPointsFunctor_comp_app_apply]
+    CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply]
   -- Normalize the remaining functorial precomposition to the map induced by the weight torus;
   -- the categorical wrapper has no application lemma at this expression.
-  change (CommHopfAlgCat.mapPointsFunctor
+  change (CommHopfAlgCat.Hom.mapPointsFunctor
     (weightTorusCoordinateMap (R := R) (fun i (_ : ULift.{u} Unit) ↦ w i))).app A q = _
   rw [mapPointsFunctor_weightTorusCoordinateMap_app]
   have hq : SplitTorus.pointsMulEquiv q (ULift.up ()) =
@@ -583,8 +709,8 @@ private theorem mapPointsFunctor_weightCocharacterCoordinateMap_app (w : Fin N �
     ext
     rw [SplitTorus.pointsMulEquiv_apply_coe,
       MultiplicativeGroup.pointsMulEquiv_apply,
-      MultiplicativeGroup.unitOfPoint_val]
-    simp only [q, CommHopfAlgCat.mapPointsFunctor_app_apply,
+      laurentEvalEquiv_symm_apply]
+    simp only [q, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
       WithConv.ofConv_toConv, AlgHom.comp_apply]
     congr 1
     exact rankOneCharacterBialgEquiv_single (R := R)
@@ -604,7 +730,7 @@ theorem mapDomain_weightCocharacter (w : Fin N → ℤ)
       weightCocharacterPoints w f := by
   -- `mapDomain` and the points functor are definitionally the same precomposition here; there is
   -- no bridge lemma for the bundled coordinate morphism.
-  change (CommHopfAlgCat.mapPointsFunctor
+  change (CommHopfAlgCat.Hom.mapPointsFunctor
       (weightCocharacterCoordinateMap (R := R) w)).app (CommAlgCat.of R A) f = _
   exact mapPointsFunctor_weightCocharacterCoordinateMap_app w (CommAlgCat.of R A) f
 
@@ -626,7 +752,7 @@ private lemma groupSchemePointMulEquiv_comp_weightTorus (wt : Fin N → κ → �
         (diagonalTorusPoints (DiagonalizableGroup.pointsMap (weightCharacterMap wt) q)) := by
   calc
     _ = groupSchemePointMulEquiv N A
-        ((CommHopfAlgCat.mapPointsFunctor (weightTorusCoordinateMap wt)).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (weightTorusCoordinateMap wt)).app
           (CommAlgCat.of R A) q) := by
       rw [weightTorus_def]
       apply CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain

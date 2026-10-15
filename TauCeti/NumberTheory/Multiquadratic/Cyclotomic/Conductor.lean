@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.FundamentalDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.QuadraticCharacter
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.GaussSum
+import Mathlib.RingTheory.Prime
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -47,7 +48,7 @@ namespace TauCeti.Multiquadratic
 cyclotomic field of level `n` and `D` a fundamental discriminant with `|D| ∣ n`. If the cyclotomic
 subfield `F` of `K` at a level `m ∣ n` contains a square root of `D`, then `|D| ∣ m`. -/
 theorem natAbs_dvd_of_adjoin_sqrt_le_cyclotomic {n m : ℕ} [NeZero n] {K : Type*} [Field K]
-    [NumberField K] [IsCyclotomicExtension {n} ℚ K] {D : ℤ} (hD : IsFundamentalDiscriminant D)
+    [NumberField K] [IsCyclotomicExtension {n} ℚ K] {D : ℤ} (hD : Int.IsFundamentalDiscr D)
     (hDn : D.natAbs ∣ n) (hmn : m ∣ n) (F : IntermediateField ℚ K)
     [IsCyclotomicExtension {m} ℚ F] {x : K} (hx : x ^ 2 = (D : K)) (hfield : ℚ⟮x⟯ ≤ F) :
     D.natAbs ∣ m := by
@@ -95,10 +96,10 @@ primitive `m`-th root of unity, `0 < m`, in a field of characteristic zero. A sq
 lies in `ℚ(ζ)` if and only if `|D| ∣ m`. Thus `ℚ(ζ_|D|)` is the least cyclotomic field
 containing `ℚ(√D)`. -/
 theorem mem_adjoin_simple_iff_natAbs_dvd (hm : 0 < m) (hζ : IsPrimitiveRoot ζ m) {D : ℤ}
-    (hD : IsFundamentalDiscriminant D) {x : L} (hx : x ^ 2 = (D : L)) :
+    (hD : Int.IsFundamentalDiscr D) {x : L} (hx : x ^ 2 = (D : L)) :
     x ∈ ℚ⟮ζ⟯ ↔ D.natAbs ∣ m := by
   refine ⟨fun hxζ => ?_, fun hdvd =>
-    mem_of_sq_eq_of_isFundamentalDiscriminant hm hζ (mem_adjoin_simple_self ℚ ζ) hD hdvd hx⟩
+    mem_of_sq_eq_of_isFundamentalDiscr hm hζ (mem_adjoin_simple_self ℚ ζ) hD hdvd hx⟩
   let _ : NeZero m := ⟨hm.ne'⟩
   -- Write `x = p(ζ)` for a rational polynomial `p`.
   have hζint : IsIntegral ℚ ζ := (hζ.isIntegral hm).tower_top
@@ -142,7 +143,7 @@ theorem mem_adjoin_simple_iff_natAbs_fundamentalDiscriminant_dvd (hm : 0 < m)
     mem_of_sq_eq_of_squarefree hm hζ (mem_adjoin_simple_self ℚ ζ) hd hdvd hx⟩
   obtain ⟨c, -, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
   refine (mem_adjoin_simple_iff_natAbs_dvd hm hζ
-    (isFundamentalDiscriminant_fundamentalDiscriminant hd) (x := c * x) ?_).mp
+    (isFundamentalDiscr_fundamentalDiscriminant hd) (x := c * x) ?_).mp
     (mul_mem (intCast_mem _ c) hxζ)
   rw [← hcd, mul_pow, hx]
   push_cast

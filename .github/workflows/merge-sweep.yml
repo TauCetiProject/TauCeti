@@ -16,10 +16,16 @@ name: Merge sweep
 on:
   schedule:
     - cron: "40 * * * *"   # hourly, offset from housekeeping (:20) and the daily bump
+  repository_dispatch:
+    types: [tauceti-merge-reconcile]
   workflow_dispatch:
     inputs:
       dry-run:
         description: "List actions without enqueuing / updating / flagging"
+        type: boolean
+        default: false
+      full-scan:
+        description: "Inspect all open PRs (bounded by the API budget); normally handled hourly"
         type: boolean
         default: false
 
@@ -34,10 +40,13 @@ jobs:
   sweep:
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
+    # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
+    # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
+    # commit, so no review_ref is passed.
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@17b59b39a44a15aaa7ee3913653b82b1112e5f92
     with:
       dry_run: ${{ inputs.dry-run || false }}
-      review_ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
+      focused: ${{ github.event_name == 'repository_dispatch' || (github.event_name == 'workflow_dispatch' && !inputs.full-scan) }}
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}

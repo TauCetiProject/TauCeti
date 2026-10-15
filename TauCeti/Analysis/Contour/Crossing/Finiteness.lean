@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Normed.Module.HahnBanach
 
@@ -121,7 +122,7 @@ private theorem eventually_interior_off_pos {p : Finset ℝ} {t₀ : ℝ} {L : �
 private theorem crossing_isolated_right (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
     (ht₀ : t₀ ∈ Ico (min a b) (max a b)) (hcross : γ t₀ = z₀) :
     ∀ᶠ t in 𝓝[>] t₀, γ t ≠ z₀ := by
-  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨p, _, hpieces⟩ := h.exists_breakpoints
   obtain ⟨L, hL_ne, hL_tendsto⟩ := h.exists_deriv_right_limit ht₀
   obtain ⟨f, -, hf_L⟩ := exists_dual_vector ℝ L (norm_ne_zero_iff.mpr hL_ne)
   have hfL_pos : (0 : ℝ) < f L := by
@@ -147,7 +148,7 @@ private theorem crossing_isolated_right (h : IsPwC1ImmersionOn γ a b) {t₀ : �
 private theorem crossing_isolated_left (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
     (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) (hcross : γ t₀ = z₀) :
     ∀ᶠ t in 𝓝[<] t₀, γ t ≠ z₀ := by
-  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨p, _, hpieces⟩ := h.exists_breakpoints
   obtain ⟨L, hL_ne, hL_tendsto⟩ := h.exists_deriv_left_limit ht₀
   obtain ⟨f, -, hf_L⟩ := exists_dual_vector ℝ L (norm_ne_zero_iff.mpr hL_ne)
   have hfL_pos : (0 : ℝ) < f L := by

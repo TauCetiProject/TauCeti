@@ -25,9 +25,8 @@ in the automorphism group of the scalar-extension functor.
 
 The final section combines this naturality with tensor-product compatibility of multiplicative
 Jordan decomposition. Thus both factors are tensor automorphisms. In the commutative
-coordinate-Hopf-algebra setting of the roadmap, Tannakian reconstruction can now lift them from
-compatible actions on representations to points of the original affine group. This is the
-representation-theoretic bridge in Layer 4 of the ReductiveGroups roadmap.
+coordinate-Hopf-algebra setting, Tannakian reconstruction can therefore lift them from compatible
+actions on representations to points of the original affine group.
 
 ## Main declarations
 
@@ -134,7 +133,7 @@ action, transported across the scalar-extension functor's object equality. -/
 @[simp]
 theorem fgPointSemisimplePartNatIso_hom_app (g : WithConv (H →ₐ[k] K))
     (M : FGComoduleCat.{u, v, w} k H) :
-    (fgPointSemisimplePartNatIso k H K g).hom.app M =
+    (fgPointSemisimplePartNatIso k H K g).asIso.hom.app M =
       eqToHom (FGComoduleCat.scalarExtensionFunctor_obj k H K M) ≫
         (GeneralLinearGroup.semisimplePart
           (LinearMap.GeneralLinearGroup.ofLinearEquiv
@@ -147,7 +146,7 @@ the point action, transported across the scalar-extension functor's object equal
 @[simp]
 theorem fgPointSemisimplePartNatIso_inv_app (g : WithConv (H →ₐ[k] K))
     (M : FGComoduleCat.{u, v, w} k H) :
-    (fgPointSemisimplePartNatIso k H K g).inv.app M =
+    (fgPointSemisimplePartNatIso k H K g).asIso.inv.app M =
       eqToHom (FGComoduleCat.scalarExtensionFunctor_obj k H K M) ≫
         (GeneralLinearGroup.semisimplePart
           (LinearMap.GeneralLinearGroup.ofLinearEquiv
@@ -160,7 +159,7 @@ transported across the scalar-extension functor's object equality. -/
 @[simp]
 theorem fgPointUnipotentPartNatIso_hom_app (g : WithConv (H →ₐ[k] K))
     (M : FGComoduleCat.{u, v, w} k H) :
-    (fgPointUnipotentPartNatIso k H K g).hom.app M =
+    (fgPointUnipotentPartNatIso k H K g).asIso.hom.app M =
       eqToHom (FGComoduleCat.scalarExtensionFunctor_obj k H K M) ≫
         (GeneralLinearGroup.unipotentPart
           (LinearMap.GeneralLinearGroup.ofLinearEquiv
@@ -173,7 +172,7 @@ point action, transported across the scalar-extension functor's object equality.
 @[simp]
 theorem fgPointUnipotentPartNatIso_inv_app (g : WithConv (H →ₐ[k] K))
     (M : FGComoduleCat.{u, v, w} k H) :
-    (fgPointUnipotentPartNatIso k H K g).inv.app M =
+    (fgPointUnipotentPartNatIso k H K g).asIso.inv.app M =
       eqToHom (FGComoduleCat.scalarExtensionFunctor_obj k H K M) ≫
         (GeneralLinearGroup.unipotentPart
           (LinearMap.GeneralLinearGroup.ofLinearEquiv
@@ -204,6 +203,7 @@ theorem fgPointSemisimplePartNatIso_mul_fgPointUnipotentPartNatIso
   rw [fgPointSemisimplePartNatIso, fgPointUnipotentPartNatIso,
     FGComoduleCat.autOfComponents_mul]
   apply Aut.ext
+  apply Iso.ext
   apply NatTrans.ext
   funext M
   simp only [FGComoduleCat.autOfComponents_hom_app, fgPointNatIsoHom_hom_app]
@@ -272,7 +272,7 @@ variable [PerfectField K]
 /-- The natural semisimple-factor automorphism preserves the tensor unit and tensor products. -/
 theorem isMonoidal_fgPointSemisimplePartNatIso_hom
     (g : WithConv (H →ₐ[k] K)) :
-    NatTrans.IsMonoidal (fgPointSemisimplePartNatIso k H K g).hom := by
+    NatTrans.IsMonoidal (fgPointSemisimplePartNatIso k H K g).asIso.hom := by
   apply isMonoidal_of_linear_components k H K
     (fun M ↦ GeneralLinearGroup.semisimplePart
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)))
@@ -290,7 +290,7 @@ theorem isMonoidal_fgPointSemisimplePartNatIso_hom
 /-- The natural unipotent-factor automorphism preserves the tensor unit and tensor products. -/
 theorem isMonoidal_fgPointUnipotentPartNatIso_hom
     (g : WithConv (H →ₐ[k] K)) :
-    NatTrans.IsMonoidal (fgPointUnipotentPartNatIso k H K g).hom := by
+    NatTrans.IsMonoidal (fgPointUnipotentPartNatIso k H K g).asIso.hom := by
   apply isMonoidal_of_linear_components k H K
     (fun M ↦ GeneralLinearGroup.unipotentPart
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)))
@@ -309,40 +309,40 @@ theorem isMonoidal_fgPointUnipotentPartNatIso_hom
 monoidal scalar-extension functor. -/
 noncomputable def fgPointSemisimplePartTensorIso (g : WithConv (H →ₐ[k] K)) :
     Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H K) :=
-  @LaxMonoidalFunctor.isoMk _ _ _ _ _ _ _ _
-    (fgPointSemisimplePartNatIso k H K g)
+  Aut.of <| @LaxMonoidalFunctor.isoMk _ _ _ _ _ _ _ _
+    (fgPointSemisimplePartNatIso k H K g).asIso
     (isMonoidal_fgPointSemisimplePartNatIso_hom k H K g)
 
 /-- The unipotent factors of a point's actions on finite comodules, as an automorphism of the
 monoidal scalar-extension functor. -/
 noncomputable def fgPointUnipotentPartTensorIso (g : WithConv (H →ₐ[k] K)) :
     Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H K) :=
-  @LaxMonoidalFunctor.isoMk _ _ _ _ _ _ _ _
-    (fgPointUnipotentPartNatIso k H K g)
+  Aut.of <| @LaxMonoidalFunctor.isoMk _ _ _ _ _ _ _ _
+    (fgPointUnipotentPartNatIso k H K g).asIso
     (isMonoidal_fgPointUnipotentPartNatIso_hom k H K g)
 
 /-- Forgetting tensor compatibility from the semisimple-factor automorphism recovers its
 underlying natural automorphism. -/
 @[simp]
 theorem fgPointSemisimplePartTensorIso_hom_hom (g : WithConv (H →ₐ[k] K)) :
-    (fgPointSemisimplePartTensorIso k H K g).hom.hom =
-      (fgPointSemisimplePartNatIso k H K g).hom :=
+    (fgPointSemisimplePartTensorIso k H K g).asIso.hom.hom =
+      (fgPointSemisimplePartNatIso k H K g).asIso.hom :=
   (rfl)
 
 /-- Forgetting tensor compatibility from the unipotent-factor automorphism recovers its
 underlying natural automorphism. -/
 @[simp]
 theorem fgPointUnipotentPartTensorIso_hom_hom (g : WithConv (H →ₐ[k] K)) :
-    (fgPointUnipotentPartTensorIso k H K g).hom.hom =
-      (fgPointUnipotentPartNatIso k H K g).hom :=
+    (fgPointUnipotentPartTensorIso k H K g).asIso.hom.hom =
+      (fgPointUnipotentPartNatIso k H K g).asIso.hom :=
   (rfl)
 
 /-- Forgetting tensor compatibility from the inverse semisimple-factor automorphism recovers
 the inverse underlying natural automorphism. -/
 @[simp]
 theorem fgPointSemisimplePartTensorIso_inv_hom (g : WithConv (H →ₐ[k] K)) :
-    (fgPointSemisimplePartTensorIso k H K g).inv.hom =
-      (fgPointSemisimplePartNatIso k H K g).inv :=
+    (fgPointSemisimplePartTensorIso k H K g).asIso.inv.hom =
+      (fgPointSemisimplePartNatIso k H K g).asIso.inv :=
   by
     unfold fgPointSemisimplePartTensorIso
     rfl
@@ -351,8 +351,8 @@ theorem fgPointSemisimplePartTensorIso_inv_hom (g : WithConv (H →ₐ[k] K)) :
 the inverse underlying natural automorphism. -/
 @[simp]
 theorem fgPointUnipotentPartTensorIso_inv_hom (g : WithConv (H →ₐ[k] K)) :
-    (fgPointUnipotentPartTensorIso k H K g).inv.hom =
-      (fgPointUnipotentPartNatIso k H K g).inv :=
+    (fgPointUnipotentPartTensorIso k H K g).asIso.inv.hom =
+      (fgPointUnipotentPartNatIso k H K g).asIso.inv :=
   by
     unfold fgPointUnipotentPartTensorIso
     rfl
@@ -390,8 +390,9 @@ theorem commute_fgPointSemisimplePartTensorIso_fgPointUnipotentPartTensorIso
       (fgPointUnipotentPartTensorIso k H K g) := by
   rw [commute_iff_eq]
   apply Aut.ext
+  apply Iso.ext
   apply LaxMonoidalFunctor.hom_ext
-  exact congrArg Iso.hom
+  exact congrArg (fun α ↦ α.asIso.hom)
     (commute_fgPointSemisimplePartNatIso_fgPointUnipotentPartNatIso k H K g).eq
 
 /-- Multiplying the tensor automorphisms formed by the semisimple and unipotent factors recovers
@@ -402,9 +403,10 @@ theorem fgPointSemisimplePartTensorIso_mul_fgPointUnipotentPartTensorIso
     fgPointSemisimplePartTensorIso k H K g * fgPointUnipotentPartTensorIso k H K g =
       fgPointTensorIso k H K g := by
   apply Aut.ext
+  apply Iso.ext
   apply LaxMonoidalFunctor.hom_ext
   rw [fgPointTensorIso_hom_hom]
-  exact congrArg Iso.hom
+  exact congrArg (fun α ↦ α.asIso.hom)
     (fgPointSemisimplePartNatIso_mul_fgPointUnipotentPartNatIso k H K g)
 
 end PerfectField

@@ -7,9 +7,11 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
 /-!
@@ -35,12 +37,27 @@ multiplicative `1`-cocycle `Gal(F/K) → Fˣ`, which is a coboundary by Noether'
 `Gal(L/K)` because every continuous class is inflated from a finite layer,
 `TauCeti.ContCohomology.subsingleton_H1_of_forall_openNormalSubgroup`.
 
+For a finite group `H` of automorphisms of `L`, embedded in `Gal(L/K)` by `f`, Artin's theorem
+identifies `H` with the Galois group of `L` over the fixed field of the image of `f`, so Noether's
+Hilbert 90 gives `H¹(H, Lˣ) = 0` without any finiteness assumption on `L/K`.
+
 ## Main results
 
+* `TauCeti.galEquivOfInjective`: a finite group `H` embedded in `Gal(L/K)` is the Galois group of
+  `L` over the fixed field of its image.
+* `TauCeti.groupCohomologyResUnitsIso`: the induced isomorphism of the cohomology of `Lˣ`.
+* `TauCeti.isZero_groupCohomology_one_res_units`: `H¹(H, Lˣ) = 0` for such `H`.
 * `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints`: Hilbert 90 at a finite layer
   `Gal(L/K) ⧸ U` with coefficients `(Lˣ)^U`.
 * `TauCeti.subsingleton_H1_additive_units`: `H¹(Gal(L/K), Lˣ) = 0` for any Galois `L/K`.
+* `TauCeti.isMulCoboundary₁_of_isMulCocycle₁_of_isLocallyConstant`: the same for an explicit
+  locally constant multiplicative cocycle `Gal(L/K) → Lˣ`.
 * `TauCeti.subsingleton_H1_unitsCoeff`: `H¹(G_K, (Kˢ)ˣ) = 0`.
+* `TauCeti.subsingleton_H1_unitsCoeff_fixingSubgroup`,
+  `TauCeti.subsingleton_H1_unitsCoeff_of_isClosed`: `H¹(N, (Kˢ)ˣ) = 0` for the subgroup `N` fixing
+  a subextension, equivalently for every closed subgroup `N` of `G_K`.
+* `TauCeti.explicitInfl2_unitsCoeff_injective`: consequently inflation from `G_K ⧸ N` into
+  `H²(G_K, (Kˢ)ˣ)` is injective for every closed normal subgroup `N`.
 * `TauCeti.hilbert90`: the preceding vanishing for Mathlib's canonical continuous cohomology.
 
 ## References
@@ -111,14 +128,63 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints (U : OpenNorm
 
 end FiniteLevel
 
+section FiniteGroup
+
+open Limits IntermediateField
+
+variable {K L : Type} [Field K] [Field L] [Algebra K L]
+  {H : Type} [Group H] [Finite H] {f : H →* Gal(L/K)} (hf : Function.Injective f)
+
+/-- **Artin's theorem for a finite group of automorphisms.** An injective homomorphism
+`f : H →* Gal(L/K)` from a finite group identifies `H` with the Galois group of `L` over the fixed
+field of the image of `f` (`FixedPoints.toAlgAutMulEquiv`). No finiteness of `L/K` is needed. -/
+noncomputable def galEquivOfInjective : H ≃* Gal(L/fixedField f.range) :=
+  have : Finite f.range := Finite.of_surjective _ f.rangeRestrict_surjective
+  (MonoidHom.ofInjective hf).trans (FixedPoints.toAlgAutMulEquiv f.range L)
+
+@[simp]
+theorem galEquivOfInjective_apply (h : H) (x : L) :
+    galEquivOfInjective hf h x = f h x :=
+  (rfl)
+
+/-- The cohomology of a finite group `H` acting on `Lˣ` through an injective
+`f : H →* Gal(L/K)` is the cohomology of `Gal(L/E)` acting on `Lˣ`, for `E` the fixed field of the
+image of `f`. -/
+noncomputable def groupCohomologyResUnitsIso (n : ℕ) :
+    groupCohomology (Rep.res f (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) n ≅
+      groupCohomology (Rep.ofMulDistribMulAction Gal(L/fixedField f.range) Lˣ) n :=
+  groupCohomology.mapIso (galEquivOfInjective hf) (LinearEquiv.refl ℤ _) (fun h => by
+    ext x
+    exact Additive.toMul.injective (Units.ext (galEquivOfInjective_apply hf h _).symm)) n
+
+include hf in
+/-- **Hilbert 90 for a finite group of automorphisms.** If `H` is finite and
+`f : H →* Gal(L/K)` is injective, then `H¹(H, Lˣ) = 0` for the action of `H` on `Lˣ` through
+`f`: the group `H` is the Galois group of `L` over the fixed field of its image, and Noether's
+Hilbert 90 applies to that finite extension. -/
+theorem isZero_groupCohomology_one_res_units :
+    IsZero (groupCohomology (Rep.res f (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) 1) := by
+  refine IsZero.of_iso ?_ (groupCohomologyResUnitsIso hf 1)
+  have : Finite f.range := Finite.of_surjective _ f.rangeRestrict_surjective
+  have : FiniteDimensional (fixedField f.range) L :=
+    inferInstanceAs (FiniteDimensional (FixedPoints.subfield f.range L) L)
+  -- `Rep.ofAlgebraAutOnUnits` unfolds to `Rep.ofMulDistribMulAction`, and `H1` to degree one.
+  have : Subsingleton (groupCohomology
+      (Rep.ofMulDistribMulAction Gal(L/fixedField f.range) Lˣ) 1) :=
+    inferInstanceAs <| Subsingleton <|
+      groupCohomology.H1 (Rep.ofAlgebraAutOnUnits (fixedField f.range) L)
+  exact ModuleCat.isZero_of_subsingleton _
+
+end FiniteGroup
+
 /-- **Hilbert 90 for a Galois extension** `L/K`, finite or not: the continuous `H¹(Gal(L/K), Lˣ)`
 vanishes, the units of `L` being written additively and carrying the discrete topology
 (NSW (6.2.1)). Every class is inflated from a finite layer, where it vanishes by
 `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints`.
 
 The continuity of the action is automatic for the discrete topology
-(`TauCeti.stabilizer_isOpen_units`) and is an instance argument only because `H¹` is formed under
-it. -/
+(`Units.stabilizer_isOpen_of_isIntegral`) and is an instance argument only because `H¹` is formed
+under it. -/
 theorem subsingleton_H1_additive_units {K L : Type*} [Field K] [Field L] [Algebra K L]
     [IsGalois K L] [TopologicalSpace (Additive Lˣ)] [DiscreteTopology (Additive Lˣ)]
     [ContinuousSMul Gal(L/K) (Additive Lˣ)] :
@@ -129,6 +195,26 @@ theorem subsingleton_H1_additive_units {K L : Type*} [Field K] [Field L] [Algebr
       exact H1pi_eq_zero_iff.2 (mem_B1_iff.2
         (isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints U (mem_Z1_iff.1 z.2).2))
 
+/-- **Hilbert 90 for explicit cocycles.** For a Galois extension `L/K`, finite or not, every
+locally constant multiplicative `1`-cocycle `f : Gal(L/K) → Lˣ`, that is
+`f (σ * τ) = σ (f τ) * f σ`, is a coboundary: `f σ = σ x / x` for some `x : Lˣ`. -/
+theorem isMulCoboundary₁_of_isMulCocycle₁_of_isLocallyConstant {K L : Type*} [Field K]
+    [Field L] [Algebra K L] [IsGalois K L] {f : Gal(L/K) → Lˣ} (hf : IsMulCocycle₁ f)
+    (hc : IsLocallyConstant f) : IsMulCoboundary₁ f := by
+  let _ : TopologicalSpace (Additive Lˣ) := ⊥
+  have : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
+  have : ContinuousSMul Gal(L/K) (Additive Lˣ) := continuousSMul_iff_stabilizer_isOpen.2 fun x ↦
+    x.toMul.stabilizer_isOpen_of_isIntegral (Algebra.IsIntegral.isIntegral _)
+  have := subsingleton_H1_additive_units (K := K) (L := L)
+  have hz : Additive.ofMul ∘ f ∈ Z1 Gal(L/K) (Additive Lˣ) :=
+    mem_Z1_iff.2 ⟨(hc.comp _).continuous, fun σ τ ↦ by
+      simp only [Function.comp_apply, hf σ τ, ofMul_mul, Additive.ofMul_smul]⟩
+  obtain ⟨x, hx⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 (Subsingleton.elim (H1pi _ _ ⟨_, hz⟩) 0))
+  obtain ⟨y, rfl⟩ := Additive.ofMul.surjective x
+  refine ⟨y, fun σ ↦ Additive.ofMul.injective ?_⟩
+  rw [ofMul_div, Additive.ofMul_smul]
+  exact hx σ
+
 variable (K : Type*) [Field K]
 
 /-- **Hilbert 90 for the absolute Galois group**: `H¹(G_K, (Kˢ)ˣ) = 0`. -/
@@ -136,20 +222,51 @@ instance subsingleton_H1_unitsCoeff :
     Subsingleton (H1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
   subsingleton_H1_additive_units
 
+/-- **Hilbert 90 for the subgroup of `G_K` fixing a subextension**: for a `K`-embedding
+`σ : L →ₐ[K] Kˢ`, the continuous `H¹(Gal(Kˢ/σ(L)), (Kˢ)ˣ)` vanishes. The isomorphism
+`G_L ≃ₜ* Gal(Kˢ/σ(L))` of `TauCeti.absoluteGaloisGroupEquivFixingSubgroup`, together with the
+matching identification `(Kˢ)ˣ ≃ (Lˢ)ˣ` of coefficients, carries it to Hilbert 90 for `G_L`. -/
+theorem subsingleton_H1_unitsCoeff_fixingSubgroup {L : Type*} [Field L] [Algebra K L]
+    (σ : L →ₐ[K] SeparableClosure K) :
+    Subsingleton (H1 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K)) :=
+  (explicitMap1Equiv (↥σ.fieldRange.fixingSubgroup) (UnitsCoeff K) (AbsoluteGaloisGroup L)
+    (UnitsCoeff L) (absoluteGaloisGroupEquivFixingSubgroup K L σ)
+    (Units.mapEquiv (separableClosureRingEquiv K L σ).symm.toMulEquiv).toAdditive
+    continuous_of_discreteTopology continuous_of_discreteTopology fun g m ↦ by
+      refine Additive.toMul.injective (Units.ext ?_)
+      rw [Subgroup.smul_def (α := UnitsCoeff K), Additive.toMul_smul]
+      simp only [MulEquiv.toAdditive_apply_apply, toMul_ofMul, Additive.toMul_smul]
+      simp [AlgEquiv.smul_units_def]).toEquiv.subsingleton_congr.2 inferInstance
+
+/-- **Hilbert 90 for a closed subgroup of `G_K`**: `H¹(N, (Kˢ)ˣ) = 0` for every closed subgroup
+`N`, which is the subgroup fixing its fixed field (`InfiniteGalois.fixingSubgroup_fixedField`). -/
+theorem subsingleton_H1_unitsCoeff_of_isClosed (N : Subgroup (AbsoluteGaloisGroup K))
+    (hN : IsClosed (N : Set (AbsoluteGaloisGroup K))) :
+    Subsingleton (H1 N (UnitsCoeff K)) := by
+  have h : (IntermediateField.fixedField N).val.fieldRange.fixingSubgroup = N := by
+    rw [IntermediateField.fieldRange_val]
+    exact InfiniteGalois.fixingSubgroup_fixedField ⟨N, hN⟩
+  rw [← h]
+  exact subsingleton_H1_unitsCoeff_fixingSubgroup K (IntermediateField.fixedField N).val
+
+/-- **Inflation into `H²(G_K, (Kˢ)ˣ)` is injective**: for a closed normal subgroup `N` of `G_K`,
+inflation `H²(G_K ⧸ N, ((Kˢ)ˣ)^N) → H²(G_K, (Kˢ)ˣ)` is injective, since by Hilbert 90 for `N`
+the transgression out of `H¹(N, (Kˢ)ˣ)` vanishes. For the subgroup fixing a Galois subextension
+`L/K` this is the injectivity of `H²(Gal(L/K), Lˣ)` into the cohomological Brauer group. -/
+theorem explicitInfl2_unitsCoeff_injective (N : Subgroup (AbsoluteGaloisGroup K)) [N.Normal]
+    (hN : IsClosed (N : Set (AbsoluteGaloisGroup K)))
+    [ContinuousSMul (AbsoluteGaloisGroup K ⧸ N) (FixedPoints.addSubgroup N (UnitsCoeff K))] :
+    Function.Injective (explicitInfl2 (AbsoluteGaloisGroup K) (UnitsCoeff K) N) :=
+  have := subsingleton_H1_unitsCoeff_of_isClosed K N hN
+  explicitInfl2_injective_of_subsingleton _ _ N hN
+
 /-- **Hilbert 90 for the absolute Galois group**, stated for Mathlib's canonical continuous
 cohomology: `H¹(G_K, (Kˢ)ˣ) = 0` (NSW (6.2.1)). This is the form in which the vanishing feeds
 the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective for
 `n` positive and invertible in `K`. -/
 theorem hilbert90 :
     Limits.IsZero (continuousCohomology 1
-      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
-  let h : Subsingleton (DiscreteH1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
-    (discreteH1Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)).toEquiv.subsingleton_congr.mpr
-      inferInstance
-  rw [← (explicitH1IsoContinuousCohomology
-    (AbsoluteGaloisGroup K) (UnitsCoeff K)).isZero_iff]
-  rw [Limits.IsZero.iff_id_eq_zero]
-  ext x
-  exact h.elim _ _
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :=
+  isZero_continuousCohomology_one_of_subsingleton _ _
 
 end TauCeti

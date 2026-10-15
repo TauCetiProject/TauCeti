@@ -32,3 +32,17 @@ theorem mem_sup_adjoin_of_exists_add_mul {F : IntermediateField K L} {x y : L}
     (mul_mem (hF hb) (hx (IntermediateField.mem_adjoin_of_mem K (Set.mem_singleton x))))
 
 end TauCeti.IntermediateField
+
+namespace IntermediateField
+
+open scoped IntermediateField
+
+/-- **The generator of `K⟮α⟯` generates it**: inside the field `K⟮α⟯`, adjoining the generator gives
+everything. -/
+theorem adjoin_adjoinSimple_gen_eq_top {K L : Type*} [Field K] [Field L] [Algebra K L] (α : L) :
+    K⟮AdjoinSimple.gen K α⟯ = ⊤ := by
+  apply map_injective K⟮α⟯.val
+  rw [adjoin_map, Set.image_singleton, coe_val, AdjoinSimple.coe_gen, ← AlgHom.fieldRange_eq_map,
+    fieldRange_val]
+
+end IntermediateField

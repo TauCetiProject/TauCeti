@@ -18,6 +18,9 @@ construction also applies to compact manifolds with boundary or corners.
 
 The volume is the total mass of the Riemannian density of J. M. Lee, *Introduction to
 Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 2.
+
+The `RiemannianIsometry` namespace packages measure and total-volume invariance at the bundled
+isometry API.
 -/
 
 public section
@@ -60,6 +63,19 @@ theorem ofReal_riemannianTotalVolume :
 theorem riemannianTotalVolume_nonneg : 0 ≤ riemannianTotalVolume I M :=
   measureReal_nonneg
 
+/-- A nonempty compact boundaryless Riemannian manifold has positive total volume. -/
+theorem riemannianTotalVolume_pos [I.Boundaryless] [Nonempty M] :
+    0 < riemannianTotalVolume I M := by
+  obtain ⟨α⟩ := ‹Nonempty M›
+  rw [riemannianTotalVolume_def]
+  apply ENNReal.toReal_pos
+  · have hsource : 0 < riemannianVolume I M (chartAt H α).source := by
+      rw [riemannianVolume_apply_of_subset (α := α) (s := (chartAt H α).source) subset_rfl]
+      exact chartRiemannianVolume_pos α
+    have hmono : (chartAt H α).source ⊆ (Set.univ : Set M) := subset_univ _
+    exact (lt_of_lt_of_le hsource (measure_mono hmono)).ne'
+  · finiteness
+
 variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   {N : Type*} [TopologicalSpace N] [CompactSpace N] [ChartedSpace H' N]
   [IsManifold I' 1 N]
@@ -80,5 +96,25 @@ theorem _root_.Homeomorph.riemannianTotalVolume_eq (Φ : M ≃ₜ N)
     (riemannianVolume I M) univ = ((riemannianVolume I M).map Φ) univ := by
       rw [Measure.map_apply Φ.measurable MeasurableSet.univ, preimage_univ]
     _ = (riemannianVolume I' N) univ := congrArg (· univ) h.map_eq
+
+namespace RiemannianIsometry
+
+variable {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'}
+  {N : Type*} [TopologicalSpace N] [CompactSpace N] [ChartedSpace H' N]
+  [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace J y)]
+
+/-- A Riemannian isometry between compact manifolds preserves total Riemannian volume. -/
+theorem riemannianTotalVolume_eq
+    (Φ : RiemannianIsometry I J M N) :
+    riemannianTotalVolume I M = riemannianTotalVolume J N := by
+  apply Homeomorph.riemannianTotalVolume_eq Φ.toDiffeomorph.toHomeomorph Φ.mdifferentiable
+  intro x v w
+  -- See `measurePreserving_riemannianVolume` for the coercion normalization.
+  change ⟪mfderiv I J Φ x v, mfderiv I J Φ x w⟫_ℝ = ⟪v, w⟫_ℝ
+  exact Φ.inner_mfderiv x v w
+
+end RiemannianIsometry
 
 end TauCeti

@@ -5,11 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.AdicCompletion.Topology
+public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
+public import TauCeti.NumberTheory.LocalField.Uniformizer
+import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
+import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 
 /-!
 # Normalization of the p-adic absolute value
@@ -21,14 +28,27 @@ concrete p-adic norm and valuation APIs.
 
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`.
+* `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
+  the additive-group uniformity, so completeness arguments can use the canonical group structure.
+* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
+  `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit of it.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
 * `Padic.natCastValuation_eq_padicValNat` identifies the normalized valuation of a natural
   number with `padicValNat`, and `Padic.natCastValuation_self` and
-  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
+  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`; by
+  the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer ring for odd
+  `p`.
+* `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
+  the integer ring, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a uniformizer of
+  `ℚ_[p]`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
+* `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
+  power of `p` is not a square in `ℚ_[p]`; `Padic.not_isSquare_five` (`5` in `ℚ_[2]`) and
+  `Padic.not_isSquare_neg_three` (`-3` in `ℚ_[5]`) are its two instances.
+* `Padic.irreducible_X_sq_add_X_add_one`: `X² + X + 1` is irreducible over `ℚ_[5]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
 `NumberTheory/Padics` development.
@@ -42,6 +62,15 @@ open scoped WithZero
 variable (p : ℕ) [Fact p.Prime]
 
 namespace Padic
+
+/-- The metric uniformity on `ℚ_[p]` agrees with the additive-group uniformity determined by its
+valuation topology. This identifies the uniformity used by the normed-field structure with the
+one used by additive topological-group completeness. -/
+theorem uniformSpace_eq_rightUniformSpace :
+    (inferInstance : UniformSpace ℚ_[p]) =
+      @IsTopologicalAddGroup.rightUniformSpace ℚ_[p] _
+        (Padic.mulValuation (p := p)).subgroups_basis.topology _ :=
+  (Padic.mulValuation (p := p)).toUniformSpace_eq
 
 /-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
 Mathlib's p-adic valuation. -/
@@ -63,20 +92,72 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
   rw [hcoe, Padic.mulValuation_toFun, ite_eq_right x.ne_zero, ← WithZero.exp_neg, neg_neg] at h
   exact WithZero.exp_injective h
 
+/-- The ring of integers of `ℚ_[p]` for its valuative relation is Mathlib's subring of elements
+of norm at most `1`. -/
+theorem integerRing_eq_subring : 𝒪[ℚ_[p]] = PadicInt.subring p := by
+  ext x
+  rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
+  rw [(ValuativeRel.isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation).le_one_iff_le_one]
+  simpa using (not_congr (Padic.norm_lt_norm_iff_mulValuation_lt
+    (x := (1 : ℚ_[p])) (y := x))).symm
+
+/-- The ring of integers of `ℚ_[p]` for its valuative relation is `ℤ_[p]`. -/
+noncomputable def integerRingEquiv : 𝒪[ℚ_[p]] ≃+* ℤ_[p] :=
+  RingEquiv.subringCongr (integerRing_eq_subring p)
+
+/-- The identification of the ring of integers of `ℚ_[p]` with `ℤ_[p]` is the identity on the
+underlying `p`-adic numbers. -/
+@[simp]
+theorem coe_integerRingEquiv_apply (x : 𝒪[ℚ_[p]]) : ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p]) = x :=
+  (rfl)
+
+/-- The inverse identification of `ℤ_[p]` with the ring of integers of `ℚ_[p]` is the identity on
+the underlying `p`-adic numbers. -/
+@[simp]
+theorem coe_integerRingEquiv_symm_apply (x : ℤ_[p]) :
+    (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p]) = x :=
+  (rfl)
+
+variable {p} in
+/-- An integer prime to `p` is a unit of the integer ring of `ℚ_[p]`. -/
+theorem isUnit_intCast_integerRing {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) : IsUnit (m : 𝒪[ℚ_[p]]) := by
+  have h : IsUnit (m : ℤ_[p]) := PadicInt.isUnit_iff.2 <| (PadicInt.norm_le_one _).antisymm <|
+    not_lt.1 fun h ↦ hm ((PadicInt.norm_int_lt_one_iff_dvd m).1 h)
+  simpa using h.map (integerRingEquiv p).symm
+
+/-- The integer ring of `ℚ_[p]` is adically complete, via its canonical identification with
+`ℤ_[p]`. -/
+instance integerRingIsAdicComplete :
+    IsAdicComplete (IsLocalRing.maximalIdeal (𝒪[ℚ_[p]])) (𝒪[ℚ_[p]]) := by
+  have h := (IsAdicComplete.congr_ringEquiv
+    (I := IsLocalRing.maximalIdeal ℤ_[p]) (e := (integerRingEquiv p).symm)).2
+      (inferInstance : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) ℤ_[p])
+  simpa only [IsLocalRing.map_ringEquiv_maximalIdeal] using h
+
+/-- The integer ring of `ℚ_[p]` is compact, since it is identified with `ℤ_[p]`. -/
+instance integerRingCompactSpace : CompactSpace 𝒪[ℚ_[p]] := by
+  have hcoe : Continuous (fun x : 𝒪[ℚ_[p]] =>
+      ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p])) := by
+    simp only [coe_integerRingEquiv_apply]
+    exact continuous_subtype_val
+  have hcoe' : Continuous (fun x : ℤ_[p] =>
+      (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p])) := by
+    simp only [coe_integerRingEquiv_symm_apply]
+    exact continuous_subtype_val
+  let e : 𝒪[ℚ_[p]] ≃ₜ ℤ_[p] :=
+    { toEquiv := (integerRingEquiv p).toEquiv
+      continuous_toFun := continuous_induced_rng.2 hcoe
+      continuous_invFun := continuous_induced_rng.2 hcoe' }
+  exact e.symm.compactSpace
+
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.
 theorem natCard_residueField :
     Nat.card 𝓀[ℚ_[p]] = p := by
   rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
-  have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
-    ext x
-    rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
-    rw [(ValuativeRel.isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation).le_one_iff_le_one]
-    simpa using (not_congr (Padic.norm_lt_norm_iff_mulValuation_lt
-      (x := (1 : ℚ_[p])) (y := x))).symm
-  let e : 𝒪[ℚ_[p]] ≃+* ℤ_[p] := RingEquiv.subringCongr h
   rw [@Fintype.card_congr _ _ (Fintype.ofFinite 𝓀[ℚ_[p]]) inferInstance
-    ((IsLocalRing.ResidueField.mapEquiv e).trans PadicInt.residueField).toEquiv, ZMod.card]
+    ((IsLocalRing.ResidueField.mapEquiv (integerRingEquiv p)).trans
+      PadicInt.residueField).toEquiv, ZMod.card]
 
 /-- The normalized absolute value on `ℚ_[p]` agrees with Mathlib's norm. -/
 @[simp]
@@ -114,6 +195,12 @@ theorem natCastValuation_two (hp : p ≠ 2) :
   exact padicValNat.eq_zero_of_not_dvd fun h ↦
     hp ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h)
 
+variable {p} in
+/-- For an odd prime `p`, the integer `2` is a unit of the integer ring of `ℚ_[p]`. -/
+theorem isUnit_two_integerRing (hp : p ≠ 2) : IsUnit (2 : 𝒪[ℚ_[p]]) :=
+  (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
+    (natCastValuation_two p hp)
+
 /-- If `p ≡ 3 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Combined with
 `TauCeti.anisotropic_binary_one_one_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
 over `ℚ_[p]` for such primes. -/
@@ -121,9 +208,7 @@ theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     ¬ IsSquare (-1 : ℚ_[p]) := by
   intro hs0
   have hs : IsSquare (-1 : ℚ_[p]ˣ) := TauCeti.isSquare_units_val_iff.mp hs0
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) :=
-    (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
-      (natCastValuation_two p (by omega))
+  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := isUnit_two_integerRing (by omega)
   have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
     have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
     exact (by simpa using h (by simpa using hs))
@@ -134,4 +219,61 @@ theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     simpa only [Nat.card_eq_fintype_card] using natCard_residueField p
   exact ((FiniteField.isSquare_neg_one_iff).mp hs') (by simpa [hcard] using hp)
 
+variable {p} in
+/-- A square root in `ℚ_[p]` of an integer is a `p`-adic integer, so an integer that is not a
+square modulo some power of `p` is not a square in `ℚ_[p]`. -/
+theorem not_isSquare_intCast_of_not_isSquare_zmod {a : ℤ} {k : ℕ}
+    (h : ¬ IsSquare (a : ZMod (p ^ k))) : ¬ IsSquare (a : ℚ_[p]) := by
+  rintro ⟨b, hb⟩
+  have hb1 : ‖b‖ ≤ 1 := by
+    have : ‖b‖ * ‖b‖ ≤ 1 := by rw [← norm_mul, ← hb]; exact norm_int_le_one a
+    nlinarith [norm_nonneg b]
+  obtain ⟨c, rfl⟩ : ∃ c : ℤ_[p], (c : ℚ_[p]) = b := ⟨⟨b, hb1⟩, rfl⟩
+  have hc : c * c = a := PadicInt.ext (by push_cast; exact hb.symm)
+  exact h ⟨PadicInt.toZModPow k c, by rw [← map_mul, hc, map_intCast]⟩
+
+/-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
+theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by
+  have h := not_isSquare_intCast_of_not_isSquare_zmod (p := 2) (a := 5) (k := 3)
+    (by rintro ⟨x, hx⟩; revert x hx; decide)
+  simpa using h
+
+/-- The prime `5`, as a `Fact`, so that `ℚ_[5]` can be written. -/
+local instance factPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+
+/-- `-3` is not a square in `ℚ_[5]`, since its residue `2` is not a square modulo `5`. -/
+theorem not_isSquare_neg_three : ¬ IsSquare (-3 : ℚ_[5]) := by
+  have h := not_isSquare_intCast_of_not_isSquare_zmod (p := 5) (a := -3) (k := 1)
+    (by rintro ⟨x, hx⟩; revert x hx; decide)
+  simpa using h
+
+open Polynomial in
+/-- `X² + X + 1` is irreducible over `ℚ_[5]`: a root `r` would make `(2r + 1)² = −3` a square. -/
+theorem irreducible_X_sq_add_X_add_one : Irreducible (X ^ 2 + X + 1 : ℚ_[5][X]) := by
+  have hdeg : (X ^ 2 + X + 1 : ℚ_[5][X]).natDegree = 2 := by compute_degree!
+  have hmonic : (X ^ 2 + X + 1 : ℚ_[5][X]).Monic := by monicity!
+  rw [hmonic.irreducible_iff_roots_eq_zero_of_degree_le_three (by omega) (by omega),
+    Multiset.eq_zero_iff_forall_notMem]
+  intro r hr
+  rw [mem_roots hmonic.ne_zero, IsRoot, eval_add, eval_add, eval_pow, eval_X, eval_one] at hr
+  exact not_isSquare_neg_three ⟨2 * r + 1, by linear_combination (-4 : ℚ_[5]) * hr⟩
+
 end Padic
+
+namespace TauCeti.Padic
+
+/-- The residue prime `p` is a uniformizer of the integer ring of `ℚ_[p]`. -/
+theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
+  simpa only [map_natCast] using
+    (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
+
+/-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
+theorem isUniformizer_natCast_self :
+    IsUniformizer ℚ_[p]
+      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) := by
+  rw [isUniformizer_def]
+  apply Multiplicative.toAdd.injective
+  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, _root_.Padic.valuation_p,
+    toAdd_ofAdd]
+
+end TauCeti.Padic

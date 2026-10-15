@@ -60,9 +60,6 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
 
 ## References
 
-* [Tau Ceti's Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  Layer 2's triangulated `K₀` target and its accompanying
-  [`Suggested.lean` formal sketch](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/Suggested.lean).
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II,
   Exercise II.9.15, where `K₀` of a triangulated category is presented by the distinguished
   triangles, and Section 6 for the presentation engine consumed here.
@@ -80,8 +77,8 @@ section Relations
 
 variable {C : Type u} [Category.{v} C] [HasShift C ℤ] [EssentiallySmall.{w} C]
 
-/-- The relation `[T.obj₂] - [T.obj₁] - [T.obj₃]` attached to a triangle. It is imposed in
-triangulated `K₀` exactly for the distinguished triangles. -/
+/-- The relation `[T.obj₂] - [T.obj₁] - [T.obj₃]` attached to a triangle. Triangulated `K₀`
+imposes it for every distinguished triangle. -/
 noncomputable def triangleRelation (T : Triangle C) : FreeAbelianGroup (ObjectCode C) :=
   freeOf T.obj₂ - freeOf T.obj₁ - freeOf T.obj₃
 
@@ -93,10 +90,10 @@ lemma triangleRelation_def (T : Triangle C) :
 /-- An additive homomorphism annihilates the relation of a triangle exactly when it is additive
 on that triangle. This evaluates a triangle relation once and for all, for both the quotient map
 presenting triangulated `K₀` and the free extension of an invariant. -/
-lemma map_triangleRelation_eq_zero_iff {G : Type*} [AddCommGroup G]
+lemma map_triangleRelation_eq_zero_iff {G : Type*} [AddGroup G]
     (f : FreeAbelianGroup (ObjectCode C) →+ G) (T : Triangle C) :
     f (triangleRelation T) = 0 ↔ f (freeOf T.obj₂) = f (freeOf T.obj₁) + f (freeOf T.obj₃) := by
-  rw [triangleRelation_def, map_sub, map_sub, sub_sub, sub_eq_zero]
+  rw [triangleRelation_def, sub_sub, map_sub, map_add, sub_eq_zero]
 
 /-- The free map of a functor commuting with the shift carries the relation of a triangle to the
 relation of its image. -/
@@ -171,8 +168,7 @@ theorem of_eq_add_of_distTriang {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {h : Z �
 first two terms. -/
 theorem of_eq_sub_of_distTriang {T : Triangle C} (hT : T ∈ distTriang C) :
     (of T.obj₃ : TriangulatedK0 C) = of T.obj₂ - of T.obj₁ := by
-  rw [of_distTriang hT]
-  abel
+  rw [of_distTriang hT, add_sub_cancel_left]
 
 /-- The class of the zero object vanishes: it is the third term of the contractible triangle. -/
 @[simp]
@@ -239,22 +235,39 @@ theorem hom_ext {f g : TriangulatedK0 C →+ G} (h : ∀ X : C, f (of X) = g (of
 
 end HomExt
 
+/-- A homomorphism into triangulated `K₀` whose range contains the class of every object is
+surjective. -/
+theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ TriangulatedK0 C}
+    (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f :=
+  PresentedK0.surjective_of_forall_of_mem_range h
+
 variable {G : Type*} [AddCommGroup G]
 
 variable (C) in
-/-- An additive invariant for triangulated `K₀`: a function on objects of `C`, constant on
-isomorphism classes and additive on the distinguished triangles. These are exactly the data that
-factor through `TauCeti.TriangulatedK0 C`; see `TauCeti.TriangulatedK0.liftEquiv`. -/
+/-- An additive invariant for triangulated `K₀`: a function on objects of `C` additive on the
+distinguished triangles. It is then constant on isomorphism classes
+(`TauCeti.TriangulatedK0.AdditiveInvariant.map_iso`). These are exactly the data that factor
+through `TauCeti.TriangulatedK0 C`; see `TauCeti.TriangulatedK0.liftEquiv`. -/
 @[ext]
 structure AdditiveInvariant (G : Type*) [AddCommGroup G] where
   /-- The value of the invariant on an object. -/
   obj : C → G
-  /-- Isomorphic objects receive equal values. -/
-  map_iso : ∀ ⦃X Y : C⦄, (X ≅ Y) → obj X = obj Y
   /-- The value on the middle term of a distinguished triangle is the sum of the outer values. -/
   map_distTriang : ∀ ⦃T : Triangle C⦄, T ∈ distTriang C → obj T.obj₂ = obj T.obj₁ + obj T.obj₃
 
-private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant C G) :
+omit [EssentiallySmall.{w} C] in
+/-- **An additive invariant takes equal values on isomorphic objects.** Additivity on distinguished
+triangles alone forces invariance under isomorphisms of objects, which is the invariance the
+presentation of triangulated `K₀` requires. -/
+theorem AdditiveInvariant.map_iso (a : AdditiveInvariant C G) ⦃X Y : C⦄ (e : X ≅ Y) :
+    a.obj X = a.obj Y := by
+  have h0 : a.obj (0 : C) = 0 := by
+    simpa using a.map_distTriang (contractible_distinguished (0 : C))
+  have hT : Triangle.mk e.hom (0 : Y ⟶ (0 : C)) (0 : (0 : C) ⟶ X⟦(1 : ℤ)⟧) ∈ distTriang C :=
+    (Triangle.distinguished_iff_of_isZero₃ _ (isZero_zero C)).2 (by dsimp; infer_instance)
+  simpa [h0] using (a.map_distTriang hT).symm
+
+private def AdditiveInvariant.toPresented (a : AdditiveInvariant C G) :
     PresentedK0.AdditiveInvariant (triangulatedRelations C) G where
   obj := a.obj
   map_iso := a.map_iso
@@ -263,10 +276,6 @@ private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant C
     rw [map_triangleRelation_eq_zero_iff, freeLift_freeOf a.map_iso,
       freeLift_freeOf a.map_iso, freeLift_freeOf a.map_iso]
     exact a.map_distTriang hT
-
-@[simp] private lemma AdditiveInvariant.toPresented_obj (a : AdditiveInvariant C G) :
-    a.toPresented.obj = a.obj :=
-  (rfl)
 
 /-- The homomorphism out of triangulated `K₀` induced by a triangle-additive invariant. -/
 noncomputable def lift (a : AdditiveInvariant C G) : TriangulatedK0 C →+ G :=
@@ -288,7 +297,6 @@ noncomputable def liftEquiv : AdditiveInvariant C G ≃ (TriangulatedK0 C →+ G
   toFun := lift
   invFun f :=
     { obj := fun X => f (of X)
-      map_iso := fun _ _ e => by rw [of_congr e]
       map_distTriang := fun _ hT => by rw [of_distTriang hT, map_add] }
   left_inv a := by ext X; exact lift_of a X
   right_inv f := (lift_unique _ f fun _ => rfl).symm
@@ -342,38 +350,40 @@ theorem map_comp {K : Type u''} [Category.{v''} K] [Preadditive K] [HasZeroObjec
     map (F ⋙ H) = (map H).comp (map F) :=
   PresentedK0.map_comp F H _ _ _
 
-/-- Naturally isomorphic triangulated functors induce the same map. -/
-theorem map_congr {F' : C ⥤ D} [F'.CommShift ℤ] [F'.IsTriangulated] (e : F ≅ F') :
-    map F = map F' :=
-  PresentedK0.map_congr (fun X => ⟨e.app X⟩) _ _
+/-- Triangulated functors with isomorphic values on every object induce the same map. -/
+theorem map_congr {F' : C ⥤ D} [F'.CommShift ℤ] [F'.IsTriangulated]
+    (h : ∀ X : C, Nonempty (F.obj X ≅ F'.obj X)) : map F = map F' :=
+  PresentedK0.map_congr h _ _
 
 end Functoriality
 
 section Equivalence
 
-/-- **Equivalence invariance of triangulated `K₀`**: a triangulated equivalence induces an
-isomorphism of triangulated Grothendieck groups. -/
-noncomputable def mapEquiv (e : C ≌ D) [e.functor.CommShift ℤ] [e.inverse.CommShift ℤ]
-    [e.IsTriangulated] : TriangulatedK0 C ≃+ TriangulatedK0 D :=
+variable (e : C ≌ D) [e.functor.CommShift ℤ] [e.functor.IsTriangulated]
+
+/-- **Equivalence invariance of triangulated `K₀`**: an equivalence whose functor is triangulated
+induces an isomorphism of triangulated Grothendieck groups. The inverse functor inherits a
+compatible shift and is triangulated (`CategoryTheory.Equivalence.commShiftInverse`,
+`CategoryTheory.Equivalence.IsTriangulated.mk'`), so no data about it is needed. -/
+noncomputable def mapEquiv : TriangulatedK0 C ≃+ TriangulatedK0 D :=
+  letI := e.commShiftInverse ℤ
+  letI : e.CommShift ℤ := e.commShift_of_functor ℤ
+  letI : e.IsTriangulated := Equivalence.IsTriangulated.mk' e inferInstance
   PresentedK0.mapEquiv e (mapsTo_triangulatedRelations e.functor)
     (mapsTo_triangulatedRelations e.inverse)
 
 @[simp]
-lemma mapEquiv_of (e : C ≌ D) [e.functor.CommShift ℤ] [e.inverse.CommShift ℤ]
-    [e.IsTriangulated] (X : C) :
-    mapEquiv e (of X) = (of (e.functor.obj X) : TriangulatedK0 D) :=
+lemma mapEquiv_of (X : C) : mapEquiv e (of X) = (of (e.functor.obj X) : TriangulatedK0 D) :=
   PresentedK0.mapEquiv_of e _ _ X
 
 @[simp]
-lemma mapEquiv_symm_of (e : C ≌ D) [e.functor.CommShift ℤ] [e.inverse.CommShift ℤ]
-    [e.IsTriangulated] (Y : D) :
+lemma mapEquiv_symm_of (Y : D) :
     (mapEquiv e).symm (of Y) = (of (e.inverse.obj Y) : TriangulatedK0 C) :=
   PresentedK0.mapEquiv_symm_of e _ _ Y
 
 /-- The homomorphism underlying equivalence invariance is the map induced by the functor. -/
 @[simp]
-lemma mapEquiv_toAddMonoidHom (e : C ≌ D) [e.functor.CommShift ℤ] [e.inverse.CommShift ℤ]
-    [e.IsTriangulated] :
+lemma mapEquiv_toAddMonoidHom :
     ((mapEquiv e : TriangulatedK0 C ≃+ TriangulatedK0 D) : TriangulatedK0 C →+ TriangulatedK0 D) =
       map e.functor :=
   PresentedK0.mapEquiv_toAddMonoidHom e _ _
@@ -428,18 +438,8 @@ theorem fromSplit_unique (f : SplitK0 C →+ TriangulatedK0 C)
 
 /-- The canonical comparison out of split `K₀` is surjective: the classes of objects generate
 triangulated `K₀`, so triangulated `K₀` is a quotient of split `K₀`. -/
-theorem fromSplit_surjective : Function.Surjective (fromSplit C) := by
-  intro x
-  induction x using TriangulatedK0.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of X => exact ⟨SplitK0.of X, fromSplit_of X⟩
-  | add a b ha hb =>
-    obtain ⟨a', rfl⟩ := ha
-    obtain ⟨b', rfl⟩ := hb
-    exact ⟨a' + b', map_add _ _ _⟩
-  | neg a ha =>
-    obtain ⟨a', rfl⟩ := ha
-    exact ⟨-a', map_neg _ _⟩
+theorem fromSplit_surjective : Function.Surjective (fromSplit C) :=
+  surjective_of_forall_of_mem_range fun X => ⟨SplitK0.of X, fromSplit_of X⟩
 
 /-- **Naturality of the comparison out of split `K₀`** in a triangulated functor, which is in
 particular additive and so also acts on split `K₀`. -/

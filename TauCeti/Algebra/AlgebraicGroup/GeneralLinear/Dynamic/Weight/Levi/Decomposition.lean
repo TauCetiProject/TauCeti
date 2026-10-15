@@ -44,11 +44,6 @@ decomposition of `P(w)`.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This advances the dynamic route to parabolic subgroups and Levi decomposition in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap. The remaining step is to combine this
-represented retraction with the represented unipotent and Levi inclusions to identify `P(w)` with
-their semidirect product.
 -/
 
 public section
@@ -125,7 +120,7 @@ theorem weightParabolicLimitPointsMap_app_apply (w : Fin N → ℤ)
 
 private theorem mapPointsFunctor_weightLeviToParabolicCoordinateMap_eq_transported
     (w : Fin N → ℤ) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, v}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, v}
       (weightLeviToParabolicCoordinateMap R w) :
       HopfAlgebra.pointsFunctor (R := R) (H := weightLeviCoordinateHopfAlgebra R w) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)) =
@@ -171,7 +166,7 @@ private theorem mapPointsFunctor_weightLeviToParabolicCoordinateMap_eq_transport
 @[simp]
 theorem mapPointsFunctor_weightLeviToParabolicCoordinateMap_comp_weightParabolicLimitPointsMap
     (w : Fin N → ℤ) :
-    CommHopfAlgCat.mapPointsFunctor.{u, u, v}
+    CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, v}
         (weightLeviToParabolicCoordinateMap R w) ≫
       weightParabolicLimitPointsMap R w =
       𝟙 (HopfAlgebra.pointsFunctor.{u, u, v}
@@ -195,7 +190,7 @@ noncomputable def weightParabolicLimitCoordinateMap (w : Fin N → ℤ) :
 represented points. -/
 private theorem mapPointsFunctor_weightParabolicLimitCoordinateMap_sameUniverse
     (w : Fin N → ℤ) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (weightParabolicLimitCoordinateMap R w) :
       HopfAlgebra.pointsFunctor (R := R) (H := weightParabolicCoordinateHopfAlgebra R w) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := weightLeviCoordinateHopfAlgebra R w)) =
@@ -209,22 +204,18 @@ private theorem mapPointsFunctor_apply_eq_mapValue_generic
     {H K : _root_.CommHopfAlgCat.{u} R} (φ : H ⟶ K)
     {A : Type v} [CommRing A] [Algebra R A]
     (g : HopfAlgebra.points (R := R) (H := K) (CommAlgCat.of R A)) :
-    (CommHopfAlgCat.mapPointsFunctor φ).app (CommAlgCat.of R A) g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R A) g =
       AlgHom.mapValue g.ofConv
-        ((CommHopfAlgCat.mapPointsFunctor φ).app (CommAlgCat.of R K)
+        ((CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R K)
           (show HopfAlgebra.points (R := R) (H := K) (CommAlgCat.of R K) from
             toConv (AlgHom.id R K))) := by
   -- The application lemmas cannot rewrite the cross-universe `pointsFunctor.obj` carrier at
-  -- implicit transparency. Expose `mapPointsFunctor`, `mapValue`, and `WithConv` so both sides
+  -- implicit transparency. Expose `CommHopfAlgCat.Hom.mapPointsFunctor`, `mapValue`, and
+  -- `WithConv` so both sides
   -- become the underlying pre- and post-compositions of algebra homomorphisms.
   change toConv (g.ofConv.comp φ.hom) =
     AlgHom.mapValue g.ofConv (toConv ((AlgHom.id R K).comp φ.hom.toAlgHom))
-  apply WithConv.ofConv_injective
-  ext h
-  -- After removing `WithConv`, expose the two `AlgHom.comp` applications; the remaining
-  -- difference is precisely evaluation through the generic identity point.
-  change g.ofConv (φ.hom h) = g.ofConv ((AlgHom.id R K) (φ.hom h))
-  rw [AlgHom.id_apply]
+  simp only [AlgHom.mapValue_apply, AlgHom.id_comp]
 
 -- The representing isomorphism sends the generic parabolic point to a point whose base change
 -- along `g : O(P(w)) → A` is the dynamic-parabolic point represented by `g`. The explicit
@@ -282,6 +273,9 @@ private theorem mapValue_weightParabolicGenericPoint (w : Fin N → ℤ)
     _ = CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
           (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A) g := by
       congr 1
+      rw [AlgHom.mapValue_apply]
+      dsimp only [q]
+      rw [ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
     _ = _ := (coe_weightParabolicPointsIso_hom_app_apply R w g).symm
 
 /-- The limit coordinate morphism is a section of the coordinate morphism representing the
@@ -295,9 +289,10 @@ theorem weightParabolicLimitCoordinateMap_comp_weightLeviToParabolicCoordinateMa
   apply (CommHopfAlgCat.pointsFunctor.{u, u, u} (R := R) :
     (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}).map_injective
   -- The points functor is contravariant, so the coordinate composite appears in reverse order.
-  -- Writing it as `mapPointsFunctor` lets the two representing-map theorems rewrite it.
-  change CommHopfAlgCat.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w) ≫
-      CommHopfAlgCat.mapPointsFunctor (weightParabolicLimitCoordinateMap R w) = 𝟙 _
+  -- Writing it as `CommHopfAlgCat.Hom.mapPointsFunctor` lets the two representing-map theorems
+  -- rewrite it.
+  change CommHopfAlgCat.Hom.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w) ≫
+      CommHopfAlgCat.Hom.mapPointsFunctor (weightParabolicLimitCoordinateMap R w) = 𝟙 _
   rw [mapPointsFunctor_weightParabolicLimitCoordinateMap_sameUniverse,
     mapPointsFunctor_weightLeviToParabolicCoordinateMap_comp_weightParabolicLimitPointsMap]
 
@@ -307,7 +302,7 @@ dynamic limit transported to the represented weight-Levi points. -/
 theorem mapPointsFunctor_weightParabolicLimitCoordinateMap_app (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R)
     (g : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w) A) :
-    (CommHopfAlgCat.mapPointsFunctor (weightParabolicLimitCoordinateMap R w)).app A g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (weightParabolicLimitCoordinateMap R w)).app A g =
       (weightLeviPointsIso R w).inv.app A
         (Cocharacter.limitToLevi A (weightCocharacter (R := R) w)
           ((weightParabolicPointsIso R w).hom.app A g)) := by
@@ -329,7 +324,7 @@ theorem mapPointsFunctor_weightParabolicLimitCoordinateMap_app (w : Fin N → �
       (weightCocharacter (R := R) w) (CommAlgCat.of R A))
       ((weightParabolicPointsIso R w).hom.app (CommAlgCat.of R A) g)
   have hsame :
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (weightParabolicLimitCoordinateMap R w)).app PAlg q =
         (weightLeviPointsIso R w).inv.app PAlg
           (Cocharacter.limitToLevi PAlg (weightCocharacter (R := R) w) gP) := by
@@ -349,7 +344,7 @@ theorem mapPointsFunctor_weightParabolicLimitCoordinateMap_app (w : Fin N → �
     simpa only [P, PAlg, q, gP, gA] using mapValue_weightParabolicGenericPoint R w g
   -- Name the dynamic-parabolic component already present in the theorem statement so the
   -- quotient-point comparison below can use its characteristic lemma directly.
-  change (CommHopfAlgCat.mapPointsFunctor
+  change (CommHopfAlgCat.Hom.mapPointsFunctor
       (weightParabolicLimitCoordinateMap R w)).app (CommAlgCat.of R A) g =
     (weightLeviPointsIso R w).inv.app (CommAlgCat.of R A)
       (Cocharacter.limitToLevi (CommAlgCat.of R A)
@@ -362,18 +357,18 @@ theorem mapPointsFunctor_weightParabolicLimitCoordinateMap_app (w : Fin N → �
   calc
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
         (weightLeviDefiningHopfIdeal R w) (CommAlgCat.of R A)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (weightParabolicLimitCoordinateMap R w)).app (CommAlgCat.of R A) g) =
         AlgHom.mapValue g.ofConv
           (CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
             (weightLeviDefiningHopfIdeal R w) PAlg
-            ((CommHopfAlgCat.mapPointsFunctor
+            ((CommHopfAlgCat.Hom.mapPointsFunctor
               (weightParabolicLimitCoordinateMap R w)).app PAlg q)) := by
       calc
         _ = CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
               (weightLeviDefiningHopfIdeal R w) (CommAlgCat.of R A)
               (AlgHom.mapValue g.ofConv
-                ((CommHopfAlgCat.mapPointsFunctor
+                ((CommHopfAlgCat.Hom.mapPointsFunctor
                   (weightParabolicLimitCoordinateMap R w)).app PAlg q)) :=
           by
             rw [mapPointsFunctor_apply_eq_mapValue_generic R
@@ -382,7 +377,7 @@ theorem mapPointsFunctor_weightParabolicLimitCoordinateMap_app (w : Fin N → �
           simpa only [P, PAlg] using
             (CommHopfAlgCat.mapValue_quotientPointsHom (coordinateHopfAlgebra R N)
               (weightLeviDefiningHopfIdeal R w) g.ofConv
-              ((CommHopfAlgCat.mapPointsFunctor
+              ((CommHopfAlgCat.Hom.mapPointsFunctor
                 (weightParabolicLimitCoordinateMap R w)).app PAlg q)).symm
     _ = AlgHom.mapValue g.ofConv
           (Cocharacter.limit PAlg (weightCocharacter (R := R) w) gP) :=
@@ -432,10 +427,11 @@ theorem schemePointsAlgΓMulEquiv_weightParabolicLimit (w : Fin N → ℤ)
   rw [weightParabolicLimit_def]
   erw [CommHopfAlgCat.schemePointsAlgΓMulEquiv_mapDomain]
   -- `schemePointsAlgΓMulEquiv_mapDomain` leaves the coordinate algebra in the relative-spectrum
-  -- presentation produced by `hopfSpec`, whereas `mapPointsFunctor_app_apply` is stated using the
+  -- presentation produced by `hopfSpec`, whereas
+  -- `CommHopfAlgCat.Hom.mapPointsFunctor_app_apply` is stated using the
   -- named coordinate algebra. These are definitionally equal, but the coordinate definitions are
   -- sealed, so rewriting cannot see across the presentation; normalize the application once.
-  change (CommHopfAlgCat.mapPointsFunctor
+  change (CommHopfAlgCat.Hom.mapPointsFunctor
       (weightParabolicLimitCoordinateMap R w)).app
       ((algΓ (CommRingCat.of R)).obj T).unop
       (CommHopfAlgCat.schemePointsAlgΓMulEquiv

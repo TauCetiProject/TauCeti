@@ -8,8 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.CongruenceQuotient
 
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
--- Private in `RayClass.Basic`; needed below for `ClassGroup.mk_toPrincipalIdeal`.
-import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # The ray class exact sequence
@@ -62,6 +61,9 @@ the input to the ray class number formula.
   `TauCeti.GlobalNumberFields.mulExact_unitsResidueSignHom_residueSignRayClass` and
   `TauCeti.GlobalNumberFields.mulExact_residueSignRayClass_rayClassToClassGroup`: their
   multiplicative exactness forms.
+* `TauCeti.GlobalNumberFields.classMap_eq_one_iff_of_finitePart_eq`: the kernel of a transition
+  map between moduli with the same finite part consists of the classes of sign patterns trivial at
+  the real places of the smaller modulus.
 
 ## References
 
@@ -82,18 +84,18 @@ variable {K : Type*} [Field K] [NumberField K]
 dividing the finite part of `m`. -/
 noncomputable def principalRayClass (m : Modulus K) :
     primeToSubgroup m →* RayClassGroup m :=
-  (rayClassMk m).comp (principalIdealPrimeTo m)
+  (rayClassMk m).comp (NumberFieldArithmetic.principalIdealAway K m.support)
 
 /-- The principal ray class is represented by the corresponding principal fractional ideal. -/
 @[simp] theorem principalRayClass_apply (m : Modulus K) (x : primeToSubgroup m) :
-    principalRayClass m x = rayClassMk m (principalIdealPrimeTo m x) :=
+    principalRayClass m x = rayClassMk m (NumberFieldArithmetic.principalIdealAway K m.support x) :=
   (rfl)
 
 /-- A generator congruent to one modulo `m` has trivial principal ray class. -/
 theorem principalRayClass_eq_one_of_isCongrOne {m : Modulus K} {x : primeToSubgroup m}
     (hx : IsCongrOne m (x : Kˣ)) : principalRayClass m x = 1 := by
   rw [principalRayClass_apply, rayClassMk_eq_one_iff, mem_ray_iff]
-  exact ⟨(x : Kˣ), hx, coe_principalIdealPrimeTo m x |>.symm⟩
+  exact ⟨(x : Kˣ), hx, NumberFieldArithmetic.coe_principalIdealAway m.support x |>.symm⟩
 
 /-- The map from a ray class to its underlying ordinary ideal class. -/
 noncomputable def rayClassToClassGroup (m : Modulus K) :
@@ -173,12 +175,12 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
   rw [classMap_rayClassMk]
   let xm : primeToSubgroup 𝔪 :=
     ⟨x, congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hxm)⟩
-  have hJ : NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h) J =
-      I * principalIdealPrimeTo 𝔪 xm := by
+  have hJ : NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h) J =
+      I * NumberFieldArithmetic.principalIdealAway K 𝔪.support xm := by
     apply Subtype.ext
     apply Units.ext
     rw [NumberFieldArithmetic.coe_idealsAwayInclusion, Subgroup.coe_mul,
-      coe_principalIdealPrimeTo]
+      NumberFieldArithmetic.coe_principalIdealAway]
   rw [hJ, map_mul]
   rw [← principalRayClass_apply, principalRayClass_eq_one_of_isCongrOne hxm, mul_one]
 
@@ -192,7 +194,12 @@ theorem rayClassToClassGroup_surjective (m : Modulus K) :
 is exactness at `RayClassGroup m` in the ray-class exact sequence. -/
 theorem ker_rayClassToClassGroup (m : Modulus K) :
     (rayClassToClassGroup m).ker = (principalRayClass m).range := by
-  rw [rayClassToClassGroup, ker_rayClassLift, ← range_principalIdealPrimeTo,
+  have hmap : idealsPrimeToClassGroup m =
+      (ClassGroup.mk K).comp (NumberFieldArithmetic.idealsAway K m.support).subtype := by
+    ext I
+    simp only [idealsPrimeToClassGroup_apply, MonoidHom.comp_apply, Subgroup.subtype_apply]
+  rw [rayClassToClassGroup, ker_rayClassLift, hmap,
+    ← NumberFieldArithmetic.range_principalIdealAway (K := K) m.support,
     principalRayClass, MonoidHom.range_comp]
 
 /-- The principal-ray-class map followed by forgetting the modulus is exact. -/
@@ -208,7 +215,8 @@ ray only sees an element of `primeToSubgroup 𝔪` up to the integer units. -/
 theorem principalRayClass_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
     principalRayClass 𝔪 x = 1 ↔
       ∃ u : (𝓞 K)ˣ, IsCongrOne 𝔪 (Units.map (algebraMap (𝓞 K) K).toMonoidHom u * x) := by
-  rw [principalRayClass_apply, rayClassMk_eq_one_iff, mem_ray_iff, coe_principalIdealPrimeTo]
+  rw [principalRayClass_apply, rayClassMk_eq_one_iff, mem_ray_iff,
+    NumberFieldArithmetic.coe_principalIdealAway]
   refine ⟨fun ⟨y, hy, hyx⟩ ↦ ?_, fun ⟨u, hu⟩ ↦ ⟨_, hu, ?_⟩⟩
   · obtain ⟨u, hu⟩ := (FractionalIdeal.toPrincipalIdeal_eq_one_iff (y * (x : Kˣ)⁻¹)).mp
       (by rw [map_mul, map_inv, hyx, mul_inv_cancel])
@@ -300,5 +308,61 @@ theorem mulExact_unitsResidueSignHom_residueSignRayClass (𝔪 : Modulus K) :
 theorem mulExact_residueSignRayClass_rayClassToClassGroup (𝔪 : Modulus K) :
     Function.MulExact (residueSignRayClass 𝔪) (rayClassToClassGroup 𝔪) :=
   MonoidHom.mulExact_iff.mpr (range_residueSignRayClass 𝔪).symm
+
+/-- The residue and signs of the unit `-1`: residue `-1` and sign `-1` at every real place of the
+modulus. -/
+theorem unitsResidueSignHom_neg_one (𝔪 : Modulus K) :
+    unitsResidueSignHom 𝔪 (-1) = (-1, fun _ ↦ -1) := by
+  rw [unitsResidueSignHom_apply]
+  refine Prod.ext ?_ (funext fun w ↦ ?_)
+  · rw [residueSignHom_fst]
+    refine Units.ext ?_
+    rw [coe_residueHom, Units.val_neg, Units.val_one,
+      residue_eq _ (a := -1) (b := 1) (by simp) (by simp [coe_unitsToPrimeToSubgroup]), map_neg,
+      map_one]
+  · rw [residueSignHom_snd, modulusSignHom_apply, signHom_apply_eq_neg_one_iff,
+      coe_unitsToPrimeToSubgroup]
+    simp
+
+/-! ### Transition maps that only forget real places -/
+
+/-- **The kernel of a transition map between moduli with the same finite part consists of sign
+classes.**  When `𝔪 ∣ 𝔫` have the same finite part, a ray class of `𝔫` is killed by
+`classMap : Cl_𝔫 → Cl_𝔪` exactly when it is the class `residueSignRayClass 𝔫 (1, s)` of the trivial
+residue together with a pattern of signs `s` that is trivial at the real places of `𝔪`. -/
+theorem classMap_eq_one_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (hfin : 𝔪.finitePart = 𝔫.finitePart) (c : RayClassGroup 𝔫) :
+    classMap h c = 1 ↔ ∃ s : 𝔫.infinitePart → ℤˣ,
+      (∀ w : 𝔫.infinitePart, w.1 ∈ 𝔪.infinitePart → s w = 1) ∧
+        residueSignRayClass 𝔫 (1, s) = c := by
+  constructor
+  · intro hc
+    obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔫 c
+    rw [classMap_rayClassMk, rayClassMk_eq_one_iff, mem_ray_iff] at hc
+    obtain ⟨x, hx, hxI⟩ := hc
+    rw [NumberFieldArithmetic.coe_idealsAwayInclusion] at hxI
+    have hxn : x ∈ primeToSubgroup 𝔫 := by
+      refine mem_primeToSubgroup.mpr fun v hv ↦ hx.valuation_eq_one ?_
+      rwa [hfin]
+    obtain ⟨hres, hpos⟩ := (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin hxn).mp hx
+    refine ⟨modulusSignHom 𝔫 x, fun w hw ↦ ?_, ?_⟩
+    · rw [modulusSignHom_apply, signHom_apply_eq_one_iff]
+      exact hpos w.1 hw
+    · have hI : NumberFieldArithmetic.principalIdealAway K 𝔫.support ⟨x, hxn⟩ = I :=
+        Subtype.ext (Units.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway, hxI]))
+      rw [← hI, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom]
+      exact congrArg _ (Prod.ext (by rw [residueSignHom_fst, hres]) (by rw [residueSignHom_snd]))
+  · rintro ⟨s, hs, rfl⟩
+    obtain ⟨x, hx⟩ := residueSignHom_surjective 𝔫 (1, s)
+    rw [← hx, residueSignRayClass_residueSignHom, principalRayClass_apply, classMap_rayClassMk,
+      rayClassMk_eq_one_iff, mem_ray_iff]
+    refine ⟨x, ?_, by rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
+      NumberFieldArithmetic.coe_principalIdealAway]⟩
+    refine (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin x.2).mpr
+      ⟨by rw [← residueSignHom_fst, hx], fun w hw ↦ ?_⟩
+    have hw' := congrArg (fun p ↦ p.2 ⟨w, (Modulus.dvd_iff.mp h).2 hw⟩) hx
+    simp only [residueSignHom_snd, modulusSignHom_apply] at hw'
+    rw [← signHom_apply_eq_one_iff, hw']
+    exact hs _ hw
 
 end TauCeti.GlobalNumberFields

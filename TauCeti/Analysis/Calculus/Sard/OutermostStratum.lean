@@ -10,7 +10,7 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.LocallyNull
 
 /-!
@@ -24,11 +24,11 @@ target carries no measurable structure of its own.
 
 The strata of the critical set are handled in the neighbouring files, and this one supplies the
 outermost stratum, where the derivative is nonzero but not surjective, together with the assembly
-of all the strata into the theorem itself. The two earlier slices,
+of all the strata into the theorem itself. The two earlier results,
 `Differentiable.addHaar_image_criticalPoints_eq_zero` (equal dimensions),
 `Differentiable.addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank`
-(smaller source), are both subsumed by the statement proved here, which needs no relation between
-the two dimensions.
+(smaller source), need only differentiability. The theorem here needs no relation between the
+two dimensions, but imposes stronger smoothness.
 
 The argument for the outermost stratum is Milnor's. Near a point `a` where the derivative does not
 vanish, pick `v₀` with `Df(a) v₀ ≠ 0` and a functional `φ` on the target with `φ (Df(a) v₀) = 1`.
@@ -55,16 +55,17 @@ in the descent, since the inverse function theorem returns a local inverse as sm
 
 ## Main results
 
-* `TauCeti.addHaar_image_criticalPoints_eq_zero`: the critical values taken on an open set form a
-  null set.
-* `TauCeti.ContDiff.addHaar_image_criticalPoints_eq_zero`: **the Morse--Sard theorem**, its global
+* `TauCeti.addHaar_image_criticalPoints_eq_zero`: the critical values taken on a set where the map
+  is sufficiently smooth at every point form a null set.
+* `ContDiff.addHaar_image_criticalPoints_eq_zero`: **the Morse--Sard theorem**, its global
   form.
-* `TauCeti.ContDiff.dense_compl_image_criticalPoints`: the regular values are dense.
+* `ContDiff.dense_compl_image_criticalPoints`: the regular values are dense, without requiring a
+  measurable structure on the target.
 * `TauCeti.interior_image_criticalPoints_eq_empty`: the measure-free restatement, that the
-  critical values taken on an open set have empty interior.
+  critical values have empty interior.
 
-This is Lane F0 of the analytic Heegaard Floer roadmap, where finite-dimensional Sard is the
-prerequisite for Sard--Smale and hence for every transversality argument downstream.
+Finite-dimensional Sard supplies the fibrewise step in Sard--Smale and the regular values used
+in transversality arguments.
 
 ## References
 
@@ -81,32 +82,6 @@ open scoped ContDiff Topology
 namespace TauCeti
 
 universe u v
-
-section Surjective
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- A map into a trivial space has no critical points, every linear map into it being
-surjective. -/
-private theorem setOf_not_surjective_fderiv_eq_empty [Subsingleton F] (g : E → F) :
-    {x | ¬ Surjective (fderiv ℝ g x)} = ∅ :=
-  eq_empty_of_forall_notMem fun _ hx ↦ hx fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
-
-/-- If a continuous linear map `A` hits every vector annihilated by a functional `φ`, and `φ ∘ A`
-does not vanish identically, then `A` is surjective: rescaling gives `v₁` with `φ (A v₁) = 1`, and
-then `w - φ w • A v₁` is annihilated by `φ`, hence in the range. -/
-private theorem surjective_of_ker_subset_range {A : E →L[ℝ] F} {φ : F →L[ℝ] ℝ}
-    (hφA : ∃ v, φ (A v) ≠ 0) (h : ∀ y : F, φ y = 0 → ∃ v, A v = y) : Surjective A := by
-  obtain ⟨v₀, hv₀⟩ := hφA
-  intro w
-  set v₁ : E := (φ (A v₀))⁻¹ • v₀ with hv₁def
-  have hv₁ : φ (A v₁) = 1 := by
-    simp [hv₁def, hv₀]
-  obtain ⟨v, hv⟩ := h (w - φ w • A v₁) (by simp [hv₁])
-  exact ⟨v + φ w • v₁, by simp [hv]⟩
-
-end Surjective
 
 section MorseSard
 
@@ -129,14 +104,14 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
   | zero =>
     intro E _ _ _ hE k _ F _ _ _ _ _ ν _ U _ f _
     rcases subsingleton_or_nontrivial F with _ | _
-    · rw [setOf_not_surjective_fderiv_eq_empty f, inter_empty, image_empty, measure_empty]
+    · simp [surjective_to_subsingleton]
     · have : Subsingleton E := Module.finrank_zero_iff.mp (Nat.le_zero.mp hE)
       exact (Set.Subsingleton.image (fun x _ y _ ↦ Subsingleton.elim x y) f).measure_zero ν
   | succ n ih =>
     intro E _ _ _ hE k hk F _ _ _ _ _ ν _ U hU f hf
     -- A trivial target has no critical points at all.
     rcases subsingleton_or_nontrivial F with _ | hF
-    · rw [setOf_not_surjective_fderiv_eq_empty f, inter_empty, image_empty, measure_empty]
+    · simp [surjective_to_subsingleton]
     have hk1 : 1 ≤ k := by nlinarith
     have hkne : (k : ℕ∞ω) ≠ 0 := by
       simpa using Nat.one_le_iff_ne_zero.1 hk1
@@ -307,12 +282,20 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
           (hd.congr_of_eventuallyEq heq.symm).unique (hasFDerivAt_const t z)
         intro w
         simpa using congrArg (fun A : ↥Ek →L[ℝ] ℝ ↦ A w) hzero'
-      refine surjective_of_ker_subset_range ⟨v₀, hΘne⟩ fun y hy ↦ ?_
-      obtain ⟨w, hw⟩ := hGz ⟨y, hy⟩
-      refine ⟨T w, ?_⟩
-      have := congrArg (Subtype.val) hw
-      rw [hGd.fderiv] at this
-      simpa [hρval, hzero w] using this
+      have hker : (φ : F →ₗ[ℝ] ℝ).ker ≤ (fderiv ℝ f x).toLinearMap.range := by
+        intro y hy
+        obtain ⟨w, hw⟩ := hGz ⟨y, hy⟩
+        refine ⟨T w, ?_⟩
+        have := congrArg Subtype.val hw
+        rw [hGd.fderiv] at this
+        simpa [hρval, hzero w] using this
+      -- The range contains `ker φ`, and maps onto the quotient by it, so it is all of `F`.
+      have hcomp : Surjective ((φ : F →ₗ[ℝ] ℝ).comp (fderiv ℝ f x).toLinearMap) :=
+        LinearMap.surjective_iff_ne_zero.2 fun h ↦ hΘne (by
+          simpa using congrArg (fun A : E →ₗ[ℝ] ℝ ↦ A v₀) h)
+      apply LinearMap.range_eq_top.1
+      rw [← Submodule.comap_map_eq_self hker, ← LinearMap.range_comp,
+        LinearMap.range_eq_top.2 hcomp, Submodule.comap_top]
     -- Every slice of the image of the critical set is null.
     have hslicenull : ∀ t : ℝ, (addHaar : Measure ↥Fk)
         (Prod.mk t ⁻¹' (eF '' (f '' ({x | ¬ Surjective (fderiv ℝ f x)} ∩ K)))) = 0 := by
@@ -345,9 +328,10 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
       measure_prod_null_of_ae_null (hPcomp.image eF.continuous).isClosed.measurableSet
         (Filter.Eventually.of_forall hslicenull)
     have hnull : ν (f '' ({x | ¬ Surjective (fderiv ℝ f x)} ∩ K)) = 0 := by
-      have := (ContinuousLinearEquiv.quasiMeasurePreserving_addHaar eF ν
+      have := (eF.toContinuousAddEquiv.quasiMeasurePreserving_addHaar ν
         ((volume : Measure ℝ).prod (addHaar : Measure ↥Fk))).preimage_null hprod
-      rwa [Set.preimage_image_eq _ eF.injective] at this
+      rwa [ContinuousLinearEquiv.toContinuousAddEquiv_coe,
+        Set.preimage_image_eq _ eF.injective] at this
     refine ⟨(U ∩ {x | ¬ Surjective (fderiv ℝ f x)} ∩ {x | fderiv ℝ f x ≠ 0}) ∩
       Metric.ball a (r / 2), inter_mem_nhdsWithin _
         (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self (by linarith))), ?_⟩
@@ -355,34 +339,36 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
     rintro x ⟨⟨⟨-, hxc⟩, -⟩, hxb⟩
     exact ⟨hxc, Metric.ball_subset_closedBall hxb⟩
 
-/-- **The Morse--Sard theorem** on an open set. The values taken by a sufficiently smooth map at
-the points of an open set where its Fréchet derivative is not surjective form a set of additive
-Haar measure zero, with no relation required between the two finite dimensions. -/
-theorem addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω} (hU : IsOpen U)
+/-- **The Morse--Sard theorem** on a set. The values taken at the points of `U` where the Fréchet
+derivative is not surjective form a set of additive Haar measure zero, provided the map is
+sufficiently smooth at every point of `U`. The set need not be open, and no relation between the
+two finite dimensions is required. -/
+theorem addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x)
     (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    ν (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = 0 :=
-  addHaar_image_criticalPoints_eq_zero_aux (finrank ℝ E) E le_rfl
-    (finrank ℝ E * finrank ℝ E + 1) le_rfl F ν U hU f fun x hx ↦ (hf x hx).of_le hk
+    ν (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = 0 := by
+  refine measure_image_null_of_locally_null fun a ha ↦ ?_
+  -- Finite-order smoothness at `a` supplies an open smooth neighbourhood for the induction.
+  let k : ℕ := finrank ℝ E * finrank ℝ E + 1
+  have hkfinite : (k : ℕ∞ω) ≠ ∞ := by simp
+  obtain ⟨V, hVsmooth, hVopen, hVmem⟩ :=
+    eventually_nhds_iff.1 (((hf a ha.1).of_le hk).eventually hkfinite)
+  refine ⟨(U ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ∩ V,
+    inter_mem_nhdsWithin _ (hVopen.mem_nhds hVmem), ?_⟩
+  refine measure_mono_null (image_mono ?_)
+    (addHaar_image_criticalPoints_eq_zero_aux (finrank ℝ E) E le_rfl
+      (finrank ℝ E * finrank ℝ E + 1) le_rfl F ν V hVopen f hVsmooth)
+  exact fun _ hx ↦ ⟨hx.2, hx.1.2⟩
 
 /-- **The Morse--Sard theorem.** The critical values of a sufficiently smooth map between
 finite-dimensional real normed spaces, that is the values it takes at the points where its Fréchet
 derivative is not surjective, form a set of additive Haar measure zero. No relation between the
 two dimensions is required. -/
-theorem ContDiff.addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω} (hf : ContDiff ℝ n f)
+theorem _root_.ContDiff.addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω} (hf : ContDiff ℝ n f)
     (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
     ν (f '' {x | ¬ Surjective (fderiv ℝ f x)}) = 0 := by
-  simpa using TauCeti.addHaar_image_criticalPoints_eq_zero (U := univ) ν isOpen_univ
+  simpa using TauCeti.addHaar_image_criticalPoints_eq_zero (U := univ) ν
     (fun x _ ↦ hf.contDiffAt) hk
-
-/-- The regular values of a sufficiently smooth map between finite-dimensional real normed spaces
-are dense: this is the form in which the Morse--Sard theorem is used in transversality
-arguments. -/
-theorem ContDiff.dense_compl_image_criticalPoints {n : ℕ∞ω} (hf : ContDiff ℝ n f)
-    (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    Dense (f '' {x | ¬ Surjective (fderiv ℝ f x)})ᶜ :=
-  interior_eq_empty_iff_dense_compl.1 <| Measure.interior_eq_empty_of_null <|
-    TauCeti.ContDiff.addHaar_image_criticalPoints_eq_zero (ν := addHaar) hf hk
 
 end MorseSard
 
@@ -393,17 +379,28 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
   {U : Set E} {f : E → F}
 
 /-- **The Morse--Sard theorem**, in the form that carries no measure-theoretic data: the critical
-values taken on an open set have empty interior. The measure structure used to prove it is chosen
-inside the proof, so the target here carries no `MeasurableSpace` instance; this is the shape in
-which Sard is fed to the fibrewise step of the Sard--Smale theorem, where the target is a
-complement subspace with no measurable structure of its own. -/
-theorem interior_image_criticalPoints_eq_empty {n : ℕ∞ω} (hU : IsOpen U)
+values taken on a set where the map is sufficiently smooth at every point have empty interior.
+The measure structure used to prove it is chosen inside the proof, so the target here carries no
+`MeasurableSpace` instance; this is the shape in which Sard is fed to the fibrewise step of the
+Sard--Smale theorem, where the target is a complement subspace with no measurable structure of
+its own. -/
+theorem interior_image_criticalPoints_eq_empty {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x)
     (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
     interior (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = ∅ := by
   borelize F
   exact Measure.interior_eq_empty_of_null
-    (TauCeti.addHaar_image_criticalPoints_eq_zero (ν := addHaar) hU hf hk)
+    (TauCeti.addHaar_image_criticalPoints_eq_zero (ν := addHaar) hf hk)
+
+/-- The regular values of a sufficiently smooth map between finite-dimensional real normed spaces
+are dense. This form of the Morse--Sard theorem needs no measurable structure on the target and
+supplies the regular values used in transversality arguments. -/
+theorem _root_.ContDiff.dense_compl_image_criticalPoints {n : ℕ∞ω} (hf : ContDiff ℝ n f)
+    (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    Dense (f '' {x | ¬ Surjective (fderiv ℝ f x)})ᶜ := by
+  apply interior_eq_empty_iff_dense_compl.1
+  simpa using interior_image_criticalPoints_eq_empty (U := univ)
+    (fun x _ ↦ hf.contDiffAt) hk
 
 end EmptyInterior
 

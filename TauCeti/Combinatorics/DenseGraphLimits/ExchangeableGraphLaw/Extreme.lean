@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.ArrayLaw
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.InfiniteSampling
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Sampling
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
@@ -96,7 +96,7 @@ theorem arrayLaw_mem_iff {μ : Measure (SimpleGraph ℕ)} :
 /-- The exchangeable probability measures on graphs form a convex set. -/
 theorem convex_exchangeableGraphProbabilityMeasures :
     Convex ℝ≥0∞ exchangeableGraphProbabilityMeasures := by
-  rintro μ ⟨hμ, hμp⟩ ν ⟨hν, hνp⟩ a b ha hb hab
+  rintro μ ⟨hμ, hμp⟩ ν ⟨hν, hνp⟩ a b _ _ hab
   have := hμp; have := hνp
   refine ⟨fun σ => ?_, TauCeti.MeasureTheory.isProbabilityMeasure_smul_add_smul hab μ ν⟩
   rw [Measure.map_add _ _ (SimpleGraph.measurable_comap _),

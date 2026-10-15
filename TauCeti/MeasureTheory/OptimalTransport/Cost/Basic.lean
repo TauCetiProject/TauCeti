@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 
 /-!
 # The transport cost of two measures
@@ -73,7 +73,7 @@ none.
 
 The Monge-to-Kantorovich inequality is a statement about the transport cost, so it is stated
 here; the graph plan that witnesses it and the change of variables it uses come from
-`TauCeti/MeasureTheory/OptimalTransport/GraphPlan.lean`, which is below this module. Its
+`TauCeti/MeasureTheory/OptimalTransport/GraphPlan/Basic.lean`, which is below this module. Its
 inequality half needs no measurability of the cost at all, since only one half of the change of
 variables, `MeasureTheory.lintegral_map_le`, is used.
 
@@ -330,6 +330,18 @@ protected theorem swap (hc : Measurable c) (h : IsOptimalCoupling c π μ ν) :
     rw [lintegral_map hcs measurable_swap, transportCost_comp_swap hc μ ν]
     simpa using h.lintegral_eq
 
+/-- A convex combination of optimal plans is optimal for the same marginals and cost.
+The cost need not be measurable, and the optimal value may be infinite. -/
+theorem smul_add_smul (hπ : IsOptimalCoupling c π μ ν) {σ : Measure (X × Y)}
+    (hσ : IsOptimalCoupling c σ μ ν) {a b : NNReal} (hab : a + b = 1) :
+    IsOptimalCoupling c (a • π + b • σ) μ ν where
+  toIsCoupling := hπ.toIsCoupling.smul_add_smul hσ.toIsCoupling hab
+  lintegral_eq := by
+    rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure,
+      hπ.lintegral_eq, hσ.lintegral_eq]
+    simp only [ENNReal.smul_def, smul_eq_mul]
+    rw [← add_mul, ← ENNReal.coe_add, hab, ENNReal.coe_one, one_mul]
+
 end IsOptimalCoupling
 
 /-- Optimality is minimality among the feasible plans. This form of the definition avoids the
@@ -339,6 +351,15 @@ theorem isOptimalCoupling_iff :
       IsCoupling π μ ν ∧ ∀ σ, IsCoupling σ μ ν → ∫⁻ z, c z ∂π ≤ ∫⁻ z, c z ∂σ :=
   ⟨fun h ↦ ⟨h.toIsCoupling, fun _ hσ ↦ h.lintegral_le hσ⟩, fun ⟨hπ, h⟩ ↦
     ⟨hπ, le_antisymm (le_transportCost h) (transportCost_le_lintegral hπ c)⟩⟩
+
+/-- Scaling a cost by a finite nonnegative constant preserves optimality, including when the
+constant is zero or the optimal cost is infinite. No measurability of the cost is required. -/
+protected theorem IsOptimalCoupling.const_mul (h : IsOptimalCoupling c π μ ν)
+    {a : ℝ≥0∞} (ha : a ≠ ⊤) :
+    IsOptimalCoupling (fun z ↦ a * c z) π μ ν := by
+  refine isOptimalCoupling_iff.2 ⟨h.toIsCoupling, fun σ hσ ↦ ?_⟩
+  rw [lintegral_const_mul' a c ha, lintegral_const_mul' a c ha]
+  exact mul_le_mul_of_nonneg_left (h.lintegral_le hσ) (by positivity)
 
 /-- Every coupling out of a Dirac measure is optimal, because there is only one. -/
 theorem IsCoupling.isOptimalCoupling_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c)

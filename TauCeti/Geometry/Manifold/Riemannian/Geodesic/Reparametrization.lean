@@ -76,48 +76,24 @@ theorem IsGeodesicCurveOn.comp_affine (h : IsGeodesicCurveOn I γ s) (a b : ℝ)
   contMDiffOn := by
     have hφ : ContDiff ℝ 2 (fun t : ℝ ↦ a * t + b) := by fun_prop
     exact h.contMDiffOn.comp hφ.contMDiff.contMDiffOn hmaps
-  alongCurveWithin_curveVelocityWithin_eq_zero t ht := by
-    let φ : ℝ → ℝ := fun r ↦ a * r + b
+  accelerationWithin_eq_zero t ht := by
+    set φ : ℝ → ℝ := fun r ↦ a * r + b
     have hφ (r : ℝ) : HasDerivWithinAt φ a u r :=
       ((hasDerivAt_const_mul a).add_const b).hasDerivWithinAt
-    have hchart : DifferentiableWithinAt ℝ (extChartAt I (γ (φ t)) ∘ γ) s (φ t) :=
-      (hasDerivWithinAt_extChartAt_comp_curve (hasMFDerivWithinAt_curveVelocityWithin
-        (h.mdifferentiableOn (φ t) (hmaps ht)))).differentiableWithinAt
+    have hderiv : EqOn (derivWithin φ u) (fun _ ↦ a) u := fun r hr ↦ (hφ r).derivWithin (hu r hr)
     have hsection : DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) := by
-      exact differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
-        h.contMDiffOn (hmaps ht) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I)
-          (γ (φ t)))
-    have hvelocity (r : ℝ) (hr : r ∈ u) :
-        curveVelocityWithin I (γ ∘ φ) u r =
-          a • curveVelocityWithin I γ s (φ r) :=
-      curveVelocityWithin_comp (hφ r) hmaps (h.mdifferentiableOn (φ r) (hmaps hr)) (hu r hr)
-    have hvelocity_eventually :
-        curveVelocityWithin I (γ ∘ φ) u =ᶠ[𝓝[u] t]
-          fun r ↦ a • curveVelocityWithin I γ s (φ r) := by
-      filter_upwards [self_mem_nhdsWithin] with r hr
-      exact hvelocity r hr
-    have hreparam :
-        alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-            (fun r ↦ curveVelocityWithin I γ s (φ r)) u t =
-          a • alongCurveWithin (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) s
-            (φ t) := by
-      rw [alongCurveWithin_comp (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) φ
-        (hφ t).differentiableWithinAt hmaps hchart hsection, (hφ t).derivWithin (hu t ht)]
-    calc
-      alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-          (curveVelocityWithin I (γ ∘ φ) u) u t =
-          alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-            (fun r ↦ a • curveVelocityWithin I γ s (φ r)) u t :=
-        alongCurveWithin_congr (leviCivitaConnection I M) (γ ∘ φ) _ hvelocity_eventually
-          (hvelocity t ht)
-      _ = a • alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-          (fun r ↦ curveVelocityWithin I γ s (φ r)) u t :=
-        alongCurveWithin_const_smul (leviCivitaConnection I M) (γ ∘ φ)
-          (fun r ↦ curveVelocityWithin I γ s (φ r)) a u t
-      _ = a • (a • alongCurveWithin (leviCivitaConnection I M) γ
-          (curveVelocityWithin I γ s) s (φ t)) := by rw [hreparam]
-      _ = 0 := by rw [h.alongCurveWithin_curveVelocityWithin_eq_zero (φ t) (hmaps ht)]; simp
+        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) :=
+      differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn h.contMDiffOn
+        (hmaps ht) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ (φ t)))
+    -- By the chain rule for the acceleration, the reparametrized acceleration is `a²` times the
+    -- original one, since the affine map has vanishing second derivative.
+    rw [accelerationWithin_comp (leviCivitaConnection I M) γ hu ht
+        (fun r _ ↦ (hφ r).differentiableWithinAt)
+        ((differentiableWithinAt_const a).congr hderiv (hderiv ht)) hmaps h.mdifferentiableOn
+        hsection,
+      derivWithin_congr hderiv (hderiv ht), derivWithin_fun_const,
+      h.accelerationWithin_eq_zero (φ t) (hmaps ht)]
+    simp
 
 /-- A geodesic remains a geodesic after restriction to a smaller parameter set with unique
 derivatives. The smaller set need not be open or an interval. -/

@@ -128,18 +128,19 @@ theorem pSectionIndicator_mem_classFunction :
 by `TauCeti.indPSectionIndicator_eq_pSectionCosetCard`. -/
 noncomputable def indPSectionIndicator (k : Type u) [Semiring k] [Finite G] (s : G)
     (P : Sylow p (centralizer ({s} : Set G))) : G → k :=
-  indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P)
+  Subgroup.indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P)
 
 /-- Scaling the induced `p`-section indicator is the induction of the scaled section indicator. -/
 theorem nsmul_indPSectionIndicator [Finite G] (n : ℕ) :
     n • indPSectionIndicator k s P =
-      indClassFun (pElementaryOfSylow s P) (n • pSectionIndicator k s P) := by
-  rw [indPSectionIndicator, ← indClassFunAddHom_apply, ← map_nsmul, indClassFunAddHom_apply]
+      Subgroup.indClassFun (pElementaryOfSylow s P) (n • pSectionIndicator k s P) := by
+  rw [indPSectionIndicator, ← Subgroup.indClassFunAddHom_apply, ← map_nsmul,
+    Subgroup.indClassFunAddHom_apply]
 
 /-- The induced `p`-section indicator is a class function of `G`. -/
 theorem indPSectionIndicator_mem_classFunction [Finite G] :
     indPSectionIndicator k s P ∈ ClassFunction k G :=
-  indClassFun_mem_classFunction pSectionIndicator_mem_classFunction
+  Subgroup.indClassFun_mem_classFunction _ pSectionIndicator_mem_classFunction
 
 /-! ### The contributing cosets -/
 
@@ -211,7 +212,7 @@ theorem indPSectionIndicator_eq_pSectionCosetCard [Finite G] [Fact p.Prime]
     indPSectionIndicator k s P x = (pSectionCosetCard s P x : k) := by
   classical
   let := Fintype.ofFinite (G ⧸ pElementaryOfSylow s P)
-  rw [indPSectionIndicator, indClassFun_apply, pSectionCosetCard, Nat.card_eq_fintype_card,
+  rw [indPSectionIndicator, Subgroup.indClassFun_apply, pSectionCosetCard, Nat.card_eq_fintype_card,
     Fintype.card_subtype, ← Finset.sum_boole]
   refine Finset.sum_congr rfl fun t _ => ?_
   by_cases hmem : (Quotient.out t)⁻¹ * x * Quotient.out t ∈ pElementaryOfSylow s P

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.Continuous.Coarsen
@@ -17,7 +18,7 @@ public import TauCeti.RingTheory.Valuation.Microbial
 /-!
 # Analytic points and the analytic locus of `Spa(A, A⁺)`
 
-**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(2), (3), (5),
+**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(1), (2), (3), (5),
 Remark 7.42(2), and Proposition 7.49.**
 
 This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
@@ -36,6 +37,11 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   `Spv A` (and hence `Spa(A, A⁺)`) is analytic.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_spa_of_isTateRing` : **Wedhorn Remark 7.40(3)**,
   for a Tate ring `A`, the analytic locus is the entire adic spectrum.
+* `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_not_le_supp_of_isAdic` : in an `I`-adic ring a
+  point is analytic exactly when its support does not contain `I`.
+* `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp` :
+  **Wedhorn Remark 7.40(1)**, over a Huber ring a point is analytic exactly when some
+  topologically nilpotent element is outside its support.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
 * `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
   the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
@@ -51,7 +57,7 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(2), (3), (5),
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(1), (2), (3), (5),
   Remark 7.42(2), and Proposition 7.49.
 -/
 
@@ -100,6 +106,20 @@ theorem spaAnalytic_subset_spa (Aplus : Subring A) :
 theorem spaAnalytic_antitone : Antitone (spaAnalytic (A := A)) := fun _ _ hle ↦
   Set.inter_subset_inter_left _ (spa_antitone hle)
 
+/-- In a ring whose topology is `I`-adic, a point is analytic exactly when its support does not
+contain `I`. -/
+theorem isAnalyticPoint_iff_not_le_supp_of_isAdic {I : Ideal A} (hI : IsAdic I) (v : Spv A) :
+    IsAnalyticPoint v ↔ ¬ I ≤ v.supp := by
+  have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  rw [isAnalyticPoint_def, not_iff_not]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · -- an open prime ideal contains a power of `I`, hence `I` itself
+    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds v.supp.zero_mem)
+    exact Ideal.IsPrime.le_of_pow_le hn
+  · -- a prime containing `I` contains the open subgroup `I`
+    exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := v.supp.toAddSubgroup) h
+      (by simpa using IsAdic.isOpen_pow hI 1)
+
 section TopologicalRing
 
 variable [IsTopologicalRing A]
@@ -113,6 +133,15 @@ theorem isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp
   have hsupp : v.supp.radical = v.supp :=
     (inferInstance : v.supp.IsPrime).isRadical.radical
   rw [hsupp]
+  exact Set.not_subset
+
+/-- **Wedhorn Remark 7.40(1).** Over a Huber ring, a point is analytic exactly when some
+topologically nilpotent element is outside its support. Unlike
+`isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp`, no pair of definition is
+chosen. -/
+theorem isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp [IsHuberRing A]
+    (v : Spv A) : IsAnalyticPoint v ↔ ∃ a : A, IsTopologicallyNilpotent a ∧ a ∉ v.supp := by
+  rw [isAnalyticPoint_def, isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime]
   exact Set.not_subset
 
 /-- An analytic point supplies an element of an ideal of definition which is outside its

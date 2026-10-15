@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Algebra.Group.Generation
 
 public import TauCeti.GroupTheory.GroupExtension.Of.Surjective

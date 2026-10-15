@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import Mathlib.RingTheory.Localization.FractionRing
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # Adic valuations and completions transport along an isomorphism of Dedekind domains
@@ -45,7 +45,7 @@ how an automorphism permuting the places above a given place acts on their compl
 The ideal-level input this rests on — that `Ideal.map e` preserves divisibility and
 factorisation multiplicities, and that Mathlib's `equivOfRingEquiv` is `Ideal.map e` on
 underlying ideals — is not valuation theory and lives in
-`TauCeti/RingTheory/DedekindDomain/Ideal.lean`.
+`TauCeti/RingTheory/DedekindDomain/Ideal/Basic.lean`.
 
 ## Implementation notes
 
@@ -66,8 +66,8 @@ Adapted from [AINTLIB](https://github.com/CBirkbeck/AINTLIB) (Apache-2.0), commi
 `intValuation_map_ringEquiv`, `valuation_map_ringEquiv_algebraMap` and `valuation_map_ringEquiv`
 are that file's, with the vocabulary adapted to this repository's interfaces. The ideal-level
 lemmas adapted from the same source are attributed in
-`TauCeti/RingTheory/DedekindDomain/Ideal.lean`. The completion section is not from that source;
-it follows the pattern of `adicCompletionExtension` in
+`TauCeti/RingTheory/DedekindDomain/Ideal/Basic.lean`. The completion section is not from that
+source; it follows the pattern of `adicCompletionExtension` in
 `TauCeti/RingTheory/DedekindDomain/AdicCompletionExtension.lean`.
 
 ## References

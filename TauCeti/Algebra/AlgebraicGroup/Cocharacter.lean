@@ -20,8 +20,9 @@ into the endomorphism lattice of the multiplicative group, all realized on the f
 Throughout, the multiplicative group is `𝔾ₘ = D(Multiplicative ℤ)` in its group-algebra
 presentation, so its `A`-points are the units `Aˣ` (its character group `Multiplicative ℤ →* Aˣ`
 being determined by the value on the generator, `Mathlib`'s `MonoidHom.apply_mint`). Its
-canonical Laurent-polynomial API is `TauCeti.MultiplicativeGroup`, matched to this presentation by
-`TauCeti.DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply`.
+Laurent-polynomial points-to-units equivalence is `TauCeti.laurentEvalEquiv` from
+`TauCeti.Algebra.Polynomial.Laurent.Basic`, matched to this presentation by
+`TauCeti.DiagonalizableGroup.charOfPoint_ofAdd_one`.
 
 * A **character** of `D(M)` is an element `m : M`, giving the homomorphism of group functors
   `D(M) → 𝔾ₘ` whose action on points is evaluation of a character `χ : M →* Aˣ` at `m`.
@@ -36,10 +37,6 @@ canonical Laurent-polynomial API is `TauCeti.MultiplicativeGroup`, matched to th
   `M = Multiplicative ℤ`, so `X*(𝔾ₘ) = X_*(𝔾ₘ) = ℤ`, the pairing is multiplication
   (`pairing_ofAdd`): the rank-`1` root datum input.
 
-This advances the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap,
-Layer 4: "Tori ... the character lattice `X*(T)` and cocharacter lattice `X_*(T)` with their
-perfect pairing: the input to root data").
-
 ## Main declarations
 
 * `TauCeti.DiagonalizableGroup.charPoints`: the character of `D(M)` at `m : M`, on points.
@@ -49,13 +46,12 @@ perfect pairing: the input to root data").
 * `TauCeti.DiagonalizableGroup.charPoints_comp_cocharPoints`: the pairing is realized as the
   composite endomorphism `character m ∘ cocharacter ψ = powEnd ⟨m, ψ⟩`.
 
-## References
+## See also
 
-The contravariant points functoriality `DiagonalizableGroup.pointsMap` is Tau Ceti's
-`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality`. The one-generator universal
-property `zpowersHom : α ≃ (Multiplicative ℤ →* α)` and the induced `MonoidHom.apply_mint` are
-Mathlib's (`Mathlib.Data.Int.Cast.Lemmas`). This realizes the character/cocharacter pairing of
-the Tau Ceti reductive-groups roadmap (Layer 4).
+* `TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality`: contravariant points
+  functoriality `DiagonalizableGroup.pointsMap`.
+* `Mathlib.Data.Int.Cast.Lemmas`: the one-generator universal property `zpowersHom` and
+  `MonoidHom.apply_mint`.
 -/
 
 public section

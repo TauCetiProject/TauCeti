@@ -27,6 +27,7 @@ on the scaling, and the datum is unique once the cusp and the scaling are fixed.
 ## Main declarations
 
 * `Subgroup.CuspDatum`: normalized cusp data of `Γ ≤ PSL(2, ℝ)`.
+* `Subgroup.CuspDatum.cusp_eq_of_scaling_eq`: cusp data with equal scalings have equal cusps.
 * `Subgroup.CuspDatum.mem_stabilizer_iff_conj`: the conjugated stabilizer of the cusp is exactly
   the group of translations by `width * ℤ`.
 * `Subgroup.CuspDatum.ext`: a cusp datum is determined by its cusp and
@@ -90,7 +91,7 @@ private theorem exists_pos_zmultiples_eq_cuspPeriods [DiscreteTopology Γ] {c : 
     rw [mem_cuspPeriods, ← hpx]
     simp [mul_assoc]
   have := discreteTopology_cuspPeriods (Γ := Γ) σ
-  have := AddSubgroup.discrete_iff_addCyclic.mpr this
+  have := AddSubgroup.isAddCyclic_iff_discreteTopology.mpr this
   have : Nontrivial (cuspPeriods Γ σ) := ⟨⟨⟨x, hxP⟩, 0, fun h ↦ hx (congrArg Subtype.val h)⟩⟩
   obtain ⟨a, ha, haP⟩ := LinearOrderedAddCommGroup.Subgroup.exists_neg_generator
     (cuspPeriods Γ σ)
@@ -202,6 +203,12 @@ theorem scaling_smul_cusp : D.scaling • D.cusp = ∞ := by
   rwa [(isParabolic_upperRightHom_iff.mpr D.width_pos.ne').smul_eq_self_iff,
     parabolicFixedPoint_upperRightHom] at hfix
 
+/-- Cusp data with the same scaling represent the same boundary point. -/
+theorem cusp_eq_of_scaling_eq {Δ : Subgroup PSL(2, ℝ)} (D : Δ.CuspDatum) (E : Γ.CuspDatum)
+    (hσ : D.scaling = E.scaling) : D.cusp = E.cusp :=
+  (MulAction.injective D.scaling)
+    (D.scaling_smul_cusp.trans (hσ.symm ▸ E.scaling_smul_cusp).symm)
+
 /-- The point of a cusp datum is a cusp point. -/
 theorem isCuspPoint : Γ.IsCuspPoint D.cusp :=
   isCuspPoint_iff_exists_mem_stabilizer_isParabolic.mpr
@@ -224,6 +231,16 @@ theorem cuspOrbit_eq_iff (D' : Γ.CuspDatum) :
 theorem mem_stabilizer_iff {g : Γ} : g ∈ stabilizer Γ D.cusp ↔ ∃ n : ℤ, D.generator ^ n = g := by
   rw [← D.zpowers_generator, mem_zpowers_iff]
 
+/-- Every nonidentity element of the stabilizer of a normalized cusp is parabolic. -/
+theorem isParabolic_of_mem_stabilizer_of_ne_one {g : Γ}
+    (hg : g ∈ stabilizer Γ D.cusp) (h1 : g ≠ 1) : IsParabolic (g : PSL(2, ℝ)) := by
+  obtain ⟨k, rfl⟩ := D.mem_stabilizer_iff.mp hg
+  have hk0 : k ≠ 0 := by
+    intro hk0
+    exact h1 (by simp [hk0])
+  rw [Subgroup.coe_zpow]
+  exact D.isParabolic_generator.zpow hk0
+
 /-- Conjugation by the scaling sends the `n`-th power of the generator to translation by
 `n * width`. -/
 @[simp]
@@ -231,6 +248,16 @@ theorem scaling_mul_generator_zpow_mul_inv (n : ℤ) :
     D.scaling * (D.generator : PSL(2, ℝ)) ^ n * D.scaling⁻¹ =
       upperRightHom (n * D.width) := by
   rw [mul_zpow_mul_inv_eq_upperRightHom D.scaling_mul_generator_mul_inv]
+
+/-- The selected generator of the stabilizer of a cusp has infinite order: for `n ≠ 0`, its `n`-th
+power is conjugate to translation by `n * width ≠ 0`. -/
+@[simp]
+theorem orderOf_generator_eq_zero : orderOf D.generator = 0 := by
+  refine orderOf_eq_zero_iff'.mpr fun n hn hpow ↦ ?_
+  have h := D.scaling_mul_generator_zpow_mul_inv n
+  rw [zpow_natCast, ← Subgroup.coe_pow, hpow, Subgroup.coe_one, mul_one, mul_inv_cancel,
+    ← AddChar.map_zero_eq_one upperRightHom] at h
+  simpa [hn.ne', D.width_pos.ne'] using upperRightHom_injective h
 
 /-- **The conjugated cusp stabilizer is `width * ℤ`.** An element of `Γ` fixes the cusp exactly
 when its conjugate by the scaling is translation by an integer multiple of the width. -/

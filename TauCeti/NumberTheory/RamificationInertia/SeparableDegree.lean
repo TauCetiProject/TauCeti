@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Galois
+import Mathlib.RingTheory.Finiteness.Quotient
 
 /-!
 # Separable and inseparable residue degrees in Hilbert theory

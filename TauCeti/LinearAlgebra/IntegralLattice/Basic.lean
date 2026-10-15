@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -30,6 +30,8 @@ The form restricts to a canonical `ℤ`-bilinear form on the carrier.  Conversel
 * `TauCeti.IntegralLattice`: an integral symmetric lattice in a rational vector space.
 * `TauCeti.IntegralLattice.IsNondegenerate`: the nondegeneracy mixin for an integral lattice.
 * `TauCeti.IntegralLattice.form_mem_one`: the rational form takes integer values on lattice vectors.
+* `TauCeti.IntegralLattice.le_dualSubmodule_of_le_carrier`: every submodule of the carrier is
+  integral for the lattice form.
 * `TauCeti.IntegralLattice.rationalBasis`: the ambient `ℚ`-basis extending a chosen `ℤ`-basis of
   the carrier.
 * `TauCeti.IntegralLattice.integralForm`: the induced `ℤ`-bilinear form on the carrier.
@@ -97,6 +99,14 @@ theorem form_mem_one (L : IntegralLattice V) (x y : L) :
     L.form x y ∈ (1 : Submodule ℤ ℚ) :=
   L.le_dual x.2 (y : V) y.2
 
+/-- Every ambient submodule contained in the carrier is integral for the lattice form. -/
+theorem le_dualSubmodule_of_le_carrier (L : IntegralLattice V) {N : Submodule ℤ V}
+    (hN : N ≤ L.carrier) : N ≤ L.form.dualSubmodule N := by
+  intro x hx
+  rw [LinearMap.BilinForm.mem_dualSubmodule]
+  intro y hy
+  exact L.le_dual (hN hx) y (hN hy)
+
 /-- The chosen `ℤ`-basis of an integral lattice extends to a `ℚ`-basis of the ambient space. -/
 noncomputable def rationalBasis (L : IntegralLattice V) :
     Basis (Module.Free.ChooseBasisIndex ℤ L) ℚ V :=
@@ -151,7 +161,16 @@ noncomputable def integralForm (L : IntegralLattice V) : LinearMap.BilinForm ℤ
 theorem integralForm_cast (L : IntegralLattice V) (x y : L) :
     (L.integralForm x y : ℚ) = L.form x y := by
   rw [integralForm, LinearMap.comp_apply, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
-  exact L.form.dualSubmoduleParing_spec (Submodule.inclusion L.le_dual x) y
+  exact L.form.dualSubmodulePairing_spec (Submodule.inclusion L.le_dual x) y
+
+/-- An inclusion of carriers with the same ambient form preserves the integral form. -/
+theorem integralForm_inclusion (L M : IntegralLattice V) (hform : L.form = M.form)
+    (hle : L.carrier ≤ M.carrier) (x y : L) :
+    M.integralForm (Submodule.inclusion hle x) (Submodule.inclusion hle y) =
+      L.integralForm x y := by
+  apply Int.cast_injective (α := ℚ)
+  rw [M.integralForm_cast, L.integralForm_cast, hform]
+  simp only [Submodule.coe_inclusion]
 
 /-- The induced integral form is symmetric. -/
 theorem isSymm_integralForm (L : IntegralLattice V) : L.integralForm.IsSymm := by
@@ -170,12 +189,12 @@ def ofSubmodule (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.Bili
   le_dual := hle
 
 @[simp]
-theorem ofSubmodule_carrier (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_carrier (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).carrier = S := (rfl)
 
 @[simp]
-theorem ofSubmodule_form (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_form (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).form = B := (rfl)
 

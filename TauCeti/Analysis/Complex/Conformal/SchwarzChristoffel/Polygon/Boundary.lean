@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
-import Mathlib.Data.Fin.SuccPredOrder
-import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
 # The Schwarz--Christoffel compactified boundary is polygonal
@@ -63,14 +62,8 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
   let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   have hfree (i : Fin n) :
-      ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) := by
-    intro j _ hj
-    by_cases hji : j ≤ i.castSucc
-    · exact (not_lt_of_ge (ha hji)) hj.1
-    · have hij : i.succ ≤ j := by
-        simp only [Fin.le_iff_val_le_val, Fin.val_succ, Fin.val_castSucc] at hji ⊢
-        omega
-      exact (not_lt_of_ge (ha hij)) hj.2
+      ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) :=
+    fun j _ ↦ not_mem_Ioo_castSucc_succ a ha i j
   have hright : ∀ i, e i ≠ 0 → a i ≤ a (Fin.last n) := by
     intro i _
     exact ha i.le_last
@@ -112,15 +105,13 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
           · have himage : B x ∈ B '' Ici (a (Fin.last n)) := ⟨x, hxright, rfl⟩
             rw [hrightImage] at himage
             exact Or.inl (Or.inr himage.1)
-          · -- Mathlib covers `Ioc (a 0) (a (Fin.last n))` by consecutive intervals.
-            have hx : x ∈ ⋃ j ∈ Ico 0 (Fin.last n), Ioc (a j) (a (Order.succ j)) := by
-              rw [ha.biUnion_Ico_Ioc_map_succ]
-              exact ⟨lt_of_not_ge hxleft, (lt_of_not_ge hxright).le⟩
-            simp only [mem_iUnion, mem_Ico] at hx
-            obtain ⟨j, ⟨-, hj⟩, hxj⟩ := hx
-            obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
-            have hi : x ∈ Icc (a i.castSucc) (a i.succ) :=
-              Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)
+          · have hn : n ≠ 0 := by
+              intro h
+              subst n
+              simp only [Fin.last_zero] at hxright
+              exact hxright (le_of_lt (lt_of_not_ge hxleft))
+            obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a ha hn
+              ⟨(lt_of_not_ge hxleft).le, (lt_of_not_ge hxright).le⟩
             have himage : B x ∈ B '' Icc (a i.castSucc) (a i.succ) := ⟨x, hi, rfl⟩
             rw [hbounded i] at himage
             exact Or.inl (Or.inl (Set.mem_iUnion.mpr ⟨i, himage⟩))

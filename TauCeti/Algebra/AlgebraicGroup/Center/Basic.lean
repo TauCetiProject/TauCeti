@@ -45,9 +45,6 @@ ideal, so the represented closed subgroup is canonical.
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This constructs the center `Z(G)` required in Layer 6, "Reductive and semisimple groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -64,7 +61,7 @@ variable {k : Type u} [Field k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- The index type of the vector-space basis used to extract center equations. -/
-private abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
+private noncomputable abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
 
 private noncomputable instance :
     DecidableEq (centerBasisIndex (k := k) (H := H)) :=
@@ -142,8 +139,7 @@ private theorem tensorMap_comul_eq_convMul
           (Algebra.TensorProduct.includeLeft (R := k) (S := k) (A := A) (B := H)) g *
         toConv (Algebra.TensorProduct.includeRight (R := k) (A := A) (B := H)) := by
   rw [Bialgebra.toConv_comp_comulAlgHom]
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom, AlgHom.mapValue_apply]
+  simp only [AlgHom.mapValue_apply]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
 
@@ -233,7 +229,7 @@ private theorem centerCoefficientIdeal_antipode_mem {x : H}
     (centerCoefficientIdeal_le_ker_iff_isCentralPoint g⁻¹).2 hginv
   have hxzero := RingHom.mem_ker.mp (hle hx)
   have hxzero' : g⁻¹ x = 0 := hxzero
-  rw [AlgHom.convInv_apply] at hxzero'
+  rw [WithConv.algHom_inv_apply] at hxzero'
   exact Ideal.Quotient.eq_zero_iff_mem.mp hxzero'
 
 private theorem centerCoefficientIdeal_comul_mem {x : H}
@@ -372,7 +368,7 @@ noncomputable abbrev centerPointsSubgroup (H : _root_.CommHopfAlgCat.{v} k)
   quotientPointsSubgroup H (centerDefiningIdeal H) A
 
 /-- Membership in the represented center is universal centrality in the functor of points. -/
-@[simp]
+@[simp↓]
 theorem mem_centerPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} k)
     (A : CommAlgCat.{v} k) (g : HopfAlgebra.points (R := k) (H := H) A) :
     g ∈ centerPointsSubgroup H A ↔ HopfAlgebra.IsCentralPoint g := by
@@ -443,11 +439,6 @@ noncomputable abbrev centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
     centerGroupScheme H ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj (Opposite.op H) :=
   quotientSpecι H (centerDefiningIdeal H)
-
-/-- The center is a closed subgroup scheme of the ambient affine group scheme. -/
-instance isClosedImmersion_centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
-    IsClosedImmersion (centerGroupSchemeι H).hom.hom.left :=
-  inferInstance
 
 /-- A central closed subgroup scheme cut out by `I` includes canonically into the center. -/
 noncomputable def centralSubgroupToCenter (H : _root_.CommHopfAlgCat.{u} k)

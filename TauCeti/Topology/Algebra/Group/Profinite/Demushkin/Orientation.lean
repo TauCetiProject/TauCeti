@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.GeneratedClosedSubgroups
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -24,7 +24,8 @@ topologically generate `ℤ_2ˣ = {±1} × (1 + 4ℤ_2)`. The marked generators 
 
 ## Main declarations
 
-* `TauCeti.negThreeUnit`: the `2`-adic unit `-3`.
+* `TauCeti.negThreeUnit`: the `2`-adic unit `-3`, whose negative is `-1 + 2²`
+  (`TauCeti.negThreeUnit_neg_coe`).
 * `TauCeti.standardD0Orientation`: the standard orientation `D₀ →ₜ* ℤ_2ˣ`, with its values
   `TauCeti.standardD0Orientation_d0A`, `TauCeti.standardD0Orientation_d0S` and
   `TauCeti.standardD0Orientation_d0Y`.
@@ -33,7 +34,8 @@ topologically generate `ℤ_2ˣ = {±1} × (1 + 4ℤ_2)`. The marked generators 
 
 * `TauCeti.standardD0Orientation_relator`: any character of the free pro-`2` group with values
   `-1` on `A` and `1` on `S` kills the relator `A²S⁴(S,Y)`, regardless of its value on `Y`.
-* `TauCeti.standardD0Orientation_surjective`: the standard orientation is surjective.
+* `TauCeti.standardD0Orientation_surjective`, `TauCeti.range_standardD0Orientation`: the standard
+  orientation is surjective, so its image is all of `ℤ_2ˣ`.
 * `TauCeti.standardD0Orientation_unique`: it is the only continuous character of `D₀` with these
   values on the marked generators.
 
@@ -63,6 +65,12 @@ noncomputable abbrev negThreeUnit : ℤ_[2]ˣ := isUnit_neg_three.unit
 @[simp]
 theorem negThreeUnit_coe : (negThreeUnit : ℤ_[2]) = -3 :=
   isUnit_neg_three.unit_spec
+
+/-- The negative of `negThreeUnit` is `3 = -1 + 2 ^ 2`, the generator `-1 + 2 ^ k` at `k = 2` of the
+twisted closed subgroups `U^[k]` of `ℤ₂ˣ`. -/
+theorem negThreeUnit_neg_coe : ((-negThreeUnit : ℤ_[2]ˣ) : ℤ_[2]) = -1 + 2 ^ 2 := by
+  rw [Units.val_neg, negThreeUnit_coe]
+  norm_num
 
 /-- The inverse of `negThreeUnit` is the value `(1 - 2 ^ 2)⁻¹` of the orientation character table:
 `(-3)⁻¹ · (1 - 2²) = 1`. -/
@@ -103,9 +111,8 @@ image of a compact group, and contains `-1` and `(-3)⁻¹`, which topologically
 `ℤ_2ˣ = {±1} × (1 + 4ℤ_2)`. -/
 theorem standardD0Orientation_surjective : Function.Surjective standardD0Orientation := by
   set R : Subgroup ℤ_[2]ˣ := standardD0Orientation.toMonoidHom.range
-  have hR : IsClosed (R : Set ℤ_[2]ˣ) := by
-    rw [MonoidHom.coe_range, ContinuousMonoidHom.coe_toMonoidHom]
-    exact (isCompact_range standardD0Orientation.continuous).isClosed
+  have hR : IsClosed (R : Set ℤ_[2]ˣ) :=
+    MonoidHom.isClosed_range_of_continuous standardD0Orientation.continuous
   have hle : unitsPlusMinus 2 ≤ R := by
     rw [← topologicalClosure_zpowers_neg_one_sup_zpowers_eq_unitsPlusMinus le_rfl
       negThreeUnit_inv_mul_one_sub_two_pow_two]
@@ -115,6 +122,12 @@ theorem standardD0Orientation_surjective : Function.Surjective standardD0Orienta
     · exact standardD0Orientation_d0Y
   rw [unitsPlusMinus_two] at hle
   exact MonoidHom.range_eq_top.mp (top_le_iff.mp hle)
+
+/-- **The image of the standard orientation is `ℤ₂ˣ`**: `TauCeti.standardD0Orientation_surjective`
+as an equation of subgroups, stated on the underlying monoid homomorphism. -/
+@[simp]
+theorem range_standardD0Orientation : (standardD0Orientation : demushkinD0 →* ℤ_[2]ˣ).range = ⊤ :=
+  MonoidHom.range_eq_top.mpr standardD0Orientation_surjective
 
 /-- The standard orientation is the **only** continuous character of `D₀` with values `-1`, `1`,
 `(-3)⁻¹` on `A`, `S`, `Y`, because the marked generators topologically generate `D₀`. -/

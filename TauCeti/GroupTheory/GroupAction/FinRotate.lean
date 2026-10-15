@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Jordan
 public import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.GroupTheory.Perm.MultipleTransitivity
 
 /-!
 # Transitivity from cyclic rotation
@@ -29,9 +30,6 @@ theorem isPretransitive_of_finRotate_mem {n : ℕ}
   · infer_instance
   · refine ⟨fun x y ↦ ⟨1, ?_⟩⟩
     exact Fin.ext (by omega)
-  · have h := Equiv.Perm.isPretransitive_of_isCycle_mem (G := G) isCycle_finRotate hg
-    rw [support_finRotate, Finset.coe_univ, Set.compl_univ] at h
-    exact IsPretransitive.of_surjective_map
-      SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
+  · exact isPretransitive_of_isCycle_mem_of_support_eq_univ isCycle_finRotate hg support_finRotate
 
 end TauCeti

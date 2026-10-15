@@ -35,9 +35,9 @@ apply to every scheme-theoretic image of a smooth unipotent affine group.
 
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4, for the unipotent-radical application.
 
-This is the image-unipotence step for Layer 5, "The unipotent radical", of the ReductiveGroups
-roadmap. In particular, it supplies the remaining geometric-unipotence input in the binary-product
-closure of connected normal smooth unipotent subgroup schemes.
+This is the image-unipotence step for the unipotent radical. In particular, it supplies the
+geometric-unipotence input in the binary-product closure of connected normal smooth unipotent
+subgroup schemes.
 -/
 
 public section
@@ -71,12 +71,8 @@ theorem image_of_faithfullyFlat (f : H ⟶ K) [Algebra.FiniteType k K]
     (hK : geometricallyUnipotentPointsCommHopfAlgProperty k K)
     (hflat : (CommHopfAlgCat.imageι f).hom.toAlgHom.toRingHom.FaithfullyFlat) :
     geometricallyUnipotentPointsCommHopfAlgProperty k (CommHopfAlgCat.image f) := by
-  have hfinite : (CommHopfAlgCat.imageι f).hom.toAlgHom.FiniteType := by
-    apply AlgHom.FiniteType.of_comp_finiteType
-      (f := Algebra.ofId k (CommHopfAlgCat.image f))
-    rw [Algebra.comp_ofId]
-    exact RingHom.finiteType_algebraMap.mpr inferInstance
-  exact of_faithfullyFlat (CommHopfAlgCat.imageι f) hfinite hflat hK
+  exact of_faithfullyFlat (CommHopfAlgCat.imageι f)
+    (CommHopfAlgCat.imageι_finiteType f) hflat hK
 
 end geometricallyUnipotentPointsCommHopfAlgProperty
 

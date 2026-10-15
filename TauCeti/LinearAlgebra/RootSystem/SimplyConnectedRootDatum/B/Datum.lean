@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Model
+import TauCeti.Algebra.Group.Submonoid.Closure
+import TauCeti.Algebra.Group.Submonoid.Telescoping
 
 /-!
 # The simply connected root datum of type `Bₙ`
@@ -58,9 +60,8 @@ below, not by unfolding.
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate II, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `Bₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+4--6*, Plate II, and Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+section 12.1.
 -/
 
 public section
@@ -469,7 +470,6 @@ coroot lattice, so that the datum is the simply connected one. -/
       shift_mk _ _ _ (by split_ifs <;> omega)
     rw [typeBSimplePair, dite_eq_right hlast, hv]
     funext k
-    have hk := k.isLt
     simp only [corootOfPair_apply, Pi.single_apply, Fin.ext_iff,
       typeB_sgn_mk_ge (n := n) (a := n + (i : ℕ) + 1) (by omega)
         (show n ≤ n + (i : ℕ) + 1 by omega),

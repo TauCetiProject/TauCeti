@@ -23,7 +23,9 @@ odd `p` the correction vanishes, so `π` commutes with the bracket in every degr
 is the iterated bracket `[[x, y], x]`, resp. `[[x, y], y]`. These are the counterparts for the
 bracket of the degree-zero additivity defect `π (x + y) = π x + π y + (p choose 2) • [y, x]`
 (`TauCeti.gradedPow_add_zero`), and together with the results away from degree zero they describe
-`π` on the whole graded Lie algebra.
+`π` on the whole graded Lie algebra. The file also records that a degree-zero class brackets
+trivially with its iterated `p`-powers, `[π^j x, x] = 0`
+(`TauCeti.gradedBracket_gradedPowIter_self`).
 
 ## Main results
 
@@ -37,6 +39,11 @@ bracket of the degree-zero additivity defect `π (x + y) = π x + π y + (p choo
 * `TauCeti.gradedBracket_gradedPow_zero_left_of_two`,
   `TauCeti.gradedBracket_gradedPow_zero_right_of_two`: for `p = 2`,
   `[π x, y] = π [x, y] + [[x, y], x]` and `[x, π y] = π [x, y] + [[x, y], y]`.
+* `TauCeti.gradedPow_gradedBracket_left_zero`, `TauCeti.gradedPow_gradedBracket_left_zero_of_odd`,
+  `TauCeti.gradedPow_gradedBracket_zero_zero`: the identities for a bracket `[x, y]` with `y` of
+  degree zero, where `π [x, y]` and `[π x, y]` have the same degree and no transport is needed.
+* `TauCeti.gradedBracket_gradedPowIter_self`: `[π^j x, x] = 0` for `x` of degree zero, the class
+  of `⁅g ^ (p ^ j), g⁆ = 1`.
 
 ## References
 
@@ -143,17 +150,6 @@ theorem gradedPow_gradedBracket_right_of_odd (hp : Odd p) {j k : ℕ}
     simpa only [add_zero] using h.symm
   · exact gradedPow_gradedBracket_right hk x y
 
-private theorem neg_gradedPiece_two {k : ℕ} (x : gradedPiece 2 G k) : -x = x := by
-  rw [neg_eq_iff_add_eq_zero]
-  exact (two_nsmul _).symm.trans (nsmul_gradedPiece_eq_zero _)
-
-private theorem gradedCast_trans {i j k : ℕ} (hij : i = j) (hjk : j = k)
-    (x : gradedPiece p G i) :
-    gradedCast p G hjk (gradedCast p G hij x) = gradedCast p G (hij.trans hjk) x := by
-  subst hij
-  subst hjk
-  simp only [gradedCast_rfl]
-
 /-- For `p = 2` and `x` of degree zero, `[π x, y] = π [x, y] + [[x, y], x]`.
 The last term has this orientation because every graded piece is killed by `2`. -/
 theorem gradedBracket_gradedPow_zero_left_of_two (hp : p = 2) {k : ℕ}
@@ -166,8 +162,8 @@ theorem gradedBracket_gradedPow_zero_left_of_two (hp : p = 2) {k : ℕ}
   rw [gradedBracket_gradedPow_zero_left, Nat.choose_self, one_nsmul]
   congr 1
   -- Skew-symmetry reverses the outer bracket up to a sign, which is trivial for `p = 2`.
-  rw [← neg_gradedPiece_two (gradedBracket 2 G 0 (0 + k + 1) x (gradedBracket 2 G 0 k x y)),
-    ← gradedCast_gradedBracket_swap, gradedCast_trans]
+  rw [← ZModModule.neg_eq_self (gradedBracket 2 G 0 (0 + k + 1) x (gradedBracket 2 G 0 k x y)),
+    ← gradedCast_gradedBracket_swap, gradedCast_gradedCast]
 
 /-- For `p = 2` and `y` of degree zero, `[x, π y] = π [x, y] + [[x, y], y]`.
 The inner bracket retains the order `[x, y]`. -/
@@ -181,7 +177,51 @@ theorem gradedBracket_gradedPow_zero_right_of_two (hp : p = 2) {j : ℕ}
   rw [gradedBracket_gradedPow_zero_right, Nat.choose_self, one_nsmul]
   congr 1
   -- Skew-symmetry reverses the outer bracket up to a sign, which is trivial for `p = 2`.
-  rw [← neg_gradedPiece_two (gradedBracket 2 G 0 (j + 0 + 1) y (gradedBracket 2 G j 0 x y)),
-    ← gradedCast_gradedBracket_swap, gradedCast_trans]
+  rw [← ZModModule.neg_eq_self (gradedBracket 2 G 0 (j + 0 + 1) y (gradedBracket 2 G j 0 x y)),
+    ← gradedCast_gradedBracket_swap, gradedCast_gradedCast]
+
+/-! ### Brackets with a degree-zero class, without transport of degrees -/
+
+/-- **`π` against a bracket with a degree-zero class**, away from degree zero: `π [x, y] = [π x, y]`
+for `x ∈ gr_j(G)` with `j ≥ 1` and `y ∈ gr_0(G)`. Both sides lie in `gr_{j+2}(G)`, so no
+transport of degrees is needed. -/
+theorem gradedPow_gradedBracket_left_zero {j : ℕ} (hj : 1 ≤ j) (x : gradedPiece p G j)
+    (y : gradedPiece p G 0) :
+    gradedPow p G (j + 1) (gradedBracket p G j 0 x y) =
+      gradedBracket p G (j + 1) 0 (gradedPow p G j x) y :=
+  (gradedPow_gradedBracket_left hj x y).trans (gradedCast_rfl _)
+
+/-- For odd `p`, `π [x, y] = [π x, y]` for `y` of degree zero, in every degree of `x`. -/
+theorem gradedPow_gradedBracket_left_zero_of_odd (hp : Odd p) {j : ℕ} (x : gradedPiece p G j)
+    (y : gradedPiece p G 0) :
+    gradedPow p G (j + 1) (gradedBracket p G j 0 x y) =
+      gradedBracket p G (j + 1) 0 (gradedPow p G j x) y :=
+  (gradedPow_gradedBracket_left_of_odd hp x y).trans (gradedCast_rfl _)
+
+/-- **`π` against a bracket of two degree-zero classes**:
+`π [x, y] = [π x, y] + (p choose 2) • [[x, y], x]` in `gr_2(G)`. For odd `p` the correction
+vanishes, and for `p = 2` it is `[[x, y], x]`. -/
+theorem gradedPow_gradedBracket_zero_zero (x y : gradedPiece p G 0) :
+    gradedPow p G 1 (gradedBracket p G 0 0 x y) =
+      gradedBracket p G 1 0 (gradedPow p G 0 x) y +
+        p.choose 2 • gradedBracket p G 1 0 (gradedBracket p G 0 0 x y) x := by
+  have h := gradedBracket_gradedPow_zero_left x y
+  have hswap := gradedCast_gradedBracket_swap x (gradedBracket p G 0 0 x y)
+  rw [gradedCast_rfl, gradedCast_rfl] at h
+  rw [gradedCast_rfl] at hswap
+  rw [← neg_eq_iff_eq_neg] at hswap
+  rw [h, ← hswap, smul_neg, neg_add_cancel_right]
+
+/-! ### Brackets with iterated `p`-powers -/
+
+/-- **A degree-zero class brackets trivially with its iterated `p`-powers**: `[π^j x, x] = 0`, since
+it is the class of the commutator `⁅g ^ (p ^ j), g⁆ = 1`. -/
+@[simp]
+theorem gradedBracket_gradedPowIter_self (j : ℕ) (x : gradedPiece p G 0) :
+    gradedBracket p G j 0 (gradedPowIter p G j x) x = 0 := by
+  obtain ⟨g, rfl⟩ := gradedMkZero_surjective x
+  rw [gradedPowIter_gradedMkZero, gradedBracket_gradedMk_gradedMkZero, gradedMk_eq_zero_iff]
+  simp only [commutatorElement_eq_one_iff_commute.mpr (Commute.pow_self g _)]
+  exact one_mem _
 
 end TauCeti

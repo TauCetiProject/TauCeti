@@ -103,4 +103,18 @@ theorem _root_.Subgroup.mem_iUnionClassesOfFullCycleType {G : Subgroup (Equiv.Pe
     g ∈ G.iUnionClassesOfFullCycleType mu ↔ (g : Equiv.Perm α).fullCycleType = mu :=
   Subgroup.mem_iUnion_classesOfFullCycleType G mu g
 
+/-- A conjugacy class of a permutation subgroup has a specified full cycle type if and only if
+one (hence every) representative has that type. -/
+theorem _root_.Subgroup.mem_classesOfFullCycleType_mk
+    (G : Subgroup (Equiv.Perm α)) (mu : Multiset ℕ) (g : G) :
+    ConjClasses.mk g ∈ G.classesOfFullCycleType mu ↔
+      (g : Equiv.Perm α).fullCycleType = mu := by
+  constructor
+  · intro h
+    apply (G.mem_iUnion_classesOfFullCycleType mu g).mp
+    exact Set.mem_iUnion.mpr ⟨ConjClasses.mk g,
+      Set.mem_iUnion.mpr ⟨h, ConjClasses.mem_carrier_iff_mk_eq.mpr rfl⟩⟩
+  · intro h
+    exact Subgroup.mem_classesOfFullCycleType.mpr ⟨g, rfl, h⟩
+
 end TauCeti

@@ -63,10 +63,17 @@ noncomputable def diagonalTorusDefiningIdeal : HopfIdeal R (coordinateHopfAlgebr
     (diagonalTorusCoordinateMap_surjective r R)
 
 /-- A function belongs to the diagonal-torus ideal precisely when its restriction vanishes. -/
-@[simp]
+@[simp↓]
 theorem mem_diagonalTorusDefiningIdeal (x : coordinateHopfAlgebra R (r + 1)) :
     x ∈ diagonalTorusDefiningIdeal r R ↔ (diagonalTorusCoordinateMap r R).hom x = 0 := by
   rw [diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
+
+/-- The diagonal-torus defining ideal is the kernel of restriction to the torus. -/
+theorem diagonalTorusDefiningIdeal_eq_ker :
+    diagonalTorusDefiningIdeal r R =
+      HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap r R).hom
+        (diagonalTorusCoordinateMap_surjective r R) :=
+  (rfl)
 
 /-- The quotient by the diagonal-torus ideal is the Laurent coordinate Hopf algebra of the
 rank-`r` split torus. -/

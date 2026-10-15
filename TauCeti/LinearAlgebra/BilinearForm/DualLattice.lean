@@ -61,7 +61,7 @@ theorem _root_.LinearMap.BilinForm.dualSubmoduleToDual_surjective
   rintro _ ⟨i, rfl⟩
   apply FaithfulSMul.algebraMap_injective R K
   rw [LinearMap.BilinForm.dualSubmoduleToDual_apply_apply,
-    LinearMap.BilinForm.dualSubmoduleParing_spec]
+    LinearMap.BilinForm.dualSubmodulePairing_spec]
   have hform (j) : B (bd j) ((b i : N) : V) = if i = j then 1 else 0 := by
     calc
       B (bd j) ((b i : N) : V) = B (bd j) (b_ext i) := by

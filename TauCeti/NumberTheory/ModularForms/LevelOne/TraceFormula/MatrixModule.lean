@@ -58,6 +58,15 @@ namespace TauCeti
 /-- Integral two-by-two matrices of determinant `n`. -/
 abbrev TraceFormulaMatrix (n : ℤ) := FixedDetMatrix (Fin 2) ℤ n
 
+/-- The diagonal matrix `diag(d₀, d₁)`, as a matrix of determinant `n = d₀ d₁`. -/
+def TraceFormulaMatrix.diagonal (d₀ d₁ : ℤ) (h : d₀ * d₁ = n) : TraceFormulaMatrix n :=
+  ⟨!![d₀, 0; 0, d₁], by simp [Matrix.det_fin_two_of, h]⟩
+
+/-- The underlying matrix of `TraceFormulaMatrix.diagonal d₀ d₁ h` is `diag(d₀, d₁)`. -/
+@[simp]
+theorem TraceFormulaMatrix.val_diagonal (d₀ d₁ : ℤ) (h : d₀ * d₁ = n) :
+    (TraceFormulaMatrix.diagonal d₀ d₁ h).1 = !![d₀, 0; 0, d₁] := (rfl)
+
 instance (n : ℤ) : Neg (TraceFormulaMatrix n) where
   neg A := ⟨-A.1, by simpa [Matrix.det_neg] using A.2⟩
 

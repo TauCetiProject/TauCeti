@@ -121,7 +121,7 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one
         mk0 I = C := by
   classical
   obtain ⟨J, rfl⟩ := mk0_surjective C
-  set σ := ringOfIntegersQuadraticConj hmin hgen with hσdef
+  set σ := ringOfIntegersQuadraticConj hmin hgen with _
   have hinv : Function.Involutive σ := ringOfIntegersQuadraticConj_involutive hmin hgen
   have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.2
   have hJm0 : Ideal.map σ (J : Ideal (𝓞 K)) ≠ 0 := by

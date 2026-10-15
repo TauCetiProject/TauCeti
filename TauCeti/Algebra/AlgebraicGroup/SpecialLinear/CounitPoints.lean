@@ -39,6 +39,15 @@ noncomputable def counitPointsMulEquiv :
   (Bialgebra.CounitAlgebra.pointsMulEquiv R (coordinateHopfAlgebra R n) B).trans
     (pointsMulEquiv (R := R) (A := B) n)
 
+/-- The determinant-one matrix of a counit-valued point is the matrix of its transported
+ordinary point. -/
+theorem counitPointsMulEquiv_eq_pointsMulEquiv
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R]
+      Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
+    counitPointsMulEquiv n g = pointsMulEquiv (R := R) (A := B) n
+      ((Bialgebra.CounitAlgebra.pointsMulEquiv R (coordinateHopfAlgebra R n) B) g) :=
+  (rfl)
+
 /-- The image in `GLₙ` of a counit-valued `SLₙ` point is its canonical inclusion. -/
 @[simp]
 theorem toGL_counitPointsMulEquiv

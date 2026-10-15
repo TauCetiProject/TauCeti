@@ -17,11 +17,11 @@ preserved by the whole family.  Over an algebraically closed field, the triangul
 hypothesis is automatic.
 
 For a group representation with commuting, triangularizable image, such a joint eigenvector
-exists.  The general `unitHomOfJointEigenvector` construction from `JointEigenvector/Basic.lean`
-packages its eigenvalue function as a unit-valued character.  Thus every such representation has
-a one-dimensional submodule on which the group acts through that character.  Over an algebraically
-closed field, triangularizability is automatic.  This is the abelian base step for the fixed-line
-induction in the Lie--Kolchin theorem.
+exists.  The general `MonoidHom.unitHomOfJointEigenvector` construction from
+`JointEigenvector/Basic.lean` packages its eigenvalue function as a unit-valued character.  Thus
+every such representation has a one-dimensional submodule on which the group acts through that
+character.  Over an algebraically closed field, triangularizability is automatic.  This is the
+abelian base step for the fixed-line induction in the Lie--Kolchin theorem.
 
 ## Main declarations
 
@@ -159,9 +159,9 @@ theorem exists_unitHom_jointEigenvector_of_pairwise_commute [FiniteDimensional K
   obtain ⟨χ, v, hv, hv_mem⟩ :=
     exists_jointEigenvector_of_pairwise_commute (fun g ↦ ρ g) hcomm htri
   let χ' : G →* Kˣ :=
-    unitHomOfJointEigenvector ρ χ v hv hv_mem
+    ρ.unitHomOfJointEigenvector χ v hv hv_mem
   refine ⟨χ', v, hv, fun g ↦ ?_⟩
-  rw [unitHomOfJointEigenvector_apply]
+  rw [MonoidHom.unitHomOfJointEigenvector_apply]
   exact Module.End.mem_eigenspace_iff.mp (hv_mem g)
 
 /-- Over an algebraically closed field, every nonzero finite-dimensional representation with

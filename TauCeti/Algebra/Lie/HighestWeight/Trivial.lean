@@ -35,10 +35,9 @@ whole action is trivial.
 
 ## References
 
-This is the zero-weight separation step in Layer 5, "Weyl's complete reducibility theorem", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. Humphreys, *Introduction to Lie
-Algebras and Representation Theory*, §6 supplies the model for the subsequent Casimir-splitting
-argument; the rank-one zero-highest-weight argument used here is from §§7.2 and 21.1.
+J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §6 is the model for the
+Casimir-splitting argument of Weyl's complete reducibility theorem; the rank-one zero-highest-weight
+argument used here is from §§7.2 and 21.1.
 -/
 
 public section
@@ -124,10 +123,11 @@ theorem isTrivial_of_isHighestWeightVector_weight_zero_of_isIrreducible
         exact ht i) he hf
   have hann : lieAnnihilator K L v = ⊤ := by
     apply eq_top_iff.mpr
-    rw [← hspan, LieSubalgebra.lieSpan_le]
+    rw [← hspan]
+    refine lieSpan_le_lieAnnihilator K L ?_
     rintro x (⟨i, rfl⟩ | ⟨i, rfl⟩)
-    · exact (mem_lieAnnihilator K L).mpr (he_zero i)
-    · exact (mem_lieAnnihilator K L).mpr (hf_zero i)
+    · exact he_zero i
+    · exact hf_zero i
   apply isTrivial_of_forall_lie_eq_zero_of_lieSpan_eq_top
     (R := K) (L := L) (M := M)
     (hgen := lieSpan_singleton_eq_top_of_ne_zero hv.ne_zero)

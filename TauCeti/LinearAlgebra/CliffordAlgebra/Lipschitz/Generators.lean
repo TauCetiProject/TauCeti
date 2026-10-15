@@ -23,7 +23,6 @@ Lipschitz group as soon as some vector has invertible norm.
 
 * `CliffordAlgebra.mem_lipschitzGroup_iff_exists_list`: a unit lies in the Lipschitz group exactly
   when it is a product of vectors of invertible norm, if `2` is invertible.
-* `CliffordAlgebra.lipschitzGroup_eq_bot`: the Lipschitz group of the zero module is trivial.
 * `CliffordAlgebra.scalarUnits`: the scalar units, as a homomorphism into the Lipschitz group,
   whenever some vector has invertible norm.
 * `CliffordAlgebra.scalarUnits_injective`: when `2` is invertible, the scalar units embed.
@@ -95,16 +94,6 @@ theorem mem_lipschitzGroup_iff_exists_list [Invertible (2 : R)] {x : (CliffordAl
     refine ⟨[⅟(Q m) • m], ?_, by simp⟩
     simp only [List.mem_singleton, forall_eq]
     exact QuadraticMap.isUnit_apply_smul (isUnit_of_invertible _) (isUnit_of_invertible _)
-
-/-- The Lipschitz group of a quadratic form on the zero module is trivial: its only vector is `0`,
-which is not a unit unless the Clifford algebra is itself trivial. -/
-theorem lipschitzGroup_eq_bot [Subsingleton M] : lipschitzGroup Q = ⊥ := by
-  rw [lipschitzGroup, Subgroup.closure_eq_bot_iff]
-  rintro x ⟨m, hm⟩
-  rw [Subsingleton.elim m 0, map_zero] at hm
-  have : Subsingleton (CliffordAlgebra Q) := subsingleton_of_zero_eq_one (by
-    rw [← x.mul_inv, ← hm, zero_mul])
-  exact Subsingleton.elim x 1
 
 /-! ### The scalar units -/
 

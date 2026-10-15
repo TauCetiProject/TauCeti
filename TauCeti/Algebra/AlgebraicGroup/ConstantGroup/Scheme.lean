@@ -22,10 +22,8 @@ The structural morphism of a constant finite group scheme is finite and étale. 
 comes from the finite free function algebra, while étaleness is the scheme-side form of the
 finite-product étaleness proved for the coordinate ring.
 
-This is the scheme-side representer required for the identity-component and component-group
-milestone in Layer 3 of the ReductiveGroups roadmap.  Once the component coordinate morphism is
-available, its relative spectrum has this object as target; identifying that morphism with the
-fppf quotient remains downstream.
+This is the scheme-side representer for the component group; it is used in
+`TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Representable`.
 
 ## Main declarations
 
@@ -83,7 +81,6 @@ theorem groupScheme_X_left :
 
 /-- The structural morphism of the constant group scheme is induced by the scalar inclusion into
 its function algebra. -/
-@[simp]
 theorem groupScheme_X_hom :
     (groupScheme R G).X.hom =
       eqToHom (groupScheme_X_left R G) ≫
@@ -187,7 +184,8 @@ noncomputable def groupSchemePointMulEquiv (A : Type u) [CommRing A] [Algebra R 
     (CommHopfAlgCat.of R (coordinateRing R G)) A (groupScheme_def R G)
 
 /-- Under `groupSchemePointMulEquiv`, an algebra point is represented by its spectrum map. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 theorem groupSchemePointMulEquiv_apply_left (A : Type u) [CommRing A] [Algebra R A]
     (p : WithConv (coordinateRing R G →ₐ[R] A)) :
     (groupSchemePointMulEquiv R G A p).left =
@@ -205,7 +203,7 @@ theorem groupSchemePointMulEquiv_groupSchemeMap {H : Type u} [Group H] [Finite H
     (p : WithConv (coordinateRing R G →ₐ[R] A)) :
     groupSchemePointMulEquiv R G A p ≫ (groupSchemeMap R f).hom.hom =
       groupSchemePointMulEquiv R H A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.ofHom (coordinateBialgHom R G H f))).app
             (CommAlgCat.of R A) p) := by
   rw [groupSchemeMap_def]

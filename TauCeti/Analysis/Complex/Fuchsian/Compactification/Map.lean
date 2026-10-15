@@ -95,8 +95,7 @@ theorem image_compactifiedQuotientMap_cuspNhd_subset_cuspNhd
     (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : E.scaling = D.scaling) (A : ℝ) :
     compactifiedQuotientMap h '' cuspNhd D A ⊆ cuspNhd E A := by
-  have hc : E.cusp = D.cusp := (MulAction.injective D.scaling)
-    ((hσ ▸ E.scaling_smul_cusp).trans D.scaling_smul_cusp.symm)
+  have hc : E.cusp = D.cusp := E.cusp_eq_of_scaling_eq D hσ
   rintro _ ⟨x, hx, rfl⟩
   cases x with
   | ofQuotient p =>

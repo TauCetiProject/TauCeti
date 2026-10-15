@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # Closed root subgroups of the Geck carrier
@@ -39,8 +40,7 @@ divided-power coefficient vanishes.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
 
-This supplies the closed-root-subgroup condition in the pinning target of Layer 9 of the
-ReductiveGroups roadmap.
+This supplies the closed-root-subgroup condition of a pinning.
 -/
 
 public section
@@ -130,8 +130,7 @@ private theorem two_le_nilpotencyClass_geckRootOperator
     intro hzero
     apply hrestricted
     apply Subtype.ext
-    rw [TauCeti.coe_integralDividedPower_apply, TauCeti.Associative.dividedPower_one,
-      hzero, zero_smul]
+    rw [TauCeti.coe_integralDividedPower_one_apply, hzero, zero_smul]
     rfl
   by_contra hlt
   have hone : (t.geckRepresentation ht
@@ -154,7 +153,7 @@ theorem geckRootSubgroupMatrix_apply (i : Fin t.rank ⊕ Fin t.rank)
   simp_rw [t.geckRootSubgroup_dividedPower_repr ht]
   rw [Finset.sum_eq_single 1]
   · simp
-  · intro n hn hne
+  · intro n _ hne
     simp [hne]
   · intro hnot
     have htwo := t.two_le_nilpotencyClass_geckRootOperator ht i
@@ -221,21 +220,7 @@ private theorem geckRepresentedRootCoordinateMap_surjective
           (MvPolynomial.X
             (t.geckRootRow ht (Sum.elim id id i), t.geckRootColumn ht i))),
         t.geckRepresentedRootCoordinateMap_X ht i⟩
-  intro y
-  have hy : y ∈ (t.geckRepresentedRootCoordinateMap ht i).hom.toAlgHom.range := by
-    induction y using SymmetricAlgebra.induction with
-    | algebraMap z => exact Subalgebra.algebraMap_mem _ z
-    | ι z =>
-        have hz : SymmetricAlgebra.ι ℤ ℤ z = z • SymmetricAlgebra.ι ℤ ℤ 1 := by
-          rw [← map_zsmul]
-          congr 1
-          simp
-        rw [hz]
-        exact zsmul_mem hgen z
-    | mul y z hy hz => exact mul_mem hy hz
-    | add y z hy hz => exact add_mem hy hz
-  obtain ⟨z, hz⟩ := (AlgHom.mem_range _).1 hy
-  exact ⟨z, hz⟩
+  exact (t.geckRepresentedRootCoordinateMap ht i).hom.toAlgHom.surjective_of_ι_one_mem_range hgen
 
 /-- The coordinate morphism of a numbered root subgroup after factorization through the Geck
 carrier. -/

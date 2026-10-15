@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Counting
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
+public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.UnitIntervalEmbedding
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 
@@ -16,7 +17,9 @@ public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 Homomorphism density is invariant under zero cut distance, so it descends from strict graphon
 representatives to `GraphonSpace`.  The descended observable retains the quantitative counting
 bound: for a finite graph `F`, it is Lipschitz with constant equal to the number of edges of `F`.
-In particular every homomorphism density is continuous on graphon space.
+In particular every homomorphism density is continuous on graphon space. Homomorphism densities are
+also preserved by the isometric embedding of every fixed-carrier graphon space into the
+unit-interval one.
 
 These quotient-stable observables are the coordinates used by graphon separation, compactness, and
 the equivalence between cut-distance convergence and convergence of all homomorphism densities.
@@ -49,6 +52,10 @@ space.
 * `TauCeti.DenseGraphLimits.lipschitzWith_homDensityOnSpace` gives the edge-count Lipschitz bound;
 * `TauCeti.DenseGraphLimits.continuous_homDensityOnSpace` gives continuity on every fixed-carrier
   graphon space;
+* `TauCeti.DenseGraphLimits.Graphon.homDensity_unitIntervalRepr` and
+  `TauCeti.DenseGraphLimits.homDensityOnSpace_toGraphonSpaceI` say that the unit-interval
+  representative and the embedding into the unit-interval graphon space preserve homomorphism
+  densities;
 * `TauCeti.DenseGraphLimits.homDensityOnSpace_bot`,
   `TauCeti.DenseGraphLimits.homDensityOnSpace_map_embedding` and
   `TauCeti.DenseGraphLimits.homDensityOnSpace_sum` are normalization, relabelling invariance and
@@ -132,6 +139,23 @@ theorem lipschitzWith_homDensityOnSpace (F : SimpleGraph V) [DecidableRel F.Adj]
 theorem continuous_homDensityOnSpace (F : SimpleGraph V) [DecidableRel F.Adj] :
     Continuous (homDensityOnSpace (μ := μ) F) :=
   (lipschitzWith_homDensityOnSpace (μ := μ) F).continuous
+
+/-- The unit-interval representative has the same homomorphism densities as the original
+graphon. -/
+@[simp]
+theorem Graphon.homDensity_unitIntervalRepr (F : SimpleGraph V) [DecidableRel F.Adj]
+    (W : Graphon Ω μ) : homDensity F W.unitIntervalRepr = homDensity F W := by
+  have h := abs_homDensity_sub_le_cutDist F W.unitIntervalRepr W
+  rw [Graphon.cutDist_unitIntervalRepr_left, cutDist_self, mul_zero] at h
+  exact sub_eq_zero.1 (abs_nonpos_iff.1 h)
+
+/-- Homomorphism densities are preserved by the embedding into the unit-interval graphon space. -/
+@[simp]
+theorem homDensityOnSpace_toGraphonSpaceI (F : SimpleGraph V) [DecidableRel F.Adj]
+    (x : GraphonSpace Ω μ) :
+    homDensityOnSpace F (toGraphonSpaceI x) = homDensityOnSpace F x := by
+  obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x
+  simp
 
 section Structural
 

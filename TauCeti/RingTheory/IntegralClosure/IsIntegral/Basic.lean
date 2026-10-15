@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 -- Proof-only: supplies `isIntegral_trans` and `Algebra.IsIntegral.adjoin`, the two facts the
 -- argument runs through. The statement mentions only `IsIntegral`, which the public import
@@ -23,6 +24,9 @@ without either being an algebra over the other.
 
 * `TauCeti.isIntegral_trans_common`: if every element of `P` becomes integral over `R` once
   mapped into `L`, then an element of `L` integral over `P` is integral over `R`.
+* `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
+  elements of `A` and is integral over `A` has its numerator divisible by its denominator, when
+  `A` is integrally closed.
 -/
 
 public section
@@ -48,5 +52,23 @@ theorem isIntegral_trans_common {R P L : Type*} [CommRing R] [CommRing P]
     ext z
     simp [pAlgebra, RingHom.algebraMap_toAlgebra, pToS]
   exact isIntegral_trans (R := R) (A := S) x (hx.tower_top (A := S))
+
+/-- An element of a field extension of `A` that is a quotient of elements of `A` and is integral
+over `A` has its numerator divisible by its denominator, when `A` is integrally closed. -/
+theorem dvd_of_isIntegral_div
+    {A L : Type*} [CommRing A] [IsDomain A]
+    [IsIntegrallyClosed A] [Field L] [Algebra A L] [FaithfulSMul A L] {a d : A} (hd : d ≠ 0)
+    (h : IsIntegral A (algebraMap A L a / algebraMap A L d)) : d ∣ a := by
+  have hinj : Function.Injective (algebraMap A L) := FaithfulSMul.algebraMap_injective A L
+  let f : FractionRing A →ₐ[A] L := IsFractionRing.liftAlgHom (g := Algebra.ofId A L) hinj
+  have hf : Function.Injective f := (f : FractionRing A →+* L).injective
+  have hdF : algebraMap A (FractionRing A) d ≠ 0 := fun h' =>
+    hd (IsFractionRing.injective A (FractionRing A) (by rw [h', map_zero]))
+  have hw : f (algebraMap A (FractionRing A) a / algebraMap A (FractionRing A) d) =
+      algebraMap A L a / algebraMap A L d := by
+    rw [map_div₀, AlgHom.commutes, AlgHom.commutes]
+  obtain ⟨e, he⟩ := IsIntegrallyClosed.isIntegral_iff.mp ((isIntegral_algHom_iff f hf).mp (hw ▸ h))
+  refine ⟨e, IsFractionRing.injective A (FractionRing A) ?_⟩
+  rw [map_mul, he, mul_div_cancel₀ _ hdF]
 
 end TauCeti

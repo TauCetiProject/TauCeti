@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.SpecialLinear
 
 /-!

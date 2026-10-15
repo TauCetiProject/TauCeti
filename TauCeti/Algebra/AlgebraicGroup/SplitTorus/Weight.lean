@@ -61,6 +61,11 @@ monomial `∏ j, x_j ^ μ j`. -/
 noncomputable def weightCharacter (μ : σ → ℤ) : Multiplicative (σ →₀ ℤ) :=
   Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm μ)
 
+/-- A finitely supported exponent vector represents its own integral character. -/
+theorem weightCharacter_coe (f : σ →₀ ℤ) :
+    weightCharacter ⇑f = Multiplicative.ofAdd f := by
+  rw [weightCharacter, Finsupp.equivFunOnFinite_symm_coe]
+
 @[simp]
 theorem toAdd_weightCharacter (μ : σ → ℤ) (j : σ) :
     Multiplicative.toAdd (weightCharacter μ) j = μ j := by

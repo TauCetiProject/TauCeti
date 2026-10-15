@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind the projective faithfulness
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
@@ -39,6 +40,9 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
+* `TauCeti.UpperHalfPlane.pslS_smul` — `TauCeti.pslS` (the `PSL(2, ℝ)` image of
+  `ModularGroup.S`) acts on `ℍ` as `ModularGroup.S` does; `re_pslS_smul` gives its effect on
+  the real part, up to the `normSq` factor.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/PSL2Action.lean`); the AINTLIB Jacobian computation of
@@ -219,3 +223,21 @@ theorem glPosToPSL2R_smul (g : GL(2, ℝ)⁺) (τ : ℍ) :
   exact glPosToSL2R_coe_matrix g
 
 end UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+/-- `pslS` acts on `ℍ` as `ModularGroup.S` does, i.e. as `z ↦ -1/z`. -/
+theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
+  rw [pslS_def, psl2zToPSL2R_smul, pslMk_smul]
+
+/-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
+theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
+  rw [pslS_smul, _root_.ModularGroup.re_S_smul]
+
+/-- Translating by `(g * pslS)⁻¹` negates the real part of the `g⁻¹`-translate `w = g⁻¹ • z`
+and divides it by `normSq w`: `((g * pslS)⁻¹ • z).re = -w.re / normSq w`. -/
+theorem re_mul_pslS_inv_smul (g : PSL(2, ℝ)) (z : ℍ) :
+    ((g * pslS)⁻¹ • z : ℍ).re = -(g⁻¹ • z : ℍ).re / Complex.normSq ((g⁻¹ • z : ℍ) : ℂ) := by
+  rw [mul_inv_rev, pslS_inv, mul_smul, re_pslS_smul]
+
+end TauCeti.UpperHalfPlane

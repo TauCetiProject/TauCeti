@@ -248,7 +248,9 @@ private theorem ι₁₂_associator_whiskerLeft_enrichedComp (W X Y Z : C) (p q 
       (D.hom W X) (D.hom X Y) (D.hom Y Z) (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r (p + q) j
       rfl h]
     rfl
-  rw [comp_f, comp_f, e, Category.assoc, ι_ι_associator_hom_assoc, ι_whiskerLeft_assoc,
+  rw [comp_f, comp_f, e, Category.assoc,
+    ι_ι_associator_hom_assoc _ _ _ p q r (p + q) (q + r) j rfl rfl h (by omega),
+    ι_whiskerLeft_assoc,
     ι_enrichedComp, ← whiskerLeft_comp_assoc, ι_enrichedComp]
 
 /-- The enriched composition is associative, with the tensor products identified by the monoidal

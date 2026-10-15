@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Different.Basic
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+import TauCeti.NumberTheory.LocalField.Monogenic
 import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
-import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 
 /-!
 # The different under isomorphism
@@ -41,8 +41,7 @@ theorem differentIdeal_map_integerRingEquiv (e : L ≃ₐ[K] M) :
     (differentIdeal 𝒪[K] 𝒪[L]).map e.integerRingEquiv =
       differentIdeal 𝒪[K] 𝒪[M] := by
   have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
-  obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
-    (R := 𝒪[K]) (S := 𝒪[L])
+  obtain ⟨x, hx⟩ := exists_integerRing_adjoin_eq_top K L
   have hy : Algebra.adjoin 𝒪[K] {e.integerRingEquiv x} = ⊤ := by
     have hmap := AlgHom.map_adjoin_singleton (e.integerRingEquiv.toAlgHom) x
     rw [hx] at hmap

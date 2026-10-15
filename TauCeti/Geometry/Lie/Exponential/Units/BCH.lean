@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
+public import TauCeti.Geometry.Lie.Exponential.BCH
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 
 /-!
@@ -28,6 +29,8 @@ local group law directly in the derivation model of the Lie algebra.
 * `TauCeti.unitsLocalBCH_map_lieExp`: the local exponential product equation.
 * `TauCeti.eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq`: uniqueness among small germs with the
   same exponential image.
+* `TauCeti.lieLocalBCH_eq_unitsLocalBCH`: the local BCH germ of the Lie group `Rˣ` is the
+  transported algebra-valued germ.
 -/
 
 public section
@@ -88,9 +91,9 @@ theorem unitsLocalBCH_def :
       (↑(fun p : LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ×
           LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ↦
         (unitsLieAlgebraEquiv (R := R)).symm
-          (NormedSpace.logOneAdd ℝ R
+          (NormedSpace.log
             (NormedSpace.exp (unitsLieAlgebraEquiv p.1) *
-              NormedSpace.exp (unitsLieAlgebraEquiv p.2) - 1))) :
+              NormedSpace.exp (unitsLieAlgebraEquiv p.2)))) :
         Germ (nhds ((0, 0) :
           LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ×
             LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ))
@@ -123,8 +126,7 @@ the origin. -/
 @[simp]
 theorem unitsLocalBCH_value : (unitsLocalBCH R).value = 0 := by
   rw [unitsLocalBCH_def, Germ.value_ofFun]
-  simp only [map_zero, NormedSpace.exp_zero, mul_one, sub_self,
-    NormedSpace.logOneAdd_zero, map_zero]
+  simp only [map_zero, NormedSpace.exp_zero, mul_one, NormedSpace.log_one, map_zero]
 
 /-- Restricting `unitsLocalBCH` to the first coordinate axis gives the identity germ. -/
 @[simp]
@@ -138,8 +140,9 @@ theorem unitsLocalBCH_sliceLeft :
   have he : Tendsto e (nhds 0) (nhds 0) := by
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
+  let _ : NormedAlgebra ℚ R := NormedAlgebra.restrictScalars ℚ ℝ R
   rw [unitsLocalBCH_def, Germ.sliceLeft_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one R)] with X hX
+  filter_upwards [he.eventually (NormedSpace.eventually_log_exp R)] with X hX
   rw [map_zero, NormedSpace.exp_zero, mul_one, hX, e.symm_apply_apply]
 
 /-- Restricting `unitsLocalBCH` to the second coordinate axis gives the identity germ. -/
@@ -154,8 +157,9 @@ theorem unitsLocalBCH_sliceRight :
   have he : Tendsto e (nhds 0) (nhds 0) := by
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
+  let _ : NormedAlgebra ℚ R := NormedAlgebra.restrictScalars ℚ ℝ R
   rw [unitsLocalBCH_def, Germ.sliceRight_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one R)] with Y hY
+  filter_upwards [he.eventually (NormedSpace.eventually_log_exp R)] with Y hY
   rw [map_zero, NormedSpace.exp_zero, one_mul, hY, e.symm_apply_apply]
 
 /-- The representative defining `unitsLocalBCH` is analytic at the origin. -/
@@ -164,9 +168,9 @@ theorem analyticAt_unitsLocalBCH_representative :
       (fun p : LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ×
           LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ↦
         (unitsLieAlgebraEquiv (R := R)).symm
-          (NormedSpace.logOneAdd ℝ R
+          (NormedSpace.log
             (NormedSpace.exp (unitsLieAlgebraEquiv p.1) *
-              NormedSpace.exp (unitsLieAlgebraEquiv p.2) - 1)))
+              NormedSpace.exp (unitsLieAlgebraEquiv p.2))))
       (0, 0) := by
   let e := unitsLieAlgebraEquiv (R := R)
   have he : AnalyticAt ℝ
@@ -182,17 +186,16 @@ theorem analyticAt_unitsLocalBCH_representative :
       (he.comp_of_eq (analyticAt_snd : AnalyticAt ℝ
         (fun p : LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ×
             LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ↦ p.2) (0, 0)) (by simp))
-  have hb := (NormedSpace.analyticAt_localBCH_representative R).comp_of_eq hc (by simp)
+  have hb := (NormedSpace.analyticAt_localBCH_representative R ℝ).comp_of_eq hc (by simp)
   have hs : AnalyticAt ℝ e.symm 0 := e.symm.toContinuousLinearEquiv.analyticAt 0
   simpa only [Function.comp_def, e, map_zero, NormedSpace.exp_zero, mul_one,
-    sub_self, NormedSpace.logOneAdd_zero] using hs.comp_of_eq hb (by simp)
+    NormedSpace.log_one] using hs.comp_of_eq hb (by simp)
 
 /-- The local Baker--Campbell--Hausdorff germ on the Lie algebra of `Rˣ` tends to zero at the
 origin. -/
 theorem unitsLocalBCH_tendsto : (unitsLocalBCH R).Tendsto (nhds 0) := by
   rw [unitsLocalBCH_def, Germ.coe_tendsto]
-  simpa only [map_zero, NormedSpace.exp_zero, mul_one, sub_self,
-    NormedSpace.logOneAdd_zero] using
+  simpa only [map_zero, NormedSpace.exp_zero, mul_one, NormedSpace.log_one] using
       (analyticAt_unitsLocalBCH_representative R).continuousAt.tendsto
 
 /-- Applying the abstract Lie-group exponential to `unitsLocalBCH` gives the germ of the product
@@ -282,5 +285,12 @@ theorem eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq
       rw [unitsLocalBCH_def, Germ.coe_eq]
       filter_upwards [(tendsto_unitsLieAlgebraCoordinates R).eventually hg] with p hp
       simpa only [gR, e, e.symm_apply_apply, e.apply_symm_apply] using congrArg e.symm hp
+
+/-- The local Baker--Campbell--Hausdorff germ of the Lie group `Rˣ` is the Banach-algebra germ
+transported to its Lie algebra. -/
+theorem lieLocalBCH_eq_unitsLocalBCH :
+    lieLocalBCH (modelWithCornersSelf ℝ R) Rˣ = unitsLocalBCH R :=
+  eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq R _ lieLocalBCH_tendsto
+    (by rw [lieLocalBCH_map_lieExp, unitsLocalBCH_map_lieExp])
 
 end TauCeti

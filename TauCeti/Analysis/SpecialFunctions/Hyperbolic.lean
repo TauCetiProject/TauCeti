@@ -15,14 +15,16 @@ Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
-itself. This file supplies both.
+itself, nor its continuity. This file supplies these.
 
 ## Main declarations
 
 * `Real.tanh_add` — `tanh (a + b) = (tanh a + tanh b) / (1 + tanh a * tanh b)`: the hyperbolic
   tangent of a sum is the Möbius sum of the hyperbolic tangents.
 * `Real.tanh_strictMono` and `Real.tanh_lt_tanh_iff` — `Real.tanh` is strictly monotone, so it
-  compares two real numbers exactly as they compare.
+  compares two real numbers exactly as they compare, and is positive on the positive reals.
+* `Real.tanh_nonneg` and `Real.continuous_tanh` — `Real.tanh` is nonnegative on `[0, ∞)` and
+  continuous.
 
 The formula is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
@@ -81,5 +83,17 @@ theorem _root_.Real.tanh_strictMono : StrictMono Real.tanh := by
 @[simp]
 theorem _root_.Real.tanh_lt_tanh_iff {a b : ℝ} : Real.tanh a < Real.tanh b ↔ a < b :=
   Real.tanh_strictMono.lt_iff_lt
+
+/-- The hyperbolic tangent is nonnegative on the nonnegative reals. -/
+theorem _root_.Real.tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := by
+  simpa only [Real.tanh_zero] using Real.tanh_strictMono.monotone hx
+
+/-- The hyperbolic tangent is continuous: it is the quotient of `exp x - exp (-x)` by the
+positive function `exp x + exp (-x)`. -/
+@[continuity, fun_prop]
+theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
+  simp_rw [funext Real.tanh_eq]
+  exact (by fun_prop : Continuous fun x ↦ Real.exp x - Real.exp (-x)).div (by fun_prop)
+    fun x ↦ (add_pos (Real.exp_pos x) (Real.exp_pos (-x))).ne'
 
 end TauCeti

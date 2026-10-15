@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Function.Lp.BallAverage
 public import Mathlib.MeasureTheory.Function.UnifTight
 
 import Mathlib.MeasureTheory.Measure.TightNormed
-import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # The Fréchet--Kolmogorov compactness criterion in `Lᵖ`
@@ -36,8 +36,8 @@ set, which is the form
 `TauCeti.totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl` records. This is the form
 that Rellich--Kondrachov for `W^{1,p}_0(Ω)` consumes: extending by zero makes a function vanish off
 `Ω`, and its translation increments are controlled by `‖h‖ ‖∇u‖_p` through
-`TauCeti.W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient`. The `W^{1,p}(Ω)` clause of
-Lane A.6 additionally needs an extension operator and boundary regularity.
+`TauCeti.W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient`. The corresponding theorem for
+`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity.
 
 ## The proof
 
@@ -48,9 +48,9 @@ the family are uniformly bounded (`TauCeti.enorm_ballAverage_le`), uniformly equ
 (`TauCeti.enorm_ballAverage_add_sub_ballAverage_le`, packaged for a family as
 `TauCeti.uniformEquicontinuous_ballAverage`) and, once `r` is smaller than the translation modulus
 of the family at `ε`, uniformly within `ε` of the family itself
-(`TauCeti.eLpNorm_ballAverage_sub_le`). Compactness of that smoothed family is
-Mathlib's `BoundedContinuousFunction.arzela_ascoli`, applied after restricting the ball averages
-to a large compact closed ball `K`.
+(`TauCeti.eLpNorm_ballAverage_sub_le`). The finite uniform approximation of that smoothed
+family is supplied by `EquicontinuousOn.exists_finite_approx_of_isCompact` on a large compact
+closed ball `K`.
 
 Putting the two together, `‖f - f'‖_p` for `f'` the chosen approximant is split as the `Lᵖ`
 seminorm over `K` plus the one over its complement. Off `K` tightness bounds each of `f` and `f'`
@@ -69,8 +69,8 @@ is uniformly at most `η` there, and `μ K ^ (1/p) η` is made small by the choi
 
 ## References
 
-Lane A.6 of `TauCetiRoadmap/PDE/README.md`; H. Brezis, *Functional Analysis, Sobolev Spaces and
-Partial Differential Equations*, Theorem 4.26 and Corollary 4.27; H. Hanche-Olsen, H. Holden,
+H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
+Theorem 4.26 and Corollary 4.27; H. Hanche-Olsen, H. Holden,
 *The Kolmogorov--Riesz compactness theorem*, Expo. Math. 28 (2010).
 -/
 
@@ -82,52 +82,6 @@ namespace TauCeti
 
 open Filter MeasureTheory Metric Set Topology
 open scoped ENNReal
-
-section ArzelaAscoli
-
-variable {X F ι : Type*} [PseudoMetricSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F]
-
-/-- The finite uniform net on a compact set extracted from Arzelà--Ascoli. -/
-private theorem exists_finite_approx_on_isCompact {K : Set X} (hK : IsCompact K)
-    {g : ι → X → F} {C η : ℝ}
-    (hC : ∀ i x, g i x ∈ closedBall (0 : F) C) (hequi : UniformEquicontinuous g) (hη : 0 < η) :
-    ∃ t : Set ι, t.Finite ∧ ∀ i, ∃ j ∈ t, ∀ x ∈ K, dist (g i x) (g j x) ≤ η := by
-  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let φ : ι → BoundedContinuousFunction K F := fun i =>
-    BoundedContinuousFunction.mkOfCompact
-      ⟨fun x : K => g i x, (hequi.equicontinuous.continuous i).comp continuous_subtype_val⟩
-  let 𝒜 : Set (BoundedContinuousFunction K F) := Set.range φ
-  have hφcoe : ∀ i : ι, ⇑(φ i) = K.domRestrict (g i) := fun i => by
-    rfl
-  have hφequi : Equicontinuous fun i : ι => (φ i : K → F) := by
-    rw [funext hφcoe]
-    exact (equicontinuous_restrict_iff _).2 (hequi.equicontinuous.equicontinuousOn K)
-  have h𝒜equi : Equicontinuous ((↑) : 𝒜 → K → F) := by
-    rw [← Set.comp_rangeSplitting φ]
-    exact hφequi.comp (Set.rangeSplitting φ)
-  have h𝒜compact : IsCompact (closure 𝒜) :=
-    BoundedContinuousFunction.arzela_ascoli (closedBall (0 : F) C)
-      (isCompact_closedBall _ _) 𝒜 (by
-        intro q x hq
-        obtain ⟨i, rfl⟩ := hq
-        simpa only [φ, BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk] using
-          hC i x) h𝒜equi
-  have h𝒜tb : TotallyBounded 𝒜 := h𝒜compact.totallyBounded.subset subset_closure
-  obtain ⟨u, hu𝒜, hufin, hucover⟩ := h𝒜tb.exists_subset (dist_mem_uniformity hη)
-  let _ : Finite u := hufin.to_subtype
-  choose idx hidx using fun q : u => hu𝒜 q.2
-  refine ⟨Set.range idx, Set.finite_range idx, fun i => ?_⟩
-  obtain ⟨q, hqu, hiq⟩ : ∃ q ∈ u, dist (φ i) q < η := by
-    simpa only [mem_iUnion, mem_ofPred_eq, exists_prop] using hucover (Set.mem_range_self i)
-  let q' : u := ⟨q, hqu⟩
-  refine ⟨idx q', Set.mem_range_self q', fun x hx => ?_⟩
-  have hφdist : dist (φ i) (φ (idx q')) < η := by rw [hidx q']; exact hiq
-  simpa only [φ, BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk] using
-    (BoundedContinuousFunction.dist_coe_le_dist (f := φ i) (g := φ (idx q'))
-      ⟨x, hx⟩).trans hφdist.le
-
-end ArzelaAscoli
 
 section LpApproximation
 
@@ -163,11 +117,11 @@ private theorem eLpNorm_sub_le_of_approx_of_dist_bdd_on {K : Set α}
     rw [hdecomp]
     refine (eLpNorm_add_le hp).trans ?_
     refine add_le_add ?_ ((eLpNorm_add_le hp).trans (add_le_add ?_ ?_))
-    · refine (eLpNorm_indicator_le _ hK).trans ?_
+    · refine (eLpNorm_indicator_le _ hK.nullMeasurableSet).trans ?_
       rw [← neg_sub A f, eLpNorm_neg]
     · exact eLpNorm_indicator_sub_le_of_dist_bdd mu hp' hK.nullMeasurableSet hη
         ((hA.sub hA').indicator hK) hmid
-    · exact eLpNorm_indicator_le _ hK
+    · exact eLpNorm_indicator_le _ hK.nullMeasurableSet
   calc
     eLpNorm (f - f') p mu
         ≤ eLpNorm (K.indicator (f - f')) p mu + eLpNorm (Kᶜ.indicator (f - f')) p mu := by
@@ -207,7 +161,7 @@ private theorem eLpNorm_indicator_compl_le_of_approx_of_bound
       abel
     rw [hsplit']
     refine (eLpNorm_add_le hp).trans (add_le_add ?_ ?_)
-    · refine (eLpNorm_indicator_le _ (hK.compl.inter hs)).trans ?_
+    · refine (eLpNorm_indicator_le _ (hK.compl.inter hs).nullMeasurableSet).trans ?_
       rw [← neg_sub A f, eLpNorm_neg]
       exact happrox
     · have hA' : eLpNorm ((Kᶜ ∩ s).indicator A) p mu ≤
@@ -320,16 +274,20 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
           rw [ENNReal.ofReal_mul hWnn, ENNReal.ofReal_toReal hWt, mul_comm]
       _ ≤ ENNReal.ofReal (ε / 4) := ENNReal.ofReal_le_ofReal hkey
   -- Arzelà--Ascoli supplies a finite uniform net for the restricted ball averages.
-  obtain ⟨t, htfin, ht⟩ := exists_finite_approx_on_isCompact
-    (isCompact_closedBall (0 : E) R) hgB hequi hη
+  obtain ⟨t, htfin, ht⟩ :=
+    (hequi.equicontinuous.equicontinuousOn K).exists_finite_approx_of_isCompact
+      (isCompact_closedBall (0 : E) R)
+      (fun x _ ↦ (isCompact_closedBall (0 : F) Bₑ.toReal).totallyBounded.subset
+        (range_subset_iff.mpr fun i ↦ hgB i x))
+      (dist_mem_uniformity hη)
   refine ⟨Subtype.val '' t, htfin.image (fun i : S => (i : Lp F p mu)), fun f hf => ?_⟩
   obtain ⟨j, hjt, hmid⟩ := ht ⟨f, hf⟩
   refine mem_iUnion₂.2 ⟨(j : Lp F p mu), ⟨j, hjt, rfl⟩, ?_⟩
   set f' : Lp F p mu := (j : Lp F p mu)
   set A : E → F := ballAverage mu r ⇑f
   set A' : E → F := ballAverage mu r ⇑f'
-  have hfm : AEStronglyMeasurable (⇑f) mu := Lp.aestronglyMeasurable f
-  have hf'm : AEStronglyMeasurable (⇑f') mu := Lp.aestronglyMeasurable f'
+  have _ : AEStronglyMeasurable (⇑f) mu := Lp.aestronglyMeasurable f
+  have _ : AEStronglyMeasurable (⇑f') mu := Lp.aestronglyMeasurable f'
   have hAm : AEStronglyMeasurable A mu :=
     (continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable
   have hA'm : AEStronglyMeasurable A' mu :=
@@ -340,7 +298,8 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
         ≤ eLpNorm (A - ⇑f) p mu +
             (ENNReal.ofReal η * W + eLpNorm (A' - ⇑f') p mu) +
             (eLpNorm (Kᶜ.indicator ⇑f) p mu + eLpNorm (Kᶜ.indicator ⇑f') p mu) :=
-          eLpNorm_sub_le_of_approx_of_dist_bdd_on hp hp' hmeasK hAm hA'm hη.le hmid
+          eLpNorm_sub_le_of_approx_of_dist_bdd_on hp hp' hmeasK hAm hA'm hη.le
+            (fun x hx ↦ (hmid x hx).le)
       _ ≤ ε₁ + (ENNReal.ofReal (ε / 4) + ε₁) +
             ((ε₁ + ε₁ + ε₁) + (ε₁ + ε₁ + ε₁)) := by
           exact add_le_add

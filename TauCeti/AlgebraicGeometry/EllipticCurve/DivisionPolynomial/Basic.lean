@@ -12,7 +12,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 # Identities among the division polynomials
 
 Two identities the Nagell–Lutz route needs and Mathlib lacks — one univariate, one bivariate —
-and the consumer the univariate one exists for.
+and the consumer the univariate one exists for, followed by three evaluations of `Ψ₃` that
+reduce a Weierstrass curve to Tate normal form.
 
 Mathlib gives the univariate polynomials `Φₙ` in two registers. `Φ_three` and `Φ_four` are stated
 through the division polynomials `Ψ₃`, `preΨ₄` and `Ψ₂Sq`; `Φ_two` is stated through the
@@ -31,13 +32,36 @@ a curve in characteristic-≠-2 normal form.
   here rather than with its consumer because it is a plain identity among Mathlib's division
   polynomials over any commutative ring — the same reason as the two above — and because a
   consumer-side home would tie its availability to torsion imports it does not need.
+* `WeierstrassCurve.eval_Ψ₃`: `Ψ₃(x) = 3x⁴ + b₂x³ + 3b₄x² + 3b₆x + b₈`, the value of `Ψ₃` at a
+  point through the `b`-invariants.
+* `WeierstrassCurve.variableChange_b₈_eq_eval_Ψ₃`: after a change of variables `C`, the invariant
+  `b₈` is `u⁻⁸ Ψ₃(r)`.
+* `WeierstrassCurve.a₂_mul_ψ₂_sq_eq_eval_Ψ₃`: if `(x, y)` lies on `W` and
+  `sψ₂ = a₄ + 2a₂x - a₁y + 3x²`, where `ψ₂ = 2y + a₁x + a₃`, then
+  `(a₂ - sa₁ + 3x - s²) ψ₂² = Ψ₃(x)`. The factor `a₂ - sa₁ + 3x - s²` is the coefficient `a₂` of
+  `W` after the change of variables `(1, x, s, y)`.
+* `WeierstrassCurve.eval_variableChange_Ψ₂Sq`: after a change of variables `C`, the polynomial
+  `Ψ₂Sq` becomes `u⁻⁶ Ψ₂Sq(u²x + r)`.
+* `WeierstrassCurve.eval_variableChange_Ψ₃`: after a change of variables `C`, the polynomial
+  `Ψ₃` becomes `u⁻⁸ Ψ₃(u²x + r)`.
 
-All three hold over an arbitrary commutative ring, with no ellipticity and no division. The first
-has no hypothesis at all; the second's is an equation between ring elements; the third's is
-Mathlib's `IsCharNeTwoNF` instance, which is a condition on the curve's coefficients rather than on
-a point. The first two are statements about univariate polynomials and mention no point at all; the
-third evaluates the bivariate `ψ₂`, but at an arbitrary `(x, y)` — it does not ask that the pair lie
-on the curve.
+Everything here holds over an arbitrary commutative ring, with no ellipticity and no division. Of
+the first three, the first has no hypothesis at all; the second's is an equation between ring
+elements; the third's is Mathlib's `IsCharNeTwoNF` instance, which is a condition on the curve's
+coefficients rather than on a point. The first two are statements about univariate polynomials and
+mention no point at all; the third evaluates the bivariate `ψ₂`, but at an arbitrary `(x, y)` — it
+does not ask that the pair lie on the curve.
+
+The last three evaluate `Ψ₃` and `ψ₂` at a point and are what reduces a Weierstrass curve to Tate
+normal form (`TauCeti/AlgebraicGeometry/EllipticCurve/TateNormalForm.lean`): once the point is
+moved to `(0, 0)` with horizontal tangent, `b₈ = a₂a₃²`, so the normalisation `a₂ = a₃` is read off
+`Ψ₃`. Only `a₂_mul_ψ₂_sq_eq_eval_Ψ₃` asks that the point lie on the curve.
+
+The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
+an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
+(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`). The one for `Ψ₃` transports the
+condition that a point has order `3` along a change of variables
+(`TauCeti/AlgebraicGeometry/EllipticCurve/LevelThreeNormalForm.lean`).
 
 Declarations here are stated in the root
 `WeierstrassCurve` namespace, not under `TauCeti`, because they extend Mathlib's own
@@ -128,5 +152,52 @@ sites are unchanged. Over any commutative ring, because both `ℤ` (for the inte
 @[simp] lemma evalEval_ψ₂_of_isCharNeTwoNF {R : Type*} [CommRing R] (W : WeierstrassCurve R)
     [W.IsCharNeTwoNF] (x y : R) : W.ψ₂.evalEval x y = 2 * y := by
   simp [WeierstrassCurve.ψ₂, Affine.polynomialY, evalEval]
+
+/-- The `3`-division polynomial `Ψ₃ = 3X⁴ + b₂X³ + 3b₄X² + 3b₆X + b₈` at a point. -/
+theorem eval_Ψ₃ (x : R) :
+    W.Ψ₃.eval x = 3 * x ^ 4 + W.b₂ * x ^ 3 + 3 * W.b₄ * x ^ 2 + 3 * W.b₆ * x + W.b₈ := by
+  simp [Ψ₃]
+
+/-- After a change of variables `C`, the invariant `b₈` is `u⁻⁸ Ψ₃(r)`. -/
+theorem variableChange_b₈_eq_eval_Ψ₃ (C : VariableChange R) :
+    (C • W).b₈ = C.u⁻¹ ^ 8 * W.Ψ₃.eval C.r := by
+  rw [variableChange_b₈, eval_Ψ₃]
+  ring
+
+/-- If `(x, y)` lies on `W` and `sψ₂ = a₄ + 2a₂x - a₁y + 3x²`, where `ψ₂ = 2y + a₁x + a₃`, then
+`(a₂ - sa₁ + 3x - s²) ψ₂² = Ψ₃(x)`. The factor `a₂ - sa₁ + 3x - s²` is the coefficient `a₂` of `W`
+after the change of variables `(u, r, s, t) = (1, x, s, y)`, and the hypothesis on `s` says that
+this change of variables makes `a₄` vanish. -/
+theorem a₂_mul_ψ₂_sq_eq_eval_Ψ₃ {W : WeierstrassCurve R} {x y : R} (h : W.toAffine.Equation x y)
+    {s : R} (hs : s * (2 * y + W.a₁ * x + W.a₃) = W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2) :
+    (W.a₂ - s * W.a₁ + 3 * x - s ^ 2) * (2 * y + W.a₁ * x + W.a₃) ^ 2 = W.Ψ₃.eval x := by
+  rw [Affine.equation_iff] at h
+  rw [eval_Ψ₃, b₂, b₄, b₆, b₈]
+  linear_combination (-W.a₁ * (2 * y + W.a₁ * x + W.a₃) - (s * (2 * y + W.a₁ * x + W.a₃) +
+    (W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2))) * hs + (W.a₁ ^ 2 + 4 * W.a₂ + 12 * x) * h
+
+/-- `x = u⁻² (u² x)` for the scaling `u` of a change of variables. -/
+private theorem VariableChange.eq_inv_sq_mul (C : VariableChange R) (x : R) :
+    x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
+  linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
+
+/-- After a change of variables `C`, the polynomial `Ψ₂Sq`, which agrees with `(2y + a₁x + a₃)²`
+on the curve, transforms as `Ψ₂Sq'(x) = u⁻⁶ Ψ₂Sq(u²x + r)`. -/
+theorem eval_variableChange_Ψ₂Sq (C : VariableChange R) (x : R) :
+    (C • W).Ψ₂Sq.eval x = C.u⁻¹ ^ 6 * W.Ψ₂Sq.eval (C.u ^ 2 * x + C.r) := by
+  -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
+  conv_lhs => rw [VariableChange.eq_inv_sq_mul C x]
+  simp only [Ψ₂Sq, eval_add, eval_mul, eval_pow, eval_C, eval_X, variableChange_b₂,
+    variableChange_b₄, variableChange_b₆]
+  ring
+
+/-- After a change of variables `C`, the `3`-division polynomial transforms as
+`Ψ₃'(x) = u⁻⁸ Ψ₃(u²x + r)`. -/
+theorem eval_variableChange_Ψ₃ (C : VariableChange R) (x : R) :
+    (C • W).Ψ₃.eval x = C.u⁻¹ ^ 8 * W.Ψ₃.eval (C.u ^ 2 * x + C.r) := by
+  -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
+  conv_lhs => rw [VariableChange.eq_inv_sq_mul C x]
+  simp only [eval_Ψ₃, variableChange_b₂, variableChange_b₄, variableChange_b₆, variableChange_b₈]
+  ring
 
 end WeierstrassCurve

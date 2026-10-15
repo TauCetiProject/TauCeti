@@ -537,14 +537,10 @@ theorem primeVonMangoldtCoeff_rat_natGenerator_pow (S : Set (HeightOneSpectrum (
     (v : HeightOneSpectrum (𝓞 ℚ)) {k : ℕ} (hk : 0 < k) :
     primeVonMangoldtCoeff ℚ S (Rat.HeightOneSpectrum.natGenerator v ^ k) =
       if v ∈ S then Real.log (Rat.HeightOneSpectrum.natGenerator v) else 0 := by
-  rw [← Rat.HeightOneSpectrum.absNorm_asIdeal]
-  have hJ : ⟨v.asIdeal ^ k, pow_mem (mem_nonZeroDivisors_of_ne_zero v.ne_bot) k⟩ ∈
-      normFiber ℚ (Ideal.absNorm v.asIdeal ^ k) := by simp
   -- over `ℚ` every norm fibre is a singleton, so this one is `{v ^ k}`
-  obtain ⟨I, hI⟩ := Finset.card_eq_one.mp <| (card_normFiber_eq_dedekindZetaCoeff ℚ <|
-    pow_ne_zero _ <| Ideal.absNorm_eq_zero_iff.not.mpr v.ne_bot).trans (dedekindZetaCoeff_rat _)
-  rw [hI, Finset.mem_singleton] at hJ
-  rw [primeVonMangoldtCoeff_apply, hI, Finset.sum_singleton, ← hJ]
+  rw [← Rat.HeightOneSpectrum.absNorm_asIdeal, ← map_pow, primeVonMangoldtCoeff_apply,
+    normFiber_rat_absNorm ⟨v.asIdeal ^ k, pow_mem (mem_nonZeroDivisors_of_ne_zero v.ne_bot) k⟩,
+    Finset.sum_singleton]
   split_ifs with h
   · exact primeVonMangoldtWeight_of_pow_of_mem h hk rfl
   · exact primeVonMangoldtWeight_of_pow_of_notMem h hk rfl

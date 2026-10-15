@@ -6,6 +6,7 @@ Authors: Kim Morrison
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
 # Basic results on fundamental groupoids and fundamental groups
@@ -24,6 +25,8 @@ Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
 
 ## Main declarations
 
+* `FundamentalGroup.map_id`: the identity induces the identity homomorphism.
+* `FundamentalGroup.map_comp`: induced maps preserve composition.
 * `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
   space is connected.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
@@ -52,6 +55,26 @@ theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
 
 end FundamentalGroupoid
 
+namespace FundamentalGroup
+
+/-- The identity map induces the identity homomorphism on fundamental groups. -/
+@[simp]
+theorem map_id {X : Type*} [TopologicalSpace X] (x : X) :
+    map (ContinuousMap.id X) x = MonoidHom.id _ := by
+  ext ⟨p⟩ : 1
+  -- Mapping a representative path by the identity preserves the path and its endpoints.
+  induction p using Path.Homotopic.Quotient.ind
+  rfl
+
+/-- The map on fundamental groups induced by a composite is the composite of the induced maps. -/
+@[simp]
+theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) (f : C(X, Y)) (x : X) :
+    map (g.comp f) x = (map g (f x)).comp (map f x) :=
+  MonoidHom.ext fun p ↦ End.ext (FundamentalGroupoid.map_comp_map g f p.asHom)
+
+end FundamentalGroup
+
 namespace TauCeti
 
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
@@ -60,8 +83,10 @@ variable {A : Type*} [TopologicalSpace A]
 /-- Mapping a loop class represented by a path is represented by mapping that path. -/
 theorem FundamentalGroup.map_fromPath {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (base : X)
     (q : Path base base) :
-    _root_.FundamentalGroup.map f base (_root_.FundamentalGroup.fromPath ⟦q⟧) =
-      _root_.FundamentalGroup.fromPath ⟦q.map f.continuous⟧ := by
+    _root_.FundamentalGroup.map f base
+        (_root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk q)) =
+      _root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (q.map f.continuous)) := by
+  simp only [← Path.Homotopic.Quotient.mk''_eq_mk]
   rfl
 
 /-- **The induced map is trivial exactly loop by loop.** The map on fundamental groups induced by
@@ -76,18 +101,21 @@ theorem FundamentalGroup.map_range_eq_bot_iff {Y : Type*} [TopologicalSpace Y] (
   · intro h γ
     have h_map : _root_.FundamentalGroup.fromPath ⟦γ.map f.continuous⟧ =
         _root_.FundamentalGroup.fromPath ⟦Path.refl (f base)⟧ := by
+      simp only [Path.Homotopic.Quotient.mk''_eq_mk]
       rw [← FundamentalGroup.map_fromPath f base γ, h]
-      -- the identity of the fundamental groupoid is the class of the constant path
-      exact FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base))
-    exact (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp h_map
+      simp only [MonoidHom.one_apply, _root_.FundamentalGroup.one_def,
+        Path.Homotopic.Quotient.mk_refl]
+    exact (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp (congrArg End.asHom h_map)
   · intro h
-    ext p
-    obtain ⟨γ, rfl⟩ := Quotient.exists_rep (_root_.FundamentalGroup.toPath p)
+    ext ⟨p⟩ : 1
+    obtain ⟨γ, rfl⟩ := Quotient.exists_rep p
     have hnull : _root_.FundamentalGroup.fromPath ⟦γ.map f.continuous⟧ =
         _root_.FundamentalGroup.fromPath ⟦Path.refl (f base)⟧ :=
-      (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr (h γ)
+      congrArg End.of ((FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr (h γ))
+    simp only [Path.Homotopic.Quotient.mk''_eq_mk] at hnull ⊢
     rw [FundamentalGroup.map_fromPath f base γ, hnull]
-    exact (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base))).symm
+    simp only [MonoidHom.one_apply, _root_.FundamentalGroup.one_def,
+      Path.Homotopic.Quotient.mk_refl]
 
 /-- If the source fundamental group is subsingleton, the range of any induced map from it is
 trivial. -/

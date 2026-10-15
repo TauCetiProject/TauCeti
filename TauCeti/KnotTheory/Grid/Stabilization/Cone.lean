@@ -43,6 +43,8 @@ connecting map with `GC⁻(G)` and multiplication by `V₁ - V₂`; that compari
 
 ## Main definitions
 
+* `TauCeti.GridDiagram.stabilizeXConeStateEquiv`: identifies the off-center states together with
+  the grid states of `G` (the center states) with all grid states of `G'`.
 * `TauCeti.GridDiagram.stabilizeXCenterComplex`: the complex of center states.
 * `TauCeti.GridDiagram.stabilizeXOffCenterComplex`: the complex of off-center states.
 * `TauCeti.GridDiagram.stabilizeXConnectingHom`: the connecting chain map between them.
@@ -75,6 +77,47 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 not contain the center `(s.succ, (G.X s).succ)` of its new block. -/
 abbrev StabilizeXOffCenterState : Type :=
   {y : GridState (n + 1) // y s.succ ≠ (G.X s).succ}
+
+private theorem stabilizeXCenterState_injective :
+    Function.Injective fun x : GridState n =>
+      (⟨x.insertPoint s.succ (G.X s).succ, not_not_intro (x.insertPoint_apply_newColumn _ _)⟩ :
+        {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ}) :=
+  fun _ _ h => GridState.insertPoint_injective _ _ (congrArg Subtype.val h)
+
+private theorem stabilizeXCenterState_surjective :
+    Function.Surjective fun x : GridState n =>
+      (⟨x.insertPoint s.succ (G.X s).succ, not_not_intro (x.insertPoint_apply_newColumn _ _)⟩ :
+        {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ}) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨x, rfl⟩ := GridState.exists_insertPoint_eq (not_not.1 hy)
+  exact ⟨x, rfl⟩
+
+private noncomputable def stabilizeXCenterStateEquiv :
+    GridState n ≃ {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ} :=
+  Equiv.ofBijective _
+    ⟨G.stabilizeXCenterState_injective s, G.stabilizeXCenterState_surjective s⟩
+
+/-- Mapping-cone generators for the fully blocked `X`-stabilization comparison are naturally the
+grid states of the stabilized diagram. The left summand consists of off-center states; the right
+summand consists of states obtained by inserting the center of the new block. -/
+noncomputable def stabilizeXConeStateEquiv :
+    G.StabilizeXOffCenterState s ⊕ GridState n ≃ GridState (n + 1) :=
+  ((Equiv.refl _).sumCongr (G.stabilizeXCenterStateEquiv s)).trans
+    (Equiv.sumCompl fun y : GridState (n + 1) => y s.succ ≠ (G.X s).succ)
+
+/-- The cone-state equivalence sends an off-center generator to its underlying stabilized state. -/
+@[simp]
+theorem stabilizeXConeStateEquiv_apply_inl (y : G.StabilizeXOffCenterState s) :
+    G.stabilizeXConeStateEquiv s (.inl y) = y.1 := by
+  simp [stabilizeXConeStateEquiv]
+
+/-- The cone-state equivalence sends a center generator to the state with the center inserted. -/
+@[simp]
+theorem stabilizeXConeStateEquiv_apply_inr (x : GridState n) :
+    G.stabilizeXConeStateEquiv s (.inr x) = x.insertPoint s.succ (G.X s).succ := by
+  simp only [stabilizeXConeStateEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr,
+    Equiv.sumCompl_apply_inr]
+  exact congrArg Subtype.val (Equiv.ofBijective_apply _ _ x)
 
 section Blocks
 

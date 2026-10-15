@@ -32,6 +32,8 @@ system.
   permutations.
 * `TauCeti.glTitsSystemSimpleRep` and `TauCeti.glTitsSystem_simple`: its simple reflections are
   represented by the permutation matrices of the adjacent transpositions.
+* `TauCeti.glTitsSystem_simple_eq_preimage`: under the Weyl-group identification, the simple
+  reflections are the adjacent transpositions.
 
 ## References
 
@@ -288,6 +290,20 @@ theorem glTitsSystemWeylGroupMulEquivPerm_simpleRep (i : Fin n) :
   rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
     diagonalNormalizerQuotientMulEquivPerm_mk]
   exact diagonalNormalizerPerm_permutationGL (Equiv.swap i.castSucc i.succ)
+
+/-- The simple reflections of the standard `GLₙ₊₁` Tits system are the classes corresponding to
+the adjacent transpositions under the identification of its Weyl group with permutations. -/
+theorem glTitsSystem_simple_eq_preimage :
+    (glTitsSystem k n).simple = glTitsSystemWeylGroupMulEquivPerm k n ⁻¹'
+      Set.range fun i : Fin n ↦ Equiv.swap i.castSucc i.succ := by
+  ext w
+  simp only [glTitsSystem_simple, Set.mem_range, Set.mem_preimage]
+  constructor
+  · rintro ⟨i, rfl⟩
+    exact ⟨i, (glTitsSystemWeylGroupMulEquivPerm_simpleRep k n i).symm⟩
+  · rintro ⟨i, hi⟩
+    exact ⟨i, (glTitsSystemWeylGroupMulEquivPerm k n).injective
+      (by rw [glTitsSystemWeylGroupMulEquivPerm_simpleRep, hi])⟩
 
 /-- The Weyl-group equivalence sends the class of a permutation matrix to that permutation. -/
 @[simp]

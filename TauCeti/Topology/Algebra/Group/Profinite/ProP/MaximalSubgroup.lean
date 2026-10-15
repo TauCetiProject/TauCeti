@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Topology.Algebra.ClopenNhdofOne
+import Mathlib.Topology.Separation.Connected
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
@@ -99,7 +100,7 @@ private theorem normal_and_index_eq_of_isCoatom (hG : IsProP p G) {M : Subgroup 
     Subgroup.NormalizerCondition.normal_of_coatom _ Group.normalizerCondition_of_isNilpotent hK
   refine ⟨hMK ▸ hKn.comap q, ?_⟩
   rw [← hMK, Subgroup.index_comap_of_surjective _ hq]
-  exact hQ.index_eq_prime_of_isCoatom hK
+  exact hQ.isCoatom_iff_index_eq_prime.mp hK
 
 /-- **A maximal open subgroup of a pro-`p` group is normal.** -/
 theorem normal_of_isCoatom (hG : IsProP p G) {M : Subgroup G} (hMo : IsOpen (M : Set G))

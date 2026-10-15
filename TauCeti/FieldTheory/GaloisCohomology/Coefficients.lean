@@ -7,11 +7,18 @@ module
 
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+public import TauCeti.RingTheory.RootsOfUnity.ZMod
+-- Non-public: the roots of unity of a separably closed field are used only inside a proof.
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+-- Non-public: the nonvanishing of `n` in `Kˢ` is used only inside a proof.
+import TauCeti.Algebra.Algebra.NatCast
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
 import TauCeti.Algebra.GroupWithZero.Units.Basic
 
@@ -29,9 +36,9 @@ UnitsCoeff K = Additive (Kˢ)ˣ,      KummerCoeff K n = Additive μₙ,
 
 with `μₙ = rootsOfUnity n Kˢ`. Both are **discrete** `G_K`-modules: their point stabilizers are
 open because every element of `Kˢ` is separable over `K`, hence lies in a finite subextension
-(`TauCeti.stabilizer_isOpen_units`). The action on `μₙ` is in general nontrivial, and the Kummer
-isomorphism is false for the trivial action, so it is the module and not the abstract group that
-is named here.
+(`Units.stabilizer_isOpen_of_isIntegral`). The action on `μₙ` is in general nontrivial, and the
+Kummer isomorphism is false for the trivial action, so it is the module and not the abstract group
+that is named here.
 
 The two maps between them assemble the **Kummer sequence**
 
@@ -56,17 +63,31 @@ are strictly larger than `Kˣ`.
 
 * `TauCeti.UnitsCoeff`, `TauCeti.KummerCoeff`: the two coefficient modules, with their discrete
   topologies.
+* `TauCeti.kummerCoeffAddEquivZMod`: an additive isomorphism `μₙ ≃ ℤ/nℤ`, for `n` invertible in
+  `K`.
 * `TauCeti.kummerCoeffIncl`, `TauCeti.unitsCoeffPow`: the inclusion `μₙ ↪ (Kˢ)ˣ` and the `n`-th
   power map, the two maps of the Kummer sequence.
 * `TauCeti.kummerShortExact`: the Kummer sequence as a short exact sequence of discrete
   `G_K`-modules.
 * `TauCeti.baseUnitsEquivInvariants`: the isomorphism `Kˣ ≅ H⁰(G_K, (Kˢ)ˣ)`.
+* `TauCeti.embeddedUnitsInvariants`: for a `K`-embedding `σ : L →ₐ[K] Kˢ`, a unit `b` of `L` as
+  the invariant `σ b` of `(Kˢ)ˣ` under the subgroup of `G_K` fixing `σ(L)`.
+* `TauCeti.embeddedUnitsEquivInvariants`: the isomorphism `Lˣ ≅ H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ)`.
+  For normal `L/K` it intertwines the action of `σ.restrictNormalHom g` with that of `g`
+  (`TauCeti.embeddedUnitsEquivInvariants_restrictNormalHom_smul`, with the `simp` form
+  `TauCeti.coe_embeddedUnitsInvariants_map_restrictNormalHom`).
 
 ## Main results
 
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
+* `TauCeti.natCard_kummerCoeff`: `μₙ` has `n` elements, for `n` invertible in `K`.
+* `TauCeti.finrank_kummerCoeff`: `μ_ℓ` is a line over `𝔽_ℓ` for a prime `ℓ` invertible in `K`.
+* `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
+  `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
+* `TauCeti.mem_H0_fixingSubgroup_unitsCoeff_iff`: a unit of `Kˢ` fixed by the subgroup fixing
+  `σ(L)` comes from `Lˣ`.
 
 ## References
 
@@ -98,7 +119,8 @@ instance : DiscreteTopology (UnitsCoeff K) := ⟨rfl⟩
 /-- **`(Kˢ)ˣ` is a discrete `G_K`-module**: every unit of `Kˢ` is separable over `K`, so it lies
 in a finite subextension and its stabilizer is open. -/
 instance unitsCoeff_continuousSMul : ContinuousSMul (AbsoluteGaloisGroup K) (UnitsCoeff K) :=
-  continuousSMul_iff_stabilizer_isOpen.2 fun x => stabilizer_isOpen_units (K := K) x.toMul
+  continuousSMul_iff_stabilizer_isOpen.2 fun x =>
+    x.toMul.stabilizer_isOpen_of_isIntegral (Algebra.IsIntegral.isIntegral _)
 
 /-! ### The roots of unity -/
 
@@ -119,11 +141,55 @@ the underlying unit of `Kˢ`, which is open. -/
 instance kummerCoeff_continuousSMul :
     ContinuousSMul (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
   continuousSMul_iff_stabilizer_isOpen.2 fun x => by
-    convert stabilizer_isOpen_units (K := K) (x.toMul : (SeparableClosure K)ˣ) using 2
+    convert Units.stabilizer_isOpen_of_isIntegral (x.toMul : (SeparableClosure K)ˣ)
+      (Algebra.IsIntegral.isIntegral (R := K) _) using 2
     ext σ
     refine ⟨fun h => ?_, fun h => Additive.toMul.injective (Subtype.ext (by simpa using h))⟩
     simpa using
       congrArg (fun v : KummerCoeff K n => (v.toMul : (SeparableClosure K)ˣ)) h
+
+variable {K n} in
+/-- **`G_K` acts trivially on `μₙ` when `K` contains a primitive `n`th root of unity `ζ`**: every
+`n`th root of unity of `Kˢ` is then a power of `ζ`, which `G_K` fixes. -/
+theorem smul_kummerCoeff_eq_self [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
+    (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n) : g • x = x := by
+  have hζs := (hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).isUnit_unit
+    (NeZero.ne n)
+  obtain ⟨i, -, hi⟩ := hζs.eq_pow_of_mem_rootsOfUnity x.toMul.2
+  have hx : (((x.toMul : rootsOfUnity n (SeparableClosure K)) : (SeparableClosure K)ˣ) :
+      SeparableClosure K) = algebraMap K _ ζ ^ i := by
+    rw [← hi, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
+  refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
+  simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
+    MonoidHom.coe_ofClass]
+  rw [hx, map_pow, AlgEquiv.commutes]
+
+variable {K n} in
+/-- **`μₙ` has `n` elements** for `n` invertible in `K`. -/
+theorem natCard_kummerCoeff (hn : IsUnit (n : K)) : Nat.card (KummerCoeff K n) = n := by
+  have : NeZero (n : K) := ⟨hn.ne_zero⟩
+  have : NeZero n := NeZero.of_neZero_natCast K
+  exact (Nat.card_congr Additive.toMul).trans
+    (HasEnoughRootsOfUnity.natCard_rootsOfUnity (SeparableClosure K) n)
+
+variable {K} in
+/-- **`μ_ℓ` is a line over `𝔽_ℓ`** for a prime `ℓ` invertible in `K`. -/
+theorem finrank_kummerCoeff {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : IsUnit (ℓ : K)) :
+    Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
+  have hp : ℓ.Prime := Fact.out
+  apply Nat.pow_right_injective hp.two_le
+  dsimp only
+  conv_rhs => rw [pow_one, ← natCard_kummerCoeff hℓ]
+  rw [Module.natCard_eq_pow_finrank (K := ZMod ℓ), Nat.card_zmod]
+
+variable {K n} in
+/-- **`μₙ` is cyclic of order `n`** for `n` invertible in `K`: the `n`th roots of unity of `Kˢ`
+are additively isomorphic to `ℤ/nℤ`. The isomorphism is not canonical; it amounts to a choice of
+primitive `n`th root of unity in `Kˢ`. -/
+def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) : KummerCoeff K n ≃+ ZMod n :=
+  have : NeZero (n : K) := ⟨hn.ne_zero⟩
+  have : NeZero n := NeZero.of_neZero_natCast K
+  addEquivOfAddCyclicCardEq <| by rw [Nat.card_zmod, natCard_kummerCoeff hn]
 
 /-! ### The two maps of the Kummer sequence -/
 
@@ -140,6 +206,22 @@ theorem toMul_kummerCoeffIncl (x : KummerCoeff K n) :
 theorem kummerCoeffIncl_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n) :
     kummerCoeffIncl K n (g • x) = g • kummerCoeffIncl K n x :=
   Additive.toMul.injective (by simp)
+
+/-- The inclusion `μₙ ↪ (Kˢ)ˣ` as an equivariant additive homomorphism over `G_K`. -/
+def kummerCoeffInclHom : KummerCoeff K n →+[AbsoluteGaloisGroup K] UnitsCoeff K :=
+  { kummerCoeffIncl K n with map_smul' := kummerCoeffIncl_equivariant K n }
+
+/-- The additive homomorphism underlying `kummerCoeffInclHom` is `kummerCoeffIncl`. -/
+@[simp]
+theorem kummerCoeffInclHom_toAddMonoidHom :
+    (kummerCoeffInclHom K n).toAddMonoidHom = kummerCoeffIncl K n :=
+  (rfl)
+
+/-- The equivariant Kummer inclusion acts by the roots-of-unity inclusion. -/
+@[simp]
+theorem kummerCoeffInclHom_apply (x : KummerCoeff K n) :
+    kummerCoeffInclHom K n x = kummerCoeffIncl K n x :=
+  (rfl)
 
 theorem kummerCoeffIncl_injective : Function.Injective (kummerCoeffIncl K n) := fun x y h =>
   Additive.toMul.injective <| Subtype.ext <| by
@@ -179,9 +261,7 @@ theorem kummerSequence_exact : Function.Exact (kummerCoeffIncl K n) (unitsCoeffP
 invertible in `K`: `Xⁿ - a` is then separable, and `Kˢ` is separably closed. -/
 theorem unitsCoeffPow_surjective (hn : IsUnit (n : K)) :
     Function.Surjective (unitsCoeffPow K n) := by
-  have hn0 : (n : SeparableClosure K) ≠ 0 := by
-    have h := (map_ne_zero (algebraMap K (SeparableClosure K))).2 hn.ne_zero
-    rwa [map_natCast] at h
+  have hn0 : (n : SeparableClosure K) ≠ 0 := hn.natCast_ne_zero_of_algebra
   have hn' : n ≠ 0 := by rintro rfl; simp at hn0
   have : NeZero (n : SeparableClosure K) := ⟨hn0⟩
   intro x
@@ -209,6 +289,14 @@ def kummerShortExact (hn : IsUnit (n : K)) :
 theorem kummerShortExact_incl (hn : IsUnit (n : K)) :
     (kummerShortExact K n hn).incl = kummerCoeffIncl K n :=
   (rfl)
+
+/-- The equivariant inclusion of the Kummer sequence is the canonical Kummer inclusion. -/
+@[simp]
+theorem kummerShortExact_inclDistribMulActionHom (hn : IsUnit (n : K)) :
+    (kummerShortExact K n hn).inclDistribMulActionHom = kummerCoeffInclHom K n := by
+  ext x
+  rw [DiscreteShortExact.inclDistribMulActionHom_apply, kummerShortExact_incl,
+    kummerCoeffInclHom_apply]
 
 @[simp]
 theorem kummerShortExact_proj (hn : IsUnit (n : K)) :
@@ -275,5 +363,118 @@ theorem toMul_coe_baseUnitsEquivInvariants (a : Additive Kˣ) :
     ((baseUnitsEquivInvariants K a : UnitsCoeff K).toMul : (SeparableClosure K)ˣ) =
       Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a.toMul :=
   (rfl)
+
+section Embedded
+
+variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
+
+/-- **A unit of `L` as an invariant of `(Kˢ)ˣ` under `Gal(Kˢ/σ(L))`**: every automorphism of `Kˢ`
+fixing `σ(L)` fixes `σ b`. For the subgroup cut out by `σ` this is what
+`TauCeti.baseUnitsEquivInvariants` is for the whole of `G_K`. -/
+def embeddedUnitsInvariants (b : Lˣ) : H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) :=
+  ⟨Additive.ofMul (Units.map σ.toRingHom.toMonoidHom b), by
+    refine (FixedPoints.mem_addSubgroup _ _ _).2 fun h => ?_
+    rw [Subgroup.smul_def (α := UnitsCoeff K), ← Additive.ofMul_smul]
+    exact congrArg Additive.ofMul (Units.ext
+      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h.2 (σ b) ⟨b, rfl⟩))⟩
+
+/-- The invariant attached to a unit of `L` is the image of that unit in `(Kˢ)ˣ`. -/
+@[simp]
+theorem toMul_coe_embeddedUnitsInvariants (b : Lˣ) :
+    ((embeddedUnitsInvariants K L σ b : UnitsCoeff K).toMul : (SeparableClosure K)ˣ) =
+      Units.map σ.toRingHom.toMonoidHom b :=
+  (rfl)
+
+/-- The unit `1` of `L` is the zero invariant. -/
+@[simp]
+theorem embeddedUnitsInvariants_one : embeddedUnitsInvariants K L σ 1 = 0 :=
+  Subtype.ext <| Additive.toMul.injective <| map_one (Units.map σ.toRingHom.toMonoidHom)
+
+/-- Multiplication of units of `L` becomes addition of invariants. -/
+@[simp]
+theorem embeddedUnitsInvariants_mul (a b : Lˣ) :
+    embeddedUnitsInvariants K L σ (a * b) =
+      embeddedUnitsInvariants K L σ a + embeddedUnitsInvariants K L σ b :=
+  Subtype.ext <| Additive.toMul.injective <| map_mul (Units.map σ.toRingHom.toMonoidHom) a b
+
+variable {K L σ} in
+/-- **A unit of `Kˢ` fixed by `Gal(Kˢ/σ(L))` comes from `Lˣ`.** This is the fixed-field theorem
+`InfiniteGalois.fixedField_fixingSubgroup` for the intermediate field `σ(L)`, read on units. -/
+theorem mem_H0_fixingSubgroup_unitsCoeff_iff {u : UnitsCoeff K} :
+    u ∈ H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) ↔
+      ∃ b : Lˣ, Units.map σ.toRingHom.toMonoidHom b = u.toMul := by
+  refine ⟨fun hu => ?_, ?_⟩
+  · have hfix : ((u.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) ∈
+        IntermediateField.fixedField σ.fieldRange.fixingSubgroup :=
+      (IntermediateField.mem_fixedField_iff _ _).2 fun g hg => by
+        have h := (FixedPoints.mem_addSubgroup _ _ _).1 hu ⟨g, hg⟩
+        rw [Subgroup.smul_def (α := UnitsCoeff K)] at h
+        have h' := congrArg (fun v : UnitsCoeff K =>
+          ((v.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)) h
+        simp only [Additive.toMul_smul] at h'
+        simpa [AlgEquiv.smul_units_def] using h'
+    rw [InfiniteGalois.fixedField_fixingSubgroup] at hfix
+    obtain ⟨b, hb⟩ := hfix
+    have hb0 : b ≠ 0 := by
+      rintro rfl
+      exact u.toMul.ne_zero (by simpa using hb.symm)
+    exact ⟨Units.mk0 b hb0, Units.ext hb⟩
+  · rintro ⟨b, hb⟩
+    have hu : u = embeddedUnitsInvariants K L σ b :=
+      Additive.toMul.injective (hb.symm.trans (toMul_coe_embeddedUnitsInvariants K L σ b).symm)
+    rw [hu]
+    exact (embeddedUnitsInvariants K L σ b).2
+
+/-- **The invariants of `(Kˢ)ˣ` under `Gal(Kˢ/σ(L))` are the units of `L`**, that is
+`H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ) ≅ Lˣ`: the additive equivalence whose forward map is
+`embeddedUnitsInvariants`. For `σ(L) = K` this is `TauCeti.baseUnitsEquivInvariants`. -/
+def embeddedUnitsEquivInvariants :
+    Additive Lˣ ≃+ H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) :=
+  AddEquiv.ofBijective
+    ({ toFun := fun b => embeddedUnitsInvariants K L σ b.toMul
+       map_zero' := embeddedUnitsInvariants_one K L σ
+       map_add' := fun a b => embeddedUnitsInvariants_mul K L σ a.toMul b.toMul } :
+      Additive Lˣ →+ H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K))
+    ⟨fun a b h => Additive.toMul.injective <| Units.map_injective σ.toRingHom.injective <| by
+        simpa using congrArg (fun v : H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) =>
+          ((v : UnitsCoeff K).toMul : (SeparableClosure K)ˣ)) h,
+      fun u => by
+        obtain ⟨b, hb⟩ := mem_H0_fixingSubgroup_unitsCoeff_iff.1 u.2
+        exact ⟨Additive.ofMul b, Subtype.ext (Additive.toMul.injective
+          ((toMul_coe_embeddedUnitsInvariants K L σ b).trans hb))⟩⟩
+
+/-- `embeddedUnitsEquivInvariants` sends a unit of `L` to its invariant `embeddedUnitsInvariants`.
+-/
+@[simp]
+theorem embeddedUnitsEquivInvariants_apply (b : Additive Lˣ) :
+    embeddedUnitsEquivInvariants K L σ b = embeddedUnitsInvariants K L σ b.toMul :=
+  (rfl)
+
+/-- **`embeddedUnitsInvariants` is Galois-equivariant**, in `simp`-normal form: for normal `L/K`,
+embedding by `σ` turns the restriction `σ.restrictNormalHom g` acting on `Lˣ` into the action of
+`g` on `(Kˢ)ˣ`. -/
+@[simp]
+theorem coe_embeddedUnitsInvariants_map_restrictNormalHom [Normal K L]
+    (g : AbsoluteGaloisGroup K) (b : Lˣ) :
+    (embeddedUnitsInvariants K L σ (Units.map (σ.restrictNormalHom g : L →* L) b) :
+        UnitsCoeff K) =
+      g • (embeddedUnitsInvariants K L σ b : UnitsCoeff K) := by
+  refine Additive.toMul.injective (Units.ext ?_)
+  rw [Additive.toMul_smul, toMul_coe_embeddedUnitsInvariants, toMul_coe_embeddedUnitsInvariants,
+    AlgEquiv.smul_units_def]
+  simp only [Units.coe_map]
+  exact σ.restrictNormalHom_commutes g b
+
+/-- **`embeddedUnitsEquivInvariants` is Galois-equivariant**: for normal `L/K`, embedding by `σ`
+turns the action of the restriction `σ.restrictNormalHom g` on `Lˣ` into the action of `g` on
+`(Kˢ)ˣ`. -/
+theorem embeddedUnitsEquivInvariants_restrictNormalHom_smul [Normal K L]
+    (g : AbsoluteGaloisGroup K) (b : Additive Lˣ) :
+    (embeddedUnitsEquivInvariants K L σ (Additive.ofMul (σ.restrictNormalHom g • b.toMul)) :
+        UnitsCoeff K) =
+      g • (embeddedUnitsEquivInvariants K L σ b : UnitsCoeff K) := by
+  simp
+
+end Embedded
 
 end TauCeti

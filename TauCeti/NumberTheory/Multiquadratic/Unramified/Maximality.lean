@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.AlgHom
+public import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Subfields
@@ -143,12 +143,8 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefre
   · -- Otherwise the two ramification constraints apply, and cut `u` down to a subset.
     obtain ⟨c, e, hsfc, he, hce⟩ :=
       Int.exists_squarefree_mul_sq (mul_ne_zero hsfa.ne_zero hd.ne_zero)
-    have hnsqc : ¬ IsSquare ((c : ℤ) : ℚ) := fun h => hsq <| by
-      have hcast : ((a * d : ℤ) : ℚ) = ((c : ℤ) : ℚ) * ((e : ℤ) : ℚ) ^ 2 := by
-        exact_mod_cast congrArg (fun n : ℤ => (n : ℚ)) hce
-      exact hcast ▸ (isSquare_mul_sq_iff (Int.cast_ne_zero.mpr he)).mpr h
     obtain ⟨u, hu, hue, huprod⟩ :=
-      (isFundamentalDiscriminant_fundamentalDiscriminant hsfa).exists_finset_primeDiscriminant
+      (isFundamentalDiscr_fundamentalDiscriminant hsfa).exists_finset_primeDiscriminant
     obtain ⟨hs, hse, hsprod⟩ := genusPrimeDiscriminants_spec hd
     refine exists_mem_candidateGenusField_sq_eq_intCast_of_subset hd huprod
       (subset_of_forall_prime_dvd_fundamentalDiscriminant hs hse hsprod hu hue huprod hce
@@ -241,7 +237,7 @@ theorem nonempty_algEquiv_candidateGenusField {d : ℤ} (hd : Squarefree d)
   obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hnsqd hy hunr
   have hrank : Module.finrank ℚ M = Module.finrank ℚ (candidateGenusField hd) := by
     rw [hfr, finrank_candidateGenusField hd]
-  exact ⟨TauCeti.algEquivOfFinrankEq φ hrank⟩
+  exact ⟨φ.algEquivOfFinrankEq hrank⟩
 
 end IsAbelianGalois
 

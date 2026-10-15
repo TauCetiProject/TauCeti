@@ -104,7 +104,7 @@ private theorem exists_asAlgebraHom_apply_eq (t : YoungTableau μ)
   obtain ⟨u', rfl⟩ := hx
   -- an element of `k[S_d]` killing `c_t u` kills `c_t u'`, so some endomorphism commuting with
   -- `k[S_d]` carries `c_t u` to `c_t u'`
-  obtain ⟨f, hf, hfx⟩ := (exists_mem_centralizer_range_apply_eq_iff
+  obtain ⟨f, hf, hfx⟩ := (AlgHom.exists_mem_centralizer_range_apply_eq_iff
     (permTensorActionAlgHom k n μ.card)
     (x := permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) u')).mpr fun r hr => by
       rw [← Module.End.mul_apply, ← map_mul, mul_youngSymmetrizerOver_eq_zero t hw0 hr, map_zero,

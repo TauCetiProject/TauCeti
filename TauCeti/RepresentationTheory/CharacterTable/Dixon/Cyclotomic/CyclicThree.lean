@@ -12,8 +12,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solve
 /-!
 # The cyclotomic Dixon computation for the cyclic group of order three
 
-This file carries the Burnside--Dixon--Schneider computation beyond the rational-table stage for
-the first time.  For `C₃ = Multiplicative (ZMod 3)`, it displays the exact table
+This file carries the Burnside--Dixon--Schneider computation beyond the rational-table stage. For
+`C₃ = Multiplicative (ZMod 3)`, it displays the exact table
 
 ```
 1  1   1
@@ -51,20 +51,17 @@ with the complex character table up to row order.
   recovers every exact entry from its two conjugate residues.
 * `TauCeti.isSome_dixonCyclotomicCharacterTable_cyclicGroupThree`: the assembled exact solver
   succeeds on the certified data.
+* `TauCeti.isSome_characterTableDixon_cyclicGroupThree`: the assembled algorithm, searching for
+  its own prime, reaches `7` and succeeds there.
 * `TauCeti.isCharacterTableSpec_cyclicGroupThree`: the embedded exact table satisfies the complex
   character-table specification.
 
 ## References
 
-This is the `C₃` case of “Small cyclotomic (second milestone)” in Layer 6 of the
-[character theory roadmap][roadmap].
-
 The worked computation follows
 `TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.CyclicTwo`; its prime certificate
 follows `TauCeti.RepresentationTheory.CharacterTable.Dixon.Dihedral`, and the specification bridge
 follows `TauCeti.RepresentationTheory.CharacterTable.Dixon.IntegerChecker`.
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
@@ -255,36 +252,16 @@ theorem cyclicGroupThreeExactCharacterTable_lift_conjugateResidues
 
 /-- **The assembled cyclotomic Dixon--Schneider solver succeeds on the certified `C₃` data.** -/
 theorem isSome_dixonCyclotomicCharacterTable_cyclicGroupThree :
-    ((cyclicClassData 3).dixonCyclotomicCharacterTable? 3 (by simp)
+    ((cyclicClassData 3).dixonCyclotomicCharacterTable? 3
       cyclicGroupThreeDixonPrimeData).isSome = true := by
   apply (cyclicClassData 3).isSome_dixonCyclotomicCharacterTable_of_spec 3 (by simp)
     cyclicGroupThreeDixonPrimeData cyclicGroupThreeExactCharacterTable
     cyclicGroupThreeExactCharacterTable (fun _ ↦ 1)
     isCyclotomicCharacterTableSpec_cyclicGroupThree
-  · intro i j k
-    have h := cyclicGroupThreeExactCharacterTable_natAbs_coeff_le_sqrt i j k
-    exact cyclicGroupThreeDixonPrimeData.isGoodDixonPrime
-      |>.two_mul_natAbs_lt_of_natAbs_le_sqrt h
-  · intro j i i' h
-    let k : CyclicGroupThreeClassIndex := ⟨1, by decide⟩
-    have hk : Cyclotomic.conjugateResidues cyclicGroupThreeDixonPrimeData.root
-        (cyclicGroupThreeExactCharacterTable i k) j =
-      Cyclotomic.conjugateResidues cyclicGroupThreeDixonPrimeData.root
-        (cyclicGroupThreeExactCharacterTable i' k) j := congrFun h k
-    rw [cyclicGroupThreeExactCharacterTable_apply,
-      cyclicGroupThreeExactCharacterTable_apply] at hk
-    have hbase : IsPrimitiveRoot cyclicGroupThreeDixonPrimeData.root 3 := by
-      simpa using cyclicGroupThreeDixonPrimeData.isPrimitiveRoot_root
-    have hroot := Cyclotomic.isPrimitiveRoot_conjugateRoot hbase j
-    have hpows :
-        Cyclotomic.conjugateRoot 3 cyclicGroupThreeDixonPrimeData.root j ^ (i : ℕ) =
-          Cyclotomic.conjugateRoot 3 cyclicGroupThreeDixonPrimeData.root j ^ (i' : ℕ) := by
-      simp only [k, Nat.mul_one, Cyclotomic.conjugateResidues_apply] at hk
-      rw [← Cyclotomic.reduceRingHom_apply cyclicGroupThreeDixonPrimeData.p _ hroot,
-        ← Cyclotomic.reduceRingHom_apply cyclicGroupThreeDixonPrimeData.p _ hroot] at hk
-      simpa only [map_pow, Cyclotomic.reduceRingHom_apply,
-        Cyclotomic.reduce_zeta cyclicGroupThreeDixonPrimeData.p _ hroot] using hk
-    exact Fin.ext (hroot.pow_inj (by simpa using i.isLt) (by simpa using i'.isLt) hpows)
+  intro i j k
+  have h := cyclicGroupThreeExactCharacterTable_natAbs_coeff_le_sqrt i j k
+  exact cyclicGroupThreeDixonPrimeData.isGoodDixonPrime
+    |>.two_mul_natAbs_lt_of_natAbs_le_sqrt h
 
 /-- The displayed exact table, embedded in `ℂ` and reindexed by actual conjugacy classes. -/
 noncomputable def cyclicGroupThreeComplexCharacterTable :
@@ -319,5 +296,15 @@ theorem isCharacterTableSpec_cyclicGroupThree :
     IsCharacterTableSpec (Multiplicative (ZMod 3))
       cyclicGroupThreeComplexCharacterTable :=
   isCyclotomicCharacterTableSpec_cyclicGroupThree.isCharacterTableSpec
+
+/-- **The Burnside--Dixon--Schneider algorithm computes a character table of `C₃` with its own
+choice of prime.** Its search tries `4` and then `7`, finds the primitive cube root `2` modulo `7`,
+and the solver succeeds there. -/
+theorem isSome_characterTableDixon_cyclicGroupThree :
+    ((cyclicClassData 3).characterTableDixon? 3 (by simp) 2).isSome = true :=
+  (cyclicClassData 3).isSome_characterTableDixon?_of_isSome 3 (by simp)
+    cyclicGroupThreeDixonPrimeData (DixonPrimeData.ofPrime?_eq_some
+      (ZMod.map_val_primitiveRoot?_eq_some_iff.mpr (by decide))) (by decide)
+    isSome_dixonCyclotomicCharacterTable_cyclicGroupThree
 
 end TauCeti

@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.RingTheory.Coalgebra.MonoidAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.Submodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
@@ -465,7 +465,7 @@ noncomputable def ofMapWeightSpace (f : V →ₗ[R] W)
     rw [← weightDecomposition_sum (R := R) (G := G) (V := V) v]
     simp only [Finsupp.sum, map_sum, LinearMap.coe_comp, Function.comp_apply]
     apply Finset.sum_congr rfl
-    intro g hg
+    intro g _
     rw [weightDecomposition_apply,
       mem_weightSpace.mp (weightProj_mem_weightSpace g v), TensorProduct.map_tmul,
       mem_weightSpace.mp (hf g (weightProj_mem_weightSpace g v))]
@@ -538,7 +538,7 @@ theorem range_weightProj (g : G) :
 
 private theorem finite_setOf_weightSpace_ne_bot_aux [Module.Finite R V] :
     {g : G | weightSpace R G V g ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep_of_fg (iSupIndep_weightSpace R G V)
+  (iSupIndep_weightSpace R G V).finite_ne_bot_of_fg
     (by rw [iSup_weightSpace_eq_top R G V]; exact Module.Finite.fg_top)
 
 /-- **A comodule over `R[G]` that is finitely generated as a module has only finitely many

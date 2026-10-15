@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.IsSepClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Rank
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Surjective
@@ -23,6 +24,10 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
   `#E[n] = n ²`, in the kernel and the torsion-subgroup forms.
 * `WeierstrassCurve.natCard_torsionBy`: the same count read on `W.toAffine.Point` itself,
   rather than on the trivial base change `W⁄K`.
+* `WeierstrassCurve.torsionMapAlong_bijective`: the `N`-torsion does not grow from one separably
+  closed field to another.
+* `WeierstrassCurve.torsionMapAlong_bijective_of_natCard`: nor from any field already having all
+  `N²` points of `E[N]` to a separably closed one.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`,
   `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
   `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: `E[ℓ] ≅ (ZMod ℓ) ²` at a prime.
@@ -31,6 +36,8 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
 * `WeierstrassCurve.Affine.exists_point_zsmul_eq_of_zsmul_eq_zero` and
   `WeierstrassCurve.Affine.natCard_setOf_zsmul_eq_zero`: the same two facts on the points of `W`
   itself rather than of `W⁄F`.
+* `WeierstrassCurve.Affine.infinite_point`: the points of `W` are infinitely many, the torsion
+  alone being unbounded.
 
 ## References
 
@@ -136,6 +143,28 @@ theorem natCard_setOf_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0) :
 
 end WeierstrassCurve.Affine
 
+namespace WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [IsSepClosed F] (W : Affine F) [W.IsElliptic]
+
+/-- **An elliptic curve has infinitely many points over a separably closed field**: for every prime
+`ℓ` other than the characteristic, its `ℓ`-torsion alone has `ℓ ²` points. -/
+instance infinite_point : Infinite W.Point := by
+  classical
+  refine not_finite_iff_infinite.mp fun _ ↦ ?_
+  obtain ⟨p, hp_le, hp⟩ := Nat.exists_infinite_primes (Nat.card W.Point + ringChar F + 1)
+  have hchar : ((p : ℤ) : F) ≠ 0 := fun h0 ↦ by
+    rw [Int.cast_natCast] at h0
+    have := CharP.ringChar_of_prime_eq_zero hp h0
+    omega
+  have hle : Nat.card {R : W.Point | (p : ℤ) • R = 0} ≤ Nat.card W.Point :=
+    Nat.card_le_card_of_injective _ Subtype.val_injective
+  rw [W.natCard_setOf_zsmul_eq_zero hchar, Int.natAbs_natCast] at hle
+  have := Nat.le_self_pow two_ne_zero p
+  omega
+
+end WeierstrassCurve.Affine
+
 namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] [IsSepClosed K] (W : WeierstrassCurve K) [W.IsElliptic]
@@ -147,6 +176,37 @@ theorem natCard_torsionBy {n : ℤ} (hn : (n : K) ≠ 0) :
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) = n.natAbs ^ 2 := by
   have h := W.toAffine.natCard_torsionBy hn
   rwa [Affine.baseChange_self] at h
+
+section MapAlong
+
+variable {F : Type*} [Field F] [DecidableEq F] [DecidableEq K] (W : WeierstrassCurve F)
+  [W.IsElliptic] (f : F →+* K)
+
+/-- **`E[N](F) → E[N](K)` is bijective once `E(F)` has `N²` points of order dividing `N`**: for
+`N` invertible and `K` separably closed, the map is injective and `E[N](K)` also has `N²`
+elements. -/
+theorem torsionMapAlong_bijective_of_natCard {N : ℤ} (hN : (N : F) ≠ 0)
+    (hF : Nat.card (AddSubgroup.torsionBy W.toAffine.Point N) = N.natAbs ^ 2) :
+    Function.Bijective (W.torsionMapAlong f N) := by
+  -- both groups have `N²` elements
+  have hK : Nat.card (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) = N.natAbs ^ 2 := by
+    convert (W.map f).natCard_torsionBy (by rwa [← map_intCast f, map_ne_zero] : (N : K) ≠ 0) with P
+    simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
+    convert Iff.rfl
+  have : Finite (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) :=
+    Nat.finite_of_card_ne_zero (by
+      rw [hK]
+      exact pow_ne_zero 2 (Int.natAbs_ne_zero.mpr (by rintro rfl; exact hN Int.cast_zero)))
+  exact (W.torsionMapAlong_injective f N).bijective_of_nat_card_le (hK.trans hF.symm).le
+
+/-- **The `N`-torsion does not grow from one separably closed field to another**: for `N`
+invertible, `E[N](F) → E[N](K)` is bijective, both groups having `N²` elements. -/
+theorem torsionMapAlong_bijective [IsSepClosed F] {N : ℤ} (hN : (N : F) ≠ 0) :
+    Function.Bijective (W.torsionMapAlong f N) :=
+  W.torsionMapAlong_bijective_of_natCard f hN <| by
+    convert W.natCard_torsionBy hN
+
+end MapAlong
 
 end WeierstrassCurve
 

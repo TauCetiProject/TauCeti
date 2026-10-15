@@ -170,7 +170,7 @@ private theorem realOperator_eq_add_integral_map_generator (S : StronglyContinuo
       MeasureTheory.volume 0 s := by
     apply ContinuousOn.intervalIntegrable
     simpa [Set.uIcc_of_le hs] using
-      (S.realOperator_continuousOn_Ici z).mono (fun _ hu => hu.1)
+      (S.realOperator_continuousOn_Ici z).mono (fun _ (hu : _ ∈ Set.Icc 0 s) => hu.1)
   have hftc := intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hs
     ((S.realOperator_continuousOn_Ici x).mono Set.Icc_subset_Ici_self)
     (fun u hu => (S.realOperator_hasDerivWithinAt_map_generator x hu.1.le).mono
@@ -237,6 +237,15 @@ theorem realOperator_derivWithin_map_generator (S : StronglyContinuousSemigroup 
         exact x.property⟩) :=
   (S.realOperator_hasDerivWithinAt_map_generator x ht).derivWithin
     (uniqueDiffWithinAt_Ici t)
+
+/-- On the whole nonnegative half-line, the derivative of a generator-domain orbit is the
+orbit of its generator. In particular, the derivative at zero is a right derivative. -/
+@[simp] theorem realOperator_derivWithin_Ici (S : StronglyContinuousSemigroup X) [CompleteSpace X]
+    (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
+    derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici 0) t =
+      S.realOperator t (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) := by
+  rw [(S.realOperator_hasDerivWithinAt_Ici x ht).derivWithin
+    (uniqueDiffOn_Ici 0 t ht), S.realOperator_generator_map ht x]
 
 end StronglyContinuousSemigroup
 

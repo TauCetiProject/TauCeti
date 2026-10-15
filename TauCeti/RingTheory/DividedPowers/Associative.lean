@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import TauCeti.Algebra.Ring.Commutator
-import Mathlib.Data.Nat.Choose.Cast
+import TauCeti.Data.Nat.Choose.Cast
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -24,10 +24,8 @@ algebra to be commutative. This is the form used by the Kostant integral form of
 enveloping algebra. The multiplication and commuting-sum formulas below show why these rational
 elements can generate an integral algebra and a coalgebra: their structure constants are integers.
 
-This is a prerequisite for the explicit Chevalley--Demazure construction in Layer 9 of the
-ReductiveGroups roadmap. That construction starts from divided powers of Chevalley root vectors in
-the generally noncommutative universal enveloping algebra. No integral-form or group-scheme
-definition is made here.
+The Chevalley--Demazure construction starts from divided powers of Chevalley root vectors in
+the generally noncommutative universal enveloping algebra.
 
 ## Main definitions and results
 
@@ -41,7 +39,7 @@ definition is made here.
 * `TauCeti.Associative.dividedPower_sub`: the corresponding signed expansion for a difference.
 * `TauCeti.Associative.map_dividedPower`: divided powers are natural under algebra homomorphisms.
 * `TauCeti.Associative.dividedPower_apply_mem_of_pow_two_eq_zero`: a square-zero endomorphism
-  preserving an integral submodule has all divided powers preserving it.
+  preserving a set containing zero has all divided powers preserving it.
 * `TauCeti.Associative.dividedPower_units_conj`: divided powers are equivariant for conjugation by
   a unit.
 
@@ -97,13 +95,7 @@ theorem dividedPower_apply (f : Module.End ℚ V) (n : ℕ) (v : V) :
 theorem dividedPower_apply_eq_zero_iff (f : Module.End ℚ V) (n : ℕ) (v : V) :
     dividedPower n f • v = 0 ↔ (f ^ n) v = 0 := by
   rw [dividedPower_apply]
-  constructor
-  · intro h
-    have hn : (n.factorial : ℚ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
-    have h' := congrArg (fun z : V => (n.factorial : ℚ) • z) h
-    simpa [smul_smul, hn] using h'
-  · intro h
-    rw [h, smul_zero]
+  simp [Nat.factorial_ne_zero]
 
 /-- If a divided power annihilates a vector, so does the next ordinary power. -/
 theorem pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
@@ -124,13 +116,13 @@ theorem dividedPower_apply_mem_of_pow_eq_zero
       LinearMap.zero_apply]
     exact hzero
 
-/-- Every divided power of a square-zero endomorphism preserves an additive subgroup once the
+/-- Every divided power of a square-zero endomorphism preserves a set containing zero once the
 endomorphism itself does. -/
 theorem dividedPower_apply_mem_of_pow_two_eq_zero
-    (f : Module.End ℚ V) (N : AddSubgroup V) (hf : f ^ 2 = 0)
+    (f : Module.End ℚ V) (N : Set V) (hzero : 0 ∈ N) (hf : f ^ 2 = 0)
     (hN : ∀ {v : V}, v ∈ N → f v ∈ N) (n : ℕ) {v : V} (hv : v ∈ N) :
     dividedPower n f v ∈ N := by
-  apply dividedPower_apply_mem_of_pow_eq_zero f N (zero_mem N) 2 hf _ n hv
+  apply dividedPower_apply_mem_of_pow_eq_zero f N hzero 2 hf _ n hv
   intro k hk
   have hk' : k = 0 ∨ k = 1 := by omega
   rcases hk' with rfl | rfl
@@ -192,13 +184,6 @@ theorem _root_.Commute.dividedPower_right {x y : A} (hxy : Commute x y) (n : ℕ
     Commute x (dividedPower n y) :=
   (hxy.pow_right n).smul_right _
 
-/-- The rational coefficient identity behind multiplication of divided powers. -/
-private theorem inv_factorial_mul_inv_factorial (m n : ℕ) :
-    (m.factorial : ℚ)⁻¹ * (n.factorial : ℚ)⁻¹ =
-      (Nat.choose (m + n) m : ℚ) * ((m + n).factorial : ℚ)⁻¹ := by
-  rw [Nat.cast_add_choose ℚ]
-  field_simp
-
 /-- Products of divided powers of the same element have integral structure constants:
 `x⁽ᵐ⁾ x⁽ⁿ⁾ = choose (m + n) m • x⁽ᵐ⁺ⁿ⁾`. -/
 theorem mul_dividedPower (m n : ℕ) (x : A) :
@@ -206,7 +191,7 @@ theorem mul_dividedPower (m n : ℕ) (x : A) :
       Nat.choose (m + n) m • dividedPower (m + n) x := by
   rw [← Nat.cast_smul_eq_nsmul ℚ]
   simp only [dividedPower_def, smul_mul_smul, ← pow_add, smul_smul]
-  rw [inv_factorial_mul_inv_factorial]
+  rw [Nat.inv_factorial_mul_inv_factorial]
 
 /-- The right-handed first-order recurrence for divided powers. -/
 theorem dividedPower_mul_self (n : ℕ) (x : A) :
@@ -222,12 +207,7 @@ theorem self_mul_dividedPower (n : ℕ) (x : A) :
 into `m + 1` copies of `x^[m+1] · z`, for any `z`. -/
 theorem succ_nsmul_dividedPower_succ_mul (m : ℕ) (x z : A) :
     (m + 1) • (dividedPower (m + 1) x * z) = x * (dividedPower m x * z) := by
-  calc
-    (m + 1) • (dividedPower (m + 1) x * z) = ((m + 1) • dividedPower (m + 1) x) * z := by
-      simp only [nsmul_eq_mul]
-      rw [mul_assoc]
-    _ = (x * dividedPower m x) * z := by rw [self_mul_dividedPower]
-    _ = x * (dividedPower m x * z) := mul_assoc _ _ _
+  rw [← smul_mul_assoc, ← self_mul_dividedPower, mul_assoc]
 
 /-- The first-order recurrence solved for the successor divided power. -/
 theorem dividedPower_succ (n : ℕ) (x : A) :
@@ -249,15 +229,6 @@ theorem dividedPower_comp (m n : ℕ) (hn : n ≠ 0) (x : A) :
     simpa [mul_comm, mul_left_comm, mul_assoc] using (Nat.uniformBell_mul_eq m hn).symm
   · rw [mul_comm]
 
-/-- The rational coefficient identity that cancels the binomial coefficient in the divided-power
-expansion of a commuting sum. -/
-private theorem inv_factorial_mul_choose (n i j : ℕ) (hij : i + j = n) :
-    (n.factorial : ℚ)⁻¹ * Nat.choose n i =
-      (i.factorial : ℚ)⁻¹ * (j.factorial : ℚ)⁻¹ := by
-  subst n
-  rw [mul_comm]
-  exact (inv_factorial_mul_inv_factorial i j).symm
-
 /-- The divided-power binomial formula for commuting elements of an associative algebra:
 `(x + y)⁽ⁿ⁾ = ∑ i+j=n x⁽ⁱ⁾ y⁽ʲ⁾`.
 
@@ -272,7 +243,7 @@ theorem dividedPower_add {x y : A} (hxy : Commute x y) (n : ℕ) :
   intro ij hij
   rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul, dividedPower_def, dividedPower_def,
     smul_mul_smul]
-  rw [inv_factorial_mul_choose n ij.1 ij.2 (mem_antidiagonal.mp hij)]
+  rw [Nat.inv_factorial_mul_choose n ij.1 ij.2 (mem_antidiagonal.mp hij)]
 
 end Semiring
 

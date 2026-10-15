@@ -50,12 +50,9 @@ what the transport lemmas below say, one constructor at a time.
 
 ## References
 
-This discharges the "functoriality under graph/quiver isomorphism" clause of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. It covers the "invariance under graph isomorphism"
-clause of Layer 1 only in part: the uniform relation quotient is transported, while the
-skew-parameter statements of that clause — extension along a field homomorphism, the resulting
-scalar-extension comparison, and injectivity on units — are untouched. See Huerfano--Khovanov,
-*A category for the adjoint representation*, Section 3.
+For the skew-zigzag algebras, extension along a field homomorphism, the resulting scalar-extension
+comparison, and injectivity on units are not treated here. See Huerfano--Khovanov, *A category for
+the adjoint representation*, Section 3.
 -/
 
 public section

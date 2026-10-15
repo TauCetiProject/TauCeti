@@ -5,6 +5,7 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Valuation.Integers
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
@@ -17,6 +18,8 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
 * `TauCeti.ValuativeRel.vle_of_vle_inv_mul` and
   `TauCeti.ValuativeRel.vle_of_inv_mul_vle` : cancel a unit in valuation comparisons.
+* `TauCeti.natCast_ne_zero_of_isUnit` and `TauCeti.two_ne_zero_of_isUnit_two`: an integer
+  that is a unit in the ring of integers is nonzero in the ambient ring.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
   of itself.
 * `TauCeti.valuation_le_one_of_sub_sq_le_one`: if an integral element differs from a square by
@@ -67,6 +70,18 @@ instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
     ValuativeExtension K K := ⟨fun a b ↦ by simp⟩
 
 variable {K : Type*} [Ring K] [ValuativeRel K]
+
+/-- A natural number that is a unit in the integer ring is nonzero in the ambient ring. -/
+theorem natCast_ne_zero_of_isUnit {n : ℕ}
+    (hn : IsUnit (n : (valuation K).integer)) : (n : K) ≠ 0 := by
+  have hunit : IsUnit (n : K) := by
+    simpa only [map_natCast] using hn.map (Subring.subtype ((valuation K).integer))
+  intro h
+  exact ValuativeRel.not_vle_zero_of_isUnit hunit (by simp [h])
+
+/-- If `2` is a unit in the integer ring, it is nonzero in the ambient ring. -/
+theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : (valuation K).integer)) : (2 : K) ≠ 0 := by
+  exact_mod_cast natCast_ne_zero_of_isUnit (K := K) (n := 2) (by exact_mod_cast h2)
 
 /-- If an element of valuation at most one differs from a square by an element of valuation at
 most one, then the square root also has valuation at most one. -/

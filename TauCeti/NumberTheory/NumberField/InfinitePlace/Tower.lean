@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
@@ -16,7 +17,9 @@ For a tower `K ⊆ F ⊆ L` with `F / K` normal, restriction of automorphisms al
 place of `L` by `σ` and then inducing a place of `F` gives the same place as inducing first and
 then moving by the restricted automorphism.
 
-Two consequences of that compatibility are recorded here too. A place of `F` induced by a place
+The general tower API also identifies places over a fixed base place with pairs of successive
+places through the intermediate field. Two consequences of the Galois-action compatibility are
+recorded here too. A place of `F` induced by a place
 of `L` ramified over `K` is itself ramified over `K` as soon as it stays complex, because both
 places lie over the same place of `K`. And an automorphism restricting trivially to `F` is
 itself trivial whenever it fixes a place that is unramified over `F`, because such a place has
@@ -28,6 +31,8 @@ used by `TauCeti/NumberTheory/NumberField/ComplexConjugation/Basic.lean`.
 ## Main results
 
 * `AlgEquiv.restrictNormal_smul_comap`: the action is equivariant along the tower.
+* `NumberField.InfinitePlace.liesOverTowerEquiv`: places over a fixed place correspond to pairs of
+  successive places through an intermediate field.
 * `TauCeti.NumberField.isRamified_comap_of_isComplex`: a complex induced place is itself ramified.
 * `TauCeti.NumberField.eq_one_of_restrictNormal_eq_one`: an automorphism restricting trivially
   to `F` and fixing a place unramified over `F` is the identity.
@@ -40,6 +45,61 @@ used by `TauCeti/NumberTheory/NumberField/ComplexConjugation/Basic.lean`.
 public section
 
 open NumberField NumberField.InfinitePlace
+
+namespace NumberField.InfinitePlace
+
+variable {K L M : Type*} [Field K] [Field L] [Field M] [Algebra K L] [Algebra L M]
+  [Algebra K M] [IsScalarTower K L M]
+
+/-- Infinite places over `v` correspond to pairs of successive infinite places through an
+intermediate field. -/
+def liesOverTowerEquiv (v : InfinitePlace K) :
+    (Σ w : {w : InfinitePlace L // w.LiesOver v},
+      {u : InfinitePlace M // u.LiesOver w.1}) ≃
+      {u : InfinitePlace M // u.LiesOver v} where
+  toFun p := by
+    let _ : p.2.1.LiesOver p.1.1 := p.2.2
+    let _ : p.1.1.LiesOver v := p.1.2
+    exact ⟨p.2.1, LiesOver.trans p.2.1 p.1.1 v⟩
+  invFun u := by
+    let _ : u.1.LiesOver v := u.2
+    let w := u.1.comap (algebraMap L M)
+    have hw : w.LiesOver v := by
+      have h : w.comap (algebraMap K L) = v := by
+        rw [← comap_comp, ← IsScalarTower.algebraMap_eq K L M,
+          LiesOver.comap_eq u.1 v]
+      exact ⟨congrArg Subtype.val h⟩
+    exact ⟨⟨w, hw⟩, ⟨u.1, InfinitePlace.liesOver_comap u.1⟩⟩
+  left_inv p := by
+    rcases p with ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
+    let _ : u.LiesOver w := hu
+    have h : u.comap (algebraMap L M) = w := LiesOver.comap_eq u w
+    subst w
+    rfl
+  right_inv u := Subtype.ext (by rfl)
+
+@[simp]
+theorem liesOverTowerEquiv_apply (v : InfinitePlace K)
+    (p : Σ w : {w : InfinitePlace L // w.LiesOver v},
+      {u : InfinitePlace M // u.LiesOver w.1}) :
+    (liesOverTowerEquiv (L := L) (M := M) v p).1 = p.2.1 :=
+  by simp [liesOverTowerEquiv]
+
+/-- The inverse of `liesOverTowerEquiv` passes through the place `u` induces on `L`. -/
+@[simp]
+theorem liesOverTowerEquiv_symm_apply_fst (v : InfinitePlace K)
+    (u : {u : InfinitePlace M // u.LiesOver v}) :
+    ((liesOverTowerEquiv (L := L) v).symm u).1.1 = u.1.comap (algebraMap L M) :=
+  by simp [liesOverTowerEquiv]
+
+/-- The inverse of `liesOverTowerEquiv` keeps `u` as the top place. -/
+@[simp]
+theorem liesOverTowerEquiv_symm_apply_snd (v : InfinitePlace K)
+    (u : {u : InfinitePlace M // u.LiesOver v}) :
+    ((liesOverTowerEquiv (L := L) v).symm u).2.1 = u.1 :=
+  by simp [liesOverTowerEquiv]
+
+end NumberField.InfinitePlace
 
 namespace TauCeti.NumberField
 

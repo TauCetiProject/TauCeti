@@ -30,7 +30,8 @@ relation `σinf * σ1 * σ0 = 1` of a permutation triple on the nose.
 The construction factors through representations. Any homomorphism
 `ρ : π₁(U, b) →* Equiv.Perm (Fin n)` has the triple `(ρ periph0, ρ periph1, ρ periphInf)`, and since
 `periph0` and `periph1` generate `π₁(U, b)`, that triple determines `ρ`, its monodromy group is the
-image of `ρ`, and conjugating `ρ` relabels it.
+image of `ρ`, and conjugating `ρ` relabels it. Since `π₁(U, b)` is free on `periph0` and
+`periph1`, every permutation triple arises from some `ρ`.
 
 For a cover, the triple records the cover faithfully in the following senses.
 
@@ -46,8 +47,8 @@ For a cover, the triple records the cover faithfully in the following senses.
 
 * `TauCeti.ThricePuncturedSphere.permutationTriple`: the triple of a representation of
   `π₁(U, b)` on `Fin n`, with `monodromyGroup_permutationTriple`,
-  `isConnected_permutationTriple_iff`, `permutationTriple_conj_comp` and
-  `permutationTriple_injective`.
+  `isConnected_permutationTriple_iff`, `permutationTriple_conj_comp`,
+  `permutationTriple_injective` and `permutationTriple_surjective`.
 * `IsCoveringMap.monodromyTriple`: the monodromy triple of a cover of `U` with numbered fibre,
   with its components `monodromyTriple_σ0`, `monodromyTriple_σ1`, `monodromyTriple_σinf`.
 * `IsCoveringMap.isConnected_monodromyTriple_iff`: the triple is connected exactly when the total
@@ -133,6 +134,13 @@ theorem permutationTriple_injective :
     Injective (permutationTriple : (FundamentalGroup ThricePuncturedSphere basePt →*
       Perm (Fin n)) → PermutationTriple n) := fun _ _ h =>
   fundamentalGroup_hom_ext (congrArg PermutationTriple.σ0 h) (congrArg PermutationTriple.σ1 h)
+
+/-- Every permutation triple is the triple of a representation of `π₁(ℂ ∖ {0, 1}, 1/2)`, because
+the fundamental group is free on `periph0` and `periph1`. -/
+theorem permutationTriple_surjective :
+    Surjective (permutationTriple : (FundamentalGroup ThricePuncturedSphere basePt →*
+      Perm (Fin n)) → PermutationTriple n) := fun t =>
+  ⟨peripheralBasis.lift ![t.σ0, t.σ1], PermutationTriple.ext_of_two (by simp) (by simp)⟩
 
 end ThricePuncturedSphere
 

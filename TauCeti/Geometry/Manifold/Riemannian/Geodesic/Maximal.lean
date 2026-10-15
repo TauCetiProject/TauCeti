@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
+public import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # Maximal intervals of geodesics
@@ -78,7 +79,7 @@ theorem exists_geodesicCurveOnFrom
   have hγu : IsMIntegralCurveOn γ (geodesicSpray I M) u := hγs.mono hu
   let base : ℝ → M := fun t => (γ t).proj
   refine ⟨u, huopen.mem_nhds hu0, base, ?_⟩
-  exact hγu.isGeodesicCurveOnFrom_proj huopen hu0 hγ₀
+  exact hγu.isGeodesicCurveOnFrom_proj huopen.uniqueDiffOn hu0 hγ₀
 
 /-- A neighbourhood of zero contains an interval of geodesic existence. -/
 theorem exists_geodesicCurveOnFrom_Ioo
@@ -122,7 +123,7 @@ theorem IsGeodesicCurveOnFrom.subset_geodesicInterval
 
 /-- Geodesics with the same initial data agree on the overlap of their intervals. -/
 theorem IsGeodesicCurveOnFrom.eqOn_of_inter
-    [T2Space (TangentBundle I M)] {p : M} {v : TangentSpace I p}
+    [T2Space M] {p : M} {v : TangentSpace I p}
     {γ γ' : ℝ → M} {a b a' b' : ℝ}
     (hγ : IsGeodesicCurveOnFrom I γ (Ioo a b) p v)
     (hγ' : IsGeodesicCurveOnFrom I γ' (Ioo a' b') p v) :
@@ -186,10 +187,19 @@ theorem isPreconnected_geodesicInterval {p : M} {v : TangentSpace I p} :
     IsPreconnected (geodesicInterval I M p v) :=
   ordConnected_geodesicInterval.isPreconnected
 
+omit [I.Boundaryless] in
+/-- A nonempty maximal geodesic interval contains the initial parameter: any geodesic witness is
+defined on an open interval around `0`. Unlike `zero_mem_geodesicInterval`, this needs no
+boundarylessness. -/
+theorem zero_mem_geodesicInterval_of_mem {p : M} {v : TangentSpace I p} {t : ℝ}
+    (h : t ∈ geodesicInterval I M p v) : (0 : ℝ) ∈ geodesicInterval I M p v := by
+  obtain ⟨γ, a, b, hγ, -⟩ := mem_geodesicInterval_iff.1 h
+  exact hγ.subset_geodesicInterval hγ.zero_mem
+
 /-- The initial parameter belongs to the maximal geodesic interval. -/
 @[simp] theorem zero_mem_geodesicInterval {p : M} {v : TangentSpace I p} :
     (0 : ℝ) ∈ geodesicInterval I M p v := by
-  obtain ⟨a, b, hab, h0, γ, hγ⟩ :=
+  obtain ⟨a, b, _, h0, γ, hγ⟩ :=
     exists_geodesicCurveOnFrom_Ioo (I := I) (M := M) p v
   exact ⟨γ, a, b, hγ, h0⟩
 
@@ -259,7 +269,7 @@ omit [I.Boundaryless] in
   constructor
   · rintro ⟨γ, b, c, hγ, ht⟩
     let u := Ioo (min (b / a⁻¹) (c / a⁻¹)) (max (b / a⁻¹) (c / a⁻¹))
-    obtain ⟨hu, hmap, h0u, huuniq, hγ'⟩ :=
+    obtain ⟨hu, _, _, _, hγ'⟩ :=
       hγ.comp_mul_left_Ioo (a := a⁻¹) (inv_ne_zero ha)
     have hu' : (fun s : ℝ => a⁻¹ * s) ⁻¹' Ioo b c = u := by
       simpa only [u] using hu
@@ -272,7 +282,7 @@ omit [I.Boundaryless] in
     simpa [← mul_assoc, inv_mul_cancel₀ ha] using ht
   · rintro ⟨γ, b, c, hγ, ht⟩
     let u := Ioo (min (b / a) (c / a)) (max (b / a) (c / a))
-    obtain ⟨hu, hmap, h0u, huuniq, hγ'⟩ := hγ.comp_mul_left_Ioo ha
+    obtain ⟨hu, _, _, _, hγ'⟩ := hγ.comp_mul_left_Ioo ha
     have hu' : (fun s : ℝ => a * s) ⁻¹' Ioo b c = u := by
       simpa only [u] using hu
     refine ⟨γ ∘ fun s : ℝ => a * s, _, _, hγ', ?_⟩

@@ -15,24 +15,20 @@ import Mathlib.Tactic.Ring
 /-!
 # Weil divisors as finite integer combinations of points
 
-This file provides the first, purely combinatorial piece of the Jacobian roadmap's Layer A:
-Weil divisors are finite formal integer sums of points. The scheme-theoretic predicates
-which decide which points are codimension-one points, the principal-divisor map, and the
-comparison with Cartier divisors are deliberately not bundled here; those are later geometric
-constructions.
+This file provides the purely combinatorial part of the theory: Weil divisors are finite formal
+integer sums of points. The scheme-theoretic predicates which decide which points are
+codimension-one points, the principal-divisor map, and the comparison with Cartier divisors are not
+part of this file.
 
-The API here records the free-abelian-group operations needed before that geometry exists:
-point divisors, effectivity, pushforward of formal sums along a map of point sets, and both
-the unweighted degree and the weighted degree used for curves over a field. It also packages
-the degree-zero subgroups that later receive principal divisors and model the abstract
-`Pic⁰` kernel before the Picard functor and Picard scheme exist.
+The API here records the free-abelian-group operations: point divisors, effectivity, pushforward of
+formal sums along a map of point sets, and both the unweighted degree and the weighted degree used
+for curves over a field. It also packages the degree-zero subgroups: when principal divisors have
+degree zero, they lie in these subgroups, and the resulting quotient identifies with the abstract
+`Pic⁰` kernel.
 
 For a curve over `k`, the intended weighted degree has weight
 `x ↦ [κ(x) : k]`; this file only supplies the formal finite-sum operation against an arbitrary
 integer-valued weight.
-
-This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve: Weil divisors
-`⊕_x ℤ`", "Degree", and "`Pic⁰ X = ker deg` (as an abstract group)".
 -/
 
 public section
@@ -130,6 +126,12 @@ lemma single_eq_zsmul_ofPoint (a : X) (b : ℤ) :
     (Finsupp.single a b : WeilDivisor X) = b • ofPoint a :=
   (Finsupp.smul_single_one a b).symm
 
+/-- The sum of the points of a finite set has coefficient `1` on the set and `0` off it. -/
+@[simp]
+lemma coeff_sum_ofPoint [DecidableEq X] (s : Finset X) (x : X) :
+    coeff (∑ y ∈ s, ofPoint y) x = if x ∈ s then 1 else 0 := by
+  simp [coeff, ofPoint, Finsupp.finsetSum_apply, Finsupp.single_apply]
+
 /-- A divisor is effective when every coefficient is nonnegative. -/
 def IsEffective (D : WeilDivisor X) : Prop :=
   ∀ x, 0 ≤ coeff D x
@@ -139,7 +141,7 @@ lemma isEffective_iff (D : WeilDivisor X) : IsEffective D ↔ ∀ x, 0 ≤ coeff
 
 @[simp]
 lemma isEffective_zero : IsEffective (0 : WeilDivisor X) := by
-  intro x
+  intro _
   simp
 
 lemma IsEffective.add {D E : WeilDivisor X} (hD : IsEffective D) (hE : IsEffective E) :
@@ -151,6 +153,15 @@ lemma IsEffective.nsmul {D : WeilDivisor X} (hD : IsEffective D) (n : ℕ) :
     IsEffective (n • D) := by
   intro x
   simpa [IsEffective, coeff] using nsmul_nonneg (hD x) n
+
+/-- An effective divisor is nonnegative in the pointwise order. -/
+lemma IsEffective.zero_le {D : WeilDivisor X} (hD : IsEffective D) : 0 ≤ D :=
+  Finsupp.le_def.mpr fun x ↦ by simpa [coeff] using hD x
+
+/-- Multiples of an effective divisor are monotone in the multiplier. -/
+lemma IsEffective.zsmul_le_zsmul {D : WeilDivisor X} (hD : IsEffective D) {m n : ℤ} (h : m ≤ n) :
+    m • D ≤ n • D :=
+  Finsupp.le_def.mpr fun x ↦ by simpa [coeff] using mul_le_mul_of_nonneg_right h (hD x)
 
 /-- A nonzero effective divisor has some point with positive coefficient. -/
 lemma IsEffective.exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : IsEffective D)

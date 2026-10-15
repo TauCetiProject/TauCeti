@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Degree
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.Data.Nat.Squarefree
+import Mathlib.FieldTheory.KummerPolynomial
 
 /-!
 # Multiquadratic fields with prime radicands
@@ -33,6 +34,8 @@ factor), so it is not a square.
 * `TauCeti.Multiquadratic.not_isSquare_prod_primes_of_injective`: the same square-class
   independence, packaged from an injective family of primes — the shape the multiquadratic degree
   and Galois-group theorems consume directly.
+* `TauCeti.Multiquadratic.irreducible_X_sq_sub_C_natCast_of_prime`: `X² - p` is irreducible over
+  `ℚ` for a prime `p`, the minimal polynomial of each single prime radicand.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_primes`: `[ℚ(√p₁, …, √pₙ) : ℚ] = 2^|ι|` for a finite
   family of distinct primes.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_two_three`: `[ℚ(√2, √3) : ℚ] = 4`.
@@ -40,6 +43,7 @@ factor), so it is not a square.
 
 public section
 
+open Polynomial
 open scoped Function
 
 namespace TauCeti.Multiquadratic
@@ -60,6 +64,14 @@ theorem not_isSquare_prod_primes {ι : Type*} (p : ι → ℕ) {S : Finset ι} (
     obtain ⟨i, hi⟩ := hS
     intro hprod
     exact (hp i hi).ne_one (Nat.dvd_one.mp (hprod ▸ Finset.dvd_prod_of_mem p hi))
+
+/-- **`X² - p` is irreducible over `ℚ` for a prime `p`**: a rational root would make `p` a square
+in `ℕ` (`Rat.isSquare_natCast_iff`), which a prime is not. This is Kummer irreducibility
+(`X_pow_sub_C_irreducible_of_prime`) for a single prime radicand. -/
+theorem irreducible_X_sq_sub_C_natCast_of_prime {p : ℕ} (hp : p.Prime) :
+    Irreducible (X ^ 2 - C (p : ℚ)) :=
+  X_pow_sub_C_irreducible_of_prime Nat.prime_two fun b hb =>
+    hp.prime.not_isSquare (Rat.isSquare_natCast_iff.mp ⟨b, by rw [← hb]; ring⟩)
 
 /-- The real square root of a natural number squares back to its rational value, in the form
 `(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis that the multiquadratic degree and

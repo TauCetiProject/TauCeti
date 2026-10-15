@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 
@@ -134,6 +134,21 @@ protected def symm (Φ : RiemannianIsometry I J M N) :
         (by simp) x w] at h
     exact h.symm
 
+/-- The underlying diffeomorphism of the inverse Riemannian isometry is the inverse of the
+underlying diffeomorphism. -/
+@[simp]
+theorem symm_toDiffeomorph (Φ : RiemannianIsometry I J M N) :
+    Φ.symm.toDiffeomorph = Diffeomorph.symm Φ.toDiffeomorph := by
+  apply Diffeomorph.ext
+  intro y
+  rfl
+
+/-- The inverse Riemannian isometry has the same underlying function as the inverse of its
+underlying diffeomorphism. -/
+theorem coe_symm (Φ : RiemannianIsometry I J M N) :
+    ⇑Φ.symm = ⇑(Diffeomorph.symm Φ.toDiffeomorph) := by
+  rw [← coe_toDiffeomorph, symm_toDiffeomorph]
+
 @[simp]
 theorem symm_apply_apply (Φ : RiemannianIsometry I J M N)
     (x : M) : Φ.symm (Φ x) = x := Φ.toDiffeomorph.symm_apply_apply x
@@ -232,7 +247,7 @@ theorem pathELength_comp (Φ : RiemannianIsometry I J M N)
   rw [Manifold.pathELength_eq_lintegral_mfderiv_Ioo,
     Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
   apply MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo
-  intro t ht
+  intro t _
   dsimp only
   -- The length expression coerces `Φ` directly, while the chain rule uses its diffeomorphism.
   change ‖mfderiv 𝓘(ℝ, ℝ) J ((Φ : M → N) ∘ γ) t (1 : ℝ)‖ₑ =

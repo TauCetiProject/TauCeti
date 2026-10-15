@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.RingTheory.Finiteness.Subalgebra
 public import TauCeti.Algebra.WordFiltration.AssociatedGraded
+-- Private: the vanishing of exterior powers above the dimension is used only to show that the
+-- filtration of a finite-dimensional space stabilises at its dimension.
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # The degree filtration of a Clifford algebra
@@ -34,12 +37,11 @@ Clifford relation are specializations of the generic ones. Its successive quotie
 `TauCeti.Algebra.wordFiltration.GradedPiece`; the universal enveloping algebra carries the same
 construction as its PBW filtration.
 
-Following the roadmap, the filtration is *not* the submodule power `LinearMap.range (ι Q) ^ k`:
-powers of a submodule of a noncommutative algebra collect the products of *exactly* `k` generators.
-The relation between the two is `CliffordAlgebra.filtration_eq_iSup_pow`, which writes
-`filtration Q k` as the supremum of those powers over `i ≤ k`; this is the sense in which the
-filtration is the "at most `k`" companion of Mathlib's `evenOdd`, whose definition is the analogous
-supremum over the `i` of a fixed parity.
+The filtration is *not* the submodule power `LinearMap.range (ι Q) ^ k`: powers of a submodule of a
+noncommutative algebra collect the products of *exactly* `k` generators. The relation between the
+two is `CliffordAlgebra.filtration_eq_iSup_pow`, which writes `filtration Q k` as the supremum of
+those powers over `i ≤ k`; this is the sense in which the filtration is the "at most `k`" companion
+of Mathlib's `evenOdd`, whose definition is the analogous supremum over the `i` of a fixed parity.
 
 ## Main definitions
 
@@ -54,10 +56,11 @@ supremum over the `i` of a fixed parity.
   scalars together with `LinearMap.range (ι Q)`.
 * `CliffordAlgebra.filtration_mul`: the filtration is multiplicative, and in fact exactly
   so: `filtration Q i * filtration Q j = filtration Q (i + j)`. This is the statement that makes
-  the associated graded object an algebra, and it is the prerequisite the roadmap asks for before
-  anything downstream; `CliffordAlgebra.filtration_pow` is its iterate and
+  the associated graded object an algebra; `CliffordAlgebra.filtration_pow` is its iterate and
   `CliffordAlgebra.mul_mem_filtration` its elementwise form.
 * `CliffordAlgebra.filtration_succ_eq_sup`: the recursion for the successor step.
+* `CliffordAlgebra.filtration_eq_top_of_finrank_le`: over a field, the filtration of a
+  finite-dimensional space is exhausted at its dimension.
 * `CliffordAlgebra.filtration_eq_iSup_pow`: the comparison with the submodule powers of
   `LinearMap.range (ι Q)`.
 * `CliffordAlgebra.filtrationLeadingTerm` and
@@ -84,8 +87,6 @@ supremum over the `i` of a fixed parity.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 0, "The degree filtration".
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I.
 -/
@@ -155,8 +156,7 @@ step. -/
 theorem ι_range_le_filtration_one : LinearMap.range (ι Q) ≤ filtration Q 1 :=
   TauCeti.Algebra.range_le_wordFiltration_one (ι Q)
 
-/-- A product of two generators lies in the second step. This is the membership the roadmap's
-bivectors use. -/
+/-- A product of two generators lies in the second step. -/
 theorem ι_mul_ι_mem_filtration_two (a b : M) : ι Q a * ι Q b ∈ filtration Q 2 := by
   simpa using prod_map_ι_mem_filtration Q (l := [a, b]) le_rfl
 
@@ -280,6 +280,7 @@ private theorem prod_map_ι_mem_filtration_pred_of_not_nodup :
         change ι Q a * (tail.map (ι Q)).prod ∈ filtration Q tail.length
         exact hmul
 
+/-- The multilinear product of `k + 1` Clifford generators. -/
 private noncomputable def filtrationLeadingTermRaw (k : ℕ) :
     MultilinearMap R (fun _ : Fin (k + 1) => M) (CliffordAlgebra Q) :=
   (MultilinearMap.mkPiAlgebraFin R (k + 1) (CliffordAlgebra Q)).compLinearMap fun _ => ι Q
@@ -304,6 +305,8 @@ private theorem filtrationLeadingTermRaw_mem_previous (k : ℕ) (v : Fin (k + 1)
   simpa only [List.length_ofFn, Nat.add_sub_cancel] using
     prod_map_ι_mem_filtration_pred_of_not_nodup Q (List.ofFn v) hnot
 
+/-- The product of `k + 1` generators modulo the preceding filtration piece,
+which is alternating because repeated generators lower the filtration degree. -/
 private noncomputable def filtrationLeadingTermAlternating (k : ℕ) :
     M [⋀^Fin (k + 1)]→ₗ[R] GradedPiece (ι Q) (k + 1) :=
   let P := previousRestricted (ι Q) (k + 1)
@@ -322,10 +325,7 @@ private noncomputable def filtrationLeadingTermAlternating (k : ℕ) :
 
 /-- The degree-`k + 1` leading-term map from the exterior power to the corresponding Clifford
 filtration quotient. A repeated generator becomes a lower-filtration term under the Clifford
-relation, so the product descends to an alternating map.
-
-This is the `CommRing`-level half of the Layer 0 `filtrationGradedEquiv` target in the
-[spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Suggested.lean#L62-L68). -/
+relation, so the product descends to an alternating map. -/
 noncomputable def filtrationLeadingTerm (k : ℕ) : ExteriorAlgebra.exteriorPower R (k + 1) M →ₗ[R]
     GradedPiece (ι Q) (k + 1) :=
   exteriorPower.alternatingMapLinearEquiv (filtrationLeadingTermAlternating Q k)
@@ -565,5 +565,32 @@ theorem fg_filtration [Module.Finite R M] (k : ℕ) : (filtration Q k).FG := by
   | succ k ih =>
     rw [filtration_succ_eq_sup]
     exact ih.sup (hι.pow _)
+
+/-- **The filtration stops at the dimension.** Over a field, every element of the Clifford algebra
+of a finite-dimensional space of dimension at most `n` is a combination of products of at most `n`
+generators: the exterior powers above the dimension vanish, so from degree `n + 1` on the
+leading-term map has a trivial target and each step of the filtration equals the previous one. -/
+theorem filtration_eq_top_of_finrank_le {K : Type u} {V : Type v} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V) {n : ℕ}
+    (hV : Module.finrank K V ≤ n) : filtration Q n = ⊤ := by
+  rw [eq_top_iff, ← iSup_filtration_eq_top Q]
+  refine iSup_le fun k => ?_
+  induction k with
+  | zero => exact filtration_mono Q (Nat.zero_le n)
+  | succ k ih =>
+    by_cases hk : k + 1 ≤ n
+    · exact filtration_mono Q hk
+    · have hvanish (x : ⋀[K]^(k + 1) V) : x = 0 :=
+        exteriorPower.eq_zero_of_finrank_lt (k + 1) (by omega) x
+      have : Subsingleton (⋀[K]^(k + 1) V) := ⟨fun x y => (hvanish x).trans (hvanish y).symm⟩
+      have : Subsingleton (GradedPiece (ι Q) (k + 1)) :=
+        (filtrationLeadingTerm_surjective Q k).subsingleton
+      -- The degree-`k + 1` quotient is trivial, so the step `k + 1` lies in the step `k`.
+      have hstep : filtration Q (k + 1) ≤ filtration Q k := fun x hx => by
+        have hxzero : (previousRestricted (ι Q) (k + 1)).mkQ ⟨x, hx⟩ = 0 :=
+          Subsingleton.elim _ _
+        rwa [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, mem_previousRestricted_iff,
+          wordFiltrationPrevious_succ] at hxzero
+      exact hstep.trans ih
 
 end CliffordAlgebra

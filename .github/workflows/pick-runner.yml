@@ -10,15 +10,20 @@ name: pick-runner
 # they are all taken. This stops being free if a repository goes private or a job moves to a
 # GitHub "larger runner", which is billed even for public repositories.
 #
-# There is no API for the plan's current usage, so this counts it: every in-progress or queued job
-# in every repository of the organisation that does not carry a Namespace label. That count includes
-# this job, whose slot the build inherits when this job ends. A build goes to GitHub only while the
-# count is at most `vars.HOSTED_RUNNER_BUDGET` (default 16). The budget sits below 20 for two
+# There is no API for the plan's current usage, so this counts it: every running hosted job
+# in every repository of the organisation, excluding Namespace and self-hosted jobs. The picker
+# itself occupies one counted slot; its build becomes eligible after it ends. No slot is reserved
+# or transferred, and another job may take the freed slot. A build goes to GitHub only while the
+# count is at most `vars.HOSTED_RUNNER_BUDGET` (default 18). The budget sits below 20 for two
 # reasons: pickers running at the same moment each see the same count and can all choose GitHub,
 # and a slot held by an hour-long build is a slot the short label, merge and notification jobs
 # cannot use. Set the variable to 20 to use every slot.
 #
-# Any failure (API error, timeout, rate limit, more results than one page holds) answers Namespace,
+# The App-token path preserves `vars.PICKER_API_RESERVE` requests (default 1500) for merge
+# and review automation. At the reserve, the picker tries the separate per-repository
+# `github.token` budget before falling back to Namespace. That repository budget also serves
+# required CI status publication, so preserve `vars.PICKER_REPOSITORY_API_RESERVE` (default 250) there.
+# Any failure (API error, timeout or rate limit) answers Namespace,
 # and a caller whose picker did not produce an answer at all also falls back to Namespace. The job is
 # `continue-on-error`, so even a picker that crashes leaves the caller's run green: review.yml and
 # auto-merge key off pr-build's overall conclusion. This job can delay a build by its own runtime
@@ -39,6 +44,12 @@ on:
       github:
         description: "`true` when the caller should run on a GitHub-hosted runner"
         value: ${{ jobs.pick.outputs.github }}
+      busy:
+        description: "GitHub-hosted jobs counted busy, when the count completed (for CI telemetry)"
+        value: ${{ jobs.pick.outputs.busy }}
+      budget:
+        description: "the HOSTED_RUNNER_BUDGET the decision used (for CI telemetry)"
+        value: ${{ jobs.pick.outputs.budget }}
 
 jobs:
   pick:
@@ -47,6 +58,8 @@ jobs:
     continue-on-error: true
     outputs:
       github: ${{ steps.pick.outputs.github }}
+      busy: ${{ steps.pick.outputs.busy }}
+      budget: ${{ steps.pick.outputs.budget }}
     steps:
       - name: Check for the App
         id: app
@@ -70,12 +83,17 @@ jobs:
         id: pick
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          FALLBACK_TOKEN: ${{ github.token }}
           ORG: ${{ github.repository_owner }}
-          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '16' }}
+          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
+          API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || (vars.PICKER_REPOSITORY_API_RESERVE || '250') }}
+          REPOSITORY_API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
         run: |
           set -uo pipefail
           decide() {
             echo "github=$1" >> "$GITHUB_OUTPUT"
+            echo "budget=$BUDGET" >> "$GITHUB_OUTPUT"
+            echo "busy=${busy:-}" >> "$GITHUB_OUTPUT"
             echo "$2" | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           }
@@ -83,32 +101,58 @@ jobs:
 
           case "$BUDGET" in ''|*[!0-9]*) decide false "HOSTED_RUNNER_BUDGET='$BUDGET' is not a number: using Namespace." ;; esac
 
+          case "$API_RESERVE" in ''|*[!0-9]*|?????????*) decide false "Invalid picker API reserve: using Namespace." ;; esac
+          case "$REPOSITORY_API_RESERVE" in ''|*[!0-9]*|?????????*) decide false "Invalid repository API reserve: using Namespace." ;; esac
+          api_pool=installation
+          [ "$GH_TOKEN" != "$FALLBACK_TOKEN" ] || api_pool=repository
+          quota_available() {
+            remaining=$(api rate_limit --jq .resources.core.remaining) || return 1
+            case "$remaining" in ''|*[!0-9]*) return 1 ;; esac
+            if [ "$remaining" -le "$((10#$API_RESERVE + $1))" ] \
+                && [ -n "$FALLBACK_TOKEN" ] && [ "$GH_TOKEN" != "$FALLBACK_TOKEN" ]; then
+              # Preserve the review App's reserve without giving up idle hosted capacity.
+              # Export the replacement so parallel child gh processes use the same token.
+              export GH_TOKEN="$FALLBACK_TOKEN"
+              API_RESERVE="$REPOSITORY_API_RESERVE"
+              api_pool=repository
+              echo "Shared App quota reserve protected; checking capacity with the repository API budget." \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              remaining=$(api rate_limit --jq .resources.core.remaining) || return 1
+              case "$remaining" in ''|*[!0-9]*) return 1 ;; esac
+            fi
+            [ "$remaining" -gt "$((10#$API_RESERVE + $1))" ]
+          }
+          # Both API pools serve merge and review automation; protect the active reserve.
+          quota_available 0 || decide false "Preserving the shared API quota reserve: using Namespace."
+
           repos=$(api --paginate "orgs/$ORG/repos?per_page=100" --jq '.[] | select(.archived | not) | .name') \
             || decide false "Could not list the repositories of $ORG: using Namespace."
 
-          # The calls are independent, so run them eight at a time: one at a time takes most of a
-          # minute when the organisation is busy, and every build waits for this answer.
-          # Both listings stop at one page of 100; a larger total fails the call, and so answers
-          # Namespace, rather than silently undercounting.
+          # A queued workflow may already have completed its GitHub picker and be waiting
+          # for Namespace. Workflow queue depth therefore says nothing about GitHub capacity.
+          # Inspect only running workflows and count their actually running GitHub jobs.
+          # Queued jobs consume no slot, and excluding queued workflows avoids both stale
+          # orphaned runs and one API request per job waiting on Namespace.
+          # Paginate both runs and jobs: page limits must not masquerade as saturation.
           export ORG
-          runs=$(printf '%s\n' $repos | xargs -r -P 8 -n 1 bash -c '
-                   set -o pipefail
-                   for status in in_progress queued; do
-                     timeout 30 gh api "repos/$ORG/$0/actions/runs?status=$status&per_page=100" \
-                       --jq "if .total_count > 100 then error(\"over 100 runs\") else .workflow_runs[].id | \"$0 \(.)\" end" || exit 1
-                   done' | sort -u) \
+          runs=$(printf '%s\n' "$repos" | xargs -r -P 8 -n 1 bash -c '
+                   timeout 30 gh api --paginate "repos/$ORG/$0/actions/runs?status=in_progress&per_page=100" \
+                     --jq ".workflow_runs[].id | \"$0 \(.)\""' | sort -u) \
             || decide false "Could not list the active runs in $ORG: using Namespace."
-          # A run that moves from queued to in progress between the two calls appears in both
-          # lists; `sort -u` above counts it once.
+          # Reserve one jobs request per run before starting the parallel reads. The margin
+          # also leaves room for pagination; this check is a snapshot, not a quota reservation.
+          run_count=$(printf '%s\n' "$runs" | awk 'NF { n++ } END { print n + 0 }')
+          quota_available "$run_count" \
+            || decide false "Active-run inspection would consume the shared API quota reserve: using Namespace."
           counts=$(printf '%s\n' "$runs" | xargs -r -P 8 -n 2 bash -c '
-                     timeout 30 gh api "repos/$ORG/$0/actions/runs/$1/jobs?per_page=100" --jq \
-                       "if .total_count > 100 then error(\"over 100 jobs\") else
-                          [.jobs[] | select(.status == \"in_progress\" or .status == \"queued\")
-                                   | select(any(.labels[]; startswith(\"nscloud-\")) | not)] | length end"') \
+                     timeout 30 gh api --paginate "repos/$ORG/$0/actions/runs/$1/jobs?per_page=100" --jq \
+                       "[.jobs[] | select(.status == \"in_progress\")
+                                 | select(any(.labels[]; startswith(\"nscloud-\") or startswith(\"namespace-profile-\")) | not)
+                                 | select(any(.labels[]; . == \"self-hosted\") | not)] | length"') \
             || decide false "Could not list the jobs of the active runs in $ORG: using Namespace."
           busy=$(printf '%s\n' "$counts" | awk '{ s += $1 } END { print s + 0 }')
           # A drained API budget turns every answer into Namespace, so keep it visible.
-          echo "API requests left this hour: $(api rate_limit --jq .resources.core.remaining || echo unknown)" \
+          echo "$api_pool API requests left this hour (reserve $API_RESERVE): $(api rate_limit --jq .resources.core.remaining || echo unknown)" \
             >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$busy" -le "$BUDGET" ]; then

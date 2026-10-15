@@ -29,6 +29,8 @@ Everything is functorial: a morphism of local coefficient systems `L ⟶ K` indu
 from the cochains twisted by `K` to those twisted by `L`, a continuous map `f : X ⟶ Y` induces a
 cochain map from the cochains of `Y` twisted by `L` to those of `X` twisted by the pullback
 system, and for a constant system the construction returns ordinary singular cohomology.
+Pulling a system back along homotopic maps produces canonically isomorphic twisted cochain
+complexes and cohomology groups.
 
 ## Main declarations
 
@@ -40,6 +42,8 @@ system, and for a constant system the construction returns ordinary singular coh
   system.
 * `TauCeti.LocalCoefficientSystem.twistedCochainComplexMap` and
   `TauCeti.LocalCoefficientSystem.twistedCohomologyMap`: the maps induced by a continuous map.
+* `TauCeti.LocalCoefficientSystem.twistedCohomologyPullbackHomotopyIso`: the canonical comparison
+  for pullbacks along homotopic maps.
 * `TauCeti.LocalCoefficientSystem.twistedCohomologyConstantIso`: for a constant system, twisted
   cohomology is ordinary singular cohomology.
 
@@ -114,6 +118,26 @@ lemma twistedCochainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
       (twistedChainComplexCoefficientMap_comp η θ)).trans
     (CategoryTheory.Functor.map_comp _ _ _)
 
+/-- An isomorphism of local coefficient systems induces an isomorphism of twisted cochain
+complexes, contravariantly in the coefficient system. -/
+def twistedCochainComplexCoefficientIso (e : L ≅ K) :
+    K.twistedCochainComplex k M ≅ L.twistedCochainComplex k M :=
+  (ChainComplex.linearYonedaFunctor k M).mapIso (twistedChainComplexCoefficientIso e).op
+
+@[simp]
+lemma twistedCochainComplexCoefficientIso_hom (e : L ≅ K) :
+    (twistedCochainComplexCoefficientIso k M e).hom =
+      twistedCochainComplexCoefficientMap k M e.hom := by
+  rw [twistedCochainComplexCoefficientIso, Functor.mapIso_hom, Iso.op_hom,
+    twistedChainComplexCoefficientIso_hom]
+
+@[simp]
+lemma twistedCochainComplexCoefficientIso_inv (e : L ≅ K) :
+    (twistedCochainComplexCoefficientIso k M e).inv =
+      twistedCochainComplexCoefficientMap k M e.inv := by
+  rw [twistedCochainComplexCoefficientIso, Functor.mapIso_inv, Iso.op_inv,
+    twistedChainComplexCoefficientIso_inv]
+
 /-- The map on twisted cohomology induced by a morphism of local coefficient systems. -/
 abbrev twistedCohomologyCoefficientMap (η : L ⟶ K) (n : ℕ) :
     K.twistedCohomology k M n ⟶ L.twistedCohomology k M n :=
@@ -133,7 +157,75 @@ lemma twistedCohomologyCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) (n : �
       (twistedCochainComplexCoefficientMap_comp k M η θ)).trans
     (CategoryTheory.Functor.map_comp _ _ _)
 
+/-- An isomorphism of local coefficient systems induces an isomorphism on twisted cohomology,
+contravariantly in the coefficient system. -/
+def twistedCohomologyCoefficientIso (e : L ≅ K) (n : ℕ) :
+    K.twistedCohomology k M n ≅ L.twistedCohomology k M n :=
+  (HomologicalComplex.homologyFunctor _ _ n).mapIso (twistedCochainComplexCoefficientIso k M e)
+
+@[simp]
+lemma twistedCohomologyCoefficientIso_hom (e : L ≅ K) (n : ℕ) :
+    (twistedCohomologyCoefficientIso k M e n).hom =
+      twistedCohomologyCoefficientMap k M e.hom n := by
+  rw [twistedCohomologyCoefficientIso, Functor.mapIso_hom, twistedCochainComplexCoefficientIso_hom,
+    HomologicalComplex.homologyFunctor_map]
+
+@[simp]
+lemma twistedCohomologyCoefficientIso_inv (e : L ≅ K) (n : ℕ) :
+    (twistedCohomologyCoefficientIso k M e n).inv =
+      twistedCohomologyCoefficientMap k M e.inv n := by
+  rw [twistedCohomologyCoefficientIso, Functor.mapIso_inv, twistedCochainComplexCoefficientIso_inv,
+    HomologicalComplex.homologyFunctor_map]
+
 end Coefficients
+
+section Homotopy
+
+variable {Y : TopCat.{v}} {f g : X ⟶ Y} (H : f.hom.Homotopy g.hom)
+  (L : LocalCoefficientSystem.{u, v, max v w} R Y)
+
+/-- The canonical comparison of twisted cochain complexes whose coefficient systems are pulled
+back along homotopic maps.  It is induced by transport along the pointwise paths of the
+homotopy. -/
+def twistedCochainComplexPullbackHomotopyIso :
+    ((pullback g.hom).obj L).twistedCochainComplex k M ≅
+      ((pullback f.hom).obj L).twistedCochainComplex k M :=
+  twistedCochainComplexCoefficientIso k M ((pullbackHomotopyIso H).app L)
+
+@[simp]
+lemma twistedCochainComplexPullbackHomotopyIso_hom :
+    (twistedCochainComplexPullbackHomotopyIso k M H L).hom =
+      twistedCochainComplexCoefficientMap k M ((pullbackHomotopyIso H).hom.app L) := by
+  rw [twistedCochainComplexPullbackHomotopyIso, twistedCochainComplexCoefficientIso_hom,
+    Iso.app_hom]
+
+@[simp]
+lemma twistedCochainComplexPullbackHomotopyIso_inv :
+    (twistedCochainComplexPullbackHomotopyIso k M H L).inv =
+      twistedCochainComplexCoefficientMap k M ((pullbackHomotopyIso H).inv.app L) := by
+  rw [twistedCochainComplexPullbackHomotopyIso, twistedCochainComplexCoefficientIso_inv,
+    Iso.app_inv]
+
+/-- Homotopic pullbacks of a local coefficient system have canonically isomorphic twisted
+cohomology groups. -/
+def twistedCohomologyPullbackHomotopyIso (n : ℕ) :
+    ((pullback g.hom).obj L).twistedCohomology k M n ≅
+      ((pullback f.hom).obj L).twistedCohomology k M n :=
+  twistedCohomologyCoefficientIso k M ((pullbackHomotopyIso H).app L) n
+
+@[simp]
+lemma twistedCohomologyPullbackHomotopyIso_hom (n : ℕ) :
+    (twistedCohomologyPullbackHomotopyIso k M H L n).hom =
+      twistedCohomologyCoefficientMap k M ((pullbackHomotopyIso H).hom.app L) n := by
+  rw [twistedCohomologyPullbackHomotopyIso, twistedCohomologyCoefficientIso_hom, Iso.app_hom]
+
+@[simp]
+lemma twistedCohomologyPullbackHomotopyIso_inv (n : ℕ) :
+    (twistedCohomologyPullbackHomotopyIso k M H L n).inv =
+      twistedCohomologyCoefficientMap k M ((pullbackHomotopyIso H).inv.app L) n := by
+  rw [twistedCohomologyPullbackHomotopyIso, twistedCohomologyCoefficientIso_inv, Iso.app_inv]
+
+end Homotopy
 
 section Map
 

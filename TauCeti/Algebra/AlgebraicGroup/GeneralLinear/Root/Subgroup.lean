@@ -13,6 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 -- `TauCeti.transvectionUnit` is the matrix the homomorphism is built from.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # The root subgroups of the general linear group
@@ -38,6 +39,11 @@ Chevalley commutator relations, and the rescaling of the parameter under conjuga
 to any of the three views of the group. Nothing here needs `R` to be a field, and nothing needs the
 base to be reduced or the rank to be positive: the construction is the one over `ℤ` that a
 Chevalley–Demazure group of type `A` base changes from.
+
+## Formal references
+
+* [The integral coordinate-surjectivity argument](https://github.com/TauCetiProject/TauCeti/blob/6a0b39f93cf134d7d6f8ab7b5ee0bfcdbb1ce9ad/TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/AllRootSubgroups/Basic.lean)
+  for the type-A full-weight carrier.
 
 ## Main definitions
 
@@ -164,7 +170,7 @@ noncomputable def rootSubgroupCoordinateMap (hij : i ≠ j) :
 /-- Precomposition by the root-subgroup coordinate morphism is the previously constructed
 natural map on convolution points. -/
 theorem mapPointsFunctor_rootSubgroupCoordinateMap (hij : i ≠ j) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (rootSubgroupCoordinateMap (R := R) (N := N) hij) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R N)) =
@@ -179,7 +185,7 @@ morphism is the elementary root subgroup homomorphism already constructed on poi
 theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (hij : i ≠ j)
     (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij)).app A f =
       rootSubgroupPoints hij f := by
   rw [mapPointsFunctor_rootSubgroupCoordinateMap, rootSubgroupPointsMap_app]
@@ -197,7 +203,7 @@ theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin N) :
   let A := AdditiveGroup.coordinateHopfAlgebra R
   let q : WithConv (A →ₐ[R] A) := toConv (AlgHom.id R A)
   let p : WithConv (coordinateHopfAlgebra R N →ₐ[R] A) :=
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij)).app (CommAlgCat.of R A) q
   have h := congrArg
     (fun p' : WithConv (coordinateHopfAlgebra R N →ₐ[R] A) ↦
@@ -209,10 +215,22 @@ theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin N) :
   rw [pointsMulEquiv_rootSubgroupPoints, coe_transvectionUnit] at h
   rw [pointsMulEquiv_apply, pointToGeneralLinear_apply] at h
   simp only [Matrix.transvection, Matrix.add_apply] at h
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at h
   simp only [AdditiveGroup.toAdd_gaPointsMulEquiv] at h
   dsimp [q] at h
   exact h
+
+/-- The root-subgroup coordinate morphism is surjective over every commutative base ring. -/
+theorem rootSubgroupCoordinateMap_surjective (hij : i ≠ j) :
+    Function.Surjective (rootSubgroupCoordinateMap (R := R) hij).hom := by
+  classical
+  let f := (rootSubgroupCoordinateMap (R := R) hij).hom.toAlgHom
+  have hgen : SymmetricAlgebra.ι R R 1 ∈ f.range := by
+    refine (AlgHom.mem_range _).mpr ⟨coordinateHopfAlgebraAlgEquiv R N
+      (coordinateRingMap R N (MvPolynomial.X (i, j))), ?_⟩
+    simpa [f, BialgHom.coe_toAlgHom, Matrix.one_apply, hij] using
+      rootSubgroupCoordinateMap_apply_X (R := R) hij i j
+  exact f.surjective_of_ι_one_mem_range hgen
 
 /-- **The root subgroup of `GLₙ` attached to the root `εᵢ - εⱼ`**: the affine
 group-scheme morphism `𝔾ₐ → GLₙ` whose value on points is `c ↦ xᵢⱼ(c)`. -/

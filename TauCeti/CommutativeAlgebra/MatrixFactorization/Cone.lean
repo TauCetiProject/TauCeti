@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
-public import TauCeti.Algebra.Homology.Curved.Cone
+public import TauCeti.Algebra.Homology.Curved.Cone.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 
 /-!

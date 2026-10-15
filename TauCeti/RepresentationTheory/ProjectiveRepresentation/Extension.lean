@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
 
@@ -49,8 +50,6 @@ This lets finite lifting extensions use roots of unity as their kernel coefficie
 
 ## Main definitions
 
-* `TauCeti.trivialMulDistribMulAction`: the trivial action, the one a projective representation's
-  own factor set is bundled over, since a projective representation carries no action.
 * `TauCeti.IsFactorSet.toFactorSet`: a normalized curried factor set, bundled as a
   `TauCeti.FactorSet` for a trivial action, so that its central extension is available.
 * `TauCeti.IsFactorSet.toRootsOfUnityFactorSet`: a factor set with values of exponent dividing
@@ -110,33 +109,9 @@ variable {k : Type u} {G : Type v} {V : Type w}
 ## Factor sets, curried and uncurried
 
 The extension is built from a bundled, uncurried factor set while a projective representation
-carries a curried one; for the trivial action, defined first, the two notions agree.
+carries a curried one; for the trivial action `TauCeti.trivialMulDistribMulAction`, the two notions
+agree.
 -/
-
-/-- **The trivial action of a monoid `G` on a monoid `M`**, `g • a = a`, obtained by composing the
-tautological action of `MulAut M` with the trivial homomorphism. It is the action for which the
-extension built from a factor set is central, so it is the one a projective representation's factor
-set is bundled over in `TauCeti.IsProjectiveRep.exists_factorSet_linearization`. It is reducible and
-deliberately not an instance, since the results below are stated for an arbitrary action; it is only
-used to supply one where the ambient theory has none. -/
-abbrev trivialMulDistribMulAction (G M : Type*) [Monoid G] [Monoid M] :
-    MulDistribMulAction G M :=
-  MulDistribMulAction.compHom M (1 : G →* MulAut M)
-
-section TrivialActionSmul
-
-attribute [local instance] trivialMulDistribMulAction
-
-/-- Under `TauCeti.trivialMulDistribMulAction` every element is fixed. This is the triviality
-hypothesis that `TauCeti.FactorSet.isFactorSet_curry`, `TauCeti.IsFactorSet.toFactorSet` and
-`TauCeti.FactorSet.inl_range_le_center` take, supplied once so that their callers can name a
-constant rather than an inlined proof. -/
-@[simp]
-theorem trivialMulDistribMulAction_smul {G M : Type*} [Monoid G] [Monoid M] (g : G) (a : M) :
-    g • a = a :=
-  rfl
-
-end TrivialActionSmul
 
 section RootsOfUnity
 

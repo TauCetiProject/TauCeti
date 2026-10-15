@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
+import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
 /-!
 # Relative singular chains and homology with local coefficients

@@ -26,7 +26,9 @@ in the plan.
 No finiteness or normalisation is assumed of the measures, and the cost need not be measurable.
 Subadditivity cannot in general be improved to an equality: splitting `δ_x + δ_y` against itself
 as `(δ_x, δ_y) + (δ_y, δ_x)` with the cost `edist` gives a strict inequality whenever `x ≠ y`.
-Homogeneity is stated for a finite scaling factor.
+Homogeneity is stated for a finite scaling factor. By homogeneity, two optimal plans for the same
+pair of marginals add up to an optimal plan for the doubled marginals; uniqueness theorems for
+optimal plans compare two optimal plans through their sum.
 
 ## Main statements
 
@@ -34,7 +36,12 @@ Homogeneity is stated for a finite scaling factor.
   cost;
 * `TauCeti.transportCost_sum_le` — countable subadditivity for `MeasureTheory.Measure.sum`;
 * `TauCeti.transportCost_finset_sum_le` and `TauCeti.transportCost_add_le` — the finite and binary
-  forms of subadditivity.
+  forms of subadditivity;
+* `TauCeti.IsOptimalCoupling.add` — the sum of two optimal plans for the same marginals is optimal
+  for the doubled marginals;
+* `TauCeti.transportCost_smul_add_smul_lt` — strict convexity in the target: when the optimal
+  plans out of the source into a mixture of two distinct targets are induced by maps, the cost to
+  the mixture is strictly below the mixture of the costs.
 
 ## References
 
@@ -78,6 +85,14 @@ theorem transportCost_smul (ha : a ≠ ∞) (c : X × Y → ℝ≥0∞) (μ : Me
           rw [lintegral_smul_measure, smul_eq_mul, ← mul_assoc, ENNReal.mul_inv_cancel ha₀ ha,
             one_mul]
 
+/-- Scaling an optimal plan by a finite factor preserves optimality, including at zero mass. -/
+protected theorem IsOptimalCoupling.smul {c : X × Y → ℝ≥0∞} {π : Measure (X × Y)}
+    {μ : Measure X} {ν : Measure Y} (h : IsOptimalCoupling c π μ ν) (ha : a ≠ ∞) :
+    IsOptimalCoupling c (a • π) (a • μ) (a • ν) where
+  toIsCoupling := h.toIsCoupling.smul a
+  lintegral_eq := by
+    rw [lintegral_smul_measure, smul_eq_mul, h.lintegral_eq, transportCost_smul ha]
+
 /-- **Countable subadditivity of the transport cost.** The transport cost of the sums of two
 countable families of marginals is at most the sum of the transport costs of the pairs: near
 optimal plans of the pairs sum to a plan of the sums. -/
@@ -113,5 +128,51 @@ theorem transportCost_add_le (c : X × Y → ℝ≥0∞) (μ μ' : Measure X) (�
   simpa only [Finset.sum_pair zero_ne_one, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.head_cons] using
     transportCost_finset_sum_le {0, 1} c ![μ, μ'] ![ν, ν']
+
+/-- **Two optimal plans add up to an optimal plan.** If `π` and `π'` are optimal plans between `μ`
+and `ν`, their sum is an optimal plan between `μ + μ` and `ν + ν`, whose transport cost is twice
+that of `μ` and `ν` by homogeneity. -/
+protected theorem IsOptimalCoupling.add {c : X × Y → ℝ≥0∞} {π π' : Measure (X × Y)}
+    {μ : Measure X} {ν : Measure Y} (h : IsOptimalCoupling c π μ ν)
+    (h' : IsOptimalCoupling c π' μ ν) : IsOptimalCoupling c (π + π') (μ + μ) (ν + ν) where
+  toIsCoupling := h.toIsCoupling.add h'.toIsCoupling
+  lintegral_eq := by
+    rw [lintegral_add_measure, h.lintegral_eq, h'.lintegral_eq, ← two_smul ℝ≥0∞ μ,
+      ← two_smul ℝ≥0∞ ν, transportCost_smul ENNReal.ofNat_ne_top, two_mul]
+
+/-- **Strict convexity of the transport cost in the target.** Let `π₀` and `π₁` be optimal plans
+from `μ` to `ν₀` and to `ν₁`, and let `a, b` be nonzero weights with `a + b = 1`. If every optimal
+plan from `μ` to the mixture `a • ν₀ + b • ν₁` is induced by a map and `ν₀ ≠ ν₁`, then the
+transport cost from `μ` to the mixture is strictly below the mixture of the two transport costs.
+-/
+theorem transportCost_smul_add_smul_lt [MeasurableEq Y] {c : X × Y → ℝ≥0∞}
+    {π₀ π₁ : Measure (X × Y)} {μ : Measure X} {ν₀ ν₁ : Measure Y} {b : ℝ≥0∞} (hab : a + b = 1)
+    (ha : a ≠ 0) (hb : b ≠ 0) (h₀ : IsOptimalCoupling c π₀ μ ν₀)
+    (h₁ : IsOptimalCoupling c π₁ μ ν₁)
+    (hgraph : ∀ π, IsOptimalCoupling c π μ (a • ν₀ + b • ν₁) →
+      ∃ T : X → Y, AEMeasurable T μ ∧ π = graphPlan T μ)
+    (hne : ν₀ ≠ ν₁) :
+    transportCost c μ (a • ν₀ + b • ν₁) <
+      a * transportCost c μ ν₀ + b * transportCost c μ ν₁ := by
+  have hπ : IsCoupling (a • π₀ + b • π₁) μ (a • ν₀ + b • ν₁) := by
+    have h := (h₀.toIsCoupling.smul a).add (h₁.toIsCoupling.smul b)
+    rwa [← add_smul, hab, one_smul] at h
+  have hcost : ∫⁻ z, c z ∂(a • π₀ + b • π₁) =
+      a * transportCost c μ ν₀ + b * transportCost c μ ν₁ := by
+    rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure, smul_eq_mul,
+      smul_eq_mul, h₀.lintegral_eq, h₁.lintegral_eq]
+  -- The mixture of the two plans couples `μ` with the mixture of the targets and costs exactly the
+  -- mixture of the two costs, so it remains to rule out equality.
+  refine lt_of_le_of_ne (hcost ▸ transportCost_le_lintegral hπ c) fun heq ↦ hne ?_
+  -- Equality makes the mixture of the two plans optimal, so it is the graph plan of a map `T`.
+  obtain ⟨T, hT, hπT⟩ := hgraph _ ⟨hπ, hcost.trans heq.symm⟩
+  -- A coupling out of `μ` lying below a multiple of that graph plan has target `μ.map T`.
+  have key {σ : Measure (X × Y)} {ν : Measure Y} {d : ℝ≥0∞} (hd : d ≠ 0)
+      (hσ : IsCoupling σ μ ν) (hle : d • σ ≤ graphPlan T μ) : ν = μ.map T := by
+    have hac : σ ≪ graphPlan T μ :=
+      (Measure.absolutelyContinuous_smul hd).trans (Measure.absolutelyContinuous_of_le hle)
+    rw [← hσ.snd_eq, eq_graphPlan_of_absolutelyContinuous hT hac, hσ.fst_eq, snd_graphPlan hT]
+  rw [key ha h₀.toIsCoupling (hπT ▸ Measure.le_add_right le_rfl),
+    key hb h₁.toIsCoupling (hπT ▸ Measure.le_add_left le_rfl)]
 
 end TauCeti

@@ -7,9 +7,11 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -21,7 +23,10 @@ Mathlib's `TopologicalAbelianization G`. This file adds two pieces of API to it.
 **Functoriality.** A continuous homomorphism `f : G →* H` carries the topological closure of the
 commutator subgroup of `G` into that of `H`, so it induces a continuous homomorphism
 `TopologicalAbelianization.map f hf : G^{ab} →* H^{ab}`, compatible with identities and
-composition.
+composition. When `f` has dense range and is inducing on a subgroup containing both the
+commutators of `G` and everything `f` sends into the closed commutators of `H`, the induced map
+is injective; this is how the abelianized Weil group of a local field embeds into the abelianized
+absolute Galois group.
 
 **The conjugation action.** Let `N` be a normal subgroup of `G`. Conjugation by `G` preserves
 `N`, hence its commutator subgroup, hence the topological closure of the latter, so it descends
@@ -45,6 +50,8 @@ and Labute's action is recovered by precomposing with the inversion of the actin
 
 * `TopologicalAbelianization.map`: the homomorphism `G^{ab} →* H^{ab}` induced by a continuous
   homomorphism `G →* H`.
+* `ContinuousMulEquiv.topologicalAbelianizationCongr`: the topological isomorphism
+  `G^{ab} ≃ₜ* H^{ab}` induced by a topological group isomorphism `G ≃ₜ* H`.
 * The instances `MulDistribMulAction (ConjAct G) (TopologicalAbelianization N)` and
   `MulDistribMulAction (G ⧸ N) (TopologicalAbelianization N)`: conjugation on the topological
   abelianization of a normal subgroup, and its factorization through `G ⧸ N`.
@@ -54,6 +61,14 @@ and Labute's action is recovered by precomposing with the inversion of the actin
 * `TopologicalAbelianization.map_mk`, `TopologicalAbelianization.continuous_map`,
   `TopologicalAbelianization.map_id`, `TopologicalAbelianization.map_comp`: the characteristic
   properties of `map`.
+* `ContinuousMulEquiv.map_topologicalClosure_commutator`: a topological group isomorphism carries
+  the closed commutator subgroup onto the closed commutator subgroup.
+* `TopologicalAbelianization.map_surjective`, `TopologicalAbelianization.ker_map_of_surjective`:
+  a continuous surjection `f : G →* H` of a compact group onto a Hausdorff group induces a
+  surjection `G^{ab} →* H^{ab}` whose kernel is the image of `ker f`, so that `H^{ab}` is the
+  quotient of `G^{ab}` by the image of `ker f`.
+* `TopologicalAbelianization.map_injective_of_isInducing`: a criterion for `map f hf` to be
+  injective when `f` has dense range.
 * `TopologicalAbelianization.mk_smul_mk`: the class of `g : G` acts on the class of `n : N` by
   the class of `g * n * g⁻¹`; `TopologicalAbelianization.mk_inv_smul_mk` is Labute's form of
   the same action, the inverse of the class of `g` acting by the class of `g⁻¹ * n * g`.
@@ -126,6 +141,105 @@ composite of the induced maps. -/
 theorem map_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : Continuous f) :
     (map g hg).comp (map f hf) = map (g.comp f) (hg.comp hf) :=
   QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun x => by simp)
+
+/-- The homomorphism between topological abelianizations induced by a continuous surjection is
+surjective. -/
+theorem map_surjective (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
+    Function.Surjective (map f hf) :=
+  QuotientGroup.map_surjective_of_surjective _ _ f
+    ((QuotientGroup.mk'_surjective (commutator H).topologicalClosure).comp hsurj) _
+
+/-- **A criterion for injectivity on topological abelianizations.** Let `f : G →* H` be a
+continuous homomorphism with dense range, and let `i : J →* G` be a continuous homomorphism such
+that `f ∘ i` is inducing. Suppose that the range of `i` contains every element that `f` sends
+into the closed commutator subgroup of `H`. Then the map `G^{ab} → H^{ab}` induced by `f` is
+injective.
+
+For example, `G` can be a group carrying a topology finer than the one induced from a dense
+embedding into `H`, where `i` is the inclusion of a subgroup on which the two topologies agree. -/
+theorem map_injective_of_isInducing {J : Type*} [Group J] [TopologicalSpace J] (f : G →* H)
+    (hf : Continuous f) (hd : DenseRange f) (i : J →* G) (hi : Continuous i)
+    (hfi : Topology.IsInducing (f ∘ i))
+    (hrange : (commutator H).topologicalClosure.comap f ≤ i.range) :
+    Function.Injective (map f hf) := by
+  -- `f` sends commutators to commutators, so the range of `i` contains the commutator subgroup.
+  have hmap : (commutator G).map f ≤ commutator H := by
+    rw [map_commutator_eq]
+    exact Subgroup.commutator_mono le_top le_top
+  have hcomm : commutator G ≤ i.range :=
+    ((Subgroup.map_le_iff_le_comap.1 hmap).trans
+      (Subgroup.comap_mono (Subgroup.le_topologicalClosure _))).trans hrange
+  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
+  induction x using QuotientGroup.induction_on with | H g => ?_
+  rw [map_mk, QuotientGroup.eq_one_iff] at hx
+  rw [QuotientGroup.eq_one_iff]
+  obtain ⟨j, rfl⟩ := hrange hx
+  -- The image of the commutator subgroup is dense in the closed commutator subgroup of `H`, and
+  -- it is the image under `f ∘ i` of the preimage of the commutator subgroup under `i`.
+  have himage : f '' (commutator G : Set G) = (f ∘ i) '' (i ⁻¹' (commutator G : Set G)) := by
+    rw [Set.image_comp,
+      Set.image_preimage_eq_of_subset fun _ hx ↦ MonoidHom.mem_range.1 (hcomm hx)]
+  rw [← hd.topologicalClosure_map_commutator, ← SetLike.mem_coe,
+    Subgroup.topologicalClosure_coe, Subgroup.coe_map, himage] at hx
+  -- Since `f ∘ i` is inducing, `j` lies in the closure of that preimage, so `i j` lies in the
+  -- closure of the commutator subgroup of `G`.
+  have hj : j ∈ closure (i ⁻¹' (commutator G : Set G)) := by
+    rw [hfi.closure_eq_preimage_closure_image]
+    exact hx
+  rw [← SetLike.mem_coe, Subgroup.topologicalClosure_coe]
+  exact map_mem_closure hi hj fun _ hy ↦ hy
+
+/-- A topological group isomorphism `G ≃ₜ* H` carries the closed commutator subgroup of `G` onto
+the closed commutator subgroup of `H`. -/
+theorem _root_.ContinuousMulEquiv.map_topologicalClosure_commutator (e : G ≃ₜ* H) :
+    (commutator G).topologicalClosure.map e.toMulEquiv.toMonoidHom =
+      (commutator H).topologicalClosure := by
+  have h : (commutator G).map e.toMulEquiv.toMonoidHom = commutator H := by
+    rw [map_commutator_eq, MonoidHom.range_eq_top.mpr e.surjective, ← commutator_def]
+  apply SetLike.coe_injective
+  rw [Subgroup.coe_map, Subgroup.topologicalClosure_coe, Subgroup.topologicalClosure_coe, ← h,
+    Subgroup.coe_map]
+  exact e.toHomeomorph.image_closure _
+
+/-- A topological group isomorphism `G ≃ₜ* H` induces a topological isomorphism
+`G^{ab} ≃ₜ* H^{ab}` between the topological abelianizations. This is the topological analogue of
+`MulEquiv.abelianizationCongr`, and the specialisation of `ContinuousMulEquiv.quotientCongr` to
+the closed commutator subgroups. -/
+def _root_.ContinuousMulEquiv.topologicalAbelianizationCongr (e : G ≃ₜ* H) :
+    TopologicalAbelianization G ≃ₜ* TopologicalAbelianization H :=
+  e.quotientCongr _ _ e.map_topologicalClosure_commutator
+
+/-- `e.topologicalAbelianizationCongr` sends the class of `x : G` to the class of `e x`. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.topologicalAbelianizationCongr_mk (e : G ≃ₜ* H) (x : G) :
+    e.topologicalAbelianizationCongr (x : TopologicalAbelianization G) =
+      (e x : TopologicalAbelianization H) :=
+  e.quotientCongr_mk _ _ _ x
+
+/-- The inverse of `e.topologicalAbelianizationCongr` is `e.symm.topologicalAbelianizationCongr`. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.topologicalAbelianizationCongr_symm (e : G ≃ₜ* H) :
+    e.topologicalAbelianizationCongr.symm = e.symm.topologicalAbelianizationCongr :=
+  ContinuousMulEquiv.ext fun x ↦ QuotientGroup.induction_on x fun h ↦
+    e.topologicalAbelianizationCongr.symm_apply_eq.mpr (by simp)
+
+/-- **The kernel of the map induced on abelianizations by a surjection.** For a continuous
+surjection `f : G →* H` from a compact group onto a Hausdorff group, the kernel of
+`G^{ab} →* H^{ab}` is the image of `ker f` in `G^{ab}`. Compactness is what makes the image of the
+closed commutator subgroup of `G` closed, so that it is the closed commutator subgroup of `H`. -/
+theorem ker_map_of_surjective [CompactSpace G] [T2Space H] (f : G →* H) (hf : Continuous f)
+    (hsurj : Function.Surjective f) :
+    (map f hf).ker = f.ker.map (QuotientGroup.mk' (commutator G).topologicalClosure) := by
+  have hcomm : (commutator H).topologicalClosure = (commutator G).topologicalClosure.map f := by
+    rw [f.map_topologicalClosure hf _ (Subgroup.isClosed_topologicalClosure _).isCompact,
+      map_commutator_eq, MonoidHom.range_eq_top.mpr hsurj, ← commutator_def]
+  refine Subgroup.comap_injective
+    (QuotientGroup.mk'_surjective (commutator G).topologicalClosure) ?_
+  have h : (map f hf).comp (QuotientGroup.mk' (commutator G).topologicalClosure) =
+      (QuotientGroup.mk' (commutator H).topologicalClosure).comp f :=
+    MonoidHom.ext fun x ↦ map_mk f hf x
+  rw [Subgroup.comap_map_eq, QuotientGroup.ker_mk', MonoidHom.comap_ker, h, ← MonoidHom.comap_ker,
+    QuotientGroup.ker_mk', hcomm, Subgroup.comap_map_eq, sup_comm]
 
 end Map
 
@@ -278,6 +392,23 @@ instance : ContinuousSMul (G ⧸ N) (TopologicalAbelianization N) where
       (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
 
 variable {R : Subgroup G} [R.Normal] {N}
+
+omit [N.Normal] in
+/-- **An element of `⁅N, N⁆` has trivial class in `N^{ab}`**: `⁅N, N⁆` is the image of the
+commutator subgroup of `N`, which the topological abelianization kills. -/
+@[simp]
+theorem mk_eq_one_of_mem_commutator {r : G} (hrN : r ∈ N) (hr : r ∈ ⁅N, N⁆) :
+    ((⟨r, hrN⟩ : N) : TopologicalAbelianization N) = 1 := by
+  rw [← N.map_subtype_commutator] at hr
+  obtain ⟨s, hs, rfl⟩ := hr
+  exact (QuotientGroup.eq_one_iff _).mpr (Subgroup.le_topologicalClosure _ hs)
+
+omit [N.Normal] in
+/-- An element of `⁅N, N⁆` has zero class in `N^{ab}`, written additively. Not a simp lemma:
+simp derives it from `TopologicalAbelianization.mk_eq_one_of_mem_commutator` and `ofMul_one`. -/
+theorem ofMul_mk_eq_zero_of_mem_commutator {r : G} (hrN : r ∈ N) (hr : r ∈ ⁅N, N⁆) :
+    Additive.ofMul ((⟨r, hrN⟩ : N) : TopologicalAbelianization N) = 0 :=
+  ofMul_eq_zero.mpr (mk_eq_one_of_mem_commutator hrN hr)
 
 /-- For normal subgroups `R ≤ N`, the map `R^{ab} →* N^{ab}` induced by the inclusion is
 equivariant for conjugation by `G`. -/

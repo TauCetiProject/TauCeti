@@ -7,8 +7,8 @@ module
 
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.Monogenic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
-public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.Valuation.AddValuation
@@ -57,17 +57,6 @@ variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Algebra L M] [ValuativeExtension L M] [Module.Finite L M]
   [Algebra K M] [ValuativeExtension K M] [Module.Finite K M] [IsGalois K M]
   [IsScalarTower K L M]
-
-omit [TopologicalSpace M] [IsNonarchimedeanLocalField M] [ValuativeExtension K L]
-  [Module.Finite K L] [Normal K L] [IsGalois K M] in
-/-- The characteristic polynomial of `x` under `Gal(M/L)`, transformed by `σ` and evaluated at
-`x`, is the product `∏_τ (x - σ τ x)`. -/
-private theorem eval_smul_charpoly (σ : M ≃ₐ[K] M) (x : 𝒪[M]) :
-    (σ • MulSemiringAction.charpoly (M ≃ₐ[L] M) x).eval x =
-      ∏ τ : M ≃ₐ[L] M, (x - (σ * τ.restrictScalars K) • x) := by
-  simpa only [AlgEquiv.restrictScalarsHom_apply] using
-    (MulSemiringAction.eval_smul_charpoly (AlgEquiv.restrictScalarsHom (S := L) K)
-      (fun τ b ↦ AlgEquiv.restrictScalars_smul_integerRing (K := K) τ b) σ x)
 
 omit [IsGalois K M] in
 /-- The displacement `σ y - y` of a generator `y` of `𝒪[L]` divides `(σ f)(x)`, where `f` is
@@ -127,8 +116,8 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum [IsGalois L M]
     (σ : M ≃ₐ[K] M) :
     (ramificationIndex L M : ℕ∞) * lowerIndex 𝒪[L] (σ.restrictNormal L) =
       ∑ τ : M ≃ₐ[L] M, lowerIndex 𝒪[M] (σ * τ.restrictScalars K) := by
-  obtain ⟨x, hx⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[M])
-  obtain ⟨y, hy⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[L])
+  obtain ⟨x, hx⟩ := TauCeti.exists_integerRing_adjoin_eq_top K M
+  obtain ⟨y, hy⟩ := TauCeti.exists_integerRing_adjoin_eq_top K L
   have key : IsDiscreteValuationRing.addVal 𝒪[M]
       (σ • algebraMap 𝒪[L] 𝒪[M] y - algebraMap 𝒪[L] 𝒪[M] y) =
       IsDiscreteValuationRing.addVal 𝒪[M]
@@ -140,7 +129,8 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum [IsGalois L M]
     lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hx, ← nsmul_eq_mul,
     ← addVal_algebraMap, map_sub,
     ← AlgEquiv.smul_algebraMap_integerRing, AddValuation.map_sub_swap _ _ x,
-    ← AddValuation.map_prod, ← eval_smul_charpoly]
+    ← AddValuation.map_prod, mul_smul, AlgEquiv.restrictScalars_smul_integerRing,
+    ← MulSemiringAction.eval_smul_charpoly]
   exact key
 
 open scoped Classical in

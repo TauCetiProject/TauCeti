@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.NumberField.Global.Counting.RayFundamentalDomain.Lat
 import TauCeti.NumberTheory.NumberField.Global.Counting.RayFundamentalDomain.MainTerm
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.Reindex
 import TauCeti.RingTheory.Ideal.CoprimeCoset
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # The asymptotic count of the integral ideals of a ray class
@@ -114,5 +115,30 @@ theorem rayClassIdealCount (𝔪 : Modulus K) :
           (rayClassIdealCountingFunction 𝔪 c x : ℝ) - rayClassIdealMainTerm 𝔪 * x) =O[atTop]
         (fun x : ℝ => x ^ (1 - δ)) :=
   ⟨(finrank ℚ K : ℝ)⁻¹, by simp [finrank_pos], isBigO_rayClassIdealCountingFunction_sub 𝔪⟩
+
+open scoped Topology in
+/-- **In every ray class the count divided by `x` tends to the main term.**  The power saving of
+`rayClassIdealCount` is negligible against `x`. -/
+theorem tendsto_rayClassIdealCountingFunction_div (𝔪 : Modulus K) (c : RayClassGroup 𝔪) :
+    Tendsto (fun x : ℝ => (rayClassIdealCountingFunction 𝔪 c x : ℝ) / x) atTop
+      (𝓝 (rayClassIdealMainTerm 𝔪)) := by
+  obtain ⟨δ, hδ, h⟩ := rayClassIdealCount 𝔪
+  have hlittle : (fun x : ℝ => x ^ (1 - δ)) =o[atTop] (fun x : ℝ => x) := by
+    refine (isLittleO_iff_tendsto' ?_).mpr ?_
+    · filter_upwards [eventually_gt_atTop 0] with x hx h0
+      exact absurd h0 hx.ne'
+    · refine (tendsto_rpow_neg_atTop hδ).congr' ?_
+      filter_upwards [eventually_gt_atTop 0] with x hx
+      rw [Real.rpow_sub hx, Real.rpow_one, Real.rpow_neg hx.le]
+      field_simp
+  have h0 : Tendsto (fun x : ℝ =>
+      ((rayClassIdealCountingFunction 𝔪 c x : ℝ) - rayClassIdealMainTerm 𝔪 * x) / x) atTop
+      (𝓝 0) :=
+    ((h c).trans_isLittleO hlittle).tendsto_div_nhds_zero
+  have := h0.add_const (rayClassIdealMainTerm 𝔪)
+  rw [zero_add] at this
+  refine this.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  rw [sub_div, mul_div_assoc, div_self hx.ne', mul_one, sub_add_cancel]
 
 end TauCeti.GlobalNumberFields

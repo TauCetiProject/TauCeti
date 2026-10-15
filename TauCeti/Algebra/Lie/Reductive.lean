@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.CartanCriterion
--- `TauCeti.Algebra.Lie.Solvable` is imported publicly because it supplies
+-- `TauCeti.Algebra.Lie.Solvable.Basic` is imported publicly because it supplies
 -- `LieAlgebra.HasTrivialRadical`, which is a hypothesis of the reductivity criterion below, and
 -- `LieIdeal.eq_bot_of_le_of_isSolvable`, which proves it.
-public import TauCeti.Algebra.Lie.Solvable
+public import TauCeti.Algebra.Lie.Solvable.Basic
 public import TauCeti.Algebra.Lie.Weights.Central
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import Mathlib.Algebra.Lie.Normalizer

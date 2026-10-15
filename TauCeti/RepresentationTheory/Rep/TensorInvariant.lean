@@ -5,26 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Tensoring a representation with an invariant
 
 For an invariant `y` of a representation `N`, this file constructs the morphism of
 representations `M ⟶ M ⊗ N` that sends `m` to `m ⊗ₜ y`. It also records its additivity,
-linearity, and naturality in both representations.
+linearity, naturality in both representations, and compatibility with the associator and
+braiding, as well as restriction along arbitrary homomorphisms of groups.
 -/
 
 public noncomputable section
 
-universe u
+universe u v w
 
 open CategoryTheory MonoidalCategory
 open scoped TensorProduct
 
 namespace Rep
 
-variable {k G : Type u} [CommRing k] [Group G]
+variable {k : Type u} {G : Type v} [CommRing k] [Group G]
 
 /-- For an invariant `y` of the representation `N`, the morphism of representations
 `M ⟶ M ⊗ N`, `m ↦ m ⊗ₜ y`. -/
@@ -41,6 +42,20 @@ def tensorInvariant (M : Rep k G) {N : Rep k G} (y : N.ρ.invariants) : M ⟶ M 
 theorem tensorInvariant_hom_apply (M : Rep k G) {N : Rep k G} (y : N.ρ.invariants) (m : M.V) :
     (dsimp% ((tensorInvariant M y).hom m)) = m ⊗ₜ[k] (y : N.V) :=
   (rfl)
+
+/-- Restricting the map `m ↦ m ⊗ y` along a homomorphism of groups gives the map defined by
+the restricted invariant. -/
+@[simp]
+theorem resMap_tensorInvariant (M N : Rep k G) {H : Type w} [Group H] (f : H →* G)
+    (y : N.ρ.invariants) :
+    Rep.resMap f (tensorInvariant M y) =
+      tensorInvariant (N := Rep.res f N) (Rep.res f M)
+        ((Submodule.inclusion (N.ρ.invariants_le_invariants_comp f)) y) := by
+  ext m
+  simp only [resMap_hom_toLinearMap]
+  exact (tensorInvariant_hom_apply M y m).trans
+    (tensorInvariant_hom_apply (N := Rep.res f N) (Rep.res f M)
+      ((Submodule.inclusion (N.ρ.invariants_le_invariants_comp f)) y) m).symm
 
 variable (M : Rep k G) {N : Rep k G}
 
@@ -87,11 +102,41 @@ theorem tensorInvariant_comp_whiskerLeft {N' : Rep k G} (g : N ⟶ N') (y : N.ρ
   ext m
   simp [hy]
 
+/-- Tensoring `M ⊗ N` with an invariant and then reassociating is tensoring the second factor
+`N` with that invariant. -/
+@[reassoc]
+theorem tensorInvariant_comp_associator (N : Rep k G) {P : Rep k G}
+    (z : P.ρ.invariants) :
+    tensorInvariant (M ⊗ N) z ≫ (α_ M N P).hom = M ◁ tensorInvariant N z := by
+  ext m
+  induction m using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul m n =>
+    simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+      LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply,
+      Rep.hom_hom_associator, Rep.hom_whiskerLeft]
+    rw [tensorInvariant_hom_apply, Representation.IntertwiningMap.lTensor_apply,
+      tensorInvariant_hom_apply]
+    exact Representation.TensorProduct.assoc_apply M.ρ N.ρ P.ρ m n z
+
+/-- Tensoring `M` with an invariant of `N`, tensoring the result on the right by `P`, and
+reassociating puts that invariant between the two original factors. -/
+@[reassoc]
+theorem tensorInvariant_whiskerRight_comp_associator (P : Rep k G)
+    (y : N.ρ.invariants) :
+    (tensorInvariant M y ▷ P) ≫ (α_ M N P).hom =
+      M ◁ (tensorInvariant P y ≫ (β_ P N).hom) := by
+  ext v
+  induction v using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul m p =>
+    simp [Rep.hom_comp, Rep.hom_hom_associator, Rep.hom_braiding]
+
 end Rep
 
 namespace TauCeti.Rep
 
-variable {k G : Type u} [CommRing k] [Group G] {M N : _root_.Rep k G}
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] {M N : _root_.Rep k G}
 
 /-- Braiding the tensor of a vector with an invariant puts the invariant first. -/
 theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
@@ -99,11 +144,24 @@ theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
       (x : M.V) ⊗ₜ[k] y := by
   simp [_root_.Rep.hom_braiding]
 
+-- As for `Rep.tensorInvariant_hom_apply`, the left-hand side is stated through `dsimp%` in the form
+-- `simp` reaches after unfolding the composite, so that the lemma fires.
+/-- Tensoring a scalar of the trivial representation with an invariant `x`, braiding, and applying
+the right unitor sends `c` to `c • x`. -/
+@[simp]
+theorem tensorInvariant_braiding_rightUnitor_hom_apply (x : M.ρ.invariants) (c : k) :
+    (dsimp% ((_root_.Rep.tensorInvariant (_root_.Rep.trivial k G k) x ≫ (β_ _ M).hom ≫
+      (ρ_ M).hom).hom c)) = c • (x : M.V) := by
+  have h := tensorInvariant_braiding_hom_apply (N := _root_.Rep.trivial k G k) x c
+  simp only [_root_.Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
+    _root_.Rep.hom_braiding, Representation.Equiv.coe_toIntertwiningMap] at h
+  simp [h]
+
 end TauCeti.Rep
 
 namespace Rep
 
-variable {k G : Type u} [CommRing k] [Group G]
+variable {k : Type u} {G : Type v} [CommRing k] [Group G]
 
 /-- Tensoring with the invariant `1` of the trivial representation, then braiding and applying
 the left unitor, is the identity. -/
@@ -122,5 +180,17 @@ theorem tensorInvariant_one_braiding_leftUnitor (M : Rep k G) :
   -- defines that unit as `Rep.trivial k G k`; `change` checks precisely this definitional equality.
   change (ρ_ M).inv ≫ (β_ M (𝟙_ (Rep k G))).hom ≫ (λ_ M).hom = 𝟙 M
   rw [braiding_leftUnitor, Iso.inv_hom_id]
+
+/-- Restricting `y ↦ x ⊗ₜ y` along a monoid homomorphism gives the same map for the restricted
+representations, tensoring with `x` viewed as an invariant of the restriction. -/
+theorem resMap_tensorInvariant_braiding {M : Rep k G} (N : Rep k G) {H : Type w} [Group H]
+    (f : H →* G) (x : M.ρ.invariants) (x' : (Rep.res f M).ρ.invariants) (hx : (x' : M.V) = x) :
+    Rep.resMap f (tensorInvariant N x ≫ (β_ N M).hom) =
+      tensorInvariant (Rep.res f N) x' ≫ (β_ (Rep.res f N) (Rep.res f M)).hom := by
+  ext y
+  simp only [resMap_hom_toLinearMap]
+  exact (TauCeti.Rep.tensorInvariant_braiding_hom_apply x y).trans
+    ((congrArg (· ⊗ₜ[k] y) hx.symm).trans
+      (TauCeti.Rep.tensorInvariant_braiding_hom_apply x' y).symm)
 
 end Rep

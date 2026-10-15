@@ -55,6 +55,7 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
   read the condition in `ℤ/pℤ` and in the residue field, and
   `TauCeti.unitsPrincipal_one_eq_ker_unitsMap_residue` identifies `U^(1)` with the kernel of
   reduction on units.
+* `TauCeti.unitsPrincipalMk`: the element of `U^(f)` with a prescribed value `v ≡ 1 mod p ^ f`.
 * `TauCeti.isOpen_unitsPrincipal`, `TauCeti.isClosed_unitsPrincipal`,
   `TauCeti.unitsPrincipal_antitone`, `TauCeti.iInf_unitsPrincipal_eq_bot`,
   `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration.
@@ -63,12 +64,14 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
   `[U^(f) : U^(f+k)] = p ^ k` for `f ≥ 1`.
 * `TauCeti.exists_mem_unitsPrincipal_and_notMem_succ`: every unit other than `1` has an exact
   level.
+* `TauCeti.neg_one_notMem_unitsPrincipal`: `-1 ∉ U^(f)` once `p ^ f > 2`.
 * `TauCeti.neg_one_mem_unitsPrincipal_two_iff`, `TauCeti.neg_mem_unitsPrincipal_two_two_iff`:
   in `ℤ_2ˣ`, `-1 ∉ U^(f)` for `f ≥ 2`, and `u ≡ ±1 mod 4` with exactly one sign;
   `TauCeti.inv_mul_mem_unitsPrincipal_two_succ`: two dyadic units of the same exact level are
   congruent modulo the next level.
 * `TauCeti.pow_pow_mem_unitsPrincipal`, `TauCeti.pow_pow_notMem_unitsPrincipal`: the `p ^ k`-th
   power of an element of exact level `f` has exact level `f + k`.
+* `TauCeti.infinite_unitsPrincipal`: every `U^(f)` is infinite.
 * `TauCeti.topologicalClosure_zpowers_eq_unitsPrincipal`: an element of exact level `f`
   topologically generates `U^(f)`; `TauCeti.exists_topologicalClosure_zpowers_eq_unitsPrincipal`:
   `U^(f)` is procyclic.
@@ -76,7 +79,9 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
   of `U^(f)`; `TauCeti.relIndex_map_powMonoidHom_unitsPrincipal`: `(U^(f) : (U^(f))^p) = p`.
 * `TauCeti.exists_eq_unitsPrincipal_of_isClosed`: a nontrivial closed subgroup of `U^(f₀)` is
   some `U^(f)` with `f ≥ f₀`; `TauCeti.unitsPrincipal_inj`, `TauCeti.unitsPrincipal_injective`:
-  the level is unique, at every level when `p` is odd.
+  the level is unique, at every level when `p` is odd;
+  `TauCeti.exists_topologicalClosure_zpowers_eq_of_isClosed_of_le_unitsPrincipal`: every closed
+  subgroup of `U^(f₀)` is procyclic.
 * `TauCeti.isProP_unitsPrincipal`: `1 + p^f ℤ_p` is pro-`p` for `f ≥ 1`.
 * `TauCeti.IsProP.le_unitsPrincipal_one`, `TauCeti.isProP_iff_le_unitsPrincipal_one`: a subgroup
   of `ℤ_pˣ` is pro-`p` exactly when it lies in `1 + pℤ_p`.
@@ -135,6 +140,19 @@ theorem mem_unitsPrincipal_one_iff_residue {u : ℤ_[p]ˣ} :
     ← PadicInt.maximalIdeal_eq_span_p, ← IsLocalRing.residue_eq_zero_iff, map_sub, map_one,
     sub_eq_zero]
 
+/-- **The principal unit of level `f ≠ 0` with a prescribed value**: for `v ≡ 1 mod p ^ f`, the
+unit `v` of `ℤ_p`, as an element of `U^(f)`. -/
+noncomputable def unitsPrincipalMk {f : ℕ} (hf : f ≠ 0) {v : ℤ_[p]}
+    (hv : (p : ℤ_[p]) ^ f ∣ v - 1) : unitsPrincipal p f :=
+  ⟨(PadicInt.isUnit_one_add_of_dvd ((dvd_pow_self _ hf).trans hv)).unit, by
+    rw [mem_unitsPrincipal_iff, IsUnit.unit_spec, add_sub_cancel_left]
+    exact hv⟩
+
+@[simp]
+theorem coe_unitsPrincipalMk {f : ℕ} (hf : f ≠ 0) {v : ℤ_[p]} (hv : (p : ℤ_[p]) ^ f ∣ v - 1) :
+    ((unitsPrincipalMk hf hv : ℤ_[p]ˣ) : ℤ_[p]) = v := by
+  rw [unitsPrincipalMk, Subgroup.coe_mk, IsUnit.unit_spec, add_sub_cancel]
+
 variable (p) in
 /-- The principal unit group `1 + pℤ_p` is the kernel of reduction on units. -/
 theorem unitsPrincipal_one_eq_ker_unitsMap_residue :
@@ -181,6 +199,10 @@ group. -/
 theorem isClosed_unitsPrincipal (f : ℕ) : IsClosed (unitsPrincipal p f : Set ℤ_[p]ˣ) := by
   rw [unitsPrincipal, MonoidHom.coe_ker]
   exact isClosed_singleton.preimage ((PadicInt.continuous_toZModPow f).units_map _)
+
+/-- The principal unit groups are compact, being closed in the compact group `ℤ_pˣ`. -/
+instance compactSpace_unitsPrincipal (f : ℕ) : CompactSpace (unitsPrincipal p f) :=
+  isCompact_iff_compactSpace.mp (isClosed_unitsPrincipal p f).isCompact
 
 variable (p) in
 /-- The principal unit groups have trivial intersection: `U^(∞) = {1}`. -/
@@ -263,6 +285,13 @@ theorem neg_one_mem_unitsPrincipal_two_iff {f : ℕ} :
     one_add_one_eq_two, dvd_neg,
     ← pow_dvd_pow_iff (by norm_num : (2 : ℤ_[2]) ≠ 0) PadicInt.p_nonunit (n := f) (m := 1),
     pow_one]
+
+/-- `-1 ∉ U^(f)` once `p ^ f > 2`: then `-1 ≢ 1 mod p ^ f`. -/
+theorem neg_one_notMem_unitsPrincipal {f : ℕ} (h : 2 < p ^ f) :
+    (-1 : ℤ_[p]ˣ) ∉ unitsPrincipal p f := by
+  have : Fact (2 < p ^ f) := ⟨h⟩
+  rw [mem_unitsPrincipal_iff_toZModPow, Units.val_neg, Units.val_one, map_neg, map_one]
+  exact ZMod.neg_one_ne_one
 
 /-- `U^(2) = 1 + 4ℤ_2` has index `2` in `ℤ_2ˣ` and does not contain `-1`, so a dyadic unit `u`
 lies outside `1 + 4ℤ_2` iff `-u` lies inside: `u ≡ 1` or `u ≡ -1 mod 4`, and not both. -/
@@ -414,6 +443,20 @@ theorem exists_mem_unitsPrincipal_and_notMem_succ_of_pos {f : ℕ} (hf : 0 < f) 
       pow_dvd_pow_iff (Nat.cast_ne_zero.mpr hp.out.ne_zero) PadicInt.p_nonunit]
     omega
 
+variable (p) in
+/-- Every principal unit group `U^(f)` is **infinite**: for each `k`, it contains a unit of exact
+level `f + k + 1`, and units of distinct exact levels are distinct. -/
+theorem infinite_unitsPrincipal (f : ℕ) : (unitsPrincipal p f : Set ℤ_[p]ˣ).Infinite := by
+  choose u hu hu' using fun k : ℕ ↦
+    exists_mem_unitsPrincipal_and_notMem_succ_of_pos p (by omega : 0 < f + k + 1)
+  refine Set.infinite_of_injective_forall_mem (f := u) (fun k k' hkk' ↦ ?_)
+    fun k ↦ unitsPrincipal_antitone p (by omega) (hu k)
+  by_contra hne
+  -- A unit of exact level `f + k' + 1 > f + k + 1` lies in `U^(f + k + 2)`, which `u k` does not.
+  rcases Nat.lt_or_gt_of_ne hne with h | h
+  · exact hu' k (hkk' ▸ unitsPrincipal_antitone p (by omega) (hu k'))
+  · exact hu' k' (hkk' ▸ unitsPrincipal_antitone p (by omega) (hu k))
+
 /-- The principal unit group `U^(f)` is **procyclic** for `f ≥ 1`, and `f ≥ 2` when `p = 2`:
 it is the closed subgroup generated by `1 + p ^ f`. -/
 theorem exists_topologicalClosure_zpowers_eq_unitsPrincipal {f : ℕ} (hf : 0 < f)
@@ -421,6 +464,21 @@ theorem exists_topologicalClosure_zpowers_eq_unitsPrincipal {f : ℕ} (hf : 0 < 
     ∃ u : ℤ_[p]ˣ, (Subgroup.zpowers u).topologicalClosure = unitsPrincipal p f := by
   obtain ⟨u, hu, hu'⟩ := exists_mem_unitsPrincipal_and_notMem_succ_of_pos p hf
   exact ⟨u, topologicalClosure_zpowers_eq_unitsPrincipal hf hf₂ hu hu'⟩
+
+/-- A principal unit `u ≠ 1` of level `f ≥ 1`, with `f ≥ 2` when `p = 2`, has infinite order. -/
+theorem not_isOfFinOrder_of_mem_unitsPrincipal {f : ℕ} (hf : 0 < f) (hf₂ : p = 2 → 2 ≤ f)
+    {u : ℤ_[p]ˣ} (hu : u ∈ unitsPrincipal p f) (hu1 : u ≠ 1) : ¬ IsOfFinOrder u := by
+  intro hfin
+  obtain ⟨g, hg, hg'⟩ := exists_mem_unitsPrincipal_and_notMem_succ hu1
+  have hfg : f ≤ g := by
+    by_contra h
+    exact hg' (unitsPrincipal_antitone p (by omega) hu)
+  have hclos := topologicalClosure_zpowers_eq_unitsPrincipal (by omega : 0 < g)
+    (fun h ↦ (hf₂ h).trans hfg) hg hg'
+  have : Finite (Subgroup.zpowers u) := hfin.finite_zpowers
+  rw [(Set.toFinite _).isClosed.subgroup_topologicalClosure_eq] at hclos
+  rw [hclos] at this
+  exact not_finite_iff_infinite.mpr (infinite_unitsPrincipal p g).to_subtype this
 
 /-! ### The subgroup of `p`-th powers -/
 
@@ -510,6 +568,20 @@ theorem exists_eq_unitsPrincipal_of_isClosed {f₀ : ℕ} (hf₀ : 0 < f₀) (hf
   rw [← topologicalClosure_zpowers_eq_unitsPrincipal (by omega)
     (fun h2 ↦ by have := hf₀₂ h2; omega) (hAle hbA) hb]
   exact Subgroup.topologicalClosure_minimal _ (Subgroup.zpowers_le.mpr hbA) hA
+
+/-- Every closed subgroup of `U^(f₀)` is **procyclic**, provided `f₀ ≥ 1`, and `f₀ ≥ 2` when
+`p = 2`: it is trivial or a principal unit group `U^(f)`, each topologically generated by one
+element. -/
+theorem exists_topologicalClosure_zpowers_eq_of_isClosed_of_le_unitsPrincipal {f₀ : ℕ}
+    (hf₀ : 0 < f₀) (hf₀₂ : p = 2 → 2 ≤ f₀) {A : Subgroup ℤ_[p]ˣ} (hA : IsClosed (A : Set ℤ_[p]ˣ))
+    (hle : A ≤ unitsPrincipal p f₀) :
+    ∃ u : ℤ_[p]ˣ, (Subgroup.zpowers u).topologicalClosure = A := by
+  rcases eq_or_ne A ⊥ with rfl | hA'
+  · refine ⟨1, SetLike.coe_injective ?_⟩
+    rw [Subgroup.zpowers_one_eq_bot, Subgroup.coe_topologicalClosure_bot, closure_singleton,
+      Subgroup.coe_bot]
+  · obtain ⟨f, hf, rfl⟩ := exists_eq_unitsPrincipal_of_isClosed hf₀ hf₀₂ hA hle hA'
+    exact exists_topologicalClosure_zpowers_eq_unitsPrincipal (by omega) fun h ↦ (hf₀₂ h).trans hf
 
 /-! ### The pro-`p` subgroups of `ℤ_pˣ` -/
 

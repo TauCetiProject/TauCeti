@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.Topology.Algebra.Group.DenseRange
 
 /-!
 # Open ideals of a Huber ring
@@ -16,6 +17,10 @@ can be much larger than the additive subgroup it is spanned by. What makes the i
 work is that an *ideal* of `A` containing the image of `Iⁿ` automatically contains its span
 `(I · A)ⁿ`. So an ideal of `A` is open exactly when it contains one of those powers, and since
 `I · A` is finitely generated that is the same as asking `I · A` to lie in its radical.
+
+The openness criteria require only separate continuity of addition. The small-coefficient and
+weighted-neighbourhood results require only separate continuity of multiplication, together with
+the chosen pair of definition.
 
 ## Main results
 
@@ -31,14 +36,23 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
 * `TauCeti.Huber.PairOfDefinition.isOpen_map_of_isOpen_map_extendedIdealOfDefinition`: a ring
   homomorphism that maps an ideal of definition to an open ideal maps every open ideal to an open
   ideal.
+  A variant supplies the target pair of definition from its Huber structure.
 * `TauCeti.Huber.PairOfDefinition.isOpen_span_mul`: the span of a pointwise product of sets is
   open when the two spans are.
 * `TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`: its `Finset` form with the two
   denominators adjoined — the admissibility half of Wedhorn Remark 7.30(5).
-* `TauCeti.Huber.PairOfDefinition.exists_forall_mem_idealImage_exists_sum_eq`: the sharpening of
-  those criteria that the valuation theory needs — if a finite set `T` spans an open ideal, then
-  a basic neighbourhood of zero consists of `T`-combinations whose *coefficients* lie in the
-  image of the ideal of definition, hence are topologically nilpotent.
+* `TauCeti.Huber.PairOfDefinition.exists_forall_mem_idealImage_exists_sum_eq`: if a finite set `T`
+  spans an ideal containing a neighbourhood of zero, then a basic neighbourhood of zero
+  consists of `T`-combinations whose *coefficients* lie in any prescribed basic neighbourhood.
+* `TauCeti.Huber.PairOfDefinition.addSubgroupClosure_pow_mul_mem_nhds`: for any subset `T`
+  whose span is a neighbourhood of zero, every `Tᵐ · U` generates a neighbourhood of zero when
+  `U` is one.
+* `TauCeti.Huber.isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical`: Lemma 6.6 in
+  Wedhorn's own form, with no pair of definition: an ideal of a Huber ring is open exactly when
+  its radical contains every topologically nilpotent element. For the span of a finite set this
+  is Wedhorn's Remark 7.30(1).
+* `TauCeti.Huber.isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime`: a prime ideal of a
+  Huber ring is open exactly when it contains every topologically nilpotent element.
 * `TauCeti.Huber.exists_finset_subset_isOpen_span`: every neighbourhood of zero of a Huber ring
   contains a finite set generating an open ideal.
 * `TauCeti.Huber.exists_isOpen_span_forall_sub_mem_of_denseRange`: along a continuous map with
@@ -46,6 +60,8 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
   within a neighbourhood of zero, by the image of a finite set that spans an open ideal.
 * `TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`: an ideal of a Tate ring is open exactly when it is
   the whole ring.
+* `TauCeti.Huber.IsTateRing.isOpen_map_of_isOpen`: every ring homomorphism from a Tate ring maps
+  open ideals to open ideals.
 
 ## Provenance
 
@@ -57,8 +73,11 @@ as `fg_extendedIdealOfDefinition` is, by `Ideal.FG.map`. Its
 `projects/AdicSpaces/Adic spaces/OpenIdeals.lean` is headed "We prove Lemma 6.6 … of
 [Wedhorn, *Adic Spaces*]" and reaches the radical criterion as
 `ideal_isOpen_iff_topologicalNilradical_le_radical`, phrased through the topological nilradical
-and hypothesising a finitely generated ideal of definition; the form below instead names the pair
-of definition and routes the whole lemma through `Ideal.map_pow`.
+and hypothesising a finitely generated ideal of definition. Here the pair-based form
+`PairOfDefinition.isOpen_iff_le_radical` names the pair of definition and routes the lemma through
+`Ideal.map_pow`; the intrinsic form `isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical`,
+which names no pair and is the counterpart of AINTLIB's statement, is derived from it via
+`isTopologicallyNilpotent_of_mem_idealOfDefinition`.
 
 The product lemmas below are independent of it in a stronger sense: AINTLIB's
 `ValuationSpectrum.HasRationalPresentation` (`projects/AdicSpaces/Adic spaces/RationalSubsets.lean`)
@@ -69,7 +88,7 @@ formalised there and nothing could be ported.
 
 ## References
 
-* [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemma 6.6 and Remark 7.30(5).
+* [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemmas 6.6 and 6.20 and Remark 7.30(1) and (5).
 * [AINTLIB](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`,
   `projects/AdicSpaces/Adic spaces/OpenIdeals.lean` and `HuberRings.lean`.
 -/
@@ -89,7 +108,7 @@ theorem extendedIdealOfDefinition_pow (P : PairOfDefinition A) (n : ℕ) :
   rw [P.coe_idealImage, ← Subring.coe_subtype, ← Ideal.map_span, Ideal.span_eq,
     P.extendedIdealOfDefinition_def, ← Ideal.map_pow]
 
-variable [IsTopologicalRing A]
+variable [SeparatelyContinuousAdd A]
 
 /-- Wedhorn Lemma 6.6: an ideal of a Huber ring is open exactly when it contains a power of the
 ideal `I · A` generated by an ideal of definition. -/
@@ -101,7 +120,8 @@ theorem isOpen_iff_exists_pow_le (P : PairOfDefinition A) (a : Ideal A) :
     exact ⟨n, by rw [P.extendedIdealOfDefinition_pow, Ideal.span_le]; exact hn⟩
   · rintro ⟨n, hn⟩
     rw [P.extendedIdealOfDefinition_pow, Ideal.span_le] at hn
-    exact AddSubgroup.isOpen_mono (H₂ := a.toAddSubgroup) hn (P.isOpen_idealImage n)
+    exact a.toAddSubgroup.isOpen_of_mem_nhds
+      (Filter.mem_of_superset (P.hasBasis_nhds_zero.mem_of_mem (i := n) trivial) hn)
 
 /-- Wedhorn Lemma 6.6, radical form: an ideal of a Huber ring is open exactly when its radical
 contains the ideal `I · A` generated by an ideal of definition. -/
@@ -122,11 +142,13 @@ theorem isOpen_mul (P : PairOfDefinition A) {a b : Ideal A} (ha : IsOpen (a : Se
   rw [pow_add]
   exact Ideal.mul_mono hn hm
 
+omit [SeparatelyContinuousAdd A] in
 /-- **A map taking an ideal of definition to an open ideal takes every open ideal to an open
 ideal.** This criterion transports openness of ideals along ring homomorphisms once it is known
 for one ideal of definition. -/
 theorem isOpen_map_of_isOpen_map_extendedIdealOfDefinition {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (Q : PairOfDefinition B)
+    [TopologicalSpace B] [SeparatelyContinuousAdd B] (P : PairOfDefinition A)
+    (Q : PairOfDefinition B)
     (f : A →+* B) (hP : IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B))
     {a : Ideal A} (ha : IsOpen (a : Set A)) : IsOpen (Ideal.map f a : Set B) := by
   have hpow : ∀ n : ℕ,
@@ -135,10 +157,25 @@ theorem isOpen_map_of_isOpen_map_extendedIdealOfDefinition {B : Type*} [CommRing
     induction n with
     | zero => simp
     | succ n ih => simpa [pow_succ] using Q.isOpen_mul ih hP
-  obtain ⟨n, hn⟩ := (P.isOpen_iff_exists_pow_le a).mp ha
-  apply Ideal.isOpen_of_isOpen_subideal (Ideal.map_mono hn)
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp (ha.mem_nhds a.zero_mem)
+  have hle : P.extendedIdealOfDefinition ^ n ≤ a := by
+    rwa [P.extendedIdealOfDefinition_pow, Ideal.span_le]
+  apply AddSubgroup.isOpen_mono
+    (H₁ := (Ideal.map f (P.extendedIdealOfDefinition ^ n)).toAddSubgroup)
+    (H₂ := (Ideal.map f a).toAddSubgroup) (Ideal.map_mono hle)
   rw [Ideal.map_pow]
   exact hpow n
+
+omit [SeparatelyContinuousAdd A] in
+/-- If the target is Huber, openness of the image of one ideal of definition implies
+openness of the image of every open ideal. -/
+theorem isOpen_map_of_isOpen_map_extendedIdealOfDefinition_of_isHuberRing
+    {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+    (P : PairOfDefinition A) (f : A →+* B)
+    (hP : IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B))
+    {a : Ideal A} (ha : IsOpen (a : Set A)) : IsOpen (Ideal.map f a : Set B) :=
+  (IsHuberRing.nonempty_pairOfDefinition (A := B)).elim fun Q ↦
+    P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition Q f hP ha
 
 open scoped Pointwise in
 /-- **A span over a pointwise product of sets is open** when the two factors' spans are, since
@@ -153,8 +190,7 @@ theorem isOpen_span_mul (P : PairOfDefinition A) {S T : Set A}
 
 open scoped Classical Pointwise in
 /-- **The numerator set of an intersection of rational subsets spans an open ideal.** Adjoining
-each denominator only enlarges a span, so this is `isOpen_span_mul` after two applications of
-Mathlib's `Ideal.isOpen_of_isOpen_subideal`. It is the admissibility half of Wedhorn
+each denominator only enlarges a span. It is the admissibility half of Wedhorn
 Remark 7.30(5): the set identity
 `TauCeti.ValuationSpectrum.rationalSubset_inter` presents the intersection with numerators
 `insert s₁ T₁ * insert s₂ T₂`, and a rational subset is one whose numerator ideal is open. -/
@@ -163,47 +199,54 @@ theorem isOpen_span_insert_mul_insert (P : PairOfDefinition A) {T₁ T₂ : Fins
     (hT₂ : IsOpen (Ideal.span (T₂ : Set A) : Set A)) :
     IsOpen (Ideal.span ((insert s₁ T₁ * insert s₂ T₂ : Finset A) : Set A) : Set A) := by
   rw [Finset.coe_mul]
-  exact P.isOpen_span_mul (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (by simp)) hT₁)
-    (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (by simp)) hT₂)
+  apply P.isOpen_span_mul
+  · exact AddSubgroup.isOpen_mono
+      (H₁ := (Ideal.span (T₁ : Set A)).toAddSubgroup)
+      (H₂ := (Ideal.span ((insert s₁ T₁ : Finset A) : Set A)).toAddSubgroup)
+      (Ideal.span_mono (by simp)) hT₁
+  · exact AddSubgroup.isOpen_mono
+      (H₁ := (Ideal.span (T₂ : Set A)).toAddSubgroup)
+      (H₂ := (Ideal.span ((insert s₂ T₂ : Finset A) : Set A)).toAddSubgroup)
+      (Ideal.span_mono (by simp)) hT₂
 
-/-- **An open numerator ideal swallows a whole neighbourhood of zero with coefficients that are
-themselves topologically nilpotent.** If the ideal generated by a finite set `T` is open, then
-some basic neighbourhood `Iⁿ` of zero consists of combinations `∑ t ∈ T, t * w t` whose
-coefficients `w t` lie in the image of the ideal of definition itself.
+omit [SeparatelyContinuousAdd A] in
+variable [SeparatelyContinuousMul A] in
+open scoped Topology in
+/-- **A numerator ideal containing a neighbourhood of zero admits arbitrarily small
+coefficients.** If the ideal generated by a finite set `T` is a neighbourhood of zero, then
+for each `r`, some basic neighbourhood `Iⁿ` of zero consists of combinations
+`∑ t ∈ T, t * w t` whose coefficients `w t` lie in the image of `Iʳ`.
 
 This sharpens `TauCeti.Huber.PairOfDefinition.isOpen_iff_exists_pow_le`, which only places `Iⁿ`
 inside the ideal `T · A` and so offers coefficients in `A` about which nothing is known. The
-sharpening is what a valuation-theoretic estimate needs: over a point of the adic spectrum a
+case `r = 1` is what a valuation-theoretic estimate needs: over a point of the adic spectrum a
 coefficient in `A` carries no bound at all, whereas one in `I` has value `< 1` (an element of `I`
 is topologically nilpotent). Thus the resulting combination is strictly dominated by any chosen
 nonzero common upper bound for the values `v t`, such as a rational subset's denominator. -/
 theorem exists_forall_mem_idealImage_exists_sum_eq (P : PairOfDefinition A) (T : Finset A)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    (hT : (Ideal.span (T : Set A) : Set A) ∈ 𝓝 (0 : A)) (r : ℕ) :
     ∃ n : ℕ, ∀ a ∈ P.idealImage n, ∃ w : A → A,
-      (∀ t ∈ T, w t ∈ P.idealImage 1) ∧ ∑ t ∈ T, t * w t = a := by
+      (∀ t ∈ T, w t ∈ P.idealImage r) ∧ ∑ t ∈ T, t * w t = a := by
   classical
-  obtain ⟨m, hm⟩ := (P.isOpen_iff_exists_pow_le _).mp hT
+  obtain ⟨m, -, hm⟩ := P.hasBasis_nhds_zero.mem_iff.mp hT
   obtain ⟨G, hG⟩ := P.fg_idealOfDefinition.pow (n := m)
   -- Each generator of `Iᵐ` is a `T`-combination, with coefficients `d z` in `A`.
-  have hgen : ∀ z : P.ringOfDefinition, ∃ d : A → A, z ∈ G → ∑ t ∈ T, t * d t = (z : A) := by
-    intro z
-    by_cases hz : z ∈ G
-    · have hz' : (z : A) ∈ Ideal.span (T : Set A) * (⊤ : Ideal A) := by
-        rw [Ideal.mul_top]
-        refine hm ?_
-        rw [P.extendedIdealOfDefinition_pow]
-        exact Ideal.subset_span ((P.mem_idealImage m).mpr ⟨z, hG ▸ Ideal.subset_span hz, rfl⟩)
-      obtain ⟨d, -, hd⟩ := exists_sum_eq_of_mem_span_mul T (⊤ : Ideal A) hz'
-      exact ⟨d, fun _ ↦ hd⟩
-    · exact ⟨0, fun h ↦ absurd h hz⟩
-  choose d hd using hgen
-  -- Each coefficient carries a high enough power of `I` back into `I`.
+  have hgen : ∀ z ∈ G, ∃ d : A → A, ∑ t ∈ T, t * d t = (z : A) := by
+    intro z hz
+    have hz' : (z : A) ∈ Submodule.span A (T : Set A) := by
+      rw [Ideal.submodule_span_eq]
+      exact hm ((P.mem_idealImage m).mpr ⟨z, hG ▸ Ideal.subset_span hz, rfl⟩)
+    obtain ⟨d, -, hd⟩ := Submodule.mem_span_finset.mp hz'
+    exact ⟨d, by simpa only [smul_eq_mul, mul_comm] using hd⟩
+  choose! d hd using hgen
+  -- Each coefficient carries a high enough power of `I` back into `Iʳ`.
   have habs : ∀ (z : P.ringOfDefinition) (t : A), ∃ N : ℕ,
-      ∀ x ∈ P.idealImage N, d z t * x ∈ P.idealImage 1 := by
+      ∀ x ∈ P.idealImage N, d z t * x ∈ P.idealImage r := by
     intro z t
-    have h0 : (0 : A) ∈ (d z t * ·) ⁻¹' (P.idealImage 1 : Set A) := by simp
+    have hr : (P.idealImage r : Set A) ∈ 𝓝 (d z t * 0) := by
+      simpa only [mul_zero] using P.hasBasis_nhds_zero.mem_of_mem (i := r) trivial
     obtain ⟨N, -, hN⟩ := P.hasBasis_nhds_zero.mem_iff.mp
-      (((P.isOpen_idealImage 1).preimage (continuous_const_mul (d z t))).mem_nhds h0)
+      ((continuous_const_mul (d z t)).continuousAt.preimage_mem_nhds hr)
     exact ⟨N, fun x hx ↦ hN hx⟩
   choose N hN using habs
   set K : ℕ := G.sup fun z ↦ T.sup (N z)
@@ -229,6 +272,47 @@ theorem exists_forall_mem_idealImage_exists_sum_eq (P : PairOfDefinition A) (T :
       _ = ∑ z ∈ G, (z : A) * (c z : A) := Finset.sum_congr rfl hz
       _ = ((∑ z ∈ G, z * c z : P.ringOfDefinition) : A) := by push_cast; rfl
       _ = (y : A) := by rw [hsum]
+
+omit [SeparatelyContinuousAdd A] in
+variable [SeparatelyContinuousMul A] in
+open scoped Topology Pointwise in
+/-- **A generalization of Wedhorn's Lemma 6.20**: if the ideal generated by a subset `T` is a
+neighbourhood of zero, then the additive subgroup generated by `Tᵐ · U` is a neighbourhood of
+zero for every natural exponent `m` and every neighbourhood `U` of zero. Wedhorn states the
+result for an open numerator ideal, positive exponents and open additive subgroups `U`; here
+the numerator ideal need only be a neighbourhood of zero, `m` may be zero and `U` may be any
+neighbourhood of zero. No finiteness or boundedness hypothesis on `T` is needed.
+
+This is the admissibility condition for weighted restricted power series: a numerator ideal
+that is a neighbourhood of zero controls multiplication of arbitrarily small neighbourhoods
+by every power of its weights.
+-/
+theorem addSubgroupClosure_pow_mul_mem_nhds (P : PairOfDefinition A) {T U : Set A}
+    (hT : (Ideal.span T : Set A) ∈ 𝓝 (0 : A)) (m : ℕ) (hU : U ∈ 𝓝 (0 : A)) :
+    (AddSubgroup.closure (T ^ m * U) : Set A) ∈ 𝓝 (0 : A) := by
+  classical
+  -- A finite part of `Tᵐ` already spans a neighbourhood of zero, because a power of `I · A`
+  -- inside that span is finitely generated.
+  obtain ⟨k, -, hk⟩ := P.hasBasis_nhds_zero.mem_iff.mp hT
+  have hn : P.extendedIdealOfDefinition ^ (k * m) ≤ Ideal.span (T ^ m) := by
+    rw [pow_mul, ← Ideal.submodule_span_eq, ← Submodule.span_pow,
+      Ideal.submodule_span_eq]
+    exact pow_le_pow_left' (by rwa [P.extendedIdealOfDefinition_pow, Ideal.span_le]) m
+  set n := k * m
+  obtain ⟨G, hG⟩ := P.fg_extendedIdealOfDefinition.pow (n := n)
+  obtain ⟨F, hFT, hGF⟩ := Submodule.subset_span_finite_of_subset_span
+    (R := A) (s := T ^ m) (t := G) (fun x hx ↦ hn (hG ▸ Ideal.subset_span hx))
+  have hF : (Ideal.span (F : Set A) : Set A) ∈ 𝓝 (0 : A) := by
+    apply Filter.mem_of_superset (P.hasBasis_nhds_zero.mem_of_mem (i := n) trivial)
+    exact (Ideal.subset_span.trans ((P.extendedIdealOfDefinition_pow n).symm.le.trans
+      (hG ▸ Ideal.span_le.mpr hGF)))
+  obtain ⟨r, -, hr⟩ := P.hasBasis_nhds_zero.mem_iff.mp hU
+  obtain ⟨N, hN⟩ := P.exists_forall_mem_idealImage_exists_sum_eq F hF r
+  refine Filter.mem_of_superset (P.hasBasis_nhds_zero.mem_of_mem (i := N) trivial) ?_
+  intro a ha
+  obtain ⟨w, hw, hwa⟩ := hN a ha
+  rw [← hwa]
+  exact sum_mem fun t ht ↦ AddSubgroup.subset_closure ⟨t, hFT ht, w t, hr (hw t ht), rfl⟩
 
 end PairOfDefinition
 
@@ -259,25 +343,40 @@ Along a continuous `φ : A → B` with dense image out of a Huber ring `A`, a fi
 finite set of `A` that generates an open ideal, and an element `s` of `B` by the image of an
 element of `A`. The open-ideal condition is what makes the approximating data a presentation of a
 rational subset of `Spa(A, A⁺)`, rather than merely a finite set and a denominator. -/
-theorem exists_isOpen_span_forall_sub_mem_of_denseRange {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing A] {φ : A →+* B}
+theorem exists_isOpen_span_forall_sub_mem_of_denseRange {B : Type*} [NonAssocRing B]
+    [TopologicalSpace B] [IsTopologicalAddGroup B] [IsHuberRing A] {φ : A →+* B}
     (hφc : Continuous φ) (hφ : DenseRange φ) {V : Set B} (hV : V ∈ 𝓝 0) {T : Finset B}
     (hT : 0 ∈ T) (s : B) :
     ∃ (T' : Finset A) (s' : A), IsOpen (Ideal.span (T' : Set A) : Set A) ∧
       (∀ t ∈ T, ∃ u ∈ T'.image φ, t - u ∈ V) ∧ (∀ u ∈ T'.image φ, ∃ t ∈ T, u - t ∈ V) ∧
       s - φ s' ∈ V := by
-  -- `G ⊆ φ⁻¹(V)` generates an open ideal, and `φ (a b)` lies within `V ∩ -V` of each `b : B`
   obtain ⟨G, hGV, hGopen⟩ := exists_finset_subset_isOpen_span (V := φ ⁻¹' V)
     (hφc.continuousAt.preimage_mem_nhds (by rwa [map_zero]))
-  have happrox : ∀ b : B, ∃ x : A, φ x - b ∈ V ∧ b - φ x ∈ V := fun b ↦ by
-    simpa using mem_closure_iff_nhds_zero.mp (hφ b) _ (Filter.inter_mem hV (neg_mem_nhds_zero B hV))
-  choose a ha ha' using happrox
-  refine ⟨T.image a ∪ G, a s, Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (by simp)) hGopen,
-    fun t ht ↦ ⟨φ (a t), by grind, ha' t⟩, fun u hu ↦ ?_, ha' s⟩
-  simp only [Finset.mem_image, Finset.mem_union] at hu
-  -- the elements of `φ(G)` lie in `V`, so they are close to `0 ∈ T`
-  obtain ⟨x, ⟨t, ht, rfl⟩ | hx, rfl⟩ := hu
-  exacts [⟨t, ht, ha t⟩, ⟨0, hT, by simpa using hGV hx⟩]
+  obtain ⟨T', s', hGT', hTT', hT'T, hs'⟩ :=
+    exists_finset_superset_forall_sub_mem_of_denseRange hφ hV hT G (fun x hx ↦ hGV hx) s
+  exact ⟨T', s', Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono hGT') hGopen,
+    hTT', hT'T, hs'⟩
+
+/-- **Wedhorn Lemma 6.6**, in his intrinsic form: an ideal `a` of a Huber ring is open exactly when
+its radical contains the ideal generated by the topologically nilpotent elements. Unlike
+`TauCeti.Huber.PairOfDefinition.isOpen_iff_le_radical`, no pair of definition is chosen. Applied to
+the span of a finite set this is Wedhorn's Remark 7.30(1). -/
+theorem isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical [IsHuberRing A] {a : Ideal A} :
+    IsOpen (a : Set A) ↔ Ideal.span {x : A | IsTopologicallyNilpotent x} ≤ a.radical := by
+  refine ⟨fun ha ↦ Ideal.span_le.mpr fun x hx ↦ ?_, fun h ↦ ?_⟩
+  · exact hx.exists_pow_mem_of_mem_nhds (ha.mem_nhds a.zero_mem)
+  · obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+    refine (P.isOpen_iff_le_radical a).mpr (le_trans ?_ h)
+    rw [P.extendedIdealOfDefinition_def, Ideal.map_le_iff_le_comap]
+    exact fun x hx ↦ Ideal.subset_span (P.isTopologicallyNilpotent_of_mem_idealOfDefinition hx)
+
+/-- **The open prime ideals of a Huber ring** are those containing every topologically nilpotent
+element: in Wedhorn's notation, the open points of `Spec A` form `V(A°°)` (the sentence after
+Lemma 6.6). -/
+theorem isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime [IsHuberRing A] {p : Ideal A}
+    [p.IsPrime] : IsOpen (p : Set A) ↔ {x : A | IsTopologicallyNilpotent x} ⊆ p := by
+  rw [isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical, Ideal.IsPrime.radical ‹_›,
+    Ideal.span_le]
 
 end IsHuberRing
 
@@ -291,6 +390,13 @@ theorem IsTateRing.eq_top_of_isOpen [IsTateRing A] {J : Ideal A}
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨n, hn⟩ := hϖ.isTopologicallyNilpotent.exists_pow_mem_of_mem_nhds (hJ.mem_nhds J.zero_mem)
   exact Ideal.eq_top_of_isUnit_mem J hn (hϖ.isUnit.pow n)
+
+/-- A ring homomorphism from a Tate ring sends every open ideal to an open ideal. -/
+theorem IsTateRing.isOpen_map_of_isOpen [IsTateRing A] {B : Type*} [Semiring B]
+    [TopologicalSpace B] (f : A →+* B) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
+    IsOpen (Ideal.map f J : Set B) := by
+  rw [IsTateRing.eq_top_of_isOpen hJ, Ideal.map_top, Submodule.top_coe]
+  exact isOpen_univ
 
 /-- In a Tate ring, an ideal is open if and only if it is the whole ring `⊤`. -/
 @[simp]
@@ -308,14 +414,9 @@ theorem IsTateRing.not_isOpen_of_isMaximal [IsTateRing A] {𝔪 : Ideal A} (h�
 /-- **Requiring every maximal ideal to be open forces a Tate ring to be zero**, since a nonzero
 ring has a maximal ideal and `IsTateRing.not_isOpen_of_isMaximal` says that one cannot be open.
 
-Worth naming because that hypothesis is easy to write down and impossible to satisfy. Wedhorn's
-Proposition 7.52(2) carries it, and the statements that inherit it — among them
-`TauCeti.ValuationSpectrum.isUnit_of_forall_not_vle_zero` — are therefore vacuous on exactly the
-affinoid rings they are meant for, since those are Tate.
-
-Note the quantifier is doing real work: over the zero ring there is no maximal ideal, so `hmax`
-holds and the conclusion holds too. Dropping it to a single maximal ideal would give a statement
-whose own hypotheses are contradictory. -/
+Thus such a hypothesis excludes every nonzero Tate ring, including Tate affinoid rings. General
+Huber rings can have open maximal ideals. Over the zero ring there is no maximal ideal, so the
+hypothesis and conclusion both hold. -/
 theorem IsTateRing.subsingleton_of_forall_isMaximal_isOpen [IsTateRing A]
     (hmax : ∀ 𝔪 : Ideal A, 𝔪.IsMaximal → IsOpen (𝔪 : Set A)) : Subsingleton A := by
   rw [← not_nontrivial_iff_subsingleton]

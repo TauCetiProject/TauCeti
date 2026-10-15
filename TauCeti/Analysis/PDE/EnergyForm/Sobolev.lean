@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Basic
 public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Symmetry
 public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # The divergence-form energy form on `H¹(Ω)`, and Gårding's inequality
@@ -91,8 +92,12 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 
 * `TauCeti.PDE.jetField`: the value-gradient jet field of a Sobolev function.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
+* `TauCeti.PDE.aestronglyMeasurable_energyFormH1`: for coefficients jointly measurable in a
+  parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.energyFormH1_const_eq_setIntegral`: the energy form of a constant principal
   coefficient with no lower-order terms is the integral of `⟨A ∇u, ∇v⟩`.
+* `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
+  constant does not change the form.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
@@ -109,6 +114,8 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self`: Gårding's inequality on `H¹(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm`: the equivalent roadmap form
   with an `H¹` norm and a negative `L²` term.
+* `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm_of_norm_le`: the same form
+  with no sign condition on the mass coefficient, only a bound `‖c‖ ≤ γ`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_of_mass_lower_bound`: the bound
   retaining an arbitrary mass floor `δ` with the half split.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_of_mass_lower_bound_with_parameter`:
@@ -151,7 +158,7 @@ open MeasureTheory Set TopologicalSpace
 section JetField
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- The **value-gradient jet field** `x ↦ (u x, ∇u x)` of a first-order Sobolev function.
@@ -164,7 +171,6 @@ Its application theorem exposes the componentwise fact needed downstream. -/
 def jetField (u : W1p mu Omega p) : E → ℝ × E :=
   fun x => (W1p.value u x, W1p.gradient u x)
 
-omit [FiniteDimensional ℝ E] in
 /-- The value-gradient jet field evaluated at a point. -/
 @[simp]
 theorem jetField_apply (u : W1p mu Omega p) (x : E) :
@@ -173,7 +179,6 @@ theorem jetField_apply (u : W1p mu Omega p) (x : E) :
     unfold jetField
     rfl
 
-omit [FiniteDimensional ℝ E] in
 private theorem jetField_zero_ae :
     jetField (0 : W1p mu Omega p) =ᵐ[mu.restrict Omega] 0 := by
   have hval : W1p.value (0 : W1p mu Omega p) = 0 := by
@@ -187,7 +192,6 @@ private theorem jetField_zero_ae :
   rw [jetField_apply, hval, hgrad]
   exact Prod.ext hx hy
 
-omit [FiniteDimensional ℝ E] in
 private theorem jetField_add_ae (u v : W1p mu Omega p) :
     jetField (u + v) =ᵐ[mu.restrict Omega] fun x => jetField u x + jetField v x := by
   have hval : W1p.value (u + v) = W1p.value u + W1p.value v := by
@@ -199,7 +203,6 @@ private theorem jetField_add_ae (u v : W1p mu Omega p) :
   simp only [jetField_apply, hval, hgrad]
   exact Prod.ext hx hy
 
-omit [FiniteDimensional ℝ E] in
 private theorem jetField_smul_ae (r : ℝ) (u : W1p mu Omega p) :
     jetField (r • u) =ᵐ[mu.restrict Omega] fun x => r • jetField u x := by
   have hval : W1p.value (r • u) = r • W1p.value u := by
@@ -210,7 +213,6 @@ private theorem jetField_smul_ae (r : ℝ) (u : W1p mu Omega p) :
   simp only [jetField_apply, hval, hgrad]
   exact Prod.ext hx hy
 
-omit [FiniteDimensional ℝ E] in
 /-- The jet field of a Sobolev function belongs to `Lᵖ(Ω)`: both of its components do, by the
 construction of `W^{1,p}(Ω)`. -/
 theorem memLp_jetField (u : W1p mu Omega p) : MemLp (jetField u) p (mu.restrict Omega) :=
@@ -218,18 +220,57 @@ theorem memLp_jetField (u : W1p mu Omega p) : MemLp (jetField u) p (mu.restrict 
 
 end JetField
 
-section Domain
-
-variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-  {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-  {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
-  {lam Lam beta gamma P : ℝ}
-
-omit [Fintype ι] [mu.IsAddHaarMeasure] in
 private theorem ae_mem_restrict {alpha : Type*} [TopologicalSpace alpha] [MeasurableSpace alpha]
     [OpensMeasurableSpace alpha] {mu : Measure alpha} {Omega : Opens alpha} :
     ∀ᵐ x ∂mu.restrict (Omega : Set alpha), x ∈ (Omega : Set alpha) :=
   ae_restrict_mem Omega.isOpen.measurableSet
+
+section Domain
+
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+  {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+  {lam Lam beta gamma P : ℝ}
+
+/-- Bounded measurable coefficients define an essentially bounded field of pointwise energy
+forms. Only the displayed upper bound on the principal part is needed; ellipticity is not. -/
+theorem memLp_energyIntegrand_of_bounds
+    (hLam : 0 ≤ Lam) (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+      ∀ eta xi : EuclideanSpace ℝ ι,
+        |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) := by
+  refine memLp_top_of_bound (f := fun x => energyIntegrand (a x) (b x) (c x))
+    (aestronglyMeasurable_energyIntegrand ha hb hc) (Lam + beta + gamma) ?_
+  exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
+    opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
+
+/-- Subtracting a constant from the mass coefficient preserves essential boundedness of the
+pointwise energy forms. -/
+theorem memLp_energyIntegrand_mass_sub_const
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (kappa : ℝ) :
+    MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x - kappa)) ⊤ (mu.restrict Omega) := by
+  let : NormedAddCommGroup
+      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
+  have hconst :
+      MemLp (fun _ : EuclideanSpace ℝ ι ↦ energyIntegrand (0 : Matrix ι ι ℝ) 0 kappa)
+        ⊤ (mu.restrict Omega) :=
+    memLp_top_const
+      (E := (ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ)
+      (μ := mu.restrict Omega) (energyIntegrand (0 : Matrix ι ι ℝ) 0 kappa)
+  have hsub := hcoeff.sub hconst
+  apply MemLp.ae_eq (hf_Lp := hsub)
+  filter_upwards with x
+  simp only [Pi.sub_apply]
+  simpa only [sub_zero] using
+    (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
+
+variable [mu.IsAddHaarMeasure]
 
 /-- The continuous linear inclusion that forgets the `W^{1,2}` weak-derivative constraint and
 views a Sobolev function as its square-integrable value-gradient jet. -/
@@ -348,15 +389,55 @@ theorem energyFormH1_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x) ∂mu :=
   energyFormIntegral_def _ _ _ _ _ _
 
-/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
-matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
-over `Ω`. This is the shape the difference-quotient arguments of elliptic regularity work
-with. -/
-theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ => A) 0 0 u v
-      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
+/-- **Measurability of the energy form in a parameter.** If the coefficients of a
+divergence-form operator depend on a parameter `t` and are jointly a.e. strongly measurable in
+`(t, x)`, then for fixed `u, v ∈ H¹(Ω)` the energy form `t ↦ a_t(u, v)` is a.e. strongly
+measurable in `t`. -/
+theorem aestronglyMeasurable_energyFormH1 {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    {a : α → EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : α → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : α → EuclideanSpace ℝ ι → ℝ}
+    (ha : AEStronglyMeasurable (Function.uncurry a) (ν.prod (mu.restrict Omega)))
+    (hb : AEStronglyMeasurable (Function.uncurry b) (ν.prod (mu.restrict Omega)))
+    (hc : AEStronglyMeasurable (Function.uncurry c) (ν.prod (mu.restrict Omega)))
+    (u v : W1p mu Omega 2) :
+    AEStronglyMeasurable (fun t => energyFormH1 (a t) (b t) (c t) u v) ν := by
+  simp only [energyFormH1_def]
+  exact (aestronglyMeasurable_energyIntegrand_apply₂ ha hb hc
+    (memLp_jetField u).aestronglyMeasurable.comp_snd
+    (memLp_jetField v).aestronglyMeasurable.comp_snd).integral_prod_right'
+
+/-- Essential boundedness of the drift- and mass-free energy densities is invariant under
+translating the coefficients, by translation invariance of the Haar measure. -/
+theorem memLp_energyIntegrand_comp_add_right
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
+    (h : EuclideanSpace ℝ ι) :
+    MemLp (fun x => energyIntegrand (a (x + h)) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+  -- Name the normed structure on bilinear forms so that `MemLp` can be transported.
+  let : NormedAddCommGroup
+      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
+  simp only [Opens.coe_top, Measure.restrict_univ] at hcoeff ⊢
+  exact hcoeff.comp_measurePreserving (measurePreserving_add_right mu h)
+
+/-- **The drift- and mass-free energy form.** With no drift or mass term, the energy form on
+`H¹(Ω)` is the integral of `⟨a ∇u, ∇v⟩` over `Ω`. This is the shape the difference-quotient
+arguments of elliptic regularity work with. -/
+theorem energyFormH1_zero_zero_eq_setIntegral (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (u v : W1p mu Omega 2) :
+    energyFormH1 a 0 0 u v
+      = ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
   rw [energyFormH1_def]
   simp
+
+/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
+matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
+over `Ω`. -/
+theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => A) 0 0 u v
+      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu :=
+  energyFormH1_zero_zero_eq_setIntegral _ u v
 
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]
@@ -394,6 +475,24 @@ theorem energyFormH1_smul_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       energyFormIntegral_congr_ae (mu.restrict Omega) a b c (jetField (r • u)) (jetField v)
         .rfl .rfl .rfl (jetField_smul_ae r u) .rfl
     _ = r * energyFormH1 a b c u v := energyFormIntegral_smul_left _ _ _ _ _ _ r
+
+/-- The Sobolev energy form changes sign under negation of its left argument. -/
+@[simp]
+theorem energyFormH1_neg_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
+    (u v : W1p mu Omega 2) : energyFormH1 a b c (-u) v = -energyFormH1 a b c u v := by
+  rw [← neg_one_smul ℝ u, energyFormH1_smul_left, neg_one_mul]
+
+/-- **Shifting by a constant.** On a domain of finite measure, an energy form with no mass term
+does not see constants: `a(u + δ, v) = a(u, v)` for every constant `δ`, since adding a constant
+does not change the gradient, and the gradient is the only part of the left argument that the
+principal and drift terms involve. -/
+@[simp]
+theorem energyFormH1_add_const_left [IsFiniteMeasure (mu.restrict Omega)]
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    (u v : W1p mu Omega 2) (δ : ℝ) :
+    energyFormH1 a b 0 (u + W1p.const δ) v = energyFormH1 a b 0 u v := by
+  simp [energyFormH1_def, driftForm_apply, massForm_apply]
 
 /-- Homogeneity of the Sobolev energy form in its right argument. -/
 @[simp]
@@ -445,8 +544,6 @@ private theorem mul_norm_sq_le_of_gradient_sub_value_bound {A B q : ℝ}
   rw [div_mul_eq_mul_div, div_le_iff₀ hP, hnorm]
   nlinarith [mul_nonneg hAB (sub_nonneg.2 hsq)]
 
-variable [DecidableEq ι]
-
 /-- Shortcut seminormed group instance on `W^{1,2}(Ω)` to aid instance search for continuous
 bilinear forms. -/
 noncomputable local instance instSeminormedAddCommGroupW1p :
@@ -457,25 +554,6 @@ bilinear forms. -/
 noncomputable local instance instNormedSpaceW1p :
     NormedSpace ℝ (W1p mu Omega 2) := inferInstance
 
-omit [mu.IsAddHaarMeasure] [DecidableEq ι] in
-/-- Bounded measurable coefficients define an essentially bounded field of pointwise energy
-forms. Only the displayed upper bound on the principal part is needed; ellipticity is not. -/
-theorem memLp_energyIntegrand_of_bounds
-    (hLam : 0 ≤ Lam) (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hb : AEStronglyMeasurable b (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
-      ∀ eta xi : EuclideanSpace ℝ ι,
-        |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
-    MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) := by
-  refine memLp_top_of_bound (f := fun x => energyIntegrand (a x) (b x) (c x))
-    (aestronglyMeasurable_energyIntegrand ha hb hc) (Lam + beta + gamma) ?_
-  exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
-    opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
-
-omit [DecidableEq ι] in
 /-- The energy density of two Sobolev functions is integrable whenever its pointwise bilinear
 coefficient field is essentially bounded. -/
 theorem integrable_energyIntegrand_jetField
@@ -487,30 +565,7 @@ theorem integrable_energyIntegrand_jetField
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
-omit [mu.IsAddHaarMeasure] [DecidableEq ι] in
-/-- Subtracting a constant from the mass coefficient preserves essential boundedness of the
-pointwise energy forms. -/
-theorem memLp_energyIntegrand_mass_sub_const
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (kappa : ℝ) :
-    MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x - kappa)) ⊤ (mu.restrict Omega) := by
-  let : NormedAddCommGroup
-      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
-  have hconst :
-      MemLp (fun _ : EuclideanSpace ℝ ι ↦ energyIntegrand (0 : Matrix ι ι ℝ) 0 kappa)
-        ⊤ (mu.restrict Omega) :=
-    memLp_top_const
-      (E := (ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ)
-      (μ := mu.restrict Omega) (energyIntegrand (0 : Matrix ι ι ℝ) 0 kappa)
-  have hsub := hcoeff.sub hconst
-  apply MemLp.ae_eq (hf_Lp := hsub)
-  filter_upwards with x
-  simp only [Pi.sub_apply]
-  simpa only [sub_zero] using
-    (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
-
 open scoped InnerProductSpace in
-omit [DecidableEq ι] in
 /-- Subtracting a constant from the mass coefficient subtracts the corresponding `L²` mass pairing
 from the Sobolev energy form. No boundary or coercivity assumption is needed. -/
 theorem energyFormH1_mass_sub_const
@@ -536,7 +591,6 @@ def energyFormH1L
     W1p mu Omega 2 →L[ℝ] W1p mu Omega 2 →L[ℝ] ℝ :=
   (energyFormLpVariable (mu.restrict Omega) a b c hcoeff).bilinearComp jetLpL jetLpL
 
-omit [DecidableEq ι] in
 /-- The bundled Sobolev energy form evaluates to `energyFormH1`. -/
 @[simp]
 theorem energyFormH1L_apply
@@ -549,7 +603,6 @@ theorem energyFormH1L_apply
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
-omit [DecidableEq ι] in
 /-- Additivity of the Sobolev energy form in its left argument. -/
 theorem energyFormH1_add_left
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -558,7 +611,14 @@ theorem energyFormH1_add_left
   rw [← energyFormH1L_apply hcoeff]
   simp only [map_add, add_apply, energyFormH1L_apply]
 
-omit [DecidableEq ι] in
+/-- Subtractivity of the Sobolev energy form in its left argument. -/
+theorem energyFormH1_sub_left
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v w : W1p mu Omega 2) :
+    energyFormH1 a b c (u - w) v = energyFormH1 a b c u v - energyFormH1 a b c w v := by
+  rw [← energyFormH1L_apply hcoeff]
+  simp only [map_sub, sub_apply, energyFormH1L_apply]
+
 /-- Additivity of the Sobolev energy form in its right argument. -/
 theorem energyFormH1_add_right
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -567,7 +627,6 @@ theorem energyFormH1_add_right
   rw [← energyFormH1L_apply hcoeff, map_add]
   simp only [energyFormH1L_apply]
 
-omit [DecidableEq ι] in
 /-- Boundedness of the Sobolev energy form from upper bounds alone. No lower ellipticity
 hypothesis is needed. -/
 theorem norm_energyFormH1_le_of_bounds
@@ -592,7 +651,6 @@ theorem norm_energyFormH1_le_of_bounds
   rw [integral_const_mul]
   exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
 
-omit [DecidableEq ι] in
 /-- The operator norm of the bundled Sobolev energy form is controlled by the coefficient
 upper bounds. -/
 theorem norm_energyFormH1L_le_of_bounds
@@ -619,7 +677,6 @@ def energyFormH1L0
     (w1p0Submodule mu Omega 2).toSubmodule.subtypeL
     (w1p0Submodule mu Omega 2).toSubmodule.subtypeL
 
-omit [DecidableEq ι] in
 /-- The bundled `H¹₀` energy form evaluates to `energyFormH1` on the underlying Sobolev
 functions. -/
 @[simp]
@@ -628,10 +685,10 @@ theorem energyFormH1L0_apply
     (u v : W1p0 mu Omega 2) :
     energyFormH1L0 hcoeff u v =
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
-  rw [energyFormH1L0, ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
+  unfold energyFormH1L0
+  rw [ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
   simp only [Submodule.subtypeL_apply]
 
-omit [DecidableEq ι] in
 /-- **Symmetry of the bundled `H¹₀` energy form.**  Only symmetry of `energyFormH1` at the
 Sobolev functions underlying `H¹₀(Ω)` is needed; with no drift and an almost everywhere symmetric
 principal coefficient `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae` supplies it. -/
@@ -646,7 +703,6 @@ theorem energyFormH1L0_comm
   exact hsymm u v
 
 open scoped InnerProductSpace in
-omit [DecidableEq ι] in
 /-- A weak equation with an essentially bounded principal energy density and bounded
 lower-order coefficients admits an `L²` forcing for its principal part alone. Neither
 ellipticity nor a boundary condition on the solution is required. -/
@@ -715,6 +771,8 @@ theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → 
       rw [hx]
 
 namespace UniformlyEllipticOn
+
+variable [DecidableEq ι]
 
 /-- Uniform ellipticity does not depend on the decidable equality chosen for the coordinate
 index: it is a subsingleton, so this transports the ambient hypothesis to the classical choice
@@ -851,6 +909,25 @@ theorem garding_energyFormH1_self_norm
   rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
   convert garding_energyFormH1_self h ha hb hc hb_bound hc_bound hc_nonneg u using 1
   ring
+
+/-- **Gårding's inequality in `H¹`-norm form, without a sign condition on `c`.** For a mass
+coefficient bounded by `γ`, of either sign,
+
+`(λ/2)‖u‖²_{H¹} - (λ/2 + γ + β²/2λ)‖u‖²_{L²} ≤ a(u,u)`. -/
+theorem garding_energyFormH1_self_norm_of_norm_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) (u : W1p mu Omega 2) :
+    lam / 2 * ‖u‖ ^ 2 - (lam / 2 + gamma + beta ^ 2 / (2 * lam)) * ‖W1p.value u‖ ^ 2
+      ≤ energyFormH1 a b c u u := by
+  have key := h.garding_energyFormH1_self_of_mass_lower_bound (delta := -gamma) ha hb hc
+    hb_bound hc_bound
+    (fun x hx => neg_le_of_abs_le ((Real.norm_eq_abs _).symm.trans_le (hc_bound x hx))) u
+  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  linarith
 
 /-- A lower bound in the full Sobolev norm with constant `min (λ - ε) (δ - β²/(4ε))`.
 Positive coefficients give coercivity on all of `H¹(Ω)`, independently of the domain. -/
@@ -1011,7 +1088,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_slab
     (lam ^ 2 - beta ^ 2 * (t - s) ^ 2) / (2 * lam * ((t - s) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab (ENNReal.ofNat_ne_top) hst hslab hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hst hslab hu)
 
 /-- **An energy-form lower bound on `H¹₀(Ω)` for a domain inside a ball.** For
 `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` every `u ∈ W^{1,2}_0(Ω)` satisfies
@@ -1035,7 +1112,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_ball
     (lam ^ 2 - beta ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball (ENNReal.ofNat_ne_top) hball hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball hball hu)
 
 end UniformlyEllipticOn
 

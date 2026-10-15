@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.ScalarExtension
-public import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
 
-import TauCeti.Algebra.Bialgebra.TensorProduct
 import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
@@ -68,7 +66,7 @@ variable [AddCommMonoid V] [Module R V]
 
 It is a natural family of group homomorphisms from the convolution group of `A`-points to the
 linear automorphisms of `A ⊗[R] V`, for every commutative `R`-algebra `A`. -/
-noncomputable abbrev PointRepresentation :=
+abbrev PointRepresentation :=
   (pointsFunctor (R := R) (H := H) :
       CommAlgCat.{max u v w} R ⥤ GrpCat.{max u v w}) ⟶
     (GeneralLinear.scalarExtensionAutomorphismsFunctor (R := R) (V := V) :
@@ -134,8 +132,8 @@ theorem action_naturality (Theta : PointRepresentation (R := R) (H := H) (V := V
     Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id] at h'
   exact (ConcreteCategory.congr_hom h'.symm x)
 
-/-- Naturality determines the action of a transported point on the canonical copy of `V`. -/
-@[simp]
+/-- Naturality determines the action of a transported point on the elements `1 ⊗ v`. -/
+@[simp↓]
 theorem action_mapPoints_one_tmul
     (Theta : PointRepresentation (R := R) (H := H) (V := V))
     {A B : CommAlgCat.{max u v w} R} (phi : A ⟶ B) (x : points (H := H) A) (v : V) :
@@ -149,9 +147,8 @@ theorem action_mapPoints_one_tmul
 
 private noncomputable def rawPointAction (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) :
-    points (H := H) A ⟶ GeneralLinear.scalarExtensionAutomorphisms (V := V) A := by
-  letI : Comodule R H V := rho
-  exact GrpCat.ofHom <|
+    points (H := H) A ⟶ GeneralLinear.scalarExtensionAutomorphisms (V := V) A :=
+  GrpCat.ofHom <|
     (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[R] V)).symm.toMonoidHom.comp
       (Comodule.pointsAction V)
 
@@ -159,7 +156,6 @@ private noncomputable def rawPointAction (rho : Comodule R H V)
 private theorem rawPointAction_apply (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) (x : points (H := H) A) :
     rawPointAction rho A x =
-      let _ : Comodule R H V := rho
       (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[R] V)).symm
         (Comodule.pointsAction V x) := by
   rfl
@@ -168,7 +164,6 @@ private theorem rawPointAction_apply (rho : Comodule R H V)
 private theorem rawPointAction_val (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) (x : points (H := H) A) :
     (rawPointAction rho A x).val = Comodule.endOfPoint V x.ofConv := by
-  let : Comodule R H V := rho
   rw [rawPointAction_apply]
   exact Comodule.pointsAction_toLinearMap V x
 
@@ -182,16 +177,13 @@ private theorem rawPointAction_naturality (rho : Comodule R H V)
       (rawPointAction rho B (mapPoints (H := H) phi x))
   intro z
   rw [rawPointAction_val, rawPointAction_val]
-  let : Comodule R H V := rho
   have hscalar :
       GeneralLinear.scalarExtensionMap (V := V) phi =
         LinearMap.rTensor V phi.hom.toLinearMap := by
-    refine TensorProduct.ext' fun a v ↦ ?_
-    rw [GeneralLinear.scalarExtensionMap_tmul, LinearMap.rTensor_tmul]
-    rfl
+    rw [GeneralLinear.scalarExtensionMap_eq_map, LinearMap.rTensor_def]
   have hpoint :
       (mapPoints (H := H) phi x).ofConv = phi.hom.comp x.ofConv := by
-    rfl
+    rw [mapPoints_apply, ofConv_toConv]
   have h := DFunLike.congr_fun
     (Comodule.rTensor_comp_endOfPoint V phi.hom x.ofConv) z
   rw [hscalar, hpoint]
@@ -224,7 +216,6 @@ noncomputable def ofComodule (rho : Comodule R H V) :
     rw [← Category.assoc, hraw]
     simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
-@[simp]
 private theorem action_ofComodule (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) :
     (ofComodule rho).action A = rawPointAction rho A := by
@@ -239,7 +230,7 @@ private theorem action_ofComodule (rho : Comodule R H V)
   rw [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 /-- The action induced by a coaction, evaluated on a pure tensor. -/
-@[simp]
+@[simp↓]
 theorem ofComodule_action_tmul (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R)
     (x : points (H := H) A) (a : A) (v : V) :
@@ -248,7 +239,6 @@ theorem ofComodule_action_tmul (rho : Comodule R H V)
         (TensorProduct.map LinearMap.id x.ofConv.toLinearMap (rho.coact v)) := by
   rw [action_ofComodule]
   rw [rawPointAction_val]
-  let : Comodule R H V := rho
   simpa only [LinearMap.lTensor_def] using
     (Comodule.endOfPoint_tmul (R := R) (H := H) V x.ofConv a v)
 
@@ -257,11 +247,10 @@ comodule point-action endomorphism. -/
 theorem ofComodule_action_val_eq_endOfPoint (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) (x : points (H := H) A) :
     ((ofComodule rho).action A x).val = Comodule.endOfPoint V x.ofConv := by
-  refine TensorProduct.AlgebraTensorModule.ext fun a v ↦ ?_
-  rw [ofComodule_action_tmul, Comodule.endOfPoint_tmul, LinearMap.lTensor_def]
+  rw [action_ofComodule, rawPointAction_val]
 
 /-- At the universal point, the action induced by a coaction is the flipped coaction. -/
-@[simp]
+-- Not `@[simp]`: `ofComodule_action_tmul` already rewrites the left-hand side.
 theorem ofComodule_action_universal_one_tmul (rho : Comodule R H V) (v : V) :
     ((ofComodule rho).action (CommAlgCat.of R (ULift.{max u v w} H))
         (toConv ULift.algEquiv.symm.toAlgHom)).val (1 ⊗ₜ[R] v) =
@@ -316,6 +305,7 @@ private theorem mapPoints_universal {A : Type (max u v w)} [CommRing A] [Algebra
     mapPoints (H := H) (CommAlgCat.ofHom phi)
         (toConv ULift.algEquiv.symm.toAlgHom) =
       toConv (phi.comp ULift.algEquiv.symm.toAlgHom) := by
+  rw [mapPoints_apply, ofConv_toConv]
   rfl
 
 omit [AddCommMonoid V] [Module R V] in
@@ -391,19 +381,19 @@ private theorem recoveredCoaction_counit
   exact counit_rTensor_universalGeneratorDown Theta v
 
 private noncomputable abbrev includeLeftAlgHom : H →ₐ[R] H ⊗[R] H :=
-  (Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+  (Algebra.TensorProduct.includeLeft (R := R) (A := H) (B := H))
 
 private noncomputable abbrev includeRightAlgHom : H →ₐ[R] H ⊗[R] H :=
-  (Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+  (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H))
 
 private theorem includeRight_mul_includeLeft (a b : H) :
     includeRightAlgHom (R := R) (H := H) a *
         includeLeftAlgHom (R := R) (H := H) b =
       b ⊗ₜ[R] a := by
   have hleft : includeLeftAlgHom (R := R) (H := H) b = b ⊗ₜ[R] 1 :=
-    Bialgebra.TensorProduct.includeLeft_apply b
+    Algebra.TensorProduct.includeLeft_apply b
   have hright : includeRightAlgHom (R := R) (H := H) a = 1 ⊗ₜ[R] a :=
-    Bialgebra.TensorProduct.includeRight_apply a
+    Algebra.TensorProduct.includeRight_apply a
   rw [hleft, hright, Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_one]
 
 private noncomputable def liftedIncludeLeftAlgHom (_V : Type w) :
@@ -419,27 +409,6 @@ private noncomputable def liftedIncludeRightAlgHom (_V : Type w) :
 private noncomputable def liftTensorSquare :
     (H ⊗[R] H) ⊗[R] V ≃ₗ[R] ULift.{max u v w} (H ⊗[R] H) ⊗[R] V :=
   TensorProduct.congr ULift.algEquiv.symm.toLinearEquiv (LinearEquiv.refl R V)
-
-omit [AddCommMonoid V] [Module R V] in
-@[simp]
-private theorem ofHom_liftedIncludeLeft_apply (a : ULift.{max u v w} H) :
-    (CommAlgCat.ofHom (liftedIncludeLeftAlgHom (R := R) (H := H) V)).hom a =
-      liftedIncludeLeftAlgHom (R := R) (H := H) V a :=
-  rfl
-
-omit [AddCommMonoid V] [Module R V] in
-@[simp]
-private theorem ofHom_liftedIncludeRight_apply (a : ULift.{max u v w} H) :
-    (CommAlgCat.ofHom (liftedIncludeRightAlgHom (R := R) (H := H) V)).hom a =
-      liftedIncludeRightAlgHom (R := R) (H := H) V a :=
-  rfl
-
-omit [AddCommMonoid V] [Module R V] in
-@[simp]
-private theorem ofHom_liftedComul_apply (a : ULift.{max u v w} H) :
-    (CommAlgCat.ofHom (liftedComulAlgHom (R := R) (H := H) V)).hom a =
-      liftedComulAlgHom (R := R) (H := H) V a :=
-  rfl
 
 omit [AddCommMonoid V] [Module R V] in
 private theorem liftedComulPoint_eq_include_mul :
@@ -529,7 +498,7 @@ private theorem liftTensorSquare_iterated_tmul
       simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.comm_tmul,
         TensorProduct.assoc_tmul]
       rw [GeneralLinear.scalarExtensionMap_tmul]
-      rw [ofHom_liftedIncludeLeft_apply]
+      rw [CommAlgCat.hom_ofHom]
       simp only [liftTensorSquare, TensorProduct.congr_tmul]
       apply congrArg (fun c : ULift.{max u v w} (H ⊗[R] H) ↦ c ⊗ₜ[R] n)
       apply ULift.down_injective
@@ -571,7 +540,7 @@ private theorem recoveredCoaction_iterate_eq_include_actions
     | add z w hz hw => simpa only [map_add] using congrArg₂ (fun p q ↦ p + q) hz hw
     | tmul a n =>
         rw [GeneralLinear.scalarExtensionMap_tmul]
-        rw [ofHom_liftedIncludeRight_apply]
+        rw [CommAlgCat.hom_ofHom]
         rw [action_includeLeft_includeRight_tmul]
         simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.comm_tmul,
           LinearMap.rTensor_tmul, recoveredCoaction_apply, universalGeneratorDown_apply]
@@ -589,7 +558,7 @@ private theorem scalarExtensionMap_comul_eq_liftTensorSquare
   induction z using TensorProduct.inductionOn with
   | add z t hz ht => simpa only [map_add] using congrArg₂ (fun x y ↦ x + y) hz ht
   | tmul a n =>
-      rw [GeneralLinear.scalarExtensionMap_tmul, ofHom_liftedComul_apply,
+      rw [GeneralLinear.scalarExtensionMap_tmul, CommAlgCat.hom_ofHom,
         TensorProduct.map_tmul, LinearMap.rTensor_tmul]
       simp only [liftTensorSquare, TensorProduct.congr_tmul]
       rfl

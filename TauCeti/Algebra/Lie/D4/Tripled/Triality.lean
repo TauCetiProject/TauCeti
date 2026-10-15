@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.D4.Tripled.PointsFunctor
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
+import TauCeti.Algebra.Lie.D4.Tripled.Generation
 
 /-!
 # Triality on the tripled type-D4 carrier
@@ -25,10 +26,11 @@ tripled carrier through the numbered-symmetry construction on Kostant toral clos
 The resulting automorphism `TauCeti.D4Tripled.trialityAutomorphism` carries each numbered root
 subgroup to the subgroup numbered by triality, without changing its additive parameter, and
 carries the represented split torus to itself, relabelling its coordinates by the inverse of the
-diagram permutation: `weightTorus ≫ γ.hom = relabel σ⁻¹ ≫ weightTorus`, a distinction that
+diagram permutation: `weightTorus ≫ γ.asIso.hom = relabel σ⁻¹ ≫ weightTorus`, a distinction that
 matters for a permutation of order three. It has order dividing three. On matrix-valued points it
 is conjugation by the permutation matrix of `TauCeti.DynkinType.d4TripledTrialityPerm`, and that
-matrix is compatible with every change of value ring.
+matrix is compatible with every change of value ring. The action on the numbered root subgroups
+already determines it, since those subgroups generate the carrier.
 
 No reductivity, maximality of the represented torus, or identification of the carrier with the
 pinned simply connected group scheme of type `D₄` is asserted here.
@@ -38,6 +40,9 @@ pinned simply connected group scheme of type `D₄` is asserted here.
 * `TauCeti.D4Tripled.trialityAutomorphism`: the triality automorphism of the tripled carrier.
 * `TauCeti.D4Tripled.rootSubgroup_comp_trialityAutomorphism_hom`: its action on the numbered
   simple-root subgroups, `γ ∘ x_k = x_{σ k}`.
+* `TauCeti.D4Tripled.eq_trialityAutomorphism_hom_of_rootSubgroup` and
+  `TauCeti.D4Tripled.eq_trialityAutomorphism_of_rootSubgroup`: that action determines it, among
+  endomorphisms and among automorphisms of the carrier.
 * `TauCeti.D4Tripled.weightTorus_comp_trialityAutomorphism_hom`: its action on the split weight
   torus.
 * `TauCeti.D4Tripled.trialityAutomorphism_pow_three`,
@@ -53,7 +58,7 @@ pinned simply connected group scheme of type `D₄` is asserted here.
   scheme-valued points is conjugation by `trialityMatrix`.
 * `TauCeti.D4Tripled.trialityPoints_pow_three` and `TauCeti.D4Tripled.trialityPoints_symm_apply`:
   its pointwise order-three relation.
-* `TauCeti.D4Tripled.pointsMap_comp_trialityPoints`: its naturality in the value ring, and so its
+* `TauCeti.D4Tripled.map_comp_trialityPoints`: its naturality in the value ring, and so its
   commutation with every Frobenius map.
 
 ## References
@@ -141,16 +146,35 @@ noncomputable def trialityAutomorphism : Aut groupScheme :=
 by triality, without changing its additive parameter: `γ ∘ x_k = x_{σ k}`. -/
 @[reassoc (attr := simp)]
 theorem rootSubgroup_comp_trialityAutomorphism_hom (k : Fin 4 ⊕ Fin 4) :
-    rootSubgroup k ≫ trialityAutomorphism.hom = rootSubgroup (trialitySymmetry.rootPerm k) := by
+    rootSubgroup k ≫ trialityAutomorphism.asIso.hom =
+      rootSubgroup (trialitySymmetry.rootPerm k) := by
   rw [rootSubgroup_def, trialityAutomorphism, toralTrialityAutomorphism,
     kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom]
   exact (rootSubgroup_def (trialitySymmetry.rootPerm k)).symm
+
+/-- **Triality has exactly one realization on the carrier.** An endomorphism of the carrier
+carrying each numbered simple-root subgroup to the one at the triality image of its node, with
+the same additive parameter, is the triality automorphism. The numbered root subgroups generate
+the carrier, so these equations leave nothing free; in particular no condition on the represented
+weight torus is needed. -/
+theorem eq_trialityAutomorphism_hom_of_rootSubgroup (φ : groupScheme ⟶ groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ φ = rootSubgroup (trialitySymmetry.rootPerm k)) :
+    φ = trialityAutomorphism.asIso.hom :=
+  groupScheme_hom_ext_of_rootSubgroup φ _ fun k => by
+    rw [hroot k, rootSubgroup_comp_trialityAutomorphism_hom]
+
+/-- **The triality automorphism is the unique automorphism of the carrier realizing the
+three-cycle of the outer `D₄` nodes on the numbered simple-root subgroups.** -/
+theorem eq_trialityAutomorphism_of_rootSubgroup (γ : Aut groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ γ.asIso.hom = rootSubgroup (trialitySymmetry.rootPerm k)) :
+    γ = trialityAutomorphism :=
+  Aut.ext (Iso.ext (eq_trialityAutomorphism_hom_of_rootSubgroup γ.asIso.hom hroot))
 
 /-- The triality automorphism relabels the represented split weight torus by the inverse of the
 diagram permutation. -/
 @[reassoc (attr := simp)]
 theorem weightTorus_comp_trialityAutomorphism_hom :
-    weightTorus ≫ trialityAutomorphism.hom =
+    weightTorus ≫ trialityAutomorphism.asIso.hom =
       SplitTorus.relabel ℤ trialityPermD4⁻¹ ≫ weightTorus := by
   rw [weightTorus_def, trialityAutomorphism, toralTrialityAutomorphism,
     kostantWeightTorusToToral_comp_numberedSymmetryIso_hom]
@@ -168,25 +192,24 @@ theorem trialityAutomorphism_pow_three : trialityAutomorphism ^ 3 = 1 := by
 /-- Applying the triality automorphism three times is the identity on the tripled carrier. -/
 @[reassoc (attr := simp)]
 theorem trialityAutomorphism_hom_comp_self_comp_self :
-    trialityAutomorphism.hom ≫ trialityAutomorphism.hom ≫ trialityAutomorphism.hom =
+    trialityAutomorphism.asIso.hom ≫ trialityAutomorphism.asIso.hom ≫
+        trialityAutomorphism.asIso.hom =
       𝟙 groupScheme := by
   calc
-    trialityAutomorphism.hom ≫ trialityAutomorphism.hom ≫ trialityAutomorphism.hom =
-        trialityAutomorphism.hom ≫ (trialityAutomorphism.trans trialityAutomorphism).hom :=
-      congrArg (trialityAutomorphism.hom ≫ ·) (Iso.trans_hom _ _).symm
-    _ = (trialityAutomorphism.trans (trialityAutomorphism.trans trialityAutomorphism)).hom :=
-      (Iso.trans_hom _ _).symm
-    _ = (trialityAutomorphism * trialityAutomorphism * trialityAutomorphism).hom := by
-      rw [Aut.Aut_mul_def, Aut.Aut_mul_def]
-    _ = (trialityAutomorphism ^ 3).hom := by rw [pow_three']
-    _ = (1 : Aut groupScheme).hom := by rw [trialityAutomorphism_pow_three]
-    _ = 𝟙 groupScheme := Iso.refl_hom groupScheme
+    trialityAutomorphism.asIso.hom ≫ trialityAutomorphism.asIso.hom ≫
+          trialityAutomorphism.asIso.hom =
+        (trialityAutomorphism * trialityAutomorphism * trialityAutomorphism).asIso.hom := by
+      simp only [Aut.mul_asIso, Iso.trans_hom]
+    _ = (trialityAutomorphism ^ 3).asIso.hom := by rw [pow_three']
+    _ = (1 : Aut groupScheme).asIso.hom := by rw [trialityAutomorphism_pow_three]
+    _ = 𝟙 groupScheme := by rw [Aut.one_asIso, Iso.refl_hom]
 
 /-- The inverse leg of the triality automorphism is the square of its forward leg. -/
 @[simp]
 theorem trialityAutomorphism_inv :
-    trialityAutomorphism.inv = trialityAutomorphism.hom ≫ trialityAutomorphism.hom :=
-  ((Iso.hom_comp_eq_id trialityAutomorphism).mp
+    trialityAutomorphism.asIso.inv =
+      trialityAutomorphism.asIso.hom ≫ trialityAutomorphism.asIso.hom :=
+  ((Iso.hom_comp_eq_id trialityAutomorphism.asIso).mp
     trialityAutomorphism_hom_comp_self_comp_self).symm
 
 /-! ## Triality on matrix-valued points -/
@@ -310,7 +333,7 @@ theorem schemePointsMulEquiv_trialityAutomorphism_comp_carrierι
     (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶ groupScheme.X) :
     GeneralLinear.schemePointsMulEquiv 24 A
-        (p ≫ (trialityAutomorphism.hom ≫ carrierι).hom.hom) =
+        (p ≫ (trialityAutomorphism.asIso.hom ≫ carrierι).hom.hom) =
       trialityMatrix A *
           GeneralLinear.schemePointsMulEquiv 24 A (p ≫ carrierι.hom.hom) *
         (trialityMatrix A)⁻¹ := by
@@ -327,14 +350,15 @@ theorem schemePointsMulEquiv_trialityAutomorphism_comp_carrierι
 
 /-- **Triality on matrix-valued points is natural in the value ring**: it commutes with the map on
 points induced by any ring homomorphism, in particular with every Frobenius map of the carrier. -/
-theorem pointsMap_comp_trialityPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+theorem map_comp_trialityPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
     (f : A →+* B) :
-    (pointsMap f).comp (trialityPoints A).toMonoidHom =
-      (trialityPoints B).toMonoidHom.comp (pointsMap f) :=
+    ((pointsPresentation A).map (pointsPresentation B) f).comp (trialityPoints A).toMonoidHom =
+      (trialityPoints B).toMonoidHom.comp ((pointsPresentation A).map (pointsPresentation B) f) :=
   comp_kostantNumberedSymmetryPoints lattice.toAddSubgroup latticeBasis
     trialitySymmetry.moduleEquiv trialityModuleEquiv_mem_lattice_iff
     (points A) (map_points_conj_trialityMatrix A) (points B) (map_points_conj_trialityMatrix B) f
-    (pointsMap f) (coe_pointsMap f)
+    ((pointsPresentation A).map (pointsPresentation B) f)
+    ((pointsPresentation A).coe_map (pointsPresentation B) f)
 
 /-- **Triality on matrix-valued points has order dividing three.** -/
 @[simp]

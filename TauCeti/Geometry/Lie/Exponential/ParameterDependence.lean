@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Exponential.Basic
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # Parameter dependence of invariant integral curves

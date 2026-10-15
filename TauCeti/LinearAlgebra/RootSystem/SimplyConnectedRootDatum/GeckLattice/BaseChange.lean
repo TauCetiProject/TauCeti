@@ -40,8 +40,20 @@ reductive or that the represented weight torus is maximal.
   subgroup factored through the specialized carrier.
 * `TauCeti.DynkinType.geckWeightTorusToBaseChangeCoordinateMap`: the transported weight torus
   factored through the specialized carrier.
+* `TauCeti.DynkinType.geckGeneratorCoordinateAlgebra` and
+  `TauCeti.DynkinType.geckGeneratorCoordinateMap`: the transported numbered root subgroups and
+  weight torus as one family of coordinate maps into `GLₙ/A`.
+* `TauCeti.DynkinType.geckGeneratorCoordinateAlgebraBaseChangeIso`: the coordinate algebras of
+  that family over `K` are the scalar extensions of those over `k`.
+
+## Main results
+
 * `TauCeti.DynkinType.geckBaseChangeDefiningIdeal_le_commonKernel`: the transported carrier
   contains the subgroup generated after base change by those maps.
+* `TauCeti.DynkinType.pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap`:
+  on points, the factored root-subgroup map is the numbered Geck root-subgroup matrix.
+* `TauCeti.DynkinType.geckGeneratorCoordinateMap_baseChange`: the generator family over `K` is the
+  scalar extension of the family over `k`.
 
 ## References
 
@@ -49,10 +61,6 @@ reductive or that the represented weight torus is maximal.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * B. Conrad, *Reductive Group Schemes*, §1.
-
-This advances the base-change target in Layer 9 of the ReductiveGroups roadmap. The resulting
-specialized pinned carrier is an input to milestone L0, "pinned ambient groups", of the
-CFSGStatement roadmap.
 -/
 
 public section
@@ -287,6 +295,18 @@ noncomputable def geckRootSubgroupIntegralCoordinateMap
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i
 
+/-- The named integral Geck root-subgroup map is the generic Kostant toral factorization. -/
+theorem geckRootSubgroupIntegralCoordinateMap_def (i : Fin t.rank ⊕ Fin t.rank) :
+    t.geckRootSubgroupIntegralCoordinateMap ht i =
+      kostantRootSubgroupToralCoordinateMap
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i := by
+  rw [geckRootSubgroupIntegralCoordinateMap]
+  simp
+
 /-- The base change to `A` of a numbered integral Geck root-subgroup coordinate map, transported
 to the coordinate Hopf algebras constructed directly over `A`. -/
 noncomputable def geckRootSubgroupBaseChangeCoordinateMap
@@ -330,6 +350,33 @@ theorem mkQuotient_comp_geckRootSubgroupToBaseChangeCoordinateMap
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A i
+
+/-- The factored root-subgroup map sends an additive point to the numbered Geck root-subgroup
+matrix with the same parameter. -/
+-- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+@[simp↓]
+theorem pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap
+    (i : Fin t.rank ⊕ Fin t.rank) (B : CommAlgCat.{w} A)
+    (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
+    GeneralLinear.pointToGeneralLinear (t.geckDim ht)
+        (AlgHom.mapDomain
+          (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
+            (t.geckBaseChangeDefiningIdeal ht A)).hom
+          (WithConv.toConv
+            (q.ofConv.comp (t.geckRootSubgroupToBaseChangeCoordinateMap ht A i).hom.toAlgHom))) =
+      (t.geckRootSubgroupPoints ht i B (AdditiveGroup.gaPointsMulEquiv q) :
+        Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) B) := by
+  rw [← GeneralLinear.pointsMulEquiv_apply, coe_geckRootSubgroupPoints]
+  -- Match the named Geck presentation to the generic Kostant point formula.
+  unfold geckBaseChangeDefiningIdeal geckRootSubgroupToBaseChangeCoordinateMap
+  convert pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A (t.geckDefiningIdeal_def ht) i B q
+      using 1
+  congr 1
 
 /-- Under the Geck coordinate isomorphism, the factored `i`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/
@@ -377,6 +424,12 @@ noncomputable def geckWeightTorusBaseChangeCoordinateMap :
         (SplitTorus.characterGroup (Fin t.rank))).obj :=
   GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (t.geckWeightFin ht)
 
+/-- The transported Geck weight-torus map is the general-linear weight torus of the Geck
+coordinate weights. -/
+theorem geckWeightTorusBaseChangeCoordinateMap_def :
+    t.geckWeightTorusBaseChangeCoordinateMap ht A =
+      GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (t.geckWeightFin ht) := (rfl)
+
 /-- The integral weight-torus coordinate map, with source expressed using the named Geck defining
 ideal. -/
 noncomputable def geckWeightTorusIntegralCoordinateMap :
@@ -393,6 +446,18 @@ noncomputable def geckWeightTorusIntegralCoordinateMap :
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
+
+/-- The named integral Geck weight-torus map is the generic Kostant toral factorization. -/
+theorem geckWeightTorusIntegralCoordinateMap_def :
+    t.geckWeightTorusIntegralCoordinateMap ht =
+      kostantWeightTorusToralCoordinateMap
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) := by
+  rw [geckWeightTorusIntegralCoordinateMap]
+  simp
 
 /-- The base-changed Geck weight-torus coordinate map factored through the transported Geck
 carrier. -/
@@ -460,36 +525,97 @@ theorem geckBaseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
     (GeneralLinear.weightTorusBaseChangeCoordinateMap_def ℤ A
       (t.geckWeightFin ht)).symm
 
+/-- The coordinate algebras of the transported numbered Geck root subgroups and the transported
+Geck weight torus: an affine line for each numbered root subgroup, and the split torus of rank
+`t.rank`. -/
+noncomputable abbrev geckGeneratorCoordinateAlgebra :
+    Sum (Fin t.rank ⊕ Fin t.rank) Unit → CommHopfAlgCat A
+  | .inl _ => AdditiveGroup.coordinateHopfAlgebra A
+  | .inr _ => (DiagonalizableGroup.coordinateRing A
+      (SplitTorus.characterGroup (Fin t.rank))).obj
+
+/-- The coordinate maps of the transported numbered Geck root subgroups and the transported Geck
+weight torus into `GLₙ/A`, as one family. -/
+noncomputable def geckGeneratorCoordinateMap (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+    GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht) ⟶
+      t.geckGeneratorCoordinateAlgebra A j :=
+  match j with
+  | .inl i => t.geckRootSubgroupBaseChangeCoordinateMap ht A i
+  | .inr _ => t.geckWeightTorusBaseChangeCoordinateMap ht A
+
+/-- The numbered branches of the generator family are the transported root-subgroup maps. -/
+@[simp]
+theorem geckGeneratorCoordinateMap_inl (i : Fin t.rank ⊕ Fin t.rank) :
+    t.geckGeneratorCoordinateMap ht A (.inl i) =
+      t.geckRootSubgroupBaseChangeCoordinateMap ht A i := by
+  simp [geckGeneratorCoordinateMap]
+
+/-- The remaining branch of the generator family is the transported weight-torus map. -/
+@[simp]
+theorem geckGeneratorCoordinateMap_inr :
+    t.geckGeneratorCoordinateMap ht A (.inr ()) =
+      t.geckWeightTorusBaseChangeCoordinateMap ht A := by
+  simp [geckGeneratorCoordinateMap]
+
 /-- The closed subgroup of `GLₙ/A` generated by the transported numbered Geck root subgroups and
 the transported weight torus lies in the base change of the integral Geck carrier.
 
 The reverse inclusion is not asserted over an arbitrary base ring. -/
 theorem geckBaseChangeDefiningIdeal_le_commonKernel :
-    let K : Sum (Fin t.rank ⊕ Fin t.rank) Unit → CommHopfAlgCat A
-      | .inl _ => AdditiveGroup.coordinateHopfAlgebra A
-      | .inr _ =>
-          (DiagonalizableGroup.coordinateRing A
-            (SplitTorus.characterGroup (Fin t.rank))).obj
     t.geckBaseChangeDefiningIdeal ht A ≤
-      CommHopfAlgCat.commonKernelHopfIdeal (K := K)
-        (fun j => match j with
-          | .inl i => t.geckRootSubgroupBaseChangeCoordinateMap ht A i
-          | .inr _ => t.geckWeightTorusBaseChangeCoordinateMap ht A) := by
-  dsimp only
+      CommHopfAlgCat.commonKernelHopfIdeal (t.geckGeneratorCoordinateMap ht A) := by
   rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
   rintro (i | _)
-  · exact kostantToralBaseChangePresentationIdeal_toIdeal_le_root_ker
+  · rw [geckGeneratorCoordinateMap_inl]
+    exact kostantToralBaseChangePresentationIdeal_toIdeal_le_root_ker
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A i
-  · exact kostantToralBaseChangePresentationIdeal_toIdeal_le_torus_ker
+  · rw [geckGeneratorCoordinateMap_inr]
+    exact kostantToralBaseChangePresentationIdeal_toIdeal_le_torus_ker
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A
+
+section Tower
+
+variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
+
+/-- The coordinate Hopf algebras of the Geck generators over `K` are the scalar extensions of
+those over `k`: the affine line for a numbered root subgroup, and the split torus of rank
+`t.rank` for the weight torus. -/
+noncomputable def geckGeneratorCoordinateAlgebraBaseChangeIso :
+    ∀ j, CommHopfAlgCat.baseChange (K := K) (t.geckGeneratorCoordinateAlgebra k j) ≅
+      t.geckGeneratorCoordinateAlgebra K j
+  | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
+  | .inr _ => _root_.CommHopfAlgCat.isoMk
+      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+        (G := SplitTorus.characterGroup (Fin t.rank)))
+
+/-- **The Geck generators commute with scalar extension.** For a ring map `k → K`, each numbered
+root-subgroup or weight-torus coordinate map over `K` is the scalar extension of the one over `k`,
+read through the coordinate identifications of `GLₙ` and of the generator's domain. -/
+theorem geckGeneratorCoordinateMap_baseChange (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).inv ≫
+        CommHopfAlgCat.baseChangeMap (t.geckGeneratorCoordinateMap ht k j) ≫
+        (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom =
+      t.geckGeneratorCoordinateMap ht K j := by
+  rcases j with i | _
+  · rw [geckGeneratorCoordinateMap_inl, geckGeneratorCoordinateMap_inl]
+    exact kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckCoordinateBasisFin ht) k K i
+  · rw [geckGeneratorCoordinateMap_inr, geckGeneratorCoordinateMap_inr]
+    exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K (t.geckWeightFin ht)
+
+end Tower
 
 end
 

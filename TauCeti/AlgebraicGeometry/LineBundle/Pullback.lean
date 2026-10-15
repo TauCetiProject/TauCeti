@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
-public import TauCeti.AlgebraicGeometry.Modules.Pullback
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 
 /-!
@@ -15,7 +15,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 Let `f : X ⟶ Y` be a morphism of schemes. The inverse image `f^* L` of a line bundle `L` on `Y`
 is a line bundle on `X`, giving a pullback functor on line bundles.
 The generic restriction compatibility used to establish this result is provided by
-`TauCeti.AlgebraicGeometry.Modules.Pullback`.
+`TauCeti.AlgebraicGeometry.Modules.Pullback.Basic`.
 
 ## Main declarations
 

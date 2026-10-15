@@ -27,8 +27,11 @@ Chevalley--Demazure construction.
   make the torus redundant in the Geck defining ideal.
 * `TauCeti.DynkinType.geckGroupScheme_eq_kostantGeneratedGroupScheme`: the corresponding carrier
   equality.
-* The suffixes `_E8`, `_F4`, and `_G2` record both equalities and the canonical comparison
-  isomorphism for the three full-weight Geck carriers.
+* `TauCeti.DynkinType.geckGroupScheme_hom_ext_of_rootSubgroup`: under the same hypothesis, a
+  morphism out of the Geck carrier is determined by its restrictions to the numbered root
+  subgroups.
+* The suffixes `_E8`, `_F4`, and `_G2` record both equalities, the canonical comparison
+  isomorphism, and this rigidity for the three full-weight Geck carriers.
 
 ## References
 
@@ -182,6 +185,44 @@ theorem isIso_kostantGeneratedToToral_geck
     (t.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le ht
       (t.range_geckTorusPoints_le_geckElementarySubgroup ht hrow _))
 
+/-- **Generation of the universal Geck torus makes the Geck carrier rigid in its root
+subgroups.** Two morphisms out of the carrier agree as soon as they agree on its numbered positive
+and negative simple-root subgroups; the weight-torus hypothesis of
+`TauCeti.DynkinType.geckGroupScheme_hom_ext` is then redundant. -/
+theorem geckGroupScheme_hom_ext_of_rootSubgroup_of_universal_torus_mem_elementary
+    (huniv :
+      let T := (DiagonalizableGroup.coordinateRing ℤ
+        (SplitTorus.characterGroup (Fin t.rank))).obj
+      let A := CommAlgCat.of ℤ T
+      let q : HopfAlgebra.points
+          (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup (Fin t.rank))) A := toConv (AlgHom.id ℤ T)
+      t.geckTorusPoints ht A (SplitTorus.pointsMulEquiv q) ∈
+        t.geckElementarySubgroup ht A)
+    {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (φ ψ : t.geckGroupScheme ht ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ i, t.geckRootSubgroup ht i ≫ φ = t.geckRootSubgroup ht i ≫ ψ) :
+    φ = ψ := by
+  apply (cancel_epi (eqToHom (t.geckGroupScheme_def ht).symm)).1
+  exact kostantToralGroupScheme_hom_ext_of_universal_torus_mem_elementary
+    _ _ _ _ _ _ _ _ huniv _ _
+    fun i => by simpa only [geckRootSubgroup_def, Category.assoc] using hroot i
+
+/-- **Primitive Cartan rows make the Geck carrier rigid in its root subgroups.** Two morphisms out
+of the carrier agree as soon as they agree on its numbered positive and negative simple-root
+subgroups. -/
+theorem geckGroupScheme_hom_ext_of_rootSubgroup
+    (hrow : ∀ i, ∃ c : Fin t.rank → ℤ, ∑ j, t.cartanMatrix i j * c j = 1)
+    {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (φ ψ : t.geckGroupScheme ht ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ i, t.geckRootSubgroup ht i ≫ φ = t.geckRootSubgroup ht i ≫ ψ) :
+    φ = ψ :=
+  t.geckGroupScheme_hom_ext_of_rootSubgroup_of_universal_torus_mem_elementary ht
+    (t.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le ht
+      (t.range_geckTorusPoints_le_geckElementarySubgroup ht hrow _)) φ ψ hroot
+
 /-! ## Full-weight exceptional Geck carriers -/
 
 /-- The type-`E₈` Geck defining ideal is generated scheme-theoretically by its sixteen numbered
@@ -228,6 +269,17 @@ instance isIso_kostantGeneratedToToral_E8 :
     (E8.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le valid_E8
       (range_geckTorusPoints_le_geckElementarySubgroup_E8 _))
 
+/-- Two morphisms out of the type-`E₈` full-weight Geck carrier agree as soon as they agree on
+its sixteen numbered positive and negative simple-root subgroups. -/
+theorem geckGroupScheme_hom_ext_of_rootSubgroup_E8 {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (φ ψ : E8.geckGroupScheme valid_E8 ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ i, E8.geckRootSubgroup valid_E8 i ≫ φ = E8.geckRootSubgroup valid_E8 i ≫ ψ) :
+    φ = ψ :=
+  E8.geckGroupScheme_hom_ext_of_rootSubgroup_of_universal_torus_mem_elementary valid_E8
+    (E8.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le valid_E8
+      (range_geckTorusPoints_le_geckElementarySubgroup_E8 _)) φ ψ hroot
+
 /-- The type-`F₄` Geck defining ideal is generated scheme-theoretically by its eight numbered
 positive and negative simple-root subgroups; adjoining the weight torus does not change it. -/
 theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_F4 :
@@ -272,6 +324,17 @@ instance isIso_kostantGeneratedToToral_F4 :
     (F4.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le valid_F4
       (range_geckTorusPoints_le_geckElementarySubgroup_F4 _))
 
+/-- Two morphisms out of the type-`F₄` full-weight Geck carrier agree as soon as they agree on
+its eight numbered positive and negative simple-root subgroups. -/
+theorem geckGroupScheme_hom_ext_of_rootSubgroup_F4 {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (φ ψ : F4.geckGroupScheme valid_F4 ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ i, F4.geckRootSubgroup valid_F4 i ≫ φ = F4.geckRootSubgroup valid_F4 i ≫ ψ) :
+    φ = ψ :=
+  F4.geckGroupScheme_hom_ext_of_rootSubgroup_of_universal_torus_mem_elementary valid_F4
+    (F4.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le valid_F4
+      (range_geckTorusPoints_le_geckElementarySubgroup_F4 _)) φ ψ hroot
+
 /-- The type-`G₂` Geck defining ideal is generated scheme-theoretically by its four numbered
 positive and negative simple-root subgroups; adjoining the weight torus does not change it. -/
 theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_G2 :
@@ -315,5 +378,16 @@ instance isIso_kostantGeneratedToToral_G2 :
   G2.isIso_kostantGeneratedToToral_geck_of_universal_torus_mem_elementary valid_G2
     (G2.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le valid_G2
       (range_geckTorusPoints_le_geckElementarySubgroup_G2 _))
+
+/-- Two morphisms out of the type-`G₂` full-weight Geck carrier agree as soon as they agree on
+its four numbered positive and negative simple-root subgroups. -/
+theorem geckGroupScheme_hom_ext_of_rootSubgroup_G2 {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (φ ψ : G2.geckGroupScheme valid_G2 ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ i, G2.geckRootSubgroup valid_G2 i ≫ φ = G2.geckRootSubgroup valid_G2 i ≫ ψ) :
+    φ = ψ :=
+  G2.geckGroupScheme_hom_ext_of_rootSubgroup_of_universal_torus_mem_elementary valid_G2
+    (G2.universalGeckTorusPoint_mem_geckElementarySubgroup_of_range_le valid_G2
+      (range_geckTorusPoints_le_geckElementarySubgroup_G2 _)) φ ψ hroot
 
 end TauCeti.DynkinType

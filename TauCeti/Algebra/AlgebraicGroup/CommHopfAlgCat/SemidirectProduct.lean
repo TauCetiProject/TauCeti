@@ -29,11 +29,11 @@ algebra-valued points.
   `pointMulEquiv_mapDomain_coordinateInr`: their formulas under the semidirect-product point
   equivalence.
 
-## References
+## See also
 
-This uses Mathlib's `commHopfAlgCatEquivCogrpCommAlgCat` and Tau Ceti's group-object Yoneda
-equivalence. It is the coordinate bridge used by the semidirect-product construction in Layer 5,
-"The unipotent radical", of the ReductiveGroups roadmap.
+* `Mathlib.Algebra.Category.CommHopfAlgCat`: the equivalence
+  `commHopfAlgCatEquivCogrpCommAlgCat`.
+* `TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda`: the group-object Yoneda equivalence.
 -/
 
 public section
@@ -91,10 +91,10 @@ inclusion of the normal factor. -/
 theorem grpObjMap_coordinateInl
     (A : GrpObj.Action (CommHopfAlgCat.grpObj K) (CommHopfAlgCat.grpObj H)) :
     letI := A.semidirectProductGrpObj
-    CommHopfAlgCat.grpObjMap A.coordinateInl = A.inl.hom.hom := by
+    CommHopfAlgCat.Hom.grpObjMap A.coordinateInl = A.inl.hom.hom := by
   let _ := A.semidirectProductGrpObj
   apply Quiver.Hom.unop_inj
-  rw [CommHopfAlgCat.grpObjMap_unop]
+  rw [CommHopfAlgCat.Hom.grpObjMap_unop]
   rfl
 
 /-- The represented group-object morphism associated to `coordinateInr` is the canonical
@@ -103,21 +103,21 @@ inclusion of the acting factor. -/
 theorem grpObjMap_coordinateInr
     (A : GrpObj.Action (CommHopfAlgCat.grpObj K) (CommHopfAlgCat.grpObj H)) :
     letI := A.semidirectProductGrpObj
-    CommHopfAlgCat.grpObjMap A.coordinateInr = A.inr.hom.hom := by
+    CommHopfAlgCat.Hom.grpObjMap A.coordinateInr = A.inr.hom.hom := by
   let _ := A.semidirectProductGrpObj
   apply Quiver.Hom.unop_inj
-  rw [CommHopfAlgCat.grpObjMap_unop]
+  rw [CommHopfAlgCat.Hom.grpObjMap_unop]
   rfl
 
 private theorem grpObjPointsMulEquiv_symm_mapDomain {B C : _root_.CommHopfAlgCat.{u} k}
     (f : B ⟶ C) (L : CommAlgCat.{u} k) (g : HopfAlgebra.points (R := k) (H := C) L) :
     (CommHopfAlgCat.grpObjPointsMulEquiv B (op L)).symm (AlgHom.mapDomain f.hom g) =
       (CommHopfAlgCat.grpObjPointsMulEquiv C (op L)).symm g ≫
-        CommHopfAlgCat.grpObjMap f := by
+        CommHopfAlgCat.Hom.grpObjMap f := by
   have hnat := CommHopfAlgCat.grpObjPointsMulEquiv_comp_grpObjMap f
     (op L) ((CommHopfAlgCat.grpObjPointsMulEquiv C (op L)).symm g)
   apply (CommHopfAlgCat.grpObjPointsMulEquiv B (op L)).injective
-  simpa only [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply,
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply,
     MulEquiv.apply_symm_apply] using hnat.symm
 
 /-- Under the point equivalence for a semidirect product, precomposition with `coordinateInl`

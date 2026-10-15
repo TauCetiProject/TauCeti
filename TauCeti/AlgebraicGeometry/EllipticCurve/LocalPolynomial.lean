@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.LFunction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.SingularPointCount
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
 # The Frobenius trace of a reduction, and the local polynomial
@@ -24,7 +25,8 @@ local polynomial is `1 − a T + q T²` at good reduction and `1 − a T` otherw
 ## Main results
 
 * `WeierstrassCurve.reduction_Δ_eq_zero_iff`,
-  `WeierstrassCurve.HasMultiplicativeReduction.reduction_c₄_ne_zero` and
+  `WeierstrassCurve.HasMultiplicativeReduction.reduction_c₄_ne_zero`,
+  `WeierstrassCurve.HasMultiplicativeReduction.reduction_c₆_ne_zero` and
   `WeierstrassCurve.HasAdditiveReduction.reduction_c₄_eq_zero`: the reduction types read on the
   invariants of the reduced model.
 * `WeierstrassCurve.HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff`: a
@@ -57,9 +59,8 @@ variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 below `1`. -/
 private theorem residue_eq_zero_iff_valuation_lt_one (r : R) :
     IsLocalRing.residue R r = 0 ↔ valuation K (maximalIdeal R) (algebraMap R K r) < 1 := by
-  rw [IsLocalRing.residue_eq_zero_iff, valuation_lt_one_iff_mem]
-  -- `(maximalIdeal R).asIdeal` is by definition `IsLocalRing.maximalIdeal R`
-  rfl
+  rw [IsLocalRing.residue_eq_zero_iff,
+    TauCeti.IsDiscreteValuationRing.valuation_algebraMap_lt_one_iff_mem]
 
 /-- **The reduction is singular exactly when it is bad.** -/
 theorem reduction_Δ_eq_zero_iff [IsMinimal R W] :
@@ -72,6 +73,17 @@ theorem HasMultiplicativeReduction.reduction_c₄_ne_zero (h : W.HasMultiplicati
   rw [reduction, map_c₄, Ne, residue_eq_zero_iff_valuation_lt_one R (K := K),
     integralModel_c₄_eq R W, h.multiplicativeReduction]
   exact lt_irrefl 1
+
+/-- **A multiplicative reduction has `c₆ ≠ 0`.** By `1728 Δ = c₄³ - c₆²` on the reduced model, the
+vanishing of `Δ` and the nonvanishing of `c₄` there force that of `c₆`. -/
+theorem HasMultiplicativeReduction.reduction_c₆_ne_zero (h : W.HasMultiplicativeReduction R) :
+    (W.reduction R).c₆ ≠ 0 := by
+  have hΔ : (W.reduction R).Δ = 0 := (reduction_Δ_eq_zero_iff R).mpr h.not_hasGoodReduction
+  intro hc₆
+  have hrel := (W.reduction R).c_relation
+  rw [hΔ, hc₆] at hrel
+  exact h.reduction_c₄_ne_zero R (pow_eq_zero_iff (n := 3) (by norm_num) |>.mp
+    (by linear_combination -hrel))
 
 /-- **An additive reduction has `c₄ = 0`**: its singular point is a cusp. -/
 theorem HasAdditiveReduction.reduction_c₄_eq_zero (h : W.HasAdditiveReduction R) :
@@ -104,7 +116,6 @@ theorem HasMultiplicativeReduction.frobeniusTrace_reduction_eq_neg_one
     (W.reduction R).frobeniusTrace = -1 :=
   frobeniusTrace_eq_neg_one_of_not_splits _
     ((reduction_Δ_eq_zero_iff R).2 (h.not_hasGoodReduction R))
-    (h.reduction_c₄_ne_zero R)
     (mt (h.splits_nodePolynomial_reduction_iff R).1 hs)
 
 /-- **The Frobenius trace of an additive reduction is `0`.** -/

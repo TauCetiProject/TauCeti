@@ -29,4 +29,9 @@ theorem _root_.FGModuleCat.isZero_of_subsingleton {R : Type u} [Ring R] (M : FGM
   apply IsZero.of_full_of_faithful_of_isZero (ObjectProperty.ι _)
   exact ModuleCat.isZero_iff_subsingleton.mpr hM
 
+/-- The zero module gives a zero object among finitely generated modules over any ring. -/
+instance _root_.FGModuleCat.hasZeroObject {R : Type u} [Ring R] :
+    HasZeroObject (FGModuleCat.{v} R) :=
+  (FGModuleCat.isZero_of_subsingleton (FGModuleCat.of R PUnit) inferInstance).hasZeroObject
+
 end TauCeti

@@ -41,12 +41,6 @@ elements, and the pre-composition map is injective because the quotient map is s
 `αₚ(A)` is the additive group of `p`-nilpotent elements of `A` (those `a` with `aᵖ = 0`). This
 exhibits `αₚ` as a non-reduced affine group scheme, the additive companion of the `μ_p` example of
 `TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.NotReduced`.
-
-This is the worked example `αₚ` from the Tau Ceti reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap): the standing hypotheses note that an affine
-group scheme of finite type "admits `μ_p`, `αₚ`, and other non-smooth / non-reduced groups",
-and Layer 3 develops "Hopf ideals ↔ closed subgroup schemes".
-
 ## Main declarations
 
 * `TauCeti.AlphaP.hopfIdeal`: the Hopf ideal `(xᵖ)` of the additive-group Hopf algebra.
@@ -61,7 +55,7 @@ and Layer 3 develops "Hopf ideals ↔ closed subgroup schemes".
 * `TauCeti.AlphaP.pointsMulEquiv`: the group isomorphism identifying the points of `αₚ` with the
   `p`-nilpotent subgroup.
 
-## References
+## See also
 
 The Hopf structure on the additive group is Tau Ceti's
 `TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic` and

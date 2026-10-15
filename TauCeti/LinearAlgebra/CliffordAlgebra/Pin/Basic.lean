@@ -14,6 +14,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 The Pin group is the subgroup of the Lipschitz group whose elements have unit Clifford norm.
 This file packages its inclusion into the Lipschitz group, the vector generators with norm `-1`,
 and the Spin inclusion used when transporting norms and actions along those maps.
+
+`TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz` identifies the inverse unit coordinate of a
+Pin element's image in the Lipschitz group with its Clifford star.
 -/
 
 public section
@@ -50,6 +53,16 @@ theorem coe_pinToLipschitz_apply (x : pinGroup Q) :
       (x : CliffordAlgebra Q) := by
   rw [pinToLipschitz]
   rfl
+
+variable {Q} in
+/-- The inverse unit coordinate of a Pin element in the Lipschitz group is its Clifford star. -/
+@[simp]
+theorem _root_.TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz (x : pinGroup Q) :
+    (((pinToLipschitz Q x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) :
+        CliffordAlgebra Q) = star (x : CliffordAlgebra Q) :=
+  Units.inv_eq_of_mul_eq_one_right (by
+    rw [coe_pinToLipschitz_apply]
+    exact pinGroup.mul_star_self_of_mem x.2)
 
 /-- The spin group sits inside the Pin group. -/
 def spinToPin : spinGroup Q →* pinGroup Q :=

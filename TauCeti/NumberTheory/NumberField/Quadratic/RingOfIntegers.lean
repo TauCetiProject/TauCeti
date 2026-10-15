@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 
@@ -85,7 +86,7 @@ private theorem den_eq_one_of_squarefree_mul_sq_isInt {d : ℤ} (hd : Squarefree
   have hb1 : (B.den : ℤ) = 1 := by
     rcases Int.isUnit_iff.mp hunit with h1 | h1
     · exact h1
-    · have hpos : (0 : ℤ) < (B.den : ℤ) := by exact_mod_cast B.pos
+    · have _hpos : (0 : ℤ) < (B.den : ℤ) := by exact_mod_cast B.pos
       omega
   exact_mod_cast hb1
 
@@ -184,7 +185,7 @@ private theorem exists_half_int_coords (hmin : minpoly ℤ θ = X ^ 2 - C d)
     ∃ A B N : ℤ, (z : K) = algebraMap ℚ K ((A : ℚ) / 2) + algebraMap ℚ K ((B : ℚ) / 2) * (θ : K)
       ∧ A ^ 2 - d * B ^ 2 = 4 * N := by
   have hfr := finrank_rat_eq_two hmin hgen
-  obtain ⟨bs, hbs, hb⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
+  obtain ⟨bs, hbs, _⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
     hfr (gen_notMem_range hmin) θ.isIntegral_coe
   set a := bs.repr (z : K) 0
   set c := bs.repr (z : K) 1
@@ -247,8 +248,8 @@ theorem adjoin_rat_halfGen_eq_top (hmin : minpoly ℤ θ = X ^ 2 - C d)
 `X² - X + (1 - d)/4`. -/
 theorem minpoly_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) :
     minpoly ℤ (halfGen hmin hd4) = X ^ 2 - X + C ((1 - d) / 4) := by
-  set ω := halfGen hmin hd4 with hω
-  set c : ℤ := (1 - d) / 4 with hc
+  set ω := halfGen hmin hd4
+  set c : ℤ := (1 - d) / 4
   have h4 : 4 * c = 1 - d := by omega
   have hmonic : (X ^ 2 - X + C c : ℤ[X]).Monic := by
     simpa using (isMonicOfDegree_sub_add_two (R := ℤ) 1 c).monic
@@ -351,14 +352,6 @@ theorem discr_eq_of_squarefree_of_mod_four_eq_one (hmin : minpoly ℤ θ = X ^ 2
   have hspan := span_eq_top_of_int_repr hbs' hb (exists_int_repr_one hmin hgen hsf hd4)
   exact_mod_cast discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int bs hb hspan hdd
 
-/-- From squarefreeness and `d % 4 ≠ 1`, the residue is `2` or `3` (it is never `0`, as `4 ∤ d`). -/
-private theorem mod_four_eq_two_or_three (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) :
-    d % 4 = 2 ∨ d % 4 = 3 := by
-  have hnd4 : ¬ (4 : ℤ) ∣ d := fun h => by
-    have h2 : IsUnit (2 : ℤ) := hsf 2 (by rw [(by norm_num : (2 : ℤ) * 2 = 4)]; exact h)
-    rw [Int.isUnit_iff] at h2; omega
-  omega
-
 /-- The norm of the generator is `-d`: the constant coefficient of `minpoly ℚ θ = X² - d`, up to
 the sign `(-1)^2`. -/
 private theorem norm_gen_eq_neg_radicand (hmin : minpoly ℤ θ = X ^ 2 - C d)
@@ -408,7 +401,8 @@ theorem exists_sq_sub_mul_sq_eq_four_mul_norm (hmin : minpoly ℤ θ = X ^ 2 - C
 theorem exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) (z : 𝓞 K) :
     ∃ A B : ℤ, A ^ 2 - d * B ^ 2 = Algebra.norm ℤ z := by
-  obtain ⟨A, B, hz⟩ := exists_int_repr hmin hgen hsf (mod_four_eq_two_or_three hsf hd4) z
+  obtain ⟨A, B, hz⟩ := exists_int_repr hmin hgen hsf
+    (TauCeti.Int.emod_four_eq_two_or_three_of_squarefree hsf hd4) z
   refine ⟨A, B, ?_⟩
   have hzK : (z : K) = algebraMap ℚ K (A : ℚ) + algebraMap ℚ K (B : ℚ) * (θ : K) := by
     rw [hz]
@@ -431,7 +425,8 @@ theorem adjoin_gen_eq_top_of_mod_four_ne_one :
     Algebra.adjoin ℤ {θ} = (⊤ : Subalgebra ℤ (𝓞 K)) := by
   rw [eq_top_iff]
   rintro z -
-  obtain ⟨k, l, hkl⟩ := exists_int_repr hmin hgen hsf (mod_four_eq_two_or_three hsf hd4) z
+  obtain ⟨k, l, hkl⟩ := exists_int_repr hmin hgen hsf
+    (TauCeti.Int.emod_four_eq_two_or_three_of_squarefree hsf hd4) z
   rw [hkl]
   exact add_mem (zsmul_mem (one_mem _) k)
     (zsmul_mem (Algebra.subset_adjoin (Set.mem_singleton θ)) l)
@@ -442,7 +437,7 @@ include hmin hgen hsf hd4 in
 `ℤ[θ]` — see `adjoin_gen_eq_top_of_mod_four_ne_one`. -/
 theorem discr_eq_four_mul_of_mod_four_ne_one : NumberField.discr K = 4 * d := by
   have hfr := finrank_rat_eq_two hmin hgen
-  have hd4' := mod_four_eq_two_or_three hsf hd4
+  have hd4' := TauCeti.Int.emod_four_eq_two_or_three_of_squarefree hsf hd4
   obtain ⟨bs, hbs, hb⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
     hfr (gen_notMem_range hmin) θ.isIntegral_coe
   -- Discriminant of `{1, θ}` is `4d` (`discr_one_gen`); `{1, θ}` spans `𝓞 K` over `ℤ`.

@@ -27,6 +27,11 @@ the two cokernels (`AuslanderReitenTranspose.linearEquiv`), characterized on rep
 the uniqueness theorem for minimal presentations then gives
 `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`.
 
+The construction is additive in the presenting arrow: `AuslanderReitenTranspose.prodMapEquiv`
+identifies the transpose of a direct sum with the product of the two transposes, while
+`AuslanderReitenTranspose.compFstEquiv` identifies the transpose of an arrow enlarged by a zero
+source summand with the product of its transpose and the dual of that summand.
+
 The transpose is a construction on the *non-projective* modules: for a minimal projective
 presentation `P₁ → P₀ → M` whose left-hand source `P₁` is finitely generated, it vanishes on a
 projective `M` and on no other, which is
@@ -47,6 +52,10 @@ next to the other module structures on the transpose.
   opposite-linear map that kills the functionals factoring through `p₁`.
 * `AuslanderReitenTranspose.linearEquiv`: the equivalence induced by an isomorphism of presentation
   diagrams.
+* `AuslanderReitenTranspose.prodMapEquiv`: the transpose of a direct sum of arrows is the direct
+  sum of their transposes.
+* `AuslanderReitenTranspose.compFstEquiv`: a zero source summand contributes its dual to the
+  transpose.
 
 ## Main results
 
@@ -172,6 +181,41 @@ theorem induction_on {motive : AuslanderReitenTranspose p₁ → Prop}
     motive x :=
   Submodule.Quotient.induction_on _ x h
 
+section QuotientEquiv
+
+variable {S N : Type*} [Ring S] [AddCommGroup N] [Module S N]
+  {σ : Aᵐᵒᵖ →+* S} {σ' : S →+* Aᵐᵒᵖ}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- A semilinear equivalence carrying the range of precomposition onto `Q` identifies the
+transpose with the quotient by `Q`. -/
+def quotientEquiv (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛₗ[σ] N)
+    (he : (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).map e.toLinearMap = Q) :
+    AuslanderReitenTranspose p₁ ≃ₛₗ[σ] N ⧸ Q :=
+  Submodule.Quotient.equiv _ Q e he
+
+/-- Quotient transport applies the semilinear equivalence to a functional representative. -/
+@[simp]
+theorem quotientEquiv_mk (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛₗ[σ] N)
+    (he : (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).map e.toLinearMap = Q)
+    (φ : Module.Dual A P₁) :
+    quotientEquiv p₁ Q e he (mk p₁ φ) = Submodule.Quotient.mk (e φ) := by
+  -- The transpose, `mk`, and `quotientEquiv` have unexposed bodies. Present their quotient
+  -- form locally so that the public quotient application lemmas can apply.
+  with_unfolding_all
+    change Submodule.Quotient.equiv _ Q e he (Submodule.Quotient.mk φ) = _
+    rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
+
+/-- Inverse quotient transport applies the inverse equivalence to a quotient representative. -/
+@[simp]
+theorem quotientEquiv_symm_mk (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛₗ[σ] N)
+    (he : (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).map e.toLinearMap = Q) (n : N) :
+    (quotientEquiv p₁ Q e he).symm (Submodule.Quotient.mk n) = mk p₁ (e.symm n) := by
+  apply (quotientEquiv p₁ Q e he).injective
+  simp
+
+end QuotientEquiv
+
 section Lift
 
 variable {N : Type*} [AddCommGroup N] [Module Aᵐᵒᵖ N]
@@ -213,6 +257,97 @@ theorem eq_lift (f : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] N)
   hom_ext p₁ fun φ => by rw [hg, lift_mk]
 
 end Lift
+
+section Additivity
+
+open LinearMap
+
+variable {A₁ A₂ E₁ E₂ : Type*} [AddCommMonoid A₁] [Module A A₁] [AddCommMonoid A₂] [Module A A₂]
+  [AddCommMonoid E₁] [Module A E₁] [AddCommMonoid E₂] [Module A E₂]
+  (u : A₁ →ₗ[A] E₁) (w : A₂ →ₗ[A] E₂)
+
+/-- **The transpose is additive.** The transpose of the direct sum `u ⊕ w` of two arrows is the
+direct sum of their transposes. On representatives it restricts a functional on `A₁ × A₂` to the
+two summands. -/
+def prodMapEquiv :
+    AuslanderReitenTranspose (u.prodMap w) ≃ₗ[Aᵐᵒᵖ]
+      AuslanderReitenTranspose u × AuslanderReitenTranspose w :=
+  LinearEquiv.ofLinearMap
+    (lift (u.prodMap w)
+      ((mk u ∘ₗ (inl A A₁ A₂).lcomp Aᵐᵒᵖ A).prod (mk w ∘ₗ (inr A A₁ A₂).lcomp Aᵐᵒᵖ A))
+      fun φ => by
+        refine Prod.ext ((mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ inl A E₁ E₂, ?_⟩)
+          ((mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ inr A E₁ E₂, ?_⟩) <;> ext <;> simp)
+    ((lift u (mk (u.prodMap w) ∘ₗ (fst A A₁ A₂).lcomp Aᵐᵒᵖ A) fun φ =>
+        (mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ fst A E₁ E₂, by ext <;> simp⟩).coprod
+      (lift w (mk (u.prodMap w) ∘ₗ (snd A A₁ A₂).lcomp Aᵐᵒᵖ A) fun φ =>
+        (mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ snd A E₁ E₂, by ext <;> simp⟩))
+    (by
+      apply prod_ext <;> ext φ <;> simp [lcomp_apply', comp_assoc])
+    (by
+      ext φ
+      simp only [comp_apply, lift_mk, coprod_apply, prod_apply, Function.prod, lcomp_apply',
+        id_apply]
+      rw [← map_add]
+      congr 1
+      ext <;> simp [← Prod.zero_eq_mk])
+
+/-- The equivalence `prodMapEquiv` restricts a representative to the two summands. -/
+@[simp]
+theorem prodMapEquiv_mk (φ : Module.Dual A (A₁ × A₂)) :
+    prodMapEquiv u w (mk (u.prodMap w) φ) =
+      (mk u (φ ∘ₗ inl A A₁ A₂), mk w (φ ∘ₗ inr A A₁ A₂)) := by
+  simp [prodMapEquiv, lcomp_apply']
+
+/-- The inverse of `prodMapEquiv` combines representatives using the canonical functional on the
+product. -/
+@[simp]
+theorem prodMapEquiv_symm_mk (φ : Module.Dual A A₁) (ψ : Module.Dual A A₂) :
+    (prodMapEquiv u w).symm (mk u φ, mk w ψ) = mk (u.prodMap w) (φ.coprod ψ) := by
+  apply (prodMapEquiv u w).injective
+  simp
+
+variable (C : Type*) [AddCommMonoid C] [Module A C]
+
+/-- **A zero summand contributes its dual.** Enlarging the source of `u : A₁ → E₁` by a summand
+`C` on which the arrow vanishes adds `Hom_A(C, A)` to the transpose. On representatives it
+restricts a functional on `A₁ × C` to the two summands. -/
+def compFstEquiv :
+    AuslanderReitenTranspose (u ∘ₗ fst A A₁ C) ≃ₗ[Aᵐᵒᵖ]
+      AuslanderReitenTranspose u × Module.Dual A C :=
+  LinearEquiv.ofLinearMap
+    (lift (u ∘ₗ fst A A₁ C)
+      ((mk u ∘ₗ (inl A A₁ C).lcomp Aᵐᵒᵖ A).prod ((inr A A₁ C).lcomp Aᵐᵒᵖ A))
+      fun φ => by
+        refine Prod.ext ((mk_eq_zero_iff _ _).mpr ⟨φ, ?_⟩) ?_ <;> ext <;> simp)
+    ((lift u (mk (u ∘ₗ fst A A₁ C) ∘ₗ (fst A A₁ C).lcomp Aᵐᵒᵖ A) fun φ =>
+        (mk_eq_zero_iff _ _).mpr ⟨φ, by ext <;> simp⟩).coprod
+      (mk (u ∘ₗ fst A A₁ C) ∘ₗ (snd A A₁ C).lcomp Aᵐᵒᵖ A))
+    (by
+      apply prod_ext <;> ext φ <;> simp [lcomp_apply', comp_assoc])
+    (by
+      ext φ
+      simp only [comp_apply, lift_mk, coprod_apply, prod_apply, Function.prod, lcomp_apply',
+        id_apply]
+      rw [← map_add]
+      congr 1
+      ext <;> simp [← Prod.zero_eq_mk])
+
+/-- The equivalence `compFstEquiv` restricts a representative to the two summands. -/
+@[simp]
+theorem compFstEquiv_mk (φ : Module.Dual A (A₁ × C)) :
+    compFstEquiv u C (mk (u ∘ₗ fst A A₁ C) φ) = (mk u (φ ∘ₗ inl A A₁ C), φ ∘ₗ inr A A₁ C) := by
+  simp [compFstEquiv, lcomp_apply']
+
+/-- The inverse of `compFstEquiv` combines representatives using the canonical functional on the
+product. -/
+@[simp]
+theorem compFstEquiv_symm_mk (φ : Module.Dual A A₁) (ψ : Module.Dual A C) :
+    (compFstEquiv u C).symm (mk u φ, ψ) = mk (u ∘ₗ fst A A₁ C) (φ.coprod ψ) := by
+  apply (compFstEquiv u C).injective
+  simp
+
+end Additivity
 
 section Split
 
@@ -294,7 +429,7 @@ def linearEquiv {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q₀)
     (e₁ : P₁ ≃ₗ[A] Q₁)
     (hsquare : e₀.toLinearMap ∘ₗ p₁ = q₁ ∘ₗ e₁.toLinearMap) :
     AuslanderReitenTranspose p₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose q₁ :=
-  Submodule.Quotient.equiv _ _ (e₁.congrLeft A Aᵐᵒᵖ) (map_range_lcomp_eq e₀ e₁ hsquare)
+  quotientEquiv p₁ _ (e₁.congrLeft A Aᵐᵒᵖ) (map_range_lcomp_eq e₀ e₁ hsquare)
 
 /-- The presentation equivalence on transposes, evaluated on a functional representative. -/
 @[simp]
@@ -308,16 +443,8 @@ theorem linearEquiv_mk {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q₀)
       e₁.symm.toLinearMap.lcomp Aᵐᵒᵖ A φ := by
     ext x
     simp [LinearMap.lcomp_apply]
-  -- `linearEquiv`, `mk` and `AuslanderReitenTranspose` itself are not exposed, so neither the
-  -- statement nor Mathlib's quotient lemmas reduce here on their own: an exported theorem may only
-  -- unfold exposed definitions.  `with_unfolding_all` lets this proof see through them, and the
-  -- `change` then presents the goal in the `Submodule.Quotient` form in which
-  -- `Submodule.Quotient.equiv_apply` and `Submodule.mapQ_apply` apply; `hrep` then identifies the
-  -- representative maps through public application lemmas rather than by definitional unfolding.
-  with_unfolding_all
-    change Submodule.Quotient.equiv _ _ _ _ (Submodule.Quotient.mk φ) =
-      Submodule.Quotient.mk _
-    rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, hrep]
+  exact (quotientEquiv_mk p₁ _ (e₁.congrLeft A Aᵐᵒᵖ)
+    (map_range_lcomp_eq e₀ e₁ hsquare) φ).trans (congrArg (mk q₁) hrep)
 
 /-- Transport along the identity presentation equivalences is the identity. -/
 @[simp]

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 440" role="img">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'Liberation Sans',sans-serif;fill:#eef2fb}.title{font-size:19.0px;font-weight:600}.subtitle{font-size:13.0px;fill:#9aa6c9}.tick{font-size:12.0px;fill:#9aa6c9}.grid{stroke:rgba(255,255,255,0.08);stroke-width:1.0}.axis{stroke:rgba(255,255,255,0.18);stroke-width:1.0}.legend{font-size:12.0px;fill:#eef2fb}.note{font-size:11.0px;fill:#9aa6c9}</style>
+<rect x="0.5" y="0.5" width="979" height="439" rx="12.0" fill="#101936" stroke="#1b2547" stroke-width="1.0"/>
+<text class="title" x="64" y="36">How long a job waits for a runner</text>
+<text class="subtitle" x="64" y="58">From the job being queued to it starting; UTC days 20 Sep to 26 Sep</text>
+<line class="grid" x1="64" x2="928" y1="380.0" y2="380.0"/><text class="tick" x="56" y="384.0" text-anchor="end">0</text>
+<line class="grid" x1="64" x2="928" y1="328.8" y2="328.8"/><text class="tick" x="56" y="332.8" text-anchor="end">0.5</text>
+<line class="grid" x1="64" x2="928" y1="277.6" y2="277.6"/><text class="tick" x="56" y="281.6" text-anchor="end">1</text>
+<line class="grid" x1="64" x2="928" y1="226.4" y2="226.4"/><text class="tick" x="56" y="230.4" text-anchor="end">1.5</text>
+<line class="grid" x1="64" x2="928" y1="175.2" y2="175.2"/><text class="tick" x="56" y="179.2" text-anchor="end">2</text>
+<line class="grid" x1="64" x2="928" y1="124.0" y2="124.0"/><text class="tick" x="56" y="128.0" text-anchor="end">2.5</text>
+<text class="tick" transform="translate(16,252) rotate(-90)" text-anchor="middle">minutes</text>
+<text class="tick" x="125.7" y="398" text-anchor="middle">20 Sep</text>
+<text class="tick" x="249.1" y="398" text-anchor="middle">21 Sep</text>
+<text class="tick" x="372.6" y="398" text-anchor="middle">22 Sep</text>
+<text class="tick" x="496.0" y="398" text-anchor="middle">23 Sep</text>
+<text class="tick" x="619.4" y="398" text-anchor="middle">24 Sep</text>
+<text class="tick" x="742.9" y="398" text-anchor="middle">25 Sep</text>
+<text class="tick" x="866.3" y="398" text-anchor="middle">26 Sep</text>
+<line class="axis" x1="64" x2="928" y1="380" y2="380"/>
+<circle cx="866.3" cy="376.6" r="2.5" fill="#60a5fa"/>
+<circle cx="866.3" cy="374.9" r="2.5" fill="#60a5fa"/>
+<circle cx="125.7" cy="364.6" r="2.5" fill="#ff9d4d"/>
+<circle cx="866.3" cy="364.6" r="2.5" fill="#ff9d4d"/>
+<circle cx="125.7" cy="156.4" r="2.5" fill="#ff9d4d"/>
+<circle cx="866.3" cy="361.2" r="2.5" fill="#ff9d4d"/>
+<circle cx="125.7" cy="364.6" r="2.5" fill="#fb7185"/>
+<circle cx="866.3" cy="364.6" r="2.5" fill="#fb7185"/>
+<circle cx="125.7" cy="187.1" r="2.5" fill="#fb7185"/>
+<circle cx="866.3" cy="361.2" r="2.5" fill="#fb7185"/>
+<circle cx="125.7" cy="380.0" r="2.5" fill="#5eead4"/>
+<circle cx="866.3" cy="376.6" r="2.5" fill="#5eead4"/>
+<circle cx="125.7" cy="376.6" r="2.5" fill="#5eead4"/>
+<circle cx="866.3" cy="371.5" r="2.5" fill="#5eead4"/>
+<rect x="64" y="72" width="12" height="12" rx="2" fill="#60a5fa"/>
+<text class="legend" x="81" y="82">PR, GitHub, median</text>
+<line x1="289" x2="301" y1="78" y2="78" stroke="#60a5fa" stroke-width="2" stroke-dasharray="3 2"/>
+<text class="legend" x="306" y="82">PR, GitHub, 90th pct</text>
+<rect x="514" y="72" width="12" height="12" rx="2" fill="#ff9d4d"/>
+<text class="legend" x="531" y="82">PR, Namespace, median</text>
+<line x1="739" x2="751" y1="78" y2="78" stroke="#ff9d4d" stroke-width="2" stroke-dasharray="3 2"/>
+<text class="legend" x="756" y="82">PR, Namespace, 90th pct</text>
+<rect x="64" y="86" width="12" height="12" rx="2" fill="#fb7185"/>
+<text class="legend" x="81" y="96">merge queue, median</text>
+<line x1="289" x2="301" y1="92" y2="92" stroke="#fb7185" stroke-width="2" stroke-dasharray="3 2"/>
+<text class="legend" x="306" y="96">merge queue, 90th pct</text>
+<rect x="514" y="86" width="12" height="12" rx="2" fill="#5eead4"/>
+<text class="legend" x="531" y="96">other GitHub jobs, median</text>
+<line x1="739" x2="751" y1="92" y2="92" stroke="#5eead4" stroke-width="2" stroke-dasharray="3 2"/>
+<text class="legend" x="756" y="96">other GitHub jobs, 90th pct</text>
+</svg>

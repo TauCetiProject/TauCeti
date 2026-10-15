@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.NumberTheory.NumberField.Basic
+import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 
 /-!
@@ -22,6 +23,9 @@ the second is the first with its coefficients cast to `ℚ`.
   `minpoly ℚ (x : K) = (minpoly ℤ x).map (algebraMap ℤ ℚ)`.
 * `TauCeti.NumberField.minpoly_rat_eq_of_mem_rootSet`: a root in a commutative domain over `ℚ`
   has the same minimal polynomial over `ℚ` as `x`.
+* `TauCeti.NumberField.minpoly_two_mul_sub_one_of_minpoly_eq_X_sq_sub_X_add`: an algebraic
+  integer `ω` with minimal polynomial `X² - X + c` has `2ω - 1` with minimal polynomial
+  `X² - (1 - 4c)`.
 * `TauCeti.NumberField.minpoly_int_eq_of_coe_mem_rootSet`: an algebraic integer in another
   number field that is a root has the same minimal polynomial over `ℤ` as `x`.
 -/
@@ -81,5 +85,35 @@ theorem minpoly_int_eq_of_coe_mem_rootSet {M : Type*} [Field M] [NumberField M] 
   rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,
     _root_.NumberField.RingOfIntegers.minpoly_rat_coe] at h
   exact Polynomial.map_injective _ (algebraMap ℤ ℚ).injective_int h
+
+/-- For an algebraic integer `ω` with minimal polynomial `X² - X + c` over `ℤ`, the element
+`2ω - 1` is a square root of `1 - 4c`: its minimal polynomial over `ℤ` is `X² - (1 - 4c)`. This
+converts the half-integer presentation of a quadratic field back into the radicand
+presentation. -/
+theorem minpoly_two_mul_sub_one_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) :
+    minpoly ℤ (2 * ω - 1) = X ^ 2 - C (1 - 4 * c) := by
+  have hdeg : (X ^ 2 - X + C c : ℤ[X]).natDegree = 2 := by
+    simpa using (isMonicOfDegree_sub_add_two (R := ℤ) 1 c).natDegree_eq
+  -- Scaling the roots of `X² - X + c` by `2` gives the minimal polynomial `X² - 2X + 4c` of `2ω`.
+  have hscale : minpoly ℤ ((2 : ℤ) • ω) = X ^ 2 - C 2 * X + C (4 * c) := by
+    rw [IsIntegrallyClosed.minpoly_smul two_ne_zero ω.isIntegral, hmin]
+    ext i
+    rw [coeff_scaleRoots, hdeg]
+    rcases i with _ | _ | _ | i <;>
+      simp only [coeff_add, coeff_sub, coeff_X_pow, coeff_X, coeff_C, coeff_C_mul] <;> norm_num
+    ring
+  -- Over `ℚ`, subtracting `1` composes the minimal polynomial with `X + 1`; the coefficient map
+  -- `ℤ → ℚ` is injective.
+  have h2ω : (2 * ω - 1 : 𝓞 K) = (2 : ℤ) • ω - algebraMap ℤ (𝓞 K) 1 := by simp
+  have hcoe : (((2 : ℤ) • ω - algebraMap ℤ (𝓞 K) 1 : 𝓞 K) : K) =
+      (((2 : ℤ) • ω : 𝓞 K) : K) - algebraMap ℚ K 1 := by
+    push_cast
+    simp
+  apply Polynomial.map_injective (algebraMap ℤ ℚ) (algebraMap ℤ ℚ).injective_int
+  rw [← _root_.NumberField.RingOfIntegers.minpoly_rat_coe, h2ω, hcoe, minpoly.sub_algebraMap,
+    _root_.NumberField.RingOfIntegers.minpoly_rat_coe, hscale]
+  simp
+  ring
 
 end TauCeti.NumberField

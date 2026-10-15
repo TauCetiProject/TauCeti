@@ -19,6 +19,11 @@ counts need, namely that the continuous dual has the same dimension as the space
 
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
+In real dimension one, equal-norm vectors agree up to sign; in particular, a nonzero-radius
+sphere consists of two antipodal points.
+
+A linear endomorphism of a finite-dimensional normed space that is bounded below by `c > 0` is
+injective, hence invertible, and its inverse is bounded by `c⁻¹`.
 
 ## Main results
 
@@ -26,6 +31,8 @@ isomorphic. This allows pointwise choices of complements to be identified with a
   dimension as the space.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
+* `TauCeti.continuous_det_div_conj`: the determinant phase `det A / conj (det A)` of a continuous
+  family of continuous linear automorphisms varies continuously.
 -/
 
 public section
@@ -65,6 +72,65 @@ theorem nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv {V W F : Ty
   rw [Module.finrank_prod, Module.finrank_prod] at h
   omega
 
+/-- In a one-dimensional real normed space, vectors of equal norm agree up to sign. -/
+theorem eq_or_eq_neg_of_norm_eq_of_finrank_eq_one
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (h : Module.finrank ℝ V = 1) {x y : V} (hn : ‖x‖ = ‖y‖) :
+    x = y ∨ x = -y := by
+  by_cases hy : y = 0
+  · left
+    simpa [hy] using hn
+  obtain ⟨c, rfl⟩ := exists_smul_eq_of_finrank_eq_one h hy x
+  have hc : |c| = 1 := by
+    simpa [norm_smul, Real.norm_eq_abs, norm_ne_zero_iff.mpr hy] using hn
+  rcases (abs_eq (by positivity : (0 : ℝ) ≤ 1)).mp hc with hc | hc <;>
+    simp [hc]
+
+section Star
+
+open scoped ComplexConjugate
+
+variable {𝕜 E X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [StarRing 𝕜]
+  [ContinuousStar 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace X]
+
+/-- The determinant phase `det A / conj (det A)` of a continuous family of continuous linear
+automorphisms varies continuously. Over `ℂ` this is the Maslov phase `ρ(L, A L)` of a maximal
+totally real subspace `L`. -/
+theorem continuous_det_div_conj (A : X → E ≃L[𝕜] E)
+    (hA : Continuous fun x => (A x : E →L[𝕜] E)) :
+    Continuous fun x => LinearMap.det ((A x).toLinearEquiv : E →ₗ[𝕜] E) /
+      conj (LinearMap.det ((A x).toLinearEquiv : E →ₗ[𝕜] E)) := by
+  have hd : Continuous fun x => LinearMap.det ((A x).toLinearEquiv : E →ₗ[𝕜] E) :=
+    ContinuousLinearMap.continuous_det.comp hA
+  refine hd.div (continuous_star.comp hd) fun x => (map_ne_zero _).2 ?_
+  rw [← LinearEquiv.coe_det]
+  exact (LinearEquiv.det (A x).toLinearEquiv).ne_zero
+
+end Star
+
 end TauCeti
+
+namespace LinearMap
+
+variable {K V : Type*} [DivisionRing K] [NormedAddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- A linear endomorphism of a finite-dimensional normed space bounded below by `c > 0` is
+invertible, with inverse bounded by `c⁻¹`. -/
+theorem exists_comp_eq_id_of_mul_norm_le {C : V →ₗ[K] V} {c : ℝ} (hc : 0 < c)
+    (hC : ∀ v, c * ‖v‖ ≤ ‖C v‖) :
+    ∃ G : V →ₗ[K] V, C ∘ₗ G = .id ∧ G ∘ₗ C = .id ∧ ∀ v, ‖G v‖ ≤ c⁻¹ * ‖v‖ := by
+  have hinj : Function.Injective C := (injective_iff_map_eq_zero C).mpr fun v hv ↦
+    norm_eq_zero.mp <| le_antisymm (nonpos_of_mul_nonpos_right (by simpa [hv] using hC v) hc)
+      (norm_nonneg v)
+  set e := LinearEquiv.ofInjectiveEndo C hinj
+  refine ⟨e.symm, LinearEquiv.ofInjectiveEndo_right_inv C hinj,
+    LinearEquiv.ofInjectiveEndo_left_inv C hinj, fun v ↦ ?_⟩
+  rw [le_inv_mul_iff₀ hc]
+  have hv : C (e.symm v) = v := by
+    rw [← LinearEquiv.coe_ofInjectiveEndo C hinj]
+    exact e.apply_symm_apply v
+  simpa [hv] using hC (e.symm v)
+
+end LinearMap
 
 end

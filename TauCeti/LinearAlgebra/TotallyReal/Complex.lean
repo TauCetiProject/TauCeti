@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.TotallyReal.Basic
 
 /-!
@@ -29,6 +30,8 @@ these subspaces, and an endomorphism preserving one has real determinant.
   totally real subspace has the same (real) determinant as its restriction.
 * `TauCeti.IsMaximalTotallyReal.exists_linearEquiv_map_eq`: complex-linear automorphisms act
   transitively on maximal totally real subspaces.
+* `TauCeti.IsMaximalTotallyReal.isMaximalTotallyReal_prod`: a direct sum of maximal totally real
+  subspaces is maximal totally real in the product of the ambient complex modules.
 -/
 
 public section
@@ -190,6 +193,23 @@ theorem exists_linearEquiv_map_eq {L' : Submodule ℝ E}
   congr 2
   funext i
   exact hA i
+
+end IsMaximalTotallyReal
+
+namespace IsMaximalTotallyReal
+
+variable {E' : Type*} [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
+  {M : Submodule ℝ E'}
+
+/-- **A direct sum of maximal totally real subspaces is maximal totally real.** The coordinate
+submodule `L.prod M` of a product of complex modules is maximal totally real for multiplication by
+`i` whenever the two summands are. -/
+theorem isMaximalTotallyReal_prod
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L)
+    (hM : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) M) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (E × E') Complex.I).restrictScalars ℝ) (L.prod M) := by
+  rw [LinearMap.lsmul_restrictScalars_prodMap Complex.I]
+  exact hL.prod hM
 
 end IsMaximalTotallyReal
 

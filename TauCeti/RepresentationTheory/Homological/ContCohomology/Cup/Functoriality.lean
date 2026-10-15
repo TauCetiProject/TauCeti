@@ -44,7 +44,9 @@ objects. The restricted pairing `TauCeti.TopPairing.res` is the canonical choice
   cochains and on cocycles.
 * `TauCeti.TopPairing.cup_map`: **naturality of the cup product in compatible pairs**.
 * `TauCeti.TopPairing.cup_res`, `TauCeti.TopPairing.cup_infl`, `TauCeti.TopPairing.cup_coeffMap`:
-  compatibility with restriction, inflation and coefficient maps.
+  compatibility with restriction, inflation and coefficient maps;
+  `TauCeti.TopPairing.cup_coeffMap_left_id` is the case of a coefficient map on the right factor
+  only.
 
 ## References
 
@@ -175,6 +177,18 @@ theorem cup_coeffMap {X' Y' Z' : TopRep.{max v w} R G} (P' : TopPairing X' Y' Z'
       P'.cup m n (ContinuousCohomology.coeffMap f m a) (ContinuousCohomology.coeffMap g n b) := by
   simp only [ContinuousCohomology.coeffMap_def]
   exact P.cup_map P' (ContinuousMonoidHom.id G) f g h hcompat m n a b
+
+/-- Naturality of the cup product in the coefficients of the right factor only: coefficient
+morphisms `g`, `h` with `h (P.bil x y) = P'.bil x (g y)` satisfy
+`coeffMap h (a ⌣ b) = a ⌣' coeffMap g b`. This is `cup_coeffMap` with `f = 𝟙 X`. -/
+theorem cup_coeffMap_left_id {Y' Z' : TopRep.{max v w} R G} (P' : TopPairing X Y' Z')
+    (g : Y ⟶ Y') (h : Z ⟶ Z')
+    (hcompat : ∀ (x : X.V) (y : Y.V), h (P.bil x y) = P'.bil x (g y)) (m n : ℕ)
+    (a : continuousCohomology m X) (b : continuousCohomology n Y) :
+    ContinuousCohomology.coeffMap h (m + n) (P.cup m n a b) =
+      P'.cup m n a (ContinuousCohomology.coeffMap g n b) := by
+  have := P.cup_coeffMap P' (𝟙 X) g h (fun x y ↦ by rw [hcompat, CategoryTheory.id_apply]) m n a b
+  rwa [ContinuousCohomology.coeffMap_id] at this
 
 /-- **Restriction preserves cup products** (NSW (1.5.3)(i)): for a subgroup `S ≤ G` and a pairing
 `Pres` of the restricted coefficients with the same underlying bilinear map as `P`,

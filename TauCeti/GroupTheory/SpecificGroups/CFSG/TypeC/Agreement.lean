@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Generation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic
 public import TauCeti.LinearAlgebra.RootSystem.RootLength
@@ -117,7 +117,7 @@ theorem carrierNode_eq_last_iff (i : Fin d.1.rank) :
     have := d.carrierRank_add_one
     rw [Fin.ext_iff, Fin.val_cast, Fin.val_last]
     omega
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofC
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   rw [hcarrier, DynkinType.isLongSimpleRoot_congr (LieTypeIndex.dynkinType_C rank q)]
   simp only [DynkinType.isLongSimpleRoot_C, finCongr_apply, Fin.val_cast]
   simp only [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType, LieTypeIndex.dynkinType_C,
@@ -128,8 +128,8 @@ root `2eᵣ₋₁` at the final node, and the adjacent difference root `eᵢ - e
 noncomputable def symplecticRootIndex (i : Fin d.1.rank) :
     GLSymplecticFin.RootSubgroupIndex (d.carrierRank + 1) :=
   if hi : d.carrierNode i = Fin.last d.carrierRank then .positiveLong (Fin.last d.carrierRank)
-  else .difference (d.carrierNode i) (SpStd.next d.carrierRank (d.carrierNode i) hi)
-    (SpStd.lt_next d.carrierRank (d.carrierNode i) hi).ne
+  else .difference (d.carrierNode i) (Order.succ (d.carrierNode i))
+    (Order.lt_succ_iff_ne_top.2 hi).ne
 
 /-- The symplectic root at the final carrier node is the positive long root `2eᵣ₋₁`. -/
 theorem symplecticRootIndex_of_carrierNode_eq_last {i : Fin d.1.rank}
@@ -141,8 +141,8 @@ theorem symplecticRootIndex_of_carrierNode_eq_last {i : Fin d.1.rank}
 theorem symplecticRootIndex_of_carrierNode_ne_last {i : Fin d.1.rank}
     (hi : d.carrierNode i ≠ Fin.last d.carrierRank) :
     d.symplecticRootIndex i =
-      .difference (d.carrierNode i) (SpStd.next d.carrierRank (d.carrierNode i) hi)
-        (SpStd.lt_next d.carrierRank (d.carrierNode i) hi).ne := by
+      .difference (d.carrierNode i) (Order.succ (d.carrierNode i))
+        (Order.lt_succ_iff_ne_top.2 hi).ne := by
   simp only [symplecticRootIndex, hi, ↓reduceDIte]
 
 /-- **At a long simple root the symplectic root is the positive long root `2eᵣ₋₁`.** -/

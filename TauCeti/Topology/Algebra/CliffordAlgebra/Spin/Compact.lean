@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
-import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.Data.List.Pair
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import Mathlib.Analysis.Normed.Group.BallSphere
@@ -261,27 +261,12 @@ private theorem surjective_realCliffordSpinCompactParam (n : ℕ) [NeZero n] :
     List.prod_replicate, hpprod]
   rw [hfiller, one_pow, mul_one]
 
-/-- The zero-dimensional compact real Spin group has at most one element. -/
-instance instSubsingletonRealCliffordSpinGroupZeroZero :
-    Subsingleton (realCliffordSpinGroupZero 0) := by
-  let Q := realCliffordForm 0 0
-  have : Subsingleton (Fin 0 → ℝ) := ⟨fun _ _ ↦ funext (fun i ↦ Fin.elim0 i)⟩
-  have hlipschitz : lipschitzGroup Q = ⊥ := lipschitzGroup_eq_bot
-  constructor
-  intro x y
-  apply spinGroup.toUnits_injective
-  have hx : spinGroup.toUnits x ∈ lipschitzGroup Q :=
-    spinGroup.units_mem_lipschitzGroup x.2
-  have hy : spinGroup.toUnits y ∈ lipschitzGroup Q :=
-    spinGroup.units_mem_lipschitzGroup y.2
-  rw [hlipschitz] at hx hy
-  exact (Subgroup.mem_bot.mp hx).trans (Subgroup.mem_bot.mp hy).symm
-
 /-- The compact real Spin group is compact in every dimension. -/
 instance instCompactSpaceRealCliffordSpinGroupZero (n : ℕ) :
     CompactSpace (realCliffordSpinGroupZero n) := by
   cases n with
   | zero =>
+      have : Subsingleton (Fin (0 + 0) → ℝ) := ⟨fun _ _ ↦ funext (fun i ↦ Fin.elim0 i)⟩
       infer_instance
   | succ n =>
       let _ : NeZero (n + 1) := ⟨Nat.succ_ne_zero n⟩

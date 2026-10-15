@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 import TauCeti.MeasureTheory.Measure.UnitIntervalMap
+import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Pullback
 
 /-!
@@ -31,10 +32,10 @@ and `exists_measurePreserving_from_unitInterval` (Janson, Thm A.9) does that wit
 hypothesis. That is the whole content of the harder direction: an *arbitrary* coupling, however
 atomic, is realized by a pair of measure-preserving maps out of `(I, volume)`, because the pair of
 projections of such a realization has the coupling as its joint law. The companion
-`CutMetric.Pullback.Validation` module instantiates the equivalence at a point-mass coupling, at a
-finitely atomic one, and at one mixing an atomic with a continuous direction; these regressions are
-what the absence of an atomless hypothesis buys, and each fails to typecheck for any formulation
-that assumes one.
+`CutMetric.Pullback.Validation` module evaluates the map form through the equivalence at a
+point-mass coupling, at finitely atomic ones, and at ones mixing an atomic with a continuous
+direction; these regressions are what the absence of an atomless hypothesis buys, and each fails to
+typecheck for any formulation that assumes one.
 
 **Why the easy direction is easy.** A pair of measure-preserving maps `f, g` out of a common
 carrier pushes that carrier forward to a coupling along `x ↦ (f x, g x)`, and the overlaid
@@ -65,6 +66,8 @@ any witness supplies the required upper bound.
   infimum, and `exists_measurePreserving_cutNorm_sub_lt` produces a pair of maps beating any strict
   upper bound; `cutDistPullback_def` spells the defining infimum out in public terms;
 * `cutDistPullback_comm` is symmetry, and holds with no hypothesis on either carrier;
+* `cutDistPullback_congr_ae_left` and `cutDistPullback_congr_ae_right`: the map form only sees the
+  almost-everywhere class of each graphon, again with no hypothesis on either carrier;
 * `cutDistPullback_nonneg`, `cutDistPullback_le_one`, `cutDistPullback_self` and
   `cutDistPullback_le_cutNorm_sub` are the range and the same-carrier bounds.
 
@@ -222,6 +225,42 @@ theorem cutDistPullback_nonneg (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ�
   by_cases h : (pullbackCutNorms U W).Nonempty
   · exact le_csInf h fun _ hr => nonneg_of_mem_pullbackCutNorms hr
   · rw [Set.not_nonempty_iff_eq_empty.mp h, Real.sInf_empty]
+
+/-! ### Almost-everywhere invariance -/
+
+/-- **The map form of the cut distance only sees the a.e. class of its left argument**, on
+arbitrary probability carriers. -/
+theorem cutDistPullback_congr_ae_left {U U' : Graphon Ω₁ μ₁} {W : Graphon Ω₂ μ₂}
+    (h : ∀ᵐ p ∂(μ₁.prod μ₁), U p.1 p.2 = U' p.1 p.2) :
+    cutDistPullback U W = cutDistPullback U' W := by
+  -- Along `f × f`, the a.e. equality on `μ₁ ⊗ μ₁` pulls back to one on `I × I`.
+  have hcut (f : I → Ω₁) (g : I → Ω₂) (hf : MeasurePreserving f volume μ₁)
+      (hg : MeasurePreserving g volume μ₂) :
+      cutNorm volume (U.toSymmKernel.comap f hf.measurable volume
+        - W.toSymmKernel.comap g hg.measurable volume) =
+      cutNorm volume (U'.toSymmKernel.comap f hf.measurable volume
+        - W.toSymmKernel.comap g hg.measurable volume) := by
+    refine cutNorm_congr_ae ?_
+    filter_upwards [(hf.prod hf).quasiMeasurePreserving.ae h] with q hq
+    rw [Prod.map_fst, Prod.map_snd] at hq
+    simp only [SymmKernel.coe_sub, Pi.sub_apply, SymmKernel.comap_apply,
+      Graphon.coe_toSymmKernel, hq]
+  -- So every pair of maps contributes the same cut norm for `U` as for `U'`, and the two infima are
+  -- taken over the same set of reals.
+  rw [cutDistPullback_def, cutDistPullback_def]
+  congr 1
+  ext r
+  constructor <;> rintro ⟨f, g, hf, hg, rfl⟩
+  · exact ⟨f, g, hf, hg, (hcut f g hf hg).symm⟩
+  · exact ⟨f, g, hf, hg, hcut f g hf hg⟩
+
+/-- **The map form of the cut distance only sees the a.e. class of its right argument**, on
+arbitrary probability carriers. -/
+theorem cutDistPullback_congr_ae_right {U : Graphon Ω₁ μ₁} {W W' : Graphon Ω₂ μ₂}
+    (h : ∀ᵐ p ∂(μ₂.prod μ₂), W p.1 p.2 = W' p.1 p.2) :
+    cutDistPullback U W = cutDistPullback U W' := by
+  -- By symmetry, from `cutDistPullback_congr_ae_left`.
+  rw [cutDistPullback_comm U W, cutDistPullback_comm U W', cutDistPullback_congr_ae_left h]
 
 /-! ### The two forms agree -/
 

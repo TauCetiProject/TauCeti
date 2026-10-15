@@ -163,6 +163,12 @@ variable {third : HodgeStructure h₃ n}
 noncomputable def toLinearMap (f : Hom source target) : W₁ →ₗ[ℂ] W₂ :=
   integralMapToComplex h₁ ι₂ f.toIntLinearMap
 
+/-- The complex action of a Hodge morphism is the complexification of its integral map. This is
+the bridge to the `TauCeti.Hodge.integralMapToComplex` API. -/
+theorem toLinearMap_def (f : Hom source target) :
+    f.toLinearMap = integralMapToComplex h₁ ι₂ f.toIntLinearMap :=
+  (rfl)
+
 /-- A Hodge morphism acts on complex vectors through the complexification of its integral map. -/
 noncomputable instance : CoeFun (Hom source target) fun _ ↦ W₁ → W₂ :=
   ⟨fun f ↦ f.toLinearMap⟩
@@ -445,7 +451,7 @@ theorem zero_comp (f : Hom source target) : (0 : Hom target third).comp f = 0 :=
 /-- Composing with a zero morphism on the right gives zero. -/
 @[simp]
 theorem comp_zero (g : Hom target third) : g.comp (0 : Hom source target) = 0 := by
-  ext x
+  ext _
   exact g.toIntLinearMap.map_zero
 
 end Hom

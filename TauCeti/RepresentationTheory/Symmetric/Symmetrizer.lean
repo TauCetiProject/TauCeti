@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.Group.Subgroup.Finite
+public import Mathlib.Combinatorics.Enumerative.Partition.YoungDiagram
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.SubgroupCharSum
 public import TauCeti.RepresentationTheory.Symmetric.RowColumnSubgroup
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
@@ -47,6 +49,10 @@ criterion with `b_t`, and it is the element the Garnir relations of
 `TauCeti/RepresentationTheory/Symmetric/Specht/Garnir.lean` are stated for.  Nothing about it
 refers to a tableau, only to the sign character `TauCeti.signLinearCharacter`.
 
+For a partition `μ` of `d`, `Nat.Partition.youngSymmetrizer` is the transported Young symmetrizer
+of the row-superstandard tableau of the diagram of `μ`, with the labels of the diagram identified
+with `Fin d`: the partition-indexed element `c_μ ∈ k[S_d]`.
+
 The symmetrizers are built over `ℚ`, which is what the essential-idempotence theorem and the
 Specht-module constructions downstream of this file work over.  The coefficients of `c_t` are in
 fact integral -- each is a sum of signs -- so nothing about `c_t` itself demands rational
@@ -59,8 +65,6 @@ arbitrary commutative ring, would remove it, and is a separate construction.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 2.
 -/
 
 public section
@@ -80,7 +84,8 @@ local instance (t : YoungTableau μ) : DecidablePred (· ∈ rowSubgroup t) :=
   Classical.decPred _
 
 /-- Classical decidability of membership in the column group, used to form its finite sum. -/
-local instance (t : YoungTableau μ) : DecidablePred (· ∈ colSubgroup t) :=
+local instance decidablePredMemColSubgroup (t : YoungTableau μ) :
+    DecidablePred (· ∈ colSubgroup t) :=
   Classical.decPred _
 
 /-- The **row symmetrizer** `a_t`, the sum of the permutations preserving the rows of `t`. -/
@@ -96,8 +101,8 @@ noncomputable def columnAntisymmetrizer (t : YoungTableau μ) :
     ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
       MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) q
 
-/-- The **Young symmetrizer** of `t`, with the convention `c_t = a_t b_t`: first
-row-symmetrize, then column-antisymmetrize. -/
+/-- The **Young symmetrizer** of `t`, with the convention `c_t = a_t b_t`. On a left module it
+acts by column-antisymmetrization followed by row-symmetrization. -/
 noncomputable def youngSymmetrizer (t : YoungTableau μ) :
     MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)) :=
   rowSymmetrizer t * columnAntisymmetrizer t
@@ -117,7 +122,7 @@ theorem columnAntisymmetrizer_def (t : YoungTableau μ) :
           MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) q :=
   (rfl)
 
-/-- The Young symmetrizer uses the row-then-column convention `c_t = a_t b_t`. -/
+/-- The Young symmetrizer is the product `c_t = a_t b_t`. -/
 theorem youngSymmetrizer_def (t : YoungTableau μ) :
     youngSymmetrizer t = rowSymmetrizer t * columnAntisymmetrizer t :=
   (rfl)
@@ -323,10 +328,10 @@ theorem asAlgebraHom_columnAntisymmetrizer_apply {V : Type*} [AddCommGroup V] [M
 
 section Transport
 
-variable (k : Type*) [CommSemiring k] [Algebra ℚ k]
+variable (k : Type*) [Semiring k] [Algebra ℚ k]
 
 /-- The Young symmetrizer `c_t` with the coefficients of its rational form transported into a
-`ℚ`-algebra `k`, so that it can act on a `k`-module.
+`ℚ`-algebra `k`, so that it can act on a `k`-module. The algebra `k` need not be commutative.
 
 The `ℚ`-algebra hypothesis comes from `youngSymmetrizer` being defined over `ℚ` here, not from
 `c_t`, whose coefficients are integral. -/
@@ -349,9 +354,7 @@ theorem youngSymmetrizerOver_coeff (t : YoungTableau μ) (σ : Equiv.Perm (Fin �
   rw [youngSymmetrizerOver_def, MonoidAlgebra.coeff_mapAlgHom, Algebra.ofId_apply]
 
 /-- **The column group acts on the transported Young symmetrizer through its sign character.**
-This is `TauCeti.mul_youngSymmetrizer_right` carried into `k`. The sign keeps acting as a rational
-scalar, which is available because `k` is a `ℚ`-algebra; it cannot be phrased as a `ℤ`-action,
-since a `CommSemiring` `k` need not have negation. -/
+The sign acts as a rational scalar, using the `ℚ`-algebra structure of `k`. -/
 @[simp]
 theorem mul_youngSymmetrizerOver_right (t : YoungTableau μ) (q : colSubgroup t) :
     youngSymmetrizerOver k t * MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 =
@@ -378,9 +381,8 @@ end Transport
 
 section TransportRing
 
--- The signed sum below is a `ℤ`-linear combination, so it asks the target ring for negation; that
--- is the only difference from the `CommSemiring` hypothesis of the section above.
-variable (k : Type*) [CommRing k] [Algebra ℚ k]
+-- The signed sum below uses the target ring's `ℤ`-action.
+variable (k : Type*) [Ring k] [Algebra ℚ k]
 
 /-- **The Young symmetrizer of a shape with at most one column is the full antisymmetrization**
 `∑_σ sgn(σ) σ`: the column group is everything and the row group is trivial. -/
@@ -494,7 +496,7 @@ theorem asAlgebraHom_antisymmetrizerOn_apply_eq_zero {M : Type*} [AddCommGroup M
     (V : Representation ℚ (Equiv.Perm α) M) {X : Finset α} {p : Equiv.Perm α}
     (hp : ∀ k ∉ X, p k = k) (hsign : Equiv.Perm.sign p = -1) {v : M} (hv : V p v = v) :
     V.asAlgebraHom (antisymmetrizerOn X) v = 0 := by
-  have : IsAddTorsionFree M := .of_module_rat _
+  have : HasUniqueDiv M := .of_module_rat _
   rw [antisymmetrizerOn_def]
   refine asAlgebraHom_subgroupCharSum_apply_eq_zero _ _ (nsmul_right_injective two_ne_zero) V
     (mem_fixingSubgroup_compl_of_forall_notMem hp) ?_ hv
@@ -503,3 +505,36 @@ theorem asAlgebraHom_antisymmetrizerOn_apply_eq_zero {M : Type*} [AddCommGroup M
 end AntisymmetrizerOn
 
 end TauCeti
+
+namespace Nat.Partition
+
+open TauCeti
+
+variable {d : ℕ} (μ : d.Partition) (k : Type*) [CommSemiring k] [Algebra ℚ k]
+
+/-- **The Young symmetrizer of a partition** `μ` of `d`, as an element of `k[S_d]`: the Young
+symmetrizer `c_t = a_t b_t` of the row-superstandard tableau `t` of the diagram of `μ`, transported
+to `k` and with the labels of the diagram identified with `Fin d` along
+`YoungDiagram.card_ofPartition`. This is the identification along which `TauCeti.spechtModule μ`
+is a representation of `S_d`. -/
+noncomputable def youngSymmetrizer : MonoidAlgebra k (Equiv.Perm (Fin d)) :=
+  MonoidAlgebra.domCongr k k (finCongr (YoungDiagram.card_ofPartition μ)).permCongrHom
+    (YoungTableau.youngSymmetrizerOver k
+      (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau)
+
+/-- The Young symmetrizer of a partition is the transported Young symmetrizer of the
+row-superstandard tableau of its diagram. -/
+theorem youngSymmetrizer_def :
+    μ.youngSymmetrizer k =
+      MonoidAlgebra.domCongr k k (finCongr (YoungDiagram.card_ofPartition μ)).permCongrHom
+        (YoungTableau.youngSymmetrizerOver k
+          (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau) :=
+  (rfl)
+
+/-- The coefficient of the identity in the Young symmetrizer is `1`. -/
+@[simp]
+theorem youngSymmetrizer_coeff_one : (μ.youngSymmetrizer k).coeff 1 = 1 := by
+  rw [youngSymmetrizer_def, MonoidAlgebra.coeff_domCongr, map_one,
+    YoungTableau.youngSymmetrizerOver_coeff, YoungTableau.youngSymmetrizer_coeff_one, map_one]
+
+end Nat.Partition

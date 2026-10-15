@@ -298,6 +298,13 @@ def principalCartierDivisorAddHom : Additive X.functionFieldˣ →+ CartierDivis
 def principalCartierDivisor (f : X.functionFieldˣ) : CartierDivisor X :=
   principalCartierDivisorAddHom X (Additive.ofMul f)
 
+/-- The principal-divisor homomorphism sends an additively written rational unit to its
+principal Cartier divisor. -/
+@[simp]
+lemma principalCartierDivisorAddHom_apply (f : Additive X.functionFieldˣ) :
+    principalCartierDivisorAddHom X f = principalCartierDivisor X f.toMul :=
+  (rfl)
+
 /-- The principal Cartier divisor of one is zero. -/
 @[simp]
 lemma principalCartierDivisor_one : principalCartierDivisor X 1 = 0 :=
@@ -327,7 +334,6 @@ lemma principalCartierDivisor_regularUnitToFunctionField
 
 /-- Restricting a principal Cartier divisor to a nonempty open subset gives the class of the same
 rational function there: a principal divisor has a global equation. -/
-@[simp]
 lemma principalCartierDivisorAddHom_restrict (g : Additive X.functionFieldˣ) (U : X.Opens)
     [Nonempty U] :
     (principalCartierDivisorAddHom X g) |_ U = rationalUnitClass X U g :=

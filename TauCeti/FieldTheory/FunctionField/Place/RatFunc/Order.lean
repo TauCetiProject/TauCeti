@@ -27,12 +27,16 @@ rational function field.
   `TauCeti.Place.ord_adicOfIrreducible_eq_zero_iff`: the zeros, poles and units at `P_q` are
   detected by divisibility of the reduced numerator and denominator by `q`.
 * `TauCeti.Place.ord_adicOfIrreducible_algebraMap_irreducible`: an irreducible polynomial has
-  order one at the place it defines and order zero elsewhere;
+  order one at the place it defines and order zero elsewhere, and
+  `TauCeti.Place.ord_adicOfIrreducible_algebraMap_of_squarefree` extends this to squarefree
+  polynomials;
   `TauCeti.Place.ord_adicOfIrreducible_X` and its two `simp` specializations spell this out
-  for `X`.
+  for `X`, and `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_self` and
+  `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_of_not_associated` for `X - a`.
 * `TauCeti.Place.valuation_ofIrreducible_le_one_iff` and
   `TauCeti.Place.residue_adicOfIrreducible_eq_zero_iff`: regularity and vanishing in the residue
   field are detected by the denominator and numerator respectively.
+* `RatFunc.pow_ne_X`: `X` is not a proper power in `k(X)`.
 * `TauCeti.Place.forall_ord_adicOfIrreducible_nonneg_iff`: the functions regular at every finite
   place are the polynomials.
 
@@ -56,7 +60,7 @@ variable {k : Type*} [Field k]
 multiplicity of `q` in `r`. -/
 theorem ord_adicOfIrreducible_algebraMap {q r : k[X]} (hq : Irreducible q) (hr : r ≠ 0) :
     (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = multiplicity q r := by
-  rw [adicOfIrreducible_def, ord_algebraMap_adic _ _ _ hr,
+  rw [adicOfIrreducible_def, ord_ofPrime_algebraMap _ _ _ hr,
     HeightOneSpectrum.ofIrreducible_asIdeal]
   exact_mod_cast multiplicity_eq_of_emultiplicity_eq Ideal.emultiplicity_span_eq_emultiplicity
 
@@ -76,6 +80,24 @@ theorem ord_adicOfIrreducible_algebraMap_irreducible {q p : k[X]} (hq : Irreduci
     exact fun hdiv ↦ h (hq.associated_of_dvd hp hdiv)
 
 open scoped Classical in
+/-- A squarefree polynomial has order one at the finite place of each of its irreducible factors,
+and order zero at every other finite place. -/
+theorem ord_adicOfIrreducible_algebraMap_of_squarefree {q r : k[X]} (hq : Irreducible q)
+    (hr : Squarefree r) :
+    (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = if q ∣ r then 1 else 0 := by
+  rw [ord_adicOfIrreducible_algebraMap hq hr.ne_zero]
+  have hfin : FiniteMultiplicity q r := .of_not_isUnit hq.not_isUnit hr.ne_zero
+  split_ifs with hdvd
+  · -- `q ∣ r` but `q ^ 2 ∤ r`, so the multiplicity is exactly one
+    have hlt : multiplicity q r < 2 := by
+      rw [hfin.multiplicity_lt_iff_not_dvd, sq]
+      exact fun h ↦ hq.not_isUnit (hr q h)
+    have : 1 ≤ multiplicity q r := by
+      rwa [← hfin.pow_dvd_iff_le_multiplicity, pow_one]
+    omega
+  · rw [multiplicity_eq_zero_of_not_dvd hdvd, Nat.cast_zero]
+
+open scoped Classical in
 /-- Among the finite places, `X` has order one at the place defined by a polynomial associated to
 `X` and order zero at every other place. -/
 theorem ord_adicOfIrreducible_X {q : k[X]} (hq : Irreducible q) :
@@ -90,6 +112,14 @@ theorem ord_adicOfIrreducible_X_self :
   classical
   rw [ord_adicOfIrreducible_X, ite_eq_left (Associated.refl _)]
 
+/-- `X` is not a proper power in `k(X)`: it has order one at the place `X = 0`. -/
+theorem _root_.RatFunc.pow_ne_X {n : ℕ} (hn : 1 < n) (c : RatFunc k) : c ^ n ≠ RatFunc.X := by
+  intro h
+  have h1 := congrArg (adicOfIrreducible (irreducible_X (R := k))).ord h
+  rw [ord_pow, ord_adicOfIrreducible_X_self] at h1
+  have := Int.eq_one_of_dvd_one (by positivity) ⟨_, h1.symm⟩
+  omega
+
 /-- `X` has order zero at every finite place other than its own. -/
 @[simp]
 theorem ord_adicOfIrreducible_X_of_not_associated {q : k[X]} (hq : Irreducible q)
@@ -97,6 +127,24 @@ theorem ord_adicOfIrreducible_X_of_not_associated {q : k[X]} (hq : Irreducible q
     (adicOfIrreducible hq).ord (RatFunc.X : RatFunc k) = 0 := by
   classical
   rw [ord_adicOfIrreducible_X, ite_eq_right h]
+
+/-- `X - a` has order one at its own finite place. -/
+@[simp]
+theorem ord_adicOfIrreducible_X_sub_C_self (a : k) :
+    (adicOfIrreducible (irreducible_X_sub_C a)).ord (RatFunc.X - RatFunc.C a) = 1 := by
+  classical
+  rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub,
+    ord_adicOfIrreducible_algebraMap_irreducible _ (irreducible_X_sub_C a),
+    ite_eq_left (Associated.refl _)]
+
+/-- `X - a` has order zero at every finite place other than its own. -/
+@[simp]
+theorem ord_adicOfIrreducible_X_sub_C_of_not_associated {q : k[X]} (hq : Irreducible q) {a : k}
+    (h : ¬Associated q (X - C a)) :
+    (adicOfIrreducible hq).ord (RatFunc.X - RatFunc.C a) = 0 := by
+  classical
+  rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub,
+    ord_adicOfIrreducible_algebraMap_irreducible hq (irreducible_X_sub_C a), ite_eq_right h]
 
 /-- The order of a nonzero rational function at the finite place associated to `q` is the
 multiplicity of `q` in its numerator minus its multiplicity in its denominator. -/
@@ -202,7 +250,7 @@ theorem forall_ord_adicOfIrreducible_nonneg_iff {f : RatFunc k} :
     exact h q hq
   · rintro ⟨p, rfl⟩ q hq
     rw [adicOfIrreducible_def]
-    exact ord_algebraMap_adic_nonneg k (RatFunc k) _ p
+    exact ord_ofPrime_algebraMap_nonneg k (RatFunc k) _ p
 
 /-- A function regular at `P_q` has zero residue exactly when `q` divides its reduced numerator. -/
 theorem residue_adicOfIrreducible_eq_zero_iff {q : k[X]} (hq : Irreducible q)

@@ -33,7 +33,7 @@ open scoped Topology NNReal
 
 namespace TauCeti.Semigroups
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-! ## Exponential growth bounds -/
 
@@ -42,7 +42,6 @@ def StronglyContinuousSemigroup.HasGrowthBound
     (S : StronglyContinuousSemigroup X) (ω : ℝ) (M : ℝ) : Prop :=
   1 ≤ M ∧ ∀ (t : ℝ), 0 ≤ t → ‖S.realOperator t‖ ≤ M * Real.exp (ω * t)
 
-omit [CompleteSpace X] in
 /-- The multiplicative constant in a growth bound is at least one. -/
 theorem StronglyContinuousSemigroup.HasGrowthBound.one_le
     {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hb : S.HasGrowthBound ω M) :
@@ -50,7 +49,6 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.one_le
   unfold StronglyContinuousSemigroup.HasGrowthBound at hb
   exact hb.1
 
-omit [CompleteSpace X] in
 /-- The operator-norm estimate supplied by a growth bound. -/
 theorem StronglyContinuousSemigroup.HasGrowthBound.bound
     {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hb : S.HasGrowthBound ω M)
@@ -58,7 +56,6 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.bound
   unfold StronglyContinuousSemigroup.HasGrowthBound at hb
   exact hb.2 t ht
 
-omit [CompleteSpace X] in
 /-- Constructor for a growth bound from the multiplicative lower bound and operator-norm
 estimate. -/
 public theorem StronglyContinuousSemigroup.hasGrowthBound_of_bound
@@ -68,7 +65,6 @@ public theorem StronglyContinuousSemigroup.hasGrowthBound_of_bound
   unfold StronglyContinuousSemigroup.HasGrowthBound
   exact ⟨hM, hbound⟩
 
-omit [CompleteSpace X] in
 /-- A growth bound can be weakened by increasing both the exponential rate and the multiplicative
 constant. -/
 theorem StronglyContinuousSemigroup.HasGrowthBound.mono
@@ -82,14 +78,12 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.mono
   exact (hb.bound t ht).trans
     (mul_le_mul hM hexp (Real.exp_nonneg _) (hM_nonneg.trans hM))
 
-omit [CompleteSpace X] in
 /-- A growth bound can be weakened by increasing the exponential rate. -/
 theorem StronglyContinuousSemigroup.HasGrowthBound.mono_omega
     {S : StronglyContinuousSemigroup X} {ω M ω' : ℝ} (hb : S.HasGrowthBound ω M) (hω : ω ≤ ω') :
     S.HasGrowthBound ω' M :=
   hb.mono hω le_rfl
 
-omit [CompleteSpace X] in
 /-- **A growth bound controls the semigroup on `[0, t₀]` by the envelope
 `M * exp (max ω 0 * t₀)`.** Replacing the signed rate `ω` by `max ω 0` makes the envelope
 nondecreasing in the time, so the bound at `t₀` covers every earlier nonnegative `t`. -/
@@ -103,40 +97,36 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.norm_le_mul_exp_max_zero_mul_
       (mul_le_mul_of_nonneg_left htt₀ (le_max_right ω 0)))
     (zero_le_one.trans hb.one_le)
 
-omit [CompleteSpace X] in
 /-- A growth bound can be weakened by increasing the multiplicative constant. -/
 theorem StronglyContinuousSemigroup.HasGrowthBound.mono_const
     {S : StronglyContinuousSemigroup X} {ω M M' : ℝ} (hb : S.HasGrowthBound ω M) (hM : M ≤ M') :
     S.HasGrowthBound ω M' :=
   hb.mono le_rfl hM
 
-omit [CompleteSpace X] in
 /-- A contraction semigroup has growth bound `(0, 1)`. -/
 theorem ContractionSemigroup.hasGrowthBound (S : ContractionSemigroup X) :
     S.toStronglyContinuousSemigroup.HasGrowthBound 0 1 :=
   ⟨le_rfl, fun t ht => by simpa using S.contracting_real t ht⟩
 
-omit [CompleteSpace X] in
 /-- A contraction semigroup has every nonnegative exponential growth rate with constant `1`. -/
 theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega
     (S : ContractionSemigroup X) {ω : ℝ} (hω : 0 ≤ ω) :
     S.toStronglyContinuousSemigroup.HasGrowthBound ω 1 :=
   S.hasGrowthBound.mono_omega hω
 
-omit [CompleteSpace X] in
 /-- A contraction semigroup has growth bound `(0, M)` for every `M ≥ 1`. -/
 theorem ContractionSemigroup.hasGrowthBound_of_one_le_const
     (S : ContractionSemigroup X) {M : ℝ} (hM : 1 ≤ M) :
     S.toStronglyContinuousSemigroup.HasGrowthBound 0 M :=
   S.hasGrowthBound.mono_const hM
 
-omit [CompleteSpace X] in
 /-- A contraction semigroup has growth bound `(ω, M)` whenever `0 ≤ ω` and `1 ≤ M`. -/
 theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega_of_one_le_const
     (S : ContractionSemigroup X) {ω M : ℝ} (hω : 0 ≤ ω) (hM : 1 ≤ M) :
     S.toStronglyContinuousSemigroup.HasGrowthBound ω M :=
   S.hasGrowthBound.mono hω hM
 
+variable [CompleteSpace X]
 
 /-! ## Growth Bounds and Exponential Type -/
 
@@ -147,7 +137,7 @@ theorem StronglyContinuousSemigroup.existsGrowthBound (S : StronglyContinuousSem
   obtain ⟨M, hM1, hMbound⟩ := S.normBoundedOnUnitInterval
   have hM_pos : 0 < M := by linarith
   refine ⟨Real.log M, M, hM1, fun t ht => ?_⟩
-  set n := ⌊t⌋₊ with hn_def
+  set n := ⌊t⌋₊
   have hn_le : (↑n : ℝ) ≤ t := Nat.floor_le ht
   have hfrac_nn : 0 ≤ t - ↑n := sub_nonneg.mpr hn_le
   have hfrac_le1 : t - ↑n ≤ 1 := by

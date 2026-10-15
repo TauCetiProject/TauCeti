@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Decidable
+public import TauCeti.Algebra.GroupAction.DiagonalOrbits
 
 /-!
 # Connected permutation triples and their isomorphism classes
@@ -26,12 +27,17 @@ of the thrice-punctured sphere, as isomorphism classes of connected triples are 
 
 * `TauCeti.ConnectedTriple`: a permutation triple together with connectedness.
 * `TauCeti.ConnectedIsoClass`: connected triples modulo simultaneous relabeling.
+* `TauCeti.PermutationTriple.IsoClass.IsConnected`: connectedness of an ordinary triple class.
+* `TauCeti.ConnectedIsoClass.forget`: inclusion into the isomorphism classes of all triples.
 * `TauCeti.ConnectedIsoClass.orbitFinset`: the connected triples in a class, as a finset.
 * `TauCeti.MarkedIsoClass`: connected triples with a marked label, modulo the diagonal relabeling
   action `τ • (t, i) = (τ • t, τ i)`, and `TauCeti.MarkedIsoClass.forget`, which forgets the label.
 
 ## Main results
 
+* `TauCeti.ConnectedIsoClass.equivSubtype`: connected classes are exactly the connected elements
+  of the quotient of all triples, using Mathlib's `Equiv.subtypeQuotientEquivQuotientSubtype`.
+* `TauCeti.ConnectedIsoClass.forget_injective`: forgetting connectedness preserves distinct classes.
 * `TauCeti.ConnectedIsoClass.mk_eq_mk_iff_exists_smul`,
   `TauCeti.ConnectedIsoClass.mk_eq_mk_iff_equivalent`: two connected triples have the same class
   exactly when a relabeling carries one onto the other, that is, when the underlying permutation
@@ -43,6 +49,8 @@ of the thrice-punctured sphere, as isomorphism classes of connected triples are 
 * `TauCeti.MarkedIsoClass.mk_eq_mk_iff_exists_smul`: two marked connected triples have the same
   class exactly when a relabeling carries one triple onto the other and its label onto the other
   label.
+* `TauCeti.MarkedIsoClass.stabilizerEquiv`: fixing a label identifies marked classes with
+  connected triples modulo permutations stabilizing that label.
 -/
 
 open Equiv MulAction
@@ -50,6 +58,24 @@ open Equiv MulAction
 public section
 
 namespace TauCeti
+
+namespace PermutationTriple.IsoClass
+
+variable {n : ℕ}
+
+/-- Connectedness of any representative of an isomorphism class of triples. -/
+def IsConnected : PermutationTriple.IsoClass n → Prop :=
+  lift PermutationTriple.IsConnected fun t t' h => by
+    obtain ⟨τ, rfl⟩ := PermutationTriple.equivalent_iff_exists_smul_eq.mp h
+    exact propext (PermutationTriple.isConnected_smul_iff τ t).symm
+
+/-- A triple class is connected exactly when its representative is connected. -/
+@[simp]
+theorem isConnected_mk (t : PermutationTriple n) :
+    (mk t).IsConnected ↔ t.IsConnected := by
+  rw [IsConnected, lift_mk]
+
+end PermutationTriple.IsoClass
 
 /-- A connected permutation triple of degree `n`. -/
 abbrev ConnectedTriple (n : ℕ) : Type :=
@@ -112,6 +138,56 @@ theorem mk_eq_mk_iff_equivalent {t t' : ConnectedTriple n} :
     exact ⟨τ⁻¹, by simp⟩
   · rintro ⟨τ, h⟩
     exact ⟨τ⁻¹, Subtype.ext (by rw [ConnectedTriple.coe_smul, ← h, inv_smul_smul])⟩
+
+/-- Connected isomorphism classes are exactly the connected elements of the quotient of all
+permutation triples. -/
+def equivSubtype (n : ℕ) :
+    ConnectedIsoClass n ≃ {c : PermutationTriple.IsoClass n // c.IsConnected} :=
+  (Equiv.subtypeQuotientEquivQuotientSubtype PermutationTriple.IsConnected
+    PermutationTriple.IsoClass.IsConnected
+    (fun t => by
+      simpa only [PermutationTriple.IsoClass.quotient_mk] using
+        (PermutationTriple.IsoClass.isConnected_mk t).symm)
+    (fun t t' => by
+      simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
+        Subtype.ext_iff, ConnectedTriple.coe_smul])).symm
+
+/-- The connected class of a representative corresponds to its ordinary class together with
+the induced connectedness proof. -/
+@[simp]
+theorem equivSubtype_mk (t : ConnectedTriple n) :
+    equivSubtype n (mk t) = ⟨PermutationTriple.IsoClass.mk t.1,
+      (PermutationTriple.IsoClass.isConnected_mk t.1).2 t.2⟩ := by
+  apply Subtype.ext
+  dsimp only
+  rw [← PermutationTriple.IsoClass.quotient_mk]
+  exact congrArg Subtype.val
+    (Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk
+      (s₁ := MulAction.orbitRel (Perm (Fin n)) (PermutationTriple n))
+      (s₂ := MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n)) _ _ _ _ t)
+
+/-- The isomorphism class of a connected triple, viewed among all permutation triples. -/
+def forget (c : ConnectedIsoClass n) : PermutationTriple.IsoClass n :=
+  (equivSubtype n c).1
+
+/-- Forgetting connectedness sends a connected representative to its ordinary triple class. -/
+@[simp]
+theorem forget_mk (t : ConnectedTriple n) :
+    (mk t).forget = PermutationTriple.IsoClass.mk t.1 :=
+  congrArg Subtype.val (equivSubtype_mk t)
+
+/-- Recovering a connected quotient class from a connected representative of an ordinary class. -/
+@[simp]
+theorem equivSubtype_symm_mk (t : PermutationTriple n)
+    (h : (PermutationTriple.IsoClass.mk t).IsConnected) :
+    (equivSubtype n).symm ⟨PermutationTriple.IsoClass.mk t, h⟩ =
+      mk ⟨t, (PermutationTriple.IsoClass.isConnected_mk t).1 h⟩ := by
+  apply (equivSubtype n).injective
+  simp
+
+/-- Forgetting connectedness does not identify distinct isomorphism classes. -/
+theorem forget_injective : Function.Injective (forget : ConnectedIsoClass n → _) :=
+  fun _ _ h => (equivSubtype n).injective (Subtype.ext h)
 
 /-- Equality of isomorphism classes is decidable: on representatives, decide isomorphism of the
 underlying permutation triples. -/
@@ -212,6 +288,38 @@ def forget : MarkedIsoClass n → ConnectedIsoClass n :=
 theorem forget_mk (t : ConnectedTriple n) (i : Fin n) :
     (mk t i).forget = ConnectedIsoClass.mk t :=
   (rfl)
+
+/-- Fixing any label identifies its stabilizer-orbit quotient with marked triple classes.
+For positive degree, `i = 0` gives the fixed-zero-label description. -/
+noncomputable def stabilizerEquiv (i : Fin n) :
+    MulAction.orbitRel.Quotient (MulAction.stabilizer (Perm (Fin n)) i) (ConnectedTriple n) ≃
+      MarkedIsoClass n :=
+  TauCeti.MulAction.orbitRelQuotientStabilizerEquiv
+    (G := Perm (Fin n)) (X := ConnectedTriple n) i
+
+/-- The stabilizer orbit of a triple is sent to its class marked at the fixed label. -/
+@[simp]
+theorem stabilizerEquiv_mk (i : Fin n) (t : ConnectedTriple n) :
+    stabilizerEquiv i (Quotient.mk'' t) = mk t i := by
+  exact TauCeti.MulAction.orbitRelQuotientStabilizerEquiv_mk
+    (G := Perm (Fin n)) i t
+
+/-- A class already marked at the fixed label is sent back to the stabilizer orbit of its
+triple. -/
+@[simp]
+theorem stabilizerEquiv_symm_mk (i : Fin n) (t : ConnectedTriple n) :
+    (stabilizerEquiv i).symm (mk t i) = Quotient.mk'' t := by
+  rw [← stabilizerEquiv_mk i t, Equiv.symm_apply_apply]
+
+/-- Moving a marked label back to the fixed label also applies the inverse permutation to
+its triple. -/
+@[simp]
+theorem stabilizerEquiv_symm_mk_apply (i : Fin n) (t : ConnectedTriple n)
+    (τ : Perm (Fin n)) :
+    (stabilizerEquiv i).symm (mk t (τ i)) = Quotient.mk'' (τ⁻¹ • t) := by
+  rw [stabilizerEquiv, mk]
+  exact TauCeti.MulAction.orbitRelQuotientStabilizerEquiv_symm_mk_smul
+    (G := Perm (Fin n)) i t τ
 
 end MarkedIsoClass
 

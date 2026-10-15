@@ -36,9 +36,8 @@ result for the canonical velocity `TauCeti.Manifold.curveVelocityWithin`.
 The chart computation of this file also specializes to the *velocity field* `t ↦ γ' t` of the
 curve, which is not pulled back from an ambient vector field: reading it in a chart returns the
 derivative of the chart reading of the curve, so the moving-chart formula becomes the classical
-second-order expression `u'' + Γ (u', u')`.  Those lemmas are stated for an arbitrary connection;
-`TauCeti/Geometry/Manifold/Riemannian/Geodesic/Basic.lean` reads the geodesic equation off them
-for the Levi-Civita connection.
+second-order expression `u'' + Γ (u', u')`.  `AlongCurve/Acceleration.lean` builds the covariant
+acceleration of the curve on this computation.
 
 ## Main results
 
@@ -64,9 +63,7 @@ for the Levi-Civita connection.
 * `CovariantDerivative.alongCurveWithin_pullback_curveVelocityWithin`: the same identification with
   the velocity written as `TauCeti.Manifold.curveVelocityWithin`.
 * `CovariantDerivative.alongCurveInChartWithin_curveVelocityWithin`: the coordinate formula for the
-  velocity field of the curve is `u'' + Γ (u', u')`, and
-  `CovariantDerivative.alongCurveWithin_curveVelocityWithin_eq_zero_iff`: it vanishes exactly when
-  that second-order expression does, for the chart centred at the current point.
+  velocity field of the curve is `u'' + Γ (u', u')`.
 
 ## References
 
@@ -339,27 +336,5 @@ theorem alongCurveInChartWithin_curveVelocityWithin {x : M} {s : Set 𝕜} {t : 
   have hpoint : sectionCoord (F := E) γ (curveVelocityWithin I γ s) x t =
       derivWithin (extChartAt I x ∘ γ) s t := hEq.self_of_nhdsWithin ht
   rw [alongCurveInChartWithin_apply, hEq.derivWithin_eq hpoint, hpoint]
-
-/-- The moving-chart candidate for the derivative of the velocity field along the curve vanishes
-exactly when the curve read in the extended chart at the current point solves the second-order
-equation `u'' + Γ (u', u') = 0` there. -/
-theorem alongCurveWithin_curveVelocityWithin_eq_zero_iff {s : Set 𝕜} {t : 𝕜}
-    (hs : UniqueDiffOn 𝕜 s) (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s) :
-    alongCurveWithin cov γ (curveVelocityWithin I γ s) s t = 0 ↔
-      derivWithin (derivWithin (extChartAt I (γ t) ∘ γ) s) s t +
-        christoffelMap (Module.finBasis 𝕜 E)
-          (cov.isCovariantDerivativeOn
-            (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
-          (derivWithin (extChartAt I (γ t) ∘ γ) s t)
-          (derivWithin (extChartAt I (γ t) ∘ γ) s t) = 0 := by
-  set e := trivializationAt E (TangentSpace I) (γ t)
-  have hmem : γ t ∈ e.baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_curveVelocityWithin cov γ hs hγ ht hmem]
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
-  -- The coordinate formula is transported by a fibrewise linear equivalence, so its vanishing is
-  -- equivalent to the vanishing of its reading in the chart.
-  have h' := congrArg (e.continuousLinearMapAt 𝕜 (γ t)) h
-  rwa [e.continuousLinearMapAt_symmL (R := 𝕜) hmem, map_zero] at h'
 
 end CovariantDerivative

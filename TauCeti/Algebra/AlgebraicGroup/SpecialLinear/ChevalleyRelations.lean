@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
 
 /-!
 # Chevalley relations for the root subgroups of the special linear group
@@ -35,9 +35,8 @@ corresponding commutation and commutator relations. The scheme-level parameter p
 `TauCeti.AdditiveGroup.gaSchemePointParamMul`, the scheme-point counterpart of
 `gaPointParamMul`.
 
-This file supplies the commutator-relations part of the pinned Chevalley–Demazure interface from
-Layer 9 of the ReductiveGroups roadmap for the worked example `SLₙ` over an arbitrary commutative
-base ring.
+This file supplies the commutator-relations part of the pinned Chevalley–Demazure interface for
+`SLₙ` over an arbitrary commutative base ring.
 
 ## Main declarations
 

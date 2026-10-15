@@ -9,6 +9,10 @@ inputs:
     description: Cache directory; defaults to $GITHUB_WORKSPACE/.mathlib-ltar-cache.
     required: false
     default: ""
+  cold:
+    description: Skip restoration while still selecting the shared key and cache directory.
+    required: false
+    default: 'false'
 
 outputs:
   cache-hit:
@@ -16,7 +20,7 @@ outputs:
     value: ${{ steps.restore.outputs.cache-hit }}
   cache-primary-key:
     description: Exact key to use when the trusted main workflow publishes a new snapshot.
-    value: ${{ steps.restore.outputs.cache-primary-key }}
+    value: ${{ steps.cache_dir.outputs.key }}
   cache-dir:
     description: Selected cache directory, also exported as MATHLIB_CACHE_DIR for later steps.
     value: ${{ steps.cache_dir.outputs.path }}
@@ -31,21 +35,26 @@ runs:
       shell: bash
       env:
         CONFIGURED_CACHE_DIR: ${{ inputs.cache-dir }}
+        CACHE_KEY_PREFIX: mathlib-ltar-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/lean-toolchain', inputs.project-dir)) }}-
+        MANIFEST_HASH: ${{ hashFiles(format('{0}/lake-manifest.json', inputs.project-dir)) }}
       run: |
         set -euo pipefail
         cache_dir="${CONFIGURED_CACHE_DIR:-$GITHUB_WORKSPACE/.mathlib-ltar-cache}"
         echo "MATHLIB_CACHE_DIR=$cache_dir" >> "$GITHUB_ENV"
         echo "path=$cache_dir" >> "$GITHUB_OUTPUT"
+        echo "prefix=$CACHE_KEY_PREFIX" >> "$GITHUB_OUTPUT"
+        echo "key=$CACHE_KEY_PREFIX$MANIFEST_HASH" >> "$GITHUB_OUTPUT"
 
     # This mirrors Mathlib's cache-snapshot warming in `.github/workflows/build_template.yml` and
     # `.github/actions/get-cache`, using `actions/cache` instead of run artifacts. Keep the key
     # namespace here so publishers and restore-only consumers cannot silently drift apart.
     - name: Restore compressed download cache
       id: restore
+      if: inputs.cold != 'true'
       uses: actions/cache/restore@v4
       with:
         # Cache only content-addressed artifacts, never cache-tool scratch files or executables.
         path: ${{ steps.cache_dir.outputs.path }}/*.ltar
-        key: mathlib-ltar-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/lean-toolchain', inputs.project-dir)) }}-${{ hashFiles(format('{0}/lake-manifest.json', inputs.project-dir)) }}
+        key: ${{ steps.cache_dir.outputs.key }}
         restore-keys: |
-          mathlib-ltar-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/lean-toolchain', inputs.project-dir)) }}-
+          ${{ steps.cache_dir.outputs.prefix }}

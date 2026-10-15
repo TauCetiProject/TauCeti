@@ -23,8 +23,7 @@ in those expansions.
 The theorem is stated using two Peano expansions, independently of any particular
 second-derivative API.
 
-As prescribed by the contour integration roadmap, the answer is given by an explicit coordinate
-formula.
+The answer is given by an explicit coordinate formula.
 
 ## Main results
 
@@ -90,7 +89,8 @@ private theorem tendsto_realWindingIntegrand_mul_add {α : Type*} {l : Filter α
       (𝓝 ((L.re * A.im - L.im * A.re) / 2)) := by
     convert (((hr_re.mul_const L.im).sub (hr_im.mul_const L.re)).add
       ((hq_re.mul hd_im).sub (hq_im.mul hd_re))) using 1
-    all_goals simp <;> ring_nf
+    all_goals simp
+    ring
   have hdiv := hnum.div hnorm ((Complex.normSq_eq_zero.not.mpr hL))
   convert hdiv.congr' ?_ using 1
   · ring_nf

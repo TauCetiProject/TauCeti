@@ -32,9 +32,9 @@ cost only when the cost is everywhere finite.
   same conclusion for an extended-nonnegative cost finite on the support, when the matrix is
   optimal for the cost after applying `ENNReal.toReal` pointwise.
 
-The converse from cyclical monotonicity alone is not proved here. Its general Polish-space form
-is the Schachermayer--Teichmann theorem and requires the contact-potential representation that
-remains later in Layer 2 of the optimal-transport roadmap.
+The converse, that a matrix whose support is cyclically monotone for a finite cost is optimal, is
+not proved here in matrix form. Its general Polish-space form is the Schachermayer--Teichmann
+theorem `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`.
 
 ## References
 
@@ -71,7 +71,7 @@ theorem isCyclicallyMonotone_toPMF_support_of_forall_cost_le (A : TransportMatri
     IsCyclicallyMonotone (fun q ↦ ENNReal.ofReal (c q)) A.toPMF.support := by
   obtain ⟨φ, ψ, hfeas, hsupp⟩ :=
     (A.forall_cost_le_iff_exists_forall_add_le_and_support_subset_contactSet c).1 hA
-  have hdual : DualFeasible (fun q ↦ ENNReal.ofReal (c q)) φ ψ :=
+  have hdual : DualFeasible (fun q ↦ (ENNReal.ofReal (c q) : EReal)) φ ψ :=
     (dualFeasible_ofReal_iff hc φ ψ).2 hfeas
   have hsupp' : A.toPMF.support ⊆
       dualContactSet (fun q ↦ ENNReal.ofReal (c q)) φ ψ := by

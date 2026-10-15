@@ -47,7 +47,7 @@ noncomputable def cotangentLinearEquivZariski :
     CotangentSpace k H ≃ₗ[k]
       TauCeti.AlgebraicGeometry.ZariskiCotangentSpace
         (Spec (CommRingCat.of H)) (augmentationPoint k H) :=
-  AlgHom.kernelCotangentLinearEquivZariski (_root_.Bialgebra.counitAlgHom k H)
+  _root_.AlgHom.kernelCotangentLinearEquivZariski (_root_.Bialgebra.counitAlgHom k H)
 
 /-- On an element of the augmentation ideal, the cotangent comparison is induced by the map from
 the coordinate ring to its stalk at the augmentation point. -/
@@ -60,17 +60,17 @@ theorem cotangentLinearEquivZariski_toCotangent (a : AugmentationIdeal k H) :
             ((Spec (CommRingCat.of H)).presheaf.stalk (augmentationPoint k H)) a,
           by
             let _ : (AugmentationIdeal k H).IsMaximal :=
-              AlgHom.kernelIsMaximal (_root_.Bialgebra.counitAlgHom k H)
+              _root_.AlgHom.kernelIsMaximal (_root_.Bialgebra.counitAlgHom k H)
             let _ : IsLocalization.AtPrime
                 ((Spec (CommRingCat.of H)).presheaf.stalk (augmentationPoint k H))
                 (AugmentationIdeal k H) :=
-              AlgHom.kernelStalkIsLocalization (_root_.Bialgebra.counitAlgHom k H)
+              _root_.AlgHom.kernelStalkIsLocalization (_root_.Bialgebra.counitAlgHom k H)
             rw [← Ideal.mem_under,
               IsLocalization.AtPrime.under_maximalIdeal
                 ((Spec (CommRingCat.of H)).presheaf.stalk (augmentationPoint k H))
                 (AugmentationIdeal k H)]
             exact a.2⟩ :=
-  AlgHom.kernelCotangentLinearEquivZariski_toCotangent
+  _root_.AlgHom.kernelCotangentLinearEquivZariski_toCotangent
     (_root_.Bialgebra.counitAlgHom k H) a
 
 /-- The augmentation cotangent space and the Zariski cotangent space at the augmentation point
@@ -80,7 +80,7 @@ theorem finrank_cotangentSpace_eq_finrank_zariskiCotangentSpace :
       Module.finrank k
         (TauCeti.AlgebraicGeometry.ZariskiCotangentSpace
           (Spec (CommRingCat.of H)) (augmentationPoint k H)) :=
-  AlgHom.finrank_kernelCotangent_eq_finrank_zariskiCotangentSpace
+  _root_.AlgHom.finrank_kernelCotangent_eq_finrank_zariskiCotangentSpace
     (_root_.Bialgebra.counitAlgHom k H)
 
 end TauCeti.Bialgebra

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.PointsFunctor
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
+import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generation
 
 /-!
 # The graph automorphism of the doubled type-E6 minuscule carrier
@@ -20,7 +21,8 @@ that lift and descends it to the full-weight doubled minuscule carrier.
 The resulting automorphism `TauCeti.E6DoubledMinuscule.graphAutomorphism` carries each numbered
 root subgroup to the subgroup numbered by `TauCeti.DynkinType.graphPermE6`, without changing its
 additive parameter, and relabels the represented split torus by the same diagram involution. It
-has order dividing two.
+has order dividing two, and it is the only endomorphism of the carrier with that action on the
+numbered root subgroups, which generate it.
 
 No reductivity, maximality of the represented torus, or identification of the carrier's root datum
 is asserted here.
@@ -34,6 +36,9 @@ is asserted here.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphism`: the induced automorphism of the doubled carrier.
 * `TauCeti.E6DoubledMinuscule.rootSubgroup_comp_graphAutomorphism_hom`: its action on the numbered
   simple-root subgroups.
+* `TauCeti.E6DoubledMinuscule.eq_graphAutomorphism_hom_of_rootSubgroup` and
+  `TauCeti.E6DoubledMinuscule.eq_graphAutomorphism_of_rootSubgroup`: that action determines it,
+  among endomorphisms and among automorphisms of the carrier.
 * `TauCeti.E6DoubledMinuscule.weightTorus_comp_graphAutomorphism_hom`: its action on the split
   weight torus.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphism_hom_comp_self` and
@@ -467,16 +472,34 @@ noncomputable def graphAutomorphism : Aut groupScheme :=
 type-`E₆` diagram involution, without changing its additive parameter. -/
 @[reassoc (attr := simp)]
 theorem rootSubgroup_comp_graphAutomorphism_hom (k : Fin 6 ⊕ Fin 6) :
-    rootSubgroup k ≫ graphAutomorphism.hom = rootSubgroup (graphRootPerm k) := by
+    rootSubgroup k ≫ graphAutomorphism.asIso.hom = rootSubgroup (graphRootPerm k) := by
   rw [rootSubgroup_def, graphAutomorphism, toralGraphAutomorphism,
     kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom]
   exact (rootSubgroup_def (graphRootPerm k)).symm
+
+/-- **The type-`E₆` diagram involution has exactly one realization on the carrier.** An
+endomorphism of the carrier carrying each numbered simple-root subgroup to the one at the image
+node, with the same additive parameter, is the graph automorphism. The numbered root subgroups
+generate the carrier, so these equations leave nothing free; in particular no condition on the
+represented weight torus is needed. -/
+theorem eq_graphAutomorphism_hom_of_rootSubgroup (φ : groupScheme ⟶ groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ φ = rootSubgroup (graphRootPerm k)) :
+    φ = graphAutomorphism.asIso.hom :=
+  groupScheme_hom_ext_of_rootSubgroup φ _ fun k => by
+    rw [hroot k, rootSubgroup_comp_graphAutomorphism_hom]
+
+/-- **The graph automorphism is the unique automorphism of the carrier realizing the type-`E₆`
+diagram involution on the numbered simple-root subgroups.** -/
+theorem eq_graphAutomorphism_of_rootSubgroup (γ : Aut groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ γ.asIso.hom = rootSubgroup (graphRootPerm k)) :
+    γ = graphAutomorphism :=
+  Aut.ext (Iso.ext (eq_graphAutomorphism_hom_of_rootSubgroup γ.asIso.hom hroot))
 
 /-- The graph automorphism relabels the represented split weight torus by the type-`E₆` diagram
 involution. -/
 @[reassoc (attr := simp)]
 theorem weightTorus_comp_graphAutomorphism_hom :
-    weightTorus ≫ graphAutomorphism.hom =
+    weightTorus ≫ graphAutomorphism.asIso.hom =
       SplitTorus.relabel ℤ graphPermE6 ≫ weightTorus := by
   rw [weightTorus_def, graphAutomorphism, toralGraphAutomorphism,
     kostantWeightTorusToToral_comp_numberedSymmetryIso_hom, Equiv.Perm.inv_def,
@@ -494,22 +517,19 @@ theorem graphAutomorphism_sq : graphAutomorphism ^ 2 = 1 := by
 /-- Applying the graph automorphism twice is the identity on the doubled type-`E₆` carrier. -/
 @[reassoc (attr := simp)]
 theorem graphAutomorphism_hom_comp_self :
-    graphAutomorphism.hom ≫ graphAutomorphism.hom = 𝟙 groupScheme := by
+    graphAutomorphism.asIso.hom ≫ graphAutomorphism.asIso.hom = 𝟙 groupScheme := by
   calc
-    graphAutomorphism.hom ≫ graphAutomorphism.hom =
-        (graphAutomorphism.trans graphAutomorphism).hom := (Iso.trans_hom _ _).symm
-    _ = (graphAutomorphism * graphAutomorphism).hom :=
-      congrArg Iso.hom
-        (Aut.Aut_mul_def groupScheme graphAutomorphism graphAutomorphism).symm
-    _ = (1 : Aut groupScheme).hom := by
+    graphAutomorphism.asIso.hom ≫ graphAutomorphism.asIso.hom =
+        (graphAutomorphism * graphAutomorphism).asIso.hom := by
+      rw [Aut.mul_asIso, Iso.trans_hom]
+    _ = (1 : Aut groupScheme).asIso.hom := by
       rw [← pow_two, graphAutomorphism_sq]
-    _ = (Iso.refl groupScheme).hom := rfl
-    _ = 𝟙 groupScheme := Iso.refl_hom groupScheme
+    _ = 𝟙 groupScheme := by rw [Aut.one_asIso, Iso.refl_hom]
 
 /-- The inverse leg of the doubled type-`E₆` graph automorphism is its forward leg. -/
 @[simp]
-theorem graphAutomorphism_inv : graphAutomorphism.inv = graphAutomorphism.hom :=
-  ((Iso.hom_comp_eq_id graphAutomorphism).mp graphAutomorphism_hom_comp_self).symm
+theorem graphAutomorphism_inv : graphAutomorphism.asIso.inv = graphAutomorphism.asIso.hom :=
+  ((Iso.hom_comp_eq_id graphAutomorphism.asIso).mp graphAutomorphism_hom_comp_self).symm
 
 /-! ## The graph automorphism on matrix-valued points -/
 
@@ -628,7 +648,7 @@ theorem schemePointsMulEquiv_graphAutomorphism_comp_carrierι
     (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶ groupScheme.X) :
     GeneralLinear.schemePointsMulEquiv 54 A
-        (p ≫ (graphAutomorphism.hom ≫ carrierι).hom.hom) =
+        (p ≫ (graphAutomorphism.asIso.hom ≫ carrierι).hom.hom) =
       graphAutomorphismMatrix A *
           GeneralLinear.schemePointsMulEquiv 54 A (p ≫ carrierι.hom.hom) *
         (graphAutomorphismMatrix A)⁻¹ := by

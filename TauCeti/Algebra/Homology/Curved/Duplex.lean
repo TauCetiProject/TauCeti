@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 
 /-!
@@ -190,8 +189,13 @@ instance : AddCommGroup (X ⟶ Y) where
   neg_add_cancel _ := by ext <;> apply neg_add_cancel
   add_comm _ _ := by ext <;> apply add_comm
   sub_eq_add_neg _ _ := by ext <;> apply sub_eq_add_neg
-  nsmul := nsmulRec
-  zsmul := zsmulRec
+  nsmul n f := { f₀ := n • f.f₀, f₁ := n • f.f₁ }
+  zsmul n f := { f₀ := n • f.f₀, f₁ := n • f.f₁ }
+  nsmul_zero _ := by ext <;> apply zero_smul
+  nsmul_succ _ _ := by ext <;> apply succ_nsmul
+  zsmul_zero' _ := by ext <;> apply zero_zsmul
+  zsmul_succ' _ _ := by ext <;> apply SubNegMonoid.zsmul_succ'
+  zsmul_neg' _ _ := by ext <;> apply SubNegMonoid.zsmul_neg'
 
 instance : Preadditive (CurvedDuplex C w) where
 
@@ -235,6 +239,16 @@ instance : (eval₁ C w).Linear R where
 
 instance (f : X ⟶ Y) [IsIso f] : IsIso f.f₀ := (eval₀ C w).map_isIso f
 instance (f : X ⟶ Y) [IsIso f] : IsIso f.f₁ := (eval₁ C w).map_isIso f
+
+/-- The even component of the inverse of an isomorphism is the inverse of its even component. -/
+@[simp]
+theorem inv_f₀ (f : X ⟶ Y) [IsIso f] : (inv f).f₀ = inv f.f₀ :=
+  IsIso.eq_inv_of_hom_inv_id (by rw [← comp_f₀, IsIso.hom_inv_id, id_f₀])
+
+/-- The odd component of the inverse of an isomorphism is the inverse of its odd component. -/
+@[simp]
+theorem inv_f₁ (f : X ⟶ Y) [IsIso f] : (inv f).f₁ = inv f.f₁ :=
+  IsIso.eq_inv_of_hom_inv_id (by rw [← comp_f₁, IsIso.hom_inv_id, id_f₁])
 
 /-- A constructor for isomorphisms of curved duplexes from isomorphisms of their components
 commuting with the differentials. -/
@@ -463,6 +477,10 @@ noncomputable def HomotopyCategory.parityShiftEquivalence :
     HomotopyCategory C w ≌ HomotopyCategory C w :=
   MorphismIdeal.mapEquivalence (CurvedDuplex.parityShiftEquivalence C w) _ _
     comap_parityShift_nullHomotopic.symm
+
+instance : (HomotopyCategory.parityShiftEquivalence C w).functor.Additive := by
+  unfold HomotopyCategory.parityShiftEquivalence
+  infer_instance
 
 /-- The parity shift of the homotopy category is induced by the parity shift of curved
 duplexes. -/

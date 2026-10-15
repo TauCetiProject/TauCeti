@@ -10,13 +10,19 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 /-!
 # Exact pairings in rigid monoidal categories
 
-This file records evaluation and coevaluation formulas for transported exact pairings and for the
-adjunction associated to an exact pairing.
+This file records evaluation and coevaluation formulas for the self-pairing of the unit, for
+transported exact pairings, and for the adjunction associated to an exact pairing.
 
 ## Main declarations
 
+* `TauCeti.ExactPairing.unit_evaluation` and `TauCeti.ExactPairing.unit_coevaluation`: the
+  evaluation and coevaluation of Mathlib's self-pairing of the unit;
 * `TauCeti.exactPairingCongrLeft_evaluation` and
-  `TauCeti.exactPairingCongrLeft_coevaluation`: the pairing transported across an isomorphism;
+  `TauCeti.exactPairingCongrLeft_coevaluation`: transport in the left argument;
+* `TauCeti.exactPairingCongrRight_evaluation` and
+  `TauCeti.exactPairingCongrRight_coevaluation`: transport in the right argument;
+* `TauCeti.exactPairingCongr_evaluation` and
+  `TauCeti.exactPairingCongr_coevaluation`: simultaneous transport in both arguments;
 * `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
   and counit of the adjunction associated to an exact pairing.
 -/
@@ -30,6 +36,20 @@ namespace TauCeti
 universe v u
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
+namespace ExactPairing
+
+/-- The evaluation of the canonical self-pairing of the unit is the right unitor. -/
+@[simp]
+theorem unit_evaluation : ε_ (𝟙_ C) (𝟙_ C) = (ρ_ (𝟙_ C)).hom :=
+  (rfl)
+
+/-- The coevaluation of the canonical self-pairing of the unit is the inverse right unitor. -/
+@[simp]
+theorem unit_coevaluation : η_ (𝟙_ C) (𝟙_ C) = (ρ_ (𝟙_ C)).inv :=
+  (rfl)
+
+end ExactPairing
 
 /-- The evaluation of an exact pairing transported across an isomorphism in its left argument.
 
@@ -48,6 +68,39 @@ argument. Not a `simp` lemma, for the reason given on
 theorem exactPairingCongrLeft_coevaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
     @ExactPairing.coevaluation C _ _ X Y (exactPairingCongrLeft i) = η_ X' Y ≫ i.inv ▷ Y :=
   rfl
+
+/-- The evaluation of an exact pairing transported across an isomorphism in its right argument. -/
+@[reassoc]
+theorem exactPairingCongrRight_evaluation {X Y Y' : C} [ExactPairing X Y'] (j : Y ≅ Y') :
+    @ExactPairing.evaluation C _ _ X Y (exactPairingCongrRight j) =
+      j.hom ▷ X ≫ ε_ X Y' :=
+  rfl
+
+/-- The coevaluation of an exact pairing transported across an isomorphism in its right argument. -/
+@[reassoc]
+theorem exactPairingCongrRight_coevaluation {X Y Y' : C} [ExactPairing X Y'] (j : Y ≅ Y') :
+    @ExactPairing.coevaluation C _ _ X Y (exactPairingCongrRight j) =
+      η_ X Y' ≫ X ◁ j.inv :=
+  rfl
+
+/-- The evaluation of an exact pairing transported across isomorphisms in both arguments. -/
+@[reassoc]
+theorem exactPairingCongr_evaluation {X X' Y Y' : C} [ExactPairing X' Y']
+    (i : X ≅ X') (j : Y ≅ Y') :
+    @ExactPairing.evaluation C _ _ X Y (exactPairingCongr i j) =
+      Y ◁ i.hom ≫ j.hom ▷ X' ≫ ε_ X' Y' := by
+  rw [@exactPairingCongrLeft_evaluation C _ _ X X' Y (exactPairingCongrRight j) i,
+    exactPairingCongrRight_evaluation]
+
+/-- The coevaluation of an exact pairing transported across isomorphisms in both arguments. -/
+@[reassoc]
+theorem exactPairingCongr_coevaluation {X X' Y Y' : C} [ExactPairing X' Y']
+    (i : X ≅ X') (j : Y ≅ Y') :
+    @ExactPairing.coevaluation C _ _ X Y (exactPairingCongr i j) =
+      η_ X' Y' ≫ X' ◁ j.inv ≫ i.inv ▷ Y := by
+  rw [@exactPairingCongrLeft_coevaluation C _ _ X X' Y (exactPairingCongrRight j) i,
+    exactPairingCongrRight_coevaluation]
+  simp only [Category.assoc]
 
 variable (D Y : C) [ExactPairing D Y]
 

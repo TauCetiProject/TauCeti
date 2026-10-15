@@ -20,8 +20,12 @@ identity.
 
 The isomorphism identifies the ambient restricted products only; it need not carry the
 everywhere-integral subgroup of one family onto that of the other, because the coordinate
-condition can change at the finitely many indices where the families differ.  The witness
-`exists_map_integralSubgroup_ne` records a counterexample to the general preservation claim.
+condition can change at the finitely many indices where the families differ.  Precisely, it
+carries the subgroup cut out by any family `V` to the subgroup cut out by `V`, so it preserves the
+everywhere-integral subgroups exactly when the two families agree at every index
+(`map_integralSubgroup_restrictedProductCongr_eq_iff`).  The witness
+`exists_map_integralSubgroup_ne` records an explicit counterexample to the general preservation
+claim.
 The resulting transport of double-coset spaces is in
 `TauCeti.Topology.Algebra.RestrictedProduct.Congr.DoubleCoset`.
 
@@ -147,6 +151,43 @@ theorem coe_monoidHom_restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
       restrictedProductMap U U' (fun _ ↦ MonoidHom.id _) (h.mono fun _ hi _ hx ↦ hi ▸ hx) := by
   ext x i
   simp
+
+/-- The change-of-family equivalence carries the subgroup cut out by a family `V` in the first
+restricted product to the subgroup cut out by the same family in the second. -/
+@[to_additive (attr := simp) map_integralAddSubgroupOf_addRestrictedProductCongr]
+theorem map_integralSubgroupOf_restrictedProductCongr (U U' V : ∀ i, Subgroup (G i))
+    (h : ∀ᶠ i in cofinite, U i = U' i) :
+    (integralSubgroupOf U V).map (restrictedProductCongr U U' h :
+        (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [G i, (U' i : Set (G i))]) =
+      integralSubgroupOf U' V := by
+  ext y
+  rw [Subgroup.map_equiv_eq_comap_symm, Subgroup.mem_comap, mem_integralSubgroupOf,
+    mem_integralSubgroupOf]
+  simp
+
+/-- The change-of-family equivalence carries the everywhere-integral subgroup of `U` to the
+subgroup of the `U'`-restricted product cut out by `U`. -/
+@[to_additive (attr := simp) map_integralAddSubgroup_addRestrictedProductCongr]
+theorem map_integralSubgroup_restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
+    (h : ∀ᶠ i in cofinite, U i = U' i) :
+    (integralSubgroup U).map (restrictedProductCongr U U' h :
+        (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [G i, (U' i : Set (G i))]) =
+      integralSubgroupOf U' U := by
+  rw [← integralSubgroupOf_self, map_integralSubgroupOf_restrictedProductCongr]
+
+/-- The change-of-family equivalence carries the everywhere-integral subgroup of `U` onto that of
+`U'` exactly when the two reference families agree at every index. Agreement at all but finitely
+many indices identifies the ambient restricted products, but not their integral subgroups. -/
+@[to_additive map_integralAddSubgroup_addRestrictedProductCongr_eq_iff]
+theorem map_integralSubgroup_restrictedProductCongr_eq_iff (U U' : ∀ i, Subgroup (G i))
+    (h : ∀ᶠ i in cofinite, U i = U' i) :
+    (integralSubgroup U).map (restrictedProductCongr U U' h :
+        (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [G i, (U' i : Set (G i))]) =
+      integralSubgroup U' ↔ U = U' := by
+  rw [map_integralSubgroup_restrictedProductCongr, ← integralSubgroupOf_self U',
+    le_antisymm_iff, integralSubgroupOf_le_integralSubgroupOf_iff,
+    integralSubgroupOf_le_integralSubgroupOf_iff, funext_iff]
+  exact ⟨fun h i ↦ le_antisymm (h.1 i) (h.2 i), fun h ↦ ⟨fun i ↦ (h i).le, fun i ↦ (h i).ge⟩⟩
 
 /-- The change-of-family equivalence need not carry the everywhere-integral subgroup onto the
 everywhere-integral subgroup of the new family. The witness is that of

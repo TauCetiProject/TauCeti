@@ -25,6 +25,8 @@ bounded by a given constant.
   into `FixedDetMatrices.reps n` by `SL(2, ℤ)`.
 * `FixedDetMatrices.eq_of_smul_eq_of_mem_reps`: two matrices of `FixedDetMatrices.reps n` in the
   same `SL(2, ℤ)`-orbit are equal.
+* `FixedDetMatrices.repsEquiv`: the representatives are parametrized by positive factor pairs
+  `(a, d)` of `|n|` and residues `0 ≤ b < d`.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
 * `FixedDetMatrices.finite_setOf_abs_le`: there are only finitely many integral matrices of
   determinant `n` whose entries are at most `B` in absolute value.
@@ -92,35 +94,64 @@ lemma apply_zero_zero_mul_apply_one_one {R : Type*} [CommRing R] {m : R}
     {A : FixedDetMatrix (Fin 2) R m} (h : A.1 1 0 = 0) : A.1 0 0 * A.1 1 1 = m := by
   simpa only [det_fin_two, h, mul_zero, sub_zero] using A.2
 
-private lemma card_reps_eq_card_sigma (hn : n ≠ 0) :
-    Nat.card (reps n) = (n.natAbs.divisorsAntidiagonal.sigma fun p ↦ Finset.range p.2).card := by
-  rw [Nat.card_eq_card_toFinset]
-  -- record `(a b; 0 d)` by its diagonal `(|a|, |d|)` and its entry `|b|`; conversely,
-  -- `((a, d), b)` is the representative `(a b; 0 ±d)` with the sign of `n` on `d`
-  refine Finset.card_bij' (fun A _ ↦ ⟨((A.1 0 0).natAbs, (A.1 1 1).natAbs), (A.1 0 1).natAbs⟩)
-    (fun x hx ↦ ⟨!![(x.1.1 : ℤ), x.2; 0, n.sign * x.1.2], by
-      calc _ = n.sign * ((x.1.1 * x.1.2 : ℕ) : ℤ) := by simp [mul_left_comm]
-        _ = n := by
-          rw [(Nat.mem_divisorsAntidiagonal.mp (Finset.mem_sigma.mp hx).1).1, Int.sign_mul_natAbs]⟩)
-    (fun A hA ↦ ?_) (fun x hx ↦ ?_) (fun A hA ↦ ?_) (fun x hx ↦ ?_)
-  · rw [Set.mem_toFinset] at hA
-    simp only [Finset.mem_sigma, Nat.mem_divisorsAntidiagonal, Finset.mem_range]
-    refine ⟨⟨by rw [← Int.natAbs_mul, apply_zero_zero_mul_apply_one_one hA.1],
-      Int.natAbs_ne_zero.mpr hn⟩, ?_⟩
-    zify
-    exact hA.2.2.2
-  · obtain ⟨hmem, hlt⟩ := Finset.mem_sigma.mp hx
-    exact Set.mem_toFinset.mpr ⟨rfl, Nat.cast_pos.mpr (Nat.pos_of_ne_zero
-      (Nat.left_ne_zero_of_mem_divisorsAntidiagonal hmem)), Int.natCast_nonneg _,
-      by simpa [abs_mul, Int.abs_sign_of_ne_zero hn] using Finset.mem_range.mp hlt⟩
-  · rw [Set.mem_toFinset] at hA
+/-- **The upper-triangular representatives, explicitly parametrized.** For `n ≠ 0`, a
+representative `(a b; 0 d)` is recorded by the positive factor pair `(|a|, |d|)` of `|n|`
+and the residue `b ∈ Fin |d|`. The inverse gives `d` the sign of `n`.
+
+This is the summation interface for the representatives: an invariant may be summed first over
+factor pairs and then over the upper-right entry. -/
+def repsEquiv (hn : n ≠ 0) :
+    reps n ≃ Σ p : ↥n.natAbs.divisorsAntidiagonal, Fin p.1.2 where
+  toFun A :=
+    ⟨⟨((A.1.1 0 0).natAbs, (A.1.1 1 1).natAbs), by
+      rw [Nat.mem_divisorsAntidiagonal]
+      exact ⟨by rw [← Int.natAbs_mul, apply_zero_zero_mul_apply_one_one A.2.1],
+        Int.natAbs_ne_zero.mpr hn⟩⟩,
+      ⟨(A.1.1 0 1).natAbs, by
+        zify
+        exact A.2.2.2.2⟩⟩
+  invFun x :=
+    ⟨⟨!![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, n.sign * x.1.1.2], by
+        calc _ = n.sign * ((x.1.1.1 * x.1.1.2 : ℕ) : ℤ) := by simp [mul_left_comm]
+          _ = n := by
+            rw [(Nat.mem_divisorsAntidiagonal.mp x.1.2).1, Int.sign_mul_natAbs]⟩,
+      by
+        refine ⟨rfl, Nat.cast_pos.mpr (Nat.pos_of_ne_zero
+          (Nat.left_ne_zero_of_mem_divisorsAntidiagonal x.1.2)), Int.natCast_nonneg _, ?_⟩
+        simp [abs_mul, Int.abs_sign_of_ne_zero hn, x.2.2]⟩
+  left_inv A := by
+    apply Subtype.ext
     ext i j
     fin_cases i <;> fin_cases j
     -- the lower-right entry has the sign of `n`, since `n = a * d` with `0 < a`
-    exacts [Int.natAbs_of_nonneg hA.2.1.le, Int.natAbs_of_nonneg hA.2.2.1, hA.1.symm, by
-      simp [← apply_zero_zero_mul_apply_one_one hA.1, Int.sign_eq_one_of_pos hA.2.1,
-        Int.sign_mul_abs]]
-  · simp [Int.natAbs_mul, Int.natAbs_sign_of_ne_zero hn]
+    exacts [Int.natAbs_of_nonneg A.2.2.1.le, Int.natAbs_of_nonneg A.2.2.2.1,
+      A.2.1.symm, by
+        simp [← apply_zero_zero_mul_apply_one_one A.2.1,
+          Int.sign_eq_one_of_pos A.2.2.1, Int.sign_mul_abs]]
+  right_inv x := by
+    refine Sigma.ext ?_ ?_
+    · apply Subtype.ext
+      simp [Int.natAbs_mul, Int.natAbs_sign_of_ne_zero hn]
+    · rw [Fin.heq_ext_iff (by simp [Int.natAbs_mul, Int.natAbs_sign_of_ne_zero hn])]
+      simp
+
+/-- The factor pair recording a representative `(a b; 0 d)` is `(|a|, |d|)`. -/
+@[simp]
+theorem coe_repsEquiv_apply_fst (hn : n ≠ 0) (A : reps n) :
+    ((repsEquiv hn A).1 : ℕ × ℕ) = ((A.1.1 0 0).natAbs, (A.1.1 1 1).natAbs) := (rfl)
+
+/-- The residue recording a representative `(a b; 0 d)` is `|b|`. -/
+@[simp]
+theorem coe_repsEquiv_apply_snd (hn : n ≠ 0) (A : reps n) :
+    ((repsEquiv hn A).2 : ℕ) = (A.1.1 0 1).natAbs := (rfl)
+
+/-- The matrix represented by a factor pair `(a, d)` and a residue `b` is
+`(a b; 0, sign(n)d)`. -/
+@[simp]
+theorem coe_repsEquiv_symm_apply (hn : n ≠ 0)
+    (x : Σ p : ↥n.natAbs.divisorsAntidiagonal, Fin p.1.2) :
+    ((repsEquiv hn).symm x : FixedDetMatrix (Fin 2) ℤ n).1 =
+      !![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, n.sign * x.1.1.2] := (rfl)
 
 /-- **The number of upper-triangular representatives**: the set `reps n` has `σ₁(|n|)`
 elements, one for each divisor `d` of `|n|` and each `0 ≤ b < d`. -/
@@ -128,10 +159,11 @@ elements, one for each divisor `d` of `|n|` and each `0 ≤ b < d`. -/
 theorem ncard_reps (n : ℤ) : (reps n).ncard = ArithmeticFunction.sigma 1 n.natAbs := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rw [← Nat.card_coe_set_eq, card_reps_eq_card_sigma hn, Finset.card_sigma,
+  rw [← Nat.card_coe_set_eq, Nat.card_congr (repsEquiv hn), Nat.card_sigma,
     ArithmeticFunction.sigma_one_apply,
     ← Nat.sum_divisorsAntidiagonal' fun _ d ↦ d]
-  simp
+  simp only [Nat.card_fin]
+  rw [Finset.sum_coe_sort]
 
 /-- **Finiteness of bounded matrices**: there are only finitely many integral matrices of
 determinant `n` whose entries are at most `B` in absolute value. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 
 /-!
@@ -37,7 +38,11 @@ rewritable.
   commutes with the homomorphisms `QuotientGroup.map` induced by a homomorphism `G →* H` on the
   quotients.
 * `TauCeti.QuotientGroup.mapOfLE_surjective`: the map is surjective.
+* `TauCeti.QuotientGroup.closure_range_quotient_mk_eq_top_of_le`: a family generating `G ⧸ N'`
+  also generates `G ⧸ N` when `N' ≤ N`.
 * `TauCeti.QuotientGroup.ker_mapOfLE`: its kernel is the image of `U` in `G ⧸ V`.
+* `TauCeti.QuotientGroup.map_injective_of_eq_comap`: the homomorphism `G ⧸ f⁻¹(M) →* H ⧸ M`
+  induced by `f : G →* H` is injective.
 
 ## Usage
 
@@ -45,6 +50,8 @@ Work with `mapOfLE` through the lemmas above: `mapOfLE_mk` evaluates it on class
 `mapOfLE_refl`, `mapOfLE_comp`, `mapOfLE_comp_mk'`, `map_comp_mapOfLE` and `mapOfLE_comp_map`
 simplify identities and composites, `mapOfLE_surjective` feeds constructions that need a
 surjection, such as `Sylow.mapSurjective`, and `ker_mapOfLE` identifies its kernel.
+Use `closure_range_quotient_mk_eq_top_of_le` to descend generation by a family from a quotient
+by a normal subgroup to the quotient by a larger normal subgroup.
 To identify `mapOfLE hVU` with another homomorphism out of `G ⧸ V`, compare the two on classes with
 `QuotientGroup.induction_on` and `mapOfLE_mk`.
 -/
@@ -114,11 +121,28 @@ theorem mapOfLE_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
   _root_.QuotientGroup.map_surjective_of_surjective V U (.id G)
     _root_.QuotientGroup.mk_surjective _
 
+/-- Generation by a family modulo a normal subgroup descends to any larger normal subgroup. -/
+theorem closure_range_quotient_mk_eq_top_of_le {ι : Type*} {N N' : Subgroup G}
+    [N.Normal] [N'.Normal] (h : N' ≤ N) {x : ι → G}
+    (hx : Subgroup.closure (Set.range fun i ↦ (_root_.QuotientGroup.mk (x i) : G ⧸ N')) = ⊤) :
+    Subgroup.closure (Set.range fun i ↦ (_root_.QuotientGroup.mk (x i) : G ⧸ N)) = ⊤ := by
+  have hmap := congrArg (Subgroup.map (mapOfLE h)) hx
+  rw [MonoidHom.map_closure, ← Set.range_comp,
+    Subgroup.map_top_of_surjective _ (mapOfLE_surjective h)] at hmap
+  simpa only [Function.comp_def, mapOfLE_mk] using hmap
+
 /-- The kernel of the quotient homomorphism `G ⧸ V →* G ⧸ U` is the image of `U` in `G ⧸ V`. -/
 @[simp]
 theorem ker_mapOfLE [U.Normal] [V.Normal] (hVU : V ≤ U) :
     (mapOfLE hVU).ker = U.map (_root_.QuotientGroup.mk' V) :=
   (_root_.QuotientGroup.ker_map V U (.id G) fun _ hv ↦ hVU hv).trans (by rw [Subgroup.comap_id])
+
+/-- The homomorphism `G ⧸ N →* H ⧸ M` induced by `f : G →* H` on the quotients is injective when
+`N` is the preimage `f⁻¹(M)`: its kernel is the image of `f⁻¹(M)`, which is trivial in `G ⧸ N`. -/
+theorem map_injective_of_eq_comap {H : Type*} [Group H] (f : G →* H) [U.Normal] (M : Subgroup H)
+    [M.Normal] (h : U = M.comap f) : Function.Injective (_root_.QuotientGroup.map U M f h.le) :=
+  (_root_.QuotientGroup.injective_lift_iff _ _ _).mpr
+    (by rw [← MonoidHom.comap_ker, _root_.QuotientGroup.ker_mk']; exact h)
 
 end QuotientGroup
 

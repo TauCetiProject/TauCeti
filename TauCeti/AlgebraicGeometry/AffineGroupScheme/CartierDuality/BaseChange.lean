@@ -38,9 +38,7 @@ Everything is transported from the coordinate Hopf algebras, where the correspon
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-* J. S. Milne, *Algebraic Groups* (2017), Section 12.e.
-
-This advances Layer 4, "Cartier duality", of the ReductiveGroups roadmap.
+* J. S. Milne, *Algebraic Groups* (2017), Section 11.c, with Aside 11.17 for a base ring.
 -/
 
 public section
@@ -82,10 +80,7 @@ theorem finiteLocallyFreeCommAffineGroupSchemeProperty_baseChange
       ((finiteLocallyFreeBicommutativeHopfAlgProperty R).ι.obj (coordinateHopfAlgebra R G))).symm ≪≫
     (AffineGroupSchemeCat.baseChangeFunctor
       (CommRingCat.ofHom (algebraMap R S))).mapIso ?_
-  exact ((functorCompFullSubcategoryιIso R).app (op (coordinateHopfAlgebra R G))).symm ≪≫
-    (finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.mapIso
-      ((finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
-        R).counitIso.app G)
+  exact hopfSpecCoordinateHopfAlgebraIso R G
 
 namespace FiniteLocallyFreeCommAffineGroupSchemeCat
 

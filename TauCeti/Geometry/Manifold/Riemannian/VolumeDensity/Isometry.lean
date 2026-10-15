@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 
 /-!
@@ -109,11 +110,7 @@ variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
-/-- The Borel measurable space on the model vector space, used for chart volume. -/
-local instance chartIsometryMeasurableSpaceE : MeasurableSpace E := borel E
-
-/-- The model vector space's measurable space is its Borel measurable space. -/
-local instance : BorelSpace E := ⟨rfl⟩
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
 /-- A map which is injective and differentiable on a measurable subset `s` of the chart source at
 `α`, maps `s` into the chart source at `β`, and whose tangent maps at points of `s` preserve the
@@ -205,5 +202,27 @@ theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [
       (fun x hx ↦ hx.2) (fun x _ ↦ hΦ x) (fun x _ ↦ hinner x)]
 
 end Measure
+
+namespace RiemannianIsometry
+
+variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
+
+/-- A Riemannian isometry preserves the Riemannian volume measure.
+
+This packages the general homeomorphism theorem at the canonical `RiemannianIsometry` API. -/
+theorem measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
+    (Φ : RiemannianIsometry I I' M N) :
+    MeasurePreserving Φ (riemannianVolume I M) (riemannianVolume I' N) := by
+  apply Homeomorph.measurePreserving_riemannianVolume Φ.toDiffeomorph.toHomeomorph
+    Φ.mdifferentiable
+  intro x v w
+  -- The coercions from a Riemannian isometry to its diffeomorphism and homeomorphism
+  -- are definitionally the same map, but `mfderiv` does not unfold those wrappers itself.
+  change ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ
+  exact Φ.inner_mfderiv x v w
+
+end RiemannianIsometry
 
 end TauCeti

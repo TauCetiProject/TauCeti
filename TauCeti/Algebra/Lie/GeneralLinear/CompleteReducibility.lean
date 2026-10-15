@@ -53,7 +53,7 @@ universe u v w
 
 section GeneralLinear
 
-variable {K : Type u} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K : Type u} [Field K] [CharZero K]
 variable {n : Type v} [Fintype n] [DecidableEq n]
 variable {M : Type w} [AddCommGroup M] [Module K M]
 variable [LieRingModule (Matrix n n K) M] [LieModule K (Matrix n n K) M]
@@ -70,7 +70,6 @@ private def extendSl (c : K) (hc : ∀ m : M, ⁅(1 : Matrix n n K), m⁆ = c �
     rw [add_lie, smul_lie, hc, smul_smul]
     exact N.add_mem (N.lie_mem hm) (N.smul_mem _ hm)
 
-omit [IsAlgClosed K] in
 /-- The scalar-centre extension preserves the underlying submodule. -/
 @[simp]
 private theorem extendSl_toSubmodule (c : K)
@@ -117,7 +116,7 @@ section CAR
 attribute [local instance] Classical.decEq
 open scoped TauCeti
 
-variable {K n : Type*} [Field K] [Fintype n] [CharZero K] [IsAlgClosed K]
+variable {K n : Type*} [Field K] [Fintype n] [CharZero K]
 
 variable (K n) in
 /-- **The CAR module is completely reducible.** Its Lie-submodule lattice is complemented because

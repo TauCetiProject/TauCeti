@@ -21,6 +21,11 @@ chain construction in Eilenberg--Steenrod, *Foundations of Algebraic Topology*, 
 The formal infrastructure is Mathlib's relative simplicial chains: the comparison is the
 quotient natural transformation `SSetPair.chainComplexFunctorπ`, and its invertibility for a
 pair whose subcomplex is empty is Mathlib's `SSetPair.isIso_chainComplexπ`.
+
+For any pair whose subspace is empty, the singular simplicial set of the subspace has no simplices
+(`TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty`), so by Mathlib's
+`SSetPair.isIso_chainComplexπ` the quotient map `TopPair.singularHomologyπ` from ambient to
+relative singular homology is an isomorphism, found by instance resolution.
 -/
 
 public section
@@ -35,13 +40,17 @@ namespace TopPair
 
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
 
-/-- The singular simplicial set of the empty subspace in `(X, ∅)` has no simplices. -/
-lemma hasDimensionLT_toSSetPair_incl_left (X : TopCat.{w}) :
-    (toSSetPair.obj (incl.obj X)).left.HasDimensionLT 0 :=
+/-- The subspace of the pair `(X, ∅)` is empty. -/
+instance isEmpty_incl_obj_snd (X : TopCat.{w}) : IsEmpty (incl.obj X).snd :=
+  inferInstanceAs (IsEmpty PEmpty)
+
+/-- The singular simplicial set of an empty subspace has no simplices. -/
+instance hasDimensionLT_toSSetPair_left_of_isEmpty (P : TopPair.{w}) [IsEmpty P.snd] :
+    (toSSetPair.obj P).left.HasDimensionLT 0 :=
   (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun h ↦ by
     obtain ⟨σ⟩ := h
     rw [toSSetPair_obj_left] at σ
-    exact PEmpty.elim (TopCat.toSSetObj₀Equiv σ)
+    exact isEmptyElim (TopCat.toSSetObj₀Equiv σ)
 
 /-- Ordinary singular chains are the ambient chains of the singular pair associated to `(X, ∅)`. -/
 lemma singularChainComplexFunctor_eq_incl_chainComplexFunctorRight :
@@ -87,8 +96,6 @@ noncomputable def singularChainComplexInclIso :
     (AlgebraicTopology.singularChainComplexFunctor C).obj R ≅
       incl ⋙ (singularChainComplexFunctor C).obj R :=
   NatIso.ofComponents (fun X ↦ by
-    let _ : (toSSetPair.obj (incl.obj X)).left.HasDimensionLT 0 :=
-      hasDimensionLT_toSSetPair_incl_left X
     letI : IsIso ((singularChainComplexInclComparison C R).app X) := by
       let _ : IsIso (((SSetPair.chainComplexFunctorπ C).app R).app
           (toSSetPair.obj (incl.obj X))) :=

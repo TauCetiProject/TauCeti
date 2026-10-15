@@ -480,8 +480,6 @@ private noncomputable def forgetGradingInvInvariant [F.EssSurj]
       LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X')) :
     ExactK0.AdditiveInvariant E' (LaurentSpecialization (1 : ℤˣ) (LaurentK0 E)) where
   obj Y := LaurentSpecialization.mk 1 (of E (F.objPreimage Y))
-  map_iso Y Y' e := hclass _ _
-    ⟨F.objObjPreimageIso Y ≪≫ e ≪≫ (F.objObjPreimageIso Y').symm⟩
   map_conflation S hS := by
     obtain ⟨S', hS', ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ := hlift S hS
     have key : ∀ (Y : D) (X : C), (F.obj X ≅ Y) →

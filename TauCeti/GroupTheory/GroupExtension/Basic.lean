@@ -17,8 +17,14 @@ This file provides operations on an existing group extension.
 * `GroupExtension.card_fiber_rightHom`: every fiber of the projection has the cardinality of the
   kernel term.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
+* `GroupExtension.relabelQuotient`: relabels the quotient term of a group extension.
+* `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
+* `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
+  over the identity of the quotient group.
+* `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
+  the quotient group is surjective as soon as it is surjective on the kernel terms.
 
-The construction is mirrored for additive groups by `to_additive`.
+The constructions are mirrored for additive groups by `to_additive`.
 -/
 
 public section
@@ -67,5 +73,121 @@ theorem relabelKer_inl (S : GroupExtension N E G) {N' : Type*} [Group N'] (e : N
 theorem relabelKer_rightHom (S : GroupExtension N E G) {N' : Type*} [Group N'] (e : N' ≃* N) :
     (S.relabelKer e).rightHom = S.rightHom :=
   (rfl)
+
+/-- Relabel the quotient term of a group extension along a multiplicative equivalence. -/
+@[to_additive /-- Relabel the quotient term of an additive group extension along an additive
+equivalence. -/]
+def relabelQuotient (S : GroupExtension N E G) {G' : Type*} [Group G'] (e : G ≃* G') :
+    GroupExtension N E G' where
+  inl := S.inl
+  rightHom := e.toMonoidHom.comp S.rightHom
+  inl_injective := S.inl_injective
+  range_inl_eq_ker_rightHom := by
+    rw [S.range_inl_eq_ker_rightHom,
+      MonoidHom.ker_comp_of_injective S.rightHom e.toMonoidHom e.injective]
+  rightHom_surjective := e.surjective.comp S.rightHom_surjective
+
+/-- Relabelling the quotient preserves the inclusion of the kernel. -/
+@[to_additive (attr := simp) /-- Relabelling the quotient preserves the inclusion of the
+kernel. -/]
+theorem relabelQuotient_inl (S : GroupExtension N E G) {G' : Type*} [Group G'] (e : G ≃* G') :
+    (S.relabelQuotient e).inl = S.inl :=
+  (rfl)
+
+/-- The projection of a relabelled extension is its original projection followed by the
+quotient equivalence. -/
+@[to_additive (attr := simp) /-- The projection of a relabelled extension is its original
+projection followed by the quotient equivalence. -/]
+theorem relabelQuotient_rightHom (S : GroupExtension N E G) {G' : Type*} [Group G']
+    (e : G ≃* G') :
+    (S.relabelQuotient e).rightHom = e.toMonoidHom.comp S.rightHom :=
+  (rfl)
+
+/-- Relabel both the kernel and quotient terms of a group extension along multiplicative
+equivalences. The middle group is unchanged. -/
+@[to_additive
+  /-- Relabel both the kernel and quotient terms of an additive group extension along additive
+  equivalences. The middle group is unchanged. -/]
+def relabel (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') : GroupExtension N' E G' :=
+  (S.relabelKer eN).relabelQuotient eG
+
+/-- The inclusion of a relabelled extension is the original inclusion after the kernel
+equivalence. -/
+@[to_additive (attr := simp) /-- The inclusion of a relabelled additive extension is the original
+inclusion after the kernel equivalence. -/]
+theorem relabel_inl (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).inl = S.inl.comp eN.toMonoidHom :=
+  (rfl)
+
+/-- The projection of a relabelled extension is the quotient equivalence after the original
+projection. -/
+@[to_additive (attr := simp) /-- The projection of a relabelled additive extension is the quotient
+equivalence after the original projection. -/]
+theorem relabel_rightHom (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).rightHom = eG.toMonoidHom.comp S.rightHom :=
+  (rfl)
+
+/-- Relabelling the quotient does not change conjugation on the kernel. -/
+@[simp]
+theorem _root_.TauCeti.GroupExtension.relabelQuotient_conjAct {S : GroupExtension N E G}
+    {H : Type*} [Group H] (e : G ≃* H) :
+    (S.relabelQuotient e).conjAct = S.conjAct := by
+  ext x m
+  apply S.inl_injective
+  rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm,
+    GroupExtension.relabelQuotient_inl, GroupExtension.inl_conjAct_comm]
+
+section Hom
+
+variable {N' : Type*} {E' : Type*} [Group N'] [Group E'] {S : GroupExtension N E G}
+  {S' : GroupExtension N' E' G}
+
+/-- Transport a section of an extension along a homomorphism `φ` of extensions over the identity
+of the quotient group: `φ ∘ σ` is a section of the target extension. The kernel terms of the two
+extensions may differ; for an equivalence of extensions with the same kernel this is
+`GroupExtension.Section.equivComp`. -/
+@[to_additive
+  /-- Transport a section of an additive extension along a homomorphism `φ` of extensions over the
+  identity of the quotient group: `φ ∘ σ` is a section of the target extension. The kernel terms of
+  the two extensions may differ; for an equivalence of extensions with the same kernel this is
+  `AddGroupExtension.Section.equivComp`. -/]
+def Section.monoidHomComp (σ : S.Section) (φ : E →* E')
+    (hright : S'.rightHom.comp φ = S.rightHom) : S'.Section where
+  toFun g := φ (σ g)
+  rightInverse_rightHom g := by
+    rw [← MonoidHom.comp_apply, hright, Section.rightHom_section]
+
+@[to_additive (attr := simp)]
+theorem Section.monoidHomComp_apply (σ : S.Section) (φ : E →* E')
+    (hright : S'.rightHom.comp φ = S.rightHom) (g : G) :
+    σ.monoidHomComp φ hright g = φ (σ g) :=
+  (rfl)
+
+/-- **A homomorphism of extensions over the identity of the quotient group is surjective as soon
+as its restriction `f` to the kernel terms is.** It meets every fibre of the projection, because
+it covers the identity, and within a fibre it reaches every translate of the kernel, because `f`
+is surjective. -/
+@[to_additive
+  /-- **A homomorphism of additive extensions over the identity of the quotient group is surjective
+  as soon as its restriction `f` to the kernel terms is.** It meets every fibre of the projection,
+  because it covers the identity, and within a fibre it reaches every translate of the kernel,
+  because `f` is surjective. -/]
+theorem surjective_of_comp_inl_eq (f : N →* N') (hf : Function.Surjective f) (φ : E →* E')
+    (hinl : φ.comp S.inl = S'.inl.comp f) (hright : S'.rightHom.comp φ = S.rightHom) :
+    Function.Surjective φ := by
+  intro y
+  obtain ⟨x, hx⟩ := S.rightHom_surjective (S'.rightHom y)
+  have hker : (φ x)⁻¹ * y ∈ S'.inl.range := by
+    rw [S'.range_inl_eq_ker_rightHom, MonoidHom.mem_ker, map_mul, map_inv, ← MonoidHom.comp_apply,
+      hright, hx, inv_mul_cancel]
+  obtain ⟨n, hn⟩ := hker
+  obtain ⟨m, rfl⟩ := hf n
+  refine ⟨x * S.inl m, ?_⟩
+  rw [map_mul, ← MonoidHom.comp_apply φ S.inl, hinl, MonoidHom.comp_apply, hn, mul_inv_cancel_left]
+
+end Hom
 
 end GroupExtension

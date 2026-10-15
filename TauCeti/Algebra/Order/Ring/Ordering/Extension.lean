@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Order.Ring.Ordering.Basic
 public import Mathlib.Algebra.Order.Ring.Cone
 public import Mathlib.Order.Zorn
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-! # Extending field preorderings to orderings
 

@@ -79,7 +79,7 @@ and equal `V_k + V_j` on it, where `O_j` is the `O`-marking in the row of `X_k`.
 theorem sum_unblockedCoefficient_mul_XHomotopyCoefficient_add (k : Fin n) (x z : GridState n) :
     ∑ y : GridState n, (G.unblockedCoefficient R x y * G.XHomotopyCoefficient R k y z +
         G.XHomotopyCoefficient R k x y * G.unblockedCoefficient R y z) =
-      if x = z then (MvPolynomial.X k + MvPolynomial.X (G.O.columnOfRow (G.X k)) :
+      if x = z then (MvPolynomial.X k + MvPolynomial.X (G.O.transpose (G.X k)) :
         MvPolynomial (Fin n) R) else 0 := by
   rw [← sum_XHomotopyDecompositions]
   split_ifs with h
@@ -88,7 +88,7 @@ theorem sum_unblockedCoefficient_mul_XHomotopyCoefficient_add (k : Fin n) (x z :
     · exact G.sum_XHomotopyDecompositions_self R hn k x
     · -- On a grid with at most one column there are no rectangles, and `V_k + V_k = 0`.
       have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr hn
-      rw [Subsingleton.elim (G.O.columnOfRow (G.X k)) k, CharTwo.add_self_eq_zero]
+      rw [Subsingleton.elim (G.O.transpose (G.X k)) k, CharTwo.add_self_eq_zero]
       exact Finset.sum_eq_zero fun D _ => absurd (Subsingleton.elim _ _) D.first.left_ne_right
   · exact G.sum_XHomotopyDecompositions_eq_zero R k (Ne.symm h)
 
@@ -96,7 +96,7 @@ theorem sum_unblockedCoefficient_mul_XHomotopyCoefficient_add (k : Fin n) (x z :
 characteristic two, where `O_j` is the `O`-marking in the row of `X_k`. -/
 theorem unblockedDifferential_comp_XHomotopy_add_XHomotopy_comp (k : Fin n) :
     G.unblockedDifferential R ∘ₗ G.XHomotopy R k + G.XHomotopy R k ∘ₗ G.unblockedDifferential R =
-      (MvPolynomial.X k + MvPolynomial.X (G.O.columnOfRow (G.X k)) : MvPolynomial (Fin n) R) •
+      (MvPolynomial.X k + MvPolynomial.X (G.O.transpose (G.X k)) : MvPolynomial (Fin n) R) •
         LinearMap.id := by
   refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun z => ?_)
   have h₁ : G.unblockedDifferential R (G.XHomotopy R k (Finsupp.single x 1)) z =
@@ -125,7 +125,7 @@ multiplication by `V_k` to multiplication by `V_j`, where `O_j` is the `O`-marki
 `X_k`. -/
 noncomputable def unblockedComplexXHomotopy (k : Fin n) :
     Homotopy ((MvPolynomial.X k : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R))
-      ((MvPolynomial.X (G.O.columnOfRow (G.X k)) : MvPolynomial (Fin n) R) •
+      ((MvPolynomial.X (G.O.transpose (G.X k)) : MvPolynomial (Fin n) R) •
         𝟙 (G.unblockedComplex R)) where
   hom _ _ := eqToHom (G.unblockedComplex_X R ()) ≫ ModuleCat.ofHom (G.XHomotopy R k) ≫
     eqToHom (G.unblockedComplex_X R ()).symm
@@ -156,7 +156,7 @@ noncomputable def unblockedComplexComponentHomotopy (c : Fin n) :
         𝟙 (G.unblockedComplex R))
       ((MvPolynomial.X c : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R)) :=
   (G.unblockedComplexXHomotopy R (G.componentPerm c)).trans
-    (Homotopy.ofEq (by rw [columnOfRow_X_componentPerm]))
+    (Homotopy.ofEq (by rw [O_transpose_X_componentPerm]))
 
 /-- Multiplication by the variables of two columns on the same link component is chain homotopic
 on the unblocked grid complex. -/

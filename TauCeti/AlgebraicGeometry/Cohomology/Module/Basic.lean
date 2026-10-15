@@ -43,7 +43,7 @@ endomorphisms. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAction
     (M : X.Modules) (i : ℕ) :
     Γ(X, ⊤) →+* AddMonoid.End (Cohomology M i) where
-  toFun r := ((cohomologyFunctor X i).map (globalSectionsSmul M r)).hom
+  toFun r := ((cohomologyFunctor X i).map (M.globalSectionsSmul r)).hom
   map_one' := by
     ext x
     rw [globalSectionsSmul_one]
@@ -65,10 +65,10 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAction
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAction_apply
     (M : X.Modules) (i : ℕ) (r : Γ(X, ⊤)) (x : Cohomology M i) :
     cohomologyAction M i r x =
-      (cohomologyFunctor X i).map (globalSectionsSmul M r) x := by
+      (cohomologyFunctor X i).map (M.globalSectionsSmul r) x := by
   simp only [cohomologyAction]
   exact DFunLike.congr_fun (AddCommGrpCat.homAddEquiv_apply
-    ((cohomologyFunctor X i).map (globalSectionsSmul M r))) x
+    ((cohomologyFunctor X i).map (M.globalSectionsSmul r))) x
 
 /-- Cohomology is canonically a module over the ring of global functions. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.cohomologyModule
@@ -80,7 +80,7 @@ scalar endomorphism of the coefficient sheaf. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomology_smul
     (M : X.Modules) (i : ℕ) (r : Γ(X, ⊤)) (x : Cohomology M i) :
-    r • x = (cohomologyFunctor X i).map (globalSectionsSmul M r) x :=
+    r • x = (cohomologyFunctor X i).map (M.globalSectionsSmul r) x :=
   by
     -- `Module.compHom` exposes its action definitionally, without an accessor lemma.
     change cohomologyAction M i r x = _
@@ -97,8 +97,8 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapLinear
     -- Normalize only the scalar action supplied by `Module.compHom`; keep cohomology
     -- abstract so functoriality, rather than `Sheaf.H` implementation details, proves it.
     change (cohomologyFunctor X i).map f
-        ((cohomologyFunctor X i).map (globalSectionsSmul M r) x) =
-      (cohomologyFunctor X i).map (globalSectionsSmul N r)
+        ((cohomologyFunctor X i).map (M.globalSectionsSmul r) x) =
+      (cohomologyFunctor X i).map (N.globalSectionsSmul r)
         ((cohomologyFunctor X i).map f x)
     erw [← (cohomologyFunctor X i).map_comp_apply,
       ← (cohomologyFunctor X i).map_comp_apply, globalSectionsSmul_naturality]
@@ -154,7 +154,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyZeroLinearEquiv
     -- The inherited linear-equivalence fields have no accessor lemmas for their actions;
     -- normalize them to the named cohomology and section operations.
     change cohomologyZeroEquiv M
-        ((cohomologyFunctor X 0).map (globalSectionsSmul M r) x) =
+        ((cohomologyFunctor X 0).map (M.globalSectionsSmul r) x) =
       r • cohomologyZeroEquiv M x
     rw [cohomologyZeroEquiv_naturality]
     rw [globalSectionsSmul_app]

@@ -24,6 +24,11 @@ pairings against other modules.
 The resolution is the standard first-arrow sequence
 `0 ⟶ ⨁_{e : i ⟶ j} Pⱼ ⟶ Pᵢ ⟶ Sᵢ ⟶ 0`; see Assem--Simson--Skowroński,
 *Elements of the Representation Theory of Associative Algebras I*, Chapter III, Section 2.
+
+Over an acyclic quiver the vertex simples are the only simple modules:
+`TauCeti.exists_iso_vertexSimpleModule_of_simple` transports the classification of simple
+representations along the same equivalence. Together with the resolution it reduces statements
+about all simple path algebra modules, such as Euler-admissibility, to the vertex simples.
 -/
 
 public section
@@ -46,9 +51,24 @@ noncomputable def vertexSimpleModuleIso (i : Q) :
     (quiverRepFunctor k Q).obj (vertexSimpleModule k Q i) ≅ simpleRep k Q i :=
   (quiverRepFunctor k Q).objObjPreimageIso _
 
+/-- Every vertex space of a vertex simple path-algebra module is finite-dimensional. -/
+instance finiteDimensional_vertexSimpleModule_obj (i j : Q) :
+    FiniteDimensional k
+      (((quiverRepFunctor k Q).obj (vertexSimpleModule k Q i)).obj j) := by
+  have := finiteDimensional_simpleRep_obj (k := k) i j
+  exact ((vertexSimpleModuleIso k Q i).symm.app j).toLinearEquiv.finiteDimensional
+
 /-- The vertex simple is a simple object of the path algebra module category. -/
 instance simple_vertexSimpleModule (i : Q) : Simple (vertexSimpleModule k Q i) :=
   simple_obj (quiverRepFunctor k Q).inv (simpleRep k Q i)
+
+/-- **Over an acyclic quiver, every simple path algebra module is a vertex simple.** -/
+theorem exists_iso_vertexSimpleModule_of_simple (hQ : Quiver.IsAcyclic Q)
+    (M : ModuleCat (pathAlgebra k Q)) [Simple M] :
+    ∃ i : Q, Nonempty (M ≅ vertexSimpleModule k Q i) := by
+  have := simple_obj (quiverRepFunctor k Q) M
+  obtain ⟨i, ⟨e⟩⟩ := exists_iso_simpleRep_of_simple hQ ((quiverRepFunctor k Q).obj M)
+  exact ⟨i, ⟨(quiverRepFunctor k Q).preimageIso (e ≪≫ (vertexSimpleModuleIso k Q i).symm)⟩⟩
 
 variable {Q}
 

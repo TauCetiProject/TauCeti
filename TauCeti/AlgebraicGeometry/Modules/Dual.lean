@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Dualizable
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
@@ -13,11 +14,16 @@ public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
 The self-duality of a finite free sheaf of modules specializes to the symmetric monoidal category
 `X.Modules` on a scheme. This is the local model for duality of finite locally free sheaves.
+Gluing these local dualities, the dual-tensor comparison `𝓗om(M, 𝒪_X) ⊗ N ⟶ 𝓗om(M, N)` of a
+locally free `𝒪_X`-module of finite type is an isomorphism, so `𝓗om(M, 𝒪_X)` is a left dual of `M`
+by `TauCeti.exactPairingOfIsIsoDualTensorIhom`.
 
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.exactPairingFree`: a finite free `𝒪_X`-module is
-  self-dual.
+  self-dual;
+* `AlgebraicGeometry.Scheme.Modules.isIso_dualTensorIhom_of_isLocallyFree`: the dual-tensor
+  comparison of a locally free `𝒪_X`-module of finite type is an isomorphism.
 -/
 
 public section
@@ -50,6 +56,13 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.exactPairingFree
       (_root_.SheafOfModules.free (R := X.ringCatSheaf) I : X.Modules)
       (_root_.SheafOfModules.free (R := X.ringCatSheaf) I : X.Modules) :=
   @TauCeti.SheafOfModules.exactPairingFree _ _ _ _ _ _ X.sheaf I _
+
+/-- The dual-tensor comparison `𝓗om(M, 𝒪_X) ⊗ N ⟶ 𝓗om(M, N)` of a locally free `𝒪_X`-module of
+finite type is an isomorphism. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isIso_dualTensorIhom_of_isLocallyFree
+    {X : Scheme.{u}} (M : X.Modules) [M.IsLocallyFree] [M.IsFiniteType] :
+    IsIso (dualTensorIhom M) :=
+  _root_.SheafOfModules.isIso_dualTensorIhom_of_isLocallyFree (R := X.sheaf) M
 
 end
 

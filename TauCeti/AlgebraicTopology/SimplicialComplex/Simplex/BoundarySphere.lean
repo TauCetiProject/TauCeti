@@ -7,16 +7,19 @@ module
 
 import Mathlib.Analysis.Convex.GaugeRescale
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 
 /-!
 # The realization of a simplex boundary
 
-This file proves that the geometric realization of the boundary of the standard
-`(n + 1)`-simplex is homeomorphic to the unit `n`-sphere.  It completes the
-"realization round-trips" acceptance check in layer 11 of the geometric-topology roadmap.
+The geometric realization of the boundary of the standard `(n + 1)`-simplex is
+homeomorphic to the unit `n`-sphere. The same identification applies to a boundary on
+any `n + 2` vertices inside an ambient weak realization, supplying spherical link models
+without adjoining unused vertices.
 
 The proof uses barycentric coordinates twice.  First, they identify the weak realization of the
 abstract boundary with the frontier of the convex hull of an affine basis of
@@ -334,3 +337,24 @@ noncomputable def realizationStandardSuccSimplexBoundaryHomeomorphSphere (n : �
     (polytopeFrontierHomeomorphSphere n)
 
 end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+open AbstractSimplicialComplex
+
+/-- The polyhedron of a simplex boundary with `n + 2` vertices is an `n`-sphere, inside
+any ambient weak realization containing that boundary. The ambient vertex type may be infinite. -/
+theorem nonempty_homeomorph_simplexBoundary_sphere {ι : Type*}
+    {A : AbstractSimplicialComplex ι} {V : Finset ι} {n : ℕ}
+    (hV : V.card = n + 2) (hA : simplexBoundary V ≤ A.toPreAbstractSimplicialComplex) :
+    Nonempty ({x : Realization A // x.1.support ∈ simplexBoundary V} ≃ₜ
+      sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
+  classical
+  let P := simplexBoundary (Finset.univ : Finset (Fin (n + 2)))
+  have hP : P = (standardSuccSimplexBoundary n).toPreAbstractSimplicialComplex :=
+    (standardSuccSimplexBoundary_toPreAbstractSimplicialComplex n).symm
+  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
+      rw [map_simplexBoundary, himage]) hP hA
+  exact ⟨r.trans (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)⟩
+
+end PreAbstractSimplicialComplex

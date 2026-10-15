@@ -7,13 +7,16 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+-- Private: `noncomm_ring` is used only in the proof of `ι_mul_ι_mul_ι_add_reverse`.
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Reversal on Clifford subalgebras
 
 This file restricts Clifford reversal to the even subalgebra, records its action on bivectors,
-develops its naturality under the standard even-algebra equivalences, and records general
-reverse-norm identities and comparisons with Clifford conjugation.
+develops its naturality under the standard even-algebra equivalences, computes a product of three
+vectors plus its reversal, and records general reverse-norm identities and comparisons with
+Clifford conjugation.
 -/
 
 public section
@@ -70,6 +73,35 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
     reverseEven Q (reverseEven Q x) = x := by
   apply Subtype.ext
   simpa only [coe_reverseEven_apply] using (reverse_reverse (Q := Q) (x : CliffordAlgebra Q))
+
+/-- Reversal identifies the even Clifford algebra with its opposite algebra. -/
+noncomputable def reverseEvenOpEquiv (Q : QuadraticForm R M) :
+    even Q ≃ₐ[R] (even Q)ᵐᵒᵖ :=
+  AlgEquiv.ofBijective
+    { toFun := fun x => MulOpposite.op (reverseEven Q x)
+      map_one' := by simp
+      map_mul' := by intro x y; simp
+      map_zero' := by simp
+      map_add' := by intro x y; simp
+      commutes' := by
+        intro r
+        apply MulOpposite.unop_injective
+        simp }
+    ⟨fun x y h => by
+        have h' : reverseEven Q x = reverseEven Q y := MulOpposite.op_injective h
+        simpa only [reverseEven_reverseEven] using congrArg (reverseEven Q) h',
+      fun x => ⟨reverseEven Q x.unop, by simp⟩⟩
+
+/-- The even reversal equivalence acts by reversal and passage to the opposite algebra. -/
+@[simp] theorem reverseEvenOpEquiv_apply (x : even Q) :
+    reverseEvenOpEquiv Q x = MulOpposite.op (reverseEven Q x) := by
+  rfl
+
+/-- The inverse even reversal equivalence acts by reversal. -/
+@[simp] theorem reverseEvenOpEquiv_symm_apply (x : (even Q)ᵐᵒᵖ) :
+    (reverseEvenOpEquiv Q).symm x = reverseEven Q x.unop := by
+  apply (reverseEvenOpEquiv Q).injective
+  simp
 
 /-! ### Naturality -/
 
@@ -132,6 +164,35 @@ theorem equivEven_symm_reverseEven (Q : QuadraticForm R M) (x : even (EquivEven.
   exact congrArg (fun y : even (EquivEven.Q' Q) =>
     reverse (y : CliffordAlgebra (EquivEven.Q' Q)))
       ((equivEven Q).apply_symm_apply x).symm
+
+/-! ### Reversal of products of vectors -/
+
+section Polar
+
+open QuadraticMap
+
+variable (Q)
+
+/-- **A product of three vectors plus its reversal is a vector**, namely
+`polar b c • a - polar a c • b + polar a b • c`: reversing the product costs three transpositions
+of adjacent generators, each of which contributes a polarization term. This is the analogue one
+degree up of Mathlib's `CliffordAlgebra.ι_mul_ι_add_swap`. -/
+theorem ι_mul_ι_mul_ι_add_reverse (a b c : M) :
+    ι Q a * ι Q b * ι Q c + reverse (ι Q a * ι Q b * ι Q c) =
+      ι Q (polar Q b c • a - polar Q a c • b + polar Q a b • c) := by
+  calc ι Q a * ι Q b * ι Q c + reverse (ι Q a * ι Q b * ι Q c)
+      = (ι Q c * ι Q b + ι Q b * ι Q c) * ι Q a - ι Q b * (ι Q c * ι Q a + ι Q a * ι Q c) +
+          (ι Q b * ι Q a + ι Q a * ι Q b) * ι Q c := by
+        simp only [reverse.map_mul, reverse_ι]
+        noncomm_ring
+    _ = algebraMap R _ (polar Q c b) * ι Q a - ι Q b * algebraMap R _ (polar Q c a) +
+          algebraMap R _ (polar Q b a) * ι Q c := by
+        simp only [ι_mul_ι_add_swap]
+    _ = ι Q (polar Q b c • a - polar Q a c • b + polar Q a b • c) := by
+        simp only [map_add, map_sub, map_smul, Algebra.smul_def, Algebra.commutes, polar_comm Q c b,
+          polar_comm Q c a, polar_comm Q b a]
+
+end Polar
 
 /-! ### Reverse norms and comparison with Clifford conjugation -/
 
@@ -207,7 +268,8 @@ variable [Invertible (2 : R)]
   module
 
 /-- Clifford reversal negates the image of the exterior-square bivector map. -/
-@[simp] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
+-- Use the image computation before testing membership in the quadratic Lie subalgebra.
+@[simp 1100] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
     reverse (bivectorExterior q x) = -bivectorExterior q x := by
   let P := LinearMap.eqLocus (reverse (Q := q)) (-LinearMap.id)
   have hle : LinearMap.range (bivectorExterior q) ≤ P :=

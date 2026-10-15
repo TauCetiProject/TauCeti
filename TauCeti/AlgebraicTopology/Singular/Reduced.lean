@@ -7,10 +7,14 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Topology.Homotopy.Equiv
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Reduced singular homology
@@ -22,7 +26,18 @@ coefficient object; the splitting commutes with maps preserving that point.
 
 Coefficients lie in a preadditive category with coproducts, homology and kernels. The splitting
 isomorphism additionally uses binary biproducts. No connectedness assumption is needed for the
-splitting; for a path-connected space the reduced homology object in degree zero vanishes.
+splitting; for a path-connected space the reduced homology object in degree zero vanishes, and for
+the empty space reduced homology vanishes in every degree.
+
+In degree zero, a chosen point identifies reduced homology with the coproduct of copies of the
+coefficient object indexed by the path components other than that of the point
+(`TauCeti.reducedSingularHomology₀Iso`); the generator at the component of `y` is the class
+`[y] - [x]`. This is the kernel of the codiagonal of Mathlib's `TopCat.singularHomology₀Iso`.
+
+With coefficients in a module `M`, the splitting shows that `H_q(X; M)` of a nonempty space is
+free or finitely generated when the reduced homology in degree `q` is and `M` is, and that its
+rank is that of the reduced homology, plus the rank of `M` in degree zero
+(`ModuleCat.finrank_singularHomology_eq_finrank_reducedSingularHomology_add`).
 
 This follows Hatcher, *Algebraic Topology*, Section 2.1, using Mathlib's singular homology and
 augmentation and `ShortComplex.Splitting.isoBinaryBiproduct`.
@@ -70,6 +85,20 @@ lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x 
   exact (SSet.ιHomology₀_homologyMap R (TopCat.toSSet.map f)
     (TopCat.toSSetObj₀Equiv.symm x)).trans
       (congrArg (SSet.ιHomology₀ R) (TopCat.toSSet_map_app_toSSetObj₀Equiv_symm f x))
+
+/-- Mathlib's identification of zeroth homology with the coproduct over path components sends the
+class of a point to the coproduct inclusion indexed by its path component. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀Section_singularHomology₀Iso_hom {X : TopCat.{w}} (x : X) :
+    singularHomology₀Section R x ≫ (X.singularHomology₀Iso R).hom =
+      Sigma.ι (fun _ : ZerothHomotopy X ↦ R) (ZerothHomotopy.mk x) := by
+  -- `TopCat.singularHomology₀Iso` is stated on `singularHomologyFunctor`, which is by definition
+  -- the homology of `TopCat.toSSet`; the statement is restated at that definitional unfolding so
+  -- that the simplicial lemma `TauCeti.SSet.ιHomology₀_homology₀Iso_hom` applies.
+  change SSet.ιHomology₀ R (TopCat.toSSetObj₀Equiv.symm x) ≫
+    ((TopCat.toSSet.obj X).homology₀Iso R ≪≫
+      (sigmaConst.obj R).mapIso TopCat.zerothHomotopyEquiv.toIso.symm).hom = _
+  simp [sigmaConst]
 
 variable [HasKernels C]
 
@@ -127,6 +156,20 @@ def reducedSingularHomologySuccIso (n : ℕ) :
 lemma reducedSingularHomologySuccIso_hom (n : ℕ) :
     (reducedSingularHomologySuccIso R n).hom = reducedSingularHomologyι R (n + 1) := (rfl)
 
+/-- A continuous map induces a monomorphism on singular homology when the reduced homology of
+its source vanishes in that degree. -/
+lemma _root_.TopCat.Hom.mono_singularHomologyMap_of_isZero {X Y : TopCat.{w}} (f : X ⟶ Y)
+    (R : C) {n : ℕ} (h : IsZero ((reducedSingularHomologyFunctor R n).obj X)) :
+    Mono (((singularHomologyFunctor C n).obj R).map f) := by
+  cases n with
+  | zero =>
+    rw [reducedSingularHomologyFunctor_zero_obj] at h
+    have : Mono (X.singularHomology₀ε R) := Preadditive.mono_of_isZero_kernel _ h
+    exact mono_of_mono_fac (singularHomologyMap_singularHomology₀ε R f)
+  | succ n =>
+    have hX := h.of_iso ((reducedSingularHomologySuccIso R n).app X).symm
+    exact ⟨fun g h _ ↦ hX.eq_of_tgt g h⟩
+
 /-- Homotopic continuous maps induce the same map on reduced singular homology. -/
 lemma reducedSingularHomologyFunctor_map_eq_of_homotopy {X Y : TopCat.{w}} {f g : X ⟶ Y}
     (H : TopCat.Homotopy f g) (n : ℕ) :
@@ -169,6 +212,50 @@ lemma _root_.ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_inv {X Y : T
 lemma isZero_reducedSingularHomologyFunctor_zero (X : TopCat.{w}) [PathConnectedSpace X] :
     IsZero ((reducedSingularHomologyFunctor R 0).obj X) :=
   isZero_kernel_of_mono (X.singularHomology₀ε R)
+
+/-- The reduced singular homology of the empty space vanishes in every degree. -/
+lemma isZero_reducedSingularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
+    IsZero ((reducedSingularHomologyFunctor R n).obj X) := by
+  cases n with
+  | zero =>
+    have hπ : IsEmpty (ZerothHomotopy X) :=
+      ⟨fun c ↦ ZerothHomotopy.rec (motive := fun _ ↦ False) (fun x ↦ isEmptyElim x) c⟩
+    have h₀ : IsZero (((singularHomologyFunctor C 0).obj R).obj X) :=
+      ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun c ↦ isEmptyElim c)).of_iso
+        (X.singularHomology₀Iso R)
+    rw [reducedSingularHomologyFunctor_zero_obj, IsZero.iff_id_eq_zero,
+      ← cancel_mono (kernel.ι (X.singularHomology₀ε R))]
+    exact h₀.eq_of_tgt _ _
+  | succ n =>
+    exact (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C (n + 1) R X
+      n.succ_ne_zero).of_iso ((reducedSingularHomologySuccIso R n).app X)
+
+/-- **Reduced homology in degree zero is free on the path components other than that of a
+basepoint.**  A point `x` identifies the reduced zeroth singular homology of `X` with the
+coproduct of copies of `R` indexed by the path components of `X` different from that of `x`.  The
+generator at the component of `y` corresponds to the class `[y] - [x]`
+(`TauCeti.ι_reducedSingularHomology₀Iso_inv_ι`). -/
+def reducedSingularHomology₀Iso {X : TopCat.{w}} (x : X) :
+    (reducedSingularHomologyFunctor R 0).obj X ≅
+      ∐ fun _ : {c : ZerothHomotopy X // c ≠ ZerothHomotopy.mk x} ↦ R :=
+  haveI := hasCoproducts_shrink.{0, w} (C := C)
+  haveI : HasZeroObject C := ⟨_, initialIsInitial.isZero⟩
+  eqToIso (reducedSingularHomologyFunctor_zero_obj R X) ≪≫
+    kernelIsoOfEq (X.singularHomology₀Iso_sigma_desc_id R).symm ≪≫
+    kernelIsIsoComp (X.singularHomology₀Iso R).hom (Sigma.desc fun _ ↦ 𝟙 R) ≪≫
+    kernelSigmaDescIdIso R (ZerothHomotopy.mk x)
+
+/-- The generator of `TauCeti.reducedSingularHomology₀Iso` at the path component of `y` is the
+class `[y] - [x]` in ordinary zeroth homology. -/
+-- Not a simp lemma: `reducedSingularHomologyι_zero_app` rewrites the degree-zero inclusion
+-- inside the left-hand side first, so this would fail the `simpNF` linter.
+@[reassoc]
+lemma ι_reducedSingularHomology₀Iso_inv_ι {X : TopCat.{w}} (x y : X)
+    (h : ZerothHomotopy.mk y ≠ ZerothHomotopy.mk x) :
+    Sigma.ι (fun _ : {c : ZerothHomotopy X // c ≠ ZerothHomotopy.mk x} ↦ R) ⟨.mk y, h⟩ ≫
+        (reducedSingularHomology₀Iso R x).inv ≫ (reducedSingularHomologyι R 0).app X =
+      singularHomology₀Section R y - singularHomology₀Section R x := by
+  simp [reducedSingularHomology₀Iso, ← singularHomology₀Section_singularHomology₀Iso_hom]
 
 /-- The augmentation sequence split by the class of a chosen point. -/
 private def singularHomology₀Splitting {X : TopCat.{w}} (x : X) :
@@ -233,3 +320,59 @@ lemma singularHomology₀SplitIso_inv_naturality {X Y : TopCat.{w}} (f : X ⟶ Y
   · simp
 
 end TauCeti
+
+namespace ModuleCat
+
+open TauCeti
+
+section Free
+
+variable {k : Type w} [Ring k] (M : ModuleCat.{w} k) {X : TopCat.{w}}
+
+/-- A point of `X` splits the zeroth singular homology with coefficients in a module as the
+product of the reduced zeroth homology and the coefficient module. -/
+private def singularHomology₀LinearEquiv (x : X) :
+    ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X ≃ₗ[k]
+      (reducedSingularHomologyFunctor M 0).obj X × M :=
+  (singularHomology₀SplitIso M x ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv
+
+variable [Nonempty X]
+
+/-- The singular homology of a nonempty space with coefficients in a free module is free in each
+degree in which its reduced homology is. -/
+theorem free_singularHomology_of_free_reducedSingularHomology (q : ℕ)
+    [Module.Free k ((reducedSingularHomologyFunctor M q).obj X)] [Module.Free k M] :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) := by
+  cases q with
+  | zero => exact .of_equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
+  | succ q => exact .of_equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv
+
+/-- The singular homology of a nonempty space with coefficients in a finitely generated module is
+finitely generated in each degree in which its reduced homology is. -/
+theorem finite_singularHomology_of_finite_reducedSingularHomology (q : ℕ)
+    [Module.Finite k ((reducedSingularHomologyFunctor M q).obj X)] [Module.Finite k M] :
+    Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) := by
+  cases q with
+  | zero => exact .equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
+  | succ q => exact .equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv
+
+/-- The rank of the singular homology of a nonempty space is the rank of its reduced homology,
+plus the rank of the coefficient module in degree zero. -/
+theorem finrank_singularHomology_eq_finrank_reducedSingularHomology_add [StrongRankCondition k]
+    [Module.Free k ((reducedSingularHomologyFunctor M 0).obj X)]
+    [Module.Finite k ((reducedSingularHomologyFunctor M 0).obj X)]
+    [Module.Free k M] [Module.Finite k M] (q : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) =
+      Module.finrank k ((reducedSingularHomologyFunctor M q).obj X) +
+        if q = 0 then Module.finrank k M else 0 := by
+  cases q with
+  | zero =>
+    rw [(singularHomology₀LinearEquiv M (Classical.arbitrary X)).finrank_eq,
+      Module.finrank_prod, ite_eq_left rfl]
+  | succ q =>
+    rw [ite_eq_right q.succ_ne_zero, add_zero]
+    exact ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv.finrank_eq.symm
+
+end Free
+
+end ModuleCat

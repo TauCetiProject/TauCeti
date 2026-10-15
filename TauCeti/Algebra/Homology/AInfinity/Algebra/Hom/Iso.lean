@@ -22,8 +22,10 @@ the inverse of `f₁`.
 Every isomorphism is a quasi-isomorphism.  Between minimal algebras the converse holds, see
 `TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal`: a quasi-isomorphism between minimal
 algebras is an `A∞` isomorphism.  This is one ingredient of the uniqueness clause of Kadeishvili's
-theorem, which additionally needs the existence of such a quasi-isomorphism between two minimal
-models; that existence is not proved here.
+theorem; the other is a quasi-isomorphism between a minimal algebra and the minimal model.
+`TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Cohomology` builds one for any minimal
+algebra equipped with a quasi-isomorphism to or from the original algebra, by composing with the
+projection onto, or the inclusion of, the transferred structure.
 
 ## Main definitions
 

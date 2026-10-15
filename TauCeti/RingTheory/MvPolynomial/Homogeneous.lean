@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
 /-!
@@ -15,7 +16,13 @@ multiplies its value by `a ^ n`. This permits normalizing linear substitutions w
 expanding the polynomial.
 
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
-notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`.
+notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In the same way
+`hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
+vector, and `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
+positive degree.
+
+The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
+product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
 -/
 
 public section
@@ -57,4 +64,82 @@ theorem eval_smul {σ R : Type*} [CommSemiring R]
     _root_.MvPolynomial.eval (a • g) p = a ^ n • _root_.MvPolynomial.eval g p := by
   simpa only [_root_.MvPolynomial.eval, coe_eval₂Hom, Pi.smul_def, smul_eq_mul] using
     hp.eval₂_const_mul (RingHom.id R) g a
+
+/-- The coefficient of `X_j ^ n` in a homogeneous polynomial of degree `n` is its value at the
+`j`-th basis vector: every other monomial involves a variable other than `X_j`. -/
+theorem coeff_single_eq_eval {σ R : Type*} [CommSemiring R] [DecidableEq σ]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (j : σ) :
+    p.coeff (Finsupp.single j n) = _root_.MvPolynomial.eval (Pi.single j 1) p := by
+  conv_rhs => rw [p.as_sum]
+  rw [map_sum, Finset.sum_eq_single (Finsupp.single j n)]
+  · simp [_root_.MvPolynomial.eval_monomial]
+  · intro s hs hne
+    obtain ⟨i, hij, hi⟩ : ∃ i, i ≠ j ∧ s i ≠ 0 := by
+      by_contra! h
+      have hs' : s = Finsupp.single j (s j) := Finsupp.ext fun i ↦ by
+        by_cases hi : i = j
+        · simp [hi]
+        · simp [hi, h i hi]
+      have hdeg := hp (_root_.MvPolynomial.mem_support_iff.mp hs)
+      rw [hs'] at hdeg
+      simp only [Finsupp.weight_apply, Finsupp.sum_single_index, Pi.one_apply, smul_eq_mul,
+        mul_one] at hdeg
+      exact hne (hs'.trans (by rw [hdeg]))
+    rw [_root_.MvPolynomial.eval_monomial, Finsupp.prod,
+      Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi)
+        (by rw [Pi.single_eq_of_ne hij, zero_pow hi]), mul_zero]
+  · intro h
+    simp [_root_.MvPolynomial.notMem_support_iff.mp h]
+
+/-- A homogeneous polynomial of positive degree has zero constant coefficient. -/
+theorem constantCoeff_eq_zero {σ R : Type*} [CommSemiring R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (hn : n ≠ 0) :
+    _root_.MvPolynomial.constantCoeff p = 0 := by
+  rw [_root_.MvPolynomial.constantCoeff_eq]
+  exact hp.coeff_eq_zero (by simpa using hn.symm)
+
 end MvPolynomial.IsHomogeneous
+
+namespace MvPolynomial
+
+variable {σ R : Type*} [CommRing R]
+
+/-- The coefficient of `X ^ k` in a product of linear factors `X - C Ψ`, whose constant terms `Ψ`
+are all homogeneous of degree `m`, is homogeneous of degree `m * (s.card - k)`. -/
+theorem isHomogeneous_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι)
+    (Ψ : ι → MvPolynomial σ R) {m : ℕ} (hΨ : ∀ i ∈ s, (Ψ i).IsHomogeneous m) (k : ℕ) :
+    ((∏ i ∈ s, (Polynomial.X - Polynomial.C (Ψ i))).coeff k).IsHomogeneous
+      (m * (s.card - k)) := by
+  classical
+  induction s using Finset.induction_on generalizing k with
+  | empty =>
+    rw [Finset.prod_empty, Polynomial.coeff_one]
+    split_ifs
+    · simpa using isHomogeneous_one σ R
+    · exact isHomogeneous_zero σ R _
+  | insert a s ha ih =>
+    have hs (k : ℕ) := ih (fun i hi => hΨ i (Finset.mem_insert_of_mem hi)) k
+    have ha' := hΨ a (Finset.mem_insert_self a s)
+    rw [Finset.prod_insert ha, Finset.card_insert_of_notMem ha, mul_comm]
+    rcases k with _ | j
+    · rw [Polynomial.mul_coeff_zero, Polynomial.coeff_sub, Polynomial.coeff_X_zero,
+        Polynomial.coeff_C_zero, zero_sub, Nat.sub_zero, mul_add_one]
+      have h0 := hs 0
+      rw [Nat.sub_zero] at h0
+      exact h0.mul ha'.neg
+    · rw [Polynomial.coeff_mul_X_sub_C, Nat.add_sub_add_right]
+      refine (hs j).sub ?_
+      by_cases hj : j + 1 ≤ s.card
+      · have hdeg : s.card - j = s.card - (j + 1) + 1 := by omega
+        rw [hdeg, mul_add_one]
+        exact (hs (j + 1)).mul ha'
+      · have hle : (∏ i ∈ s, (Polynomial.X - Polynomial.C (Ψ i))).natDegree ≤ s.card := by
+          refine (Polynomial.natDegree_prod_le _ _).trans ?_
+          simpa using Finset.sum_le_card_nsmul s _ 1 fun i _ =>
+            Polynomial.natDegree_X_sub_C_le (Ψ i)
+        have hlt : (∏ i ∈ s, (Polynomial.X - Polynomial.C (Ψ i))).natDegree < j + 1 := by
+          omega
+        rw [Polynomial.coeff_eq_zero_of_natDegree_lt hlt, zero_mul]
+        exact isHomogeneous_zero σ R _
+
+end MvPolynomial

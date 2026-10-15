@@ -35,7 +35,8 @@ needed to define the differential.
 * `TauCeti.HeegaardIntersectionSystem.generatorOfPointChoice`: the point-choice constructor from
   bijective `β`-labels.
 * `TauCeti.HeegaardIntersectionSystem.point` and `TauCeti.HeegaardIntersectionSystem.betaEquiv`:
-  accessors for the chosen point and its curve matching.
+  accessors for the chosen point and its curve matching; a generator is determined by its chosen
+  points (`TauCeti.HeegaardIntersectionSystem.point_injective`).
 * `TauCeti.HeegaardIntersectionSystem.generatorChain`: the `0`-chain of the points of a
   generator.
 
@@ -110,7 +111,7 @@ theorem generator_card :
     (pairwise_disjoint_fiber D.beta) (by
       intro i j
       exact hPoint.subset (by
-        intro p hp
+        intro p _
         exact Set.mem_univ p))
 
 /-- Construct a generator from a point choice and its two curve-label conditions. -/
@@ -175,6 +176,14 @@ theorem betaEquiv_apply (g : D.Generator) (i : Fin n) :
     D.betaEquiv g i = D.beta (D.point g i) := by
   simpa [betaEquiv, point] using (g.2 i).property.2.symm
 
+/-- A generator is determined by its chosen points: their `β`-labels recover the matching. -/
+theorem point_injective : Function.Injective D.point := by
+  rintro ⟨σ, f⟩ ⟨τ, g⟩ h
+  obtain rfl : σ = τ := Equiv.ext fun i => by
+    simpa [point] using (f i).property.2.symm.trans (congrArg D.beta (congrFun h i)) |>.trans
+      (g i).property.2
+  exact congrArg (Sigma.mk σ) (funext fun i => Subtype.ext (congrFun h i))
+
 /-- The chosen point over `i` has `α`-label `i`. -/
 @[simp]
 theorem alpha_coe (g : D.Generator) (i : Fin n) : D.alpha (g.2 i) = i :=
@@ -205,6 +214,17 @@ theorem generatorChain_apply [DecidableEq Point] (g : D.Generator) (q : Point) :
     D.generatorChain g q = if D.point g (D.alpha q) = q then 1 else 0 := by
   simp only [generatorChain, Set.indicator_apply, Set.mem_range, point_apply, exists_point_iff,
     Pi.one_apply]
+
+/-- The `0`-chain of a generator is the sum of the unit chains at its intersection points. -/
+theorem generatorChain_eq_sum_single [DecidableEq Point] (g : D.Generator) :
+    D.generatorChain g = ∑ i, Pi.single (D.point g i) 1 := by
+  funext q
+  rw [generatorChain_apply, Finset.sum_apply, Finset.sum_eq_single (D.alpha q)]
+  · simp [Pi.single_apply, eq_comm]
+  · intro i _ hi
+    have : q ≠ D.point g i := fun h => hi (by simp [h])
+    exact Pi.single_eq_of_ne this 1
+  · simp
 
 /-- Pairing the `0`-chain of a generator with a function on intersection points sums the
 function over the points of the generator. -/

@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
@@ -20,6 +20,8 @@ import TauCeti.LinearAlgebra.TensorProduct.Basis
 # Base change of quadratic forms
 
 This file supplies the functorial API for extending quadratic spaces along a commutative algebra.
+The pure-tensor map also restricts to the polar kernel of a vector, so orthogonal parameters can
+be extended before passing to quotient spaces.
 It lifts isometries and isometric equivalences by extending their underlying linear maps, records
 the interaction with the additive operations on forms, compares direct and successive extension
 through a scalar tower, and proves that finite-dimensional nondegenerate forms remain
@@ -363,7 +365,7 @@ theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
   intro x y hxy
   apply hinjective
   simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
-    LinearMap.baseChange_eq_ltensor] using hxy
+    LinearMap.baseChange_eq_lTensor] using hxy
 
 namespace TauCeti
 
@@ -399,6 +401,17 @@ theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
       A ⊗[R] M ≃ₗ[A] A ⊗[R] M) = LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
   rfl
 
+/-- The matrix of a scalar-extended orthogonal automorphism in a base-changed basis is obtained
+by applying the algebra map to each entry. -/
+@[simp]
+theorem toMatrix_orthogonalGroupBaseChange {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (Q : _root_.QuadraticForm R M) (b : Module.Basis ι R M) (g : orthogonalGroup Q) :
+    LinearMap.toMatrix (b.baseChange A) (b.baseChange A)
+      (orthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M).toLinearMap =
+      (LinearMap.toMatrix b b (g : M ≃ₗ[R] M).toLinearMap).map (algebraMap R A) := by
+  rw [coe_orthogonalGroupBaseChange, LinearEquiv.coe_baseChange]
+  exact b.toMatrix_baseChange_baseChange b _
+
 /-- On a pure tensor, base change of an orthogonal automorphism applies the automorphism to the
 second tensor factor. -/
 @[simp]
@@ -408,6 +421,26 @@ theorem orthogonalGroupBaseChange_apply_tmul (Q : _root_.QuadraticForm R M)
       a ⊗ₜ (g : M ≃ₗ[R] M) m := by
   rw [coe_orthogonalGroupBaseChange]
   exact LinearEquiv.baseChange_tmul R A M M a m
+
+/-- Scalar extension commutes with transport of orthogonal automorphisms along an isometry. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupBaseChange_congr
+    {Q : _root_.QuadraticForm R M}
+    {N : Type*} [AddCommGroup N] [Module R N] {Q' : _root_.QuadraticForm R N}
+    (e : Q.IsometryEquiv Q') (g : orthogonalGroup Q) :
+    orthogonalGroupBaseChange (A := A) Q' (e.orthogonalGroupCongr g) =
+      (e.baseChange A).orthogonalGroupCongr (orthogonalGroupBaseChange (A := A) Q g) := by
+  apply Subtype.ext
+  apply LinearEquiv.toLinearMap_injective
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a m
+  simp only [LinearEquiv.coe_coe, orthogonalGroupBaseChange_apply_tmul,
+    _root_.QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    _root_.QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
+    _root_.QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply]
+  rw [← e.baseChange_symm (A := A)]
+  simp only [_root_.QuadraticMap.IsometryEquiv.baseChange_tmul,
+    orthogonalGroupBaseChange_apply_tmul]
 
 /-- The determinant of a base-changed orthogonal automorphism is the image of its original
 determinant. -/
@@ -441,8 +474,7 @@ noncomputable def specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Fin
     apply mem_specialOrthogonalGroup_iff.mpr
     refine ⟨(orthogonalGroupBaseChange (A := A) Q
       ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩).2, ?_⟩
-    have hg := (mem_specialOrthogonalGroup_iff.mp g.2).2
-    rw [det_orthogonalGroupBaseChange, hg, map_one]⟩
+    rw [det_orthogonalGroupBaseChange, det_coe_specialOrthogonalGroup, map_one]⟩
   map_one' := Subtype.ext (by simp [orthogonalGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [orthogonalGroupBaseChange, LinearEquiv.baseChange_mul])
 
@@ -464,6 +496,18 @@ theorem specialOrthogonalGroupBaseChange_to_orthogonalGroup [Module.Free R M] [M
         (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g) := by
   rfl
 
+/-- Base change commutes with the inclusion `SO(Q) →* O(Q)`. -/
+@[simp]
+theorem specialOrthogonalToOrthogonal_specialOrthogonalGroupBaseChange [Module.Free R M]
+    [Module.Finite R M] (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
+    _root_.QuadraticMap.specialOrthogonalToOrthogonal (Q.baseChange A)
+        (specialOrthogonalGroupBaseChange (A := A) Q g) =
+      orthogonalGroupBaseChange (A := A) Q
+        (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
+  apply Subtype.ext
+  rw [_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal, coe_orthogonalGroupBaseChange,
+    coe_specialOrthogonalGroupBaseChange, _root_.QuadraticMap.coe_specialOrthogonalToOrthogonal]
+
 /-- On pure tensors, base change of a special orthogonal automorphism acts on the second factor. -/
 @[simp]
 theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Finite R M]
@@ -472,6 +516,26 @@ theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Fi
       a ⊗ₜ (g : M ≃ₗ[R] M) m := by
   rw [coe_specialOrthogonalGroupBaseChange]
   exact LinearEquiv.baseChange_tmul R A M M a m
+
+/-- Scalar extension commutes with isometric transport on the special orthogonal group. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupBaseChange_congr
+    [Module.Free R M] [Module.Finite R M]
+    {Q : _root_.QuadraticForm R M} {N : Type*} [AddCommGroup N] [Module R N]
+    [Module.Free R N] [Module.Finite R N]
+    {Q' : _root_.QuadraticForm R N} (e : Q.IsometryEquiv Q') (g : specialOrthogonalGroup Q) :
+    specialOrthogonalGroupBaseChange (A := A) Q' (e.specialOrthogonalGroupCongr g) =
+      (e.baseChange A).specialOrthogonalGroupCongr
+        (specialOrthogonalGroupBaseChange (A := A) Q g) := by
+  apply Subtype.ext
+  apply LinearEquiv.toLinearMap_injective
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a m
+  simp only [LinearEquiv.coe_coe, specialOrthogonalGroupBaseChange_apply_tmul,
+    _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_apply]
+  rw [← e.baseChange_symm (A := A)]
+  simp only [_root_.QuadraticMap.IsometryEquiv.baseChange_tmul,
+    specialOrthogonalGroupBaseChange_apply_tmul]
 
 /-- Scalar extension of special orthogonal automorphisms is injective whenever the extension is
 faithful and the original module is flat. -/
@@ -588,14 +652,14 @@ theorem orthogonalGroupBaseChange_baseChange (Q : _root_.QuadraticForm R M)
     (g : orthogonalGroup Q) :
     letI : Invertible (2 : A) :=
       (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
-    orthogonalGroupCongr (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
+    (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).orthogonalGroupCongr
         (orthogonalGroupBaseChange (A := B) Q g) =
       orthogonalGroupBaseChange (A := B) (Q.baseChange A)
         (orthogonalGroupBaseChange (A := A) Q g) := by
   apply Subtype.ext
   apply LinearEquiv.ext
   intro x
-  simp only [coe_orthogonalGroupCongr_apply,
+  simp only [QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply,
     QuadraticForm.baseChangeBaseChange_toLinearEquiv,
     coe_orthogonalGroupBaseChange]
   have h := LinearMap.baseChange_baseChange (R := R) (A := A) (B := B)
@@ -620,7 +684,7 @@ theorem specialOrthogonalGroupBaseChange_baseChange [Module.Free R M] [Module.Fi
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
     letI : Invertible (2 : A) :=
       (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
-    orthogonalGroupCongr (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
+    (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).orthogonalGroupCongr
         (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange B))
           (specialOrthogonalGroupBaseChange (A := B) Q g)) =
       Subgroup.inclusion
@@ -641,6 +705,18 @@ variable {K : Type uR} {L : Type uA} [Field K] [Field L] [Algebra K L]
 variable {V : Type uM} [AddCommGroup V] [Module K V]
 
 namespace QuadraticForm
+
+/-- Nondegeneracy of a finite-dimensional quadratic form descends from a field extension. -/
+theorem Nondegenerate.of_baseChange [Invertible (2 : K)]
+    [FiniteDimensional K V] {Q : _root_.QuadraticForm K V}
+    (hQ : (Q.baseChange L).Nondegenerate) : Q.Nondegenerate := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  apply QuadraticMap.nondegenerate_associated_iff.mp
+  have h := QuadraticMap.nondegenerate_associated_iff.mpr hQ
+  rw [_root_.QuadraticForm.associated_baseChange] at h
+  exact TauCeti.nondegenerate_of_nondegenerate_baseChange L
+    (QuadraticMap.associated Q) (Module.Free.chooseBasis K V) h
 
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
 base field. -/
@@ -679,3 +755,29 @@ theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
 end QuadraticForm
 
 end Field
+
+namespace TauCeti.QuadraticMap
+
+open _root_.QuadraticMap
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Invertible (2 : R)]
+
+/-- Pure tensors carry the orthogonal kernel of `u` into that of `1 ⊗ u`. -/
+def polarKernelBaseChange (Q : QuadraticForm R M) (u : M) :
+    LinearMap.ker (Q.polarBilin u) →ₛₗ[algebraMap R A]
+      LinearMap.ker ((Q.baseChange A).polarBilin (1 ⊗ₜ[R] u)) where
+  toFun w := ⟨1 ⊗ₜ[R] (w : M), by
+    rw [LinearMap.mem_ker, polarBilin_apply_apply, QuadraticForm.polar_baseChange_tmul]
+    have hw : polar Q u w = 0 := LinearMap.mem_ker.mp w.2
+    simp [hw]⟩
+  map_add' w w' := by ext; simp [TensorProduct.tmul_add]
+  map_smul' r w := by ext; simp [TensorProduct.tmul_smul]
+
+/-- The scalar-extension map on an orthogonal kernel is the pure-tensor map on vectors. -/
+@[simp]
+theorem coe_polarKernelBaseChange_apply (Q : QuadraticForm R M) (u : M)
+    (w : LinearMap.ker (Q.polarBilin u)) :
+    (polarKernelBaseChange (A := A) Q u w : A ⊗[R] M) = 1 ⊗ₜ[R] (w : M) := (rfl)
+
+end TauCeti.QuadraticMap

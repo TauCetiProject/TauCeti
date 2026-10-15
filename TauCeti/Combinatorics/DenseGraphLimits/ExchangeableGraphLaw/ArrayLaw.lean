@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 public import TauCeti.Probability.Exchangeability.Arrays.Windows
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.AdjArray
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 
@@ -36,6 +36,9 @@ speak about graph laws.
   arrays. Extremality among those laws is joint dissociation
   (`jointlyDissociated_iff_mem_extremePoints_on`), so dissociation of a graph law is extremality of
   its array law (`isDissociated_iff_arrayLaw_mem_extremePoints`).
+* **Ergodicity.** Joint dissociation is ergodicity of the finitary permutations acting
+  diagonally on arrays (`jointlyDissociated_iff_ergodicSMul`), so dissociation of a graph law is
+  ergodicity of that action on its array law (`isDissociated_iff_ergodicSMul`).
 
 The carrier-level bridge, the adjacency array of a graph and the graph of an array, is
 `ExchangeableGraphLaw/AdjArray.lean`. The window of a graph on the labels `[k, k + n)` corresponds
@@ -51,6 +54,8 @@ to the block `[k, k + n)²` of its adjacency array.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_forall_indepFun_restrict` — dissociation of the
   finite law is block independence of the array law at consecutive windows.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_jointlyDissociated` — dissociation compatibility.
+* `TauCeti.DenseGraphLimits.isDissociated_iff_ergodicSMul` — dissociation of a graph law is
+  ergodicity of the finitary-permutation action on its array law.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_arrayLaw_mem_extremePoints`,
   `isDissociated_iff_graphLawArrayLawEquiv_mem_extremePoints`,
   `isDissociated_graphLawArrayLawEquiv_symm` — dissociation of a graph law is extremality of its
@@ -368,6 +373,15 @@ theorem isDissociated_iff_jointlyDissociated (L : InfiniteExchangeableGraphLaw) 
   intro n hn hn'
   simp only [Finset.mem_Ico] at hn hn'
   omega
+
+/-- **Dissociation is ergodicity**: an exchangeable law on infinite graphs is dissociated exactly
+when the finitary permutations, relabelling both axes simultaneously, act ergodically on its array
+law. -/
+theorem isDissociated_iff_ergodicSMul (L : InfiniteExchangeableGraphLaw) :
+    (exchangeableGraphLawEquivInfinite.symm L).IsDissociated ↔
+      ErgodicSMul FinitaryPerm (ℕ × ℕ → Bool) (arrayLaw L.law) := by
+  rw [isDissociated_iff_jointlyDissociated,
+    jointlyDissociated_iff_ergodicSMul (jointlyExchangeable_arrayLaw L.exchangeable)]
 
 /-- **Dissociation is extremality** for exchangeable laws on infinite graphs, read through their
 array laws. -/

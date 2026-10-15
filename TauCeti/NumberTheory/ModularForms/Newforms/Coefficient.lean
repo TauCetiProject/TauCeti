@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 import TauCeti.NumberTheory.ArithmeticFunction.PrimeRecurrence
+import TauCeti.NumberTheory.ModularForms.HeckeSlash.BadPrime.Eigenvector
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Eigenvector
 import TauCeti.NumberTheory.ModularForms.Newforms.EigenFromPrimes
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Composite
+public import TauCeti.NumberTheory.ModularForms.Newforms.Eigenform
 public import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
 
 /-!
@@ -36,6 +38,14 @@ coprime multiplicativity, and the prime-power recurrence imply the good-prime re
 hence produce a bundled good Hecke eigenform. This is the away-from-the-level part of the
 coefficient characterisation in Diamond–Shurman, Proposition 5.8.5.
 
+The same holds for full Hecke eigenforms once the nebentypus is extended by zero, `χ(p) = 0` for
+`p ∣ N` (Mathlib's `MulChar.ofUnitHom`): at a prime dividing the level the recurrence degenerates
+to `a_{pm} = a_p a_m`, the coefficient form of `U_p f = a_p f`. Together with the coefficient
+identities `Eigenform.qExpansion_coeff_mul` and `Eigenform.qExpansion_coeff_prime_pow_add_two`
+this gives Proposition 5.8.5 itself on `S_k(N, χ)`: a cusp form with `a₁ = 1` is a full Hecke
+eigenform exactly when its coefficients are multiplicative at coprime indices and satisfy the
+Hecke recurrence along the powers of every prime.
+
 ## Main results
 
 * `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue_mul_coeff_one`:
@@ -51,6 +61,14 @@ coefficient characterisation in Diamond–Shurman, Proposition 5.8.5.
   coefficient identities at the good indices,
   `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_mul` and
   `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_prime_pow_add_two`.
+* `Eigenform.exists_toCuspForm_eq_and_χ_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul`:
+  a cusp form of nebentypus `χ` underlies a full Hecke eigenform exactly when it is nonzero and
+  its coefficients satisfy a scalar Hecke recurrence at every prime.
+* `Eigenform.exists_toCuspForm_eq_and_χ_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two`:
+  nonvanishing, coprime multiplicativity, and the prime-power recurrences at every prime produce
+  a full Hecke eigenform.
+* `Eigenform.exists_toCuspForm_eq_and_χ_eq_iff_qExpansion_coeff_mul_and_prime_pow_add_two`:
+  Diamond–Shurman's Proposition 5.8.5 on `S_k(N, χ)`.
 
 ## Provenance
 
@@ -205,5 +223,91 @@ theorem exists_toCuspForm_eq_and_χ_eq_of_qExpansion_coeff_mul_of_prime_pow_add_
       (Nat.coprime_one_right m)
 
 end EigenformAwayFromLevel
+
+namespace Eigenform
+
+/-! ### The coefficient characterisation of full eigenforms -/
+
+/-- **The coefficient recurrence at every prime characterises full eigen-ness.** A cusp form
+`f ∈ S_k(N, χ)` underlies a full `Eigenform` exactly when it is nonzero and, at every prime `p`,
+its coefficients satisfy `a_{pm} = c_p a_m - χ(p) p^{k-1} a_{m/p}` for some scalar `c_p` and every
+`m`, with the nebentypus extended by zero, so that the last term vanishes for `p ∣ N`.
+
+The scalar is not required to be named as `a_p` here: that identification needs the separate
+normalisation `a₁ = 1`. -/
+theorem exists_toCuspForm_eq_and_χ_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ}
+    (hχ : f ∈ cuspFormCharSpace k χ) :
+    (∃ F : Eigenform N k, F.toCuspForm = f ∧ F.χ = χ) ↔
+      f ≠ 0 ∧ ∀ p : ℕ, p.Prime → ∃ c : ℂ, ∀ m : ℕ,
+        (qExpansion 1 f).coeff (p * m) = c * (qExpansion 1 f).coeff m -
+          if p ∣ m then (MulChar.ofUnitHom χ : DirichletCharacter ℂ N) p *
+            (p : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (m / p) else 0 := by
+  constructor
+  · rintro ⟨F, rfl, rfl⟩
+    exact ⟨F.ne_zero, fun p hp ↦ ⟨F.eigenvalue ⟨p, hp.pos⟩,
+      (heckeTCuspNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul_ofUnitHom hp F.mem_charSpace
+        _).1 (F.heckeTCuspNat_eq_eigenvalue_smul hp)⟩⟩
+  · rintro ⟨hf, hrec⟩
+    refine ⟨ofForallPrime hχ hf (fun p hp ↦ ?_), ofForallPrime_toCuspForm _ _ _,
+      ofForallPrime_χ _ _ _⟩
+    obtain ⟨c, hc⟩ := hrec p hp
+    refine ⟨c, Subtype.ext ?_⟩
+    rw [coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
+    exact (heckeTCuspNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul_ofUnitHom hp hχ c).2 hc
+
+/-- **Diamond–Shurman's coefficient relations at every prime produce a full Hecke eigenform.**
+Let `f ∈ S_k(N, χ)` be nonzero. If its coefficients are multiplicative at coprime indices and
+satisfy the Hecke recurrence along the powers of every prime, with the nebentypus extended by
+zero to the primes dividing the level, then `f` underlies an `Eigenform`. -/
+theorem exists_toCuspForm_eq_and_χ_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ}
+    (hχ : f ∈ cuspFormCharSpace k χ) (hf : f ≠ 0)
+    (hmul : ∀ u v : ℕ, Nat.Coprime u v →
+      (qExpansion 1 f).coeff (u * v) =
+        (qExpansion 1 f).coeff u * (qExpansion 1 f).coeff v)
+    (hpow : ∀ (p : ℕ) (_hp : p.Prime) (r : ℕ),
+      (qExpansion 1 f).coeff (p ^ (r + 2)) =
+        (qExpansion 1 f).coeff p * (qExpansion 1 f).coeff (p ^ (r + 1)) -
+          (MulChar.ofUnitHom χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1) *
+            (qExpansion 1 f).coeff (p ^ r)) :
+    ∃ F : Eigenform N k, F.toCuspForm = f ∧ F.χ = χ := by
+  rw [exists_toCuspForm_eq_and_χ_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul hχ]
+  refine ⟨hf, fun p hp ↦ ⟨(qExpansion 1 f).coeff p, fun m ↦ ?_⟩⟩
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp [CuspFormClass.qExpansion_coeff_zero f one_pos
+      (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
+  · exact TauCeti.prime_mul_eq_of_prime_pow_recurrence_of_coprime_mul_eq
+      (a := fun n ↦ (qExpansion 1 f).coeff n) (L := 1) hp (Nat.coprime_one_right p)
+      (fun u v huv _ _ ↦ hmul u v huv) (hpow p hp) m hm (Nat.coprime_one_right m)
+
+/-- **Diamond–Shurman, Proposition 5.8.5, on `S_k(N, χ)`.** A cusp form `f ∈ S_k(N, χ)` with
+`a₁ = 1` underlies a full Hecke eigenform exactly when its coefficients satisfy
+* `a_{mn} = a_m a_n` whenever `m` and `n` are coprime, and
+* `a_{p^{r+2}} = a_p a_{p^{r+1}} - χ(p) p^{k-1} a_{p^r}` for every prime `p` and every `r`,
+  with the nebentypus extended by zero, `χ(p) = 0` for `p ∣ N`. -/
+theorem exists_toCuspForm_eq_and_χ_eq_iff_qExpansion_coeff_mul_and_prime_pow_add_two
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ}
+    (hχ : f ∈ cuspFormCharSpace k χ) (h₁ : (qExpansion 1 f).coeff 1 = 1) :
+    (∃ F : Eigenform N k, F.toCuspForm = f ∧ F.χ = χ) ↔
+      (∀ u v : ℕ, Nat.Coprime u v →
+        (qExpansion 1 f).coeff (u * v) =
+          (qExpansion 1 f).coeff u * (qExpansion 1 f).coeff v) ∧
+      ∀ (p : ℕ) (_hp : p.Prime) (r : ℕ),
+        (qExpansion 1 f).coeff (p ^ (r + 2)) =
+          (qExpansion 1 f).coeff p * (qExpansion 1 f).coeff (p ^ (r + 1)) -
+            (MulChar.ofUnitHom χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1) *
+              (qExpansion 1 f).coeff (p ^ r) := by
+  constructor
+  · rintro ⟨F, rfl, rfl⟩
+    exact ⟨fun u v huv ↦ F.qExpansion_coeff_mul h₁ huv,
+      fun p hp r ↦ F.qExpansion_coeff_prime_pow_add_two h₁ hp r⟩
+  · rintro ⟨hmul, hpow⟩
+    refine exists_toCuspForm_eq_and_χ_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two hχ ?_
+      hmul hpow
+    rintro rfl
+    simp [qExpansion_zero] at h₁
+
+end Eigenform
 
 end HeckeRing.GL2

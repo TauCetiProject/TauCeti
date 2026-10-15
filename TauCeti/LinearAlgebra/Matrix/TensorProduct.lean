@@ -20,6 +20,7 @@ matrix algebras.
 * `Matrix.finOneAlgEquiv`: the canonical equivalence `A ≃ₐ[R] M₁(A)` using `Fin 1` indices.
 * `Matrix.kroneckerTMulFinAlgEquiv`: matrix absorption
   `M_m(A) ⊗[R] M_n(B) ≃ₐ[R] M_(mn)(A ⊗[R] B)`.
+* `Matrix.kroneckerFinAlgEquiv`: its scalar case `M_m(R) ⊗[R] M_n(R) ≃ₐ[R] M_(mn)(R)`.
 -/
 
 public section
@@ -79,5 +80,20 @@ theorem kroneckerTMulFinAlgEquiv_symm_single_tmul (m n : ℕ) (R : Type*)
   rw [AlgEquiv.symm_apply_eq]
   rw [Matrix.kroneckerTMulFinAlgEquiv_tmul, Matrix.single_kroneckerTMul_single]
   simp
+
+/-- The Kronecker product identifies `M_m(R) ⊗[R] M_n(R)` with `M_(mn)(R)`, with `Fin` indices. -/
+def kroneckerFinAlgEquiv (m n : ℕ) (R : Type*) [CommSemiring R] :
+    Matrix (Fin m) (Fin m) R ⊗[R] Matrix (Fin n) (Fin n) R ≃ₐ[R]
+      Matrix (Fin (m * n)) (Fin (m * n)) R :=
+  (Matrix.kroneckerAlgEquiv (Fin m) (Fin n) R).trans (Matrix.reindexAlgEquiv R R finProdFinEquiv)
+
+/-- The finite-index Kronecker equivalence sends a pure tensor to the reindexed Kronecker
+product. -/
+@[simp]
+theorem kroneckerFinAlgEquiv_tmul (m n : ℕ) (R : Type*) [CommSemiring R]
+    (a : Matrix (Fin m) (Fin m) R) (b : Matrix (Fin n) (Fin n) R) :
+    Matrix.kroneckerFinAlgEquiv m n R (a ⊗ₜ[R] b) =
+      Matrix.reindex finProdFinEquiv finProdFinEquiv (a ⊗ₖ b) := by
+  simp [kroneckerFinAlgEquiv]
 
 end Matrix

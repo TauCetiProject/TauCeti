@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.Index
+public import TauCeti.LinearAlgebra.Quotient.Prod
 
 /-!
 # Index of linear maps
 
 This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing
-with a linear equivalence.
+with a linear equivalence and its additivity under products with finite free kernels and cokernels.
 
-These composition lemmas are absent from `Mathlib.Algebra.Module.LinearMap.Index` and support the
-continuous-linear-map results in `TauCeti.Analysis.Fredholm.Index`.
+These lemmas are absent from `Mathlib.Algebra.Module.LinearMap.Index` and support the
+continuous-linear-map results in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
 -/
 
 public section
@@ -45,5 +46,21 @@ lemma index_comp_equiv (f : M →ₗ[R] N) (e : P ≃ₗ[R] M) :
   congr 1
   · rw [ker_comp, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
   · rw [range_comp_of_range_eq_top _ (range_eq_top.2 e.surjective)]
+
+/-- The index is additive under Cartesian products when the kernels and cokernels are finite
+free modules. -/
+@[simp]
+lemma index_prodMap {Q : Type*} [AddCommGroup Q] [Module R Q] [StrongRankCondition R]
+    (f : M →ₗ[R] N) (g : P →ₗ[R] Q)
+    [Module.Free R f.ker] [Module.Free R g.ker]
+    [Module.Finite R f.ker] [Module.Finite R g.ker]
+    [Module.Free R (N ⧸ f.range)] [Module.Free R (Q ⧸ g.range)]
+    [Module.Finite R (N ⧸ f.range)] [Module.Finite R (Q ⧸ g.range)] :
+    (f.prodMap g).index = f.index + g.index := by
+  simp only [index_eq_finrank_sub]
+  rw [ker_prodMap, range_prodMap]
+  simp only [(Submodule.prodEquiv _ _).finrank_eq, Submodule.finrank_quotient_prod,
+    Module.finrank_prod]
+  omega
 
 end LinearMap

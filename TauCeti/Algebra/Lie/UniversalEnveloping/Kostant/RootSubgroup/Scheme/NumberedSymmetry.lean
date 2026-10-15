@@ -72,10 +72,6 @@ All of these live in the `TauCeti.UniversalEnvelopingAlgebra` namespace.
 * R. W. Carter, *Simple Groups of Lie Type*, §12.2.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * J. E. Humphreys, *Linear Algebraic Groups*, §27.
-
-This advances the pinnings and pinned-isomorphism targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`; the automorphisms it produces are required by milestone
-L1 of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -247,7 +243,7 @@ theorem pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
     (f : HopfAlgebra.points
       (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A) :
     GeneralLinear.pointsMulEquiv n
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom).app A f) =
       kostantNumberedSymmetryMatrix M b θ hθM A *
           GeneralLinear.pointsMulEquiv n f *
@@ -268,7 +264,7 @@ theorem pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso (A : Typ
       kostantNumberedSymmetryMatrix M b θ hθM A *
           GeneralLinear.pointsMulEquiv n f *
         (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
-  simpa only [CommHopfAlgCat.mapPointsFunctor_app_apply] using
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] using
     pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
       M b θ hθM (CommAlgCat.of ℤ A) f
 
@@ -347,7 +343,7 @@ theorem kostantNumberedSymmetryCoordinateIso_hom_comp_rootSubgroupCoordinateMap
   have hp : toConv (f.ofConv.comp c.hom.toAlgHom) = g := by
     apply (GeneralLinear.pointsMulEquiv
       (R := ℤ) (A := CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) n).injective
-    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply c
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply c
       (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) f,
       pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso,
       GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointsMulEquiv_apply]
@@ -489,8 +485,8 @@ theorem kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap
       diagGL fun i => torusCharacter (SplitTorus.pointsMulEquiv q) (wt i) := by
     calc
       _ = GeneralLinear.pointsMulEquiv n
-          ((CommHopfAlgCat.mapPointsFunctor r).app (CommAlgCat.of ℤ T) q) := by
-        rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+          ((CommHopfAlgCat.Hom.mapPointsFunctor r).app (CommAlgCat.of ℤ T) q) := by
+        rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       _ = _ := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
         wt (CommAlgCat.of ℤ T) q
   have htorus_s : GeneralLinear.pointsMulEquiv n g =
@@ -498,13 +494,13 @@ theorem kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap
         torusCharacter (SplitTorus.pointsMulEquiv q) (wt (basisPerm⁻¹ i)) := by
     calc
       _ = GeneralLinear.pointsMulEquiv n
-          ((CommHopfAlgCat.mapPointsFunctor s).app (CommAlgCat.of ℤ T) q) := by
-        rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+          ((CommHopfAlgCat.Hom.mapPointsFunctor s).app (CommAlgCat.of ℤ T) q) := by
+        rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       _ = _ := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
         (fun i => wt (basisPerm⁻¹ i)) (CommAlgCat.of ℤ T) q
   have hp : toConv (f.ofConv.comp c.hom.toAlgHom) = g := by
     apply (GeneralLinear.pointsMulEquiv (R := ℤ) (A := CommAlgCat.of ℤ T) n).injective
-    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply c (CommAlgCat.of ℤ T) f,
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply c (CommAlgCat.of ℤ T) f,
       pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso, htorus_r, htorus_s,
       kostantNumberedSymmetryMatrix_conj_diagGL
         M b θ hθM basisPerm basisScale hbasis]

@@ -19,9 +19,9 @@ This file transports that presentation along `ℤ → A`. The base-changed defin
 the specialized carrier, its quotient is canonically the base change of the original coordinate
 ring, and the factored root-subgroup and torus maps base-change without being chosen again.
 
-The construction deliberately stays in the base-changed coordinate algebras. Identifying the
-base change of `O(GLₙ/ℤ)`, `O(𝔾ₐ/ℤ)`, and `O(T/ℤ)` with the corresponding coordinate Hopf
-algebras constructed directly over `A` is the next, independent comparison step.
+The construction deliberately stays in the base-changed coordinate algebras. Identifying the base
+change of `O(GLₙ/ℤ)`, `O(𝔾ₐ/ℤ)`, and `O(T/ℤ)` with the corresponding coordinate Hopf algebras
+constructed directly over `A` is not treated here.
 
 ## Main declarations
 
@@ -38,8 +38,6 @@ algebras constructed directly over `A` is the next, independent comparison step.
 
 This is the base-change compatibility in the pinned Chevalley--Demazure construction; see
 R. W. Carter, *Simple Groups of Lie Type*, §4.4, and B. Conrad, *Reductive Group Schemes*, §1.
-It advances Layer 9 of the ReductiveGroups roadmap, whose base-changed pinned carrier is consumed
-by milestone L0 of the CFSGStatement roadmap.
 -/
 
 public section
@@ -119,6 +117,16 @@ noncomputable def kostantRootSubgroupToralBaseChangeCoordinateMap (i : I) :
     CommHopfAlgCat.baseChangeMap
       (kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i)
 
+/-- Reading a root-subgroup map back through the toral base-change comparison recovers the scalar
+extension of its integral factorization. -/
+@[simp]
+theorem kostantToralBaseChangeIso_inv_comp_rootSubgroupToralBaseChangeCoordinateMap (i : I) :
+    (kostantToralBaseChangeIso e h ρ M hM hnil b wt A).inv ≫
+        kostantRootSubgroupToralBaseChangeCoordinateMap e h ρ M hM hnil b wt A i =
+      CommHopfAlgCat.baseChangeMap
+        (kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i) := by
+  simp [kostantRootSubgroupToralBaseChangeCoordinateMap]
+
 /-- The specialized quotient map followed by the factored root-subgroup map is the base change of
 the original represented root-subgroup coordinate map. -/
 @[simp]
@@ -145,6 +153,16 @@ noncomputable def kostantWeightTorusToralBaseChangeCoordinateMap :
   (kostantToralBaseChangeIso e h ρ M hM hnil b wt A).hom ≫
     CommHopfAlgCat.baseChangeMap
       (kostantWeightTorusToralCoordinateMap e h ρ M hM hnil b wt)
+
+/-- Reading the weight-torus map back through the toral base-change comparison recovers the scalar
+extension of its integral factorization. -/
+@[simp]
+theorem kostantToralBaseChangeIso_inv_comp_weightTorusToralBaseChangeCoordinateMap :
+    (kostantToralBaseChangeIso e h ρ M hM hnil b wt A).inv ≫
+        kostantWeightTorusToralBaseChangeCoordinateMap e h ρ M hM hnil b wt A =
+      CommHopfAlgCat.baseChangeMap
+        (kostantWeightTorusToralCoordinateMap e h ρ M hM hnil b wt) := by
+  simp [kostantWeightTorusToralBaseChangeCoordinateMap]
 
 /-- The specialized quotient map followed by the factored weight-torus map is the base change of
 the original represented weight-torus coordinate map. -/

@@ -130,8 +130,9 @@ theorem twistedHeckeSlashSum_eq_sum_of_rightCosets {ι : Type*} [Fintype ι]
   classical
   -- The coset bookkeeping is not twisted: matching this family against the one
   -- `twistedHeckeSlashSum` sums over involves no weight and no character, so it is
-  -- `exists_bijective_rightCosetRep_smul_eq` of `HeckeSlash/Independence.lean`, shared with the
-  -- unweighted `heckeSlashSum_eq_sum_of_rightCosets`. Only the per-summand step below is twisted.
+  -- `DoubleCoset.exists_bijective_rightCosetRep_smul_eq` of `HeckeRing/Basic.lean`, shared with
+  -- the unweighted `heckeSlashSum_eq_sum_of_rightCosets`. Only the per-summand step below is
+  -- twisted.
   obtain ⟨φ, hbij, hφ⟩ := exists_bijective_rightCosetRep_smul_eq D a hcover hinj
   rw [twistedHeckeSlashSum_def]
   refine (Fintype.sum_bijective φ hbij _ _ fun i ↦ ?_).symm
@@ -166,8 +167,7 @@ theorem sum_nebentypus_smul_slash_eq_nsmul_twistedHeckeSlashSum
         ⟨a i, IsHeckeTriple.mem_of_mem_doubleCoset D.out.2 (hmem i)⟩ : ℂ) • (f ∣[k] a i) =
       m • twistedHeckeSlashSum k χ D f := by
   classical
-  let _ : Fintype (DecompQuotient ((Gamma0 N).map (mapGL ℚ))
-      ((Gamma0 N).map (mapGL ℚ)) (D.out : GL (Fin 2) ℚ)⁻¹) := Fintype.ofFinite _
+  let _ := fintypeDecompQuotientGamma0 D
   choose g hg using fun i ↦ exists_rightCosetRep_smul_eq D (hmem i)
   rw [twistedHeckeSlashSum_def, Finset.smul_sum,
     ← Finset.sum_fiberwise_of_maps_to (fun i _ ↦ Finset.mem_univ (g i))

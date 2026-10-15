@@ -38,7 +38,7 @@ theorems are statements about.
 
 On characters everything is as expected: the character of an induced virtual representation is the
 induced class function of its character (`TauCeti.repRingCharacter_repRingInd`), so the square
-formed by the two character homomorphisms, induction on `R(S)` and `TauCeti.indClassFun` commutes.
+formed by the two character homomorphisms, induction on `R(S)` and `Subgroup.indClassFun` commutes.
 
 ## Implementation notes
 
@@ -101,14 +101,14 @@ theorem repRingInd_of (A : FDRep k S) :
 
 /-- **The character of an induced virtual representation is the induced class function of its
 character**: the square formed by `TauCeti.repRingCharacter` on `R(S)` and on `R(G)`,
-`TauCeti.repRingInd` and `TauCeti.indClassFun` commutes. -/
+`TauCeti.repRingInd` and `Subgroup.indClassFun` commutes. -/
 @[simp]
 theorem repRingCharacter_repRingInd (x : repRing k S) :
-    repRingCharacter k G (repRingInd k S x) = indClassFun S (repRingCharacter k S x) := by
+    repRingCharacter k G (repRingInd k S x) = Subgroup.indClassFun S (repRingCharacter k S x) := by
   have h := DFunLike.congr_fun (SplitK0.hom_ext
     (f := (repRingCharacter k G).toAddMonoidHom.comp (repRingInd k S))
-    (g := (indClassFunAddHom S).comp (repRingCharacter k S).toAddMonoidHom)
-    fun A => by simp [indClassFun_ofFDRep_character]) x
+    (g := (Subgroup.indClassFunAddHom S).comp (repRingCharacter k S).toAddMonoidHom)
+    fun A => by simp [Subgroup.indClassFun_ofFDRep_character]) x
   simpa using h
 
 end Definition

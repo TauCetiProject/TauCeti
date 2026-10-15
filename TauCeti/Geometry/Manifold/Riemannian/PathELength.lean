@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Smooth paths with prescribed Riemannian path length
@@ -169,9 +170,9 @@ theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
       η =ᶠ[𝓝 0] (fun _ ↦ γ₁ 0) ∧
       η =ᶠ[𝓝 1] (fun _ ↦ γ₂ 1) ∧
       MapsTo η (Icc 0 1) (γ₁ '' Icc 0 1 ∪ γ₂ '' Icc 0 1) := by
-  obtain ⟨α, hα, hα₀, hα₁, hαlen, hαconst₀, hαconst₁, hαmaps⟩ :=
+  obtain ⟨α, hα, hα₀, _, hαlen, hαconst₀, hαconst₁, hαmaps⟩ :=
     exists_contMDiff_pathELength_eq hγ₁
-  obtain ⟨β, hβ, hβ₀, hβ₁, hβlen, hβconst₀, hβconst₁, hβmaps⟩ :=
+  obtain ⟨β, hβ, _, hβ₁, hβlen, hβconst₀, hβconst₁, hβmaps⟩ :=
     exists_contMDiff_pathELength_eq hγ₂
   let f : ℝ → M := fun t ↦ α (2 * t)
   let g : ℝ → M := fun t ↦ β (2 * t - 1)

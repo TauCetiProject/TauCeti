@@ -17,12 +17,18 @@ Facts about the invariants of an elliptic curve, complementing
 * `WeierstrassCurve.a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero`: where `2 = 0`, a curve
   with `Δ ≠ 0`
   has `a₁ ≠ 0` or `a₃ ≠ 0`;
+* `WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq`: two equations with the same `c`-invariants have the
+  same discriminant, wherever `1728` is a regular element, by `WeierstrassCurve.c_relation`;
 * `WeierstrassCurve.j_eq_1728_iff`: `j = 1728 ↔ c₆ = 0`, the analogue for `j = 1728` of Mathlib's
   `WeierstrassCurve.j_eq_zero_iff` (`j = 0 ↔ c₄ = 0`), together with its unreduced companion
   `WeierstrassCurve.j_eq_1728_iff'` mirroring `WeierstrassCurve.j_eq_zero_iff'`;
 * `WeierstrassCurve.baseChange_c₄_ne_zero` and `WeierstrassCurve.baseChange_c₆_ne_zero`: the two
   corollaries of those criteria that say `j ≠ 0` and `j ≠ 1728` survive base change along an
   injection, in the `c₄`/`c₆` form the automorphism criterion consumes.
+* `WeierstrassCurve.algebraMap_Δ_of_baseChange_eq`,
+  `WeierstrassCurve.algebraMap_c₄_of_baseChange_eq` and
+  `WeierstrassCurve.algebraMap_c₆_of_baseChange_eq`: the invariants of an equation known to be a
+  base change are the images of the original invariants.
 * `WeierstrassCurve.cusp`: the cusp curve `Y² = X³`, its coefficient projections, and the point
   `(1, 1)` on it (`WeierstrassCurve.equation_cusp_one_one`). It depends on nothing beyond a
   Weierstrass equation, and is the specialization target
@@ -33,7 +39,7 @@ All are stated over a commutative ring, matching the generality of the Mathlib r
 complement. The first two are consumed by the automorphism-group development in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean`, the `Aut (E, O)` milestone of
 `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1; the base-change pair is consumed by the
-twist classification in `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean`, which
+twist classification in `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist/Basic.lean`, which
 needs `Aut(Eᴸ) = {±1}` after base change to a splitting field.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
@@ -62,6 +68,13 @@ lemma a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero (hΔ : E.Δ ≠ 
   by_contra! h
   exact hΔ (by rw [Δ, b₈, b₆, b₄, b₂, h.1, h.2]; grobner)
 
+/-- **The discriminant is determined by the `c`-invariants**, wherever `1728` can be cancelled:
+`WeierstrassCurve.c_relation` pins `1728 * Δ` down to `c₄³ - c₆²`. -/
+lemma Δ_eq_of_c₄_eq_of_c₆_eq (h1728 : IsRegular (1728 : R)) {W W' : WeierstrassCurve R}
+    (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) : W.Δ = W'.Δ := by
+  have h : (1728 : R) * W.Δ = 1728 * W'.Δ := by rw [c_relation, c_relation, h₄, h₆]
+  exact h1728.left h
+
 /-- `j(E) = 1728` if and only if `c₆(E)² = 0`, by the relation `1728·Δ = c₄³ - c₆²`. This is the
 analogue for `j = 1728` of `WeierstrassCurve.j_eq_zero_iff'` (`j = 0 ↔ c₄³ = 0`). -/
 lemma j_eq_1728_iff' : E.j = 1728 ↔ E.c₆ ^ 2 = 0 := by
@@ -75,7 +88,15 @@ lemma j_eq_1728_iff [IsReduced R] : E.j = 1728 ↔ E.c₆ = 0 := by
 
 section BaseChange
 
-variable {A : Type*} [CommRing A] [Algebra R A] (hRA : Function.Injective (algebraMap R A))
+variable {A : Type*} [CommRing A] [Algebra R A]
+
+/-- **Base change preserves ellipticity.** Mathlib's instance is stated for
+`WeierstrassCurve.map`, which instance search does not see through the plain `def`
+`WeierstrassCurve.baseChange`. -/
+instance isElliptic_baseChange : (E.baseChange A).IsElliptic :=
+  inferInstanceAs (E.map _).IsElliptic
+
+variable (hRA : Function.Injective (algebraMap R A))
 
 include hRA
 
@@ -94,6 +115,26 @@ omit [E.IsElliptic] in
 lemma baseChange_c₆_ne_zero (hc₆ : E.c₆ ≠ 0) : (E.baseChange A).c₆ ≠ 0 := by
   simp only [baseChange, map_c₆]
   exact (map_ne_zero_iff _ hRA).mpr hc₆
+
+omit hRA
+
+/-- **The discriminant of a base change is the image of the discriminant**, stated against an
+equation `W` known to be the base change of `W₀`. -/
+lemma algebraMap_Δ_of_baseChange_eq {W₀ : WeierstrassCurve R} {W : WeierstrassCurve A}
+    (h : W₀.baseChange A = W) : algebraMap R A W₀.Δ = W.Δ := by
+  rw [← h, baseChange, map_Δ]
+
+/-- **The invariant `c₄` of a base change is the image of `c₄`**, stated against an equation `W`
+known to be the base change of `W₀`. -/
+lemma algebraMap_c₄_of_baseChange_eq {W₀ : WeierstrassCurve R} {W : WeierstrassCurve A}
+    (h : W₀.baseChange A = W) : algebraMap R A W₀.c₄ = W.c₄ := by
+  rw [← h, baseChange, map_c₄]
+
+/-- **The invariant `c₆` of a base change is the image of `c₆`**, stated against an equation `W`
+known to be the base change of `W₀`. -/
+lemma algebraMap_c₆_of_baseChange_eq {W₀ : WeierstrassCurve R} {W : WeierstrassCurve A}
+    (h : W₀.baseChange A = W) : algebraMap R A W₀.c₆ = W.c₆ := by
+  rw [← h, baseChange, map_c₆]
 
 end BaseChange
 

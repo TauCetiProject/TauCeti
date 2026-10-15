@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Coderivation
+public import TauCeti.Algebra.Module.GradedModule.Multilinear.Basic
 
 /-!
 # Nonunital A-infinity algebras
@@ -26,6 +27,8 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 * `TauCeti.AInfinityAlgebra`: an uncurved nonunital `A∞` algebra.
 * `TauCeti.AInfinityAlgebra.barDifferential`: its square-zero bar coderivation.
 * `TauCeti.AInfinityAlgebra.ofStasheff`: construct an algebra from the unsuspended identities.
+* `TauCeti.AInfinityAlgebra.ofTaylor`: construct an algebra from a degree-one Taylor map whose
+  bar coderivation squares to zero.
 * `TauCeti.AInfinityAlgebra.differential`: the unary operation as a linear endomorphism.
 * `TauCeti.AInfinityAlgebra.mul`: the binary operation as a bilinear map.
 
@@ -190,6 +193,53 @@ theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.gradi
       subst F'
       rfl
 
+/-- Construct an `A∞` algebra from a Taylor map of degree one for the suspended grading whose bar
+coderivation squares to zero.  Its operations are the desuspension of the Taylor map. -/
+noncomputable def ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
+      (G.shift 1).piece 1)
+    (hsq : ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 ∘ₗ
+      ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 = 0) :
+    AInfinityAlgebra R A where
+  grading := G
+  m := AInfinity.desuspension G F
+  m_zero := AInfinity.desuspension_zero G F
+  m_degree _ hn := AInfinity.isHomogeneous_desuspension hF hn
+  taylor := F
+  taylor_isSuspension := AInfinity.isSuspension_desuspension G F
+  bar_square_zero := hsq
+
+@[simp]
+theorem ofTaylor_grading (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF hsq) : (ofTaylor G F hF hsq).grading = G := (rfl)
+
+@[simp]
+theorem ofTaylor_m (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A) (hF hsq) :
+    (ofTaylor G F hF hsq).m = AInfinity.desuspension G F := (rfl)
+
+@[simp]
+theorem ofTaylor_taylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF hsq) : (ofTaylor G F hF hsq).taylor = F := (rfl)
+
+/-- The bar differential of the algebra built from a Taylor map is the coderivation it generates. -/
+@[simp]
+theorem barDifferential_ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF hsq) :
+    (ofTaylor G F hF hsq).barDifferential = ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 :=
+  (rfl)
+
+/-- The operations of an `A∞` algebra are the desuspension of its Taylor map. -/
+theorem m_eq_desuspension (𝒜 : AInfinityAlgebra R A) :
+    𝒜.m = AInfinity.desuspension 𝒜.grading 𝒜.taylor :=
+  𝒜.taylor_isSuspension.eq_desuspension 𝒜.m_zero
+
+/-- Every `A∞` algebra is built from its own Taylor map. -/
+@[simp]
+theorem ofTaylor_self (𝒜 : AInfinityAlgebra R A) :
+    ofTaylor 𝒜.grading 𝒜.taylor (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree)
+      𝒜.bar_square_zero = 𝒜 :=
+  ext (ofTaylor_grading _ _ _ _) (by rw [ofTaylor_m, 𝒜.m_eq_desuspension])
+
 /-! ### Low-arity identities -/
 
 /-- The arity-one identity is `m₁ m₁ = 0`. -/
@@ -314,6 +364,20 @@ theorem stasheff_arity_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r :
     simpa [E, x, e] using h
   rw [hE, LinearMap.zero_apply]
 
+/-! ### Algebras concentrated in degree zero -/
+
+/-- An `A∞` algebra concentrated in degree zero has no operations besides `m₂`: the operation
+`mₙ` has degree `2 - n`, which is nonzero for `n ≠ 2`. -/
+theorem m_eq_zero_of_forall_mem_piece_zero (𝒜 : AInfinityAlgebra R A)
+    (h : ∀ x, x ∈ 𝒜.grading.piece 0) {n : ℕ} (hn : n ≠ 2) : 𝒜.m n = 0 := by
+  rcases n.eq_zero_or_pos with rfl | hpos
+  · exact 𝒜.m_zero
+  ext x
+  have hx := (𝒜.m_degree n hpos).map_mem (fun _ ↦ 0) x fun i ↦ h (x i)
+  rw [Finset.sum_const_zero, zero_add] at hx
+  exact Submodule.disjoint_def.mp
+    (𝒜.grading.isInternal.submodule_iSupIndep.pairwiseDisjoint (by omega)) _ hx (h _)
+
 /-! ### Low-arity identities for arbitrary inputs -/
 
 /-- The unary `A∞` operation, regarded as a linear differential on the total module. -/
@@ -342,7 +406,7 @@ theorem taylor_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
       (fun _ ↦ p) (fun _ ↦ y) fun _ _ ↦ hy
     rw [ReducedTensorWords.of_tprod_eq_subword R Nat.one_pos,
       ReducedTensorWords.subword_one R A _ Nat.one_pos] at hs
-    rw [LinearMap.comp_apply, hs, AInfinity.evalNat_suspend, _root_.MultilinearMap.suspExp_one,
+    rw [LinearMap.comp_apply, hs, MultilinearMap.evalNat_suspend, _root_.MultilinearMap.suspExp_one,
       negOnePowCast_zero, one_smul, MultilinearMap.evalNat_def, differential_apply]
     congr 1
     funext i
@@ -389,41 +453,101 @@ theorem mul_mem_piece (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {x y : A}
   have h := (𝒜.m_degree 2 two_pos).map_mem ![p, q] ![x, y] fun i ↦ by fin_cases i <;> simpa
   simpa using h
 
+/-- The ternary operation has degree `-1`. -/
+theorem m_three_mem_piece (𝒜 : AInfinityAlgebra R A) {p q r : ℤ} {x y z : A}
+    (hx : x ∈ 𝒜.grading.piece p) (hy : y ∈ 𝒜.grading.piece q) (hz : z ∈ 𝒜.grading.piece r) :
+    𝒜.m 3 ![x, y, z] ∈ 𝒜.grading.piece (p + q + r - 1) := by
+  have h := (𝒜.m_degree 3 three_pos).map_mem ![p, q, r] ![x, y, z] fun i ↦ by
+    fin_cases i <;> simpa
+  convert h using 2
+  simp [Fin.sum_univ_three]
+  ring
+
+/-- The binary operation vanishes on a zero left input. -/
+@[simp] theorem m_two_zero_left (𝒜 : AInfinityAlgebra R A) (y : A) :
+    𝒜.m 2 ![0, y] = 0 :=
+  (𝒜.m 2).map_coord_zero 0 rfl
+
+/-- The binary operation vanishes on a zero right input. -/
+@[simp] theorem m_two_zero_right (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.m 2 ![x, 0] = 0 :=
+  (𝒜.m 2).map_coord_zero 1 rfl
+
+/-- The ternary operation vanishes on a zero first input. -/
+@[simp] theorem m_three_zero_first (𝒜 : AInfinityAlgebra R A) (y z : A) :
+    𝒜.m 3 ![0, y, z] = 0 :=
+  (𝒜.m 3).map_coord_zero 0 rfl
+
+/-- The ternary operation vanishes on a zero second input. -/
+@[simp] theorem m_three_zero_second (𝒜 : AInfinityAlgebra R A) (x z : A) :
+    𝒜.m 3 ![x, 0, z] = 0 :=
+  (𝒜.m 3).map_coord_zero 1 rfl
+
+/-- The ternary operation vanishes on a zero third input. -/
+@[simp] theorem m_three_zero_third (𝒜 : AInfinityAlgebra R A) (x y : A) :
+    𝒜.m 3 ![x, y, 0] = 0 :=
+  (𝒜.m 3).map_coord_zero 2 rfl
+
+/-- The ternary operation is additive in its first input. -/
+@[simp] theorem m_three_add_first (𝒜 : AInfinityAlgebra R A) (x x' y z : A) :
+    𝒜.m 3 ![x + x', y, z] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x', y, z] := by
+  convert (𝒜.m 3).map_update_add ![x, y, z] 0 x x' using 2 <;>
+    congr 1 <;> funext i <;> fin_cases i <;> rfl
+
+/-- The ternary operation is additive in its second input. -/
+@[simp] theorem m_three_add_second (𝒜 : AInfinityAlgebra R A) (x y y' z : A) :
+    𝒜.m 3 ![x, y + y', z] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x, y', z] := by
+  convert (𝒜.m 3).map_update_add ![x, y, z] 1 y y' using 2 <;>
+    congr 1 <;> funext i <;> fin_cases i <;> rfl
+
+/-- The ternary operation is additive in its third input. -/
+@[simp] theorem m_three_add_third (𝒜 : AInfinityAlgebra R A) (x y z z' : A) :
+    𝒜.m 3 ![x, y, z + z'] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x, y, z'] := by
+  convert (𝒜.m 3).map_update_add ![x, y, z] 2 z z' using 2 <;>
+    congr 1 <;> funext i <;> fin_cases i <;> rfl
+
+/-- On a pure tensor word of length `n` the Taylor map evaluates the arity-`n` operation after
+twisting the `i`-th letter by the Koszul twist of parameter `n - 1 - i`; on homogeneous letters
+these twists multiply to the suspension sign `(-1) ^ suspExp n d`. -/
+theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (x : Fin n.1 → A) :
+    𝒜.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) =
+      𝒜.m n.1 fun i ↦ 𝒜.grading.koszulTwist ((n.1 : ℤ) - 1 - i) (x i) := by
+  rw [𝒜.taylor_isSuspension.taylor_eq (AInfinity.isSuspension_suspensionTaylor _ _),
+    AInfinity.suspensionTaylor_of_tprod]
+
+/-- A vanishing operation has vanishing suspended Taylor component. -/
+theorem taylor_comp_of_eq_zero_of_m_eq_zero (𝒜 : AInfinityAlgebra R A)
+    (n : {n : ℕ // 0 < n}) (hn : 𝒜.m n.1 = 0) :
+    𝒜.taylor ∘ₗ ReducedTensorWords.of R A n = 0 := by
+  apply PiTensorProduct.ext
+  apply MultilinearMap.ext
+  intro x
+  simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
+  rw [taylor_of_tprod, hn]
+  rfl
+
 /-- On a two-letter word the Taylor map is the binary operation, with the suspension sign carried
 by the degree-one Koszul twist of the first letter. -/
 theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
     𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
         (PiTensorProduct.tprod R ![a, b])) =
       𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, b] := by
-  let L : A →ₗ[R] A →ₗ[R] A :=
-    ((ReducedTensorWords.prepend R A).compr₂ 𝒜.taylor).compl₂
-      (ReducedTensorWords.ofLetter R A)
-  let Q : A →ₗ[R] A →ₗ[R] A := 𝒜.mul ∘ₗ 𝒜.grading.koszulTwist 1
-  suffices h : L = Q by
-    rw [← ReducedTensorWords.prepend_ofLetter]
-    simpa [L, Q] using LinearMap.congr_fun (LinearMap.congr_fun h a) b
-  refine 𝒜.grading.linearMap_ext fun p x hx ↦ ?_
-  refine 𝒜.grading.linearMap_ext fun q y hy ↦ ?_
-  have hcons : (fun i : Fin 2 ↦ if (i : ℕ) = 0 then x else y) = ![x, y] := by
-    funext i
-    fin_cases i <;> simp
-  have hexp : _root_.MultilinearMap.suspExp 2 (fun j : ℕ ↦ if j = 0 then p else q) = p := by
-    simp [_root_.MultilinearMap.suspExp_def, Finset.sum_range_succ]
-  have hs := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension 2 (by omega)
-    (fun j : ℕ ↦ if j = 0 then p else q) (fun j : ℕ ↦ if j = 0 then x else y) (by
-      intro i hi
-      have hi' : i = 0 ∨ i = 1 := by omega
-      rcases hi' with rfl | rfl
-      · simpa using hx
-      · simpa using hy)
-  rw [hcons] at hs
-  rw [AInfinity.evalNat_suspend, MultilinearMap.evalNat_def, hcons, hexp] at hs
-  have hs' : 𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
-      (PiTensorProduct.tprod R ![x, y])) = negOnePowCast R p • 𝒜.m 2 ![x, y] := hs
-  simp only [L, Q, LinearMap.compl₂_apply, LinearMap.compr₂_apply, LinearMap.comp_apply,
-    𝒜.grading.koszulTwist_apply_of_mem hx, ← negOnePowCast_eq_intCast, one_mul, map_smul]
-  rw [ReducedTensorWords.prepend_ofLetter]
-  exact hs'
+  refine (𝒜.taylor_of_tprod ⟨2, two_pos⟩ ![a, b]).trans ?_
+  congr 1
+  funext i
+  fin_cases i <;> simp [InternalGrading.koszulTwist_zero]
+
+/-- On a three-letter word the Taylor map is the ternary operation, with the suspension sign
+carried by the degree-one Koszul twist of the middle letter: the first letter is twisted by the
+trivial parameter two. -/
+theorem taylor_of_three (𝒜 : AInfinityAlgebra R A) (a b c : A) :
+    𝒜.taylor (ReducedTensorWords.of R A (3 : ℕ+)
+        (PiTensorProduct.tprod R ![a, b, c])) =
+      𝒜.m 3 ![a, 𝒜.grading.koszulTwist 1 b, c] := by
+  refine (𝒜.taylor_of_tprod ⟨3, three_pos⟩ ![a, b, c]).trans ?_
+  congr 1
+  funext i
+  fin_cases i <;> simp [InternalGrading.koszulTwist_zero]
 
 /-- The bar differential of a two-letter word: the unary operation applied to either letter, and
 the collapse of both letters to the binary operation.  Koszul twists carry the suspension signs. -/
@@ -436,16 +560,6 @@ theorem barDifferential_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
             (𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, b])
         - ReducedTensorWords.of R A (2 : ℕ+)
             (PiTensorProduct.tprod R ![𝒜.grading.koszulTwist 1 a, 𝒜.m 1 ![b]]) := by
-  have hkos : (𝒜.grading.shift 1).koszulTwist 1 = -𝒜.grading.koszulTwist 1 := by
-    refine 𝒜.grading.linearMap_ext fun p x hx ↦ ?_
-    have hshift : x ∈ (𝒜.grading.shift 1).piece (p - 1) := by
-      rwa [InternalGrading.shift_piece, sub_add_cancel]
-    have hadd := negOnePowCast_add (R := R) (p - 1) 1
-    rw [sub_add_cancel, negOnePowCast_one] at hadd
-    rw [LinearMap.neg_apply, InternalGrading.koszulTwist_apply_of_mem _ hshift,
-      𝒜.grading.koszulTwist_apply_of_mem hx]
-    simp only [one_mul, ← negOnePowCast_eq_intCast]
-    rw [hadd, mul_smul, neg_one_smul, smul_neg, neg_neg]
   refine ReducedTensorWords.eq_of_deconcatenation_eq_of_letter_eq R A ?_ ?_
   · rw [𝒜.isGradedCoderivation_barDifferential.deconcatenation_apply,
       ReducedTensorWords.deconcatenation_of_two, map_sub, map_add,
@@ -453,8 +567,8 @@ theorem barDifferential_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
       ReducedTensorWords.deconcatenation_of_two]
     simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, ReducedTensorWords.map_ofLetter,
       barDifferential_ofLetter]
-    rw [LinearMap.congr_fun hkos a, LinearMap.neg_apply, map_neg, TensorProduct.neg_tmul,
-      add_zero]
+    rw [InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply, map_neg,
+      TensorProduct.neg_tmul, add_zero]
     abel
   · rw [← LinearMap.comp_apply, letter_comp_barDifferential, taylor_of_two, map_sub,
       map_add, ReducedTensorWords.letter_of_two, ReducedTensorWords.letter_ofLetter,
@@ -481,6 +595,22 @@ theorem m_one_koszulTwist (𝒜 : AInfinityAlgebra R A) (x : A) :
     congr 1
     simp [Int.negOnePow_succ]
   simpa using LinearMap.congr_fun h x
+
+/-- The binary operation has degree zero, so it commutes with every Koszul twist. -/
+theorem koszulTwist_m_two (𝒜 : AInfinityAlgebra R A) (q : ℤ) (x y : A) :
+    𝒜.grading.koszulTwist q (𝒜.m 2 ![x, y]) =
+      𝒜.m 2 ![𝒜.grading.koszulTwist q x, 𝒜.grading.koszulTwist q y] := by
+  have h : 𝒜.mul.compr₂ (𝒜.grading.koszulTwist q) =
+      (𝒜.mul ∘ₗ 𝒜.grading.koszulTwist q).compl₂ (𝒜.grading.koszulTwist q) := by
+    refine 𝒜.grading.linearMap_ext fun p x hx ↦ 𝒜.grading.linearMap_ext fun p' y hy ↦ ?_
+    simp only [LinearMap.compr₂_apply, LinearMap.compl₂_apply, LinearMap.comp_apply,
+      𝒜.grading.koszulTwist_apply_of_mem hx, 𝒜.grading.koszulTwist_apply_of_mem hy,
+      𝒜.grading.koszulTwist_apply_of_mem (𝒜.mul_mem_piece hx hy), map_smul,
+      LinearMap.smul_apply, smul_smul]
+    congr 1
+    rw [mul_add, Int.negOnePow_add, Units.val_mul, Int.cast_mul, mul_comm]
+  simpa only [LinearMap.compr₂_apply, LinearMap.compl₂_apply, LinearMap.comp_apply, mul_apply]
+    using LinearMap.congr_fun (LinearMap.congr_fun h x) y
 
 /-- The graded Leibniz rule for arbitrary inputs, with the sign on the second term carried by the
 degree-one Koszul twist of the left factor. -/
@@ -566,7 +696,7 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
   -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
   let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
   have hE : E = 0 := by
-    apply 𝒜.grading.multilinearMap_ext
+    apply InternalGrading.multilinearMap_ext (fun _ ↦ 𝒜.grading)
     intro d a ha
     have avec : a = ![a 0, a 1, a 2] := by
       funext i
@@ -590,103 +720,10 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
 theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)
     (x y z : A) :
     𝒜.m 2 ![𝒜.m 2 ![x, y], z] = 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] := by
-  -- Package the left- and right-associated products as trilinear maps. It then suffices to
-  -- compare them on homogeneous first and second inputs via `stasheff_arity_three`.
-  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (((𝒜.m 2).domDomCongr (Fin.oneSlotEquiv 0 1).symm).oneSlot (𝒜.m 2)).domDomCongr
-      (Fin.blockEquiv 0 2 1)
-  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (((𝒜.m 2).domDomCongr (Fin.oneSlotEquiv 1 0).symm).oneSlot (𝒜.m 2)).domDomCongr
-      (Fin.blockEquiv 1 2 0)
-  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
-    simp only [L, MultilinearMap.domDomCongr_apply, MultilinearMap.oneSlot_apply]
-    congr 1
-    funext i
-    obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv 0 1).surjective i
-    rcases j with j | (j | j)
-    · exact Fin.elim0 j
-    · rcases j with ⟨⟩
-      simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl]
-      have hout : Fin.oneSlotEquiv 0 1 (.inr (.inl ())) = (0 : Fin 2) := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_middle_val 0 1
-      rw [hout]
-      -- Expose the inner tuple selected by `oneSlot` so that `blockEquiv` can be evaluated
-      -- coordinatewise; simplification does not unfold vector notation to this form.
-      change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 0 2 1 (.inr (.inl j)))) =
-        𝒜.m 2 ![a, b]
-      congr 1
-      funext k
-      have hi : Fin.blockEquiv 0 2 1 (.inr (.inl k)) =
-          ⟨k, by omega⟩ := by
-        apply Fin.ext
-        simpa only [Nat.zero_add] using Fin.blockEquiv_middle_val 0 2 1 k
-      rw [hi]
-      fin_cases k <;> rfl
-    · simp only [Equiv.symm_apply_apply, Sum.elim_inr]
-      have hout : Fin.oneSlotEquiv 0 1 (.inr (.inr j)) = ⟨1 + j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_suffix_val 0 1 j
-      have hin : Fin.blockEquiv 0 2 1 (.inr (.inr j)) = ⟨2 + j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.blockEquiv_suffix_val 0 2 1 j
-      rw [hout, hin]
-      fin_cases j
-      rfl
-  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-    simp only [Q, MultilinearMap.domDomCongr_apply, MultilinearMap.oneSlot_apply]
-    congr 1
-    funext i
-    obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv 1 0).surjective i
-    rcases j with j | (j | j)
-    · simp only [Equiv.symm_apply_apply, Sum.elim_inl]
-      have hout : Fin.oneSlotEquiv 1 0 (.inl j) = ⟨j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_inl_val 1 0 j
-      have hin : Fin.blockEquiv 1 2 0 (.inl j) = ⟨j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.blockEquiv_inl_val 1 2 0 j
-      rw [hout, hin]
-      fin_cases j
-      rfl
-    · rcases j with ⟨⟩
-      simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl]
-      have hout : Fin.oneSlotEquiv 1 0 (.inr (.inl ())) = (1 : Fin 2) := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_middle_val 1 0
-      rw [hout]
-      -- As above, expose the inner tuple; the coordinate proof below identifies this middle
-      -- block with the final two entries of the original tuple.
-      change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 1 2 0 (.inr (.inl j)))) =
-        𝒜.m 2 ![b, c]
-      congr 1
-      funext k
-      have hi : Fin.blockEquiv 1 2 0 (.inr (.inl k)) = ⟨1 + k, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.blockEquiv_middle_val 1 2 0 k
-      rw [hi]
-      fin_cases k <;> rfl
-    · exact Fin.elim0 j
-  have hcurry : L.curryRight = Q.curryRight := by
-    apply 𝒜.grading.multilinearMap_ext
-    intro d a ha
-    ext c
-    have h := 𝒜.stasheff_arity_three (a 0) (a 1) c (d 0) (d 1) (ha 0) (ha 1)
-    rw [h₃] at h
-    have hz : 𝒜.m 1 ![(0 : A)] = 0 := (𝒜.m 1).map_coord_zero 0 rfl
-    simp only [MultilinearMap.curryRight_apply]
-    have hac : Fin.snoc a c = ![a 0, a 1, c] := by
-      funext i
-      fin_cases i <;> rfl
-    rw [hac]
-    rw [L_apply, Q_apply]
-    apply sub_eq_zero.mp
-    simpa only [_root_.zero_apply, hz, smul_zero, add_zero, zero_add] using h
-  have hLQ : L = Q := by
-    rw [← MultilinearMap.uncurry_curryRight L, ← MultilinearMap.uncurry_curryRight Q,
-      hcurry]
-  rw [← L_apply, ← Q_apply]
-  exact MultilinearMap.congr_fun hLQ ![x, y, z]
+  have h := 𝒜.m_one_m_three x y z
+  have hz : 𝒜.m 1 ![(0 : A)] = 0 := (𝒜.m 1).map_coord_zero 0 rfl
+  simp only [h₃, _root_.zero_apply, hz, sub_zero] at h
+  exact (sub_eq_zero.mp h.symm).symm
 
 end AInfinityAlgebra
 

@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
-import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Sard's lemma on the flat stratum
@@ -26,7 +27,7 @@ Iterating the mean value inequality down the tower of derivatives turns the vani
 into the Taylor-type bound `‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1)`, valid for `x` in the stratum and
 `y` in a convex set on which `‖D^{k+1} f‖ ≤ M`. On the stratum this bound *is* a Hölder condition
 with exponent `k + 1`, so Mathlib's `dimH_image_le_of_locally_holder_on` divides the Hausdorff
-dimension of the source by `k + 1`, and `measure_zero_of_dimH_lt` finishes.
+dimension of the source by `k + 1`, and `addHaar_eq_zero_of_dimH_lt_finrank` finishes.
 
 When `[Nontrivial F]`, a point of the stratum with `1 ≤ k` has vanishing first derivative, so the
 stratum consists of critical points and this is a statement about critical values; see
@@ -68,16 +69,6 @@ variable {E F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : E → F} {k : ℕ} {s : Set E}
-
-/-- A Hölder bound stated with `dist` upgrades to `HolderOnWith`, which is phrased with `edist`. -/
-private theorem holderOnWith_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
-    {C r : ℝ≥0} {g : X → Y} {t : Set X}
-    (h : ∀ x ∈ t, ∀ y ∈ t, dist (g x) (g y) ≤ C * dist x y ^ (r : ℝ)) :
-    HolderOnWith C r g t := by
-  intro x hx y hy
-  rw [edist_dist, edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg,
-    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul C.coe_nonneg]
-  exact ENNReal.ofReal_le_ofReal (h x hx y hy)
 
 /-- The descending induction behind `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: if the
 derivatives of order `1 ≤ i ≤ k` vanish at `x`, then the derivative of order `k - j` grows at most
@@ -147,7 +138,7 @@ theorem holderOnWith_of_iteratedFDeriv_eq_zero {A V : Set E} {C : ℝ≥0}
     (hC : ∀ y ∈ V, ‖iteratedFDeriv ℝ (k + 1) f y‖ ≤ C) (hAV : A ⊆ V)
     (hzero : ∀ x ∈ A, ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
     HolderOnWith C (k + 1) f A := by
-  refine holderOnWith_of_dist_le fun x hx y hy ↦ ?_
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
   have hcast : (((k : ℝ≥0) + 1 : ℝ≥0) : ℝ) = ((k + 1 : ℕ) : ℝ) := by push_cast; ring
   rw [dist_eq_norm, dist_eq_norm, hcast, Real.rpow_natCast]
   exact norm_sub_le_pow_of_iteratedFDeriv_eq_zero hf hV (hAV hy) (hAV hx) hC (hzero y hy)
@@ -210,13 +201,12 @@ theorem addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero (hU : IsOpen U)
     (hzero : ∀ x ∈ s, ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0)
     (hdim : finrank ℝ E < (k + 1) * finrank ℝ F) :
     ν (f '' s) = 0 := by
-  have hν : ν ≪ (μH[(finrank ℝ F : ℝ)] : Measure F) := absolutelyContinuous_isAddHaarMeasure ν _
-  refine measure_zero_of_dimH_lt (d := (finrank ℝ F : ℝ≥0)) hν ?_
+  apply addHaar_eq_zero_of_dimH_lt_finrank ν
   refine (dimH_image_le_of_iteratedFDeriv_eq_zero hU hf hsU hzero).trans_lt ?_
   have hs : dimH s ≤ (finrank ℝ E : ℝ≥0∞) := by
     simpa only [Real.dimH_univ_eq_finrank] using dimH_mono (subset_univ s)
   refine lt_of_le_of_lt (ENNReal.div_le_div_right hs _) ?_
-  rw [ENNReal.div_lt_iff (Or.inl (by simp)) (Or.inl (by simp)), ENNReal.coe_natCast, mul_comm]
+  rw [ENNReal.div_lt_iff (Or.inl (by simp)) (Or.inl (by simp)), mul_comm]
   exact_mod_cast hdim
 
 /-- **Sard's lemma on the flat stratum**, global form: the image of the whole set of points at

@@ -260,7 +260,6 @@ theorem norm_lyapunovPerronIntegral_le_mul_exp
     {β : ℝ} (hβ : 0 ≤ β) (hβα : β < α) (hgM : ∀ s, 0 ≤ s → ‖g s‖ ≤ M * Real.exp (-β * s))
     (ht : 0 ≤ t) :
     ‖lyapunovPerronIntegral A P g t‖ ≤ 2 * K * M / (α - β) * Real.exp (-β * t) := by
-  have hαβ : (0 : ℝ) < α - β := sub_pos.2 hβα
   have hM : 0 ≤ M := by simpa using (norm_nonneg _).trans (hgM 0 le_rfl)
   rw [lyapunovPerronIntegral]
   refine (norm_sub_le _ _).trans ?_
@@ -315,6 +314,15 @@ theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg�
     integral_sub (integrableOn_lyapunovPerron_unstable hu hα t hg₁.continuousOn fun s _ ↦ hg₁M s)
       (integrableOn_lyapunovPerron_unstable hu hα t hg₂.continuousOn fun s _ ↦ hg₂M s)]
   abel
+
+omit [CompleteSpace X] hu in
+/-- The Lyapunov--Perron integral is homogeneous in its forcing term. -/
+@[simp]
+theorem lyapunovPerronIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
+    lyapunovPerronIntegral A P (c • g) t =
+      c • lyapunovPerronIntegral A P g t := by
+  simp only [lyapunovPerronIntegral, Pi.smul_apply, map_smul, ← smul_sub,
+    intervalIntegral.integral_smul, integral_smul]
 
 /-- Under the backward exponential estimate, the integral terms of the Lyapunov--Perron equation
 solve the forced linear equation `y' = A y + g`. -/

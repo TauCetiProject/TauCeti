@@ -140,7 +140,10 @@ lemma isClopen_of_isCompact_of_isOpen_generateFrom {V : Set X} (hV : IsCompact V
 lemma quasiSeparatedSpace_of_isClopen_generateFrom : QuasiSeparatedSpace X := by
   refine QuasiSeparatedSpace.of_isTopologicalBasis
     (b := fun f : {f : Set (Set X) // f.Finite ∧ f ⊆ U} ↦ ⋂₀ f.1)
-    (Set.image_eq_range _ _ ▸ isTopologicalBasis_sInter_of_patch htU) fun i j ↦ ?_
+    (by
+      have h := isTopologicalBasis_sInter_of_patch htU
+      rw [Set.image_eq_range] at h
+      exact h) fun i j ↦ ?_
   rw [← Set.sInter_union]
   exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU (i.2.1.union j.2.1)
     (Set.union_subset i.2.2 j.2.2)
@@ -153,7 +156,7 @@ private lemma nonempty_inter_biInter_of_isIrreducible {Z : Set X} (hZ : IsIrredu
   classical
   induction T using Finset.induction_on with
   | empty => simpa using hZ.nonempty
-  | insert a T ha ih =>
+  | insert a T _ ih =>
     rw [Finset.set_biInter_insert]
     exact hZ.2 (f a) (⋂ i ∈ T, f i) (hf a (Finset.mem_insert_self a T))
       (isOpen_biInter_finset fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
 # Linear changes of variables in multivariate polynomials
@@ -34,6 +36,15 @@ forms of degree `n`, through which the modular group acts on period polynomials.
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
+* `MvPolynomial.pderiv_linearSubst`: the chain rule
+  `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
+* `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: an invertible substitution preserves
+  the nonsingularity of the zeros of a polynomial.
+* `MvPolynomial.map_linearSubst`: changing coefficients commutes with substitution.
+* `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
+  the product of its diagonal entries raised to the corresponding exponents.
+* `MvPolynomial.coeff_linearSubst_upperTriangular_monomial`: under an upper-triangular
+  substitution in two variables, the coefficient of `X₀ᵏ X₁ˡ` in its own image is `aᵏ dˡ`.
 * `MvPolynomial.IsHomogeneous.linearSubst`: the substitution preserves homogeneity.
 * `MvPolynomial.IsHomogeneous.linearSubst_smul`: rescaling the matrix by `c` rescales a form
   of degree `n` by `cⁿ`.
@@ -71,6 +82,76 @@ theorem linearSubst_X (M : Matrix σ σ R) (i : σ) :
     linearSubst M (X i) = ∑ j, C (M i j) * X j :=
   aeval_X _ _
 
+/-- Changing the coefficients commutes with substitution, after mapping the matrix entries. -/
+theorem map_linearSubst {S : Type*} [CommSemiring S] (f : R →+* S) (M : Matrix σ σ R)
+    (p : MvPolynomial σ R) :
+    map f (linearSubst M p) = linearSubst (M.map f) (map f p) := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp [linearSubst_eq_aeval]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => simp [hp]
+
+/-- A diagonal change of variables scales a monomial by the product of its eigenvalues. -/
+@[simp]
+theorem linearSubst_diagonal_monomial [DecidableEq σ] (v : σ → R) (s : σ →₀ ℕ) :
+    linearSubst (Matrix.diagonal v) (monomial s 1) =
+      (s.prod fun i k => v i ^ k) • monomial s 1 := by
+  have h (i : σ) : (∑ j, C ((Matrix.diagonal v) i j) * X j) = C (v i) * X i := by
+    classical
+    have hs : (∑ j, C ((Matrix.diagonal v) i j) * X j) =
+        C ((Matrix.diagonal v) i i) * X i := by
+      apply Finset.sum_eq_single i
+      · intro j _ hji
+        simp [Ne.symm hji]
+      · simp
+    simpa [Matrix.diagonal_apply] using hs
+  rw [linearSubst_eq_aeval, aeval_monomial, monomial_eq]
+  simp only [h, map_one, one_mul, mul_pow, Finsupp.prod, smul_eq_C_mul,
+    Finset.prod_mul_distrib, map_prod, map_pow]
+
+/-- An upper-triangular change of variables in two variables is triangular on monomials: the
+coefficient of `X₀ᵏ X₁ˡ` in the image of `X₀ᵏ X₁ˡ` is `aᵏ dˡ`, independently of `b`. -/
+theorem coeff_linearSubst_upperTriangular_monomial (a b d : R) (s : Fin 2 →₀ ℕ) :
+    (linearSubst !![a, b; 0, d] (monomial s 1)).coeff s = a ^ s 0 * d ^ s 1 := by
+  have hCX (r : R) (i : Fin 2) :
+      C r * X i = monomial (Finsupp.single i 1) r := by
+    rw [X, C_mul_monomial, mul_one]
+  have hMC (u : Fin 2 →₀ ℕ) (r q : R) :
+      monomial u r * C q = monomial u (r * q) := by
+    rw [mul_comm, C_mul_monomial, mul_comm]
+  have hnat (m : ℕ) : (m : MvPolynomial (Fin 2) R) = C (m : R) := by
+    simp
+  have hexp (x : ℕ) (hx : x ≤ s 0) :
+      Finsupp.single (0 : Fin 2) x +
+          (Finsupp.single (1 : Fin 2) (s 0) - Finsupp.single (1 : Fin 2) x) +
+          Finsupp.single (1 : Fin 2) (s 1) = s ↔
+        x = s 0 := by
+    constructor
+    · intro h
+      have h0 := DFunLike.congr_fun h (0 : Fin 2)
+      simpa using h0
+    · rintro rfl
+      ext i
+      fin_cases i <;> simp
+  have hsplit :
+      Finsupp.single (0 : Fin 2) (s 0) + Finsupp.single (1 : Fin 2) (s 1) = s := by
+    ext i
+    fin_cases i <;> simp
+  rw [linearSubst_eq_aeval, aeval_monomial, map_one, one_mul,
+    s.prod_fintype _ (by simp), Fin.prod_univ_two]
+  simp only [Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
+    cons_val_fin_one, Fin.isValue, C_0, zero_mul, zero_add]
+  rw [hCX, hCX, hCX, add_pow, Finset.sum_mul]
+  simp_rw [monomial_pow, monomial_mul_monomial, hnat]
+  rw [coeff_sum]
+  simp_rw [hMC, monomial_mul_monomial]
+  simp only [coeff_monomial]
+  rw [Finset.sum_eq_single (s 0)]
+  · simp [hsplit]
+  · intro x hx hne
+    simp [hexp _ (Nat.le_of_lt_succ (Finset.mem_range.mp hx)), hne]
+  · simp
+
 /-- Evaluating `linearSubst M p` at `x` is evaluating `p` at `M *ᵥ x`. -/
 theorem aeval_linearSubst {S : Type*} [CommSemiring S] [Algebra R S] (M : Matrix σ σ R)
     (x : σ → S) (p : MvPolynomial σ R) :
@@ -84,6 +165,39 @@ theorem aeval_linearSubst {S : Type*} [CommSemiring S] [Algebra R S] (M : Matrix
 theorem eval_linearSubst (M : Matrix σ σ R) (x : σ → R) (p : MvPolynomial σ R) :
     eval x (linearSubst M p) = eval (M *ᵥ x) p := by
   simpa using aeval_linearSubst M x p
+
+/-- **The chain rule for a linear change of variables**:
+`∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`. -/
+theorem pderiv_linearSubst (M : Matrix σ σ R) (j : σ) (p : MvPolynomial σ R) :
+    pderiv j (linearSubst M p) = ∑ i, C (M i j) * linearSubst M (pderiv i p) := by
+  classical
+  rw [linearSubst_eq_aeval, pderiv_aeval]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [pderiv_X, Pi.single_apply, mul_comm]
+
+/-- **An invertible linear change of variables preserves nonsingularity**: if at every nonzero
+zero `b ∈ Kˢ` of `p` some partial derivative of `p` is nonzero, then the same holds for
+`linearSubst M p` when `det M ≠ 0`. -/
+theorem exists_aeval_pderiv_linearSubst_ne_zero [DecidableEq σ] {k K : Type*} [Field k] [Field K]
+    [Algebra k K] {p : MvPolynomial σ k} {M : Matrix σ σ k} (hM : M.det ≠ 0)
+    (hp : ∀ b : σ → K, b ≠ 0 → aeval b p = 0 → ∃ l, aeval b (pderiv l p) ≠ 0)
+    {b : σ → K} (hb : b ≠ 0) (hpb : aeval b (linearSubst M p) = 0) :
+    ∃ l, aeval b (pderiv l (linearSubst M p)) ≠ 0 := by
+  set M' := M.map (algebraMap k K)
+  have hM' : M'.det ≠ 0 := by
+    have : M'.det = algebraMap k K M.det := by rw [RingHom.map_det]; rfl
+    rw [this]
+    exact (map_ne_zero _).mpr hM
+  rw [aeval_linearSubst] at hpb
+  obtain ⟨l, hl⟩ := hp (M' *ᵥ b) (fun h ↦ hb (eq_zero_of_mulVec_eq_zero hM' h)) hpb
+  by_contra! h
+  -- The gradient of `p` at `M b`, multiplied by `M`, is the gradient of `linearSubst M p` at `b`.
+  have hvec : (fun i ↦ aeval (M' *ᵥ b) (pderiv i p)) ᵥ* M' = 0 := by
+    ext j
+    have hj := h j
+    rw [pderiv_linearSubst] at hj
+    simpa [vecMul, dotProduct, aeval_linearSubst, M', mul_comm] using hj
+  exact hl (congrFun (eq_zero_of_vecMul_eq_zero hM' hvec) l)
 
 @[simp]
 theorem linearSubst_one [DecidableEq σ] : linearSubst (1 : Matrix σ σ R) = AlgHom.id R _ :=
@@ -140,7 +254,7 @@ theorem IsHomogeneous.linearSubst_smul {p : MvPolynomial σ R} {n : ℕ} (hp : p
       (MvPolynomial.aeval fun i ↦ C c * X i).comp (MvPolynomial.linearSubst M) := by
     refine algHom_ext fun i ↦ ?_
     simp only [linearSubst_X, AlgHom.comp_apply, map_sum, map_mul, aeval_X, aeval_C,
-      algebraMap_eq, smul_apply, smul_eq_mul, map_mul C]
+      algebraMap_eq, Matrix.smul_apply, smul_eq_mul, map_mul C]
     exact Finset.sum_congr rfl fun _ _ ↦ by ring
   rw [hM, AlgHom.comp_apply, (hp.linearSubst M).aeval_C_mul_X]
 

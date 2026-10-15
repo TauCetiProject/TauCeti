@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Normal generation in pro-`p` groups
@@ -94,7 +95,7 @@ theorem topologicalClosure_normalClosure_eq_iff_topologicalClosure_sup_eq {s : S
     (hs : s ⊆ R) :
     (normalClosure s).topologicalClosure = R ↔
       (Subgroup.closure s ⊔ pLowerCentralStep p R).topologicalClosure = R := by
-  set K := (Subgroup.closure s ⊔ pLowerCentralStep p R).topologicalClosure with hK
+  set K := (Subgroup.closure s ⊔ pLowerCentralStep p R).topologicalClosure
   have hKR : K ≤ R :=
     topologicalClosure_minimal _ (sup_le ((Subgroup.closure_le _).mpr hs) (pLowerCentralStep_le hR))
       hR

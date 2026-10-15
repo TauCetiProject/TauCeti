@@ -45,7 +45,7 @@ The ring `ℤ₂[C₂]` is the coefficient ring of the completed group algebra
 Canad. J. Math. 19 (1967), §4, p. 122, treats the even-rank Demushkin groups with `q = 2`.
 Labute works integrally over `ℤ₂`; the splitting after inverting `2` and the absence of an
 integral splitting recorded here are related facts about that coefficient ring, specialised to
-`ℚ₂` and `ℤ₂` in `TauCeti.NumberTheory.Padics.GroupAlgebraCyclicTwo`.
+`ℚ₂` and `ℤ₂` in `TauCeti.NumberTheory.Padics.GroupAlgebra.CyclicTwo`.
 -/
 
 public section

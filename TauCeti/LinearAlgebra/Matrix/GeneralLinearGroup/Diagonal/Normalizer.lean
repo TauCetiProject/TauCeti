@@ -7,14 +7,17 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 
 /-!
 # The normalizer of the diagonal torus
 
-Over a field with at least two units, an invertible matrix normalizes the diagonal torus exactly
-when it is monomial: it is a diagonal matrix followed by a permutation matrix.  The permutation
-is unique, and multiplication of monomial matrices multiplies these permutations.  Consequently
-the quotient of the normalizer by the diagonal torus is canonically the symmetric group.
+Over a commutative semiring with cancellation by nonzero elements and at least two units, an
+invertible matrix normalizes the diagonal torus exactly when it is monomial: it is a diagonal
+matrix followed by a permutation matrix. The permutation is unique, and multiplication of
+monomial matrices multiplies these permutations. Consequently the quotient of the normalizer by
+the diagonal torus is canonically the symmetric group. In dimensions zero and one, the quotient
+is trivial over any semiring, without cancellation or nontrivial-unit assumptions.
 
 This is the group-of-points calculation behind the Weyl group of the diagonal maximal torus in
 `GL_n`.  It complements `TauCeti.SplitTorus.coordinatePermMulEquivWeylGroup`, which identifies the
@@ -25,6 +28,10 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 * `TauCeti.permutationGL`: the permutation-matrix embedding in `GL`.
 * `TauCeti.coe_permutationGL_inv_mul_mul_permutationGL_apply`: conjugation by a permutation matrix
   relabels both matrix indices.
+* `TauCeti.permutationGL_mul_mul_inv`: conjugation by a permutation matrix is reindexing along
+  the permutation, `Equiv.reindexGL`.
+* `TauCeti.map_permutationGL`: a ring homomorphism maps permutation matrices to permutation
+  matrices.
 * `TauCeti.diagGL_mul_permutationGL`: moving a permutation matrix past a diagonal one relabels
   the diagonal entries.
 * `TauCeti.exists_eq_diagGL_mul_permutationGL_of_forall_ne`: an invertible matrix whose
@@ -41,9 +48,6 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 
 * J. S. Milne, *Algebraic Groups* (2017), Example 19.7 and Section 21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
-
-This advances Layer 7, "Borel subgroups, maximal tori" and "Root datum `(G, T)`", of the
-ReductiveGroups roadmap through the standard split maximal torus of `GL_n`.
 -/
 
 public section
@@ -95,6 +99,16 @@ theorem coe_permutationGL_inv_mul_mul_permutationGL_apply {ι : Type*} [Fintype 
   rw [coe_mul_permutationGL_apply, ← map_inv, Units.val_mul, permutationGL_coe, inv_inv,
     Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, id]
 
+/-- Conjugation by `permutationGL σ` reindexes both matrix indices along `σ`. -/
+theorem permutationGL_mul_mul_inv {ι : Type*} [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι)
+    (g : GL ι k) :
+    permutationGL (k := k) σ * g * (permutationGL (k := k) σ)⁻¹ = σ.reindexGL k g := by
+  rw [mul_inv_eq_iff_eq_mul]
+  ext i j
+  rw [coe_mul_permutationGL_apply, Units.val_mul, permutationGL_coe, Equiv.Perm.permMatrix,
+    PEquiv.toMatrix_toPEquiv_mul, Equiv.coe_reindexGL]
+  simp [Equiv.Perm.inv_def]
+
 /-- Conjugating a diagonal matrix by a permutation matrix relabels its diagonal entries. -/
 @[simp]
 theorem permutationGL_mul_diagGL_mul_inv (σ : Equiv.Perm (Fin n)) (t : Fin n → kˣ) :
@@ -142,11 +156,27 @@ theorem permutationGL_mem_normalizer (σ : Equiv.Perm (Fin n)) :
 
 end Permutation
 
-section Field
+/-- A ring homomorphism maps the permutation matrix of `σ` to the permutation matrix of `σ`. -/
+@[simp]
+theorem map_permutationGL {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι) :
+    Matrix.GeneralLinearGroup.map f (permutationGL (k := R) σ) = permutationGL (k := S) σ := by
+  ext i j
+  simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, apply_ite f]
 
-variable [Field k] [Nontrivial kˣ]
+/-- In dimensions zero and one, the diagonal normalizer quotient is trivial over any
+semiring. -/
+instance [Semiring k] [Subsingleton (Fin n)] :
+    Subsingleton (Subgroup.normalizerQuotient (diagonalTorus k n)) := by
+  apply QuotientGroup.subsingleton_iff.mpr
+  apply top_unique
+  intro g _
+  exact mem_diagonalTorus_iff.mpr (Matrix.isDiag_of_subsingleton _)
 
-omit [Nontrivial kˣ] in
+section IsCancelMulZero
+
+variable [CommSemiring k] [IsCancelMulZero k]
+
 /-- If conjugation by `g` sends the diagonal matrix `t` to a diagonal matrix, then `t` takes the
 same value at any two columns in which a row of `g` is nonzero. -/
 private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t : Fin n → kˣ}
@@ -166,7 +196,6 @@ private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t :
   have hl' : (t l : k) = s i := mul_left_cancel₀ hl (by rw [hentry l, mul_comm])
   exact Units.ext (hj'.trans hl'.symm)
 
-omit [Nontrivial kˣ] in
 /-- An invertible matrix is monomial, a diagonal matrix followed by a permutation matrix, as soon
 as conjugation by it keeps enough diagonal matrices diagonal to tell every two coordinates
 apart. -/
@@ -176,6 +205,10 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
       g = diagGL d * permutationGL (k := k) σ := by
   classical
+  by_cases hk : Subsingleton k
+  · let _ := hk
+    exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
+  let _ : Nontrivial k := not_subsingleton_iff_nontrivial.mp hk
   let G : Matrix (Fin n) (Fin n) k := g
   let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
   have hrow (i j l : Fin n) (hj : G i j ≠ 0) (hl : G i l ≠ 0) : j = l := by
@@ -209,10 +242,22 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
   let e : Equiv.Perm (Fin n) :=
     Equiv.ofBijective f ⟨Finite.injective_iff_surjective.mpr hsurj, hsurj⟩
   have he (i : Fin n) : e i = f i := Equiv.ofBijective_apply _ _ i
-  refine ⟨fun i ↦ Units.mk0 (G i (f i)) (hf i), e.symm, ?_⟩
+  -- The sole nonzero entry of each row has its inverse in the inverse matrix.
+  have hunit (i : Fin n) : G i (f i) * Ginv (f i) i = 1 := by
+    have hii := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M i i) hGGinv
+    rw [Matrix.mul_apply, Finset.sum_eq_single (f i)] at hii
+    · simpa using hii
+    · intro j _ hj
+      have hzero : G i j = 0 := by
+        by_contra h
+        exact hj ((hf_iff i j).mp h)
+      simp [hzero]
+    · simp
+  refine ⟨fun i ↦ Units.mkOfMulEqOne _ _ (hunit i), e.symm, ?_⟩
   apply Units.ext
   ext i j
-  simp only [Units.val_mul, diagGL_coe, permutationGL_coe, Matrix.diagonal_mul, Units.val_mk0]
+  simp only [Units.val_mul, diagGL_coe, permutationGL_coe, Matrix.diagonal_mul,
+    Units.val_mkOfMulEqOne]
   by_cases hj : j = f i
   · subst j
     simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, G]
@@ -220,6 +265,8 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
       by_contra h
       exact hj ((hf_iff i j).mp h)
     simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, Ne.symm hj, G] using hzero
+
+variable [Nontrivial kˣ]
 
 /-- An invertible matrix normalizes the diagonal torus exactly when it is a diagonal matrix
 followed by a permutation matrix. -/
@@ -241,11 +288,12 @@ theorem mem_normalizer_diagonalTorus_iff_exists {g : GL (Fin n) k} :
         exact mem_diagonalTorus_iff_exists_diagGL.mpr ⟨d, rfl⟩))
       (permutationGL_mem_normalizer σ)
 
-omit [Nontrivial kˣ] in
+omit [IsCancelMulZero k] in
 private theorem permutation_eq_of_diagGL_mul_permutationGL_eq
     {d e : Fin n → kˣ} {σ τ : Equiv.Perm (Fin n)}
     (h : diagGL d * permutationGL (k := k) σ =
       diagGL e * permutationGL (k := k) τ) : σ = τ := by
+  let _ : Nontrivial k := Units.val_injective.nontrivial
   apply Equiv.ext
   intro j
   by_contra hj
@@ -445,7 +493,7 @@ theorem diagonalNormalizerQuotientMulEquivPerm_symm_apply (σ : Equiv.Perm (Fin 
   apply (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n)).injective
   simp
 
-end Field
+end IsCancelMulZero
 
 end
 

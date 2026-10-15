@@ -44,7 +44,7 @@ cone is `0` (`TauCeti.eq_zero_of_mem_posRootCone_of_forall_coroot'_nonpos`).
 
 Everything below is stated over a linearly ordered coefficient ring, which is where the chamber
 geometry the proof runs through lives: `TauCeti.openDotDominantChamber` is defined through
-`TauCeti.openDominantChamber`, whose *definition* already asks for `[LinearOrder R]`, and
+`RootPairing.openDominantChamber`, whose orbit-existence theorem asks for `[LinearOrder R]`, and
 `TauCeti.IsDotAlternating.eq_weylNumerator` is stated over an ordered ring. The identity therefore
 specializes directly to an ordered root pairing — a rational or a real one — but not, without a
 base change, to one over an unordered field such as `ℂ`. Carrying it there is a scalar-restriction
@@ -70,6 +70,8 @@ character, dimension, and Kostant formulas") of
 public section
 
 namespace TauCeti
+
+open RootPairing
 
 universe u v w x
 

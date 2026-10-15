@@ -44,11 +44,11 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
     (hQ : Q.Nondegenerate) (g : QuadraticMap.orthogonalGroup Q) :
     @orthogonalSpinorNorm K W _ _ _ e.toLinearEquiv.finiteDimensional _ Q'
       (e.nondegenerate_iff.mp hQ)
-      (QuadraticMap.orthogonalGroupCongr e g) = orthogonalSpinorNorm Q hQ g := by
+      (e.orthogonalGroupCongr g) = orthogonalSpinorNorm Q hQ g := by
   let _ : FiniteDimensional K W := e.toLinearEquiv.finiteDimensional
   have h :
       ((orthogonalSpinorNorm Q' (e.nondegenerate_iff.mp hQ)).comp
-        (QuadraticMap.orthogonalGroupCongr e).toMonoidHom) =
+        (e.orthogonalGroupCongr).toMonoidHom) =
       orthogonalSpinorNorm Q hQ := by
     refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun x _ ↦ ?_
     have hx : Invertible (Q' (e x)) := by rw [e.map_app]; infer_instance
@@ -70,7 +70,7 @@ theorem spinorNorm_specialOrthogonalGroupCongr (e : Q.IsometryEquiv Q')
   rw [spinorNorm_apply, spinorNorm_apply]
   have he : QuadraticMap.specialOrthogonalToOrthogonal Q'
         (e.specialOrthogonalGroupCongr g) =
-      QuadraticMap.orthogonalGroupCongr e (QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
+      e.orthogonalGroupCongr (QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
     apply Subtype.ext
     apply LinearEquiv.ext
     intro x

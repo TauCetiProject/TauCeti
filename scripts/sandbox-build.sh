@@ -34,6 +34,16 @@ export LEAN="$WATCHDOG_TOOLCHAIN/bin/lean"
 # code ran, and is mounted read-only; lint-env.sh will not compile one inside the sandbox.
 test -x "${LINT_DRIVER_EXE:?the prebuilt environment-lint driver is required}"
 
+# CI telemetry: when each phase below starts, and the build's own per-module log, for the host's
+# telemetry step to summarise (pr-build.yml, scripts/ci_telemetry.py). Written under .lake because
+# that is the only place the sandbox can write, which also means candidate code could rewrite
+# them: they are statistics, never an input to any decision. Every telemetry write is best-effort:
+# under `set -e` a failed write (a full disk, say) must not turn a passing build red.
+TELEMETRY="$PWD/.lake/telemetry"
+mkdir -p "$TELEMETRY" 2>/dev/null || true
+: > "$TELEMETRY/phases.tsv" 2>/dev/null || true
+phase() { printf '%s\t%s\n' "$1" "$(date +%s.%N)" >> "$TELEMETRY/phases.tsv" 2>/dev/null || true; }
+
 # Build the exact candidate against its attested Lake config. bwrap keeps this offline and
 # confines writes to the candidate's .lake directory.
 #
@@ -41,19 +51,39 @@ test -x "${LINT_DRIVER_EXE:?the prebuilt environment-lint driver is required}"
 # `--fail-level=info`, so the build fails if any module logs an `info:` (or warning/error) — a stray
 # #check/#eval, a `simp?`/`ring_nf?`-style "Try this: …" suggestion, a linter note. A clean elaboration
 # logs nothing above trace, so this is exit-code enforcement, not output scraping.
-lake build --iofail
+#
+# Staging builds (IS_BATCH=true: merge-group or bors staging, set by the trusted workflow) add
+# --fail-fast, which stops Lake scheduling new jobs after the first failed one (an `info:` failing
+# under --iofail counts), so a doomed batch frees the queue sooner. Jobs already running finish
+# normally, and Lake still exits nonzero; a passing build is unchanged. Ordinary PR builds keep going
+# after a failure, so their log reports every broken module for the repair.
+LAKE_BUILD_FLAGS=(--iofail)
+if [ "${IS_BATCH:-}" = "true" ]; then
+  LAKE_BUILD_FLAGS+=(--fail-fast)
+fi
+phase build
+# `--output-error=warn` keeps tee passing the build's output through even if writing the copy fails,
+# and `|| true` drops tee's own status, so `pipefail` reports exactly Lake's.
+lake build "${LAKE_BUILD_FLAGS[@]}" 2>&1 | { tee --output-error=warn "$TELEMETRY/lake-build.log" 2>/dev/null || true; }
 
-# Reject duplicate declaration ownership before merging imported environments can hide it.
-# This also checks orphan modules and runs on the exact merge-group candidate before landing.
-lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/DuplicateDeclarations.lean"
+# One workflow-pinned native driver imports all artifact parts once. Its first check reads
+# per-module ownership (compatible duplicates must not disappear in merged constants), then
+# it checks axiom reachability. No imported initializer executes.
+# Built beside the lint driver on the host and mounted in the same read-only directory.
+AUDIT_DRIVER_EXE="$(dirname "$LINT_DRIVER_EXE")/audit-driver"
+test -x "$AUDIT_DRIVER_EXE"
+phase audit-setup
+# This is a full-library pass, so use the existing environment-lint liveness budget,
+# not the 300s compiler deadline. A shared process must not shrink the former audits
+# into one per-module compilation budget. Phase telemetry exposes growth before tuning
+# this trusted bound; timeout remains a process/liveness failure, not an audit finding.
+AUDIT_TIMEOUT="$(command -v timeout)"
+AUDIT_PHASES_FILE="$TELEMETRY/phases.tsv" lake env "$AUDIT_TIMEOUT" --signal=TERM --kill-after=30 \
+  3000s "$AUDIT_DRIVER_EXE"
 
-# Axiom audit: inspect the built environment and reject any axiom outside
-# {propext, Classical.choice, Quot.sound} — catching sorry, native_decide, and
-# home-rolled axioms, including ones reaching in through imports.
-lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/Axioms.lean"
-
-# Module-system audit: every TauCeti/ module must opt into the Lean module system
-# (read from each compiled module's isModule flag, not a textual grep).
+# The canonical module-system check reads only the main artifact flag, without importing
+# the Mathlib environment. Keep one implementation and its existing standalone executable.
+phase audit-module-system
 lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lean"
 
 # Environment lint (the compiled driver in LINT_DRIVER_EXE): Mathlib's default `#lint` set minus
@@ -63,18 +93,21 @@ lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lea
 # (scripts/lint-nolints-allowlist.txt) are workflow-pinned trusted copies, and its report parsing
 # is fail-closed (see the SECURITY MODEL in the script). Fails on new violations or
 # unaccounted nolints; fixed baseline entries print a ratchet reminder only.
+phase lint-env
 bash "$TRUSTED_SCRIPTS/lint-env.sh"
 
 # Source style lint. The trusted wrapper uses the shared validated TauCeti/ module list, applies
 # Mathlib's copyright/Authors checks (excluding the deliberately empty root), and generates the
 # text-linter import root under .lake/ without relying on TauCeti.lean's imports.
+phase lint-style
 bash "$TRUSTED_SCRIPTS/lint-style.sh"
 
 # A merge-group commit that passes every audit is the exact commit GitHub will land. Pack its
 # root-package outputs while still inside the bwrap sandbox, after the final operation that executes
-# candidate code. The host uploads only this data-only staging tree to a fresh, secret-isolated
-# publisher job. Ordinary PRs and installations without upload endpoints leave this disabled.
+# candidate code. After the sandbox exits, the host stages validated archive files and the complete
+# map for a fresh, secret-isolated publisher job. Ordinary PRs and installations without upload endpoints leave this disabled.
 if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
+  phase stage-cache
   if ! grep -Eq '^[[:space:]]*platformIndependent[[:space:]]*=[[:space:]]*true' lakefile.toml; then
     echo "lakefile.toml no longer sets platformIndependent = true" >&2
     exit 1
@@ -94,6 +127,8 @@ if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
   # --rehash makes Lake hash the archive bytes instead of trusting those sidecars.
   lake build --no-build --rehash -o .lake/outputs.jsonl
   echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-  rm -rf .lake/cache-staging
-  lake cache stage .lake/outputs.jsonl .lake/cache-staging
+  # The host stages these data after all sandbox processes exit, using pinned tooling
+  # and anonymous availability checks. Candidate code never writes the staging tree.
 fi
+
+phase end

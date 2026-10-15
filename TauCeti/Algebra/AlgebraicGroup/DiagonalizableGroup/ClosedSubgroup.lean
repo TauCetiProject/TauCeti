@@ -31,11 +31,6 @@ diagonalizable affine group is diagonalizable.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.9.
-
-This advances Layer 4, "Diagonalizable groups and groups of multiplicative type", of the
-ReductiveGroups roadmap. It also supplies the closed-subgroup classification used in Layer 6 to
-show that smooth unipotent closed subgroups of tori are trivial, on the way to proving that tori
-are reductive.
 -/
 
 public section

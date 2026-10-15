@@ -39,6 +39,7 @@ the `DGAInfinity` roadmap.
   even when the two sides present its length by different arithmetic expressions.
 * `TauCeti.ReducedTensorWords.subword_congr`: equal-length blocks in different ambient tuples or
   at different offsets agree when their letters agree.
+* `TauCeti.ReducedTensorWords.subword_tail`: blocks of the tail of a tuple.
 * `TauCeti.ReducedTensorWords.prepend_subword`: prepending the preceding letter extends a block.
 * `TauCeti.ReducedTensorWords.map_subword`: mapping a block applies the map to each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_subword`: deconcatenation of a block.
@@ -229,6 +230,14 @@ theorem subword_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b : 
   · rw [subword_length_zero, subword_length_zero]
   · rw [subword_eq_of_tprod R x hb hab, subword_eq_of_tprod R y hb hab']
     exact of_tprod_congr R M _ rfl fun j ↦ h j.1 j.isLt
+
+/-- A block of the tail of a tuple is the block one position further along the tuple. -/
+theorem subword_tail {n : ℕ} (z : Fin (n + 1) → M) (a b : ℕ) :
+    subword R (Fin.tail z) a b = subword R z (a + 1) b :=
+  if hab : a + b ≤ n then
+    subword_congr R _ z hab (by omega) fun j _ ↦ congrArg z (Fin.ext (by simp; omega))
+  else by
+    rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R z (by omega)]
 
 /-- Deconcatenating a block cuts it at each of its nontrivial internal positions. -/
 theorem deconcatenation_subword {n : ℕ} (x : Fin n → M) {a b : ℕ} :

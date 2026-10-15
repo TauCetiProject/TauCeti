@@ -376,7 +376,7 @@ theorem JO_eq_card (x : GridState n) :
       (((Finset.univ.filter fun p : Fin n × Fin n => p.1 ≤ p.2 ∧ x p.1 ≤ G.O p.2).card +
         (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.O p.1 < x p.2).card : ℕ) :
           ℚ) / 2 := by
-  rw [JO_def, OSet, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
+  rw [JO_def, OSet_def, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
 
 /-- The `X`-marking pairing as a column-index count. -/
 theorem JX_eq_card (x : GridState n) :
@@ -384,7 +384,7 @@ theorem JX_eq_card (x : GridState n) :
       (((Finset.univ.filter fun p : Fin n × Fin n => p.1 ≤ p.2 ∧ x p.1 ≤ G.X p.2).card +
         (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.X p.1 < x p.2).card : ℕ) :
           ℚ) / 2 := by
-  rw [JX_def, XSet, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
+  rw [JX_def, XSet_def, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
 
 /-- `JO` is invariant under reflecting the diagram and state across the diagonal. -/
 theorem JO_transpose (x : GridState n) :

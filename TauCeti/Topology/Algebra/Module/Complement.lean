@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Complement
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 
 /-!
 # Transport of complemented submodules

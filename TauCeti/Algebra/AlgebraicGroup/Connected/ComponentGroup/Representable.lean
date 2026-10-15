@@ -44,9 +44,6 @@ the desired representability.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Sections 6.7 and 14.
-
-This completes the algebraically closed-field representability step of Layer 3, "Identity
-component `G°` and component group `π₀(G)`", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -309,8 +306,10 @@ theorem mapPoints_componentPointsHom
         (H := ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))) f
         (componentPointsHom H A g) =
       componentPointsHom H B (HopfAlgebra.mapPoints (H := H) f g) := by
-  exact DFunLike.congr_fun
-    (AlgHom.mapValue_mapDomain (componentCoordinateHom H).hom f.hom) g
+  have h := DFunLike.congr_fun
+    (AlgHom.mapValue_mapDomain (componentCoordinateHom H).hom f.hom).symm g
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
+  exact h
 
 /-- The pointwise quotient functor by the identity component is naturally isomorphic to the
 functor of points of the finite constant component group. -/
@@ -519,7 +518,7 @@ private theorem pointwiseQuotientProjection_app'
 
 private theorem mapPointsFunctor_componentCoordinateHom_app
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) (A : CommAlgCat.{u} k) :
-    (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)).app A =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)).app A =
       eqToHom (HopfAlgebra.pointsFunctor_obj (H := H) A) ≫
         GrpCat.ofHom (componentPointsHom H A) ≫
           eqToHom (HopfAlgebra.pointsFunctor_obj
@@ -533,7 +532,7 @@ private theorem pointwiseQuotientProjection_comp_componentNatIso_hom
         (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
         (isNormal_identityComponentHopfIdeal H) ≫
       (componentPointwiseQuotientNatIso H).hom =
-        CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H) := by
+        CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H) := by
   apply NatTrans.ext
   funext A
   rw [NatTrans.comp_app, pointwiseQuotientProjection_app',
@@ -567,7 +566,7 @@ private noncomputable def componentCoordinatePresheafGrpHom
   eqToHom (CommHopfAlgCat.pointsPresheafGrp.eq_1 H.obj) ≫
     CommHopfAlgCat.groupFunctorGrpMap (Functor.whiskerRight
       (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
-        (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)))
+        (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)))
       GrpCat.uliftFunctor.{u + 1, u}) ≫
     eqToHom (CommHopfAlgCat.pointsPresheafGrp.eq_1
       (CommHopfAlgCat.of k
@@ -598,7 +597,7 @@ private theorem pointwiseQuotientPresheafGrpProjection_comp_componentIso_hom
           GrpCat.uliftFunctor.{u + 1, u})).hom =
       CommHopfAlgCat.groupFunctorGrpMap (Functor.whiskerRight
         (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
-          (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)))
+          (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)))
         GrpCat.uliftFunctor.{u + 1, u}) := by
     rw [CommHopfAlgCat.groupFunctorGrpIso_hom,
       groupFunctorGrpMap_comp]

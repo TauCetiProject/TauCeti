@@ -34,19 +34,16 @@ the point factors uniquely through the quotient algebra.
   the augmentation ideal consists only of the identity point.
 * `CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup`: when the quotient Hopf algebra is
   cocommutative, the cut-out point subgroup is commutative.
-* `CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective`: membership in the point
-  subgroup cut out by an ideal mapped along a surjective morphism is detected after pullback.
-* `CommHopfAlgCat.mem_quotientPointsSubgroup_map_mkQuotient_iff`: membership in the point
-  subgroup cut out by a mapped ideal is detected after pullback along the quotient map.
-* `CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
-  quotient-subgroup membership along a bialgebra equivalence.
+* `CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff`: membership in the point subgroup cut out
+  by an ideal mapped along a morphism is detected after pullback.
+* `BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
+  quotient-subgroup membership along a surjective bialgebra morphism.
 
-## References
+## Implementation notes
 
-This is a Layer 3 prerequisite for `TauCetiRoadmap/ReductiveGroups/README.md`, "Hopf ideals ↔
-closed subgroup schemes". It builds on the quotient Hopf algebra API in
-`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic` and Mathlib's algebra quotient universal
-property `Ideal.Quotient.liftₐ`.
+The file builds on the quotient Hopf algebra API in
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic` and on Mathlib's algebra quotient
+universal property `Ideal.Quotient.liftₐ`.
 -/
 
 public section
@@ -56,7 +53,7 @@ open scoped commutatorElement
 
 namespace TauCeti
 
-universe u v w
+universe u v v' w
 
 namespace CommHopfAlgCat
 
@@ -70,7 +67,7 @@ quotient Hopf algebra to its composite with the quotient map from `H`. -/
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     HopfAlgebra.points (R := R) (H := quotient H I) A ⟶
       HopfAlgebra.points (R := R) (H := H) A :=
-  (mapPointsFunctor (mkQuotient H I)).app A
+  (CommHopfAlgCat.Hom.mapPointsFunctor (mkQuotient H I)).app A
 
 /-- The quotient-points map acts by pre-composition with the quotient morphism. -/
 @[simp]
@@ -78,7 +75,7 @@ lemma quotientPointsHom_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
     quotientPointsHom H I A f =
       toConv (f.ofConv.comp ((mkQuotient H I).hom : H →ₐ[R] quotient H I)) :=
-  mapPointsFunctor_app_apply (mkQuotient H I) A f
+  CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (mkQuotient H I) A f
 
 /-- Pointwise form of `CommHopfAlgCat.quotientPointsHom_apply`. -/
 @[simp]
@@ -97,17 +94,17 @@ lemma mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
     {H K : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
     (f : quotient H I ⟶ K) (g : H ⟶ K) (hfg : mkQuotient H I ≫ f = g)
     (A : CommAlgCat.{w} R) (q : HopfAlgebra.points (R := R) (H := K) A) :
-    (mapPointsFunctor g).app A q =
-      quotientPointsHom H I A ((mapPointsFunctor f).app A q) := by
-  rw [quotientPointsHom, ← hfg, mapPointsFunctor_comp]
-  rfl
+    (CommHopfAlgCat.Hom.mapPointsFunctor g).app A q =
+      quotientPointsHom H I A ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A q) := by
+  rw [quotientPointsHom, ← hfg]
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply (mkQuotient H I) f A q
 
 /-- The map from quotient points to ambient points is injective. -/
 lemma quotientPointsHom_injective (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     Function.Injective (quotientPointsHom H I A) :=
-  mapPointsFunctor_app_injective_of_surjective (mkQuotient H I)
-    (Ideal.Quotient.mkₐ_surjective R I.toIdeal) A
+  CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective (mkQuotient H I)
+    (mkQuotient_surjective H I) A
 
 /-- An ambient `A`-point factors through `H ⧸ I` when it kills the Hopf ideal `I`. -/
 noncomputable def liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
@@ -126,11 +123,10 @@ lemma liftQuotientPoint_mk (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : ∀ h : H, h ∈ I → g.ofConv h = 0) (h : H) :
-    ((liftQuotientPoint H I A g hg).ofConv) (Ideal.Quotient.mkₐ R I.toIdeal h) =
-      g.ofConv h := by
-  exact AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp I.toIdeal g.ofConv (by
-    intro h hh
-    exact hg h ((HopfIdeal.mem_toIdeal (I := I)).mp hh))) h
+    ((liftQuotientPoint H I A g hg).ofConv) (Ideal.Quotient.mk I.toIdeal h) =
+      g.ofConv h :=
+  AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp I.toIdeal g.ofConv
+    fun h hh ↦ hg h ((HopfIdeal.mem_toIdeal (I := I)).mp hh)) h
 
 /-- Factoring a point that kills `I` through the quotient and then including it back in the
 ambient point group recovers the original point. -/
@@ -143,21 +139,22 @@ lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro h
-  rw [quotientPointsHom_apply_apply, liftQuotientPoint_mk]
+  rw [quotientPointsHom_apply_apply, Ideal.Quotient.mkₐ_eq_mk, liftQuotientPoint_mk]
 
 /-- Evaluating the commutator of two lifted quotient points on a quotient class gives
 the commutator of the original ambient points on its representative. -/
 @[simp↓]
 theorem commutator_liftQuotientPoint_apply_mkQuotient
-    {A : _root_.CommHopfAlgCat.{v} R}
-    (I : HopfIdeal R A) (B : CommAlgCat R) (g h : WithConv (A →ₐ[R] B))
-    (hg : ∀ x ∈ I, g.ofConv x = 0) (hh : ∀ x ∈ I, h.ofConv x = 0) (x : A) :
-    (⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆).ofConv
-      ((mkQuotient A I).hom x) = ⁅g, h⁆.ofConv x := by
-  have heval := quotientPointsHom_apply_apply A I B
-    ⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆ x
+    {H : _root_.CommHopfAlgCat.{v} R}
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R) (g h : WithConv (H →ₐ[R] A))
+    (hg : ∀ x ∈ I, g.ofConv x = 0) (hh : ∀ x ∈ I, h.ofConv x = 0) (x : H) :
+    (⁅liftQuotientPoint H I A g hg, liftQuotientPoint H I A h hh⁆).ofConv
+      ((mkQuotient H I).hom x) = ⁅g, h⁆.ofConv x := by
+  have heval := quotientPointsHom_apply_apply H I A
+    ⁅liftQuotientPoint H I A g hg, liftQuotientPoint H I A h hh⁆ x
   rw [map_commutatorElement, quotientPointsHom_liftQuotientPoint,
     quotientPointsHom_liftQuotientPoint] at heval
+  rw [mkQuotient_apply]
   exact heval.symm
 
 /-- A point of the ambient Hopf algebra lies in the image of quotient points if and only if it
@@ -185,7 +182,7 @@ point-level closed subgroup represented by the quotient coordinate Hopf algebra 
 
 /-- The points cut out by `I` form a commutative group whenever the quotient coordinate Hopf
 algebra is cocommutative. -/
-noncomputable instance instIsMulCommutativeQuotientPointsSubgroup
+instance instIsMulCommutativeQuotientPointsSubgroup
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H)
     [Coalgebra.IsCocomm R (quotient H I)] (A : CommAlgCat.{w} R) :
     IsMulCommutative (quotientPointsSubgroup H I A) :=
@@ -203,15 +200,11 @@ lemma mem_quotientPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} R)
 the identity over every value algebra. -/
 theorem eq_one_of_mem_quotientPointsSubgroup_augmentation (H : _root_.CommHopfAlgCat.{v} R)
     (A : CommAlgCat.{w} R) {g : HopfAlgebra.points (R := R) (H := H) A}
-    (hg : g ∈ quotientPointsSubgroup H (HopfIdeal.augmentation R ↥H) A) : g = 1 := by
+    (hg : g ∈ quotientPointsSubgroup H (HopfIdeal.augmentation R H) A) : g = 1 := by
   refine WithConv.ofConv_injective (AlgHom.ext fun x ↦ ?_)
-  have hx : x - algebraMap R ↥H (Coalgebra.counit (R := R) x) ∈
-      HopfIdeal.augmentation R ↥H := by
-    rw [HopfIdeal.mem_augmentation]
-    simp
-  have hzero := (mem_quotientPointsSubgroup_iff H _ A g).mp hg _ hx
-  rw [map_sub, sub_eq_zero] at hzero
-  rw [hzero, AlgHom.commutes]
+  rw [AlgHom.apply_eq_counit_of_augmentation_le_ker g.ofConv
+    (fun y hy ↦ RingHom.mem_ker.mpr
+      ((mem_quotientPointsSubgroup_iff H _ A g).mp hg y (HopfIdeal.mem_toIdeal.mp hy))) x]
   exact (AlgHom.convOne_apply x).symm
 
 /-- The subgroup of points cut out by the augmentation ideal consists exactly of the identity
@@ -225,44 +218,39 @@ theorem mem_quotientPointsSubgroup_augmentation_iff (H : _root_.CommHopfAlgCat.{
   · rintro rfl
     exact Subgroup.one_mem _
 
-/-- A point vanishes on a Hopf ideal mapped along a surjective morphism exactly when its
-pullback along that morphism vanishes on the original ideal. -/
-theorem mem_quotientPointsSubgroup_map_iff_of_surjective
-    {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K) (hphi : Function.Surjective phi.hom)
+/-- A point vanishes on a Hopf ideal mapped along a morphism exactly when its pullback along
+that morphism vanishes on the original ideal. -/
+@[simp]
+theorem mem_quotientPointsSubgroup_map_iff
+    {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
     (J : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := K) A) :
     f ∈ quotientPointsSubgroup K (J.map phi.hom) A ↔
       (show HopfAlgebra.points (R := R) (H := H) A from
-        (mapPointsFunctor phi).app A f) ∈ quotientPointsSubgroup H J A := by
+        (CommHopfAlgCat.Hom.mapPointsFunctor phi).app A f) ∈ quotientPointsSubgroup H J A := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
   constructor
   · intro hf x hx
-    rw [mapPointsFunctor_app_apply_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply]
     exact hf _ (HopfIdeal.mem_map_of_mem phi.hom hx)
-  · intro hf y hy
-    obtain ⟨x, hx, rfl⟩ := (HopfIdeal.mem_map_iff_of_surjective hphi).mp hy
-    simpa only [mapPointsFunctor_app_apply_apply] using hf x hx
+  · intro hf
+    have hle : (J.map phi.hom).toIdeal ≤ RingHom.ker f.ofConv.toRingHom := by
+      rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
+      intro x hx
+      have hx' := hf x (HopfIdeal.mem_toIdeal.mp hx)
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hx'
+      exact Ideal.mem_comap.mpr (RingHom.mem_ker.mpr hx')
+    exact fun y hy ↦ RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hy))
 
-/-- A point of a Hopf-algebra quotient vanishes on a mapped Hopf ideal exactly when its
-pullback along the quotient map vanishes on the original ideal. -/
-@[simp]
-theorem mem_quotientPointsSubgroup_map_mkQuotient_iff
-    (H : _root_.CommHopfAlgCat.{v} R) (I J : HopfIdeal R H) (A : CommAlgCat.{w} R)
-    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
-    f ∈ quotientPointsSubgroup (quotient H I)
-        (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)) A ↔
-      quotientPointsHom H I A f ∈ quotientPointsSubgroup H J A := by
-  exact mem_quotientPointsSubgroup_map_iff_of_surjective
-    (mkQuotient H I) (mkQuotient_surjective H I) J A f
-
-/-- Precomposition by a bijective bialgebra morphism identifies the points cut out by a Hopf
+/-- Precomposition by a surjective bialgebra morphism identifies the points cut out by a Hopf
 ideal with the points cut out by its pullback. -/
-theorem mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
-    {H K : Type v} [CommRing H] [CommRing K] [HopfAlgebra R H] [HopfAlgebra R K]
-    (f : H →ₐc[R] K) (hinj : Function.Injective f) (hsurj : Function.Surjective f)
+-- Not `@[simp]`: `AlgHom.mapDomain_apply` rewrites the left-hand side first, so simpNF rejects it.
+theorem _root_.BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff
+    {H : Type v} {K : Type v'} [CommRing H] [CommRing K] [HopfAlgebra R H] [HopfAlgebra R K]
+    (f : H →ₐc[R] K) (hsurj : Function.Surjective f)
     (I : HopfIdeal R K) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
-    AlgHom.mapDomainMulEquiv (A := A) (BialgEquiv.ofBijective f ⟨hinj, hsurj⟩) g ∈
+    AlgHom.mapDomain (A := A) f g ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.comapOfSurjective f hsurj) A ↔
       g ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]

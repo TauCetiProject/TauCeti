@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Acyclic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 /-!
 # The diagram of a finite-type Cartan matrix is a forest
@@ -35,6 +36,8 @@ the root-system case is irreducibility, which Mathlib packages as
 
 * `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
   diagram along the reindexing.
+* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A`: the type `Aₙ` diagram is the path graph on
+  `n` nodes.
 * `TauCeti.IsFiniteType.isAcyclic_diagramGraph`: **the diagram of a finite-type matrix is a
   forest**. The affine diagrams `Ãₙ` for `n ≥ 2`, the ones whose diagrams are cycles, are excluded
   here in one theorem.
@@ -96,9 +99,30 @@ theorem diagramGraph_submatrix {C : Type*} {f : C → B} (hf : Function.Injectiv
   rw [diagramGraph_adj, SimpleGraph.comap_adj, diagramGraph_adj, Matrix.submatrix_apply,
     Matrix.submatrix_apply, hf.ne_iff]
 
+namespace DynkinType
+
+/-- **The diagram of type `Aₙ` is the path graph**: in Bourbaki's numbering, the nodes `i` and `j`
+are joined exactly when they are consecutive. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_A (n : ℕ) :
+    (diagramGraph (CartanMatrix.A n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  ext i j
+  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
+  simp [CartanMatrix.A, Fin.ext_iff]
+  omega
+
+end DynkinType
+
+/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
+theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
+    (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
+      (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
+  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
+    SimpleGraph.pathGraph_adj]
+
 namespace IsFiniteType
 
-variable [Fintype B]
 
 /-- **Adjacency in the diagram of a finite-type matrix is a single nonvanishing condition**, the
 vanishing pattern of such a matrix being symmetric. -/
@@ -162,7 +186,7 @@ theorem exists_chain_of_reachable (h : IsFiniteType A) {u v : B}
 
 /-- **The degree bound in graph form**: no index of a finite-type matrix has four neighbours in the
 diagram, so a finite-type diagram branches into at most three arms. -/
-theorem degree_le_three [DecidableEq B] (h : IsFiniteType A) (i : B) :
+theorem degree_le_three [Fintype B] [DecidableEq B] (h : IsFiniteType A) (i : B) :
     (diagramGraph A).degree i ≤ 3 :=
   h.card_le_three_of_forall_apply_ne_zero (SimpleGraph.notMem_neighborFinset_self _ i)
     fun _ hj ↦ (diagramGraph_adj.mp ((SimpleGraph.mem_neighborFinset _ _ _).mp hj)).2.1
@@ -176,7 +200,7 @@ theorem isTree_diagramGraph (h : IsFiniteType A) (hconn : (diagramGraph A).Conne
 /-- **A connected finite-type diagram has one edge fewer than it has vertices.** This is the
 counting form of acyclicity, and the constraint that the enumeration of admissible diagrams is run
 against. -/
-theorem card_edgeFinset_add_one_eq_card [DecidableEq B] (h : IsFiniteType A)
+theorem card_edgeFinset_add_one_eq_card [Fintype B] [DecidableEq B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Connected) :
     (diagramGraph A).edgeFinset.card + 1 = Fintype.card B :=
   (h.isTree_diagramGraph hconn).card_edgeFinset

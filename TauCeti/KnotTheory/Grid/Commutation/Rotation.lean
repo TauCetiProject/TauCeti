@@ -77,7 +77,7 @@ arc in the original diagram. The `swapMarkings` appears because `Fin.rev` revers
 orientation. -/
 theorem rowArc_rotate (r : Fin n) :
     rowArc G.rotate r = (rowArc G.swapMarkings r.rev).image Fin.rev := by
-  simp [rowArc, Grid.cIoo_image_rev, OColumnOfRow_rotate, XColumnOfRow_rotate]
+  simp [rowArc, Grid.cIoo_image_rev, ← GridState.transpose_rotate]
 
 /-- Membership in a rotated row arc is membership of the reversed column in the opposite oriented
 row arc of the original diagram. -/
@@ -95,9 +95,9 @@ accounted for by swapping the two marking states. -/
 @[simp]
 theorem rowsNoninterleaving_rotate (a b : Fin n) :
     RowsNoninterleaving G.rotate a b ↔ RowsNoninterleaving G.swapMarkings a.rev b.rev := by
-  simpa [RowsNoninterleaving] using
-    (Grid.noninterleaving_rev (OColumnOfRow G a.rev) (XColumnOfRow G a.rev)
-      (OColumnOfRow G b.rev) (XColumnOfRow G b.rev))
+  simpa [RowsNoninterleaving, ← GridState.transpose_rotate] using
+    (Grid.noninterleaving_rev (G.O.transpose a.rev) (G.X.transpose a.rev)
+      (G.O.transpose b.rev) (G.X.transpose b.rev))
 
 end GridDiagram
 

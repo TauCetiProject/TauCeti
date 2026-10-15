@@ -8,14 +8,15 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
 # Inflation of the index-two Evens graph cocycle
 
 Let `N` be a normal subgroup contained in an open subgroup `U` of a topological group `G`. The
 image of `U` in `G / N` is open, has the same index as `U`, and the quotient map restricts to a
-homomorphism from `U` onto it; these are `TauCeti.quotientOpenSubgroup` and
-`TauCeti.quotientOpenSubgroupMap`. This file proves that the two-point graph cocycle commutes
+homomorphism from `U` onto it; these are `Subgroup.quotientOpenSubgroup` and
+`Subgroup.quotientOpenSubgroupMap`. This file proves that the two-point graph cocycle commutes
 with pullback along that quotient map. Consequently, degree-two inflation carries the
 graph-cocycle class for the image of `U` to the graph-cocycle class for `U`.
 
@@ -57,6 +58,9 @@ of the pulled-back character, so the inflation identity mentions no coset repres
 -/
 
 public section
+
+open Subgroup (quotientOpenSubgroup quotientOpenSubgroupMap mem_quotientOpenSubgroup_mk_iff
+  coe_quotientOpenSubgroupMap continuous_quotientOpenSubgroupMap)
 
 namespace TauCeti.ContCohomology
 
@@ -170,9 +174,10 @@ noncomputable def evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤
   cocyclesMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
       (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
       (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
-      (fun q x => by simpa using trivialF2QuotientEquivFixedPoints_smul N q x)
+      (fun _ _ => by simp)
     (evensGraphCocycle (quotientOpenSubgroup N U) (s : G ⧸ N) α
-      ((quotientOpenSubgroup_index N U hNU).trans hU)
+      (by simpa only [Subgroup.toSubgroup_quotientOpenSubgroup,
+        Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU] using hU)
       (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα)
 
 /-- The fixed-point-valued graph cocycle is obtained by applying the coefficient equivalence
@@ -231,9 +236,10 @@ noncomputable def explicitGraphClassFixedPoints (U : OpenSubgroup G) (hNU : N �
   explicitMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
       (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
       (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
-      (fun q x => by simpa using trivialF2QuotientEquivFixedPoints_smul N q x)
+      (fun _ _ => by simp)
     (explicitGraphClass (quotientOpenSubgroup N U)
-      ((quotientOpenSubgroup_index N U hNU).trans hU) α hα)
+      (by simpa only [Subgroup.toSubgroup_quotientOpenSubgroup,
+        Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU] using hU) α hα)
 
 /-- The choice-free fixed-point-valued quotient graph class is represented by the quotient graph
 cocycle formed using every element outside `U`. -/
@@ -245,7 +251,8 @@ theorem explicitGraphClassFixedPoints_eq_evensGraphCocycleFixedPoints (U : OpenS
       (evensGraphCocycleFixedPoints U hNU hU s hs α hα :
         H2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V)) := by
   rw [explicitGraphClassFixedPoints, explicitGraphClass_eq_evensGraphCocycle
-    (quotientOpenSubgroup N U) ((quotientOpenSubgroup_index N U hNU).trans hU) (s : G ⧸ N)
+    (quotientOpenSubgroup N U) (by simpa only [Subgroup.toSubgroup_quotientOpenSubgroup,
+      Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU] using hU) (s : G ⧸ N)
     (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) α hα, explicitMap2_mk,
     evensGraphCocycleFixedPoints]
 

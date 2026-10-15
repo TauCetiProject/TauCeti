@@ -12,7 +12,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Tits.Basic
 
 /-!
-# The concrete carrier and Steinberg map of every valid Lie-type index
+# The Steinberg map and candidate group of every valid Lie-type index
 
 The thirteen ordinary and graph-twisted families use their existing assembly. The four
 half-Frobenius families use their explicit Suzuki, Ree, or Tits endomorphism. Every branch
@@ -22,11 +22,42 @@ The candidate group is uniformly the derived subgroup of the fixed points modulo
 Comparison with the pinned simply connected groups requires isomorphisms preserving the
 root subgroups and Steinberg maps. No finiteness or simplicity of a candidate is asserted.
 The construction follows the family modules it imports.
+
+## Main definitions
+
+* `TauCeti.ValidLieTypeIndex.steinberg`: the Steinberg endomorphism on the ambient group of each
+  valid Lie-type index.
+* `TauCeti.ValidLieTypeIndex.FixedPoints`: the fixed subgroup of the Steinberg endomorphism.
+* `TauCeti.ValidLieTypeIndex.Group`: the Lie-type candidate group, the derived subgroup
+  of the fixed points modulo its centre.
+
+## Main results
+
+* `TauCeti.ValidLieTypeIndex.steinberg_suzuki`, `TauCeti.ValidLieTypeIndex.steinberg_reeG2`,
+  `TauCeti.ValidLieTypeIndex.steinberg_reeF4` and `TauCeti.ValidLieTypeIndex.steinberg_tits`: on
+  the four half-Frobenius constructors the Steinberg endomorphism is that of the family.
+* `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius`: on ordinary
+  and graph-twisted indices, the action on simple root subgroups permutes by the diagram
+  automorphism and raises the parameter to the `q`-th power.
+* `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_usesHalfFrobenius`: on the Suzuki,
+  Ree and Tits indices, the action on simple root subgroups exchanges root lengths and raises
+  the parameter to the odd half-Frobenius exponent.
+* `TauCeti.ValidLieTypeIndex.steinberg_steinberg_of_usesHalfFrobenius`: on half-Frobenius
+  families, the Steinberg endomorphism squares to the `q`-power Frobenius.
+* `TauCeti.ValidLieTypeIndex.Group_eq_of_not_usesHalfFrobenius`: on ordinary and graph-twisted
+  families, the candidate group agrees with `GraphTwistedIndex.Group`.
+
+## References
+
+* R. W. Carter, *Simple Groups of Lie Type*, Wiley, 1972.
+* R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968).
 -/
 
 public section
 
-namespace TauCeti.ValidLieTypeIndex
+namespace TauCeti
+
+namespace ValidLieTypeIndex
 
 noncomputable section
 
@@ -42,6 +73,32 @@ def steinberg : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩ | ⟨.twistedE6 _, hv⟩
   | ⟨.trialityD4 _, hv⟩ =>
       GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩
+
+section Branches
+
+variable {m : ℕ}
+
+/-- On `²B₂(2^(2m+1))` the Steinberg endomorphism is that of the Suzuki family. -/
+theorem steinberg_suzuki (hv : (LieTypeIndex.suzuki m).Valid) :
+    steinberg ⟨_, hv⟩ = SuzukiLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²G₂(3^(2m+1))` the Steinberg endomorphism is that of the Ree `G₂` family. -/
+theorem steinberg_reeG2 (hv : (LieTypeIndex.reeG2 m).Valid) :
+    steinberg ⟨_, hv⟩ = ReeG2LieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²F₄(2^(2m+1))` the Steinberg endomorphism is that of the Ree `F₄` family. -/
+theorem steinberg_reeF4 (hv : (LieTypeIndex.reeF4 m).Valid) :
+    steinberg ⟨_, hv⟩ = ReeF4LieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On the Tits index the Steinberg endomorphism is that of the Tits construction. -/
+theorem steinberg_tits (hv : LieTypeIndex.tits.Valid) :
+    steinberg ⟨_, hv⟩ = TitsLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+end Branches
 
 /-- On ordinary and graph-twisted indices the assembled map has the recorded diagram action
 and field-order exponent. -/
@@ -118,4 +175,6 @@ example (d : ValidLieTypeIndex) : _root_.Group d.Group := inferInstance
 
 end
 
-end TauCeti.ValidLieTypeIndex
+end ValidLieTypeIndex
+
+end TauCeti

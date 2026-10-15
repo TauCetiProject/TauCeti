@@ -17,6 +17,10 @@ bijection between the sigma index and another index presents a tuple as a family
 Mathlib has `Homeomorph.piCurry` for a *product* index `X × Y`; the sigma-indexed version below is
 what a varying family of index types needs.
 
+Similarly, a family indexed by `Option ι` splits off its `none` component: the equivalence
+`Equiv.piOptionEquivProd` is a homeomorphism. For cubes this identifies `I^(Option N)` with
+`I × I^N`, a cube with one distinguished extra direction.
+
 ## Main declarations
 
 * `TauCeti.piCurryHomeomorph`: `Equiv.piCurry` as a homeomorphism.
@@ -24,6 +28,7 @@ what a varying family of index types needs.
   sigma index.
 * `TauCeti.piSigmaConstHomeomorph`: along an explicit equivalence from a sigma index, a
   homeomorphism between a family of tuples and a tuple in a fixed space.
+* `TauCeti.piOptionEquivProdHomeomorph`: `Equiv.piOptionEquivProd` as a homeomorphism.
 -/
 
 public section
@@ -87,5 +92,38 @@ theorem piSigmaConstHomeomorph_symm_apply (Y : Type*) [TopologicalSpace Y] {ι :
     rw [piSigmaConstHomeomorph_apply]
     exact congrArg f (e.apply_symm_apply k).symm
   exact congrFun (congrFun h i) j
+
+/-- **Splitting off the `none` component.** A family indexed by `Option ι` is its `none`
+component together with the family of its `some` components: `Equiv.piOptionEquivProd` as a
+homeomorphism. -/
+def piOptionEquivProdHomeomorph {ι : Type*} (Y : Option ι → Type*)
+    [∀ i, TopologicalSpace (Y i)] : (∀ i, Y i) ≃ₜ Y none × ∀ i : ι, Y (some i) where
+  toEquiv := Equiv.piOptionEquivProd
+  continuous_toFun :=
+    (continuous_apply none).prodMk (continuous_pi fun i => continuous_apply (some i))
+  continuous_invFun := continuous_pi fun o => by
+    cases o with
+    | none => exact continuous_fst
+    | some i =>
+      exact ((continuous_apply i).comp continuous_snd :
+        Continuous fun x : Y none × ∀ i : ι, Y (some i) => x.2 i)
+
+@[simp]
+theorem piOptionEquivProdHomeomorph_apply {ι : Type*} (Y : Option ι → Type*)
+    [∀ i, TopologicalSpace (Y i)] (f : ∀ i, Y i) :
+    piOptionEquivProdHomeomorph Y f = (f none, fun i => f (some i)) :=
+  (rfl)
+
+@[simp]
+theorem piOptionEquivProdHomeomorph_symm_apply_none {ι : Type*} (Y : Option ι → Type*)
+    [∀ i, TopologicalSpace (Y i)] (x : Y none × ∀ i : ι, Y (some i)) :
+    (piOptionEquivProdHomeomorph Y).symm x none = x.1 :=
+  (rfl)
+
+@[simp]
+theorem piOptionEquivProdHomeomorph_symm_apply_some {ι : Type*} (Y : Option ι → Type*)
+    [∀ i, TopologicalSpace (Y i)] (x : Y none × ∀ i : ι, Y (some i)) (i : ι) :
+    (piOptionEquivProdHomeomorph Y).symm x (some i) = x.2 i :=
+  (rfl)
 
 end TauCeti

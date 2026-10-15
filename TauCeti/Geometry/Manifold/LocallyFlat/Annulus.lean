@@ -7,12 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.UnitInterval
-public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
-import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 import Mathlib.Analysis.SpecialFunctions.Exp
-import Mathlib.Topology.Order.MonotoneContinuity
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 
 /-!
 # The annulus conjecture
@@ -43,10 +42,13 @@ model `EuclideanSpace ℝ (Fin n) × ℝ`. Kirby's theorem is the case `n + 1 �
 
 The round case is proved here, which shows that the hypotheses of the conjecture can hold and that
 its conclusion is attained: scaling the unit sphere by `c ≠ 0` is locally flat
-(`TauCeti.isLocallyFlat_smul_coe_sphere`), for `0 < r < R` the sphere of radius `r` lies inside the
-sphere of radius `R` (`TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff`), and the two
-concentric spheres cobound the closed annulus `{r ≤ ‖x‖ ≤ R}`
-(`TauCeti.coboundAnnulus_smul_coe_sphere`).
+(`TauCeti.isLocallyFlat_smul_coe_sphere`), and for `0 < r < R` the two concentric spheres cobound
+the closed annulus `{r ≤ ‖x‖ ≤ R}` (`TauCeti.coboundAnnulus_smul_coe_sphere`). The required nesting
+condition follows from `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff` in the
+filled-hull API.
+
+Both round-sphere results hold in any real seminormed space. Radial coordinates use the
+positive-norm locus, so the seminorm need not separate points.
 
 ## Main definitions
 
@@ -57,8 +59,6 @@ concentric spheres cobound the closed annulus `{r ≤ ‖x‖ ≤ R}`
 
 * `TauCeti.isLocallyFlat_smul_coe_sphere`: a rescaled unit sphere is locally flat, with
   one-dimensional complementary model.
-* `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff`: a smaller concentric sphere lies inside
-  a larger one.
 * `TauCeti.coboundAnnulus_smul_coe_sphere`: two concentric round spheres cobound an annulus.
 
 ## References
@@ -111,38 +111,28 @@ def AnnulusConjecture (n : ℕ) : Prop :=
 
 section Round
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- **A rescaled unit sphere is locally flat**, with one-dimensional complementary model, for any
-charted-space structure on the sphere and every nonzero scale. -/
+/-- **A rescaled unit sphere in a real seminormed space is locally flat**, with one-dimensional
+complementary model, for any charted-space structure on the sphere and every nonzero scale. -/
 theorem isLocallyFlat_smul_coe_sphere {F : Type*} [TopologicalSpace F]
     [ChartedSpace F (sphere (0 : E) 1)] {c : ℝ} (hc : c ≠ 0) :
     IsLocallyFlat F ℝ (fun u : sphere (0 : E) 1 => c • (u : E)) := by
-  let polar : sphere (0 : E) 1 × ℝ ≃ₜ ({0}ᶜ : Set E) :=
+  let polar : sphere (0 : E) 1 × ℝ ≃ₜ {x : E | 0 < ‖x‖} :=
     ((Homeomorph.refl _).prodCongr Real.expOrderIso.toHomeomorph).trans
-      (homeomorphUnitSphereProd E).symm
+      (homeomorphUnitSphereProdOfNormPos E).symm
   have hopen : IsOpenEmbedding (Subtype.val ∘ polar) :=
-    isOpen_compl_singleton.isOpenEmbedding_subtypeVal.comp polar.isOpenEmbedding
+    (isOpen_lt continuous_const continuous_norm).isOpenEmbedding_subtypeVal.comp
+      polar.isOpenEmbedding
   have hflat := (isLocallyFlat_prodMkLeft (F := F) (F' := ℝ)).isOpenEmbedding_comp hopen
     |>.homeomorph_comp (Homeomorph.smulOfNeZero c hc)
   convert hflat using 1
   ext u
   simp [polar]
 
-/-- **A smaller concentric sphere lies inside a larger one:** for `0 < r < R`, the sphere of
-radius `r` lies in the open region bounded by the sphere of radius `R`. -/
-theorem range_smul_coe_sphere_subset_filledHull_sdiff {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
-    range (fun u : sphere (0 : E) 1 => r • (u : E)) ⊆
-      filledHull (range fun u : sphere (0 : E) 1 => R • (u : E)) \
-        range fun u : sphere (0 : E) 1 => R • (u : E) := by
-  rw [range_smul_coe_sphere hr, range_smul_coe_sphere (hr.trans hrR),
-    filledHull_sphere _ (hr.trans hrR).le]
-  intro x hx
-  rw [mem_sphere_zero_iff_norm] at hx
-  simp [hx, hrR]
-
-/-- **Two concentric round spheres cobound an annulus:** for `0 < r < R`, the spheres of radii `R`
-and `r` cobound the closed annulus `{x | r ≤ ‖x‖ ≤ R}`, parametrized by
+/-- **Two concentric round spheres in a real seminormed space cobound an annulus:** for
+`0 < r < R`, the spheres of radii `R` and `r` cobound the closed annulus `{x | r ≤ ‖x‖ ≤ R}`,
+parametrized by
 `(u, t) ↦ (R - (R - r) * t) • u`. -/
 theorem coboundAnnulus_smul_coe_sphere {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
     CoboundAnnulus (fun u : sphere (0 : E) 1 => R • (u : E)) (fun u => r • (u : E)) := by
@@ -164,7 +154,8 @@ theorem coboundAnnulus_smul_coe_sphere {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
     exact hline.codRestrict _ hpos
   refine ⟨fun p => (R - (R - r) * p.2) • (p.1 : E), ?_, ?_, ?_, ?_⟩
   · have hemb := IsEmbedding.subtypeVal.comp
-      ((homeomorphUnitSphereProd E).symm.isEmbedding.comp (IsEmbedding.id.prodMap hradius))
+      ((homeomorphUnitSphereProdOfNormPos E).symm.isEmbedding.comp
+        (IsEmbedding.id.prodMap hradius))
     convert hemb using 1
     funext p
     simp

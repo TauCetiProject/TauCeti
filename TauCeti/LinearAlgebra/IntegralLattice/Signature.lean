@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Rat.Star
+public import Mathlib.Algebra.Order.Star.Rat
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
@@ -177,6 +177,10 @@ theorem isPosDef_iff_isPosSemidef_and_nondegenerate :
   have := L.finiteDimensional
   exact LinearMap.BilinForm.posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate
     L.form L.isSymm
+
+/-- A positive-definite lattice is positive-semidefinite. -/
+theorem IsPosDef.isPosSemidef (hL : L.IsPosDef) : L.IsPosSemidef :=
+  (L.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hL).1
 
 /-- Positive-definiteness is equivalent to zero null and negative indices. -/
 @[grind =]

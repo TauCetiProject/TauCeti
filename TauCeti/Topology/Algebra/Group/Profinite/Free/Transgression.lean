@@ -56,7 +56,8 @@ theorem transgression_bijective (R : Subgroup (freeProP p X)) [R.Normal]
     (hRc : IsClosed (R : Set (freeProP p X))) (hR : R ≤ proPFrattini p (freeProP p X))
     (htriv : ∀ (g : freeProP p X) (m : M), g • m = m) (hexp : ∀ m : M, m ^ p = 1) :
     Function.Bijective (transgression (freeProP p X) (Additive M) R hRc) :=
-  haveI := subsingleton_H2 (X := X) (IsPGroup.isProP (p := p) fun m ↦ ⟨1, by simpa using hexp m⟩)
+  haveI := (isProjective_of_hasPGroupSolutions (hasPGroupSolutions_freeProP p X)).subsingleton_H2
+    (isProP_freeProP p X) (IsPGroup.isProP (p := p) fun m ↦ ⟨1, by simpa using hexp m⟩)
   transgression_bijective_of_le_proPFrattini hRc hR
     (fun g m ↦ by rw [← ofMul_toMul m, ← Additive.ofMul_smul, htriv])
     (fun m ↦ by rw [← ofMul_toMul m, ← ofMul_pow, hexp, ofMul_one])

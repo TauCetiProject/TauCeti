@@ -183,13 +183,12 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
   refine ⟨g⁻¹, ?_⟩
   have hle : diagonalTorusDefiningIdeal k n ≤ I.conjugate g := by
     intro x hx
-    rw [HopfIdeal.mem_conjugate, ← HopfIdeal.mem_toIdeal,
-      ← CommHopfAlgCat.mkQuotient_eq_zero_iff]
+    rw [HopfIdeal.mem_conjugate, ← CommHopfAlgCat.mkQuotient_eq_zero_iff]
     rw [mem_diagonalTorusDefiningIdeal] at hx
     have h := congrArg (fun f ↦ f.ofConv x) hkey
     refine h.trans ?_
     rw [← mapPointsFunctor_diagonalTorusCoordinateMap_app (A := CommAlgCat.of k Q),
-      CommHopfAlgCat.mapPointsFunctor_app_apply_apply, hx, map_zero]
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, hx, map_zero]
   simpa using HopfIdeal.conjugate_mono g⁻¹ hle
 
 /-- **Split maximal tori of `GLₙ` are conjugate to the diagonal torus.** A maximal torus of `GLₙ`
