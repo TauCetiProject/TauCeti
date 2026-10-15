@@ -35,7 +35,7 @@ variable {C ι ι' : Type*} [Category* C] [HasZeroObject C] [Preadditive C]
 
 /-- Extending both complexes by zero along an embedding of complex shapes preserves a homotopy
 equivalence. -/
-@[expose] noncomputable def extend (h : HomotopyEquiv K L) (e : c.Embedding c') [e.IsRelIff] :
+noncomputable def extend (h : HomotopyEquiv K L) (e : c.Embedding c') [e.IsRelIff] :
     HomotopyEquiv (K.extend e) (L.extend e) where
   hom := extendMap h.hom e
   inv := extendMap h.inv e
@@ -47,11 +47,11 @@ equivalence. -/
 /-- The forward map of an extended homotopy equivalence is the extension of the forward map. -/
 @[simp] theorem extend_hom (h : HomotopyEquiv K L) (e : c.Embedding c') [e.IsRelIff] :
     (h.extend e).hom = extendMap h.hom e :=
-  rfl
+  (rfl)
 
 /-- The inverse map of an extended homotopy equivalence is the extension of the inverse map. -/
 @[simp] theorem extend_inv (h : HomotopyEquiv K L) (e : c.Embedding c') [e.IsRelIff] :
     (h.extend e).inv = extendMap h.inv e :=
-  rfl
+  (rfl)
 
 end HomotopyEquiv

@@ -16,9 +16,10 @@ standard Mathlib interface is indexed by `ℤ`.  The coinduced resolution is nat
 `ℕ`.  This file extends it by zero in negative degrees and transports its underlying contraction
 to the resulting integer-indexed complex.
 
-This is the form of the contraction consumed by tensor resolutions.  Evaluation at the identity
-still supplies the inverse in nonnegative degrees, while all maps and homotopies vanish in
-negative degrees.
+This is the form of the contraction consumed by tensor resolutions.  The inverse is still
+evaluation at the identity in degree zero and vanishes in every other degree; evaluation at the
+identity in positive degrees instead appears in the contracting homotopy.  All maps and
+homotopies vanish in negative degrees.
 
 ## Main definitions
 

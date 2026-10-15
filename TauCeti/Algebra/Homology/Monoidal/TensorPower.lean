@@ -71,7 +71,7 @@ variable {C I : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
 
 /-- Tensoring a homotopy equivalence with itself `n` times gives a homotopy equivalence of
 tensor powers. -/
-@[expose] noncomputable def tensorPower (e : HomotopyEquiv K L) :
+noncomputable def tensorPower (e : HomotopyEquiv K L) :
     (n : ℕ) → HomotopyEquiv (K.tensorPower n) (L.tensorPower n)
   | 0 => HomotopyEquiv.refl _
   | n + 1 => mapBifunctor (MonoidalCategory.curriedTensor C) c e (tensorPower e n)
@@ -79,12 +79,12 @@ tensor powers. -/
 /-- The forward map on the zeroth tensor power is the identity of the tensor unit. -/
 @[simp] theorem tensorPower_hom_zero (e : HomotopyEquiv K L) :
     (e.tensorPower 0).hom = 𝟙 _ :=
-  rfl
+  (rfl)
 
 /-- The inverse map on the zeroth tensor power is the identity of the tensor unit. -/
 @[simp] theorem tensorPower_inv_zero (e : HomotopyEquiv K L) :
     (e.tensorPower 0).inv = 𝟙 _ :=
-  rfl
+  (rfl)
 
 /-- The forward map on a successor tensor power is the tensor product of the forward maps. -/
 @[simp] theorem tensorPower_hom_succ (e : HomotopyEquiv K L) (n : ℕ) :
