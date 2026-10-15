@@ -20,8 +20,9 @@ Lipshitz's index formula computes the expected dimension of the moduli space of 
 disks in a Whitney class `φ` from its domain `D` alone:
 `μ(φ) = e(D) + n_x(D) + n_y(D)`. This file defines the right-hand side for the abstract region
 incidence data `TauCeti.HeegaardRegionSystem` and proves that it is additive under juxtaposition
-of domains. Together with the Maslov index two of the whole surface, this makes the relative
-grading `μ(D) - 2 n_z(D)` independent of the choice of domain
+of domains. In a singly pointed diagram satisfying the Euler normalization, this additivity,
+the Maslov index two of the whole surface, and vanishing Maslov index on periodic domains make
+the relative grading `μ(D) - 2 n_z(D)` independent of the choice of domain
 (`TauCeti.LowDimTopology.Heegaard.RelativeGrading`).
 
 Every intersection point `p` is a corner of four regions (with repetition): the regions on the

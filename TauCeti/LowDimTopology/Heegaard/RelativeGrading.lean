@@ -87,8 +87,9 @@ variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 open scoped Classical in
 variable (H) in
 /-- The relative Maslov grading `gr(x, y) = μ(D) - 2 n_z(D)` of two generators, for a chosen
-domain `D` from `x` to `y`, or `0` when no domain joins them. When the periodic domains have
-Maslov index zero, the value does not depend on the choice of `D`
+domain `D` from `x` to `y`, or `0` when no domain joins them. In a singly pointed diagram
+satisfying the Euler normalization, when the periodic domains have Maslov index zero at the
+source generator, the value does not depend on the choice of `D`
 (`TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeGrading_eq`). -/
 noncomputable def relativeGrading (χ : Region → ℤ) (z : Basepoint) (x y : H.Generator) : ℚ :=
   if h : ∃ D, H.IsDomainBetween x y D then
@@ -142,6 +143,7 @@ theorem IsDomainBetween.relativeGrading_eq
   exact h.choose_spec.maslovIndex_sub_two_mul_eq z hχ hP hD
 
 /-- A generator has relative grading zero with itself. -/
+@[simp]
 theorem relativeGrading_self (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) :
     H.relativeGrading χ z x x = 0 := by
   simp [(isDomainBetween_zero x).relativeGrading_eq z hχ hP]
