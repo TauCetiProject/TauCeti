@@ -23,7 +23,8 @@ model used when transporting local charts along stellar equivalences. The constr
 includes the two-point zero-sphere, with zero-dimensional chart model.
 
 Reuse the weak realization's closed-subcomplex embedding, the coordinate-simplex
-homeomorphism, and the existing polyhedral boundary atlas.
+homeomorphism and shared ambient coordinate maps from `Simplex.Ball`, and the existing
+polyhedral boundary atlas.
 Reference: C. P. Rourke and B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
 Springer (1972), Chapters 1–2.
 -/
@@ -34,50 +35,6 @@ open Set TauCeti
 open scoped Manifold
 
 namespace AbstractSimplicialComplex
-
-/-- Reindex the retained simplex coordinates, distinguishing the last coordinate with
-`none`. This ambient homeomorphism is shared by the solid and boundary comparisons. -/
-def simplexCoordinateReindex (n : ℕ) :
-    (Fin (n + 1) → ℝ) ≃ₜ (Option (Fin n) → ℝ) :=
-  Homeomorph.piCongrLeft (Y := fun _ : Option (Fin n) => ℝ) finSuccEquivLast
-
-/-- The reindexing reads the corresponding retained barycentric coordinate. -/
-@[simp] theorem simplexCoordinateReindex_apply (n : ℕ) (x : Fin (n + 1) → ℝ)
-    (i : Option (Fin n)) :
-    simplexCoordinateReindex n x i = x (finSuccEquivLast.symm i) := by
-  simp only [simplexCoordinateReindex, Homeomorph.piCongrLeft_apply,
-    Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply, Equiv.symm_symm]
-
-/-- Reindexing preserves the coordinate simplex, so it restricts to both the solid
-simplex and its frontier. -/
-theorem simplexCoordinateReindex_mem_iff (n : ℕ) (x : Fin (n + 1) → ℝ) :
-    simplexCoordinateReindex n x ∈ coordinateSimplex (Option (Fin n)) ↔
-      x ∈ coordinateSimplex (Fin (n + 1)) := by
-  have hsum : ∑ i, simplexCoordinateReindex n x i = ∑ i, x i := by
-    simp only [simplexCoordinateReindex_apply]
-    exact finSuccEquivLast.symm.sum_comp x
-  rw [mem_coordinateSimplex, mem_coordinateSimplex, hsum]
-  constructor
-  · rintro ⟨h, hs⟩
-    refine ⟨fun i => ?_, hs⟩
-    simpa only [simplexCoordinateReindex_apply, Equiv.symm_apply_apply] using
-      h (finSuccEquivLast i)
-  · rintro ⟨h, hs⟩
-    exact ⟨fun i => (simplexCoordinateReindex_apply n x i).symm ▸
-      h (finSuccEquivLast.symm i), hs⟩
-
-/-- The affine coordinates of a realized simplex boundary: discard the last coordinate,
-then apply `simplexCoordinateReindex` to distinguish the last retained coordinate using
-`none`. -/
-def simplexBoundaryCoordinateMap (n : ℕ) :
-    (Fin (n + 2) → ℝ) →L[ℝ] (Option (Fin n) → ℝ) :=
-  ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj
-    ((finSuccEquivLast.symm i : Fin (n + 1)).castSucc)
-
-/-- Each coordinate is the corresponding retained barycentric coordinate. -/
-@[simp] theorem simplexBoundaryCoordinateMap_apply (n : ℕ)
-    (x : Fin (n + 2) → ℝ) (i : Option (Fin n)) :
-    simplexBoundaryCoordinateMap n x i = x (finSuccEquivLast.symm i).castSucc := (rfl)
 
 /-- The weak boundary realization is identified with the geometric coordinate frontier by
 an affine barycentric formula. Unlike a radial sphere identification, this map is PL. -/
@@ -122,7 +79,7 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
       simplexBoundaryCoordinateMap n x.1 i := by
   simp [realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex,
     realizationTopHomeomorphCoordinateSimplex_apply, realizationMap_val,
-    simplexBoundaryCoordinateMap, simplexCoordinateReindex_apply]
+    simplexBoundaryCoordinateMap_apply, simplexCoordinateReindex_apply]
 
 /-- The inverse frontier identification restores every retained coordinate. -/
 @[simp] theorem realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_symm_castSucc

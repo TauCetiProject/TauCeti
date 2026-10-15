@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.PL.Boundary
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 public import TauCeti.Geometry.Manifold.PLGroupoid.Simplex.Ball
 
 /-!
