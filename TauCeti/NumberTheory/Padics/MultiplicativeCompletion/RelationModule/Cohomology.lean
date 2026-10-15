@@ -106,13 +106,17 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   let F : B ⟶ C := ofModuleMonoidAlgebra.map (ModuleCat.ofHom β)
   have hF : ∀ x, χ (f.toAdditive x) = F.hom (ψ x) := by
     intro x
-    simp [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv, f, eL, eR, Rep.ofHom,
+    dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv, Rep.ofHom]
+    change ofMul (eR.symm (f x.toMul)) = β (eL x)
+    rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
+    exact congrArg ofMul (eR.symm_apply_apply _)
   intro x
   have hnat := explicitH2AddEquivGroupCohomology_explicitCoeff2
     (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
   simpa only [explicitH2EquivPadicCompletionUnits,
-    freeProfiniteGroup.explicitH2EquivRelationModule, _root_.groupCohomology.functor_map]
+    freeProfiniteGroup.explicitH2EquivRelationModule, _root_.groupCohomology.functor_map,
+    ψ, χ, f, hf, F, eL, eR, B, C]
     using hnat
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
@@ -171,8 +175,11 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
   let F : B ⟶ C := ofModuleMonoidAlgebra.map (ModuleCat.ofHom β)
   have hF : ∀ x, χ (f.toAdditive x) = F.hom (ψ x) := by
     intro x
-    simp [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv, f, eL, eR, Rep.ofHom,
+    dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv, Rep.ofHom]
+    change ofMul (eR.symm (f x.toMul)) = β (eL x)
+    rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
+    exact congrArg ofMul (eR.symm_apply_apply _)
   have := groupCohomology.isIso_map_of_surjective_of_projective_ker β hβ 1
   apply (explicitCoeff2_bijective_iff
     (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF).mpr
