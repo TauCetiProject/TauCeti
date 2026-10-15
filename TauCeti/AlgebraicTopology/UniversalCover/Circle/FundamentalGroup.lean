@@ -445,9 +445,8 @@ theorem homotopic_trans_of_degree_map_eq {x y : X}
     (@hd (FundamentalGroup.fromPath (.mk γ))
       (FundamentalGroup.fromPath (.mk (α.trans (δ.trans α.symm))))
       ((fundamentalGroupMulEquiv _).injective ?_)))
-  have hmap (ε : Path x x) : FundamentalGroup.map d x (FundamentalGroup.fromPath (.mk ε)) =
-      FundamentalGroup.fromPath (.mk (ε.map d.continuous)) := rfl
-  rw [hmap, hmap, fundamentalGroupMulEquiv_fromPath,
+  rw [FundamentalGroup.map_fromPath d x γ, FundamentalGroup.map_fromPath d x _,
+    fundamentalGroupMulEquiv_fromPath,
     fundamentalGroupMulEquiv_fromPath, Path.map_trans, Path.map_trans, ← Path.map_symm, h]
   -- Conjugating by the image of `α` does not change the degree.
   simpa using (degree_symm_trans_trans (δ.map d.continuous) (α.map d.continuous).symm).symm

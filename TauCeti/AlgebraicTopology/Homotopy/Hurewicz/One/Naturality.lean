@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+
 /-!
 # Naturality of the Hurewicz map in degree one
 
@@ -88,9 +90,8 @@ theorem homologyMap_H₁AddEquivHomology_hurewiczAb {x : X}
   induction a using Quot.ind with | mk p =>
   obtain ⟨p⟩ := p
   induction p using Path.Homotopic.Quotient.ind with | mk γ =>
-  have hmap : FundamentalGroup.map f.hom x (FundamentalGroup.fromPath (.mk γ)) =
-      FundamentalGroup.fromPath (.mk (γ.map f.hom.continuous)) := rfl
-  rw [Abelianization.mk_eq_of, toMul_ofMul, Abelianization.map_of, hmap, hurewiczAb_ofMul_of_mk,
+  rw [Abelianization.mk_eq_of, toMul_ofMul, Abelianization.map_of,
+    FundamentalGroup.map_fromPath f.hom x γ, hurewiczAb_ofMul_of_mk,
     hurewiczAb_ofMul_of_mk, homologyMap_H₁AddEquivHomology_loopClass]
 
 /-- **Naturality of the Hurewicz isomorphism** of path-connected spaces. -/

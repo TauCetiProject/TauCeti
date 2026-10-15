@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
 public import TauCeti.Topology.Homotopy.Path
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -550,10 +551,11 @@ private theorem mob1InfMulAut_fromPath (γ : Path basePt basePt) :
       FundamentalGroup.fromPath ((Path.Homotopic.Quotient.mk αMob1Inf.symm).trans
         ((Path.Homotopic.Quotient.mk (γ.map mob1Inf.continuous)).trans
           (Path.Homotopic.Quotient.mk αMob1Inf))) := by
-  simp [mob1InfMulAut_def, FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
-  -- `FundamentalGroup.fromPath` is an abbreviation for the identity, which blocks rewriting with
-  -- `Path.Homotopic.Quotient.mk_map`; that lemma holds by `rfl`
-  rfl
+  simp only [mob1InfMulAut_def, MulEquiv.trans_apply, FundamentalGroup.homeomorphMulEquiv_apply,
+    ContinuousMap.coe_mk, ne_eq, FundamentalGroup.mapOfEq_rfl,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply, Path.Homotopic.Quotient.mk_symm,
+    CategoryTheory.End.of.injEq]
+  rw [FundamentalGroup.map_fromPath ⟨mob1Inf, mob1Inf.continuous⟩ basePt γ]
 
 /-- The class of the image of a loop under `z ↦ z / (z − 1)` is the product of the classes of the
 images of its two halves at the time `1/2`. -/
