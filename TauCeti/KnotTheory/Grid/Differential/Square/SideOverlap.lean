@@ -41,6 +41,8 @@ rectangles or rectangles sharing exactly one side column.
   common exactly for a diagonal two-step path.
 * `TauCeti.GridRectangleDecomposition.hasOneCommonSide_iff_sameSideOverlap_or_mixedSideOverlap`:
   the same-side and mixed-side orientations exhaust the one-common-side case.
+* `TauCeti.GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide`:
+  off the diagonal, any weighted family splits into its two overlap orientations.
 * `TauCeti.GridRectangleDecomposition.hasDisjointSides_or_hasOneCommonSide_or_eq`: every
   decomposition belongs to one of the three cases.
 * `TauCeti.GridRectangleDecomposition.hasDisjointSides_of_disjoint`: a decomposition whose target
@@ -507,6 +509,47 @@ theorem not_hasDisjointSides_of_hasOneCommonSide (D : GridRectangleDecomposition
   have hzero := D.card_commonSideColumns_eq_zero_iff.mpr hdisjoint
   rw [HasOneCommonSide] at h
   omega
+
+/-- Off the diagonal, failing to have disjoint side pairs is equivalent to having a same-side or
+mixed-side overlap. -/
+theorem not_hasDisjointSides_iff_sameSideOverlap_or_mixedSideOverlap_of_ne
+    (D : GridRectangleDecomposition x z) (hzx : z ≠ x) :
+    ¬D.HasDisjointSides ↔ D.HasSameSideOverlap ∨ D.HasMixedSideOverlap := by
+  rw [← D.hasOneCommonSide_iff_sameSideOverlap_or_mixedSideOverlap]
+  exact ⟨(D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left,
+    D.not_hasDisjointSides_of_hasOneCommonSide⟩
+
+open scoped Classical in
+/-- Every two-step rectangle domain in a diagonal family has nondisjoint side pairs. -/
+theorem filter_not_hasDisjointSides_eq_self {α : Type*} (S : Finset α)
+    (underlying : α → GridRectangleDecomposition x x) :
+    S.filter (fun D => ¬(underlying D).HasDisjointSides) = S :=
+  Finset.filter_true_of_mem fun D _ hD =>
+    (underlying D).target_ne_source_of_hasDisjointSides hD rfl
+
+open scoped Classical in
+/-- For an off-diagonal family of two-step rectangle domains, the sum over nondisjoint side pairs
+splits into the same-side and mixed-side overlap sums. -/
+theorem sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide
+    {α M : Type*} [AddCommMonoid M] (S : Finset α)
+    (underlying : α → GridRectangleDecomposition x z) (w : α → M) (hzx : z ≠ x) :
+    ∑ D ∈ S.filter (fun D => ¬(underlying D).HasDisjointSides), w D =
+      (∑ D ∈ S.filter (fun D => (underlying D).HasSameSideOverlap), w D) +
+        ∑ D ∈ S.filter (fun D => (underlying D).HasMixedSideOverlap), w D := by
+  have hunion :
+      S.filter (fun D => ¬(underlying D).HasDisjointSides) =
+        S.filter (fun D => (underlying D).HasSameSideOverlap) ∪
+          S.filter (fun D => (underlying D).HasMixedSideOverlap) := by
+    ext D
+    simp only [Finset.mem_filter, Finset.mem_union, ← and_or_left,
+      (underlying D).not_hasDisjointSides_iff_sameSideOverlap_or_mixedSideOverlap_of_ne hzx]
+  have hdisjoint : Disjoint
+      (S.filter (fun D => (underlying D).HasSameSideOverlap))
+      (S.filter (fun D => (underlying D).HasMixedSideOverlap)) := by
+    rw [Finset.disjoint_filter]
+    intro D _ hsame
+    exact (underlying D).not_hasMixedSideOverlap_of_hasSameSideOverlap hsame
+  rw [hunion, Finset.sum_union hdisjoint]
 
 end GridRectangleDecomposition
 
