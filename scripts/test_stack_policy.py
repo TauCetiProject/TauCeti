@@ -781,8 +781,11 @@ class MainTests(unittest.TestCase):
             with self.subTest(field=field):
                 changed = copy.deepcopy(wake)
                 changed["workflow_run"][field] = value
-                with self.assertRaises(sp.Superseded if field == "head_sha" else sp.Gap):
-                    sp.event_targets(changed, [fork])
+                if field == "head_sha":
+                    self.assertEqual(sp.event_targets(changed, [fork]), {2})
+                else:
+                    with self.assertRaises(sp.Gap):
+                        sp.event_targets(changed, [fork])
 
     def test_incomplete_wake_or_closed_event_never_broadens_to_backlog(self):
         with self.assertRaises(sp.Gap):
@@ -790,12 +793,17 @@ class MainTests(unittest.TestCase):
         self.assertFalse(self.event({"pull_request": {"number": 99}}))
         self.assertEqual(self.api.calls, [])
 
-    def test_stale_fork_wake_is_superseded_but_missing_identity_is_unknown(self):
+    def test_out_of_order_fork_wakes_recompute_current_head(self):
         fork = sp.PR(**{**sp.asdict(self.child), "base": "branch-1", "head_repo": "fork/TauCeti"})
         self.raw[1] = self.record(fork)
         wake = {"workflow_run": {"head_sha": "f" * 40, "head_branch": fork.branch,
                                 "head_repository": {"full_name": fork.head_repo}}}
-        self.assertFalse(self.event(wake))
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.head) or None, [])
+        for old in ("f" * 40, "b" * 40, fork.head):
+            wake["workflow_run"]["head_sha"] = old
+            self.assertFalse(self.event(wake))
+        self.assertEqual(visited, [fork.head] * 3)
         self.raw[1]["head"]["repo"] = None
         with self.assertRaises(sp.Gap):
             self.event(wake)
@@ -918,6 +926,8 @@ class IntegrationContractTests(unittest.TestCase):
         job = workflow["jobs"]["enforce"]
         self.assertNotIn("queue", workflow["concurrency"])
         self.assertIn("github.event.pull_request.number", workflow["concurrency"]["group"])
+        self.assertIn("head_repository.id", workflow["concurrency"]["group"])
+        self.assertIn("head_branch", workflow["concurrency"]["group"])
         self.assertIn("github.run_id", workflow["concurrency"]["group"])
         self.assertEqual(job["concurrency"], {"group": "tauceti-no-stacking",
                                            "queue": "max", "cancel-in-progress": False})

@@ -37,10 +37,6 @@ class Gap(RuntimeError):
     """Observation is incomplete; do not close or claim safety."""
 
 
-class Superseded(Gap):
-    """A complete current index proves this queued event has been replaced."""
-
-
 class UnsupportedCommit(Gap):
     """No unambiguous individual patch; another commit may still prove inheritance."""
 
@@ -196,17 +192,15 @@ def event_targets(event, prs):
         if ((base.get("full_name") == REPO or base.get("url") == f"https://api.github.com/repos/{REPO}")
                 and (linked.get("head") or {}).get("sha") == head):
             associated.add(int(linked["number"]))
-    # Fork wake runs can omit their PR association. Match their API identities
-    # against this repository's current index; never fetch a fork URL or broaden
-    # a stale/unmatched wake into another expensive backlog sweep.
+    # Wake completions can arrive out of push order and replace a newer pending
+    # wake. Recompute the current branch's PRs, rather than declining its changed
+    # head. This stays focused and never fetches a fork URL.
     repo = (wake.get("head_repository") or {}).get("full_name")
     branch = wake.get("head_branch")
-    matched = {p.number for p in prs if p.base != "main" and p.head == head
+    matched = {p.number for p in prs if p.base != "main"
                and p.head_repo == repo and p.branch == branch}
     if associated or matched:
         return associated | matched
-    if any(p.base != "main" and p.head_repo == repo and p.branch == branch for p in prs):
-        raise Superseded("wake branch has a newer current head; queued event superseded")
     raise Gap("wake has no associated PR/current canonical PR identity match")
 
 
@@ -734,13 +728,7 @@ def main():
             metadata_gaps.add(number)
             incomplete_index = True
     main_sha = api.main()
-    try:
-        targets = {args.pr} if args.pr else event_targets(event, prs)
-    except Superseded as error:
-        if incomplete_index:
-            raise Gap("incomplete index cannot establish a superseded wake") from error
-        emit(classification="superseded", reason=str(error), selected=0)
-        return False
+    targets = {args.pr} if args.pr else event_targets(event, prs)
     selected = [p for p in prs if targets is None or p.number in targets]
     if targets is not None and not selected:
         if incomplete_index:
