@@ -23,8 +23,8 @@ differential `η` of `k(X)` to that of `k'(X)`.
 
 Since the cotrace is injective and `F`-semilinear, identities between Weil differentials of `F`
 can be checked after a constant field extension, where more places are rational. This is how the
-chain rule `dy = (dy/dx) · dx` is proved over a perfect constant field
-(`TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_perfectField`).
+chain rule `dy = (dy/dx) · dx` is proved over an arbitrary exact constant field
+(`TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul`).
 
 ## Main results
 
