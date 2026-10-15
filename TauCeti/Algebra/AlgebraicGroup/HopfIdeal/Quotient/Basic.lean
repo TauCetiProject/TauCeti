@@ -348,8 +348,11 @@ lemma quotientIsoOfIso_inv_mk (e : H ≅ K) (I : HopfIdeal R K) (y : K) :
     (quotientIsoOfIso e I).inv.hom (Ideal.Quotient.mk I.toIdeal y) =
       Ideal.Quotient.mkₐ R
         (I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2).toIdeal
-        (e.inv.hom y) :=
-  congr($(mkQuotient_comp_quotientIsoOfIso_inv e I).hom y)
+        (e.inv.hom y) := by
+  have h := congr($(mkQuotient_comp_quotientIsoOfIso_inv e I) y)
+  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply,
+    mkQuotient_apply, mkQuotient_apply] at h
+  simpa only [Ideal.Quotient.mkₐ_eq_mk] using h
 
 /-- Quotienting a commutative Hopf algebra by the zero Hopf ideal gives an isomorphic object
 of `CommHopfAlgCat`. -/
