@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.ODE.ExistUnique
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+public import TauCeti.Analysis.Calculus.FDeriv.Prod
 public import TauCeti.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Analysis.ODE.SmoothParameter
 
@@ -707,42 +708,14 @@ private theorem hasFDerivAt_graph_of_solution_family {n : ℕ∞}
       ((ContinuousLinearEquiv.refl ℝ E).skewProd
         (ContinuousLinearEquiv.refl ℝ F) (f (x₀, y₀)) : (E × F) →L[ℝ] (E × F))
       (x₀, y₀) := by
-  have huDeriv := husmooth.differentiableAt (by simp) |>.hasFDerivAt
   -- The solution equation determines the derivative in horizontal directions.
-  have hx (v : E) : fderiv ℝ u (x₀, y₀) (v, 0) = f (x₀, y₀) v := by
-    have hcomp : HasFDerivAt (fun x ↦ u (x, y₀))
-        ((fderiv ℝ u (x₀, y₀)).comp
-          ((ContinuousLinearMap.id ℝ E).prod (0 : E →L[ℝ] F))) x₀ :=
-      huDeriv.comp x₀
-        ((hasFDerivAt_id x₀).prodMk (hasFDerivAt_const (x := x₀) y₀))
-    have heq := hcomp.unique husol.self_of_nhds
-    simpa [hu₀] using congrArg (fun L : E →L[ℝ] F ↦ L v) heq
+  have hx : HasFDerivAt (fun x ↦ u (x, y₀)) (f (x₀, y₀)) x₀ := by
+    simpa only [hu₀] using husol.self_of_nhds
   -- The initial-value identity determines the derivative in vertical directions.
-  have hy (w : F) : fderiv ℝ u (x₀, y₀) (0, w) = w := by
-    have hcomp : HasFDerivAt (fun y ↦ u (x₀, y))
-        ((fderiv ℝ u (x₀, y₀)).comp
-          ((0 : F →L[ℝ] E).prod (ContinuousLinearMap.id ℝ F))) y₀ :=
-      huDeriv.comp y₀
-        ((hasFDerivAt_const (x := y₀) x₀).prodMk (hasFDerivAt_id y₀))
-    have huinit' : (fun y ↦ u (x₀, y)) =ᶠ[𝓝 y₀] id := huinit
-    have hinitDeriv : HasFDerivAt (fun y ↦ u (x₀, y)) (ContinuousLinearMap.id ℝ F) y₀ :=
-      (hasFDerivAt_id y₀).congr_of_eventuallyEq huinit'
-    have heq := hcomp.unique hinitDeriv
-    simpa using congrArg (fun L : F →L[ℝ] F ↦ L w) heq
-  have htotal (q : E × F) :
-      fderiv ℝ u (x₀, y₀) q = f (x₀, y₀) q.1 + q.2 := by
-    calc
-      fderiv ℝ u (x₀, y₀) q =
-          fderiv ℝ u (x₀, y₀) (q.1, 0) + fderiv ℝ u (x₀, y₀) (0, q.2) := by
-            rw [← map_add]
-            congr 2
-            ext <;> simp
-      _ = f (x₀, y₀) q.1 + q.2 := by rw [hx, hy]
-  have hderiv := hasFDerivAt_fst.prodMk huDeriv
-  convert hderiv using 1
-  apply ContinuousLinearMap.ext
-  intro q
-  simpa [add_comm] using congrArg (fun z : F ↦ (q.1, z)) (htotal q).symm
+  have huinit' : (fun y ↦ u (x₀, y)) =ᶠ[𝓝 y₀] id := huinit
+  have hy : HasFDerivAt (fun y ↦ u (x₀, y)) (ContinuousLinearMap.id ℝ F) y₀ :=
+    (hasFDerivAt_id y₀).congr_of_eventuallyEq huinit'
+  exact (husmooth.differentiableAt (by simp)).hasFDerivAt_fst_prodMk_of_slices hx hy
 
 /-- **Flat coordinates for an integrable graph field.** The smooth family of Frobenius solutions
 defines a local coordinate change `(x, y) ↦ (x, u (x, y))`. Its derivative at the base point is
