@@ -521,6 +521,7 @@ theorem not_hasDisjointSides_iff_sameSideOverlap_or_mixedSideOverlap_of_ne
 
 open scoped Classical in
 /-- Every two-step rectangle domain in a diagonal family has nondisjoint side pairs. -/
+@[simp]
 theorem filter_not_hasDisjointSides_eq_self {α : Type*} (S : Finset α)
     (underlying : α → GridRectangleDecomposition x x) :
     S.filter (fun D => ¬(underlying D).HasDisjointSides) = S :=
