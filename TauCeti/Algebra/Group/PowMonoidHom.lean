@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Even
 public import Mathlib.GroupTheory.Schreier
+import Mathlib.GroupTheory.Perm.Cycle.Type
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -24,6 +25,11 @@ root that is a bare element of `M`.
 `n`th-power homomorphism has index at most `n ^ S.card` when `n` is nonzero. In particular, the
 range of the squaring homomorphism has index at most `2 ^ S.card`.
 
+*When is it proper?* In a finite commutative group `G` whose order is not prime to `n`, the
+`n`th powers form a proper subgroup: by Cauchy's theorem some prime `p` dividing both has an
+element of order `p`, killed by the `n`th power map, which is then not injective and so, `G` being
+finite, not surjective.
+
 *How does it move along homomorphisms?* A homomorphism carries squares to squares, so `G²` lands
 inside the preimage of `H²`. This is the side condition that descends a homomorphism to the
 quotients by squares.
@@ -32,6 +38,8 @@ quotients by squares.
 
 * `TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow`: the class of a unit in `Mˣ ⧸ (Mˣ)ⁿ` is
   trivial iff the unit is an `n`th power in `M`.
+* `TauCeti.powMonoidHom_range_ne_top_of_not_coprime`, and its additive counterpart: `Gⁿ ≠ G` for a
+  finite `G` whose order is not prime to `n`.
 * `TauCeti.square_eq_range_powMonoidHom`: `G²` is the range of the squaring homomorphism.
 * `MonoidHom.square_le_comap`: `G² ≤ (H²).comap f` for a homomorphism `f : G →* H`.
 * `TauCeti.index_square_le_of_closure_eq_top`: `[G : G²] ≤ 2 ^ S.card`.
@@ -105,6 +113,26 @@ private theorem index_powMonoidHom_range_le_of_closure_eq_top {G : Type*} [CommG
       = Nat.card (G ⧸ H) := Subgroup.index_eq_card H
     _ ≤ n ^ Group.rank (G ⧸ H) := Nat.le_of_dvd (pow_pos (Nat.pos_of_ne_zero hn) _) hcard
     _ ≤ n ^ S.card := Nat.pow_le_pow_right (Nat.pos_of_ne_zero hn) hrank
+
+/-- **The `n`th powers of a finite group of order not prime to `n` form a proper subgroup.** By
+Cauchy's theorem some prime dividing both `n` and the order of `G` is the order of an element
+`x ≠ 1`. Then `x ^ n = 1 ^ n`, so the `n`th power map is not injective, hence, `G` being finite,
+not surjective. -/
+@[to_additive /-- **The multiples `n • G` of a finite additive group of order not prime to `n`
+form a proper subgroup.** By Cauchy's theorem some prime dividing both `n` and the order of `G` is
+the order of an element `x ≠ 0`, so multiplication by `n` is not injective, hence not
+surjective. -/]
+theorem powMonoidHom_range_ne_top_of_not_coprime {G : Type*} [CommGroup G] [Finite G] {n : ℕ}
+    (hn : ¬(Nat.card G).Coprime n) : (powMonoidHom n : G →* G).range ≠ ⊤ := by
+  obtain ⟨p, hp, hpG, hpn⟩ := Nat.Prime.not_coprime_iff_dvd.1 hn
+  have : Fact p.Prime := ⟨hp⟩
+  obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' p hpG
+  intro htop
+  have hx1 : x = 1 := Finite.injective_iff_surjective.2 (MonoidHom.range_eq_top.1 htop) <| by
+    rw [powMonoidHom_apply, powMonoidHom_apply, one_pow, ← orderOf_dvd_iff_pow_eq_one, hx]
+    exact hpn
+  rw [hx1, orderOf_one] at hx
+  exact hp.one_lt.ne hx
 
 /-- In a commutative group, Mathlib's subgroup of squares agrees with the range of the
 squaring homomorphism. -/

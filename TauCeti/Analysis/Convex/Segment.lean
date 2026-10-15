@@ -54,6 +54,13 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   product space.
 * `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
   endpoint removed.
+* `TauCeti.exists_lineMap_endpoint` — the overlap of `[0, 1]` with its image under an affine map
+  `lineMap a b` of `𝕜`, when nondegenerate, has two ends each given by a point `u ∈ [0, 1]` with
+  `u` or `lineMap a b u` an end of `[0, 1]`.
+
+The overlap of `[0, 1]` with an affine image of itself, in a linear ordered field, is a closed
+interval whose ends come from ends of the two copies of `[0, 1]`. This is what an argument
+comparing two segments through their parameters needs.
 
 The origin-at-an-end and origin-in-the-middle criteria are consumed by
 `TauCeti/Analysis/Complex/Conformal/Poincare/Betweenness.lean`, which identifies the hyperbolic
@@ -63,6 +70,9 @@ is a real inner product space with `⟪w, z⟫_ℝ = (z * conj w).re`
 complex-number formulas.
 The affine half-open segment result is consumed by
 `TauCeti/Analysis/Complex/Conformal/SchwarzChristoffel/UnboundedEdge.lean`.
+The overlap result is consumed by `TauCeti/Geometry/Polygon/DoublePoint.lean`, which shows that
+two distinct edges of a simple polygon contain at most one pair of points with the same image
+under an affine regular projection.
 -/
 
 public section
@@ -204,6 +214,62 @@ theorem image_add_smul_Ico {x y u : E} {D : 𝕜} (hDpos : 0 < D) (hu : u ≠ 0)
       simp only [smul_smul]
 
 end HalfOpen
+
+/-! ### Overlaps of affine images of the unit interval -/
+
+section Overlap
+
+open AffineMap
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+
+/-- **The overlap of `[0, 1]` with an affine image of `[0, 1]`.** Let `f = lineMap a b` be an
+affine function on `𝕜` taking distinct values in `[0, 1]` at two points of `[0, 1]`. Then the
+overlap of `[0, 1]` with `f '' [0, 1]` is a nondegenerate interval, and its two ends are values
+`f u` at points `u ∈ [0, 1]` with `u` or `f u` an end of `[0, 1]`. -/
+theorem exists_lineMap_endpoint {a b t t' : 𝕜} (ht : t ∈ Icc 0 1) (ht' : t' ∈ Icc 0 1)
+    (hs : lineMap a b t ∈ Icc (0 : 𝕜) 1) (hs' : lineMap a b t' ∈ Icc (0 : 𝕜) 1)
+    (hne : lineMap a b t ≠ lineMap a b t') :
+    ∃ u₁ u₂ : 𝕜, lineMap a b u₁ ≠ lineMap a b u₂ ∧ ∀ u ∈ ({u₁, u₂} : Set 𝕜),
+      u ∈ Icc (0 : 𝕜) 1 ∧ lineMap a b u ∈ Icc (0 : 𝕜) 1 ∧
+        (u = 0 ∨ u = 1 ∨ lineMap a b u = 0 ∨ lineMap a b u = 1) := by
+  have hab : a ≠ b := by rintro rfl; simp at hne
+  have hI : Icc (0 : 𝕜) 1 ∩ lineMap a b '' Icc (0 : 𝕜) 1 = Icc (0 ⊔ (a ⊓ b)) (1 ⊓ (a ⊔ b)) := by
+    rw [← segment_eq_image_lineMap, segment_eq_uIcc, uIcc, Icc_inter_Icc]
+  have hmem {u : 𝕜} (hu : u ∈ Icc (0 : 𝕜) 1) (hfu : lineMap a b u ∈ Icc (0 : 𝕜) 1) :
+      lineMap a b u ∈ Icc (0 ⊔ (a ⊓ b)) (1 ⊓ (a ⊔ b)) :=
+    hI ▸ ⟨hfu, mem_image_of_mem _ hu⟩
+  have hlt : 0 ⊔ (a ⊓ b) < 1 ⊓ (a ⊔ b) := by
+    obtain ⟨h₁, h₂⟩ := hmem ht hs
+    obtain ⟨h₃, h₄⟩ := hmem ht' hs'
+    by_contra! hle
+    exact hne (le_antisymm (h₂.trans (hle.trans h₃)) (h₄.trans (hle.trans h₁)))
+  -- Each end of the overlap is `0`, `1`, `f 0 = a` or `f 1 = b`.
+  have key (e : 𝕜) (he : e ∈ Icc (0 ⊔ (a ⊓ b)) (1 ⊓ (a ⊔ b)))
+      (hcases : e = 0 ∨ e = 1 ∨ e = a ∨ e = b) :
+      ∃ u, lineMap a b u = e ∧ u ∈ Icc (0 : 𝕜) 1 ∧ lineMap a b u ∈ Icc (0 : 𝕜) 1 ∧
+        (u = 0 ∨ u = 1 ∨ lineMap a b u = 0 ∨ lineMap a b u = 1) := by
+    rw [← hI] at he
+    obtain ⟨he₁, u, hu, rfl⟩ := he
+    refine ⟨u, rfl, hu, he₁, ?_⟩
+    rcases hcases with h | h | h | h
+    · exact .inr (.inr (.inl h))
+    · exact .inr (.inr (.inr h))
+    · exact .inl ((lineMap_eq_left_iff.1 h).resolve_left hab)
+    · exact .inr (.inl ((lineMap_eq_right_iff.1 h).resolve_left hab))
+  obtain ⟨u₁, hu₁, h₁⟩ := key _ (left_mem_Icc.2 hlt.le) (by
+    rcases max_choice 0 (a ⊓ b) with h | h <;> rw [h]
+    · exact .inl rfl
+    · rcases min_choice a b with h' | h' <;> rw [h'] <;> simp)
+  obtain ⟨u₂, hu₂, h₂⟩ := key _ (right_mem_Icc.2 hlt.le) (by
+    rcases min_choice 1 (a ⊔ b) with h | h <;> rw [h]
+    · exact .inr (.inl rfl)
+    · rcases max_choice a b with h' | h' <;> rw [h'] <;> simp)
+  refine ⟨u₁, u₂, hu₁ ▸ hu₂ ▸ hlt.ne, ?_⟩
+  rintro u (rfl | rfl)
+  exacts [h₁, h₂]
+
+end Overlap
 
 /-! ### The inner-product forms -/
 

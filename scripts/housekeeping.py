@@ -37,6 +37,11 @@ For other PRs, the override is a `keep` label (also `hold`/`wip`/`human`/`do-not
 is never auto-closed. By design these jobs do NOT spare human-touched PRs — anyone who wants a PR held
 adds `keep`. A failed close makes the job exit nonzero.
 
+These exemptions apply only to the retirement policies in this file. The
+separate stack_policy.py policy includes drafts, dependency bumps and all labels;
+it has its own evidence, race and idempotency checks before commenting/closing.
+Its close also emits the normal GitHub event consumed by bors withdrawal.
+
 A scoreboard is trusted only if it carries the `tauceti-scoreboard` marker AND its author is
 repo-associated (OWNER/MEMBER/COLLABORATOR). This destructive close policy is deliberately stricter
 than the worker and auto-merge scoreboard readers. The reviewer and the PR author are frequently the
