@@ -215,21 +215,36 @@ open scoped MonoidAlgebra
 variable {A G W : Type*} [CommSemiring A] [Monoid G] [AddCommMonoid W] [Module A W]
   {ρ : Representation A G W}
 
+/-- The module inclusion attached to `σ.subtype`, corestricted to its image submodule. -/
+private noncomputable def asModuleSubtype (σ : Subrepresentation ρ) :
+    σ.toRepresentation.asModule →ₗ[A[G]] σ.asSubmodule :=
+  (Representation.IntertwiningMap.equivLinearMapAsModule _ _ σ.subtype).codRestrict
+    σ.asSubmodule (fun x =>
+      (mem_asSubmodule_iff (v := (σ.toRepresentation.asModuleEquiv x : W))).mpr
+        (σ.toRepresentation.asModuleEquiv x).2)
+
+/-- The corestricted inclusion evaluates through the two representation/module identifications. -/
+private theorem coe_asModuleSubtype_apply (σ : Subrepresentation ρ)
+    (x : σ.toRepresentation.asModule) :
+    (asModuleSubtype σ x).1 = ρ.asModuleEquiv.symm (σ.toRepresentation.asModuleEquiv x).1 :=
+  (LinearMap.codRestrict_apply _ _ x).trans
+    (Representation.IntertwiningMap.equivLinearMapAsModule_apply σ.subtype x)
+
 /-- **The module carried by a subrepresentation is canonically its associated submodule.**
 The equivalence identifies both with the same invariant subset of the ambient representation.
 Its linear map is the corestriction of the module map attached to `σ.subtype` by
 `Representation.IntertwiningMap.equivLinearMapAsModule`. -/
 noncomputable def asModuleEquivAsSubmodule (σ : Subrepresentation ρ) :
     σ.toRepresentation.asModule ≃ₗ[A[G]] σ.asSubmodule :=
-  let f := Representation.IntertwiningMap.equivLinearMapAsModule _ _ σ.subtype
-  LinearEquiv.ofBijective (f.codRestrict σ.asSubmodule (fun x =>
-    (mem_asSubmodule_iff (v := (σ.toRepresentation.asModuleEquiv x : W))).mpr
-      (σ.toRepresentation.asModuleEquiv x).2))
-    ⟨fun _ _ h => σ.toRepresentation.asModuleEquiv.injective (Subtype.ext
-      (congrArg Subtype.val h)), fun x =>
+  LinearEquiv.ofBijective (asModuleSubtype σ)
+    ⟨fun x y h => σ.toRepresentation.asModuleEquiv.injective <| Subtype.ext <|
+      ρ.asModuleEquiv.symm.injective <| (coe_asModuleSubtype_apply σ x).symm.trans
+        ((congrArg Subtype.val h).trans (coe_asModuleSubtype_apply σ y)), fun x =>
       ⟨σ.toRepresentation.asModuleEquiv.symm
         ⟨ρ.asModuleEquiv x.1, (mem_asSubmodule_iff (v := ρ.asModuleEquiv x.1)).mp x.2⟩,
-        Subtype.ext (ρ.asModuleEquiv.symm_apply_apply x.1)⟩⟩
+        Subtype.ext <| by
+          rw [coe_asModuleSubtype_apply, LinearEquiv.apply_symm_apply]
+          exact ρ.asModuleEquiv.symm_apply_apply x.1⟩⟩
 
 @[simp]
 theorem coe_asModuleEquivAsSubmodule_apply (σ : Subrepresentation ρ)
@@ -238,8 +253,7 @@ theorem coe_asModuleEquivAsSubmodule_apply (σ : Subrepresentation ρ)
       (σ.toRepresentation.asModuleEquiv x).1 := by
   refine (congrArg Subtype.val (LinearEquiv.ofBijective_apply _
     (hf := σ.asModuleEquivAsSubmodule.bijective) x)).trans ?_
-  exact (LinearMap.codRestrict_apply _ _ x).trans
-    (Representation.IntertwiningMap.equivLinearMapAsModule_apply σ.subtype x)
+  exact coe_asModuleSubtype_apply σ x
 
 @[simp]
 theorem coe_asModuleEquivAsSubmodule_symm_apply (σ : Subrepresentation ρ)
