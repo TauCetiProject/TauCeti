@@ -52,6 +52,7 @@ theorem resMap_tensorInvariant (M N : Rep k G) {H : Type w} [Group H] (f : H →
       tensorInvariant (N := Rep.res f N) (Rep.res f M)
         ((Submodule.inclusion (N.ρ.invariants_le_invariants_comp f)) y) := by
   ext m
+  simp only [resMap_hom_toLinearMap]
   exact (tensorInvariant_hom_apply M y m).trans
     (tensorInvariant_hom_apply (N := Rep.res f N) (Rep.res f M)
       ((Submodule.inclusion (N.ρ.invariants_le_invariants_comp f)) y) m).symm
@@ -187,8 +188,7 @@ theorem resMap_tensorInvariant_braiding {M : Rep k G} (N : Rep k G) {H : Type w}
     Rep.resMap f (tensorInvariant N x ≫ (β_ N M).hom) =
       tensorInvariant (Rep.res f N) x' ≫ (β_ (Rep.res f N) (Rep.res f M)).hom := by
   ext y
-  -- Restriction keeps the underlying linear map, so both sides are evaluations of
-  -- `tensorInvariant_braiding_hom_apply`.
+  simp only [resMap_hom_toLinearMap]
   exact (TauCeti.Rep.tensorInvariant_braiding_hom_apply x y).trans
     ((congrArg (· ⊗ₜ[k] y) hx.symm).trans
       (TauCeti.Rep.tensorInvariant_braiding_hom_apply x' y).symm)
