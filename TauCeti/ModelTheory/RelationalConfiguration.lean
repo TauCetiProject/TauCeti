@@ -11,10 +11,11 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 /-!
 # Relational configurations
 
-A **relational configuration** of a one-sorted relational signature `L` on a vertex type `V` is a
-truth value for every atom `R(v₁, …, vₙ)`: an `n`-ary relation symbol of `L` together with an
-`n`-tuple of vertices. Tuple entries may repeat, so a configuration also records the value of
-`R(v, v)` and the like; nothing here assumes distinct coordinates.
+A **relational configuration** on a vertex type `V` interprets the relational part of a
+one-sorted first-order language `L`: it is a truth value for every atom `R(v₁, …, vₙ)`, an `n`-ary
+relation symbol of `L` together with an `n`-tuple of vertices. Tuple entries may repeat, so a
+configuration also records the value of `R(v, v)` and the like; nothing here assumes distinct
+coordinates.
 
 Configurations carry the product σ-algebra, with one Boolean coordinate per atom. Pulling a
 configuration back along a map of vertex types `f : V → W` reads each atom of `V` at its image
@@ -22,8 +23,8 @@ atom of `W`. This **restriction** is measurable and functorial: restriction alon
 the identity, and restriction along a composite is the composite of the restrictions in the
 opposite order.
 
-The function symbols of `L` play no role. A structure of `L` determines a configuration by
-deciding its relations (`ofStructure`).
+The function symbols of `L` are permitted and play no role. A structure of `L` determines a
+configuration by deciding its relations (`ofStructure`).
 
 ## Main definitions
 
@@ -49,7 +50,7 @@ namespace TauCeti
 
 open _root_.FirstOrder (Language)
 
-/-- An atom of the signature `L` over the vertex type `V`: an `n`-ary relation symbol together with
+/-- An atom of the language `L` over the vertex type `V`: an `n`-ary relation symbol together with
 an `n`-tuple of vertices, whose entries may repeat. -/
 @[expose] def RelationalConfiguration.Atom (L : Language) (V : Type*) : Type _ :=
   Σ n, L.Relations n × (Fin n → V)
@@ -93,7 +94,8 @@ theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
 /-- The value of a configuration at the atom `R(x)`. -/
 def eval (c : RelationalConfiguration L V) (a : Atom L V) : Bool := c a
 
-/-- Build a configuration from its value at every atom. -/
+/-- Build a configuration from its value at every atom. A bare function on atoms only unfolds to a
+configuration, so this gives it the configuration type, with `eval_mk` to rewrite with. -/
 def mk (c : Atom L V → Bool) : RelationalConfiguration L V := c
 
 @[simp]

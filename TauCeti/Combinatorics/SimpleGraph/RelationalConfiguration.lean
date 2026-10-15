@@ -81,6 +81,13 @@ false on the diagonal. -/
 def IsSimpleGraph (c : RelationalConfiguration Language.graph V) : Prop :=
   (∀ u v, c.eval (adjAtom u v) = c.eval (adjAtom v u)) ∧ ∀ v, c.eval (adjAtom v v) = false
 
+/-- A configuration is a simple graph exactly when adjacency is symmetric and false on the
+diagonal. -/
+theorem isSimpleGraph_iff {c : RelationalConfiguration Language.graph V} :
+    IsSimpleGraph c ↔
+      (∀ u v, c.eval (adjAtom u v) = c.eval (adjAtom v u)) ∧ ∀ v, c.eval (adjAtom v v) = false :=
+  Iff.rfl
+
 /-- The configuration of a simple graph, read off its first-order structure. -/
 def ofSimpleGraph (G : SimpleGraph V) : RelationalConfiguration Language.graph V :=
   @ofStructure Language.graph V G.structure
@@ -134,6 +141,12 @@ def simpleGraphEquiv :
     SimpleGraph.measurable_iff_adj.2 fun u v =>
       (Measurable.of_discrete (f := fun b : Bool => b = true)).comp
         ((measurable_eval (adjAtom u v)).comp measurable_subtype_coe)
+
+/-- Encoding a simple graph as a configuration is measurable. -/
+@[fun_prop]
+theorem measurable_ofSimpleGraph :
+    Measurable (ofSimpleGraph : SimpleGraph V → RelationalConfiguration Language.graph V) :=
+  measurable_subtype_coe.comp simpleGraphEquiv.measurable
 
 @[simp]
 theorem coe_simpleGraphEquiv (G : SimpleGraph V) :
