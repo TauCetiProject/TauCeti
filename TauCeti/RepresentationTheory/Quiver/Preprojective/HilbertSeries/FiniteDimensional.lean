@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Inverse
+public import TauCeti.LinearAlgebra.Matrix.PowerSeries
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.ZigzagCartan
 
 /-!
@@ -23,9 +24,8 @@ finite-dimensional, its graded corners `e_j Π_n e_i` vanish in all large degree
 * the inverse `M⁻¹` has a negative coefficient.
 
 Both statements rest on one observation: when `Q` is nonempty, no matrix `N` whose entries are
-polynomials satisfies `M N = I`. Indeed the coefficient matrices of such an `N` satisfy
-`N_{n+2} = A N_{n+1} - N_n`, so if they vanish from some degree on, then they vanish in every degree
-by descending induction, against `N_0 = I`. For the second statement, the Koszul defect formula
+polynomials satisfies `M N = I` (`TauCeti.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`).
+For the second statement, the Koszul defect formula
 gives `M H = I + D` where `D` has nonnegative coefficients
 (`TauCeti.coeff_one_le_coeff_mul_preprojectiveHilbertSeries`). If every coefficient of `M⁻¹` were
 nonnegative, then `H = M⁻¹ + M⁻¹ D` would bound `M⁻¹` coefficientwise, so `M⁻¹` would be a matrix
@@ -39,8 +39,9 @@ which is the case for every finite simply-laced Dynkin diagram
 (`TauCeti.finiteDimensional_preprojectiveAlgebra_of_isSimplyLaced`). This is the numerical
 obstruction to the Koszulity of the zigzag algebras of these graphs: the inverse of the graded
 Cartan matrix of a Koszul algebra at `q = -X` is the matrix Hilbert series of its Koszul dual, so it
-has nonnegative coefficients. It contrasts with the graphs containing a cycle, for which
-`H = C_G(-X)⁻¹` (`TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.NonTree`).
+has nonnegative coefficients. It contrasts with the finite preconnected graphs containing a cycle,
+for which `H = C_G(-X)⁻¹`
+(`TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.NonTree`).
 
 ## Main results
 
@@ -74,51 +75,6 @@ namespace TauCeti
 open _root_.Quiver PathAlgebra PowerSeries
 
 universe u v w
-
-/-- **No polynomial matrix is a right inverse of `(1 + X²) I - X A`** over a nonempty index type. If
-`((1 + X²) I - X A) N = I` for a matrix `A` of natural numbers, and the coefficients of every entry
-of `N` vanish from degree `d` on, then the index type is empty. -/
-private theorem isEmpty_of_mul_eq_one_of_coeff_eq_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (A : ι → ι → ℕ) {N : Matrix ι ι ℤ⟦X⟧}
-    (hN : (((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix ι ι ℤ⟦X⟧) -
-      (X : ℤ⟦X⟧) • Matrix.of fun v w => (A v w : ℤ⟦X⟧)) * N = 1)
-    {d : ℕ} (hd : ∀ n, d ≤ n → ∀ i j, coeff n (N i j) = 0) : IsEmpty ι := by
-  have happly (i j : ι) : ((((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix ι ι ℤ⟦X⟧) -
-      (X : ℤ⟦X⟧) • Matrix.of fun v w => (A v w : ℤ⟦X⟧)) * N) i j =
-        ((1 : ℤ⟦X⟧) + X ^ 2) * N i j - X * ∑ l, (A i l : ℤ⟦X⟧) * N l j := by
-    rw [sub_mul]
-    simp only [Matrix.smul_mul, Matrix.one_mul, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul,
-      Matrix.mul_apply, Matrix.of_apply]
-  -- The coefficients of `N` satisfy `N_{n+2} = A N_{n+1} - N_n`.
-  have hrec (n : ℕ) (i j : ι) : coeff (n + 2) (N i j) + coeff n (N i j) =
-      ∑ l, (A i l : ℤ) * coeff (n + 1) (N l j) := by
-    have h := congrArg (fun P => coeff (n + 2) (P i j)) hN
-    simp only [happly, Matrix.one_apply] at h
-    have h0 : coeff (n + 2) (if i = j then (1 : ℤ⟦X⟧) else 0) = 0 := by
-      split_ifs <;> simp [coeff_one]
-    rw [h0, map_sub, add_mul, one_mul, map_add, coeff_X_pow_mul',
-      ite_eq_left (by omega : 2 ≤ n + 2), Nat.add_sub_cancel, coeff_succ_X_mul, map_sum,
-      sub_eq_zero] at h
-    simpa only [coeff_natCast_mul] using h
-  -- Descending induction from degree `d` kills every coefficient.
-  have hzero : ∀ t n, d ≤ n + t → ∀ i j, coeff n (N i j) = 0 := by
-    intro t
-    induction t with
-    | zero => exact fun n hn => hd n hn
-    | succ t ih =>
-      intro n hn i j
-      have h1 := ih (n + 1) (by omega)
-      have h2 := ih (n + 2) (by omega)
-      have h := hrec n i j
-      simp only [h1, h2, mul_zero, Finset.sum_const_zero, zero_add] at h
-      exact h
-  -- But the constant term of `N` is the identity matrix.
-  refine ⟨fun i => ?_⟩
-  have h := congrArg (fun P => constantCoeff (P i i)) hN
-  simp only [happly, Matrix.one_apply_eq, map_sub, map_mul, map_add, map_one, map_pow,
-    constantCoeff_X, zero_pow two_ne_zero, add_zero, one_mul, zero_mul, sub_zero] at h
-  rw [← coeff_zero_eq_constantCoeff_apply, hzero d 0 (by omega)] at h
-  exact zero_ne_one h
 
 section Quiver
 
@@ -158,7 +114,11 @@ theorem mul_preprojectiveHilbertSeries_ne_one [FiniteDimensional k (preprojectiv
           (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧)) *
         preprojectiveHilbertSeries k Q ≠ 1 := fun h => by
   obtain ⟨d, hd⟩ := exists_forall_le_coeff_preprojectiveHilbertSeries_eq_zero k Q
-  exact not_isEmpty_of_nonempty Q (isEmpty_of_mul_eq_one_of_coeff_eq_zero _ h hd)
+  refine not_isEmpty_of_nonempty Q (isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
+    (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ)) ?_ hd)
+  convert h using 4
+  ext v w
+  simp
 
 omit [DecidableEq Q] in
 /-- **The Koszul complex of a finite-dimensional preprojective algebra is not exact at its left
@@ -215,8 +175,12 @@ theorem exists_coeff_inv_lt_zero_of_finiteDimensional
   obtain ⟨d, hd⟩ := exists_forall_le_coeff_preprojectiveHilbertSeries_eq_zero k Q
   have hN (n : ℕ) (hn : d ≤ n) (v i : Q) : coeff n (M⁻¹ v i) = 0 :=
     le_antisymm ((hle n v i).trans (hd n hn v i).le) (hpos n v i)
-  exact not_isEmpty_of_nonempty Q
-    (isEmpty_of_mul_eq_one_of_coeff_eq_zero _ (Matrix.mul_nonsing_inv M hdet) hN)
+  refine not_isEmpty_of_nonempty Q (isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
+    (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ)) ?_ hN)
+  convert Matrix.mul_nonsing_inv M hdet using 2
+  rw [hM]
+  ext v w
+  simp
 
 end Quiver
 
