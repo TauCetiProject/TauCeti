@@ -49,9 +49,9 @@ noncomputable local instance quotientFintype : Fintype (G ⧸ U) :=
 
 /-- The pure tensor in the smooth tensor induction of trivial `𝔽₂` coefficients.
 
-The body is exposed so morphisms defined independently of this coefficient identification can
-use their `PiTensorProduct.tprod` computation rules on this named tensor. -/
-@[expose] noncomputable def smoothTensorInducedTrivialF2Tprod
+Its characteristic equation `smoothTensorInducedTrivialF2Tprod_eq` lets morphisms use their
+`PiTensorProduct.tprod` computation rules without exposing this definition. -/
+noncomputable def smoothTensorInducedTrivialF2Tprod
     (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
     (DiscreteRep.tensorInduced U hU s
       (DiscreteRep.trivialF2 U)).V := by
@@ -59,6 +59,14 @@ use their `PiTensorProduct.tprod` computation rules on this named tensor. -/
   letI : Module ℤ A.V := A.module
   exact cast (DiscreteRep.tensorInduced_V U hU s A).symm
     (PiTensorProduct.tprod ℤ x)
+
+/-- The named tensor is the underlying pure tensor, transported to the carrier of tensor
+induction. -/
+theorem smoothTensorInducedTrivialF2Tprod_eq
+    (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
+    letI : Module ℤ (DiscreteRep.trivialF2 U).V := (DiscreteRep.trivialF2 U).module
+    smoothTensorInducedTrivialF2Tprod G U hU s x = PiTensorProduct.tprod ℤ x := by
+  rfl
 
 /-- The coefficient calculation on the tensor power: read every tensor factor in `ZMod 2` and
 multiply the factors. The factors carry the `ℤ`-module structure of the `DiscreteRep`, which is the
@@ -77,9 +85,7 @@ private theorem tensorInducedTrivialF2LinearEquiv_tprod
     tensorInducedTrivialF2LinearEquiv G U (smoothTensorInducedTrivialF2Tprod G U hU s x) =
       ∏ i, trivialF2Equiv U (x i) := by
   let _ : Module ℤ (DiscreteRep.trivialF2 U).V := (DiscreteRep.trivialF2 U).module
-  -- `smoothTensorInducedTrivialF2Tprod` is a cast along the definitional equality
-  -- `DiscreteRep.tensorInduced_V`.
-  change tensorInducedTrivialF2LinearEquiv G U (PiTensorProduct.tprod ℤ x) = _
+  rw [smoothTensorInducedTrivialF2Tprod_eq]
   simp only [tensorInducedTrivialF2LinearEquiv, LinearEquiv.trans_apply,
     PiTensorProduct.congr_tprod, PiTensorProduct.zmodEquiv_tprod]
   rfl

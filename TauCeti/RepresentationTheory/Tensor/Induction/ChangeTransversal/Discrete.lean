@@ -73,8 +73,7 @@ noncomputable def tensorInducedChangeTransversalIso (A : DiscreteRep.{u, v, w} R
 theorem tensorInducedChangeTransversalIso_hom_toLinearMap (A : DiscreteRep.{u, v, w} R U) :
     (tensorInducedChangeTransversalIso U hU s t A).hom.toLinearMap =
       (U.tensorInducedChangeTransversal s t A.ρ).toLinearEquiv.toLinearMap := by
-  change (U.tensorInducedChangeTransversal s t A.ρ).toIntertwiningMap.toLinearMap = _
-  exact (Representation.Equiv.toLinearEquiv_toLinearMap _).symm
+  rw [tensorInducedChangeTransversalIso]
 
 /-- On a pure tensor, the discrete comparison applies the difference of the two transversal
 representatives in every coset coordinate. -/
@@ -99,6 +98,9 @@ theorem tensorInducedChangeTransversalIso_hom_naturality
   apply Representation.IntertwiningMap.ext
   apply PiTensorProduct.ext
   ext m
+  -- The extensionality goal is wrapped in `MultilinearMap.compMultilinearMap`, so the functor-map
+  -- and comparison projection lemmas cannot rewrite it. Unfold those two wrappers to expose the
+  -- algebraic intertwining maps on the pure tensor.
   change (U.tensorInducedChangeTransversal s t B.ρ)
       (f.tensorInduced t (PiTensorProduct.tprod R m)) =
     f.tensorInduced s
@@ -169,7 +171,7 @@ theorem smoothTensorInducedChangeTransversalIso_hom_apply_trivialF2Tprod
       smoothTensorInducedTrivialF2Tprod G U hU s fun x ↦
         (DiscreteRep.trivialF2 U).ρ
           ((Subgroup.monomialChangeTransversal U s t).left x) (m x) := by
-  simp only [smoothTensorInducedTrivialF2Tprod]
+  rw [smoothTensorInducedTrivialF2Tprod_eq, smoothTensorInducedTrivialF2Tprod_eq]
   exact smoothTensorInducedChangeTransversalIso_hom_apply_tprod U hU s t _ m
 
 /-- The smooth change-of-transversal comparison is natural in the coefficient representation. -/
@@ -224,6 +226,9 @@ theorem smoothTensorInducedTrivialF2Iso_changeTransversal_apply_tprod
   congr 1
   funext x
   congr 1
+  -- The action above comes from the discrete representation underlying `trivialF2`; its public
+  -- computation lemma is stated for the smooth object, and rewriting cannot cross that opaque
+  -- wrapper. Unfolding only the carrier projection aligns the two action expressions.
   change (trivialF2 U).ρ _ (m x) = m x
   exact trivialF2_ρ_apply_apply U _ _
 
