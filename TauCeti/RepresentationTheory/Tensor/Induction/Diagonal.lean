@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Invariants
-public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal
+public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Basic
 import Mathlib.Data.ZMod.Basic
 
 /-!

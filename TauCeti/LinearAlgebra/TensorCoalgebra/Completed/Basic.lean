@@ -162,6 +162,21 @@ theorem truncate_truncate (n m : ℕ) (x : CompletedTensorWords R M) :
   simp only [truncate_apply, lt_min_iff]
   split_ifs <;> simp_all
 
+/-- Truncation keeps a single tensor-length summand exactly when it is below the cutoff. -/
+@[simp]
+theorem truncate_of (n k : ℕ) (z : TensorPower R k M) :
+    truncate R M n (TensorWords.of R M k z) =
+      if k < n then TensorWords.of R M k z else 0 := by
+  ext j
+  rw [truncate_apply]
+  by_cases hkj : k = j
+  · subst j
+    split_ifs <;> rfl
+  · have hz : TensorWords.of R M k z j = 0 :=
+      (TensorWords.component_apply R M j _).symm.trans
+        (TensorWords.component_of_of_ne R M hkj z)
+    split_ifs <;> simp [hz]
+
 /-- The descending length filtration consists of words whose components below `n` vanish. -/
 def filtration (n : ℕ) : Submodule R (CompletedTensorWords R M) :=
   ⨅ k : Fin n, LinearMap.ker (LinearMap.proj k.val)
