@@ -110,7 +110,7 @@ theorem energyFormH1_translate (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     _ = ∫ x, matrixBilinearForm (a (x + k)) (W1p.gradient v (x + k))
           (W1p.gradient u x) ∂mu.restrict Omega :=
         hres.integral_comp (Homeomorph.addRight h).measurableEmbedding
-          (fun y => matrixBilinearForm (a (y + k)) (W1p.gradient v (y + k)) (W1p.gradient u y)
+          (fun y => matrixBilinearForm (a (y + k)) (W1p.gradient v (y + k)) (W1p.gradient u y))
     _ = ∫ x, matrixBilinearForm (a (x + k))
           (W1p.gradient (W1p.translate hkOmega v) x)
           (W1p.gradient u x) ∂mu.restrict Omega := by
@@ -174,7 +174,7 @@ theorem norm_energyFormH1_comp_add_sub_le
   rw [hdiff]
   calc _ ≤ ∫ x, K * ‖s‖ * (‖W1p.gradient z x‖ * ‖W1p.gradient y x‖) ∂mu.restrict Omega :=
         norm_integral_le_of_norm_le (hint.const_mul _)
-          ((ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx => hpt x hx)
+          ((ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet).mono fun x hx => hpt x hx)
     _ = K * ‖s‖ * ∫ x, ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖ ∂mu.restrict Omega :=
         integral_const_mul _ _
     _ ≤ K * ‖s‖ * (‖W1p.gradient z‖ * ‖W1p.gradient y‖) := by gcongr
