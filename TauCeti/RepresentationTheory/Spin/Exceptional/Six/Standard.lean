@@ -104,15 +104,15 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdRep :
   · intro g s
     simp only [MonoidHom.comp_apply, stdRep_apply_apply]
     rw [hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix]
-    convert
-      LinearMap.toMatrix_mulVec_repr
-        (Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P)
-          (hyperbolicSix_spinPlus_finrank K))
-        (Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P)
-          (hyperbolicSix_spinPlus_finrank K))
+    change Matrix.mulVec
+      (LinearMap.toMatrix b b
         (spinPlusAction (splitEvenForm K 3) P hline
-          (spinGroupToEven (splitEvenForm K 3) g)) s using 1
-    rfl
+          (spinGroupToEven (splitEvenForm K 3) g))) (b.repr s) =
+        b.repr (spinPlusAction (splitEvenForm K 3) P hline
+          (spinGroupToEven (splitEvenForm K 3) g) s)
+    exact LinearMap.toMatrix_mulVec_repr b b
+      (spinPlusAction (splitEvenForm K 3) P hline
+        (spinGroupToEven (splitEvenForm K 3) g)) s
 
 /-- For three hyperbolic planes, the even half-spin representation is the standard
 four-dimensional representation pulled back along `hyperbolicSixSpinToGeneralLinear`, and the odd
