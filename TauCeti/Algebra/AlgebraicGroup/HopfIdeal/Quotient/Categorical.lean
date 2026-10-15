@@ -18,10 +18,10 @@ and its monomorphism and monoid-homomorphism instances.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.quotientGrpObjInclusion`: the categorical closed-subgroup inclusion
+* `CommHopfAlgCat.quotientGrpObjInclusion`: the categorical closed-subgroup inclusion
   represented by a Hopf-ideal quotient.
-* `TauCeti.CommHopfAlgCat.quotientGrpObjInclusion_mono`: the inclusion is a monomorphism.
-* `TauCeti.CommHopfAlgCat.quotientGrpObjInclusion_isMonHom`: the inclusion preserves the
+* `CommHopfAlgCat.quotientGrpObjInclusion_mono`: the inclusion is a monomorphism.
+* `CommHopfAlgCat.quotientGrpObjInclusion_isMonHom`: the inclusion preserves the
   group-object multiplication.
 
 ## References
@@ -33,6 +33,8 @@ API in `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic`.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory Opposite
 
 namespace TauCeti.CommHopfAlgCat
@@ -43,33 +45,33 @@ variable {R : Type u} [CommRing R]
 
 /-- The categorical closed-subgroup inclusion represented contravariantly by the quotient map
 `H ⟶ H/I`. -/
-noncomputable def quotientGrpObjInclusion (H : _root_.CommHopfAlgCat.{u} R)
+noncomputable def _root_.CommHopfAlgCat.quotientGrpObjInclusion (H : _root_.CommHopfAlgCat.{u} R)
     (I : HopfIdeal R H) : CommHopfAlgCat.grpObj (quotient H I) ⟶ CommHopfAlgCat.grpObj H :=
   CommHopfAlgCat.Hom.grpObjMap (mkQuotient H I)
 
 /-- The categorical quotient inclusion is represented by the group-object map induced by the
 coordinate quotient morphism. -/
-theorem quotientGrpObjInclusion_def (H : _root_.CommHopfAlgCat.{u} R)
+theorem _root_.CommHopfAlgCat.quotientGrpObjInclusion_def (H : _root_.CommHopfAlgCat.{u} R)
     (I : HopfIdeal R H) :
     quotientGrpObjInclusion H I = CommHopfAlgCat.Hom.grpObjMap (mkQuotient H I) := (rfl)
 
 /-- The categorical quotient inclusion is the opposite of the coordinate quotient map. -/
 @[simp]
-theorem quotientGrpObjInclusion_unop (H : _root_.CommHopfAlgCat.{u} R)
+theorem _root_.CommHopfAlgCat.quotientGrpObjInclusion_unop (H : _root_.CommHopfAlgCat.{u} R)
     (I : HopfIdeal R H) :
     (quotientGrpObjInclusion H I).unop = CommAlgCat.ofHom (mkQuotient H I).hom := by
   rw [quotientGrpObjInclusion_def]
   exact CommHopfAlgCat.Hom.grpObjMap_unop (mkQuotient H I)
 
 /-- A quotient group-object inclusion preserves multiplication. -/
-noncomputable instance quotientGrpObjInclusion_isMonHom
+noncomputable instance _root_.CommHopfAlgCat.quotientGrpObjInclusion_isMonHom
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     IsMonHom (quotientGrpObjInclusion H I) := by
   rw [quotientGrpObjInclusion_def]
   exact CommHopfAlgCat.Hom.grpObjMap_isMonHom (mkQuotient H I)
 
 /-- A quotient group-object inclusion is a monomorphism. -/
-noncomputable instance quotientGrpObjInclusion_mono
+noncomputable instance _root_.CommHopfAlgCat.quotientGrpObjInclusion_mono
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     Mono (quotientGrpObjInclusion H I) := by
   let q : CommAlgCat.of R H ⟶ CommAlgCat.of R (quotient H I) :=

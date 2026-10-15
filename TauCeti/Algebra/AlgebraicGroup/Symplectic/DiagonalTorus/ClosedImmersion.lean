@@ -84,7 +84,7 @@ noncomputable def diagonalTorusCoordinateIso :
       DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin m))) :=
   ObjectProperty.isoMk _ <|
-    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := R) (m := m))
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := R) (m := m))
       diagonalTorusCoordinateMap_surjective
 
 /-- The quotient isomorphism identifies the quotient map with restriction to the torus. -/
@@ -95,7 +95,7 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
           (diagonalTorusDefiningIdeal R m) ≫
         (diagonalTorusCoordinateIso R m).hom =
       ObjectProperty.homMk (diagonalTorusCoordinateMap (R := R) (m := m)) :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The coordinate quotient defining the symplectic diagonal torus is a split torus. -/
 theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :

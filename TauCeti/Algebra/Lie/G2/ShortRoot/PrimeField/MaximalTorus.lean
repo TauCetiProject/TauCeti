@@ -71,7 +71,7 @@ theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
         weightTorusDefiningIdeal) := by
   exact (splitTorusCommHopfAlgProperty (ZMod 3)).prop_of_iso
     (ObjectProperty.isoMk _
-      (CommHopfAlgCat.quotientKerOfSurjectiveIso weightTorusCoordinateMap
+      (CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso weightTorusCoordinateMap
         weightTorusCoordinateMap_surjective)).symm
     (SplitTorus.splitTorus_coordinateRing (ZMod 3) (Fin 2))
 

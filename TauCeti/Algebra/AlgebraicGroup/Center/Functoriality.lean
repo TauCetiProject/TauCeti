@@ -32,6 +32,8 @@ than stability of an ideal.
 
 public section
 
+open _root_.CommHopfAlgCat
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat

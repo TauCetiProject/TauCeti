@@ -54,6 +54,8 @@ group, hence trivial.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 open scoped TensorProduct
 
@@ -99,7 +101,7 @@ private abbrev reducedIdentityComponent : HopfIdeal k G :=
 private abbrev reducedIdentityComponentIso :
     CommHopfAlgCat.quotient G.obj (reducedIdentityComponent G P) ≅
       (FiniteTypeCommHopfAlgCat.identityComponent (reducedQuotient G P)).obj :=
-  CommHopfAlgCat.quotientIsoOfSurjective _ (toReducedQuotient_surjective G P) _
+  CommHopfAlgCat.Hom.quotientIsoOfSurjective _ (toReducedQuotient_surjective G P) _
 
 /-- Over an algebraically closed field, the reduced group `P_red` is smooth. -/
 private instance : Algebra.Smooth k (reducedQuotient G P) :=

@@ -42,6 +42,8 @@ algebraic groups is represented by the quotient by this ideal.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti

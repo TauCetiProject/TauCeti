@@ -90,7 +90,7 @@ noncomputable def diagonalTorusCoordinateIso :
       DiagonalizableGroup.coordinateRing k
         (SplitTorus.characterGroup (ULift.{u} (Fin n))) :=
   ObjectProperty.isoMk _ <|
-    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
       (diagonalTorusCoordinateMap_surjective k n)
 
 /-- The diagonal-torus quotient isomorphism identifies the quotient morphism with the canonical
@@ -103,7 +103,7 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
           (diagonalTorusDefiningIdeal k n) ≫
         (diagonalTorusCoordinateIso k n).hom =
       ObjectProperty.homMk (diagonalTorusCoordinateMap (R := k) (N := n)) :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/

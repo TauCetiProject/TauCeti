@@ -40,6 +40,8 @@ Schemes*, §15.3.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory AlgebraicGeometry
 
 namespace TauCeti

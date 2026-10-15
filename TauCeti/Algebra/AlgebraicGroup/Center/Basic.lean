@@ -49,6 +49,8 @@ ideal, so the represented closed subgroup is canonical.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory TensorProduct WithConv
 
 namespace TauCeti.CommHopfAlgCat

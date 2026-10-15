@@ -54,7 +54,7 @@ theorem isSolvableRadicalCandidate_comap_solvableRadicalDefiningIdeal_quotient
   let P := J.comapOfSurjective (CommHopfAlgCat.mkQuotient H.obj I).hom
     (CommHopfAlgCat.mkQuotient_surjective H.obj I)
   let e : (quotient H P).obj ≅ (solvableRadical Q).obj :=
-    CommHopfAlgCat.quotientIsoOfSurjective (CommHopfAlgCat.mkQuotient H.obj I)
+    CommHopfAlgCat.Hom.quotientIsoOfSurjective (CommHopfAlgCat.mkQuotient H.obj I)
       (CommHopfAlgCat.mkQuotient_surjective H.obj I) J
   have hsm : Algebra.Smooth k (quotient H P) :=
     (smoothCommHopfAlgProperty_iff _).mp <|

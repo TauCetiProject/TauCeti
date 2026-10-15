@@ -55,6 +55,8 @@ after every base change, the argument is run after an arbitrary base change `R â
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv TensorProduct TauCeti.CommHopfAlgCat
 
 namespace TauCeti

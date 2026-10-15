@@ -48,6 +48,8 @@ universal property `Ideal.Quotient.liftₐ`.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 open scoped commutatorElement
 

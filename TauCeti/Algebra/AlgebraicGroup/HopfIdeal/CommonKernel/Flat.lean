@@ -30,6 +30,8 @@ the Hopf ideal used here is `TauCeti.HopfIdeal.scalarTorsion`.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open scoped TensorProduct nonZeroDivisors
 
 namespace TauCeti.CommHopfAlgCat
