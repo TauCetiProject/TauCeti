@@ -189,6 +189,9 @@ lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_id (H : CommHopfAlgCat.{v} R) :
       𝟙 (HopfAlgebra.pointsFunctor (R := R) (H := H) :
         CommAlgCat.{w} R ⥤ GrpCat.{max v w}) := by
   ext A f
+  -- The `GrpCat.ofHom` component and `(𝟙 H).hom` hide the bialgebra identity
+  -- expected by `mapDomain_id`; reduce those categorical wrappers while keeping
+  -- `BialgHom.mapDomain` opaque.
   change BialgHom.mapDomain (BialgHom.id R H) f = f
   rw [BialgHom.mapDomain_id]
   rfl
@@ -200,6 +203,9 @@ lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_comp
     mapPointsFunctor (φ ≫ ψ) =
       mapPointsFunctor ψ ≫ mapPointsFunctor φ := by
   ext A f
+  -- Natural-transformation composition packages the point maps as `GrpCat.ofHom`,
+  -- and `(φ ≫ ψ).hom` uses `CommHopfAlgCat` composition. Reduce those wrappers to
+  -- expose the bialgebra composition expected by `mapDomain_comp`.
   change BialgHom.mapDomain (ψ.hom.comp φ.hom) f =
     BialgHom.mapDomain φ.hom (BialgHom.mapDomain ψ.hom f)
   rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply]
