@@ -500,8 +500,7 @@ theorem IsBounded.image_of_isOpen_map_extendedIdealOfDefinition [SeparatelyConti
   obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp ht
   have hzs : f ((z : A) * s) ∈ Q.ringOfDefinition :=
     hVS (Set.mul_mem_mul (hp ((P.mem_idealImage p).mpr ⟨z, hG ▸ Ideal.subset_span hz, rfl⟩)) hs)
-  rw [show f z * w (f z) * f s = f ((z : A) * s) * w (f z) by rw [map_mul]; ring]
-  exact Q.mul_mem_idealImage hzs (hw _ ht)
+  simpa only [map_mul, mul_right_comm] using Q.mul_mem_idealImage hzs (hw _ ht)
 
 /-- **A continuous homomorphism of Huber rings that maps an ideal of definition to an open ideal
 preserves power-boundedness.** This is
@@ -516,10 +515,11 @@ theorem IsPowerBounded.map_of_isOpen_map_extendedIdealOfDefinition [SeparatelyCo
   rintro _ ⟨n, rfl⟩
   exact ⟨a ^ n, ⟨n, rfl⟩, map_pow f a n⟩
 
-/-- **A homomorphism out of a Tate ring maps an ideal of definition to an open ideal**: the ideal
-of definition is open, so it is the unit ideal. -/
+/-- **A homomorphism out of a Tate ring maps the extended ideal of definition to an open
+ideal.** The extended ideal `I · A` is open and hence the unit ideal, so its image generates the
+unit ideal in the target. -/
 theorem IsTateRing.isOpen_map_extendedIdealOfDefinition [IsTopologicalRing A] [IsTateRing A]
-    (P : PairOfDefinition A) (f : A →+* B) :
+    {B : Type*} [Semiring B] [TopologicalSpace B] (P : PairOfDefinition A) (f : A →+* B) :
     IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B) :=
   IsTateRing.isOpen_map_of_isOpen f P.isOpen_extendedIdealOfDefinition
 
