@@ -111,6 +111,34 @@ theorem classicalDGLocalSystemMap_preimage {L L' : LocalCoefficientSystem.{u, u,
     fun m ↦ (classicalDGLocalSystemMap_apply _ m).trans
       (classicalDGLocalSystemPreimage_app_mk_apply f m)
 
+/-- **The preimage of an induced morphism is the morphism itself.** -/
+@[simp]
+theorem classicalDGLocalSystemPreimage_map {L L' : LocalCoefficientSystem.{u, u, w} R X}
+    (φ : L ⟶ L') : classicalDGLocalSystemPreimage (classicalDGLocalSystemMap (x := x) φ) = φ :=
+  classicalDGLocalSystemMap_injective (classicalDGLocalSystemMap_preimage _)
+
+/-- The preimage of the identity is the identity. -/
+@[simp]
+theorem classicalDGLocalSystemPreimage_id (L : LocalCoefficientSystem.{u, u, w} R X) :
+    classicalDGLocalSystemPreimage (𝟙 (classicalDGLocalSystem x L)) = 𝟙 L :=
+  classicalDGLocalSystemMap_injective ((classicalDGLocalSystemMap_preimage _).trans
+    ((classicalDGLocalSystemFunctor R x).map_id L).symm)
+
+/-- The preimage of a composite is the composite of the preimages. -/
+@[simp]
+theorem classicalDGLocalSystemPreimage_comp {L L' L'' : LocalCoefficientSystem.{u, u, w} R X}
+    (f : classicalDGLocalSystem x L ⟶ classicalDGLocalSystem x L')
+    (g : classicalDGLocalSystem x L' ⟶ classicalDGLocalSystem x L'') :
+    classicalDGLocalSystemPreimage (f ≫ g) =
+      classicalDGLocalSystemPreimage f ≫ classicalDGLocalSystemPreimage g :=
+  classicalDGLocalSystemMap_injective ((classicalDGLocalSystemMap_preimage _).trans
+    (((classicalDGLocalSystemFunctor R x).map_comp _ _).trans (by
+      rw [classicalDGLocalSystemFunctor_map, classicalDGLocalSystemFunctor_map,
+        classicalDGLocalSystemMap_preimage, classicalDGLocalSystemMap_preimage]
+      -- The composite is taken between `(classicalDGLocalSystemFunctor R x).obj _` and
+      -- `classicalDGLocalSystem x _`, which agree by `classicalDGLocalSystemFunctor_obj`.
+      rfl)).symm)
+
 variable (R x) in
 /-- On a path-connected space, the functor from classical to DG local systems is full. -/
 instance : (classicalDGLocalSystemFunctor R x).Full where
