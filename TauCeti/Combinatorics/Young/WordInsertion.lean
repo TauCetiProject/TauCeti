@@ -196,6 +196,7 @@ theorem reverseInsertWord_nil (rows : List (List α)) :
 
 /-- Undoing a run of insertions undoes the most recent one first; the letter it removes is the
 last letter of the recovered word. -/
+@[simp]
 theorem reverseInsertWord_cons (rows : List (List α)) (k : ℕ) (rs : List ℕ) :
     reverseInsertWord rows (k :: rs) =
       ((reverseInsertWord (reverseRowInsert k rows).1 rs).1,
