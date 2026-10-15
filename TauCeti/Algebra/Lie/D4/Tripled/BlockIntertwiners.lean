@@ -266,15 +266,33 @@ noncomputable def d4BlockZeroToOneEquiv :
     (Block 0 → ℚ) ≃ₗ[ℚ] (Block 1 → ℚ) :=
   LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockZeroToOneIndexEquiv
 
+/-- The block-zero-to-block-one equivalence is the coordinate reindexing induced by triality. -/
+theorem d4BlockZeroToOneEquiv_apply (v : Block 0 → ℚ) :
+    d4BlockZeroToOneEquiv v =
+      LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockZeroToOneIndexEquiv v := by
+  rfl
+
 /-- The rational coordinate equivalence induced by triality from block one to block two. -/
 noncomputable def d4BlockOneToTwoEquiv :
     (Block 1 → ℚ) ≃ₗ[ℚ] (Block 2 → ℚ) :=
   LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockOneToTwoIndexEquiv
 
+/-- The block-one-to-block-two equivalence is the coordinate reindexing induced by triality. -/
+theorem d4BlockOneToTwoEquiv_apply (v : Block 1 → ℚ) :
+    d4BlockOneToTwoEquiv v =
+      LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockOneToTwoIndexEquiv v := by
+  rfl
+
 /-- The rational coordinate equivalence induced by triality from block two to block zero. -/
 noncomputable def d4BlockTwoToZeroEquiv :
     (Block 2 → ℚ) ≃ₗ[ℚ] (Block 0 → ℚ) :=
   LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockTwoToZeroIndexEquiv
+
+/-- The block-two-to-block-zero equivalence is the coordinate reindexing induced by triality. -/
+theorem d4BlockTwoToZeroEquiv_apply (v : Block 2 → ℚ) :
+    d4BlockTwoToZeroEquiv v =
+      LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockTwoToZeroIndexEquiv v := by
+  rfl
 
 /-- Three successive concrete block intertwiners return every block-zero coordinate vector to
 itself. -/
