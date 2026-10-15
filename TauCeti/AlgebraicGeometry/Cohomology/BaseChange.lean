@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
 public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import TauCeti.AlgebraicGeometry.Scheme.SectionsBaseChange
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeRightExact
 
@@ -37,7 +37,8 @@ one the construction depends on the chosen cover, and no naturality is claimed.
 
 On sections, flat base change is
 `AlgebraicGeometry.isIso_pushoutSection_of_isQuasiSeparated_of_flat_right`: for a quasi-compact
-quasi-separated open `W ⊆ X`, `Γ(Y, g⁻¹ W) = R' ⊗_R Γ(X, W)`. For a cover `X = U ∪ V` whose
+quasi-separated open `W ⊆ X`, `Γ(Y, g⁻¹ W) = R' ⊗_R Γ(X, W)`, restated over the base ring as
+`TauCeti.AlgebraicGeometry.isBaseChange_sectionsBaseChange`. For a cover `X = U ∪ V` whose
 members have vanishing first cohomology, the Mayer–Vietoris sequence presents `H¹(X, 𝒪_X)` as
 the cokernel of `Γ(U) × Γ(V) → Γ(U ∩ V)`
 (`TauCeti.AlgebraicGeometry.ker_mayerVietorisBoundaryLinear`), and tensor products preserve
@@ -88,79 +89,6 @@ variable {R' : Type u} [CommRing R'] [Algebra R R']
   {Y : Scheme.{u}} [Y.Over (Spec (.of R'))] {g : Y ⟶ X}
   (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
-
-include H in
-/-- Pulling back sections along `g` is compatible with the base-ring structures on both sides. -/
-private lemma comm_sections {W : X.Opens} {W' : Y.Opens} (hW : W' ≤ g ⁻¹ᵁ W) :
-    CommRingCat.ofHom (algebraMap R Γ(X, W)) ≫ g.appLE W W' hW =
-      CommRingCat.ofHom (algebraMap R R') ≫ CommRingCat.ofHom (algebraMap R' Γ(Y, W')) := by
-  rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-    CommRingCat.ofHom_hom, Scheme.baseRingToStructurePresheaf_app_eq_appLE R X,
-    Scheme.baseRingToStructurePresheaf_app_eq_appLE R' Y, Category.assoc]
-  -- The map `appLE` on sections depends only on the morphism, whatever the inclusion proofs.
-  have hw : ∀ e₁ e₂, (g ≫ X ↘ Spec (.of R)).appLE ⊤ W' e₁ =
-      (Y ↘ Spec (.of R') ≫ Spec.map (CommRingCat.ofHom (algebraMap R R'))).appLE ⊤ W' e₂ := by
-    rw [H.w]
-    exact fun _ _ ↦ rfl
-  refine (congrArg _ ((Scheme.Hom.appLE_comp_appLE _ _ _ _ _ _ _).trans ((hw _
-    (le_top.trans_eq (Scheme.Hom.preimage_top _).symm)).trans
-    (Scheme.Hom.comp_appLE _ _ _ _ (le_top.trans_eq (Scheme.Hom.preimage_top _).symm))))).trans ?_
-  -- The open `Spec.map φ ⁻¹ᵁ ⊤` is `⊤` only up to definitional unfolding.
-  exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
-    (Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap R R'))).symm).trans
-      (Category.assoc _ _ _))
-
-include H in
-private lemma isPushout_sections [Module.Flat R R'] {W : X.Opens} (hW : IsCompact (W : Set X))
-    (hW' : IsQuasiSeparated (W : Set X)) {W' : Y.Opens} (hW'eq : W' = g ⁻¹ᵁ W) :
-    IsPushout (CommRingCat.ofHom (algebraMap R Γ(X, W))) (CommRingCat.ofHom (algebraMap R R'))
-      (g.appLE W W' hW'eq.le) (CommRingCat.ofHom (algebraMap R' Γ(Y, W'))) := by
-  have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
-    rw [Flat.SpecMap_iff]
-    exact RingHom.flat_algebraMap_iff.mpr inferInstance
-  have h := isIso_pushoutSection_of_isQuasiSeparated_of_flat_right H (US := ⊤) (UT := ⊤)
-    (UX := W) (le_top.trans_eq (Scheme.Hom.preimage_top _).symm)
-    (le_top.trans_eq (Scheme.Hom.preimage_top _).symm) (UY := W') (by simp [hW'eq])
-    (isAffineOpen_top _) (isAffineOpen_top _) hW hW'
-  refine ((isIso_pushoutSection_iff ..).mp h).of_iso (Scheme.ΓSpecIso _) (Iso.refl _)
-    (Scheme.ΓSpecIso _) (Iso.refl _) ?_ ?_ ?_ ?_
-  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
-      Category.comp_id]
-  · exact Category.comp_id _ |>.trans (Scheme.ΓSpecIso_naturality _)
-  · simp
-  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
-      Category.comp_id]
-
-/-- Pulling back sections of the structure sheaf along the base change `g`, as an `R`-linear map
-to the sections of `Y`, which are an `R`-module through `R → R'`. -/
-private def sectionsBaseChange {W : X.Opens} {W' : Y.Opens} (hW : W' ≤ g ⁻¹ᵁ W) :
-    letI : Module R Γ(Y, W') := Module.compHom _ (algebraMap R R')
-    Γ(X, W) →ₗ[R] Γ(Y, W') :=
-  letI : Module R Γ(Y, W') := Module.compHom _ (algebraMap R R')
-  { toFun := g.appLE W W' hW
-    map_add' := map_add _
-    map_smul' r s := by
-      rw [Algebra.smul_def, map_mul, RingHom.id_apply]
-      exact congrArg (· * _) (congr($(comm_sections H hW) r)) }
-
-include H in
-private lemma isBaseChange_sectionsBaseChange [Module.Flat R R'] {W : X.Opens}
-    (hW : IsCompact (W : Set X)) (hW' : IsQuasiSeparated (W : Set X)) {W' : Y.Opens}
-    (hW'eq : W' = g ⁻¹ᵁ W) :
-    letI : Module R Γ(Y, W') := Module.compHom _ (algebraMap R R')
-    haveI : IsScalarTower R R' Γ(Y, W') := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-    IsBaseChange R' (sectionsBaseChange H hW'eq.le) := by
-  let : Algebra Γ(X, W) Γ(Y, W') := (g.appLE W W' hW'eq.le).hom.toAlgebra
-  let : Algebra R Γ(Y, W') := ((algebraMap R' Γ(Y, W')).comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' Γ(Y, W') := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower R Γ(X, W) Γ(Y, W') :=
-    IsScalarTower.of_algebraMap_eq fun r ↦ congr($(comm_sections H hW'eq.le) r).symm
-  have := (CommRingCat.isPushout_iff_isPushout (R := R) (R' := Γ(X, W)) (S := R')
-    (S' := Γ(Y, W'))).mp (isPushout_sections H hW hW' hW'eq)
-  -- The `R`-module structure of the algebra `Γ(Y, W')` is the one restricted along `R → R'`.
-  exact this.symm.out
 
 /-- The structure sheaf of `Z` as a sheaf of modules over itself. The ascription to `Z.Modules`
 lets instance search find the module structures on its cohomology. -/
@@ -241,9 +169,10 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
       (g ⁻¹ᵁ V) (σU s) (σV t)).trans (mayerVietorisSectionsDifference_apply _ _ _ _ _)
     have hres {W₁ W₂ : X.Opens} {W₂' : Y.Opens} (h₂ : W₂' ≤ g ⁻¹ᵁ W₂) (hW : W₂ ≤ W₁)
         (hW' : W₂' ≤ g ⁻¹ᵁ W₁) (s : Γ(X, W₁)) :
-        g.appLE W₂ W₂' h₂ (X.presheaf.map (homOfLE hW).op s) =
-          Y.presheaf.map (homOfLE hW').op (g.appLE W₁ (g ⁻¹ᵁ W₁) le_rfl s) := by
-      simp only [← CommRingCat.comp_apply, Scheme.Hom.map_appLE, Scheme.Hom.appLE_map]
+        sectionsBaseChange H h₂ (X.presheaf.map (homOfLE hW).op s) =
+          Y.presheaf.map (homOfLE hW').op (sectionsBaseChange H (W' := g ⁻¹ᵁ W₁) le_rfl s) := by
+      simp only [sectionsBaseChange_apply, ← CommRingCat.comp_apply, Scheme.Hom.map_appLE,
+        Scheme.Hom.appLE_map]
     exact (congrArg σUV hX).trans (((map_sub _ _ _).trans (congrArg₂ (· - ·)
       (hres _ inf_le_left _ s) (hres _ inf_le_right _ t))).trans hY.symm)
   -- The induced map on first cohomology.
