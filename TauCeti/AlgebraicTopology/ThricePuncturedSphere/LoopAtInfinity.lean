@@ -438,7 +438,8 @@ traversed counterclockwise and transported to the basepoint along `α₊`. -/
 theorem periph1_mul_periph0_eq_fromPath :
     periph1 * periph0 = FundamentalGroup.fromPath ⟦(αPlus.trans δ).trans αPlus.symm⟧ := by
   rw [periph1_def, periph0_def, FundamentalGroup.mul_def]
-  exact (Path.Homotopic.Quotient.eq.2 αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1).symm
+  exact CategoryTheory.End.ext
+    (Path.Homotopic.Quotient.eq.2 αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1).symm
 
 /-- **The peripheral element at infinity is the loop around infinity.** `periphInf` is the class of
 the circle `|z| = 3` traversed clockwise in the affine coordinate `z`, transported to the basepoint
@@ -451,7 +452,7 @@ theorem periphInf_eq_fromPath :
     rw [Path.trans_symm, Path.trans_symm, Path.symm_symm]
     exact (Path.Homotopic.trans_assoc _ _ _).symm
   -- the class of the reversed loop is the inverse class by definition (`mk_symm` is `rfl`)
-  exact Path.Homotopic.Quotient.eq.2 h
+  exact CategoryTheory.End.ext (Path.Homotopic.Quotient.eq.2 h)
 
 /-! ### The anharmonic map exchanging `1` and `∞`
 
@@ -546,9 +547,9 @@ theorem mob1InfMulAut_def :
 /-- The value of `mob1InfMulAut` on the class of a loop. -/
 private theorem mob1InfMulAut_fromPath (γ : Path basePt basePt) :
     mob1InfMulAut (FundamentalGroup.fromPath (.mk γ)) =
-      (Path.Homotopic.Quotient.mk αMob1Inf.symm).trans
+      FundamentalGroup.fromPath ((Path.Homotopic.Quotient.mk αMob1Inf.symm).trans
         ((Path.Homotopic.Quotient.mk (γ.map mob1Inf.continuous)).trans
-          (Path.Homotopic.Quotient.mk αMob1Inf)) := by
+          (Path.Homotopic.Quotient.mk αMob1Inf))) := by
   simp [mob1InfMulAut_def, FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
   -- `FundamentalGroup.fromPath` is an abbreviation for the identity, which blocks rewriting with
   -- `Path.Homotopic.Quotient.mk_map`; that lemma holds by `rfl`

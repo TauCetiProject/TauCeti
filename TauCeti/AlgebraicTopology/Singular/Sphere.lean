@@ -135,7 +135,7 @@ universe w v u
 namespace TauCeti
 
 -- Fix the scalar field when synthesizing torsion-freeness for the antipodal cover.
-local instance {E : Type*} [AddCommGroup E] [Module ℝ E] : IsAddTorsionFree E :=
+local instance {E : Type*} [AddCommGroup E] [Module ℝ E] : HasUniqueDiv E :=
   .of_isTorsionFree ℝ E
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)

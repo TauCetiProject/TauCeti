@@ -101,7 +101,7 @@ variable {K : Type*} [CommRing K] [TopologicalSpace K] [NonarchimedeanRing K]
 /-- **The closed subdisc `D(a, |c|)`** of the closed unit disc: the rational subset
 `{v : v(T - a) ≤ v(c) ≠ 0}`. For a nonarchimedean normed field `K`, `‖a‖ ≤ 1` and
 `0 < ‖c‖ ≤ 1`, this is the closed disc of radius `‖c‖` about `a`. -/
-def closedSubdisc (a c : K) : Set (closedPolydisc 1 K) :=
+noncomputable def closedSubdisc (a c : K) : Set (closedPolydisc 1 K) :=
   Subtype.val ⁻¹' basicOpen (T - C a) (C c)
 
 /-- Membership in `D(a, |c|)` is the defining valuation inequality and nonvanishing. -/

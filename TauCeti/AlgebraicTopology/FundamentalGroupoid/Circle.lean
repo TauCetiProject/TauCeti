@@ -156,7 +156,7 @@ private theorem isPathConnected_re_pos :
     have hw : 0 < (w : ℂ).re := w.2
     simp [h] at hw
   let f := normalizeToSphere (fun w : H ↦ (w : ℂ)) continuous_subtype_val hne
-  convert isPathConnected_range f.continuous
+  convert isPathConnected_range f.continuous using 1
   ext z
   constructor
   · intro hz
@@ -387,7 +387,7 @@ private theorem homMk_loop :
 `-1` on `lower`, written multiplicatively. -/
 private def loopHom : FundamentalGroup (sphere (0 : ℂ) 1) 1 →* Multiplicative ℤ :=
   MonoidHom.mk' (fun g ↦ (lift 1 (Multiplicative.ofAdd (-1))).map
-    (InducedCategory.homMk g : one ⟶ one)) fun g h ↦ by
+    (InducedCategory.homMk g.asHom : one ⟶ one)) fun g h ↦ by
     rw [End.mul_asHom, ← SingleObj.comp_as_mul, ← Functor.map_comp]
     -- Composition in `FundamentalGroupoidOn` is composition of the underlying morphisms.
     rfl
@@ -436,7 +436,7 @@ private def retraction (γA : Path (1 : sphere (0 : ℂ) 1) (-1)) :
   Groupoid.functorOfEndHom one (conn γA) ((FundamentalGroupoidOn.incl basepoints).mapEnd one)
 
 private theorem retraction_map {y : FundamentalGroupoidOn basepoints} (x : one ⟶ y) :
-    (retraction γA).map x = (x ≫ inv (conn γA y)).hom := by
+    (retraction γA).map x = .of (x ≫ inv (conn γA y)).hom := by
   rw [retraction, Groupoid.functorOfEndHom_map, conn_one, Category.id_comp]
   -- `mapEnd` of the inclusion takes the underlying morphism.
   rfl
@@ -460,14 +460,14 @@ private theorem retraction_eq (hγA : ∀ t, γA t ∈ upper) (hγB : ∀ t, γB
         (InducedCategory.homMk (Path.Homotopic.Quotient.mk γB) : one ⟶ negOne)) ℓ⁻¹ := by
       rw [retraction_map, conn_negOne]
       refine eq_inv_of_mul_eq_one_left ?_
-      have h : (InducedCategory.homMk ℓ : one ⟶ one) ≫
+      have h : (InducedCategory.homMk ℓ.asHom : one ⟶ one) ≫
           InducedCategory.homMk (Path.Homotopic.Quotient.mk γB) ≫
             inv (InducedCategory.homMk (Path.Homotopic.Quotient.mk γA) : one ⟶ negOne) = 𝟙 one := by
         rw [homMk_loop]
         simp
       -- Multiplication in `π₁(S¹, 1)` is composition, which is composition of the underlying
       -- morphisms in `FundamentalGroupoidOn`.
-      calc _ = ((InducedCategory.homMk ℓ : one ⟶ one) ≫
+      calc _ = End.of ((InducedCategory.homMk ℓ.asHom : one ⟶ one) ≫
             InducedCategory.homMk (Path.Homotopic.Quotient.mk γB) ≫
               inv (InducedCategory.homMk (Path.Homotopic.Quotient.mk γA) : one ⟶ negOne)).hom :=
             rfl
@@ -496,7 +496,8 @@ theorem zpowersHom_bijective (γA : Path (1 : sphere (0 : ℂ) 1) (-1)) (hγA : 
   refine ⟨hleft.injective, Function.LeftInverse.surjective (g := loopHom) fun g ↦ ?_⟩
   have h := congrArg (fun E : FundamentalGroupoidOn basepoints ⥤
     SingleObj (FundamentalGroup (sphere (0 : ℂ) 1) 1) ↦
-      (E.map (InducedCategory.homMk g : one ⟶ one) : FundamentalGroup (sphere (0 : ℂ) 1) 1))
+      (E.map (InducedCategory.homMk g.asHom : one ⟶ one) :
+        FundamentalGroup (sphere (0 : ℂ) 1) 1))
     (retraction_eq γA γB hγA hγB)
   refine h.symm.trans ((retraction_map γA _).trans ?_)
   rw [conn_one, IsIso.inv_id, Category.comp_id]

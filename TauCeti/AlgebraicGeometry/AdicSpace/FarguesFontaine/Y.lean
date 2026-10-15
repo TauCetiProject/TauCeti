@@ -113,7 +113,7 @@ variable [TopologicalSpace (WittVector p R)]
 with plus ring all of `𝕎 R`, at which neither `p` nor the Teichmüller representative `[ϖ]`
 vanishes. For `A_inf = W(𝒪_F)` with its `(p, [ϖ])`-adic topology, this is the space whose quotient
 by Frobenius is the adic Fargues–Fontaine curve. -/
-def spaY (ϖ : R) : Set (Spv (WittVector p R)) :=
+noncomputable def spaY (ϖ : R) : Set (Spv (WittVector p R)) :=
   spa (⊤ : Subring (WittVector p R)) ∩
     {v | (p : WittVector p R) ∉ v.supp ∧ teichmuller p ϖ ∉ v.supp}
 

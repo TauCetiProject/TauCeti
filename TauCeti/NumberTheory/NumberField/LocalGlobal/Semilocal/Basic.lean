@@ -121,7 +121,9 @@ completions of `L` at the places above `v`. -/
 theorem denseRange_algebraMap_pi_liesOver :
     DenseRange fun (x : L) (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) ↦
       algebraMap L (w.1.adicCompletion L) x := by
-  let S := (Set.finite_coe_iff.mp (finite_liesOver (𝒪 L) v)).toFinset
+  let S := ((Set.finite_coe_iff
+    (s := {w : HeightOneSpectrum (𝒪 L) | w.asIdeal.LiesOver v.asIdeal})).mp
+      (finite_liesOver (𝒪 L) v)).toFinset
   have hS {w : HeightOneSpectrum (𝒪 L)} : w ∈ S ↔ w.asIdeal.LiesOver v.asIdeal :=
     Set.Finite.mem_toFinset _
   let e : {w : HeightOneSpectrum (𝒪 L) // w ∈ S} ≃
