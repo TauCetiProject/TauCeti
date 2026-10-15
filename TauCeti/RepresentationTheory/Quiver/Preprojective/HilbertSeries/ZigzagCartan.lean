@@ -133,7 +133,7 @@ variable (k : Type w) [Field k] {V : Type u} {G : SimpleGraph V} (o : Orientatio
 /-- **Over a graph without isolated vertices, the zigzag graded Cartan matrix at `q = -X` is the
 denominator of the preprojective Hilbert series** of any orientation, read through the
 identification of the vertices of the oriented quiver with those of `G`. -/
-private theorem zigzagGradedCartanMatrix_map_aeval_neg_X_eq_submatrix [Finite V]
+theorem zigzagGradedCartanMatrix_map_aeval_neg_X_eq_submatrix [Finite V]
     [DecidableEq (OrientedQuiver G o)] (hns : ∀ i : V, ∃ j, G.Adj i j) :
     (zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)) =
       (((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix (OrientedQuiver G o) (OrientedQuiver G o) ℤ⟦X⟧) -
