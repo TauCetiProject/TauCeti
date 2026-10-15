@@ -14,7 +14,6 @@ import TauCeti.Algebra.DirectSum.Internal
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Nakayama
-import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.RingTheory.Valuation.FinsetDvd
 
