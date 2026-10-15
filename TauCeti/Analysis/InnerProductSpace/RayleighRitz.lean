@@ -90,6 +90,32 @@ theorem compression_def : A.compression X = adjoint X ∘L A ∘L X :=
 theorem compression_apply (x : F) : A.compression X x = adjoint X (A (X x)) :=
   (rfl)
 
+/-- Compression sends the zero operator to zero. -/
+@[simp]
+theorem compression_zero : (0 : E →L[𝕜] E).compression X = 0 := by
+  ext x
+  simp
+
+/-- Compression preserves addition in the operator argument. -/
+@[simp]
+theorem compression_add (B : E →L[𝕜] E) :
+    (A + B).compression X = A.compression X + B.compression X := by
+  ext x
+  simp
+
+/-- Compression preserves subtraction in the operator argument. -/
+@[simp]
+theorem compression_sub (B : E →L[𝕜] E) :
+    (A - B).compression X = A.compression X - B.compression X := by
+  ext x
+  simp
+
+/-- Compression preserves scalar multiplication in the operator argument. -/
+@[simp]
+theorem compression_smul (c : 𝕜) : (c • A).compression X = c • A.compression X := by
+  ext x
+  simp
+
 /-- The matrix coefficients of the compression are those of `A` on the images under `X`. -/
 theorem inner_compression_apply (x y : F) :
     ⟪x, A.compression X y⟫_𝕜 = ⟪X x, A (X y)⟫_𝕜 :=

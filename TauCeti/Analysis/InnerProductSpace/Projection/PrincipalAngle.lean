@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
-public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 
 /-!
@@ -376,22 +375,6 @@ section Isometry
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] {X : F →L[𝕜] E}
-
-namespace ContinuousLinearMap
-
-/-- For an isometry `X`, an operator `T` has the same singular values after the projection onto
-`range X` as after `X` itself: `T P_{range X} = (T X) X†` and `X†` is the adjoint of an isometry. -/
-theorem singularValues_comp_starProjection_range [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-    (hX : Isometry X) (T : E →L[𝕜] E) :
-    ((T ∘L X.range.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E).singularValues =
-      ((T ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
-  let W : F →ₗᵢ[𝕜] E := ⟨X, AddMonoidHomClass.isometry_iff_norm _ |>.1 hX⟩
-  -- The linear map underlying `W` is `X` by construction.
-  have hW : W.toLinearMap = X := rfl
-  rw [← comp_adjoint_eq_starProjection_range hX, ← comp_assoc, toLinearMap_comp,
-    ← adjoint_toLinearMap, ← hW, LinearMap.singularValues_comp_adjoint_linearIsometry]
-
-end ContinuousLinearMap
 
 namespace Submodule
 

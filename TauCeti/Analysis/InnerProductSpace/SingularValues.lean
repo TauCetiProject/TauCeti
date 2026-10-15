@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
+public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
@@ -94,6 +95,9 @@ Courant–Fischer min–max principle for their source Gram operators.
 * `LinearMap.singularValues_linearIsometryEquiv_comp`,
   `LinearMap.singularValues_comp_linearIsometryEquiv`: composing with isometric isomorphisms on
   either side leaves the singular values unchanged.
+* `ContinuousLinearMap.singularValues_comp_starProjection_range`: an operator into any finite-
+  dimensional inner product space has the same singular values after a range projection as
+  after the corresponding isometric trial map.
 
 ## Diagonal models
 
@@ -791,5 +795,23 @@ theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
       simpa only [htail, e.spanIndices_eq_span, Set.image_empty, Submodule.span_empty,
         Submodule.mem_bot] using hx
     simp [hx0]
+
+section RangeProjection
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+
+/-- For an isometry `X`, an operator `T` has the same singular values after the projection onto
+`range X` as after `X` itself: `T P_{range X} = (T X) X†` and `X†` is the adjoint of an isometry. -/
+theorem singularValues_comp_starProjection_range {X : F →L[𝕜] E}
+    (hX : Isometry X) (T : E →L[𝕜] G) :
+    ((T ∘L X.range.starProjection : E →L[𝕜] G) : E →ₗ[𝕜] G).singularValues =
+      ((T ∘L X : F →L[𝕜] G) : F →ₗ[𝕜] G).singularValues := by
+  let W : F →ₗᵢ[𝕜] E := ⟨X, AddMonoidHomClass.isometry_iff_norm _ |>.1 hX⟩
+  -- The linear map underlying `W` is `X` by construction.
+  have hW : W.toLinearMap = X := rfl
+  rw [← comp_adjoint_eq_starProjection_range hX, ← comp_assoc, toLinearMap_comp,
+    ← adjoint_toLinearMap, ← hW, LinearMap.singularValues_comp_adjoint_linearIsometry]
+
+end RangeProjection
 
 end ContinuousLinearMap
