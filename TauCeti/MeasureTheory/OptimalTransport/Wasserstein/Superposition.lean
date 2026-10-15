@@ -63,6 +63,8 @@ so it is the image of a law on `C([a, b], X)`, which represents `μ`.
 * `TauCeti.ae_forall_apply_mem_of_dense`: a law on continuous paths whose time marginals at the
   times of a countable dense set are concentrated on a closed set is concentrated on the paths
   with values in that set.
+* `TauCeti.isProbabilityMeasure_comap_postcomp`: such a law can be pulled back along a closed
+  embedding of the path codomain.
 
 ## References
 
@@ -195,6 +197,29 @@ theorem ae_forall_apply_mem_of_dense {T E : Type*} [TopologicalSpace T] [Topolog
   have hsub := (hF.preimage γ.continuous).closure_subset_iff.2 fun s hs ↦ hγ ⟨s, hs⟩
   exact hsub (hDd.closure_eq ▸ mem_univ t)
 
+/-- Pulling a probability law on `C(T, E)` back along postcomposition by a closed embedding
+`ι : X → E` gives a probability law whose pushforward is the original law, provided the original
+law is concentrated on paths valued in the range of `ι` at the times of a countable dense set. -/
+theorem isProbabilityMeasure_comap_postcomp {T X E : Type*} [TopologicalSpace T]
+    [TopologicalSpace X] [TopologicalSpace E] [T2Space E] [PolishSpace C(T, X)] (ι : X → E)
+    (hι : IsClosedEmbedding ι) (η : Measure C(T, E)) (hη : IsProbabilityMeasure η)
+    {D : Set T} (hDc : D.Countable) (hDd : Dense D)
+    (hD : ∀ t ∈ D, ∀ᵐ γ ∂η, γ t ∈ range ι) :
+    let Φ : C(T, X) → C(T, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
+    IsProbabilityMeasure (η.comap Φ) ∧ (η.comap Φ).map Φ = η := by
+  let _ := hη
+  let Φ : C(T, X) → C(T, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
+  have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
+    (ContinuousMap.postcomp_injective _ hι.injective)
+  have hrange : ∀ᵐ γ ∂η, γ ∈ range Φ := by
+    filter_upwards [ae_forall_apply_mem_of_dense hDc hDd hι.isClosed_range hD] with γ hall
+    choose g hg using hall
+    have hgc : Continuous g := hι.isEmbedding.continuous_iff.2 (by simpa [Function.comp_def, hg]
+      using γ.continuous)
+    exact ⟨⟨g, hgc⟩, ContinuousMap.ext hg⟩
+  exact ⟨hΦ.isProbabilityMeasure_comap hrange, by
+    rw [hΦ.map_comap, Measure.restrict_eq_self_of_ae_mem hrange]⟩
+
 end Concentration
 
 section MetricSpace
@@ -236,7 +261,7 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
   -- Postcomposition with `ι` embeds the paths in `X` into the paths in `E`.
   set Φ : C(Icc a b, X) → C(Icc a b, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
   have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
-    fun γ δ h ↦ ContinuousMap.ext fun t ↦ hι.injective (DFunLike.congr_fun h t)
+    (ContinuousMap.postcomp_injective _ hι.injective)
   have hΦIcc (γ : C(Icc a b, X)) : IccExtend hab.le (Φ γ) = ι ∘ IccExtend hab.le γ := by
     ext t
     simp [Φ, IccExtend_apply]
@@ -251,17 +276,12 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
       with γ hγ
     rwa [IccExtend_val] at hγ
   obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Icc a b)
-  have hrange : ∀ᵐ γ ∂η, γ ∈ range Φ := by
-    filter_upwards [ae_forall_apply_mem_of_dense hDc hDd hι.isClosedEmbedding.isClosed_range
-      fun t _ ↦ hD t] with γ hall
-    choose g hg using hall
-    have hgc : Continuous g := hι.isEmbedding.continuous_iff.2 (by simpa [Function.comp_def, hg]
-      using γ.continuous)
-    exact ⟨⟨g, hgc⟩, ContinuousMap.ext hg⟩
   -- The pullback of `η` to the paths in `X` represents `μ`.
   set ηX := η.comap Φ
-  have hηX : ηX.map Φ = η := by
-    rw [hΦ.map_comap, Measure.restrict_eq_self_of_ae_mem hrange]
+  obtain ⟨hprob, hηX⟩ := isProbabilityMeasure_comap_postcomp ι hι.isClosedEmbedding η hηP
+    hDc hDd fun t _ ↦ hD t
+  change IsProbabilityMeasure ηX at hprob
+  change ηX.map Φ = η at hηX
   have hAC : ∀ᵐ γ : C(Icc a b, X) ∂ηX,
       AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b := by
     rw [← hηX, hΦ.ae_map_iff] at hηAC
@@ -276,8 +296,6 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
         ((μ t : ProbabilityMeasure X) : Measure X).map ι := by
       rwa [Measure.map_map hιm.measurable (measurable_IccExtend_apply hab.le t)]
     exact hιm.map_injective h'
-  have hprob : IsProbabilityMeasure ηX :=
-    ⟨by rw [← preimage_univ (f := Φ), ← hΦ.map_apply, hηX, measure_univ]⟩
   have heq : ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂ηX =
       curveAction p.toReal μ a b := by
     rw [← hιW.curveAction_comp, ← hηA, ← hηX, hΦ.lintegral_map]
