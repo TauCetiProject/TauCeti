@@ -7,20 +7,31 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.LinearAlgebra.Alternating.DomCoprod
-public import Mathlib.LinearAlgebra.Alternating.Curry
-public import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Topology.UniformSpace.Real
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 public import TauCeti.Data.Fin.Basic
+public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Paired wedges of continuous alternating maps
 
-This file provides the unalternated pairing used to construct paired wedges on topological real
-vector spaces. It requires no norm on the domain.
+This file provides the unalternated pairing and paired wedge on topological real vector spaces.
+It also proves the norm-free interior-product antiderivation law
+`ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (deg φ) • φ ∧ ι_v ψ`, using
+`ContinuousAlternatingMap.curryLeftTopological` from the accompanying Curry module. The construction
+requires no norm on the domain and is the topological counterpart of `curryLeft_wedgeWith`.
+
+The alternating-map API follows Mathlib's `AlternatingMap.curryLeft` and `map_insertNth`, and the
+paired-wedge design follows Yury Kudryashov's `DeRhamCohomology` project.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
+  Springer, 2013, Lemma 14.13.
+* Yury Kudryashov's `DeRhamCohomology` project.
 -/
 
 public section
@@ -283,51 +294,19 @@ theorem pairedWedge_flip {k l : ℕ}
 
 end TopologicalFlip
 
-variable {M N : Type*} [AddCommGroup M] [Module ℝ M] [TopologicalSpace M]
-  [AddCommGroup N] [Module ℝ N] [TopologicalSpace N]
-
-/-- Inserting a vector into a continuous alternating map gives the usual alternating sign. -/
-theorem map_insertNthTopological {n : ℕ} (f : M [⋀^Fin (n + 1)]→L[ℝ] N) (p : Fin (n + 1))
-    (x : M) (v : Fin n → M) :
-    f (p.insertNth x v) = (-1 : ℤ) ^ (p : ℕ) • f (Matrix.vecCons x v) := by
-  exact f.toAlternatingMap.map_insertNth p x v
-
-/-- The topology-level interior product obtained by fixing the first vector argument.
-
-This is the companion to Mathlib's normed `ContinuousAlternatingMap.curryLeft`; it works
-without a norm on the domain. -/
-noncomputable def curryLeftTopological {n : ℕ}
-    (f : M [⋀^Fin (n + 1)]→L[ℝ] N) (x : M) : M [⋀^Fin n]→L[ℝ] N :=
-  { toMultilinearMap :=
-      (AlternatingMap.curryLeft (R := ℝ) f.toAlternatingMap x).toMultilinearMap
-    cont := by
-      change Continuous (fun v => f (Matrix.vecCons x v))
-      apply f.cont.comp
-      exact continuous_pi (fun i => by
-        induction i using Fin.cases with
-        | zero => simpa using (continuous_const : Continuous (fun _ : Fin n → M => x))
-        | succ i => simpa using (continuous_apply i))
-    map_eq_zero_of_eq' := by
-      intro v i j hv hij
-      apply f.toAlternatingMap.map_eq_zero_of_eq (Matrix.vecCons x v)
-        (i := i.succ) (j := j.succ)
-      · simpa
-      · exact (Fin.succ_injective _).ne hij }
-
-/-- Evaluation of `curryLeftTopological` is evaluation on a vector cons. -/
-@[simp] theorem curryLeftTopological_apply_apply {n : ℕ} (f : M [⋀^Fin (n + 1)]→L[ℝ] N) (x : M)
-    (v : Fin n → M) : curryLeftTopological f x v = f (Matrix.vecCons x v) := by rfl
-
 section InteriorProduct
 open Equiv
 variable {E F₁ F₂ F₃ : Type*}
   [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
   [AddCommGroup F₁] [Module ℝ F₁] [TopologicalSpace F₁]
+  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
   [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
+  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
   [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
   [IsTopologicalAddGroup F₃] [ContinuousSMul ℝ F₃]
   {k l : ℕ}
 
+omit [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (k + 1)) :
@@ -344,7 +323,7 @@ private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ
   have hsign : (-1 : ℤ) ^ (Fin.castAdd (l + 1) i : ℕ) * (-1) ^ (i : ℕ) = 1 := by
     simp [← mul_pow]
   simp_rw [Fin.insertNth_castAdd_comp_castAdd, Fin.insertNth_castAdd_apply_natAdd,
-    map_insertNthTopological, ← curryLeftTopological_apply_apply]
+    ContinuousAlternatingMap.map_insertNth', ← curryLeftTopological_apply_apply]
   simp only [map_zsmul, FunLike.coe_smul, Pi.smul_apply, smul_comm (Perm.sign _),
     ← Finset.smul_sum, smul_smul, hsign, one_smul]
   symm
@@ -352,6 +331,7 @@ private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ
     fun sigma => ?_
   simp [Perm.sign_permCongr]
 
+omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁] in
 private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (l + 1)) :
@@ -366,13 +346,16 @@ private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ]
   have hsign : (-1 : ℤ) ^ (Fin.natAdd (k + 1) i : ℕ) * (-1 : ℤ) ^ (i : ℕ) = (-1 : ℤ) ^ (k + 1) := by
     simp [pow_add, mul_assoc, ← mul_pow]
   simp_rw [Fin.insertNth_natAdd_apply_castAdd, Fin.insertNth_natAdd_comp_natAdd,
-    map_insertNthTopological, ← curryLeftTopological_apply_apply]
+    ContinuousAlternatingMap.map_insertNth', ← curryLeftTopological_apply_apply]
   simp only [map_zsmul, smul_comm (Perm.sign _), ← Finset.smul_sum, smul_smul, hsign,
     Function.comp_apply]
   rw [← Int.cast_smul_eq_zsmul ℝ]
   simp only [Int.cast_pow, Int.cast_neg, Int.cast_one]
 
-/-- The interior product is an antiderivation of degree `-1` for the paired wedge. -/
+/-- The interior product is an antiderivation of degree `-1` for the paired wedge:
+`ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (k + 1) • φ ∧ ι_v ψ` for a `(k + 1)`-form `φ`.
+This is the topological counterpart of `TauCeti.curryLeft_wedgeWith` and the formula of Lee,
+*Introduction to Smooth Manifolds*, 2nd ed., Lemma 14.13. -/
 theorem curryLeftTopological_pairedWedge (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (fun p : F₁ × F₂ ↦ mu p.1 p.2))
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁)
@@ -384,13 +367,13 @@ theorem curryLeftTopological_pairedWedge (mu : F₁ →L[ℝ] F₂ →L[ℝ] F�
         (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
         (-1 : ℝ) ^ (k + 1) •
           pairedWedge (k := k + 1) (l := l) mu hmu phi (curryLeftTopological (n := l) psi v) w := by
-  rw [curryLeftTopological_apply_apply, pairedWedge_apply, pairedWedge_apply, pairedWedge_apply,
-    Matrix.vecCons]
+  rw [curryLeftTopological_apply_apply, pairedWedge_apply, pairedWedge_apply, pairedWedge_apply]
   let g : (Fin (k + 1 + l + 1) → E) → F₃ := fun y =>
     mu (phi fun i => y (Fin.castAdd (l + 1) i))
       (psi fun j => y (Fin.natAdd (k + 1) j))
   have hexp := TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth
     (n := k + 1 + l) g v w
+  simp only [g, Function.comp_apply] at hexp
   have hexp' : (∑ sigma : Perm (Fin (k + 1 + (l + 1))), Perm.sign sigma •
       mu (phi fun i =>
         Fin.cons (α := fun _ : Fin (k + 1 + l + 1) => E) v w
@@ -404,12 +387,16 @@ theorem curryLeftTopological_pairedWedge (mu : F₁ →L[ℝ] F₂ →L[ℝ] F�
               (Fin.castAdd (l + 1) i))
             (psi fun q => Fin.insertNth (α := fun _ => E) j v (w ∘ tau)
               (Fin.natAdd (k + 1) q)) := by
+    -- The paired-wedge expression uses the other parenthesization of the sum of degrees;
+    -- `convert` transports the expansion across that definitional equality.
     convert hexp using 1
-    rfl
   have hsplit (f : Fin (k + 1 + l + 1) → F₃) :
       ∑ j, f j = ∑ i : Fin (k + 1), f (Fin.castAdd (l + 1) i) +
         ∑ i : Fin (l + 1), f (Fin.natAdd (k + 1) i) :=
     Fin.sum_univ_add (a := k + 1) (b := l + 1) f
+  have hvecCons (x : E) (y : Fin (k + 1 + l) → E) :
+      Matrix.vecCons x y = Fin.cons x y := rfl
+  rw [hvecCons]
   rw [hexp', hsplit]
   simp only [sum_sign_smul_insertNth_castAdd, sum_sign_smul_insertNth_natAdd, Finset.sum_const,
     Finset.card_univ, Fintype.card_fin]

@@ -456,57 +456,13 @@ variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
   {k l : ℕ}
 
-/-- The terms of the expansion of `(wedgeWith mu phi psi).curryLeft v` in which `v` lands in the
-`i`-th slot of `phi`: each such slot contributes the signed sum of `wedgeWith mu (phi.curryLeft v)
-psi`. -/
-private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
-    (w : Fin (k + 1 + l) → E) (i : Fin (k + 1)) :
-    (-1 : ℤ) ^ (Fin.castAdd (l + 1) i : ℕ) • ∑ τ : Perm (Fin (k + 1 + l)), Perm.sign τ •
-      mu (phi fun a => Fin.insertNth (α := fun _ => E)
-          (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) v (w ∘ τ) (Fin.castAdd (l + 1) a))
-        (psi fun b => Fin.insertNth (α := fun _ => E)
-          (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) v (w ∘ τ) (Fin.natAdd (k + 1) b)) =
-      ∑ sigma : Perm (Fin (k + (l + 1))), Perm.sign sigma •
-        mu (phi.curryLeft v fun a =>
-            (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) (sigma (Fin.castAdd (l + 1) a)))
-          (psi fun b =>
-            (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) (sigma (Fin.natAdd k b))) := by
-  have hsign : (-1 : ℤ) ^ (Fin.castAdd (l + 1) i : ℕ) * (-1) ^ (i : ℕ) = 1 := by
-    simp [← mul_pow]
-  -- Locate the entries of the inserted tuple, then move `v` to the front of the block of `phi`.
-  simp_rw [Fin.insertNth_castAdd_comp_castAdd, Fin.insertNth_castAdd_apply_natAdd,
-    ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply]
-  -- Collect the two signs in front of the sum, where they cancel.
-  simp only [map_zsmul, FunLike.coe_smul, Pi.smul_apply, smul_comm (Perm.sign _),
-    ← Finset.smul_sum, smul_smul, hsign, one_smul]
-  symm
-  refine Fintype.sum_equiv (finCongr (show k + (l + 1) = k + 1 + l by omega)).permCongr _ _
-    fun sigma => ?_
-  simp [Perm.sign_permCongr]
-
-/-- The terms of the expansion of `(wedgeWith mu phi psi).curryLeft v` in which `v` lands in the
-`i`-th slot of `psi`: each such slot contributes `(-1) ^ (k + 1)` times the signed sum of
-`wedgeWith mu phi (psi.curryLeft v)`. -/
-private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
-    (w : Fin (k + 1 + l) → E) (i : Fin (l + 1)) :
-    (-1 : ℤ) ^ (Fin.natAdd (k + 1) i : ℕ) • ∑ τ : Perm (Fin (k + 1 + l)), Perm.sign τ •
-      mu (phi fun a => Fin.insertNth (α := fun _ => E)
-          (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)) v (w ∘ τ) (Fin.castAdd (l + 1) a))
-        (psi fun b => Fin.insertNth (α := fun _ => E)
-          (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)) v (w ∘ τ) (Fin.natAdd (k + 1) b)) =
-      (-1 : ℤ) ^ (k + 1) • ∑ sigma : Perm (Fin (k + 1 + l)), Perm.sign sigma •
-        mu (phi fun a => w (sigma (Fin.castAdd l a)))
-          (psi.curryLeft v fun b => w (sigma (Fin.natAdd (k + 1) b))) := by
-  have hsign : (-1 : ℤ) ^ (Fin.natAdd (k + 1) i : ℕ) * (-1) ^ (i : ℕ) = (-1) ^ (k + 1) := by
-    simp [pow_add, mul_assoc, ← mul_pow]
-  -- Locate the entries of the inserted tuple, then move `v` to the front of the block of `psi`.
-  simp_rw [Fin.insertNth_natAdd_apply_castAdd, Fin.insertNth_natAdd_comp_natAdd,
-    ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply]
-  -- Collect the two signs in front of the sum, where they combine to `(-1) ^ (k + 1)`.
-  simp only [map_zsmul, smul_comm (Perm.sign _), ← Finset.smul_sum, smul_smul, hsign,
-    Function.comp_apply]
+/-- The normed and norm-free interior products agree on normed spaces. -/
+theorem curryLeft_eq_curryLeftTopological {n : ℕ}
+    (f : E [⋀^Fin (n + 1)]→L[ℝ] F₁) (x : E) :
+    f.curryLeft x = f.curryLeftTopological x := by
+  ext v
+  simp only [ContinuousAlternatingMap.curryLeft_apply_apply,
+    ContinuousAlternatingMap.curryLeftTopological_apply_apply]
 
 /-- The interior product is an antiderivation of degree `-1` for the paired wedge:
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (k + 1) φ ∧ ι_v ψ` for a `(k + 1)`-form `φ`, where the interior
@@ -518,27 +474,12 @@ theorem curryLeft_wedgeWith (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (wedgeWith mu phi psi).curryLeft v w =
       wedgeWith mu (phi.curryLeft v) psi (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
         (-1 : ℝ) ^ (k + 1) • wedgeWith mu phi (psi.curryLeft v) w := by
-  rw [ContinuousAlternatingMap.curryLeft_apply_apply, wedgeWith_apply, wedgeWith_apply,
-    wedgeWith_apply, Matrix.vecCons]
-  -- Expand the signed sum along the slot that receives `v`; the summand is the function
-  -- `y ↦ mu (phi (y ∘ castAdd)) (psi (y ∘ natAdd))` evaluated at `Fin.cons v w ∘ sigma`.
-  have hexp : (∑ sigma : Perm (Fin (k + 1 + (l + 1))), Perm.sign sigma •
-      mu (phi fun i => Fin.cons (α := fun _ => E) v w (sigma (Fin.castAdd (l + 1) i)))
-        (psi fun j => Fin.cons (α := fun _ => E) v w (sigma (Fin.natAdd (k + 1) j)))) = _ :=
-    sum_sign_smul_cons_comp_eq_sum_insertNth
-      (fun y : Fin (k + 1 + l + 1) → E =>
-        mu (phi fun i => y (Fin.castAdd (l + 1) i)) (psi fun j => y (Fin.natAdd (k + 1) j))) v w
-  -- The slot of `v` ranges over `Fin (k + 1 + l + 1)`, which is `Fin ((k + 1) + (l + 1))`;
-  -- split it into the block of `phi` and the block of `psi`.
-  have hsplit (f : Fin (k + 1 + l + 1) → F₃) :
-      ∑ j, f j = ∑ i : Fin (k + 1), f (Fin.castAdd (l + 1) i) +
-        ∑ i : Fin (l + 1), f (Fin.natAdd (k + 1) i) :=
-    Fin.sum_univ_add (a := k + 1) (b := l + 1) f
-  rw [hexp, hsplit]
-  simp only [sum_sign_smul_insertNth_castAdd, sum_sign_smul_insertNth_natAdd, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin]
-  rw [Nat.factorial_succ k, Nat.factorial_succ l]
-  match_scalars <;> field_simp
+  rw [ContinuousAlternatingMap.curryLeft_apply_apply, wedgeWith_eq_topological,
+    ← ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+  have h := ContinuousAlternatingMap.curryLeftTopological_pairedWedge
+    mu mu.continuous₂ phi psi v w
+  simpa only [wedgeWith_eq_topological, curryLeft_eq_curryLeftTopological] using h
+
 
 end InteriorProduct
 
