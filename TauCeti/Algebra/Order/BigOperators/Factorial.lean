@@ -51,7 +51,7 @@ theorem prod_max_one_add_one_div_two {K : Type*} [Field K] [LinearOrder K]
         ring
       have hfac : ((n + 2).factorial : K) =
           ((n + 2 : ℕ) : K) * ((n + 1).factorial : K) := by
-        rw [show n + 2 = (n + 1) + 1 by omega, Nat.factorial_succ]
+        rw [Nat.factorial_succ]
         push_cast
         ring
       rw [hmax, hfac, Nat.succ_sub_one, Nat.succ_sub_one]
