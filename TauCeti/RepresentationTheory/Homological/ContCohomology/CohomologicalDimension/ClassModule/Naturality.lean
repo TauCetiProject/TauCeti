@@ -98,23 +98,18 @@ theorem contCohomologyClass_map_abelianizationProPMapEquivariant :
   let ψ := abelianizationProPExtensionMap p f hf hVW
   apply X.contCohomologyClass_map_eq_of_continuous_monoidHom κ
     (continuous_abelianizationProPMapEquivariant p f hf hVW e he) Y ψ.toMonoidHom ψ.continuous
-  · apply MonoidHom.ext
-    intro a
-    -- Read the equivariant homomorphism as a function so its apply lemma, rather
-    -- than the hidden monoid-hom projection, specifies the coefficient map.
-    change ψ (X.toGroupExtension.inl a) = Y.toGroupExtension.inl (κ a)
-    obtain ⟨v, rfl⟩ := abelianizationProPMk_surjective p G V a
-    simp [X, Y, κ, ψ]
-  · apply MonoidHom.ext
-    intro x
-    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
-    -- Evaluate the bundled map at a quotient representative; otherwise the
-    -- monoid-hom projection hides its characteristic evaluation lemma.
-    change (abelianizationProPExtension p H W).rightHom
-      (ψ (QuotientGroup.mk g)) = X.toGroupExtension.rightHom (QuotientGroup.mk g)
-    rw [abelianizationProPExtensionMap_mk,
-      ProfiniteGroupExtension.relabelQuotient_rightHom_apply]
-    simpa only [abelianizationProPExtension_rightHom, QuotientGroup.mapOfLE_mk] using (he g).symm
+  · have hκ : κ.toMonoidHom = abelianizationProPMap p f hf hVW :=
+      MonoidHom.ext (abelianizationProPMapEquivariant_apply p f hf hVW e he)
+    simpa only [X, Y, hκ, ProfiniteGroupExtension.relabelQuotient_toGroupExtension,
+      GroupExtension.relabelQuotient_inl, abelianizationProPProfiniteExtension_toGroupExtension]
+      using abelianizationProPExtensionMap_comp_inl p f hf hVW
+  · have hquot : QuotientGroup.map V W f hVW = e.toMulEquiv.toMonoidHom := by
+      apply QuotientGroup.monoidHom_ext
+      exact MonoidHom.ext (fun g ↦ (he g).symm)
+    simpa only [X, Y, hquot, ProfiniteGroupExtension.relabelQuotient_toGroupExtension,
+      GroupExtension.relabelQuotient_rightHom,
+      abelianizationProPProfiniteExtension_toGroupExtension]
+      using rightHom_comp_abelianizationProPExtensionMap p f hf hVW
 
 /-- If the target class-module extension class generates second cohomology, the
 canonical induced class-module map is surjective on second cohomology. This does not

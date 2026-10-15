@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.ClassModule.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Naturality
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Basic
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.ClassIdentification
 
 /-!
