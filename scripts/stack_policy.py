@@ -579,10 +579,17 @@ class Detector:
                 if not shared and not canonical_base:
                     continue
                 graph_direction = parent.head in commits or canonical_base
-                historical_commits = {}
-                if not graph_direction:
-                    historical_commits = self.source.historical_commits(child.head, parent.head)
-                    if not historical_commits:
+                imported_commits = {}
+                constrain_imports = not graph_direction
+                if parent.head in commits:
+                    child_line = {row[0] for row in self.source.first_parent_history(child.head)}
+                    constrain_imports = parent.head not in child_line
+                if constrain_imports:
+                    imported_commits = self.source.historical_commits(child.head, parent.head)
+                    if not imported_commits:
+                        if graph_direction:
+                            reasons.append(f"#{number}: no distinct parent-line work newly imported")
+                            continue
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
                 # Only a current canonical base choice bypasses provenance guards.
                 provenance_gap = None
@@ -601,14 +608,18 @@ class Detector:
                 landed = self.source.landed(parent, base, paths, patch) if patch else None
                 if landed:
                     reasons.append(f"#{number}: aggregate source equivalent landed at {landed}")
-                eligible = set(historical_commits) if historical_commits else parent_commits
+                eligible = set(imported_commits) if constrain_imports else parent_commits
                 preferred = parent.head
                 ordered = sorted(eligible - {preferred})
                 if preferred in eligible:
                     ordered.insert(0, preferred)
                 unsupported = False
                 for commit in ordered[:MAX_EVIDENCE_COMMITS]:
-                    historical = historical_commits.get(commit)
+                    historical = imported_commits.get(commit)
+                    # A current head is already bound by the fresh PR API. Older
+                    # import pins additionally need their historical event binding.
+                    if historical and historical[0] == parent.head:
+                        historical = None
                     historical_run = 0
                     try:
                         cb, cp, delta = self.source.commit_patch(commit)

@@ -43,7 +43,11 @@ own first-parent line, outside the child's first-parent line. This supports
 indirect imports through another branch. The audit records that merge and pinned
 revision. Only parent-line commits NEWLY introduced by this merge are eligible:
 all commits reachable from the child's pre-merge first parent are excluded,
-including work it previously merged from its own side branches.
+including work it previously merged from its own side branches. The same
+newly-introduced attribution rule applies when a CURRENT parent head arrived
+through a merge, so an ordinary match cannot cite the child's own prefix either.
+Straight forks still use exact current-head ancestry; older import pins require
+the historical binding below.
 
 A canonical GitHub Actions PR-event record must independently bind the exact
 head repository, branch and pinned SHA while the parent PR existed (server

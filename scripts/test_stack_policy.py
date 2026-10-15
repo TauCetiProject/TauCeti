@@ -339,11 +339,69 @@ class GitFixtures(unittest.TestCase):
         self.commit("parent advances")
         self.pr(1)
         api = SimpleNamespace(historical_head=lambda _, head: 12345 if head == pinned else None)
-        try:
-            evidence, _ = self.detector(api).detect(child)
-        except sp.Gap:
-            evidence = None
-        self.assertIsNone(evidence)
+        with self.assertRaisesRegex(sp.Gap, "canonical PR-event binding"):
+            self.detector(api).detect(child)
+
+    def test_current_parent_import_cites_new_parent_work_not_child_prefix(self):
+        for merge_main in (False, True):
+            with self.subTest(merge_main=merge_main):
+                self.setUp()
+                git(self.root, "checkout", "-b", "child")
+                self.write("C", "child's existing contribution\n")
+                self.commit("child prefix")
+                git(self.root, "checkout", "-b", "parent")
+                self.write("P", "new parent contribution\n")
+                parent_commit = self.commit("parent work")
+                if merge_main:
+                    git(self.root, "checkout", "main")
+                    self.write("later-main", "independent landed work\n")
+                    self.commit("main advances")
+                    git(self.root, "checkout", "parent")
+                    git(self.root, "merge", "--no-ff", "main", "-m", "parent merges main")
+                self.pr(1)
+                git(self.root, "checkout", "child")
+                git(self.root, "merge", "--no-ff", "parent", "-m", "child imports parent")
+                child = self.pr(2)
+                evidence, _ = self.detector().detect(child)
+                self.assertEqual(evidence.commit, parent_commit)
+
+    def test_current_parent_merge_cannot_claim_childs_own_prefix(self):
+        git(self.root, "checkout", "-b", "child")
+        self.write("C", "child's original contribution\n")
+        self.commit("child owns C")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent contribution\n")
+        self.commit("parent owns P")
+        self.pr(1)
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge current parent")
+        self.write("P", "independent child rewrite\n")
+        self.commit("rewrite all parent work")
+        child = self.pr(2)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_current_parent_merge_cannot_claim_childs_prior_side_branch(self):
+        git(self.root, "checkout", "-b", "child-side")
+        self.write("C", "child's original side contribution\n")
+        self.commit("child side")
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("own", "child main line\n")
+        self.commit("child main")
+        git(self.root, "merge", "--no-ff", "child-side", "-m", "merge own side")
+        git(self.root, "checkout", "child-side")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent contribution\n")
+        current_head = self.commit("parent contribution")
+        self.pr(1)
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge current parent")
+        self.write("P", "child rewrites parent source\n")
+        self.commit("rewrite P")
+        child = self.pr(2)
+        api = SimpleNamespace(historical_head=lambda _, head: 12345 if head == current_head else None)
+        with self.assertRaisesRegex(sp.Gap, "canonical PR-event binding"):
+            self.detector(api).detect(child)
 
     def test_closed_submission_cannot_close_its_own_resubmission(self):
         parent, old_child = self.parent_child()
