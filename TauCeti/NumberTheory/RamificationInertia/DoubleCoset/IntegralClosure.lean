@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Inertia
 public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
@@ -32,8 +33,9 @@ Finite residue fields are never assumed. The statements specialize the invariant
 coset law of `TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic` and
 `TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Inertia`: the work here is to
 recognize `G` and `H` as Galois groups of the integral closures, via
-`IsGaloisGroup.of_isIntegralClosure` and `IsGaloisGroup.of_isIntegralClosure_tower`,
-and to supply the finiteness and flatness that a Dedekind base provides. Rings of integers of
+`IsGaloisGroup.of_isIntegralClosure` and `IsGaloisGroup.of_isIntegralClosure_fixedField`,
+and to supply the finiteness and flatness that a Dedekind base provides, via
+`IsIntegralClosure.finite` and `TauCeti.IsIntegralClosure.flat`. Rings of integers of
 number fields are the case `A = 𝓞 K`, `B = 𝓞 M`, `C = 𝓞 (M ^ H)`.
 
 ## Main definitions
@@ -88,13 +90,9 @@ omit [IsScalarTower A K M] [IsGalois K M] [IsIntegrallyClosed A] in
 include A in
 /-- The subgroup `H` is a Galois group of `B` over `C`, and `C` embeds in `B`. -/
 private theorem isGaloisGroup_fixedField_aux : IsGaloisGroup H C B ∧ FaithfulSMul C B := by
-  have : IsGalois (fixedField H) M := IsGalois.of_fixed_field M H
-  have : IsGaloisGroup H (fixedField H) M :=
-    IsGaloisGroup.of_mulEquiv_algEquiv (subgroupEquivAlgEquiv H) fun _ _ ↦ rfl
   have : FaithfulSMul C (fixedField H) := IsIntegralClosure.faithfulSMul A C (fixedField H)
   have : FaithfulSMul C M := .trans C (fixedField H) M
-  exact ⟨IsGaloisGroup.of_isIntegralClosure_tower H A K (fixedField H) M C B,
-    .tower_bot C B M⟩
+  exact ⟨IsGaloisGroup.of_isIntegralClosure_fixedField A H C B, .tower_bot C B M⟩
 
 /-- **The double coset law over an integrally closed base.** For `M / K` finite Galois with
 group `G`, a subgroup `H` of `G`, the integral closures `B` and `C` of `A` in `M` and in `M ^ H`,
@@ -143,8 +141,7 @@ include K M in
 private theorem finite_flat_aux : IsDomain B ∧ Module.Finite A B ∧ Module.Flat A B := by
   have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain _
   have : FaithfulSMul A M := .trans A K M
-  have : Module.IsTorsionFree A B := IsIntegralClosure.isTorsionFree A M
-  exact ⟨inferInstance, IsIntegralClosure.finite A K M B, inferInstance⟩
+  exact ⟨inferInstance, IsIntegralClosure.finite A K M B, TauCeti.IsIntegralClosure.flat A M B⟩
 
 include K M H in
 /-- Over a Dedekind base, `C` is a finite flat `A`-algebra and a domain, and `B` is flat
@@ -157,10 +154,9 @@ private theorem finite_flat_fixedField_aux :
     Algebra.isSeparable_tower_bot_of_isSeparable K (fixedField H) M
   have : IsDedekindDomain C := IsIntegralClosure.isDedekindDomain A K (fixedField H) C
   have : FaithfulSMul A (fixedField H) := .trans A K (fixedField H)
-  have : Module.IsTorsionFree A C := IsIntegralClosure.isTorsionFree A (fixedField H)
   obtain ⟨_, _⟩ := isGaloisGroup_fixedField_aux (A := A) (B := B) H C
-  exact ⟨inferInstance, IsIntegralClosure.finite A K (fixedField H) C, inferInstance,
-    inferInstance⟩
+  exact ⟨inferInstance, IsIntegralClosure.finite A K (fixedField H) C,
+    TauCeti.IsIntegralClosure.flat A (fixedField H) C, inferInstance⟩
 
 omit [Q.IsPrime] in
 /-- **The local degree of `σ Q ∩ C` is an index of decomposition groups**:
