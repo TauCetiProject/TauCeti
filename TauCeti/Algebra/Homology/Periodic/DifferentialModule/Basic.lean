@@ -281,7 +281,6 @@ def ofOnePeriodicComplex :
 variable (C) in
 /-- Differential modules are equivalent to one-periodic complexes, that is to homological
 complexes of shape `ComplexShape.up (ZMod 1)`. -/
-@[expose]
 def onePeriodicComplexEquivalence :
     DifferentialModule C ≌ HomologicalComplex C (ComplexShape.up (ZMod 1)) where
   functor := toOnePeriodicComplex C
@@ -312,6 +311,13 @@ def onePeriodicComplexEquivalence :
 @[simp] theorem onePeriodicComplexEquivalence_inverse :
     (onePeriodicComplexEquivalence C).inverse = ofOnePeriodicComplex C := by
   simp [onePeriodicComplexEquivalence]
+
+variable (C) in
+/-- Evaluating the one-periodic complex of a differential module in any degree recovers the
+underlying object. -/
+theorem toOnePeriodicComplex_comp_eval (i : ZMod 1) :
+    toOnePeriodicComplex C ⋙ HomologicalComplex.eval C _ i = forget C :=
+  rfl
 
 end OnePeriodic
 

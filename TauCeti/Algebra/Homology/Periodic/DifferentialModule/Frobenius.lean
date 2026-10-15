@@ -57,28 +57,16 @@ theorem splitExact_conflation_iff (S : ShortComplex (DifferentialModule C)) :
     (splitExact C).Conflation S ↔ Nonempty (S.map (forget C)).Splitting := by
   rw [splitExact, ExactStructure.transport_conflation_iff,
     ExactStructure.homologicalComplex_conflation_iff]
-  simp only [ExactStructure.split_conflation, Equivalence.symm_inverse]
-  simp only [onePeriodicComplexEquivalence]
-  constructor
-  · intro h
-    have h0 := h (0 : ZMod 1)
-    rw [← ShortComplex.map_comp] at h0
-    change Nonempty (S.map (forget C)).Splitting at h0
-    exact h0
-  · intro h i
-    obtain rfl := Subsingleton.elim i 0
-    rw [← ShortComplex.map_comp]
-    change Nonempty (S.map (forget C)).Splitting
-    exact h
+  simp only [ExactStructure.split_conflation, Equivalence.symm_inverse,
+    onePeriodicComplexEquivalence_functor, ← ShortComplex.map_comp,
+    toOnePeriodicComplex_comp_eval]
+  exact ⟨fun h ↦ h 0, fun h _ ↦ h⟩
 
 /-- Differential modules with the componentwise split exact structure form a Frobenius exact
 category. -/
 theorem splitExact_isFrobenius : (splitExact C).IsFrobenius :=
-  by
-    have h := ExactStructure.homologicalComplex_split_up'_isFrobenius
-      (C := C) (1 : ZMod 1)
-    change (E₁).IsFrobenius at h
-    exact h.transport (onePeriodicComplexEquivalence C).symm
+  (ExactStructure.homologicalComplex_split_isFrobenius (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩)
+    (fun i ↦ ⟨i + 1, rfl⟩)).transport (onePeriodicComplexEquivalence C).symm
 
 /-- A differential module is relatively projective for the componentwise split exact structure
 exactly when its one-periodic complex is contractible. -/
