@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.RelationModule.Equivariant
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelationModule.Cohomology
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.ProjectiveKernel
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.CoeffMap
 
 /-!
 # Second cohomology of transported arithmetic relation-module maps
@@ -73,43 +73,15 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   let := galoisClassModuleAction p K L j
   let := continuousSMul_galoisClassModuleAction p K L j
   intro x
-  induction x using QuotientAddGroup.induction_on with
-  | H z =>
-    let B := ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
-      (MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g))
-    let e := freeProfiniteGroup.abelianizationProPEquivRelationModule p hg
-    let ψ : Additive (abelianizationProP p (freeProfiniteGroup ι)
-        (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker) ≃+ B :=
-      e.trans (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
-        (MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g)).symm
-    let c : _root_.groupCohomology.cocycles₂ B :=
-      ⟨fun q ↦ ψ ((z : _ → _) q), by
-        rw [_root_.groupCohomology.mem_cocycles₂_iff]
-        intro a b d
-        -- In this representation the action is the group-algebra monomial action.
-        change e (z.val (a * b, d)) + e (z.val (a, b)) =
-          MonoidAlgebra.single a (1 : ℤ_[p]) • e (z.val (b, d)) + e (z.val (a, b * d))
-        simpa only [e, map_add,
-          freeProfiniteGroup.abelianizationProPEquivRelationModule_presentation_smul]
-          using congrArg e ((mem_Z2_iff.mp z.property).2 a b d)⟩
-    simp only [explicitCoeff2_mk]
-    rw [freeProfiniteGroup.explicitH2EquivRelationModule_mk p hg z c (fun _ ↦ rfl)]
-    have hmap := ConcreteCategory.congr_hom
-      (_root_.groupCohomology.H2π_comp_map (MonoidHom.id (L ≃ₐ[K] L))
-        (ofModuleMonoidAlgebra.map (ModuleCat.ofHom β))) c
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hmap
-    refine Eq.trans (b := _root_.groupCohomology.H2π _
-      (_root_.groupCohomology.mapCocycles₂ (MonoidHom.id (L ≃ₐ[K] L))
-        (ofModuleMonoidAlgebra.map (ModuleCat.ofHom β)) c)) ?_ ?_
-    · apply explicitH2EquivPadicCompletionUnits_mk
-      rintro ⟨a, b⟩
-      rw [TauCeti.groupCohomology.mapCocycles₂_apply]
-      -- Evaluate the coefficient morphisms on their underlying additive carriers.
-      erw [cocyclesMap2_apply]
-      simp [ofModuleMonoidAlgebra, c, ψ, e, RestrictScalars.addEquiv]
-      rfl
-    · convert hmap.symm using 1
-      rfl
+  unfold explicitH2EquivPadicCompletionUnits freeProfiniteGroup.explicitH2EquivRelationModule
+  apply explicitH2AddEquivGroupCohomology_explicitCoeff2
+  intro m
+  change ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm
+      (relationModuleToAbelianizationProPEquivariant p K L hg β j m.toMul)) =
+    β (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg m)
+  rw [relationModuleToAbelianizationProPEquivariant_apply,
+    relationModuleToAbelianizationProP_apply, ContinuousMulEquiv.symm_apply_apply]
+  rfl
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
 on explicit second cohomology after transport through Lyndon and local reciprocity. -/
@@ -133,18 +105,45 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
   let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
   let := galoisClassModuleAction p K L j
   let := continuousSMul_galoisClassModuleAction p K L j
-  have := groupCohomology.isIso_map_of_surjective_of_projective_ker β hβ 1
-  let e₁ := freeProfiniteGroup.explicitH2EquivRelationModule p hg
-  let e₂ := explicitH2EquivPadicCompletionUnits p K L j
+  let B := ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+    (MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g))
+  let C := ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+    (Additive ↑(padicCompletionUnits p L)))
+  let eL := freeProfiniteGroup.abelianizationProPEquivRelationModule p hg
+  let eR := padicCompletionUnitsEquivAbelianizationProP p K L j
+  let ψ : Additive (abelianizationProP p (freeProfiniteGroup ι)
+      (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker) ≃+ B :=
+    eL.trans (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+      (MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g)).symm
+  let χ : Additive (abelianizationProP p (AbsoluteGaloisGroup K)
+      (galoisSubgroup K L j).toSubgroup) ≃+ C :=
+    eR.symm.toMulEquiv.toAdditive.trans
+      (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+        (Additive ↑(padicCompletionUnits p L))).symm
+  have hψ : ∀ t x, ψ (t • x) = B.ρ t (ψ x) := fun t x => by
+    change eL (t • x) = MonoidAlgebra.single t (1 : ℤ_[p]) • eL x
+    exact freeProfiniteGroup.abelianizationProPEquivRelationModule_presentation_smul p hg t x
+  have hχ : ∀ t x, χ (t • x) = C.ρ t (χ x) := fun t x => by
+    change ofMul (eR.symm (t • x.toMul)) =
+      MonoidAlgebra.single t (1 : ℤ_[p]) • ofMul (eR.symm x.toMul)
+    rw [padicCompletionUnits_single_smul, one_smul]
+    have h := padicCompletionUnitsEquivAbelianizationProP_galois_smul p K L j t
+      (eR.symm x.toMul)
+    rw [eR.apply_symm_apply] at h
+    exact congrArg ofMul (eR.injective ((eR.apply_symm_apply _).trans h.symm))
   let f := relationModuleToAbelianizationProPEquivariant p K L hg β j
   let hf := f.continuous_toAdditive
     (continuous_relationModuleToAbelianizationProPEquivariant p K L hg β j)
-  let b := (_root_.groupCohomology.functor ℤ_[p] (L ≃ₐ[K] L) 2).map
-    (ofModuleMonoidAlgebra.map (ModuleCat.ofHom β))
-  have heq : ⇑e₂ ∘ explicitCoeff2 (L ≃ₐ[K] L) _ f.toAdditive hf = ⇑b ∘ ⇑e₁ :=
-    funext (explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule p K L hg β j)
-  apply (Function.Bijective.of_comp_iff' e₂.bijective _).mp
-  rw [heq]
-  exact (ConcreteCategory.bijective_of_isIso b).comp e₁.bijective
+  let F : B ⟶ C := ofModuleMonoidAlgebra.map (ModuleCat.ofHom β)
+  have hF : ∀ x, χ (f.toAdditive x) = F.hom (ψ x) := by
+    intro x
+    change ofMul (eR.symm (f x.toMul)) = β (eL x)
+    dsimp only [f, eR]
+    rw [relationModuleToAbelianizationProPEquivariant_apply,
+      relationModuleToAbelianizationProP_apply, ContinuousMulEquiv.symm_apply_apply]
+    rfl
+  have := groupCohomology.isIso_map_of_surjective_of_projective_ker β hβ 1
+  exact explicitCoeff2_bijective_of_isIso
+    (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF
 
 end TauCeti

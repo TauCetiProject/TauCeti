@@ -38,25 +38,6 @@ variable (p : ℕ) [Fact p.Prime] {G ι : Type} [Group G] [Finite G]
   [TopologicalSpace G] [DiscreteTopology G] [Fintype ι] [DecidableEq ι]
   {g : ι → G} (hg : Subgroup.closure (Set.range g) = ⊤)
 
-/-- Lyndon's coordinates intertwine the presented group's conjugation action with its
-left group-algebra action on the relation module. -/
-@[simp]
-theorem abelianizationProPEquivRelationModule_presentation_smul (t : G)
-    (x : Additive (abelianizationProP p (freeProfiniteGroup ι)
-      (lift g : freeProfiniteGroup ι →* G).ker)) :
-    letI := presentationClassModuleAction p (g := g)
-      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
-    abelianizationProPEquivRelationModule p hg (t • x) =
-      MonoidAlgebra.single t (1 : ℤ_[p]) • abelianizationProPEquivRelationModule p hg x := by
-  have hd : Dense (Subgroup.closure (Set.range g) : Set G) := by
-    rw [hg, Subgroup.coe_top]
-    exact dense_univ
-  let := presentationClassModuleAction p hd
-  obtain ⟨f, rfl⟩ := lift_surjective hd t
-  rw [← ofMul_toMul x, ← ofMul_smul, presentationClassModuleAction_lift_smul,
-    ofMul_smul]
-  exact abelianizationProPEquivRelationModule_smul p hg f x
-
 /-- Explicit second cohomology of the pro-`p` relation group, with the presented group's
 conjugation action, is second cohomology of its integral relation-module representation. -/
 def explicitH2EquivRelationModule :

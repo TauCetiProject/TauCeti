@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelationModule.Comparison
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelationModule.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
 /-!
@@ -121,5 +122,34 @@ theorem exists_presentationProfiniteExtension_comparison :
     exact hψ f
 
 end Comparison
+
+end TauCeti.freeProfiniteGroup
+
+namespace TauCeti.freeProfiniteGroup
+
+open Additive
+
+variable (p : ℕ) [Fact p.Prime] {G ι : Type} [Group G] [Finite G]
+  [TopologicalSpace G] [DiscreteTopology G] [Fintype ι] [DecidableEq ι]
+  {g : ι → G} (hgen : Subgroup.closure (Set.range g) = ⊤)
+
+/-- Lyndon's coordinates intertwine the presented group's conjugation action with its
+left group-algebra action on the relation module. -/
+@[simp]
+theorem abelianizationProPEquivRelationModule_presentation_smul (t : G)
+    (x : Additive (abelianizationProP p (freeProfiniteGroup ι)
+      (lift g : freeProfiniteGroup ι →* G).ker)) :
+    letI := presentationClassModuleAction p (g := g)
+      (by rw [hgen, Subgroup.coe_top]; exact dense_univ)
+    abelianizationProPEquivRelationModule p hgen (t • x) =
+      MonoidAlgebra.single t (1 : ℤ_[p]) • abelianizationProPEquivRelationModule p hgen x := by
+  have hd : Dense (Subgroup.closure (Set.range g) : Set G) := by
+    rw [hgen, Subgroup.coe_top]
+    exact dense_univ
+  let := presentationClassModuleAction p hd
+  obtain ⟨f, rfl⟩ := lift_surjective hd t
+  rw [← ofMul_toMul x, ← ofMul_smul, presentationClassModuleAction_lift_smul,
+    ofMul_smul]
+  exact abelianizationProPEquivRelationModule_smul p hgen f x
 
 end TauCeti.freeProfiniteGroup
