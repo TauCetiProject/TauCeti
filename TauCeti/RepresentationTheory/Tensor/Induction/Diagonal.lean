@@ -66,7 +66,7 @@ noncomputable def tensorInducedDiagonal (ρ : Representation R U M) (s : U.LeftT
 
 /-- Scaling an invariant vector scales its diagonal tensor by the scalar raised to the
 number of cosets. The caller's finite enumeration of the cosets is retained. -/
-theorem tensorInducedDiagonal_smul (ρ : Representation R U M) (s : U.LeftTransversal)
+@[simp] theorem tensorInducedDiagonal_smul (ρ : Representation R U M) (s : U.LeftTransversal)
     [Fintype (G ⧸ U)] (r : R) (x : ρ.invariants) :
     ρ.tensorInducedDiagonal s (r • x) = r ^ Fintype.card (G ⧸ U) •
       ρ.tensorInducedDiagonal s x := by
