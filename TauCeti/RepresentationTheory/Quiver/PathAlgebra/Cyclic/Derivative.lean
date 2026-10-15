@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Cyclic.Quotient
 
 /-!
 # Cyclic derivatives in a path algebra
@@ -47,6 +47,8 @@ Ginzburg differential vanish on the adjoined loops.
   derivative `0`.
 * `TauCeti.PathAlgebra.cyclicDerivative_mul_comm`: **the cyclic derivative is invariant under
   cyclic permutation**, `∂_a(xy) = ∂_a(yx)`.
+* `TauCeti.PathAlgebra.cyclicDerivativeCyclicQuotient`: the cyclic derivative descended to the
+  cyclic quotient `kQ / [kQ, kQ]`.
 * `TauCeti.PathAlgebra.cyclicDerivative_ofArrow_self` and
   `TauCeti.PathAlgebra.cyclicDerivative_ofArrow_of_ne`: the cyclic derivatives of an arrow.
 * `TauCeti.PathAlgebra.sum_ofArrow_mul_cyclicDerivative_eq_sum_cyclicDerivative_mul_ofArrow`:
@@ -424,6 +426,31 @@ theorem cyclicDerivative_mul_comm (x y : pathAlgebra k Q) :
             mul_comm r c]
 
 end CommDerivative
+
+section CyclicQuotient
+
+variable {k : Type w} [CommRing k] {Q : Type u} [Quiver.{v} Q] {i j : Q} (a : i ⟶ j)
+
+/-- The cyclic derivative kills the commutator submodule. -/
+theorem commutatorSubmodule_le_ker_cyclicDerivative :
+    commutatorSubmodule k Q ≤ LinearMap.ker (cyclicDerivative k a) :=
+  (commutatorSubmodule_le_ker_iff k Q (cyclicDerivative k a)).2
+    (cyclicDerivative_mul_comm a)
+
+/-- The cyclic derivative with respect to `a`, descended to the cyclic quotient
+`kQ / [kQ, kQ]`. -/
+noncomputable def cyclicDerivativeCyclicQuotient :
+    cyclicQuotient k Q →ₗ[k] pathAlgebra k Q :=
+  (commutatorSubmodule k Q).liftQ (cyclicDerivative k a)
+    (commutatorSubmodule_le_ker_cyclicDerivative a)
+
+@[simp]
+theorem cyclicDerivativeCyclicQuotient_mk (x : pathAlgebra k Q) :
+    cyclicDerivativeCyclicQuotient a (Submodule.Quotient.mk x) =
+      cyclicDerivative k a x :=
+  Submodule.liftQ_apply _ _ x
+
+end CyclicQuotient
 
 section Telescoping
 
