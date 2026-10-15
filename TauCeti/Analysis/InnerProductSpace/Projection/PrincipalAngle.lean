@@ -47,6 +47,11 @@ the *cosine embedding* `P_V X` have as singular values the principal sines and c
 
 ## Main results
 
+* `Submodule.principalSines_range_eq_singularValues`,
+  `Submodule.principalCosines_range_eq_singularValues`: for an isometry `X`, the principal sines
+  and cosines of `range X` and `V` are the singular values of the sine and cosine embeddings.
+* `Submodule.norm_starProjection_orthogonal_comp`: the operator norm of the sine embedding of an
+  isometry is the directed gap.
 * `Submodule.principalCosines_comm`: the principal cosines are symmetric in `U` and `V`.
 * `Submodule.principalSines_comm`, `Submodule.principalAngles_comm`: for subspaces of the same
   dimension, the principal sines and the principal angles are symmetric in `U` and `V`.
@@ -56,11 +61,6 @@ the *cosine embedding* `P_V X` have as singular values the principal sines and c
 * `Submodule.principalCosines_eq_zero_iff`: all principal cosines vanish exactly when `U ⟂ V`.
 * `Submodule.sin_principalAngles`: the sine of the `i`-th principal angle is the `i`-th principal
   sine.
-* `Submodule.principalSines_range_eq_singularValues`,
-  `Submodule.principalCosines_range_eq_singularValues`: for an isometry `X`, the principal sines
-  and cosines of `range X` and `V` are the singular values of the sine and cosine embeddings.
-* `Submodule.norm_starProjection_orthogonal_comp`: the operator norm of the sine embedding of an
-  isometry is the directed gap.
 
 ## References
 
