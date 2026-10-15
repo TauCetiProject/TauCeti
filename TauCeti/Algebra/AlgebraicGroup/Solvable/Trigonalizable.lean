@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Triangular
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Diagonalization
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
@@ -63,25 +62,6 @@ noncomputable section
 variable {k : Type u} {H : Type v} {M : Type w}
 variable [Field k] [CommRing H] [HopfAlgebra k H]
 variable [AddCommGroup M] [Module k M] [Comodule k H M]
-
-/-- A nonzero vector spanning a submodule preserved by every base-valued point is a weight
-vector. -/
-theorem exists_groupLike_coact_eq_tmul_of_basePointsRepresentation_stable
-    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
-    (p : Submodule k M) (v : M) (hv : v ≠ 0) (hspan : p = k ∙ v)
-    (hact : ∀ (g : WithConv (H →ₐ[k] k)) {m : M}, m ∈ p →
-      basePointsRepresentation (R := k) (H := H) M g m ∈ p) :
-    ∃ c : GroupLike k H, coact (R := k) (C := H) v = v ⊗ₜ[k] c.val := by
-  have hstable : ∀ (g : H →ₐ[k] k) {m : M}, m ∈ p →
-      Comodule.endOfPoint M g ((1 : k) ⊗ₜ[k] m) ∈ p.baseChange k := by
-    intro g m hm
-    rw [endOfPoint_tmul, one_smul,
-      endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-    exact Submodule.tmul_mem_baseChange_of_mem _ (hact (toConv g) hm)
-  obtain ⟨c, hc, hcoact⟩ := exists_isGroupLikeElem_coact_eq_tmul_of_toSubmodule_eq_span
-    (Subcomodule.ofEndOfPointStable (K := k) p hstable) hv
-    ((Subcomodule.ofEndOfPointStable_toSubmodule (K := k) p hstable).trans hspan)
-  exact ⟨⟨c, hc⟩, hcoact⟩
 
 /-- A nonzero vector spanning a submodule preserved by every base-valued point gives a
 nonzero weight vector. -/
