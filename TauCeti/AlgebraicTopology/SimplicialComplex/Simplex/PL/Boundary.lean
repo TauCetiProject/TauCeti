@@ -23,7 +23,8 @@ model used when transporting local charts along stellar equivalences. The constr
 includes the two-point zero-sphere, with zero-dimensional chart model.
 
 Reuse the weak realization's closed-subcomplex embedding, the coordinate-simplex
-homeomorphism, and the existing polyhedral boundary atlas.
+homeomorphism and shared ambient coordinate maps from `Simplex.Ball`, and the existing
+polyhedral boundary atlas.
 Reference: C. P. Rourke and B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
 Springer (1972), Chapters 1–2.
 -/
@@ -34,18 +35,6 @@ open Set TauCeti
 open scoped Manifold
 
 namespace AbstractSimplicialComplex
-
-/-- The affine coordinates of a realized simplex boundary: discard the last coordinate,
-then distinguish the last of the retained coordinates using the `Option` index. -/
-def simplexBoundaryCoordinateMap (n : ℕ) :
-    (Fin (n + 2) → ℝ) →L[ℝ] (Option (Fin n) → ℝ) :=
-  ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj
-    ((finSuccEquivLast.symm i : Fin (n + 1)).castSucc)
-
-/-- Each coordinate is the corresponding retained barycentric coordinate. -/
-@[simp] theorem simplexBoundaryCoordinateMap_apply (n : ℕ)
-    (x : Fin (n + 2) → ℝ) (i : Option (Fin n)) :
-    simplexBoundaryCoordinateMap n x i = x (finSuccEquivLast.symm i).castSucc := (rfl)
 
 /-- The weak boundary realization is identified with the geometric coordinate frontier by
 an affine barycentric formula. Unlike a radial sphere identification, this map is PL. -/
@@ -76,25 +65,9 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
     right_inv := fun _ => rfl
     continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
     continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
-  let a := Homeomorph.piCongrLeft (Y := fun _ : Option (Fin n) => ℝ) finSuccEquivLast
-  have ha_apply (x : Fin (n + 1) → ℝ) (i : Option (Fin n)) :
-      a x i = x (finSuccEquivLast.symm i) := by
-    simp only [a, Homeomorph.piCongrLeft_apply, Equiv.piCongrLeft'_symm,
-      Equiv.piCongrLeft'_apply, Equiv.symm_symm]
-  have ha (x : Fin (n + 1) → ℝ) :
-      a x ∈ coordinateSimplex (Option (Fin n)) ↔ x ∈ coordinateSimplex (Fin (n + 1)) := by
-    have hsum : ∑ i, a x i = ∑ i, x i := by
-      simp only [ha_apply]
-      exact finSuccEquivLast.symm.sum_comp x
-    rw [mem_coordinateSimplex, mem_coordinateSimplex, hsum]
-    constructor
-    · rintro ⟨h, hs⟩
-      refine ⟨fun i => ?_, hs⟩
-      simpa only [ha_apply, Equiv.symm_apply_apply] using h (finSuccEquivLast i)
-    · rintro ⟨h, hs⟩
-      exact ⟨fun i => (ha_apply x i).symm ▸ h (finSuccEquivLast.symm i), hs⟩
+  let a := simplexCoordinateReindex n
   have hpre : a ⁻¹' coordinateSimplex (Option (Fin n)) = coordinateSimplex (Fin (n + 1)) :=
-    Set.ext ha
+    Set.ext (simplexCoordinateReindex_mem_iff n)
   have hf := a.preimage_frontier (coordinateSimplex (Option (Fin n)))
   rw [hpre] at hf
   exact r.trans (b.trans (flat.trans (a.subtype fun x => (Set.ext_iff.mp hf x).symm)))
@@ -106,8 +79,7 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
       simplexBoundaryCoordinateMap n x.1 i := by
   simp [realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex,
     realizationTopHomeomorphCoordinateSimplex_apply, realizationMap_val,
-    simplexBoundaryCoordinateMap, Homeomorph.piCongrLeft_apply,
-    Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply, Equiv.symm_symm]
+    simplexBoundaryCoordinateMap_apply, simplexCoordinateReindex_apply]
 
 /-- The inverse frontier identification restores every retained coordinate. -/
 @[simp] theorem realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_symm_castSucc
