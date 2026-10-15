@@ -44,6 +44,8 @@ Projecting along a nondegenerate edge is never regular (`Polygon.not_isRegularPr
 * `Polygon.isRegularProjection_congr`: regularity only depends on the fibres of the projection on
   the polygon.
 * `Polygon.not_isRegularProjection_edge`: projecting along a nondegenerate edge is not regular.
+* `Polygon.IsRegularProjection.injOn_edgeSet`: an affine regular projection is injective on every
+  edge.
 * `Polygon.dense_setOf_isRegularProjection`: the directions of regular projections of a polygon in
   a three-dimensional real affine space are dense.
 * `Polygon.exists_ne_zero_isRegularProjection`: every such polygon has a regular projection along
@@ -153,6 +155,27 @@ theorem not_isRegularProjection_edge (p₀ : P) {i : Fin n} (hi : poly i ≠ pol
   exact projAlong_eq_projAlong_iff.2 ⟨1, one_smul R _⟩
 
 end Defs
+
+section InjOn
+
+variable {W : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [IsDomain R] [AddCommGroup V]
+  [Module R V] [AddTorsor V P] [AddCommGroup W] [Module R W] [Module.IsTorsionFree R W]
+  [AddTorsor W Q] {poly : Polygon P n} {π : P →ᵃ[R] Q}
+
+/-- An affine regular projection is injective on every edge of the polygon: on a nondegenerate
+edge, failure of injectivity would identify the two ends of the edge. -/
+theorem IsRegularProjection.injOn_edgeSet (hπ : poly.IsRegularProjection R π) (i : Fin n) :
+    InjOn π (poly.edgeSet R i) := by
+  by_cases hi : poly i = poly (finRotate n i)
+  · rintro _ ⟨s, -, rfl⟩ _ ⟨t, -, rfl⟩ -
+    rw [hi, AffineMap.lineMap_same_apply, AffineMap.lineMap_same_apply]
+  have hne : π (poly i) ≠ π (poly (finRotate n i)) := fun h ↦
+    hi (hπ.eq_vertex_of_apply_eq i (poly.apply_mem_boundary R _) h.symm).symm
+  rintro _ ⟨s, -, rfl⟩ _ ⟨t, -, rfl⟩ hst
+  rw [π.apply_lineMap, π.apply_lineMap] at hst
+  rw [AffineMap.lineMap_injective R hne hst]
+
+end InjOn
 
 section EdgeVector
 
