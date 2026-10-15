@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # Relative Maslov index of paths of totally real subspaces
