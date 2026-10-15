@@ -175,9 +175,21 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   have hR := padicCompletionUnitsComparison_eq p K L j χ hχ rfl
   dsimp only
   intro x
-  rw [hR, hL, _root_.groupCohomology.functor_map]
-  exact explicitH2AddEquivGroupCohomology_explicitCoeff2
-    (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
+  let T : _root_.groupCohomology B 2 → _root_.groupCohomology C 2 :=
+    ((_root_.groupCohomology.functor ℤ_[p] (L ≃ₐ[K] L) 2).map F).hom
+  have hx := congrArg (fun e => e x) hL
+  have hTx := congrArg T hx
+  calc
+    _ = explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ
+        (explicitCoeff2 (L ≃ₐ[K] L) _ f.toAdditive hf x) :=
+      congrArg (fun e => e (explicitCoeff2 (L ≃ₐ[K] L) _ f.toAdditive hf x)) hR
+    _ = groupCohomology.map (MonoidHom.id (L ≃ₐ[K] L)) F 2
+        (explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) ψ hψ x) :=
+      explicitH2AddEquivGroupCohomology_explicitCoeff2
+        (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
+    _ = _ := by
+      rw [← _root_.groupCohomology.functor_map]
+      exact hTx.symm
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
 on explicit second cohomology after transport through Lyndon and local reciprocity. -/
