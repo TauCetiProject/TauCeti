@@ -74,7 +74,7 @@ theorem unitToZModPowQuotient_mk (n : ℕ) (u : ℤ_[p]ˣ) :
 
 /-- The congruence quotient is the native first-isomorphism-theorem equivalence for truncation,
 after identifying its kernel with the principal unit group. -/
-theorem unitToZModPowQuotient_eq_native (n : ℕ) :
+theorem unitToZModPowQuotient_def (n : ℕ) :
     unitToZModPowQuotient p n =
       (QuotientGroup.quotientMulEquivOfEq (ker_unitsToZModPow p n).symm).trans
         (QuotientGroup.quotientKerEquivOfSurjective _
