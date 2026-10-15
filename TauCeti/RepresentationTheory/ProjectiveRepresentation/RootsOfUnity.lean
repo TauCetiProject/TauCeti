@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.ProjectiveRepresentation.SchurMultiplier
+public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Linearization
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 
 /-!
@@ -82,31 +82,19 @@ theorem IsProjectiveRep.exists_rootsOfUnityExtension_linearization
   rw [IsProjectiveRep.cohomologyClass_def] at hclass
   obtain ⟨γ, hγ, hpow⟩ :=
     (FactorSet.nsmul_eq_zero_iff_exists_factorSet_pow_eq_one hρ.factorSet.cohomologyClass).1 hclass
-  obtain ⟨c, hc⟩ := (FactorSet.cohomologyClass_eq_iff γ hρ.factorSet).1 hγ
-  simp only [trivialMulDistribMulAction_smul, IsProjectiveRep.factorSet_apply] at hc
-  have hc1 : c 1 = 1 := by simpa [hρ.isFactorSet.one_left] using hc 1 1
   let β := (γ.isFactorSet_curry trivialMulDistribMulAction_smul).toRootsOfUnityFactorSet
     (fun g h ↦ hpow (g, h))
-  have hval (p : G × G) : (β p : kˣ) = γ p :=
-    IsFactorSet.coe_toRootsOfUnityFactorSet_apply _ _ p
   let f : rootsOfUnity n k →*[G] kˣ :=
     { (rootsOfUnity n k).subtype with map_smul' _ _ := rfl }
   have hf (a : rootsOfUnity n k) : f a = (a : kˣ) := rfl
-  have hβ : Function.curry ⇑(β.map f) =
-      fun g h ↦ c g * c h * (c (g * h))⁻¹ * α g h := by
-    funext g h
-    simp only [Function.curry, FactorSet.map_apply, hf, hval]
-    have heq := (div_eq_iff_eq_mul).1 (hc g h).symm
-    simpa [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using heq
-  have hrep : IsProjectiveRep
-      (fun g ↦ (ρ g).trans (LinearEquiv.smulOfUnit (c g))) (Function.curry ⇑(β.map f)) := by
-    rw [hβ]
-    exact hρ.rescale c hc1
-  refine ⟨β, (hrep.linearization trivialMulDistribMulAction_smul).comp (β.mapExtension f),
-    c, hc1, fun x ↦ ?_⟩
-  apply LinearEquiv.ext
-  intro v
-  simp [MonoidHom.comp_apply, IsProjectiveRep.linearization_apply,
-    LinearEquiv.smulOfUnit_apply, smul_smul, hf]
+  have hmap : β.map f = γ := by
+    apply FactorSet.ext
+    intro p
+    simp only [FactorSet.map_apply, hf]
+    exact IsFactorSet.coe_toRootsOfUnityFactorSet_apply _ _ p
+  obtain ⟨c, π, hc, hπ⟩ := hρ.exists_linearization_of_characterTransgression_eq β f
+    (by rw [hmap, IsProjectiveRep.cohomologyClass_def]; exact hγ)
+  refine ⟨β, π, c, hc, fun x ↦ ?_⟩
+  simpa only [FactorSet.rightHom_apply, hf] using hπ x
 
 end TauCeti

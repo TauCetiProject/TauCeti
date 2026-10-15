@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 # The supporting line of `x ↦ x * log x`
 
 The function `x ↦ x * log x` of Mathlib's `Mathlib.Analysis.SpecialFunctions.Log.NegMulLog` is
-strictly convex on the nonnegative reals. This file records the two estimates about it that the
+strictly convex on the nonnegative reals. This file records estimates about it that the
 optimisation arguments over matrices and over measures use: the tangent line at a positive point
 lies below the graph at every nonnegative point, and the loss of the function at a point that gives
 up a small amount of its value is bounded by that same tangent line.
@@ -24,6 +24,11 @@ up a small amount of its value is bounded by that same tangent line.
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
 * `TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub`: for `0 < a` and `0 ≤ u`, the gap
   between the graph and the supporting line at `a` is at least `(√u - √a) ^ 2`.
+* `TauCeti.mul_log_sub_mul_log_sub_le_sq_div`: for `0 < a` and `0 ≤ u`, that gap is at most
+  `(u - a) ^ 2 / a`.
+* `Real.sq_sub_le_mul_sub_mul_log_sub_log`: for `0 < p, q ≤ M`,
+  `(p - q) ^ 2 ≤ M * ((p - q) * (log p - log q))`, the strong monotonicity of the logarithm on
+  `(0, M]`.
 
 The first estimate is the tangent line at `a`, whose slope `log a + 1` is the derivative
 `Real.deriv_mul_log` of the function. It is stated for `u = 0` as well, where the convention
@@ -92,6 +97,28 @@ theorem sub_mul_log_le {x t : ℝ} (ht0 : 0 ≤ t) (htx : t ≤ x / 2) :
     subst ht
     simp
 
+/-- The logarithm is strongly monotone on `(0, M]`: for `0 < p, q ≤ M`,
+`(p - q) ^ 2 ≤ M * ((p - q) * (log p - log q))`. The product `(p - q) * (log p - log q)` is the
+sum of the gaps of the supporting lines `Real.mul_log_sub_mul_log_ge` of `u ↦ u * log u` at `p`
+and at `q`, so this bounds that symmetrised gap below by `(p - q) ^ 2 / M`. -/
+theorem sq_sub_le_mul_sub_mul_log_sub_log {p q M : ℝ} (hp : 0 < p) (hq : 0 < q) (hpM : p ≤ M)
+    (hqM : q ≤ M) : (p - q) ^ 2 ≤ M * ((p - q) * (Real.log p - Real.log q)) := by
+  wlog hqp : q ≤ p generalizing p q
+  · have h := this hq hp hqM hpM (le_of_not_ge hqp)
+    linarith
+  -- Scale `log p - log q ≥ 1 - q / p` by `p * (p - q) ≥ 0`, then enlarge `p` to `M`.
+  have hlog : 1 - q / p ≤ Real.log p - Real.log q := by
+    rw [← Real.log_div hp.ne' hq.ne']
+    simpa [inv_div] using Real.one_sub_inv_le_log_of_pos (div_pos hp hq)
+  have hpq : 0 ≤ p - q := sub_nonneg.2 hqp
+  have hsq : (p - q) ^ 2 = p * ((p - q) * (1 - q / p)) := by field_simp
+  have hgap : 0 ≤ (p - q) * (Real.log p - Real.log q) :=
+    mul_nonneg hpq (sub_nonneg.2 (Real.log_le_log hq hqp))
+  rw [hsq]
+  calc p * ((p - q) * (1 - q / p)) ≤ p * ((p - q) * (Real.log p - Real.log q)) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlog hpq) hp.le
+    _ ≤ M * ((p - q) * (Real.log p - Real.log q)) := mul_le_mul_of_nonneg_right hpM hgap
+
 end Real
 
 namespace TauCeti
@@ -116,5 +143,23 @@ theorem sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub {a u : ℝ} (ha : 0 < a) (hu
   rw [sqrt_sq hs.le, sqrt_sq hc.le, log_pow, log_pow]
   push_cast
   nlinarith [mul_le_mul_of_nonneg_left hlog (sq_nonneg s)]
+
+/-- The gap between the convex function `u ↦ u * log u` and its supporting line at a positive
+point `a` is at most quadratic in `u - a`: for every nonnegative `u`,
+`u * log u - a * log a - (u - a) * (log a + 1) ≤ (u - a) ^ 2 / a`. The left side is
+`u * log (u / a) - u + a`, a relative-entropy integrand, and the right side the corresponding
+`χ²` integrand. Together with `Real.mul_log_sub_mul_log_ge`, the gap lies between `0` and
+`(u - a) ^ 2 / a`, so it is `O((u - a) ^ 2)`. -/
+theorem mul_log_sub_mul_log_sub_le_sq_div {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u) :
+    u * log u - a * log a - (u - a) * (log a + 1) ≤ (u - a) ^ 2 / a := by
+  rw [le_div_iff₀ ha]
+  rcases hu.eq_or_lt with rfl | hu
+  · simp only [log_zero, mul_zero, zero_sub]
+    nlinarith
+  have hlog : log u - log a ≤ u / a - 1 := by
+    rw [← log_div hu.ne' ha.ne']
+    exact log_le_sub_one_of_pos (div_pos hu ha)
+  have hua : u / a * a = u := div_mul_cancel₀ u ha.ne'
+  nlinarith [mul_le_mul_of_nonneg_left hlog (mul_nonneg hu.le ha.le)]
 
 end TauCeti

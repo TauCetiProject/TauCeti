@@ -131,7 +131,7 @@ private theorem vertexIdempotent_mul_liftDerivation_ofPath (x : Quiver.TotalPath
   rw [liftDerivation_ofPath]
   induction p with
   | nil => rw [liftDerivationPath_nil, mul_zero]
-  | cons p e ih =>
+  | cons p e _ =>
       rw [liftDerivationPath_cons, mul_add, ← mul_assoc, hfl e, mul_smul_comm, ← mul_assoc,
         ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
 

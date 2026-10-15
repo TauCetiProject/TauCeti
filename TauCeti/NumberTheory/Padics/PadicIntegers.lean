@@ -9,8 +9,9 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Data.Finset.Max
-import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
+import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
 # Units of the `p`-adic integers
@@ -28,6 +29,10 @@ Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well
 divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
 multiple `q • w` of a family `w` with a coordinate equal to `1`, namely at an index of maximal norm.
 This is the shape in which the exponent vector of a relator of a free pro-`p` group is read.
+
+Every continuous additive homomorphism from `ℤ_p` to the discrete integers is zero, as a
+specialization of the compact-domain vanishing theorem. This supplies the homomorphism
+calculation for first continuous cohomology with trivial integer coefficients.
 
 ## Main results
 
@@ -59,6 +64,19 @@ theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit 
   IsLocalRing.isUnit_of_mem_nonunits_one_sub_self _ <| by
     rw [sub_add_cancel_left, mem_nonunits, norm_neg]
     exact (norm_lt_one_iff_dvd x).mpr hx
+
+/-- A natural number prime to `p` is a unit in `ℤ_p`. -/
+theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
+  isUnit_iff.mpr (norm_natCast_eq_one_iff.mpr h)
+
+/-- Every prime number `ℓ` is a unit in `ℤ_p` or generates a maximal ideal of `ℤ_p`: it is a unit
+for `ℓ ≠ p` and generates the maximal ideal for `ℓ = p`. -/
+theorem isUnit_natCast_or_isMaximal_span {ℓ : ℕ} (hℓ : ℓ.Prime) :
+    IsUnit (ℓ : ℤ_[p]) ∨ (Ideal.span {(ℓ : ℤ_[p])}).IsMaximal := by
+  by_cases h : ℓ = p
+  · subst h
+    exact .inr (maximalIdeal_eq_span_p (p := ℓ) ▸ IsLocalRing.maximalIdeal.isMaximal _)
+  · exact .inl (isUnit_natCast_of_coprime ((Nat.coprime_primes Fact.out hℓ).mpr (Ne.symm h)))
 
 /-- `2` is a unit in `ℤ_p` for every odd prime `p`. -/
 theorem isUnit_two (hp : p ≠ 2) : IsUnit (2 : ℤ_[p]) :=
@@ -148,3 +166,9 @@ theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ �
   · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
 
 end Padic
+
+/-- A continuous additive homomorphism from `ℤ_[p]` to `ℤ` is zero: its image is compact, hence
+finite, and a finite subgroup of `ℤ` is trivial. -/
+theorem PadicInt.continuousAddMonoidHom_to_int_eq_zero (p : ℕ) [Fact p.Prime]
+    (φ : ContinuousAddMonoidHom ℤ_[p] ℤ) : φ = 0 :=
+  φ.eq_zero_of_isAddTorsionFree

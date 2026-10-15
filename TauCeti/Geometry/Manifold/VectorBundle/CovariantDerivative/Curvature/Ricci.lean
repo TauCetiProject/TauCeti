@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Ricci curvature of a smooth connection
@@ -94,6 +95,14 @@ theorem ricciTensor_eq_zero_of_curvatureTensor_eq_zero (x : M)
     simp [h]
   rw [ricciTensor_apply, hz, map_zero]
   rfl
+
+/-- A smooth connection on a manifold of dimension at most one has zero Ricci tensor. -/
+@[simp]
+theorem ricciTensor_eq_zero_of_finrank_le_one (x : M)
+    (h : Module.finrank ℝ E ≤ 1) : cov.ricciTensor x = 0 :=
+  cov.ricciTensor_eq_zero_of_curvatureTensor_eq_zero x
+    (cov.curvatureTensor_eq_zero_of_finrank_le_one x
+      (by simpa only [TauCeti.finrank_tangentSpace] using h))
 
 /-- Contracting curvature of the form `R(w,u)v = B(u,v)w - B(w,v)u` gives
 `Ric = (dim - 1) B`. In particular, the constant-curvature model with `B = κ g`

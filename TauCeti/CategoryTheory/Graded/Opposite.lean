@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Opposite
+public import Mathlib.Basic.Opposite
 public import TauCeti.CategoryTheory.Graded.TotalHom
 
 /-!

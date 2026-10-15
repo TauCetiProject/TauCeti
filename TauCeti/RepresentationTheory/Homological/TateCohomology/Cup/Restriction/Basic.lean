@@ -39,15 +39,15 @@ omit [Fintype G] in
 private theorem restrict_invariant_pure_tensor (M N : Rep k G) (H : Subgroup G)
     (x : M.ρ.invariants) (y : N.ρ.invariants) :
     ((Submodule.inclusion
-      (Representation.invariants_le_invariants_comp_subtype (ρ := (M ⊗ N).ρ) (H := H)))
+      ((M ⊗ N).ρ.invariants_le_invariants_comp H.subtype))
       (⟨(x : M.V) ⊗ₜ[k] (y : N.V), fun g ↦ by
         simp [Representation.tprod_apply, x.2 g, y.2 g]⟩ : (M ⊗ N).ρ.invariants) :
         (Rep.res H.subtype (M ⊗ N)).ρ.invariants).1 =
       (((Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) x :
+        (M.ρ.invariants_le_invariants_comp H.subtype)) x :
           (Rep.res H.subtype M).ρ.invariants).1 ⊗ₜ[k]
         ((Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y :
+          (N.ρ.invariants_le_invariants_comp H.subtype)) y :
             (Rep.res H.subtype N).ρ.invariants).1) := by
   rfl
 
@@ -84,7 +84,7 @@ theorem cup_res_zero_right (M N : Rep k G) (H : Subgroup G) (r : ℤ)
         res M H r ≫ (tateCohomologyFunctor r).map
           (Rep.resMap H.subtype (Rep.tensorInvariant M y)) :=
       res_natural (Rep.tensorInvariant M y) H r
-    rw [Rep.resMap_tensorInvariant M N H y] at hnat
+    rw [Rep.resMap_tensorInvariant M N H.subtype y] at hnat
     -- The goal is `hnat` applied to `x`, with the target read in
     -- `Rep.res H.subtype M ⊗ Rep.res H.subtype N`, which is `Rep.res H.subtype (M ⊗ N)` by
     -- definition (the same identification made in the statement).

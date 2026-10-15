@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 public import TauCeti.AlgebraicTopology.Sphere.Equator
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Sphere.Circle
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
 public import TauCeti.KnotTheory.SmoothCircle
 
 /-!
@@ -54,6 +55,8 @@ knot group, hence trivial commutator subgroup, and it has perfect commutator sub
   `TauCeti.SmoothCircleEmbedding.hasPerfectCommutatorSubgroup_rotate_iff` and
   `TauCeti.SmoothCircleEmbedding.hasPerfectCommutatorSubgroup_reverse_iff`: the condition is
   invariant under ambient diffeomorphisms and reparametrizations.
+* `TauCeti.SmoothCircleEmbedding.hasPerfectCommutatorSubgroup_smoothAmbientIsotopic_iff`: the
+  condition descends through the smooth geometric-presentation equivalence.
 * `TauCeti.SmoothCircleEmbedding.knotGroupGreatCircleMulEquiv`: the knot group of a great circle in
   the three-sphere is infinite cyclic.
 * `TauCeti.SmoothCircleEmbedding.hasPerfectCommutatorSubgroup_greatCircle` and
@@ -184,6 +187,24 @@ theorem hasPerfectCommutatorSubgroup_transDiffeomorph_iff :
 
 end Ambient
 
+/-! ### Invariance under the geometric equivalence -/
+
+/-- The perfect-commutator-subgroup condition is invariant under smooth ambient isotopy.
+
+The final diffeomorphism of an ambient isotopy carries the first circle embedding to the second,
+so this is the geometric-presentation invariance needed before passing the condition to isotopy
+classes. -/
+theorem hasPerfectCommutatorSubgroup_smoothAmbientIsotopic_iff
+    {K K' : SmoothCircleEmbedding I M}
+    [IsManifold I ∞ M]
+    (h : SmoothEmbedding.SmoothAmbientIsotopic K K') :
+    K.HasPerfectCommutatorSubgroup ↔ K'.HasPerfectCommutatorSubgroup := by
+  obtain ⟨Φ, hΦ⟩ := SmoothEmbedding.smoothAmbientIsotopic_def.mp h
+  have hK : SmoothEmbedding.transDiffeomorph K Φ.final = K' :=
+    SmoothEmbedding.ext fun x ↦ by simp [hΦ x]
+  rw [← hK]
+  exact (hasPerfectCommutatorSubgroup_transDiffeomorph_iff (K := K) (e := Φ.final)).symm
+
 /-! ### Great circles in the three-sphere -/
 
 section GreatCircle
@@ -199,7 +220,8 @@ theorem compl_range_greatCircle :
     ((range (greatCircle (n := 3) ι))ᶜ : Set (sphere (0 : F) 1)) =
       ({x | (x : F) ∉ LinearMap.range ι.toLinearMap} : Set (sphere (0 : F) 1)) := by
   ext x
-  rw [mem_compl_iff, mem_ofPred_eq, not_iff_not, LinearMap.mem_range]
+  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
+  rw [not_iff_not, LinearMap.mem_range]
   constructor
   · rintro ⟨z, hz⟩
     exact ⟨z, by simpa using congrArg Subtype.val hz⟩

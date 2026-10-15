@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Basic
+public import TauCeti.Algebra.Lie.HighestWeight.Basis
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basis
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Killing
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
 
@@ -16,9 +17,9 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattic
 The spin module of an odd polarization is the exterior algebra `S = ⋀·W` of the first isotropic
 summand, acted on by the split type-`B` matrix Lie algebra through
 `TauCeti.SpinPolarizationData.typeBSpinLieRep`. Its exterior basis diagonalizes the numbered
-simple coroots, with integral eigenvalues
-`TauCeti.SpinPolarizationData.typeBSpinCorootWeight` read off which coordinates occur; the
-underlying weights are the half-integral sign vectors `½(±1, …, ±1)` of `TauCeti.spinWeight`. The
+simple coroots, with integral eigenvalues the coordinates of the spin weight
+`TauCeti.DynkinType.typeBSpinWeight` of the index set; the underlying weights are the
+half-integral sign vectors `½(±1, …, ±1)` of `TauCeti.spinWeight`. The
 last fundamental weight `ωₗ` of `Bₙ₊₁`, the one attached to the terminal short node of the Dynkin
 diagram, is carried by the basis vector with **every** coordinate occupied. This file combines two
 facts that identify that vector:
@@ -27,19 +28,20 @@ facts that identify that vector:
   generate;
 * its coroot weight is `Pi.single (Fin.last n) 1`, that last fundamental weight.
 
-These are the generator-level inputs for a highest-weight identification, namely the
-identification `S ≅ L(ωₗ)` of the type-`B` spin module with the irreducible highest-weight module
-at the last fundamental weight.
+The standard type-`B` Lie basis identifies these conditions with the canonical highest-weight
+predicate for its compatible Borel. Thus the all-coordinate spinor is a highest-weight vector of
+weight `ωₗ`; the resulting identification `S ≅ L(ωₗ)` is packaged in
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/Fundamental.lean`.
 
 The last section reads the weights against the standard Lie algebra basis
 `TauCeti.typeBLieBasis`, whose raising generators are the positive simple-root generators above.
 In the basis of fundamental weights `ωᵢ`, dual to its simple coroots, the weight of the index set
-`s` has the integral coordinates `typeBSpinCorootWeight s`; in particular the all-coordinate weight
+`s` has integral coordinates `DynkinType.typeBSpinWeight s`; in particular the all-coordinate weight
 is exactly the dual basis vector `ωₗ` at the terminal short node, the abstract last fundamental
 weight of the basis. These are the hypotheses of the Lie-basis characterization
-`LieAlgebra.Basis.isHighestWeightVector_iff_forall_e` of highest-weight vectors, which applies
-over a field of characteristic zero once the Killing form of the split type-`B` Lie algebra is
-known to be nondegenerate; that nondegeneracy is not proved here.
+`LieAlgebra.Basis.isHighestWeightVector_iff_forall_e` of highest-weight vectors. In characteristic
+zero, `TauCeti.isKilling_typeB` supplies the required nondegenerate Killing form whenever the
+standard module is triangularizable, in particular over an algebraically closed field.
 
 The annihilation is read off the two ways a simple-root generator acts on the exterior basis. The
 terminal short generator creates the last coordinate (after the grade involution, and scaled by
@@ -70,12 +72,16 @@ enveloping-algebra weight-vector statement is over `ℚ`, where
 * `TauCeti.SpinPolarizationData.isCartanWeightVector_typeBSpinRep_exteriorBasis_univ`: the
   all-coordinate vector has the last fundamental weight.
 * `TauCeti.SpinPolarizationData.typeBWeightEquiv_spinWeight_apply_simpleCorootGenerator`: a spin
-  weight takes the value `typeBSpinCorootWeight` on each numbered simple coroot.
+  weight takes on each numbered simple coroot the corresponding coordinate of
+  `TauCeti.DynkinType.typeBSpinWeight`.
 * `TauCeti.SpinPolarizationData.typeBWeightEquiv_spinWeight_eq_sum_dualBasis`: a spin weight in
   the fundamental-weight basis of `TauCeti.typeBLieBasis`, with
   `TauCeti.SpinPolarizationData.typeBWeightEquiv_spinWeight_univ` its all-coordinate case `ωₗ`.
 * `TauCeti.SpinPolarizationData.typeBSpinLieRep_apply_cartan_exteriorBasis_univ`: the diagonal
   Cartan acts on the all-coordinate vector through that fundamental weight.
+* `TauCeti.SpinPolarizationData.isHighestWeightVector_typeBSpinLieRep_exteriorBasis_univ`: the
+  all-coordinate vector is a highest-weight vector for the compatible Borel and abstract
+  type-`B` root datum.
 
 ## References
 
@@ -198,7 +204,7 @@ theorem isCartanWeightVector_typeBSpinRep_exteriorBasis_univ :
       (typeBSimpleCorootGenerator (K := ℚ)) (P.typeBSpinRep b z hz)
       (Pi.single (Fin.last n) 1)
       (b.ExteriorAlgebra (Finset.univ : Finset (Fin (n + 1)))) := by
-  simpa only [typeBSpinCorootWeight_univ_eq_single] using
+  simpa only [DynkinType.typeBSpinWeight_univ_eq_single] using
     P.isCartanWeightVector_typeBSpinRep_exteriorBasis b z hz
       (Finset.univ : Finset (Fin (n + 1)))
 
@@ -210,21 +216,20 @@ section CommRing
 
 variable {K : Type u} [CommRing K] [Invertible (2 : K)] {n : ℕ}
 
-/-- **A spin sign-vector weight evaluated on a numbered simple coroot is the integral coroot
-weight `typeBSpinCorootWeight`.** At the terminal short node the coroot is `2εₙ`, which doubles
-the half-integral entry `±½`; at a long node it is `εⱼ - εⱼ₊₁`, which takes an adjacent
-difference of entries. -/
+/-- **A spin sign-vector weight evaluated on a numbered simple coroot is the corresponding
+coordinate of the integral spin weight `DynkinType.typeBSpinWeight`.** At the terminal short node
+the coroot is `2εₙ`, which doubles the half-integral entry `±½`; at a long node it is
+`εⱼ - εⱼ₊₁`, which takes an adjacent difference of entries. -/
 @[simp 1100]
 theorem typeBWeightEquiv_spinWeight_apply_simpleCorootGenerator
     (s : Finset (Fin (n + 1))) (i : Fin (n + 1)) :
     typeBWeightEquiv (spinWeight K s)
         ⟨typeBSimpleCorootGenerator i, typeBSimpleCorootGenerator_mem_typeBDiagonalCartan i⟩ =
-      (typeBSpinCorootWeight s i : K) := by
+      (DynkinType.typeBSpinWeight s i : K) := by
   simp only [typeBWeightEquiv_apply, typeBSimpleCorootGenerator_eq_diagonal,
     coe_typeBDiagonalEquiv_apply, typeBDiagonalMatrix_apply, typeBDiagonalValue_inr_inl,
     ↓reduceIte]
-  rw [typeBSpinCorootWeight_eq_typeBSpinWeight, ← eq_intCast (algebraMap ℤ K),
-    DynkinType.algebraMap_typeBSpinWeight_apply]
+  rw [← eq_intCast (algebraMap ℤ K), DynkinType.algebraMap_typeBSpinWeight_apply]
   refine Fin.lastCases ?_ (fun j ↦ ?_) i
   · simp [Pi.single_apply, mul_two]
   · simp [Fin.orderSucc_castSucc, Pi.single_apply, mul_sub, Finset.sum_sub_distrib]
@@ -238,24 +243,24 @@ variable {K : Type u} [Field K] [Invertible (2 : K)] {n : ℕ}
 /-- **The spin weight of an exterior-basis vector in the fundamental-weight basis.** Expanded in
 the basis dual to the simple coroots of `TauCeti.typeBLieBasis`, that is, in the fundamental
 weights `ωᵢ` of `Bₙ₊₁`, the sign-vector weight of the index set `s` has the integral coefficients
-`typeBSpinCorootWeight s i`. -/
+`DynkinType.typeBSpinWeight s i`. -/
 theorem typeBWeightEquiv_spinWeight_eq_sum_dualBasis (s : Finset (Fin (n + 1))) :
     typeBWeightEquiv (spinWeight K s) =
-      ∑ i, (typeBSpinCorootWeight s i : K) •
+      ∑ i, (DynkinType.typeBSpinWeight s i : K) •
         (typeBLieBasis (K := K) n).cartanBasis.dualBasis i := by
   refine (typeBLieBasis (K := K) n).cartanBasis.ext fun i ↦ ?_
   have hcartan : (typeBLieBasis (K := K) n).cartanBasis i =
       ⟨typeBSimpleCorootGenerator i, typeBSimpleCorootGenerator_mem_typeBDiagonalCartan i⟩ :=
     Subtype.ext (by simp)
   rw [hcartan, typeBWeightEquiv_spinWeight_apply_simpleCorootGenerator, ← hcartan]
-  simp [Finsupp.single_apply]
+  simp [Finsupp.single_apply, -DynkinType.typeBSpinWeight_apply]
 
 /-- **The all-coordinate spin weight is the last fundamental weight `ωₗ`**: the basis vector at
 the terminal short node of the basis dual to the simple coroots of `TauCeti.typeBLieBasis`. -/
 theorem typeBWeightEquiv_spinWeight_univ :
     typeBWeightEquiv (spinWeight K (Finset.univ : Finset (Fin (n + 1)))) =
       (typeBLieBasis (K := K) n).cartanBasis.dualBasis (Fin.last n) := by
-  rw [typeBWeightEquiv_spinWeight_eq_sum_dualBasis, typeBSpinCorootWeight_univ_eq_single]
+  rw [typeBWeightEquiv_spinWeight_eq_sum_dualBasis, DynkinType.typeBSpinWeight_univ_eq_single]
   simp [Pi.single_apply]
 
 variable {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
@@ -275,6 +280,51 @@ theorem typeBSpinLieRep_apply_cartan_exteriorBasis_univ (A : typeBDiagonalCartan
   rw [P.typeBSpinLieRep_apply_cartan_exteriorBasis, typeBWeightEquiv_spinWeight_univ]
 
 end Field
+
+/-! ## The highest-weight vector -/
+
+section HighestWeight
+
+variable {K : Type u} [Field K] [CharZero K]
+  {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+  {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
+  (z : P.line) (hz : Q (z : V) = 1) [Invertible (2 : K)]
+  [LieAlgebra.IsKilling K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)]
+
+/-- **The all-coordinate spinor is a highest-weight vector of last fundamental weight.**
+The base and Borel are those of `typeBLieBasis`; its Cartan basis consists of the simple
+coroots, so the displayed dual basis vector is the abstract fundamental weight at the terminal
+short node. -/
+theorem isHighestWeightVector_typeBSpinLieRep_exteriorBasis_univ :
+    letI := (typeBLieBasis (K := K) n).isCartanSubalgebra
+    letI := (typeBLieBasis (K := K) n).isTriangularizable
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+        (ExteriorAlgebra K P.W) :=
+      LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+        (ExteriorAlgebra K P.W) :=
+      LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+    IsHighestWeightVector (typeBLieBasis (K := K) n).base
+      ((typeBLieBasis (K := K) n).cartanBasis.dualBasis (Fin.last n))
+      (b.ExteriorAlgebra (Finset.univ : Finset (Fin (n + 1)))) := by
+  let _ := (typeBLieBasis (K := K) n).isCartanSubalgebra
+  let _ := (typeBLieBasis (K := K) n).isTriangularizable
+  let _ : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+      (ExteriorAlgebra K P.W) :=
+    LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+  let _ : LieModule K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+      (ExteriorAlgebra K P.W) :=
+    LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+  rw [(typeBLieBasis (K := K) n).isHighestWeightVector_iff_forall_e]
+  refine ⟨(b.ExteriorAlgebra).ne_zero _, ?_, ?_⟩
+  · exact P.typeBSpinLieRep_apply_cartan_exteriorBasis_univ b z hz
+  · intro i
+    simpa only [typeBLieBasis_e, LieRingModule.compLieHom_apply, Module.End.lie_apply] using
+      P.typeBSpinLieRep_simpleRootGenerator_exteriorBasis_eq_zero_of_mem b z hz
+        (Finset.mem_univ i)
+
+end HighestWeight
 
 end SpinPolarizationData
 

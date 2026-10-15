@@ -11,9 +11,9 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Splitting
 /-!
 # Abel-Jacobi sums of Weil divisors
 
-This file extends the formal Layer A Abel-Jacobi API from points to arbitrary Weil divisors.
-Given an order system whose principal divisors have weighted degree zero and a weight-one base
-point `x₀`, the degree splitting
+This file extends the formal Abel-Jacobi API from points to arbitrary Weil divisors. Given an order
+system whose principal divisors have weighted degree zero and a weight-one base point `x₀`, the
+degree splitting
 
 `Cl(X) ≃+ Pic⁰(X) × ℤ`
 
@@ -22,13 +22,10 @@ with the divisor-class map gives the additive Abel-Jacobi sum of a formal diviso
 
 `D ↦ [D - weightedDegree w D · x₀] ∈ Pic⁰`.
 
-For a divisor `D = ∑ nₓ[x]`, this is the finite sum `∑ nₓ AJ(x)`. This is the formal
-divisor-class shadow of the Abel maps `D ↦ 𝒪_X(D - d x₀)` used later to construct the
-Jacobian from symmetric powers.
+For a divisor `D = ∑ nₓ[x]`, this is the finite sum `∑ nₓ AJ(x)`. This is the formal divisor-class
+shadow of the Abel maps `D ↦ 𝒪_X(D - d x₀)`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, the "`Pic⁰ X = ker deg`
-(as an abstract group)" item and the Layer D/F Abel-map prerequisite `D ↦ 𝒪_X(D - d·x₀)`.
-It reuses Tau Ceti's existing `WeilDivisor`, `OrderSystem.picZero`, `degreeCorrection`, and
+This file reuses Tau Ceti's `WeilDivisor`, `OrderSystem.picZero`, `degreeCorrection`, and
 `weightedAbelJacobiClass` APIs; no external mathematics is vendored.
 -/
 
@@ -125,7 +122,7 @@ lemma weightedAbelJacobiDivisorClass_eq_sum (w : X → ℤ) (h : S.IsWeightedDeg
       rw [S.weightedAbelJacobiDivisorClass_add w h hx₀, Finsupp.sum_add_index, hD, hE]
       · intro x
         simp
-      · intro x a b
+      · intro x _ b
         simp [add_zsmul]
 
 /-- Equality of weighted Abel-Jacobi sums is equality of the corresponding degree-corrected

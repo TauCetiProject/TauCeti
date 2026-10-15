@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.FundamentalSolution.Planar
+public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Basic
 public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
-import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
+import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Gradient
 
 /-!
 # The Green kernel of the planar unit disk

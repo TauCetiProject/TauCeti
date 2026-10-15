@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.ConditionallyIID.Construct
-public import TauCeti.Probability.Exchangeability.JointPathLaw
+public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
+public import TauCeti.Probability.Process.IIDMixture.Basic
+public import TauCeti.Probability.Process.PathLaw.Joint
 -- Non-public: mixing-law uniqueness is used only inside the proof of
 -- `ConditionallyIIDWith.jointPathLaw_eq_of_pathLaw_eq`.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
@@ -28,7 +29,7 @@ measure together with the entire process is the disintegration `∫ δ_{ν ω} �
 ## Implementation
 
 The right-hand side is not a new construction: `iidMixtureLaw (μ.map ν) id` is the canonical
-two-stage law of `ConditionallyIID.Construct` — draw a probability measure from the mixing law
+two-stage law of `Process.IIDMixture.Basic` — draw a probability measure from the mixing law
 `μ.map ν`, then sample i.i.d. from it, keeping the drawn measure as a coordinate. So the theorem
 says the abstract conditional predicate is *exactly* realised by that generative construction, which
 is a stronger statement than naming a bespoke disintegration measure would be.
@@ -38,9 +39,8 @@ prefix. For the joint law that prefix marginal is the defining identity of `Cond
 at the selection `Fin n → ℕ`, which is
 `map_prefixProjPair_jointPathLaw_eq_disintegration`. For the mixture law it is
 `map_prefixProjPair_iidMixtureLaw` — a general fact about `iidMixtureLaw`, and so kept with the
-construction in `ConditionallyIID/Construct.lean` — proved fibrewise: over each point `t` of the
-mixing law the
-fibre `δ_t ⊗ (P t)^{⊗ℕ}` projects to `δ_t ⊗ (P t)^{⊗ Fin n}`, which is
+construction in `Process/IIDMixture/Basic.lean` — proved fibrewise: over each point `t` of the
+mixing law the fibre `δ_t ⊗ (P t)^{⊗ℕ}` projects to `δ_t ⊗ (P t)^{⊗ Fin n}`, which is
 `map_infinitePi_pair_block` at the prefix selection — the tag `t` and the sampled law `P t`
 differ there, which is why that lemma carries an arbitrary tag. Instantiating at the identity
 kernel and pushing the bind back along `ν` makes the two prefix marginals agree, and

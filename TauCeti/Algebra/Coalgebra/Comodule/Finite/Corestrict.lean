@@ -82,7 +82,6 @@ theorem corestrict_obj_coact (f : C →ₗc[R] D) (M : FGComoduleCat.{u, v, x} R
 
 /-- The coaction after corestricting a finitely generated comodule evaluates as
 `(id ⊗ f) (ρ m)`. -/
-@[simp]
 theorem corestrict_obj_coact_apply (f : C →ₗc[R] D) (M : FGComoduleCat.{u, v, x} R C) (m : M) :
     Comodule.coact (R := R) (C := D)
         (M := (corestrict (R := R) (C := C) (D := D) f).obj M) m =
@@ -108,7 +107,6 @@ theorem corestrict_map_toLinearMap (f : C →ₗc[R] D) {M N : FGComoduleCat.{u,
 
 /-- Corestriction leaves the underlying function of a finitely generated comodule morphism
 unchanged. -/
-@[simp]
 theorem corestrict_map_apply (f : C →ₗc[R] D) {M N : FGComoduleCat.{u, v, x} R C}
     (g : M ⟶ N) (m : M) : (corestrict (R := R) (C := C) (D := D) f).map g m = g m :=
   rfl
@@ -168,7 +166,6 @@ theorem corestrict_map_comp_coalg_toLinearMap (f : C →ₗc[R] D) (g : D →ₗ
   rfl
 
 /-- Corestriction functors compose in the coalgebra morphism on elements. -/
-@[simp]
 theorem corestrict_map_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E)
     {M N : FGComoduleCat.{u, v, x} R C} (h : M ⟶ N) (m : M) :
     (corestrict (R := R) (C := C) (D := E) (g.comp f)).map h m =

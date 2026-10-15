@@ -46,11 +46,10 @@ found on geometric points to an actual flag by subcomodules.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This is the point-separation bridge in Layer 5, "Lie–Kolchin; solvable groups", of the
-ReductiveGroups roadmap. Lie–Kolchin produces a basis in which every geometric point acts
-triangularly; for a unipotent group the diagonal characters are trivial, and the results here
-turn that pointwise statement into the upper-unitriangular comodule flag used to embed the group
-in `Uₙ`.
+This is the point-separation bridge for the Lie–Kolchin theorem. Lie–Kolchin produces a basis in
+which every geometric point acts triangularly; for a unipotent group the diagonal characters are
+trivial, and the results here turn that pointwise statement into the upper-unitriangular comodule
+flag used to embed the group in `Uₙ`.
 -/
 
 public section

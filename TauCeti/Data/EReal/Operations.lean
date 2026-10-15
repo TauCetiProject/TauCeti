@@ -14,7 +14,9 @@ This file supplements Mathlib's API for arithmetic operations on `EReal`. The co
 subtraction in which one operand is a *real* number: both `a - (r : EReal)` and `(r : EReal) - a`
 are defined for every extended real `a`, are never of the form `∞ - ∞`, and behave like real
 subtraction in the ways recorded here. The first two results below have a real subtrahend and
-the last two a real minuend.
+the last two a real minuend. The file also records that adding a finite extended nonnegative real
+to a real number is real addition, and how the positive part `ENNReal.ofReal` of a real number
+compares with the number itself in `EReal`.
 
 ## Main results
 
@@ -32,12 +34,20 @@ the last two a real minuend.
 * `EReal.sub_coe_eq_iff_eq_add_coe` — a real subtrahend can be moved across an equation, as in
   `sub_eq_iff_eq_add` for groups;
 * `EReal.add_eq_coe_iff_neg_add_neg_eq` — an equation between a sum and a real number can be
-  negated term by term.
+  negated term by term;
+* `EReal.coe_le_coe_add_coe_ennreal_iff` — an inequality `x ≤ y + I` with `x`, `y` real and `I` a
+  finite extended nonnegative real is the corresponding inequality between reals.
+* `EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff` — likewise for an inequality
+  `x + I ≤ y + J` with `I`, `J` finite extended nonnegative reals.
+* `EReal.coe_le_coe_ennreal_of_ofReal_le` — a real number whose positive part is at most
+  `a : ℝ≥0∞` is at most `a` in `EReal`.
 -/
 
 public section
 
 noncomputable section
+
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -109,6 +119,29 @@ Both sides force `x` and `y` to be real, so no finiteness hypothesis is needed, 
 theorem _root_.EReal.add_eq_coe_iff_neg_add_neg_eq {x y : EReal} {r : ℝ} :
     x + y = (r : EReal) ↔ -x + -y = ((-r : ℝ) : EReal) := by
   induction x <;> induction y <;> simp [← EReal.coe_add, ← EReal.coe_neg, ← neg_add, -neg_add_rev]
+
+/-- Adding a finite `I : ℝ≥0∞` to a real number in `EReal` is real addition: the inequality
+`x ≤ y + I` between extended reals is `x ≤ y + I.toReal` between reals. -/
+theorem _root_.EReal.coe_le_coe_add_coe_ennreal_iff {x y : ℝ} {I : ℝ≥0∞} (hI : I ≠ ∞) :
+    (x : EReal) ≤ y + I ↔ x ≤ y + I.toReal := by
+  rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- Adding finite elements of `ℝ≥0∞` to real numbers in `EReal` is real addition: the inequality
+`x + I ≤ y + J` between extended reals is `x + I.toReal ≤ y + J.toReal` between reals. -/
+theorem _root_.EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff {x y : ℝ} {I J : ℝ≥0∞}
+    (hI : I ≠ ∞) (hJ : J ≠ ∞) :
+    (x : EReal) + I ≤ y + J ↔ x + I.toReal ≤ y + J.toReal := by
+  rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_ennreal_toReal hJ, ← EReal.coe_add,
+    ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- A real number whose positive part is at most `a : ℝ≥0∞` is at most `a` in `EReal`. -/
+theorem _root_.EReal.coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
+    (h : ENNReal.ofReal x ≤ a) : (x : EReal) ≤ (a : EReal) := by
+  calc
+    (x : EReal) ≤ (ENNReal.ofReal x : EReal) := by
+      rw [EReal.coe_ennreal_ofReal]
+      exact le_max_left (x : EReal) 0
+    _ ≤ (a : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 h
 
 end TauCeti
 

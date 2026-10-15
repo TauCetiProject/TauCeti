@@ -292,7 +292,7 @@ private theorem IsMetricCompatible.hasMetricProductRuleWithinAt
       (fun r ↦ ∑ i, U i r) (fun r ↦ ∑ j, Z j r) := by
     refine HasMetricProductRuleWithinAt.finsetSum_left
       (A := Finset.univ) (U := U) (W := fun r ↦ ∑ j, Z j r) ?_ ?_
-    · intro i hi
+    · intro i _
       exact HasMetricProductRuleWithinAt.finsetSum_right
         (A := Finset.univ) (hU := fun j _ ↦ hterm i j) (fun j _ ↦ hcoordZ j)
     · exact fun i _ ↦ hcoordU i

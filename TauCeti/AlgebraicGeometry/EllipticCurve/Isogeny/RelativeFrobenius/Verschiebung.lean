@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
@@ -51,6 +52,7 @@ supersingularity, the triviality of the geometric `p`-torsion of `W` (Silverman 
 * `TauCeti.Isogeny.verschiebungIsogeny_comp_relativeFrobeniusIsogeny` and
   `TauCeti.Isogeny.eq_verschiebungIsogeny_iff_comp_eq`: `V ∘ F_{W/F} = [p]`, and this
   characterises `V`.
+* `TauCeti.Isogeny.dual_relativeFrobeniusIsogeny`: `V` is the dual of `F_{W/F}`.
 * `TauCeti.Isogeny.relativeFrobeniusIsogeny_comp_verschiebungIsogeny`: `F_{W/F} ∘ V = [p]` on
   `W⁽ᵖ⁾`.
 * `TauCeti.Isogeny.degree_verschiebungIsogeny`: `deg V = p`.
@@ -123,6 +125,14 @@ theorem eq_verschiebungIsogeny_iff_comp_eq {χ : Isogeny (W.map (frobenius F p))
       mulByIntIsogenyOfNeZero W (n := p) (mod_cast expChar_ne_zero F p) :=
   ⟨fun h ↦ h ▸ verschiebungIsogeny_comp_relativeFrobeniusIsogeny p W, fun h ↦
     comp_right_injective _ (h.trans (verschiebungIsogeny_comp_relativeFrobeniusIsogeny p W).symm)⟩
+
+/-- **`V` is the dual of relative Frobenius**: the dual isogeny `TauCeti.Isogeny.dual` of
+`F_{W/F}` is `verschiebungIsogeny`. -/
+@[simp]
+theorem dual_relativeFrobeniusIsogeny :
+    (relativeFrobeniusIsogeny p W).dual = verschiebungIsogeny p W :=
+  (eq_verschiebungIsogeny_iff_comp_eq p W).2 <| by
+    rw [dual_comp, mulByIntIsogeny_inj, degree_relativeFrobeniusIsogeny]
 
 /-- **Verschiebung has degree `p`**, the degree of relative Frobenius (Silverman III.6.2(e)). -/
 @[simp]

@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Localization.Module
 public import TauCeti.Algebra.Polynomial.CommonXPower
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.RingTheory.Valuation.Polynomial
 
 /-!
 # The degree of a place of an algebraic function field is finite
@@ -42,11 +44,19 @@ a genuine positive natural number.
 * `TauCeti.Place.degree_eq_one_of_isAlgClosed_of_isFunctionField`: over an algebraically closed
   field of constants every place of an algebraic function field is rational (Stichtenoth,
   Remark 1.1.17).
+* `TauCeti.Place.perfectField_residueField`: over a perfect field of constants every residue
+  field is perfect.
+* `TauCeti.Place.isSeparable_residueField_of_degree_eq_one`: the residue field of a rational place
+  is separable over the constants.
+* `TauCeti.Place.isSeparable_residueField_of_perfectField`: over a perfect field of constants every
+  residue field is separable over the constants.
 
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
 computation Stichtenoth's argument turns on; it is reused by the bound on the zeros of a
-function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`.
+function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`. Its companion
+`TauCeti.Place.valuation_aeval_eq_one_of_valuation_sub_lt_one` says that a polynomial in a function
+congruent to a constant `c` is a unit at `P` as soon as it does not vanish at `c`.
 
 The rational places themselves are characterised in
 `TauCeti.FieldTheory.FunctionField.Place.Basic`, where no function-field hypothesis is needed.
@@ -96,6 +106,20 @@ to the constant term of `p`. -/
   rw [aeval_def, Polynomial.hom_eval₂, ht, eval₂_at_zero]
   rw [RingHom.comp_apply, IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
     IsLocalRing.ResidueField.algebraMap_eq]
+
+/-- **A polynomial in a function congruent to a constant `c` is a unit at `P` when it does not
+vanish at `c`**: if `v_P (z - c) < 1` and `R (c) ≠ 0`, then `v_P (R (z)) = 1`. -/
+theorem valuation_aeval_eq_one_of_valuation_sub_lt_one {z : F} {c : k}
+    (hz : P.valuation (z - algebraMap k F c) < 1) {R : k[X]} (hR : R.eval c ≠ 0) :
+    P.valuation (aeval z R) = 1 := by
+  -- Shift the variable: `R (z)` is `R (X + c)` evaluated at `z - c`, with constant term `R (c)`.
+  have hv : P.valuation.IsEquiv P.integers.valuation := by
+    rw [integers_def]; exact Valuation.isEquiv_valuation_valuationSubring _
+  have h := valuation_aeval_eq_one P.algebraMap_mem_integers
+    ((Valuation.isEquiv_iff_val_lt_one.mp hv).mp hz) (p := R.comp (X + C c))
+    (by simpa [coeff_zero_eq_eval_zero] using hR)
+  rw [aeval_comp, map_add, aeval_X, aeval_C, sub_add_cancel] at h
+  exact (Valuation.isEquiv_iff_val_eq_one.mp hv).mpr h
 
 /-! ### Linear independence over `k(x)` of a lift of a `k`-independent family of residues -/
 
@@ -231,6 +255,30 @@ theorem degree_eq_one_of_isAlgClosed_of_isFunctionField [IsAlgClosed k]
     (hF : IsFunctionField k F) : P.degree = 1 := by
   let _ := P.finiteDimensional_residueField hF
   exact P.degree_eq_one_of_isAlgClosed_of_isIntegral
+
+variable (P) in
+/-- Over a perfect field of constants the residue field of every place of an algebraic function
+field is perfect, being a finite extension of the constants. -/
+theorem perfectField_residueField [PerfectField k] (hF : IsFunctionField k F) :
+    PerfectField P.ResidueField :=
+  have := P.finiteDimensional_residueField hF
+  Algebra.IsAlgebraic.perfectField k
+
+variable (P) in
+/-- The residue field of a rational place is `k` itself, hence separable over `k`. -/
+theorem isSeparable_residueField_of_degree_eq_one (hP : P.degree = 1) :
+    Algebra.IsSeparable k P.ResidueField :=
+  Algebra.IsSeparable.of_algHom k k (AlgEquiv.ofBijective (Algebra.ofId k P.ResidueField)
+    ⟨(algebraMap k P.ResidueField).injective,
+      P.degree_eq_one_iff_algebraMap_surjective.mp hP⟩).symm.toAlgHom
+
+variable (P) in
+/-- Over a perfect field of constants the residue field of every place of an algebraic function
+field is separable over the constants, being a finite extension of a perfect field. -/
+theorem isSeparable_residueField_of_perfectField [PerfectField k] (hF : IsFunctionField k F) :
+    Algebra.IsSeparable k P.ResidueField :=
+  have := P.finiteDimensional_residueField hF
+  inferInstance
 
 end Place
 

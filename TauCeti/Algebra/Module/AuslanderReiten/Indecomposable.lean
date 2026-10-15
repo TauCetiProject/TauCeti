@@ -75,32 +75,37 @@ theorem indecomposable_stableTransposeObj_iff (P : FiniteProjectivePresentation 
       (fun h ↦ by let := h; exact hpM inferInstance)
     have : IsLocalRing (End M) := (indecomposable_iff_isLocalRing_end M hM).mp hi
     have : Nontrivial (End ((S).obj M)) :=
-      nontrivial_of_ne (𝟙 ((S).obj M)) 0
-        (fun h ↦ hs.1 ((IsZero.iff_id_eq_zero _).mpr h))
+      nontrivial_of_ne 1 0
+        (fun h ↦ hs.1 ((IsZero.iff_id_eq_zero _).mpr (congrArg End.asHom h)))
     have : IsLocalRing (End ((S).obj M)) := IsLocalRing.of_surjective'
-      ({ (S).mapEnd M, (S).mapAddHom with } : End M →+* End ((S).obj M))
-      (S).map_surjective
+      ({ (S).mapEnd M with
+          map_zero' := by apply End.ext; exact (S).map_zero M M
+          map_add' := fun _ _ ↦ by apply End.ext; exact (S).map_add } :
+        End M →+* End ((S).obj M))
+      (fun f ↦ let ⟨a, ha⟩ := (S).map_surjective f.asHom; ⟨End.of a, End.ext ha⟩)
     let X := (T).obj (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
     let f := AuslanderReitenTranspose.stableMap P.exact.linearMap_comp_eq_zero
       P.exact P.surjective
     -- Transposition reverses composition; the opposite ring accounts for that reversal.
     let φ : (End ((S).obj M))ᵐᵒᵖ →+* End X :=
-      { toFun := fun a ↦ f a.unop
-        map_zero' := f.map_zero
-        map_one' := AuslanderReitenTranspose.stableMap_id P.exact P.surjective
-        map_add' := fun a b ↦ f.map_add a.unop b.unop
-        map_mul' := fun a b ↦ AuslanderReitenTranspose.stableMap_comp
+      { toFun := fun a ↦ End.of (f a.unop.asHom)
+        map_zero' := End.ext f.map_zero
+        map_one' := End.ext (AuslanderReitenTranspose.stableMap_id P.exact P.surjective)
+        map_add' := fun a b ↦ End.ext (f.map_add a.unop.asHom b.unop.asHom)
+        map_mul' := fun a b ↦ End.ext (AuslanderReitenTranspose.stableMap_comp
           P.exact.linearMap_comp_eq_zero P.exact P.surjective P.exact P.surjective
-          a.unop b.unop }
+          a.unop.asHom b.unop.asHom) }
     let e : (End ((S).obj M))ᵐᵒᵖ ≃+* End X := RingEquiv.ofBijective φ
-      ⟨(AuslanderReitenTranspose.stableMap_injective
-          P.exact P.surjective P.exact P.surjective).comp MulOpposite.unop_injective,
-        (AuslanderReitenTranspose.stableMap_surjective
-          P.exact P.surjective P.exact P.surjective).comp MulOpposite.unop_surjective⟩
+      ⟨fun a b h ↦ MulOpposite.unop_injective (End.ext (AuslanderReitenTranspose.stableMap_injective
+          P.exact P.surjective P.exact P.surjective (congrArg End.asHom h))),
+        fun y ↦
+          let ⟨x, hx⟩ := AuslanderReitenTranspose.stableMap_surjective
+            P.exact P.surjective P.exact P.surjective y.asHom
+          ⟨MulOpposite.op (End.of x), End.ext hx⟩⟩
     have : IsLocalRing (End X) := e.isLocalRing
     exact indecomposable_of_injective_of_isLocalRing (R := End X)
-      (fun h ↦ one_ne_zero (α := End X) ((IsZero.iff_id_eq_zero _).mp h)) id
-      Function.injective_id rfl rfl (fun _ ↦ rfl)
+      (fun h ↦ one_ne_zero (α := End X) (End.ext ((IsZero.iff_id_eq_zero _).mp h))) End.of
+      End.homEquiv.symm.injective rfl rfl (fun _ ↦ rfl)
 
 /-- The transpose of a finite minimal presentation of a finite-length indecomposable module
 is indecomposable exactly when the original module is not projective. -/
@@ -123,10 +128,6 @@ theorem isIndecomposableModule_auslanderReitenTranspose_iff
       ((P.indecomposable_stableTransposeObj_iff hM hiM).mpr hpM)).mpr
     intro Q r hQ
     let := hQ
-    have hzero := hP.isSuperfluous_ker.subsingleton_of_retract_auslanderReitenTranspose
-      r.r.hom r.i.hom (by
-        simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
-          congrArg ModuleCat.Hom.hom r.retract)
-    exact ModuleCat.isZero_iff_subsingleton.mpr hzero
+    exact hP.isSuperfluous_ker.isZero_of_retract_auslanderReitenTranspose r
 
 end TauCeti.FiniteProjectivePresentation

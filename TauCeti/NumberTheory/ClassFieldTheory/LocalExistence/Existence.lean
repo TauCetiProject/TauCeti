@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.UpwardClosure
-public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
@@ -126,11 +126,11 @@ theorem exists_abelianLayer_localNormSubgroup_eq_of_powerSubgroup_le {n : ℕ} (
   have : NeZero n := .of_neZero_natCast K
   have : NeZero (n : SeparableClosure K) := .nat_of_injective (algebraMap K _).injective
   -- `K' = K(ξ)` for a primitive `n`-th root of unity `ξ ∈ Kˢ` is again a local field
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) n
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) n
   let K' := K⟮ξ⟯
   have : FiniteDimensional K K' := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral ξ)
-  let _ := finiteExtensionValuativeRel K K'
-  let _ := finiteExtensionNormedFieldTopology K K'
+  let _ := algebraicExtensionValuativeRel K K'
+  let _ := algebraicExtensionNormedFieldTopology K K'
   have := finiteExtension_isNonarchimedeanLocalField K K'
   have hζ : IsPrimitiveRoot (AdjoinSimple.gen K ξ) n :=
     .of_map_of_injective (f := K'.val) (by simpa using hξ) K'.val.injective

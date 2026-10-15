@@ -37,7 +37,7 @@ universe u
 
 variable (k : Type u) [Field k]
 
-private theorem isGeometricallyReduced_generatorCoordinateAlgebra :
+theorem isGeometricallyReduced_generatorCoordinateAlgebra :
     ∀ j, Algebra.IsGeometricallyReduced k (generatorCoordinateAlgebra k j) := by
   intro j
   cases j with

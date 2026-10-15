@@ -107,6 +107,19 @@ private theorem rootAtEntry_eq_some_iff_root (root : RootSubgroupIndex m)
     simp [hzero, hn, Finsupp.single_neg, sub_eq_add_neg, ← Finsupp.single_add,
       add_comm]
 
+/-- Every nonzero difference of paired standard weights is a root of the symplectic
+diagonal datum. The characters are integral, independently of the coefficient ring. -/
+theorem exists_root_eq_pairedCoordinateWeight_sub (a b : Fin m ⊕ Fin m)
+    (h : pairedCoordinateWeight.{u} a - pairedCoordinateWeight b ≠ 0) :
+    ∃ root : RootSubgroupIndex m,
+      (diagonalRootDatum.{u} m).root root =
+        pairedCoordinateWeight a - pairedCoordinateWeight b := by
+  cases hr : rootAtEntry a b with
+  | some root => exact ⟨root, (rootAtEntry_eq_some_iff_root root a b).mp hr⟩
+  | none =>
+      cases a <;> cases b <;> simp only [rootAtEntry] at hr <;>
+        split_ifs at hr <;> simp_all
+
 /-- The integral support of a normalized root matrix consists exactly of the entries
 whose paired-weight difference is that root of the symplectic diagonal root datum. -/
 theorem tangentMatrix_apply_ne_zero_iff_root_eq (root : RootSubgroupIndex m)

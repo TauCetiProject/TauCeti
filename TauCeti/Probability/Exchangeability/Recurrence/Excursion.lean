@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.Excursion.Basic
+public import TauCeti.Probability.Process.Excursion.MarkovChain
+public import TauCeti.Probability.Exchangeability.ConditionallyIID.Const
 public import TauCeti.Probability.Exchangeability.Excursion
 public import TauCeti.Probability.Recurrent.Basic
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
@@ -25,12 +27,18 @@ exchangeability alone does not ensure recurrence. De Finetti's theorem can then 
 to the exchangeable excursion process, as in
 `TauCeti.Probability.Exchangeability.Recurrence.Representation`.
 
+For a recurrent Markov chain itself the excursions are not merely exchangeable but i.i.d.
+(`TauCeti.Probability.Process.Excursion.MarkovChain`); in the language of de Finetti's theorem,
+their directing measure is the constant excursion law.
+
 ## Main results
 
 * `TauCeti.Probability.MarkovExchangeable.measure_setOf_excursionPrefix_eq_of_perm`: reordering a
   list of excursions does not change its probability.
 * `TauCeti.Probability.MarkovExchangeable.exchangeable_excursionProcess`: the excursions of a
   recurrent Markov exchangeable process are exchangeable.
+* `TauCeti.Probability.conditionallyIIDWith_excursionProcess`: the excursions of a recurrent
+  Markov chain are conditionally i.i.d. with the constant excursion law as directing measure.
 
 ## References
 
@@ -76,10 +84,11 @@ theorem MarkovExchangeable.measure_setOf_excursionPrefix_eq_of_perm (h : MarkovE
     have hempty : ∀ cs : List (List α), ¬(∀ e ∈ cs, a₀ ∉ e) →
         μ {ω | excursionPrefix (fun n => X n ω) a₀ cs.length = cs} = 0 := by
       intro cs hcs
-      convert measure_empty (μ := μ)
-      refine Set.eq_empty_of_forall_notMem fun ω hω => hcs ?_
-      rw [← hω]
-      exact forall_not_mem_excursionPrefix _ a₀ cs.length
+      have hset : {ω | excursionPrefix (fun n => X n ω) a₀ cs.length = cs} = ∅ :=
+        Set.eq_empty_of_forall_notMem fun ω hω => hcs (by
+          rw [← Set.mem_ofPred.mp hω]
+          exact forall_not_mem_excursionPrefix _ a₀ cs.length)
+      rw [hset, measure_empty]
     rw [hempty bs havoid,
       hempty bs' fun hbs' => havoid fun e he => hbs' e (hperm.mem_iff.mp he)]
 
@@ -138,6 +147,24 @@ theorem MarkovExchangeable.exchangeable_excursionProcess (h : MarkovExchangeable
     (Equiv.Perm.ofFn_comp_perm σ.symm v)
 
 end Exchangeable
+
+/-! ## The excursions of a recurrent Markov chain -/
+
+/-- **The excursions of a recurrent Markov chain are i.i.d.**: independent, and each distributed as
+the first excursion. The constant directing measure is the excursion law, so this is genuine
+independence and not only a mixture identity. -/
+theorem conditionallyIIDWith_excursionProcess [Countable α] [MeasurableSingletonClass α]
+    {κ : ProbabilityTheory.Kernel α α} [ProbabilityTheory.IsMarkovKernel κ]
+    (hret : ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) κ), {n | x n = a₀}.Infinite) :
+    ConditionallyIIDWith (markovChainLaw (Measure.dirac a₀) κ)
+      (excursionProcess (fun n (x : ℕ → α) => x n) a₀)
+      (fun _ => ⟨excursionLaw κ a₀, isProbabilityMeasure_excursionLaw⟩) :=
+  conditionallyIIDWith_const_iff_iIndepFun_and_map_eq.2
+    ⟨aemeasurable_excursionProcess (fun i => (measurable_pi_apply i).aemeasurable) a₀
+        (measurableSet_singleton a₀),
+      iIndepFun_excursionProcess hret,
+      fun k => map_excursionProcess_eq_excursionLaw k
+        (hret.mono fun _ hx => exists_visitCount_of_infinite hx (k + 1))⟩
 
 end Probability
 

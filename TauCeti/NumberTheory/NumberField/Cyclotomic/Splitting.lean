@@ -223,7 +223,7 @@ cyclotomic field. -/
 theorem ncard_primesOver_eq_totient_iff_of_mod_four_eq_two (hn4 : n % 4 = 2) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = n.totient ↔ (p : ZMod (n / 2)) = 1 := by
   have : IsCyclotomicExtension {n / 2} ℚ K :=
-    IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two hn4 two_ne_zero
+    IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two hn4
   have : NeZero (n / 2) := ⟨by omega⟩
   have hn : n = 2 * (n / 2) := by omega
   rw [hn, Nat.totient_two_mul_of_odd (Nat.odd_iff.2 (by omega)), ← hn]
@@ -235,7 +235,7 @@ field is also an `n / 2`-th cyclotomic field. -/
 theorem isPrime_span_natCast_iff_orderOf_eq_totient_of_mod_four_eq_two (hn4 : n % 4 = 2) :
     (span {(p : 𝓞 K)}).IsPrime ↔ ¬ p ∣ n / 2 ∧ orderOf (p : ZMod (n / 2)) = (n / 2).totient := by
   have : IsCyclotomicExtension {n / 2} ℚ K :=
-    IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two hn4 two_ne_zero
+    IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two hn4
   have : NeZero (n / 2) := ⟨by omega⟩
   exact isPrime_span_natCast_iff_orderOf_eq_totient (by omega)
 

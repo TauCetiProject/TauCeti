@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Boundaries
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
+import TauCeti.Algebra.Homology.Split
 
 /-!
 # The universal coefficient sequence for cohomology
@@ -25,7 +28,9 @@ monomorphisms and `Zⱼ` is projective. The second map is the Kronecker map
 `TauCeti.Algebra.Homology.Kronecker`). This is the universal coefficient theorem for cohomology.
 Over a hereditary ring, such as a principal ideal domain, these hypotheses hold for a degreewise
 projective complex: the cycles and the boundaries are submodules of projective modules, hence
-projective, and a surjection onto the projective boundaries splits.
+projective, and a surjection onto the projective boundaries splits.  Over a principal ideal domain
+they are found by instance search (`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
+`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`).
 
 The first map is built from the extension class of `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0`. A morphism
 `β : Bⱼ ⟶ Y` gives the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y` of `Hom(X, Y)`, through the corestriction of the
@@ -34,12 +39,19 @@ differential `Xᵢ ⟶ Xⱼ` to the boundaries. Its class depends only on the im
 the identification `TauCeti.homCokernelEquivExt` of `Ext¹(Hⱼ(X), Y)` with `Hom(Bⱼ, Y)` modulo the
 morphisms extending to `Zⱼ`.
 
+For a chain complex indexed by `ℕ` whose terms and homology objects are projective, the
+hypotheses hold in every degree over any ring
+(`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and the `Ext¹` term vanishes, so the
+Kronecker map is bijective.
+
 ## Main declarations
 
 * `TauCeti.ChainComplex.extToHomology`: the map `Ext¹(Hⱼ(X), Y) →ₗ[k] Hⁱ(Hom(X, Y))`,
   characterized by `TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀`.
 * `TauCeti.ChainComplex.extToHomology_injective` and
   `TauCeti.ChainComplex.exact_extToHomology_kronecker`: exactness at the first two places.
+* `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology`: the Kronecker map is
+  bijective for a complex indexed by `ℕ` with projective terms and projective homology.
 
 ## References
 
@@ -65,30 +77,12 @@ section Ext
 
 variable {k : Type*} [CommRing k] [Linear k C] [HasExt.{w} C] {X : ChainComplex C α} {Y : C}
 
-/-- The corestriction `Xᵢ ⟶ Bⱼ` of the differential to the boundaries `ker(Zⱼ ⟶ Hⱼ(X))`. -/
-private abbrev toBoundaries (i j : α) : X.X i ⟶ kernel (X.homologyπ j) :=
-  kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j)
-
-omit [HasExt C] in
-/-- The corestriction of the differential to the boundaries vanishes on boundaries. -/
-private lemma d_toBoundaries (i j : α) :
-    X.d ((ComplexShape.up α).next i) i ≫ toBoundaries (X := X) i j = 0 := by
-  rw [← cancel_mono (kernel.ι _), Category.assoc, kernel.lift_ι, X.d_toCycles, zero_comp]
-
-omit [HasExt C] in
-/-- In degree `i = j + 1`, the corestriction of the differential to the boundaries is an
-epimorphism, because the homology `Hⱼ(X)` is the cokernel of `Xᵢ ⟶ Zⱼ`. -/
-private lemma epi_toBoundaries {i j : α} (hij : j + 1 = i) : Epi (toBoundaries (X := X) i j) :=
-  (ShortComplex.exact_of_g_is_cokernel
-    (ShortComplex.mk (X.toCycles i j) (X.homologyπ j) (X.toCycles_comp_homologyπ i j))
-    (X.homologyIsCokernel i j ((ComplexShape.down α).prev_eq' hij))).epi_kernelLift
-
 variable (k Y) in
 /-- The map `Hom(Bⱼ, Y) →ₗ[k] Hⁱ(Hom(X, Y))` sending `β` to the class of the cocycle
 `Xᵢ ⟶ Bⱼ ⟶ Y`. -/
 private abbrev boundariesHom (i j : α) :
     (kernel (X.homologyπ j) ⟶ Y) →ₗ[k] (X.linearYonedaObj k Y).homology i :=
-  homologyClassOfComp k Y (toBoundaries (X := X) i j) (d_toBoundaries i j)
+  homologyClassOfComp k Y (X.toBoundaries i j) (X.d_toBoundaries _ i j)
 
 omit [HasExt C] in
 /-- `TauCeti.kernelSequence_shortExact` for `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0`, with the terms of the
@@ -109,7 +103,7 @@ private lemma range_leftComp_le_ker (i j : α) [IsSplitMono (X.iCycles j)] :
   rw [LinearMap.mem_ker, homologyClassOfComp_eq _ _ _
     ((X.linearYonedaObj k Y).toCycles j i (retraction (X.iCycles j) ≫ γ))
     ((linearYonedaObj_iCycles_toCycles_apply j i _).trans (by
-      rw [Linear.leftComp_apply, kernel.lift_ι_assoc, ← X.toCycles_i_assoc,
+      rw [Linear.leftComp_apply, X.toBoundaries_ι_assoc, ← X.toCycles_i_assoc,
         IsSplitMono.id_assoc]))]
   exact linearYonedaObj_homologyπ_toCycles_apply j i _
 
@@ -138,14 +132,14 @@ of a morphism `β : Bⱼ ⟶ Y` from the boundaries goes to the class of the coc
 lemma extToHomology_extClass_comp_mk₀ (i j : α) [Projective (X.cycles j)]
     [IsSplitMono (X.iCycles j)] (β : kernel (X.homologyπ j) ⟶ Y)
     (φ : (X.linearYonedaObj k Y).cycles i)
-    (hφ : (X.linearYonedaObj k Y).iCycles i φ =
-      kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j) ≫ β) :
+    (hφ : (X.linearYonedaObj k Y).iCycles i φ = X.toBoundaries i j ≫ β) :
     extToHomology k X Y i j
         ((kernelSequence_shortExact (X.homologyπ j)).extClass.comp (Ext.mk₀ β) (add_zero 1)) =
       (X.linearYonedaObj k Y).homologyπ i φ := by
   -- the extension classes of `kernelSequence` and of its unfolding agree by definition
   have h := congrArg (extToHomology k X Y i j) (homBoundary_apply k (boundaries_shortExact j) Y β)
-  exact h.symm.trans ((extToHomology_homBoundary i j β).trans (homologyClassOfComp_eq _ _ β φ hφ))
+  exact h.symm.trans ((extToHomology_homBoundary i j β).trans
+    (homologyClassOfComp_eq _ _ β φ hφ))
 
 /-- **Injectivity in the universal coefficient sequence**: in degree `i = j + 1`, the map
 `Ext¹(Hⱼ(X), Y) →ₗ[k] Hⁱ(Hom(X, Y))` is injective. If the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y` is the coboundary
@@ -158,7 +152,7 @@ theorem extToHomology_injective {i j : α} (hij : j + 1 = i) [Projective (X.cycl
   obtain ⟨β, rfl⟩ := homBoundary_surjective k (boundaries_shortExact (X := X) j) Y e
   have hβ : boundariesHom k Y i j β = 0 := (extToHomology_homBoundary i j β).symm.trans he
   -- the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y` is a coboundary `Xᵢ ⟶ Xⱼ ⟶ Y`
-  have hφ := iCycles_cocycleOfComp (k := k) _ (d_toBoundaries i j) β
+  have hφ := iCycles_cocycleOfComp (k := k) _ (X.d_toBoundaries _ i j) β
   rw [homologyClassOfComp_eq _ _ β _ hφ] at hβ
   obtain ⟨ψ, hψ⟩ := ((ShortComplex.moduleCat_exact_iff _).1
     (ShortComplex.exact_of_g_is_cokernel (ShortComplex.mk _ _
@@ -167,10 +161,10 @@ theorem extToHomology_injective {i j : α} (hij : j + 1 = i) [Projective (X.cycl
   rw [← hψ, linearYonedaObj_iCycles_toCycles_apply] at hφ
   -- name the cochain `ψ` with its morphism type `Xⱼ ⟶ Y`, so that composites with it rewrite
   obtain ⟨ψ', rfl⟩ : ∃ ψ' : X.X j ⟶ Y, ψ' = ψ := ⟨ψ, rfl⟩
-  have := epi_toBoundaries (X := X) hij
+  have := X.epi_toBoundaries hij
   -- hence `β` is the restriction of `ψ` along `Bⱼ ⟶ Zⱼ ⟶ Xⱼ`, whose class in `Ext¹` vanishes
   have hβψ : kernel.ι (X.homologyπ j) ≫ X.iCycles j ≫ ψ' = β := by
-    rw [← cancel_epi (toBoundaries (X := X) i j), ← hφ, kernel.lift_ι_assoc, X.toCycles_i_assoc]
+    rw [← cancel_epi (X.toBoundaries i j), ← hφ, X.toBoundaries_ι_assoc, X.toCycles_i_assoc]
   exact LinearMap.mem_ker.1
     ((ker_homBoundary k (boundaries_shortExact j) Y).ge ⟨X.iCycles j ≫ ψ', hβψ⟩)
 
@@ -191,25 +185,40 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
     obtain ⟨a, ha⟩ : ∃ a : X.X i ⟶ Y, (X.linearYonedaObj k Y).iCycles i φ = a := ⟨_, rfl⟩
     have hcyc : X.iCycles i ≫ a = 0 := by
       rw [← ha, ← kronecker_homologyπ, LinearMap.mem_ker.1 hx, comp_zero]
-    have := epi_toBoundaries (X := X) hij
-    -- the kernel of `Xᵢ ⟶ Bⱼ` lies in the cycles `Zᵢ`, on which the cocycle vanishes
-    have hker : kernel.ι (toBoundaries (X := X) i j) ≫ a = 0 := by
-      have hd : kernel.ι (toBoundaries (X := X) i j) ≫ X.d i j = 0 := by
-        rw [← X.toCycles_i, ← kernel.lift_ι _ _ (X.toCycles_comp_homologyπ i j), Category.assoc,
-          kernel.condition_assoc, zero_comp]
-      rw [← X.liftCycles_i _ j ((ComplexShape.down α).next_eq' hij) hd, Category.assoc, hcyc,
-        comp_zero]
-    obtain ⟨β, hβ⟩ := CokernelCofork.IsColimit.desc' (Abelian.epiIsCokernelOfKernel _
-      (kernelIsKernel (toBoundaries (X := X) i j))) a hker
+    -- the cocycle vanishes on the cycles `Zᵢ`, so it factors through their cokernel `Xᵢ ⟶ Bⱼ`
+    obtain ⟨β, hβ⟩ := CokernelCofork.IsColimit.desc' (X.toBoundariesIsCokernel hij) a hcyc
     exact ⟨β, homologyClassOfComp_eq _ _ β φ (ha.trans hβ.symm)⟩
   · rintro _ ⟨β, rfl⟩
     -- the cycles `Zᵢ` map to zero in `Bⱼ ⊆ Zⱼ ⊆ Xⱼ`, as `Zᵢ ⟶ Xᵢ ⟶ Xⱼ` vanishes
-    have h0 : X.iCycles i ≫ toBoundaries (X := X) i j = 0 := by
-      rw [← cancel_mono (kernel.ι (X.homologyπ j)), ← cancel_mono (X.iCycles j)]
-      simp only [Category.assoc, kernel.lift_ι, X.toCycles_i, X.iCycles_d, zero_comp]
     rw [LinearMap.mem_ker, ← cancel_epi (X.homologyπ i), homologyπ_kronecker_homologyClassOfComp,
-      reassoc_of% h0, zero_comp, comp_zero]
+      X.iCycles_toBoundaries_assoc, zero_comp, comp_zero]
 
 end Ext
+
+section ProjectiveHomology
+
+variable {k : Type*} [CommRing k] [Linear k C] {X : ChainComplex C ℕ} {Y : C}
+  [∀ n, Projective (X.X n)] [∀ n, Projective (X.homology n)]
+
+/-- **The universal coefficient theorem with projective homology**: for a chain complex `X`
+indexed by `ℕ` whose terms and homology objects are all projective, the Kronecker map
+`Hⁿ(Hom(X, Y)) →ₗ[k] (Hₙ(X) ⟶ Y)` is bijective in every degree, for every object `Y`. -/
+theorem kronecker_bijective_of_projective_homology (n : ℕ) :
+    Function.Bijective (kronecker k X Y n) := by
+  cases n with
+  | zero => exact kronecker_bijective_of_isIso 0
+  | succ n =>
+    -- the cycles are projective and split off, so the universal coefficient sequence is exact,
+    -- and its `Ext¹` term vanishes since the homology is projective
+    have := ChainComplex.isSplitMono_iCycles_of_projective_homology X
+    have := ChainComplex.projective_cycles_of_projective_homology X
+    refine ⟨?_, kronecker_surjective_of_isSplitMono _⟩
+    let := HasExt.standard C
+    rw [← LinearMap.ker_eq_bot,
+      (exact_extToHomology_kronecker (k := k) (X := X) (Y := Y) rfl).linearMap_ker_eq,
+      LinearMap.range_eq_bot]
+    exact LinearMap.ext fun e ↦ by rw [Ext.eq_zero_of_projective e, map_zero, LinearMap.zero_apply]
+
+end ProjectiveHomology
 
 end TauCeti.ChainComplex

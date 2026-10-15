@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.Orders
+public import TauCeti.Combinatorics.PermutationTriple.Orders.Basic
 public import TauCeti.Combinatorics.PermutationTriple.Regular
 public import TauCeti.GroupTheory.GroupAction.Stabilizer
 

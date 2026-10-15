@@ -50,6 +50,7 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
+* `TauCeti.bijOn_const_sub_inv_upperHalfPlaneSet`.
 * `TauCeti.tendsto_comp_neg_inv_cobounded`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
@@ -198,6 +199,14 @@ theorem im_neg_inv_pos {w : ℂ} : 0 < (-w⁻¹).im ↔ 0 < w.im := by
   · simp
   · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
     rw [him, lt_div_iff₀ (normSq_pos.mpr hw), zero_mul]
+
+/-- For real `c`, the Möbius map `z ↦ c - z⁻¹`, which sends `0` to infinity and infinity to `c`, is
+a bijection of the open upper half-plane. -/
+theorem bijOn_const_sub_inv_upperHalfPlaneSet (c : ℝ) :
+    BijOn (fun z : ℂ => (c : ℂ) - z⁻¹) upperHalfPlaneSet upperHalfPlaneSet := by
+  refine ⟨fun z (hz : 0 < z.im) => ?_, (sub_right_injective.comp inv_injective).injOn,
+    fun w (hw : 0 < w.im) => ⟨-(w - c)⁻¹, im_neg_inv_pos.mpr (by simpa using hw), by simp⟩⟩
+  simpa [upperHalfPlaneSet] using im_neg_inv_pos.mpr hz
 
 /-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
 infinity, so a limit of `f` at infinity in the closed upper half-plane is a limit of `w ↦ f (-w⁻¹)`

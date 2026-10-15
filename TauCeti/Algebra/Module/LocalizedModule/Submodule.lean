@@ -7,24 +7,30 @@ module
 
 public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
+public import Mathlib.RingTheory.Localization.Basic
 
 /-!
-# Localizing the image of the base ring in an algebra
+# Submodules over a localization
 
-Let `B` be an algebra over a commutative semiring `A`, let `S` be a submonoid of `A`, and let
-`A'` and `B'` be the localizations of `A` at `S` and of `B` at the image of `S`. Viewing `B → B'`
-as a localization of `A`-modules, the localization `Submodule.localized'` of the image
-`(1 : Submodule A B)` of `A` in `B` is the image `(1 : Submodule A' B')` of `A'` in `B'`. Together
-with Mathlib's `IsLocalizedModule.toLocalizedQuotient'`, this exhibits `B' / A'` as the
-localization of the `A`-module `B / A`.
+This file proves two facts about submodules and localized modules:
 
-## Main statements
-
-* `Submodule.localized'_one`: the localization of the image of `A` in `B` is the image of `A'`
-  in `B'`.
+* `IsLocalizedModule.mk'_mem_iff`: a fraction `f x / s` lies in a submodule over the localization
+  exactly when `f x` does.
+* `Submodule.localized'_one`: the localization of the image of `A` in an algebra `B` is the image
+  of the localized base ring `A'` in the localized algebra `B'`.
 -/
 
 public section
+
+/-- Let `A` be the localization of `R` at `S`, and `f : M → M'` a localization map at `S` into an
+`A`-module. Then `f x / s` lies in an `A`-submodule `L` of `M'` exactly when `f x` does. -/
+@[simp]
+theorem IsLocalizedModule.mk'_mem_iff {R : Type*} [CommSemiring R] {S : Submonoid R}
+    {A : Type*} [CommSemiring A] [Algebra R A] [IsLocalization S A]
+    {M M' : Type*} [AddCommMonoid M] [AddCommMonoid M'] [Module R M] [Module R M'] [Module A M']
+    [IsScalarTower R A M'] (f : M →ₗ[R] M') [IsLocalizedModule S f] {L : Submodule A M'}
+    {x : M} {s : S} : IsLocalizedModule.mk' f x s ∈ L ↔ f x ∈ L := by
+  rw [← IsLocalization.smul_mem_iff (s := s), IsLocalizedModule.mk'_cancel']
 
 namespace Submodule
 

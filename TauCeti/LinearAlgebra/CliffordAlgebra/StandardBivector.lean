@@ -393,7 +393,6 @@ private theorem standardQuadraticToSoLinearEquiv_map_lie
 private noncomputable def standardQuadraticToSoLieEquiv :
     let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
     quadraticLieSubalgebra Q ≃ₗ⁅R⁆ LieAlgebra.Orthogonal.so (Fin n) R := by
-  let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
   let e := standardQuadraticToSoLinearEquiv n R
   exact LieEquiv.mk
     { toLinearMap := e.toLinearMap

@@ -127,7 +127,6 @@ open Fin.NatCast in
 theorem re_toComplex_vertex_lt_of_lt (h₀ : P.vertex 0 = .inr ∞) {i j : Fin n} (hi : i ≠ 0)
     (hij : i < j) : (toComplex (P.vertex i)).re < (toComplex (P.vertex j)).re := by
   -- induction on the value of `j`, through the cast `ℕ → Fin n`
-  have hi₀ : (i : ℕ) ≠ 0 := Fin.val_ne_zero_iff.2 hi
   have key {k : ℕ} (hik : (i : ℕ) < k) (hkn : k < n) :
       (toComplex (P.vertex i)).re < (toComplex (P.vertex (k : Fin n))).re := by
     induction k, hik using Nat.le_induction with

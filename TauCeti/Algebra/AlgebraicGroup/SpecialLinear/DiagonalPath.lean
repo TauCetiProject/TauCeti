@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
@@ -37,19 +37,17 @@ theorem map_diag2nUnit_genericUnit
     {K : Type u} [Field K] {m : Type v} [Fintype m] [DecidableEq m]
     {i j : m} (hij : i ≠ j) (b : Kˣ) :
     Matrix.SpecialLinearGroup.map
-        (MultiplicativeGroup.point (R := K) b).toRingHom
-        (Matrix.SpecialLinearGroup.diag2nUnit hij (MultiplicativeGroup.genericUnit K)) =
+        (laurentEval (R := K) b).toRingHom
+        (Matrix.SpecialLinearGroup.diag2nUnit hij (LaurentPolynomial.genericUnit K)) =
       Matrix.SpecialLinearGroup.diag2n hij (b : K) (Units.ne_zero b) := by
   rw [Matrix.SpecialLinearGroup.map_diag2nUnit]
-  have hunit : Units.map (MultiplicativeGroup.point (R := K) b).toRingHom
-      (MultiplicativeGroup.genericUnit K) = b := by
-    exact ((MultiplicativeGroup.map_genericUnit K
-      (MultiplicativeGroup.point (R := K) b)).trans
-        (MultiplicativeGroup.unitOfPoint_point b))
+  have hunit : Units.map (laurentEval (R := K) b).toRingHom
+      (LaurentPolynomial.genericUnit K) = b :=
+    (LaurentPolynomial.map_genericUnit K _).trans (laurentEvalEquiv_symm_laurentEval b)
   calc
     Matrix.SpecialLinearGroup.diag2nUnit hij
-        (Units.map (MultiplicativeGroup.point (R := K) b).toRingHom
-          (MultiplicativeGroup.genericUnit K)) =
+        (Units.map (laurentEval (R := K) b).toRingHom
+          (LaurentPolynomial.genericUnit K)) =
         Matrix.SpecialLinearGroup.diag2nUnit hij b := congrArg _ hunit
     _ = Matrix.SpecialLinearGroup.diag2n hij (b : K) (Units.ne_zero b) := by
       simpa using

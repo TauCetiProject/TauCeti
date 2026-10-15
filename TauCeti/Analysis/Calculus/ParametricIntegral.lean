@@ -62,8 +62,6 @@ theorem hasFDerivAt_integral_Icc_of_contDiff
   let h' : E → ℝ → E →L[ℝ] F := fun x t ↦
     (fderiv ℝ h.uncurry (x, t)).comp (ContinuousLinearMap.inl ℝ E ℝ)
   have hh' : Continuous h'.uncurry := by
-    have hd : Continuous (fderiv ℝ h.uncurry) :=
-      (hh.fderiv_right (m := 0) (by norm_num)).continuous
     fun_prop
   obtain ⟨C, hC⟩ := (isCompact_Icc : IsCompact (Set.Icc (0 : ℝ) 1)).exists_eventually_norm_le
     (F := h'.uncurry) (x₀ := x₀) isOpen_univ (fun _ _ ↦ hh'.continuousAt)
@@ -108,8 +106,6 @@ private theorem contDiff_integral_Icc_of_contDiff_nat
       let h' : V → ℝ → V →L[ℝ] W := fun x t ↦
         (fderiv ℝ h.uncurry (x, t)).comp (ContinuousLinearMap.inl ℝ V ℝ)
       have hh' : ContDiff ℝ n h'.uncurry := by
-        have hd : ContDiff ℝ n (fderiv ℝ h.uncurry) :=
-          hh.fderiv_right (m := n) (by norm_num)
         fun_prop
       have hsmooth : ContDiff ℝ ((n : ℕ∞ω) + 1)
           (fun x ↦ ∫ t in Set.Icc (0 : ℝ) 1, h x t) := by
@@ -151,7 +147,7 @@ theorem hasDerivAt_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
     IntervalIntegrable (fun t ↦ fderiv ℝ G (x₀, t) (1, 0)) volume a b ∧
       HasDerivAt (fun x ↦ ∫ t in a..b, G (x, t))
         (∫ t in a..b, fderiv ℝ G (x₀, t) (1, 0)) x₀ := by
-  obtain ⟨u, v, huo, hvo, hu, hv, huv⟩ :=
+  obtain ⟨u, v, huo, _, hu, hv, huv⟩ :=
     generalized_tube_lemma isCompact_singleton isCompact_uIcc hU hsub
   have hx₀u : x₀ ∈ u := hu (Set.mem_singleton x₀)
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp (huo.mem_nhds hx₀u)

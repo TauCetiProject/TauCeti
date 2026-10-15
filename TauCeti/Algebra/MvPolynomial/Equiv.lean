@@ -51,6 +51,7 @@ The coefficient of `Xᵘ` then has as its coefficient of `Xₙ ^ k` the coeffici
 exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivLast_coeff_coeff`).
 This is the form used for Lazard evaluation, where the base variables are eliminated first and
 the last variable is kept.
+
 -/
 
 public section
@@ -186,6 +187,19 @@ theorem polynomial_eval_map_finSuccEquiv (φ : R →+* S) (s : Fin n → S) (y :
     polynomial_eval_map_finSuccEquiv' φ 0 s y f
 
 end Map
+
+/-- Moving the polynomial variable into the coefficient ring maps a constant multivariate
+polynomial by the univariate constant-coefficient homomorphism. -/
+theorem optionEquivRight_optionEquivLeft_symm_C {σ : Type*} (g : MvPolynomial σ R) :
+    ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) (Polynomial.C g) =
+      map Polynomial.C g := by
+  rw [AlgEquiv.trans_apply]
+  induction g using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p i hp =>
+    simp only [map_mul, optionEquivLeft_symm_C_X,
+      optionEquivRight_X_some, hp, map_X]
 
 section Last
 

@@ -90,20 +90,15 @@ spaces `Fin n → k`; `FDRep.of` mediates between the two, and nothing is lost, 
 of an irreducible representation on an arbitrary finite-dimensional space already lies in
 `TauCeti.irreducibleCharacters`.
 
-Following the roadmap, the lattice is an `AddSubgroup (G → k)` and not a `Subring (G → k)`: the
-additive structure is what the integrality arguments downstream use, and closure under the pointwise
-product is recorded as the lemma `TauCeti.mul_mem_virtualCharacters` rather than built into the
-interface. The coefficients in `TauCeti.mem_virtualCharacters_iff` are genuine integers, the scalars
-`(c i : k)` appearing only because the ambient module is a `k`-module; they are determined by the
-element only in characteristic zero, since in positive characteristic the cast `ℤ → k` is not
-injective.
+The lattice is an `AddSubgroup (G → k)` and not a `Subring (G → k)`: the additive structure is what
+the integrality arguments downstream use, and closure under the pointwise product is recorded as the
+lemma `TauCeti.mul_mem_virtualCharacters` rather than built into the interface. The coefficients in
+`TauCeti.mem_virtualCharacters_iff` are genuine integers, the scalars `(c i : k)` appearing only
+because the ambient module is a `k`-module; they are determined by the element only in
+characteristic zero, since in positive characteristic the cast `ℤ → k` is not injective.
 
 ## References
 
-This is the virtual-character-lattice item of Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and the `virtualCharacters` target of Layer 6 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md).
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2 and Lemma 4.7, or
 J.-P. Serre, *Linear Representations of Finite Groups* (1977), Sections 2.5 and 9. The norm-`1`
 test over an arbitrary field of characteristic zero is the argument of Serre, Section 12.3
@@ -129,7 +124,7 @@ by the characters of the finite-dimensional representations of `G`.
 
 Its elements, the *virtual characters*, are the differences of genuine characters: characters are
 closed under addition, so an integer combination of them is a difference of two of them. -/
-def virtualCharacters : AddSubgroup (G → k) :=
+noncomputable def virtualCharacters : AddSubgroup (G → k) :=
   AddSubgroup.closure (Set.range (FDRep.character : FDRep k G → G → k))
 
 variable {k G}
@@ -181,8 +176,7 @@ characters is the character of the tensor product, and multiplication by a fixed
 additive, so the property propagates through the additive generation of the lattice.
 
 The lattice is nevertheless kept as an `AddSubgroup`: multiplicativity is recorded by this lemma
-rather than by bundling the carrier as a `Subring (G → k)`, the additive interface being the one
-the roadmap prescribes. -/
+rather than by bundling the carrier as a `Subring (G → k)`. -/
 theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters k G)
     (hg : g ∈ virtualCharacters k G) : f * g ∈ virtualCharacters k G := by
   rw [virtualCharacters] at hf hg ⊢
@@ -192,8 +186,8 @@ theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters 
     obtain ⟨W, rfl⟩ := hy
     rw [← FDRep.char_tensor]
     exact AddSubgroup.subset_closure ⟨V ⊗ W, rfl⟩
-  | zero_left x hx => simp
-  | zero_right x hx => simp
+  | zero_left x _ => simp
+  | zero_right x _ => simp
   | add_left x y z hx hy hz ihx ihy => rw [add_mul]; exact AddSubgroup.add_mem _ ihx ihy
   | add_right y z x hy hz hx ihy ihz => rw [mul_add]; exact AddSubgroup.add_mem _ ihy ihz
   | neg_left x y hx hy ih => rw [neg_mul]; exact AddSubgroup.neg_mem _ ih
@@ -277,8 +271,8 @@ theorem conj_apply_of_mem_virtualCharacters {f : G → ℂ} (hf : f ∈ virtualC
       obtain ⟨V, rfl⟩ := hx
       exact FDRep.conj_char V g
     | zero => simp
-    | neg x hx ih => simp [ih]
-    | add x y hx hy ihx ihy => simp [ihx, ihy]
+    | neg x _ ih => simp [ih]
+    | add x y _ _ ihx ihy => simp [ihx, ihy]
   exact key f hf
 
 end Complex
@@ -513,7 +507,7 @@ theorem exists_eq_irreducibleCharacter_or_neg {f : ClassFunction k G}
   have hzero : ∑ i ∈ Finset.univ.erase i₀, c i * c i = 0 := by omega
   have hrest : ∀ i ∈ Finset.univ.erase i₀, c i = 0 := fun i hi =>
     mul_self_eq_zero.mp
-      ((Finset.sum_eq_zero_iff_of_nonneg fun j hj => hnn j (Finset.mem_univ j)).mp hzero i hi)
+      ((Finset.sum_eq_zero_iff_of_nonneg fun j _ => hnn j (Finset.mem_univ j)).mp hzero i hi)
   have hval : (f : G → k) = (c i₀ : k) • irreducibleCharacter k i₀ := by
     rw [hc, ← Finset.sum_erase_add Finset.univ _ (Finset.mem_univ i₀),
       Finset.sum_eq_zero fun i hi => by rw [hrest i hi]; simp, zero_add]

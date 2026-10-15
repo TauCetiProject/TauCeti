@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Corner
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 
 /-!
 # The middle tensor factor at nonadjacent zigzag vertices

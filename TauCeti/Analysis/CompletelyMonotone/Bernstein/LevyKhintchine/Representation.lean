@@ -90,7 +90,7 @@ private lemma integral_integratedLaplaceKernel_eq_sub
       (isOpen_Ioi.mem_nhds (ha.trans ht.1))).hasDerivAt
   have hintDeriv : IntervalIntegrable (deriv f) volume a b :=
     (hf.deriv_isCompletelyMonotoneOnIoi.contDiffOn.continuousOn.mono
-      (fun t ht => ha.trans_le ht.1)).intervalIntegrable_of_Icc hab
+      (fun t (ht : t ∈ Set.Icc a b) => ha.trans_le ht.1)).intervalIntegrable_of_Icc hab
   calc
     ∫ x, integratedLaplaceKernel a b x ∂σ =
         ∫ t in a..b, ∫ x : ℝ≥0, Real.exp (-(t * (x : ℝ))) ∂σ := by
@@ -252,7 +252,6 @@ private lemma min_one_mul_inv_le_exp_mul_one_sub_exp_neg_mul_inv {x : ℝ} (hx :
     min 1 x * x⁻¹ ≤ Real.exp 1 * ((1 - Real.exp (-x)) * x⁻¹) := by
   by_cases hx_zero : x = 0
   · simp [hx_zero]
-  have hx_pos : 0 < x := lt_of_le_of_ne hx (Ne.symm hx_zero)
   have hmain : min 1 x ≤ Real.exp 1 * (1 - Real.exp (-x)) := by
     by_cases hx_one : x ≤ 1
     · rw [min_eq_right hx_one]

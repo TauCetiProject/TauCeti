@@ -140,6 +140,30 @@ theorem crossinglessComponents_reidemeisterOne (D : OrientedPDCode n) (h : Fin (
     (D.reidemeisterOne h b).crossinglessComponents = D.crossinglessComponents :=
   (rfl)
 
+/-- Mirroring an oriented kink switches its over-strand. -/
+@[simp] theorem mirror_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n))
+    (b : Bool) : (D.reidemeisterOne h b).mirror = D.mirror.reidemeisterOne h (!b) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    obtain ⟨x, rfl⟩ := (PDCode.halfEdgeSuccEquiv n).surjective x
+    rcases x with x | slot
+    · simp
+    · fin_cases slot <;> simp
+  · simp
+
+/-- Reversing all component directions commutes with inserting an oriented kink. -/
+@[simp] theorem reverse_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n))
+    (b : Bool) : (D.reidemeisterOne h b).reverse = D.reverse.reidemeisterOne h b := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    obtain ⟨x, rfl⟩ := (PDCode.halfEdgeSuccEquiv n).surjective x
+    rcases x with x | slot
+    · simp
+    · fin_cases slot <;> simp
+  · simp
+
 /-- Every old crossing keeps its sign after insertion of an oriented kink. -/
 @[simp]
 theorem crossingSign_reidemeisterOne_castSucc (D : OrientedPDCode n) (h : Fin (4 * n))

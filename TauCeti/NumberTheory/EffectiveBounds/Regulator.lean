@@ -73,7 +73,6 @@ theorem rank_eq_zero_of_card_infinitePlace_eq_one
 theorem rank_eq_zero_of_finrank_le_one (h : finrank ℚ K ≤ 1) : rank K = 0 := by
   refine rank_eq_zero_of_card_infinitePlace_eq_one K ?_
   have hpos : 0 < finrank ℚ K := Module.finrank_pos
-  have hfin : finrank ℚ K = 1 := by omega
   have h₁ := card_add_two_mul_card_eq_rank K
   have h₂ := card_eq_nrRealPlaces_add_nrComplexPlaces K
   omega

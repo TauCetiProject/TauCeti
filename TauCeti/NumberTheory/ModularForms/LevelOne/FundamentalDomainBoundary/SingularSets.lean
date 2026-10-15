@@ -99,8 +99,8 @@ theorem one_lt_norm_of_mem_verticalSingularSet {S : Finset ℍ} {s : ℂ}
     intro p c hc
     rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, hc]
     ring
-  rcases hs with ⟨p, -, ⟨hre, hn⟩, rfl⟩ | ⟨p, -, ⟨hre, hn⟩, rfl⟩ |
-    ⟨p, -, ⟨hre, hn⟩, rfl⟩ | ⟨p, -, ⟨hre, hn⟩, rfl⟩
+  rcases hs with ⟨p, -, ⟨_, hn⟩, rfl⟩ | ⟨p, -, ⟨hre, hn⟩, rfl⟩ |
+    ⟨p, -, ⟨_, hn⟩, rfl⟩ | ⟨p, -, ⟨hre, hn⟩, rfl⟩
   · exact hn
   · have h1 := key p _ hre
     have h2 : ‖(p : ℂ) - 1‖ ^ 2 = (-(1 / 2) : ℝ) ^ 2 + (p : ℂ).im ^ 2 := by
@@ -254,7 +254,7 @@ theorem im_pos_of_mem_arcSingularSet {S : Finset ℍ} {s : ℂ}
     (hs : s ∈ arcSingularSet S) : 0 < s.im := by
   simp only [arcSingularSet, Finset.mem_union, Finset.mem_image, Finset.mem_filter,
     Finset.mem_insert, Finset.mem_singleton] at hs
-  rcases hs with (⟨p, ⟨-, hp_norm⟩, rfl⟩ | ⟨p, ⟨-, hp_norm⟩, rfl⟩) | rfl | rfl
+  rcases hs with (⟨p, ⟨-, _⟩, rfl⟩ | ⟨p, ⟨-, _⟩, rfl⟩) | rfl | rfl
   · exact p.2
   · simpa [neg_div] using p.im_inv_neg_coe_pos
   · simpa using (ρ : ℍ).2

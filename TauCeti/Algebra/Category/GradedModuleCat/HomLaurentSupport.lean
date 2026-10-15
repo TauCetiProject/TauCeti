@@ -20,6 +20,8 @@ algebra are needed.
 
 ## Main results
 
+* The instance `Module.Finite k (M ⟶ N)`: graded maps between finite-dimensional graded modules
+  form a finite-dimensional space.
 * `TauCeti.GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj`: graded maps from a finitely
   generated graded module into the shifts of a finite-dimensional one have finite Laurent support.
 
@@ -35,10 +37,22 @@ open CategoryTheory
 
 namespace TauCeti.GradedModuleCat
 
-universe uk uA
+universe v uk uA
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+  {𝒜 : ℤ → Submodule k A}
+
+/-- **Graded maps between finite-dimensional graded modules form a finite-dimensional space**:
+forgetting the grading and the `A`-linearity embeds them in the `k`-linear maps. -/
+instance (M N : GradedModuleCat.{v} 𝒜) [Module.Finite k M] [Module.Finite k N] :
+    Module.Finite k (M ⟶ N) :=
+  Module.Finite.of_injective
+    ({ toFun f := f.hom.restrictScalars k
+       map_add' _ _ := rfl
+       map_smul' _ _ := rfl } : (M ⟶ N) →ₗ[k] (M →ₗ[k] N))
+    fun _ _ h ↦ hom_ext (LinearMap.ext fun x ↦ LinearMap.congr_fun h x)
+
+variable [GradedAlgebra 𝒜]
 
 /-- **Graded maps into the shifts of a finite-dimensional graded module have finite Laurent
 support** when the source is finitely generated. A surjection from a finite graded free module

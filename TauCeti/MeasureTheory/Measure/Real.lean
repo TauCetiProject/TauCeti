@@ -34,6 +34,15 @@ open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti
 
+/-- The pushforward of Lebesgue measure under an invertible affine map.
+Translation preserves volume, while scaling contributes the reciprocal absolute slope. -/
+theorem map_volume_mul_add {c : ℝ} (hc : c ≠ 0) (d : ℝ) :
+    volume.map (fun t ↦ c * t + d) = ENNReal.ofReal |c⁻¹| • volume := by
+  have hcomp : (fun t : ℝ ↦ c * t + d) = (fun t ↦ t + d) ∘ (fun t ↦ c * t) := rfl
+  rw [hcomp, ← Measure.map_map (measurable_add_const d) (measurable_const_mul c),
+    Real.map_volume_mul_left hc, Measure.map_smul, map_add_right_eq_self]
+  exact (measurable_add_const d).aemeasurable
+
 /-- The part of a subinterval `Ioc a b` of `[0, 1]` lying in the open unit interval has the full
 length `b - a`: the two intervals differ at most at the endpoint `1`. -/
 @[simp]
@@ -118,7 +127,7 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
     linarith
   -- For negative `x`, the squared law fixes `(x, -x)`.  Symmetry equates the two closed
   -- complementary tails, of which `Iic x` is one.
-  · have hx' : x < 0 := lt_of_not_ge hx
+  · have _ : x < 0 := lt_of_not_ge hx
     have hsq_preimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iio (x ^ 2) = Ioo x (-x) := by
       ext y
       simp only [mem_preimage, mem_Iio, mem_Ioo]

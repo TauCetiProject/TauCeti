@@ -77,6 +77,17 @@ noncomputable def demushkinWordTwoEvenPadic (hH : IsProP 2 H) (α : ℤ_[2]) (q 
 
 variable (hH : IsProP 2 H) (α : ℤ_[2]) (q n : ℕ) (x : ℕ → H)
 
+/-- The even dyadic word lies in a closed normal subgroup containing its first generator,
+the power of its third generator, and the left entries of its tail commutators. -/
+theorem demushkinWordTwoEvenPadic_mem {N : Subgroup H} [N.Normal]
+    (hN : IsClosed (N : Set H)) (h₀ : x 0 ∈ N) (h₂ : x 2 ^ q ∈ N)
+    (hx : ∀ i < n / 2 - 1, x (2 * i + 2) ∈ N) :
+    demushkinWordTwoEvenPadic hH α q n x ∈ N := by
+  refine mul_mem (mul_mem (mul_mem (hH.padicPow_mem hN h₀ _)
+    (labuteComm_mem_of_mem_left h₀ _)) h₂) (Subgroup.list_prod_mem _ ?_)
+  simpa only [List.forall_mem_map, List.mem_range] using
+    fun i hi ↦ labuteComm_mem_of_mem_left (hx i hi) (x (2 * i + 3))
+
 /-- The defining equation of `TauCeti.demushkinWordTwoEvenPadic`. -/
 theorem demushkinWordTwoEvenPadic_def :
     demushkinWordTwoEvenPadic hH α q n x =

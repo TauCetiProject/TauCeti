@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Separability
 public import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
 
 /-!
 # A separable isogeny is unramified

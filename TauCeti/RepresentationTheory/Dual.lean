@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.LinearAlgebra.Dual.Contraction
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
 
@@ -25,6 +26,9 @@ the averaging projection onto `ρ.invariants`, and every functional on `ρ.invar
 through it, so the invariant functionals are the `k`-dual of `ρ.invariants`: the dual has as many
 invariants as the representation itself.
 
+For a one-dimensional representation the dual is the inverse character: `Dual V ⊗ V` is the trivial
+line.
+
 Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and whose dual is
 `Dual Y ⊗ X`, this counts intertwiners in both directions alike.
 
@@ -37,6 +41,8 @@ Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and w
   invariants as the representation** whenever `|G|` is invertible in `k`.
 * `Representation.dualTprodEquivDualDualTprod`: `Dual W ⊗ V` is the dual of `Dual V ⊗ W` as
   representations.
+* `Representation.dualTprodEquivTrivialOfFinrankEqOne`: for a line `V`, the contraction
+  `Dual V ⊗ V → k` is an equivalence onto the trivial representation.
 * `FDRep.finrank_invariants_dual_tprod`: the intertwiners `X → Y` are as many as the invariants
   of `Dual X ⊗ Y`.
 * `FDRep.finrank_hom_comm`: when `|G|` is invertible in `k`, there are as many
@@ -182,6 +188,36 @@ theorem dualTprodEquivDualDualTprod_tmul_apply (ρ : Representation k G V)
     (σ : Representation k G W) (η : Module.Dual k W) (v : V) (ξ : Module.Dual k V) (w : W) :
     dualTprodEquivDualDualTprod ρ σ (η ⊗ₜ[k] v) (ξ ⊗ₜ[k] w) = ξ v * η w := by
   simp [dualTprodEquivDualDualTprod, _root_.TensorProduct.dualDistribEquiv, mul_comm]
+
+end Representation
+
+/-! ### The dual of a line -/
+
+namespace Representation
+
+open Module (finrank)
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- **The dual of a line tensored with the line is trivial.** For a one-dimensional
+representation, the contraction `Dual V ⊗ V ≃ k`, `f ⊗ v ↦ f v`
+(`TauCeti.contractLeftEquivOfFinrankEqOne`), is an equivalence onto the trivial
+representation. -/
+noncomputable def dualTprodEquivTrivialOfFinrankEqOne (ρ : Representation k G V)
+    (h : finrank k V = 1) :
+    (tprod (dual ρ) ρ).Equiv (trivial k G k) :=
+  .mk (TauCeti.contractLeftEquivOfFinrankEqOne h) fun g ↦
+    _root_.TensorProduct.ext' fun f v ↦ by
+      simp only [LinearMap.coe_comp, Function.comp_apply, tprod_apply, TensorProduct.map_tmul,
+        LinearEquiv.coe_coe, TauCeti.contractLeftEquivOfFinrankEqOne_tmul, dual_apply,
+        Module.Dual.transpose_apply, trivial_apply]
+      rw [inv_self_apply]
+
+@[simp]
+theorem dualTprodEquivTrivialOfFinrankEqOne_tmul (ρ : Representation k G V)
+    (h : finrank k V = 1) (f : Module.Dual k V) (v : V) :
+    dualTprodEquivTrivialOfFinrankEqOne ρ h (f ⊗ₜ v) = f v :=
+  TauCeti.contractLeftEquivOfFinrankEqOne_tmul h f v
 
 end Representation
 

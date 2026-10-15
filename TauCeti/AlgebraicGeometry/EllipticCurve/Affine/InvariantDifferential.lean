@@ -91,6 +91,16 @@ theorem invariantDifferentialDenom_eq_evalEval_polynomialY :
   simp only [invariantDifferentialDenom_def, WeierstrassCurve.baseChange,
     WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
 
+/-- **The denominator is the image of the class of `W_Y`** in the coordinate ring, which is what
+lets its values at the places of points be read off from `W_Y` at those points. -/
+theorem invariantDifferentialDenom_eq_algebraMap_mk_polynomialY :
+    invariantDifferentialDenom E =
+      algebraMap E.CoordinateRing E.FunctionField (CoordinateRing.mk E E.polynomialY) := by
+  have h := evalEval_genericX_genericY E E.polynomialY
+  rw [← WeierstrassCurve.Affine.map_polynomialY] at h
+  rw [invariantDifferentialDenom_eq_evalEval_polynomialY, ← h]
+  simp only [WeierstrassCurve.baseChange]
+
 /-- **The denominator of the invariant differential is nonzero.** It is the image of `W_Y` in
 `K(E)`, and `W_Y` is a nonzero polynomial of degree below `deg W`, so it survives both
 `F[X][Y] → F[E]` and `F[E] → K(E)`. -/

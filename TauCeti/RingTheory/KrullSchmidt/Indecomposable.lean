@@ -46,18 +46,21 @@ local-endomorphism-ring theorem. Both are supplied here.
   that a local endomorphism ring forces the module to be nonzero.
 * `TauCeti.isIndecomposableModule_iff_isLocalRing_end`: for a module of finite length the converse
   holds too, so indecomposability is *equivalent* to having a local endomorphism ring.
-* `TauCeti.isIndecomposableModule_self`: a local ring is indecomposable over itself.
+* `TauCeti.isIndecomposableModule_self`: a local semiring is indecomposable over itself, and
+  `TauCeti.isLocalRing_of_isIndecomposableModule_self` the converse for a ring of finite length
+  over itself; `TauCeti.isIndecomposableModule_self_iff` reads indecomposability of a ring over
+  itself off its idempotents.
 * `TauCeti.IsIndecomposableModule.nonempty_linearEquiv_of_free`: an indecomposable free module is
   isomorphic to the scalar semiring.
 
 ## Implementation notes
 
-`IsIndecomposableModule`, its two projections, and its transport along a semilinear equivalence are
-stated for a semimodule over a semiring, since the submodule lattice and the order isomorphism it
-inherits from a semilinear equivalence need no subtraction; so is `nontrivial_of_isLocalRing_end`,
-which only reads `0 ≠ 1` off the endomorphism semiring. The free-module theorem also works over
-a semiring. The idempotent, splitting, and Fitting results are stated over a ring, where Mathlib
-puts the tools they use:
+`IsIndecomposableModule`, its two projections, its transport along a semilinear equivalence, and
+restriction of scalars along a surjection are stated for a semimodule over a semiring, since the
+submodule lattice and its order isomorphisms need no subtraction. So are the free-module theorem,
+`isIndecomposableModule_self` for local semirings, and `nontrivial_of_isLocalRing_end`, which only
+reads `0 ≠ 1` off the endomorphism semiring. The idempotent, splitting, and Fitting results are
+stated over a ring, where Mathlib puts the tools they use:
 `LinearMap.IsIdempotentElem.isCompl` and `Submodule.projection` build a projection by subtracting,
 and `IsSimpleModule` is itself only defined for modules over a ring.
 
@@ -127,25 +130,46 @@ theorem nontrivial_of_isLocalRing_end [IsLocalRing (Module.End A M)] : Nontrivia
       zero_ne_one
   · exact h
 
-end Semiring
-
-section Ring
-
-variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
-
 /-! ### Restriction of scalars along a surjection -/
 
 /-- **Indecomposability is insensitive to restriction of scalars along a surjection**: when
 `algebraMap R A` is surjective, the `R`-submodules and the `A`-submodules of `M` are the same, so
 `M` is indecomposable over `R` exactly when it is over `A`. -/
 theorem isIndecomposableModule_iff_isIndecomposableModule_of_algebraMap_surjective
-    {R : Type*} [CommRing R] [Algebra R A] [Module R M] [IsScalarTower R A M]
+    {R : Type*} [CommSemiring R] [Algebra R A] [Module R M] [IsScalarTower R A M]
     (h : Function.Surjective (algebraMap R A)) :
     IsIndecomposableModule R M ↔ IsIndecomposableModule A M := by
-  let e := Submodule.orderIsoOfAlgebraMapSurjective (M := M) h
+  have : RingHomSurjective (algebraMap R A) := ⟨h⟩
+  -- The identity on `M` is semilinear for the surjective algebra map.
+  let f : M →ₛₗ[algebraMap R A] M :=
+    { toFun := id
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ (algebraMap_smul A _ _).symm }
+  let e := (Submodule.orderIsoMapComapOfBijective f Function.bijective_id).symm
   refine and_congr_right fun _ ↦ ⟨fun hR N P hNP ↦ ?_, fun hA N P hNP ↦ ?_⟩
   · simpa using hR (e N) (e P) (e.isCompl hNP)
   · simpa using hA (e.symm N) (e.symm P) (e.symm.isCompl hNP)
+
+/-! ### Indecomposable local semirings -/
+
+variable (A) in
+/-- **A local semiring is indecomposable as a left module over itself**: if two left ideals sum
+to the whole semiring, one contains a unit and hence is the whole semiring. -/
+theorem isIndecomposableModule_self [IsLocalRing A] : IsIndecomposableModule A A := by
+  refine isIndecomposableModule_of_forall_isCompl fun N P hNP ↦ ?_
+  have hsum : (1 : A) ∈ N ⊔ P := by simp [hNP.sup_eq_top]
+  obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp hsum
+  rcases IsLocalRing.isUnit_or_isUnit_of_add_one hab with hua | hub
+  · have hN : N = ⊤ := Ideal.eq_top_of_isUnit_mem N ha hua
+    exact Or.inr (by simpa [hN] using hNP.disjoint)
+  · have hP : P = ⊤ := Ideal.eq_top_of_isUnit_mem P hb hub
+    exact Or.inl (by simpa [hP] using hNP.disjoint)
+
+end Semiring
+
+section Ring
+
+variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
 
 /-! ### Indecomposability through idempotent endomorphisms -/
 
@@ -201,34 +225,23 @@ theorem IsIndecomposableModule.isSimpleModule [IsSemisimpleModule A M]
 
 /-! ### Splitting off an indecomposable module -/
 
-/-- **A split injection into an indecomposable module is an isomorphism.** If `g ∘ₗ f` is bijective
-then `f ∘ₗ (g ∘ₗ f)⁻¹ ∘ₗ g` is an idempotent endomorphism of the indecomposable module `f` lands
-in, hence is `0` or `1`; it cannot be `0`, because that would force `f` to vanish on a nontrivial
-module, so it is the identity and `f` is surjective. -/
+/-- If `N` is nontrivial, `P` is indecomposable, and `g ∘ₗ f` is bijective for linear maps
+`f : N →ₗ[A] P` and `g : P →ₗ[A] N`, then `f` is bijective. -/
 theorem IsIndecomposableModule.bijective_of_bijective_comp {N P : Type*}
     [AddCommGroup N] [Module A N] [AddCommGroup P] [Module A P] [Nontrivial N]
     (hP : IsIndecomposableModule A P) {f : N →ₗ[A] P} {g : P →ₗ[A] N}
     (h : Function.Bijective (g ∘ₗ f)) : Function.Bijective f := by
-  set u : N ≃ₗ[A] N := LinearEquiv.ofBijective (g ∘ₗ f) h with hu
-  have hgf : ∀ x : N, u.symm (g (f x)) = x := fun x ↦ u.symm_apply_apply x
-  set e : Module.End A P := f ∘ₗ (u.symm : N →ₗ[A] N) ∘ₗ g with he
-  have hidem : IsIdempotentElem e := by
-    ext x
-    simp only [he, Module.End.mul_apply, LinearMap.coe_comp, Function.comp_apply,
-      LinearEquiv.coe_coe]
-    rw [hgf]
-  have hinjf : Function.Injective f := fun x y hxy ↦ h.1 (by
-    simp only [LinearMap.coe_comp, Function.comp_apply, hxy])
-  rcases hP.eq_zero_or_eq_one_of_isIdempotentElem hidem with h0 | h1
-  · exfalso
-    have hzero : ∀ x : N, f x = 0 := fun x ↦ by
-      have hx := congrArg (fun t : Module.End A P ↦ t (f x)) h0
-      simpa [he, hgf] using hx
-    obtain ⟨x, y, hxy⟩ := exists_pair_ne N
-    exact hxy (hinjf (by rw [hzero x, hzero y]))
-  · refine ⟨hinjf, fun y ↦ ⟨u.symm (g y), ?_⟩⟩
-    have hy := congrArg (fun t : Module.End A P ↦ t y) h1
-    simpa [he] using hy
+  let u := LinearEquiv.ofBijective (g ∘ₗ f) h
+  have hinj : Function.Injective f := Function.Injective.of_comp (f := g) (g := f) h.1
+  let p := f.rangeRestrict ∘ₗ u.symm.toLinearMap ∘ₗ g
+  have hcompl : IsCompl f.range p.ker := LinearMap.isCompl_of_proj (f := p) (by
+    rintro ⟨_, x, rfl⟩
+    apply Subtype.ext
+    exact congrArg f (u.symm_apply_apply x))
+  have hker := (hP.eq_bot_or_eq_bot hcompl).resolve_left fun hf ↦
+    LinearMap.ne_zero_of_injective hinj (LinearMap.range_eq_bot.mp hf)
+  refine ⟨hinj, LinearMap.range_eq_top.mp ?_⟩
+  simpa [hker] using hcompl.sup_eq_top
 
 /-! ### Fitting's lemma -/
 
@@ -293,7 +306,7 @@ theorem isIndecomposableModule_of_isLocalRing_end [IsLocalRing (Module.End A M)]
     IsIndecomposableModule A M :=
   have := nontrivial_of_isLocalRing_end (A := A) (M := M)
   isIndecomposableModule_of_forall_isIdempotentElem fun _ hf ↦
-    IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem hf
+    IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hf
 
 /-- For a module of finite length, indecomposability is **equivalent** to having a local
 endomorphism ring. -/
@@ -304,12 +317,39 @@ theorem isIndecomposableModule_iff_isLocalRing_end (hM : IsFiniteLength A M) :
   exact isIndecomposableModule_of_isLocalRing_end
 
 variable (A) in
-/-- **A local ring is indecomposable as a left module over itself**: its endomorphism ring is the
-opposite ring, which is again local. -/
-theorem isIndecomposableModule_self [IsLocalRing A] : IsIndecomposableModule A A := by
-  have : IsLocalRing (Module.End A A) :=
-    .of_surjective' (RingEquiv.moduleEndSelf A).toRingHom (RingEquiv.moduleEndSelf A).surjective
-  exact isIndecomposableModule_of_isLocalRing_end
+/-- **A ring is indecomposable as a left module over itself exactly when it is nontrivial and `0`
+and `1` are its only idempotents.** An endomorphism of the left module `A` is right multiplication
+by an element, and it is idempotent exactly when that element is. -/
+theorem isIndecomposableModule_self_iff :
+    IsIndecomposableModule A A ↔ Nontrivial A ∧ ∀ e : A, IsIdempotentElem e → e = 0 ∨ e = 1 := by
+  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
+  refine and_congr_right fun _ ↦ ⟨fun h e he ↦ ?_, fun h f hf ↦ ?_⟩
+  · have hop : IsIdempotentElem (MulOpposite.op e) := by
+      rw [IsIdempotentElem, ← MulOpposite.op_mul, he.eq]
+    have hf := h (RingEquiv.moduleEndSelf A (MulOpposite.op e))
+      (hop.map (RingEquiv.moduleEndSelf A))
+    rw [map_eq_zero_iff _ (RingEquiv.moduleEndSelf A).injective,
+      map_eq_one_iff _ (RingEquiv.moduleEndSelf A).injective, MulOpposite.op_eq_zero_iff,
+      MulOpposite.op_eq_one_iff] at hf
+    exact hf
+  · obtain ⟨e, rfl⟩ := (RingEquiv.moduleEndSelf A).surjective f
+    have he : IsIdempotentElem e.unop := by
+      have hee : e * e = e := (RingEquiv.moduleEndSelf A).injective (by rw [map_mul, hf.eq])
+      rw [IsIdempotentElem, ← MulOpposite.unop_mul, hee]
+    rcases h e.unop he with h0 | h1
+    · exact Or.inl (by rw [← MulOpposite.op_unop e, h0, MulOpposite.op_zero, map_zero])
+    · exact Or.inr (by rw [← MulOpposite.op_unop e, h1, MulOpposite.op_one, map_one])
+
+/-- **A ring of finite length over itself which is indecomposable over itself is local**, the
+converse of `TauCeti.isIndecomposableModule_self` under finite length: by Fitting's lemma the
+endomorphism ring of the left module `A`, which is the opposite ring, is local. -/
+theorem isLocalRing_of_isIndecomposableModule_self (hA : IsFiniteLength A A)
+    (h : IsIndecomposableModule A A) : IsLocalRing A := by
+  have := h.nontrivial
+  have := isLocalRing_end_of_isIndecomposable hA h
+  have : IsLocalRing Aᵐᵒᵖ := .of_surjective' (RingEquiv.moduleEndSelf A).symm.toRingHom
+    (RingEquiv.moduleEndSelf A).symm.surjective
+  exact .of_surjective' (RingEquiv.opOp A).symm.toRingHom (RingEquiv.opOp A).symm.surjective
 
 end Ring
 

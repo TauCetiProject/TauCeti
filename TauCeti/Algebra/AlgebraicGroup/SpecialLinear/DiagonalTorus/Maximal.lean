@@ -68,13 +68,13 @@ variable (R : Type u) [CommRing R]
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{w} R) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R (r + 1))
         (diagonalTorusDefiningIdeal r R) A =
-      ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A).hom.range := by
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A).hom.range := by
   rw [diagonalTorusDefiningIdeal_eq_ker]
   exact HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 /-- **Membership in the diagonal torus of `SL_{r+1}` on points.** A point lies in the torus
 exactly when its matrix is diagonal. -/
-@[simp]
+@[simp↓]
 theorem mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff (A : Type w) [CommRing A]
     [Algebra R A]
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R (r + 1)) (CommAlgCat.of R A)) :

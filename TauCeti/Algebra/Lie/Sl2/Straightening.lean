@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Associative
 public import Mathlib.RingTheory.Binomial
 public import TauCeti.Algebra.Module.Rat
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.RingTheory.Binomial
 import TauCeti.RingTheory.DividedPowers.Commutation
 import Mathlib.Tactic.NoncommRing
@@ -68,27 +69,6 @@ private theorem straighteningSummand_zero_left (H E F : A) (n : ℕ) :
     straighteningSummand H E F 0 n 0 = dividedPower n F := by
   simp [straighteningSummand]
 
-private theorem weighted_straightening_coefficient (r : A) (m j : ℕ) (hj : j ≤ m + 1)
-    (hj0 : 0 < j) :
-    (m + 1 - j) • Ring.choose (r - 1) j +
-        (r + (m + 1 - j : ℕ)) * Ring.choose (r - 1) (j - 1) =
-      (m + 1) • Ring.choose r j := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hj0)
-  have hk : k ≤ m := by omega
-  have h := TauCeti.Ring.mul_weighted_choose_add_mul_choose
-    r (m - k : ℕ) (R := A) k
-  have hc : m + 1 - (k + 1) = m - k := by omega
-  rw [hc]
-  rw [Nat.succ_sub_one]
-  simp only [nsmul_eq_mul'] at h ⊢
-  have hcast : ((m + 1 : ℕ) : A) = (m - k : ℕ) + (k + 1 : ℕ) := by
-    rw [← Nat.cast_add]
-    congr 1
-    omega
-  rw [← (Nat.cast_commute (m - k) (Ring.choose (r - 1) (k + 1))).eq,
-    hcast, mul_add, ← (Nat.cast_commute (m - k) (Ring.choose r (k + 1))).eq]
-  exact h
-
 private theorem e_mul_ringChoose_of_commutator {E a : A}
     (ha : a * E = E * (a + 2)) (k : ℕ) :
     E * Ring.choose a k = Ring.choose (a - 2) k * E := by
@@ -130,32 +110,20 @@ private theorem e_mul_straighteningSummand_of_lt {H E F : A}
   have harg :
       H - (m + n : ℕ) + (2 * k : ℕ) - 2 =
         H - (m + 1 + n : ℕ) + (2 * k : ℕ) - 1 := by
-    have hmn : ((m + 1 + n : ℕ) : A) = (m + n : ℕ) + 1 := by
-      push_cast
-      abel
-    have htwo : (2 : A) = 1 + 1 := by norm_num
-    rw [hmn, htwo]
-    abel
-  have hnkCast : ((n - k - 1 : ℕ) : A) = (n : A) - (k : A) - 1 := by
-    have hsub : n - k - 1 = n - (k + 1) := by omega
-    rw [hsub, Nat.cast_sub (by omega : k + 1 ≤ n)]
     push_cast
-    abel
-  have hmkCast : ((m - k : ℕ) : A) = (m : A) - (k : A) := by
-    rw [Nat.cast_sub hk]
+    have htwo : (2 : A) = 1 + 1 := by norm_num
+    simp only [htwo]
+    noncomm_ring
   have hfactor :
       H - ((n - k - 1 : ℕ) : A) =
         (H - (m + 1 + n : ℕ) + (2 * (k + 1) : ℕ)) + (m - k : ℕ) := by
-    rw [hnkCast, hmkCast]
-    have hmn : ((m + 1 + n : ℕ) : A) = (m : A) + 1 + n := by push_cast; rfl
-    have hk2 : ((2 * (k + 1) : ℕ) : A) = (k : A) + k + 2 := by
-      have hdouble : 2 * (k + 1) = k + k + 2 := by omega
-      rw [hdouble]
-      push_cast
-      rfl
+    rw [Nat.cast_sub (by omega : 1 ≤ n - k), Nat.cast_sub (Nat.le_of_lt hkn),
+      Nat.cast_sub hk]
+    push_cast
     have htwo : (2 : A) = 1 + 1 := by norm_num
-    rw [hmn, hk2, htwo]
-    abel
+    simp only [htwo]
+    noncomm_ring
+    norm_num
   have hm : m + 1 - k = m - k + 1 := by omega
   have hmove := e_mul_ringChoose_of_commutator
     (shifted_cartan_mul_e hhe (m + n) (2 * k)) k
@@ -190,12 +158,10 @@ private theorem e_mul_straighteningSummand_of_eq {H E F : A}
   have harg :
       H - (m + k : ℕ) + (2 * k : ℕ) - 2 =
         H - (m + 1 + k : ℕ) + (2 * k : ℕ) - 1 := by
-    have hmk : ((m + 1 + k : ℕ) : A) = (m + k : ℕ) + 1 := by
-      push_cast
-      abel
+    push_cast
     have htwo : (2 : A) = 1 + 1 := by norm_num
-    rw [hmk, htwo]
-    abel
+    simp only [htwo]
+    noncomm_ring
   simp only [straighteningSummand, Nat.sub_self, dividedPower_zero, one_mul]
   have hmove := e_mul_ringChoose_of_commutator
     (shifted_cartan_mul_e hhe (m + k) (2 * k)) k
@@ -217,105 +183,22 @@ private theorem kept_add_raised_pred {H E F : A} (m n j : ℕ) (hj0 : 0 < j)
         raisedStraighteningSummand H E F m n (j - 1) =
       (m + 1) • straighteningSummand H E F (m + 1) n j := by
   let r : A := H - (m + 1 + n : ℕ) + (2 * j : ℕ)
-  have hcoef := weighted_straightening_coefficient r m j hjm hj0
-  have hm : m - (j - 1) = m + 1 - j := by omega
   have hj : (j - 1) + 1 = j := by omega
+  have hcoef := TauCeti.Ring.mul_weighted_choose_add_mul_choose
+    r (m + 1 - j : ℕ) (j - 1)
+  simp only [hj, ← nsmul_eq_mul] at hcoef
+  rw [← add_nsmul, Nat.sub_add_cancel hjm] at hcoef
+  have hm : m - (j - 1) = m + 1 - j := by omega
   have harg :
       H - (m + n : ℕ) + (2 * (j - 1) : ℕ) = r - 1 := by
-    dsimp [r]
-    have hmn : ((m + 1 + n : ℕ) : A) = (m + n : ℕ) + 1 := by
-      push_cast
-      abel
-    have htwoj : ((2 * j : ℕ) : A) = (2 * (j - 1) : ℕ) + 2 := by
-      have hdouble : 2 * j = 2 * (j - 1) + 2 := by omega
-      rw [hdouble]
-      push_cast
-      rfl
-    have htwo : (2 : A) = 1 + 1 := by norm_num
-    rw [hmn, htwoj, htwo]
-    abel
+    dsimp only [r]
+    push_cast [Nat.cast_sub (by omega : 1 ≤ j)]
+    noncomm_ring
   have htargetArg : H - (m + 1 + n : ℕ) + (2 * j : ℕ) = r := by rfl
   simp only [keptStraighteningSummand, raisedStraighteningSummand,
     straighteningSummand, hj, hm, harg, htargetArg]
-  let X := dividedPower (n - j) F
-  let Y := dividedPower (m + 1 - j) E
-  let c₀ := Ring.choose (r - 1) j
-  let c₁ := Ring.choose (r - 1) (j - 1)
-  let c := Ring.choose r j
-  -- Refold the expanded summands and coefficient identity into the abbreviations above so the
-  -- final noncommutative calculation displays only the algebraic structure of the argument.
-  change (m + 1 - j) • (X * c₀ * Y) + X * (r + (m + 1 - j : ℕ)) * c₁ * Y =
-    (m + 1) • (X * c * Y)
-  change (m + 1 - j) • c₀ + (r + (m + 1 - j : ℕ)) * c₁ = (m + 1) • c at hcoef
-  simp only [nsmul_eq_mul'] at hcoef ⊢
-  have hY₀ := (Nat.cast_commute (m + 1 - j) Y).eq
-  have hY₁ := (Nat.cast_commute (m + 1) Y).eq
-  calc
-    X * c₀ * Y * ((m + 1 - j : ℕ) : A) +
-        X * (r + ((m + 1 - j : ℕ) : A)) * c₁ * Y =
-      X * (c₀ * ((m + 1 - j : ℕ) : A) +
-        (r + ((m + 1 - j : ℕ) : A)) * c₁) * Y := by
-      noncomm_ring [hY₀]
-    _ = X * (c * ((m + 1 : ℕ) : A)) * Y := by rw [hcoef]
-    _ = X * c * Y * ((m + 1 : ℕ) : A) := by noncomm_ring [hY₁]
-
-private theorem sum_range_adjacent_with_zero {B : Type*} [AddCommMonoid B]
-    (K R T : ℕ → B) (r : ℕ) (h₀ : T 0 = K 0)
-    (hstep : ∀ j, 0 < j → j ≤ r + 1 → T j = K j + R (j - 1))
-    (hbound : K (r + 1) = 0) :
-    ∑ j ∈ range (r + 2), T j = ∑ k ∈ range (r + 1), (K k + R k) := by
-  have hr : r + 2 = (r + 1) + 1 := by omega
-  rw [hr, sum_range_succ']
-  rw [h₀]
-  have hsum : ∑ k ∈ range (r + 1), T (k + 1) =
-      ∑ k ∈ range (r + 1), (K (k + 1) + R k) := by
-    apply sum_congr rfl
-    intro k hk
-    rw [hstep (k + 1) (by omega) (by simpa using Nat.le_of_lt_succ (mem_range.mp hk))]
-    simp
-  rw [hsum, sum_add_distrib, sum_add_distrib]
-  have hK : (∑ k ∈ range (r + 1), K (k + 1)) + K 0 =
-      ∑ k ∈ range (r + 1), K k := by
-    calc
-      (∑ k ∈ range (r + 1), K (k + 1)) + K 0 =
-          ∑ k ∈ range (r + 2), K k := (sum_range_succ' K (r + 1)).symm
-      _ = (∑ k ∈ range (r + 1), K k) + K (r + 1) := sum_range_succ K (r + 1)
-      _ = ∑ k ∈ range (r + 1), K k := by rw [hbound, add_zero]
-  calc
-    ((∑ k ∈ range (r + 1), K (k + 1)) + ∑ k ∈ range (r + 1), R k) + K 0 =
-        ((∑ k ∈ range (r + 1), K (k + 1)) + K 0) +
-          ∑ k ∈ range (r + 1), R k := by ac_rfl
-    _ = (∑ k ∈ range (r + 1), K k) + ∑ k ∈ range (r + 1), R k := by rw [hK]
-
-private theorem sum_range_adjacent_capped {B : Type*} [AddCommMonoid B]
-    (K R T : ℕ → B) (r : ℕ) (h₀ : T 0 = K 0)
-    (hstep : ∀ j, 0 < j → j ≤ r → T j = K j + R (j - 1)) :
-    ∑ j ∈ range (r + 1), T j = (∑ k ∈ range r, (K k + R k)) + K r := by
-  rw [sum_range_succ', h₀]
-  have hsum : ∑ k ∈ range r, T (k + 1) =
-      ∑ k ∈ range r, (K (k + 1) + R k) := by
-    apply sum_congr rfl
-    intro k hk
-    rw [hstep (k + 1) (by omega) (Nat.succ_le_of_lt (mem_range.mp hk))]
-    simp
-  rw [hsum, sum_add_distrib, sum_add_distrib]
-  have hshift : (∑ k ∈ range r, K (k + 1)) + K 0 =
-      (∑ k ∈ range r, K k) + K r := by
-    calc
-      (∑ k ∈ range r, K (k + 1)) + K 0 =
-          ∑ k ∈ range (r + 1), K k := (sum_range_succ' K r).symm
-      _ = (∑ k ∈ range r, K k) + K r := sum_range_succ K r
-  calc
-    ((∑ k ∈ range r, K (k + 1)) + ∑ k ∈ range r, R k) + K 0 =
-        ((∑ k ∈ range r, K (k + 1)) + K 0) + ∑ k ∈ range r, R k := by ac_rfl
-    _ = ((∑ k ∈ range r, K k) + K r) + ∑ k ∈ range r, R k := by rw [hshift]
-    _ = ((∑ k ∈ range r, K k) + ∑ k ∈ range r, R k) + K r := by ac_rfl
-
-private theorem eq_of_succ_nsmul_eq (m : ℕ) {x y : A}
-    (h : (m + 1) • x = (m + 1) • y) : x = y := by
-  simp only [← Nat.cast_smul_eq_nsmul ℚ] at h
-  have hm : ((m + 1 : ℕ) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  exact smul_right_injective A hm h
+  simpa only [mul_add, add_mul, mul_smul_comm, smul_mul_assoc, mul_assoc] using
+    congrArg (fun c ↦ dividedPower (n - j) F * c * dividedPower (m + 1 - j) E) hcoef
 
 private theorem straightening_step {H E F : A}
     (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E)
@@ -324,7 +207,9 @@ private theorem straightening_step {H E F : A}
       ∑ k ∈ range (min m n + 1), straighteningSummand H E F m n k) :
     dividedPower (m + 1) E * dividedPower n F =
       ∑ k ∈ range (min (m + 1) n + 1), straighteningSummand H E F (m + 1) n k := by
-  apply eq_of_succ_nsmul_eq m
+  -- Cancel the extra factor after moving one raising generator through the sum.
+  let := HasUniqueDiv.of_module_rat A
+  apply (nsmul_right_inj (n := m + 1) (by omega)).mp
   have hleft :
       (m + 1) • (dividedPower (m + 1) E * dividedPower n F) =
         E * ∑ k ∈ range (min m n + 1), straighteningSummand H E F m n k := by
@@ -333,17 +218,21 @@ private theorem straightening_step {H E F : A}
   let K := keptStraighteningSummand H E F m n
   let R := raisedStraighteningSummand H E F m n
   let T := fun k ↦ (m + 1) • straighteningSummand H E F (m + 1) n k
+  -- The new endpoint vanishes when the raising degree limits the range.
   by_cases hmn : m < n
   · have hmin : min m n = m := min_eq_left (Nat.le_of_lt hmn)
     have hminSucc : min (m + 1) n = m + 1 := min_eq_left hmn
     rw [hmin, hminSucc]
     have hcombine :
         ∑ j ∈ range (m + 2), T j = ∑ k ∈ range (m + 1), (K k + R k) := by
-      apply sum_range_adjacent_with_zero K R T m
-      · exact (keptStraighteningSummand_zero H E F m n).symm
-      · intro j hj0 hjm
-        exact (kept_add_raised_pred m n j hj0 hjm).symm
-      · simp [K, keptStraighteningSummand]
+      have h := Finset.sum_range_succ_eq_sum_range_add
+        (f := T) (g := K) (h := R) (n := m + 1)
+        (keptStraighteningSummand_zero H E F m n).symm
+        (fun k hk ↦ by
+          simpa only [Nat.add_sub_cancel] using
+            (kept_add_raised_pred m n (k + 1) (by omega) (by omega)).symm)
+      have hbound : K (m + 1) = 0 := by simp [K, keptStraighteningSummand]
+      simpa only [hbound, add_zero] using h
     rw [Finset.smul_sum]
     rw [hcombine]
     apply sum_congr rfl
@@ -352,16 +241,18 @@ private theorem straightening_step {H E F : A}
     dsimp only [K, R]
     exact e_mul_straighteningSummand_of_lt hef hhe hhf
       (Nat.le_of_lt_succ hkm) (by omega)
+  -- Otherwise the lowering degree limits the range, retaining the last kept summand.
   · have hnm : n ≤ m := by omega
     have hmin : min m n = n := min_eq_right hnm
     have hminSucc : min (m + 1) n = n := min_eq_right (by omega)
     rw [hmin, hminSucc]
     have hcombine :
         ∑ j ∈ range (n + 1), T j = (∑ k ∈ range n, (K k + R k)) + K n := by
-      apply sum_range_adjacent_capped K R T n
+      apply Finset.sum_range_succ_eq_sum_range_add
       · exact (keptStraighteningSummand_zero H E F m n).symm
-      · intro j hj0 _hjn
-        exact (kept_add_raised_pred m n j hj0 (by omega)).symm
+      · intro k hk
+        simpa only [Nat.add_sub_cancel] using
+          (kept_add_raised_pred m n (k + 1) (by omega) (by omega)).symm
     rw [Finset.smul_sum]
     rw [hcombine, sum_range_succ]
     congr 1

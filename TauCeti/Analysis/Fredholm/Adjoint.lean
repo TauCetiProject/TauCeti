@@ -15,8 +15,9 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 This file proves the closed-range theorem for adjoints on Hilbert spaces and applies it to
 Fredholm operators. If a continuous linear map has closed range, then its adjoint has range
-equal to the orthogonal complement of the original kernel. Consequently, taking adjoints
-preserves Fredholm operators and negates their index.
+equal to the orthogonal complement of the original kernel. Consequently, an operator and its
+adjoint have rank at most `n` together, and taking adjoints preserves Fredholm operators and
+negates their index.
 
 The proof restricts an operator with closed range to a continuous linear equivalence from the
 orthogonal complement of its kernel onto its range. The adjoint of this equivalence is
@@ -31,6 +32,8 @@ surjective, which removes the closure from Mathlib's general identity
   closed-range theorem for adjoints.
 * `ContinuousLinearMap.isClosed_range_adjoint_iff`: an operator has closed range if and
   only if its adjoint does.
+* `ContinuousLinearMap.rank_adjoint_le_iff`: an operator has rank at most `n` if and only if
+  its adjoint does.
 * `ContinuousLinearMap.IsFredholm.adjoint`: the adjoint of a Fredholm operator is Fredholm.
 * `ContinuousLinearMap.index_adjoint`: taking the adjoint negates the Fredholm index.
 
@@ -151,8 +154,8 @@ private theorem _root_.ContinuousLinearMap.codRestrict_domRestrict_adjoint_surje
       (((T†).domRestrict (LinearMap.range (T : E →ₗ[𝕜] F))).codRestrict
         (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T
           y) := by
-  set K := LinearMap.ker (T : E →ₗ[𝕜] F) with hK
-  set R := LinearMap.range (T : E →ₗ[𝕜] F) with hR
+  set K := LinearMap.ker (T : E →ₗ[𝕜] F) with _
+  set R := LinearMap.range (T : E →ₗ[𝕜] F) with _
   set e : Kᗮ ≃L[𝕜] R := ContinuousLinearMap.orthogonalKerEquivRange T hT with he
   have he_apply (x : Kᗮ) : (e x : F) = T (x : E) := by
     simpa only [he] using ContinuousLinearMap.orthogonalKerEquivRange_apply T hT x
@@ -202,6 +205,26 @@ theorem _root_.ContinuousLinearMap.isClosed_range_adjoint_iff (T : E →L[𝕜] 
   · intro hT
     simpa using ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range (T†) hT
   · exact ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range T
+
+/-- An operator of rank at most `n` has an adjoint of rank at most `n`: its range is closed, so
+the range of `T†` is `(ker T)ᗮ`, which `T` maps isomorphically onto the range of `T`. -/
+private theorem _root_.ContinuousLinearMap.rank_adjoint_le_of_rank_le {T : E →L[𝕜] F} {n : ℕ}
+    (hT : (T : E →ₗ[𝕜] F).rank ≤ n) : (T† : F →ₗ[𝕜] E).rank ≤ n := by
+  have : FiniteDimensional 𝕜 (LinearMap.range (T : E →ₗ[𝕜] F)) :=
+    Module.rank_lt_aleph0_iff.mp (hT.trans_lt (Cardinal.natCast_lt_aleph0))
+  have hT' := Submodule.closed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
+  rw [LinearMap.rank, T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT',
+    ← Cardinal.lift_le_nat_iff, (T.orthogonalKerEquivRange hT').toLinearEquiv.lift_rank_eq,
+    Cardinal.lift_le_nat_iff]
+  exact hT
+
+/-- A continuous linear map between Hilbert spaces has rank at most `n` if and only if its
+adjoint does. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.rank_adjoint_le_iff (T : E →L[𝕜] F) {n : ℕ} :
+    (T† : F →ₗ[𝕜] E).rank ≤ n ↔ (T : E →ₗ[𝕜] F).rank ≤ n :=
+  ⟨fun h ↦ by simpa using ContinuousLinearMap.rank_adjoint_le_of_rank_le h,
+    ContinuousLinearMap.rank_adjoint_le_of_rank_le⟩
 
 
 

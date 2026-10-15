@@ -308,7 +308,6 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
       (iteratedFDerivWithin_of_isOpen 2 hW).symm).mono hKW)
   -- Nonnegative bounds, so that the constant of the differential inequality is nonnegative.
   set A := 4 * max a 0 * max c 0 + 2 * b ^ 2 + 8 * max a 0 ^ 2 * b ^ 2
-  have hA : 0 ≤ A := by positivity
   refine ⟨π / (8 * (A + 1)), by positivity, fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
   have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
   refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR

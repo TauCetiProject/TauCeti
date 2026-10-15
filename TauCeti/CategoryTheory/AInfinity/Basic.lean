@@ -54,6 +54,8 @@ differential squares to zero and satisfies the Leibniz rule
   operations on composable strings.
 * `TauCeti.AInfinityCategory.homDifferential_homDifferential`: the differential squares to zero.
 * `TauCeti.AInfinityCategory.homDifferential_comp`: the Leibniz rule.
+* `TauCeti.AInfinityCategory.comp_assoc_of_m_three_eq_zero`: composition is associative when the
+  ternary operation vanishes.
 
 ## References
 
@@ -176,6 +178,21 @@ theorem homDifferential_apply (X Y : C) (f : homModule (R := R) X Y) :
   rw [homDifferential, LinearMap.comp_apply, LinearMap.comp_apply,
     AInfinityAlgebra.differential_apply]
 
+/-- The Hom differential is the unary operation on a composable string. -/
+theorem homDifferential_eq_m (X : Fin 2 → C)
+    (f : ∀ i : Fin 1, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    𝒞.homDifferential (X 0) (X (Fin.last 1)) (f 0) =
+      homProjection (X 0) (X (Fin.last 1))
+        (𝒞.m 1 fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) := by
+  rw [homDifferential_apply]
+  -- The only input has endpoints X₀ and X₁; enumerate it to identify the literal tuple.
+  have h : (fun i : Fin 1 ↦ homInclusion (R := R) (X i.rev.castSucc) (X i.rev.succ)
+      (f i)) = ![homInclusion (X 0) (X (Fin.last 1)) (f 0)] := by
+    funext i
+    fin_cases i
+    rfl
+  rw [h]
+
 /-- The differential of a morphism, included into the total module, is the unary operation of
 the included morphism. -/
 @[simp]
@@ -244,6 +261,20 @@ theorem comp_apply (X Y Z : C) (g : homModule (R := R) Y Z) (f : homModule (R :=
     𝒞.comp X Y Z g f = homProjection X Z (𝒞.m 2 ![homInclusion Y Z g, homInclusion X Y f]) := by
   rw [comp, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, AInfinityAlgebra.mul_apply]
 
+/-- Hom composition is the binary operation on a composable string, in Keller's input order. -/
+theorem comp_eq_m (X : Fin 3 → C)
+    (f : ∀ i : Fin 2, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    𝒞.comp (X 0) (X 1) (X (Fin.last 2)) (f 0) (f 1) =
+      homProjection (X 0) (X (Fin.last 2))
+        (𝒞.m 2 fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) := by
+  rw [comp_apply]
+  -- Reversal puts X₁ ⟶ X₂ first and X₀ ⟶ X₁ second; check both tuple entries explicitly.
+  have h : (fun i : Fin 2 ↦ homInclusion (R := R) (X i.rev.castSucc) (X i.rev.succ)
+      (f i)) = ![homInclusion (X 1) (X (Fin.last 2)) (f 0), homInclusion (X 0) (X 1) (f 1)] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [h]
+
 /-- The composite of two morphisms, included into the total module, is the binary operation of
 the included morphisms. -/
 @[simp]
@@ -285,6 +316,15 @@ theorem homDifferential_comp {X Y Z : C} {p : ℤ} {g : homModule (R := R) Y Z}
   simp only [homInclusion_homDifferential, homInclusion_comp,
     AInfinityAlgebra.differential_apply]
   exact 𝒞.stasheff_arity_two _ _ p (by rwa [𝒞.grading_eq, homInclusion_mem_totalGrading_piece_iff])
+
+/-- **Associativity of composition.** If the ternary operation vanishes, the arity-three Stasheff
+identity says that the composition `m₂` is associative: `(h ∘ g) ∘ f = h ∘ (g ∘ f)`. -/
+theorem comp_assoc_of_m_three_eq_zero (h₃ : 𝒞.m 3 = 0) {W X Y Z : C}
+    (h : homModule (R := R) Y Z) (g : homModule (R := R) X Y) (f : homModule (R := R) W X) :
+    𝒞.comp W X Z (𝒞.comp X Y Z h g) f = 𝒞.comp W Y Z h (𝒞.comp W X Y g f) := by
+  apply homInclusion_injective W Z
+  simp only [homInclusion_comp]
+  exact 𝒞.m_two_assoc_of_m_three_eq_zero h₃ _ _ _
 
 end AInfinityCategory
 

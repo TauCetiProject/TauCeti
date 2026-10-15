@@ -53,8 +53,6 @@ is `TauCeti.nonempty_iso_GL2PrincipalSeries_self` in
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The boundary: linear and Steinberg constituents" and "Character-value formulas".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §5.2.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 -/

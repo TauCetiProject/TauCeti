@@ -70,7 +70,7 @@ theorem finiteExponentialMixture_singleton {ι : Type*} (i : ι) (w p : ι → �
 theorem isCompletelyMonotone_finiteExponentialMixture {ι : Type*} (s : Finset ι) (w p : ι → ℝ≥0) :
     IsCompletelyMonotone (finiteExponentialMixture s w p) := by
   apply IsCompletelyMonotone.sum
-  intro i hi
+  intro i _
   have hexp : IsCompletelyMonotone (fun t : ℝ => Real.exp (-(p i : ℝ) * t)) :=
     isCompletelyMonotone_exp_neg_mul (p i).coe_nonneg
   have hweighted := hexp.smul (w i).coe_nonneg
@@ -117,7 +117,7 @@ theorem finiteExponentialMixture_eq_integral {ι : Type*} (s : Finset ι) (w p :
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [integral_smul_measure, integral_dirac]
     simp [mul_comm]
-  · intro i hi
+  · intro i _
     exact (integrable_dirac (by simp)).smul_measure (by simp)
 
 /-- The Laplace transform of the unit Dirac mass at `1` is `t ↦ exp (-t)`.

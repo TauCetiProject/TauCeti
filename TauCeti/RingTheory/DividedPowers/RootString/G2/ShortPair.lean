@@ -193,7 +193,7 @@ private theorem mul_g2ShortPairSeries (hxy : x * y = y * x + z)
     x * g2ShortPairSeries y z w s n k =
       g2ShortPairSeries y z w s n k * x + (k + 1) • g2ShortPairSeries y z w s n (k + 1) := by
   classical
-  -- The reindexing architecture follows Claude's proof of the other type-`G₂` configuration in
+  -- The reindexing architecture follows the proof of the other type-`G₂` configuration in
   -- `TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`.
   have hshiftA : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
         0 < n - p.1 - p.2.1 - 2 * p.2.2},
@@ -300,7 +300,7 @@ theorem dividedPower_mul_dividedPower_of_g2_short_pair_scaled
   classical
   have hseries := dividedPower_mul_of_ad_dividedPower_series (x := x)
     (d := g2ShortPairSeries y z w s n)
-    (fun k => mul_g2ShortPairSeries hxy hxz hzy hxw hxs hys hzw hzs hws n k) m
+    m (fun k _ ↦ mul_g2ShortPairSeries hxy hxz hzy hxw hxs hys hzw hzs hws n k)
   rw [g2ShortPairSeries_zero] at hseries
   rw [hseries]
   simp only [mul_assoc]

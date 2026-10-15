@@ -202,10 +202,11 @@ while it persists.
 
 This is an **emergency channel, not a help queue.** Every alert means a piece of
 infrastructure needs fixing so the wedge cannot recur, not that a human should
-hand-hold one PR. It fires on: a red, stale last-known-good bump PR; a mathlib pin
-that has stopped advancing; an in-scope, fully-green PR the merge path never
+hand-hold one PR. It fires on: a pinned Mathlib commit that is more than three days
+old, regardless of when the manifest changed, linking the active `bump-mathlib/` repair PR;
+an in-scope, fully-green PR the merge path never
 merged; an open `Review stuck: PR #…` issue; a scheduled workflow that is disabled
-or overdue; `main` gone red; and a long-open mathlib-incompatibility issue. It
+or overdue; and `main` gone red. It
 **deliberately does not** alert on normal backlog (a PR awaiting its first review
 verdict, changes-requested nobody addressed, open roadmap issues); the module
 docstring lists the full catalogue and the reasoning.

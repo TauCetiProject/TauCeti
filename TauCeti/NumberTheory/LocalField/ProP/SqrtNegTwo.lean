@@ -13,6 +13,7 @@ import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # The marked pro-`2` Galois group of `ℚ₂(√-2)`
@@ -74,10 +75,6 @@ open Polynomial
 
 namespace TauCeti
 
-/-- Instance search for `Nontrivial ℚ_[2]` times out through the Henselian-ring instances; the
-degree and separability computations below need it. -/
-local instance : Nontrivial ℚ_[2] := DivisionRing.toNontrivial
-
 /-- The local field `ℚ₂(√-2)`, obtained by adjoining a root of `X² + 2` to `ℚ₂`. -/
 def RatPadicSqrtNegTwo : Type := AdjoinRoot (X ^ 2 + C 2 : ℚ_[2][X])
 
@@ -102,19 +99,24 @@ private def powerBasis : PowerBasis ℚ_[2] RatPadicSqrtNegTwo :=
 
 instance : FiniteDimensional ℚ_[2] RatPadicSqrtNegTwo := powerBasis.finite
 
+-- Use finite dimensionality directly when installing the spectral-norm structures.
+local instance : Algebra.IsAlgebraic ℚ_[2] RatPadicSqrtNegTwo :=
+  Algebra.IsAlgebraic.of_finite ℚ_[2] RatPadicSqrtNegTwo
+
 instance : Algebra.IsSeparable ℚ_[2] RatPadicSqrtNegTwo :=
   Algebra.IsAlgebraic.isSeparable_of_perfectField
 
 instance : CharZero RatPadicSqrtNegTwo :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[2] RatPadicSqrtNegTwo).injective
 
-instance : ValuativeRel RatPadicSqrtNegTwo := finiteExtensionValuativeRel ℚ_[2] RatPadicSqrtNegTwo
+instance : ValuativeRel RatPadicSqrtNegTwo :=
+  algebraicExtensionValuativeRel ℚ_[2] RatPadicSqrtNegTwo
 
 instance : TopologicalSpace RatPadicSqrtNegTwo :=
-  finiteExtensionNormedFieldTopology ℚ_[2] RatPadicSqrtNegTwo
+  algebraicExtensionNormedFieldTopology ℚ_[2] RatPadicSqrtNegTwo
 
 instance : ValuativeExtension ℚ_[2] RatPadicSqrtNegTwo :=
-  finiteExtension_valuativeExtension ℚ_[2] RatPadicSqrtNegTwo
+  algebraicExtension_valuativeExtension ℚ_[2] RatPadicSqrtNegTwo
 
 instance : IsNonarchimedeanLocalField RatPadicSqrtNegTwo :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] RatPadicSqrtNegTwo

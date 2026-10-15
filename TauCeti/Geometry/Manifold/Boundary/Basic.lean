@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Chart-independent detection of manifold boundary points
@@ -16,10 +16,14 @@ model.
 
 Mathlib states chart independence for charts of the atlas. The charts produced by local normal
 forms, such as the charts of `Manifold.IsImmersionAt`, are only known to lie in the maximal atlas,
-so the statements here are proved for every chart of `IsManifold.maximalAtlas`. Membership in the
+so the chart-independence statements here are proved for every chart of
+`IsManifold.maximalAtlas`. Membership in the
 maximal atlas makes a chart a local diffeomorphism, so Mathlib's
 `IsLocalDiffeomorphAt.isInteriorPoint_iff` gives chart independence without a global `IsManifold`
 assumption on the charted space.
+
+Under `IsManifold` at nonzero regularity, the preferred extended chart also sends an intrinsic
+interior point to coordinates with a neighborhood inside the extended chart target.
 -/
 
 public section
@@ -34,6 +38,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {k : WithTop ℕ∞}
   {e e' : OpenPartialHomeomorph M H} {x : M}
+
+/-- A preferred chart target is a neighborhood of the coordinates of an intrinsic interior
+point at any nonzero manifold regularity. The model may have boundary or corners. -/
+theorem extChartAt_target_mem_nhds_of_isInteriorPoint [IsManifold I k M] (hk : k ≠ 0)
+    (α : M) {x : M} (hx : x ∈ (extChartAt I α).source) (hi : I.IsInteriorPoint x) :
+    (extChartAt I α).target ∈ nhds (extChartAt I α x) := by
+  have h := (I.isInteriorPoint_iff_of_mem_atlas hk (chart_mem_atlas H α)
+    (by simpa only [extChartAt_source] using hx)).mp hi
+  exact mem_interior_iff_mem_nhds.mp h
 
 /-- An interior point of a charted space is detected by any maximal-atlas chart around it,
 provided its differentiability exponent is nonzero. -/

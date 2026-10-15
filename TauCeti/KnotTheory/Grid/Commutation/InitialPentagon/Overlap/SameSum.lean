@@ -60,14 +60,13 @@ interval shares exactly one side column. -/
 theorem hasOneCommonSide_of_initial_self (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.left = D.second.left)
     (hcol : D.first.right ∈ Grid.cIoo D.second.left D.second.right) :
-    D.HasOneCommonSide := by
-  apply D.hasOneCommonSide_iff_existsUnique.mpr
+    D.toGridRectangleDecomposition.HasOneCommonSide := by
+  apply D.toGridRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
   refine ⟨D.first.left, ?_, ?_⟩
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hleft := Grid.ne_left_of_mem_cIoo hcol
-    have hright := Grid.ne_right_of_mem_cIoo hcol
+    have _ := Grid.ne_right_of_mem_cIoo hcol
     grind
 
 private theorem underlying_first_isEmpty
@@ -158,10 +157,7 @@ private theorem initialSelfRecut_turn_mem
   obtain ⟨hbottom, htop⟩ := D.initialSelfRecut_second_rows hcommon hcol hfirst hsecond
   rw [hbottom, htop]
   have hturn := D.second_turn_mem
-  have hjoin : D.second.bottom = D.first.top := by
-    rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, ← hcommon]
-    exact D.first.map_left
-  rw [hjoin] at hturn
+  rw [D.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon] at hturn
   exact Grid.cIco_subset_of_mem_cIoo (D.initial_row_order hcommon hcol hfirst hsecond) hturn
 
 /-- Recut a rectangle followed by an initial-side pentagon sharing its initial side, when the
@@ -173,7 +169,7 @@ noncomputable def recutInitialSelf
     (hcol : D.first.right ∈ Grid.cIoo D.second.left D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty) :
     GridRectangleInitialPentagonDecomposition a s x z where
-  toGridRectangleDecomposition := D.initialSelfRecut hcommon hcol hfirst hsecond
+  toGridTwoStepDecomposition := D.initialSelfRecut hcommon hcol hfirst hsecond
   second_left_eq := (D.initialSelfRecut_data hcommon hcol hfirst hsecond).2.2.2.1.trans
     (hcommon.trans D.second_left_eq)
   second_turn_mem := D.initialSelfRecut_turn_mem hcommon hcol hfirst hsecond
@@ -252,10 +248,8 @@ theorem coveredSquares_val_add_recutInitialSelf
     hcommon hcol hfirst hsecond
   have hrow := D.initial_row_order hcommon hcol hfirst hsecond
   have hjoin : D.first.top = D.pentagon.bottom := by
-    have h : D.first.top = D.second.bottom := by
-      rw [GridRectangleBetween.top_def, GridRectangleBetween.bottom_def, ← hcommon]
-      exact D.first.map_left.symm
-    simpa only [D.pentagon_toGridRectangleBetween] using h
+    simpa only [D.pentagon_toGridRectangleBetween] using
+      (D.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon).symm
   have hDtop : D.pentagon.top = D.second.top := by
     simp only [D.pentagon_toGridRectangleBetween]
   have haD : a ∉ D.first.toGridRectangle.coveredColumns := by
@@ -315,27 +309,11 @@ theorem recutInitialSelf_mem_rectangleInitialPentagonDecompositions
     (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
     D.recutInitialSelf hcommon hcol hfirst hsecond ∈
       G.rectangleInitialPentagonDecompositions C x z := by
-  classical
-  let E := D.recutInitialSelf hcommon hcol hfirst hsecond
-  obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hD
-  have hRX := ((G.mem_unblockedRectangles _).1 hR).2
-  have hPX := ((G.mem_initialPentagons _).1 hP).2
-  have hunion := congrArg Multiset.toFinset
-    (D.coveredSquares_val_add_recutInitialSelf hcommon hcol hfirst hsecond)
-  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
-  have hnew : Disjoint (E.first.toGridRectangle.coveredSquares ∪ E.pentagon.coveredSquares)
-      G.XSet := by
-    rw [hunion]
-    exact Finset.disjoint_union_left.mpr ⟨hRX, hPX⟩
-  obtain ⟨hER, hEP⟩ := Finset.disjoint_union_left.mp hnew
   have hrecut := D.isRecut_recutInitialSelf hcommon hcol hfirst hsecond
-  exact (G.mem_rectangleInitialPentagonDecompositions C E).2
-    ⟨(G.mem_unblockedRectangles _).2 ⟨hrecut.isEmpty_first, hER⟩,
-    (G.mem_initialPentagons _).2 ⟨by
-        have hs := hrecut.isEmpty_second
-        rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hs ⊢
-        simpa only [E.pentagon_toGridRectangleBetween] using hs,
-      hEP⟩⟩
+  refine G.mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq C hD hrecut.isEmpty_first
+    ?_ (D.coveredSquares_val_add_recutInitialSelf hcommon hcol hfirst hsecond)
+  simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween] using
+    hrecut.isEmpty_second
 
 /-- The same-sum initial-side recut preserves the monomial contribution over any commutative
 semiring. -/
@@ -375,7 +353,7 @@ private theorem initialPentagonInitialSelfSource_data
     (hD : D ∈ G.initialPentagonInitialSelfSources C x z) :
     D.first.left = D.second.left ∧
       D.first.right ∈ Grid.cIoo D.second.left D.second.right ∧
-        D.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.pentagon.IsEmpty := by
+        D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.pentagon.IsEmpty := by
   obtain ⟨hcounted, hcommon, hcol⟩ := (G.mem_initialPentagonInitialSelfSources C D).1 hD
   obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
   exact ⟨hcommon, hcol, D.hasOneCommonSide_of_initial_self hcommon hcol,

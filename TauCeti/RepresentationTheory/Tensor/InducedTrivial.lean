@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.PiTensorProduct.ZMod
-public import TauCeti.RepresentationTheory.Tensor.Induction
+public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 
 /-!
 # Tensor induction of trivial cyclic representations

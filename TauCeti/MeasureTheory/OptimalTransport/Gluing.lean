@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.Probability.Kernel.Disintegration.StandardBorel
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Probability.Kernel.Disintegration.Countable
+import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
 # Gluing transport plans
@@ -45,6 +47,10 @@ needs, since its two carriers are arbitrary probability spaces.
   `TauCeti.Measure.exists_glue_of_standardBorel_left` — **the gluing lemma**, in the two regimes
   obtained by disintegrating `σ` over `Y` (which needs `Z` standard Borel) and by disintegrating
   `π` over `Y` (which needs `X` standard Borel);
+* `MeasureTheory.Measure.exists_glue_of_fst_eq` — the gluing lemma for two plans out of a common
+  first space, realising both on `X × Y × Z`;
+* `MeasureTheory.Measure.exists_glue_pi_of_fst_eq` — the same for finitely many plans out of a
+  common first space, realising all of them on `X × ∀ i, Y i`;
 * `TauCeti.MeasureTheory.exists_glue_of_countable_middle` — **the gluing lemma over a countable
   middle space**, which needs nothing of either outer space;
 * `TauCeti.Measure.exists_comp_of_exists_glue` — the composition of plans read off a glued measure,
@@ -54,7 +60,8 @@ needs, since its two carriers are arbitrary probability spaces.
 * `TauCeti.Measure.lintegral_map_prodMap_id_snd_le` — the composition estimate: a cost on `X × Z`
   dominated by the sum of a cost on `X × Y` and a cost on `Y × Z` integrates against the composed
   plan to at most the sum of the two integrals. This is the mechanism behind the triangle
-  inequality for transport costs.
+  inequality for transport costs, and `TauCeti.MeasureTheory.eLpNorm_map_prodMap_id_snd_le` is its
+  `L^p` form for `1 ≤ p`.
 
 ## Implementation notes
 
@@ -263,6 +270,70 @@ theorem exists_glue_of_standardBorel_left [StandardBorelSpace X] [IsFiniteMeasur
       ← MeasureTheory.Measure.map_map measurable_swap (measurable_id.prodMap measurable_fst),
       map_prodMap_id_fst_glue, hswapσ]
 
+/-- **The gluing lemma along a shared first marginal.**
+
+Two plans out of a common space, `π` on `X × Y` and `ρ` on `X × Z` with `π.fst = ρ.fst`, admit a
+joint law on `X × Y × Z` whose `(X, Y)`-marginal is `π` and whose `(X, Z)`-marginal is `ρ`. Only
+the last space is assumed standard Borel. Compare
+`TauCeti.Measure.exists_glue_of_standardBorel_right`, where the shared space is the middle one. -/
+theorem _root_.MeasureTheory.Measure.exists_glue_of_fst_eq [StandardBorelSpace Z]
+    {ρ : Measure (X × Z)} [IsFiniteMeasure ρ] (hπρ : π.fst = ρ.fst) :
+    ∃ γ : Measure (X × Y × Z),
+      γ.map (Prod.map id Prod.fst) = π ∧ γ.map (Prod.map id Prod.snd) = ρ := by
+  obtain ⟨γ, hγπ, hγρ⟩ := exists_glue_of_standardBorel_right (π.map Prod.swap) ρ
+    (by rw [MeasureTheory.Measure.snd_map_swap, hπρ])
+  refine ⟨γ.map fun q ↦ (q.2.1, q.1, q.2.2), ?_, ?_⟩
+  · have h : (Prod.map (id : X → X) (Prod.fst : Y × Z → Y)) ∘
+        (fun q : Y × X × Z ↦ (q.2.1, q.1, q.2.2)) = Prod.swap ∘ Prod.map id Prod.fst := rfl
+    rw [MeasureTheory.Measure.map_map (measurable_id.prodMap measurable_fst) (by fun_prop), h,
+      ← MeasureTheory.Measure.map_map measurable_swap (measurable_id.prodMap measurable_fst),
+      hγπ, MeasureTheory.Measure.map_map measurable_swap measurable_swap, Prod.swap_swap_eq,
+      MeasureTheory.Measure.map_id]
+  · have h : (Prod.map (id : X → X) (Prod.snd : Y × Z → Z)) ∘
+        (fun q : Y × X × Z ↦ (q.2.1, q.1, q.2.2)) = Prod.snd := rfl
+    rw [MeasureTheory.Measure.map_map (measurable_id.prodMap measurable_snd) (by fun_prop), h,
+      ← MeasureTheory.Measure.snd, hγρ]
+
+/-- **The gluing lemma for finitely many plans out of a common space.**
+
+Plans `π i` on `X × Y i`, indexed by a finite type and sharing their first marginal `ν`, admit a
+joint law on `X × ∀ i, Y i` with first marginal `ν` whose `(X, Y i)`-marginal is `π i` for every
+`i`. Only the spaces `Y i` are assumed standard Borel. Compare
+`MeasureTheory.Measure.exists_glue_of_fst_eq`, the case of two plans. -/
+theorem _root_.MeasureTheory.Measure.exists_glue_pi_of_fst_eq {ι : Type*} [Finite ι]
+    {Y : ι → Type*} [∀ i, MeasurableSpace (Y i)] [∀ i, StandardBorelSpace (Y i)]
+    {ν : Measure X} [IsFiniteMeasure ν] {π : ∀ i, Measure (X × Y i)} (hπ : ∀ i, (π i).fst = ν) :
+    ∃ γ : Measure (X × ∀ i, Y i),
+      γ.fst = ν ∧ ∀ i, γ.map (Prod.map id (Function.eval i)) = π i := by
+  have := Fintype.ofFinite ι
+  have _ (i : ι) : IsFiniteMeasure (π i) := ⟨by
+    rw [← MeasureTheory.Measure.fst_univ, hπ i]
+    exact measure_lt_top _ _⟩
+  by_cases hY : ∀ i, Nonempty (Y i)
+  · -- Given `x`, draw the coordinates independently from the conditional laws of the plans.
+    let κ : Kernel X (∀ i, Y i) :=
+      { toFun x := (ProbabilityMeasure.pi fun i ↦
+          (⟨(π i).condKernel x, inferInstance⟩ : ProbabilityMeasure (Y i))).toMeasure
+        measurable' := TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_toMeasure _
+          fun i ↦ (π i).condKernel.measurable.subtype_mk }
+    have hκx (x : X) : κ x = Measure.pi fun i ↦ (π i).condKernel x :=
+      ProbabilityMeasure.toMeasure_pi _
+    have : IsMarkovKernel κ := ⟨fun x ↦ by rw [hκx]; infer_instance⟩
+    have hκ (i : ι) : κ.map (Function.eval i) = (π i).condKernel := by
+      ext1 x
+      rw [Kernel.map_apply _ (measurable_pi_apply i), hκx]
+      exact (measurePreserving_eval _ i).map_eq
+    refine ⟨ν ⊗ₘ κ, MeasureTheory.Measure.fst_compProd _ _, fun i ↦ ?_⟩
+    rw [← MeasureTheory.Measure.compProd_map (measurable_pi_apply i), hκ, ← hπ i,
+      MeasureTheory.Measure.disintegrate]
+  · -- An empty factor forces every plan, and hence `ν`, to vanish.
+    obtain ⟨i₀, hi₀⟩ := not_forall.1 hY
+    have : IsEmpty (Y i₀) := not_nonempty_iff.1 hi₀
+    have hν : ν = 0 := by rw [← hπ i₀, MeasureTheory.Measure.eq_zero_of_isEmpty (π i₀)]; simp
+    refine ⟨0, by simp [hν], fun i ↦ ?_⟩
+    rw [MeasureTheory.Measure.map_zero, eq_comm, ← MeasureTheory.Measure.measure_univ_eq_zero,
+      ← MeasureTheory.Measure.fst_univ, hπ i, hν, MeasureTheory.Measure.coe_zero, Pi.zero_apply]
+
 end Gluing
 
 section Comp
@@ -352,6 +423,32 @@ end Measure
 
 namespace MeasureTheory
 
+variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
+
+/-- The `L^p` composition estimate. For `1 ≤ p`, if a cost on `X × Z` is dominated pointwise by the
+sum of a cost on `X × Y` and a cost on `Y × Z`, then its `L^p` seminorm against the composition of
+two glued plans is at most the sum of the `L^p` seminorms of the two costs against the plans.
+
+This is the `L^p` form of `TauCeti.Measure.lintegral_map_prodMap_id_snd_le`, and the mechanism
+behind the triangle inequality for `L^p` transport distances. It lives in `TauCeti.MeasureTheory`
+for the same dot-notation reason as the countable gluing lemmas below. -/
+theorem eLpNorm_map_prodMap_id_snd_le {π : Measure (X × Y)} {σ : Measure (Y × Z)}
+    {γ : Measure (X × Y × Z)} {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hγπ : γ.map (Prod.map id Prod.fst) = π) (hγσ : γ.snd = σ) {c : X × Z → ℝ≥0∞}
+    {c₁ : X × Y → ℝ≥0∞} {c₂ : Y × Z → ℝ≥0∞} (hc : Measurable c) (hc₁ : Measurable c₁)
+    (hc₂ : Measurable c₂) (hle : ∀ x y z, c (x, z) ≤ c₁ (x, y) + c₂ (y, z)) :
+    eLpNorm c p (γ.map (Prod.map id Prod.snd)) ≤ eLpNorm c₁ p π + eLpNorm c₂ p σ := by
+  rw [eLpNorm_map_measure hc.aestronglyMeasurable
+      (measurable_id.prodMap measurable_snd).aemeasurable, ← hγπ,
+    eLpNorm_map_measure hc₁.aestronglyMeasurable
+      (measurable_id.prodMap measurable_fst).aemeasurable, ← hγσ, MeasureTheory.Measure.snd,
+    eLpNorm_map_measure hc₂.aestronglyMeasurable measurable_snd.aemeasurable]
+  exact (eLpNorm_mono_enorm (hc.comp (measurable_id.prodMap measurable_snd)).aestronglyMeasurable
+    (g := c₁ ∘ Prod.map id Prod.fst + c₂ ∘ Prod.snd)
+    fun ⟨x, y, z⟩ ↦ by
+      simpa only [enorm_eq_self, Pi.add_apply, Function.comp_apply, Prod.map_apply, id_eq] using
+        hle x y z).trans (eLpNorm_add_le hp)
+
 /-! ### Gluing over a countable middle space
 
 These live in `TauCeti.MeasureTheory` rather than alongside their standard Borel siblings in
@@ -360,7 +457,6 @@ These live in `TauCeti.MeasureTheory` rather than alongside their standard Borel
 blocks dot notation on Mathlib's type. `TauCeti.MeasureTheory` is the namespace of the
 conditional kernel these consume. -/
 
-variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
 variable (π : Measure (X × Y)) (σ : Measure (Y × Z))
 
 /-- Gluing `π` against the conditional kernel of `σ` over a countable middle space recovers `σ` as

@@ -49,9 +49,10 @@ this file names those two parts and records that they multiply to the degree.
   `TauCeti.Isogeny.inseparableDegree_eq_degree_of_isPurelyInseparable`: the purely inseparable
   case, consumed by `separableDegree_frobeniusIsogeny` and
   `inseparableDegree_frobeniusIsogeny` to compute the purely inseparable degree of Frobenius.
-* `TauCeti.Isogeny.separableDegree_eq_one_iff_isPurelyInseparable` and
-  `TauCeti.Isogeny.inseparableDegree_eq_one_iff_isSeparable`:
-  the biconditional forms, for a consumer holding a computed degree rather than an assumed class.
+* `TauCeti.Isogeny.separableDegree_eq_one_iff_isPurelyInseparable`,
+  `TauCeti.Isogeny.inseparableDegree_eq_one_iff_isSeparable` and
+  `TauCeti.Isogeny.separableDegree_eq_degree_iff_isSeparable`: the biconditional forms, for a
+  consumer holding a computed degree rather than an assumed class.
 
 ## Design
 
@@ -233,6 +234,14 @@ theorem inseparableDegree_eq_one_iff_isSeparable (φ : Isogeny W₁ W₂) :
     φ.inseparableDegree = 1 ↔
       Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField :=
   φ.inseparableDegree_def ▸ (isSeparable_iff_finInsepDegree_eq_one _ _).symm
+
+/-- **A separable degree equal to the degree characterises separability**, the converse of
+`separableDegree_eq_degree_of_isSeparable`. -/
+theorem separableDegree_eq_degree_iff_isSeparable (φ : Isogeny W₁ W₂) :
+    φ.separableDegree = φ.degree ↔
+      Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField := by
+  rw [separableDegree_def, degree_def]
+  exact Field.finSepDegree_eq_finrank_iff _ _
 
 variable {W₃ : WeierstrassCurve.Affine F}
 

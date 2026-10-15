@@ -163,7 +163,7 @@ theorem halfSpinSubcomodule_toSubmodule (j : ZMod 2) :
 
 /-- Membership in a half-spin subcomodule means vanishing at every sign set of the other
 parity. -/
-@[simp]
+@[simp↓]
 theorem mem_halfSpinSubcomodule (j : ZMod 2) (v : Fin (dimension n) → R) :
     v ∈ halfSpinSubcomodule n hn R j ↔ ∀ a, ((signSet n a).card : ZMod 2) ≠ j → v a = 0 := by
   classical

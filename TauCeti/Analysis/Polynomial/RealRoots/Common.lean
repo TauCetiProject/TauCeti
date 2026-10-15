@@ -138,7 +138,7 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
     exists_continuous_ordered_roots_of_preconnectedSpace (F := fun x => ∏ k, F k x)
       (d := ∑ k, d k)
       (fun i _ => continuous_iff_continuousAt.2 fun x =>
-        continuousAt_coeff_prod _ (fun k _ i => (hF' k i).continuousAt) i)
+        continuousAt_coeff_prod _ (fun k _ i _ => (hF' k i).continuousAt))
       (fun x => by rw [degree_prod, Nat.cast_sum]; exact Finset.sum_congr rfl fun k _ => hdeg k x)
       (fun x₀ => (eventually_card_aroots_prod_eq (fun k i hi => (hF k i hi).continuousAt)
         (fun k => Eventually.of_forall (hdeg k)) (fun k => hcard k x₀)
@@ -146,15 +146,10 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
   have hroot (x : B) (t : ℝ) : (∃ k, (F k x).IsRoot t) ↔ ∃ i, r x i = t := by
     rw [← hroots x t, IsRoot.def, eval_prod, Finset.prod_eq_zero_iff]
     simp only [Finset.mem_univ, true_and, IsRoot.def]
-  refine ⟨n, r, hrc, hrm, hroot, fun k i => ?_⟩
-  -- Constant product multiplicity forces every factor multiplicity to be locally constant.
-  suffices h : IsLocallyConstant fun x => (F k x).rootMultiplicity (r x i) from
-    h.apply_eq_of_preconnectedSpace
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x₀ => ?_
-  exact (eventually_rootMultiplicity_eq_of_prod Finset.univ
-    (fun k _ j hj => (hF k j hj).continuousAt)
-    (fun k _ => .of_forall fun x => (natDegree_eq_of_degree_eq_some (hdeg k x)).le)
-    (hrc i).continuousAt (fun k _ => hne k x₀)
-    (.of_forall fun x => hmult i x x₀)).mono fun _ hx => hx k (Finset.mem_univ k)
+  exact ⟨n, r, hrc, hrm, hroot, fun k i =>
+    TauCeti.Polynomial.rootMultiplicity_eq_of_prod Finset.univ
+      (fun k _ j hj => hF k j hj)
+      (fun k _ x => (natDegree_eq_of_degree_eq_some (hdeg k x)).le)
+      (hrc i) (fun k _ => hne k) (hmult i) k (Finset.mem_univ k)⟩
 
 end Polynomial

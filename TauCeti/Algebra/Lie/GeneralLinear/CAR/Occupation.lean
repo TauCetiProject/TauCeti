@@ -57,9 +57,7 @@ open CliffordAlgebra
 
 variable {K n : Type*} [Field K] [Fintype n]
 
-attribute [local instance] Classical.decEq
-
-private theorem polar_single_single_eq_zero (i j k l : n)
+private theorem polar_single_single_eq_zero [DecidableEq n] (i j k l : n)
     (h : ¬(j = k ∧ l = i)) :
     QuadraticMap.polar (traceQuadraticForm K n)
       (Matrix.single i j 1) (Matrix.single k l 1) = 0 := by
@@ -140,6 +138,7 @@ theorem carOccupationElement_mul_self {i j : n} (hij : i ≠ j) :
 theorem commute_carOccupationElement {i j k l : n} :
     Commute (carOccupationElement (K := K) i j)
       (carOccupationElement (K := K) k l) := by
+  classical
   by_cases heq : (i, j) = (k, l)
   · cases heq
     exact Commute.refl _
@@ -187,7 +186,7 @@ theorem commute_carOccupationElement {i j k l : n} :
 
 section Diagonal
 
-variable [Invertible (2 : K)]
+variable [DecidableEq n] [Invertible (2 : K)]
 
 /-- A diagonal normal-ordered generator is the sum of all occupation elements with its first
 index fixed. The diagonal summand is the scalar `1/2`. -/
@@ -211,6 +210,7 @@ theorem glCliffordHom_single_self_eq_sum_positive_occupation
   · exact eq_sub_iff_add_eq.mpr (carOccupationElement_add_swap (K := K) i k)
   · rfl
 
+omit [DecidableEq n] in
 private theorem sum_carOccupationElement_internal (s : Finset n) :
     (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) =
       ((s.card : K) ^ 2 / 2) • (1 : CliffordAlgebra (traceQuadraticForm K n)) := by
@@ -259,12 +259,12 @@ theorem sum_glCliffordHom_single_self_eq_cut_occupation (s : Finset n) :
     (∑ i ∈ s, glCliffordHom (K := K) (n := n) (Matrix.single i i 1)) =
         ∑ i ∈ s, ∑ j : n, carOccupationElement (K := K) i j := by
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       exact glCliffordHom_single_self_eq_sum_occupation i
     _ = ∑ i ∈ s, ((∑ j ∈ s, carOccupationElement (K := K) i j) +
           ∑ j ∈ Finset.univ \ s, carOccupationElement (K := K) i j) := by
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       rw [← Finset.sum_sdiff (Finset.subset_univ s), add_comm]
     _ = (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) +
           ∑ i ∈ s, ∑ j ∈ Finset.univ \ s,

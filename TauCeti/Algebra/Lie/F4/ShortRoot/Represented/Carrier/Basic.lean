@@ -196,7 +196,7 @@ noncomputable def f4ShortRootCarrierIdealInRange :
       f4ShortRootCarrierCotangentRange :=
   f4ShortRootCarrierCotangentIdeal.comap f4ShortRootCarrierCotangentRange.subtype
 
-@[simp] theorem mem_f4ShortRootCarrierIdealInRange
+@[simp↓] theorem mem_f4ShortRootCarrierIdealInRange
     (x : f4ShortRootCarrierCotangentRange) :
     x ∈ f4ShortRootCarrierIdealInRange ↔
       (x : f4ShortRootCotangentDual) ∈ f4ShortRootCarrierCotangentIdeal := by

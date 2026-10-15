@@ -34,11 +34,10 @@ representations carries the kernel at `i` for `M` into the kernel for `N`, so th
 resulting map `Mᵢ → Nᵢ` completes the components of `θ` away from `i` to a morphism `M ⟶ N`
 reflecting back to `θ`.
 
-The consequence is the second milestone of the reflection-functor route to Gabriel's theorem:
-**reflection at a sink preserves indecomposability**. The reflection functor is additive, so a
-bijection on endomorphisms matches idempotents with idempotents; an indecomposable `M` other than
-`Sᵢ` therefore reflects to an indecomposable representation of the reflected quiver. No
-finite-dimensionality is needed for that. It is needed for the other half of the induction step:
+The consequence is that **reflection at a sink preserves indecomposability**. The reflection functor
+is additive, so a bijection on endomorphisms matches idempotents with idempotents; an indecomposable
+`M` other than `Sᵢ` therefore reflects to an indecomposable representation of the reflected quiver.
+No finite-dimensionality is needed for that. It is needed for the other half of the induction step:
 `TauCeti.dimVector_reflectRep_of_indecomposable` computes the dimension vector of the reflection as
 `sᵢ · dim M` when the vertex spaces at the sources of the arrows into `i` are finite-dimensional.
 
@@ -78,11 +77,8 @@ and it is the only property of that map the proofs use.
 
 ## References
 
-This is the second milestone of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, that the reflection functor
-carries an indecomposable other than `Sᵢ` to an indecomposable. See Bernstein--Gelfand--Ponomarev,
-*Coxeter functors and Gabriel's theorem*, and Derksen--Weyman, *An Introduction to Quiver
-Representations*, Ch. 2.
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
+*An Introduction to Quiver Representations*, Ch. 2.
 -/
 
 public section
@@ -356,6 +352,7 @@ theorem finrank_end_reflectRep (hs : Function.Surjective (incomingSum M i)) :
     (X := M) (Y := M)) (reflectionFunctor_map_bijective hi hs)
   have he := e.finrank_eq
   rw [reflectionFunctor_obj] at he
+  rw [(End.linearEquiv (R := k)).finrank_eq, (End.linearEquiv (R := k)).finrank_eq]
   exact he.symm
 
 /-- **The reflection functor at a sink reflects isomorphisms**, between representations whose

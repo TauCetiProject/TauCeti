@@ -65,11 +65,8 @@ product to `{0, 1, 2, 3}` and the case analysis closes.
 
 ## References
 
-This file supplies “the order of a product of two simple reflections” in Layer 2 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, the input the roadmap earmarks for the
-braid relations of `weylCoxeterSystem`. The rank-two computation is Bourbaki, *Lie Groups and Lie
-Algebras*, Chapters 4--6, Ch. VI, §1.3, and Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, §9.
+The rank-two computation is Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6, Ch. VI, §1.3,
+and Humphreys, *Introduction to Lie Algebras and Representation Theory*, §9.
 -/
 
 public section

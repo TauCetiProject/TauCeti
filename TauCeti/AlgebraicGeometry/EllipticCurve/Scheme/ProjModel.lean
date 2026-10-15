@@ -33,7 +33,8 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 ## Main definitions
 
 * `WeierstrassCurve.projModel W`: the projective Weierstrass model, a scheme.
-* `WeierstrassCurve.projModelOver W`: its structure morphism to `Spec R`.
+* `WeierstrassCurve.projModelOver W`: its structure morphism to `Spec R`, which makes
+  `projModel W` a scheme over `Spec R`.
 * `WeierstrassCurve.projModelZero W`: the zero section `[0 : 1 : 0]`, a morphism
   `Spec R ⟶ projModel W`, defined on the standard affine chart `D₊(Y)`.
 * `WeierstrassCurve.projModelVariableChangeIso W C`: the isomorphism
@@ -43,6 +44,10 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 
 * `WeierstrassCurve.isProper_projModelOver`: the projective Weierstrass model is proper over the
   base.
+* `WeierstrassCurve.isSeparated_projModel` and
+  `WeierstrassCurve.valuativeCriterionExistence_projModel`: as a proper scheme over `Spec R`, the
+  projective Weierstrass model is separated and satisfies the existence part of the valuative
+  criterion.
 * `WeierstrassCurve.compactSpace_projModel`: the projective Weierstrass model is quasi-compact.
 * `WeierstrassCurve.isNoetherian_projModel`: over a Noetherian ring, the projective Weierstrass
   model is a Noetherian scheme.
@@ -103,6 +108,40 @@ noncomputable def projModelOver : W.projModel ⟶ Spec (.of R) :=
 instance isProper_projModelOver : IsProper W.projModelOver := by
   unfold projModelOver
   infer_instance
+
+/-- The projective Weierstrass model is a scheme over `Spec R` through its structure morphism
+`projModelOver`. -/
+noncomputable instance : W.projModel.Over (Spec (.of R)) where
+  hom := W.projModelOver
+
+/-- The structure morphism of the projective Weierstrass model as a scheme over `Spec R` is
+`projModelOver`. -/
+@[simp]
+theorem over_projModel : W.projModel ↘ Spec (.of R) = W.projModelOver :=
+  (rfl)
+
+/-- The projective Weierstrass model is proper over `Spec R`, as a scheme over `Spec R`. -/
+instance isProper_over_projModel : IsProper (W.projModel ↘ Spec (.of R)) :=
+  inferInstanceAs (IsProper W.projModelOver)
+
+/-- The projective Weierstrass model is a separated scheme, being proper over `Spec R`. -/
+instance isSeparated_projModel : W.projModel.IsSeparated :=
+  ⟨by rw [← Limits.terminal.comp_from (W.projModel ↘ Spec (.of R))]; infer_instance⟩
+
+/-- The structure morphism of the projective Weierstrass model satisfies the existence part of the
+valuative criterion, being proper. -/
+theorem valuativeCriterionExistence_projModel :
+    ValuativeCriterion.Existence (W.projModel ↘ Spec (.of R)) :=
+  (UniversallyClosed.eq_valuativeCriterion ▸
+    (inferInstance : UniversallyClosed (W.projModel ↘ Spec (.of R)))).1
+
+/-- The structure morphisms of equal Weierstrass curves agree through the identification of their
+projective models. -/
+@[reassoc (attr := simp)]
+theorem eqToHom_projModelOver {W₁ W₂ : WeierstrassCurve R} (h : W₁ = W₂) :
+    eqToHom (congrArg projModel h) ≫ W₂.projModelOver = W₁.projModelOver := by
+  subst h
+  simp
 
 /-- The projective Weierstrass model is quasi-compact. -/
 instance compactSpace_projModel : CompactSpace W.projModel :=

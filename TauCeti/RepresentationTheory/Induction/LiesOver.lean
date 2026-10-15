@@ -28,6 +28,8 @@ the given intertwiner with the unit `FDRep.indFDRepUnit`, which is injective.
 
 * `FDRep.liesOver_iff`: the characterisation by nonzero intertwiners.
 * `FDRep.LiesOver.of_iso_left`, `FDRep.LiesOver.of_iso_right`: transport across isomorphisms.
+* `FDRep.liesOver_res_self`: a nontrivial representation lies over its own restriction.
+* `FDRep.LiesOver.of_res_iso`: transport across isomorphisms of restrictions.
 * `FDRep.liesOver_of_ne_bot`: a representation lies over each nonzero subrepresentation of its
   restriction.
 * `FDRep.LiesOver.indFDRep`: induction preserves lying over along the composite homomorphism.
@@ -64,14 +66,25 @@ theorem liesOver_iff :
     U.LiesOver φ V ↔ ∃ f : V ⟶ (Action.res (FGModuleCat k) φ).obj U, f ≠ 0 :=
   Iff.rfl
 
+/-- A nontrivial representation lies over its own restriction along any homomorphism. -/
+theorem liesOver_res_self (U : FDRep k H) (φ : N →* H) [Nontrivial U] :
+    U.LiesOver φ ((Action.res (FGModuleCat k) φ).obj U) := by
+  obtain ⟨x, hx⟩ := exists_ne (0 : U)
+  refine ⟨𝟙 _, fun h => hx ?_⟩
+  exact ConcreteCategory.congr_hom h x
+
+/-- Lying over transfers along an isomorphism of the restricted larger representations. -/
+theorem LiesOver.of_res_iso {U' : FDRep k H} (h : U.LiesOver φ V)
+    (e : (Action.res (FGModuleCat k) φ).obj U ≅
+      (Action.res (FGModuleCat k) φ).obj U') : U'.LiesOver φ V := by
+  obtain ⟨f, hf⟩ := h
+  refine ⟨f ≫ e.hom, fun hzero => hf ?_⟩
+  exact (cancel_mono e.hom).mp (hzero.trans Limits.zero_comp.symm)
+
 /-- Lying over is invariant under isomorphism of the larger representation. -/
 theorem LiesOver.of_iso_left {U' : FDRep k H} (h : U.LiesOver φ V) (e : U ≅ U') :
-    U'.LiesOver φ V := by
-  obtain ⟨f, hf⟩ := h
-  refine ⟨f ≫ ((Action.res (FGModuleCat k) φ).mapIso e).hom, ?_⟩
-  intro hzero
-  exact hf ((cancel_mono ((Action.res (FGModuleCat k) φ).mapIso e).hom).mp
-    (hzero.trans Limits.zero_comp.symm))
+    U'.LiesOver φ V :=
+  h.of_res_iso ((Action.res (FGModuleCat k) φ).mapIso e)
 
 /-- Lying over is invariant under isomorphism of the smaller representation. -/
 theorem LiesOver.of_iso_right {V' : FDRep k N} (h : U.LiesOver φ V) (e : V ≅ V') :
