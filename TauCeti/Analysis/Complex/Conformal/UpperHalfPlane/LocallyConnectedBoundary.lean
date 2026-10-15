@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.UpperHalfPlane
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
+import TauCeti.Data.Set.Image
 
 /-!
 # Upper-half-plane maps with locally connected boundary
@@ -42,13 +43,6 @@ public section
 open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
-
-/-- If `c` maps `A` bijectively onto `S` with the point `ζ ∈ S` deleted, then restoring the value
-`g ζ` to the image of `A` under `g ∘ c` recovers the image of `S` under `g`. -/
-private lemma insert_image_comp_of_bijOn_sdiff_singleton {α β γ : Type*} {c : α → β}
-    {g : β → γ} {A : Set α} {S : Set β} {ζ : β} (hc : BijOn c A (S \ {ζ})) (hζ : ζ ∈ S) :
-    insert (g ζ) ((g ∘ c) '' A) = g '' S := by
-  rw [image_comp, hc.image_eq, ← image_insert_eq, insert_sdiff_singleton, insert_eq_of_mem hζ]
 
 /-- **Transport of a continuous closed-disc extension to the upper half-plane.** Suppose `g` is
 continuous on the closed unit disc and conformally maps its interior onto `Ω`. Given a point `p` of
