@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
-public import Mathlib.Analysis.Normed.Module.Alternating.Curry
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
@@ -107,14 +107,6 @@ variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
   [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
   {k l : ℕ}
-
-/-- The normed and norm-free interior products agree on normed spaces. -/
-theorem curryLeft_eq_curryLeftTopological {n : ℕ}
-    (f : E [⋀^Fin (n + 1)]→L[ℝ] F₁) (x : E) :
-    f.curryLeft x = f.curryLeftTopological x := by
-  ext v
-  simp only [ContinuousAlternatingMap.curryLeft_apply_apply,
-    ContinuousAlternatingMap.curryLeftTopological_apply_apply]
 
 /-- The interior product is an antiderivation of degree `-1` for the paired wedge:
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (k + 1) φ ∧ ι_v ψ` for a `(k + 1)`-form `φ`, where the interior
