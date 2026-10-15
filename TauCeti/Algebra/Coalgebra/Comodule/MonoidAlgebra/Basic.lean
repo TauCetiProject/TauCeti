@@ -293,7 +293,7 @@ theorem weightProj_weightProj_of_ne {h g : G} (hne : h ≠ g) (v : V) :
   have h0 := tensorPairComponent_comp_lTensor_comul (M := V)
     (pairCoeff_comp_comul_of_ne (R := R) (G := G) hne)
   have := congr($h0 (coact (R := R) (C := MonoidAlgebra R G) v))
-  simpa only [LinearMap.coe_comp, Function.comp_apply, _root_.LinearMap.tensorComponent_zero,
+  simpa only [LinearMap.coe_comp, Function.comp_apply, map_zero,
     LinearMap.zero_apply] using this
 
 end Coassoc
