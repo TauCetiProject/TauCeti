@@ -572,6 +572,10 @@ class ProseTests(unittest.TestCase):
             self.assertEqual(sp.rendered_parents(
                 f"<p>{introduction}</p><p>Stacked on #12.</p>"), set())
 
+    def test_based_or_built_on_does_not_alone_assert_a_dependency(self):
+        for phrase in ("Based on", "Built on", "This PR is based on", "This branch is built on"):
+            self.assertEqual(sp.rendered_parents(f"<p>{phrase} #12.</p>"), set())
+
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
                       "Stacked on #1", False)
@@ -1012,6 +1016,14 @@ class MainTests(unittest.TestCase):
         self.api.events.append({**self.api.events[0], "id": 2, "actor": {"login": "human"}})
         self.assertFalse(self.main("--apply", "--pr", "2"))
         self.assertEqual(self.api.calls, [])
+
+    def test_declined_declaration_retains_policy_owned_block(self):
+        self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
+        self.api.declaration_gaps = {2}
+        self.api.events = [{"id": 1, "event": "labeled", "label": {"name": sp.BLOCK_LABEL},
+                            "actor": {"login": "trusted[bot]"}}]
+        self.assertFalse(self.main("--apply", "--pr", "2"))
+        self.assertFalse(any(method == "DELETE" for _, method, _ in self.api.calls))
 
     def test_global_budget_exhaustion_aborts_sweep(self):
         self.detector.detect = MagicMock(side_effect=sp.BudgetGap("source operation/time budget exhausted"))

@@ -165,6 +165,7 @@ class API:
                         raise Gap("rendered PR prose/head identity changed; retry fresh metadata")
                     cache[key] = rendered_parents(p["bodyHTML"])
                     if not cache[key]:
+                        self.__dict__.setdefault("declaration_gaps", set()).add(child.number)
                         emit(declaration_pr=child.number,
                              gap="no complete unqualified rendered parent declaration; body-only inference declined")
             except BudgetGap:
@@ -249,7 +250,7 @@ def rendered_prose_parents(body):
             claim = re.search(
                 r"\bstack(?:ed|s|ing)?\s+on\b|"
                 r"(?:^\s*(?:[-*]\s*)?|\bthis (?:PR|branch) (?:is )?)"
-                r"(?:depends? on|based on|built on|carries (?:unmerged |prerequisite )?commits from)\b|"
+                r"(?:depends? on|carries (?:unmerged |prerequisite )?commits from)\b|"
                 r"\b(?:prerequisites?|dependencies|parent PR)\s*:", sentence, re.I)
             if claim:
                 if not re.fullmatch(
@@ -941,6 +942,8 @@ def main():
                         emit(pr=child.number, mutation="closed", withdrawal="pull_request.closed webhook")
                         verify_withdrawal(child, before, observation)
                     elif child.blocked:
+                        if child.number in getattr(api, "declaration_gaps", set()):
+                            raise Gap("declined body-only declaration; retaining prior blocking label")
                         if incomplete_index or detector.gaps:
                             raise Gap("incomplete parent index; retaining blocking label")
                         if not owns_block(api, child, actor):

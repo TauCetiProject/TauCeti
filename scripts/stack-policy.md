@@ -41,6 +41,10 @@ placeholders, so removing them cannot manufacture a sentence start.
 These restrictions may miss valid declarations;
 exact ancestry/base evidence remains available independently. Inaccessible or
 changed rendered metadata is an unknown result, never closure authority.
+Supported wording is stacked on, depends on, prerequisites/dependencies/parent PR,
+or carries (unmerged/prerequisite) commits from. Based on and built on alone do
+not establish a current dependency. A declined declaration also retains any
+existing policy-owned blocking label until the uncertainty is resolved.
 
 A confirmed stack must have a current parent identity and a complete individual
 parent commit patch reverse-applicable to the child's current source tree.
