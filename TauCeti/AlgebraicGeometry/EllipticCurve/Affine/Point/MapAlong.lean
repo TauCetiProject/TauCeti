@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.Algebra.Module.Torsion.Snake
+-- Proof-only: transport of points along an equality of curves keeps their coordinates.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # The point map induced by a ring homomorphism
@@ -31,6 +33,9 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
   `F`-algebra, the transport along `algebraMap F K` *is* Mathlib's `Affine.Point.map`. A user
   holding only a ring homomorphism `f : F →+* K` writes `letI := f.toAlgebra` and gets the same
   statement for `f`.
+* `WeierstrassCurve.Affine.Point.map_eq_cast_mapAlong`: more generally, Mathlib's
+  `Affine.Point.map` along an `F`-algebra homomorphism `σ : L →ₐ[F] M` of fields is the transport
+  along `σ`, followed by the identification `(W⁄L).map σ = W⁄M`.
 * `WeierstrassCurve.Affine.Point.mapAlong_iterateFrobenius_some`: iterated Frobenius
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
 * `WeierstrassCurve.Affine.Point.mapAlong_add` and `mapAlong_zsmul`: over fields the transport is
@@ -175,6 +180,25 @@ lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_eq_map (P : W.toAffine.Point
   · exact (Affine.Point.map_zero (Algebra.ofId F K)).symm
   · rw [WeierstrassCurve.Affine.Point.mapAlong_some]
     exact (Affine.Point.map_some (W' := W) (F := F) (K := K) (Algebra.ofId F K) h).symm
+
+omit [DecidableEq F] [DecidableEq K] [Algebra F K] in
+/-- **Mathlib's `Affine.Point.map` along an algebra homomorphism is the transport along it.** For
+an `F`-algebra homomorphism `σ : L →ₐ[F] M` of fields, the point map `W(L) → W(M)` is the
+transport `WeierstrassCurve.Affine.Point.mapAlong σ` into the points of `(W⁄L).map σ`, followed by
+the identification of that curve with `W⁄M` (`WeierstrassCurve.map_baseChange`). It is what
+carries statements about the transport, such as the base change of a morphism, to Galois actions
+on points. -/
+lemma _root_.WeierstrassCurve.Affine.Point.map_eq_cast_mapAlong {L M : Type*} [Field L] [Field M]
+    [Algebra F L] [Algebra F M] [DecidableEq L] [DecidableEq M] (σ : L →ₐ[F] M)
+    (P : (W⁄L).toAffine.Point) :
+    Affine.Point.map σ P = cast (congrArg (fun V : _root_.WeierstrassCurve M ↦ V.toAffine.Point)
+      (W.map_baseChange σ)) (P.mapAlong (σ : L →+* M) (σ : L →+* M).injective) := by
+  rcases P with _ | ⟨x, y, h⟩
+  · rw [← Affine.Point.zero_def, map_zero, WeierstrassCurve.Affine.Point.mapAlong_zero,
+      Affine.Point.cast_zero (W.map_baseChange σ)]
+  · rw [WeierstrassCurve.Affine.Point.mapAlong_some, Affine.Point.cast_some (W.map_baseChange σ),
+      Affine.Point.map_some]
+    simp only [AlgHom.coe_toRingHom]
 
 end Field
 
