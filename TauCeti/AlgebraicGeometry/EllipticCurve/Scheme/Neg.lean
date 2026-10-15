@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # The negation morphism of the projective Weierstrass model
@@ -43,6 +43,8 @@ independent of the local Weierstrass equations used to define it.
   (`WeierstrassCurve.inv_projModelNeg`).
 * `WeierstrassCurve.projModelPoint_projModelNeg`: negation sends the point with homogeneous
   coordinates `P` to the point with homogeneous coordinates `Projective.neg P`.
+* `WeierstrassCurve.projModelAffinePoint_projModelNeg`: negation sends the point `[x : y : 1]` to
+  `[x : -y - a₁x - a₃ : 1]`.
 * `WeierstrassCurve.projModelNeg_projModelBaseChange`: negation commutes with the base change
   morphism `projModel (W.map f) ⟶ projModel W`.
 * `WeierstrassCurve.projModelNeg_projModelVariableChangeIso_hom`: negation commutes with the
@@ -51,6 +53,9 @@ independent of the local Weierstrass equations used to define it.
   of projective models over `Spec R`.
 * `WeierstrassCurve.projModelNeg_comp_of_isPullback`: negation commutes with every pointed
   cartesian morphism of projective models.
+* `WeierstrassCurve.eq_id_of_projModelAffinePoint_comp_eq`: an automorphism of the projective
+  model over `Spec R` fixing the zero section and two affine points `(x₁, y₁)`, `(x₂, y₂)`, with
+  `x₁ - x₂` and `2y₁ + a₁x₁ + a₃` units, is the identity.
 
 ## References
 
@@ -155,6 +160,19 @@ theorem projModelPoint_projModelNeg {S : Type u} [CommRing S] {g : R →+* S} {P
     projModelPoint_projModelVariableChangeIso_hom hi (hQ ▸ hj)]
   simp only [hQ]
 
+/-- The negation morphism sends the point `[x : y : 1]` with values in `R` to the point
+`[x : -y - a₁x - a₃ : 1]`, the negative of `(x, y)` on the affine curve. -/
+@[reassoc (attr := simp)]
+theorem projModelAffinePoint_projModelNeg {x y : R} (h : W.toAffine.Equation x y) :
+    W.projModelAffinePoint h ≫ W.projModelNeg =
+      W.projModelAffinePoint ((W.toAffine.equation_neg x y).mpr h) := by
+  rw [projModelNeg, projModelAffinePoint_eqToHom_assoc _ W.negVariableChange_smul_self.symm,
+    projModelAffinePoint_projModelVariableChangeIso_hom, projModelAffinePoint_inj]
+  refine ⟨by simp, ?_⟩
+  simp only [negVariableChange_u, negVariableChange_s, negVariableChange_t, Affine.negY]
+  push_cast
+  ring
+
 /-- The negation morphism commutes with base change: negation on `projModel (W.map f)` followed by
 the base change morphism `projModel (W.map f) ⟶ projModel W` along `f : R →+* R'` is the base change
 morphism followed by negation on `projModel W`. -/
@@ -224,5 +242,39 @@ theorem projModelNeg_comp_of_isPullback {R R' : Type u} [CommRing R] [CommRing R
     hB.hom_ext (by simp [hF', h0, projModelZero_projModelBaseChange]) (by simp [he])
   rw [← hF', reassoc_of% projModelNeg_comp_hom_of_iso e he h0', projModelNeg_projModelBaseChange,
     Category.assoc]
+
+variable {W} in
+/-- **An automorphism of the projective model fixing two suitable points is the identity.** Let
+`e : projModel W ⟶ projModel W` be an automorphism over `Spec R`, given as a cartesian square over
+the identity, which fixes the zero section and the points `[x₁ : y₁ : 1]` and `[x₂ : y₂ : 1]`. If
+`x₁ - x₂` and `y₁ - (-y₁ - a₁x₁ - a₃)` are units, then `e` is the identity. Over a field, the
+conditions say that the two points are distinct from each other and from the negative of the
+first point, and that the first point is not its own negative. -/
+theorem eq_id_of_projModelAffinePoint_comp_eq {e : W.projModel ⟶ W.projModel}
+    (he : IsPullback e W.projModelOver W.projModelOver (𝟙 _))
+    (h0 : W.projModelZero ≫ e = W.projModelZero) {x₁ y₁ x₂ y₂ : R}
+    (h₁ : W.toAffine.Equation x₁ y₁) (h₂ : W.toAffine.Equation x₂ y₂)
+    (hx : IsUnit (x₁ - x₂)) (hy : IsUnit (y₁ - W.toAffine.negY x₁ y₁))
+    (he₁ : W.projModelAffinePoint h₁ ≫ e = W.projModelAffinePoint h₁)
+    (he₂ : W.projModelAffinePoint h₂ ≫ e = W.projModelAffinePoint h₂) : e = 𝟙 _ := by
+  have := he.isIso_fst_of_isIso
+  obtain ⟨C, hC, hCe⟩ := (existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom (asIso e)
+    (by simpa using he.w) h0).exists
+  rw [asIso_hom] at hCe
+  -- a point fixed by `e` is fixed by the change of variables `C`
+  have key {x y : R} (h : W.toAffine.Equation x y)
+      (hfix : W.projModelAffinePoint h ≫ e = W.projModelAffinePoint h) :
+      (C.u : R) ^ 2 * x + C.r = x ∧ (C.u : R) ^ 3 * y + (C.u : R) ^ 2 * C.s * x + C.t = y := by
+    rwa [hCe, projModelAffinePoint_eqToHom_assoc _ hC.symm,
+      projModelAffinePoint_projModelVariableChangeIso_hom, projModelAffinePoint_inj] at hfix
+  -- `e` commutes with negation, so it also fixes the negative of the first point
+  have he₁' := key ((W.toAffine.equation_neg x₁ y₁).mpr h₁) (by
+    rw [← W.projModelAffinePoint_projModelNeg h₁, Category.assoc,
+      projModelNeg_comp_of_isPullback he (by simpa using h0), reassoc_of% he₁])
+  obtain ⟨hx₁, hy₁⟩ := key h₁ he₁
+  obtain ⟨hx₂, hy₂⟩ := key h₂ he₂
+  rw [hCe]
+  exact (eqToHom_comp_projModelVariableChangeIso_hom_eq_id_iff hC).mpr
+    (C.eq_one_of_isUnit_sub hx hy hx₁ hx₂ hy₁ he₁'.2 hy₂)
 
 end WeierstrassCurve

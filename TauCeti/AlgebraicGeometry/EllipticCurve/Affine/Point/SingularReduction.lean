@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Points reducing to the singular point
@@ -49,19 +49,35 @@ In each case Tate's algorithm reports the local index `1` (Silverman, *Advanced 
 Table 4.1), and the theorems here show that `E₀(F) = W(F)` there, for an arbitrary valuation and
 without completeness.
 
+When the reduction is singular at the origin, that is `a₃, a₄, a₆ ∈ 𝔪`, the points outside `E₀(F)`
+are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of `W_k` is unique.
+
 ## Main results
 
 * `WeierstrassCurve.Δ_mem_maximalIdeal_sq_of_isSingular`: over a local ring, a solution
   reducing to a singular point forces `Δ ∈ 𝔪²`.
 * `WeierstrassCurve.exists_associated_sq_Δ_of_isSingular`: over a valuation ring, a solution
   reducing to a nonsplit node forces `Δ` to be a unit times a square.
+* `WeierstrassCurve.mem_maximalIdeal_of_isSingular`: over a local ring, if the reduction is
+  singular at the origin, a point reducing to a singular point has coordinates in `𝔪`.
 * `WeierstrassCurve.a₆_mem_maximalIdeal_sq_of_isSingular`: over a local ring, if the
   reduction is singular at the origin, a solution reducing to it forces `a₆ ∈ 𝔪²`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_forall_not_isSingular`: if no integral
   solution reduces to a singular point, then `E₀(F) = W(F)`.
+* `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation`:
+  if the reduction is singular at the origin and no integral solution has both coordinates in
+  `𝔪`, then `E₀(F) = W(F)`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_Δ_notMem`,
   `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_not_splits` and
   `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_a₆_notMem`: the three criteria above.
+* `WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff`: when the reduction is singular
+  at the origin, an affine point has singular reduction exactly when both of its coordinates lie in
+  the maximal ideal, and `WeierstrassCurve.Affine.exists_eq_some_of_notMem_nonsingularReduction`
+  writes such a point with integral coordinates.
+* `WeierstrassCurve.Affine.exists_chord_of_add_notMem_nonsingularReduction`: the identities
+  satisfied by the chord through two points whose sum has singular reduction.
+* `WeierstrassCurve.Affine.two_nsmul_notMem_of_slope_mem`: twice a point with singular reduction
+  whose tangent slope lies in the maximal ideal has singular reduction.
 
 ## References
 
@@ -89,6 +105,21 @@ theorem Δ_mem_maximalIdeal_sq_of_isSingular (W : WeierstrassCurve R) {x y : R}
   W.toAffine.Δ_mem_sq_of_equation h hs.evalEval_polynomialX_mem_maximalIdeal
     hs.evalEval_polynomialY_mem_maximalIdeal
 
+/-- **A point reducing to the singular point at the origin has coordinates in the maximal
+ideal.** Over a local ring, suppose that `a₃`, `a₄` and `a₆` lie in the maximal ideal, so that the
+reduced curve is singular at the origin. If `(x, y)` reduces to a singular point of the reduced
+curve, that point is the origin, since the reduced curve has only one singular point, so `x` and `y`
+lie in the maximal ideal. -/
+theorem mem_maximalIdeal_of_isSingular (W : WeierstrassCurve R)
+    (h₃ : W.a₃ ∈ maximalIdeal R) (h₄ : W.a₄ ∈ maximalIdeal R) (h₆ : W.a₆ ∈ maximalIdeal R)
+    {x y : R} (hs : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
+    x ∈ maximalIdeal R ∧ y ∈ maximalIdeal R := by
+  have h0 : (W.map (residue R)).toAffine.IsSingular 0 0 := by
+    simp [(residue_eq_zero_iff _).mpr h₃, (residue_eq_zero_iff _).mpr h₄,
+      (residue_eq_zero_iff _).mpr h₆]
+  obtain ⟨hx, hy⟩ := Affine.eq_of_isSingular_of_isSingular hs h0
+  exact ⟨(residue_eq_zero_iff x).mp hx, (residue_eq_zero_iff y).mp hy⟩
+
 /-- **A solution reducing to the singular point at the origin forces `a₆ ∈ 𝔪²`.** Over a local
 ring, suppose that `a₃`, `a₄` and `a₆` lie in the maximal ideal, so that the reduced curve is
 singular at the origin. If an integral solution `(x, y)` reduces to a singular point, that point is
@@ -98,13 +129,7 @@ theorem a₆_mem_maximalIdeal_sq_of_isSingular (W : WeierstrassCurve R)
     {x y : R} (h : W.toAffine.Equation x y)
     (hs : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
     W.a₆ ∈ maximalIdeal R ^ 2 := by
-  have h0 : (W.map (residue R)).toAffine.IsSingular 0 0 := by
-    simp [(residue_eq_zero_iff _).mpr h₃, (residue_eq_zero_iff _).mpr h₄,
-      (residue_eq_zero_iff _).mpr h₆]
-  -- the reduced curve has only one singular point
-  obtain ⟨hx, hy⟩ := Affine.eq_of_isSingular_of_isSingular hs h0
-  replace hx := (residue_eq_zero_iff x).mp hx
-  replace hy := (residue_eq_zero_iff y).mp hy
+  obtain ⟨hx, hy⟩ := W.mem_maximalIdeal_of_isSingular h₃ h₄ h₆ hs
   rw [Affine.equation_iff'] at h
   have ha₆ : W.a₆ = y * y + W.a₁ * (x * y) + W.a₃ * y -
       ((x * x) * x + (W.a₂ * x) * x + W.a₄ * x) := by
@@ -232,11 +257,8 @@ theorem nonsingularReduction_eq_top_of_forall_not_isSingular
     set x₀ : v.valuationSubring := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩
     set y₀ : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).mpr
       (valuation_y_le_one_of_valuation_x_le_one v hxy.left hx)⟩
-    have hE : (integralModel v.valuationSubring W).toAffine.Equation x₀ y₀ := by
-      have hxy' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by
-        rw [baseChange_integralModel_eq]
-        exact hxy.left
-      exact (map_equation _ Subtype.val_injective x₀ y₀).mp hxy'
+    have hE : (integralModel v.valuationSubring W).toAffine.Equation x₀ y₀ :=
+      (equation_integralModel_iff v).2 hxy.left
     by_contra hn
     exact h x₀ y₀ hE (isSingular_iff_equation_and_not_nonsingular.mpr ⟨hE.map _, hn⟩)
   · exact mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some])
@@ -249,6 +271,22 @@ theorem nonsingularReduction_eq_top_of_Δ_notMem
     W.nonsingularReduction v = ⊤ :=
   nonsingularReduction_eq_top_of_forall_not_isSingular v fun _ _ hE hs ↦
     h (Δ_mem_maximalIdeal_sq_of_isSingular _ hE hs)
+
+/-- **If the reduction is singular at the origin and no integral solution lies in `𝔪 × 𝔪`, every
+point has nonsingular reduction**: `E₀(F) = W(F)`. Here `a₃`, `a₄` and `a₆` of the integral model
+lie in the maximal ideal, so that the singular point of the reduced curve is the origin, and the
+points reducing to it are the integral solutions with both coordinates in the maximal ideal. -/
+theorem nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    (h : ∀ x y : v.valuationSubring, x ∈ maximalIdeal v.valuationSubring →
+      y ∈ maximalIdeal v.valuationSubring →
+        ¬ (integralModel v.valuationSubring W).toAffine.Equation x y) :
+    W.nonsingularReduction v = ⊤ :=
+  nonsingularReduction_eq_top_of_forall_not_isSingular v fun x y hE hs ↦
+    have hxy := mem_maximalIdeal_of_isSingular _ h₃ h₄ h₆ hs
+    h x y hxy.1 hxy.2 hE
 
 /-- **At a nonsplit node with `v(Δ)` not a square, every point has nonsingular reduction**:
 `E₀(F) = W(F)`. Here `c₄` of the integral model is a unit and its node polynomial
@@ -281,6 +319,175 @@ theorem nonsingularReduction_eq_top_of_a₆_notMem
     W.nonsingularReduction v = ⊤ :=
   nonsingularReduction_eq_top_of_forall_not_isSingular v fun _ _ hE hs ↦
     h (a₆_mem_maximalIdeal_sq_of_isSingular _ h₃ h₄ h₆ hE hs)
+
+/-! ### Points with singular reduction -/
+
+-- `↓`: tried before `simp` rewrites the membership inside `∉` with
+-- `mem_nonsingularReduction_iff`, after which this left-hand side no longer matches.
+/-- **When the reduction is singular at the origin, the points with singular reduction are the
+affine points with both coordinates in the maximal ideal.** Here `a₃`, `a₄` and `a₆` of the
+integral model lie in the maximal ideal, and `(x, y)` lies outside `E₀(F)` exactly when `v x < 1`
+and `v y < 1`. -/
+@[simp↓]
+theorem some_notMem_nonsingularReduction_iff
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x y : F} (h : W.Nonsingular x y) :
+    Point.some x y h ∉ W.nonsingularReduction v ↔ v x < 1 ∧ v y < 1 := by
+  have h0 : ((integralModel v.valuationSubring W).map (residue _)).toAffine.IsSingular 0 0 :=
+    (isSingular_zero _).2 <| by simp [(residue_eq_zero_iff _).2, h₃, h₄, h₆]
+  constructor
+  · intro hn
+    have hx : v x ≤ 1 := not_lt.1 fun hx ↦
+      hn (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
+    rw [some_mem_nonsingularReduction_iff v h hx] at hn
+    have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
+    have hE := ((equation_integralModel_iff v (x := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
+      (y := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩)).2 h.left).map (residue _)
+    obtain ⟨hx0, hy0⟩ := eq_of_isSingular_of_isSingular
+      (isSingular_iff_equation_and_not_nonsingular.2 ⟨hE, hn⟩) h0
+    exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 ((residue_eq_zero_iff _).1 hx0),
+      (Valuation.mem_maximalIdeal_iff (v := v)).1 ((residue_eq_zero_iff _).1 hy0)⟩
+  · rintro ⟨hx, hy⟩ hm
+    rw [some_mem_nonsingularReduction_iff v h hx.le,
+      (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hx),
+      (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hy)] at hm
+    exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 hm
+
+/-- **When the reduction is singular at the origin, a point with singular reduction is an affine
+point whose coordinates lie in the maximal ideal of the valuation ring.** Here `a₃`, `a₄` and `a₆`
+of the integral model lie in the maximal ideal. -/
+theorem exists_eq_some_of_notMem_nonsingularReduction
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {P : W.Point} (hP : P ∉ W.nonsingularReduction v) :
+    ∃ (x y : v.valuationSubring) (h : W.Nonsingular x y), P = .some _ _ h ∧
+      x ∈ maximalIdeal v.valuationSubring ∧ y ∈ maximalIdeal v.valuationSubring := by
+  rcases P with _ | ⟨x, y, h⟩
+  · exact absurd (zero_mem _) hP
+  obtain ⟨hx, hy⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ h).1 hP
+  exact ⟨⟨x, (v.mem_valuationSubring_iff x).2 hx.le⟩, ⟨y, (v.mem_valuationSubring_iff y).2 hy.le⟩,
+    h, rfl, (Valuation.mem_maximalIdeal_iff (v := v)).2 hx,
+    (Valuation.mem_maximalIdeal_iff (v := v)).2 hy⟩
+
+/-- **The chord through two points whose sum has singular reduction.** Let `(x₁, y₁)` and
+`(x₂, y₂)` be points of `W(F)` with integral coordinates, at a reduction singular at the origin, and
+suppose that their sum has singular reduction. Then the sum is an affine point `(x₃, y₃)` with
+`x₃, y₃ ∈ 𝔪`, and the slope `ℓ = W.slope x₁ x₂ y₁ y₂` of the line through the two points is
+integral, with
+
+* `ℓ² + a₁ ℓ − a₂ = x₁ + x₂ + x₃`,
+* `y₁ − y₂ = ℓ (x₁ − x₂)`, and
+* `a₄ − a₃ ℓ − (2 ℓ + a₁) (y₁ − ℓ x₁) = x₁ x₂ + x₁ x₃ + x₂ x₃`.
+
+The first and last identities compare coefficients in the Weierstrass cubic restricted to the line
+`y = ℓ (x − x₁) + y₁`, whose roots are `x₁`, `x₂` and `x₃`. The coefficients are those of the
+integral model. -/
+theorem exists_chord_of_add_notMem_nonsingularReduction
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x₁ y₁ x₂ y₂ : v.valuationSubring} {h₁ : W.Nonsingular x₁ y₁} {h₂ : W.Nonsingular x₂ y₂}
+    (hPQ : Point.some _ _ h₁ + Point.some _ _ h₂ ∉ W.nonsingularReduction v) :
+    ∃ (x₃ y₃ ℓ : v.valuationSubring) (h : W.Nonsingular x₃ y₃),
+      Point.some _ _ h₁ + Point.some _ _ h₂ = .some _ _ h ∧ (ℓ : F) = W.slope x₁ x₂ y₁ y₂ ∧
+      x₃ ∈ maximalIdeal v.valuationSubring ∧ y₃ ∈ maximalIdeal v.valuationSubring ∧
+      ℓ ^ 2 + (integralModel v.valuationSubring W).a₁ * ℓ -
+        (integralModel v.valuationSubring W).a₂ = x₁ + x₂ + x₃ ∧
+      y₁ - y₂ = ℓ * (x₁ - x₂) ∧
+      (integralModel v.valuationSubring W).a₄ - (integralModel v.valuationSubring W).a₃ * ℓ -
+        (2 * ℓ + (integralModel v.valuationSubring W).a₁) * (y₁ - ℓ * x₁) =
+          x₁ * x₂ + x₁ * x₃ + x₂ * x₃ := by
+  have hxy : ¬((x₁ : F) = x₂ ∧ (y₁ : F) = W.negY x₂ y₂) := by
+    rintro ⟨hx, hy⟩
+    exact hPQ (by rw [Point.add_of_Y_eq hx hy]; exact zero_mem _)
+  rw [Point.add_some hxy] at hPQ ⊢
+  obtain ⟨hx₃, hy₃⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ _).1 hPQ
+  set ℓ := W.slope (x₁ : F) x₂ y₁ y₂
+  have hO {z : F} (hz : v z < 1) : z ∈ v.valuationSubring :=
+    (v.mem_valuationSubring_iff z).2 hz.le
+  have hint (z : v.valuationSubring) : v (z : F) ≤ 1 := (v.mem_valuationSubring_iff _).1 z.2
+  have hℓ : ℓ ∈ v.valuationSubring := (v.mem_valuationSubring_iff ℓ).2
+    (valuation_le_one_of_valuation_addX_le_one v (hint x₁) (hint x₂) hx₃.le)
+  -- the coefficient of `X` in `W(X, ℓ (X − x₁) + y₁) = −(X − x₁) (X − x₂) (X − x₃)`
+  have hc : 2 * (x₁ : F) * ℓ ^ 2 + (W.a₁ * x₁ - 2 * y₁ - W.a₃) * ℓ + (-W.a₁ * y₁ + W.a₄) =
+      x₁ * x₂ + x₁ * W.addX x₁ x₂ ℓ + x₂ * W.addX x₁ x₂ ℓ := by
+    have key := W.addPolynomial_slope h₁.left h₂.left hxy
+    rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
+    exact congrArg Cubic.c ((Cubic.toPoly_injective _ _).1 key)
+  -- the line passes through both points; when `x₁ = x₂` the two points are equal
+  have hL : (y₁ : F) - y₂ = ℓ * (x₁ - x₂) := by
+    by_cases hx : (x₁ : F) = x₂
+    · rw [Y_eq_of_Y_ne h₁.left h₂.left hx fun hy ↦ hxy ⟨hx, hy⟩, hx]
+      ring
+    · have hℓ' : ℓ = (y₁ - y₂) / (x₁ - x₂) := slope_of_X_ne hx
+      rw [hℓ', div_mul_cancel₀ _ (sub_ne_zero.2 hx)]
+  have h2 : ((2 : v.valuationSubring) : F) = 2 := by
+    simpa using map_ofNat (algebraMap v.valuationSubring F) 2
+  refine ⟨⟨_, hO hx₃⟩, ⟨_, hO hy₃⟩, ⟨ℓ, hℓ⟩, nonsingular_add h₁ h₂ hxy, rfl, rfl,
+    (Valuation.mem_maximalIdeal_iff (v := v)).2 hx₃,
+    (Valuation.mem_maximalIdeal_iff (v := v)).2 hy₃, ?_, ?_, ?_⟩ <;> apply Subtype.ext <;>
+    push_cast
+  · simp only [addX, ← integralModel_a₁_eq v.valuationSubring W,
+      ← integralModel_a₂_eq v.valuationSubring W, ValuationSubring.algebraMap_apply]
+    ring
+  · exact hL
+  · simp only [← integralModel_a₁_eq v.valuationSubring W,
+      ← integralModel_a₃_eq v.valuationSubring W, ← integralModel_a₄_eq v.valuationSubring W,
+      ValuationSubring.algebraMap_apply] at hc
+    rw [h2]
+    linear_combination hc
+
+/-- **Twice a point whose tangent slope lies in `𝔪` has singular reduction.** Here the reduction is
+singular at the origin and `a₂ ∈ 𝔪` as well. If `(x, y)` has integral coordinates in `𝔪` and the
+tangent there has slope `ℓ ∈ 𝔪`, that is `ℓ (2 y + a₁ x + a₃) = 3 x² + 2 a₂ x + a₄ − a₁ y` with
+`2 y + a₁ x + a₃ ≠ 0`, then both coordinates of twice the point lie in `𝔪`. -/
+theorem two_nsmul_notMem_of_slope_mem
+    (h₂ : (integralModel v.valuationSubring W).a₂ ∈ maximalIdeal v.valuationSubring)
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x y ℓ : v.valuationSubring} {hxy : W.Nonsingular x y}
+    (hx : x ∈ maximalIdeal v.valuationSubring) (hy : y ∈ maximalIdeal v.valuationSubring)
+    (hℓ : ℓ ∈ maximalIdeal v.valuationSubring)
+    (hne : 2 * y + (integralModel v.valuationSubring W).a₁ * x +
+      (integralModel v.valuationSubring W).a₃ ≠ 0)
+    (hslope : ℓ * (2 * y + (integralModel v.valuationSubring W).a₁ * x +
+      (integralModel v.valuationSubring W).a₃) = 3 * x ^ 2 +
+        2 * (integralModel v.valuationSubring W).a₂ * x + (integralModel v.valuationSubring W).a₄ -
+          (integralModel v.valuationSubring W).a₁ * y) :
+    2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
+  set Wo := integralModel v.valuationSubring W
+  have hy' : (y : F) ≠ W.negY x y := by
+    rw [← coe_negY_integralModel, Ne, Subtype.coe_inj]
+    intro h
+    exact hne (by rw [negY] at h; linear_combination h)
+  have h2 : ((2 : v.valuationSubring) : F) = 2 := by
+    simpa using map_ofNat (algebraMap v.valuationSubring F) 2
+  have h3 : ((3 : v.valuationSubring) : F) = 3 := by
+    simpa using map_ofNat (algebraMap v.valuationSubring F) 3
+  have hslopeF : W.slope (x : F) x y y = ℓ := by
+    rw [slope_of_Y_ne rfl hy', div_eq_iff (sub_ne_zero.2 hy')]
+    have := congrArg ((↑) : v.valuationSubring → F) hslope
+    push_cast at this
+    rw [h2, h3] at this
+    simp only [negY, ← integralModel_a₁_eq v.valuationSubring W,
+      ← integralModel_a₂_eq v.valuationSubring W, ← integralModel_a₃_eq v.valuationSubring W,
+      ← integralModel_a₄_eq v.valuationSubring W, ValuationSubring.algebraMap_apply]
+    linear_combination -this
+  have hx₃ : Wo.toAffine.addX x x ℓ ∈ maximalIdeal v.valuationSubring :=
+    sub_mem (sub_mem (sub_mem (add_mem (Ideal.pow_mem_of_mem _ hℓ 2 two_pos)
+      (Ideal.mul_mem_left _ _ hℓ)) h₂) hx) hx
+  have hy₃ : Wo.toAffine.addY x x y ℓ ∈ maximalIdeal v.valuationSubring :=
+    sub_mem (sub_mem (neg_mem (add_mem (Ideal.mul_mem_right _ _ hℓ) hy))
+      (Ideal.mul_mem_left _ _ hx₃)) h₃
+  -- the coordinates of `2 P` are the images of those computed in the integral model
+  rw [two_nsmul, Point.add_self_of_Y_ne hy', some_notMem_nonsingularReduction_iff v h₃ h₄ h₆,
+    hslopeF, ← coe_addX_integralModel, ← coe_addY_integralModel]
+  exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 hx₃,
+    (Valuation.mem_maximalIdeal_iff (v := v)).1 hy₃⟩
 
 end Affine
 

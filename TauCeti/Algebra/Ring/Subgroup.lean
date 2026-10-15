@@ -40,39 +40,10 @@ This is the additive-subgroup analogue of `AddSubmonoid.closure_mul_closure` fro
 theorem _root_.AddSubgroup.closure_mul_closure (S T : Set R) :
     AddSubgroup.closure S * AddSubgroup.closure T = AddSubgroup.closure (S * T) := by
   apply AddSubgroup.toAddSubmonoid_injective
-  rw [AddSubgroup.mul_toAddSubmonoid, AddSubgroup.closure_toAddSubmonoid,
-    AddSubgroup.closure_toAddSubmonoid, AddSubgroup.closure_toAddSubmonoid,
-    AddSubmonoid.closure_mul_closure]
-  apply le_antisymm
-  · rw [AddSubmonoid.closure_le]
-    rintro _ ⟨a, ha, b, hb, rfl⟩
-    rcases ha with ha | ha <;> rcases hb with hb | hb
-    · exact AddSubmonoid.subset_closure (Or.inl (Set.mul_mem_mul ha hb))
-    · apply AddSubmonoid.subset_closure
-      right
-      rw [Set.mem_neg]
-      simpa using Set.mul_mem_mul ha (Set.mem_neg.mp hb)
-    · apply AddSubmonoid.subset_closure
-      right
-      rw [Set.mem_neg]
-      simpa using Set.mul_mem_mul (Set.mem_neg.mp ha) hb
-    · apply AddSubmonoid.subset_closure
-      left
-      simpa using Set.mul_mem_mul (Set.mem_neg.mp ha) (Set.mem_neg.mp hb)
-  · rw [AddSubmonoid.closure_le]
-    intro x hx
-    rcases hx with hx | hx
-    · rcases hx with ⟨a, ha, b, hb, rfl⟩
-      exact AddSubmonoid.subset_closure <|
-        Set.mul_mem_mul (Or.inl ha) (Or.inl hb)
-    · rw [Set.mem_neg] at hx
-      rcases hx with ⟨a, ha, b, hb, hab⟩
-      apply AddSubmonoid.subset_closure
-      refine ⟨a, Or.inl ha, -b, Or.inr (Set.neg_mem_neg.mpr hb), ?_⟩
-      calc
-        a * -b = -(a * b) := mul_neg _ _
-        _ = -(-x) := congrArg Neg.neg hab
-        _ = x := neg_neg x
+  simp only [AddSubgroup.mul_toAddSubmonoid, AddSubgroup.closure_toAddSubmonoid,
+    AddSubmonoid.closure_union, AddSubmonoid.closure_neg,
+    AddSubmonoid.sup_mul, AddSubmonoid.mul_sup, AddSubmonoid.closure_mul_closure,
+    neg_mul, mul_neg, AddSubmonoid.neg_sup, neg_neg, sup_idem, sup_comm]
 
 /-- If products of generators lie in their additive closure, then that additive closure is
 closed under multiplication. -/

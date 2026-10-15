@@ -285,7 +285,7 @@ theorem isIndecomposableModule_of_isLocalRing_end [IsLocalRing (Module.End A M)]
     IsIndecomposableModule A M :=
   have := nontrivial_of_isLocalRing_end (A := A) (M := M)
   isIndecomposableModule_of_forall_isIdempotentElem fun _ hf ↦
-    IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem hf
+    IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hf
 
 /-- For a module of finite length, indecomposability is **equivalent** to having a local
 endomorphism ring. -/

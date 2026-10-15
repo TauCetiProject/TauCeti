@@ -266,11 +266,7 @@ theorem commute_includeLeft_includeRight_iff_isCocomm :
     Commute (toConv (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)))
         (toConv (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H))) ↔
       _root_.Coalgebra.IsCocomm R H := by
-  simp only [← Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    ← Bialgebra.TensorProduct.includeRight_toAlgHom]
   rw [commute_iff_eq, ← Bialgebra.comulPoint_eq_include_mul]
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom]
   rw [convMul_includeRight_includeLeft]
   constructor
   · intro h
