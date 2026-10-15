@@ -36,13 +36,12 @@ open scoped IntermediateField
 
 namespace Polynomial
 
-/-- An Artin–Schreier polynomial with exponent greater than one has that natural degree. -/
+/-- The nonconstant part of an Artin–Schreier polynomial has its expected natural degree. -/
 @[simp]
-theorem natDegree_X_pow_sub_X_sub_C {R : Type*} [Ring R] [Nontrivial R]
-    {p : ℕ} (u : R) (hp : 1 < p) : (X ^ p - X - C u : R[X]).natDegree = p := by
-  rw [sub_sub, natDegree_sub_eq_left_of_natDegree_lt] <;>
-    rw [natDegree_X_pow]
-  rw [natDegree_X_add_C]
+theorem natDegree_X_pow_sub_X {R : Type*} [Ring R] [Nontrivial R]
+    {p : ℕ} (hp : 1 < p) : (X ^ p - X : R[X]).natDegree = p := by
+  rw [natDegree_sub_eq_left_of_natDegree_lt] <;> rw [natDegree_X_pow]
+  rw [natDegree_X]
   exact hp
 
 end Polynomial
@@ -237,7 +236,8 @@ the form `w ^ p - w`, then `X ^ p - X - u` is irreducible. -/
 theorem irreducible_X_pow_sub_X_sub_C (hu : ∀ w : K, w ^ p - w ≠ u) :
     Irreducible (X ^ p - X - C u : K[X]) := by
   have hne := (monic_polynomial (p := p) u).ne_zero
-  have hdeg := natDegree_X_pow_sub_X_sub_C u (Fact.out : p.Prime).one_lt
+  have hdeg : (X ^ p - X - C u : K[X]).natDegree = p := by
+    rw [natDegree_sub_C, natDegree_X_pow_sub_X (Fact.out : p.Prime).one_lt]
   have hnu : ¬ IsUnit (X ^ p - X - C u : K[X]) := by
     rw [isUnit_iff_degree_eq_zero, degree_eq_natDegree hne, hdeg, Nat.cast_eq_zero]
     exact (Fact.out : p.Prime).ne_zero
@@ -255,7 +255,8 @@ theorem irreducible_X_pow_sub_X_sub_C_iff :
   refine ⟨fun h w hw ↦ ?_, irreducible_X_pow_sub_X_sub_C p⟩
   have hdeg := degree_eq_one_of_irreducible_of_root h (x := w) (by simp [hw])
   rw [degree_eq_natDegree h.ne_zero,
-    natDegree_X_pow_sub_X_sub_C u (Fact.out : p.Prime).one_lt, Nat.cast_eq_one] at hdeg
+    natDegree_sub_C, natDegree_X_pow_sub_X (Fact.out : p.Prime).one_lt,
+    Nat.cast_eq_one] at hdeg
   exact (Fact.out : p.Prime).ne_one hdeg
 
 end Irreducible
