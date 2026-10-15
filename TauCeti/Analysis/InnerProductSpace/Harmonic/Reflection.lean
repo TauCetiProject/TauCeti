@@ -190,7 +190,8 @@ theorem WeaklyHarmonicOn.sub_comp_normalReflection
   have hwl := hw.locallyIntegrableOn
   have hwρ : LocallyIntegrableOn (fun x => w (ρ x)) U volume :=
     (hw.comp_measurePreserving (measurePreserving_normalReflection a)
-      (normalReflection E a).isometry.lipschitz.locallyLipschitzOn hU).locallyIntegrableOn
+      (normalReflection E a).isometry.lipschitzWith.locallyLipschitz.locallyLipschitzOn
+      hU).locallyIntegrableOn
   refine weaklyHarmonicOn_iff.2 ⟨hwl.sub hwρ, fun φ => ?_⟩
   -- The reflected test function `φ ∘ ρ` and the odd combination `ψ = φ - φ ∘ ρ`.
   set φρ := reflectTestFunction hU φ
