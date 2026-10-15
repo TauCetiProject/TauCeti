@@ -141,7 +141,8 @@ class PR:
         return cls(int(p["number"]), p["state"], oid(h["sha"]), p["base"]["ref"],
                    h["ref"], h["repo"]["full_name"], p.get("body") or "", bool(p["draft"]),
                    oid(p["base"]["sha"]), any(l.get("name") == BLOCK_LABEL for l in p.get("labels", [])),
-                   p.get("merged_at") is not None or (p.get("title") or "").startswith("[Merged by Bors] - "))
+                   p.get("merged_at") is not None or bool(re.match(r"^\[Merged by Bors\] - ",
+                                                                  p.get("title") or "", re.I)))
 
 
 def explicit_parents(body):
@@ -334,15 +335,17 @@ class Source:
             raise Gap("cannot test reverse patch application")
         return p.returncode == 0
 
+    def zero_patch(self, base, head):
+        if (base, head) not in self.zero_cache:
+            self.zero_cache[base, head] = self.git(
+                "diff", "--no-ext-diff", "--no-textconv", "--no-renames", "--binary",
+                "--full-index", "--unified=0", base, head).stdout
+        return self.zero_cache[base, head]
+
     def landed(self, parent, base, paths, patch, *, head=None):
         key = base, hashlib.sha256(patch).hexdigest()
         if key not in self.landed_cache:
-            end = head or parent.head
-            if (base, end) not in self.zero_cache:
-                self.zero_cache[base, end] = self.git(
-                    "diff", "--no-ext-diff", "--no-textconv", "--no-renames", "--binary",
-                    "--full-index", "--unified=0", base, end).stdout
-            zero = self.zero_cache[base, end]
+            zero = self.zero_patch(base, head or parent.head)
             # Scan actual main source history, not mergedAt/state/title. Include
             # combined bors squash commits and subsequently modified/reverted files.
             rows = self.git("log", "--first-parent", f"--max-count={MAX_HISTORY + 1}", "--format=%H",
@@ -365,6 +368,13 @@ class Source:
         if isinstance(self.landed_cache[key], Gap):
             raise self.landed_cache[key]
         return self.landed_cache[key]
+
+    def present_at_fork(self, child, base, paths, patch, head):
+        forks = self.git("merge-base", "--all", self.main, child.head).stdout.decode().splitlines()
+        if len(forks) != 1:
+            raise Gap("ambiguous child fork point")
+        zero = self.zero_patch(base, head)
+        return self.contains(forks[0], paths, patch) or self.contains(forks[0], paths, zero, zero=True)
 
 
 @dataclass(frozen=True)
@@ -461,6 +471,8 @@ class Detector:
                     cb, cp, delta = self.source.commit_patch(commit)
                     if (delta and self.source.contains(child.head, cp, delta)
                             and not self.source.landed(parent, cb, cp, delta, head=commit)):
+                        if commit not in commits and self.source.present_at_fork(child, cb, cp, delta, commit):
+                            raise Gap("matched content already present at child's main fork point; base drift")
                         if parent.state == "closed" and parent.landing_claim:
                             raise Gap("closed parent reports landing but exact source equivalence is unproved")
                         kind = ("retained-unmerged-commit" if commit in commits
@@ -507,11 +519,10 @@ def comment_text(evidence, parent_state="open"):
 
 
 def enforce(api, child, parent, evidence, actor):
-    if child.head_repo == REPO and child.landing_claim:
-        # The existing bors branch deleter recognizes its merged-title marker.
-        # A forged/reopened marker must not turn policy closure into deletion.
-        raise Gap("repository-head PR has a bors merge marker; branch preservation unproved, closure declined")
     body = comment_text(evidence, parent.state)
+    preserve_gap = child.head_repo == REPO and child.landing_claim
+    if preserve_gap:
+        body += " Automatic closure is declined because this repository head has a bors merged-title marker; branch preservation requires investigation."
     marker = body.splitlines()[0]
     comments = api.pages(f"issues/{child.number}/comments", 1000)
     # Trust only our installation/account's exact marker; candidate authors cannot
@@ -528,6 +539,8 @@ def enforce(api, child, parent, evidence, actor):
         api.call(f"issues/comments/{int(existing['id'])}", "PATCH", {"body": body})
     if not unchanged(api, child, parent, evidence.main):
         raise Gap("identities changed before close; explanation retained, closure declined")
+    if preserve_gap:
+        raise Gap("repository-head bors marker: branch preservation unproved, closure declined")
     # PATCH closes without deleting the branch. GitHub emits pull_request.closed;
     # bors's existing handler cancels batch/try work just as bors r- does.
     api.call(f"pulls/{child.number}", "PATCH", {"state": "closed"})
@@ -549,6 +562,12 @@ def block(api, child):
         api.call(f"issues/{child.number}/labels", "POST", {"labels": [BLOCK_LABEL]})
     if not any(l["name"] == BLOCK_LABEL for l in api.pages(f"issues/{child.number}/labels", 1000)):
         raise Gap("bors blocking label was not applied; closure declined")
+
+
+def owns_block(api, child, actor):
+    events = [e for e in api.pages(f"issues/{child.number}/events", 1000)
+              if e.get("event") == "labeled" and e.get("label", {}).get("name") == BLOCK_LABEL]
+    return bool(events and max(events, key=lambda e: int(e["id"])).get("actor", {}).get("login") == actor)
 
 
 def membership(data, child):
@@ -604,15 +623,11 @@ def main():
         wake = event.get("workflow_run")
         if wake:
             associated = wake.get("pull_requests") or []
-            if not associated:
-                associated = api.pages(f"commits/{oid(wake['head_sha'])}/pulls", 100)
             numbers = {int(p["number"]) for p in associated}
-            if len(numbers) == 1:
-                args.pr = numbers.pop()
-            else:
-                emit(wake="PR association ambiguous/absent; bounded backlog sweep")
+            emit(wake="bounded backlog sweep", associated_prs=sorted(numbers))
     prs = []
     metadata_gaps = 0
+    incomplete_index = False
     for raw in api.pages("pulls?state=open&sort=created&direction=asc", MAX_PRS):
         try:
             prs.append(PR.parse(raw))
@@ -620,15 +635,16 @@ def main():
             number = raw.get("number")
             emit(index_pr=number, classification="unknown", gap=str(error))
             metadata_gaps += int(not args.pr or args.pr == number)
+            incomplete_index = True
     main_sha = api.main()
     selected = [p for p in prs if not args.pr or p.number == args.pr]
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
     # can still contain unlanded prerequisite work. Never assume closure = landing.
     indexed = {p.number for p in prs}
     references = set().union(*(explicit_parents(p.body) for p in selected)) - indexed
-    if len(references) > 64:
-        raise Gap("closed-parent lookup budget exceeded")
-    for number in sorted(references):
+    for number in sorted(references)[64:]:
+        emit(index_pr=number, classification="unknown", gap="closed-parent lookup budget exceeded")
+    for number in sorted(references)[:64]:
         try:
             prs.append(api.pr(number))
         except Exception as e:
@@ -639,7 +655,7 @@ def main():
     if args.apply and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?", actor):
         raise Gap("STACK_ACTOR is required to authenticate idempotency comments")
     common = run(["git", "rev-parse", "--git-common-dir"]).stdout.decode().strip()
-    failures = metadata_gaps
+    failures, unknowns = 0, metadata_gaps
     with tempfile.TemporaryDirectory(prefix="no-stack-") as directory:
         source = Source(directory, api, main_sha, Path(common) / "objects")
         source.fetch(prs)
@@ -648,6 +664,7 @@ def main():
             emit(index_pr=number, head=detector.prs[number].head,
                  main=main_sha, classification="unknown", gap=gap)
         for child in selected:
+            mutation_started = False
             try:
                 evidence, reasons = detector.detect(child)
                 emit(pr=child.number, head=child.head, main=main_sha,
@@ -655,6 +672,7 @@ def main():
                      evidence=asdict(evidence) if evidence else None, reasons=reasons)
                 if args.apply:
                     if evidence:
+                        mutation_started = True
                         parent = detector.prs[evidence.parent]
                         if not unchanged(api, child, parent, main_sha):
                             raise Gap("identities changed before blocking label")
@@ -672,14 +690,20 @@ def main():
                         emit(pr=child.number, mutation="closed", withdrawal="pull_request.closed webhook")
                         verify_withdrawal(child, before, observation)
                     elif child.blocked:
+                        mutation_started = True
+                        if incomplete_index or detector.gaps:
+                            raise Gap("incomplete parent index; retaining blocking label")
+                        if not owns_block(api, child, actor):
+                            raise Gap("blocking label is not policy-owned; retaining it")
                         if api.main() != main_sha or api.pr(child.number) != child:
                             raise Gap("identities changed before removing obsolete stack label")
                         api.call(f"issues/{child.number}/labels/{BLOCK_LABEL}", "DELETE")
                         emit(pr=child.number, mutation="obsolete blocking label removed")
             except Exception as e:
-                failures += 1
+                unknowns += 1
+                failures += int(mutation_started)
                 emit(pr=child.number, head=child.head, main=main_sha, classification="unknown", gap=str(e))
-        emit(summary=True, selected=len(selected), failures=failures, api_calls=api.calls,
+        emit(summary=True, selected=len(selected), failures=failures, unknowns=unknowns, api_calls=api.calls,
              api_bytes=api.bytes, mode="apply" if args.apply else "dry-run")
     return bool(failures)
 

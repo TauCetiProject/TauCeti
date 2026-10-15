@@ -25,7 +25,9 @@ parent commit patch reverse-applicable to the child's current source tree.
 It must also have an exact unmerged ancestor head or a canonical parent branch
 as its base. For a body-only rebase/cherry-pick link, both the complete current
 parent aggregate and its head commit patch must be present; a shared precursor
-alone cannot establish direction. The source diff and its SHA-256 are reported.
+alone cannot establish direction. Content-only evidence must also be absent at
+the child's main fork point; old main content is base drift, not inherited work.
+The source diff and its SHA-256 are reported.
 Before confirming, the detector checks actual main source history for the same
 complete content, including combined bors squashes and later modifications or
 reverts. GitHub PR closure/mergedAt is never proof of landing. Closed but
@@ -82,8 +84,9 @@ or exceeded bounds produce `unknown` with an explicit gap and no closure.
 
 Main-target PR opened/reopened/edited/synchronize/draft events invoke the trusted
 policy directly. Other bases invoke an unprivileged wake workflow, then the
-main-defined workflow_run observer. A bounded hourly/manual sweep repairs missed
-or coalesced events. The workflow checks out main-defined tooling explicitly;
+main-defined workflow_run observer. Every event performs a bounded backlog sweep,
+so coalesced events cannot starve a pending hourly sweep. Manual dispatch can
+select one PR. The workflow checks out main-defined tooling explicitly;
 candidate-defined code never receives its app token. Every run publishes JSONL
 in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables enforcement;
 otherwise all triggers audit only. Manual dispatch additionally defaults to
@@ -96,8 +99,9 @@ It writes no commit statuses and makes no admission mutations for ordinary or
 unknown PRs. Moving main therefore does not invalidate unrelated clean heads or
 consume recurring status slots. The existing build, bump-guard, scope, review and
 publication gates remain. An obsolete policy label is removed only after a
-complete no-proof result and fresh identity checks; uncertainty retains a prior
-block. Existing status/roadmap label reconciliation preserves this policy label.
+complete no-proof result, complete parent index, fresh identity checks and a
+latest label event owned by the policy bot. Human-applied labels and uncertainty
+retain a prior block. Existing status/roadmap label reconciliation preserves it.
 Parent/content changes are reconsidered on subsequent sweeps; no waiting PR
 builds/rebases are started. A deleted fork is recorded per PR, not a reason to
 abort all other observations. Failed individual ref fetches likewise produce gaps.
@@ -118,6 +122,10 @@ bors's existing handler marks the patch closed and cancels its waiting/running
 batch and try work, the same withdrawal route as bors r-. Rollout must verify
 an actual admitted child's removal using the bors observation endpoint, not just
 infer it from a successful GitHub API response.
+Unknown detections remain explicit in the audit summary; only mutation or
+withdrawal failures make a completed per-PR sweep fail. Global observation
+failures still fail the run. Closed-parent budget overflow affects the children
+naming unavailable parents, rather than preventing unrelated classifications.
 The apply audit records read-only bors membership before the blocking label and
 close, then makes at most six observations (five-second gaps) after close. A
 still-admitted child fails the run visibly. Missing pre-close observations are

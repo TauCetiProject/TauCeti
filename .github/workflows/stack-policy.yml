@@ -24,7 +24,8 @@ permissions:
   contents: read
 
 # Serialize comment/close transactions so retries cannot duplicate comments.
-# Superseded pending event runs are covered by the bounded hourly sweep.
+# Every event also sweeps the backlog, so replacing a pending scheduled run
+# with an event cannot starve enforcement under continuous PR traffic.
 concurrency:
   group: tauceti-no-stacking
   cancel-in-progress: false
@@ -58,7 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           STACK_ACTOR: ${{ steps.app-token.outputs.app-slug }}[bot]
-          REQUESTED_PR: ${{ inputs.pr || github.event.pull_request.number || 0 }}
+          REQUESTED_PR: ${{ inputs.pr || 0 }}
           APPLY_ENABLED: ${{ vars.NO_STACK_APPLY == 'true' && (github.event_name != 'workflow_dispatch' || !inputs.dry-run) }}
         run: |
           args=()

@@ -120,6 +120,33 @@ class GitFixtures(unittest.TestCase):
         child = self.pr(2)
         self.assertIsNone(self.detector().detect(child)[0])
 
+    def test_old_main_content_is_not_a_rebased_parent_restore(self):
+        for restores_file in (True, False):
+            with self.subTest(restores_file=restores_file):
+                self.setUp()
+                if restores_file:
+                    self.write("G", "original main content\n")
+                    self.commit("old main has G")
+                git(self.root, "checkout", "-b", "child")
+                self.write("own", "child's independent change\n")
+                self.commit("own work")
+                child = self.pr(2, "Depends on #1")
+                git(self.root, "checkout", "main")
+                if restores_file:
+                    git(self.root, "rm", "G")
+                else:
+                    self.write("G", "new main content\n")
+                self.commit("main changes G")
+                git(self.root, "checkout", "-b", "parent")
+                if restores_file:
+                    self.write("G", "original main content\n")
+                else:
+                    git(self.root, "rm", "G")
+                self.commit("parent reverses main's change")
+                self.pr(1)
+                with self.assertRaisesRegex(sp.Gap, "fork point; base drift"):
+                    self.detector().detect(child)
+
     def test_parent_landed_normally(self):
         parent, child = self.parent_child(explicit=True)
         git(self.root, "update-ref", "refs/heads/main", parent.head)
@@ -333,6 +360,7 @@ class FakeAPI:
         self.fail_close = False
         self.race = None
         self.labels = set()
+        self.events = []
 
     def main(self):
         return self.sha
@@ -345,6 +373,8 @@ class FakeAPI:
             return copy.deepcopy(self.comments)
         if path.endswith("/labels"):
             return [{"name": label} for label in sorted(self.labels)]
+        if path.endswith("/events"):
+            return self.events
         raise AssertionError(f"unexpected page path: {path}")
 
     def call(self, path, method="GET", data=None):
@@ -387,9 +417,11 @@ class MutationTests(unittest.TestCase):
 
     def test_forged_merge_marker_cannot_trigger_repository_branch_deletion(self):
         self.child = sp.PR(**{**sp.asdict(self.child), "landing_claim": True})
+        self.api.prs[self.child.number] = self.child
         with self.assertRaisesRegex(sp.Gap, "branch preservation"):
             self.enforce()
-        self.assertEqual(self.api.calls, [])
+        self.assertEqual([c[1] for c in self.api.calls], ["POST"])
+        self.assertIn("Automatic closure is declined", self.api.calls[0][2]["body"])
 
     def test_comment_failure_does_not_close(self):
         self.api.fail_comment = True
@@ -528,7 +560,7 @@ class MainTests(unittest.TestCase):
         deleted["number"] = 3
         deleted["head"]["repo"] = None
         self.raw.append(deleted)
-        self.assertTrue(self.main("--apply"))
+        self.assertFalse(self.main("--apply"))
         self.assertEqual(self.api.calls, [])
 
     def test_failure_on_one_pr_does_not_write_error_status_or_abort_other_prs(self):
@@ -539,7 +571,7 @@ class MainTests(unittest.TestCase):
                 raise sp.Gap("incomplete source")
             return None, []
         self.detector.detect = result
-        self.assertTrue(self.main("--apply"))
+        self.assertFalse(self.main("--apply"))
         self.assertEqual(visited, [1, 2])
         self.assertEqual(self.api.calls, [])
 
@@ -548,14 +580,41 @@ class MainTests(unittest.TestCase):
         sp.block(self.api, self.child)
         self.assertEqual(sum(method == "POST" for _, method, _ in self.api.calls), 1)
 
-    def test_workflow_run_association_uses_current_canonical_pr(self):
+    def test_workflow_run_association_keeps_full_backlog_sweep(self):
         visited = []
         self.detector.detect = lambda p: (visited.append(p.number) or None, [])
         with tempfile.TemporaryDirectory() as directory:
             event = Path(directory) / "event.json"
             event.write_text(json.dumps({"workflow_run": {"pull_requests": [{"number": 2}]}}))
             self.assertFalse(self.main("--github-event", str(event)))
-        self.assertEqual(visited, [2])
+        self.assertEqual(visited, [1, 2])
+
+    def test_closed_parent_budget_does_not_abort_unrelated_children(self):
+        self.raw[1]["body"] = "Dependencies: " + ", ".join(f"#{n}" for n in range(100, 165))
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+        with patch.object(self.api, "pr", side_effect=sp.Gap("missing prerequisite")) as read:
+            self.assertFalse(self.main())
+        self.assertEqual(read.call_count, 64)
+        self.assertEqual(visited, [1, 2])
+
+    def test_incomplete_index_and_human_label_retain_prior_block(self):
+        self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
+        for incomplete in (True, False):
+            self.detector.gaps = {1: "source unavailable"} if incomplete else {}
+            self.assertTrue(self.main("--apply", "--pr", "2"))
+            self.assertFalse(any(method == "DELETE" for _, method, _ in self.api.calls))
+
+    def test_only_latest_policy_owned_label_can_be_removed(self):
+        self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
+        self.api.events = [{"id": 1, "event": "labeled", "label": {"name": sp.BLOCK_LABEL},
+                            "actor": {"login": "trusted[bot]"}}]
+        self.assertFalse(self.main("--apply", "--pr", "2"))
+        self.assertEqual(self.api.calls[-1][1], "DELETE")
+        self.api.calls.clear()
+        self.api.events.append({**self.api.events[0], "id": 2, "actor": {"login": "human"}})
+        self.assertTrue(self.main("--apply", "--pr", "2"))
+        self.assertEqual(self.api.calls, [])
 
     def test_failed_label_write_does_not_abort_remaining_prs_or_close(self):
         other = sp.PR(3, "open", "e" * 40, "main", "other", sp.REPO, "", False, "a" * 40)
