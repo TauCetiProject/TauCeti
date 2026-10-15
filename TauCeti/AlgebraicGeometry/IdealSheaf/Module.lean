@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
 public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
 
 /-!
@@ -165,3 +166,22 @@ instance isIso_sheafι_top : IsIso (⊤ : X.IdealSheafData).sheafι := by
 end
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X Y : Scheme.{u}}
+
+/-- Sections of the ideal sheaf of a closed immersion are exactly the regular functions
+whose pullback to its source vanishes. -/
+@[simp]
+lemma mem_ker_sections_iff (f : X ⟶ Y) [IsClosedImmersion f]
+    {U : Y.Opens} {s : Γ(Y, U)} :
+    s ∈ f.ker.sections U ↔ f.app U s = 0 := by
+  rw [IdealSheafData.mem_sections_iff]
+  have hinj := (ConcreteCategory.bijective_of_isIso
+    (f.toImage.app (f.ker.subschemeι ⁻¹ᵁ U))).1
+  rw [← (map_eq_zero_iff _ hinj), ← CommRingCat.comp_apply, ← Scheme.Hom.comp_app]
+  have hfac : f.toImage ≫ f.ker.subschemeι = f := f.toImage_imageι
+  exact (congrArg (fun g : X ⟶ Y ↦ g.app U s = 0) hfac).to_iff
+
+end AlgebraicGeometry.Scheme.Hom

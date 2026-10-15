@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 /-!
 # The rational basis of the adic spectrum
 
-**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.29, Remark 7.30(5),
+**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.29, Remark 7.30(4) and (5),
 and Theorem 7.35.**
 
 Let `P = (A₀,I)` be a pair of definition of a Huber ring. The rational subsets
@@ -49,6 +49,10 @@ the basis arguments uses it.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit`: a
+  rational subset `R(T/s)` with unit denominator belongs to the family for every finite `T`, which
+  is Wedhorn Remark 7.30(4); `TauCeti.ValuationSpectrum.setOf_vle_one_mem_spaRationalFamily` is
+  its case `R(f/1) = {v : v(f) ≤ 1}`.
 * `TauCeti.ValuationSpectrum.inter_mem_spaRationalFamily`: the family is closed under binary
   intersections, which is Wedhorn Remark 7.30(5).
 * `TauCeti.ValuationSpectrum.biInter_mem_spaRationalFamily`: the family is closed under *finite*
@@ -64,6 +68,8 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.isTopologicalBasis_spaRationalFamily`: the family is a basis for
   the topology of `spa Aplus`, with `TauCeti.ValuationSpectrum.isBasis_spaRationalOpens` the same
   statement in the `Opens.IsBasis` form.
+* `TauCeti.ValuationSpectrum.isBasis_range_spaBasicOpen`: for a fixed pair of definition, the
+  rational opens of admissible presentations form a basis, indexed by the presentations.
 * `TauCeti.ValuationSpectrum.isCompact_of_mem_spaRationalFamily`: every member of the family is
   quasi-compact. Each result also has an `_of_pairOfDefinition` form for use with a specified
   pair of definition.
@@ -164,6 +170,28 @@ theorem univ_mem_spaRationalFamily (Aplus : Subring A) :
     exact isOpen_univ
   · rw [rationalSubset_singleton_one]
     exact (Subtype.coe_preimage_self (spa Aplus)).symm
+
+/-- **Wedhorn Remark 7.30(4).** If the denominator `s` is a unit, then `R(T/s)` is a rational
+subset for every finite `T`, whether or not `T · A` is open: it is also `R((T ∪ {s})/s)`, and the
+numerator ideal of that presentation is the unit ideal. -/
+theorem val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit (Aplus : Subring A)
+    (T : Finset A) {s : A} (hs : IsUnit s) :
+    Subtype.val ⁻¹' rationalSubset Aplus T s ∈ spaRationalFamily Aplus := by
+  classical
+  refine ⟨insert s T, s, ?_, by rw [rationalSubset_insert_self]⟩
+  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr
+    (Finset.mem_insert_self s T))) hs]
+  exact isOpen_univ
+
+/-- **Wedhorn Remark 7.30(4)** for the denominator `1`: for every `f : A`, the locus
+`{v : v(f) ≤ 1}` of `Spa(A, A⁺)` is the rational subset `R(f/1)`. -/
+theorem setOf_vle_one_mem_spaRationalFamily (Aplus : Subring A) (f : A) :
+    {v : spa Aplus | v.1.toValuativeRel.vle f 1} ∈ spaRationalFamily Aplus := by
+  have h : {v : spa Aplus | v.1.toValuativeRel.vle f 1} =
+      Subtype.val ⁻¹' rationalSubset Aplus {f} 1 := by
+    ext v
+    simp [v.1.toValuativeRel.not_vle_one_zero]
+  exact h ▸ val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit Aplus {f} isUnit_one
 
 section TopologicalRing
 
@@ -286,6 +314,18 @@ theorem exists_presentation_mem_spaBasicOpen_le (P : PairOfDefinition A) {Aplus 
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalFamily_iff.mp hW
   exact ⟨⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩, hT, mem_spaBasicOpen.mpr hxW,
     fun y hy ↦ hWU (mem_spaBasicOpen.mp hy)⟩
+
+/-- **The rational opens of admissible presentations form a basis of `Spa(A,A⁺)`**: the basic opens
+`R(p.num / p.den)` of the presentations `p` relative to a fixed pair of definition whose numerator
+ideal is open. This is `exists_presentation_mem_spaBasicOpen_le` in the `Opens.IsBasis` form, with
+the basis indexed by presentations, as consumers comparing sections presentation by presentation
+need. -/
+theorem isBasis_range_spaBasicOpen (P : PairOfDefinition A) (Aplus : Subring A) :
+    Opens.IsBasis (Set.range fun p : {p : Presentation P //
+      IsOpen (Ideal.span (p.num : Set A) : Set A)} ↦ spaBasicOpen Aplus p.1.num p.1.den) := by
+  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
+  obtain ⟨p, hp, hxp, hle⟩ := exists_presentation_mem_spaBasicOpen_le P hx
+  exact ⟨_, ⟨⟨p, hp⟩, rfl⟩, hxp, hle⟩
 
 /-- **Rational subsets form a basis of `Spa(A,A⁺)`**, without choosing a pair of definition
 of the Huber ring. -/

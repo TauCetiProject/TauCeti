@@ -61,6 +61,14 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
   immersion `f` along `g` has image `g⁻¹(f(X))`.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.forgetToPresheafedSpace_preservesPullback_of_left`: the
   forgetful functor to presheafed spaces preserves pullbacks of open immersions.
+* `TauCeti.PreAdicSpace.Hom.prop_restrictPreimage_iff_of_isOpenImmersion`: a morphism that
+  becomes the restriction of `f` over `V` after composing with open immersions onto `V` and onto
+  `f⁻¹(V)` has the same isomorphism-invariant properties as that restriction.
+* `TauCeti.PreAdicSpace.Hom.prop_restrictPreimage_restrictPreimage_iff`: restricting over an open
+  and then over an open of it is restricting over the image of the second open.
+* `TauCeti.PreAdicSpace.Hom.prop_restrictPreimage_of_forall_exists_le`: a property that descends
+  along open covers of the target holds over an open once it holds over a neighbourhood inside it
+  of each of its points.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion`, including its
 construction of pullbacks along open immersions.
@@ -436,6 +444,95 @@ theorem restrictPreimage_base_apply
     (f.restrictPreimage V).base x = ⟨f.base x.1, Opens.mem_map.mp x.2⟩ := by
   apply Subtype.ext
   exact congrArg (fun g ↦ g.base x) (f.restrictPreimage_ofRestrict V)
+
+
+/-- **Restrictions of a morphism can be recognized through open immersions.** Let `f : X ⟶ Y` be
+a morphism of pre-adic spaces and `V` an open of `Y`. If open immersions `v : Y' ⟶ Y` and
+`u : X' ⟶ X` have images `V` and `f⁻¹(V)`, and `f' : X' ⟶ Y'` satisfies `f' ≫ v = u ≫ f`, then
+`f'` is the restriction `f⁻¹(V) → V` of `f` up to the isomorphisms of `X'` and `Y'` with the open
+subspaces. So every isomorphism-invariant property holds for one exactly when it holds for the
+other. -/
+theorem prop_restrictPreimage_iff_of_isOpenImmersion (P : MorphismProperty PreAdicSpace.{u})
+    [P.RespectsIso] {X' Y' : PreAdicSpace.{u}} (f' : X' ⟶ Y') (u : X' ⟶ X) (v : Y' ⟶ Y)
+    [IsOpenImmersion u] [IsOpenImmersion v] (hv : Set.range v.base = V)
+    (hu : Set.range u.base = f.base ⁻¹' V) (w : f' ≫ v = u ≫ f) :
+    P (f.restrictPreimage V) ↔ P f' := by
+  -- the images are compared pointwise, as the bases of `ofRestrict` are inclusions of opens only
+  -- up to unfolding the restricted spaces
+  have hV : Set.range v.base = Set.range (Y.ofRestrict V.isOpenEmbedding).base := by
+    rw [hv]
+    ext y
+    exact ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, by rintro ⟨z, rfl⟩; exact z.2⟩
+  have hU : Set.range u.base =
+      Set.range (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding).base := by
+    rw [hu]
+    ext x
+    exact ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨z, rfl⟩; exact z.2⟩
+  let eY := IsOpenImmersion.isoOfRangeEq v (Y.ofRestrict V.isOpenEmbedding) hV
+  let eX := IsOpenImmersion.isoOfRangeEq u
+    (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding) hU
+  -- `f'` is the restriction of `f`, up to the two identifications
+  have hsq : f' ≫ eY.hom = eX.hom ≫ f.restrictPreimage V := by
+    rw [← cancel_mono (Y.ofRestrict V.isOpenEmbedding), Category.assoc, Category.assoc,
+      IsOpenImmersion.isoOfRangeEq_hom_comp, restrictPreimage_ofRestrict,
+      IsOpenImmersion.isoOfRangeEq_hom_comp_assoc, w]
+  rw [← MorphismProperty.cancel_left_of_respectsIso P eX.hom, ← hsq,
+    MorphismProperty.cancel_right_of_respectsIso P f' eY.hom]
+
+/-- **Restricting twice is restricting once**: for a morphism `f : X ⟶ Y`, an open `W` of `Y` and
+an open `O` of the restriction of `Y` to `W`, an isomorphism-invariant property holds for `f`
+restricted over `W` and then over `O` exactly when it holds for `f` restricted over the image of
+`O` in `Y`. -/
+theorem prop_restrictPreimage_restrictPreimage_iff (P : MorphismProperty PreAdicSpace.{u})
+    [P.RespectsIso] (W : Opens Y) (O : Opens (Y.restrict W.isOpenEmbedding)) :
+    P ((f.restrictPreimage W).restrictPreimage O) ↔
+      P (f.restrictPreimage (W.isOpenEmbedding.isOpenMap.functor.obj O)) := by
+  refine (prop_restrictPreimage_iff_of_isOpenImmersion f _ P _
+    ((X.restrict ((Opens.map f.base).obj W).isOpenEmbedding).ofRestrict
+        ((Opens.map (f.restrictPreimage W).base).obj O).isOpenEmbedding ≫
+      X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding)
+    ((Y.restrict W.isOpenEmbedding).ofRestrict O.isOpenEmbedding ≫ Y.ofRestrict W.isOpenEmbedding)
+    ?_ ?_ ?_).symm
+  · ext y
+    constructor
+    · rintro ⟨⟨z, hz⟩, rfl⟩
+      exact ⟨z, hz, rfl⟩
+    · rintro ⟨z, hz, rfl⟩
+      exact ⟨⟨z, hz⟩, rfl⟩
+  · ext x
+    constructor
+    · rintro ⟨⟨z, hz⟩, rfl⟩
+      refine ⟨(f.restrictPreimage W).base z, hz, ?_⟩
+      rw [restrictPreimage_base_apply]
+      rfl
+    · rintro ⟨z, hz, hzx⟩
+      have hxW : f.base x ∈ W := hzx ▸ z.2
+      let x' : X.restrict ((Opens.map f.base).obj W).isOpenEmbedding := ⟨x, Opens.mem_map.mpr hxW⟩
+      have heq : (f.restrictPreimage W).base x' = z :=
+        (f.restrictPreimage_base_apply W x').trans (Subtype.ext hzx.symm)
+      exact ⟨⟨x', Opens.mem_map.mpr (heq.symm ▸ hz)⟩, rfl⟩
+  · simp
+
+/-- **Restricting over an open covered by good opens**: let `P` be an isomorphism-invariant
+property of morphisms that descends along open covers of the target. If every point of an open `W`
+of `Y` has an open neighbourhood `V ≤ W` over which the restriction of `f` has `P`, then so does
+the restriction `f⁻¹(W) → W`. -/
+theorem prop_restrictPreimage_of_forall_exists_le (P : MorphismProperty PreAdicSpace.{u})
+    [P.RespectsIso]
+    (hP : ∀ {X' Y' : PreAdicSpace.{u}} (g : X' ⟶ Y') {ι : Type u} (V : ι → Opens Y'),
+      iSup V = ⊤ → (∀ i, P (g.restrictPreimage (V i))) → P g)
+    (W : Opens Y) (h : ∀ y : W, ∃ V : Opens Y, y.1 ∈ V ∧ V ≤ W ∧ P (f.restrictPreimage V)) :
+    P (f.restrictPreimage W) := by
+  choose V hyV hVW hV using h
+  -- the opens `V y`, read as opens of `Y|_W`, cover it
+  refine hP _ (fun y ↦ (Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj (V y))
+    (eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, Opens.mem_map.mpr (hyV y)⟩) fun y ↦ ?_
+  have hO : W.isOpenEmbedding.isOpenMap.functor.obj
+      ((Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj (V y)) = V y :=
+    (Opens.functor_obj_map_obj W.isOpenEmbedding.isOpenMap (V y)).trans
+      (by rw [Opens.isOpenEmbedding_obj_top, inf_eq_right.mpr (hVW y)])
+  rw [prop_restrictPreimage_restrictPreimage_iff f P, hO]
+  exact hV y
 
 end Hom
 

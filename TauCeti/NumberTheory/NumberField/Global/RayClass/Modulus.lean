@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -29,7 +30,7 @@ This file builds that vocabulary:
 * the group `idealsPrimeTo 𝔪` of invertible fractional ideals and the monoid
   `integralIdealsPrimeTo 𝔪` of nonzero integral ideals that are prime to the finite part.
 
-The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway 𝔪.support` and
+The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway K 𝔪.support` and
 `TauCeti.NumberFieldArithmetic.integralIdealsAway 𝔪.support`: there is exactly one group of
 prime-to fractional ideals and one monoid of prime-to integral ideals, and both are the ones built
 away from a finite set of primes.
@@ -403,19 +404,17 @@ theorem congruenceSubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) 
 
 /-- The subgroup of `Kˣ` of elements that are units at every prime dividing the finite part of the
 modulus.  This is the domain of reduction to the residue units. -/
-def primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
-  carrier := {x | ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
-    v.valuation K (x : K) = 1}
-  one_mem' := by simp
-  mul_mem' := fun hx hy v hv ↦ by
-    rw [Units.val_mul, map_mul, hx v hv, hy v hv, one_mul]
-  inv_mem' := fun hx v hv ↦ by
-    rw [Units.val_inv_eq_inv_val, map_inv₀, hx v hv, inv_one]
+noncomputable abbrev primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ :=
+  (𝔪.support : Set (HeightOneSpectrum (𝓞 K)))ᶜ.unit K
 
-@[simp] theorem mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ} :
+@[simp↓] theorem mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ} :
     x ∈ primeToSubgroup 𝔪 ↔
-      ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 :=
-  Iff.rfl
+      ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 := by
+  -- Mathlib has no S-unit membership lemma; unfold the defining valuation condition.
+  change (∀ v ∉ (𝔪.support : Set (HeightOneSpectrum (𝓞 K)))ᶜ,
+    v.valuation K (x : K) = 1) ↔ _
+  simp only [Set.mem_compl_iff, Finset.mem_coe,
+    not_not, Modulus.mem_support_iff]
 
 /-- A larger finite part has a smaller prime-to subgroup.  This is the carrier map used when
 changing the finite part in a reduction statement. -/
@@ -431,7 +430,7 @@ theorem primeToSubgroup_le_of_dvd {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart �
 the principal ideal of an element congruent to one prime to the modulus. -/
 theorem congruenceSubgroup_le_primeToSubgroup (𝔪 : Modulus K) :
     congruenceSubgroup 𝔪 ≤ primeToSubgroup 𝔪 :=
-  fun _ hx v hv ↦ hx.valuation_eq_one (v := v) hv
+  fun _ hx ↦ mem_primeToSubgroup.mpr fun v hv ↦ hx.valuation_eq_one (v := v) hv
 
 /-- The units of `𝓞 K` congruent to one modulo `𝔪`.  Its index in `(𝓞 K)ˣ` is the unit correction
 in the ray class number formula. -/
@@ -504,7 +503,7 @@ multiplicity vanishes at every prime dividing the finite part.  There is one suc
 built away from a finite set of primes. -/
 noncomputable abbrev idealsPrimeTo (𝔪 : Modulus K) :
     Subgroup (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
-  NumberFieldArithmetic.idealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.idealsAway K 𝔪.support
 
 /-- Coprimality of a nonzero integral ideal to a modulus: it is prime to the support, that is, to
 the finite part.  This is the membership predicate of `integralIdealsPrimeTo`. -/
@@ -549,7 +548,7 @@ theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K
 /-- **The monoid of nonzero integral ideals prime to a modulus.**  There is one such monoid, the
 one built away from a finite set of primes; its membership predicate is `Modulus.IsCoprimeTo`. -/
 noncomputable abbrev integralIdealsPrimeTo (𝔪 : Modulus K) : Submonoid (Ideal (𝓞 K)) :=
-  NumberFieldArithmetic.integralIdealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) 𝔪.support
 
 theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     I ∈ integralIdealsPrimeTo 𝔪 ↔ 𝔪.IsCoprimeTo I :=

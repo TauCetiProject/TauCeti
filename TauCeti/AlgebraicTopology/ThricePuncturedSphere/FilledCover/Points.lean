@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoodComponents
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
 
+import TauCeti.Topology.Covering.Finite
+
 /-!
 # Points of the filled cover
 
@@ -70,6 +72,45 @@ theorem equivSum_overOne (c) : equivSum p (overOne p c) = Sum.inr (Sum.inl c) :=
 
 @[simp]
 theorem equivSum_overInf (c) : equivSum p (overInf p c) = Sum.inr (Sum.inr c) := (rfl)
+
+/-- The added points as pairs `⟨q, c⟩` of a puncture `q` and a connected component `c` of
+`p ⁻¹' D_q*`, so that the three punctures can be handled by one argument. -/
+def sigmaEquiv : FilledPoint p ≃ Σ q : Puncture, ConnectedComponents (p ⁻¹' q.neighborhood) :=
+  (equivSum p).trans
+    { toFun
+        | .inl c => ⟨.zero, c⟩
+        | .inr (.inl c) => ⟨.one, c⟩
+        | .inr (.inr c) => ⟨.inf, c⟩
+      invFun
+        | ⟨.zero, c⟩ => .inl c
+        | ⟨.one, c⟩ => .inr (.inl c)
+        | ⟨.inf, c⟩ => .inr (.inr c)
+      left_inv := by rintro (c | c | c) <;> rfl
+      right_inv := by rintro ⟨_ | _ | _, c⟩ <;> rfl }
+
+@[simp]
+theorem sigmaEquiv_overZero (c) : sigmaEquiv p (overZero p c) = ⟨.zero, c⟩ := by
+  simp [sigmaEquiv]
+
+@[simp]
+theorem sigmaEquiv_overOne (c) : sigmaEquiv p (overOne p c) = ⟨.one, c⟩ := by
+  simp [sigmaEquiv]
+
+@[simp]
+theorem sigmaEquiv_overInf (c) : sigmaEquiv p (overInf p c) = ⟨.inf, c⟩ := by
+  simp [sigmaEquiv]
+
+@[simp]
+theorem sigmaEquiv_symm_zero (c) : (sigmaEquiv p).symm ⟨.zero, c⟩ = overZero p c := by
+  rfl
+
+@[simp]
+theorem sigmaEquiv_symm_one (c) : (sigmaEquiv p).symm ⟨.one, c⟩ = overOne p c := by
+  rfl
+
+@[simp]
+theorem sigmaEquiv_symm_inf (c) : (sigmaEquiv p).symm ⟨.inf, c⟩ = overInf p c := by
+  rfl
 
 theorem overZero_injective : Function.Injective (overZero p) := Sum.inl_injective
 
@@ -181,5 +222,70 @@ theorem natCard_eq_cycleCounts :
   omega
 
 end FilledPoint
+
+open Equiv.Perm FilledPoint
+
+namespace FilledCover
+
+variable {p}
+
+/-- **The added points are the cycles of the monodromy.** For a cover whose fibre over `1/2` is
+numbered by `ν`, the components of `p ⁻¹' D_q*` over the punctures `0`, `1` and `∞`, which are
+the points added in `FilledCover p`, are the cycles of `σ0`, `σ1` and `σinf` respectively
+(`IsCoveringMap.sameCycleQuotientσ0EquivConnectedComponents` and its analogues). -/
+def indexEquiv (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) :
+    FilledPoint p ≃ Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ0) ⊕
+      Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ1) ⊕
+        Quotient (SameCycle.setoid (hp.monodromyTriple ν).σinf) :=
+  (equivSum p).trans <| (hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm.sumCongr <|
+    (hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm.sumCongr
+      (hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm
+
+@[simp]
+theorem indexEquiv_overZero (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν (overZero p c) =
+      .inl ((hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm c) := by
+  simp [indexEquiv]
+
+@[simp]
+theorem indexEquiv_overOne (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν (overOne p c) =
+      .inr (.inl ((hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm c)) := by
+  simp [indexEquiv]
+
+@[simp]
+theorem indexEquiv_overInf (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν (overInf p c) =
+      .inr (.inr ((hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm c)) := by
+  simp [indexEquiv]
+
+@[simp]
+theorem indexEquiv_symm_inl (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
+    (indexEquiv hp ν).symm (.inl a) =
+      overZero p (hp.sameCycleQuotientσ0EquivConnectedComponents ν a) := by
+  rw [Equiv.symm_apply_eq, indexEquiv_overZero, Equiv.symm_apply_apply]
+
+@[simp]
+theorem indexEquiv_symm_inr_inl (hp : IsCoveringMap p) {n : ℕ}
+    (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
+    (indexEquiv hp ν).symm (.inr (.inl a)) =
+      overOne p (hp.sameCycleQuotientσ1EquivConnectedComponents ν a) := by
+  rw [Equiv.symm_apply_eq, indexEquiv_overOne, Equiv.symm_apply_apply]
+
+@[simp]
+theorem indexEquiv_symm_inr_inr (hp : IsCoveringMap p) {n : ℕ}
+    (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
+    (indexEquiv hp ν).symm (.inr (.inr a)) =
+      overInf p (hp.sameCycleQuotientσinfEquivConnectedComponents ν a) := by
+  rw [Equiv.symm_apply_eq, indexEquiv_overInf, Equiv.symm_apply_apply]
+
+/-- **A finite cover has finitely many added points.** This is `FilledPoint.finite`, applied to a
+numbering of the fibre over `1/2`, which is finite as soon as one fibre is. -/
+theorem finite_filledPoint (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere}
+    (hfin : Finite (p ⁻¹' {z₀})) : Finite (FilledPoint p) :=
+  have := finite_fiber_of_finite_fiber hp hfin basePt
+  FilledPoint.finite p hp (Finite.equivFin _)
+
+end FilledCover
 
 end TauCeti

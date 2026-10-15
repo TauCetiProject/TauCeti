@@ -31,6 +31,9 @@ same base-change argument.
   post-composition in the value algebra.
 * `TauCeti.AlgHom.baseChangePointsMulEquiv_mapDomain`: base change of points commutes with
   pre-composition in the coordinate bialgebra.
+* `TauCeti.AlgHom.mapDomain_pointsBaseChange`: the same for base change of base-valued points.
+* `TauCeti.AlgHom.mapDomain_comp_pointsBaseChange_comp`: base change of base-valued points
+  preserves a commuting square of monoid homomorphisms into points.
 
 ## See also
 
@@ -141,6 +144,30 @@ lemma baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
       f.ofConv (1 ⊗ₜ[k] φ a) := by
   simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
     _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
+
+variable (K) in
+/-- Base change of base-valued points is natural in the coordinate bialgebra: pre-composing the
+base change of a point `f` of `B` by the scalar extension of `φ : A →ₐc[k] B` gives the base change
+of `f ∘ φ`. -/
+lemma mapDomain_pointsBaseChange (φ : A →ₐc[k] B) (f : WithConv (B →ₐ[k] k)) :
+    mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
+        (pointsBaseChange K f) =
+      pointsBaseChange K (mapDomain φ f) := by
+  ext a
+  simp
+
+variable (K) in
+/-- Base change of base-valued points preserves a commuting square: if families of points
+`ψ : M →* B(k)` and `ψ' : N →* A(k)` satisfy `φ ∘ ψ = ψ' ∘ g` on points, then so do their base
+changes along `k → K`, with `φ` replaced by its scalar extension. -/
+lemma mapDomain_comp_pointsBaseChange_comp {M N : Type*} [Monoid M] [Monoid N]
+    (φ : A →ₐc[k] B) {ψ : M →* WithConv (B →ₐ[k] k)} {ψ' : N →* WithConv (A →ₐ[k] k)}
+    {g : M →* N} (h : (mapDomain φ).comp ψ = ψ'.comp g) :
+    (mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)).comp
+        ((pointsBaseChange K).comp ψ) = ((pointsBaseChange K).comp ψ').comp g := by
+  ext1 m
+  simp only [MonoidHom.comp_apply, mapDomain_pointsBaseChange]
+  rw [← MonoidHom.comp_apply (mapDomain φ), h, MonoidHom.comp_apply]
 
 end MapDomain
 

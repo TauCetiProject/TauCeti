@@ -39,6 +39,9 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   of ring elements is closed — the closedness behind Wedhorn's Corollary 7.12.
 * `TauCeti.ValuationSpectrum.specializes_of_forall_mem_basicOpen` : a point specializes to every
   point whose basic open neighbourhoods all contain it.
+* `TauCeti.ValuationSpectrum.vle_of_specializes` and
+  `TauCeti.ValuationSpectrum.vlt_of_specializes` : comparisons `w(f) ≤ w(s) ≠ 0` at a
+  specialization `w` of `v` hold at `v`, and strict comparisons at `v` persist at `w`.
 * `TauCeti.ValuationSpectrum.quotientLift 𝔞 h` : Lift the implicitly inferred point `v` with
   `𝔞 ≤ supp v` to `Spv (A ⧸ 𝔞)`.
 * `TauCeti.ValuationSpectrum.localizationComapSection S B v hS` : Lift `v` to a localization
@@ -48,7 +51,8 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
 * `TauCeti.ValuationSpectrum.suppFun` : The continuous support map `Spv A → Spec A`.
 * `TauCeti.ValuationSpectrum.trivialSection` : The continuous section of `suppFun` given by
   the trivial valuation attached to a prime ideal; in particular `suppFun` is surjective
-  (`suppFun_surjective`).
+  (`suppFun_surjective`). It is a topological embedding (`isEmbedding_trivialSection`), whose
+  image consists of the valuations with values in `{0, 1}` (`mem_range_trivialSection_iff`).
 
 ## References
 
@@ -168,6 +172,25 @@ lemma specializes_of_forall_mem_basicOpen {v w : Spv A}
   refine biInf_mono ?_
   rintro U ⟨hwU, f, s, rfl⟩
   exact ⟨h f s hwU, f, s, rfl⟩
+
+/-- **Comparisons at a specialization hold at the generization.** If `v ⤳ w`, then
+`w(f) ≤ w(s) ≠ 0` implies `v(f) ≤ v(s)`: the basic open `Spv(A)(f/s)` contains `w`, hence `v`.
+A partial converse of `specializes_of_forall_mem_basicOpen`. -/
+lemma vle_of_specializes {v w : Spv A} (h : v ⤳ w) {f s : A}
+    (hfs : w.toValuativeRel.vle f s) (hs : ¬ w.toValuativeRel.vle s 0) :
+    v.toValuativeRel.vle f s :=
+  (h.mem_open (isOpen_basicOpen f s) ⟨hfs, hs⟩).1
+
+/-- **Strict comparisons at a generization hold at a specialization**, provided one side is
+nonzero there: if `v ⤳ w` and `v(s) < v(f)`, then `w(s) < w(f)` unless `w(f) = w(s) = 0`. -/
+lemma vlt_of_specializes {v w : Spv A} (h : v ⤳ w) {f s : A}
+    (hsf : v.toValuativeRel.vlt s f)
+    (hw : ¬ w.toValuativeRel.vle s 0 ∨ ¬ w.toValuativeRel.vle f 0) :
+    w.toValuativeRel.vlt s f := by
+  refine fun hfs ↦ hsf (vle_of_specializes h hfs ?_)
+  rcases hw with hw | hw
+  · exact hw
+  · exact fun hs ↦ hw (w.toValuativeRel.vle_trans hfs hs)
 
 /-- The valuative relation of a point is determined by its basic opens: `v(f) ≤ v(s)` holds
 iff `v` lies in `basicOpen f s`, or `s` and `f` both lie in the support — the latter being
@@ -362,6 +385,12 @@ lemma valuation_lt_iff (v : Spv A) (x y : A) :
     v.valuation x < v.valuation y ↔ v.toValuativeRel.vlt x y :=
   let := v.toValuativeRel
   ((ValuativeRel.valuation A).vlt_iff_lt (x := x) (y := y)).symm
+
+/-- Membership in a basic open subset, read through the canonical valuation of the point:
+`v ∈ Spv(A)(f/s)` iff `v(f) ≤ v(s)` and `v(s) ≠ 0`. -/
+lemma mem_basicOpen_iff_valuation (f s : A) (v : Spv A) :
+    v ∈ basicOpen f s ↔ v.valuation f ≤ v.valuation s ∧ v.valuation s ≠ 0 := by
+  rw [mem_basicOpen_iff, ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
 
 /-- The support of `v : Spv A` equals the support of its canonical valuation. -/
 lemma supp_eq_valuation_supp (v : Spv A) : v.supp = v.valuation.supp :=
@@ -603,6 +632,41 @@ lemma continuous_trivialSection :
 /-- The support map is surjective; the trivial valuations provide a section. -/
 theorem suppFun_surjective : Function.Surjective (suppFun : Spv A → PrimeSpectrum A) :=
   fun p ↦ ⟨trivialSection p, suppFun_trivialSection p⟩
+
+/-- `trivialSection` is injective: the support of the trivial valuation of a prime is that prime. -/
+theorem trivialSection_injective : Function.Injective (trivialSection : PrimeSpectrum A → Spv A) :=
+  Function.LeftInverse.injective suppFun_trivialSection
+
+/-- **Wedhorn, Remark 4.6(2)**: `trivialSection` is a topological embedding. Equivalently, the
+support map restricts to a homeomorphism from the subspace of trivial valuations onto `Spec A`. -/
+theorem isEmbedding_trivialSection :
+    Topology.IsEmbedding (trivialSection : PrimeSpectrum A → Spv A) :=
+  Function.LeftInverse.isEmbedding suppFun_trivialSection continuous_suppFun
+    continuous_trivialSection
+
+/-- **The trivial valuations** are the points of `Spv A` taking only the values `0` and `1`: every
+element is in the support or has value exactly `1`. -/
+theorem mem_range_trivialSection_iff (v : Spv A) :
+    v ∈ Set.range trivialSection ↔ ∀ a : A, v.toValuativeRel.vle a 0 ∨
+      v.toValuativeRel.vle 1 a ∧ v.toValuativeRel.vle a 1 := by
+  constructor
+  · rintro ⟨p, rfl⟩ a
+    have h1 : (1 : A) ∉ p.asIdeal := (Ideal.ne_top_iff_one _).mp p.isPrime.ne_top
+    simp only [trivialSection_vle_iff, p.asIdeal.zero_mem, h1, not_true_eq_false, or_false,
+      not_false_eq_true, or_true, false_or, and_true]
+    tauto
+  · refine fun h ↦ ⟨suppFun v, ext' fun x y ↦ ?_⟩
+    simp only [trivialSection_vle_iff, suppFun_asIdeal, mem_supp_iff, ← valuation_le_iff,
+      map_zero, map_one] at h ⊢
+    refine ⟨?_, fun hxy ↦ or_iff_not_imp_right.mpr fun hy ↦ hxy.trans (not_not.mp hy)⟩
+    -- `x` has value `0`, or `y` has value `1`, which bounds every value
+    rintro (hx | hy)
+    · exact hx.trans zero_le
+    · obtain hy' | hy' := h y
+      · exact absurd hy' hy
+      obtain hx | hx := h x
+      · exact hx.trans zero_le
+      · exact hx.2.trans hy'.1
 
 end PrimeSpectrum
 

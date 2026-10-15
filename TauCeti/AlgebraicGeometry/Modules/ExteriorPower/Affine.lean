@@ -520,4 +520,26 @@ theorem tildeExteriorPowerIso_hom_naturality (n : ℕ) {M N : ModuleCat.{u} R} (
       (tildeExteriorPowerIso_inv_naturality n φ).symm).trans
         (Category.assoc _ _ _).symm)
 
+/-- The affine exterior-power comparisons form a natural isomorphism between taking the
+exterior power before and after associating a sheaf to a module. -/
+def tildeExteriorPowerNatIso (n : ℕ) :
+    ModuleCat.exteriorPower.functor R n ⋙ tilde.functor R ≅
+      tilde.functor R ⋙ SheafOfModules.exteriorPower (Spec R).sheaf n :=
+  NatIso.ofComponents (tildeExteriorPowerIso n)
+    (fun φ ↦ tildeExteriorPowerIso_hom_naturality n φ)
+
+/-- The forward components of the natural affine comparison. -/
+@[simp]
+theorem tildeExteriorPowerNatIso_hom_app (n : ℕ) (M : ModuleCat.{u} R) :
+    (tildeExteriorPowerNatIso (R := R) n).hom.app M =
+      (tildeExteriorPowerIso n M).hom :=
+  (rfl)
+
+/-- The inverse components of the natural affine comparison. -/
+@[simp]
+theorem tildeExteriorPowerNatIso_inv_app (n : ℕ) (M : ModuleCat.{u} R) :
+    (tildeExteriorPowerNatIso (R := R) n).inv.app M =
+      (tildeExteriorPowerIso n M).inv :=
+  (rfl)
+
 end TauCeti.AlgebraicGeometry

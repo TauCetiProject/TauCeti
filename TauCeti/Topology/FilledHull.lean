@@ -57,6 +57,9 @@ Carathéodory boundary correspondence in `TauCeti/Analysis/Complex/Conformal/Car
   `TauCeti.filledHull_mono` its two structural properties.
 * `TauCeti.filledHull_eq_self` — filling a set whose complement is preconnected and unbounded
   changes nothing.
+* `IsClosed.isOpen_filledHull_sdiff`, `IsClosed.isClosed_filledHull`, and
+  `IsClosed.frontier_filledHull_sdiff_subset` — for a closed set in a locally connected space,
+  the bounded complementary components form an open set whose frontier lies in that set.
 * `TauCeti.filledHull_eq_self_of_isPreconnected_frontier` — an open set with preconnected frontier
   and unbounded complement has no holes: filling it changes nothing.
 * `IsPreconnected.subset_filledHull` — a preconnected set disjoint from `K` that meets the
@@ -79,7 +82,8 @@ is bounded. Equivalently, `K` together with the bounded connected components of 
 def filledHull (K : Set E) : Set E := {x | IsBounded (connectedComponentIn Kᶜ x)}
 
 @[simp]
-theorem mem_filledHull_iff : x ∈ filledHull K ↔ IsBounded (connectedComponentIn Kᶜ x) := Iff.rfl
+theorem mem_filledHull_iff
+    : x ∈ filledHull K ↔ IsBounded (connectedComponentIn Kᶜ x) := Iff.rfl
 
 /-- **A set lies in its filled hull.** For `x ∈ K` the component of `x` in `Kᶜ` is empty, and the
 empty set is bounded. -/
@@ -95,10 +99,49 @@ theorem filledHull_mono (h : K ⊆ L) : filledHull K ⊆ filledHull L := fun _ h
   mem_filledHull_iff.mpr <|
     (mem_filledHull_iff.mp hx).subset (connectedComponentIn_mono _ (compl_subset_compl.mpr h))
 
+/-- The bounded complementary components of a closed set form an open set in a locally
+connected space. No Jordan-curve or finiteness assumption is needed. -/
+theorem _root_.IsClosed.isOpen_filledHull_sdiff
+    [LocallyConnectedSpace E] (hK : IsClosed K) :
+    IsOpen (filledHull K \ K) := by
+  rw [isOpen_iff_mem_nhds]
+  intro x hx
+  refine Filter.mem_of_superset
+    ((hK.isOpen_compl.connectedComponentIn).mem_nhds (mem_connectedComponentIn hx.2)) ?_
+  intro y hy
+  refine ⟨?_, connectedComponentIn_subset Kᶜ x hy⟩
+  rw [mem_filledHull_iff, ← connectedComponentIn_eq hy]
+  exact mem_filledHull_iff.mp hx.1
+
+/-- Filling a closed set preserves closedness in a locally connected space. -/
+theorem _root_.IsClosed.isClosed_filledHull [LocallyConnectedSpace E] (hK : IsClosed K) :
+    IsClosed (filledHull K) := by
+  rw [← isOpen_compl_iff, isOpen_iff_mem_nhds]
+  intro x hx
+  have hxK : x ∈ Kᶜ := fun h => hx (subset_filledHull h)
+  refine Filter.mem_of_superset
+    ((hK.isOpen_compl.connectedComponentIn).mem_nhds (mem_connectedComponentIn hxK)) ?_
+  intro y hy hyH
+  apply hx
+  rw [mem_filledHull_iff, connectedComponentIn_eq hy]
+  exact mem_filledHull_iff.mp hyH
+
+/-- The frontier of the bounded complementary components of a closed set lies in the set
+itself. In particular, filling introduces no new boundary points. -/
+theorem _root_.IsClosed.frontier_filledHull_sdiff_subset
+    [LocallyConnectedSpace E] (hK : IsClosed K) :
+    frontier (filledHull K \ K) ⊆ K := by
+  intro x hx
+  have hxH : x ∈ filledHull K :=
+    (closure_minimal sdiff_subset (IsClosed.isClosed_filledHull hK)) hx.1
+  by_contra hxK
+  exact hx.2 ((IsClosed.isOpen_filledHull_sdiff hK).interior_eq.symm ▸ ⟨hxH, hxK⟩)
+
 /-- **Filling changes nothing when the complement is connected and unbounded.** The complement is
 then a single component and that component is unbounded, so no point outside `K` is filled in. This
 is the case of a segment in the plane, and of any set that does not separate the space. -/
-theorem filledHull_eq_self (h : IsPreconnected Kᶜ) (hu : ¬ IsBounded Kᶜ) : filledHull K = K := by
+theorem filledHull_eq_self
+    (h : IsPreconnected Kᶜ) (hu : ¬ IsBounded Kᶜ) : filledHull K = K := by
   refine Subset.antisymm (fun x hx => ?_) subset_filledHull
   by_contra hxK
   exact hu ((mem_filledHull_iff.mp hx).subset

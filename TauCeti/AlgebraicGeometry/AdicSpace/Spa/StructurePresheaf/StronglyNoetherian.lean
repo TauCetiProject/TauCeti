@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Topology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -16,7 +17,11 @@ import TauCeti.Topology.Algebra.Ring.Ideal
 For a strongly noetherian Tate ring `A` and a ring of integral elements `A⁺`, the
 presentation-limit structure presheaf of `Spa(A, A⁺)` is a sheaf of complete separated topological
 rings. This is Wedhorn's Theorem 8.28(b) for the pair `(A, A⁺)`; `A` itself need not be complete
-or Hausdorff.
+or Hausdorff. The same holds at ring level: `A` is sheafy and stably sheafy in the sense of
+Wedhorn's Definition 8.26 (Theorem 8.28(b) and Corollary 8.35), again with no completeness or
+Hausdorff hypothesis. A complete Hausdorff ring topologically of finite type over `Â` is
+topologically of finite type over `A` itself, through the completion map `A → Â`, so it is a
+strongly noetherian Tate ring and the pair-level theorem applies to each of its plus rings.
 
 Strong noetherianness satisfies `ContinuousLaurentGluing`
 (`continuousLaurentGluing_isStronglyNoetherian`): it passes to completed rational localisations,
@@ -35,12 +40,12 @@ homomorphisms, and hence the sheaf property
 * `TauCeti.Huber.isSheafyForEveryPresentation_of_isStronglyNoetherian` : every ring of integral
   elements of a strongly noetherian Tate ring satisfies
   `TauCeti.Huber.IsSheafyForEveryPresentation`.
-* `TauCeti.Huber.isSheafyRing_of_isStronglyNoetherian` : a complete Hausdorff strongly noetherian
-  Tate ring is sheafy.
-* `TauCeti.Huber.isSheafyRing_quotient_of_isStronglyNoetherian` : so is its quotient by a closed
-  ideal.
-* `TauCeti.Huber.isStablySheafyRing_of_isStronglyNoetherian` : a complete Hausdorff strongly
-  noetherian Tate ring is stably sheafy.
+* `TauCeti.Huber.isStablySheafyRing_of_isStronglyNoetherian` : a strongly noetherian Tate ring is
+  stably sheafy.
+* `TauCeti.Huber.isSheafyRing_of_isStronglyNoetherian` : a strongly noetherian Tate ring is
+  sheafy.
+* `TauCeti.Huber.isSheafyRing_quotient_of_isStronglyNoetherian` : the quotient of a complete
+  Hausdorff strongly noetherian Tate ring by a closed ideal is sheafy.
 
 ## References
 
@@ -107,14 +112,31 @@ theorem isSheafyForEveryPresentation_of_isStronglyNoetherian {A : Type v} [CommR
   ⟨hAplus, fun P hP ↦
     isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian P hP hAplus.isPowerBounded_of_mem⟩
 
-/-- **A complete Hausdorff strongly noetherian Tate ring is sheafy** in the sense of Wedhorn's
-Definition 8.26 (`TauCeti.Huber.IsSheafyRing`). This is Wedhorn's Theorem 8.28(b) for a complete
-Hausdorff ring. -/
-theorem isSheafyRing_of_isStronglyNoetherian {A : Type v} [CommRing A] [UniformSpace A]
-    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A]
-    [CompleteSpace A] [T0Space A] : IsSheafyRing A :=
-  isSheafyRing_iff_forall_isSheafyForEveryPresentation.mpr fun _ ↦
+/-- **Every strongly noetherian Tate ring is stably sheafy** (Wedhorn's Corollary 8.35): every
+complete Hausdorff Huber ring `B` topologically of finite type over the completion `Â`, in the
+weighted sense of `TauCeti.Huber.IsTopologicallyFiniteType`, is sheafy. `A` need not be complete
+or Hausdorff. -/
+theorem isStablySheafyRing_of_isStronglyNoetherian {A : Type u} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A] :
+    IsStablySheafyRing.{u, v} A := by
+  -- `B` is topologically of finite type over `A` itself, through the completion map `A → Â`. So
+  -- `B` is Tate, since the image of a pseudouniformiser is one, and strongly noetherian, since
+  -- over a Tate ring a weighted presentation can be made strict; Theorem 8.28(b) applies to it
+  refine isStablySheafyRing_iff.mpr fun B _ _ _ _ _ _ _ φ hφ ↦ ?_
+  have hφ' := hφ.comp isStrictlyTopologicallyFiniteType_coeRingHom.isTopologicallyFiniteType
+  have : IsTateRing B := IsTateRing.of_continuous hφ'.continuous
+  have : IsStronglyNoetherian B := hφ'.isStronglyNoetherian
+  exact isSheafyRing_iff_forall_isSheafyForEveryPresentation.mpr fun _ ↦
     isSheafyForEveryPresentation_of_isStronglyNoetherian
+
+/-- **Every strongly noetherian Tate ring is sheafy** in the sense of Wedhorn's Definition 8.26
+(`TauCeti.Huber.IsSheafyRing`). This is Wedhorn's Theorem 8.28(b); `A` need not be complete or
+Hausdorff. The identity of `Â` is topologically of finite type, so this is the case `B = Â` of
+`TauCeti.Huber.isStablySheafyRing_of_isStronglyNoetherian`. -/
+theorem isSheafyRing_of_isStronglyNoetherian {A : Type v} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A] :
+    IsSheafyRing A :=
+  isStablySheafyRing_of_isStronglyNoetherian.isSheafyRing
 
 /-- **The quotient of a complete Hausdorff strongly noetherian Tate ring by a closed ideal is
 sheafy.** The quotient `A ⧸ J` carries the quotient topology and the uniformity of that additive
@@ -131,24 +153,6 @@ theorem isSheafyRing_quotient_of_isStronglyNoetherian {A : Type v} [CommRing A] 
   have _ : CompleteSpace (A ⧸ J) := QuotientAddGroup.completeSpace_right _ J.toAddSubgroup
   have _ : T1Space (A ⧸ J) := (Ideal.Quotient.t1Space_iff J).mpr hJ
   have _ := IsStronglyNoetherian.quotient J hJ
-  exact isSheafyRing_of_isStronglyNoetherian
-
-/-- **A complete Hausdorff strongly noetherian Tate ring is stably sheafy** (Wedhorn's
-Corollary 8.35): every complete Hausdorff Huber ring `B` topologically of finite type over `A`, in
-the weighted sense of `TauCeti.Huber.IsTopologicallyFiniteType`, is sheafy. -/
-theorem isStablySheafyRing_of_isStronglyNoetherian {A : Type u} [CommRing A] [UniformSpace A]
-    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A]
-    [CompleteSpace A] [T0Space A] : IsStablySheafyRing.{u, v} A := by
-  have : IsStronglyNoetherian (UniformSpace.Completion A) :=
-    (isStronglyNoetherian_congr (UniformSpace.Completion.completeRingEquivSelf A).symm
-      (UniformSpace.Completion.uniformContinuous_completeRingEquivSelf_symm A).continuous
-      (UniformSpace.Completion.uniformContinuous_completeRingEquivSelf A).continuous).mp
-      inferInstance
-  -- `B` is Tate, since the image of a pseudouniformiser is one, and strongly noetherian, since over
-  -- a Tate ring a weighted presentation can be made strict; Theorem 8.28(b) applies to it
-  refine isStablySheafyRing_iff.mpr fun B _ _ _ _ _ _ _ φ hφ ↦ ?_
-  have : IsTateRing B := IsTateRing.of_continuous hφ.continuous
-  have : IsStronglyNoetherian B := hφ.isStronglyNoetherian
   exact isSheafyRing_of_isStronglyNoetherian
 
 end TauCeti.Huber

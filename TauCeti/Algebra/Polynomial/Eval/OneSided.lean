@@ -76,6 +76,20 @@ theorem signRight_C (c a : R) : (C c).signRight a = sign c := by
 theorem signLeft_C (c a : R) : (C c).signLeft a = sign c := by
   simp [signLeft_def]
 
+section One
+
+variable [ZeroLEOneClass R] [NeZero (1 : R)]
+
+@[simp]
+theorem signRight_one (a : R) : (1 : R[X]).signRight a = 1 := by
+  simpa [sign_pos zero_lt_one] using signRight_C (1 : R) a
+
+@[simp]
+theorem signLeft_one (a : R) : (1 : R[X]).signLeft a = 1 := by
+  simpa [sign_pos zero_lt_one] using signLeft_C (1 : R) a
+
+end One
+
 /-- Away from a root, the right-hand sign is the sign of the value itself. -/
 theorem signRight_eq_sign_eval (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
     p.signRight a = sign (p.eval a) := by
@@ -130,6 +144,26 @@ theorem signLeft_map {S : Type*} [CommRing S] [LinearOrder S]
   rw [signLeft_def, signLeft_def, ← eq_rootMultiplicity_map hf.injective, signRight_map p f hf]
 
 end Transport
+
+section Neg
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [AddLeftMono R]
+
+/-- Negation reverses the right-hand sign. -/
+@[simp]
+theorem signRight_neg (p : R[X]) (a : R) :
+    (-p).signRight a = -p.signRight a := by
+  simp only [signRight_def, rootMultiplicity_eq_natTrailingDegree, neg_comp,
+    natTrailingDegree_neg, iterate_derivative_neg, eval_neg, Left.sign_neg]
+
+/-- Negation reverses the left-hand sign. -/
+@[simp]
+theorem signLeft_neg (p : R[X]) (a : R) :
+    (-p).signLeft a = -p.signLeft a := by
+  simp only [signLeft_def, rootMultiplicity_eq_natTrailingDegree, neg_comp,
+    natTrailingDegree_neg, signRight_neg, mul_neg]
+
+end Neg
 
 section OrderedRing
 
@@ -198,30 +232,6 @@ theorem signLeft_mul (p q : R[X]) (a : R) :
   · simp [hq]
   simp only [signLeft_def, rootMultiplicity_mul (mul_ne_zero hp hq), pow_add, signRight_mul]
   ac_rfl
-
-@[simp]
-theorem signRight_one (a : R) : (1 : R[X]).signRight a = 1 := by
-  simpa using signRight_C (1 : R) a
-
-@[simp]
-theorem signLeft_one (a : R) : (1 : R[X]).signLeft a = 1 := by
-  simpa using signLeft_C (1 : R) a
-
-/-- Negation reverses the right-hand sign. -/
-@[simp]
-theorem signRight_neg (p : R[X]) (a : R) :
-    (-p).signRight a = -p.signRight a := by
-  have h := signRight_mul (C (-1)) p a
-  rw [signRight_C, sign_neg (neg_one_lt_zero (R := R))] at h
-  simpa using h
-
-/-- Negation reverses the left-hand sign. -/
-@[simp]
-theorem signLeft_neg (p : R[X]) (a : R) :
-    (-p).signLeft a = -p.signLeft a := by
-  have h := signLeft_mul (C (-1)) p a
-  rw [signLeft_C, sign_neg (neg_one_lt_zero (R := R))] at h
-  simpa using h
 
 /-- Powers raise the right-hand sign to the same power, with the convention `0^0 = 1`. -/
 @[simp]
