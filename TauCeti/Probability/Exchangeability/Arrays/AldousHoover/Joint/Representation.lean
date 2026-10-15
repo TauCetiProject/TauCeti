@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
-import Mathlib.Data.Sym.Sym2.Order
+import Mathlib.Order.Sym2
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.OffDiagonalCoding
@@ -563,7 +563,7 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
 omit [StandardBorelSpace α] in
 /-- The coding of all visible pairs codes each visible pair `(g i, g j)`, `i < j`, from its own
 square context. -/
-private theorem map_pairCoding_visiblePair_eq [IsFiniteMeasure ρ] {e d g : ℕ → ℕ}
+private theorem map_pairCoding_visiblePair_eq {e d g : ℕ → ℕ}
     {G : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
       (α × α) → I → α × α} (hG : Measurable (Function.uncurry G))
     (hcode : ((ρ.map (vertexLayerData e d g)).prod

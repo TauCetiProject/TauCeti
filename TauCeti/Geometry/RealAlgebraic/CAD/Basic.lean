@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Setoid.Partition
+public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant

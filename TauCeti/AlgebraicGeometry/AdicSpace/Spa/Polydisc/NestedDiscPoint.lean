@@ -79,6 +79,8 @@ are not sorted into Wedhorn's types here.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc_iff`: `η` lies in `D(b, |d|)`
   exactly when `d ≠ 0` and `inf_n max(‖cₙ‖, ‖aₙ - b‖) ≤ ‖d‖`; in particular
   `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc`, `η` lies in every `D(aₙ, |cₙ|)`.
+* `TauCeti.ValuationSpectrum.mem_closedSubdisc_of_nestedDiscPoint_specializes`: when the discs
+  have no common point in `K`, every specialization of `η` lies in every defining disc.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_eq_discPoint_iff`: `η = η_{b,s}` exactly when `b`
   lies in every disc and `s` is the infimum of the radii.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_ne_classicalPoint`,
@@ -292,6 +294,19 @@ theorem nestedDiscPoint_mem_closedSubdisc (n : ℕ) :
   (nestedDiscPoint_mem_closedSubdisc_iff a ha c hc₀ hc₁ hac hcc (a n) (c n)).mpr
     ⟨(ciInf_le ⟨0, Set.forall_mem_range.mpr fun _ ↦ (norm_nonneg _).trans (le_max_left _ _)⟩
       n).trans (by simp), hc₀ n⟩
+
+/-- Every specialization of a nested-disc point with no common field-valued centre remains
+in every defining disc. -/
+theorem mem_closedSubdisc_of_nestedDiscPoint_specializes (a c : ℕ → K)
+    (ha : ∀ n, ‖a n‖ ≤ 1) (hc₀ : ∀ n, c n ≠ 0) (hc₁ : ∀ n, ‖c n‖ ≤ 1)
+    (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
+    (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖)
+    (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) {x : closedPolydisc 1 K}
+    (hx : nestedDiscPoint a ha c hc₀ hc₁ hac hcc ⤳ x) (n : ℕ) :
+    x ∈ closedSubdisc (a n) (c n) := by
+  have hclosed := isClosed_iInter_closedSubdisc_of_no_common_point a c hac hcc hempty
+  exact Set.mem_iInter.mp (hx.mem_closed hclosed (Set.mem_iInter.mpr
+    (nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc))) n
 
 /-! ### Comparison with the other points of the disc -/
 

@@ -91,6 +91,7 @@ variable [NeZero n] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocal
 
 include hn
 
+omit [NeZero n] in
 /-- Duality in degrees `(0, 2)`: Tate's `α₂` on explicit cocycles
 (`dualityMap2_kummerCoeff_bijective`), read through
 `tateDualityPairing_eq_explicitDualityPairing02`. -/
@@ -130,6 +131,7 @@ private theorem flip_perfect_zero_two (hij : 0 + 2 = 2) :
   · exact congrArg A.explicitH2AddEquivContinuousCohomologyOfDiscrete
       (explicitMap2Equiv_apply _ _ _ _ _ _ _ _ _ y)
 
+omit [NeZero n] in
 /-- Duality in degrees `(1, 1)`: Tate's `α₁` on explicit cocycles
 (`dualityMap1_kummerCoeff_bijective`), which is minus the swapped evaluation cup, read through
 `tateDualityPairing_eq_explicitDualityPairing11`. -/
@@ -167,6 +169,7 @@ private theorem flip_perfect_one_one (hij : 1 + 1 = 2) :
   · exact congrArg A.explicitH1AddEquivContinuousCohomologyOfDiscrete
       (explicitMap1Equiv_apply _ _ _ _ _ _ _ _ _ y)
 
+omit [NeZero n] in
 /-- Duality in degrees `(2, 0)`: Tate's `α₀` on explicit cocycles
 (`dualityMap0_kummerCoeff_bijective`), read through
 `tateDualityPairing_eq_explicitDualityPairing20`. -/

@@ -321,8 +321,8 @@ algebra-valued points of `H`. It sends the categorical multiplication `lift f g 
 the convolution product of the underlying algebra morphisms. -/
 noncomputable def grpObjPointsMulEquiv (H : _root_.CommHopfAlgCat.{u} R)
     (X : (CommAlgCat.{u} R)ᵒᵖ) :
-    (X ⟶ grpObj H) ≃* HopfAlgebra.points (R := R) (H := H) X.unop where
-  toEquiv := (opEquiv X (grpObj H)).trans (HopfAlgebra.pointsHomEquiv H X.unop)
+    (X ⟶ CommHopfAlgCat.grpObj H) ≃* HopfAlgebra.points (R := R) (H := H) X.unop where
+  toEquiv := (opEquiv X (CommHopfAlgCat.grpObj H)).trans (HopfAlgebra.pointsHomEquiv H X.unop)
   map_mul' f g := by
     apply WithConv.ofConv_injective
     -- Exposing the hom type also exposes the group-object multiplication induced by the Hopf
@@ -339,27 +339,32 @@ noncomputable def grpObjPointsMulEquiv (H : _root_.CommHopfAlgCat.{u} R)
 its underlying algebra morphism. -/
 @[simp]
 theorem grpObjPointsMulEquiv_apply (H : _root_.CommHopfAlgCat.{u} R)
-    (X : (CommAlgCat.{u} R)ᵒᵖ) (g : X ⟶ grpObj H) :
+    (X : (CommAlgCat.{u} R)ᵒᵖ) (g : X ⟶ CommHopfAlgCat.grpObj H) :
     grpObjPointsMulEquiv H X g = toConv g.unop.hom := by
   exact HopfAlgebra.pointsHomEquiv_apply H g.unop
 
 /-- Unopping categorical conjugation on the represented group object gives the coordinate
 conjugation algebra map. -/
 theorem grpObj_conj_unop_hom (H : _root_.CommHopfAlgCat.{u} R) :
-    (GrpObj.conj (grpObj H)).unop.hom =
+    (GrpObj.conj (CommHopfAlgCat.grpObj H)).unop.hom =
       HopfAlgebra.conjugationAlgHom (R := R) (H := H) := by
   apply WithConv.toConv_injective
   calc
-    WithConv.toConv (GrpObj.conj (grpObj H)).unop.hom =
-        grpObjPointsMulEquiv H (grpObj H ⊗ grpObj H) (GrpObj.conj (grpObj H)) := by
+    WithConv.toConv (GrpObj.conj (CommHopfAlgCat.grpObj H)).unop.hom =
+        grpObjPointsMulEquiv H (CommHopfAlgCat.grpObj H ⊗ CommHopfAlgCat.grpObj H) (GrpObj.conj
+          (CommHopfAlgCat.grpObj H)) := by
       rw [grpObjPointsMulEquiv_apply]
-    _ = grpObjPointsMulEquiv H (grpObj H ⊗ grpObj H) (fst (grpObj H) (grpObj H)) *
-        grpObjPointsMulEquiv H (grpObj H ⊗ grpObj H) (snd (grpObj H) (grpObj H)) *
-        (grpObjPointsMulEquiv H (grpObj H ⊗ grpObj H) (fst (grpObj H) (grpObj H)))⁻¹ := by
+    _ = grpObjPointsMulEquiv H (CommHopfAlgCat.grpObj H ⊗ CommHopfAlgCat.grpObj H) (fst
+      (CommHopfAlgCat.grpObj H) (CommHopfAlgCat.grpObj H)) *
+        grpObjPointsMulEquiv H (CommHopfAlgCat.grpObj H ⊗ CommHopfAlgCat.grpObj H) (snd
+          (CommHopfAlgCat.grpObj H) (CommHopfAlgCat.grpObj H)) *
+        (grpObjPointsMulEquiv H (CommHopfAlgCat.grpObj H ⊗ CommHopfAlgCat.grpObj H) (fst
+          (CommHopfAlgCat.grpObj H) (CommHopfAlgCat.grpObj H)))⁻¹ := by
       rw [GrpObj.conj, map_mul, map_mul, map_inv]
     _ = WithConv.toConv (HopfAlgebra.conjugationAlgHom (R := R) (H := H)) := by
       rw [grpObjPointsMulEquiv_apply,
-        grpObjPointsMulEquiv_apply H (grpObj H ⊗ grpObj H) (snd (grpObj H) (grpObj H))]
+        grpObjPointsMulEquiv_apply H (CommHopfAlgCat.grpObj H ⊗ CommHopfAlgCat.grpObj H) (snd
+          (CommHopfAlgCat.grpObj H) (CommHopfAlgCat.grpObj H))]
       simpa only [CommAlgCat.fst_unop_hom, CommAlgCat.snd_unop_hom,
         Bialgebra.TensorProduct.includeLeft_toAlgHom,
         Bialgebra.TensorProduct.includeRight_toAlgHom] using
@@ -371,26 +376,27 @@ category of commutative algebras. -/
 theorem grpObjPointsMulEquiv_symm_apply (H : _root_.CommHopfAlgCat.{u} R)
     (X : (CommAlgCat.{u} R)ᵒᵖ) (p : HopfAlgebra.points (R := R) (H := H) X.unop) :
     (grpObjPointsMulEquiv H X).symm p =
-      (opEquiv X (grpObj H)).symm (CommAlgCat.ofHom p.ofConv) := by
+      (opEquiv X (CommHopfAlgCat.grpObj H)).symm (CommAlgCat.ofHom p.ofConv) := by
   -- The inverse of the composite carrier equivalence reduces definitionally to the composite
   -- of the inverse opposite-hom equivalence and `pointsHomEquiv.symm`.
-  change (opEquiv X (grpObj H)).symm ((HopfAlgebra.pointsHomEquiv H X.unop).symm p) = _
+  change (opEquiv X (CommHopfAlgCat.grpObj H)).symm ((HopfAlgebra.pointsHomEquiv H X.unop).symm
+    p) = _
   rw [HopfAlgebra.pointsHomEquiv_symm_apply]
 
 /-- Under the group-object point equivalences, composition with the morphism represented by `f`
 is precomposition of algebra-valued points with `f`. -/
 @[simp]
 theorem grpObjPointsMulEquiv_comp_grpObjMap {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K)
-    (X : (CommAlgCat.{u} R)ᵒᵖ) (q : X ⟶ grpObj K) :
-    grpObjPointsMulEquiv H X (q ≫ grpObjMap f) =
-      (mapPointsFunctor f).app X.unop (grpObjPointsMulEquiv K X q) := by
+    (X : (CommAlgCat.{u} R)ᵒᵖ) (q : X ⟶ CommHopfAlgCat.grpObj K) :
+    grpObjPointsMulEquiv H X (q ≫ CommHopfAlgCat.Hom.grpObjMap f) =
+      (CommHopfAlgCat.Hom.mapPointsFunctor f).app X.unop (grpObjPointsMulEquiv K X q) := by
   apply WithConv.ofConv_injective
   -- The public application rules expose both categorical points as their underlying algebra
   -- morphisms before the functorial action is computed.
-  change (q ≫ grpObjMap f).unop.hom =
-    ((mapPointsFunctor f).app X.unop (toConv q.unop.hom)).ofConv
-  rw [mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
-  rw [unop_comp, grpObjMap_unop, CommAlgCat.hom_comp]
+  change (q ≫ CommHopfAlgCat.Hom.grpObjMap f).unop.hom =
+    ((CommHopfAlgCat.Hom.mapPointsFunctor f).app X.unop (toConv q.unop.hom)).ofConv
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
+  rw [unop_comp, CommHopfAlgCat.Hom.grpObjMap_unop, CommAlgCat.hom_comp]
   rfl
 
 /-- The tautological carrier equivalence respects group-Yoneda multiplication: unopping
@@ -506,8 +512,8 @@ instance pointsFunctor_full :
 /-- A coordinate Hopf-algebra morphism is an isomorphism when its induced natural map on
 points is an isomorphism. -/
 theorem isIso_of_isIso_mapPointsFunctor {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K)
-    [IsIso (mapPointsFunctor.{u, u, u} f)] : IsIso f := by
-  let h : IsIso (mapPointsFunctor.{u, u, u} f) := inferInstance
+    [IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} f)] : IsIso f := by
+  let h : IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} f) := inferInstance
   let _ : IsIso ((pointsFunctor.{u, u, u} (R := R)).map f.op) := by
     rw [pointsFunctor_map, Quiver.Hom.unop_op]
     exact h
@@ -536,7 +542,7 @@ the only thing its users need. -/
 theorem mapPointsFunctor_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
     (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
       HopfAlgebra.pointsFunctor (R := R) (H := K)) :
-    (mapPointsFunctor (homOfPointsMap α) :
+    (CommHopfAlgCat.Hom.mapPointsFunctor (homOfPointsMap α) :
       HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := K)) = α := by
   unfold homOfPointsMap
@@ -548,21 +554,22 @@ theorem mapPointsFunctor_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
 /-- Recovering a coordinate morphism from the points map it induces returns that morphism.
 With `TauCeti.CommHopfAlgCat.mapPointsFunctor_homOfPointsMap` this makes
 `TauCeti.CommHopfAlgCat.homOfPointsMap` a two-sided inverse of
-`TauCeti.CommHopfAlgCat.mapPointsFunctor`, and it is where faithfulness of the functor of
+`CommHopfAlgCat.Hom.mapPointsFunctor`, and it is where faithfulness of the functor of
 points is used rather than only its fullness. -/
 @[simp]
 theorem homOfPointsMap_mapPointsFunctor {H K : _root_.CommHopfAlgCat.{u} R} (φ : K ⟶ H) :
-    homOfPointsMap (mapPointsFunctor φ) = φ := by
-  -- `pointsFunctor.map ψ.op` and `mapPointsFunctor ψ` are definitionally but not syntactically
+    homOfPointsMap (CommHopfAlgCat.Hom.mapPointsFunctor φ) = φ := by
+  -- `pointsFunctor.map ψ.op` and `CommHopfAlgCat.Hom.mapPointsFunctor ψ` are definitionally
+  -- but not syntactically
   -- equal, so `Functor.preimage_map` does not unify against the goal. This `have` is
   -- load-bearing: it restates the defining property in the functor's own spelling of the
   -- morphism part, which is the one `Functor.map_injective` unifies against.
   have h : (pointsFunctor.{u, u, u} (R := R) :
         (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}).map
-        (homOfPointsMap (mapPointsFunctor φ)).op =
+        (homOfPointsMap (CommHopfAlgCat.Hom.mapPointsFunctor φ)).op =
       (pointsFunctor.{u, u, u} (R := R) :
         (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}).map φ.op :=
-    mapPointsFunctor_homOfPointsMap (mapPointsFunctor φ)
+    mapPointsFunctor_homOfPointsMap (CommHopfAlgCat.Hom.mapPointsFunctor φ)
   exact Quiver.Hom.op_inj (Functor.map_injective _ h)
 
 /-- The recovered coordinate morphism of an identity points map is the identity. -/
@@ -570,11 +577,11 @@ theorem homOfPointsMap_mapPointsFunctor {H K : _root_.CommHopfAlgCat.{u} R} (φ 
 theorem homOfPointsMap_id (H : _root_.CommHopfAlgCat.{u} R) :
     homOfPointsMap (𝟙 (HopfAlgebra.pointsFunctor (R := R) (H := H) :
       CommAlgCat.{u} R ⥤ GrpCat.{u})) = 𝟙 H := by
-  rw [← mapPointsFunctor_id (R := R) H, homOfPointsMap_mapPointsFunctor]
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_id (R := R) H, homOfPointsMap_mapPointsFunctor]
 
 /-- The recovered coordinate morphism of a composite points map is the composite of the
 recovered morphisms, in the opposite order: `TauCeti.CommHopfAlgCat.homOfPointsMap` is
-contravariant, like `TauCeti.CommHopfAlgCat.mapPointsFunctor`. -/
+contravariant, like `CommHopfAlgCat.Hom.mapPointsFunctor`. -/
 @[simp]
 theorem homOfPointsMap_comp {H K L : _root_.CommHopfAlgCat.{u} R}
     (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
@@ -590,9 +597,9 @@ theorem homOfPointsMap_comp {H K L : _root_.CommHopfAlgCat.{u} R}
       (pointsFunctor.{u, u, u} (R := R) :
         (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}).map
         (homOfPointsMap β ≫ homOfPointsMap α).op := by
-    change mapPointsFunctor (homOfPointsMap (α ≫ β)) =
-      mapPointsFunctor (homOfPointsMap β ≫ homOfPointsMap α)
-    simp only [mapPointsFunctor_comp, mapPointsFunctor_homOfPointsMap]
+    change CommHopfAlgCat.Hom.mapPointsFunctor (homOfPointsMap (α ≫ β)) =
+      CommHopfAlgCat.Hom.mapPointsFunctor (homOfPointsMap β ≫ homOfPointsMap α)
+    simp only [CommHopfAlgCat.Hom.mapPointsFunctor_comp, mapPointsFunctor_homOfPointsMap]
   exact Quiver.Hom.op_inj (Functor.map_injective _ h)
 
 /-- Precomposition by `unopUnop` turns representability on a double opposite into

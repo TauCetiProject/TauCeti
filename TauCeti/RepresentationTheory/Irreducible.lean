@@ -288,8 +288,12 @@ theorem exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul
   -- Some linear functional on `V` contracts `z` to a nonzero vector of `M`.
   obtain ⟨f, hf⟩ : ∃ f : Module.Dual k V, _root_.TensorProduct.lid k M (f.rTensor M z) ≠ 0 := by
     by_contra! H
-    exact hz (tensor_eq_zero_of_forall_lid_rTensor_eq_zero (fun f : Module.Dual k V ↦ f)
-      (fun v hv ↦ (Module.forall_dual_apply_eq_zero_iff k v).1 hv) z H)
+    apply hz
+    apply tensor_eq_zero_of_forall_rTensor_eq_zero (fun f : Module.Dual k V ↦ f)
+      (fun v hv ↦ (Module.forall_dual_apply_eq_zero_iff k v).1 hv) z
+    intro f
+    apply (_root_.TensorProduct.lid k M).injective
+    simpa only [map_zero] using H f
   refine ⟨_, hf, fun v ↦ ?_⟩
   -- By density the rank-one endomorphism `x ↦ f x • v` is the action of some `r`.
   obtain ⟨r, hr⟩ := asAlgebraHom_surjective_of_isIrreducible ρ hρ (f.smulRight v)

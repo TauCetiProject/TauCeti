@@ -430,7 +430,7 @@ theorem ae_infinite_setOf_eq_markovChainLaw_const (a₀ : α) :
       HasLaw.ae_eq_of_dirac
         ⟨(measurable_pi_apply n).aemeasurable, markovChainLaw_const_map_eval a₀ n⟩
   filter_upwards [hall] with x hx
-  rw [Set.eq_univ_of_forall hx]
+  rw [Set.eq_univ_of_forall (s := {n | x n = a₀}) hx]
   exact Set.infinite_univ
 
 /-- **The excursions of that chain are empty.** Its excursion law is the point mass at the empty

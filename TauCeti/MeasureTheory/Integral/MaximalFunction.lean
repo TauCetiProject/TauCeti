@@ -421,8 +421,9 @@ theorem ae_maximalFunction_lt_top (μ : Measure E) [μ.IsAddHaarMeasure] (f : E 
     ENNReal.mul_ne_top (ENNReal.pow_ne_top (by norm_num)) hf
   have hsub : ∀ t : ℝ≥0∞, t ≠ ∞ →
       t * μ {x | maximalFunction μ f x = ∞} ≤ 4 ^ finrank ℝ E * ∫⁻ x, ‖f x‖ₑ ∂μ := by
-    refine fun t ht => le_trans (mul_le_mul_right (measure_mono
-      fun x (hx : maximalFunction μ f x = ∞) => lt_of_lt_of_le (lt_top_iff_ne_top.2 ht) hx.ge) t)
+    refine fun t ht => le_trans (mul_le_mul_right (measure_mono fun x hx => by
+      simp only [Set.mem_ofPred_eq] at hx ⊢
+      exact lt_of_lt_of_le (lt_top_iff_ne_top.2 ht) hx.ge) t)
       (mul_measure_lt_maximalFunction_le μ f t)
   have hm : μ {x | maximalFunction μ f x = ∞} = 0 := by
     by_contra hm'

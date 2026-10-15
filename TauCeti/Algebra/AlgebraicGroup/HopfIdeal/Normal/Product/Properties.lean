@@ -72,8 +72,9 @@ theorem productMapOfNormal_comp_coordinateInl
   have _ : IsMonHom.Normal (quotientGrpObjInclusion H I) :=
     (quotientGrpObjInclusion_normal_iff H I).2 hI
   rw [normalSemidirectProductCoordinateInl_def, ← Category.assoc]
-  apply grpObjMap_injective
-  rw [grpObjMap_comp, grpObjMap_comp, GrpObj.Action.grpObjMap_coordinateInl,
+  apply CommHopfAlgCat.Hom.grpObjMap_injective
+  rw [CommHopfAlgCat.Hom.grpObjMap_comp, CommHopfAlgCat.Hom.grpObjMap_comp,
+    GrpObj.Action.grpObjMap_coordinateInl,
     grpObjMap_productMapOfNormal]
   rw [← quotientGrpObjInclusion_def]
   have hrestriction :
@@ -98,8 +99,9 @@ theorem productMapOfNormal_comp_coordinateInr
   have _ : IsMonHom.Normal (quotientGrpObjInclusion H I) :=
     (quotientGrpObjInclusion_normal_iff H I).2 hI
   rw [normalSemidirectProductCoordinateInr_def, ← Category.assoc]
-  apply grpObjMap_injective
-  rw [grpObjMap_comp, grpObjMap_comp, GrpObj.Action.grpObjMap_coordinateInr,
+  apply CommHopfAlgCat.Hom.grpObjMap_injective
+  rw [CommHopfAlgCat.Hom.grpObjMap_comp, CommHopfAlgCat.Hom.grpObjMap_comp,
+    GrpObj.Action.grpObjMap_coordinateInr,
     grpObjMap_productMapOfNormal]
   rw [← quotientGrpObjInclusion_def]
   have hrestriction :
@@ -180,34 +182,34 @@ private theorem productMapOfNormal_conjugation_equivariant
   let A := GrpObj.Action.normalConjugation i j
   let _ := A.semidirectProductGrpObj
   have hequiv := GrpObj.Action.normalSemidirectMul_equivariant i j
-  have hproduct : grpObjMap (productMapOfNormal H I J hI ≫
+  have hproduct : CommHopfAlgCat.Hom.grpObjMap (productMapOfNormal H I J hI ≫
       (normalSemidirectProductIso H I J hI).hom) =
       (GrpObj.Action.normalSemidirectMul i j).hom.hom :=
     by
-      rw [grpObjMap_comp]
+      rw [CommHopfAlgCat.Hom.grpObjMap_comp]
       exact grpObjMap_productMapOfNormal H I J hI
   rw [← hproduct] at hequiv
   have hunop := congrArg (fun q ↦ q.unop.hom) hequiv.symm
   have hleft :
-      (MonoidalCategoryStruct.whiskerLeft (grpObj H)
-          (grpObjMap (productMapOfNormal H I J hI ≫
+      (MonoidalCategoryStruct.whiskerLeft (CommHopfAlgCat.grpObj H)
+          (CommHopfAlgCat.Hom.grpObjMap (productMapOfNormal H I J hI ≫
             (normalSemidirectProductIso H I J hI).hom)) ≫
-        GrpObj.conj (grpObj H)).unop.hom =
+        GrpObj.conj (CommHopfAlgCat.grpObj H)).unop.hom =
         (Algebra.TensorProduct.map (AlgHom.id k H)
           ((productMapOfNormal H I J hI ≫
             (normalSemidirectProductIso H I J hI).hom).hom.toAlgHom)).comp
             (HopfAlgebra.conjugationAlgHom (R := k) (H := H)) := by
-    rw [unop_comp, CommAlgCat.hom_comp, whiskerLeft_grpObjMap_unop_hom,
+    rw [unop_comp, CommAlgCat.hom_comp, CommHopfAlgCat.Hom.whiskerLeft_grpObjMap_unop_hom,
       grpObj_conj_unop_hom]
   have hright :
       ((GrpObj.Action.normalSemidirectConjugation i j).hom ≫
-          grpObjMap (productMapOfNormal H I J hI ≫
+          CommHopfAlgCat.Hom.grpObjMap (productMapOfNormal H I J hI ≫
             (normalSemidirectProductIso H I J hI).hom)).unop.hom =
         (normalSemidirectConjugationAlgHom H I J hI hJ).comp
           ((productMapOfNormal H I J hI ≫
             (normalSemidirectProductIso H I J hI).hom).hom.toAlgHom) := by
     have hproductHom := congrArg (fun q ↦ q.unop.hom) hproduct
-    rw [grpObjMap_unop_hom] at hproductHom
+    rw [CommHopfAlgCat.Hom.grpObjMap_unop_hom] at hproductHom
     rw [hproduct, hproductHom]
     -- Expanding the local action instances identifies the named coordinate map with the unop of
     -- categorical semidirect conjugation, and composition in the opposite category reverses.

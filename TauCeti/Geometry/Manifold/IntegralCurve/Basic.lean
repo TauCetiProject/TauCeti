@@ -111,7 +111,7 @@ theorem map_of_mfderiv_eq {f : M → M'} {V : (x : M) → TangentSpace I x}
   obtain ⟨sf, hsf, hf⟩ := hf
   obtain ⟨sVW, hsVW, hVW⟩ := hVW
   refine ⟨s ∩ sf ∩ sVW, Filter.inter_mem (Filter.inter_mem hs hsf) hsVW, ?_⟩
-  exact (hγs.mono fun _ ht ↦ ht.1.1).map_of_mfderiv_eq
+  exact (hγs.mono (Set.inter_subset_left.trans Set.inter_subset_left)).map_of_mfderiv_eq
     (fun t ht ↦ hf t ht.1.2) (fun t ht ↦ hVW t ht.2)
 
 end IsMIntegralCurveAt
