@@ -383,7 +383,7 @@ theorem mem_jacobsonRadical_iff_not_isIso {f : X ⟶ Y} :
     -- multiplication of `End Y` is one for composition, `CategoryTheory.End.mul_asHom`, and the
     -- ring `1` it is compared to is the identity, `CategoryTheory.End.one_asHom`.
     have hY : ∀ e : Y ⟶ Y, e ≫ e = e → e = 0 ∨ e = 𝟙 Y := fun e he => by
-      exact (IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem (R := End Y)
+      exact (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing (R := End Y)
         (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom)
     exact isIso_of_isIso_comp (id_ne_zero X) hY f (retraction f)
       (by rw [IsSplitMono.id]; infer_instance)

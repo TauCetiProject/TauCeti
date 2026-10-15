@@ -77,7 +77,7 @@ theorem isIso_of_map_isIso_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRing
   refine TauCeti.isIso_of_isIso_comp
     (fun h ↦ one_ne_zero (α := End X) (End.ext h))
     (fun e he ↦ ?_) f g inferInstance
-  exact (TauCeti.IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem (R := End Y)
+  exact (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing (R := End Y)
     (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom)
 
 /-- An additive functor surjective on morphisms in both directions between two objects
