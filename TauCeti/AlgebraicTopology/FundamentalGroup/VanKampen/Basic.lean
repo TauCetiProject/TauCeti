@@ -12,6 +12,9 @@ public import Mathlib.CategoryTheory.Limits.Shapes.WidePullbacks
 public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.CoprodI
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+import Mathlib.Topology.Homeomorph.Lemmas
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Pushout
 import TauCeti.CategoryTheory.Groupoid.SingleObj
@@ -57,6 +60,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
   homomorphisms.
 * `TauCeti.vanKampen_hom_ext`: homomorphisms out of `π₁(X, x)` are determined by their
   restrictions to `π₁(A, x)` and `π₁(B, x)`.
+* `TauCeti.isPushout_fundamentalGroup_union`: the same inclusion-induced pushout for a union
+  of two open subspaces.
 * `TauCeti.isPushout_fundamentalGroup`: **the based Seifert--van Kampen theorem**, as a pushout
   square in the category of groups.
 * `TauCeti.vanKampenLift`, `TauCeti.vanKampenLift_bijective`, `TauCeti.vanKampenEquiv`: the
@@ -372,6 +377,124 @@ theorem isPushout_fundamentalGroup (hCover : interior A ∪ interior B = univ)
         hxA hxB _ _ (congrArg GrpCat.Hom.hom s.condition)).symm
     · exact (congrArg GrpCat.Hom.hom h₂).trans (vanKampenDesc_comp_map_right hCover hA hB hAB
         hxA hxB _ _ (congrArg GrpCat.Hom.hom s.condition)).symm
+
+/-- The overlap square commutes after identifying the nested subspaces inside `C`. -/
+private theorem fundamentalGroup_subspace_inclusion_square {C S T : Set X}
+    (hSC : S ⊆ C) (hTC : T ⊆ C) (hST : S ⊆ T) (x : X) (hxS : x ∈ S) :
+    let S' : Set C := Subtype.val ⁻¹' S
+    let T' : Set C := Subtype.val ⁻¹' T
+    let eS : S' ≃ₜ S := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun s hs => ⟨⟨s, hSC hs⟩, rfl⟩)
+    let eT : T' ≃ₜ T := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun t ht => ⟨⟨t, hTC ht⟩, rfl⟩)
+    let x' : C := ⟨x, hSC hxS⟩
+    GrpCat.ofHom (_root_.FundamentalGroup.map
+        (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) ⟨x', hxS⟩) ≫
+        (FundamentalGroup.homeomorphMulEquivOfEq eT rfl).toGrpIso.hom =
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl).toGrpIso.hom ≫
+        GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion hST) ⟨x, hxS⟩) := by
+  intro S' T' eS eT x'
+  ext p
+  -- Pin the group carriers before unfolding the categorical wrappers: composition simp
+  -- cannot infer them through the homeomorphism-induced isomorphisms at nested subtypes.
+  change FundamentalGroup.homeomorphMulEquivOfEq eT rfl
+      (_root_.FundamentalGroup.map (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T'))
+        (⟨x', hxS⟩ : S') p) =
+    _root_.FundamentalGroup.map (ContinuousMap.inclusion hST) ⟨x, hxS⟩
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl p)
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply,
+    FundamentalGroup.homeomorphMulEquivOfEq_apply,
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')),
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion hST)]
+  exact (FundamentalGroup.mapOfEq_comp ⟨eT, eT.continuous⟩
+    (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) rfl rfl p).trans
+    ((FundamentalGroup.mapOfEq_congr
+      (f₂ := (ContinuousMap.inclusion hST).comp ⟨eS, eS.continuous⟩)
+      (by ext z; rfl) _ _ p).trans
+      (FundamentalGroup.mapOfEq_comp (ContinuousMap.inclusion hST)
+        ⟨eS, eS.continuous⟩ rfl rfl p).symm)
+
+/-- The map into `C` factors through the identification of a nested subspace with `S`. -/
+private theorem fundamentalGroup_subspace_subtypeVal_square {C S : Set X}
+    (hSC : S ⊆ C) (x : X) (hxS : x ∈ S) :
+    let S' : Set C := Subtype.val ⁻¹' S
+    let eS : S' ≃ₜ S := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun s hs => ⟨⟨s, hSC hs⟩, rfl⟩)
+    let x' : C := ⟨x, hSC hxS⟩
+    GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal S') ⟨x', hxS⟩) =
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl).toGrpIso.hom ≫
+        GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion hSC) ⟨x, hxS⟩) := by
+  intro S' eS x'
+  ext p
+  -- As in the overlap square, expose the induced maps after fixing their group carriers.
+  change _root_.FundamentalGroup.map (ContinuousMap.subtypeVal S') ⟨x', hxS⟩ p =
+    _root_.FundamentalGroup.map (ContinuousMap.inclusion hSC) ⟨x, hxS⟩
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl p)
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply,
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion hSC),
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.subtypeVal S')]
+  -- The canonical homeomorphism forgets the outer subtype, so composing it with
+  -- inclusion is definitionally the subtype-value map.
+  exact (FundamentalGroup.mapOfEq_comp (ContinuousMap.inclusion hSC)
+    ⟨eS, eS.continuous⟩ rfl rfl p).symm
+
+/-- Based van Kampen for a union of two open subspaces. All the maps are induced by
+inclusions, and neither inclusion from the overlap needs to induce an injective map. -/
+theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
+    (hAo : IsOpen A) (hBo : IsOpen B)
+    (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsPathConnected (A ∩ B))
+    (x : X) (hxA : x ∈ A) (hxB : x ∈ B) :
+    IsPushout
+      (GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left)
+        (⟨x, hxA, hxB⟩ : ↥(A ∩ B))))
+      (GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
+        (⟨x, hxA, hxB⟩ : ↥(A ∩ B))))
+      (GrpCat.ofHom (_root_.FundamentalGroup.map
+        (ContinuousMap.inclusion (hC.symm ▸ subset_union_left))
+        (⟨x, hxA⟩ : A)))
+      (GrpCat.ofHom (_root_.FundamentalGroup.map
+        (ContinuousMap.inclusion (hC.symm ▸ subset_union_right))
+        (⟨x, hxB⟩ : B))) := by
+  subst C
+  -- Apply van Kampen inside the union, then transport the three source carriers.
+  -- The four compatibility checks retain the original inclusion-induced maps.
+  let A' : Set ↥(A ∪ B) := Subtype.val ⁻¹' A
+  let B' : Set ↥(A ∪ B) := Subtype.val ⁻¹' B
+  let x' : ↥(A ∪ B) := ⟨x, Or.inl hxA⟩
+  let eA : A' ≃ₜ A := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+    (fun a ha => ⟨⟨a, Or.inl ha⟩, rfl⟩)
+  let eB : B' ≃ₜ B := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+    (fun b hb => ⟨⟨b, Or.inr hb⟩, rfl⟩)
+  let eAB : ↥(A' ∩ B') ≃ₜ ↥(A ∩ B) :=
+    Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange (s := A ∩ B)
+      (fun a ha => ⟨(⟨a, Or.inl ha.1⟩ : ↥(A ∪ B)), rfl⟩)
+  have hA' : IsPathConnected A' := hA.preimage_coe subset_union_left
+  have hB' : IsPathConnected B' := hB.preimage_coe subset_union_right
+  have hAB' : IsPathConnected (A' ∩ B') :=
+    hAB.preimage_coe (inter_subset_left.trans subset_union_left)
+  have hCover : interior A' ∪ interior B' = univ := by
+    rw [(hAo.preimage continuous_subtype_val).interior_eq,
+      (hBo.preimage continuous_subtype_val).interior_eq]
+    ext z
+    exact iff_of_true z.2 (mem_univ z)
+  let iA : GrpCat.of (_root_.FundamentalGroup A' ⟨x', hxA⟩) ≅
+      GrpCat.of (_root_.FundamentalGroup A ⟨x, hxA⟩) := (FundamentalGroup.homeomorphMulEquivOfEq eA
+    (rfl : eA ⟨x', hxA⟩ = ⟨x, hxA⟩)).toGrpIso
+  let iB : GrpCat.of (_root_.FundamentalGroup B' ⟨x', hxB⟩) ≅
+      GrpCat.of (_root_.FundamentalGroup B ⟨x, hxB⟩) := (FundamentalGroup.homeomorphMulEquivOfEq eB
+    (rfl : eB ⟨x', hxB⟩ = ⟨x, hxB⟩)).toGrpIso
+  let iAB : GrpCat.of (_root_.FundamentalGroup ↥(A' ∩ B') ⟨x', hxA, hxB⟩) ≅
+      GrpCat.of (_root_.FundamentalGroup ↥(A ∩ B) ⟨x, hxA, hxB⟩) :=
+    (FundamentalGroup.homeomorphMulEquivOfEq eAB
+    (rfl : eAB ⟨x', hxA, hxB⟩ = ⟨x, hxA, hxB⟩)).toGrpIso
+  refine (isPushout_fundamentalGroup hCover hA' hB' hAB' hxA hxB).of_iso
+    iAB iA iB (Iso.refl _) ?_ ?_ ?_ ?_
+  · exact fundamentalGroup_subspace_inclusion_square
+      (inter_subset_left.trans subset_union_left) subset_union_left inter_subset_left x ⟨hxA, hxB⟩
+  · exact fundamentalGroup_subspace_inclusion_square
+      (inter_subset_left.trans subset_union_left) subset_union_right inter_subset_right x ⟨hxA, hxB⟩
+  · exact fundamentalGroup_subspace_subtypeVal_square subset_union_left x hxA
+  · exact fundamentalGroup_subspace_subtypeVal_square subset_union_right x hxB
 
 /-- The canonical homomorphism from the free product of the fundamental groups of two
 subspaces to the fundamental group of the ambient space. -/
