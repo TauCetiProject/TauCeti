@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.ExponentNorms
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Ideles
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.AuxiliaryIdeles
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Surjective
@@ -73,22 +72,11 @@ theorem auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport {n
     (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
     auxiliaryKummerIdeleSubgroup S ∅ n ≤
       (GlobalNumberFields.ideleNormMap K L).toMonoidHom.range := by
-  intro x hx
-  rw [mem_auxiliaryKummerIdeleSubgroup_iff] at hx
-  refine mem_range_ideleNormMap_of_exponent_dvd K L hn (S := (S : Set _)) (T := ∅)
-    (by simp) ?_ ?_ ?_ ?_
-  · intro v hvS _
-    obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
-    exact ⟨⟨w, inferInstance⟩, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport _
-      (fun hv ↦ hvS (hram hv)) w.asIdeal⟩
-  · intro v hvS
-    rw [powerSubgroup_eq_range_powMonoidHom]
-    exact hx.1 v hvS
-  · intro v hvS _
-    exact hx.2.2 v hvS (by simp)
-  · intro v
-    rw [powerSubgroup_eq_range_powMonoidHom]
-    exact hx.2.1 v
+  apply auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap K L hn S ∅ (by simp)
+  intro v hvS _
+  obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+  exact ⟨⟨w, inferInstance⟩, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport _
+    (fun hv ↦ hvS (hram hv)) w.asIdeal⟩
 
 /-- **The Kummer idele-class subgroup consists of norms.** Under the same hypotheses as
 `auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport`, every class represented
@@ -99,13 +87,11 @@ theorem auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap_of_ramified
     auxiliaryKummerIdeleClassSubgroup S ∅ n ≤
       (GlobalNumberFields.ideleClassNormMap K L :
         IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
-  intro c hc
-  obtain ⟨x, hx, rfl⟩ := (mem_auxiliaryKummerIdeleClassSubgroup_iff S ∅ n c).mp hc
-  obtain ⟨y, hy⟩ :=
-    auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport K L hn S hram hx
-  refine ⟨(y : IdeleClassGroup (𝓞 L) L), ?_⟩
-  exact (GlobalNumberFields.ideleClassNormMap_mk y).trans
-    (congrArg (fun z : IdeleGroup (𝓞 K) K ↦ (z : IdeleClassGroup (𝓞 K) K)) hy)
+  apply auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap K L hn S ∅ (by simp)
+  intro v hvS _
+  obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+  exact ⟨⟨w, inferInstance⟩, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport _
+    (fun hv ↦ hvS (hram hv)) w.asIdeal⟩
 
 /-- **The idele-class norm index divides the Kummer subgroup index.** If `S` contains the
 ramified places and `n` is divisible by the exponent of `Gal(L/K)`, then

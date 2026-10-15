@@ -18,9 +18,9 @@ still applies on `S ∩ T`. At exponent one it is the full group of `(S ∪ T)`-
 the exponent-`n` subgroup in that group is the product of the local power-class counts over `S`
 and the infinite places. No roots-of-unity hypothesis is needed for this identity.
 
-If the primes in `S` generate the ideal class group, every idele class has an `S`-idele, hence
-an `(S ∪ T)`-idele, representative. Consequently the index of the image of the auxiliary Kummer
-subgroup in the idele class group divides the same product.
+If the primes in `S ∪ T` generate the ideal class group, every idele class has an `(S ∪ T)`-idele
+representative. Consequently the index of the image of the auxiliary Kummer subgroup in the idele
+class group divides the same product.
 
 ## References
 
@@ -170,12 +170,12 @@ theorem mem_auxiliaryKummerIdeleClassSubgroup_iff
         (x : IdeleClassGroup (𝓞 K) K) = c :=
   (Iff.rfl)
 
-/-- If the classes of `S` generate the ideal class group, the index of the auxiliary Kummer
+/-- If the classes of `S ∪ T` generate the ideal class group, the index of the auxiliary Kummer
 idele-class subgroup divides the product of the local power-class counts. -/
 theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
     (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
-    (hS : Subgroup.closure
-      (HeightOneSpectrum.classGroupMk (R := 𝓞 K) '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤) :
+    (hST : Subgroup.closure (HeightOneSpectrum.classGroupMk (R := 𝓞 K) ''
+      ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ (T : Set (HeightOneSpectrum (𝓞 K))))) = ⊤) :
     (auxiliaryKummerIdeleClassSubgroup S T n).index ∣
       (∏ v ∈ S, Nat.card ((v.adicCompletion K)ˣ ⧸ (powMonoidHom n).range)) *
         ∏ w : InfinitePlace K, Nat.card (w.Completionˣ ⧸ (powMonoidHom n).range) := by
@@ -184,9 +184,10 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
       (auxiliaryKummerIdeleSubgroup S T 1).subtype
   have hf : Function.Surjective f := by
     intro c
-    obtain ⟨x, hx, hc⟩ := IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hS c
+    obtain ⟨x, hx, hc⟩ :=
+      IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
     exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x).mpr
-      (fun v hvS _ ↦ hx v hvS)⟩, hc⟩
+      (fun v hvS hvT ↦ hx v (by simp [hvS, hvT]))⟩, hc⟩
   have hmap :
       ((auxiliaryKummerIdeleSubgroup S T n).subgroupOf
           (auxiliaryKummerIdeleSubgroup S T 1)).map f =
