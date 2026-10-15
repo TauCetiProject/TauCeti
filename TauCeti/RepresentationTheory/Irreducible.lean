@@ -17,9 +17,9 @@ import TauCeti.LinearAlgebra.TensorProduct.Separation
 /-!
 # Criteria for irreducibility
 
-This file collects three ways of recognising an irreducible representation from outside, without
-inspecting its subrepresentations one by one, and the finite-dimensional existence statement that
-makes the second of them usable.
+This file collects criteria for recognising irreducible representations without inspecting their
+subrepresentations one by one, together with existence, density, and Schur lemmas for
+finite-dimensional representations.
 
 A representation on a one-dimensional vector space is irreducible, whatever the group and however
 it acts: a subrepresentation is in particular a subspace, and a line has only the two trivial
@@ -177,36 +177,9 @@ translation is the correspondence between the subrepresentations of `σ.toRepres
 subrepresentations of `ρ` contained in `σ`, given by pushing forward along the inclusion. -/
 theorem isIrreducible_toRepresentation_of_isAtom {ρ : Representation k G V}
     {σ : Subrepresentation ρ} (h : IsAtom σ) : σ.toRepresentation.IsIrreducible := by
-  have hσ : σ.toSubmodule ≠ ⊥ := fun hc =>
-    h.1 (Subrepresentation.toSubmodule_injective (hc.trans Subrepresentation.toSubmodule_bot.symm))
-  have : Nontrivial σ.toSubmodule := Submodule.nontrivial_iff_ne_bot.mpr hσ
-  refine ⟨fun τ => ?_⟩
-  -- push `τ` forward to a subrepresentation of `ρ` contained in `σ`
-  let τ' : Subrepresentation ρ :=
-    { toSubmodule := τ.toSubmodule.map σ.toSubmodule.subtype
-      apply_mem_toSubmodule := by
-        rintro g _ ⟨w, hw, rfl⟩
-        exact ⟨σ.toRepresentation g w, τ.apply_mem_toSubmodule g hw, rfl⟩ }
-  have hmap : τ'.toSubmodule = τ.toSubmodule.map σ.toSubmodule.subtype := rfl
-  have hle : τ' ≤ σ := Submodule.map_subtype_le _ _
-  rcases eq_or_ne τ' ⊥ with hτ | hτ
-  · refine Or.inl (Subrepresentation.toSubmodule_injective ?_)
-    have : τ.toSubmodule.map σ.toSubmodule.subtype =
-        (⊥ : Submodule k σ.toSubmodule).map σ.toSubmodule.subtype := by
-      rw [Submodule.map_bot]
-      exact hmap.symm.trans (congrArg Subrepresentation.toSubmodule hτ)
-    exact (Submodule.map_injective_of_injective σ.toSubmodule.subtype_injective this).trans
-      Subrepresentation.toSubmodule_bot.symm
-  · refine Or.inr (Subrepresentation.toSubmodule_injective ?_)
-    have heq : τ' = σ := by
-      by_contra hne'
-      exact hτ (h.2 _ (lt_of_le_of_ne hle hne'))
-    have : τ.toSubmodule.map σ.toSubmodule.subtype =
-        (⊤ : Submodule k σ.toSubmodule).map σ.toSubmodule.subtype := by
-      rw [Submodule.map_subtype_top]
-      exact hmap.symm.trans (congrArg Subrepresentation.toSubmodule heq)
-    exact (Submodule.map_injective_of_injective σ.toSubmodule.subtype_injective this).trans
-      Subrepresentation.toSubmodule_top.symm
+  rw [irreducible_iff_isSimpleModule_asModule,
+    σ.asModuleEquivAsSubmodule.isSimpleModule_iff, Subrepresentation.isSimpleModule_asSubmodule_iff]
+  exact h
 
 /-- **A representation whose algebra map exhausts the endomorphisms is irreducible.** Every nonzero
 vector then generates, because a vector space is a simple module over its endomorphism ring. -/

@@ -49,7 +49,9 @@ subgroup.
 It also records the constructor `LinearEquiv.toFDRepIso`, which turns an equivariant linear
 equivalence into an isomorphism of `FDRep R G`: the `FDRep` counterpart of Mathlib's `Rep.mkIso`,
 with the equivariance condition read pointwise on the underlying linear maps rather than as an
-equation of morphisms of `FGModuleCat R`.
+equation of morphisms of `FGModuleCat R`, and its converse `FDRep.isoToEquiv`, which reads an
+isomorphism of `FDRep R G` as an equivalence of the carried representations, so that invariants
+of `Representation.Equiv` apply to isomorphic objects.
 
 ## Main definitions
 
@@ -57,6 +59,8 @@ equation of morphisms of `FGModuleCat R`.
   object of `FDRep k G`.
 * `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
   equivalence.
+* `FDRep.isoToEquiv`: the equivalence of representations underlying an isomorphism in
+  `FDRep R G`.
 
 ## Main statements
 
@@ -432,6 +436,25 @@ instance normal_iInf_ker (W : ι → FDRep k G) : (⨅ i, (W i).ρ.ker).Normal :
   Subgroup.normal_iInf_normal fun _ => inferInstance
 
 end CommonKernel
+
+section IsoToEquiv
+
+variable {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+
+/-- **The equivalence of representations underlying an isomorphism in `FDRep R G`**: the linear
+equivalence `FDRep.isoToLinearEquiv` intertwines the two actions, by `FDRep.Iso.conj_ρ`.  This is
+the `FDRep` counterpart of `Representation.equivOfIso` for `Rep`, and the converse of
+`LinearEquiv.toFDRepIso`. -/
+noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Equiv V.ρ W.ρ :=
+  .mk (isoToLinearEquiv i) fun g => LinearMap.ext fun v => by
+    simp [Iso.conj_ρ i g, LinearEquiv.conj_apply]
+
+@[simp]
+theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
+    (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=
+  (rfl)
+
+end IsoToEquiv
 
 end FDRep
 
