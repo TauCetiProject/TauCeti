@@ -29,6 +29,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
   the measure of a cube.
 * `EuclideanSpace.measure_preimage_ofLp_closedBall_le`: a cube has measure at most `√nⁿ` times
   that of the Euclidean ball of the same radius.
+* `EuclideanSpace.measurePreserving_consEquivL`: splitting off the first coordinate identifies the
+  volume of `ℝⁿ⁺¹` with the product of the volumes of `ℝ` and `ℝⁿ`.
 -/
 
 public section
@@ -97,5 +99,19 @@ theorem measure_preimage_ofLp_closedBall_le [Nonempty ι] (μ : Measure (Euclide
     mul_left_comm, ← ENNReal.ofReal_mul (by positivity), ← mul_pow]
   congr 3
   field_simp
+
+/-- Splitting off the first coordinate carries the product of Lebesgue measure on `ℝ` and the volume
+of `ℝⁿ` to the volume of `ℝⁿ⁺¹`. -/
+theorem measurePreserving_consEquivL (n : ℕ) : MeasurePreserving (consEquivL ℝ n) := by
+  have h : MeasurePreserving (fun z : ℝ × EuclideanSpace ℝ (Fin n) => (z.1, ofLp z.2)) :=
+    (MeasurePreserving.id volume).prod (PiLp.volume_preserving_ofLp (Fin n))
+  have hcons : MeasurePreserving (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0).symm
+      ((volume : Measure ℝ).prod (volume : Measure (Fin n → ℝ)))
+      (volume : Measure (Fin (n + 1) → ℝ)) := by
+    simpa [volume_pi] using
+      (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => (volume : Measure ℝ)) 0).symm
+  convert ((PiLp.volume_preserving_toLp (Fin (n + 1))).comp hcons).comp h using 1
+  ext z i
+  refine Fin.cases ?_ (fun j => ?_) i <;> simp
 
 end EuclideanSpace
