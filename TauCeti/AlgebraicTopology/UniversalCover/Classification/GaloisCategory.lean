@@ -125,12 +125,12 @@ theorem finiteFiberActionFunctor_obj_obj_ρ_apply (p : FiniteCoveringSpace X)
     cast (finiteFiberActionFunctor_obj_obj_V x₀ p)
         (((finiteFiberActionFunctor x₀).obj p).obj.ρ g
           (cast (finiteFiberActionFunctor_obj_obj_V x₀ p).symm e)) =
-      p.isCoveringMap_proj.monodromy g e := by
+      p.isCoveringMap_proj.monodromy g.toPath e := by
   exact (cast_apply_of_heq
     (finiteFiberActionFunctor_obj_obj_V x₀ p)
     (finiteFiberActionFunctor_obj_obj_V x₀ p)
     (f' := ConcreteCategory.hom
-      (((CoveringSpace.fiberActionFunctor x₀).obj ((forget X).obj p)).ρ g)) (by
+      (((CoveringSpace.fiberActionFunctor x₀).obj ((forget X).obj p)).ρ g).asHom) (by
         cases finiteFiberActionFunctor_obj_obj x₀ p
         rfl) e).trans
     (CoveringSpace.fiberActionFunctor_obj_ρ_apply x₀ ((forget X).obj p) g e)

@@ -40,22 +40,36 @@ class GitFixtures(unittest.TestCase):
         git(self.root, "commit", "-m", title)
         return git(self.root, "rev-parse", "HEAD")
 
-    def pr(self, number, body="", *, draft=False, fork=True, base="main", state="open"):
+    def pr(self, number, *, draft=False, fork=True, base="main", state="open"):
         head = git(self.root, "rev-parse", "HEAD")
         git(self.root, "update-ref", f"refs/pull/{number}/head", head)
         p = sp.PR(number, state, head, base, f"branch-{number}",
-                  "fork/TauCeti" if fork else sp.REPO, body, draft, author_id=1)
+                  "fork/TauCeti" if fork else sp.REPO, draft, author_id=1)
         self.prs.append(p)
         return p
 
-    def detector(self):
+    def detector(self, api=None):
         main = git(self.root, "rev-parse", "main")
         src = sp.Source(Path(self.tmp.name) / "source", None, main,
                         self.root / ".git/objects", str(self.root))
         src.fetch(self.prs)
-        return sp.Detector(None, src, self.prs)
+        api = api or SimpleNamespace(historical_head=lambda *_: 12345)
+        return sp.Detector(api, src, self.prs)
 
-    def parent_child(self, *, draft=False, explicit=False):
+    def test_independent_identical_content_does_not_establish_direction(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "independent identical content\n")
+        self.commit("parent change")
+        self.pr(1)
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("P", "independent identical content\n")
+        self.write("C", "own change\n")
+        self.commit("independent child change")
+        child = self.pr(2)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def parent_child(self, *, draft=False):
         git(self.root, "checkout", "-b", "parent")
         self.write("parent", "prerequisite\n")
         self.commit("prerequisite")
@@ -63,7 +77,7 @@ class GitFixtures(unittest.TestCase):
         git(self.root, "checkout", "-b", "child")
         self.write("child", "own change\n")
         self.commit("own change")
-        child = self.pr(2, "Stacked on #1" if explicit else "", draft=draft)
+        child = self.pr(2, draft=draft)
         return parent, child
 
     def test_ancestor_head_draft_fork(self):
@@ -90,8 +104,8 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "possible copied prefix"):
             self.detector().detect(victim)
 
-    def test_unpinned_child_declaration_does_not_bypass_cross_fork_provenance(self):
-        _, child = self.parent_child(explicit=True)
+    def test_ancestor_does_not_bypass_cross_fork_provenance(self):
+        _, child = self.parent_child()
         child = sp.PR(**{**sp.asdict(child), "head_repo": "another/TauCeti", "author_id": 2})
         self.prs[-1] = child
         with self.assertRaisesRegex(sp.Gap, "possible copied prefix"):
@@ -109,7 +123,7 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "unknown/different author"):
             self.detector().detect(child)
 
-    def test_stale_explicit_parent_cannot_copy_standalone_child_prefix(self):
+    def test_third_party_cannot_replace_landed_parent_with_copied_child_prefix(self):
         git(self.root, "checkout", "-b", "parent")
         self.write("A", "old prerequisite\n")
         self.commit("original prerequisite")
@@ -119,7 +133,7 @@ class GitFixtures(unittest.TestCase):
         copied_prefix = self.commit("child first")
         self.write("D", "child next contribution\n")
         self.commit("child next")
-        child = self.pr(2, "Stacked on #1")
+        child = self.pr(2)
         git(self.root, "checkout", "main")
         git(self.root, "merge", "--squash", "parent")
         self.commit("original prerequisite landed through another squash")
@@ -134,8 +148,8 @@ class GitFixtures(unittest.TestCase):
                 with self.assertRaisesRegex(sp.Gap, "provenance unproved|unknown/different author"):
                     detector.detect(child)
 
-    def test_explicit_parent_with_unknown_author_remains_unknown(self):
-        parent, child = self.parent_child(explicit=True)
+    def test_parent_with_unknown_author_remains_unknown(self):
+        parent, child = self.parent_child()
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "author_id": 0})
         with self.assertRaisesRegex(sp.Gap, "unknown/different author"):
             self.detector().detect(child)
@@ -148,7 +162,7 @@ class GitFixtures(unittest.TestCase):
         self.assertIsNotNone(self.detector().detect(child)[0])
 
     def test_closed_parent_cannot_grant_canonical_base_exception(self):
-        parent, child = self.parent_child(explicit=True)
+        parent, child = self.parent_child()
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed",
                               "head_repo": sp.REPO, "author_id": 2})
         child = sp.PR(**{**sp.asdict(child), "base": parent.branch})
@@ -156,13 +170,47 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "provenance unproved"):
             self.detector().detect(child)
 
-    def test_cross_principal_prose_cannot_attribute_copied_content(self):
+    def test_canonical_base_update_branch_retains_older_parent_work(self):
+        parent, child = self.parent_child()
+        git(self.root, "checkout", "main")
+        self.write("new-main", "landed independently\n")
+        self.commit("advance main")
+        git(self.root, "checkout", "parent")
+        git(self.root, "merge", "--no-ff", "main", "-m", "parent updates main")
+        self.prs = []
+        self.pr(1, fork=False)
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "Update branch")
+        child = self.pr(2, base="branch-1")
+        evidence, _ = self.detector().detect(child)
+        self.assertEqual(evidence.commit, parent.head)
+
+    def test_current_parent_reverted_source_cannot_close_child_restoring_it(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("A", "old parent work\n")
+        added = self.commit("add A")
+        git(self.root, "revert", "--no-edit", added)
+        self.write("B", "current parent work\n")
+        self.commit("add B")
+        self.pr(1)
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("own", "own child work\n")
+        self.commit("child work")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge current parent")
+        git(self.root, "rm", "B")
+        self.write("A", "old parent work\n")
+        self.commit("restore removed A and remove B")
+        child = self.pr(2)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_independent_cross_principal_cherry_pick_has_no_direction(self):
         git(self.root, "checkout", "-b", "victim")
         self.write("copied", "victim contribution\n")
         copied = self.commit("victim change")
         self.write("own", "victim next contribution\n")
         self.commit("victim next")
-        child = self.pr(2, "Stacked on #1")
+        child = self.pr(2)
         git(self.root, "checkout", "main")
         git(self.root, "checkout", "-b", "outsider")
         git(self.root, "cherry-pick", copied)
@@ -170,11 +218,10 @@ class GitFixtures(unittest.TestCase):
         parent = self.pr(1)
         self.prs[-1] = sp.PR(**{**sp.asdict(parent), "head_repo": "outsider/TauCeti", "author_id": 2})
         self.assertNotEqual(parent.head, copied)
-        with self.assertRaisesRegex(sp.Gap, "provenance unproved"):
-            self.detector().detect(child)
+        self.assertIsNone(self.detector().detect(child)[0])
 
-    def test_cross_principal_explicit_parent_landed_by_squash_is_not_unknown(self):
-        parent, child = self.parent_child(explicit=True)
+    def test_cross_principal_ancestor_landed_by_squash_is_not_closed(self):
+        parent, child = self.parent_child()
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "head_repo": "other/TauCeti", "author_id": 2})
         git(self.root, "checkout", "main")
         git(self.root, "merge", "--squash", "parent")
@@ -200,7 +247,7 @@ class GitFixtures(unittest.TestCase):
         git(self.root, "checkout", "-b", "child")
         self.write("parent-one", "edited by child\n")
         self.commit("child edits first change")
-        child = self.pr(2, "Stacked on #1")
+        child = self.pr(2)
         evidence, _ = self.detector().detect(child)
         self.assertEqual(evidence.kind, "retained-unmerged-commit")
         self.assertEqual(evidence.commit, commit)
@@ -242,6 +289,188 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "no alternative retained commit proof"):
             self.detector().detect(child)
 
+    def historical_parent(self, *, remove_source=False, land_source=False, closed=False):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent contribution\n")
+        pinned = self.commit("parent version incorporated by child")
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("C", "child's own work\n")
+        self.commit("child contribution")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge source prerequisite")
+        merge = git(self.root, "rev-parse", "HEAD")
+        child = self.pr(2)
+        git(self.root, "checkout", "parent")
+        if remove_source:
+            git(self.root, "rm", "P")
+        self.write("future", "later parent change absent from child\n")
+        self.commit("parent advances")
+        parent = self.pr(1, state="closed" if closed else "open")
+        if land_source:
+            git(self.root, "checkout", "main")
+            git(self.root, "cherry-pick", pinned)
+            git(self.root, "commit", "--amend", "-m", "source lands with a different hash")
+        return parent, child, pinned, merge
+
+    def test_merged_historical_parent_with_retained_current_source(self):
+        parent, child, pinned, merge = self.historical_parent()
+        evidence, _ = self.detector().detect(child)
+        self.assertEqual(evidence.kind, "merged-historical-parent-commit")
+        self.assertEqual(evidence.parent_pin, pinned)
+        self.assertEqual(evidence.child_merge, merge)
+        self.assertEqual(evidence.parent_head, parent.head)
+        self.assertIn("both current PR trees", sp.comment_text(evidence))
+
+    def test_closed_unlanded_historical_parent_remains_unknown(self):
+        _, child, _, _ = self.historical_parent(closed=True)
+        with self.assertRaisesRegex(sp.Gap, "prerequisite versus supersession"):
+            self.detector().detect(child)
+
+    def test_historical_relationship_without_event_binding_stays_unknown(self):
+        _, child, _, _ = self.historical_parent()
+        api = SimpleNamespace(historical_head=lambda *_: None)
+        with self.assertRaisesRegex(sp.Gap, "canonical PR-event binding"):
+            self.detector(api).detect(child)
+
+    def test_historical_parent_cannot_claim_childs_own_prefix(self):
+        git(self.root, "checkout", "-b", "child")
+        self.write("C", "child's own original work\n")
+        self.commit("child owns C first")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent contribution\n")
+        self.commit("parent change")
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge parent")
+        self.write("P", "child independently rewrites parent contribution\n")
+        self.commit("rewrite inherited P")
+        child = self.pr(2)
+        git(self.root, "checkout", "parent")
+        self.write("future", "parent advances\n")
+        self.commit("parent next")
+        self.pr(1)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_historical_parent_cannot_claim_childs_previously_merged_side_branch(self):
+        git(self.root, "checkout", "-b", "child-side")
+        self.write("C", "child's own side-branch work\n")
+        self.commit("child side contribution")
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("own", "child main line\n")
+        self.commit("child main contribution")
+        git(self.root, "merge", "--no-ff", "child-side", "-m", "child imports own side branch")
+        git(self.root, "checkout", "child-side")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent change\n")
+        pinned = self.commit("parent contribution")
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge parent")
+        self.write("P", "child rewrites parent change\n")
+        self.commit("rewrite P")
+        child = self.pr(2)
+        git(self.root, "checkout", "parent")
+        self.write("future", "parent next change\n")
+        self.commit("parent advances")
+        self.pr(1)
+        api = SimpleNamespace(historical_head=lambda _, head: 12345 if head == pinned else None)
+        with self.assertRaisesRegex(sp.Gap, "canonical PR-event binding"):
+            self.detector(api).detect(child)
+
+    def test_current_parent_import_cites_new_parent_work_not_child_prefix(self):
+        for merge_main in (False, True):
+            with self.subTest(merge_main=merge_main):
+                self.setUp()
+                git(self.root, "checkout", "-b", "child")
+                self.write("C", "child's existing contribution\n")
+                self.commit("child prefix")
+                git(self.root, "checkout", "-b", "parent")
+                self.write("P", "new parent contribution\n")
+                parent_commit = self.commit("parent work")
+                if merge_main:
+                    git(self.root, "checkout", "main")
+                    self.write("later-main", "independent landed work\n")
+                    self.commit("main advances")
+                    git(self.root, "checkout", "parent")
+                    git(self.root, "merge", "--no-ff", "main", "-m", "parent merges main")
+                self.pr(1)
+                git(self.root, "checkout", "child")
+                git(self.root, "merge", "--no-ff", "parent", "-m", "child imports parent")
+                child = self.pr(2)
+                evidence, _ = self.detector().detect(child)
+                self.assertEqual(evidence.commit, parent_commit)
+
+    def test_current_parent_merge_cannot_claim_childs_own_prefix(self):
+        git(self.root, "checkout", "-b", "child")
+        self.write("C", "child's original contribution\n")
+        self.commit("child owns C")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent contribution\n")
+        self.commit("parent owns P")
+        self.pr(1)
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge current parent")
+        self.write("P", "independent child rewrite\n")
+        self.commit("rewrite all parent work")
+        child = self.pr(2)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_current_parent_merge_cannot_claim_childs_prior_side_branch(self):
+        git(self.root, "checkout", "-b", "child-side")
+        self.write("C", "child's original side contribution\n")
+        self.commit("child side")
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("own", "child main line\n")
+        self.commit("child main")
+        git(self.root, "merge", "--no-ff", "child-side", "-m", "merge own side")
+        git(self.root, "checkout", "child-side")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent contribution\n")
+        current_head = self.commit("parent contribution")
+        self.pr(1)
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge current parent")
+        self.write("P", "child rewrites parent source\n")
+        self.commit("rewrite P")
+        child = self.pr(2)
+        api = SimpleNamespace(historical_head=lambda _, head: 12345 if head == current_head else None)
+        with self.assertRaisesRegex(sp.Gap, "canonical PR-event binding"):
+            self.detector(api).detect(child)
+
+    def test_closed_submission_cannot_close_its_own_resubmission(self):
+        parent, old_child = self.parent_child()
+        self.prs[-1] = sp.PR(**{**sp.asdict(old_child), "state": "closed"})
+        git(self.root, "checkout", "main")
+        git(self.root, "merge", "--squash", "parent")
+        self.commit("prerequisite lands under different hash")
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "main", "-m", "merge landed prerequisite")
+        child = self.pr(3)
+        with self.assertRaisesRegex(sp.Gap, "prerequisite versus supersession"):
+            self.detector().detect(child)
+
+    def test_historical_source_moved_out_of_parent_is_not_closed(self):
+        _, child, _, _ = self.historical_parent(remove_source=True)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_historical_source_landed_with_different_hash_is_not_closed(self):
+        _, child, _, _ = self.historical_parent(land_source=True)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_sibling_merges_of_shared_prerequisite_do_not_establish_direction(self):
+        git(self.root, "checkout", "-b", "shared")
+        self.write("shared", "unlanded common precursor\n")
+        self.commit("shared precursor")
+        for branch, number in (("parent", 1), ("child", 2)):
+            git(self.root, "checkout", "main")
+            git(self.root, "checkout", "-b", branch)
+            self.write(branch, branch + " own contribution\n")
+            self.commit(branch)
+            git(self.root, "merge", "--no-ff", "shared", "-m", "merge same shared source")
+            child = self.pr(number)
+        with self.assertRaisesRegex(sp.Gap, "shared ancestry without a confirmed direction"):
+            self.detector().detect(child)
+
     def test_independent_same_file(self):
         git(self.root, "checkout", "-b", "one")
         self.write("common", "independent one\n")
@@ -264,7 +493,7 @@ class GitFixtures(unittest.TestCase):
                 git(self.root, "checkout", "-b", "child")
                 self.write("own", "child's independent change\n")
                 self.commit("own work")
-                child = self.pr(2, "Depends on #1")
+                child = self.pr(2)
                 git(self.root, "checkout", "main")
                 if restores_file:
                     git(self.root, "rm", "G")
@@ -278,16 +507,15 @@ class GitFixtures(unittest.TestCase):
                     git(self.root, "rm", "G")
                 self.commit("parent reverses main's change")
                 self.pr(1)
-                with self.assertRaisesRegex(sp.Gap, "fork point; base drift"):
-                    self.detector().detect(child)
+                self.assertIsNone(self.detector().detect(child)[0])
 
     def test_parent_landed_normally(self):
-        parent, child = self.parent_child(explicit=True)
+        parent, child = self.parent_child()
         git(self.root, "update-ref", "refs/heads/main", parent.head)
         self.assertIsNone(self.detector().detect(child)[0])
 
     def test_parent_landed_by_bors_squash_then_changed_again(self):
-        _, child = self.parent_child(explicit=True)
+        _, child = self.parent_child()
         git(self.root, "checkout", "main")
         git(self.root, "merge", "--squash", "parent")
         self.commit("bors squash")
@@ -297,14 +525,14 @@ class GitFixtures(unittest.TestCase):
         self.assertIsNone(evidence)
         self.assertTrue(any("source equivalent landed" in r for r in reasons))
 
-    def retained_then_reverted_parent(self, landed_aggregate, *, body_only=False):
+    def retained_then_reverted_parent(self, landed_aggregate, *, without_base_relation=False):
         git(self.root, "checkout", "-b", "parent")
         self.write("A", "unlanded prerequisite\n")
         added = self.commit("add A")
         git(self.root, "checkout", "-b", "child")
         self.write("child", "own work\n")
         self.commit("child retains A")
-        child = self.pr(2, "Stacked on #1", base="main" if body_only else "branch-1")
+        child = self.pr(2, base="main" if without_base_relation else "branch-1")
         git(self.root, "checkout", "parent")
         git(self.root, "revert", "--no-edit", added)
         if landed_aggregate:
@@ -314,13 +542,11 @@ class GitFixtures(unittest.TestCase):
         if landed_aggregate:
             git(self.root, "checkout", "main")
             git(self.root, "cherry-pick", last)
-        if body_only:
+        if without_base_relation:
             with self.assertRaises(sp.Gap):
                 self.detector().detect(child)
             return
-        evidence, _ = self.detector().detect(child)
-        self.assertEqual(evidence.kind, "retained-unmerged-commit")
-        self.assertEqual(evidence.commit, added)
+        self.assertIsNone(self.detector().detect(child)[0])
 
     def test_empty_parent_aggregate_still_checks_retained_commits(self):
         self.retained_then_reverted_parent(False)
@@ -328,8 +554,8 @@ class GitFixtures(unittest.TestCase):
     def test_landed_parent_aggregate_still_checks_retained_commits(self):
         self.retained_then_reverted_parent(True)
 
-    def test_body_only_reverted_parent_has_ambiguous_direction(self):
-        self.retained_then_reverted_parent(False, body_only=True)
+    def test_without_base_relation_reverted_parent_has_ambiguous_direction(self):
+        self.retained_then_reverted_parent(False, without_base_relation=True)
 
     def test_parent_parts_landed_separately_never_together_are_not_unmerged_work(self):
         git(self.root, "checkout", "-b", "parent")
@@ -341,7 +567,7 @@ class GitFixtures(unittest.TestCase):
         git(self.root, "checkout", "-b", "child")
         self.write("child", "own change\n")
         self.commit("child")
-        child = self.pr(2, "Stacked on #1")
+        child = self.pr(2)
         git(self.root, "checkout", "main")
         self.write("A", "parent A\n")
         first = self.commit("squash A independently")
@@ -360,7 +586,7 @@ class GitFixtures(unittest.TestCase):
         git(self.root, "checkout", "-b", "child")
         self.write("child", "own work\n")
         self.commit("child")
-        child = self.pr(2, "Stacked on #1")
+        child = self.pr(2)
         git(self.root, "checkout", "main")
         self.write("file", "changed context\nold value\ncontext after\n")
         self.commit("main context drift")
@@ -369,37 +595,28 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "possible landed content"):
             self.detector().detect(child)
 
-    def test_closed_parent_discovered_by_other_child_does_not_bleed_into_shared_index(self):
-        parent, child = self.parent_child()
-        self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed"})
-        # This child adopts the closed source; only an unrelated third PR names it.
-        self.write("third", "unrelated\n")
-        self.commit("third")
-        self.pr(3, "Depends on #1")
-        detector = self.detector()
-        self.assertNotIn(parent.number, detector.index[parent.head])
-        self.assertIsNone(detector.detect(child)[0])
 
     def test_closed_but_unlanded_parent(self):
-        parent, child = self.parent_child(explicit=True)
+        parent, child = self.parent_child()
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed"})
-        self.assertIsNotNone(self.detector().detect(child)[0])
+        with self.assertRaisesRegex(sp.Gap, "prerequisite versus supersession"):
+            self.detector().detect(child)
 
     def test_closed_landing_claim_without_source_proof_is_unknown_not_assumed_landed(self):
-        parent, child = self.parent_child(explicit=True)
+        parent, child = self.parent_child()
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed", "landing_claim": True})
         with self.assertRaisesRegex(sp.Gap, "reports landing"):
             self.detector().detect(child)
 
-    def test_stale_description_and_reverted_inheritance(self):
-        _, child = self.parent_child(explicit=True)
+    def test_reverted_inheritance_is_not_closed(self):
+        _, child = self.parent_child()
         git(self.root, "rm", "parent")
         self.commit("remove prerequisite")
         self.prs.pop()
-        child = self.pr(2, child.body)
+        child = self.pr(2)
         self.assertIsNone(self.detector().detect(child)[0])
 
-    def test_cherry_pick_identity_with_explicit_parent(self):
+    def test_cherry_pick_without_source_graph_direction_remains_outside_coverage(self):
         parent, _ = self.parent_child()
         self.prs.pop()
         git(self.root, "checkout", "main")
@@ -409,9 +626,8 @@ class GitFixtures(unittest.TestCase):
         git(self.root, "cherry-pick", parent.head)
         self.write("child", "own change\n")
         self.commit("child")
-        child = self.pr(2, "This PR is stacked on #1.")
-        evidence, _ = self.detector().detect(child)
-        self.assertEqual(evidence.kind, "explicit-parent-content")
+        child = self.pr(2)
+        self.assertIsNone(self.detector().detect(child)[0])
 
     def test_open_head_branch_parent(self):
         parent, child = self.parent_child()
@@ -451,39 +667,6 @@ class GitFixtures(unittest.TestCase):
             self.detector().detect(child)
 
 
-class ProseTests(unittest.TestCase):
-    def test_read_only_historical_explicit_examples(self):
-        fixtures = json.loads((Path(__file__).with_name("stack_policy_fixtures.json")).read_text())
-        expected = {"16755": {16515}, "16656": {16643, 16632, 15253},
-                    "16613": {16611}, "16130": {15856, 16035}}
-        for number, parents in expected.items():
-            item = fixtures["explicit_prose"][number]
-            self.assertEqual(sp.oid(item["head"]), item["head"])
-            self.assertEqual(sp.explicit_parents("\n".join(item["body_lines"])), parents)
-
-    def test_affirmative_parent_identity(self):
-        self.assertEqual(sp.explicit_parents("This PR is stacked on #12 (#11)."), {11, 12})
-        self.assertEqual(sp.explicit_parents(f"Stacked on https://github.com/{sp.REPO}/pull/12"), {12})
-        self.assertEqual(sp.explicit_parents("Prerequisite: #12"), {12})
-
-    def test_superseding_closed_source_is_not_a_stack_claim(self):
-        self.assertFalse(sp.explicit_parents(
-            "Includes the prerequisite source from #12. This PR supersedes that standalone foundation."))
-        self.assertFalse(sp.explicit_parents(
-            "Includes #12 (a composition theorem, which depends on #11). This PR supersedes them."))
-        self.assertEqual(sp.explicit_parents(
-            "Prerequisite: #12. This PR includes #11 and supersedes it."), {12})
-
-    def test_misleading_quoted_negative_and_foreign_prose(self):
-        for body in ["> Stacked on #12", "```\nStacked on #12\n```", "Not stacked on #12",
-                     "This was stacked on #12", '`Stacked on #12`', 'The title is "stacked on #12"',
-                     '“Stacked on #12”', "'Stacked on #12'", "    Stacked on #12", "``Stacked on #12``",
-                     "Prerequisites: none; #12 will build on this", "Depends on Mathlib PR #12",
-                     "<!-- Stacked on #12 -->", "Stacked on https://github.com/other/repo/pull/12"]:
-            with self.subTest(body=body):
-                self.assertFalse(sp.explicit_parents(body))
-
-
 class FakeAPI:
     def __init__(self, child, parent, main):
         self.prs = {child.number: child, parent.number: parent}
@@ -495,6 +678,7 @@ class FakeAPI:
         self.race = None
         self.labels = set()
         self.events = []
+        self.closed = []
 
     def main(self):
         return self.sha
@@ -515,6 +699,8 @@ class FakeAPI:
         raise AssertionError(f"unexpected page path: {path}")
 
     def call(self, path, method="GET", data=None):
+        if path.startswith("pulls?state=closed"):
+            return self.closed
         self.calls.append((path, method, data))
         if path.endswith("/labels") and method == "POST":
             self.labels.update(data["labels"])
@@ -535,8 +721,8 @@ class FakeAPI:
 
 class MutationTests(unittest.TestCase):
     def setUp(self):
-        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, "Stacked on #1", True)
-        self.parent = sp.PR(1, "open", "b" * 40, "main", "parent", sp.REPO, "", False)
+        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, True)
+        self.parent = sp.PR(1, "open", "b" * 40, "main", "parent", sp.REPO, False)
         self.evidence = sp.Evidence(1, self.parent.head, self.child.head, "a" * 40,
                                     "ancestor-head", self.parent.head, "d" * 64)
         self.api = FakeAPI(self.child, self.parent, self.evidence.main)
@@ -610,6 +796,54 @@ class MutationTests(unittest.TestCase):
 
 
 class APITests(unittest.TestCase):
+    def test_pr_metadata_never_reads_description_fields(self):
+        class NoDescriptions(dict):
+            def get(self, key, *args):
+                if key in ("body", "bodyHTML"):
+                    raise AssertionError("description consulted")
+                return super().get(key, *args)
+            def __getitem__(self, key):
+                if key in ("body", "bodyHTML"):
+                    raise AssertionError("description consulted")
+                return super().__getitem__(key)
+        raw = NoDescriptions(number=1, state="open", draft=False,
+                             head={"sha": "a" * 40, "ref": "child", "repo": {"full_name": sp.REPO}},
+                             base={"sha": "b" * 40, "ref": "main", "repo": {"full_name": sp.REPO}},
+                             body="Depends on #2", bodyHTML="<p>Stacked on #2</p>")
+        self.assertEqual(sp.PR.parse(raw).head, "a" * 40)
+
+
+    def test_historical_head_requires_exact_server_event_and_pr_lifetime(self):
+        parent = sp.PR(1, "closed", "b" * 40, "main", "branch", "fork/TauCeti", False,
+                       created_at="2026-10-10T00:00:00Z", closed_at="2026-10-12T00:00:00Z")
+        event = {"id": 123, "event": "pull_request_target", "head_sha": "a" * 40,
+                 "head_branch": "branch", "head_repository": {"full_name": "fork/TauCeti"},
+                 "repository": {"full_name": sp.REPO}, "created_at": "2026-10-11T00:00:00Z",
+                 "pull_requests": []}
+        for changes, expected in (({}, 123), ({"event": "workflow_dispatch"}, None),
+                                  ({"head_sha": "c" * 40}, None), ({"head_branch": "other"}, None),
+                                  ({"head_repository": {"full_name": "outsider/TauCeti"}}, None),
+                                  ({"repository": {"full_name": "outsider/TauCeti"}}, None),
+                                  ({"created_at": "2026-10-09T00:00:00Z"}, None),
+                                  ({"created_at": "2026-10-13T00:00:00Z"}, None)):
+            with self.subTest(changes=changes):
+                api = object.__new__(sp.API)
+                api.request = MagicMock(return_value={"total_count": 1,
+                                                   "workflow_runs": [{**event, **changes}]})
+                self.assertEqual(api.historical_head(parent, "a" * 40), expected)
+                self.assertEqual(api.historical_head(parent, "a" * 40), expected)
+                api.request.assert_called_once()
+        for data in ({"total_count": 101, "workflow_runs": [event]},
+                     {"total_count": 2, "workflow_runs": [event]},
+                     {"total_count": 1, "workflow_runs": [{}]}):
+            api = object.__new__(sp.API)
+            api.request = MagicMock(return_value=data)
+            if data["workflow_runs"] == [{}]:
+                self.assertIsNone(api.historical_head(parent, "a" * 40))
+            else:
+                with self.assertRaises(sp.Gap):
+                    api.historical_head(parent, "a" * 40)
+
     def test_child_budget_declines_before_io_then_next_child_can_continue(self):
         api = object.__new__(sp.API)
         api.token, api.calls, api.bytes, api.deadline = "fixture", 0, 0, sp.time.monotonic() + 60
@@ -659,9 +893,9 @@ class APITests(unittest.TestCase):
 
 class MainTests(unittest.TestCase):
     def setUp(self):
-        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, "Stacked on #1", False,
+        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, False,
                            "a" * 40)
-        self.parent = sp.PR(1, "open", "b" * 40, "main", "parent", sp.REPO, "", False, "a" * 40)
+        self.parent = sp.PR(1, "open", "b" * 40, "main", "parent", sp.REPO, False, "a" * 40)
         self.api = FakeAPI(self.child, self.parent, "a" * 40)
         self.api.bytes = 0
         self.evidence = sp.Evidence(1, self.parent.head, self.child.head, self.api.sha,
@@ -672,7 +906,7 @@ class MainTests(unittest.TestCase):
         self.detector = SimpleNamespace(prs=self.api.prs, gaps={}, detect=lambda _: (None, []))
 
     def record(self, p):
-        return {"number": p.number, "state": p.state, "draft": p.draft, "body": p.body,
+        return {"number": p.number, "state": p.state, "draft": p.draft, "body": "ignored description",
                 "head": {"sha": p.head, "ref": p.branch, "repo": {"full_name": p.head_repo}},
                 "base": {"sha": p.base_head, "ref": p.base, "repo": {"full_name": sp.REPO}},
                 "labels": [{"name": sp.BLOCK_LABEL}] if p.blocked else []}
@@ -826,14 +1060,24 @@ class MainTests(unittest.TestCase):
         linked["head"]["sha"] = "f" * 40
         self.assertEqual(sp.event_targets(wake, [self.parent, fork]), {2})
 
-    def test_closed_parent_budget_does_not_abort_unrelated_children(self):
+    def test_description_references_never_trigger_parent_lookups(self):
         self.raw[1]["body"] = "Dependencies: " + ", ".join(f"#{n}" for n in range(100, 165))
         visited = []
         self.detector.detect = lambda p: (visited.append(p.number) or None, [])
-        with patch.object(self.api, "pr", side_effect=sp.Gap("missing prerequisite")) as read:
+        with patch.object(self.api, "pr", side_effect=AssertionError("unexpected parent lookup")) as read:
             self.assertFalse(self.main())
-        self.assertEqual(read.call_count, 64)
+        read.assert_not_called()
         self.assertEqual(visited, [2, 1])
+
+    def test_full_recent_closed_index_does_not_disable_obsolete_label_removal(self):
+        self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
+        self.api.closed = [{**self.raw[0], "number": n, "state": "closed"}
+                           for n in range(100, 164)]
+        self.api.events = [{"id": 1, "event": "labeled", "label": {"name": sp.BLOCK_LABEL},
+                            "actor": {"login": "trusted[bot]"}}]
+        self.assertFalse(self.main("--apply", "--pr", "2"))
+        self.assertTrue(any(method == "DELETE" for _, method, _ in self.api.calls))
+        self.assertEqual(len(self.last_constructor.call_args.args[2]), 66)
 
     def test_incomplete_index_and_human_label_retain_prior_block(self):
         self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
@@ -853,6 +1097,7 @@ class MainTests(unittest.TestCase):
         self.assertFalse(self.main("--apply", "--pr", "2"))
         self.assertEqual(self.api.calls, [])
 
+
     def test_global_budget_exhaustion_aborts_sweep(self):
         self.detector.detect = MagicMock(side_effect=sp.BudgetGap("source operation/time budget exhausted"))
         with self.assertRaises(sp.BudgetGap):
@@ -860,7 +1105,7 @@ class MainTests(unittest.TestCase):
         self.assertEqual(self.detector.detect.call_count, 1)
 
     def test_failed_label_write_does_not_abort_remaining_prs_or_close(self):
-        other = sp.PR(3, "open", "e" * 40, "main", "other", sp.REPO, "", False, "a" * 40)
+        other = sp.PR(3, "open", "e" * 40, "main", "other", sp.REPO, False, "a" * 40)
         self.api.prs[3] = other
         self.raw.append(self.record(other))
         visited = []
@@ -884,7 +1129,7 @@ class WithdrawalTests(unittest.TestCase):
         output = redirect_stdout(io.StringIO())
         output.__enter__()
         self.addCleanup(output.__exit__, None, None, None)
-        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, "", False)
+        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, False)
         self.data = {"schema": "tauceti-bors.observation/v1", "repo": sp.REPO, "base": "main",
                      "batch_ids": [7], "batches": [{"id": 7, "state": "waiting", "members": [
                          {"pr": 2, "head_sha": self.child.head}]}], "held": []}

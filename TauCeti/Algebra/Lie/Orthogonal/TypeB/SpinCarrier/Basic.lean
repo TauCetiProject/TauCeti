@@ -420,6 +420,18 @@ noncomputable def carrierι :
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
       (latticeBasis n) (basisWeight n)
 
+/-- The carrier inclusion is the generic Kostant toral-closure inclusion, transported across the
+named presentation of the type-`Bₙ₊₁` spin carrier. -/
+theorem carrierι_def :
+    carrierι n =
+      eqToHom (groupScheme_eq_kostantToralGroupScheme n) ≫
+        kostantToralGroupSchemeι
+          (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+          (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+          (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+          (latticeBasis n) (basisWeight n) := by
+  rw [carrierι]
+
 /-- The spin carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by
   rw [carrierι]

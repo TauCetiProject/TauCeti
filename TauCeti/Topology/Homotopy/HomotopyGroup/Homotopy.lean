@@ -96,11 +96,11 @@ theorem homotopic_genLoopEquivOfUnique_iff [Unique N] {p q : Ω^ N X x} :
     (genLoopEquivOfUnique N p).Homotopic (genLoopEquivOfUnique N q) ↔
       _root_.GenLoop.Homotopic p q :=
   ⟨fun h => Quotient.exact
-      ((homotopyGroupEquivFundamentalGroupOfUnique (X := X) (x := x) N).injective
-        (Quotient.sound h)),
+      (((homotopyGroupEquivFundamentalGroupOfUnique (X := X) (x := x) N).trans
+        CategoryTheory.End.homEquiv).injective (Quotient.sound h)),
    fun h => Quotient.exact
-      (congrArg (homotopyGroupEquivFundamentalGroupOfUnique (X := X) (x := x) N)
-        (Quotient.sound h))⟩
+      (congrArg ((homotopyGroupEquivFundamentalGroupOfUnique (X := X) (x := x) N).trans
+        CategoryTheory.End.homEquiv) (Quotient.sound h))⟩
 
 /-! ### Homotopies in the base space -/
 

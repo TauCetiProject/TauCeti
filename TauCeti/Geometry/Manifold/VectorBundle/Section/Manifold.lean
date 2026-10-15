@@ -287,10 +287,10 @@ theorem isImmersionOfComplement_coe_sectionZero :
     · apply ContDiffOn.contMDiffOn
       exact A.contDiff.comp_contDiffOn
         (hminus.comp (A.symm.contDiff.comp (contDiff_id.add contDiff_const)).contDiffOn
-          (fun _ hp ↦ hp.2))
+          (fun _ (hp : _ ∈ Ψ.source) ↦ hp.2))
     · apply ContDiffOn.contMDiffOn
       exact ((A.contDiff.comp_contDiffOn
-        (hplus.comp A.symm.contDiff.contDiffOn (fun _ hp ↦ hp.1))).add
+        (hplus.comp A.symm.contDiff.contDiffOn (fun _ hp ↦ Set.mem_of_mem_inter_left hp))).add
           contDiffOn_const)
   have hcoord (w : ↥{y | s y = 0}) : (A.symm (chartAt X z.1 w.1 - chartAt X z.1 z.1)).1 = χ w := by
     rw [hA_symm, hL]
@@ -298,13 +298,15 @@ theorem isImmersionOfComplement_coe_sectionZero :
   let c := (chartAt X z.1).trans Ψ
   have hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, X) m M := by
     apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
-    · simpa only [c, OpenPartialHomeomorph.coe_trans] using
+    · simpa only [c, OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.trans_source] using
         (contMDiffOn_of_mem_maximalAtlas hΨ).comp
-          (contMDiffOn_chart.mono (fun _ hy ↦ hy.1)) (fun _ hy ↦ hy.2)
-    · simpa only [c, OpenPartialHomeomorph.coe_trans_symm] using
+          (contMDiffOn_chart.mono fun _ hy ↦ Set.mem_of_mem_inter_left hy)
+          fun _ hy ↦ Set.mem_of_mem_inter_right hy
+    · simpa only [c, OpenPartialHomeomorph.coe_trans_symm,
+        OpenPartialHomeomorph.trans_target] using
         (contMDiffOn_chart_symm).comp
-          ((contMDiffOn_symm_of_mem_maximalAtlas hΨ).mono (fun _ hy ↦ hy.1))
-          (fun _ hy ↦ hy.2)
+          ((contMDiffOn_symm_of_mem_maximalAtlas hΨ).mono fun _ hy ↦ Set.mem_of_mem_inter_left hy)
+          fun _ hy ↦ Set.mem_of_mem_inter_right hy
   apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
     continuous_subtype_val.continuousAt A χ c
     (mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z)

@@ -79,6 +79,7 @@ theorem exists_pos_sq_norm_fderiv_one_le_energy
   have hd : 0 < d := norm_pos_iff.mpr (sub_ne_zero.mpr hz.2)
   have hdR : d < R / 2 := by simpa only [mem_ball, dist_eq_norm] using hz.1
   have hsub : closedBall z (d / 2) ⊆ ball z₀ R \ {z₀} := by
+    rw [sdiff_eq]
     refine subset_inter ?_ ?_
     · exact closedBall_subset_ball' (by rw [dist_eq_norm]; linarith)
     · intro y hy hzero

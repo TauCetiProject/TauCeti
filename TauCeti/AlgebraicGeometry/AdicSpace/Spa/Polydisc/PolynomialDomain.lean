@@ -153,7 +153,7 @@ private theorem IsHoledDiscUnion.inter_biInter_closedSubdisc {ι : Type*}
 /-- The points `x` such that `x(γ - α) ≤ x(T - α)` for every `α ∈ Z` (equivalently, `γ`
 minimises `α ↦ x(T - α)` over `Z`), `x(γ - δ) ≤ x(T - γ)`, and `x(T - γ) ≤ x(γ - α)` for every
 `α ∈ Z` farther from `γ` than `δ`. -/
-private def cell (Z : Finset K) (γ δ : K) : Set (closedPolydisc 1 K) :=
+private noncomputable def cell (Z : Finset K) (γ δ : K) : Set (closedPolydisc 1 K) :=
   (⋂ α ∈ Z, {x | x.1.toValuativeRel.vle (C (γ - α)) (T - C α)}) ∩
     {x | x.1.toValuativeRel.vle (C (γ - δ)) (T - C γ)} ∩
     ⋂ α ∈ Z.filter fun α ↦ ‖γ - δ‖ < ‖γ - α‖, closedSubdisc γ (γ - α)
@@ -387,7 +387,7 @@ theorem exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter [IsAlgClose
   rcases eq_or_ne g 0 with rfl | hg
   · -- `f` is a unit, hence a nonzero constant, and no point has `x(f) ≤ 0`
     obtain ⟨u, hu, rfl⟩ := Polynomial.isUnit_iff.mp (isCoprime_zero_right.mp hfg)
-    convert isHoledDiscUnion_empty
+    convert isHoledDiscUnion_empty using 1
     refine Set.eq_empty_of_forall_notMem fun x hx ↦ hu.ne_zero ?_
     rw [Set.mem_ofPred_eq, map_zero, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_C,
       ← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero, norm_le_zero_iff] at hx
@@ -518,7 +518,7 @@ theorem exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily
     exact hx.trans (and_iff_right hv)
   rcases eq_or_ne p 0 with rfl | hp
   · -- no point has `x(0) ≠ 0`
-    convert isHoledDiscUnion_empty
+    convert isHoledDiscUnion_empty using 1
     rw [hU', map_zero]
     exact Set.eq_empty_of_forall_notMem fun x hx ↦ hx.2 (x.1.toValuativeRel.vle_refl 0)
   -- after cancelling common factors, each inequality is between coprime polynomials

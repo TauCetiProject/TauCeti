@@ -135,10 +135,10 @@ theorem zpowers_puncturedDiscCircle_eq_top :
   let W := puncturedDiscStarConvex.fundamentalGroupMulEquivInt puncturedDiscRadius_pos
     puncturedDiscSphere_subset x
   apply W.zpowers_eq_top_of_apply_eq_ofAdd_one
-  simpa only [W, puncturedDiscBasepoint, puncturedDiscCircle, FundamentalGroup.map_apply,
-    Path.Homotopic.Quotient.mk_map] using
-    puncturedDiscStarConvex.fundamentalGroupMulEquivInt_sphereLoop puncturedDiscRadius_pos
-      puncturedDiscSphere_subset
+  -- The image of the circle class under the homotopy equivalence is, by definition, the class
+  -- of the mapped loop `puncturedDiscCircle`.
+  exact puncturedDiscStarConvex.fundamentalGroupMulEquivInt_sphereLoop puncturedDiscRadius_pos
+    puncturedDiscSphere_subset
 
 /-- The scalar action of the `e`-th roots of unity on the punctured disc is rotation. -/
 noncomputable instance puncturedDiscSMul [NeZero e] :
@@ -218,7 +218,8 @@ theorem isCoveringMap_puncturedDiscPow (he : e ≠ 0) : IsCoveringMap (punctured
   -- `Homeomorph.setCongr` does not move the point and `Set.restrictPreimage_mk` applies the power
   -- map, so the composite below is `puncturedDiscPow he` by definition.
   exact (((isCoveringMapOn_npow (𝕜 := ℂ) e (Nat.cast_ne_zero.2 he)).mono
-    fun _ hz => hz.2).isCoveringMap_restrictPreimage).comp_homeomorph (.setCongr hs.symm)
+    fun _ (hz : _ ∈ ball (0 : ℂ) 1 \ {0}) => hz.2).isCoveringMap_restrictPreimage).comp_homeomorph
+      (.setCongr hs.symm)
 
 /-- **Monodromy of the power map around the puncture is one cycle.** For the positive generator
 `puncturedDiscCircle` of the fundamental group, monodromy acts transitively by the powers of a

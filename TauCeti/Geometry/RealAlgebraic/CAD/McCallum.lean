@@ -189,7 +189,7 @@ private lemma isIrreducibleBasis_nullificationExample :
   have hirr : Irreducible (Polynomial.C (X 1 : MvPolynomial (Fin 3) ℝ) * Polynomial.X +
       Polynomial.C (X 1 + X 2 * X 0)) := by
     refine irreducible_C_mul_X_add_C (X_ne_zero _) <|
-      (Irreducible.isRelPrime_iff_not_dvd (MvPolynomial.X_prime).irreducible).2 fun h ↦ ?_
+      (Irreducible.isRelPrime_iff_not_dvd (MvPolynomial.prime_X).irreducible).2 fun h ↦ ?_
     rw [dvd_add_right dvd_rfl, X_dvd_mul_iff] at h
     simp [X_dvd_X] at h
   refine ⟨by simpa using hirr, fun b hb ↦ ?_, by simp, fun f hf ↦ ⟨1, fun _ ↦ 1, by simp_all⟩,
