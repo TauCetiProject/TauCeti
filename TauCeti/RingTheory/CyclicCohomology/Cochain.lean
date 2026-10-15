@@ -287,8 +287,9 @@ end Face
 
 section Cochain
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommMonoid M] [Module R M] {n : ℕ}
+variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommMonoid M] [Module R M]
+  [SMulCommClass R R M] {n : ℕ}
 
 /-- Updating one entry of a tuple only changes one entry of a contraction of it. -/
 private theorem contractNth_update_comp_val (j : Fin (n + 1)) (b : ℕ → A) (k : Fin (n + 2))
@@ -324,6 +325,7 @@ private def contractCoface (j : Fin (n + 1)) (φ : MultilinearMap R (fun _ : Fin
     simp only [contractNth_update_comp_val, natContract_update_smul,
       MultilinearMap.map_update_smul]
 
+omit [SMulCommClass R R M] in
 private theorem contractCoface_apply (j : Fin (n + 1))
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (a : Fin (n + 2) → A) :
     contractCoface j φ a = φ (Fin.contractNth j.castSucc (· * ·) a) :=
@@ -336,6 +338,7 @@ private def cofaceAux (i : Fin (n + 2)) (φ : MultilinearMap R (fun _ : Fin (n +
   Fin.lastCases ((contractCoface 0 φ).domDomCongr (finRotate (n + 2)).symm)
     (fun j ↦ contractCoface j φ) i
 
+omit [SMulCommClass R R M] in
 private theorem cofaceAux_apply (i : Fin (n + 2))
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (a : Fin (n + 2) → A) :
     cofaceAux i φ a = φ (hochschildFace i a) := by
@@ -374,8 +377,8 @@ end Cochain
 
 section Cyclic
 
-variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
-  [Module R M] {n : ℕ}
+variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
+  [Module R M] [SMulCommClass R R M] {n : ℕ}
 
 /-- The cyclic `n`-cochains: the multilinear maps `φ` in `n + 1` arguments with
 `φ(aₙ, a₀, …, aₙ₋₁) = (-1)ⁿ φ(a₀, …, aₙ)`. -/
@@ -408,8 +411,9 @@ section Coboundary
 
 section NonAssoc
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
 
 /-- The Hochschild coboundary `b` on `M`-valued cochains of `A`, the alternating sum
 `∑ᵢ (-1)ⁱ φ ∘ dᵢ` of the cofaces. Explicitly (`hochschildCoboundary_apply_eq_sum_contractNth_add`),
@@ -444,9 +448,9 @@ end NonAssoc
 
 section Assoc
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+variable (R A M : Type*) [Semiring R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-  {n : ℕ}
+  [SMulCommClass R R M] {n : ℕ}
 
 /-- The Hochschild coboundary squares to zero. -/
 @[simp]
@@ -468,9 +472,9 @@ end Assoc
 
 section NonAssoc
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-  {n : ℕ}
+  [SMulCommClass R R M] {n : ℕ}
 
 /-- In degree zero, `(bφ)(a₀, a₁) = φ(a₀a₁) - φ(a₁a₀)`. -/
 theorem hochschildCoboundary_zero_apply (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M)
@@ -531,9 +535,9 @@ end NonAssoc
 
 section Assoc
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+variable (R A M : Type*) [Semiring R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-  {n : ℕ}
+  [SMulCommClass R R M] {n : ℕ}
 
 /-- The restricted coboundary on cyclic cochains squares to zero. -/
 @[simp]
