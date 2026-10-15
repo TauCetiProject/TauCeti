@@ -17,12 +17,12 @@ import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 /-!
 # Composition of topological finite type
 
-For ring homomorphisms `φ : A → B` and `ψ : B → C` with `A` and `B` Huber rings, weighted
-finite-type presentations combine into a weighted finite-type presentation of `ψ ∘ φ`. The key
-point is to replace the weights of the second presentation by images of sufficiently small finite
-weights in `A`. The corresponding weighted variables are power-bounded, so the second presentation
-is an open quotient of one with those image weights and extra unweighted variables. Weighted
-iteration then gives a presentation over `A`.
+For ring homomorphisms `φ : A → B` and `ψ : B → C` with `A` a Huber ring, weighted finite-type
+presentations combine into a weighted finite-type presentation of `ψ ∘ φ`. The key point is to
+replace the weights of the second presentation by images of sufficiently small finite weights in
+`A`. The corresponding weighted variables are power-bounded, so the second presentation is an open
+quotient of one with those image weights and extra unweighted variables. Weighted iteration then
+gives a presentation over `A`.
 
 For strict finite-type presentations the construction has the simpler form
 
@@ -35,7 +35,7 @@ the presentation of `φ` applied coefficientwise, which is again an open quotien
 `IsOpenQuotientMap.weightedMapCompletion`. No completeness is required of `B` or `C`.
 
 This gives Wedhorn's Proposition 6.33(1): the composite of homomorphisms topologically of finite
-type, whose source rings are Huber, is topologically of finite type. No Tate hypothesis is needed.
+type over a Huber base is topologically of finite type. No Tate hypothesis is needed.
 
 The same presentation composes morphisms of Huber pairs topologically of finite type (Wedhorn,
 Definition 8.42), where the plus rings must be controlled as well: each of the three maps is a
@@ -98,17 +98,55 @@ theorem IsStrictlyTopologicallyFiniteType.comp [IsHuberRing A]
   simp [β, e, algebraMap_completion_weightedRestrictedSubring_apply]
 
 /-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
-type and `A` and `B` are Huber rings, then `ψ ∘ φ` is topologically of finite type.
-
-Small finite weights in `A` are chosen so that their images times the variables of a presentation
-of `ψ` are power-bounded. The partly-unweighted presentation theorem replaces that presentation by
-one with these image weights. Applying the presentation of `φ` coefficientwise and flattening the
-resulting weighted iteration gives the required presentation over `A`. -/
-theorem IsTopologicallyFiniteType.comp [IsHuberRing A] [IsHuberRing B]
+type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
+theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
     (hψ : IsTopologicallyFiniteType ψ) (hφ : IsTopologicallyFiniteType φ) :
     IsTopologicallyFiniteType (ψ.comp φ) := by
   classical
   obtain ⟨k, T, hTfin, hT, π, hπ, hπφ⟩ := isTopologicallyFiniteType_iff.mp hφ
+  -- The open quotient presentation of `B` transports a pair of definition from its Huber source.
+  let _ : IsHuberRing B := ⟨by
+    obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition
+      (A := Completion (weightedRestrictedSubring T hT))
+    let B₀ : Subring B := P.ringOfDefinition.map π
+    let π₀ : P.ringOfDefinition →+* B₀ :=
+      (π.comp P.ringOfDefinition.subtype).codRestrict B₀ fun a ↦
+        Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+    have hπ₀_cont : Continuous π₀ :=
+      (hπ.continuous.comp continuous_subtype_val).subtype_mk _
+    have hπ₀_open : IsOpenMap π₀ :=
+      hπ.isOpenMap.subtype_map P.isOpen_ringOfDefinition
+        (fun a ha ↦ Subring.mem_map.mpr ⟨a, ha, rfl⟩)
+    have hπ₀_surj : Function.Surjective π₀ := by
+      rintro ⟨b, hb⟩
+      obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hb
+      exact ⟨⟨a, ha⟩, rfl⟩
+    exact ⟨{
+      ringOfDefinition := B₀
+      isOpen_ringOfDefinition := by
+        rw [Subring.coe_map]
+        exact hπ.isOpenMap _ P.isOpen_ringOfDefinition
+      idealOfDefinition := P.idealOfDefinition.map π₀
+      fg_idealOfDefinition := P.fg_idealOfDefinition.map π₀
+      isAdic_idealOfDefinition := isAdic_iff.mpr ⟨by
+        intro n
+        rw [← Ideal.map_pow]
+        have hset : ((P.idealOfDefinition ^ n).map π₀ : Set B₀) =
+            π₀ '' ((P.idealOfDefinition ^ n : Ideal P.ringOfDefinition) :
+              Set P.ringOfDefinition) := by
+          ext b
+          exact Ideal.mem_map_iff_of_surjective π₀ hπ₀_surj
+        rw [hset]
+        exact hπ₀_open _ ((isAdic_iff.mp P.isAdic_idealOfDefinition).1 n), by
+        intro s hs
+        obtain ⟨n, hn⟩ := (isAdic_iff.mp P.isAdic_idealOfDefinition).2
+          (π₀ ⁻¹' s) (hπ₀_cont.continuousAt.preimage_mem_nhds (by simpa using hs))
+        refine ⟨n, ?_⟩
+        rw [← Ideal.map_pow]
+        rintro b hb
+        obtain ⟨a, ha, rfl⟩ := Ideal.mem_map_iff_of_surjective π₀ hπ₀_surj |>.mp hb
+        exact hn ha⟩
+    }⟩⟩
   obtain ⟨m, U, hUfin, hU, ρ, hρ, hρψ⟩ := isTopologicallyFiniteType_iff.mp hψ
   have hρψ_apply (b : B) :
       ρ (algebraMap B (Completion (weightedRestrictedSubring U hU)) b) = ψ b := by
