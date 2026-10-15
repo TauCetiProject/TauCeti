@@ -379,6 +379,7 @@ theorem dropLastOfRow_succ_cons (k : ℕ) (row : List α) (rows : List (List α)
     dropLastOfRow (k + 1) (row :: rows) = row :: dropLastOfRow k rows := (rfl)
 
 /-- Removing the letter just appended to a row of a list of nonempty rows recovers the rows. -/
+@[simp]
 theorem dropLastOfRow_appendToRow (a : α) {k : ℕ} {rows : List (List α)}
     (hne : [] ∉ rows) (hk : k ≤ rows.length) : dropLastOfRow k (appendToRow a k rows) = rows := by
   induction rows generalizing k with
@@ -416,6 +417,7 @@ theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
 
 /-- At a corner of a tableau, putting back the last letter of row `k` after removing it recovers
 the tableau. -/
+@[simp]
 theorem appendToRow_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
     (h : rows.IsTableauRows) (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
     {a : α} (ha : (rows.getD k []).getLast? = some a) :
