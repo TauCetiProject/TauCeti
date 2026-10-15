@@ -27,9 +27,9 @@ for an inducing map `f : X → Y` with non-dense range. The set-level form conce
   non-dense range and `Y` is irreducible, then `topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`.
 * `Topology.IsInducing.topologicalKrullDim_lt`: the strict inequality for such a map, when the
   Krull dimension of the target is finite.
-* `TauCeti.topologicalKrullDim_add_one_le_of_isClosed`: a proper closed subset `Z` of an
+* `IsClosed.topologicalKrullDim_add_one_le`: a proper closed subset `Z` of an
   irreducible space `Y` satisfies `topologicalKrullDim Z + 1 ≤ topologicalKrullDim Y`.
-* `TauCeti.topologicalKrullDim_lt_of_isClosed`: the strict inequality, when the Krull dimension
+* `IsClosed.topologicalKrullDim_lt`: the strict inequality, when the Krull dimension
   of `Y` is finite.
 * `IsIrreducible.topologicalKrullDim_add_one_le`, `IsIrreducible.topologicalKrullDim_lt`: the
   same statements for a closed subset strictly contained in an irreducible subset of an ambient
@@ -84,25 +84,25 @@ theorem topologicalKrullDim_lt [IrreducibleSpace Y] {f : X → Y} (hf : IsInduci
 
 end Topology.IsInducing
 
-namespace TauCeti
+namespace IsClosed
 
 variable {Y : Type*} [TopologicalSpace Y] [IrreducibleSpace Y] {Z : Set Y}
 
 /-- A proper closed subset `Z` of an irreducible space `Y` satisfies
 `topologicalKrullDim Z + 1 ≤ topologicalKrullDim Y`. -/
-theorem topologicalKrullDim_add_one_le_of_isClosed (hZ : IsClosed Z) (hZY : Z ≠ univ) :
+theorem topologicalKrullDim_add_one_le (hZ : IsClosed Z) (hZY : Z ≠ univ) :
     topologicalKrullDim Z + 1 ≤ topologicalKrullDim Y :=
   IsInducing.subtypeVal.topologicalKrullDim_add_one_le fun h ↦
     hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtype_val.mp h)
 
 /-- A proper closed subset `Z` of an irreducible space `Y` of finite Krull dimension has
 strictly smaller Krull dimension than `Y`. -/
-theorem topologicalKrullDim_lt_of_isClosed (hZ : IsClosed Z) (hZY : Z ≠ univ)
+theorem topologicalKrullDim_lt (hZ : IsClosed Z) (hZY : Z ≠ univ)
     (hY : topologicalKrullDim Y ≠ ⊤) : topologicalKrullDim Z < topologicalKrullDim Y :=
   IsInducing.subtypeVal.topologicalKrullDim_lt (fun h ↦
     hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtype_val.mp h)) hY
 
-end TauCeti
+end IsClosed
 
 namespace IsIrreducible
 
