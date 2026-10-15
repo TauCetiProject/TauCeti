@@ -106,7 +106,7 @@ noncomputable def torsion : Grp (Over S) :=
 /-- **The `n`-torsion is the kernel of the endomorphism `n`.** The `n`-torsion of `E` is the kernel
 of the image in `Grp (Over S)` of the integer `n` of the endomorphism ring `End E.toCommGrp`. -/
 theorem torsion_eq_kernel :
-    E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp)) := by
+    E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp).asHom) := by
   rw [torsion, GroupScheme.torsion_eq_kernel]
 
 /-- The inclusion `E[n] ⟶ E` of the `n`-torsion of `E`, a morphism of `Over S`. -/

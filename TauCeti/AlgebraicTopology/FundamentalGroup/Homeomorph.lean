@@ -73,7 +73,7 @@ theorem mapOfEq_id (h : (ContinuousMap.id X) x = x) (p : _root_.FundamentalGroup
     induction q using Quotient.inductionOn with
     | h γ => exact congrArg _ (Path.map_id γ)
   rw [_root_.FundamentalGroup.mapOfEq_apply, key]
-  exact Path.Homotopic.Quotient.cast_rfl_rfl p
+  exact CategoryTheory.End.ext (Path.Homotopic.Quotient.cast_rfl_rfl p.asHom)
 
 /-- Transporting the target basepoint along the reflexivity proof does nothing: `mapOfEq f rfl`
 is Mathlib's `FundamentalGroup.map f x`.

@@ -194,7 +194,7 @@ private theorem ray_le_ker_cyclotomicArtinAway :
     refine Subtype.ext (Units.ext ?_)
     rw [Subgroup.coe_mul, Units.val_mul, coe_integralIdealsAwayHom, coe_integralIdealsAwayHom,
       ← hxJ, coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton,
-      FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.spanSingleton_mul_spanSingleton,
+      FractionalIdeal.coeIdeal_span_singleton, ← map_mul (FractionalIdeal.spanSingleton _),
       hab, mul_comm]
   -- Hence the cyclotomic character of `(x)` is trivial once those of `(a)` and `(b)` agree.
   refine (mul_eq_right (b := hζ.autToPow K (cyclotomicArtinIntegral F m ⟨_, hIb⟩))).mp ?_

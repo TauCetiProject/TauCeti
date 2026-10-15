@@ -317,12 +317,8 @@ theorem _root_.ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self_of_fl
     (hsymm : B.flip = B) (hB : B.IsInvertible) :
     IsNondegenerateCriticalPoint (fun z ↦ B z z) 0 := by
   refine ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self B ?_
+  rw [hsymm, ← two_smul ℝ B]
   obtain ⟨e, rfl⟩ := hB
-  have hflip : (e : E →L[ℝ] E →L[ℝ] ℝ).flip + (e : E →L[ℝ] E →L[ℝ] ℝ) =
-      (2 : ℝ) • (e : E →L[ℝ] E →L[ℝ] ℝ) := by
-    rw [hsymm]
-    exact (two_smul ℝ _).symm
-  rw [hflip]
   refine _root_.ContinuousLinearMap.IsInvertible.of_inverse
     (g := (2 : ℝ)⁻¹ • (e.symm : (E →L[ℝ] ℝ) →L[ℝ] E)) ?_ ?_ <;> ext v <;> simp [smul_smul]
 

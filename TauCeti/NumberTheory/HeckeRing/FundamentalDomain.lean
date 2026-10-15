@@ -79,7 +79,7 @@ theorem isFundamentalDomain_iUnion_rightCosetRep_smul {P α : Type*} [Group P]
     (φ : G →* P) {H : Subgroup G} [Countable (DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹)] {S : Set α}
     {μ : Measure α} (h₂ : Γ₁ ≤ H) (hconj : ∀ y ∈ Γ₂, (D.out : G) * y * (D.out : G)⁻¹ ∈ H)
     (hker : φ.ker ⊓ H ≤ Γ₁) (hS : IsFundamentalDomain (Γ₂.map φ : Subgroup P) S μ)
-    (hδ : Measure.QuasiMeasurePreserving (fun x : α ↦ (φ (D.out : G))⁻¹ • x) μ μ)
+    (hδ : QuasiMeasurePreserving (fun x : α ↦ (φ (D.out : G))⁻¹ • x) μ μ)
     (hnull : ∀ v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹,
       NullMeasurableSet ((φ (v.out : G))⁻¹ • S) μ) :
     IsFundamentalDomain (Γ₁.map φ ⊓ toConjAct (φ (D.out : G)) • Γ₂.map φ : Subgroup P)
