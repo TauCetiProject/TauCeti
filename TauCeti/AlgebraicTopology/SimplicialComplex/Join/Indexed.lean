@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 
 /-!
@@ -131,12 +132,13 @@ theorem mem_indexedJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
     x ∈ (indexedJoin A).standardGeometricComplex.space ↔
       (∀ v, 0 ≤ x v) ∧ x.sum (fun _ r => r) = 1 ∧
         ∀ v w, x v ≠ 0 → x w ≠ 0 → v.1 = w.1 → v = w := by
+  rw [AbstractSimplicialComplex.standardGeometricComplex,
+    Geometry.SimplicialComplex.mem_space_onFinsupp_iff,
+    AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex, mem_indexedJoin_iff]
   constructor
-  · intro hx
-    let p : (indexedJoin A).Realization := ⟨x, hx⟩
-    exact ⟨Realization.nonneg _ p, Realization.sum_eq_one _ p, fun v w hv hw hvw =>
-      (mem_indexedJoin_iff.mp ((indexedJoin A).support_mem p)).2
-        (Finsupp.mem_support_iff.mpr hv) (Finsupp.mem_support_iff.mpr hw) hvw⟩
+  · rintro ⟨hnonneg, hsum, -, hinj⟩
+    exact ⟨hnonneg, hsum, fun v w hv hw hvw => hinj
+      (Finsupp.mem_support_iff.mpr hv) (Finsupp.mem_support_iff.mpr hw) hvw⟩
   · rintro ⟨hnonneg, hsum, hunique⟩
     have hsupp : x.support.Nonempty := by
       apply Finsupp.support_nonempty_iff.mpr
@@ -145,10 +147,7 @@ theorem mem_indexedJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
     have hinj : Set.InjOn Sigma.fst (x.support : Set (Σ i, A i)) :=
       fun v hv w hw hvw => hunique v w (Finsupp.mem_support_iff.mp hv)
         (Finsupp.mem_support_iff.mp hw) hvw
-    refine AbstractSimplicialComplex.mem_realization_iff.mpr
-      ⟨x.support, mem_indexedJoin_iff.mpr ⟨hsupp, hinj⟩, ?_⟩
-    rw [Finset.coe_image, AbstractSimplicialComplex.mem_standardSimplex_iff]
-    exact ⟨hnonneg, hsum, Finset.Subset.rfl⟩
+    exact ⟨hnonneg, hsum, hsupp, hinj⟩
 
 /-- The carrier of a point in an indexed join contains at most one vertex over each index. -/
 theorem realization_support_injOn_fst (x : (indexedJoin A).Realization) :

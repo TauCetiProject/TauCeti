@@ -62,8 +62,9 @@ attribute [local instance] Classical.decEq
 /-- The standard geometric simplicial complex associated to an abstract simplicial complex.
 
 Each vertex is sent to its coordinate vector in `ι →₀ ℝ`. This is Mathlib's
-`Geometry.SimplicialComplex.onFinsupp` construction. -/
-noncomputable def standardGeometricComplex (K : AbstractSimplicialComplex ι) :
+`Geometry.SimplicialComplex.onFinsupp` construction. The body is exposed so downstream coordinate
+characterizations can reuse the `onFinsupp` API. -/
+@[expose] noncomputable def standardGeometricComplex (K : AbstractSimplicialComplex ι) :
     Geometry.SimplicialComplex ℝ (ι →₀ ℝ) :=
   Geometry.SimplicialComplex.onFinsupp K.toPreAbstractSimplicialComplex
 
