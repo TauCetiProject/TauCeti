@@ -277,7 +277,8 @@ theorem isRegularCone_hull_image_basis (hi : IsIntegralLattice i) {κ : Type*}
   refine ⟨⟨isLatticeRational_iff.2 ⟨hfin.toFinset, by rw [Set.Finite.coe_toFinset]⟩,
       hcone ▸ PointedCone.salient_hull_range hw⟩, Fintype.card κ,
     b.reindex (Fintype.equivFin κ),
-    (e.toEmbedding.trans (Function.Embedding.subtype A)).trans (Fintype.equivFin κ).toEmbedding,
+    (e.toEmbedding.trans (Function.Embedding.subtype (· ∈ A))).trans
+      (Fintype.equivFin κ).toEmbedding,
     ⟨fun ρ ↦ ?_⟩⟩
   simp only [Function.Embedding.trans_apply, Equiv.coe_toEmbedding, Module.Basis.reindex_apply,
     Equiv.symm_apply_apply]

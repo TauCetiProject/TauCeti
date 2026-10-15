@@ -55,14 +55,14 @@ the field norm. -/
 theorem coe_norm_unitFiltrationZero [IsGalois K L]
     (x : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) :
     (((Rep.toAdditive
-        ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)).toMul :
+        ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.asHom.hom x)).toMul :
           Lˣ) : L) =
       algebraMap K L (Algebra.norm K (((Rep.toAdditive x).toMul : Lˣ) : L)) := by
   -- Compare in `Lˣ`, where the representation norm is the field norm.
   have hc := congr($(Rep.norm_comm (unitFiltrationZeroIncl K L)).hom x)
   simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply] at hc
   rw [unitFiltrationZeroIncl_apply K L x, unitFiltrationZeroIncl_apply K L
-    ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)] at hc
+    ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.asHom.hom x)] at hc
   rw [← groupCohomology.norm_ofAlgebraAutOnUnits_eq]
   exact congr(((Additive.toMul (Rep.toAdditive $hc.symm) : Lˣ) : L))
 

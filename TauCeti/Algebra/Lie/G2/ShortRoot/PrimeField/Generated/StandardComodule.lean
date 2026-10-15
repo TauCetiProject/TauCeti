@@ -128,7 +128,7 @@ theorem rootSubgroupPoints_mulVec_mem
         Matrix (Fin 7) (Fin 7) k) =
       ((rootSubgroupPoints j k u : Matrix.GeneralLinearGroup (Fin 7) k) :
         Matrix (Fin 7) (Fin 7) k) := by
-    have hid := CommHopfAlgCat.mapPointsFunctor_app_apply (generator (.inl j))
+    have hid := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (generator (.inl j))
       (CommAlgCat.of (ZMod 3) k) q
     rw [hu, coe_rootSubgroupPoints_gaPointsMulEquiv, hid, GeneralLinear.pointsMulEquiv_apply,
       ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, AlgHom.mapDomain_apply,

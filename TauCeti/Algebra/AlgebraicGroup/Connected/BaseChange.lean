@@ -50,6 +50,8 @@ open scoped TensorProduct
 
 namespace TauCeti
 
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+
 universe u
 
 /-- **Geometric connectedness is preserved by extension of the base field.**
@@ -69,7 +71,8 @@ theorem geometricallyConnectedCommHopfAlgProperty.baseChange
   let _ : IsScalarTower k K L := IsScalarTower.of_algebraMap_eq' rfl
   rw [geometricallyConnectedCommHopfAlgProperty_iff] at hH
   exact (PrimeSpectrum.homeomorphOfRingEquiv
-    (Algebra.TensorProduct.baseChangeTowerRingEquiv k K H L)).connectedSpace_iff.mpr (hH L)
+    (Algebra.TensorProduct.baseChangeTowerRightAlgEquiv k K H L).toRingEquiv).connectedSpace_iff.mpr
+      (hH L)
 
 /-- **Geometric connectedness descends from an extension of the base field.**
 
