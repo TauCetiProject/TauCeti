@@ -32,10 +32,10 @@ The measure carrier, Dirac measures, and the two topologies are Mathlib's.
 
 public section
 
-open ContinuousMap
+open ContinuousMap AbstractMeasure
 open scoped AbstractMeasure
 
-namespace AbstractMeasure
+namespace TauCeti.AbstractMeasure
 
 variable {X R K : Type*} [TopologicalSpace X]
 
@@ -107,4 +107,4 @@ theorem not_isCompact_measure_unitBall [Infinite X] :
   rw [he] at hc
   exact Set.infinite_univ hc.finite_of_discrete
 
-end AbstractMeasure
+end TauCeti.AbstractMeasure
