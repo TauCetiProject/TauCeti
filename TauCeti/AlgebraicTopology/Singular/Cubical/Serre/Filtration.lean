@@ -302,12 +302,15 @@ variable {R p}
 /-- In chain degree `n`, the `s`-th piece of the Serre filtration of the chain complex consists
 of the elements of `NormalizedCubicalChain.serreFiltration`. -/
 theorem mem_range_serreChainFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
-    (x : NormalizedCubicalChain E R n) :
+    (x : ((normalizedCubicalChainComplex R).obj E).X n) :
     x ∈ LinearMap.range ((serreChainFiltration R p s).arrow.f n).hom ↔
       x ∈ NormalizedCubicalChain.serreFiltration R p.hom s n := by
-  rw [serreChainFiltration]
-  exact HomologicalComplex.mem_range_subobjectOfSubmodules_arrow_f_iff
-    ((normalizedCubicalChainComplex R).obj E) (serreSubmodule R p s) _ n x
+  rw [serreChainFiltration, HomologicalComplex.mem_range_subobjectOfSubmodules_arrow_f_iff,
+    serreSubmodule]
+  -- The two memberships differ only in the module instances: those of the term
+  -- `ModuleCat.of R (NormalizedCubicalChain E R n)` of the complex
+  -- (`normalizedCubicalChainComplex_obj_X`) and those of the normalized chains, which agree.
+  exact Iff.rfl
 
 /-- In cochain degree `-n`, the `s`-th piece of the Serre filtration consists of the elements whose
 image in the normalized cubical `n`-chains, under the identification of the extended complex with
@@ -320,9 +323,7 @@ theorem mem_range_serreFiltration_arrow_f_iff (s : ℤ) (n : ℕ)
         (by simp : (ComplexShape.embeddingUpIntLE 0).f n = -n)).hom x ∈
           NormalizedCubicalChain.serreFiltration R p.hom s n := by
   rw [serreFiltration, Subobject.mem_range_extend_arrow_f_iff _ _ (i := n) (by simp)]
-  -- The term of the chain complex in degree `n` is the module of normalized chains by
-  -- definition (`normalizedCubicalChainComplex_obj_X`).
-  exact mem_range_serreChainFiltration_arrow_f_iff s n _
+  rw [mem_range_serreChainFiltration_arrow_f_iff]
 
 variable (R p) in
 /-- The Serre filtration is increasing. -/
