@@ -39,23 +39,6 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
   (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
     (Spec.map (CommRingCat.ofHom (algebraMap k K))))
 
-/-- The first structure-sheaf cohomology of a smooth proper connected curve is finite-dimensional.
-This local helper packages the geometric instances required by the general proper-curve theorem. -/
-private theorem finiteDimensional_cohomology_one_trivial_of_smooth
-    (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
-    [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
-    [ConnectedSpace X] :
-    FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) := by
-  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
-    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
-  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-  have : ∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X)) :=
-    fun _ ↦ inferInstance
-  exact finiteDimensional_cohomology_one_trivial_of_isProper k
-    (topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)))
-
 include H in
 /-- **The genus of a smooth proper connected curve is invariant under extension of the base
 field**: `dim_K H¹(X_K, 𝒪) = dim_k H¹(X, 𝒪)`. -/
@@ -88,17 +71,8 @@ theorem genus_eq_of_isPullback_of_smooth
     [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
     [ConnectedSpace X] :
     haveI : FiniteDimensional k
-        (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) := by
-      have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-      have : IsLocallyNoetherian X :=
-        LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-      have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
-        isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
-      have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-      have : ∀ x : CodimensionOnePoint X,
-          IsDiscreteValuationRing (X.presheaf.stalk (x : X)) := fun _ ↦ inferInstance
-      exact finiteDimensional_cohomology_one_trivial_of_isProper k
-        (topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)))
+        (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
+      finiteDimensional_cohomology_one_trivial_of_smooth k X
     haveI := finiteDimensional_cohomology_one_trivial_of_isPullback_of_smooth H
     Y.genus K = X.genus k := by
   rw [Scheme.genus_def, Scheme.genus_def,
