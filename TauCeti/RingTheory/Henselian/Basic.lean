@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Henselian rings
@@ -49,6 +50,8 @@ square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ 
   residue field lifts to a root with the same residue.
 * `TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal`: Hensel's lemma for a polynomial
   that need not be monic.
+* `TauCeti.HenselianLocalRing.exists_conic_eq`: a residue point on a smooth conic perturbed
+  by a cubic in the maximal ideal lifts to a solution over the ring.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
 
@@ -194,6 +197,42 @@ theorem exists_isRoot_sub_mem_maximalIdeal {R : Type*} [CommRing R] [HenselianLo
     rwa [h]
   obtain ⟨b, hb, hgb⟩ := exists_mem_maximalIdeal_eval_eq_zero g hc hu
   refine ⟨b + a₀, by simpa [IsRoot, hg, eval_comp] using hgb, by rwa [add_sub_cancel_right]⟩
+
+/-- **Lifting a point of the residue conic.** Over a Henselian local ring, let `b₂ = a₁² + 4 a₂`
+and `A` be units and `z ∈ 𝔪`. A solution modulo `𝔪` of `Y² + a₁ X Y − a₂ X² − z X³ = A` lifts to
+a solution: the reduction is a smooth conic, so a partial derivative is a unit at the solution. -/
+theorem exists_conic_eq {R : Type*} [CommRing R] [HenselianLocalRing R]
+    {a₁ a₂ z A X₀ Y₀ : R} (hb₂ : IsUnit (a₁ ^ 2 + 4 * a₂)) (hz : z ∈ maximalIdeal R)
+    (hA : IsUnit A) (h₀ : Y₀ ^ 2 + a₁ * X₀ * Y₀ - a₂ * X₀ ^ 2 - z * X₀ ^ 3 - A ∈ maximalIdeal R) :
+    ∃ X Y : R, Y ^ 2 + a₁ * X * Y - a₂ * X ^ 2 - z * X ^ 3 - A = 0 := by
+  by_cases hY : IsUnit (2 * Y₀ + a₁ * X₀)
+  · -- Hensel's lemma in `Y`
+    obtain ⟨Y, hY', -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+      (X ^ 2 + C (a₁ * X₀) * X - C (a₂ * X₀ ^ 2 + z * X₀ ^ 3 + A)) (a₀ := Y₀)
+      (by convert h₀ using 1; simp; ring) (by convert hY using 1; simp [derivative_pow])
+    exact ⟨X₀, Y, by linear_combination (by simpa using hY'.eq_zero :
+      Y ^ 2 + a₁ * X₀ * Y - (a₂ * X₀ ^ 2 + z * X₀ ^ 3 + A) = 0)⟩
+  · -- otherwise `∂/∂X` is a unit, since both partials in `𝔪` would force `X₀, Y₀, A ∈ 𝔪`
+    have hX : IsUnit (-3 * z * X₀ ^ 2 - 2 * a₂ * X₀ + a₁ * Y₀) := by
+      by_contra hX
+      rw [← residue_ne_zero_iff_isUnit] at hb₂ hA
+      rw [← residue_ne_zero_iff_isUnit, not_not] at hY hX
+      have hz0 := (residue_eq_zero_iff _).2 hz
+      have h00 := (residue_eq_zero_iff _).2 h₀
+      simp only [map_add, map_sub, map_mul, map_pow, map_neg, map_ofNat] at hb₂ hY hX h00
+      have hX₀ : residue R X₀ = 0 := by
+        refine (mul_eq_zero.1 ?_).resolve_left hb₂
+        linear_combination residue R a₁ * hY - 2 * hX - 6 * residue R X₀ ^ 2 * hz0
+      have hY₀ : residue R Y₀ = 0 := by
+        refine (mul_eq_zero.1 ?_).resolve_left hb₂
+        linear_combination 2 * residue R a₂ * hY + residue R a₁ * hX +
+          3 * residue R a₁ * residue R X₀ ^ 2 * hz0
+      exact hA (by rw [hX₀, hY₀, hz0] at h00; linear_combination -h00)
+    obtain ⟨X', hX', -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+      (-C z * X ^ 3 - C a₂ * X ^ 2 + C (a₁ * Y₀) * X + C (Y₀ ^ 2 - A)) (a₀ := X₀)
+      (by convert h₀ using 1; simp; ring) (by convert hX using 1; simp [derivative_pow]; ring)
+    exact ⟨X', Y₀, by linear_combination (by simpa using hX'.eq_zero :
+      -(z * X' ^ 3) - a₂ * X' ^ 2 + a₁ * Y₀ * X' + (Y₀ ^ 2 - A) = 0)⟩
 
 end HenselianLocalRing
 
