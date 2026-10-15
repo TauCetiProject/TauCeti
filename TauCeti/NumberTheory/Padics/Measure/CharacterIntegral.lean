@@ -40,7 +40,7 @@ natural for it (`characterIntegralAlgHom_comp_mapAlgHom`).
 * `AbstractMeasure.algebraMap_apply`: the scalar measure `r` integrates `f` to `r * f 1`.
 * `AbstractMeasure.convolveFunRight_continuousMonoidHom`: convolution against a character.
 * `AbstractMeasure.mul_apply_one`: the total mass of a convolution.
-* `AbstractMeasure.characterIntegralAlgHom_comp_diracHom`: the character integral recovers the
+* `AbstractMeasure.characterIntegralAlgHom_diracHom`: the character integral recovers the
   character on Dirac measures.
 
 ## References
@@ -102,7 +102,9 @@ theorem characterIntegralAlgHom_dirac (κ : G →ₜ* R) (g : G) :
     characterIntegralAlgHom κ (dirac R g) = κ g := by
   simp
 
-/-- The integral of the trivial character is the total mass `μ 1`. -/
+/-- The integral of the trivial character is the total mass `μ 1`. It has high priority so that
+`simp` reaches `μ 1` rather than unfolding by `characterIntegralAlgHom_apply` to `μ ↑1`. -/
+@[simp high]
 theorem characterIntegralAlgHom_one_character (μ : D(G, R)) :
     characterIntegralAlgHom 1 μ = μ 1 := by
   have h : ((1 : G →ₜ* R) : C(G, R)) = 1 := by
@@ -112,7 +114,7 @@ theorem characterIntegralAlgHom_one_character (μ : D(G, R)) :
 
 /-- On Dirac measures, the character integral recovers the character. -/
 @[simp]
-theorem characterIntegralAlgHom_comp_diracHom (κ : G →ₜ* R) :
+theorem characterIntegralAlgHom_diracHom (κ : G →ₜ* R) :
     ((characterIntegralAlgHom κ : D(G, R) →* R)).comp diracHom = κ := by
   ext g
   simp
