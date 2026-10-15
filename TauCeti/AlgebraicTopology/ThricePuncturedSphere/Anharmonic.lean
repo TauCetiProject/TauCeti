@@ -355,16 +355,22 @@ noncomputable def anharmonic (ρ : Equiv.Perm (Fin 3)) :
   | 2, 0 => mobRotInv
   | _, _ => Homeomorph.refl _
 
+/-- The identity puncture permutation indexes the identity homeomorphism. -/
 @[simp] theorem anharmonic_one : anharmonic 1 = Homeomorph.refl _ := (rfl)
 
+/-- The transposition of `0` and `1` indexes `mob01`. -/
 @[simp] theorem anharmonic_swap_zero_one : anharmonic (Equiv.swap 0 1) = mob01 := (rfl)
 
+/-- The transposition of `1` and `∞` indexes `mob1Inf`. -/
 @[simp] theorem anharmonic_swap_one_two : anharmonic (Equiv.swap 1 2) = mob1Inf := (rfl)
 
+/-- The transposition of `0` and `∞` indexes `mob0Inf`. -/
 @[simp] theorem anharmonic_swap_zero_two : anharmonic (Equiv.swap 0 2) = mob0Inf := (rfl)
 
+/-- The cycle `0 ↦ 1 ↦ ∞ ↦ 0` indexes `mobRot`. -/
 @[simp] theorem anharmonic_finRotate : anharmonic (finRotate 3) = mobRot := (rfl)
 
+/-- The cycle `0 ↦ ∞ ↦ 1 ↦ 0` indexes `mobRotInv`. -/
 @[simp] theorem anharmonic_finRotate_inv : anharmonic (finRotate 3)⁻¹ = mobRotInv := (rfl)
 
 /-- Left multiplication by the transposition of `0` and `1` composes with `mob01`. -/
