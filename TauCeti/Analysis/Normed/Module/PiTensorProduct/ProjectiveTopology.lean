@@ -192,6 +192,39 @@ theorem seminormFamily_tprod_le (s : ∀ i, Finset (σ i)) (x : ∀ i, E i) :
   simpa using
     PiTensorProduct.projectiveSeminormOf_tprod_le (fun i => (s i).sup (p i)) x
 
+/-- The canonical pure-tensor map is continuous when each factor carries the topology generated
+by its defining seminorm family. -/
+theorem continuous_tprod [∀ i, TopologicalSpace (E i)] (hp : ∀ i, WithSeminorms (p i)) :
+    Continuous (tprod p) := by
+  classical
+  rw [continuous_iff_continuousAt]
+  intro x₀
+  -- Expand `tprod p x` multilinearly around `x₀`; every term other than `tprod p x₀` has a
+  -- factor `x i - x₀ i`, so its seminorms are controlled by a continuous product vanishing at `x₀`.
+  have key : ∀ t : Finset ι, Filter.Tendsto (fun x => tprod p (t.piecewise (x - x₀) x₀))
+      (nhds x₀) (nhds (tprod p (t.piecewise (x₀ - x₀) x₀))) := by
+    intro t
+    rcases t.eq_empty_or_nonempty with rfl | ⟨i, hi⟩
+    · simpa only [Finset.piecewise_empty] using tendsto_const_nhds
+    rw [(tprod p).map_coord_zero i (by simp [hi]), (withSeminorms p).tendsto_nhds]
+    intro s ε hε
+    have hcont : Continuous fun x : ∀ i, E i =>
+        ∏ j, (s j).sup (p j) (t.piecewise (x - x₀) x₀ j) := by
+      refine continuous_finsetProd _ fun j _ => ((hp j).finset_sups.continuous_seminorm
+        (s j)).comp ?_
+      have := (hp j).isTopologicalAddGroup
+      by_cases hj : j ∈ t
+      · simp only [Finset.piecewise_eq_of_mem _ _ _ hj, Pi.sub_apply]
+        exact (continuous_apply j).sub continuous_const
+      · simpa [Finset.piecewise_eq_of_notMem _ _ _ hj] using continuous_const
+    have h0 : ∏ j, (s j).sup (p j) (t.piecewise (x₀ - x₀) x₀ j) = 0 :=
+      Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hi])
+    filter_upwards [(hcont.tendsto x₀).eventually_lt_const (h0 ▸ hε)] with x hx
+    rw [sub_zero]
+    exact (seminormFamily_tprod_le p s _).trans_lt hx
+  simpa only [ContinuousAt, ← (tprod p).map_add_univ, sub_add_cancel] using
+    tendsto_finsetSum Finset.univ fun t _ => key t
+
 /-- A product-seminorm estimate for every target seminorm makes the tensor lift continuous.
 The selected finite families and the bound may depend on the target seminorm. -/
 theorem continuous_lift {τ : Type*} [TopologicalSpace F]
