@@ -84,6 +84,8 @@ structure CoherentCubeHomotopies (m : ℕ) where
 
 namespace CoherentCubeHomotopies
 
+attribute [simp] homotopy_zero
+
 /-- The time `k / (k + 1)`. The inductive deformations of singular cubes make the homotopies of the
 cubes of dimension `k` stationary from time `threshold (k + 1)` on, strictly before those of the
 cubes of dimension `k + 1`, which leaves room for a further deformation in between. -/
@@ -142,6 +144,7 @@ theorem boundaryHomotopy_apply (c : SingularCube X (m + 1)) (s : I)
     (by rw [Fin.insertNth_self_removeNth, Fin.insertNth_self_removeNth]) s
 
 /-- The glued boundary homotopy of `c` starts at the restriction of `c` to the boundary. -/
+@[simp]
 theorem boundaryHomotopy_zero (c : SingularCube X (m + 1)) (y : Cube.boundary (Fin (m + 1))) :
     L.boundaryHomotopy c (0, y) = c y := by
   obtain ⟨j, hj⟩ := y.2
@@ -155,6 +158,7 @@ def degenerateHomotopy (c : SingularCube X (m + 1)) (k : Fin (m + 1)) :
   (L.homotopy (SingularCube.face k 0 c)).comp ((ContinuousMap.id I).prodMap (removeNthCM k))
 
 /-- Unfolding of `TauCeti.CoherentCubeHomotopies.degenerateHomotopy`. -/
+@[simp]
 theorem degenerateHomotopy_apply (c : SingularCube X (m + 1)) (k : Fin (m + 1)) (s : I)
     (y : Fin (m + 1) → I) :
     L.degenerateHomotopy c k (s, y) = L.homotopy (SingularCube.face k 0 c) (s, k.removeNth y) :=
