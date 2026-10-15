@@ -18,7 +18,7 @@ import Mathlib.Algebra.FiniteSupport.Basic
 The height of an S-integer is supported on the primes in S and the infinite places.
 This file translates membership in Mathlib's S-integers and S-units into finite-place
 absolute values, proves the resulting multiplicative and logarithmic height identities,
-and shows that the multiplicative identity characterizes nonzero S-integers.
+and shows that the multiplicative identity characterizes S-integers.
 The set S may be arbitrary; finset versions give ordinary products and sums.
 
 Adapted from Ralf Stephan's `ArithmeticHeights/SUnit.lean` in `rwst/Subspace-Theorems`,
@@ -133,11 +133,15 @@ theorem logHeight₁_eq_sum_of_mem_integer (S : Finset (HeightOneSpectrum (𝓞 
 /-- **The display of `NumberField.mulHeight₁_eq_of_mem_integer` characterizes the `S`-integers.**
 Every local factor is at least `1`, so a finite place outside `S` at which `x` has absolute value
 greater than `1` makes the full finite product strictly larger than its part over `S`. -/
-theorem mulHeight₁_eq_iff_mem_integer (S : Set (HeightOneSpectrum (𝓞 K))) {x : K} (hx : x ≠ 0) :
+theorem mulHeight₁_eq_iff_mem_integer (S : Set (HeightOneSpectrum (𝓞 K))) {x : K} :
     mulHeight₁ x
         = (∏ w : InfinitePlace K, max (w x) 1 ^ w.mult)
           * ∏ᶠ v ∈ S, max (FinitePlace.mk v x) 1
       ↔ x ∈ S.integer K := by
+  by_cases hx : x = 0
+  · subst x
+    exact iff_of_true (mulHeight₁_eq_of_mem_integer S (S.integer K).zero_mem)
+      (S.integer K).zero_mem
   refine ⟨fun h ↦ (S.mem_integer_iff_finitePlace x).mpr fun v hv ↦ ?_,
     mulHeight₁_eq_of_mem_integer S⟩
   have hone : ∀ w : HeightOneSpectrum (𝓞 K), (1 : ℝ) ≤ max (FinitePlace.mk w x) 1 :=
