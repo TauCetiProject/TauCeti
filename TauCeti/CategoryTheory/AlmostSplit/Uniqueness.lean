@@ -116,7 +116,7 @@ theorem IsLeftAlmostSplit.isIso_τ₁_of_τ₃_eq_id (hf : IsLeftAlmostSplit S.f
     hf.not_isSplitMono
       (IsSplitMono.mk' ⟨γ ≫ inv (𝟙 S.X₁ - φ.τ₁), by rw [← Category.assoc, hfγ, IsIso.hom_inv_id]⟩)
   -- In a local ring one of `a` and `1 - a` is a unit, and here it is not the second.
-  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End S.X₁) φ.τ₁ with h | h
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End S.X₁) (.of φ.τ₁) with h | h
   · exact (isUnit_iff_isIso _).mp h
   · exact absurd ((isUnit_iff_isIso _).mp h) hnot
 
@@ -144,7 +144,7 @@ theorem IsRightAlmostSplit.isIso_τ₃_of_τ₁_eq_id (hg : IsRightAlmostSplit S
   have hnot : ¬ IsIso (𝟙 S.X₃ - φ.τ₃) := fun h ↦
     hg.not_isSplitEpi (IsSplitEpi.mk'
       ⟨inv (𝟙 S.X₃ - φ.τ₃) ≫ γ, by rw [Category.assoc, hγg, IsIso.inv_hom_id]⟩)
-  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End S.X₃) φ.τ₃ with h | h
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End S.X₃) (.of φ.τ₃) with h | h
   · exact (isUnit_iff_isIso _).mp h
   · exact absurd ((isUnit_iff_isIso _).mp h) hnot
 

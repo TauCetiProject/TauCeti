@@ -91,13 +91,13 @@ instance : Algebra.IsSeparable ℚ_[2] DyadicSqrtNegOne := by
   let : PerfectField ℚ_[2] := PerfectField.ofCharZero
   exact Algebra.IsAlgebraic.isSeparable_of_perfectField
 
-instance : ValuativeRel DyadicSqrtNegOne := finiteExtensionValuativeRel ℚ_[2] DyadicSqrtNegOne
+instance : ValuativeRel DyadicSqrtNegOne := algebraicExtensionValuativeRel ℚ_[2] DyadicSqrtNegOne
 
 instance : TopologicalSpace DyadicSqrtNegOne :=
-  finiteExtensionNormedFieldTopology ℚ_[2] DyadicSqrtNegOne
+  algebraicExtensionNormedFieldTopology ℚ_[2] DyadicSqrtNegOne
 
 instance : ValuativeExtension ℚ_[2] DyadicSqrtNegOne :=
-  finiteExtension_valuativeExtension ℚ_[2] DyadicSqrtNegOne
+  algebraicExtension_valuativeExtension ℚ_[2] DyadicSqrtNegOne
 
 instance : IsNonarchimedeanLocalField DyadicSqrtNegOne :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] DyadicSqrtNegOne

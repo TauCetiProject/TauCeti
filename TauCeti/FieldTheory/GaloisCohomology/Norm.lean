@@ -35,7 +35,7 @@ variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] 
 theorem mem_range_rep_norm_iff_mem_normGroup (a : Kˣ) :
     (Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) :
         Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) ∈
-        LinearMap.range (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ).norm.hom.toLinearMap ↔
+        LinearMap.range (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ).norm.asHom.hom.toLinearMap ↔
       a ∈ normGroup K L := by
   rw [mem_normGroup_iff]
   constructor

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-public import TauCeti.Probability.Process.IIDMixture
+public import TauCeti.Probability.Process.IIDMixture.Basic
 -- Public: `iIndepFun` appears in the hypothesis of the degeneracy theorem.
 public import Mathlib.Probability.Independence.Basic
 -- Non-public: the mixture representation and its uniqueness are used only inside the
@@ -20,7 +20,7 @@ import TauCeti.MeasureTheory.Measure.GiryMonad
 # The canonical conditionally i.i.d. process
 
 The parameter-retaining mixture `iidMixtureLaw π P`, constructed in
-`TauCeti.Probability.Process.IIDMixture`, realizes every measurable family of probability
+`TauCeti.Probability.Process.IIDMixture.Basic`, realizes every measurable family of probability
 measures as a directing measure. Its coordinate process `X n ω = ω.2 n` is conditionally
 i.i.d. with directing measure `ω ↦ P ω.1`. The joint law of this directing measure and each
 finite selection of distinct coordinates is the required conditional-product disintegration.

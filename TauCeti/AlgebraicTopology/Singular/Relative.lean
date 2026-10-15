@@ -352,6 +352,30 @@ lemma homologyMap_comp_singularHomologyπ (n : ℕ) :
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).homologyMap_hom_homologyπ R n
 
+variable {P P'} in
+/-- The map from ambient to relative singular homology is natural in maps of pairs. -/
+@[simp, reassoc]
+lemma singularHomologyπ_naturality (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n ≫ P'.singularHomologyπ R n =
+      P.singularHomologyπ R n ≫ TopPair.singularHomologyMap f R n :=
+  SSetPair.homologyπ_naturality (toSSetPair.map f) R n
+
+variable {P P'} in
+/-- If `f` is a map of pairs which is an isomorphism on the ambient spaces, the map from ambient to
+relative singular homology of its target is an isomorphism as soon as its composite with the map
+induced by `f` on relative homology is. -/
+lemma isIso_singularHomologyπ_of_isIso_comp [IsIso (Hom.fst f)] {n : ℕ}
+    (h : IsIso (P.singularHomologyπ R n ≫ TopPair.singularHomologyMap f R n)) :
+    IsIso (P'.singularHomologyπ R n) := by
+  have : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
+    rw [← TauCeti.singularHomologyFunctor_obj_map]
+    exact Functor.map_isIso _ (Hom.fst f)
+  have : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n ≫
+      P'.singularHomologyπ R n) := by
+    rw [singularHomologyπ_naturality]
+    exact h
+  exact IsIso.of_isIso_comp_left (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) _
+
 end Homology
 
 section LongExactSequence

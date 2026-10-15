@@ -168,7 +168,9 @@ noncomputable def topRealizationHomeomorph
     simpa only [Function.Embedding.coe_refl] using (map_id (K := P))
   exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (le_top P)
     (by rw [hid]; exact hA)).trans
-    (Homeomorph.setCongr (by rw [hid]))
+    (Homeomorph.setCongr
+      (s := {x : Realization A | x.1.support ∈ P.map (Function.Embedding.refl ι)})
+      (t := {x : Realization A | x.1.support ∈ P}) (by rw [hid]))
 
 /-- An injective relabeling carrying the underlying precomplex of `K` onto `R` identifies the
 realization of `K` with the polyhedron of `R`, inside any ambient weak realization containing
@@ -177,11 +179,14 @@ def realizationRelabelingHomeomorph {R : PreAbstractSimplicialComplex β}
     (hmap : P.map f = R) (hP : P = K.toPreAbstractSimplicialComplex)
     (hR : R ≤ L.toPreAbstractSimplicialComplex) :
     Realization K ≃ₜ {y : Realization L // y.1.support ∈ R} :=
-  ((Homeomorph.Set.univ _).symm.trans (Homeomorph.setCongr (Set.eq_univ_of_forall fun x => by
-      rw [hP]
-      exact AbstractSimplicialComplex.support_mem _ x).symm)).trans
+  ((Homeomorph.Set.univ _).symm.trans
+    (Homeomorph.setCongr (s := Set.univ) (t := {x : Realization K | x.1.support ∈ P})
+      (Set.eq_univ_of_forall fun x => by
+        rw [hP]
+        exact AbstractSimplicialComplex.support_mem _ x).symm)).trans
     ((P.relabelingHomeomorph f hP.le (by rw [hmap]; exact hR)).trans
-      (Homeomorph.setCongr (by rw [hmap])))
+      (Homeomorph.setCongr (s := {x : Realization L | x.1.support ∈ P.map f})
+        (t := {x : Realization L | x.1.support ∈ R}) (by rw [hmap])))
 
 /-- A finite precomplex on `V` has the realization of its model on `Fin m` as a homeomorphic
 polyhedron. The witness is existential because the finite enumeration of `V` is noncanonical. -/
@@ -262,7 +267,9 @@ def ambientHomeomorph
     exact PreAbstractSimplicialComplex.map_id
   exact (P.relabelingHomeomorph (Function.Embedding.refl α) hK
     (by simpa only [hmap] using hL)).trans
-    (Homeomorph.setCongr (by rw [hmap]))
+    (Homeomorph.setCongr
+      (s := {x : Realization L' | x.1.support ∈ P.map (Function.Embedding.refl α)})
+      (t := {x : Realization L' | x.1.support ∈ P}) (by rw [hmap]))
 
 /-- Changing the ambient complex leaves the barycentric coordinate vector unchanged. -/
 @[simp]
@@ -294,11 +301,10 @@ def realizationTopHomeomorphFace :
   ((simplex (Finset.univ : Finset α)).realizationRelabelingHomeomorph f
     (map_simplex _) (by rw [simplex_univ, top_toPreAbstractSimplicialComplex])
     (simplex_le_iff.mpr fun _ => hf)).trans
-    (Homeomorph.setCongr (by
+    (Homeomorph.setCongr
+      (s := {x : Realization K | x.1.support ∈ simplex (Finset.univ.image f)})
+      (t := {x : Realization K | x.1.support ⊆ Finset.univ.image f}) (by
       ext x
-      -- Unifying `Homeomorph.setCongr` with the two subtypes infers both sets as bare
-      -- predicate lambdas, so `ext` leaves `x ∈ fun y => _` rather than `x ∈ {y | _}`. No
-      -- membership lemma matches that form, so `change` unfolds it to the predicates.
       change x.1.support ∈ simplex _ ↔ x.1.support ⊆ _
       rw [mem_simplex]
       exact and_iff_right (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))))

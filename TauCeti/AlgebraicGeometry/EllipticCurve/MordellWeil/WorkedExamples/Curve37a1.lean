@@ -174,8 +174,6 @@ theorem not_isOfFinAddOrder_curve37a1Point : ¬IsOfFinAddOrder curve37a1Point :=
 Mordell–Weil theorem, contains the point `(0, 0)` of infinite order. -/
 theorem finrank_point_curve37a1_pos :
     0 < Module.finrank ℤ (curve37a1.baseChange ℚ).toAffine.Point := by
-  have : Module.Finite ℤ (curve37a1.baseChange ℚ).toAffine.Point :=
-    Module.Finite.iff_addGroup_fg.mpr fg_point_of_numberField
   refine Nat.pos_of_ne_zero fun h ↦ not_isOfFinAddOrder_curve37a1Point ?_
   obtain ⟨a, ha, hP⟩ := Module.finrank_eq_zero_iff.mp h curve37a1Point
   exact isOfFinAddOrder_iff_zsmul_eq_zero.mpr ⟨a, ha, hP⟩

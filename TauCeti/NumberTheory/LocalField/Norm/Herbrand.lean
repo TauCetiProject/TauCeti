@@ -20,10 +20,12 @@ carries the unit filtration of `L` into that of `K` after the Herbrand shift:
 
 `N_{L/K}(U(L, ψℕ_{L/K}(n))) ⊆ U(K, n)`   and   `N_{L/K}(U(L, ψℕ_{L/K}(n) + 1)) ⊆ U(K, n + 1)`
 
-for every `n : ℕ`. The shift cannot be dropped: `N_{L/K}(U(L, n)) ⊆ U(K, n)` fails in general
-for ramified extensions. These inclusions are the input to the comparison of the norm group of
-an abelian extension with its upper ramification filtration, through which its conductor is
-computed.
+for every `n : ℕ`. Read without the shift, these give
+`N_{L/K}(U(L, i)) ⊆ U(K, ⌊φ_{L/K}(i)⌋)`. The shift cannot be dropped:
+`N_{L/K}(U(L, n)) ⊆ U(K, n)` fails in general for ramified extensions
+(`TauCeti.not_map_normUnits_unitFiltration_le`). These inclusions are the input to the
+comparison of the norm group of an abelian extension with its upper ramification filtration,
+through which its conductor is computed.
 
 The proof is Serre's. The trace bound in
 `TauCeti.NumberTheory.LocalField.Different.Herbrand` comes first: Hilbert's formula
@@ -41,6 +43,8 @@ is transitive, `N_{L/K} = N_{F/K} ∘ N_{L/F}`, and so is the inverse Herbrand f
 * `TauCeti.map_normUnits_unitFiltration_psiNat_add_one_le`:
   `N_{L/K}(U(L, ψℕ_{L/K}(n) + 1)) ⊆ U(K, n + 1)`.
 * `TauCeti.map_normUnits_unitFiltration_psiNat_le`: `N_{L/K}(U(L, ψℕ_{L/K}(n))) ⊆ U(K, n)`.
+* `TauCeti.map_normUnits_unitFiltration_le_floor_herbrand`: the unshifted form,
+  `N_{L/K}(U(L, i)) ⊆ U(K, ⌊φ_{L/K}(i)⌋)`.
 
 ## References
 
@@ -168,6 +172,20 @@ theorem map_normUnits_unitFiltration_psiNat_le (n : ℕ) :
     exact (Subgroup.map_mono (unitFiltration_antitone
       (Nat.succ_le_of_lt (psiNat_strictMono K L n.lt_succ_self)))).trans
       (map_normUnits_unitFiltration_psiNat_add_one_le K L n)
+
+variable (K L) in
+/-- **The norm on the unit filtration, without the Herbrand shift.** For a finite Galois extension
+`L/K` of nonarchimedean local fields, `N_{L/K}(U(L, i)) ⊆ U(K, ⌊φ_{L/K}(i)⌋)` for every `i : ℕ`.
+This is the shifted inclusion at depth `⌊φ_{L/K}(i)⌋`, since `ψℕ_{L/K}(⌊φ_{L/K}(i)⌋) ≤ i`. The
+target depth cannot be raised to `i` in general: by `TauCeti.not_map_normUnits_unitFiltration_le`,
+`N_{L/K}(U(L,i)) ⊄ U(K,i)` for `i ≥ 2` when `L/K` is ramified of degree prime to the residue
+characteristic. -/
+theorem map_normUnits_unitFiltration_le_floor_herbrand (i : ℕ) :
+    (unitFiltration L i).map (Algebra.normUnits K) ≤
+      unitFiltration K ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ :=
+  (Subgroup.map_mono (unitFiltration_antitone
+    ((psiNat_le_iff_le_floor_herbrand K L).2 le_rfl))).trans
+    (map_normUnits_unitFiltration_psiNat_le K L _)
 
 end Norm
 

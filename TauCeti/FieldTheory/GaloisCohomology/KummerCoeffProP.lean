@@ -49,7 +49,7 @@ theorem smul_kummerCoeff_eq_self_of_isProP (hℓ : IsUnit (ℓ : K))
   let χ := modularCyclotomicCharacter L hcard
   let ρ := MulSemiringAction.toRingAut (AbsoluteGaloisGroup K) L
   let f : P →* (ZMod ℓ)ˣ := (χ.comp ρ).comp P.subtype
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot L ℓ
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot L ℓ
   have hζu := hζ.isUnit_unit (Fact.out : ℓ.Prime).ne_zero
   -- an automorphism fixing `ζ` fixes every `ℓ`-th root of unity, so has trivial character
   have hker : IsOpen (f.ker : Set P) := by
