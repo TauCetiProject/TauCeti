@@ -36,19 +36,6 @@ variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 noncomputable section
 
-/-- A comodule morphism whose underlying module map is an isomorphism is an isomorphism. -/
-instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).ReflectsIsomorphisms where
-  reflects {M N} f hf := by
-    let F := forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)
-    have hbij : Function.Bijective f.toLinearMap := ConcreteCategory.bijective_of_isIso (F.map f)
-    let e := LinearEquiv.ofBijective f.toLinearMap hbij
-    let i : M ≅ N := isoOfLinearEquiv (R := R) (C := C) e f.map_coact
-    have hi : i.hom = f := by
-      ext x
-      exact isoOfLinearEquiv_hom_apply (R := R) (C := C) e _ x
-    rw [← hi]
-    infer_instance
-
 variable [Module.Flat R C]
 
 instance {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
