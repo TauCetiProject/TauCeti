@@ -138,6 +138,25 @@ def quotientEquiv : (Fin k → CoordinateRing R x) ≃ₗ[CoordinateRing R x] Qu
       ((universalIdeal R x).restrictScalars (CoordinateRing R x))
       (universalIdeal_restrictScalars R x).symm)
 
+/-- The quotient equivalence sends coordinates to the class of their linear combination. -/
+@[simp]
+theorem quotientEquiv_apply (v : Fin k → CoordinateRing R x) :
+    quotientEquiv R x v = Ideal.Quotient.mk (universalIdeal R x)
+      (Fintype.linearCombination (CoordinateRing R x)
+        (fun i ↦ (1 : CoordinateRing R x) ⊗ₜ[R] x i) v) := by
+  unfold quotientEquiv
+  -- The ideal quotient and its restricted submodule have derived scalar actions.
+  erw [LinearEquiv.trans_apply, chartQuotEquiv_apply, Submodule.quotEquivOfEq_mk]
+
+/-- The inverse quotient equivalence sends distinguished generators to coordinate vectors. -/
+@[simp]
+theorem quotientEquiv_symm_apply_mk (i : Fin k) :
+    (quotientEquiv R x).symm
+      (Ideal.Quotient.mk (universalIdeal R x) ((1 : CoordinateRing R x) ⊗ₜ[R] x i)) =
+        Pi.single i 1 := by
+  apply (LinearEquiv.symm_apply_eq _).2
+  rw [quotientEquiv_apply, Fintype.linearCombination_apply_single, one_smul]
+
 /-- The universal quotient has its distinguished basis, induced by the tuple `x`. -/
 def basis : Module.Basis (Fin k) (CoordinateRing R x) (Quotient R x) :=
   (Pi.basisFun (CoordinateRing R x) (Fin k)).map (quotientEquiv R x)
