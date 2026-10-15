@@ -40,54 +40,6 @@ attribute [local instance] Classical.propDecidable
 variable {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι) {n : ℕ}
   (f : Fin (n + 1) ↪ ι) (hf : Finset.univ.image f ∈ K)
 
-/-- The sup-norm closed unit ball parametrizes the closed simplex on an explicitly
-enumerated face. Its boundary corresponds to the proper faces. -/
-def simplexClosedBallHomeomorph :
-    closedBall (0 : Fin n → ℝ) 1 ≃ₜ
-      {x : Realization K // x.1.support ⊆ Finset.univ.image f} :=
-  (realizationTopHomeomorphPiClosedBall n).symm.trans (realizationTopHomeomorphFace K f hf)
-
-/-- Barycentric coordinates are obtained from the fixed standard ball model by pushing
-its coordinate vector along the vertex enumeration. -/
-theorem simplexClosedBallHomeomorph_val (x : closedBall (0 : Fin n → ℝ) 1) :
-    (simplexClosedBallHomeomorph K f hf x).1.1 =
-      Finsupp.mapDomain f ((realizationTopHomeomorphPiClosedBall n).symm x).1 :=
-  realizationTopHomeomorphFace_val K f hf _
-
-/-- The boundary sphere corresponds exactly to barycentric support smaller than the face. -/
-theorem simplexClosedBallHomeomorph_support_ne_iff
-    (x : closedBall (0 : Fin n → ℝ) 1) :
-    (simplexClosedBallHomeomorph K f hf x).1.1.support ≠ Finset.univ.image f ↔ ‖x.1‖ = 1 := by
-  rw [simplexClosedBallHomeomorph_val, Finsupp.mapDomain_support_of_injective f.injective,
-    ne_eq, Finset.image_inj f.injective, ← ne_eq,
-    ← realizationTopHomeomorphPiClosedBall_norm_eq_one_iff, Homeomorph.apply_symm_apply]
-
-/-- The open ball corresponds exactly to the points with full barycentric support. -/
-@[simp]
-theorem simplexClosedBallHomeomorph_support_eq_iff
-    (x : closedBall (0 : Fin n → ℝ) 1) :
-    (simplexClosedBallHomeomorph K f hf x).1.1.support = Finset.univ.image f ↔ ‖x.1‖ < 1 := by
-  have hx : ‖x.1‖ ≤ 1 := mem_closedBall_zero_iff.mp x.2
-  have h := simplexClosedBallHomeomorph_support_ne_iff K f hf x
-  grind
-
-/-- The inverse closed-simplex homeomorphism lands in the open ball exactly at the points
-with full barycentric support. -/
-theorem norm_simplexClosedBallHomeomorph_symm_lt_one_iff
-    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
-    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ < 1 ↔
-      y.1.1.support = Finset.univ.image f := by
-  rw [← simplexClosedBallHomeomorph_support_eq_iff K f hf, Homeomorph.apply_symm_apply]
-
-/-- The inverse closed-simplex homeomorphism lands on the sphere exactly at the points of
-proper faces. -/
-theorem norm_simplexClosedBallHomeomorph_symm_eq_one_iff
-    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
-    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ = 1 ↔
-      y.1.1.support ⊂ Finset.univ.image f := by
-  rw [← simplexClosedBallHomeomorph_support_ne_iff K f hf, Homeomorph.apply_symm_apply,
-    Finset.ssubset_iff_subset_ne, and_iff_right y.2]
-
 private def simplexCharacteristicFun (x : Fin n → ℝ) : Realization K :=
   if hx : x ∈ closedBall 0 1 then (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1
   else (simplexClosedBallHomeomorph K f hf ⟨0, by simp⟩).1

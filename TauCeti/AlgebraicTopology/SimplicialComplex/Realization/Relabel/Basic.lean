@@ -305,6 +305,8 @@ def realizationTopHomeomorphFace :
       (s := {x : Realization K | x.1.support ∈ simplex (Finset.univ.image f)})
       (t := {x : Realization K | x.1.support ⊆ Finset.univ.image f}) (by
       ext x
+      -- The set-congruence goal is membership in two set comprehensions; expose their
+      -- predicates before applying the criterion for membership in a simplex.
       change x.1.support ∈ simplex _ ↔ x.1.support ⊆ _
       rw [mem_simplex]
       exact and_iff_right (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))))
