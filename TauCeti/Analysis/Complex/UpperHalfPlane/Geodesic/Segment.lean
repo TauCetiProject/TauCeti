@@ -101,6 +101,11 @@ theorem isCompact_geodesicSegment (z w : ℍ) : IsCompact (geodesicSegment z w) 
 theorem isClosed_geodesicSegment (z w : ℍ) : IsClosed (geodesicSegment z w) :=
   (isCompact_geodesicSegment z w).isClosed
 
+/-- Segments are path-connected. -/
+theorem isPathConnected_geodesicSegment (z w : ℍ) : IsPathConnected (geodesicSegment z w) :=
+  ((convex_Icc 0 (dist z w)).isPathConnected (nonempty_Icc.2 dist_nonneg)).image
+    (isometry_geodesicLine _).continuous
+
 end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
