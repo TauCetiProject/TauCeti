@@ -10,6 +10,7 @@ import base64
 from collections import defaultdict
 from dataclasses import dataclass, asdict, field
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -140,6 +141,37 @@ class API:
     def main(self):
         return oid(self.call("git/ref/heads/main")["object"]["sha"])
 
+    def declared_parents(self, child):
+        """Only current GitHub-rendered prose may establish a body-only edge."""
+        cache = self.__dict__.setdefault("declarations", {})
+        key = child.number, child.head, child.body
+        if key not in cache:
+            try:
+                if not re.search(r"stack|depend|prereq|parent PR|based on|built on|carries", child.body, re.I):
+                    cache[key] = set()
+                else:
+                    data = self.request("https://api.github.com/graphql", "POST", {
+                        "query": 'query($number: Int!) { repository(owner: "TauCetiProject", name: "TauCeti") '
+                                 '{ pullRequest(number: $number) { body bodyHTML headRefOid } } }',
+                        "variables": {"number": child.number},
+                    })
+                    errors = data.get("errors") or []
+                    if any(e.get("type") == "RATE_LIMITED" for e in errors):
+                        raise BudgetGap("GraphQL API rate limit refused; sweep stopped")
+                    if errors:
+                        raise Gap("rendered PR prose unavailable")
+                    p = data["data"]["repository"]["pullRequest"]
+                    if not p or (p["body"] or "") != child.body or p["headRefOid"] != child.head:
+                        raise Gap("rendered PR prose/head identity changed; retry fresh metadata")
+                    cache[key] = rendered_parents(p["bodyHTML"])
+            except BudgetGap:
+                raise
+            except (Gap, KeyError, TypeError, ValueError) as error:
+                cache[key] = Gap(f"unverified rendered PR prose: {error}")
+        if isinstance(cache[key], Gap):
+            raise cache[key]
+        return cache[key]
+
 
 def oid(value):
     if not isinstance(value, str) or not SHA.fullmatch(value):
@@ -204,7 +236,7 @@ def event_targets(event, prs):
     raise Gap("wake has no associated PR/current canonical PR identity match")
 
 
-def explicit_parents(body):
+def explicit_parents(body, *, current_only=False):
     """Candidate discovery only: affirmative unquoted prose with local PR identities.
 
     A mention never authorizes closure. Reject negatives, fenced/inline code, quoted
@@ -233,6 +265,10 @@ def explicit_parents(body):
                 r"(?:depends? on|based on|built on|carries .*commits from)\b|"
                 r"\b(?:prerequisites?|dependencies|parent PR)\s*:", sentence, re.I)
             if claim:
+                if current_only and not re.fullmatch(
+                        r"\s*(?:[-*]\s*)?(?:this (?:PR|branch|pull request) (?:is )?)?",
+                        sentence[:claim.start()], re.I):
+                    continue
                 # Identities must belong to this particular declaration. Other
                 # sentences may discuss superseded source or mathematical uses.
                 tail = sentence[claim.end():].split(";", 1)[0]
@@ -240,6 +276,75 @@ def explicit_parents(body):
                     continue
                 result.update(int(n) for n in re.findall(r"(?<![\w/])#([1-9]\d*)\b", tail))
     return result
+
+
+class RenderedProse(HTMLParser):
+    """Read HTML as data; never execute/fetch it or infer code from Markdown."""
+    excluded = {"pre", "code", "blockquote", "q", "kbd", "samp", "tt", "var",
+                "script", "style", "textarea", "template"}
+    blocks = {"p", "div", "li", "br", "hr", "ul", "ol", "table", "tr", "td", "th",
+              "h1", "h2", "h3", "h4", "h5", "h6", "details", "summary"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.hidden = defaultdict(int)
+        self.anchors = []
+        self.prose, self.quoting = [], []
+
+    def boundary(self):
+        self.prose.append("\n")
+        self.quoting.append("\n")
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.excluded:
+            self.hidden[tag] += 1
+            self.boundary()
+        elif tag == "a":
+            canonical = False
+            if not any(self.hidden.values()):
+                href = dict(attrs).get("href") or ""
+                if href.startswith("/"):
+                    href = "https://github.com" + href
+                match = re.fullmatch(r"https://github.com/([^/]+/[^/]+)/(?:pull|issues)/([1-9]\d*)(?:[/?#].*)?", href)
+                if match and match[1].lower() == REPO.lower():
+                    self.prose.append(f" #{match[2]} ")
+                    canonical = True
+            self.anchors.append(not canonical)
+            if not canonical:
+                self.boundary()
+            self.hidden[tag] += 1  # Link labels cannot manufacture declarations.
+        elif tag in self.blocks:
+            self.boundary()
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.anchors:
+            self.hidden[tag] -= 1
+            if self.anchors.pop():
+                self.boundary()
+        elif self.hidden[tag]:
+            self.hidden[tag] -= 1
+            self.boundary()
+        elif tag in self.blocks:
+            self.boundary()
+
+    def handle_data(self, data):
+        if not any(count for tag, count in self.hidden.items() if tag != "a"):
+            self.quoting.append(data)
+        if not any(self.hidden.values()):
+            self.prose.append(data)
+
+
+def rendered_parents(html):
+    if not isinstance(html, str) or len(html.encode()) > MAX_BYTES:
+        raise Gap("rendered PR prose missing or exceeds byte bound")
+    parser = RenderedProse()
+    parser.feed(html)
+    parser.close()
+    # Literal quotation can span paragraphs/inline markup. Conservatively decline
+    # body-only inference in such prose; exact ancestry/base evidence still works.
+    if re.search(r'''["“”‘’]|(?<!\w)'|'(?!\w)''', "".join(parser.quoting)):
+        return set()
+    return explicit_parents("".join(parser.prose), current_only=True)
 
 
 class Source:
@@ -478,7 +583,9 @@ class Detector:
                 self.gaps[p.number] = str(e)
 
     def candidates(self, child):
-        explicit = explicit_parents(child.body) - {child.number}
+        if self.api is None:
+            raise Gap("verified PR prose provider unavailable")
+        explicit = self.api.declared_parents(child) - {child.number}
         numbers = set(explicit)
         for commit in self.source.commits(child.head):
             numbers.update(self.index[commit])
@@ -740,7 +847,15 @@ def main():
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
     # can still contain unlanded prerequisite work. Never assume closure = landing.
     indexed = {p.number for p in prs}
-    references = set().union(*(explicit_parents(p.body) for p in selected)) - indexed
+    references = set()
+    for child in selected:
+        try:
+            references.update(api.declared_parents(child))
+        except BudgetGap:
+            raise
+        except Gap as error:
+            emit(declaration_pr=child.number, classification="unknown", gap=str(error))
+    references -= indexed
     for number in sorted(references, reverse=True)[64:]:
         emit(index_pr=number, classification="unknown", gap="closed-parent lookup budget exceeded")
     for number in sorted(references, reverse=True)[:64]:

@@ -20,6 +20,17 @@ prose identifying local prerequisite PRs. A label, author, import, shared file,
 branch name, non-main base alone, or mention in code/quoted/negative prose does
 not prove stacking. Discovery by prose never suffices for closure.
 
+Explicit declarations use GitHub's rendered body, read through the canonical PR
+API with matching raw body and head identity, then cached within the sweep.
+The HTML is parsed as data: code, blockquotes, quotation elements and link labels
+cannot provide declarations. Canonical local PR links can identify parents.
+Only affirmative declarations beginning a rendered sentence (optionally with
+this PR or this branch) qualify; example-prefixed prose does not. Literal quoted
+prose conservatively disables body-only inference for that body, including
+quotations spanning paragraphs. These restrictions may miss valid declarations;
+exact ancestry/base evidence remains available independently. Inaccessible or
+changed rendered metadata is an unknown result, never closure authority.
+
 A confirmed stack must have a current parent identity and a complete individual
 parent commit patch reverse-applicable to the child's current source tree.
 It must also have an exact unmerged ancestor head or a canonical parent branch
