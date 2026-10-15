@@ -93,7 +93,7 @@ private theorem integral_mul_eq_neg_integral_lineDeriv_mul {g g' : E → ℝ}
     rw [lineDeriv_neg, neg_mul]
     by_cases hxK : x ∈ tsupport (φ : E → ℝ)
     · rw [hgG (self_subset_cthickening _ hxK)]
-    · simp [lineDeriv_eq_zero_of_notMem_tsupport φ hxK]
+    · simp [lineDeriv_of_notMem_tsupport hxK]
   rw [h1, hG.integral_lineDeriv_mul_eq hD φ.hasCompactSupport v, h2]
 
 /-- **A locally Lipschitz function is weakly differentiable.** If `u` is locally Lipschitz on the
