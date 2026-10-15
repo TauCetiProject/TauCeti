@@ -22,8 +22,9 @@ classes are twice the corresponding simple S₃ classes.
 
 The coefficient field matters. Over 𝔽₂ the standard plane stays simple on restriction to
 A₃; over a field containing a primitive cube root of unity it splits into lines.
-The proof identifies the regular A₃ class with the sum of these two simple classes,
-then uses occurrence in the regular module to show that this list is exhaustive.
+Consequently a class is induced exactly when each simple class occurs with even
+multiplicity, so even dimension alone does not suffice: the standard plane has dimension
+two but its class is not induced.
 
 ## References
 
