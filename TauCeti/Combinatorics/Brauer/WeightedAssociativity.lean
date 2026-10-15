@@ -62,36 +62,6 @@ open Relation
 
 variable {k : ℕ}
 
-/-! ### Counting loops as connected components -/
-
-/-- Two middle points have the same class in the quotient by the middle graph exactly when they
-are joined by a chain of its arcs, the middle graph being symmetric. -/
-private theorem mk_middleAdj_eq_mk_iff (D₁ D₂ : BrauerDiagram k) {a b : Fin k} :
-    Quot.mk (MiddleAdj D₁ D₂) a = Quot.mk (MiddleAdj D₁ D₂) b ↔
-      ReflTransGen (MiddleAdj D₁ D₂) a b := by
-  have : Std.Symm (MiddleAdj D₁ D₂) := ⟨fun _ _ h => MiddleAdj.symm h⟩
-  rw [Quot.eq, EqvGen.eqvGen_eq_reflTransGen]
-
-/-- The middle-loop count counts the closed middle loops as connected components of the middle
-graph, that is as classes of the quotient by it, rather than by their least points. -/
-private theorem middleLoopCount_eq_ncard_image (D₁ D₂ : BrauerDiagram k) :
-    middleLoopCount D₁ D₂ =
-      (Quot.mk (MiddleAdj D₁ D₂) '' {a | OnMiddleLoop D₁ D₂ a}).ncard := by
-  have hinj : Set.InjOn (Quot.mk (MiddleAdj D₁ D₂)) {a | IsMiddleLoopMin D₁ D₂ a} := by
-    intro a ha b hb hab
-    have h := (mk_middleAdj_eq_mk_iff D₁ D₂).mp hab
-    exact le_antisymm (((isMiddleLoopMin_def D₁ D₂ a).mp ha).2 b h)
-      (((isMiddleLoopMin_def D₁ D₂ b).mp hb).2 a (MiddleAdj.reflTransGen_symm h))
-  rw [middleLoopCount_def, ← hinj.ncard_image]
-  congr 1
-  ext S
-  constructor
-  · rintro ⟨a, ha, rfl⟩
-    exact ⟨a, ((isMiddleLoopMin_def D₁ D₂ a).mp ha).1, rfl⟩
-  · rintro ⟨a, ha, rfl⟩
-    obtain ⟨m, hm, ham⟩ := (ha : OnMiddleLoop D₁ D₂ a).exists_isMiddleLoopMin
-    exact ⟨m, hm, ((mk_middleAdj_eq_mk_iff D₁ D₂).mpr ham).symm⟩
-
 /-! ### The middle graph of a stack of three diagrams -/
 
 /-- **The middle graph of the stack of `D₁` above `D₂` above `D₃`.** Its vertices are the points
