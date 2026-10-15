@@ -74,13 +74,6 @@ private theorem span_range_basis_of_finite_constantCompositum
   let : Algebra C C' := g.toAlgebra
   have : IsScalarTower C C' F' := .of_algebraMap_eq fun _ => rfl
   let f := IsScalarTower.toAlgHom C F F'
-  let e := AlgEquiv.ofInjective f f.injective
-  have hspan := f.range.adjoin_eq_span_basis C' (b.map e.toLinearEquiv)
-  have hrange : (f.range : Set F') = Set.range (algebraMap F F') := rfl
-  have hfun : (fun i => ((b.map e.toLinearEquiv) i : F')) = algebraMap F F' ∘ b := by
-    ext i
-    exact AlgEquiv.ofInjective_apply f f.injective (b i)
-  rw [hrange, hfun] at hspan
   let A := IntermediateField.adjoin C' (Set.range (algebraMap F F'))
   have hle : (constantCompositum F k' F' : Set F') ⊆ A := by
     rw [constantCompositum_def]
@@ -97,11 +90,12 @@ private theorem span_range_basis_of_finite_constantCompositum
     have hx : IsAlgebraic C (algebraMap F F' x) :=
       IsAlgebraic.algHom f (Algebra.IsAlgebraic.isAlgebraic (R := C) x)
     exact hx.tower_top C'
-  have htop' := congrArg IntermediateField.toSubalgebra htop
-  change (IntermediateField.adjoin C' (Set.range (algebraMap F F'))).toSubalgebra = ⊤ at htop'
+  have htop' : (IntermediateField.adjoin C' (Set.range (algebraMap F F'))).toSubalgebra =
+      ⊤ := by
+    simpa only [A, IntermediateField.top_toSubalgebra] using
+      congrArg IntermediateField.toSubalgebra htop
   rw [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic halg] at htop'
-  rw [htop', Algebra.top_toSubmodule] at hspan
-  exact hspan.symm
+  exact span_range_basis_eq_top_of_adjoin_eq_top C b htop'
 
 /-- **Extending constants can only lower a finite degree over `k(x)`**: if `F' = F · k'`
 and `F / k(x)` is finite, then `[F' : k'(x)] ≤ [F : k(x)]`. The extension `k' / k` may be

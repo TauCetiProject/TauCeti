@@ -74,13 +74,14 @@ theorem linearIndependent_adjoin_algebraMap_comp_of_isIntegrallyClosedIn
   exact (LinearIndependent.iff_fractionRing S
     (IntermediateField.adjoin k' (Set.range (algebraMap C F')))).mp hli
 
-omit [Algebra.IsSeparable k k'] in
-/-- A basis over an intermediate field spans the constant compositum over the enlarged
-intermediate field. Algebraicity of the constants suffices; separability is unnecessary. -/
-theorem span_range_basis_of_constantCompositum_eq_top
-    [Algebra.IsAlgebraic k k']
-    (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
-    {ι : Type*} (b : Module.Basis ι C F) :
+omit [Algebra.IsSeparable k k'] [Algebra k k'] [Algebra k F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+/-- If the original field generates the ambient field as an algebra over the enlarged
+intermediate field, its basis over `C` spans the ambient field over that enlarged field. -/
+theorem span_range_basis_eq_top_of_adjoin_eq_top (C : IntermediateField k F)
+    {ι : Type*} (b : Module.Basis ι C F)
+    (h : Algebra.adjoin (IntermediateField.adjoin k' (Set.range (algebraMap C F')))
+      (Set.range (algebraMap F F')) = ⊤) :
     Submodule.span (IntermediateField.adjoin k' (Set.range (algebraMap C F')))
       (Set.range (algebraMap F F' ∘ b)) = ⊤ := by
   let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
@@ -98,6 +99,19 @@ theorem span_range_basis_of_constantCompositum_eq_top
     ext i
     exact AlgEquiv.ofInjective_apply f f.injective (b i)
   rw [hrange, hfun] at hspan
+  rw [h, Algebra.top_toSubmodule] at hspan
+  exact hspan.symm
+
+omit [Algebra.IsSeparable k k'] in
+/-- A basis over an intermediate field spans the constant compositum over the enlarged
+intermediate field. Algebraicity of the constants suffices; separability is unnecessary. -/
+theorem span_range_basis_of_constantCompositum_eq_top
+    [Algebra.IsAlgebraic k k']
+    (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
+    {ι : Type*} (b : Module.Basis ι C F) :
+    Submodule.span (IntermediateField.adjoin k' (Set.range (algebraMap C F')))
+      (Set.range (algebraMap F F' ∘ b)) = ⊤ := by
+  let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
   have htop : Algebra.adjoin C' (Set.range (algebraMap F F')) = ⊤ := by
     let A := Algebra.adjoin C' (Set.range (algebraMap F F'))
     apply eq_top_iff.mpr
@@ -115,8 +129,7 @@ theorem span_range_basis_of_constantCompositum_eq_top
       · exact fun _ _ _ _ ↦ A.add_mem
       · exact fun _ _ _ _ ↦ A.mul_mem
     exact hzA
-  rw [htop, Algebra.top_toSubmodule] at hspan
-  exact hspan.symm
+  exact span_range_basis_eq_top_of_adjoin_eq_top C b htop
 
 /-- A basis of `F / C` remains a basis of `F · k' / C · k'` for a separable algebraic extension
 of an exact constant field. Neither extension of fields needs to be finite-dimensional. -/

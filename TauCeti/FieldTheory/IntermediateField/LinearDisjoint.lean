@@ -250,7 +250,7 @@ theorem linearDisjoint_fieldRange_of_forall_finiteDimensional [Algebra.IsAlgebra
     (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
   let f := IsScalarTower.toAlgHom k k' E
   have : Algebra.IsAlgebraic k f.fieldRange := f.equivFieldRange.isAlgebraic
-  change f.fieldRange.toSubalgebra.LinearDisjoint (IsScalarTower.toAlgHom k F E).range
+  rw [IntermediateField.linearDisjoint_iff]
   apply Subalgebra.LinearDisjoint.of_linearDisjoint_finite_left
   intro A hA hfinite
   let N : IntermediateField k E := Algebra.IsAlgebraic.toIntermediateField A
@@ -261,6 +261,8 @@ theorem linearDisjoint_fieldRange_of_forall_finiteDimensional [Algebra.IsAlgebra
   have hN : N ≤ f.fieldRange := hA
   have hmap : M.map f = N := IntermediateField.map_comap_eq_self hN
   have hfield : (IsScalarTower.toAlgHom k M E).fieldRange = N := by
+    -- The tower map through M is definitionally the restriction f.comp M.val.
+    -- Expose that restriction to apply the field-range/map identity.
     change (f.comp M.val).fieldRange = N
     rw [IntermediateField.fieldRange_comp_val, hmap]
   have hdisj := h M this
