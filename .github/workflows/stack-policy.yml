@@ -16,7 +16,7 @@ on:
         type: number
         default: 0
       dry-run:
-        description: 'Publish classifications without statuses, comments or closure'
+        description: 'Publish classifications without labels, comments or closure'
         type: boolean
         default: true
 
@@ -54,17 +54,15 @@ jobs:
           permission-contents: read
           permission-issues: read
           permission-pull-requests: write
-          permission-statuses: write
       - name: Inspect current source and enforce confirmed stacks
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           STACK_ACTOR: ${{ steps.app-token.outputs.app-slug }}[bot]
-          STACK_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           REQUESTED_PR: ${{ inputs.pr || github.event.pull_request.number || 0 }}
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+          APPLY_ENABLED: ${{ vars.NO_STACK_APPLY == 'true' && (github.event_name != 'workflow_dispatch' || !inputs.dry-run) }}
         run: |
           args=()
-          if [ "$DRY_RUN" != true ]; then args+=(--apply); fi
+          if [ "$APPLY_ENABLED" = true ]; then args+=(--apply); fi
           python3 scripts/stack_policy.py --github-event "$GITHUB_EVENT_PATH" \
             --pr "$REQUESTED_PR" --report stack-policy.jsonl "${args[@]}"
       - name: Publish audit

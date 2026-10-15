@@ -8,7 +8,7 @@ All mutation is opt-in; JSONL is the audit record (including gaps, never a safet
 import argparse
 import base64
 from collections import defaultdict
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import hashlib
 import json
 import os
@@ -19,10 +19,11 @@ import sys
 import tempfile
 import time
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 
 REPO = "TauCetiProject/TauCeti"
-CONTEXT = "no-stack"
+BLOCK_LABEL = "stacked-pr"
 MAX_PRS = 2000
 MAX_COMMITS = 256
 MAX_EVIDENCE_COMMITS = 16
@@ -71,7 +72,7 @@ class API:
         self.bytes += len(raw)
         if len(raw) > 8 * MAX_BYTES:
             raise Gap("API response truncated by byte bound")
-        return json.loads(raw)
+        return json.loads(raw) if raw else None
 
     def call(self, path, method="GET", data=None):
         return self.request(f"https://api.github.com/repos/{REPO}/{path}", method, data)
@@ -127,6 +128,8 @@ class PR:
     body: str
     draft: bool
     base_head: str = ""
+    blocked: bool = field(default=False, compare=False)
+    landing_claim: bool = False
 
     @classmethod
     def parse(cls, p):
@@ -137,7 +140,8 @@ class PR:
             raise Gap(f"#{p['number']}: deleted head repository")
         return cls(int(p["number"]), p["state"], oid(h["sha"]), p["base"]["ref"],
                    h["ref"], h["repo"]["full_name"], p.get("body") or "", bool(p["draft"]),
-                   oid(p["base"]["sha"]))
+                   oid(p["base"]["sha"]), any(l.get("name") == BLOCK_LABEL for l in p.get("labels", [])),
+                   p.get("merged_at") is not None or (p.get("title") or "").startswith("[Merged by Bors] - "))
 
 
 def explicit_parents(body):
@@ -161,7 +165,7 @@ def explicit_parents(body):
                       lambda m: f"#{m[2]}" if m[1].lower() == REPO.lower() else "", line)
         line = re.sub(r"https?://\S+", "", line)
         for sentence in re.split(r"(?<=[.!?])\s+", line):
-            if re.search(r"\b(not|no|never|previously|formerly|was|used to|isn't|isn’t)\b", sentence, re.I):
+            if re.search(r"\b(not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t)\b", sentence, re.I):
                 continue
             claim = re.search(
                 r"\bstack(?:ed|s|ing)?\s+on\b|"
@@ -171,8 +175,10 @@ def explicit_parents(body):
             if claim:
                 # Identities must belong to this particular declaration. Other
                 # sentences may discuss superseded source or mathematical uses.
-                result.update(int(n) for n in re.findall(
-                    r"(?<![\w/])#([1-9]\d*)\b", sentence[claim.end():]))
+                tail = sentence[claim.end():].split(";", 1)[0]
+                if not re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#", tail, re.I):
+                    continue
+                result.update(int(n) for n in re.findall(r"(?<![\w/])#([1-9]\d*)\b", tail))
     return result
 
 
@@ -196,6 +202,7 @@ class Source:
         self.tree_cache = {}
         self.blobs_checked = set()
         self.parent_patch_cache = {}
+        self.zero_cache = {}
         self.index = str(self.root / "policy-index")
         self.deadline = time.monotonic() + 1200
         self.calls = 0
@@ -216,8 +223,17 @@ class Source:
         if len(main_history) > 64000:
             raise Gap("main history exceeds graph bound")
         for start in range(0, len(prs), 100):
-            self.git("fetch", "--no-tags", "--filter=blob:none", f"--depth={MAX_COMMITS}", "origin",
-                     *(f"+refs/pull/{p.number}/head:refs/policy/{p.number}" for p in prs[start:start + 100]))
+            batch = prs[start:start + 100]
+            try:
+                self.git("fetch", "--no-tags", "--filter=blob:none", f"--depth={MAX_COMMITS}", "origin",
+                         *(f"+refs/pull/{p.number}/head:refs/policy/{p.number}" for p in batch))
+            except (Gap, subprocess.TimeoutExpired):
+                for p in batch:
+                    try:
+                        self.git("fetch", "--no-tags", "--filter=blob:none", f"--depth={MAX_COMMITS}",
+                                 "origin", f"+refs/pull/{p.number}/head:refs/policy/{p.number}")
+                    except (Gap, subprocess.TimeoutExpired):
+                        self.commits_cache[p.head] = None
         shallow = self.root / "shallow"
         if shallow.exists():
             # The trusted checkout supplies complete main history. Depth-limited
@@ -231,7 +247,9 @@ class Source:
         # through the byte-budgeted API and verified by object identity below.
         self.git("config", "remote.origin.promisor", "false")
         for p in prs:
-            actual = self.git("rev-parse", f"refs/policy/{p.number}").stdout.decode().strip()
+            if p.head in self.commits_cache:
+                continue
+            actual = self.git("rev-parse", f"refs/policy/{p.number}", check=False).stdout.decode().strip()
             if actual != p.head:
                 self.commits_cache[p.head] = None
 
@@ -306,30 +324,46 @@ class Source:
             self.patch_cache[key] = (base, paths, patch)
         return self.patch_cache[key]
 
-    def contains(self, revision, paths, patch):
+    def contains(self, revision, paths, patch, *, zero=False):
         self.blobs(self.tree(revision, paths))
         self.git("read-tree", revision)
-        p = self.git("apply", "--cached", "--reverse", "--check", "--whitespace=nowarn", "-",
+        p = self.git("apply", "--cached", "--reverse", "--check", "--whitespace=nowarn",
+                     *( ["--unidiff-zero"] if zero else []), "-",
                      data=patch, check=False)
         if p.returncode not in (0, 1):
             raise Gap("cannot test reverse patch application")
         return p.returncode == 0
 
-    def landed(self, parent, base, paths, patch):
+    def landed(self, parent, base, paths, patch, *, head=None):
         key = base, hashlib.sha256(patch).hexdigest()
         if key not in self.landed_cache:
+            end = head or parent.head
+            if (base, end) not in self.zero_cache:
+                self.zero_cache[base, end] = self.git(
+                    "diff", "--no-ext-diff", "--no-textconv", "--no-renames", "--binary",
+                    "--full-index", "--unified=0", base, end).stdout
+            zero = self.zero_cache[base, end]
             # Scan actual main source history, not mergedAt/state/title. Include
             # combined bors squash commits and subsequently modified/reverted files.
             rows = self.git("log", "--first-parent", f"--max-count={MAX_HISTORY + 1}", "--format=%H",
                             f"{base}..{self.main}", "--", *paths).stdout.decode().splitlines()
+            possible = None
             for revision in dict.fromkeys([self.main, *rows[:MAX_HISTORY]]):
                 if self.contains(revision, paths, patch):
                     self.landed_cache[key] = revision
                     break
+                if possible is None and self.contains(revision, paths, zero, zero=True):
+                    possible = revision
             else:
+                if possible:
+                    error = Gap(f"possible landed content after context drift at {possible}; no closure")
+                    self.landed_cache[key] = error
+                    raise error
                 if len(rows) > MAX_HISTORY:
                     raise Gap("main's relevant source history exceeds squash-equivalence bound")
                 self.landed_cache[key] = None
+        if isinstance(self.landed_cache[key], Gap):
+            raise self.landed_cache[key]
         return self.landed_cache[key]
 
 
@@ -353,8 +387,11 @@ class Detector:
         self.gaps = {}
         for p in prs:
             try:
-                for commit in source.commits(p.head):
-                    self.index[commit].add(p.number)
+                # Closed parents are scoped to the child explicitly naming
+                # them. Their discovery by another child must not alter this PR.
+                if p.state == "open":
+                    for commit in source.commits(p.head):
+                        self.index[commit].add(p.number)
             except Gap as e:
                 self.gaps[p.number] = str(e)
 
@@ -364,7 +401,7 @@ class Detector:
         for commit in self.source.commits(child.head):
             numbers.update(self.index[commit])
         for p in list(self.prs.values()):
-            if p.head_repo == REPO and child.base == p.branch and child.number != p.number:
+            if p.state == "open" and p.head_repo == REPO and child.base == p.branch and child.number != p.number:
                 numbers.add(p.number)
         if len(numbers) > 64:
             raise Gap("parent candidate bound exceeded")
@@ -404,29 +441,36 @@ class Detector:
                 landed = self.source.landed(parent, base, paths, patch) if patch else None
                 if landed:
                     reasons.append(f"#{number}: aggregate source equivalent landed at {landed}")
-                if patch and not landed and self.source.contains(child.head, paths, patch):
-                    kind = "shared-unmerged-commit" if shared else "explicit-parent-content"
-                    if parent.head in commits:
-                        kind = "ancestor-head"
-                    return Evidence(number, parent.head, child.head, self.source.main, kind,
-                                    parent.head if parent.head in commits else (shared[0] if shared else ""),
-                                    hashlib.sha256(patch).hexdigest(), base), reasons
+                aggregate_retained = bool(patch and self.source.contains(child.head, paths, patch))
                 # A descendant can edit part of the parent's aggregate diff while
                 # retaining another complete, individually unlanded commit. Check
                 # exact commit patches, with the same main-history exclusion.
                 if not relationship and parent.head not in commits:
                     raise Gap("shared ancestry without a confirmed direction/complete parent delta")
-                eligible = parent_commits if relationship else set(shared)
+                graph_direction = parent.head in commits or (parent.head_repo == REPO and child.base == parent.branch)
+                if not graph_direction and not aggregate_retained:
+                    raise Gap("body-only direction without complete current parent content")
+                # Body-only links can establish whole-parent patch identity for
+                # a cherry-pick/rebase. They cannot attribute a shared precursor
+                # commit to a dependent PR whose own current work is absent.
+                eligible = parent_commits if graph_direction else {parent.head}
                 ordered = sorted(eligible - {parent.head})
                 if parent.head in eligible:
                     ordered.insert(0, parent.head)
                 for commit in ordered[:MAX_EVIDENCE_COMMITS]:
                     cb, cp, delta = self.source.commit_patch(commit)
                     if (delta and self.source.contains(child.head, cp, delta)
-                            and not self.source.landed(parent, cb, cp, delta)):
+                            and not self.source.landed(parent, cb, cp, delta, head=commit)):
+                        if parent.state == "closed" and parent.landing_claim:
+                            raise Gap("closed parent reports landing but exact source equivalence is unproved")
+                        kind = ("retained-unmerged-commit" if commit in commits
+                                else "explicit-parent-commit-content")
+                        if aggregate_retained:
+                            kind = ("ancestor-head" if commit == parent.head and commit in commits
+                                    else "shared-unmerged-commit" if commit in commits
+                                    else "explicit-parent-content")
                         return Evidence(number, parent.head, child.head, self.source.main,
-                                        "retained-unmerged-commit" if commit in commits else "explicit-parent-commit-content",
-                                        commit, hashlib.sha256(delta).hexdigest(), cb), reasons
+                                        kind, commit, hashlib.sha256(delta).hexdigest(), cb), reasons
                 if len(ordered) > MAX_EVIDENCE_COMMITS:
                     raise Gap("retained-commit evidence search exceeds 16-commit bound")
                 reasons.append(f"#{number}: no complete unlanded parent delta/commit retained")
@@ -457,7 +501,8 @@ def comment_text(evidence, parent_state="open"):
         f"ending at `{e.main}` (patch SHA-256 `{e.patch_sha256}`).\n\n"
         f"{next_step}Rebase onto current main so the diff contains only "
         "this PR's own changes and reopen or submit it as a standalone PR. Closing this PR under the "
-        "no-stacking policy; its branch is preserved. Drafts and keep/hold/human labels do not exempt stacks."
+        "no-stacking policy if the final identity check still matches; its branch is preserved. "
+        "Drafts and keep/hold/human labels do not exempt stacks."
     )
 
 
@@ -484,11 +529,22 @@ def enforce(api, child, parent, evidence, actor):
     api.call(f"pulls/{child.number}", "PATCH", {"state": "closed"})
 
 
-def status(api, child, state, description):
-    api.call(f"statuses/{child.head}", "POST", {
-        "context": CONTEXT, "state": state, "description": description[:140],
-        "target_url": os.environ.get("STACK_RUN_URL", f"https://github.com/{REPO}/issues/16791"),
-    })
+def block(api, child):
+    """Only confirmed stacks affect admission; no recurring per-head status writes."""
+    if not getattr(api, "label_ready", False):
+        try:
+            api.call(f"labels/{BLOCK_LABEL}")
+        except HTTPError as error:
+            if error.code != 404:
+                raise
+            api.call("labels", "POST", {"name": BLOCK_LABEL, "color": "b60205",
+                                        "description": "Confirmed unmerged prerequisite work; bors admission blocked"})
+        api.label_ready = True
+    current = api.pages(f"issues/{child.number}/labels", 1000)
+    if not any(l["name"] == BLOCK_LABEL for l in current):
+        api.call(f"issues/{child.number}/labels", "POST", {"labels": [BLOCK_LABEL]})
+    if not any(l["name"] == BLOCK_LABEL for l in api.pages(f"issues/{child.number}/labels", 1000)):
+        raise Gap("bors blocking label was not applied; closure declined")
 
 
 def membership(data, child):
@@ -513,16 +569,16 @@ def membership(data, child):
 
 
 def verify_withdrawal(child, before, observe, sleep=time.sleep):
-    """Three bounded observations after close, allowing webhook delivery latency."""
-    for attempt in range(3):
+    """Six bounded observations after close, allowing webhook delivery latency."""
+    for attempt in range(6):
         after = membership(observe(), child)
         emit(pr=child.number, head=child.head, bors_before=before, bors_after=after,
              withdrawal="observed" if before and (before["batches"] or before["held"])
              and not (after["batches"] or after["held"]) else "not-proved")
         if not (after["batches"] or after["held"]):
             return
-        if attempt < 2:
-            sleep(2)
+        if attempt < 5:
+            sleep(5)
     raise Gap("closed child still admitted in bors; withdrawal pending, inspect close webhook/reconciliation")
 
 
@@ -551,7 +607,15 @@ def main():
                 args.pr = numbers.pop()
             else:
                 emit(wake="PR association ambiguous/absent; bounded backlog sweep")
-    prs = [PR.parse(p) for p in api.pages("pulls?state=open&sort=created&direction=asc", MAX_PRS)]
+    prs = []
+    metadata_gaps = 0
+    for raw in api.pages("pulls?state=open&sort=created&direction=asc", MAX_PRS):
+        try:
+            prs.append(PR.parse(raw))
+        except (Gap, KeyError, ValueError) as error:
+            number = raw.get("number")
+            emit(index_pr=number, classification="unknown", gap=str(error))
+            metadata_gaps += int(not args.pr or args.pr == number)
     main_sha = api.main()
     selected = [p for p in prs if not args.pr or p.number == args.pr]
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
@@ -570,13 +634,8 @@ def main():
     actor = os.environ.get("STACK_ACTOR", "")
     if args.apply and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?", actor):
         raise Gap("STACK_ACTOR is required to authenticate idempotency comments")
-    # Event runs invalidate an older result promptly. A backlog sweep avoids
-    # rewriting every status before source observation (thousands of redundant
-    # writes and a stale main snapshot); confirmed results block before closing.
-    if args.apply and args.pr and selected:
-        status(api, selected[0], "pending", "Inspecting current unmerged ancestry/content")
     common = run(["git", "rev-parse", "--git-common-dir"]).stdout.decode().strip()
-    failures = 0
+    failures = metadata_gaps
     with tempfile.TemporaryDirectory(prefix="no-stack-") as directory:
         source = Source(directory, api, main_sha, Path(common) / "objects")
         source.fetch(prs)
@@ -594,7 +653,7 @@ def main():
                     if evidence:
                         parent = detector.prs[evidence.parent]
                         if not unchanged(api, child, parent, main_sha):
-                            raise Gap("identities changed before blocking status")
+                            raise Gap("identities changed before blocking label")
                         from bors_observation import observation
                         before = None
                         try:
@@ -604,19 +663,18 @@ def main():
                             emit(pr=child.number, bors_gap=str(error))
                         if not unchanged(api, child, parent, main_sha):
                             raise Gap("identities changed during bors observation")
-                        status(api, child, "failure", f"Unmerged work from #{parent.number}; stack closure pending")
+                        block(api, child)
                         enforce(api, child, parent, evidence, actor)
                         emit(pr=child.number, mutation="closed", withdrawal="pull_request.closed webhook")
                         verify_withdrawal(child, before, observation)
-                    else:
+                    elif child.blocked:
                         if api.main() != main_sha or api.pr(child.number) != child:
-                            raise Gap("identities changed before result status")
-                        status(api, child, "success", "No confirmed stack within documented source/metadata bounds")
+                            raise Gap("identities changed before removing obsolete stack label")
+                        api.call(f"issues/{child.number}/labels/{BLOCK_LABEL}", "DELETE")
+                        emit(pr=child.number, mutation="obsolete blocking label removed")
             except Exception as e:
                 failures += 1
                 emit(pr=child.number, head=child.head, main=main_sha, classification="unknown", gap=str(e))
-                if args.apply:
-                    status(api, child, "error", "Incomplete stack evidence; inspect audit and retry")
         emit(summary=True, selected=len(selected), failures=failures, api_calls=api.calls,
              api_bytes=api.bytes, mode="apply" if args.apply else "dry-run")
     return bool(failures)

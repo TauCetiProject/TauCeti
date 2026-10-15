@@ -4,10 +4,13 @@ import copy
 from contextlib import redirect_stdout
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch, MagicMock
 
 import stack_policy as sp
 
@@ -133,23 +136,27 @@ class GitFixtures(unittest.TestCase):
         self.assertIsNone(evidence)
         self.assertTrue(any("source equivalent landed" in r for r in reasons))
 
-    def retained_then_reverted_parent(self, landed_aggregate):
+    def retained_then_reverted_parent(self, landed_aggregate, *, body_only=False):
         git(self.root, "checkout", "-b", "parent")
         self.write("A", "unlanded prerequisite\n")
         added = self.commit("add A")
         git(self.root, "checkout", "-b", "child")
         self.write("child", "own work\n")
         self.commit("child retains A")
-        child = self.pr(2, "Stacked on #1")
+        child = self.pr(2, "Stacked on #1", base="main" if body_only else "branch-1")
         git(self.root, "checkout", "parent")
         git(self.root, "revert", "--no-edit", added)
         if landed_aggregate:
             self.write("B", "independently landed\n")
             last = self.commit("add B")
-        self.pr(1)
+        self.pr(1, fork=False)
         if landed_aggregate:
             git(self.root, "checkout", "main")
             git(self.root, "cherry-pick", last)
+        if body_only:
+            with self.assertRaises(sp.Gap):
+                self.detector().detect(child)
+            return
         evidence, _ = self.detector().detect(child)
         self.assertEqual(evidence.kind, "retained-unmerged-commit")
         self.assertEqual(evidence.commit, added)
@@ -160,10 +167,68 @@ class GitFixtures(unittest.TestCase):
     def test_landed_parent_aggregate_still_checks_retained_commits(self):
         self.retained_then_reverted_parent(True)
 
+    def test_body_only_reverted_parent_has_ambiguous_direction(self):
+        self.retained_then_reverted_parent(False, body_only=True)
+
+    def test_parent_parts_landed_separately_never_together_are_not_unmerged_work(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("A", "parent A\n")
+        self.commit("parent adds A")
+        self.write("B", "parent B\n")
+        self.commit("parent adds B")
+        self.pr(1)
+        git(self.root, "checkout", "-b", "child")
+        self.write("child", "own change\n")
+        self.commit("child")
+        child = self.pr(2, "Stacked on #1")
+        git(self.root, "checkout", "main")
+        self.write("A", "parent A\n")
+        first = self.commit("squash A independently")
+        git(self.root, "revert", "--no-edit", first)
+        self.write("B", "parent B\n")
+        self.commit("squash B independently")
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_landed_squash_with_changed_context_is_unknown_never_closed(self):
+        self.write("file", "context before\nold value\ncontext after\n")
+        self.commit("context base")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("file", "context before\nparent value\ncontext after\n")
+        self.commit("parent")
+        parent = self.pr(1, state="closed")
+        git(self.root, "checkout", "-b", "child")
+        self.write("child", "own work\n")
+        self.commit("child")
+        child = self.pr(2, "Stacked on #1")
+        git(self.root, "checkout", "main")
+        self.write("file", "changed context\nold value\ncontext after\n")
+        self.commit("main context drift")
+        self.write("file", "changed context\nparent value\ncontext after\n")
+        self.commit("squash parent on new main")
+        with self.assertRaisesRegex(sp.Gap, "possible landed content"):
+            self.detector().detect(child)
+
+    def test_closed_parent_discovered_by_other_child_does_not_bleed_into_shared_index(self):
+        parent, child = self.parent_child()
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed"})
+        # This child adopts the closed source; only an unrelated third PR names it.
+        self.write("third", "unrelated\n")
+        self.commit("third")
+        self.pr(3, "Depends on #1")
+        detector = self.detector()
+        self.assertNotIn(parent.number, detector.index[parent.head])
+        self.assertIsNone(detector.detect(child)[0])
+
     def test_closed_but_unlanded_parent(self):
         parent, child = self.parent_child(explicit=True)
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed"})
         self.assertIsNotNone(self.detector().detect(child)[0])
+
+    def test_closed_landing_claim_without_source_proof_is_unknown_not_assumed_landed(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed", "landing_claim": True})
+        with self.assertRaisesRegex(sp.Gap, "reports landing"):
+            self.detector().detect(child)
 
     def test_stale_description_and_reverted_inheritance(self):
         _, child = self.parent_child(explicit=True)
@@ -252,6 +317,7 @@ class ProseTests(unittest.TestCase):
         for body in ["> Stacked on #12", "```\nStacked on #12\n```", "Not stacked on #12",
                      "This was stacked on #12", '`Stacked on #12`', 'The title is "stacked on #12"',
                      '“Stacked on #12”', "'Stacked on #12'", "    Stacked on #12", "``Stacked on #12``",
+                     "Prerequisites: none; #12 will build on this", "Depends on Mathlib PR #12",
                      "<!-- Stacked on #12 -->", "Stacked on https://github.com/other/repo/pull/12"]:
             with self.subTest(body=body):
                 self.assertFalse(sp.explicit_parents(body))
@@ -266,6 +332,7 @@ class FakeAPI:
         self.fail_comment = False
         self.fail_close = False
         self.race = None
+        self.labels = set()
 
     def main(self):
         return self.sha
@@ -274,10 +341,16 @@ class FakeAPI:
         return self.prs[n]
 
     def pages(self, path, limit):
-        return copy.deepcopy(self.comments)
+        if path.endswith("/comments"):
+            return copy.deepcopy(self.comments)
+        if path.endswith("/labels"):
+            return [{"name": label} for label in sorted(self.labels)]
+        raise AssertionError(f"unexpected page path: {path}")
 
     def call(self, path, method="GET", data=None):
         self.calls.append((path, method, data))
+        if path.endswith("/labels") and method == "POST":
+            self.labels.update(data["labels"])
         if path.endswith("/comments"):
             if self.fail_comment:
                 raise sp.Gap("comment permission/rate limit")
@@ -362,6 +435,15 @@ class MutationTests(unittest.TestCase):
 
 
 class APITests(unittest.TestCase):
+    def test_empty_delete_response_is_success(self):
+        api = object.__new__(sp.API)
+        api.token, api.calls, api.bytes, api.deadline = "fixture", 0, 0, sp.time.monotonic() + 60
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.read.return_value = b""
+        with patch.object(sp, "urlopen", return_value=response):
+            self.assertIsNone(api.request("https://api.github.com/repos/TauCetiProject/TauCeti/issues/2/labels/stacked-pr",
+                                          "DELETE"))
     def test_pagination_truncation_and_rate_limit_are_failures(self):
         api = object.__new__(sp.API)
         api.call = lambda *args: [None] * 100
@@ -382,6 +464,111 @@ class APITests(unittest.TestCase):
             api.request = lambda *args: {"data": {"repository": {"pullRequest": {"headRef": ref}}}}
             with self.assertRaises(sp.Gap):
                 api.pr(2)
+
+
+class MainTests(unittest.TestCase):
+    def setUp(self):
+        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, "Stacked on #1", False,
+                           "a" * 40)
+        self.parent = sp.PR(1, "open", "b" * 40, "main", "parent", sp.REPO, "", False, "a" * 40)
+        self.api = FakeAPI(self.child, self.parent, "a" * 40)
+        self.api.bytes = 0
+        self.evidence = sp.Evidence(1, self.parent.head, self.child.head, self.api.sha,
+                                    "ancestor-head", self.parent.head, "d" * 64, "a" * 40)
+        self.raw = [self.record(self.parent), self.record(self.child)]
+        original_pages = self.api.pages
+        self.api.pages = lambda path, limit: self.raw if path.startswith("pulls?") else original_pages(path, limit)
+        self.detector = SimpleNamespace(prs=self.api.prs, gaps={}, detect=lambda _: (None, []))
+
+    def record(self, p):
+        return {"number": p.number, "state": p.state, "draft": p.draft, "body": p.body,
+                "head": {"sha": p.head, "ref": p.branch, "repo": {"full_name": p.head_repo}},
+                "base": {"sha": p.base_head, "ref": p.base, "repo": {"full_name": sp.REPO}},
+                "labels": [{"name": sp.BLOCK_LABEL}] if p.blocked else []}
+
+    def main(self, *args):
+        empty_bors = {"schema": "tauceti-bors.observation/v1", "repo": sp.REPO, "base": "main",
+                      "batch_ids": [], "batches": [], "held": []}
+        with patch.object(sp, "API", return_value=self.api), patch.object(sp, "Source"), \
+                patch.object(sp, "Detector", return_value=self.detector), \
+                patch.object(sp, "run", return_value=SimpleNamespace(stdout=b"/tmp/policy-fixture")), \
+                patch("bors_observation.observation", return_value=empty_bors), \
+                patch.dict(os.environ, {"STACK_ACTOR": "trusted[bot]"}), \
+                patch.object(sp.sys, "argv", ["stack_policy.py", *args]), redirect_stdout(io.StringIO()):
+            return sp.main()
+
+    def test_dry_run_confirmed_has_no_mutations(self):
+        self.detector.detect = lambda _: (self.evidence, [])
+        self.assertFalse(self.main("--pr", "2"))
+        self.assertEqual(self.api.calls, [])
+
+    def test_main_movement_on_clean_result_has_no_global_admission_side_effect(self):
+        def result(_):
+            self.api.sha = "f" * 40
+            return None, []
+        self.detector.detect = result
+        self.assertFalse(self.main("--apply"))
+        self.assertEqual(self.api.calls, [])
+
+    def test_confirmed_blocks_then_comments_then_closes(self):
+        self.detector.detect = lambda _: (self.evidence, [])
+        self.assertFalse(self.main("--apply", "--pr", "2"))
+        writes = [path for path, method, _ in self.api.calls if method != "GET"]
+        self.assertEqual(writes, ["issues/2/labels", "issues/2/comments", "pulls/2"])
+        self.assertFalse(any(path.startswith("statuses/") for path, _, _ in self.api.calls))
+
+    def test_deleted_fork_in_index_does_not_abort_other_prs(self):
+        deleted = copy.deepcopy(self.raw[1])
+        deleted["number"] = 3
+        deleted["head"]["repo"] = None
+        self.raw.append(deleted)
+        self.assertTrue(self.main("--apply"))
+        self.assertEqual(self.api.calls, [])
+
+    def test_failure_on_one_pr_does_not_write_error_status_or_abort_other_prs(self):
+        visited = []
+        def result(pr):
+            visited.append(pr.number)
+            if pr.number == 1:
+                raise sp.Gap("incomplete source")
+            return None, []
+        self.detector.detect = result
+        self.assertTrue(self.main("--apply"))
+        self.assertEqual(visited, [1, 2])
+        self.assertEqual(self.api.calls, [])
+
+    def test_label_retry_is_idempotent(self):
+        sp.block(self.api, self.child)
+        sp.block(self.api, self.child)
+        self.assertEqual(sum(method == "POST" for _, method, _ in self.api.calls), 1)
+
+    def test_workflow_run_association_uses_current_canonical_pr(self):
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+        with tempfile.TemporaryDirectory() as directory:
+            event = Path(directory) / "event.json"
+            event.write_text(json.dumps({"workflow_run": {"pull_requests": [{"number": 2}]}}))
+            self.assertFalse(self.main("--github-event", str(event)))
+        self.assertEqual(visited, [2])
+
+    def test_failed_label_write_does_not_abort_remaining_prs_or_close(self):
+        other = sp.PR(3, "open", "e" * 40, "main", "other", sp.REPO, "", False, "a" * 40)
+        self.api.prs[3] = other
+        self.raw.append(self.record(other))
+        visited = []
+        def result(pr):
+            visited.append(pr.number)
+            return (self.evidence if pr.number == 2 else None), []
+        self.detector.detect = result
+        original = self.api.call
+        def fail(path, method="GET", data=None):
+            if path == "issues/2/labels" and method == "POST":
+                raise sp.Gap("label write rate limited")
+            return original(path, method, data)
+        self.api.call = fail
+        self.assertTrue(self.main("--apply"))
+        self.assertEqual(visited, [1, 2, 3])
+        self.assertFalse(any(method == "PATCH" for _, method, _ in self.api.calls))
 
 
 class WithdrawalTests(unittest.TestCase):
@@ -417,13 +604,13 @@ class WithdrawalTests(unittest.TestCase):
 
 
 class IntegrationContractTests(unittest.TestCase):
-    def test_required_pr_status_and_workflow_trust(self):
+    def test_block_label_and_workflow_trust(self):
         import tomllib
         import yaml
         root = Path(__file__).resolve().parent.parent
         bors = tomllib.loads((root / "bors.toml").read_text())
-        self.assertIn("no-stack", bors["pr_status"])
-        self.assertNotIn("no-stack", bors["status"])
+        self.assertIn(sp.BLOCK_LABEL, bors["block_labels"])
+        self.assertEqual(bors["pr_status"], ["build", "bump-guard", "scope"])
         workflow = yaml.safe_load((root / ".github/workflows/stack-policy.yml").read_text())
         events = workflow.get("on", workflow.get(True))
         self.assertEqual(events["pull_request_target"]["branches"], ["main"])
