@@ -29,6 +29,9 @@ divisibility statements hold over any commutative ring with a non-zero-divisor `
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, 93:28--29, for invariants of dyadic Jordan
   splittings.
+* Sungmun Cho, *Group schemes and local densities of quadratic lattices in residue
+  characteristic 2*, [Definition 2.1(b)](https://arxiv.org/pdf/1210.7625#page=3), for parity
+  relative to a modular lattice's own scale.
 -/
 
 public section
