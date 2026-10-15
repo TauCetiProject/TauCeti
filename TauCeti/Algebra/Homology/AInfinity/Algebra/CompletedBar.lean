@@ -43,44 +43,49 @@ theorem hasLengthBound_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) 
     (𝒜.grading.shift 1) 𝒜.taylor 1 c fun n hn ↦
       𝒜.taylor_comp_of_eq_zero_of_m_eq_zero n (h𝒜 n.1 hn)
 
-/-- The extension of a finite-arity coaugmented bar differential to completed tensor words.
-The proof of the arity bound restricts this construction to the regime where the finite
-prefix formula agrees with the original differential. -/
-noncomputable def completedBarDifferential (𝒜 : AInfinityAlgebra R A) (c : ℕ)
-    (_h𝒜 : ∀ n, c + 1 < n → 𝒜.m n = 0) :
+/-- The finite-prefix extension of the coaugmented bar differential to completed tensor words.
+When operations above arity `c + 1` vanish, it agrees with the original differential on finite
+words and squares to zero. -/
+noncomputable def completedBarDifferential (𝒜 : AInfinityAlgebra R A) (c : ℕ) :
     CompletedTensorWords R A →ₗ[R] CompletedTensorWords R A :=
   CompletedTensorWords.extend c 𝒜.coaugmentedBarDifferential
+
+/-- The completed bar differential is the finite-prefix extension at length bound `c`. -/
+theorem completedBarDifferential_def (𝒜 : AInfinityAlgebra R A) (c : ℕ) :
+    𝒜.completedBarDifferential c =
+      CompletedTensorWords.extend c 𝒜.coaugmentedBarDifferential := by
+  rw [completedBarDifferential]
 
 /-- Each output coordinate of the completed differential reads a finite input prefix. -/
 @[simp]
 theorem completedBarDifferential_apply (𝒜 : AInfinityAlgebra R A) (c : ℕ)
-    (h𝒜 : ∀ n, c + 1 < n → 𝒜.m n = 0) (x : CompletedTensorWords R A) (k : ℕ) :
-    𝒜.completedBarDifferential c h𝒜 x k =
+    (x : CompletedTensorWords R A) (k : ℕ) :
+    𝒜.completedBarDifferential c x k =
       𝒜.coaugmentedBarDifferential (CompletedTensorWords.truncate R A (k + 1 + c) x) k := by
-  rw [completedBarDifferential, CompletedTensorWords.extend_apply]
+  rw [completedBarDifferential_def, CompletedTensorWords.extend_apply]
 
 /-- On finite tensor words, the completed differential is the original bar differential. -/
 @[simp]
 theorem completedBarDifferential_coe (𝒜 : AInfinityAlgebra R A) (c : ℕ)
     (h𝒜 : ∀ n, c + 1 < n → 𝒜.m n = 0) (x : TensorWords R A) :
-    𝒜.completedBarDifferential c h𝒜 x =
+    𝒜.completedBarDifferential c x =
       (𝒜.coaugmentedBarDifferential x : CompletedTensorWords R A) := by
-  rw [completedBarDifferential]
+  rw [completedBarDifferential_def]
   exact CompletedTensorWords.extend_coe c _ (𝒜.hasLengthBound_coaugmentedBarDifferential c h𝒜) x
 
 /-- The completed bar differential lowers the descending length filtration by at most `c`. -/
 theorem map_completedBarDifferential_filtration_le (𝒜 : AInfinityAlgebra R A) (c : ℕ)
-    (h𝒜 : ∀ n, c + 1 < n → 𝒜.m n = 0) (n : ℕ) :
-    Submodule.map (𝒜.completedBarDifferential c h𝒜)
+    (n : ℕ) :
+    Submodule.map (𝒜.completedBarDifferential c)
       (CompletedTensorWords.filtration R A (n + c)) ≤ CompletedTensorWords.filtration R A n := by
-  rw [completedBarDifferential]
+  rw [completedBarDifferential_def]
   exact CompletedTensorWords.map_extend_filtration_le c _ n
 
 /-- The completed bar differential is independent of its arity bound. -/
 theorem completedBarDifferential_eq (𝒜 : AInfinityAlgebra R A) (c d : ℕ)
     (hc : ∀ n, c + 1 < n → 𝒜.m n = 0) (hd : ∀ n, d + 1 < n → 𝒜.m n = 0) :
-    𝒜.completedBarDifferential c hc = 𝒜.completedBarDifferential d hd := by
-  rw [completedBarDifferential, completedBarDifferential]
+    𝒜.completedBarDifferential c = 𝒜.completedBarDifferential d := by
+  rw [completedBarDifferential_def, completedBarDifferential_def]
   exact CompletedTensorWords.extend_eq c d _
     (𝒜.hasLengthBound_coaugmentedBarDifferential c hc)
     (𝒜.hasLengthBound_coaugmentedBarDifferential d hd)
@@ -89,8 +94,8 @@ theorem completedBarDifferential_eq (𝒜 : AInfinityAlgebra R A) (c d : ℕ)
 @[simp]
 theorem completedBarDifferential_sq (𝒜 : AInfinityAlgebra R A) (c : ℕ)
     (h𝒜 : ∀ n, c + 1 < n → 𝒜.m n = 0) :
-    𝒜.completedBarDifferential c h𝒜 ∘ₗ 𝒜.completedBarDifferential c h𝒜 = 0 := by
-  rw [completedBarDifferential]
+    𝒜.completedBarDifferential c ∘ₗ 𝒜.completedBarDifferential c = 0 := by
+  rw [completedBarDifferential_def]
   exact CompletedTensorWords.extend_comp_self_eq_zero c _
     (𝒜.hasLengthBound_coaugmentedBarDifferential c h𝒜) 𝒜.coaugmentedBarDifferential_sq
 
@@ -103,8 +108,8 @@ theorem completedBarDifferential_unique (𝒜 : AInfinityAlgebra R A) (c : ℕ)
       CompletedTensorWords.filtration R A n)
     (hb𝒜 : ∀ x : TensorWords R A, b x =
       (𝒜.coaugmentedBarDifferential x : CompletedTensorWords R A)) :
-    b = 𝒜.completedBarDifferential c h𝒜 := by
-  rw [completedBarDifferential]
+    b = 𝒜.completedBarDifferential c := by
+  rw [completedBarDifferential_def]
   exact CompletedTensorWords.extend_unique c _
     (𝒜.hasLengthBound_coaugmentedBarDifferential c h𝒜) b d hb fun x ↦ by
       simpa only [DFinsupp.coeFnLinearMap_apply] using hb𝒜 x
