@@ -15,12 +15,6 @@ Symmetric powers of quasicoherent modules on a spectrum are computed by symmetri
 of modules. The comparison sends a product of module elements to the sheafified product of
 their associated global sections.
 
-The affine computation uses the localization of symmetric powers on basic opens and
-Mathlib's equivalence between morphisms into a sheaf and their restrictions to a basis.
-The construction follows `TauCeti/AlgebraicGeometry/Modules/ExteriorPower/Affine.lean`.
-The local scalar-linearity argument adapts
-`AlgebraicGeometry.SpecModulesToSheafFullyFaithful` to a presheaf source.
-
 ## References
 
 * [The Stacks Project, Lemma 10.13.6](https://stacks.math.columbia.edu/tag/0C6F).
@@ -39,6 +33,9 @@ universe u
 
 variable {R : CommRingCat.{u}}
 
+-- The construction follows TauCeti/AlgebraicGeometry/Modules/ExteriorPower/Affine.lean.
+-- The local scalar-linearity argument adapts
+-- AlgebraicGeometry.SpecModulesToSheafFullyFaithful to a presheaf source.
 private abbrev symmetricPresheaf (M : ModuleCat.{u} R) (n : ℕ) :=
   (PresheafOfModulesOfCommRing.symmetricPower (R := (Spec R).presheaf) n).obj (tilde M).val
 
@@ -436,6 +433,20 @@ private lemma tildeSymmetricPowerIso_inv_toOpen (n : ℕ) (M : ModuleCat.{u} R)
     (congrArg (fun α ↦ α.app (.op U)) (h₂.trans h₁)) (symmetricToOpen M n U x)).trans
       (ConcreteCategory.congr_hom (symmetricComparisonR_toOpen M n U) x)
 
+-- Public statements retain the explicit monomial value: the module system permits the
+-- private helper only in their membership proofs.
+private abbrev symmetricToOpenMonomial (M : ModuleCat.{u} R) (U : (Spec R).Opens)
+    (l : List M) : (symmetricPresheaf M l.length).obj (.op U) :=
+  ⟨(l.map (fun m ↦ SymmetricAlgebra.ι ((Spec R).presheaf.obj (.op U))
+      (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
+      (tilde.toOpen M U m))).prod, by
+    have h := TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule
+      ((Spec R).presheaf.obj (.op U))
+      (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
+      (l.map (fun m ↦ tilde.toOpen M U m))
+    erw [List.map_map, List.length_map] at h
+    exact h⟩
+
 /-- On every open, the inverse affine comparison sends a sheafified monomial in associated
 sections to the associated section of the same monomial. The empty list includes degree zero. -/
 theorem tildeSymmetricPowerIso_inv_toOpen_prod (M : ModuleCat.{u} R)
@@ -444,36 +455,23 @@ theorem tildeSymmetricPowerIso_inv_toOpen_prod (M : ModuleCat.{u} R)
       ((SheafOfModules.symmetricPowerIso l.length (tilde M)).inv.val.app (.op U)
         (((PresheafOfModules.sheafificationAdjunction (𝟙 (Spec R).ringCatSheaf.obj)).unit.app
           ((PresheafOfModulesOfCommRing.symmetricPower (R := (Spec R).presheaf) l.length).obj
-            (tilde M).val)).app (.op U) ⟨(l.map (fun m ↦ SymmetricAlgebra.ι
-              ((Spec R).presheaf.obj (.op U))
+            (tilde M).val)).app (.op U)
+          ⟨(l.map (fun m ↦ SymmetricAlgebra.ι ((Spec R).presheaf.obj (.op U))
               (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
               (tilde.toOpen M U m))).prod, by
-            have h := TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule
-                ((Spec R).presheaf.obj (.op U))
-                (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
-                (l.map (fun m ↦ tilde.toOpen M U m))
-            erw [List.map_map, List.length_map] at h
-            exact h⟩)) =
+            exact (symmetricToOpenMonomial M U l).property⟩)) =
       tilde.toOpen (M.symmetricPower l.length) U
         ⟨(l.map (SymmetricAlgebra.ι R M)).prod,
         TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R M l⟩ := by
   have hp : symmetricToOpen M l.length U
       ⟨(l.map (SymmetricAlgebra.ι R M)).prod,
         TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R M l⟩ =
-      ⟨(l.map (fun m ↦ SymmetricAlgebra.ι
-              ((Spec R).presheaf.obj (.op U))
-              (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
-              (tilde.toOpen M U m))).prod, by
-            have h := TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule
-                ((Spec R).presheaf.obj (.op U))
-                (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
-                (l.map (fun m ↦ tilde.toOpen M U m))
-            erw [List.map_map, List.length_map] at h
-            exact h⟩ := by
+      symmetricToOpenMonomial M U l := by
     apply Subtype.ext
     rw [coe_symmetricToOpen]
     simp only [map_list_prod, List.map_map, Function.comp_def, SymmetricAlgebra.mapₛₗ_ι]
     rfl
+  dsimp only [symmetricToOpenMonomial] at hp
   rw [← hp]
   exact tildeSymmetricPowerIso_inv_toOpen l.length M U _
 
@@ -488,16 +486,11 @@ theorem tildeSymmetricPowerIso_hom_toOpen_prod (M : ModuleCat.{u} R)
       (SheafOfModules.symmetricPowerIso l.length (tilde M)).inv.val.app (.op U)
         (((PresheafOfModules.sheafificationAdjunction (𝟙 (Spec R).ringCatSheaf.obj)).unit.app
           ((PresheafOfModulesOfCommRing.symmetricPower (R := (Spec R).presheaf) l.length).obj
-            (tilde M).val)).app (.op U) ⟨(l.map (fun m ↦ SymmetricAlgebra.ι
-              ((Spec R).presheaf.obj (.op U))
+            (tilde M).val)).app (.op U)
+          ⟨(l.map (fun m ↦ SymmetricAlgebra.ι ((Spec R).presheaf.obj (.op U))
               (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
               (tilde.toOpen M U m))).prod, by
-            have h := TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule
-                ((Spec R).presheaf.obj (.op U))
-                (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
-                (l.map (fun m ↦ tilde.toOpen M U m))
-            erw [List.map_map, List.length_map] at h
-            exact h⟩) := by
+            exact (symmetricToOpenMonomial M U l).property⟩) := by
   have h := congrArg ((tildeSymmetricPowerIso l.length M).hom.val.app (.op U))
     (tildeSymmetricPowerIso_inv_toOpen_prod M U l)
   exact h.symm.trans (ModuleCat.hom_inv_apply
@@ -570,12 +563,14 @@ def tildeSymmetricPowerNatIso (n : ℕ) :
     (fun φ ↦ tildeSymmetricPowerIso_hom_naturality n φ)
 
 /-- The forward components of the natural affine comparison. -/
+@[simp]
 theorem tildeSymmetricPowerNatIso_hom_app (n : ℕ) (M : ModuleCat.{u} R) :
     (tildeSymmetricPowerNatIso (R := R) n).hom.app M =
       (tildeSymmetricPowerIso n M).hom :=
   (rfl)
 
 /-- The inverse components of the natural affine comparison. -/
+@[simp]
 theorem tildeSymmetricPowerNatIso_inv_app (n : ℕ) (M : ModuleCat.{u} R) :
     (tildeSymmetricPowerNatIso (R := R) n).inv.app M =
       (tildeSymmetricPowerIso n M).inv :=
