@@ -2,12 +2,17 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
+* `WeierstrassCurve.Affine.posDef_neronTateGramMatrix`: under Northcott finiteness, every
+  finite-basis Gram matrix is positive definite.
+
 -/
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.CanonicalHeight.Basic
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.PosDef.Northcott
 
 /-!
 # The points modulo torsion, and the Néron-Tate pairing on them
@@ -176,5 +181,18 @@ theorem isSymm_neronTateGramMatrix [W.toAffine.IsElliptic] {ι : Type*}
     (b : Module.Basis ι ℤ (PointModTorsion W)) : (neronTateGramMatrix W b).IsSymm := by
   ext i j
   simpa using neronTatePairingModTorsion_comm (b j) (b i)
+
+variable (W) in
+/-- The Gram matrix of the Néron–Tate pairing is positive definite under Northcott finiteness,
+for every finite basis of the points modulo torsion. -/
+theorem posDef_neronTateGramMatrix [W.toAffine.IsElliptic]
+    [Northcott (Point.canonicalHeight (W := W))] {ι : Type*} [Finite ι]
+    (b : Module.Basis ι ℤ (PointModTorsion W)) : (neronTateGramMatrix W b).PosDef := by
+  let := Fintype.ofFinite ι
+  apply (isSymm_neronTateGramMatrix b).posDef_of_northcott
+  refine ⟨fun C ↦ ?_⟩
+  simp_rw [neronTateGramMatrix_dotProduct_mulVec]
+  exact (Northcott.finite_le (h := fun x : PointModTorsion W ↦
+    neronTatePairingModTorsion W x x) C).preimage b.equivFun.symm.injective.injOn
 
 end WeierstrassCurve.Affine

@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.PointModTorsion.Basic
-public import Mathlib.LinearAlgebra.Matrix.PosDef
 -- The Gram-congruence lemmas are used only inside the proofs below, so the import is private:
 -- `toMatrix₂Aux` itself comes from Mathlib through the public import above.
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
-import TauCeti.LinearAlgebra.Matrix.PosDef.Northcott
 
 /-!
 # The regulator of an elliptic curve
@@ -39,8 +37,6 @@ types of two bases of the same module are equivalent.
   by any basis whatsoever.
 * `WeierstrassCurve.Affine.regulator_eq_one_of_finrank_eq_zero`: the rank-zero convention.
 * `WeierstrassCurve.Affine.regulator_nonneg`: the regulator is non-negative.
-* `WeierstrassCurve.Affine.posDef_neronTateGramMatrix`: under Northcott finiteness, every
-  finite-basis Gram matrix is positive definite.
 * `WeierstrassCurve.Affine.regulator_pos`: under Northcott finiteness, the regulator is positive.
 
 ## References
@@ -121,18 +117,6 @@ theorem regulator_eq_one_of_finrank_eq_zero [W.toAffine.IsElliptic]
 theorem regulator_nonneg [W.toAffine.IsElliptic] [Module.Finite ℤ (PointModTorsion W)] :
     0 ≤ regulator W :=
   abs_nonneg _
-
-/-- The Gram matrix of the Néron–Tate pairing is positive definite under Northcott finiteness,
-for every finite basis of the points modulo torsion. -/
-theorem posDef_neronTateGramMatrix [W.toAffine.IsElliptic]
-    [Northcott (Point.canonicalHeight (W := W))] {ι : Type*} [Finite ι]
-    (b : Module.Basis ι ℤ (PointModTorsion W)) : (neronTateGramMatrix W b).PosDef := by
-  let := Fintype.ofFinite ι
-  apply (isSymm_neronTateGramMatrix b).posDef_of_northcott
-  refine ⟨fun C ↦ ?_⟩
-  simp_rw [neronTateGramMatrix_dotProduct_mulVec]
-  exact (Northcott.finite_le (h := fun x : PointModTorsion W ↦
-    neronTatePairingModTorsion W x x) C).preimage b.equivFun.symm.injective.injOn
 
 /-- The regulator is strictly positive under Northcott finiteness, including in rank zero,
 where it equals `1`. -/
