@@ -63,7 +63,8 @@ Depth-limited canonical PR fetches are checked for shallow boundaries. Main's
 complete trusted history is retained (up to 64,000 commits). Missing metadata,
 deleted repositories, pagination overflow, rate limits, races, unsupported source
 or exceeded bounds produce `unknown` with an explicit gap and no closure.
-Each detection and subsequent validation/mutation phase has a 256-call/16-MiB API budget, 2,500 Git operations
+Each detection and subsequent validation/mutation phase has a 256-call/16-MiB
+API budget, 2,500 Git operations
 and 120-second budget checked before operations. A child exceeding these limits
 becomes unknown while other PRs continue. Cheap direction/ownership checks
 precede expensive content checks; summary records Git operations and elapsed time.
@@ -100,10 +101,11 @@ Main-target PR opened/reopened/edited/synchronize/draft events invoke the truste
 policy directly. Other bases invoke an unprivileged wake workflow, then the
 main-defined workflow_run observer. Every event performs a bounded backlog sweep,
 so coalesced events cannot starve a pending hourly sweep. Manual dispatch can
-select one PR. The workflow checks out main-defined tooling explicitly;
-The triggering PR is classified first, followed by the newest backlog PRs, so
+select one PR. The triggering PR is classified first, followed by the newest
+backlog PRs, so
 old costly claims cannot prevent the triggering PR from being checked.
-candidate-defined code never receives its app token. Every run publishes JSONL
+The workflow checks out main-defined tooling explicitly; candidate-defined code
+never receives its app token. Every run publishes JSONL
 in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables enforcement;
 otherwise all triggers audit only. Manual dispatch additionally defaults to
 dry-run. Clearing this repository variable pauses mutations while audits continue.

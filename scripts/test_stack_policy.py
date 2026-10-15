@@ -661,9 +661,9 @@ class MainTests(unittest.TestCase):
         self.detector.detect = lambda p: (visited.append(p.number) or None, [])
         with tempfile.TemporaryDirectory() as directory:
             event = Path(directory) / "event.json"
-            event.write_text(json.dumps({"workflow_run": {"pull_requests": [{"number": 2}]}}))
+            event.write_text(json.dumps({"workflow_run": {"pull_requests": [{"number": 1}]}}))
             self.assertFalse(self.main("--github-event", str(event)))
-        self.assertEqual(visited, [2, 1])
+        self.assertEqual(visited, [1, 2])
 
     def test_closed_parent_budget_does_not_abort_unrelated_children(self):
         self.raw[1]["body"] = "Dependencies: " + ", ".join(f"#{n}" for n in range(100, 165))
