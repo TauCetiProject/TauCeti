@@ -75,7 +75,7 @@ theorem
           LinearMap.toMatrix bminus bminus (spinMinusAction Q P hline (spinGroupToEven Q g))) := by
     have h := coe_spinGroupEquivSpecialLinearProdOfAlgEquiv_apply Q
       (P.nondegenerate_of_line_eq_bot hline) hV e g
-    rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary] at h
+    rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply] at h
     have he (x : even Q) : e x =
         (LinearMap.toMatrix bplus bplus (spinPlusAction Q P hline x),
           LinearMap.toMatrix bminus bminus (spinMinusAction Q P hline x)) := by

@@ -343,23 +343,6 @@ universe u
 
 variable (K : Type u) [Field K]
 
-/-- The ambient split space of three hyperbolic planes has dimension `2 * 3`. -/
-theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 2 * 3 := by
-  simp [SplitEvenSpace]
-
-/-- The canonical isotropic summand of the split six-dimensional space has dimension three. -/
-theorem hyperbolicSix_finrank_W :
-    finrank K (splitEvenPolarization K 3).W = 3 := by
-  rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-    (hyperbolicSix_finrank K)]
-
-/-- The isotropic summand in the canonical split polarization of three hyperbolic planes is
-nonzero. -/
-theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
-  Submodule.finrank_eq_zero.not.1 <| by
-    rw [hyperbolicSix_finrank_W K]
-    norm_num
-
 variable [NeZero (2 : K)]
 
 /-- The invertibility witness used by the characteristic-not-two Clifford APIs. -/
@@ -422,7 +405,7 @@ theorem coe_hyperbolicSixSpinToGeneralLinear_apply
   rw [hyperbolicSixSpinToGeneralLinear, MonoidHom.comp_apply]
   simp only [MulEquiv.coe_toMonoidHom]
   rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary]
+  rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
 
 /-- Reconstructing a hyperbolic even unitary element recovers the given first matrix component.
 The rule precedes simplification of the full inverse Clifford value. -/

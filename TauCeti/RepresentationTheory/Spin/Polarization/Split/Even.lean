@@ -27,6 +27,8 @@ directly into the spin representation and Kostant-lattice constructions.
 * `TauCeti.splitEvenForm`: its quadratic form `(f, x) ↦ f x`.
 * `TauCeti.splitEvenPolarization`: the canonical polarization by the two coordinate axes.
 * `TauCeti.splitEvenBasis`: the coordinate basis of the first isotropic summand.
+* `TauCeti.hyperbolicSix_finrank_W`: the isotropic summand in three hyperbolic planes has
+  dimension three.
 
 ## References
 
@@ -37,6 +39,8 @@ directly into the spin representation and Kostant-lattice constructions.
 public section
 
 namespace TauCeti
+
+open Module
 
 universe u
 
@@ -121,5 +125,24 @@ theorem coe_splitEvenBasis (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
       (0, Pi.single i 1) := by
   rw [splitEvenBasis, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply,
     SpinPolarizationData.coe_hyperbolicBasis_apply, Pi.basisFun_apply]
+
+variable (K : Type u) [Field K]
+
+/-- The ambient split space of three hyperbolic planes has dimension `2 * 3`. -/
+theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 2 * 3 := by
+  simp [SplitEvenSpace]
+
+/-- The canonical isotropic summand of the split six-dimensional space has dimension three. -/
+theorem hyperbolicSix_finrank_W :
+    finrank K (splitEvenPolarization K 3).W = 3 := by
+  rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
+    (hyperbolicSix_finrank K)]
+
+/-- The isotropic summand in the canonical split polarization of three hyperbolic planes is
+nonzero. -/
+theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
+  Submodule.finrank_eq_zero.not.1 <| by
+    rw [hyperbolicSix_finrank_W K]
+    norm_num
 
 end TauCeti
