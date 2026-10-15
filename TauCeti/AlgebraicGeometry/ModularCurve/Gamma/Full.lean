@@ -72,6 +72,16 @@ theorem baseChangePointsEquiv_universalDrinfeldBasisHom
       X.curve.torsionPairHom N a :=
   MulEquiv.apply_symm_apply _ _
 
+/-- Pulling the universal Drinfeld-basis homomorphism back along a point `x` of
+`E[N] ×_S E[N]` gives the pair of torsion points classified by `x`. -/
+theorem baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom {T : Over X.base}
+    (x : T ⟶ X.drinfeldBasisAmbient N) (a : Multiplicative (ZMod N × ZMod N)) :
+    X.baseChangePointsEquiv T (EllipticCurveGeom.pointsPullback
+        (X.baseChangeFunctor.map x).isPullback (X.baseChangeFunctor.map x).zero_total
+        (X.universalDrinfeldBasisHom N a)) =
+      x ≫ X.curve.torsionPairHom N a := by
+  rw [baseChangePointsEquiv_pointsPullback, baseChangePointsEquiv_universalDrinfeldBasisHom]
+
 /-- The ideal sheaf on `E[N] ×_S E[N]` cutting out the locus where its universal pair is a
 Drinfeld basis. -/
 noncomputable def universalDrinfeldBasisLocus :
@@ -96,8 +106,7 @@ instance isFinite_drinfeldBasisScheme_hom : IsFinite (X.drinfeldBasisScheme N).h
     dsimp only [drinfeldBasisAmbient]
     rw [Over.tensorObj_hom]
     infer_instance
-  change IsFinite ((X.universalDrinfeldBasisLocus N).subschemeι ≫
-    (X.drinfeldBasisAmbient N).hom)
+  dsimp only [drinfeldBasisScheme, Over.mk_hom]
   infer_instance
 
 end EllObj
@@ -140,8 +149,8 @@ theorem isDrinfeldBasis_gammaStructureOfSchemeHom {T : Over X.base}
     apply MonoidHom.ext
     intro a
     apply (X.baseChangePointsEquiv T).injective
-    simp only [MonoidHom.coe_comp, Function.comp_apply]
-    rw [EllObj.baseChangePointsEquiv_pointsPullback]
+    rw [MonoidHom.comp_apply,
+      EllObj.baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom]
     simp [x]
   rw [← heq]
   apply (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff k.isPullback k.zero_total _).2
@@ -185,9 +194,9 @@ noncomputable def gammaBaseChangeEquiv (T : Over X.base) :
       apply MonoidHom.ext
       intro a
       apply (X.baseChangePointsEquiv T).injective
-      simp only [MonoidHom.coe_comp, Function.comp_apply]
-      rw [EllObj.baseChangePointsEquiv_pointsPullback]
-      simpa using hx a
+      rw [MonoidHom.comp_apply,
+        EllObj.baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom]
+      exact hx a
     have hle : X.universalDrinfeldBasisLocus N ≤ x.left.ker :=
       (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff k.isPullback k.zero_total _).mp <| by
         rw [heq]
@@ -197,9 +206,7 @@ noncomputable def gammaBaseChangeEquiv (T : Over X.base) :
         rw [Scheme.IdealSheafData.ker_subschemeι]
         exact hle))
       (by
-        change IsClosedImmersion.lift (X.universalDrinfeldBasisLocus N).subschemeι x.left _ ≫
-            (X.universalDrinfeldBasisLocus N).subschemeι ≫
-              (X.drinfeldBasisAmbient N).hom = T.hom
+        dsimp only [EllObj.drinfeldBasisScheme, Over.mk_hom]
         rw [← Category.assoc, IsClosedImmersion.lift_fac]
         exact x.w)
     have hy : y ≫ X.drinfeldBasisSchemeι N = x := by
@@ -218,7 +225,7 @@ noncomputable def gammaBaseChangeEquiv (T : Over X.base) :
 /-- The point of the Drinfeld-basis scheme attached to the structure defined by a point `y` is
 `y` itself. -/
 @[simp]
-theorem gammaBaseChangeEquiv_symm_apply (T : Over X.base)
+theorem gammaBaseChangeEquiv_apply_symm_apply (T : Over X.base)
     (y : T ⟶ X.drinfeldBasisScheme N) :
     gammaBaseChangeEquiv X T ((gammaEquiv _).symm
       ⟨gammaStructureOfSchemeHom X y, isDrinfeldBasis_gammaStructureOfSchemeHom X y⟩) = y :=
@@ -226,12 +233,12 @@ theorem gammaBaseChangeEquiv_symm_apply (T : Over X.base)
 
 /-- The inverse of `gammaBaseChangeEquiv` sends a point to its associated universal
 `[Γ(N)]`-structure. -/
-theorem gammaBaseChangeEquiv_symm_apply_eq (T : Over X.base)
+theorem gammaBaseChangeEquiv_symm_apply (T : Over X.base)
     (y : T ⟶ X.drinfeldBasisScheme N) :
     (gammaBaseChangeEquiv X T).symm y = (gammaEquiv _).symm
       ⟨gammaStructureOfSchemeHom X y, isDrinfeldBasis_gammaStructureOfSchemeHom X y⟩ := by
   apply (gammaBaseChangeEquiv X T).injective
-  rw [Equiv.apply_symm_apply, gammaBaseChangeEquiv_symm_apply]
+  rw [Equiv.apply_symm_apply, gammaBaseChangeEquiv_apply_symm_apply]
 
 /-- The `[Γ(N)]`-structure associated to a point commutes with base change. -/
 theorem pointsPullback_gammaStructureOfSchemeHom {T' T : Over X.base} (k : T' ⟶ T)
@@ -254,7 +261,7 @@ theorem gammaBaseChangeEquiv_map {T' T : Over X.base} (k : T' ⟶ T)
         ((gamma B N).map (X.baseChangeFunctor.map k).op α) =
       k ≫ gammaBaseChangeEquiv X T α := by
   obtain ⟨y, rfl⟩ := (gammaBaseChangeEquiv X T).symm.surjective α
-  rw [gammaBaseChangeEquiv_symm_apply_eq]
+  rw [gammaBaseChangeEquiv_symm_apply]
   have hmap : (gamma B N).map (X.baseChangeFunctor.map k).op
         ((gammaEquiv _).symm ⟨gammaStructureOfSchemeHom X y,
           isDrinfeldBasis_gammaStructureOfSchemeHom X y⟩) =
@@ -265,7 +272,7 @@ theorem gammaBaseChangeEquiv_map {T' T : Over X.base} (k : T' ⟶ T)
     rw [gammaEquiv_map, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
     exact pointsPullback_gammaStructureOfSchemeHom X k y
   rw [hmap]
-  simp only [gammaBaseChangeEquiv_symm_apply]
+  simp only [gammaBaseChangeEquiv_apply_symm_apply]
 
 /-- Naturality of `gammaBaseChangeEquiv`, read backwards. -/
 theorem gammaBaseChangeEquiv_symm_comp {T' T : Over X.base} (k : T' ⟶ T)
