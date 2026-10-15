@@ -105,11 +105,9 @@ theorem exists_continuous_primitive_Icc (hab : a ≤ b) (hf : ContinuousOn f (Ic
       hg.aestronglyMeasurable.stronglyMeasurableAtFilter hg.continuousAt
   · intro x hx y hy
     calc
-      F y - F x = ∫ z in x..y, g z := by
-        apply sub_eq_iff_eq_add.mpr
-        simpa only [F, add_comm] using
-          (_root_.intervalIntegral.integral_add_adjacent_intervals
-            (hg.intervalIntegrable a x) (hg.intervalIntegrable x y)).symm
+      F y - F x = ∫ z in x..y, g z :=
+        _root_.intervalIntegral.integral_interval_sub_left
+          (hg.intervalIntegrable a y) (hg.intervalIntegrable a x)
       _ = _ := _root_.intervalIntegral.integral_congr (hgf.mono (uIcc_subset_Icc hx hy))
 
 /-- **Integration by parts against a primitive.** For `a ≤ b`, `f` integrable on `[a, b]` and a
