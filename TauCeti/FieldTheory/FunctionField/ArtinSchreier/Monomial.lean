@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.ArtinSchreier.Genus
 public import TauCeti.FieldTheory.FunctionField.Different.Tame
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier.Basic
+import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
@@ -192,7 +193,7 @@ theorem isFunctionField : IsFunctionField k (FunctionField k p m) :=
 ramified. -/
 theorem isIntegrallyClosedIn : IsIntegrallyClosedIn k (FunctionField k p m) :=
   isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole
-    (IsFunctionField.ratFunc k) inferInstance p (adjoin_genY_eq_top k p m)
+    (IsFunctionField.ratFunc k) isIntegrallyClosedIn_ratFunc p (adjoin_genY_eq_top k p m)
     (genY_pow_sub_genY k p m) (Place.infty k) ⟨0, reduced_pole k p hm.out⟩
 
 /-! ### The place at infinity -/

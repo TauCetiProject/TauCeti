@@ -17,8 +17,8 @@ An `A∞` category `𝒞` on a graded linear quiver `C` over a commutative ring 
 when the ternary operation vanishes the arity-three Stasheff identity says that it is associative
 (`TauCeti.AInfinityCategory.comp_assoc_of_m_three_eq_zero`).  A family `e` of degree-zero
 two-sided identities for `m₂` makes it unital.  These are exactly the axioms of a differential
-graded category in Keller's factor order, so such an `A∞` category with `m₃ = 0` determines the
-differential graded category `TauCeti.AInfinityCategory.toDGCategory` on the same objects.  A
+graded category in Keller's factor order, so such an `A∞` category with `m₃ = 0` determines a
+differential graded category on a copy `TauCeti.AInfinityCategory.AsDGCategory` of its objects.  A
 strict unit (`TauCeti.AInfinityCategory.StrictUnit`) supplies such a family; its conditions on the
 operations of arity other than two are not needed.
 
@@ -32,11 +32,17 @@ three vanish (`TauCeti.DGCategory.strictUnit_toAInfinityCategory`).  The hypothe
 only `m₃ = 0`: the operations of arity at least four play no role in a differential graded
 category.
 
+The objects are wrapped in the structure `TauCeti.AInfinityCategory.AsDGCategory` rather than the
+differential graded category being put on `C` itself, so that it is not a second structure on the
+type of objects of `𝒞`: it can then be compared with the differential graded categories and the
+`A∞` categories on `C`.
+
 ## Main definitions
 
 * `TauCeti.AInfinityCategory.toDGCategoryData`: the explicit Hom-complex data of an `A∞` category
   with `m₃ = 0` and degree-zero identities for `m₂`.
-* `TauCeti.AInfinityCategory.toDGCategory`: the differential graded category it determines.
+* `TauCeti.AInfinityCategory.AsDGCategory`: the objects of the differential graded category it
+  determines, which is the instance `TauCeti.AInfinityCategory.instDGCategoryAsDGCategory`.
 * `TauCeti.AInfinityCategory.dgHomEquiv`: its morphisms of degree `n` are the morphisms of degree
   `n` of the `A∞` category.
 
@@ -108,7 +114,23 @@ end HomComplex
 /-! ### The differential graded category -/
 
 variable {R : Type v} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, v} R C]
-  {𝒞 : AInfinityCategory R C} {e : ∀ X : C, homModule (R := R) X X}
+
+/-- The objects of the **differential graded category of an `A∞` category** `𝒞` with `m₃ = 0` and
+a family `e` of degree-zero two-sided identities for `m₂`: a copy of the objects of `𝒞`.  The
+differential graded category itself is the instance
+`TauCeti.AInfinityCategory.instDGCategoryAsDGCategory`.  For a strict unit `he : 𝒞.StrictUnit e`
+this is `𝒞.AsDGCategory h₃ he.degree_zero he.binary_left he.binary_right`.  The objects are
+wrapped, as for `CategoryTheory.Discrete`, so that the differential graded category is not a
+second structure on `C` itself. -/
+@[ext]
+structure AsDGCategory (𝒞 : AInfinityCategory R C) {e : ∀ X : C, homModule (R := R) X X}
+    (h₃ : 𝒞.m 3 = 0) (he₀ : ∀ X, e X ∈ (grading (R := R) X X).piece 0)
+    (hel : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X Y Y (e Y) f = f)
+    (her : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X X Y f (e X) = f) where
+  /-- The object of `𝒞` underlying an object of its differential graded category. -/
+  as : C
+
+variable {𝒞 : AInfinityCategory R C} {e : ∀ X : C, homModule (R := R) X X}
 
 /-- The **explicit Hom-complex data** of an `A∞` category with `m₃ = 0` and a family `e` of
 degree-zero two-sided identities for `m₂`: the Hom complexes
@@ -117,99 +139,85 @@ noncomputable def toDGCategoryData (h₃ : 𝒞.m 3 = 0)
     (he₀ : ∀ X, e X ∈ (grading (R := R) X X).piece 0)
     (hel : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X Y Y (e Y) f = f)
     (her : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X X Y f (e X) = f) :
-    DGCategoryData R C :=
-  DGCategoryData.ofKeller 𝒞.homComplex (fun q p n hn ↦ 𝒞.kellerComp q p n hn)
-    (fun X ↦ (𝒞.homComplexXEquiv X X 0).symm ⟨e X, he₀ X⟩)
-    (fun {X Y Z q p n} hn g f ↦ 𝒞.homComplexι_injective X Z (n + 1) <| by
+    DGCategoryData R (𝒞.AsDGCategory h₃ he₀ hel her) :=
+  DGCategoryData.ofKeller (fun X Y ↦ 𝒞.homComplex X.as Y.as)
+    (fun q p n hn ↦ 𝒞.kellerComp q p n hn)
+    (fun X ↦ (𝒞.homComplexXEquiv X.as X.as 0).symm ⟨e X.as, he₀ X.as⟩)
+    (fun {X Y Z q p n} hn g f ↦ 𝒞.homComplexι_injective X.as Z.as (n + 1) <| by
       rw [map_add, map_zsmul_unit, homComplexι_d, homComplexι_kellerComp, homComplexι_kellerComp,
         homComplexι_kellerComp, homComplexι_d, homComplexι_d,
-        𝒞.homDifferential_comp (𝒞.homComplexι_mem Y Z q g),
+        𝒞.homDifferential_comp (𝒞.homComplexι_mem Y.as Z.as q g),
         negOnePow_smul_eq_negOnePowCast_smul (R := R)])
-    (fun {W X Y Z r q p rq qp n} hrq hqp hn k g f ↦ 𝒞.homComplexι_injective W Z n <| by
+    (fun {W X Y Z r q p rq qp n} hrq hqp hn k g f ↦ 𝒞.homComplexι_injective W.as Z.as n <| by
       simp only [homComplexι_kellerComp]
       exact 𝒞.comp_assoc_of_m_three_eq_zero h₃ _ _ _)
-    (fun {X Y q} g ↦ 𝒞.homComplexι_injective X Y q <| by
+    (fun {X Y q} g ↦ 𝒞.homComplexι_injective X.as Y.as q <| by
       simp only [homComplexι_kellerComp, LinearMap.coe_comp, Function.comp_apply,
         LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, Submodule.coe_subtype, her])
-    (fun {X Y p} f ↦ 𝒞.homComplexι_injective X Y p <| by
+    (fun {X Y p} f ↦ 𝒞.homComplexι_injective X.as Y.as p <| by
       simp only [homComplexι_kellerComp, LinearMap.coe_comp, Function.comp_apply,
         LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, Submodule.coe_subtype, hel])
-
-/-- The **differential graded category of an `A∞` category with `m₃ = 0`** and a family `e` of
-degree-zero two-sided identities for `m₂`: its Hom complexes are
-`TauCeti.AInfinityCategory.homComplex`, with differential `m₁`, its composition is `m₂` converted
-to Mathlib's enriched factor order with the Koszul sign, and its identities are `e`.  For a
-strict unit `he : 𝒞.StrictUnit e` this is
-`toDGCategory h₃ he.degree_zero he.binary_left he.binary_right`. -/
-@[instance_reducible]
-noncomputable def toDGCategory (h₃ : 𝒞.m 3 = 0)
-    (he₀ : ∀ X, e X ∈ (grading (R := R) X X).piece 0)
-    (hel : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X Y Y (e Y) f = f)
-    (her : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X X Y f (e X) = f) :
-    DGCategory R C :=
-  (toDGCategoryData h₃ he₀ hel her).toDGCategory
 
 variable (h₃ : 𝒞.m 3 = 0) (he₀ : ∀ X, e X ∈ (grading (R := R) X X).piece 0)
   (hel : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X Y Y (e Y) f = f)
   (her : ∀ X Y (f : homModule (R := R) X Y), 𝒞.comp X X Y f (e X) = f)
 
+/-- The **differential graded category of an `A∞` category with `m₃ = 0`** and a family `e` of
+degree-zero two-sided identities for `m₂`: its Hom complexes are
+`TauCeti.AInfinityCategory.homComplex`, with differential `m₁`, its composition is `m₂` converted
+to Mathlib's enriched factor order with the Koszul sign, and its identities are `e`. -/
+noncomputable instance : DGCategory R (𝒞.AsDGCategory h₃ he₀ hel her) :=
+  (toDGCategoryData h₃ he₀ hel her).toDGCategory
+
 /-- The Hom complexes of the differential graded category are the Hom complexes of the `A∞`
 category. -/
 @[simp↓]
-theorem dgHomComplex_toDGCategory (X Y : C) :
-    letI := toDGCategory h₃ he₀ hel her
-    dgHomComplex R X Y = 𝒞.homComplex X Y :=
+theorem dgHomComplex_asDGCategory (X Y : 𝒞.AsDGCategory h₃ he₀ hel her) :
+    dgHomComplex R X Y = 𝒞.homComplex X.as Y.as :=
   (rfl)
 
 /-- The morphisms of degree `n` of the differential graded category are the morphisms of degree
 `n` of the `A∞` category. -/
-noncomputable def dgHomEquiv (X Y : C) (n : ℤ) :
-    letI := toDGCategory h₃ he₀ hel her
-    DGHom R n X Y ≃ₗ[R] grHom R X Y n :=
-  𝒞.homComplexXEquiv X Y n
+noncomputable def dgHomEquiv (X Y : 𝒞.AsDGCategory h₃ he₀ hel her) (n : ℤ) :
+    DGHom R n X Y ≃ₗ[R] grHom R X.as Y.as n :=
+  𝒞.homComplexXEquiv X.as Y.as n
 
 /-- **The differential of the differential graded category** is `m₁`. -/
 @[simp↓]
-theorem dgHomEquiv_dgDifferential {X Y : C} (n : ℤ)
-    (f : letI := toDGCategory h₃ he₀ hel her; DGHom R n X Y) :
-    letI := toDGCategory h₃ he₀ hel her
-    (dgHomEquiv h₃ he₀ hel her X Y (n + 1) (dgDifferential R n f) : homModule (R := R) X Y) =
-      𝒞.homDifferential X Y (dgHomEquiv h₃ he₀ hel her X Y n f) := by
+theorem dgHomEquiv_dgDifferential {X Y : 𝒞.AsDGCategory h₃ he₀ hel her} (n : ℤ)
+    (f : DGHom R n X Y) :
+    (dgHomEquiv h₃ he₀ hel her X Y (n + 1) (dgDifferential R n f) : homModule (R := R) X.as Y.as) =
+      𝒞.homDifferential X.as Y.as (dgHomEquiv h₃ he₀ hel her X Y n f) := by
   rw [(toDGCategoryData h₃ he₀ hel her).dgDifferential_toDGCategory n f]
-  exact 𝒞.homComplexXEquiv_d X Y n f
+  exact 𝒞.homComplexXEquiv_d X.as Y.as n f
 
 /-- **The composition of the differential graded category** is `m₂` in the reversed order: for
 `f : X ⟶ Y` of degree `p` and `g : Y ⟶ Z` of degree `q`, the enriched composite `dgComp f g` is
 `g ∘ f` up to the Koszul sign `(-1) ^ (p * q)`. -/
 @[simp↓]
-theorem dgHomEquiv_dgComp {X Y Z : C} {p q n : ℤ}
-    (f : letI := toDGCategory h₃ he₀ hel her; DGHom R p X Y)
-    (g : letI := toDGCategory h₃ he₀ hel her; DGHom R q Y Z) (h : p + q = n) :
-    letI := toDGCategory h₃ he₀ hel her
-    (dgHomEquiv h₃ he₀ hel her X Z n (dgComp R f g h) : homModule (R := R) X Z) =
-      (p * q).negOnePow • 𝒞.comp X Y Z (dgHomEquiv h₃ he₀ hel her Y Z q g)
+theorem dgHomEquiv_dgComp {X Y Z : 𝒞.AsDGCategory h₃ he₀ hel her} {p q n : ℤ}
+    (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p + q = n) :
+    (dgHomEquiv h₃ he₀ hel her X Z n (dgComp R f g h) : homModule (R := R) X.as Z.as) =
+      (p * q).negOnePow • 𝒞.comp X.as Y.as Z.as (dgHomEquiv h₃ he₀ hel her Y Z q g)
         (dgHomEquiv h₃ he₀ hel her X Y p f) := by
-  let := toDGCategory h₃ he₀ hel her
   -- `toDGCategoryData` is built by `DGCategoryData.ofKeller`, whose enriched-order composition
   -- is the signed reversed Keller composition by definition (`DGCategoryData.ofKeller_comp`).
   have hcomp : dgComp R f g h = (p * q).negOnePow • 𝒞.kellerComp q p n (by omega) g f :=
     DGCategoryData.dgComp_toDGCategory _ f g h
   rw [hcomp]
-  exact (map_zsmul_unit (𝒞.homComplexι X Z n) _ _).trans
+  exact (map_zsmul_unit (𝒞.homComplexι X.as Z.as n) _ _).trans
     (congrArg _ (𝒞.homComplexι_kellerComp q p n _ g f))
 
 /-- **The identities of the differential graded category** are the given identities `e`. -/
 @[simp↓]
-theorem dgHomEquiv_dgId (X : C) :
-    letI := toDGCategory h₃ he₀ hel her
-    (dgHomEquiv h₃ he₀ hel her X X 0 (dgId R X) : homModule (R := R) X X) = e X := by
-  let := toDGCategory h₃ he₀ hel her
+theorem dgHomEquiv_dgId (X : 𝒞.AsDGCategory h₃ he₀ hel her) :
+    (dgHomEquiv h₃ he₀ hel her X X 0 (dgId R X) : homModule (R := R) X.as X.as) = e X.as := by
   -- As for composition, the identity of `ofKeller` data is the given one by definition
   -- (`DGCategoryData.ofKeller_id`).
-  have hid : dgId R X = (𝒞.homComplexXEquiv X X 0).symm ⟨e X, he₀ X⟩ :=
+  have hid : dgId R X = (𝒞.homComplexXEquiv X.as X.as 0).symm ⟨e X.as, he₀ X.as⟩ :=
     DGCategoryData.dgId_toDGCategory _ X
   rw [hid]
-  exact congrArg Subtype.val ((𝒞.homComplexXEquiv X X 0).apply_symm_apply _)
+  exact congrArg Subtype.val ((𝒞.homComplexXEquiv X.as X.as 0).apply_symm_apply _)
 
 end AInfinityCategory
 

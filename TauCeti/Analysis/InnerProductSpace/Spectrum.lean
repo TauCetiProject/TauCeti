@@ -60,8 +60,12 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   finite-dimensional spectral splitting.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
+* `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
+  positive determinant.
 * `LinearMap.IsPositive.exists_pos_mul_norm_sq_le_re_inner`: an injective positive operator on a
   finite-dimensional space is coercive.
+* `ContinuousLinearMap.IsPositive.det_one_sub_smul_id_add_smul_pos`: interpolating the identity
+  with a positive operator `A` as `(1 - t) • 1 + t • A`, `0 ≤ t < 1`, gives positive determinant.
 
 ## References
 
@@ -406,6 +410,11 @@ theorem det_nonneg (hT : T.IsPositive) : 0 ≤ T.det := by
   rw [hT.isSymmetric.det_eq_prod_eigenvalues rfl, ← RCLike.ofReal_prod]
   exact RCLike.ofReal_nonneg.2 (Finset.prod_nonneg fun i _ => hT.nonneg_eigenvalues rfl i)
 
+/-- An injective positive operator on a finite-dimensional inner product space has positive
+determinant. -/
+theorem det_pos (hT : T.IsPositive) (hker : LinearMap.ker T = ⊥) : 0 < T.det :=
+  lt_of_le_of_ne hT.det_nonneg fun h => LinearMap.det_eq_zero_iff_ker_ne_bot.1 h.symm hker
+
 /-- An injective positive operator on a finite-dimensional inner product space is coercive:
 `c ‖v‖ ^ 2 ≤ re ⟪T v, v⟫` for some `c > 0`, namely its smallest eigenvalue. -/
 theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap.ker T = ⊥) :
@@ -434,3 +443,28 @@ theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap
   rwa [le_div_iff₀ (pow_pos (norm_pos_iff.2 hw) 2)] at hle
 
 end LinearMap.IsPositive
+
+namespace ContinuousLinearMap.IsPositive
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- For a positive operator `A` on a finite-dimensional real inner product space and `0 ≤ t < 1`,
+the operator `(1 - t) • 1 + t • A` is positive and injective, so its determinant is positive. -/
+theorem det_one_sub_smul_id_add_smul_pos {A : F →L[ℝ] F} (hA : A.IsPositive) {t : ℝ}
+    (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+    0 < ((1 - t) • ContinuousLinearMap.id ℝ F + t • A).det := by
+  set B := (1 - t) • ContinuousLinearMap.id ℝ F + t • A
+  have hB : B.IsPositive :=
+    (ContinuousLinearMap.isPositive_id.smul_of_nonneg (by linarith)).add (hA.smul_of_nonneg ht₀)
+  have hker : LinearMap.ker (B : F →ₗ[ℝ] F) = ⊥ := by
+    refine LinearMap.ker_eq_bot'.2 fun v hv => ?_
+    have hBv : B v = 0 := hv
+    have hAv : 0 ≤ ⟪A v, v⟫_ℝ := hA.inner_nonneg_left v
+    have h0 : ⟪B v, v⟫_ℝ = (1 - t) * ‖v‖ ^ 2 + t * ⟪A v, v⟫_ℝ := by
+      simp [B, inner_add_left, inner_smul_left]
+    rw [hBv, inner_zero_left] at h0
+    have : ‖v‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖v‖, mul_nonneg ht₀ hAv]
+    simpa using this
+  exact ((ContinuousLinearMap.isPositive_toLinearMap_iff B).2 hB).det_pos hker
+
+end ContinuousLinearMap.IsPositive

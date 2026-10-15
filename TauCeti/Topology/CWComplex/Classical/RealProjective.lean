@@ -40,7 +40,9 @@ homeomorphism `ContinuousLinearEquiv.unitBallHomeomorph`.
 * `TauCeti.RealProjectiveSpace.cwComplex`: the CW structure on `RPⁿ`, with characteristic maps
   `cellMap` (`TauCeti.RealProjectiveSpace.map_cwComplex`); it is finite
   (`TauCeti.RealProjectiveSpace.finite_cwComplex`) with one cell in each dimension `m ≤ n`
-  (`TauCeti.RealProjectiveSpace.nat_card_cell_cwComplex`) and none above
+  (`TauCeti.RealProjectiveSpace.nat_card_cell_cwComplex`,
+  `TauCeti.RealProjectiveSpace.nonempty_cell_cwComplex`,
+  `TauCeti.RealProjectiveSpace.subsingleton_cell_cwComplex`) and none above
   (`TauCeti.RealProjectiveSpace.le_of_cell_cwComplex`).
 * `TauCeti.RealProjectiveSpace.finiteCWType`: `RPⁿ` has finite CW type.
 
@@ -463,6 +465,22 @@ theorem le_of_cell_cwComplex {m : ℕ}
   -- Unfolding the definition of `CWComplex.mkFinite`, the cells of `cwComplex n` in dimension `m`
   -- are `Cell n m`, which stores the bound.
   Nat.le_of_lt_succ (c : Cell n m).down
+
+/-- The CW structure on `RPⁿ` has at most one cell in each dimension. -/
+instance subsingleton_cell_cwComplex (m : ℕ) :
+    letI := cwComplex n
+    Subsingleton (cell (univ : Set (RealProjectiveSpace n)) m) :=
+  -- Unfolding the definition of `CWComplex.mkFinite`, the cells of `cwComplex n` in dimension `m`
+  -- are `Cell n m`, a `PLift` of a proposition.
+  inferInstanceAs (Subsingleton (Cell n m))
+
+/-- The CW structure on `RPⁿ` has a cell in each dimension `m ≤ n`. -/
+theorem nonempty_cell_cwComplex {m : ℕ} (hm : m ≤ n) :
+    letI := cwComplex n
+    Nonempty (cell (univ : Set (RealProjectiveSpace n)) m) :=
+  -- Unfolding the definition of `CWComplex.mkFinite`, the cells of `cwComplex n` in dimension `m`
+  -- are `Cell n m`.
+  ⟨(⟨by omega⟩ : Cell n m)⟩
 
 /-- Real projective space has finite CW type. -/
 instance finiteCWType : FiniteCWType (RealProjectiveSpace n) :=
