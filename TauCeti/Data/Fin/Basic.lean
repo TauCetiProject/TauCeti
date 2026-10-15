@@ -33,8 +33,8 @@ range, so the value is a `dite` rather than a plain application.
 
 ## Main results
 
-* `TauCeti.perm_fin_two_eq_one_or_swap`: every permutation of `Fin 2` is the identity or the
-  transposition.
+* `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
+  `Fin 2` is the identity or the transposition, and these form the set of all permutations.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -674,8 +674,12 @@ theorem neg_one_pow_val_add_one {M : Type*} [Monoid M] [HasDistribNeg M] {n : �
     have hodd : Odd i.val := Nat.not_even_iff_odd.mp (Nat.even_add_one.mp hn')
     rw [hi, Nat.mod_self, pow_zero, hodd.neg_one_pow, neg_neg]
 
+end TauCeti
+
+namespace Equiv.Perm
+
 /-- A permutation of `Fin 2` is either the identity or the transposition. -/
-theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
+theorem eq_one_or_swap_fin_two (e : Equiv.Perm (Fin 2)) :
     e = 1 ∨ e = Equiv.swap 0 1 := by
   by_cases h0 : e 0 = 0
   · left
@@ -699,12 +703,16 @@ theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
       simpa using h1
 
 /-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
-theorem univ_perm_fin_two [Fintype (Equiv.Perm (Fin 2))] :
+theorem univ_fin_two [Fintype (Equiv.Perm (Fin 2))] :
     (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
     {1, Equiv.swap 0 1} := by
   classical
   ext e
-  simpa using perm_fin_two_eq_one_or_swap e
+  simpa using e.eq_one_or_swap_fin_two
+
+end Equiv.Perm
+
+namespace TauCeti
 
 /-- **A shifted indicator picks out one summand.** Summing `f` over `Fin n` against the indicator
 of `b = k + j` gives `f` at the index `b - j` when that is a valid index and `j ≤ b`, and `0`

@@ -200,7 +200,7 @@ theorem toTensorPower_ιMulti_two {R : Type} {M : Type*}
       PiTensorProduct.tprod R f -
         PiTensorProduct.tprod R (fun i ↦ f (Equiv.swap 0 1 i)) := by
   classical
-  rw [exteriorPower.toTensorPower_apply_ιMulti, TauCeti.univ_perm_fin_two,
+  rw [exteriorPower.toTensorPower_apply_ιMulti, Equiv.Perm.univ_fin_two,
     Finset.sum_insert (by decide), Finset.sum_singleton]
   rw [Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
   simp [sub_eq_add_neg]
@@ -251,7 +251,7 @@ private theorem symToAlternatingQuotient_rel {R : Type} {M : Type*}
   | perm e f =>
     apply (AddCon.ker_rel _).2
     apply (Submodule.Quotient.eq _).2
-    rcases TauCeti.perm_fin_two_eq_one_or_swap e with rfl | rfl
+    rcases e.eq_one_or_swap_fin_two with rfl | rfl
     · simp
     · exact ⟨exteriorPower.ιMulti R 2 f, exteriorPower.toTensorPower_ιMulti_two f⟩
 
@@ -451,7 +451,7 @@ private theorem symmetricProjection_rel :
   cases h with
   | perm e f =>
       apply (AddCon.ker_rel _).2
-      rcases perm_fin_two_eq_one_or_swap e with rfl | rfl
+      rcases e.eq_one_or_swap_fin_two with rfl | rfl
       · rfl
       · change symmetricProjection R M (PiTensorProduct.tprod R f) =
           symmetricProjection R M

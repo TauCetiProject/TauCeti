@@ -143,7 +143,7 @@ theorem pairedWedge_apply_one_one {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
     pairedWedge μ hμ φ ψ ![v, w] = μ (φ ![v]) (ψ ![w]) - μ (φ ![w]) (ψ ![v]) := by
   classical
   rw [pairedWedge_apply]
-  rw [TauCeti.univ_perm_fin_two, Finset.sum_insert (by decide), Finset.sum_singleton,
+  rw [Equiv.Perm.univ_fin_two, Finset.sum_insert (by decide), Finset.sum_singleton,
     Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
   simp [Fin.fin_one_eq_zero, Matrix.cons_fin_one, sub_eq_add_neg]
 
