@@ -26,6 +26,8 @@ The subcomplex is the one spanned, degree by degree, by a family of submodules s
 differentials: its terms are the submodules with the restricted differentials, and its inclusion
 is a monomorphism of complexes, which defines the subobject. Its characterization is through
 `HomologicalComplex.ofSubmodulesXEquiv` and the membership lemma for the ranges of the arrow.
+This generalizes the subobject construction `gradedCochainComplexSubobject` for twisted complexes
+(TauCeti PR #16305) to an arbitrary complex of modules.
 
 ## Main definitions
 

@@ -359,6 +359,7 @@ theorem monotone_serreFiltration : Monotone (serreFiltration R p) := fun _ _ hst
     Submodule.comap_mono (NormalizedCubicalChain.serreFiltration_mono hst n))
 
 /-- Below `0`, the Serre filtration is zero. -/
+@[simp]
 theorem serreFiltration_eq_bot {s : ℤ} (hs : s < 0) : serreFiltration R p s = ⊥ := by
   rw [serreFiltration, serreChainFiltration, HomologicalComplex.subobjectOfSubmodules_eq_bot _ _ _
     fun n ↦ by rw [serreSubmodule, NormalizedCubicalChain.serreFiltration_eq_bot hs,

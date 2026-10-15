@@ -91,6 +91,7 @@ def normalizedCubicalChainComplexXEquiv (X : TopCat.{u}) (n : ℕ) :
 
 /-- Under `normalizedCubicalChainComplexXEquiv`, the differential of the complex is the boundary of
 normalized chains. -/
+@[simp]
 theorem normalizedCubicalChainComplexXEquiv_d (X : TopCat.{u}) (n : ℕ)
     (x : ((normalizedCubicalChainComplex R).obj X).X (n + 1)) :
     normalizedCubicalChainComplexXEquiv R X n
@@ -103,6 +104,7 @@ theorem normalizedCubicalChainComplexXEquiv_d (X : TopCat.{u}) (n : ℕ)
 
 /-- Under `normalizedCubicalChainComplexXEquiv`, the chain map of a continuous map is its
 push-forward of normalized chains. -/
+@[simp]
 theorem normalizedCubicalChainComplexXEquiv_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
     (x : ((normalizedCubicalChainComplex R).obj X).X n) :
     normalizedCubicalChainComplexXEquiv R Y n (((normalizedCubicalChainComplex R).map f).f n x) =
