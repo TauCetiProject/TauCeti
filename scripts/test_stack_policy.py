@@ -499,6 +499,8 @@ class ProseTests(unittest.TestCase):
             '<p>Stacked on <a href="https://githubxcom/TauCetiProject/TauCeti/pull/12">parent</a></p>',
             '<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">not a dependency</a></p>',
             '<p>Stacked on #12 <a href="https://example.com">no longer</a></p>',
+            '<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12"><code>not a dependency</code></a></p>',
+            '<p>Stacked on #12 <a href="https://example.com"><code>no longer</code></a></p>',
         ]
         for html in cases:
             with self.subTest(html=html):

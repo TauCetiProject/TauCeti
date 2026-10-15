@@ -26,6 +26,9 @@ The HTML is parsed as data: code, blockquotes, quotation/retracted elements and 
 cannot provide declarations. Canonical local PR links can identify parents.
 Visible link-label text can still veto negated/retracted claims; deleting a
 negative label must not turn its surrounding prose into an affirmative claim.
+Suppressed markup also participates in these conservative vetoes, so formatting
+negation as code inside a link cannot remove it; this may decline other valid
+body-only declarations alongside quoted/code examples.
 Only affirmative declarations beginning a rendered sentence (optionally with
 this PR or this branch) qualify; example-prefixed prose does not. Literal quoted
 prose or explicit negative/example/historical context conservatively disables body-only

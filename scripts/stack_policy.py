@@ -326,8 +326,10 @@ class RenderedProse(HTMLParser):
 
     def handle_data(self, data):
         data = data.replace("\x1e", " ")
-        if not any(count for tag, count in self.hidden.items() if tag != "a"):
-            self.quoting.append(data)
+        # Suppressed markup cannot declare parents, but it may veto a claim.
+        # In particular, formatting a negative link label as code must not
+        # erase its negation. This deliberately favors conservative misses.
+        self.quoting.append(data)
         if not any(self.hidden.values()):
             self.prose.append(data)
 
