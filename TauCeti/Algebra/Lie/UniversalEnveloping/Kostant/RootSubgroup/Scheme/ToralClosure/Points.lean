@@ -136,7 +136,7 @@ theorem kostantTorusMatrix_mem_toralPoints
   let p := (SplitTorus.pointsMulEquiv (R := ℤ) (A := A) (σ := κ)).symm s
   let q : HopfAlgebra.points
       (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) (CommAlgCat.of ℤ A) :=
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (GeneralLinear.weightTorusCoordinateMap wt)).app (CommAlgCat.of ℤ A) p
   have hq_matrix :
       GeneralLinear.pointsMulEquiv n q = kostantTorusMatrix M b wt s := by

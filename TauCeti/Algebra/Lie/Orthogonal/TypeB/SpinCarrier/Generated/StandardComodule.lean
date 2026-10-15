@@ -98,12 +98,12 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     ext x
     exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
   have hcarrier := mapPointsFunctor_coordinateMap_app n R
-    ((CommHopfAlgCat.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
   have hmatrix := coe_baseChangePointsMulEquiv_apply n R (CommAlgCat.of R B)
-    ((CommHopfAlgCat.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
   rw [baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap,
-    ← hcarrier, CommHopfAlgCat.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply] at hmatrix
+    ← hcarrier, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hmatrix
   rw [hpoint, hmatrix, GeneralLinear.pointsMulEquiv_apply, AlgHom.mapDomain_apply]
 
 /-- The standard right comodule of the generated type-`Bₙ₊₁` spin subgroup on `R^(2^(n+1))`. -/

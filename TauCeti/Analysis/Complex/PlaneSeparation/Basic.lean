@@ -326,7 +326,7 @@ theorem hasContinuousLogOn_sub_div_sub_of_isPreconnected_compl_union {S T Z : Se
   have hlog : ∀ {U Y : Set ℂ}, IsPreconnected U → a ∈ U → b ∈ U → U ⊆ S ∪ T → IsClosed Y →
       Disjoint Y U → HasContinuousLogOn (fun z => (z - a) / (z - b)) (Y ∪ L) :=
     fun {U Y} hUc haU hbU hUST hY hYU => hasContinuousLogOn_sub_div_sub (hY.union hLc.isClosed)
-      (hUc.subset_connectedComponentIn haU (fun z hzU (hz : z ∈ Y ∪ L) => hz.elim
+      (hUc.subset_connectedComponentIn (F := (Y ∪ L)ᶜ) haU (fun z hzU (hz : z ∈ Y ∪ L) => hz.elim
         (fun h => disjoint_left.mp hYU h hzU) fun h => hLD h (hUST hzU)) hbU)
   have hinter : (ZS ∪ L) ∩ (ZT ∪ L) = L := by
     rw [← inter_union_distrib_right]

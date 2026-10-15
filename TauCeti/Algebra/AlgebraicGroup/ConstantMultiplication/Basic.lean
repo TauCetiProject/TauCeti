@@ -343,7 +343,7 @@ end Basis
 
 /-- The set of defining relations: the entries of the relation matrices of the generic
 matrix. -/
-def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range fun p : Fin n × Fin n × Fin n =>
     relationMatrix R n C (GeneralLinear.genericMatrix R n) p.1 p.2.1 p.2.2
 

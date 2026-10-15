@@ -44,6 +44,18 @@ open TauCeti
 
 local instance realCliffordSpinLocallyPathConnectedSpace (n : ℕ) :
     LocallyPathConnectedSpace (realCliffordSpinGroupZero n) := by
+  -- Fix the model's norm and normed-space structures first: searching for them inside the
+  -- local path-connectedness search exceeds the instance-synthesis budget.
+  let _ : SeminormedAddCommGroup
+      (LieSubalgebra.toSubmodule (Lie.lieSubalgebraOfSubgroup
+        (I := 𝓘(ℝ, _root_.CliffordAlgebra (realCliffordForm n 0)))
+        (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))))) :=
+    inferInstance
+  let _ : NormedSpace ℝ
+      (LieSubalgebra.toSubmodule (Lie.lieSubalgebraOfSubgroup
+        (I := 𝓘(ℝ, _root_.CliffordAlgebra (realCliffordForm n 0)))
+        (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))))) :=
+    inferInstance
   let _ : LocallyPathConnectedSpace
       (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :=
     ChartedSpace.locallyPathConnectedSpace

@@ -300,11 +300,11 @@ theorem IsNormal.antipode_mem_coinvariants (hI : I.IsNormal) (hh : h ∈ I.coinv
   have hconj : g * n⁻¹ * g⁻¹ ∈ CommHopfAlgCat.quotientPointsSubgroup H I A :=
     (CommHopfAlgCat.quotientPointsSubgroup_normal H I hI A).conj_mem _ (inv_mem hn) g
   calc (g * n).ofConv (HopfAlgebraStruct.antipode R h)
-      _ = ((g * n)⁻¹).ofConv h := (AlgHom.convInv_apply _ h).symm
+      _ = ((g * n)⁻¹).ofConv h := (WithConv.algHom_inv_apply _ h).symm
       _ = (g⁻¹ * (g * n⁻¹ * g⁻¹)).ofConv h := by
         simp only [mul_inv_rev, ← mul_assoc, inv_mul_cancel, one_mul]
       _ = (g⁻¹).ofConv h := ofConv_mul_apply_of_mem_coinvariants hh _ hconj
-      _ = g.ofConv (HopfAlgebraStruct.antipode R h) := AlgHom.convInv_apply _ h
+      _ = g.ofConv (HopfAlgebraStruct.antipode R h) := WithConv.algHom_inv_apply _ h
 
 /-- **Coinvariants of a normal Hopf ideal form a right coideal.** Over a flat Hopf algebra,
 comultiplication maps the coinvariants of a normal Hopf ideal into `H^{co H/I} ⊗ H`. -/

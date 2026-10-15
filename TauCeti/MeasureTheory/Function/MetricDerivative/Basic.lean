@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
+public import TauCeti.Analysis.Calculus.Deriv.Slope
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 public import TauCeti.Topology.Order.Interval
@@ -18,7 +19,7 @@ public import TauCeti.Topology.Order.Interval
 
 For a curve `γ : ℝ → X` in an extended pseudometric space, the *metric derivative* at `t` is
 `|γ'|(t) = limsup_{s → t, s ≠ t} edist (γ s) (γ t) / |s - t|`, the metric replacement for the norm
-of the velocity of a curve in a normed space (`HasDerivAt.metricDerivative_eq`). It is the speed
+of the velocity of a curve in a seminormed space (`HasDerivAt.metricDerivative_eq`). It is the speed
 that the action `∫ |γ'|(t)ᵖ dt` of a curve integrates, and so the basic object behind absolutely
 continuous curves in metric spaces, dynamic transport plans and metric gradient flows.
 
@@ -62,13 +63,15 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
 
 ## Main results
 
-* `HasDerivAt.tendsto_edist_div` and `HasDerivAt.metricDerivative_eq`: on a normed space the
+* `HasDerivAt.tendsto_edist_div` and `HasDerivAt.metricDerivative_eq`: on a seminormed space the
   difference quotients converge to the norm of the derivative, which is the metric derivative.
 * `TauCeti.continuousAt_of_metricDerivative_ne_top`: a curve is continuous wherever its metric
   derivative is finite.
 * `LipschitzWith.metricDerivative_le`, `LipschitzOnWith.metricDerivative_le` and
   `LipschitzWith.metricDerivative_comp_le`: Lipschitz bounds on a curve, globally or near a time,
   and under Lipschitz post-composition.
+* `Isometry.metricDerivative_comp`: post-composition with an isometry preserves the metric
+  derivative.
 * `BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOnFromTo`: for a curve of bounded
   variation, the metric derivative is almost everywhere at most the derivative of the variation.
 * `TauCeti.ae_metricDerivative_le`: minimality of the metric derivative among the integrable
@@ -88,8 +91,8 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
   measurable family of continuous curves.
 * `TauCeti.measurable_metricDerivative_IccExtend` and
   `TauCeti.measurableSet_absolutelyContinuousOnInterval_IccExtend`: the same statements on the
-  path space `C([a, b], X)`, with `TauCeti.measurable_metricDerivative_IccExtend_apply` and
-  `TauCeti.measurable_IccExtend_apply` for the speed and the position at a fixed time.
+  path space `C([a, b], X)`, with `TauCeti.measurable_metricDerivative_IccExtend_apply` for the
+  speed at a fixed time.
 
 ## References
 
@@ -169,6 +172,11 @@ theorem _root_.LipschitzWith.metricDerivative_comp_le {f : X → Y} {K : ℝ≥0
   rw [← mul_div_assoc]
   exact ENNReal.div_le_div_right (hf _ _) _
 
+/-- Post-composing a curve with an isometry leaves its metric derivative unchanged. -/
+theorem _root_.Isometry.metricDerivative_comp {f : X → Y} (hf : Isometry f) (γ : ℝ → X)
+    (t : ℝ) : metricDerivative (f ∘ γ) t = metricDerivative γ t := by
+  simp only [metricDerivative_def, Function.comp_apply, hf.edist_eq]
+
 /-- **Minimality of the metric derivative.** If `m` has finite integral over `[a, b]` and bounds
 the distances along `γ` by `edist (γ s) (γ u) ≤ ∫⁻ r in Ι s u, m r` for all `s, u ∈ [a, b]`, then
 the metric derivative of `γ` is at most `m` almost everywhere on `[a, b]`. -/
@@ -186,18 +194,18 @@ theorem ae_metricDerivative_le {m : ℝ → ℝ≥0∞} {a b : ℝ}
 
 end PseudoEMetricSpace
 
-/-- The difference quotients `edist (γ s) (γ t) / edist s t` of a curve in a normed space converge
-to the norm of its derivative. -/
-theorem _root_.HasDerivAt.tendsto_edist_div {E : Type*} [NormedAddCommGroup E]
+/-- The difference quotients `edist (γ s) (γ t) / edist s t` of a curve in a seminormed space
+converge to the norm of its derivative. -/
+theorem _root_.HasDerivAt.tendsto_edist_div {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {γ : ℝ → E} {v : E} {t : ℝ} (h : HasDerivAt γ v t) :
     Tendsto (fun s ↦ edist (γ s) (γ t) / edist s t) (𝓝[≠] t) (𝓝 ‖v‖ₑ) := by
-  refine ((continuous_enorm.tendsto v).comp (hasDerivAt_iff_tendsto_slope.1 h)).congr' <|
+  refine ((continuous_enorm.tendsto v).comp (HasDerivAtFilter.tendsto_slope h)).congr' <|
     eventually_nhdsWithin_of_forall fun s hs ↦ ?_
   simp only [Function.comp_apply, slope_def_module, enorm_smul, enorm_inv (sub_ne_zero.2 hs),
     edist_eq_enorm_sub, ENNReal.div_eq_inv_mul]
 
-/-- On a normed space the metric derivative of a curve is the norm of its derivative. -/
-theorem _root_.HasDerivAt.metricDerivative_eq {E : Type*} [NormedAddCommGroup E]
+/-- On a seminormed space the metric derivative of a curve is the norm of its derivative. -/
+theorem _root_.HasDerivAt.metricDerivative_eq {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {γ : ℝ → E} {v : E} {t : ℝ} (h : HasDerivAt γ v t) :
     metricDerivative γ t = ‖v‖ₑ :=
   metricDerivative_eq_of_tendsto h.tendsto_edist_div
@@ -516,13 +524,6 @@ fixed time of the path extended by constants outside `[a, b]` is measurable. -/
 theorem measurable_metricDerivative_IccExtend_apply {a b : ℝ} (hab : a ≤ b) (t : ℝ) :
     Measurable fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) t :=
   (measurable_metricDerivative_IccExtend hab).of_uncurry_right
-
-/-- On the space `C([a, b], X)` of continuous paths, evaluating the path extended by constants
-outside `[a, b]` at a fixed time is measurable. -/
-theorem measurable_IccExtend_apply [MeasurableSpace X] [BorelSpace X] {a b : ℝ} (hab : a ≤ b)
-    (t : ℝ) : Measurable fun γ : C(Icc a b, X) ↦ IccExtend hab γ t := by
-  simp only [IccExtend_apply]
-  exact (continuous_eval_const _).measurable
 
 end Measurable
 

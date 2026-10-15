@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Descent
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
 
@@ -87,17 +87,18 @@ open WeierstrassCurve.Affine.Point
 variable {K : Type*} [Field K] [DecidableEq K] (W : WeierstrassCurve K) {e t : K}
   (hT : W.toAffine.Nonsingular e t) (hψ : W.toAffine.polynomialY.evalEval e t = 0)
 
-/-- **The point `T` of order two, as an element of `E(Kˢ)[2]`.** -/
+/-- **The point `T` of order two, as an element of `E(Kˢ)[2]`**: its image under
+`WeierstrassCurve.baseTorsionCoeff`. -/
 def twoTorsionCoeff : W.TorsionCoeff 2 :=
-  ⟨W.basePointCoeff (some e t hT), by
-    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, two_nsmul,
-      (Affine.Point.some_add_self_eq_zero_iff hT).2 hψ, _root_.map_zero]⟩
+  W.baseTorsionCoeff 2 ⟨some e t hT, by
+    rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul,
+      (Affine.Point.some_add_self_eq_zero_iff hT).2 hψ]⟩
 
 /-- `twoTorsionCoeff` is the image of `T` in `E(Kˢ)`. -/
 @[simp]
 theorem coe_twoTorsionCoeff :
     (W.twoTorsionCoeff hT hψ : W.PointCoeff) = W.basePointCoeff (some e t hT) :=
-  (rfl)
+  W.coe_baseTorsionCoeff _
 
 /-- `T` is a nonzero element of `E(Kˢ)[2]`. -/
 theorem twoTorsionCoeff_ne_zero : W.twoTorsionCoeff hT hψ ≠ 0 := fun h ↦
@@ -200,14 +201,14 @@ theorem twoTorsionCharacter_eq_zero_iff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) :
 
 open scoped Classical in
 /-- **`twoTorsionCharacter` is the Weil pairing with `T`**: `χ_T(S) = e₂(S, T)`, the form in which
-it appears in Silverman X.1.4. -/
+it appears in Silverman X.1.4. The right-hand side is `WeierstrassCurve.weilPairingCoeff` of `T`
+applied to `S`. -/
 theorem twoTorsionCharacter_eq_weilPairing [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
     (S : W.TorsionCoeff 2) :
     W.twoTorsionCharacter hT hψ h2 S =
-      Isogeny.weilPairing (W⁄(SeparableClosure K)) 2 h2.natCast_ne_zero_of_algebra
-        (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _ S)
-        (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _ (W.twoTorsionCoeff hT hψ)) := by
-  set φ := AddEquiv.torsionByCongr W.pointCoeffEquiv.symm ((2 : ℕ) : ℤ)
+      W.torsionCoeffWeilPairing 2 h2 S (W.twoTorsionCoeff hT hψ) := by
+  rw [torsionCoeffWeilPairing_apply _ _ _ h2.natCast_ne_zero_of_algebra]
+  set φ := (AddEquiv.torsionByCongr W.pointCoeffEquiv ((2 : ℕ) : ℤ)).symm
   set e := (Isogeny.weilPairing (W⁄(SeparableClosure K)) 2
     h2.natCast_ne_zero_of_algebra).flip (φ (W.twoTorsionCoeff hT hψ)) with he_def
   set H := AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)

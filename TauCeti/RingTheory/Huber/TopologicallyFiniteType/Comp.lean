@@ -24,7 +24,7 @@ A⟨X₁, …, Xₖ, Y₁, …, Yₘ⟩ ≅ A⟨X₁, …, Xₖ⟩⟨Y₁, …, 
 
 The first map is the iteration isomorphism `TauCeti.Huber.iterateRingEquiv`, and the second is
 the presentation of `φ` applied coefficientwise, which is again an open quotient map by
-`IsOpenQuotientMap.weightedMapCompletion_one_weight`. No completeness is required of `B` or `C`.
+`IsOpenQuotientMap.weightedMapCompletion`. No completeness is required of `B` or `C`.
 
 Over a Tate ring `A`, topological finite type agrees with strict topological finite type, and a
 Huber ring receiving a continuous homomorphism from `A` is again Tate. This gives Wedhorn's
@@ -84,7 +84,8 @@ theorem IsStrictlyTopologicallyFiniteType.comp [IsHuberRing A]
       (continuous_iterateRingEquiv_symm ..)).isOpenQuotientMap
   refine isStrictlyTopologicallyFiniteType_iff.mpr
     ⟨k + m, (ρ.comp β).comp (e : _ →+* _),
-      hρ.comp (hπ.weightedMapCompletion_one_weight.comp he), RingHom.ext fun a ↦ ?_⟩
+      hρ.comp ((hπ.weightedMapCompletion isWeightFamily_one_weight
+        isWeightFamily_one_weight (fun _ ↦ by simp)).comp he), RingHom.ext fun a ↦ ?_⟩
   -- on a constant series each of the three maps acts as the corresponding structure map
   simp [β, e, algebraMap_completion_weightedRestrictedSubring_apply]
 
@@ -144,7 +145,8 @@ private theorem exists_isQuotientMapping_weightedMapCompletion {S : Pair A'} {U 
       continuous_toRingHom := continuous_weightedMapCompletion ..
       map_mem_plus := weighted_completion_plus_le_comap_weightedMapCompletion _ π _ _ }
   refine ⟨β, Hom.isQuotientMapping_of_isIntegral_weighted β
-    hπ.isOpenQuotientMap.weightedMapCompletion_one_weight (fun b hb ↦ ?_) (fun i t ht ↦ ?_), rfl⟩
+    (hπ.isOpenQuotientMap.weightedMapCompletion isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ by simp)) (fun b hb ↦ ?_) (fun i t ht ↦ ?_), rfl⟩
   · -- `b` is integral over `π(A'⁺)`, so its constant is integral over the constants of `π(A'⁺)`
     let φ : B →+* restrictedMvPowerSeriesCompletion m B :=
       Completion.coeRingHom.comp (weightedC _ isWeightFamily_one_weight)

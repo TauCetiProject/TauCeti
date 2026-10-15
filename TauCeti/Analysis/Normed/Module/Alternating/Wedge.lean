@@ -150,7 +150,7 @@ private lemma norm_wedgeAlternating_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →
     (v : Fin (k + l) → E) :
     ‖wedgeAlternating mu phi psi v‖ ≤
       (k + l).choose k * ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
-  rw [wedgeAlternating_eq_alternatization, AlternatingMap.smul_apply,
+  rw [wedgeAlternating_eq_alternatization, _root_.smul_apply,
     MultilinearMap.alternatization_apply,
     norm_smul]
   have hterm (sigma : Equiv.Perm (Fin (k + l))) :

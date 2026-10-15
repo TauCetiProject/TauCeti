@@ -53,7 +53,8 @@ theorem ord_pow_sub_self_of_ord_neg {n : ℕ} (hn : 1 < n) {y : F}
   have hlt : (n : ℤ) * v.ord y < v.ord y := by
     have _ : (1 : ℤ) < n := by exact_mod_cast hn
     nlinarith
-  rw [sub_eq_add_neg, ord_add_eq_min_of_ord_ne v (pow_ne_zero _ hy0) (neg_ne_zero.mpr hy0)
+  rw [sub_eq_add_neg, ord_add_eq_min_of_ord_ne v (v.ne_zero_iff.mpr (pow_ne_zero _ hy0))
+    (v.ne_zero_iff.mpr (neg_ne_zero.mpr hy0))
     (by rw [ord_pow, ord_neg]; omega), ord_pow, ord_neg, min_eq_left hlt.le]
 
 /-- For `n > 1`, `y ^ n - y` has a pole exactly when `y` has a pole. -/
@@ -65,7 +66,7 @@ theorem ord_pow_sub_self_neg_iff {n : ℕ} (hn : 1 < n) (y : F) :
     have hne : y ^ n - y ≠ 0 := by
       intro hzero
       simp [hzero] at h
-    have hmin := v.min_ord_le_ord_add (by simpa [sub_eq_add_neg] using hne)
+    have hmin := v.min_ord_le_ord_add (v.ne_zero_iff.mpr (by simpa [sub_eq_add_neg] using hne))
     rw [ord_pow, ord_neg, ← sub_eq_add_neg] at hmin
     by_contra hy
     have hnonneg : 0 ≤ v.ord y := by omega
@@ -116,7 +117,8 @@ theorem ord_sub_pow_le_of_not_dvd {n : ℕ} {u : F} (hdiv : ¬(n : ℤ) ∣ v.or
     simp at hdiv
   rcases eq_or_ne (y ^ n) 0 with hy | hy
   · simp [hy]
-  rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne hu0 (neg_ne_zero.mpr hy)
+  rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne (v.ne_zero_iff.mpr hu0)
+    (v.ne_zero_iff.mpr (neg_ne_zero.mpr hy))
     (by rw [v.ord_neg, v.ord_pow]; exact fun h ↦ hdiv ⟨v.ord y, h⟩)]
   exact min_le_left _ _
 
@@ -141,9 +143,11 @@ theorem ord_sub_pow_sub_self_eq_min {n : ℕ} (hn : 1 < n) {u : F} (hu : v.ord u
   -- The power term: `u - w ^ n` has order `min (ord u) (n * ord w)`.
   have ha : v.ord (u - w ^ n) = min (v.ord u) (n * v.ord w) := by
     rcases lt_or_ge ((n : ℤ) * v.ord w) (v.ord u) with hlt | hge
-    · rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne hu0 (neg_ne_zero.mpr hwn)
+    · rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne (v.ne_zero_iff.mpr hu0)
+        (v.ne_zero_iff.mpr (neg_ne_zero.mpr hwn))
         (by rw [v.ord_neg, v.ord_pow]; omega), v.ord_neg, v.ord_pow]
-    · have hmin := v.min_ord_le_ord_add (f := u) (g := -w ^ n) (by rwa [← sub_eq_add_neg])
+    · have hmin := v.min_ord_le_ord_add (f := u) (g := -w ^ n)
+        (v.ne_zero_iff.mpr (by rwa [← sub_eq_add_neg]))
       rw [v.ord_neg, v.ord_pow, ← sub_eq_add_neg, min_eq_left hge] at hmin
       rw [min_eq_left hge]
       exact le_antisymm (hroot w) hmin
@@ -154,7 +158,8 @@ theorem ord_sub_pow_sub_self_eq_min {n : ℕ} (hn : 1 < n) {u : F} (hu : v.ord u
       exact (min_le_right _ _).trans_lt (by nlinarith)
     · exact (min_le_left _ _).trans_lt (hu.trans_le hnonneg)
   rw [show u - (w ^ n - w) = (u - w ^ n) + w by ring,
-    v.ord_add_eq_min_of_ord_ne ha0 hw0 (by rw [ha]; exact hlt.ne), ha, min_eq_left hlt.le]
+    v.ord_add_eq_min_of_ord_ne (v.ne_zero_iff.mpr ha0) (v.ne_zero_iff.mpr hw0)
+      (by rw [ha]; exact hlt.ne), ha, min_eq_left hlt.le]
 
 /-- A negative order not divisible by `n > 1` is maximal among all representatives
 `u - (w ^ n - w)`. No perfection or characteristic hypothesis is needed for this

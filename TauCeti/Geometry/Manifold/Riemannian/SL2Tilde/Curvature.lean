@@ -114,13 +114,13 @@ private theorem second_connection_const (p : SL2Tilde) (u v w : P) :
   have h₂ := (he (-1)).smul_section (hd (negativeCoeff v w))
   have h₃ := (he (-2)).smul_section (hd (doubleNegativeCoeff v w))
   have h₀₁ := mdifferentiableAt_add_section (hd (constantCoeff v w)) h₁
-  rw [connection_const, ∇.isCovariantDerivativeOn.add
+  rw [connection_const, ∇.isCovariantDerivativeOnUniv.add
     (mdifferentiableAt_add_section h₀₁ h₂) h₃,
-    ∇.isCovariantDerivativeOn.add h₀₁ h₂,
-    ∇.isCovariantDerivativeOn.add (hd (constantCoeff v w)) h₁,
-    ∇.isCovariantDerivativeOn.leibniz (hd (positiveCoeff v w)) (he 1),
-    ∇.isCovariantDerivativeOn.leibniz (hd (negativeCoeff v w)) (he (-1)),
-    ∇.isCovariantDerivativeOn.leibniz (hd (doubleNegativeCoeff v w)) (he (-2))]
+    ∇.isCovariantDerivativeOnUniv.add h₀₁ h₂,
+    ∇.isCovariantDerivativeOnUniv.add (hd (constantCoeff v w)) h₁,
+    ∇.isCovariantDerivativeOnUniv.leibniz (hd (positiveCoeff v w)) (he 1),
+    ∇.isCovariantDerivativeOnUniv.leibniz (hd (negativeCoeff v w)) (he (-1)),
+    ∇.isCovariantDerivativeOnUniv.leibniz (hd (doubleNegativeCoeff v w)) (he (-2))]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     map_add, map_smul]
   rw [mvfderiv_exp_y, mvfderiv_exp_y, mvfderiv_exp_y]

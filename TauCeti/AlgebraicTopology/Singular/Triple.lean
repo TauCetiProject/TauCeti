@@ -172,6 +172,13 @@ noncomputable def singularHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (outerPair.obj T).singularHomology R n ⟶ (innerPair.obj T).singularHomology R m :=
   (T.shortExact_singularChainComplexShortComplex R).δ n m (by simpa)
 
+/-- The connecting morphism of a triple is the connecting morphism of the short exact sequence of
+relative singular chain complexes of the triple. -/
+lemma singularHomologyδ_def (n m : ℕ) (h : m + 1 = n := by lia) :
+    T.singularHomologyδ R n m h =
+      (T.shortExact_singularChainComplexShortComplex R).δ n m (by simpa) :=
+  (rfl)
+
 @[reassoc (attr := simp)]
 lemma singularHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
     T.singularHomologyδ R n m h ≫ TopPair.singularHomologyMap (innerToTotal.app T) R m = 0 :=

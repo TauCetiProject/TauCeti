@@ -89,10 +89,10 @@ theorem add_apply (f g : Hom R C M N) (m : M) : (f + g) m = f m + g m :=
   rfl
 
 /-- The zero comodule morphism evaluates pointwise, as required by Mathlib's `FunLike` API. -/
-instance : IsZeroApply (Hom R C M N) M N where
+instance : IsZeroApply (Hom R C M N) where
 
 /-- Addition of comodule morphisms evaluates pointwise, as required by Mathlib's `FunLike` API. -/
-instance : IsAddApply (Hom R C M N) M N where
+instance : IsAddApply (Hom R C M N) where
 
 /-- Scalar multiplication of comodule morphisms is pointwise scalar multiplication. -/
 @[simp]

@@ -42,6 +42,8 @@ full `8 × 8` table of the symbol over `ℚ_2`, the check that pins the dyadic s
 ## Main results
 
 * `TauCeti.hilbertSymbol_padicTwo`: Serre's formula for the Hilbert symbol over `ℚ_2`.
+* `TauCeti.hilbertSymbol_natCast_natCast_padicTwo`: for odd natural numbers `m` and `n`,
+  `(m, n) = (-1) ^ ((m - 1)/2 · (n - 1)/2)` over `ℚ_2`.
 * `TauCeti.hilbertSymbol_neg_one_neg_one_padicTwo`: `(-1, -1) = −1` over `ℚ_2`, that is `-1` is
   not of the form `x² + y²` in `ℚ_2`.
 * `TauCeti.hilbertSymbol_two_five_padicTwo`: `(2, 5) = −1` over `ℚ_2`.
@@ -196,6 +198,19 @@ theorem hilbertSymbol_padicTwo {a b : ℚ_[2]ˣ} {α β : ℤ} {u v : ℤ_[2]ˣ}
   congr 1
   simp only [Int.cast_natCast, ZMod.natCast_zmod_val]
   ring
+
+/-- **The Hilbert symbol of two odd natural numbers over `ℚ_2`**: `(m, n) = (-1) ^ ((m - 1)/2 ·
+(n - 1)/2)`, which is `-1` exactly when `m ≡ n ≡ 3 (mod 4)`. This is the dyadic factor of the
+product formula behind quadratic reciprocity. -/
+theorem hilbertSymbol_natCast_natCast_padicTwo {m n : ℕ} (hm : Odd m) (hn : Odd n) :
+    hilbertSymbol (Units.mk0 (m : ℚ_[2]) (Nat.cast_ne_zero.2 hm.pos.ne'))
+      (Units.mk0 (n : ℚ_[2]) (Nat.cast_ne_zero.2 hn.pos.ne')) = (-1) ^ (m / 2 * (n / 2)) := by
+  have hum := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hm)
+  have hun := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hn)
+  rw [hilbertSymbol_padicTwo (α := 0) (β := 0) (u := hum.unit) (v := hun.unit) (by simp)
+    (by simp), serreEps_eq_natCast_div_two_of_coe_eq_natCast hum.unit_spec,
+    serreEps_eq_natCast_div_two_of_coe_eq_natCast hun.unit_spec]
+  simp only [Int.cast_zero, zero_mul, add_zero, ← Nat.cast_mul, uzpow_natCast]
 
 /-! ### The symbol on a basis of the square classes, and the `8 × 8` table -/
 

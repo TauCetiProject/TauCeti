@@ -168,15 +168,13 @@ theorem Coupling.dense_graphPlans {μ₀ : ProbabilityMeasure X} {ν₀ : Probab
     Dense {π₀ : Coupling μ₀ ν₀ |
       ∃ T : X → Y, MeasurePreserving T (μ₀ : Measure X) (ν₀ : Measure Y) ∧
         π₀.1.toMeasure = graphPlan T (μ₀ : Measure X)} := by
-  apply Subtype.dense_iff.2
-  intro ρ hρ
+  refine Topology.IsEmbedding.subtypeVal.isInducing.dense_iff.2 ?_
+  rintro ⟨ρ, hρ⟩
   have hclosure := Coupling.mem_closure_graphPlans (⟨ρ, hρ⟩ : Coupling μ₀ ν₀)
   apply closure_mono _ hclosure
   intro σ hσ
   obtain ⟨T, hT, hσ⟩ := hσ
   refine ⟨⟨σ, ?_⟩, ⟨T, hT, hσ⟩, rfl⟩
-  -- Expose the subtype predicate so the equality of raw measures rewrites its argument.
-  change IsCoupling σ.toMeasure (μ₀ : Measure X) (ν₀ : Measure Y)
   exact hσ.symm ▸ isCoupling_graphPlan hT.hasLaw
 
 /-- For an atomless source, the Monge and Kantorovich values agree for every bounded continuous
