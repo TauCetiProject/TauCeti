@@ -51,8 +51,6 @@ homology of `E` by `TauCeti.singularCubicalHomologyIso`.
   filtration on chains, as submodules.
 * `TauCeti.serreFiltration R p s`: the Serre filtration of the cubical cochain complex of `E`, by
   subcomplexes.
-* `TauCeti.normalizedCubicalChainComplexXEquiv R E n`: the term of the normalized cubical chain
-  complex in degree `n`, identified with the normalized `n`-chains.
 * `TauCeti.serreSpectralSequence R p`: the Serre spectral sequence, with its first page
   `TauCeti.serreSpectralSequenceFirstPageXIsoCokernel`.
 
@@ -294,37 +292,6 @@ section Complex
 universe u
 
 variable (R : Type u) [Ring R] {E B E' : TopCat.{u}} (p : E ⟶ B)
-
-variable (E) in
-/-- The term in degree `n` of the normalized cubical chain complex of `E` is the module of
-normalized cubical `n`-chains. -/
-def normalizedCubicalChainComplexXEquiv (n : ℕ) :
-    ((normalizedCubicalChainComplex R).obj E).X n ≃ₗ[R] NormalizedCubicalChain E R n :=
-  LinearEquiv.refl R _
-
-variable {R} in
-/-- Under `normalizedCubicalChainComplexXEquiv`, the differential of the complex is the boundary of
-normalized chains. -/
-theorem normalizedCubicalChainComplexXEquiv_d (n : ℕ)
-    (x : ((normalizedCubicalChainComplex R).obj E).X (n + 1)) :
-    normalizedCubicalChainComplexXEquiv R E n
-        (((normalizedCubicalChainComplex R).obj E).d (n + 1) n x) =
-      NormalizedCubicalChain.boundary E R n
-        (normalizedCubicalChainComplexXEquiv R E (n + 1) x) := by
-  -- `normalizedCubicalChainComplexXEquiv` is the identity of the underlying modules.
-  unfold normalizedCubicalChainComplexXEquiv
-  exact normalizedCubicalChainComplex_obj_d_apply E n x
-
-variable {R} in
-/-- Under `normalizedCubicalChainComplexXEquiv`, the chain map of a continuous map is its
-push-forward of normalized chains. -/
-theorem normalizedCubicalChainComplexXEquiv_map_f (f : E ⟶ E') (n : ℕ)
-    (x : ((normalizedCubicalChainComplex R).obj E).X n) :
-    normalizedCubicalChainComplexXEquiv R E' n (((normalizedCubicalChainComplex R).map f).f n x) =
-      NormalizedCubicalChain.map R f.hom n (normalizedCubicalChainComplexXEquiv R E n x) := by
-  -- `normalizedCubicalChainComplexXEquiv` is the identity of the underlying modules.
-  unfold normalizedCubicalChainComplexXEquiv
-  exact normalizedCubicalChainComplex_map_f_apply f n x
 
 /-- The Serre filtration in chain degree `n`, as a submodule of the term of the chain complex. -/
 private def serreSubmodule (s : ℤ) (n : ℕ) :

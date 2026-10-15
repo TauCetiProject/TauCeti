@@ -23,6 +23,8 @@ simplicial singular chain complex.
 
 * `TauCeti.normalizedCubicalChainComplex R`: the functor sending a space to its normalized cubical
   chain complex with coefficients in `R`.
+* `TauCeti.normalizedCubicalChainComplexXEquiv R X n`: its term in degree `n`, identified with the
+  normalized cubical `n`-chains.
 -/
 
 @[expose] public section
@@ -79,6 +81,35 @@ theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ 
     (x : NormalizedCubicalChain X R n) :
     ((normalizedCubicalChainComplex R).map f).f n x = NormalizedCubicalChain.map R f.hom n x :=
   (rfl)
+
+variable (R) in
+/-- The term in degree `n` of the normalized cubical chain complex of `X` is the module of
+normalized cubical `n`-chains. -/
+def normalizedCubicalChainComplexXEquiv (X : TopCat.{u}) (n : ℕ) :
+    ((normalizedCubicalChainComplex R).obj X).X n ≃ₗ[R] NormalizedCubicalChain X R n :=
+  LinearEquiv.refl R _
+
+/-- Under `normalizedCubicalChainComplexXEquiv`, the differential of the complex is the boundary of
+normalized chains. -/
+theorem normalizedCubicalChainComplexXEquiv_d (X : TopCat.{u}) (n : ℕ)
+    (x : ((normalizedCubicalChainComplex R).obj X).X (n + 1)) :
+    normalizedCubicalChainComplexXEquiv R X n
+        (((normalizedCubicalChainComplex R).obj X).d (n + 1) n x) =
+      NormalizedCubicalChain.boundary X R n
+        (normalizedCubicalChainComplexXEquiv R X (n + 1) x) := by
+  -- `normalizedCubicalChainComplexXEquiv` is the identity of the underlying modules.
+  unfold normalizedCubicalChainComplexXEquiv
+  exact normalizedCubicalChainComplex_obj_d_apply X n x
+
+/-- Under `normalizedCubicalChainComplexXEquiv`, the chain map of a continuous map is its
+push-forward of normalized chains. -/
+theorem normalizedCubicalChainComplexXEquiv_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
+    (x : ((normalizedCubicalChainComplex R).obj X).X n) :
+    normalizedCubicalChainComplexXEquiv R Y n (((normalizedCubicalChainComplex R).map f).f n x) =
+      NormalizedCubicalChain.map R f.hom n (normalizedCubicalChainComplexXEquiv R X n x) := by
+  -- `normalizedCubicalChainComplexXEquiv` is the identity of the underlying modules.
+  unfold normalizedCubicalChainComplexXEquiv
+  exact normalizedCubicalChainComplex_map_f_apply f n x
 
 /-- The terms of the normalized cubical chain complex are projective modules. -/
 instance (X : TopCat.{u}) (n : ℕ) :
