@@ -497,6 +497,8 @@ class ProseTests(unittest.TestCase):
             "<summary>Example</summary><p>Stacked on #12</p>",
             "<p>Do not write:</p><ul><li>Stacked on #12</li></ul>",
             '<p>Stacked on <a href="https://githubxcom/TauCetiProject/TauCeti/pull/12">parent</a></p>',
+            '<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">not a dependency</a></p>',
+            '<p>Stacked on #12 <a href="https://example.com">no longer</a></p>',
         ]
         for html in cases:
             with self.subTest(html=html):
@@ -558,36 +560,39 @@ class ProseTests(unittest.TestCase):
             with self.assertRaisesRegex(sp.Gap, "transient rendering timeout"):
                 api.declared_parents(child)
         self.assertEqual(api.request.call_count, 1)
-    def test_read_only_historical_explicit_examples(self):
+    def test_read_only_historical_rendered_examples(self):
         fixtures = json.loads((Path(__file__).with_name("stack_policy_fixtures.json")).read_text())
-        expected = {"16755": {16515}, "16656": {16643, 16632, 15253},
-                    "16613": {16611}, "16130": {15856, 16035}}
+        # Current captured bodies are separate from the immutable audit heads.
+        # Quoted/negative context conservatively declines three declarations;
+        # exact ancestry may still establish their stacks independently.
+        expected = {"16755": set(), "16656": {16643, 16632, 15253},
+                    "16613": set(), "16130": set()}
         for number, parents in expected.items():
             item = fixtures["explicit_prose"][number]
             self.assertEqual(sp.oid(item["head"]), item["head"])
-            self.assertEqual(sp.explicit_parents("\n".join(item["body_lines"])), parents)
+            captured = fixtures["rendered_prose_capture"]["prs"][number]
+            self.assertEqual(sp.oid(captured["head"]), captured["head"])
+            self.assertEqual(sp.rendered_parents(captured["body_html"]), parents)
 
     def test_affirmative_parent_identity(self):
-        self.assertEqual(sp.explicit_parents("This PR is stacked on #12 (#11)."), {11, 12})
-        self.assertEqual(sp.explicit_parents(f"Stacked on https://github.com/{sp.REPO}/pull/12"), {12})
-        self.assertEqual(sp.explicit_parents("Prerequisite: #12"), {12})
+        self.assertEqual(sp.rendered_parents("<p>This PR is stacked on #12 (#11).</p>"), {11, 12})
+        self.assertEqual(sp.rendered_parents('<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">parent</a></p>'), {12})
+        self.assertEqual(sp.rendered_parents("<p>Prerequisite: #12</p>"), {12})
 
     def test_superseding_closed_source_is_not_a_stack_claim(self):
-        self.assertFalse(sp.explicit_parents(
-            "Includes the prerequisite source from #12. This PR supersedes that standalone foundation."))
-        self.assertFalse(sp.explicit_parents(
-            "Includes #12 (a composition theorem, which depends on #11). This PR supersedes them."))
-        self.assertEqual(sp.explicit_parents(
-            "Prerequisite: #12. This PR includes #11 and supersedes it."), {12})
+        for body in ("Includes the prerequisite source from #12. This PR supersedes that standalone foundation.",
+                     "Includes #12 (a composition theorem, which depends on #11). This PR supersedes them.",
+                     "Prerequisite: #12. This PR includes #11 and supersedes it."):
+            self.assertFalse(sp.rendered_parents("<p>" + html.escape(body) + "</p>"))
 
     def test_misleading_quoted_negative_and_foreign_prose(self):
         for body in ["> Stacked on #12", "```\nStacked on #12\n```", "Not stacked on #12",
                      "This was stacked on #12", '`Stacked on #12`', 'The title is "stacked on #12"',
-                     '“Stacked on #12”', "'Stacked on #12'", "    Stacked on #12", "``Stacked on #12``",
+                     '“Stacked on #12”', "'Stacked on #12'", "``Stacked on #12``",
                      "Prerequisites: none; #12 will build on this", "Depends on Mathlib PR #12",
                      "<!-- Stacked on #12 -->", "Stacked on https://github.com/other/repo/pull/12"]:
             with self.subTest(body=body):
-                self.assertFalse(sp.explicit_parents(body))
+                self.assertFalse(sp.rendered_parents("<p>" + html.escape(body) + "</p>"))
 
 
 class FakeAPI:

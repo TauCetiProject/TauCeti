@@ -24,9 +24,11 @@ Explicit declarations use GitHub's rendered body, read through the canonical PR
 API with matching raw body and head identity, then cached within the sweep.
 The HTML is parsed as data: code, blockquotes, quotation/retracted elements and link labels
 cannot provide declarations. Canonical local PR links can identify parents.
+Visible link-label text can still veto negated/retracted claims; deleting a
+negative label must not turn its surrounding prose into an affirmative claim.
 Only affirmative declarations beginning a rendered sentence (optionally with
 this PR or this branch) qualify; example-prefixed prose does not. Literal quoted
-prose or explicit example/historical context conservatively disables body-only
+prose or explicit negative/example/historical context conservatively disables body-only
 inference for that body, including quotations spanning paragraphs. Whitespace
 within paragraphs is normalized and excluded inline elements retain opaque
 placeholders, so removing them cannot manufacture a sentence start.

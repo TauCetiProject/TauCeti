@@ -236,29 +236,10 @@ def event_targets(event, prs):
     raise Gap("wake has no associated PR/current canonical PR identity match")
 
 
-def explicit_parents(body, *, current_only=False):
-    """Candidate discovery only: affirmative unquoted prose with local PR identities.
-
-    A mention never authorizes closure. Reject negatives, fenced/inline code, quoted
-    lines, HTML comments and foreign URLs (including their trailing issue numbers).
-    """
-    if not current_only:
-        body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+def rendered_prose_parents(body):
+    """Candidate identities from filtered rendered paragraphs, never raw Markdown."""
     result = set()
-    fenced = False
     for line in body.splitlines():
-        if not current_only and re.match(r"\s*(```|~~~)", line):
-            fenced = not fenced
-            continue
-        if fenced or line.lstrip().startswith(">") or line.startswith("    "):
-            continue
-        if not current_only:
-            line = re.sub(r"(`+).*?\1", "", line)
-            line = re.sub(r'''"[^"\n]*"|“[^”\n]*”|(?<!\w)'[^'\n]*'(?!\w)''', "", line)
-        if not current_only:
-            line = re.sub(r"https://github\.com/([^\s/)]+/[^\s/)]+)/(?:pull|issues)/(\d+)",
-                          lambda m: f"#{m[2]}" if m[1].lower() == REPO.lower() else "", line)
-            line = re.sub(r"https?://\S+", "", line)
         for sentence in re.split(r"(?<=[.!?])\s+", line):
             if re.search(r"\b(not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t)\b", sentence, re.I):
                 continue
@@ -268,7 +249,7 @@ def explicit_parents(body, *, current_only=False):
                 r"(?:depends? on|based on|built on|carries .*commits from)\b|"
                 r"\b(?:prerequisites?|dependencies|parent PR)\s*:", sentence, re.I)
             if claim:
-                if current_only and not re.fullmatch(
+                if not re.fullmatch(
                         r"\s*(?:[-*]\s*)?(?:this (?:PR|branch|pull request) (?:is )?)?",
                         sentence[:claim.start()], re.I):
                     continue
@@ -373,10 +354,10 @@ def rendered_parents(html):
         return set()
     if "`" in visible or "<!--" in visible:
         return set()
-    if re.search(r"\b(?:examples?|for reference|do not write|no longer|previously|formerly|supersed\w*)\b", visible, re.I):
+    if re.search(r"\b(?:examples?|for reference|not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t|supersed\w*)\b", visible, re.I):
         return set()
     paragraphs = [" ".join(p.split()) for p in "".join(parser.prose).split("\x1e")]
-    return explicit_parents("\n".join(paragraphs), current_only=True)
+    return rendered_prose_parents("\n".join(paragraphs))
 
 
 class Source:
