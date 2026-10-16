@@ -198,15 +198,8 @@ theorem coactComponent_apply (n : ℕ) (v : V) :
 @[simp]
 theorem coactComponent_zero : coactComponent R V 0 = LinearMap.id := by
   ext v
-  rw [coactComponent_apply, coeff_zero_eq_counit]
-  have hcomponent :
-      _root_.LinearMap.tensorComponent (R := R) (M := V)
-          (Coalgebra.counit (R := R) (A := SymmetricAlgebra R R)) =
-        (TensorProduct.rid R V).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := SymmetricAlgebra R R)).lTensor V := by
-    refine TensorProduct.ext' fun w c => ?_
-    simp
-  rw [hcomponent, LinearMap.coe_comp, Function.comp_apply, Comodule.lTensor_counit_coact]
+  rw [coactComponent_apply, coeff_zero_eq_counit, LinearMap.tensorComponent_def,
+    LinearMap.comp_apply, Comodule.lTensor_counit_coact]
   simp
 
 /-- **The divided-power components compose by the binomial rule** `Nᵢ ∘ Nⱼ = (i + j choose i)
@@ -240,20 +233,9 @@ noncomputable def coactDecomposition : V →ₗ[R] (ℕ →₀ V) :=
 @[simp]
 theorem coactDecomposition_apply (v : V) (n : ℕ) :
     coactDecomposition R V v n = coactComponent R V n v := by
-  rw [coactDecomposition, LinearMap.coe_comp, Function.comp_apply, coactComponent_apply]
-  calc
-    (TensorProduct.equivFinsuppOfBasisRight (monomialBasis R)
-        (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v)) n =
-        TensorProduct.rid R V
-          (((monomialBasis R).coord n).lTensor V
-            (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v)) :=
-      TensorProduct.equivFinsuppOfBasisRight_apply _ _ _
-    _ = _root_.LinearMap.tensorComponent (coeff R n)
-        (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v) := by
-      induction Comodule.coact (R := R) (C := SymmetricAlgebra R R) v using
-        TensorProduct.inductionOn with
-      | add x y hx hy => simp only [map_add, hx, hy]
-      | tmul m x => simp [coeff]
+  simp only [coactDecomposition, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    TensorProduct.equivFinsuppOfBasisRight_apply, coactComponent_apply,
+    LinearMap.tensorComponent_def, coeff]
 
 /-- The coaction is recovered from its divided-power components: `ρ v = ∑ₙ Nₙ v ⊗ xⁿ`. -/
 theorem coact_eq_sum (v : V) :
