@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.Basic
+public import Mathlib.Order.Filter.TendstoCofinite
 import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.NumberTheory.NumberField.Minpoly
 
@@ -62,6 +63,10 @@ end NumberField.InfinitePlace
 namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- The coercion from units of the ring of integers to the number field has finite fibers. -/
+instance : Filter.TendstoCofinite (fun u : (𝓞 K)ˣ ↦ (u : K)) :=
+  Filter.tendstoCofinite_of_injective (Units.coe_injective K)
 
 open scoped IntermediateField in
 /-- The constant coefficient of the minimal polynomial of a unit is `±1`. -/
