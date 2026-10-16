@@ -205,11 +205,11 @@ omit hab in
 /-- The inverse interval tangent equivalence multiplies the real coordinate by the chart sign. -/
 @[simp]
 theorem subtypeValIccTangentEquiv_symm_apply (x : Icc a b) (r : ℝ) (i : Fin 1) :
-    EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) i ((subtypeValIccTangentEquiv x).symm r) =
+    (subtypeValIccTangentEquiv x).symm r i =
       (if (x : ℝ) < b then (1 : ℝ) else -1) * r := by
   rw [Subsingleton.elim i 0]
   have h := subtypeValIccTangentEquiv_apply x ((subtypeValIccTangentEquiv x).symm r)
-  rw [ContinuousLinearEquiv.apply_symm_apply] at h
+  rw [ContinuousLinearEquiv.apply_symm_apply, PiLp.proj_apply] at h
   by_cases hx : (x : ℝ) < b
   · simpa only [hx, ↓reduceIte, one_mul] using h.symm
   · simp only [hx, ↓reduceIte, neg_one_mul] at h ⊢
