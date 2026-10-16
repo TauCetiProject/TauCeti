@@ -5,9 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 
 /-!
 # Divergence, Hessian, and Laplace–Beltrami operators
@@ -15,7 +21,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
-trace formula makes the relationship between the Laplacian and the Hessian explicit.
+trace formula makes the relationship between the Laplacian and the Hessian explicit. On a
+finite-dimensional inner-product space, the operator agrees with Mathlib's flat Laplacian.
 
 -/
 
@@ -264,5 +271,84 @@ theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*
   rw [laplaceBeltrami, divergence, LinearMap.trace_eq_sum_inner _ b]
   simp only [hessian, real_inner_comm]
   rfl
+
+/-! ### The flat model -/
+
+open scoped Gradient Laplacian
+
+/-- On a finite-dimensional real inner-product space with its standard metric, the Riemannian
+Hessian is the second Fréchet derivative. -/
+theorem hessian_eq_iteratedFDeriv_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x)
+    (v w : TangentSpace (modelWithCornersSelf ℝ F) x) :
+    hessian (modelWithCornersSelf ℝ F) f x v w =
+      iteratedFDeriv ℝ 2 f x
+        ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w] := by
+  rw [hessian]
+  have hm : mgradient (modelWithCornersSelf ℝ F) f = ∇ f :=
+    funext fun y ↦ mgradient_eq_gradient f y
+  have hmgrad : DifferentiableAt ℝ (mgradient (modelWithCornersSelf ℝ F) f) x := by
+    rw [hm]
+    exact hgrad
+  have hconnection := leviCivitaConnection_eq_fderiv_model_space hmgrad
+    (NormedSpace.fromTangentSpace x v)
+  have hconnection' :
+      NormedSpace.fromTangentSpace x
+          (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F
+            (mgradient (modelWithCornersSelf ℝ F) f) x v) =
+        fderiv ℝ (mgradient (modelWithCornersSelf ℝ F) f) x
+          (NormedSpace.fromTangentSpace x v) := by
+    simpa only [NormedSpace.fromTangentSpace, ContinuousLinearEquiv.symm_apply_apply] using
+      hconnection
+  calc
+    inner ℝ
+        (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F
+          (mgradient (modelWithCornersSelf ℝ F) f) x v) w =
+        inner ℝ
+          (NormedSpace.fromTangentSpace x
+            (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F
+              (mgradient (modelWithCornersSelf ℝ F) f) x v))
+          (NormedSpace.fromTangentSpace x w) := rfl
+    _ = inner ℝ
+        (fderiv ℝ (mgradient (modelWithCornersSelf ℝ F) f) x
+          (NormedSpace.fromTangentSpace x v))
+        (NormedSpace.fromTangentSpace x w) := by rw [hconnection']
+    _ = inner ℝ (fderiv ℝ (∇ f) x (NormedSpace.fromTangentSpace x v))
+        (NormedSpace.fromTangentSpace x w) := by rw [hm]
+    _ = _ := by
+      rw [← InnerProductSpace.toDual_apply_apply]
+      let L := (InnerProductSpace.toDual ℝ F).toContinuousLinearEquiv.toContinuousLinearMap
+      have hcomp := L.hasFDerivAt.comp x hgrad.hasFDerivAt
+      have hdual : L ∘ ∇ f = fderiv ℝ f := toDual_comp_gradient
+      calc
+        ((InnerProductSpace.toDual ℝ F)
+            (fderiv ℝ (∇ f) x (NormedSpace.fromTangentSpace x v)))
+            (NormedSpace.fromTangentSpace x w) =
+            fderiv ℝ (L ∘ ∇ f) x
+              (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
+                rw [hcomp.fderiv]
+                rfl
+        _ = fderiv ℝ (fderiv ℝ f) x (NormedSpace.fromTangentSpace x v)
+            (NormedSpace.fromTangentSpace x w) := by rw [hdual]
+        _ = _ := (iteratedFDeriv_two_apply f x
+          ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
+
+/-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
+This fixes the sign convention as `Δ = div ∘ grad`. -/
+theorem laplaceBeltrami_eq_laplacian
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {f : F → ℝ} (hf : ContDiff ℝ 2 f) (x : F) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
+  let e : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F :=
+    (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner (fun _ _ ↦ rfl)
+  let b := (stdOrthonormalBasis ℝ F).map e.symm
+  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x b,
+    InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := e.apply_symm_apply u
+  simpa only [b, OrthonormalBasis.map_apply, he] using
+    hessian_eq_iteratedFDeriv_model_space
+      ((hf.gradient_right (m := 1) (by norm_num)).differentiable one_ne_zero x) (b i) (b i)
 
 end TauCeti.Manifold
