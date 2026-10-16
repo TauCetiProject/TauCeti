@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LSum
 public import TauCeti.LowDimTopology.Plumbing.Cube.Face.Exponent
-public import TauCeti.LowDimTopology.Plumbing.Cube.Generator
+public import TauCeti.LowDimTopology.Plumbing.Cube.Orientation
 
 /-!
 # The oriented lattice-homology differential over `R[U]`
@@ -39,9 +39,11 @@ all coefficients, intertwines the two differentials
 and the differential over `𝔽₂[U]` is the unsigned one of
 `TauCeti.LowDimTopology.Plumbing.Differential`.
 
+The positions of directions and their sign rule are in
+`TauCeti.LowDimTopology.Plumbing.Cube.Orientation`.
+
 ## Main definitions
 
-* `TauCeti.PlumbingCube.directionIndex`: the position of a direction in the direction set of a cube.
 * `TauCeti.PlumbingGraph.signedLatticeDifferentialOnGenerator`: the oriented weighted boundary of
   one cube.
 * `TauCeti.PlumbingGraph.signedLatticeDifferential`: the `R[U]`-linear oriented lattice
@@ -49,8 +51,6 @@ and the differential over `𝔽₂[U]` is the unsigned one of
 
 ## Main results
 
-* `TauCeti.PlumbingCube.neg_one_pow_directionIndex_add_eraseDirection_eq_neg`: the sign rule for
-  removing two directions in either order.
 * `TauCeti.PlumbingGraph.signedLatticeDifferential_single`: the differential on a basis cube.
 * `TauCeti.PlumbingGraph.signedLatticeDifferential_comp_self`: the oriented lattice differential
   squares to zero.
@@ -68,72 +68,6 @@ public section
 open Polynomial
 
 namespace TauCeti
-
-namespace PlumbingCube
-
-variable {V : Type*} [LinearOrder V]
-
-/-- The position of `v` among the directions of `C` listed in increasing order, counted from one
-when `v` is a direction: the number of directions of `C` that are at most `v`. It fixes the sign of
-the face of `C` in direction `v` in the oriented lattice differential. -/
-def directionIndex (C : PlumbingCube V) (v : V) : ℕ :=
-  (C.directions.filter (· ≤ v)).card
-
-/-- The position of a direction is the number of directions at most it. -/
-theorem directionIndex_def (C : PlumbingCube V) (v : V) :
-    C.directionIndex v = (C.directions.filter (· ≤ v)).card :=
-  (rfl)
-
-/-- The position of a direction in an explicit cube. -/
-@[simp]
-theorem directionIndex_mk (x : V → ℤ) (S : Finset V) (v : V) :
-    directionIndex ({ base := x, directions := S } : PlumbingCube V) v =
-      (S.filter (· ≤ v)).card :=
-  (rfl)
-
-/-- The position of a direction depends only on the direction set, so it is the same in the lower
-face and in the raw lower cube. -/
-@[simp]
-theorem directionIndex_lowerFace (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) (w : V) :
-    (C.lowerFace v hv).directionIndex w = (C.eraseDirection v).directionIndex w := by
-  simp [directionIndex_def]
-
-/-- The position of a direction depends only on the direction set, so it is the same in the upper
-face and in the raw lower cube. -/
-@[simp]
-theorem directionIndex_upperFace (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) (w : V) :
-    (C.upperFace v hv).directionIndex w = (C.eraseDirection v).directionIndex w := by
-  simp [directionIndex_def]
-
-/-- Removing a smaller direction lowers the position of a larger direction by one. -/
-theorem directionIndex_eraseDirection_add_one_of_lt (C : PlumbingCube V) {v w : V}
-    (hv : v ∈ C.directions) (hvw : v < w) :
-    (C.eraseDirection v).directionIndex w + 1 = C.directionIndex w := by
-  rw [directionIndex_def, directionIndex_def, eraseDirection_directions, Finset.filter_erase,
-    Finset.card_erase_add_one (Finset.mem_filter.mpr ⟨hv, hvw.le⟩)]
-
-/-- Removing a larger direction leaves the position of a smaller direction unchanged. -/
-theorem directionIndex_eraseDirection_of_lt (C : PlumbingCube V) {v w : V} (hvw : v < w) :
-    (C.eraseDirection w).directionIndex v = C.directionIndex v := by
-  rw [directionIndex_def, directionIndex_def, eraseDirection_directions, Finset.filter_erase,
-    Finset.erase_eq_of_notMem (by simp [hvw])]
-
-/-- The sign rule behind `∂² = 0`: removing two distinct directions in the two possible orders
-produces opposite products of position signs. -/
-theorem neg_one_pow_directionIndex_add_eraseDirection_eq_neg (R : Type*) [Ring R]
-    (C : PlumbingCube V) {v w : V} (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
-    (-1 : R) ^ (C.directionIndex v + (C.eraseDirection v).directionIndex w) =
-      -(-1 : R) ^ (C.directionIndex w + (C.eraseDirection w).directionIndex v) := by
-  have hswap : ∀ a b : ℕ, b + 1 + a = a + b + 1 := fun a b => by omega
-  rcases hne.lt_or_gt with hvw | hwv
-  · rw [← C.directionIndex_eraseDirection_add_one_of_lt hv hvw,
-      C.directionIndex_eraseDirection_of_lt hvw, hswap, pow_succ]
-    simp
-  · rw [← C.directionIndex_eraseDirection_add_one_of_lt hw hwv,
-      C.directionIndex_eraseDirection_of_lt hwv, hswap, pow_succ]
-    simp
-
-end PlumbingCube
 
 namespace PlumbingGraph
 
@@ -336,11 +270,6 @@ private theorem sum_latticeTwoDirectionFaces_eq_zero
     apply Subtype.ext
     exact Prod.swap_swap p.1
 
-/-- The coefficient of a codimension-two face is the product of the two signs times the product
-of the two `U`-powers. -/
-private theorem mul_mul_mul_comm_left (s t x y : R[X]) : s * (x * (t * y)) = s * t * (x * y) := by
-  ring
-
 /-- Expanding the differential twice on a cube gives the signed sum of the four-face
 contributions over ordered pairs of distinct directions. -/
 private theorem signedLatticeDifferential_signedLatticeDifferentialOnGenerator_eq_sum
@@ -373,7 +302,8 @@ private theorem signedLatticeDifferential_signedLatticeDifferentialOnGenerator_e
     simp only [latticeTwoDirectionFaces, directionPairSign, lowerEquiv, upperEquiv,
       lowerFaceDirectionEquiv, upperFaceDirectionEquiv, Equiv.coe_fn_symm_mk,
       PlumbingCube.directionIndex_lowerFace, PlumbingCube.directionIndex_upperFace,
-      smul_add, smul_sub, Finsupp.smul_single, smul_eq_mul, pow_add, mul_mul_mul_comm_left]
+      smul_add, smul_sub, Finsupp.smul_single, smul_eq_mul, pow_add, mul_assoc,
+      mul_left_comm (X ^ _ : R[X])]
     abel
   · simp only [Finset.attach_eq_univ]
     rw [← Fintype.sum_sigma']
