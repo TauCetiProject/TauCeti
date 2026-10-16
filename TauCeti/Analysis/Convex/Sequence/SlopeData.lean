@@ -98,6 +98,7 @@ theorem heights_ne_top_iff {n : ℕ} :
   split_ifs with h <;> simp [h]
 
 /-- The represented heights are infinite exactly outside `[start, start + length]`. -/
+@[simp]
 theorem heights_eq_top_iff {n : ℕ} :
     d.heights n = ⊤ ↔ n < d.start ∨ d.start + d.length < n := by
   rw [← not_iff_not, ← ne_eq, heights_ne_top_iff]
@@ -227,6 +228,7 @@ theorem heights_ne_top_iff {n : ℕ} : d.heights n ≠ ⊤ ↔ d.start ≤ n := 
   split_ifs with h <;> simp [h]
 
 /-- The represented heights are infinite exactly before `start`. -/
+@[simp]
 theorem heights_eq_top_iff {n : ℕ} : d.heights n = ⊤ ↔ n < d.start := by
   rw [← not_iff_not, ← ne_eq, heights_ne_top_iff, not_lt]
 

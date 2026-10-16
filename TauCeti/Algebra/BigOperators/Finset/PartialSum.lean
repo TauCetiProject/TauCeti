@@ -42,9 +42,13 @@ variable {M : Type*} [AddCommMonoid M] {n : ℕ}
 
 /-- The prefix sum `∑_{i < k} x i` of the first `k` coordinates of `x`. For `n ≤ k` it is the
 sum of all coordinates. -/
-@[expose]
 def prefixSum (k : ℕ) (x : Fin n → M) : M :=
   ∑ i : Fin n with i.val < k, x i
+
+/-- The defining formula of `prefixSum` as a filtered sum. -/
+theorem prefixSum_def (k : ℕ) (x : Fin n → M) :
+    prefixSum k x = ∑ i : Fin n with i.val < k, x i := by
+  rw [prefixSum]
 
 @[simp]
 theorem prefixSum_zero (x : Fin n → M) : prefixSum 0 x = 0 := by
