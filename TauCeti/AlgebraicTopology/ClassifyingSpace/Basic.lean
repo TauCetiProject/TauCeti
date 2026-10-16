@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.WeakContractibility
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Covering
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LocallyPathConnected
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.ActingGroup
 
 /-!
@@ -24,6 +26,10 @@ to the other, the fibre through a point is its orbit, a continuous `G`-invariant
 the orbit space, and, since the countable join is connected, the acting group is the deck
 transformation group of the orbit map.
 
+The classifying space satisfies the standing hypotheses of covering-space theory: it is
+path-connected and locally path-connected, being a quotient of the countable join, which is both,
+and it is semilocally simply connected, being covered by the simply connected countable join.
+
 ## Main definitions
 
 * `TauCeti.classifyingSpace`: the orbit space of the countable join.
@@ -39,6 +45,10 @@ transformation group of the orbit map.
 * `TauCeti.classifyingSpaceProj_eq_iff_existsUnique`: two points have the same image exactly when
   a unique group element carries one to the other.
 * `TauCeti.preimage_classifyingSpaceProj_singleton`: the fibre through a point is its orbit.
+* `TauCeti.instPathConnectedSpaceClassifyingSpace`,
+  `TauCeti.instLocallyPathConnectedSpaceClassifyingSpace` and
+  `TauCeti.instSemilocallySimplyConnectedSpaceClassifyingSpace`: the standing hypotheses of
+  covering-space theory.
 
 ## References
 
@@ -136,6 +146,23 @@ theorem isQuotientCoveringMap_classifyingSpaceProj :
     obtain ⟨v, hv⟩ := (indexedJoin fun _ : ℕ => G).exists_mem_openStarRealization x
     exact ⟨_, ((indexedJoin fun _ : ℕ => G).isOpen_openStarRealization v).mem_nhds hv,
       fun g => eq_one_of_image_smul_openStarRealization_inter_nonempty g v⟩
+
+/-- The classifying space is path-connected, as the image of the path-connected countable join. -/
+instance instPathConnectedSpaceClassifyingSpace : PathConnectedSpace (classifyingSpace G) :=
+  (classifyingSpaceProj_surjective G).pathConnectedSpace (continuous_classifyingSpaceProj G)
+
+/-- The classifying space is locally path-connected, as a quotient of the locally path-connected
+countable join. -/
+instance instLocallyPathConnectedSpaceClassifyingSpace :
+    LocallyPathConnectedSpace (classifyingSpace G) :=
+  (isQuotientMap_classifyingSpaceProj G).locallyPathConnectedSpace
+
+/-- The classifying space is semilocally simply connected, being covered by the simply connected
+countable join. -/
+instance instSemilocallySimplyConnectedSpaceClassifyingSpace :
+    SemilocallySimplyConnectedSpace (classifyingSpace G) :=
+  .of_isCoveringMap (isQuotientCoveringMap_classifyingSpaceProj G).isCoveringMap
+    (classifyingSpaceProj_surjective G)
 
 /-- A continuous map out of the countable join that is invariant under the group action descends
 to a continuous map out of the classifying space. -/

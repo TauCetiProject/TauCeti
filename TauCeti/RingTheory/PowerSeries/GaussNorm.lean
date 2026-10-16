@@ -120,8 +120,11 @@ open scoped Topology
 
 section SeminormedRing
 
-variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
-  {c : ℝ} {f g : PowerSeries R}
+variable {R : Type*} [SeminormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
+
+section Ultrametric
+
+variable [IsUltrametricDist R]
 
 variable (f g) in
 /-- Over an ultrametric ring, each weighted coefficient norm of a sum is at most the larger of the
@@ -173,14 +176,7 @@ theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
                 (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
   exact ⟨_, Set.forall_mem_range.mpr key⟩
 
-end SeminormedRing
-
-variable {R : Type*} [NormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
-
-/-- A restricted power series has bounded weighted coefficient norms. -/
-theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
-    f.HasGaussNorm norm c :=
-  ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
+end Ultrametric
 
 /-- If the weighted coefficient in degree `s` dominates every other one, the Gauss norm is the
 value it takes there. -/
@@ -198,6 +194,17 @@ theorem gaussNorm_le_gaussNorm_of_le {S : Type*} [Semiring S] {v : S → ℝ} {a
   (PowerSeries.gaussNorm_eq v r a).trans_le <| ciSup_le fun n ↦
     (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hrs n) (hv _)).trans
       (PowerSeries.le_gaussNorm v s a ha n)
+
+end SeminormedRing
+
+section NormedRing
+
+variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
+
+/-- A restricted power series has bounded weighted coefficient norms. -/
+theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
+    f.HasGaussNorm norm c :=
+  ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
 
 /-- **The Gauss norm is right continuous in the radius**: for a series restricted at radius `s`,
 if radii `rₙ ∈ [ρ, s]` tend to `ρ > 0`, the Gauss norms at `rₙ` tend to the Gauss norm at `ρ`.
@@ -238,14 +245,15 @@ theorem tendsto_gaussNorm_of_isRestricted {s ρ : ℝ} {r : ℕ → ℝ} (hρ : 
             (pow_le_pow_right₀ ((one_le_div hρ).mpr (hρr n)) hk.le)
             (pow_nonneg (div_nonneg (hρ.le.trans (hρr n)) hρ.le) k) hG
 
+end NormedRing
+
 section Distinguished
 
-variable {R : Type*} [SeminormedRing R] {f : PowerSeries R}
+section SeminormedRing
 
-section
+variable {R : Type*} [SeminormedRing R] {c : ℝ} {s t : ℕ} {f : PowerSeries R}
 
-variable (c) (s) (f)
-
+variable (c) (s) (f) in
 /-- `f` is **distinguished of degree `s`** at the radius `c` when its Gauss norm at `c` is attained
 in degree `s` and every later coefficient is strictly smaller.
 
@@ -266,8 +274,6 @@ structure IsDistinguished : Prop where
   norm_coeff_mul_pow_eq : ‖f.coeff s‖ * c ^ s = f.gaussNorm norm c
   /-- Every coefficient in a degree past `s` is strictly smaller. -/
   norm_coeff_mul_pow_lt : ∀ m, s < m → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c
-
-end
 
 /-- A distinguished series has positive Gauss norm, without any sign assumption on the radius. -/
 theorem IsDistinguished.gaussNorm_pos (hf : IsDistinguished c s f) :
@@ -314,7 +320,11 @@ theorem IsDistinguished.le_of_forall_lt (hf : IsDistinguished c s f)
     (h : ∀ m, t < m → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) : s ≤ t :=
   not_lt.mp fun hts ↦ (h s hts).ne hf.norm_coeff_mul_pow_eq
 
-end Distinguished
+end SeminormedRing
+
+section NormedRing
+
+variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
 
 /-- Every nonzero restricted series is distinguished of some degree: its last coefficient
 attaining the Gauss norm supplies that degree. -/
@@ -351,13 +361,17 @@ theorem exists_isDistinguished (hc : 0 < c) (hf : f.IsRestricted c) (hf0 : f ≠
     exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
   exact (not_le_of_gt hm) (hnmax m hm_mem)
 
+end NormedRing
+
+end Distinguished
+
 /-! ### The lowest dominant degree -/
 
 section LowestDominant
 
-section
+section SeminormedRing
 
-variable {R : Type*} [SeminormedRing R] {f : PowerSeries R}
+variable {R : Type*} [SeminormedRing R] {c : ℝ} {s t : ℕ} {f : PowerSeries R}
 
 variable (c) (s) (f) in
 /-- `s` is the **lowest dominant degree** of `f` at the radius `c` when the Gauss norm of `f` at
@@ -405,7 +419,11 @@ theorem IsLowestDominant.le_of_forall_lt (hf : IsLowestDominant c s f)
     (h : ∀ m, m < t → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) : t ≤ s :=
   not_lt.mp fun hst ↦ (h s hst).ne hf.norm_coeff_mul_pow_eq
 
-end
+end SeminormedRing
+
+section NormedRing
+
+variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
 
 /-- Every nonzero restricted series has a lowest dominant degree at a positive radius: the first
 degree in which its Gauss norm is attained. -/
@@ -417,8 +435,6 @@ theorem exists_isLowestDominant (hc : 0 < c) (hf : f.IsRestricted c) (hf0 : f �
   refine ⟨Nat.find hex, hk.gaussNorm_pos, Nat.find_spec hex, fun m hm ↦ ?_⟩
   exact (PowerSeries.le_gaussNorm norm c f (hasGaussNorm_of_isRestricted hf) m).lt_of_ne
       (Nat.find_min hex hm)
-
-end LowestDominant
 
 /-- A monomial `a Xⁿ` with `a ≠ 0` is distinguished of degree `n` at a positive radius. -/
 theorem isDistinguished_monomial (hc : 0 < c) {a : R} (ha : a ≠ 0) (n : ℕ) :
@@ -436,6 +452,14 @@ theorem isLowestDominant_monomial (hc : 0 < c) {a : R} (ha : a ≠ 0) (n : ℕ) 
   refine ⟨hf.gaussNorm_pos, hf.norm_coeff_mul_pow_eq, fun m hm ↦ ?_⟩
   simp only [PowerSeries.coeff_monomial, hm.ne, ite_false, norm_zero, zero_mul]
   exact hf.gaussNorm_pos
+
+end NormedRing
+
+end LowestDominant
+
+section SeminormedRing
+
+variable {R : Type*} [SeminormedRing R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
 
 /-- A linear polynomial `X - b` whose root lies in the closed disc of radius `c > 0` is
 distinguished of degree `1` at `c`: its Gauss norm `max ‖b‖ c` is `c`, attained by the leading
@@ -465,12 +489,6 @@ theorem isLowestDominant_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖
   obtain rfl : m = 0 := by omega
   simpa [hnorm] using hb
 
-section Truncation
-
-section
-
-variable {R : Type*} [SeminormedRing R] {f : PowerSeries R}
-
 /-- Truncating a series just past a degree in which its Gauss norm is attained leaves that norm
 unchanged. -/
 @[simp] theorem IsDistinguished.gaussNorm_trunc (hf : IsDistinguished c s f) :
@@ -498,7 +516,11 @@ theorem IsDistinguished.trunc (hf : IsDistinguished c s f) :
       ite_eq_right (by omega : ¬ m < s + 1), norm_zero, zero_mul, hf.gaussNorm_trunc]
       using hf.gaussNorm_pos
 
-end
+end SeminormedRing
+
+section NormedRing
+
+variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
 
 /-- The tail `f⁺` left by truncating a restricted distinguished series just past its
 distinguished degree has strictly smaller Gauss norm than the series itself. This is the
@@ -525,11 +547,11 @@ theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc 
     rw [← hn.norm_coeff_mul_pow_eq, hcoeff n, ite_eq_right (by omega)]
     exact hf.norm_coeff_mul_pow_lt n hns
 
-end Truncation
+end NormedRing
 
 section Recognition
 
-variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {f : PowerSeries R}
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
 
 /-- **Recognising a distinguished series.** At a positive radius, `f` is distinguished of degree
 `s` once its weighted coefficient in degree `s` is closer than the Gauss norm to an element `a`
@@ -549,9 +571,8 @@ end Recognition
 
 section Summation
 
-section
-
-variable [CompleteSpace R] {ι : Type*} {a : ι → PowerSeries R}
+variable {R : Type*} [NormedRing R] [CompleteSpace R] {c : ℝ}
+  {ι : Type*} {a : ι → PowerSeries R}
 
 /-- Over a complete ring, a family of power series with summable Gauss norms has summable
 coefficients in every degree. -/
@@ -563,9 +584,7 @@ theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c)
   rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
   exact PowerSeries.le_gaussNorm norm c _ (ha k) i
 
-end
-
-variable [IsUltrametricDist R] [CompleteSpace R] {ι : Type*} {a : ι → PowerSeries R}
+variable [IsUltrametricDist R]
 
 /-- **Coefficientwise summation of restricted power series.** Over a complete nonarchimedean
 ring, the degreewise sums of a family of restricted power series with summable Gauss norms
@@ -614,11 +633,11 @@ theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted 
 
 end Summation
 
-variable [IsUltrametricDist R]
+section SeminormedRing
+
+variable {R : Type*} [SeminormedRing R] {c : ℝ} {i j : ℕ} {f g : PowerSeries R}
 
 section Multiplication
-
-variable {R : Type*} [SeminormedRing R] {f g : PowerSeries R}
 
 section
 
@@ -769,6 +788,10 @@ theorem IsLowestDominant.mul (hf : IsLowestDominant c i f) (hg : IsLowestDominan
       fun m₁ m₂ hsum ↦ hf.norm_coeff_mul_mul_pow_lt hg hc hbf hbg (by omega)⟩
 
 end Multiplication
+
+end SeminormedRing
+
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {c : ℝ} {f g : PowerSeries R}
 
 /-- The Gauss norm is multiplicative on restricted power series at every positive radius. -/
 theorem gaussNorm_mul_of_isRestricted [NormMulClass R] (hc : 0 < c) (hf : f.IsRestricted c)

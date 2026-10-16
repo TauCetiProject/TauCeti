@@ -92,7 +92,7 @@ theorem ae_injective_vertexNoise :
   · exact Filter.Eventually.of_forall fun _ _ => hij
   · exact (ae_vertexNoise_ne_of_ne hij).mono fun _ hne heq => (hne heq).elim
 
-variable {α : Type*} [MeasurableSpace α]
+variable {α : Type*}
 
 /-- Orient a pair-valued cell coder by its two continuous vertex marks.  The output is ordered in
 the same way as the input marks: when they arrive in decreasing order, both the inputs and the two
@@ -100,21 +100,18 @@ output coordinates are swapped. -/
 def orientPairCoding (g : I → I → I → I → α × α) (z a b t : I) : α × α :=
   if a ≤ b then g z a b t else (g z b a t).swap
 
-omit [MeasurableSpace α] in
 /-- With increasing vertex marks, the oriented pair coder reads the supplied coder directly. -/
 @[simp]
 theorem orientPairCoding_of_le (g : I → I → I → I → α × α) (z a b t : I) (hab : a ≤ b) :
     orientPairCoding g z a b t = g z a b t := by
   simp [orientPairCoding, hab]
 
-omit [MeasurableSpace α] in
 /-- With decreasing vertex marks, the oriented pair coder swaps both inputs and outputs. -/
 @[simp]
 theorem orientPairCoding_of_lt (g : I → I → I → I → α × α) (z a b t : I) (hba : b < a) :
     orientPairCoding g z a b t = (g z b a t).swap := by
   simp [orientPairCoding, not_le_of_gt hba]
 
-omit [MeasurableSpace α] in
 /-- Reversing two distinct vertex marks swaps the output of the oriented pair coder. -/
 theorem orientPairCoding_swap (g : I → I → I → I → α × α) (z t : I) {a b : I}
     (hab : a ≠ b) : orientPairCoding g z b a t = (orientPairCoding g z a b t).swap := by
@@ -123,7 +120,7 @@ theorem orientPairCoding_swap (g : I → I → I → I → α × α) (z t : I) {
   · simp [orientPairCoding, hba.le, not_le_of_gt hba]
 
 /-- A measurable pair-valued coder remains measurable after orientation by its vertex marks. -/
-theorem measurable_orientPairCoding {g : I → I → I → I → α × α}
+theorem measurable_orientPairCoding [MeasurableSpace α] {g : I → I → I → I → α × α}
     (hg : Measurable fun q : I × I × I × I => g q.1 q.2.1 q.2.2.1 q.2.2.2) :
     Measurable fun q : I × I × I × I =>
       orientPairCoding g q.1 q.2.1 q.2.2.1 q.2.2.2 := by
@@ -142,7 +139,6 @@ def assembleJointCoding (d : I → I → α) (g : I → I → I → I → α × 
   if q.2.1 = q.2.2.1 then d q.1 q.2.1
   else (orientPairCoding g q.1 q.2.1 q.2.2.1 q.2.2.2).1
 
-omit [MeasurableSpace α] in
 /-- On the diagonal, the assembled coding reads the designated diagonal coder and ignores the cell
 variable. -/
 @[simp]
@@ -150,7 +146,6 @@ theorem assembleJointCoding_diag (d : I → I → α) (g : I → I → I → I �
     (z a t : I) : assembleJointCoding d g (z, a, a, t) = d z a := by
   simp [assembleJointCoding]
 
-omit [MeasurableSpace α] in
 /-- At two distinct vertex marks, opposite orientations of the assembled scalar coding are the two
 coordinates of one oriented pair output. -/
 theorem assembleJointCoding_pair (d : I → I → α) (g : I → I → I → I → α × α)
@@ -163,7 +158,8 @@ theorem assembleJointCoding_pair (d : I → I → α) (g : I → I → I → I �
   exact Prod.eta _
 
 /-- The scalar joint coding assembled from measurable diagonal and pair coders is measurable. -/
-theorem measurable_assembleJointCoding {d : I → I → α} {g : I → I → I → I → α × α}
+theorem measurable_assembleJointCoding [MeasurableSpace α] {d : I → I → α}
+    {g : I → I → I → I → α × α}
     (hd : Measurable (Function.uncurry d))
     (hg : Measurable fun q : I × I × I × I => g q.1 q.2.1 q.2.2.1 q.2.2.2) :
     Measurable (assembleJointCoding d g) := by
@@ -174,7 +170,6 @@ theorem measurable_assembleJointCoding {d : I → I → α} {g : I → I → I �
       (measurable_fst.comp measurable_snd))
   · exact measurable_fst.comp (measurable_orientPairCoding hg)
 
-omit [MeasurableSpace α] in
 /-- For distinct vertex-noise coordinates, a `jointArray` built from `assembleJointCoding` reads
 one oriented pair output at the two opposite directed positions. -/
 theorem jointArray_assembleJointCoding_pair (d : I → I → α)
