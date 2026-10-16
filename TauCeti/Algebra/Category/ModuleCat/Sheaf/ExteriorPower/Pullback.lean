@@ -281,6 +281,14 @@ def pullbackExteriorPowerComparison (n : ℕ) :
     _root_.SheafOfModules.exteriorPower S n ⋙ G ⟶ G ⋙ _root_.SheafOfModules.exteriorPower R n :=
   (mateEquiv adj adj).symm (pushforwardExteriorPowerComparison φ n)
 
+/-- The mate of the exterior-power pullback comparison is the sectionwise pushforward
+comparison. -/
+-- Not a simp lemma: `mateEquiv_apply` expands its left-hand side first.
+theorem mateEquiv_pullbackExteriorPowerComparison (n : ℕ) :
+    mateEquiv adj adj (pullbackExteriorPowerComparison adj n) =
+      pushforwardExteriorPowerComparison φ n :=
+  Equiv.apply_symm_apply _ _
+
 /-- The adjunction equation characterizing the pullback comparison. -/
 @[reassoc (attr := simp)]
 theorem unit_comp_pushforward_pullbackExteriorPowerComparison (n : ℕ)
