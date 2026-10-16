@@ -142,9 +142,8 @@ example :
   constructor
   · rw [map_nsmul]
     rw [jointFiniteProjection_dirac]
-    simp only [Nat.reducePow, Fin.isValue, id_apply, Finsupp.smul_single, nsmul_eq_mul,
-      Nat.cast_ofNat, mul_one, Finsupp.single_eq_same]
-    exact ZMod.natCast_self 2
+    norm_num
+    decide
   · rw [map_nsmul]
     rw [jointFiniteProjection_dirac]
     norm_num
