@@ -90,35 +90,6 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
   {mS : TwistingCocycle 𝒜 d S indS}
 
-section Vanishing
-
-omit [GradedAlgebra 𝒜] in
-/-- Over an algebra concentrated in cohomological degrees `≤ 0`, a continuation cocycle has no
-entries strictly increasing the index: `ν x y` has degree `indQ y - ind x`. -/
-theorem ν_eq_zero_of_lt_of_nonpos (ν : ContinuationCocycle mP mQ) (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥)
-    {x : P} {y : Q} (hxy : ind x < indQ y) : ν.ν x y = 0 := by
-  have hν := ν.mem_graded x y
-  rw [h𝒜 _ (by omega)] at hν
-  exact (Submodule.mem_bot R).1 hν
-
-/-- The Kronecker continuation cocycle has no entries strictly increasing the index. -/
-theorem refl_ν_eq_zero_of_lt [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycle 𝒜 d P ind)
-    {x y : P} (hxy : ind x < ind y) : (refl hd m).ν x y = 0 := by
-  rw [refl_ν, Matrix.one_apply_ne fun hxy' ↦ (hxy' ▸ hxy).false]
-
-/-- A composite of continuation cocycles with no entries strictly increasing the index has no
-such entries. -/
-theorem comp_ν_eq_zero_of_lt (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mS)
-    (hν₁ : ∀ x y, ind x < indQ y → ν₁.ν x y = 0) (hν₂ : ∀ x y, indQ x < indS y → ν₂.ν x y = 0)
-    {x : P} {y : S} (hxy : ind x < indS y) : (ν₁.comp h ν₂).ν x y = 0 := by
-  rw [comp_ν, Matrix.mul_apply]
-  refine Finset.sum_eq_zero fun z _ ↦ ?_
-  rcases lt_or_ge (ind x) (indQ z) with hz | hz
-  · rw [Matrix.of_apply, hν₁ x z hz, zero_mul]
-  · rw [Matrix.of_apply, Matrix.of_apply, hν₂ z y (hz.trans_lt hxy), mul_zero]
-
-end Vanishing
-
 variable (hM : IsDGRightModule h ℳ dM)
 
 /-- A continuation cocycle with no entries strictly increasing the index sends each piece of the
@@ -127,7 +98,7 @@ theorem factors_twistedIndexSubobject (ν : ContinuationCocycle mP mQ)
     (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) (p : ℤ) :
     (mQ.twistedIndexSubobject hM p).Factors
       ((mP.twistedIndexSubobject hM p).arrow ≫ ν.continuationHom hM) := by
-  refine HomologicalComplex.factors_of_forall_mem_range _ _ fun n x ↦ ?_
+  refine Subobject.factors_of_forall_mem_range _ _ fun n x ↦ ?_
   rw [mQ.mem_range_twistedIndexSubobject_arrow_f_iff, HomologicalComplex.comp_f,
     ModuleCat.hom_comp, LinearMap.comp_apply, continuationHom_f_apply]
   refine (mem_twistedIndexFiltration_iff _).1

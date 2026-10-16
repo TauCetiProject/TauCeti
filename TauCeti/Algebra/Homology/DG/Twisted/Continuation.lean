@@ -367,6 +367,14 @@ theorem ext {ν₁ ν₂ : ContinuationCocycle mP mQ} (h : ∀ x y, ν₁.ν x y
   obtain rfl : ν₁ = ν₂ := funext fun x ↦ funext fun y ↦ h x y
   rfl
 
+/-- Over an algebra concentrated in cohomological degrees `≤ 0`, a continuation cocycle has no
+entries strictly increasing the index: `ν x y` has degree `indQ y - ind x`. -/
+theorem ν_eq_zero_of_lt_of_nonpos (ν : ContinuationCocycle mP mQ) (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥)
+    {x : P} {y : Q} (hxy : ind x < indQ y) : ν.ν x y = 0 := by
+  have hν := ν.mem_graded x y
+  rw [h𝒜 _ (by omega)] at hν
+  exact (Submodule.mem_bot R).1 hν
+
 variable [GradedAlgebra 𝒜]
 
 /-- The Kronecker matrix, as a continuation cocycle from `m` to itself, for a differential with
@@ -421,6 +429,23 @@ theorem comp_assoc {T : Type uT} {indT : T → ℤ} [Fintype T] {mT : TwistingCo
   rw [comp_ν, comp_ν, comp_ν, comp_ν]
   exact congrFun (congrFun
     (Matrix.mul_assoc (Matrix.of ν₁.ν) (Matrix.of ν₂.ν) (Matrix.of ν₃.ν)) x) y
+
+/-- The Kronecker continuation cocycle has no entries strictly increasing the index. -/
+theorem refl_ν_eq_zero_of_lt [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycle 𝒜 d P ind)
+    {x y : P} (hxy : ind x < ind y) : (refl hd m).ν x y = 0 := by
+  rw [refl_ν, Matrix.one_apply_ne fun hxy' ↦ (hxy' ▸ hxy).false]
+
+/-- A composite of continuation cocycles with no entries strictly increasing the index has no
+such entries. -/
+theorem comp_ν_eq_zero_of_lt (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
+    (ν₂ : ContinuationCocycle mQ mS) (hν₁ : ∀ x y, ind x < indQ y → ν₁.ν x y = 0)
+    (hν₂ : ∀ x y, indQ x < indS y → ν₂.ν x y = 0) {x : P} {y : S} (hxy : ind x < indS y) :
+    (ν₁.comp h ν₂).ν x y = 0 := by
+  rw [comp_ν, Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun z _ ↦ ?_
+  rcases lt_or_ge (ind x) (indQ z) with hz | hz
+  · rw [Matrix.of_apply, hν₁ x z hz, zero_mul]
+  · rw [Matrix.of_apply, Matrix.of_apply, hν₂ z y (hz.trans_lt hxy), mul_zero]
 
 variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
   {ℳ : ℤ → Submodule R M}

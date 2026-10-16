@@ -76,32 +76,6 @@ section FiltrationMap
 variable {K L N : CochainComplex C ℤ} {F : ℤ → Subobject K} {hF : Monotone F}
   {G : ℤ → Subobject L} {hG : Monotone G} {H : ℤ → Subobject N} {hH : Monotone H}
 
-/-- A morphism of complexes sending each piece of a filtration into the corresponding piece of
-another one does so for the extensions of the filtrations to `EInt`. -/
-lemma factors_filtrationEInt (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f))
-    (a : EInt) : (filtrationEInt G a).Factors ((filtrationEInt F a).arrow ≫ f) := by
-  induction a using WithBotTop.rec with
-  | bot =>
-    rw [filtrationEInt_bot, filtrationEInt_bot, Subobject.bot_factors_iff_zero,
-      Subobject.bot_arrow, zero_comp]
-  | coe n =>
-    rw [filtrationEInt_coe G n, filtrationEInt_coe F n]
-    exact hf n
-  | top =>
-    simpa only [filtrationEInt_top] using
-      Subobject.top_factors ((filtrationEInt F (⊤ : EInt)).arrow ≫ f)
-
-/-- The inclusion of the object at `a` of the functor of a filtration into the filtered
-complex. -/
-private noncomputable abbrev filtrationι (F : ℤ → Subobject K) (hF : Monotone F) (a : EInt) :
-    (filtrationFunctor F hF).obj a ⟶ K :=
-  (filtrationFunctorObjIso F hF a).hom ≫ (filtrationEInt F a).arrow
-
-private lemma map_comp_ι {a b : EInt} (g : a ⟶ b) :
-    (filtrationFunctor F hF).map g ≫ filtrationι F hF b = filtrationι F hF a := by
-  rw [← Category.assoc, filtrationFunctor_map_comp_objIso_hom, Category.assoc,
-    Subobject.ofLE_arrow]
-
 variable (hF hG) in
 /-- **The morphism of filtration functors induced by a morphism of filtered complexes**: a
 morphism `f : K ⟶ L` sending each piece `F n` into `G n` restricts to morphisms
@@ -112,9 +86,10 @@ noncomputable def filtrationFunctorMap (f : K ⟶ L) (hf : ∀ n, (G n).Factors 
     (filtrationEInt G a).factorThru _ (factors_filtrationEInt f hf a) ≫
       (filtrationFunctorObjIso G hG a).inv
   naturality a b g := by
-    rw [← cancel_mono (filtrationι G hG b), Category.assoc _ ((filtrationFunctor G hG).map g),
-      map_comp_ι]
-    simp only [filtrationι, Category.assoc, Iso.inv_hom_id_assoc, Subobject.factorThru_arrow]
+    rw [← cancel_mono (filtrationFunctorArrow G hG b),
+      Category.assoc _ ((filtrationFunctor G hG).map g), filtrationFunctor_map_comp_arrow]
+    simp only [filtrationFunctorArrow, Category.assoc, Iso.inv_hom_id_assoc,
+      Subobject.factorThru_arrow]
     rw [← Category.assoc, filtrationFunctor_map_comp_objIso_hom, Category.assoc,
       ← Category.assoc _ _ f, Subobject.ofLE_arrow]
 
@@ -139,7 +114,8 @@ lemma filtrationFunctorMap_congr {f f' : K ⟶ L} (e : f = f')
 lemma filtrationFunctorMap_id (hf : ∀ n, (F n).Factors ((F n).arrow ≫ 𝟙 K)) :
     filtrationFunctorMap hF hF (𝟙 K) hf = 𝟙 _ := by
   ext a : 2
-  rw [← cancel_mono (filtrationι F hF a), filtrationι, filtrationFunctorMap_app_comp,
+  rw [← cancel_mono (filtrationFunctorArrow F hF a), filtrationFunctorArrow,
+    filtrationFunctorMap_app_comp,
     NatTrans.id_app, Category.id_comp, Category.comp_id]
 
 /-- A composite of morphisms of filtered complexes induces the composite of the morphisms of
@@ -151,7 +127,8 @@ lemma filtrationFunctorMap_comp (f : K ⟶ L) (g : L ⟶ N)
     filtrationFunctorMap hF hH (f ≫ g) hfg =
       filtrationFunctorMap hF hG f hf ≫ filtrationFunctorMap hG hH g hg := by
   ext a : 2
-  rw [← cancel_mono (filtrationι H hH a), filtrationι, filtrationFunctorMap_app_comp,
+  rw [← cancel_mono (filtrationFunctorArrow H hH a), filtrationFunctorArrow,
+    filtrationFunctorMap_app_comp,
     NatTrans.comp_app, Category.assoc, filtrationFunctorMap_app_comp,
     filtrationFunctorMap_app_comp_assoc]
 
