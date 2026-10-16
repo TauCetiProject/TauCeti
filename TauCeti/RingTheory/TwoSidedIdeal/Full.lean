@@ -59,10 +59,7 @@ theorem span_eq_top_iff_forall_span_image_eval_eq_top {ι : Type*} [Finite ι] {
       refine TauCeti.TwoSidedIdeal.coe_span_subset_addSubgroup_iff.mpr ?_
       rintro a _ ⟨x, hx, rfl⟩ b
       have heq : (Pi.single i (a * x i * b) : ∀ j, A j) = Pi.single i a * x * Pi.single i b := by
-        ext j
-        rcases eq_or_ne j i with rfl | hj
-        · simp
-        · simp [hj]
+        rw [Pi.single_mul, Pi.single_mul_left]
       simp only [H, AddSubgroup.mem_comap, AddMonoidHom.single_apply, Submodule.mem_toAddSubgroup,
         mem_asIdeal, heq]
       exact mul_mem_right _ _ _ (mul_mem_left _ _ _ (subset_span hx))
