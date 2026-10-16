@@ -378,9 +378,7 @@ private theorem exists_mk_eq_artinMap_and_apply_eq {v : HeightOneSpectrum (𝓞 
   -- The elements on which `χ` takes the value `χ(x₀)` form a coset of the open kernel of `χ`.
   let T : Set (AbsoluteGaloisGroup K) := {x | χ (.ofMul x) = χ (.ofMul x₀)}
   have hT : T = (fun x ↦ Additive.ofMul (x₀⁻¹ * x)) ⁻¹' χ.ker := Set.ext fun x ↦ by
-    rw [Set.mem_preimage, SetLike.mem_coe, AddMonoidHom.mem_ker, ofMul_mul, ofMul_inv, map_add,
-      map_neg, neg_add_eq_zero]
-    exact eq_comm
+    simp [T, neg_add_eq_sub, sub_eq_zero]
   have hS : IsOpen (ψ ⁻¹' T) := by
     rw [hT]
     exact hχ.preimage (continuous_ofMul.comp (continuous_const.mul

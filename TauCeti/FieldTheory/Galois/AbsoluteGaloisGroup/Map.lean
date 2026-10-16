@@ -130,8 +130,8 @@ theorem _root_.AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq {A : Type*} [Add
     (g : AbsoluteGaloisGroup L) :
     f (.ofMul (absoluteGaloisGroupMap τ' g)) = f (.ofMul (absoluteGaloisGroupMap τ g)) := by
   obtain ⟨h, rfl⟩ := τ.exists_comp_eq_of_normal τ'
-  rw [absoluteGaloisGroupMap_comp, ofMul_mul, ofMul_mul, map_add, map_add, ofMul_inv, map_neg,
-    add_right_comm, neg_add_cancel, zero_add]
+  simp only [absoluteGaloisGroupMap_comp, ofMul_mul, ofMul_inv, map_add, map_neg]
+  abel
 
 /-- **The maps are compatible with composition of extensions** `K → L → M`: if `τ'' : Kˢ → Mˢ`
 is the composite of `τ : Kˢ → Lˢ` and `τ' : Lˢ → Mˢ`, the map `G_M → G_K` along `τ''` is the
