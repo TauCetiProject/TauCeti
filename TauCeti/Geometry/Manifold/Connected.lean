@@ -31,8 +31,9 @@ model space `E` itself; no smoothness of the transition maps is needed.
   arbitrarily small neighbourhoods whose punctured versions are connected.
 * `TauCeti.isPreconnected_compl_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from
   a preconnected manifold leaves it preconnected.
-* `TauCeti.isConnected_compl_of_finite_of_one_lt_rank`: removing a finite set from a connected
-  manifold leaves it connected.
+* `TauCeti.isConnected_compl_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from a
+  connected manifold leaves it connected.
+* `TauCeti.isConnected_compl_of_finite_of_one_lt_rank`: the special case of a finite set.
 -/
 
 public section
@@ -78,19 +79,29 @@ theorem isPreconnected_compl_of_isDiscrete_of_one_lt_rank [PreconnectedSpace X]
   isPreconnected_compl_of_isDiscrete hs hd fun x _ _ hU ↦
     exists_mem_nhds_subset_isConnected_sdiff_singleton h x hU
 
-/-- **Removing a finite set from a connected manifold leaves it connected**, when the model is a
-real normed space of dimension greater than one. -/
-theorem isConnected_compl_of_finite_of_one_lt_rank [ConnectedSpace X] (h : 1 < Module.rank ℝ E)
-    {s : Set X} (hs : s.Finite) : IsConnected sᶜ := by
-  have := ChartedSpace.t1Space E X
-  refine ⟨?_, isPreconnected_compl_of_isDiscrete_of_one_lt_rank h hs.isClosed hs.isDiscrete⟩
+/-- **Removing a closed discrete set from a connected manifold leaves it connected**, when the
+model is a real normed space of dimension greater than one. -/
+theorem isConnected_compl_of_isDiscrete_of_one_lt_rank [ConnectedSpace X]
+    (h : 1 < Module.rank ℝ E) {s : Set X} (hs : IsClosed s) (hd : IsDiscrete s) :
+    IsConnected sᶜ := by
+  refine ⟨?_, isPreconnected_compl_of_isDiscrete_of_one_lt_rank h hs hd⟩
   obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
   by_cases hx : x ∈ s
   · -- A punctured neighbourhood of `x` avoiding the rest of `s` supplies a point off `s`.
-    have hU : (s \ {x})ᶜ ∈ 𝓝 x := (hs.sdiff).isClosed.isOpen_compl.mem_nhds fun h ↦ h.2 rfl
-    obtain ⟨V, -, hVU, hc⟩ := exists_mem_nhds_subset_isConnected_sdiff_singleton h x hU
+    obtain ⟨u, hu, hus⟩ := isDiscrete_iff_forall_mem_exists_isOpen.1 hd x hx
+    have hxu : x ∈ u := (hus.symm ▸ mem_singleton x : x ∈ u ∩ s).1
+    obtain ⟨V, -, hVu, hc⟩ := exists_mem_nhds_subset_isConnected_sdiff_singleton h x
+      (hu.mem_nhds hxu)
     obtain ⟨z, hz⟩ := hc.nonempty
-    exact ⟨z, fun hzs ↦ hVU hz.1 ⟨hzs, hz.2⟩⟩
+    refine ⟨z, fun hzs ↦ hz.2 ?_⟩
+    simpa [← hus] using And.intro (hVu hz.1) hzs
   · exact ⟨x, hx⟩
+
+/-- **Removing a finite set from a connected manifold leaves it connected**, when the model is a
+real normed space of dimension greater than one. -/
+theorem isConnected_compl_of_finite_of_one_lt_rank [ConnectedSpace X] (h : 1 < Module.rank ℝ E)
+    {s : Set X} (hs : s.Finite) : IsConnected sᶜ :=
+  have := ChartedSpace.t1Space E X
+  isConnected_compl_of_isDiscrete_of_one_lt_rank h hs.isClosed hs.isDiscrete
 
 end TauCeti
