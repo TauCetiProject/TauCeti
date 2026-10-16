@@ -20,6 +20,9 @@ when two is not a unit. Each summand comes with a two-element basis, so this is 
 of the actual module, not just an equality of ranks. In
 particular its rank is even. The empty decomposition covers the zero module.
 
+An isotropic vector pairing to `1` with a vector of even norm completes to a hyperbolic pair
+(`LinearMap.BilinForm.IsSymm.exists_hyperbolic_of_apply_self_eq_zero`).
+
 These binary constituents are the inputs to the classification of even unimodular dyadic
 lattices. No inverse of two, domain hypothesis, or completeness assumption is used here.
 
@@ -40,6 +43,18 @@ public section
 namespace LinearMap.BilinForm
 
 open Module
+
+/-- An isotropic vector `u` with `B u w = 1` completes to a hyperbolic pair when `B w w` is even:
+subtract `d • u` from `w` when `B w w = 2 * d`. -/
+theorem IsSymm.exists_hyperbolic_of_apply_self_eq_zero {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] {B : LinearMap.BilinForm R M} (hB : B.IsSymm) {u w : M} {d : R}
+    (hu : B u u = 0) (huw : B u w = 1) (hw : B w w = 2 * d) :
+    ∃ e f : M, B e f = 1 ∧ B e e = 0 ∧ B f f = 0 := by
+  refine ⟨u, w - d • u, ?_, hu, ?_⟩
+  · simp [hu, huw]
+  · simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, hu,
+      huw, hw, hB.eq w u]
+    ring
 
 variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
   (B : LinearMap.BilinForm R M) [B.IsPerfPair]
