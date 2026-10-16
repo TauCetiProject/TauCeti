@@ -89,6 +89,8 @@ private theorem macbeathHom_comp_macbeathMap {U V : Set X}
 
 /-! ### The thickening of a closed set with locally finite translates -/
 
+section Metric
+
 variable [PseudoMetricSpace X] [IsIsometricSMul G X] {P : Set X}
 
 /-- Around each point `z` there is a ball such that every translate of `P` meeting it
@@ -226,20 +228,72 @@ private theorem exists_macbeathCongr [LocallyPathConnectedSpace X] (hPc : IsClos
       (PresentedGroup.ext fun s ↦ by simp [macbeathMap_of]),
     macbeathHom_comp_macbeathMap hgen.subset fun s u ↦ (hrel s u).1⟩
 
+end Metric
+
+section Topological
+
+variable [TopologicalSpace X] [ContinuousConstSMul G X] {P : Set X}
+
 /-- **The Macbeath generators of a tile generate the group.** If the translates of a closed set
-`P` are locally finite and cover a connected metric space on which `G` acts isometrically, then
-the elements `g` with `g • P` meeting `P` generate `G`. -/
+`P` are locally finite and cover a connected topological space on which `G` acts continuously,
+then the elements `g` with `g • P` meeting `P` generate `G`. -/
 theorem macbeathHom_surjective_of_locallyFinite [ConnectedSpace X]
     (hPc : IsClosed P) (hlf : LocallyFinite fun g : G ↦ g • P)
     (hcover : ⋃ g : G, g • P = univ) : Surjective (macbeathHom G P) := by
-  obtain ⟨U, hUo, hPU, hgen⟩ :=
-    exists_isOpen_superset_macbeathGenerators_of_locallyFinite hPc hlf
-  have hUcover : ⋃ g : G, g • U = univ :=
-    eq_univ_of_univ_subset (hcover ▸ iUnion_mono fun g ↦ smul_set_mono hPU)
+  let H := Subgroup.closure (macbeathGenerators G P)
+  let A := ⋃ h : H, (h : G) • P
+  let B := ⋃ g : {g : G // g ∉ H}, (g : G) • P
+  have hmem {h g : G} (hh : h ∈ H) (hinter : (h • P ∩ g • P).Nonempty) : g ∈ H := by
+    obtain ⟨x, hxh, hxg⟩ := hinter
+    have hgen : h⁻¹ * g ∈ macbeathGenerators G P := by
+      rw [mem_macbeathGenerators]
+      exact ⟨h⁻¹ • x, mem_smul_set_iff_inv_smul_mem.1 hxh, by
+        rw [mul_smul]
+        exact smul_mem_smul_set hxg⟩
+    simpa using H.mul_mem hh (Subgroup.subset_closure hgen)
+  have hAlf : LocallyFinite fun h : H ↦ (h : G) • P := by
+    simpa [Function.comp_def] using hlf.comp_injective (g := fun h : H ↦ (h : G))
+      Subtype.val_injective
+  have hBlf : LocallyFinite fun g : {g : G // g ∉ H} ↦ (g : G) • P := by
+    simpa [Function.comp_def] using
+      hlf.comp_injective (g := fun g : {g : G // g ∉ H} ↦ (g : G)) Subtype.val_injective
+  have hAc : IsClosed A := hAlf.isClosed_iUnion fun h ↦ hPc.smul (h : G)
+  have hBc : IsClosed B := hBlf.isClosed_iUnion fun g ↦ hPc.smul (g : G)
+  have hAB : Aᶜ = B := by
+    ext x
+    simp only [mem_compl_iff]
+    constructor
+    · intro hx
+      obtain ⟨g, hxg⟩ := mem_iUnion.1 (hcover ▸ mem_univ x)
+      have hg : g ∉ H := fun hg ↦ hx (mem_iUnion.2 ⟨⟨g, hg⟩, hxg⟩)
+      exact mem_iUnion.2 ⟨⟨g, hg⟩, hxg⟩
+    · intro hx hxA
+      obtain ⟨g, hxg⟩ := mem_iUnion.1 hx
+      obtain ⟨h, hxh⟩ := mem_iUnion.1 hxA
+      exact g.2 (hmem h.2 ⟨x, hxh, hxg⟩)
+  have hAo : IsOpen A := by
+    rw [← isClosed_compl_iff, hAB]
+    exact hBc
+  have hP : P.Nonempty := by
+    obtain ⟨g, hg⟩ := mem_iUnion.1 (hcover ▸ mem_univ (Classical.arbitrary X))
+    exact smul_set_nonempty.1 ⟨_, hg⟩
+  have hAne : A.Nonempty := by
+    obtain ⟨x, hx⟩ := hP
+    exact ⟨x, mem_iUnion.2 ⟨⟨1, H.one_mem⟩, by simpa⟩⟩
+  have hA : A = univ := IsClopen.eq_univ ⟨hAc, hAo⟩ hAne
   rw [← MonoidHom.range_eq_top, range_macbeathHom]
+  change H = ⊤
   apply top_unique
-  rw [← closure_macbeathGenerators_eq_top hUo hUcover]
-  exact Subgroup.closure_mono hgen
+  intro g _
+  obtain ⟨x, hxg⟩ := hP.smul_set (a := g)
+  obtain ⟨h, hxh⟩ := mem_iUnion.1 (hA ▸ mem_univ x)
+  exact hmem h.2 ⟨x, hxh, hxg⟩
+
+end Topological
+
+section Metric
+
+variable [PseudoMetricSpace X] [IsIsometricSMul G X] {P : Set X}
 
 /-- **Macbeath's theorem for a tile.** If the translates of a closed path-connected set `P` are
 locally finite and cover a simply connected, locally path-connected metric space on which `G`
@@ -265,5 +319,7 @@ theorem ker_lift_eq_normalClosure_macbeathRels_of_locallyFinite [LocallyPathConn
   rw [MonoidHom.mem_ker, ← macbeathHom_mk,
     (injective_iff_map_eq_one' _).1 (macbeathHom_injective_of_locallyFinite hPc hP hlf hcover),
     PresentedGroup.mk_eq_one_iff]
+
+end Metric
 
 end TauCeti
