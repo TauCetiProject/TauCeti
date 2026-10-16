@@ -109,12 +109,11 @@ theorem comp_lineMap {γ : ℝ → X} {a b : ℝ}
   have hmap : MapsTo (AffineMap.lineMap a b) (uIcc (0 : ℝ) 1) (uIcc a b) := by
     rw [mapsTo_iff_image_subset, uIcc_of_le zero_le_one,
       ← segment_eq_image_lineMap, segment_eq_uIcc]
-  rcases le_total a b with hab | hab
-  · exact hγ.comp_monotoneOn
-      ((lipschitzWith_lineMap a b).lipschitzOnWith.absolutelyContinuousOnInterval)
-      ((AffineMap.lineMap_mono hab).monotoneOn _) hmap
-  · exact hγ.comp_antitoneOn
-      ((lipschitzWith_lineMap a b).lipschitzOnWith.absolutelyContinuousOnInterval)
-      ((AffineMap.lineMap_anti hab).antitoneOn _) hmap
+  have he : (AffineMap.lineMap a b : ℝ → ℝ) = fun t ↦ (b - a) * t + a := by
+    funext t
+    simp only [AffineMap.lineMap_apply, smul_eq_mul, vsub_eq_sub, vadd_eq_add]
+    ring
+  rw [he] at hmap ⊢
+  exact hγ.comp_affine (b - a) a hmap
 
 end AbsolutelyContinuousOnInterval
