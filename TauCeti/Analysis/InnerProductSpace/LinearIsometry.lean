@@ -55,6 +55,8 @@ sections and product integration.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement`: a linear isometry equals the
   extension if it agrees on the unit vector and its orthogonal complement.
+* `LinearIsometryEquiv.eq_refl_or_eq_neg`: the only real linear isometry equivalences of `ℝ`
+  are the identity and negation.
 -/
 
 public section
@@ -210,6 +212,17 @@ theorem eq_extendOrthogonalComplement
   · intro v
     simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
       extendOrthogonalComplement_apply_coe] using hf v
+
+/-- The only real linear isometry equivalences of the real line are the identity and negation. -/
+theorem eq_refl_or_eq_neg (A : ℝ ≃ₗᵢ[ℝ] ℝ) : A = .refl ℝ ℝ ∨ A = .neg ℝ := by
+  have hsq : (A 1) ^ 2 = 1 := by
+    simpa only [RCLike.inner_apply, conj_trivial, mul_one, one_mul, pow_two]
+      using A.inner_map_map (1 : ℝ) 1
+  -- By linearity, `A` is multiplication by `A 1`.
+  have hA (x : ℝ) : A x = x * A 1 := by simpa using _root_.map_smul A x (1 : ℝ)
+  rcases sq_eq_one_iff.mp hsq with h | h
+  · exact .inl (ext fun x ↦ by simp [hA x, h])
+  · exact .inr (ext fun x ↦ by simp [hA x, h])
 
 end LinearIsometryEquiv
 

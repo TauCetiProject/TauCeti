@@ -66,7 +66,8 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Rep
       ∃ θ : V →ₗ[k] V, ∀ v, δ v = (p : k) • θ v := by
     have hker : δ ∈ RingHom.ker (Ideal.endMapQ (Ideal.span {algebraMap k k (p : k)}) V) :=
       (Ideal.mem_ker_endMapQ_iff _ _).2 fun _ ⟨v, hv⟩ ↦ hv ▸
-        (Submodule.mem_span_algebraMap_smul_top_iff (p : k)).2 (hred_eq_zero _ (hδ v))
+        (Submodule.mem_span_algebraMap_smul_iff ⊤ (p : k)).2
+          (by simpa only [Submodule.mem_top, true_and] using hred_eq_zero _ (hδ v))
     obtain ⟨θ, rfl⟩ := (Ideal.endMapQ_span_algebraMap_eq_zero_iff (p : k) δ).1 hker
     exact ⟨θ, fun _ ↦ rfl⟩
   obtain ⟨θ, hθ⟩ := hdiv ((linHom ρ ρ).norm π - LinearMap.id) fun v ↦ by

@@ -26,6 +26,11 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 ## Main results
 
+* `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`: preferred-chart invariance of
+  manifold differentiability.
+* `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred charts preserves
+  manifold derivatives when the source atlas changes.
+
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
 * `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
@@ -56,6 +61,44 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+
+namespace TauCeti.Manifold
+
+omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Preferred charts determine manifold differentiability independently of the rest of the atlas. -/
+theorem mdifferentiableAt_iff_of_chartAt_eq {c c' : ChartedSpace H M}
+    (h : c.chartAt = c'.chartAt) (f : M → M') (x : M) :
+    (letI := c; MDifferentiableAt I I' f x) ↔ (letI := c'; MDifferentiableAt I I' f x) := by
+  simp only [mdifferentiableAt_iff, writtenInExtChartAt, extChartAt, chartAt, h]
+
+omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Changing the source atlas while retaining its preferred charts preserves manifold derivatives
+for maps to any charted target. -/
+theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
+    (f : M → M') (x : M) :
+    (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
+  have hd := mdifferentiableAt_iff_of_chartAt_eq (I := I) (I' := I') h f x
+  -- Select c as the local atlas for the source-side derivative formula.
+  let sourceAtlas : ChartedSpace H M := c
+  by_cases hf : (letI := c; MDifferentiableAt I I' f x)
+  · have hleft : (letI := c; mfderiv I I' f x) = _ := hf.mfderiv
+    -- Select c' for the target-side formula; both displayed statements fix their atlas.
+    let targetAtlas : ChartedSpace H M := c'
+    have hright : (letI := c'; mfderiv I I' f x) = _ := (hd.mp hf).mfderiv
+    apply hleft.trans
+    apply Eq.trans ?_ hright.symm
+    simp only [writtenInExtChartAt, extChartAt, chartAt, h]
+    -- The tangent-space implementation casts are independent of the chosen atlas.
+    rfl
+  · have hleft : (letI := c; mfderiv I I' f x) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt hf
+    -- Select c' to apply its non-differentiability law.
+    let targetAtlas : ChartedSpace H M := c'
+    have hright : (letI := c'; mfderiv I I' f x) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt (hd.not.mp hf)
+    exact hleft.trans hright.symm
+
+end TauCeti.Manifold
 
 /-- Read in the extended charts at `x` and `y`, a map with manifold derivative `f'` at `x'` has
 Fréchet derivative within `range I` equal to `f'` pre- and post-composed with the derivatives of

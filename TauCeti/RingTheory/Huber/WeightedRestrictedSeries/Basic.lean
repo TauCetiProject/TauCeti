@@ -26,13 +26,11 @@ with the subgroups `U⟨X⟩ := { ∑ aν Xν ∈ A⟨X⟩_T | aν ∈ Tν · U 
 neighbourhoods of zero. Here `Tν := T₁^ν₁ ⋯ Tₖ^νₖ`. Taking every `Tᵢ = {1}` recovers the ordinary
 restricted series `A⟨X⟩`.
 
-**Both of those claims need Wedhorn's standing hypothesis** `TauCeti.Huber.IsWeightFamily T`,
-fixed at the start of his §5.6: without it `A⟨X⟩_T` is not multiplicatively closed and the
-`U⟨X⟩` are not neighbourhoods of zero. The subring and topology constructions
-(`weightedRestrictedSubring`, `weightedNhd`, `weightedTopology` and the maps into them) therefore
-take it as an argument; the underlying weight operations `weightPow` and `weightMul` and the
-predicate `IsWeightedRestricted` do not, since they are defined for any family. The
-counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not automatic.
+**Both claims require Wedhorn's standing hypothesis** `TauCeti.Huber.IsWeightFamily T`, fixed
+at the start of §5.6: otherwise multiplicative closure and the neighbourhood claim can fail.
+The subring, `weightedNhd`, topology and maps into them take this hypothesis; `weightPow`,
+`weightMul` and `IsWeightedRestricted` are defined for any family. The counterexample in
+`IsWeightFamily`'s docstring shows that the hypothesis is not automatic.
 
 ## Main definitions
 
@@ -57,7 +55,7 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
 * `TauCeti.Huber.IsWeightFamily.isOpen_span`: weights generate open ideals under separately
   continuous addition.
 * `TauCeti.Huber.IsWeightedRestricted.mul` gives multiplicative closure; `finite_coeff_notMem`
-  identifies the exceptional finite set.
+  identifies the exceptional finite set, and `exists_coeff_mem_weightMul` corrects it.
 * `TauCeti.Huber.weightedNhd_subgroups_basis` gives the ring topology through
   `hasBasis_nhds_zero_weightedTopology`, `isTopologicalRing_weightedTopology`,
   `nonarchimedeanRing_weightedTopology` and `continuous_weightedC`.
@@ -558,6 +556,38 @@ theorem IsWeightedRestricted.finite_coeff_notMem {T : Fin k → Set A}
     {f : MvPowerSeries (Fin k) A} (hf : IsWeightedRestricted T f) (U : OpenAddSubgroup A) :
     {ν | MvPowerSeries.coeff ν f ∉ weightMul T ν U.toAddSubgroup}.Finite :=
   Filter.eventually_cofinite.mp (hf U)
+
+open scoped Classical in
+/-- Replace the coefficients of a restricted series that fail one open weighted bound by
+coefficients satisfying that bound. Only finitely many coefficients change, so the resulting
+series remains restricted. The coefficient equation retains every coefficient already in the
+bound. Openness of `U` ensures that the exceptional set is finite. -/
+theorem IsWeightedRestricted.exists_coeff_mem_weightMul {T : Fin k → Set A}
+    {f : MvPowerSeries (Fin k) A} (hf : IsWeightedRestricted T f) (U : OpenAddSubgroup A)
+    (u : (Fin k →₀ ℕ) → A) (hu : ∀ ν, u ν ∈ weightMul T ν U.toAddSubgroup) :
+    ∃ g : MvPowerSeries (Fin k) A, IsWeightedRestricted T g ∧
+      (∀ ν, MvPowerSeries.coeff ν g ∈ weightMul T ν U.toAddSubgroup) ∧
+      ∀ ν, MvPowerSeries.coeff ν g =
+        if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+        then MvPowerSeries.coeff ν f else u ν := by
+  classical
+  let g : MvPowerSeries (Fin k) A := fun ν ↦
+    if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+    then MvPowerSeries.coeff ν f else u ν
+  have hcoeff (ν) : MvPowerSeries.coeff ν g =
+      if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+      then MvPowerSeries.coeff ν f else u ν := MvPowerSeries.coeff_apply g ν
+  refine ⟨g, ?_, ?_, hcoeff⟩
+  · rw [isWeightedRestricted_iff]
+    intro W
+    filter_upwards [isWeightedRestricted_iff.mp hf U,
+      isWeightedRestricted_iff.mp hf W] with ν hU hW
+    rwa [hcoeff, ite_eq_left hU]
+  · intro ν
+    rw [hcoeff]
+    split_ifs with h
+    · exact h
+    · exact hu ν
 
 /-- One open additive subgroup absorbing exceptional coefficients of two series at once: `Z` sends
 `coeff α f * z` into `Tα · U` for every `α ∈ F`, and `coeff β g * z` into `Tβ · U` for every
@@ -1319,6 +1349,25 @@ theorem _root_.RingHom.weightMul_map_le (φ : A →+* B) {T : Fin k → Set A} {
   simp only [AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass, map_mul]
   exact mul_mem_weightMul S ν V
     (weightPow_mono hTS ν (image_weightPow φ T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
+
+/-- A ring homomorphism carries a weighted coefficient subgroup onto the corresponding
+subgroup for the image weights and the image coefficient subgroup. -/
+theorem _root_.RingHom.map_weightMul (φ : A →+* B) (T : Fin k → Set A)
+    (ν : Fin k →₀ ℕ) (U : AddSubgroup A) :
+    (weightMul T ν U).map (φ : A →+ B) =
+      weightMul (fun i ↦ φ '' T i) ν (U.map (φ : A →+ B)) := by
+  simp only [weightMul_def, AddMonoidHom.map_closure, AddSubgroup.coe_map,
+    AddMonoidHom.coe_ofClass, Set.image_mul, image_weightPow]
+
+/-- If a ring homomorphism maps each source weight onto the target weight, it maps each
+weighted coefficient subgroup onto the target subgroup weighted by the image of `U`. -/
+theorem _root_.RingHom.image_weightMul_of_image_eq (φ : A →+* B)
+    {T : Fin k → Set A} {S : Fin k → Set B} (hTS : ∀ i, φ '' T i = S i)
+    (ν : Fin k →₀ ℕ) (U : AddSubgroup A) :
+    φ '' (weightMul T ν U : Set A) =
+      (weightMul S ν (U.map (φ : A →+ B)) : Set B) := by
+  simpa only [AddSubgroup.coe_map, AddMonoidHom.coe_ofClass, hTS] using
+    congrArg SetLike.coe (φ.map_weightMul T ν U)
 
 variable [TopologicalSpace A] [TopologicalSpace B]
 

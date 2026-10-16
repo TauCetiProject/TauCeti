@@ -42,7 +42,9 @@ residue degree one therefore generate `Gal(M/L)` on their own, and an `𝔽_p`-b
 This is the choice of the auxiliary set `T` in Milne's Kummer-theoretic proof of the second
 fundamental inequality, applied with `M = K(U_S^{1/p})` and `L/K` cyclic of degree `p`. The
 generation hypothesis is the conclusion of Milne's Proposition 4.7 for the extension `M/L`, that
-the Frobenius elements outside a finite set generate the Galois group of an abelian extension.
+the Frobenius elements outside a finite set generate the Galois group of an abelian extension. It
+is proved from the first fundamental inequality in
+`TauCeti.ClassFieldTheory.closure_isArithFrobAt_eq_top_tower`.
 
 ## Main results
 

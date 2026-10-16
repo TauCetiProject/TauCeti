@@ -55,9 +55,9 @@ private theorem exists_localCyclotomicCharacter_toZModPow_eq
       PadicInt.toZModPow n (localCyclotomicCharacter p K σ : ℤ_[p]) =
         PadicInt.toZModPow n (u : ℤ_[p]) := by
   let ζ : AlgebraicClosure K :=
-    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose
+    HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose
   have hζ : IsPrimitiveRoot ζ (p ^ n) :=
-    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose_spec
+    HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose_spec
   let L := IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K))
   let _ : IsCyclotomicExtension {p ^ n} K L :=
     hζ.intermediateField_adjoin_isCyclotomicExtension K

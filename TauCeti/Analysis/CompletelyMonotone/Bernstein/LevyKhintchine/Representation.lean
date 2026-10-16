@@ -90,7 +90,7 @@ private lemma integral_integratedLaplaceKernel_eq_sub
       (isOpen_Ioi.mem_nhds (ha.trans ht.1))).hasDerivAt
   have hintDeriv : IntervalIntegrable (deriv f) volume a b :=
     (hf.deriv_isCompletelyMonotoneOnIoi.contDiffOn.continuousOn.mono
-      (fun t ht => ha.trans_le ht.1)).intervalIntegrable_of_Icc hab
+      (fun t (ht : t ∈ Set.Icc a b) => ha.trans_le ht.1)).intervalIntegrable_of_Icc hab
   calc
     ∫ x, integratedLaplaceKernel a b x ∂σ =
         ∫ t in a..b, ∫ x : ℝ≥0, Real.exp (-(t * (x : ℝ))) ∂σ := by

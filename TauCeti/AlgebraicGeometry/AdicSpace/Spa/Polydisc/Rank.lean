@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.NestedDiscPoint
 public import TauCeti.RingTheory.Valuation.ValuativeRel.RankLeOne
 import Mathlib.Topology.Algebra.Valued.NormedValued
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RankLeOne
 
 /-!
 # The rank of the points of the closed unit disc
@@ -34,6 +35,12 @@ that is, its value group embeds into the positive reals.
 For radii outside `|Kˣ|` the points `η_{a,r±}` need not differ from `η_{a,r}`, so the hypothesis
 `r = ‖c‖` cannot be dropped from the second statement.
 
+The points of rank at most one form a Hausdorff subspace of the polydisc, as they do in the adic
+spectrum of every Tate ring (`TauCeti.ValuationSpectrum.t2Space_spa_isRankLeOne`). In the closed
+unit disc this subspace contains the points of types (1) to (4) and none of type (5). Since the
+five types exhaust the disc over an algebraically closed field (Wedhorn, Example 7.57), it is
+the Berkovich disc there.
+
 ## Main results
 
 * `TauCeti.ValuationSpectrum.isRankLeOne_classicalPoint`: the classical points of the closed
@@ -44,6 +51,8 @@ For radii outside `|Kˣ|` the points `η_{a,r±}` need not differ from `η_{a,r}
 * `TauCeti.ValuationSpectrum.not_isRankLeOne_discPointAbove` and
   `TauCeti.ValuationSpectrum.not_isRankLeOne_discPointBelow`: for `r` the norm of an element of
   `K`, the points `η_{a,r⁺}` and `η_{a,r⁻}` do not have rank at most one.
+* `TauCeti.ValuationSpectrum.t2Space_closedPolydisc_isRankLeOne`: the points of the closed
+  polydisc of rank at most one form a Hausdorff subspace.
 
 ## References
 
@@ -170,5 +179,20 @@ theorem not_isRankLeOne_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
     rw [discPointBelow_vle_iff]
     simpa only [map_pow, map_mul, map_sub, taylorHom_weightedX, taylorHom_weightedC,
       add_sub_cancel_right] using hlt.le
+
+/-! ### The points of rank at most one -/
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- **The points of the closed polydisc of rank at most one form a Hausdorff subspace.** In the
+closed unit disc over an algebraically closed field these are the points of types (1) to (4), so
+this subspace is the Berkovich disc, which Wedhorn's Example 7.57 notes is Hausdorff. -/
+theorem t2Space_closedPolydisc_isRankLeOne (k : ℕ) :
+    T2Space {x : closedPolydisc k K // @ValuativeRel.IsRankLeOne _ _ x.1.toValuativeRel} := by
+  -- a constant `c` with `0 < ‖c‖ < 1` is a topologically nilpotent unit of `K⟨T₁, …, Tₖ⟩`
+  obtain ⟨c, hc₀, hc₁⟩ := NormedField.exists_norm_lt_one K
+  have hc := (IsPseudoUniformizer.of_norm_lt_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hc₀))
+    hc₁).map (continuous_weightedC (isWeightFamily_one_weight (k := k)))
+  rw [closedPolydisc_def]
+  exact t2Space_spa_isRankLeOne hc _
 
 end TauCeti.ValuationSpectrum

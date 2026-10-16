@@ -369,20 +369,22 @@ theorem _root_.Path.joined_iff_homotopic {p q : Ω X x} : Joined p q ↔ p.Homot
 at `x`**: the degree-zero case of the loop-space shift. Both sides are quotients of `Ω X x`, by
 path connectedness and by homotopy respectively, and `Path.joined_iff_homotopic` says the two
 relations agree. -/
-def zerothHomotopyLoopSpaceEquivFundamentalGroup :
+noncomputable def zerothHomotopyLoopSpaceEquivFundamentalGroup :
     ZerothHomotopy (Ω X x) ≃ FundamentalGroup X x :=
-  Quotient.congr (Equiv.refl (Ω X x)) fun _ _ => Path.joined_iff_homotopic
+  (Quotient.congr (Equiv.refl (Ω X x)) fun _ _ => Path.joined_iff_homotopic :
+    ZerothHomotopy (Ω X x) ≃ Path.Homotopic.Quotient x x).trans
+      (CategoryTheory.End.homEquiv (X := FundamentalGroupoid.mk x)).symm
 
 @[simp]
 theorem zerothHomotopyLoopSpaceEquivFundamentalGroup_mk (p : Ω X x) :
     zerothHomotopyLoopSpaceEquivFundamentalGroup (⟦p⟧ : ZerothHomotopy (Ω X x)) =
-      (Path.Homotopic.Quotient.mk p : FundamentalGroup X x) :=
+      FundamentalGroup.fromPath (.mk p) :=
   by rw [zerothHomotopyLoopSpaceEquivFundamentalGroup.eq_1]; rfl
 
 @[simp]
 theorem zerothHomotopyLoopSpaceEquivFundamentalGroup_symm_mk (p : Ω X x) :
     zerothHomotopyLoopSpaceEquivFundamentalGroup.symm
-        (Path.Homotopic.Quotient.mk p : FundamentalGroup X x) =
+        (FundamentalGroup.fromPath (.mk p)) =
       (⟦p⟧ : ZerothHomotopy (Ω X x)) :=
   by rw [zerothHomotopyLoopSpaceEquivFundamentalGroup.eq_1]; rfl
 

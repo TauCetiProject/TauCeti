@@ -50,6 +50,15 @@ open ContCohomology
 
 universe u
 
+/-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
+does not find this within its default budget under the imports of this file, so it is assembled
+here from the Krull topology being Hausdorff. -/
+local instance {K : Type u} [Field K] : LocallyCompactSpace (AbsoluteGaloisGroup K) :=
+  have : R1Space (AbsoluteGaloisGroup K) := @T2Space.r1Space _ _ krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
+  WeaklyLocallyCompactSpace.locallyCompactSpace
+
 variable (n : ℕ) (F : Type u) [Field F]
 
 /-- **The Kummer coefficient map `H²(G_F, μₙ) → Br F`.** It is the Kummer-sequence coefficient

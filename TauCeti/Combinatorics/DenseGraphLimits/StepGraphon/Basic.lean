@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Pullback
 public import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
-import Mathlib.Data.Setoid.Partition
+import Mathlib.Order.Setoid.Partition
 
 /-!
 # Step graphons

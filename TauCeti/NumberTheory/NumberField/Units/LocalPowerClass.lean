@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Frobenius.Kummer.LocalUnit
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 import TauCeti.NumberTheory.NumberField.Global.Places.UnitPowerClasses
-import TauCeti.NumberTheory.NumberField.Units.SUnit
+import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 import TauCeti.RingTheory.Valuation.UnitGroup
 
 /-!

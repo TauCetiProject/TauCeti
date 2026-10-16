@@ -44,7 +44,9 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   `T† T`; in particular `ContinuousLinearMap.IsPositive.modulus_eq`: a positive operator is its
   own modulus.
 * `ContinuousLinearMap.norm_modulus_apply`: `‖|T| x‖ = ‖T x‖`; consequently
-  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`, and
+  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`,
+  `ContinuousLinearMap.topologicalClosure_range_modulus`: the closure of the range of `|T|` is
+  `(ker T)ᗮ`, and
   `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
 * `ContinuousLinearMap.norm_modulus_comp`, `ContinuousLinearMap.norm_comp_modulus`: the
   composition laws `‖|T| D‖ = ‖T D‖` and `‖D |T|‖ = ‖D T†‖`.
@@ -155,6 +157,18 @@ theorem ker_modulus (T : E →L[𝕜] F) : T.modulus.ker = T.ker := by
   ext x
   simp only [LinearMap.mem_ker, coe_coe, ← norm_eq_zero (a := T.modulus x),
     ← norm_eq_zero (a := T x), norm_modulus_apply]
+
+/-- The orthogonal complement of the range of the modulus is the kernel of the operator. -/
+@[simp]
+theorem orthogonal_range_modulus (T : E →L[𝕜] F) : T.modulus.rangeᗮ = T.ker := by
+  rw [orthogonal_range, adjoint_modulus, ker_modulus]
+
+/-- The closure of the range of the modulus is the orthogonal complement of the kernel of the
+operator. This is the initial space of the polar factor of `T`. -/
+@[simp]
+theorem topologicalClosure_range_modulus (T : E →L[𝕜] F) :
+    T.modulus.range.topologicalClosure = T.kerᗮ := by
+  rw [← Submodule.orthogonal_orthogonal_eq_closure, orthogonal_range_modulus]
 
 /-- The modulus and the operator have the same operator norm. -/
 @[simp]
