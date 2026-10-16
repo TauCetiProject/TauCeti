@@ -10,8 +10,6 @@ public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
-public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
-public import Mathlib.Algebra.Ring.NegOnePow
 
 /-!
 # The Euler characteristic of a bounded complex in split `K₀`

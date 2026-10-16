@@ -6,18 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.QuasiIso
-public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.Abelian.Images
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 /-!
 # The Euler characteristic of a bounded complex in abelian and exact `K₀`
-
-For an invariant additive on the conflations of an exact category, the finite Euler sum of a
-`ℤ`-graded family is the alternating sum of its values over an explicit finite set. Its API records
-support independence, invariance under pointwise isomorphism, additivity under pointwise
-biproducts, and additivity along a degreewise family of conflations.
 
 For a cochain complex `K` over an abelian category `A` and an invariant `v` additive on short
 exact sequences, the alternating sum
@@ -59,8 +53,6 @@ objects only that it vanishes on zero objects and satisfies the degreewise homol
 
 ## Main definitions
 
-* `TauCeti.ExactK0.AdditiveInvariant.finiteEulerSum`: the finite Euler sum of the values of an
-  exact-additive invariant on a family of objects.
 * `TauCeti.AbelianK0.eulerChar`: the alternating class `∑ n ∈ s, (-1)ⁿ [Kⁿ]` of the terms of a
   cochain complex over a finite set of degrees.
 * `TauCeti.AbelianK0.homologyEulerChar`: the same alternating class formed from the cohomology
@@ -68,9 +60,6 @@ objects only that it vanishes on zero objects and satisfies the degreewise homol
 
 ## Main results
 
-* `TauCeti.ExactK0.AdditiveInvariant.finiteEulerSum_biprod` and
-  `TauCeti.ExactK0.AdditiveInvariant.finiteEulerSum_conflation`: additivity under pointwise
-  biproducts and degreewise conflations.
 * `HomologicalComplex.sum_negOnePow_X_eq_sum_negOnePow_homology`: the telescoping argument for
   any function on objects satisfying the degreewise homology relation.
 * `TauCeti.AbelianK0.AdditiveInvariant.obj_kernel_add_obj_kernel`: for a short complex `S` in an
@@ -198,76 +187,6 @@ theorem sum_negOnePow_X_eq_sum_negOnePow_homology (hzero : ∀ X : A, IsZero X �
 end HomologicalComplex
 
 namespace TauCeti
-
-/-! ### Finite Euler sums of exact-additive invariants -/
-
-namespace ExactK0.AdditiveInvariant
-
-variable {G : Type*} [AddCommGroup G]
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
-  [HasBinaryBiproducts C] {E : ExactStructure C} (a : ExactK0.AdditiveInvariant E G)
-
-/-- The Euler sum of an exact-additive invariant on a `ℤ`-indexed family of objects, over an
-explicit finite set of degrees. -/
-def finiteEulerSum (X : ℤ → C) (s : Finset ℤ) : G :=
-  TauCeti.finiteEulerSum (fun n ↦ a.obj (X n)) s
-
-/-- The object-family Euler sum is its defining finite alternating sum. -/
-theorem finiteEulerSum_def (X : ℤ → C) (s : Finset ℤ) :
-    a.finiteEulerSum X s = ∑ n ∈ s, (n.negOnePow : ℤ) • a.obj (X n) :=
-  by rw [ExactK0.AdditiveInvariant.finiteEulerSum, TauCeti.finiteEulerSum_def]
-
-@[simp]
-theorem finiteEulerSum_empty (X : ℤ → C) : a.finiteEulerSum X ∅ = 0 :=
-  TauCeti.finiteEulerSum_empty _
-
-/-- If the object family is zero outside each of two finite sets, both sets compute the same
-Euler sum. -/
-theorem finiteEulerSum_eq_of_isZero (X : ℤ → C) {s t : Finset ℤ}
-    (hs : ∀ n, n ∉ s → IsZero (X n)) (ht : ∀ n, n ∉ t → IsZero (X n)) :
-    a.finiteEulerSum X s = a.finiteEulerSum X t :=
-  TauCeti.finiteEulerSum_eq_of_eq_zero _
-    (fun n hn ↦ a.obj_eq_zero_of_isZero (hs n hn))
-    (fun n hn ↦ a.obj_eq_zero_of_isZero (ht n hn))
-
-/-- Pointwise isomorphic object families have the same Euler sum. -/
-theorem finiteEulerSum_iso {X Y : ℤ → C} {s : Finset ℤ}
-    (e : ∀ n ∈ s, X n ≅ Y n) : a.finiteEulerSum X s = a.finiteEulerSum Y s :=
-  TauCeti.finiteEulerSum_congr fun n hn ↦ a.map_iso (e n hn)
-
-/-- Translating the degrees of an object family changes its Euler sum by the parity sign of the
-translation. -/
-theorem finiteEulerSum_reindex_add (X : ℤ → C) (m : ℤ) (s : Finset ℤ) :
-    a.finiteEulerSum (fun n ↦ X (n + m)) s =
-      (m.negOnePow : ℤ) •
-        a.finiteEulerSum X (s.map (Equiv.addRight m).toEmbedding) :=
-  by
-    rw [finiteEulerSum, finiteEulerSum]
-    exact TauCeti.finiteEulerSum_reindex_add (G := G) (fun n ↦ a.obj (X n)) m s
-
-/-- The Euler sum of pointwise biproducts is the sum of the two Euler sums. -/
-@[simp]
-theorem finiteEulerSum_biprod (X Y : ℤ → C) (s : Finset ℤ) :
-    a.finiteEulerSum (fun n ↦ X n ⊞ Y n) s =
-      a.finiteEulerSum X s + a.finiteEulerSum Y s := by
-  rw [finiteEulerSum, finiteEulerSum, finiteEulerSum, ← TauCeti.finiteEulerSum_add]
-  apply TauCeti.finiteEulerSum_congr
-  intro n _
-  exact a.map_conflation (E.conflation_biprodShortComplex (X n) (Y n))
-
-/-- A degreewise family of conflations gives an additive identity of Euler sums. Only the
-degrees in the stated finite range need to be conflations. -/
-theorem finiteEulerSum_conflation (S : ℤ → ShortComplex C) (s : Finset ℤ)
-    (hS : ∀ n ∈ s, E.Conflation (S n)) :
-    a.finiteEulerSum (fun n ↦ (S n).X₂) s =
-      a.finiteEulerSum (fun n ↦ (S n).X₁) s +
-        a.finiteEulerSum (fun n ↦ (S n).X₃) s := by
-  rw [finiteEulerSum, finiteEulerSum, finiteEulerSum, ← TauCeti.finiteEulerSum_add]
-  apply TauCeti.finiteEulerSum_congr
-  intro n hn
-  exact a.map_conflation (hS n hn)
-
-end ExactK0.AdditiveInvariant
 
 namespace AbelianK0
 
