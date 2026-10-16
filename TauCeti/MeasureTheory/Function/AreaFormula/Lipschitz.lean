@@ -93,7 +93,8 @@ private theorem euclideanHausdorffMeasure_image_eq_zero_of_bounded (hs : Measura
   have hle (ε : ℝ) (hε : ε ≠ 0) : μHE[finrank ℝ U] (f '' s) ≤
       ∫⁻ x in s, ENNReal.ofReal (D ε (fderiv ℝ f x)).normDet :=
     euclideanHausdorffMeasure_image_le_lintegral_normDet hs
-      (LipschitzWith.of_edist_le WithLp.edist_fst_le) (fun x _ => by simp [ι₁, ι₂, e])
+      (LipschitzWith.of_edist_le WithLp.edist_fst_le).lipschitzOnWith
+      (fun x _ => by simp [ι₁, ι₂, e])
       (fun x hx => (ι₁.hasFDerivAt.comp x (hd x hx).hasFDerivAt).add
         (ι₂.hasFDerivAt.const_smul ε))
       (fun x _ v w h => smul_right_injective U hε (by simpa [hDsnd] using congrArg WithLp.snd h))

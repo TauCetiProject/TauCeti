@@ -377,21 +377,21 @@ theorem lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image (hs : Measur
       (euclideanHausdorffMeasure_image_le_and_lintegral_le_of_one_lt hs hd hinj hf hτ).1)
 
 /-- **Area bound through a `1`-Lipschitz factorization.** If `h` factors on a measurable set `s`
-as `p ∘ g`, where `p` is `1`-Lipschitz and `g` is injective on `s` with injective derivatives
-`g' x`, then `μHE[m] (h '' s) ≤ ∫⁻ x in s, J (g' x)`, where `m = dim U` and `J = normDet`. The
-target of `h` is an arbitrary extended metric space. -/
+as `p ∘ g`, where `p` is `1`-Lipschitz on `g '' s` and `g` is injective on `s` with injective
+derivatives `g' x`, then `μHE[m] (h '' s) ≤ ∫⁻ x in s, J (g' x)`, where `m = dim U` and
+`J = normDet`. The target of `h` is an arbitrary extended metric space. -/
 theorem euclideanHausdorffMeasure_image_le_lintegral_normDet {X : Type*} [EMetricSpace X]
     [MeasurableSpace X] [BorelSpace X] {h : U → X} {g : U → V} {g' : U → U →L[ℝ] V}
-    {p : V → X} (hs : MeasurableSet s) (hp : LipschitzWith 1 p) (hpg : ∀ x ∈ s, p (g x) = h x)
-    (hg : ∀ x ∈ s, HasFDerivAt g (g' x) x) (hg' : ∀ x ∈ s, Injective (g' x))
-    (hinj : InjOn g s) :
+    {p : V → X} (hs : MeasurableSet s) (hp : LipschitzOnWith 1 p (g '' s))
+    (hpg : ∀ x ∈ s, p (g x) = h x) (hg : ∀ x ∈ s, HasFDerivAt g (g' x) x)
+    (hg' : ∀ x ∈ s, Injective (g' x)) (hinj : InjOn g s) :
     μHE[finrank ℝ U] (h '' s) ≤ ∫⁻ x in s, ENNReal.ofReal (g' x).normDet := by
   have himage : h '' s = p '' (g '' s) := by
     rw [image_image]
     exact (image_congr fun x hx => hpg x hx).symm
   calc μHE[finrank ℝ U] (h '' s) ≤ 1 ^ finrank ℝ U * μHE[finrank ℝ U] (g '' s) := by
         rw [himage]
-        simpa using (hp.lipschitzOnWith (s := g '' s)).euclideanHausdorffMeasure_image_le _
+        simpa using hp.euclideanHausdorffMeasure_image_le _
     _ = ∫⁻ x in s, ENNReal.ofReal (g' x).normDet := by
         rw [one_pow, one_mul,
           ← lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs
