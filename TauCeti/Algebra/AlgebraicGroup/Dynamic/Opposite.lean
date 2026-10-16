@@ -30,46 +30,10 @@ public section
 
 open WithConv
 
-namespace BialgHom
-
-variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
-
-/-- The opposite cocharacter, obtained by precomposing the group morphism with `t ↦ t⁻¹`. -/
-noncomputable def oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
-    H →ₐc[R] LaurentPolynomial R :=
-  (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom.comp l
-
-/-- On coordinates the opposite cocharacter inverts the Laurent variable. -/
-@[simp]
-theorem oppositeCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (h : H) :
-    l.oppositeCocharacter h = LaurentPolynomial.invert (l h) := (rfl)
-
-/-- Taking the opposite cocharacter twice recovers the original one. -/
-@[simp]
-theorem oppositeCocharacter_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
-    l.oppositeCocharacter.oppositeCocharacter = l := by
-  ext h : 1
-  simpa only [oppositeCocharacter_apply] using LaurentPolynomial.involutive_invert (l h)
-
-end BialgHom
-
 namespace TauCeti.Cocharacter
 
 variable {R H A : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 variable [CommSemiring A] [Algebra R A]
-
-/-- The opposite cocharacter evaluates at the inverse unit. -/
-@[simp]
-theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
-    pointsHom A l.oppositeCocharacter u = pointsHom A l u⁻¹ := by
-  ext h
-  simp [pointsHom_apply, AlgHom.mapDomain_apply, laurentEval_invert]
-
-/-- The generic value of the opposite cocharacter is the inverse generic value. -/
-@[simp]
-theorem genericPoint_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
-    genericPoint A l.oppositeCocharacter = (genericPoint A l)⁻¹ := by
-  simp only [genericPoint_eq_pointsHom, pointsHom_oppositeCocharacter, map_inv]
 
 /-- Reversing the cocharacter inverts the variable of the conjugation family. -/
 theorem conjugate_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R)

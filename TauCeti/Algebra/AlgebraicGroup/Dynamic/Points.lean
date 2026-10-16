@@ -33,6 +33,9 @@ extension and evaluation operations used to define dynamic parabolic subgroups a
 * `TauCeti.Cocharacter.evalZeroPoint`: evaluation of polynomial-valued points at the origin.
 * `TauCeti.Cocharacter.pointsHom` and `TauCeti.Cocharacter.genericPoint`: the map from
   multiplicative-group points and its generic value.
+* `BialgHom.oppositeCocharacter`: the opposite cocharacter, with its point formulas
+  `TauCeti.Cocharacter.pointsHom_oppositeCocharacter` and
+  `TauCeti.Cocharacter.genericPoint_oppositeCocharacter`.
 * `TauCeti.Cocharacter.mapValue_ofPolyPoint` and `TauCeti.Cocharacter.mapValue_evalZeroPoint`:
   naturality of inclusion and evaluation.
 -/
@@ -40,6 +43,29 @@ extension and evaluation operations used to define dynamic parabolic subgroups a
 public section
 
 open WithConv
+
+namespace BialgHom
+
+variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- The opposite cocharacter, obtained by precomposing the group morphism with `t ↦ t⁻¹`. -/
+noncomputable def oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
+    H →ₐc[R] LaurentPolynomial R :=
+  (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom.comp l
+
+/-- On coordinates the opposite cocharacter inverts the Laurent variable. -/
+@[simp]
+theorem oppositeCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (h : H) :
+    l.oppositeCocharacter h = LaurentPolynomial.invert (l h) := (rfl)
+
+/-- Taking the opposite cocharacter twice recovers the original one. -/
+@[simp]
+theorem oppositeCocharacter_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
+    l.oppositeCocharacter.oppositeCocharacter = l := by
+  ext h : 1
+  simpa only [oppositeCocharacter_apply] using LaurentPolynomial.involutive_invert (l h)
+
+end BialgHom
 
 namespace TauCeti.Cocharacter
 
@@ -209,5 +235,24 @@ theorem mapValue_evalZeroPoint (F : WithConv (H →ₐ[R] Polynomial A)) :
 end Naturality
 
 end Bialgebra
+
+section HopfAlgebra
+
+variable [HopfAlgebra R H]
+
+/-- The opposite cocharacter evaluates at the inverse unit. -/
+@[simp]
+theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
+    pointsHom A l.oppositeCocharacter u = pointsHom A l u⁻¹ := by
+  ext h
+  simp [pointsHom_apply, AlgHom.mapDomain_apply, laurentEval_invert]
+
+/-- The generic value of the opposite cocharacter is the inverse generic value. -/
+@[simp]
+theorem genericPoint_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
+    genericPoint A l.oppositeCocharacter = (genericPoint A l)⁻¹ := by
+  simp only [genericPoint_eq_pointsHom, pointsHom_oppositeCocharacter, map_inv]
+
+end HopfAlgebra
 
 end TauCeti.Cocharacter
