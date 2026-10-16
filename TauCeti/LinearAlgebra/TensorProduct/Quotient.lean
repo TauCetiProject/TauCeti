@@ -35,7 +35,7 @@ that `A ⊗[ℤ] M` only depends on `M ⧸ ℓM`, and is finitely generated when
 
 For a map of modules over a commutative ring, the same right exactness identifies scalar
 extension of its cokernel with the cokernel of its scalar extension. This is the module form of
-Stacks Project, Lemma 10.12.10, [Tag 00MK](https://stacks.math.columbia.edu/tag/00MK).
+Stacks Project, Lemma 10.12.10, [Tag 00DF](https://stacks.math.columbia.edu/tag/00DF).
 
 The heterobasic version is what identifies the base change of a module presented by generators
 and relations over a noncommutative algebra `A` with the module presented by the base-changed
