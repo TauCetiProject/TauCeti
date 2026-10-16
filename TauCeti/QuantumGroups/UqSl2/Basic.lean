@@ -113,38 +113,38 @@ abbrev k (q : ℂ) : UqSl2 q := generator q .k
 /-- The inverse weight generator `K⁻¹` of `UqSl2 q`. -/
 abbrev kInv (q : ℂ) : UqSl2 q := generator q .kInv
 
-/-- Every element of `UqSl2 q` is represented by an element of the free algebra. -/
-theorem mkAlgHom_surjective : Function.Surjective (mkAlgHom q) :=
-  RingQuot.mkAlgHom_surjective _ _
-
-/-- Related free-algebra elements have the same image in `UqSl2 q`. -/
-theorem mkAlgHom_rel {x y : FreeAlgebra ℂ Generator} (h : Rel q x y) :
-    mkAlgHom q x = mkAlgHom q y :=
-  RingQuot.mkAlgHom_rel ℂ h
-
 /-- `K` is a left inverse of `K⁻¹`. -/
 @[simp]
 theorem k_mul_kInv : k q * kInv q = 1 := by
-  simpa only [map_mul, map_one, mkAlgHom_ι] using mkAlgHom_rel (Rel.k_mul_kInv (q := q))
+  simpa only [map_mul, map_one, mkAlgHom_ι] using
+    (show mkAlgHom q _ = mkAlgHom q _ from
+      RingQuot.mkAlgHom_rel ℂ (Rel.k_mul_kInv (q := q)))
 
 /-- `K⁻¹` is a left inverse of `K`. -/
 @[simp]
 theorem kInv_mul_k : kInv q * k q = 1 := by
-  simpa only [map_mul, map_one, mkAlgHom_ι] using mkAlgHom_rel (Rel.kInv_mul_k (q := q))
+  simpa only [map_mul, map_one, mkAlgHom_ι] using
+    (show mkAlgHom q _ = mkAlgHom q _ from
+      RingQuot.mkAlgHom_rel ℂ (Rel.kInv_mul_k (q := q)))
 
 /-- The defining commutation relation `K E = q² E K`. -/
 theorem k_mul_e : k q * e q = q ^ 2 • (e q * k q) := by
-  simpa only [map_mul, map_smul, mkAlgHom_ι] using mkAlgHom_rel (Rel.k_mul_e (q := q))
+  simpa only [map_mul, map_smul, mkAlgHom_ι] using
+    (show mkAlgHom q _ = mkAlgHom q _ from
+      RingQuot.mkAlgHom_rel ℂ (Rel.k_mul_e (q := q)))
 
 /-- The defining commutation relation `K F = q⁻² F K`. -/
 theorem k_mul_f : k q * f q = q⁻¹ ^ 2 • (f q * k q) := by
-  simpa only [map_mul, map_smul, mkAlgHom_ι] using mkAlgHom_rel (Rel.k_mul_f (q := q))
+  simpa only [map_mul, map_smul, mkAlgHom_ι] using
+    (show mkAlgHom q _ = mkAlgHom q _ from
+      RingQuot.mkAlgHom_rel ℂ (Rel.k_mul_f (q := q)))
 
 /-- The defining commutator relation between `E` and `F`. -/
 theorem e_mul_f_sub_f_mul_e :
     e q * f q - f q * e q = (q - q⁻¹)⁻¹ • (k q - kInv q) := by
   simpa only [map_sub, map_mul, map_smul, mkAlgHom_ι] using
-    mkAlgHom_rel (Rel.e_mul_f_sub_f_mul_e (q := q))
+    (show mkAlgHom q _ = mkAlgHom q _ from
+      RingQuot.mkAlgHom_rel ℂ (Rel.e_mul_f_sub_f_mul_e (q := q)))
 
 /-- The generator `K`, packaged with the specified inverse `K⁻¹`. -/
 def kUnit (q : ℂ) : (UqSl2 q)ˣ where
