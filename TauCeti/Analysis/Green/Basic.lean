@@ -23,6 +23,8 @@ public section
 
 noncomputable section
 
+open MeasureTheory Set
+
 namespace TauCeti.Green
 
 /-- The real 1-form `P dx + Q dy` on the positively oriented complex plane. -/
@@ -67,5 +69,25 @@ theorem curveIntegral_oneForm_eq {p q : ℂ} (γ : Path p q) (P Q : ℂ → ℝ)
       ∫ t in (0 : ℝ)..1, circulationFun P Q γ.extend t := by
   rw [curveIntegral_eq_intervalIntegral_deriv]
   simp only [← circulationFun_eq_oneForm]
+
+/-- Continuous coefficients are genuinely Bochner integrable along a straight segment. -/
+theorem intervalIntegrable_circulationFun_segment {p q : ℂ} {P Q : ℂ → ℝ}
+    (hP : ContinuousOn P (segment ℝ p q)) (hQ : ContinuousOn Q (segment ℝ p q)) :
+    IntervalIntegrable (circulationFun P Q (Path.segment p q).extend) volume 0 1 := by
+  have hc : CurveIntegrable (oneForm P Q) (Path.segment p q) := by
+    rw [curveIntegrable_segment]
+    apply ContinuousOn.intervalIntegrable_of_Icc zero_le_one
+    have hm : Set.MapsTo (AffineMap.lineMap p q) (Set.Icc (0 : ℝ) 1) (segment ℝ p q) :=
+      fun _ ht ↦ (convex_segment p q).lineMap_mem (left_mem_segment ℝ p q)
+        (right_mem_segment ℝ p q) ht
+    have hp := hP.comp (by fun_prop) hm
+    have hq := hQ.comp (by fun_prop) hm
+    simpa only [oneForm_apply, Pi.add_def, Pi.mul_def, Function.comp_apply] using
+      (hp.mul continuousOn_const).add (hq.mul continuousOn_const)
+  apply (intervalIntegrable_congr_ae ?_).mpr hc
+  rw [uIoc_of_le zero_le_one, ← restrict_Ioo_eq_restrict_Ioc]
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
+  rw [curveIntegralFun_def, derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
+  exact circulationFun_eq_oneForm P Q (Path.segment p q).extend t
 
 end TauCeti.Green
