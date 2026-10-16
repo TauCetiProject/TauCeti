@@ -29,16 +29,18 @@ perfect, and the residue extensions need not be separable.
   prime above it in `B`, for instance an inert prime: then `p` has a single prime above it in
   every intermediate ring.
 * **`H = 1`.** Then `1 \ G / D` is `G / D`, and the law recovers the Galois count `g = [G : D]`
-  of the primes of `B` above `p`.
+  of the primes of `B` above `p` (`Ideal.card_primesOver_eq_index_stabilizer`).
 * **`H = D`.** Then `C` is the decomposition ring of `Q`. The double cosets `D \ G / D` are not
   a singleton in general, and only the identity double coset is special: it names `Q ∩ C`,
   which has ramification index `1` and residue degree `1` over `p`, and `Q` is the only prime of
-  `B` above it. Both facts hold for any subgroup comparable with `D`: the local degree
-  `e · f = [D : H ∩ D]` is `1` as soon as `D ≤ H`, and the primes of `B` with the same
+  `B` above it. The two facts extend in opposite directions: the local degree
+  `e · f = [D : H ∩ D]` is `1` as soon as `D ≤ H`
+  (`Ideal.ramificationIdx_under_eq_one_of_stabilizer_le` and
+  `Ideal.inertiaDeg_under_eq_one_of_stabilizer_le`), and the primes of `B` with the same
   contraction to `C` as `Q` form the `H`-orbit of `Q`, which is `{Q}` as soon as `H ≤ D`
-  (`Ideal.primesOver_under_eq_singleton_of_le_stabilizer`). These are the invariant-ring
-  counterparts of the Hilbert-theory statements for an abstract decomposition field, Tau Ceti's
-  `TauCeti.IsDecompositionField.ramificationIdx_under_eq_one` and
+  (`Ideal.primesOver_under_eq_singleton_of_le_stabilizer`). Both hold at `H = D`. These are
+  the invariant-ring counterparts of the Hilbert-theory statements for an abstract
+  decomposition field, Tau Ceti's `TauCeti.IsDecompositionField.ramificationIdx_under_eq_one` and
   `TauCeti.IsDecompositionField.inertiaDeg_under_eq_one`, and Mathlib's
   `IsDecompositionField.primesOver_eq_singleton`.
 
@@ -51,11 +53,6 @@ perfect, and the residue extensions need not be separable.
 * `Ideal.card_primesOver_eq_one_iff`: a single prime above `p` in `C` exactly when `H D = G`.
 * `Ideal.primesOver_eq_singleton_of_eq_top` and
   `Ideal.primesOver_eq_singleton_of_stabilizer_eq_top`: the cases `H = G` and `D = G`.
-* `Ideal.card_primesOver_eq_index_stabilizer`: the case `H = 1`, the count `[G : D]` of the
-  primes of `B` above `p`.
-* `Ideal.ramificationIdx_under_eq_one_of_stabilizer_le` and
-  `Ideal.inertiaDeg_under_eq_one_of_stabilizer_le`: if `D ≤ H`, then `Q ∩ C` has `e = f = 1`
-  over `p`.
 * `Ideal.ramificationIdx_doubleCosetQuotientEquivPrimesOverOfIsInvariant_stabilizer_mk_one_eq_one`,
   `Ideal.inertiaDeg_doubleCosetQuotientEquivPrimesOverOfIsInvariant_stabilizer_mk_one_eq_one`
   and
@@ -144,13 +141,6 @@ theorem primesOver_eq_singleton_of_stabilizer_eq_top (hD : stabilizer G Q = ⊤)
 
 end Subgroup
 
-/-- **The case `H = 1`: the Galois count.** The primes of `B` above `p` are counted by the
-index `[G : D]` of the decomposition group of `Q`, matching `1 \ G / D = G / D`. -/
-theorem card_primesOver_eq_index_stabilizer :
-    Nat.card (p.primesOver B) = (stabilizer G Q).index := by
-  rw [index_stabilizer, ← Algebra.IsInvariant.orbit_eq_primesOver A B G p Q,
-    Nat.card_coe_set_eq]
-
 /-- **`Q` is the only prime above the prime named by the identity double coset of
 `D \ G / D`.** For `D` the decomposition group of `Q` and `C` its invariant ring, the only prime
 of `B` above `Q ∩ C` is `Q` itself. -/
@@ -169,31 +159,7 @@ section LocalDegree
 
 variable [Finite G] [IsDomain A] [IsDomain B] [Module.Finite A B] [Module.Flat A B]
   [IsGaloisGroup G A B] (Q : Ideal B) [Q.IsMaximal]
-
-section Subgroup
-
-variable {H : Subgroup G} (C : Type*) [CommRing C] [IsDomain C]
-  [Algebra A C] [Algebra C B] [IsScalarTower A C B] [Module.Flat C B] [IsGaloisGroup H C B]
-
-/-- **Above the decomposition group the ramification index is one.** If `H` contains the
-decomposition group `D(Q)`, then the prime `Q ∩ C` of the `H`-invariant ring `C` has
-ramification index one over `A`. No hypothesis on the residue extension is needed. -/
-theorem ramificationIdx_under_eq_one_of_stabilizer_le (hH : stabilizer G Q ≤ H) :
-    (Q.under C).ramificationIdx A = 1 :=
-  (mul_eq_one.1 <| (Q.ramificationIdx_mul_inertiaDeg_under_eq_relIndex H C).trans
-    (Subgroup.relIndex_eq_one.2 hH)).1
-
-/-- **Above the decomposition group the residue degree is one.** If `H` contains the
-decomposition group `D(Q)`, then the prime `Q ∩ C` of the `H`-invariant ring `C` has residue
-degree one over `A`. No hypothesis on the residue extension is needed. -/
-theorem inertiaDeg_under_eq_one_of_stabilizer_le (hH : stabilizer G Q ≤ H) :
-    (Q.under C).inertiaDeg A = 1 :=
-  (mul_eq_one.1 <| (Q.ramificationIdx_mul_inertiaDeg_under_eq_relIndex H C).trans
-    (Subgroup.relIndex_eq_one.2 hH)).2
-
-end Subgroup
-
-variable (p : Ideal A) [Q.LiesOver p] (C : Type*) [CommRing C] [IsDomain C]
+  (p : Ideal A) [Q.LiesOver p] (C : Type*) [CommRing C] [IsDomain C]
   [Algebra A C] [Algebra C B] [IsScalarTower A C B] [FaithfulSMul C B] [Module.Flat C B]
   [IsGaloisGroup (stabilizer G Q) C B]
 

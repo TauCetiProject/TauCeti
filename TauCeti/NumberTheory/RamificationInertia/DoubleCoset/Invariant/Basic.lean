@@ -49,6 +49,9 @@ including `FixedPoints.subalgebra A B H`.
   agrees with contracting primes to the smaller invariant ring.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_eq_relIndex`: the local degree below `Q` is
   `[D(Q) : H ∩ D(Q)]`, including inseparable residue extensions.
+* `Ideal.ramificationIdx_under_eq_one_of_stabilizer_le` and
+  `Ideal.inertiaDeg_under_eq_one_of_stabilizer_le`: if `D(Q) ≤ H`, then `Q ∩ C` has
+  `e = f = 1` over `A`.
 * `Ideal.sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_index`: the local
   degrees indexed by double cosets sum to `[G : H]`.
 * `Ideal.sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_finrank`: the same
@@ -209,6 +212,24 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex (sigma : G) :
   rw [ramificationIdx_mul_inertiaDeg_under_eq_relIndex (Q := sigma • Q) (H := H) (C := C),
     stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
     TauCeti.map_conj_eq_conj_smul]
+
+variable {H}
+
+/-- **Above the decomposition group the ramification index is one.** If `H` contains the
+decomposition group `D(Q)`, then the prime `Q ∩ C` of the `H`-invariant ring `C` has
+ramification index one over `A`. No hypothesis on the residue extension is needed. -/
+theorem ramificationIdx_under_eq_one_of_stabilizer_le (hH : stabilizer G Q ≤ H) :
+    (Q.under C).ramificationIdx A = 1 :=
+  (mul_eq_one.1 <| (Q.ramificationIdx_mul_inertiaDeg_under_eq_relIndex H C).trans
+    (Subgroup.relIndex_eq_one.2 hH)).1
+
+/-- **Above the decomposition group the residue degree is one.** If `H` contains the
+decomposition group `D(Q)`, then the prime `Q ∩ C` of the `H`-invariant ring `C` has residue
+degree one over `A`. No hypothesis on the residue extension is needed. -/
+theorem inertiaDeg_under_eq_one_of_stabilizer_le (hH : stabilizer G Q ≤ H) :
+    (Q.under C).inertiaDeg A = 1 :=
+  (mul_eq_one.1 <| (Q.ramificationIdx_mul_inertiaDeg_under_eq_relIndex H C).trans
+    (Subgroup.relIndex_eq_one.2 hH)).2
 
 end LocalDegree
 
