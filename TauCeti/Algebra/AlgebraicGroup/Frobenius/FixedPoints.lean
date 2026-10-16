@@ -50,6 +50,8 @@ finiteness is asserted.
 * `TauCeti.Bialgebra.fixedSubgroup_iterateFrobeniusPoints_le_of_dvd`: the fixed subgroups grow
   along divisibility of the exponent, the inclusion `G(𝔽_{p ^ m}) ⊆ G(𝔽_{p ^ k})` in the
   motivating case.
+* `TauCeti.Bialgebra.fixedSubgroup_iterateFrobeniusPoints_inf`: fixed subgroups at exponents
+  `m` and `n` intersect in the fixed subgroup at `m.gcd n`.
 * `TauCeti.Bialgebra.map_fixedSubgroup_iterateFrobeniusPoints_le` and
   `TauCeti.Bialgebra.mapValue_mem_fixedSubgroup_iterateFrobeniusPoints`: a homomorphism of value
   algebras carries Frobenius-fixed points to Frobenius-fixed points.
@@ -200,6 +202,24 @@ theorem fixedSubgroup_iterateFrobeniusPoints_le_of_dvd {m k : ℕ} (hmk : m ∣ 
   (iterateFrobeniusPoints_eq_self_iff p k).mpr fun h =>
     mem_frobeniusFixedSubring.mp (frobeniusFixedSubring_le_of_dvd hmk
       (mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p m).mp hf h)))
+
+/-- Two Frobenius-fixed point subgroups intersect in the fixed subgroup at the gcd of their
+exponents. In the motivating case this is the intersection formula for groups of rational points. -/
+@[simp]
+theorem fixedSubgroup_iterateFrobeniusPoints_inf (m n : ℕ) :
+    fixedSubgroup (iterateFrobeniusPoints p m (H := H) (A := A)) ⊓
+        fixedSubgroup (iterateFrobeniusPoints p n) =
+      fixedSubgroup (iterateFrobeniusPoints p (m.gcd n)) := by
+  refine le_antisymm ?_ (le_inf
+    (fixedSubgroup_iterateFrobeniusPoints_le_of_dvd p (Nat.gcd_dvd_left m n))
+    (fixedSubgroup_iterateFrobeniusPoints_le_of_dvd p (Nat.gcd_dvd_right m n)))
+  rintro f ⟨hm, hn⟩
+  apply (iterateFrobeniusPoints_eq_self_iff p (m.gcd n)).mpr
+  intro h
+  apply mem_frobeniusFixedSubring.mp
+  rw [← frobeniusFixedSubring_inf m n]
+  exact ⟨mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p m).mp hm h),
+    mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p n).mp hn h)⟩
 
 variable {B : Type w} [CommRing B] [ExpChar B p]
 
