@@ -319,12 +319,8 @@ theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding_iff (u : (𝓞 L)ˣ) :
   · intro h
     have habs : |∑ w, y w| = 0 := by
       nlinarith
-    have hlog : Real.log ((w₀ (K := L)) u) = 0 := by
-      rw [abs_eq_zero, hsum] at habs
-      have hmult : (0 : ℝ) < (w₀ (K := L)).mult := by
-        exact_mod_cast InfinitePlace.mult_pos
-      nlinarith
-    exact Real.eq_one_of_pos_of_log_eq_zero (Units.pos_at_place u (w₀ (K := L))) hlog
+    simpa only [abs_eq_zero, hsum, neg_eq_zero,
+      NumberField.Units.dirichletUnitTheorem.mult_log_place_eq_zero] using habs
   · intro h
     have hsum_zero : ∑ w, y w = 0 := by
       rw [hsum, h, Real.log_one, mul_zero, neg_zero]
