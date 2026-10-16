@@ -21,10 +21,11 @@ the sesquilinear form `leviForm f x` whose real and imaginary parts are
 `Im (leviForm f x v w) = (D²f(x)(I • v, w) - D²f(x)(v, I • w)) / 4`.
 
 In holomorphic coordinates `z_j = x_j + I y_j` its matrix entries are the Wirtinger second
-derivatives `∂²f / ∂z_j ∂(conj z_k)`, and its diagonal value `leviForm f x v v` is the real number
-`(D²f(x)(v, v) + D²f(x)(I • v, I • v)) / 4`. Unlike the real Hessian, which is intrinsic only at
-critical points, the Levi form transforms as a Hermitian form under holomorphic changes of
-variables at every point. Positive definiteness of the Levi form is strict plurisubharmonicity.
+derivatives `∂²f / ∂z_j ∂(conj z_k)`, and for `C²` `f` its diagonal value `leviForm f x v v` is
+the real number `(D²f(x)(v, v) + D²f(x)(I • v, I • v)) / 4`. Unlike the real Hessian, which is
+intrinsic only at critical points, the Levi form transforms as a Hermitian form under holomorphic
+changes of variables at every point. Positive definiteness of the Levi form is strict
+plurisubharmonicity.
 
 This file gives the calculus of the Levi form: its value on the diagonal in terms of the Hessian
 quadratic form, Hermitian symmetry, the sum rule, the product rule, the rule for post-composition
@@ -115,14 +116,10 @@ theorem leviForm_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) : leviForm f x =
 /-- **The sum rule.** -/
 theorem leviForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
     leviForm (f + g) x = leviForm f x + leviForm g x := by
-  have hev : fderiv ℝ (f + g) =ᶠ[𝓝 x] fderiv ℝ f + fderiv ℝ g := by
-    filter_upwards [(hf.of_le (m := 1) (by norm_num)).eventually (by simp),
-      (hg.of_le (m := 1) (by norm_num)).eventually (by simp)] with y hfy hgy
-    exact fderiv_add (hfy.differentiableAt one_ne_zero) (hgy.differentiableAt one_ne_zero)
-  have h2 : fderiv ℝ (fderiv ℝ (f + g)) x =
-      fderiv ℝ (fderiv ℝ f) x + fderiv ℝ (fderiv ℝ g) x :=
-    (((hf.hasFDerivAt_fderiv le_rfl).add (hg.hasFDerivAt_fderiv le_rfl)).congr_of_eventuallyEq
-      hev).fderiv
+  have h2 (v w : V) : fderiv ℝ (fderiv ℝ (f + g)) x v w =
+      fderiv ℝ (fderiv ℝ f) x v w + fderiv ℝ (fderiv ℝ g) x v w := by
+    simpa [iteratedFDeriv_two_apply] using
+      congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, w])
   ext v w
   apply Complex.ext <;> simp [h2] <;> ring
 
@@ -163,8 +160,8 @@ theorem leviForm_scalar_comp_apply {φ : ℝ → ℝ} (hφ : ContDiffAt ℝ 2 φ
 
 /-- **Post-composition with a convex function.** If `φ'' ≥ 0` at `f x`, then the diagonal of the
 Levi form of `φ ∘ f` dominates `φ'(f x)` times the diagonal of the Levi form of `f`. In particular,
-post-composition with an increasing convex function preserves strict positivity of the Levi
-form. -/
+if moreover `φ'(f x) > 0`, post-composition with `φ` preserves strict positivity of the Levi
+form at `x`. -/
 theorem le_re_leviForm_scalar_comp_apply_self {φ : ℝ → ℝ} (hφ : ContDiffAt ℝ 2 φ (f x))
     (hf : ContDiffAt ℝ 2 f x) (hφ₂ : 0 ≤ iteratedDeriv 2 φ (f x)) (v : V) :
     deriv φ (f x) * (leviForm f x v v).re ≤ (leviForm (φ ∘ f) x v v).re := by

@@ -19,10 +19,12 @@ The **Levi form** of `B` is the sesquilinear form
 `B.leviForm v w = (B v w + B (I • v) (I • w) + I * (B (I • v) w - B v (I • w))) / 4`,
 
 conjugate-linear in `v` and complex-linear in `w`. It is the `(1,1)`-part of `B`: on a coordinate
-basis `e_j` of `V`, with `I • e_j` the imaginary coordinate directions, its matrix entries are
-the Wirtinger expressions `(B_{x_j x_k} + B_{y_j y_k} + I (B_{x_j y_k} - B_{y_j x_k})) / 4`, so
-for the real Hessian `B` of a function `f` the entry `B.leviForm (e_k) (e_j)` is
-`∂²f / ∂z_j ∂(conj z_k)`. Its diagonal is one quarter of `B v v + B (I • v) (I • v)`.
+basis `e_j` of `V`, with `I • e_j` the imaginary coordinate directions, write
+`B_{x_j y_k} = B (e_j) (I • e_k)` and similarly for the other entries. Then the entry
+`B.leviForm (e_j) (e_k)` is `(B_{x_j x_k} + B_{y_j y_k} + I (B_{y_j x_k} - B_{x_j y_k})) / 4`, so
+for the (symmetric) real Hessian `B` of a function `f` the entry `B.leviForm (e_k) (e_j)` is the
+Wirtinger derivative `∂²f / ∂z_j ∂(conj z_k)`. The real part of its diagonal is one quarter of
+`B v v + B (I • v) (I • v)`, and for symmetric `B` the diagonal is this real number.
 
 The Levi form forgets the part of `B` which anticommutes with multiplication by `I`. This is why
 it transforms well under holomorphic maps: the second derivative of a holomorphic map is complex
@@ -62,8 +64,8 @@ variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarT
 
 /-- The **Levi form** of a real bilinear form `B` on a complex vector space: the sesquilinear form
 `(B v w + B (I • v) (I • w) + I * (B (I • v) w - B v (I • w))) / 4`, conjugate-linear in `v` and
-complex-linear in `w`. It is the `(1,1)`-part of `B`; its diagonal is one quarter of
-`B v v + B (I • v) (I • v)`. -/
+complex-linear in `w`. It is the `(1,1)`-part of `B`; for symmetric `B` its diagonal is one
+quarter of `B v v + B (I • v) (I • v)`. -/
 noncomputable def leviForm (B : LinearMap.BilinForm ℝ V) : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ :=
   LinearMap.mk₂'ₛₗ (starRingEnd ℂ) (RingHom.id ℂ)
     (fun v w ↦ (4 : ℂ)⁻¹ *
