@@ -12,23 +12,15 @@ public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 
 /-!
-# Transporting subcomplexes of complexes of modules
+# Factoring through subcomplexes of complexes of modules
 
-A subcomplex `S` of a homological complex `D` of modules is recorded degreewise by the range of
-the components of `S.arrow`.  When `D` is only propositionally equal to another complex `C`, for
-instance because `C` is a definition whose body is not exposed and `D` is its unfolding, `S` is
-transported to a subcomplex of `C` by `Subobject.mapIsoToOrderIso (eqToIso _)`.  This file
-records that the transported subcomplex has the same degreewise range, up to the transport of
-elements along `eqToHom`.
-
-Conversely, a morphism of complexes into `D` factors through a subcomplex `S` as soon as it does
-degreewise, that is, as soon as each of its components lands in the range of the corresponding
-component of `S.arrow` (`HomologicalComplex.factors_of_forall_mem_range`).
+A subcomplex `S` of a homological complex `L` of modules is recorded degreewise by the range of
+the components of `S.arrow`. A morphism of complexes into `L` factors through `S` as soon as it
+does degreewise, that is, as soon as each of its components lands in the range of the
+corresponding component of `S.arrow` (`HomologicalComplex.factors_of_forall_mem_range`).
 
 ## Main results
 
-* `HomologicalComplex.mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff`: degreewise
-  membership in a subcomplex transported along an equality of complexes.
 * `HomologicalComplex.factors_iff_forall_mem_range`: a morphism factors through a subcomplex
   exactly when it does degreewise.
 -/
@@ -40,19 +32,6 @@ open CategoryTheory
 namespace HomologicalComplex
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
-
-/-- Transporting a subcomplex along `eqToIso` does not change its degreewise range, up to the
-transport of elements. -/
-theorem mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff.{v}
-    {C D : HomologicalComplex (ModuleCat.{v} R) c} (e : C = D) (S : Subobject D) (n : ι)
-    (x : C.X n) :
-    x ∈ LinearMap.range ((Subobject.mapIsoToOrderIso (eqToIso e.symm) S).arrow.f n).hom ↔
-      ((eqToHom e).f n).hom x ∈ LinearMap.range (S.arrow.f n).hom := by
-  subst e
-  -- By definition, `mapIsoToOrderIso e` is `(Subobject.map e.hom).obj`; for the reflexive
-  -- equality this is therefore the subobject map along the identity.
-  rw [eqToIso_refl, show Subobject.mapIsoToOrderIso (Iso.refl C) S = S from Subobject.map_id S,
-    eqToHom_refl, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
 
 section Factors
 
