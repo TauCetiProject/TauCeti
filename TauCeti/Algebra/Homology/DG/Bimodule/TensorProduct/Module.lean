@@ -63,6 +63,19 @@ abbrev tensorBimoduleObj (M : DGRightModuleCat.{uR, uB, uM} hB)
 variable {M M' M'' : DGRightModuleCat.{uR, uB, uM} hB}
   {N N' N'' : DGBimoduleCat.{uR, uB, uC, uN} hB hC}
 
+/-- The differential on a homogeneous pure tensor has the usual Koszul sign. -/
+theorem tensorBimoduleObj_differential_tmul {p : ℤ} {m : M}
+    (hm : m ∈ M.grading p) (n : N) :
+    (tensorBimoduleObj M N).differential (tmul R B m n) =
+      tmul R B (M.differential m) n + p.negOnePow • tmul R B m (N.differential n) :=
+  DGBimoduleCat.tensorObj_differential_tmul hm n
+
+/-- A pure tensor of homogeneous elements has the sum of their degrees. -/
+theorem tmul_mem_tensorBimoduleObj_grading {p q : ℤ} {m : M} {n : N}
+    (hm : m ∈ M.grading p) (hn : n ∈ N.grading q) :
+    tmul R B m n ∈ (tensorBimoduleObj M N).grading (p + q) :=
+  DGBimoduleCat.tmul_mem_tensorObj_grading hm hn
+
 /-- The tensor map induced by a right-module morphism and a bimodule morphism. -/
 abbrev tensorBimoduleMap (f : M ⟶ M') (g : N ⟶ N') :
     tensorBimoduleObj M N ⟶ tensorBimoduleObj M' N' :=
