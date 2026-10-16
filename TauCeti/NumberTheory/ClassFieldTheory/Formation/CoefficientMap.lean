@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 
 /-!
@@ -35,10 +35,11 @@ multiplicative, idele and idele-class formations of a layer.
 * `TauCeti.ClassFieldTheory.Formation.map_mem_level`: an equivariant map preserves levels.
 * `TauCeti.ClassFieldTheory.NormalLayer.shortExact_repMap`: a short exact sequence of
   coefficient modules stays short exact on a layer once invariants of the top subgroup lift.
-* `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_comp_map_repMap` and
-  `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes_comp_map_repMap`: inflation and
-  restriction of layer cohomology commute with the maps of cohomology induced by a map of
-  coefficient modules.
+* `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_comp_map_repMap`,
+  `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes_comp_map_repMap` and
+  `TauCeti.ClassFieldTheory.NormalLayer.conjugateCohomologyIso_hom_comp_map_repMap`: inflation,
+  restriction and conjugation of layer cohomology commute with the maps of cohomology induced by a
+  map of coefficient modules.
 -/
 
 public noncomputable section
@@ -125,7 +126,7 @@ end NormalLayer
 `V ◁ U` and an equivariant map `φ : A → A'` of coefficient modules, inflating from
 `H^n(U/V, A^V)` to `H^n(U/V', A^{V'})` and then applying `φ` is applying `φ` and then inflating
 from `H^n(U/V, A'^V)`. -/
-@[reassoc]
+@[reassoc, elementwise]
 theorem LayerRefinement.cohomologyInfl_comp_map_repMap {old new : NormalLayer G}
     (T : LayerRefinement old new) (φ : F.toRep ⟶ F'.toRep) (n : ℕ) :
     T.cohomologyInfl F n ≫ groupCohomology.map (MonoidHom.id new.Gal) (new.repMap φ) n =
@@ -158,5 +159,29 @@ theorem LayerRestriction.cohomologyRes_comp_map_repMap {small big : NormalLayer 
   exact ((small.repMap_hom_apply_coe φ _).trans
     (congrArg φ.hom (R.repIso_inv_apply_coe F x))).trans
     ((R.repIso_inv_apply_coe F' _).trans (big.repMap_hom_apply_coe φ x)).symm
+
+/-- **Conjugation commutes with maps of coefficient modules**: for `g` in the ambient group and an
+equivariant map `φ : A → A'` of coefficient modules, conjugating a class of `H^n(U/V, A^V)` by `g`
+and then applying `φ` is applying `φ` and then conjugating, since `φ (g • x) = g • φ x`. -/
+@[reassoc, elementwise]
+theorem NormalLayer.conjugateCohomologyIso_hom_comp_map_repMap (L : NormalLayer G) (g : G)
+    (φ : F.toRep ⟶ F'.toRep) (n : ℕ) :
+    (L.conjugateCohomologyIso F g n).hom ≫
+        groupCohomology.map (MonoidHom.id (L.conjugate g).Gal) ((L.conjugate g).repMap φ) n =
+      groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) n ≫
+        (L.conjugateCohomologyIso F' g n).hom := by
+  rw [NormalLayer.conjugateCohomologyIso_def, NormalLayer.conjugateCohomologyIso_def,
+    groupCohomology.mapIso_hom, groupCohomology.mapIso_hom]
+  refine (groupCohomology.map_comp _ _ _ _ n).symm.trans
+    (Eq.trans ?_ (groupCohomology.map_comp _ _ _ _ n))
+  refine groupCohomology.map_congr rfl (LinearMap.ext fun x ↦ Subtype.ext ?_) n
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+    Rep.resMap_hom_toLinearMap, LinearMap.coe_comp, Representation.IntertwiningMap.coe_toLinearMap,
+    Function.comp_apply, Rep.hom_ofHom, LinearEquiv.coe_coe]
+  exact (((L.conjugate g).repMap_hom_apply_coe φ _).trans
+    (congrArg φ.hom (L.conjugateCoefficientEquiv_apply_coe F g x))).trans
+    ((Rep.hom_comm_apply φ g (x : F.toRep.V)).trans
+      ((L.conjugateCoefficientEquiv_apply_coe F' g _).trans
+        (congrArg _ (L.repMap_hom_apply_coe φ x))).symm)
 
 end TauCeti.ClassFieldTheory

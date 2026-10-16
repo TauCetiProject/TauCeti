@@ -142,7 +142,7 @@ theorem globalSectionsAction_injective : Function.Injective (globalSectionsActio
   apply X.sheaf.eq_of_locally_eq' t.X ⊤ (fun i ↦ (t.X i).leTop) hcover
   intro i
   have h := congrArg (fun ψ : End M ↦ trivializationCoordinate M (t.iso i) (𝟙 (t.X i))
-    (ψ.app (t.X i) (trivializationGenerator M (t.iso i)))) hrs
+    (ψ.asHom.app (t.X i) (trivializationGenerator M (t.iso i)))) hrs
   have key : X.presheaf.map (t.X i).leTop.op r = X.presheaf.map (t.X i).leTop.op s := by
     simpa only [globalSectionsAction_apply, globalSectionsSmul_app, smul_apply,
       LinearEquiv.map_smul, trivializationCoordinate_trivializationGenerator, smul_eq_mul,
@@ -151,7 +151,7 @@ theorem globalSectionsAction_injective : Function.Injective (globalSectionsActio
 
 /-- Every endomorphism of an invertible sheaf is multiplication by a global function. -/
 theorem globalSectionsAction_surjective : Function.Surjective (globalSectionsAction M) := by
-  intro φ
+  rintro ⟨φ⟩
   let t := TauCeti.SheafOfModules.LocalTrivializations.ofIsInvertible M
   have hcover : (⊤ : X.Opens) ≤ iSup t.X :=
     ((Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop).iSup_eq_top.ge
@@ -167,6 +167,7 @@ theorem globalSectionsAction_surjective : Function.Surjective (globalSectionsAct
   obtain ⟨r, hr⟩ := key
   refine ⟨r, ?_⟩
   rw [globalSectionsAction_apply]
+  congr 1
   refine Modules.hom_ext _ _ fun U ↦ ?_
   ext x
   rw [globalSectionsSmul_app, smul_apply]
@@ -197,7 +198,8 @@ theorem globalSectionsAction_bijective : Function.Bijective (globalSectionsActio
 /-- Every endomorphism of an invertible sheaf is multiplication by a unique global function. -/
 theorem existsUnique_globalSectionsSmul_eq (φ : M ⟶ M) :
     ∃! r : Γ(X, ⊤), M.globalSectionsSmul r = φ := by
-  simpa only [globalSectionsAction_apply] using (globalSectionsAction_bijective M).existsUnique φ
+  simpa only [globalSectionsAction_apply, End.ext_iff] using
+    (globalSectionsAction_bijective M).existsUnique (End.of φ)
 
 /-- **Endomorphisms of a line bundle are global functions.** For an invertible sheaf `M` on a
 scheme `X`, the action of global functions is a ring isomorphism `Γ(X, 𝒪_X) ≃+* End M`. -/
@@ -206,13 +208,15 @@ def globalSectionsActionRingEquiv : Γ(X, ⊤) ≃+* End M :=
 
 @[simp]
 lemma globalSectionsActionRingEquiv_apply (r : Γ(X, ⊤)) :
-    globalSectionsActionRingEquiv M r = M.globalSectionsSmul r := by
+    globalSectionsActionRingEquiv M r = End.of (M.globalSectionsSmul r) := by
   rw [globalSectionsActionRingEquiv, RingEquiv.ofBijective_apply, globalSectionsAction_apply]
 
 @[simp]
 lemma globalSectionsSmul_globalSectionsActionRingEquiv_symm (φ : M ⟶ M) :
-    M.globalSectionsSmul ((globalSectionsActionRingEquiv M).symm φ) = φ := by
-  rw [← globalSectionsActionRingEquiv_apply, RingEquiv.apply_symm_apply]
+    M.globalSectionsSmul ((globalSectionsActionRingEquiv M).symm (End.of φ)) = φ := by
+  have h := congrArg End.asHom
+    ((globalSectionsActionRingEquiv M).apply_symm_apply (End.of φ))
+  rwa [globalSectionsActionRingEquiv_apply] at h
 
 /-- **Automorphisms of a line bundle are global units.** For an invertible sheaf `M` on a scheme
 `X`, the action of global functions is a group isomorphism `Γ(X, 𝒪_X)ˣ ≃* Aut M`. -/
@@ -224,21 +228,23 @@ def unitsGlobalSectionsMulEquivAut : Γ(X, ⊤)ˣ ≃* Aut M :=
 -- `u` and `u⁻¹` under the ring isomorphism.
 @[simp]
 lemma unitsGlobalSectionsMulEquivAut_apply_hom (u : Γ(X, ⊤)ˣ) :
-    (unitsGlobalSectionsMulEquivAut M u).hom = M.globalSectionsSmul u := by
-  have h : (unitsGlobalSectionsMulEquivAut M u).hom = globalSectionsActionRingEquiv M u := rfl
+    (unitsGlobalSectionsMulEquivAut M u).asIso.hom = M.globalSectionsSmul u := by
+  have h : (unitsGlobalSectionsMulEquivAut M u).asIso.hom =
+      (globalSectionsActionRingEquiv M u).asHom := rfl
   rw [h, globalSectionsActionRingEquiv_apply]
 
 @[simp]
 lemma unitsGlobalSectionsMulEquivAut_apply_inv (u : Γ(X, ⊤)ˣ) :
-    (unitsGlobalSectionsMulEquivAut M u).inv = M.globalSectionsSmul ↑u⁻¹ := by
-  have h : (unitsGlobalSectionsMulEquivAut M u).inv = globalSectionsActionRingEquiv M ↑u⁻¹ := rfl
+    (unitsGlobalSectionsMulEquivAut M u).asIso.inv = M.globalSectionsSmul ↑u⁻¹ := by
+  have h : (unitsGlobalSectionsMulEquivAut M u).asIso.inv =
+      (globalSectionsActionRingEquiv M ↑u⁻¹).asHom := rfl
   rw [h, globalSectionsActionRingEquiv_apply]
 
 /-- An automorphism of an invertible sheaf is multiplication by the global unit corresponding to
 it. -/
 @[simp]
 lemma globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm (f : Aut M) :
-    M.globalSectionsSmul ((unitsGlobalSectionsMulEquivAut M).symm f) = f.hom := by
+    M.globalSectionsSmul ((unitsGlobalSectionsMulEquivAut M).symm f) = f.asIso.hom := by
   rw [← unitsGlobalSectionsMulEquivAut_apply_hom, MulEquiv.apply_symm_apply]
 
 end Invertible

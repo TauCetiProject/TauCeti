@@ -138,9 +138,8 @@ noncomputable def pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
 
 /-- A multiplicative-group morphism sends a unit to the `𝔾ₘ`-point precomposed with `l`. -/
 theorem pointsHom_apply (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
-    pointsHom A l u = AlgHom.mapDomain l (toConv (MultiplicativeGroup.point (R := R) u)) := by
-  rw [pointsHom, MonoidHom.comp_apply]
-  congr 1
+    pointsHom A l u = AlgHom.mapDomain l (toConv (laurentEval (R := R) u)) := by
+  simp [pointsHom, MultiplicativeGroup.pointsMulEquiv_symm_apply]
 
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/
@@ -154,12 +153,12 @@ morphism `l` at the tautological unit `T`. For commutative `H`, it is a point of
 monoid scheme `Spec H`. -/
 noncomputable def genericPoint (l : H →ₐc[R] LaurentPolynomial R) :
     WithConv (H →ₐ[R] LaurentPolynomial A) :=
-  pointsHom (LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A)
+  pointsHom (LaurentPolynomial A) l (LaurentPolynomial.genericUnit A)
 
 /-- The generic point is the image of the generic unit `T`. -/
 theorem genericPoint_eq_pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
     genericPoint A l =
-      pointsHom (LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A) := by
+      pointsHom (LaurentPolynomial A) l (LaurentPolynomial.genericUnit A) := by
   rw [genericPoint]
 
 /-! ### Naturality in the value algebra -/
@@ -174,7 +173,7 @@ theorem mapValue_pointsHom (u : Aˣ) :
   rw [pointsHom_apply, pointsHom_apply, ← MonoidHom.comp_apply,
     ← AlgHom.mapValue_mapDomain, MonoidHom.comp_apply]
   congr 1
-  rw [AlgHom.mapValue_apply, MultiplicativeGroup.comp_point]
+  simp [AlgHom.mapValue_apply, comp_laurentEval]
 
 /-- The constant-point inclusion is natural in the value algebra. -/
 theorem mapValue_constPoint (g : WithConv (H →ₐ[R] A)) :
@@ -189,7 +188,7 @@ theorem mapValue_genericPoint :
   rw [genericPoint, genericPoint, mapValue_pointsHom]
   congr 1
   apply Units.ext
-  simp only [Units.coe_map, MultiplicativeGroup.genericUnit_val]
+  simp only [Units.coe_map, LaurentPolynomial.genericUnit_val]
   exact LaurentPolynomial.mapAlgHom_T φ 1
 
 /-- The inclusion of points over the affine line is natural in the value algebra. -/

@@ -115,7 +115,7 @@ theorem isProperMap_choleskyReconstruction :
   have hTc : IsCompact T :=
     (isCompact_univ_pi fun _ ↦ isCompact_univ_pi fun _ ↦ isCompact_Icc).of_isClosed_subset
       hTclosed hTbox
-  exact Topology.IsInducing.subtypeVal.isCompact_iff.2 (himage ▸ hTc)
+  exact Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.2 (himage ▸ hTc)
 
 /-- Cholesky factorization is continuous. -/
 theorem continuous_cholesky : Continuous (@cholesky p) := by

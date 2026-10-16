@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.List.MinMax
-public import Mathlib.Data.Prod.Lex
+public import Mathlib.Order.Prod.Lex.Basic
 public import TauCeti.Combinatorics.Young.Schensted.Bumping
 public import TauCeti.Data.List.Sort
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
-public import TauCeti.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Gram
 
 /-!
 # The level of an integral lattice
@@ -207,18 +207,15 @@ theorem level_dvd_iff_gramMatrix {ι : Type v} [Fintype ι] [DecidableEq ι] (b 
     (N : ℤ) :
     (L.level : ℤ) ∣ N ↔ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
       M.map (Int.cast : ℤ → ℚ) = (N : ℚ) • ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ := by
-  set f := L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ)
+  set f := (L.dualCarrierBasis b).extendOfIsLattice ℚ
   -- The inverse Gram matrix is the Gram matrix of the dual basis.
   have hinv (i j : ι) : ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ i j = L.form (f i) (f j) := by
-    have hsymm : ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))ᵀ =
-        (L.gramMatrix b).map (Int.cast : ℤ → ℚ) := by
-      rw [← Matrix.transpose_map, (L.isSymm_gramMatrix b).eq]
-    have hmap : (L.gramMatrix b).map (Int.cast : ℤ → ℚ) =
-        LinearMap.BilinForm.toMatrix (b.extendOfIsLattice ℚ) L.form := by
-      rw [← L.map_gramMatrix b, algebraMap_int_eq, Int.coe_castRingHom]
-    rw [← hsymm, hmap, ← LinearMap.BilinForm.toMatrix_dualBasis _ L.form_nondegenerate,
-      LinearMap.BilinForm.toMatrix_apply]
-  rw [L.level_dvd_iff_of_dualCarrier_eq_span f (by convert L.dualCarrier_eq_span_dualBasis b) N]
+    have h := congrFun (congrFun (L.toMatrix_dualCarrierBasis b) i) j
+    simpa only [LinearMap.BilinForm.toMatrix_apply,
+      algebraMap_int_eq, Int.coe_castRingHom] using h.symm
+  rw [L.level_dvd_iff_of_dualCarrier_eq_span f (by
+    simpa only [f, L.extendOfIsLattice_dualCarrierBasis] using
+      L.dualCarrier_eq_span_dualBasis b) N]
   constructor
   · rintro ⟨hint, heven⟩
     choose M hM using fun i j ↦ Submodule.mem_one.mp (hint i j)
