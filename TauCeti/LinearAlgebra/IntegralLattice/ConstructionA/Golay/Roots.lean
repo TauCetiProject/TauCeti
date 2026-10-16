@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Discriminant
 public import TauCeti.LinearAlgebra.IntegralLattice.CoordinatePower.Unit
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 
+import TauCeti.Data.Int.SumSquares
+
 /-!
 # Roots of the Golay Construction A lattice
 
@@ -82,20 +84,6 @@ theorem integralNorm_coordinateRoot (i : Fin 24) :
   exact_mod_cast (constructionALattice.integralNorm_cast (coordinateRoot i)).trans
     (norm_coordinateRoot i)
 
-private theorem hammingNorm_intCast_le_sum_sq (z : Fin 24 → ℤ) :
-    (hammingNorm (fun i ↦ (z i : ZMod 2)) : ℤ) ≤ ∑ i, z i ^ 2 := by
-  have hsum : ∑ i, (if (z i : ZMod 2) ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
-    apply sum_le_sum
-    intro i _
-    split_ifs with hi
-    · have hz : z i ≠ 0 := by
-        rintro h
-        simp [h] at hi
-      have := sq_pos_of_ne_zero hz
-      omega
-    · exact sq_nonneg _
-  simpa only [sum_boole, hammingNorm] using hsum
-
 /-- **Classification of the Golay lattice roots.** With the halved dot product, an ambient
 vector in the Golay lattice has norm two exactly when it is `2 eᵢ` or `-2 eᵢ`. -/
 theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.carrier) :
@@ -123,31 +111,15 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
         simp_rw [hw, mul_pow]
         simp [mul_sum]
       omega
-    obtain ⟨i, hi⟩ : ∃ i, w i ≠ 0 := by
-      by_contra! h
-      simp [h] at hsumw
-    have hieq : w i ^ 2 = 1 := by
-      apply le_antisymm
-      · simpa only [hsumw] using
-          (single_le_sum (fun j _ ↦ sq_nonneg (w j)) (mem_univ i))
-      · have := sq_pos_of_ne_zero hi
-        omega
-    have hsign := sq_eq_one_iff.mp hieq
-    have hrest : ∑ j ∈ univ.erase i, w j ^ 2 = 0 := by
-      have h := sum_erase_add (s := univ) (fun j ↦ w j ^ 2) (mem_univ i)
-      omega
-    have hother {j : Fin 24} (hj : j ≠ i) : w j = 0 := by
-      have := (sum_eq_zero_iff_of_nonneg (fun j _ ↦ sq_nonneg (w j))).mp hrest j
-        (mem_erase.mpr ⟨hj, mem_univ j⟩)
-      exact sq_eq_zero_iff.mp this
-    refine ⟨i, hsign.imp (fun h ↦ ?_) (fun h ↦ ?_)⟩ <;>
+    obtain ⟨i, hi⟩ := exists_eq_single_or_neg_single_of_sum_sq_eq_one w hsumw
+    refine ⟨i, hi.imp (fun h ↦ ?_) (fun h ↦ ?_)⟩ <;>
       funext j <;> by_cases hj : j = i
     · subst j
       simp [hw, h]
-    · simp [hw, hother hj, Pi.single_eq_of_ne hj]
+    · simp [hw, h, Pi.single_apply, hj]
     · subst j
       simp [hw, h]
-    · simp [hw, hother hj, Pi.single_eq_of_ne hj]
+    · simp [hw, h, Pi.single_apply, hj]
   · rintro ⟨i, rfl | rfl⟩
     · exact norm_coordinateRoot i
     · rw [IntegralLattice.norm_neg]
