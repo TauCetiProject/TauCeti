@@ -379,11 +379,12 @@ private theorem groupSchemePointMulEquiv_comp_inclusion
     groupSchemePointMulEquiv (Fin n) A q ≫ (inclusion R n).hom.hom =
       GeneralLinear.groupSchemePointMulEquiv n A (inclusionPoints (R := R) n q) := by
   rw [inclusion_def, ← mapPointsFunctor_coordinateMap_app R n (CommAlgCat.of R A) q]
-  exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
-    (R := R) A (GeneralLinear.groupScheme_def R n) (groupScheme_def R (Fin n))
-      (GeneralLinear.groupSchemePointMulEquiv n A) (groupSchemePointMulEquiv (Fin n) A)
-      (GeneralLinear.groupSchemePointMulEquiv_apply_left n A)
-      (groupSchemePointMulEquiv_apply_left (Fin n) A) (coordinateMap R n) q
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] using
+    (CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+      (R := R) A (GeneralLinear.groupScheme_def R n) (groupScheme_def R (Fin n))
+        (GeneralLinear.groupSchemePointMulEquiv n A) (groupSchemePointMulEquiv (Fin n) A)
+        (GeneralLinear.groupSchemePointMulEquiv_apply_left n A)
+        (groupSchemePointMulEquiv_apply_left (Fin n) A) (coordinateMap R n) q)
 
 /-- Composing a scheme-valued point with `U_n ⟶ GL_n` is ordinary subgroup inclusion on
 matrices. -/

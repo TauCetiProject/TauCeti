@@ -44,6 +44,8 @@ bialternant formula follows from the two branching rules by induction on the num
 
 ## Main statements
 
+* `TauCeti.injective_staircase`: the staircase exponents are pairwise distinct, so `a_δ` is
+  nonzero over a domain and may be cancelled.
 * `TauCeti.alternant_eq_prod_mul_sum_interlacingShapes`: the branching rule for the alternants
   `a_{λ+δ}`.
 * `TauCeti.diagramSchurPoly_mul_alternant`: **Jacobi's bialternant formula** for Young diagrams.
@@ -232,6 +234,15 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
   rw [hdet, ← mul_assoc, prod_pow_eq_pow_sum, ← pow_add, sum_tsub_distrib _ hr', hcard]
   congr 2
   omega
+
+/-- The staircase exponents `δ_j = N - 1 - j` are pairwise distinct.  Together with
+`TauCeti.alternant_ne_zero_of_injective` this is what makes the Vandermonde alternant `a_δ`
+nonzero, and so cancellable, over a domain. -/
+theorem injective_staircase (N : ℕ) : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) :=
+  fun i j hij => by
+    have := i.isLt
+    have := j.isLt
+    exact Fin.ext (by simp only at hij; omega)
 
 /-- **Jacobi's bialternant formula.**  For a Young diagram `μ` with at most `N` rows, the Schur
 polynomial `s_μ` in the alphabet `Fin N` times the Vandermonde alternant `a_δ`, `δ_j = N - 1 - j`,

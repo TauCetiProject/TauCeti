@@ -249,4 +249,16 @@ theorem _root_.MeasurableSet.isChartMeasurable [MeasurableSpace E] [OpensMeasura
     ((isOpen_extChartAt_source (I := I) x).measurableSet.inter hs).image_extChartAt
       (I := I) x Set.inter_subset_left
 
+/-- In a zero-dimensional charted manifold every preferred chart source is a singleton. -/
+theorem extChartAt_source_zeroDim {E M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M] (x : M) :
+    (extChartAt 𝓘(ℝ, E) x).source = {x} := by
+  ext y
+  constructor
+  · intro hy
+    exact (extChartAt 𝓘(ℝ, E) x).injOn hy (mem_extChartAt_source x)
+      (Subsingleton.elim _ _)
+  · rintro rfl
+    exact mem_extChartAt_source y
+
 end TauCeti
