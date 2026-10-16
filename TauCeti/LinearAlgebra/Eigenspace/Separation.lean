@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 
 /-!
 # Separating eigenspace summands
@@ -44,24 +45,19 @@ variable {K : Type u} {V : Type v} [CommRing K] [AddCommGroup V] [Module K V]
 theorem Module.End.pow_sub_smul_one_mem {f : Module.End K V} {P : Submodule K V}
     (hP : ∀ m ∈ P, f m ∈ P) (μ : K) (k : ℕ) :
     ∀ m ∈ P, ((f - μ • (1 : Module.End K V)) ^ k) m ∈ P := by
-  induction k with
-  | zero => intro m hm; simpa using hm
-  | succ k ih =>
-    intro m hm
-    rw [pow_succ, Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply,
-      Module.End.one_apply]
-    exact ih _ (sub_mem (hP m hm) (P.smul_mem μ hm))
+  intro m hm
+  rw [Module.End.coe_pow]
+  have hmaps : Set.MapsTo (f - μ • (1 : Module.End K V)) P P :=
+    fun x hx => P.sub_mem (hP x hx) (P.smul_mem μ hx)
+  exact hmaps.iterate k hm
 
 /-- An eigenvector of `f` with eigenvalue `ν` is an eigenvector of every power of `f - μ • 1`, with
 eigenvalue `(ν - μ) ^ k`. -/
 theorem Module.End.pow_sub_smul_one_apply_of_apply_eq_smul {f : Module.End K V} {μ ν : K} {v : V}
     (hv : f v = ν • v) (k : ℕ) :
     ((f - μ • (1 : Module.End K V)) ^ k) v = (ν - μ) ^ k • v := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ, Module.End.mul_apply, LinearMap.sub_apply, hv, LinearMap.smul_apply,
-      Module.End.one_apply, ← sub_smul, map_smul, ih, smul_smul, pow_succ, mul_comm]
+  simpa using Module.End.aeval_apply_of_mem_apply_eq_smul (p := Polynomial.X ^ k)
+    (by simp [hv, sub_smul] : (f - μ • (1 : Module.End K V)) v = (ν - μ) • v)
 
 namespace TauCeti
 
