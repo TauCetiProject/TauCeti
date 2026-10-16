@@ -242,7 +242,7 @@ theorem weightedIndex_rename {τ : Type*} {f : σ → τ} (hf : Function.Injecti
     have hd' : eval b (hasseDeriv (d.mapDomain f) (rename f P)) ≠ 0 := by
       rwa [← coeff_taylor, taylor_rename, coeff_rename_mapDomain f hf, coeff_taylor]
     exact (weightedIndex_le hd').trans_eq
-      (Finsupp.weight_mapDomain (fun j ↦ (r j : ℝ≥0∞)⁻¹) f d)
+      (Finsupp.linearCombination_mapDomain (v' := fun j ↦ (r j : ℝ≥0∞)⁻¹) (f := f) (l := d))
   · refine le_iInf₂ fun d hd ↦ ?_
     rw [← coeff_taylor, taylor_rename] at hd
     obtain ⟨u, rfl, hu⟩ : ∃ u, u.mapDomain f = d ∧ (taylor (b ∘ f) P).coeff u ≠ 0 := by
@@ -250,7 +250,7 @@ theorem weightedIndex_rename {τ : Type*} {f : σ → τ} (hf : Function.Injecti
       exact hd (coeff_rename_eq_zero f _ d h)
     rw [coeff_taylor] at hu
     exact (weightedIndex_le hu).trans_eq
-      (Finsupp.weight_mapDomain (fun j ↦ (r j : ℝ≥0∞)⁻¹) f u).symm
+      (Finsupp.linearCombination_mapDomain (v' := fun j ↦ (r j : ℝ≥0∞)⁻¹) (f := f) (l := u)).symm
 
 example : weightedIndex ![1, 2] 0
     (X 0 * X 1 : MvPolynomial (Fin 2) ℚ) = 3 / 2 := by
