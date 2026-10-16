@@ -43,6 +43,8 @@ point of `H`, so it kills every equation of the original center.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 open WithConv
 
