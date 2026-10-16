@@ -16,7 +16,7 @@ Every orientation of a binary lattice with primitive discriminant one gives the 
 proper class of the split product order. In particular the existing hyperbolic plane has
 this class. The primitive norm form also defines a class in the primitive split quotient,
 whose forgetful image is the existing oriented proper class. For the hyperbolic plane this
-is the triangular class with coefficients `1, 0`, the composition identity, and its module
+is the triangular principal class with coefficients `1, 1`, the composition identity, and its module
 is the unit module over the actual product order. No number-field order is used.
 
 ## References
@@ -78,20 +78,33 @@ theorem binaryProperClass_eq_splitPrincipalForm_of_discriminant_eq_one
       Quotient.mk'' BinaryQuadraticForm.splitPrincipalForm :=
   binaryProperClass_eq_splitPrincipalForm_of_discriminant_eq_one _ _ (by simp) o
 
-/-- The hyperbolic plane's primitive norm form gives the triangular split class `xy`. -/
+/-- The hyperbolic plane's primitive norm form gives the principal triangular split class. -/
 theorem hyperbolicPlane_binarySplitProperClass (o : Orientation ℤ hyperbolicPlane (Fin 2)) :
     hyperbolicPlane.binarySplitProperClass (by simp) 1 (by simp) o =
-      BinaryQuadraticForm.splitProperClassMk 1 0 isCoprime_one_left := by
+      BinaryQuadraticForm.splitProperClassMk 1 1 isCoprime_one_right := by
   apply BinaryQuadraticForm.splitProperClassToProperClass_injective 1
   rw [binarySplitProperClass_toProperClass, hyperbolicPlane_binaryProperClass,
     BinaryQuadraticForm.splitProperClassToProperClass_splitProperClassMk]
-  rfl
+  simpa only [BinaryQuadraticForm.splitPrincipalForm_def,
+    BinaryQuadraticForm.splitTriangularForm_def] using
+    (BinaryQuadraticForm.properClass_splitTriangularForm_eq_iff 1 0 1 one_ne_zero).mpr
+      (one_dvd _)
+
+/-- The existing raw proper class of the hyperbolic plane is the image of its principal
+split proper class. -/
+theorem hyperbolicPlane_binaryProperClass_eq_splitProperClassMk
+    (o : Orientation ℤ hyperbolicPlane (Fin 2)) :
+    hyperbolicPlane.binaryProperClass (by simp) o =
+      BinaryQuadraticForm.splitProperClassToProperClass 1
+        (BinaryQuadraticForm.splitProperClassMk 1 1 isCoprime_one_right) := by
+  rw [← binarySplitProperClass_toProperClass hyperbolicPlane (by simp) 1 (by simp) o,
+    hyperbolicPlane_binarySplitProperClass]
 
 /-- The hyperbolic plane gives the identity for split proper-class composition. -/
 @[simp] theorem hyperbolicPlane_binarySplitProperClass_eq_one
     (o : Orientation ℤ hyperbolicPlane (Fin 2)) :
-    hyperbolicPlane.binarySplitProperClass (by simp) 1 (by simp) o = 1 :=
-  Subsingleton.elim _ _
+    hyperbolicPlane.binarySplitProperClass (by simp) 1 (by simp) o = 1 := by
+  rw [hyperbolicPlane_binarySplitProperClass, BinaryQuadraticForm.splitProperClassMk_one]
 
 /-- The hyperbolic plane's split class maps to the actual product order's unit module. -/
 @[simp] theorem hyperbolicPlane_splitProperClassModule
