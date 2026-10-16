@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Height.MahlerMeasure
 public import TauCeti.NumberTheory.Height.NumberField
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.NumberTheory.Height.FiniteOrder
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Roots
 import TauCeti.RingTheory.Polynomial.GaussNorm
 
 /-!
@@ -67,17 +68,6 @@ section NumberField
 
 variable {L : Type*} [Field L] [NumberField L]
 
-/-- If `p` splits in the number field `L`, then at every infinite place `w` of `L` the product of
-`max (w r) 1` over the roots `r` of `p` in `L` is the product of `max 1 ‖z‖` over the complex
-roots `z` of `p`. -/
-private lemma prod_aroots_max_infinitePlace {p : ℚ[X]} (hs : (p.map (algebraMap ℚ L)).Splits)
-    (w : InfinitePlace L) :
-    ((p.aroots L).map fun r ↦ max (w r) 1).prod = ((p.aroots ℂ).map fun z ↦ max 1 ‖z‖).prod := by
-  have h : p.aroots ℂ = (p.aroots L).map w.embedding := by
-    rw [aroots_def, aroots_def, ← hs.roots_map, Polynomial.map_map,
-      Subsingleton.elim (w.embedding.comp (algebraMap ℚ L)) (algebraMap ℚ ℂ)]
-  simp [h, InfinitePlace.norm_embedding_eq, max_comm]
-
 /-- If `minpoly ℚ x` splits in the number field `L`, then at every finite place `w` of `L` the
 value of the leading coefficient `a₀` of `F_x` times the product of `max (w r) 1` over the
 conjugates `r` of `x` in `L` is `1`. -/
@@ -135,7 +125,7 @@ private theorem prod_aroots_mulHeight₁_eq_mahlerMeasure_pow {x : F} (hx : IsAl
         simp_rw [Finset.prod_pow]
     _ = (∏ v : InfinitePlace L, P ^ v.mult) * ∏ᶠ w : FinitePlace L, (w (a : L))⁻¹ := by
         congr 1
-        · exact Finset.prod_congr rfl fun v _ ↦ by rw [ht, prod_aroots_max_infinitePlace hs]
+        · exact Finset.prod_congr rfl fun v _ ↦ by rw [ht, v.prod_aroots_max_one_eq hs]
         · exact finprod_congr fun w ↦ by
             rw [ht, eq_inv_of_mul_eq_one_right (mul_prod_aroots_max_finitePlace hx hs w)]
     _ = mahlerMeasure x ^ finrank ℚ L := by
