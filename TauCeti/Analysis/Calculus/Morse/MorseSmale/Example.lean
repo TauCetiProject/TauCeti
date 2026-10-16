@@ -15,9 +15,11 @@ The function `f(x, y) = cos x + y² / 2` on `ℝ²` has globally Lipschitz gradi
 saddles of Morse index `1` for even `k` and minima of Morse index `0` for odd `k`. Its
 negative-gradient flow is Morse–Smale. Along an orbit the second coordinate is `y₀ e^{-t}`, so an
 unstable set lies on the `x`-axis; the first coordinate solves `x' = sin x`, for which the saddle
-values `2πm` are repelling, so the stable set of a saddle is a vertical line. Hence the unstable
-and stable sets of two saddles meet only at a saddle itself, where they are the two axes, and the
-stable set of a minimum has full-dimensional tangent spaces at each point.
+values `2πm` are repelling, so the stable set of a saddle is the vertical line through it. Hence
+the unstable set of a saddle `p` and the stable set of a saddle `q` meet only if `p = q`, and then
+only at that saddle. There the unstable set is tangent to the horizontal direction and the stable
+set is the vertical line, so the tangent spaces are the horizontal and vertical directions. The
+stable set of a minimum has two-dimensional tangent spaces at each of its points.
 
 For a saddle `p` and a minimum `q` (for instance `(0, 0)` and `(π, 0)`), the set of points on
 trajectories from `p` to `q` is a manifold of dimension `1`, and its level slices are manifolds of
@@ -262,7 +264,7 @@ private theorem morseIndex_cosAddHalfSq_congr {z w : EuclideanSpace ℝ (Fin 2)}
   exact QuadraticMap.ext fun u ↦ by
     rw [hessianQuadraticForm_cosAddHalfSq, hessianQuadraticForm_cosAddHalfSq, h]
 
-/-- The point `(z 0, 0)` of the `x`-axis below `z`; it is critical when `sin (z 0) = 0`. -/
+/-- The projection `(z 0, 0)` of `z` to the `x`-axis; it is critical when `sin (z 0) = 0`. -/
 private noncomputable abbrev onAxis (z : EuclideanSpace ℝ (Fin 2)) : EuclideanSpace ℝ (Fin 2) :=
   EuclideanSpace.single 0 (z 0)
 
@@ -354,8 +356,9 @@ private theorem orbit_vertical {a : ℝ} (ha : Real.sin a = 0) (y s : ℝ) :
   have := eq_negativeGradientFlow cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq hc s
   simpa [c] using this.symm
 
-/-- **The stable set of a saddle is vertical.** A point of the stable set of a critical point `q`
-with `cos (q 0) = 1` has first coordinate `q 0`: for `x' = sin x` the value `q 0` is repelling. -/
+/-- **The stable set of a saddle lies on a vertical line.** A point of the stable set of a critical
+point `q` with `cos (q 0) = 1` has first coordinate `q 0`: for `x' = sin x` the value `q 0` is
+repelling. -/
 private theorem apply_zero_eq_of_mem_stableSet {q z : EuclideanSpace ℝ (Fin 2)}
     (hs : Real.sin (q 0) = 0) (hc : Real.cos (q 0) = 1) (hz : z ∈ Flow.stableSet Φ q) :
     z 0 = q 0 := by
@@ -410,9 +413,9 @@ private theorem orbit_eq_self {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ 
   refine (forall_negativeGradientFlow_eq_self_iff _ _ z).2 ?_ t
   simp [gradient, hz]
 
-/-- **Transversality at a saddle.** At a critical point `q` with `cos (q 0) = 1`, the unstable set
-is tangent to the `x`-axis and the stable set contains the vertical line, so together they span
-the plane. -/
+/-- **Transversality at a saddle.** At a critical point `q` with `cos (q 0) = 1`, the span of the
+tangent cone of the unstable set lies in the `x`-axis (and is a line), and the tangent cone of the
+stable set contains the vertical direction, so together the two spans are the whole plane. -/
 private theorem span_sup_span_eq_top_of_saddle {q : EuclideanSpace ℝ (Fin 2)}
     (hq : fderiv ℝ cosAddHalfSq q = 0) (hc : Real.cos (q 0) = 1) :
     Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet Φ q) q) ⊔
@@ -506,8 +509,9 @@ variable {p q : EuclideanSpace ℝ (Fin 2)}
 
 /-- **The connecting locus from a saddle to a minimum is a manifold of dimension `1`.** For a
 saddle `p` (`cos (p 0) = 1`) and a minimum `q` (`cos (q 0) = -1`), the set
-`W^u(p) ∩ W^s(q)` of points on trajectories from `p` to `q` is a manifold of dimension
-`1 = morseIndex p - morseIndex q`; for example `p = (0, 0)` and `q = (π, 0)`. -/
+`W^u(p) ∩ W^s(q)` of points on trajectories from `p` to `q` is a `C¹` manifold of dimension
+`1 = morseIndex p - morseIndex q`, modelled on any one-dimensional subspace, with `C¹` inclusion
+into the plane; for example `p = (0, 0)` and `q = (π, 0)`. -/
 theorem exists_isManifold_cosAddHalfSq_saddle_min (hp : fderiv ℝ cosAddHalfSq p = 0)
     (hpc : Real.cos (p 0) = 1) (hq : fderiv ℝ cosAddHalfSq q = 0) (hqc : Real.cos (q 0) = -1)
     {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} (hL : Module.finrank ℝ L = 1) :
