@@ -49,7 +49,7 @@ theorem degreeOf_genWronskian_le_sum (D : Fin m → σ →₀ ℕ) (f : Fin m �
     (i : σ) (e : Fin m → ℕ) (hf : ∀ l, (f l).degreeOf i ≤ e l) :
     (genWronskian D f).degreeOf i ≤ ∑ l, e l := by
   rw [genWronskian_def]
-  refine TauCeti.Matrix.degreeOf_det_le_sum _ i e fun k l ↦ ?_
+  refine Matrix.degreeOf_det_le_sum _ i e fun k l ↦ ?_
   exact (degreeOf_hasseDeriv_le (D k) (f l) i).trans
     ((Nat.sub_le _ _).trans (hf l))
 

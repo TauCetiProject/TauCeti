@@ -19,17 +19,15 @@ at most `∑ l, e l` in `Xᵢ`.
 
 ## Main results
 
-* `TauCeti.Matrix.degreeOf_det_le_sum`: the partial degree of a determinant is bounded by
+* `Matrix.degreeOf_det_le_sum`: the partial degree of a determinant is bounded by
   the sum of the column-wise partial-degree bounds.
 -/
 
 public section
 
-namespace TauCeti
-
 namespace Matrix
 
-open _root_.Matrix _root_.MvPolynomial Finset
+open MvPolynomial Finset
 
 variable {R σ n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
 
@@ -50,5 +48,3 @@ theorem degreeOf_det_le_sum (A : Matrix n n (MvPolynomial σ R)) (i : σ) (e : n
     _ ≤ ∑ l, e l := Finset.sum_le_sum fun l _ ↦ hA (p l) l
 
 end Matrix
-
-end TauCeti
