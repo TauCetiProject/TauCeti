@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Funext
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Valuation
 
 /-!
@@ -22,24 +23,32 @@ Consequently a finite family of multivariate polynomials can be carried to a fam
 polynomials while preserving linear independence. This reduces statements about several
 variables, such as the generalized Wronskian criterion, to the one-variable case.
 
+Translating `T` to `T + a` turns the substitution into `Xₛ ↦ (T + a) ^ eₛ - a ^ eₛ` applied to
+the Taylor expansion of `f` at `(a ^ eₛ)ₛ`. This gives a chain rule: Hasse derivatives of the
+image of `f`, evaluated at `a`, are linear combinations of the Hasse derivatives of `f`
+evaluated at `(a ^ eₛ)ₛ`.
+
 ## Main results
 
 * `Finsupp.exists_injOn_weight`: every finite set of exponent vectors is separated by
   `weight e` for some `e : σ → ℕ`.
 * `MvPolynomial.coeff_aeval_X_pow_weight`: if `weight e` is injective on a set containing the
   support of `f` and `μ`, the coefficient of `T ^ (weight e μ)` is that of `X^μ` in `f`.
-* `MvPolynomial.disjoint_restrictSupport_ker_aeval_X_pow`,
-  `MvPolynomial.linearIndependent_aeval_X_pow`: the substitution is injective on such
-  polynomials and preserves linear independence of families supported there.
+* `MvPolynomial.injOn_aeval_X_pow`, `MvPolynomial.linearIndependent_aeval_X_pow`: the
+  substitution is injective on such polynomials and preserves linear independence of families
+  supported there.
+* `MvPolynomial.taylor_aeval_X_pow`: the substitution intertwines the Taylor expansions at `a`
+  and at `(a ^ eₛ)ₛ`.
+* `MvPolynomial.eval_hasseDeriv_aeval_X_pow`: the chain rule for the substitution; the `k`-th
+  Hasse derivative of the image only involves Hasse derivatives `∂^ν f` with `|ν| ≤ k`
+  (`MvPolynomial.coeff_aeval_X_add_C_pow_sub_C_eq_zero`).
 
 ## Implementation notes
 
-The weight is found without ordering or enumerating the variables, which may form an arbitrary
-type; for linearly ordered variables, the Lazard evaluators of
-`TauCeti.exists_isLazardEvaluator` are such weights (`TauCeti.IsLazardEvaluator.weight_injOn`).
-The product over all pairs `μ ≠ ν` of the linear forms `∑ₛ (μₛ - νₛ) Xₛ` is a nonzero polynomial
-over `ℤ`, so it does not vanish at some point with natural coordinates
-(`MvPolynomial.funext_set`); any such point is a separating weight.
+The variables may form an arbitrary type. A separating weight is a Lazard evaluator
+(`TauCeti.exists_isLazardEvaluator`, `TauCeti.IsLazardEvaluator.weight_injOn`) for a linear
+order on the variables chosen locally from a well-ordering; the statement does not depend on
+that order.
 
 ## References
 
@@ -65,29 +74,9 @@ variable {σ : Type*}
 makes `weight e` injective on it. No order on the variables is needed. -/
 theorem exists_injOn_weight (T : Finset (σ →₀ ℕ)) :
     ∃ e : σ → ℕ, Set.InjOn (weight e) (T : Set (σ →₀ ℕ)) := by
-  classical
-  -- The linear form `∑ₛ μₛ Xₛ` over `ℤ`; its value at `x` is `weight x μ`.
-  let ℓ : (σ →₀ ℕ) → MvPolynomial σ ℤ := fun μ ↦ weight MvPolynomial.X μ
-  have hℓ (x : σ → ℤ) (μ : σ →₀ ℕ) : MvPolynomial.eval x (ℓ μ) = weight x μ := by
-    simp [ℓ, weight_apply, Finsupp.sum, map_sum]
-  have hℓinj : Function.Injective ℓ := fun μ ν h ↦ Finsupp.ext fun s ↦ by
-    have := congrArg (MvPolynomial.eval (Pi.single s 1)) h
-    simpa [hℓ, weight_single_index] using this
-  have hQ : ∏ p ∈ T.offDiag, (ℓ p.1 - ℓ p.2) ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun p hp ↦
-      sub_ne_zero.mpr (hℓinj.ne (Finset.mem_offDiag.mp hp).2.2)
-  obtain ⟨x, hx, hQx⟩ : ∃ x ∈ Set.pi Set.univ fun _ : σ ↦ Set.range (Nat.cast : ℕ → ℤ),
-      MvPolynomial.eval x (∏ p ∈ T.offDiag, (ℓ p.1 - ℓ p.2)) ≠ 0 := by
-    by_contra! h
-    exact hQ (MvPolynomial.funext_set _ (fun _ ↦ Set.infinite_range_of_injective
-      Nat.cast_injective) fun x hx ↦ by rw [h x hx, map_zero])
-  choose e he using fun s ↦ hx s (Set.mem_univ s)
-  have hx' : x = fun s ↦ (e s : ℤ) := funext fun s ↦ (he s).symm
-  refine ⟨e, fun μ hμ ν hν h ↦ by_contra fun hne ↦ hQx ?_⟩
-  rw [map_prod]
-  refine Finset.prod_eq_zero (i := (μ, ν)) (Finset.mem_offDiag.mpr ⟨hμ, hν, hne⟩) ?_
-  rw [map_sub, hℓ, hℓ, sub_eq_zero, hx']
-  simpa [weight_apply, Finsupp.sum] using congrArg (Nat.cast : ℕ → ℤ) h
+  let _ : LinearOrder σ := WellOrderingRel.isWellOrder.linearOrder
+  obtain ⟨e, he⟩ := TauCeti.exists_isLazardEvaluator T.finite_toSet
+  exact ⟨e, he.weight_injOn⟩
 
 end Finsupp
 
@@ -117,24 +106,15 @@ theorem coeff_aeval_X_pow_weight {e : σ → ℕ} {T : Set (σ →₀ ℕ)} (he 
 
 /-- The Kronecker substitution `Xₛ ↦ T ^ eₛ` is injective on the polynomials supported in a set
 of exponent vectors on which `weight e` is injective. -/
-theorem disjoint_restrictSupport_ker_aeval_X_pow {e : σ → ℕ} {T : Set (σ →₀ ℕ)}
-    (he : Set.InjOn (weight e) T) :
-    Disjoint (restrictSupport R T)
-      (LinearMap.ker (aeval fun s ↦ (Polynomial.X : Polynomial R) ^ e s).toLinearMap) := by
-  rw [Submodule.disjoint_def]
-  intro f hf hker
-  rw [LinearMap.mem_ker, AlgHom.toLinearMap_apply] at hker
-  by_contra hf0
-  obtain ⟨μ, hμ⟩ := support_nonempty.mpr hf0
-  have hfT : ↑f.support ⊆ T := (mem_restrictSupport_iff (R := R)).mp hf
-  exact mem_support_iff.mp hμ (by
-    rw [← coeff_aeval_X_pow_weight he hfT (hfT hμ), hker, Polynomial.coeff_zero])
-
-end CommSemiring
-
-section CommRing
-
-variable [CommRing R]
+theorem injOn_aeval_X_pow {e : σ → ℕ} {T : Set (σ →₀ ℕ)} (he : Set.InjOn (weight e) T) :
+    Set.InjOn (aeval fun s ↦ (Polynomial.X : Polynomial R) ^ e s)
+      (restrictSupport R T : Set (MvPolynomial σ R)) := by
+  intro f hf g hg h
+  rw [SetLike.mem_coe, mem_restrictSupport_iff] at hf hg
+  ext μ
+  by_cases hμ : μ ∈ T
+  · rw [← coeff_aeval_X_pow_weight he hf hμ, ← coeff_aeval_X_pow_weight he hg hμ, h]
+  · rw [notMem_support_iff.mp fun h ↦ hμ (hf h), notMem_support_iff.mp fun h ↦ hμ (hg h)]
 
 /-- The Kronecker substitution `Xₛ ↦ T ^ eₛ` preserves linear independence of a family of
 polynomials supported in a set of exponent vectors on which `weight e` is injective. -/
@@ -142,11 +122,57 @@ theorem linearIndependent_aeval_X_pow {ι : Type*} {e : σ → ℕ} {T : Set (σ
     (he : Set.InjOn (weight e) T) {φ : ι → MvPolynomial σ R} (hφT : ∀ i, ↑(φ i).support ⊆ T)
     (hφ : LinearIndependent R φ) :
     LinearIndependent R fun i ↦ aeval (fun s ↦ (Polynomial.X : Polynomial R) ^ e s) (φ i) := by
-  refine hφ.map (f := (aeval fun s ↦ (Polynomial.X : Polynomial R) ^ e s).toLinearMap) ?_
-  refine (disjoint_restrictSupport_ker_aeval_X_pow he).mono_left ?_
-  rw [Submodule.span_le]
+  refine hφ.map_injOn (aeval fun s ↦ (Polynomial.X : Polynomial R) ^ e s).toLinearMap
+    ((injOn_aeval_X_pow he).mono ?_)
+  rw [SetLike.coe_subset_coe, Submodule.span_le]
   rintro _ ⟨i, rfl⟩
   exact (mem_restrictSupport_iff (R := R)).mpr (hφT i)
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R]
+
+/-- Translating `T` to `T + a` after the Kronecker substitution `Xₛ ↦ T ^ eₛ` is the same as
+translating `X` to `X + (a ^ eₛ)ₛ` and then substituting `Xₛ ↦ (T + a) ^ eₛ - a ^ eₛ`. -/
+theorem taylor_aeval_X_pow (e : σ → ℕ) (a : R) (f : MvPolynomial σ R) :
+    Polynomial.taylor a (aeval (fun s ↦ (Polynomial.X : Polynomial R) ^ e s) f) =
+      aeval (fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s))
+        (taylor (fun s ↦ a ^ e s) f) := by
+  have h : (Polynomial.taylorAlgHom a).comp (aeval fun s ↦ (Polynomial.X : Polynomial R) ^ e s) =
+      (aeval fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s)).comp
+        (taylor fun s ↦ a ^ e s) :=
+    algHom_ext fun s ↦ by simp [taylor_X]
+  simpa using DFunLike.congr_fun h f
+
+/-- The translated Kronecker substitution `Xₛ ↦ (T + a) ^ eₛ - a ^ eₛ` sends `X^ν` to a multiple
+of `T ^ |ν|`, so the coefficients of `T ^ k` with `k < |ν|` vanish. -/
+theorem coeff_aeval_X_add_C_pow_sub_C_eq_zero (e : σ → ℕ) (a : R) (ν : σ →₀ ℕ) {k : ℕ}
+    (hk : k < ν.degree) :
+    (aeval (fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s))
+      (monomial ν (1 : R))).coeff k = 0 := by
+  refine Polynomial.X_pow_dvd_iff.mp ?_ k hk
+  rw [aeval_monomial, map_one, one_mul, Finsupp.prod, degree_apply, ← Finset.prod_pow_eq_pow_sum]
+  refine Finset.prod_dvd_prod_of_dvd _ _ fun s _ ↦ pow_dvd_pow_of_dvd ?_ _
+  rw [Polynomial.X_dvd_iff, Polynomial.coeff_zero_eq_eval_zero]
+  simp
+
+/-- **The chain rule for the Kronecker substitution.** The `k`-th Hasse derivative of the image of
+`f` under `Xₛ ↦ T ^ eₛ`, evaluated at `a`, is a linear combination of the Hasse derivatives
+`∂^ν f` evaluated at `(a ^ eₛ)ₛ`, with coefficients independent of `f`. -/
+theorem eval_hasseDeriv_aeval_X_pow (e : σ → ℕ) (a : R) (f : MvPolynomial σ R) (k : ℕ)
+    {T : Finset (σ →₀ ℕ)} (hT : (taylor (fun s ↦ a ^ e s) f).support ⊆ T) :
+    (Polynomial.hasseDeriv k (aeval (fun s ↦ (Polynomial.X : Polynomial R) ^ e s) f)).eval a =
+      ∑ ν ∈ T, (aeval (fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s))
+        (monomial ν (1 : R))).coeff k * eval (fun s ↦ a ^ e s) (hasseDeriv ν f) := by
+  rw [← Polynomial.taylor_coeff, taylor_aeval_X_pow,
+    (taylor (fun s ↦ a ^ e s) f).as_sum, Finset.sum_subset hT fun ν _ hν ↦ by
+      rw [notMem_support_iff.mp hν, monomial_zero], map_sum, Polynomial.finsetSum_coeff]
+  refine Finset.sum_congr rfl fun ν _ ↦ ?_
+  rw [coeff_taylor]
+  conv_lhs => rw [← mul_one (eval _ (hasseDeriv ν f)), ← smul_eq_mul, ← smul_monomial]
+  rw [map_smul, Polynomial.coeff_smul, smul_eq_mul, mul_comm]
 
 end CommRing
 

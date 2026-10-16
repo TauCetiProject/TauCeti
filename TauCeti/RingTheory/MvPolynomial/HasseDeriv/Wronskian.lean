@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharZero.Infinite
-public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
 public import TauCeti.RingTheory.Polynomial.HasseWronskian
 
@@ -143,48 +141,6 @@ theorem genWronskian_eq_zero_of_not_linearIndependent [IsDomain R] (D : Fin m �
     refine sum_congr rfl fun l _ ↦ ?_
     rw [map_smul, smul_eq_C_mul, mul_comm]
   simpa [mulVec, dotProduct, hc] using hk
-
-/-! ### The chain rule through the Kronecker substitution -/
-
-/-- Translating `T` to `T + a` after the Kronecker substitution `Xₛ ↦ T ^ eₛ` is the same as
-translating `X` to `X + (a ^ eₛ)ₛ` and then substituting `Xₛ ↦ (T + a) ^ eₛ - a ^ eₛ`. -/
-private theorem taylor_aeval_X_pow (e : σ → ℕ) (a : R) (f : MvPolynomial σ R) :
-    Polynomial.taylor a (aeval (fun s ↦ (Polynomial.X : Polynomial R) ^ e s) f) =
-      aeval (fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s))
-        (taylor (fun s ↦ a ^ e s) f) := by
-  have h : (Polynomial.taylorAlgHom a).comp (aeval fun s ↦ (Polynomial.X : Polynomial R) ^ e s) =
-      (aeval fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s)).comp
-        (taylor fun s ↦ a ^ e s) :=
-    algHom_ext fun s ↦ by simp [taylor_X]
-  simpa using DFunLike.congr_fun h f
-
-/-- The translated Kronecker substitution `Xₛ ↦ (T + a) ^ eₛ - a ^ eₛ` sends `X^ν` to a multiple
-of `T ^ |ν|`, so the coefficients of `T ^ k` with `k < |ν|` vanish. -/
-private theorem coeff_aeval_X_add_C_pow_sub_C_eq_zero (e : σ → ℕ) (a : R) (ν : σ →₀ ℕ) {k : ℕ}
-    (hk : k < ν.degree) :
-    (aeval (fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s))
-      (monomial ν (1 : R))).coeff k = 0 := by
-  refine Polynomial.X_pow_dvd_iff.mp ?_ k hk
-  rw [aeval_monomial, map_one, one_mul, Finsupp.prod, degree_apply, ← prod_pow_eq_pow_sum]
-  refine prod_dvd_prod_of_dvd _ _ fun s _ ↦ pow_dvd_pow_of_dvd ?_ _
-  rw [Polynomial.X_dvd_iff, Polynomial.coeff_zero_eq_eval_zero]
-  simp
-
-/-- **The chain rule for the Kronecker substitution.** The `k`-th Hasse derivative of the image of
-`f` under `Xₛ ↦ T ^ eₛ`, evaluated at `a`, is a linear combination of the Hasse derivatives
-`∂^ν f` evaluated at `(a ^ eₛ)ₛ`, with coefficients independent of `f`. -/
-private theorem eval_hasseDeriv_aeval_X_pow (e : σ → ℕ) (a : R) (f : MvPolynomial σ R) (k : ℕ)
-    {T : Finset (σ →₀ ℕ)} (hT : (taylor (fun s ↦ a ^ e s) f).support ⊆ T) :
-    (Polynomial.hasseDeriv k (aeval (fun s ↦ (Polynomial.X : Polynomial R) ^ e s) f)).eval a =
-      ∑ ν ∈ T, (aeval (fun s ↦ (Polynomial.X + Polynomial.C a) ^ e s - Polynomial.C (a ^ e s))
-        (monomial ν (1 : R))).coeff k * eval (fun s ↦ a ^ e s) (hasseDeriv ν f) := by
-  rw [← Polynomial.taylor_coeff, taylor_aeval_X_pow,
-    (taylor (fun s ↦ a ^ e s) f).as_sum, sum_subset hT fun ν _ hν ↦ by
-      rw [notMem_support_iff.mp hν, monomial_zero], map_sum, Polynomial.finsetSum_coeff]
-  refine sum_congr rfl fun ν _ ↦ ?_
-  rw [coeff_taylor]
-  conv_lhs => rw [← mul_one (eval _ (hasseDeriv ν f)), ← smul_eq_mul, ← smul_monomial]
-  rw [map_smul, Polynomial.coeff_smul, smul_eq_mul, mul_comm]
 
 /-! ### The generalized Wronskian criterion -/
 
