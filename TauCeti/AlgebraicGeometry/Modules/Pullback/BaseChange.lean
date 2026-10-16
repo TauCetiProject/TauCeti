@@ -30,71 +30,11 @@ open scoped ChangeOfRings TensorProduct
 noncomputable section
 universe u
 namespace AlgebraicGeometry.Scheme.Modules
-variable {X Y : Scheme.{u}} (g : Y ⟶ X) (M : X.Modules) (U : X.Opens)
-variable {Z : Scheme.{u}} (f : Z ⟶ Y)
-variable (V : Y.Opens) (hV : V ≤ g ⁻¹ᵁ U)
-private def pullbackSectionsLE : Γ(M, U) →ₛₗ[(g.appLE U V hV).hom] Γ((pullback g).obj M,V) where
-  toFun s := ((pullback g).obj M).presheaf.map (homOfLE hV).op (Scheme.Hom.pullbackSections g M U s)
-  map_add' := by simp
-  map_smul' r s := by
-    rw [map_smulₛₗ, map_smul]
-    rfl
-private lemma pullbackSectionsLE_apply (s : Γ(M, U)) :
-    pullbackSectionsLE g M U V hV s =
-      ((pullback g).obj M).presheaf.map (homOfLE hV).op (g.pullbackSections M U s) :=
-  (rfl)
-private lemma pullbackSectionsLE_self (s : Γ(M, U)) :
-    pullbackSectionsLE g M U (g ⁻¹ᵁ U) le_rfl s = Scheme.Hom.pullbackSections g M U s := by
-  simp [pullbackSectionsLE]
-private lemma pullbackSectionsLE_naturality {N : X.Modules} (φ : M ⟶ N) (s : Γ(M, U)) :
-    ((pullback g).map φ).app V (pullbackSectionsLE g M U V hV s) =
-      pullbackSectionsLE g N U V hV (φ.app U s) := by
-  have hn := PresheafOfModules.naturality_apply ((pullback g).map φ).val
-    (homOfLE hV).op (Scheme.Hom.pullbackSections g M U s)
-  have hu := Scheme.Hom.pullbackSections_naturality g M U φ s
-  exact hn.trans (congrArg (((pullback g).obj N).presheaf.map (homOfLE hV).op) hu)
-private lemma pullbackSectionsLE_congr {g' : Y ⟶ X} (h : g = g') (s : Γ(M, U)) :
-    ((pullbackCongr h).hom.app M).app V (pullbackSectionsLE g M U V hV s) =
-      pullbackSectionsLE g' M U V (by simpa [← h] using hV) s := by
-  subst h
-  simp [pullbackCongr]
-private lemma pullbackSectionsLE_comp {W : Z.Opens} (hW : W ≤ f ⁻¹ᵁ V) (s : Γ(M, U)) :
-    ((pullbackComp f g).inv.app M).app W
-      (pullbackSectionsLE (f ≫ g) M U W (hW.trans (Set.preimage_mono hV)) s) =
-    pullbackSectionsLE f ((pullback g).obj M) V W hW
-      (pullbackSectionsLE g M U V hV s) := by
-  have h := Scheme.Hom.pullbackSections_comp g M U f s
-  have hn := PresheafOfModules.naturality_apply ((pullbackComp f g).inv.app M).val
-    (homOfLE (show W ≤ (f ≫ g) ⁻¹ᵁ U from hW.trans
-      (Set.preimage_mono (show (V : Set Y) ⊆ (g ⁻¹ᵁ U : Set Y) from hV)))).op
-    (Scheme.Hom.pullbackSections (f ≫ g) M U s)
-  dsimp only [pullbackSectionsLE, LinearMap.coe_mk, AddHom.coe_mk]
-  -- The naturality equation uses the ModuleCat components before forgetting to groups.
-  erw [hn]
-  erw [h]
-  have hr := Scheme.Hom.pullbackSections_restrict f ((pullback g).obj M) (g ⁻¹ᵁ U)
-    (homOfLE hV) (Scheme.Hom.pullbackSections g M U s)
-  rw [← hr, ← ((pullback f).obj ((pullback g).obj M)).presheaf.map_comp_apply]
-  rfl
-private lemma pullbackSectionsLE_comp_hom {W : Z.Opens} (hW : W ≤ f ⁻¹ᵁ V)
-    (s : Γ(M, U)) :
-    ((pullbackComp f g).hom.app M).app W
-      (pullbackSectionsLE f ((pullback g).obj M) V W hW
-        (pullbackSectionsLE g M U V hV s)) =
-    pullbackSectionsLE (f ≫ g) M U W
-      (hW.trans (Set.preimage_mono (show (V : Set Y) ⊆ (g ⁻¹ᵁ U : Set Y) from hV))) s := by
-  rw [← pullbackSectionsLE_comp g M U f V hV hW]
-  simpa only [Iso.app_hom, Iso.app_inv, Hom.comp_app, Hom.id_app, ConcreteCategory.comp_apply,
-    ConcreteCategory.id_apply] using congrArg
-    (fun a : (pullback (f ≫ g)).obj M ⟶ (pullback (f ≫ g)).obj M ↦ a.app W
-      (pullbackSectionsLE (f ≫ g) M U W _ s)) ((pullbackComp f g).app M).inv_hom_id
-end AlgebraicGeometry.Scheme.Modules
-namespace AlgebraicGeometry.Scheme.Modules
 variable {X : Scheme.{u}} (M : X.Modules) {U : X.Opens} (hU : IsAffineOpen U)
 private lemma chartPullback_unit (s : Γ(M, U)) :
     ((restrictFunctorIsoPullback hU.fromSpec).hom.app M).app ⊤
       (M.fromSpecSectionsEquiv hU s) =
-    pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s := by
+    Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s := by
   have h : (restrictAdjunction hU.fromSpec).unit.app M ≫
       (pushforward hU.fromSpec).map ((restrictFunctorIsoPullback hU.fromSpec).hom.app M) =
       (pullbackPushforwardAdjunction hU.fromSpec).unit.app M :=
@@ -130,12 +70,13 @@ private lemma chartPullback_unit (s : Γ(M, U)) :
     _ = ((pullback hU.fromSpec).obj M).presheaf.map (homOfLE (hU.fromSpec_preimage_self.ge)).op
         (((restrictFunctorIsoPullback hU.fromSpec).hom.app M).app (hU.fromSpec ⁻¹ᵁ U)
           (M.presheaf.map (homOfLE (hU.fromSpec.image_preimage_le U)).op s)) := hn
-    _ = pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s :=
-      congrArg (((pullback hU.fromSpec).obj M).presheaf.map
+    _ = Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s := by
+      rw [Scheme.Hom.pullbackSectionsLE_apply]
+      exact congrArg (((pullback hU.fromSpec).obj M).presheaf.map
         (homOfLE (hU.fromSpec_preimage_self.ge)).op) he'
 private lemma chartPullback_unit_inv (s : Γ(M, U)) :
     ((restrictFunctorIsoPullback hU.fromSpec).inv.app M).app ⊤
-      (pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s) =
+      (Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s) =
       M.fromSpecSectionsEquiv hU s := by
   rw [← chartPullback_unit M hU]
   exact congrArg (fun a ↦ a.app ⊤ (M.fromSpecSectionsEquiv hU s))
@@ -158,16 +99,16 @@ private def chartPullbackIso :
 private lemma chartPullbackIso_unit (s : Γ(M, U)) :
     (chartPullbackIso g M hU hV).hom.app ⊤
       (((pullback g).obj M).fromSpecSectionsEquiv hV (Scheme.Hom.pullbackSections g M U s)) =
-      pullbackSectionsLE (Spec.map (g.app U)) (M.restrict hU.fromSpec)
+      Scheme.Hom.pullbackSectionsLE (Spec.map (g.app U)) (M.restrict hU.fromSpec)
         ⊤ ⊤ (by simp) (M.fromSpecSectionsEquiv hU s) := by
   simp only [chartPullbackIso, Iso.trans_hom, Iso.symm_hom, Hom.comp_app,
     ConcreteCategory.comp_apply, Functor.mapIso_hom, Iso.app_hom, Iso.app_inv]
   rw [chartPullback_unit]
-  rw [← pullbackSectionsLE_self g M U s]
-  rw [pullbackSectionsLE_comp_hom]
-  rw [pullbackSectionsLE_congr]
-  rw [pullbackSectionsLE_comp]
-  · rw [pullbackSectionsLE_naturality, chartPullback_unit_inv]
+  rw [← Scheme.Hom.pullbackSectionsLE_self g M U s]
+  rw [Scheme.Hom.pullbackSectionsLE_comp_hom]
+  rw [Scheme.Hom.pullbackSectionsLE_congr]
+  rw [Scheme.Hom.pullbackSectionsLE_comp]
+  · rw [Scheme.Hom.pullbackSectionsLE_naturality, chartPullback_unit_inv]
   · exact hU.fromSpec_preimage_self.ge
   · simp
 /-- If an open and its inverse image are affine, sections of a quasicoherent pullback
@@ -222,7 +163,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pullbackSectionsEquiv_one_tmul (s : Γ
     (chartPullbackIso g M hU hV).hom.app ⊤
       (((pullback g).obj M).fromSpecSectionsEquiv hV (Scheme.Hom.pullbackSections g M U s))
   convert! (chartPullbackIso_unit g M hU hV s).symm using 1
-  erw [pullbackSectionsLE_apply]
+  erw [Scheme.Hom.pullbackSectionsLE_apply]
   simp only [Scheme.Hom.pullbackSections_apply]
   simp
   rfl
