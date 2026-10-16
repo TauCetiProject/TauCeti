@@ -68,7 +68,7 @@ theorem lift_mk (f : G →ₜ* A) (x : G) : lift f (x : TopologicalAbelianizatio
 /-- The lift of `f` composed with the projection is `f`. -/
 @[simp]
 theorem lift_comp_quotientMk (f : G →ₜ* A) :
-    (lift f).comp (ContinuousMonoidHom.quotientMk (commutator G).topologicalClosure) = f :=
+    (lift f).comp (Subgroup.quotientMkContinuousMonoidHom (commutator G).topologicalClosure) = f :=
   ContinuousMonoidHom.quotientLift_comp_quotientMk _ f _
 
 /-- A continuous homomorphism out of the topological abelianization that agrees with `f` on

@@ -22,6 +22,9 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
+`Subgroup.quotientMkContinuousMonoidHom` is the quotient projection, and
+`Subgroup.quotientContinuousMonoidHomEquiv` identifies continuous homomorphisms out of the quotient
+with those whose kernels contain the normal subgroup.
 Named compatibility proofs describe subgroup inclusions and composition of scalar/coefficient maps
 for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
 `Subgroup.fixedPoints_subtype_quotientMk_smul` records compatibility of the quotient map with the
@@ -335,31 +338,43 @@ theorem _root_.Subgroup.inverseConjugationHom_smul [SeparatelyContinuousMul G]
     Subgroup.smul_def]
   simp [smul_smul, mul_assoc]
 
-namespace ContinuousMonoidHom
+end TauCeti
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- The projection onto the quotient by a normal subgroup, carrying the quotient topology, as a
 continuous homomorphism. -/
-@[expose] def quotientMk (N : Subgroup G) [N.Normal] : G →ₜ* G ⧸ N where
+@[expose] def quotientMkContinuousMonoidHom (N : Subgroup G) [N.Normal] : G →ₜ* G ⧸ N where
   __ := QuotientGroup.mk' N
   continuous_toFun := continuous_quot_mk
 
 @[simp]
-theorem coe_quotientMk (N : Subgroup G) [N.Normal] :
-    (quotientMk N : G →* G ⧸ N) = QuotientGroup.mk' N :=
+theorem coe_quotientMkContinuousMonoidHom (N : Subgroup G) [N.Normal] :
+    (quotientMkContinuousMonoidHom N : G →* G ⧸ N) = QuotientGroup.mk' N :=
   (rfl)
 
 @[simp]
-theorem quotientMk_apply (N : Subgroup G) [N.Normal] (g : G) : quotientMk N g = (g : G ⧸ N) :=
+theorem quotientMkContinuousMonoidHom_apply (N : Subgroup G) [N.Normal] (g : G) :
+    quotientMkContinuousMonoidHom N g = (g : G ⧸ N) :=
   (rfl)
 
 /-- The inclusion of the fixed-point additive subgroup is equivariant along the continuous
 quotient map. This is the compatible-pair form of the quotient action on fixed points. -/
-theorem _root_.Subgroup.fixedPoints_subtype_quotientMk_smul (N : Subgroup G) [N.Normal]
+theorem fixedPoints_subtype_quotientMk_smul (N : Subgroup G) [N.Normal]
     {M : Type*} [AddGroup M] [DistribMulAction G M] (g : G)
     (m : FixedPoints.addSubgroup N M) :
-    (FixedPoints.addSubgroup N M).subtype (quotientMk N g • m) =
+    (FixedPoints.addSubgroup N M).subtype (quotientMkContinuousMonoidHom N g • m) =
       g • (FixedPoints.addSubgroup N M).subtype m := by
-  simpa only [quotientMk_apply, QuotientGroup.mk'_apply] using N.fixedPoints_subtype_mk'_smul g m
+  simpa only [quotientMkContinuousMonoidHom_apply, QuotientGroup.mk'_apply] using
+    N.fixedPoints_subtype_mk'_smul g m
+
+end Subgroup
+
+namespace ContinuousMonoidHom
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- The continuous homomorphism induced on a quotient by a continuous homomorphism that kills
 the normal subgroup. -/
@@ -384,7 +399,7 @@ theorem quotientLift_mk {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgrou
 @[simp]
 theorem quotientLift_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) :
-    (quotientLift N f hf).comp (quotientMk N) = f := by
+    (quotientLift N f hf).comp (Subgroup.quotientMkContinuousMonoidHom N) = f := by
   ext x
   simp
 
@@ -399,17 +414,25 @@ theorem quotientLift_unique {H : Type*} [Monoid H] [TopologicalSpace H] (N : Sub
 /-- The kernel of precomposition with the quotient projection contains the subgroup. -/
 theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    N ≤ ((g.comp (quotientMk N) : G →* H)).ker :=
+    N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker :=
   fun x hx => by simp [MonoidHom.mem_ker, (QuotientGroup.eq_one_iff x).mpr hx]
+
+end ContinuousMonoidHom
+
+namespace Subgroup
+
+open ContinuousMonoidHom
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- Precomposition with the quotient projection identifies continuous homomorphisms on the
 quotient with continuous homomorphisms whose kernels contain the normal subgroup. -/
-def quotientHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
+def quotientContinuousMonoidHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
     [N.Normal] :
     ((G ⧸ N) →ₜ* H) ≃ {f : G →ₜ* H // N ≤ (f : G →* H).ker} where
-  toFun g := ⟨g.comp (quotientMk N), le_ker_comp_quotientMk N g⟩
+  toFun g := ⟨g.comp (Subgroup.quotientMkContinuousMonoidHom N), le_ker_comp_quotientMk N g⟩
   invFun f := quotientLift N f.val f.property
-  left_inv g := (quotientLift_unique N (g.comp (quotientMk N))
+  left_inv g := (quotientLift_unique N (g.comp (Subgroup.quotientMkContinuousMonoidHom N))
     (le_ker_comp_quotientMk N g) g (by intro x; simp)).symm
   right_inv f := by
     apply Subtype.ext
@@ -417,17 +440,17 @@ def quotientHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G
 
 /-- Evaluation of the forward quotient homomorphism equivalence. -/
 @[simp]
-theorem quotientHomEquiv_apply_coe {H : Type*} [Monoid H] [TopologicalSpace H]
+theorem quotientContinuousMonoidHomEquiv_apply_coe
+    {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    ((quotientHomEquiv N g : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
-      g.comp (quotientMk N) := (rfl)
+    ((quotientContinuousMonoidHomEquiv N g :
+      {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
+      g.comp (Subgroup.quotientMkContinuousMonoidHom N) := (rfl)
 
 /-- Evaluation of the inverse quotient homomorphism equivalence. -/
 @[simp]
-theorem quotientHomEquiv_symm_apply {H : Type*} [Monoid H] [TopologicalSpace H]
+theorem quotientContinuousMonoidHomEquiv_symm_apply {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (f : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) :
-    (quotientHomEquiv N).symm f = quotientLift N f.val f.property := (rfl)
+    (quotientContinuousMonoidHomEquiv N).symm f = quotientLift N f.val f.property := (rfl)
 
-end ContinuousMonoidHom
-
-end TauCeti
+end Subgroup

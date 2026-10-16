@@ -79,7 +79,7 @@ theorem exists_surjective_presentationClassModuleHom :
   obtain ⟨-, χ, -, hχ, -, hright⟩ :=
     X.exists_surjective_continuousMonoidHom_of_comparison Y φ hφ
       isProP_maximalProPQuotient f hf hs hc hy hcard
-  let q := ContinuousMonoidHom.quotientMk
+  let q := Subgroup.quotientMkContinuousMonoidHom
     (abelianizationProPExtensionKernel p (freeProfiniteGroup ι)
       (lift g : freeProfiniteGroup ι →* H ⧸ W).ker)
   refine ⟨χ.comp q, hχ.comp QuotientGroup.mk_surjective, MonoidHom.ext fun x ↦ ?_⟩

@@ -134,7 +134,7 @@ theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
   -- `χ` as a character of the idele group, and a neighbourhood of `1` on which it kills every
   -- subgroup.
   let f : IdeleGroup (𝓞 K) K →ₜ* ℂˣ :=
-    χ.comp (ContinuousMonoidHom.quotientMk (IdeleGroup.principalSubgroup (𝓞 K) K))
+    χ.comp (Subgroup.quotientMkContinuousMonoidHom (IdeleGroup.principalSubgroup (𝓞 K) K))
   obtain ⟨N, hN, hNker⟩ := f.exists_mem_nhds_one_forall_le_ker
   obtain ⟨𝔪, h𝔪⟩ := exists_ideleCongruenceSubgroup_ofFiniteIdele_mem_of_mem_nhds hN
   -- The finite parts of the ideles of `ideleCongruenceSubgroup 𝔪` form a subgroup inside `N`.

@@ -363,7 +363,7 @@ coefficients on the quotient are the `N`-invariants `Xᴺ`, and the compatible p
 homomorphism together with the inclusion `Xᴺ ↪ X`. -/
 noncomputable def infl (X : TopRep R G) (n : ℕ) :
     continuousCohomology n (TopRep.quotientToInvariants X N) ⟶ continuousCohomology n X :=
-  _root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk N)
+  _root_.ContinuousCohomology.map (Subgroup.quotientMkContinuousMonoidHom N)
     (TopRep.quotientToInvariantsι X N) n
 
 -- Not `@[simp]`: `infl` is the intended normal form, and this lemma unfolds it.
@@ -373,7 +373,7 @@ theorem infl_def (X : TopRep R G) (n : ℕ) :
     infl N X n =
       -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
       -- (This follows the ascription idiom of #8346.)
-      (_root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk N)
+      (_root_.ContinuousCohomology.map (Subgroup.quotientMkContinuousMonoidHom N)
         (TopRep.quotientToInvariantsι X N) n :) :=
   (rfl)
 
@@ -388,10 +388,10 @@ theorem coeffMap_comp_infl {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
   -- propagated into both `Eq.trans` and checked repeatedly (0.15 s).
   refine ((_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N)
       (Y := TopRep.quotientToInvariants Y N) (Z := Y) (ContinuousMonoidHom.id (G ⧸ N))
-      (ContinuousMonoidHom.quotientMk N) (TopRep.quotientToInvariantsMap f N)
+      (Subgroup.quotientMkContinuousMonoidHom N) (TopRep.quotientToInvariantsMap f N)
       (TopRep.quotientToInvariantsι Y N) n).symm.trans (Eq.trans ?_
     (_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N) (Y := X) (Z := Y)
-      (ContinuousMonoidHom.quotientMk N) (ContinuousMonoidHom.id G)
+      (Subgroup.quotientMkContinuousMonoidHom N) (ContinuousMonoidHom.id G)
       (TopRep.quotientToInvariantsι X N) f n)) :)
   -- Ascribed for the same reason (0.03 s).
   exact map_congr rfl
@@ -422,12 +422,12 @@ coefficients. -/
 theorem infl_comp_infl (P : Subgroup (G ⧸ N)) [P.Normal] (X : TopRep R G) (n : ℕ) :
     infl P (TopRep.quotientToInvariants X N) n ≫ infl N X n =
       _root_.ContinuousCohomology.map
-        ((ContinuousMonoidHom.quotientMk P).comp (ContinuousMonoidHom.quotientMk N))
-        ((TopRep.resFunctor (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)).map
+        ((Subgroup.quotientMkContinuousMonoidHom P).comp (Subgroup.quotientMkContinuousMonoidHom N))
+        ((TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
             (TopRep.quotientToInvariantsι (TopRep.quotientToInvariants X N) P) ≫
           TopRep.quotientToInvariantsι X N) n :=
-  (_root_.ContinuousCohomology.map_comp (ContinuousMonoidHom.quotientMk P)
-    (ContinuousMonoidHom.quotientMk N)
+  (_root_.ContinuousCohomology.map_comp (Subgroup.quotientMkContinuousMonoidHom P)
+    (Subgroup.quotientMkContinuousMonoidHom N)
     (TopRep.quotientToInvariantsι (TopRep.quotientToInvariants X N) P)
     (TopRep.quotientToInvariantsι X N) n).symm
 

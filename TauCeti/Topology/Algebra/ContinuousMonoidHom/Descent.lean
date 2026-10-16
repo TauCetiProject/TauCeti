@@ -13,7 +13,7 @@ public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 A continuous group homomorphism descends through a quotient map precisely when its kernel contains
 the kernel of the quotient homomorphism. The construction uses
-`TauCeti.ContinuousMonoidHom.quotientLift` on the kernel quotient and Mathlib's
+`ContinuousMonoidHom.quotientLift` on the kernel quotient and Mathlib's
 `QuotientGroup.quotientKerEquivOfSurjective` to identify that quotient with the target. The
 quotient-map hypothesis ensures that the descended homomorphism is continuous.
 
@@ -37,7 +37,7 @@ variable {G Q H : Type*} [Group G] [Group Q] [Monoid H]
 private noncomputable def liftMonoidHomOfIsQuotientMap (p : G →ₜ* Q) (hp : IsQuotientMap p)
     (f : G →ₜ* H) (hf : (p : G →* Q).ker ≤ (f : G →* H).ker) : Q →* H :=
   let e := QuotientGroup.quotientKerEquivOfSurjective (p : G →* Q) hp.surjective
-  let lift := TauCeti.ContinuousMonoidHom.quotientLift (p : G →* Q).ker f hf
+  let lift := quotientLift (p : G →* Q).ker f hf
   lift.toMonoidHom.comp e.symm.toMonoidHom
 
 private theorem liftMonoidHomOfIsQuotientMap_comp_apply (p : G →ₜ* Q) (hp : IsQuotientMap p)
@@ -49,7 +49,7 @@ private theorem liftMonoidHomOfIsQuotientMap_comp_apply (p : G →ₜ* Q) (hp : 
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply
       (p : G →* Q) hp.surjective x
   rw [liftMonoidHomOfIsQuotientMap, MonoidHom.comp_apply, hx]
-  exact TauCeti.ContinuousMonoidHom.quotientLift_mk (p : G →* Q).ker f hf x
+  exact quotientLift_mk (p : G →* Q).ker f hf x
 
 /-- Descend a continuous group homomorphism through a quotient homomorphism whose kernel it
 kills. -/
