@@ -166,7 +166,6 @@ abbrev finiteSubjoin (A : ι → Type v) (s : Finset ι) :
   indexedJoin fun i : s => A i.1
 
 /-- A face of a finite subjoin is a nonempty set of vertices with distinct underlying indices. -/
-@[simp]
 theorem mem_finiteSubjoin_iff {s : Finset ι} {σ : Finset (Σ i : s, A i.1)} :
     σ ∈ finiteSubjoin A s ↔
       σ.Nonempty ∧ Set.InjOn (fun v => v.1.1) (σ : Set (Σ i : s, A i.1)) := by
