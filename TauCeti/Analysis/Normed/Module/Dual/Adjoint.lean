@@ -179,12 +179,8 @@ theorem mem_closure_image_closedBall_of_norm_le_norm_comp (S : E →L[𝕜] F) {
     have hre : ∀ c : 𝕜, ‖c‖ = 1 → RCLike.re (c * f (S x)) ≤ u := fun c hc ↦ by
       have hcx : c • x ∈ closedBall (0 : E) r := by simpa [norm_smul, hc] using hx
       simpa using (hfK _ (subset_closure ⟨c • x, hcx, rfl⟩)).le
-    rcases eq_or_ne (f (S x)) 0 with h0 | h0
-    · simpa [h0] using hre 1 (by simp)
-    · have hw : ‖f (S x)‖ ≠ 0 := norm_ne_zero_iff.mpr h0
-      convert hre (starRingEnd 𝕜 (f (S x)) / ‖f (S x)‖) (by simp [norm_div, hw]) using 1
-      rw [div_mul_eq_mul_div, RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_div,
-        RCLike.ofReal_re, sq, mul_div_cancel_right₀ _ hw]
+    obtain ⟨c, hc, heq⟩ := RCLike.exists_norm_eq_mul_self (f (S x))
+    simpa only [← heq, RCLike.ofReal_re] using hre c hc
   have hu : 0 ≤ u := by simpa using hball 0 (by simpa using hr)
   have hfS : ‖f.comp S‖ * r ≤ u := by
     rcases hr.eq_or_lt with h | h
