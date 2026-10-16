@@ -244,7 +244,7 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul
   obtain ⟨kz, hkz⟩ := hz
   obtain ⟨kw, hkw⟩ := Associative.isNilpotent_of_commutator_eq_nsmul (by decide)
     hxz hxw hzw ⟨kx, hkx⟩
-  set N := kx + ky + kz + 2 * kw with hNdef
+  set N := kx + ky + kz + 2 * kw
   have hxN : x ^ N = 0 := pow_eq_zero_of_le (by omega) hkx
   have hyN : y ^ N = 0 := pow_eq_zero_of_le (by omega) hky
   have hzN : z ^ N = 0 := pow_eq_zero_of_le (by omega) hkz

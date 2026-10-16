@@ -141,6 +141,12 @@ noncomputable def centerQuotientFppfProjection (H : _root_.CommHopfAlgCat.{u} k)
     pointsFppfGroupObject H ⟶ centerQuotientFppfSheaf H :=
   fppfQuotientProjection H (centerDefiningIdeal H) (isNormal_centerDefiningIdeal H)
 
+/-- The center-quotient projection is the fppf quotient projection by the center. -/
+theorem centerQuotientFppfProjection_def (H : _root_.CommHopfAlgCat.{u} k) :
+    centerQuotientFppfProjection H =
+      fppfQuotientProjection H (centerDefiningIdeal H) (isNormal_centerDefiningIdeal H) :=
+  (rfl)
+
 /-- Maps from the center quotient to an fppf sheaf group are equivalent to maps from the
 pointwise center quotient into its underlying presheaf. -/
 noncomputable def centerQuotientFppfHomEquiv (H : _root_.CommHopfAlgCat.{u} k)

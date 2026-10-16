@@ -116,9 +116,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
     [DistribMulAction G N] [ContinuousSMul G N]
   (U : Subgroup G)
 
-/-- Multiplication on the subgroup `U` is continuous for the subspace topology. -/
-local instance : ContinuousMul U := U.toSubmonoid.continuousMul
-
 /-- On the restricted internal hom, the `(0,2)` evaluation pairing of the `U`-modules is the
 explicit `(0,2)` cup along the evaluation pairing of `G`. -/
 theorem explicitDualityPairing02_explicitCoeff0_restrict (a : H0 U (InternalHom G M N))

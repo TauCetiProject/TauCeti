@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.OfMulAction
+public import TauCeti.GroupTheory.GroupAction.PiTransport
 
 /-!
 # Coinduction: exactness and coextension of scalars
@@ -27,6 +28,15 @@ Mathlib's coinduced representation `Representation.coind φ ρ`, by evaluation a
 monoid elements (`Representation.coextendScalarsEquivCoind`). This transports statements about
 coextension of scalars on module categories, such as its action on Grothendieck groups of group
 algebras, to coinduced and induced representations.
+
+If a representation `B` of `G` decomposes as a product whose factors `G` permutes transitively,
+the map from `B` to the representation coinduced from the stabilizer of one factor, adjoint to the
+projection to that factor, is bijective (`TauCeti.resCoindToHom_bijective_of_transport`). This
+identifies the units of a semi-local algebra `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` with a representation
+coinduced from a decomposition group.
+
+Mathlib's coinduced action is evaluated by `Representation.coind_apply_coe_apply`:
+`(h • f) h₁ = f (h₁ * h)`.
 
 ## References
 
@@ -63,6 +73,19 @@ instance (H : Subgroup G) :
 end Rep
 
 namespace Representation
+
+section Apply
+
+variable {k G H V : Type*} [Semiring k] [Monoid G] [Monoid H] [AddCommMonoid V] [Module k V]
+
+-- Not `@[simp]`: simp first unfolds the action `coind φ ρ h` through `Representation.coind_apply`,
+-- so the left-hand side is not in simp-normal form (`simpNF`).
+/-- The coinduced action translates the argument of a function: `(h • f) h₁ = f (h₁ * h)`. -/
+theorem coind_apply_coe_apply (φ : G →* H) (ρ : Representation k G V) (f : coindV φ ρ)
+    (h h₁ : H) : ((coind φ ρ h) f).1 h₁ = f.1 (h₁ * h) :=
+  rfl
+
+end Apply
 
 open scoped MonoidAlgebra
 
@@ -182,3 +205,39 @@ theorem coextendScalarsEquivCoind_symm_apply_single (y : (coind φ ρ).asModule)
   rw [coextendScalarsEquivCoind_apply]
 
 end Representation
+
+namespace TauCeti
+
+variable {G P ι : Type*} [Group G] [MulAction G P] {p : ι → P} {M : ι → Type*}
+  (T : ∀ (g : G) {i j : ι}, p j = g • p i → M i ≃ M j) {w : ι}
+
+/-- **Coinduction from a stabilizer.** Let `B` be a representation of `G` that decomposes as a
+product `∏_{i : ι} M i` on which `g` carries the factor at `i` to the factor at `j` along
+`T g : M i ≃ M j` whenever `p j = g • p i`, and let `A` be a representation of the stabilizer of
+`p w` whose underlying type is identified with `M w`, the action of the stabilizer being given by
+`T`. If `G` permutes the factors transitively, every element of `G` carries some factor to `w`,
+and the transport maps compose, then the map `B ⟶ Coind A` adjoint to the projection
+`f : B ⟶ A` to the factor at `w` is bijective. -/
+theorem resCoindToHom_bijective_of_transport {k : Type*} [CommRing k] {B : Rep k G}
+    {A : Rep k (MulAction.stabilizer G (p w))}
+    (f : Rep.res (MulAction.stabilizer G (p w)).subtype B ⟶ A) (e : B ≃ ∀ i, M i)
+    (he : ∀ (g : G) (x : B) {i j : ι} (h : p j = g • p i), e (B.ρ g x) j = T g h (e x i))
+    (eA : A ≃ M w) (hf : ∀ x, eA (f.hom x) = e x w)
+    (hA : ∀ (d : MulAction.stabilizer G (p w)) (a : A),
+      eA (A.ρ d a) = T d (MulAction.mem_stabilizer_iff.mp d.2).symm (eA a))
+    (hT : ∀ (g g' : G) {i j k : ι} (h : p j = g • p i) (h' : p k = g' • p j) (a : M i),
+      T g' h' (T g h a) = T (g' * g) (by rw [h', h, mul_smul]) a)
+    (htrans : ∀ i, ∃ g : G, p w = g • p i) (hsurj : ∀ g : G, ∃ i, p w = g • p i) :
+    Function.Bijective (Rep.resCoindToHom _ B A f).hom := by
+  refine ⟨fun x x' h ↦ eq_of_forall_transport_component_eq e T he htrans fun g ↦ ?_,
+    fun F ↦ ?_⟩
+  · rw [← hf, ← hf]
+    exact congrArg (fun F ↦ eA (F.1 g)) h
+  obtain ⟨x, hx⟩ := exists_forall_transport_component_eq e T he hT htrans hsurj
+    (fun g ↦ eA (F.1 g)) fun d hd g ↦ by
+      have hF := F.2 ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩ g
+      simp only [Subgroup.subtype_apply] at hF
+      rw [hF, hA]
+  exact ⟨x, Subtype.ext <| funext fun g ↦ eA.injective <| (hf _).trans (hx g)⟩
+
+end TauCeti

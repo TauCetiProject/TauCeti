@@ -59,7 +59,7 @@ namespace TauCeti.GradedModuleCat
 
 open CategoryTheory Limits
 
-universe v uk uA
+universe v w uk uA
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 variable {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N)
@@ -81,6 +81,11 @@ noncomputable def kernelι : kernelObj f ⟶ M :=
   ofHom (M := kernelObj f) (LinearMap.ker f.hom).subtype <|
     LinearMap.isHomogeneous_def.2 fun _ _ hz ↦ by simpa [kernelObj] using hz
 
+/-- The underlying linear map of the kernel inclusion is the submodule inclusion. -/
+@[simp]
+theorem hom_kernelι : (kernelι f).hom = (LinearMap.ker f.hom).subtype :=
+  rfl
+
 @[reassoc (attr := simp)]
 theorem kernelι_comp : kernelι f ≫ f = 0 :=
   hom_ext <| LinearMap.ext fun z ↦ z.2
@@ -92,7 +97,7 @@ noncomputable def kernelCone : KernelFork f :=
 
 @[simp]
 theorem hom_kernelCone_ι : (kernelCone f).ι.hom = (LinearMap.ker f.hom).subtype :=
-  rfl
+  hom_kernelι f
 
 /-- An element of the kernel of `f` has degree `p` exactly when it has degree `p` in the source. -/
 @[simp]
@@ -201,17 +206,23 @@ instance : PreservesColimit (parallelPair f 0) toModuleCat :=
 
 end Cokernel
 
-section Product
+section DirectSum
 
-variable {J : Type} (M : J → GradedModuleCat.{v} 𝒜)
+variable {J : Type w} (M : J → GradedModuleCat.{v} 𝒜)
 
 /-- The direct sum of a family of graded modules, graded degreewise. -/
-abbrev directSumObj : GradedModuleCat.{v} 𝒜 where
+abbrev directSumObj : GradedModuleCat.{max w v} 𝒜 where
   carrier := DirectSum J fun j ↦ M j
   grading := InternalGrading.directSum fun j ↦ (M j).grading
   gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
     rw [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff] at hx ⊢
     exact fun j ↦ SetLike.GradedSMul.smul_mem (B := (M j).grading.piece) ha (hx j)⟩
+
+end DirectSum
+
+section Product
+
+variable {J : Type} (M : J → GradedModuleCat.{v} 𝒜)
 
 /-- The fan exhibiting the direct sum of a family of graded modules as their product, which it is
 when the family is finite. -/
@@ -308,6 +319,16 @@ theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom :
 /-- The forgetful functor preserves homology because kernels and cokernels are formed on
 underlying modules. -/
 instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
+
+/-- The forgetful functor preserves finite limits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteLimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteLimits_of_preservesHomology _
+
+/-- The forgetful functor preserves finite colimits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteColimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteColimits_of_preservesHomology _
 
 /-- A short complex of graded modules is exact exactly when its underlying linear maps are
 exact. No additional condition on the internal degrees is needed. -/

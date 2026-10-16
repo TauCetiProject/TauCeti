@@ -169,7 +169,7 @@ private lemma exists_differentiableOn_patch {σ : ℝ}
       DifferentiableOn ℂ G (ball (((σ + 1 : ℝ) : ℂ)) (1 + δ)) ∧
         Set.EqOn G (LSeries a) {s : ℂ | σ < s.re} := by
   obtain ⟨r, hr, F, hF, hFeq⟩ := h
-  set δ : ℝ := min (r ^ 2 / 4) 1 with hδdef
+  set δ : ℝ := min (r ^ 2 / 4) 1
   have hδpos : 0 < δ := lt_min (by positivity) one_pos
   have hδ1 : δ ≤ 1 := min_le_right _ _
   have hδr : 3 * δ < r ^ 2 := by

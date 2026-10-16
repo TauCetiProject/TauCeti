@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MkOfDetNeZero
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
@@ -142,16 +142,10 @@ theorem map_leviHom {S : Type*} [CommRing S] (f : R →+* S) (A : GL l R) :
   apply Matrix.GeneralLinearGroup.ext
   intro i j
   rw [coe_map, Matrix.GeneralLinearGroup.map_apply, coe_leviHom, coe_leviHom]
-  have hinv := congrArg
-    (fun g : GL l S => (g : Matrix l l S))
-    (Matrix.GeneralLinearGroup.map_inverseTranspose f A)
-  rw [Matrix.GeneralLinearGroup.coe_inverseTranspose] at hinv
   have hinv_apply (a b : l) :
       f (((A⁻¹ : GL l R) : Matrix l l R)ᵀ a b) =
         (((Matrix.GeneralLinearGroup.map f A)⁻¹ : GL l S) : Matrix l l S)ᵀ a b := by
-    have h := congrFun (congrFun hinv a) b
-    simpa only [Matrix.GeneralLinearGroup.map_apply,
-      Matrix.GeneralLinearGroup.coe_inverseTranspose] using h
+    simp [Matrix.GeneralLinearGroup.map]
   cases i with
   | inl i =>
       cases j with

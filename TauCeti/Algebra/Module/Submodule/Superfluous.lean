@@ -53,10 +53,6 @@ contained in the radical `Module.jacobson`.
 
 ## References
 
-This is the superfluous-kernel vocabulary behind the projective-cover bullet of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose statement of it is
-"a projective `P` with an essential epimorphism `P ↠ M` (superfluous kernel)".
-
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4, and T. Y. Lam, *A First Course in Noncommutative Rings*, §24.
 -/
@@ -87,6 +83,12 @@ theorem isSuperfluous_iff {N : Submodule R M} :
 theorem IsSuperfluous.eq_top_of_sup_eq_top {N K : Submodule R M} (hN : IsSuperfluous N)
     (h : N ⊔ K = ⊤) : K = ⊤ :=
   hN K h
+
+/-- A superfluous direct summand is zero. -/
+theorem IsSuperfluous.eq_bot_of_isCompl {N K : Submodule R M} (hN : IsSuperfluous N)
+    (hNK : IsCompl N K) : N = ⊥ := by
+  have hK := hN.eq_top_of_sup_eq_top hNK.sup_eq_top
+  simpa only [hK, inf_top_eq] using hNK.inf_eq_bot
 
 /-- The zero submodule is superfluous. -/
 @[simp]

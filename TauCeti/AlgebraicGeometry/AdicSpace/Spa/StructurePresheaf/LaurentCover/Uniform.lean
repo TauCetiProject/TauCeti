@@ -22,6 +22,8 @@ Corollary 4 (`isClosedEmbedding_laurentCover_of_isUniform`, `laurentCover_exact_
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isUniform` :
+  restriction to the two Laurent pieces induces the topology on global sections.
 * `TauCeti.ValuationSpectrum.injective_presentationLimitMap_laurentCoverOpen_of_isUniform` :
   restriction from `X` to the two pieces is injective.
 * `TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen_of_isUniform` :
@@ -35,7 +37,7 @@ Corollary 4 (`isClosedEmbedding_laurentCover_of_isUniform`, `laurentCover_exact_
 
 public section
 
-open CategoryTheory TopologicalSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition
+open CategoryTheory TopologicalSpace Topology TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
 universe v
 
@@ -44,6 +46,22 @@ namespace TauCeti.ValuationSpectrum
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [CompleteSpace A] [T0Space A] [IsTateRing A] [IsUniform A]
   (P : PairOfDefinition A) {Aplus : Subring A}
+
+/-- **Buzzard--Verberkmoes topological Laurent gluing for the presentation-limit presheaf.**
+Restriction from `Spa(A, A⁺)` to the two Laurent pieces `{|f| ≤ 1}` and `{|f| ≥ 1}` is
+a closed embedding on sections when `A` is a complete Hausdorff uniform Tate ring. Thus the
+topology on global sections is the subspace topology inherited from the two coordinate rings. -/
+theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isUniform
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A) :
+    IsClosedEmbedding fun x : presentationLimit (P := P) Aplus ⊤ ↦
+      ((presentationLimitMap (P := P)
+          (le_top : laurentCoverOpen Aplus f true ≤ ⊤)).hom.1 x,
+        (presentationLimitMap (P := P)
+          (le_top : laurentCoverOpen Aplus f false ≤ ⊤)).hom.1 x) := by
+  exact isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbedding_toCompletionLoc
+    P hAplus f fun hden₂ ↦
+      isClosedEmbedding_laurentCover_of_isUniform P f (Localization.Away (1 : A))
+        (Localization.Away f) hden₂
 
 /-- **Buzzard--Verberkmoes Laurent injectivity for the presentation-limit presheaf.** A section
 over `Spa(A, A⁺)` is determined by its restrictions to `{|f| ≤ 1}` and `{|f| ≥ 1}` when `A`

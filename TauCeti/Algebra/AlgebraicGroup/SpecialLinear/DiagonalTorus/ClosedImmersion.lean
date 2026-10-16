@@ -63,7 +63,7 @@ noncomputable def diagonalTorusDefiningIdeal : HopfIdeal R (coordinateHopfAlgebr
     (diagonalTorusCoordinateMap_surjective r R)
 
 /-- A function belongs to the diagonal-torus ideal precisely when its restriction vanishes. -/
-@[simp]
+@[simp↓]
 theorem mem_diagonalTorusDefiningIdeal (x : coordinateHopfAlgebra R (r + 1)) :
     x ∈ diagonalTorusDefiningIdeal r R ↔ (diagonalTorusCoordinateMap r R).hom x = 0 := by
   rw [diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
@@ -83,7 +83,7 @@ noncomputable def diagonalTorusCoordinateIso :
         (diagonalTorusDefiningIdeal r R) ≅
       DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (ULift.{u} (Fin r))) :=
   ObjectProperty.isoMk _ <|
-    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap r R)
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap r R)
       (diagonalTorusCoordinateMap_surjective r R)
 
 /-- The quotient isomorphism identifies the quotient morphism with restriction to the torus. -/
@@ -94,7 +94,7 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
           (diagonalTorusDefiningIdeal r R) ≫
         (diagonalTorusCoordinateIso r R).hom =
       ObjectProperty.homMk (diagonalTorusCoordinateMap r R) :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The coordinate quotient defining the diagonal torus of `SL_{r+1}` is a split torus. -/
 theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :

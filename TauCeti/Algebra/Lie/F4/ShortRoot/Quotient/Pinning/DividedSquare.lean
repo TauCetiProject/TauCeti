@@ -72,12 +72,8 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl j)
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector α)) =
-        f4ShortRootLieIdealBasis b := by
-    have hq := f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis α hk
-    calc
-      _ = f4ShortRootQuotientToIdealEquiv (f4ShortRootQuotientBasis b) :=
-        congrArg f4ShortRootQuotientToIdealEquiv hq
-      _ = _ := f4ShortRootQuotientToIdealEquiv_basis b
+        f4ShortRootLieIdealBasis b :=
+    f4ShortRootQuotientToIdealEquiv_mkQ_rootVector α hk
   have htargetSource : f4SignedSimpleRootIndex (isogenyReverse k) =
       f4SpecialIsogenyIndexEquiv α := by
     simpa only [α] using
@@ -165,10 +161,6 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
       rw [hlift]
       exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_long
         k β hk hβ hβne
-    have htargetShort :
-        f4Length (f4SignedSimpleRootIndex (isogenyReverse k)) = 1 := by
-      rw [← f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex]
-      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff _).2 hk
     have htargetNe : i ≠
         f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) := by
       intro h
@@ -336,12 +328,8 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
       k β γ hk hβ hγ hadd
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
-        f4ShortRootLieIdealBasis b := by
-    have hq := f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis γ hγ
-    calc
-      _ = f4ShortRootQuotientToIdealEquiv (f4ShortRootQuotientBasis b) :=
-        congrArg f4ShortRootQuotientToIdealEquiv hq
-      _ = _ := f4ShortRootQuotientToIdealEquiv_basis b
+        f4ShortRootLieIdealBasis b :=
+    f4ShortRootQuotientToIdealEquiv_mkQ_rootVector γ hγ
   have htargetSource : f4SignedSimpleRootIndex (isogenyReverse k) =
       f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) :=
     (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm

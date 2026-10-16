@@ -124,7 +124,7 @@ theorem _root_.Polynomial.psc_add_mul_left {p q a : R[X]} {m n j : ℕ}
     (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
     (ha : a.natDegree + n ≤ m) :
     psc (p + a * q) q m n j = psc p q m n j := by
-  simpa only [subresultantCoeff_index] using
+  simpa only [subresultantCoeff_self] using
     subresultantCoeff_add_mul_left (j := j) hp hq ha j
 
 /-- Polynomial reduction preserves the fixed-bound subresultant polynomial. -/
@@ -133,7 +133,7 @@ theorem _root_.Polynomial.subresultant_add_mul_left {p q a : R[X]} {m n j : ℕ}
     (ha : a.natDegree + n ≤ m) :
     subresultant (p + a * q) q m n j = subresultant p q m n j := by
   ext k
-  simp only [subresultant_coeff, subresultantCoeff_add_mul_left hp hq ha]
+  simp only [coeff_subresultant, subresultantCoeff_add_mul_left hp hq ha]
 
 section Field
 
@@ -170,14 +170,14 @@ theorem _root_.Polynomial.subresultantCoeff_mod_left {p q : K[X]} {m j : ℕ}
 theorem _root_.Polynomial.psc_mod_left {p q : K[X]} {m j : ℕ}
     (hp : p.natDegree ≤ m) :
     psc (p % q) q m q.natDegree j = psc p q m q.natDegree j := by
-  simpa only [subresultantCoeff_index] using subresultantCoeff_mod_left (j := j) hp j
+  simpa only [subresultantCoeff_self] using subresultantCoeff_mod_left (j := j) hp j
 
 /-- Division with remainder preserves the subresultant polynomial at fixed bounds. -/
 theorem _root_.Polynomial.subresultant_mod_left {p q : K[X]} {m j : ℕ}
     (hp : p.natDegree ≤ m) :
     subresultant (p % q) q m q.natDegree j = subresultant p q m q.natDegree j := by
   ext k
-  simp only [subresultant_coeff, subresultantCoeff_mod_left hp]
+  simp only [coeff_subresultant, subresultantCoeff_mod_left hp]
 
 /-- A Euclidean step for principal subresultant coefficients. Lowering the remainder's
 bound from `m` to `r` contributes `q.leadingCoeff ^ (m - r)`; the displayed sign

@@ -104,7 +104,7 @@ def reducedForms (D : ℕ) : Finset (BinaryQuadraticForm ℤ) :=
 @[simp]
 theorem reducedForms_eq_empty_of_mod_four_eq_one_or_two {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
     reducedForms D = ∅ :=
-  filter_eq_empty_iff.mpr fun f _ ⟨h, _⟩ ↦ by
+  filter_eq_empty_iff.mpr fun f _ ⟨_, _⟩ ↦ by
     have := f.discrim_def ▸ Int.discrim_emod_four f.a f.b f.c
     lia
 

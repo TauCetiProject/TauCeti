@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
+public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Topology.Algebra.Homeomorph.Congr
+import TauCeti.Geometry.Diffeomorphism.Composition
 
 /-!
 # Transporting the self-diffeomorphism group along a diffeomorphism
@@ -20,16 +22,13 @@ group isomorphism `Diff I M n ≃* Diff J N n` between the self-diffeomorphism g
 forgetful homomorphism to the permutation group (`Diffeomorph.toPerm`) through Mathlib's
 `Equiv.permCongr`.
 
-This expresses that the *algebraic* group object of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
-topology") is a diffeomorphism invariant: diffeomorphic manifolds have isomorphic
-self-diffeomorphism groups as abstract groups. The construction is purely algebraic and stops at the
-bare group isomorphism; it does *not yet* carry the `C^∞` topology, so on its own it says nothing
-about homotopy type. Transporting the homotopy-type statements the layer targets — the Smale
-conjecture `Diff(S³) ≃ O(4)`, `[Kir97, Problem 4.34]`, and Watanabe's `π_k(Diff(D⁴, ∂))` classes,
-`[Kir97, Problem 4.126]` — needs the refinement of this isomorphism to a topological-group (indeed
-homeomorphism) isomorphism, which is a separate, later layer-3 deliverable. It works for every
-smoothness exponent `n`.
+For compact manifolds with locally compact model spaces, conjugation is continuous in the weak
+Whitney topology: composition on either side by the fixed diffeomorphisms `e` and `e.symm` is
+continuous. Thus `Diffeomorph.diffCongrContinuousMulEquiv` upgrades the algebraic isomorphism to
+a homeomorphic group isomorphism. In particular, homotopy invariants of diffeomorphism groups do
+not depend on replacing a manifold by a diffeomorphic model. The construction works for every
+smoothness exponent `n`; when the manifolds are Hausdorff, the existing instances make its source
+and target topological groups.
 
 The construction is the diffeomorphism analogue of `Equiv.permCongr`
 (`Mathlib/Logic/Equiv/Defs.lean`), the conjugation isomorphism of permutation groups, and reuses it
@@ -39,6 +38,9 @@ for the naturality statement.
 
 * `Diffeomorph.diffCongr e`: the group isomorphism `Diff I M n ≃* Diff J N n` conjugating by
   a diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N`.
+* `Diffeomorph.diffCongrContinuousMulEquiv e`: the same conjugation as a homeomorphic group
+  isomorphism for the weak Whitney topologies, when the manifolds are compact and their models
+  locally compact.
 
 The analogous self-homeomorphism-group isomorphism `Homeomorph.homeoCongr`, the target of
 the forgetful naturality below, lives in `TauCeti.Topology.Algebra.Homeomorph.Congr`.
@@ -57,6 +59,7 @@ the forgetful naturality below, lives in `TauCeti.Topology.Algebra.Homeomorph.Co
   intertwining `diffCongr` with `Homeomorph.homeoCongr` and `Equiv.permCongrHom` respectively.
 * `Diffeomorph.toHomeomorph_diffCongr` and `Diffeomorph.toPerm_diffCongr`: the
   elementwise shadows of those squares.
+* `Diffeomorph.continuous_diffCongr`: conjugation is continuous in the weak Whitney topology.
 -/
 
 public section
@@ -161,5 +164,62 @@ theorem toPerm_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯
     toPerm (diffCongr e φ) = e.toEquiv.permCongr (toPerm φ) := by
   have h := DFunLike.congr_fun (toPerm_comp_diffCongr e) φ
   simpa using h
+
+section Topology
+
+open scoped TauCeti.DiffeomorphWeakWhitney
+
+variable [CompactSpace M] [CompactSpace N] [LocallyCompactSpace E] [LocallyCompactSpace E']
+  [IsManifold I n M] [IsManifold J n N]
+
+/-- Conjugation by a fixed diffeomorphism is continuous for the weak Whitney topologies on the
+self-diffeomorphism groups. -/
+theorem continuous_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) : Continuous (diffCongr e) := by
+  have hleft : Continuous fun φ : M ≃ₘ^n⟮I, I⟯ M ↦ e.symm.trans φ :=
+    continuous_trans.comp (continuous_const.prodMk continuous_id)
+  have hright : Continuous fun ψ : N ≃ₘ^n⟮J, I⟯ M ↦ ψ.trans e :=
+    continuous_trans.comp (continuous_id.prodMk continuous_const)
+  exact hright.comp hleft
+
+/-- A diffeomorphism gives a homeomorphic group isomorphism between the weak-Whitney spaces of
+self-diffeomorphisms of its source and target by conjugation. -/
+def diffCongrContinuousMulEquiv (e : M ≃ₘ^n⟮I, J⟯ N) :
+    (M ≃ₘ^n⟮I, I⟯ M) ≃ₜ* (N ≃ₘ^n⟮J, J⟯ N) where
+  toMulEquiv := diffCongr e
+  continuous_toFun := continuous_diffCongr e
+  continuous_invFun :=
+    (continuous_diffCongr e.symm).congr fun _ ↦ (rfl)
+
+/-- Topological conjugation applies the underlying algebraic conjugation. -/
+@[simp]
+theorem diffCongrContinuousMulEquiv_apply (e : M ≃ₘ^n⟮I, J⟯ N)
+    (φ : M ≃ₘ^n⟮I, I⟯ M) : diffCongrContinuousMulEquiv e φ = diffCongr e φ :=
+  (rfl)
+
+/-- Conjugation by the identity diffeomorphism is the identity topological group isomorphism. -/
+@[simp]
+theorem diffCongrContinuousMulEquiv_refl :
+    diffCongrContinuousMulEquiv (Diffeomorph.refl I M n) =
+      ContinuousMulEquiv.refl (M ≃ₘ^n⟮I, I⟯ M) := by
+  ext φ x
+  simp
+
+/-- Topological conjugation is functorial under composition of diffeomorphisms. -/
+@[simp]
+theorem diffCongrContinuousMulEquiv_trans (e : M ≃ₘ^n⟮I, J⟯ N)
+    (e' : N ≃ₘ^n⟮J, K⟯ P) [CompactSpace P] [LocallyCompactSpace E''] [IsManifold K n P] :
+    diffCongrContinuousMulEquiv (e.trans e') =
+      (diffCongrContinuousMulEquiv e).trans (diffCongrContinuousMulEquiv e') := by
+  ext φ x
+  simp
+
+/-- The inverse topological group isomorphism conjugates by the inverse diffeomorphism. -/
+@[simp]
+theorem diffCongrContinuousMulEquiv_symm (e : M ≃ₘ^n⟮I, J⟯ N) :
+    (diffCongrContinuousMulEquiv e).symm = diffCongrContinuousMulEquiv e.symm := by
+  ext ψ x
+  rfl
+
+end Topology
 
 end Diffeomorph

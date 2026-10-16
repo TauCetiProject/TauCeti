@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 
 /-!
 # Triangulable topological spaces

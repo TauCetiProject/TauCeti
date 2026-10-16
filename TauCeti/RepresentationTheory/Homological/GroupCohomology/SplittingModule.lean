@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.Augmentation
+public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
@@ -183,6 +183,22 @@ theorem splittingModuleProj_apply (x : splittingModule A u) :
     splittingModuleProj A u x = (splittingModuleEquiv A u x).1 :=
   (rfl)
 
+/-- The inclusion of `A` followed by the projection to `I_G` is zero. -/
+@[reassoc (attr := simp)]
+theorem splittingModuleIncl_comp_splittingModuleProj :
+    splittingModuleIncl A u ≫ splittingModuleProj A u = 0 := by
+  ext; rfl
+
+/-- The inclusion of `A` into the splitting module is injective. -/
+theorem splittingModuleIncl_injective : Function.Injective (splittingModuleIncl A u).hom :=
+  LinearMap.inr_injective
+
+/-- The kernel of the projection to `I_G` is the image of the inclusion of `A`. -/
+theorem ker_splittingModuleProj_eq_range :
+    LinearMap.ker (splittingModuleProj A u).hom.toLinearMap =
+      LinearMap.range (splittingModuleIncl A u).hom.toLinearMap :=
+  LinearMap.ker_fst _ _ _
+
 /-- The short complex `A → A(u) → I_G` associated to the splitting module. -/
 def splittingModuleSES : ShortComplex (Rep k G) :=
   { X₁ := A
@@ -191,6 +207,13 @@ def splittingModuleSES : ShortComplex (Rep k G) :=
     f := splittingModuleIncl A u
     g := splittingModuleProj A u
     zero := by ext; rfl }
+
+/-- The splitting-module sequence has maps the inclusion of `A` and the projection to `I_G`. -/
+theorem splittingModuleSES_def :
+    splittingModuleSES A u =
+      ShortComplex.mk (splittingModuleIncl A u) (splittingModuleProj A u)
+        (splittingModuleIncl_comp_splittingModuleProj A u) :=
+  (rfl)
 
 /-- The left object of the splitting-module sequence is the original representation. -/
 @[simp]

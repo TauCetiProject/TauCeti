@@ -42,11 +42,11 @@ readings are uses of one construction.
 
 ## What is not here
 
-**The degree.** `deg (φ.map f) = deg φ` is a true and wanted statement — it is flat base change of
-a finite morphism — but it is not a formal consequence of anything above: it compares
-`[K(W₁.map f) : (φ.map f)^*K(W₂.map f)]` with `[F(W₁) : φ^*F(W₂)]`, which needs the function field
-of the base-changed curve to be recognised as a localisation of `K ⊗_F F[W₁]`. That comparison, and
-with it the invariance of the separable and inseparable degrees, is its own development.
+**The degree.** `deg (φ.map f) = deg φ` is not a formal consequence of anything above: it compares
+`[K(W₁.map f) : (φ.map f)^*K(W₂.map f)]` with `[F(W₁) : φ^*F(W₂)]`, which needs `F(W₁)` and `K` to
+be linearly disjoint over `F`. It is `TauCeti.Isogeny.degree_map`, in
+`Isogeny/BaseChange/Degree.lean`. The invariance of the separable and inseparable degrees is not
+proved there.
 
 ## Main definitions
 

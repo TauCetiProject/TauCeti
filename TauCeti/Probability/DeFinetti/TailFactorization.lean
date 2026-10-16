@@ -9,7 +9,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Probability.Process.Tail.Basic
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
 -- Non-public: used only inside the proof, absent from the exported statement —
 -- `condExp_blockIndicatorProd_future_ae_eq_prod` (finite-level factorization) and

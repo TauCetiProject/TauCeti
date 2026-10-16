@@ -33,7 +33,7 @@ need only be checked on a single element outside `N`.
 When `χ` is moreover **faithful** the condition loses all reference to `χ`: `χ (s x s⁻¹) ≠ χ x`
 becomes `s x s⁻¹ ≠ x`, so the induced representation is irreducible exactly when the centralizer
 of `N` in `G` is contained in `N`.  This is the form the classical examples are checked in --
-`A₃ ◁ S₃` in `TauCeti.RepresentationTheory.Induction.Mackey.SymmetricThree`, and the rotation
+`A₃ ◁ S₃` in `TauCeti.RepresentationTheory.Induction.Mackey.SymmetricThree.Basic`, and the rotation
 subgroup of a dihedral group -- where the ambient group is visibly nonabelian on `N`.
 
 The whole file is the normal-subgroup half of the roadmap's dichotomy: nothing induced from the

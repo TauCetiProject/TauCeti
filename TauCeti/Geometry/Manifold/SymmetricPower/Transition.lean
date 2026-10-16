@@ -79,8 +79,6 @@ theorem symOpenPartialHomeomorph_transition_apply
   classical
   let C : OpenPartialHomeomorph (Sym α n) (Fin n → ℂ) :=
     symOpenPartialHomeomorph φ V m hm hVo hVsubφ hVdisj e hp
-  let D : OpenPartialHomeomorph (Sym α n) (Fin n → ℂ) :=
-    symOpenPartialHomeomorph ψ V m hm hVo hVsubψ hVdisj e' hp
   have hrepr : ∃ q : ∀ i, Sym ↥(V i) (m i),
       C.symm c = Sym.sumSubtype V m hm q := by
     have hs : C.symm c ∈ C.source := C.map_target hc

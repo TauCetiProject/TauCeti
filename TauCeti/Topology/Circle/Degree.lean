@@ -26,7 +26,7 @@ under homotopies of based loops (`Circle.degree_eq_of_homotopic`). It is additiv
 concatenation (`Circle.degree_trans`) and the pointwise product (`Circle.degree_mul`) of loops,
 because angle functions concatenate and add, and reversing a loop negates it
 (`Circle.degree_symm`). Raising a loop pointwise to the `n`-th power multiplies its degree by `n`
-(`Circle.degree_map_pow`).
+(`Circle.degree_map_pow`), and inverting it pointwise negates its degree (`Circle.degree_inv`).
 
 The degree is the integer that Tau Ceti's identification
 `Circle.fundamentalGroupMulEquiv : π₁(Circle, x) ≃* Multiplicative ℤ` assigns to the class of the
@@ -46,6 +46,8 @@ which the Maslov index of a loop of totally real subspaces is defined.
   of the degrees, and reversing a loop negates its degree.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
 * `Circle.degree_map_pow`: the pointwise `n`-th power of a loop has `n` times its degree.
+* `Circle.degree_inv`: the pointwise inverse of a loop has the opposite degree.
+* `Circle.degree_congr`: loops agreeing pointwise have the same degree.
 -/
 
 public section
@@ -119,6 +121,12 @@ theorem degree_eq_of_homotopy {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y 
     sub_eq_degree_mul γ₁ (θ := fun t => Θ (t, 1)) (by fun_prop)
       (fun t => (hΘ t 1).trans (h₁ t))] at hconst
   exact_mod_cast mul_right_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0) hconst
+
+/-- Loops that agree pointwise have the same degree, however their basepoints are written. -/
+theorem degree_congr {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y) (h : ∀ t, γ₀ t = γ₁ t) :
+    degree γ₀ = degree γ₁ :=
+  degree_eq_of_homotopy γ₀ γ₁ (γ₀.toContinuousMap.comp ⟨Prod.snd, continuous_snd⟩)
+    (fun _ => rfl) h (fun _ => by simp)
 
 /-- Homotopic loops, relative to their basepoint, have the same degree. -/
 theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.Homotopic γ₁) :
@@ -205,16 +213,23 @@ theorem degree_mul {x y : Circle} (γ₁ : Path x x) (γ₂ : Path y y) :
 @[simp]
 theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
     degree (γ.map (continuous_pow n)) = n * degree γ := by
-  -- Loops agreeing pointwise have the same degree, via the constant homotopy.
-  have h {y z : Circle} (γ₀ : Path y y) (γ₁ : Path z z) (hγ : ∀ t, γ₀ t = γ₁ t) :
-      degree γ₀ = degree γ₁ :=
-    degree_eq_of_homotopy γ₀ γ₁ (γ₀.toContinuousMap.comp ⟨Prod.snd, continuous_snd⟩)
-      (fun _ => rfl) hγ (fun _ => by simp)
   induction n with
-  | zero => simpa using h _ (Path.refl 1) fun t => by simp
+  | zero => simpa using degree_congr _ (Path.refl 1) fun t => by simp
   | succ n ih =>
-    rw [h _ ((γ.map (continuous_pow n)).mul γ) fun t => by simp [pow_succ], degree_mul, ih]
+    rw [degree_congr _ ((γ.map (continuous_pow n)).mul γ) fun t => by simp [pow_succ], degree_mul,
+      ih]
     push_cast
     ring
+
+/-- The pointwise inverse of a loop has the opposite degree. -/
+@[simp]
+theorem degree_inv {x : Circle} (γ : Path x x) : degree γ.inv = -degree γ := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  refine degree_eq_of_sub_eq _ (θ := fun t => -θ t) (by fun_prop)
+    (fun t => by simp [exp_neg, hθ]) ?_
+  rw [Int.cast_neg, neg_mul, ← sub_eq_degree_mul γ θ.continuous hθ]
+  ring
 
 end Circle

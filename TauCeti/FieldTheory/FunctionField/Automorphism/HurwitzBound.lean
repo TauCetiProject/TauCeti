@@ -92,7 +92,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     exact IntermediateField.finrank_fixedField_eq_natCard G
   have hGpos : 0 < Nat.card G := Nat.card_pos
   have hFE : IsFunctionField k ↥E := hF.fixedField G
-  have hexE : IsIntegrallyClosedIn k ↥E := isIntegrallyClosedIn_intermediateField hex E
+  have hexE : IsIntegrallyClosedIn k ↥E := E.val.isIntegrallyClosedIn E.val.injective hex
   -- The ramified places of the fixed field form a finite set.
   have hfinite : {P : Place k ↥E | 1 < P.ramificationIdxIn F}.Finite := by
     refine (Place.finite_setOf_exists_differentExponent_ne_zero (k' := k) (F' := F)
@@ -104,7 +104,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
       rwa [← Place.ramificationIdxIn_eq_ramificationIdx hP']
     have hdl := Place.ramificationIdx_le_differentExponent_add_one k ↥E P'
     omega
-  set s : Finset (Place k ↥E) := hfinite.toFinset with hs
+  let s : Finset (Place k ↥E) := hfinite.toFinset
   -- Hurwitz, in its tame form, through the branch data of the extension.
   have hhur : 2 * (genus k F : ℤ) - 2 =
       Module.finrank ↥E F * (2 * (genus k ↥E : ℤ) - 2) +

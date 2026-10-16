@@ -54,7 +54,8 @@ the Riemann–Roch identity.
   the characteristic property of that divisor.
 * `TauCeti.weilDifferentialDivisor_repartitionDualMul`: **the transformation law**
   `(z · ω) = div z + (ω)` (Stichtenoth, Proposition 1.5.13), which is what makes the class of
-  `(ω)` — the canonical class — independent of `ω`.
+  `(ω)` — the canonical class — independent of `ω`;
+  `TauCeti.weilDifferentialOrder_repartitionDualMul` gives its coefficient form at each place.
 * `TauCeti.divisorClass_weilDifferentialDivisor`: the divisor of every nonzero Weil differential
   represents `TauCeti.canonicalClass`.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace`: the
@@ -152,6 +153,16 @@ noncomputable def weilDifferentialDivisor (hF : IsFunctionField k F)
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) : Divisor k F :=
   (exists_isGreatest_mem_weilDifferentialFiltration hF hex hmem hω).choose
 
+/-- The divisor of a Weil differential depends only on the differential, not on the proofs that it
+is a nonzero Weil differential. -/
+theorem weilDifferentialDivisor_congr (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    {ω₁ ω₂ : Module.Dual k ↥(repartitionSpace k F)} (h : ω₁ = ω₂)
+    (hmem₁ : ω₁ ∈ weilDifferentialSpace k F) (hω₁ : ω₁ ≠ 0)
+    (hmem₂ : ω₂ ∈ weilDifferentialSpace k F) (hω₂ : ω₂ ≠ 0) :
+    weilDifferentialDivisor hF hex hmem₁ hω₁ = weilDifferentialDivisor hF hex hmem₂ hω₂ := by
+  subst h
+  rfl
+
 /-- The divisor of a nonzero Weil differential is indeed the greatest divisor bounding it. -/
 theorem isGreatest_weilDifferentialDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
@@ -229,6 +240,31 @@ theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     rw [hcancel, Divisor.principal_inv, ← sub_eq_add_neg] at h
     rw [add_comm]
     exact sub_le_iff_le_add.mp (hW.2 h)
+
+/-- Multiplication by a nonzero function adds its order to the order of a Weil differential
+at every place. This is the coefficient form of `weilDifferentialDivisor_repartitionDualMul`. -/
+@[simp]
+theorem weilDifferentialOrder_repartitionDualMul (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (z : Fˣ) (P : Place k F) :
+    weilDifferentialOrder hF hex (repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hmem)
+        (repartitionDualMul_ne_zero hF (Units.ne_zero z) hω) P =
+      P.ord (z : F) + weilDifferentialOrder hF hex hmem hω P := by
+  simp only [weilDifferentialOrder, weilDifferentialDivisor_repartitionDualMul hF hex hmem hω z,
+    AlgebraicGeometry.WeilDivisor.coeff_add, Divisor.coeff_principal]
+
+/-- If a nonzero Weil differential `ω` equals `z · η`, then `v_P(ω) = ord_P z + v_P(η)` at every
+place. This is `weilDifferentialOrder_repartitionDualMul` for a differential given only up to
+equality, with its own proofs of membership and nonvanishing. -/
+theorem weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω η : Module.Dual k ↥(repartitionSpace k F)}
+    (hωmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0)
+    (hηmem : η ∈ weilDifferentialSpace k F) (hη : η ≠ 0) {z : F} (hz : z ≠ 0)
+    (h : ω = repartitionDualMul hF z η) (P : Place k F) :
+    weilDifferentialOrder hF hex hωmem hω P =
+      P.ord z + weilDifferentialOrder hF hex hηmem hη P := by
+  subst h
+  exact weilDifferentialOrder_repartitionDualMul hF hex hηmem hη (Units.mk0 z hz) P
 
 /-- The divisors of any two nonzero Weil differentials have the same divisor class. -/
 theorem divisorClass_weilDifferentialDivisor_eq (hF : IsFunctionField k F)
@@ -467,7 +503,7 @@ theorem divisorClass_eq_canonicalClass_iff (hF : IsFunctionField k F)
   -- `D` has the class of `W`.  Conversely such a `D` is itself a Riemann–Roch divisor, whose
   -- degree and dimension are `2g - 2` and `g` by Corollary 1.5.16.
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
-  refine ⟨fun hD ↦ ?_, fun ⟨hdeg, hdim⟩ ↦ ?_⟩
+  refine ⟨fun hD ↦ ?_, fun ⟨hdeg, _⟩ ↦ ?_⟩
   · have hRR := isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex hD
     exact ⟨hRR.degree_eq hF hex, (hRR.dim_eq hF hex).ge⟩
   · have hid := Divisor.isRiemannRochDivisor_iff.mp

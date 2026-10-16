@@ -39,6 +39,8 @@ instance — independent of the presentation up to summands built from projectiv
   equal ranges differ, after stabilisation, by an automorphism.
 * `TauCeti.exists_linearEquiv_comp_prodMap_comp_fst_eq`: two projective presentations of the same
   module are stably isomorphic as arrows.
+* `LinearMap.projective_ker_of_projective_ker`: whether the kernel of a surjection from a
+  projective module is projective does not depend on the surjection.
 
 ## References
 
@@ -173,5 +175,31 @@ theorem exists_linearEquiv_comp_prodMap_comp_fst_eq {f : P₁ →ₗ[R] P₀} {�
   exact ⟨e₀, e₁, he₁⟩
 
 end Presentation
+
+section Kernel
+
+variable {R : Type*} [Semiring R] {M P Q : Type*} [AddCommMonoid M] [Module R M]
+  [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+  [Module.Projective R P] [Module.Projective R Q]
+
+/-- **Projectivity of the kernel does not depend on the projective presentation.** If `f : P → M`
+and `g : Q → M` are surjections from projective modules and `ker g` is projective, then so is
+`ker f`: by Schanuel's lemma `ker f × Q ≃ P × ker g`, of which `ker f` is a direct summand. -/
+theorem _root_.LinearMap.projective_ker_of_projective_ker (f : P →ₗ[R] M)
+    (hf : Function.Surjective f) (g : Q →ₗ[R] M) (hg : Function.Surjective g)
+    [Module.Projective R (ker g)] : Module.Projective R (ker f) := by
+  obtain ⟨e, he⟩ := exists_linearEquiv_comp_fst_eq_comp_snd_comp (a := f) (b := g)
+    (by rw [range_eq_top.mpr hf, range_eq_top.mpr hg])
+  have he' (x : P × Q) : f x.1 = g (e x).2 := congr($he x)
+  -- `e` carries `ker f × Q` onto `P × ker g`; restrict it to `ker f × 0` and invert it.
+  let a : ker f →ₗ[R] P × Q := e.toLinearMap ∘ₗ inl R P Q ∘ₗ (ker f).subtype
+  let b : P × ker g →ₗ[R] P := fst R P Q ∘ₗ e.symm.toLinearMap ∘ₗ id.prodMap (ker g).subtype
+  have ha (x : ker f) : snd R P Q (a x) ∈ ker g := by simp [a, ← he']
+  have hb (y : P × ker g) : b y ∈ ker f := by simp [b, he']
+  let i : ker f →ₗ[R] P × ker g := (fst R P Q ∘ₗ a).prod ((snd R P Q ∘ₗ a).codRestrict _ ha)
+  refine .of_split i (b.codRestrict _ hb) (LinearMap.ext fun x ↦ Subtype.ext ?_)
+  simp [i, a, b]
+
+end Kernel
 
 end TauCeti

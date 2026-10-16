@@ -75,7 +75,7 @@ theorem schwarzChristoffelCompactifiedBoundary_locally_openSegment
       exact (hball' hz) ⟨t, hts, rfl⟩
     obtain ⟨y, hy, rfl⟩ := ht
     exact ⟨⟨y, hy, (schwarzChristoffelCompactifiedBoundary_coe a e z₀ y).symm⟩, hz⟩
-  · rintro ⟨⟨y, hy, rfl⟩, hz⟩
+  · rintro ⟨⟨y, _, rfl⟩, hz⟩
     exact ⟨⟨(y : OnePoint ℝ), schwarzChristoffelCompactifiedBoundary_coe a e z₀ y⟩, hz⟩
 
 end TauCeti

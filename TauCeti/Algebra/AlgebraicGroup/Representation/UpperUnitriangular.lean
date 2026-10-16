@@ -23,10 +23,8 @@ This morphism factors the usual coordinate morphism `O(GL_n) ⟶ H` through the 
 `O(GL_n) ⟶ O(U_n)`. Consequently, if `M` is faithful, the represented affine group embeds as
 a closed subgroup of `U_n`.
 
-This is the coordinate-algebra bridge needed for the upper-unitriangular embedding
-characterization in Layer 5, "Unipotent groups", of the ReductiveGroups roadmap. The remaining
-Kolchin step must produce a basis with upper-unitriangular coefficient matrix for a faithful
-representation of a unipotent group.
+This is the coordinate-algebra bridge used by the upper-unitriangular embedding characterization in
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding`.
 
 ## Main declarations
 

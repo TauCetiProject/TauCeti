@@ -229,6 +229,7 @@ theorem gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self_ne_zero 
         (gradedPowIter p (freeProP p X) k (gradedMkZero p (freeProP p X) (of i))) ≠ 0 := by
   rw [gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self]
   exact MulEquiv.ulift.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow
+    (Fact.out : p.Prime).one_lt
 
 /-- The graded map induced by the `i`-th exponent sum modulo `p ^ (k + 1)` kills `π^k x'_j` for
 `j ≠ i`. -/
@@ -299,6 +300,7 @@ theorem linearIndependent_degreeOneFamily_of :
     · refine (smul_eq_zero_iff_left ?_).mp h
       rw [degreeOneFamily_inl]
       simpa using e.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow
+        (Fact.out : p.Prime).one_lt
     · intro k hk
       refine smul_eq_zero_of_right _ ?_
       rcases k with k | ⟨⟨k, l⟩, hkl⟩

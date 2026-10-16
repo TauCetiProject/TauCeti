@@ -145,7 +145,7 @@ private theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset_of_arc
       · exact hz
     · exact fun hz => ⟨hz.1, Or.inr hz⟩
   have hSsep : y ∈ connectedComponentIn Sᶜ x₀ :=
-    hU.isConnected.isPreconnected.subset_connectedComponentIn hx₀U
+    hU.isConnected.isPreconnected.subset_connectedComponentIn (F := Sᶜ) hx₀U
       (fun z hz hzJ => (Set.eq_empty_iff_forall_notMem.mp hUJ) z ⟨hz, hzJ⟩) hyU
   have hTsep : y ∈ connectedComponentIn Tᶜ x₀ := by
     refine (convex_ball a ρ).isPreconnected.subset_connectedComponentIn hx₀a ?_ hya
@@ -164,7 +164,7 @@ theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset
   obtain ⟨S, hSJ, hScompact, hSpre, haS, hball⟩ :=
     hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball ha hε
   have hcancel : frontier U \ (frontier U \ S) = S := sdiff_sdiff_cancel_left hSJ
-  refine hU.exists_isPreconnected_inter_ball_subset_of_arc hε
+  refine hU.exists_isPreconnected_inter_ball_subset_of_arc hε (W := frontier U \ S)
     (fun z hz => ⟨hz.1, hball hz⟩) ⟨ha, haS⟩ ?_ ?_
   · rw [hcancel]; exact hScompact.isClosed
   · rw [hcancel]; exact hSpre
@@ -194,7 +194,8 @@ theorem IsJordanDomain.injOn_closedBall_of_conformal
     fun _ ha => hJ.isPreconnectedApproachAt ha
 
 /-- **Boundary injectivity, Jordan case**, in the hypothesis shape of
-`TauCeti.exists_continuousOn_closedBall_eqOn_of_isJordanCurve_frontier`. -/
+`TauCeti.exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier` with a Jordan-curve
+boundary. -/
 theorem injOn_closedBall_of_isJordanCurve_frontier (hr : 0 < r)
     (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) (hJf : IsJordanCurve (frontier (f '' ball c r)))

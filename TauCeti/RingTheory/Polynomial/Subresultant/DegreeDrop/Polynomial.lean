@@ -45,10 +45,10 @@ theorem _root_.Polynomial.subresultant_eq_C_coeff_pow_mul_of_right_degree_drop
   ext k
   have hj' : j < min m N := by omega
   by_cases hk : k ≤ j
-  · simp only [subresultant_coeff, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
+  · simp only [coeff_subresultant, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
     exact subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hN
       (by omega) (by omega) k
-  · simp only [coeff_C_mul, subresultant_coeff, hk, and_false, ↓reduceIte, mul_zero]
+  · simp only [coeff_C_mul, coeff_subresultant, hk, and_false, ↓reduceIte, mul_zero]
 
 /-- Below both smaller bounds, a left-bound drop scales the whole subresultant polynomial,
 including the column-block sign. -/
@@ -60,11 +60,11 @@ theorem _root_.Polynomial.subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degre
   ext k
   have hj' : j < min M n := by omega
   by_cases hk : k ≤ j
-  · simp only [subresultant_coeff, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
+  · simp only [coeff_subresultant, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
     simpa only [mul_assoc] using
       subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM
         (by omega) (by omega) k
-  · simp only [coeff_C_mul, subresultant_coeff, hk, and_false, ↓reduceIte, mul_zero]
+  · simp only [coeff_C_mul, coeff_subresultant, hk, and_false, ↓reduceIte, mul_zero]
 
 /-- When only the right bound drops, the subresultant at its smaller terminal index survives
 as a scalar multiple of the right polynomial, rather than a terminal subresultant polynomial. -/
@@ -75,7 +75,7 @@ theorem _root_.Polynomial.subresultant_right_bound_of_degree_drop {p q : R[X]} {
       C (p.coeff m ^ (N - n) * q.coeff n ^ (m - n - 1)) * q := by
   ext k
   have hj : n < min m N := by omega
-  rw [coeff_C_mul, subresultant_coeff]
+  rw [coeff_C_mul, coeff_subresultant]
   by_cases hk : k ≤ n
   · simp only [hj, hk, and_self, ↓reduceIte]
     rw [subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hnN.le hnm le_rfl,
@@ -107,7 +107,7 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_lt_bounds {p q : R[X
   · have hnpos : 0 < n := by omega
     obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hnpos)
     ext k
-    rw [subresultant_coeff]
+    rw [coeff_subresultant]
     by_cases hk : k ≤ j
     · simp only [hj, hk, and_self, ↓reduceIte, coeff_zero]
       rw [subresultantCoeff_succ_right hm.le (by omega) (by omega) (by omega),

@@ -77,7 +77,7 @@ theorem exists_contMDiffAt_localGeodesicFlow (z : TangentBundle I M) :
   intro w hw
   obtain ⟨hΦ0, hΦcurve, hΦadd⟩ := hΦ w hw
   refine ⟨hΦ0, hΦcurve, hΦadd, ?_⟩
-  exact hΦcurve.isGeodesicCurveOnFrom_proj hsopen (mem_of_mem_nhds hs) hΦ0
+  exact hΦcurve.isGeodesicCurveOnFrom_proj hsopen.uniqueDiffOn (mem_of_mem_nhds hs) hΦ0
 
 /-! ### The maximal geodesic flow -/
 
@@ -87,8 +87,9 @@ theorem maximalIntegralCurveFlowDomain_geodesicSpray :
     maximalIntegralCurveFlowDomain (geodesicSpray I M) =
       {q : TangentBundle I M × ℝ | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} := by
   ext ⟨z, t⟩
-  rw [mem_maximalIntegralCurveFlowDomain, mem_ofPred_eq,
-    ← maximalIntegralCurveInterval_geodesicSpray]
+  rw [mem_maximalIntegralCurveFlowDomain]
+  simp only [Set.mem_ofPred_eq]
+  rw [← maximalIntegralCurveInterval_geodesicSpray]
 
 variable [T2Space M]
 

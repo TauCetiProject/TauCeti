@@ -6,16 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Map
+public import Mathlib.Algebra.Module.Equiv.Basic
 
 /-!
 # Elementary linear-equivalence transport
 
 Transport of submodule stability through an intertwining linear equivalence.
+Symmetry of a linear automorphism agrees with inversion in its group structure.
 -/
 
 public section
 
 namespace LinearEquiv
+
+/-- Symmetry of a linear automorphism is its group inverse. -/
+theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    (e : V ≃ₗ[R] V) : e.symm = e⁻¹ := rfl
 
 /-- Transport stability of a mapped submodule through an intertwining linear equivalence. -/
 theorem mem_of_preserves_map

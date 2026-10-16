@@ -49,7 +49,7 @@ private lemma integral_abs_pow_mul_exp_neg_mul_sq (n : ℕ) {b : ℝ} (hb : 0 < 
       have h' : ∫ x : ℝ in Ioi 0, x ^ (n : ℝ) * exp (-b * x ^ 2) =
           b ^ (-((n : ℝ) + 1) / 2) * (1 / 2) * Gamma (((n : ℝ) + 1) / 2) := by
         rw [← h]
-        refine setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ ?_
+        refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
         rw [Real.rpow_two]
       calc
         _ = 2 * (b ^ (-((n : ℝ) + 1) / 2) * (1 / 2) *

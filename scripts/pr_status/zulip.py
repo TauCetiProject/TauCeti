@@ -124,6 +124,7 @@ EMOJI = {
 }
 CI_GROUP = ["yellow", "green_circle", "red_circle"]
 REVIEW_GROUP = ["eyes", "play", "writing", "check", "merge", "closed-pr"]
+BORS_MERGED_PREFIX = re.compile(r"^\[Merged by Bors\] - ", re.IGNORECASE)
 
 # core.derive's CI states -> this sink's emoji. An unreported build is the
 # `awaiting-CI` state, so it is yellow too; terminal PRs clear the group.
@@ -358,7 +359,8 @@ def pr_message_content(pr, title, author, roadmaps):
         ", ".join(zulip_sanitize(name.removeprefix("roadmap/")) for name in roadmaps)
         or "unlabelled"
     )
-    return (f"**{zulip_sanitize(title)}** · {pr_url(pr)}  \n"
+    display_title = BORS_MERGED_PREFIX.sub("", title, count=1)
+    return (f"**{zulip_sanitize(display_title)}** · {pr_url(pr)}  \n"
             f"author: {author_text} · roadmap: {roadmap_text}")
 
 
@@ -447,6 +449,11 @@ def reconcile(
 
     status = core.derive(pr, ci_override, state=st)
     rev = {"merged": "merge", "closed": "closed-pr"}.get(status["lifecycle"])
+    # Bors fast-forwards a tested squash batch, then closes its PRs with this
+    # title marker. GitHub reports merged=false for those closed PRs. This is
+    # only a display signal; do not change the shared merge-readiness policy.
+    if status["lifecycle"] == "closed" and BORS_MERGED_PREFIX.match(st["title"]):
+        rev = "merge"
     if rev is None:  # open PR: render the review state
         rev = review_emoji(status)
     changes += set_group(z, message, bot_id, REVIEW_GROUP, rev, dry_run)

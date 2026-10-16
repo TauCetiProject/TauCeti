@@ -69,6 +69,9 @@ by the degree alone, and in degree two by separability and irreducibility.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
 * `TauCeti.HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three`: the Galois group of a polynomial
   with a label is solvable unless the label is `5T4` or `5T5`.
+* `TauCeti.isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two`: the Galois group of
+  an irreducible polynomial whose root set is numbered by `Fin 5` is solvable exactly when its
+  permutation image lies in a conjugate of `F₂₀`.
 * `TauCeti.HasGaloisLabel.eq_one_of_smul_eq_self`: a regular label acts freely on the roots.
 * `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible, and
   `TauCeti.exists_hasGaloisLabel_of_irreducible`: conversely, an irreducible separable polynomial
@@ -287,6 +290,30 @@ about `solvableByRad`. -/
 theorem HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three (h : HasGaloisLabel f j) :
     Group.IsSolvable f.Gal ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
   rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff]
+
+/-- The Galois group of an irreducible polynomial whose root set is numbered by `Fin 5` is
+solvable exactly when its permutation image, read through that numbering `e`, lies in a
+conjugate of the Frobenius group `F₂₀`, the reference subgroup of `5T3`. No separability or
+degree hypothesis is needed beyond this numbering of the distinct roots. -/
+theorem isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two (hirr : Irreducible f)
+    (e : f.rootSet f.SplittingField ≃ Fin 5) :
+    Group.IsSolvable f.Gal ↔
+      ∃ τ : Equiv.Perm (Fin 5),
+        (Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom ≤
+          (referenceSubgroup 5 ⟨2, by simp⟩).map (MulAut.conj τ).toMonoidHom := by
+  let G : Subgroup (Equiv.Perm (Fin 5)) :=
+    (Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom
+  have htrans : IsPretransitive G (Fin 5) := by
+    dsimp only [G]
+    rw [Equiv.isPretransitive_map_permCongrHom_iff]
+    exact isPretransitive_range_galActionHom f.SplittingField hirr
+  let _ : IsPretransitive G (Fin 5) := htrans
+  have hgal : Group.IsSolvable f.Gal ↔ Group.IsSolvable G :=
+    MulEquiv.isSolvable_congr <|
+      (MonoidHom.ofInjective (Gal.galActionHom_injective f f.SplittingField)).trans
+        (e.permCongrHom.subgroupMap _)
+  rw [hgal]
+  exact isSolvable_iff_exists_le_map_conj_referenceSubgroup_five_two G
 
 open scoped Classical in
 /-- The Galois image of a polynomial with a label consists of even permutations of the roots

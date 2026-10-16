@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.LayerEquiv
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Equiv
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup

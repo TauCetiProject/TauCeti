@@ -38,9 +38,8 @@ The final theorem transports this argument across the canonical identification
 * J. S. Milne, *Algebraic Groups* (2017), §§4.a, 5, 19.b, and Chapter 14.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2 and 2.4.
 
-This gives the reductivity half of the `GL_n` worked example requested alongside Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap. The characteristic-zero
-complete-reducibility route remains open.
+For the characteristic-zero complete-reducibility theorem, see
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.LinearlyReductive`.
 -/
 
 public section

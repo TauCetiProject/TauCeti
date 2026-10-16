@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 
 /-!
@@ -109,27 +109,16 @@ theorem map_frobeniusAlgHom_eq_self_iff_mem_range_baseChange [DecidableEq K]
     (P : (W.baseChange L).toAffine.Point) :
     Affine.Point.map (W' := W) (FiniteField.frobeniusAlgHom K L) P = P ↔
       P ∈ Set.range (Affine.Point.baseChange (W' := W) K L) := by
-  rcases P with _ | ⟨x, y, h⟩
-  · exact iff_of_true (Affine.Point.map_zero _) ⟨0, Affine.Point.map_zero _⟩
-  · rw [Affine.Point.map_some, Affine.Point.some.injEq]
-    simp only [FiniteField.coe_frobeniusAlgHom]
-    rw [TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap,
-      TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap]
-    constructor
-    · rintro ⟨⟨x₀, rfl⟩, ⟨y₀, rfl⟩⟩
-      refine ⟨Affine.Point.some x₀ y₀ ((W.toAffine.baseChange_nonsingular
-        (f := Algebra.ofId K L) (FaithfulSMul.algebraMap_injective K L) x₀ y₀).mp h), ?_⟩
-      -- `baseChange` is `map (Algebra.ofId K L)`, so this is its `some` computation rule.
-      rw [Affine.Point.map_some]
-      simp only [Algebra.ofId_apply]
-    · rintro ⟨_ | ⟨x₀, y₀, h₀⟩, hQ⟩
-      -- `baseChange` fixes the point at infinity definitionally, but `rcases` leaves the
-      -- constructor `zero` rather than `0`, so name that reduction before discriminating.
-      · refine absurd hQ ?_
-        change (Affine.Point.zero : (W.baseChange L).toAffine.Point) ≠ Affine.Point.some x y h
-        simp
-      · rw [Affine.Point.map_some, Affine.Point.some.injEq] at hQ
-        exact ⟨⟨x₀, hQ.1⟩, ⟨y₀, hQ.2⟩⟩
+  have hmap : (Algebra.ofId K L : K → L) = algebraMap K L :=
+    funext (Algebra.ofId_apply L)
+  rw [Set.mem_range, exists_map_eq_iff, hmap]
+  cases P with
+  | zero => simp [← Affine.Point.zero_def]
+  | some x y h =>
+    simpa only [Affine.Point.map_some, Affine.Point.some.injEq, xCoord_some, yCoord_some,
+      FiniteField.coe_frobeniusAlgHom] using and_congr
+        (TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap x)
+        (TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap y)
 
 /-- **The `q`-power map fixes exactly `Nat.card W.toAffine.Point` of the `L`-points.**
 

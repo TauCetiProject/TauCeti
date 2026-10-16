@@ -9,7 +9,11 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Nonsingular
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
+public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.RingTheory.Smooth.Jacobian
 
 /-!
@@ -36,12 +40,28 @@ some `∂W/∂Xⱼ` with `j ≠ i` is nonzero there.
   derivatives generate the unit ideal of the chart.
 * `WeierstrassCurve.smoothOfRelativeDimension_one_projModelOver`: the projective model of an
   elliptic Weierstrass curve is smooth of relative dimension one over the base.
+* `WeierstrassCurve.smooth_projModelOver`: the projective model of an elliptic Weierstrass curve
+  is smooth over the base.
+* `WeierstrassCurve.topologicalKrullDim_projModel`: over a field, the projective model of an
+  elliptic curve has dimension one.
+* `WeierstrassCurve.isDiscreteValuationRing_stalk_projModel`: over a field, the local rings of the
+  projective model of an elliptic curve at its codimension-one points are discrete valuation rings.
 
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
 * P. Deligne and M. Rapoport, *Les schémas de modules de courbes elliptiques*, II.1.
 * Stacks Project, Tag 00T7.
+
+## Provenance
+
+`smooth_projModelOver` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at
+commit `c3415f32a313e19ace43e05479aeaa0d56ca287a`, directory
+`projects/ModularCurves/ModularCurves/EllipticCurve/`: the unnamed instance
+`Smooth universalCurveπ` in `PointsDictionary.lean` and its universe-polymorphic counterpart
+`Smooth (projModelπ universalWeierstrassLocU)` in `GroupLawAxioms.lean`, which treat only the
+universal Weierstrass curve over `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`. Here the instance is stated for
+every elliptic Weierstrass curve over every commutative ring.
 -/
 
 public section
@@ -183,5 +203,45 @@ instance smoothOfRelativeDimension_one_projModelOver [W.IsElliptic] :
   exact HasRingHomProperty.of_source_openCover (P := @SmoothOfRelativeDimension 1) 𝒰
     fun i ↦ (HasRingHomProperty.iff_of_isAffine (P := @SmoothOfRelativeDimension 1)).mp
       (W.smoothOfRelativeDimension_awayι_projModelOver i)
+
+/-- If the discriminant is a unit, the projective Weierstrass model is smooth over the base. -/
+instance smooth_projModelOver [W.IsElliptic] : Smooth W.projModelOver :=
+  -- Mathlib's `SmoothOfRelativeDimension.smooth` is a lemma, not an instance: the goal `Smooth f`
+  -- does not determine the relative dimension
+  SmoothOfRelativeDimension.smooth 1 W.projModelOver
+
+/-- The projective model of an elliptic curve is smooth of relative dimension one over the base,
+as a scheme over `Spec R`. -/
+instance smoothOfRelativeDimension_over_projModel [W.IsElliptic] :
+    SmoothOfRelativeDimension 1 (W.projModel ↘ Spec (.of R)) := by
+  rw [over_projModel]
+  infer_instance
+
+section Field
+
+open Order TauCeti TauCeti.AlgebraicGeometry
+
+variable {K : Type u} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+/-- The projective model of an elliptic curve over a field has dimension one. -/
+theorem topologicalKrullDim_projModel : topologicalKrullDim W.projModel = 1 :=
+  topologicalKrullDim_eq_of_smoothOfRelativeDimension (W.projModel ↘ Spec (.of K))
+
+/-- The local rings of the projective model of an elliptic curve at its codimension-one points are
+discrete valuation rings. -/
+instance isDiscreteValuationRing_stalk_projModel (y : CodimensionOnePoint W.projModel) :
+    IsDiscreteValuationRing (W.projModel.presheaf.stalk (y : W.projModel)) := by
+  have := SmoothOfRelativeDimension.smooth 1 (W.projModel ↘ Spec (.of K))
+  have : ∀ x : W.projModel, IsRegularLocalRing (W.projModel.presheaf.stalk x) :=
+    isRegularLocalRing_stalk_of_smooth (W.projModel ↘ Spec (.of K))
+  infer_instance
+
+/-- Every point of the projective model of an elliptic curve has codimension at most one. -/
+instance fact_coheight_le_one_projModel : Fact (∀ y : W.projModel, coheight y ≤ 1) :=
+  ⟨fun y ↦ by
+    exact_mod_cast (coheight_le_topologicalKrullDim y).trans
+      (topologicalKrullDim_projModel W).le⟩
+
+end Field
 
 end WeierstrassCurve

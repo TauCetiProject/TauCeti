@@ -55,6 +55,8 @@ function.
   they are built from.
 * `TauCeti.neg_mem_posRoots_of_mem_negRoots` and `TauCeti.neg_mem_negRoots_of_mem_posRoots` say
   that negation exchanges negative and positive roots.
+* `TauCeti.sum_root_eq_sum_posRootsFinset` splits a sum over all roots into its positive-root
+  terms and their negatives.
 * `TauCeti.borelSubalgebra_eq_sup`: the Borel subalgebra is the join `H ⊔ n⁺`.
 * `TauCeti.le_borelSubalgebra` and `TauCeti.positiveNilradical_le_borelSubalgebra` are the two
   inclusions `H ≤ 𝔟` and `n⁺ ≤ 𝔟`.
@@ -92,12 +94,6 @@ the negative case running the positive one through root negation, in the form of
 reflection `P.reflectionPerm i i`.
 
 ## References
-
-This file supplies the "Borel and the nilradicals" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signatures
-`positiveNilradical`, `negativeNilradical` and `borelSubalgebra` are pinned in the accompanying
-`Suggested.lean`. They are the subalgebras the Verma module `U(L) ⊗_{U(𝔟)} Kλ` of that layer is
-induced from.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §10.1.
 -/
@@ -229,6 +225,30 @@ theorem neg_mem_negRoots_of_mem_posRoots {i : H.root}
   exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots
     (IsKilling.rootSystem H) b i).mpr hi
 
+/-- A sum over all roots is the sum, over the positive roots, of the terms at each root and its
+negative. -/
+theorem sum_root_eq_sum_posRootsFinset {A : Type*} [AddCommMonoid A] (f : H.root → A) :
+    ∑ a, f a = ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b, (f i + f (-i)) := by
+  classical
+  have hunion : posRootsFinset (IsKilling.rootSystem H) b ∪
+      negRootsFinset (IsKilling.rootSystem H) b = Finset.univ := by
+    ext i
+    simp only [Finset.mem_union, mem_posRootsFinset, mem_negRootsFinset, mem_posRoots,
+      mem_negRoots, Finset.mem_univ, iff_true]
+    exact em _
+  have hdisj : Disjoint (posRootsFinset (IsKilling.rootSystem H) b)
+      (negRootsFinset (IsKilling.rootSystem H) b) :=
+    Finset.disjoint_left.mpr fun i hi hi' ↦
+      (mem_negRoots _ b i).mp ((mem_negRootsFinset _ b i).mp hi')
+        ((mem_posRoots _ b i).mp ((mem_posRootsFinset _ b i).mp hi))
+  have hswap : ∑ i ∈ negRootsFinset (IsKilling.rootSystem H) b, f i =
+      ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b, f (-i) := by
+    refine Finset.sum_equiv (Equiv.neg H.root) (fun i ↦ ?_) (fun i _ ↦ by simp)
+    simp only [Equiv.neg_apply, mem_negRootsFinset, mem_posRootsFinset]
+    exact ⟨fun hi ↦ neg_mem_posRoots_of_mem_negRoots b hi,
+      fun hi ↦ by simpa using neg_mem_negRoots_of_mem_posRoots b hi⟩
+  rw [← hunion, Finset.sum_union hdisj, hswap, Finset.sum_add_distrib]
+
 /-- The positive roots are a special closed set of roots: heights add, and a positive root never
 has a positive negative. -/
 theorem isSpecialClosedRootSet_posRoots :
@@ -277,11 +297,11 @@ theorem rootSpaceSubalgebra_le_iff {S : Set H.root} (hS : IsSpecialClosedRootSet
 variable (H)
 
 /-- The **positive nilradical** `n⁺ = ⨁_{α > 0} Lα` of the positive system determined by `b`. -/
-def positiveNilradical : LieSubalgebra K L :=
+noncomputable def positiveNilradical : LieSubalgebra K L :=
   rootSpaceSubalgebra H _ (isSpecialClosedRootSet_posRoots b)
 
 /-- The **negative nilradical** `n⁻ = ⨁_{α < 0} Lα` of the positive system determined by `b`. -/
-def negativeNilradical : LieSubalgebra K L :=
+noncomputable def negativeNilradical : LieSubalgebra K L :=
   rootSpaceSubalgebra H _ (isSpecialClosedRootSet_negRoots b)
 
 @[simp]
@@ -341,7 +361,7 @@ private theorem lie_mem_sup_positiveNilradical {x y : L}
 
 It is a subalgebra because `H` is one, because `⁅H, n⁺⁆ ≤ n⁺` — the root spaces being
 `H`-submodules — and because `n⁺` is one. -/
-def borelSubalgebra : LieSubalgebra K L where
+noncomputable def borelSubalgebra : LieSubalgebra K L where
   __ := (H : Submodule K L) ⊔ (positiveNilradical H b : Submodule K L)
   lie_mem' hx hy := lie_mem_sup_positiveNilradical H b hx hy
 

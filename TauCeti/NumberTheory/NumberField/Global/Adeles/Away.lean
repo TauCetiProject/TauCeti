@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
@@ -50,7 +50,7 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- A finite idele defines an ideal away from `S` exactly when its orders vanish on `S`. -/
 theorem toFractionalIdeal_mem_idealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : 𝔸ᶠ[(𝓞 K), K]ˣ) :
-    toFractionalIdeal x ∈ NumberFieldArithmetic.idealsAway (K := K) S ↔
+    toFractionalIdeal x ∈ NumberFieldArithmetic.idealsAway K S ↔
       ∀ v ∈ S, adicOrd x v = 0 := by
   rw [NumberFieldArithmetic.mem_idealsAway_iff]
   simp only [count_coe_toFractionalIdeal]
@@ -58,7 +58,7 @@ theorem toFractionalIdeal_mem_idealsAway_iff (S : Finset (HeightOneSpectrum (�
 /-- The finite ideles whose orders vanish on `S`, viewed as a subgroup. -/
 noncomputable def adicOrdAway (S : Finset (HeightOneSpectrum (𝓞 K))) :
     Subgroup (𝔸ᶠ[(𝓞 K), K]ˣ) :=
-  (NumberFieldArithmetic.idealsAway (K := K) S).comap
+  (NumberFieldArithmetic.idealsAway K S).comap
     (toFractionalIdeal (R := 𝓞 K) (K := K))
 
 @[simp]
@@ -69,7 +69,7 @@ theorem mem_adicOrdAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
 
 /-- The ideal away from `S` attached to a finite idele whose orders vanish on `S`. -/
 noncomputable def toIdealsAway (S : Finset (HeightOneSpectrum (𝓞 K))) :
-    adicOrdAway S →* NumberFieldArithmetic.idealsAway (K := K) S :=
+    adicOrdAway S →* NumberFieldArithmetic.idealsAway K S :=
   MonoidHom.codRestrict
     ((toFractionalIdeal (R := 𝓞 K) (K := K)).comp (adicOrdAway S).subtype) _
     fun x ↦ x.property
@@ -113,12 +113,12 @@ theorem toIdealsAway_surjective (S : Finset (HeightOneSpectrum (𝓞 K))) :
 In particular, these orders are nonnegative everywhere and vanish on the excluded finite set. -/
 theorem exists_forall_adicOrd_eq_count_integralIdealsAway
     (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (I : NumberFieldArithmetic.integralIdealsAway (K := K) S) :
+    (I : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S) :
     ∃ x : 𝔸ᶠ[(𝓞 K), K]ˣ,
       ∀ v : HeightOneSpectrum (𝓞 K),
         adicOrd x v = FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
   obtain ⟨x, hx⟩ := exists_forall_adicOrd_eq_count
-    (R := 𝓞 K) (K := K) (NumberFieldArithmetic.integralIdealsAwayHom S I)
+    (R := 𝓞 K) (K := K) (NumberFieldArithmetic.integralIdealsAwayHom K S I)
   refine ⟨x, fun v ↦ ?_⟩
   exact (hx v).trans (congrArg (FractionalIdeal.count K v)
     (NumberFieldArithmetic.coe_integralIdealsAwayHom S I))

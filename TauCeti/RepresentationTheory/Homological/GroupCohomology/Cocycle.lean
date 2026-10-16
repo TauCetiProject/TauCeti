@@ -29,7 +29,9 @@ Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
 * `TauCeti.isCocycle₁_ext_of_forall_mem_zpowers`: a one-cocycle on a cyclic group is
   determined by its value at a generator.
 * `TauCeti.groupNorm`: the sum of the scalar actions of a finite group, as an additive
-  homomorphism, with no topology or representation required.
+  homomorphism, with no topology or representation required. For a finite normal subgroup it
+  commutes with the action of the ambient group (`TauCeti.groupNorm_smul`), and so is a
+  `G`-equivariant additive endomorphism (`TauCeti.groupNormHom`).
 * `TauCeti.sum_smul_apply_eq_zero_of_isCocycle₁`: on a finite group, the group norm kills
   every value of a one-cocycle.
 
@@ -99,6 +101,28 @@ def groupNorm (G M : Type*) [Fintype G] [AddCommMonoid M] [DistribSMul G M] : M 
 theorem groupNorm_apply (G M : Type*) [Fintype G] [AddCommMonoid M] [DistribSMul G M]
     (m : M) : groupNorm G M m = ∑ x : G, x • m := by
   simp [groupNorm]
+
+/-- The norm of a finite normal subgroup `N` of `G` commutes with the action of `G`: conjugation
+by `g` permutes `N`. -/
+theorem groupNorm_smul {G M : Type*} [Group G] [AddCommMonoid M] [DistribMulAction G M]
+    (N : Subgroup G) [N.Normal] [Fintype N] (g : G) (m : M) :
+    groupNorm N M (g • m) = g • groupNorm N M m := by
+  simp only [groupNorm_apply, Finset.smul_sum, Subgroup.smul_def]
+  exact Fintype.sum_equiv (MulAut.conjNormal g⁻¹).toEquiv _ _ fun n ↦ by
+    simp [← mul_smul, mul_assoc]
+
+/-- The norm of a finite normal subgroup `N` of `G`, as a `G`-equivariant additive endomorphism
+of `M` (`TauCeti.groupNorm_smul`). -/
+def groupNormHom {G : Type*} [Group G] (N : Subgroup G) [N.Normal] [Fintype N] (M : Type*)
+    [AddCommMonoid M] [DistribMulAction G M] : M →+[G] M :=
+  { groupNorm N M with map_smul' := groupNorm_smul N }
+
+/-- The equivariant norm `groupNormHom N M` is the group norm of `N`. -/
+@[simp]
+theorem groupNormHom_apply {G : Type*} [Group G] (N : Subgroup G) [N.Normal] [Fintype N]
+    (M : Type*) [AddCommMonoid M] [DistribMulAction G M] (m : M) :
+    groupNormHom N M m = groupNorm N M m :=
+  (rfl)
 
 variable {G M : Type*} [Group G] [AddCommGroup M] [MulAction G M]
 

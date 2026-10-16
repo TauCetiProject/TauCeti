@@ -260,7 +260,7 @@ the nonnegative half-line, including at the endpoint `0`. -/
 theorem continuousOn_bernsteinLevyJumpExponent {μ : Measure ℝ≥0}
     (hμ : Integrable (fun x : ℝ≥0 => min 1 (x : ℝ)) μ) :
     ContinuousOn (bernsteinLevyJumpExponent μ) (Ici 0) := by
-  intro t ht
+  intro t _
   let C : ℝ := max 1 (t + 1)
   have hfilter : 𝓝[Ici 0] t ≤ 𝓝 t := nhdsWithin_le_nhds
   have hlt : Iio (t + 1) ∈ 𝓝[Ici 0] t :=

@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Basic
+public import TauCeti.NumberTheory.HeckeRing.GLn.ProductSupport
 
 /-!
 # `pLocalSubring` is a polynomial ring for `n = 1, 2`
@@ -51,19 +52,7 @@ namespace HeckeRing.GLn
 
 open HeckeRing.GL2
 
-/-- The `CommSemiring` structure this module needs on `IntegralHeckeRing n`, rebuilt locally
-from `HeckeCosetModule.instSemiringHeckeRing` and `HeckeCosetModule.mul_comm_of_antiInvolution`.
-
-`PolynomialRing/Basic.lean` carries the same reconstruction, but as a `local instance`, which
-does not cross the module boundary; and `commSemiringIntegralHeckeRing` is a sealed `def`, so
-registering it for typeclass search does not make its body reduce to the ambient
-`NonAssocSemiring`. Writing the structure here makes it transparent exactly where this file
-needs it, leaving the upstream definitions sealed for every other consumer. -/
-noncomputable local instance localCommSemiringForInjectivity (n : ℕ) [NeZero n] :
-    CommSemiring (IntegralHeckeRing n) :=
-  { (HeckeCosetModule.instSemiringHeckeRing ℤ : Semiring (IntegralHeckeRing n)) with
-    mul_comm := HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-      (transposeAntiInvolution_onHeckeCoset_eq_self n) }
+attribute [local instance] commSemiringIntegralHeckeRingLocal
 
 /-- The product of two diagonal basis elements, unfolded: it is the structure-constant family
 of their representatives. The `b₁ = b₂ = 1` case of `HeckeCosetModule.single_mul`.
@@ -147,33 +136,6 @@ private lemma divChain_two_of_dvd {a b : ℕ} (hab : a ∣ b) :
   isDvdChain_iff.mpr fun i j hij ↦ by
     fin_cases i <;> fin_cases j <;> simp_all
 
-/-- Elements in the same SL_n double coset have the same determinant. The general fact is
-`det_eq_of_mem_doubleCoset_SLnZ`; this is its `HeckeCoset` phrasing. -/
-private lemma det_doubleCoset_eq {g₁ g₂ : posDetInt 2}
-    (h : HeckeCoset.mk (SLnZ 2) (SLnZ 2) g₁ = HeckeCoset.mk (SLnZ 2) (SLnZ 2) g₂) :
-    (↑(↑g₁ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det =
-      (↑(↑g₂ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det :=
-  det_eq_of_mem_doubleCoset_SLnZ 2
-    (HeckeCoset.eq_iff.mp h ▸ DoubleCoset.mem_doubleCoset_self _ _ _)
-
-/-- Every coset in the support of a mulMap output has determinant = det(g₁) * det(g₂). -/
-private lemma det_mulMap_eq (g₁ g₂ : posDetInt 2)
-    (p : DecompQuotient (SLnZ 2) (SLnZ 2) (g₁ : GL (Fin 2) ℚ) ×
-      DecompQuotient (SLnZ 2) (SLnZ 2) (g₂ : GL (Fin 2) ℚ)) :
-    (↑(↑(HeckeCoset.rep (HeckeCoset.mulMap (SLnZ 2) (SLnZ 2) (SLnZ 2) g₁ g₂ p)) : GL (Fin 2) ℚ) :
-        Matrix (Fin 2) (Fin 2) ℚ).det =
-      (↑(↑g₁ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det *
-        (↑(↑g₂ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
-  -- `mulMap` names the double coset of the explicit product `σ g₁ τ g₂`
-  have h_eq := (HeckeCoset.mk_rep
-      (HeckeCoset.mulMap (SLnZ 2) (SLnZ 2) (SLnZ 2) g₁ g₂ p)).trans
-    (HeckeCoset.mulMap_eq_mk (SLnZ 2) (SLnZ 2) (SLnZ 2) g₁ g₂ p)
-  rw [det_doubleCoset_eq h_eq]
-  simp only [GeneralLinearGroup.coe_mul, Matrix.det_mul]
-  have h1 := det_eq_one_of_mem_SLnZ 2 (p.1.out.2)
-  have h2 := det_eq_one_of_mem_SLnZ 2 (p.2.out.2)
-  rw [h1, h2]; ring
-
 /-- If `D'` appears in the support of `m(rep D₁, rep D₂)`, then the determinant of its
 representative is the product of the determinants of `rep D₁` and `rep D₂`. -/
 private lemma det_rep_eq_mul_of_m_ne_zero (D₁ D₂ D' : HeckeCoset (posDetInt 2) (SLnZ 2) (SLnZ 2))
@@ -183,14 +145,7 @@ private lemma det_rep_eq_mul_of_m_ne_zero (D₁ D₂ D' : HeckeCoset (posDetInt 
       (↑(↑(HeckeCoset.rep D₁) : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det *
         (↑(↑(HeckeCoset.rep D₂) : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
   classical
-  rw [HeckeCosetModule.structureConstants_apply] at hm
-  -- a nonzero structure constant means `D'` is hit by `mulMap`
-  have hD'_mem : D' ∈ Finset.univ.image
-      (HeckeCoset.mulMap (SLnZ 2) (SLnZ 2) (SLnZ 2) (HeckeCoset.rep D₁) (HeckeCoset.rep D₂)) :=
-    (HeckeCoset.mem_image_mulMap_iff _ _ _).mpr (Nat.cast_ne_zero.mp hm)
-  rw [Finset.mem_image] at hD'_mem
-  obtain ⟨p, _, hD'_eq⟩ := hD'_mem
-  rw [← hD'_eq]; exact det_mulMap_eq (HeckeCoset.rep D₁) (HeckeCoset.rep D₂) p
+  exact HeckeCoset.rep_det_eq_mul_of_structureConstants_ne_zero D₁ D₂ D' hm
 
 /-- Determinant tracking: if `f` is supported on cosets of determinant `q^{a₀}`, then
 `heckeGen(q,0)^{b₀} · f` is supported on cosets of determinant `q^{b₀ + a₀}`. -/
@@ -379,7 +334,6 @@ private lemma T_mul_T_pp_pow_eval_at_one_zero (p : ℕ) (hp : 1 < p) (i k : ℕ)
   intro hdvd
   have hle : p ^ i ≤ 1 := Nat.le_of_dvd Nat.one_pos hdvd
   have hge : p ≤ p ^ i := Nat.le_self_pow (by omega) p
-  have hp2 : 2 ≤ p := hp
   omega
 
 /-- `diagElem ![p^i, p^j] = heckeTDiag(1, p^{j-i}) * heckeTScalar(p)^i` for `i ≤ j` with `p`
@@ -474,7 +428,7 @@ private lemma T_ad_one_p_mul_supp_ne_leading_eval_zero (p : ℕ) (hp : p.Prime) 
       (HeckeCoset.rep D₂)) (diagCoset (![1, p ^ (n + 1)] : Fin 2 → ℕ)) = 0 := by
   have hg_eq : (heckeTDiag 1 p) ^ n = (heckeGen 2 p 0) ^ n * (heckeGen 2 p 1) ^ 0 := by
     simp only [pow_zero, mul_one, heckeGen_zero_eq_heckeTDiag p hp.pos]
-  obtain ⟨a, hDa, ha_pos, ha_div, ha_det⟩ := T_gen_pow_support_qpower p hp.pos
+  obtain ⟨a, hDa, _, ha_div, ha_det⟩ := T_gen_pow_support_qpower p hp.pos
       ![n, 0] D₂ (hg_eq ▸ hD₂_ne_zero)
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, mul_zero, add_zero] at ha_det
   have ha_prod : a 0 * a 1 = p ^ n := Fin.prod_univ_two a ▸ ha_det

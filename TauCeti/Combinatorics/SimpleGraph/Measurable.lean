@@ -123,7 +123,7 @@ theorem measurableSet_of_mem_restrictFinCylinders {s : Set (SimpleGraph ℕ)}
 window is contained in the other, because the shorter window is a window of the longer one. -/
 theorem isPiSystem_restrictFinCylinders : IsPiSystem restrictFinCylinders := by
   -- The ordered case; the general case follows by symmetry.
-  have key : ∀ {m n : ℕ} (hmn : m ≤ n) (H : SimpleGraph (Fin m)) (H' : SimpleGraph (Fin n)),
+  have key : ∀ {m n : ℕ} (_ : m ≤ n) (H : SimpleGraph (Fin m)) (H' : SimpleGraph (Fin n)),
       ((fun G : SimpleGraph ℕ => G.restrictFin m) ⁻¹' {H} ∩
           (fun G : SimpleGraph ℕ => G.restrictFin n) ⁻¹' {H'}).Nonempty →
       (fun G : SimpleGraph ℕ => G.restrictFin m) ⁻¹' {H} ∩

@@ -13,9 +13,9 @@ public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 
 This file proves the step that drives the uniqueness half of the Krull-Schmidt theorem. Suppose a
 module `M` is the internal direct sum of a finite family `Q` of indecomposable submodules, and
-suppose `N` is an indecomposable direct summand of `M`. Then `N` is isomorphic to one of the
-summands `Q i₀`, and it may be *exchanged* for it: `M` is also the direct sum of `N` and the
-remaining summands `⨆ j ≠ i₀, Q j`.
+suppose `N` is a direct summand of `M` whose endomorphism ring is local. Then `N` is isomorphic
+to one of the summands `Q i₀`, and it may be *exchanged* for it: `M` is also the direct sum of `N`
+and the remaining summands `⨆ j ≠ i₀, Q j`.
 
 The argument is the classical one. The endomorphisms of `N` obtained by projecting `N` into `Q i`
 and back sum to the identity, because the
@@ -47,9 +47,6 @@ makes `N` nonzero (`TauCeti.nontrivial_of_isLocalRing_end`) and indecomposable
 (`TauCeti.isIndecomposableModule_of_isLocalRing_end`), and indecomposability is never used.
 
 ## References
-
-This implements the exchange argument behind the uniqueness bullet of Layer 2 ("the Krull-Schmidt
-theorem") of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4.

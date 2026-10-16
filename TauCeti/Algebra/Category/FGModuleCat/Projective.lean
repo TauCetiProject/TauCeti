@@ -23,6 +23,7 @@ every short exact sequence of finite-dimensional modules splits.
 * `FGModuleCat.projective_of_moduleProjective`: every finitely generated projective module is a
   projective object.
 * `FGModuleCat.projective_biprod`: finite projective modules are closed under biproducts.
+* `FGModuleCat.projective_tensorObj`: finite projective modules are closed under tensor products.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
 * `FGModuleCat.enoughProjectives`: every finitely generated module is a quotient of a finite free
   module.
@@ -47,14 +48,17 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 /-- A biproduct of finitely generated projective modules is projective. -/
 theorem _root_.FGModuleCat.projective_biprod
     (X Y : FGModuleCat.{v} R) [Module.Projective R X] [Module.Projective R Y] :
-    Module.Projective R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) := by
-  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
-  let _ : PreservesBinaryBiproduct X Y F :=
-    preservesBinaryBiproduct_of_preservesBinaryCoproduct F
-  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of R (X × Y) :=
-    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
-  let e' : (X ⊞ Y : FGModuleCat.{v} R) ≅ FGModuleCat.of R (X × Y) := F.preimageIso e
-  exact Module.Projective.of_equiv' (FGModuleCat.isoToLinearEquiv e').symm
+    Module.Projective R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) :=
+  Module.Projective.of_equiv' (FGModuleCat.isoToLinearEquiv (FGModuleCat.biprodIsoProd X Y)).symm
+
+open MonoidalCategory in
+/-- A tensor product of finitely generated projective modules is projective. -/
+-- Instance search does not see through the `FGModuleCat` tensor object to its carrier, the module
+-- tensor product, so Mathlib's `Module.Projective.tensorProduct` does not apply on its own.
+instance _root_.FGModuleCat.projective_tensorObj {S : Type u} [CommRing S]
+    (X Y : FGModuleCat.{u} S) [Module.Projective S X] [Module.Projective S Y] :
+    Module.Projective S ((X ⊗ Y : FGModuleCat.{u} S) : Type u) :=
+  Module.Projective.tensorProduct
 
 /-- A finitely generated projective module is a projective object of `FGModuleCat R`. -/
 theorem _root_.FGModuleCat.projective_of_moduleProjective (X : FGModuleCat.{v} R)

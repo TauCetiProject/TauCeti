@@ -249,7 +249,7 @@ theorem exists_abs_ncard_smul_inter_vadd_sub_le {D : Set E} (hDb : IsBounded D)
   classical
   -- A fundamental domain for `L`, with the properties the estimate below consumes. Tiling is
   -- taken in subtraction form, which is the idiom the count uses.
-  set b := Module.Free.chooseBasis ℤ L with hb
+  let b := Module.Free.chooseBasis ℤ L
   set β := b.ofZLatticeBasis ℝ L with hβ
   set F := ZSpan.fundamentalDomain β with hF
   have hmem : ∀ w : E, w ∈ (L : Set E) ↔ w ∈ Submodule.span ℤ (Set.range β) := fun w ↦ by

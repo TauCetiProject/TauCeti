@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.RightAction
+public import TauCeti.Algebra.Module.Dual.Indecomposable
 
 /-!
 # The Auslander--Reiten translate
@@ -48,6 +48,8 @@ that statement, and it is what licenses the notation `τ M`.
   for a finitely generated left-hand source and a transpose projective over the base, the converse
   holds too — **the translate vanishes exactly on the projective modules** — so that `τ` assigns a
   nonzero module to every non-projective one.
+* `TauCeti.AuslanderReitenTranslate.isIndecomposableModule_iff`: when the transpose is reflexive
+  over a commutative base ring, the translate is indecomposable exactly when the transpose is.
 
 ## Implementation notes
 
@@ -249,5 +251,23 @@ theorem nonempty_linearEquiv_auslanderReitenTranslate (h : IsMinimalProjectivePr
 end Comparison
 
 end IsMinimalProjectivePresentation
+
+namespace AuslanderReitenTranslate
+
+variable {P₀ : Type v} {P₁ : Type w} [AddCommGroup P₀] [Module A P₀]
+  [AddCommGroup P₁] [Module A P₁] (p₁ : P₁ →ₗ[A] P₀)
+
+/-- For a transpose reflexive over the base, the translate is indecomposable exactly when
+the transpose is. In particular this applies to finite-dimensional transposes over a field. -/
+@[simp]
+theorem isIndecomposableModule_iff (K : Type*) [CommRing K] [Algebra K A]
+    [Module.IsReflexive K (AuslanderReitenTranspose p₁)] :
+    IsIndecomposableModule A (AuslanderReitenTranslate K p₁) ↔
+      IsIndecomposableModule Aᵐᵒᵖ (AuslanderReitenTranspose p₁) :=
+  LinearEquiv.isIndecomposableModule_iff_of_dual (A := A)
+    (N := AuslanderReitenTranspose p₁) (Q := AuslanderReitenTranslate K p₁)
+    (LinearEquiv.refl K _) (fun a φ x ↦ smul_apply a φ x)
+
+end AuslanderReitenTranslate
 
 end TauCeti

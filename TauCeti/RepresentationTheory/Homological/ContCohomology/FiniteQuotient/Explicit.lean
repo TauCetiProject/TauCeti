@@ -210,9 +210,7 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
         (explicitFiniteQuotientTransition1 G M U V hVU) :=
   (explicitMap1_congr_of_eq (hφeq := (continuousFiniteQuotientMap_comp G hWV hVU).symm)
     (hfeq := (fixedPointsInclusion_comp_fixedPointsInclusion hVU hWV).symm)).trans
-      (explicitMap1_comp (hcomp := comp_apply_smul _ _ _ _
-        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
-        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV)) ..)
+      (explicitMap1_comp ..)
 
 end Transition
 

@@ -132,6 +132,25 @@ private theorem hext {G H : GridDiagram n} {C : ColumnCommutationData G}
   subst H
   exact heq_of_eq (ext hcolumn hturnRow hoppositeTurnRow)
 
+/-- A grid diagram admitting a column commutation has at least two columns. -/
+theorem one_lt (C : ColumnCommutationData G) : 1 < n := by
+  by_contra h
+  exact C.column_ne_next (Fin.ext (by
+    have := C.column.isLt
+    have := (finRotate n C.column).isLt
+    omega))
+
+/-- The two intersection rows of validated commutation data are distinct: otherwise both
+markings of the first column would occupy the same square. -/
+theorem turnRow_ne_oppositeTurnRow (C : ColumnCommutationData G) :
+    C.turnRow ≠ C.oppositeTurnRow := by
+  intro h
+  have hO := C.O_column_below
+  have hX := C.X_column_below
+  rw [← h] at hO hX
+  simp only [Grid.cIco_self, Finset.mem_insert, Finset.notMem_empty, or_false] at hO hX
+  exact G.disjoint C.column (hO.trans hX.symm)
+
 /-- Validated column-commutation data determines an elementary column commutation. -/
 theorem isColumnCommutation (C : ColumnCommutationData G) :
     IsColumnCommutation G (G.swapColumns C.column (finRotate n C.column)) :=

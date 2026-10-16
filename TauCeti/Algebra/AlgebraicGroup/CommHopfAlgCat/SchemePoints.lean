@@ -51,6 +51,9 @@ coordinate algebra.
   precomposition by the corresponding spectrum morphism.
 * `TauCeti.CommHopfAlgCat.mapMulEquivOfPresentation_mapValue`: the same covariance after
   transport across a named presentation.
+* `TauCeti.CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue`: covariance in the
+  value algebra of a points equivalence read through a named presentation, from its covariance
+  on algebra points.
 * `TauCeti.CommHopfAlgCat.mapMulEquiv_mapDomain`: a coordinate bialgebra morphism
   becomes postcomposition by the induced relative spectrum morphism `Spec K ⟶ Spec H`.
 * `TauCeti.CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain`: contravariance for arbitrary
@@ -93,13 +96,13 @@ theorem mapMulEquiv_mapDomain
     {H K : Type u} [CommRing H] [CommRing K] [Bialgebra R H] [Bialgebra R K]
     (A : CommAlgCat.{u} R) (f : H →ₐc[R] K)
     (p : WithConv (K →ₐ[R] A)) :
-    AlgebraicGeometry.Spec.mapMulEquiv (AlgHom.mapDomain f p) =
+    AlgebraicGeometry.Spec.mapMulEquiv (BialgHom.mapDomain f p) =
       AlgebraicGeometry.Spec.mapMulEquiv p ≫
         (Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom)).asOver
           (Spec (CommRingCat.of R)) := by
   apply Over.OverMorphism.ext
   erw [Over.comp_left]
-  simp only [mapMulEquiv_left, OverClass.asOverHom_left, AlgHom.mapDomain_apply]
+  simp only [mapMulEquiv_left, OverClass.asOverHom_left, BialgHom.mapDomain_apply]
   erw [← Spec.map_comp]
   rfl
 
@@ -279,7 +282,7 @@ theorem schemePointsAlgΓMulEquiv_mapDomain
     schemePointsAlgΓMulEquiv H T
         (g ≫ (Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom)).asOver
           (Spec (CommRingCat.of R))) =
-      AlgHom.mapDomain f (schemePointsAlgΓMulEquiv K T g) := by
+      BialgHom.mapDomain f (schemePointsAlgΓMulEquiv K T g) := by
   let eH := schemePointsAlgΓMulEquiv H T
   let eK := schemePointsAlgΓMulEquiv K T
   apply eH.symm.injective
@@ -288,7 +291,7 @@ theorem schemePointsAlgΓMulEquiv_mapDomain
         (Spec (CommRingCat.of R)))) =
         g ≫ (Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom)).asOver
           (Spec (CommRingCat.of R)) := eH.symm_apply_apply _
-    _ = eH.symm (AlgHom.mapDomain f (eK g)) := by
+    _ = eH.symm (BialgHom.mapDomain f (eK g)) := by
       conv_lhs => rw [← eK.symm_apply_apply g]
       dsimp only [eH, eK]
       rw [schemePointsAlgΓMulEquiv_symm_apply_spec,
@@ -399,6 +402,26 @@ theorem mapMulEquivOfPresentation_mapValue
     exact hmapLeft
   simpa only [q] using hq
 
+/-- Naturality in the value algebra of a points equivalence read through a named presentation.
+If `eA` and `eB` identify the convolution points of `H` over `A` and `B` with `M` and `N` and
+intertwine `AlgHom.mapValue φ` with `m : M → N`, then the composites with the transported
+spectrum-points equivalence intertwine precomposition by `Spec B ⟶ Spec A` with `m`. -/
+theorem mapMulEquivOfPresentation_symm_trans_mapValue
+    (H : _root_.CommHopfAlgCat.{u} R)
+    {A B : Type u} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    (φ : A →ₐ[R] B) {G : Grp (Over (Spec (CommRingCat.of R)))}
+    (hG : G = (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))
+    {M N : Type*} [Mul M] [Mul N]
+    (eA : WithConv (H →ₐ[R] A) ≃* M) (eB : WithConv (H →ₐ[R] B) ≃* N) (m : M → N)
+    (h : ∀ q, eB (AlgHom.mapValue φ q) = m (eA q))
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ G.X) :
+    ((mapMulEquivOfPresentation H B hG).symm.trans eB)
+        ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver (Spec (CommRingCat.of R)) ≫ p) =
+      m (((mapMulEquivOfPresentation H A hG).symm.trans eA) p) := by
+  rw [MulEquiv.trans_apply, MulEquiv.trans_apply, mapMulEquivOfPresentation_mapValue,
+    HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
+  exact h _
+
 private lemma transportedHopfSpecMap_left
     {H K : _root_.CommHopfAlgCat.{u} R}
     {G H' : Grp (Over (Spec (CommRingCat.of R)))}
@@ -441,7 +464,7 @@ theorem pointMulEquivOfPresentation_mapDomain
         (eqToHom hH' ≫
           (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map φ.op ≫
           eqToHom hG.symm).hom.hom =
-      eG ((mapPointsFunctor φ).app (CommAlgCat.of R A) p) := by
+      eG ((CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R A) p) := by
   let hGX : G.X.left = Spec (CommRingCat.of H) :=
     congrArg (fun K : Grp (Over (Spec (CommRingCat.of R))) ↦ K.X.left) hG
   let hH'X : H'.X.left = Spec (CommRingCat.of K) :=
@@ -456,9 +479,9 @@ theorem pointMulEquivOfPresentation_mapDomain
       eqToHom hH'X ≫ Spec.map (CommRingCat.ofHom (φ.hom.toAlgHom : H →+* K)) ≫
         eqToHom hGX.symm =
     Spec.map (CommRingCat.ofHom
-      (((mapPointsFunctor φ).app (CommAlgCat.of R A) p).ofConv : H →+* A)) ≫
+      (((CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R A) p).ofConv : H →+* A)) ≫
         eqToHom hGX.symm
-  rw [mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   rw [← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
   rfl

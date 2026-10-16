@@ -41,10 +41,7 @@ The reflection of the quiver itself, which reverses the arrows at `i`, is
 
 ## References
 
-This implements the “simple reflection at a vertex” target of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose Layer 5 root-system
-bridge consumes the symmetrized Gram matrix `TauCeti.titsPolarForm_single_single`. See
-Derksen--Weyman, *An Introduction to Quiver Representations*.
+See Derksen--Weyman, *An Introduction to Quiver Representations*.
 -/
 
 public section

@@ -80,7 +80,7 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
       (tq (g (tp.toOpenPartialHomeomorph.symm (v, i)))).2 =
         (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, i)))).2 :=
     fun i _ hv => hVconn.constant (hcont i) hv hf₀V
-  set j₀ : J := (tq f₀).2 with hj₀
+  set j₀ : J := (tq f₀).2 with _₀
   set W : Set F := {f | q f ∈ V ∧ (tq f).2 = j₀}
   have hf₀W : f₀ ∈ W := ⟨hf₀V, rfl⟩
   have hWopen : IsOpen W := by
