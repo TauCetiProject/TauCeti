@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import TauCeti.Algebra.BigOperators.AlternatingSum
@@ -38,6 +39,7 @@ identities between faces and the cyclic rotation
 * `TauCeti.hochschildCoboundary`: the Hochschild coboundary `b`.
 * `TauCeti.cyclicCochains`: the submodule of cyclic cochains.
 * `TauCeti.cyclicHochschildCoboundary`: the restriction of `b` to cyclic cochains.
+* `TauCeti.LinearMap.cyclicCochainPullback`: pullback of cyclic cochains along a linear map.
 
 ## Main results
 
@@ -46,6 +48,8 @@ identities between faces and the cyclic rotation
 * `TauCeti.cyclicHochschildCoboundary_cyclicHochschildCoboundary`: the restriction of `b` to
   cyclic cochains also squares to zero.
 * `TauCeti.hochschildCoboundary_zero_eq_zero_iff`: the degree-zero cocycles are the traces.
+* `TauCeti.NonUnitalAlgHom.cyclicCochainPullback_cyclicHochschildCoboundary`: pullback along a
+  nonunital algebra homomorphism commutes with the coboundary.
 
 ## References
 
@@ -556,5 +560,75 @@ theorem cyclicHochschildCoboundary_comp_cyclicHochschildCoboundary :
 end Assoc
 
 end Coboundary
+
+/-! ### Pullback of cyclic cochains -/
+
+section Pullback
+
+variable {R A B C M : Type*} [Semiring R]
+  [AddCommMonoid A] [Module R A] [AddCommMonoid B] [Module R B] [AddCommMonoid C] [Module R C]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+
+/-- Pullback of a cyclic cochain by precomposition with a linear map. -/
+def LinearMap.cyclicCochainPullback (f : A →ₗ[R] B) (n : ℕ) :
+    cyclicCochains R B M n →ₗ[R] cyclicCochains R A M n where
+  toFun φ := ⟨(φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compLinearMap (fun _ ↦ f), by
+    rw [mem_cyclicCochains_iff]
+    intro a
+    exact cyclicCochains_apply_finRotate_symm R B M φ (fun j ↦ f (a j))⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- Pullback evaluates a cochain after applying the linear map to every argument. -/
+@[simp]
+theorem LinearMap.coe_cyclicCochainPullback_apply (f : A →ₗ[R] B) (n : ℕ)
+    (φ : cyclicCochains R B M n) :
+    (LinearMap.cyclicCochainPullback f n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
+      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compLinearMap (fun _ ↦ f) := (rfl)
+
+/-- Pullback of cyclic cochains is the identity for the identity map. -/
+@[simp]
+theorem LinearMap.cyclicCochainPullback_id (n : ℕ) :
+    LinearMap.cyclicCochainPullback (M := M) (LinearMap.id : A →ₗ[R] A) n = LinearMap.id := by
+  ext φ a
+  rfl
+
+/-- Pullback along a composite is the composite of the pullbacks, in contravariant order. -/
+theorem LinearMap.cyclicCochainPullback_comp (f : A →ₗ[R] B) (g : B →ₗ[R] C) (n : ℕ) :
+    LinearMap.cyclicCochainPullback (M := M) (g ∘ₗ f) n =
+      LinearMap.cyclicCochainPullback (M := M) f n ∘ₗ
+        LinearMap.cyclicCochainPullback (M := M) g n := by
+  ext φ a
+  rfl
+
+/-- Pullback along a nonunital algebra homomorphism commutes with the Hochschild coboundary. -/
+theorem NonUnitalAlgHom.cyclicCochainPullback_cyclicHochschildCoboundary
+    {A B : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A]
+    [NonUnitalNonAssocSemiring B] [Module R B]
+    [IsScalarTower R B B] [SMulCommClass R B B] (f : A →ₙₐ[R] B) (n : ℕ) :
+    LinearMap.cyclicCochainPullback (M := M) (f : A →ₗ[R] B) (n + 1) ∘ₗ
+        cyclicHochschildCoboundary R B M n =
+      cyclicHochschildCoboundary R A M n ∘ₗ
+        LinearMap.cyclicCochainPullback (M := M) (f : A →ₗ[R] B) n := by
+  ext φ a
+  simp only [LinearMap.comp_apply, LinearMap.coe_cyclicCochainPullback_apply,
+    coe_cyclicHochschildCoboundary_apply, MultilinearMap.compLinearMap_apply,
+    hochschildCoboundary_apply]
+  apply Finset.sum_congr rfl
+  intro i _
+  congr 2
+  symm
+  induction i using Fin.lastCases with
+  | last =>
+      rw [hochschildFace_last, hochschildFace_last]
+      funext j
+      cases j using Fin.cases <;> simp
+  | cast i =>
+      rw [hochschildFace_castSucc, hochschildFace_castSucc]
+      exact Fin.comp_contractNth (fun x y : A ↦ x * y) (fun x y : B ↦ x * y)
+        (map_mul f) i.castSucc a
+
+end Pullback
 
 end TauCeti
