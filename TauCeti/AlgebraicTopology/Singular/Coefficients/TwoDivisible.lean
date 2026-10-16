@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.Algebra.Category.ModuleCat.ModTwo
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
 import TauCeti.Algebra.Category.ModuleCat.AB
 import Mathlib.Algebra.Homology.HomologySequence
 
