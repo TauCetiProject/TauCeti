@@ -29,6 +29,8 @@ specializes to pointed elliptic twists when `W` is elliptic.
 
 * `WeierstrassCurve.PointedTwist`: pointed twists split by a fixed extension.
 * `WeierstrassCurve.PointedTwist.mk`: the class represented by a curve and a trivialisation.
+* `WeierstrassCurve.PointedTwist.lift`: descend a representative-invariant function to pointed
+  twists.
 * `WeierstrassCurve.PointedTwist.toCohomologyClass`: the associated nonabelian cohomology class.
 * `WeierstrassCurve.pointedTwistEquivNonabelianH1`: the classification equivalence.
 
@@ -105,20 +107,66 @@ theorem induction_on {motive : PointedTwist W L → Prop} (T : PointedTwist W L)
   rintro ⟨V, C, hC⟩
   exact mk V C hC
 
+section lift
+
+variable {β : Sort*}
+
+/-- Descend a function of a representing curve and trivialisation to pointed twists, provided it
+takes equal values on representatives whose curves differ by a change of variables over `K`. -/
+def lift (f : ∀ (V : WeierstrassCurve K) (C : VariableChange L),
+      C • V.baseChange L = W.baseChange L → β)
+    (hf : ∀ (V : WeierstrassCurve K) (C : VariableChange L)
+      (hC : C • V.baseChange L = W.baseChange L) (U : WeierstrassCurve K) (D : VariableChange L)
+      (hD : D • U.baseChange L = W.baseChange L), (∃ B : VariableChange K, B • V = U) →
+        f V C hC = f U D hD) :
+    PointedTwist W L → β :=
+  Quotient.lift (fun P ↦ f P.curve P.trivialisation P.isTrivialisation)
+    fun _ _ h ↦ hf _ _ _ _ _ _ h
+
+/-- A lifted function computes on a represented twist by evaluating on the representative. -/
+@[simp]
+theorem lift_mk (f : ∀ (V : WeierstrassCurve K) (C : VariableChange L),
+      C • V.baseChange L = W.baseChange L → β)
+    (hf : ∀ (V : WeierstrassCurve K) (C : VariableChange L)
+      (hC : C • V.baseChange L = W.baseChange L) (U : WeierstrassCurve K) (D : VariableChange L)
+      (hD : D • U.baseChange L = W.baseChange L), (∃ B : VariableChange K, B • V = U) →
+        f V C hC = f U D hD)
+    (V : WeierstrassCurve K) (C : VariableChange L) (hC : C • V.baseChange L = W.baseChange L) :
+    lift f hf (mk W L V C hC) = f V C hC :=
+  (rfl)
+
+/-- A function on pointed twists that agrees with `f` on every representative is `lift f hf`. -/
+theorem lift_unique (f : ∀ (V : WeierstrassCurve K) (C : VariableChange L),
+      C • V.baseChange L = W.baseChange L → β)
+    (hf : ∀ (V : WeierstrassCurve K) (C : VariableChange L)
+      (hC : C • V.baseChange L = W.baseChange L) (U : WeierstrassCurve K) (D : VariableChange L)
+      (hD : D • U.baseChange L = W.baseChange L), (∃ B : VariableChange K, B • V = U) →
+        f V C hC = f U D hD)
+    (g : PointedTwist W L → β)
+    (hg : ∀ (V : WeierstrassCurve K) (C : VariableChange L)
+      (hC : C • V.baseChange L = W.baseChange L), g (mk W L V C hC) = f V C hC) :
+    g = lift f hf := by
+  funext T
+  induction T using induction_on with
+  | mk V C hC => exact hg V C hC
+
+end lift
+
 /-- The distinguished pointed twist, represented by `W` with the identity trivialisation. -/
 instance : One (PointedTwist W L) :=
   ⟨mk W L W 1 (one_smul _ _)⟩
+
+/-- The distinguished pointed twist is represented by `W` with the identity trivialisation. -/
+theorem one_def : (1 : PointedTwist W L) = mk W L W 1 (one_smul _ _) :=
+  (rfl)
 
 variable [IsGalois K L]
 
 /-- The nonabelian Galois cohomology class of a pointed twist. It is represented by
 `σ ↦ C (σ C)⁻¹` for any trivialisation `C : V_L ≅ W_L`. -/
 def toCohomologyClass : PointedTwist W L → NonabelianH1 Gal(L/K) (W.AutCoeff L) :=
-  Quotient.lift
-    (fun P ↦ P.trivialisation.twistCohomologyClass P.isTrivialisation)
-    fun P Q h ↦
-      (P.trivialisation.twistCohomologyClass_eq_iff P.isTrivialisation Q.trivialisation
-        Q.isTrivialisation).2 h
+  lift (fun _ C hC ↦ C.twistCohomologyClass hC)
+    fun _ C hC _ D hD h ↦ (C.twistCohomologyClass_eq_iff hC D hD).2 h
 
 /-- The cohomology class of a represented twist is the class of its trivialisation cocycle. -/
 @[simp]
@@ -149,8 +197,7 @@ theorem toCohomologyClass_surjective :
 @[simp]
 theorem toCohomologyClass_one :
     toCohomologyClass (1 : PointedTwist W L) = 1 := by
-  rw [show (1 : PointedTwist W L) = mk W L W 1 (one_smul _ _) from rfl,
-    toCohomologyClass_mk, VariableChange.twistCohomologyClass_def,
+  rw [one_def, toCohomologyClass_mk, VariableChange.twistCohomologyClass_def,
     VariableChange.twistCocycle_one, NonabelianH1.mk_one]
 
 end PointedTwist
