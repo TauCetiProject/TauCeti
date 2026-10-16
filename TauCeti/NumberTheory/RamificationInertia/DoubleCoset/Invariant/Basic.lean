@@ -20,7 +20,10 @@ intermediate ring of invariants for a subgroup `H` of `G`. For a prime `Q` of `B
 `H \ G / D`, where `D` is the stabilizer of `Q`. The class of `σ` corresponds to
 `(σ • Q).under C`.
 
-This formulation applies to integral closures over an arbitrary Dedekind base. The bijection
+This formulation applies to integral closures over an arbitrary Dedekind base, once
+`IsGaloisGroup.of_isIntegralClosure` and `IsGaloisGroup.of_isIntegralClosure_fixedField` supply
+the invariance, and directly, through instances, to the rings of integers `𝓞 K`, `𝓞 M` and
+`𝓞 (M ^ H)` of number fields. The bijection
 itself needs neither a Dedekind hypothesis nor residue-field separability: transitivity on prime
 fibres and lying over are supplied by Mathlib's invariant-ring theory. The intermediate ring is
 an explicit parameter, so the same construction works for any realization of the fixed ring,
@@ -33,12 +36,20 @@ including `FixedPoints.subalgebra A B H`.
 
 ## Main results
 
+* `Ideal.under_eq_iff_mem_orbit`: two primes have the same contraction to the `H`-invariant
+  ring exactly when they lie in one `H`-orbit.
 * `Ideal.under_smul_eq_iff_doubleCosetMk_eq`: the fibres of translated contraction are exactly
   the double cosets.
+* `Ideal.primesOver_under_eq_singleton_of_le_stabilizer`: for `H` inside the stabilizer of `Q`,
+  `Q` is the only prime above its contraction.
+* `Ideal.exists_smul_under_eq`: every prime of the intermediate ring above `p` is the
+  contraction of a translate of `Q`.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk`: the value at a double-coset
   representative.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff`:
   characterization of the inverse.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_smul_mk`: compatibility with the
+  action of `G`, moving the base prime `Q` to `τ • Q`.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural`: enlarging the subgroup
   agrees with contracting primes to the smaller invariant ring.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_eq_relIndex`: the local degree below `Q` is
@@ -53,8 +64,7 @@ including `FixedPoints.subalgebra A B H`.
 * J. Neukirch, *Algebraic Number Theory*, Chapter I, §9, page 55.
 * G. J. Janusz, *Algebraic Number Fields*, Chapter I.
 
-The construction generalizes the number-field double-coset law in
-`TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic`. It uses Mathlib's
+The construction uses Mathlib's
 `Algebra.IsInvariant.exists_smul_of_under_eq` and `Algebra.IsInvariant.orbit_eq_primesOver`,
 and the rank identity is reindexed from Mathlib's
 `Ideal.sum_ramification_inertia_eq_finrank`.
@@ -75,20 +85,37 @@ section Fibres
 variable (Q : Ideal B) [Q.IsPrime] (H : Subgroup G) (C : Type*) [CommRing C] [Algebra C B]
   [Finite H] [Algebra.IsInvariant C B H] [SMulCommClass H C B]
 
+/-- **Same contraction means same `H`-orbit.** Two primes of `B` contract to the same prime of
+the `H`-invariant ring `C` exactly when one is an `H`-translate of the other. -/
+theorem under_eq_iff_mem_orbit (R R' : Ideal B) [R.IsPrime] [R'.IsPrime] :
+    R.under C = R'.under C ↔ R ∈ orbit H R' := by
+  rw [mem_orbit_iff]
+  constructor
+  · intro h
+    obtain ⟨h, hh⟩ := Algebra.IsInvariant.exists_smul_of_under_eq C B H R' R h.symm
+    exact ⟨h, hh.symm⟩
+  · rintro ⟨h, rfl⟩
+    exact under_smul (G := H) C R' h
+
 /-- Two translates of a prime contract to the same prime of the `H`-invariant ring exactly
 when their translating elements belong to the same `H`-decomposition double coset. -/
 theorem under_smul_eq_iff_doubleCosetMk_eq (σ τ : G) :
     (σ • Q).under C = (τ • Q).under C ↔
       DoubleCoset.mk H (stabilizer G Q) σ = DoubleCoset.mk H (stabilizer G Q) τ := by
   rw [TauCeti.doubleCosetMk_eq_mk_iff_mem,
-    ← TauCeti.orbitRel_smul_iff_mem_doubleCoset_stabilizer, orbitRel_apply, mem_orbit_iff]
-  constructor
-  · intro h
-    obtain ⟨h, hh⟩ := Algebra.IsInvariant.exists_smul_of_under_eq C B H (τ • Q) (σ • Q) h.symm
-    exact ⟨h, hh.symm⟩
-  · rintro ⟨h, hh⟩
-    rw [← hh]
-    exact under_smul (G := H) C (τ • Q) h
+    ← TauCeti.orbitRel_smul_iff_mem_doubleCoset_stabilizer, orbitRel_apply,
+    under_eq_iff_mem_orbit H C]
+
+variable {H} in
+/-- **A prime is alone above its contraction to the invariant ring of a subgroup fixing it.**
+If `H` lies in the stabilizer of `Q`, then `Q` is the only prime of `B` above `Q ∩ C`: the other
+primes above it are the `H`-translates of `Q`, which all equal `Q`. -/
+theorem primesOver_under_eq_singleton_of_le_stabilizer (hH : H ≤ stabilizer G Q) :
+    (Q.under C).primesOver B = {Q} := by
+  refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨inferInstance, inferInstance⟩, ?_⟩
+  rintro R ⟨_, hR⟩
+  obtain ⟨h, rfl⟩ := mem_orbit_iff.1 ((under_eq_iff_mem_orbit H C R Q).1 hR.over.symm)
+  exact mem_stabilizer_iff.1 (hH h.2)
 
 end Fibres
 
@@ -105,6 +132,20 @@ private def translatedPrime (σ : G) : p.primesOver C :=
   ⟨(σ • Q).under C, inferInstance,
     ⟨by rw [under_under]; exact (inferInstance : (σ • Q).LiesOver p).over⟩⟩
 
+variable (G) in
+/-- **Every prime of `C` above `p` is the contraction of a translate of `Q`**, for any ring `C`
+between `A` and `B` over which `B` is integral. -/
+theorem exists_smul_under_eq [Algebra.IsIntegral C B] (q : Ideal C) [q.IsPrime] [q.LiesOver p] :
+    ∃ σ : G, (σ • Q).under C = q := by
+  -- Lift `q` to a prime `R` of `B`; transitivity of `G` on the primes above `p` makes `R` a
+  -- translate of `Q`.
+  obtain ⟨⟨R, hR, hRq⟩⟩ := q.nonempty_primesOver (S := B)
+  have : R.LiesOver p := LiesOver.trans R q p
+  have hRp : R ∈ p.primesOver B := ⟨hR, inferInstance⟩
+  rw [← Algebra.IsInvariant.orbit_eq_primesOver A B G p Q, mem_orbit_iff] at hRp
+  obtain ⟨σ, hσ⟩ := hRp
+  exact ⟨σ, by rw [hσ]; exact hRq.over.symm⟩
+
 /-- **The double-coset splitting law over invariant rings.** The primes of the intermediate
 `H`-invariant ring `C` above `p` are indexed by `H \ G / stabilizer G Q`. The class of `σ`
 is sent to the contraction of `σ • Q`, without any residue-field hypothesis. -/
@@ -120,16 +161,11 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsInvariant :
       exact (Q.under_smul_eq_iff_doubleCosetMk_eq H C σ τ).mp (Subtype.ext_iff.mp hqr), by
       have : Algebra.IsIntegral C B := Algebra.IsInvariant.isIntegral C B H
       rintro ⟨q, hq, hqp⟩
-      obtain ⟨⟨R, hR, hRq⟩⟩ := q.nonempty_primesOver (S := B)
-      have : R.LiesOver p := LiesOver.trans R q p
-      have hRp : R ∈ p.primesOver B := ⟨hR, inferInstance⟩
-      rw [← Algebra.IsInvariant.orbit_eq_primesOver A B G p Q, mem_orbit_iff] at hRp
-      obtain ⟨σ, hσ⟩ := hRp
+      obtain ⟨σ, hσ⟩ := Q.exists_smul_under_eq G p C q
       refine ⟨DoubleCoset.mk H _ σ, Subtype.ext ?_⟩
       -- Reduce the quotient lift at its representative and the private subtype constructor.
       change (σ • Q).under C = q
-      rw [hσ]
-      exact hRq.over.symm⟩
+      exact hσ⟩
 
 include hAB hCB in
 /-- The class of `σ` is sent to the contraction of `σ • Q`. -/
@@ -147,6 +183,14 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C).symm q = DoubleCoset.mk H _ σ ↔
       q.1 = (σ • Q).under C := by
   rw [Equiv.symm_apply_eq, Subtype.ext_iff, doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
+
+/-- **The double-coset law is compatible with the action of `G`.** Indexing the primes of `C`
+above `p` through the translate `τ • Q` instead of `Q` sends the class of `σ` to the prime that
+the indexing through `Q` attaches to the class of `σ * τ`. -/
+theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_smul_mk (τ σ : G) :
+    (τ • Q).doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C (DoubleCoset.mk H _ σ) =
+      Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C (DoubleCoset.mk H _ (σ * τ)) :=
+  Subtype.ext <| by simp only [doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk, mul_smul]
 
 /-- Enlarging the subgroup and contracting to its invariant ring give the same prime under
 the double-coset splitting bijection. The scalar towers express the two inclusions of `C'`
