@@ -186,6 +186,24 @@ theorem cubicalToSingular_app_f_zero_ofZeroCube {X : TopCat.{u}} (c : SingularCu
   rw [← SingularCube.eq_point c] at h
   exact h
 
+/-- The comparison with simplicial chains is natural: pushing forward the image of a cube is the
+image of the pushed-forward cube. -/
+theorem singularChains_map_cubicalToSingular {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
+    (c : SingularCube X n) :
+    ((singularChains k).map f).f n
+        (((cubicalToSingular k).app X).f n
+          (NormalizedCubicalChain.ofCube X k c)) =
+      ((cubicalToSingular k).app Y).f n
+        (NormalizedCubicalChain.ofCube Y k (f.hom.comp c)) := by
+  have h := congrArg (fun φ ↦ φ.f n (NormalizedCubicalChain.ofCube X k c))
+    ((cubicalToSingular k).naturality f)
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp] at h
+  -- The term `((normalizedCubicalChainComplex k).obj X).X n` is the module of normalized chains by
+  -- definition, which `exact` sees but `rw` does not.
+  exact h.symm.trans (congrArg (((cubicalToSingular k).app Y).f n).hom
+    ((normalizedCubicalChainComplex_map_f_apply f n _).trans
+      (NormalizedCubicalChain.map_ofCube _ f.hom c)))
+
 /-! ### Quasi-isomorphisms and the homology comparison -/
 
 /-- The comparison map to cubical chains is a quasi-isomorphism. -/
