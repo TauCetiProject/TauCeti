@@ -244,13 +244,9 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
   set G := ⨆ y, g y
   have h1θ : 0 < 1 - θ := sub_pos.2 hθ₁
   rcases eq_or_ne F 0 with hF0 | hF0
-  · have : ∫⁻ x, f x = 0 := by
-      simp [show f = 0 from funext fun x ↦ le_antisymm ((le_iSup f x).trans hF0.le) bot_le]
-    simp [this, ENNReal.zero_rpow_of_pos h1θ]
+  · simp [ENNReal.iSup_eq_zero.1 hF0, ENNReal.zero_rpow_of_pos h1θ]
   rcases eq_or_ne G 0 with hG0 | hG0
-  · have : ∫⁻ y, g y = 0 := by
-      simp [show g = 0 from funext fun y ↦ le_antisymm ((le_iSup g y).trans hG0.le) bot_le]
-    simp [this, ENNReal.zero_rpow_of_pos hθ₀]
+  · simp [ENNReal.iSup_eq_zero.1 hG0, ENNReal.zero_rpow_of_pos hθ₀]
   -- Normalize the suprema of `f` and `g` to one, and scale `h` by the matching factor `K⁻¹`.
   set K := F ^ (1 - θ) * G ^ θ
   have hK0 : K ≠ 0 := mul_ne_zero (ENNReal.rpow_pos (pos_iff_ne_zero.2 hF0) hF).ne'
