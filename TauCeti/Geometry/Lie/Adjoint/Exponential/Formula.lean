@@ -25,9 +25,9 @@ here in two forms.  On the tangent space at the identity it reads
 `tangentAd (exp X) Y = exp (ad X) Y` (`TauCeti.Lie.tangentAd_mulInvariantExp_apply`).  On
 left-invariant derivations, the Lie algebra `LeftInvariantDerivation I G` on which `TauCeti.Lie.Ad`
 and `TauCeti.Lie.lieExp` are defined, it is an identity of bounded operators
-(`TauCeti.Lie.Ad_lieExp`).  The two forms correspond under evaluation at the identity, which
-identifies a left-invariant derivation with its tangent vector at `1`, `Ad g` with
-`tangentAd g`, and the bracket of derivations with the tangent bracket.
+(`LeftInvariantDerivation.Ad_lieExp`).  The two forms correspond under evaluation at the
+identity, which identifies a left-invariant derivation with its tangent vector at `1`, `Ad g`
+with `tangentAd g`, and the bracket of derivations with the tangent bracket.
 
 Consequently the one-parameter subgroup of `X` fixes every vector that brackets to zero with `X`;
 on left-invariant derivations, derivations that bracket to zero have commuting exponentials, and
@@ -47,9 +47,9 @@ the exponential of their sum is the product of their exponentials.
   left-invariant derivations, two derivations that bracket to zero generate one-parameter
   subgroups fixing each other under `Ad`, hence commuting, and the exponential of their sum is
   the product of their exponentials.
-* `TauCeti.Lie.Ad_lieExp`: **the adjoint-exponential formula `Ad (lieExp X) = exp (ad X)`** as an
-  identity of bounded operators on left-invariant derivations, and `TauCeti.Lie.Ad_lieExp_apply`
-  its pointwise form.
+* `LeftInvariantDerivation.Ad_lieExp`: **the adjoint-exponential formula
+  `Ad (lieExp X) = exp (ad X)`** as an identity of bounded operators on left-invariant
+  derivations, and `LeftInvariantDerivation.Ad_lieExp_apply` its pointwise form.
 
 ## References
 
@@ -290,7 +290,7 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 /-- **The adjoint-exponential formula** `Ad (lieExp X) = exp (ad X)`: the group adjoint of the
 Lie-group exponential of a left-invariant derivation `X` is the operator exponential of Mathlib's
 Lie-algebra adjoint `ad X = ⁅X, ·⁆`, as bounded operators on `LeftInvariantDerivation I G`. -/
-theorem Ad_lieExp (X : LeftInvariantDerivation I G) :
+theorem _root_.LeftInvariantDerivation.Ad_lieExp (X : LeftInvariantDerivation I G) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
       finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
@@ -351,13 +351,13 @@ theorem Ad_lieExp (X : LeftInvariantDerivation I G) :
 
 /-- **The adjoint-exponential formula, pointwise**: `Ad (lieExp X) Y = exp (ad X) Y` for
 left-invariant derivations `X` and `Y`. -/
-theorem Ad_lieExp_apply (X Y : LeftInvariantDerivation I G) :
+theorem _root_.LeftInvariantDerivation.Ad_lieExp_apply (X Y : LeftInvariantDerivation I G) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
       finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
     Ad (I := I) (lieExp X) Y =
       NormedSpace.exp (LinearMap.toContinuousLinearMap
         (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X)) Y :=
-  DFunLike.congr_fun (Ad_lieExp X) Y
+  DFunLike.congr_fun X.Ad_lieExp Y
 
 end TauCeti.Lie

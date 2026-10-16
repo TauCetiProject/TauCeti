@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 For the Lie group of units of a complete real normed algebra, the tangent adjoint of an exponential
 is the exponential of the continuous commutator operator. This is the concrete Banach-algebra form,
 valid without any finite-dimensionality, of the general identity `Ad (lieExp X) = exp (ad X)`
-(`TauCeti.Lie.Ad_lieExp`).
+(`LeftInvariantDerivation.Ad_lieExp`).
 
 ## Main result
 
