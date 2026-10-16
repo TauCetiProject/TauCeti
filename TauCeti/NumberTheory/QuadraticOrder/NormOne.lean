@@ -244,7 +244,7 @@ private theorem negFourUnitary_bijective : Function.Bijective negFourUnitary := 
       ext <;> simp [negFourUnitary, h, hr]
 
 /-- The discriminant-minus-four order has four units. -/
-@[simp] theorem card_units_neg_four : Nat.card (toSubalgebra (-4) (by decide))ˣ = 4 := by
+theorem card_units_neg_four : Nat.card (toSubalgebra (-4) (by decide))ˣ = 4 := by
   have h := Nat.card_congr (normOneUnitsEquivUnitary (-4) (by decide)).toEquiv
   rw [normOneUnits_eq_top_of_neg _ _ (by decide), Subgroup.card_top] at h
   exact h.trans (by
@@ -303,7 +303,7 @@ private theorem negThreeUnitary_bijective : Function.Bijective negThreeUnitary :
         ext <;> simp [negThreeUnitary, h, hr']
 
 /-- The discriminant-minus-three order has six units. -/
-@[simp] theorem card_units_neg_three : Nat.card (toSubalgebra (-3) (by decide))ˣ = 6 := by
+theorem card_units_neg_three : Nat.card (toSubalgebra (-3) (by decide))ˣ = 6 := by
   have h := Nat.card_congr (normOneUnitsEquivUnitary (-3) (by decide)).toEquiv
   rw [normOneUnits_eq_top_of_neg _ _ (by decide), Subgroup.card_top] at h
   exact h.trans (by
