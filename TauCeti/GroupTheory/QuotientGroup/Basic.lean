@@ -37,6 +37,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 ## Main statements
 
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
+* `TauCeti.card_orbit_quotientGroup_mk`: the size of the `K`-orbit of `sH` is the relative
+  index of `H` in the conjugate of `K` by `s⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
 * `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
@@ -100,6 +102,23 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
   rw [← mem_stabilizer_iff, stabilizer_quotientGroup_mk,
     Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def, MulAut.conj_apply]
   simp
+
+/-- The size of the orbit of `sH` under a subgroup `K` is the relative index of `H` in the
+conjugate of `K` by `s⁻¹`. -/
+theorem card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
+    Nat.card (orbit K ((s : G) : G ⧸ H)) =
+      H.relIndex (MulAut.conj s⁻¹ • K) := by
+  change Nat.card (orbit K ((s : G) : G ⧸ H)) =
+    H.relIndex (K.map (MulAut.conj s⁻¹ : G →* G))
+  rw [← Subgroup.relIndex_comap, Subgroup.comap_equiv_eq_map_symm,
+    Nat.card_congr (orbitEquivQuotientStabilizer _ _), ← Subgroup.index_eq_card,
+    Subgroup.relIndex]
+  congr 1
+  ext k
+  rw [mem_stabilizer_iff, Subgroup.mem_subgroupOf, MulAction.subgroup_smul_def,
+    ← mem_stabilizer_iff,
+    stabilizer_quotientGroup_mk, map_inv, MulAut.inv_symm]
+  rfl
 
 /-- The elements `x` of `G` with `x⁻¹ g x ∈ H` are the preimage of the `g`-fixed points of `G ⧸ H`,
 a union of `|(G ⧸ H)^g|` cosets of `H`. -/

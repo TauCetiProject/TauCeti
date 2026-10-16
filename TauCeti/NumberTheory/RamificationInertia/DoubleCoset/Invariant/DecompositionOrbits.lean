@@ -82,10 +82,9 @@ noncomputable def primesOverOfCoset : G ⧸ H → p.primesOver C :=
     dsimp only
     obtain ⟨h, rfl⟩ : ∃ h : H, τ' = τ * h :=
       ⟨⟨τ⁻¹ * τ', QuotientGroup.leftRel_apply.mp hτ⟩, by simp⟩
-    ext x
-    have hx : (h : G) • algebraMap C B x = algebraMap C B x := by
-      rw [← Subgroup.smul_def, smul_algebraMap]
-    simp only [mem_comap, mem_pointwise_smul_iff_inv_smul_mem, inv_inv, mul_smul, hx]
+    rw [mul_inv_rev, mul_smul]
+    rw [← Subgroup.coe_inv, ← Subgroup.smul_def]
+    exact (under_smul (G := H) C (τ⁻¹ • Q) h⁻¹).symm
 
 /-- The prime attached to the coset of `τ` is the contraction of `τ⁻¹ Q`. -/
 @[simp]
@@ -170,14 +169,8 @@ theorem card_orbit_stabilizer_coset (x : G ⧸ H) :
   induction x using QuotientGroup.induction_on with | H τ => ?_
   rw [coe_primesOverOfCoset_mk,
     ramificationIdx_mul_inertiaDeg_under_eq_relIndex (τ⁻¹ • Q) H C,
-    stabilizer_smul_eq_stabilizer_map_conj, ← Subgroup.relIndex_comap,
-    Subgroup.comap_equiv_eq_map_symm', Nat.card_congr (orbitEquivQuotientStabilizer _ _),
-    ← Subgroup.index_eq_card, Subgroup.relIndex]
-  congr 1
-  ext d
-  rw [mem_stabilizer_iff, Subgroup.mem_subgroupOf, MulAction.subgroup_smul_def,
-    ← mem_stabilizer_iff, TauCeti.stabilizer_quotientGroup_mk, map_inv, MulAut.inv_symm,
-    MulEquiv.toMonoidHom_eq_coe, TauCeti.map_conj_eq_conj_smul]
+    stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+    TauCeti.map_conj_eq_conj_smul, TauCeti.card_orbit_quotientGroup_mk]
 
 variable [FaithfulSMul C B]
 
