@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ZeroDim
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
+public import TauCeti.Geometry.Manifold.Boundary.Restriction
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -15,9 +15,9 @@ import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 # The fundamental theorem of calculus as interval Stokes
 
 The actual exterior derivative of a function on a closed interval integrates to its endpoint
-difference. Stokes identifies this with the integral over its outward-oriented zero-dimensional
-boundary. Direct zero-dimensional integration separately verifies the endpoint signs,
-without using Stokes, for arbitrary functions on the two-point boundary.
+difference, using the interval pullback identity and the ordinary fundamental theorem of
+calculus. Direct zero-dimensional integration identifies the outward-oriented boundary integral
+with the same endpoint difference, for arbitrary functions on the two-point boundary.
 -/
 
 public section

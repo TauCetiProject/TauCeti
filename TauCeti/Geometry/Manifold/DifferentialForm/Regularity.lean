@@ -24,7 +24,9 @@ Conversely, flat regularity of a coordinate expression gives regularity of the s
 manifold exterior derivative takes
 `C^p` sections to `C^n` sections whenever `n + 1 ≤ p`, on any manifold of class `C²` over any
 model with corners.
-In particular it maps smooth `k`-forms to smooth `(k+1)`-forms.
+In particular it maps smooth `k`-forms to smooth `(k+1)`-forms. A form supported compactly inside
+a chart extends by zero with the same regularity within the model range, and exterior
+differentiation commutes with this extension.
 
 ## Main declarations
 
@@ -345,5 +347,49 @@ variable (I) in
 theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M F k) :
     (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.1 :=
   (rfl)
+
+/-- A coordinate form supported compactly inside the chart extends with the same regularity
+within the model range. Regularity outside the model range is unnecessary. -/
+theorem RoughForm.contDiffOn_indicator_inChartAt {r : WithTop ℕ∞}
+    (φ : RoughForm I M F k) (α : M)
+    (hφ : ∀ z ∈ (extChartAt I α).target,
+      ContDiffWithinAt ℝ r (φ.inChartAt α) (range I) z)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
+    ContDiffOn ℝ r ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I) := by
+  classical
+  intro z hz
+  by_cases ht : z ∈ (extChartAt I α).target
+  · exact (hφ z ht).congr_of_eventuallyEq (φ.indicator_inChartAt_eventuallyEq α ht)
+      (indicator_of_mem ht _)
+  · have hn : z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
+      φ.notMem_tsupport_indicator_inChartAt α hc hs ht
+    have he : (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝 z] 0 := by
+      filter_upwards [(_root_.isClosed_tsupport _).isOpen_compl.mem_nhds hn] with y hy
+      exact image_eq_zero_of_notMem_tsupport hy
+    exact (contDiffAt_const.congr_of_eventuallyEq he).contDiffWithinAt
+
+/-- For a form supported inside one chart, exterior differentiation of its zero extension
+is the zero extension of its actual manifold exterior derivative, throughout the model range. -/
+theorem IsSmoothForm.extDerivWithin_indicator_inChartAt [IsManifold I 2 M]
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) (α : M)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
+    EqOn (extDerivWithin ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I))
+      ((extChartAt I α).target.indicator ((TauCeti.mextDeriv φ).inChartAt α)) (range I) := by
+  classical
+  intro z hz
+  by_cases ht : z ∈ (extChartAt I α).target
+  · rw [indicator_of_mem ht, hφ.inChartAt_mextDeriv_eq α ht, extDerivWithin,
+      extDerivWithin]
+    exact congrArg ContinuousAlternatingMap.alternatizeUncurryFin
+      ((φ.indicator_inChartAt_eventuallyEq α ht).fderivWithin_eq (indicator_of_mem ht _))
+  · rw [indicator_of_notMem ht]
+    have hn : z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
+      φ.notMem_tsupport_indicator_inChartAt α hc hs ht
+    rw [extDerivWithin,
+      (HasFDerivWithinAt.of_notMem_tsupport ℝ (s := range I) hn).fderivWithin
+        (I.uniqueDiffOn z hz)]
+    exact map_zero _
 
 end TauCeti

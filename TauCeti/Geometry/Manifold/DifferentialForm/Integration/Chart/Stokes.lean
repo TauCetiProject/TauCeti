@@ -12,11 +12,12 @@ public import TauCeti.Geometry.Manifold.Boundary.InducedOrientation
 public import TauCeti.Geometry.Manifold.Boundary.Restriction
 
 /-!
-# Compactly supported chart extensions for Stokes' theorem
+# Stokes' theorem in boundary charts
 
-A form supported inside one chart extends by zero off that chart's target. Compactness keeps
-its coordinate support away from the edge of the target, so extension preserves regularity
-within the model range and commutes with the actual exterior derivative.
+Half-space integration gives Stokes' theorem for a compactly supported form in one boundary
+chart. Boundary restriction identifies the coordinate boundary term, and the induced orientation
+supplies the outward-first sign. General chart-extension support and regularity facts come from
+DifferentialForm.Support and DifferentialForm.Regularity.
 -/
 
 public section
@@ -27,104 +28,6 @@ open Set Filter
 open scoped Manifold Topology
 
 namespace TauCeti
-
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-
-/-- The coordinate extension of a form supported inside a chart has support inside the compact
-coordinate image of the original support. -/
-theorem RoughForm.tsupport_indicator_inChartAt_subset (φ : RoughForm I M F k) (α : M)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
-    _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) ⊆
-      (extChartAt I α) '' (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) := by
-  classical
-  have hK := hc.image_of_continuousOn ((continuousOn_extChartAt α).mono hs)
-  apply closure_minimal _ hK.isClosed
-  intro z hz
-  have ht : z ∈ (extChartAt I α).target := by
-    by_contra ht
-    exact hz (indicator_of_notMem ht _)
-  refine ⟨(extChartAt I α).symm z, ?_, (extChartAt I α).right_inv ht⟩
-  apply _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ
-  intro hzero
-  apply hz
-  rw [indicator_of_mem ht]
-  ext v
-  rw [RoughForm.inChartAt_apply, hzero]
-  rfl
-
-/-- The zero extension of a compact chart-supported form has no support outside the target. -/
-theorem RoughForm.notMem_tsupport_indicator_inChartAt (φ : RoughForm I M F k) (α : M)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source)
-    {z : E} (hz : z ∉ (extChartAt I α).target) :
-    z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) := by
-  intro ht
-  obtain ⟨x, hx, rfl⟩ := φ.tsupport_indicator_inChartAt_subset α hc hs ht
-  exact hz ((extChartAt I α).map_source (hs hx))
-
-/-- Compact support survives extension by zero from a chart containing the form's support. -/
-theorem RoughForm.hasCompactSupport_indicator_inChartAt (φ : RoughForm I M F k) (α : M)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
-    HasCompactSupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
-  (hc.image_of_continuousOn ((continuousOn_extChartAt α).mono hs)).of_isClosed_subset
-    (_root_.isClosed_tsupport _) (φ.tsupport_indicator_inChartAt_subset α hc hs)
-
-/-- On the target, extension by zero has the same germ within the model range as the original
-coordinate form. -/
-theorem RoughForm.indicator_inChartAt_eventuallyEq (φ : RoughForm I M F k) (α : M)
-    {z : E} (hz : z ∈ (extChartAt I α).target) :
-    (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝[range I] z] φ.inChartAt α := by
-  classical
-  filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hz] with y hy
-  exact indicator_of_mem hy _
-
-/-- A coordinate form supported compactly inside the chart extends with the same regularity
-within the model range. Regularity outside the model range is unnecessary. -/
-theorem RoughForm.contDiffOn_indicator_inChartAt {r : WithTop ℕ∞}
-    (φ : RoughForm I M F k) (α : M)
-    (hφ : ∀ z ∈ (extChartAt I α).target,
-      ContDiffWithinAt ℝ r (φ.inChartAt α) (range I) z)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
-    ContDiffOn ℝ r ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I) := by
-  classical
-  intro z hz
-  by_cases ht : z ∈ (extChartAt I α).target
-  · exact (hφ z ht).congr_of_eventuallyEq (φ.indicator_inChartAt_eventuallyEq α ht)
-      (indicator_of_mem ht _)
-  · have hn : z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
-      φ.notMem_tsupport_indicator_inChartAt α hc hs ht
-    have he : (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝 z] 0 := by
-      filter_upwards [(_root_.isClosed_tsupport _).isOpen_compl.mem_nhds hn] with y hy
-      exact image_eq_zero_of_notMem_tsupport hy
-    exact (contDiffAt_const.congr_of_eventuallyEq he).contDiffWithinAt
-
-/-- For a form supported inside one chart, exterior differentiation of its zero extension
-is the zero extension of its actual manifold exterior derivative, throughout the model range. -/
-theorem IsSmoothForm.extDerivWithin_indicator_inChartAt [IsManifold I 2 M]
-    {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) (α : M)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
-    EqOn (extDerivWithin ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I))
-      ((extChartAt I α).target.indicator ((TauCeti.mextDeriv φ).inChartAt α)) (range I) := by
-  classical
-  intro z hz
-  by_cases ht : z ∈ (extChartAt I α).target
-  · rw [indicator_of_mem ht, hφ.inChartAt_mextDeriv_eq α ht, extDerivWithin,
-      extDerivWithin]
-    exact congrArg ContinuousAlternatingMap.alternatizeUncurryFin
-      ((φ.indicator_inChartAt_eventuallyEq α ht).fderivWithin_eq (indicator_of_mem ht _))
-  · rw [indicator_of_notMem ht]
-    have hn : z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
-      φ.notMem_tsupport_indicator_inChartAt α hc hs ht
-    rw [extDerivWithin,
-      (HasFDerivWithinAt.of_notMem_tsupport ℝ (s := range I) hn).fderivWithin
-        (I.uniqueDiffOn z hz)]
-    exact map_zero _
 
 section Boundary
 
