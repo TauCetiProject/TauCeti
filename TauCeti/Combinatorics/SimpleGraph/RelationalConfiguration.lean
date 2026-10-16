@@ -8,8 +8,10 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration
 public import Mathlib.ModelTheory.Graph
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import Mathlib.Combinatorics.SimpleGraph.Maps
 import Mathlib.Tactic.FinCases
+import TauCeti.Combinatorics.SimpleGraph.Measurable
 
 /-!
 # Simple graphs as relational configurations
@@ -30,8 +32,14 @@ shows that pulling a graph back along a vertex map corresponds to restricting it
 
 ## Main results
 
+* `SimpleGraph.measurableEmbedding_toRelationalConfiguration` — on a countable vertex type, the
+  encoding is a measurable embedding onto the simple-graph configurations
+  (`SimpleGraph.range_toRelationalConfiguration`);
+* `SimpleGraph.map_comap_toRelationalConfiguration` — a law on configurations concentrated on
+  simple graphs is the encoding of its pullback to simple graphs;
 * `SimpleGraph.toRelationalConfiguration_comap` — encoding a pulled-back graph is restricting its
-  encoding;
+  encoding; for laws, `SimpleGraph.map_comap_comap_toRelationalConfiguration` — pulling back to
+  simple graphs commutes with restriction;
 * `TauCeti.RelationalConfiguration.IsSimpleGraph.restrict` — restriction preserves symmetry and
   irreflexivity, also along non-injective vertex maps;
 * `SimpleGraph.relationalConfigurationEquiv_comap` and
@@ -105,6 +113,23 @@ theorem IsSimpleGraph.restrict {c : RelationalConfiguration Language.graph W}
     (hc : IsSimpleGraph c) (f : V → W) : IsSimpleGraph (c.restrict f) :=
   ⟨fun u v => by simpa using hc.1 (f u) (f v), fun v => by simpa using hc.2 (f v)⟩
 
+/-- On a countable vertex type, the simple-graph configurations form a measurable set: a countable
+intersection of conditions on one or two atoms. -/
+theorem measurableSet_setOf_isSimpleGraph [Countable V] :
+    MeasurableSet {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} := by
+  simp only [IsSimpleGraph, Set.ofPred_and, Set.ofPred_forall]
+  exact (MeasurableSet.iInter fun u => MeasurableSet.iInter fun v =>
+      ((measurable_eval (adjAtom u v)).prodMk (measurable_eval (adjAtom v u)))
+        (.of_discrete : MeasurableSet {p : Bool × Bool | p.1 = p.2})).inter
+    (MeasurableSet.iInter fun v => measurable_eval (adjAtom v v) (measurableSet_singleton false))
+
+/-- Restricting a law concentrated on simple graphs gives a law concentrated on simple graphs. -/
+theorem ae_isSimpleGraph_map_restrict [Countable V] (f : V → W)
+    {μ : Measure (RelationalConfiguration Language.graph W)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
+    ∀ᵐ c ∂μ.map (restrict f), IsSimpleGraph c := by
+  rw [ae_map_iff (measurable_restrict f).aemeasurable measurableSet_setOf_isSimpleGraph]
+  filter_upwards [hμ] with c hc using hc.restrict f
+
 end RelationalConfiguration
 
 end TauCeti
@@ -176,6 +201,47 @@ theorem relationalConfigurationEquiv_symm_apply
     (c : {c : RelationalConfiguration Language.graph V // IsSimpleGraph c}) :
     relationalConfigurationEquiv.symm c = toSimpleGraph c.1 c.2 := (rfl)
 
+/-- The configurations of simple graphs are exactly the simple-graph configurations. -/
+@[simp]
+theorem range_toRelationalConfiguration :
+    Set.range
+        (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) =
+      {c | IsSimpleGraph c} := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 isSimpleGraph_toRelationalConfiguration)
+    fun c hc => ⟨relationalConfigurationEquiv.symm ⟨c, hc⟩,
+      congrArg Subtype.val (relationalConfigurationEquiv.apply_symm_apply ⟨c, hc⟩)⟩
+
+/-- On a countable vertex type, encoding simple graphs as configurations is a measurable embedding,
+so laws on simple graphs are the laws on configurations concentrated on simple graphs. -/
+theorem measurableEmbedding_toRelationalConfiguration [Countable V] :
+    MeasurableEmbedding
+      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
+  (MeasurableEmbedding.subtype_coe measurableSet_setOf_isSimpleGraph).comp
+    relationalConfigurationEquiv.measurableEmbedding
+
+/-- The encoding of a law on simple graphs is concentrated on simple graphs. -/
+theorem ae_isSimpleGraph_map_toRelationalConfiguration [Countable V] (μ : Measure (SimpleGraph V)) :
+    ∀ᵐ c ∂μ.map toRelationalConfiguration, IsSimpleGraph c :=
+  measurableEmbedding_toRelationalConfiguration.ae_map_iff.2
+    (ae_of_all _ isSimpleGraph_toRelationalConfiguration)
+
+/-- A law on configurations concentrated on simple graphs is the encoding of its pullback to
+simple graphs. -/
+theorem map_comap_toRelationalConfiguration [Countable V]
+    {μ : Measure (RelationalConfiguration Language.graph V)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
+    (μ.comap toRelationalConfiguration).map toRelationalConfiguration = μ := by
+  rw [measurableEmbedding_toRelationalConfiguration.map_comap, range_toRelationalConfiguration]
+  exact Measure.restrict_eq_self_of_ae_mem hμ
+
+/-- The pullback to simple graphs of a probability law concentrated on simple graphs is a
+probability law. -/
+theorem isProbabilityMeasure_comap_toRelationalConfiguration [Countable V]
+    {μ : Measure (RelationalConfiguration Language.graph V)} [IsProbabilityMeasure μ]
+    (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
+    IsProbabilityMeasure (μ.comap toRelationalConfiguration) :=
+  measurableEmbedding_toRelationalConfiguration.isProbabilityMeasure_comap <| by
+    rwa [range_toRelationalConfiguration]
+
 /-! ### Compatibility with restriction -/
 
 /-- **Encoding commutes with restriction**: the configuration of a pulled-back graph is the
@@ -186,6 +252,25 @@ theorem toRelationalConfiguration_comap (f : V → W) (G : SimpleGraph W) :
   ext a
   induction a using Atom.induction_adjAtom with
   | h u v => simp
+
+/-- Encoding commutes with restriction, as an identity of maps. -/
+theorem toRelationalConfiguration_comp_comap (f : V → W) :
+    toRelationalConfiguration ∘ SimpleGraph.comap f =
+      restrict f ∘ (toRelationalConfiguration : SimpleGraph W → _) :=
+  funext fun G => toRelationalConfiguration_comap f G
+
+/-- For laws concentrated on simple graphs, pulling back to simple graphs commutes with
+restriction. -/
+theorem map_comap_comap_toRelationalConfiguration [Countable V] [Countable W] (f : V → W)
+    {μ : Measure (RelationalConfiguration Language.graph W)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
+    (μ.comap toRelationalConfiguration).map (SimpleGraph.comap f) =
+      (μ.map (restrict f)).comap toRelationalConfiguration := by
+  refine measurableEmbedding_toRelationalConfiguration.map_injective ?_
+  rw [Measure.map_map measurable_toRelationalConfiguration (measurable_comap _),
+    toRelationalConfiguration_comp_comap,
+    ← Measure.map_map (measurable_restrict _) measurable_toRelationalConfiguration,
+    map_comap_toRelationalConfiguration hμ,
+    map_comap_toRelationalConfiguration (ae_isSimpleGraph_map_restrict f hμ)]
 
 theorem relationalConfigurationEquiv_comap (f : V → W) (G : SimpleGraph W) :
     relationalConfigurationEquiv (G.comap f) =

@@ -67,8 +67,8 @@ attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 
 section Preadditive
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [HasZeroObject C]
-  {X : TopCat.{w}} {ι : Type w} [LinearOrder ι] (U : ι → Opens X) (R : C)
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
+  {X : TopCat.{w}} {ι : Type w} (U : ι → Opens X) (R : C)
 
 /-- `TopCat.toSmallSingularSubcomplex` for an open subset `V` of a member of the family, with its
 source stated through `Opens.toTopCat`, as in `TauCeti.cechSingularChains`. -/
@@ -77,24 +77,28 @@ private def smallLift {V : Opens X} {i : ι} (h : V ≤ U i) :
       (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) :=
   TopCat.toSmallSingularSubcomplex (fun i ↦ (U i : Set X)) (S := (V : Set X)) (i := i) h
 
-omit [LinearOrder ι] in
 private lemma smallLift_ι {V : Opens X} {i : ι} (h : V ≤ U i) :
     smallLift U h ≫ (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι =
       TopCat.toSSet.map (Opens.inclusion' V) :=
   TopCat.toSmallSingularSubcomplex_ι (fun i ↦ (U i : Set X)) (S := (V : Set X)) (i := i) h
 
-omit [LinearOrder ι] in
 /-- `smallLift` does not depend on the chosen member of the family. -/
 private lemma smallLift_congr {V : Opens X} {i j : ι} (hi : V ≤ U i) (hj : V ≤ U j) :
     smallLift U hi = smallLift U hj :=
   (cancel_mono (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι).1
     ((smallLift_ι U hi).trans (smallLift_ι U hj).symm)
 
-omit [LinearOrder ι] in
 private lemma smallLift_app_coe {V : Opens X} {i : ι} (h : V ≤ U i) {n : SimplexCategoryᵒᵖ}
     (τ : (TopCat.toSSet.obj ((Opens.toTopCat X).obj V)).obj n) :
     ((smallLift U h).app n τ).1 = (TopCat.toSSet.map (Opens.inclusion' V)).app n τ :=
   TopCat.toSmallSingularSubcomplex_app_coe (fun i ↦ (U i : Set X)) (S := (V : Set X)) (i := i) h τ
+
+private lemma smallLift_app_toSSetObjCodRestrict {V : Opens X} {i : ι} (hV : V ≤ U i) {q : ℕ}
+    (σ : (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) _⦋q⦌)
+    (h : Set.range (X.toSSetObjEquiv _ σ.1) ⊆ V) :
+    (smallLift U hV).app _ (TopCat.toSSetObjCodRestrict σ.1 h) = σ :=
+  Subtype.ext ((smallLift_app_coe U hV _).trans
+    (TopCat.toSSet_map_inclusion'_toSSetObjCodRestrict σ.1 h))
 
 /-- The chain map from the singular chains of `U_s` to the small chains, for a nonempty set `s`
 of indices. Its type is stated in terms of `TauCeti.cechSingularChains`, so that it composes
@@ -104,12 +108,15 @@ private def smallLiftChains {s : Finset ι} {i : ι} (hi : i ∈ s) :
       (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet).chainComplex R :=
   SSet.chainComplexMap (smallLift U (Finset.inf_le hi : s.inf U ≤ U i)) R
 
-omit [LinearOrder ι] [HasZeroObject C] in
 private lemma smallLiftChains_comp_ι {s : Finset ι} {i : ι} (hi : i ∈ s) :
     smallLiftChains U R hi ≫
         SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R =
       ((singularChainComplexFunctor C).obj R).map (Opens.inclusion' (s.inf U)) :=
   (Functor.map_comp _ _ _).symm.trans (congrArg _ (smallLift_ι U _))
+
+section
+
+variable [LinearOrder ι]
 
 /-- The augmentation of column `0` onto the small chains, on summands. -/
 private def cechSmallAugmentationX :
@@ -118,13 +125,11 @@ private def cechSmallAugmentationX :
   cechDoubleComplexDesc U R fun s ↦
     smallLiftChains U R (Finset.min'_mem s.1 (Finset.card_pos.1 (by rw [s.2]; omega)))
 
-omit [HasZeroObject C] in
 private lemma ι_cechSmallAugmentationX (s : {s : Finset ι // #s = 0 + 1}) {i : ι} (hi : i ∈ s.1) :
     cechDoubleComplexι U R s ≫ cechSmallAugmentationX U R = smallLiftChains U R hi :=
   (ι_cechDoubleComplexDesc U R _ s).trans (congrArg (SSet.chainComplexMap · R)
     (smallLift_congr U _ _))
 
-omit [HasZeroObject C] in
 private lemma cechSmallAugmentationX_comp_ι :
     cechSmallAugmentationX U R ≫
         SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R =
@@ -133,6 +138,8 @@ private lemma cechSmallAugmentationX_comp_ι :
   rw [cechSmallAugmentationX, ι_cechDoubleComplexDesc_assoc, smallLiftChains_comp_ι]
   -- The two sides are typed by the two defeq forms of the singular chains of `X`.
   exact (ι_cechAugmentation U R s).symm
+
+variable [HasZeroObject C]
 
 /-- The augmentation of the ordered Čech double complex of a family of open sets onto the singular
 chains small for the family, placed in Čech degree zero: on the summand `C(U i; R)` it is the map
@@ -171,6 +178,8 @@ lemma cechSmallAugmentation_f_zero_comp_chainComplexMap_ι :
       cechAugmentation U R :=
   (congrArg (· ≫ _) (cechSmallAugmentation_f_zero U R)).trans (cechSmallAugmentationX_comp_ι U R)
 
+end
+
 /-! ### The rows of the double complex -/
 
 /-- The summand inclusion of a singular `q`-simplex of `U_s` into `C_q(U_s; R)`, with its target
@@ -180,7 +189,6 @@ private def simplexι {s : Finset ι} {q : ℕ}
     R ⟶ ((cechSingularChains U R).obj (op s)).X q :=
   (TopCat.toSSet.obj _).ιChainComplex τ
 
-omit [LinearOrder ι] [HasZeroObject C] in
 private lemma simplexι_map {s t : Finset ι} (h : t ⊆ s) {q : ℕ}
     (τ : (TopCat.toSSet.obj ((Opens.toTopCat X).obj (s.inf U))) _⦋q⦌) :
     simplexι U R τ ≫ ((cechSingularChains U R).map (homOfLE h).op).f q =
@@ -188,7 +196,6 @@ private lemma simplexι_map {s t : Finset ι} (h : t ⊆ s) {q : ℕ}
         ((Opens.toTopCat X).map (homOfLE (Finset.inf_mono h)))).app _ τ) :=
   SSet.ι_chainComplexMap_f _ _ _ R τ
 
-omit [LinearOrder ι] [HasZeroObject C] in
 private lemma simplexι_hom_ext {s : Finset ι} {q : ℕ} {Y : C}
     {f g : ((cechSingularChains U R).obj (op s)).X q ⟶ Y}
     (h : ∀ τ, simplexι U R τ ≫ f = simplexι U R τ ≫ g) : f = g :=
@@ -200,13 +207,11 @@ private def simplexDesc {s : Finset ι} {q : ℕ} {Y : C}
     ((cechSingularChains U R).obj (op s)).X q ⟶ Y :=
   Sigma.desc f
 
-omit [LinearOrder ι] [HasZeroObject C] in
 private lemma simplexι_simplexDesc {s : Finset ι} {q : ℕ} {Y : C}
     (f : (TopCat.toSSet.obj ((Opens.toTopCat X).obj (s.inf U))) _⦋q⦌ → (R ⟶ Y)) (τ) :
     simplexι U R τ ≫ simplexDesc U R f = f τ :=
   Sigma.ι_comp_desc f τ
 
-omit [LinearOrder ι] [HasZeroObject C] in
 private lemma simplexι_smallLiftChains {s : Finset ι} {i : ι} (hi : i ∈ s) {q : ℕ}
     (τ : (TopCat.toSSet.obj ((Opens.toTopCat X).obj (s.inf U))) _⦋q⦌) :
     simplexι U R τ ≫ (smallLiftChains U R hi).f q =
@@ -220,18 +225,18 @@ private def simplexCover (q : ℕ) :
     ι → Set ((X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) _⦋q⦌) :=
   fun i ↦ {σ | Set.range (X.toSSetObjEquiv _ σ.1) ⊆ U i}
 
-omit [LinearOrder ι] in
 private lemma iUnion_simplexCover (q : ℕ) : ⋃ i, simplexCover U q i = Set.univ :=
   Set.eq_univ_of_forall fun σ ↦ Set.mem_iUnion.2
     ((TopCat.mem_smallSingularSubcomplex_iff _ _ _).1 σ.2)
 
-omit [LinearOrder ι] in
 private lemma range_subset_finset_inf {q : ℕ} {s : Finset ι}
     {σ : (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) _⦋q⦌}
     (hσ : ∀ i ∈ s, σ ∈ simplexCover U q i) :
     Set.range (X.toSSetObjEquiv _ σ.1) ⊆ (s.inf U : Opens X) := by
   rw [Opens.coe_finset_inf]
   exact Finset.le_inf hσ
+
+variable [LinearOrder ι]
 
 /-- A singular simplex of `U_s`, for a nonempty set `s`, as a small simplex lying in `U i` for
 every `i ∈ s`. -/
@@ -246,14 +251,6 @@ private lemma smallSimplex_mem {s : Finset ι} (hs : s.Nonempty) {q : ℕ}
   simpa only [simplexCover, Set.mem_ofPred_eq, smallSimplex, smallLift_app_coe] using
     (TopCat.range_toSSetObjEquiv_toSSet_map_inclusion'_subset τ).trans
       (Finset.inf_le hi : s.inf U ≤ U _)
-
-omit [LinearOrder ι] in
-private lemma smallLift_app_toSSetObjCodRestrict {V : Opens X} {i : ι} (hV : V ≤ U i) {q : ℕ}
-    (σ : (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) _⦋q⦌)
-    (h : Set.range (X.toSSetObjEquiv _ σ.1) ⊆ V) :
-    (smallLift U hV).app _ (TopCat.toSSetObjCodRestrict σ.1 h) = σ :=
-  Subtype.ext ((smallLift_app_coe U hV _).trans
-    (TopCat.toSSet_map_inclusion'_toSSetObjCodRestrict σ.1 h))
 
 private lemma smallSimplex_toSSetObjCodRestrict {s : Finset ι} (hs : s.Nonempty) {q : ℕ}
     (σ : (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) _⦋q⦌)
@@ -289,7 +286,6 @@ private def rowHom (q : ℕ) :
       ι_freeCechFunctor_map_assoc, Functor.ι_orderedCechComplexDesc, ι_freeCechDesc,
       ← Category.assoc, simplexι_map, TopCat.toSSet_map_homOfLE_toSSetObjCodRestrict]
 
-omit [HasZeroObject C] in
 private lemma ι_rowHom_f {q p : ℕ} (s : {s : Finset ι // #s = p + 1}) {σ} (hσ) :
     freeCechι R σ hσ ≫ (freeCechFunctor R (simplexCover U q)).orderedCechComplexι s ≫
         (rowHom U R q).f p =
@@ -313,7 +309,6 @@ private def rowInvX (q p : ℕ) :
       (freeCechFunctor R (simplexCover U q)).orderedCechComplex.X p :=
   Cofan.IsColimit.desc (isColimitCechDoubleComplexXCofan U R p q) (rowInvSummand U R q p)
 
-omit [HasZeroObject C] in
 private lemma ι_rowInvX {q p : ℕ} (s : {s : Finset ι // #s = p + 1}) (τ) :
     simplexι U R τ ≫ (cechDoubleComplexι U R s).f q ≫ rowInvX U R q p =
       freeCechι R (smallSimplex U (Finset.card_pos.1 (by rw [s.2]; omega)) τ)
@@ -337,6 +332,8 @@ private instance isIso_rowHom (q : ℕ) : IsIso (rowHom U R q) := by
       simp only [toSSetObjCodRestrict_smallSimplex]
       exact (Category.comp_id (_ ≫ _)).symm.trans (Category.assoc _ _ _)
   exact HomologicalComplex.Hom.isIso_of_components _
+
+variable [HasZeroObject C]
 
 /-- The identification of the ordered Čech complex of `simplexCover U q`, augmented, with the
 `q`-th row of the double complex augmented to small chains. -/

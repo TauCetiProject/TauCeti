@@ -169,6 +169,20 @@ theorem spinGroupEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
   ext x
   rfl
 
+/-- The identity isometry induces the identity equivalence of a Spin group. -/
+@[simp]
+theorem spinGroupEquiv_refl (Q₁ : QuadraticForm R M₁) :
+    (QuadraticMap.IsometryEquiv.refl Q₁).spinGroupEquiv = MulEquiv.refl (spinGroup Q₁) :=
+  MulEquiv.ext fun x ↦ DFunLike.congr_fun (QuadraticMap.Isometry.spinGroupMap_id Q₁) x
+
+/-- Spin-group equivalences respect composition of quadratic isometry equivalences. -/
+@[simp]
+theorem spinGroupEquiv_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    (e₁₂.trans e₂₃).spinGroupEquiv = e₁₂.spinGroupEquiv.trans e₂₃.spinGroupEquiv :=
+  MulEquiv.ext fun x ↦
+    (DFunLike.congr_fun (e₂₃.toIsometry.spinGroupMap_comp e₁₂.toIsometry) x).symm
+
 end QuadraticMap.IsometryEquiv
 
 
