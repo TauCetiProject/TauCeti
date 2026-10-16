@@ -236,16 +236,9 @@ private theorem ray_negative (u v : Kˣ) (n : ℕ) :
   field_simp
 
 omit [CompleteSpace K] [IsUltrametricDist K] in
-private theorem inverse_x_term (r : K) (hr : r ≠ 0) :
-    r⁻¹ / (1 - r⁻¹) ^ 2 = r / (1 - r) ^ 2 := by
-  by_cases h : r = 1
-  · simp [h]
-  · field_simp
-    ring
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
 private theorem inverse_y_term (r : K) (hr : r ≠ 0) :
     (r⁻¹) ^ 2 / (1 - r⁻¹) ^ 3 = -r / (1 - r) ^ 3 := by
+  rw [yTerm_inv r hr]
   by_cases h : r = 1
   · simp [h]
   · field_simp
@@ -269,12 +262,12 @@ theorem evalIntBivariateSeries_tateFormalX (u v : Kˣ)
   have hm : Summable (fun n : ℕ ↦ (v : K) ^ (n + 1) * (u : K) ^ n /
       (1 - (v : K) ^ (n + 1) * (u : K) ^ n) ^ 2) := by
     simpa only [Function.comp_def, ray_negative,
-      inverse_x_term _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
+      xTerm_inv _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
       using hs.comp_injective hn
   rw [eval_tateFormalX_expansion _ _ hu hv, tateUniformizationX_def,
     ← tsum_nat_add_neg_add_one hs]
   simp_rw [ray_positive, ray_negative,
-    inverse_x_term _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
+    xTerm_inv _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
   rw [hp.tsum_add hm, Units.val_mul]
   ring
 

@@ -49,25 +49,26 @@ variable {K : Type*} [Field K]
 private def xTerm (x : K) : K := x / (1 - x) ^ 2
 private def yTerm (x : K) : K := x ^ 2 / (1 - x) ^ 3
 
-private theorem xTerm_inv (x : K) (hx : x ≠ 0) : xTerm x⁻¹ = xTerm x := by
+/-- Inverting a nonzero argument preserves the summand of the first Tate coordinate. -/
+theorem xTerm_inv (x : K) (hx : x ≠ 0) :
+    x⁻¹ / (1 - x⁻¹) ^ 2 = x / (1 - x) ^ 2 := by
   by_cases h : x = 1
-  · simp [h, xTerm]
-  · dsimp [xTerm]
-    field_simp
+  · simp [h]
+  · field_simp
     ring
 
-private theorem yTerm_inv (x : K) (hx : x ≠ 0) :
-    yTerm x⁻¹ = -yTerm x - xTerm x := by
+/-- Inverting a nonzero argument gives the summand identity for Tate coordinate negation. -/
+theorem yTerm_inv (x : K) (hx : x ≠ 0) :
+    (x⁻¹) ^ 2 / (1 - x⁻¹) ^ 3 = - (x ^ 2 / (1 - x) ^ 3) - x / (1 - x) ^ 2 := by
   by_cases h : x = 1
-  · simp [h, xTerm, yTerm]
-  · dsimp [xTerm, yTerm]
-    field_simp
+  · simp [h]
+  · field_simp
     ring
 
 private theorem xTerm_zpow_neg (q u : Kˣ) (n : ℤ) :
     xTerm ((q : K) ^ (-n) * (u : K)) = xTerm ((q : K) ^ n * (u : K)⁻¹) := by
   rw [zpow_neg]
-  simpa only [mul_inv, inv_inv] using
+  simpa only [xTerm, mul_inv, inv_inv] using
     xTerm_inv ((q : K) ^ n * (u : K)⁻¹)
       (mul_ne_zero (zpow_ne_zero _ q.ne_zero) (inv_ne_zero u.ne_zero))
 
@@ -75,7 +76,7 @@ private theorem yTerm_zpow_neg (q u : Kˣ) (n : ℤ) :
     yTerm ((q : K) ^ (-n) * (u : K)) =
       -yTerm ((q : K) ^ n * (u : K)⁻¹) - xTerm ((q : K) ^ n * (u : K)⁻¹) := by
   rw [zpow_neg]
-  simpa only [mul_inv, inv_inv] using
+  simpa only [yTerm, xTerm, mul_inv, inv_inv] using
     yTerm_inv ((q : K) ^ n * (u : K)⁻¹)
       (mul_ne_zero (zpow_ne_zero _ q.ne_zero) (inv_ne_zero u.ne_zero))
 
