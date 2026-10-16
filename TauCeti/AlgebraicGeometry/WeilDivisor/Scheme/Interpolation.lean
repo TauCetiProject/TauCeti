@@ -48,22 +48,30 @@ universe u
 noncomputable section
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-  [IsProper (X ↘ Spec (.of k))] [IsIntegral X] [IsLocallyNoetherian X]
+  [IsProper (X ↘ Spec (.of k))] [IsIntegral X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (hdim : ∀ x : X, coheight x ≤ 1)
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
 
 include hdim hF hk
 
+-- The order and residue-map statements need the locally Noetherian structure
+-- supplied by properness.
+
 /-- If `deg D > 2g - 2`, every global section of the residue skyscraper at a closed point `y`
 is the residue of a global section of `𝒪_X(D + y)`. For `E = D + y`, the bound is
 `deg E - [κ(y) : k] > 2g - 2`, including points of higher residue degree. -/
-theorem surjective_toSkyscraperResidueField_app_top_of_high_degree
-    {D : SchemeWeilDivisor X} {y : CodimensionOnePoint X} {g : X.functionFieldˣ}
+theorem surjective_toSkyscraperResidueField_app_top_of_high_degree :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+    ∀ {D : SchemeWeilDivisor X} {y : CodimensionOnePoint X} {g : X.functionFieldˣ}
     (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1)
-    (hD : 2 * (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) - 2 <
-      relativeDegree (X ↘ Spec (.of k)) D) :
+    (_hD : 2 * (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) - 2 <
+      relativeDegree (X ↘ Spec (.of k)) D),
     Function.Surjective (Scheme.Modules.Hom.app (toSkyscraperResidueField g hg) ⊤) := by
+  let : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  intro D y g hg hD
   have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
   have : IsNoetherian X := {}
   have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := X)
@@ -83,13 +91,17 @@ theorem surjective_toSkyscraperResidueField_app_top_of_high_degree
 
 /-- For `deg D > 2g - 2`, the existing residue linear map `L(D + y) → κ(y)` is surjective.
 The source is the submodule of global rational functions satisfying the divisor bounds. -/
-theorem surjective_residueMap_of_high_degree
-    {D : SchemeWeilDivisor X} {y : CodimensionOnePoint X} {g : X.functionField}
+theorem surjective_residueMap_of_high_degree :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+    ∀ {D : SchemeWeilDivisor X} {y : CodimensionOnePoint X} {g : X.functionField}
     (hg0 : g ≠ 0) (hg : X.ord g y = WeilDivisor.coeff D y + 1)
-    (hD : 2 * (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) - 2 <
-      relativeDegree (X ↘ Spec (.of k)) D) :
+    (_hD : 2 * (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) - 2 <
+      relativeDegree (X ↘ Spec (.of k)) D),
     Function.Surjective (residueMap D y hg0 hg) := by
-  intro a
+  let : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  intro D y g hg0 hg hD a
   have hyTop : (y : X) ∈ (⊤ : X.Opens) := by simp
   let e := Scheme.skyscraperResidueFieldEquiv (y : X) hyTop
   obtain ⟨s, hs⟩ := surjective_toSkyscraperResidueField_app_top_of_high_degree
@@ -102,17 +114,22 @@ theorem surjective_residueMap_of_high_degree
 /-- A nonzero prescribed residue is realized by a global section of `𝒪_X(D + y)` with the
 exact allowed order at `y`, provided `deg D > 2g - 2`. The residue uses any multiplier `g`
 of order `D(y) + 1`; the conclusion concerns the associated rational function of the section. -/
-theorem exists_globalSection_residue_eq_and_ord_eq_of_high_degree
-    {D : SchemeWeilDivisor X} {y : CodimensionOnePoint X} {g : X.functionFieldˣ}
+theorem exists_globalSection_residue_eq_and_ord_eq_of_high_degree :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+    ∀ {D : SchemeWeilDivisor X} {y : CodimensionOnePoint X} {g : X.functionFieldˣ}
     (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1)
-    (hD : 2 * (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) - 2 <
+    (_hD : 2 * (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) - 2 <
       relativeDegree (X ↘ Spec (.of k)) D)
-    (a : X.residueField y) (ha : a ≠ 0) :
+    (a : X.residueField y) (_ha : a ≠ 0),
     ∃ s : Γ(sheaf (D + WeilDivisor.ofPoint y), ⊤),
       Scheme.skyscraperResidueFieldEquiv (y : X) (by simp)
           (Scheme.Modules.Hom.app (toSkyscraperResidueField g hg) ⊤ s) = a ∧
         X.ord (Scheme.rationalFunctionsEquiv ⊤
           (Scheme.Modules.Hom.app (sheafι _) ⊤ s)) y = -WeilDivisor.coeff D y - 1 := by
+  let : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  intro D y g hg hD a ha
   have hyTop : (y : X) ∈ (⊤ : X.Opens) := by simp
   let e := Scheme.skyscraperResidueFieldEquiv (y : X) hyTop
   obtain ⟨s, hs⟩ := surjective_toSkyscraperResidueField_app_top_of_high_degree
