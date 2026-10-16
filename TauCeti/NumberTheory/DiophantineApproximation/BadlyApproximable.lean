@@ -30,9 +30,9 @@ Littlewood's conjecture asserts that `inf_{y ≥ 1} y ‖y α‖ ‖y β‖ = 0`
 open, and is recorded here only as the proposition `LittlewoodConjecture`. It holds for `α`, `β`
 as soon as one of them is not badly approximable (`littlewood_of_not_badlyApproximable`), so it
 reduces to pairs of badly approximable numbers (`littlewoodConjecture_iff_badlyApproximable`).
-Dirichlet's theorem in nearest-integer form (`infinite_setOf_mul_abs_mul_sub_round_le_one`) gives
-the weaker unconditional statement that `y ‖y α‖ ‖y β‖ ≤ 1` for infinitely many `y ≥ 1`
-(`infinite_setOf_mul_le_one`).
+Dirichlet's theorem in nearest-integer form
+(`Real.infinite_setOf_mul_abs_mul_sub_round_le_one`) gives the weaker unconditional statement
+that `y ‖y α‖ ‖y β‖ ≤ 1` for infinitely many `y ≥ 1` (`Real.infinite_setOf_mul_le_one`).
 
 ## Main definitions
 
@@ -65,7 +65,7 @@ theorem badlyApproximable_iff {ξ : ℝ} :
   refine ⟨And.right, fun ⟨c, hc, h⟩ ↦ ⟨?_, c, hc, h⟩⟩
   rintro ⟨r, rfl⟩
   have := h (1 * r.den) (by simp [r.den_pos])
-  rw [abs_den_mul_sub_round_eq_zero, mul_zero] at this
+  rw [r.abs_den_mul_sub_round_eq_zero, mul_zero] at this
   exact this.not_gt hc
 
 /-- A badly approximable number is irrational. -/
@@ -74,7 +74,7 @@ theorem BadlyApproximable.irrational {ξ : ℝ} (h : BadlyApproximable ξ) : Irr
 
 /-- A rational number is not badly approximable. -/
 @[simp]
-theorem not_badlyApproximable_ratCast (r : ℚ) : ¬BadlyApproximable r :=
+theorem _root_.Rat.not_badlyApproximable (r : ℚ) : ¬BadlyApproximable r :=
   fun h ↦ r.not_irrational h.irrational
 
 /-- `ξ` is badly approximable exactly when there is `c > 0` such that every rational number `r`
@@ -177,7 +177,7 @@ theorem BadlyApproximable.ratCast_mul {ξ : ℝ} (h : BadlyApproximable ξ) {s :
 
 /-- Adding a rational number does not change bad approximability. -/
 @[simp]
-theorem badlyApproximable_add_ratCast_iff {ξ : ℝ} (s : ℚ) :
+theorem badlyApproximable_add_ratCast_iff {ξ : ℝ} {s : ℚ} :
     BadlyApproximable (ξ + s) ↔ BadlyApproximable ξ :=
   ⟨fun h ↦ by simpa using h.add_ratCast (-s), fun h ↦ h.add_ratCast s⟩
 
@@ -265,9 +265,9 @@ theorem littlewoodConjecture_iff_badlyApproximable :
   · exact littlewood_of_not_badlyApproximable hα β hε
 
 /-- For all real `α`, `β`, infinitely many `y ≥ 1` satisfy `y ‖y α‖ ‖y β‖ ≤ 1`. -/
-theorem infinite_setOf_mul_le_one (α β : ℝ) :
+theorem _root_.Real.infinite_setOf_mul_le_one (α β : ℝ) :
     {y : ℕ | 0 < y ∧ y * |y * α - round (y * α)| * |y * β - round (y * β)| ≤ 1}.Infinite := by
-  refine Set.Infinite.mono ?_ (infinite_setOf_mul_abs_mul_sub_round_le_one α)
+  refine Set.Infinite.mono ?_ α.infinite_setOf_mul_abs_mul_sub_round_le_one
   rintro y ⟨hy, hyα⟩
   refine ⟨hy, ?_⟩
   exact (mul_le_of_le_one_right (by positivity) ((abs_sub_round _).trans (by norm_num))).trans hyα
@@ -288,7 +288,7 @@ example : ¬BadlyApproximable (liouvilleNumber 10) := fun h ↦
 
 example (q : ℚ) (β : ℝ) {ε : ℝ} (hε : 0 < ε) :
     ∃ y : ℕ, 0 < y ∧ y * |y * (q : ℝ) - round (y * (q : ℝ))| * |y * β - round (y * β)| < ε :=
-  littlewood_of_not_badlyApproximable (not_badlyApproximable_ratCast q) β hε
+  littlewood_of_not_badlyApproximable q.not_badlyApproximable β hε
 
 /-- Littlewood's conjecture genuinely needs two numbers: for `√2` alone, `y ‖y √2‖` stays
 bounded away from `0`. -/

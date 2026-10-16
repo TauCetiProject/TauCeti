@@ -32,7 +32,7 @@ lower bounds behind exponents of approximation.
 * `TauCeti.simultaneous_dirichlet`: for `α ∈ ℝᵐ` and `Q > 1` there are integers `x` and
   `0 < y ≤ Q ^ m` with `|xᵢ - αᵢ y| ≤ Q⁻¹`.
 * `TauCeti.dirichlet_linearForm_infinite`: the case of a single linear form.
-* `TauCeti.infinite_setOf_mul_abs_mul_sub_round_le_one`: for every real `α`, infinitely many
+* `Real.infinite_setOf_mul_abs_mul_sub_round_le_one`: for every real `α`, infinitely many
   `q ≥ 1` satisfy `q ‖q α‖ ≤ 1`, where `‖x‖ = |x - round x|`.
 
 ## Implementation notes
@@ -215,7 +215,7 @@ theorem dirichlet_linearForm_infinite [Nonempty κ] (α : κ → ℝ)
 
 /-- A rational number times a multiple of its denominator is an integer, so it has distance `0`
 from the nearest integer. -/
-theorem abs_den_mul_sub_round_eq_zero (r : ℚ) (n : ℕ) :
+theorem _root_.Rat.abs_den_mul_sub_round_eq_zero (r : ℚ) (n : ℕ) :
     |((n * r.den : ℕ) : ℝ) * r - round (((n * r.den : ℕ) : ℝ) * r)| = 0 := by
   have h : ((n * r.den : ℕ) : ℝ) * r = ((n * r.num : ℤ) : ℝ) := by
     push_cast
@@ -225,7 +225,7 @@ theorem abs_den_mul_sub_round_eq_zero (r : ℚ) (n : ℕ) :
 
 /-- **Dirichlet's theorem, nearest-integer form.** For every real `α`, infinitely many natural
 numbers `q ≥ 1` satisfy `q ‖q α‖ ≤ 1`. -/
-theorem infinite_setOf_mul_abs_mul_sub_round_le_one (α : ℝ) :
+theorem _root_.Real.infinite_setOf_mul_abs_mul_sub_round_le_one (α : ℝ) :
     {q : ℕ | 0 < q ∧ q * |q * α - round (q * α)| ≤ 1}.Infinite := by
   refine Set.infinite_of_forall_exists_gt fun N ↦ ?_
   by_cases hα : Irrational α
@@ -248,7 +248,7 @@ theorem infinite_setOf_mul_abs_mul_sub_round_le_one (α : ℝ) :
   · -- A rational `α = r` has `‖q α‖ = 0` at every multiple `q` of `den r`.
     obtain ⟨r, rfl⟩ := not_not.mp hα
     refine ⟨(N + 1) * r.den, ⟨Nat.mul_pos N.succ_pos r.den_pos, ?_⟩, ?_⟩
-    · rw [abs_den_mul_sub_round_eq_zero, mul_zero]
+    · rw [r.abs_den_mul_sub_round_eq_zero, mul_zero]
       exact zero_le_one
     · exact (Nat.lt_succ_self N).trans_le (Nat.le_mul_of_pos_right _ r.den_pos)
 
