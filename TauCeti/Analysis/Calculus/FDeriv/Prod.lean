@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 
 /-!
-# Derivatives of separated sums on a product
+# Derivative lemmas on products
 
 A function on a product `E × F` of the form `φ ∘ Prod.fst + ψ ∘ Prod.snd`, with `φ : E → G` and
 `ψ : F → G`, is a *separated sum*: it depends on the two coordinates through two independent
@@ -18,6 +18,10 @@ two summands, so it vanishes exactly when both summands have vanishing derivativ
 first-order input for the study of critical points of separated sums, for instance of Morse
 functions on a product manifold.
 
+The derivative of a graph map `(x, y) ↦ (x, u (x, y))` can likewise be reconstructed from the
+derivatives of its two coordinate slices. When the vertical slice has identity derivative, the
+result is the canonical linear graph shear.
+
 ## Main declarations
 
 * `HasFDerivAt.comp_fst_add_comp_snd`: the derivative of a separated sum is the coproduct of the
@@ -25,6 +29,8 @@ functions on a product manifold.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
+* `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
+  horizontal derivative and its vertical identity derivative.
 -/
 
 public section
@@ -70,6 +76,40 @@ theorem fderiv_comp_fst_add_comp_snd_eq_zero_iff (hφ : DifferentiableAt 𝕜 φ
   · rintro ⟨h₁, h₂⟩
     rw [h₁, h₂]
     ext <;> simp
+
+/-- If a differentiable function on a product has horizontal slice derivative `A` and vertical
+slice derivative the identity, then its graph map has derivative the canonical shear by `A`. -/
+theorem _root_.DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices
+    {u : E × F → F} {A : E →L[𝕜] F}
+    (hu : DifferentiableAt 𝕜 u (a, b))
+    (hx : HasFDerivAt (fun x ↦ u (x, b)) A a)
+    (hy : HasFDerivAt (fun y ↦ u (a, y)) (ContinuousLinearMap.id 𝕜 F) b) :
+    HasFDerivAt (fun p : E × F ↦ (p.1, u p))
+      ((ContinuousLinearEquiv.refl 𝕜 E).skewProd
+        (ContinuousLinearEquiv.refl 𝕜 F) A : (E × F) →L[𝕜] (E × F))
+      (a, b) := by
+  have huDeriv := hu.hasFDerivAt
+  have hx' (v : E) : fderiv 𝕜 u (a, b) (v, 0) = A v := by
+    have hcomp := huDeriv.comp a (hasFDerivAt_prodMk_left (𝕜 := 𝕜) a b)
+    have heq := hcomp.unique hx
+    simpa using congrArg (fun L : E →L[𝕜] F ↦ L v) heq
+  have hy' (w : F) : fderiv 𝕜 u (a, b) (0, w) = w := by
+    have hcomp := huDeriv.comp b (hasFDerivAt_prodMk_right (𝕜 := 𝕜) a b)
+    have heq := hcomp.unique hy
+    simpa using congrArg (fun L : F →L[𝕜] F ↦ L w) heq
+  have htotal (q : E × F) : fderiv 𝕜 u (a, b) q = A q.1 + q.2 := by
+    calc
+      fderiv 𝕜 u (a, b) q =
+          fderiv 𝕜 u (a, b) (q.1, 0) + fderiv 𝕜 u (a, b) (0, q.2) := by
+            rw [← map_add]
+            congr 2
+            ext <;> simp
+      _ = A q.1 + q.2 := by rw [hx', hy']
+  have hderiv := hasFDerivAt_fst.prodMk huDeriv
+  convert hderiv using 1
+  apply ContinuousLinearMap.ext
+  intro q
+  simpa [add_comm] using congrArg (fun z : F ↦ (q.1, z)) (htotal q).symm
 
 end TauCeti
 

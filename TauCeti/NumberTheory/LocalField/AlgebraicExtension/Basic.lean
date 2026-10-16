@@ -516,18 +516,3 @@ theorem residueFieldHom_id : (AlgHom.id K L).residueFieldHom = AlgHom.id 𝓀[K]
   exact congrArg _ (Subtype.ext (by simp))
 
 end AlgHom
-
-namespace IntermediateField
-
-variable {K Ω : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field Ω] [Algebra K Ω]
-
-/-- A compatible valued ambient field is a valuative extension of any algebraic intermediate
-field carrying a valuation extending the base-field valuation. -/
-theorem valuativeExtension [ValuativeRel Ω] [ValuativeExtension K Ω]
-    (E : IntermediateField K Ω) [Algebra.IsAlgebraic K E] [ValuativeRel E]
-    [ValuativeExtension K E] : ValuativeExtension E Ω := by
-  have h := E.val.valuativeExtension
-  exact ⟨fun a b ↦ h.vle_iff_vle a b⟩
-
-end IntermediateField

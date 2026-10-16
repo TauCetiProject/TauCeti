@@ -114,7 +114,7 @@ theorem mem_definingPointsSubgroup_iff
   rw [definingHopfIdeal_def,
     CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff (SpecialLinear.coordinateMap R n),
     GeneralLinear.UpperTriangular.mem_definingPointsSubgroup_iff,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     ← CommHopfAlgCat.quotientPointsHom_apply
       (GeneralLinear.coordinateHopfAlgebra R n) (SpecialLinear.definingHopfIdeal R n)
       (CommAlgCat.of R A) g,

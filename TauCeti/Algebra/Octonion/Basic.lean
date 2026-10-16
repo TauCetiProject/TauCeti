@@ -50,6 +50,9 @@ nothing more.
   involution.
 * `TauCeti.Octonion.trace` and `TauCeti.Octonion.norm`: the trace `a + b` and the norm
   `a * b - v ⬝ᵥ w` of the composition algebra.
+* `TauCeti.Octonion.intCast`: coordinatewise transport of integral octonions to another ring.
+* `TauCeti.Octonion.trialityTrilinearForm`: the trace of a triple octonion product as a bundled
+  trilinear form.
 * `TauCeti.Octonion.imaginary`: the imaginary octonions, the kernel of the trace.
 
 ## Main results
@@ -356,6 +359,87 @@ def trace : Octonion R →ₗ[R] R where
   map_smul' _ _ := by simp [smul_eq_mul, mul_add]
 
 @[simp] theorem trace_apply (x : Octonion R) : trace x = x.a + x.b := (rfl)
+
+/-- Transport an integral octonion coordinatewise to a ring. -/
+def intCast (S : Type*) [Ring S] (x : Octonion ℤ) : Octonion S :=
+  ⟨x.a, x.b, fun i ↦ x.v i, fun i ↦ x.w i⟩
+
+@[simp] theorem intCast_a (S : Type*) [Ring S] (x : Octonion ℤ) :
+    (intCast S x).a = x.a := (rfl)
+@[simp] theorem intCast_b (S : Type*) [Ring S] (x : Octonion ℤ) :
+    (intCast S x).b = x.b := (rfl)
+@[simp] theorem intCast_v (S : Type*) [Ring S] (x : Octonion ℤ) (i : Fin 3) :
+    (intCast S x).v i = x.v i := (rfl)
+@[simp] theorem intCast_w (S : Type*) [Ring S] (x : Octonion ℤ) (i : Fin 3) :
+    (intCast S x).w i = x.w i := (rfl)
+
+/-- Coordinatewise integer casting preserves zero. -/
+@[simp]
+theorem intCast_zero (S : Type*) [Ring S] : intCast S 0 = 0 := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves one. -/
+@[simp]
+theorem intCast_one (S : Type*) [Ring S] : intCast S 1 = 1 := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves addition. -/
+@[simp]
+theorem intCast_add (S : Type*) [Ring S] (x y : Octonion ℤ) :
+    intCast S (x + y) = intCast S x + intCast S y := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves negation. -/
+@[simp]
+theorem intCast_neg (S : Type*) [Ring S] (x : Octonion ℤ) :
+    intCast S (-x) = -intCast S x := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves octonion multiplication. -/
+@[simp]
+theorem intCast_mul (S : Type*) [CommRing S] (x y : Octonion ℤ) :
+    intCast S (x * y) = intCast S x * intCast S y := by
+  apply Octonion.ext
+  · simp [intCast, mul_a, Matrix.vec3_dotProduct]
+  · simp [intCast, mul_b, Matrix.vec3_dotProduct]
+  · funext i
+    fin_cases i <;> simp [intCast, mul_v, cross_apply]
+  · funext i
+    fin_cases i <;> simp [intCast, mul_w, cross_apply]
+
+/-- The trace of an integral octonion commutes with coordinatewise integer casting. -/
+theorem trace_intCast (S : Type*) [CommRing S] (x : Octonion ℤ) :
+    trace (R := S) (intCast S x) = (trace (R := ℤ) x : S) := by
+  simp [intCast, trace_apply]
+
+/-- The trace of a triple octonion product, bundled as a trilinear form. -/
+def trialityTrilinearForm (R : Type*) [CommRing R] :
+    Octonion R →ₗ[R] Octonion R →ₗ[R] Octonion R →ₗ[R] R := by
+  let m := LinearMap.mul R (Octonion R)
+  exact m.compr₂ (m.compr₂ trace)
+
+/-- The octonion triality form evaluates as the trace of a triple product. -/
+@[simp]
+theorem trialityTrilinearForm_apply (R : Type*) [CommRing R]
+    (x y z : Octonion R) :
+    trialityTrilinearForm R x y z = trace (x * y * z) :=
+  by simp [trialityTrilinearForm]
 
 /-- The trace of `1` is `2`, not `1`: the identity vector matrix has two diagonal entries. Not a
 `simp` lemma, because `TauCeti.Octonion.trace_apply` already takes its left-hand side apart. -/

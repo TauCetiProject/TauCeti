@@ -11,11 +11,15 @@ The database is the `ci.sqlite.gz` asset of https://github.com/TauCetiProject/Ta
   ci-stats.json      the binned series behind both, for anyone who wants the numbers
   ci-freshness.json  group status, available-source cutoffs, known published cutoffs and gaps
 
-A stale or failed group preserves its existing assets. Published cutoffs are null when no
-previous freshness report establishes the fallback coverage; source cutoffs remain separate.
+Also writes the charts of ci_daily_graphs.py (daily build duration, waits, phases, failures,
+runner-minutes, merge validation and runner picker, plus timestamped backlog and staging runs).
 
-and the charts of ci_daily_graphs.py (daily build duration, waits, phases, failures, runner-minutes,
-merge validation and runner picker, plus timestamped merge backlog and bors staging runs).
+Stale daily charts redraw through their dated coverage so historical corrections can publish;
+stale relative-time groups preserve their assets. Query, rendering and SVG-validation failures
+leave existing assets intact. Validated files are replaced sequentially; filesystem errors during
+replacement may leave a partial group, reported as an error. All stale groups still fail the
+freshness check. Published cutoffs are null when no previous freshness report establishes the
+fallback coverage; source cutoffs remain separate.
 
 The fleet timeline has three panels on one time axis, after Marcelo Lynch's mathlib4 fleet graph:
 
@@ -54,7 +58,8 @@ BUILD_JOBS = {"sandboxed-build", "verify", "build", "performance-gate"}
 # Queue waits cannot exceed GitHub's 24-hour queue limit, nor runs its 6-hour job limit, so a job
 # overlapping the window was created no more than this long before it.
 LOOKBACK = 30 * 3600
-# Refuse to redraw from data older than this: the freshness report should say so instead.
+# Beyond this age, preserve relative-time charts and report stale coverage. Historical daily
+# charts still redraw through their own coverage to incorporate corrected records.
 MAX_STALENESS = 36 * 3600
 
 # (key, label, colour); stacking order bottom to top.
@@ -405,8 +410,17 @@ def chart_cutoffs(db, now, override=None):
             for name, end in ends.items()}
 
 
+def write_charts(out: Path, files: dict[str, str]):
+    """Validate every SVG before creating the output directory or replacing any chart."""
+    for svg in files.values():
+        ET.fromstring(svg)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, svg in files.items():
+        (out/name).write_text(svg)
+
+
 def generate(db, out, now, override=None):
-    """Publish independent groups; preserve stale fallbacks and report every group's state."""
+    """Publish independent groups, including dated historical corrections, and report freshness."""
     out.mkdir(parents=True, exist_ok=True)
     ends = chart_cutoffs(db, now, override)
     annotations = []
@@ -419,15 +433,17 @@ def generate(db, out, now, override=None):
     except (OSError,ValueError):
         previous = {}
     detail_assets = {'ci-build-phases.svg','ci-failures.svg'}
-    status, errors = {}, []
+    status, errors = {}, {}
     for group, until in ends.items():
         status[group] = {'source_through': iso(until) if until is not None else None,
                          'published_through': previous.get(group,{}).get('published_through')}
-        if until is None or override is None and now-until > MAX_STALENESS:
+        stale = until is None or override is None and now-until > MAX_STALENESS
+        if stale:
             reason = 'no coverage' if until is None else f'coverage older than {MAX_STALENESS//3600} hours'
             status[group].update(status='stale', reason=reason, files=[])
-            errors.append(f'{group}: {reason}')
-            continue
+            errors[group] = f'{group}: {reason}'
+            if until is None or group not in ('daily','details'):
+                continue
         try:
             stats, files = {}, {}
             if group == 'fleet':
@@ -464,21 +480,20 @@ def generate(db, out, now, override=None):
                         height = float(ET.fromstring(svg).attrib['viewBox'].split()[3])
                         note = f'<text class="note" x="64" y="{height-8:g}">Source gaps: {gaps} unavailable job, attempt or detail records</text>'
                         files[name] = svg.replace('</svg>',note+'</svg>')
-            for svg in files.values():
-                ET.fromstring(svg)
             # A failed group never replaces another group's good data. Parse
             # every SVG in this group before replacing any of its fallbacks.
-            for name, svg in files.items():
-                (out/name).write_text(svg)
+            write_charts(out, files)
             if group == 'fleet':
                 (out/'ci-stats.json').write_text(json.dumps(stats, separators=(',', ':')))
-            status[group].update(status='updated', files=list(files), published_through=iso(until), gaps=gaps)
+            status[group].update(status='stale' if stale else 'updated', files=list(files),
+                                 published_through=iso(until), gaps=gaps)
         except Exception as e:
-            status[group].update(status='error', reason=str(e), files=[])
-            errors.append(f'{group}: {e}')
+            reason = f'{status[group]["reason"]}; redraw failed: {e}' if stale else str(e)
+            status[group].update(status='error', reason=reason, files=[])
+            errors[group] = f'{group}: {reason}'
     (out/'ci-freshness.json').write_text(json.dumps(
         {'generated_at': iso(now), 'groups': status}, indent=2)+'\n')
-    return errors
+    return list(errors.values())
 
 
 def main(argv=None):

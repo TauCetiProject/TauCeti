@@ -26,13 +26,12 @@ H¹(Gal(L/K), L) = 0.
 
 For a separable closure this is `H¹(G_K, Kˢ) = 0`. It is the additive companion of Hilbert 90,
 `H¹(G_K, (Kˢ)ˣ) = 0` (`TauCeti/FieldTheory/GaloisCohomology/Hilbert90.lean`). The two vanishing
-theorems are inputs toward the first Galois cohomology of the admissible changes of variables
-`(u, r, s, t)` of Weierstrass equations over `Kˢ`: the scaling `u` lies in `(Kˢ)ˣ`, and the changes
-with `u = 1` are built from three copies of `Kˢ`, one for each of `r`, `s` and `t`. Deducing the
-vanishing for the changes of variables from these inputs still needs a dévissage along the
-nonabelian exact sequences of pointed sets, including the vanishing for the twisted forms of the
-kernels, which remains to be established. That vanishing is what lets a Galois cocycle of changes
-of variables descend a Weierstrass equation from `Kˢ` to `K`.
+theorems, in their form for explicit locally constant cocycles, are the inputs to the vanishing of
+the first Galois cohomology of the admissible changes of variables `(u, r, s, t)` of Weierstrass
+equations: the scaling `u` is a unit, and the changes with `u = 1` are built from three copies of
+the additive group, one for each of `r`, `s` and `t`. That vanishing, which lets a Galois cocycle of
+changes of variables descend a Weierstrass equation, is
+`WeierstrassCurve.VariableChange.exists_eq_mul_map_inv`.
 
 The finite case is Noether's argument with the sum over all `K`-automorphisms in place of a norm.
 For a finite extension `L/K` the automorphisms of `L/K` are linearly independent over `L`
@@ -52,6 +51,8 @@ exactly as for Hilbert 90: every continuous class is inflated from a finite quot
 * `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscrete`: the additive
   Hilbert 90 at a finite layer `Gal(L/K) ⧸ U`, with coefficients in `L^U`.
 * `TauCeti.subsingleton_H1_forcedDiscrete`: `H¹(Gal(L/K), L) = 0` for any Galois `L/K`.
+* `TauCeti.isCoboundary₁_of_isCocycle₁_of_isLocallyConstant`: the same for an explicit locally
+  constant cocycle `Gal(L/K) → L`.
 * `TauCeti.subsingleton_H1_forcedDiscrete_separableClosure` and `TauCeti.additiveHilbert90`:
   `H¹(G_K, Kˢ) = 0`, for the explicit and for Mathlib's canonical continuous cohomology.
 
@@ -183,6 +184,21 @@ theorem subsingleton_H1_forcedDiscrete : Subsingleton (H1 Gal(L/K) (ForcedDiscre
       exact H1pi_eq_zero_iff.2 (mem_B1_iff.2
         (isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscrete U
           (mem_Z1_iff.1 z.2).2))
+
+/-- **The additive Hilbert 90 for explicit cocycles.** For a Galois extension `L/K`, finite or
+not, every locally constant `1`-cocycle `f : Gal(L/K) → L`, that is
+`f (σ * τ) = σ (f τ) + f σ`, is a coboundary: `f σ = σ x - x` for some `x : L`. -/
+theorem isCoboundary₁_of_isCocycle₁_of_isLocallyConstant {f : Gal(L/K) → L}
+    (hf : IsCocycle₁ f) (hc : IsLocallyConstant f) : IsCoboundary₁ f := by
+  have := subsingleton_H1_forcedDiscrete (K := K) (L := L)
+  have hz : ForcedDiscrete.addEquiv L ∘ f ∈ Z1 Gal(L/K) (ForcedDiscrete L) := by
+    refine mem_Z1_iff.2 ⟨(hc.comp _).continuous, fun σ τ ↦ ?_⟩
+    simp only [Function.comp_apply, hf σ τ, map_add, ForcedDiscrete.smul_addEquiv]
+  obtain ⟨x, hx⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 (Subsingleton.elim (H1pi _ _ ⟨_, hz⟩) 0))
+  obtain ⟨y, rfl⟩ := (ForcedDiscrete.addEquiv L).surjective x
+  refine ⟨y, fun σ ↦ (ForcedDiscrete.addEquiv L).injective ?_⟩
+  rw [map_sub, ← ForcedDiscrete.smul_addEquiv]
+  exact hx σ
 
 end Galois
 

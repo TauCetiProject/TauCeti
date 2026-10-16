@@ -470,7 +470,6 @@ theorem exists_isTubularNeighborhood_normalBundle [I.Boundaryless] [IsManifold I
       zero_mem := fun x => by simp [zeroSection, hε]
       fiberwise_starConvex := fun x => by
         convert (convex_ball (0 : normalSubspace I f x) ε).starConvex (Metric.mem_ball_self hε)
-        ext v
         simp
       isOpenEmbedding := hemb.comp σ.isOpenEmbedding
       isEmbedding_f := (hf.continuous.isClosedEmbedding hinj).isEmbedding

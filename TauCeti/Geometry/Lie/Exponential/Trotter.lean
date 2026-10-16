@@ -24,6 +24,8 @@ roadmap.
   tangent model.
 * `tendsto_lieExp_smul_mul_lieExp_smul_pow`: the Trotter product formula for left-invariant
   derivations.
+* `lieExp_add_of_commute`: the exponential of a sum of derivations with commuting one-parameter
+  subgroups is the product of the exponentials.
 
 ## References
 
@@ -134,3 +136,24 @@ theorem tendsto_lieExp_smul_mul_lieExp_smul_pow [FiniteDimensional ℝ E]
   simpa only [lieExp_eq_mulInvariantExp, map_smul, map_add] using
     tendsto_mulInvariantExp_smul_mul_mulInvariantExp_smul_pow
       (I := I) (G := G) (L X) (L Y) t
+
+/-- **The exponential of a sum of derivations with commuting one-parameter subgroups is the product
+of the exponentials.** -/
+theorem lieExp_add_of_commute [FiniteDimensional ℝ E] [LieGroup I ∞ G] :
+    let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    ∀ {X Y : LeftInvariantDerivation I G},
+      (∀ t : ℝ, Commute (lieExp (t • X)) (lieExp (t • Y))) →
+        lieExp (X + Y) = lieExp X * lieExp Y := by
+  let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  dsimp only
+  intro X Y h
+  -- By the Trotter product formula `lieExp (X + Y)` is the limit of
+  -- `(lieExp ((1 / n) • X) * lieExp ((1 / n) • Y)) ^ n`, and when the two factors commute every
+  -- term of this sequence is `lieExp X * lieExp Y`.
+  have htrotter := tendsto_lieExp_smul_mul_lieExp_smul_pow (I := I) (G := G) X Y 1
+  simp only [one_smul, one_div] at htrotter
+  refine tendsto_nhds_unique htrotter (tendsto_const_nhds.congr' ?_)
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  rw [(h _).mul_pow, lieExp_inv_natCast_smul_pow X hn, lieExp_inv_natCast_smul_pow Y hn]

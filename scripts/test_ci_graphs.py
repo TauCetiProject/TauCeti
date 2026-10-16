@@ -148,6 +148,51 @@ class MergeQueueChartsTest(unittest.TestCase):
         self.assertEqual(fleet.classify(daily.BUILD, "github", "pr"),
                          ("gh-build-pr", "build"))
 
+    def test_stale_historical_corrections_publish_with_dated_coverage_and_a_freshness_error(self):
+        self.build(1, 'pr', 'failure')
+        self.db.execute("UPDATE jobs SET failure_class='lean-error'")
+        self.db.executescript("""
+            CREATE TABLE coverage (repo TEXT, complete_to TEXT);
+            INSERT INTO coverage VALUES ('TauCeti','2026-10-08');
+            CREATE TABLE stream_coverage (repo TEXT,stream TEXT,since TEXT,complete_to TEXT);
+            INSERT INTO stream_coverage VALUES
+              ('TauCeti','build-jobs','2026-10-05','2026-10-08'),
+              ('TauCeti','details','2026-10-05','2026-10-07'),
+              ('TauCeti','details','2026-10-08','2026-10-10');
+        """)
+        with tempfile.TemporaryDirectory() as directory:
+            out=Path(directory)
+            fallbacks={'ci-fleet-72h.svg':'previous fleet', 'ci-stats.json':'previous fleet data',
+                       'ci-queue-size.svg':'previous queue', 'ci-bors-staging.svg':'previous staging'}
+            for name, contents in fallbacks.items():
+                (out/name).write_text(contents)
+            (out/'ci-failures.svg').write_text('old false timeout chart')
+            errors=fleet.generate(self.db,out,daily.ts('2026-10-15'))
+            self.assertIn('details: coverage older than 36 hours',errors)
+            self.assertIn('daily: coverage older than 36 hours',errors)
+            for name,contents in fallbacks.items():
+                self.assertEqual((out/name).read_text(),contents)
+            status=json.loads((out/'ci-freshness.json').read_text())['groups']
+            for name in status['daily']['files']+status['details']['files']:
+                ET.parse(out/name)
+            failure_chart=(out/'ci-failures.svg').read_text()
+            self.assertIn('UTC days 06 Oct to 06 Oct',failure_chart)
+            self.assertIn('>lean-error<',failure_chart)
+            self.assertNotIn('>timeout<',failure_chart)
+            self.assertEqual(status['daily']['published_through'],'2026-10-08T00:00:00Z')
+            self.assertEqual(status['details']['published_through'],'2026-10-07T00:00:00Z')
+            self.assertEqual(status['details']['status'],'stale')
+            self.assertIn('ci-failures.svg',status['details']['files'])
+
+    def test_invalid_svg_preserves_every_chart_in_the_group(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out=Path(directory)
+            (out/'ci-failures.svg').write_text('previous')
+            with self.assertRaises(ET.ParseError):
+                fleet.write_charts(out,{'ci-failures.svg':'<svg/>','other.svg':'<broken'})
+            self.assertEqual((out/'ci-failures.svg').read_text(),'previous')
+            self.assertFalse((out/'other.svg').exists())
+
 
 class MergeTimelinesTest(unittest.TestCase):
     def setUp(self):
@@ -300,7 +345,7 @@ class MergeTimelinesTest(unittest.TestCase):
         self.assertTrue(any(n.attrib.get('class') == 'coverage-gap' for n in svg))
         self.assertEqual(len(list(svg.iter('{http://www.w3.org/2000/svg}circle'))), 1)
 
-    def test_fresh_timelines_survive_stale_fleet_without_replacing_its_fallbacks(self):
+    def test_fresh_timelines_survive_stale_fleet_and_failed_historical_groups(self):
         self.db.executescript("""
             CREATE TABLE coverage (repo TEXT, complete_to TEXT);
             INSERT INTO coverage VALUES ('TauCeti', '2026-10-02T00:00:00Z');
@@ -312,15 +357,16 @@ class MergeTimelinesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory)
             (out/'ci-fleet-72h.svg').write_text('preserved fleet')
-            (out/'ci-duration.svg').write_text('preserved daily')
+            (out/'ci-build-duration.svg').write_text('preserved daily')
             errors = fleet.generate(self.db, out, self.until)
-            self.assertEqual(len(errors), 3)
+            self.assertEqual([e.split(':',1)[0] for e in errors],['fleet','daily','details'])
             self.assertEqual((out/'ci-fleet-72h.svg').read_text(), 'preserved fleet')
-            self.assertEqual((out/'ci-duration.svg').read_text(), 'preserved daily')
+            self.assertEqual((out/'ci-build-duration.svg').read_text(), 'preserved daily')
             ET.parse(out/'ci-queue-size.svg'); ET.parse(out/'ci-bors-staging.svg')
             status = json.loads((out/'ci-freshness.json').read_text())['groups']
             self.assertEqual({g: s['status'] for g, s in status.items()},
-                             {'fleet': 'stale', 'daily': 'stale', 'details': 'stale', 'queue': 'updated', 'staging': 'updated'})
+                             {'fleet': 'stale', 'daily': 'error', 'details': 'error', 'queue': 'updated', 'staging': 'updated'})
+            self.assertIn('coverage older than 36 hours; redraw failed:',status['details']['reason'])
             self.assertIn('ci-freshness.json', generated_assets.GENERATED_ASSETS)
 
     def test_missing_staging_schema_does_not_block_queue(self):
@@ -389,22 +435,22 @@ class MergeTimelinesTest(unittest.TestCase):
             fleet.main(["--db", str(dbpath), "--until", "2026-10-08T12:00:00Z", "--out-dir", directory])
             for name in daily.ASSET_NAMES:
                 ET.parse(Path(directory) / name)
-            # Fresh basic jobs cannot overwrite charts that need still-pending
-            # failure/phase enrichment.
+            # Historical corrections may replace the old detail chart, but its
+            # range must follow detail coverage rather than newer basic jobs.
             before = (Path(directory)/'ci-failures.svg').read_bytes()
             with sqlite3.connect(dbpath) as disk:
                 disk.executescript("""
                     CREATE TABLE stream_coverage (repo TEXT,stream TEXT,since TEXT,complete_to TEXT);
                     INSERT INTO stream_coverage VALUES ('TauCeti','build-jobs','2026-10-01','2026-10-08T12:00:00Z');
-                    INSERT INTO stream_coverage VALUES ('TauCeti','details','2026-10-01','2026-10-02');
+                    INSERT INTO stream_coverage VALUES ('TauCeti','details','2026-10-05','2026-10-07');
                 """)
-                fleet.generate(disk,Path(directory),self.until)
+                fleet.generate(disk,Path(directory),self.until+1)
             status=json.loads((Path(directory)/'ci-freshness.json').read_text())['groups']
             self.assertEqual(status['daily']['status'],'updated')
             self.assertEqual(status['details']['status'],'stale')
-            self.assertEqual((Path(directory)/'ci-failures.svg').read_bytes(),before)
-            self.assertEqual(status['details']['published_through'],'2026-10-08T12:00:00Z')
-            self.assertEqual(status['details']['source_through'],'2026-10-02T00:00:00Z')
+            self.assertNotEqual((Path(directory)/'ci-failures.svg').read_bytes(),before)
+            self.assertEqual(status['details']['published_through'],'2026-10-07T00:00:00Z')
+            self.assertEqual(status['details']['source_through'],'2026-10-07T00:00:00Z')
 
 
 if __name__ == "__main__":

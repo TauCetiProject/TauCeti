@@ -547,7 +547,8 @@ theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
   rw [← ENNReal.mul_le_mul_iff_right ha ENNReal.ofReal_ne_top, ← hvol, mul_left_comm, ← hvol]
   calc volume (e ⁻¹' {x ∈ B | s < ‖f x - ⨍ y in B, f y ∂volume‖})
       = volume {x ∈ dyadicCube 0 0 | s < ‖(f ∘ e) x - ⨍ y in B, f y ∂volume‖} :=
-        measure_congr (hB.inter (ae_eq_refl _))
+        measure_congr (hB.inter
+          (Filter.EventuallyEqSet.rfl (s := {x | s < ‖(f ∘ e) x - ⨍ y in B, f y ∂volume‖})))
     _ ≤ _ := hJN
     _ = _ := by rw [measure_congr hB]
 

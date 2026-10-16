@@ -2,238 +2,199 @@
 
 Tau Ceti prohibits carrying unmerged prerequisite PR work, including in drafts
 and PRs with keep, hold, wip, human or do-not-close labels. Wait for prerequisites
-to land on main, rebase, and open a standalone PR. No label exempts a stack. The
-other housekeeping policies retain their own draft, bump and label exemptions.
-This policy does not change bors bundle support in other repositories.
+to land on main, rebase, and open a standalone PR. No label exempts a stack. Other
+housekeeping policies retain their own exemptions. Generic bors bundle support
+in other repositories is unchanged.
 
-`stack_policy.py` reads only TauCetiProject/TauCeti PRs and canonical pull refs.
-It never checks out candidate source, runs Lean or candidate tooling, downloads
-compiled artifacts, or writes a shared cache. Fork names and PR prose are data.
-The only mutable source store is a disposable bare Git repository and index.
+`scripts/stack_policy.py` uses canonical GitHub API identities and Git source.
+It does not read or interpret PR descriptions, rendered HTML, keywords, links or
+claimed dependencies. Descriptions cannot supply a candidate, establish a
+relationship, affect classification or authorize closure.
 
-## Evidence and limits
+Historical event metadata uses the workflow GitHub token with Actions read
+permission in the trusted main-defined job. The App token retains its existing
+PR/issue/content permissions; candidate code receives neither token.
 
-One sweep caches an index of at most 2,000 open PRs and 64 explicitly named
-closed parents. Candidates come from shared non-main commits, a canonical
-repository parent head branch matching the child's base, or affirmative PR-body
-prose identifying local prerequisite PRs. A label, author, import, shared file,
-branch name, non-main base alone, or mention in code/quoted/negative prose does
-not prove stacking. Discovery by prose never suffices for closure.
+Candidate source is never checked out or executed. No Lean build, candidate
+script, compiled artifact, publication credential or persistent cache is used to
+identify a stack. Source is inspected in a disposable bare Git store/index. Fork
+URLs are never fetched; objects come from this repository's canonical pull refs.
 
-Explicit declarations use GitHub's rendered body, read through the canonical PR
-API with matching raw body and head identity, then cached within the sweep.
-The HTML is parsed as data: code, blockquotes, quotation/retracted elements and link labels
-cannot provide declarations. Canonical local PR links identify parents only when
-their complete text label is exactly the matching #N or canonical PR URL.
-Descriptive, qualified, alternative or mismatched labels remain opaque, including
-formatted labels; removing their wording cannot manufacture unconditional claims.
-Visible link-label text can still veto negated/retracted claims; deleting a
-negative label must not turn its surrounding prose into an affirmative claim.
-Suppressed markup also participates in these conservative vetoes, so formatting
-negation as code inside a link cannot remove it; this may decline other valid
-body-only declarations alongside quoted/code examples.
-Only complete affirmative declarations beginning a rendered sentence (optionally
-with this PR or this branch) qualify. Their tail must contain only the contiguous
-parent-reference list and closing punctuation, without questions, conditions or
-extra qualifying prose. Questions/conditional context elsewhere in the body also
-decline body-only inference. Example-prefixed prose does not qualify. Literal quoted
-prose or explicit negative/example/historical context conservatively disables body-only
-inference for that body, including quotations spanning paragraphs. Whitespace
-within paragraphs is normalized and excluded inline elements retain opaque
-placeholders, so removing them cannot manufacture a sentence start.
-These restrictions may miss valid declarations;
-exact ancestry/base evidence remains available independently. Inaccessible or
-changed rendered metadata is an unknown result, never closure authority.
-The entire rendered body must use this closed declaration language, optionally
-with an exact Roadmap attribution or canonical Refs field. Mixed narrative,
-headings with other text, task checkboxes, images and unsupported markup decline
-body-only authority: their context cannot be interpreted reliably from keywords.
-This intentionally leaves ordinary mixed descriptions to independent graph/base
-proofs, and preserves simple explicit declarations for rebased/cherry-picked work.
-Supported wording is stacked on, depends on, prerequisites/dependencies/parent PR,
-or carries (unmerged/prerequisite) commits from. Based on and built on alone do
-not establish a current dependency. A declined declaration also retains any
-existing policy-owned blocking label until the uncertainty is resolved.
+## Source evidence
 
-A confirmed stack must have a current parent identity and a complete individual
-parent commit patch reverse-applicable to the child's current source tree.
-It must also have an exact unmerged ancestor head or a canonical parent branch
-as its base. For a body-only rebase/cherry-pick link, both the complete current
-parent aggregate and its head commit patch must be present; a shared precursor
-alone cannot establish direction. Content-only evidence must also be absent at
-the child's main fork point; old main content is base drift, not inherited work.
-Except for a current open canonical parent branch used as the child's base, every
-relationship additionally requires the same head repository and the same known
-PR-author account ID. An unpinned prose reference does not bypass these guards:
-it can remain stale after the original prerequisite lands, while another account
-force-pushes that parent to a copied prefix of the now-standalone child.
-Deleted/unknown authors and an outsider opening a PR from someone else's branch
-also cannot authorize closure. The canonical-base exception relies on the
-child's current explicit base choice and the open parent's live branch identity,
-rechecked before mutation. [GitHub requires write access to the source branch
-to open a PR](https://docs.github.com/en/rest/pulls/pulls#create-a-pull-request);
-the canonical exception therefore trusts repository branch writers. Account
-identity does not distinguish independent agents sharing that account. If one
-opens a prerequisite PR at another PR's prefix, the existing source proof can
-classify the older PR as stacked and close it even when the prerequisite PR was
-opened later. PR numbering does not exempt a current confirmed stack.
-Repository or author identity alone never proves stacking. The source diff and
-its SHA-256 are reported.
-Before confirming, the detector checks actual main source history for the same
-complete content, including combined bors squashes and later modifications or
-reverts. GitHub PR closure/mergedAt is never proof of landing. Closed but
-unlanded parents remain candidates. Common main ancestors are excluded before
-graph work; identical heads alone are classified as duplicate identity.
-Context-free reverse patches are used only to exclude uncertain closures: a
-match after context drift is `unknown`, not proof that a parent landed. A closed
-parent claiming a normal/bors landing without verifiable source equivalence is
-also unknown. Closed parents are considered only for children explicitly naming
-them, so unrelated body references cannot change another child's classification.
-An empty or landed aggregate does not skip the individual commit search: a
-child may retain prerequisite work subsequently reverted on its parent's branch.
-An aggregate match cannot independently authorize closure either: its parts may
-have landed separately on main without ever coexisting in one main snapshot.
-Candidate descendants of the child are excluded so a standalone prerequisite is
-not closed merely because another PR includes its exact current head. Rebased
-shared ancestry with ambiguous direction produces a gap.
+A sweep caches at most 2,000 open PRs and the 64 most recently updated closed PRs
+from this repository. Closed parents outside that bounded index are outside
+coverage. Closed state, mergedAt and bors title markers do not establish landing.
+Candidates share non-main commits or have a canonical repository parent head
+branch matching the child's current base. An author, label, shared file, import,
+branch name or non-main base alone never proves stacking.
 
-Bounds are 256 non-main commits per head, 16 individual commit patches per parent,
-128 parent files, 128 relevant
-first-parent main-history changes per parent, 64 candidates per child, 1 MiB per
-blob, 2 MiB per patch/command output (8 MiB for the bounded main commit index),
-16 MiB per API response, 128 MiB total API
-responses, 4,000 API calls, 30,000 Git operations, 20 minutes per source/API sweep
-and a 30-minute workflow limit.
-Depth-limited canonical PR fetches are checked for shallow boundaries. Main's
-complete trusted history is retained (up to 64,000 commits). Missing metadata,
-deleted repositories, pagination overflow, rate limits, races, unsupported source
-or exceeded bounds produce `unknown` with an explicit gap and no closure.
-Each detection and subsequent validation/mutation phase has a 256-call/16-MiB
-API budget, 2,500 Git operations
-and 120-second budget checked before operations. A child exceeding these limits
-becomes unknown while other PRs continue. Cheap direction/ownership checks
-precede expensive content checks; summary records Git operations and elapsed time.
+A confirmed stack requires a complete individual parent commit patch retained in
+the child's current tree, absent actual main source history. A current parent
+head that is an exact unmerged ancestor, or an open canonical parent branch used
+as the child's base, establishes direction. A child that is the other PR's
+ancestor is not closed by reversing that relationship. Identical heads alone
+are duplicate identity, not a stack proof.
+
+A parent can advance after its child last merged it. Historical evidence starts
+with a two-parent merge on the CHILD's first-parent line. The unique merge base
+between its incoming history and the current parent must lie on the parent's
+own first-parent line, outside the child's first-parent line. This supports
+indirect imports through another branch. The audit records that merge and pinned
+revision. Only parent-line commits NEWLY introduced by this merge are eligible:
+all commits reachable from the child's pre-merge first parent are excluded,
+including work it previously merged from its own side branches. The same
+newly-introduced attribution rule applies when a CURRENT parent head arrived
+through a merge, so an ordinary match cannot cite the child's own prefix either.
+Straight forks still use exact current-head ancestry; older import pins require
+the historical binding below.
+
+A canonical GitHub Actions PR-event record must independently bind the exact
+head repository, branch and pinned SHA while the parent PR existed (server
+timestamps between creation and closure). This checks branch history without
+parsing descriptions or trusting workflow artifacts. Fork run associations can
+be empty; the binding uses server-recorded branch/head identity and PR lifetime.
+Only pull_request/pull_request_target events qualify. The lookup is cached per
+parent/pin and bounded at 100 results; incomplete results, missing timestamps or
+unavailable event evidence are unknown.
+
+The complete selected patch must also remain in BOTH current trees. Source
+moved out of a parent cannot authorize closing its new owner because an old
+parent commit once contained it. Shared precursors imported through merges by
+both PRs do not establish a direction between them.
+
+Except for an open canonical parent branch currently used as the child's base,
+all relationships additionally require the same head repository and the same
+known PR-author account ID. Deleted/unknown authors and third-party PR openers
+cannot authorize closure. The canonical-base exception relies on repository
+branch writers and the child's explicit current base choice. These identities
+alone never prove stacking. Shared accounts do not distinguish independent
+agents: a later PR opened at another PR's prefix can establish the same current
+source relationship. PR numbering is not an exemption.
+
+Actual main source history is checked for the complete patch, including normal
+merges, combined bors squashes and later changes/reverts. Common main ancestors
+are excluded before graph work. Context-free possible landing matches veto
+closure as unknown; they do not establish landing. A closed parent claiming
+landing without verifiable source equivalence is also unknown. Closed parents in the bounded recent index supply source observations, but
+cannot authorize closure: unlanded source might instead belong to an absorbed or
+resubmitted PR. Such a match is unknown, not landed or proved safe. This avoids
+closing legitimate replacements of closed PRs, including policy-closed children
+resubmitted after their prerequisite lands.
+
+An empty or landed aggregate does not skip individually retained commits, but
+every selected patch must remain in both current trees. Parent-side removals
+cannot authorize closure. An aggregate match
+alone cannot authorize closure; parts might have landed separately. For
+canonical-base content matches without the original commit identity, equivalent
+content must also be absent at the child's main fork point. Old main content is
+base drift, not proof of inherited work. Every positive audit includes commit,
+patch base, source SHA-256, current heads and inspected main.
+
+## Bounds and remaining gaps
+
+Bounds are 256 non-main commits per head, 16 individual patches per candidate,
+128 parent files, 128 relevant first-parent main-history changes per patch,
+64 candidates per child and 256 entries per first-parent graph. Main history is
+bounded at 64,000 commits. Blobs are limited to 1 MiB; patch/command output to
+2 MiB (8 MiB for the main commit index); API responses to 16 MiB each/128 MiB
+total. A sweep permits 4,000 API calls, 30,000 Git operations and 20 minutes;
+the workflow permits 30 minutes. Each detection and subsequent mutation phase
+permits 256 API calls/16 MiB, 2,500 Git operations and 120 seconds, checked before
+operations. PR, commit, patch, blob, graph and landing observations are cached
+within the sweep. Depth-limited PR fetches are checked for shallow boundaries.
+
+Missing/deleted/inaccessible source, API pagination/rate limits, source identity
+mismatches, unsupported patches, exceeded bounds and races are recorded gaps
+without closure. An individual merge/root commit is skipped while searching for
+another supported commit; no merge patch is guessed. A failed individual fetch
+does not abort unrelated PRs. Global observation/budget failures fail the run.
 
 `no-confirmed-stack` means only that these bounded checks found no proof. It is
-**not** a claim that arbitrary dependencies have been ruled out. Undetected forms:
+not a proved-safe result. Undetected forms include:
 
-- Unmentioned, independently rebased/cherry-picked inherited work with no shared
-  unmerged commit and no matching canonical parent base branch.
-- Cross-repository or different/unknown-author relationships without a current
-  canonical parent base branch, even with an unpinned explicit parent reference.
-  Such a reference cannot authenticate a later force-pushed head. Immutable head
-  declarations or trusted changed-parent history are not yet supported.
-- Work whose parent diff and individual commit patches were partially edited,
-  split, rewritten or only partly inherited so that no complete reverse patch
-  applies, and body-only links whose current parent content is incomplete.
-  These relationships are not established by semantic inference.
-- Parents outside the bounded index, inaccessible/deleted source or histories
-  beyond the bounds. These are gaps, not proved-safe results.
-- A non-main fork wake without an association or matching current repository,
-  branch identity is unknown until a backlog sweep. Events canceled by
-  GitHub's 100-entry concurrency bound supply no coverage. A full queue also
-  rejects new schedule/manual arrivals; reconciliation requires a backlog job
+- Independently rebased/cherry-picked work with no shared unmerged commit or
+  matching canonical parent base branch. Prose does not change this result.
+- Historical direct forks or merge histories without the supported first-parent
+  relationship and canonical PR-event binding, and histories whose selected complete patches no longer
+  apply to both current parent and child. Shared ancestry can remain ambiguous.
+  Ordinary forks from an older parent revision that later merge its current head
+  are only partly covered: their earlier shared prefix cannot establish ownership
+  without stronger historical evidence. A canonical current parent base establishes
+  direction independently, including after GitHub's Update branch merge.
+- Partial, split or edited inherited content without complete patch identity.
+  No semantic equivalence or Lean declaration parsing is attempted.
+- Cross-repository or different/unknown-author relationships without a verified
+  open canonical parent base branch.
+- Closed-but-unlanded source relationships: dependency versus legitimate
+  absorption/resubmission is unknown without a stronger trusted signal; no
+  description is interpreted to resolve it. Older closed parents outside the
+  64-entry index and inaccessible/deleted/mismatched refs remain outside coverage.
+  Source/API/graph histories beyond the bounds also remain gaps.
+- Possible landing after context drift, arbitrary semantic integration rewrites,
+  or a closed landing claim without source equality.
+- Repository-owned heads with a bors merged-title marker: confirmed stacks are
+  blocked/explained but closure declines because the existing branch deleter
+  could otherwise delete the branch.
+- Non-main wakes without a verified association/current repository-and-branch
+  match, and events rejected by GitHub's 100-job concurrency limit. A full queue
+  also rejects new schedule/manual arrivals; reconciliation needs a backlog job
   that is actually admitted and completes.
-- Individual merge/root commit patches. The detector skips these while looking
-  for a separate supported commit within the same bound, then records a gap if
-  none proves inheritance. It never guesses a merge's parent/content identity.
-- Context-free possible landing matches (including ambiguous deletion-only
-  patches) are unknown. Arbitrary semantic rewrites during integration cannot
-  be identified by exact source matching; closed landing claims without source
-  proof are unknown. The policy never declares semantic equivalence from prose.
-- A repository-owned head with bors's merged-title marker is blocked when proved
-  stacked but not closed automatically: the existing bors branch deleter could
-  interpret that marker as permission to delete the branch. Fork heads and
-  ordinary unmerged repository heads use the normal closure path.
 
-## Enforcement and retries
+An unmerged module dependency without inherited source is not closure evidence.
+Normal build gates and the worker rule to wait for prerequisites still apply.
 
-Main-target PR opened/reopened/edited/synchronize/draft events invoke the trusted
-policy directly. Other bases invoke an unprivileged wake workflow, then the
-main-defined workflow_run observer. PR events inspect only the triggering PR
-against the bounded complete parent index. An unassociated fork wake must match
-current canonical PR metadata by head repository and branch. Associations must
-name this base repository and the wake's head. Wake completions can arrive out
-of push order, so even an older wake recomputes the branch's current PR heads;
-all closure evidence and final live checks use that current state. A target
-absent from a complete open index is `superseded` without mutation. Missing or
-incomplete identities are unknown. Neither case initiates a backlog sweep.
-Hourly schedules and manual dispatches inspect the bounded backlog; manual
-dispatch can also select one PR. This avoids repeating every older PR's expensive
-content/landing checks on each ordinary event, preserving App API quota.
-Workflow-level groups coalesce repeated events per PR or
-fork branch, while backlog runs have unique groups. One job-level mutation lock
-then uses GitHub's FIFO `queue: max` (up to 100), bounding queued event jobs by
-distinct active PRs/branches rather than repeated edits. New arrivals do not
-replace already pending jobs. When full, this queue rejects new jobs including
-schedule/manual arrivals. Cancellations are visible in Actions and are not
-coverage; backlog reconciliation requires an admitted, completed sweep.
-The workflow checks out main-defined tooling explicitly; candidate-defined code
-never receives its app token. Every run publishes JSONL
-in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables automatic
-checks/enforcement. Otherwise automatic jobs skip and manual audits remain
-available, preventing background quota consumption during an audit-only rollout.
-Manual dispatch additionally defaults to dry-run. Clearing the repository
-variable pauses automatic jobs and mutations while retaining manual audits.
-`NO_STACK_APPLY=dispatch` permits only a manual apply selecting one positive PR
-number, for a production canary before enabling automatic checks. A dry-run also
-checks current identities and live fork branches for every confirmed result.
+## Enforcement, races and retries
 
-Only a confirmed stack receives the `stacked-pr` label **before** its explanation
-and close. Main's bors.toml blocks admission on that label using the existing
-block-label path. The script verifies the label took effect before proceeding.
-It writes no commit statuses and makes no admission mutations for ordinary or
-unknown PRs. Moving main therefore does not invalidate unrelated clean heads or
-consume recurring status slots. The existing build, bump-guard, scope, review and
-publication gates remain. An obsolete policy label is removed only after a
-complete no-proof result, complete parent index, fresh identity checks and a
-latest label event owned by the policy bot. Human-applied labels and uncertainty
-retain a prior block. Existing status/roadmap label reconciliation preserves it.
-Retaining a block is an audit gap, not a failed mutation. A persistently incomplete
-repository index can prevent automatic removal; manual label removal after review
-remains available. A source/API identity mismatch is never resolved by guessing.
-Parent/content changes are reconsidered on subsequent sweeps; no waiting PR
-builds/rebases are started. A deleted fork is recorded per PR, not a reason to
-abort all other observations. Failed individual ref fetches likewise produce gaps.
+Main-target opened/reopened/edited/synchronize/draft events invoke trusted main
+policy. Other bases use an unprivileged wake followed by a main-defined observer.
+Events inspect only the triggering current PR against the parent index; they do
+not initiate a backlog sweep. Out-of-order wake completions recompute current
+branch heads. Missing identities are unknown; a target absent from a complete
+open index is superseded without mutation. Hourly/manual sweeps inspect backlog.
 
-Immediately before each explanation and close, current child head/base/body/state,
-parent head/base/body/state and main identity must match the source snapshot.
-Changed identities decline the action and require a fresh run. GitHub provides no
-atomic compare-and-close primitive, so a residual race exists between the final
-identity read and the API mutation. The audit exposes the observed identities.
+Workflow groups coalesce events per PR/fork branch, while backlog groups are
+unique. One job-level FIFO mutation lock uses `queue: max`, up to 100 entries.
+Cancellations are visible and do not constitute coverage. All runs publish JSONL
+in logs, a job summary and a retained artifact. `NO_STACK_APPLY=true` enables
+automatic checks/enforcement. Otherwise automatic jobs skip and manual audits
+remain available. Manual dispatch defaults to dry-run; `dispatch` allows only a
+manual apply selecting one positive PR number for a canary.
 
-Global workflow serialization and a marker authenticated by the installation's
-bot identity prevent duplicate explanations on retries. Comment failure prevents
-closure. A changed proof updates the same explanation for that child head rather
-than posting a second one. Close failure remains observable/nonzero and can retry
-using the existing comment.
-No branches are deleted. A successful close emits pull_request.closed;
-bors's existing handler marks the patch closed and cancels its waiting/running
-batch and try work, the same withdrawal route as bors r-. Rollout must verify
-an actual admitted child's removal using the bors observation endpoint, not just
-infer it from a successful GitHub API response.
-Unknown detections remain explicit in the audit summary; only mutation or
-withdrawal failures make a completed per-PR sweep fail. Global observation
-failures and global source/API budget exhaustion still fail the run. Closed-parent budget overflow affects the children
-naming unavailable parents, rather than preventing unrelated classifications.
-The apply audit records read-only bors membership before the blocking label and
-close, then makes at most six observations (five-second gaps) after close. A
-still-admitted child fails the run visibly. Missing pre-close observations are
-reported as unproved withdrawal, never as a successful production verification.
-Closing a member of a running batch uses bors's existing batch cancellation and
-remaining-member recovery behavior.
+Only a confirmed stack receives `stacked-pr`, before explanation and closure.
+Main's bors config blocks admission on that label, which must be verified before
+continuing. No commit statuses or admission mutations are written for ordinary
+or unknown PRs. Existing build, bump, scope, review, axiom and publication gates
+remain. No waiting PR rebuild/rebase loop is started.
 
-## Running the policy
+A previous policy block can be removed only after a no-proof result, complete
+index, current child/main identities and a latest label event owned by the bot.
+The bounded closed index alone does not permanently veto unlabeling, but any
+observed unresolved source/metadata gap retains a prior block. Human labels are
+never removed. Reviewed manual label removal remains available. These
+retained blocks are coverage gaps, not proofs of current stacking.
 
-Run `python3 scripts/test_stack_policy.py` for real Git and API/mutation fixtures.
-`stack_policy_fixtures.json` records read-only historical PR identities, source
-evidence and literal stacking prose at its named detector/main revisions, including
-declined/stale/ambiguous cases. These are observations, not a claim about later heads.
-Run `python3 scripts/stack_policy.py --pr NUMBER --report audit.jsonl` for a
-read-only source audit; omit --pr for the bounded backlog. `--apply` explicitly
-enables labels/comments/closure and requires `STACK_ACTOR` to authenticate
-prior marker comments. Production uses the app installation bot login.
+Immediately before every label, explanation and close, fresh child/parent
+head/base/state/author/repository and main identities must match the snapshot.
+Open PRs must still have their live branches. Changed identities decline the
+write and require fresh observations. GitHub has no atomic compare-and-close
+primitive, leaving a residual race between the final read and mutation.
 
-To verify deployment, issue a new main-defined workflow dispatch and inspect its
-audit artifact. Production verification requires actual detection, explanation,
-closure, preserved branch and observed removal of a previously admitted child.
+Serialized mutations and an installation-authenticated marker prevent duplicate
+explanations. A retry updates the same comment for that child head if evidence
+changes. Comment failure prevents closing; failed mutation is observable/nonzero.
+Branches are never deleted. Closing emits the existing `pull_request.closed`
+webhook, which withdraws/cancels bors waiting/running/try work. The audit observes
+exact-head membership before blocking and up to six times after closing, five
+seconds apart. A still-admitted child fails the run. Missing before-observation
+means withdrawal is unproved, never a successful verification claim. Closing a
+running-batch member uses normal bors cancellation/recovery for remaining members.
+
+Run `python3 scripts/test_stack_policy.py` for real Git/source and API/mutation
+fixtures. Historical source observations are recorded at their named revisions
+in `stack_policy_fixtures.json`; they are not assertions about later heads.
+Use `python3 scripts/stack_policy.py --pr NUMBER --report audit.jsonl` for a local
+read-only audit; omit the number for backlog. `--apply` requires `STACK_ACTOR` to
+authenticate policy comments. Deployments need a NEW main-defined dispatch using
+the reviewed source; a changed closing path needs actual detection, explanation,
+closure, preserved branch and observed admitted-child withdrawal verification.

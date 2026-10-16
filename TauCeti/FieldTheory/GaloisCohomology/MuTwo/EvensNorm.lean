@@ -126,6 +126,13 @@ theorem galoisEvens2_kummerClass_eq_pullback [Invertible (2 : L)]
           kummerInd σ hdeg a r hr s hs q.2))
         (continuous_wreathD16Cocycle_kummerInd σ hdeg a r hr s hs)
         (fun g h j => by simp only [map_mul]; exact wreathD16Cocycle_isCocycle _ _ _) := by
+  -- Instance search does not find local compactness within its default budget under these
+  -- imports, so assemble it from the Krull topology being compact and Hausdorff.
+  have : LocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    have : R1Space (AbsoluteGaloisGroup K) := @T2Space.r1Space _ _ krullTopology_t2
+    have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+      ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
+    WeaklyLocallyCompactSpace.locallyCompactSpace
   rw [galoisEvens_def, galoisF2Iso_inv_kummerClass σ a r hr,
     evensNormIndexTwo_eq_ind_pullback _ _ s hs, f2CocycleClass_def]
   simp only [kummerInd_def]

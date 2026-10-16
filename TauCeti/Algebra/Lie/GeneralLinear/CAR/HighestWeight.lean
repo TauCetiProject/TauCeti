@@ -265,9 +265,7 @@ private theorem positive_iota_mul_carHighestWeightVector_eq_zero
 private theorem positive_carGenerator_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) :
     carGenerator (K := K) i j * carHighestWeightVector K n = 0 := by
-  rw [carGenerator_def]
-  rw [Subsingleton.elim (Classical.decEq n) (inferInstance : DecidableEq n),
-    positive_iota_mul_carHighestWeightVector_eq_zero hij]
+  rw [carGenerator_def, positive_iota_mul_carHighestWeightVector_eq_zero hij]
 
 private theorem raisingTerm_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) (k : n) :
@@ -341,13 +339,13 @@ private theorem diagonalSum_mul_carHighestWeightVector (i : n) :
 
 section Action
 
-variable [h2 : Invertible (2 : K)]
+variable [Invertible (2 : K)]
 
 private theorem glCliffordHom_single_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) :
-    (@glCliffordHom K n inferInstance inferInstance h2) (Matrix.single i j 1) *
+    glCliffordHom (K := K) (n := n) (Matrix.single i j 1) *
       carHighestWeightVector K n = 0 := by
-  rw [glCliffordHom_single (decEq := inferInstance), smul_mul_assoc, Finset.sum_mul]
+  rw [glCliffordHom_single, smul_mul_assoc, Finset.sum_mul]
   have hsum : (∑ k : n,
       carGenerator (K := K) i k * carGenerator k j *
           carHighestWeightVector K n) = 0 := by
@@ -366,7 +364,7 @@ private theorem diagonal_lie_carHighestWeightVector (i : n) :
     ⁅Matrix.single i i (1 : K), carHighestWeightVector K n⁆ =
       ((2 : K)⁻¹ * (1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K))) •
         carHighestWeightVector K n := by
-  rw [car_lie_def, glCliffordHom_single (decEq := inferInstance), smul_mul_assoc]
+  rw [car_lie_def, glCliffordHom_single, smul_mul_assoc]
   have hsum := diagonalSum_mul_carHighestWeightVector (K := K) i
   have hsum' :
       (∑ k : n,
