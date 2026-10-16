@@ -16,7 +16,7 @@ The cyclic cochains of an associative unital algebra, with the Hochschild coboun
 cochain complex.  Its cycles, boundaries, and homology are the cyclic cocycles, cyclic
 coboundaries, and cyclic cohomology.  Algebra homomorphisms act contravariantly by precomposition,
 both on the complex and on cyclic cohomology, using the pullback of cyclic cochains
-`TauCeti.LinearMap.cyclicCochainPullback`.  Maps need not preserve the unit.
+`TauCeti.cyclicCochainPullback`.  Maps need not preserve the unit.
 
 The construction is made in `ModuleCat`, so its homology uses Mathlib's kernel-and-cokernel
 homology API.  In particular, cyclic boundaries are the kernel of the projection from cocycles
@@ -99,7 +99,7 @@ variable {R : Type uR} {A B C M : Type u} [Ring R]
 def NonUnitalAlgHom.cyclicCochainComplexMap (f : A →ₙₐ[R] B) :
     cyclicCochainComplex R B M ⟶ cyclicCochainComplex R A M :=
   CochainComplex.ofHom
-    (fun n ↦ ModuleCat.ofHom (LinearMap.cyclicCochainPullback (f : A →ₗ[R] B) n))
+    (fun n ↦ ModuleCat.ofHom (cyclicCochainPullback (f : A →ₗ[R] B) n))
     fun n ↦ by
       simp only [CochainComplex.of_d]
       exact ModuleCat.hom_ext
@@ -109,7 +109,7 @@ def NonUnitalAlgHom.cyclicCochainComplexMap (f : A →ₙₐ[R] B) :
 @[simp]
 theorem NonUnitalAlgHom.cyclicCochainComplexMap_f (f : A →ₙₐ[R] B) (n : ℕ) :
     (cyclicCochainComplexMap (M := M) f).f n =
-      ModuleCat.ofHom (LinearMap.cyclicCochainPullback (f : A →ₗ[R] B) n) := (rfl)
+      ModuleCat.ofHom (cyclicCochainPullback (f : A →ₗ[R] B) n) := (rfl)
 
 /-- The identity algebra map induces the identity on the cyclic cochain complex. -/
 @[simp]
@@ -126,7 +126,7 @@ theorem NonUnitalAlgHom.cyclicCochainComplexMap_comp (f : A →ₙₐ[R] B) (g :
   intro n
   simp only [cyclicCochainComplexMap_f, HomologicalComplex.comp_f]
   exact ModuleCat.hom_ext
-    (LinearMap.cyclicCochainPullback_comp (f : A →ₗ[R] B) (g : B →ₗ[R] C) n)
+    (cyclicCochainPullback_comp (f : A →ₗ[R] B) (g : B →ₗ[R] C) n)
 
 /-- The map on degree-`n` cyclic cohomology induced contravariantly by an algebra map. -/
 abbrev NonUnitalAlgHom.cyclicCohomologyMap (f : A →ₙₐ[R] B) (n : ℕ) :

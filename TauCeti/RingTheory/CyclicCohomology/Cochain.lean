@@ -39,7 +39,7 @@ identities between faces and the cyclic rotation
 * `TauCeti.hochschildCoboundary`: the Hochschild coboundary `b`.
 * `TauCeti.cyclicCochains`: the submodule of cyclic cochains.
 * `TauCeti.cyclicHochschildCoboundary`: the restriction of `b` to cyclic cochains.
-* `TauCeti.LinearMap.cyclicCochainPullback`: pullback of cyclic cochains along a linear map.
+* `TauCeti.cyclicCochainPullback`: pullback of cyclic cochains along a linear map.
 
 ## Main results
 
@@ -570,7 +570,7 @@ variable {R A B C M : Type*} [Semiring R]
   [AddCommGroup M] [Module R M] [SMulCommClass R R M]
 
 /-- Pullback of a cyclic cochain by precomposition with a linear map. -/
-def LinearMap.cyclicCochainPullback (f : A →ₗ[R] B) (n : ℕ) :
+def cyclicCochainPullback (f : A →ₗ[R] B) (n : ℕ) :
     cyclicCochains R B M n →ₗ[R] cyclicCochains R A M n where
   toFun φ := ⟨(φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compLinearMap (fun _ ↦ f), by
     rw [mem_cyclicCochains_iff]
@@ -581,23 +581,22 @@ def LinearMap.cyclicCochainPullback (f : A →ₗ[R] B) (n : ℕ) :
 
 /-- Pullback evaluates a cochain after applying the linear map to every argument. -/
 @[simp]
-theorem LinearMap.coe_cyclicCochainPullback_apply (f : A →ₗ[R] B) (n : ℕ)
+theorem coe_cyclicCochainPullback_apply (f : A →ₗ[R] B) (n : ℕ)
     (φ : cyclicCochains R B M n) :
-    (LinearMap.cyclicCochainPullback f n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
+    (cyclicCochainPullback f n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
       (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compLinearMap (fun _ ↦ f) := (rfl)
 
 /-- Pullback of cyclic cochains is the identity for the identity map. -/
 @[simp]
-theorem LinearMap.cyclicCochainPullback_id (n : ℕ) :
-    LinearMap.cyclicCochainPullback (M := M) (LinearMap.id : A →ₗ[R] A) n = LinearMap.id := by
+theorem cyclicCochainPullback_id (n : ℕ) :
+    cyclicCochainPullback (M := M) (LinearMap.id : A →ₗ[R] A) n = LinearMap.id := by
   ext φ a
   rfl
 
 /-- Pullback along a composite is the composite of the pullbacks, in contravariant order. -/
-theorem LinearMap.cyclicCochainPullback_comp (f : A →ₗ[R] B) (g : B →ₗ[R] C) (n : ℕ) :
-    LinearMap.cyclicCochainPullback (M := M) (g ∘ₗ f) n =
-      LinearMap.cyclicCochainPullback (M := M) f n ∘ₗ
-        LinearMap.cyclicCochainPullback (M := M) g n := by
+theorem cyclicCochainPullback_comp (f : A →ₗ[R] B) (g : B →ₗ[R] C) (n : ℕ) :
+    cyclicCochainPullback (M := M) (g ∘ₗ f) n =
+      cyclicCochainPullback (M := M) f n ∘ₗ cyclicCochainPullback (M := M) g n := by
   ext φ a
   rfl
 
@@ -607,12 +606,12 @@ theorem NonUnitalAlgHom.cyclicCochainPullback_cyclicHochschildCoboundary
     [IsScalarTower R A A] [SMulCommClass R A A]
     [NonUnitalNonAssocSemiring B] [Module R B]
     [IsScalarTower R B B] [SMulCommClass R B B] (f : A →ₙₐ[R] B) (n : ℕ) :
-    LinearMap.cyclicCochainPullback (M := M) (f : A →ₗ[R] B) (n + 1) ∘ₗ
+    cyclicCochainPullback (M := M) (f : A →ₗ[R] B) (n + 1) ∘ₗ
         cyclicHochschildCoboundary R B M n =
       cyclicHochschildCoboundary R A M n ∘ₗ
-        LinearMap.cyclicCochainPullback (M := M) (f : A →ₗ[R] B) n := by
+        cyclicCochainPullback (M := M) (f : A →ₗ[R] B) n := by
   ext φ a
-  simp only [LinearMap.comp_apply, LinearMap.coe_cyclicCochainPullback_apply,
+  simp only [LinearMap.comp_apply, coe_cyclicCochainPullback_apply,
     coe_cyclicHochschildCoboundary_apply, MultilinearMap.compLinearMap_apply,
     hochschildCoboundary_apply]
   apply Finset.sum_congr rfl
