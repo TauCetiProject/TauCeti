@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.Affinoid.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Radical
-public import TauCeti.RingTheory.Ideal.KrullIntersection
 
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
