@@ -28,10 +28,10 @@ idele-layer invariants in prime-degree layers.
 
 ## Main results
 
-* `exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_prime`:
+* `IntermediateField.exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_prime`:
   a prime-degree finite Galois subextension of `Kˢ/K` has a finite place whose local absolute
   Galois group restricts onto its Galois group.
-* `TauCeti.ClassFieldTheory.exists_surjective_quotient_absoluteGaloisGroupMap_of_degree_prime`:
+* `OpenNormalSubgroup.exists_surjective_quotient_absoluteGaloisGroupMap_of_degree_prime`:
   the corresponding statement for the quotient attached to a prime-degree open normal layer.
 
 ## References
@@ -47,9 +47,11 @@ noncomputable section
 open IsDedekindDomain NumberField
 open scoped AdicCompletionExtension Pointwise
 
-namespace TauCeti.ClassFieldTheory
-
 variable {K : Type} [Field K] [NumberField K]
+
+namespace TauCeti.IntermediateField
+
+open ClassFieldTheory
 
 /-- **A prime-degree Galois extension has a place of full local degree.** If `L/K` is a finite
 Galois subextension of the separable closure and `[L : K]` is prime, then at some finite place
@@ -103,13 +105,24 @@ theorem exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_pr
       (((AlgEquiv.restrictNormalHom L (absoluteGaloisGroupMap τ g)) x : L) :
           SeparableClosure K) = absoluteGaloisGroupMap τ g (x : SeparableClosure K) :=
     AlgEquiv.restrictNormal_commutes (absoluteGaloisGroupMap τ g) L x
-  simp only at hres ⊢
-  rw [hres, show τ.toRingHom (absoluteGaloisGroupMap τ g (x : SeparableClosure K)) =
-      g (τ x) from absoluteGaloisGroupMap_commutes τ g x,
-    hτ_apply, ← AlgHom.restrictNormalHom_commutes τ' g,
-    hg, HeightOneSpectrum.decompositionHom_algebraMap,
-    ← hτ_apply]
-  rfl
+  -- The goal applies `τ` through `τ.toRingHom`; restate it with the algebra-hom coercion used by
+  -- `absoluteGaloisGroupMap_commutes` and `hτ_apply`.
+  change τ _ = τ _
+  calc
+    _ = τ (absoluteGaloisGroupMap τ g (x : SeparableClosure K)) := congrArg τ hres
+    _ = g (τ x) := absoluteGaloisGroupMap_commutes τ g x
+    _ = g (τ' (algebraMap L (w.1.adicCompletion L) x)) := by rw [hτ_apply]
+    _ = τ' (τ'.restrictNormalHom g (algebraMap L (w.1.adicCompletion L) x)) :=
+      (AlgHom.restrictNormalHom_commutes τ' g _).symm
+    _ = τ' (algebraMap L (w.1.adicCompletion L) (σ x)) := by
+      rw [hg, HeightOneSpectrum.decompositionHom_algebraMap]
+    _ = τ (σ x) := (hτ_apply (σ x)).symm
+
+end TauCeti.IntermediateField
+
+namespace TauCeti.OpenNormalSubgroup
+
+open ClassFieldTheory
 
 /-- **A prime-degree layer has a surjective decomposition map at some finite place.** Let `V` be
 an open normal subgroup of `G_K` whose layer has prime degree. There are a finite place `v` and an
@@ -126,7 +139,7 @@ theorem exists_surjective_quotient_absoluteGaloisGroupMap_of_degree_prime
       Nat.card_congr (galClassFieldEquiv V).toEquiv]
     simpa only [NormalLayer.degree_eq_natCard_gal] using hV
   obtain ⟨v, τ, hsurj⟩ :=
-    exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_prime
+    IntermediateField.exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_prime
       (classField K V) hfin
   refine ⟨v, τ, fun q ↦ ?_⟩
   let e : Gal(classField K V/K) ≃* AbsoluteGaloisGroup K ⧸ V.toSubgroup :=
@@ -142,4 +155,4 @@ theorem exists_surjective_quotient_absoluteGaloisGroupMap_of_degree_prime
     _ = e (e.symm q) := congrArg e hg
     _ = q := e.apply_symm_apply q
 
-end TauCeti.ClassFieldTheory
+end TauCeti.OpenNormalSubgroup
