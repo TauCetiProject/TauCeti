@@ -291,6 +291,14 @@ lemma quotient_map_hom {X Y : CochainComplex.Bounded C} (f : X ⟶ Y) :
         (HomotopyCategory.quotient C (.up ℤ)).map f.hom ≫
         eqToHom (quotient_obj_obj C Y).symm := quotient_map_hom_private C f
 
+variable {C} in
+/-- The underlying complex of the class of a bounded complex has the same homotopy class as that
+complex. -/
+lemma quotient_obj_rep_quotient_obj (K : CochainComplex.Bounded C) :
+    (HomotopyCategory.quotient C (.up ℤ)).obj (rep ((quotient C).obj K)) =
+      (HomotopyCategory.quotient C (.up ℤ)).obj K.obj :=
+  (quotient_obj_rep _).trans (quotient_obj_obj C K)
+
 private def quotientCompιIsoAux :
     quotient C ⋙ ι C ≅
       CochainComplex.Bounded.ι C ⋙ HomotopyCategory.quotient C (.up ℤ) :=

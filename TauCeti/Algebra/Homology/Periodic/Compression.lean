@@ -184,8 +184,10 @@ noncomputable def compressionHomotopy (h : Homotopy f g) :
     simp [compression, compressionHomotopyHom, ιCompression,
       GradedObject.ιMapObjOrZero_eq_zero _ _ _ _ hs]
   comm r := by
-    rw [dNext_eq _ (show (ComplexShape.up (ZMod n)).Rel r (r + 1) from rfl),
-      prevD_eq _ (show (ComplexShape.up (ZMod n)).Rel (r - 1) r from sub_add_cancel r 1)]
+    have hr₁ : (ComplexShape.up (ZMod n)).Rel r (r + 1) := by rw [ComplexShape.up_Rel]
+    have hr₀ : (ComplexShape.up (ZMod n)).Rel (r - 1) r := by
+      rw [ComplexShape.up_Rel, sub_add_cancel]
+    rw [dNext_eq _ hr₁, prevD_eq _ hr₀]
     ext i hi
     have hi₁ : ((i + 1 : ℤ) : ZMod n) = r + 1 := by simp [← hi]
     have hi₀ : ((i - 1 : ℤ) : ZMod n) = r - 1 := by simp [← hi]
@@ -194,8 +196,9 @@ noncomputable def compressionHomotopy (h : Homotopy f g) :
       ιCompression_compressionHomotopyHom n h (i + 1) i rfl (r + 1) r hi₁ hi,
       ιCompression_compressionHomotopyHom_assoc n h i (i - 1) (sub_add_cancel i 1) r (r - 1) hi hi₀,
       ιCompression_d n L (i - 1) i (sub_add_cancel i 1) (r - 1) r hi₀ hi]
-    rw [h.comm i, dNext_eq _ (show (ComplexShape.up ℤ).Rel i (i + 1) from rfl),
-      prevD_eq _ (show (ComplexShape.up ℤ).Rel (i - 1) i from sub_add_cancel i 1)]
+    have hi₂ : (ComplexShape.up ℤ).Rel i (i + 1) := by rw [ComplexShape.up_Rel]
+    have hi₃ : (ComplexShape.up ℤ).Rel (i - 1) i := by rw [ComplexShape.up_Rel, sub_add_cancel]
+    rw [h.comm i, dNext_eq _ hi₂, prevD_eq _ hi₃]
     simp only [Preadditive.add_comp, Category.assoc]
 
 /-- On the summand of degree `i`, the compressed homotopy is the homotopy into degree `i - 1`. -/
@@ -307,7 +310,7 @@ noncomputable def quotientCompressionIso
   hom_inv_id := by rw [← quotientCompressionMap_comp, e.hom_inv_id, quotientCompressionMap_id]
   inv_hom_id := by rw [← quotientCompressionMap_comp, e.inv_hom_id, quotientCompressionMap_id]
 
-open HomotopyCategory.Bounded (rep quotient_obj_rep)
+open HomotopyCategory.Bounded (rep quotient_obj_rep quotient_obj_rep_quotient_obj)
 
 variable [HasFiniteCoproducts C]
 
@@ -331,6 +334,13 @@ noncomputable def homotopyCompressionFunctor :
     refine Eq.trans ?_ (quotientCompressionMap_comp n _ _)
     simp
 
+/-- The descended compression sends an object to the class of the compression of its underlying
+complex. -/
+lemma homotopyCompressionFunctor_obj (K : HomotopyCategory.Bounded C) :
+    (homotopyCompressionFunctor n).obj K =
+      (HomotopyCategory.quotient C _).obj (compression n (rep K)) :=
+  rfl
+
 /-- The descended compression acts on a morphism through any representing chain map. -/
 lemma homotopyCompressionFunctor_map {K L : HomotopyCategory.Bounded C} (f : K ⟶ L)
     (g : rep K ⟶ rep L)
@@ -346,12 +356,6 @@ instance : (homotopyCompressionFunctor (C := C) n).Additive where
     -- Morphisms of the full subcategory are added as morphisms of the homotopy category.
     rw [← Preadditive.comp_add, ← Preadditive.add_comp]
     rfl
-
-omit [HasFiniteCoproducts C] in
-private lemma quotient_obj_rep_quotient_obj (K : CochainComplex.Bounded C) :
-    (HomotopyCategory.quotient C _).obj (rep ((HomotopyCategory.Bounded.quotient C).obj K)) =
-      (HomotopyCategory.quotient C _).obj K.obj :=
-  (quotient_obj_rep _).trans (HomotopyCategory.Bounded.quotient_obj_obj C K)
 
 /-- The descended compression restricts along the quotient functor to the compression of bounded
 cochain complexes. -/
