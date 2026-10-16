@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
-import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
 # Direct integration of zero-dimensional forms
@@ -26,22 +25,19 @@ open scoped Manifold
 
 namespace TauCeti
 
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 0)) M]
-  [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 M]
-
-local notation "E" => EuclideanSpace ℝ (Fin 0)
+variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Subsingleton E]
+  [MeasurableSpace E] [BorelSpace E] [TopologicalSpace M] [ChartedSpace E M]
+  [IsManifold 𝓘(ℝ, E) 1 M]
 
 /-- A function supported in a singleton integrates to its value at that point multiplied by
 the tangent orientation sign. Singleton support also supplies compactness. -/
 theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin 0))
-    (g : M → ℝ) (x : M)
+    (b : Module.Basis (Fin 0) ℝ E) (g : M → ℝ) (x : M)
     (hs : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) (RoughForm.ofFunction 𝓘(ℝ, E) g)) ⊆ {x}) :
     integralTopForm o (RoughForm.ofFunction 𝓘(ℝ, E) g) =
-      (Orientation.signBasis (o.orientationAt x)
-        (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis : ℝ) * g x := by
+      (Orientation.signBasis (o.orientationAt x) b : ℝ) * g x := by
   classical
   obtain ⟨l, rfl⟩ := o.exists_lift
-  let b := (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis
   have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ)
       (RoughForm.ofFunction 𝓘(ℝ, E) g)) :=
     isCompact_singleton.of_isClosed_subset (_root_.isClosed_tsupport _) hs
@@ -69,10 +65,9 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
 /-- On a finite zero-dimensional manifold the actual integral is the signed sum of values.
 The signs come from its tangent orientations, and the point masses are normalized to one. -/
 theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M]
-    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin 0)) (g : M → ℝ) :
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin 0)) (b : Module.Basis (Fin 0) ℝ E) (g : M → ℝ) :
     integralTopForm o (RoughForm.ofFunction 𝓘(ℝ, E) g) =
-      ∑ x : M, (Orientation.signBasis (o.orientationAt x)
-        (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis : ℝ) * g x := by
+      ∑ x : M, (Orientation.signBasis (o.orientationAt x) b : ℝ) * g x := by
   classical
   have : T1Space M := ChartedSpace.t1Space E M
   let δ : M → RoughForm 𝓘(ℝ, E) M ℝ 0 := fun x ↦
@@ -90,8 +85,7 @@ theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M]
     isCompact_singleton.of_isClosed_subset
     (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) _) (hs x)
   have hi (x : M) : IntegrableTopForm (δ x) :=
-    (isSmoothForm_zeroDim (n := 0) _).integrableTopForm (hc x)
-      (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis
+    (isSmoothForm_zeroDim (n := 0) _).integrableTopForm (hc x) b
   have he : RoughForm.ofFunction 𝓘(ℝ, E) g = ∑ x : M, δ x := by
     ext y v
     simp [δ, RoughForm.ofFunction_apply, Finset.sum_apply,
@@ -99,7 +93,7 @@ theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M]
   rw [he, integralTopForm_sum o δ Finset.univ (fun x _ ↦ hi x)]
   apply Finset.sum_congr rfl
   intro x _
-  have h := integralTopForm_ofFunction_zeroDim o
+  have h := integralTopForm_ofFunction_zeroDim o b
     (fun y ↦ if y = x then g x else 0) x (hs x)
   simpa only [δ, ite_true] using h
 

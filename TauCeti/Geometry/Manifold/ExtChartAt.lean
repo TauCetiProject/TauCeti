@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Coordinate overlaps, measurability and precompact chart neighborhoods
@@ -251,13 +250,13 @@ theorem _root_.MeasurableSet.isChartMeasurable [MeasurableSpace E] [OpensMeasura
       (I := I) x Set.inter_subset_left
 
 /-- In a zero-dimensional charted manifold every preferred chart source is a singleton. -/
-theorem extChartAt_source_zeroDim {M : Type*} [TopologicalSpace M]
-    [ChartedSpace (EuclideanSpace ℝ (Fin 0)) M] (x : M) :
-    (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x).source = {x} := by
+theorem extChartAt_source_zeroDim {E M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M] (x : M) :
+    (extChartAt 𝓘(ℝ, E) x).source = {x} := by
   ext y
   constructor
   · intro hy
-    exact (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x).injOn hy (mem_extChartAt_source x)
+    exact (extChartAt 𝓘(ℝ, E) x).injOn hy (mem_extChartAt_source x)
       (Subsingleton.elim _ _)
   · rintro rfl
     exact mem_extChartAt_source y
