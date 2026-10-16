@@ -147,7 +147,7 @@ private lemma multiplicity_add_eq_two_mul {n : ℕ} {c : ℕ → T.Component}
   have hnext : T.intersection (c (i + 1)) (c (i + 2)) = W := by
     rw [edge_eq_max_weight hc hcard hn (by omega), hint (i + 1) (by omega) (by omega),
       hint (i + 1 + 1) (by omega) (by omega), max_self]
-  have h := hc.interior_fiber_relation hcard hzero (i := i + 1) (by omega) (by omega)
+  have h := interior_fiber_relation hc.injOn hcard hzero (i := i + 1) (by omega) (by omega)
   rw [Nat.add_sub_cancel, show i + 1 + 1 = i + 2 by omega,
     T.intersection_comm (c (i + 1)) (c i), hedge, hnext,
     hc.intersection_self (i + 1) (by omega), hint (i + 1) (by omega) (by omega)] at h
@@ -171,7 +171,7 @@ private lemma multiplicity_eq_of_left_half {n : ℕ} {c : ℕ → T.Component}
     · subst i; omega
     · rw [hint i (by omega) (by omega)]
   have hone : (T.multiplicity (c 1) : ℤ) = T.multiplicity (c 0) := by
-    have h := hc.left_fiber_relation hcard (by omega) hzero
+    have h := left_fiber_relation hc.injOn hcard (by omega) hzero
     rw [hc.intersection_self 0 (by omega), hedge 0 (by omega)] at h
     apply mul_left_cancel₀ hW.ne'
     linear_combination h + (T.multiplicity (c 0) : ℤ) * hleft
@@ -198,12 +198,12 @@ private lemma multiplicity_eq_two_mul_of_left_double {n : ℕ} {c : ℕ → T.Co
     rw [edge_eq_max_weight hc hcard hn (by omega), hint i hi (by omega),
       hint (i + 1) (by omega) (by omega), max_self]
   have hone : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
-    have h := hc.left_fiber_relation hcard (by omega) hzero
+    have h := left_fiber_relation hc.injOn hcard (by omega) hzero
     rw [hc.intersection_self 0 (by omega), hleft, hedge0] at h
     apply mul_left_cancel₀ (mul_ne_zero two_ne_zero hW.ne')
     linear_combination h
   have htwo : (T.multiplicity (c 2) : ℤ) = 2 * T.multiplicity (c 0) := by
-    have h := hc.interior_fiber_relation hcard hzero (i := 1) (by omega) (by omega)
+    have h := interior_fiber_relation hc.injOn hcard hzero (i := 1) (by omega) (by omega)
     rw [Nat.sub_self, T.intersection_comm (c 1) (c 0), hedge0,
       hc.intersection_self 1 (by omega), hint 1 (by omega) (by omega),
       hedge 1 (by omega) (by omega), hone] at h
@@ -234,7 +234,7 @@ private lemma multiplicity_eq_succ_mul_of_left_equal {n : ℕ} {c : ℕ → T.Co
     · rw [hi0, hleft, max_self]
     · rw [hint i (by omega) (by omega), max_self]
   have hone : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
-    have h := hc.left_fiber_relation hcard (by omega) hzero
+    have h := left_fiber_relation hc.injOn hcard (by omega) hzero
     rw [hc.intersection_self 0 (by omega), hleft, hedge 0 (by omega)] at h
     apply mul_left_cancel₀ hW.ne'
     linear_combination h
@@ -259,7 +259,7 @@ private lemma right_multiplicity_eq_of_right_half {n : ℕ} {c : ℕ → T.Compo
     rw [show n - 2 + 1 = n - 1 by omega] at h
     rw [hint (n - 2) (by omega) (by omega), max_eq_left (by omega)] at h
     exact h
-  have h := hc.right_fiber_relation hcard (by omega) hzero
+  have h := right_fiber_relation hc.injOn hcard (by omega) hzero
   rw [T.intersection_comm (c (n - 1)) (c (n - 2)), hedge,
     hc.intersection_self (n - 1) (by omega)] at h
   apply mul_left_cancel₀ hW.ne'
@@ -279,7 +279,7 @@ private lemma right_multiplicity_eq_of_right_double {n : ℕ} {c : ℕ → T.Com
     rw [show n - 2 + 1 = n - 1 by omega] at h
     rw [hint (n - 2) (by omega) (by omega), hright, max_eq_right (by omega)] at h
     exact h
-  have h := hc.right_fiber_relation hcard (by omega) hzero
+  have h := right_fiber_relation hc.injOn hcard (by omega) hzero
   rw [T.intersection_comm (c (n - 1)) (c (n - 2)), hedge,
     hc.intersection_self (n - 1) (by omega), hright] at h
   apply mul_left_cancel₀ (mul_ne_zero two_ne_zero hW.ne')
@@ -311,12 +311,12 @@ private lemma false_of_left_equal {n : ℕ} {c : ℕ → T.Component}
   rw [show n - 3 + 1 = n - 2 by omega, hint (n - 2) (by omega) (by omega), max_self]
     at hedgeBefore
   rw [show n - 2 + 1 = n - 1 by omega] at hedgeLast
-  have hP := hc.interior_fiber_relation hcard hzero (i := n - 2) (by omega) (by omega)
+  have hP := interior_fiber_relation hc.injOn hcard hzero (i := n - 2) (by omega) (by omega)
   rw [show n - 2 - 1 = n - 3 by omega, show n - 2 + 1 = n - 1 by omega,
     T.intersection_comm (c (n - 2)) (c (n - 3)), hedgeBefore, hedgeLast,
     hc.intersection_self (n - 2) (by omega), hint (n - 2) (by omega) (by omega)] at hP
   rcases hright with hright | hright | hright
-  · have hR := hc.right_fiber_relation hcard (by omega) hzero
+  · have hR := right_fiber_relation hc.injOn hcard (by omega) hzero
     rw [T.intersection_comm (c (n - 1)) (c (n - 2)), hedgeLast,
       hc.intersection_self (n - 1) (by omega), hright, max_self] at hR
     rw [hright, max_self] at hP
