@@ -21,7 +21,7 @@ file shows that reduction of points (`WeierstrassCurve.Affine.Point.reduction`) 
 homomorphism `W(F) →+ W_k(k)`: Silverman VII.2.1 in the case of good reduction, where the subgroup
 `E₀(F)` of points with nonsingular reduction (`WeierstrassCurve.Affine.nonsingularReduction`) is all
 of `W(F)`. Its kernel is the kernel of reduction `E₁(F)`, the points whose `x`-coordinate has a
-pole.
+pole, and it is surjective when `O` is Henselian.
 
 Since the reduced curve is elliptic, every point of it is nonsingular, so every point of `W(F)` has
 nonsingular reduction. The reduction homomorphism is then the homomorphism
@@ -42,6 +42,8 @@ nonsingular reduction. The reduction homomorphism is then the homomorphism
   addition.
 * `WeierstrassCurve.Affine.Point.reductionHom_eq_zero_iff`: the kernel of the reduction
   homomorphism consists of the point at infinity and the points whose `x`-coordinate has a pole.
+* `WeierstrassCurve.Affine.Point.reductionHom_surjective`: if the valuation ring is Henselian, the
+  reduction homomorphism is surjective.
 
 ## References
 
@@ -138,6 +140,13 @@ theorem reductionHom_eq_zero_iff (P : W.Point) :
 theorem reductionHom_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x) :
     reductionHom v (some x y h) = 0 :=
   (reductionHom_eq_zero_iff v _).mpr (.inr (by rwa [xCoord_some]))
+
+/-- **Reduction is onto at good reduction** when the valuation ring is Henselian, for instance
+complete: every point of the reduced elliptic curve is the reduction of a point of `W(F)`. -/
+theorem reductionHom_surjective [HenselianLocalRing v.valuationSubring] :
+    Function.Surjective (reductionHom v (W := W)) := fun Q ↦ by
+  obtain ⟨P, rfl⟩ := W.nonsingularReductionHom_surjective v Q
+  exact ⟨P, reductionHom_apply v _ P.2⟩
 
 end WeierstrassCurve.Affine.Point
 

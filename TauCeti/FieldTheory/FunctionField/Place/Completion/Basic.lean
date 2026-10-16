@@ -290,6 +290,14 @@ theorem residueFieldEquivCompletion_apply_residue (x : P.integers) :
       IsLocalRing.residue P.completionPlace.integers (P.completionIntegersEmbedding x) :=
   IsLocalRing.ResidueField.mapAlgHom_residue P.completionIntegersEmbedding x
 
+/-- Reading the residue of a function regular at `P` back in `F_P` gives its value at `P`. -/
+@[simp]
+theorem residueFieldEquivCompletion_symm_residue_completionIntegersEmbedding (x : P.integers) :
+    P.residueFieldEquivCompletion.symm
+        (IsLocalRing.residue P.completionPlace.integers (P.completionIntegersEmbedding x)) =
+      IsLocalRing.residue P.integers x := by
+  rw [← residueFieldEquivCompletion_apply_residue, AlgEquiv.symm_apply_apply]
+
 /-- Completing a place preserves its degree over the constants. -/
 @[simp]
 theorem degree_completionPlace : P.completionPlace.degree = P.degree := by

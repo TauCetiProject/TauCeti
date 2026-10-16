@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
@@ -17,6 +18,7 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Convergence
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 
@@ -65,6 +67,8 @@ and equal to `u` almost everywhere on `Ω`.
 * `TauCeti.WeaklyHarmonicOn.mono`, `TauCeti.WeaklyHarmonicOn.congr_ae`,
   `TauCeti.WeaklyHarmonicOn.add`, …: weak harmonicity is local, depends only on the a.e. class of
   the function on `Ω`, and is closed under the linear operations.
+* `TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`: weak derivatives of weakly harmonic functions
+  are weakly harmonic.
 * `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`: **Weyl's lemma**.
 * `TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`: a continuous function is harmonic on `Ω` if and
   only if it is weakly harmonic there.
@@ -137,6 +141,20 @@ theorem WeaklyHarmonicOn.const_smul (h : WeaklyHarmonicOn μ Ω w) (c : ℝ) :
   ⟨h.locallyIntegrableOn.smul c, fun φ ↦ by
     simp only [Pi.smul_apply, smul_comm _ c, integral_smul, h.integral_laplacian_smul_eq_zero φ,
       smul_zero]⟩
+
+/-- **Weak derivatives of weakly harmonic functions are weakly harmonic.** If `w` is weakly
+harmonic on `Ω` and `w'` is a weak derivative of `w` in the direction `v` on `Ω`, then `w'` is
+weakly harmonic on `Ω`: the Laplacian commutes with `∂_v` on test functions. -/
+theorem HasWeakLineDerivOn.weaklyHarmonicOn {w' : E → F} {v : E}
+    (h : HasWeakLineDerivOn μ Ω w w' v) (hw : WeaklyHarmonicOn μ Ω w) :
+    WeaklyHarmonicOn μ Ω w' := by
+  refine ⟨h.locallyIntegrableOn_deriv, fun φ ↦ ?_⟩
+  have h' := h.integral_lineDeriv_smul_eq_neg_integral_smul (LineDeriv.laplacianCLM ℝ E 𝓓(Ω, ℝ) φ)
+  simp only [TestFunction.laplacianCLM_apply] at h'
+  rw [← neg_eq_zero, ← h']
+  simp_rw [← TestFunction.lineDerivOp_apply, TestFunction.lineDerivOp_laplacianCLM,
+    TestFunction.laplacianCLM_apply]
+  exact hw.integral_laplacian_smul_eq_zero _
 
 section OpensMeasurable
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Relative.Basic
+public import TauCeti.AlgebraicTopology.Homotopy.Relative.Compression
 public import TauCeti.Topology.Homotopy.Cube.Basic
 
 /-!
@@ -48,10 +48,9 @@ Theorem 4.3.
   null-homotopy in front of `p` along the distinguished direction. Shrinking the glued part gives
   a homotopy through relative cubes from `p` to a cube whose distinguished face is constant, that
   is, to an absolute cube.
-* At `π_{n+1}(X)`: a homotopy through relative cubes `F` from an absolute cube to the constant
-  cube restricts on the distinguished face to a cube in `A`. Sweeping the path of `F` from the
-  direction of the absolute cube to the direction of its face gives a homotopy in `X`, relative to
-  the boundary, between the absolute cube and that cube in `A`.
+* At `π_{n+1}(X)`: by the compression criterion
+  (`TauCeti.RelGenLoop.exists_homotopicRel_of_homotopic_const`), an absolute cube that is
+  trivial as a relative cube is homotopic, relative to the boundary, to a cube in `A`.
 
 ## Main declarations
 
@@ -60,6 +59,9 @@ Theorem 4.3.
 * `TauCeti.RelHomotopyGroup.mem_range_homotopyGroupMap_iff`: exactness at `π_{n+1}(X, a₀)`.
 * `TauCeti.RelHomotopyGroup.mem_range_ofHomotopyGroup_iff`: exactness at `π_{n+1}(X, A, a₀)`.
 * `TauCeti.RelHomotopyGroup.mem_range_boundary_iff`: exactness at `π_n(A, a₀)`.
+* `TauCeti.RelHomotopyGroup.subsingleton_of_injective_of_surjective`: `π_{n+1}(X, A, a₀)` is
+  trivial when `π_n(A, a₀) → π_n(X, a₀)` is injective and `π_{n+1}(A, a₀) → π_{n+1}(X, a₀)` is
+  surjective.
 -/
 
 public section
@@ -84,9 +86,11 @@ def ofGenLoop (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)) : RelGen
   mk ((γ : C(I^(Option N), X.pair.fst)).comp
       ((piOptionEquivProdHomeomorph fun _ : Option N => I).symm : C(I × (I^N), I^(Option N))))
     (fun _ => mem_range.2 ⟨X.basepoint, by
-      simpa using (γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (.inl (.inl rfl)))).symm⟩)
+      simpa using (γ.2 _ <| piOptionEquivProdHomeomorph_symm_mem_boundary <|
+        Cube.mk_zero_mem_prodBoundary _).symm⟩)
     (fun _ _ h => by
-      simpa using γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (h.imp .inr id)))
+      simpa using
+        γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_mem_prodBoundary h)))
 
 @[simp]
 theorem ofGenLoop_apply (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)) (y : I × (I^N)) :
@@ -105,7 +109,7 @@ theorem boundary_ofGenLoop (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoi
     boundary (ofGenLoop γ) = GenLoop.const := by
   ext t
   rw [boundary_apply_eq_iff, ofGenLoop_apply, GenLoop.const_apply]
-  exact γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (.inl (.inl rfl)))
+  exact γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_zero_mem_prodBoundary _))
 
 /-- Regarding absolute cubes as relative cubes commutes with the action of morphisms of based
 pairs. -/
@@ -125,11 +129,11 @@ theorem Homotopic.ofGenLoop {γ δ : Ω^ (Option N) X.pair.fst (X.pair.map X.bas
       map_one_left y := by simp
       prop' r := by
         have h₀ (t : I^N) :=
-          piOptionEquivProdHomeomorph_symm_mem_boundary (s := 0) (t := t) (.inl (.inl rfl))
+          piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_zero_mem_prodBoundary t)
         refine mem_iff.2
           ⟨fun t => ⟨X.basepoint, ((F.eq_fst r (h₀ t)).trans (γ.2 _ (h₀ t))).symm⟩,
             fun s t h => ?_⟩
-        have hb := piOptionEquivProdHomeomorph_symm_mem_boundary (h.imp .inr id)
+        have hb := piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_mem_prodBoundary h)
         exact (F.eq_fst r hb).trans (γ.2 _ hb) }) h
 
 /-! ### Exactness at `π_n(A)` -/
@@ -255,95 +259,32 @@ theorem exists_homotopic_ofGenLoop {p : RelGenLoop N X}
 
 /-! ### Exactness at `π_{n+1}(X)` -/
 
-section Sweep
-
-variable {γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)}
-  (F : (ofGenLoop γ : C(I × (I^N), X.pair.fst)).HomotopyWith const.1 (· ∈ RelGenLoop N X))
-
-/-- The face in `A` swept out by a homotopy `F` through relative cubes from `ofGenLoop γ` to the
-constant cube, as a cube in `A` with the time of `F` as its `none` coordinate. -/
-private noncomputable def sweepFace : Ω^ (Option N) X.pair.snd X.basepoint :=
-  ⟨X.pair.liftSnd ⟨fun y => F (y none, (0, fun k => y (some k))), by fun_prop⟩
-      fun y => by simpa using (mem_iff.1 (F.prop (y none))).1 (fun k => y (some k)),
-    fun y hy => by
-      rw [TopPair.liftSnd_apply_eq_iff, ContinuousMap.coe_mk]
-      rcases Cube.boundary_option_iff.1 hy with (h | h) | h
-      · rw [h, F.apply_zero, coe_coe, ofGenLoop_apply]
-        exact γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (s := 0) (.inl (.inl rfl)))
-      · rw [h, F.apply_one, coe_coe, const_apply]
-      · simpa using (mem_iff.1 (F.prop (y none))).2 0 _ (Or.inr h)⟩
-
-/-- The point of the `(u, s)`-square visited at time `y` along the `w`-th segment from the origin.
-At `w = 0` this is `(0, y)`, at `w = 1` it is `(y, 0)`, and at `y = 1` it lies on the edge `u = 1`
-or `s = 1`, where `F` is constant at the basepoint. -/
-private noncomputable def sweep (w y : I) : I × I :=
-  (projIcc 0 1 zero_le_one (min 1 (2 * (w : ℝ)) * y),
-    projIcc 0 1 zero_le_one (min 1 (2 * (1 - (w : ℝ))) * y))
-
-private theorem continuous_sweep : Continuous fun y : I × I => sweep y.1 y.2 := by
-  unfold sweep
-  fun_prop
-
-private theorem sweep_zero (y : I) : sweep 0 y = (0, y) := by
-  ext <;> simp [sweep]
-
-private theorem sweep_one (y : I) : sweep 1 y = (y, 0) := by
-  ext <;> simp [sweep]
-
-private theorem sweep_apply_zero (w : I) : sweep w 0 = (0, 0) := by
-  ext <;> simp [sweep]
-
-private theorem sweep_apply_one (w : I) : (sweep w 1).1 = 1 ∨ (sweep w 1).2 = 1 := by
-  simp only [sweep, Set.Icc.coe_one, mul_one, projIcc_eq_one]
-  rcases le_total (w : ℝ) (1 / 2) with hw | hw
-  · exact Or.inr (le_min le_rfl (by linarith))
-  · exact Or.inl (le_min le_rfl (by linarith))
-
-/-- Sweeping the path of `F` is a homotopy relative to the boundary from `γ` to the cube in `A`
-swept out by the face. -/
-private theorem homotopic_map_sweepFace :
-    GenLoop.Homotopic γ (GenLoop.map X.pair.map.hom rfl (sweepFace F)) := by
-  have hs : Continuous fun y : I × (I^(Option N)) => sweep y.1 (y.2 none) :=
-    continuous_sweep.comp (f := fun y : I × (I^(Option N)) => (y.1, y.2 none))
-      (by fun_prop)
-  have h₀ (t : I^N) :=
-    piOptionEquivProdHomeomorph_symm_mem_boundary (s := 0) (t := t) (.inl (.inl rfl))
-  refine ⟨{ toFun y := F ((sweep y.1 (y.2 none)).1, ((sweep y.1 (y.2 none)).2,
-              fun k => y.2 (some k)))
-            continuous_toFun := F.continuous.comp ((continuous_fst.comp hs).prodMk
-              ((continuous_snd.comp hs).prodMk (by fun_prop)))
-            map_zero_left y := ?_
-            map_one_left y := ?_
-            prop' w y hy := ?_ }⟩
-  · dsimp only
-    rw [sweep_zero, F.apply_zero, coe_coe, ofGenLoop_apply, GenLoop.coe_coe,
-      ← piOptionEquivProdHomeomorph_apply, Homeomorph.symm_apply_apply]
-  · rw [sweep_one, GenLoop.coe_coe, GenLoop.map_apply]
-    exact (TopPair.map_liftSnd (X := X.pair)
-      ⟨fun y => F (y none, (0, fun k => y (some k))), by fun_prop⟩ _ y).symm
-  · rw [ContinuousMap.coe_mk, γ.2 y hy]
-    dsimp only
-    rcases Cube.boundary_option_iff.1 hy with (h | h) | h
-    · rw [h, sweep_apply_zero, F.apply_zero, coe_coe, ofGenLoop_apply]
-      exact γ.2 _ (h₀ _)
-    · rw [h]
-      rcases sweep_apply_one w with h₁ | h₁
-      · rw [h₁, F.apply_one, coe_coe, const_apply]
-      · rw [h₁]
-        simpa using (mem_iff.1 (F.prop _)).2 1 _ (Or.inl rfl)
-    · simpa using (mem_iff.1 (F.prop _)).2 _ _ (Or.inr h)
-
-end Sweep
-
 /-- If the relative cube of an absolute cube `γ` is homotopic through relative cubes to the
 constant cube, then `γ` is homotopic relative to the boundary to a cube in `A`. -/
 theorem exists_homotopic_map_of_homotopic_const
     {γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)}
     (h : Homotopic (ofGenLoop γ) const) :
     ∃ α : Ω^ (Option N) X.pair.snd X.basepoint,
-      GenLoop.Homotopic γ (GenLoop.map X.pair.map.hom rfl α) :=
-  let ⟨F⟩ := homotopic_iff.1 h
-  ⟨sweepFace F, homotopic_map_sweepFace F⟩
+      GenLoop.Homotopic γ (GenLoop.map X.pair.map.hom rfl α) := by
+  obtain ⟨q, ⟨H⟩, hq⟩ := exists_homotopicRel_of_homotopic_const h
+  let e : C(I^(Option N), I × (I^N)) := piOptionEquivProdHomeomorph fun _ : Option N => I
+  have hb {y : I^(Option N)} (hy : y ∈ Cube.boundary (Option N)) : e y ∈ Cube.prodBoundary N :=
+    piOptionEquivProdHomeomorph_mem_prodBoundary_iff.2 hy
+  have hγ (y : I^(Option N)) : ofGenLoop γ (e y) = γ y := by
+    rw [ofGenLoop_apply]
+    exact congrArg γ (Homeomorph.symm_apply_apply _ y)
+  refine ⟨⟨X.pair.liftSnd (q.comp e) fun y => hq _, fun y hy => ?_⟩, ⟨?_⟩⟩
+  · rw [TopPair.liftSnd_apply_eq_iff, ContinuousMap.comp_apply, ← H.fst_eq_snd (hb hy), coe_coe,
+      hγ]
+    exact γ.2 y hy
+  · exact
+      { toFun y := H (y.1, e y.2)
+        continuous_toFun := by fun_prop
+        map_zero_left y := by simpa using hγ y
+        map_one_left y := by
+          rw [H.apply_one, GenLoop.coe_coe, GenLoop.map_apply]
+          exact (TopPair.map_liftSnd (X := X.pair) (q.comp e) _ y).symm
+        prop' w y hy := by simpa [hγ] using H.eq_fst w (hb hy) }
 
 end RelGenLoop
 
@@ -442,6 +383,24 @@ theorem mem_range_boundary_iff {b : HomotopyGroup N X.pair.snd X.basepoint} :
   induction b using Quotient.inductionOn with | h β => ?_
   obtain ⟨p, hp⟩ := RelGenLoop.exists_boundary_eq (Quotient.exact h)
   exact ⟨mk p, by rw [boundary_mk, hp]⟩
+
+/-- If the inclusion `A ↪ X` induces an injection `π_n(A, a₀) → π_n(X, a₀)` and a surjection
+`π_{n+1}(A, a₀) → π_{n+1}(X, a₀)`, then the relative homotopy set `π_{n+1}(X, A, a₀)` is
+trivial. -/
+theorem subsingleton_of_injective_of_surjective
+    (hinj : Function.Injective
+      (HomotopyGroup.map (N := N) (x := X.basepoint) X.pair.map.hom rfl))
+    (hsurj : Function.Surjective
+      (HomotopyGroup.map (N := Option N) (x := X.basepoint) X.pair.map.hom rfl)) :
+    Subsingleton (RelHomotopyGroup N X) := by
+  suffices h : ∀ a : RelHomotopyGroup N X, a = default from
+    ⟨fun a b => (h a).trans (h b).symm⟩
+  intro a
+  have hb : boundary a = (⟦GenLoop.const⟧ : HomotopyGroup N X.pair.snd X.basepoint) :=
+    hinj <| by rw [homotopyGroupMap_boundary, HomotopyGroup.map_mk, GenLoop.map_const]
+  obtain ⟨c, rfl⟩ := mem_range_ofHomotopyGroup_iff.2 hb
+  obtain ⟨d, rfl⟩ := hsurj c
+  exact ofHomotopyGroup_homotopyGroupMap d
 
 end RelHomotopyGroup
 

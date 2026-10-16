@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.CechNerve
+public import Mathlib.AlgebraicTopology.ExtraDegeneracy
 public import Mathlib.AlgebraicTopology.SimplicialObject.Homotopy
 
 import TauCeti.Data.Fin.Basic
 
 /-!
-# Homotopies between maps of Čech nerves
+# Homotopies between maps of Čech nerves, and maps into a Čech nerve
 
 Let `F G : f ⟶ g` be two morphisms of arrows with the same component `F.right = G.right` on the
 targets. The induced maps of Čech nerves `Arrow.mapCechNerve F` and `Arrow.mapCechNerve G` are
@@ -24,10 +25,21 @@ induced on Čech nerves by a refinement of covers does not depend on the chosen 
 to homotopy. This is the input for `TauCeti.CategoryTheory.cechComplexMapHomotopy`, which shows
 that the maps induced on Čech complexes by two refinement maps are homotopic.
 
+For an object `T`, the morphisms from `T` into the Čech nerve of `f` form an augmented simplicial
+set over the morphisms `T ⟶ f.right` which lift along `f.hom`. It has an extra degeneracy, which
+inserts a chosen lift of the base as a new first factor; this is Mathlib's extra degeneracy of the
+Čech nerve of a split epimorphism, `Arrow.AugmentedCechNerve.extraDegeneracy`, with the section
+chosen separately over each morphism. For the map from the disjoint union of a family of open sets
+and `T` a topological simplex, it shows that the rows of the Čech--singular double complex resolve
+the singular chains subordinate to the family.
+
 ## Main definitions
 
 * `CategoryTheory.Arrow.mapCechNerveHomotopy`: the simplicial homotopy between
   `Arrow.mapCechNerve F` and `Arrow.mapCechNerve G` for `F.right = G.right`.
+* `CategoryTheory.Arrow.augmentedCechNerveMapsFrom`: the morphisms from `T` into the Čech nerve,
+  augmented over the morphisms which lift along `f.hom`.
+* `CategoryTheory.Arrow.AugmentedCechNerveMapsFrom.extraDegeneracy`: its extra degeneracy.
 
 ## References
 
@@ -134,5 +146,158 @@ theorem mapCechNerveHomotopy_h_π {n : ℕ} (i : Fin (n + 1)) (j : Fin (n + 2)) 
 theorem mapCechNerveHomotopy_h_base {n : ℕ} (i : Fin (n + 1)) :
     (mapCechNerveHomotopy F G h).h i ≫ WidePullback.base _ = WidePullback.base _ ≫ F.right :=
   mapCechNerveHomotopyApp_base F G h i
+
+end CategoryTheory.Arrow
+
+namespace CategoryTheory.Arrow
+
+variable {C : Type u} [Category.{v} C] (f : Arrow C)
+  [∀ n : ℕ, HasWidePullback f.right (fun _ : Fin (n + 1) ↦ f.left) fun _ ↦ f.hom]
+
+/-- The morphisms from `T` into the Čech nerve of `f`, augmented over the morphisms
+`T ⟶ f.right` which lift along `f.hom`. The augmentation composes with the projection
+`WidePullback.base`. -/
+@[expose] noncomputable def augmentedCechNerveMapsFrom (T : C) :
+    SimplicialObject.Augmented (Type v) where
+  left := f.cechNerve ⋙ coyoneda.obj (op T)
+  right := {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}
+  hom :=
+    { app n := ↾fun σ ↦ ⟨σ ≫ WidePullback.base _, σ ≫ WidePullback.π _ 0, by simp⟩
+      naturality n m θ := by
+        ext σ
+        simp }
+
+/-- The simplicial operators act on maps into the Čech nerve by postcomposition. -/
+@[simp]
+theorem augmentedCechNerveMapsFrom_left_map (T : C) {n m : SimplexCategoryᵒᵖ} (θ : n ⟶ m)
+    (σ : T ⟶ f.cechNerve.obj n) :
+    (f.augmentedCechNerveMapsFrom T).left.map θ σ = σ ≫ f.cechNerve.map θ :=
+  (rfl)
+
+/-- The augmentation sends a map into the Čech nerve to its composite with the base.
+
+The source and target of `ConcreteCategory.hom` are given explicitly, as `left.obj n` and
+`right`, so that the left-hand side is in simp normal form: elaborated directly they would be
+`(𝟭 _).obj left` and `(const.obj right).obj n`, which simp rewrites first. -/
+@[simp]
+theorem augmentedCechNerveMapsFrom_hom_app_coe (T : C) (n : SimplexCategoryᵒᵖ)
+    (σ : T ⟶ f.cechNerve.obj n) :
+    Subtype.val (ConcreteCategory.hom (X := (f.augmentedCechNerveMapsFrom T).left.obj n)
+      (Y := (f.augmentedCechNerveMapsFrom T).right) ((f.augmentedCechNerveMapsFrom T).hom.app n)
+      σ) = σ ≫ WidePullback.base _ :=
+  (rfl)
+
+namespace AugmentedCechNerveMapsFrom
+
+variable {f} {T : C}
+
+omit [∀ n : ℕ, HasWidePullback f.right (fun _ : Fin (n + 1) ↦ f.left) fun _ ↦ f.hom] in
+/-- A chosen lift along `f.hom` of a morphism which admits one. -/
+private noncomputable def lift (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
+    T ⟶ f.left :=
+  g.2.choose
+
+omit [∀ n : ℕ, HasWidePullback f.right (fun _ : Fin (n + 1) ↦ f.left) fun _ ↦ f.hom] in
+@[reassoc (attr := simp)]
+private theorem lift_comp (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
+    lift g ≫ f.hom = g.1 :=
+  g.2.choose_spec
+
+/-- The section of the augmentation in degree `0`: a liftable morphism goes to its chosen lift. -/
+private noncomputable def sectionFun (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
+    T ⟶ f.cechNerve _⦋0⦌ :=
+  WidePullback.lift g.1 (fun _ ↦ lift g) (by simp)
+
+/-- The extra degeneracy on maps into the Čech nerve: it inserts the chosen lift of the base
+as the new `0`-th factor. -/
+private noncomputable def sFun {n : ℕ} (σ : T ⟶ f.cechNerve _⦋n⦌) : T ⟶ f.cechNerve _⦋n + 1⦌ :=
+  WidePullback.lift (σ ≫ WidePullback.base _)
+    (Fin.cases (lift ⟨σ ≫ WidePullback.base _, σ ≫ WidePullback.π _ 0, by simp⟩)
+      fun i ↦ σ ≫ WidePullback.π _ i)
+    fun i ↦ by cases i using Fin.cases <;> simp
+
+@[reassoc (attr := simp)]
+private theorem sectionFun_π (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g})
+    (i : Fin 1) :
+    sectionFun g ≫ WidePullback.π _ i = lift g :=
+  WidePullback.lift_π _ _ _ _ _
+
+@[reassoc (attr := simp)]
+private theorem sectionFun_base (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
+    sectionFun g ≫ WidePullback.base _ = g.1 :=
+  WidePullback.lift_base _ _ _ _
+
+@[reassoc (attr := simp)]
+private theorem sFun_π_zero {n : ℕ} (σ : T ⟶ f.cechNerve _⦋n⦌) :
+    sFun σ ≫ WidePullback.π _ 0 =
+      lift ⟨σ ≫ WidePullback.base _, σ ≫ WidePullback.π _ 0, by simp⟩ :=
+  WidePullback.lift_π _ _ _ _ _
+
+@[reassoc (attr := simp)]
+private theorem sFun_π_succ {n : ℕ} (σ : T ⟶ f.cechNerve _⦋n⦌) (i : Fin (n + 1)) :
+    sFun σ ≫ WidePullback.π _ i.succ = σ ≫ WidePullback.π _ i :=
+  WidePullback.lift_π _ _ _ _ _
+
+@[reassoc (attr := simp)]
+private theorem sFun_base {n : ℕ} (σ : T ⟶ f.cechNerve _⦋n⦌) :
+    sFun σ ≫ WidePullback.base _ = σ ≫ WidePullback.base _ :=
+  WidePullback.lift_base _ _ _ _
+
+private theorem sFun_zero_comp_δ_one (σ : T ⟶ f.cechNerve _⦋0⦌) :
+    sFun σ ≫ f.cechNerve.δ 1 =
+      sectionFun ⟨σ ≫ WidePullback.base _, σ ≫ WidePullback.π _ 0, by simp⟩ := by
+  apply WidePullback.hom_ext
+  · intro j
+    fin_cases j
+    simp [SimplicialObject.δ, SimplexCategory.δ]
+  · simp [SimplicialObject.δ]
+
+private theorem sFun_comp_δ_zero {n : ℕ} (σ : T ⟶ f.cechNerve _⦋n⦌) :
+    sFun σ ≫ f.cechNerve.δ 0 = σ := by
+  apply WidePullback.hom_ext
+  · intro j
+    simp [SimplicialObject.δ, SimplexCategory.δ]
+  · simp [SimplicialObject.δ]
+
+private theorem sFun_comp_δ_succ {n : ℕ} (i : Fin (n + 2)) (σ : T ⟶ f.cechNerve _⦋n + 1⦌) :
+    sFun σ ≫ f.cechNerve.δ i.succ = sFun (σ ≫ f.cechNerve.δ i) := by
+  apply WidePullback.hom_ext
+  · intro j
+    induction j using Fin.cases <;> simp [SimplicialObject.δ, SimplexCategory.δ]
+  · simp [SimplicialObject.δ]
+
+private theorem sFun_comp_σ_succ {n : ℕ} (i : Fin (n + 1)) (σ : T ⟶ f.cechNerve _⦋n⦌) :
+    sFun σ ≫ f.cechNerve.σ i.succ = sFun (σ ≫ f.cechNerve.σ i) := by
+  apply WidePullback.hom_ext
+  · intro j
+    induction j using Fin.cases <;> simp [SimplicialObject.σ, SimplexCategory.σ]
+  · simp [SimplicialObject.σ]
+
+end AugmentedCechNerveMapsFrom
+
+open AugmentedCechNerveMapsFrom in
+/-- **Maps into a Čech nerve over liftable maps have an extra degeneracy.** -/
+noncomputable def AugmentedCechNerveMapsFrom.extraDegeneracy (T : C) :
+    SimplicialObject.Augmented.ExtraDegeneracy (f.augmentedCechNerveMapsFrom T) where
+  s' := ↾sectionFun
+  s _ := ↾sFun
+  -- The simplices of `f.augmentedCechNerveMapsFrom T` are morphisms into the Čech nerve and its
+  -- simplicial operators act by postcomposition, so each identity is the corresponding identity
+  -- for morphisms into the Čech nerve.
+  s'_comp_ε := by
+    ext g
+    exact Subtype.ext (sectionFun_base g)
+  s₀_comp_δ₁ := by
+    ext σ
+    exact sFun_zero_comp_δ_one σ
+  s_comp_δ₀ n := by
+    ext σ
+    exact sFun_comp_δ_zero σ
+  s_comp_δ n i := by
+    ext σ
+    exact sFun_comp_δ_succ i σ
+  s_comp_σ n i := by
+    ext σ
+    exact sFun_comp_σ_succ i σ
 
 end CategoryTheory.Arrow

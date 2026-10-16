@@ -32,9 +32,9 @@ dimension gives another additive homomorphism,
 whose value at `[M]` is `dimₖ (M ⊗ A)^G`. This packages the semisimple representation-theoretic
 functional used in Euler characteristic calculations.
 
-Induction from a subgroup `S` does not change invariant dimension (`finrank_invariants_indFDRep`),
-so `finrankInvariantsK0` is unchanged by induction on Grothendieck groups
-(`finrankInvariantsK0_indK0`).
+Induction from a subgroup `S` does not change invariant dimension
+(`FDRep.finrank_invariants_indFDRep`), so `finrankInvariantsK0` is unchanged by induction on
+Grothendieck groups (`finrankInvariantsK0_indK0`).
 
 ## References
 
@@ -123,6 +123,6 @@ theorem finrankInvariantsK0_indK0 (S : Subgroup G) [NeZero (Nat.card S : k)]
       (eqToIso (fdRepEquivalence_functor_obj_obj k S V)))
   simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hV, indK0_of_indFDRep,
     finrankInvariantsK0_of]
-  exact_mod_cast finrank_invariants_indFDRep V
+  exact_mod_cast FDRep.finrank_invariants_indFDRep V
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 public import TauCeti.LinearAlgebra.Graded.Insertion
@@ -88,16 +89,9 @@ propositionally equal arities.
   `TauCeti.AInfinity.stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero`: the
   differential graded degeneration.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 0, item "signed graded multilinear and
-tensor-coalgebra infrastructure", specifically "Implement the suspension/unsuspension equivalence
-fixed above.  Prove the general Stasheff component formula and the arity `1`--`4` equations
-verbatim." The sign prescribed by the suspension square is adopted in
-`TauCeti/LinearAlgebra/Graded/Shift.lean`; its tensor power is not yet formalized. This file proves
-the resulting Stasheff comparison and identities. What the roadmap's acceptance test still owes
-is the identification of `(SIₙ)` with
-the arity-`n` component of `b ∘ b = 0` on the bar coalgebra of
-`TauCeti/LinearAlgebra/TensorCoalgebra/`, which needs the graded, signed coderivations of that
-coalgebra.
+The unsuspended terms, sums, and low-arity formulas work over any ring. Commutativity of the
+ground ring is used for the signed multilinear maps in the suspension and one-slot substitution
+comparisons.
 
 ## References
 
@@ -113,55 +107,7 @@ open scoped BigOperators
 open _root_.MultilinearMap
 open TauCeti.MultilinearMap
 
-universe uR uA uN
-
-namespace TauCeti
-
-/-- Evaluating an operation on a tuple whose replaced entry is scaled scales the value: the
-replaced entry sits in a single slot, in which the operation is linear. -/
-theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
-    {R : Type uR} {A : Type uA} [Semiring R] [AddCommMonoid A] [Module R A]
-    [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin u ↦ A) N)
-    (x : ℕ → A) {p : ℕ} (s : ℕ) (hp : p < u) (c : R) (v : A) :
-    evalNat f (replaceBlock x p s (c • v)) = c • evalNat f (replaceBlock x p s v) := by
-  have hupd : ∀ w : A, (fun i : Fin u ↦ replaceBlock x p s w i.1) =
-      Function.update (fun i : Fin u ↦ replaceBlock x p s v i.1) ⟨p, hp⟩ w := by
-    intro w
-    funext i
-    rcases eq_or_ne (i : ℕ) p with h | h
-    · have hi : i = (⟨p, hp⟩ : Fin u) := Fin.ext h
-      subst hi
-      simp
-    · rw [Function.update_of_ne (by simpa [Fin.ext_iff] using h)]
-      rcases lt_or_gt_of_ne h with h' | h'
-      · rw [replaceBlock_of_lt _ _ _ _ h', replaceBlock_of_lt _ _ _ _ h']
-      · rw [replaceBlock_of_gt _ _ _ _ h', replaceBlock_of_gt _ _ _ _ h']
-  rw [evalNat_def, evalNat_def, hupd (c • v), MultilinearMap.map_update_smul, ← hupd v]
-
-end TauCeti
-
-namespace Finset
-
-private theorem Icc_one_two : (Finset.Icc 1 2 : Finset ℕ) = {1, 2} := by decide
-
-private theorem Icc_one_three : (Finset.Icc 1 3 : Finset ℕ) = {1, 2, 3} := by decide
-
-private theorem Icc_one_four : (Finset.Icc 1 4 : Finset ℕ) = {1, 2, 3, 4} := by decide
-
-private theorem sum_Icc_one_two {M : Type*} [AddCommMonoid M] (f : ℕ → M) :
-    ∑ i ∈ Finset.Icc 1 2, f i = f 1 + f 2 := by
-  simp [Icc_one_two]
-
-private theorem sum_Icc_one_three {M : Type*} [AddCommMonoid M] (f : ℕ → M) :
-    ∑ i ∈ Finset.Icc 1 3, f i = f 1 + f 2 + f 3 := by
-  simp [Icc_one_three, add_assoc]
-
-private theorem sum_Icc_one_four {M : Type*} [AddCommMonoid M] (f : ℕ → M) :
-    ∑ i ∈ Finset.Icc 1 4, f i = f 1 + f 2 + f 3 + f 4 := by
-  simp [Icc_one_four, add_assoc]
-
-end Finset
+universe uR uA
 
 namespace TauCeti
 
@@ -171,21 +117,6 @@ open TauCeti
 open _root_.MultilinearMap
 
 variable {R : Type uR} {A : Type uA}
-
-/-! ### Evaluation of suspended operations -/
-
-section Evaluation
-
-variable [CommRing R] [AddCommMonoid A] [Module R A]
-
-@[simp]
-theorem evalNat_suspend {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
-    (d : ℕ → ℤ) (f : MultilinearMap R (fun _ : Fin k ↦ A) N)
-    (x : ℕ → A) :
-    evalNat (suspend d f) x = negOnePowCast R (suspExp k d) • evalNat f x := by
-  rw [suspend_eq_smul, evalNat_smul]
-
-end Evaluation
 
 /-! ### The degrees of a substituted tuple -/
 
@@ -297,7 +228,7 @@ theorem sum_stasheff_reflect {M : Type*} [AddCommMonoid M] (n : ℕ)
 
 section Stasheff
 
-variable [CommRing R] [AddCommMonoid A] [Module R A]
+variable [Ring R] [AddCommMonoid A] [Module R A]
 variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /-- The `(p, s, t)` term of the unsuspended Stasheff identity in arity `p + s + t`: the arity-`s`
@@ -314,35 +245,6 @@ theorem stasheffTerm_def (p s t : ℕ) : stasheffTerm m d x p s t =
     negOnePowCast R ((p : ℤ) + s * t + (2 - s) * ∑ i ∈ Finset.range p, d i) •
       evalNat (m (p + 1 + t))
         (replaceBlock x p s (evalNat (m s) fun j ↦ x (p + j))) := (rfl)
-
-/-- Up to the structural coefficient `(-1) ^ (p + s * t)`, a Stasheff term is the existing signed
-one-slot substitution evaluated after the canonical reindexing of its three input blocks. -/
-theorem stasheffTerm_eq_smul_signedOneSlot (p s t : ℕ) :
-    stasheffTerm m d x p s t =
-      negOnePowCast R ((p : ℤ) + s * t) •
-        (((m (p + 1 + t)).domDomCongr (Fin.oneSlotEquiv p t).symm).signedOneSlot
-          (2 - (s : ℤ)) (fun i : Fin p ↦ d i) (m s))
-            (fun i ↦ x (Fin.blockEquiv p s t i)) := by
-  rw [stasheffTerm_def, MultilinearMap.signedOneSlot_apply,
-    MultilinearMap.koszulSign_eq_negOnePowCast, Fin.sum_univ_eq_sum_range, smul_smul,
-    ← negOnePowCast_add]
-  congr 1
-  rw [evalNat_def, MultilinearMap.domDomCongr_apply]
-  congr 1
-  funext i
-  obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv p t).surjective i
-  rcases j with j | (j | j)
-  · rw [Fin.oneSlotEquiv_inl_val, replaceBlock_of_lt _ _ _ _ j.isLt]
-    simp only [Equiv.symm_apply_apply, Sum.elim_inl, Fin.blockEquiv_inl_val]
-  · rcases j with ⟨⟩
-    rw [Fin.oneSlotEquiv_middle_val, replaceBlock_self]
-    simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl,
-      Fin.blockEquiv_middle_val, evalNat_def]
-  · have hsuffix : p < p + 1 + (j : ℕ) := by omega
-    rw [Fin.oneSlotEquiv_suffix_val, replaceBlock_of_gt _ _ _ _ hsuffix]
-    simp only [Equiv.symm_apply_apply, Sum.elim_inr, Fin.blockEquiv_suffix_val]
-    congr 1
-    omega
 
 /-- A Stasheff term only reads the degrees and inputs below its total arity. -/
 theorem stasheffTerm_congr {e : ℕ → ℤ} {y : ℕ → A} (p s t : ℕ)
@@ -395,6 +297,80 @@ theorem stasheffTerm_of_even {s : ℕ} (hs : Even s) (p t : ℕ) :
     ring
   rw [hexp, negOnePowCast_add, negOnePowCast_two_mul, mul_one]
 
+/-- The left-hand side `(SI_n)` of the arity-`n` Stasheff identity: the sum of
+`TauCeti.AInfinity.stasheffTerm` over the decompositions `n = p + s + t` with `1 ≤ s`. -/
+def stasheffSum (n : ℕ) : A :=
+  ∑ p ∈ Finset.range (n + 1), ∑ s ∈ Finset.Icc 1 (n - p), stasheffTerm m d x p s (n - p - s)
+
+/-- The defining double sum for the unsuspended Stasheff identity. -/
+theorem stasheffSum_def (n : ℕ) : stasheffSum m d x n =
+    ∑ p ∈ Finset.range (n + 1),
+      ∑ s ∈ Finset.Icc 1 (n - p), stasheffTerm m d x p s (n - p - s) := (rfl)
+
+@[simp]
+theorem stasheffSum_zero : stasheffSum m d x 0 = 0 := by
+  simp [stasheffSum_def]
+
+/-- The arity-`n` Stasheff sum only reads the first `n` supplied degrees and inputs. -/
+theorem stasheffSum_congr {e : ℕ → ℤ} {y : ℕ → A} (n : ℕ)
+    (hd : ∀ i < n, d i = e i) (hx : ∀ i < n, x i = y i) :
+    stasheffSum m d x n = stasheffSum m e y n := by
+  rw [stasheffSum_def, stasheffSum_def]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  rw [Finset.mem_range] at hp
+  rw [Finset.mem_Icc] at hs
+  apply stasheffTerm_congr m d x
+  · intro i hi
+    exact hd i (by omega)
+  · intro i hi
+    exact hx i (by omega)
+
+/-- **Naturality of the Stasheff sums.** A linear map which intertwines two families of
+operations intertwines their Stasheff sums. -/
+theorem map_stasheffSum {B : Type*} [AddCommMonoid B] [Module R B] (f : A →ₗ[R] B)
+    (m' : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ B) B)
+    (hf : ∀ (k : ℕ) (y : Fin k → A), f (m k y) = m' k fun i ↦ f (y i)) (n : ℕ) :
+    f (stasheffSum m d x n) = stasheffSum m' d (fun i ↦ f (x i)) n := by
+  simp only [stasheffSum_def, stasheffTerm_def, _root_.map_sum, map_smul, evalNat_def, hf,
+    apply_replaceBlock f]
+
+end Stasheff
+
+section SuspendedStasheff
+
+variable [CommRing R] [AddCommMonoid A] [Module R A]
+variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
+
+/-- Up to the structural coefficient `(-1) ^ (p + s * t)`, a Stasheff term is the existing signed
+one-slot substitution evaluated after the canonical reindexing of its three input blocks. -/
+theorem stasheffTerm_eq_smul_signedOneSlot (p s t : ℕ) :
+    stasheffTerm m d x p s t =
+      negOnePowCast R ((p : ℤ) + s * t) •
+        (((m (p + 1 + t)).domDomCongr (Fin.oneSlotEquiv p t).symm).signedOneSlot
+          (2 - (s : ℤ)) (fun i : Fin p ↦ d i) (m s))
+            (fun i ↦ x (Fin.blockEquiv p s t i)) := by
+  rw [stasheffTerm_def, MultilinearMap.signedOneSlot_apply,
+    MultilinearMap.koszulSign_eq_negOnePowCast, Fin.sum_univ_eq_sum_range, smul_smul,
+    ← negOnePowCast_add]
+  congr 1
+  rw [evalNat_def, MultilinearMap.domDomCongr_apply]
+  congr 1
+  funext i
+  obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv p t).surjective i
+  rcases j with j | (j | j)
+  · rw [Fin.oneSlotEquiv_inl_val, replaceBlock_of_lt _ _ _ _ j.isLt]
+    simp only [Equiv.symm_apply_apply, Sum.elim_inl, Fin.blockEquiv_inl_val]
+  · rcases j with ⟨⟩
+    rw [Fin.oneSlotEquiv_middle_val, replaceBlock_self]
+    simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl,
+      Fin.blockEquiv_middle_val, evalNat_def]
+  · have hsuffix : p < p + 1 + (j : ℕ) := by omega
+    rw [Fin.oneSlotEquiv_suffix_val, replaceBlock_of_gt _ _ _ _ hsuffix]
+    simp only [Equiv.symm_apply_apply, Sum.elim_inr, Fin.blockEquiv_suffix_val]
+    congr 1
+    omega
+
 /-- The `(p, s, t)` term of the suspended Stasheff identity: the same substitution performed with
 the suspended operations, with no structural coefficient and with the Koszul coefficient of the
 degree-one operation `b_s` crossing the `p` suspended prefix inputs, whose degrees are `d i - 1`.
@@ -410,20 +386,6 @@ theorem suspendedStasheffTerm_def (p s t : ℕ) : suspendedStasheffTerm m d x p 
       evalNat (suspend (replaceDeg d p s) (m (p + 1 + t)))
         (replaceBlock x p s
           (evalNat (suspend (fun j ↦ d (p + j)) (m s)) fun j ↦ x (p + j))) := (rfl)
-
-/-- The left-hand side `(SI_n)` of the arity-`n` Stasheff identity: the sum of
-`TauCeti.AInfinity.stasheffTerm` over the decompositions `n = p + s + t` with `1 ≤ s`. -/
-def stasheffSum (n : ℕ) : A :=
-  ∑ p ∈ Finset.range (n + 1), ∑ s ∈ Finset.Icc 1 (n - p), stasheffTerm m d x p s (n - p - s)
-
-/-- The defining double sum for the unsuspended Stasheff identity. -/
-theorem stasheffSum_def (n : ℕ) : stasheffSum m d x n =
-    ∑ p ∈ Finset.range (n + 1),
-      ∑ s ∈ Finset.Icc 1 (n - p), stasheffTerm m d x p s (n - p - s) := (rfl)
-
-@[simp]
-theorem stasheffSum_zero : stasheffSum m d x 0 = 0 := by
-  simp [stasheffSum_def]
 
 /-- The left-hand side of the arity-`n` Stasheff identity in the suspended encoding: the sum of
 `TauCeti.AInfinity.suspendedStasheffTerm` over the same decompositions `n = p + s + t`, with no
@@ -468,21 +430,6 @@ theorem suspendedStasheffTerm_congr {e : ℕ → ℤ} {y : ℕ → A} (p s t : �
   rw [suspendedStasheffTerm_eq_smul, suspendedStasheffTerm_eq_smul, suspExp_congr hd,
     stasheffTerm_congr m d x p s t hd hx]
 
-/-- The arity-`n` Stasheff sum only reads the first `n` supplied degrees and inputs. -/
-theorem stasheffSum_congr {e : ℕ → ℤ} {y : ℕ → A} (n : ℕ)
-    (hd : ∀ i < n, d i = e i) (hx : ∀ i < n, x i = y i) :
-    stasheffSum m d x n = stasheffSum m e y n := by
-  rw [stasheffSum_def, stasheffSum_def]
-  refine Finset.sum_congr rfl fun p hp ↦ ?_
-  refine Finset.sum_congr rfl fun s hs ↦ ?_
-  rw [Finset.mem_range] at hp
-  rw [Finset.mem_Icc] at hs
-  apply stasheffTerm_congr m d x
-  · intro i hi
-    exact hd i (by omega)
-  · intro i hi
-    exact hx i (by omega)
-
 /-- **The suspended and unsuspended Stasheff identities agree up to a global sign.** -/
 @[simp]
 theorem suspendedStasheffSum_eq_smul (n : ℕ) :
@@ -509,22 +456,13 @@ theorem suspendedStasheffSum_eq_zero_iff (n : ℕ) :
     suspendedStasheffSum m d x n = 0 ↔ stasheffSum m d x n = 0 := by
   rw [suspendedStasheffSum_eq_smul, negOnePowCast_smul_eq_zero_iff]
 
-/-- **Naturality of the Stasheff sums.** A linear map which intertwines two families of
-operations intertwines their Stasheff sums. -/
-theorem map_stasheffSum {B : Type*} [AddCommMonoid B] [Module R B] (f : A →ₗ[R] B)
-    (m' : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ B) B)
-    (hf : ∀ (k : ℕ) (y : Fin k → A), f (m k y) = m' k fun i ↦ f (y i)) (n : ℕ) :
-    f (stasheffSum m d x n) = stasheffSum m' d (fun i ↦ f (x i)) n := by
-  simp only [stasheffSum_def, stasheffTerm_def, _root_.map_sum, map_smul, evalNat_def, hf,
-    apply_replaceBlock f]
-
-end Stasheff
+end SuspendedStasheff
 
 /-! ### The identities in arities one to four -/
 
 section LowArity
 
-variable [CommRing R] [AddCommGroup A] [Module R A]
+variable [Ring R] [AddCommGroup A] [Module R A]
 variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /- Keep the implementation-level sign and tuple normalization in this private layer.  The
@@ -581,27 +519,18 @@ private theorem evalNat_replaceBlock_four_three (s : ℕ) (v : A) :
 below.  Keeping them private avoids adding arity-specific combinatorics to the public API. -/
 private theorem stasheffSum_one_terms :
     stasheffSum m d x 1 = stasheffTerm m d x 0 1 0 := by
-  simp only [stasheffSum_def, Nat.reduceAdd, Finset.sum_range_succ, Finset.range_one,
-    Finset.sum_singleton, tsub_zero, Finset.Icc_self, Nat.add_one_sub_one,
-    Order.lt_one_iff, Finset.Icc_eq_empty_of_lt, Finset.sum_empty, add_zero, zero_tsub]
+  simp [stasheffSum_def, Finset.sum_range_succ]
 
 private theorem stasheffSum_two_terms :
     stasheffSum m d x 2 = stasheffTerm m d x 0 1 1 + stasheffTerm m d x 0 2 0
       + stasheffTerm m d x 1 1 0 := by
-  simp only [stasheffSum_def, Nat.reduceAdd, Finset.sum_range_succ, Finset.range_one,
-    Finset.sum_singleton, tsub_zero, Finset.sum_Icc_one_two, Nat.add_one_sub_one,
-    Nat.reduceSub, Finset.Icc_self, Order.lt_one_iff,
-    Finset.Icc_eq_empty_of_lt, Finset.sum_empty, add_zero, zero_tsub]
+  simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top, add_assoc]
 
 private theorem stasheffSum_three_terms :
     stasheffSum m d x 3 = stasheffTerm m d x 0 1 2 + stasheffTerm m d x 0 2 1
       + stasheffTerm m d x 0 3 0 + stasheffTerm m d x 1 1 1
       + stasheffTerm m d x 1 2 0 + stasheffTerm m d x 2 1 0 := by
-  simp only [stasheffSum_def, Nat.reduceAdd, Finset.sum_range_succ, Finset.range_one,
-    Finset.sum_singleton, tsub_zero, Finset.sum_Icc_one_three, Nat.add_one_sub_one,
-    Nat.reduceSub, Finset.sum_Icc_one_two, Finset.Icc_self,
-    Order.lt_one_iff, Finset.Icc_eq_empty_of_lt, Finset.sum_empty, add_zero, zero_tsub]
-  ac_rfl
+  simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top, add_assoc]
 
 private theorem stasheffSum_four_terms :
     stasheffSum m d x 4 = stasheffTerm m d x 0 1 3 + stasheffTerm m d x 0 2 2
@@ -609,12 +538,7 @@ private theorem stasheffSum_four_terms :
       + stasheffTerm m d x 1 1 2 + stasheffTerm m d x 1 2 1
       + stasheffTerm m d x 1 3 0 + stasheffTerm m d x 2 1 1
       + stasheffTerm m d x 2 2 0 + stasheffTerm m d x 3 1 0 := by
-  simp only [stasheffSum_def, Nat.reduceAdd, Finset.sum_range_succ, Finset.range_one,
-    Finset.sum_singleton, tsub_zero, Finset.sum_Icc_one_four, Nat.add_one_sub_one,
-    Nat.reduceSub, Finset.sum_Icc_one_three, Finset.sum_Icc_one_two,
-    Finset.Icc_self, Order.lt_one_iff, Finset.Icc_eq_empty_of_lt, Finset.sum_empty,
-    add_zero, zero_tsub]
-  ac_rfl
+  simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top, add_assoc]
 
 private theorem negOnePowCast_two_normalize : negOnePowCast R 2 = 1 :=
   negOnePowCast_even (by norm_num)

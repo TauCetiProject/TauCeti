@@ -56,11 +56,15 @@ A roadmap under `Completed/` is one the maintainers declared complete against it
 a human decision, recorded separately from any layer assessment; the two are shown side by side
 and neither is inferred from the other.
 
-Topics are a hand assignment (`scripts/roadmap_topics.json`) and are labelled as such, and
+Rows are grouped by the arXiv category each roadmap declares in its own `metadata.toml` in
+TauCetiRoadmap (`topic = "math.NT"`), shown by its name ("Number Theory"); a sub-roadmap is in its
+parent's category, and a roadmap that declares none (or something that is not an arXiv mathematics
+category) is shown under "Unsorted". `scripts/arxiv_categories.py` holds the names.
 `scripts/roadmap_links.json` lists per-roadmap pages elsewhere (a contributor's route map, say)
 that a row should point at.
 
-Pure stdlib, like the other chart generators, so CI needs no pip install.
+Generation uses only the Python stdlib, so CI needs no pip install. The optional
+`--check-snapshot` cache check also requires Node to reuse the browser's schema validator.
 """
 
 from __future__ import annotations
@@ -75,8 +79,67 @@ import re
 import subprocess
 import sys
 
+from arxiv_categories import ARXIV_MATH, read_topic
+
 AREAS_DIR = "TauCetiRoadmap"
 COMPLETED_DIR = "Completed"
+UNSORTED = "Unsorted"
+# Which classification `topic` follows. Written into every snapshot so a published one can be told
+# apart from one made before the switch to arXiv categories: those carry the six hand-assigned
+# topics, and the Pages workflow, which restores the last published static files before it
+# regenerates them, must not publish one under the board's "by arXiv category" label when
+# regeneration fails (see `snapshot_is_current`).
+TOPIC_SCHEME = "arxiv-math"
+def snapshot_is_current(path: pathlib.Path) -> bool:
+    """Does `path` pass the board's schema validation and the current arXiv topic rules?
+
+    Uses the browser's validator under Node, then checks category codes, labels, parent
+    inheritance and the topic list. Returns False for unreadable or invalid data, or if Node
+    is unavailable. This checks structure and classification, not snapshot freshness.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return False
+    if not isinstance(data, dict) or data.get("topic_scheme") != TOPIC_SCHEME:
+        return False
+    validator = pathlib.Path(__file__).resolve().parents[1] / "web/static_files/progress.js"
+    script = """
+const validate = require(process.argv[1]);
+try {
+  const data = JSON.parse(require("fs").readFileSync(0, "utf8"));
+  process.exit(validate(data) === null ? 0 : 1);
+} catch (_) { process.exit(1); }
+"""
+    try:
+        checked = subprocess.run(["node", "-e", script, str(validator)], input=json.dumps(data),
+                                 text=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                 timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if checked.returncode != 0:
+        return False
+    rows = data["rows"]
+    for row in rows:
+        if "arxiv" not in row:
+            return False
+        code = row["arxiv"]
+        if code is not None and (not isinstance(code, str) or code not in ARXIV_MATH):
+            return False
+        if row["topic"] != topic_label(code):
+            return False
+    by_id = {row["id"]: row for row in rows}
+    for row in rows:
+        if row["parent_id"] is not None:
+            parent = by_id.get(row["parent_id"])
+            if parent is None or row["arxiv"] != parent["arxiv"]:
+                return False
+    return data["topics"] == sorted({row["topic"] for row in rows} - {UNSORTED})
+
+
+def topic_label(code: str | None) -> str:
+    """How a category is shown on the board: by its name ("Number Theory"), not its code."""
+    return ARXIV_MATH[code] if code in ARXIV_MATH else UNSORTED
 AREA_PREFIX = "roadmap/"
 EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
 WEEKS = 16
@@ -124,7 +187,8 @@ def layer_headings_with_lines(readme: str) -> list[tuple[str, int]]:
     Worded headings win outright: a roadmap that has `## Part A` also tends to have `### A1`
     sub-headings beneath it, and those are its milestones, not further layers. Short labels
     count only in a roadmap that names its layers that way throughout, and bold bullets only
-    when there are no layer headings at all.
+    when there are no layer headings at all. A heading whose id has already appeared, such as a
+    bare `### Part A` under the worked examples, is a later mention of that layer, not another one.
     """
     def scan(rx):
         return [(m.group(1), readme.count("\n", 0, m.start()) + 1) for m in rx.finditer(readme)]
@@ -132,8 +196,8 @@ def layer_headings_with_lines(readme: str) -> list[tuple[str, int]]:
     out, seen = [], set()
     for h, line in found:
         h = re.sub(r"\s*\([^()]*\)\s*$", "", h).strip().rstrip(".")
-        if h and h not in seen:
-            seen.add(h)
+        if h and layer_id(h) not in seen:
+            seen.add(layer_id(h))
             out.append((h, line))
     return out
 
@@ -404,6 +468,8 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
         "completed": base == COMPLETED_DIR,
         "readme": f"{rel}/README.md",
         "readme_sha": sha256(text),
+        # A sub-roadmap declares no category of its own; read_roadmaps gives it its parent's.
+        "arxiv": None if parent else read_topic(dirpath),
         "layers": layers,
         "layer_ids": [layer_id(t) for t in layers],
         "layer_lines": [line for _, line in with_lines],
@@ -496,6 +562,7 @@ def read_roadmaps(roadmap_dir: pathlib.Path, transitional: dict, links: dict | N
             for sub in sorted(p for p in d.iterdir() if p.is_dir() and (p / "Suggested.lean").is_file()):
                 child = read_roadmap(sub, base, transitional, parent=d.name, inherit=parent_status, links=links)
                 if child is not None:
+                    child["arxiv"] = row["arxiv"]
                     rows.append(child)
     return rows
 
@@ -648,12 +715,11 @@ def git_head(repo_dir: pathlib.Path) -> str | None:
         return None
 
 
-def build(rows: list[dict], prs: list[dict], topics: dict, exported_at: dt.datetime,
+def build(rows: list[dict], prs: list[dict], exported_at: dt.datetime,
           cutoff: dt.datetime, collected_at: str | None, roadmap_head: str | None, prs_source: str) -> dict:
     labels, glob, per = activity(prs, cutoff, known={r["name"] for r in rows if r["parent"] is None})
-    topic_of = topics.get("map", {})
     for row in rows:
-        row["topic"] = topic_of.get(row["parent"] or row["name"], "Unsorted")
+        row["topic"] = topic_label(row.get("arxiv"))
         a = per.get(row["name"]) if row["parent"] is None else None
         if a and (a["total"] or a["open"]):
             since = None
@@ -674,7 +740,10 @@ def build(rows: list[dict], prs: list[dict], topics: dict, exported_at: dt.datet
         "update_due_prs": UPDATE_DUE_PRS,
         "weeks": labels,
         "global": {**glob, "first_merge": min((p["merged_at"] for p in prs if p["merged_at"] and parse_ts(p["merged_at"]) <= cutoff), default=None)},
-        "topics": topics.get("order", []),
+        # The categories in use, by name, in alphabetical order; "Unsorted" is never listed (the board
+        # appends it).
+        "topic_scheme": TOPIC_SCHEME,
+        "topics": sorted({r["topic"] for r in rows} - {UNSORTED}),
         "rows": rows,
     }
 
@@ -682,13 +751,12 @@ def build(rows: list[dict], prs: list[dict], topics: dict, exported_at: dt.datet
 def main(argv=None) -> int:
     here = pathlib.Path(__file__).resolve().parent
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--roadmap-dir", type=pathlib.Path, required=True,
+    p.add_argument("--roadmap-dir", type=pathlib.Path,
                    help="a checkout of TauCetiRoadmap")
     p.add_argument("--repo", default="TauCetiProject/TauCeti",
                    help="repository whose merged PRs carry the roadmap labels")
     p.add_argument("--data", type=pathlib.Path,
                    help="pull-request snapshot to read instead of querying gh")
-    p.add_argument("--topics", type=pathlib.Path, default=here / "roadmap_topics.json")
     p.add_argument("--coverage", type=pathlib.Path, default=here / "roadmap_coverage.json",
                    help="hand-transcribed per-layer states, used only when no coverage marker fits")
     p.add_argument("--links", type=pathlib.Path, default=here / "roadmap_links.json",
@@ -696,11 +764,17 @@ def main(argv=None) -> int:
     p.add_argument("--cutoff", type=parse_ts, default=None,
                    help="count pull requests merged up to this ISO-8601 UTC time (default: the "
                         "snapshot's collection time when it records one, else now)")
-    p.add_argument("--out", type=pathlib.Path, required=True)
+    p.add_argument("--out", type=pathlib.Path)
+    p.add_argument("--check-snapshot", type=pathlib.Path, metavar="FILE",
+                   help="validate FILE against the board schema and current arXiv topic rules "
+                        "(requires Node): exit 0 if valid, 1 otherwise; does not check freshness")
     args = p.parse_args(argv)
+    if args.check_snapshot:
+        return 0 if snapshot_is_current(args.check_snapshot) else 1
+    if args.roadmap_dir is None or args.out is None:
+        p.error("--roadmap-dir and --out are required")
     now = dt.datetime.now(dt.timezone.utc)
 
-    topics = json.loads(args.topics.read_text(encoding="utf-8"))
     transitional = json.loads(args.coverage.read_text(encoding="utf-8")) if args.coverage.is_file() else {}
     links = json.loads(args.links.read_text(encoding="utf-8")) if args.links.is_file() else {}
     rows = read_roadmaps(args.roadmap_dir, transitional, links)
@@ -712,7 +786,7 @@ def main(argv=None) -> int:
     else:
         prs, collected_at, source = fetch_prs(args.repo), iso_z(now), "gh"
     cutoff = args.cutoff or parse_ts(collected_at) or now
-    data = build(rows, prs, topics, now, cutoff, collected_at, git_head(args.roadmap_dir), source)
+    data = build(rows, prs, now, cutoff, collected_at, git_head(args.roadmap_dir), source)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8")

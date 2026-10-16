@@ -48,10 +48,9 @@ the explicit smoothness hypothesis used by `smoothUnipotentCommHopfAlgProperty`.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This supplies the extension-closure step in Layer 5, "Unipotent groups", of the ReductiveGroups
-roadmap. Together with closed-subgroup and product closure, it is part of the subgroup calculus
-needed to construct and compare connected normal unipotent closed subgroups in the unipotent
-radical.
+This supplies the extension-closure step for the unipotent radical. Together with closed-subgroup
+and product closure, it is part of the subgroup calculus needed to construct and compare connected
+normal unipotent closed subgroups in the unipotent radical.
 -/
 
 public section

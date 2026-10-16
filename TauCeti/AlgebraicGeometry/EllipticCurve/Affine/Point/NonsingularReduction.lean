@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Henselian
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Reduction
 -- Proof-only: one Bosma–Lenstra law computes a sum over a local ring and all its residue fields.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.LocalRing
@@ -27,6 +28,11 @@ sequence `0 → E₁(F) → E₀(F) → W_k,ns(k) → 0` (AEC VII.2.1), for an a
 arbitrary integral model. The hypotheses are those of the statement: neither ellipticity of `W`,
 minimality of `W_O`, discreteness of `v` nor completeness of `F` is assumed.
 
+The sequence is also right-exact when `O` is Henselian, for instance complete: the reduction
+homomorphism is then surjective. This is Hensel's lemma applied to the Weierstrass equation in
+whichever variable has a nonvanishing partial derivative at the point of `W_k`
+(`WeierstrassCurve.Affine.exists_nonsingular_residue_eq`).
+
 ## Main definitions
 
 * `WeierstrassCurve.Affine.nonsingularReduction`: the subgroup `E₀(F)` of points whose
@@ -45,6 +51,10 @@ minimality of `W_O`, discreteness of `v` nor completeness of `F` is assumed.
   contained in `E₀(F)`.
 * `WeierstrassCurve.Affine.nonsingularReductionHom_eq_zero_iff`: the kernel of the reduction
   homomorphism is the kernel of reduction `E₁(F)`.
+* `WeierstrassCurve.Affine.mem_ker_nonsingularReductionHom_iff`: the same statement for the kernel
+  subgroup `E₁(F)` of `E₀(F)`.
+* `WeierstrassCurve.Affine.nonsingularReductionHom_surjective`: if the valuation ring is
+  Henselian, the reduction homomorphism is surjective.
 
 ## References
 
@@ -55,7 +65,7 @@ minimality of `W_O`, discreteness of `v` nor completeness of `F` is assumed.
 
 public section
 
-open IsLocalRing
+open IsLocalRing Polynomial
 
 namespace WeierstrassCurve.Affine
 
@@ -121,14 +131,17 @@ noncomputable def nonsingularReduction : AddSubgroup W.Point where
 
 /-- A point lies in `E₀(F)` exactly when its reduction is a nonsingular point of the reduced curve.
 -/
+@[simp]
 theorem mem_nonsingularReduction_iff {P : W.Point} :
     P ∈ W.nonsingularReduction v ↔ ((integralModel v.valuationSubring W).map
       (residue v.valuationSubring)).toProjective.NonsingularLift (Point.reduction v P) :=
   Iff.rfl
 
+-- `high`: tried before `mem_nonsingularReduction_iff`, whose `NonsingularLift` form `simp` cannot
+-- reduce to coordinates.
 /-- An affine point with integral `x`-coordinate has nonsingular reduction exactly when the
 residues of its coordinates form a nonsingular point of the reduced curve. -/
-@[simp]
+@[simp high]
 theorem some_mem_nonsingularReduction_iff {x y : F} (h : W.Nonsingular x y) (hx : v x ≤ 1) :
     Point.some x y h ∈ W.nonsingularReduction v ↔
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toAffine.Nonsingular
@@ -197,12 +210,41 @@ theorem nonsingularReductionHom_some_of_valuation_le_one {x y : F} (h : W.Nonsin
 /-- **The kernel of the reduction homomorphism is the kernel of reduction** `E₁(F)`: a point with
 nonsingular reduction reduces to the point at infinity exactly when it is the point at infinity or
 its `x`-coordinate has a pole. -/
+@[simp]
 theorem nonsingularReductionHom_eq_zero_iff (P : W.nonsingularReduction v) :
     W.nonsingularReductionHom v P = 0 ↔ (P : W.Point) = 0 ∨ 1 < v (P : W.Point).xCoord := by
   rw [← Point.reduction_eq_zero_iff, ← nonsingularReductionHom_toProjective_point,
     ← (Projective.Point.toAffineAddEquiv _).symm.injective.eq_iff, _root_.map_zero,
     Projective.Point.toAffineAddEquiv_symm_apply, Projective.Point.ext_iff,
     Projective.Point.zero_point]
+
+/-- **The kernel of reduction `E₁(F)` as a subgroup of `E₀(F)`**: a point with nonsingular reduction
+lies in the kernel of the reduction homomorphism exactly when it is the point at infinity or its
+`x`-coordinate has a pole. -/
+theorem mem_ker_nonsingularReductionHom_iff (P : W.nonsingularReduction v) :
+    P ∈ (W.nonsingularReductionHom v).ker ↔ (P : W.Point) = 0 ∨ 1 < v (P : W.Point).xCoord := by
+  rw [AddMonoidHom.mem_ker, nonsingularReductionHom_eq_zero_iff]
+
+/-- **Reduction onto the nonsingular points.** If the valuation ring is Henselian, for instance
+complete, every nonsingular point of the reduced curve is the reduction of a point of `W(F)` with
+nonsingular reduction. -/
+theorem nonsingularReductionHom_surjective [HenselianLocalRing v.valuationSubring] :
+    Function.Surjective (W.nonsingularReductionHom v) := by
+  rintro (_ | ⟨a, b, hab⟩)
+  · exact ⟨0, _root_.map_zero _⟩
+  obtain ⟨x₀, rfl⟩ := residue_surjective a
+  obtain ⟨y₀, rfl⟩ := residue_surjective b
+  obtain ⟨x, y, hxy, hx, hy⟩ := exists_nonsingular_residue_eq hab
+  -- the lifted point is a point of `W(F)` with integral coordinates
+  have hF : W.Nonsingular (x : F) (y : F) := by
+    have := ((integralModel v.valuationSubring W).toAffine.map_nonsingular
+      (IsFractionRing.injective v.valuationSubring F) x y).mpr hxy
+    rwa [← baseChange_integralModel_eq v.valuationSubring W]
+  have hxv : v (x : F) ≤ 1 := (v.mem_valuationSubring_iff _).mp x.2
+  refine ⟨⟨Point.some _ _ hF, (some_mem_nonsingularReduction_iff v hF hxv).mpr
+    (hx ▸ hy ▸ hab)⟩, ?_⟩
+  rw [nonsingularReductionHom_some_of_valuation_le_one v hF hxv (hx ▸ hy ▸ hab)]
+  simp only [hx, hy]
 
 end WeierstrassCurve.Affine
 

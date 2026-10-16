@@ -15,8 +15,8 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 For a partial linear map `A` on a module over a ring, `LinearPMap.IsResolventAt`
 says that a continuous linear map inverts `lambda • I - A` on the domain of `A`. The inverse
 is unique, and its existence defines `LinearPMap.resolventSet` and the chosen map
-`LinearPMap.resolvent`. These notions require only a topology on the module, with no norm or
-continuity assumptions on addition or scalar multiplication.
+`LinearPMap.resolvent`. Its complement is `LinearPMap.spectrum`. These notions require only a
+topology on the module, with no norm or continuity assumptions on addition or scalar multiplication.
 
 Over a noncommutative ring, the scalar expression `x ↦ lambda • x - A x` need not be linear.
 The predicate still requires its inverse to be linear over the full scalar ring; a parameter
@@ -420,5 +420,20 @@ theorem _root_.ContinuousLinearMap.resolvent_toPMap_top
 end ContinuousOperator
 
 end LinearPMap
+
+namespace TauCeti
+
+variable {𝕜 E : Type*} [Ring 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+
+/-- The spectrum of a partial linear map consists of the scalars whose shifts do not admit
+continuous linear two-sided inverses. -/
+def _root_.LinearPMap.spectrum (A : E →ₗ.[𝕜] E) : Set 𝕜 := A.resolventSetᶜ
+
+/-- Membership in the partial-operator spectrum is failure of resolvent membership. -/
+@[simp]
+theorem _root_.LinearPMap.mem_spectrum_iff (A : E →ₗ.[𝕜] E) (z : 𝕜) :
+    z ∈ A.spectrum ↔ z ∉ A.resolventSet := (Iff.rfl)
+
+end TauCeti
 
 end

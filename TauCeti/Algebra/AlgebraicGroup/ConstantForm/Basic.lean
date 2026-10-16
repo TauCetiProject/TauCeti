@@ -22,7 +22,9 @@ X C Xᵀ - C
 — `X` the localized generic matrix of `GL n`, `C` read in the coordinate Hopf algebra through
 the structure morphism — generate a Hopf ideal in the coordinate Hopf algebra of `GL n`. Its
 quotient represents the closed subgroup scheme of `GL n` preserving `C`. On every commutative
-`R`-algebra `A`, its points are the invertible matrices `M` with `M C Mᵀ = C`.
+`R`-algebra `A`, its points are the invertible matrices `M` with `M C Mᵀ = C`. This is the row
+convention of Mathlib's `Matrix.symplecticGroup`; the column convention `Mᵀ C M = C` defines the
+same group for `C = 1` and `C = Jₘ`, but not for a general `C`.
 
 Nothing is assumed of `C`: it is an arbitrary square matrix over the base, not required to be
 invertible, symmetric, alternating, or nondegenerate, and the construction includes `n = 0` and
@@ -79,20 +81,16 @@ a relation between `C` and `Cᵀ`.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §2.3, where the orthogonal and symplectic groups are
-  introduced as the subgroups of `GLₙ` cut out by the entries of a form relation.
+* J. S. Milne, *Algebraic Groups* (2017), 2.10, the group-valued functor
+  `R ↦ {A ∈ GLₙ(R) | AᵗCA = C}` (in the column convention).
 * W. C. Waterhouse, *Introduction to Affine Group Schemes* (1979), Chapter 1, for such groups
   as representable functors on commutative rings.
 * The Stacks Project, [Tag 022W](https://stacks.math.columbia.edu/tag/022W), for the ambient
   general linear group scheme.
 
 The matrix form of the closure computations is standard, and the framing identities above are
-not adapted from either reference. The proofs themselves are those of the merged worked
-examples `TauCeti.Symplectic` (for `C = Jₘ`) and `TauCeti.Orthogonal` (for `C = 1`),
-generalized here to an arbitrary `C`: the declaration order and proof plan are theirs, and
-those two files now consume this one rather than repeating it. `TauCeti.Symplectic` recorded
-the generalization in its own module docstring — that the computations "apply verbatim to
-`X C Xᵀ - C` for any constant matrix `C`" — before it was carried out.
+not adapted from either reference. The proofs generalize those for `TauCeti.Symplectic`
+(`C = Jₘ`) and `TauCeti.Orthogonal` (`C = 1`), which specialize this file.
 -/
 
 public section
@@ -129,7 +127,7 @@ theorem relationMatrix_def :
   rw [relationMatrix]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range fun ij : Fin n × Fin n => relationMatrix R n C ij.1 ij.2
 
 /-- Every entry of the relation matrix is a defining relation. -/
@@ -189,11 +187,11 @@ private theorem relationMatrix_map_comul :
 ideals of the span of the relations. -/
 private theorem comul_relationMatrix_mem (i j : Fin n) :
     Coalgebra.comul (R := R) (relationMatrix R n C i j) ∈
-      HopfIdeal.leftTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+      Ideal.leftTensorIdeal (R := R)
+          (B := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) ⊔
-        HopfIdeal.rightTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+        Ideal.rightTensorIdeal (R := R)
+          (A := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
   have h := congrFun (congrFun (relationMatrix_map_comul R n C) i) j
   rw [Matrix.map_apply, Bialgebra.comulAlgHom_apply] at h
@@ -201,45 +199,32 @@ private theorem comul_relationMatrix_mem (i j : Fin n) :
   refine Ideal.add_mem _ (Ideal.mem_sup_right ?_) (Ideal.mem_sup_left ?_)
   · refine Matrix.mul_mul_apply_mem (fun k l => ?_) _ _ i j
     rw [Matrix.map_apply]
-    exact HopfIdeal.includeRight_mem_rightTensorIdeal (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n)
+    exact Ideal.includeRight_mem_rightTensorIdeal (R := R)
+      (A := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C k l))
   · rw [Matrix.map_apply]
-    exact HopfIdeal.includeLeft_mem_leftTensorIdeal (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n)
+    exact Ideal.includeLeft_mem_leftTensorIdeal (R := R)
+      (B := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
 
 /-- The antipode image of the relation matrix is the negative of the relation matrix framed by
-the bundled inverse: `X⁻¹ C (X⁻¹)ᵀ - C = -(X⁻¹ (X C Xᵀ - C) (X⁻¹)ᵀ)`. -/
+the inverse matrix: `X⁻¹ C (X⁻¹)ᵀ - C = -(X⁻¹ (X C Xᵀ - C) (X⁻¹)ᵀ)`. -/
 private theorem relationMatrix_map_antipode :
     (relationMatrix R n C).map
         (HopfAlgebra.antipodeAlgHom (R := R)
           (A := GeneralLinear.coordinateHopfAlgebra R n)) =
       -((GeneralLinear.genericMatrix R n)⁻¹ * relationMatrix R n C *
         ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ) := by
-  have ht : (GeneralLinear.genericMatrix R n)ᵀ * ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ = 1 := by
-    rw [← Matrix.transpose_mul,
-      Matrix.nonsing_inv_mul _ (GeneralLinear.isUnit_det_genericMatrix R n),
-      Matrix.transpose_one]
   have hkey : (GeneralLinear.genericMatrix R n)⁻¹ * relationMatrix R n C *
       ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ =
       C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) -
         (GeneralLinear.genericMatrix R n)⁻¹ *
           C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
           ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ := by
+    have h := GeneralLinear.isUnit_det_genericMatrix R n
     rw [relationMatrix, Matrix.mul_sub, Matrix.sub_mul]
-    congr 1
-    calc (GeneralLinear.genericMatrix R n)⁻¹ *
-          (GeneralLinear.genericMatrix R n *
-            C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
-            (GeneralLinear.genericMatrix R n)ᵀ) * ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ
-        = (GeneralLinear.genericMatrix R n)⁻¹ * GeneralLinear.genericMatrix R n *
-            C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
-            ((GeneralLinear.genericMatrix R n)ᵀ * ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ) := by
-          simp only [Matrix.mul_assoc]
-      _ = C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) := by
-          rw [Matrix.nonsing_inv_mul _ (GeneralLinear.isUnit_det_genericMatrix R n), ht,
-            Matrix.one_mul, Matrix.mul_one]
+    simp only [Matrix.mul_assoc, ← Matrix.transpose_mul, Matrix.nonsing_inv_mul _ h,
+      Matrix.transpose_one, Matrix.mul_one, Matrix.nonsing_inv_mul_cancel_left _ _ h]
   rw [relationMatrix_map R n C, GeneralLinear.map_antipode_genericMatrix, hkey, neg_sub]
 
 /-- The antipode carries every defining relation into the span of the relations. -/
@@ -364,7 +349,7 @@ theorem inclusion_eq_eqToHom_comp_hopfSpec_map :
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R n C).op ≫
         eqToHom (GeneralLinear.groupScheme_def R n).symm := by
   rw [inclusion_def, GeneralLinear.hopfIdealInclusion_def,
-    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def, eqToIso.hom]
+    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def]
   simp only [eqToHom_refl, Category.id_comp]
 
 /-- The inclusion into the named general linear group scheme is a closed immersion. -/
@@ -403,12 +388,12 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 point. `CommHopfAlgCat.quotientPointsHom` is by definition the points map induced by the
 quotient morphism, so this is `coordinateMap_def` read on points; it is stated here to glue
 the two applied forms at a value algebra. -/
--- Not `@[simp]`: `CommHopfAlgCat.mapPointsFunctor_app_apply` already rewrites the left-hand
+-- Not `@[simp]`: `CommHopfAlgCat.Hom.mapPointsFunctor_app_apply` already rewrites the left-hand
 -- side to its composition form before this lemma could apply.
 theorem mapPointsFunctor_coordinateMap_app
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C)
       (CommAlgCat.of R A)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap R n C)).app (CommAlgCat.of R A) f =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R n C)).app (CommAlgCat.of R A) f =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n C)
         (CommAlgCat.of R A) f := by

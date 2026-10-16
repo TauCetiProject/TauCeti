@@ -25,9 +25,6 @@ an equivalence by `HopfIdeal.counitBialgEquivOfAugmentationEqBot`. The result is
 with the exact connectedness and finite-generation assumptions used in the proof, then
 specialized to geometrically connected finite-type commutative Hopf algebras.
 
-This is the zero-dimensional quotient input for the equal-dimension containment argument in
-Layer 5, "The unipotent radical", of the ReductiveGroups roadmap.
-
 ## Main declarations
 
 * `TauCeti.HopfIdeal.augmentation_eq_bot_iff_finrank_lie_eq_zero`: for a connected coordinate

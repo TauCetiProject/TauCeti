@@ -69,6 +69,8 @@ one, which is not proved here (see the Roadmap section below).
   and the signed exchange of the raising and lowering families.
 * `TauCeti.serreLift_eq_id`: lifting the generators along their own Serre system is the identity.
 * `TauCeti.lieSpan_serreGenerators_eq_top`: the generators generate the presented algebra.
+* `TauCeti.lieSpan_serreE_union_serreF_eq_top`: the raising and lowering generators alone generate
+  the presented algebra.
 
 ## Roadmap
 
@@ -539,5 +541,18 @@ theorem lieSpan_serreGenerators_eq_top :
   refine eq_top_iff.2 fun y _ => ?_
   obtain ⟨x, rfl⟩ := serreMk_surjective R CM y
   exact hle (by rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial)
+
+/-- The raising and lowering generators of `Matrix.ToLieAlgebra R CM` generate it: the Cartan
+generators are their brackets `Hᵢ = ⁅Eᵢ, Fᵢ⁆`. -/
+theorem lieSpan_serreE_union_serreF_eq_top :
+    LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
+      (Set.range (serreE R CM) ∪ Set.range (serreF R CM)) = ⊤ := by
+  rw [eq_top_iff, ← lieSpan_serreGenerators_eq_top R CM, LieSubalgebra.lieSpan_le]
+  rintro _ ((⟨i, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩)
+  · rw [← lie_serreE_serreF_self R CM i]
+    exact LieSubalgebra.lie_mem _ (LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩))
+      (LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩))
+  · exact LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩)
+  · exact LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩)
 
 end TauCeti

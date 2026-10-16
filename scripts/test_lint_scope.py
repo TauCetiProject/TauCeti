@@ -113,7 +113,7 @@ class LintScopeTest(unittest.TestCase):
             github_env = d / "github_env"
             full_env = {**os.environ, "PATH": f"{gh.parent}:{os.environ['PATH']}",
                         "FAKE_GH_RESPONSES": str(d / "responses.json"),
-                        "GITHUB_ENV": str(github_env), "GH_TOKEN": "x", "REPO": "o/r",
+                        "GITHUB_ENV": str(github_env), "RUNNER_TEMP": str(d), "GH_TOKEN": "x", "REPO": "o/r",
                         "SCOPE_REPO": str(checkout), **env}
             command = ["bash", str(SCRIPT), str(d / "scope")]
             if policy:
@@ -124,6 +124,7 @@ class LintScopeTest(unittest.TestCase):
                 event = env.get("EVENT", "repository_dispatch")
                 run = (run.replace("${{ env.IS_BATCH }}", "true" if event in self.BATCH_EVENTS else "false")
                           .replace("${{ github.event_name }}", event)
+                          .replace("${{ github.event.action }}", "tauceti-bors-staging" if event == "repository_dispatch" else "")
                           .replace("${{ github.repository }}", "o/r")
                           .replace("${{ steps.pr.outputs.num }}", "12"))
                 (d / "gate").symlink_to(ROOT, target_is_directory=True)
@@ -173,6 +174,38 @@ class LintScopeTest(unittest.TestCase):
             self.PR_ENV,
             {self.PR_COMPARE: {"files": [f("modified", "lake-manifest.json")]},
              "repos/o/r/pulls/12": pr()}), [])
+
+    def test_approved_dispatch_uses_pr_scope_without_squash_commit_titles(self):
+        for files, expected in (
+            ([f("modified", ".github/workflows/pick-runner.yml"),
+              f("modified", "scripts/test_pick_runner.py")], []),
+            ([f("modified", "TauCeti/A.lean")], ["TauCeti.A"]),
+        ):
+            with self.subTest(files=files):
+                self.assertEqual(self.run_scope(
+                    dict(self.PR_ENV, EVENT="repository_dispatch", IS_BATCH="false"),
+                    {self.PR_COMPARE: {"files": files,
+                                       "commits": [{"commit": {"message": "ordinary PR commit"}}]},
+                     "repos/o/r/pulls/12": pr()}), expected)
+
+    def test_approved_dispatch_keeps_full_lint_policy_and_missing_metadata_fallback(self):
+        env = dict(self.PR_ENV, EVENT="repository_dispatch", IS_BATCH="false")
+        for metadata in (pr(labels=("full-lint",)), pr(head_ref="lint-repair/main")):
+            with self.subTest(metadata=metadata):
+                self.assertIsNone(self.run_scope(
+                    env, {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A.lean")]},
+                          "repos/o/r/pulls/12": metadata}))
+        self.assertIsNone(self.run_scope(env, {}))
+
+    def test_dispatch_without_explicit_pr_classification_keeps_batch_fallback(self):
+        for classification in ("true", "", "invalid"):
+            with self.subTest(classification=classification):
+                self.assertIsNone(self.run_scope(
+                    dict(self.PR_ENV, EVENT="repository_dispatch", IS_BATCH=classification),
+                    {f"repos/o/r/compare/{SHA_A}...{SHA_B}": {
+                        "files": [f("modified", ".github/workflows/pick-runner.yml")],
+                        "commits": [{"commit": {"message": "ordinary PR commit"}}],
+                        "total_commits": 1}}))
 
     def test_pull_request_without_commits_lints_everything(self):
         for missing in ("BASE", "HEAD", "HEAD_REPO"):
@@ -420,6 +453,7 @@ class PrBuildWiringTest(unittest.TestCase):
         self.assertLess(names.index("Checkout the exact candidate head (untrusted contents, no credentials)"), guard)
         scope_step = job["steps"][scope]
         self.assertEqual(scope_step["env"]["SCOPE_REPO"], "pr")
+        self.assertEqual(scope_step["env"]["IS_BATCH"], "${{ env.IS_BATCH }}")
         sandbox = next(i for i, n in enumerate(names) if "Build exact candidate under bwrap" in n)
         self.assertLess(scope, sandbox)
         run = job["steps"][sandbox]["run"]

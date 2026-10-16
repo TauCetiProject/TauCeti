@@ -39,14 +39,8 @@ The span is valued in `LieSubmodule R H M` rather than in `Submodule R M`: the w
 `H`-submodules by construction, so this records for free that `⁅H, -⁆` preserves the span.
 
 The bracket lemma is the only place an ambient Lie algebra `L` appears; everything else is stated
-for an abstract nilpotent `H` acting on `M`.
-
-## References
-
-This file is the elementary weight-space infrastructure that the "Borel and the nilradicals" item
-of Layer 3 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` and the highest
-weight modules above it are built from: `TauCeti.rootSpaceSpan`, hence the two nilradicals, is its
-instance at `M = L`.
+for an abstract nilpotent `H` acting on `M`. `TauCeti.rootSpaceSpan`, and hence the two nilradicals,
+is the instance `M = L`.
 -/
 
 public section

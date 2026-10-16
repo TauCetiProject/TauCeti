@@ -10,16 +10,14 @@ public import Mathlib.Topology.Homotopy.HomotopyGroup
 /-!
 # Functoriality of homotopy groups
 
-Mathlib defines the generalized loop space `Ω^ N X x` and the quotient
-`HomotopyGroup N X x`, but it does not yet provide the map induced by a based continuous
-map. This file supplies that small API: postcomposition sends generalized loops based at
-`x` to generalized loops based at `y`, descends to homotopy classes, respects identity and
-composition, handles constant maps and subsingleton targets, and is a monoid homomorphism in
-positive dimensions.
+Mathlib defines the generalized loop space `Ω^ N X x` and the quotient `HomotopyGroup N X x`, and
+this file supplies the map induced by a based continuous map: postcomposition sends generalized
+loops based at `x` to generalized loops based at `y`, descends to homotopy classes, respects
+identity and composition, handles constant maps and subsingleton targets, and is a monoid
+homomorphism in positive dimensions.
 
-This is a prerequisite for the higher-homotopy API requested in the Tau Ceti universal-covers
-roadmap, Stage 3 item 9, before proving that a covering map induces isomorphisms on
-`π_n` for `n ≥ 2`.
+The covering-map isomorphisms on `π_n` for `n ≥ 2`
+(`TauCeti.Topology.Homotopy.HomotopyGroup.Covering`) are stated with it.
 -/
 
 public section
@@ -200,6 +198,13 @@ theorem map_comp_apply (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y)
   -- both sides are now `⟦GenLoop.map (g.comp f) _ p⟧` and differ only in the basepoint proof
   -- carried by `GenLoop.map`, which is proof-irrelevant.
   rfl
+
+/-- Composition law, as an equality of functions: the composite of the maps induced on homotopy
+classes is the map induced by the composite continuous map. -/
+@[simp]
+theorem map_comp_map (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y) :
+    map (N := N) g hg ∘ map f hf = map (g.comp f) (by simp [hf, hg]) :=
+  funext (map_comp_apply g hg f hf)
 
 /-- The induced map `HomotopyGroup.map` depends only on the underlying continuous map, not on the
 chosen proof of the basepoint equation. -/

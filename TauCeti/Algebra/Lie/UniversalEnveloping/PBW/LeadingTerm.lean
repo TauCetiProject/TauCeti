@@ -40,11 +40,6 @@ an arbitrary permutation.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwMonomial_sub_insertionSort_mem_pbwFiltrationPrevious`:
   every word has the same leading term as its ordered version.
 
-This is the first part of the associated-graded-map target in Layer 3, "PBW, a substantial
-sub-project", of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. The next stage
-uses these permutation-invariant leading terms to define the map from `SymmetricAlgebra R L` to the
-associated graded of `U(L)`.
-
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter V, §17.

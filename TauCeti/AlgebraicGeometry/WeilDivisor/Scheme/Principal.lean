@@ -29,11 +29,10 @@ The main results are:
 * `SchemeWeilDivisor.isEffective_add_principalDivisor_iff`: the coefficientwise criterion for a
   divisor plus a principal divisor to be effective.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "principal divisors" in
-"Divisors on a curve". It completes the global step explicitly left open by
+This file completes the global step left open by
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
-`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and the decomposition of a closed subset
-of a Noetherian space into finitely many irreducible closed subsets. No formalization is vendored.
+`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and the decomposition of a closed subset of a
+Noetherian space into finitely many irreducible closed subsets. No formalization is vendored.
 -/
 
 public section

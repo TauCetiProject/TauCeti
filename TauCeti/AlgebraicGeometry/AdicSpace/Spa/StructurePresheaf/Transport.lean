@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChan
 
 import TauCeti.Topology.Sheaves.Functors
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
-import TauCeti.RingTheory.Huber.OpenIdeal
 
 /-!
 # Transporting the sheaf property along isomorphisms and completion
@@ -97,7 +96,9 @@ through `ψ`, then base change along `φ`. -/
 private noncomputable def presentationLimitLeg (j : PresentationIndex (P := P') Bplus V) :
     presentationLimit (P := P) Aplus U ⟶ j.pres.completionLocObj :=
   presentationLimitπToPresentation Aplus U
-      (j.map ψ hψ (fun _ ↦ isOpen_map_of_continuous_inverse hφ hφψ hψφ) hplus' hVU) ≫
+      (j.map ψ hψ (fun I hI ↦ by
+        rw [Ideal.map_eq_image_of_surjective ψ (Function.RightInverse.surjective hψφ)]
+        exact (IsOpenMap.of_inverse hφ hψφ hφψ) I hI) hplus' hVU) ≫
     Presentation.mapHom φ hφ _ j.pres (by rw [PresentationIndex.map_pres_den, hφψ])
       (fun t ht ↦ by
         classical

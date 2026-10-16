@@ -42,9 +42,6 @@ action laws, and identifies its action on the prime spectrum.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This is translation infrastructure for Layer 3, "Identity component `G°` and component group
-`π₀(G)`", of the ReductiveGroups roadmap.
 -/
 
 public section

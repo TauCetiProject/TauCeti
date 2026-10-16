@@ -10,7 +10,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel
+import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Approximation
 import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 import TauCeti.Probability.Moments.Pi

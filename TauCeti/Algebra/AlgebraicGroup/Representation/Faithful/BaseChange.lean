@@ -32,8 +32,7 @@ morphism survives base change.
 * J. S. Milne, *Algebraic Groups* (2017), Remarks 4.1 and 4.8.
 
 This transports the faithful representation used to prove base-change invariance of geometric
-unipotence, the next scalar-extension step for the unipotent radical in Layer 5 of the
-ReductiveGroups roadmap.
+unipotence.
 -/
 
 public section

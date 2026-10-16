@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.MvPolynomial
-public import Mathlib.Topology.Instances.Real.Lemmas
+public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Order.IntermediateValue
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
@@ -44,7 +44,7 @@ open MvPolynomial Set
 
 /-- A polynomial whose order of vanishing is the same at all points of a preconnected set `S` is
 sign-invariant on `S`. -/
-theorem IsPreconnected.signInvariant_eval_of_orderAt_eq {σ R : Type*} [CommRing R]
+theorem IsPreconnected.signInvariant_eval_of_orderAt_eq {σ R : Type*} [CommSemiring R]
     [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [IsTopologicalSemiring R]
     {p : MvPolynomial σ R} {S : Set (σ → R)} (hS : IsPreconnected S)
     (h : ∀ x ∈ S, ∀ y ∈ S, p.orderAt x = p.orderAt y) :

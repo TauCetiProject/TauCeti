@@ -92,7 +92,7 @@ theorem exists_rankOne_form_equivalent_at_places (d : SquareClassGroup K)
         RegularFormClass.hasseInvariant_eq_one_of_rank_le_one (by simp)]
   · intro w
     let _ : Invertible (2 : ℂ) := invertibleOfNonzero two_ne_zero
-    exact (_root_.QuadraticForm.equivalent_iff_finrank_eq_of_isAlgClosed
+    exact (_root_.QuadraticForm.equivalent_iff_finrank_eq_of_isSepClosed
       (Q.atComplexEmbedding w) (C w)
       (_root_.QuadraticForm.Nondegenerate.atComplexEmbedding hQ w) (hC w)).mpr (by simp)
 

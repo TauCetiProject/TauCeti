@@ -41,9 +41,8 @@ Tau Ceti already supplies the locally connected instance.
 * The Stacks Project, Tag 00EE, for the idempotent--clopen correspondence.
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a, for the identity-component construction.
 
-This ordinary connected-component construction is a commutative-algebra prerequisite for the
-geometric identity component in Layer 3 of the ReductiveGroups roadmap; it does not itself assert
-compatibility with base change.
+This construction supplies the commutative-algebra model for the identity component of an affine
+algebraic group. Compatibility with base change requires separate arguments.
 -/
 
 public section
@@ -281,16 +280,9 @@ noncomputable def primeSpectrumQuotientHomeomorphConnectedComponent
 /-- The spectrum of the component quotient is connected. -/
 noncomputable instance connectedSpace_quotient_connectedComponentIdeal
     (x : PrimeSpectrum R) :
-    ConnectedSpace (PrimeSpectrum (R ⧸ connectedComponentIdeal x)) := by
-  let e := primeSpectrumQuotientHomeomorphConnectedComponent x
-  let _ : ConnectedSpace (connectedComponent x) :=
-    Subtype.connectedSpace isConnected_connectedComponent
-  exact
-    { isPreconnected_univ := by
-        rw [← e.isPreconnected_image]
-        simpa using (PreconnectedSpace.isPreconnected_univ :
-          IsPreconnected (Set.univ : Set (connectedComponent x)))
-      toNonempty := e.toEquiv.nonempty_congr.mpr inferInstance }
+    ConnectedSpace (PrimeSpectrum (R ⧸ connectedComponentIdeal x)) :=
+  (primeSpectrumQuotientHomeomorphConnectedComponent x).connectedSpace_iff.mpr
+    (Subtype.connectedSpace isConnected_connectedComponent)
 
 /-- The quotient by the component ideal is nontrivial. -/
 noncomputable instance nontrivial_quotient_connectedComponentIdeal

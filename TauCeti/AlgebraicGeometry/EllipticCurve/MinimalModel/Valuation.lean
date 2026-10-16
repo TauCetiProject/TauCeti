@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.LocalDiscriminant
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Valuation
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 
 /-!
 # The valuation of the local minimal discriminant
@@ -30,8 +31,12 @@ measured.
 
 ## Main results
 
+* `WeierstrassCurve.integralModel_minimal_Δ_ne_zero`: the integral discriminant of the chosen
+  minimal equation is nonzero.
 * `WeierstrassCurve.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul`: any minimal
   equation in the orbit computes the valuation.
+* `WeierstrassCurve.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange`: the
+  same for a minimal equation given over `R`.
 * `WeierstrassCurve.valuation_Δ_eq_exp_neg_of_isMinimal_smul`: the multiplicative valuation of the
   discriminant of such an equation is `exp (-v (Δ_min))`.
 * `WeierstrassCurve.localMinimalDiscriminant_eq_maximalIdeal_pow`: the local minimal discriminant
@@ -60,7 +65,7 @@ variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 /-- **The integral discriminant of the chosen minimal equation is nonzero.** This is the
 element-level form of `localMinimalDiscriminant_ne_bot`, useful for removing the `∞` value from
 the additive valuation. -/
-private theorem integralModel_minimal_Δ_ne_zero (W : WeierstrassCurve K) [W.IsElliptic] :
+theorem integralModel_minimal_Δ_ne_zero (W : WeierstrassCurve K) [W.IsElliptic] :
     ((W.minimal R).integralModel R).Δ ≠ 0 := by
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
   simpa [W.localMinimalDiscriminant_eq_span_Δ R C hC] using W.localMinimalDiscriminant_ne_bot R
@@ -98,6 +103,16 @@ theorem localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul
   rw [localMinimalDiscriminantValuation_eq_addVal]
   exact (addVal_eq_iff_associated _ _).mpr
     (associated_integralModel_Δ_of_isMinimal_smul R _ hminimal)
+
+/-- **A minimal equation over `R` in the variable-change orbit computes the local minimal
+discriminant valuation.** This is `localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul`
+for an equation given over `R` rather than as an integral equation over `K`. -/
+theorem localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange
+    (W : WeierstrassCurve K) [W.IsElliptic] {W' : WeierstrassCurve R}
+    [IsMinimal R (W'.baseChange K)] (D : VariableChange K) (hD : D • W = W'.baseChange K) :
+    (W.localMinimalDiscriminantValuation R : ENat) = addVal R W'.Δ := by
+  rw [W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul R D hD,
+    integralModel_baseChange_self]
 
 /-- **A minimal model has discriminant of valuation `exp (-v (Δ_min))`.** This reads the
 local minimal discriminant valuation off the multiplicative valuation that Mathlib's minimality
@@ -177,7 +192,7 @@ theorem ord_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
   have hΔ : W'.Δ ≠ 0 := by
     rw [← hD, variableChange_Δ]
     exact mul_ne_zero (pow_ne_zero _ D.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero
-  apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ hΔ).2
+  apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ ((v.valuation K).ne_zero_iff.mpr hΔ)).2
   rw [← v.valuation_maximalIdeal_localizationAtPrime W'.Δ]
   exact W.valuation_Δ_eq_exp_neg_of_isMinimal_smul _ D hD
 
@@ -196,7 +211,8 @@ theorem localMinimalDiscriminantValuation_le_ord_Δ (v : HeightOneSpectrum O)
   have hmin := W.valuation_Δ_eq_exp_neg_of_isMinimal_smul
     (Localization.AtPrime v.asIdeal) C hC
   simp only [v.valuation_maximalIdeal_localizationAtPrime] at hle hmin
-  rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin,
+  rw [Valuation.valuation_eq_exp_neg_ord _
+      ((v.valuation K).ne_zero_iff.mpr W.isUnit_Δ.ne_zero), hmin,
     WithZero.exp_le_exp] at hle
   omega
 
@@ -219,7 +235,8 @@ theorem ord_Δ_eq_localMinimalDiscriminantValuation_iff_isMinimal (v : HeightOne
       (Localization.AtPrime v.asIdeal) C hC
     simp only [v.valuation_maximalIdeal_localizationAtPrime] at hmin
     simp only [v.valuation_maximalIdeal_localizationAtPrime]
-    rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin, WithZero.exp_inj]
+    rw [Valuation.valuation_eq_exp_neg_ord _
+      ((v.valuation K).ne_zero_iff.mpr W.isUnit_Δ.ne_zero), hmin, WithZero.exp_inj]
     exact congrArg Neg.neg h
   · intro hmin
     have := hmin -- expose minimality to instance synthesis for the ord-level comparison

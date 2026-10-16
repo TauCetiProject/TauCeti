@@ -35,13 +35,6 @@ Mathlib's `IsIsotypicOfType`, `IsIsotypic`, and `isotypicComponent` through thos
 * `LieModule.isotypicComponent_eq_top_iff_of_ι_smul`: the top-component criterion for an
   irreducible type.
 
-## Roadmap
-
-This is the universal-enveloping-algebra bridge for Layer 6 of the Lie highest-weight roadmap.
-It deliberately stops before highest-weight classification: consumers such as Kostant-form
-modules can state that all irreducible Lie submodules are equivalent without rebuilding ring-level
-isotypic machinery.
-
 ## References
 
 * `Mathlib/RingTheory/SimpleModule/Isotypic.lean` (Junyan Xu): the module-theoretic isotypic

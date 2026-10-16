@@ -40,11 +40,22 @@ when `re ⟪A x, x⟫ ≤ a ‖x‖²` on the subspace, and in `[a, ∞)` exactl
 `a ‖x‖² ≤ re ⟪A x, x⟫` there. The implication from the form bound to the spectral containment
 needs neither symmetry, invariance, nor finite dimensionality.
 
+Perturbation bounds for spectral subspaces assume that the spectral data being compared are
+separated. Three forms of this hypothesis are named here, all stated over restricted point spectra
+of two operators `A` on `E` and `B` on `F`: a *separation* `δ ≤ |μ - ν|` with no ordering, an
+*ordered gap* `μ + δ ≤ ν`, and an *interval/exterior gap*, where the spectrum of `A` lies in
+`[a, b]` and that of `B` outside `(a - δ, b + δ)`. The latter two imply the first.
+
 ## Main definitions
 
 * `Module.End.restrictedPointSpectrum A U`: the real eigenvalues of `A` with an eigenvector in `U`.
 * `Module.End.PointSpectrumIn A U Ω`: the restricted point spectrum of `A` on `U` lies in `Ω`.
 * `Module.End.pointSpectralSubspace A Ω`: the sum of the eigenspaces of `A` at eigenvalues in `Ω`.
+* `Module.End.PointSpectraSeparated A U B V δ`: the restricted point spectra of `A` on `U` and of
+  `B` on `V` are at distance at least `δ`.
+* `Module.End.PointOrderedGap A U B V δ`: the first lies below the second with margin `δ`.
+* `Module.End.PointIntervalExteriorGap A U B V a b δ`: the first lies in `[a, b]` and the second
+  outside `(a - δ, b + δ)`.
 
 ## Main statements
 
@@ -61,6 +72,21 @@ needs neither symmetry, invariance, nor finite dimensionality.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
+* `LinearMap.IsSymmetric.norm_apply_sub_smul_le_of_pointSpectrumIn`,
+  `LinearMap.IsSymmetric.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn`: on a
+  finite-dimensional invariant subspace, if every eigenvalue lies within `r` of `c` then
+  `‖T x - c x‖ ≤ r ‖x‖`, and if every eigenvalue is at distance at least `r` from `c` then
+  `r ‖x‖ ≤ ‖T x - c x‖`.
+* `Module.End.PointOrderedGap.pointSpectraSeparated`,
+  `Module.End.PointIntervalExteriorGap.pointSpectraSeparated`: ordered and interval/exterior gaps
+  are separations.
+* `Module.End.PointOrderedGap.of_pointSpectrumIn`,
+  `Module.End.PointOrderedGap.of_re_inner_apply_self`: containment on opposite sides of a cut, or
+  opposite quadratic-form bounds, give an ordered gap.
+* `Module.End.exists_pos_pointSpectraSeparated_iff_disjoint`: in finite dimension, two restricted
+  point spectra are separated by a positive distance exactly when they are disjoint.
+* `LinearMap.IsSymmetric.eigenvalues_ne_eigenvalues_of_disjoint`: for symmetric `A` and `B` with
+  disjoint point spectra, eigenbasis eigenvalues of `A` and of `B` are distinct.
 
 ## References
 
@@ -404,5 +430,287 @@ theorem pointSpectrumIn_Ici_iff (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ 
     A.PointSpectrumIn U (Set.Ici a) ↔ ∀ x ∈ U, a * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜 :=
   ⟨fun h _ hx ↦ hA.le_re_inner_apply_self_of_pointSpectrumIn hU h hx,
     Module.End.pointSpectrumIn_Ici_of_le_re_inner_apply_self⟩
+
+end LinearMap.IsSymmetric
+
+/-! ### Norm bounds -/
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  {T : Module.End 𝕜 E} {U : Submodule 𝕜 E} [FiniteDimensional 𝕜 U] {c r : ℝ}
+
+/-- `‖T x - c x‖²` and `‖x‖²` in an ordered eigenbasis of a symmetric `T`. -/
+private theorem sq_norm_apply_sub_smul_eq_sum [FiniteDimensional 𝕜 E] (hT : T.IsSymmetric) (c : ℝ)
+    (x : E) :
+    ‖T x - (c : 𝕜) • x‖ ^ 2 = ∑ i, (hT.eigenvalues rfl i - c) ^ 2 *
+      ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 ∧
+    ‖x‖ ^ 2 = ∑ i, ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 := by
+  have hw (i) : (T - (c : 𝕜) • LinearMap.id : E →ₗ[𝕜] E) (hT.eigenvectorBasis rfl i) =
+      ((hT.eigenvalues rfl i - c : ℝ) : 𝕜) • hT.eigenvectorBasis rfl i := by
+    simp [sub_smul]
+  have h := LinearMap.sq_norm_apply_eq_sum_of_eigenbasis _ _ hw x
+  simp only [RCLike.norm_ofReal, sq_abs] at h
+  refine ⟨by simpa using h, ?_⟩
+  rw [← (hT.eigenvectorBasis rfl).repr.norm_map, EuclideanSpace.norm_sq_eq]
+
+/-- **Norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant under a
+symmetric operator `T`, and every eigenvalue of `T` on `U` lies within `r` of `c`, then
+`‖T x - c x‖ ≤ r ‖x‖` for every `x ∈ U`. -/
+theorem norm_apply_sub_smul_le_of_pointSpectrumIn (hT : T.IsSymmetric) (hU : ∀ x ∈ U, T x ∈ U)
+    (h : T.PointSpectrumIn U (Metric.closedBall c r)) {x : E} (hxU : x ∈ U) :
+    ‖T x - (c : 𝕜) • x‖ ≤ r * ‖x‖ := by
+  set hB := hT.restrict_invariant hU
+  suffices ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ ≤ r * ‖(⟨x, hxU⟩ : U)‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : |hB.eigenvalues rfl i - c| ≤ r := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
+  -- Without eigenvalues the space is trivial; otherwise `r ≥ 0`.
+  have hr : 0 ≤ r * ‖x‖ := by
+    rcases isEmpty_or_nonempty (Fin (Module.finrank 𝕜 U)) with hι | hι
+    · rw [Finset.univ_eq_empty, Finset.sum_empty, sq_eq_zero_iff, norm_eq_zero] at hx
+      simp [hx]
+    · obtain ⟨i⟩ := hι
+      exact mul_nonneg ((abs_nonneg _).trans (hev i)) (norm_nonneg x)
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) hr two_ne_zero).mp ?_
+  rw [hTx, mul_pow, hx, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+  simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg _) (hev i) 2
+
+/-- **Lower norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant
+under a symmetric operator `T`, and every eigenvalue of `T` on `U` is at distance at least `r`
+from `c`, then `r ‖x‖ ≤ ‖T x - c x‖` for every `x ∈ U`. -/
+theorem mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn (hT : T.IsSymmetric)
+    (hU : ∀ x ∈ U, T x ∈ U) (h : T.PointSpectrumIn U (Metric.ball c r)ᶜ) {x : E} (hxU : x ∈ U) :
+    r * ‖x‖ ≤ ‖T x - (c : 𝕜) • x‖ := by
+  rcases le_or_gt r 0 with hr | hr
+  · exact (mul_nonpos_of_nonpos_of_nonneg hr (norm_nonneg x)).trans (norm_nonneg _)
+  set hB := hT.restrict_invariant hU
+  suffices r * ‖(⟨x, hxU⟩ : U)‖ ≤ ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : r ≤ |hB.eigenvalues rfl i - c| := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
+  refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp ?_
+  rw [hTx, mul_pow, hx, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+  simpa only [sq_abs] using pow_le_pow_left₀ hr.le (hev i) 2
+
+end LinearMap.IsSymmetric
+
+/-! ### Spectral separation -/
+
+namespace Module.End
+
+section Separation
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [AddCommGroup F] [Module 𝕜 F]
+  {A : Module.End 𝕜 E} {B : Module.End 𝕜 F} {U U' : Submodule 𝕜 E} {V V' : Submodule 𝕜 F}
+  {a b δ δ' : ℝ}
+
+/-- `A.PointSpectraSeparated U B V δ` says that the restricted point spectra of `A` on `U` and of
+`B` on `V` are at distance at least `δ`: `δ ≤ |μ - ν|` for every eigenvalue `μ` of `A` carried by
+`U` and every eigenvalue `ν` of `B` carried by `V`. No ordering of the two spectra is implied. -/
+def PointSpectraSeparated (A : Module.End 𝕜 E) (U : Submodule 𝕜 E) (B : Module.End 𝕜 F)
+    (V : Submodule 𝕜 F) (δ : ℝ) : Prop :=
+  ∀ μ ∈ A.restrictedPointSpectrum U, ∀ ν ∈ B.restrictedPointSpectrum V, δ ≤ |μ - ν|
+
+/-- Restatement of `Module.End.PointSpectraSeparated` in terms of the restricted point
+spectra. -/
+theorem pointSpectraSeparated_iff :
+    A.PointSpectraSeparated U B V δ ↔
+      ∀ μ ∈ A.restrictedPointSpectrum U, ∀ ν ∈ B.restrictedPointSpectrum V, δ ≤ |μ - ν| :=
+  Iff.rfl
+
+/-- Eigenvalues carried by separated subspaces are at distance at least `δ`. -/
+theorem PointSpectraSeparated.le_abs_sub (h : A.PointSpectraSeparated U B V δ) {μ ν : ℝ}
+    (hμ : μ ∈ A.restrictedPointSpectrum U) (hν : ν ∈ B.restrictedPointSpectrum V) :
+    δ ≤ |μ - ν| :=
+  h μ hμ ν hν
+
+/-- Separation is symmetric in the two operators. -/
+theorem PointSpectraSeparated.symm (h : A.PointSpectraSeparated U B V δ) :
+    B.PointSpectraSeparated V A U δ :=
+  fun ν hν μ hμ ↦ abs_sub_comm μ ν ▸ h μ hμ ν hν
+
+/-- Separation is symmetric in the two operators. -/
+theorem pointSpectraSeparated_comm :
+    A.PointSpectraSeparated U B V δ ↔ B.PointSpectraSeparated V A U δ :=
+  ⟨.symm, .symm⟩
+
+/-- Separation passes to smaller subspaces and smaller distances. -/
+theorem PointSpectraSeparated.mono (h : A.PointSpectraSeparated U B V δ) (hU : U' ≤ U)
+    (hV : V' ≤ V) (hδ : δ' ≤ δ) : A.PointSpectraSeparated U' B V' δ' :=
+  fun μ hμ ν hν ↦
+    hδ.trans (h μ (restrictedPointSpectrum_mono hU hμ) ν (restrictedPointSpectrum_mono hV hν))
+
+/-- Restricted point spectra lying in sets `Ω` and `Ω'` at distance at least `δ` from each other
+are separated by `δ`. -/
+theorem PointSpectraSeparated.of_pointSpectrumIn {Ω Ω' : Set ℝ} (hA : A.PointSpectrumIn U Ω)
+    (hB : B.PointSpectrumIn V Ω') (hΩ : ∀ μ ∈ Ω, ∀ ν ∈ Ω', δ ≤ |μ - ν|) :
+    A.PointSpectraSeparated U B V δ :=
+  fun μ hμ ν hν ↦ hΩ μ (hA hμ) ν (hB hν)
+
+/-- Restricted point spectra separated by a positive distance are disjoint. -/
+theorem PointSpectraSeparated.disjoint (h : A.PointSpectraSeparated U B V δ) (hδ : 0 < δ) :
+    Disjoint (A.restrictedPointSpectrum U) (B.restrictedPointSpectrum V) :=
+  Set.disjoint_left.mpr fun μ hμ hν ↦ (h μ hμ μ hν).not_gt (by simpa using hδ)
+
+/-- Point-spectral subspaces selected by sets `Ω` and `Ω'` at distance at least `δ` from each other
+carry point spectra separated by `δ`. -/
+theorem pointSpectraSeparated_pointSpectralSubspace (A : Module.End 𝕜 E) (B : Module.End 𝕜 F)
+    {Ω Ω' : Set ℝ} (hΩ : ∀ μ ∈ Ω, ∀ ν ∈ Ω', δ ≤ |μ - ν|) :
+    A.PointSpectraSeparated (A.pointSpectralSubspace Ω) B (B.pointSpectralSubspace Ω') δ :=
+  .of_pointSpectrumIn (A.pointSpectrumIn_pointSpectralSubspace Ω)
+    (B.pointSpectrumIn_pointSpectralSubspace Ω') hΩ
+
+/-- `A.PointOrderedGap U B V δ` says that the restricted point spectrum of `A` on `U` lies below
+that of `B` on `V` with margin `δ`: `μ + δ ≤ ν` for every eigenvalue `μ` of `A` carried by `U` and
+every eigenvalue `ν` of `B` carried by `V`. -/
+def PointOrderedGap (A : Module.End 𝕜 E) (U : Submodule 𝕜 E) (B : Module.End 𝕜 F)
+    (V : Submodule 𝕜 F) (δ : ℝ) : Prop :=
+  ∀ μ ∈ A.restrictedPointSpectrum U, ∀ ν ∈ B.restrictedPointSpectrum V, μ + δ ≤ ν
+
+/-- Restatement of `Module.End.PointOrderedGap` in terms of the restricted point spectra. -/
+theorem pointOrderedGap_iff :
+    A.PointOrderedGap U B V δ ↔
+      ∀ μ ∈ A.restrictedPointSpectrum U, ∀ ν ∈ B.restrictedPointSpectrum V, μ + δ ≤ ν :=
+  Iff.rfl
+
+/-- An eigenvalue of `A` carried by `U` lies at least `δ` below every eigenvalue of `B`
+carried by `V`. -/
+theorem PointOrderedGap.add_le (h : A.PointOrderedGap U B V δ) {μ ν : ℝ}
+    (hμ : μ ∈ A.restrictedPointSpectrum U) (hν : ν ∈ B.restrictedPointSpectrum V) : μ + δ ≤ ν :=
+  h μ hμ ν hν
+
+/-- An ordered gap passes to smaller subspaces and smaller margins. -/
+theorem PointOrderedGap.mono (h : A.PointOrderedGap U B V δ) (hU : U' ≤ U) (hV : V' ≤ V)
+    (hδ : δ' ≤ δ) : A.PointOrderedGap U' B V' δ' := fun μ hμ ν hν ↦ by
+  have := h μ (restrictedPointSpectrum_mono hU hμ) ν (restrictedPointSpectrum_mono hV hν)
+  linarith
+
+/-- **An ordered gap is a separation.** If the restricted point spectrum of `A` on `U` lies below
+that of `B` on `V` with margin `δ`, the two are separated by `δ`. -/
+theorem PointOrderedGap.pointSpectraSeparated (h : A.PointOrderedGap U B V δ) :
+    A.PointSpectraSeparated U B V δ := fun μ hμ ν hν ↦
+  (le_sub_iff_add_le'.mpr (h μ hμ ν hν)).trans ((le_abs_self _).trans_eq (abs_sub_comm ν μ))
+
+/-- **Opposite-side containment gives an ordered gap.** If the restricted point spectrum of `A`
+on `U` lies in `(-∞, a]` and that of `B` on `V` lies in `[a + δ, ∞)`, then they are ordered with
+margin `δ`. -/
+theorem PointOrderedGap.of_pointSpectrumIn (hA : A.PointSpectrumIn U (Set.Iic a))
+    (hB : B.PointSpectrumIn V (Set.Ici (a + δ))) : A.PointOrderedGap U B V δ :=
+  fun μ hμ ν hν ↦ by
+    have h₁ : μ ≤ a := hA hμ
+    have h₂ : a + δ ≤ ν := hB hν
+    linarith
+
+/-- The point-spectral subspaces of `A` selected by `(-∞, a]` and by `[a + δ, ∞)` carry point
+spectra ordered with margin `δ`. -/
+theorem pointOrderedGap_pointSpectralSubspace (A : Module.End 𝕜 E) (a δ : ℝ) :
+    A.PointOrderedGap (A.pointSpectralSubspace (Set.Iic a)) A
+      (A.pointSpectralSubspace (Set.Ici (a + δ))) δ :=
+  .of_pointSpectrumIn (A.pointSpectrumIn_pointSpectralSubspace _)
+    (A.pointSpectrumIn_pointSpectralSubspace _)
+
+/-- `A.PointIntervalExteriorGap U B V a b δ` says that the restricted point spectrum of `A` on
+`U` lies in the interval `[a, b]`, while that of `B` on `V` lies outside its enlargement
+`(a - δ, b + δ)`. -/
+structure PointIntervalExteriorGap (A : Module.End 𝕜 E) (U : Submodule 𝕜 E)
+    (B : Module.End 𝕜 F) (V : Submodule 𝕜 F) (a b δ : ℝ) : Prop where
+  /-- The restricted point spectrum of `A` on `U` lies in `[a, b]`. -/
+  pointSpectrumIn_Icc : A.PointSpectrumIn U (Set.Icc a b)
+  /-- The restricted point spectrum of `B` on `V` avoids `(a - δ, b + δ)`. -/
+  pointSpectrumIn_compl_Ioo : B.PointSpectrumIn V (Set.Ioo (a - δ) (b + δ))ᶜ
+
+/-- An interval/exterior gap passes to smaller subspaces and smaller margins. -/
+theorem PointIntervalExteriorGap.mono (h : A.PointIntervalExteriorGap U B V a b δ) (hU : U' ≤ U)
+    (hV : V' ≤ V) (hδ : δ' ≤ δ) : A.PointIntervalExteriorGap U' B V' a b δ' where
+  pointSpectrumIn_Icc := h.pointSpectrumIn_Icc.mono hU subset_rfl
+  pointSpectrumIn_compl_Ioo := h.pointSpectrumIn_compl_Ioo.mono hV
+    (Set.compl_subset_compl.mpr (Set.Ioo_subset_Ioo (by linarith) (by linarith)))
+
+/-- **An interval/exterior gap is a separation.** If the restricted point spectrum of `A` on `U`
+lies in `[a, b]` and that of `B` on `V` lies outside `(a - δ, b + δ)`, the two are separated
+by `δ`. -/
+theorem PointIntervalExteriorGap.pointSpectraSeparated
+    (h : A.PointIntervalExteriorGap U B V a b δ) : A.PointSpectraSeparated U B V δ := by
+  refine .of_pointSpectrumIn h.pointSpectrumIn_Icc h.pointSpectrumIn_compl_Ioo ?_
+  rintro μ ⟨hμa, hμb⟩ ν hν
+  rw [Set.mem_compl_iff, Set.mem_Ioo, not_and_or, not_lt, not_lt] at hν
+  rcases hν with hν | hν
+  · exact le_abs.mpr (Or.inl (by linarith))
+  · exact le_abs.mpr (Or.inr (by linarith))
+
+/-- The point-spectral subspaces of `A` selected by `[a, b]` and by the complement of
+`(a - δ, b + δ)` satisfy the interval/exterior gap. -/
+theorem pointIntervalExteriorGap_pointSpectralSubspace (A : Module.End 𝕜 E) (a b δ : ℝ) :
+    A.PointIntervalExteriorGap (A.pointSpectralSubspace (Set.Icc a b)) A
+      (A.pointSpectralSubspace (Set.Ioo (a - δ) (b + δ))ᶜ) a b δ :=
+  ⟨A.pointSpectrumIn_pointSpectralSubspace _, A.pointSpectrumIn_pointSpectralSubspace _⟩
+
+/-- In finite dimension, the restricted point spectrum is finite. -/
+theorem finite_restrictedPointSpectrum [FiniteDimensional 𝕜 E] (A : Module.End 𝕜 E)
+    (U : Submodule 𝕜 E) : (A.restrictedPointSpectrum U).Finite :=
+  (A.finite_hasEigenvalue.preimage RCLike.ofReal_injective.injOn).subset
+    ((restrictedPointSpectrum_mono le_top).trans restrictedPointSpectrum_top.subset)
+
+/-- In finite dimension, two restricted point spectra are separated by some positive distance
+exactly when they are disjoint. -/
+theorem exists_pos_pointSpectraSeparated_iff_disjoint [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 F] :
+    (∃ δ > 0, A.PointSpectraSeparated U B V δ) ↔
+      Disjoint (A.restrictedPointSpectrum U) (B.restrictedPointSpectrum V) := by
+  refine ⟨fun ⟨δ, hδ, h⟩ ↦ h.disjoint hδ, fun hd ↦ ?_⟩
+  -- The set of differences `μ - ν` is finite, hence closed, and avoids `0`.
+  set D := Set.image2 (· - ·) (A.restrictedPointSpectrum U) (B.restrictedPointSpectrum V)
+  have hD : D.Finite :=
+    (A.finite_restrictedPointSpectrum U).image2 _ (B.finite_restrictedPointSpectrum V)
+  have h0 : (0 : ℝ) ∈ Dᶜ := by
+    rintro ⟨μ, hμ, ν, hν, hμν⟩
+    exact Set.disjoint_left.mp hd hμ (sub_eq_zero.mp hμν ▸ hν)
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hD.isClosed.isOpen_compl 0 h0
+  refine ⟨ε, hε, fun μ hμ ν hν ↦ not_lt.mp fun hlt ↦ hball ?_ (Set.mem_image2_of_mem hμ hν)⟩
+  simpa [Real.dist_eq] using hlt
+
+end Separation
+
+section FormBound
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {A : Module.End 𝕜 E} {B : Module.End 𝕜 F}
+  {U : Submodule 𝕜 E} {V : Submodule 𝕜 F} {a δ : ℝ}
+
+/-- **Form bounds give an ordered gap.** If `re ⟪A x, x⟫ ≤ a ‖x‖²` on `U` and
+`(a + δ) ‖y‖² ≤ re ⟪B y, y⟫` on `V`, then the restricted point spectra of `A` on `U` and of `B` on
+`V` are ordered with margin `δ`. -/
+theorem PointOrderedGap.of_re_inner_apply_self
+    (hA : ∀ x ∈ U, RCLike.re ⟪A x, x⟫_𝕜 ≤ a * ‖x‖ ^ 2)
+    (hB : ∀ y ∈ V, (a + δ) * ‖y‖ ^ 2 ≤ RCLike.re ⟪B y, y⟫_𝕜) : A.PointOrderedGap U B V δ :=
+  .of_pointSpectrumIn (pointSpectrumIn_Iic_of_re_inner_apply_self_le hA)
+    (pointSpectrumIn_Ici_of_le_re_inner_apply_self hB)
+
+end FormBound
+
+end Module.End
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+  {A : E →ₗ[𝕜] E} {B : F →ₗ[𝕜] F} {n m : ℕ}
+
+/-- If the real point spectra of symmetric `A` and `B` are disjoint, then no eigenvalue of an
+ordered eigenbasis of `A` equals one of an ordered eigenbasis of `B`. -/
+theorem eigenvalues_ne_eigenvalues_of_disjoint (hA : A.IsSymmetric) (hB : B.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) (hm : Module.finrank 𝕜 F = m)
+    (h : Disjoint (restrictedPointSpectrum A ⊤) (restrictedPointSpectrum B ⊤)) (i : Fin n)
+    (j : Fin m) : hA.eigenvalues hn i ≠ hB.eigenvalues hm j := by
+  rw [restrictedPointSpectrum_top, restrictedPointSpectrum_top] at h
+  exact fun hij ↦ Set.disjoint_left.mp h (hA.hasEigenvalue_eigenvalues hn i)
+    (hij ▸ hB.hasEigenvalue_eigenvalues hm j)
 
 end LinearMap.IsSymmetric

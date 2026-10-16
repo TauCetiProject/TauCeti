@@ -30,6 +30,15 @@ class of any finite graded projective resolution. This is the graded analogue of
 * `TauCeti.gradedCartanEquiv`: the graded Cartan map as a Laurent-linear equivalence when every
   finite graded module has a finite graded-projective resolution.
 
+## Main results
+
+* `TauCeti.gradedCartanMap_apply`: the graded Cartan map factors through the modules admitting
+  finite graded-projective resolutions.
+* `TauCeti.gradedCartanInverse_of_eq_foldAlternating`: the inverse sends the class of a finite
+  graded module to the alternating class of any finite graded-projective resolution.
+* `TauCeti.gradedCartanMap_bijective`: the graded Cartan map is bijective when every finite
+  graded module has a finite graded-projective resolution.
+
 ## References
 
 * Charles A. Weibel, *The K-book*, Chapter II, Theorem 7.6.
@@ -42,7 +51,7 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+open CategoryTheory
 
 universe uk uA
 
@@ -74,7 +83,7 @@ instance : ObjectProperty.EssentiallySmall.{uA}
 
 /-- The induced graded exact structure on graded modules admitting finite resolutions by finite
 graded projectives. -/
-noncomputable def gradedFiniteProjectiveResolutionExactStructure :
+def gradedFiniteProjectiveResolutionExactStructure :
     GradedExactStructure
       ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
         (gradedFiniteProjectiveModules 𝒜)).FullSubcategory :=
@@ -86,7 +95,7 @@ noncomputable def gradedFiniteProjectiveResolutionExactStructure :
 
 /-- The graded resolution theorem for modules admitting finite resolutions by finite graded
 projectives. -/
-noncomputable def gradedModuleResolutionEquiv :
+def gradedModuleResolutionEquiv :
     LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ≃ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) :=
   GradedExactStructure.laurentResolutionEquiv.{uA} (gradedModuleCanonicalExactStructure 𝒜)
@@ -107,7 +116,7 @@ theorem gradedModuleResolutionEquiv_of
     gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
     gradedFiniteProjectiveModules_gradedAbelian_shift M
 
-private noncomputable def finiteResolutionToFiniteFunctor :
+private def finiteResolutionToFiniteFunctor :
     GradedConflationExact
       (gradedFiniteProjectiveResolutionExactStructure 𝒜)
       ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
@@ -127,7 +136,7 @@ private noncomputable def finiteResolutionToFiniteFunctor :
 
 /-- The comparison from modules admitting finite graded-projective resolutions to all finite
 graded modules. -/
-noncomputable def fromGradedFiniteProjectiveResolution :
+def fromGradedFiniteProjectiveResolution :
     LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) :=
   LaurentK0.map.{uA, uA} (finiteResolutionToFiniteFunctor 𝒜)
@@ -167,7 +176,7 @@ variable (h : gradedFiniteModules 𝒜 ≤
   (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
     (gradedFiniteProjectiveModules 𝒜))
 
-private noncomputable def finiteToFiniteResolutionFunctor :
+private def finiteToFiniteResolutionFunctor :
     GradedConflationExact
       ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
         isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift)
@@ -183,7 +192,7 @@ private noncomputable def finiteToFiniteResolutionFunctor :
 
 /-- Under finite graded-projective dimension, compare all finite graded modules with the
 subcategory of modules admitting finite graded-projective resolutions. -/
-noncomputable def toGradedFiniteProjectiveResolution :
+def toGradedFiniteProjectiveResolution :
     LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) :=
   LaurentK0.map.{uA, uA} (finiteToFiniteResolutionFunctor 𝒜 h)
@@ -225,7 +234,7 @@ theorem toGradedFiniteProjectiveResolution_fromGradedFiniteProjectiveResolution
   simp
 
 /-- The inverse of the graded Cartan map under finite graded-projective dimension. -/
-noncomputable def gradedCartanInverse :
+def gradedCartanInverse :
     LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) :=
   (gradedModuleResolutionEquiv 𝒜).symm.toLinearMap.comp
@@ -251,7 +260,7 @@ theorem gradedCartanInverse_of_eq_foldAlternating
 
 /-- If every finite graded module admits a finite graded-projective resolution, the graded Cartan
 map is an isomorphism of `ℤ[q,q⁻¹]`-modules. -/
-noncomputable def gradedCartanEquiv :
+def gradedCartanEquiv :
     LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ≃ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) where
   toFun := gradedCartanMap 𝒜

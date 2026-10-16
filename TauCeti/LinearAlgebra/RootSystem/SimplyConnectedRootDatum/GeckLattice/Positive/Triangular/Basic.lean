@@ -77,7 +77,7 @@ theorem upperTriangular_comap_le_geckTorusPositiveDefiningIdeal :
         (CommAlgCat.of ℤ (MonoidAlgebra ℤ (SplitTorus.characterGroup (Fin t.rank)))) :=
       toConv (AlgHom.id ℤ _)
     have hmatrix : GeneralLinear.pointsMulEquiv (t.geckDim ht)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (GeneralLinear.weightTorusCoordinateMap (R := ℤ) (t.geckWeightFin ht))).app _ p) =
         t.geckTorusMatrix ht (SplitTorus.pointsMulEquiv p) := by
       rw [geckTorusMatrix, kostantTorusMatrix_apply]
@@ -163,7 +163,7 @@ theorem geckTorusPositiveToUpperTriangular_comp_inclusion :
     t.geckTorusPositiveInclusion_comp_geckGroupSchemeι ht]
   simp only [geckTorusPositiveToUpperTriangular, GeneralLinear.UpperTriangular.inclusion,
     GeneralLinear.weightParabolicInclusion_def, kostantTorusSubsystemGroupSchemeι_def,
-    CommHopfAlgCat.quotientSpecι_def, eqToIso.hom, Category.assoc,
+    CommHopfAlgCat.quotientSpecι_def, Category.assoc,
     eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.comp_id]
   apply eq_of_heq
   simp only [eqToHom_comp_heq_iff, heq_eqToHom_comp_iff]
@@ -186,12 +186,12 @@ theorem isSolvable_points_geckTorusPositive (A : CommAlgCat.{v} ℤ) :
         (t.geckTorusPositiveDefiningIdeal ht)) A →*
       HopfAlgebra.points (R := ℤ)
         (H := GeneralLinear.UpperTriangular.coordinateHopfAlgebra ℤ (t.geckDim ht)) A :=
-    ((CommHopfAlgCat.mapPointsFunctor f).app A).hom
+    ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A).hom
   let _ : Group.IsSolvable (HopfAlgebra.points (R := ℤ)
       (H := GeneralLinear.UpperTriangular.coordinateHopfAlgebra ℤ (t.geckDim ht)) A) :=
     GeneralLinear.UpperTriangular.isSolvable_points ℤ A (t.geckDim ht)
   exact Group.isSolvable_of_isSolvable_injective (f := φ)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f
       (t.geckTorusPositiveUpperTriangularCoordinateMap_surjective ht) A)
 
 end

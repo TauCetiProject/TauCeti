@@ -37,6 +37,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
 * `TauCeti.Huber.IsUniform.of_normedDivisionRing`: normed division rings are uniform.
+* `TauCeti.Huber.isPowerBounded_algebraMap_of_norm_le_one`: in a topological algebra over a
+  nontrivially normed field, scalars of norm at most one are power-bounded.
 * `TauCeti.Huber.IsPseudoUniformizer.isBounded_iff_forall_norm_le`: in a seminormed ring with a
   pseudouniformiser a set is bounded exactly when it is norm-bounded.
 * `TauCeti.Huber.IsPseudoUniformizer.isPowerBounded_iff_norm_le_one` and
@@ -188,6 +190,31 @@ theorem isPseudoUniformizer_iff_norm_lt_one {ϖ : K} :
   exact and_congr_right fun _ ↦ tendsto_pow_atTop_nhds_zero_iff_norm_lt_one
 
 end NormedDivisionRing
+
+open Pointwise in
+/-- **Scalars of norm at most one are power-bounded** in a topological algebra over a nontrivially
+normed field. A neighbourhood `U` of zero contains `t • v` for all small scalars `t` and all `v`
+in some neighbourhood `V` of zero, so for a scalar `d` of small norm the neighbourhood `d • V` is
+carried into `U` by every power of `c`. -/
+theorem isPowerBounded_algebraMap_of_norm_le_one {K : Type*} [NontriviallyNormedField K]
+    {A : Type*} [Semiring A] [TopologicalSpace A] [Algebra K A] [ContinuousSMul K A] {c : K}
+    (hc : ‖c‖ ≤ 1) : IsPowerBounded (algebraMap K A c) := by
+  refine isPowerBounded_iff.mpr (isBounded_iff.mpr fun U hU ↦ ?_)
+  have hsmul : Tendsto (fun p : K × A ↦ p.1 • p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
+    simpa [nhds_prod_eq] using (continuous_smul (M := K) (X := A)).tendsto ((0 : K), (0 : A))
+  obtain ⟨W, hW, V, hV, hWV⟩ := mem_prod_iff.mp (hsmul hU)
+  obtain ⟨ε, hε, hεW⟩ := Metric.mem_nhds_iff.mp hW
+  obtain ⟨d, hd₀, hdε⟩ := NormedField.exists_norm_lt K hε
+  refine ⟨d • V, (set_smul_mem_nhds_zero_iff (norm_pos_iff.mp hd₀)).mpr hV, ?_⟩
+  rintro _ ⟨_, ⟨v, hv, rfl⟩, _, ⟨n, rfl⟩, rfl⟩
+  have hmul : d • v * algebraMap K A c ^ n = (c ^ n * d) • v := by
+    rw [← map_pow, ← Algebra.commutes, ← Algebra.smul_def, smul_smul]
+  dsimp only
+  rw [hmul]
+  refine hWV (Set.mk_mem_prod (hεW (mem_ball_zero_iff.mpr ?_)) hv)
+  calc ‖c ^ n * d‖ = ‖c‖ ^ n * ‖d‖ := by rw [norm_mul, norm_pow]
+    _ ≤ 1 * ‖d‖ := by gcongr; exact pow_le_one₀ (norm_nonneg c) hc
+    _ < ε := by rwa [one_mul]
 
 section Ultrametric
 

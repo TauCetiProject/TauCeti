@@ -174,7 +174,7 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
   obtain ⟨ψ, hψ⟩ := CharacterModule.exists_apply_unitOfCoprime_pow_sub_one _ n hq hn
   have : NeZero (Nat.card 𝓀[v.adicCompletion K] ^ n - 1) :=
     ⟨by have := Nat.one_lt_pow hn hq; omega⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K)
     (Nat.card 𝓀[v.adicCompletion K] ^ n - 1)
   -- The global character: `ψ` of the action of `G_K` on `ζ`. It kills the fixing subgroup of
   -- `K(ζ)`, which is open.
@@ -199,10 +199,10 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
   | intro τ hτ =>
   -- The unramified extension `E_v` of `K_v` of degree `n` contains `τ ζ`.
   let Ev := unramifiedExtension (v.adicCompletion K) (SeparableClosure (v.adicCompletion K)) n
-  let := finiteExtensionValuativeRel (v.adicCompletion K) Ev
-  let := finiteExtensionNormedFieldTopology (v.adicCompletion K) Ev
+  let := algebraicExtensionValuativeRel (v.adicCompletion K) Ev
+  let := algebraicExtensionNormedFieldTopology (v.adicCompletion K) Ev
   have := finiteExtension_isNonarchimedeanLocalField (v.adicCompletion K) Ev
-  have := finiteExtension_valuativeExtension (v.adicCompletion K) Ev
+  have := algebraicExtension_valuativeExtension (v.adicCompletion K) Ev
   have : IsUnramified (v.adicCompletion K) Ev := isUnramified_unramifiedExtension hn
   have hτζ : τ ζ ^ Nat.card 𝓀[v.adicCompletion K] ^ n = τ ζ := by
     rw [← map_pow, ← Nat.sub_add_cancel (Nat.one_le_pow _ _ (by omega) : 1 ≤ _), pow_succ,
@@ -263,7 +263,8 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
       infiniteInvMap u ((ideleLocalization K x).2 u) = 0 := by
     rw [ideleLocalization_snd_apply,
       ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
-        IsSepClosed.lift χ hχ a (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
+        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ a
+        (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
   -- At `v` the invariant is `v(π) · χ_v(Frob) = 1 / n`.
   have hv : invMap (v.adicCompletion K) ((ideleLocalization K x).1 v) =
       ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by

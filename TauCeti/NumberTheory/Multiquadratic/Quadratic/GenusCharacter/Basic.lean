@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 
 Genus theory attaches to a fundamental discriminant `D` a family of real quadratic characters, one
 for each prime discriminant occurring in a factorization `D = P₁ ⋯ P_t`
-(`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`); the products of these over subsets
+(`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`); the products of these over subsets
 are the *genus characters* of `D`. The character `primeDiscriminantCharFun P` of a single prime
 discriminant is built in
 `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Character`. This file defines the
@@ -182,7 +182,7 @@ private theorem prod_emod_four_eq_one {s : Finset ℤ} (hs : ∀ P ∈ s, P % 4 
 
 /-- **The genus-character relation.** Let `D = ∏ P ∈ s, P` be a factorization of a discriminant
 into prime discriminants, at most one of them even, as produced by
-`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`. For each `P ∈ s`, every integer `n`
+`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`. For each `P ∈ s`, every integer `n`
 coprime to `P` and represented by the principal form of discriminant `D`, `4n = x² - D y²`, has
 trivial character at `P`.
 

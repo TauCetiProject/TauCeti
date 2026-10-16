@@ -68,7 +68,7 @@ private theorem cartanMatrix_eq_toMatrix_cartanEquiv
         (simpleClassBasis S hSnoniso hSexhaustive)
         (cartanEquiv R h).toIntLinearEquiv := by
   ext i j
-  simp [LinearMap.toMatrix_apply, cartanMap_of R (P j).2]
+  simp [LinearMap.toMatrix_apply, cartanMap_of R (P j)]
 
 /-- The matrix of the inverse Cartan map in the simple-class basis on the source and the
 indecomposable-projective basis on the target. Its columns are the projective coordinates of the

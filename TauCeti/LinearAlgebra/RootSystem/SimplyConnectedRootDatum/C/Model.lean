@@ -75,9 +75,8 @@ hypothesis always holds.
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate III, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This supports the `Cₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+4--6*, Plate III, and Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+section 12.1.
 -/
 
 public section

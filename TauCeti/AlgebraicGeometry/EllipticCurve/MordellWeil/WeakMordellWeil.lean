@@ -94,8 +94,12 @@ This is the input to the descent argument in the Mordell–Weil theorem proper. 
 theorem finiteIndex_range_nsmulAddMonoidHom_two :
     (nsmulAddMonoidHom (α := W.Point) 2).range.FiniteIndex := by
   rw [W.finiteIndex_range_nsmulAddMonoidHom_two_iff]
-  have := W.finite_selmerGroupA R
-  exact ((W.selmerGroupA R : Set W.M).toFinite.subset (W.range_μ_le_selmerGroupA R)).to_subtype
+  have := W.finite_selmerGroupA R (W.finite_badPrimes R)
+  exact ((W.selmerGroupA R (W.badPrimes R) : Set W.M).toFinite.subset
+    (W.range_μ_le_selmerGroupA R (fun _ ↦ W.valuation_a₂_le_one_of_notMem_badPrimes R)
+      (fun _ ↦ W.valuation_a₄_le_one_of_notMem_badPrimes R)
+      (fun _ ↦ W.valuation_a₆_le_one_of_notMem_badPrimes R)
+      (fun _ ↦ W.valuation_discr_f_eq_one_of_notMem_badPrimes R))).to_subtype
 
 end WeierstrassCurve.Affine
 

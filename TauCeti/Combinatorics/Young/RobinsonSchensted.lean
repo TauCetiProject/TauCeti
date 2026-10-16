@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Young.Schensted
+public import TauCeti.Combinatorics.Young.Schensted.Basic
 
 /-!
 # The Robinson--Schensted correspondence for words

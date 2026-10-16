@@ -11,10 +11,6 @@ import TauCeti.FieldTheory.FunctionField.Radical.Genus
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
-import TauCeti.FieldTheory.Kummer.Extension
-import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -89,58 +85,21 @@ private theorem rational_equation :
   let := ratFuncAlgebraOfTranscendental h.transcendental_y
   simpa [map_add, map_pow, RatFunc.algebraMap_X] using h.equation.symm
 
-private theorem rational_finrank (hq : 1 < q) :
-    let := ratFuncAlgebraOfTranscendental h.transcendental_y
-    Module.finrank (RatFunc K) F = q + 1 := by
-  let := ratFuncAlgebraOfTranscendental h.transcendental_y
-  refine (Place.infty K).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
-    h.rational_adjoin_eq_top h.rational_equation (by omega) ?_
-  rw [Valuation.ord_def, ← Place.ord_def, Place.ord_infty, RatFunc.intDegree_polynomial,
-    radicand_degree hq]
-  rw [Int.gcd_neg, Int.gcd_natCast_natCast]
+omit h in
+private theorem radicand_gcd_ord_infty (hq : 1 < q) :
+    Int.gcd (q + 1 : ℕ) ((Place.infty K).ord (algebraMap K[X] (RatFunc K) (X ^ q + X))) = 1 := by
+  rw [Place.ord_infty, RatFunc.intDegree_polynomial, radicand_degree hq, Int.gcd_neg,
+    Int.gcd_natCast_natCast]
   simp
-
-private theorem rational_finiteDimensional (hq : 1 < q) :
-    let := ratFuncAlgebraOfTranscendental h.transcendental_y
-    FiniteDimensional (RatFunc K) F := by
-  let := ratFuncAlgebraOfTranscendental h.transcendental_y
-  exact Module.finite_of_finrank_pos (by rw [h.rational_finrank hq]; omega)
-
-private theorem rational_separable (hchar : (q : K) = 0) :
-    let := ratFuncAlgebraOfTranscendental h.transcendental_y
-    Algebra.IsSeparable (RatFunc K) F := by
-  let := ratFuncAlgebraOfTranscendental h.transcendental_y
-  let a := algebraMap K[X] (RatFunc K) (X ^ q + X)
-  have ha : a ≠ 0 := RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero
-  have hn : ((q + 1 : ℕ) : RatFunc K) ≠ 0 := by
-    have hc := congrArg (algebraMap K (RatFunc K)) hchar
-    simp only [map_natCast, map_zero] at hc
-    simp [Nat.cast_add, hc]
-  have he : aeval x (X ^ (q + 1) - C a) = 0 := by
-    simpa [a] using sub_eq_zero.mpr h.rational_equation
-  have hs : IsSeparable (RatFunc K) x :=
-    (separable_X_pow_sub_C a hn ha).of_dvd (minpoly.dvd _ _ he)
-  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable _ _).mpr hs
-  rw [h.rational_adjoin_eq_top] at this
-  exact AlgEquiv.Algebra.isSeparable IntermediateField.topEquiv
 
 /-- A Hermitian equation with `q = 0` in `K` acquires no new constants. -/
 theorem isIntegrallyClosedIn (hq : 1 < q) (hchar : (q : K) = 0) : IsIntegrallyClosedIn K F := by
   let := ratFuncAlgebraOfTranscendental h.transcendental_y
   let := isScalarTower_ratFuncAlgebraOfTranscendental h.transcendental_y
-  let := h.rational_finiteDimensional hq
-  let := h.rational_separable hchar
-  obtain ⟨P, hP⟩ := Place.restrict_surjective_of_finiteDimensional (IsFunctionField.ratFunc K)
-    (h.isFunctionField hq) (Place.infty K)
-  replace hP : P.restrict K (RatFunc K) = Place.infty K := hP
-  refine isIntegrallyClosedIn_of_isTotallyRamified (F := RatFunc K) inferInstance (P' := P) ?_
-  rw [Place.isTotallyRamified_iff, h.rational_finrank hq,
-    Place.ramificationIdx_eq_of_pow_eq K (RatFunc K) h.rational_adjoin_eq_top
-      h.rational_equation (by simp [hchar])
-      (RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero), hP,
-    Place.ord_infty, RatFunc.intDegree_polynomial, radicand_degree hq]
-  rw [Int.gcd_neg, Int.gcd_natCast_natCast]
-  simp
+  exact isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc K) inferInstance
+    h.rational_adjoin_eq_top h.rational_equation (by simp [hchar])
+    (RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero) (Place.infty K)
+    (radicand_gcd_ord_infty hq)
 
 end RationalBase
 
@@ -216,8 +175,6 @@ theorem two_mul_genus_eq (hq : 1 < q) (hchar : (q : K) = 0) :
   classical
   let := ratFuncAlgebraOfTranscendental h.transcendental_y
   let := isScalarTower_ratFuncAlgebraOfTranscendental h.transcendental_y
-  let := h.rational_finiteDimensional hq
-  let := h.rational_separable hchar
   let z := radicandUnit hchar
   let Z := Divisor.zeros (IsFunctionField.ratFunc K) z
   let S := insert (Place.infty K) Z.support
@@ -231,11 +188,10 @@ theorem two_mul_genus_eq (hq : 1 < q) (hchar : (q : K) = 0) :
     have hz := hh.resolve_right (by omega)
     rw [hz]
     exact dvd_zero _
-  have hg := genus_formula_of_pow_eq (k' := K) (F' := F) (IsFunctionField.ratFunc K)
-    h.rational_adjoin_eq_top h.rational_equation (by simp [hchar])
-    (RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero) S hS
-    (h.isFunctionField hq) inferInstance (h.isIntegrallyClosedIn hq hchar) (h.rational_finrank hq)
-  rw [Module.finrank_self, genus_ratFunc] at hg
+  have hg := two_mul_genus_eq_of_pow_eq_of_gcd_ord_eq_one_ratFunc h.rational_adjoin_eq_top
+    h.rational_equation (by simp [hchar])
+    (RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero) S hS (Place.infty K)
+    (radicand_gcd_ord_infty hq)
   have hsum : ∑ P ∈ S,
       ((q + 1 : ℕ) - Int.gcd (q + 1) (P.ord
         (algebraMap K[X] (RatFunc K) (X ^ q + X))) : ℤ) * P.degree =
@@ -244,10 +200,8 @@ theorem two_mul_genus_eq (hq : 1 < q) (hchar : (q : K) = 0) :
   rw [hsum] at hg
   have hq1 : 1 ≤ q := by omega
   have hg' : (2 * genus K F : ℤ) = (q : ℤ) * (q - 1 : ℕ) := by
-    push_cast at hg ⊢
     rw [Nat.cast_sub hq1]
-    norm_num at hg ⊢
-    nlinarith
+    linear_combination hg
   exact_mod_cast hg'
 
 /-- A Hermitian function field with parameter at least three has genus at least two. -/

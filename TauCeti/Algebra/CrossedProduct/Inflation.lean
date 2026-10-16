@@ -419,7 +419,7 @@ private theorem cocyclesMap2_finiteLevelZ2_apply (c : TwoCocycle K L)
       (FixedPoints.addSubgroup
         (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K)).subtype
       (continuous_fixedPoints_addSubgroup_subtype _ _ _)
-      (subtype_quotientMk_smul _ _ _)
+      (galoisOpenNormalSubgroup K L L.val).toSubgroup.fixedPoints_subtype_quotientMk_smul
       (c.finiteLevelZ2 L) :
         AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) (g, h) =
       (c.inflateZ2 L : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K)

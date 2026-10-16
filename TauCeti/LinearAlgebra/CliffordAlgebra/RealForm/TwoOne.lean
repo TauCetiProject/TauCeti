@@ -207,7 +207,8 @@ theorem realCliffordTwoOneEvenEquivMatrix_reverseEven
 
 /-- In the split three-dimensional matrix model, the reverse norm-one equation is determinant
 one. -/
-@[simp]
+-- Compute the matrix norm condition before generic one-sided-inverse rewrites.
+@[simp 1100]
 theorem realCliffordTwoOne_reverseEven_mul_self_eq_one_iff_det_eq_one
     (x : CliffordAlgebra.even (realCliffordForm 2 1)) :
     CliffordAlgebra.reverseEven (realCliffordForm 2 1) x * x = 1 ↔

@@ -70,10 +70,11 @@ theorem coact_mem_range_iff_forall_matrixCoefficient_eq_zero (W : Submodule k M)
   · intro h ψ
     rw [← hcontract, h, map_zero, map_zero]
   · intro h
-    apply tensor_eq_zero_of_forall_lid_rTensor_eq_zero (fun ψ : Module.Dual k (M ⧸ W) ↦ ψ)
+    apply tensor_eq_zero_of_forall_rTensor_eq_zero (fun ψ : Module.Dual k (M ⧸ W) ↦ ψ)
       (fun x hx ↦ (Module.forall_dual_apply_eq_zero_iff k x).mp hx)
     intro ψ
-    rw [hcontract, h]
+    apply (TensorProduct.lid k C).injective
+    simpa only [map_zero, hcontract] using h ψ
 
 end Coalgebra
 
@@ -104,7 +105,7 @@ theorem mapsTo_endOfPoint_baseChange_iff (W : Submodule k M) (g : C →ₐ[k] A)
       LinearMap.ker (W.mkQ.lTensor A) := by
     ext z
     simp only [SetLike.mem_coe, lTensor_mkQ, baseChange, LinearMap.mem_range,
-      LinearMap.baseChange_eq_ltensor]
+      LinearMap.baseChange_eq_lTensor]
   constructor
   · intro h ψ w hw
     have hz := h (tmul_mem_baseChange_of_mem (1 : A) hw)

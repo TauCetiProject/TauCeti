@@ -28,9 +28,8 @@ upgrade to automorphisms over a Hopf algebra is in
 points.) On the comodule attached to a group-like element `x`, this action is scalar
 multiplication by `g x`.
 
-This is the comodule-to-representation direction of the "representations = comodules"
-dictionary (ReductiveGroups roadmap, Layer 1): it realizes a comodule as an action of
-the functor of points on scalar extensions of `V`.
+This is the comodule-to-representation direction of the "representations = comodules" dictionary: it
+realizes a comodule as an action of the functor of points on scalar extensions of `V`.
 
 ## Main declarations
 

@@ -39,8 +39,9 @@ graded algebras are formed in this category with this shift.
 
 ## Main results
 
-* `TauCeti.GradedModuleCat.mem_shift_functor_obj_piece_iff` and
-  `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{1})ₚ = M_{p-1}` and
+* `TauCeti.GradedModuleCat.shift_functor_obj`: the shift autoequivalence sends `M` to `M{1}`.
+* `TauCeti.GradedModuleCat.mem_shiftObj_piece_iff` and
+  `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{n})ₚ = M_{p-n}` and
   `(M{-1})ₚ = M_{p+1}`.
 -/
 
@@ -135,6 +136,21 @@ theorem hom_injective : Function.Injective (fun f : M ⟶ N ↦ f.hom) :=
 theorem map_mem (f : M ⟶ N) {p : ℤ} {x : M} (hx : x ∈ M.grading.piece p) :
     f.hom x ∈ N.grading.piece p := by
   simpa using f.isHomogeneous.map_mem hx
+
+/-- A graded surjection preserves vanishing of a homogeneous piece. In particular, a quotient
+of a module concentrated in one degree is concentrated in that degree. -/
+theorem piece_eq_bot_of_surjective (f : M ⟶ N)
+    (hf : Function.Surjective f.hom) (p : ℤ) (hp : M.grading.piece p = ⊥) :
+    N.grading.piece p = ⊥ := by
+  apply (Submodule.eq_bot_iff _).mpr
+  intro y hy
+  obtain ⟨x, rfl⟩ := hf y
+  have hx : (_root_.DirectSum.decompose M.grading.piece x p : M) = 0 := by
+    simpa only [hp, Submodule.mem_bot] using
+      (_root_.DirectSum.decompose M.grading.piece x p).property
+  have h := f.isHomogeneous.map_decompose p x
+  rw [add_zero, _root_.DirectSum.decompose_of_mem_same N.grading.piece hy, hx, map_zero] at h
+  exact h.symm
 
 end Hom
 
@@ -292,10 +308,10 @@ def shift : GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} 𝒜 where
     fun _ ↦ by ext; rfl
   functor_unitIso_comp _ := by ext; rfl
 
+/-- The grading-shift autoequivalence sends a module to its shift by one. -/
 @[simp]
-theorem mem_shift_functor_obj_piece_iff (p : ℤ) (x : M) :
-    x ∈ ((shift 𝒜).functor.obj M).grading.piece p ↔ x ∈ M.grading.piece (p - 1) :=
-  M.mem_shiftObj_piece_iff 1 p x
+theorem shift_functor_obj : (shift 𝒜).functor.obj M = M.shiftObj 1 :=
+  rfl
 
 @[simp]
 theorem mem_shift_inverse_obj_piece_iff (p : ℤ) (x : M) :

@@ -27,13 +27,6 @@ instantiate the result below.
 
 * `TauCeti.GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv`: the
   presented base-change point equivalence preserves the ambient invertible matrix.
-
-## Roadmap
-
-This advances the carrier-independent half of the base-change and points targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It identifies no particular carrier with the pinned
-simply connected group.
 -/
 
 public section

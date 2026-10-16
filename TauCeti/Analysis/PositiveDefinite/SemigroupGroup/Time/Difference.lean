@@ -63,9 +63,6 @@ statements are read off the differences built here in
 
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Theorem 4.1.13 and its bounded-semigroup argument.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-  ("BCR semigroup--Bochner").
 -/
 
 public section
@@ -187,7 +184,7 @@ theorem iteratedTimeDifference_eq_listTimeDifference (n : ℕ) (h : ℝ≥0) (F 
 
 /-- At a fixed spatial coordinate, the `n`-th time difference is the alternating `n`-th forward
 difference of the one-variable function `t ↦ F (t, v)`. This is the bridge to the generic
-finite-difference theory of `TauCeti/Analysis/PositiveDefinite/Function/Difference.lean`. -/
+finite-difference theory of `TauCeti/Algebra/Group/ForwardDiff.lean`. -/
 theorem iteratedTimeDifference_apply_eq_fwdDiff (n : ℕ) (h : ℝ≥0) (F : ℝ≥0 × V → ℂ) (t : ℝ≥0)
     (v : V) :
     iteratedTimeDifference n h F (t, v)

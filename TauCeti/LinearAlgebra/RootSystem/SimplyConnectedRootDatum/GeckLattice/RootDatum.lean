@@ -17,21 +17,21 @@ conjugates the parameter of the numbered raising subgroup at node `i` through th
 This file restates those conjugation equations with that character read instead as a simple root
 of `TauCeti.DynkinType.simplyConnectedRootDatum t`.
 
-The distinction is important to the downstream finite-group construction. Its ambient carrier is
-indexed by a Dynkin type and must use the root datum supplied by the root-systems roadmap; equality
-with a Cartan-matrix row is not by itself an interface connecting the two constructions. The
-substitution itself is `TauCeti.DynkinType.rootGeneratorWeight_inl_eq_root_simpleIndex` and its
-lowering counterpart, proved with the Kostant form in
+The distinction matters for the finite groups of Lie type built on the Geck carrier: their ambient
+carrier is indexed by a Dynkin type and must use the root datum
+`TauCeti.DynkinType.simplyConnectedRootDatum`; equality with a Cartan-matrix row is not by itself an
+interface connecting the two constructions. The substitution itself is
+`TauCeti.DynkinType.rootGeneratorWeight_inl_eq_root_simpleIndex` and its lowering counterpart,
+proved with the Kostant form in
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/KostantForm.lean`; the results below are
 the carrier's conjugation equations that consume it.
 
-The existing Geck lattice has full character lattice exactly in types `E₈`, `F₄`, and `G₂`.
-Thus the equations below supply this named-root form of the pinning interface for those three
-carriers. They are stated uniformly because the conjugation equations are valid for every Dynkin
-type, including the other types whose full-weight admissible lattices remain to be constructed.
-Each equation says only how the torus rescales a subgroup parameter: nothing here asserts
-reductivity, maximality of the torus, or that these numbered subgroups exhaust the root subgroups
-of a root datum carried by the group scheme; those are separate Layer 9 targets.
+The Geck lattice has full character lattice exactly in types `E₈`, `F₄`, and `G₂`. Thus the
+equations below supply this named-root form of the pinning interface for those three carriers. They
+are stated uniformly because the conjugation equations are valid for every Dynkin type. Each
+equation says only how the torus rescales a subgroup parameter: nothing here asserts reductivity,
+maximality of the torus, or that these numbered subgroups exhaust the root subgroups of a root datum
+carried by the group scheme.
 
 ## Main results
 
@@ -49,11 +49,6 @@ of a root datum carried by the group scheme; those are separate Layer 9 targets.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plates I--IX.
-
-This advances the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone `L0` of
-`TauCetiRoadmap/CFSGStatement/README.md`, which requires each Lie-type carrier to be traceable to
-`DynkinType.simplyConnectedRootDatum` through `ValidLieTypeIndex.dynkinType`.
 -/
 
 public section

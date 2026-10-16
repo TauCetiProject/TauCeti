@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedRationalSubset
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Point
@@ -29,6 +30,9 @@ admissible presentations, when `A⁺` consists of power-bounded elements.
 
 * `TauCeti.ValuationSpectrum.presentationLimitMap_comp_presentationLimitLocIso_hom` : these
   isomorphisms commute with the restriction maps.
+* `TauCeti.ValuationSpectrum.presentationLimitLocIso_hom_comp_πToPresentation` : followed by a
+  projection, these isomorphisms are a projection followed by any map compatible with the
+  structure maps from `A`.
 * `TauCeti.ValuationSpectrum.presentationLimitLocIso_hom_presentationLimitMap_apply` and
   `TauCeti.ValuationSpectrum.bijective_presentationLimitLocIso_hom` : the same, and bijectivity,
   read on sections.
@@ -101,8 +105,7 @@ private theorem coe_locPresentation_num (p : Presentation P) :
       toCompletionLoc P T s S hden '' p.num :=
   Finset.coe_image
 
--- The numerators `ρ(T'')` span an open ideal when `T''` does: the ideal is carried to an open
--- ideal by the localisation map and then by the completion map.
+-- The numerators `ρ(T'')` span an open ideal when `T''` does.
 private theorem isOpen_span_locPresentation_num {p : Presentation P}
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
     letI := locUniformSpace P T s S hden
@@ -113,13 +116,8 @@ private theorem isOpen_span_locPresentation_num {p : Presentation P}
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
-  have _ := isHuberRing_locUniformSpace P T s S hden
-  have hρ : toCompletionLoc P T s S hden =
-      UniformSpace.Completion.coeRingHom.comp (algebraMap A S) :=
-    RingHom.ext (toCompletionLoc_apply P T s S hden)
-  have hopen := isOpen_map_algebraMap_locUniformSpace P T s S hden hp
-  rw [coe_locPresentation_num, ← Ideal.map_span, hρ, ← Ideal.map_map]
-  exact isOpen_map_coeRingHom hopen
+  rw [coe_locPresentation_num, ← Ideal.map_span]
+  exact isOpen_map_toCompletionLoc P T s S hden hp
 
 /-! ### The ring isomorphism as an isomorphism of objects -/
 
@@ -182,6 +180,28 @@ private theorem map_locPresentationIso_hom {p : Presentation P}
     Presentation.completionLocObjCommRingCatIso_hom,
     Presentation.completionLocObjCommRingCatIso_hom]
   exact TauCeti.TopCommRingCat.forget₂_map_eqToHom_comp_comp_eqToHom _ _ _ _
+
+-- The isomorphism carries the structure map `A → A⟨T''/s''⟩` to the composite
+-- `A → A⟨T/s⟩ → A⟨T/s⟩⟨ρ(T'')/ρ(s'')⟩` of the structure maps.
+private theorem toCompletionLocTopHom_comp_locPresentationIso_hom {p : Presentation P}
+    (hle : ∃ r, p.den = s * r ∧ ∀ t ∈ T, t * r ∈ p.num) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    p.toCompletionLocTopHom ≫ (locPresentationIso P T s S hden hle).hom.hom =
+      (⟨toCompletionLoc P T s S hden, continuous_toCompletionLoc P T s S hden⟩ :
+        TopCommRingCat.of A ⟶ TopCommRingCat.of (UniformSpace.Completion S)) ≫
+        (locPresentation P T s S hden p).toCompletionLocTopHom := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  rw [Presentation.toCompletionLocTopHom_eq, Presentation.toCompletionLocTopHom_eq]
+  simp only [locPresentationIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom,
+    Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
+  simp only [← Category.assoc]
+  apply eq_whisker
+  exact Subtype.ext (iteratedLocalizationRingEquiv_coe_comp_toCompletionLoc ..)
 
 -- **The ring-level square.** Comparison maps over `A` and over `A⟨T/s⟩` correspond under the
 -- isomorphisms: both composites are continuous and restrict to the same map on `A`.
@@ -352,6 +372,70 @@ theorem presentationLimitMap_comp_presentationLimitLocIso_hom
         presentationLimitMap (P := completionLocalization P T s S hden)
           (locOpensComap_mono P Aplus T s S hden h) :=
   presentationLimitMap_comp_presentationLimitLocIsoAux_hom P Aplus T s S hden hAplus _ _ h
+
+-- The isomorphism computed through a presentation, followed by a projection, is a projection
+-- followed by any map out of `A⟨i⟩` that is compatible with the structure maps.
+private theorem presentationLimitLocIsoAux_hom_comp_πToPresentation
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p : Presentation P}
+    {V : Opens ↥(spa Aplus)} (hpV : IsOpen (Ideal.span (p.num : Set A) : Set A) ∧
+      V = spaBasicOpen Aplus p.num p.den ∧ ∃ r, p.den = s * r ∧ ∀ t ∈ T, t * r ∈ p.num)
+    (i : PresentationIndex (P := P) Aplus V) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ (m : PresentationIndex (P := completionLocalization P T s S hden)
+      (completedPlusSubring P Aplus T s S hden) (locOpensComap P Aplus T s S hden V))
+      (f : i.pres.completionLocObj ⟶ m.pres.completionLocObj),
+      i.pres.toCompletionLocTopHom ≫ f.hom =
+          (⟨toCompletionLoc P T s S hden, continuous_toCompletionLoc P T s S hden⟩ :
+            TopCommRingCat.of A ⟶ TopCommRingCat.of (UniformSpace.Completion S)) ≫
+            m.pres.toCompletionLocTopHom →
+        (presentationLimitLocIsoAux P Aplus T s S hden hAplus hpV).hom ≫
+            presentationLimitπToPresentation _ _ m =
+          presentationLimitπToPresentation Aplus V i ≫ f := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  obtain ⟨hp, rfl, hle⟩ := hpV
+  intro m f hf
+  simp only [presentationLimitLocIsoAux, Iso.trans_hom, Iso.symm_hom, eqToIso.hom, eqToHom_refl,
+    Category.id_comp, Category.assoc]
+  rw [eqToHom_presentationLimit (locOpensComap_spaBasicOpen P Aplus T s S hden p.num p.den).symm,
+    presentationLimitMap_comp_πToPresentation,
+    reassoc_of% presentationLimitRationalIso_inv_comp_π,
+    presentationLimitRationalIso_hom]
+  -- both sides are projections followed by maps out of `A⟨i⟩` and `A⟨p⟩` agreeing on `A`
+  refine (presentationLimitπToPresentation_comp_eq_of_subset hAplus
+    (i.rationalSubset_subset le_rfl) ?_).symm
+  rw [hf, ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
+    reassoc_of% toCompletionLocTopHom_comp_locPresentationIso_hom P T s S hden hle,
+    toCompletionLocTopHom_comp_homOfRationalSubsetSubset_assoc,
+    Presentation.toCompletionLocTopHom_comp_eqToHom_hom (presentationIndexRestrict_obj_pres _ m)]
+
+/-- **Wedhorn's Remark 8.4 on projections.** For a rational open `V ⊆ R(T/s)`, an index `i` of
+`V` and an index `m` of its pullback `locOpensComap P Aplus T s S hden V`, the isomorphism
+`presentationLimitLocIso` followed by the projection to `A⟨T/s⟩⟨m⟩` is the projection to `A⟨i⟩`
+followed by any morphism `f : A⟨i⟩ → A⟨T/s⟩⟨m⟩` compatible with the structure maps from `A`. Such
+an `f` exists when `R(m)` lies over `R(i)`, for instance
+`TauCeti.Huber.PairOfDefinition.Presentation.mapHomOfSubset`. -/
+theorem presentationLimitLocIso_hom_comp_πToPresentation
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    {V : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus) (hVW : V ≤ spaBasicOpen Aplus T s)
+    (i : PresentationIndex (P := P) Aplus V) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ (m : PresentationIndex (P := completionLocalization P T s S hden)
+      (completedPlusSubring P Aplus T s S hden) (locOpensComap P Aplus T s S hden V))
+      (f : i.pres.completionLocObj ⟶ m.pres.completionLocObj),
+      i.pres.toCompletionLocTopHom ≫ f.hom =
+          (⟨toCompletionLoc P T s S hden, continuous_toCompletionLoc P T s S hden⟩ :
+            TopCommRingCat.of A ⟶ TopCommRingCat.of (UniformSpace.Completion S)) ≫
+            m.pres.toCompletionLocTopHom →
+        (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom ≫
+            presentationLimitπToPresentation _ _ m =
+          presentationLimitπToPresentation Aplus V i ≫ f :=
+  presentationLimitLocIsoAux_hom_comp_πToPresentation P Aplus T s S hden hAplus _ i
 
 /-- **Wedhorn's Remark 8.4 is natural in `V`, on sections.** This is
 `presentationLimitMap_comp_presentationLimitLocIso_hom` evaluated at a section `x` over `V`. -/

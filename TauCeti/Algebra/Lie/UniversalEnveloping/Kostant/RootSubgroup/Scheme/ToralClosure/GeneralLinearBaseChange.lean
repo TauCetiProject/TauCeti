@@ -415,7 +415,7 @@ theorem pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
     GeneralLinear.pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra ℤ n) J B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantRootSubgroupToralCoordinateMapOfEq
               e h ρ M hM hnil b wt hJ i)).app B q)) =
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
@@ -424,7 +424,7 @@ theorem pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
   -- The additive coordinate Hopf algebra is definitionally this symmetric-algebra model; the
   -- explicit spelling also selects the bundled `CommAlgCat` algebra structure carried by `q`.
   change WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] B) at q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.quotientPointsHom_apply, GeneralLinear.pointsMulEquiv_apply]
   -- Expose the algebra-hom precomposition hidden by the quotient and point-functor wrappers.
   change GeneralLinear.pointToGeneralLinear n
@@ -502,12 +502,12 @@ theorem pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq [Fintype κ]
     GeneralLinear.pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra ℤ n) J B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantWeightTorusToralCoordinateMapOfEq
               e h ρ M hM hnil b wt hJ)).app B q)) =
       (@kostantTorusMatrix κ V _ M _ n b wt B _ (Ring.toIntAlgebra B))
         (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.quotientPointsHom_apply, GeneralLinear.pointsMulEquiv_apply]
   -- Expose the algebra-hom precomposition hidden by the quotient and point-functor wrappers.
   change GeneralLinear.pointToGeneralLinear n
@@ -518,7 +518,7 @@ theorem pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq [Fintype κ]
             MonoidAlgebra ℤ (SplitTorus.characterGroup κ)))) = _
   rw [mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq]
   rw [← GeneralLinear.pointsMulEquiv_apply,
-    ← CommHopfAlgCat.mapPointsFunctor_app_apply,
+    ← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap,
     kostantTorusMatrix_apply]
 
@@ -590,13 +590,13 @@ theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra A n)
           (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A) B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantRootSubgroupToralBaseChangePresentationCoordinateMap
               e h ρ M hM hnil b wt A i)).app B q)) =
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
         ((@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
           (Ring.toIntAlgebra B)).symm (AdditiveGroup.gaPointsMulEquiv q)) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   let qTensor :=
     WithConv.toConv (q.ofConv.comp
       (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom.hom.toAlgHom)
@@ -656,7 +656,7 @@ theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
         (kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChangeMap
           e h ρ M hM hnil b wt A hJ i) B q
     _ = _ := by
-      rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
+      rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       exact
         pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
           e h ρ M hM hnil b wt hJ i
@@ -708,12 +708,12 @@ theorem pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap [Fintype �
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra A n)
           (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A) B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantWeightTorusToralBaseChangePresentationCoordinateMap
               e h ρ M hM hnil b wt A)).app B q)) =
       (@kostantTorusMatrix κ V _ M _ n b wt B _ (Ring.toIntAlgebra B))
         (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   let qTensor :=
     WithConv.toConv (q.ofConv.comp
       (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ A
@@ -776,7 +776,7 @@ theorem pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap [Fintype �
         (kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChangeMap
           e h ρ M hM hnil b wt A hJ) B q
     _ = _ := by
-      rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
+      rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       exact
         pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
           e h ρ M hM hnil b wt hJ

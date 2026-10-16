@@ -56,11 +56,7 @@ finiteness is asserted.
 
 ## References
 
-This advances the target "points over an algebraically closed field as a group, functorially in
-the field, so that a field endomorphism induces a group endomorphism of the points" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which names the `q`-power Frobenius as the first case
-a consumer asks for. The consumer is milestone L3 of `TauCetiRoadmap/CFSGStatement/README.md`,
-which sets `H_d = fixedSubgroup d.steinberg`; the construction is standard, see R. W. Carter,
+For the fixed-point construction of finite groups of Lie type, see R. W. Carter,
 *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 -/
 
@@ -93,30 +89,6 @@ theorem iterateFrobeniusPoints_eq_self_iff {f : WithConv (H →ₐ[ℤ] A)} :
     refine WithConv.ofConv_injective (AlgHom.ext fun h => ?_)
     rw [iterateFrobeniusPoints_apply_apply]
     exact hf h
-
-/-- The corestriction of a point all of whose values are Frobenius-fixed to a point valued in the
-Frobenius-fixed subring. Private: the public interface is `frobeniusFixedInclusion` together with
-`range_frobeniusFixedInclusion`, which say the same thing without exposing a second spelling of a
-point. -/
-private def corestrictFrobeniusFixed (f : H →ₐ[ℤ] A)
-    (hf : ∀ h : H, f h ∈ frobeniusFixedSubring A p n) :
-    H →ₐ[ℤ] ↥(frobeniusFixedSubring A p n) :=
-  -- `AlgHom.codRestrict` corestricts to a `Subalgebra`, so the corestriction is literally valued
-  -- in `↥(subalgebraOfSubring (frobeniusFixedSubring A p n))`. That subtype has the same carrier
-  -- as `↥(frobeniusFixedSubring A p n)` and, since the base is `ℤ`, the same algebra structure
-  -- (`Subalgebra.algebra` and `algebraInt` agree definitionally on it), so the declared type is
-  -- the `Subring` spelling of the same object; Mathlib has no lemma naming that identification.
-  f.codRestrict (subalgebraOfSubring (frobeniusFixedSubring A p n))
-    fun h => mem_subalgebraOfSubring.mpr (hf h)
-
-/-- The corestriction of a point to the Frobenius-fixed subring has the same values as the point
-itself. Private, like the corestriction it describes. -/
-private theorem coe_corestrictFrobeniusFixed_apply (f : H →ₐ[ℤ] A)
-    (hf : ∀ h : H, f h ∈ frobeniusFixedSubring A p n) (h : H) :
-    (corestrictFrobeniusFixed p n f hf h : A) = f h :=
-  -- `AlgHom.coe_codRestrict` states this for the `Subalgebra` coercion; it applies because that
-  -- coercion is the `Subring` one, as recorded in the comment on `corestrictFrobeniusFixed`.
-  AlgHom.coe_codRestrict _ _ _ h
 
 /-- The homomorphism of convolution monoids that reads a point valued in the Frobenius-fixed
 subring of `A` as a point valued in `A`. It is post-composition with the inclusion of the subring,
@@ -159,10 +131,14 @@ theorem range_frobeniusFixedInclusion :
     simpa only [frobeniusFixedInclusion_apply_apply] using
       mem_frobeniusFixedSubring.mp (g.ofConv h).2
   · intro hf
-    refine ⟨toConv (corestrictFrobeniusFixed p n f.ofConv fun h =>
-      mem_frobeniusFixedSubring.mpr (hf h)), ?_⟩
+    -- Over `ℤ`, the subalgebra and subring have definitionally equal subtype algebra
+    -- structures, so `codRestrict` is valued in the fixed subring with its usual algebra.
+    refine ⟨toConv (f.ofConv.codRestrict
+      (subalgebraOfSubring (frobeniusFixedSubring A p n)) fun h =>
+        mem_subalgebraOfSubring.mpr (mem_frobeniusFixedSubring.mpr (hf h))), ?_⟩
     refine WithConv.ofConv_injective (AlgHom.ext fun h => ?_)
-    rw [frobeniusFixedInclusion_apply_apply, ofConv_toConv, coe_corestrictFrobeniusFixed_apply]
+    rw [frobeniusFixedInclusion_apply_apply, ofConv_toConv]
+    exact AlgHom.coe_codRestrict _ _ _ h
 
 /-- The fixed points of the `p ^ n`-power Frobenius on the `A`-valued points of `H` are the points
 of `H` valued in the Frobenius-fixed subring of `A`. When `H` is moreover commutative these are
@@ -209,11 +185,9 @@ theorem coe_frobeniusFixedPointsMulEquiv_symm_apply_apply
 
 /-! ### Elementary properties of the fixed subgroup -/
 
-/-- The zeroth Frobenius iterate fixes every point.
-
-Deliberately not `@[simp]`: `iterateFrobeniusPoints_zero` already rewrites the endomorphism to the
-identity, after which `MonoidHom.eqLocus_same` closes the goal, so a `simp` attribute here would be
-redundant and the `simpNF` linter rejects it. -/
+/-- The zeroth Frobenius iterate fixes every point. -/
+-- Not `@[simp]`: `iterateFrobeniusPoints_zero` already rewrites the endomorphism to the
+-- identity, after which `MonoidHom.eqLocus_same` closes the goal.
 theorem fixedSubgroup_iterateFrobeniusPoints_zero :
     fixedSubgroup (iterateFrobeniusPoints p 0 (H := H) (A := A)) = ⊤ :=
   fixedSubgroup_eq_top_iff.mpr (iterateFrobeniusPoints_zero p)

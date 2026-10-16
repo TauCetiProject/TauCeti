@@ -105,7 +105,7 @@ theorem sum_inv_mul_monoidHom_apply_finRotate_three_ne_ite :
       if finRotate 3 = (1 : Perm (Fin 3)) then (Nat.card (Perm (Fin 3)) : M) else 0 := by
   -- a domain with a primitive square root of unity does not have characteristic two
   have h2 : (2 : M) ≠ 0 := by
-    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot M 2
+    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M 2
     exact_mod_cast hζ.neZero'.out
   rw [ite_eq_right (by decide)]
   simpa only [map_one, inv_one, Units.val_one, one_mul, sum_monoidHom_apply_finRotate_three]

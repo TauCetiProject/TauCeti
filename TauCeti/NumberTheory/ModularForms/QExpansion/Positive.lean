@@ -76,8 +76,8 @@ theorem weight_ne_zero_of_pos_qExpansion_coeff_ne_zero [Subgroup.IsFiniteRelInde
     simpa only [Subgroup.inf_relIndex_right] using Γ.relIndex_ne_zero⟩,
     Subgroup.isFiniteRelIndex_of_le_right 𝒮ℒ inf_le_right⟩⟩
   obtain ⟨c, hconst⟩ := _root_.ModularForm.eq_const_of_weight_zero
-    (_root_.ModularForm.ofLe (Γ' := Γ ⊓ 𝒮ℒ) inf_le_left f)
-  rw [_root_.ModularForm.coe_ofLe] at hconst
+    (_root_.ModularForm.restrict (𝒢 := Γ ⊓ 𝒮ℒ) inf_le_left f)
+  rw [_root_.ModularForm.coe_restrict] at hconst
   have hs (z : ℍ) :
       HasSum (fun m ↦ (if m = 0 then c else 0) • Function.Periodic.qParam h z ^ m) (f z) := by
     rw [hconst, Function.const_apply]

@@ -25,11 +25,7 @@ Concretely `φ` induces, by `MonoidAlgebra.mapDomainBialgHom`, the bialgebra map
 calculation `pointsMulEquiv_pointsMap` says this monoid homomorphism is intertwined by
 `pointsMulEquiv` with precomposition by `φ` on character groups, so the contravariant functor
 `G ↦ D(G)` agrees on points with the contravariant functor `G ↦ (G →* Aˣ)`. This is the
-on-points half of the roadmap's anti-equivalence `M ↦ D(M)`.
-
-This advances the reductive-groups roadmap (Layer 4, "diagonalizable groups and groups of
-multiplicative type: the anti-equivalence `M ↦ D(M)`"), building on the diagonalizable-group
-worked example and the coordinate-Hopf-algebra functoriality `AlgHom.mapDomain`.
+on-points half of the anti-equivalence `M ↦ D(M)`.
 
 ## Main declarations
 
@@ -49,8 +45,7 @@ worked example and the coordinate-Hopf-algebra functoriality `AlgHom.mapDomain`.
 The group-algebra bialgebra functoriality `MonoidAlgebra.mapDomainBialgHom` is Mathlib's
 (`Mathlib.RingTheory.Bialgebra.MonoidAlgebra`). The convolution-group functoriality in the
 coordinate Hopf algebra is Tau Ceti's `TauCeti.AlgHom.mapDomain`
-(`TauCeti.Algebra.AlgebraicGroup.Hopf.Map`). This realizes the diagonalizable-group
-functoriality of the Tau Ceti reductive-groups roadmap (Layer 4).
+(`TauCeti.Algebra.AlgebraicGroup.Hopf.Map`).
 -/
 
 public section

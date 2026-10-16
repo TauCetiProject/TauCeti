@@ -22,10 +22,9 @@ morphisms induce the same map on it, which is the defining condition of the equa
 
 ## References
 
-The equalizer of two homomorphisms of group schemes is a closed subgroup scheme, described on
-points by exactly this condition; see [Milne, *Algebraic Groups*][milne2017], §1.h, and Waterhouse,
-*Introduction to Affine Group Schemes*, §15.3. It serves
-`TauCetiRoadmap/ReductiveGroups/README.md`, "Hopf ideals ↔ closed subgroup schemes".
+The equalizer of two homomorphisms of group schemes is a closed subgroup scheme, described on points
+by exactly this condition; see [Milne, *Algebraic Groups*][milne2017], §1.h, and Waterhouse,
+*Introduction to Affine Group Schemes*, §15.3.
 -/
 
 public section

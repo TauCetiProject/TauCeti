@@ -54,6 +54,8 @@ differential squares to zero and satisfies the Leibniz rule
   operations on composable strings.
 * `TauCeti.AInfinityCategory.homDifferential_homDifferential`: the differential squares to zero.
 * `TauCeti.AInfinityCategory.homDifferential_comp`: the Leibniz rule.
+* `TauCeti.AInfinityCategory.comp_assoc_of_m_three_eq_zero`: composition is associative when the
+  ternary operation vanishes.
 
 ## References
 
@@ -314,6 +316,15 @@ theorem homDifferential_comp {X Y Z : C} {p : ℤ} {g : homModule (R := R) Y Z}
   simp only [homInclusion_homDifferential, homInclusion_comp,
     AInfinityAlgebra.differential_apply]
   exact 𝒞.stasheff_arity_two _ _ p (by rwa [𝒞.grading_eq, homInclusion_mem_totalGrading_piece_iff])
+
+/-- **Associativity of composition.** If the ternary operation vanishes, the arity-three Stasheff
+identity says that the composition `m₂` is associative: `(h ∘ g) ∘ f = h ∘ (g ∘ f)`. -/
+theorem comp_assoc_of_m_three_eq_zero (h₃ : 𝒞.m 3 = 0) {W X Y Z : C}
+    (h : homModule (R := R) Y Z) (g : homModule (R := R) X Y) (f : homModule (R := R) W X) :
+    𝒞.comp W X Z (𝒞.comp X Y Z h g) f = 𝒞.comp W Y Z h (𝒞.comp W X Y g f) := by
+  apply homInclusion_injective W Z
+  simp only [homInclusion_comp]
+  exact 𝒞.m_two_assoc_of_m_three_eq_zero h₃ _ _ _
 
 end AInfinityCategory
 

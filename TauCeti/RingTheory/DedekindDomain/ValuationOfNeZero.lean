@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.RamificationInertia.Valuation
 public import Mathlib.RingTheory.DedekindDomain.SelmerGroup
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # The `Multiplicative ℤ`-valued adic valuation of a unit

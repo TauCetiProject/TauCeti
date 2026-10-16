@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
-import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -45,8 +44,6 @@ represented value carries the whole content of the first theorem: every quadrati
 * `TauCeti.mem_unitValueSet_binary_iff_equivalent`: the representation normal form, Lam I.2.3 (2).
 * `TauCeti.equivalent_binaryNormalForm_inv`: the two spellings `a b c` and `a b c⁻¹` of the
   forced second coefficient present the same form.
-* `TauCeti.isSquare_mul_mul_of_equivalent_binary`: isometric binary forms have equal
-  discriminants modulo squares.
 * `TauCeti.apply_mul_eq_of_equivalent_binary`: a pairing constant on isometric binary forms
   agrees on their discriminants in its first argument.
 * `TauCeti.equivalent_binary_iff`: the binary equivalence criterion, Lam I.5.1.
@@ -200,29 +197,29 @@ theorem equivalent_binary_of_isSquare_of_mem_unitValueSet {a b c d e : Rˣ}
         _ = a * (b * e) := by simp [mul_assoc]
     simpa [mul_assoc] using congrArg Units.val hu
 
-/-- Isometric binary diagonal forms with unit coefficients have the same discriminant modulo
-squares: the discriminant of `⟨a, b⟩` is `a * b` and that of `⟨c, d⟩` is `c * d`, and the two
-agree modulo squares exactly when their product `a * b * (c * d)` is a square. -/
-theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : R)] {a b c d : Rˣ}
-    (h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
-      (weightedSumSquares R ![(c : R), (d : R)])) :
-    IsSquare (a * b * (c * d)) := by
-  obtain ⟨f⟩ := h
-  have heq : weightedSumSquares R ![(a : R), (b : R)] =
-      (weightedSumSquares R ![(c : R), (d : R)]).comp f.toLinearMap :=
-    QuadraticMap.ext fun x => (f.map_app x).symm
-  have hdisc := congrArg QuadraticForm.discr' heq
-  rw [QuadraticForm.discr'_comp, LinearMap.det_toMatrix'] at hdisc
-  have hdiag (x y : Rˣ) :
-      QuadraticForm.discr' (weightedSumSquares R ![(x : R), (y : R)]) = (x : R) * y := by
-    rw [QuadraticForm.discr', Matrix.det_fin_two]
-    simp [QuadraticForm.toMatrix', LinearMap.toMatrix₂'_apply,
-      QuadraticMap.associated_eq_self_apply, QuadraticMap.associated_apply,
-      weightedSumSquares_apply, Fin.sum_univ_two]
-  rw [hdiag, hdiag] at hdisc
-  refine ⟨LinearEquiv.det f.toLinearEquiv * c * d, Units.ext ?_⟩
-  simp only [Units.val_mul, LinearEquiv.coe_det]
-  linear_combination ((c : R) * d) * hdisc
+/-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
+coefficients are isometric exactly when their discriminants agree modulo squares and they
+represent a common unit.
+
+The quotient-free spelling `IsSquare (a * b * (c * d))` of "equal discriminants" is the one that
+`TauCeti.squareClass_eq_zero_iff` translates into the square-class group. -/
+theorem equivalent_binary_iff [Invertible (2 : R)] (a b c d : Rˣ) :
+    (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
+        (weightedSumSquares R ![(c : R), (d : R)]) ↔
+      IsSquare (a * b * (c * d)) ∧
+        ∃ e : Rˣ, e ∈ unitValueSet (weightedSumSquares R ![(a : R), (b : R)]) ∧
+          e ∈ unitValueSet (weightedSumSquares R ![(c : R), (d : R)]) := by
+  refine ⟨fun h => ⟨?_, a,
+    mem_unitValueSet_binary_left _ _, ?_⟩,
+    fun ⟨hdisc, _, hab, hcd⟩ => equivalent_binary_of_isSquare_of_mem_unitValueSet hdisc hab hcd⟩
+  · have hcoe (u v : Rˣ) : (fun i => ((![u, v] i : Rˣ) : R)) = ![(u : R), (v : R)] := by
+      ext i
+      fin_cases i <;> rfl
+    have hunit : (weightedSumSquares R ![a, b]).Equivalent (weightedSumSquares R ![c, d]) := by
+      simpa only [weightedSumSquares_units, hcoe] using h
+    simpa [Fin.prod_univ_two] using isSquare_prod_mul_prod_of_equivalent hunit
+  · rw [← h.unitValueSet_eq]
+    exact mem_unitValueSet_binary_left _ _
 
 /-- A pairing constant on the coefficients of isometric binary forms takes the same values
 at their discriminants in its first argument. -/
@@ -238,31 +235,13 @@ theorem apply_mul_eq_of_equivalent_binary [Invertible (2 : R)] {M : Type*}
     intro i
     fin_cases i
     · simpa [pow_two] using
-        (isSquare_mul_mul_of_equivalent_binary h).div (IsSquare.sq (c * d))
+        ((equivalent_binary_iff a b c d).mp h).1.div (IsSquare.sq (c * d))
     · simp
   have hcoe (u v : Rˣ) : (fun i => ((![u, v] i : Rˣ) : R)) = ![(u : R), (v : R)] := by
     ext i
     fin_cases i <;> rfl
   simpa only [weightedSumSquares_units, hcoe] using
     equivalent_weightedSumSquares_of_isSquare_div (R := R) hsq
-
-/-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
-coefficients are isometric exactly when their discriminants agree modulo squares and they
-represent a common unit.
-
-The quotient-free spelling `IsSquare (a * b * (c * d))` of "equal discriminants" is the one that
-`TauCeti.squareClass_eq_zero_iff` translates into the square-class group. -/
-theorem equivalent_binary_iff [Invertible (2 : R)] (a b c d : Rˣ) :
-    (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
-        (weightedSumSquares R ![(c : R), (d : R)]) ↔
-      IsSquare (a * b * (c * d)) ∧
-        ∃ e : Rˣ, e ∈ unitValueSet (weightedSumSquares R ![(a : R), (b : R)]) ∧
-          e ∈ unitValueSet (weightedSumSquares R ![(c : R), (d : R)]) := by
-  refine ⟨fun h => ⟨isSquare_mul_mul_of_equivalent_binary h, a,
-    mem_unitValueSet_binary_left _ _, ?_⟩,
-    fun ⟨hdisc, _, hab, hcd⟩ => equivalent_binary_of_isSquare_of_mem_unitValueSet hdisc hab hcd⟩
-  rw [← h.unitValueSet_eq]
-  exact mem_unitValueSet_binary_left _ _
 
 end CommRing
 

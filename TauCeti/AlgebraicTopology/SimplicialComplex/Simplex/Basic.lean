@@ -96,7 +96,8 @@ theorem singleton_mem_simplex {v : ι} : {v} ∈ simplex V ↔ v ∈ V := by
   simp
 
 /-- A zero-simplex has exactly its singleton vertex as a face. -/
-@[simp]
+-- Compute faces before converting a singleton simplex to the point complex.
+@[simp↓]
 theorem faces_simplex_singleton (v : ι) : (simplex {v}).faces = {{v}} := by
   ext σ
   constructor

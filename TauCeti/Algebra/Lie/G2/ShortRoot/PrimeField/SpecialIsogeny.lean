@@ -671,7 +671,8 @@ private theorem g2SpecialIsogeny_g2SpecialIsogeny_of_mem_points
       (((TauCeti.GeneralLinear.pointsMulEquiv (R := ZMod 3) 7).symm g).ofConv :
         TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7 → A) := by
     funext x
-    rw [Function.comp_apply, hq, BialgHom.coe_toAlgHom, CommHopfAlgCat.mkQuotient_apply]
+    rw [Function.comp_apply, hq, BialgHom.coe_toAlgHom, CommHopfAlgCat.mkQuotient_apply,
+      Ideal.Quotient.mkₐ_eq_mk]
     exact CommHopfAlgCat.liftQuotientPoint_mk
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
       (CommHopfAlgCat.commonKernelHopfIdeal generator) (CommAlgCat.of (ZMod 3) A)
