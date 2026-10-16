@@ -15,7 +15,7 @@ import TauCeti.Topology.Algebra.Group.Profinite.Gaschutz
 # Free presentations lifting prescribed local Galois generators
 
 Let `L/K` be a finite Galois extension of finite extensions of `ℚ_p`. Every generating
-family of `Gal(L/K)` with `[K : ℚ_p] + 2` members lifts to a topological generating family
+family of `Gal(L/K)` with at least `[K : ℚ_p] + 2` members lifts to a topological generating family
 of `G_K`. Consequently it is the image of the free generators under a continuous
 surjection onto `G_K` that commutes with restriction to `L`.
 
@@ -26,8 +26,8 @@ surjection onto the completed multiplicative group of `L`.
 
 ## Main results
 
-* `TauCeti.exists_surjective_presentation_of_card_eq`: a free profinite presentation of
-  `G_K` lifting any prescribed generating family of `Gal(L/K)` of size `[K : ℚ_p] + 2`.
+* `TauCeti.exists_surjective_presentation_of_card_le`: a free profinite presentation of
+  `G_K` lifting any prescribed generating family of `Gal(L/K)` of size at least `[K : ℚ_p] + 2`.
 
 ## References
 
@@ -40,15 +40,15 @@ public section
 
 namespace TauCeti
 
-/-- Every generating family of a finite local Galois group with `[K : ℚ_p] + 2` members
+/-- Every generating family of a finite local Galois group with at least `[K : ℚ_p] + 2` members
 lifts to a continuous surjective free profinite presentation of `G_K`. The presentation
 commutes with restriction along the chosen embedding of `L` into the separable closure. -/
-theorem exists_surjective_presentation_of_card_eq (p : ℕ) [Fact p.Prime]
+theorem exists_surjective_presentation_of_card_le (p : ℕ) [Fact p.Prime]
     (K L : Type) [Field K] [Field L] [Algebra K L] [Algebra ℚ_[p] K]
     [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L] [Module.Finite ℚ_[p] L]
     [IsGalois K L] {ι : Type} [Fintype ι] {g : ι → L ≃ₐ[K] L}
     (hg : Subgroup.closure (Set.range g) = ⊤)
-    (hι : Fintype.card ι = Module.finrank ℚ_[p] K + 2)
+    (hι : Module.finrank ℚ_[p] K + 2 ≤ Fintype.card ι)
     (j : L →ₐ[K] SeparableClosure K) :
     ∃ φ : freeProfiniteGroup ι →ₜ* AbsoluteGaloisGroup K,
       Function.Surjective φ ∧
@@ -62,14 +62,19 @@ theorem exists_surjective_presentation_of_card_eq (p : ℕ) [Fact p.Prime]
   let _ := algebraicExtensionNormedFieldTopology ℚ_[p] K
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] K
   have := algebraicExtension_valuativeExtension ℚ_[p] K
-  -- Supply a generating family of `G_K` with the required indexing type.
+  -- Pad a generating family of `G_K` with identities to the required indexing type.
   obtain ⟨x, hx⟩ := exists_tuple_generating_mod_wildInertiaCommutator p K
   have hxgen := topologicalClosure_eq_top_of_sup_wildInertiaCommutator hx
   let a := absoluteGaloisGroupRestrictEquiv K
-  let e : ι ≃ Fin (Module.finrank ℚ_[p] K + 2) := Fintype.equivOfCardEq (by simpa using hι)
-  let t := (a ∘ x) ∘ e
+  obtain ⟨e : Fin (Module.finrank ℚ_[p] K + 2) ↪ ι⟩ :=
+    Function.Embedding.nonempty_of_card_le
+      (α := Fin (Module.finrank ℚ_[p] K + 2)) (β := ι) (by simpa using hι)
+  let t := Function.extend e (a ∘ x) (fun _ ↦ 1)
+  have hxt : Set.range (a ∘ x) ⊆ Set.range t := by
+    simpa only [t, Function.extend_comp e.injective] using Set.range_comp_subset_range e t
   have ht : (Subgroup.closure (Set.range t)).topologicalClosure = ⊤ := by
-    simpa [t, e.surjective.range_comp, Set.range_comp] using
+    apply eq_top_mono (Subgroup.topologicalClosure_mono (Subgroup.closure_mono hxt))
+    simpa [Set.range_comp] using
       topologicalClosure_closure_image_eq_top (f := a.toMulEquiv.toMonoidHom)
         hxgen a.continuous a.surjective.denseRange
   -- Gaschütz's lemma replaces that family by one lifting the prescribed generators.
