@@ -578,14 +578,14 @@ theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
     one_smul _ := rfl
     mul_smul _ _ _ := rfl }
   let _ := action
+  -- The action is evaluation, read through the coercion to `P.X`.
+  have coe_smul (e : P.Iso P) (x : P.restrict ⁻¹' {basePt}) :
+      ((e • x : P.restrict ⁻¹' {basePt}) : P.X) = e x :=
+    rfl
   let _ : IsCancelSMul (P.Iso P) (P.restrict ⁻¹' {basePt}) :=
     isCancelSMul_iff_eq_one_of_smul_eq.mpr fun e x h ↦ by
       apply eq_of_apply_eq x
-      change action.smul e x = x at h
-      calc
-        e (x : P.X) = ((action.smul e x : P.restrict ⁻¹' {basePt}) : P.X) := rfl
-        _ = (x : P.X) := congrArg (fun y : P.restrict ⁻¹' {basePt} ↦ (y : P.X)) h
-        _ = (1 : P.Iso P) (x : P.X) := (one_apply (P := P) (x : P.X)).symm
+      rw [one_apply, ← coe_smul, h]
   have := (P.finite_restrict_preimage_singleton basePt).to_subtype
   rw [← P.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq]
   exact natCard_dvd_natCard_of_isCancelSMul
