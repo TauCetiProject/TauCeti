@@ -435,12 +435,12 @@ noncomputable def projectivePresentation (h : E.EnoughProjectives) (X : C) :
   (h.presentation X).some
 
 /-- Enough relative projectives transfer along an additive equivalence that preserves
-conflations in both directions: a presentation of `Y` is the image of a presentation of the
-inverse image of `Y`, corrected by the counit. -/
+conflations in both directions. -/
 theorem of_equivalence {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
     [HasBinaryBiproducts D] {E' : ExactStructure D} (h : E.EnoughProjectives) (e : C ≌ D)
     [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
     (hG : E'.IsConflationExact E e.inverse) : E'.EnoughProjectives := by
+  -- Transport a presentation of the inverse image of `Y`, then correct by the counit.
   refine ⟨fun Y ↦ ?_⟩
   let P := h.projectivePresentation (e.inverse.obj Y)
   have hp : E'.IsDeflation (e.functor.map P.p ≫ e.counit.app Y) :=

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.Homotopy
-public import Mathlib.Algebra.Homology.Linear
 public import Mathlib.CategoryTheory.DifferentialObject
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.Data.ZMod.Defs
