@@ -37,7 +37,7 @@ theorem coordinatePower_a1_eq_smul_unitLattice (ι : Type*) [Fintype ι] :
     intro y
     simp only [coordinatePower_form, coordinatePowerForm_apply, a1_form_apply,
       smul_form, LinearMap.smul_apply, unitLattice_form_apply,
-      smul_eq_mul, mul_assoc, mul_sum]
+      smul_eq_mul, mul_assoc, Finset.mul_sum]
     norm_num
 
 end TauCeti.IntegralLattice
