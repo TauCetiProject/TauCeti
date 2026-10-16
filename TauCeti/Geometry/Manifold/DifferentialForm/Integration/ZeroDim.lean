@@ -45,14 +45,16 @@ theorem extChartAt_source_zeroDim (x : M) :
 /-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
 theorem isSmoothForm_zeroDim (g : M → ℝ) :
     IsSmoothForm 𝓘(ℝ, E) 0 (RoughForm.ofFunction 𝓘(ℝ, E) g) := by
-  apply IsSmoothForm.of_contDiffWithinAt_inChartAt_self
+  rw [isSmoothForm_def]
   intro x
-  have he : (RoughForm.ofFunction 𝓘(ℝ, E) g).inChartAt x =
-      fun _ ↦ (RoughForm.ofFunction 𝓘(ℝ, E) g).inChartAt x 0 := by
-    funext y
-    rw [Subsingleton.elim y 0]
-  rw [he]
-  exact contDiffWithinAt_const
+  rw [Bundle.contMDiffAt_section x, contMDiffAt_iff_source,
+    contMDiffWithinAt_iff_contDiffWithinAt]
+  have hflat (f : E → E [⋀^Fin 0]→L[ℝ] ℝ) (s : Set E) (z : E) :
+      ContDiffWithinAt ℝ 0 f s z := by
+    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
+    rw [he]
+    exact contDiffWithinAt_const
+  exact hflat _ _ _
 
 private theorem addHaar_univ_zeroDim (b : Module.Basis (Fin 0) ℝ E) : b.addHaar univ = 1 := by
   have hp : parallelepiped b = (univ : Set E) := by
