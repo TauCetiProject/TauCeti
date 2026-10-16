@@ -50,33 +50,10 @@ theorem IsJordanSplitting.forall_pow_succ_dvd_self_iff (h : B.IsJordanSplitting 
     (hπ : π ∈ nonZeroDivisors R) (j : ℕ) :
     (∀ x : N j, π ^ (j + 1) ∣ B x x) ↔
       ∀ x : M, (∀ y, π ^ j ∣ B x y) → π ^ (j + 1) ∣ B x x := by
-  classical
   constructor
   · intro hself x hx
-    obtain ⟨f, rfl⟩ := (Submodule.mem_iSup_iff_exists_dfinsupp' N x).mp
-      (h.isInternal.submodule_iSup_eq_top ▸ Submodule.mem_top)
-    have hcomponent (i : ℕ) : π ^ (j + 1) ∣ B (f i) (f i) := by
-      rcases lt_trichotomy i j with hi | rfl | hi
-      · obtain ⟨z, hz⟩ := (h.isModular i).exists_eq_smul_of_forall_dvd
-          (pow_mem hπ i) (pow_mem hπ (j - i)) (x := f i) fun y ↦ by
-            rw [← pow_add, Nat.add_sub_of_le hi.le, restrict_apply, domRestrict_apply,
-              ← h.apply_dfinsuppSum f i y]
-            exact hx y
-        obtain ⟨c, hc⟩ := (h.isModular i).dvd z z
-        have hc' : B z z = π ^ i * c := by
-          simpa only [restrict_apply, domRestrict_apply] using hc
-        rw [hz, Submodule.coe_smul]
-        simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hc']
-        have heq : π ^ (j - i) * (π ^ (j - i) * (π ^ i * c)) =
-            π ^ ((j - i) + (j - i) + i) * c := by simp [pow_add, mul_assoc]
-        rw [heq]
-        exact dvd_mul_of_dvd_left (pow_dvd_pow π (by omega)) c
-      · exact hself (f i)
-      · exact (pow_dvd_pow π hi).trans ((h.isModular i).dvd (f i) (f i))
-    rw [DFinsupp.sum, map_sum]
-    refine Finset.dvd_sum fun i _ ↦ ?_
-    rw [← DFinsupp.sum, h.apply_dfinsuppSum f i (f i)]
-    exact hcomponent i
+    obtain ⟨f, _, hf⟩ := h.exists_pow_succ_dvd_sub hπ j
+    simpa using (hf x x hx hx).add (hself (f x))
   · intro hself x
     exact hself x (h.pow_dvd_apply x.2)
 
