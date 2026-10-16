@@ -61,6 +61,7 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
   shifts, after translating the point, and by injective coefficient maps.
 * `Polynomial.orderAt_comp_X_add_C`: translating the distinguished variable of a polynomial
   family translates its ambient order.
+* `MvPolynomial.taylor_rename`: Taylor shifts commute with renaming the variables.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
@@ -144,6 +145,12 @@ theorem taylor_zero (p : MvPolynomial σ R) : taylor 0 p = p := by
 theorem taylor_taylor (a b : σ → R) (p : MvPolynomial σ R) :
     taylor a (taylor b p) = taylor (a + b) p := by
   induction p using MvPolynomial.induction_on <;> simp_all [add_assoc]
+
+/-- Renaming the variables commutes with Taylor shifts, with the center pulled back along the
+renaming. -/
+theorem taylor_rename (f : σ → τ) (b : τ → R) (p : MvPolynomial σ R) :
+    taylor b (rename f p) = rename f (taylor (b ∘ f) p) := by
+  induction p using MvPolynomial.induction_on <;> simp_all
 
 /-- The Taylor shift does not increase the total degree. -/
 theorem totalDegree_taylor_le (a : σ → R) (p : MvPolynomial σ R) :
@@ -449,10 +456,8 @@ theorem orderAt_prod [NoZeroDivisors R] [Nontrivial R] {ι : Type*}
 /-- Renaming the variables along an injective map does not change the order. -/
 theorem orderAt_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolynomial σ R)
     (b : τ → R) : (rename f p).orderAt b = p.orderAt (b ∘ f) := by
-  have htaylor : taylor b (rename f p) = rename f (taylor (b ∘ f) p) := by
-    induction p using MvPolynomial.induction_on <;> simp_all
   refine eq_of_forall_le_iff fun n ↦ ?_
-  rw [le_orderAt_iff, le_orderAt_iff, htaylor]
+  rw [le_orderAt_iff, le_orderAt_iff, taylor_rename]
   refine ⟨fun h d hd ↦ ?_, fun h d hd ↦ ?_⟩
   · simpa only [coeff_rename_mapDomain f hf] using
       h (d.mapDomain f) (by simpa only [degree_mapDomain] using hd)
