@@ -13,8 +13,9 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
 For a scheme over a base commutative ring, restricting the global-functions actions of
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic` along the induced map on global functions gives
 the corresponding actions of the base ring: the module structure on cohomology, the linearity
-of the maps induced by morphisms of coefficient sheaves, and the degree-zero identification
-with global sections.
+of the maps induced by morphisms of coefficient sheaves (and the linear equivalences induced by
+isomorphisms), the compatibility of the two actions (`Scheme.Modules.isScalarTower_cohomology`),
+and the degree-zero identification with global sections.
 
 The base-ring statements live in their own file, rather than alongside the global-functions
 ones, to keep each file's kernel-checking time inside the CI per-file budget: every declaration
@@ -104,6 +105,42 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_add
   simp only [cohomologyMapBaseLinear_apply, LinearMap.add_apply]
   rw [Functor.map_add]
   rfl
+
+variable {X} in
+/-- An isomorphism of sheaves of modules on a scheme over a commutative ring induces a linear
+equivalence over the base ring on cohomology. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBaseLinearEquivOfIso
+    (e : M ≅ N) (i : ℕ) :
+    Cohomology M i ≃ₗ[R] Cohomology N i :=
+  LinearEquiv.ofLinearMap (cohomologyMapBaseLinear R X e.hom i)
+    (cohomologyMapBaseLinear R X e.inv i)
+    (by rw [← cohomologyMapBaseLinear_comp, e.inv_hom_id, cohomologyMapBaseLinear_id])
+    (by rw [← cohomologyMapBaseLinear_comp, e.hom_inv_id, cohomologyMapBaseLinear_id])
+
+variable {X} in
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply
+    (e : M ≅ N) (i : ℕ) (x : Cohomology M i) :
+    cohomologyBaseLinearEquivOfIso R e i x = cohomologyMapBaseLinear R X e.hom i x := by
+  rfl
+
+variable {X} in
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBaseLinearEquivOfIso_symm_apply
+    (e : M ≅ N) (i : ℕ) (x : Cohomology N i) :
+    (cohomologyBaseLinearEquivOfIso R e i).symm x = cohomologyMapBaseLinear R X e.inv i x := by
+  rfl
+
+/-- Global functions act on cohomology compatibly with the base ring, where the base ring acts on
+global functions through `Scheme.baseRingToStructurePresheaf`, as it does on local sections in
+`Scheme.Modules.isScalarTower_sections`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.isScalarTower_cohomology (M : X.Modules) (i : ℕ) :
+    letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    IsScalarTower R Γ(X, ⊤) (Cohomology M i) :=
+  letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+  .of_algebraMap_smul fun r x ↦ by
+    rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_top,
+      CommRingCat.hom_ofHom, base_smul_cohomology]
 
 /-- For a scheme over a commutative ring, the canonical identification of zeroth cohomology with
 global sections is linear over the base ring. -/

@@ -49,6 +49,8 @@ holds for every homomorphism topologically of finite type
   along two open embeddings with the same range are locally of finite type together.
 * `TauCeti.PreAdicSpace.LocallyOfFiniteType.comp_of_isOpenImmersion`: composing with an open
   immersion into a larger target preserves being locally of finite type.
+* `TauCeti.PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage`: being locally of
+  finite type can be checked over an open cover of the target.
 
 ## Implementation notes
 
@@ -246,6 +248,19 @@ theorem LocallyOfFiniteType.comp_of_isOpenImmersion {f : X ⟶ Y} (hf : LocallyO
     e.symm ≪≫ eV, ?_⟩
   rw [reassoc_of% hfac]
   simp [e]
+
+/-- **Being locally of finite type can be checked over an open cover of the target**: if `Y` is
+covered by opens `Vᵢ` such that every restriction `f⁻¹(Vᵢ) → Vᵢ` of `f` is locally of finite type,
+then so is `f`. -/
+theorem LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage {f : X ⟶ Y} {ι : Type*}
+    (V : ι → Opens Y) (hV : iSup V = ⊤) (h : ∀ i, LocallyOfFiniteType (f.restrictPreimage (V i))) :
+    LocallyOfFiniteType f := by
+  refine LocallyOfFiniteType.of_iSup_eq_top (fun i ↦ (Opens.map f.base).obj (V i)) ?_ fun i ↦ ?_
+  · refine eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ?_
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : f.base x ∈ iSup V)
+    exact ⟨i, hi⟩
+  · rw [← Hom.restrictPreimage_ofRestrict]
+    exact (h i).comp_of_isOpenImmersion _
 
 end PreAdicSpace
 

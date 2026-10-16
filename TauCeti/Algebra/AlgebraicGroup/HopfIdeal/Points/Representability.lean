@@ -80,7 +80,7 @@ noncomputable def ofIdealOfPointsSubgroup (I : Ideal H)
     have hg : toConv q ∈ S (CommAlgCat.of R Q) :=
       (hS _ _).mpr hq
     have hz := RingHom.mem_ker.mp ((hS _ _).mp ((S _).inv_mem hg) hx)
-    rw [AlgHom.convInv_apply] at hz
+    rw [WithConv.algHom_inv_apply] at hz
     exact Ideal.Quotient.eq_zero_iff_mem.mp hz
   exact ofIdeal I (fun _ hx ↦ hcomul hx) (fun _ hx ↦ hcounit hx)
     (fun _ hx ↦ hantipode hx)

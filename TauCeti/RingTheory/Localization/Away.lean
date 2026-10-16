@@ -40,6 +40,7 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `TauCeti.Localization.divBy_mul_mul_right`: `(u · t)/(u · s) = t/s` and `(t · u)/(s · u) = t/s`,
   given that `S` is a localisation away from the rescaled denominator as well.
 * `TauCeti.Localization.divBy_self`: `s/s = 1`.
+* `TauCeti.Localization.mk'_pow_eq_invSelf_pow_mul`: a fraction `t/sⁿ` is `(1/s)ⁿ · t`.
 * `TauCeti.Localization.adjoin_invSelf_eq_top`: `S` is generated over `A` by `1/s`.
 * `TauCeti.Localization.adjoin_divBy_eq_top`: as soon as the numerators `T` together with the
   denominator `s` generate the unit ideal, the fractions `t/s` alone already generate `S` over
@@ -82,6 +83,9 @@ image of `MvPolynomial T A₀`; that surjectivity is true by construction, since
 defined as the adjoin, and it says nothing about the localisation `S` itself. Generating the whole
 of `S` over `A` is a strictly stronger statement and needs the hypothesis on `T` below, which the
 source never states.
+
+`mk'_pow_eq_invSelf_pow_mul` is **also a later addition with no AINTLIB analogue**, proved here
+directly from Mathlib's `mk'` API.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -219,6 +223,14 @@ and stops, where before `invSelf_mul_algebraMap` it could reach `1` through Math
 theorem divBy_self : (divBy s s : S) = 1 := by
   rw [divBy_def]
   exact IsLocalization.mk'_self S (Submonoid.mem_powers s)
+
+/-- **A fraction over a power of `s` is a power of `1/s` times the numerator**:
+`t/sⁿ = (1/s)ⁿ · t`. -/
+theorem mk'_pow_eq_invSelf_pow_mul (n : ℕ) :
+    IsLocalization.mk' S t (⟨s ^ n, n, rfl⟩ : Submonoid.powers s) =
+      (IsLocalization.Away.invSelf s : S) ^ n * algebraMap A S t := by
+  rw [IsLocalization.mk'_eq_iff_eq_mul, mul_right_comm, map_pow, ← mul_pow,
+    mul_comm (IsLocalization.Away.invSelf s), IsLocalization.Away.mul_invSelf, one_pow, one_mul]
 
 /-! ### A factored denominator
 

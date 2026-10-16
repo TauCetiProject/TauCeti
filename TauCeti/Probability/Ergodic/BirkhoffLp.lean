@@ -16,7 +16,7 @@ The Birkhoff sums and averages of the composition (Koopman) operator of a measur
 pointwise Birkhoff averages `birkhoffAverage ℝ T f n` of an observable. This file records that the
 two agree: an `Lᵖ` Birkhoff average of `g` is represented by the pointwise Birkhoff average of the
 coercion `⇑g`. For another representative `f =ᵐ[μ] ⇑g`, compose with Mathlib's
-`Measure.QuasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq`.
+`QuasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq`.
 
 ## Main results
 

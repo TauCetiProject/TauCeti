@@ -12,14 +12,14 @@ public import TauCeti.Topology.PiCurry
 /-!
 # The singular homology of tori
 
-Over a principal ideal domain `k`, the torus `Tⁿ = (S¹)ⁿ` has free homology with
+Over a nontrivial commutative ring `k`, the torus `Tⁿ = (S¹)ⁿ` has free homology with
 `rank H_m(Tⁿ; M) = (n choose m) · rank M` for a free coefficient module `M` of finite rank.
 Splitting off one circle at a time, `Tⁿ⁺¹ ≅ S¹ × Tⁿ`, and the homology of a product of spaces with
 free homology is free with ranks given by the Künneth formula
 (`TopCat.free_singularHomology_tensor`, `TopCat.finrank_singularHomology_tensor`), from the
 homology of the circle (`ModuleCat.finrank_singularHomology_sphere`) and of a point
 (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).  In particular, with these freeness
-instances, `TopCat.isIso_singularHomologyKunneth_of_projective` shows that the Künneth map
+instances, `TopCat.isIso_singularHomologyKunneth_of_projective_homology` shows that the Künneth map
 `H(S¹) ⊗ H(Tⁿ) ⟶ H(S¹ × Tⁿ)` is an isomorphism for every `n`, as an iterated Künneth description
 of the homology of a torus requires.
 
@@ -67,7 +67,7 @@ open TauCeti
 
 section Torus
 
-variable {k : Type w} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k] (M : ModuleCat.{w} k)
+variable {k : Type w} [CommRing k] (M : ModuleCat.{w} k)
   [Module.Free k M]
 
 /-- Splitting off one circle factor, the homology of `T^{Option α}` with coefficients in `M` is
@@ -80,7 +80,7 @@ private def singularHomologyTorusOptionLinearEquiv (α : Type w) (m : ℕ) :
   (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).mapIso (torusOptionIso α) ≪≫
     ((singularHomologyFunctor (ModuleCat.{w} k) m).mapIso (λ_ M).symm).app _).toLinearEquiv
 
-/-- **The homology of a torus is free**: over a principal ideal domain, the singular homology of
+/-- **The homology of a torus is free**: over any commutative ring, the singular homology of
 `Tⁿ = (S¹)ⁿ` with coefficients in a free module is free. -/
 instance free_singularHomology_torus (ι : Type w) [Finite ι] (m : ℕ) :
     Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).obj
@@ -101,7 +101,7 @@ instance free_singularHomology_torus (ι : Type w) [Finite ι] (m : ℕ) :
     have : Module.Free k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Free k k)
     exact .of_equiv (singularHomologyTorusOptionLinearEquiv M α m).symm
 
-variable [Module.Finite k M]
+variable [Nontrivial k] [Module.Finite k M]
 
 /-- The induction behind `ModuleCat.finite_singularHomology_torus` and
 `ModuleCat.finrank_singularHomology_torus`, splitting off one circle at a time. -/
@@ -160,7 +160,7 @@ private lemma finite_singularHomology_torus_aux (ι : Type w) [Fintype ι] (m : 
 
 variable (ι : Type w) [Finite ι]
 
-/-- Over a principal ideal domain, the singular homology of a torus with coefficients in a free
+/-- Over a nontrivial commutative ring, the singular homology of a torus with coefficients in a free
 module of finite rank has finite rank. -/
 instance finite_singularHomology_torus (m : ℕ) :
     Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).obj
@@ -168,8 +168,8 @@ instance finite_singularHomology_torus (m : ℕ) :
   have := Fintype.ofFinite ι
   (finite_singularHomology_torus_aux M ι m).1
 
-/-- **The ranks of the homology of a torus**: over a principal ideal domain, with coefficients in a
-free module `M` of finite rank, `rank H_m(Tⁿ; M) = (n choose m) · rank M`, where `Tⁿ` is the
+/-- **The ranks of the homology of a torus**: over a nontrivial commutative ring, with coefficients
+in a free module `M` of finite rank, `rank H_m(Tⁿ; M) = (n choose m) · rank M`, where `Tⁿ` is the
 product of `n` circles. -/
 @[simp]
 theorem finrank_singularHomology_torus (m : ℕ) :

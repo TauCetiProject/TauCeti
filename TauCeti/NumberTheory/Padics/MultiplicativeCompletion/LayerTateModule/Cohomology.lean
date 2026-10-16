@@ -59,15 +59,18 @@ private theorem nonempty_layerTateModule_of_type (L K : Type) [Field L] [Field K
     [IsGalois K L] : Nonempty (LayerTateModule p L K) := by
   have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
   have : FiniteDimensional K L := .right ℚ_[p] K L
+  have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
+  have : Algebra.IsAlgebraic ℚ_[p] K := Algebra.IsAlgebraic.of_finite ℚ_[p] K
+  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
   -- The local-field structures of `K` and `L`.
-  let _ := finiteExtensionValuativeRel ℚ_[p] K
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] K
+  let _ := algebraicExtensionValuativeRel ℚ_[p] K
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] K
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] K
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
-  have := finiteExtension_valuativeExtension ℚ_[p] L
+  have := algebraicExtension_valuativeExtension ℚ_[p] L
   have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
   let A := Rep.of (padicCompletionUnitsRepresentation p L K)
   obtain ⟨u, hu, hcard⟩ := exists_zmultiples_eq_top_groupCohomology_two_padicCompletionUnits p K L
@@ -140,9 +143,9 @@ theorem nonempty_layerTateModule (K L : Type u) [Field L] [Field K] [Algebra K L
         simp [AlgEquiv.mul_apply] }
   obtain ⟨Y⟩ := @nonempty_layerTateModule_of_type p _ (Shrink.{0} L) (Shrink.{0} K) _ _ _ _ hL _ hst
     hG
-  exact LayerTateModule.nonempty_of_equiv φ (padicCompletionUnitsCongr p eL.symm)
-    (padicCompletionUnitsCongr_smul p eL.symm)
-    (fun σ x ↦ padicCompletionUnitsCongr_aut p K eL.symm σ (φ σ) (fun y ↦ by
+  exact LayerTateModule.nonempty_of_equiv φ (padicCompletionUnitsCongr p eL.symm.toMulEquiv)
+    (padicCompletionUnitsCongr_smul p eL.symm.toMulEquiv)
+    (fun σ x ↦ padicCompletionUnitsCongr_aut p K eL.symm.toMulEquiv σ (φ σ) (fun y ↦ by
       -- `φ σ` is the conjugate of `σ` by `eL`.
       change eL.symm (σ (eL (eL.symm y))) = eL.symm (σ y)
       simp) x) Y

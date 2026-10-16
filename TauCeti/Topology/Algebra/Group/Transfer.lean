@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Transfer
+public import TauCeti.GroupTheory.Transfer.Basic
 public import TauCeti.Topology.Algebra.Group.TransversalWord
 
 /-!
