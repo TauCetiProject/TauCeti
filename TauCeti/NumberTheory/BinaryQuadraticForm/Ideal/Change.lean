@@ -19,8 +19,9 @@ import Mathlib.Tactic.Ring
 For the left action `γ • f = f ∘ γ⁻¹`, write `γ = !![p,q;r,s]` and
 `β = (-b + √D)/2`. The transformed ideal is the original ideal multiplied by
 `star (a s + r β) / a`. This factor has norm `a'/a`, where `a'` is the transformed
-leading coefficient. The algebraic formulas require only a nonzero original leading coefficient,
-so they also cover square discriminants and a transformed leading coefficient of zero.
+leading coefficient. The two basis-vector identities require a nonzero original leading
+coefficient and also cover square discriminants and a zero transformed leading coefficient.
+The norm formula holds even when the original leading coefficient is zero, when both sides vanish.
 Positivity of the norm is equivalent to positivity of `a * a'`, the comparison needed for
 the oriented narrow class. The native fractional-ideal statements use the nonsquare hypothesis.
 
@@ -74,10 +75,13 @@ theorem idealChangeFactor_mul_second (f : BinaryQuadraticForm ℤ) (D : ℤ)
   · field_simp [haQ]
     nlinarith [congrArg (fun z : ℚ ↦ (f.a : ℚ) * z) hdet]
 
-/-- The scaling factor has norm equal to the ratio of leading coefficients. -/
+/-- The scaling factor has norm equal to the ratio of leading coefficients, including a zero
+original leading coefficient, when both sides vanish. -/
 theorem norm_idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ)
-    (hf : f.discrim = D) (ha : f.a ≠ 0) (γ : SL(2, ℤ)) :
+    (hf : f.discrim = D) (γ : SL(2, ℤ)) :
     Algebra.norm ℚ (f.idealChangeFactor D γ) = ((γ • f).a : ℚ) / (f.a : ℚ) := by
+  by_cases ha : f.a = 0
+  · simp [idealChangeFactor, ha]
   have haQ : (f.a : ℚ) ≠ 0 := by exact_mod_cast ha
   have hnorm : QuadraticAlgebra.norm
       (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 1 0 • f.idealGenerator D) =
@@ -100,9 +104,9 @@ theorem norm_idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ)
 /-- The change factor has positive norm exactly when the old and new leading coefficients
 have positive product. -/
 theorem norm_idealChangeFactor_pos_iff (f : BinaryQuadraticForm ℤ) (D : ℤ)
-    (hf : f.discrim = D) (ha : f.a ≠ 0) (γ : SL(2, ℤ)) :
+    (hf : f.discrim = D) (γ : SL(2, ℤ)) :
     0 < Algebra.norm ℚ (f.idealChangeFactor D γ) ↔ 0 < f.a * (γ • f).a := by
-  rw [norm_idealChangeFactor f D hf ha γ, ← Int.cast_pos (R := ℚ), Int.cast_mul,
+  rw [norm_idealChangeFactor f D hf γ, ← Int.cast_pos (R := ℚ), Int.cast_mul,
     div_pos_iff, mul_pos_iff]
   exact or_congr and_comm and_comm
 
