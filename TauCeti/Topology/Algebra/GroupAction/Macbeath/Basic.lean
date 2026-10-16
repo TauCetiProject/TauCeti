@@ -170,7 +170,7 @@ theorem macbeath_of_inv (s : macbeathGenerators G U) :
 
 /-- If a translate of `U` by an element of the image of `macbeathHom` meets the translate by
 `g`, then `g` also lies in that image. -/
-private theorem mem_range_macbeathHom_of_nonempty {h g : G} (hh : h ∈ (macbeathHom G U).range)
+theorem mem_range_macbeathHom_of_nonempty {h g : G} (hh : h ∈ (macbeathHom G U).range)
     (hg : (h • U ∩ g • U).Nonempty) : g ∈ (macbeathHom G U).range := by
   obtain ⟨x, hxh, hxg⟩ := hg
   have hs : h⁻¹ * g ∈ macbeathGenerators G U :=

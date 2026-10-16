@@ -82,7 +82,6 @@ public section
 open CategoryTheory Limits
 
 namespace TauCeti
-
 namespace AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
