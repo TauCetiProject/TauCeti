@@ -5,9 +5,10 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Construction
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 
 /-!
 # The Lie algebra of a solvable-radical candidate
