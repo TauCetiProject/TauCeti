@@ -9,13 +9,14 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Multiplication operators on complex L²
 
 An essentially bounded complex function `a` acts on `L²` by pointwise multiplication.  This file
 bundles that action as `MeasureTheory.Lp.multiplicationOperator a` and records its algebraic,
-adjoint, and norm properties.  In particular, on a finite measure space the operator norm on
+adjoint, and norm properties.  In particular, on a sigma-finite measure space the operator norm on
 `L²` with values in any nontrivial space is exactly the `L∞` norm of the symbol.
 
 The construction is Mathlib's Hölder map for scalar multiplication with one exponent equal to
@@ -142,26 +143,17 @@ end FiniteMeasure
 
 section ExactNorm
 
-variable [NormedAddCommGroup E] [NormedSpace ℂ E] [IsFiniteMeasure μ]
-
-/-- On a finite measure space, every level strictly below the `L∞` norm of `a` is exceeded by
-`‖a‖` on a set of nonzero measure. -/
-private theorem measure_lt_norm_ne_zero {a : Lp ℂ ∞ μ} {c : ℝ} (hc_nonneg : 0 ≤ c)
-    (hc : c < ‖a‖) : μ {x | c < ‖a x‖} ≠ 0 := by
-  intro hμs
-  have hae : ∀ᵐ x ∂μ, ‖a x‖ ≤ c :=
-    (measure_eq_zero_iff_ae_notMem.mp hμs).mono fun x hx ↦ le_of_not_gt hx
-  have ha_le : ‖a‖ ≤ c := by simpa using Lp.norm_le_of_ae_bound hc_nonneg hae
-  exact (not_lt_of_ge ha_le) hc
+variable [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- If `c ≤ ‖a‖` pointwise on `s`, then multiplication by `a` scales the `L²` norm of a constant
 indicator of `s` by at least `c`. -/
 private theorem mul_norm_indicatorConstLp_le {a : Lp ℂ ∞ μ} {c : ℝ} (hc_nonneg : 0 ≤ c)
-    {s : Set α} (hs : MeasurableSet s) (ha : ∀ x ∈ s, c ≤ ‖a x‖) (v : E) :
-    c * ‖indicatorConstLp 2 hs (measure_ne_top μ s) v‖ ≤
-      ‖multiplicationOperator a (indicatorConstLp 2 hs (measure_ne_top μ s) v)‖ := by
-  set f := indicatorConstLp 2 hs (measure_ne_top μ s) v
-  set g := indicatorConstLp 2 hs (measure_ne_top μ s) ((c : ℂ) • v)
+    {s : Set α} (hs : MeasurableSet s) (hs_top : μ s ≠ ∞) (ha : ∀ x ∈ s, c ≤ ‖a x‖)
+    (v : E) :
+    c * ‖indicatorConstLp 2 hs hs_top v‖ ≤
+      ‖multiplicationOperator a (indicatorConstLp 2 hs hs_top v)‖ := by
+  set f := indicatorConstLp 2 hs hs_top v
+  set g := indicatorConstLp 2 hs hs_top ((c : ℂ) • v)
   have hfg : c * ‖f‖ = ‖g‖ := by
     simp only [f, g, norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, norm_smul,
       Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hc_nonneg, mul_assoc]
@@ -178,10 +170,10 @@ private theorem mul_norm_indicatorConstLp_le {a : Lp ℂ ∞ μ} {c : ℝ} (hc_n
   rw [hfg]
   exact Lp.norm_le_norm_of_ae_le hpoint
 
-/-- On a finite measure space, the operator norm of multiplication by `a` on `L²` with values in
-a nontrivial space is exactly the `L∞` norm of `a`. -/
+/-- On a sigma-finite measure space, the operator norm of multiplication by `a` on `L²` with
+values in a nontrivial space is exactly the `L∞` norm of `a`. -/
 @[simp]
-theorem norm_multiplicationOperator [Nontrivial E] (a : Lp ℂ ∞ μ) :
+theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp ℂ ∞ μ) :
     ‖multiplicationOperator (E := E) a‖ = ‖a‖ := by
   apply le_antisymm (norm_multiplicationOperator_le a)
   by_contra hle
@@ -196,16 +188,18 @@ theorem norm_multiplicationOperator [Nontrivial E] (a : Lp ℂ ∞ μ) :
   have hs : MeasurableSet s :=
     measurableSet_lt measurable_const (Lp.stronglyMeasurable a).norm.measurable
   have hμs : μ s ≠ 0 := measure_lt_norm_ne_zero hc_nonneg hc_lt
+  obtain ⟨t, ht, hts, hμt_pos, hμt_top⟩ :=
+    Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  set f := indicatorConstLp 2 hs (measure_ne_top μ s) v
+  set f := indicatorConstLp 2 ht hμt_top.ne v
   have hf_pos : 0 < ‖f‖ := by
     rw [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top]
-    have hμs_pos : 0 < μ.real s :=
-      lt_of_le_of_ne measureReal_nonneg (Ne.symm ((measureReal_ne_zero_iff).mpr hμs))
-    exact mul_pos (norm_pos_iff.mpr hv) (Real.rpow_pos_of_pos hμs_pos _)
+    have hμt_real_pos : 0 < μ.real t := ENNReal.toReal_pos hμt_pos.ne' hμt_top.ne
+    exact mul_pos (norm_pos_iff.mpr hv) (Real.rpow_pos_of_pos hμt_real_pos _)
   -- Comparing the lower bound on `f` with the operator norm forces `c ≤ ‖M_a‖`.
   have hcancel : c * ‖f‖ ≤ ‖multiplicationOperator (E := E) a‖ * ‖f‖ :=
-    (mul_norm_indicatorConstLp_le hc_nonneg hs (fun _ hx ↦ le_of_lt hx) v).trans
+    (mul_norm_indicatorConstLp_le hc_nonneg ht hμt_top.ne
+      (fun _ hx ↦ le_of_lt (hts hx)) v).trans
       (le_opNorm _ _)
   exact (not_le_of_gt hop_lt_c) (le_of_mul_le_mul_right hcancel hf_pos)
 
