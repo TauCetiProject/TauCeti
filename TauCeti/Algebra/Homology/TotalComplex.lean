@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.Embedding.HomEquiv
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.TotalComplexSymmetry
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
+public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.DownNatSucc
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
@@ -20,8 +21,9 @@ A bicomplex indexed by `ℕ × ℕ` with homological differentials has only fini
 `(K.X p).X q` with `p + q = n`, so its total complex exists in any preadditive category with finite
 coproducts. Its differential is `d₁ + (-1)ᵖ d₂` on the summand `(K.X p).X q`, by Mathlib's sign
 convention `TotalComplexShape (ComplexShape.down ℕ) (ComplexShape.down ℕ) (ComplexShape.down ℕ)`.
-The symmetry between the total complexes of a bicomplex and its flip is the natural-number
-analogue of Mathlib's `TotalComplexShapeSymmetry` instance for cochain complexes indexed by `ℤ`.
+The symmetry between the total complexes of a bicomplex and its flip is given by the instance
+`HomologicalComplex₂.totalComplexShapeSymmetryDownNat` from
+`TauCeti.Algebra.Homology.ComplexShape.Signs`.
 
 An augmentation `ε : K.X 0 ⟶ E` of the column `0` by a chain complex `E`, that is a chain map
 vanishing on the image of the horizontal differential `K.d 1 0`, induces a chain map
@@ -40,8 +42,6 @@ compares the homology sequences of these short exact sequences.
 ## Main definitions and results
 
 * `HomologicalComplex₂.hasTotal_down_nat`: first-quadrant bicomplexes have total complexes.
-* `HomologicalComplex₂.totalComplexShapeSymmetryDownNat`: flipping a first-quadrant
-  bicomplex changes its total complex by the sign `(-1)^(p*q)` in bidegree `(p, q)`.
 * `HomologicalComplex₂.totalAugmentation`: the chain map from the total complex induced by an
   augmentation of the column `0`.
 * `HomologicalComplex₂.total_map_totalAugmentation`: naturality of the augmentation under maps
@@ -84,23 +84,6 @@ instance hasTotal_down_nat [HasFiniteCoproducts C]
       (ComplexShape.down ℕ) ⁻¹' {n}) :=
     inferInstanceAs (Finite ((fun i : ℕ × ℕ ↦ i.1 + i.2) ⁻¹' {n}))
   inferInstance
-
-/-- The total complexes of a first-quadrant bicomplex and its flip are identified by the Koszul
-sign `(-1)^(p*q)` on the term in bidegree `(p, q)`. -/
-instance totalComplexShapeSymmetryDownNat :
-    TotalComplexShapeSymmetry (ComplexShape.down ℕ) (ComplexShape.down ℕ)
-      (ComplexShape.down ℕ) where
-  symm p q := Nat.add_comm q p
-  σ p q := (-1 : ℤˣ) ^ (p * q)
-  σ_ε₁ := by
-    rintro p _ rfl q
-    dsimp
-    rw [mul_one, Nat.add_mul, one_mul, pow_add]
-    ac_rfl
-  σ_ε₂ := by
-    rintro p q _ rfl
-    dsimp
-    rw [one_mul, Nat.mul_add, Nat.mul_one, pow_add, mul_assoc, Int.units_mul_self, mul_one]
 
 variable (K : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ))
   [K.HasTotal (ComplexShape.down ℕ)] {E : ChainComplex C ℕ} (ε : K.X 0 ⟶ E) (hε : K.d 1 0 ≫ ε = 0)
