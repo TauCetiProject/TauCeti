@@ -96,12 +96,6 @@ instance : (gradedFiniteProjectiveModulesForget 𝒜).Additive := by
 
 section ConflationExact
 
-local instance : PreservesFiniteLimits (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteLimits_of_preservesHomology _
-
-local instance : PreservesFiniteColimits (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteColimits_of_preservesHomology _
-
 /-- Forgetting grading preserves the conflations of finite modules. -/
 theorem isConflationExact_gradedFiniteModulesForget :
     (gradedFiniteModulesExactStructure 𝒜).toExactStructure.IsConflationExact
