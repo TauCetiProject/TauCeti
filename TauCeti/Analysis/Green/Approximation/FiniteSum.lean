@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.Approximation
-public import TauCeti.Analysis.Green.WindingWeight.FiniteSum
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
 
 /-!
@@ -30,80 +29,6 @@ namespace TauCeti.Green
 
 variable {ι : Type*} {s : Finset ι} {γ : ι → ℝ → ℂ} {γn : ℕ → ι → ℝ → ℂ}
   {a b : ι → ℝ} {w : ι → ℤ} {U : Set ℂ}
-
-/-- Joint uniform approximation preserves every off-domain index eventually, so it preserves
-the total integer-weighted index without any individual index-vanishing assumption. -/
-theorem eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
-    (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
-    (hγn : ∀ n, ∀ i ∈ s, AbsolutelyContinuousOnInterval (γn n i) (a i) (b i))
-    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
-    (hclosedn : ∀ n, ∀ i ∈ s, γn n i (a i) = γn n i (b i))
-    (hconv : ∀ i ∈ s, TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (uIcc (a i) (b i)))
-    (hU : IsOpen U) (htrace : ∀ i ∈ s, γ i '' uIcc (a i) (b i) ⊆ U) :
-    ∀ᶠ n in atTop, (∀ i ∈ s, γn n i '' uIcc (a i) (b i) ⊆ U) ∧
-      ∀ z ∉ U, (∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γn n i) (a i) (b i) z) =
-        ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z := by
-  have he := (Filter.eventually_all_finset s).mpr fun i hi ↦
-    AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl (hγ i hi)
-      (fun n ↦ hγn n i hi) (hclosed i hi) (fun n ↦ hclosedn n i hi)
-      (hconv i hi) hU (htrace i hi)
-  filter_upwards [he] with n hn
-  refine ⟨fun i hi ↦ (hn i hi).1, fun z hz ↦ ?_⟩
-  exact Finset.sum_congr rfl fun i hi ↦ congrArg ((w i : ℂ) * ·) ((hn i hi).2 z hz)
-
-/-- Per-curve uniform and derivative `L¹` convergence imply `L¹` convergence of the actual total
-real winding weight. No uniform bound on the indices is assumed. -/
-theorem tendsto_integral_abs_sum_windingWeight_sub
-    (hab : ∀ i ∈ s, a i ≤ b i)
-    (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
-    (hγn : ∀ n, ∀ i ∈ s, AbsolutelyContinuousOnInterval (γn n i) (a i) (b i))
-    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
-    (hclosedn : ∀ n, ∀ i ∈ s, γn n i (a i) = γn n i (b i))
-    (hconv : ∀ i ∈ s, TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (Icc (a i) (b i)))
-    (hdconv : ∀ i ∈ s, Tendsto
-      (fun n ↦ ∫ t in a i..b i, ‖deriv (γn n i) t - deriv (γ i) t‖) atTop (nhds 0)) :
-    Tendsto (fun n ↦ ∫ z : ℂ,
-      |(∑ i ∈ s, (w i : ℝ) * windingWeight (γn n i) (a i) (b i) z) -
-        ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z|) atTop (nhds 0) := by
-  have hd (n : ℕ) (i : ι) (hi : i ∈ s) :
-      Integrable (fun z ↦ |windingWeight (γn n i) (a i) (b i) z -
-        windingWeight (γ i) (a i) (b i) z|) := by
-    simpa only [Real.norm_eq_abs, Pi.sub_apply] using
-      ((AbsolutelyContinuousOnInterval.integrable_windingWeight (hγn n i hi) (hclosedn n i hi)).sub
-        (AbsolutelyContinuousOnInterval.integrable_windingWeight (hγ i hi) (hclosed i hi))).norm
-  have hlim : Tendsto
-      (fun n ↦ ∑ i ∈ s, |(w i : ℝ)| *
-        ∫ z : ℂ, |windingWeight (γn n i) (a i) (b i) z - windingWeight (γ i) (a i) (b i) z|)
-      atTop (nhds 0) := by
-    simpa only [mul_zero, Finset.sum_const_zero] using tendsto_finsetSum s (fun i hi ↦
-      Tendsto.const_mul |(w i : ℝ)|
-        (tendsto_integral_abs_windingWeight_sub (hab i hi) (fun n ↦ hγn n i hi)
-          (hγ i hi) (fun n ↦ hclosedn n i hi) (hclosed i hi) (hconv i hi) (hdconv i hi)))
-  apply squeeze_zero (fun n ↦ integral_nonneg fun _ ↦ abs_nonneg _) (fun n ↦ ?_) hlim
-  have htotal : Integrable (fun z ↦
-      |(∑ i ∈ s, (w i : ℝ) * windingWeight (γn n i) (a i) (b i) z) -
-        ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z|) := by
-    simpa only [Real.norm_eq_abs, Pi.sub_apply] using
-      ((integrable_sum_windingWeight (fun i hi ↦ hγn n i hi) (fun i hi ↦ hclosedn n i hi)).sub
-        (integrable_sum_windingWeight hγ hclosed)).norm
-  calc
-    _ ≤ ∫ z : ℂ, ∑ i ∈ s, |(w i : ℝ)| *
-        |windingWeight (γn n i) (a i) (b i) z - windingWeight (γ i) (a i) (b i) z| := by
-      apply integral_mono htotal (integrable_finsetSum _ fun i hi ↦ (hd n i hi).const_mul _)
-      intro z
-      dsimp only
-      rw [← Finset.sum_sub_distrib]
-      have heq : ∀ i, (w i : ℝ) * windingWeight (γn n i) (a i) (b i) z -
-          (w i : ℝ) * windingWeight (γ i) (a i) (b i) z =
-          (w i : ℝ) * (windingWeight (γn n i) (a i) (b i) z -
-            windingWeight (γ i) (a i) (b i) z) := fun i ↦ (mul_sub _ _ _).symm
-      simp_rw [heq]
-      simpa only [abs_mul] using Finset.abs_sum_le_sum_abs
-        (f := fun i ↦ (w i : ℝ) * (windingWeight (γn n i) (a i) (b i) z -
-          windingWeight (γ i) (a i) (b i) z)) s
-    _ = _ := by
-      rw [integral_finsetSum s (fun i hi ↦ (hd n i hi).const_mul _)]
-      simp only [integral_const_mul]
 
 /-- Closed AC curves admit simultaneous polygonal approximations preserving their own endpoints,
 all three analytic convergences, and total-index vanishing outside a common field domain.
@@ -157,7 +82,7 @@ theorem exists_polygonal_approximation_winding_sum
   have hu' (i) (hi : i ∈ s) :
       TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (uIcc (a i) (b i)) := by
     simpa only [uIcc_of_le (hab i hi).le] using hu i hi
-  filter_upwards [eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
+  filter_upwards [Contour.eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
     hγ hAC hclosed hcl hu' hU htrace] with n hn
   exact ⟨hn.1, fun z hz ↦ (hn.2 z hz).trans (hindex z hz)⟩
 

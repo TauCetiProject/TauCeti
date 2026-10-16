@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -148,5 +149,28 @@ theorem _root_.AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_com
       exact hz (hεU (mem_thickening_iff.mpr ⟨γ t, ⟨t, ht, rfl⟩,
         by simpa only [dist_comm] using lt_of_not_ge h⟩))
     exact (hnear t ht).trans_le hdist
+
+variable {ι : Type*} {s : Finset ι} {γ : ι → ℝ → ℂ} {γn : ℕ → ι → ℝ → ℂ}
+  {a b : ι → ℝ} {w : ι → ℤ} {U : Set ℂ}
+
+/-- Joint uniform approximation preserves every off-domain index eventually, so it preserves
+the total integer-weighted index without any individual index-vanishing assumption. -/
+theorem eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
+    (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
+    (hγn : ∀ n, ∀ i ∈ s, AbsolutelyContinuousOnInterval (γn n i) (a i) (b i))
+    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
+    (hclosedn : ∀ n, ∀ i ∈ s, γn n i (a i) = γn n i (b i))
+    (hconv : ∀ i ∈ s, TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (uIcc (a i) (b i)))
+    (hU : IsOpen U) (htrace : ∀ i ∈ s, γ i '' uIcc (a i) (b i) ⊆ U) :
+    ∀ᶠ n in atTop, (∀ i ∈ s, γn n i '' uIcc (a i) (b i) ⊆ U) ∧
+      ∀ z ∉ U, (∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γn n i) (a i) (b i) z) =
+        ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z := by
+  have he := (Filter.eventually_all_finset s).mpr fun i hi ↦
+    AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl (hγ i hi)
+      (fun n ↦ hγn n i hi) (hclosed i hi) (fun n ↦ hclosedn n i hi)
+      (hconv i hi) hU (htrace i hi)
+  filter_upwards [he] with n hn
+  refine ⟨fun i hi ↦ (hn i hi).1, fun z hz ↦ ?_⟩
+  exact Finset.sum_congr rfl fun i hi ↦ congrArg ((w i : ℂ) * ·) ((hn i hi).2 z hz)
 
 end TauCeti.Contour
