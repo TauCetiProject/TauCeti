@@ -226,20 +226,20 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
       apply reflection_apply_of_polar_eq_zero
       rw [polar_sub_left, horth i hi, horth' i hi, sub_zero]
   · -- Reflecting in `f + e` carries `f` to `-e`, and reflecting in `e` carries `-e` to `e`.
-    have hnorm : ‖Q (f - -e)‖ = 1 := by rwa [sub_neg_eq_add, add_comm]
-    let _ : Invertible (Q (f - -e)) :=
+    have hnorm : ‖Q (f + e)‖ = 1 := by rwa [add_comm]
+    let _ : Invertible (Q (f + e)) :=
       invertibleOfNonzero (norm_ne_zero_iff.mp (hnorm.symm ▸ one_ne_zero))
     let _ : Invertible (Q e) :=
       invertibleOfNonzero (norm_ne_zero_iff.mp ((hunit j).symm ▸ one_ne_zero))
-    refine ⟨reflectionOrthogonal Q e * reflectionOrthogonal Q (f - -e),
+    refine ⟨reflectionOrthogonal Q e * reflectionOrthogonal Q (f + e),
       mul_mem (reflectionOrthogonal_mem_closure he (hunit j))
-        (reflectionOrthogonal_mem_closure (sub_mem hf (neg_mem he)) hnorm), ?_, fun i hi ↦ ?_⟩
-    · have hneg : reflection Q (f - -e) ((g : V ≃ₗ[ℚ_[p]] V) e) = -e :=
-        reflection_sub_apply_eq_of_map_eq Q f (-e) (by rw [QuadraticMap.map_neg, hfe])
+        (reflectionOrthogonal_mem_closure (add_mem hf he) hnorm), ?_, fun i hi ↦ ?_⟩
+    · have hneg : reflection Q (f + e) ((g : V ≃ₗ[ℚ_[p]] V) e) = -e :=
+        reflection_add_apply_eq_neg_of_map_eq Q f e hfe
       simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal]
       rw [hneg, map_neg, reflection_apply_self, neg_neg]
-    · have hpolar : polar Q (f - -e) (b i) = 0 := by
-        rw [polar_sub_left, polar_neg_left, horth i hi, horth' i hi, neg_zero, sub_zero]
+    · have hpolar : polar Q (f + e) (b i) = 0 := by
+        rw [polar_add_left, horth i hi, horth' i hi, add_zero]
       simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal, hfix i hi]
       rw [reflection_apply_of_polar_eq_zero Q _ hpolar,
         reflection_apply_of_polar_eq_zero Q _ (horth i hi)]

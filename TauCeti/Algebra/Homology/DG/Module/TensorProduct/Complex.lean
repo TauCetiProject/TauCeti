@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Differential
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 public import TauCeti.Algebra.Homology.GradedCochainComplex
 
 /-!
@@ -42,12 +42,14 @@ variable {R A M N : Type*} [CommRing R] [Ring A] [Algebra R A]
   {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
 
 -- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.
-local instance : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
+local instance tensorGradedRight :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (InternalGrading.ofDecomposition ℳ).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒩).piece := by
+local instance tensorGradedLeft :
+    SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒩).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 

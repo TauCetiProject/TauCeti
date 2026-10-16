@@ -21,7 +21,7 @@ The excluded case, where the rectangle contains the turn row, is the turn-point 
 `GridDiagram.rectanglePentagonTurnCuts`: the same two underlying rectangles are instead read as an
 initial-side pentagon followed by a rectangle. This file is the half-turn mirror of the mixed
 `right = left` overlap of initial-side pentagons in
-`TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.RightLeft`.
+`TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.RightLeft.Basic`.
 
 Write `f` for the rectangle's terminal side and `c` for the pentagon's initial side, and `p`, `q`,
 `r` for the rows of the source state on `b`, `c` and `f`. The two domains share their top row `r`.
@@ -193,11 +193,11 @@ noncomputable def recutLeftEqRight (D : GridRectanglePentagonDecomposition a s x
     (hturn : s ∉ Grid.cIco D.rectangle.bottom D.rectangle.top) :
     GridPentagonRectangleDecomposition a s x z where
   middle := (D.leftRightRecut hcommon hrectangle hpentagon hturn).middle
-  pentagon := GridPentagonBetween.ofRightEq
+  first := GridPentagonBetween.ofRightEq
     (D.leftRightRecut hcommon hrectangle hpentagon hturn).first
     (D.leftRightRecut_first_right hcommon hrectangle hpentagon hturn)
     (D.leftRightRecut_first_turn_mem hcommon hrectangle hpentagon hturn)
-  rectangle := (D.leftRightRecut hcommon hrectangle hpentagon hturn).second
+  second := (D.leftRightRecut hcommon hrectangle hpentagon hturn).second
 
 /-- Forgetting the turn row of the promoted decomposition recovers the generic recut. -/
 @[simp]
@@ -216,7 +216,7 @@ theorem recutLeftEqRight_toRectangleDecomposition
     exact GridPentagonBetween.ofRightEq_left _ _ _
   · simp only [recutLeftEqRight,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
-      GridPentagonBetween.ofRightEq_right]
+      GridPentagonRectangleDecomposition.pentagon, GridPentagonBetween.ofRightEq_right]
     exact (D.leftRightRecut_first_right hcommon hrectangle hpentagon hturn).symm
   · simp only [recutLeftEqRight,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, leftRightRecut]
@@ -251,11 +251,14 @@ theorem recutLeftEqRight_geometry (D : GridRectanglePentagonDecomposition a s x 
   obtain ⟨hmiddle, hbottom, htop, hsecondBottom, hsecondTop, -⟩ :=
     D.leftRightRecut_geometry hcommon hrectangle hpentagon hturn
   have hEbottom : E.pentagon.bottom = D.pentagon.bottom := by
-    simpa only [E, recutLeftEqRight, GridPentagonBetween.ofRightEq_bottom] using hbottom
+    simpa only [E, recutLeftEqRight, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_bottom] using hbottom
   have hEtop : E.pentagon.top = D.rectangle.bottom := by
-    simpa only [E, recutLeftEqRight, GridPentagonBetween.ofRightEq_top] using htop
+    simpa only [E, recutLeftEqRight, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_top] using htop
   have hErbottom : E.rectangle.bottom = D.rectangle.bottom := by
-    simpa only [E, recutLeftEqRight] using hsecondBottom
+    simpa only [E, recutLeftEqRight, GridPentagonRectangleDecomposition.rectangle] using
+      hsecondBottom
   -- The source state has the same row on the pentagon's initial side before and after the
   -- rectangle, since that side is not a side of the rectangle.
   have hpentagonLeft : E.pentagon.left = D.pentagon.left := by

@@ -691,4 +691,16 @@ theorem kummerClass_eq_kummerClass_iff_isSquare_mul (a b : Kˣ) :
   rw [← kummerSquareClassEquiv_squareClass, ← kummerSquareClassEquiv_squareClass,
     EmbeddingLike.apply_eq_iff_eq, squareClass_eq_iff_isSquare_mul]
 
+/-- A family of mod-two Kummer classes is linearly independent exactly when no
+nonempty finite subset product of its units is a square. -/
+theorem linearIndependent_kummerClass_iff {ι : Type*} (a : ι → Kˣ) :
+    LinearIndependent (ZMod 2) (fun i ↦ kummerClass (a i)) ↔
+      ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, a i) := by
+  let e := (kummerSquareClassEquiv K).toAddMonoidHom.toZModLinearMap 2
+  have h := e.linearIndependent_iff_of_injOn
+    (v := fun i ↦ squareClass (a i)) (kummerSquareClassEquiv K).injective.injOn
+  simpa only [e, Function.comp_def, AddMonoidHom.coe_toZModLinearMap,
+    AddEquiv.coe_toAddMonoidHom, kummerSquareClassEquiv_squareClass] using
+    h.trans (linearIndependent_squareClass_iff a)
+
 end TauCeti

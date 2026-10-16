@@ -300,5 +300,24 @@ theorem map_snd_outerGluing (h : π.map Prod.snd = σ.map Prod.fst) :
     congrArg (fun q : PMF (β × γ) => q.map Prod.snd)
       (map_snd_finiteGluing π σ h)
 
+/-! ### Null middle-atom regressions
+
+These examples exercise both branches relevant to the zero-mass convention: the glued mass at a
+null middle atom is zero, while gluing still assigns the full mass to a supported middle atom.
+The first catches a formula that divides by the middle mass without handling `0 / 0`; the second
+ensures that adding this branch does not discard the positive-mass part of the input plans. -/
+
+example (a c : Fin 2) :
+    finiteGluing (PMF.pure (a, (0 : Fin 2))) (PMF.pure ((0 : Fin 2), c))
+      (by rw [PMF.pure_map, PMF.pure_map]) (a, 1, c) = 0 := by
+  rw [finiteGluing_apply]
+  simp [PMF.pure_map, PMF.pure_apply]
+
+example (a c : Fin 2) :
+    finiteGluing (PMF.pure (a, (0 : Fin 2))) (PMF.pure ((0 : Fin 2), c))
+      (by rw [PMF.pure_map, PMF.pure_map]) (a, 0, c) = 1 := by
+  rw [finiteGluing_apply]
+  simp [PMF.pure_map, PMF.pure_apply]
+
 
 end PMF

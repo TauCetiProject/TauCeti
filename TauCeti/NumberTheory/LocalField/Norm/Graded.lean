@@ -73,8 +73,6 @@ the kernel and the cokernel of `normGradedMap K L t` both have order `ℓ`.
 * `TauCeti.normGradedMap_tame_break_zero`: in the tame case both have order `n`.
 * `TauCeti.normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top`: if
   `G_1 = Gal(L/K)`, the depth-zero graded norm is bijective.
-* `TauCeti.norm_one_add_sub_one_sub_norm_mem_maximalIdeal_pow_succ`: before the break in prime
-  degree, `N(1 + z) ≡ 1 + N(z)` modulo the next power of the maximal ideal.
 * `TauCeti.normGradedMap_bijective_of_lowerRamificationGroup_eq_top`: in prime degree, the graded
   norm at depth `v` is bijective whenever `G_{v+1} = Gal(L/K)`.
 * `TauCeti.normGradedMap_zero_before_break` and `TauCeti.normGradedMap_positive_before_break`: in
@@ -306,7 +304,8 @@ finite Galois extension `L/K` of nonarchimedean local fields is the whole Galois
 ramified of degree a power of the residue characteristic `p`, which is prime to `q - 1`. -/
 theorem normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top
     (hG : lowerRamificationGroup K L 1 = ⊤) : Function.Bijective (normGradedMap K L 0) := by
-  have h := isTotallyRamified_of_lowerRamificationGroup_eq_top zero_le_one hG
+  have h : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L zero_le_one)
   have hqKL : Nat.card 𝓀[K] = Nat.card 𝓀[L] := by
     rw [natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
   rw [normGradedMap_zero_bijective_iff h, hqKL]
@@ -326,22 +325,6 @@ theorem normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top
   have hqpos : 1 ≤ Nat.card 𝓀[L] := Nat.card_pos
   exact Nat.Coprime.pow_left k <| Nat.Coprime.of_dvd_left hq <|
     (Nat.coprime_self_sub_right hqpos).2 (by simp)
-
-/-- If `G_{v+1} = Gal(L/K)` in prime degree and `z ∈ 𝓂[L]^v`, then
-`N(1 + z) ≡ 1 + N(z)` modulo `𝓂[K]^(v+1)`. -/
-theorem norm_one_add_sub_one_sub_norm_mem_maximalIdeal_pow_succ
-    (hℓ : (finrank K L).Prime) {v : ℕ}
-    (hG : lowerRamificationGroup K L (v + 1) = ⊤) {z : 𝒪[L]} (hz : z ∈ 𝓂[L] ^ v) :
-    Algebra.norm 𝒪[K] (1 + z) - 1 - Algebra.norm 𝒪[K] z ∈ 𝓂[K] ^ (v + 1) := by
-  obtain ⟨w, hw, hN⟩ := exists_norm_one_add_eq_of_mem_maximalIdeal_pow hℓ hz
-  have heq : Algebra.norm 𝒪[K] (1 + z) - 1 - Algebra.norm 𝒪[K] z =
-      Algebra.trace 𝒪[K] 𝒪[L] z + Algebra.trace 𝒪[K] 𝒪[L] w := by
-    rw [hN]
-    ring
-  rw [heq]
-  exact add_mem (trace_mem_maximalIdeal_pow_succ hℓ.two_le hG hz)
-    (trace_mem_maximalIdeal_pow_succ hℓ.two_le hG
-      (Ideal.pow_le_pow_right (show v ≤ 2 * v by omega) hw))
 
 /-- **Before the break, the graded norm is bijective.** Let `L/K` be a Galois extension of
 nonarchimedean local fields of prime degree, and let `v : ℕ` lie strictly before the break of its

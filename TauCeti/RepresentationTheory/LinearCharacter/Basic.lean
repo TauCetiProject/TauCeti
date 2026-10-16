@@ -16,14 +16,14 @@ A **linear character** of a monoid `G` over a commutative semiring `k` is a mult
 character `χ : G →* kˣ`. It acts on the one-dimensional `k`-module `k` by scalar multiplication.
 This file packages that action as `Representation.ofLinearCharacter χ`, bundles it as an object
 `FDRep.ofLinearCharacter χ` of `FDRep k G`, and records the facts every consumer of a linear
-character needs: its character is `χ`, it is a line, it is simple, it restricts along a
-homomorphism by pulling `χ` back, and two of them are isomorphic exactly when the two characters
-are equal.
+character needs: over a field its character is `χ` and it is simple; over a commutative ring it
+has rank one. Restriction along a homomorphism pulls `χ` back, and two of these representations
+are isomorphic exactly when the two characters are equal.
 
 The construction is the common core of the linear characters of the Borel subgroup and of
 `GL₂`; keeping it here avoids separate scalar-action implementations for each group. It is also
-the smallest nonzero representation there is, and it is what the induction machinery is fed in the
-classical worked examples: `Ind_H^G` of a linear character of a subgroup is a *monomial*
+the smallest nonzero representation over a field, and it is what the induction machinery is fed
+in the classical worked examples: `Ind_H^G` of a linear character of a subgroup is a *monomial*
 representation, and its irreducibility is what the Mackey criterion decides.
 
 ## Main definitions
@@ -34,8 +34,6 @@ representation, and its irreducibility is what the Mackey criterion decides.
 
 ## Main results
 
-* `TauCeti.val_apply_neg_one_eq_one_or_eq_neg_one`: a unit-valued character on a commutative
-  ring with coefficients in an integral domain takes the value `1` or `-1` at `-1`.
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
@@ -60,10 +58,10 @@ representation, and its irreducibility is what the Mackey criterion decides.
 
 Neither definition is exposed: consumers go through the lemmas rather than the body.
 `FDRep.ofLinearCharacter_def` is the defining equation the dependent API is derived from, and with
-Mathlib's `FDRep.of_ρ'` it recovers the action. That the carrier is the line `k` **on the nose** is
-recorded once and for all by `FDRep.actionRes_obj_ofLinearCharacter`, an honest equality of objects
-rather than an isomorphism; conjugation, restriction and comparison of these objects are then
-computed inside `G →* kˣ` through it and `FDRep.nonempty_iso_ofLinearCharacter_iff`.
+Mathlib's `FDRep.of_ρ'` it recovers the action. Since both sides use the carrier `k`,
+`FDRep.actionRes_obj_ofLinearCharacter` is an equality of objects; conjugation, restriction and
+comparison of these objects are computed inside `G →* kˣ` through it and
+`FDRep.nonempty_iso_ofLinearCharacter_iff`.
 -/
 
 public section
@@ -72,35 +70,14 @@ open CategoryTheory
 
 universe u v
 
-namespace TauCeti
-
-/-- A unit-valued linear character on a commutative ring takes the value `1` or `-1` at `-1`
-when its coefficient ring is an integral domain. The character is inferred from the goal. -/
-theorem val_apply_neg_one_eq_one_or_eq_neg_one {R k : Type*} [CommRing R] [CommRing k]
-    [IsDomain k] {α : Rˣ →* kˣ} :
-    (α (-1) : k) = 1 ∨ (α (-1) : k) = -1 :=
-  mul_self_eq_one_iff.mp (by rw [← Units.val_mul, ← map_mul]; simp)
-
-end TauCeti
-
 namespace Representation
 
 variable {k : Type u} {G : Type v}
 
 /-- **The one-dimensional representation associated to a multiplicative character.** An element
 `g : G` acts on the line `k` by multiplication by the unit `χ g`. -/
-def ofLinearCharacter [CommSemiring k] [Monoid G] (χ : G →* kˣ) : Representation k G k where
-  toFun g := LinearMap.lsmul k k (χ g : k)
-  map_one' := by
-    apply LinearMap.ext
-    intro x
-    simp
-  map_mul' g h := by
-    apply LinearMap.ext
-    intro x
-    simp only [map_mul, Units.val_mul, LinearMap.lsmul_apply, smul_eq_mul,
-      Module.End.mul_apply]
-    rw [mul_assoc]
+def ofLinearCharacter [CommSemiring k] [Monoid G] (χ : G →* kˣ) : Representation k G k :=
+  (Algebra.lsmul k k k).toMonoidHom.comp ((Units.coeHom k).comp χ)
 
 /-- The representation associated to `χ` acts by multiplication by `χ`. -/
 @[simp]
@@ -183,9 +160,9 @@ theorem actionRes_obj_ofLinearCharacter [CommRing k] [Monoid G] {S : Type*} [Mon
 
 /-- A linear character is carried by a line. -/
 @[simp]
-theorem finrank_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) :
+theorem finrank_ofLinearCharacter [CommRing k] [Monoid G] (χ : G →* kˣ) :
     Module.finrank k (ofLinearCharacter (k := k) χ) = 1 :=
-  Module.finrank_self k
+  CommSemiring.finrank_self k
 
 /-- **The character of `FDRep.ofLinearCharacter` is the linear character it was built from.** -/
 @[simp]
@@ -209,23 +186,14 @@ the same object. -/
 theorem nonempty_iso_ofLinearCharacter_iff [CommRing k] [Monoid G] (χ ψ : G →* kˣ) :
     Nonempty (ofLinearCharacter (k := k) χ ≅ ofLinearCharacter ψ) ↔ χ = ψ := by
   refine ⟨fun ⟨e⟩ => MonoidHom.ext fun g => Units.ext ?_, fun h => ⟨h ▸ Iso.refl _⟩⟩
-  -- Both objects are the line `k`, so the isomorphism is an automorphism `f` of `k` intertwining
-  -- multiplication by `χ g` with multiplication by `ψ g`.
-  obtain ⟨f, hf⟩ : ∃ f : k ≃ₗ[k] k, ∀ x : k, f ((χ g : k) * x) = (ψ g : k) * f x := by
-    refine ⟨isoToLinearEquiv e, fun x => ?_⟩
-    -- Conjugation of the actions, read at `e x`, says `ψ g * e x = e (χ g * e⁻¹ (e x))`.
-    have h := DFunLike.congr_fun (FDRep.Iso.conj_ρ e g) (isoToLinearEquiv e x)
-    have hx := congrArg (fun y => isoToLinearEquiv e ((ofLinearCharacter (k := k) χ).ρ g y))
-      ((isoToLinearEquiv e).symm_apply_apply x)
-    exact (h.trans hx).symm
-  -- Such an `f` is multiplication by the unit `f 1`, which cancels from `χ g * f 1 = ψ g * f 1`.
-  have hlin : ∀ c : k, f c = c * f 1 := fun c => by
-    conv_lhs => rw [← mul_one c, ← smul_eq_mul]
-    rw [map_smul, smul_eq_mul]
-  have hkey : (χ g : k) * f 1 = (ψ g : k) * f 1 := by
-    have h := hf 1
-    rwa [mul_one, hlin] at h
-  exact f.injective (by rw [hlin (χ g : k), hlin (ψ g : k)]; exact hkey)
+  rw [ofLinearCharacter_def, ofLinearCharacter_def] at e
+  let f := isoToLinearEquiv e
+  have hlin (c : k) : f c = c * f 1 := by simpa using f.map_smul c (1 : k)
+  apply f.injective
+  rw [hlin (χ g : k), hlin (ψ g : k)]
+  have h := DFunLike.congr_fun (FDRep.Iso.conj_ρ e g) (f 1)
+  simpa only [f, LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply,
+    of_ρ', Representation.ofLinearCharacter_apply, mul_one, hlin (χ g : k)] using h.symm
 
 /-- **An irreducible representation whose operators commute has a linear character.**  Over an
 algebraically closed field, if the operators of an irreducible representation `W` commute

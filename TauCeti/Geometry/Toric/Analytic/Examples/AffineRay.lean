@@ -123,6 +123,40 @@ theorem affineRayCharacter_apply (n : Fin 1 → ℤ) :
   rw [affineRayCharacter, coe_dualSemigroupCoord]
   simp [rayBasis, Pi.basisFun_repr]
 
+/-- Every character of the positive-ray semigroup is a natural multiple of its standard
+character; the coefficient is its value at the primitive lattice generator. -/
+theorem eq_nsmul_affineRayCharacter
+    (m : dualSemigroup (isIntegralLattice_intCast 1) affineRayCone) :
+    m = ((m : (Fin 1 → ℤ) →+ ℤ) 1).toNat • affineRayCharacter := by
+  have hm : 0 ≤ (m : (Fin 1 → ℤ) →+ ℤ) 1 := by
+    have h := (mem_dualSemigroup _ _).1 m.2
+      (x := ((Int.castAddHom ℝ).compLeft (Fin 1)) (1 : Fin 1 → ℤ))
+      (by simp)
+    rw [IsIntegralLattice.realCharacter_apply] at h
+    exact_mod_cast h
+  apply Subtype.ext
+  apply DFunLike.ext
+  intro n
+  have hn : n = n 0 • (1 : Fin 1 → ℤ) := by
+    ext j
+    simp [Subsingleton.elim j 0]
+  rw [hn, map_zsmul]
+  simp [affineRayCharacter_apply, Int.toNat_of_nonneg hm, mul_comm]
+
+/-- In the standard affine-line coordinate, every semigroup monomial is the corresponding
+natural power, including at the origin. -/
+@[simp low]
+theorem affineRayPointHomeomorph_symm_apply_single_eq_pow (z : ℂ)
+    (m : dualSemigroup (isIntegralLattice_intCast 1) affineRayCone) :
+    let _ := affinePointTopology g
+    (affineRayPointHomeomorph g).symm z (MonoidAlgebra.single (ofAdd m) 1) =
+      z ^ ((m : (Fin 1 → ℤ) →+ ℤ) 1).toNat := by
+  let _ := affinePointTopology g
+  dsimp only
+  conv_lhs => rw [eq_nsmul_affineRayCharacter m]
+  rw [AffineSemigroupComplexPoint.apply_single_nsmul,
+    affineRayPointHomeomorph_symm_apply_single]
+
 /-- The regular-cone complex structure on the affine ray chart. Its model retains the single
 ray coordinate and the empty family of complementary coordinates. -/
 @[instance_reducible]
@@ -470,5 +504,46 @@ theorem affineRayFanDiffeomorph_analyticAffineChartι (n : ℕ∞ω)
     (isIntegralLattice_intCast 1) isRegularCone_affineRayCone rayBasis_extends
       rayNumbering g n]
   exact affineRayPointDiffeomorph_apply g n x
+
+namespace Fan
+
+variable (Φ : Fan ((Int.castAddHom ℝ).compLeft (Fin 1))) (hΦ : Φ.IsRegular)
+  (hσ : affineRayCone ∈ Φ.cones)
+
+/-- The affine-ray chart inclusion is a biholomorphism onto its cone open, for the standard
+positive-character complex structure. -/
+noncomputable def affineRayChartPartialDiffeomorph (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := affineRayChartedSpace g
+    let _ := Φ.analyticChartedSpace hΦ
+    PartialDiffeomorph 𝓘(ℂ, (Fin 1 → ℂ) × (Fin 0 → ℂ))
+      𝓘(ℂ, Fin (Module.finrank ℤ (Fin 1 → ℤ)) → ℂ)
+      (AffineSemigroupComplexPoint (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone))
+      (Φ.analyticRealization hΦ) n :=
+  Φ.analyticAffineChartPartialDiffeomorph hΦ ⟨affineRayCone, hσ⟩ rayBasis_extends rayNumbering g n
+
+/-- The standard affine-ray chart inclusion is defined everywhere. -/
+@[simp] theorem affineRayChartPartialDiffeomorph_source (n : ℕ∞ω) :
+    (Φ.affineRayChartPartialDiffeomorph g hΦ hσ n).source = Set.univ :=
+  Φ.analyticAffineChartPartialDiffeomorph_source hΦ ⟨affineRayCone, hσ⟩
+    rayBasis_extends rayNumbering g n
+
+/-- The target of the standard affine-ray chart inclusion is its cone open. -/
+@[simp] theorem affineRayChartPartialDiffeomorph_target (n : ℕ∞ω) :
+    (Φ.affineRayChartPartialDiffeomorph g hΦ hσ n).target =
+      Set.range (Φ.analyticAffineChartι hΦ ⟨affineRayCone, hσ⟩) :=
+  Φ.analyticAffineChartPartialDiffeomorph_target hΦ ⟨affineRayCone, hσ⟩
+    rayBasis_extends rayNumbering g n
+
+/-- The standard affine-ray chart inclusion is the canonical map into the fan realization. -/
+@[simp] theorem affineRayChartPartialDiffeomorph_apply (n : ℕ∞ω)
+    (x : AffineSemigroupComplexPoint
+      (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone)) :
+    Φ.affineRayChartPartialDiffeomorph g hΦ hσ n x =
+      Φ.analyticAffineChartι hΦ ⟨affineRayCone, hσ⟩ x :=
+  Φ.analyticAffineChartPartialDiffeomorph_apply hΦ ⟨affineRayCone, hσ⟩
+    rayBasis_extends rayNumbering g n x
+
+end Fan
 
 end TauCeti.Toric

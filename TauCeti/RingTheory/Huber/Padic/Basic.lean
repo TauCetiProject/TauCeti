@@ -39,8 +39,9 @@ maximal ideal.
 
 ## Scope
 
-Only `ℤ_[p]` is treated here. The roadmap's remaining Layer-0 examples — `ℚ_[p]` and `F⸨t⸩` are
-Tate, and `ℚ_p⟨T₁,…,Tₙ⟩` is complete and strongly noetherian — are not proved in this file.
+Only `ℤ_[p]` is treated here. That `ℚ_[p]` is a Tate ring is in
+`TauCeti.RingTheory.Huber.Padic.Field`, and that the Tate algebra `ℚ_p⟨T₁,…,Tₙ⟩` is a complete
+strongly noetherian Tate ring is in `TauCeti.RingTheory.Huber.Padic.TateAlgebra`.
 
 ## References
 

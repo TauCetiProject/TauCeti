@@ -48,7 +48,7 @@ theorem minorsIdeal_range_finrank_eq_span_det (φ : F →ₗ[R] F) :
       Matrix.detRowAlternating.compLinearMap (LinearMap.pi f)
     have hdet : (Matrix.of fun i j => f j (v i)).det = φ.det * ω w := by
       have hscale := congr($(AlternatingMap.compLinearMap_eq_det_smul b ω φ) w)
-      rw [AlternatingMap.compLinearMap_apply, AlternatingMap.smul_apply, smul_eq_mul] at hscale
+      rw [AlternatingMap.compLinearMap_apply, _root_.smul_apply, smul_eq_mul] at hscale
       simpa only [ω, AlternatingMap.compLinearMap_apply, Matrix.detRowAlternating_pi_apply,
         hw] using hscale
     rw [hdet]

@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
+public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 
@@ -24,6 +25,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
 
 * `WeierstrassCurve.projModelFunctionFieldEquiv`: the isomorphism
   `W.projModel.functionField ≃+* W.toAffine.FunctionField`.
+* `WeierstrassCurve.projModelFunctionFieldAlgebra`: the transported `R`-algebra structure on
+  `W.projModel.functionField`.
+* `WeierstrassCurve.projModelFunctionFieldAlgEquiv`: the comparison as an `R`-algebra equivalence.
 
 ## Main results
 
@@ -31,6 +35,8 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
   chart `D₊(Z)` of the projective model is nonempty.
 * `WeierstrassCurve.projModelFunctionFieldEquiv_germToFunctionField_awayToSection_mk`: the
   isomorphism sends the rational function `p(X, Y, Z) / Zⁿ` on the chart `D₊(Z)` to `p(x, y, 1)`.
+* `WeierstrassCurve.projModelFunctionFieldEquiv_baseRingToFunctionField`: the isomorphism respects
+  the constants pulled back along the structure morphism `projModel W ⟶ Spec R`.
 * `WeierstrassCurve.SpecMap_projModelFunctionFieldEquiv_fromSpecStalk`: through the isomorphism,
   the generic point `Spec K(E) ⟶ E` of the projective model is the point with homogeneous
   coordinates `[x : y : 1]`, where `x` and `y` are the affine coordinates in
@@ -151,6 +157,33 @@ noncomputable def projModelFunctionFieldEquiv [IsDomain R] :
   -- affine open, so both sides are fraction fields of the same ring
   IsFractionRing.ringEquivOfRingEquiv W.chartSectionsEquivCoordinateRing
 
+/-- The algebra structure on the projective function field transported from the affine
+function field. -/
+noncomputable instance projModelFunctionFieldAlgebra [IsDomain R] :
+    Algebra R W.projModel.functionField := by
+  let f : R →+* W.projModel.functionField :=
+    W.projModelFunctionFieldEquiv.symm.toRingHom.comp (algebraMap R W.toAffine.FunctionField)
+  exact f.toAlgebra
+
+/-- The function-field comparison between the projective model and the affine equation, as an
+equivalence of `R`-algebras. -/
+noncomputable def projModelFunctionFieldAlgEquiv [IsDomain R] :
+    W.projModel.functionField ≃ₐ[R] W.toAffine.FunctionField :=
+  AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) (by
+    intro x
+    -- The transported algebra map is the affine algebra map followed by the inverse comparison.
+    -- Expose that composite so the ring equivalence and its inverse cancel by `simp`.
+    change W.projModelFunctionFieldEquiv
+      (W.projModelFunctionFieldEquiv.symm (algebraMap R W.toAffine.FunctionField x)) = _
+    simp)
+
+/-- The underlying ring equivalence of the algebra comparison is the original function-field
+comparison. -/
+@[simp]
+theorem projModelFunctionFieldAlgEquiv_toRingEquiv [IsDomain R] :
+    W.projModelFunctionFieldAlgEquiv.toRingEquiv = W.projModelFunctionFieldEquiv :=
+  (rfl)
+
 /-- On the standard affine chart `D₊(Z)`, `projModelFunctionFieldEquiv` sends the rational
 function `p(X, Y, Z) / Zⁿ`, for `p` whose class in the homogeneous coordinate ring has degree `n`,
 to `p(x, y, 1)`, where `x` and `y` are the classes of the affine coordinates in
@@ -231,5 +264,23 @@ theorem SpecMap_projModelFunctionFieldEquiv_fromSpecStalk [IsDomain R] :
   · -- on the fractions `X / Z`, `Y / Z` and `Z / Z`
     ext k
     fin_cases k <;> simp [Affine.genericX_def, Affine.genericY_def, Affine.CoordinateRing.mk]
+
+/-- **The function-field comparison respects constants.** The rational function on the projective
+model pulled back from `r : R` along the structure morphism `projModel W ⟶ Spec R` goes to `r` in
+the function field of the affine equation. Thus `projModelFunctionFieldEquiv` is also compatible
+with the `R`-algebra structure `Scheme.functionFieldBaseAlgebra` defined by the structure morphism,
+not only with the transported structure `projModelFunctionFieldAlgebra`. -/
+theorem projModelFunctionFieldEquiv_baseRingToFunctionField [IsDomain R] (r : R) :
+    W.projModelFunctionFieldEquiv (Scheme.baseRingToFunctionField R W.projModel r) =
+      algebraMap R W.toAffine.FunctionField r := by
+  -- Both sides are the ring maps under `Spec` of the composite `Spec K(W) ⟶ E ⟶ Spec R` through
+  -- the generic point: one computed through the base algebra of `E`, the other through the point
+  -- `[x : y : 1]` of `E` with values in `K(W)`.
+  have h := congrArg (· ≫ (W.projModel ↘ Spec (.of R)))
+    W.SpecMap_projModelFunctionFieldEquiv_fromSpecStalk
+  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over, over_projModel,
+    projModelPoint_projModelOver, ← Spec.map_comp, Spec.map_inj] at h
+  rw [← Scheme.algebraMap_functionField_eq_baseRingToFunctionField]
+  exact congr($h r)
 
 end WeierstrassCurve

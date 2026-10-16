@@ -35,7 +35,7 @@ then equips `R[x] / (xᵖ)` with its Hopf structure through the bridge instances
 
 The functor of points is recovered by pre-composing points of `αₚ` with the quotient map
 `R[x] → R[x] / (xᵖ)` (a bialgebra morphism, hence a convolution homomorphism through
-`TauCeti.AlgHom.mapDomain`) and reading the resulting `𝔾ₐ`-point off with
+`BialgHom.mapDomain`) and reading the resulting `𝔾ₐ`-point off with
 `TauCeti.AdditiveGroup.gaPointsMulEquiv`. The image consists of exactly the `p`-nilpotent
 elements, and the pre-composition map is injective because the quotient map is surjective, so
 `αₚ(A)` is the additive group of `p`-nilpotent elements of `A` (those `a` with `aᵖ = 0`). This
@@ -84,17 +84,17 @@ by the freshman's dream in characteristic `p`, `Δ(xᵖ) = xᵖ ⊗ 1 + 1 ⊗ x�
 (`TauCeti.AdditiveGroup.comul_ι_pow`). -/
 private theorem comul_gen_mem :
     Coalgebra.comul (R := R) (ι R R 1 ^ p) ∈
-      HopfIdeal.leftTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+      Ideal.leftTensorIdeal (R := R) (B := SymmetricAlgebra R R)
           (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}) ⊔
-        HopfIdeal.rightTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+        Ideal.rightTensorIdeal (R := R) (A := SymmetricAlgebra R R)
           (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}) := by
   rw [AdditiveGroup.comul_ι_pow R p]
   exact Ideal.add_mem _
     (Ideal.mem_sup_left
-      (HopfIdeal.tmul_mem_leftTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+      (Ideal.tmul_mem_leftTensorIdeal (R := R) (B := SymmetricAlgebra R R)
         (Ideal.mem_span_singleton_self _) 1))
     (Ideal.mem_sup_right
-      (HopfIdeal.tmul_mem_rightTensorIdeal (R := R) (H := SymmetricAlgebra R R) 1
+      (Ideal.tmul_mem_rightTensorIdeal (R := R) (A := SymmetricAlgebra R R) 1
         (Ideal.mem_span_singleton_self _)))
 
 omit [CharP R p] in
@@ -218,7 +218,7 @@ element of `Multiplicative A` by `TauCeti.AdditiveGroup.gaPointsMulEquiv`. -/
 @[expose] noncomputable def pointsHom :
     WithConv (CoordinateRing (R := R) p →ₐ[R] A) →* Multiplicative A :=
   (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).toMonoidHom.comp
-    (AlgHom.mapDomain (Bialgebra.Quotient.mkBialgHom (hopfIdeal (R := R) p).toIdeal))
+    (BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom (hopfIdeal (R := R) p).toIdeal))
 
 /-- A point of `αₚ` is sent to the value at `x` of its underlying `R[x]`-point: the element
 `F(x̄)` of `A`, where `x̄` is the class of `x` in the coordinate ring. -/
@@ -228,7 +228,7 @@ theorem toAdd_pointsHom (F : WithConv (CoordinateRing (R := R) p →ₐ[R] A)) :
       F.ofConv (Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal
         (ι R R 1 : SymmetricAlgebra R R)) := by
   simp only [pointsHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    AdditiveGroup.toAdd_gaPointsMulEquiv, AlgHom.mapDomain_apply,
+    AdditiveGroup.toAdd_gaPointsMulEquiv, BialgHom.mapDomain_apply,
     AlgHom.comp_apply, BialgHom.coe_toAlgHom, Bialgebra.Quotient.mkBialgHom_apply]
 
 /-- The points homomorphism of `αₚ` is injective, because the quotient map `R[x] → R[x] / (xᵖ)`
@@ -236,7 +236,7 @@ is surjective, so pre-composition with it is injective on algebra homomorphisms.
 theorem pointsHom_injective : Function.Injective (pointsHom (R := R) p (A := A)) := by
   intro F F' h
   have h2 := (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).injective h
-  rw [AlgHom.mapDomain_apply, AlgHom.mapDomain_apply] at h2
+  rw [BialgHom.mapDomain_apply, BialgHom.mapDomain_apply] at h2
   have h3 := WithConv.toConv_injective h2
   apply WithConv.ofConv_injective
   apply AlgHom.ext

@@ -286,7 +286,7 @@ theorem apply_algebra_splice_of_mem
   have hinner : AA.taylor (ReducedTensorWords.subword R (fun i : Fin (p + s + t) ↦ a i) p s) =
       negOnePowCast R (suspExp s fun j ↦ d (p + j)) •
         evalNat (AA.m s) fun j ↦ a (p + j) := by
-    rw [ReducedTensorWords.subword_eq_of_tprod R _ hs (by omega), ← AInfinity.evalNat_suspend]
+    rw [ReducedTensorWords.subword_eq_of_tprod R _ hs (by omega), ← MultilinearMap.evalNat_suspend]
     exact (AInfinity.isSuspension_def _ _ _).1 AA.taylor_isSuspension s hs _ _
       fun i hi ↦ ha (p + i) (by omega)
   -- The suspended algebra operation on the block is its unsuspended operation up to a sign.
@@ -319,7 +319,7 @@ theorem apply_algebra_splice_of_mem
     hFf, apply_koszulTwist_of_mem G AA.grading (f (p + 1 + t)) hx
       (AInfinity.replaceDeg d p s) _
       fun i hi ↦ AInfinity.replaceBlock_mem_replaceDeg_of_mem_blockDeg AA.grading.piece ha hcv
-        (by omega) (by omega), evalNat_replaceBlock_smul _ _ _ (by omega)]
+        (by omega) (by omega), MultilinearMap.evalNat_replaceBlock_smul _ _ _ (by omega)]
   have hpre : (1 : ℤ) * ∑ j ∈ Finset.range p,
       (if h : j < p + s + t then (fun i : Fin (p + s + t) ↦ d i - 1) ⟨j, h⟩ else 0) =
         ∑ i ∈ Finset.range p, (d i - 1) := by

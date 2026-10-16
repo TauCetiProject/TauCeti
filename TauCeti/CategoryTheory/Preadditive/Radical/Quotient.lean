@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
--- Finite-dimensionality of the quotient, for the local finiteness of the Auslander-Reiten quiver.
+-- Finite-dimensionality of the irreducible-morphism space between each pair of objects.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 -- Non-public: Mathlib's quotient operations occur only inside the declarations below, the API
 -- here standing in for them, and the dimension bound only inside proofs.
@@ -33,8 +33,8 @@ is an arrow `X → Y`" mean "there is an irreducible morphism `X ⟶ Y`".  Secon
 invariance**: conjugating by isomorphisms `X ≅ X'` and `Y ≅ Y'` induces a `k`-linear equivalence
 `Irr(X, Y) ≃ₗ[k] Irr(X', Y')`, functorially, which is what lets the arrows be indexed by
 *isomorphism classes* of indecomposables.  Third, **finite-dimensionality** over a division ring
-whenever the ambient morphism space is finite-dimensional, which is what makes the quiver locally
-finite.
+whenever the ambient morphism space is finite-dimensional, with the dimension bounded by that of
+the ambient space.  This controls the irreducible-morphism space between each fixed pair of objects.
 
 The detection statement is the only one that constrains the objects: it needs the two endomorphism
 rings to be local (the indecomposables of a Krull-Schmidt category) and the category to have binary
@@ -305,16 +305,12 @@ indexed by isomorphism classes of indecomposables rather than by objects. -/
 noncomputable def irreducibleMorphismSpaceCongr (e : X ≅ X') (e' : Y ≅ Y') :
     irreducibleMorphismSpace k X Y ≃ₗ[k] irreducibleMorphismSpace k X' Y' :=
   Submodule.Quotient.equiv _ _ (jacobsonRadicalSubmoduleCongr k e e') <| by
-    refine le_antisymm ?_ fun g hg => ?_
-    · rw [Submodule.map_le_iff_le_comap]
-      intro f hf
-      simp only [Submodule.mem_comap, LinearEquiv.coe_coe, mem_jacobsonRadicalSqSubmoduleIn,
-        coe_jacobsonRadicalSubmoduleCongr_apply] at hf ⊢
-      exact comp_mem_jacobsonRadicalSq_right (comp_mem_jacobsonRadicalSq_left e.inv hf) e'.hom
-    · refine ⟨(jacobsonRadicalSubmoduleCongr k e e').symm g, ?_, by simp⟩
-      simp only [SetLike.mem_coe, mem_jacobsonRadicalSqSubmoduleIn,
-        coe_jacobsonRadicalSubmoduleCongr_symm_apply] at hg ⊢
-      exact comp_mem_jacobsonRadicalSq_left e.hom (comp_mem_jacobsonRadicalSq_right hg e'.inv)
+    ext g
+    have h := congrArg (fun P : Submodule k (X' ⟶ Y') => (g : X' ⟶ Y') ∈ P)
+      (jacobsonRadicalSqSubmodule_map_homCongr k e e')
+    simpa only [Submodule.mem_map_equiv, mem_jacobsonRadicalSqSubmoduleIn,
+      mem_jacobsonRadicalSqSubmodule, Linear.homCongr_symm_apply,
+      coe_jacobsonRadicalSubmoduleCongr_symm_apply] using Iff.of_eq h
 
 /-- **Conjugation of the quotient is computed on representatives**: the image of the class of a
 radical morphism `f` is the class of its conjugate
@@ -375,10 +371,10 @@ instance [FiniteDimensional k (X ⟶ Y)] :
     (jacobsonRadicalSqSubmodule k X Y).submoduleOf (jacobsonRadicalSubmodule k X Y)))
 
 /-- **The space of irreducible morphisms is no larger than the morphism space it is carved out
-of.**  This is the bound that makes the Auslander-Reiten quiver of a category with
-finite-dimensional morphism spaces locally finite.  Finite-dimensionality of `X ⟶ Y` is a genuine
-hypothesis and not merely a convenience: without it the right-hand side is `0` by the convention
-for `Module.finrank`, while the quotient can perfectly well be finite-dimensional and nonzero. -/
+of.**  This bounds the dimension of the irreducible-morphism space between the fixed objects `X`
+and `Y`.  Finite-dimensionality of `X ⟶ Y` is a genuine hypothesis and not merely a convenience:
+without it the right-hand side is `0` by the convention for `Module.finrank`, while the quotient
+can perfectly well be finite-dimensional and nonzero. -/
 theorem finrank_irreducibleMorphismSpace_le [FiniteDimensional k (X ⟶ Y)] :
     Module.finrank k (irreducibleMorphismSpace k X Y) ≤ Module.finrank k (X ⟶ Y) :=
   (Submodule.finrank_quotient_le _).trans (Submodule.finrank_le _)

@@ -46,6 +46,8 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * `TauCeti.gradedPositiveMulQuotientMk_eq_zero_iff`: the kernel of `Ae ⟶ Ae / A₊e` is `A₊e`.
 * `TauCeti.mem_gradedPositiveMulQuotient_piece_iff`: the degree-`p` piece of `Ae / A₊e` consists
   of the classes of the degree-`p` elements of `Ae`.
+* `TauCeti.decompose_eq_zero_of_mem_gradedPositiveMulIdeal`: over a nonnegatively graded algebra,
+  the elements of `A₊e` have no component in degrees `≤ 0`.
 * `TauCeti.gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk`,
   `TauCeti.gradedPositiveMulQuotientLift_unique`: the universal property of `Ae / A₊e`.
 * `TauCeti.smulGradedDimension_gradedIdempotentHead`: the graded dimension of `eⱼ • Sᵢ` is `δᵢⱼ`.
@@ -240,7 +242,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 include hneg in
 /-- In a nonnegatively graded algebra, every element of `A₊e` has vanishing components in all
 degrees `q ≤ 0`. -/
-private theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
+theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
     (hy : y ∈ gradedPositiveMulIdeal 𝒜 f) {q : ℤ} (hq : q ≤ 0) : (decompose 𝒜 y q : A) = 0 := by
   induction hy using Submodule.span_induction generalizing q with
   | mem y hy =>
@@ -282,7 +284,7 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
 omit [GradedAlgebra 𝒜] in
 include he hspan in
 /-- A degree-zero element of `A eᵢ` is a scalar multiple of `eᵢ`. -/
-private theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
+theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
     (hxi : x ∈ (Ideal.span {e i} : Ideal A)) : ∃ c : k, x = c • e i := by
   classical
   have hmul : ∀ y ∈ Submodule.span k (Set.range e), ∃ c : k, y * e i = c • e i := by

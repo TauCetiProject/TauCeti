@@ -35,6 +35,8 @@ supplies the scalar-kernel bridge and its characteristic API.
 * `Matrix.PosSemidef.KolmogorovSpace`: the canonical Hilbert space.
 * `Matrix.PosSemidef.kolmogorovFeature`: its canonical feature map.
 * `Matrix.PosSemidef.inner_kolmogorovFeature`: the Kolmogorov identity.
+* `Matrix.PosSemidef.continuous_kolmogorovFeature`: the feature map of a jointly continuous
+  kernel is continuous.
 * `Matrix.PosSemidef.kolmogorovFeature_dense`: minimality of the decomposition.
 * `Matrix.PosSemidef.kolmogorovIsometry`: the universal comparison isometry.
 * `Matrix.PosSemidef.kolmogorovEquiv`: equivalence with any other minimal
@@ -164,6 +166,25 @@ theorem norm_kolmogorovFeature_sub_sq (hK : Matrix.PosSemidef K) (a b : α) :
       RCLike.re (K a a) - 2 * RCLike.re (K a b) + RCLike.re (K b b) := by
   rw [norm_sub_sq (𝕜 := 𝕜), norm_kolmogorovFeature_sq hK, norm_kolmogorovFeature_sq hK,
     inner_kolmogorovFeature hK]
+
+/-- The canonical feature map of a jointly continuous positive-definite kernel is continuous. -/
+theorem continuous_kolmogorovFeature [TopologicalSpace α] (hK : Matrix.PosSemidef K)
+    (hKc : Continuous (Function.uncurry K)) : Continuous (kolmogorovFeature hK) := by
+  rw [continuous_iff_continuousAt]
+  intro a
+  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+  have hre := RCLike.continuous_re.comp hKc
+  have hd : Filter.Tendsto (fun b ↦ RCLike.re (K b b)) (nhds a) (nhds (RCLike.re (K a a))) :=
+    (hre.comp (continuous_id.prodMk continuous_id)).tendsto a
+  have ho : Filter.Tendsto (fun b ↦ RCLike.re (K b a)) (nhds a) (nhds (RCLike.re (K a a))) :=
+    (hre.comp (continuous_id.prodMk continuous_const)).tendsto a
+  -- The squared distance `re (K b b) - 2 re (K b a) + re (K a a)` tends to `0` as `b → a`.
+  have hsq : Filter.Tendsto (fun b ↦ ‖kolmogorovFeature hK b - kolmogorovFeature hK a‖ ^ 2)
+      (nhds a) (nhds 0) := by
+    simp only [norm_kolmogorovFeature_sub_sq]
+    convert (hd.sub (ho.const_mul 2)).add_const (RCLike.re (K a a)) using 2
+    ring
+  simpa only [Real.sqrt_sq (norm_nonneg _), Real.sqrt_zero] using hsq.sqrt
 
 /-- The canonical feature vectors have dense linear span in the Kolmogorov space.  Thus the
 construction is minimal: it contains no orthogonal summand invisible to the kernel. -/

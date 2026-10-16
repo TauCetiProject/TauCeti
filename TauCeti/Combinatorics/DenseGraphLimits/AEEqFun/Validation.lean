@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun.Basic
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
+public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Examples
 import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
 
 /-!
@@ -175,9 +176,7 @@ theorem Graphon.toAEEqFun_not_injective_unitInterval :
 -- The nontrivial density is retained despite that strict inequality.
 example : homDensity (⊤ : SimpleGraph (Fin 3))
     (repaired (Graphon.const (volume : Measure I) ⟨1 / 2, by norm_num, by norm_num⟩)) = 1 / 8 := by
-  rw [homDensity_congr_ae _ (repaired_ae _), homDensity_const,
-    SimpleGraph.card_edgeFinset_top_eq_card_choose_two]
-  norm_num
+  rw [homDensity_congr_ae _ (repaired_ae _), homDensity_top_three_const_half]
 
 -- A nonconstant finite-graph example on an atomic carrier checks all four entries
 -- of the two-point adjacency matrix, not just the off-diagonal ones.

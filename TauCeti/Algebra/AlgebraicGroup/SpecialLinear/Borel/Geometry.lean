@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Borel.Basic
 
 /-!
@@ -43,7 +43,6 @@ conjugates, is proved in `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTria
 public section
 
 open WithConv
-open scoped LaurentPolynomial
 
 namespace TauCeti.SpecialLinear.Borel
 
@@ -59,7 +58,7 @@ private abbrev presentationRing := Polynomial (LaurentPolynomial R)
 
 /-- The tautological diagonal parameter in the polynomial-Laurent presentation. -/
 private def presentationUnit : (presentationRing R)ˣ :=
-  Units.map Polynomial.C.toMonoidHom (MultiplicativeGroup.genericUnit R)
+  Units.map Polynomial.C.toMonoidHom (LaurentPolynomial.genericUnit R)
 
 @[simp]
 private theorem presentationUnit_val :
@@ -85,23 +84,25 @@ private def coordinateToPresentation :
     (presentationPoint R)).ofConv
 
 /-- The tautological point of the standard Borel in its own coordinate algebra. -/
-noncomputable def tautologicalPoint : SL2Borel (coordinateHopfAlgebra R) :=
+def tautologicalPoint : SL2Borel (coordinateHopfAlgebra R) :=
   pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R)
     (toConv (AlgHom.id R (coordinateHopfAlgebra R)))
 
 /-- The upper-left diagonal coordinate of the standard `SL₂` Borel, bundled as a unit. -/
-noncomputable def diagonalUnit : (coordinateHopfAlgebra R)ˣ :=
+def diagonalUnit : (coordinateHopfAlgebra R)ˣ :=
   SL2Borel.diag (tautologicalPoint R)
 
+/-- The diagonal unit is the upper-left entry of the tautological point. -/
 theorem diagonalUnit_val :
     (diagonalUnit R : coordinateHopfAlgebra R) =
-      (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 0 := by
-  exact SL2Borel.diag_val (tautologicalPoint R)
+      (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 0 :=
+  SL2Borel.diag_val (tautologicalPoint R)
 
 /-- The upper-right coordinate of the standard `SL₂` Borel. -/
-noncomputable def upperRightCoordinate : coordinateHopfAlgebra R :=
+def upperRightCoordinate : coordinateHopfAlgebra R :=
   SL2Borel.upperRight (tautologicalPoint R)
 
+/-- The upper-right coordinate is the upper-right entry of the tautological point. -/
 theorem upperRightCoordinate_def :
     upperRightCoordinate R =
       (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1 :=
@@ -110,8 +111,7 @@ theorem upperRightCoordinate_def :
 /-- Interpret Laurent coefficients through the tautological diagonal unit. -/
 private def presentationCoefficientToCoordinate :
     LaurentPolynomial R →ₐ[R] coordinateHopfAlgebra R :=
-  ((MultiplicativeGroup.pointsMulEquiv
-    (R := R) (A := coordinateHopfAlgebra R)).symm (diagonalUnit R)).ofConv
+  laurentEval (R := R) (diagonalUnit R)
 
 /-- Evaluate the polynomial coordinate at the tautological upper-right matrix entry. -/
 private def presentationToCoordinate :
@@ -122,8 +122,8 @@ private def presentationToCoordinate :
 
 @[simp]
 private theorem presentationToCoordinate_X :
-    presentationToCoordinate R Polynomial.X = upperRightCoordinate R := by
-  exact Polynomial.eval₂_X _ _
+    presentationToCoordinate R Polynomial.X = upperRightCoordinate R :=
+  Polynomial.eval₂_X _ _
 
 private theorem map_tautologicalPoint :
     SL2Borel.map (coordinateToPresentation R).toRingHom (tautologicalPoint R) =
@@ -142,7 +142,7 @@ private theorem map_presentationPoint :
   ext i j
   fin_cases i <;> fin_cases j
   · simp [presentationPoint, presentationToCoordinate, presentationCoefficientToCoordinate,
-      presentationUnit_val, MultiplicativeGroup.point_T, diagonalUnit_val]
+      presentationUnit_val, laurentEval_T, diagonalUnit_val]
   · rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk]
     simpa [AlgHom.coe_toRingHom, upperRightCoordinate_def] using
       presentationToCoordinate_X R
@@ -159,10 +159,11 @@ private theorem map_presentationPoint :
       simpa only [diagonalUnit_val] using hunit
     have hinv := Units.inv_eq_of_mul_eq_one_right hunit'
     simpa [presentationPoint, presentationToCoordinate, presentationCoefficientToCoordinate,
-      presentationUnit_val, MultiplicativeGroup.point_T] using hinv
+      presentationUnit_val, laurentEval_T] using hinv
 
 private theorem map_tautologicalUnit :
-    Units.map (coordinateToPresentation R).toMonoidHom (diagonalUnit R) =
+    Units.map (coordinateToPresentation R : coordinateHopfAlgebra R →* presentationRing R)
+      (diagonalUnit R) =
       presentationUnit R := by
   apply Units.ext
   have h := congrArg
@@ -171,13 +172,6 @@ private theorem map_tautologicalUnit :
     (map_tautologicalPoint R)
   rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
   simpa [diagonalUnit_val, presentationUnit_val] using h
-
-private theorem unitOfPoint_CAlgHom :
-    MultiplicativeGroup.unitOfPoint
-        (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) =
-      presentationUnit R := by
-  apply Units.ext
-  simp [MultiplicativeGroup.unitOfPoint_val, presentationUnit_val]
 
 private theorem presentationToCoordinate_comp_coordinateToPresentation :
     (presentationToCoordinate R).comp (coordinateToPresentation R) =
@@ -205,13 +199,17 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
         (upperRightCoordinate R) (Polynomial.C x) = _
       simp
     rw [hcoeff]
-    apply (MultiplicativeGroup.pointEquiv
-      (R := R) (A := presentationRing R)).injective
-    rw [MultiplicativeGroup.pointEquiv_comp]
-    simpa only [presentationCoefficientToCoordinate,
-      MultiplicativeGroup.pointsMulEquiv_symm_apply, WithConv.ofConv_toConv,
-      MultiplicativeGroup.pointEquiv_apply, MultiplicativeGroup.unitOfPoint_point,
-      AlgHom.id_comp, unitOfPoint_CAlgHom] using map_tautologicalUnit R
+    apply (laurentEvalEquiv (R := R) (A := presentationRing R)).symm.injective
+    rw [laurentEvalEquiv_symm_comp]
+    have hunit : laurentEvalEquiv.symm
+        (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) =
+          presentationUnit R := by
+      rw [← LaurentPolynomial.map_genericUnit]
+      ext
+      simp only [Units.coe_map, LaurentPolynomial.genericUnit_val, MonoidHom.coe_ofClass,
+        Polynomial.CAlgHom_apply, presentationUnit_val]
+    simpa only [presentationCoefficientToCoordinate, laurentEvalEquiv_symm_laurentEval,
+      AlgHom.id_comp, hunit] using map_tautologicalUnit R
   · have h := congrArg
       (fun g : SL2Borel (presentationRing R) ↦
         (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 1)
@@ -226,7 +224,7 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
 /-- **Polynomial-Laurent coordinates on the standard `SL₂` Borel.** Its coordinate algebra is
 `R[T, T⁻¹][X]`: `T` records the upper-left diagonal unit and `X` records the free upper-right
 entry. -/
-noncomputable def coordinateAlgEquiv :
+def coordinateAlgEquiv :
     coordinateHopfAlgebra R ≃ₐ[R] Polynomial (LaurentPolynomial R) :=
   AlgEquiv.ofAlgHom (coordinateToPresentation R) (presentationToCoordinate R)
     (coordinateToPresentation_comp_presentationToCoordinate R)

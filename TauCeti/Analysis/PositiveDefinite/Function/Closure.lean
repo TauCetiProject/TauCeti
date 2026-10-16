@@ -17,9 +17,7 @@ products, and unweighted finite sums/products. Here we package the forms used by
 finite approximations: finite nonnegative weighted sums, real-weighted variants, and powers. The
 weighted sum API is available in scalar (`•`) notation.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
-functions API asking for closure under sums and products before the Bochner and BCR representation
-milestones. No external formalization is vendored.
+No external formalization is vendored.
 
 ## Main declarations
 

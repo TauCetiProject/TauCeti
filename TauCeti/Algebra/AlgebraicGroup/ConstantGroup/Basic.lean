@@ -20,14 +20,16 @@ choices and proves that its underlying algebra is finite étale over `R`.
 
 The formulas below identify multiplication, comultiplication, counit, and antipode with the usual
 pointwise product, group multiplication, identity, and inversion. Evaluation at a group element is
-then an algebra point, and these evaluations multiply exactly as the elements of `G` do.
+then an algebra point, and these evaluations multiply exactly as the elements of `G` do. Apart from
+the antipode and the functoriality, these results only use the monoid structure of `G`, and are
+stated for a finite monoid.
 
 ## Main declarations
 
 * `TauCeti.ConstantGroup.coordinateRing`: the Hopf algebra of functions on a finite group.
 * `TauCeti.ConstantGroup.functionAlgEquiv`: its canonical equivalence with `G → R`.
 * `TauCeti.ConstantGroup.eval`: evaluation at a group element as an algebra homomorphism.
-* `TauCeti.ConstantGroup.toPoints`: the group homomorphism from `G` to its algebra points.
+* `TauCeti.ConstantGroup.toPoints`: the monoid homomorphism from `G` to its algebra points.
 * `TauCeti.ConstantGroup.coordinateBialgHom`: contravariant pullback along a group homomorphism.
 
 ## References
@@ -98,9 +100,9 @@ theorem eval_apply (g : G) (f : coordinateRing R G) :
     eval R G g f = functionAlgEquiv R G f g := by
   simp [eval]
 
-section Group
+section Monoid
 
-variable [Group G]
+variable [Monoid G]
 
 /-- Comultiplication on the coordinate ring is dual to multiplication in `G`. -/
 theorem comul_apply (f : coordinateRing R G) (g h : G) :
@@ -116,13 +118,7 @@ theorem counit_apply (f : coordinateRing R G) :
   rw [ConvolutionDual.counit_apply, functionAlgEquiv_apply]
   rw [MonoidAlgebra.one_def]
 
-/-- The antipode of the coordinate ring sends a function `f` to `g ↦ f (g⁻¹)`. -/
-theorem antipode_apply (f : coordinateRing R G) (g : G) :
-    functionAlgEquiv R G (HopfAlgebra.antipode R f) g = functionAlgEquiv R G f g⁻¹ := by
-  rw [functionAlgEquiv_apply, ConvolutionDual.antipode_apply,
-    MonoidAlgebra.antipode_single, functionAlgEquiv_apply]
-  simp
-
+omit [Monoid G] in
 private theorem dualDistribEquiv_apply_single
     (w : coordinateRing R G ⊗[R] coordinateRing R G) (g h : G) :
     ConvolutionDual.dualDistribEquiv R (MonoidAlgebra R G) w
@@ -153,7 +149,7 @@ theorem eval_one : WithConv.toConv (eval R G (1 : G)) = 1 := by
   rw [eval_apply, AlgHom.convOne_apply]
   simpa using (counit_apply R G f).symm
 
-/-- A finite group maps canonically to the group of algebra points of its constant group. -/
+/-- A finite monoid maps canonically to the monoid of algebra points of its constant monoid. -/
 noncomputable def toPoints : G →* WithConv (coordinateRing R G →ₐ[R] R) where
   toFun g := WithConv.toConv (eval R G g)
   map_one' := eval_one R G
@@ -163,7 +159,7 @@ noncomputable def toPoints : G →* WithConv (coordinateRing R G →ₐ[R] R) wh
 theorem toPoints_apply (g : G) : (toPoints R G g).ofConv = eval R G g := by
   simp [toPoints]
 
-/-- Over a nontrivial base ring, evaluation distinguishes the elements of the constant group. -/
+/-- Over a nontrivial base ring, evaluation distinguishes the elements of the constant monoid. -/
 theorem toPoints_injective [Nontrivial R] : Function.Injective (toPoints R G) := by
   intro g h hgh
   have hmaps := congrArg WithConv.ofConv hgh
@@ -172,6 +168,19 @@ theorem toPoints_injective [Nontrivial R] : Function.Injective (toPoints R G) :=
   ext f
   obtain ⟨x, rfl⟩ := (functionAlgEquiv R G).surjective f
   simpa only [eval_apply, Pi.evalAlgHom_apply] using DFunLike.congr_fun hmaps x
+
+end Monoid
+
+section Group
+
+variable [Group G]
+
+/-- The antipode of the coordinate ring sends a function `f` to `g ↦ f (g⁻¹)`. -/
+theorem antipode_apply (f : coordinateRing R G) (g : G) :
+    functionAlgEquiv R G (HopfAlgebra.antipode R f) g = functionAlgEquiv R G f g⁻¹ := by
+  rw [functionAlgEquiv_apply, ConvolutionDual.antipode_apply,
+    MonoidAlgebra.antipode_single, functionAlgEquiv_apply]
+  simp
 
 section Functoriality
 

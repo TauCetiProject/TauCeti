@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Multilinear.Basic
+public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
-# Multilinear maps on finitely many finite-dimensional spaces are continuous
+# Multilinear maps and seminorms on finite-dimensional spaces are continuous
 
 A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
@@ -22,6 +23,12 @@ This is the multilinear companion of `LinearMap.continuous_of_finiteDimensional`
 `MultilinearMap.continuous_of_bound` asks for an explicit bound, which is exactly what one does
 not have when the multilinear map arrives from algebra — a tensor or symmetric-power
 construction, say — rather than from analysis.
+
+In the same setting every seminorm on a finite-dimensional Hausdorff topological vector space is
+continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is dominated by a multiple
+of the sup norm of the coordinates in a basis, and those coordinates are continuous. This is how a
+norm defined by algebra, such as the spectral norm of a finite field extension, is compared with a
+topology given in advance.
 -/
 
 public section
@@ -57,3 +64,33 @@ theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuo
     (continuous_apply i)).congr fun m ↦ Module.Basis.coord_apply _ _ _
 
 end MultilinearMap
+
+namespace Seminorm
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
+  [FiniteDimensional 𝕜 E]
+
+/-- A seminorm on a finite-dimensional Hausdorff topological vector space over a complete
+nontrivially normed field is continuous. -/
+theorem continuous_of_finiteDimensional (p : Seminorm 𝕜 E) : Continuous p := by
+  let b := Module.finBasis 𝕜 E
+  -- `p` is dominated by `C` times the sup norm of the coordinates in `b`, with `C = ∑ᵢ p (b i)`
+  have hle (x : E) : p x ≤ (∑ i, p (b i)) * ‖b.equivFun x‖ :=
+    calc p x = p (∑ i, b.equivFun x i • b i) := by rw [b.sum_equivFun]
+      _ ≤ ∑ i, p (b.equivFun x i • b i) :=
+        Finset.le_sum_of_subadditive p (map_zero p).le (map_add_le_add p) _ _
+      _ = ∑ i, ‖b.equivFun x i‖ * p (b i) := by simp only [map_smul_eq_mul]
+      _ ≤ ∑ i, ‖b.equivFun x‖ * p (b i) := by
+        gcongr with i
+        exact norm_le_pi_norm (b.equivFun x) i
+      _ = (∑ i, p (b i)) * ‖b.equivFun x‖ := by
+        rw [← Finset.mul_sum, mul_comm]
+  refine Seminorm.continuous_of_continuousAt_zero ?_
+  rw [ContinuousAt, map_zero]
+  refine squeeze_zero (fun x ↦ apply_nonneg p x) hle ?_
+  have hc : Continuous fun x ↦ (∑ i, p (b i)) * ‖b.equivFun x‖ :=
+    continuous_const.mul (continuous_norm.comp (continuous_equivFun_basis b))
+  simpa using hc.tendsto 0
+
+end Seminorm

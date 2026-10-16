@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.Convex.DoublyStochasticMatrix
+public import TauCeti.Analysis.Convex.PermutationOrbit
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 
 import Mathlib.Analysis.Convex.Mul
@@ -28,6 +29,9 @@ forward Schur–Horn inequality in Karamata form: for every convex `φ`,
 
 `∑ₖ φ(dₖ) ≤ ∑ᵢ φ(λᵢ)`.
 
+By Birkhoff's theorem the doubly stochastic matrices are the convex combinations of permutation
+matrices, so the diagonal lies in the convex hull of the rearrangements of the spectrum.
+
 The case `φ = x²` says that the Euclidean norm of the diagonal is at most that of the spectrum.
 The sum of the diagonal entries is the trace, so it equals the sum of the eigenvalues in every
 orthonormal basis.
@@ -44,13 +48,19 @@ orthonormal basis.
 * `OrthonormalBasis.schurWeight_mem_doublyStochastic`: a Schur weight matrix of two orthonormal
   bases with a common index type is doubly stochastic.
 * `LinearMap.IsSymmetric.re_inner_apply_self_eq_sum_schurWeight_mul_eigenvalues`: the diagonal
-  entries of a symmetric operator are Schur-weighted averages of its eigenvalues.
+  entries of a symmetric operator are Schur-weighted averages of its eigenvalues;
+  `LinearMap.IsSymmetric.re_inner_apply_self_eq_schurWeight_mulVec_eigenvalues` is the same
+  statement as a matrix-vector product.
+* `LinearMap.IsSymmetric.re_inner_apply_self_mem_convexHull_eigenvalues_comp_perm`: by
+  Birkhoff's theorem, the diagonal lies in the convex hull of the rearrangements of the spectrum.
 * `LinearMap.IsSymmetric.sum_map_re_inner_apply_self_le_sum_map_eigenvalues`: the forward
   Schur–Horn inequality `∑ₖ φ(dₖ) ≤ ∑ᵢ φ(λᵢ)` for convex `φ`.
 * `LinearMap.IsSymmetric.sum_re_inner_apply_self_eq_sum_eigenvalues`: the diagonal entries sum to
   the sum of the eigenvalues in every orthonormal basis.
 * `LinearMap.IsSymmetric.sum_sq_re_inner_apply_self_le_sum_sq_eigenvalues`:
   `∑ₖ dₖ² ≤ ∑ᵢ λᵢ²`.
+* `LinearMap.IsSymmetric.sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues`: for a decreasing
+  weight sequence `c`, `∑ₖ cₖ dₖ ≤ ∑ₖ cₖ λₖ`, with the eigenvalues listed in decreasing order.
 
 ## References
 
@@ -124,6 +134,18 @@ theorem re_inner_apply_self_eq_sum_schurWeight_mul_eigenvalues (hT : T.IsSymmetr
   simp [hT.re_inner_apply_self_eq_sum_eigenvalues_mul_sq hn, OrthonormalBasis.repr_apply_apply,
     mul_comm]
 
+/-- **The diagonal of a symmetric operator is the image of its spectrum under a Schur weight
+matrix.** For every orthonormal basis `e`, the vector of diagonal entries `Re⟪T (e k), e k⟫` is
+`w *ᵥ λ`, where `w` is the Schur weight matrix of `e` and the eigenbasis of `T`. -/
+theorem re_inner_apply_self_eq_schurWeight_mulVec_eigenvalues (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) (e : OrthonormalBasis κ 𝕜 E) :
+    (fun k ↦ RCLike.re ⟪T (e k), e k⟫_𝕜) =
+      e.schurWeight (hT.eigenvectorBasis hn) *ᵥ hT.eigenvalues hn := by
+  ext k
+  rw [hT.re_inner_apply_self_eq_sum_schurWeight_mul_eigenvalues hn,
+    ← OrthonormalBasis.transpose_schurWeight]
+  simp [Matrix.mulVec, dotProduct]
+
 /-- **Forward Schur–Horn inequality**, Karamata form. If `φ` is convex on a set `s` containing
 the eigenvalues of a symmetric operator `T`, then for every orthonormal basis `e`, the sum of
 `φ` over the diagonal entries `Re⟪T (e k), e k⟫` is at most the sum of `φ` over the
@@ -138,18 +160,12 @@ theorem sum_map_re_inner_apply_self_le_sum_map_eigenvalues (hT : T.IsSymmetric)
   let σ : κ ≃ Fin n :=
     Fintype.equivFinOfCardEq ((Module.finrank_eq_card_basis e.toBasis).symm.trans hn)
   let e' := e.reindex σ
-  have hdiag : (fun k ↦ RCLike.re ⟪T (e' k), e' k⟫_𝕜) =
-      e'.schurWeight (hT.eigenvectorBasis hn) *ᵥ hT.eigenvalues hn := by
-    ext k
-    rw [hT.re_inner_apply_self_eq_sum_schurWeight_mul_eigenvalues hn,
-      ← OrthonormalBasis.transpose_schurWeight]
-    simp [Matrix.mulVec, dotProduct]
   calc ∑ k, φ (RCLike.re ⟪T (e k), e k⟫_𝕜)
       = ∑ k, φ (RCLike.re ⟪T (e' k), e' k⟫_𝕜) := by
         rw [← σ.symm.sum_comp]
         simp [e']
     _ = ∑ k, φ ((e'.schurWeight (hT.eigenvectorBasis hn) *ᵥ hT.eigenvalues hn) k) := by
-        rw [← hdiag]
+        rw [← hT.re_inner_apply_self_eq_schurWeight_mulVec_eigenvalues hn]
     _ ≤ ∑ i, φ (hT.eigenvalues hn i) :=
         hφ.sum_map_mulVec_le_of_mem_doublyStochastic
           (e'.schurWeight_mem_doublyStochastic _) hs
@@ -170,5 +186,31 @@ theorem sum_sq_re_inner_apply_self_le_sum_sq_eigenvalues (hT : T.IsSymmetric)
     ∑ k, RCLike.re ⟪T (e k), e k⟫_𝕜 ^ 2 ≤ ∑ i, hT.eigenvalues hn i ^ 2 :=
   hT.sum_map_re_inner_apply_self_le_sum_map_eigenvalues hn e (Even.convexOn_pow even_two)
     fun _ ↦ Set.mem_univ _
+
+/-- **The diagonal lies in the permutohedron of the spectrum.** For every orthonormal basis `e`
+indexed by `Fin n`, the vector of diagonal entries `Re⟪T (e k), e k⟫` of a symmetric operator `T`
+lies in the convex hull of the rearrangements `λ ∘ σ` of its eigenvalues. -/
+theorem re_inner_apply_self_mem_convexHull_eigenvalues_comp_perm (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) (e : OrthonormalBasis (Fin n) 𝕜 E) :
+    (fun k ↦ RCLike.re ⟪T (e k), e k⟫_𝕜) ∈
+      convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ hT.eigenvalues hn ∘ σ) := by
+  rw [hT.re_inner_apply_self_eq_schurWeight_mulVec_eigenvalues hn]
+  exact Matrix.mulVec_mem_convexHull_range_comp_perm (e.schurWeight_mem_doublyStochastic _) _
+
+/-- **Sorted weights of the diagonal.** For a symmetric `T`, an orthonormal basis `e`, and a
+decreasing weight sequence `c`, the `c`-weighted sum of the diagonal entries `Re⟪T eₖ, eₖ⟫` is
+at most the `c`-weighted sum of the eigenvalues of `T`, listed in decreasing order. -/
+theorem sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) (e : OrthonormalBasis (Fin n) 𝕜 E) {c : Fin n → ℝ}
+    (hc : Antitone c) :
+    ∑ k, c k * RCLike.re ⟪T (e k), e k⟫_𝕜 ≤ ∑ i, c i * hT.eigenvalues hn i := by
+  -- The diagonal is the image of the spectrum under the doubly stochastic Schur weights.
+  have hdiag : ∑ k, c k * RCLike.re ⟪T (e k), e k⟫_𝕜 =
+      c ⬝ᵥ (e.schurWeight (hT.eigenvectorBasis hn) *ᵥ hT.eigenvalues hn) := by
+    simp [hT.re_inner_apply_self_eq_sum_schurWeight_mul_eigenvalues hn,
+      OrthonormalBasis.schurWeight_apply, dotProduct, Matrix.mulVec, norm_inner_symm]
+  rw [hdiag]
+  exact (hc.monovary (hT.eigenvalues_antitone hn)).dotProduct_mulVec_le_of_mem_doublyStochastic
+    (e.schurWeight_mem_doublyStochastic _)
 
 end LinearMap.IsSymmetric

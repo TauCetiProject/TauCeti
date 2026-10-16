@@ -82,14 +82,12 @@ for the sum, which need not be unique for a non-reduced pairing.
 
 ## References
 
-This file implements the “Positive and negative roots” item in Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signatures in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/Suggested.lean`. The coroot-side positivity at the
-end of the file is the prerequisite that the fundamental-domain item of Layer 4 consumes; that
-argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
-GTM 9, Ch. III, §10. The decomposition half of `TauCeti.mem_support_iff_isPos_and_forall_ne_add` is
-the step that Mathlib currently performs only inside the proof of
-`RootPairing.Base.IsPos.induction_on_add`, isolated here as a statement of its own.
+The coroot-side positivity at the end of the file is the prerequisite of the fundamental-domain
+argument; that argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and
+Representation Theory*, GTM 9, Ch. III, §10. The decomposition half of
+`TauCeti.mem_support_iff_isPos_and_forall_ne_add` is the step that Mathlib currently performs only
+inside the proof of `RootPairing.Base.IsPos.induction_on_add`, isolated here as a statement of its
+own.
 -/
 
 public section
@@ -357,7 +355,7 @@ This is what makes the cone an order on weights: `μ ≤ λ` defined by `λ - μ
 and a weight cannot be reached from itself through a nonempty chain of positive roots. -/
 theorem isPointed_posRootCone : (posRootCone P b).IsPointed := by
   classical
-  refine AddSubmonoid.IsPointed.mk fun u hu hu' => ?_
+  intro u hu hu'
   obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hu
   obtain ⟨g, hg⟩ := (mem_posRootCone P b).mp hu'
   have huv : (∑ j ∈ b.support, f j • P.root j) + ∑ j ∈ b.support, g j • P.root j = 0 := by
@@ -415,8 +413,8 @@ legitimate because the simple roots are linearly independent, leaves `αⱼ` a n
 This is the combinatorial input to the integrability relation of a highest weight module: it is
 what confines a positive root vector raising the weight `lam - (n + 1) αᵢ` to the single direction
 `αᵢ`. -/
-theorem eq_of_nsmul_root_sub_root_mem_posRootCone [Finite ι] [IsAddTorsionFree M]
-    [IsAddTorsionFree N] {i : ι} (hi : i ∈ b.support) {j : ι} (hj : j ∈ posRoots P b) {n : ℕ}
+theorem eq_of_nsmul_root_sub_root_mem_posRootCone [Finite ι] [HasUniqueDiv M]
+    [HasUniqueDiv N] {i : ι} (hi : i ∈ b.support) {j : ι} (hj : j ∈ posRoots P b) {n : ℕ}
     (h : n • P.root i - P.root j ∈ posRootCone P b) : j = i := by
   classical
   obtain ⟨c, -, hc⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b hj

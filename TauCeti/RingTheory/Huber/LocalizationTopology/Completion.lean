@@ -50,6 +50,8 @@ complete Hausdorff targets.
 * `toCompletionLoc_sub_mem_completionIdealImage`: an approximation of a point of `A⟨T/s⟩` from `Aₛ`
   can be corrected by an element of `locIdealImage` to one from `A`.
 * `continuous_toCompletionLoc`: the structure map `A → A⟨T/s⟩` is continuous.
+* `isOpen_map_toCompletionLoc`: the structure map carries open ideals to ideals generating open
+  ideals.
 * `isHuberRing_completion_locTopology`: `A⟨T/s⟩` is a Huber ring — the completed pair above is a
   pair of definition for it.
 * `isTateRing_completion_locTopology_of_isTopologicallyNilpotent`: a topologically nilpotent
@@ -257,6 +259,28 @@ theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T 
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     toCompletionLoc P T s S hden a = (algebraMap A S a : UniformSpace.Completion S) := (rfl)
+
+/-- **The structure map `A → A⟨T/s⟩` carries open ideals to ideals generating open ideals.** This
+is the openness hypothesis `hopen` of `presentationLimitPreAdicSpaceComap`, so it lets the structure
+map of a rational localisation induce a morphism of pre-adic spaces. -/
+theorem isOpen_map_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A)
+    (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    IsOpen (J.map (toCompletionLoc P T s S hden) : Set (UniformSpace.Completion S)) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_locUniformSpace P T s S hden
+  -- The body of `toCompletionLoc` is not exported, so unfold it through `toCompletionLoc_apply`
+  -- into the localisation map followed by the completion map, and push `J` through each in turn.
+  have hρ : toCompletionLoc P T s S hden =
+      UniformSpace.Completion.coeRingHom.comp (algebraMap A S) :=
+    RingHom.ext (toCompletionLoc_apply P T s S hden)
+  rw [hρ, ← Ideal.map_map]
+  exact isOpen_map_coeRingHom (isOpen_map_algebraMap_locUniformSpace P T s S hden hJ)
 
 /-- **A change of presentation with the same ring of definition leaves the structure map alone.**
 `locUniformSpace_congr` identifies the two completions; this identifies the two structure maps

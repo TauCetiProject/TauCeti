@@ -50,9 +50,6 @@ Equality requires descent of an arbitrary radical candidate over `K` and is not 
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 6.45--6.46.
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
-
-This advances scalar-extension compatibility for the unipotent radical in Layer 5 of the
-ReductiveGroups roadmap.
 -/
 
 public section

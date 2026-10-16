@@ -56,7 +56,8 @@ coefficient vanishes in characteristic two.
   their monomial weights and the resulting matrix coefficients.
 * `TauCeti.GridDiagram.initialPentagonMap`: the map counting them.
 * `TauCeti.GridDiagram.commutationMap`: the commutation map
-  `Φ : GC⁻(G) → GC⁻(G.swapColumns a b)`, counting pentagons of both kinds.
+  `Φ : GC⁻(G) → GC⁻(G.swapColumns a b)`, counting pentagons of both kinds, with matrix
+  coefficients `TauCeti.GridDiagram.commutationPentagonCoefficient`.
 
 ## Main results
 
@@ -71,7 +72,8 @@ coefficient vanishes in characteristic two.
 * `TauCeti.GridInitialPentagonBetween.disjoint_coveredSquares_XSet_iff`: the `X`-avoidance
   condition column by column.
 * `TauCeti.GridDiagram.commutationMap_apply_apply`: the matrix coefficients of `Φ` are the sums of
-  those of the two pentagon maps.
+  those of the two pentagon maps; `TauCeti.GridDiagram.commutationMap_single_apply` states this on
+  a generator.
 
 ## References
 
@@ -464,6 +466,24 @@ theorem commutationMap_apply_apply (C : ColumnCommutationData G) (c : GridChainM
           (G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y) := by
   simp only [commutationMap_apply, Finsupp.add_apply, pentagonMap_apply_apply,
     initialPentagonMap_apply_apply, mul_add, Finsupp.sum_add]
+
+/-- The matrix coefficient of the commutation map from `x` to `y`, counting the pentagons turning
+on either side. -/
+noncomputable def commutationPentagonCoefficient (C : ColumnCommutationData G)
+    (x y : GridState n) : MvPolynomial (Fin n) R :=
+  G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y
+
+/-- The commutation pentagon coefficient is the sum of the two turn-side coefficients. -/
+theorem commutationPentagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+    G.commutationPentagonCoefficient R C x y =
+      G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y :=
+  (rfl)
+
+/-- The matrix coefficients of the commutation map are the commutation pentagon coefficients. -/
+theorem commutationMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
+    G.commutationMap R C (Finsupp.single x 1) y = G.commutationPentagonCoefficient R C x y := by
+  rw [commutationMap_apply_apply, Finsupp.sum_single_index (by simp), map_one, one_mul,
+    commutationPentagonCoefficient_def]
 
 end GridDiagram
 

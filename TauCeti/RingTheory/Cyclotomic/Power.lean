@@ -64,21 +64,24 @@ theorem powRingHom_zeta (hn : e.Coprime n) : powRingHom hn (zeta e) = zeta e ^ n
   exact evalRingHom_zeta _ _ _
 
 /-- A ring homomorphism intertwines power substitution with evaluation at the powered image
-of the distinguished generator. -/
-theorem map_powRingHom {R : Type*} [CommRing R] (hn : e.Coprime n)
+of the distinguished generator. The target ring need not be commutative. -/
+theorem map_powRingHom {R : Type*} [Ring R] (hn : e.Coprime n)
     (φ : Cyclotomic e →+* R) (x : Cyclotomic e) :
     φ (powRingHom hn x) = evalCoeffs (Int.castRingHom R) (φ (zeta e) ^ n) x := by
-  rw [powRingHom_apply, evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
+  rw [powRingHom_apply, RingHom.map_evalCoeffs]
   congr 1
   · exact RingHom.ext_int _ _
   · exact map_pow _ _ _
 
-/-- Reduction after power substitution is reduction at the powered primitive root. -/
+/-- Reduction at a root of the cyclotomic polynomial, over any modulus, intertwines power
+substitution with powering the root. -/
 @[simp]
-theorem reduce_powRingHom {p : ℕ} [Fact p.Prime] (hn : e.Coprime n)
-    {α : ZMod p} (hα : IsPrimitiveRoot α e) (x : Cyclotomic e) :
+theorem reduce_powRingHom {p : ℕ} (hn : e.Coprime n)
+    {α : ZMod p}
+    (hα : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) α = 0)
+    (x : Cyclotomic e) :
     reduce p α (powRingHom hn x) = reduce p (α ^ n) x := by
-  rw [← reduceRingHom_apply p α hα]
-  rw [map_powRingHom, reduceRingHom_apply, reduce_zeta p α hα, reduce]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hα, map_powRingHom,
+    evalRingHom_zeta, reduce]
 
 end TauCeti.Cyclotomic

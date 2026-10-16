@@ -19,8 +19,11 @@ need not be injective: two arrows that are not composable can become composable 
 it. Requiring a morphism of the total morphism algebras would incorrectly exclude such functors.
 
 We provide extensionality, identity, composition, the degreewise operation equation, and the
-chain-map and binary-composition equations. Composition has no additional Koszul sign because
-all Hom maps have degree zero.
+chain-map and binary-composition equations.  Between `A∞` categories whose operations of arity
+at least three vanish, such as those of differential graded categories, the chain-map and
+binary-composition equations suffice to give a strict functor
+(`TauCeti.AInfinityStrictFunctor.ofHomDifferentialComp`).  Composition has no additional Koszul
+sign because all Hom maps have degree zero.
 
 ## References
 
@@ -167,6 +170,54 @@ theorem map_comp (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y Z : C)
   -- At the closed indices 0, 1 and Fin.last 2, the literal tuple evaluates to X, Y and Z;
   -- the nested Fin.cases evaluates x 0 to g and x 1 to f by constructor reduction.
   exact h
+
+/-- A **strict functor between `A∞` categories whose operations of arity at least three vanish**,
+from an object map and degree-preserving linear Hom maps commuting with the differential `m₁` and
+preserving the composition `m₂`. -/
+-- Expose the object map so the types of the characteristic Hom-map equations reduce.
+@[expose]
+def ofHomDifferentialComp (h𝒞 : ∀ n, 3 ≤ n → 𝒞.m n = 0) (h𝒟 : ∀ n, 3 ≤ n → 𝒟.m n = 0)
+    (obj : C → D)
+    (map : ∀ X Y : C, homModule (R := R) X Y →ₗ[R] homModule (R := R) (obj X) (obj Y))
+    (map_mem : ∀ (X Y : C) {p : ℤ} {f : homModule (R := R) X Y},
+      f ∈ (grading (R := R) X Y).piece p → map X Y f ∈ (grading (R := R) (obj X) (obj Y)).piece p)
+    (map_homDifferential : ∀ (X Y : C) (f : homModule (R := R) X Y),
+      map X Y (𝒞.homDifferential X Y f) = 𝒟.homDifferential (obj X) (obj Y) (map X Y f))
+    (map_comp : ∀ (X Y Z : C) (g : homModule (R := R) Y Z) (f : homModule (R := R) X Y),
+      map X Z (𝒞.comp X Y Z g f) = 𝒟.comp (obj X) (obj Y) (obj Z) (map Y Z g) (map X Y f)) :
+    AInfinityStrictFunctor 𝒞 𝒟 where
+  obj := obj
+  map := map
+  map_mem' := map_mem
+  map_m' {n} X f := by
+    match n with
+    | 0 => rw [𝒞.m_zero, 𝒟.m_zero, _root_.zero_apply, _root_.zero_apply, map_zero,
+        map_zero, map_zero]
+    | 1 =>
+      rw [← 𝒞.homDifferential_eq_m X f, map_homDifferential]
+      exact 𝒟.homDifferential_eq_m (fun i ↦ obj (X i)) fun i ↦ map _ _ (f i)
+    | 2 =>
+      rw [← 𝒞.comp_eq_m X f, map_comp]
+      exact 𝒟.comp_eq_m (fun i ↦ obj (X i)) fun i ↦ map _ _ (f i)
+    | n + 3 => rw [h𝒞 _ (by omega), h𝒟 _ (by omega), _root_.zero_apply, _root_.zero_apply,
+        map_zero, map_zero, map_zero]
+
+@[simp]
+theorem ofHomDifferentialComp_obj (h𝒞 : ∀ n, 3 ≤ n → 𝒞.m n = 0)
+    (h𝒟 : ∀ n, 3 ≤ n → 𝒟.m n = 0) (obj : C → D)
+    (map : ∀ X Y : C, homModule (R := R) X Y →ₗ[R] homModule (R := R) (obj X) (obj Y))
+    (map_mem map_homDifferential map_comp) (X : C) :
+    (ofHomDifferentialComp h𝒞 h𝒟 obj map map_mem map_homDifferential map_comp).obj X = obj X :=
+  (rfl)
+
+@[simp]
+theorem ofHomDifferentialComp_map (h𝒞 : ∀ n, 3 ≤ n → 𝒞.m n = 0)
+    (h𝒟 : ∀ n, 3 ≤ n → 𝒟.m n = 0) (obj : C → D)
+    (map : ∀ X Y : C, homModule (R := R) X Y →ₗ[R] homModule (R := R) (obj X) (obj Y))
+    (map_mem map_homDifferential map_comp) (X Y : C) :
+    (ofHomDifferentialComp h𝒞 h𝒟 obj map map_mem map_homDifferential map_comp).map X Y =
+      map X Y :=
+  (rfl)
 
 /-- The identity strict functor of a nonunital `A∞` category. -/
 -- Expose the object map so the types of the characteristic Hom-map equations reduce.
