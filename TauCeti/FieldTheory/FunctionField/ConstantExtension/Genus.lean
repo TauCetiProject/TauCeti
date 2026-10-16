@@ -30,16 +30,17 @@ Exactness of `k'` in `F'` is not needed for the degree and genus identities; whe
 class of `F' / k'` is spoken of, it follows from exactness of `k` in `F`
 (`IsIntegrallyClosedIn.of_constantCompositum_eq_top`).
 
-Without separability the genus can drop (`TauCeti.GenusDrop.genus_lt_genus`), but it never
-increases: for any finite `k' / k`, comparing `ℓ(Con D)` with `ℓ(D)` gives
-`[k' : k] (g(F' / k') - 1) ≤ [F' : F] (g(F / k) - 1)`, and `[F' : F] ≤ [k' : k]`.
+The genus never increases under any algebraic extension of constants, including inseparable
+and infinite extensions. For a finite extension the conorm comparison also gives
+`[k' : k] (g(F' / k') - 1) ≤ [F' : F] (g(F / k) - 1)`. Without separability the genus inequality
+can be strict (`TauCeti.GenusDrop.genus_lt_genus`).
 
 ## Main results
 
 * `TauCeti.finrank_mul_genus_sub_one_le_of_constantCompositum_eq_top`:
   `[k' : k] (g(F' / k') - 1) ≤ [F' : F] (g(F / k) - 1)` for any finite `k' / k`.
-* `TauCeti.genus_le_genus_of_constantCompositum_eq_top`: `g(F' / k') ≤ g(F / k)` for any finite
-  `k' / k`, separable or not.
+* `TauCeti.genus_le_genus_of_constantCompositum_eq_top`: `g(F' / k') ≤ g(F / k)` for any
+  algebraic `k' / k`, finite or not, separable or not.
 * `TauCeti.Divisor.degree_conorm_of_constantCompositum_eq_top`: `deg (Con D) = deg D`.
 * `TauCeti.genus_eq_genus_of_constantCompositum_eq_top`: `g(F' / k') = g(F / k)` for a separable
   algebraic `k' / k`, finite or not.
@@ -116,12 +117,9 @@ theorem finrank_mul_genus_sub_one_le_of_constantCompositum_eq_top (hF : IsFuncti
     rw [hD'] at this
     linarith
 
-/-- **The genus never increases under a finite constant field extension**: if `F' = F · k'` for a
-finite extension `k' / k`, then `g(F' / k') ≤ g(F / k)`.  No separability or exactness hypothesis
-is needed.  The inequality is strict for some inseparable extensions
-(`TauCeti.GenusDrop.genus_lt_genus`), and an equality for separable ones over an exact constant
-field (`TauCeti.genus_eq_genus_of_constantCompositum_eq_top`). -/
-theorem genus_le_genus_of_constantCompositum_eq_top (hF : IsFunctionField k F)
+/-- The finite case of `TauCeti.genus_le_genus_of_constantCompositum_eq_top`, read off the
+quantitative inequality `TauCeti.finrank_mul_genus_sub_one_le_of_constantCompositum_eq_top`. -/
+private theorem genus_le_genus_of_finiteDimensional (hF : IsFunctionField k F)
     (h : constantCompositum F k' F' = ⊤) : genus k' F' ≤ genus k F := by
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hmul := finrank_mul_genus_sub_one_le_of_constantCompositum_eq_top hF h
@@ -136,6 +134,131 @@ theorem genus_le_genus_of_constantCompositum_eq_top (hF : IsFunctionField k F)
   linarith
 
 end Finite
+
+section IsAlgebraic
+
+/-- A linearly disjoint algebraic extension of constants cannot increase the genus.
+The pole-divisor degrees do not increase, while the Riemann–Roch dimensions do not decrease. -/
+private theorem genus_le_genus_of_linearDisjoint [Algebra.IsAlgebraic k k']
+    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤)
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) :
+    genus k' F' ≤ genus k F := by
+  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have := isAlgebraic_of_constantCompositum_eq_top (k := k) h
+  -- the pole divisor `B` of a transcendental `x` and its counterpart `B'` in `F'`
+  obtain ⟨x, hx⟩ := hF.exists_transcendental
+  have := hF.finiteDimensional_adjoin hx
+  set z := Units.mk0 x hx.ne_zero
+  set B := Divisor.poles hF z
+  set B' := Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)
+  have hx' : Transcendental k' (algebraMap F F' x) := hx.algebraMap_of_isAlgebraic
+  have := hF'.finiteDimensional_adjoin hx'
+  have hdegB' : Divisor.degree B' = Module.finrank k'⟮algebraMap F F' x⟯ F' :=
+    Divisor.degree_poles hF' _ (by simpa [z, Transcendental] using hx')
+  have hdeg : Divisor.degree B' ≤ Divisor.degree B := by
+    rw [Divisor.degree_poles hF z hx, hdegB']
+    exact_mod_cast finrank_over_adjoin_simple_le_of_constantCompositum_eq_top h x
+  have hpos : 0 < Divisor.degree B' := by
+    rw [hdegB']
+    exact_mod_cast Module.finrank_pos
+  refine genus_le fun D' ↦ ?_
+  -- `L(l B' - D')` is nonzero for large `l`, so `deg D' + 1 - ℓ(D')` is at most the value at
+  -- `l B'`, which is at most the value at `l B`
+  obtain ⟨l, hl⟩ : ∃ l : ℕ, Divisor.degree D' + genus k' F' ≤ l * Divisor.degree B' :=
+    ⟨(Divisor.degree D' + genus k' F').toNat,
+      by nlinarith [Int.self_le_toNat (Divisor.degree D' + genus k' F')]⟩
+  have hne : riemannRochSpace (l • B' - D') ≠ ⊥ := by
+    refine (Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF' _).1 ?_
+    have := Divisor.degree_add_one_sub_genus_le_dim hF' (l • B' - D')
+    rw [Divisor.degree_sub, map_nsmul, nsmul_eq_mul] at this
+    omega
+  have hcomp := Divisor.dim_sub_degree_le_of_riemannRochSpace_ne_bot hF' hne
+  have hR := Divisor.degree_add_one_sub_dim_le_genus hF (l • B)
+  rw [map_nsmul, nsmul_eq_mul] at hcomp hR
+  have hdim : (l • B).dim ≤ (l • B').dim :=
+    Divisor.dim_nsmul_poles_le_of_linearDisjoint hF hF' H l z
+  have : (l : ℤ) * Divisor.degree B' ≤ l * Divisor.degree B :=
+    mul_le_mul_of_nonneg_left hdeg (Nat.cast_nonneg l)
+  omega
+
+/-- For a function field `E / K` of degree `n` over a rational subfield, every algebraic
+extension of its constants has genus at most that of `E / K`. -/
+private theorem genus_le_genus_aux (n : ℕ) :
+    ∀ (K : Type u') (E : Type v') [Field K] [Field E] [Algebra K k'] [Algebra K E]
+      [Algebra K F'] [Algebra E F'] [IsScalarTower K k' F'] [IsScalarTower K E F']
+      [Algebra.IsAlgebraic K k'], IsFunctionField K E → constantCompositum E k' F' = ⊤ →
+      ∀ x : E, Transcendental K x → Module.finrank K⟮x⟯ E = n → genus k' F' ≤ genus K E := by
+  -- Induct on the degree over a rational subfield. A finite constant extension either
+  -- preserves the degree or reduces it, yielding a smaller-degree comparison.
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  intro K E _ _ _ _ _ _ _ _ _ hE h x hx hn
+  by_cases hdisj : ∀ M : IntermediateField K k', FiniteDimensional K M →
+      Module.finrank E (constantCompositum E M F') = Module.finrank K M
+  · exact genus_le_genus_of_linearDisjoint hE h
+      (linearDisjoint_fieldRange_of_forall_finrank_constantCompositum_eq hdisj)
+  push Not at hdisj
+  obtain ⟨M, _, hM⟩ := hdisj
+  -- the lower field `E · M`, a function field over `M`
+  let EM := constantCompositum E M F'
+  let := constantCompositumAlgebra E M F'
+  have := isScalarTower_constantCompositum E M F'
+  have := isScalarTower_base_constantCompositum K E M F'
+  have hEM : constantCompositum E M EM = ⊤ := (constantCompositum_eq_top_iff E M F' EM).2 rfl
+  have := finiteDimensional_of_constantCompositum_eq_top (k := K) hEM
+  have hFEM : IsFunctionField M EM := hE.of_constantCompositum_eq_top hEM
+  have : Algebra.IsAlgebraic M k' := .tower_top (K := K) M
+  set z := Units.mk0 x hx.ne_zero
+  have hx' : Transcendental M (algebraMap E EM x) := hx.algebraMap_of_isAlgebraic
+  -- `[M : K] · [E · M : M(x)] = [E · M : E] · n`, and `[E · M : E] < [M : K]`
+  have hlt : Module.finrank M⟮algebraMap E EM x⟯ EM < n := by
+    have hconorm := Divisor.finrank_mul_degree_conorm M EM hE (Divisor.poles hE z)
+    rw [Divisor.conorm_poles M EM hE hFEM, Divisor.degree_poles hFEM _
+      (by simpa [z, Transcendental] using hx'), Divisor.degree_poles hE z hx] at hconorm
+    simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0, z] at hconorm
+    have hconorm' : Module.finrank K M * Module.finrank M⟮algebraMap E EM x⟯ EM =
+        Module.finrank E EM * Module.finrank K⟮x⟯ E := by
+      exact_mod_cast hconorm
+    have hle : Module.finrank E EM < Module.finrank K M :=
+      lt_of_le_of_ne (finrank_le_finrank_of_constantCompositum_eq_top hEM) hM
+    have := hE.finiteDimensional_adjoin hx
+    have hpos : 0 < Module.finrank K⟮x⟯ E := Module.finrank_pos
+    rw [← hn]
+    by_contra hcon
+    push Not at hcon
+    have := Nat.mul_le_mul_left (Module.finrank K M) hcon
+    have := Nat.mul_lt_mul_of_pos_right hle hpos
+    omega
+  calc genus k' F'
+      ≤ genus M EM := ih _ hlt M EM hFEM (constantCompositum_eq_top_of_eq_top E k' F' EM h) _ hx'
+        rfl
+    _ ≤ genus K E := genus_le_genus_of_finiteDimensional hE hEM
+
+/-- **The genus never increases under an algebraic constant field extension**: if `F' = F · k'`
+for an algebraic extension `k' / k`, finite or not, then `g(F' / k') ≤ g(F / k)`.  No separability
+or exactness hypothesis is needed.  The inequality is strict for some inseparable extensions
+(`TauCeti.GenusDrop.genus_lt_genus`), and an equality for separable ones over an exact constant
+field (`TauCeti.genus_eq_genus_of_constantCompositum_eq_top`).  For an algebraic closure `k'` of
+`k`, it bounds the genus of `F · k' / k'` by that of `F / k`. -/
+theorem genus_le_genus_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
+    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) : genus k' F' ≤ genus k F := by
+  -- pass to the copy `F · ⊥` of `F` inside `F'`, whose constants live in the universe of `k'`
+  let M : IntermediateField k k' := ⊥
+  let E := constantCompositum F M F'
+  let := constantCompositumAlgebra F M F'
+  have := isScalarTower_constantCompositum F M F'
+  have := isScalarTower_base_constantCompositum k F M F'
+  have hE : constantCompositum F M E = ⊤ := (constantCompositum_eq_top_iff F M F' E).2 rfl
+  have hFE : IsFunctionField M E := hF.of_constantCompositum_eq_top hE
+  have : Algebra.IsAlgebraic M k' := .tower_top (K := k) M
+  obtain ⟨x, hx⟩ := hF.exists_transcendental
+  have hx' : Transcendental M (algebraMap F E x) := hx.algebraMap_of_isAlgebraic
+  calc genus k' F'
+      ≤ genus M E :=
+        genus_le_genus_aux _ M E hFE (constantCompositum_eq_top_of_eq_top F k' F' E h) _ hx' rfl
+    _ ≤ genus k F := genus_le_genus_of_finiteDimensional hF hE
+
+end IsAlgebraic
 
 /-! ### The genus under separable algebraic constant field extensions -/
 
@@ -153,15 +276,10 @@ theorem genus_eq_genus_of_constantCompositum_eq_top (hF : IsFunctionField k F)
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   -- the pole divisor `B` of a transcendental `x` and its counterpart `B'` in `F'`
   obtain ⟨x, hx⟩ := hF.exists_transcendental
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact hx isAlgebraic_zero
-  set z := Units.mk0 x hx0
+  set z := Units.mk0 x hx.ne_zero
   set B := Divisor.poles hF z
   set B' := Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)
-  have hx' : Transcendental k' (algebraMap F F' x) :=
-    (Algebra.IsAlgebraic.transcendental_iff k k').1
-      ((transcendental_algebraMap_iff (algebraMap F F').injective).2 hx)
+  have hx' : Transcendental k' (algebraMap F F' x) := hx.algebraMap_of_isAlgebraic
   have hdegB : Divisor.degree B = Module.finrank k⟮x⟯ F := Divisor.degree_poles hF z hx
   have hdeg : Divisor.degree B' = Divisor.degree B := by
     rw [hdegB, ← finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top hex h x]
@@ -172,29 +290,16 @@ theorem genus_eq_genus_of_constantCompositum_eq_top (hF : IsFunctionField k F)
     exact_mod_cast Module.finrank_pos
   have hdim (l : ℕ) : (l • B').dim = (l • B).dim :=
     Divisor.dim_nsmul_poles_of_constantCompositum_eq_top hF hex h l z
-  refine le_antisymm (genus_le fun D' ↦ ?_) ?_
-  · -- `L(l B' - D')` is nonzero for large `l`, so `deg D' + 1 - ℓ(D')` is at most the value at
-    -- `l B'`, which is the value at `l B`
-    obtain ⟨l, hl⟩ : ∃ l : ℕ, Divisor.degree D' + genus k' F' ≤ l * Divisor.degree B :=
-      ⟨(Divisor.degree D' + genus k' F').toNat,
-        by nlinarith [Int.self_le_toNat (Divisor.degree D' + genus k' F')]⟩
-    have hne : riemannRochSpace (l • B' - D') ≠ ⊥ := by
-      refine (Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF' _).1 ?_
-      have := Divisor.degree_add_one_sub_genus_le_dim hF' (l • B' - D')
-      rw [Divisor.degree_sub, map_nsmul, hdeg, nsmul_eq_mul] at this
-      omega
-    have hcomp := Divisor.dim_sub_degree_le_of_riemannRochSpace_ne_bot hF' hne
-    have hR := Divisor.degree_add_one_sub_dim_le_genus hF (l • B)
-    rw [map_nsmul, hdeg, hdim, ← map_nsmul] at hcomp
-    linarith
-  · -- in large degree `l B` attains the genus of `F`, and `l B'` has the same degree and dimension
-    obtain ⟨c, hc⟩ := exists_forall_dim_eq_degree_add_one_sub_genus hF hex
-    obtain ⟨l, hl⟩ : ∃ l : ℕ, c ≤ l * Divisor.degree B :=
-      ⟨c.toNat, by nlinarith [Int.self_le_toNat c]⟩
-    have hgen := hc (l • B) (by rwa [map_nsmul, nsmul_eq_mul])
-    have hR := Divisor.degree_add_one_sub_dim_le_genus hF' (l • B')
-    rw [map_nsmul, hdeg, hdim, ← map_nsmul] at hR
-    exact_mod_cast (by linarith : (genus k F : ℤ) ≤ genus k' F')
+  -- the genus never increases; in large degree `l B` attains the genus of `F`, and `l B'` has
+  -- the same degree and dimension
+  refine le_antisymm (genus_le_genus_of_constantCompositum_eq_top hF h) ?_
+  obtain ⟨c, hc⟩ := exists_forall_dim_eq_degree_add_one_sub_genus hF hex
+  obtain ⟨l, hl⟩ : ∃ l : ℕ, c ≤ l * Divisor.degree B :=
+    ⟨c.toNat, by nlinarith [Int.self_le_toNat c]⟩
+  have hgen := hc (l • B) (by rwa [map_nsmul, nsmul_eq_mul])
+  have hR := Divisor.degree_add_one_sub_dim_le_genus hF' (l • B')
+  rw [map_nsmul, hdeg, hdim, ← map_nsmul] at hR
+  exact_mod_cast (by linarith : (genus k F : ℤ) ≤ genus k' F')
 
 end Algebraic
 

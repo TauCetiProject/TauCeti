@@ -289,23 +289,9 @@ end ContinuousMonoidHom
 def _root_.Subgroup.inverseConjugationHom [SeparatelyContinuousMul G] (N : Subgroup G) [N.Normal]
     (g : G) : N →ₜ* N where
   toMonoidHom := (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
-  continuous_toFun := by
-    have hf : Continuous (fun n : N =>
-        (⟨g⁻¹ * (n : G) * g, by
-          simpa only [inv_inv] using
-            (inferInstance : N.Normal).conj_mem (n : G) n.property g⁻¹⟩ : N)) := by
-      -- Conjugation by a fixed element is already a Mathlib continuity theorem.
-      exact (((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
-        continuous_subtype_val).subtype_mk (fun n => by
-          simpa only [Function.comp_apply, inv_inv] using
-            (inferInstance : N.Normal).conj_mem (n : G) n.property g⁻¹)).congr fun n => by
-          apply Subtype.ext
-          simp
-    exact hf.congr fun n => by
-      -- The bundled automorphism and the displayed inverse-conjugation formula are definitionally
-      -- the same map after taking underlying values.
-      apply Subtype.ext
-      simp
+  continuous_toFun := continuous_induced_rng.2 <|
+    ((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
+      continuous_subtype_val).congr fun n => (MulAut.conjNormal_apply g⁻¹ n).symm
 
 /-- Evaluation of inverse conjugation on a subgroup element. -/
 @[simp]

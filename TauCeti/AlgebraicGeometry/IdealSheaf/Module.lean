@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Submodule
 
 /-!
 # The ideal sheaf as a sheaf of modules
@@ -31,6 +32,8 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
   `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
   (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), and
   `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`;
+* `Scheme.IdealSheafData.sheafLift`: a morphism into `𝒪_X` whose sections lie in `I` factors
+  through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
   subscheme, is the whole structure sheaf.
 
@@ -147,6 +150,20 @@ lemma range_sheafι_app (U : X.Opens) :
     Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) := by
   ext s
   exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ I.sheafι_app_mem U t, fun hs ↦ ⟨I.sectionMk s hs, rfl⟩⟩
+
+/-- A morphism `M ⟶ 𝒪_X` all of whose sections lie in `I` factors through the ideal sheaf `I`. -/
+def sheafLift {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
+    M ⟶ I.sheaf :=
+  TauCeti.SheafOfModules.liftToSubmodule I.submodule φ fun U s ↦ hφ U.unop s
+
+/-- `sheafLift` factors `φ` through `I`: composing it with the inclusion `I ⟶ 𝒪_X` recovers
+`φ`. -/
+@[simp, reassoc]
+lemma sheafLift_ι {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
+    I.sheafLift φ hφ ≫ I.sheafι = φ :=
+  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
 
 /-- Every regular function is a section of the unit ideal sheaf, which cuts out the empty closed
 subscheme. -/
