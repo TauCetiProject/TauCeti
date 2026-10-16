@@ -33,10 +33,6 @@ Contracting from `𝓞 M` rather than working inside `𝓞 E` directly is what m
 possible: a prime of a non-Galois subfield has no Galois-theoretic description of its own, and the
 bijection is the dictionary that supplies one.
 
-## Main definitions
-
-* `Ideal.doubleCosetQuotientEquivPrimesOver`: the bijection `H \ G / D ≃ p.primesOver (𝓞 E)`.
-
 ## Main results
 
 * `Ideal.under_fixedField_eq_iff_mem_orbit`: two primes of `𝓞 M` contract to the same prime of
@@ -44,8 +40,6 @@ bijection is the dictionary that supplies one.
 * `Ideal.primesOver_under_fixedField_eq_singleton_of_le_stabilizer`: for `H ≤ D`, `Q` is the only
   prime of `𝓞 M` above `Q ∩ 𝓞 E`.
 * `Ideal.exists_smul_under_fixedField_eq`: every prime of `𝓞 E` above `p` is such a contraction.
-* `Ideal.doubleCosetQuotientEquivPrimesOver_mk`: the bijection sends the class of `σ` to
-  `σ Q ∩ 𝓞 E`.
 * `Ideal.doubleCosetQuotientEquivPrimesOver_smul_mk`: replacing `Q` by `τ Q` sends the class
   of `σ` to the prime indexed through `Q` by the class of `σ τ`.
 * `Ideal.card_doubleCosetQuotient_eq_card_primesOver`: the resulting count.
@@ -77,8 +71,6 @@ theorem under_fixedField_eq_iff_mem_orbit (R R' : Ideal (𝓞 M)) [R.IsPrime] [R
     R.under (𝓞 ↥(fixedField H)) = R'.under (𝓞 ↥(fixedField H)) ↔ R ∈ MulAction.orbit H R' := by
   -- The extension over the fixed field is Galois without assuming that `M / K` is Galois.
   have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
-  have : IsGaloisGroup (M ≃ₐ[↥(fixedField H)] M) ↥(fixedField H) M :=
-    IsGaloisGroup.of_isGalois _ M
   rw [MulAction.mem_orbit_iff]
   constructor
   · intro h
@@ -121,46 +113,17 @@ theorem exists_smul_under_fixedField_eq [IsGalois K M] (p : Ideal (𝓞 K)) (Q :
   obtain ⟨σ, hσ⟩ := exists_smul_eq_of_isGaloisGroup p Q R (M ≃ₐ[K] M)
   exact ⟨σ, by rw [hσ]; exact hRo.over.symm⟩
 
-/-- **The double coset law.**  For `M / K` a finite Galois extension of number fields with group
-`G`, a subgroup `H ≤ G` with fixed field `E = M ^ H`, a prime `p` of `𝓞 K` and a prime `Q` of
-`𝓞 M` above it with decomposition group `D`, the primes of `𝓞 E` above `p` are indexed by the
-double cosets `H \ G / D`.
-
-The class of `σ` corresponds to the contraction `σ Q ∩ 𝓞 E`, by
-`Ideal.doubleCosetQuotientEquivPrimesOver_mk`. -/
-noncomputable def doubleCosetQuotientEquivPrimesOver [IsGalois K M] (p : Ideal (𝓞 K))
-    (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p] (H : Subgroup (M ≃ₐ[K] M)) :
-    DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M)) (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)) ≃
-      p.primesOver (𝓞 ↥(fixedField H)) := by
-  have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
-  have : IsGaloisGroup (M ≃ₐ[↥(fixedField H)] M) ↥(fixedField H) M :=
-    IsGaloisGroup.of_isGalois _ M
-  have : IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
-    IsGaloisGroup.of_mulEquiv (subgroupEquivAlgEquiv H) fun h x ↦
-      NumberField.RingOfIntegers.ext (by
-        simp [Subgroup.smul_def, NumberField.algebraMap_smul_eq_apply])
-  have : IsGaloisGroup (M ≃ₐ[K] M) K M := IsGaloisGroup.of_isGalois _ M
-  exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
-
-/-- The double coset law sends the class of `σ` to the contraction `σ Q ∩ 𝓞 (M ^ H)`. -/
-@[simp]
-theorem doubleCosetQuotientEquivPrimesOver_mk [IsGalois K M] (p : Ideal (𝓞 K)) (Q : Ideal (𝓞 M))
-    [Q.IsPrime] [Q.LiesOver p] (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) :
-    (doubleCosetQuotientEquivPrimesOver p Q H (DoubleCoset.mk H _ σ) :
-        Ideal (𝓞 ↥(fixedField H)))
-      = (σ • Q).under (𝓞 ↥(fixedField H)) := by
-  simp only [doubleCosetQuotientEquivPrimesOver,
-    doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
-
 /-- **The double coset law is compatible with the action of `G`.** Indexing the primes of
 `𝓞 (M ^ H)` above `p` through the translate `τ Q` instead of `Q` sends the class of `σ` to the
 prime that the indexing through `Q` attaches to the class of `σ τ`. -/
 theorem doubleCosetQuotientEquivPrimesOver_smul_mk [IsGalois K M] (p : Ideal (𝓞 K))
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p] (H : Subgroup (M ≃ₐ[K] M))
     (τ σ : M ≃ₐ[K] M) :
-    doubleCosetQuotientEquivPrimesOver p (τ • Q) H (DoubleCoset.mk H _ σ) =
-      doubleCosetQuotientEquivPrimesOver p Q H (DoubleCoset.mk H _ (σ * τ)) :=
-  Subtype.ext <| by simp only [doubleCosetQuotientEquivPrimesOver_mk, mul_smul]
+    (τ • Q).doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
+      (DoubleCoset.mk H _ σ) =
+      Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
+        (DoubleCoset.mk H _ (σ * τ)) :=
+  Subtype.ext <| by simp only [doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk, mul_smul]
 
 /-- **The number of primes above `p` in a subfield is a number of double cosets.** -/
 theorem card_doubleCosetQuotient_eq_card_primesOver [IsGalois K M] (p : Ideal (𝓞 K))
@@ -168,6 +131,6 @@ theorem card_doubleCosetQuotient_eq_card_primesOver [IsGalois K M] (p : Ideal (�
     Nat.card (DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
         (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)))
       = Nat.card (p.primesOver (𝓞 ↥(fixedField H))) :=
-  Nat.card_congr (doubleCosetQuotientEquivPrimesOver p Q H)
+  Nat.card_congr (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H)))
 
 end Ideal
