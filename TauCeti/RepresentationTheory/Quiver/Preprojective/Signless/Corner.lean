@@ -120,6 +120,24 @@ theorem signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner {n :
       mul_signlessPreprojectiveMk_vertexIdempotent_of_mem_signlessPreprojectiveCorner hx,
       ← mul_assoc, ← map_mul, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
 
+/-- Distinct graded corners of the signless preprojective algebra meet only in zero. -/
+theorem disjoint_signlessPreprojectiveCorner {m n : ℕ} {i i' j j' : R}
+    (h : m ≠ n ∨ i ≠ i' ∨ j ≠ j') :
+    Disjoint (signlessPreprojectiveCorner k R m i j)
+      (signlessPreprojectiveCorner k R n i' j') := by
+  rw [Submodule.disjoint_def]
+  intro x hx hx'
+  rcases h with hmn | hi | hj
+  · exact Submodule.disjoint_def.1
+      ((isInternal_signlessPreprojectiveGrade k R).submodule_iSupIndep.pairwiseDisjoint hmn) x
+      (mem_signlessPreprojectiveCorner_iff.1 hx).1 (mem_signlessPreprojectiveCorner_iff.1 hx').1
+  · rw [← mul_signlessPreprojectiveMk_vertexIdempotent_of_mem_signlessPreprojectiveCorner hx',
+      ← mul_signlessPreprojectiveMk_vertexIdempotent_of_mem_signlessPreprojectiveCorner hx,
+      mul_assoc, ← map_mul, vertexIdempotent_mul_vertexIdempotent_of_ne hi, map_zero, mul_zero]
+  · rw [← signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner hx,
+      ← signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner hx',
+      ← mul_assoc, ← map_mul, vertexIdempotent_mul_vertexIdempotent_of_ne hj, map_zero, zero_mul]
+
 section Fintype
 
 variable [Fintype R] [∀ i j : R, Fintype (i ⟶ j)]
