@@ -35,10 +35,10 @@ section Nodal
 variable {R : Type u} [CommRing R] {X Y : Scheme.{u}}
 
 /-- Restriction along an open immersion preserves the nodal-curve criterion. -/
-theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
-    {f : Y ⟶ Spec (.of R)} (h : AtWorstNodalOfRelativeDimensionOne f)
+theorem AffineAtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
+    {f : Y ⟶ Spec (.of R)} (h : AffineAtWorstNodalOfRelativeDimensionOne f)
     (i : X ⟶ Y) [IsOpenImmersion i] :
-    AtWorstNodalOfRelativeDimensionOne (i ≫ f) := by
+    AffineAtWorstNodalOfRelativeDimensionOne (i ≫ f) := by
   let : Y.Over (Spec (.of R)) := ⟨f⟩
   let : X.Over (Spec (.of R)) := ⟨i ≫ f⟩
   have : i.IsOver (Spec (.of R)) := ⟨rfl⟩
@@ -46,7 +46,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
   have hs : SyntomicOfRelativeDimension 1 (i ≫ f) :=
     IsZariskiLocalAtSource.comp h.syntomic i
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hs
-  refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
+  refine AffineAtWorstNodalOfRelativeDimensionOne.mk hs ?_
   -- The local `Over` instance has structure map `i ≫ f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((X.singularLocus R).subschemeι ≫ i ≫ f) from
@@ -62,15 +62,15 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
 
 /-- The nodal-curve criterion over an affine base can be checked on an open cover of the
 source. -/
-theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
+theorem AffineAtWorstNodalOfRelativeDimensionOne.of_openCover
     {f : Y ⟶ Spec (.of R)} (𝒰 : Y.OpenCover)
-    (h : ∀ j, AtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f)) :
-    AtWorstNodalOfRelativeDimensionOne f := by
+    (h : ∀ j, AffineAtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f)) :
+    AffineAtWorstNodalOfRelativeDimensionOne f := by
   let : Y.Over (Spec (.of R)) := ⟨f⟩
   have hs : SyntomicOfRelativeDimension 1 f :=
     IsZariskiLocalAtSource.of_openCover 𝒰 fun j ↦ (h j).syntomic
   have : SyntomicOfRelativeDimension 1 (Y ↘ Spec (.of R)) := hs
-  refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
+  refine AffineAtWorstNodalOfRelativeDimensionOne.mk hs ?_
   -- The local `Over` instance has structure map `f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) from
@@ -98,12 +98,12 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
 
 /-- A relative curve over an affine base is nodal if and only if its restrictions to every
 member of an open cover are nodal. -/
-theorem atWorstNodalOfRelativeDimensionOne_iff_of_openCover
+theorem affineAtWorstNodalOfRelativeDimensionOne_iff_of_openCover
     (f : Y ⟶ Spec (.of R)) (𝒰 : Y.OpenCover) :
-    AtWorstNodalOfRelativeDimensionOne f ↔
-      ∀ j, AtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f) :=
+    AffineAtWorstNodalOfRelativeDimensionOne f ↔
+      ∀ j, AffineAtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f) :=
   ⟨fun h j ↦ h.comp_of_isOpenImmersion (𝒰.f j),
-    AtWorstNodalOfRelativeDimensionOne.of_openCover 𝒰⟩
+    AffineAtWorstNodalOfRelativeDimensionOne.of_openCover 𝒰⟩
 
 end Nodal
 
