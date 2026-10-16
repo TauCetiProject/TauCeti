@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
-public import TauCeti.Geometry.Lie.Subgroup.Differential
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
-import TauCeti.Geometry.Lie.Exponential.CommutativeGroup
 import Mathlib.GroupTheory.NoncommCoprod
 
 /-!
@@ -18,8 +16,8 @@ A **torus** of a topological group `G` is a compact connected commutative subgro
 **maximal torus** is a torus which is maximal under inclusion among the tori of `G`. For a
 finite-dimensional real Lie group `G`:
 
-* a closed connected commutative subgroup `K` is the exponential image of its Lie algebra,
-  `K = lieExp '' Lie(K)`; in particular a torus is the exponential image of its Lie algebra;
+* a torus is the exponential image of its Lie algebra, `T = lieExp '' Lie(T)`, since a closed
+  connected commutative subgroup is (`image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`);
 * for a maximal torus `T` of a compact `G`, the centralizer of `T` has the same Lie algebra as `T`,
   and `Lie(T)` is a maximal abelian Lie subalgebra of `𝔤`: a derivation that brackets to zero with
   `Lie(T)` lies in `Lie(T)`.
@@ -32,10 +30,8 @@ finite-dimensional real Lie group `G`:
 
 ## Main results
 
-* `TauCeti.Lie.image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`: a closed connected
-  commutative subgroup is the exponential image of its Lie algebra.
 * `TauCeti.Lie.IsTorus.image_lieExp_lieSubalgebraOfSubgroup`: a torus is the exponential image of
-  its Lie algebra.
+  its Lie algebra (the case of `image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`).
 * `TauCeti.Lie.IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer`: the centralizer of a maximal
   torus of a compact Lie group has the Lie algebra of the torus.
 * `TauCeti.Lie.IsMaximalTorus.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero`: a derivation
@@ -98,33 +94,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
-
-/-- **A closed connected commutative subgroup is the exponential image of its Lie algebra.** -/
-theorem image_lieExp_lieSubalgebraOfSubgroup_of_isConnected {K : Subgroup G} [IsMulCommutative K]
-    (hK : IsClosed (K : Set G)) (hconn : IsConnected (K : Set G)) :
-    lieExp (I := I) '' (lieSubalgebraOfSubgroup (I := I) K : Set (LeftInvariantDerivation I G)) =
-      K := by
-  refine Set.Subset.antisymm ?_ fun k hk => ?_
-  · rintro _ ⟨X, hX, rfl⟩
-    exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hX
-  -- `K` is a Lie group with model space its Lie algebra, commutative and connected, so its own
-  -- exponential is surjective; the inclusion intertwines the two exponentials.
-  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
-  let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K := d.lieGroup
-  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn.isPreconnected
-  obtain ⟨X, hX⟩ := lieExp_surjective_of_preconnectedSpace
-    (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)) (G := K) ⟨k, hk⟩
-  refine ⟨d.lieMapSubtypeVal X, d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup X, ?_⟩
-  have hnat := map_lieExp d.subtypeVal X
-  dsimp only at hnat
-  rw [hX, EmbeddedLieSubgroupData.subtypeVal_apply,
-    ← EmbeddedLieSubgroupData.lieMapSubtypeVal_apply] at hnat
-  exact hnat.symm
 
 /-- **A torus is the exponential image of its Lie algebra.** -/
 @[simp]
