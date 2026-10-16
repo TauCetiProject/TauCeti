@@ -19,12 +19,15 @@ the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integ
 `TauCeti.lintegral_comp_inv_smul`.
 
 More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
-`|det e|^(-1 / p)`.
+`|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
+the `Lᵖ` seminorm on `s`.
 
 ## Main declarations
 
 * `TauCeti.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`.
 * `TauCeti.eLpNorm_comp_continuousLinearEquiv`: `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
+* `TauCeti.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity for the `Lᵖ`
+  seminorms on `e ⁻¹' s` and on `s`.
 -/
 
 public section
@@ -63,5 +66,19 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
   have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
   rw [← he.eLpNorm_map_measure, hmap, eLpNorm_smul_measure_of_ne_zero (by simpa using hdet),
     smul_eq_mul]
+
+/-- **Linear change of variables in the `Lᵖ` seminorm on a set:** composing with a linear
+automorphism `e` multiplies the `Lᵖ` seminorm on `e ⁻¹' s`, against an additive Haar measure, by
+`|det e|^(-1 / p)` relative to the `Lᵖ` seminorm of the function on `s`. -/
+theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage {F : Type*} [NormedAddCommGroup F]
+    (u : E → F) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) {s : Set E} (hs : MeasurableSet s) :
+    eLpNorm (u ∘ e) p (μ.restrict (e ⁻¹' s)) =
+      ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+        eLpNorm u p (μ.restrict s) := by
+  have hind : (e ⁻¹' s).indicator (u ∘ e) = s.indicator u ∘ e :=
+    funext fun _ => Set.indicator_comp_right e
+  rw [← eLpNorm_indicator_eq_eLpNorm_restrict
+      (hs.preimage e.continuous.measurable).nullMeasurableSet, hind,
+    eLpNorm_comp_continuousLinearEquiv, eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
 
 end TauCeti

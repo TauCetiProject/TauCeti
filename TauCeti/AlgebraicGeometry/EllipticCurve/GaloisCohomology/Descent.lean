@@ -163,16 +163,10 @@ theorem explicitCoeff0_basePointEquivInvariants (P : W.toAffine.Point) :
       map_nsmul]
 
 /-- **The kernel of the Kummer map is `m E(K)`.** -/
-theorem ker_kummerMap : (W.kummerMap m hm).ker = (nsmulAddMonoidHom m).range := by
-  ext P
-  rw [AddMonoidHom.mem_ker, kummerMap_apply, ← AddMonoidHom.mem_ker,
-    ← (W.kummerShortExact m hm).explicitLongExact_H0C, AddMonoidHom.mem_range,
-    AddMonoidHom.mem_range]
-  refine ⟨fun ⟨u, hu⟩ => ?_, fun ⟨Q, hQ⟩ => ⟨W.basePointEquivInvariants Q, ?_⟩⟩
-  · obtain ⟨Q, rfl⟩ := (W.basePointEquivInvariants).surjective u
-    rw [explicitCoeff0_basePointEquivInvariants] at hu
-    exact ⟨Q, (W.basePointEquivInvariants).injective hu⟩
-  · rw [explicitCoeff0_basePointEquivInvariants, ← hQ, nsmulAddMonoidHom_apply]
+theorem ker_kummerMap : (W.kummerMap m hm).ker = (nsmulAddMonoidHom m).range :=
+  (W.kummerShortExact m hm).ker_explicitDelta0_comp (eY := W.basePointEquivInvariants)
+    (W.basePointEquivInvariants).injective (W.basePointEquivInvariants).surjective
+    (W.explicitCoeff0_basePointEquivInvariants m hm)
 
 variable {W m} in
 /-- **A point has trivial Kummer class exactly when it is divisible by `m` in `E(K)`.** -/
@@ -208,12 +202,8 @@ theorem range_kummerMap :
     (W.kummerMap m hm).range =
       (explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
         continuous_of_discreteTopology).ker := by
-  rw [← kummerShortExact_inclDistribMulActionHom W m hm,
-    ← (W.kummerShortExact m hm).explicitLongExact_H1A]
-  ext c
-  refine ⟨fun ⟨P, hP⟩ => ⟨_, hP⟩, fun ⟨u, hu⟩ => ?_⟩
-  obtain ⟨P, rfl⟩ := (W.basePointEquivInvariants).surjective u
-  exact ⟨P, hu⟩
+  rw [← kummerShortExact_inclDistribMulActionHom W m hm]
+  exact (W.kummerShortExact m hm).range_explicitDelta0_comp (W.basePointEquivInvariants).surjective
 
 omit [DecidableEq K] in
 include hm in
@@ -256,11 +246,10 @@ omit [DecidableEq K] in
 include hm in
 /-- **`H¹(G_K, E[m]) → H¹(G_K, E)[m]` is surjective**, the right end of the `m`-descent
 sequence. -/
-theorem torsionCoeffInclH1_surjective : Function.Surjective (W.torsionCoeffInclH1 m) := by
-  rintro ⟨c, hc⟩
-  rw [← range_explicitCoeff1_torsionCoeffIncl W m hm] at hc
-  obtain ⟨d, rfl⟩ := hc
-  exact ⟨d, rfl⟩
+theorem torsionCoeffInclH1_surjective : Function.Surjective (W.torsionCoeffInclH1 m) :=
+  fun ⟨_, hc⟩ => by
+    obtain ⟨d, rfl⟩ := (range_explicitCoeff1_torsionCoeffIncl W m hm).ge hc
+    exact ⟨d, rfl⟩
 
 /-- **The `m`-descent sequence is exact at `H¹(G_K, E[m])`**: the kernel of
 `H¹(G_K, E[m]) → H¹(G_K, E)[m]` is the image of `E(K) ⧸ m E(K)` under the Kummer map. Together with
@@ -269,10 +258,9 @@ this is the short exact sequence `0 → E(K) ⧸ m E(K) → H¹(G_K, E[m]) → H
 theorem exact_kummerClassMap_torsionCoeffInclH1 :
     Function.Exact (W.kummerClassMap m hm) (W.torsionCoeffInclH1 m) := by
   rw [AddMonoidHom.exact_iff, torsionCoeffInclH1, AddMonoidHom.ker_codRestrict,
-    ← range_kummerMap W m hm]
-  ext c
-  refine ⟨fun ⟨P, hP⟩ => ⟨QuotientAddGroup.mk P, hP⟩, fun ⟨x, hx⟩ => ?_⟩
-  induction x using QuotientAddGroup.induction_on with
-  | _ P => exact ⟨P, hx⟩
+    ← AddMonoidHom.exact_iff]
+  have := (W.kummerShortExact m hm).exact_lift_explicitDelta0_comp
+    (W.basePointEquivInvariants).surjective (W.ker_kummerMap m hm).ge
+  rwa [kummerShortExact_inclDistribMulActionHom] at this
 
 end WeierstrassCurve

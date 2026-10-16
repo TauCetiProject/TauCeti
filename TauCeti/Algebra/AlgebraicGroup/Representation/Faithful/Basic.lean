@@ -323,7 +323,7 @@ theorem pointsAction_injective_of_isFaithful
     -- current Mathlib pin, so expose its definition before applying the convolution-inverse API.
     change g.ofConv (HopfAlgebraStruct.antipode k x) =
       h.ofConv (HopfAlgebraStruct.antipode k x)
-    simpa only [← AlgHom.convInv_apply] using hInvCoefficients hx
+    simpa only [← WithConv.algHom_inv_apply] using hInvCoefficients hx
   rcases hV with ⟨d, b, hb⟩
   have hgenerate :
       matrixCoefficientSubalgebra (R := k) (C := H) (M := V) ⊔

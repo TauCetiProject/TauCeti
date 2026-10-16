@@ -31,9 +31,12 @@ In a category with zero morphisms, a zero object and binary biproducts give all 
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
 inductive step for computing additive invariants of finite biproducts. An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
-(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). For a functor out of `Cᵒᵖ`, the
-comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` through `biprod.opIso` has inverse
-given by the images of the projections
+(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
+`F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
+and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statements need no
+preservation hypothesis.
+For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
+through `biprod.opIso` has inverse given by the images of the projections
 (`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
 -/
 
@@ -265,6 +268,31 @@ theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
   · rw [← F.map_comp, eq_sub_of_add_eq biprod.total]
     simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
   · rw [← F.map_comp, biprod.inl_fst, F.map_id]
+
+section Comparison
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
+  [HasZeroMorphisms D] (F : C ⥤ D)
+
+/-- The image of a map into a binary biproduct, followed by the biproduct comparison, is the map
+into the biproduct of the images. -/
+@[reassoc (attr := simp)]
+theorem map_biprod_lift_comp_biprodComparison {W X Y : C} [HasBinaryBiproduct X Y]
+    [HasBinaryBiproduct (F.obj X) (F.obj Y)] (f : W ⟶ X) (g : W ⟶ Y) :
+    F.map (biprod.lift f g) ≫ biprodComparison F X Y = biprod.lift (F.map f) (F.map g) := by
+  ext <;> simp [← F.map_comp]
+
+/-- The biproduct comparison `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural in `X` and `Y`. -/
+@[reassoc]
+theorem biprodComparison_natural {X Y X' Y' : C} [HasBinaryBiproduct X Y]
+    [HasBinaryBiproduct X' Y'] [HasBinaryBiproduct (F.obj X) (F.obj Y)]
+    [HasBinaryBiproduct (F.obj X') (F.obj Y')] (f : X ⟶ X') (g : Y ⟶ Y') :
+    F.map (biprod.map f g) ≫ biprodComparison F X' Y' =
+      biprodComparison F X Y ≫ biprod.map (F.map f) (F.map g) := by
+  ext <;> simp only [Category.assoc, biprodComparison_fst, biprodComparison_snd, biprod.map_fst,
+    biprod.map_snd, biprodComparison_fst_assoc, biprodComparison_snd_assoc, ← F.map_comp]
+
+end Comparison
 
 section Op
 

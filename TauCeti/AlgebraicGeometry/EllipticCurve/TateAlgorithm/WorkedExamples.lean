@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.LocalIndex
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
 public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
+-- Proof-only: `v (Δ) < 12` implies minimal.
+import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 -- Proof-only: divisibility of integers by powers of `p` is read in `ℤ`.
 import TauCeti.Data.Nat.Prime.IntCast
 -- Proof-only: `norm_num` decides primality of the small primes.
@@ -54,9 +57,23 @@ describe the curve. The divisibility tests of the algorithm are decided over `�
 | 24.a1 | 24a5 | `[0, -1, 0, -384, -2772]` | `2¹¹ · 3²` | `2` | `II*` | `(2, 1, 4)` |
 
 Of the multiplicative entries, 11.a1 and 11.a2 at `11` and 14.a4 at `7` are split, while 24.a5 at
-`3` and 45.a8 at `5` are nonsplit. That distinction, and the Tamagawa numbers it determines, are
-not certified here; neither is the independence of the symbol from the choices made in running the
-algorithm.
+`3` and 45.a8 at `5` are nonsplit. The last section computes the local index the algorithm reports
+(`WeierstrassCurve.tateLocalIndex`) on eight of the stopping equations, through the split test at
+`Iₙ` and the residue tests at `IV`, `I₀*`, `Iₙ*` and `IV*`:
+
+| curve | `p` | symbol | local index |
+|---|---|---|---|
+| 11.a2 | `11` | `I₅`, split | `5` |
+| 24.a5 | `3` | `I₁`, nonsplit | `1` |
+| 45.a8 | `5` | `I₈`, nonsplit | `2` |
+| 20.a3 | `2` | `IV` | `3` |
+| 32.a1 | `2` | `I₀*` | `1` |
+| 24.a4 | `2` | `I₁*` | `4` |
+| 45.a8 | `3` | `I₂*` | `2` |
+| 20.a2 | `2` | `IV*` | `1` |
+
+The independence of the symbol and of the local index from the choices made in running the
+algorithm is not certified here.
 
 The last section checks semistability over `ℤ` (`WeierstrassCurve.IsSemistable`) against these
 symbols. At the primes not dividing the discriminant the reduction is good; at the others it is
@@ -69,6 +86,10 @@ there and is not semistable.
 
 * `TauCeti.WorkedExamples.isMinimal_and_exists_isTateTerminal_curve11a1_11` and its fourteen
   companions, one for each row of the table.
+* `TauCeti.WorkedExamples.tateLocalIndex_curve11a2_11` and its seven companions, one for each
+  row of the second table.
+* `TauCeti.WorkedExamples.not_hasTateTangentRoot_curve24a5_3`: the reduction of 24.a5 at `3` is
+  nonsplit, although its local index at `I₁` does not depend on this.
 * `TauCeti.WorkedExamples.hasGoodReduction_curve11a1_iff` and
   `TauCeti.WorkedExamples.hasMultiplicativeReduction_curve11a1`: 11.a1 has good reduction away
   from `11` and multiplicative reduction at `11`.
@@ -383,5 +404,135 @@ theorem not_isSemistable_curve27a4 : ¬ IsSemistable ℤ (curve27a4.baseChange �
     (Ideal.mem_span_singleton_self _))
 
 end Semistable
+
+end TauCeti.WorkedExamples
+
+namespace TauCeti.WorkedExamples
+
+/-! ### The local index
+
+On eight of the stopping equations above, the local index that Tate's algorithm reports
+(`WeierstrassCurve.tateLocalIndex`) is computed. The equations are those produced by the changes
+of variables of the table, and the values agree with the Tamagawa numbers recorded in Cremona's
+tables and the LMFDB. When a residue polynomial has no root, the computation needs the residue field
+of `R` to be `𝔽_p`, which is the hypothesis that every element of `R` is congruent to an integer
+modulo `p`; it holds for `ℤ_[p]` and for the localisation of `ℤ` at `p`. -/
+
+variable {R : Type*} [CommRing R]
+
+/-- **The local index of 11.a2 at `11` is `5`**: the reduction is split multiplicative of type
+`I₅`, the tangent quadratic `T² − 14` having the root `5` modulo `11`. -/
+theorem tateLocalIndex_curve11a2_11 :
+    (((⟨1, 5, 0, 5⟩ : VariableChange ℤ) • curve11a2).map (Int.castRingHom R)).tateLocalIndex 11
+      (.I 5) = 5 :=
+  tateLocalIndex_I_add_one_of_hasTateTangentRoot
+    (hasTateTangentRoot_def.2 ⟨5, ⟨1, by simp [variableChange_def]; ring⟩⟩) 4
+
+/-- **The local index of 24.a5 at `3` is `1`**: the reduction is of type `I₁`, at which the local
+index is `1` whether or not the tangent quadratic splits. -/
+theorem tateLocalIndex_curve24a5_3 :
+    (((⟨1, 2, 0, 0⟩ : VariableChange ℤ) • curve24a5).map (Int.castRingHom R)).tateLocalIndex 3
+      (.I 1) = 1 :=
+  tateLocalIndex_I_one
+
+open Polynomial in
+/-- **The reduction of 24.a5 at `3` is nonsplit**: the tangent quadratic `T² − 5` has no root
+modulo `3`. -/
+theorem not_hasTateTangentRoot_curve24a5_3 [IsDomain R] (h : Irreducible (3 : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (3 : R) ∣ x - n) :
+    ¬ (((⟨1, 2, 0, 0⟩ : VariableChange ℤ) • curve24a5).map
+      (Int.castRingHom R)).HasTateTangentRoot 3 := by
+  intro ht
+  obtain ⟨t, ht⟩ := hasTateTangentRoot_def.1 ht
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 3) (f := X ^ 2 - C 5) (by norm_num)
+    h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 3, x ^ 2 - 5 ≠ 0)) t
+    (by simpa [variableChange_def] using ht)
+
+open Polynomial in
+/-- **The local index of 45.a8 at `5` is `2`**: the reduction is nonsplit multiplicative of the
+even type `I₈`, the tangent quadratic `T² + T − 8` having no root modulo `5`. -/
+theorem tateLocalIndex_curve45a8_5 [IsDomain R] (h : Irreducible (5 : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (5 : R) ∣ x - n) :
+    (((⟨1, 3, 0, 1⟩ : VariableChange ℤ) • curve45a8).map (Int.castRingHom R)).tateLocalIndex 5
+      (.I 8) = 2 := by
+  refine (tateLocalIndex_I_add_one_of_not_hasTateTangentRoot (fun ht ↦ ?_) 7).trans rfl
+  obtain ⟨t, ht⟩ := hasTateTangentRoot_def.1 ht
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 5) (f := X ^ 2 + X - C 8) (by norm_num)
+    h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 5, x ^ 2 + x - 8 ≠ 0)) t
+    (by simpa [variableChange_def] using ht)
+
+/-- **The local index of 20.a3 at `2` is `3`**: at the symbol `IV`, the residue quadratic
+`Y² + Y` of Step 5 splits. -/
+theorem tateLocalIndex_curve20a3_2 :
+    (((⟨1, 1, 0, 1⟩ : VariableChange ℤ) • curve20a3).map (Int.castRingHom R)).tateLocalIndex 2
+      .IV = 3 :=
+  tateLocalIndex_IV_of_hasTateYRoot (hasTateYRoot_def.2 ⟨0, by simp, by simp [variableChange_def]⟩)
+
+open Polynomial in
+/-- **The local index of 32.a1 at `2` is `1`**: at the symbol `I₀*`, the residue cubic
+`T³ + T² − 2T − 3` has no root modulo `2`. -/
+theorem tateLocalIndex_curve32a1_2 [IsDomain R] (h : Irreducible (2 : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (2 : R) ∣ x - n) :
+    (((⟨1, 1, 1, 0⟩ : VariableChange ℤ) • curve32a1).map (Int.castRingHom R)).tateLocalIndex 2
+      (.IStar 0) = 1 := by
+  rw [tateLocalIndex_IStar_zero, add_eq_left, Nat.card_eq_zero]
+  refine Or.inl ⟨fun ⟨t, ht⟩ ↦ ?_⟩
+  obtain ⟨t₀, rfl⟩ := Ideal.Quotient.mk_surjective t
+  rw [mk_mem_tateCubicRoots_iff (b₂ := 1) (b₄ := -2) (b₆ := -3) h.ne_zero
+    (by simp [variableChange_def]) (by simp [variableChange_def]; norm_num)
+    (by simp [variableChange_def]; norm_num)] at ht
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 2)
+    (f := X ^ 3 + X ^ 2 - C 2 * X - C 3) (by norm_num) h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 2, x ^ 3 + x ^ 2 - 2 * x - 3 ≠ 0)) t₀
+    (by convert ht using 1; simp; ring)
+
+/-- **The local index of 24.a4 at `2` is `4`**: at the symbol `I₁*`, the residue quadratic
+`Y² + Y` at which Step 7 stops splits. -/
+theorem tateLocalIndex_curve24a4_2 :
+    (((⟨1, 0, 1, 2⟩ : VariableChange ℤ) • curve24a4).map (Int.castRingHom R)).tateLocalIndex 2
+      (.IStar 1) = 4 := by
+  classical
+  have h : (((⟨1, 0, 1, 2⟩ : VariableChange ℤ) • curve24a4).map (Int.castRingHom R)).HasTateYRoot 2
+      2 := hasTateYRoot_def.2 ⟨0, by simp, by simp [variableChange_def]⟩
+  -- `I₁*` is the odd stage `2k + 1` with `k = 0`, whose test is at level `k + 2 = 2`.
+  rw [show ReductionSymbol.IStar 1 = .IStar (2 * 0 + 1) from rfl, tateLocalIndex_IStar_odd]
+  simp [h]
+
+open Polynomial in
+/-- **The local index of 45.a8 at `3` is `2`**: at the symbol `I₂*`, the residue quadratic
+`X² + 9X + 4` at which Step 7 stops has no root modulo `3`. -/
+theorem tateLocalIndex_curve45a8_3 [IsDomain R] (h : Irreducible (3 : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (3 : R) ∣ x - n) :
+    (((⟨1, 2, 1, 26⟩ : VariableChange ℤ) • curve45a8).map (Int.castRingHom R)).tateLocalIndex 3
+      (.IStar 2) = 2 := by
+  classical
+  suffices h : ¬ (((⟨1, 2, 1, 26⟩ : VariableChange ℤ) • curve45a8).map
+      (Int.castRingHom R)).HasTateXRoot 3 2 by
+    -- `I₂*` is the even stage `2k + 2` with `k = 0`, whose test is at level `k + 2 = 2`.
+    rw [show ReductionSymbol.IStar 2 = .IStar (2 * 0 + 2) from rfl, tateLocalIndex_IStar_even]
+    simp [h]
+  rw [hasTateXRoot_iff (b₂ := 1) (b₄ := 9) (b₆ := 4) h.ne_zero (by simp [variableChange_def])
+    (by simp [variableChange_def]; norm_num) (by simp [variableChange_def]; norm_num)]
+  rintro ⟨s, hs⟩
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 3) (f := X ^ 2 + C 9 * X + C 4)
+    (by norm_num) h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 3, x ^ 2 + 9 * x + 4 ≠ 0)) s (by simpa using hs)
+
+open Polynomial in
+/-- **The local index of 20.a2 at `2` is `1`**: at the symbol `IV*`, the residue quadratic
+`Y² + Y + 9` of Step 8 has no root modulo `2`. -/
+theorem tateLocalIndex_curve20a2_2 [IsDomain R] (h : Irreducible (2 : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (2 : R) ∣ x - n) :
+    (((⟨1, 0, 1, 2⟩ : VariableChange ℤ) • curve20a2).map (Int.castRingHom R)).tateLocalIndex 2
+      .IVStar = 1 := by
+  refine tateLocalIndex_IVStar_of_not_hasTateYRoot ?_
+  rw [hasTateYRoot_iff (b₃ := 1) (b₆ := -9) h.ne_zero (by simp [variableChange_def]; norm_num)
+    (by simp [variableChange_def]; norm_num)]
+  rintro ⟨s, hs⟩
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 2) (f := X ^ 2 + X + C 9) (by norm_num)
+    h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 2, x ^ 2 + x + 9 ≠ 0)) s (by simpa using hs)
 
 end TauCeti.WorkedExamples

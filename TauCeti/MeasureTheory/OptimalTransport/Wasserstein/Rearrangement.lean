@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile.Basic
 -- Proof-only: the level-set formula for a positive part, powers as mixtures of hinges, and the
 -- `L^∞` seminorm as the limit of the `Lᵖ` seminorms.
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop

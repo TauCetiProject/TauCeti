@@ -22,6 +22,9 @@ isomorphic. This allows pointwise choices of complements to be identified with a
 In real dimension one, equal-norm vectors agree up to sign; in particular, a nonzero-radius
 sphere consists of two antipodal points.
 
+A linear endomorphism of a finite-dimensional normed space that is bounded below by `c > 0` is
+injective, hence invertible, and its inverse is bounded by `c⁻¹`.
+
 ## Main results
 
 * `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
@@ -106,5 +109,28 @@ theorem continuous_det_div_conj (A : X → E ≃L[𝕜] E)
 end Star
 
 end TauCeti
+
+namespace LinearMap
+
+variable {K V : Type*} [DivisionRing K] [NormedAddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- A linear endomorphism of a finite-dimensional normed space bounded below by `c > 0` is
+invertible, with inverse bounded by `c⁻¹`. -/
+theorem exists_comp_eq_id_of_mul_norm_le {C : V →ₗ[K] V} {c : ℝ} (hc : 0 < c)
+    (hC : ∀ v, c * ‖v‖ ≤ ‖C v‖) :
+    ∃ G : V →ₗ[K] V, C ∘ₗ G = .id ∧ G ∘ₗ C = .id ∧ ∀ v, ‖G v‖ ≤ c⁻¹ * ‖v‖ := by
+  have hinj : Function.Injective C := (injective_iff_map_eq_zero C).mpr fun v hv ↦
+    norm_eq_zero.mp <| le_antisymm (nonpos_of_mul_nonpos_right (by simpa [hv] using hC v) hc)
+      (norm_nonneg v)
+  set e := LinearEquiv.ofInjectiveEndo C hinj
+  refine ⟨e.symm, LinearEquiv.ofInjectiveEndo_right_inv C hinj,
+    LinearEquiv.ofInjectiveEndo_left_inv C hinj, fun v ↦ ?_⟩
+  rw [le_inv_mul_iff₀ hc]
+  have hv : C (e.symm v) = v := by
+    rw [← LinearEquiv.coe_ofInjectiveEndo C hinj]
+    exact e.apply_symm_apply v
+  simpa [hv] using hC (e.symm v)
+
+end LinearMap
 
 end

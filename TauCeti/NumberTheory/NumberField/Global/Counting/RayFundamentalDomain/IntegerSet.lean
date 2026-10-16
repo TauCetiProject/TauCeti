@@ -68,7 +68,7 @@ namespace TauCeti.GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- The points of the ray fundamental domain of `𝔪` that are images of algebraic integers. -/
-def rayIntegerSet (𝔪 : Modulus K) : Set (mixedSpace K) :=
+noncomputable def rayIntegerSet (𝔪 : Modulus K) : Set (mixedSpace K) :=
   rayFundamentalDomain 𝔪 ∩ mixedEmbedding.integerLattice K
 
 /-- Membership in `rayIntegerSet`: a point of the ray fundamental domain that is the image of an

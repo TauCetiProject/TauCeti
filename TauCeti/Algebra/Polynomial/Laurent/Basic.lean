@@ -37,6 +37,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 
 * `TauCeti.laurentEval`: evaluation of a Laurent polynomial at a unit of an `R`-algebra.
 * `TauCeti.laurentEvalEquiv`: the units of `A` are the `R`-algebra maps `R[T;T⁻¹] →ₐ[R] A`.
+* `LaurentPolynomial.genericUnit`: the Laurent variable as a unit, with its value, inverse,
+  integer powers, and behavior under Laurent algebra maps.
 * `TauCeti.laurentTAut`: the action of `T` as an additive automorphism under a
   `DistribMulAction (LaurentPolynomial R) N`; Laurent modules are a specialization.
 
@@ -130,10 +132,37 @@ noncomputable def laurentEvalEquiv : Aˣ ≃ (R[T;T⁻¹] →ₐ[R] A) where
 lemma laurentEvalEquiv_apply (u : Aˣ) : laurentEvalEquiv (R := R) u = laurentEval u :=
   (rfl)
 
+/-- Reading the unit from its Laurent evaluation recovers that unit. -/
+@[simp]
+lemma laurentEvalEquiv_symm_laurentEval (u : Aˣ) :
+    laurentEvalEquiv.symm (laurentEval (R := R) u) = u := by
+  simpa only [laurentEvalEquiv_apply] using (laurentEvalEquiv (R := R)).symm_apply_apply u
+
+/-- Evaluating at the unit represented by a Laurent algebra map recovers that map. -/
+-- Cancel before `laurentEvalEquiv_symm_comp` rewrites a composed map inside the unit.
+@[simp↓]
+lemma laurentEval_laurentEvalEquiv_symm (f : R[T;T⁻¹] →ₐ[R] A) :
+    laurentEval (laurentEvalEquiv.symm f) = f := by
+  simpa only [laurentEvalEquiv_apply] using (laurentEvalEquiv (R := R)).apply_symm_apply f
+
 @[simp]
 lemma laurentEvalEquiv_symm_apply (f : R[T;T⁻¹] →ₐ[R] A) :
     ((laurentEvalEquiv.symm f : Aˣ) : A) = f (T 1) :=
   (rfl)
+
+/-- The inverse of the unit represented by a Laurent evaluation map is its value at `T⁻¹`. -/
+@[simp]
+lemma laurentEvalEquiv_symm_apply_inv (f : R[T;T⁻¹] →ₐ[R] A) :
+    (((laurentEvalEquiv.symm f : Aˣ)⁻¹ : Aˣ) : A) = f (T (-1)) :=
+  (rfl)
+
+/-- Reading a Laurent algebra map as a unit is natural in the target algebra. -/
+@[simp]
+theorem laurentEvalEquiv_symm_comp {B : Type*} [Semiring B] [Algebra R B]
+    (g : A →ₐ[R] B) (f : R[T;T⁻¹] →ₐ[R] A) :
+    laurentEvalEquiv.symm (g.comp f) = Units.map (g : A →* B) (laurentEvalEquiv.symm f) := by
+  ext
+  simp
 
 /-- Evaluation at a unit is natural in the target algebra. -/
 @[simp]
@@ -263,3 +292,56 @@ lemma laurentPolynomialC_smul (a : ℤ) (x : N) :
 end Constants
 
 end TauCeti
+
+namespace LaurentPolynomial
+
+open TauCeti
+open scoped LaurentPolynomial
+
+section GenericUnit
+
+variable (A : Type*) [Semiring A]
+
+/-- The Laurent variable `T`, as a unit of `A[T;T⁻¹]`. -/
+noncomputable def genericUnit : (LaurentPolynomial A)ˣ :=
+  unitOfInvertible (LaurentPolynomial.T 1)
+
+/-- The generic unit is the Laurent variable `T`. -/
+@[simp]
+theorem genericUnit_val : (genericUnit A : LaurentPolynomial A) = LaurentPolynomial.T 1 := by
+  simp [genericUnit]
+
+/-- The inverse of the generic unit is the inverse Laurent variable. -/
+@[simp]
+theorem genericUnit_inv : (((genericUnit A)⁻¹ : (LaurentPolynomial A)ˣ) :
+    LaurentPolynomial A) = LaurentPolynomial.T (-1) := by
+  simp [genericUnit]
+
+/-- An integer power of the generic unit is the corresponding Laurent monomial. -/
+@[simp]
+theorem genericUnit_zpow_val (n : ℤ) :
+    ((genericUnit A ^ n : (LaurentPolynomial A)ˣ) : LaurentPolynomial A) =
+      LaurentPolynomial.T n := by
+  induction n using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+      rw [zpow_add_one, Units.val_mul, ih, genericUnit_val, ← LaurentPolynomial.T_add]
+  | pred n ih =>
+      rw [sub_eq_add_neg, zpow_add, zpow_neg_one, Units.val_mul, ih, genericUnit_inv,
+        ← LaurentPolynomial.T_add]
+
+end GenericUnit
+
+variable (A : Type*) [CommSemiring A]
+
+/-- Mapping the generic unit along a Laurent-polynomial algebra map gives the unit represented
+by that map. -/
+@[simp]
+theorem map_genericUnit {B : Type*} [Semiring B] [Algebra A B]
+    (φ : A[T;T⁻¹] →ₐ[A] B) :
+    Units.map φ (genericUnit A) = laurentEvalEquiv.symm φ := by
+  apply Units.ext
+  simp
+
+
+end LaurentPolynomial

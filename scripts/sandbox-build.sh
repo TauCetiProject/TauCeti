@@ -104,8 +104,8 @@ bash "$TRUSTED_SCRIPTS/lint-style.sh"
 
 # A merge-group commit that passes every audit is the exact commit GitHub will land. Pack its
 # root-package outputs while still inside the bwrap sandbox, after the final operation that executes
-# candidate code. The host uploads only this data-only staging tree to a fresh, secret-isolated
-# publisher job. Ordinary PRs and installations without upload endpoints leave this disabled.
+# candidate code. After the sandbox exits, the host stages validated archive files and the complete
+# map for a fresh, secret-isolated publisher job. Ordinary PRs and installations without upload endpoints leave this disabled.
 if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
   phase stage-cache
   if ! grep -Eq '^[[:space:]]*platformIndependent[[:space:]]*=[[:space:]]*true' lakefile.toml; then
@@ -127,8 +127,8 @@ if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
   # --rehash makes Lake hash the archive bytes instead of trusting those sidecars.
   lake build --no-build --rehash -o .lake/outputs.jsonl
   echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-  rm -rf .lake/cache-staging
-  lake cache stage .lake/outputs.jsonl .lake/cache-staging
+  # The host stages these data after all sandbox processes exit, using pinned tooling
+  # and anonymous availability checks. Candidate code never writes the staging tree.
 fi
 
 phase end

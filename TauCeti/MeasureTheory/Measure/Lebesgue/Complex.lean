@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.Coordinates
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -62,18 +63,15 @@ theorem volume_setOf_re_mem_Icc_im_eq {a b : ℝ} {f : ℝ → ℝ} (hf : Contin
   have ht := Complex.volume_preserving_equiv_real_prod.measure_preimage_equiv S
   simpa only [S, preimage_ofPred_eq, Complex.measurableEquivRealProd_apply] using ht.trans hzero
 
-/-- The homeomorphism interchanging the real and imaginary coordinates. -/
-noncomputable def coordinateSwap : ℂ ≃ₜ ℂ :=
-  (Complex.equivRealProdCLM.toHomeomorph.trans (Homeomorph.prodComm ℝ ℝ)).trans
-    Complex.equivRealProdCLM.toHomeomorph.symm
-
-/-- Coordinate swap sends `(x,y)` to `(y,x)`. -/
-@[simp]
-theorem coordinateSwap_apply (z : ℂ) : coordinateSwap z = ⟨z.im, z.re⟩ := (rfl)
-
 /-- Interchanging the coordinates preserves planar area. -/
-theorem measurePreserving_coordinateSwap :
-    MeasurePreserving coordinateSwap (volume : Measure ℂ) volume := by
+theorem measurePreserving_coordinateSwapCLE :
+    MeasurePreserving coordinateSwapCLE (volume : Measure ℂ) volume := by
+  have heq : (coordinateSwapCLE : ℂ → ℂ) =
+      measurableEquivRealProd.symm ∘ Prod.swap ∘ measurableEquivRealProd := by
+    funext z
+    simp only [Function.comp_apply, coordinateSwapCLE_apply, measurableEquivRealProd_apply,
+      Prod.swap_prod_mk, measurableEquivRealProd_symm_apply]
+  rw [heq]
   exact Complex.volume_preserving_equiv_real_prod.symm.comp
     (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
 

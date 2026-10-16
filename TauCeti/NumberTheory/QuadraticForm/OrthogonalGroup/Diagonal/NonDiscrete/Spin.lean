@@ -51,9 +51,6 @@ theorem tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial
   let g := spinTransvection hQ hu huw
   have hlocal (p : Nat.Primes) : Tendsto (fun n : ℕ ↦
       spinGroupBaseChange (A := ℚ_[p]) Q (g ^ n.factorial)) atTop (𝓝 1) := by
-    -- Use the invertibility witness fixed by the scalar-extension theorem.
-    let : Invertible (2 : ℚ_[p]) :=
-      (Invertible.map (algebraMap ℚ ℚ_[p]) 2).copy 2 (map_ofNat _ _).symm
     let : TopologicalSpace (ℚ_[p] ⊗[ℚ] V) := moduleTopology ℚ_[p] _
     let up : ℚ_[p] ⊗[ℚ] V := 1 ⊗ₜ[ℚ] u
     let wp : ℚ_[p] ⊗[ℚ] V := 1 ⊗ₜ[ℚ] w
