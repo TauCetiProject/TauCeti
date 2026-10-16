@@ -76,12 +76,16 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
   analytic input to bracket closure.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff`: the universal property of the generated subalgebra,
   for an arbitrary subgroup.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`: induction on the generated subalgebra, for an
+  arbitrary subgroup.
 * `TauCeti.Lie.mem_lieSubalgebraOfSubgroup` and `TauCeti.Lie.coe_lieSubalgebraOfSubgroup`: for a
   closed subgroup, the Lie algebra of `K` is exactly `𝔨`.
 * `TauCeti.Lie.isClosed_setOf_forall_lieExp_smul_mem`: the candidate Lie algebra is a closed
   subset of `𝔤`.
 * `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`: the Lie algebra of `K` is invariant under the
   adjoint action of `K`.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_le_comap_Ad_sub_id`: the same, in the form `Ad g - 1` maps
+  `Lie(K)` into itself, as `Submodule.mapQ` consumes it.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
   intersection is the intersection of the Lie algebras.
 
@@ -289,6 +293,24 @@ theorem lieSubalgebraOfSubgroup_le_iff {K : Subgroup G}
       ∀ X : LeftInvariantDerivation I G, (∀ t : ℝ, lieExp (I := I) (t • X) ∈ K) → X ∈ L :=
   LieSubalgebra.lieSpan_le
 
+/-- **Induction on the Lie algebra of a subgroup.** A property that holds for every derivation
+whose one-parameter subgroup lies in `K` and for `0`, and is preserved by addition, scalar
+multiplication and the bracket, holds on all of `Lie(K)`. This is `LieSubalgebra.lieSpan_induction`
+for the generating set, exposed across the module boundary, where the definition does not
+unfold. -/
+@[elab_as_elim]
+theorem lieSubalgebraOfSubgroup_induction {K : Subgroup G}
+    {p : (X : LeftInvariantDerivation I G) → X ∈ lieSubalgebraOfSubgroup (I := I) K → Prop}
+    (mem : ∀ X (h : ∀ t : ℝ, lieExp (I := I) (t • X) ∈ K),
+      p X (mem_lieSubalgebraOfSubgroup_of_forall h))
+    (zero : p 0 (LieSubalgebra.zero_mem _))
+    (add : ∀ X Y hX hY, p X hX → p Y hY → p (X + Y) (LieSubalgebra.add_mem _ ‹_› ‹_›))
+    (smul : ∀ (c : ℝ) X hX, p X hX → p (c • X) (LieSubalgebra.smul_mem _ _ ‹_›))
+    (lie : ∀ X Y hX hY, p X hX → p Y hY → p ⁅X, Y⁆ (LieSubalgebra.lie_mem _ ‹_› ‹_›))
+    {X : LeftInvariantDerivation I G} (hX : X ∈ lieSubalgebraOfSubgroup (I := I) K) : p X hX :=
+  LieSubalgebra.lieSpan_induction (R := ℝ) (L := LeftInvariantDerivation I G) (p := p) mem zero add
+    smul lie hX
+
 /-- **The Lie algebra of a closed subgroup is exactly `𝔨`**: the three closure properties make the
 defining condition a Lie subalgebra, so generating it adds nothing. -/
 @[simp]
@@ -377,5 +399,13 @@ theorem Ad_mem_lieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
   lieSubalgebraOfSubgroup_le_iff
       (L := (lieSubalgebraOfSubgroup (I := I) K).comap (Ad (I := I) g).toLieHom)
       |>.mpr (fun _ hY => mem_lieSubalgebraOfSubgroup_of_forall (lieExp_smul_Ad_mem hg hY)) hX
+
+/-- **`Ad g - 1` preserves the Lie algebra of `K` for `g ∈ K`**, in the form that lets it descend
+to the quotient `𝔤 ⧸ Lie(K)` through `Submodule.mapQ`. -/
+theorem lieSubalgebraOfSubgroup_le_comap_Ad_sub_id {K : Subgroup G} {g : G} (hg : g ∈ K) :
+    (lieSubalgebraOfSubgroup (I := I) K).toSubmodule ≤
+      Submodule.comap ((Ad (I := I) g).toLinearEquiv.toLinearMap - LinearMap.id)
+        (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
+  fun _ hX => sub_mem (Ad_mem_lieSubalgebraOfSubgroup hg hX) hX
 
 end TauCeti.Lie

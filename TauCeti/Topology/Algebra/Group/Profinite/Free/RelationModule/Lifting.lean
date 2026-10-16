@@ -74,7 +74,8 @@ theorem exists_surjective_presentationClassModuleHom :
   intro f hf hs hc hy hcard
   let X := presentationProfiniteExtension p hg
   let Y := abelianizationProPProfiniteExtension p H W
-  obtain ⟨φ, hφ⟩ := exists_presentationProfiniteExtension_comparison p W hg
+  obtain ⟨φ, hφ⟩ := exists_presentationProfiniteExtension_comparison p hg Y
+    isProP_maximalProPQuotient
   obtain ⟨-, χ, -, hχ, -, hright⟩ :=
     X.exists_surjective_continuousMonoidHom_of_comparison Y φ hφ
       isProP_maximalProPQuotient f hf hs hc hy hcard

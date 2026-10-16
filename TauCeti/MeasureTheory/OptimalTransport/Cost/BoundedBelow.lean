@@ -260,17 +260,6 @@ theorem le_transportCostBddBelow {d : EReal} (h : IntegrableSplitLowerBound c μ
     d ≤ transportCostBddBelow c μ ν h :=
   le_iInf₂ hd
 
-private theorem coe_iInf_ennreal {ι : Sort*} (f : ι → ℝ≥0∞) :
-    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
-  apply le_antisymm
-  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
-  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
-      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
-    rw [← EReal.coe_toENNReal hnonneg]
-    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
-      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
-        EReal.toENNReal_coe
-
 /-- Subtracting the split lower bound reduces the signed primal problem to the nonnegative
 transport problem. The marginal correction is finite even when the optimum is infinite or the
 feasible set is empty. -/
@@ -282,7 +271,7 @@ theorem transportCostBddBelow_eq_transportCost_residual_add_integral_add_integra
     simp only [EReal.coe_neg, sub_eq_add_neg, neg_neg]
   rw [transportCostBddBelow_def, transportCost_def]
   simp_rw [planCostBddBelow_def, add_assoc, ← EReal.coe_add, hadd,
-    EReal.iInf_sub_coe, ← coe_iInf_ennreal]
+    EReal.iInf_sub_coe, ← EReal.coe_ennreal_iInf]
 
 private theorem residual_add_lowerBoundParts
     (h k : IntegrableSplitLowerBound c μ ν) (z : X × Y) :
@@ -431,10 +420,10 @@ theorem transportCostBddBelow_coe_eq_transportCost (c : X × Y → ℝ≥0∞)
       (transportCost c μ ν : EReal) := by
   rw [transportCostBddBelow_congr_lowerBound h
     (IntegrableSplitLowerBound.ofNonneg (fun _ ↦ EReal.coe_ennreal_nonneg _) μ ν)]
-  rw [transportCost_def, coe_iInf_ennreal]
+  rw [transportCost_def, EReal.coe_ennreal_iInf]
   apply iInf_congr
   intro π
-  rw [coe_iInf_ennreal]
+  rw [EReal.coe_ennreal_iInf]
   simp only [planCostBddBelow, IntegrableSplitLowerBound.residual,
     IntegrableSplitLowerBound.ofNonneg,
     Pi.zero_apply, sub_zero,

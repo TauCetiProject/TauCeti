@@ -68,8 +68,8 @@ theorem verticalRegion_fiber_of_notMem {x : ℝ} (hx : x ∉ Icc a b) :
 theorem isClosed_verticalRegion (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) : IsClosed (verticalRegion a b lower upper) := by
   have hc : IsClosed {z : ℂ | z.re ∈ Icc a b} := isClosed_Icc.preimage Complex.continuous_re
-  have hl' := hl.comp Complex.continuous_re.continuousOn (fun _ hx ↦ hx)
-  have hu' := hu.comp Complex.continuous_re.continuousOn (fun _ hx ↦ hx)
+  have hl' := hl.comp Complex.continuous_re.continuousOn (Set.mapsTo_preimage _ _)
+  have hu' := hu.comp Complex.continuous_re.continuousOn (Set.mapsTo_preimage _ _)
   convert (hc.isClosed_le hl' Complex.continuous_im.continuousOn).inter
     (hc.isClosed_le Complex.continuous_im.continuousOn hu') using 1
   ext z

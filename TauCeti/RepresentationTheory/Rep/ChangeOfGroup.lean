@@ -44,6 +44,8 @@ and restriction along a monoid isomorphism is an equivalence of representation c
 * `MonoidHom.resFunctor_id`: restriction along the identity is the identity functor.
 * `Representation.isTrivial_comp`: the restriction of a trivial representation along a
   homomorphism of monoids is trivial; in particular `Rep.res f A` is trivial when `A` is.
+* `Representation.invariants_le_invariants_comp`: an invariant vector remains invariant under
+  restriction along any homomorphism of groups.
 * `Representation.IsIntertwiningMap.trans` and `Representation.IsIntertwiningMap.symm`:
   intertwining maps along homomorphisms of monoids compose, and invert along an isomorphism when
   their linear part is an equivalence.
@@ -114,17 +116,17 @@ instance isTrivial_comp (σ : Representation R H W) [σ.IsTrivial] (f : G →* H
 
 end Monoid
 
-section SubgroupInvariants
+section Invariants
 
-variable {R G V : Type*} [Group G] [CommRing R] [AddCommGroup V] [Module R V]
-  {ρ : Representation R G V} {H : Subgroup G}
+variable {R G H V : Type*} [Group G] [Group H] [CommRing R] [AddCommGroup V] [Module R V]
 
-/-- A `G`-invariant element is `H`-invariant. -/
-theorem invariants_le_invariants_comp_subtype :
-    ρ.invariants ≤ Representation.invariants (ρ.comp H.subtype) :=
-  fun _ hx h => hx (h : G)
+/-- A vector invariant under a group action remains invariant after restriction along any
+homomorphism of groups. -/
+theorem invariants_le_invariants_comp (ρ : Representation R G V) (f : H →* G) :
+    ρ.invariants ≤ Representation.invariants (ρ.comp f) :=
+  fun _ hx h ↦ hx (f h)
 
-end SubgroupInvariants
+end Invariants
 
 section Norm
 

@@ -216,7 +216,7 @@ theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective
     (Equiv.uniqueProd _ _).bijective.comp (FundamentalGroup.prodMulEquiv u z).bijective
   have hcomp : ⇑(FundamentalGroup.map ((p.directionFrom V).comp ContinuousMap.snd) (u, z)) =
       FundamentalGroup.map (p.directionFrom V) z ∘ FundamentalGroup.map ContinuousMap.snd (u, z) :=
-    funext fun γ => FundamentalGroupoid.map_comp_map _ _ γ
+    funext fun γ => CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
   rw [hcomp]
   exact (hV.fundamentalGroup_map_directionFrom_bijective hr hS z).comp hsnd
 

@@ -5,6 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
+import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
+
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.RepartitionCohomology
@@ -25,6 +31,8 @@ both apply to every such curve.
 * `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_one_trivial_of_isProper`:
   `H¹(X, 𝒪_X)` is finite-dimensional for a proper integral curve over `k` whose codimension-one
   local rings are discrete valuation rings.
+* `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_one_trivial_of_smooth`:
+  the same finiteness holds for a smooth proper connected curve over `k`.
 
 ## References
 
@@ -65,6 +73,23 @@ theorem finiteDimensional_cohomology_one_trivial_of_isProper (hX : topologicalKr
     (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
       (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim
         ((isFunctionField_functionField_iff k).mpr hX) 0)
+
+/-- The first structure-sheaf cohomology of a smooth proper connected curve is
+finite-dimensional. -/
+theorem finiteDimensional_cohomology_one_trivial_of_smooth
+    (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
+    [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
+    [ConnectedSpace X] :
+    FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) := by
+  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
+    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
+  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
+  have : ∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X)) :=
+    fun _ ↦ inferInstance
+  exact finiteDimensional_cohomology_one_trivial_of_isProper k
+    (topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)))
 
 end AlgebraicGeometry
 

@@ -75,12 +75,12 @@ theorem isUnipotentPoint_mapDomain_iff_of_surjective
   · intro hg
     rw [Point.isUnipotentPoint_iff_semisimplePart_eq_one] at hg ⊢
     let f' : CommHopfAlgCat.of k H ⟶ CommHopfAlgCat.of k K := CommHopfAlgCat.ofHom f
-    apply CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f' hf
+    apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f' hf
       (CommAlgCat.of k L)
     have hmap' :
-        (CommHopfAlgCat.mapPointsFunctor f').app (CommAlgCat.of k L)
+        (CommHopfAlgCat.Hom.mapPointsFunctor f').app (CommAlgCat.of k L)
           (Point.semisimplePart k K L g) = 1 := by
-      rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       simp only [HopfAlgebra.pointsFunctor_obj]
       dsimp [f']
       rw [← AlgHom.mapDomain_apply, ← Point.semisimplePart_mapDomain]

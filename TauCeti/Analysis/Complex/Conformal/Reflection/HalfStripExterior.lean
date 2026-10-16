@@ -453,7 +453,8 @@ private theorem exists_comparison_of_halfStripExterior {R ρ : ℝ} {c b : ℂ} 
       exact Real.nhdsWithin_upperHalfPlaneSet_neBot s.re
     refine hfA.mem_of_tendsto (f := fun s => q (-s⁻¹)) (b := 𝓝[ball 0 r ∩ upperHalfPlaneSet] s)
       ?_ ?_
-    · exact ((hqcont s hs0).mono fun z hz => (le_of_lt hz.2 : 0 ≤ z.im)).tendsto
+    · exact ((hqcont s hs0).mono fun z (hz : z ∈ ball 0 r ∩ upperHalfPlaneSet) =>
+        (le_of_lt hz.2 : 0 ≤ z.im)).tendsto
     · filter_upwards [self_mem_nhdsWithin] with z hz
       obtain ⟨w, hw, hwq⟩ := hUp z hz.1 hz.2
       exact ⟨w, hH0 hw, hwq⟩

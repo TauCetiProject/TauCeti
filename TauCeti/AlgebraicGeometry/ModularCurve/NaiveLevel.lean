@@ -232,19 +232,21 @@ of `A` sends a naive `A`-structure `φ : A →* E(S)` to `φ ∘ σ`
 action, that is, a homomorphism from the opposite group `(Aut A)ᵐᵒᵖ` to the automorphisms of the
 moduli problem. -/
 noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B A) where
-  toFun σ :=
+  toFun σ := Aut.of
     { hom := naiveLevelMap B σ.unop.toMonoidHom σ.unop.injective
       inv := naiveLevelMap B σ.unop.symm.toMonoidHom σ.unop.symm.injective
       hom_inv_id := by ext; simp
       inv_hom_id := by ext; simp }
   map_one' := by
+    apply Aut.ext
     apply Iso.ext
     refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
     -- Mathlib has no lemma for the unit of `Aut`; it is `Iso.refl` by definition
     change _ = (naiveLevelEquiv X α).1 a
     simp
   map_mul' σ τ := by
-    refine Eq.trans ?_ (Aut.Aut_mul_def _ _ _).symm
+    apply Aut.ext
+    rw [Aut.mul_asIso]
     apply Iso.ext
     refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
     simp
@@ -253,7 +255,7 @@ noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B 
 @[simp]
 theorem naiveLevelEquiv_naiveLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
     (α : (naiveLevel B A).obj (op X)) :
-    (naiveLevelEquiv X ((naiveLevelAction B A σ).hom.app (op X) α)).1 =
+    (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.hom.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp σ.unop.toMonoidHom :=
   naiveLevelEquiv_naiveLevelMap_app _ σ.unop.injective X α
 
@@ -262,7 +264,7 @@ theorem naiveLevelEquiv_naiveLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X :
 @[simp]
 theorem naiveLevelEquiv_naiveLevelAction_inv_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
     (α : (naiveLevel B A).obj (op X)) :
-    (naiveLevelEquiv X ((naiveLevelAction B A σ).inv.app (op X) α)).1 =
+    (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.inv.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp σ.unop.symm.toMonoidHom :=
   naiveLevelEquiv_naiveLevelMap_app _ σ.unop.symm.injective X α
 
@@ -271,7 +273,7 @@ base, an automorphism of `A` fixing a naive `A`-structure is the identity, becau
 structure is injective. Over the empty base every automorphism fixes the unique structure. -/
 theorem eq_one_of_naiveLevelAction_hom_app_eq_self {X : EllObj B} [Nonempty X.base]
     {σ : (MulAut A)ᵐᵒᵖ} {α : (naiveLevel B A).obj (op X)}
-    (h : (naiveLevelAction B A σ).hom.app (op X) α = α) : σ = 1 := by
+    (h : (naiveLevelAction B A σ).asIso.hom.app (op X) α = α) : σ = 1 := by
   have h' := congrArg (fun α ↦ (naiveLevelEquiv X α).1) h
   simp only [naiveLevelEquiv_naiveLevelAction_hom_app] at h'
   refine MulOpposite.unop_injective (MulEquiv.ext fun a ↦ (naiveLevelEquiv X α).2.injective ?_)
@@ -508,7 +510,7 @@ noncomputable def gammaNaiveAction : (GL (Fin 2) (ZMod N))ᵐᵒᵖ →* Aut (ga
 @[simp]
 theorem naiveLevelEquiv_gammaNaiveAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X : EllObj B)
     (α : (gammaNaive B N).obj (op X)) :
-    (naiveLevelEquiv X ((gammaNaiveAction B N g).hom.app (op X) α)).1 =
+    (naiveLevelEquiv X ((gammaNaiveAction B N g).asIso.hom.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).toMonoidHom :=
   naiveLevelEquiv_naiveLevelAction_hom_app _ X α
 
@@ -517,14 +519,14 @@ theorem naiveLevelEquiv_gammaNaiveAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐ�
 @[simp]
 theorem naiveLevelEquiv_gammaNaiveAction_inv_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X : EllObj B)
     (α : (gammaNaive B N).obj (op X)) :
-    (naiveLevelEquiv X ((gammaNaiveAction B N g).inv.app (op X) α)).1 =
+    (naiveLevelEquiv X ((gammaNaiveAction B N g).asIso.inv.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).symm.toMonoidHom :=
   naiveLevelEquiv_naiveLevelAction_inv_app _ X α
 
 /-- The naive `[Γ(N)]`-structures are acted on freely by `GL₂(ℤ/Nℤ)` over a nonempty base. -/
 theorem eq_one_of_gammaNaiveAction_hom_app_eq_self {X : EllObj B} [Nonempty X.base]
     {g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ} {α : (gammaNaive B N).obj (op X)}
-    (h : (gammaNaiveAction B N g).hom.app (op X) α = α) : g = 1 := by
+    (h : (gammaNaiveAction B N g).asIso.hom.app (op X) α = α) : g = 1 := by
   simpa using eq_one_of_naiveLevelAction_hom_app_eq_self h
 
 variable (B) in
@@ -533,7 +535,7 @@ first column is `(1, 0)` does not change the first point `P` of a naive `[Γ(N)]
 morphism `[Γ(N)] ⟶ [Γ₁(N)]` is invariant under the subgroup of such matrices. -/
 theorem gammaNaiveAction_hom_comp_gammaNaiveToGammaOneNaive {g : GL (Fin 2) (ZMod N)}
     (h₀₀ : g 0 0 = 1) (h₁₀ : g 1 0 = 0) :
-    (gammaNaiveAction B N (.op g)).hom ≫ gammaNaiveToGammaOneNaive B N =
+    (gammaNaiveAction B N (.op g)).asIso.hom ≫ gammaNaiveToGammaOneNaive B N =
       gammaNaiveToGammaOneNaive B N := by
   ext X α z
   simp [h₀₀, h₁₀]
@@ -544,7 +546,7 @@ variable [NeZero N]
 `[Γ(N)]`-structure `(P, Q) g` is `aP + cQ`, where `(a, c)` is the first column of `g`. -/
 theorem gammaNaiveEquiv_gammaNaiveAction_hom_app_fst_torsionι (g : GL (Fin 2) (ZMod N))
     (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
-    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).hom.app (op X) α)).1.1 ≫
+    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).asIso.hom.app (op X) α)).1.1 ≫
         X.curve.torsionι N =
       ((gammaNaiveEquiv X α).1.1 ≫ X.curve.torsionι N) ^ (g 0 0).val *
         ((gammaNaiveEquiv X α).1.2 ≫ X.curve.torsionι N) ^ (g 1 0).val := by
@@ -555,7 +557,7 @@ theorem gammaNaiveEquiv_gammaNaiveAction_hom_app_fst_torsionι (g : GL (Fin 2) (
 `[Γ(N)]`-structure `(P, Q) g` is `bP + dQ`, where `(b, d)` is the second column of `g`. -/
 theorem gammaNaiveEquiv_gammaNaiveAction_hom_app_snd_torsionι (g : GL (Fin 2) (ZMod N))
     (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
-    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).hom.app (op X) α)).1.2 ≫
+    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).asIso.hom.app (op X) α)).1.2 ≫
         X.curve.torsionι N =
       ((gammaNaiveEquiv X α).1.1 ≫ X.curve.torsionι N) ^ (g 0 1).val *
         ((gammaNaiveEquiv X α).1.2 ≫ X.curve.torsionι N) ^ (g 1 1).val := by

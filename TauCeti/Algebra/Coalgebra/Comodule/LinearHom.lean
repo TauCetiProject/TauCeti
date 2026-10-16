@@ -234,7 +234,7 @@ theorem mem_fixedSubcomodule_linearHom_iff (f : M →ₗ[R] N) :
     simp only [LinearMap.comp_apply, endOfPoint_tmul, one_smul, g,
       AlgHom.toLinearMap_id, LinearMap.lTensor_id, LinearMap.id_apply,
       LinearMap.baseChange_tmul] at h
-    rw [LinearMap.baseChange_eq_ltensor, LinearMap.lTensor_comm, LinearMap.rTensor_def] at h
+    rw [LinearMap.baseChange_eq_lTensor, LinearMap.lTensor_comm, LinearMap.rTensor_def] at h
     exact h
   · intro hf
     -- Naturality of a comodule morphism makes its conjugation action trivial.

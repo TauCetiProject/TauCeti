@@ -9,7 +9,6 @@ public import Mathlib.Algebra.CharP.Two
 public import Mathlib.RingTheory.Coprime.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
 import Mathlib.Data.Int.GCD
-import Mathlib.Data.Nat.Prime.Basic
 
 /-!
 # Basic facts about local rings
@@ -21,31 +20,28 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 
 ## Main results
 
-* `TauCeti.IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem`: an idempotent of a local ring is `0`
+* `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing`: an idempotent of a local ring is `0`
   or `1`.
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
 * `TauCeti.IsLocalRing.sq_add_self_eq_zero_iff`: in characteristic two, `t² + t = 0` exactly
   when `t = 0` or `t = 1`.
-* `TauCeti.IsLocalRing.isUnit_natCast_of_not_dvd`: if the prime `p` is not a unit, every natural
-  number prime to `p` is a unit.
-* `IsCoprime.isUnit_or_isUnit`: of two coprime elements of a commutative local ring, one is a
+* `Nat.Coprime.isUnit_natCast`: if a natural number is not a unit, every coprime natural
+  number is a unit.
+* `IsCoprime.isUnit_or_isUnit`: of two coprime elements of a commutative local semiring, one is a
   unit.
 -/
 
 public section
 
-namespace TauCeti
-
 /-- An idempotent of a possibly noncommutative local ring is `0` or `1`. -/
-theorem IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem {R : Type*} [Ring R] [IsLocalRing R]
+theorem IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing {R : Type*} [Ring R] [IsLocalRing R]
     {a : R} (ha : IsIdempotentElem a) : a = 0 ∨ a = 1 := by
   -- One of `a` and `1 - a` is a unit, and an idempotent unit is `1`.
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self a with hu | hu
-  · exact Or.inr (hu.mul_left_cancel (by rw [ha, mul_one]))
-  · refine Or.inl ?_
-    have hidem : IsIdempotentElem (1 - a) := IsIdempotentElem.one_sub ha
-    have hone : (1 : R) - a = 1 := hu.mul_left_cancel (by rw [hidem, mul_one])
-    exact sub_eq_self.mp hone
+  · exact Or.inr ((IsIdempotentElem.iff_eq_one_of_isUnit hu).mp ha)
+  · exact Or.inl (sub_eq_self.mp ((IsIdempotentElem.iff_eq_one_of_isUnit hu).mp ha.one_sub))
+
+namespace TauCeti
 
 /-- A local ring is Dedekind-finite: a left inverse is also a right inverse. -/
 instance IsLocalRing.isDedekindFiniteMonoid {R : Type*} [Ring R] [IsLocalRing R] :
@@ -57,13 +53,11 @@ instance IsLocalRing.isDedekindFiniteMonoid {R : Type*} [Ring R] [IsLocalRing R]
       calc
         (q * p) * (q * p) = q * (p * q) * p := by simp only [mul_assoc]
         _ = q * p := by rw [hpq, mul_one]
-    rcases IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem he with h0 | h1
-    · have hp0 : p = 0 := by
-        calc
-          p = (p * q) * p := by rw [hpq, one_mul]
-          _ = p * (q * p) := by rw [mul_assoc]
-          _ = 0 := by rw [h0, mul_zero]
-      simpa only [hp0, mul_zero, zero_mul] using hpq
+    rcases IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing he with h0 | h1
+    · exfalso
+      exact one_ne_zero (by
+        simpa only [mul_assoc, hpq, mul_one, mul_zero, zero_mul] using
+          congrArg (fun a ↦ p * a * q) h0)
     · exact h1
 
 /-- Over a local ring of characteristic two, the zeros of `t ↦ t² + t` are `0` and `1`. -/
@@ -72,28 +66,26 @@ theorem IsLocalRing.sq_add_self_eq_zero_iff {R : Type*} [Ring R] [IsLocalRing R]
     (t : R) : t ^ 2 + t = 0 ↔ t = 0 ∨ t = 1 := by
   rw [CharTwo.add_eq_zero, pow_two]
   constructor
-  · exact IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem
+  · exact IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
   · rintro (rfl | rfl) <;> simp
-
-/-- In a local ring in which the prime `p` is not a unit, every natural number prime to `p` is a
-unit. -/
-theorem IsLocalRing.isUnit_natCast_of_not_dvd {R : Type*} [Ring R] [IsLocalRing R] {p : ℕ}
-    (hp : p.Prime) (hpR : ¬IsUnit (p : R)) {m : ℕ} (hpm : ¬p ∣ m) : IsUnit (m : R) := by
-  have hab := Nat.gcd_eq_gcd_ab m p
-  rw [Nat.Coprime.gcd_eq_one (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr hpm)),
-    Nat.cast_one] at hab
-  have hab' : (m : R) * (m.gcdA p : R) + p * (m.gcdB p : R) = 1 := by
-    exact_mod_cast congrArg (Int.cast : ℤ → R) hab.symm
-  rcases IsLocalRing.isUnit_or_isUnit_of_add_one hab' with h | h
-  · exact (((Nat.cast_commute m _).isUnit_mul_iff).mp h).1
-  · exact absurd (((Nat.cast_commute p _).isUnit_mul_iff).mp h).1 hpR
 
 end TauCeti
 
-/-- Of two coprime elements of a commutative local ring, one is a unit: a relation
+/-- Of two coprime elements of a commutative local semiring, one is a unit: a relation
 `u * a + v * b = 1` makes one of the two summands a unit. -/
 theorem IsCoprime.isUnit_or_isUnit {R : Type*} [CommSemiring R] [IsLocalRing R] {a b : R}
     (h : IsCoprime a b) : IsUnit a ∨ IsUnit b := by
   obtain ⟨u, v, huv⟩ := h
   exact (IsLocalRing.isUnit_or_isUnit_of_add_one huv).imp isUnit_of_mul_isUnit_right
     isUnit_of_mul_isUnit_right
+
+/-- In a possibly noncommutative local ring, a natural number coprime to a nonunit natural
+number is a unit. -/
+theorem Nat.Coprime.isUnit_natCast {R : Type*} [Ring R] [IsLocalRing R] {m n : ℕ}
+    (h : m.Coprime n) (hn : ¬IsUnit (n : R)) : IsUnit (m : R) := by
+  have hab := Nat.gcd_eq_gcd_ab m n
+  rw [h.gcd_eq_one, Nat.cast_one] at hab
+  have hab' : (m : R) * (m.gcdA n : R) + n * (m.gcdB n : R) = 1 := by
+    exact_mod_cast congrArg (Int.cast : ℤ → R) hab.symm
+  exact ((IsLocalRing.isUnit_or_isUnit_of_add_one hab').imp isUnit_of_mul_isUnit_left
+    isUnit_of_mul_isUnit_left).resolve_right hn
