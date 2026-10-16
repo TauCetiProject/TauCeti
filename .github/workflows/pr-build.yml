@@ -1321,13 +1321,15 @@ jobs:
             state=failure; desc="the pull request changed during this build — the run for its current state statuses it"
           elif [ "${{ env.INTEGRATION_CONFLICT }}" = "1" ]; then
             state=failure; desc="integration with captured main conflicts — human resolution required; see H/B in run"
-          elif [ "$identity_ok" != 1 ]; then
-            state=failure; desc="build not run — tested H/B/T identity missing or invalid"
+          elif [ "${{ env.INTEGRATION_BAD }}" = "1" ]; then
+            state=failure; desc="build not run — integration preparation failed; see H/B diagnostics in run"
           elif [ "${{ env.CONFIG_BAD }}" = "1" ]; then
             state=failure; desc="build not run — candidate Lake configuration failed trusted attestation"
           elif [ "${{ env.BUMP_BAD }}" = "1" ] || [ "${{ env.INFRA }}" = "1" ] \
              || [ "${{ env.TOO_LARGE }}" = "1" ] || [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             state=failure; desc="build not run — see the scope check"
+          elif [ "$identity_ok" != 1 ]; then
+            state=failure; desc="build not run — tested H/B/T identity missing or invalid"
           elif [ "${{ steps.import_headers.outcome }}" = "failure" ]; then
             state=failure; desc="import header preflight failed — see importing-file/header diagnostics"
           elif [ "${{ steps.build.outcome }}" = "failure" ]; then

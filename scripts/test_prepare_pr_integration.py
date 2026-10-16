@@ -324,7 +324,8 @@ else:
 
 
 class StatusBinding(unittest.TestCase):
-    def report(self, *, moved=False, retarget=False, missing=False, malformed=False, wrong_output=False):
+    def report(self, *, moved=False, retarget=False, missing=False, malformed=False,
+               wrong_output=False, guards=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'gate').symlink_to(ROOT)
@@ -352,6 +353,7 @@ else:
                       'steps.pr.outputs.base_ref': 'main', 'steps.pr.outputs.num': '42',
                       'steps.build.outcome': 'success', 'github.repository': 'o/r',
                       'github.server_url': 'https://github.invalid', 'github.run_id': '9'}
+            values.update({'env.' + key: value for key, value in (guards or {}).items()})
             script = re.sub(r'\$\{\{ (.*?) \}\}', lambda m: values.get(m[1], ''), report)
             env = dict(os.environ, PATH=str(fake) + os.pathsep + os.environ['PATH'],
                        RUNNER_TEMP=str(root), RAW_HEAD=head, CAPTURED_BASE=base,
@@ -376,6 +378,20 @@ else:
         self.assertIn('T=' + 'c' * 12, posts['build']['description'])
         self.assertEqual(posts['scope']['state'], 'success')
         self.assertEqual(posts['bump-guard']['state'], 'success')
+
+    def test_existing_attestation_and_bump_failures_keep_actionable_diagnostics(self):
+        for guards, diagnostic in (
+            (dict(CONFIG_BAD='1', INFRA='1'), 'Lake configuration failed'),
+            (dict(BUMP_BAD='1', INFRA='1'), 'see the scope check'),
+            (dict(INTEGRATION_BAD='1', INFRA='1'), 'integration preparation failed'),
+            (dict(INTEGRATION_CONFLICT='1', INTEGRATION_BAD='1', INFRA='1'), 'conflicts')):
+            with self.subTest(guards=guards):
+                result, posts = self.report(missing=True, guards=guards)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(posts['build']['state'], 'failure')
+                self.assertIn(diagnostic, posts['build']['description'])
+                if guards.get('INTEGRATION_CONFLICT'):
+                    self.assertEqual(posts['scope']['state'], 'success')
 
     def test_head_changes_retarget_and_identity_failures_cannot_post_green(self):
         for options in (dict(moved=True), dict(retarget=True), dict(missing=True),
