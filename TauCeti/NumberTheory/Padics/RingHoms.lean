@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
@@ -61,10 +62,12 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
-* `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
-  `ℤ_[p]`.
 * `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
-  homomorphism to the units of `ZMod (p ^ n)`.
+  homomorphism to the units of `ZMod (p ^ n)`; it is surjective, that is, every unit of
+  `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]` (`PadicInt.unitsToZModPow_surjective`),
+  compatible with the reductions `ZMod.unitsMap` between levels
+  (`PadicInt.unitsMap_unitsToZModPow`), and trivial at level `0`
+  (`PadicInt.unitsToZModPow_zero_apply`).
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
   finite of cardinality `p`.
 -/
@@ -294,18 +297,6 @@ theorem continuous_quotientSpanToZModPow (n : ℕ) {q : ℤ_[p]} (hq : (p : ℤ_
     Continuous (quotientSpanToZModPow n hq) :=
   Ideal.Quotient.continuous_lift _ (continuous_toZModPow n) _
 
-/-- Every unit of `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]`. For `n > 0` this holds because
-truncation is a surjective local homomorphism out of the local ring `ℤ_[p]`; for `n = 0` the
-target `ZMod 1` is the trivial ring, so there is nothing to lift. -/
-theorem surjective_units_map_toZModPow (n : ℕ) :
-    Function.Surjective (Units.map (toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom) := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
-    exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
-  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
-    exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
-      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
-
 /-- Truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous homomorphism to the units of
 `ZMod (p ^ n)`. -/
 noncomputable def unitsToZModPow (n : ℕ) : ℤ_[p]ˣ →ₜ* (ZMod (p ^ n))ˣ where
@@ -318,6 +309,31 @@ noncomputable def unitsToZModPow (n : ℕ) : ℤ_[p]ˣ →ₜ* (ZMod (p ^ n))ˣ 
 theorem coe_unitsToZModPow_apply (n : ℕ) (u : ℤ_[p]ˣ) :
     ((unitsToZModPow n u : (ZMod (p ^ n))ˣ) : ZMod (p ^ n)) = toZModPow n (u : ℤ_[p]) :=
   (rfl)
+
+/-- Truncation modulo `p ^ n` on the units of `ℤ_[p]` is surjective: every unit of `ZMod (p ^ n)`
+lifts to a unit of `ℤ_[p]`. -/
+theorem unitsToZModPow_surjective (n : ℕ) :
+    Function.Surjective (unitsToZModPow (p := p) n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+    exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
+  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+    exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
+      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+
+/-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
+truncation modulo `p ^ m`. -/
+@[simp]
+theorem unitsMap_unitsToZModPow {m n : ℕ} (h : p ^ m ∣ p ^ n) (u : ℤ_[p]ˣ) :
+    ZMod.unitsMap h (unitsToZModPow n u) = unitsToZModPow m u := by
+  ext
+  rw [ZMod.unitsMap_val, coe_unitsToZModPow_apply, coe_unitsToZModPow_apply,
+    cast_toZModPow _ _ ((Nat.pow_dvd_pow_iff_le_right hp.out.one_lt).mp h)]
+
+/-- Truncation modulo `p ^ 0 = 1` sends every unit to `1`. -/
+theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
+  have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+  exact Subsingleton.elim _ _
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 
