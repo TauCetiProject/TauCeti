@@ -92,16 +92,13 @@ theorem maximalSpectrumComap_injective (hB : IsAffinoidAlgebra K B) (f : A →�
   exact Ideal.comap_injective_of_surjective f hf
     (congrArg MaximalSpectrum.asIdeal hxy)
 
-/-- A finite injective algebra map into an affinoid algebra induces a surjective map on maximal
+/-- An integral injective algebra map into an affinoid algebra induces a surjective map on maximal
 spectra. -/
 theorem maximalSpectrumComap_surjective (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
-    (hf : f.Finite) (hfi : Function.Injective f) :
+    (hf : f.toRingHom.IsIntegral) (hfi : Function.Injective f) :
     Function.Surjective (hB.maximalSpectrumComap f) := by
   algebraize [f.toRingHom]
-  have : Module.Finite A B := by
-    rw [← RingHom.finite_algebraMap]
-    exact hf
-  have : Algebra.IsIntegral A B := Algebra.IsIntegral.of_finite A B
+  let _ : Algebra.IsIntegral A B := ⟨hf⟩
   intro x
   obtain ⟨m, hm, hmcomap⟩ :=
     Ideal.exists_ideal_over_maximal_of_isIntegral (R := A) (S := B) x.asIdeal (by
