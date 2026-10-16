@@ -13,8 +13,8 @@ import Mathlib.Tactic.Ring
 # Triangular representatives of split proper classes
 
 For nonzero square discriminant `s²`, primitive forms admit triangular representatives
-`sxy + cy²`, with `s` positive and `s` coprime to `c`. These are norm forms of explicit
-integer lattices inside the existing product algebra. Proper equivalence between two
+`sxy + cy²`, with the specified integer square root `s` coprime to `c`. These are norm forms
+of explicit integer lattices inside the existing product algebra. Proper equivalence between two
 representatives with the same nonzero `s` is exactly congruence of `c` modulo `s`.
 
 This is the elementary form-side classification for the separate split branch. Composition
@@ -49,7 +49,7 @@ theorem splitTriangularForm_def (s c : ℤ) : splitTriangularForm s c = ⟨0, s,
   simp [splitTriangularForm, isPrimitive_iff, content_def, Int.isCoprime_iff_gcd_eq_one]
 
 /-- The triangular form evaluates as the product of its two linear factors. -/
-theorem eval_splitTriangularForm (s c x y : ℤ) :
+@[simp] theorem eval_splitTriangularForm (s c x y : ℤ) :
     (splitTriangularForm s c).eval x y = (s * x + c * y) * y := by
   simp only [splitTriangularForm, eval_def]
   ring

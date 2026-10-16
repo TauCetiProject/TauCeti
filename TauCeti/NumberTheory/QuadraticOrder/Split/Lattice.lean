@@ -5,7 +5,7 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Classes
+public import TauCeti.NumberTheory.QuadraticOrder.Product
 public import Mathlib.Algebra.Algebra.Operations
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -14,9 +14,9 @@ import Mathlib.Tactic.Ring
 # Explicit lattices over the split product order
 
 The lattice `sℤ × 0 + ℤ(c, 1)` is a module over the actual congruence product order.
-Its product norm is the triangular form `sxy + cy²`. When `c` is coprime to `s`,
-multiplication of these modules multiplies `c` modulo `s`, giving the split composition
-calculation without a number-field ideal-class carrier.
+When `c` is coprime to `s`, multiplication of these modules multiplies `c` modulo `s`.
+Equality is exactly congruence of the coefficients modulo `s`, and coprime coefficients
+give invertible modules.
 
 ## References
 
@@ -25,11 +25,11 @@ calculation without a number-field ideal-class carrier.
 
 public section
 
-namespace TauCeti.BinaryQuadraticForm
+namespace TauCeti.QuadraticOrder
 
 /-- The module spanned over the integers by `(s, 0)` and `(c, 1)`, over the actual
 split congruence product order. -/
-def splitModule (s c : ℤ) : Submodule (QuadraticOrder.productSubalgebra s) (ℤ × ℤ) where
+def splitModule (s c : ℤ) : Submodule (productSubalgebra s) (ℤ × ℤ) where
   carrier := {z | s ∣ z.1 - c * z.2}
   zero_mem' := by simp
   add_mem' := by
@@ -42,7 +42,7 @@ def splitModule (s c : ℤ) : Submodule (QuadraticOrder.productSubalgebra s) (�
     simpa only [Set.mem_ofPred_eq, heq] using h
   smul_mem' := by
     intro r z hz
-    have hr := (QuadraticOrder.mem_productSubalgebra s (r : ℤ × ℤ)).mp r.property
+    have hr := (mem_productSubalgebra s (r : ℤ × ℤ)).mp r.property
     have h := (hz.mul_left (r : ℤ × ℤ).1).add (hr.mul_left (c * z.2))
     have heq : (r : ℤ × ℤ).1 * z.1 - c * ((r : ℤ × ℤ).2 * z.2) =
         (r : ℤ × ℤ).1 * (z.1 - c * z.2) +
@@ -76,18 +76,24 @@ theorem mem_splitModule_iff_exists (s c : ℤ) (z : ℤ × ℤ) :
   · rintro ⟨x, y, rfl⟩
     exact ⟨x, by ring⟩
 
-/-- Congruent coefficients give the same actual split-order module. -/
-theorem splitModule_eq_of_dvd_sub (s c d : ℤ) (h : s ∣ c - d) :
-    splitModule s c = splitModule s d := by
-  ext z
-  rw [mem_splitModule, mem_splitModule]
+/-- Two actual split-order modules are equal exactly when their coefficients are congruent. -/
+theorem splitModule_eq_iff_dvd_sub (s c d : ℤ) :
+    splitModule s c = splitModule s d ↔ s ∣ c - d := by
   constructor
-  · intro hz
-    convert hz.add (h.mul_right z.2) using 1
-    ring
-  · intro hz
-    convert hz.sub (h.mul_right z.2) using 1
-    ring
+  · intro h
+    have hm := second_mem_splitModule s c
+    rw [h, mem_splitModule, mul_one] at hm
+    exact hm
+  · intro h
+    ext z
+    rw [mem_splitModule, mem_splitModule]
+    constructor
+    · intro hz
+      convert hz.add (h.mul_right z.2) using 1
+      ring
+    · intro hz
+      convert hz.sub (h.mul_right z.2) using 1
+      ring
 
 /-- The module with coefficient one is the unit module, the actual product order itself. -/
 @[simp] theorem splitModule_one (s : ℤ) : splitModule s 1 = 1 := by
@@ -96,12 +102,12 @@ theorem splitModule_eq_of_dvd_sub (s c d : ℤ) (h : s ∣ c - d) :
   simp only [one_mul]
   constructor
   · intro hz
-    exact ⟨⟨z, (QuadraticOrder.mem_productSubalgebra s z).mpr hz⟩, rfl⟩
+    exact ⟨⟨z, (mem_productSubalgebra s z).mpr hz⟩, rfl⟩
   · rintro ⟨r, rfl⟩
-    exact (QuadraticOrder.mem_productSubalgebra s (r : ℤ × ℤ)).mp r.property
+    exact (mem_productSubalgebra s (r : ℤ × ℤ)).mp r.property
 
 /-- Multiplication of actual product-order modules multiplies their congruence coefficients. -/
-theorem splitModule_mul (s c d : ℤ) (hc : IsCoprime s c) :
+@[simp] theorem splitModule_mul (s c d : ℤ) (hc : IsCoprime s c) :
     splitModule s c * splitModule s d = splitModule s (c * d) := by
   apply le_antisymm
   · apply Submodule.mul_le.mpr
@@ -142,7 +148,7 @@ theorem splitModule_mul (s c d : ℤ) (hc : IsCoprime s c) :
     rw [heq] at h
     exact h
 
-/-- Primitive triangular forms give invertible modules over the actual split order. -/
+/-- Coprime coefficients give invertible modules over the actual split order. -/
 theorem isUnit_splitModule (s c : ℤ) (hc : IsCoprime s c) :
     IsUnit (splitModule s c) := by
   obtain ⟨u, v, huv⟩ := hc
@@ -150,7 +156,7 @@ theorem isUnit_splitModule (s c : ℤ) (hc : IsCoprime s c) :
     refine ⟨-u, ?_⟩
     linear_combination huv
   have hmul := splitModule_mul s c v ⟨u, v, huv⟩
-  rw [splitModule_eq_of_dvd_sub s (c * v) 1 hcv, splitModule_one] at hmul
+  rw [(splitModule_eq_iff_dvd_sub s (c * v) 1).mpr hcv, splitModule_one] at hmul
   exact IsUnit.of_mul_eq_one (splitModule s v) hmul
 
-end TauCeti.BinaryQuadraticForm
+end TauCeti.QuadraticOrder

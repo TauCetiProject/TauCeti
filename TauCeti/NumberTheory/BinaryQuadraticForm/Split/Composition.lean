@@ -5,7 +5,8 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Lattice
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Classes
+public import TauCeti.NumberTheory.QuadraticOrder.Split.Lattice
 public import Mathlib.Data.ZMod.Units
 import Mathlib.Algebra.Group.TransferInstance
 
@@ -29,6 +30,8 @@ open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
 
+open QuadraticOrder
+
 /-- The existing proper-orbit quotient of primitive square-discriminant forms. -/
 abbrev SplitProperClass (s : ℕ) :=
   MulAction.orbitRel.Quotient SL(2, ℤ) (primitiveForms ((s : ℤ) ^ 2))
@@ -41,11 +44,13 @@ def splitProperClassMk (s : ℕ) (c : ℤ) (hc : IsCoprime (s : ℤ) c) : SplitP
 
 /-- Triangular representatives give the same proper class exactly when their coefficients
 have the same residue modulo the nonzero square root. -/
-theorem splitProperClassMk_eq_iff (s : ℕ) [NeZero s] (c d : ℤ)
+@[simp] theorem splitProperClassMk_eq_iff (s : ℕ) [NeZero s] (c d : ℤ)
     (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
     splitProperClassMk s c hc = splitProperClassMk s d hd ↔ (c : ZMod s) = d := by
   rw [splitProperClassMk, splitProperClassMk, Quotient.eq,
     SubMulAction.orbitRel_of_subMul]
+  -- The subaction orbit lemma leaves subtype coercions at both endpoints; their values
+  -- are definitionally the original triangular forms.
   change MulAction.orbitRel SL(2, ℤ) (BinaryQuadraticForm ℤ)
     (splitTriangularForm s c) (splitTriangularForm s d) ↔ (c : ZMod s) = d
   rw [← Quotient.eq, properClass_splitTriangularForm_eq_iff _ _ _
@@ -111,12 +116,14 @@ def splitProperClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃* (Z
     apply (splitProperClassMk_eq_iff s _ _ _ _).mpr
     simp only [Int.cast_natCast, ZMod.natCast_zmod_val, ZMod.coe_unitOfIsCoprime]
   have h := (splitProperClassEquivUnits s).apply_symm_apply (ZMod.unitOfIsCoprime c hc.symm)
+  -- The multiplicative equivalence uses the inverse of the bijective unit-to-class map,
+  -- so its inverse evaluates definitionally to splitUnitToProperClass.
   change splitProperClassEquivUnits s
     (splitUnitToProperClass s (ZMod.unitOfIsCoprime c hc.symm)) = _ at h
   rwa [hrep] at h
 
 /-- Composition multiplies the two triangular coefficients. -/
-theorem splitProperClassMk_mul (s : ℕ) [NeZero s] (c d : ℤ)
+@[simp] theorem splitProperClassMk_mul (s : ℕ) [NeZero s] (c d : ℤ)
     (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
     splitProperClassMk s c hc * splitProperClassMk s d hd =
       splitProperClassMk s (c * d) (hc.mul_right hd) := by
@@ -135,7 +142,7 @@ theorem splitProperClassMk_mul (s : ℕ) [NeZero s] (c d : ℤ)
 
 private theorem splitModule_eq_of_cast_eq (s : ℕ) (c d : ℤ)
     (h : (c : ZMod s) = d) : splitModule s c = splitModule s d :=
-  splitModule_eq_of_dvd_sub s c d
+  (splitModule_eq_iff_dvd_sub s c d).mpr
     ((ZMod.intCast_eq_intCast_iff_dvd_sub d c s).mp h.symm)
 
 /-- A split proper class gives its explicit module over the actual product order;
@@ -160,6 +167,7 @@ def splitProperClassModule (s : ℕ) [NeZero s] :
 @[simp] theorem splitProperClassModule_mk (s : ℕ) [NeZero s] (c : ℤ)
     (hc : IsCoprime (s : ℤ) c) :
     splitProperClassModule s (splitProperClassMk s c hc) = splitModule s c := by
+  -- Applying the monoid homomorphism unfolds its defining congruence module.
   change splitModule s (splitProperClassEquivUnits s (splitProperClassMk s c hc) : ZMod s).val = _
   rw [splitProperClassEquivUnits_mk]
   apply splitModule_eq_of_cast_eq
@@ -171,12 +179,10 @@ theorem splitProperClassModule_injective (s : ℕ) [NeZero s] :
   intro p q h
   apply (splitProperClassEquivUnits s).injective
   apply Units.ext
+  -- Equality of the homomorphism values is definitionally equality of their modules.
   change splitModule s (splitProperClassEquivUnits s p : ZMod s).val =
     splitModule s (splitProperClassEquivUnits s q : ZMod s).val at h
-  have hm := second_mem_splitModule s (splitProperClassEquivUnits s p : ZMod s).val
-  rw [h] at hm
-  have hdiv := (mem_splitModule _ _ _).mp hm
-  simp only [mul_one] at hdiv
+  have hdiv := (splitModule_eq_iff_dvd_sub _ _ _).mp h
   have hcast := (ZMod.intCast_eq_intCast_iff_dvd_sub
     ((splitProperClassEquivUnits s q : ZMod s).val : ℤ)
     ((splitProperClassEquivUnits s p : ZMod s).val : ℤ) s).mpr hdiv
