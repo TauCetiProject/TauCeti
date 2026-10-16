@@ -94,9 +94,11 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_std_dual
           rw [hu, LinearMap.det_toMatrix]
           exact det_spinPlusAction_spinGroupToEven P hline hWfin s⟩
       map_one' := Subtype.ext (by
+        -- Expose the underlying matrix hidden by the special-linear subtype and the local map.
         change (u (spinGroupToEvenUnitary Q 1) : Matrix (Fin 4) (Fin 4) K) = 1
         rw [map_one, map_one, Units.val_one])
       map_mul' := fun s t ↦ Subtype.ext (by
+        -- Expose the underlying matrices so the homomorphism laws can rewrite this equality.
         change (u (spinGroupToEvenUnitary Q (s * t)) : Matrix (Fin 4) (Fin 4) K) =
           (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) *
             (u (spinGroupToEvenUnitary Q t) : Matrix (Fin 4) (Fin 4) K)
@@ -117,6 +119,7 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_std_dual
       obtain ⟨s, hs⟩ :=
         exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline hWfin a hdet
       refine ⟨s, Subtype.ext ?_⟩
+      -- Expose the matrix equality hidden by the special-linear subtype and the local map.
       change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) = A
       rw [hu, hs]
       exact LinearEquiv.apply_symm_apply (LinearMap.toMatrix b b)
