@@ -19,21 +19,14 @@ generally the completion along a finitely generated ideal `I` is Noetherian when
 are the noetherianity inputs for adic rings of finite ideal type and for rings of definition of
 Huber rings, where completions of Noetherian rings appear throughout.
 
-The proof is the associated-graded argument. Write `I = (f₁, …, fᵣ)`. An element of `I ^ n` is the
-value at `f` of a polynomial over `R` homogeneous of degree `n`
-(`Ideal.span_pow_eq_map_homogeneousSubmodule`). For an ideal `J`, the homogeneous polynomials whose
-value lies in `J + I ^ (n + 1)`, `n` being the degree, generate an ideal of
-`MvPolynomial (Fin r) R` containing the extension of `I`; the quotient by that extension is
-`MvPolynomial (Fin r) (R ⧸ I)`, which is Noetherian. So finitely many such polynomials `t`, with
-values congruent to elements `g t` of `J`, generate it. Taking homogeneous components then reduces
-any element of `J ∩ I ^ n` modulo `J ∩ I ^ (n + 1)` by a combination of the `g t` with
-coefficients in `I ^ (n - D)`, where `D` bounds the degrees. Completeness sums these corrections,
-and separatedness shows that the `g t` generate `J`.
+The complete-ring criterion supplies the Noetherian rings of definition needed when constructing
+adic rings, while its completion specialization applies directly to completions of Noetherian
+rings and to finitely generated ideals with Noetherian quotient.
 
 ## Main results
 
-* `TauCeti.isNoetherianRing_of_isAdicComplete`: an `I`-adically complete ring with `I` finitely
-  generated and `R ⧸ I` Noetherian is Noetherian.
+* `TauCeti.Ideal.isNoetherianRing_of_isAdicComplete`: an `I`-adically complete ring with `I`
+  finitely generated and `R ⧸ I` Noetherian is Noetherian.
 * `AdicCompletion.isNoetherianRing_of_fg`: the completion along a finitely generated ideal `I` is
   Noetherian when `R ⧸ I` is.
 * `AdicCompletion.isNoetherianRing`: the adic completion of a Noetherian ring is Noetherian.
@@ -74,8 +67,9 @@ private theorem le_span_of_forall_exists_sub_mem_pow [IsAdicComplete I R] {ι : 
       simp only [s, Finset.sum_range_succ, add_mul, Finset.sum_add_distrib, ← sub_sub]
       rw [ih]
   have hsub (i : ι) {m k : ℕ} (hmk : m ≤ k) : s k i - s m i ∈ I ^ (m - D) := by
-    rw [show s k i - s m i = ∑ n ∈ Finset.Ico m k, c n (y n) i by
-      rw [Finset.sum_Ico_eq_sub _ hmk]]
+    have hsum : s k i - s m i = ∑ n ∈ Finset.Ico m k, c n (y n) i := by
+      simpa only [s] using (Finset.sum_Ico_eq_sub (fun n ↦ c n (y n) i) hmk).symm
+    rw [hsum]
     refine Ideal.sum_mem _ fun n hn ↦ Ideal.pow_le_pow_right ?_ (hc n (y n) i)
     have := (Finset.mem_Ico.mp hn).1
     omega
@@ -149,7 +143,8 @@ private theorem exists_sub_mem_pow_succ {T : Finset (MvPolynomial σ R)}
   have hc (t : T) : c t * (aeval f (t : MvPolynomial σ R) - g t) ∈ I ^ (n + 1) := by
     by_cases ht : d t ≤ n
     · simp only [c, ht, ↓reduceIte]
-      rw [show n + 1 = n - d t + (d t + 1) by omega, pow_add]
+      have hn : n + 1 = n - d t + (d t + 1) := by omega
+      rw [hn, pow_add]
       exact Ideal.mul_mem_mul (hmem _ _) (hge t)
     · simp [c, ht]
   have hpc : aeval f p = ∑ t, c t * aeval f (t : MvPolynomial σ R) := by
@@ -167,6 +162,8 @@ private theorem exists_sub_mem_pow_succ {T : Finset (MvPolynomial σ R)}
   · exact sub_mem hx.1 (Ideal.sum_mem _ fun t _ ↦ Ideal.mul_mem_left _ _ (hgJ t))
   · rw [hpc, ← Finset.sum_sub_distrib]
     exact Ideal.sum_mem _ fun t _ ↦ by simpa [mul_sub] using hc t
+
+namespace Ideal
 
 /-- **Noetherianity of complete rings.** A ring that is `I`-adically complete for a finitely
 generated ideal `I` is Noetherian as soon as `R ⧸ I` is Noetherian. -/
@@ -190,6 +187,8 @@ theorem isNoetherianRing_of_isAdicComplete (I : Ideal R) (hI : I.FG) [IsAdicComp
   rw [le_antisymm hJ (Ideal.span_le.mpr (Set.range_subset_iff.mpr hgJ))]
   exact Submodule.fg_span (Set.finite_range g)
 
+end Ideal
+
 end TauCeti
 
 namespace AdicCompletion
@@ -204,8 +203,8 @@ theorem isNoetherianRing_of_fg (hI : I.FG) [IsNoetherianRing (R ⧸ I)] :
   have : IsNoetherianRing (AdicCompletion I R ⧸ I.map (algebraMap R (AdicCompletion I R))) :=
     isNoetherianRing_of_ringEquiv _ ((Ideal.quotEquivOfEq (ker_evalOneₐ_eq_map I hI)).symm.trans
       (RingHom.quotientKerEquivOfSurjective (evalOneₐ_surjective I))).symm
-  exact TauCeti.isNoetherianRing_of_isAdicComplete (I.map (algebraMap R (AdicCompletion I R)))
-    (hI.map _)
+  exact TauCeti.Ideal.isNoetherianRing_of_isAdicComplete
+    (I.map (algebraMap R (AdicCompletion I R))) (hI.map _)
 
 /-- The adic completion of a Noetherian ring along any ideal is Noetherian. -/
 instance isNoetherianRing [IsNoetherianRing R] : IsNoetherianRing (AdicCompletion I R) :=
