@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
+public import Mathlib.Basic.Real.Basic
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -16,13 +19,15 @@ This file contains general-purpose constructions and facts about finite partitio
 of the top element into an element and its complement, the partition of a type into the fibres of
 a map to a finite type, the associated indexed partition, cardinality bounds for common
 refinements, the behavior of intersections of parts under refinement, and the coarse parent
-`Finpartition.refinementParent` of a part of a finer partition, together with the decomposition
-of a coarse part of a finset into the fine parts below it.
+`Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
+summation formulas for the fine parts below a coarse part.
 -/
 
 public section
 
 namespace Finpartition
+
+open Finset
 
 /-- The finite partition of the top element into an element and its complement, omitting either
 part when it is bottom. -/
@@ -148,6 +153,17 @@ theorem refinementParent_eq_iff (h : Q ≤ P) {B : Q.parts} {A : P.parts} :
     (P.disjoint (refinementParent h B).2 A.2 (Subtype.coe_injective.ne hne)).mono
       (le_refinementParent h B) hBA
 
+/-- A double sum over the fine parts can be grouped by the coarse parents of both parts. -/
+theorem sum_sum_eq_sum_sum_fiber [DecidableEq α] {M : Type*} [AddCommMonoid M] (h : Q ≤ P)
+    (F : Q.parts → Q.parts → M) :
+    ∑ B : Q.parts, ∑ D : Q.parts, F B D = ∑ A : P.parts, ∑ C : P.parts,
+      ∑ B with refinementParent h B = A, ∑ D with refinementParent h D = C, F B D := by
+  rw [← Finset.sum_fiberwise Finset.univ (refinementParent h) fun B => ∑ D, F B D]
+  refine Finset.sum_congr rfl fun A _ => ?_
+  conv_rhs => rw [sum_comm]
+  refine Finset.sum_congr rfl fun B _ => ?_
+  exact (Finset.sum_fiberwise Finset.univ (refinementParent h) (F B)).symm
+
 end Refinement
 
 section FinsetRefinement
@@ -155,6 +171,18 @@ section FinsetRefinement
 open scoped Finset
 
 variable {α : Type*} [DecidableEq α] {s : Finset α} {P Q : Finpartition s}
+
+/-- The sizes of the parts of a finite partition add up to the size of its support. -/
+theorem sum_card_subtype (P : Finpartition s) :
+    ∑ A : P.parts, (#A.1 : ℝ) = #s := by
+  rw [Finset.sum_coe_sort P.parts fun A => (#A : ℝ)]
+  exact_mod_cast P.sum_card_parts
+
+/-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one. -/
+theorem sum_sum_weight_le_one (P : Finpartition s) :
+    ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (#s : ℝ) ^ 2) ≤ 1 := by
+  simp_rw [← Finset.sum_div, ← Finset.sum_mul_sum, sum_card_subtype, ← sq]
+  exact div_self_le_one _
 
 /-- Summing a function of the part containing each point groups the points by part. -/
 theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : Finset α → M) :

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Real.Sqrt
+public import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 public import TauCeti.Combinatorics.SimpleGraph.Density
 public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Algebra.BigOperators.Field
@@ -81,19 +81,6 @@ private theorem weightedEnergy_eq_sum_subtype (P : Finpartition (univ : Finset V
   rw [weightedEnergy, ← sum_coe_sort]
   exact sum_congr rfl fun A _ => (sum_coe_sort _ _).symm
 
-/-- The part sizes of a partition of the vertices add up to `|V|`. -/
-private theorem sum_card_subtype (P : Finpartition (univ : Finset V)) :
-    ∑ A : P.parts, (#A.1 : ℝ) = Fintype.card V := by
-  rw [sum_coe_sort P.parts fun A => (#A : ℝ)]
-  exact_mod_cast P.sum_card_parts
-
-/-- The block weights `|A||B| / |V|²` of a partition sum to at most one (to one on a nonempty
-host). -/
-private theorem sum_sum_weight_le_one (P : Finpartition (univ : Finset V)) :
-    ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (Fintype.card V : ℝ) ^ 2) ≤ 1 := by
-  simp_rw [← sum_div, ← sum_mul_sum, sum_card_subtype, ← sq]
-  exact div_self_le_one _
-
 /-- The weighted energy is nonnegative. -/
 theorem weightedEnergy_nonneg (P : Finpartition (univ : Finset V)) : 0 ≤ G.weightedEnergy P :=
   sum_nonneg fun _ _ => sum_nonneg fun _ _ => by positivity
@@ -102,7 +89,8 @@ theorem weightedEnergy_nonneg (P : Finpartition (univ : Finset V)) : 0 ≤ G.wei
 weights sum to at most one. -/
 theorem weightedEnergy_le_one (P : Finpartition (univ : Finset V)) : G.weightedEnergy P ≤ 1 := by
   rw [weightedEnergy_eq_sum_subtype]
-  refine le_trans (sum_le_sum fun A _ => sum_le_sum fun C _ => ?_) (sum_sum_weight_le_one P)
+  refine le_trans (sum_le_sum fun A _ => sum_le_sum fun C _ => ?_) (by
+    simpa using P.sum_sum_weight_le_one)
   have h0 : (0 : ℝ) ≤ G.edgeDensity A.1 C.1 := mod_cast G.edgeDensity_nonneg _ _
   have h1 : (G.edgeDensity A.1 C.1 : ℝ) ≤ 1 := mod_cast G.edgeDensity_le_one _ _
   exact mul_le_of_le_one_right (by positivity) (pow_le_one₀ h0 h1)
@@ -125,34 +113,6 @@ section Refinement
 
 variable {P Q : Finpartition (univ : Finset V)}
 
-/-- A double sum over the fine parts, grouped by the coarse parents of both parts. -/
-private theorem sum_sum_eq_sum_sum_fiber (h : Q ≤ P) (F : Q.parts → Q.parts → ℝ) :
-    ∑ B : Q.parts, ∑ D : Q.parts, F B D = ∑ A : P.parts, ∑ C : P.parts,
-      ∑ B with refinementParent h B = A, ∑ D with refinementParent h D = C, F B D := by
-  rw [← sum_fiberwise univ (refinementParent h) fun B => ∑ D, F B D]
-  refine sum_congr rfl fun A _ => ?_
-  conv_rhs => rw [sum_comm]
-  refine sum_congr rfl fun B _ => ?_
-  exact (sum_fiberwise univ (refinementParent h) (F B)).symm
-
-/-- The edge count between two coarse parts is the sum of the edge counts between their fine
-parts. -/
-private theorem sum_sum_card_interedges_fiber (h : Q ≤ P) (A C : P.parts) :
-    ∑ B with refinementParent h B = A, ∑ D with refinementParent h D = C,
-      (#(G.interedges B.1 D.1) : ℝ) = #(G.interedges A.1 C.1) := by
-  conv_rhs => rw [← biUnion_filter_refinementParent_eq h A,
-    ← biUnion_filter_refinementParent_eq h C,
-    G.card_interedges_biUnion_left _ _ _ (Q.pairwiseDisjoint_subtype_val _)]
-  push_cast
-  refine sum_congr rfl fun B _ => ?_
-  rw [G.card_interedges_biUnion_right _ _ _ (Q.pairwiseDisjoint_subtype_val _), Nat.cast_sum]
-
-omit [Fintype V] [DecidableEq V] in
-/-- The real form of `SimpleGraph.card_mul_card_mul_edgeDensity`. -/
-private theorem card_mul_card_mul_edgeDensity_real (s t : Finset V) :
-    (#s * #t : ℝ) * (G.edgeDensity s t : ℝ) = #(G.interedges s t) := by
-  exact_mod_cast G.card_mul_card_mul_edgeDensity s t
-
 /-- The size-weighted correlation between fine densities and their parent densities is the coarse
 energy, since each coarse density is the size-weighted average of its fine densities. -/
 private theorem sum_sum_weight_mul_edgeDensity_mul_parent (h : Q ≤ P) :
@@ -162,16 +122,17 @@ private theorem sum_sum_weight_mul_edgeDensity_mul_parent (h : Q ≤ P) :
       G.weightedEnergy P := by
   rw [weightedEnergy_eq_sum_subtype, sum_sum_eq_sum_sum_fiber h]
   refine sum_congr rfl fun A _ => sum_congr rfl fun C _ => ?_
-  calc _ = ∑ B with refinementParent h B = A, ∑ D with refinementParent h D = C,
+  calc _ = ∑ B : Q.parts with refinementParent h B = A,
+      ∑ D : Q.parts with refinementParent h D = C,
         (#(G.interedges B.1 D.1) : ℝ) *
           ((G.edgeDensity A.1 C.1 : ℝ) / (Fintype.card V : ℝ) ^ 2) := by
         refine sum_congr rfl fun B hB => sum_congr rfl fun D hD => ?_
         rw [(mem_filter.1 hB).2, (mem_filter.1 hD).2,
-          ← card_mul_card_mul_edgeDensity_real]
+          ← G.card_mul_card_mul_edgeDensity_real]
         ring
     _ = _ := by
         simp_rw [← sum_mul]
-        rw [sum_sum_card_interedges_fiber, ← card_mul_card_mul_edgeDensity_real]
+        rw [G.sum_sum_card_interedges_fiber_real, ← G.card_mul_card_mul_edgeDensity_real]
         ring
 
 /-- The size-weighted mean square of the parent densities is the coarse energy, since the fine
@@ -183,7 +144,8 @@ private theorem sum_sum_weight_mul_parent_sq (h : Q ≤ P) :
       G.weightedEnergy P := by
   rw [weightedEnergy_eq_sum_subtype, sum_sum_eq_sum_sum_fiber h]
   refine sum_congr rfl fun A _ => sum_congr rfl fun C _ => ?_
-  calc _ = ∑ B with refinementParent h B = A, ∑ D with refinementParent h D = C,
+  calc _ = ∑ B : Q.parts with refinementParent h B = A,
+      ∑ D : Q.parts with refinementParent h D = C,
         (#B.1 : ℝ) * #D.1 *
           ((G.edgeDensity A.1 C.1 : ℝ) ^ 2 / (Fintype.card V : ℝ) ^ 2) := by
         refine sum_congr rfl fun B hB => sum_congr rfl fun D hD => ?_
@@ -237,18 +199,13 @@ theorem weightedDensityDeviation_abs_le (h : Q ≤ P) {ε : ℝ}
       (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) *
         |(G.edgeDensity B.1 D.1 : ℝ) -
           G.edgeDensity (refinementParent h B).1 (refinementParent h D).1| ≤ √ε := by
-  rw [← G.weightedDensityDeviation_sq h] at hgap
-  have hw := sum_sum_weight_le_one Q
+  rw [← G.weightedDensityDeviation_sq (P := P) (Q := Q) h] at hgap
+  have hw : ∑ B : Q.parts, ∑ D : Q.parts,
+      (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) ≤ 1 := by
+    simpa using Q.sum_sum_weight_le_one
   rw [← Fintype.sum_prod_type'] at hgap hw ⊢
-  -- Weighted Cauchy–Schwarz: `(∑ w |δ|)² ≤ (∑ w) (∑ w δ²) ≤ ε` when the weights sum to at most one.
-  have key (w δ : Q.parts × Q.parts → ℝ) (hw0 : ∀ p ∈ univ, 0 ≤ w p) (hw1 : ∑ p, w p ≤ 1)
-      (hε : ∑ p, w p * δ p ^ 2 ≤ ε) : ∑ p, w p * |δ p| ≤ √ε := by
-    have hg : ∀ p ∈ univ, 0 ≤ w p * δ p ^ 2 := fun p hp => mul_nonneg (hw0 p hp) (sq_nonneg _)
-    refine (le_abs_self _).trans (Real.abs_le_sqrt ?_)
-    refine (sum_sq_le_sum_mul_sum_of_sq_le_mul univ hw0 hg
-      fun p _ => (by rw [mul_pow, sq_abs]; ring : _ = _).le).trans ?_
-    exact (mul_le_mul hw1 hε (sum_nonneg hg) zero_le_one).trans_eq (one_mul ε)
-  exact key (fun p => #p.1.1 * #p.2.1 / (Fintype.card V : ℝ) ^ 2)
+  exact TauCeti.weighted_sum_abs_le_sqrt (ι := Q.parts × Q.parts) univ
+    (fun p => #p.1.1 * #p.2.1 / (Fintype.card V : ℝ) ^ 2)
     (fun p => (G.edgeDensity p.1.1 p.2.1 : ℝ) -
       G.edgeDensity (refinementParent h p.1).1 (refinementParent h p.2).1)
     (fun _ _ => by positivity) hw hgap
