@@ -55,6 +55,8 @@ finiteness is asserted.
 * `TauCeti.Bialgebra.map_fixedSubgroup_iterateFrobeniusPoints_le` and
   `TauCeti.Bialgebra.mapValue_mem_fixedSubgroup_iterateFrobeniusPoints`: a homomorphism of value
   algebras carries Frobenius-fixed points to Frobenius-fixed points.
+* `TauCeti.Bialgebra.map_fixedSubgroup_iterateFrobeniusPoints_of_injective`: for an injective
+  homomorphism, those images are exactly the Frobenius-fixed points in its range.
 
 ## References
 
@@ -235,6 +237,17 @@ theorem map_fixedSubgroup_iterateFrobeniusPoints_le (φ : A →ₐ[ℤ] B) :
         (fixedSubgroup (iterateFrobeniusPoints p n)) ≤
       fixedSubgroup (iterateFrobeniusPoints p n) :=
   map_fixedSubgroup_le _ (mapValue_comp_iterateFrobeniusPoints p n φ)
+
+/-- Under an injective homomorphism of value algebras, the image of the Frobenius-fixed points
+is exactly the intersection of the image on points with the target Frobenius-fixed subgroup. -/
+theorem map_fixedSubgroup_iterateFrobeniusPoints_of_injective (φ : A →ₐ[ℤ] B)
+    (hφ : Function.Injective φ) :
+    Subgroup.map (AlgHom.mapValue (H := H) φ)
+        (fixedSubgroup (iterateFrobeniusPoints p n)) =
+      (AlgHom.mapValue (H := H) φ).range ⊓ fixedSubgroup (iterateFrobeniusPoints p n) :=
+  (AlgHom.mapValue (H := H) φ).map_fixedSubgroup_of_injective
+    (mapValue_comp_iterateFrobeniusPoints p n φ)
+    (AlgHom.mapValue_injective hφ)
 
 /-- The pointwise form of `map_fixedSubgroup_iterateFrobeniusPoints_le`: a homomorphism of value
 algebras carries Frobenius-fixed points to Frobenius-fixed points. -/

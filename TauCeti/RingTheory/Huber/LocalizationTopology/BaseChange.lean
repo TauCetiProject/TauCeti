@@ -31,7 +31,7 @@ The target is localised at any `s'` together with a proof of `f(s) = s'`, rather
 
 For `T'` with underlying set `f(T)`, the rational subset `R(T'/f(s))` of `Spa(B, B⁺)` is the
 preimage of `R(T/s) ⊆ Spa(A, A⁺)` (Wedhorn, Lemma 7.46(3)), so this is the map between the
-coordinate rings of a rational open and of its preimage. Over a Tate base it preserves topological
+coordinate rings of a rational open and of its preimage. Over a Huber base it preserves topological
 finite type: `TauCeti.Huber.PairOfDefinition.isTopologicallyFiniteType_completionLocPairMap` in
 `TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType`.
 

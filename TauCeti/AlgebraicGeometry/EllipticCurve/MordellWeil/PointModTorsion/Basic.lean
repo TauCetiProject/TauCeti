@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.CanonicalHeight.Basic
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.PosDef.Northcott
 
 /-!
 # The points modulo torsion, and the Néron-Tate pairing on them
@@ -38,14 +40,19 @@ regulator is defined.
 * `WeierstrassCurve.Affine.neronTatePairingModTorsion_self_eq_zero_iff`: the descended pairing is
   positive definite, given the `Northcott` hypothesis. This is what dividing by the torsion buys;
   on `W.Point` itself the pairing is only semidefinite.
+* `WeierstrassCurve.Affine.northcott_neronTatePairingModTorsion`: bounded diagonal values give
+  finite subsets of the quotient, as needed for nondegeneracy of its real Gram matrix.
 * `WeierstrassCurve.Affine.isSymm_neronTateGramMatrix`: the Gram matrix is symmetric. The
   regulator is the determinant of this matrix in a basis of the quotient, and is defined
   separately.
+* `WeierstrassCurve.Affine.posDef_neronTateGramMatrix`: under Northcott finiteness, every
+  finite-basis Gram matrix is positive definite.
 -/
 
 public section
 
 open Height
+open scoped Matrix
 
 namespace WeierstrassCurve.Affine
 
@@ -117,6 +124,19 @@ theorem neronTatePairingModTorsion_self_eq_zero_iff [W.toAffine.IsElliptic]
       ← AddCommGroup.mem_torsion, ← Submodule.torsion_int]
     exact Iff.rfl
 
+/-- Northcott finiteness descends to the diagonal of the pairing on points modulo torsion.
+In particular, bounded-height subsets of the free quotient are finite. -/
+instance northcott_neronTatePairingModTorsion [W.toAffine.IsElliptic]
+    [Northcott (Point.canonicalHeight (W := W))] :
+    Northcott (fun x : PointModTorsion W ↦ neronTatePairingModTorsion W x x) where
+  finite_le C := by
+    refine ((Northcott.finite_le (h := Point.canonicalHeight (W := W)) C).image
+      (Submodule.Quotient.mk (p := Submodule.torsion ℤ W.Point))).subset ?_
+    intro x hx
+    induction x using Submodule.Quotient.induction_on with
+    | _ P =>
+      exact ⟨P, by simpa using hx, rfl⟩
+
 /-! ### The Gram matrix -/
 
 variable (W) in
@@ -137,6 +157,16 @@ theorem neronTateGramMatrix_apply [W.toAffine.IsElliptic] {ι : Type*}
     neronTateGramMatrix W b i j = neronTatePairingModTorsion W (b i) (b j) := by
   simp [neronTateGramMatrix]
 
+/-- Evaluating the Gram matrix at integer coordinates recovers the descended pairing. -/
+theorem neronTateGramMatrix_dotProduct_mulVec [W.toAffine.IsElliptic] {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℤ (PointModTorsion W)) (z w : ι → ℤ) :
+    (fun i ↦ (z i : ℝ)) ⬝ᵥ neronTateGramMatrix W b *ᵥ (fun i ↦ (w i : ℝ)) =
+      neronTatePairingModTorsion W (b.equivFun.symm z) (b.equivFun.symm w) := by
+  classical
+  rw [← LinearMap.sum_repr_mul_repr_mul b b (b.equivFun.symm z) (b.equivFun.symm w)]
+  simp [Finsupp.sum_fintype, dotProduct, Matrix.mulVec, Finset.mul_sum,
+    Finsupp.single_apply, mul_comm, mul_left_comm]
+
 /-- **Reindexing the basis permutes the Gram matrix.** -/
 @[simp]
 theorem neronTateGramMatrix_reindex [W.toAffine.IsElliptic] {ι ι' : Type*}
@@ -150,5 +180,18 @@ theorem isSymm_neronTateGramMatrix [W.toAffine.IsElliptic] {ι : Type*}
     (b : Module.Basis ι ℤ (PointModTorsion W)) : (neronTateGramMatrix W b).IsSymm := by
   ext i j
   simpa using neronTatePairingModTorsion_comm (b j) (b i)
+
+variable (W) in
+/-- The Gram matrix of the Néron–Tate pairing is positive definite under Northcott finiteness,
+for every finite basis of the points modulo torsion. -/
+theorem posDef_neronTateGramMatrix [W.toAffine.IsElliptic]
+    [Northcott (Point.canonicalHeight (W := W))] {ι : Type*} [Finite ι]
+    (b : Module.Basis ι ℤ (PointModTorsion W)) : (neronTateGramMatrix W b).PosDef := by
+  let := Fintype.ofFinite ι
+  apply (isSymm_neronTateGramMatrix b).posDef_of_northcott
+  refine ⟨fun C ↦ ?_⟩
+  simp_rw [neronTateGramMatrix_dotProduct_mulVec]
+  exact (Northcott.finite_le (h := fun x : PointModTorsion W ↦
+    neronTatePairingModTorsion W x x) C).preimage b.equivFun.symm.injective.injOn
 
 end WeierstrassCurve.Affine

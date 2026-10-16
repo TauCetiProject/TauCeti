@@ -27,6 +27,8 @@ and avoid exposing the definitional equality of the objects being transported.
 * `TauCeti.eq_of_eqToHom_conjugate`: two morphisms with equal conjugates are equal.
 * `TauCeti.eqToHom_conjugate_vertical_square_of_horizontal_square`: commutativity with conjugated
   horizontal edges gives commutativity after moving the conjugations to the vertical edges.
+* `TauCeti.eqToHom_eq_iso_hom_map_eqToHom`: transport along an index equality is conjugate, through
+  identifications `Y i ≅ F.obj (X i)`, to the image under a functor `F` of the transport.
 * `CategoryTheory.Functor.map_heq`: a functor sends morphisms which agree up to equalities of their
   endpoints to morphisms which agree in the same way.
 -/
@@ -107,6 +109,16 @@ theorem eqToHom_conjugate_vertical_square_of_horizontal_square {C : Type*} [Cate
     (h : (eqToHom hA ≫ p ≫ eqToHom hB.symm) ≫ f = g ≫ eqToHom hE ≫ q ≫ eqToHom hD.symm) :
     p ≫ (eqToHom hB.symm ≫ f ≫ eqToHom hD) = (eqToHom hA.symm ≫ g ≫ eqToHom hE) ≫ q :=
   (eqToHom_conjugate_square hA hB hD hE p _ _ q).mp (by simpa using h)
+
+/-- **Transport along an index equality commutes with identifications through a functor**: given
+families `X` in `C` and `Y` in `D` with isomorphisms `e i : Y i ≅ F.obj (X i)`, the transport
+`Y i ⟶ Y j` along `i = j` is the conjugate by `e` of the image under `F` of the transport
+`X i ⟶ X j`. -/
+theorem eqToHom_eq_iso_hom_map_eqToHom {ι C D : Type*} [Category* C] [Category* D]
+    (F : C ⥤ D) {X : ι → C} {Y : ι → D} (e : ∀ i, Y i ≅ F.obj (X i)) {i j : ι} (h : i = j) :
+    eqToHom (congrArg Y h) = (e i).hom ≫ F.map (eqToHom (congrArg X h)) ≫ (e j).inv := by
+  subst h
+  simp
 
 end TauCeti
 
