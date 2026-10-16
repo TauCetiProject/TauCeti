@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
+public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
 public import Mathlib.Data.Matrix.Mul
 import TauCeti.Algebra.Ring.NegOnePow
 
@@ -167,6 +168,21 @@ theorem continuationMap_mem_twistedTotalGrading (hν : ∀ x y, ν x y ∈ 𝒜 
   have := op_smul_mem_of_mem_graded (hν x y) (hf x)
   convert this using 2
   ring
+
+omit [Algebra R A] in
+/-- The continuation map of a matrix with no entries strictly increasing the index preserves the
+index filtration. -/
+theorem continuationMap_mem_twistedIndexFiltration
+    (hν : ∀ x y, ind x < indQ y → ν x y = 0) {p : ℤ} {f : P → M}
+    (hf : f ∈ twistedIndexFiltration (R := R) ind p) :
+    continuationMap R M ν f ∈ twistedIndexFiltration (R := R) indQ p := by
+  rw [mem_twistedIndexFiltration_iff] at hf ⊢
+  intro y hy
+  rw [continuationMap_apply]
+  refine Finset.sum_eq_zero fun x _ ↦ ?_
+  rcases le_or_gt (ind x) p with hx | hx
+  · rw [hν x y (hx.trans_lt hy), MulOpposite.op_zero, zero_smul]
+  · rw [hf x hx, smul_zero]
 
 variable [Fintype Q] [IsScalarTower R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ]
   {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d} (mP : P → P → A) (mQ : Q → Q → A) (dM : M →ₗ[R] M)
