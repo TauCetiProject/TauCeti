@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Proper
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 public import Mathlib.RingTheory.ClassGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -66,7 +67,7 @@ theorem idealChangeFactor_mul_second (f : BinaryQuadraticForm ℤ) (D : ℤ)
   have hd : (f.b : ℚ) ^ 2 - 4 * (f.a : ℚ) * (f.c : ℚ) = (D : ℚ) := by
     exact_mod_cast hf
   have hdet : (γ 0 0 : ℚ) * (γ 1 1 : ℚ) - (γ 0 1 : ℚ) * (γ 1 0 : ℚ) = 1 := by
-    exact_mod_cast γ.fin_two_mul_sub_mul_eq_one
+    exact Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one γ
   ext <;> simp [idealChangeFactor, smul_b]
   · field_simp [haQ]
     nlinarith [congrArg (fun z : ℚ ↦ (γ 0 0 : ℚ) * (γ 1 0 : ℚ) * z) hd]
@@ -94,7 +95,7 @@ theorem norm_idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ)
       ring
     _ = _ := by
       rw [QuadraticAlgebra.norm_star, hnorm]
-      field_simp [haQ] <;> ring
+      field_simp [haQ]
 
 /-- The change factor has positive norm exactly when the old and new leading coefficients
 have positive product. -/
@@ -140,7 +141,7 @@ theorem fractionalIdeal_smul (f : BinaryQuadraticForm ℤ) (D : ℤ)
     obtain ⟨y, hy, rfl⟩ := FractionalIdeal.mem_singleton_mul.mp hz
     obtain ⟨m, n, rfl⟩ := (mem_fractionalIdeal_iff f D hf y).mp hy
     have hdet : (γ 0 0 : QuadraticAlgebra ℚ (D : ℚ) 0) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
-      exact_mod_cast γ.fin_two_mul_sub_mul_eq_one
+      exact Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one γ
     apply (mem_fractionalIdeal_iff _ _ _ _).mpr
     refine ⟨γ 0 0 * m - γ 0 1 * n, -(γ 1 0 * m) + γ 1 1 * n, ?_⟩
     simp only [zsmul_eq_mul, Int.cast_add, Int.cast_sub, Int.cast_mul, Int.cast_neg]
