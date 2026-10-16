@@ -45,6 +45,8 @@ finitely generated. So `p` is included explicitly, together with the instances d
 * `TauCeti.topologicalGeneratorRankNat_absoluteGaloisGroup`: `d(G_K) = [K : ℚ_p] + 2`.
 * `TauCeti.exists_finset_card_eq_finrank_add_two_absoluteGaloisGroup`: some finite subset of
   `G_K` with exactly `[K : ℚ_p] + 2` elements generates a dense subgroup of `G_K`.
+* `TauCeti.rank_absoluteGaloisGroup`: `[K : ℚ_p] + 2` is the least cardinality of such a
+  finite subset.
 
 ## References
 
@@ -120,5 +122,16 @@ theorem exists_finset_card_eq_finrank_add_two_absoluteGaloisGroup :
   have hG := isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K
   rw [← topologicalGeneratorRankNat_absoluteGaloisGroup p K hG]
   exact exists_finset_card_eq_topologicalGeneratorRankNat hG
+
+/-- **The generator rank of a local absolute Galois group as a least cardinality** (NSW
+(7.4.1)). For a finite extension `K` of `ℚ_p`, the least cardinality of a finite subset of
+`G_K` generating a dense subgroup is `[K : ℚ_p] + 2`. -/
+theorem rank_absoluteGaloisGroup :
+    IsLeast {m : ℕ | ∃ s : Finset (Field.absoluteGaloisGroup K), s.card = m ∧
+      (Subgroup.closure (s : Set (Field.absoluteGaloisGroup K))).topologicalClosure = ⊤}
+      (Module.finrank ℚ_[p] K + 2) := by
+  refine ⟨exists_finset_card_eq_finrank_add_two_absoluteGaloisGroup p K, ?_⟩
+  rintro m ⟨s, rfl, hs⟩
+  exact finrank_add_two_le_card_of_topologicalClosure_closure_eq_top_absoluteGaloisGroup p K s hs
 
 end TauCeti
