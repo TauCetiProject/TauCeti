@@ -110,12 +110,13 @@ theorem unblockedHomologyCommutationMap_unblockedHomologyClass
     G.unblockedHomologyCommutationMap R C (G.unblockedHomologyClass R z) =
       (G').unblockedHomologyClass R
         ⟨G.commutationMap R C z, G.commutationMap_mem_ker_unblockedDifferential R C z.2⟩ := by
-  rw [unblockedHomologyCommutationMap, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq,
-    CategoryTheory.Iso.toLinearEquiv_apply, CategoryTheory.Iso.toLinearEquiv_apply,
-    unblockedHomologyIso_hom_unblockedHomologyClass,
-    unblockedHomologyIso_hom_unblockedHomologyClass]
-  simp only [commutationQuotientMap, LinearMap.homologyπ_apply, Submodule.mapQ_apply]
+  simp only [unblockedHomologyCommutationMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [LinearEquiv.symm_apply_eq]
+  simp only [CategoryTheory.Iso.toLinearEquiv_apply (G.unblockedHomologyIso R),
+    CategoryTheory.Iso.toLinearEquiv_apply ((G').unblockedHomologyIso R),
+    G.unblockedHomologyIso_hom_unblockedHomologyClass R,
+    (G').unblockedHomologyIso_hom_unblockedHomologyClass R, commutationQuotientMap,
+    LinearMap.homologyπ_apply, Submodule.mapQ_apply]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (G.coe_commutationCyclesMap R C z))
 
 end GridDiagram
