@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.Algebra.Category.ModuleCat.ModTwo
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-import Mathlib.Algebra.Category.ModuleCat.AB
+import TauCeti.Algebra.Category.ModuleCat.AB
 import Mathlib.Algebra.Homology.HomologySequence
 
 /-!
@@ -52,11 +52,6 @@ theorem isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two (X : TopCat.{u
     TauCeti.IsUniquelyTwoDivisible
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) := by
-  -- Mathlib's module AB4 instance fixes the ring and module universes to be equal.
-  -- Here the ring ℤ is small while the modules and simplex sets can live in any universe.
-  let : AB4OfSize.{u} (ModuleCat.{u} ℤ) := ⟨fun I ↦
-    HasExactColimitsOfShape.domain_of_functor (Discrete I)
-      (forget₂ (ModuleCat.{u} ℤ) AddCommGrpCat.{u})⟩
   -- The coefficient sequence is exact before taking singular chains.
   let S := TauCeti.modTwoCoefficientSequence.{u}
   have hS : S.ShortExact := TauCeti.modTwoCoefficientSequence_shortExact
@@ -73,7 +68,7 @@ theorem isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two (X : TopCat.{u
   -- Additivity identifies the induced coefficient map with multiplication by two.
   have hmap : homologyMap T.f n = (2 : ℤ) • 𝟙 (T.X₁.homology n) := by
     have hf : T.f = 𝟙 T.X₁ + 𝟙 T.X₁ := by
-      simp [T, S, TauCeti.modTwoCoefficientSequence, two_smul]
+      simp [T, S, two_smul]
     rw [hf, homologyMap_add, homologyMap_id]
     exact (two_smul ℤ _).symm
   -- Transport the bundled module, including its group instance, to the chain-homology carrier.

@@ -42,6 +42,17 @@ abbrev modTwoCoefficientSequence : ShortComplex (ModuleCat.{u} ℤ) :=
     have htwo : (2 : ZMod 2) = 0 := by decide
     simp [q, Z, AddEquiv.ulift, Equiv.ulift, htwo])
 
+/-- The first coefficient map is multiplication by two. -/
+@[simp]
+theorem modTwoCoefficientSequence_f :
+    modTwoCoefficientSequence.{u}.f =
+      (2 : ℤ) • 𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)) := rfl
+
+/-- The second coefficient map reduces an integer modulo two. -/
+@[simp↓]
+theorem modTwoCoefficientSequence_g_apply (z : ℤ) :
+    modTwoCoefficientSequence.{u}.g (ULift.up z) = ULift.up (z : ZMod 2) := rfl
+
 /-- Multiplication by two and reduction modulo two form a short exact coefficient sequence,
 including after universe lifting. -/
 theorem modTwoCoefficientSequence_shortExact : modTwoCoefficientSequence.{u}.ShortExact := by
