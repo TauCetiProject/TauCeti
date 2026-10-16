@@ -25,7 +25,8 @@ open MeasureTheory Set
 namespace TauCeti.Green
 
 /-- Green on the standard triangle for fields `C¹` on any open neighborhood. The three
-Bochner curve integrals are the actual straight edges, with the diagonal signed negatively. -/
+Bochner curve integrals add the edges from `0` to `1` and from `1` to `I`, and subtract
+the edge from `0` to `I`. -/
 theorem green_standardTriangle {U : Set ℂ} (hU : IsOpen U) (hTU : standardTriangle ⊆ U)
     {P Q : ℂ → ℝ} (hP : ContDiffOn ℝ 1 P U) (hQ : ContDiffOn ℝ 1 Q U) :
     IntegrableOn (curl P Q) standardTriangle ∧
@@ -91,8 +92,7 @@ theorem green_standardTriangle {U : Set ℂ} (hU : IsOpen U) (hTU : standardTria
       · simp only [BoundaryChain.support_ofPath, Finset.mem_singleton] at h
         subst γ
         exact hsegments h₀ hI)
-  rw [show curl P Q = fun z ↦ fderiv ℝ Q z (1 : ℂ) - fderiv ℝ P z Complex.I from
-    rfl]
+  unfold curl
   simpa only [BoundaryChain.triangle_def, map_sub, map_add,
     BoundaryChain.ofPath_def, Finsupp.linearCombination_single, one_smul] using h
 

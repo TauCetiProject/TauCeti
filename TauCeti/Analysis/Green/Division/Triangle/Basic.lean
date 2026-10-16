@@ -33,6 +33,7 @@ def standardTriangle : Set ℂ := convexHull ℝ {0, 1, Complex.I}
 theorem standardTriangle_def : standardTriangle = convexHull ℝ {0, 1, Complex.I} := (rfl)
 
 /-- Barycentric coordinates give the three half-plane inequalities of the standard triangle. -/
+@[simp]
 theorem mem_standardTriangle {z : ℂ} : z ∈ standardTriangle ↔
     0 ≤ z.re ∧ 0 ≤ z.im ∧ z.re + z.im ≤ 1 := by
   let T : Set ℂ := {z | 0 ≤ z.re ∧ 0 ≤ z.im ∧ z.re + z.im ≤ 1}
@@ -93,10 +94,12 @@ theorem standardTriangleCell_a : standardTriangleCell.a = 0 := by
 theorem standardTriangleCell_b : standardTriangleCell.b = 1 := by
   simp [standardTriangleCell]
 
+@[simp]
 theorem standardTriangleCell_lowerFun {x : ℝ} (hx : x ∈ Icc (0 : ℝ) 1) :
     standardTriangleCell.lowerFun x = 0 := by
   simp [standardTriangleCell, hx]
 
+@[simp]
 theorem standardTriangleCell_upperFun {x : ℝ} (hx : x ∈ Icc (0 : ℝ) 1) :
     standardTriangleCell.upperFun x = 1 - x := by
   simp [standardTriangleCell, hx]
@@ -109,15 +112,23 @@ theorem region_standardTriangleCell (d : Coordinate) :
   · rw [standardTriangle_eq_verticalRegion]
     ext z
     simp only [region_re, mem_verticalRegion, standardTriangleCell_a, standardTriangleCell_b]
-    constructor <;> rintro ⟨hx, hy⟩ <;>
-      simpa only [standardTriangleCell_lowerFun hx, standardTriangleCell_upperFun hx] using
-        (show z.re ∈ Icc (0 : ℝ) 1 ∧ _ from ⟨hx, hy⟩)
+    constructor
+    · rintro ⟨hx, hy⟩
+      exact ⟨hx, by simpa only [standardTriangleCell_lowerFun hx,
+        standardTriangleCell_upperFun hx] using hy⟩
+    · rintro ⟨hx, hy⟩
+      exact ⟨hx, by simpa only [standardTriangleCell_lowerFun hx,
+        standardTriangleCell_upperFun hx] using hy⟩
   · rw [standardTriangle_eq_horizontalRegion]
     ext z
     simp only [region_im, mem_horizontalRegion, standardTriangleCell_a, standardTriangleCell_b]
-    constructor <;> rintro ⟨hx, hy⟩ <;>
-      simpa only [standardTriangleCell_lowerFun hx, standardTriangleCell_upperFun hx] using
-        (show z.im ∈ Icc (0 : ℝ) 1 ∧ _ from ⟨hx, hy⟩)
+    constructor
+    · rintro ⟨hx, hy⟩
+      exact ⟨hx, by simpa only [standardTriangleCell_lowerFun hx,
+        standardTriangleCell_upperFun hx] using hy⟩
+    · rintro ⟨hx, hy⟩
+      exact ⟨hx, by simpa only [standardTriangleCell_lowerFun hx,
+        standardTriangleCell_upperFun hx] using hy⟩
 
 private theorem graphPath_standardTriangleCell_lower (d : Coordinate) :
     BoundaryChain.ofPath (BoundaryChain.graphPath d standardTriangleCell.lowerFun 0 1

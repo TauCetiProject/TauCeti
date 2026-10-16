@@ -59,7 +59,7 @@ theorem curveIntegral_triangle_eq_zero_of_det_eq_zero {c p q : ℂ}
   have hzero : (0 : ℝ) ∈ T := by simp [T, subset_convexHull ℝ _ (by simp : c ∈ {c, p, q})]
   have hone : (1 : ℝ) ∈ T := by simp [T, subset_convexHull ℝ _ (by simp : p ∈ {c, p, q})]
   have hr : r ∈ T := by
-    change AffineMap.lineMap c p r ∈ convexHull ℝ {c, p, q}
+    simp only [T, Set.mem_preimage]
     rw [AffineMap.lineMap_apply_module', add_comm, ← hq]
     exact subset_convexHull ℝ _ (by simp)
   have hline : Continuous (AffineMap.lineMap c p : ℝ → ℂ) := by fun_prop

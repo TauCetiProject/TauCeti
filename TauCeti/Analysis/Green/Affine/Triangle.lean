@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.Affine.Basic
+import TauCeti.LinearAlgebra.Complex.Determinant
 public import TauCeti.Analysis.Green.Polygonal.Geometry
 public import TauCeti.Analysis.Green.Division.Triangle.Green
 
@@ -44,10 +45,7 @@ theorem triangleLinearMap_I (c p q : ℂ) : triangleLinearMap c p q Complex.I = 
 
 /-- The determinant of the triangle coordinate map is the existing oriented triangle determinant. -/
 theorem det_triangleLinearMap (c p q : ℂ) : (triangleLinearMap c p q).det = triangleDet c p q := by
-  rw [← LinearMap.det_toMatrix Complex.basisOneI, Matrix.det_fin_two]
-  simp only [LinearMap.toMatrix_apply, Complex.coe_basisOneI, Complex.coe_basisOneI_repr,
-    Matrix.cons_val_zero, Matrix.cons_val_one, triangleLinearMap_one, triangleLinearMap_I]
-  rw [triangleDet_def]
+  rw [LinearMap.det_complex, triangleLinearMap_one, triangleLinearMap_I, triangleDet_def]
   ring
 
 /-- Nonzero triangle determinant gives an invertible real continuous linear coordinate map. -/
@@ -109,12 +107,14 @@ theorem curveIntegral_triangle_affineMap (A : ℂ ≃L[ℝ] ℂ) (c p q r : ℂ)
     Finsupp.linearCombination_single, one_smul, curveIntegral_segment_affineMap]
 
 /-- Positive planar area on an ordered triangle scales by the absolute triangle determinant. -/
-theorem volume_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) :
+theorem volume_convexHull_triangle (c p q : ℂ) :
     volume (convexHull ℝ {c, p, q}) =
       ENNReal.ofReal |triangleDet c p q| * volume standardTriangle := by
-  rw [← affineMap_image_standardTriangle c p q hdet,
-    volume_affineMap_image _ _ isCompact_standardTriangle.measurableSet.nullMeasurableSet,
-    det_triangleCoordinates]
+  by_cases hdet : triangleDet c p q = 0
+  · rw [volume_convexHull_triangle_eq_zero hdet, hdet, abs_zero, ENNReal.ofReal_zero, zero_mul]
+  · rw [← affineMap_image_standardTriangle c p q hdet,
+      volume_affineMap_image _ _ isCompact_standardTriangle.measurableSet.nullMeasurableSet,
+      det_triangleCoordinates]
 
 /-- Area integration on an actual triangle agrees with the affine-coordinate integral. -/
 theorem integral_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) (f : ℂ → ℝ) :

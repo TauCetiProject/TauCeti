@@ -46,12 +46,14 @@ def affinePullbackQ (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (P Q : ℂ → ℝ) (z : �
   oneForm P Q (affineMap A c z) (A Complex.I)
 
 /-- The horizontal pullback coefficient in real coordinates. -/
+@[simp]
 theorem affinePullbackP_apply (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (P Q : ℂ → ℝ) (z : ℂ) :
     affinePullbackP A c P Q z =
       P (affineMap A c z) * (A 1).re + Q (affineMap A c z) * (A 1).im :=
   oneForm_apply P Q (affineMap A c z) (A 1)
 
 /-- The vertical pullback coefficient in real coordinates. -/
+@[simp]
 theorem affinePullbackQ_apply (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (P Q : ℂ → ℝ) (z : ℂ) :
     affinePullbackQ A c P Q z =
       P (affineMap A c z) * (A Complex.I).re + Q (affineMap A c z) * (A Complex.I).im :=
