@@ -10,71 +10,21 @@ public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.LinearAlgebra.Determinant
 
 /-!
-# Orientable manifolds
+# Orientation-preserving coordinate changes and oriented atlases
 
-A real manifold is orientable when it has an atlas all of whose coordinate changes have
-derivatives of positive determinant. This file builds that notion in the shape Mathlib uses for
-manifold structures: a `StructureGroupoid` of orientation-preserving coordinate changes on the model
-space, as anticipated by the module docstring of `Mathlib/Geometry/Manifold/ChartedSpace.lean`
-("an orientable manifold"), and a predicate on manifolds phrased through it.
+Within-range transition derivatives define the orientation-preserving groupoid and oriented
+subatlases, including at boundary and corner points. An oriented atlas supplies an orientation;
+the interval is orientable although its half-line charts have opposite transition signs.
 
-A map `f : H → H` is orientation preserving on `s` (`TauCeti.OrientationPreservingOn`) when, read
-in the model through `I`, it is differentiable within `range I` at every point of `I '' s`, with
-derivative of positive determinant. Reading the property in the model, as `contDiffPregroupoid`
-does, makes the definition apply verbatim to the half-space and quadrant models, so manifolds with
-boundary and with corners are covered by the same definition as boundaryless ones. These maps
-form a pregroupoid, whose groupoid is `TauCeti.orientationPreservingGroupoid I`.
+## Main declarations
 
-The atlas a manifold is equipped with need not be oriented even when the manifold is orientable:
-adjoining the chart `x ↦ -x` to the identity chart of `ℝ` gives a smooth atlas of `ℝ` that is not
-oriented. So the given atlas is not asked to be oriented. An *oriented atlas*
-(`TauCeti.IsOrientedAtlas`) is a family of charts from the maximal `C^n` atlas that covers the
-manifold and whose coordinate changes all lie in the orientation-preserving groupoid, and a
-manifold is `TauCeti.Orientable` when it has one. When the given atlas is itself oriented, that is
-when `HasGroupoid M (orientationPreservingGroupoid I)` holds, the manifold is orientable
-(`TauCeti.Orientable.of_hasGroupoid`).
-
-Determinants are only meaningful in finite dimension (`LinearMap.det` is `1` on an
-infinite-dimensional space), so the model vector space is assumed finite-dimensional throughout.
-The notion is the one of differentiable manifolds: an oriented atlas has differentiable coordinate
-changes, which is not the homological orientability of a topological manifold. So oriented atlases
-and orientability are only stated for `C^n` manifolds with `n ≠ 0` (`[NeZero n]`, equivalently
-`1 ≤ n`); the instances `NeZero ∞` and `NeZero ω` of `TauCeti/Geometry/Manifold/ContMDiff/Defs.lean`
-cover smooth and analytic manifolds.
-
-## Main definitions
-
-* `TauCeti.OrientationPreservingOn I f s`: `f` is differentiable with derivative of positive
-  determinant at every point of `s`, read in the model.
-* `TauCeti.orientationPreservingGroupoid I`: the groupoid of orientation-preserving open partial
-  homeomorphisms of `H`.
-* `TauCeti.IsOrientedAtlas I n A`: `A` is an oriented atlas of the `C^n` manifold `M`.
-* `TauCeti.Orientable I n M`: the `C^n` manifold `M` has an oriented atlas.
-
-## Main results
-
-* `TauCeti.orientationPreservingOn_iff` and `TauCeti.mem_orientationPreservingGroupoid_iff`: the
-  definitions unfolded.
-* `ContinuousLinearMap.orientationPreservingOn_iff`: a linear map of the model vector space
-  preserves orientation on a nonempty set exactly when its determinant is positive.
-* `TauCeti.orientationPreservingGroupoid_prod`: products of orientation-preserving maps preserve
-  orientation in the product model.
-* `ContinuousLinearEquiv.toHomeomorph_toOpenPartialHomeomorph_mem_orientationPreservingGroupoid_iff`
-  says that a linear automorphism of the model vector space preserves orientation exactly when its
-  determinant is positive.
-* `TauCeti.not_contDiffGroupoid_le_orientationPreservingGroupoid`: the reflection `x ↦ -x` of `ℝ` is
-  a smooth coordinate change that does not preserve orientation, so the `C^n` groupoid is not
-  contained in the orientation-preserving one.
-* `TauCeti.IsOrientedAtlas.det_fderivWithin_pos`: the coordinate changes of an oriented atlas have
-  derivatives of positive determinant.
-* `TauCeti.Orientable.of_hasGroupoid`, and the instances: the model space is orientable, and a
-  product of orientable manifolds is orientable.
+* `orientationPreservingGroupoid` and `IsOrientedAtlas`: positive transitions and oriented atlases.
+* `IsOrientedAtlas.det_fderivWithin_pos` and `IsOrientedAtlas.prod`: determinants and products.
+* `not_contDiffGroupoid_le_orientationPreservingGroupoid`: smooth changes can reverse orientation.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
-  Springer (2013), Chapter 15 (orientations of manifolds, and the orientation determined by a
-  consistently oriented atlas).
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition, Chapter 15.
 -/
 
 public section
@@ -319,7 +269,7 @@ theorem not_contDiffGroupoid_le_orientationPreservingGroupoid (n : ℕ∞ω) :
     (hle hmem)
   norm_num [A] at hdet
 
-/-! ### Oriented atlases and orientable manifolds -/
+/-! ### Oriented atlases -/
 
 section Atlas
 
@@ -338,13 +288,6 @@ structure IsOrientedAtlas [NeZero n] (A : Set (OpenPartialHomeomorph M H)) : Pro
   symm_trans_mem {e e' : OpenPartialHomeomorph M H} :
     e ∈ A → e' ∈ A → e.symm ≫ₕ e' ∈ orientationPreservingGroupoid I
 
-variable (M) in
-/-- A `C^n` manifold, for `n ≠ 0`, is *orientable* when it has an oriented atlas: charts
-compatible with its `C^n` structure, covering it, whose coordinate changes all have derivatives of
-positive determinant. The atlas the manifold is equipped with is not required to be oriented. -/
-class Orientable [NeZero n] : Prop where
-  exists_isOrientedAtlas : ∃ A : Set (OpenPartialHomeomorph M H), IsOrientedAtlas I n A
-
 variable {I n}
 
 /-- Two charts of an oriented atlas change coordinates with derivative of positive determinant at
@@ -362,20 +305,6 @@ theorem IsOrientedAtlas.det_fderivWithin_pos {A : Set (OpenPartialHomeomorph M H
   rw [hcoord, OpenPartialHomeomorph.extend_coe]
   exact (orientationPreservingOn_iff.1
     (mem_orientationPreservingGroupoid_iff.1 (hA.symm_trans_mem he he')).1 (e x) hmem).2
-
-variable (I n M) in
-/-- A `C^n` manifold whose atlas is itself oriented is orientable. -/
-theorem Orientable.of_hasGroupoid [IsManifold I n M]
-    [HasGroupoid M (orientationPreservingGroupoid I)] : Orientable I n M :=
-  ⟨⟨atlas H M, IsManifold.subset_maximalAtlas,
-    fun x => ⟨chartAt H x, chart_mem_atlas H x, mem_chart_source H x⟩,
-    fun he he' => HasGroupoid.compatible he he'⟩⟩
-
-/-- The model space is orientable: its single chart, the identity, is an oriented atlas. This
-covers `ℝⁿ` as well as the half-spaces and quadrants modelling manifolds with boundary and
-corners. -/
-instance : Orientable I n H :=
-  Orientable.of_hasGroupoid I n H
 
 section Prod
 
@@ -402,12 +331,6 @@ theorem IsOrientedAtlas.prod {A : Set (OpenPartialHomeomorph M H)}
     rw [OpenPartialHomeomorph.prod_symm_trans_prod]
     exact orientationPreservingGroupoid_prod (hA.symm_trans_mem he₁ he₂)
       (hA'.symm_trans_mem he₁' he₂')
-
-/-- A product of orientable manifolds is orientable. -/
-instance [Orientable I n M] [Orientable I' n M'] : Orientable (I.prod I') n (M × M') := by
-  obtain ⟨A, hA⟩ := Orientable.exists_isOrientedAtlas (I := I) (n := n) (M := M)
-  obtain ⟨A', hA'⟩ := Orientable.exists_isOrientedAtlas (I := I') (n := n) (M := M')
-  exact ⟨⟨_, hA.prod hA'⟩⟩
 
 end Prod
 

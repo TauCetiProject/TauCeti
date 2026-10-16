@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Pinning.Isomorphism
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Pinning.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Symplectic.RootSubgroup
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Symplectic.Torus
 
 /-!
 # The pinning of the integral type-C carrier
@@ -25,6 +26,8 @@ root spaces are those given by the explicit numbered root subgroups of the carri
 the pinning is the paired diagonal torus of `Sp_(2n+2)`; on group schemes,
 `TauCeti.SpStd.weightTorus_comp_symplecticIso_hom` identifies it with the weight torus of the
 carrier after the integral change from fundamental-weight to classical torus coordinates.
+`TauCeti.SpStd.pinning_torus_coordinateMap_comp_symplecticCharacters` computes the coordinate
+map stored in this pinning using the carrier weight-torus map.
 
 ## Main declarations
 
@@ -33,6 +36,8 @@ carrier after the integral change from fundamental-weight to classical torus coo
 * `TauCeti.SpStd.coordinateSymplecticIso_hom_comp_rootSubgroupCoordinateMap`: in coordinates,
   the numbered root subgroups of the carrier are the corresponding symplectic root subgroups.
 * `TauCeti.SpStd.pinning`: the pinning of the carrier over `ℤ`.
+* `TauCeti.SpStd.pinning_torus_coordinateMap_comp_symplecticCharacters`: the chosen torus
+  in the carrier's fundamental-weight coordinates.
 * `TauCeti.SpStd.pinningSimpleRootEquiv`: Bourbaki numbering of its simple roots.
 * `TauCeti.SpStd.pinning_rootVector`: its root vectors are the differentials of the numbered
   raising root subgroups.
@@ -91,6 +96,23 @@ theorem coordinateSymplecticIso_hom_comp_rootSubgroupCoordinateMap
     mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
     kostantRootSubgroupCoordinateMap_eq_comp_rootSubgroupCoordinateMap]
 
+/-- In coordinates, the carrier--symplectic isomorphism identifies the diagonal torus with the
+carrier weight torus after the integral change from classical to fundamental-weight characters. -/
+@[reassoc]
+theorem coordinateSymplecticIso_hom_comp_diagonalTorusCoordinateMap :
+    (coordinateSymplecticIso n).hom ≫ Symplectic.diagonalTorusCoordinateMap ≫
+        (DiagonalizableGroup.coordinateMap ℤ
+          (FGCommGrpCat.ofHom
+            (GeneralLinear.weightCharacterMap
+              (fun i : Fin (n + 1) => DynkinType.TypeC.weight (n + 1) i)))).hom =
+      kostantWeightTorusToralCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
+        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) := by
+  apply CommHopfAlgCat.mkQuotient_hom_ext
+  rw [mkQuotient_comp_coordinateSymplecticIso_hom_assoc,
+    mkQuotient_comp_kostantWeightTorusToralCoordinateMap,
+    diagonalTorusCoordinateMap_comp_symplecticCharacters]
+
 /-- The coordinate algebra of the carrier is smooth over `ℤ`. -/
 instance instSmoothCoordinateHopfAlgebra : Algebra.Smooth ℤ (coordinateHopfAlgebra n) :=
   Algebra.Smooth.of_equiv
@@ -108,6 +130,21 @@ theorem pinning_torus :
     (pinning n).torus =
       (Symplectic.splitMaximalTorus ℤ (n + 1)).comapOfIso (coordinateSymplecticIso n) := by
   rw [pinning, Pinning.comapOfIso_torus, Symplectic.standardPinning_torus]
+
+/-- The torus coordinate map stored in the carrier pinning is the carrier weight-torus map,
+after the integral change from classical to fundamental-weight characters. -/
+theorem pinning_torus_coordinateMap_comp_symplecticCharacters :
+    (pinning n).torus.coordinateMap ≫
+        (DiagonalizableGroup.coordinateMap ℤ
+          (FGCommGrpCat.ofHom
+            (GeneralLinear.weightCharacterMap
+              (fun i : Fin (n + 1) => DynkinType.TypeC.weight (n + 1) i)))).hom =
+      kostantWeightTorusToralCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
+        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) := by
+  rw [pinning_torus, SplitMaximalTorus.comapOfIso_coordinateMap,
+    Symplectic.splitMaximalTorus_coordinateMap, Category.assoc,
+    coordinateSymplecticIso_hom_comp_diagonalTorusCoordinateMap]
 
 /-- The Borel subgroup of the carrier pinning is the isotropic flag stabilizer of `Sp_(2n+2)`,
 pulled back to the carrier. -/

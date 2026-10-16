@@ -77,6 +77,9 @@ Boundedness is *not* preserved by an arbitrary continuous homomorphism: giving `
 discrete topology makes every subset bounded, while the identity to the `p`-adic topology is
 continuous and `ℚ_[p]` is not bounded in itself. `IsBounded.image` therefore carries the extra
 hypothesis that the morphism maps neighbourhoods of zero to neighbourhoods of zero.
+Between Huber rings a weaker hypothesis suffices: that the image of an ideal of definition
+generate an open ideal (`TauCeti.Huber.IsBounded.image_of_isOpen_map_extendedIdealOfDefinition`),
+which holds for every continuous homomorphism out of a Tate ring.
 
 ## References
 

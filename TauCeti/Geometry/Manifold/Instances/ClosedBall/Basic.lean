@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.LinearIsometry
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Basic
-public import TauCeti.Geometry.Manifold.Orientation
+public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
@@ -44,7 +44,7 @@ isometry, hence analytic, so the ball is an analytic manifold.
   `EuclideanHalfSpace n`.
 * `TauCeti.boundary_closedBall`: its manifold boundary is the unit sphere.
 * `TauCeti.isInteriorPoint_closedBall_iff`: its interior points are those of norm less than `1`.
-* `TauCeti.orientable_closedBall`: in dimension at least two it is orientable, the charts attached
+* `TauCeti.isOrientedAtlas_closedBall`: in dimension at least two, the charts attached
   to the isometries `φ` of one orientation class forming an oriented atlas.
 * `TauCeti.contMDiff_subtypeVal_closedBall`: the inclusion into `E` is analytic.
 * `TauCeti.contMDiffWithinAt_iff_comp_subtypeVal_closedBall` and its pointwise, setwise and
@@ -396,20 +396,20 @@ private theorem orientationPreservingOn_closedBallChart_symm_trans
   exact mul_pos_of_neg_of_neg (det_fderiv_inversion_neg hR h₂)
     (mul_neg_of_pos_of_neg h (det_fderiv_inversion_neg hR h₁))
 
-/-- In dimension at least two, the closed unit ball is orientable: the charts
-`closedBallChart φ` with `φ` in a fixed orientation class form an oriented atlas, since the
-coordinate change between two of them is a composite of two inversions, each reversing
-orientation, and a linear isometry of positive determinant.
-
-The hypothesis `2 ≤ n` cannot be dropped: a chart of `D¹ = [-1, 1]` at either endpoint takes values
-in the half-line `[0, ∞)`, so it is increasing at `-1` and decreasing at `1`, and no atlas of `D¹`
-modelled on the half-line has all its coordinate changes orientation preserving. -/
-theorem orientable_closedBall (hn : 2 ≤ n) {k : ℕ∞ω} [NeZero k] :
-    Orientable (𝓡∂ n) k (closedBall (0 : E) 1) := by
-  let φ₀ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) := closedBallIsometry
+/-- In dimension at least two, the closed-ball charts in a fixed orientation class form
+an oriented atlas. Their transitions are two inversions with a positive-determinant isometry. -/
+theorem isOrientedAtlas_closedBall {k : ℕ∞ω} [NeZero k]
+    (φ₀ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (hn : 2 ≤ n) :
+    IsOrientedAtlas (𝓡∂ n) k
+      (closedBallChart '' {φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) |
+        0 < (LinearEquiv.det (φ₀.symm.trans φ).toLinearEquiv :
+          ℝ)}) := by
   let S := {φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) |
     0 < (LinearEquiv.det (φ₀.symm.trans φ).toLinearEquiv : ℝ)}
-  refine ⟨⟨closedBallChart '' S, ?_, ?_, ?_⟩⟩
+  -- Name the fixed orientation class in the atlas appearing in the conclusion.
+  change IsOrientedAtlas (𝓡∂ n) k (closedBallChart '' S)
+  refine ⟨?_, ?_, ?_⟩
   · rintro _ ⟨φ, -, rfl⟩
     exact IsManifold.maximalAtlas_subset_of_le le_top
       (IsManifold.subset_maximalAtlas (atlas_closedBall (E := E) (n := n) ▸ mem_range_self φ))
