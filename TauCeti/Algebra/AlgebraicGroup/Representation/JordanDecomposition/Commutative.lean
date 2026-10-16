@@ -144,8 +144,9 @@ theorem iSup_iInf_eigenspace_semisimplePart_eq_top
     intro h x hx
     simp only [E, Submodule.mem_iInf, Module.End.mem_eigenspace_iff] at hx ⊢
     intro g
-    rw [← Module.End.mul_apply, ← map_mul, mul_comm, map_mul, Module.End.mul_apply, hx g,
-      map_smul]
+    calc ρ (semisimplePart k H k g) (ρ h x) = ρ h (ρ (semisimplePart k H k g) x) :=
+          LinearMap.congr_fun ((Commute.all _ h).map ρ).eq x
+      _ = χ g • ρ h x := by rw [hx g, map_smul]
   -- A joint eigenvector of all points in `E` spans a point-stable line, hence is a weight vector.
   have : Nontrivial E := Submodule.nontrivial_iff_ne_bot.mpr hne
   obtain ⟨μ, w, hw, hwmem⟩ := exists_jointEigenvector_of_pairwise_commute_of_isAlgClosed
@@ -280,14 +281,17 @@ noncomputable def semisimplePartBialgHom : H →ₐc[k] H :=
           Algebra.TensorProduct.lift (g.ofConv.comp (semisimplePartAlgHom k H))
             (h.ofConv.comp (semisimplePartAlgHom k H)) (fun _ _ ↦ .all _ _) :=
         Algebra.TensorProduct.ext (by ext; simp [g]) (by ext; simp [h])
-      simp only [AlgHom.comp_apply]
-      rw [← AlgHom.comp_apply φ, hσ, Bialgebra.comulAlgHom_apply, Bialgebra.comulAlgHom_apply]
-      have hl := AlgHom.convMul_apply (toConv (g.ofConv.comp (semisimplePartAlgHom k H)))
-        (toConv (h.ofConv.comp (semisimplePartAlgHom k H))) f
-      have hr := AlgHom.convMul_apply g h (semisimplePartAlgHom k H f)
-      rw [← hl, toConv_comp_semisimplePartAlgHom, toConv_comp_semisimplePartAlgHom,
-        ← semisimplePart_mul_of_commute k H k (Commute.all g h), semisimplePartAlgHom_apply,
-        ← apply_semisimplePartFun, ← semisimplePartAlgHom_apply, hr, ← hφ])
+      -- Evaluate both sides at `φ = (g, h)`: each is the value of `(g * h)_s = g_s * h_s` at `f`.
+      have hl : φ (Algebra.TensorProduct.map (semisimplePartAlgHom k H)
+          (semisimplePartAlgHom k H) (Coalgebra.comul (R := k) f)) =
+          (semisimplePart k H k (g * h)).ofConv f := by
+        rw [semisimplePart_mul_of_commute k H k (Commute.all g h),
+          ← toConv_comp_semisimplePartAlgHom, ← toConv_comp_semisimplePartAlgHom,
+          AlgHom.convMul_apply, ← hσ, AlgHom.comp_apply]
+      have hr : φ (Coalgebra.comul (R := k) (semisimplePartAlgHom k H f)) =
+          (semisimplePart k H k (g * h)).ofConv f := by
+        rw [semisimplePartAlgHom_apply, ← apply_semisimplePartFun, AlgHom.convMul_apply, ← hφ]
+      simpa [Bialgebra.comulAlgHom_apply] using hl.trans hr.symm)
 
 /-- **The semisimple-part endomorphism represents `g ↦ g_s`.** -/
 @[simp]
@@ -338,13 +342,10 @@ theorem semisimplePartBialgHom_apply_of_mem_groupLikeSetSpan {f : H}
     (hf : f ∈ Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ) :
     semisimplePartBialgHom k H f = f := by
   rw [Subcoalgebra.mem_groupLikeSetSpan] at hf
-  induction hf using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨c, -, rfl⟩ := hx
-    exact semisimplePartBialgHom_apply_of_isGroupLikeElem (k := k) c.isGroupLikeElem_val
-  | zero => exact map_zero _
-  | add x y _ _ hx hy => rw [map_add, hx, hy]
-  | smul a x _ hx => rw [map_smul, hx]
+  refine LinearMap.eqOn_span (f := (semisimplePartBialgHom k H : H →ₗ[k] H)) (g := LinearMap.id)
+    ?_ hf
+  rintro _ ⟨c, -, rfl⟩
+  exact semisimplePartBialgHom_apply_of_isGroupLikeElem (k := k) c.isGroupLikeElem_val
 
 /-- **The semisimple-part endomorphism projects onto the characters.** Its range is the span of
 the group-like elements, the coordinate ring of the diagonalizable quotient. -/
