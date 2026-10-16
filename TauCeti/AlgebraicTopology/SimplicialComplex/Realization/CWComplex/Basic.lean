@@ -19,7 +19,9 @@ whole face.
 
 A linear order on the vertex type chooses one enumeration of each face.  This avoids duplicate
 cells and fixes the orientations of the characteristic maps.  The resulting open and closed
-cells themselves depend only on the underlying faces.
+cells themselves depend only on the underlying faces.  The equivalence `realizationCellEquiv`
+identifies the cells of `realizationCWComplex K` with `RealizationCell K`, through which its open
+cells, closed cells, and cell frontiers are described by barycentric supports.
 
 ## References
 
@@ -47,21 +49,13 @@ variable {K : AbstractSimplicialComplex ι} {n : ℕ}
 
 /-- The increasing enumeration of the vertices of a simplicial cell. -/
 def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
-  (c.1.1.orderIsoOfFin c.2).toEquiv.toEmbedding.trans
-    (Function.Embedding.subtype (· ∈ c.1.1))
+  (c.1.1.orderEmbOfFin c.2).toEmbedding
 
 /-- The increasing enumeration has the cell's face as its image. -/
 @[simp]
 theorem image_vertexEmbedding (c : RealizationCell K n) :
-    Finset.univ.image c.vertexEmbedding = c.1.1 := by
-  ext v
-  simp only [Finset.mem_image, Finset.mem_univ, true_and, vertexEmbedding]
-  constructor
-  · rintro ⟨i, rfl⟩
-    exact ((c.1.1.orderIsoOfFin c.2) i).2
-  · intro hv
-    exact ⟨(c.1.1.orderIsoOfFin c.2).symm ⟨v, hv⟩,
-      congrArg Subtype.val ((c.1.1.orderIsoOfFin c.2).apply_symm_apply ⟨v, hv⟩)⟩
+    Finset.univ.image c.vertexEmbedding = c.1.1 :=
+  Finset.image_orderEmbOfFin_univ c.1.1 c.2
 
 /-- The characteristic map of a simplicial cell, using its increasing vertex enumeration. -/
 def characteristicMap (c : RealizationCell K n) : PartialEquiv (Fin n → ℝ) (Realization K) :=
@@ -129,8 +123,7 @@ private theorem pairwiseDisjoint_characteristicMap (K : AbstractSimplicialComple
     (Set.univ : Set (Σ n, RealizationCell K n)).PairwiseDisjoint
       (fun c => c.2.characteristicMap '' ball 0 1) := by
   rintro ⟨n, c⟩ - ⟨m, d⟩ - hne
-  change Disjoint (c.characteristicMap '' ball 0 1) (d.characteristicMap '' ball 0 1)
-  rw [RealizationCell.image_characteristicMap_ball,
+  rw [Function.onFun_apply, RealizationCell.image_characteristicMap_ball,
     RealizationCell.image_characteristicMap_ball, Set.disjoint_left]
   intro x hxc hxd
   have hfaces : c.1.1 = d.1.1 := hxc.symm.trans hxd
@@ -217,5 +210,45 @@ def realizationCWComplex (K : AbstractSimplicialComplex ι) :
     refine mem_iUnion.mpr ⟨n, mem_iUnion.mpr ⟨c, ?_⟩⟩
     rw [RealizationCell.image_characteristicMap_closedBall]
     exact Finset.Subset.rfl
+
+/-- The `n`-cells of `realizationCWComplex K` are the faces of `K` with `n + 1` vertices. -/
+def realizationCellEquiv (K : AbstractSimplicialComplex ι) (n : ℕ) :
+    (letI := realizationCWComplex K; RelCWComplex.cell (univ : Set (Realization K)) n) ≃
+      RealizationCell K n :=
+  Equiv.refl _
+
+/-- The characteristic maps of `realizationCWComplex K` are those of its simplicial cells. -/
+theorem map_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι) {n : ℕ}
+    (c : RealizationCell K n) :
+    letI := realizationCWComplex K
+    RelCWComplex.map n ((realizationCellEquiv K n).symm c) = c.characteristicMap :=
+  (rfl)
+
+/-- The open cells of `realizationCWComplex K` are the points whose support is the cell's face. -/
+@[simp]
+theorem openCell_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι) {n : ℕ}
+    (c : RealizationCell K n) :
+    letI := realizationCWComplex K
+    RelCWComplex.openCell n ((realizationCellEquiv K n).symm c) =
+      {x : Realization K | x.1.support = c.1.1} :=
+  c.image_characteristicMap_ball
+
+/-- The closed cells of `realizationCWComplex K` are the closed simplices of the cell's face. -/
+@[simp]
+theorem closedCell_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι) {n : ℕ}
+    (c : RealizationCell K n) :
+    letI := realizationCWComplex K
+    RelCWComplex.closedCell n ((realizationCellEquiv K n).symm c) =
+      {x : Realization K | x.1.support ⊆ c.1.1} :=
+  c.image_characteristicMap_closedBall
+
+/-- The cell frontiers of `realizationCWComplex K` are the proper subfaces of the cell's face. -/
+@[simp]
+theorem cellFrontier_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι) {n : ℕ}
+    (c : RealizationCell K n) :
+    letI := realizationCWComplex K
+    RelCWComplex.cellFrontier n ((realizationCellEquiv K n).symm c) =
+      {x : Realization K | x.1.support ⊂ c.1.1} :=
+  c.image_characteristicMap_sphere
 
 end AbstractSimplicialComplex
