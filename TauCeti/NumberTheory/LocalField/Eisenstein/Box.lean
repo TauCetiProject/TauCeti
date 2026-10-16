@@ -24,10 +24,10 @@ variables and root-counting arguments.
 
 ## Main results
 
-* `TauCeti.le_addVal_sum_eisenstein_powerBasis_iff` identifies every valuation ball with its
-  coordinate box.
-* `TauCeti.natDegree_mul_le_addVal_sum_eisenstein_powerBasis_iff` gives the cube specialization
-  at radii divisible by the degree.
+* `TauCeti.Polynomial.le_addVal_sum_eisenstein_powerBasis_iff` identifies every valuation ball
+  with its coordinate box.
+* `TauCeti.Polynomial.natDegree_mul_le_addVal_sum_eisenstein_powerBasis_iff` gives the cube
+  specialization at radii divisible by the degree.
 
 ## References
 
@@ -44,6 +44,8 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
+namespace Polynomial
 
 /-- At an Eisenstein generator, the power-basis coefficient vectors representing elements of a
 valuation ball form the box whose `i`-th factor is the `ceil((r - i) / deg f)`-th power of the
@@ -85,7 +87,8 @@ theorem le_addVal_sum_eisenstein_powerBasis_iff
           ENat.natCast_le_natCast]
         have hsub : r - (i : ℕ) ≤ f.natDegree * v :=
           (ceilDiv_le_iff_le_mul hdeg).mp hi
-        exact_mod_cast (show r ≤ f.natDegree * v + (i : ℕ) by omega)
+        have hri : r ≤ f.natDegree * v + (i : ℕ) := by omega
+        exact_mod_cast hri
 
 /-- At a radius divisible by the degree, the power-basis coordinate box is the cube in which
 every coefficient belongs to the same power of the base maximal ideal. -/
@@ -114,5 +117,7 @@ theorem natDegree_mul_le_addVal_sum_eisenstein_powerBasis_iff
             nlinarith [i.isLt]
           omega
   simp only [hceil]
+
+end Polynomial
 
 end TauCeti
