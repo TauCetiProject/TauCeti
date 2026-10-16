@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Ideal.TensorProduct
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 /-!
@@ -15,6 +16,9 @@ Flat extension of scalars preserves the annihilator of a finite module. The fini
 generation hypothesis permits testing annihilation on a finite family, whose tensor
 product commutes with its product of targets. The cyclic statement applies to the
 element `1 ⊗ₜ m`, without any finiteness hypothesis on the ambient module.
+
+Together with right exactness of scalar extension, the finite-module formula also shows that
+flat scalar extension preserves the annihilator of a cokernel.
 
 These formulas identify the scheme theoretic support of a finite module after flat
 base change. The main result is Stacks Project, Lemma 10.40.4,
@@ -79,5 +83,23 @@ theorem element_annihilator_flat_baseChange [Module.Flat R S] (m : M) :
     Ideal.torsionOf S (S ⊗[R] M) ((1 : S) ⊗ₜ[R] m) =
       (Ideal.torsionOf R M m).map (algebraMap R S) := by
   simpa using annihilator_flat_baseChange_generators (S := S) (fun _ : Unit ↦ m)
+
+section Cokernel
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Flat scalar extension preserves the annihilator of the cokernel of a map with finite
+codomain. The domain need not be finite. -/
+@[simp]
+theorem cokernel_annihilator_flat_baseChange [Module.Flat R S] [Module.Finite R N]
+    (f : M →ₗ[R] N) :
+    Module.annihilator S ((S ⊗[R] N) ⧸ LinearMap.range (f.baseChange S)) =
+      (Module.annihilator R (N ⧸ LinearMap.range f)).map (algebraMap R S) := by
+  calc
+    _ = Module.annihilator S (S ⊗[R] (N ⧸ LinearMap.range f)) :=
+      (f.cokernelBaseChangeEquiv (S := S)).annihilator_eq.symm
+    _ = _ := annihilator_flat_baseChange
+
+end Cokernel
 
 end TauCeti
