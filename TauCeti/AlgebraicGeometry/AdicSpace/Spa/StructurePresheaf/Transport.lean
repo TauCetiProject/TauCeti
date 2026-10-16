@@ -41,6 +41,10 @@ The consequences for `TauCeti.Huber.IsSheafyForEveryPresentation` are in
 * `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoPushforward` : the presentation-limit
   presheaf of `(A, A⁺)` as the pushforward of that of `(B, B⁺)`, along mutually inverse continuous
   ring homomorphisms.
+* `TauCeti.ValuationSpectrum.spaCompletionTopHom` : the homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)`
+  as a morphism of `TopCat`.
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafCompletionIso` : the presentation-limit
+  presheaf of `(A, A⁺)` as the pushforward of that of `(Â, Â⁺)` along `spaCompletionTopHom`.
 * `TauCeti.ValuationSpectrum.spaComapTopIso` : the homeomorphism of adic spectra induced by
   mutually inverse continuous ring homomorphisms.
 
@@ -447,7 +451,7 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTop
 variable (Aplus) in
 /-- The homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)` of Wedhorn's Proposition 7.48, as a morphism of
 `TopCat`. -/
-private noncomputable abbrev spaCompletionTopHom :
+noncomputable abbrev spaCompletionTopHom :
     TopCat.of ↥(spa (completionPlus Aplus)) ⟶ TopCat.of ↥(spa Aplus) :=
   (TopCat.isoOfHomeo (spaCompletionHomeomorph Aplus)).hom
 
@@ -738,13 +742,18 @@ private theorem presentationLimitMap_comp_presentationLimitDescendHom
       toCompletionLocTopHom_comp_homOfRationalSubsetSubset]
 
 variable (P P') in
-/-- The presentation-limit presheaf of `(A, A⁺)` is the pushforward of that of `(Â, Â⁺)` along the
-homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)`. -/
-private noncomputable def presentationLimitPresheafCompletionIso
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-    (hAplus' : ∀ ⦃a⦄, a ∈ completionPlus Aplus → IsPowerBounded a) :
+/-- **The structure presheaf is invariant under completion.** If `A⁺` consists of power-bounded
+elements and `Â⁺` is the closure of its image in the completion `Â`, the presentation-limit
+presheaf of `(A, A⁺)` for a pair of definition `P` of `A` is the pushforward of that of `(Â, Â⁺)`,
+for a pair of definition `P'` of `Â`, along the homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)`
+(`spaCompletionTopHom`). -/
+noncomputable def presentationLimitPresheafCompletionIso
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
     presentationLimitPresheaf P Aplus ≅ (TopCat.Presheaf.pushforward _
       (spaCompletionTopHom Aplus)).obj (presentationLimitPresheaf P' (completionPlus Aplus)) :=
+  have hAplus' : ∀ ⦃a⦄, a ∈ completionPlus Aplus → IsPowerBounded a := fun _ ha ↦
+    mem_powerBoundedSubring.mp <| topologicalClosure_map_coeRingHom_le_powerBoundedSubring
+      (fun _ hb ↦ mem_powerBoundedSubring.mpr (hAplus hb)) (completionPlus_def Aplus ▸ ha)
   NatIso.ofComponents
     (fun W ↦ eqToIso (presentationLimitPresheaf_obj P Aplus W) ≪≫
       Iso.mk (presentationLimitDescendHom P' hAplus hAplus' W.unop)
@@ -767,16 +776,13 @@ theorem isSheaf_presentationLimitPresheaf_completionPlus_iff
     Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (completionPlus Aplus)))
         (presentationLimitPresheaf P' (completionPlus Aplus)) ↔
       Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
-        (presentationLimitPresheaf P Aplus) := by
-  have hAplus' : ∀ ⦃a⦄, a ∈ completionPlus Aplus → IsPowerBounded a := fun a ha ↦
-    mem_powerBoundedSubring.mp <| topologicalClosure_map_coeRingHom_le_powerBoundedSubring
-      (fun b hb ↦ mem_powerBoundedSubring.mpr (hAplus hb)) (completionPlus_def Aplus ▸ ha)
-  exact (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
+        (presentationLimitPresheaf P Aplus) :=
+  (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
     (Y := TopCat.of ↥(spa (completionPlus Aplus)))
     (F := presentationLimitPresheaf P Aplus)
     (G := presentationLimitPresheaf P' (completionPlus Aplus))
     (TopCat.isoOfHomeo (spaCompletionHomeomorph Aplus))
-    (presentationLimitPresheafCompletionIso P P' hAplus hAplus')).symm
+    (presentationLimitPresheafCompletionIso P P' hAplus)).symm
 
 end TauCeti.ValuationSpectrum
 
