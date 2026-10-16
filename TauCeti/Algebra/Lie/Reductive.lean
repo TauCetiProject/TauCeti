@@ -11,12 +11,16 @@ public import Mathlib.Algebra.Lie.CartanCriterion
 -- `LieIdeal.eq_bot_of_le_of_isSolvable`, which proves it.
 public import TauCeti.Algebra.Lie.Solvable.Basic
 public import TauCeti.Algebra.Lie.Weights.Central
+-- `TauCeti.Algebra.Lie.LeviDecomposition.Abelian` supplies Weyl's theorem in the form used for the
+-- structure theorem: a central ideal with Killing quotient has a complementary ideal. Through it
+-- comes `LieIdeal.quotientEquivOfIsCompl`, which identifies the derived ideal with `L ⧸ Z(L)`.
+public import TauCeti.Algebra.Lie.LeviDecomposition.Abelian
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import Mathlib.Algebra.Lie.Normalizer
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
-# Reductive Lie algebras: the centre and the derived ideal span, and a converse criterion
+# Reductive Lie algebras: the structure theorem
 
 A finite-dimensional Lie algebra `L` over a field of characteristic zero is **reductive** when its
 solvable radical is its centre, Mathlib's `LieAlgebra.HasCentralRadical`. This file proves that a
@@ -44,6 +48,12 @@ the two combine into a direct sum
 
 (`TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`), which therefore
 carries those hypotheses even though the criterion itself does not.
+
+Conversely, a reductive Lie algebra is that direct sum, and its derived ideal is semisimple
+(`TauCeti.isCompl_center_derivedSeries` and `TauCeti.isKilling_derivedSeries`). Together with the
+criterion this is the **structure theorem for reductive Lie algebras**
+(`TauCeti.hasCentralRadical_iff_isCompl_center_derivedSeries`): in characteristic zero and finite
+dimension, `L` is reductive exactly when `L = Z(L) ⊕ ⁅L, L⁆` with `⁅L, L⁆` semisimple.
 
 ## The argument for the criterion
 
@@ -78,6 +88,16 @@ formula `LinearMap.BilinForm.finrank_add_finrank_orthogonal` makes that precise.
 `center K L ⊔ ⁅L, L⁆`, whose orthogonal complement is the centre by the two computations above and
 which contains the centre for trivial reasons, it forces that ideal to be everything.
 
+## The argument for the direct sum
+
+The centre is the solvable radical, so `L ⧸ Z(L)` has trivial radical and is Killing by Cartan's
+criterion (`TauCeti.isKilling_quotient_center`). Weyl's theorem for the adjoint action of
+`L ⧸ Z(L)` then complements the centre by an ideal `J` (`LieIdeal.exists_isCompl_of_le_center`).
+A bracket `⁅x, z + j⁆` with `z` central and `j ∈ J` equals `⁅x, j⁆ ∈ J`, so `⁅L, L⁆ ≤ J` and the
+derived ideal meets the centre trivially. This is the one place where complete reducibility enters;
+the elementary Killing-form argument above gives only the span. Being a complement of the centre,
+the derived ideal is isomorphic to `L ⧸ Z(L)`, hence Killing and semisimple.
+
 ## Main results
 
 * `TauCeti.normalizer_center_eq_center`: over a reductive Lie algebra the centre is its own
@@ -106,6 +126,12 @@ which contains the centre for trivial reasons, it forces that ideal to be everyt
 * `TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`: **such a Lie algebra
   is the direct sum of its centre and its derived ideal**, over a field of characteristic zero and
   in finite dimension.
+* `TauCeti.center_inf_derivedSeries_eq_bot` and `TauCeti.isCompl_center_derivedSeries`: **a
+  reductive Lie algebra is the direct sum of its centre and its derived ideal.**
+* `TauCeti.isKilling_quotient_center` and `TauCeti.isKilling_derivedSeries`: the quotient by the
+  centre and the derived ideal of a reductive Lie algebra are Killing, hence semisimple.
+* `TauCeti.hasCentralRadical_iff_isCompl_center_derivedSeries`: **the structure theorem**, `L` is
+  reductive if and only if `L = Z(L) ⊕ ⁅L, L⁆` with `⁅L, L⁆` semisimple.
 
 ## References
 
@@ -381,15 +407,80 @@ theorem isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries :
   exact ⟨disjoint_iff.mpr (inf_derivedSeries_eq_bot_of_isSolvable K L _),
     codisjoint_iff.mpr (sup_center_derivedSeries_eq_top K L)⟩
 
--- A semisimple derived ideal is the case of the two statements above that the roadmap target
--- `hasCentralRadical_iff_isCompl_center_derivedSeries` asks for: `LieAlgebra.IsSemisimple`
--- implies `LieAlgebra.HasTrivialRadical`, so no separate argument is needed.
-example [LieAlgebra.IsSemisimple K (derivedSeries K L 1)] :
-    LieAlgebra.HasCentralRadical K L ∧ IsCompl (LieAlgebra.center K L) (derivedSeries K L 1) :=
-  ⟨hasCentralRadical_of_hasTrivialRadical_derivedSeries K L,
-    isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries K L⟩
-
 end Complement
+
+/-! ### The structure theorem -/
+
+section Structure
+
+variable (K : Type u) (L : Type v) [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L]
+
+section Reductive
+
+variable [LieAlgebra.HasCentralRadical K L]
+
+variable {K L} in
+/-- **The quotient of a reductive Lie algebra by its centre has nondegenerate Killing form.** The
+centre is the solvable radical, the quotient by the radical has trivial radical
+(`LieAlgebra.hasTrivialRadical_quotient_radical`), and Cartan's criterion
+`LieAlgebra.HasTrivialRadical.instIsKilling` makes it Killing. -/
+instance isKilling_quotient_center : LieAlgebra.IsKilling K (L ⧸ LieAlgebra.center K L) := by
+  rw [← LieAlgebra.radical_eq_center]
+  infer_instance
+
+/-- **The centre of a reductive Lie algebra meets its derived ideal trivially.**
+
+Weyl's theorem complements the centre by an ideal `J` (`LieIdeal.exists_isCompl_of_le_center`,
+which applies because `L ⧸ Z(L)` is Killing). A bracket `⁅x, z + j⁆` with `z` central and `j ∈ J`
+is `⁅x, j⁆ ∈ J`, so the derived ideal lies in `J`, which meets the centre only in `⊥`. -/
+theorem center_inf_derivedSeries_eq_bot :
+    LieAlgebra.center K L ⊓ derivedSeries K L 1 = ⊥ := by
+  obtain ⟨J, hJ⟩ := (LieAlgebra.center K L).exists_isCompl_of_le_center le_rfl
+  have hD : derivedSeries K L 1 ≤ J := by
+    rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero, ← hJ.sup_eq_top,
+      LieSubmodule.lie_sup, LieModule.ideal_oper_maxTrivSubmodule_eq_bot, bot_sup_eq]
+    exact LieSubmodule.lie_le_right _ _
+  exact le_bot_iff.1 ((inf_le_inf_left _ hD).trans hJ.inf_eq_bot.le)
+
+/-- **A reductive Lie algebra is the direct sum of its centre and its derived ideal**:
+`L = Z(L) ⊕ ⁅L, L⁆`. The two span by `TauCeti.sup_center_derivedSeries_eq_top` and meet trivially
+by `TauCeti.center_inf_derivedSeries_eq_bot`. -/
+theorem isCompl_center_derivedSeries :
+    IsCompl (LieAlgebra.center K L) (derivedSeries K L 1) :=
+  ⟨disjoint_iff.2 (center_inf_derivedSeries_eq_bot K L),
+    codisjoint_iff.2 (sup_center_derivedSeries_eq_top K L)⟩
+
+variable {K L} in
+/-- **The derived ideal of a reductive Lie algebra has nondegenerate Killing form**, and is
+therefore semisimple (`LieAlgebra.IsKilling.instSemisimple`). Being a complement of the centre, it
+is isomorphic to `L ⧸ Z(L)` (`LieIdeal.quotientEquivOfIsCompl`), which is Killing by
+`TauCeti.isKilling_quotient_center`. -/
+instance isKilling_derivedSeries : LieAlgebra.IsKilling K (derivedSeries K L 1) :=
+  LieAlgebra.isKilling_of_equiv <|
+    (LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <| by
+      rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
+      exact isCompl_center_derivedSeries K L
+
+end Reductive
+
+/-- **The structure theorem for reductive Lie algebras.** Over a field of characteristic zero, a
+finite-dimensional Lie algebra is reductive (its solvable radical is its centre) if and only if it
+is the direct sum of its centre and its derived ideal, with the derived ideal semisimple.
+
+The reverse implication only uses the second conjunct: semisimplicity of the derived ideal alone
+implies reductivity, through `TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`, and
+hence the first conjunct. The first conjunct alone is not enough: the semidirect product
+`sl₂ ⋉ K²` with the standard module has trivial centre and is its own derived ideal, so it
+satisfies the first conjunct without being reductive. -/
+theorem hasCentralRadical_iff_isCompl_center_derivedSeries :
+    LieAlgebra.HasCentralRadical K L ↔
+      IsCompl (LieAlgebra.center K L) (derivedSeries K L 1) ∧
+        LieAlgebra.IsSemisimple K (derivedSeries K L 1) :=
+  ⟨fun _ ↦ ⟨isCompl_center_derivedSeries K L, inferInstance⟩,
+    fun ⟨_, _⟩ ↦ hasCentralRadical_of_hasTrivialRadical_derivedSeries K L⟩
+
+end Structure
 
 /-! ### Modules over a reductive Lie algebra -/
 
