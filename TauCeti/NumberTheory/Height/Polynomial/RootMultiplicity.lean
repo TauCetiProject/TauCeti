@@ -18,10 +18,10 @@ inequality bounds the product of the heights of the factors by the height of `P`
 `m * h(β) ≤ h(P) + [K : ℚ] * deg P * log 2`
 
 for relative logarithmic heights. Thus a polynomial of small height cannot vanish to high order
-at a point of large height. In terms of indices: if `r ≥ deg P` and `r * h(β)` is at least
-`s⁻¹ * (h(P) + [K : ℚ] * r * log 2)` for some `s > 0`, then the index of `P` at `β` with weight
-`r` is at most `s`. This is Roth's lemma in one variable, the base case of the inductive bound on
-indices of auxiliary polynomials in the proof of Roth's theorem.
+at a point of large height. In terms of indices: if `P ≠ 0`, `r ≥ deg P` and `r * h(β)` is at
+least `s⁻¹ * (h(P) + [K : ℚ] * r * log 2)` for some `s > 0`, then the index of `P` at `β` with
+weight `r` is at most `s`. This is Roth's lemma in one variable, the base case of the inductive
+bound on indices of auxiliary polynomials in the proof of Roth's theorem.
 
 ## Main results
 
@@ -33,6 +33,9 @@ indices of auxiliary polynomials in the proof of Roth's theorem.
 
 * L. Pottmeyer, [*Diophantine Approximation*](https://esaga.uni-due.de/f/lukas.pottmeyer/DioApp.pdf)
   (2022), §3.4, Lemma 3.4.3.
+* The statement of the corresponding lemma in Ralf Stephan's
+  `DiophantineApproximation/RothBaseCase.lean` in `rwst/Subspace-Theorems`, snapshot
+  `c26d909dc48cf7fe` (Apache 2.0), was consulted for reference; the proof here is independent.
 -/
 
 public section
