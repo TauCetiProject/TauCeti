@@ -22,8 +22,6 @@ weakly contractible.
 
 ## Main results
 
-* `TauCeti.isCone_restrict_indexedJoin_insert`: adjoining a vertex over a fresh index makes a
-  finite vertex restriction of an indexed join a cone.
 * `ContinuousMap.nullhomotopic_to_indexedJoin`: every map with compact image to such an
   indexed join is nullhomotopic.
 * `TauCeti.pathConnectedSpace_realization_indexedJoin`: path-connectedness of the indexed join.
@@ -45,33 +43,6 @@ variable {ι : Type u} {A : ι → Type v}
 
 attribute [local instance] Classical.decEq
 attribute [-instance] Sigma.instDecidableEqSigma instDecidableEqSigma
-
-namespace TauCeti
-
-/-- Adjoining a vertex over an index absent from a finite vertex set makes the corresponding
-restriction of an indexed join a cone. -/
-theorem isCone_restrict_indexedJoin_insert (V : Finset (Σ i, A i)) (i : ι) (a : A i)
-    (hi : i ∉ V.image Sigma.fst) :
-    PreAbstractSimplicialComplex.IsCone
-      ((indexedJoin A).restrict ((V : Set (Σ i, A i)) ∪ {⟨i, a⟩})).toPreAbstractSimplicialComplex
-      ⟨⟨i, a⟩, Set.mem_union_right _ (Set.mem_singleton _)⟩ := by
-  refine ⟨singleton_mem _ _, fun σ hσ => ?_⟩
-  rw [AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex,
-    mem_restrict_iff] at hσ ⊢
-  rw [Finset.image_insert]
-  by_cases hv : (⟨i, a⟩ : Σ i, A i) ∈ σ.image Subtype.val
-  · rwa [Finset.insert_eq_of_mem hv]
-  rw [mem_indexedJoin_iff] at hσ ⊢
-  refine ⟨Finset.insert_nonempty _ _, ?_⟩
-  rw [Finset.coe_insert, Set.injOn_insert (Finset.mem_coe.not.mpr hv)]
-  refine ⟨hσ.2, ?_⟩
-  rintro ⟨w, hw, hwi⟩
-  obtain ⟨u, hu, rfl⟩ := Finset.mem_image.mp hw
-  rcases u.2 with huV | hua
-  · exact hi (Finset.mem_image.mpr ⟨u, huV, hwi⟩)
-  · exact hv (Finset.mem_image.mpr ⟨u, hu, hua⟩)
-
-end TauCeti
 
 namespace ContinuousMap
 

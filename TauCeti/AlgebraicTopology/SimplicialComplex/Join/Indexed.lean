@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 
 /-!
 # Indexed joins of abstract simplicial complexes
@@ -14,7 +16,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 For a family of types `A : ι → Type*`, the indexed join is the abstract simplicial complex on
 `Σ i, A i` whose faces are the nonempty finite sets containing at most one vertex over each
 index.  We give its face and barycentric-coordinate descriptions, its functoriality in the
-family, and the inclusions of the subjoins supported on finite sets of indices.
+family, and the inclusions of the subjoins supported on finite sets of indices.  Finally,
+adjoining a vertex over a fresh index makes a finite vertex restriction of the join a cone.
 
 ## Main definitions
 
@@ -22,6 +25,11 @@ family, and the inclusions of the subjoins supported on finite sets of indices.
 * `TauCeti.indexedJoinMap`: the simplicial map induced by maps of the family members.
 * `TauCeti.finiteSubjoin`: the join restricted to a finite set of indices.
 * `TauCeti.finiteSubjoinInclusion`: the simplicial inclusion into the full indexed join.
+
+## Main results
+
+* `TauCeti.isCone_restrict_indexedJoin_insert`: adjoining a vertex over a fresh index makes a
+  finite vertex restriction of an indexed join a cone.
 -/
 
 public section
@@ -241,5 +249,34 @@ theorem finiteSubjoinRealizationInclusion_vertex (A : ι → Type v) (s : Finset
   rw [finiteSubjoinRealizationInclusion,
     PreAbstractSimplicialComplex.SimplicialMap.realizationMap_vertex,
     finiteSubjoinInclusion_apply]
+
+section IsCone
+
+attribute [-instance] Sigma.instDecidableEqSigma instDecidableEqSigma
+
+/-- Adjoining a vertex over an index absent from a finite vertex set makes the corresponding
+restriction of an indexed join a cone. -/
+theorem isCone_restrict_indexedJoin_insert (V : Finset (Σ i, A i)) (i : ι) (a : A i)
+    (hi : i ∉ V.image Sigma.fst) :
+    PreAbstractSimplicialComplex.IsCone
+      ((indexedJoin A).restrict ((V : Set (Σ i, A i)) ∪ {⟨i, a⟩})).toPreAbstractSimplicialComplex
+      ⟨⟨i, a⟩, Set.mem_union_right _ (Set.mem_singleton _)⟩ := by
+  refine ⟨singleton_mem _ _, fun σ hσ => ?_⟩
+  rw [AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex,
+    mem_restrict_iff] at hσ ⊢
+  rw [Finset.image_insert]
+  by_cases hv : (⟨i, a⟩ : Σ i, A i) ∈ σ.image Subtype.val
+  · rwa [Finset.insert_eq_of_mem hv]
+  rw [mem_indexedJoin_iff] at hσ ⊢
+  refine ⟨Finset.insert_nonempty _ _, ?_⟩
+  rw [Finset.coe_insert, Set.injOn_insert (Finset.mem_coe.not.mpr hv)]
+  refine ⟨hσ.2, ?_⟩
+  rintro ⟨w, hw, hwi⟩
+  obtain ⟨u, hu, rfl⟩ := Finset.mem_image.mp hw
+  rcases u.2 with huV | hua
+  · exact hi (Finset.mem_image.mpr ⟨u, huV, hwi⟩)
+  · exact hv (Finset.mem_image.mpr ⟨u, hu, hua⟩)
+
+end IsCone
 
 end TauCeti
