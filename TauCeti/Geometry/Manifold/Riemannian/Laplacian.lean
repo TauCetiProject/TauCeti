@@ -309,7 +309,8 @@ theorem hessian_eq_iteratedFDeriv_model_space
           (NormedSpace.fromTangentSpace x
             (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F
               (mgradient (modelWithCornersSelf ℝ F) f) x v))
-          (NormedSpace.fromTangentSpace x w) := rfl
+          (NormedSpace.fromTangentSpace x w) :=
+      inner_tangentSpace_vectorSpace _ _
     _ = inner ℝ
         (fderiv ℝ (mgradient (modelWithCornersSelf ℝ F) f) x
           (NormedSpace.fromTangentSpace x v))
@@ -318,19 +319,16 @@ theorem hessian_eq_iteratedFDeriv_model_space
         (NormedSpace.fromTangentSpace x w) := by rw [hm]
     _ = _ := by
       rw [← InnerProductSpace.toDual_apply_apply]
-      let L := (InnerProductSpace.toDual ℝ F).toContinuousLinearEquiv.toContinuousLinearMap
-      have hcomp := L.hasFDerivAt.comp x hgrad.hasFDerivAt
-      have hdual : L ∘ ∇ f = fderiv ℝ f := toDual_comp_gradient
       calc
         ((InnerProductSpace.toDual ℝ F)
             (fderiv ℝ (∇ f) x (NormedSpace.fromTangentSpace x v)))
             (NormedSpace.fromTangentSpace x w) =
-            fderiv ℝ (L ∘ ∇ f) x
+            fderiv ℝ ((InnerProductSpace.toDual ℝ F) ∘ ∇ f) x
               (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
-                rw [hcomp.fderiv]
+                rw [(InnerProductSpace.toDual ℝ F).comp_fderiv]
                 rfl
         _ = fderiv ℝ (fderiv ℝ f) x (NormedSpace.fromTangentSpace x v)
-            (NormedSpace.fromTangentSpace x w) := by rw [hdual]
+            (NormedSpace.fromTangentSpace x w) := by rw [toDual_comp_gradient]
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
@@ -338,17 +336,17 @@ theorem hessian_eq_iteratedFDeriv_model_space
 This fixes the sign convention as `Δ = div ∘ grad`. -/
 theorem laplaceBeltrami_eq_laplacian
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-    {f : F → ℝ} (hf : ContDiff ℝ 2 f) (x : F) :
+    {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
   let e : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F :=
-    (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner (fun _ _ ↦ rfl)
+    (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
+      inner_tangentSpace_vectorSpace
   let b := (stdOrthonormalBasis ℝ F).map e.symm
   rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x b,
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := e.apply_symm_apply u
   simpa only [b, OrthonormalBasis.map_apply, he] using
-    hessian_eq_iteratedFDeriv_model_space
-      ((hf.gradient_right (m := 1) (by norm_num)).differentiable one_ne_zero x) (b i) (b i)
+    hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
 
 end TauCeti.Manifold
