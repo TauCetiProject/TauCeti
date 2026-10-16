@@ -331,6 +331,17 @@ theorem lazardValuation_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial 
   | zero => simp
   | succ n ih => rw [pow_succ, lazardValuation_mul, ih, succ_nsmul]
 
+/-- Over a nontrivial semiring without zero divisors, the Lazard valuation of a finite product
+is the sum of the valuations. This includes the empty product, whose valuation is zero. -/
+theorem lazardValuation_prod [NoZeroDivisors R] [Nontrivial R] {ι : Type*}
+    (f : ι → MvPolynomial σ R) (s : Finset ι) (a : σ → R) :
+    (∏ i ∈ s, f i).lazardValuation a = ∑ i ∈ s, (f i).lazardValuation a := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, lazardValuation_mul, Finset.sum_insert hi, ih]
+
 /-- Each coordinate of the Lazard valuation of `p` is at most the degree of `p` in that
 variable. -/
 theorem lazardValuation_apply_le_degreeOf (h : p.lazardValuation a = toLex v) (i : σ) :
