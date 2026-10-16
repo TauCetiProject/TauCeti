@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.MaslovIndex
+public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
 
@@ -33,6 +33,10 @@ is not weakly admissible.
 The regions have Euler characteristics `χ(A) = 0` and `χ(B₁) = χ(B₂) = 1`; the annulus has four
 corners and each bigon has two. With these, the combinatorial Maslov index of each bigon is `1`,
 as for the domain of a holomorphic bigon, and that of the periodic domain `B₁ - B₂` is `0`.
+With the basepoint in the annulus every periodic domain therefore has Maslov index zero, and the
+relative grading of `p₀` over `p₁` is `1`, consistent with `HF̂(S¹ × S²) ≅ 𝔽₂²` having its two
+generators in adjacent gradings. With the basepoint in a bigon, the periodic domain `A + 2 B₂`
+has Maslov index `2`, and the two bigons give different values of `μ(D) - 2 n_z(D)`.
 
 ## Main definitions
 
@@ -57,6 +61,10 @@ as for the domain of a holomorphic bigon, and that of the periodic domain `B₁ 
   `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_single_two` and
   `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_periodic`: both bigons have Maslov
   index one and the periodic domain has Maslov index zero.
+* `TauCeti.HeegaardRegionSystem.relativeGrading_circleTimesSphere_zero`: with the basepoint in the
+  annulus, the relative grading of `p₀` over `p₁` is one.
+* `TauCeti.HeegaardRegionSystem.maslovIndex_sub_two_mul_circleTimesSphere_one`: with the
+  basepoint in a bigon, `μ(D) - 2 n_z(D)` depends on the domain `D` from `p₀` to `p₁`.
 
 ## References
 
@@ -303,6 +311,38 @@ theorem maslovIndex_circleTimesSphere_periodic (r : Fin 3) (a : Fin 2) :
     (circleTimesSphere r).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator r a)
       (circleTimesSphereGenerator r a) (Pi.single 1 1 - Pi.single 2 1) = 0 := by
   fin_cases a <;> simp [cornerCount_circleTimesSphere, Pi.single_apply, Fin.sum_univ_three]
+
+/-- With the basepoint in the annulus, every periodic domain has Maslov index zero at both
+generators. -/
+theorem maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains (a : Fin 2) {P : Fin 3 → ℤ}
+    (hP : P ∈ (circleTimesSphere 0).periodicDomains) :
+    (circleTimesSphere 0).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator 0 a)
+      (circleTimesSphereGenerator 0 a) P = 0 := by
+  rw [periodicDomains_circleTimesSphere_zero, AddSubgroup.mem_zmultiples_iff] at hP
+  obtain ⟨k, rfl⟩ := hP
+  rw [map_zsmul, maslovIndex_circleTimesSphere_periodic, smul_zero]
+
+/-- With the basepoint in the annulus, the relative grading of `p₀` over `p₁` is one, computed
+from either bigon. -/
+theorem relativeGrading_circleTimesSphere_zero :
+    (circleTimesSphere 0).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 0 0)
+      (circleTimesSphereGenerator 0 1) = 1 := by
+  rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq () (by decide)
+    fun _ => maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains 0,
+    maslovIndex_circleTimesSphere_single_one]
+  simp
+
+/-- With the basepoint in the bigon `B₁`, the two bigons from `p₀` to `p₁` give the different
+values `-1` and `1` of `μ(D) - 2 n_z(D)`, so this diagram has no well-defined relative grading. -/
+theorem maslovIndex_sub_two_mul_circleTimesSphere_one :
+    (circleTimesSphere 1).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator 1 0)
+        (circleTimesSphereGenerator 1 1) (Pi.single 1 1) -
+          2 * (Pi.single 1 1 : Fin 3 → ℤ) ((circleTimesSphere 1).basepoint ()) = -1 ∧
+      (circleTimesSphere 1).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator 1 0)
+        (circleTimesSphereGenerator 1 1) (Pi.single 2 1) -
+          2 * (Pi.single 2 1 : Fin 3 → ℤ) ((circleTimesSphere 1).basepoint ()) = 1 := by
+  rw [maslovIndex_circleTimesSphere_single_one, maslovIndex_circleTimesSphere_single_two]
+  norm_num
 
 end HeegaardRegionSystem
 
