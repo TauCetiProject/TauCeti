@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Algebra.Group.Subgroup.Finite
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Left translation on a coset space
@@ -108,8 +108,7 @@ conjugate of `K` by `s⁻¹`. -/
 theorem card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
     Nat.card (orbit K ((s : G) : G ⧸ H)) =
       H.relIndex (MulAut.conj s⁻¹ • K) := by
-  change Nat.card (orbit K ((s : G) : G ⧸ H)) =
-    H.relIndex (K.map (MulAut.conj s⁻¹ : G →* G))
+  rw [← TauCeti.map_conj_eq_conj_smul]
   rw [← Subgroup.relIndex_comap, Subgroup.comap_equiv_eq_map_symm,
     Nat.card_congr (orbitEquivQuotientStabilizer _ _), ← Subgroup.index_eq_card,
     Subgroup.relIndex]
