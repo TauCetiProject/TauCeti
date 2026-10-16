@@ -123,6 +123,7 @@ theorem isConvexSeq_ite {s : Set ℕ} [DecidablePred (· ∈ s)] {f : ℕ → �
     simpa [unitSlope, hi'.1, hi'.2, hj'.1, hj'.2] using hf hi' hj' hij
 
 /-- The all-infinite height sequence, representing the empty polygon, is convex. -/
+@[simp]
 theorem isConvexSeq_top : IsConvexSeq (⊤ : ℕ → WithTop ℝ) :=
   ⟨by simpa using Set.ordConnected_empty, fun _ hi => absurd rfl hi.1⟩
 
@@ -154,6 +155,7 @@ theorem isAdmissible_iff {a : ℕ → WithTop ℝ} :
     IsAdmissible a ↔ ∃ c m : ℝ, ∀ n : ℕ, ((c + m * n : ℝ) : WithTop ℝ) ≤ a n := Iff.rfl
 
 /-- The empty point set is admissible. -/
+@[simp]
 theorem isAdmissible_top : IsAdmissible (⊤ : ℕ → WithTop ℝ) :=
   ⟨0, 0, fun _ => le_top⟩
 
@@ -306,7 +308,7 @@ theorem exists_convexSeq_le_iff {a : ℕ → WithTop ℝ} :
 
 /-- Adding the affine function with parameters `-c` and `-m` undoes adding the one with
 parameters `c` and `m`. -/
-theorem add_affine_add_neg_affine (u : WithTop ℝ) (c m : ℝ) (n : ℕ) :
+theorem _root_.WithTop.add_affine_add_neg_affine (u : WithTop ℝ) (c m : ℝ) (n : ℕ) :
     u + ((c + m * n : ℝ) : WithTop ℝ) + ((-c + -m * n : ℝ) : WithTop ℝ) = u := by
   rw [show -c + -m * n = -(c + m * n) by ring, WithTop.LinearOrderedAddCommGroup.coe_neg]
   exact LinearOrderedAddCommGroupWithTop.add_neg_cancel_right_of_ne_top WithTop.coe_ne_top _
@@ -332,7 +334,7 @@ theorem IsConvexSeq.add_affine {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) (c
 /-- Adding a real affine function does not change convexity. -/
 theorem isConvexSeq_add_affine_iff {h : ℕ → WithTop ℝ} (c m : ℝ) :
     (IsConvexSeq fun n => h n + ((c + m * n : ℝ) : WithTop ℝ)) ↔ IsConvexSeq h :=
-  ⟨fun hh => funext (fun n => add_affine_add_neg_affine (h n) c m n) ▸ hh.add_affine (-c) (-m),
+  ⟨fun hh => funext (fun n => (h n).add_affine_add_neg_affine c m n) ▸ hh.add_affine (-c) (-m),
     fun hh => hh.add_affine c m⟩
 
 /-- Adding a real affine function preserves admissibility. -/
@@ -349,7 +351,7 @@ theorem IsAdmissible.add_affine {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) 
 /-- Adding a real affine function does not change admissibility. -/
 theorem isAdmissible_add_affine_iff {a : ℕ → WithTop ℝ} (c m : ℝ) :
     (IsAdmissible fun n => a n + ((c + m * n : ℝ) : WithTop ℝ)) ↔ IsAdmissible a :=
-  ⟨fun ha => funext (fun n => add_affine_add_neg_affine (a n) c m n) ▸ ha.add_affine (-c) (-m),
+  ⟨fun ha => funext (fun n => (a n).add_affine_add_neg_affine c m n) ▸ ha.add_affine (-c) (-m),
     fun ha => ha.add_affine c m⟩
 
 end TauCeti

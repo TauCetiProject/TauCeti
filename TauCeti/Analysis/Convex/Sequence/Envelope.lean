@@ -330,14 +330,25 @@ theorem lowerConvexEnvelope_eq_of_forall_lt (ha : IsAdmissible a) {p : ℕ}
     have hk' : (p : ℝ) + 1 ≤ k := by exact_mod_cast Nat.succ_le_of_lt hpk
     nlinarith
 
-/-- An admissible envelope passes through the last point of the sequence, when there is
-one: if every point after `p` is infinite, the envelope agrees with the sequence at `p`. -/
-theorem lowerConvexEnvelope_eq_of_forall_gt (ha : IsAdmissible a) {p : ℕ}
+/-- The envelope passes through the last point of the sequence, when there is one: if
+every point after `p` is infinite, the envelope agrees with the sequence at `p`. Such a
+sequence has only finitely many finite points, so it is automatically admissible. -/
+theorem lowerConvexEnvelope_eq_of_forall_gt {p : ℕ}
     (hp : ∀ n, p < n → a n = ⊤) : lowerConvexEnvelope a p = a p := by
   by_cases hap : a p = ⊤
   · rw [hap]
     exact lowerConvexEnvelope_eq_top_of_forall_ge fun k hk =>
       (eq_or_lt_of_le hk).elim (fun h => h ▸ hap) (hp k)
+  -- A constant below every finite height bounds `a` from below.
+  have ha : IsAdmissible a := by
+    refine isAdmissible_iff.mpr ⟨(Finset.range (p + 1)).inf' Finset.nonempty_range_add_one
+      fun k => (a k).untop₀, 0, fun n => ?_⟩
+    by_cases hn : a n = ⊤
+    · simp [hn]
+    have hnp : n ∈ Finset.range (p + 1) :=
+      Finset.mem_range.mpr (Nat.lt_succ_of_le (not_lt.mp fun h => hn (hp n h)))
+    rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe, zero_mul, add_zero]
+    exact Finset.inf'_le _ hnp
   obtain ⟨c, m, hcm⟩ := isAdmissible_iff.mp ha
   set y := (a p).untop₀
   have hy : a p = y := (WithTop.coe_untop₀_of_ne_top hap).symm
@@ -368,12 +379,12 @@ theorem IsLowerConvexEnvelope.add_affine (hh : IsLowerConvexEnvelope a h) (c m :
     fun g hg hga n => ?_⟩
   -- Subtract the affine function from `g` to obtain a convex minorant of `a`.
   have hg' : (fun n => g n + ((-c + -m * n : ℝ) : WithTop ℝ)) ≤ a := fun k =>
-    (add_le_add_left (hga k) _).trans_eq (add_affine_add_neg_affine (a k) c m k)
+    (add_le_add_left (hga k) _).trans_eq ((a k).add_affine_add_neg_affine c m k)
   have hle := add_le_add_left (hh.greatest (hg.add_affine (-c) (-m)) hg' n)
     ((c + m * n : ℝ) : WithTop ℝ)
   have hcancel :
       g n + ((-c + -m * n : ℝ) : WithTop ℝ) + ((c + m * n : ℝ) : WithTop ℝ) = g n := by
-    simpa only [neg_neg] using add_affine_add_neg_affine (g n) (-c) (-m) n
+    simpa only [neg_neg] using (g n).add_affine_add_neg_affine (-c) (-m) n
   rwa [hcancel] at hle
 
 /-- Adding a real affine function to a sequence adds it to the envelope. This holds for
