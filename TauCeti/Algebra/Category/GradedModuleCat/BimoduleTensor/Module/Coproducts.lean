@@ -108,9 +108,8 @@ private def moduleTensorLeftCofanIsColimit : IsColimit (moduleTensorLeftCofan Γ
     (fun j ↦ bimoduleModuleTensorMk Γ Δ (M j) N)
     (bimoduleModuleTensorMk Γ Δ (coproductCofan M).pt N)
     (fun j m n ↦ by
-      change (bimoduleModuleTensorMap Γ Δ ((coproductCofan M).inj j) (𝟙 N)).hom _ = _
-      rw [bimoduleModuleTensorMk_apply, bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul,
-        hom_id, LinearMap.id_apply])
+      rw [moduleTensorLeftCofan, cofan_mk_inj, bimoduleModuleTensorMk_apply,
+        bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul, hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
       (fun m n ↦ by simpa only [bimoduleModuleTensorMk_apply] using h m n))
     (fun {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
@@ -170,11 +169,8 @@ private theorem moduleTensorRightBilinear_left (a : A) (m : M) (n : (coproductCo
       rw [smul_bimoduleModuleTensorTmul] at h
       simpa only [one_smul, LinearMap.id_apply, Algebra.lsmul_apply,
         moduleTensorRightSummand_apply] using h) n m
-  change moduleTensorRightBilinear Γ Δ M N s ((a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) • m)
-    ((1 : B) • n) =
-      a • moduleTensorRightBilinear Γ Δ M N s m n at h
-  rw [one_smul (B) n] at h
-  exact h
+  simpa only [moduleTensorRightBilinear, LinearMap.flip_apply, LinearMap.id_apply,
+    Algebra.lsmul_apply, one_smul] using h
 
 private theorem moduleTensorRightBilinear_degree {p q : ℤ} {m : M} {n : (coproductCofan N).pt}
     (hm : m ∈ M.grading.piece p) (hn : n ∈ (coproductCofan N).pt.grading.piece q) :
@@ -213,9 +209,9 @@ private def moduleTensorRightCofanIsColimit : IsColimit (moduleTensorRightCofan 
     (fun j ↦ (bimoduleModuleTensorMk Γ Δ M (N j)).flip)
     (bimoduleModuleTensorMk Γ Δ M (coproductCofan N).pt).flip
     (fun j n m ↦ by
-      change (bimoduleModuleTensorMap Γ Δ (𝟙 M) ((coproductCofan N).inj j)).hom _ = _
-      rw [LinearMap.flip_apply, LinearMap.flip_apply, bimoduleModuleTensorMk_apply,
-        bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul, hom_id, LinearMap.id_apply])
+      rw [moduleTensorRightCofan, cofan_mk_inj, LinearMap.flip_apply, LinearMap.flip_apply,
+        bimoduleModuleTensorMk_apply, bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul,
+        hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
       (fun m n ↦ by simpa only [LinearMap.flip_apply, bimoduleModuleTensorMk_apply] using h n m))
     (fun {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
