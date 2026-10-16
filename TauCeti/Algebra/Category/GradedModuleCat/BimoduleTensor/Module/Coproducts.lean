@@ -108,8 +108,12 @@ private def moduleTensorLeftCofanIsColimit : IsColimit (moduleTensorLeftCofan Γ
     (fun j ↦ bimoduleModuleTensorMk Γ Δ (M j) N)
     (bimoduleModuleTensorMk Γ Δ (coproductCofan M).pt N)
     (fun j m n ↦ by
-      simp only [moduleTensorLeftCofan, cofan_mk_inj, bimoduleModuleTensorMk_apply,
-        bimoduleModuleTensorMap_tmul, hom_id, LinearMap.id_apply])
+      -- Reduce the cofan injection together with its dependent tensor-object carrier.
+      -- The cofan abbreviation has no equation theorem for `rw`, and `cofan_mk_inj`
+      -- does not match until those carrier reductions are exposed.
+      change (bimoduleModuleTensorMap Γ Δ ((coproductCofan M).inj j) (𝟙 N)).hom _ = _
+      rw [bimoduleModuleTensorMk_apply, bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul,
+        hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
       (fun m n ↦ by simpa only [bimoduleModuleTensorMk_apply] using h m n))
     (fun {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
@@ -209,7 +213,11 @@ private def moduleTensorRightCofanIsColimit : IsColimit (moduleTensorRightCofan 
     (fun j ↦ (bimoduleModuleTensorMk Γ Δ M (N j)).flip)
     (bimoduleModuleTensorMk Γ Δ M (coproductCofan N).pt).flip
     (fun j n m ↦ by
-      simp only [moduleTensorRightCofan, cofan_mk_inj, LinearMap.flip_apply,
+      -- Reduce the cofan injection together with its dependent tensor-object carrier.
+      -- The cofan abbreviation has no equation theorem for `rw`, and `cofan_mk_inj`
+      -- does not match until those carrier reductions are exposed.
+      change (bimoduleModuleTensorMap Γ Δ (𝟙 M) ((coproductCofan N).inj j)).hom _ = _
+      rw [LinearMap.flip_apply, LinearMap.flip_apply, bimoduleModuleTensorMk_apply,
         bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul, hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
       (fun m n ↦ by simpa only [LinearMap.flip_apply, bimoduleModuleTensorMk_apply] using h n m))
