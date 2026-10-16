@@ -5,26 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
+public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
 
 /-!
 # Wirtinger's inequality for periodic functions
 
-Let `f : ℝ → V` be a differentiable function on `[a, b]` with `f a = f b`, valued in a
-finite-dimensional real inner product space, whose derivative is square integrable. **Wirtinger's
-inequality** bounds the `L²` distance of `f` from its mean by its derivative, with the sharp
-constant:
+Let `f : ℝ → V` be an absolutely continuous function on `[a, b]` with `f a = f b`, valued in a
+finite-dimensional real inner product space, whose almost-everywhere derivative `f'` is square
+integrable. **Wirtinger's inequality** bounds the `L²` distance of `f` from its mean by its
+derivative, with the sharp constant:
 
 `∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2 ≤ ((b - a) / (2π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2`
 (`TauCeti.integral_norm_sub_average_sq_le`).
 
-The constant is attained by `x ↦ cos (2π x / (b - a))`. The proof is Fourier-analytic: for
-`n ≠ 0` the `n`-th Fourier coefficient of `f` on `[a, b]` is that of `f'` divided by
-`2πin / (b - a)`, the zeroth coefficient of `f` minus its mean vanishes, and Parseval's identity
-(`hasSum_sq_fourierCoeffOn`) turns the coefficientwise comparison into the inequality. Vector
-values reduce to complex scalars coordinatewise in an orthonormal basis.
+Equality holds exactly when `f` is its mean plus a first harmonic, that is, when there are
+`u v : V` with `f t = ⨍ y in a..b, f y + cos (2π t / (b - a)) • u + sin (2π t / (b - a)) • v`
+for every `t ∈ [a, b]` (`TauCeti.integral_norm_sub_average_sq_eq_iff`). Taking `V = ℂ` gives
+the complex-valued statements.
+
+The proof is Fourier-analytic: for an absolutely continuous closed curve the `n`-th Fourier
+coefficient of `f'` on `[a, b]` is that of `f` multiplied by `2πin / (b - a)`
+(`TauCeti.hasSum_sq_frequency_mul_sq_fourierCoeffOn`), the zeroth coefficient of `f` minus its
+mean vanishes, and Parseval's identity (`hasSum_sq_fourierCoeffOn`) turns the coefficientwise
+comparison into the inequality. Equality forces every coefficient of frequency `|n| ≥ 2` to
+vanish, and a continuous closed curve with finitely many nonzero coefficients is the sum of its
+Fourier series at every point. Vector values reduce to complex scalars coordinatewise in an
+orthonormal basis. No smoothness beyond absolute continuity is assumed.
 
 Together with the Cauchy--Schwarz inequality it bounds the integral of any continuous bilinear
 form along a loop: since `∫ B(m, f') = B(m, f b - f a) = 0` for the mean `m`,
@@ -38,6 +46,7 @@ the estimate behind removal of singularities and energy quantization for holomor
 ## Main results
 
 * `TauCeti.integral_norm_sub_average_sq_le`: Wirtinger's inequality.
+* `TauCeti.integral_norm_sub_average_sq_eq_iff`: its equality case.
 * `ContinuousLinearMap.norm_integral_apply_apply_le`: the bound on the integral of a bilinear form
   along a loop.
 
@@ -59,96 +68,294 @@ namespace TauCeti
 
 variable {a b : ℝ}
 
-/-- Wirtinger's inequality for complex-valued functions; the vector-valued
-`TauCeti.integral_norm_sub_average_sq_le` reduces to it coordinatewise. -/
-private theorem integral_norm_sub_average_sq_le_complex (hab : a < b) {f f' : ℝ → ℂ}
-    (hf : ∀ x ∈ [[a, b]], HasDerivAt f (f' x) x) (hfab : f a = f b)
-    (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
-    ∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2 ≤
-      ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 := by
-  set m := ⨍ y in a..b, f y
-  set g : ℝ → ℂ := fun x => f x - m
-  have hba : 0 < b - a := sub_pos.2 hab
-  have hfc : ContinuousOn f [[a, b]] := fun x hx => (hf x hx).continuousAt.continuousWithinAt
-  have hg : ∀ x ∈ [[a, b]], HasDerivAt g (f' x) x := fun x hx => (hf x hx).sub_const m
+section Complex
+
+/-- The Fourier mode of frequency `1` on `[a, b]` in terms of the cosine and sine of
+`2π t / (b - a)`. -/
+private theorem fourier_one_coe_eq (t : ℝ) :
+    fourier 1 (t : AddCircle (b - a)) =
+      Real.cos (2 * π * t / (b - a)) + Real.sin (2 * π * t / (b - a)) * I := by
+  have : 2 * π * I * ((1 : ℤ) : ℂ) * t / ((b - a : ℝ) : ℂ) =
+      ((2 * π * t / (b - a) : ℝ) : ℂ) * I := by
+    push_cast
+    ring
+  rw [fourier_coe_apply, this, exp_mul_I, ← ofReal_cos, ← ofReal_sin]
+
+/-- The Fourier mode of frequency `-1` on `[a, b]` in terms of the cosine and sine of
+`2π t / (b - a)`. -/
+private theorem fourier_neg_one_coe_eq (t : ℝ) :
+    fourier (-1) (t : AddCircle (b - a)) =
+      Real.cos (2 * π * t / (b - a)) - Real.sin (2 * π * t / (b - a)) * I := by
+  have : 2 * π * I * ((-1 : ℤ) : ℂ) * t / ((b - a : ℝ) : ℂ) =
+      ((-(2 * π * t / (b - a)) : ℝ) : ℂ) * I := by
+    push_cast
+    ring
+  rw [fourier_coe_apply, this, exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_neg, Real.sin_neg,
+    ofReal_neg, neg_mul, ← sub_eq_add_neg]
+
+/-- A first harmonic on `[a, b]` has no Fourier coefficients outside the frequencies `±1`. -/
+private theorem fourierCoeffOn_cos_smul_add_sin_smul (hab : a < b) (u v : ℂ) {n : ℤ}
+    (hn₁ : n ≠ 1) (hn₂ : n ≠ -1) :
+    fourierCoeffOn hab (fun t => Real.cos (2 * π * t / (b - a)) • u +
+      Real.sin (2 * π * t / (b - a)) • v) n = 0 := by
+  have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
+  let G : C(AddCircle (b - a), ℂ) :=
+    ((u - I * v) / 2) • fourier 1 + ((u + I * v) / 2) • fourier (-1)
+  have hG : AddCircle.liftIoc (b - a) a (fun t => Real.cos (2 * π * t / (b - a)) • u +
+      Real.sin (2 * π * t / (b - a)) • v) = G := by
+    funext x
+    obtain ⟨t, ht, rfl⟩ : x ∈ ((↑) : ℝ → AddCircle (b - a)) '' Ioc a (a + (b - a)) := by
+      rw [AddCircle.coe_image_Ioc_eq]
+      trivial
+    rw [AddCircle.liftIoc_coe_apply ht]
+    simp only [G, ContinuousMap.add_apply, ContinuousMap.smul_apply, fourier_one_coe_eq,
+      fourier_neg_one_coe_eq, real_smul, smul_eq_mul]
+    linear_combination ((Real.sin (2 * π * t / (b - a)) : ℂ) * v) * I_sq
+  have hint (k : ℤ) : Integrable (fourier k : AddCircle (b - a) → ℂ) AddCircle.haarAddCircle :=
+    (map_continuous _).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  -- By definition, `fourierCoeffOn` is the Fourier coefficient of the `liftIoc` periodization.
+  change fourierCoeff (AddCircle.liftIoc (b - a) a _) n = 0
+  rw [hG, ContinuousMap.coe_add, ContinuousMap.coe_smul, ContinuousMap.coe_smul,
+    fourierCoeff.add ((hint 1).smul _) ((hint (-1)).smul _), Pi.add_apply,
+    fourierCoeff.const_smul, fourierCoeff.const_smul, fourierCoeff_fourier, fourierCoeff_fourier]
+  simp [hn₁, hn₂]
+
+/-- A continuous closed curve on `[a, b]` whose Fourier coefficients vanish outside the
+frequencies `±1` is a first harmonic at every point of `[a, b]`. -/
+private theorem exists_cos_smul_add_sin_smul (hab : a < b) {g : ℝ → ℂ}
+    (hg : ContinuousOn g (Icc a b)) (hgab : g a = g b)
+    (h : ∀ n : ℤ, n ≠ 1 → n ≠ -1 → fourierCoeffOn hab g n = 0) :
+    ∃ u v : ℂ, ∀ t ∈ Icc a b, g t = Real.cos (2 * π * t / (b - a)) • u +
+      Real.sin (2 * π * t / (b - a)) • v := by
+  have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
+  let G : C(AddCircle (b - a), ℂ) := ⟨AddCircle.liftIoc (b - a) a g,
+    AddCircle.liftIoc_continuous (by rwa [add_sub_cancel]) (by rwa [add_sub_cancel])⟩
+  -- By definition, `fourierCoeffOn` is the Fourier coefficient of the `liftIoc` periodization.
+  have hc (n : ℤ) : fourierCoeff G n = fourierCoeffOn hab g n := rfl
+  have hsupp (n : ℤ) (hn : n ∉ ({1, -1} : Finset ℤ)) : fourierCoeff G n = 0 := by
+    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hn
+    rw [hc, h n hn.1 hn.2]
+  have hrepr (x : AddCircle (b - a)) : G x = fourierCoeffOn hab g 1 * fourier 1 x +
+      fourierCoeffOn hab g (-1) * fourier (-1) x := by
+    have hs := hasSum_sum_of_ne_finset_zero (L := SummationFilter.unconditional ℤ)
+      (s := ({1, -1} : Finset ℤ))
+      (f := fun n => fourierCoeff G n • fourier n x) fun n hn => by simp [hsupp n hn]
+    rw [(has_pointwise_sum_fourier_series_of_summable
+      (summable_of_ne_finset_zero hsupp) x).unique hs, Finset.sum_pair (by decide)]
+    rfl
+  have hab' : ((b : ℝ) : AddCircle (b - a)) = (a : ℝ) := by
+    simpa using AddCircle.coe_add_period (b - a) a
+  have hGg (t : ℝ) (ht : t ∈ Icc a b) : g t = G t := by
+    rcases ht.1.eq_or_lt with rfl | hlt
+    · rw [hgab, ← hab']
+      exact (AddCircle.liftIoc_coe_apply (by simp [hab])).symm
+    · exact (AddCircle.liftIoc_coe_apply (by simp [hlt, ht.2])).symm
+  refine ⟨fourierCoeffOn hab g 1 + fourierCoeffOn hab g (-1),
+    I * (fourierCoeffOn hab g 1 - fourierCoeffOn hab g (-1)), fun t ht => ?_⟩
+  rw [hGg t ht, hrepr, fourier_one_coe_eq, fourier_neg_one_coe_eq, real_smul, real_smul]
+  ring
+
+/-- The coefficientwise comparison behind Wirtinger's inequality, for a complex closed curve whose
+zeroth Fourier coefficient vanishes: the inequality holds, with equality exactly when every
+coefficient of frequency `|n| ≥ 2` vanishes. -/
+private theorem integral_norm_sq_le_and_eq_iff_of_fourierCoeffOn_zero (hab : a < b)
+    {g g' : ℝ → ℂ} (hg : AbsolutelyContinuousOnInterval g a b)
+    (hgg' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt g (g' t) t) (hgab : g a = g b)
+    (hg' : MemLp g' 2 (volume.restrict (Ioc a b))) (h0 : fourierCoeffOn hab g 0 = 0) :
+    (∫ x in a..b, ‖g x‖ ^ 2 ≤ ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖g' x‖ ^ 2) ∧
+    (∫ x in a..b, ‖g x‖ ^ 2 = ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖g' x‖ ^ 2 ↔
+      ∀ n : ℤ, n ≠ 1 → n ≠ -1 → fourierCoeffOn hab g n = 0) := by
+  set c := fourierCoeffOn hab g
+  set K := ((b - a) / (2 * π)) ^ 2
+  have hinv : 0 < (b - a)⁻¹ := inv_pos.2 (sub_pos.2 hab)
   -- `g` is continuous on the compact interval, hence bounded, hence square integrable.
   have hgL2 : MemLp g 2 (volume.restrict (Ioc a b)) := by
     have hgc : ContinuousOn g (Icc a b) := by
-      rw [← uIcc_of_le hab.le]
-      exact hfc.sub continuousOn_const
+      simpa only [uIcc_of_le hab.le] using hg.continuousOn
     obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hgc
     exact MemLp.of_bound ((hgc.aestronglyMeasurable measurableSet_Icc).mono_set
       Ioc_subset_Icc_self) C
       (ae_restrict_of_forall_mem measurableSet_Ioc fun x hx => hC x (Ioc_subset_Icc_self hx))
-  have hf'int : IntervalIntegrable f' volume a b :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2 (hf'.integrable one_le_two)
-  -- Coefficientwise comparison of the Fourier coefficients of `g = f - m` and `f'`.
-  have hcoeff (n : ℤ) : ‖fourierCoeffOn hab g n‖ ^ 2 ≤
-      ((b - a) / (2 * π)) ^ 2 * ‖fourierCoeffOn hab f' n‖ ^ 2 := by
+  -- Parseval for `g` and for `g'`, both normalized by `(b - a)⁻¹`.
+  have hP : HasSum (fun n : ℤ => ‖c n‖ ^ 2) ((b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2) := by
+    simpa only [smul_eq_mul] using hasSum_sq_fourierCoeffOn hab hgL2
+  have hE : HasSum (fun n : ℤ => K * ((2 * π * (n : ℝ) / (b - a)) ^ 2 * ‖c n‖ ^ 2))
+      ((b - a)⁻¹ * (K * ∫ x in a..b, ‖g' x‖ ^ 2)) := by
+    convert (hasSum_sq_frequency_mul_sq_fourierCoeffOn hab hg hgg' hgab hg').mul_left K using 1
+    ring
+  -- Coefficientwise, `K * (2πn / (b - a)) ^ 2 = n ^ 2`, and the `n = 0` coefficient vanishes.
+  have hK (n : ℤ) : K * (2 * π * (n : ℝ) / (b - a)) ^ 2 = (n : ℝ) ^ 2 := by
+    simp only [K]
+    field_simp
+  have hle (n : ℤ) : ‖c n‖ ^ 2 ≤ K * ((2 * π * (n : ℝ) / (b - a)) ^ 2 * ‖c n‖ ^ 2) := by
+    rw [← mul_assoc, hK]
     rcases eq_or_ne n 0 with rfl | hn
-    · -- The zeroth coefficient of `g` is its mean, which vanishes.
-      have hzero : fourierCoeffOn hab g 0 = 0 := by
-        have hfi : IntervalIntegrable f volume a b := hfc.intervalIntegrable
-        have hba' : (b : ℂ) - a ≠ 0 := by exact_mod_cast hba.ne'
-        simp [fourierCoeffOn_eq_integral, g, m, interval_average_eq,
-          intervalIntegral.integral_sub hfi intervalIntegrable_const, hba']
-      simpa [hzero] using (by positivity :
-        0 ≤ ((b - a) / (2 * π)) ^ 2 * ‖fourierCoeffOn hab f' 0‖ ^ 2)
-    · -- Integration by parts: the coefficient of `g` is that of `f'` over `-2πin / (b - a)`.
-      have hn' : (1 : ℝ) ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn
-      have hnorm : ‖fourierCoeffOn hab g n‖ =
-          (b - a) / (2 * π) / |(n : ℝ)| * ‖fourierCoeffOn hab f' n‖ := by
-        rw [fourierCoeffOn_of_hasDerivAt hab hn hg hf'int]
-        simp [g, hfab, ← ofReal_sub, abs_of_pos hba, abs_of_pos Real.pi_pos]
-        field_simp
-      rw [hnorm, mul_pow]
-      gcongr ?_ ^ 2 * _
-      exact div_le_self (by positivity) hn'
-  have hsum := hasSum_le hcoeff (hasSum_sq_fourierCoeffOn hab hgL2)
-    ((hasSum_sq_fourierCoeffOn hab hf').mul_left (((b - a) / (2 * π)) ^ 2))
-  rw [smul_eq_mul, smul_eq_mul, mul_left_comm] at hsum
-  exact le_of_mul_le_mul_left hsum (inv_pos.2 hba)
+    · simp [c, h0]
+    · have : (1 : ℝ) ≤ (n : ℝ) ^ 2 :=
+        mod_cast (one_le_sq_iff_one_le_abs _).2 (Int.one_le_abs hn)
+      nlinarith [sq_nonneg ‖c n‖]
+  refine ⟨le_of_mul_le_mul_left (hasSum_le hle hP hE) hinv, ?_⟩
+  rw [← mul_right_inj' hinv.ne']
+  constructor
+  · -- A nonzero coefficient of frequency `|n| ≥ 2` makes the comparison strict.
+    intro heq n hn₁ hn₂
+    by_contra hcn
+    have hn₀ : n ≠ 0 := by
+      rintro rfl
+      exact hcn h0
+    have hn : (1 : ℝ) < (n : ℝ) ^ 2 := by
+      have : (1 : ℤ) < n ^ 2 := by
+        rcases (by omega : n ≤ -2 ∨ 2 ≤ n) with h | h <;> nlinarith
+      exact_mod_cast this
+    have hlt : ‖c n‖ ^ 2 < K * ((2 * π * (n : ℝ) / (b - a)) ^ 2 * ‖c n‖ ^ 2) := by
+      rw [← mul_assoc, hK]
+      have := sq_pos_of_pos (norm_pos_iff.2 hcn)
+      nlinarith
+    exact (hasSum_lt hle hlt hP hE).ne heq
+  · -- Otherwise the two series agree term by term.
+    intro hc
+    refine hP.unique ?_
+    convert hE using 1
+    funext n
+    rw [← mul_assoc, hK]
+    by_cases hn : n = 1 ∨ n = -1
+    · rcases hn with rfl | rfl <;> simp
+    · rw [not_or] at hn
+      simp [hc n hn.1 hn.2]
 
-/-- **Wirtinger's inequality.** A function on `[a, b]` with `f a = f b`, valued in a
-finite-dimensional real inner product space and with square-integrable derivative, deviates from
-its mean in `L²` by at most `(b - a) / (2π)` times the `L²` norm of its derivative. -/
-theorem integral_norm_sub_average_sq_le {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] (hab : a < b) {f f' : ℝ → V}
-    (hf : ∀ x ∈ [[a, b]], HasDerivAt f (f' x) x) (hfab : f a = f b)
+/-- Wirtinger's inequality and its equality case for complex-valued functions; the vector-valued
+statements reduce to it coordinatewise. -/
+private theorem integral_norm_sub_average_sq_le_and_eq_iff_complex (hab : a < b) {f f' : ℝ → ℂ}
+    (hf : AbsolutelyContinuousOnInterval f a b)
+    (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t) (hfab : f a = f b)
     (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
-    ∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2 ≤
-      ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 := by
+    (∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2 ≤
+      ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2) ∧
+    (∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2 =
+        ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 ↔
+      ∃ u v : ℂ, ∀ t ∈ Icc a b, f t - ⨍ y in a..b, f y =
+        Real.cos (2 * π * t / (b - a)) • u + Real.sin (2 * π * t / (b - a)) • v) := by
+  set m := ⨍ y in a..b, f y
+  set g : ℝ → ℂ := fun x => f x - m
+  have hg : AbsolutelyContinuousOnInterval g a b :=
+    hf.sub (LipschitzWith.const m).lipschitzOnWith.absolutelyContinuousOnInterval
+  have hgg' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt g (f' t) t := by
+    filter_upwards [hff'] with t ht hmem
+    exact (ht hmem).sub_const m
+  have hgab : g a = g b := by simp only [g, hfab]
+  -- The zeroth coefficient of `g` is its mean, which vanishes.
+  have h0 : fourierCoeffOn hab g 0 = 0 := by
+    have hfi : IntervalIntegrable f volume a b := hf.continuousOn.intervalIntegrable
+    have hba' : (b : ℂ) - a ≠ 0 := by exact_mod_cast (sub_pos.2 hab).ne'
+    simp [fourierCoeffOn_eq_integral, g, m, interval_average_eq,
+      intervalIntegral.integral_sub hfi intervalIntegrable_const, hba']
+  obtain ⟨hle, heq⟩ :=
+    integral_norm_sq_le_and_eq_iff_of_fourierCoeffOn_zero hab hg hgg' hgab hf' h0
+  refine ⟨hle, heq.trans ⟨exists_cos_smul_add_sin_smul hab
+    (by simpa only [uIcc_of_le hab.le] using hg.continuousOn) hgab, ?_⟩⟩
+  -- A first harmonic has no coefficients outside the frequencies `±1`.
+  rintro ⟨u, v, huv⟩ n hn₁ hn₂
+  have h : g =ᵐ[volume.restrict (Ioc a b)] fun t => Real.cos (2 * π * t / (b - a)) • u +
+      Real.sin (2 * π * t / (b - a)) • v :=
+    ae_restrict_of_forall_mem measurableSet_Ioc fun t ht => huv t (Ioc_subset_Icc_self ht)
+  rw [congrFun (fourierCoeffOn_congr_ae hab h) n]
+  exact fourierCoeffOn_cos_smul_add_sin_smul hab u v hn₁ hn₂
+
+end Complex
+
+section Vector
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {f f' : ℝ → V}
+
+/-- Wirtinger's inequality and its equality case for a single coordinate `⟪w, f⟫`. -/
+private theorem integral_inner_sub_average_sq_le_and_eq_iff (hab : a < b)
+    (hf : AbsolutelyContinuousOnInterval f a b)
+    (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t) (hfab : f a = f b)
+    (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) (w : V) :
+    (∫ x in a..b, ⟪w, f x - ⨍ y in a..b, f y⟫ ^ 2 ≤
+      ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ⟪w, f' x⟫ ^ 2) ∧
+    (∫ x in a..b, ⟪w, f x - ⨍ y in a..b, f y⟫ ^ 2 =
+        ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ⟪w, f' x⟫ ^ 2 ↔
+      ∃ u v : ℝ, ∀ t ∈ Icc a b, ⟪w, f t - ⨍ y in a..b, f y⟫ =
+        Real.cos (2 * π * t / (b - a)) * u + Real.sin (2 * π * t / (b - a)) * v) := by
+  -- The coordinate `⟪w, ·⟫`, read as a complex number.
+  let L : V →L[ℝ] ℂ := ofRealCLM.comp (innerSL ℝ w)
+  have hL (v : V) : L v = (⟪w, v⟫ : ℂ) := rfl
+  have hm : ⨍ y in a..b, L (f y) = L (⨍ y in a..b, f y) := by
+    rw [interval_average_eq, interval_average_eq, L.map_smul,
+      L.intervalIntegral_comp_comm hf.continuousOn.intervalIntegrable]
+  have h := integral_norm_sub_average_sq_le_and_eq_iff_complex hab
+    (f := fun x => L (f x)) (f' := fun x => L (f' x))
+    (L.lipschitzWith.comp_absolutelyContinuousOnInterval hf)
+    (by filter_upwards [hff'] with t ht hmem using L.hasFDerivAt.comp_hasDerivAt t (ht hmem))
+    (by rw [hfab]) (L.comp_memLp' hf')
+  simp_rw [hm, ← L.map_sub, hL, norm_real, Real.norm_eq_abs, sq_abs] at h
+  refine ⟨h.1, h.2.trans ⟨fun ⟨u, v, huv⟩ => ⟨u.re, v.re, fun t ht => ?_⟩,
+    fun ⟨u, v, huv⟩ => ⟨u, v, fun t ht => ?_⟩⟩⟩
+  · simpa only [add_re, real_smul, re_ofReal_mul, ofReal_re] using congrArg re (huv t ht)
+  · rw [huv t ht]
+    simp only [ofReal_add, ofReal_mul, real_smul]
+
+/-- The squared distance from the mean and the squared derivative split into the squares of their
+coordinates in an orthonormal basis. -/
+private theorem integral_norm_sq_eq_sum (hab : a < b) (hfc : ContinuousOn f [[a, b]])
+    (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
+    (∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2) =
+        ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, f x - ⨍ y in a..b, f y⟫ ^ 2 ∧
+      ∫ x in a..b, ‖f' x‖ ^ 2 = ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, f' x⟫ ^ 2 := by
   set e := stdOrthonormalBasis ℝ V
-  -- The `i`-th coordinate, read as a complex number.
-  let L (i : Fin (Module.finrank ℝ V)) : V →L[ℝ] ℂ := ofRealCLM.comp (innerSL ℝ (e i))
-  have hL (i) (v : V) : ‖L i v‖ ^ 2 = ⟪e i, v⟫ ^ 2 := by simp [L]
-  have hfc : ContinuousOn f [[a, b]] := fun x hx => (hf x hx).continuousAt.continuousWithinAt
-  have hfi : IntervalIntegrable f volume a b := hfc.intervalIntegrable
-  have hm (i) : ⨍ y in a..b, L i (f y) = L i (⨍ y in a..b, f y) := by
-    rw [interval_average_eq, interval_average_eq, (L i).map_smul,
-      (L i).intervalIntegral_comp_comm hfi]
-  have hcoord (i) : ∫ x in a..b, ⟪e i, f x - ⨍ y in a..b, f y⟫ ^ 2 ≤
-      ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ⟪e i, f' x⟫ ^ 2 := by
-    have h := integral_norm_sub_average_sq_le_complex hab
-      (f := fun x => L i (f x)) (f' := fun x => L i (f' x))
-      (fun x hx => (L i).hasFDerivAt.comp_hasDerivAt x (hf x hx)) (by rw [hfab])
-      ((L i).comp_memLp' hf')
-    simp_rw [hm i, ← (L i).map_sub, hL i] at h
-    exact h
   have hint₁ (i) : IntervalIntegrable (fun x => ⟪e i, f x - ⨍ y in a..b, f y⟫ ^ 2) volume a b :=
     ((continuousOn_const.inner (hfc.sub continuousOn_const)).pow 2).intervalIntegrable
   have hint₂ (i) : IntervalIntegrable (fun x => ⟪e i, f' x⟫ ^ 2) volume a b :=
     (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
       ((innerSL ℝ (e i)).comp_memLp' hf').integrable_sq
-  calc ∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2
-      = ∑ i, ∫ x in a..b, ⟪e i, f x - ⨍ y in a..b, f y⟫ ^ 2 := by
-        simp_rw [← e.sum_sq_inner_right]
-        exact intervalIntegral.integral_finsetSum fun i _ => hint₁ i
-    _ ≤ ∑ i, ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ⟪e i, f' x⟫ ^ 2 :=
-        Finset.sum_le_sum fun i _ => hcoord i
-    _ = ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 := by
-        rw [← Finset.mul_sum, ← intervalIntegral.integral_finsetSum fun i _ => hint₂ i]
-        simp_rw [e.sum_sq_inner_right]
+  simp_rw [← e.sum_sq_inner_right]
+  exact ⟨intervalIntegral.integral_finsetSum fun i _ => hint₁ i,
+    intervalIntegral.integral_finsetSum fun i _ => hint₂ i⟩
+
+/-- **Wirtinger's inequality.** An absolutely continuous function on `[a, b]` with `f a = f b`,
+valued in a finite-dimensional real inner product space and with square-integrable
+almost-everywhere derivative, deviates from its mean in `L²` by at most `(b - a) / (2π)` times
+the `L²` norm of its derivative. -/
+theorem integral_norm_sub_average_sq_le (hab : a < b)
+    (hf : AbsolutelyContinuousOnInterval f a b)
+    (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t) (hfab : f a = f b)
+    (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
+    ∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2 ≤
+      ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 := by
+  obtain ⟨h₁, h₂⟩ := integral_norm_sq_eq_sum hab hf.continuousOn hf'
+  rw [h₁, h₂, Finset.mul_sum]
+  exact Finset.sum_le_sum fun i _ =>
+    (integral_inner_sub_average_sq_le_and_eq_iff hab hf hff' hfab hf' _).1
+
+/-- **Equality in Wirtinger's inequality.** Equality holds exactly when, on `[a, b]`, the function
+is its mean plus a first harmonic `cos (2π t / (b - a)) • u + sin (2π t / (b - a)) • v`. -/
+theorem integral_norm_sub_average_sq_eq_iff (hab : a < b)
+    (hf : AbsolutelyContinuousOnInterval f a b)
+    (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t) (hfab : f a = f b)
+    (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
+    ∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2 =
+        ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 ↔
+      ∃ u v : V, ∀ t ∈ Icc a b, f t - ⨍ y in a..b, f y =
+        Real.cos (2 * π * t / (b - a)) • u + Real.sin (2 * π * t / (b - a)) • v := by
+  set e := stdOrthonormalBasis ℝ V
+  have hc := integral_inner_sub_average_sq_le_and_eq_iff hab hf hff' hfab hf'
+  obtain ⟨h₁, h₂⟩ := integral_norm_sq_eq_sum hab hf.continuousOn hf'
+  rw [h₁, h₂, Finset.mul_sum, Finset.sum_eq_sum_iff_of_le fun i _ => (hc (e i)).1]
+  simp_rw [(hc _).2, Finset.mem_univ, true_imp_iff]
+  constructor
+  · intro h
+    choose u v huv using h
+    refine ⟨∑ i, u i • e i, ∑ i, v i • e i, fun t ht => ?_⟩
+    rw [← e.sum_repr' (f t - _), Finset.smul_sum, Finset.smul_sum, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [huv i t ht, add_smul, smul_smul, smul_smul]
+  · rintro ⟨u, v, huv⟩ i
+    refine ⟨⟪e i, u⟫, ⟪e i, v⟫, fun t ht => ?_⟩
+    rw [huv t ht, inner_add_right, real_inner_smul_right, real_inner_smul_right]
+
+end Vector
 
 end TauCeti
 
@@ -218,7 +425,10 @@ theorem norm_integral_apply_apply_le {V G : Type*} [NormedAddCommGroup V]
   have key : (c⁻¹ * ∫ x in a..b, ‖f x - m‖ ^ 2) ≤ c * ∫ x in a..b, ‖f' x‖ ^ 2 := by
     calc (c⁻¹ * ∫ x in a..b, ‖f x - m‖ ^ 2) ≤ c⁻¹ * (c ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2) := by
           gcongr
-          exact TauCeti.integral_norm_sub_average_sq_le hab hf hfab hf'
+          exact TauCeti.integral_norm_sub_average_sq_le hab
+            (hfc.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable countable_empty
+              (fun t ht => hf t (Ioo_subset_Icc_self ht.1)) hf'ii)
+            (Filter.Eventually.of_forall fun t ht => hf t (uIoc_subset_uIcc ht)) hfab hf'
       _ = c * ∫ x in a..b, ‖f' x‖ ^ 2 := by field_simp
   calc ‖B‖ * (((c⁻¹ * ∫ x in a..b, ‖f x - m‖ ^ 2) + c * ∫ x in a..b, ‖f' x‖ ^ 2) / 2)
       ≤ ‖B‖ * (((c * ∫ x in a..b, ‖f' x‖ ^ 2) + c * ∫ x in a..b, ‖f' x‖ ^ 2) / 2) := by
