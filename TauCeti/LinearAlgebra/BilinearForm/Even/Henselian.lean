@@ -9,11 +9,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Henselian
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
+import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
-import TauCeti.LinearAlgebra.BilinearForm.Modular
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -26,18 +23,10 @@ classifies the even unimodular forms, which are the unimodular Jordan constituen
 the dyadic prime.
 
 The binary forms come first. If `B x y` is a unit, then `B` has a pair `e, f` whose Gram matrix
-is either the hyperbolic plane `!![0, 1; 1, 0]` or `!![2, 1; 1, 2]`. Write
-`B e₀ f₀ = 1`, `B e₀ e₀ = 2a` and `B f₀ f₀ = 2c`. If `a` lies in the maximal ideal, Hensel's
-lemma solves `c t² + t + a = 0`, which makes `e₀ + t f₀` isotropic, and an isotropic vector pairing
-to `1` with a second vector completes to a hyperbolic pair. If `a` and `c` are both units, they are
-congruent to `1` modulo the maximal ideal, and two further applications of Hensel's lemma produce
-a pair with Gram matrix `!![2, 1; 1, 2]`.
-
-Two orthogonal copies of `!![2, 1; 1, 2]` contain a hyperbolic pair: if `t² + t = -2`, then
-`e₁ + t e₂ + f₂` is isotropic and pairs to `1` with `f₁`. Hence an even unimodular form of rank at
-least four splits off a hyperbolic plane. Splitting off a binary constituent and inducting on the
-rank gives the classification: if `-3` is not a square in `R`, two even unimodular forms of the
-same rank are isometric exactly when the product of their Gram determinants is a square. The
+is either the hyperbolic plane `!![0, 1; 1, 0]` or `!![2, 1; 1, 2]`. Two orthogonal copies of
+`!![2, 1; 1, 2]` contain a hyperbolic pair, so an even unimodular form of rank at least four splits
+off a hyperbolic plane. Consequently, if `-3` is not a square in `R`, two even unimodular forms of
+the same rank are isometric exactly when the product of their Gram determinants is a square. The
 hypothesis on `-3` separates the two binary forms, whose determinants are `-1` and `3`.
 
 This is the even half of the classification of unimodular lattices over `ℤ₂`; the odd unimodular
@@ -67,19 +56,7 @@ namespace LinearMap.BilinForm
 
 section Blocks
 
-variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {B : BilinForm R M} {C : BilinForm R N}
-
-/-- An isotropic vector `u` with `B u w = 1` completes to a hyperbolic pair when `B w w` is even:
-subtract `d • u` from `w` when `B w w = 2 * d`. -/
-private theorem IsSymm.exists_hyperbolic_of_apply_self_eq_zero (hB : B.IsSymm) {u w : M} {d : R}
-    (hu : B u u = 0) (huw : B u w = 1) (hw : B w w = 2 * d) :
-    ∃ e f : M, B e f = 1 ∧ B e e = 0 ∧ B f f = 0 := by
-  refine ⟨u, w - d • u, ?_, hu, ?_⟩
-  · simp [hu, huw]
-  · simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, hu,
-      huw, hw, hB.eq w u]
-    ring
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 
 /-- The Gram matrix of a pair `e, f` with `B e f = 1`. -/
 private theorem IsSymm.apply_pair_eq (hB : B.IsSymm) {e f : M} {p q : R} (he : B e e = p)
@@ -88,119 +65,6 @@ private theorem IsSymm.apply_pair_eq (hB : B.IsSymm) {e f : M} {p q : R} (he : B
   have hfe : B f e = 1 := by rw [← hB.eq, hef]
   intro i j
   fin_cases i <;> fin_cases j <;> simp [he, hef, hf, hfe]
-
-/-- **Recombining binary blocks.** If pairs `v` in `M` and `v'` in `N` have the same Gram matrix
-`G` of unit determinant, and the restrictions of `B` and `C` to the orthogonal complements of their
-spans are isometric, then `B` and `C` are isometric. -/
-private theorem IsSymm.equivalent_of_equivalent_restrict_orthogonal (hB : B.IsSymm)
-    (hC : C.IsSymm) {v : Fin 2 → M} {v' : Fin 2 → N} {G : Matrix (Fin 2) (Fin 2) R}
-    (hG : ∀ i j, B (v i) (v j) = G i j) (hG' : ∀ i j, C (v' i) (v' j) = G i j)
-    (hdet : IsUnit G.det)
-    (hc : IsCompl (Submodule.span R (Set.range v))
-      (B.orthogonal (Submodule.span R (Set.range v))))
-    (hc' : IsCompl (Submodule.span R (Set.range v'))
-      (C.orthogonal (Submodule.span R (Set.range v'))))
-    (h : (B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).Equivalent
-      (C.restrict (C.orthogonal (Submodule.span R (Set.range v'))))) :
-    B.Equivalent C := by
-  classical
-  set S := Submodule.span R (Set.range v)
-  set S' := Submodule.span R (Set.range v')
-  have hli := linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem
-    (fun i j ↦ by rw [one_mul, hG]) hdet
-  have hli' := linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem
-    (fun i j ↦ by rw [one_mul, hG']) hdet
-  -- The blocks spanned by `v` and `v'` are isometric, matching the two bases.
-  let φ : S ≃ₗ[R] S' := (Basis.span hli).equiv (Basis.span hli') (Equiv.refl _)
-  have hφ : (C.restrict S').compl₁₂ φ.toLinearMap φ.toLinearMap = B.restrict S :=
-    ext_basis (Basis.span hli) fun i j ↦ by
-      simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, φ, Basis.equiv_apply,
-        Equiv.refl_apply, restrict_apply]
-      simp [Basis.span_apply hli, Basis.span_apply hli', hG, hG']
-  have hS : (B.restrict S).Equivalent (C.restrict S') :=
-    ⟨{ toLinearEquiv := φ, map_app' := fun x y ↦ LinearMap.congr_fun₂ hφ x y }⟩
-  let P : Fin 2 → Submodule R M := ![S, B.orthogonal S]
-  let P' : Fin 2 → Submodule R N := ![S', C.orthogonal S']
-  have huniv : (Set.univ : Set (Fin 2)) = {0, 1} := by
-    ext i
-    fin_cases i <;> simp
-  refine equivalent_of_isInternal (N := P) (N' := P')
-    ((DirectSum.isInternal_submodule_iff_isCompl P zero_ne_one huniv).mpr hc)
-    ((DirectSum.isInternal_submodule_iff_isCompl P' zero_ne_one huniv).mpr hc') ?_ ?_ ?_
-  · intro i j hij x hx y hy
-    fin_cases i <;> fin_cases j
-    · exact absurd rfl hij
-    · exact hy x hx
-    · rw [hB.eq]
-      exact hx y hy
-    · exact absurd rfl hij
-  · intro i j hij x hx y hy
-    fin_cases i <;> fin_cases j
-    · exact absurd rfl hij
-    · exact hy x hx
-    · rw [hC.eq]
-      exact hx y hy
-    · exact absurd rfl hij
-  · intro i
-    fin_cases i
-    · exact hS
-    · exact h
-
-variable [IsLocalRing R]
-
-/-- **Splitting off a binary block.** If the Gram matrix `G` of a pair `v` has unit determinant,
-the span `S` of `v` is complementary to its orthogonal complement `T`. If `M` has a basis of size
-`m + 2`, then `T` has a basis `t` of size `m`, and the Gram determinant of `B` is
-`w ^ 2 * det G * det (B|_T)` for a unit `w`. -/
-private theorem IsSymm.exists_basis_orthogonal (hB : B.IsSymm) {m : ℕ}
-    (b : Basis (Fin (m + 2)) R M) {v : Fin 2 → M} {G : Matrix (Fin 2) (Fin 2) R}
-    (hG : ∀ i j, B (v i) (v j) = G i j) (hdet : IsUnit G.det) :
-    IsCompl (Submodule.span R (Set.range v)) (B.orthogonal (Submodule.span R (Set.range v))) ∧
-      ∃ t : Basis (Fin m) R (B.orthogonal (Submodule.span R (Set.range v))), ∃ w : R,
-        IsUnit w ∧ (B.toMatrix b).det =
-          w ^ 2 * (G.det * ((B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).toMatrix
-            t).det) := by
-  classical
-  set S := Submodule.span R (Set.range v)
-  set T := B.orthogonal S
-  have hG₁ : ∀ i j, B (v i) (v j) = 1 * G i j := fun i j ↦ by rw [one_mul, hG]
-  have hc : IsCompl S T := (isModular_restrict_span_range (nonZeroDivisors R).one_mem hG₁
-    hdet).isCompl_orthogonal hB (nonZeroDivisors R).one_mem fun _ _ ↦ one_dvd _
-  refine ⟨hc, ?_⟩
-  have hli : LinearIndependent R v :=
-    linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem hG₁ hdet
-  let s : Basis (Fin 2) R S := Basis.span hli
-  have : Module.Free R M := .of_basis b
-  have : Module.Finite R M := .of_basis b
-  have : Module.Free R S := .of_basis s
-  have : Module.Finite R S := .of_basis s
-  obtain ⟨hTfin, hTfree⟩ := T.finite_free_of_isCompl hc.symm
-  have hT : finrank R T = m := by
-    have hrank := (S.prodEquivOfIsCompl T hc).finrank_eq
-    rw [Module.finrank_prod, finrank_eq_card_basis s, finrank_eq_card_basis b] at hrank
-    simp only [Fintype.card_fin] at hrank
-    omega
-  let t : Basis (Fin m) R T := Module.finBasisOfFinrankEq R T hT
-  refine ⟨t, ?_⟩
-  -- The basis adapted to `M = S ⊕ T` has a block-diagonal Gram matrix.
-  let c : Basis (Fin 2 ⊕ Fin m) R M := (s.prod t).map (S.prodEquivOfIsCompl T hc)
-  have hcl (i : Fin 2) : c (Sum.inl i) = v i := by simp [c, s, Basis.span_apply hli i]
-  have hcr (j : Fin m) : c (Sum.inr j) = t j := by simp [c]
-  have hvT (i : Fin 2) (j : Fin m) : B (v i) (t j) = 0 :=
-    (t j).2 (v i) (Submodule.subset_span ⟨i, rfl⟩)
-  have hTv (j : Fin m) (i : Fin 2) : B (t j) (v i) = 0 := by rw [← hB.eq, hvT]
-  have hblock : B.toMatrix c =
-      Matrix.fromBlocks G 0 0 ((B.restrict T).toMatrix t) := by
-    ext (i | i) (j | j) <;> simp [toMatrix_apply, hcl, hcr, hG, hvT, hTv]
-  let e : Fin 2 ⊕ Fin m ≃ Fin (m + 2) := finSumFinEquiv.trans (finCongr (by omega))
-  have hb : (B.toMatrix (b.reindex e.symm)).det = (B.toMatrix b).det := by
-    rw [← Matrix.det_submatrix_equiv_self e (B.toMatrix b)]
-    congr 1
-    ext i j
-    simp [toMatrix_apply]
-  let := c.invertibleToMatrix (b.reindex e.symm)
-  refine ⟨(c.toMatrix (b.reindex e.symm)).det, Matrix.isUnit_det_of_invertible _, ?_⟩
-  rw [← hb, det_toMatrix_eq_det_sq_mul_det c, hblock, Matrix.det_fromBlocks_zero₂₁]
 
 end Blocks
 
@@ -360,7 +224,7 @@ private theorem IsSymm.exists_pair_of_even (hR : Nat.card (ResidueField R) = 2) 
   have hGdet : IsUnit (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) R).det := by
     rw [Matrix.det_fin_two_of, show (2 : R) * 2 - 1 * 1 = 1 - -2 by ring]
     exact isUnit_one_sub_self_of_mem_nonunits _ ((maximalIdeal R).neg_mem h2)
-  obtain ⟨-, t, w, -, hdetT⟩ := hB.exists_basis_orthogonal b hG hGdet
+  obtain ⟨-, t, w, -, hdetT⟩ := hB.exists_basis_orthogonal (k := 2) b hG hGdet
   have hTdet : IsUnit ((B.restrict _).toMatrix t).det := by
     rw [hdetT] at hdet
     exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
@@ -415,8 +279,8 @@ private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (Resid
     have hGC := hC.apply_pair_eq heC hC₁ hfC
     have hGdet : IsUnit (!![p, 1; 1, p] : Matrix (Fin 2) (Fin 2) R).det := by
       simpa [Matrix.det_fin_two_of] using hp
-    obtain ⟨hcB, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal b hGB hGdet
-    obtain ⟨hcC, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal c hGC hGdet
+    obtain ⟨hcB, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal (k := 2) b hGB hGdet
+    obtain ⟨hcC, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal (k := 2) c hGC hGdet
     refine hB.equivalent_of_equivalent_restrict_orthogonal hC hGB hGC hGdet hcB hcC
       (ih m (by omega) (hB.restrict _) (hC.restrict _) (fun x ↦ hBeven x) (fun x ↦ hCeven x) tB tC
         ?_ ?_ ?_)
@@ -438,9 +302,9 @@ private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (Resid
     have hunit : IsUnit ((p * p - 1) * (q * q - 1)) := by
       rw [hpq, show (-3 : R) = -(1 - -2) by ring]
       exact (isUnit_one_sub_self_of_mem_nonunits _ ((maximalIdeal R).neg_mem h2)).neg
-    obtain ⟨-, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal b hGB
+    obtain ⟨-, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal (k := 2) b hGB
       (by simpa [Matrix.det_fin_two_of] using isUnit_of_mul_isUnit_left hunit)
-    obtain ⟨-, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal c hGC
+    obtain ⟨-, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal (k := 2) c hGC
       (by simpa [Matrix.det_fin_two_of] using isUnit_of_mul_isUnit_right hunit)
     rw [hdetB, hdetC] at hsq
     refine absurd (hcancel (hwB.mul hwC) ?_) h3
