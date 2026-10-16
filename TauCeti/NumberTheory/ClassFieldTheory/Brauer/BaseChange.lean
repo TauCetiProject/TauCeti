@@ -228,8 +228,8 @@ theorem brBaseChange_brBaseChange (M : Type w) [Field M] [Algebra K M] [Algebra 
     (hψ := (absoluteGaloisGroupMap τ).comp_map_smul (absoluteGaloisGroupMap τ')
       (unitsCoeffBaseChange τ) (unitsCoeffBaseChange τ')
       (unitsCoeffBaseChange_smul τ) (unitsCoeffBaseChange_smul τ'))
-    (ContinuousMonoidHom.ext fun g ↦
-      (absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' τ'' (fun _ ↦ rfl) g).symm)
+    (ContinuousMonoidHom.ext fun g ↦ (absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' τ''
+      (compSeparableClosure_apply τ τ') g).symm)
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp [τ''])))
   rw [brBaseChange_apply K L τ, brBaseChange_apply L M τ', brBaseChange_apply K M τ'',
     AddEquiv.symm_apply_apply, hpair,

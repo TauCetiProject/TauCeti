@@ -139,7 +139,7 @@ variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
 
 /-- **The composite embedding `Kˢ → Lˢ → Mˢ`** of separable closures in a tower `K → L → M`:
 `τ' : Lˢ →ₐ[L] Mˢ` is in particular `K`-linear, so it composes with `τ : Kˢ →ₐ[K] Lˢ`. -/
-@[expose] def compSeparableClosure : SeparableClosure K →ₐ[K] SeparableClosure M :=
+def compSeparableClosure : SeparableClosure K →ₐ[K] SeparableClosure M :=
   have : IsScalarTower K L (SeparableClosure M) := .of_algebraMap_eq fun c ↦ by
     rw [IsScalarTower.algebraMap_apply K M (SeparableClosure M),
       IsScalarTower.algebraMap_apply K L M, ← IsScalarTower.algebraMap_apply L M]
@@ -148,7 +148,7 @@ variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
 /-- `compSeparableClosure τ τ'` applies `τ` and then `τ'`. -/
 @[simp]
 theorem compSeparableClosure_apply (x : SeparableClosure K) :
-    compSeparableClosure τ τ' x = τ' (τ x) :=
+    compSeparableClosure τ τ' x = τ' (τ x) := by
   rfl
 
 /-- The map `G_M → G_K` along `compSeparableClosure τ τ'` is the composite of the maps
