@@ -40,6 +40,11 @@ namespace TauCeti
 def IsSupportingLine (h : ℕ → WithTop ℝ) (σ c : ℝ) : Prop :=
   ∀ n : ℕ, (((c + σ * n : ℝ) : WithTop ℝ) ≤ h n)
 
+/-- A line supports a height sequence exactly when it lies below every height. -/
+theorem isSupportingLine_iff_forall {h : ℕ → WithTop ℝ} {σ c : ℝ} :
+    IsSupportingLine h σ c ↔ ∀ n : ℕ, (((c + σ * n : ℝ) : WithTop ℝ) ≤ h n) :=
+  Iff.rfl
+
 /-- A line supports a height sequence exactly when its intercept is at most the
 supporting value. -/
 theorem isSupportingLine_iff {h : ℕ → WithTop ℝ} {σ c : ℝ} :
@@ -101,6 +106,13 @@ its supporting line is exactly the integer interval `[l, u]`. -/
 def IsFiniteFace (h : ℕ → WithTop ℝ) (σ : ℝ) (l u : ℕ) : Prop :=
   l ≤ u ∧ ∃ c : ℝ,
     IsSupportingLine h σ c ∧ supportingFace h σ c = Set.Icc l u
+
+/-- A finite face is given by ordered endpoints together with a supporting intercept whose
+contact set is exactly the endpoint interval. -/
+theorem isFiniteFace_iff {h : ℕ → WithTop ℝ} {σ : ℝ} {l u : ℕ} :
+    IsFiniteFace h σ l u ↔
+      l ≤ u ∧ ∃ c : ℝ, IsSupportingLine h σ c ∧ supportingFace h σ c = Set.Icc l u :=
+  Iff.rfl
 
 namespace IsFiniteFace
 
@@ -216,7 +228,6 @@ theorem IsConvexSeq.exists_isFiniteFace_of_finiteDomain {h : ℕ → WithTop ℝ
   have hle : sInf s ≤ sSup s := Nat.sInf_le (Nat.sSup_mem hne hsbdd)
   apply hh.exists_isFiniteFace_of_finiteDomain_eq_Icc hle
   intro n
-  change n ∈ s ↔ sInf s ≤ n ∧ n ≤ sSup s
-  simpa only [Set.mem_Icc] using Set.ext_iff.mp hseq n
+  simpa only [s, Set.mem_ofPred_eq, Set.mem_Icc] using Set.ext_iff.mp hseq n
 
 end TauCeti
