@@ -17,9 +17,8 @@ constancy of the valuation of the product discriminant. Neither the factors nor 
 polynomials need have nonzero values at the base points. This algebraic reduction supplies the
 discriminant condition when applying a single-polynomial Lazard lifting theorem to a product.
 
-As in `Finset.orderAt_discr_prod_eq`, the proof uses the discriminant identity
-`Polynomial.discr_mul_of_natDegree_pos` and the finite-product resultant identity
-`Polynomial.resultant_prod_right`.
+As with ambient order, the proof specializes `Finset.map_discr_prod_eq` using the
+multiplicativity of `MvPolynomial.lazardValuation`.
 
 ## References
 
@@ -47,34 +46,10 @@ theorem lazardValuation_discr_prod_eq (s : Finset ι)
         ((f i).resultant (f j)).lazardValuation b) :
     (∏ i ∈ s, f i).discr.lazardValuation a =
       (∏ i ∈ s, f i).discr.lazardValuation b := by
-  classical
-  induction s using Finset.induction with
-  | empty =>
-    have h1 : (1 : Polynomial (MvPolynomial σ R)).discr = 1 := by
-      simpa only [Polynomial.C_1] using Polynomial.discr_C (1 : MvPolynomial σ R)
-    simp only [Finset.prod_empty, h1, lazardValuation_one]
-  | insert i s hi ih =>
-    have hdeg' := fun j hj ↦ hdeg j (Finset.mem_insert_of_mem hj)
-    have hdiscr' := fun j hj ↦ hdiscr j (Finset.mem_insert_of_mem hj)
-    have hres' := fun j hj k hk ↦ hres j (Finset.mem_insert_of_mem hj) k
-      (Finset.mem_insert_of_mem hk)
-    rcases s.eq_empty_or_nonempty with rfl | hs
-    · simp only [Finset.prod_insert hi, Finset.prod_empty, mul_one]
-      exact hdiscr i (Finset.mem_insert_self i ∅)
-    have hne : ∀ j ∈ s, f j ≠ 0 := fun j hj ↦ ne_zero_of_natDegree_gt (hdeg' j hj)
-    have hproddeg : 0 < (∏ j ∈ s, f j).natDegree := by
-      rw [natDegree_prod _ _ hne]
-      exact Finset.sum_pos (fun j hj ↦ hdeg' j hj) hs
-    have hresp : ((f i).resultant (∏ j ∈ s, f j)).lazardValuation a =
-        ((f i).resultant (∏ j ∈ s, f j)).lazardValuation b := by
-      rw [resultant_prod_right s (f i) f _ le_rfl
-        (Finset.prod_ne_zero_iff.mpr fun j hj ↦ leadingCoeff_ne_zero.mpr (hne j hj)),
-        lazardValuation_prod, lazardValuation_prod]
-      exact Finset.sum_congr rfl fun j hj ↦ hres i (Finset.mem_insert_self i s) j
-        (Finset.mem_insert_of_mem hj) (by rintro rfl; exact hi hj)
-    rw [Finset.prod_insert hi, discr_mul_of_natDegree_pos _ _
-      (hdeg i (Finset.mem_insert_self i s)) hproddeg]
-    simp only [lazardValuation_mul, lazardValuation_pow]
-    rw [hdiscr i (Finset.mem_insert_self i s), ih hdeg' hdiscr' hres', hresp]
+  let v (c : σ → R) : MvPolynomial σ R →* Multiplicative (WithTop (Lex (σ →₀ ℕ))) :=
+    { toFun := fun p ↦ Multiplicative.ofAdd (p.lazardValuation c)
+      map_one' := lazardValuation_one c
+      map_mul' := fun p q ↦ lazardValuation_mul p q c }
+  exact s.map_discr_prod_eq f hdeg (v a) (v b) hdiscr hres
 
 end Finset
