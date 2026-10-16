@@ -180,6 +180,9 @@ theorem exists_topologicalClosure_closure_range_eq_top_of_bijective_explicitCoef
   let π : freeProfiniteGroup ι →ₜ* Y.E :=
     ψ.comp (Subgroup.quotientMkContinuousMonoidHom _)
   refine ⟨fun i ↦ π (of i), fun i ↦ ?_, ?_⟩
+  -- Evaluate the local bundled composite π at the generator before rewriting.
+  -- The projection computation lemma matches its application, which is hidden behind
+  -- π and the composition's function coercions in the original goal.
   · change Y.toGroupExtension.rightHom
         (ψ (Subgroup.quotientMkContinuousMonoidHom _ (of i))) = g i
     rw [Subgroup.quotientMkContinuousMonoidHom_apply]
