@@ -28,6 +28,7 @@ def latticeSquare (k : ℤ × ℤ) : Set ℂ :=
   verticalRegion k.1 (k.1 + 1) (fun _ ↦ k.2) (fun _ ↦ k.2 + 1)
 
 /-- Membership in a lattice square is given by its two actual coordinate intervals. -/
+@[simp]
 theorem mem_latticeSquare {k : ℤ × ℤ} {z : ℂ} : z ∈ latticeSquare k ↔
     z.re ∈ Icc (k.1 : ℝ) (k.1 + 1) ∧ z.im ∈ Icc (k.2 : ℝ) (k.2 + 1) := by
   rw [latticeSquare, mem_verticalRegion]
@@ -37,8 +38,10 @@ and omitted interior squares. -/
 def latticeRegion (s : Finset (ℤ × ℤ)) : Set ℂ := ⋃ k ∈ s, latticeSquare k
 
 /-- A point lies in the finite grid region exactly when it lies in one of its selected squares. -/
+@[simp]
 theorem mem_latticeRegion {s : Finset (ℤ × ℤ)} {z : ℂ} :
-    z ∈ latticeRegion s ↔ ∃ k ∈ s, z ∈ latticeSquare k := by simp [latticeRegion]
+    z ∈ latticeRegion s ↔ ∃ k ∈ s, z ∈ latticeSquare k := by
+  simp only [latticeRegion, mem_iUnion, exists_prop]
 
 namespace GraphCell
 

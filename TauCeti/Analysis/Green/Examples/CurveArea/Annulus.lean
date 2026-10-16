@@ -160,6 +160,7 @@ theorem windingNumber_annulus_hole {r R : ℝ} (hr : 0 < r) (hrR : r < R) {z : �
 def annulusDomain (r R : ℝ) : Set ℂ := {z | r / 2 < ‖z‖ ∧ ‖z‖ < R + 1}
 
 /-- Membership in the open field domain containing both annular boundary traces. -/
+@[simp]
 theorem mem_annulusDomain {r R : ℝ} {z : ℂ} :
     z ∈ annulusDomain r R ↔ r / 2 < ‖z‖ ∧ ‖z‖ < R + 1 := Iff.rfl
 
