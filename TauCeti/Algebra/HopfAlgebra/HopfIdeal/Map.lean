@@ -164,12 +164,11 @@ theorem map_eq_bot_iff (I : HopfIdeal R H) (f : H →ₐc[R] K)
   rw [← le_bot_iff, ← toIdeal_le_toIdeal, map_toIdeal, bot_toIdeal, le_bot_iff,
     Ideal.map_eq_bot_iff_le_ker]
 
-end TwoSided
-
-section Commutative
-
-variable {H : Type v} {K : Type w} [Semiring H] [CommSemiring K]
-variable [HopfAlgebra R H] [HopfAlgebra R K]
+/-- The ideal-theoretic image of the zero Hopf ideal is two-sided. -/
+instance instIsTwoSidedMapBot (f : H →ₐc[R] K) :
+    (Ideal.map (f : H →+* K) (⊥ : HopfIdeal R H).toIdeal).IsTwoSided := by
+  rw [bot_toIdeal, Ideal.map_bot]
+  infer_instance
 
 /-- The image of the zero Hopf ideal is zero. -/
 @[simp]
@@ -178,29 +177,58 @@ theorem map_bot (f : H →ₐc[R] K) : (⊥ : HopfIdeal R H).map f = ⊥ :=
     rw [← mem_toIdeal, map_toIdeal, bot_toIdeal, Ideal.map_bot]
     exact Ideal.mem_bot.trans mem_bot.symm
 
-/-- Image of Hopf ideals preserves binary joins. -/
+/-- A binary join has two-sided image when both members do. -/
+instance instIsTwoSidedMapSup (I J : HopfIdeal R H) (f : H →ₐc[R] K)
+    [(Ideal.map (f : H →+* K) I.toIdeal).IsTwoSided]
+    [(Ideal.map (f : H →+* K) J.toIdeal).IsTwoSided] :
+    (Ideal.map (f : H →+* K) (I ⊔ J).toIdeal).IsTwoSided := by
+  rw [sup_toIdeal, Ideal.map_sup, ← map_toIdeal I f, ← map_toIdeal J f, ← sup_toIdeal]
+  infer_instance
+
+/-- Image of Hopf ideals preserves binary joins when both images are two-sided. -/
 @[simp]
-theorem map_sup (I J : HopfIdeal R H) (f : H →ₐc[R] K) :
+theorem map_sup (I J : HopfIdeal R H) (f : H →ₐc[R] K)
+    [(Ideal.map (f : H →+* K) I.toIdeal).IsTwoSided]
+    [(Ideal.map (f : H →+* K) J.toIdeal).IsTwoSided] :
     (I ⊔ J).map f = I.map f ⊔ J.map f :=
   ext fun _ => by
     rw [← mem_toIdeal, map_toIdeal, sup_toIdeal, Ideal.map_sup, ← mem_toIdeal, sup_toIdeal,
       map_toIdeal, map_toIdeal]
 
-/-- Image of Hopf ideals preserves indexed suprema. -/
+/-- An indexed supremum has two-sided image when each member does. -/
+instance instIsTwoSidedMapISup {ι : Sort*} (I : ι → HopfIdeal R H) (f : H →ₐc[R] K)
+    [∀ i, (Ideal.map (f : H →+* K) (I i).toIdeal).IsTwoSided] :
+    (Ideal.map (f : H →+* K) (⨆ i, I i).toIdeal).IsTwoSided := by
+  have h : (⨆ i, (I i).map f).toIdeal.IsTwoSided := inferInstance
+  simpa only [iSup_toIdeal, map_toIdeal, Ideal.map_iSup] using h
+
+/-- Image of Hopf ideals preserves indexed suprema when each image is two-sided. -/
 @[simp]
-theorem map_iSup {ι : Sort*} (I : ι → HopfIdeal R H) (f : H →ₐc[R] K) :
+theorem map_iSup {ι : Sort*} (I : ι → HopfIdeal R H) (f : H →ₐc[R] K)
+    [∀ i, (Ideal.map (f : H →+* K) (I i).toIdeal).IsTwoSided] :
     (⨆ i, I i).map f = ⨆ i, (I i).map f :=
   ext fun _ => by
     rw [← mem_toIdeal, map_toIdeal, iSup_toIdeal, Ideal.map_iSup, ← mem_toIdeal, iSup_toIdeal]
     simp only [map_toIdeal]
 
-/-- Image of Hopf ideals preserves suprema of sets. -/
-@[simp]
-theorem map_sSup (S : Set (HopfIdeal R H)) (f : H →ₐc[R] K) :
-    (sSup S).map f = sSup ((fun I => I.map f) '' S) := by
-  rw [sSup_eq_iSup', map_iSup, sSup_image']
+/-- A set of Hopf ideals has two-sided supremum image when each member has two-sided image. -/
+instance instIsTwoSidedMapSSup (S : Set (HopfIdeal R H)) (f : H →ₐc[R] K)
+    [∀ I : S, (Ideal.map (f : H →+* K) I.val.toIdeal).IsTwoSided] :
+    (Ideal.map (f : H →+* K) (sSup S).toIdeal).IsTwoSided := by
+  rw [sSup_eq_iSup']
+  infer_instance
 
-end Commutative
+/-- Image of Hopf ideals preserves suprema of sets when each member has two-sided image. -/
+@[simp]
+theorem map_sSup (S : Set (HopfIdeal R H)) (f : H →ₐc[R] K)
+    [∀ I : S, (Ideal.map (f : H →+* K) I.val.toIdeal).IsTwoSided] :
+    (sSup S).map f = sSup (Set.range fun I : S => I.val.map f) := by
+  rw [sSup_range]
+  ext x
+  rw [← mem_toIdeal, map_toIdeal, ← mem_toIdeal, iSup_toIdeal]
+  simp only [sSup_eq_iSup', iSup_toIdeal, Ideal.map_iSup, map_toIdeal]
+
+end TwoSided
 
 end Semiring
 
