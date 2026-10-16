@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Closedness and completeness of projected subspaces
