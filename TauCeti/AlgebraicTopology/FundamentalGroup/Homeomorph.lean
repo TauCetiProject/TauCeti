@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
-public import Mathlib.Topology.Homeomorph.Defs
+public import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Algebra.Category.Grp.Basic
 
 /-!
 # The fundamental group is a homeomorphism invariant
@@ -25,6 +26,9 @@ Both auxiliary lemmas are proved once here from Mathlib's `FundamentalGroup.mapO
 `Path.Homotopic.Quotient` transport lemmas (`map_comp`, `map_cast`, `cast_cast`), and are useful
 on their own.
 
+For nested subspaces, the induced isomorphisms commute with inclusions. The two subspace
+naturality squares are public so that other fundamental-group diagrams can reuse this transport.
+
 Transporting a fundamental-group computation across a homeomorphism is the group-level input the
 universal-covers roadmap needs for its Stage 4 applications: for example the fundamental group of
 the unit circle `Circle ⊆ ℂ`, obtained from the additive-circle computation through Mathlib's
@@ -39,6 +43,8 @@ the unit circle `Circle ⊆ ℂ`, obtained from the additive-circle computation 
 * `TauCeti.FundamentalGroup.homeomorphMulEquivOfEq`: `π₁(X, x) ≃* π₁(Y, y)` from `e : X ≃ₜ Y`
   with `e x = y`.
 * `TauCeti.FundamentalGroup.homeomorphMulEquiv`: `π₁(X, x) ≃* π₁(Y, e x)`.
+* `TauCeti.FundamentalGroup.subspace_inclusion_square`: naturality for nested inclusions.
+* `TauCeti.FundamentalGroup.subspace_subtypeVal_square`: naturality for subtype inclusion.
 -/
 
 public section
@@ -149,6 +155,76 @@ theorem homeomorphMulEquiv_symm_apply (e : X ≃ₜ Y) (x : X) (q : _root_.Funda
     (homeomorphMulEquiv e x).symm q =
       _root_.FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_apply x) q :=
   rfl
+
+section Subspace
+
+open CategoryTheory Set
+
+/-- Inclusions between nested subspaces commute on fundamental groups after the canonical
+homeomorphisms that forget the containing subspace. -/
+theorem subspace_inclusion_square {C S T : Set X}
+    (hSC : S ⊆ C) (hTC : T ⊆ C) (hST : S ⊆ T) (x : X) (hxS : x ∈ S) :
+    let S' : Set C := Subtype.val ⁻¹' S
+    let T' : Set C := Subtype.val ⁻¹' T
+    let eS : S' ≃ₜ S := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun s hs => ⟨⟨s, hSC hs⟩, rfl⟩)
+    let eT : T' ≃ₜ T := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun t ht => ⟨⟨t, hTC ht⟩, rfl⟩)
+    let x' : C := ⟨x, hSC hxS⟩
+    GrpCat.ofHom (_root_.FundamentalGroup.map
+        (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) ⟨x', hxS⟩) ≫
+        (homeomorphMulEquivOfEq eT rfl).toGrpIso.hom =
+      (homeomorphMulEquivOfEq eS rfl).toGrpIso.hom ≫
+        GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion hST) ⟨x, hxS⟩) := by
+  intro S' T' eS eT x'
+  apply GrpCat.ext
+  intro p
+  -- Pin the group carriers before unfolding the categorical wrappers: composition simp
+  -- cannot infer them through the homeomorphism-induced isomorphisms at nested subtypes.
+  change homeomorphMulEquivOfEq eT rfl
+      (_root_.FundamentalGroup.map (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T'))
+        (⟨x', hxS⟩ : S') p) =
+    _root_.FundamentalGroup.map (ContinuousMap.inclusion hST) ⟨x, hxS⟩
+      (homeomorphMulEquivOfEq eS rfl p)
+  rw [homeomorphMulEquivOfEq_apply,
+    homeomorphMulEquivOfEq_apply,
+    ← mapOfEq_rfl (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')),
+    ← mapOfEq_rfl (ContinuousMap.inclusion hST)]
+  exact (mapOfEq_comp ⟨eT, eT.continuous⟩
+    (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) rfl rfl p).trans
+    ((mapOfEq_congr
+      (f₂ := (ContinuousMap.inclusion hST).comp ⟨eS, eS.continuous⟩)
+      (by ext z; rfl) _ _ p).trans
+      (mapOfEq_comp (ContinuousMap.inclusion hST)
+        ⟨eS, eS.continuous⟩ rfl rfl p).symm)
+
+/-- Inclusion of a nested subspace into its ambient subspace factors through the canonical
+homeomorphism that forgets one subtype layer. -/
+theorem subspace_subtypeVal_square {C S : Set X}
+    (hSC : S ⊆ C) (x : X) (hxS : x ∈ S) :
+    let S' : Set C := Subtype.val ⁻¹' S
+    let eS : S' ≃ₜ S := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun s hs => ⟨⟨s, hSC hs⟩, rfl⟩)
+    let x' : C := ⟨x, hSC hxS⟩
+    GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal S') ⟨x', hxS⟩) =
+      (homeomorphMulEquivOfEq eS rfl).toGrpIso.hom ≫
+        GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion hSC) ⟨x, hxS⟩) := by
+  intro S' eS x'
+  apply GrpCat.ext
+  intro p
+  -- As in the overlap square, expose the induced maps after fixing their group carriers.
+  change _root_.FundamentalGroup.map (ContinuousMap.subtypeVal S') ⟨x', hxS⟩ p =
+    _root_.FundamentalGroup.map (ContinuousMap.inclusion hSC) ⟨x, hxS⟩
+      (homeomorphMulEquivOfEq eS rfl p)
+  rw [homeomorphMulEquivOfEq_apply,
+    ← mapOfEq_rfl (ContinuousMap.inclusion hSC),
+    ← mapOfEq_rfl (ContinuousMap.subtypeVal S')]
+  -- The canonical homeomorphism forgets the outer subtype, so composing it with
+  -- inclusion is definitionally the subtype-value map.
+  exact (mapOfEq_comp (ContinuousMap.inclusion hSC)
+    ⟨eS, eS.continuous⟩ rfl rfl p).symm
+
+end Subspace
 
 end FundamentalGroup
 

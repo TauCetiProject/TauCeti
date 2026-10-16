@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Complement
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.GroupTheory.Index.Two
 import Mathlib.GroupTheory.IndexNormal
 import Mathlib.Tactic.Group
@@ -31,10 +32,12 @@ useful: `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
 `TauCeti.transversal_mul_lWord`, the last of which is the rewriting rule
 `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` that turns a `U`-cocycle relation into a `G`-cocycle relation.
 It also records how the word changes when the transversal does (`TauCeti.transversalDiff` and
-`TauCeti.transversalDiff_mul_lWord`), builds the transversal adapted to a map `w : G → U` that is
-equivariant for left multiplication by `U` (`TauCeti.factorizationTransversal`), on which `w`
-reads off the transversal word, and computes the word for a subgroup of index two at the
-two-element transversal `{1, s}` (`Subgroup.indexTwoTransversal`): on an element `γ` of the
+`TauCeti.transversalDiff_mul_lWord`), computes the word of the composite transversal
+`Subgroup.compositeTransversal` of a tower `V ≤ U ≤ G` as the word of `V ≤ U` evaluated at the word
+of `U ≤ G` (`TauCeti.lWord_compositeTransversal`), builds the transversal adapted to a map
+`w : G → U` that is equivariant for left multiplication by `U` (`TauCeti.factorizationTransversal`),
+on which `w` reads off the transversal word, and computes the word for a subgroup of index two at
+the two-element transversal `{1, s}` (`Subgroup.indexTwoTransversal`): on an element `γ` of the
 subgroup it is `γ` at the trivial coset and `s⁻¹ * γ * s` at the other, and on an element outside
 it is `γ * s` and `s⁻¹ * γ` respectively. For a normal subgroup, the word of an element of the
 subgroup at any coset is its conjugate by the representative (`TauCeti.lWord_of_mem_of_normal`).
@@ -44,8 +47,9 @@ Continuity of `γ ↦ ℓᵗ_u(γ)` for
 an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
 
-In the word calculus, the transversal is a variable, and only `lWord_mem` and
-`transversalDiff_mem` ask that `t` actually represent each coset.
+In the word calculus, the transversal is a variable. Only `lWord_mem`, `transversalDiff_mem`
+and the tower identities `TauCeti.quotientEquivProdOfLE'_inv_smul_symm` and
+`TauCeti.lWord_compositeTransversal` ask that `t` actually represent each coset.
 
 ## Implementation notes
 
@@ -53,8 +57,11 @@ The word calculus takes a map `t : G ⧸ U → G` because its consuming formulas
 The map satisfies `↑(t u) = u` when membership in `U` is needed; `Quotient.out` is the canonical
 example. A Mathlib `Subgroup.LeftTransversal` yields the map `Subgroup.leftTransversalRep` via
 `Subgroup.IsComplement.leftQuotientEquiv`; `Subgroup.leftTransversalRep_mk` gives its
-representative property. A homomorphism `φ : G →* G'` inducing a bijection of coset spaces carries
-a left transversal `s` to the left transversal `φ '' s` (`Subgroup.LeftTransversal.map`).
+representative property, and `Subgroup.compositeLeftTransversal` bundles the composite transversal
+of a subgroup tower, whose elements are the products of the two given transversals
+(`Subgroup.mem_compositeLeftTransversal_iff`).
+A homomorphism `φ : G →* G'` inducing a bijection of coset spaces carries a left transversal
+`s` to the left transversal `φ '' s` (`Subgroup.LeftTransversal.map`).
 
 The transversal word supplies the subgroup-valued arguments in the cochain formulas for
 corestriction; its cocycle and change-of-transversal identities support their algebraic proofs.
@@ -192,6 +199,69 @@ theorem transversalDiff_mul_lWord (u : G ⧸ U) (γ : G) :
   rw [transversalDiff_def, transversalDiff_def, lWord_def, lWord_def]
   group
 
+/-! ### Transversal words in a subgroup tower -/
+
+section Tower
+
+variable {V : Subgroup G} (hVU : V ≤ U) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+
+/-- In the coordinates `(G ⧸ U) × (U ⧸ V)` of `Subgroup.quotientEquivProdOfLE'`, translating a
+coset of `V` by `γ⁻¹` translates its outer coordinate by `γ⁻¹` and its inner coordinate by the
+inverse of the transversal word of `γ` at the outer coordinate. -/
+theorem quotientEquivProdOfLE'_inv_smul_symm (a : G ⧸ U) (b : U ⧸ V.subgroupOf U) (γ : G) :
+    Subgroup.quotientEquivProdOfLE' hVU t ht
+        (γ⁻¹ • (Subgroup.quotientEquivProdOfLE' hVU t ht).symm (a, b)) =
+      (γ⁻¹ • a, (⟨lWord U t a γ, lWord_mem U t ht a γ⟩ : U)⁻¹ • b) := by
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
+  apply e.symm.injective
+  rw [e.symm_apply_apply]
+  induction b using Quotient.inductionOn' with
+  | _ b =>
+      -- Quotient induction exposes representatives on both sides of the translated coset.
+      change QuotientGroup.mk (γ⁻¹ * (t a * (b : G))) =
+        QuotientGroup.mk (t (γ⁻¹ • a) *
+          ((⟨lWord U t a γ, lWord_mem U t ht a γ⟩ : U)⁻¹ * b : U))
+      congr 1
+      simp only [lWord_def, Subgroup.coe_mul, Subgroup.coe_inv]
+      group
+
+/-- **The transversal word of a composite transversal.** For `V ≤ U ≤ G`, the word of the
+composite transversal `Subgroup.compositeTransversal` of `V` in `G` at a coset `q` with tower
+coordinates `(a, b)` is the word, at `b`, of the transversal `s` of `V` in `U`, evaluated at the
+word of `t` at `a`. -/
+theorem lWord_compositeTransversal (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) (γ : G) :
+    lWord V (Subgroup.compositeTransversal G U V hVU t ht s) q γ =
+      (lWord (V.subgroupOf U) s
+        (Subgroup.quotientEquivProdOfLE' hVU t ht q).2
+        ⟨lWord U t (Subgroup.quotientEquivProdOfLE' hVU t ht q).1 γ,
+          lWord_mem U t ht _ γ⟩ : U) := by
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
+  let L : U := ⟨lWord U t (e q).1 γ, lWord_mem U t ht _ γ⟩
+  have hcoords : e (γ⁻¹ • q) = (γ⁻¹ • (e q).1, L⁻¹ • (e q).2) := by
+    calc
+      e (γ⁻¹ • q) = e (γ⁻¹ • e.symm (e q)) :=
+        congrArg (fun x => e (γ⁻¹ • x)) (e.symm_apply_apply q).symm
+      _ = (γ⁻¹ • (e q).1, L⁻¹ • (e q).2) :=
+        quotientEquivProdOfLE'_inv_smul_symm U t hVU ht (e q).1 (e q).2 γ
+  have hfst := congrArg Prod.fst hcoords
+  have hsnd := congrArg Prod.snd hcoords
+  simp only at hfst hsnd
+  rw [lWord_def, lWord_def]
+  simp only [Subgroup.compositeTransversal_apply]
+  -- Expose the outer and inner representatives in the two transversal words.
+  change (t (e q).1 * (s (e q).2 : G))⁻¹ * γ *
+      (t (e (γ⁻¹ • q)).1 * (s (e (γ⁻¹ • q)).2 : G)) =
+    ((s (e q).2 : U)⁻¹ * L * s (L⁻¹ • (e q).2) : U)
+  rw [hfst, hsnd]
+  -- After rewriting the tower coordinates, forget the remaining subgroup coercions.
+  change (t (e q).1 * (s (e q).2 : G))⁻¹ * γ *
+      (t (γ⁻¹ • (e q).1) * (s (L⁻¹ • (e q).2) : G)) =
+    (s (e q).2 : G)⁻¹ * (L : G) * (s (L⁻¹ • (e q).2) : G)
+  simp only [L, lWord_def]
+  group
+
+end Tower
+
 /-! ### The transversal adapted to a right-coset factorization -/
 
 section Factorization
@@ -281,6 +351,57 @@ theorem leftTransversalRep_mem (s : U.LeftTransversal) (x : G ⧸ U) :
     (hg : g ∈ (s : Set G)) : leftTransversalRep U s (g : G ⧸ U) = g :=
   congrArg Subtype.val <| (isComplement_subgroup_right_iff_bijective.mp s.2).injective
     (a₁ := ⟨_, leftTransversalRep_mem U s g⟩) (a₂ := ⟨g, hg⟩) (leftTransversalRep_mk U s g)
+
+variable {U} {V : Subgroup G} (hVU : V ≤ U)
+
+/-- **The composite left transversal of a subgroup tower.** For `V ≤ U ≤ G`, a left transversal
+`s` of `U` in `G` and a left transversal `t` of `V` (as the subgroup `V.subgroupOf U`) in `U`
+give the left transversal of `V` in `G` whose representative of a coset with tower coordinates
+`(a, b)` is `r_s(a) * r_t(b)` (`leftTransversalRep_compositeLeftTransversal`). -/
+noncomputable def compositeLeftTransversal (s : U.LeftTransversal)
+    (t : (V.subgroupOf U).LeftTransversal) : V.LeftTransversal :=
+  ⟨Set.range (compositeTransversal G U V hVU (leftTransversalRep U s) (leftTransversalRep_mk U s)
+      (leftTransversalRep (V.subgroupOf U) t)),
+    isComplement_range_left (compositeTransversal_spec G U V hVU _ (leftTransversalRep_mk U s)
+      _ (leftTransversalRep_mk (V.subgroupOf U) t))⟩
+
+/-- The representatives of the composite left transversal are those of
+`Subgroup.compositeTransversal`. -/
+@[simp] theorem leftTransversalRep_compositeLeftTransversal (s : U.LeftTransversal)
+    (t : (V.subgroupOf U).LeftTransversal) :
+    leftTransversalRep V (compositeLeftTransversal hVU s t) =
+      compositeTransversal G U V hVU (leftTransversalRep U s) (leftTransversalRep_mk U s)
+        (leftTransversalRep (V.subgroupOf U) t) :=
+  leftTransversalRep_range V _ (compositeTransversal_spec G U V hVU _ (leftTransversalRep_mk U s)
+    _ (leftTransversalRep_mk (V.subgroupOf U) t))
+
+/-- The composite left transversal of `V ≤ U ≤ G` is the set of products `a * b` of an element `a`
+of `s` and an element `b` of `t`. -/
+theorem coe_compositeLeftTransversal (s : U.LeftTransversal)
+    (t : (V.subgroupOf U).LeftTransversal) :
+    (compositeLeftTransversal hVU s t : Set G) =
+      Set.image2 (fun (a : G) (b : U) ↦ a * b) (s : Set G) (t : Set U) := by
+  ext g
+  constructor
+  · rintro ⟨q, rfl⟩
+    exact ⟨_, leftTransversalRep_mem U s _, _, leftTransversalRep_mem _ t _,
+      (compositeTransversal_apply G U V hVU _ _ _ q).symm⟩
+  · rintro ⟨a, ha, b, hb, rfl⟩
+    let e := quotientEquivProdOfLE' hVU (leftTransversalRep U s) (leftTransversalRep_mk U s)
+    refine ⟨e.symm (QuotientGroup.mk a, QuotientGroup.mk b), ?_⟩
+    rw [compositeTransversal_apply, e.apply_symm_apply]
+    -- A coset of an element of a transversal is represented by that element.
+    exact congrArg₂ (fun (x : G) (y : U) ↦ x * y)
+      (congrArg Subtype.val (s.2.leftQuotientEquiv.apply_symm_apply ⟨a, ha⟩))
+      (congrArg Subtype.val (t.2.leftQuotientEquiv.apply_symm_apply ⟨b, hb⟩))
+
+/-- An element lies in the composite left transversal of `V ≤ U ≤ G` exactly when it is a product
+`a * b` of an element `a` of `s` and an element `b` of `t`. -/
+@[simp] theorem mem_compositeLeftTransversal_iff {s : U.LeftTransversal}
+    {t : (V.subgroupOf U).LeftTransversal} {g : G} :
+    g ∈ (compositeLeftTransversal hVU s t : Set G) ↔
+      ∃ a ∈ (s : Set G), ∃ b ∈ (t : Set U), a * (b : G) = g := by
+  rw [coe_compositeLeftTransversal, Set.mem_image2]
 
 end LeftTransversalRep
 

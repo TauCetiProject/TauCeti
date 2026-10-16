@@ -41,6 +41,12 @@ independent over `A`.
   the underlying subfields, so they can be compared across base fields.
 
 The declarations live in Mathlib's `IntermediateField` namespace so that this dot notation works.
+
+`IntermediateField.LinearDisjoint.linearIndependent_algebraMap_comp` extends scalars on the other
+side: if the image of `k'` in a common overfield `E` is linearly disjoint from `F` over `k`, a
+family of `F` linearly independent over `k` stays linearly independent over `k'` in `E`.
+`TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional` reduces that linear disjointness,
+for algebraic `k' / k`, to the finite subextensions of `k' / k`.
 -/
 
 public section
@@ -216,5 +222,53 @@ theorem _root_.IntermediateField.relfinrank_eq_relfinrank_of_toSubfield_eq {k' :
     (hA : A.toSubfield = A'.toSubfield) (hB : B.toSubfield = B'.toSubfield) :
     IntermediateField.relfinrank A B = IntermediateField.relfinrank A' B' :=
   congrArg Cardinal.toNat (IntermediateField.relrank_eq_relrank_of_toSubfield_eq hA hB)
+
+section ExtendScalars
+
+variable {k' : Type*} {F : Type*} {E : Type*} [Field k'] [Field F] [Field E]
+variable [Algebra k k'] [Algebra k F] [Algebra k E] [Algebra k' E] [Algebra F E]
+variable [IsScalarTower k k' E] [IsScalarTower k F E]
+
+/-- **Linear independence over `k` persists over `k'` under linear disjointness**: if the image of
+`k'` in `E` and `F` are linearly disjoint over `k`, then a family of elements of `F` linearly
+independent over `k` stays linearly independent over `k'` inside `E`. -/
+theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_algebraMap_comp
+    (H : (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F) {ι : Type*} {v : ι → F}
+    (hv : LinearIndependent k v) : LinearIndependent k' (algebraMap F E ∘ v) :=
+  (H.linearIndependent_right' hv).map_of_injective_injective
+    (IsScalarTower.toAlgHom k k' E).equivFieldRange (AddMonoidHom.id E) (by simp) (by simp)
+    fun _ _ ↦ by
+      simp only [AddMonoidHom.id_apply, Algebra.smul_def, IntermediateField.algebraMap_apply,
+        AlgHom.equivFieldRange_apply_coe, IsScalarTower.toAlgHom_apply]
+
+/-- **Linear disjointness from the finite subextensions**: if `k' / k` is algebraic and the image
+in `E` of every finite subextension `M` of `k' / k` is linearly disjoint from `F` over `k`, then so
+is the image of `k'`.  Finitely many elements of `k'` lie in a finite subextension. -/
+theorem linearDisjoint_fieldRange_of_forall_finiteDimensional [Algebra.IsAlgebraic k k']
+    (h : ∀ M : IntermediateField k k', FiniteDimensional k M →
+      (IsScalarTower.toAlgHom k M E).fieldRange.LinearDisjoint F) :
+    (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
+  let f := IsScalarTower.toAlgHom k k' E
+  have : Algebra.IsAlgebraic k f.fieldRange := f.equivFieldRange.isAlgebraic
+  rw [IntermediateField.linearDisjoint_iff]
+  apply Subalgebra.LinearDisjoint.of_linearDisjoint_finite_left
+  intro A hA hfinite
+  let N : IntermediateField k E := Algebra.IsAlgebraic.toIntermediateField A
+  let M : IntermediateField k k' := N.comap f
+  let g : M →ₐ[k] A := (f.comp M.val).codRestrict A fun x => x.property
+  have : FiniteDimensional k M :=
+    FiniteDimensional.of_injective g.toLinearMap g.injective
+  have hN : N ≤ f.fieldRange := hA
+  have hmap : M.map f = N := IntermediateField.map_comap_eq_self hN
+  have hfield : (IsScalarTower.toAlgHom k M E).fieldRange = N := by
+    -- The tower map through M is definitionally the restriction f.comp M.val.
+    -- Expose that restriction to apply the field-range/map identity.
+    change (f.comp M.val).fieldRange = N
+    rw [IntermediateField.fieldRange_comp_val, hmap]
+  have hdisj := h M this
+  rw [IntermediateField.linearDisjoint_iff, hfield] at hdisj
+  exact hdisj
+
+end ExtendScalars
 
 end TauCeti

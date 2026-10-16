@@ -26,6 +26,10 @@ sums of powers.
 For `t ∈ [0, 1]` and any exponent `r`, the sum `(1 - t) ^ r + t ^ r` is positive, so it can be
 used as the normalizing denominator of a pair of weights.
 
+If `1 ≤ C`, `D < n` and `C ^ (D / (n - D)) < B + 1`, then `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n`. This
+is the counting step of Siegel's lemma: it compares the integer points of a box with the cells
+of a partition of the image of that box under `D` linear forms.
+
 ## Main results
 
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
@@ -33,6 +37,8 @@ used as the normalizing denominator of a pair of weights.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
   `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`: the tangent-line inequalities for `u ↦ u ^ p`.
 * `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
+* `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
+  `C ^ (D / (n - D)) < B + 1`.
 -/
 
 public section
@@ -96,5 +102,24 @@ theorem one_sub_rpow_add_rpow_pos (r : ℝ) {t : ℝ} (ht : t ∈ Set.Icc (0 : �
   rcases ht.1.eq_or_lt with rfl | ht₀
   · simpa using add_pos_of_pos_of_nonneg zero_lt_one (rpow_nonneg le_rfl r)
   · exact add_pos_of_nonneg_of_pos (rpow_nonneg (sub_nonneg.2 ht.2) r) (rpow_pos_of_pos ht₀ r)
+
+/-- **The counting estimate of Siegel's lemma.** If `1 ≤ C`, `D < n` and
+`C ^ (D / (n - D)) < B + 1`, then `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n`: the `(B + 1) ^ n` integer
+points of the box `[0, B]^n` outnumber the cells of a partition of `[0, C B]^D` into
+`⌊C B⌋₊ + 1` intervals per coordinate. -/
+theorem floor_mul_add_one_pow_lt {C : ℝ} (hC : 1 ≤ C) {D n B : ℕ} (hDn : D < n)
+    (hB : C ^ ((D : ℝ) / (n - D)) < B + 1) :
+    (⌊C * B⌋₊ + 1) ^ D < (B + 1) ^ n := by
+  have hnD : (D : ℝ) < n := by exact_mod_cast hDn
+  rw [← Nat.cast_lt (α := ℝ)]
+  push_cast
+  calc ((⌊C * B⌋₊ : ℝ) + 1) ^ D ≤ (C * (B + 1)) ^ D := by
+        gcongr
+        linarith [Nat.floor_le (by positivity : 0 ≤ C * B)]
+    _ = (C ^ ((D : ℝ) / (n - D))) ^ ((n : ℝ) - D) * (B + 1) ^ D := by
+        rw [mul_pow, ← rpow_mul (by positivity), div_mul_cancel₀ _ (by linarith), rpow_natCast]
+    _ < (B + 1) ^ ((n : ℝ) - D) * (B + 1) ^ D := by gcongr
+    _ = (B + 1) ^ n := by
+        rw [← rpow_natCast _ D, ← rpow_add (by positivity), sub_add_cancel, rpow_natCast]
 
 end Real

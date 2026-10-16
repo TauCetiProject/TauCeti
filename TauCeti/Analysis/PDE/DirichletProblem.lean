@@ -127,7 +127,7 @@ namespace TauCeti
 namespace PDE
 
 open MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal InnerProductSpace NNReal
+open scoped Distributions ENNReal InnerProductSpace Matrix NNReal
 
 section Domain
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+-- Proof-only: a spanning family with as many elements as the dimension is independent.
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 
 /-!
 # Bases of constants in a constant field extension
@@ -26,10 +28,19 @@ These are the linear-algebraic inputs to the local theory of constant field exte
 place `P` of `F / k` a basis of constants is an integral basis, which is what identifies the
 functions of `F' = F · k'` with bounded poles in terms of those of `F`.
 
+Without separability or exactness, linear disjointness can fail, and its degree form
+`[F · k' : F] = [k' : k]` is then the test: for finite `k' / k` it implies linear disjointness, and
+for algebraic `k' / k` linear disjointness follows once the test passes for every finite
+subextension.  This is how an inseparable constant field extension is compared with `F`.
+
 ## Main definitions and results
 
 * `TauCeti.finrank_le_finrank_of_constantCompositum_eq_top`: `[F · k' : F] ≤ [k' : k]` for any
   finite `k' / k`, with no exactness or separability hypothesis.
+* `TauCeti.linearDisjoint_fieldRange_of_finrank_constantCompositum_eq`: equality there makes `F`
+  and `k'` linearly disjoint over `k`, again with no exactness or separability hypothesis, and
+  `TauCeti.linearDisjoint_fieldRange_of_forall_finrank_constantCompositum_eq` deduces linear
+  disjointness for an algebraic `k' / k` from equality for its finite subextensions.
 * `TauCeti.constantBasis`: the `F`-basis of `F' = F · k'` given by a `k`-basis of `k'`.
 * `TauCeti.constantBasis_repr_algebraMap`: the coordinates of a constant in a basis of constants
   are the images of its coordinates over `k`.
@@ -100,6 +111,46 @@ theorem finrank_le_finrank_of_constantCompositum_eq_top [FiniteDimensional k k']
   have hle := finrank_range_le_card (R := F) (algebraMap k' F' ∘ b)
   rwa [Set.finrank, span_range_algebraMap_comp_of_constantCompositum_eq_top h b, finrank_top,
     Fintype.card_fin] at hle
+
+/-- **The degree form of linear disjointness implies linear disjointness**: if `k' / k` is finite
+and adjoining it to `F` costs exactly `[k' : k]`, that is `[F · k' : F] = [k' : k]`, then the
+image of `k'` in `F'` and `F` are linearly disjoint over `k`.  The image of a `k`-basis of `k'`
+spans `F · k'` over `F` and has `[F · k' : F]` elements, so it stays linearly independent over
+`F`.
+
+This is the converse of `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`.  No
+exactness or separability hypothesis is needed. -/
+theorem linearDisjoint_fieldRange_of_finrank_constantCompositum_eq [FiniteDimensional k k']
+    (h : finrank F (constantCompositum F k' F') = finrank k k') :
+    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
+  let C := constantCompositum F k' F'
+  let := constantCompositumAlgebra F k' F'
+  have := isScalarTower_constantCompositum F k' F'
+  have := isScalarTower_base_constantCompositum k F k' F'
+  have hC : constantCompositum F k' C = ⊤ := (constantCompositum_eq_top_iff F k' F' C).2 rfl
+  let b := finBasis k k'
+  have hc : LinearIndependent F (algebraMap k' C ∘ b) :=
+    linearIndependent_of_top_le_span_of_card_eq_finrank
+      (span_range_algebraMap_comp_of_constantCompositum_eq_top hC b).ge
+      (by rw [Fintype.card_fin, ← h])
+  refine .of_basis_left (b.map (IsScalarTower.toAlgHom k k' F').equivFieldRange.toLinearEquiv) ?_
+  convert hc.map' C.val.toLinearMap (LinearMap.ker_eq_bot.2 C.val.injective) using 1
+  ext i
+  simpa [AlgHom.equivFieldRange_apply_coe] using IsScalarTower.algebraMap_apply k' C F' (b i)
+
+/-- **Linear disjointness from the finite subextensions**: if `k' / k` is algebraic and every
+finite subextension `M` of `k' / k` satisfies `[F · M : F] = [M : k]`, then the image of `k'` in
+`F'` and `F` are linearly disjoint over `k`.  By
+`TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional` it suffices to treat each `M`,
+where `TauCeti.linearDisjoint_fieldRange_of_finrank_constantCompositum_eq` applies.  The extension
+`k' / k` may be infinite, for instance an algebraic closure of `k`. -/
+theorem linearDisjoint_fieldRange_of_forall_finrank_constantCompositum_eq
+    [Algebra.IsAlgebraic k k']
+    (h : ∀ M : IntermediateField k k', FiniteDimensional k M →
+      finrank F (constantCompositum F M F') = finrank k M) :
+    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F :=
+  linearDisjoint_fieldRange_of_forall_finiteDimensional fun M _ ↦
+    linearDisjoint_fieldRange_of_finrank_constantCompositum_eq (h M ‹_›)
 
 variable [Algebra.IsSeparable k k']
 variable (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)

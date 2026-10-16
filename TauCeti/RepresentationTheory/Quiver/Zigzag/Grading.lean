@@ -347,6 +347,19 @@ theorem zigzagBasis_coord_dart_eq_zero_of_mem_zigzagIntegerGrade (hns : ∀ i : 
     rw [zigzagGrade_eq_bot_of_three_le k G (by omega)]
     exact bot_le
 
+/-- Every arrow class has degree one. -/
+theorem zigzagMk_ofArrow_mem_zigzagIntegerGrade_one (d : G.Dart) :
+    zigzagMk k G (ofArrow (arrow G d.adj)) ∈ zigzagIntegerGrade k G 1 := by
+  rw [← Nat.cast_one (R := ℤ), zigzagIntegerGrade_ofNat]
+  exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.ofArrow_mem_grade_one _)
+
+/-- Every volume class has degree two. -/
+theorem zigzagVolume_mem_zigzagIntegerGrade_two (i : V) :
+    zigzagVolume k G i ∈ zigzagIntegerGrade k G 2 := by
+  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
+    zigzagGrade_two_eq_span_range_zigzagVolume]
+  exact Submodule.subset_span ⟨i, rfl⟩
+
 /-- Multiplication adds signed degrees in the integer extension of the path-length grading. -/
 theorem mul_mem_zigzagIntegerGrade {m n : ℤ}
     {x y : nonisolatedZigzagQuotient k G} (hx : x ∈ zigzagIntegerGrade k G m)

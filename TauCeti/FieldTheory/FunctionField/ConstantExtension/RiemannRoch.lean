@@ -47,6 +47,9 @@ two dimensions agree.  An element of the larger space is defined over a finite s
   `TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`: along any separable algebraic
   constant field extension, `L(n (z)_∞)` of `F' / k'` is the `k'`-span of the image of
   `L(n (z)_∞)` of `F / k`, and the two dimensions are equal.
+* `TauCeti.Divisor.dim_nsmul_poles_le_of_linearDisjoint`: if `F` and `k'` are linearly disjoint
+  over `k`, then `ℓ(n (z)_∞)` of `F / k` is at most that of `F' / k'`, with no separability or
+  exactness hypothesis.
 
 ## Reference
 
@@ -286,5 +289,32 @@ theorem Divisor.dim_nsmul_poles_of_constantCompositum_eq_top
     span_image_riemannRochSpace_eq_span_range b,
     finrank_span_eq_card (linearIndependent_algebraMap_riemannRochSpace hex b),
     Fintype.card_fin]
+
+omit [FiniteDimensional F F'] [Algebra.IsSeparable k k'] in
+/-- **Under linear disjointness `ℓ(n (z)_∞)` can only grow**: if the image of `k'` in `F'` and `F`
+are linearly disjoint over `k` and both `k' / k` and `F' / F` are integral, then `n (z)_∞` has
+dimension in `F' / k'` at least its dimension in `F / k`, because a `k`-basis of `L(n (z)_∞)` stays
+linearly independent over `k'` inside `L(n (z)_∞)` of `F'`.  This is the inequality counterpart of
+`TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`, with neither separability nor
+exactness assumed. -/
+theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral k k']
+    [Algebra.IsIntegral F F']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) (n : ℕ) (z : Fˣ) :
+    (n • Divisor.poles hF z).dim ≤
+      (n • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)).dim := by
+  set D := n • Divisor.poles hF z
+  set D' := n • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)
+  have := finiteDimensional_riemannRochSpace hF D
+  have := finiteDimensional_riemannRochSpace hF' D'
+  let b := Module.finBasis k (riemannRochSpace D)
+  have hli : LinearIndependent k' (algebraMap F F' ∘ (Subtype.val ∘ b)) :=
+    H.linearIndependent_algebraMap_comp
+      (b.linearIndependent.map' (riemannRochSpace D).subtype (Submodule.ker_subtype _))
+  let v : Fin (Module.finrank k (riemannRochSpace D)) → riemannRochSpace D' :=
+    fun i ↦
+      ⟨algebraMap F F' (b i), (mem_riemannRochSpace_nsmul_poles_map_iff hF hF' n z _).2 (b i).2⟩
+  have hv : LinearIndependent k' v := .of_comp (riemannRochSpace D').subtype hli
+  simpa [Divisor.dim_def] using hv.fintype_card_le_finrank
 
 end TauCeti

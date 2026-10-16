@@ -54,11 +54,18 @@ noncomputable def Algebra.normUnits : Sˣ →* Rˣ :=
 theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.norm R (x : S) := by
   simp [Algebra.normUnits]
 
+/-- **The norm of a scalar.** In a free `R`-algebra `S`, the norm of a unit `a` of `R`, viewed in
+`S`, is `a ^ finrank R S`. -/
+@[simp]
+theorem Algebra.normUnits_unitsMap_algebraMap [Module.Free R S] (a : Rˣ) :
+    Algebra.normUnits R (Units.map (algebraMap R S : R →* S) a) = a ^ Module.finrank R S :=
+  Units.ext <| by simp
+
 /-- **Powers by the rank are norms.** In a free `R`-algebra `S` the norm of `a ∈ R` is
 `a ^ finrank R S`, so that power of a unit of `R` is the norm of a unit of `S`. -/
 theorem Algebra.pow_finrank_mem_range_normUnits [Module.Free R S] (a : Rˣ) :
     a ^ Module.finrank R S ∈ (Algebra.normUnits R : Sˣ →* Rˣ).range :=
-  ⟨Units.map (algebraMap R S : R →* S) a, Units.ext <| by simp⟩
+  ⟨Units.map (algebraMap R S : R →* S) a, Algebra.normUnits_unitsMap_algebraMap R a⟩
 
 /-- **Powers by a multiple of the rank are norms.** In a free `R`-algebra `S` whose rank divides
 `n`, every `n`-th power of a unit of `R` is the norm of a unit of `S`. -/
