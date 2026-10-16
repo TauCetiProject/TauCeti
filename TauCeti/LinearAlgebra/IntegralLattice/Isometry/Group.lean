@@ -117,19 +117,17 @@ theorem det_eq_one_or_neg_one (e : Isometry L L) : det L e = 1 ∨ det L e = -1 
 
 /-- A self-isometry preserves a finite carrier basis orientation exactly when its determinant
 is one. -/
-theorem orientation_map_eq_iff {ι : Type*} [Fintype ι] (b : Module.Basis ι ℤ L)
-    (e : Isometry L L) :
+theorem orientation_map_eq_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℤ L) (e : Isometry L L) :
     (b.map e.carrierEquiv).orientation = b.orientation ↔ det L e = 1 := by
-  classical
   rw [Module.Basis.orientation_comp_linearEquiv_eq_iff_det_pos, ← coe_det]
   rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
 
 /-- A self-isometry reverses a finite carrier basis orientation exactly when its determinant
 is minus one. -/
-theorem orientation_map_eq_neg_iff {ι : Type*} [Fintype ι] (b : Module.Basis ι ℤ L)
-    (e : Isometry L L) :
+theorem orientation_map_eq_neg_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℤ L) (e : Isometry L L) :
     (b.map e.carrierEquiv).orientation = -b.orientation ↔ det L e = -1 := by
-  classical
   rw [Module.Basis.orientation_comp_linearEquiv_eq_neg_iff_det_neg, ← coe_det]
   rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
 
