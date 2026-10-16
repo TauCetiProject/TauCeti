@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Picard
-public import TauCeti.Topology.KrullDimension
+public import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Vanishing of the cohomology of line bundles on a curve above degree one
