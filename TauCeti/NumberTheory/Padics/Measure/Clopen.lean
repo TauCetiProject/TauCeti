@@ -201,14 +201,11 @@ noncomputable def clopenDecomposition (s : Clopens X) :
   LinearEquiv.ofLinearMap ((restrictClopen s).prod (restrictClopen sᶜ))
     ((map (subtypeVal (s : Set X))).coprod (map (subtypeVal ((sᶜ : Clopens X) : Set X))))
     (LinearMap.ext fun ν ↦ by
-      rw [LinearMap.comp_apply, LinearMap.coprod_apply, LinearMap.prod_apply, Function.prod_apply,
-        map_add, map_add, restrictClopen_map_subtype, restrictClopen_map_subtype,
-        restrictClopen_map_subtype_of_disjoint disjoint_compl_right,
-        restrictClopen_map_subtype_of_disjoint disjoint_compl_left, add_zero, zero_add,
-        LinearMap.id_apply])
-    (LinearMap.ext fun μ ↦ by
-      rw [LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply, LinearMap.coprod_apply,
-        map_subtype_restrictClopen_add_compl, LinearMap.id_apply])
+      -- `Clopens.coe_compl` would turn `↑sᶜ` into `(↑s)ᶜ`, so that the restriction lemmas for the
+      -- clopen `sᶜ` no longer match.
+      simp [-Clopens.coe_compl, restrictClopen_map_subtype_of_disjoint disjoint_compl_right,
+        restrictClopen_map_subtype_of_disjoint disjoint_compl_left])
+    (LinearMap.ext (map_subtype_restrictClopen_add_compl s))
 
 /-- The two components of the decomposition are the restrictions to `s` and to `sᶜ`. -/
 @[simp]
