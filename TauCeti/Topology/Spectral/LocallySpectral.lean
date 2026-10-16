@@ -127,59 +127,6 @@ theorem spectralSpace_iff_isLocallySpectralSpace :
       toQuasiSeparatedSpace := hXqs
       toPrespectralSpace := hX.prespectralSpace }
 
-/-- Spectrality of the restriction of a map between subspaces is tested on compact open subsets of
-the ambient target: every compact open subset of `V` must pull back to a compact subset of `U`. -/
-theorem _root_.Set.MapsTo.isSpectralMap_restrict_iff {f : X → Y} {U : Set X} {V : Set Y}
-    (hUV : MapsTo f U V) (hf : ContinuousOn f U) (hV : IsOpen V) :
-    IsSpectralMap (hUV.restrict f U V) ↔
-      ∀ K ⊆ V, IsOpen K → IsCompact K → IsCompact (U ∩ f ⁻¹' K) := by
-  have hpre (K : Set Y) :
-      Subtype.val '' (hUV.restrict f U V ⁻¹' (Subtype.val ⁻¹' K)) = U ∩ f ⁻¹' K := by
-    rw [← preimage_comp, MapsTo.restrict_commutes, preimage_comp, Subtype.image_preimage_coe]
-  constructor
-  · intro h K hKV hKo hKc
-    rw [← hpre]
-    refine (h.isCompact_preimage_of_isOpen (hKo.preimage continuous_subtype_val) ?_).image
-      continuous_subtype_val
-    rwa [IsEmbedding.subtypeVal.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.mpr hKV]
-  · intro h
-    refine ⟨hf.mapsToRestrict hUV, fun s hso hsc ↦ ?_⟩
-    rw [← preimage_image_eq s Subtype.val_injective, IsEmbedding.subtypeVal.isCompact_iff, hpre]
-    exact h _ (Subtype.coe_image_subset V s) (hV.isOpenMap_subtype_val s hso)
-      (hsc.image continuous_subtype_val)
-
-/-- Compactness of `U ∩ S` for a compact set `U` may be checked on open pieces of `U` around each
-of its points. -/
-private theorem isCompact_inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
-    (h : ∀ x ∈ U, ∃ U' ⊆ U, IsOpen U' ∧ x ∈ U' ∧ IsCompact (U' ∩ S)) : IsCompact (U ∩ S) := by
-  choose! W hWU hWo hxW hWc using h
-  obtain ⟨t, htU, htf, ht⟩ :=
-    hU.elim_finite_subcover_image hWo fun x hx ↦ mem_biUnion hx (hxW x hx)
-  have heq : U ∩ S = ⋃ x ∈ t, W x ∩ S := by
-    rw [← iUnion₂_inter]
-    exact subset_antisymm (inter_subset_inter_left S ht)
-      (inter_subset_inter_left S (iUnion₂_subset fun x hx ↦ hWU x (htU hx)))
-  rw [heq]
-  exact htf.isCompact_biUnion fun x hx ↦ hWc x (htU hx)
-
-/-- Inside a spectral open subset `V`, every point of an open set `O` has a compact spectral open
-neighbourhood contained in `V ∩ O`. -/
-private theorem exists_spectralSpace_subset_inter {V O : Set X} (hVo : IsOpen V)
-    (hVs : SpectralSpace V) (hOo : IsOpen O) {x : X} (hxV : x ∈ V) (hxO : x ∈ O) :
-    ∃ W ⊆ V ∩ O, IsOpen W ∧ x ∈ W ∧ IsCompact W ∧ SpectralSpace W := by
-  obtain ⟨W', ⟨hW'o, hW'c⟩, hxW', hW'O⟩ :=
-    PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open (a := (⟨x, hxV⟩ : V))
-      (mem_preimage.2 hxO) (hOo.preimage continuous_subtype_val)
-  have hemb := hVo.isOpenEmbedding_subtypeVal
-  refine ⟨Subtype.val '' W', ?_, hemb.isOpenMap _ hW'o, ⟨_, hxW', rfl⟩,
-    hW'c.image continuous_subtype_val, ?_⟩
-  · rintro _ ⟨y, hy, rfl⟩
-    exact ⟨y.2, hW'O hy⟩
-  · refine spectralSpace_of_isEmbedding hemb.isEmbedding (image_subset_range _ _) ?_
-    rw [preimage_image_eq W' Subtype.val_injective]
-    have : CompactSpace W' := isCompact_iff_compactSpace.mp hW'c
-    exact hW'o.isOpenEmbedding_subtypeVal.spectralSpace
-
 /-- The spectral open subsets of a locally spectral space form a basis of its topology. -/
 theorem IsLocallySpectralSpace.isTopologicalBasis (hX : IsLocallySpectralSpace X) :
     IsTopologicalBasis {U : Set X | IsOpen U ∧ SpectralSpace U} := by
@@ -295,13 +242,13 @@ theorem isLocallySpectralMap_iff_isSpectralMap [SpectralSpace X] [SpectralSpace 
   ⟨IsLocallySpectralMap.isSpectralMap, IsSpectralMap.isLocallySpectralMap⟩
 
 /-- **Local spectrality can be tested on a single cover.** A map is locally spectral as soon as
-every point of the source lies in a spectral open subset that maps spectrally into a spectral open
+every point of the source lies in a quasiseparated open subset that maps spectrally into an open
 subset of the target. Continuity of the map is a consequence. -/
 theorem IsLocallySpectralMap.of_forall_exists {f : X → Y}
     (h : ∀ x, ∃ (U : Set X) (V : Set Y) (hUV : MapsTo f U V), IsOpen U ∧ IsOpen V ∧ x ∈ U ∧
-      SpectralSpace U ∧ SpectralSpace V ∧ IsSpectralMap (hUV.restrict f U V)) :
+      QuasiSeparatedSpace U ∧ IsSpectralMap (hUV.restrict f U V)) :
     IsLocallySpectralMap f := by
-  choose U V hUV hUo hVo hxU hUs hVs hUVs using h
+  choose U V hUV hUo hVo hxU hUqs hUVs using h
   have hcont (x : X) : ContinuousOn f (U x) := by
     rw [continuousOn_iff_continuous_domRestrict, domRestrict_eq, ← (hUV x).restrict_commutes]
     exact continuous_subtype_val.comp (hUVs x).continuous
@@ -329,7 +276,7 @@ theorem IsLocallySpectralMap.of_forall_exists {f : X → Y}
   have heq : U' ∩ f ⁻¹' K = U' ∩ (U x ∩ f ⁻¹' (K ∩ W)) := Set.ext fun y ↦
     ⟨fun ⟨hy, hyK⟩ ↦ ⟨hy, (hU'sub hy).2.1, hyK, (hU'sub hy).2.2⟩, fun ⟨hy, _, hyK, _⟩ ↦ ⟨hy, hyK⟩⟩
   rw [heq]
-  exact (isQuasiSeparated_iff_quasiSeparatedSpace (U x) (hUo x)).mpr (hUs x).toQuasiSeparatedSpace
+  exact (isQuasiSeparated_iff_quasiSeparatedSpace (U x) (hUo x)).mpr (hUqs x)
     U' _ (hU'sub.trans (inter_subset_right.trans inter_subset_left)) hU'o hU'c inter_subset_left
     ((hUo x).inter ((hKo.inter hWo).preimage hf)) hpre
 

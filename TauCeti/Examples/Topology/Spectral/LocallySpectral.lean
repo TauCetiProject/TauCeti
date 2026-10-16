@@ -56,7 +56,8 @@ example : ¬ IsLocallySpectralSpace ℝ := fun h ↦ by
 example : IsLocallySpectralMap (fun _ : ℕ ↦ PUnit.unit) ∧
     ¬ IsSpectralMap (fun _ : ℕ ↦ PUnit.unit) := by
   refine ⟨.of_forall_exists fun n ↦ ⟨{n}, univ, mapsTo_univ _ _, isOpen_discrete _, isOpen_univ,
-    rfl, {}, {}, continuous_of_discreteTopology, fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
+    rfl, inferInstance, continuous_of_discreteTopology, fun _ _ _ ↦ (toFinite _).isCompact⟩,
+    fun h ↦ ?_⟩
   have := h.isCompact_preimage_of_isOpen isOpen_univ isCompact_univ
   rw [preimage_univ, isCompact_iff_finite] at this
   exact infinite_univ this
@@ -73,7 +74,7 @@ example : ¬ IsLocallySpectralMap (fun x : ℝ ↦ x = 0) := fun h ↦
 image of a point is infinite. -/
 example : IsLocallySpectralMap (Prod.fst : ℕ × ℕ → ℕ) ∧ ¬ IsSpectralMap (Prod.fst : ℕ × ℕ → ℕ) := by
   refine ⟨.of_forall_exists fun p ↦ ⟨{p}, {p.1}, mapsTo_singleton.mpr rfl, isOpen_discrete _,
-    isOpen_discrete _, rfl, {}, {}, continuous_of_discreteTopology,
+    isOpen_discrete _, rfl, inferInstance, continuous_of_discreteTopology,
     fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
   have := h.isCompact_preimage_of_isOpen (isOpen_discrete {0}) isCompact_singleton
   rw [isCompact_iff_finite] at this
@@ -84,7 +85,7 @@ example : IsLocallySpectralMap (Prod.fst : ℕ × ℕ → ℕ) ∧ ¬ IsSpectral
 spectral, so agreement of the two notions needs a spectral source even over a spectral target. -/
 example : IsLocallySpectralMap ((↑) : ℕ → OnePoint ℕ) ∧ ¬ IsSpectralMap ((↑) : ℕ → OnePoint ℕ) := by
   refine ⟨.of_forall_exists fun n ↦ ⟨{n}, {(n : OnePoint ℕ)}, mapsTo_singleton.mpr rfl,
-    isOpen_discrete _, ?_, rfl, {}, {}, continuous_of_discreteTopology,
+    isOpen_discrete _, ?_, rfl, inferInstance, continuous_of_discreteTopology,
     fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
   · rw [← image_singleton]
     exact OnePoint.isOpen_image_coe.mpr (isOpen_discrete _)
@@ -125,30 +126,7 @@ example : ∃ (f : OnePoint ℕ → ℝ) (g : ℝ → Prop),
   have : SpectralSpace (OnePoint ℕ) :=
     { toPrespectralSpace := .of_isTopologicalBasis isTopologicalBasis_isClopen
         fun _ hU ↦ hU.isClosed.isCompact }
-  -- The Sierpiński space `Prop` is spectral.
-  have hF {p : Prop} (hp : p ∉ ({True} : Set Prop)) : p = False := eq_false fun h ↦ hp (eq_true h)
-  have hT0 : T0Space Prop := (t0Space_iff_inseparable Prop).mpr fun p q h ↦
-    propext (by simpa using h.mem_open_iff isOpen_singleton_true)
-  have hsober : QuasiSober Prop := by
-    refine (quasiSober_iff Prop).mpr fun {S} hS hSc ↦ ?_
-    by_cases hT : True ∈ S
-    · -- `True` specializes to every point: it is generic in each closed set containing it.
-      refine ⟨True, isGenericPoint_iff_specializes.mpr fun y ↦
-        ⟨fun h ↦ h.mem_closed hSc hT, fun _ ↦ ?_⟩⟩
-      by_cases hy : y
-      · rw [eq_true hy]
-      · rw [eq_false hy, specializes_iff_nhds, nhds_false]
-        exact le_top
-    · -- Otherwise every point of `S` is `False`, which is then the generic point.
-      have hSF {p : Prop} (hp : p ∈ S) : p = False :=
-        hF fun h ↦ hT (mem_singleton_iff.mp h ▸ hp)
-      obtain ⟨p, hp⟩ := hS.nonempty
-      refine ⟨False, isGenericPoint_iff_specializes.mpr fun y ↦ ⟨fun h ↦ ?_, fun hy ↦ ?_⟩⟩
-      · rw [hF fun hy ↦ false_ne_true (mem_singleton_iff.mp (h.mem_open isOpen_singleton_true hy)),
-          ← hSF hp]
-        exact hp
-      · rw [hSF hy]
-  have : SpectralSpace Prop := {}
+  have : SpectralSpace Prop := spectralSpace_prop
   have hpre : g ∘ f ⁻¹' {True} = range ((↑) : ℕ → OnePoint ℕ) := by
     ext x
     induction x using OnePoint.rec <;> simp [f, g, Nat.cast_add_one_pos]
