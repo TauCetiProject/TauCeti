@@ -240,8 +240,7 @@ noncomputable def rootsEquiv :
       all_goals first
         | subst j
           norm_num only [Bool.false_eq_true, ite_false, ite_true,
-            Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi;
-            rfl
+            Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi ⊢
         | norm_num only [Bool.false_eq_true, ite_false, ite_true,
             Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same,
             Pi.single_eq_of_ne hij] at hi
