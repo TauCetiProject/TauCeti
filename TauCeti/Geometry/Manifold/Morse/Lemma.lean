@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # The Morse lemma on a smooth manifold
@@ -191,17 +190,7 @@ theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
 
 end MorseChart
 
-variable [IsManifold 𝓘(ℝ, E) ∞ M]
-
-/-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
-point. -/
-theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero (hf : IsMorse 𝓘(ℝ, E) f)
-    {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
-    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
-  hf.isManifoldNondegenerateCriticalPoint
-    ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1 hx)
-
-variable [FiniteDimensional ℝ E]
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
 that is smooth at every point of a neighbourhood of `x`, on a manifold modelled on a
