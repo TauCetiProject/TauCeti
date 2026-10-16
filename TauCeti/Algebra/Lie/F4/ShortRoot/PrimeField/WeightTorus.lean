@@ -66,14 +66,14 @@ def weightTorusDefiningIdeal : HopfIdeal (ZMod 2) Q :=
 split torus. -/
 def weightTorusQuotientIso :
     CommHopfAlgCat.quotient Q weightTorusDefiningIdeal ≅ generatorCodomain (.inr ()) :=
-  CommHopfAlgCat.quotientKerOfSurjectiveIso weightTorusRestriction
+  CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso weightTorusRestriction
     weightTorusRestriction_surjective
 
 /-- The canonical quotient map followed by the torus isomorphism is restriction. -/
 @[reassoc (attr := simp)] theorem mkQuotient_comp_weightTorusQuotientIso_hom :
     CommHopfAlgCat.mkQuotient Q weightTorusDefiningIdeal ≫ weightTorusQuotientIso.hom =
       weightTorusRestriction :=
-  CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _
+  CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _
 
 /-- The coordinate algebra of the closed weight torus is a split torus of rank four. -/
 theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :

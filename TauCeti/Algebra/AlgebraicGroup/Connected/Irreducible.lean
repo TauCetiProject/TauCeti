@@ -74,7 +74,7 @@ theorem irreducibleSpace_primeSpectrum_of_connectedSpace (k : Type u) [Field k] 
     (by simp [hI])).homeomorph
   have : ConnectedSpace (AlgebraicGeometry.Spec (.of (H ⧸ I.toIdeal))) :=
     e.connectedSpace_iff.mpr ‹_›
-  have hsmooth : smoothCommHopfAlgProperty k (TauCeti.CommHopfAlgCat.quotient H I) :=
+  have hsmooth : smoothCommHopfAlgProperty k (_root_.CommHopfAlgCat.quotient H I) :=
     smoothCommHopfAlgProperty_of_geometricallyReduced k _
       ((geometricallyReducedCommHopfAlgProperty_iff k _).mpr fun _ _ _ ↦ inferInstance)
   have : Algebra.Smooth k (H ⧸ I.toIdeal) := (smoothCommHopfAlgProperty_iff _).mp hsmooth
