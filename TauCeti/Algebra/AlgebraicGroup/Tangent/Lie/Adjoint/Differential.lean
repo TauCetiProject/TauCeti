@@ -20,9 +20,6 @@ adjoint action with the differentiated representation used to study invariant su
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §10.d, 10.18–10.23.
-
-The proof combines `Derivation.adDerivation_dualNumber_apply` with
-`TauCeti.Comodule.snd_endOfPoint_derivationToDualNumberEquivLift`.
 -/
 
 public section
@@ -49,6 +46,8 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
     (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
     Comodule.differential (R := R) (H := H) d x =
       ⁅(cotangentDualLieEquiv (R := R) (H := H)).symm d, x⁆ := by
+  -- The proof combines `Derivation.adDerivation_dualNumber_apply` with
+  -- `TauCeti.Comodule.snd_endOfPoint_derivationToDualNumberEquivLift`.
   let C := Bialgebra.CounitAlgebra R H R
   let V := Module.Dual R (Bialgebra.CotangentSpace R H)
   let s : DualNumber C →ₗ[R] R := (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
