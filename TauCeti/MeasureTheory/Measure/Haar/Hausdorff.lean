@@ -25,6 +25,7 @@ namespace Measure
 variable {X : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 /-- In dimension one the Euclidean normalization constant is `1`, so `μHE[1] = μH[1]`. -/
+@[simp]
 theorem euclideanHausdorffMeasure_one : (μHE[1] : Measure X) = μH[1] := by
   have hreal : (μHE[1] : Measure ℝ) = volume := by
     simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
