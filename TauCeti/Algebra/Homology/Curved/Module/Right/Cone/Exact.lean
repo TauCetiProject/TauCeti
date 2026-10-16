@@ -102,14 +102,16 @@ noncomputable def coneGradedSplitting :
     -- their underlying composite before using the public closed cone-inclusion equation.
     change (closedHom (coneInclusion f) x).2 = x
     rw [closedHom_coneInclusion]
-    simp only [LinearMap.inr_apply]
+    -- The public map equation has reduced the inclusion; its second component is definitionally x.
+    rfl
   s_g := by
     apply GradedModuleCat.hom_ext
     ext x
     -- Evaluate the first inclusion in the underlying composite of graded morphisms.
     change closedHom (coneProjection f) (x, 0) = x
     rw [closedHom_coneProjection]
-    simp only [LinearMap.fst_apply]
+    -- The public map equation has reduced the projection on the inherited product carrier.
+    rfl
   id := by
     apply GradedModuleCat.hom_ext
     let i : N →ₗ[Aᵐᵒᵖ] M × N := closedHom (coneInclusion f)
