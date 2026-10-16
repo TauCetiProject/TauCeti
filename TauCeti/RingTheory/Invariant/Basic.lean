@@ -107,9 +107,11 @@ variable [Finite G] [Algebra.IsInvariant A B G] [SMulCommClass G A B]
 
 variable (G) in
 /-- **Every prime of `C` above `p` is the contraction of a translate of `Q`**, for any ring `C`
-between `A` and `B` over which `B` is integral. -/
-theorem exists_smul_under_eq [Algebra.IsIntegral C B] (q : Ideal C) [q.IsPrime] [q.LiesOver p] :
+between `A` and `B`. -/
+theorem exists_smul_under_eq (q : Ideal C) [q.IsPrime] [q.LiesOver p] :
     ∃ σ : G, (σ • Q).under C = q := by
+  have := Algebra.IsInvariant.isIntegral A B G
+  have := Algebra.IsIntegral.tower_top (R := A) (S := C) (T := B)
   -- Lift `q` to a prime `R` of `B`; transitivity of `G` on the primes above `p` makes `R` a
   -- translate of `Q`.
   obtain ⟨⟨R, hR, hRq⟩⟩ := q.nonempty_primesOver (S := B)

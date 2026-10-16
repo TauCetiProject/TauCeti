@@ -117,7 +117,6 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsInvariant :
       induction q using Quotient.inductionOn' with | h σ =>
       induction r using Quotient.inductionOn' with | h τ =>
       exact (Q.under_smul_eq_iff_doubleCosetMk_eq H C σ τ).mp (Subtype.ext_iff.mp hqr), by
-      have : Algebra.IsIntegral C B := Algebra.IsInvariant.isIntegral C B H
       rintro ⟨q, hq, hqp⟩
       obtain ⟨σ, hσ⟩ := Q.exists_smul_under_eq G p C q
       refine ⟨DoubleCoset.mk H _ σ, Subtype.ext ?_⟩
