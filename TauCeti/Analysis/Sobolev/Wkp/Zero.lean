@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Sobolev.Wkp.Classical
 
 /-!
 # The Sobolev spaces `W^{k,p}_0(Ω)`
@@ -32,6 +33,9 @@ Sobolev functions and density results comparing different domains are not proved
 * `TauCeti.iteratedGradientTestFunction`: the recursively bundled classical derivatives of a
   test function.
 * `TauCeti.Wkp.ofTestFunctionₗ`: the injective linear embedding `C_c^∞(Ω) → W^{k,p}(Ω)`.
+* `TauCeti.Wkp.enorm_value_ofTestFunctionₗ`, `TauCeti.Wkp.enorm_iteratedGradient_ofTestFunctionₗ`:
+  the Sobolev components of an embedded test function have the `Lᵖ` norms of its classical
+  derivatives on the whole space.
 * `TauCeti.wkp0Submodule` and `TauCeti.Wkp0`: the closure of the test functions in `W^{k,p}(Ω)`
   and its complete normed-space type.
 * `TauCeti.Wkp0.ofTestFunctionₗ` and `TauCeti.Wkp0.lowerOrderL`: the dense test-function
@@ -303,6 +307,28 @@ theorem Wkp.lowerOrder_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
       Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi := by
   apply Wkp.ext k
   rw [← Wkp.value_succ, Wkp.value_ofTestFunctionₗ, Wkp.value_ofTestFunctionₗ]
+
+/-- The extended norm of the value component of an embedded test function is its `eLpNorm` for
+the ambient measure. -/
+theorem Wkp.enorm_value_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    ‖Wkp.value k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi)‖ₑ =
+      eLpNorm (phi : E → ℝ) p mu := by
+  rw [Wkp.value_ofTestFunctionₗ, enorm_testFunctionLp_eq_eLpNorm]
+
+/-- The extended norm of the highest iterated-gradient component of an embedded test function is
+the `eLpNorm`, for the ambient measure, of its classical derivative of the same order. -/
+theorem Wkp.enorm_iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    ‖Wkp.iteratedGradient k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) (k + 1) phi)‖ₑ =
+      eLpNorm (iteratedFDeriv ℝ (k + 1) (phi : E → ℝ)) p mu := by
+  have hm : AEStronglyMeasurable (iteratedFDeriv ℝ (k + 1) (phi : E → ℝ)) mu :=
+    (phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
+  -- The restriction is dropped on the pointwise norms, since `phi` vanishes outside `Omega`.
+  rw [Wkp.iteratedGradient_ofTestFunctionₗ, Lp.enorm_def, ← eLpNorm_norm _ hm,
+    ← eLpNorm_restrict_eq_of_support_subset (s := Omega) hm.norm
+      (by simpa using (support_iteratedFDeriv_subset _).trans phi.tsupport_subset)]
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm.norm.restrict ?_
+  filter_upwards [iteratedGradientTestFunctionLp_apply_ae (mu := mu) p k phi] with x hx
+  rw [hx, iteratedGradientTestFunction_def, norm_iteratedGradientChain, norm_norm]
 
 /-- The test-function embedding into `W^{k,p}(Ω)` is injective. -/
 theorem Wkp.ofTestFunctionₗ_injective (k : ℕ) :

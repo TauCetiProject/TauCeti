@@ -15,16 +15,14 @@ public import TauCeti.Algebra.Module.GradedModule.Trivial
 
 The trivial grading `TauCeti.trivialGrading` of `TauCeti.Algebra.Module.GradedModule.Trivial`,
 concentrated in degree zero, is an internal `GradedAlgebra` when the module is an algebra.  This
-file records that instance, the degree projection, and the graded actions of the trivially graded
-base ring and of the opposite of a trivially graded algebra.  It is the canonical target grading
-for augmentations of integer-graded algebras, and the grading of the coefficients in degree-zero
-examples.
+file records that instance, whose decomposition and degree projection come from the module-level
+file, and the graded actions of the trivially graded base ring and of the opposite of a trivially
+graded algebra.  It is the canonical target grading for augmentations of integer-graded
+algebras, and the grading of the coefficients in degree-zero examples.
 
 ## Main results
 
 * `TauCeti.instGradedAlgebraTrivialGrading`: the trivial grading of an algebra is a graded algebra.
-* `TauCeti.proj_trivialGrading`: its degree projection is the identity in degree zero and zero in
-  every other degree.
 * `TauCeti.instGradedSMulTrivialGradingOpposite`: any action of the opposite of a trivially graded
   algebra on a trivially graded module is graded.
 -/
@@ -51,34 +49,7 @@ instance instGradedAlgebraTrivialGrading : GradedAlgebra (trivialGrading R A) wh
     rcases (mem_trivialGrading_iff R A).mp ha with rfl | rfl
     · rcases (mem_trivialGrading_iff R A).mp hb with rfl | rfl <;> simp
     · simp
-  decompose' a := DirectSum.of (fun p ↦ trivialGrading R A p) 0 (toTrivialGradingZero R A a)
-  left_inv a := by simp
-  right_inv x := by
-    induction x using DirectSum.induction_on with
-    | zero => simp
-    | of p y =>
-      rw [DirectSum.coeAddMonoidHom_of]
-      by_cases hp : p = 0
-      · subst hp
-        exact congrArg _ (Subtype.ext (coe_toTrivialGradingZero R A y))
-      · have hy : y = 0 :=
-          Subtype.ext (((mem_trivialGrading_iff R A).mp y.2).resolve_left hp)
-        rw [hy]
-        simp
-    | add x y hx hy => simp only [map_add, hx, hy]
-
-/-- The homogeneous projection for the trivial grading is the identity in degree zero and the
-zero map in every other degree. -/
-@[simp]
-theorem proj_trivialGrading (p : ℤ) (a : A) :
-    ((DirectSum.decompose (trivialGrading R A) a) p : A) = if p = 0 then a else 0 := by
-  have ha : a ∈ trivialGrading R A 0 := by simp
-  by_cases hp : p = 0
-  · subst hp
-    rw [ite_eq_left rfl]
-    exact DirectSum.decompose_of_mem_same (trivialGrading R A) ha
-  · rw [DirectSum.decompose_of_mem_ne _ ha (Ne.symm hp)]
-    simp [hp]
+  __ := instDecompositionTrivialGrading R A
 
 /-- Scalar multiplication by the trivially graded base ring preserves every homogeneous piece of
 an internally graded algebra. -/

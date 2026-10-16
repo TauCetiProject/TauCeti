@@ -87,7 +87,7 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
   have hdiag := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap w
     (CommAlgCat.of R B) s
   -- The categorical point uses `CommAlgCat.of R B`; expose its algebra-hom presentation.
-  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hdiag
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hdiag
   simpa only [SplitTorus.charOfPoint_weightCharacter] using hdiag
 
 /-- A weight-torus point scales each entry of the ambient tangent matrix of a closed

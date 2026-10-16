@@ -11,8 +11,9 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
 /-!
 # Riemann–Roch spaces under extension of function fields
 
-For a finite extension of function fields, the functions in `L(D)` are exactly those
-functions from the smaller field whose images belong to `L(Con D)`. This gives the
+For an algebraic extension of function fields with finite restriction fibres, the functions in
+`L(D)` are exactly those functions from the smaller field whose images belong to `L(Con D)`.
+This gives the
 intersection of `L(Con D)` with the smaller field as a submodule equality.
 
 More generally, along any integral extension, finite or not, `f` lies in `L(D)` exactly when its
@@ -96,7 +97,10 @@ theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
   rw [← hmax]
   ring
 
-variable [FiniteDimensional F F']
+section FiniteFibres
+
+variable [Algebra.IsIntegral F F']
+variable [∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
 
 /-- A function from `F` belongs to `L(D)` precisely when its image in `F'` belongs to the
 Riemann–Roch space of the conorm of `D`. -/
@@ -106,7 +110,6 @@ theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
     (D : Divisor k F) (f : F) :
     algebraMap F F' f ∈ riemannRochSpace (Divisor.conorm k' F' D) ↔
       f ∈ riemannRochSpace D :=
-  have : Algebra.IsIntegral F F' := Algebra.IsIntegral.of_finite F F'
   mem_riemannRochSpace_algebraMap_iff_of_coeff_eq hF' (Divisor.coeff_conorm k' F' D) f
 
 /-- The intersection of `L(Con D)` with the image of `F` is `L(D)`, expressed as a
@@ -119,6 +122,10 @@ theorem riemannRochSpace_conorm_comap (hF' : IsFunctionField k' F')
         riemannRochSpace D := by
   ext f
   exact mem_riemannRochSpace_conorm_iff hF' D f
+
+end FiniteFibres
+
+variable [FiniteDimensional F F']
 
 /-- An `F`-linearly independent family of `r` functions in `L(C)` multiplies the dimension of
 the Riemann–Roch space of any divisor `A` of `F`: `r ℓ(A) ≤ [k' : k] ℓ(Con A + C)`, where `ℓ(A)`

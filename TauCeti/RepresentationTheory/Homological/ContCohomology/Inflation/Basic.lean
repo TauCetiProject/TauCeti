@@ -7,14 +7,16 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
+public import TauCeti.Topology.Algebra.Group.Basic
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 /-!
 # Inflation and the inflation-restriction sequence
 
 Inflation is the third named instance of the compatible-pair pullback on the explicit low-degree
-complex: for a normal subgroup `N` of a topological group `G` it is the pullback along the
-quotient homomorphism `G → G ⧸ N` paired with the inclusion `M ^ N ↪ M` of the invariants, which
+complex: for a normal subgroup `N` of a group `G` equipped with a topology it is the pullback along
+the quotient homomorphism `G → G ⧸ N` paired with the inclusion `M ^ N ↪ M` of the invariants, which
 is equivariant along that homomorphism. This file defines inflation in degrees `0`, `1`, and `2`.
 In degree one it proves the exactness of
 
@@ -52,6 +54,8 @@ at `H²(G, M)`.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
+* `TauCeti.ContCohomology.finite_ker_explicitRes1`: for `N` of finite index with finite invariants
+  `M ^ N`, the kernel of restriction in degree `1` is finite.
 * `TauCeti.ContCohomology.explicitInfl2_injective`: inflation is injective in degree `2` when
   `H¹(N, M) = 0`, for coefficients of any topology.
 * `TauCeti.ContCohomology.explicitInfRes2_exact`: for an open normal subgroup `N` with
@@ -76,9 +80,12 @@ Continuity of that action is carried as the instance hypothesis
 `TauCeti.continuousSMulQuotientFixedPointsOfContinuousSMul` discharges it for a discrete `M`, which
 is the case arising in arithmetic applications.
 
-The public results other than `TauCeti.ContCohomology.explicitInfRes2_exact` hold for an arbitrary
-topological group `G` and an arbitrary normal subgroup `N`; neither profiniteness nor closedness of
-`N` is used. Closedness would only make `G ⧸ N` Hausdorff, and the descent argument in
+Degree-two inflation and its injectivity and exactness results require only jointly continuous
+multiplication on `G`; continuous inversion is unnecessary. Descent of `2`-cocycles itself needs
+only separately continuous multiplication. The degree-zero and degree-one results need no
+continuity assumption on the group operations. Among the public results, only
+`TauCeti.ContCohomology.explicitInfRes2_exact` requires `N` to be open; neither profiniteness nor
+closedness of `N` is used. Closedness would only make `G ⧸ N` Hausdorff, and the descent argument in
 `TauCeti.ContCohomology.explicitInfRes_exact` needs nothing but the quotient topology: a cochain
 on `G` that is constant on the cosets of `N` descends to a *continuous* cochain on `G ⧸ N`
 precisely because `G ⧸ N` carries that topology.
@@ -369,11 +376,19 @@ theorem explicitInfRes_exact :
     exact ⟨(descendZ1 z hzN : H1 (G ⧸ N) (FixedPoints.addSubgroup N M)),
       (explicitInfl1_descendZ1 z hzN).trans hzc⟩
 
+/-- **The kernel of restriction to a subgroup of finite index is finite** when the invariants
+`M ^ N` are finite. By exactness of the inflation-restriction sequence the kernel is the image of
+`H¹(G ⧸ N, M ^ N)`, whose cocycles are maps between two finite sets. -/
+theorem finite_ker_explicitRes1 [N.FiniteIndex] [Finite (FixedPoints.addSubgroup N M)] :
+    Finite (explicitRes1 G M N).ker := by
+  rw [← explicitInfRes_exact]
+  exact Set.finite_range _ |>.to_subtype
+
 end DegreeOne
 
 section DegreeTwo
 
-variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable (G : Type u) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M]
   (N : Subgroup G) [N.Normal] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
@@ -427,7 +442,7 @@ theorem explicitRes2_comp_explicitInfl2 :
 
 variable {G M N}
 
-omit [IsTopologicalGroup G] [ContinuousSMul G M]
+omit [ContinuousMul G] [ContinuousSMul G M]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- Descend a continuous `2`-cocycle which is constant on right `N`-cosets in both variables and
 whose values are fixed by `N` to a cocycle on `G ⧸ N` with values in `M ^ N`. Only separate
@@ -463,7 +478,7 @@ def descendZ2 [SeparatelyContinuousMul G] (z : Z2 G M)
                 coe_smul_fixedPoints_addSubgroup, Quotient.liftOn₂'_mk'']
               exact (mem_Z2_iff.1 z.2).2 g h j⟩⟩
 
-omit [IsTopologicalGroup G] [ContinuousSMul G M]
+omit [ContinuousMul G] [ContinuousSMul G M]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- The descended cocycle evaluates on quotient representatives as the original cocycle. -/
 @[simp]
@@ -500,7 +515,7 @@ end DegreeTwo
 
 section DegreeTwoExact
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M] {N : Subgroup G} [N.Normal]
 
@@ -520,7 +535,11 @@ private theorem exists_sub_mem_B2_vanishing_snd (hN : IsOpen (N : Set G)) (f : Z
   have hr : Continuous r := continuous_of_discreteTopology.comp QuotientGroup.continuous_mk
   have hrN (g : G) : (r g)⁻¹ * g ∈ N := QuotientGroup.eq.1 (QuotientGroup.out_eq' (g : G ⧸ N))
   let m : G → N := fun g => ⟨(r g)⁻¹ * g, hrN g⟩
-  have hm : Continuous m := (hr.inv.mul continuous_id).subtype_mk _
+  -- Inversion is applied only to the chosen representatives of the discrete quotient.
+  have hr_inv : Continuous (fun g => (r g)⁻¹) :=
+    (continuous_of_discreteTopology (f := fun q : G ⧸ N => q.out⁻¹)).comp
+      QuotientGroup.continuous_mk
+  have hm : Continuous m := (hr_inv.mul continuous_id).subtype_mk _
   have hrm (g : G) : r g * m g = g := mul_inv_cancel_left _ _
   have hr_mul (g : G) (n : N) : r (g * n) = r g := by
     simp only [r, QuotientGroup.mk_mul_of_mem g n.2]

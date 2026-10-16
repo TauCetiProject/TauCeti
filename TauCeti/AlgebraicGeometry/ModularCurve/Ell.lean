@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import Mathlib.CategoryTheory.FiberedCategory.Fibered
 
 /-!
@@ -38,6 +38,10 @@ between base changes as the morphisms of total spaces, and with the projections
 base change of `Y` along the composite with `f.base` (`EllObj.baseChangeFunctorIso`); this is what
 makes the fibres of moduli problems over `Ell/B` compatible with base change.
 
+The `T`-points of the base change `E_T` of `X = (S, E)` to a scheme `T` over `S` are the points of
+`E` with values in `T` (`EllObj.baseChangePointsEquiv`), naturally in `T`
+(`EllObj.baseChangePointsEquiv_pointsPullback`).
+
 An arrow of `Ell/B` is determined by its morphism of total spaces (`EllObj.hom_ext`): the morphism
 of bases is recovered through the zero section (`EllObj.Hom.base_eq`). It is automatically
 compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_total`).
@@ -55,6 +59,10 @@ compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_
   of `Ell/B` as a functor from schemes over `S` to `Ell/B`.
 * `TauCeti.AlgebraicGeometry.EllObj.baseChangeFunctorIso f`: for an arrow `f : X ⟶ Y`, the natural
   isomorphism between base change of `X` and base change of `Y` along the composite with `f.base`.
+* `TauCeti.AlgebraicGeometry.EllObj.isoBaseChange g`: for an arrow `g : X ⟶ Y`, the isomorphism of
+  `X` with the base change of `Y` along `g.base`.
+* `TauCeti.AlgebraicGeometry.EllObj.baseChangePointsEquiv X T`: the `T`-points of the base change
+  of `X = (S, E)` to `T` are the points of `E` with values in `T`.
 
 ## Main results
 
@@ -203,14 +211,16 @@ namespace Hom
 /-- **The cartesian factorisation in `Ell/B`.** Given arrows `g : Y ⟶ Z` and `f : X ⟶ Z` and a
 morphism of bases `h : X.base ⟶ Y.base` with `h ≫ g.base = f.base`, this is the arrow `X ⟶ Y`
 over `h` whose composite with `g` is `f` (`Hom.lift_comp`). It is unique (`Hom.eq_lift`). Its
-morphism of total spaces is induced by the cartesian square of `g`. -/
+morphism of total spaces is `EllipticCurveGeom.baseChangeLift`, induced by the cartesian square
+of `g`. -/
 noncomputable def lift (g : Y ⟶ Z) (f : X ⟶ Z) (h : X.base ⟶ Y.base) (hh : h ≫ g.base = f.base) :
     X ⟶ Y where
   base := h
   base_structureMap := by rw [← g.base_structureMap, reassoc_of% hh, f.base_structureMap]
-  total := g.isPullback.lift f.total (X.curve.structureMap ≫ h) (by simp [hh])
-  isPullback := .of_right (by simpa [hh] using f.isPullback) (by simp) g.isPullback
-  zero_total := g.isPullback.hom_ext (by simp [reassoc_of% hh]) (by simp)
+  total := EllipticCurveGeom.baseChangeLift g.isPullback f.isPullback.toCommSq hh
+  isPullback := EllipticCurveGeom.isPullback_baseChangeLift g.isPullback f.isPullback hh
+  zero_total := EllipticCurveGeom.zero_baseChangeLift g.isPullback f.isPullback.toCommSq hh
+    g.zero_total f.zero_total
 
 variable (g : Y ⟶ Z) (f : X ⟶ Z) (h : X.base ⟶ Y.base) (hh : h ≫ g.base = f.base)
 
@@ -220,7 +230,7 @@ theorem lift_base : (lift g f h hh).base = h :=
 
 @[reassoc (attr := simp)]
 theorem lift_total_total : (lift g f h hh).total ≫ g.total = f.total :=
-  g.isPullback.lift_fst _ _ _
+  EllipticCurveGeom.baseChangeLift_fst _ _ _
 
 /-- The cartesian factorisation `Hom.lift g f h hh` composed with `g` is `f`. -/
 @[reassoc (attr := simp)]
@@ -347,6 +357,17 @@ theorem isIso_iff_isIso_base (f : X ⟶ Y) : IsIso f ↔ IsIso f.base := by
     have : IsIso ((forget B).map f) := isIso_of_reflects_iso _ (Over.forget B)
     exact Functor.IsStronglyCartesian.isIso_of_base_isIso (forget B) ((forget B).map f) f
 
+/-- The morphism of bases of an isomorphism of `Ell/B` is an isomorphism. -/
+instance isIso_base {X Y : EllObj B} (f : X ⟶ Y) [IsIso f] : IsIso f.base :=
+  (isIso_iff_isIso_base _ f).1 inferInstance
+
+/-- The morphism of bases of the inverse of an isomorphism of `Ell/B` is the inverse of its morphism
+of bases. -/
+@[simp]
+theorem inv_base {X Y : EllObj B} (f : X ⟶ Y) [IsIso f] : (inv f).base = inv f.base := by
+  refine IsIso.eq_inv_of_hom_inv_id ?_
+  rw [← comp_base, IsIso.hom_inv_id, id_base]
+
 /-! ### Base change along an arrow of `Ell/B` -/
 
 /-- The arrow of `Ell/B` from the base change `X.baseChangeFunctor.obj T` of `X = (S, E)` along
@@ -425,6 +446,83 @@ theorem baseChangeFunctorIso_hom_app_comp {X Y : EllObj B} (f : X ⟶ Y) (T : Ov
     (baseChangeFunctorIso f).hom.app T ≫ Y.baseChangeFunctorHom ((Over.map f.base).obj T) =
       X.baseChangeFunctorHom T ≫ f :=
   baseChangeFunctorIsoApp_comp f T
+
+/-! ### Arrows of `Ell/B` as base changes -/
+
+/-- **Every arrow of `Ell/B` exhibits its source as a base change of its target.** For an arrow
+`g : X ⟶ Y` of `Ell/B`, this is the isomorphism of `X` with the base change of `Y` along
+`g.base : X.base ⟶ Y.base`. It lies over the identity of `X.base` (`isoBaseChange_hom_base`), and
+its composite with the projection of the base change to `Y` is `g` (`isoBaseChange_hom_comp`). It
+is the cartesian factorisation of `g` through `Y.baseChangeFunctorHom`. -/
+noncomputable def isoBaseChange {X Y : EllObj B} (g : X ⟶ Y) :
+    X ≅ Y.baseChangeFunctor.obj (Over.mk g.base) :=
+  have : IsIso (Hom.lift (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base)
+      (Category.id_comp g.base)) :=
+    (isIso_iff_isIso_base _ _).2 <| (congrArg IsIso <| Hom.lift_base
+      (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)).mpr
+        (IsIso.id X.base)
+  asIso (Hom.lift (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base)
+    (Category.id_comp g.base))
+
+@[simp]
+theorem isoBaseChange_hom_base {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).hom.base = 𝟙 X.base :=
+  Hom.lift_base (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)
+
+@[simp]
+theorem isoBaseChange_inv_base {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).inv.base = 𝟙 X.base := by
+  rw [← IsIso.Iso.inv_hom, inv_base]
+  simp only [isoBaseChange_hom_base]
+  exact IsIso.inv_id
+
+@[reassoc (attr := simp)]
+theorem isoBaseChange_hom_comp {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).hom ≫ Y.baseChangeFunctorHom (Over.mk g.base) = g :=
+  Hom.lift_comp (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)
+
+@[reassoc (attr := simp)]
+theorem isoBaseChange_inv_comp {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).inv ≫ g = Y.baseChangeFunctorHom (Over.mk g.base) := by
+  rw [Iso.inv_comp_eq, isoBaseChange_hom_comp]
+
+/-! ### Points of base changes -/
+
+open MonoidalCategory MonObj
+
+/-- **Points of a base change.** For an object `X = (S, E)` of `Ell/B` and a scheme `T` over `S`,
+composing with the projection `E_T ⟶ E` identifies the group of `T`-points of the base change
+`E_T` of `E` to `T` with the group of points of `E` with values in `T`. -/
+noncomputable def baseChangePointsEquiv (X : EllObj B) (T : Over X.base) :
+    (𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+      Over.mk (X.baseChangeFunctor.obj T).curve.structureMap) ≃*
+      (T ⟶ Over.mk X.curve.structureMap) :=
+  EllipticCurveGeom.pointsEquivOfIsPullback (X.baseChangeFunctorHom T).isPullback
+    (X.baseChangeFunctorHom T).zero_total
+
+@[simp]
+theorem baseChangePointsEquiv_apply_left {X : EllObj B} {T : Over X.base}
+    (P : 𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+      Over.mk (X.baseChangeFunctor.obj T).curve.structureMap) :
+    (X.baseChangePointsEquiv T P).left = P.left ≫ (X.baseChangeFunctorHom T).total :=
+  EllipticCurveGeom.pointsEquivOfIsPullback_apply_left _ _ P
+
+/-- **Points of base changes are natural.** Along a morphism `k : T' ⟶ T` of schemes over the base
+of `X`, the base change to `E_{T'}` of a `T`-point of `E_T` corresponds to the point of `E` with
+values in `T` precomposed with `k`. -/
+theorem baseChangePointsEquiv_pointsPullback {X : EllObj B} {T' T : Over X.base} (k : T' ⟶ T)
+    (P : 𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+      Over.mk (X.baseChangeFunctor.obj T).curve.structureMap) :
+    X.baseChangePointsEquiv T' (EllipticCurveGeom.pointsPullback
+        (X.baseChangeFunctor.map k).isPullback (X.baseChangeFunctor.map k).zero_total P) =
+      k ≫ X.baseChangePointsEquiv T P := by
+  ext1
+  simp only [baseChangePointsEquiv_apply_left, Over.comp_left]
+  rw [← baseChangeFunctor_map_baseChangeFunctorHom k, comp_total,
+    EllipticCurveGeom.pointsPullback_left_comp_assoc, baseChangeFunctor_map_base]
+  -- the two sides differ only in the objects through which `k.left` is typed, `T'.left` and the
+  -- base `(X.baseChangeFunctor.obj T').base`, which is `T'.left` by definition
+  rfl
 
 end EllObj
 

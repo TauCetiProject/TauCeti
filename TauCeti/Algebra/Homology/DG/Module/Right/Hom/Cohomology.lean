@@ -107,10 +107,11 @@ noncomputable def cohomologyMap (f : DGRightModuleHom hM hN) :
   toFun := f.cohomologyCyclesMap
   map_add' := map_add _
   map_smul' a x := by
-    obtain ⟨z, hz⟩ := Ideal.Quotient.mk_surjective a.unop
+    obtain ⟨w, hw⟩ := Ideal.Quotient.mk_surjective.comp MulOpposite.unop_surjective a.unop
+    simp only [Function.comp_apply] at hw
     simp only [RingHom.id_apply]
-    rw [← op_unop a, ← hz, hM.op_quotientMk_smul, hN.op_quotientMk_smul]
-    exact f.cohomologyCyclesMap.map_smul (op z) x
+    rw [← op_unop a, ← hw, hM.op_quotientMk_smul, hN.op_quotientMk_smul]
+    exact f.cohomologyCyclesMap.map_smul w x
 
 /-- Cohomology maps send the class of a cycle to the class of its image. -/
 @[simp]

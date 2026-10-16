@@ -25,9 +25,10 @@ Expanding each argument in the standard basis, `p n v = ∑ r, (∏ k, v k (r k)
 selects. The same formula with complex `v` defines a continuous `ℂ`-multilinear map on `ι → ℂ`,
 the *complexification* `ContinuousMultilinearMap.complexifyPi`. It agrees with `p n` on real
 arguments, it commutes with complex conjugation because its coefficients `p n (e_r)` are real, and
-its norm is at most `(card ι) ^ n` times that of `p n`. Applied to every term of a formal power
-series, this gives `FormalMultilinearSeries.complexifyPi`, whose radius of convergence is at least
-the original radius divided by `card ι`.
+its norm is at most `2 ^ n` times that of `p n`, independently of the coordinate dimension.
+Applied to every term of a formal power series, this gives
+`FormalMultilinearSeries.complexifyPi`, whose radius of convergence is at least half the original
+radius.
 
 Summing the complexified series of a real analytic function `f` at a point `a` gives a function
 `F` that is complex analytic on a ball around `a` (a polydisc, since `ι → ℂ` carries the sup norm),
@@ -48,10 +49,11 @@ commutes with complex conjugation near the point, not only the one constructed h
 
 * `ContinuousMultilinearMap.complexifyPi`: the complexification of a real multilinear form on
   `ι → ℝ`, with `complexifyPi_apply_ofReal`, `eq_complexifyPi_of_forall_ofReal`,
-  `complexifyPi_apply_star` and `norm_complexifyPi_le`; it is `ℝ`-linear (`complexifyPi_zero`,
-  `complexifyPi_add`, `complexifyPi_smul`).
+  `complexifyPi_apply_star`, `norm_complexifyPi_le` and `norm_complexifyPi_le_two_pow`; it is
+  `ℝ`-linear (`complexifyPi_zero`, `complexifyPi_add`, `complexifyPi_smul`).
 * `FormalMultilinearSeries.complexifyPi`: the termwise complexification of a power series, with
-  `FormalMultilinearSeries.le_radius_complexifyPi`.
+  `FormalMultilinearSeries.le_radius_complexifyPi` and
+  `FormalMultilinearSeries.le_radius_complexifyPi_two_mul`.
 * `AnalyticAt.exists_complexification`: a real analytic function has, on a polydisc around the
   point, a complex analytic extension compatible with conjugation.
 * `AnalyticAt.exists_complexification_pi`: the same for real analytic maps to `κ → ℝ`.
@@ -165,6 +167,42 @@ theorem norm_complexifyPi_le :
   refine (Finset.sum_le_sum fun r _ ↦ hterm r).trans_eq ?_
   simp [mul_assoc]
 
+/-- Complexification multiplies the norm of a real multilinear form by at most `2 ^ (card ν)`,
+independently of the dimension of its domain. -/
+theorem norm_complexifyPi_le_two_pow :
+    ‖f.complexifyPi‖ ≤ 2 ^ Fintype.card ν * ‖f‖ := by
+  classical
+  refine opNorm_le_bound (by positivity) fun v ↦ ?_
+  let x : ν → ι → ℂ := fun k i ↦ (v k i).re
+  let y : ν → ι → ℂ := fun k i ↦ Complex.I * (v k i).im
+  have hv : v = x + y := by
+    ext k i
+    apply Complex.ext <;> simp [x, y]
+  conv_lhs => rw [hv, f.complexifyPi.map_add_univ]
+  refine (norm_sum_le _ _).trans ?_
+  have hterm (s : Finset ν) :
+      ‖f.complexifyPi (s.piecewise x y)‖ ≤ ‖f‖ * ∏ k, ‖v k‖ := by
+    let c : ν → ℂ := fun k ↦ if k ∈ s then 1 else Complex.I
+    let w : ν → ι → ℝ := fun k i ↦ if k ∈ s then (v k i).re else (v k i).im
+    have hpiece : s.piecewise x y = fun k ↦ c k • fun i ↦ (w k i : ℂ) := by
+      ext k i
+      by_cases hk : k ∈ s <;> simp [x, y, c, w, hk, smul_eq_mul]
+    have hw (k : ν) : ‖w k‖ ≤ ‖v k‖ := by
+      rw [pi_norm_le_iff_of_nonneg (norm_nonneg _)]
+      intro i
+      by_cases hk : k ∈ s
+      · simpa only [w, hk, ↓reduceIte, Real.norm_eq_abs] using
+          (Complex.abs_re_le_norm (v k i)).trans (norm_le_pi_norm (v k) i)
+      · simpa only [w, hk, ↓reduceIte, Real.norm_eq_abs] using
+          (Complex.abs_im_le_norm (v k i)).trans (norm_le_pi_norm (v k) i)
+    rw [hpiece, f.complexifyPi.map_smul_univ, norm_smul, norm_prod]
+    simp_rw [show ∀ k, ‖c k‖ = 1 by intro k; by_cases hk : k ∈ s <;> simp [c, hk]]
+    simp only [Finset.prod_const_one, one_mul, complexifyPi_apply_ofReal, Complex.norm_real]
+    exact (f.le_opNorm w).trans <| mul_le_mul_of_nonneg_left
+      (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) (fun k _ ↦ hw k)) (norm_nonneg f)
+  refine (Finset.sum_le_sum fun s _ ↦ hterm s).trans_eq ?_
+  simp [nsmul_eq_mul, mul_assoc]
+
 end ContinuousMultilinearMap
 
 namespace ContinuousMultilinearMap
@@ -245,6 +283,20 @@ theorem le_radius_complexifyPi {r : ℝ≥0} (hr : ((Fintype.card ι * r : ℝ�
         gcongr
         simpa using (p n).norm_complexifyPi_le
     _ = ‖p n‖ * ((Fintype.card ι * r : ℝ≥0) : ℝ) ^ n := by push_cast; ring
+    _ ≤ C := hC n
+
+/-- Every radius whose double lies below the radius of the real series is a lower bound for the
+radius of the complexified series. -/
+theorem le_radius_complexifyPi_two_mul {r : ℝ≥0}
+    (hr : (((2 : ℝ≥0) * r : ℝ≥0) : ℝ≥0∞) < p.radius) :
+    (r : ℝ≥0∞) ≤ p.complexifyPi.radius := by
+  obtain ⟨C, -, hC⟩ := p.norm_mul_pow_le_of_lt_radius hr
+  refine le_radius_of_bound _ C fun n ↦ ?_
+  calc ‖p.complexifyPi n‖ * (r : ℝ) ^ n
+      ≤ 2 ^ n * ‖p n‖ * (r : ℝ) ^ n := by
+        gcongr
+        simpa using (p n).norm_complexifyPi_le_two_pow
+    _ = ‖p n‖ * (((2 : ℝ≥0) * r : ℝ≥0) : ℝ) ^ n := by push_cast; ring
     _ ≤ C := hC n
 
 /-- On real arguments, the sum of the complexified series is the sum of the real series. -/

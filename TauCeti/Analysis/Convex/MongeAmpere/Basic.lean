@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Convex.SubgradientImage
 public import TauCeti.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Convex.Alexandrov
+import TauCeti.Analysis.Convex.Extrema
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.LocallyConvex.Separation
 
@@ -78,6 +79,8 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   `TauCeti.aedisjoint_subgradientImage` — almost no point is a subgradient at two distinct points,
   so subgradient images of disjoint sets are almost disjoint;
 * `TauCeti.mongeAmpereMeasure_apply` — `MA_f(s) = μ(∂f(s ∩ D))` for measurable `s`;
+* `TauCeti.mongeAmpereMeasure_add` — `MA_f` is additive in the reference measure, among measures
+  absolutely continuous with respect to an additive Haar measure;
 * `TauCeti.mongeAmpereMeasure_compl_interior` — `MA_f` is concentrated on `D`;
 * `TauCeti.mongeAmpereMeasure_lt_top` and `TauCeti.isLocallyFiniteMeasure_comap_mongeAmpereMeasure`
   — when `μ` is finite on compact sets, `MA_f` is finite on compact subsets of `D`, so it is a
@@ -86,6 +89,8 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   σ-finite for every `f`;
 * `TauCeti.mongeAmpereMeasure_ite_apply` — the formula for a finite convex function on an open
   set;
+* `TauCeti.mongeAmpereMeasure_ite_eq_restrict` — the measure is local: restricting a convex
+  function to an open convex subset restricts its Monge–Ampère measure;
 * `TauCeti.withDensity_image_gradient_eq_setLIntegral` — the change of variables formula
   `∫_{∇F(t)} g dμ = ∫_t det (H x) g (∇F x) dμ` along the gradient of a convex function, on a set
   `t` where the subdifferential is the single gradient with positive derivative `H x`;
@@ -264,6 +269,21 @@ theorem mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous (hμ : ¬μ ≪ �
   rintro ⟨-, -, ν', _, hμ'⟩
   exact hμ (hμ'.trans (absolutelyContinuous_isAddHaarMeasure ν' ν))
 
+omit μ in
+/-- The Aleksandrov Monge–Ampère measure is additive in the reference measure, among measures
+absolutely continuous with respect to an additive Haar measure. -/
+theorem mongeAmpereMeasure_add {μ₁ μ₂ : Measure E} (hμ₁ : μ₁ ≪ ν) (hμ₂ : μ₂ ≪ ν) :
+    mongeAmpereMeasure (μ₁ + μ₂) f = mongeAmpereMeasure μ₁ f + mongeAmpereMeasure μ₂ f := by
+  by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
+  · by_cases hbot : ∀ x, f x ≠ ⊥
+    · ext s hs
+      rw [add_apply, mongeAmpereMeasure_apply _ hf hbot (hμ₁.add_left hμ₂) hs,
+        mongeAmpereMeasure_apply _ hf hbot hμ₁ hs, mongeAmpereMeasure_apply _ hf hbot hμ₂ hs,
+        add_apply]
+    · obtain ⟨x, hx⟩ := not_forall_not.1 hbot
+      simp only [mongeAmpereMeasure_eq_zero_of_eq_bot _ hx, add_zero]
+  · simp only [mongeAmpereMeasure_eq_zero_of_not_convex _ hf, add_zero]
+
 /-- The Aleksandrov Monge–Ampère measure is concentrated on the interior of the effective
 domain. -/
 @[simp]
@@ -338,6 +358,26 @@ theorem mongeAmpereMeasure_ite_apply (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) 
   ext y
   simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
   exact exists_congr fun x => and_congr_right fun hx => mem_subdifferential_ite_iff _ hx.2
+
+/-- **The Aleksandrov Monge–Ampère measure is local.** Let `u` be convex on an open set `Ω`, and
+let `U ⊆ Ω` be open and convex. The Monge–Ampère measure of `u` restricted to `U` (extended by `⊤`
+off `U`) is the restriction to `U` of the Monge–Ampère measure of `u` on `Ω`: a subgradient of `u`
+relative to the neighbourhood `U` of a point is a subgradient relative to `Ω`. -/
+theorem mongeAmpereMeasure_ite_eq_restrict {U : Set E} [DecidablePred (· ∈ U)] (hΩ : IsOpen Ω)
+    (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω) (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) :
+    mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) =
+      (mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)).restrict U := by
+  ext s hs
+  rw [Measure.restrict_apply hs, mongeAmpereMeasure_ite_apply μ hU (hu.subset hUΩ hUc) hμ hs,
+    mongeAmpereMeasure_ite_apply μ hΩ hu hμ (hs.inter hU.measurableSet),
+    inter_assoc, inter_eq_left.2 hUΩ]
+  congr 1
+  refine iUnion₂_congr fun x hx => ?_
+  ext y
+  refine ⟨fun h => hu.add_le_of_eventually_add_le (hUΩ hx.2) ((innerₗ E).flip y) ?_, fun h x' hx' =>
+    h x' (hUΩ hx')⟩
+  filter_upwards [mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hx.2)] with x' hx'
+  simpa only [LinearMap.flip_apply, innerₗ_apply_apply] using h x' hx'
 
 end Ite
 

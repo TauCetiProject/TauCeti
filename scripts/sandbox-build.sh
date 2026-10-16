@@ -66,19 +66,23 @@ phase build
 # and `|| true` drops tee's own status, so `pipefail` reports exactly Lake's.
 lake build "${LAKE_BUILD_FLAGS[@]}" 2>&1 | { tee --output-error=warn "$TELEMETRY/lake-build.log" 2>/dev/null || true; }
 
-# Reject duplicate declaration ownership before merging imported environments can hide it.
-# This also checks orphan modules and runs on the exact merge-group candidate before landing.
-phase audit-duplicates
-lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/DuplicateDeclarations.lean"
+# One workflow-pinned native driver imports all artifact parts once. Its first check reads
+# per-module ownership (compatible duplicates must not disappear in merged constants), then
+# it checks axiom reachability. No imported initializer executes.
+# Built beside the lint driver on the host and mounted in the same read-only directory.
+AUDIT_DRIVER_EXE="$(dirname "$LINT_DRIVER_EXE")/audit-driver"
+test -x "$AUDIT_DRIVER_EXE"
+phase audit-setup
+# This is a full-library pass, so use the existing environment-lint liveness budget,
+# not the 300s compiler deadline. A shared process must not shrink the former audits
+# into one per-module compilation budget. Phase telemetry exposes growth before tuning
+# this trusted bound; timeout remains a process/liveness failure, not an audit finding.
+AUDIT_TIMEOUT="$(command -v timeout)"
+AUDIT_PHASES_FILE="$TELEMETRY/phases.tsv" lake env "$AUDIT_TIMEOUT" --signal=TERM --kill-after=30 \
+  3000s "$AUDIT_DRIVER_EXE"
 
-# Axiom audit: inspect the built environment and reject any axiom outside
-# {propext, Classical.choice, Quot.sound} — catching sorry, native_decide, and
-# home-rolled axioms, including ones reaching in through imports.
-phase audit-axioms
-lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/Axioms.lean"
-
-# Module-system audit: every TauCeti/ module must opt into the Lean module system
-# (read from each compiled module's isModule flag, not a textual grep).
+# The canonical module-system check reads only the main artifact flag, without importing
+# the Mathlib environment. Keep one implementation and its existing standalone executable.
 phase audit-module-system
 lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lean"
 
@@ -100,8 +104,8 @@ bash "$TRUSTED_SCRIPTS/lint-style.sh"
 
 # A merge-group commit that passes every audit is the exact commit GitHub will land. Pack its
 # root-package outputs while still inside the bwrap sandbox, after the final operation that executes
-# candidate code. The host uploads only this data-only staging tree to a fresh, secret-isolated
-# publisher job. Ordinary PRs and installations without upload endpoints leave this disabled.
+# candidate code. After the sandbox exits, the host stages validated archive files and the complete
+# map for a fresh, secret-isolated publisher job. Ordinary PRs and installations without upload endpoints leave this disabled.
 if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
   phase stage-cache
   if ! grep -Eq '^[[:space:]]*platformIndependent[[:space:]]*=[[:space:]]*true' lakefile.toml; then
@@ -123,8 +127,8 @@ if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
   # --rehash makes Lake hash the archive bytes instead of trusting those sidecars.
   lake build --no-build --rehash -o .lake/outputs.jsonl
   echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-  rm -rf .lake/cache-staging
-  lake cache stage .lake/outputs.jsonl .lake/cache-staging
+  # The host stages these data after all sandbox processes exit, using pinned tooling
+  # and anonymous availability checks. Candidate code never writes the staging tree.
 fi
 
 phase end
