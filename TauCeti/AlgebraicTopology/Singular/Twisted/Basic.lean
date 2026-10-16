@@ -102,7 +102,7 @@ lemma initialVertex_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
 
 /-- The morphism of the fundamental groupoid of `X` obtained by running a singular simplex along
 the unique path class between two points of its simplex. -/
-def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
+abbrev pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
     (⟨TopCat.simplexMap σ z⟩ : FundamentalGroupoid X) ⟶ ⟨TopCat.simplexMap σ w⟩ :=
   (TopCat.simplexMap σ).pathClass z w
 
@@ -125,14 +125,13 @@ lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj 
   exact Path.Homotopic.Quotient.mk_map q (TopCat.simplexMap σ)
 
 /-- Transport inside a simplex from a point to itself is the identity. -/
-@[simp]
 lemma pathTransport_self (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) :
     pathTransport σ z z = 𝟙 _ :=
   (TopCat.simplexMap σ).pathClass_self z
 
 /-- Transports inside a simplex compose: running from `z` to `w` and then from `w` to `y` is
 running from `z` to `y`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma pathTransport_comp (σ : (TopCat.toSSet.obj X).obj n)
     (z w y : toTop.{v}.obj n.unop) :
     pathTransport σ z w ≫ pathTransport σ w y = pathTransport σ z y :=
@@ -180,7 +179,7 @@ variable (L : LocalCoefficientSystem.{u, v, max v w} R X)
 
 /-- The transport from the initial vertex of a singular `m`-simplex `σ` to the initial vertex of
 the singular `n`-simplex obtained from `σ` by reindexing along `α`. -/
-def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+abbrev vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
@@ -196,12 +195,6 @@ lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     vertexTransport α σ = Path.Homotopic.Quotient.mk
       (q.map (TopCat.simplexMap σ).continuous) := by
   rw [vertexTransport, pathTransport_eq_mk σ q]
-
-/-- Vertex transport is the path class inside the simplex between the two vertices. -/
-lemma vertexTransport_eq_pathClass (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
-    vertexTransport α σ = (TopCat.simplexMap σ).pathClass (toTopInitialVertex m.unop)
-      (toTop.map α.unop (toTopInitialVertex n.unop)) :=
-  (rfl)
 
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
 the `eqToHom` between the two (equal) initial vertices. -/
