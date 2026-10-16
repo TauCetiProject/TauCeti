@@ -73,11 +73,7 @@ theorem mem_Gamma0Projective_iff (N : ℕ) (g : PSL(2, ℤ)) :
 the center of `SL₂(ℤ)`, is already contained in `Γ₀(N)`. -/
 theorem Gamma0Projective_index (N : ℕ) :
     (Gamma0Projective N).index = (CongruenceSubgroup.Gamma0 N).index := by
-  unfold Gamma0Projective
-  exact Subgroup.index_map_eq (H := CongruenceSubgroup.Gamma0 N)
-    (f := QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))
-    (QuotientGroup.mk'_surjective (Subgroup.center SL(2, ℤ))) (by
-      rw [QuotientGroup.ker_mk']
-      exact center_le_Gamma0 N)
+  rw [Gamma0Projective_def, Subgroup.index_map_mk'_center,
+    Subgroup.withCenter_eq_self_iff.mpr (center_le_Gamma0 N)]
 
 end TauCeti.CongruenceSubgroup

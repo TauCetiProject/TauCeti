@@ -34,6 +34,8 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.withCenter_le_iff`: the universal property — containing `Γ·Z(G)` is containing both.
 * `Subgroup.withCenter_eq_self_iff`: adjoining the centre changes nothing exactly when the
   centre already lies inside `Γ`.
+* `Subgroup.index_map_mk'_center`: the image of `Γ` in `G ⧸ Z(G)` has the index of
+  `Γ.withCenter`.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
@@ -306,6 +308,14 @@ the other half of the dichotomy `Subgroup.withCenter` describes. -/
 theorem withCenter_eq_self_iff {G : Type*} [Group G] {Γ : Subgroup G} :
     Γ.withCenter = Γ ↔ Subgroup.center G ≤ Γ :=
   sup_eq_left
+
+/-- **The image of `Γ` modulo the centre has the index of `Γ.withCenter`.** The projection
+`G → G ⧸ Z(G)` is surjective with kernel the centre, so `[G ⧸ Z(G) : Γ̄] = [G : Γ·Z(G)]`; for
+`G = SL(2, ℤ)` this is the index of the image of `Γ` in `PSL(2, ℤ)`. -/
+theorem index_map_mk'_center {G : Type*} [Group G] (Γ : Subgroup G) :
+    (Γ.map (QuotientGroup.mk' (Subgroup.center G))).index = Γ.withCenter.index := by
+  rw [Subgroup.index_map, QuotientGroup.ker_mk', MonoidHom.range_eq_top.mpr
+    (QuotientGroup.mk'_surjective _), Subgroup.index_top, mul_one, withCenter_def]
 
 instance instFiniteIndexWithCenter {G : Type*} [Group G] (Γ : Subgroup G)
     [Γ.FiniteIndex] : Γ.withCenter.FiniteIndex :=
