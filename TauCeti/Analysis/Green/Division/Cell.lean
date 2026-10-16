@@ -227,17 +227,17 @@ theorem rectangle_b (a b c e : ℝ) (hab : a < b) (hce : c ≤ e) :
 theorem rectangle_lowerFun (a b c e : ℝ) (hab : a < b) (hce : c ≤ e) :
     (rectangle a b c e hab hce).lowerFun = fun _ ↦ c := by
   funext x
+  -- Unfold the rectangle's constant lower graph and normalize its interval-bound proof.
   change IccExtend hab.le (ContinuousMap.const (Icc a b) c) x = c
-  rw [IccExtend_apply]
-  exact ContinuousMap.const_apply c _
+  simp only [IccExtend_apply, ContinuousMap.coe_const, Function.const_apply]
 
 @[simp]
 theorem rectangle_upperFun (a b c e : ℝ) (hab : a < b) (hce : c ≤ e) :
     (rectangle a b c e hab hce).upperFun = fun _ ↦ e := by
   funext x
+  -- Unfold the rectangle's constant upper graph and normalize its interval-bound proof.
   change IccExtend hab.le (ContinuousMap.const (Icc a b) e) x = e
-  rw [IccExtend_apply]
-  exact ContinuousMap.const_apply e _
+  simp only [IccExtend_apply, ContinuousMap.coe_const, Function.const_apply]
 
 end GraphCell
 end TauCeti.Green

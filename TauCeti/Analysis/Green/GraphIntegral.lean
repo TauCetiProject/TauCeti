@@ -45,42 +45,27 @@ theorem Coordinate.exists_graph_reparam_primitive (d : Coordinate) {a b c e : �
       ∃ T : Set ℝ, T.Countable ∧ ∀ t ∈ uIoo a b \ T,
         HasDerivAt (A ∘ θ) (P (d.graph g (θ t)) * d.proj (deriv (d.graph g ∘ θ) t)) t := by
   have hce : c ≤ e := (hmap (left_mem_uIcc)).1.trans (hmap left_mem_uIcc).2
-  let f : ℝ → ℝ := fun x ↦ P (d.graph g (projIcc c e hce x))
-  have hf : Continuous f :=
-    (hP.comp (d.continuousOn_graph hg) (mapsTo_image _ _)).domRestrict.comp continuous_projIcc
-  let A : ℝ → ℝ := fun x ↦ ∫ z in c..x, f z
-  have hA : Continuous A := (intervalIntegral.differentiable_integral_of_continuous hf).continuous
-  have hdA (x : ℝ) : HasDerivAt A (f x) x :=
-    intervalIntegral.integral_hasDerivAt_right (hf.intervalIntegrable c x)
-      hf.aestronglyMeasurable.stronglyMeasurableAtFilter hf.continuousAt
+  have hf : ContinuousOn (fun x ↦ P (d.graph g x)) (Icc c e) :=
+    hP.comp (d.continuousOn_graph hg) (mapsTo_image _ _)
+  obtain ⟨A, hA, hdA, hvalue⟩ :=
+    TauCeti.intervalIntegral.exists_continuous_primitive_Icc hce hf
   let T := S ∪ {c, e}
-  refine ⟨A, hA, ?_, s ∪ {t | θ t ∈ T ∧ deriv θ t ≠ 0},
+  refine ⟨A, hA, hvalue, s ∪ {t | θ t ∈ T ∧ deriv θ t ≠ 0},
     hs.union (TauCeti.countable_setOf_mem_and_deriv_ne_zero θ
       (hS.union (toFinite _).countable)), ?_⟩
-  · intro x hx y hy
-    calc
-      A y - A x = ∫ z in x..y, f z := by
-        apply sub_eq_iff_eq_add.mpr
-        simpa [A, add_comm] using (intervalIntegral.integral_add_adjacent_intervals
-          (hf.intervalIntegrable c x) (hf.intervalIntegrable x y)).symm
-      _ = _ := intervalIntegral.integral_congr fun z hz ↦ by
-        dsimp only [f]
-        rw [projIcc_of_mem hce (uIcc_subset_Icc hx hy hz)]
-  · intro t ht
-    have hdt := hdθ t ⟨ht.1, fun h ↦ ht.2 (Or.inl h)⟩
-    have hp : d.proj (deriv (d.graph g ∘ θ) t) = θ' t := by
-      have hcoord : d.proj ∘ (d.graph g ∘ θ) = θ := by
-        ext x
-        simp only [Function.comp_apply, Coordinate.proj_graph]
-      apply d.proj.apply_deriv_eq_of_comp hcoord hdt
-      by_cases hm : θ t ∈ T
-      · exact Or.inr (not_ne_iff.mp fun hz ↦ ht.2 (Or.inr ⟨hm, hz⟩))
-      · exact Or.inl (d.differentiableAt_graph_comp hdg hdt.differentiableAt
-          (hmap (uIoo_subset_uIcc_self ht.1)) hm)
-    have he : f (θ t) = P (d.graph g (θ t)) := by
-      dsimp only [f]
-      rw [projIcc_of_mem hce (hmap (uIoo_subset_uIcc_self ht.1))]
-    simpa only [hp, he, smul_eq_mul, mul_comm] using (hdA (θ t)).scomp t hdt
+  intro t ht
+  have hdt := hdθ t ⟨ht.1, fun h ↦ ht.2 (Or.inl h)⟩
+  have hp : d.proj (deriv (d.graph g ∘ θ) t) = θ' t := by
+    have hcoord : d.proj ∘ (d.graph g ∘ θ) = θ := by
+      ext x
+      simp only [Function.comp_apply, Coordinate.proj_graph]
+    apply d.proj.apply_deriv_eq_of_comp hcoord hdt
+    by_cases hm : θ t ∈ T
+    · exact Or.inr (not_ne_iff.mp fun hz ↦ ht.2 (Or.inr ⟨hm, hz⟩))
+    · exact Or.inl (d.differentiableAt_graph_comp hdg hdt.differentiableAt
+        (hmap (uIoo_subset_uIcc_self ht.1)) hm)
+  simpa only [hp, smul_eq_mul, mul_comm] using
+    (hdA (θ t) (hmap (uIoo_subset_uIcc_self ht.1))).scomp t hdt
 
 /-- Gauge integration on a graph depends only on the endpoint graph coordinates. The
 parametrization may backtrack and have unbounded speed, and exceptional graph levels may have
@@ -95,12 +80,26 @@ theorem hasHenstockIntervalIntegral_graph_reparam (d : Coordinate) {a b c e : �
     TauCeti.BoxIntegral.HasHenstockIntervalIntegral
       (fun t ↦ P (d.graph graph (θ t)) * d.proj (deriv (d.graph graph ∘ θ) t))
       a b (∫ t in θ a..θ b, P (d.graph graph t)) := by
-  obtain ⟨A, hA, hvalue, T, hT, hdA⟩ :=
-    d.exists_graph_reparam_primitive hs hS hgraph hdgraph hP hdθ hmap
-  have hi := TauCeti.BoxIntegral.hasHenstockIntervalIntegral_of_hasDerivAt_off_countable
-    hT (hA.comp_continuousOn hθ) hdA
-  simpa only [Function.comp_apply,
-    hvalue (θ a) (hmap left_mem_uIcc) (θ b) (hmap right_mem_uIcc)] using hi
+  have hf : ContinuousOn (fun x ↦ P (d.graph graph x)) (Icc c e) :=
+    hP.comp (d.continuousOn_graph hgraph) (mapsTo_image _ _)
+  have hi := TauCeti.BoxIntegral.hasHenstockIntervalIntegral_deriv_smul_comp hs hθ hdθ
+    (hf.mono (image_subset_iff.mpr hmap))
+  apply hi.congr_ae
+  have hcoord : d.proj ∘ (d.graph graph ∘ θ) = θ := by
+    funext t
+    simp only [Function.comp_apply, Coordinate.proj_graph]
+  have hdθ' : ∀ t ∈ Ioo (min a b) (max a b) \ s, HasDerivAt θ (θ' t) t := by
+    simpa only [uIoo] using hdθ
+  have hproj := d.proj.apply_deriv_ae_eq hcoord hs (hS.union (toFinite {c, e}).countable)
+    hdθ' (fun t ht havoid ↦ d.differentiableAt_graph_comp hdgraph
+      (hdθ' t ht).differentiableAt
+      (hmap (uIoo_subset_uIcc_self (by
+        simpa only [uIoo] using ht.1))) havoid)
+  have hproj' : (fun t ↦ d.proj (deriv (d.graph graph ∘ θ) t))
+      =ᵐ[volume.restrict (uIoc a b)] θ' := by
+    simpa only [uIoc] using hproj
+  filter_upwards [hproj'] with t ht
+  simp only [ht, smul_eq_mul, mul_comm]
 
 /-- Gauge integration on a graph equals the ordinary integral over its base coordinate. -/
 theorem hasHenstockIntervalIntegral_graph (d : Coordinate) {a b : ℝ}
