@@ -33,6 +33,7 @@ The two characterizations below show that the definition is intrinsic.
 ## Main declarations
 
 * `TauCeti.mlieDerivFormWithin`, `TauCeti.mlieDerivForm`: the Lie derivative of a rough form.
+* `TauCeti.mlieDerivFormWithin_add`, `TauCeti.mlieDerivFormWithin_smul`: linearity in the form.
 * `TauCeti.mlieDerivFormWithin_apply_vectorField`, `TauCeti.mlieDerivForm_apply_vectorField`:
   the bracket formula.
 * `TauCeti.mlieDerivFormWithin_eq_interior_mextDerivWithin_add`,
@@ -93,6 +94,55 @@ theorem mlieDerivForm_def (V : (x : M) → TangentSpace I x) (φ : RoughForm I M
         (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (range I))
         (φ.inChartAt x) (range I) (extChartAt I x x) := by
   rw [← mlieDerivFormWithin_univ, mlieDerivFormWithin_def, preimage_univ, univ_inter]
+
+/-! ### Linearity in the form -/
+
+@[simp]
+theorem mlieDerivFormWithin_zero (V : (x : M) → TangentSpace I x) (s : Set M) (x : M) :
+    mlieDerivFormWithin V (0 : RoughForm I M F k) s x = 0 := by
+  rw [mlieDerivFormWithin_def, RoughForm.inChartAt_zero]
+  exact lieDerivFormWithin_zero _ _ _
+
+@[simp]
+theorem mlieDerivForm_zero (V : (x : M) → TangentSpace I x) :
+    mlieDerivForm V (0 : RoughForm I M F k) = 0 :=
+  funext (mlieDerivFormWithin_zero V univ)
+
+/-- The Lie derivative within a set is additive on forms whose coordinate expressions in the
+chart at the point are differentiable there. -/
+theorem mlieDerivFormWithin_add {φ η : RoughForm I M F k} (hs : UniqueMDiffWithinAt I s x)
+    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
+      (extChartAt I x x))
+    (hη : DifferentiableWithinAt ℝ (η.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
+      (extChartAt I x x)) :
+    mlieDerivFormWithin V (φ + η) s x =
+      mlieDerivFormWithin V φ s x + mlieDerivFormWithin V η s x := by
+  rw [mlieDerivFormWithin_def, RoughForm.inChartAt_add]
+  exact lieDerivFormWithin_add hs hφ hη
+
+/-- The Lie derivative is additive on forms whose coordinate expressions in the chart at the point
+are differentiable within `range I` there. -/
+theorem mlieDerivForm_add {φ η : RoughForm I M F k}
+    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) (range I) (extChartAt I x x))
+    (hη : DifferentiableWithinAt ℝ (η.inChartAt x) (range I) (extChartAt I x x)) :
+    mlieDerivForm V (φ + η) x = mlieDerivForm V φ x + mlieDerivForm V η x := by
+  simp only [← mlieDerivFormWithin_univ]
+  exact mlieDerivFormWithin_add (uniqueMDiffWithinAt_univ I) (by simpa using hφ)
+    (by simpa using hη)
+
+/-- The Lie derivative within a set commutes with real scalars wherever derivatives within the set
+are unique; no differentiability of the form is needed. -/
+@[simp]
+theorem mlieDerivFormWithin_smul (c : ℝ) (φ : RoughForm I M F k)
+    (hs : UniqueMDiffWithinAt I s x) :
+    mlieDerivFormWithin V (c • φ) s x = c • mlieDerivFormWithin V φ s x := by
+  rw [mlieDerivFormWithin_def, RoughForm.inChartAt_smul]
+  exact lieDerivFormWithin_smul c _ hs
+
+@[simp]
+theorem mlieDerivForm_smul (c : ℝ) (φ : RoughForm I M F k) :
+    mlieDerivForm V (c • φ) = c • mlieDerivForm V φ :=
+  funext fun _ ↦ mlieDerivFormWithin_smul c φ (uniqueMDiffWithinAt_univ I)
 
 /-! ### The model space -/
 
@@ -165,25 +215,6 @@ theorem mlieDerivForm_apply_vectorField {φ : RoughForm I M F k}
 
 /-! ### Cartan's magic formula -/
 
-/-- In the chart at `x`, the interior product of a form with a vector field is the interior
-product of the coordinate expressions of the form and of the field. -/
-theorem RoughForm.inChartAt_interior (φ : RoughForm I M F (k + 1)) {z : E}
-    (hz : z ∈ (extChartAt I x).target) :
-    (φ.interior V).inChartAt x z =
-      (φ.inChartAt x z).curryLeft
-        (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (range I) z) := by
-  ext v
-  refine Eq.trans ?_ (ContinuousAlternatingMap.curryLeft_apply_apply _ _ _).symm
-  rw [inChartAt_apply, inChartAt_apply, interior_apply]
-  congr 1
-  funext i
-  cases i using Fin.cases with
-  | zero =>
-    -- the chart derivative undoes the inverse-chart pullback on the chart target
-    simp only [Matrix.cons_val_zero, VectorField.mpullbackWithin_apply]
-    exact ((isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse _).symm
-  | succ i => rfl
-
 /-- **Cartan's magic formula** within a set, `L_V φ = ι_V dφ + d (ι_V φ)`, for a form and a vector
 field differentiable within the set at the point. -/
 theorem mlieDerivFormWithin_eq_interior_mextDerivWithin_add {φ : RoughForm I M F (k + 1)}
@@ -200,10 +231,10 @@ theorem mlieDerivFormWithin_eq_interior_mextDerivWithin_add {φ : RoughForm I M 
     mextDerivWithin_def, mextDerivWithin_def]
   congr 1
   refine Filter.EventuallyEq.extDerivWithin_eq ?_
-    (φ.inChartAt_interior (mem_extChartAt_target x)).symm
+    (φ.inChartAt_interior V (mem_extChartAt_target x)).symm
   filter_upwards [nhdsWithin_mono _ inter_subset_right (extChartAt_target_mem_nhdsWithin x)]
     with z hz
-  exact (φ.inChartAt_interior hz).symm
+  exact (φ.inChartAt_interior V hz).symm
 
 /-- **Cartan's magic formula** at a point, `L_V φ = ι_V dφ + d (ι_V φ)`, for a form and a vector
 field differentiable at the point. -/

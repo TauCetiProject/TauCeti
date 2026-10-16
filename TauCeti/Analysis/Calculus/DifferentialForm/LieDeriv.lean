@@ -35,6 +35,7 @@ Two characterizations follow.
 ## Main declarations
 
 * `TauCeti.lieDerivFormWithin`, `TauCeti.lieDerivForm`: the Lie derivative of a form.
+* `TauCeti.lieDerivFormWithin_add`, `TauCeti.lieDerivFormWithin_smul`: linearity in the form.
 * `TauCeti.lieDerivFormWithin_apply_vectorField`: the bracket formula.
 * `TauCeti.lieDerivFormWithin_eq_curryLeft_extDerivWithin_add`: Cartan's formula.
 
@@ -102,6 +103,54 @@ theorem lieDerivForm_apply (ω : E → E [⋀^Fin k]→L[𝕜] F) (v : Fin k →
       fderiv 𝕜 ω x (V x) v + ∑ i, ω x (Function.update v i (fderiv 𝕜 V x (v i))) := by
   simpa only [lieDerivFormWithin_univ, fderivWithin_univ] using
     lieDerivFormWithin_apply (V := V) (s := univ) (x := x) ω v
+
+/-! ### Linearity in the form -/
+
+@[simp]
+theorem lieDerivFormWithin_zero (V : E → E) (s : Set E) (x : E) :
+    lieDerivFormWithin V (0 : E → E [⋀^Fin k]→L[𝕜] F) s x = 0 := by
+  ext v
+  simp [lieDerivFormWithin_apply]
+
+@[simp]
+theorem lieDerivForm_zero (V : E → E) : lieDerivForm V (0 : E → E [⋀^Fin k]→L[𝕜] F) = 0 := by
+  rw [← lieDerivFormWithin_univ]
+  exact funext (lieDerivFormWithin_zero V univ)
+
+/-- The Lie derivative within a set is additive on forms differentiable within the set at the
+point, wherever derivatives within the set are unique. -/
+theorem lieDerivFormWithin_add {ω η : E → E [⋀^Fin k]→L[𝕜] F} (hs : UniqueDiffWithinAt 𝕜 s x)
+    (hω : DifferentiableWithinAt 𝕜 ω s x) (hη : DifferentiableWithinAt 𝕜 η s x) :
+    lieDerivFormWithin V (ω + η) s x = lieDerivFormWithin V ω s x + lieDerivFormWithin V η s x := by
+  ext v
+  simp only [lieDerivFormWithin_apply, fderivWithin_add hs hω hη, Pi.add_apply,
+    _root_.add_apply, ContinuousAlternatingMap.add_apply, Finset.sum_add_distrib]
+  abel
+
+/-- The Lie derivative is additive on forms differentiable at the point. -/
+theorem lieDerivForm_add {ω η : E → E [⋀^Fin k]→L[𝕜] F} (hω : DifferentiableAt 𝕜 ω x)
+    (hη : DifferentiableAt 𝕜 η x) :
+    lieDerivForm V (ω + η) x = lieDerivForm V ω x + lieDerivForm V η x := by
+  simpa only [lieDerivFormWithin_univ] using
+    lieDerivFormWithin_add (V := V) uniqueDiffWithinAt_univ hω.differentiableWithinAt
+      hη.differentiableWithinAt
+
+/-- The Lie derivative within a set commutes with scalars wherever derivatives within the set
+are unique; no differentiability of the form is needed. -/
+@[simp]
+theorem lieDerivFormWithin_smul (c : 𝕜) (ω : E → E [⋀^Fin k]→L[𝕜] F)
+    (hs : UniqueDiffWithinAt 𝕜 s x) :
+    lieDerivFormWithin V (c • ω) s x = c • lieDerivFormWithin V ω s x := by
+  ext v
+  rw [lieDerivFormWithin_apply, fderivWithin_const_smul_field (f := ω) c hs]
+  simp [lieDerivFormWithin_apply, Finset.smul_sum]
+
+@[simp]
+theorem lieDerivForm_smul (c : 𝕜) (ω : E → E [⋀^Fin k]→L[𝕜] F) :
+    lieDerivForm V (c • ω) = c • lieDerivForm V ω := by
+  ext x : 1
+  simpa only [lieDerivFormWithin_univ, Pi.smul_apply] using
+    lieDerivFormWithin_smul (V := V) (x := x) c ω uniqueDiffWithinAt_univ
 
 /-- **The bracket formula** for the Lie derivative of a form within a set: evaluated on vector
 fields `X₀, …, Xₖ₋₁`, it is the derivative of `ω (X₀, …, Xₖ₋₁)` along `V` minus the evaluations
