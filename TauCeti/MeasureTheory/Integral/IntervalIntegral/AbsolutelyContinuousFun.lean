@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
@@ -36,6 +37,8 @@ fundamental-theorem results to curves.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional` and
   `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub_of_finiteDimensional`: integrability and
   the fundamental theorem for the canonical derivative of such a curve.
+* `AbsolutelyContinuousOnInterval.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt`:
+  integration by parts with supplied almost-everywhere derivatives.
 * `ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`: a continuous curve
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
@@ -144,6 +147,35 @@ theorem integrableOn_deriv_Ioc [FiniteDimensional ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) :
     IntegrableOn (deriv γ) (Ioc a b) := by
   simpa only [uIoc_of_le hab] using hγ.intervalIntegrable_deriv_of_finiteDimensional.def'
+
+end AbsolutelyContinuousOnInterval
+
+namespace AbsolutelyContinuousOnInterval
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [FiniteDimensional ℝ A]
+  {f f' g g' : ℝ → A} {a b : ℝ}
+
+/-- **Integration by parts** for absolutely continuous functions valued in a finite-dimensional
+real normed ring. The derivatives may be supplied only almost everywhere. -/
+theorem integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt
+    (hf : AbsolutelyContinuousOnInterval f a b)
+    (hg : AbsolutelyContinuousOnInterval g a b)
+    (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t)
+    (hgg' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt g (g' t) t) :
+    ∫ t in a..b, f t * g' t = f b * g b - f a * g a - ∫ t in a..b, f' t * g t := by
+  have hprod : AbsolutelyContinuousOnInterval (fun t ↦ f t * g t) a b := by
+    have hmul : ContDiff ℝ 1 (fun p : A × A ↦ p.1 * p.2) := contDiff_mul
+    exact (hf.prodMk hg).comp_of_contDiffAt (φ := fun p : A × A ↦ p.1 * p.2)
+      (fun _ _ ↦ hmul.contDiffAt)
+  have hder : ∀ᵐ t, t ∈ uIoc a b →
+      HasDerivAt (fun t ↦ f t * g t) (f' t * g t + f t * g' t) t := by
+    filter_upwards [hff', hgg'] with t ht hu hmem
+    exact (ht hmem).mul (hu hmem)
+  have h := hprod.integral_eq_sub_of_ae_hasDerivAt hder
+  rw [intervalIntegral.integral_add
+    ((hf.intervalIntegrable_of_ae_hasDerivAt hff').mul_continuousOn hg.continuousOn)
+    ((hg.intervalIntegrable_of_ae_hasDerivAt hgg').continuousOn_mul hf.continuousOn)] at h
+  exact eq_sub_of_add_eq' h
 
 end AbsolutelyContinuousOnInterval
 
