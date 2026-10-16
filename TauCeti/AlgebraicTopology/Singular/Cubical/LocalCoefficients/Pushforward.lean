@@ -171,31 +171,14 @@ theorem pushforward_ofCube {n : ℕ} (d : SingularCube Z n)
   rw [pushforward, NormalizedCubicalChain.ofCube_def, Submodule.liftQ_apply,
     Finsupp.linearCombination_single, one_smul, LinearMap.comp_apply, Submodule.mkQ_apply]
 
-omit [SimplyConnectedSpace Z] in
-/-- **Induction on integral normalized cubical chains.** -/
-@[elab_as_elim]
-private theorem induction {n : ℕ} {P : NormalizedCubicalChain Z (ULift.{v} ℤ) n → Prop}
-    (y : NormalizedCubicalChain Z (ULift.{v} ℤ) n) (zero : P 0)
-    (cube : ∀ d, P (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d))
-    (add : ∀ y y', P y → P y' → P (y + y')) (smul : ∀ (r : ULift.{v} ℤ) y, P y → P (r • y)) :
-    P y := by
-  induction y using Submodule.Quotient.induction_on with
-  | H y =>
-    induction y using Finsupp.induction_linear with
-    | zero => exact zero
-    | add y y' hy hy' => exact add _ _ hy hy'
-    | single d r =>
-      rw [← Finsupp.smul_single_one, Submodule.Quotient.mk_smul]
-      exact smul r _ (by rw [← NormalizedCubicalChain.ofCube_def]; exact cube d)
-
 /-- The twisted pushforward commutes with the boundaries. -/
 theorem boundary_pushforward {n : ℕ} (y : NormalizedCubicalChain Z (ULift.{v} ℤ) (n + 1))
     (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
     boundary L n (pushforward L f z₀ (n + 1) y a) =
       pushforward L f z₀ n (NormalizedCubicalChain.boundary Z (ULift.{v} ℤ) n y) a := by
-  induction y using induction with
+  induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
-  | cube d =>
+  | ofCube d =>
     rw [pushforward_ofCube, boundary_mk, boundary_pushCube, NormalizedCubicalChain.boundary_ofCube]
     simp [map_sum, map_sub, ULift.smul_def, pushforward_ofCube, ← Submodule.mkQ_apply]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
@@ -209,9 +192,9 @@ theorem pushforward_map {Z' : Type*} [TopologicalSpace Z'] [SimplyConnectedSpace
     (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
     pushforward L f z₀ n (NormalizedCubicalChain.map (ULift.{v} ℤ) g n y) a =
       pushforward L (f.comp g) w₀ n y (L.map (f.pathClass z₀ (g w₀)) a) := by
-  induction y using induction with
+  induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
-  | cube d => rw [NormalizedCubicalChain.map_ofCube, pushforward_ofCube, pushforward_ofCube,
+  | ofCube d => rw [NormalizedCubicalChain.map_ofCube, pushforward_ofCube, pushforward_ofCube,
       pushCube_comp]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [LinearMap.smul_apply, ULift.smul_def, map_zsmul, hy]
@@ -222,11 +205,11 @@ theorem map_pushforward {Y : TopCat.{v}} (h : C(X, Y)) (L : LocalCoefficientSyst
     (a : ((pullback h).obj L).obj (FundamentalGroupoid.mk (f z₀))) :
     map h L n (pushforward ((pullback h).obj L) f z₀ n y a) =
       pushforward L (h.comp f) z₀ n y a := by
-  induction y using induction with
+  induction y using NormalizedCubicalChain.induction_on with
   | zero =>
     rw [map_zero, LinearMap.zero_apply, map_zero, map_zero]
     rfl
-  | cube d =>
+  | ofCube d =>
     rw [pushforward_ofCube, map_mk, map_pushCube]
     exact (pushforward_ofCube (L := L) (f := h.comp f) (z₀ := z₀) d a).symm
   -- The fibres of the pulled back system are those of `L` only by definition, which leaves the
@@ -242,9 +225,9 @@ theorem map_pushforward {Y : TopCat.{v}} (h : C(X, Y)) (L : LocalCoefficientSyst
 theorem coefficientMap_pushforward {K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K) {n : ℕ}
     (y : NormalizedCubicalChain Z (ULift.{v} ℤ) n) (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
     coefficientMap η n (pushforward L f z₀ n y a) = pushforward K f z₀ n y (η.app _ a) := by
-  induction y using induction with
+  induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
-  | cube d =>
+  | ofCube d =>
     rw [pushforward_ofCube, pushforward_ofCube, coefficientMap_mk, coefficientMap_pushCube]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [LinearMap.smul_apply, ULift.smul_def, map_zsmul, hy]
