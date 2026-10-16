@@ -296,14 +296,21 @@ theorem mpullback_interior {E' H' M' : Type*}
     mpullback I I' f (ω.interior Y) = (mpullback I I' f ω).interior X :=
   funext fun x ↦ mpullback_interior_at f X Y ω (hXY x)
 
+/-- For normed coefficients, the interior product at a point is Mathlib's continuous currying
+operation applied to the value of the form. -/
+theorem RoughForm.interior_apply_eq_curryLeft {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (X : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 1)) (x : M) :
+    ω.interior X x = ContinuousAlternatingMap.curryLeft (E := E) (ω x) (X x) := by
+  ext v
+  -- Tangent spaces identify definitionally with `E`; both currying operations insert into the
+  -- same first slot, and their continuity proofs are propositionally irrelevant.
+  rfl
+
 /-- On the model space, the interior product is Mathlib's continuous currying operation. -/
 theorem RoughForm.interior_modelSpace {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (X : E → E) (ω : RoughForm 𝓘(ℝ, E) E F (k + 1)) :
-    ω.interior X = fun x ↦ ContinuousAlternatingMap.curryLeft (E := E) (ω x) (X x) := by
-  ext x v
-  -- Model tangent spaces identify definitionally with `E`; both currying operations insert
-  -- into the same first slot, and their continuity proofs are propositionally irrelevant.
-  rfl
+    ω.interior X = fun x ↦ ContinuousAlternatingMap.curryLeft (E := E) (ω x) (X x) :=
+  funext (RoughForm.interior_apply_eq_curryLeft X ω)
 
 end FixedCoefficients
 
