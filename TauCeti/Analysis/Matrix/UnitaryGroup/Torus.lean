@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
-public import TauCeti.Algebra.Group.Subgroup.Centralizer
 public import TauCeti.Analysis.Matrix.Normal
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -25,15 +26,16 @@ The main result is that **every element of `U(n)` is conjugate into this torus**
 for normal matrices (`Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal`) it is diagonalized
 by a unitary change of basis, and the resulting diagonal matrix is again unitary. Read through the
 parametrization, every unitary matrix is conjugate in `U(n)` to `diag (z₁, …, zₙ)` for some points
-`zᵢ` of the circle, namely its eigenvalues (`TauCeti.exists_isConj_unitaryTorusHom`). This is the
-`U(n)` case of the theorem that a compact connected Lie group is the union of the conjugates of a
-maximal torus; for `SU(2)` the same statement is `TauCeti.SU2.exists_conj_mem_torus`.
+`zᵢ` of the circle, namely its eigenvalues (`TauCeti.exists_isConj_unitaryTorusHom`).
 
-The diagonal torus is also **its own centralizer** (`TauCeti.centralizer_unitaryTorus`): a unitary
-matrix commuting with the diagonal matrix `diag (1, …, -1, …, 1)`, with `-1` in position `i`, has
-vanishing off-diagonal entries in row `i`. Consequently no strictly larger commutative subgroup of
-`U(n)` contains it (`TauCeti.eq_unitaryTorus_of_le_of_isMulCommutative`), which is the maximality
-of the diagonal torus among the commutative subgroups of `U(n)`.
+The diagonal torus is commutative and is its own centralizer in `U(n)`
+(`TauCeti.centralizer_unitaryTorus`): a unitary matrix commuting with every diagonal unitary
+matrix is diagonal. Hence it is a maximal commutative subgroup of `U(n)`
+(`TauCeti.eq_unitaryTorus_of_isMulCommutative`), and in particular a maximal torus. Together with
+the conjugacy result this is the `U(n)` case of the theorem that a compact connected Lie group is
+the union of the conjugates of a maximal torus; for `SU(2)` the same statement is
+`TauCeti.SU2.exists_conj_mem_torus`. The Weyl group of this torus is computed in
+`TauCeti.Analysis.Matrix.UnitaryGroup.Weyl`.
 
 ## Main definitions
 
@@ -43,13 +45,13 @@ of the diagonal torus among the commutative subgroups of `U(n)`.
 ## Main results
 
 * `TauCeti.mem_unitaryTorus_iff`: the diagonal torus consists of the diagonal unitary matrices.
+* `TauCeti.centralizer_unitaryTorus`: the diagonal torus is its own centralizer.
+* `TauCeti.eq_unitaryTorus_of_isMulCommutative`: the diagonal torus is a maximal commutative
+  subgroup of `U(n)`.
 * `TauCeti.exists_conj_mem_unitaryTorus`: every element of `U(n)` is conjugate into the diagonal
   torus.
 * `TauCeti.exists_isConj_unitaryTorusHom`: every element of `U(n)` is conjugate to
   `diag (z₁, …, zₙ)` for some points `zᵢ` of the circle.
-* `TauCeti.centralizer_unitaryTorus`: the diagonal torus is its own centralizer in `U(n)`.
-* `TauCeti.eq_unitaryTorus_of_le_of_isMulCommutative`: the diagonal torus is a maximal commutative
-  subgroup of `U(n)`.
 
 ## References
 
@@ -82,6 +84,13 @@ theorem coe_unitaryTorusHom (z : n → Circle) :
     (unitaryTorusHom n z : Matrix n n ℂ) = diagonal fun i => (z i : ℂ) :=
   (rfl)
 
+/-- As an invertible matrix, the diagonal unitary matrix with entries `z i` is the diagonal element
+of the general linear group with the entries `z i` viewed as units of `ℂ`. -/
+@[simp]
+theorem toUnits_unitaryTorusHom (z : n → Circle) :
+    Unitary.toUnits (unitaryTorusHom n z) = diagGL fun i => Circle.toUnits (z i) :=
+  Units.ext <| by simp
+
 /-- The parametrization `TauCeti.unitaryTorusHom n` of the diagonal torus by `card n` circles is
 injective: distinct tuples of circle points give distinct diagonal matrices. -/
 theorem unitaryTorusHom_injective : Function.Injective (unitaryTorusHom n) := fun z w h => by
@@ -94,11 +103,6 @@ variable (n) in
 the image of `(n → Circle)` under `TauCeti.unitaryTorusHom n`. -/
 noncomputable def unitaryTorus : Subgroup (unitaryGroup n ℂ) :=
   (unitaryTorusHom n).range
-
-/-- The diagonal torus of `U(n)` is commutative, being the image of the commutative group
-`n → Circle`. -/
-instance : IsMulCommutative (unitaryTorus n) :=
-  inferInstanceAs (IsMulCommutative (unitaryTorusHom n).range)
 
 /-- An element of `U(n)` lies in the diagonal torus exactly when it is `TauCeti.unitaryTorusHom n z`
 for some tuple `z` of circle points. -/
@@ -121,6 +125,30 @@ theorem mem_unitaryTorus_iff {g : unitaryGroup n ℂ} :
     mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (hunit i))⟩, Subtype.ext ?_⟩
   exact hg.diagonal_diag
 
+/-- The diagonal torus of `U(n)` is commutative: diagonal matrices commute. -/
+instance : IsMulCommutative (unitaryTorus n) :=
+  Subgroup.range_isMulCommutative _
+
+/-- **The diagonal torus of `U(n)` is its own centralizer**: a unitary matrix commuting with every
+diagonal unitary matrix is diagonal. -/
+theorem centralizer_unitaryTorus :
+    Subgroup.centralizer (unitaryTorus n : Set (unitaryGroup n ℂ)) = unitaryTorus n := by
+  refine le_antisymm (fun g hg => mem_unitaryTorus_iff.mpr fun i j hij => ?_)
+    (Subgroup.le_centralizer _)
+  let z : n → Circle := Pi.mulSingle i (Circle.exp Real.pi)
+  have hcomm : Commute (diagonal fun k => (z k : ℂ)) (g : Matrix n n ℂ) := by
+    have h := congrArg Subtype.val
+      (Subgroup.mem_centralizer_iff.mp hg _ (unitaryTorusHom_mem_unitaryTorus z))
+    rwa [Submonoid.coe_mul, Submonoid.coe_mul, coe_unitaryTorusHom] at h
+  exact apply_eq_zero_of_commute_diagonal hcomm fun h => Circle.exp_pi_ne_one <| by
+    simpa [z, Pi.mulSingle_eq_of_ne hij.symm] using Circle.coe_inj.mp h
+
+/-- **The diagonal torus is a maximal commutative subgroup of `U(n)`**: a commutative subgroup
+containing it is equal to it. In particular the diagonal torus is a maximal torus of `U(n)`. -/
+theorem eq_unitaryTorus_of_isMulCommutative {H : Subgroup (unitaryGroup n ℂ)} [IsMulCommutative H]
+    (hH : unitaryTorus n ≤ H) : H = unitaryTorus n :=
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative centralizer_unitaryTorus hH
+
 /-- **Every element of `U(n)` is conjugate into the diagonal torus.** A unitary matrix is normal,
 so a unitary change of basis diagonalizes it. -/
 theorem exists_conj_mem_unitaryTorus (g : unitaryGroup n ℂ) :
@@ -142,26 +170,5 @@ theorem exists_isConj_unitaryTorusHom (g : unitaryGroup n ℂ) :
   obtain ⟨u, hu⟩ := exists_conj_mem_unitaryTorus g
   obtain ⟨z, hz⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hu
   exact ⟨z, isConj_iff.mpr ⟨u, hz.symm⟩⟩
-
-/-- **The diagonal torus of `U(n)` is its own centralizer**: a unitary matrix commuting with every
-diagonal unitary matrix is diagonal. -/
-theorem centralizer_unitaryTorus :
-    Subgroup.centralizer (unitaryTorus n : Set (unitaryGroup n ℂ)) = unitaryTorus n := by
-  refine le_antisymm (fun g hg => mem_unitaryTorus_iff.mpr fun i j hij => ?_)
-    (Subgroup.le_centralizer _)
-  -- The diagonal matrix with `-1` in position `i` and `1` elsewhere separates `i` from `j`.
-  let z : n → Circle := Pi.mulSingle i (-1)
-  have hcomm : Commute (diagonal fun l => (z l : ℂ)) (g : Matrix n n ℂ) := by
-    simpa [Commute, SemiconjBy] using congrArg Subtype.val
-      (Subgroup.mem_centralizer_iff.mp hg _ (unitaryTorusHom_mem_unitaryTorus z))
-  refine apply_eq_zero_of_commute_diagonal hcomm ?_
-  norm_num [z, Pi.mulSingle_eq_of_ne hij.symm]
-
-/-- **The diagonal torus is a maximal commutative subgroup of `U(n)`**: a commutative subgroup
-containing it is equal to it. -/
-theorem eq_unitaryTorus_of_le_of_isMulCommutative (H : Subgroup (unitaryGroup n ℂ))
-    [IsMulCommutative H] (hle : unitaryTorus n ≤ H) :
-    H = unitaryTorus n :=
-  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative centralizer_unitaryTorus hle
 
 end TauCeti

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, Adam Bornemann
 -/
 module
 
@@ -61,6 +61,20 @@ linear maps used by the semigroup development.
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
   scalar is self-adjoint.
+
+## Provenance
+
+The shifted-surjectivity and domain-density criteria added here are adapted from
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean)
+and
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean)
+in the AIQ-Kitware DKPS formalization (copyright (c) 2026 Kitware, Inc.;
+authors Jon Crall and Claude Opus 5; Apache-2.0). The donor `Basic.lean`
+credits the earlier
+[`Spectra/OneParameterUnitaryGroup/Basic.lean`](https://github.com/adambornemann-glitch/Spectra/blob/8dbaaf6728d1342ae16acf79fd7eef7c59b37e63/Spectra/OneParameterUnitaryGroup/Basic.lean)
+at commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63` (copyright (c) 2026
+Spectra Formalization Project; author Adam Bornemann; Apache-2.0).
+The present formulations use TauCeti's canonical `LinearPMap` adjoint API.
 
 ## References
 
@@ -337,6 +351,90 @@ theorem isSelfAdjoint_smul_of_adjoint_eq_neg [CompleteSpace E] {G : E →ₗ.[�
   rw [LinearPMap.isSelfAdjoint_def, adjoint_smul (dense_domain_of_adjoint_eq_neg hG) hc, hG, hconj,
     LinearPMap.smul_neg, LinearPMap.neg_smul, neg_neg]
 
+
+/-! ## Von Neumann's shifted-surjectivity criterion -/
+
+section VonNeumann
+
+open Complex InnerProductSpace
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- Surjectivity of `A + i` for a symmetric partial operator makes its domain dense.
+This supplies the density hypothesis needed when using the adjoint of the operator. -/
+theorem dense_domain_of_surjective_add_I (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
+    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ) :
+    Dense (A.domain : Set H) := by
+  rw [Submodule.dense_iff_topologicalClosure_eq_top,
+    Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
+  intro x hx
+  obtain ⟨ψ, hψ⟩ := hplus x
+  have hx0 : ⟪(ψ : H), x⟫_ℂ = 0 :=
+    (Submodule.mem_orthogonal _ x).mp hx (ψ : H) ψ.2
+  have hIm : (⟪(ψ : H), A ψ⟫_ℂ).im = 0 := hsym.im_inner_self_apply ψ
+  have hexp : ⟪(ψ : H), A ψ⟫_ℂ + I * ⟪(ψ : H), (ψ : H)⟫_ℂ = 0 := by
+    rw [← hψ, inner_add_right, inner_smul_right] at hx0
+    exact hx0
+  have him : (⟪(ψ : H), (ψ : H)⟫_ℂ).re = 0 := by
+    have hi := congrArg Complex.im hexp
+    simp only [Complex.add_im, Complex.mul_im, Complex.I_re, Complex.I_im, Complex.zero_im,
+      hIm, zero_mul, one_mul, zero_add] at hi
+    exact hi
+  have hψ0 : (ψ : H) = 0 :=
+    (re_inner_self_nonpos (𝕜 := ℂ) (x := (ψ : H))).mp
+      (by simpa only [RCLike.re_to_complex] using (le_of_eq him))
+  have : ψ = 0 := Subtype.ext hψ0
+  rw [this] at hψ
+  simpa using hψ.symm
+
+/-- **Von Neumann's criterion.** A symmetric partial linear map is self-adjoint if its
+shifts by `+i` and `-i` are surjective. Density follows from the first shift, so no
+independent density hypothesis is needed. -/
+theorem isSelfAdjoint_of_surjective_addSub
+    (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
+    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ)
+    (hminus : ∀ φ : H, ∃ ψ : A.domain, A ψ - I • (ψ : H) = φ) :
+    IsSelfAdjoint A := by
+  have hdense := dense_domain_of_surjective_add_I A hsym hplus
+  rw [LinearPMap.isSelfAdjoint_def]
+  refine le_antisymm ?_ (hsym.le_adjoint hdense)
+  have hker : ∀ w : (A.adjoint).domain, A.adjoint w = I • (w : H) → (w : H) = 0 := by
+    intro w hw
+    obtain ⟨v, hv⟩ := hplus (w : H)
+    have hadj : ⟪A.adjoint w, (v : H)⟫_ℂ = ⟪(w : H), A v⟫_ℂ :=
+      LinearPMap.adjoint_isFormalAdjoint hdense w v
+    rw [hw, inner_smul_left, Complex.conj_I] at hadj
+    have key : ⟪(w : H), A v⟫_ℂ + I * ⟪(w : H), (v : H)⟫_ℂ =
+        ⟪(w : H), (w : H)⟫_ℂ := by
+      rw [← inner_smul_right, ← inner_add_right, hv]
+    have hww : ⟪(w : H), (w : H)⟫_ℂ = 0 := by rw [← key, ← hadj]; ring
+    exact inner_self_eq_zero.mp hww
+  apply LinearPMap.le_of_eqLocus_ge
+  intro w hw
+  set W : (A.adjoint).domain := ⟨w, hw⟩ with hWdef
+  obtain ⟨x, hx⟩ := hminus (A.adjoint W - I • (W : H))
+  have hxin : (x : H) ∈ (A.adjoint).domain := (hsym.le_adjoint hdense).1 x.2
+  have hxeq : A.adjoint (⟨(x : H), hxin⟩ : (A.adjoint).domain) = A x :=
+    ((hsym.le_adjoint hdense).2 (x := x) (y := ⟨(x : H), hxin⟩) rfl).symm
+  set W' : (A.adjoint).domain := W - ⟨(x : H), hxin⟩ with hW'def
+  have hW'val : (W' : H) = (W : H) - (x : H) := by
+    simp only [hW'def, Submodule.coe_sub]
+  have hrearr : A.adjoint W - A x = I • (W : H) - I • (x : H) := by
+    have h2 : A.adjoint W = A x - I • (x : H) + I • (W : H) := by rw [hx]; abel
+    rw [h2]; abel
+  have hAW' : A.adjoint W' = I • (W' : H) := by
+    have e1 : A.adjoint W' = A.adjoint W - A x := by
+      rw [hW'def, LinearPMap.map_sub, hxeq]
+    rw [e1, hrearr, hW'val, smul_sub]
+  have hWx : (W : H) = (x : H) := sub_eq_zero.mp (hW'val ▸ hker W' hAW')
+  have hwx : w = (x : H) := by
+    have hWcoe : (W : H) = w := by rw [hWdef]
+    rw [← hWcoe]
+    exact hWx
+  subst hwx
+  exact ⟨hw, x.2, hxeq⟩
+
+end VonNeumann
 
 end LinearPMap
 

@@ -17,8 +17,24 @@ At a prime beyond twice that bound, the existing reconstruction theorem finds th
 The assembled prime search therefore succeeds after a finite number of steps, and its answer
 stays the same for every larger search budget.
 
+Consequently the search with the least successful budget is a total, executable algorithm,
+`TauCeti.ClassData.characterTableDixon`. Embedded in `ℂ`, its table is the character table of
+`G` up to a permutation of the rows.
+
 The coefficient bound here is existential: it proves termination without a quantitative
 estimate for the running time or a prescribed prime.
+
+## Main definitions
+
+* `TauCeti.ClassData.characterTableDixon`: the total Burnside--Dixon--Schneider algorithm.
+
+## Main results
+
+* `TauCeti.ClassData.exists_characterTableDixon?_eq_some`: the budgeted search succeeds.
+* `TauCeti.ClassData.characterTableDixon_eq_of_characterTableDixon?_eq_some`: every successful
+  budgeted search returns the table of the total algorithm.
+* `TauCeti.ClassData.isCharacterTableSpec_characterTableDixon`: the computed table satisfies the
+  character-table specification, so it is the character table up to a permutation of the rows.
 -/
 
 public section
@@ -120,5 +136,57 @@ theorem exists_characterTableDixon?_eq_some :
     (d.isSome_characterTableDixon?_iff e he p).mpr ⟨q, hq, hsolve⟩
   obtain ⟨output, houtput⟩ := Option.isSome_iff_exists.mp hsome
   exact ⟨p, output, fun _ hle ↦ d.characterTableDixon?_eq_some_of_le e he hle houtput⟩
+
+/-! ### The total algorithm
+
+Completeness turns the budgeted search into a total function: the algorithm runs
+`TauCeti.ClassData.characterTableDixon?` with budgets `0, 1, 2, …` and stops at the first one
+at which it succeeds. -/
+
+/-- **The Burnside--Dixon--Schneider algorithm.** It runs the prime search
+`TauCeti.ClassData.characterTableDixon?` with the least budget at which it returns a table,
+and returns that table. The search terminates by
+`TauCeti.ClassData.exists_characterTableDixon?_eq_some`, so the result is total; it remains
+executable, because finding the least budget only evaluates the search at increasing budgets. -/
+def characterTableDixon : d.CyclotomicCharacterTableData e :=
+  have h : ∃ fuel, (d.characterTableDixon? e he fuel).isSome :=
+    (d.exists_characterTableDixon?_eq_some e he).imp fun fuel ⟨output, h⟩ ↦
+      Option.isSome_iff_exists.mpr ⟨output, h fuel le_rfl⟩
+  (d.characterTableDixon? e he (Nat.find h)).get (Nat.find_spec h)
+
+/-- Whenever the budgeted search succeeds, it returns the table of the total algorithm. -/
+theorem characterTableDixon?_eq_some_characterTableDixon {fuel : ℕ}
+    (h : (d.characterTableDixon? e he fuel).isSome) :
+    d.characterTableDixon? e he fuel = some (d.characterTableDixon e he) := by
+  have hex : ∃ fuel, (d.characterTableDixon? e he fuel).isSome := ⟨fuel, h⟩
+  exact d.characterTableDixon?_eq_some_of_le e he (Nat.find_min' hex h)
+    (Option.some_get (Nat.find_spec hex)).symm
+
+/-- A table returned by the budgeted search is the table of the total algorithm. -/
+theorem characterTableDixon_eq_of_characterTableDixon?_eq_some {fuel : ℕ}
+    {output : d.CyclotomicCharacterTableData e}
+    (h : d.characterTableDixon? e he fuel = some output) :
+    d.characterTableDixon e he = output :=
+  Option.some_injective _ <| (d.characterTableDixon?_eq_some_characterTableDixon e he
+    (Option.isSome_iff_exists.mpr ⟨output, h⟩)).symm.trans h
+
+/-- The table of the Burnside--Dixon--Schneider algorithm passes the exact cyclotomic
+certificate. -/
+theorem isCyclotomicCharacterTableSpec_characterTableDixon :
+    d.IsCyclotomicCharacterTableSpec e (d.characterTableDixon e he).omega
+      (d.characterTableDixon e he).table (d.characterTableDixon e he).degree := by
+  obtain ⟨fuel, output, h⟩ := d.exists_characterTableDixon?_eq_some e he
+  rw [d.characterTableDixon_eq_of_characterTableDixon?_eq_some e he (h fuel le_rfl)]
+  exact d.isCyclotomicCharacterTableSpec_of_characterTableDixon?_eq_some e he (h fuel le_rfl)
+
+/-- **Correctness of the Burnside--Dixon--Schneider algorithm.** The table it computes, embedded
+in `ℂ` and reindexed by the conjugacy classes, satisfies the complex character-table
+specification; by `TauCeti.characterTable_unique_rows` it is therefore the character table of `G`
+up to a permutation of the rows. -/
+theorem isCharacterTableSpec_characterTableDixon :
+    haveI : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+    IsCharacterTableSpec G (d.complexTableOfCyclotomic e (d.characterTableDixon e he).table) :=
+  haveI : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  (d.isCyclotomicCharacterTableSpec_characterTableDixon e he).isCharacterTableSpec
 
 end TauCeti.ClassData

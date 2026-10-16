@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
-public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
+public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!

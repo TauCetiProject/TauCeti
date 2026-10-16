@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
+import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
 
 /-!
 # Unramified Kummer classes at good reduction
@@ -22,6 +23,10 @@ unramified. Indeed inertia fixes every `m`-division point of a rational point, s
 the unramified local condition used to control ramification of Selmer classes.
 Consequently a Selmer class restricts to an unramified class at each nonarchimedean local
 field in its defining family where the equation has good reduction and `m` is a residue unit.
+Unramifiedness is also stable under restriction to any extension of nonarchimedean local fields,
+since the inertia subgroup of the larger field maps into that of the smaller one. This carries the
+local conditions at the places of a number field to the places of a finite extension, such as the
+`m`-division field, as the proof of the finiteness of Selmer groups requires (Silverman X.4.2).
 
 ## References
 
@@ -53,6 +58,20 @@ theorem mem_unramifiedTorsionCohomology_iff
       explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
         ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) c = 0 :=
   (Iff.rfl)
+
+/-- **Unramified classes restrict to unramified classes.** For an extension `L/K` of
+nonarchimedean local fields and a `K`-embedding `τ : Kˢ → Lˢ` of separable closures, restriction
+`H¹(K, E[m]) → H¹(L, E[m])` along `τ` sends unramified classes to unramified classes, because the
+inertia subgroup of `L` maps into that of `K`. No reduction hypothesis on `W` is needed. -/
+theorem torsionRes_mem_unramifiedTorsionCohomology {L : Type*} [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
+    (hc : c ∈ W.unramifiedTorsionCohomology m) :
+    W.torsionRes τ m c ∈ (W⁄L).unramifiedTorsionCohomology m := by
+  rw [mem_unramifiedTorsionCohomology_iff, torsionRes_eq_explicitMap1]
+  exact (absoluteGaloisGroupMap τ).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
+    (τ.map_absoluteGaloisGroupMap_inertiaSubgroup_le) hc
 
 variable [IsIntegral 𝒪[K] W] [(integralModel 𝒪[K] W).IsElliptic]
 
