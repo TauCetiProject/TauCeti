@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
+public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.PartitionOfUnity
 import Mathlib.Topology.Compactness.LocallyFinite
@@ -250,5 +251,21 @@ theorem RoughForm.indicator_inChartAt_eventuallyEq (φ : RoughForm I M F k) (α 
   classical
   filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hz] with y hy
   exact indicator_of_mem hy _
+
+/-- The zero extension of a compact chart-supported form whose support avoids the boundary
+is supported inside the interior of the coordinate target. -/
+theorem RoughForm.tsupport_indicator_inChartAt_subset_interior [IsManifold I 1 M]
+    (φ : RoughForm I M F k) (α : M) (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ))
+    (hs : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source)
+    (hd : Disjoint (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) (I.boundary M)) :
+    _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) ⊆
+      interior (extChartAt I α).target := by
+  intro y hy
+  obtain ⟨x, hx, rfl⟩ := φ.tsupport_indicator_inChartAt_subset α hc hs hy
+  apply mem_interior_iff_mem_nhds.mpr
+  exact ModelWithCorners.extChartAt_target_mem_nhds_of_isInteriorPoint (k := 1)
+    one_ne_zero α (hs hx)
+    ((I.isInteriorPoint_iff_not_isBoundaryPoint x).mpr
+      (fun hb ↦ Set.disjoint_left.mp hd hx hb))
 
 end TauCeti

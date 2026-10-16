@@ -38,20 +38,6 @@ local instance boundaryChartStokes_isManifold : IsManifold 𝓘(ℝ, EuclideanSp
     ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
 
 
-private theorem unsignedInChartAt_eq_indicator
-    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-    {j : ℕ} (ψ : RoughForm I M ℝ j) (b : Module.Basis (Fin j) ℝ E) (α : M) (y : E) :
-    ψ.signedInChartAt b α (fun _ ↦ 1) y =
-      ((extChartAt I α).target.indicator (ψ.inChartAt α) y) b := by
-  classical
-  rw [RoughForm.signedInChartAt_apply]
-  split_ifs with hy
-  · rw [indicator_of_mem hy]
-    simp
-  · rw [indicator_of_notMem hy]
-    rfl
-
 /-- Stokes for a compactly supported form in one preferred chart, with its boundary term
 read on the coordinate-zero slice. Both actual coefficients are integrable. -/
 private theorem integral_mextDeriv_inChartAt [IsManifold (𝓡∂ (n + 1)) 2 M]
@@ -83,7 +69,7 @@ private theorem integral_mextDeriv_inChartAt [IsManifold (𝓡∂ (n + 1)) 2 M]
   have hD : EqOn (fun z ↦ extDerivWithin ω (range I) z e) a (range I) := by
     intro z hz
     dsimp only [a]
-    rw [unsignedInChartAt_eq_indicator]
+    rw [RoughForm.signedInChartAt_one]
     exact congrArg (fun L ↦ L e) (hφ.extDerivWithin_indicator_inChartAt α hc hs hz)
   have hsA : Function.support a ⊆ range I :=
     ((TauCeti.mextDeriv φ).support_signedInChartAt_subset_target e α (fun _ ↦ 1)).trans
@@ -128,7 +114,7 @@ theorem integral_mextDeriv_inChartAt_boundary [IsManifold (𝓡∂ (n + 1)) 2 M]
       (boundaryRestriction φ).signedInChartAt (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
         α (fun _ ↦ 1) := by
     funext y
-    rw [unsignedInChartAt_eq_indicator, indicator_inChartAt_boundaryRestriction]
+    rw [RoughForm.signedInChartAt_one, indicator_inChartAt_boundaryRestriction]
     rfl
   simpa only [hb] using hr
 

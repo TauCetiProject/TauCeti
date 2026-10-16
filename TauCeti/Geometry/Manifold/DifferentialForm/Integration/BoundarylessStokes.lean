@@ -31,42 +31,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] {n : ℕ}
 
-omit [FiniteDimensional ℝ E] in
-private theorem tsupport_indicator_inChartAt_subset_interior [IsManifold I 1 M]
-    (φ : RoughForm I M ℝ n) (α : M) (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ))
-    (hs : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ (extChartAt I α).source)
-    (hd : Disjoint (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) (I.boundary M)) :
-    _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) ⊆
-      interior (extChartAt I α).target := by
-  intro y hy
-  obtain ⟨x, hx, rfl⟩ := φ.tsupport_indicator_inChartAt_subset α hc hs hy
-  apply mem_interior_iff_mem_nhds.mpr
-  exact ModelWithCorners.extChartAt_target_mem_nhds_of_isInteriorPoint (k := 1)
-    one_ne_zero α (hs hx)
-    ((I.isInteriorPoint_iff_not_isBoundaryPoint x).mpr
-      (fun hb ↦ Set.disjoint_left.mp hd hx hb))
-
-omit [FiniteDimensional ℝ E] in
-private theorem contDiff_indicator_inChartAt [IsManifold I 2 M]
-    {φ : RoughForm I M ℝ n} (hφ : IsSmoothForm I 1 φ) (α : M)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ)) (hs :
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ (extChartAt I α).source)
-    (hd : Disjoint (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) (I.boundary M)) :
-    ContDiff ℝ 1 ((extChartAt I α).target.indicator (φ.inChartAt α)) := by
-  classical
-  apply contDiff_iff_contDiffAt.mpr
-  intro y
-  by_cases hy : y ∈ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α))
-  · have ht := mem_interior_iff_mem_nhds.mp
-      (tsupport_indicator_inChartAt_subset_interior φ α hc hs hd hy)
-    have hr : range I ∈ 𝓝 y := mem_of_superset ht (extChartAt_target_subset_range α)
-    have he : (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝 y] φ.inChartAt α := by
-      filter_upwards [ht] with z hz
-      exact indicator_of_mem hz _
-    have hy := (hφ.contDiffWithinAt_inChartAt α (mem_of_mem_nhds ht)).contDiffAt hr
-    exact hy.congr_of_eventuallyEq he
-  · exact contDiffAt_const.congr_of_eventuallyEq (notMem_tsupport_iff_eventuallyEq.mp hy)
-
 /-- The canonical integral of a chart-supported exterior derivative vanishes when the form's
 support avoids the boundary. This applies to every real model with corners. -/
 theorem integralTopForm_mextDeriv_eq_zero_of_tsupport_subset_chart [IsManifold I 2 M]
@@ -82,7 +46,7 @@ theorem integralTopForm_mextDeriv_eq_zero_of_tsupport_subset_chart [IsManifold I
   let : BorelSpace E := ⟨rfl⟩
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
   let η := (extChartAt I α).target.indicator (φ.inChartAt α)
-  have hω := contDiff_indicator_inChartAt hφ α hc hs hd
+  have hω := hφ.contDiff_indicator_inChartAt α hc hs hd
   have hcω := φ.hasCompactSupport_indicator_inChartAt α hc hs
   have hr := Module.Basis.integral_extDeriv_eq_zero b hω hcω
   have he (y : E) : (TauCeti.mextDeriv φ).signedInChartAt b α (fun _ ↦ 1) y =
@@ -93,7 +57,7 @@ theorem integralTopForm_mextDeriv_eq_zero_of_tsupport_subset_chart [IsManifold I
       have hde : extDerivWithin η (range I) y = extDeriv η y := by
         by_cases ht : y ∈ _root_.tsupport η
         · have hn := mem_interior_iff_mem_nhds.mp
-            (tsupport_indicator_inChartAt_subset_interior φ α hc hs hd ht)
+            (φ.tsupport_indicator_inChartAt_subset_interior α hc hs hd ht)
           rw [extDerivWithin, extDeriv,
             fderivWithin_of_mem_nhds (mem_of_superset hn (extChartAt_target_subset_range α))]
         · rw [extDerivWithin, extDeriv, fderiv_of_notMem_tsupport ℝ ht,

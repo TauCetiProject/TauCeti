@@ -392,4 +392,26 @@ theorem IsSmoothForm.extDerivWithin_indicator_inChartAt [IsManifold I 2 M]
         (I.uniqueDiffOn z hz)]
     exact map_zero _
 
+/-- A compact chart-supported `C¹` form whose support avoids the boundary has a globally `C¹`
+coordinate extension by zero. No integration or finite-dimensional hypothesis is required. -/
+theorem IsSmoothForm.contDiff_indicator_inChartAt [IsManifold I 2 M]
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) (α : M)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source)
+    (hd : Disjoint (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) (I.boundary M)) :
+    ContDiff ℝ 1 ((extChartAt I α).target.indicator (φ.inChartAt α)) := by
+  classical
+  apply contDiff_iff_contDiffAt.mpr
+  intro y
+  by_cases hy : y ∈ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α))
+  · have ht := mem_interior_iff_mem_nhds.mp
+      (φ.tsupport_indicator_inChartAt_subset_interior α hc hs hd hy)
+    have hr : range I ∈ 𝓝 y := mem_of_superset ht (extChartAt_target_subset_range α)
+    have he : (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝 y] φ.inChartAt α := by
+      filter_upwards [ht] with z hz
+      exact indicator_of_mem hz _
+    have hy := (hφ.contDiffWithinAt_inChartAt α (mem_of_mem_nhds ht)).contDiffAt hr
+    exact hy.congr_of_eventuallyEq he
+  · exact contDiffAt_const.congr_of_eventuallyEq (notMem_tsupport_iff_eventuallyEq.mp hy)
+
 end TauCeti
