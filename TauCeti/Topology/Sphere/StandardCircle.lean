@@ -17,7 +17,6 @@ the point `(1, 0)` and is injective elsewhere, so it is a quotient map of `I¹` 
 
 ## Main declarations
 
-* `TauCeti.Sphere1.east`: the point `(1, 0)` of the unit circle.
 * `TauCeti.circleLoop`: the standard loop `I¹ → S¹`.
 * `TauCeti.circleLoop_eq_east_iff`, `TauCeti.circleLoop_surjective` and
   `TauCeti.eq_or_of_circleLoop_eq`: it collapses exactly the boundary to `(1, 0)`, is surjective,
@@ -32,9 +31,6 @@ open Metric Real
 open scoped unitInterval
 
 namespace TauCeti
-
-/-- The point `(1, 0)` of the unit circle. -/
-def Sphere1.east : Sphere1 := ⟨EuclideanSpace.single 0 1, by simp⟩
 
 /-- The standard loop `I¹ → S¹`, `t ↦ (cos 2πt, sin 2πt)`. -/
 def circleLoop : C(Fin 1 → I, Sphere1) where
@@ -85,7 +81,7 @@ theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
   constructor
   · intro h
     have h0 := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
-    simp only [circleLoop_apply_zero, Sphere1.east, PiLp.single_apply,
+    simp only [circleLoop_apply_zero, Sphere1.coe_east, PiLp.single_apply,
       ite_true] at h0
     obtain ⟨n, hn⟩ := Real.cos_eq_one_iff _ |>.1 h0
     have hpi : (2 * π) ≠ 0 := by positivity
@@ -102,10 +98,10 @@ theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
   · rintro (h | h)
     · refine Subtype.ext ?_
       ext i
-      fin_cases i <;> simp [circleLoop_apply_zero, circleLoop_apply_one, Sphere1.east, h]
+      fin_cases i <;> simp [circleLoop_apply_zero, circleLoop_apply_one, Sphere1.coe_east, h]
     · refine Subtype.ext ?_
       ext i
-      fin_cases i <;> simp [circleLoop_apply_zero, circleLoop_apply_one, Sphere1.east, h]
+      fin_cases i <;> simp [circleLoop_apply_zero, circleLoop_apply_one, Sphere1.coe_east, h]
 
 /-- Two points of the interval with the same image under the standard loop are equal, or both
 end points. -/

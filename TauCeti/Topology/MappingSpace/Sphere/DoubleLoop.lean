@@ -59,16 +59,43 @@ def loopSpace2Homeomorph :
       BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint :=
   (basedMapCircleHomeomorph X.loopSpace).symm
 
-/-- A double loop as a map from the circle to the loop space. -/
-def loopSpace2ToMapCircle : C((X.iteratedLoopSpace 2).carrier, C(Sphere1, X.loopSpace.carrier)) :=
+/-- A double loop as a map from the circle to the loop space: the underlying map of the based map
+that corresponds to it under `loopSpace2Homeomorph`. -/
+def loopSpace2ToMapCircle :
+    C((X.iteratedLoopSpace 2).carrier, C(Sphere1, Path X.basepoint X.basepoint)) :=
   (⟨Subtype.val, continuous_subtype_val⟩ :
     C(BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint,
-      C(Sphere1, X.loopSpace.carrier))).comp (loopSpace2Homeomorph X : C(_, _))
+      C(Sphere1, Path X.basepoint X.basepoint))).comp (loopSpace2Homeomorph X : C(_, _))
+
+/-- Along the standard parametrization of the circle, the map of a double loop is the loop of the
+loop space that it is: its value at `circleLoop t` is the value of the double loop, read as a
+cube loop in `Ω X`, at `t`. -/
+@[simp]
+theorem loopSpace2ToMapCircle_circleLoop (γ : (X.iteratedLoopSpace 2).carrier)
+    (t : Fin 1 → unitInterval) :
+    loopSpace2ToMapCircle X γ (circleLoop t) = iteratedLoopSpaceHomeomorph 1 X.loopSpace γ t := by
+  have h : basedMapCircleHomeomorph X.loopSpace (loopSpace2Homeomorph X γ) = γ :=
+    (basedMapCircleHomeomorph X.loopSpace).apply_symm_apply _
+  have := iteratedLoopSpaceHomeomorph_basedMapCircleHomeomorph X.loopSpace
+    (loopSpace2Homeomorph X γ) t
+  rw [h] at this
+  -- the map of a double loop is the underlying map of its based map, by definition
+  exact this.symm
+
+/-- The map of a double loop is based: it sends the basepoint `(1, 0)` of the circle to the
+constant loop. -/
+@[simp]
+theorem loopSpace2ToMapCircle_east (γ : (X.iteratedLoopSpace 2).carrier) :
+    loopSpace2ToMapCircle X γ Sphere1.east = Path.refl X.basepoint :=
+  (loopSpace2Homeomorph X γ).2
 
 /-- The embedding of the double loop space in the space of maps from the circle to the loop space
 is a topological embedding. -/
 theorem isEmbedding_loopSpace2ToMapCircle : IsEmbedding (loopSpace2ToMapCircle X) :=
-  IsEmbedding.subtypeVal.comp (loopSpace2Homeomorph X).isEmbedding
+  -- the loop space carrier is the type of paths, so the subtype of based maps is that of
+  -- `C(S¹, Path _ _)`
+  (IsEmbedding.subtypeVal (X := C(Sphere1, Path X.basepoint X.basepoint))).comp
+    (loopSpace2Homeomorph X).isEmbedding
 
 /-- Evaluation of a double loop on the circle: `S¹ × Ω²X → ΩX`. -/
 def evalCircle :
@@ -84,6 +111,17 @@ theorem evalCircle_apply (z : Sphere1) (γ : (X.iteratedLoopSpace 2).carrier) :
   rw [evalCircle]
   -- unfolding the bundled map leaves evaluation of the map from the circle
   rfl
+
+/-- Evaluating a double loop along the standard parametrization of the circle gives the loop of
+the loop space that it is. -/
+theorem evalCircle_circleLoop (γ : (X.iteratedLoopSpace 2).carrier) (t : Fin 1 → unitInterval) :
+    evalCircle X (circleLoop t, γ) = iteratedLoopSpaceHomeomorph 1 X.loopSpace γ t := by
+  rw [evalCircle_apply, loopSpace2ToMapCircle_circleLoop]
+
+/-- Evaluating a double loop at the basepoint of the circle gives the constant loop. -/
+theorem evalCircle_east (γ : (X.iteratedLoopSpace 2).carrier) :
+    evalCircle X (Sphere1.east, γ) = Path.refl X.basepoint := by
+  rw [evalCircle_apply, loopSpace2ToMapCircle_east]
 
 variable {X} {Y : BasedTopologicalSpace.{u}}
 

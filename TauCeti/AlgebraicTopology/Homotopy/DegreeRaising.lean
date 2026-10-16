@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Circle
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
-public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 public import TauCeti.Topology.MappingSpace.Sphere.DoubleLoop
 
 /-!
@@ -15,9 +15,9 @@ public import TauCeti.Topology.MappingSpace.Sphere.DoubleLoop
 A double loop is a loop in the loop space, so evaluation on the circle gives a map
 `S¹ × Ω²X → ΩX` (`TauCeti.BasedTopologicalSpace.evalCircle`). The circle is parametrized by the
 standard loop `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`) both in this identification of
-double loops with maps from the circle and in the fundamental class below, which is the class of
-that same loop. So `β_*` is oriented by the standard parametrization of the interval and the
-circle. On singular homology with
+double loops with maps from the circle and in the fundamental class
+`TauCeti.circleFundamentalClass`, which is the class of that same loop. So `β_*` is oriented by
+the standard parametrization of the interval and the circle. On singular homology with
 coefficients in the unit `𝟙` of `ModuleCat R`, for a commutative ring `R`, composing the cross
 product with the fundamental class of the circle with the map induced by this evaluation gives the
 degree-raising map
@@ -28,8 +28,6 @@ natural in the based space `X`.
 
 ## Main declarations
 
-* `TauCeti.circleFundamentalClass`: the fundamental class `𝟙 ⟶ H₁(S¹; 𝟙)` of the unit circle in
-  `ℝ²`, the class of the standard loop.
 * `TauCeti.degreeRaising`: the degree-raising map `H_p(Ω²X; 𝟙) ⟶ H_n(ΩX; 𝟙)` for `1 + p = n`.
 * `TauCeti.degreeRaising_naturality`: its naturality in `X`.
 
@@ -46,43 +44,6 @@ noncomputable section
 open CategoryTheory MonoidalCategory Limits Metric
 
 namespace TauCeti
-
-section Class
-
-variable (R : Type) [CommRing R]
-
-/-- The circle `S¹` with the basepoint `(1, 0)`, as a topological pair. -/
-abbrev circlePair : TopPair.{0} := TopPair.ofSubset (X := TopCat.of Sphere1) {Sphere1.east}
-
-/-- The standard loop `t ↦ (cos 2πt, sin 2πt)` as a map of pairs
-`(I¹, ∂I¹) ⟶ (S¹, {(1, 0)})`. -/
-def circleLoopPairHom : cubeBoundaryPair.{0} 1 ⟶ circlePair :=
-  TopPair.ofSubsetMap
-    (TopCat.ofHom (circleLoop.comp ⟨ULift.down, continuous_uliftDown⟩))
-    fun t ht => Set.mem_singleton_iff.2 ((circleLoop_eq_east_iff t.down).2 ht)
-
-/-- The standard loop pair map takes a point of the cube to its image under the standard loop. -/
-@[simp]
-theorem circleLoopPairHom_fst_apply (t : (cubeBoundaryPair.{0} 1).fst) :
-    TopPair.Hom.fst circleLoopPairHom t = circleLoop t.down := by
-  rw [circleLoopPairHom]
-  exact TopPair.ofSubsetMap_fst_apply _ _ t
-
-/-- **The fundamental class of the circle**: the class of the standard loop
-`t ↦ (cos 2πt, sin 2πt)`. It is the image of the relative class of the standard `1`-simplex of the
-interval `I¹` under the loop, followed by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`
-(`TauCeti.singularHomologyIsoOfSubsetSingleton`). The circle is oriented by this
-parametrization, which is also the one with which double loops are read as maps from the circle in
-`TauCeti.BasedTopologicalSpace.loopSpace2Homeomorph`. -/
-def circleFundamentalClass :
-    𝟙_ (ModuleCat.{0} R) ⟶
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) 1).obj (𝟙_ _)).obj
-        (TopCat.of Sphere1) :=
-  cubeRelClass (𝟙_ (ModuleCat.{0} R)) ≫
-    TopPair.singularHomologyMap circleLoopPairHom (𝟙_ (ModuleCat.{0} R)) 1 ≫
-      (singularHomologyIsoOfSubsetSingleton (𝟙_ (ModuleCat.{0} R)) 0 Sphere1.east).inv
-
-end Class
 
 section Raising
 
