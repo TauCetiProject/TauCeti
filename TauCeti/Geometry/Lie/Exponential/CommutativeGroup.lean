@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.Generation
 public import TauCeti.Geometry.Lie.Exponential.Trotter
-public import TauCeti.Algebra.Module.ZLattice.Basic
-import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.Algebra.Module.ZLattice.Basic
+public import TauCeti.Topology.Algebra.Module.Submodule
+import TauCeti.Topology.Algebra.Module.CompactQuotient
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
@@ -239,25 +240,8 @@ instance compactSpace_quotient_ker_lieExpAddMonoidHom :
 algebra.** -/
 theorem span_ker_lieExpAddMonoidHom_eq_top :
     Submodule.span ℝ
-      ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set (LeftInvariantDerivation I G)) = ⊤ := by
-  -- A functional vanishing on the kernel descends to the compact quotient, so its range in `ℝ`
-  -- is compact; a nonzero functional is surjective, and `ℝ` is not compact.
-  by_contra hne
-  obtain ⟨f, hf0, hfker⟩ :=
-    Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.mpr hne) inferInstance
-  have hker : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ f.toAddMonoidHom.ker := fun X hX => by
-    have hmem : f X ∈ (Submodule.span ℝ
-        ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set (LeftInvariantDerivation I G))).map f :=
-      Submodule.mem_map_of_mem (Submodule.subset_span hX)
-    rwa [hfker, Submodule.mem_bot] at hmem
-  let φ := QuotientAddGroup.lift _ f.toAddMonoidHom hker
-  have hφ : Continuous φ :=
-    (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.mpr
-      (LinearMap.continuous_of_finiteDimensional f)
-  have hsurj : Function.Surjective φ := fun r => by
-    obtain ⟨X, hX⟩ := LinearMap.surjective hf0 r
-    exact ⟨QuotientAddGroup.mk X, by rw [QuotientAddGroup.lift_mk]; exact hX⟩
-  exact noncompact_univ ℝ (Set.range_eq_univ.mpr hsurj ▸ isCompact_range hφ)
+      ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set (LeftInvariantDerivation I G)) = ⊤ :=
+  AddSubgroup.span_eq_top_of_compactSpace_quotient _
 
 /-- **The kernel of the exponential of a compact commutative Lie group is a lattice**
 in the Lie algebra. -/
