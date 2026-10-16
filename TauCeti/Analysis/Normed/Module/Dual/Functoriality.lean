@@ -21,7 +21,7 @@ These are the standard functorial properties of the continuous dual; see Rudin,
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 variable {𝕜 E F G : Type*}
 
@@ -142,4 +142,4 @@ theorem precomp_precomp_comp_inclusionInDoubleDual (T : E →L[𝕜] F) :
 
 end Bidual
 
-end TauCeti
+end ContinuousLinearMap
