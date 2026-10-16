@@ -131,6 +131,43 @@ private lemma edge_eq_max_weight {n : ℕ} {c : ℕ → T.Component}
   T.intersection_eq_max_weight (by rw [hcard]; omega) (hc.intersection_self i (by omega))
     (hc.intersection_self (i + 1) hi) (hc.intersection_succ_pos i hi)
 
+/-- A sequence with `f i + f (i + 2) = 2 * f (i + 1)` below `N` is affine below `N`. -/
+private lemma eq_add_mul_sub_of_add_eq_two_mul {f : ℕ → ℤ} {N : ℕ}
+    (hf : ∀ i, i + 2 < N → f i + f (i + 2) = 2 * f (i + 1)) :
+    ∀ i < N, f i = f 0 + i * (f 1 - f 0) := by
+  intro i
+  induction i using Nat.twoStepInduction with
+  | zero => intro; simp
+  | one => intro; simp
+  | more i hi hi₁ =>
+      intro hin
+      have h := hf i (by omega)
+      rw [hi (by omega), hi₁ (by omega)] at h
+      push_cast at h ⊢
+      linear_combination h
+
+/-- The fibre relation at an interior component `c (i + 1)` of constant weight `W`, whose left
+edge has intersection number `W`. -/
+private lemma multiplicity_add_eq_two_mul {n : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain n c) (hcard : Fintype.card T.Component = n)
+    (hn : 6 ≤ n)
+    (hzero : ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0)
+    {W : ℤ} (hW : 0 < W)
+    (hint : ∀ i, 0 < i → i + 1 < n → (T.weight (c i) : ℤ) = W) {i : ℕ} (hi : i + 3 < n)
+    (hedge : T.intersection (c i) (c (i + 1)) = W) :
+    (T.multiplicity (c i) : ℤ) + T.multiplicity (c (i + 2)) =
+      2 * T.multiplicity (c (i + 1)) := by
+  have hnext : T.intersection (c (i + 1)) (c (i + 2)) = W := by
+    rw [edge_eq_max_weight hc hcard hn (by omega), hint (i + 1) (by omega) (by omega),
+      hint (i + 1 + 1) (by omega) (by omega), max_self]
+  have h := hc.interior_fiber_relation hcard hzero (i := i + 1) (by omega) (by omega)
+  rw [Nat.add_sub_cancel, show i + 1 + 1 = i + 2 by omega,
+    T.intersection_comm (c (i + 1)) (c i), hedge, hnext,
+    hc.intersection_self (i + 1) (by omega), hint (i + 1) (by omega) (by omega)] at h
+  apply mul_left_cancel₀ hW.ne'
+  linear_combination h
+
 private lemma multiplicity_eq_of_left_half {n : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain n c) (hcard : Fintype.card T.Component = n)
     (hn : 6 ≤ n)
@@ -152,19 +189,10 @@ private lemma multiplicity_eq_of_left_half {n : ℕ} {c : ℕ → T.Component}
     rw [hc.intersection_self 0 (by omega), hedge 0 (by omega)] at h
     apply mul_left_cancel₀ hW.ne'
     linear_combination h + (T.multiplicity (c 0) : ℤ) * hleft
-  intro i
-  induction i using Nat.twoStepInduction with
-  | zero => intro; rfl
-  | one => intro; exact hone
-  | more i hi hi₁ =>
-      intro hin
-      have h := hc.interior_fiber_relation hcard hzero (i := i + 1) (by omega) (by omega)
-      simp only [Nat.add_sub_cancel, Nat.add_assoc] at h
-      rw [T.intersection_comm (c (i + 1)) (c i), hedge i (by omega),
-        hc.intersection_self (i + 1) (by omega), hint (i + 1) (by omega) (by omega),
-        hedge (i + 1) (by omega), hi (by omega), hi₁ (by omega)] at h
-      apply mul_left_cancel₀ hW.ne'
-      linear_combination h
+  intro i hi
+  rw [eq_add_mul_sub_of_add_eq_two_mul (f := fun i ↦ (T.multiplicity (c i) : ℤ))
+    (fun i hi ↦ multiplicity_add_eq_two_mul hc hcard hn hzero hW hint (by omega)
+      (hedge i (by omega))) i hi, hone, sub_self, mul_zero, add_zero]
 
 private lemma multiplicity_eq_two_mul_of_left_double {n : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain n c) (hcard : Fintype.card T.Component = n)
@@ -188,28 +216,21 @@ private lemma multiplicity_eq_two_mul_of_left_double {n : ℕ} {c : ℕ → T.Co
     rw [hc.intersection_self 0 (by omega), hleft, hedge0] at h
     apply mul_left_cancel₀ (mul_ne_zero two_ne_zero hW.ne')
     linear_combination h
-  intro i
-  induction i using Nat.twoStepInduction with
-  | zero => omega
-  | one => intro _ _; exact hone
-  | more i hi hi₁ =>
-      intro hin _
-      have h := hc.interior_fiber_relation hcard hzero (i := i + 1) (by omega) (by omega)
-      simp only [Nat.add_sub_cancel, Nat.add_assoc] at h
-      by_cases hi0 : i = 0
-      · subst i
-        norm_num at h
-        rw [T.intersection_comm (c 1) (c 0), hedge0,
-          hc.intersection_self 1 (by omega), hint 1 (by omega) (by omega),
-          hedge 1 (by omega) (by omega), hone] at h
-        apply mul_left_cancel₀ hW.ne'
-        linear_combination h
-      · rw [T.intersection_comm (c (i + 1)) (c i), hedge i (by omega) (by omega),
-          hc.intersection_self (i + 1) (by omega), hint (i + 1) (by omega) (by omega),
-          hedge (i + 1) (by omega) (by omega), hi (by omega) (by omega),
-          hi₁ (by omega) (by omega)] at h
-        apply mul_left_cancel₀ hW.ne'
-        linear_combination h
+  have htwo : (T.multiplicity (c 2) : ℤ) = 2 * T.multiplicity (c 0) := by
+    have h := hc.interior_fiber_relation hcard hzero (i := 1) (by omega) (by omega)
+    rw [Nat.sub_self, T.intersection_comm (c 1) (c 0), hedge0,
+      hc.intersection_self 1 (by omega), hint 1 (by omega) (by omega),
+      hedge 1 (by omega) (by omega), hone] at h
+    apply mul_left_cancel₀ hW.ne'
+    linear_combination h
+  intro i hi hi0
+  have h := eq_add_mul_sub_of_add_eq_two_mul (N := n - 2)
+    (f := fun j ↦ (T.multiplicity (c (j + 1)) : ℤ))
+    (fun j hj ↦ multiplicity_add_eq_two_mul hc hcard hn hzero hW hint (by omega)
+      (hedge (j + 1) (by omega) (by omega))) (i - 1) (by omega)
+  simp only [Nat.sub_add_cancel hi0, Nat.zero_add, show 1 + 1 = 2 from rfl, hone, htwo,
+    sub_self, mul_zero, add_zero] at h
+  exact h
 
 private lemma multiplicity_eq_succ_mul_of_left_equal {n : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain n c) (hcard : Fintype.card T.Component = n)
@@ -231,21 +252,12 @@ private lemma multiplicity_eq_succ_mul_of_left_equal {n : ℕ} {c : ℕ → T.Co
     rw [hc.intersection_self 0 (by omega), hleft, hedge 0 (by omega)] at h
     apply mul_left_cancel₀ hW.ne'
     linear_combination h
-  intro i
-  induction i using Nat.twoStepInduction with
-  | zero => simp
-  | one => intro; simpa using hone
-  | more i hi hi₁ =>
-      intro hin
-      have h := hc.interior_fiber_relation hcard hzero (i := i + 1) (by omega) (by omega)
-      simp only [Nat.add_sub_cancel, Nat.add_assoc] at h
-      rw [T.intersection_comm (c (i + 1)) (c i), hedge i (by omega),
-        hc.intersection_self (i + 1) (by omega), hint (i + 1) (by omega) (by omega),
-        hedge (i + 1) (by omega), hi (by omega), hi₁ (by omega)] at h
-      rw [show i + (1 + 1) = i + 2 by omega] at h
-      apply mul_left_cancel₀ hW.ne'
-      push_cast at h ⊢
-      linear_combination h
+  intro i hi
+  rw [eq_add_mul_sub_of_add_eq_two_mul (f := fun i ↦ (T.multiplicity (c i) : ℤ))
+    (fun i hi ↦ multiplicity_add_eq_two_mul hc hcard hn hzero hW hint (by omega)
+      (hedge i (by omega))) i hi, hone]
+  push_cast
+  linear_combination
 
 private lemma right_multiplicity_eq_of_right_half {n : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain n c) (hcard : Fintype.card T.Component = n)
