@@ -192,15 +192,16 @@ def pad {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) : κ
 theorem pad_apply {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) (k : κ) :
     c.pad default f k = (c.decode k).elim default f := (rfl)
 
-@[simp]
 theorem pad_encode {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) (i : ι) :
     c.pad default f (c.encode i) = f i := by
   rw [pad, c.decode_encode]; rfl
 
+@[simp]
 theorem pad_of_decode_none {β : Sort*} (c : IndexCoding ι κ) {default : β} {f : ι → β} {k : κ}
     (h : c.decode k = none) : c.pad default f k = default := by
   rw [pad, h]; rfl
 
+@[simp]
 theorem pad_of_decode_some {β : Sort*} (c : IndexCoding ι κ) {default : β} {f : ι → β} {k : κ}
     {i : ι} (h : c.decode k = some i) : c.pad default f k = f i := by
   rw [pad, h]; rfl
@@ -232,7 +233,7 @@ theorem forall_pad_iff (c : IndexCoding ι κ) (p : ι → Prop) :
     simpa only [pad_encode] using h (c.encode i)
   · intro h k
     cases hk : c.decode k with
-    | none => simp [pad_apply, hk]
+    | none => simp [hk]
     | some i => simpa only [pad_of_decode_some c hk] using h i
 
 /-- Existential quantification is unchanged by padding with `False`. -/
@@ -242,7 +243,7 @@ theorem exists_pad_iff (c : IndexCoding ι κ) (p : ι → Prop) :
   constructor
   · rintro ⟨k, hk⟩
     cases hd : c.decode k with
-    | none => simp [pad_apply, hd] at hk
+    | none => simp [hd] at hk
     | some i => exact ⟨i, by simpa only [pad_of_decode_some c hd] using hk⟩
   · rintro ⟨i, hi⟩
     exact ⟨c.encode i, by simpa only [pad_encode] using hi⟩
