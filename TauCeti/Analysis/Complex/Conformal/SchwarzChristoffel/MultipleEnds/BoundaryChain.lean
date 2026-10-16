@@ -255,7 +255,7 @@ theorem schwarzChristoffelFiniteBoundary_eq_union_edges {n : ℕ}
       rintro rfl
       simp only [Fin.last_zero] at hr
       exact hr (le_of_not_ge hl)
-    exact Or.inr (exists_mem_Icc_castSucc_succ b hb.monotone hn
+    exact Or.inr (exists_mem_Icc_castSucc_succ b hn
       ⟨(le_of_not_ge hl), (le_of_not_ge hr)⟩)
   have hDl : Iic (b 0) ⊆ D := fun x hx =>
     Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
