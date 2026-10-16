@@ -188,7 +188,11 @@ theorem coe_restrict_apply (x : P.β ⁻¹' range toOnePoint) :
 /-- **The cover attached to an analytic Belyi pair.** The Belyi map restricted over the
 thrice-punctured sphere `ℂ ∖ {0, 1}` is a covering map. -/
 theorem isCoveringMap_restrict : IsCoveringMap P.restrict :=
-  have h : IsCoveringMapOn P.β (range toOnePoint) := range_toOnePoint ▸ P.isCoveringMapOn
+  have h : IsCoveringMapOn P.β (range toOnePoint) := by
+    rw [range_toOnePoint]
+    convert P.isCoveringMapOn using 1
+    ext w
+    simp only [mem_compl_iff, mem_marked, mem_insert_iff, mem_singleton_iff]
   h.isCoveringMap_restrictPreimage.homeomorph_comp _
 
 /-- The points of `X` over a point `z` of `ℂ ∖ {0, 1}` are the fibre of the Belyi map over `z`. -/
@@ -211,8 +215,10 @@ theorem ncard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
   rw [restrict, preimage_comp, Homeomorph.preimage_symm, image_singleton,
     TauCeti.ncard_fiber_restrictPreimage, Topology.IsEmbedding.toHomeomorph_apply_coe]
   refine P.ncard_preimage_singleton ?_
-  rw [← mem_compl_iff, ← range_toOnePoint]
-  exact mem_range_self z
+  have hz : toOnePoint z ∈ markedᶜ := by
+    rw [← range_toOnePoint]
+    exact mem_range_self z
+  simpa only [mem_compl_iff, mem_marked, mem_insert_iff, mem_singleton_iff] using hz
 
 /-- Every fibre of the cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair can be numbered by
 `Fin (degree P.β)`. -/
@@ -243,8 +249,8 @@ theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
 connected surface `X` with the finitely many points over `0`, `1` and `∞` removed. -/
 instance instPathConnectedSpacePreimageRange :
     PathConnectedSpace (P.β ⁻¹' range toOnePoint) := by
-  have hfin : (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), ∞}).Finite :=
-    (toFinite _).preimage' fun y _ ↦ P.β.finite_fiber y
+  have hfin : (P.β ⁻¹' marked).Finite :=
+    finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
   have hconn := isConnected_compl_of_finite_of_one_lt_rank
     (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) hfin
   rw [← preimage_compl, ← range_toOnePoint] at hconn

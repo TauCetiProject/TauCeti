@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.Measure.Basic
+public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import Mathlib.LinearAlgebra.Finsupp.Pi
+
+import Mathlib.Topology.Separation.DisjointCover
 
 /-!
 # Finite projections of abstract measures
 
 An abstract measure can be pushed to a finite discrete quotient by recording its values on the
 fibres.  This file constructs that linear projection, proves its functoriality under refinement,
-and identifies measures on a finite discrete space with finitely supported coefficient functions.
+identifies measures on a finite discrete space with finitely supported coefficient functions, and
+proves that all finite projections together determine a measure on a profinite space.
 
 The construction follows the finite-coefficient description in Rodrigues Jacinto and Williams,
 *An introduction to p-adic L-functions*, Sections 3.2--3.3.
@@ -24,11 +27,10 @@ public noncomputable section
 open ContinuousMap
 
 variable {X A B R : Type*} [TopologicalSpace X] [TopologicalSpace A] [TopologicalSpace B]
-  [TopologicalSpace R]
 
 namespace ContinuousMap
 
-variable [Zero R] [One R]
+variable [TopologicalSpace R] [Zero R] [One R]
 
 /-- The continuous characteristic function of a fibre of a map to a finite discrete space. -/
 def fiberIndicator [DiscreteTopology A] (q : C(X, A)) (a : A) : C(X, R) :=
@@ -47,7 +49,9 @@ end ContinuousMap
 
 namespace AbstractMeasure
 
-variable [CommRing R] [IsTopologicalRing R]
+section TopologicalRing
+
+variable [TopologicalSpace R] [CommRing R] [IsTopologicalRing R]
 
 /-- The finite projection of a measure records its values on all fibres of `q`. -/
 def finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
@@ -174,6 +178,72 @@ theorem ofFiniteCoefficients_finiteProjection_id [Finite A] [DiscreteTopology A]
     _ = μ ((ContinuousMap.equivFnOfDiscrete.symm f).comp (.id A)) :=
       (apply_comp_eq_sum_finiteProjection (.id A) μ f).symm
     _ = μ f := congrArg μ (by ext x; simp)
+
+/-- Measures on a finite discrete space are equivalent to their coefficient functions. -/
+def finiteProjectionEquiv [Finite A] [DiscreteTopology A] :
+    D(A, R) ≃ₗ[R] A →₀ R :=
+  { finiteProjection (.id A) with
+    invFun := ofFiniteCoefficients
+    left_inv := ofFiniteCoefficients_finiteProjection_id
+    right_inv := finiteProjection_id_ofFiniteCoefficients }
+
+@[simp]
+theorem finiteProjectionEquiv_apply [Finite A] [DiscreteTopology A] (μ : D(A, R)) :
+    finiteProjectionEquiv μ = finiteProjection (.id A) μ := (rfl)
+
+@[simp]
+theorem finiteProjectionEquiv_symm_apply [Finite A] [DiscreteTopology A] (c : A →₀ R) :
+    finiteProjectionEquiv.symm c = ofFiniteCoefficients c := (rfl)
+
+end TopologicalRing
+
+section Normed
+
+variable [NormedCommRing R]
+
+/-- Finite projection is weakly continuous when its coefficients carry the product topology. -/
+theorem continuous_finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
+    @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R)) inferInstance
+      (fun μ : D(X, R) ↦ fun a ↦ finiteProjection q μ a) := by
+  let : TopologicalSpace D(X, R) := WeakTopology
+  have heval : Continuous (fun μ : D(X, R) ↦ fun f : C(X, R) ↦ μ f) :=
+    continuous_induced_dom
+  exact continuous_pi fun a ↦
+    (continuous_apply (fiberIndicator (R := R) q a)).comp heval
+
+section Profinite
+
+variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X]
+
+/-- A measure on a profinite space is determined by its projections to all finite discrete
+quotients. -/
+theorem finiteProjection_ext (μ ν : D(X, R))
+    (h : ∀ (n : ℕ) (q : C(X, Fin n)), finiteProjection q μ = finiteProjection q ν) :
+    μ = ν := by
+  let S : Set C(X, R) := {f | ∃ (n : ℕ) (q : C(X, Fin n)) (g : Fin n → R),
+    f = (ContinuousMap.equivFnOfDiscrete.symm g).comp q}
+  have hS : Dense S := by
+    intro f
+    refine (mem_closure_iff_nhds_basis
+      (nhds_basis_uniformity'
+        ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
+      fun V hV ↦ ?_
+    obtain ⟨n, q, g, hq, hfg⟩ :=
+      ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
+        (nhdsSet_diagonal_le_uniformity hV)
+    let q' : C(X, Fin n) := ⟨q, hq⟩
+    let f' : C(X, R) := (ContinuousMap.equivFnOfDiscrete.symm g).comp q'
+    exact ⟨f', ⟨n, q', g, rfl⟩, fun x ↦ hfg x⟩
+  have hEqOn : Set.EqOn μ ν S := by
+    rintro _ ⟨n, q, g, rfl⟩
+    rw [apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, h n q]
+  apply AbstractMeasure.ext
+  intro f
+  exact congrFun (Continuous.ext_on hS μ.continuous ν.continuous hEqOn) f
+
+end Profinite
+
+end Normed
 
 example :
     finiteProjection (R := ℤ) (ContinuousMap.const (Fin 2) (0 : Fin 1))

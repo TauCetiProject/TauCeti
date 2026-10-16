@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.FieldTheory.Galois.Basic
 public import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
-public import TauCeti.LinearAlgebra.Matrix.CharpolyFinTwo
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 
 /-!
 # Trace and norm in quadratic algebras and separable quadratic extensions

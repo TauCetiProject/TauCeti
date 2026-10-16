@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
+public import TauCeti.Analysis.Fourier.AddCircle
 
 /-!
 # The sharp spectral gap on the circle
@@ -23,6 +23,9 @@ almost-everywhere derivative.
 
 The proofs use Mathlib's Fourier Hilbert basis and Parseval identity.
 
+The interval versions below identify first harmonics by their Fourier support. They provide the
+bridge between the abstract circle equality case and cosine--sine formulas on a real interval.
+
 ## References
 
 * G. H. Hardy, J. E. Littlewood and G. Pólya, *Inequalities*, Theorem 258.
@@ -30,11 +33,79 @@ The proofs use Mathlib's Fourier Hilbert basis and Parseval identity.
 
 public section
 
-open MeasureTheory AddCircle
+open MeasureTheory AddCircle Set Complex
+open scoped Real
 
 namespace TauCeti
 
 variable {T : ℝ} [Fact (0 < T)]
+
+section Interval
+
+variable {a b : ℝ}
+
+/-- A first harmonic on `[a, b]` has no Fourier coefficients outside the frequencies `±1`. -/
+theorem fourierCoeffOn_cos_smul_add_sin_smul (hab : a < b) (u v : ℂ) {n : ℤ}
+    (hn₁ : n ≠ 1) (hn₂ : n ≠ -1) :
+    fourierCoeffOn hab (fun t => Real.cos (2 * π * t / (b - a)) • u +
+      Real.sin (2 * π * t / (b - a)) • v) n = 0 := by
+  have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
+  let G : C(AddCircle (b - a), ℂ) :=
+    ((u - I * v) / 2) • fourier 1 + ((u + I * v) / 2) • fourier (-1)
+  have hG : AddCircle.liftIoc (b - a) a (fun t => Real.cos (2 * π * t / (b - a)) • u +
+      Real.sin (2 * π * t / (b - a)) • v) = G := by
+    funext x
+    obtain ⟨t, ht, rfl⟩ : x ∈ ((↑) : ℝ → AddCircle (b - a)) '' Ioc a (a + (b - a)) := by
+      rw [AddCircle.coe_image_Ioc_eq]
+      trivial
+    rw [AddCircle.liftIoc_coe_apply ht]
+    simp only [G, ContinuousMap.add_apply, ContinuousMap.smul_apply, fourier_one_coe_apply,
+      fourier_neg_one_coe_apply, real_smul, smul_eq_mul]
+    linear_combination ((Real.sin (2 * π * t / (b - a)) : ℂ) * v) * I_sq
+  have hint (k : ℤ) : Integrable (fourier k : AddCircle (b - a) → ℂ) AddCircle.haarAddCircle :=
+    (map_continuous _).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  -- By definition, `fourierCoeffOn` is the Fourier coefficient of the `liftIoc` periodization.
+  change fourierCoeff (AddCircle.liftIoc (b - a) a _) n = 0
+  rw [hG, ContinuousMap.coe_add, ContinuousMap.coe_smul, ContinuousMap.coe_smul,
+    fourierCoeff.add ((hint 1).smul _) ((hint (-1)).smul _)]
+  simp [fourierCoeff.const_smul, fourierCoeff_fourier, hn₁, hn₂]
+
+/-- A continuous closed curve on `[a, b]` whose Fourier coefficients vanish outside the
+frequencies `±1` is a first harmonic at every point of `[a, b]`. -/
+theorem exists_cos_smul_add_sin_smul (hab : a < b) {g : ℝ → ℂ}
+    (hg : ContinuousOn g (Icc a b)) (hgab : g a = g b)
+    (h : ∀ n : ℤ, n ≠ 1 → n ≠ -1 → fourierCoeffOn hab g n = 0) :
+    ∃ u v : ℂ, ∀ t ∈ Icc a b, g t = Real.cos (2 * π * t / (b - a)) • u +
+      Real.sin (2 * π * t / (b - a)) • v := by
+  have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
+  let G : C(AddCircle (b - a), ℂ) := ⟨AddCircle.liftIoc (b - a) a g,
+    AddCircle.liftIoc_continuous (by rwa [add_sub_cancel]) (by rwa [add_sub_cancel])⟩
+  -- By definition, `fourierCoeffOn` is the Fourier coefficient of the `liftIoc` periodization.
+  have hc (n : ℤ) : fourierCoeff G n = fourierCoeffOn hab g n := rfl
+  have hsupp (n : ℤ) (hn : n ∉ ({1, -1} : Finset ℤ)) : fourierCoeff G n = 0 := by
+    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hn
+    rw [hc, h n hn.1 hn.2]
+  have hrepr (x : AddCircle (b - a)) : G x = fourierCoeffOn hab g 1 * fourier 1 x +
+      fourierCoeffOn hab g (-1) * fourier (-1) x := by
+    have hs := hasSum_sum_of_ne_finset_zero (L := SummationFilter.unconditional ℤ)
+      (s := ({1, -1} : Finset ℤ))
+      (f := fun n => fourierCoeff G n • fourier n x) fun n hn => by simp [hsupp n hn]
+    rw [(has_pointwise_sum_fourier_series_of_summable
+      (summable_of_ne_finset_zero hsupp) x).unique hs, Finset.sum_pair (by decide)]
+    rfl
+  have hab' : ((b : ℝ) : AddCircle (b - a)) = (a : ℝ) := by
+    simpa using AddCircle.coe_add_period (b - a) a
+  have hGg (t : ℝ) (ht : t ∈ Icc a b) : g t = G t := by
+    rcases ht.1.eq_or_lt with rfl | hlt
+    · rw [hgab, ← hab']
+      exact (AddCircle.liftIoc_coe_apply (by simp [hab])).symm
+    · exact (AddCircle.liftIoc_coe_apply (by simp [hlt, ht.2])).symm
+  refine ⟨fourierCoeffOn hab g 1 + fourierCoeffOn hab g (-1),
+    I * (fourierCoeffOn hab g 1 - fourierCoeffOn hab g (-1)), fun t ht => ?_⟩
+  rw [hGg t ht, hrepr, fourier_one_coe_apply, fourier_neg_one_coe_apply, real_smul, real_smul]
+  ring
+
+end Interval
 
 private theorem sq_fourierCoeff_le_frequency_sq (f : Lp ℂ 2 (@haarAddCircle T _))
     (hzero : fourierCoeff f 0 = 0) (n : ℤ) :

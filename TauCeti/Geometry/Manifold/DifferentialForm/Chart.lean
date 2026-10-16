@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 public import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.UniqueDifferential
 
@@ -214,6 +215,18 @@ theorem inChartAt_mextDeriv [IsManifold I 2 M]
   simpa only [preimage_univ, univ_inter, mextDerivWithin_univ] using
     φ.inChartAt_mextDerivWithin (s := univ) (uniqueMDiffOn_univ (I := I)) hz (mem_univ _)
       (by simp) (by simpa only [preimage_univ, univ_inter] using hφ)
+
+/-- The scalar coefficient of a manifold top form transforms by the signed Jacobian between
+preferred charts, including derivatives taken within the model range at the boundary. -/
+theorem inChartAt_apply_basis_eq_det_mul [IsManifold I 1 M] (φ : RoughForm I M ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) {x₀ x : M} {z : E}
+    (hz : z ∈ (extChartAt I x₀).target)
+    (hx : (extChartAt I x₀).symm z ∈ (extChartAt I x).source) :
+    φ.inChartAt x₀ z b =
+      (fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z).toLinearMap.det *
+        φ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z)) b := by
+  rw [φ.inChartAt_eq_compContinuousLinearMap hz hx,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply_basis]
 
 end RoughForm
 
