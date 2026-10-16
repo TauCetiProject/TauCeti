@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FreeYoneda
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Yoneda
 public import Mathlib.Topology.Sheaves.Flasque
 
 /-!

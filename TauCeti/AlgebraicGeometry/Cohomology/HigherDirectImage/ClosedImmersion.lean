@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 public import TauCeti.AlgebraicGeometry.Modules.ClosedImmersion
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 
 /-!
 # Higher direct images along closed immersions

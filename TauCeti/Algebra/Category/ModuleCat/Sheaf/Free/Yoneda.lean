@@ -33,7 +33,11 @@ namespace SheafOfModules
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   (R : Sheaf J RingCat.{v})
-  [HasSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
+  [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
+
+section
+
+variable [HasWeakSheafify J AddCommGrpCat.{v}]
 
 /-- The free sheaf of `R`-modules on each representable presheaf. -/
 def freeYonedaFunctor : C ⥤ SheafOfModules.{v} R :=
@@ -89,6 +93,10 @@ lemma freeYonedaEquiv_naturality {U V : C} (i : U ⟶ V) (M : SheafOfModules.{v}
       ((((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).homEquiv _ _ m).app
         (op V)) (ModuleCat.freeMk (𝟙 V))) at hn
   simpa using hn
+
+end
+
+variable [HasSheafify J AddCommGrpCat.{v}]
 
 /-- Free module sheaves carry monomorphisms between representables to monomorphisms. -/
 instance mono_freeYonedaFunctor_map {U V : C} (i : U ⟶ V) [Mono i] :
