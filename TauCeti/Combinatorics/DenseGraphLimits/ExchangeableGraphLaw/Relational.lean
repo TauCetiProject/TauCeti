@@ -22,18 +22,28 @@ The generic correspondence between the two presentations of exchangeable relatio
 one (`exchangeableGraphLawEquivInfinite`): extending the encoded finite marginals gives the encoding
 of the extended graph law.
 
+Conversely, the encoding identifies exchangeable graph laws with the exchangeable relational laws
+of the language of graphs whose marginals are concentrated on simple graphs, and likewise for laws
+on infinite graphs: laws on simple graphs are recovered from their encodings by pulling back along
+the encoding, a measurable embedding on countable vertex types.
+
 ## Main definitions
 
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.toRelationalLaw` — the exchangeable relational law
   of an exchangeable graph law;
 * `TauCeti.DenseGraphLimits.InfiniteExchangeableGraphLaw.toRelationalLaw` — the invariant
-  relational law on `ℕ` of an exchangeable law on infinite graphs.
+  relational law on `ℕ` of an exchangeable law on infinite graphs;
+* `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.relationalLawEquiv` and
+  `TauCeti.DenseGraphLimits.InfiniteExchangeableGraphLaw.relationalLawEquiv` — these encodings are
+  equivalences onto the relational laws concentrated on simple graphs.
 
 ## Main results
 
 * `ExchangeableGraphLaw.exchangeableRelationalLawEquivInfinite_toRelationalLaw` (in
   `TauCeti.DenseGraphLimits`) — the generic correspondence agrees with
-  `exchangeableGraphLawEquivInfinite`.
+  `exchangeableGraphLawEquivInfinite`;
+* `ae_isSimpleGraph_exchangeableRelationalLawEquivInfinite_law_iff` (in `TauCeti.DenseGraphLimits`)
+  — the generic correspondence matches relational laws concentrated on simple graphs on both sides.
 -/
 
 public section
@@ -48,12 +58,6 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-/-- Encoding commutes with restriction, as an identity of maps. -/
-private theorem toRelationalConfiguration_comp_comap {V W : Type*} (f : V → W) :
-    SimpleGraph.toRelationalConfiguration ∘ SimpleGraph.comap f =
-      restrict f ∘ (SimpleGraph.toRelationalConfiguration : SimpleGraph W → _) :=
-  funext fun G => SimpleGraph.toRelationalConfiguration_comap f G
-
 namespace ExchangeableGraphLaw
 
 /-- The **exchangeable relational law of an exchangeable graph law**: its marginals, encoded as
@@ -63,13 +67,50 @@ def toRelationalLaw (L : ExchangeableGraphLaw) : ExchangeableRelationalLaw Langu
   prob _ := inferInstance
   consistent f := by
     rw [Measure.map_map (measurable_restrict _) SimpleGraph.measurable_toRelationalConfiguration,
-      ← toRelationalConfiguration_comp_comap,
+      ← SimpleGraph.toRelationalConfiguration_comp_comap,
       ← Measure.map_map SimpleGraph.measurable_toRelationalConfiguration
         (SimpleGraph.measurable_comap _), L.consistent]
 
 @[simp]
 theorem toRelationalLaw_law (L : ExchangeableGraphLaw) (n : ℕ) :
     L.toRelationalLaw.law n = (L.law n).map SimpleGraph.toRelationalConfiguration := (rfl)
+
+/-- The marginals of the relational law of an exchangeable graph law are concentrated on simple
+graphs. -/
+theorem ae_isSimpleGraph_toRelationalLaw_law (L : ExchangeableGraphLaw) (n : ℕ) :
+    ∀ᵐ c ∂L.toRelationalLaw.law n, IsSimpleGraph c :=
+  SimpleGraph.ae_isSimpleGraph_map_toRelationalConfiguration _
+
+/-- **Exchangeable graph laws are the exchangeable relational laws of the language of graphs whose
+marginals are concentrated on simple graphs**, that is, on symmetric irreflexive configurations.
+The inverse pulls each marginal back along the encoding. -/
+def relationalLawEquiv : ExchangeableGraphLaw ≃
+    {μ : ExchangeableRelationalLaw Language.graph // ∀ n, ∀ᵐ c ∂μ.law n, IsSimpleGraph c} where
+  toFun L := ⟨L.toRelationalLaw, L.ae_isSimpleGraph_toRelationalLaw_law⟩
+  invFun μ :=
+    { law n := (μ.1.law n).comap SimpleGraph.toRelationalConfiguration
+      prob n := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration (μ.2 n)
+      consistent {_ l} f := by
+        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ (μ.2 l), μ.1.consistent] }
+  left_inv L := ext fun n =>
+    SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_map (L.law n)
+  right_inv μ := Subtype.ext <| ExchangeableRelationalLaw.ext fun n =>
+    SimpleGraph.map_comap_toRelationalConfiguration (μ.2 n)
+
+@[simp]
+theorem coe_relationalLawEquiv (L : ExchangeableGraphLaw) :
+    (relationalLawEquiv L : ExchangeableRelationalLaw Language.graph) = L.toRelationalLaw := (rfl)
+
+@[simp]
+theorem relationalLawEquiv_symm_law
+    (μ : {μ : ExchangeableRelationalLaw Language.graph // ∀ n, ∀ᵐ c ∂μ.law n, IsSimpleGraph c})
+    (n : ℕ) :
+    (relationalLawEquiv.symm μ).law n =
+      (μ.1.law n).comap SimpleGraph.toRelationalConfiguration := (rfl)
+
+/-- Distinct exchangeable graph laws have distinct relational laws. -/
+theorem toRelationalLaw_injective : Function.Injective toRelationalLaw :=
+  fun _ _ h => relationalLawEquiv.injective (Subtype.ext h)
 
 end ExchangeableGraphLaw
 
@@ -83,13 +124,48 @@ def toRelationalLaw (L : InfiniteExchangeableGraphLaw) :
   prob := inferInstance
   exchangeable σ := by
     rw [Measure.map_map (measurable_restrict _) SimpleGraph.measurable_toRelationalConfiguration,
-      ← toRelationalConfiguration_comp_comap,
+      ← SimpleGraph.toRelationalConfiguration_comp_comap,
       ← Measure.map_map SimpleGraph.measurable_toRelationalConfiguration
         (SimpleGraph.measurable_comap _), L.exchangeable]
 
 @[simp]
 theorem toRelationalLaw_law (L : InfiniteExchangeableGraphLaw) :
     L.toRelationalLaw.law = L.law.map SimpleGraph.toRelationalConfiguration := (rfl)
+
+/-- The relational law of an exchangeable law on infinite graphs is concentrated on simple
+graphs. -/
+theorem ae_isSimpleGraph_toRelationalLaw_law (L : InfiniteExchangeableGraphLaw) :
+    ∀ᵐ c ∂L.toRelationalLaw.law, IsSimpleGraph c :=
+  SimpleGraph.ae_isSimpleGraph_map_toRelationalConfiguration _
+
+/-- **Exchangeable laws on infinite graphs are the exchangeable relational laws of the language of
+graphs on `ℕ` concentrated on simple graphs**, that is, on symmetric irreflexive configurations.
+The inverse pulls the law back along the encoding. -/
+def relationalLawEquiv : InfiniteExchangeableGraphLaw ≃
+    {μ : InfiniteExchangeableRelationalLaw Language.graph // ∀ᵐ c ∂μ.law, IsSimpleGraph c} where
+  toFun L := ⟨L.toRelationalLaw, L.ae_isSimpleGraph_toRelationalLaw_law⟩
+  invFun μ :=
+    { law := μ.1.law.comap SimpleGraph.toRelationalConfiguration
+      prob := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration μ.2
+      exchangeable σ := by
+        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ μ.2, μ.1.exchangeable] }
+  left_inv L := ext <| SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_map L.law
+  right_inv μ := Subtype.ext <| InfiniteExchangeableRelationalLaw.ext <|
+    SimpleGraph.map_comap_toRelationalConfiguration μ.2
+
+@[simp]
+theorem coe_relationalLawEquiv (L : InfiniteExchangeableGraphLaw) :
+    (relationalLawEquiv L : InfiniteExchangeableRelationalLaw Language.graph) =
+      L.toRelationalLaw := (rfl)
+
+@[simp]
+theorem relationalLawEquiv_symm_law
+    (μ : {μ : InfiniteExchangeableRelationalLaw Language.graph // ∀ᵐ c ∂μ.law, IsSimpleGraph c}) :
+    (relationalLawEquiv.symm μ).law = μ.1.law.comap SimpleGraph.toRelationalConfiguration := (rfl)
+
+/-- Distinct exchangeable laws on infinite graphs have distinct relational laws. -/
+theorem toRelationalLaw_injective : Function.Injective toRelationalLaw :=
+  fun _ _ h => relationalLawEquiv.injective (Subtype.ext h)
 
 end InfiniteExchangeableGraphLaw
 
@@ -116,6 +192,22 @@ theorem exchangeableRelationalLawEquivInfinite_toRelationalLaw (L : Exchangeable
     exchangeableGraphLawEquivInfinite_law_map_restrictFin]
 
 end ExchangeableGraphLaw
+
+/-- **Consistent marginals concentrated on simple graphs extend to a law concentrated on simple
+graphs**, and conversely: the extension of an exchangeable relational law of the language of graphs
+is concentrated on simple graphs exactly when every marginal is. -/
+theorem ae_isSimpleGraph_exchangeableRelationalLawEquivInfinite_law_iff
+    (μ : ExchangeableRelationalLaw Language.graph) :
+    (∀ᵐ c ∂(exchangeableRelationalLawEquivInfinite Language.graph μ).law, IsSimpleGraph c) ↔
+      ∀ n, ∀ᵐ c ∂μ.law n, IsSimpleGraph c := by
+  refine ⟨fun h n => ?_, fun h => ?_⟩
+  · rw [← exchangeableRelationalLawEquivInfinite_law_map_restrict]
+    exact ae_isSimpleGraph_map_restrict _ h
+  · -- Write `μ` as the relational law of a graph law and transport along the graph extension.
+    obtain ⟨L, hL⟩ := ExchangeableGraphLaw.relationalLawEquiv.surjective ⟨μ, h⟩
+    obtain rfl : L.toRelationalLaw = μ := congrArg Subtype.val hL
+    rw [ExchangeableGraphLaw.exchangeableRelationalLawEquivInfinite_toRelationalLaw]
+    exact InfiniteExchangeableGraphLaw.ae_isSimpleGraph_toRelationalLaw_law _
 
 end DenseGraphLimits
 
