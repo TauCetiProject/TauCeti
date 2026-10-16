@@ -36,7 +36,7 @@ namespace TauCeti
 variable (n : ℕ) [NeZero n] (M : Type*) [AddCommGroup M]
 
 /-- A torsion-free abelian group, such as `ℤ`, has no nonzero `n`-torsion for `n ≠ 0`. -/
-instance subsingleton_torsionBy_int [IsAddTorsionFree M] :
+instance subsingleton_torsionBy_int [HasUniqueDiv M] :
     Subsingleton (Submodule.torsionBy ℤ M (n : ℤ)) := by
   refine ⟨fun x y ↦ Subtype.ext ?_⟩
   have hx := (Submodule.mem_torsionBy_iff _ _).mp x.property
@@ -64,5 +64,12 @@ theorem subsingleton_torsionBy_of_injective_zsmul {V : Type*} [AddCommGroup V] (
   ⟨fun x y => Subtype.ext <| hV <|
     ((Submodule.mem_torsionBy_iff _ _).mp x.property).trans
       ((Submodule.mem_torsionBy_iff _ _).mp y.property).symm⟩
+
+/-- An element of a commutative group `G` lies in the torsion submodule of the `ℤ`-module
+`Additive G` exactly when it lies in the torsion subgroup of `G`. -/
+theorem ofMul_mem_torsion_int_iff {G : Type*} [CommGroup G] {x : G} :
+    Additive.ofMul x ∈ Submodule.torsion ℤ (Additive G) ↔ x ∈ CommGroup.torsion G := by
+  rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_int, AddCommGroup.mem_torsion,
+    isOfFinAddOrder_ofMul_iff, CommGroup.mem_torsion]
 
 end TauCeti

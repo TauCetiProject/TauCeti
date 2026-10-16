@@ -29,8 +29,8 @@ over a field, gives `Δ h = h ⊗ 1` for every `h`, hence `h = ε(h) · 1`. So t
 the augmentation ideal vanishes, and the counit is a bialgebra equivalence `H ≃ k`; equivalently
 the group of points over every commutative value algebra is trivial.
 
-Smoothness may replace reducedness, since a smooth algebra over a field is reduced. That is the
-form the roadmap's definitions are stated in, so it is also given for the object properties
+Smoothness may replace reducedness, since a smooth algebra over a field is reduced, so the result
+is also given for the object properties
 `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty` and
 `TauCeti.linearlyReductiveCommHopfAlgProperty`.
 
@@ -64,12 +64,6 @@ form the roadmap's definitions are stated in, so it is also given for the object
   unipotent.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §3.2 and §8.3.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
-
-This is the first theorem relating the two Layer 6 notions of the ReductiveGroups roadmap,
-reductivity defined by a trivial geometric unipotent radical and linear reductivity defined by
-complete reducibility. It is the step that rules out unipotent subgroups; deducing reductivity
-from linear reductivity in general still needs the invariants of a normal closed subgroup to be
-a subrepresentation of the ambient group.
 -/
 
 public section

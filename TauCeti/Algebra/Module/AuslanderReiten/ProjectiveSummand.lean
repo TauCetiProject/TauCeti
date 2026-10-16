@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.Opposite
+public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.CategoryTheory.Retract
 import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -31,6 +33,8 @@ without specifying an augmentation to a presented module.
 public section
 
 namespace TauCeti.IsSuperfluous
+
+open CategoryTheory CategoryTheory.Limits
 
 variable {A P₀ P₁ : Type*} [Ring A]
   [AddCommMonoid P₀] [Module A P₀] [Module.Finite A P₀] [Module.Projective A P₀]
@@ -84,6 +88,16 @@ theorem subsingleton_of_retract_auslanderReitenTranspose
     have hx : x = 0 := by rw [← hrs_apply x, hs_zero, map_zero]
     have hy : y = 0 := by rw [← hrs_apply y, hs_zero, map_zero]
     exact hx.trans hy.symm⟩
+
+/-- A projective module retract of a transpose with superfluous presenting kernel is zero. -/
+theorem isZero_of_retract_auslanderReitenTranspose
+    (h : IsSuperfluous (LinearMap.ker p₁)) {Q : ModuleCat Aᵐᵒᵖ}
+    (r : Retract Q (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p₁)))
+    [Projective Q] : IsZero Q := by
+  exact ModuleCat.isZero_iff_subsingleton.mpr
+    (h.subsingleton_of_retract_auslanderReitenTranspose r.r.hom r.i.hom (by
+      simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
+        congrArg ModuleCat.Hom.hom r.retract))
 
 /-- The transpose of a map between finite projectives with superfluous kernel is projective
 exactly when it is zero. -/

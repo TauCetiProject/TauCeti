@@ -56,8 +56,6 @@ variable {N : ℕ}
 
 section CliffordCalculation
 
-attribute [local instance 2000] Classical.decEq
-
 private noncomputable abbrev carF (i j : Fin N) :
     CliffordAlgebra (traceQuadraticForm K (Fin N)) :=
   glCliffordHom (K := K) (n := Fin N) (Matrix.single i j 1)
@@ -206,13 +204,6 @@ private theorem representation_glCasimir_eq_carCasimirElement_mul
     UniversalEnvelopingAlgebra.representation K (Matrix (Fin N) (Fin N) K)
         (CliffordAlgebra (traceQuadraticForm K (Fin N))) (glCasimir K (Fin N)) c =
       carCasimirElement (K := K) (N := N) * c := by
-  have hunit (i j : Fin N) :
-      glCliffordHom (K := K) (n := Fin N) (Matrix.single i j 1) =
-        carF (K := K) i j := by
-    congr 1
-    ext a b
-    simp only [Matrix.single_apply]
-    split_ifs <;> rfl
   calc
     _ = ∑ i : Fin N, ∑ j : Fin N,
         ⁅Matrix.single i j (1 : K), ⁅Matrix.single j i (1 : K), c⁆⁆ :=
@@ -224,7 +215,7 @@ private theorem representation_glCasimir_eq_carCasimirElement_mul
       intro i _
       apply Finset.sum_congr rfl
       intro j _
-      rw [car_lie_def, car_lie_def, hunit, hunit]
+      rw [car_lie_def, car_lie_def]
     _ = carCasimirElement * c := by
       rw [carCasimirElement, Finset.sum_mul]
       simp_rw [Finset.sum_mul, mul_assoc]

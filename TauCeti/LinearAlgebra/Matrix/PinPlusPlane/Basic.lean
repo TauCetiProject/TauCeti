@@ -14,10 +14,12 @@ public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 /-!
 # The `Pin⁺` model of the plane and the lift of `C₂ ≀ C₂` to `D₁₆`
 
-The Clifford algebra of the plane `F²` with the unit form `⟨1, 1⟩` is the matrix algebra `M₂(F)`,
-with generators `e₁ = diag(1, −1)` and `e₂ = [[0, 1], [1, 0]]` (`TauCeti.pinE1`, `TauCeti.pinE2`):
-they satisfy `e₁² = e₂² = +1` and `e₁ e₂ = −e₂ e₁`, so that the vector `y₀ e₁ + y₁ e₂`
-(`TauCeti.pinVec`) squares to `y₀² + y₁²`. An orthogonal matrix `x` acts on these vectors by the
+Over a field `F` with `2 ≠ 0`, the Clifford algebra of the plane `F²` with the unit form
+`⟨1, 1⟩` is the matrix algebra `M₂(F)`, with generators `e₁ = diag(1, −1)` and
+`e₂ = [[0, 1], [1, 0]]` (`TauCeti.pinE1`, `TauCeti.pinE2`): they satisfy `e₁² = e₂² = +1` and
+`e₁ e₂ = −e₂ e₁`, so that the vector `y₀ e₁ + y₁ e₂` (`TauCeti.pinVec`) squares to `y₀² + y₁²`.
+The generators and their transport along ring homomorphisms are defined over arbitrary rings.
+An orthogonal matrix `x` acts on these vectors by the
 twisted adjoint action `v ↦ det(x) · x v xᵀ`; a **`Pin⁺` lift** of `w` is an orthogonal `x` whose
 twisted action is `w` (`TauCeti.IsPinLift`). With the sign, a unit vector lifts its own
 reflection (`TauCeti.isPinLift_pinVec`). Lifts multiply, invert and are carried by ring
@@ -210,6 +212,24 @@ theorem pinDiagonalLift_mul (ε ε' : Fin 2 → ZMod 2) :
     pow_val_add h1, pow_val_add h2, Matrix.mul_assoc, ← Matrix.mul_assoc (pinE2 ^ _), hswap]
   simp only [Matrix.mul_assoc]
   rw [((Commute.neg_one_left _).pow_left _).symm.left_comm]
+
+variable {S : Type*} [Ring S]
+
+/-- The generator `e₁` is defined over the prime ring. -/
+@[simp]
+theorem map_pinE1 (φ : R →+* S) : (pinE1 : Matrix (Fin 2) (Fin 2) R).map φ = pinE1 := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [pinE1]
+
+/-- The generator `e₂` is defined over the prime ring. -/
+@[simp]
+theorem map_pinE2 (φ : R →+* S) : (pinE2 : Matrix (Fin 2) (Fin 2) R).map φ = pinE2 := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [pinE2]
+
+/-- The diagonal lift is defined over the prime ring. -/
+@[simp]
+theorem map_pinDiagonalLift (φ : R →+* S) (ε : Fin 2 → ZMod 2) :
+    (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R).map φ = pinDiagonalLift ε := by
+  simp [pinDiagonalLift_def, Matrix.map_pow]
 
 end Ring
 
@@ -420,23 +440,6 @@ theorem IsPinLift.inv {x w : Matrix (Fin 2) (Fin 2) R} (h : IsPinLift x w) :
   rwa [inv_eq_right_inv hxx, inv_eq_right_inv hww]
 
 variable {S : Type*} [CommRing S]
-
-/-- The generator `e₁` is defined over the prime ring. -/
-@[simp]
-theorem map_pinE1 (φ : R →+* S) : (pinE1 : Matrix (Fin 2) (Fin 2) R).map φ = pinE1 := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [pinE1]
-
-/-- The generator `e₂` is defined over the prime ring. -/
-@[simp]
-theorem map_pinE2 (φ : R →+* S) : (pinE2 : Matrix (Fin 2) (Fin 2) R).map φ = pinE2 := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [pinE2]
-
-/-- The diagonal lift is defined over the prime ring. -/
-@[simp]
-theorem map_pinDiagonalLift (φ : R →+* S) (ε : Fin 2 → ZMod 2) :
-    (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R).map φ = pinDiagonalLift ε := by
-  rw [pinDiagonalLift_def, pinDiagonalLift_def, ← RingHom.mapMatrix_apply, map_mul, map_pow,
-    map_pow, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, map_pinE1, map_pinE2]
 
 /-- The vector `y₀ e₁ + y₁ e₂` is natural in the coefficient ring. -/
 @[simp]

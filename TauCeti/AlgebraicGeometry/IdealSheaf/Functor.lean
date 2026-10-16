@@ -63,6 +63,12 @@ lemma baseChangeIdealSheafFunctor_obj (T : (Over S)ᵒᵖ) :
     (baseChangeIdealSheafFunctor f).obj T = (pullback T.unop.hom f).IdealSheafData :=
   rfl
 
+/-- The ideal sheaves on a base change retain their usual inclusion order when viewed as values
+of `baseChangeIdealSheafFunctor`. The delegate lets typeclass search use that order through the
+functor's object presentation. -/
+instance (T : (Over S)ᵒᵖ) : PartialOrder ((baseChangeIdealSheafFunctor f).obj T) :=
+  inferInstanceAs (PartialOrder (pullback T.unop.hom f).IdealSheafData)
+
 /-- `baseChangeIdealSheafFunctor f` acts by pullback of ideal sheaves along the induced morphism
 of base changes. -/
 @[simp]

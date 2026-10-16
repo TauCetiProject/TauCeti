@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.GorensteinProjective.Basic
-public import TauCeti.Algebra.Homology.ModuleCat
 
 /-!
 # Presentations from complete resolutions
@@ -21,10 +20,6 @@ used to put the Frobenius exact structure on Gorenstein-projective modules.
 
 ## Main declarations
 
-* `HomologicalComplex.cyclesShortComplex`: the short complex formed by two consecutive
-  cycle objects and the intervening term of a cochain complex.
-* `HomologicalComplex.cyclesShortComplex_shortExact`: this short complex is
-  short exact for a totally acyclic complex.
 * `TauCeti.IsGorensteinProjective.exists_projectivePresentation`: every
   Gorenstein-projective module has a projective presentation whose kernel is again
   Gorenstein-projective.
@@ -55,8 +50,9 @@ theorem IsGorensteinProjective.exists_projectivePresentation
     ∃ (S : ShortComplex (ModuleCat.{v} A)), S.ShortExact ∧ Nonempty (S.X₃ ≅ M) ∧
       Module.Finite A S.X₂ ∧ Projective S.X₂ ∧ IsGorensteinProjective A S.X₁ := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff M).mp hM
-  refine ⟨P.cyclesShortComplex (-1),
-    HomologicalComplex.cyclesShortComplex_shortExact (-1) (hP.acyclic 0), ?_, ?_, ?_, ?_⟩
+  refine ⟨P.cyclesShortComplex (-1) 0,
+    HomologicalComplex.cyclesShortComplex_shortExact (-1) 0 (by simp) (hP.acyclic 0),
+    ?_, ?_, ?_, ?_⟩
   · simpa using Nonempty.intro e
   · rw [HomologicalComplex.cyclesShortComplex_X₂]
     exact hP.finite (-1)
@@ -70,8 +66,8 @@ theorem IsGorensteinProjective.exists_projectiveCopresentation
     ∃ (S : ShortComplex (ModuleCat.{v} A)), S.ShortExact ∧ Nonempty (S.X₁ ≅ M) ∧
       Module.Finite A S.X₂ ∧ Projective S.X₂ ∧ IsGorensteinProjective A S.X₃ := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff M).mp hM
-  refine ⟨P.cyclesShortComplex 0,
-    HomologicalComplex.cyclesShortComplex_shortExact 0 (hP.acyclic 1), ?_, ?_, ?_, ?_⟩
+  refine ⟨P.cyclesShortComplex 0 1,
+    HomologicalComplex.cyclesShortComplex_shortExact 0 1 (by simp) (hP.acyclic 1), ?_, ?_, ?_, ?_⟩
   · simpa using Nonempty.intro e
   · rw [HomologicalComplex.cyclesShortComplex_X₂]
     exact hP.finite 0

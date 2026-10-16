@@ -111,7 +111,7 @@ theorem IsPosSemidef.successiveMinimum_zero (hL : L.IsPosSemidef)
     · have hx' : LinearIndependent ℤ (fun _ : Fin 1 ↦ x) :=
         linearIndependent_unique_iff.mpr hx
       exact hx'
-    · intro j
+    · intro _
       exact hnorm.le
   · obtain ⟨x, hx, hnorm⟩ := L.exists_linearIndependent_integralNorm_le_successiveMinimum ⟨0, h⟩
     have hle := (hL.minimum_le_integralNorm (hx.ne_zero 0)).trans (hnorm 0)

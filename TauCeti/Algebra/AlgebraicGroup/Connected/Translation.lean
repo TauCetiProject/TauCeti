@@ -32,11 +32,6 @@ and preserves its defining idempotent and ideal.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This is the translation prerequisite for Layer 3, "Identity component `G°` and component group
-`π₀(G)`", of the ReductiveGroups roadmap.  The next step uses these automorphisms to prove
-that multiplication carries the product of the identity component with itself into the identity
-component, giving comultiplication closure of its defining ideal.
 -/
 
 public section

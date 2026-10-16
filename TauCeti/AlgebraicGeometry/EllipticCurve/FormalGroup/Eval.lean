@@ -23,18 +23,17 @@ evaluations, the identities they inherit from the series, and their membership, 
 non-vanishing properties.
 
 Three hypotheses appear here, and they do different work. `PowerSeries.HasEval t` is what
-evaluation itself requires, and most results ask for it directly. Others ask instead for an ideal
-`I` whose adic topology is the ambient one, together with a membership `t ∈ I` that supplies the
-convergence: `isUnit_formalUEval`, `formalWEval_ne_zero`, `algebraMap_formalWEval_ne_zero` and
-`hasEval_formalInverseEval`. `formalUEval_sub_one_mem` is the one result asking for both.
+evaluation itself requires, and most results ask for it directly. `eq_formalWEval_of_wEquation`
+asks instead for an ideal `I` whose adic topology is the ambient one, together with a membership
+`t ∈ I` that supplies convergence. `formalUEval_sub_one_mem` is the one result asking for both.
 `isUnit_thirdRootDenom` asks for neither: it is a statement about the curve's coefficients and a
 topologically nilpotent element, so it takes `IsTopologicallyNilpotent` directly, and
 `[NonarchimedeanRing O]` in place of the ambient `[IsTopologicalRing O]`. `formalWEval_zero` asks
 for neither either, being an evaluation at a parameter that needs no convergence hypothesis.
 
-Only two of the five values are confined to `I ^ k`: `w(t)` and `ι(t)`. Of the four unit
-statements, only `u(t)`'s needs the ideal; the denominator `d(t) = 1 - a₁ t - a₃ w(t)` and its
-series inverse need nothing beyond evaluation, and the chord cubic's leading coefficient
+Only two of the five values are confined to `I ^ k`: `w(t)` and `ι(t)`. The unit part `u(t)`,
+the denominator `d(t) = 1 - a₁ t - a₃ w(t)` and its series inverse are units whenever evaluation
+converges, and the chord cubic's leading coefficient
 `1 + a₂l + a₄l² + a₆l³` needs only that `l` is topologically nilpotent. Each declaration's own
 docstring says where its conclusion comes from.
 
@@ -73,11 +72,11 @@ docstring says where its conclusion comes from.
   `eq_of_wEquation`.
 * `WeierstrassCurve.formalWEval_ne_zero`, `WeierstrassCurve.formalInverseEval_ne_zero` : the two
   non-vanishing statements, and `WeierstrassCurve.algebraMap_formalWEval_ne_zero` for the image of
-  `w(t)` in a nontrivial domain over `O`.
+  `w(t)` in an algebra without zero divisors over `O`.
 * `WeierstrassCurve.formalInverseEval_formalInverseEval` : the involution `ι(ι(t)) = t`, and
   `WeierstrassCurve.formalWEval_formalInverseEval` : `w(ι(t)) = -(w(t) * d(t)⁻¹)`. Both ask only
-  that `t` and `ι(t)` admit evaluation; `WeierstrassCurve.hasEval_formalInverseEval` supplies the
-  second from an adic ideal when that is how a consumer holds it.
+  that `t` admit evaluation; `WeierstrassCurve.hasEval_formalInverseEval` supplies evaluation at
+  `ι(t)` from that hypothesis.
 
 ## Implementation notes
 
@@ -101,8 +100,7 @@ pairing would compile.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`, whose full expansion is
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit
 `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`),
 `EllipticCurves/WeierstrassFormalGroup/Eval.lean` — its evaluation layer down to the formal
 inverse, declarations `wEval`, `vEval`, `wEval_mem`, `wEval_eq`, `wEval_eq_cube_mul`,
@@ -110,7 +108,7 @@ inverse, declarations `wEval`, `vEval`, `wEval_mem`, `wEval_eq`, `wEval_eq_cube_
 `uEval_mul_duEval`, `isUnit_uEval`, `isUnit_chordCoeff`, `iotaEval_eq`, `iotaEval_mem`,
 `wEval_iotaEval` and `iotaEval_iotaEval`.
 
-Four things are spelled differently here.
+The evaluation differs from the source as follows.
 
 * The source evaluates through its own `ChabautyColeman.MvPSeries.eval`, which is by definition
   `MvPowerSeries.eval₂ (RingHom.id _)`. That wrapper is not ported; the definitions use Mathlib's
@@ -119,10 +117,10 @@ Four things are spelled differently here.
 * The source's three `eval_mem_maximalIdeal_pow` lemmas are that same file's
   `MvPowerSeries.eval₂_mem_pow`, `_mul` and `_add_mul`, which are stated for an arbitrary adic
   ideal rather than the maximal one, so none of the three is re-ported.
-* The source obtains unit-ness from `IsLocalRing.isUnit_of_sub_one_mem_maximalIdeal`. Here it comes
-  instead from `IsTopologicallyNilpotent.isUnit_one_add` — Wedhorn 5.38, already in this repository
-  — which the ambient completeness makes available and which needs no hypothesis relating `I` to
-  the Jacobson radical. `IsLocalRing` is therefore not needed in this file at all.
+* The source obtains unit-ness from `IsLocalRing.isUnit_of_sub_one_mem_maximalIdeal`. Here
+  `formalU` is a unit by its constant coefficient, and evaluation preserves units. The inverse
+  denominator is a unit by its evaluated inverse identity, while the chord coefficient uses
+  `IsTopologicallyNilpotent.isUnit_one_add` — Wedhorn 5.38. No local-ring hypothesis is needed.
 * The source's `wPoly` is this repository's `WeierstrassCurve.wEquationRHS`, which is generic over
   an algebra, so evaluating it at `O` gives the element-level equation without a second
   definition.
@@ -214,15 +212,13 @@ theorem formalUEval_sub_one_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t : O}
   rw [← hsplit]
   simpa [eval₂] using key
 
-/-- The value of the unit part at a parameter of `I` is a unit: it differs from `1` by an element
-of `I`, which is topologically nilpotent, so Wedhorn 5.38 applies. -/
-theorem isUnit_formalUEval {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I) :
+/-- The value of the unit part is a unit whenever evaluation converges: its constant coefficient
+is `1`, so the series is a unit, and evaluation preserves units. -/
+theorem isUnit_formalUEval {t : O} (ht : PowerSeries.HasEval t) :
     IsUnit (W.formalUEval t) := by
-  have : NonarchimedeanRing O := hI ▸ I.nonarchimedean
-  have hsub : W.formalUEval t - 1 ∈ I := by
-    simpa using W.formalUEval_sub_one_mem hI (k := 1)
-      (hI.isTopologicallyNilpotent_of_mem ht) (by simpa using ht)
-  simpa using (hI.isTopologicallyNilpotent_of_mem hsub).isUnit_one_add
+  have hU : IsUnit W.formalU := PowerSeries.isUnit_iff_constantCoeff.mpr (by
+    simp [W.constantCoeff_formalU])
+  simpa only [coe_evalAt, ← W.formalUEval_def] using hU.map (evalAt ht)
 
 omit [IsTopologicalRing O] in
 /-- **The leading coefficient of the chord cubic is a unit** at any topologically nilpotent
@@ -243,7 +239,7 @@ theorem isUnit_thirdRootDenom [NonarchimedeanRing O] {l : O}
     (hl : IsTopologicallyNilpotent l) :
     IsUnit (1 + W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3) := by
   -- the nonconstant part is a multiple of `l`, hence topologically nilpotent, so Wedhorn 5.38
-  -- applies; unlike `isUnit_formalUEval` this needs no monomial estimate and hence no ideal
+  -- applies without a monomial estimate or an ideal
   have hfac : W.a₂ * l + W.a₄ * l ^ 2 + W.a₆ * l ^ 3 =
       l * (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2) := by ring
   have h := (hl.mul_right (W.a₂ + W.a₄ * l + W.a₆ * l ^ 2)).isUnit_one_add
@@ -383,25 +379,26 @@ theorem eq_formalWEval_of_wEquation {I : Ideal O} (hI : IsAdic I) {t s : O} (ht 
   exact sub_eq_zero.mp
     (((hI.isTopologicallyNilpotent_of_mem hcI).isUnit_one_sub.mul_right_eq_zero).mp hzero)
 
-/-- `w` does not vanish at a parameter of `I` whose cube is nonzero: the factorisation
-`w(t) = t ^ 3 * u(t)` has a unit second factor. Over a domain the hypothesis is `t ≠ 0`. -/
-theorem formalWEval_ne_zero {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I)
-    (ht0 : t ^ 3 ≠ 0) : W.formalWEval t ≠ 0 := by
-  rw [W.formalWEval_eq_pow_mul_formalUEval (hI.isTopologicallyNilpotent_of_mem ht)]
-  exact fun h ↦ ht0 ((W.isUnit_formalUEval hI ht).mul_left_eq_zero.mp h)
+/-- `w` does not vanish at a parameter admitting evaluation whose cube is nonzero: the
+factorisation `w(t) = t ^ 3 * u(t)` has a unit second factor. Over a domain the hypothesis is
+`t ≠ 0`. -/
+theorem formalWEval_ne_zero {t : O} (ht : PowerSeries.HasEval t) (ht0 : t ^ 3 ≠ 0) :
+    W.formalWEval t ≠ 0 := by
+  rw [W.formalWEval_eq_pow_mul_formalUEval ht]
+  exact fun h ↦ ht0 ((W.isUnit_formalUEval ht).mul_left_eq_zero.mp h)
 
-/-- **`w(t)` has nonzero image** in any nontrivial domain over `O` once the image of `t` does:
+/-- **`w(t)` has nonzero image** in any algebra without zero divisors over `O` once the image of
+`t` does and evaluation converges:
 the expansion factors as `t ^ 3 * u(t)` with `u(t)` a unit, and both factors have nonzero image —
 the cube because there are no zero divisors, the unit because units map to units. Unlike
 `formalWEval_ne_zero` this needs no hypothesis on `t ^ 3`, because the cube is checked in the
 codomain. -/
-theorem algebraMap_formalWEval_ne_zero {S : Type*} [CommRing S] [Nontrivial S] [NoZeroDivisors S]
-    [Algebra O S] {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I)
+theorem algebraMap_formalWEval_ne_zero {S : Type*} [Semiring S] [NoZeroDivisors S]
+    [Algebra O S] {t : O} (ht : PowerSeries.HasEval t)
     (ht0 : algebraMap O S t ≠ 0) : algebraMap O S (W.formalWEval t) ≠ 0 := by
-  rw [W.formalWEval_eq_pow_mul_formalUEval (hI.isTopologicallyNilpotent_of_mem ht), map_mul,
-    map_pow]
-  exact mul_ne_zero (pow_ne_zero _ ht0)
-    ((W.isUnit_formalUEval hI ht).map (algebraMap O S)).ne_zero
+  rw [W.formalWEval_eq_pow_mul_formalUEval ht, map_mul, map_pow]
+  exact fun h ↦ pow_ne_zero 3 ht0
+    (((W.isUnit_formalUEval ht).map (algebraMap O S)).mul_left_eq_zero.mp h)
 
 /-- The formal inverse does not vanish at a nonzero parameter: `ι(t)` is `-t` times a unit, and
 multiplying by a unit cannot create a zero. No hypothesis on `t ^ 3` is needed — unlike
@@ -421,14 +418,12 @@ general adic ring supplies no such instance. These two therefore go through
 coefficients.
 -/
 
-/-- **`ι(t)` admits evaluation** when `t` is drawn from an ideal carrying the ambient topology:
-`formalInverseEval_mem` puts it in the same ideal. This is the adic route to the second hypothesis
-of the two identities below, which do not themselves need an ideal. -/
-theorem hasEval_formalInverseEval {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ I) :
-    PowerSeries.HasEval (W.formalInverseEval t) :=
-  hI.isTopologicallyNilpotent_of_mem <| by
-    simpa using W.formalInverseEval_mem (k := 1)
-      (hI.isTopologicallyNilpotent_of_mem ht) (by simpa using ht)
+/-- **`ι(t)` admits evaluation** whenever `t` does: it is a multiple of `t`, so it is again
+topologically nilpotent. -/
+theorem hasEval_formalInverseEval {t : O} (ht : PowerSeries.HasEval t) :
+    PowerSeries.HasEval (W.formalInverseEval t) := by
+  rw [W.formalInverseEval_eq ht, ← mul_neg]
+  exact ht.mul_right _
 
 /-- **The inverse series evaluates to the inverse of the parameter**: the algebra map
 `PowerSeries.aeval` and the `eval₂` defining `formalInverseEval` agree on `formalInverse`. -/
@@ -442,14 +437,13 @@ private theorem aeval_formalInverse {t : O} (hE : PowerSeries.HasEval t) :
 
 /-- **The `w`-expansion at an inverted parameter**: `w(ι(t)) = -(w(t) * d(t)⁻¹)`, the evaluation of
 the series identity `subst_formalInverse_formalW`. -/
-theorem formalWEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
-    (hV : PowerSeries.HasEval (W.formalInverseEval t)) :
+theorem formalWEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t) :
     W.formalWEval (W.formalInverseEval t) =
       -(W.formalWEval t * W.formalInverseDenomInvEval t) := by
   have hcoe : ∀ f : PowerSeries O, PowerSeries.aeval hE f = eval₂ (RingHom.id O) t f :=
     congrFun (PowerSeries.coe_aeval hE)
   have hV' : PowerSeries.HasEval (PowerSeries.aeval hE W.formalInverse) :=
-    W.aeval_formalInverse hE ▸ hV
+    W.aeval_formalInverse hE ▸ W.hasEval_formalInverseEval hE
   have h := PowerSeries.aeval_subst W.hasSubst_formalInverse
     (PowerSeries.continuous_aeval hE) hV' W.formalW
   rw [W.subst_formalInverse_formalW, map_neg, map_mul,
@@ -461,13 +455,12 @@ theorem formalWEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
 that unit cancel in the ratio. No nonvanishing is needed: if `w(t) = 0` then `w(ι t) = 0` too and
 both sides are zero. -/
 theorem algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval
-    {K : Type*} [Field K] [Algebra O K] {t : O} (hE : PowerSeries.HasEval t)
-    (hEV : PowerSeries.HasEval (W.formalInverseEval t)) :
+    {K : Type*} [Field K] [Algebra O K] {t : O} (hE : PowerSeries.HasEval t) :
     algebraMap O K (W.formalInverseEval t) /
         algebraMap O K (W.formalWEval (W.formalInverseEval t)) =
       algebraMap O K t / algebraMap O K (W.formalWEval t) := by
   have hiota := congrArg (algebraMap O K) (W.formalInverseEval_eq hE)
-  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE hEV)
+  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE)
   simp only [map_neg, map_mul] at hiota hwiota
   by_cases hWt : algebraMap O K (W.formalWEval t) = 0
   · simp [hwiota, hWt]
@@ -485,13 +478,12 @@ hypothesis, both sides being zero when `w(t) = 0`.
 reading needs the hypothesis: at `w(t) = 0` both ratios are zero by field division, while
 `negY 0 0 = -a₃`. -/
 theorem neg_one_div_algebraMap_formalWEval_formalInverseEval {K : Type*} [Field K] [Algebra O K]
-    {t : O} (hE : PowerSeries.HasEval t)
-    (hEV : PowerSeries.HasEval (W.formalInverseEval t)) :
+    {t : O} (hE : PowerSeries.HasEval t) :
     -1 / algebraMap O K (W.formalWEval (W.formalInverseEval t)) =
       (1 - (W.baseChange K).a₁ * algebraMap O K t -
           (W.baseChange K).a₃ * algebraMap O K (W.formalWEval t)) /
         algebraMap O K (W.formalWEval t) := by
-  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE hEV)
+  have hwiota := congrArg (algebraMap O K) (W.formalWEval_formalInverseEval hE)
   simp only [map_neg, map_mul] at hwiota
   by_cases hWt : algebraMap O K (W.formalWEval t) = 0
   · simp [hwiota, hWt]
@@ -511,13 +503,12 @@ theorem neg_one_div_algebraMap_formalWEval_formalInverseEval {K : Type*} [Field 
 
 /-- **The formal inverse is an involution at a parameter**: `ι(ι(t)) = t`. This is `-(-P) = P` for
 the group law near the origin, evaluated at `t`. -/
-theorem formalInverseEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
-    (hV : PowerSeries.HasEval (W.formalInverseEval t)) :
+theorem formalInverseEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t) :
     W.formalInverseEval (W.formalInverseEval t) = t := by
   have hcoe : ∀ f : PowerSeries O, PowerSeries.aeval hE f = eval₂ (RingHom.id O) t f :=
     congrFun (PowerSeries.coe_aeval hE)
   have hV' : PowerSeries.HasEval (PowerSeries.aeval hE W.formalInverse) :=
-    W.aeval_formalInverse hE ▸ hV
+    W.aeval_formalInverse hE ▸ W.hasEval_formalInverseEval hE
   have h := PowerSeries.aeval_subst W.hasSubst_formalInverse
     (PowerSeries.continuous_aeval hE) hV' W.formalInverse
   rw [W.subst_formalInverse_self,

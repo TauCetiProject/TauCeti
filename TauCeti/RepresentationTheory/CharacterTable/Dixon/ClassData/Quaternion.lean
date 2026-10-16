@@ -27,11 +27,6 @@ of the three pairs of quaternion units.  Their structure constants agree with th
 * `TauCeti.card_classFinset_quaternionClassData_two`: their sizes are `1, 1, 2, 2, 2`.
 * `TauCeti.structureConstantTable_quaternionClassData_two`: the complete class multiplication
   table, evaluated by the kernel.
-
-## References
-
-This is the `Q₈ = QuaternionGroup 2` input for the rational-table milestone in Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 -/
 
 public section

@@ -89,7 +89,7 @@ cyclic subgroups -- the noncyclic ones have vanishing coefficient -- and in `k`.
 private theorem sum_artinCoeff_cyclicSubgroups_containing_eq_one {k : Type u}
     [AddCommGroupWithOne k] (y : G) :
     (∑ C : CyclicSubgroup G,
-      if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) = 1 := by
+      if _ : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) = 1 := by
   classical
   let _ := Fintype.ofFinite (Subgroup G)
   have hZ : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff = 1 := by
@@ -112,7 +112,7 @@ private theorem sum_artinCoeff_cyclicSubgroups_containing_eq_one {k : Type u}
       ← Finset.sum_filter, hZ]
   calc
     (∑ C : CyclicSubgroup G,
-        if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) =
+        if _ : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) =
         ((∑ C : CyclicSubgroup G,
           if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ) : ℤ) : k) := by
       push_cast
@@ -143,11 +143,11 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   have hnat (C : CyclicSubgroup G) :
       (Nat.card (C : Subgroup G) : k) *
           Subgroup.indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)) g =
-        ∑ x : G, if h : x⁻¹ * g * x ∈ (C : Subgroup G) then
+        ∑ x : G, if _ : x⁻¹ * g * x ∈ (C : Subgroup G) then
           (1 : k) else 0 := by
     simpa only [nsmul_eq_mul] using
-      Subgroup.natCard_nsmul_indClassFun C (f := fun _ : (C : Subgroup G) ↦ (1 : k)) (fun _ _ ↦
-        rfl) g
+      Subgroup.natCard_nsmul_indClassFun C (f := fun _ : (C : Subgroup G) ↦ (1 : k))
+        (fun _ _ ↦ rfl) g
   simp_rw [← Int.cast_smul_eq_zsmul k, ← Nat.cast_smul_eq_nsmul k,
     smul_eq_mul, hnat]
   simp_rw [Finset.mul_sum]

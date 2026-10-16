@@ -99,9 +99,9 @@ private theorem comul_g2SpecialIsogeny_carrierGenericMatrix :
     simpa only [carrierGenericMatrix_def, BialgHom.coe_toAlgHom, Matrix.map_map] using
       TauCeti.GeneralLinear.map_comul_map_genericMatrix carrierQuotient.hom
   set iL : carrierAlgebra →ₐ[ZMod 3] carrierAlgebra ⊗[ZMod 3] carrierAlgebra :=
-    Algebra.TensorProduct.includeLeft with hiL
+    Algebra.TensorProduct.includeLeft
   set iR : carrierAlgebra →ₐ[ZMod 3] carrierAlgebra ⊗[ZMod 3] carrierAlgebra :=
-    Algebra.TensorProduct.includeRight with hiR
+    Algebra.TensorProduct.includeRight
   have hL : PreservesG2Cross (carrierGenericMatrix.map iL) :=
     preservesG2Cross_carrierGenericMatrix.map iL.toRingHom
   have hR : PreservesG2Cross (carrierGenericMatrix.map iR) :=
@@ -501,7 +501,7 @@ private theorem pointsMulEquiv_map_specialIsogenyCoordinateMap
     (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
       (CommAlgCat.of (ZMod 3) B)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) B)
-        (AlgHom.mapDomain specialIsogenyCoordinateMap.hom q) =
+        (BialgHom.mapDomain specialIsogenyCoordinateMap.hom q) =
       specialIsogeny B (pointsMulEquiv (CommAlgCat.of (ZMod 3) B) q) := by
   apply Subtype.ext
   apply Units.ext
@@ -510,11 +510,11 @@ private theorem pointsMulEquiv_map_specialIsogenyCoordinateMap
   have h := congrArg (fun M : Matrix (Fin 7) (Fin 7) carrierAlgebra => M.map q.ofConv)
     map_carrierGenericMatrix_specialIsogenyCoordinateMap
   have hmap :
-      (((AlgHom.mapDomain specialIsogenyCoordinateMap.hom q).ofConv :
+      (((BialgHom.mapDomain specialIsogenyCoordinateMap.hom q).ofConv :
           carrierAlgebra →ₐ[ZMod 3] B) : carrierAlgebra → B) =
         q.ofConv ∘ specialIsogenyCoordinateMap.hom := by
     funext x
-    rfl
+    exact BialgHom.mapDomain_apply_apply specialIsogenyCoordinateMap.hom q x
   rw [hmap]
   simpa only [Matrix.map_map, Function.comp_apply, BialgHom.coe_toAlgHom,
     g2SpecialIsogeny_map] using h
@@ -671,7 +671,8 @@ private theorem g2SpecialIsogeny_g2SpecialIsogeny_of_mem_points
       (((TauCeti.GeneralLinear.pointsMulEquiv (R := ZMod 3) 7).symm g).ofConv :
         TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7 → A) := by
     funext x
-    rw [Function.comp_apply, hq, BialgHom.coe_toAlgHom, CommHopfAlgCat.mkQuotient_apply]
+    rw [Function.comp_apply, hq, BialgHom.coe_toAlgHom, CommHopfAlgCat.mkQuotient_apply,
+      Ideal.Quotient.mkₐ_eq_mk]
     exact CommHopfAlgCat.liftQuotientPoint_mk
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
       (CommHopfAlgCat.commonKernelHopfIdeal generator) (CommAlgCat.of (ZMod 3) A)

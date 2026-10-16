@@ -35,9 +35,6 @@ change.
 * J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter IV, §1.8.
 * The Stacks Project, Tags [01JO](https://stacks.math.columbia.edu/tag/01JO) and
   [022W](https://stacks.math.columbia.edu/tag/022W).
-
-This is the scalar-extension compatibility needed to assemble the `SLₙ` worked example in
-Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section

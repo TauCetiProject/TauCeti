@@ -78,7 +78,7 @@ theorem exact_δ_map (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
   rwa [ShortComplex.ab_exact_iff_function_exact] at this
 
 /-- If `Hⁿ¹(F₁)` vanishes, then `Hⁿ⁰(F₂) →+ Hⁿ⁰(F₃)` is surjective. -/
-theorem map_g_surjective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (h₁ : Subsingleton (H S.X₁ n₁)) :
+theorem map_g_surjective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (_ : Subsingleton (H S.X₁ n₁)) :
     Function.Surjective (map S.g n₀) := fun x ↦
   (exact_map_δ hS n₀ n₁ h x).1 (Subsingleton.elim _ _)
 
@@ -91,7 +91,7 @@ theorem subsingleton_X₂ (n : ℕ) (h₁ : Subsingleton (H S.X₁ n))
   rw [← hx₁, ← hy₁, Subsingleton.elim x₁ y₁]
 
 /-- If `Hⁿ⁰(F₂)` and `Hⁿ¹(F₁)` vanish, then so does `Hⁿ⁰(F₃)`. -/
-theorem subsingleton_X₃ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (h₂ : Subsingleton (H S.X₂ n₀))
+theorem subsingleton_X₃ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (_ : Subsingleton (H S.X₂ n₀))
     (h₁ : Subsingleton (H S.X₁ n₁)) : Subsingleton (H S.X₃ n₀) :=
   (map_g_surjective hS n₀ n₁ h h₁).subsingleton
 

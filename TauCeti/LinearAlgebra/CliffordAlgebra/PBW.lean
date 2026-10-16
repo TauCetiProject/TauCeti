@@ -17,9 +17,6 @@ This file identifies the associated graded algebra of the Clifford degree filtra
 exterior algebra when `2` is invertible. It combines the equivalences on the successive quotients
 with their compatibility with homogeneous multiplication.
 
-This completes the associated-graded-algebra part of Layer 0 in the
-[spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md#layer-0-the-clifford-algebra-its-universal-property-and-the-two-gradings).
-
 ## Main definition
 
 * `CliffordAlgebra.associatedGradedEquivExterior`: the algebra equivalence from

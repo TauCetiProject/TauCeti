@@ -87,7 +87,7 @@ theorem isConvexPolyhedron_convexHull {s : Set E}
   let b : AffineBasis t ℝ E := ⟨Subtype.val, ht, by simpa using hspan⟩
   have himage : b '' {i : t | (i : E) ∈ s} = s := by
     ext x
-    exact ⟨fun ⟨i, hi, hix⟩ => hix ▸ hi, fun hx => ⟨⟨x, hst hx⟩, hx, rfl⟩⟩
+    exact ⟨fun ⟨_, hi, hix⟩ => hix ▸ hi, fun hx => ⟨⟨x, hst hx⟩, hx, rfl⟩⟩
   rw [← himage]
   exact b.isConvexPolyhedron_convexHull_image _
 

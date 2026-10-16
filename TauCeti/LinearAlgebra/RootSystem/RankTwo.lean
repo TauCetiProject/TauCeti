@@ -60,11 +60,11 @@ the Cartan matrix of `A₁ × A₁`, of finite type but not irreducible.
 
 ## References
 
-This file supplies the rank-one and rank-two cases of the Layer 5 milestone "the classification of
-finite-type Cartan matrices" of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, whose
-statement `existsUnique_dynkinType` these theorems specialize. See Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, Ch. VI §4, and Humphreys, *Introduction to Lie Algebras and Representation
-Theory*, §11.1, where the rank-two diagrams are enumerated first for exactly this reason.
+This file supplies the rank-one and rank-two cases of the classification of finite-type Cartan
+matrices, whose statement `existsUnique_dynkinType` these theorems specialize. See Bourbaki, *Lie
+Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4, and Humphreys, *Introduction to Lie Algebras and
+Representation Theory*, §11.1, where the rank-two diagrams are enumerated first for exactly this
+reason.
 -/
 
 public section

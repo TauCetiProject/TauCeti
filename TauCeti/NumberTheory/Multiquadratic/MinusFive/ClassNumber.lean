@@ -67,7 +67,6 @@ private theorem exists_eq_intCast_add_intCast_mul
     adjoin_gen_eq_top_of_mod_four_ne_one hmin hgen
       ((Int.prime_iff_natAbs_prime.mpr (by decide)).squarefree) (by norm_num)
   have hz : z ∈ Algebra.adjoin ℤ {θ} := by rw [htop]; trivial
-  have hθ := gen_sq_eq_neg_five hmin
   refine Algebra.adjoin_induction (p := fun x _ =>
       ∃ a b : ℤ, x = algebraMap ℤ (𝓞 K) a + algebraMap ℤ (𝓞 K) b * θ)
     (fun x hx => ?_) (fun a => ?_) (fun x y _ _ hx hy => ?_)
@@ -195,7 +194,6 @@ private theorem not_isPrincipal_primeAboveTwo
     exact (Prime.not_isSquare hprimeTwo)
       ⟨a, by simpa [pow_two] using heq.symm⟩
   · have hbpos : 0 < b ^ 2 := sq_pos_of_ne_zero hb
-    have hb1 : (1 : ℤ) ≤ b ^ 2 := by omega
     nlinarith [sq_nonneg a]
 
 /-- **The class number of `ℚ(√-5)` is two.** This presentation-independent statement assumes an

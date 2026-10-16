@@ -198,9 +198,20 @@ theorem infl_comp_zeroIso_hom (N : Subgroup G) [N.Normal] (X : TopRep R G) :
       ((zeroIso (TopRep.quotientToInvariants X N)).hom ≫
         TopRep.invariantsResMap (QuotientGroup.mk' N : G →* G ⧸ N)
           (TopRep.quotientToInvariantsι X N) :) := by
-  rw [infl_def]
-  exact map_comp_zeroIso_hom (ContinuousMonoidHom.quotientMk N)
-    (TopRep.quotientToInvariantsι X N)
+  rw [infl_def, map_comp_zeroIso_hom]
+  congr 1
+  ext v
+  -- After extensionality, normalize the invariant-map composite to its underlying linear
+  -- map application. The public eqToHom evaluation lemma then removes the restriction
+  -- transport; it does not match through the outer coerced composite.
+  change (TopRep.quotientToInvariantsι X N).hom
+      ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom v.1) =
+    (TopRep.quotientToInvariantsι X N).hom v.1
+  rw [TopRep.eqToHom_hom_apply (congrArg (fun ψ =>
+    TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N))]
+  simp only [cast_eq]
 
 end CompatiblePair
 

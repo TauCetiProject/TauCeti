@@ -90,7 +90,7 @@ theorem lt_normSq_sub_of_normSq_eq {a w z : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
   have hw := normSq_sub_ofReal_sub_normSq_sub_ofReal (c₁ := m₁) (c₂ := m₂) a w
   rw [hz₁, ha₁, ha₂] at hz
   rw [hw₁, ha₁, ha₂] at hw
-  have hm : m₁ - m₂ < 0 := by nlinarith
+  have _ : m₁ - m₂ < 0 := by nlinarith
   nlinarith
 
 /-- A point at squared distance `ρ ^ 2` from the real point `m`, with `0 ≤ ρ`, has real part in

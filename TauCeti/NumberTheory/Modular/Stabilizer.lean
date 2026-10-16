@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.GroupAction.Stabilizer
 public import TauCeti.NumberTheory.Modular.Orbits
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 
 /-!
 # Orders of the point stabilisers of the modular group
@@ -30,8 +31,15 @@ The three orbit-level counts are stated with their hypotheses on the class of `z
 because that is the form the valence formula's index type consumes: its non-elliptic orbits are
 literally the `q` with `q ≠ ⟦i⟧` and `q ≠ ⟦ρ⟧`.
 
+The integral trace criterion uses Mathlib's
+`UpperHalfPlane.isElliptic_of_exists_smul_eq_self`, which classifies a noncentral
+positive-determinant matrix fixing a point as elliptic.
+
 ## Main declarations
 
+* `TauCeti.ModularGroup.trace_sq_lt_four_of_smul_eq_self_of_not_mem_center`: a noncentral
+  integral matrix fixing a point has trace strictly between `-2` and `2`; this detects the
+  absence of elliptic points in congruence subgroups via congruences on the trace.
 * `TauCeti.ModularGroup.finite_stabilizer`: every point stabiliser is finite, so the elliptic
   order is defined at every point of `ℍ`.
 * `TauCeti.ModularGroup.card_stabilizer_I` and `TauCeti.ModularGroup.card_stabilizer_ρ`: the
@@ -73,12 +81,37 @@ namespace ModularGroup
 
 variable {w z : ℍ}
 
+/-- A noncentral integral matrix fixing a point of the upper half-plane has trace
+strictly between `-2` and `2`, equivalently trace squared less than `4`. -/
+theorem trace_sq_lt_four_of_smul_eq_self_of_not_mem_center {γ : SL(2, ℤ)}
+    (hz : γ • z = z) (hγ : γ ∉ Subgroup.center SL(2, ℤ)) :
+    (γ : Matrix (Fin 2) (Fin 2) ℤ).trace ^ 2 < 4 := by
+  have hd : (Matrix.SpecialLinearGroup.mapGL ℝ γ).val.det = 1 := by
+    rw [← Matrix.GeneralLinearGroup.val_det_apply]
+    simp
+  have hell := UpperHalfPlane.isElliptic_of_exists_smul_eq_self
+    (g := Matrix.SpecialLinearGroup.mapGL ℝ γ) (by rw [hd]; norm_num)
+    (fun hc ↦ ?_) ⟨z, by simpa only [MulAction.compHom_smul_def] using hz⟩
+  · unfold Matrix.GeneralLinearGroup.IsElliptic Matrix.IsElliptic at hell
+    rw [Matrix.discr_fin_two, hd, Matrix.trace_fin_two] at hell
+    simp only [Matrix.SpecialLinearGroup.mapGL_coe_matrix,
+      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+      algebraMap_int_eq, Int.coe_castRingHom] at hell
+    rw [Matrix.trace_fin_two]
+    exact_mod_cast (by linarith :
+      ((γ 0 0 : ℝ) + (γ 1 1 : ℝ)) ^ 2 < 4)
+  · have hfix := UpperHalfPlane.forall_smul_eq_self_iff_mem_center.mpr hc
+    have hq : (γ : PSL(2, ℤ)) = 1 := eq_of_smul_eq_smul fun w : ℍ ↦ by
+      rw [UpperHalfPlane.pslMk_smul, one_smul, MulAction.compHom_smul_def]
+      exact hfix w
+    exact hγ ((QuotientGroup.eq_one_iff γ).mp hq)
+
 private theorem finite_stabilizer_of_subset (s : Finset SL(2, ℤ))
     (hs : ∀ g : SL(2, ℤ), g • w = w → g ∈ s) : Finite (stabilizer SL(2, ℤ) w) :=
   (s.finite_toSet.subset fun g hg ↦ hs g hg).to_subtype
 
 private theorem finite_stabilizer_of_smul (g : SL(2, ℤ))
-    (h : Finite (stabilizer SL(2, ℤ) (g • z))) : Finite (stabilizer SL(2, ℤ) z) :=
+    (_ : Finite (stabilizer SL(2, ℤ) (g • z))) : Finite (stabilizer SL(2, ℤ) z) :=
   Finite.of_equiv _ (stabilizerEquivStabilizerOfOrbitRel
     (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit z g))).toEquiv
 

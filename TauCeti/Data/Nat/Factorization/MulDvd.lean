@@ -58,7 +58,7 @@ theorem mul_dvd_iff_forall_not_pow_dvd {f d h : ℕ} (hh : h ≠ 0) (hf : f ∣ 
   simp only [Finsupp.coe_add, Pi.add_apply]
   constructor
   · intro hle p hp hdvd
-    have hb : 0 < f.factorization p :=
+    have _ : 0 < f.factorization p :=
       (Nat.Prime.factorization_pos_of_dvd (Nat.prime_of_mem_primeFactors hp) hf0
         (Nat.dvd_of_mem_primeFactors hp))
     have := ((Nat.prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hd0).mp hdvd
@@ -67,7 +67,7 @@ theorem mul_dvd_iff_forall_not_pow_dvd {f d h : ℕ} (hh : h ≠ 0) (hf : f ∣ 
     omega
   · intro hp p
     by_cases hmem : p ∈ f.primeFactors
-    · have hb : 0 < f.factorization p :=
+    · have _ : 0 < f.factorization p :=
         (Nat.Prime.factorization_pos_of_dvd (Nat.prime_of_mem_primeFactors hmem) hf0
           (Nat.dvd_of_mem_primeFactors hmem))
       have hlt : ¬(h.factorization p - f.factorization p + 1 ≤ d.factorization p) :=

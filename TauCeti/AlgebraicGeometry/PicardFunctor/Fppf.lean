@@ -63,6 +63,12 @@ line-bundle classes. -/
 def relativePicardAddPresheaf : (Over S)ᵒᵖ ⥤ AddCommGrpCat.{u + 1} :=
   relativePicardPresheaf f ⋙ CommGrpCat.toAddCommGrp
 
+/-- The additive relative Picard presheaf is obtained from the multiplicative one by the
+equivalence between commutative groups and additive commutative groups. -/
+theorem relativePicardAddPresheaf_eq :
+    relativePicardAddPresheaf f = relativePicardPresheaf f ⋙ CommGrpCat.toAddCommGrp := by
+  rw [relativePicardAddPresheaf]
+
 /-- The section of the additive relative Picard presheaf represented by a line-bundle class. -/
 def relativePicardAddPresheafMk (T : (Over S)ᵒᵖ)
     (a : LineBundleClass (pullback T.unop.hom f)) : (relativePicardAddPresheaf f).obj T :=

@@ -29,6 +29,9 @@ invariant flag.
 
 ## Main declarations
 
+* `TauCeti.Comodule.coefficientMatrix_castAdd_castAdd_of_castAdd_eq` and
+  `TauCeti.Comodule.coefficientMatrix_natAdd_castAdd_of_castAdd_eq`: the block form of the
+  coefficient matrix in any basis whose first block is a basis of a subcomodule.
 * `TauCeti.Comodule.extensionBasis`: the basis of a comodule obtained from bases of a subcomodule
   and its quotient.
 * `TauCeti.Comodule.coefficientMatrix_extensionBasis_castAdd_castAdd`: the subcomodule diagonal
@@ -60,6 +63,49 @@ noncomputable section
 attribute [local instance 1100] Module.Free.of_divisionRing Module.Flat.of_free
 
 variable {k : Type u} {C : Type v} {M : Type w} {m n : ℕ}
+
+section Semiring
+
+variable [CommSemiring k]
+variable [AddCommMonoid C] [Module k C] [Coalgebra k C] [Module.Flat k C]
+variable [AddCommMonoid M] [Module k M] [Comodule k C M]
+
+/-- If the first block of a basis of `M` is a basis of the subcomodule `N`, the corresponding
+diagonal block of its coefficient matrix is the coefficient matrix of `N` in that basis. -/
+theorem coefficientMatrix_castAdd_castAdd_of_castAdd_eq
+    (N : Subcomodule k C M) (bN : Basis (Fin m) k N) (b : Basis (Fin (m + n)) k M)
+    (hb : ∀ j, b (Fin.castAdd n j) = bN j) (i j : Fin m) :
+    coefficientMatrix (C := C) b (Fin.castAdd n i) (Fin.castAdd n j) =
+      coefficientMatrix (C := C) bN i j := by
+  rw [coefficientMatrix_apply, hb, ← N.subtype_apply (bN j), matrixCoefficient_map,
+    coefficientMatrix_apply]
+  congr 1
+  refine bN.ext fun l ↦ ?_
+  simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
+    SMulMemClass.subtype_apply, ← hb, Basis.coord_apply, Basis.repr_self,
+    Finsupp.single_apply, (Fin.castAdd_injective m n).eq_iff]
+
+/-- If the first block of a basis of `M` is a basis of the subcomodule `N`, the lower-left block
+of its coefficient matrix vanishes. This is the matrix form of stability of the subcomodule. -/
+theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
+    (N : Subcomodule k C M) (bN : Basis (Fin m) k N) (b : Basis (Fin (m + n)) k M)
+    (hb : ∀ j, b (Fin.castAdd n j) = bN j) (i : Fin n) (j : Fin m) :
+    coefficientMatrix (C := C) b (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
+  rw [coefficientMatrix_apply, hb, ← N.subtype_apply (bN j), matrixCoefficient_map]
+  have hcoord : (b.coord (Fin.natAdd m i)).comp N.subtype.toLinearMap = 0 := by
+    refine bN.ext fun l ↦ ?_
+    simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
+      SMulMemClass.subtype_apply, ← hb, Basis.coord_apply, Basis.repr_self,
+      Finsupp.single_apply, LinearMap.zero_apply]
+    refine ite_eq_right fun h ↦ ?_
+    have hval := congrArg Fin.val h
+    simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
+    omega
+  rw [hcoord]
+  simp
+
+end Semiring
+
 variable [Field k]
 variable [AddCommGroup C] [Module k C] [Coalgebra k C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
@@ -135,13 +181,8 @@ theorem coefficientMatrix_extensionBasis_castAdd_castAdd
     (bQ : Basis (Fin n) k (M ⧸ N.toSubmodule)) (i j : Fin m) :
     coefficientMatrix (C := C) (extensionBasis N bN bQ)
         (Fin.castAdd n i) (Fin.castAdd n j) =
-      coefficientMatrix (C := C) bN i j := by
-  rw [coefficientMatrix_apply, extensionBasis_castAdd, coefficientMatrix_apply]
-  rw [← N.subtype_apply (bN j), matrixCoefficient_map]
-  congr 2
-  ext x
-  simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
-    SMulMemClass.subtype_apply, Basis.coord_apply, extensionBasis_repr_castAdd]
+      coefficientMatrix (C := C) bN i j :=
+  coefficientMatrix_castAdd_castAdd_of_castAdd_eq N bN _ (extensionBasis_castAdd N bN bQ) i j
 
 /-- The lower-left block of the combined coefficient matrix vanishes. This is the matrix form of
 stability of the subcomodule. -/
@@ -150,20 +191,8 @@ theorem coefficientMatrix_extensionBasis_natAdd_castAdd
     (N : Subcomodule k C M) (bN : Basis (Fin m) k N)
     (bQ : Basis (Fin n) k (M ⧸ N.toSubmodule)) (i : Fin n) (j : Fin m) :
     coefficientMatrix (C := C) (extensionBasis N bN bQ)
-        (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
-  rw [coefficientMatrix_apply, extensionBasis_castAdd, ← N.subtype_apply (bN j),
-    matrixCoefficient_map]
-  have hcoord :
-      ((extensionBasis N bN bQ).coord (Fin.natAdd m i)).comp N.subtype.toLinearMap = 0 := by
-    ext x
-    simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
-      SMulMemClass.subtype_apply, Basis.coord_apply, extensionBasis_repr_natAdd,
-      LinearMap.zero_apply]
-    have hx : N.toSubmodule.mkQ (x : M) = 0 :=
-      (Submodule.Quotient.mk_eq_zero _).mpr x.2
-    rw [hx, map_zero, Finsupp.zero_apply]
-  rw [hcoord]
-  simp
+        (Fin.natAdd m i) (Fin.castAdd n j) = 0 :=
+  coefficientMatrix_natAdd_castAdd_of_castAdd_eq N bN _ (extensionBasis_castAdd N bN bQ) i j
 
 /-- The quotient diagonal block of the combined coefficient matrix is the coefficient matrix in
 the given quotient basis. -/

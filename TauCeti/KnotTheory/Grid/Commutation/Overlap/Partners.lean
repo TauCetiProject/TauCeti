@@ -289,7 +289,8 @@ open scoped Classical in
 /-- Every cross-overlap partner is a counted overlapping domain. -/
 theorem initialPentagonCrossOverlapPartners_subset_filter (hzx : z ≠ x) :
     G.initialPentagonCrossOverlapPartners C x z ⊆
-      (G.initialPentagonRectangleDecompositions C x z).filter (fun F => ¬F.HasDisjointSides) := by
+      (G.initialPentagonRectangleDecompositions C x z).filter
+        (fun F => ¬F.toGridRectangleDecomposition.HasDisjointSides) := by
   intro F hF
   obtain ⟨D, hD, hr⟩ : ∃ D ∈ G.rectangleInitialPentagonDecompositions C x z,
       D.toGridRectangleDecomposition.IsRecut F.toGridRectangleDecomposition := by
@@ -329,16 +330,19 @@ theorem sum_commutation_overlap_eq_iff_sdiff_crossOverlapPartners (hzx : z ≠ x
     (∑ D ∈ (G.rectanglePentagonDecompositions C x z).filter
         (fun D => ¬D.HasDisjointSides), G.rectanglePentagonWeight C R D) +
         ∑ D ∈ (G.rectangleInitialPentagonDecompositions C x z).filter
-          (fun D => ¬D.HasDisjointSides), G.rectangleInitialPentagonWeight C R D =
+          (fun D => ¬D.toGridRectangleDecomposition.HasDisjointSides),
+        G.rectangleInitialPentagonWeight C R D =
       (∑ F ∈ (G.pentagonRectangleDecompositions C x z).filter
         (fun F => ¬F.HasDisjointSides), G.pentagonRectangleWeight C R F) +
         ∑ F ∈ (G.initialPentagonRectangleDecompositions C x z).filter
-          (fun F => ¬F.HasDisjointSides), G.initialPentagonRectangleWeight C R F ↔
+          (fun F => ¬F.toGridRectangleDecomposition.HasDisjointSides),
+        G.initialPentagonRectangleWeight C R F ↔
     (∑ F ∈ (G.pentagonRectangleDecompositions C x z).filter
         (fun F => ¬F.HasDisjointSides) \ G.crossOverlapPartners C x z,
         G.pentagonRectangleWeight C R F) +
         ∑ F ∈ (G.initialPentagonRectangleDecompositions C x z).filter
-          (fun F => ¬F.HasDisjointSides) \ G.initialPentagonCrossOverlapPartners C x z,
+          (fun F => ¬F.toGridRectangleDecomposition.HasDisjointSides) \
+            G.initialPentagonCrossOverlapPartners C x z,
           G.initialPentagonRectangleWeight C R F =
       (∑ F ∈ G.pentagonRectangleTurnCuts C x z, G.pentagonRectangleWeight C R F) +
         ∑ F ∈ G.initialPentagonRectangleTurnCuts C x z,
@@ -381,7 +385,8 @@ theorem commutationMap_comp_unblockedDifferential_eq_iff_sdiff_crossOverlapPartn
           (fun F => ¬F.HasDisjointSides) \ G.crossOverlapPartners C x z,
           G.pentagonRectangleWeight C R F) +
           ∑ F ∈ (G.initialPentagonRectangleDecompositions C x z).filter
-            (fun F => ¬F.HasDisjointSides) \ G.initialPentagonCrossOverlapPartners C x z,
+            (fun F => ¬F.toGridRectangleDecomposition.HasDisjointSides) \
+              G.initialPentagonCrossOverlapPartners C x z,
             G.initialPentagonRectangleWeight C R F =
         (∑ F ∈ G.pentagonRectangleTurnCuts C x z, G.pentagonRectangleWeight C R F) +
           ∑ F ∈ G.initialPentagonRectangleTurnCuts C x z,

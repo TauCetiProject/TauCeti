@@ -171,7 +171,7 @@ diagram-indexed Schur polynomial. -/
 @[simp]
 theorem schurPoly_fin_shapePartition (N : ℕ) (μ : YoungDiagram) :
     schurPoly (Fin N) R (shapePartition μ) = diagramSchurPoly N R μ := by
-  rw [schurPoly_eq_rename, diagramOf_shapePartition, rename_diagramSchurPoly]
+  rw [schurPoly_eq_rename, ofPartition_shapePartition, rename_diagramSchurPoly]
 
 /-- Renaming a symmetric polynomial along a bijection of alphabets keeps it symmetric. -/
 private theorem isSymmetric_rename {σ τ : Type*} {p : MvPolynomial τ R} (hp : p.IsSymmetric)

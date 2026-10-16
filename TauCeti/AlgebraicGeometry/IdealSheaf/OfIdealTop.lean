@@ -131,8 +131,8 @@ theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.comap_ofIdealTop (I : Ide
     (f : X ⟶ Y) :
     (Scheme.IdealSheafData.ofIdealTop I).comap f =
       Scheme.IdealSheafData.ofIdealTop (I.map f.appTop.hom) := by
-  set J := Scheme.IdealSheafData.ofIdealTop I with hJ
-  set K := Scheme.IdealSheafData.ofIdealTop (I.map f.appTop.hom) with hK
+  set J := Scheme.IdealSheafData.ofIdealTop I with _
+  set K := Scheme.IdealSheafData.ofIdealTop (I.map f.appTop.hom) with _
   refine le_antisymm ?_ ?_
   · -- `K.subschemeι ≫ f` kills `I`, so it factors through the zero scheme `J.subscheme` of `I` and
     -- hence through the pullback of that zero scheme along `f`.

@@ -26,8 +26,6 @@ function field it produces the places of a chosen affine model.
 ## Main definitions
 
 * `TauCeti.Place.ofPrime`: the place of `F / k` attached to a height-one prime of `R`.
-* `TauCeti.Place.integersOfPrimeEquiv`: the valuation ring of that place is the localization of `R`
-  at `p`.
 
 Reduction `R → F_P` at an adic place is the canonical map
 `algebraMap R (TauCeti.Place.ofPrime k F p).ResidueField`.
@@ -152,22 +150,12 @@ instance : IsScalarTower R (ofPrime k F p).integers F :=
 instance : IsScalarTower k R (ofPrime k F p).integers :=
   IsScalarTower.of_algebraMap_eq fun c => Subtype.ext (IsScalarTower.algebraMap_apply k R F c)
 
-/-- **The valuation ring of an adic place is the localization at its prime**, by
-`IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_eq_valuationSubring`. -/
-def integersOfPrimeEquiv :
-    HeightOneSpectrum.valuationSubringAtPrime F p ≃ₐ[R] (ofPrime k F p).integers :=
-  AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr
-    (congrArg ValuationSubring.toSubring (integers_ofPrime k F p).symm)) fun _ => rfl
-
-/-- The equivalence from the localization at `p` to the integers of the adic place preserves
-the underlying element of `F`. -/
-@[simp]
-theorem integersOfPrimeEquiv_apply (x : HeightOneSpectrum.valuationSubringAtPrime F p) :
-    ((integersOfPrimeEquiv k F p x : (ofPrime k F p).integers) : F) = x :=
-  (rfl)
-
-instance : IsLocalization.AtPrime ((ofPrime k F p).integers) p.asIdeal :=
-  IsLocalization.isLocalization_of_algEquiv p.asIdeal.primeCompl (integersOfPrimeEquiv k F p)
+instance : IsLocalization.AtPrime ((ofPrime k F p).integers) p.asIdeal := by
+  have hloc (O : ValuationSubring F) [Algebra R O] [IsScalarTower R O F]
+      (hO : O = (p.valuation F).valuationSubring) : IsLocalization.AtPrime O p.asIdeal := by
+    subst O
+    exact HeightOneSpectrum.isLocalization_valuationSubring (K := F) p
+  exact hloc _ (by rw [integers_def, valuation_ofPrime])
 
 variable {k F p}
 

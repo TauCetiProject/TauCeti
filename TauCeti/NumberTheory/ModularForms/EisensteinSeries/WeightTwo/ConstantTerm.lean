@@ -44,8 +44,8 @@ lemma tendsto_E2_slash_scaleGL_slash_atImInfty (γ : SL(2, ℤ)) :
   have hdetpos : 0 < (β : Matrix (Fin 2) (Fin 2) ℝ).det := by
     rw [← GeneralLinearGroup.val_det_apply, hdet]
     exact_mod_cast NeZero.pos t
-  have ht : (t : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne t)
-  have hg : (Int.gcd (γ 1 0) t : ℂ) ≠ 0 := by
+  have _ : (t : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne t)
+  have _ : (Int.gcd (γ 1 0) t : ℂ) ≠ 0 := by
     exact_mod_cast (Int.gcd_pos_of_ne_zero_right (γ 1 0)
       (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
   have hlim := tendsto_slash_atImInfty_of_upperTriangular 2 β h10

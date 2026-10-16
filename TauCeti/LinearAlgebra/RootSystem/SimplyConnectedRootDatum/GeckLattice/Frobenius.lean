@@ -36,8 +36,8 @@ prime, `0 < k` and `A` an algebraic closure of `ZMod p`, that subring is the fie
 Two limitations are worth stating. This is the Frobenius of the *carrier*, not of the elementary
 subgroup its root subgroups generate: identifying the two needs a generation theorem that is not
 available, so no statement here restricts to the elementary group. And the Geck weights span the
-root lattice rather than, in general, the full character lattice, so this carrier is not yet the
-simply connected one a finite group of Lie type is built from. Nothing below asserts that any
+root lattice rather than, in general, the full character lattice, so this carrier is not in general
+the simply connected one a finite group of Lie type is built from. Nothing below asserts that any
 subgroup appearing in it is finite, is simple, or is a named finite group.
 
 ## Main definitions
@@ -65,15 +65,6 @@ subgroup appearing in it is finite, is simple, or is a named finite group.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This is the pinned instance of the target "points over an algebraically closed field as a group,
-functorially in the field, so that a field endomorphism induces a group endomorphism of the points"
-in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, which names the `q`-power Frobenius as the
-first case a consumer asks for. Its consumer is milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose untwisted Steinberg map
-`ValidLieTypeIndex.frobenius` is `Frob_q` on the points of a pinned Chevalley--Demazure group and
-whose completion evidence is the simple-root-subgroup equations, together with milestone L3, which
-sets `H_d = fixedSubgroup d.steinberg`.
 -/
 
 public section

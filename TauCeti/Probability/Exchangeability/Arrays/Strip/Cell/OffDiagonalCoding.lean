@@ -35,9 +35,10 @@ off-diagonal unordered pairs, coded here.
 
 Every visible ordered pair has the same joint law with its square context, so Mathlib's canonical
 conditional distribution gives **one** kernel for all of them
-(`JointlyExchangeable.condDistrib_offDiagonalPairSquareContext_eq` in `Cell/JointPair.lean`, where
-the square context `offDiagonalPairSquareContext` is defined). Combined with the conditional
-independence of distinct pairs given the crossing strips and the diagonal, the pair layer becomes a
+(`JointlyExchangeable.condDistrib_offDiagonalPairSquareContext_eq` in `Cell/JointPair.lean`).
+The square context `offDiagonalPairSquareContext` is defined in
+`Probability/Process/Array/Context.lean`. Combined with the conditional independence of distinct
+pairs given the crossing strips and the diagonal, the pair layer becomes a
 genuine coding: a single measurable function of a square context and a uniform variable generates
 every off-diagonal pair at once, each from its own context and its own fresh uniform variable,
 jointly with the crossing strips and the diagonal. This is the jointly exchangeable counterpart of
@@ -228,7 +229,7 @@ theorem JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagon
   set S : Set ℕ := insert i (insert j (Set.range e)) with hS
   set C : Set (ℕ × ℕ) := {(i, j), (j, i)} with hC
   set D : Set (ℕ × ℕ) :=
-    (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} with hD
+    (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2}
   -- The square context and the entries of the square other than the pair generate the same
   -- information, and that information is part of the crossing strips and the diagonal.
   have hRC : MeasurableSpace.comap ((S ×ˢ S \ C).domRestrict (π := fun _ => α)) inferInstance ≤

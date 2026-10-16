@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
--- Proof-only: base change to a separable closure, on points and on morphisms.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: an elliptic curve has infinitely many points over a separably closed field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
+-- Proof-only: the multiples `n • id` are distinct.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
+-- Proof-only: a separable isogeny is onto on points over a separably closed field.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Fiber
 -- Proof-only: every isogeny is a separable isogeny after a Frobenius power.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
 -- Proof-only: relative Frobenius acts on points by powering the coordinates.
@@ -37,17 +40,25 @@ additivity statements are compared after base change to a separable closure: on 
 additively and compatibly with the action of morphisms (`TauCeti.Isogeny.Hom.pointMap_map`), and on
 morphisms, along the faithful, additive base change (`TauCeti.Isogeny.Hom.map_injective`).
 
+The same factorisation shows that a nonzero morphism is surjective on points over an algebraically
+closed field: the separable factor is onto on points, and `F^r` is a bijection on points once the
+field is perfect.
+
 ## Main results
 
 * `TauCeti.Isogeny.Hom.pointMap_add`: every morphism acts additively on points, over any field
   (Silverman III.4.8), with `pointMap_neg`, `pointMap_sub`, `pointMap_nsmul` and `pointMap_zsmul`.
+* `TauCeti.Isogeny.Hom.pointMap_surjective`: a nonzero morphism is surjective on points over an
+  algebraically closed field (Silverman II.2.3).
 * `TauCeti.Isogeny.Hom.comp_add`: composition is additive in the inner morphism, over any field.
 * `TauCeti.Isogeny.Hom.compLeftHom`: postcomposition by a morphism, as an additive homomorphism.
-* The `Ring (Hom W W)` and `IsDomain (Hom W W)` instances.
+* The `Ring (Hom W W)`, `IsDomain (Hom W W)` and `CharZero (Hom W W)` instances.
+* `TauCeti.Isogeny.Hom.mapRingHom`: base change of endomorphisms, as a ring homomorphism.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.11–12 and III.4.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.3, II.2.11–12 and
+  III.4.
 -/
 
 public section
@@ -123,6 +134,27 @@ theorem pointMap_zsmul (f : Hom W₁ W₂) (n : ℤ) (P : W₁.Point) :
     f.pointMap (n • P) = n • f.pointMap P :=
   f.pointMapHom.map_zsmul n P
 
+/-- **A nonzero morphism is surjective on points over an algebraically closed field**
+(Silverman II.2.3). It factors as a separable isogeny after a Frobenius power `F^r`; the separable
+factor is onto on points over a separably closed field (`TauCeti.Isogeny.toPointHom_surjective`),
+and `F^r` raises the coordinates to the power `p ^ r`, which is bijective on a perfect field. Over a
+separably closed field that is not perfect the statement fails for inseparable morphisms such as
+`[p]`. -/
+theorem pointMap_surjective [IsAlgClosed F] {f : Hom W₁ W₂} (hf : f ≠ 0) :
+    Function.Surjective f.pointMap := by
+  obtain ⟨φ, rfl⟩ := (eq_zero_or_exists_ofIsogeny f).resolve_left hf
+  -- `φ = χ ∘ F^r` with `χ` separable and `F^r` the `r`-fold relative Frobenius
+  obtain ⟨r, χ, hχ, rfl⟩ :=
+    exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq (ringExpChar F) φ
+  have := W₂.isIntegrallyClosed_coordinateRing
+  intro Q
+  obtain ⟨P, rfl⟩ := χ.toPointHom_surjective Q
+  obtain ⟨P, rfl⟩ := Point.mapAlong_surjective _ (iterateFrobenius F (ringExpChar F) r).injective
+    (by rw [coe_iterateFrobenius]; exact (surjective_frobenius F _).iterate r) P
+  refine ⟨P, ?_⟩
+  rw [← ofIsogeny_comp_ofIsogeny, comp_pointMap, pointMap_iterateRelativeFrobeniusIsogeny,
+    pointMap_ofIsogeny_eq_toPointHom]
+
 end PointMap
 
 /-- **Composition is additive in the inner morphism**, over any field. -/
@@ -181,6 +213,39 @@ noncomputable instance : Ring (Hom W₁ W₁) where
 isogeny. -/
 instance : IsDomain (Hom W₁ W₁) :=
   NoZeroDivisors.to_isDomain _
+
+/-- **The endomorphism ring of an elliptic curve has characteristic zero**, whatever the
+characteristic of the base field: the multiples `n • id` of the identity are distinct. -/
+instance : CharZero (Hom W₁ W₁) :=
+  ⟨fun m n h ↦ Int.ofNat_inj.mp <| zsmul_id_injective (W₁ := W₁) <| by
+    simpa only [← one_def, natCast_zsmul, nsmul_one] using h⟩
+
+section BaseChange
+
+variable {K : Type*} [Field K]
+
+/-- Base change preserves the identity endomorphism, the `1` of the endomorphism ring. -/
+theorem map_one (f : F →+* K) : (1 : Hom W₁ W₁).map f = 1 :=
+  id_map W₁ f
+
+/-- **Base change of endomorphisms is a ring homomorphism**: it preserves the group law on
+morphisms, composition and the identity. -/
+noncomputable def mapRingHom (f : F →+* K) : Hom W₁ W₁ →+* Hom (W₁.map f) (W₁.map f) where
+  toFun h := h.map f
+  map_zero' := zero_map f
+  map_one' := map_one f
+  map_add' h h' := map_add h h' f
+  map_mul' h h' := comp_map h h' f
+
+@[simp]
+theorem mapRingHom_apply (f : F →+* K) (h : Hom W₁ W₁) : mapRingHom f h = h.map f := (rfl)
+
+/-- Base change preserves powers of endomorphisms. -/
+@[simp]
+theorem map_pow (h : Hom W₁ W₁) (n : ℕ) (f : F →+* K) : (h ^ n).map f = h.map f ^ n :=
+  (mapRingHom f).map_pow h n
+
+end BaseChange
 
 end TauCeti.Isogeny.Hom
 

@@ -39,6 +39,9 @@ open Metric TauCeti
 
 noncomputable section
 
+-- Prefer the subaction's own action instances; the generic search times out on these carriers.
+attribute [local instance high] SubMulAction.smul' SubMulAction.mulAction
+
 /-- The antipode of a point in the compact real Clifford unit level. -/
 def realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
     realCliffordUnitLevel n :=

@@ -137,7 +137,7 @@ private noncomputable def cyclotomicArtinIntegral :
 -- The integral Artin map is the fractional one read on the ideals the integral ones generate.
 private theorem cyclotomicArtinIntegral_apply (I : integralIdealsPrimeTo (cyclotomicModulus K m)) :
     cyclotomicArtinIntegral F m I =
-      cyclotomicArtinAway F m (integralIdealsAwayHom (cyclotomicModulus K m).support I) :=
+      cyclotomicArtinAway F m (integralIdealsAwayHom K (cyclotomicModulus K m).support I) :=
   artinHomAwayIntegral_apply _ _ _ I
 
 -- At a prime not dividing `m`, the integral Artin map is the Frobenius.
@@ -189,12 +189,12 @@ private theorem ray_le_ker_cyclotomicArtinAway :
   have hIa := span_singleton_mem_integralIdealsPrimeTo_cyclotomicModulus (hne0 ha) ha
   have hIb := span_singleton_mem_integralIdealsPrimeTo_cyclotomicModulus (hne0 hb) hb
   -- In `idealsPrimeTo`, `(a) = (x) * (b)`.
-  have hsplit : integralIdealsAwayHom _ ⟨Ideal.span {a}, hIa⟩ =
-      J * integralIdealsAwayHom _ ⟨Ideal.span {b}, hIb⟩ := by
+  have hsplit : integralIdealsAwayHom K _ ⟨Ideal.span {a}, hIa⟩ =
+      J * integralIdealsAwayHom K _ ⟨Ideal.span {b}, hIb⟩ := by
     refine Subtype.ext (Units.ext ?_)
     rw [Subgroup.coe_mul, Units.val_mul, coe_integralIdealsAwayHom, coe_integralIdealsAwayHom,
       ← hxJ, coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton,
-      FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.spanSingleton_mul_spanSingleton,
+      FractionalIdeal.coeIdeal_span_singleton, ← map_mul (FractionalIdeal.spanSingleton _),
       hab, mul_comm]
   -- Hence the cyclotomic character of `(x)` is trivial once those of `(a)` and `(b)` agree.
   refine (mul_eq_right (b := hζ.autToPow K (cyclotomicArtinIntegral F m ⟨_, hIb⟩))).mp ?_

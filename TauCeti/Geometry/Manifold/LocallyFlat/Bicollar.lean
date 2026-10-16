@@ -222,6 +222,25 @@ theorem comp_prodMap_id_neg (h : IsBicollar f b) : IsBicollar f (b ∘ Prod.map 
     (IsOpenEmbedding.id.prodMap (Homeomorph.neg ℝ).isOpenEmbedding)
   apply_zero x := by simpa using h.apply_zero x
 
+open Function in
+/-- Bicollars with pairwise disjoint images assemble into a bicollar of the map they collar on the
+disjoint union of their domains. -/
+theorem sigma {ι : Type*} {N : ι → Type*} [∀ i, TopologicalSpace (N i)] {f : ∀ i, N i → M}
+    {b : ∀ i, N i × ℝ → M} (h : ∀ i, IsBicollar (f i) (b i))
+    (hb : Pairwise (Disjoint on fun i => range (b i))) :
+    IsBicollar (fun x : Σ i, N i => f x.1 x.2) (fun p => b p.1.1 (p.1.2, p.2)) where
+  isOpenEmbedding := by
+    have hinj : Function.Injective fun q : Σ i, N i × ℝ => b q.1 q.2 := by
+      rintro ⟨i, p⟩ ⟨j, q⟩ hpq
+      obtain rfl | hij := eq_or_ne i j
+      · rw [(h i).isOpenEmbedding.injective (a₁ := p) (a₂ := q) hpq]
+      · exact ((hb hij).ne_of_mem (mem_range_self p) (mem_range_self q) hpq).elim
+    exact (IsOpenEmbedding.of_continuous_injective_isOpenMap
+      (continuous_sigma fun i => (h i).isOpenEmbedding.continuous) hinj
+      (isOpenMap_sigma.2 fun i => (h i).isOpenEmbedding.isOpenMap)).comp
+      (Homeomorph.sigmaProdDistrib (ι := ι) (X := N) (Y := ℝ)).isOpenEmbedding
+  apply_zero x := (h x.1).apply_zero x.2
+
 end IsBicollar
 
 /-- The standard local model: the inclusion of `N` as the zero slice of `N × ℝ` is bicollared, by

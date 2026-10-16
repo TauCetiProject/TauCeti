@@ -54,34 +54,22 @@ theorem _root_.Subgroup.profiniteIndex_map_of_surjective (K : Subgroup G) (f : G
     (K.map f).profiniteIndex = (K ⊔ f.ker).profiniteIndex := by
   -- Compactness of the target is automatic: it is a continuous image of the compact `G`.
   have : CompactSpace H := hsurj.compactSpace hf
-  rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup,
-    Subgroup.profiniteIndex_eq_iSup_openSubgroup]
   apply le_antisymm
   -- Pulling an open overgroup of `f(K)` back along `f` preserves its ordinary index.
-  · refine iSup_le fun V ↦ ?_
+  · rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup (K.map f)]
+    refine iSup_le fun V ↦ ?_
     let U : OpenSubgroup G := V.1.comap f hf
     have hKU : K ⊔ f.ker ≤ U.toSubgroup := by
       rw [sup_le_iff]
       exact ⟨Subgroup.map_le_iff_le_comap.mp V.2, f.ker_le_comap V.1.toSubgroup⟩
-    calc
-      Supernatural.ofNat
-          (⟨V.1.toSubgroup.index,
-            Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) =
-          Supernatural.ofNat
-            (⟨U.toSubgroup.index,
-              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) := by
-        congr 2
-        exact (V.1.toSubgroup.index_comap_of_surjective hsurj).symm
-      _ ≤ ⨆ W : {W : OpenSubgroup G // K ⊔ f.ker ≤ W.toSubgroup},
-          Supernatural.ofNat
-            (⟨W.1.toSubgroup.index,
-              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) :=
-        le_iSup (fun W : {W : OpenSubgroup G // K ⊔ f.ker ≤ W.toSubgroup} ↦
-          Supernatural.ofNat
-            (⟨W.1.toSubgroup.index,
-              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+)) ⟨U, hKU⟩
+    calc _ = U.toSubgroup.profiniteIndex := by
+          rw [OpenSubgroup.profiniteIndex_eq_ofNat_index]
+          congr 2
+          exact (V.1.toSubgroup.index_comap_of_surjective hsurj).symm
+      _ ≤ _ := Subgroup.profiniteIndex_anti hKU
   -- Conversely, an open overgroup of `K ⊔ ker f` is the preimage of its open image.
-  · refine iSup_le fun U ↦ ?_
+  · rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup (K ⊔ f.ker)]
+    refine iSup_le fun U ↦ ?_
     have hker : f.ker ≤ U.1.toSubgroup := le_sup_right.trans U.2
     have hopen : IsOpen ((U.1.toSubgroup.map f : Subgroup H) : Set H) := by
       have hquot : Topology.IsQuotientMap f := hf.isClosedMap.isQuotientMap hf hsurj
@@ -92,26 +80,12 @@ theorem _root_.Subgroup.profiniteIndex_map_of_surjective (K : Subgroup G) (f : G
       rw [Subgroup.comap_map_eq, sup_eq_left.mpr hker]
       exact U.1.isOpen'
     let V : OpenSubgroup H := ⟨U.1.toSubgroup.map f, hopen⟩
-    let _ : Finite (H ⧸ V.toSubgroup) :=
-      Subgroup.quotient_finite_of_isOpen V.toSubgroup V.isOpen'
     have hKV : K.map f ≤ V.toSubgroup := Subgroup.map_mono (le_sup_left.trans U.2)
-    calc
-      Supernatural.ofNat
-          (⟨U.1.toSubgroup.index,
-            Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) =
-          Supernatural.ofNat
-            (⟨V.toSubgroup.index,
-              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) := by
-        congr 2
-        exact (U.1.toSubgroup.index_map_eq hsurj hker).symm
-      _ ≤ ⨆ W : {W : OpenSubgroup H // K.map f ≤ W.toSubgroup},
-          Supernatural.ofNat
-            (⟨W.1.toSubgroup.index,
-              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) :=
-        le_iSup (fun W : {W : OpenSubgroup H // K.map f ≤ W.toSubgroup} ↦
-          Supernatural.ofNat
-            (⟨W.1.toSubgroup.index,
-              Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+)) ⟨V, hKV⟩
+    calc _ = V.toSubgroup.profiniteIndex := by
+          rw [OpenSubgroup.profiniteIndex_eq_ofNat_index]
+          congr 2
+          exact (U.1.toSubgroup.index_map_eq hsurj hker).symm
+      _ ≤ _ := Subgroup.profiniteIndex_anti hKV
 
 /-- A continuous surjection cannot increase the supernatural index of the image of a
 subgroup. -/
