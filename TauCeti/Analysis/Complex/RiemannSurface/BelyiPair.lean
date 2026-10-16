@@ -44,7 +44,7 @@ An isomorphism of pairs is determined by the image of a single point over `ℂ �
 (`TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`): its restriction is a lift through the connected
 cover attached to the target, and the points over `ℂ ∖ {0, 1}` are dense in the surface. Hence
 there are at most as many isomorphisms `P ≅ Q` as the degree of `Q`, and the automorphisms of a
-pair form a finite group, of order at most its degree.
+pair form a finite group whose order divides its degree.
 
 The basic examples live on the sphere itself: for `n ≠ 0`, the power map `z ↦ z ^ n` is a Belyi
 map of degree `n`, ramified of index `n` over `0` and `∞` and unramified over `1`
@@ -79,8 +79,9 @@ sphere.
 * `TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`: an isomorphism of pairs is determined by the
   image of one point over `ℂ ∖ {0, 1}`.
 * `TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`: there are finitely many isomorphisms of
-  pairs `P ≅ Q`, at most the degree of `Q`; in particular the automorphism group `P.Iso P` of a
-  pair is finite, of order at most its degree.
+  pairs `P ≅ Q`, at most the degree of `Q`.
+* `TauCeti.AnalyticBelyiPair.Iso.natCard_dvd_degree`: the order of the automorphism group
+  `P.Iso P` divides the degree of `P`.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
 
@@ -491,7 +492,9 @@ theorem eq_of_apply_eq {e e' : P.Iso Q} (x : P.β ⁻¹' range toOnePoint) (h : 
   have hres : ⇑e.restrict = e'.restrict :=
     Q.isCoveringMap_restrict.eq_of_comp_eq e.restrict.continuous e'.restrict.continuous
       (by rw [e.restrict_comp_restrict, e'.restrict_comp_restrict]) x (Subtype.ext h)
-  refine DFunLike.coe_injective <| Continuous.ext_on P.dense_preimage_range
+  apply DFunLike.coe_injective
+  rw [← coe_toHomeomorph e, ← coe_toHomeomorph e']
+  refine Continuous.ext_on P.dense_preimage_range
     e.toHomeomorph.continuous e'.toHomeomorph.continuous fun y hy ↦ ?_
   simpa using congrArg Subtype.val (congrFun hres ⟨y, hy⟩)
 
@@ -522,8 +525,8 @@ theorem natCard_le_degree : Nat.card (P.Iso Q) ≤ degree Q.β := by
 /-! ### The automorphism group -/
 
 /-- **The automorphism group of an analytic Belyi pair**: its automorphisms form a group under
-composition, `e * e'` being `e'` followed by `e`. It is finite, of order at most the degree
-(`TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`). -/
+composition, `e * e'` being `e'` followed by `e`. It is finite, with order dividing the degree
+(`TauCeti.AnalyticBelyiPair.Iso.natCard_dvd_degree`). -/
 instance : Group (P.Iso P) where
   mul e e' := e'.trans e
   one := .refl P
@@ -553,6 +556,39 @@ theorem mul_apply (e e' : P.Iso P) (x : P.X) : (e * e') x = e (e' x) :=
 @[simp]
 theorem inv_apply (e : P.Iso P) (x : P.X) : e⁻¹ x = e.symm x :=
   (rfl)
+
+private theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G X]
+    [IsCancelSMul G X] [Finite G] [Finite X] : Nat.card G ∣ Nat.card X := by
+  classical
+  let Ω := MulAction.orbitRel.Quotient G X
+  let _ : Finite Ω := Quotient.finite _
+  let _ : Fintype Ω := Fintype.ofFinite Ω
+  let _ (ω : Ω) : Finite (G ⧸ MulAction.stabilizer G ω.out) := Quotient.finite _
+  rw [Nat.card_congr (MulAction.selfEquivSigmaOrbitsQuotientStabilizer G X), Nat.card_sigma]
+  simp_rw [IsCancelSMul.stabilizer_eq_bot]
+  rw [Nat.card_congr QuotientGroup.quotientBot.toEquiv]
+  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  exact dvd_mul_left (Nat.card G) (Fintype.card Ω)
+
+/-- **The order of the automorphism group of an analytic Belyi pair divides its degree.** -/
+theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
+  let action : MulAction (P.Iso P) (P.restrict ⁻¹' {basePt}) := {
+    smul e x := ⟨e.restrict x, by simpa only [Set.mem_preimage, Set.mem_singleton_iff,
+      restrict_restrict] using x.2⟩
+    one_smul _ := rfl
+    mul_smul _ _ _ := rfl }
+  let _ := action
+  let _ : IsCancelSMul (P.Iso P) (P.restrict ⁻¹' {basePt}) :=
+    isCancelSMul_iff_eq_one_of_smul_eq.mpr fun e x h ↦ by
+      apply eq_of_apply_eq x
+      change action.smul e x = x at h
+      calc
+        e (x : P.X) = ((action.smul e x : P.restrict ⁻¹' {basePt}) : P.X) := rfl
+        _ = (x : P.X) := congrArg (fun y : P.restrict ⁻¹' {basePt} ↦ (y : P.X)) h
+        _ = (1 : P.Iso P) (x : P.X) := (one_apply (P := P) (x : P.X)).symm
+  have := (P.finite_restrict_preimage_singleton basePt).to_subtype
+  rw [← P.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq]
+  exact natCard_dvd_natCard_of_isCancelSMul
 
 end AnalyticBelyiPair.Iso
 
