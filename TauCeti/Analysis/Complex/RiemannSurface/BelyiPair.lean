@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.Data.Set.Restrict
 import TauCeti.Geometry.Manifold.Connected
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Analytic Belyi pairs
@@ -38,6 +39,12 @@ permutation triple is a well-defined function of the isomorphism class of a pair
 (`TauCeti.AnalyticBelyiPair.toIsoClass`). This is the map from analytic Belyi pairs to permutation
 triples through which the analytic Riemann existence theorem for three-point covers compares the
 two classifications.
+
+An isomorphism of pairs is determined by the image of a single point over `ℂ ∖ {0, 1}`
+(`TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`): its restriction is a lift through the connected
+cover attached to the target, and the points over `ℂ ∖ {0, 1}` are dense in the surface. Hence
+there are at most as many isomorphisms `P ≅ Q` as the degree of `Q`, and the automorphisms of a
+pair form a finite group, of order at most its degree.
 
 The basic examples live on the sphere itself: for `n ≠ 0`, the power map `z ↦ z ^ n` is a Belyi
 map of degree `n`, ramified of index `n` over `0` and `∞` and unramified over `1`
@@ -68,6 +75,12 @@ sphere.
   degree and isomorphic monodromy triples.
 * `TauCeti.AnalyticBelyiPair.isoSetoid`, `TauCeti.AnalyticBelyiPair.toIsoClass`: isomorphism of
   pairs of degree `n`, and the permutation triple of an isomorphism class of such pairs.
+* `TauCeti.AnalyticBelyiPair.dense_preimage_range`: the points over `ℂ ∖ {0, 1}` are dense.
+* `TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`: an isomorphism of pairs is determined by the
+  image of one point over `ℂ ∖ {0, 1}`.
+* `TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`: there are finitely many isomorphisms of
+  pairs `P ≅ Q`, at most the degree of `Q`; in particular the automorphism group `P.Iso P` of a
+  pair is finite, of order at most its degree.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
 
@@ -260,6 +273,15 @@ instance instPathConnectedSpacePreimageRange :
   have := isConnected_iff_connectedSpace.1 hconn
   exact pathConnectedSpace_iff_connectedSpace.2 this
 
+/-- **The cover attached to an analytic Belyi pair is dense in its surface**: the points of `X`
+over `ℂ ∖ {0, 1}` are the complement of the finitely many points over `0`, `1` and `∞`, none of
+which is isolated. -/
+theorem dense_preimage_range : Dense (P.β ⁻¹' range toOnePoint) := by
+  have : ∀ x : P.X, (𝓝[≠] x).NeBot := fun x ↦
+    (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
+  rw [range_toOnePoint, preimage_compl, compl_eq_univ_sdiff]
+  exact dense_univ.sdiff_finite <| finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
+
 /-- The permutation triple of an analytic Belyi pair is connected. -/
 theorem isConnected_isoClass : P.isoClass.IsConnected := by
   rw [P.isoClass_eq (P.nonempty_restrict_preimage_singleton_equiv basePt).some,
@@ -391,6 +413,26 @@ theorem apply_symm_apply (e : P.Iso Q) (y : Q.X) : e (e.symm y) = y :=
 theorem symm_symm (e : P.Iso Q) : e.symm.symm = e :=
   ext fun _ ↦ rfl
 
+theorem trans_assoc (e : P.Iso Q) (e' : Q.Iso R) {S : AnalyticBelyiPair.{u}} (e'' : R.Iso S) :
+    (e.trans e').trans e'' = e.trans (e'.trans e'') :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem trans_refl (e : P.Iso Q) : e.trans (.refl Q) = e :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem refl_trans (e : P.Iso Q) : (Iso.refl P).trans e = e :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem self_trans_symm (e : P.Iso Q) : e.trans e.symm = .refl P :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem symm_trans_self (e : P.Iso Q) : e.symm.trans e = .refl Q :=
+  ext fun _ ↦ by simp
+
 /-- The homeomorphism of Riemann surfaces underlying an isomorphism of analytic Belyi pairs. -/
 def toHomeomorph (e : P.Iso Q) : P.X ≃ₜ Q.X :=
   e.toDiffeomorph.toHomeomorph
@@ -437,6 +479,80 @@ theorem isoClass_monodromyTriple_eq {n : ℕ} (e : P.Iso Q) (ν : P.restrict ⁻
       PermutationTriple.IsoClass.mk (P.isCoveringMap_restrict.monodromyTriple ν) :=
   P.isCoveringMap_restrict.isoClass_monodromyTriple_eq_of_homeomorph ν
     Q.isCoveringMap_restrict ν' e.restrict e.restrict_comp_restrict
+
+/-! ### Rigidity and finiteness of isomorphisms -/
+
+/-- **An isomorphism of analytic Belyi pairs is determined by the image of one point** over
+`ℂ ∖ {0, 1}`. -/
+theorem eq_of_apply_eq {e e' : P.Iso Q} (x : P.β ⁻¹' range toOnePoint) (h : e x = e' x) :
+    e = e' := by
+  -- The restrictions are lifts of the same map through the connected cover attached to `Q`, and
+  -- the points over `ℂ ∖ {0, 1}` are dense in `P.X`.
+  have hres : ⇑e.restrict = e'.restrict :=
+    Q.isCoveringMap_restrict.eq_of_comp_eq e.restrict.continuous e'.restrict.continuous
+      (by rw [e.restrict_comp_restrict, e'.restrict_comp_restrict]) x (Subtype.ext h)
+  refine DFunLike.coe_injective <| Continuous.ext_on P.dense_preimage_range
+    e.toHomeomorph.continuous e'.toHomeomorph.continuous fun y hy ↦ ?_
+  simpa using congrArg Subtype.val (congrFun hres ⟨y, hy⟩)
+
+/-- Evaluation at a point of the fibre over `1/2` embeds the isomorphisms `P ≅ Q` into the fibre
+of `Q` over `1/2`. -/
+private theorem exists_injective_restrict_preimage_basePt :
+    ∃ f : P.Iso Q → Q.restrict ⁻¹' {basePt}, Injective f := by
+  obtain ⟨x, hx⟩ : (P.restrict ⁻¹' {basePt}).Nonempty := by
+    rw [← ncard_pos (P.finite_restrict_preimage_singleton basePt),
+      P.ncard_restrict_preimage_singleton]
+    exact degree_pos (f := P.β)
+  refine ⟨fun e ↦ ⟨e.restrict x, by simpa using hx⟩, fun e e' h ↦ eq_of_apply_eq x ?_⟩
+  simpa using congrArg (fun y : Q.restrict ⁻¹' {basePt} ↦ (y : Q.X)) h
+
+/-- There are only finitely many isomorphisms between two analytic Belyi pairs. -/
+instance : Finite (P.Iso Q) :=
+  have := (Q.finite_restrict_preimage_singleton basePt).to_subtype
+  let ⟨_, hf⟩ := exists_injective_restrict_preimage_basePt (P := P) (Q := Q)
+  .of_injective _ hf
+
+/-- **There are at most as many isomorphisms between two analytic Belyi pairs as the degree.** -/
+theorem natCard_le_degree : Nat.card (P.Iso Q) ≤ degree Q.β := by
+  have := (Q.finite_restrict_preimage_singleton basePt).to_subtype
+  obtain ⟨f, hf⟩ := exists_injective_restrict_preimage_basePt (P := P) (Q := Q)
+  rw [← Q.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq]
+  exact Nat.card_le_card_of_injective f hf
+
+/-! ### The automorphism group -/
+
+/-- **The automorphism group of an analytic Belyi pair**: its automorphisms form a group under
+composition, `e * e'` being `e'` followed by `e`. It is finite, of order at most the degree
+(`TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`). -/
+instance : Group (P.Iso P) where
+  mul e e' := e'.trans e
+  one := .refl P
+  inv := Iso.symm
+  mul_assoc e e' e'' := (trans_assoc e'' e' e).symm
+  one_mul := trans_refl
+  mul_one := refl_trans
+  inv_mul_cancel := self_trans_symm
+
+theorem one_def : (1 : P.Iso P) = .refl P :=
+  (rfl)
+
+theorem mul_def (e e' : P.Iso P) : e * e' = e'.trans e :=
+  (rfl)
+
+theorem inv_def (e : P.Iso P) : e⁻¹ = e.symm :=
+  (rfl)
+
+@[simp]
+theorem one_apply (x : P.X) : (1 : P.Iso P) x = x :=
+  (rfl)
+
+@[simp]
+theorem mul_apply (e e' : P.Iso P) (x : P.X) : (e * e') x = e (e' x) :=
+  (rfl)
+
+@[simp]
+theorem inv_apply (e : P.Iso P) (x : P.X) : e⁻¹ x = e.symm x :=
+  (rfl)
 
 end AnalyticBelyiPair.Iso
 
