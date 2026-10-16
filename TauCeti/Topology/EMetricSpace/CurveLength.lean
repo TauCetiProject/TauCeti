@@ -35,6 +35,18 @@ namespace ContinuousOn
 variable {X : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 variable {γ : ℝ → X} {a b : ℝ}
 
+/-- In dimension one the Euclidean normalization constant is `1`, so `μHE[1] = μH[1]`. -/
+private theorem euclideanHausdorffMeasure_one_eq : (μHE[1] : Measure X) = μH[1] := by
+  have hreal : (μHE[1] : Measure ℝ) = volume := by
+    simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
+  have hscalar :
+      Measure.addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin 1)))
+        μH[(1 : ℕ)] = 1 := by
+    have h := congrArg (fun μ : Measure ℝ ↦ μ (Icc 0 1)) hreal
+    simpa [Measure.euclideanHausdorffMeasure_def, Measure.smul_apply,
+      hausdorffMeasure_real, Real.volume_Icc] using h
+  rw [Measure.euclideanHausdorffMeasure_def, hscalar, one_smul, Nat.cast_one]
+
 private theorem sum_edist_le_hausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
     (hinj : InjOn γ (Icc a b)) {n : ℕ} {u : ℕ → ℝ}
     (hu : StrictMonoOn u (Iic n)) (hus : ∀ i ∈ Iic n, u i ∈ Icc a b) :
@@ -95,16 +107,8 @@ theorem eVariationOn_le_hausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
 one-dimensional Hausdorff measure of its trace. This also covers empty and singleton intervals. -/
 theorem eVariationOn_le_euclideanHausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
     (hinj : InjOn γ (Icc a b)) : eVariationOn γ (Icc a b) ≤ μHE[1] (γ '' Icc a b) := by
-  have hreal : (μHE[1] : Measure ℝ) = volume := by
-    simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
-  have hscalar :
-      Measure.addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin 1)))
-        μH[(1 : ℕ)] = 1 := by
-    have h := congrArg (fun μ : Measure ℝ ↦ μ (Icc 0 1)) hreal
-    simpa [Measure.euclideanHausdorffMeasure_def, Measure.smul_apply,
-      hausdorffMeasure_real, Real.volume_Icc] using h
-  rw [Measure.euclideanHausdorffMeasure_def, hscalar, one_smul]
-  simpa only [Nat.cast_one] using hγ.eVariationOn_le_hausdorffMeasure_image hinj
+  rw [euclideanHausdorffMeasure_one_eq]
+  exact hγ.eVariationOn_le_hausdorffMeasure_image hinj
 
 /-- A continuous injective arc with finite raw Hausdorff length has bounded variation. -/
 theorem boundedVariationOn_of_hausdorffMeasure_image_lt_top (hγ : ContinuousOn γ (Icc a b))
@@ -123,14 +127,14 @@ theorem boundedVariationOn_of_euclideanHausdorffMeasure_image_lt_top
 
 /-- The variation of a continuous simple closed curve is at most the raw one-dimensional
 Hausdorff measure of its trace. Simplicity is expressed by injectivity on the half-open parameter
-interval; the only repetition on the closed interval is therefore the common endpoint value. The
-singleton parameter interval is included. -/
+interval; the only repetition on the closed interval is therefore the common endpoint value.
+Empty and singleton parameter intervals are included. -/
 theorem eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico
     (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
-    (hclosed : γ a = γ b) (hab : a ≤ b) :
+    (hclosed : γ a = γ b) :
     eVariationOn γ (Icc a b) ≤ μH[1] (γ '' Icc a b) := by
-  rcases hab.eq_or_lt with rfl | hab
-  · exact hγ.eVariationOn_le_hausdorffMeasure_image (Icc_self a ▸ injOn_singleton γ a)
+  rcases le_or_gt b a with hba | hab
+  · exact hγ.eVariationOn_le_hausdorffMeasure_image ((subsingleton_Icc_of_ge hba).injOn γ)
   let c := (a + b) / 2
   have hac : a < c := by dsimp [c]; linarith
   have hcb : c < b := by dsimp [c]; linarith
@@ -194,35 +198,26 @@ theorem eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico
 one-dimensional Hausdorff measure of its trace. -/
 theorem eVariationOn_le_euclideanHausdorffMeasure_image_of_injOn_Ico
     (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
-    (hclosed : γ a = γ b) (hab : a ≤ b) :
+    (hclosed : γ a = γ b) :
     eVariationOn γ (Icc a b) ≤ μHE[1] (γ '' Icc a b) := by
-  have hreal : (μHE[1] : Measure ℝ) = volume := by
-    simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
-  have hscalar :
-      Measure.addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin 1)))
-        μH[(1 : ℕ)] = 1 := by
-    have h := congrArg (fun μ : Measure ℝ ↦ μ (Icc 0 1)) hreal
-    simpa [Measure.euclideanHausdorffMeasure_def, Measure.smul_apply,
-      hausdorffMeasure_real, Real.volume_Icc] using h
-  rw [Measure.euclideanHausdorffMeasure_def, hscalar, one_smul]
-  simpa only [Nat.cast_one] using
-    hγ.eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico hinj hclosed hab
+  rw [euclideanHausdorffMeasure_one_eq]
+  exact hγ.eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico hinj hclosed
 
 /-- A continuous simple closed curve with finite raw Hausdorff length has bounded variation. -/
 theorem boundedVariationOn_of_hausdorffMeasure_image_lt_top_of_injOn_Ico
     (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
-    (hclosed : γ a = γ b) (hab : a ≤ b) (hfinite : μH[1] (γ '' Icc a b) < ∞) :
+    (hclosed : γ a = γ b) (hfinite : μH[1] (γ '' Icc a b) < ∞) :
     BoundedVariationOn γ (Icc a b) :=
-  ((hγ.eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico hinj hclosed hab).trans_lt
+  ((hγ.eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico hinj hclosed).trans_lt
     hfinite).ne
 
 /-- A continuous simple closed curve with finite Euclidean Hausdorff length has bounded variation,
 without a Lipschitz hypothesis on its input parametrization. -/
 theorem boundedVariationOn_of_euclideanHausdorffMeasure_image_lt_top_of_injOn_Ico
     (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
-    (hclosed : γ a = γ b) (hab : a ≤ b) (hfinite : μHE[1] (γ '' Icc a b) < ∞) :
+    (hclosed : γ a = γ b) (hfinite : μHE[1] (γ '' Icc a b) < ∞) :
     BoundedVariationOn γ (Icc a b) :=
-  ((hγ.eVariationOn_le_euclideanHausdorffMeasure_image_of_injOn_Ico hinj hclosed hab).trans_lt
+  ((hγ.eVariationOn_le_euclideanHausdorffMeasure_image_of_injOn_Ico hinj hclosed).trans_lt
     hfinite).ne
 
 end ContinuousOn
