@@ -67,7 +67,7 @@ theorem isNormal_of_forall_le_conjugate (I : HopfIdeal k H) [IsReduced (H ⧸ I.
   let _ : Algebra.FiniteType k (H ⊗[k] (H ⧸ I.toIdeal)) :=
     Algebra.FiniteType.trans (R := k) (S := H) (A := H ⊗[k] (H ⧸ I.toIdeal))
       inferInstance inferInstance
-  rw [← ker_tensorProduct_map_id_quotient, RingHom.mem_ker]
+  rw [← Ideal.ker_tensorProduct_map_id_quotient, RingHom.mem_ker]
   apply eq_of_forall_algHom_apply_eq (k := k) (K := k)
   intro φ
   let g : WithConv (H →ₐ[k] k) :=

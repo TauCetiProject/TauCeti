@@ -109,8 +109,8 @@ is the tensor-level form of the comultiplication condition. -/
 private theorem map_sub_map_mem_sup (t : H ⊗[R] H) :
     TensorProduct.map (f : H →ₗ[R] K) (f : H →ₗ[R] K) t -
         TensorProduct.map (g : H →ₗ[R] K) (g : H →ₗ[R] K) t ∈
-      leftTensorIdeal (R := R) (H := K) (equalizerIdeal f g) ⊔
-        rightTensorIdeal (R := R) (H := K) (equalizerIdeal f g) := by
+      Ideal.leftTensorIdeal (R := R) (B := K) (equalizerIdeal f g) ⊔
+        Ideal.rightTensorIdeal (R := R) (A := K) (equalizerIdeal f g) := by
   induction t with
   | tmul a c =>
       have key : (f a) ⊗ₜ[R] (f c) - (g a) ⊗ₜ[R] (g c) =
@@ -121,9 +121,9 @@ private theorem map_sub_map_mem_sup (t : H ⊗[R] H) :
       rw [key]
       exact Submodule.add_mem _
         (Submodule.mem_sup_left
-          (tmul_mem_leftTensorIdeal (R := R) (H := K) (sub_mem_equalizerIdeal f g a) _))
+          (Ideal.tmul_mem_leftTensorIdeal (R := R) (B := K) (sub_mem_equalizerIdeal f g a) _))
         (Submodule.mem_sup_right
-          (tmul_mem_rightTensorIdeal (R := R) (H := K) _ (sub_mem_equalizerIdeal f g c)))
+          (Ideal.tmul_mem_rightTensorIdeal (R := R) (A := K) _ (sub_mem_equalizerIdeal f g c)))
   | add s t hs ht =>
       rw [map_add, map_add, add_sub_add_comm]
       exact Submodule.add_mem _ hs ht
