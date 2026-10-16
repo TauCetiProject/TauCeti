@@ -94,12 +94,7 @@ characteristic. -/
 theorem nsmul_kerReduction_bijective {n : ℕ} (hn : (n : A) ∉ u.asIdeal) :
     Function.Bijective (fun P : C.kerReduction u ↦ n • P) := by
   have hunit : IsUnit (n : u.adicCompletionIntegers F) := by
-    rw [← map_natCast (algebraMap A (u.adicCompletionIntegers F)),
-      HeightOneSpectrum.adicCompletionIntegers.isUnit_iff_valued_eq_one,
-      HeightOneSpectrum.algebraMap_adicCompletionIntegers_apply,
-      HeightOneSpectrum.valuedAdicCompletion_eq_valuation',
-      HeightOneSpectrum.valuation_eq_one_iff_notMem]
-    exact hn
+    simpa using (u.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) (n : A)).mpr hn
   let e := C.formalPointAddEquivKerReduction u
   constructor
   · intro P Q h
