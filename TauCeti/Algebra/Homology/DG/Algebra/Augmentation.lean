@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
-public import TauCeti.RingTheory.GradedAlgebra.Trivial
 
 /-!
 # Augmented differential graded algebras

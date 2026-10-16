@@ -33,7 +33,9 @@ open DirectSum MulOpposite
 
 namespace TauCeti
 
-variable (R A : Type*) [CommSemiring R]
+section GradedSMul
+
+variable (R : Type*) [Semiring R]
 
 /-- Scalar multiplication by the trivially graded base ring preserves every homogeneous piece of
 a graded module. -/
@@ -45,9 +47,11 @@ instance instGradedSMulTrivialGrading {M : Type*} [AddCommMonoid M] [Module R M]
     · simpa using (ℳ q).smul_mem r hm
     · simp
 
+end GradedSMul
+
 section Algebra
 
-variable [Semiring A] [Algebra R A]
+variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- The trivial grading is an internal grading: an element is its own degree-zero component, and
 all higher components vanish. -/
