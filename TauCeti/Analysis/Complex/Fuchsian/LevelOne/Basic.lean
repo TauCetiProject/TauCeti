@@ -48,12 +48,12 @@ subgroup into congruence conditions on the bottom row of `γ`.
   projective image are those of `SL(2, ℤ)`.
 * `TauCeti.ModularGroup.stabilizer_psl2zToPSL2RRange_eq_bot_iff`: a stabilizer is trivial exactly
   off the orbits of `i` and `ρ`.
-* `Subgroup.orbitRel_map_sl2zToPSL2R_iff`: the orbits of the effective image of `Γ ≤ SL(2, ℤ)`
-  are those of `Γ`.
 * `Subgroup.card_stabilizer_map_smul_I` and `Subgroup.card_stabilizer_map_smul_ρ`: the stabilizer
   orders in the effective image of `Γ` at `γ • i` and at `γ • ρ`.
 * `Subgroup.card_stabilizer_map_eq_one_of_orbit_ne`: off the orbits of `i` and `ρ` the stabilizer
   in the effective image of `Γ` is trivial.
+* `Subgroup.exists_smul_eq_of_card_stabilizer_ne_one`: a point with nontrivial stabilizer in the
+  effective image of `Γ` is a translate of `i` or `ρ`, with stabilizer order `2` or `3`.
 
 ## References
 
@@ -161,18 +161,6 @@ namespace TauCeti
 
 variable (Γ : Subgroup SL(2, ℤ))
 
-/-- **Orbits of the effective image of `Γ`** are the orbits of `Γ` itself: two points are related
-exactly when an element of `Γ` carries one to the other. -/
-theorem _root_.Subgroup.orbitRel_map_sl2zToPSL2R_iff {z w : ℍ} :
-    orbitRel (Γ.map sl2zToPSL2R) ℍ z w ↔ ∃ g ∈ Γ, g • w = z := by
-  rw [orbitRel_apply, mem_orbit_iff]
-  constructor
-  · rintro ⟨⟨_, g, hg, rfl⟩, h⟩
-    exact ⟨g, hg, by rwa [Subgroup.smul_def, sl2zToPSL2R_smul] at h⟩
-  · rintro ⟨g, hg, h⟩
-    exact ⟨⟨sl2zToPSL2R g, Subgroup.mem_map_of_mem _ hg⟩,
-      by rwa [Subgroup.smul_def, sl2zToPSL2R_smul]⟩
-
 open scoped Classical in
 /-- **Elliptic stabilizers in `Γ` through a generating conjugate.** Let `z₀` have level-one
 elliptic order a prime `p`, and let `E` be a noncentral matrix fixing `z₀` which is a power of
@@ -275,5 +263,25 @@ theorem _root_.Subgroup.card_stabilizer_map_eq_one_of_orbit_ne {z : ℍ}
     Γ.map_sl2zToPSL2R_le_range_psl2zToPSL2R z
   rwa [card_stabilizer_psl2zToPSL2RRange_eq_card_stabilizer_psl, ← ellipticOrder_mk,
     ellipticOrder_eq_one_of_orbit_ne_I_of_orbit_ne_ρ hI hρ, Nat.dvd_one] at hdvd
+
+/-- **Classification of the elliptic points of `Γ`**: a point with nontrivial stabilizer in the
+effective image of `Γ` lies in the `SL(2, ℤ)`-orbit of `i` or of `ρ`, with stabilizer order `2`
+or `3` respectively. -/
+theorem _root_.Subgroup.exists_smul_eq_of_card_stabilizer_ne_one {z : ℍ}
+    (hz : Nat.card (stabilizer (Γ.map sl2zToPSL2R) z) ≠ 1) :
+    (∃ γ : SL(2, ℤ), γ • I = z ∧ Nat.card (stabilizer (Γ.map sl2zToPSL2R) z) = 2) ∨
+      ∃ γ : SL(2, ℤ), γ • ρ = z ∧ Nat.card (stabilizer (Γ.map sl2zToPSL2R) z) = 3 := by
+  classical
+  by_cases hI : (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' I
+  · obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp (Quotient.exact' hI)
+    rw [Γ.card_stabilizer_map_smul_I] at hz ⊢
+    split_ifs at hz ⊢
+    exacts [Or.inl ⟨γ, rfl, rfl⟩, absurd rfl hz]
+  by_cases hρ : (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' ρ
+  · obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp (Quotient.exact' hρ)
+    rw [Γ.card_stabilizer_map_smul_ρ] at hz ⊢
+    split_ifs at hz ⊢
+    exacts [Or.inr ⟨γ, rfl, rfl⟩, absurd rfl hz]
+  exact absurd (Γ.card_stabilizer_map_eq_one_of_orbit_ne hI hρ) hz
 
 end TauCeti

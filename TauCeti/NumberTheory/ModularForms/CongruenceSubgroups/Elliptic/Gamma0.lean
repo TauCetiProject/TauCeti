@@ -224,27 +224,6 @@ private theorem card_stabilizer_smul_ρ_eq_three_iff (γ : SL(2, ℤ)) :
   · rintro ⟨x, hx, hc⟩
     linear_combination (c + x * d - d) * hc + d ^ 2 * hx
 
-/-- A point with nontrivial stabilizer in `Γ₀(N)` lies in the `SL(2, ℤ)`-orbit of `i` or of
-`ρ`, with stabilizer order `2` or `3` respectively. -/
-private theorem exists_smul_eq_of_card_stabilizer_ne_one {z : ℍ}
-    (hz : Nat.card (stabilizer ((Gamma0 N).map sl2zToPSL2R) z) ≠ 1) :
-    (∃ γ : SL(2, ℤ), γ • I = z ∧
-        Nat.card (stabilizer ((Gamma0 N).map sl2zToPSL2R) z) = 2) ∨
-      ∃ γ : SL(2, ℤ), γ • ρ = z ∧
-        Nat.card (stabilizer ((Gamma0 N).map sl2zToPSL2R) z) = 3 := by
-  classical
-  by_cases hI : (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' I
-  · obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp (Quotient.exact' hI)
-    rw [Subgroup.card_stabilizer_map_smul_I] at hz ⊢
-    split_ifs at hz ⊢
-    exacts [Or.inl ⟨γ, rfl, rfl⟩, absurd rfl hz]
-  by_cases hρ : (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' ρ
-  · obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp (Quotient.exact' hρ)
-    rw [Subgroup.card_stabilizer_map_smul_ρ] at hz ⊢
-    split_ifs at hz ⊢
-    exacts [Or.inr ⟨γ, rfl, rfl⟩, absurd rfl hz]
-  exact absurd (Subgroup.card_stabilizer_map_eq_one_of_orbit_ne _ hI hρ) hz
-
 variable (N) in
 /-- **The elliptic points of order two of `Γ₀(N)`.** The orbits of the effective image of `Γ₀(N)`
 on `ℍ` whose stabilizer has order `2` are in bijection with the square roots of `-1` in
@@ -255,7 +234,7 @@ noncomputable def gamma0OrderTwoEllipticEquiv :
       {q : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 2} :=
   ellipticEquivOfIsRatio I 2 _ card_stabilizer_smul_I_eq_two_iff
     (fun _ _ _ hx h hs ↦ h.mul_of_smul_I hx hs) fun z hz ↦ by
-      rcases exists_smul_eq_of_card_stabilizer_ne_one (N := N) (z := z) (by omega) with
+      rcases (Gamma0 N).exists_smul_eq_of_card_stabilizer_ne_one (z := z) (by omega) with
         ⟨γ, hγ, -⟩ | ⟨γ, -, h3⟩
       exacts [⟨γ, hγ⟩, absurd (h3.symm.trans hz) (by decide)]
 
@@ -277,7 +256,7 @@ noncomputable def gamma0OrderThreeEllipticEquiv :
       {q : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 3} :=
   ellipticEquivOfIsRatio ρ 3 _ card_stabilizer_smul_ρ_eq_three_iff
     (fun _ _ _ hx h hs ↦ h.mul_of_smul_ρ hx hs) fun z hz ↦ by
-      rcases exists_smul_eq_of_card_stabilizer_ne_one (N := N) (z := z) (by omega) with
+      rcases (Gamma0 N).exists_smul_eq_of_card_stabilizer_ne_one (z := z) (by omega) with
         ⟨γ, -, h2⟩ | ⟨γ, hγ, -⟩
       exacts [absurd (h2.symm.trans hz) (by decide), ⟨γ, hγ⟩]
 
