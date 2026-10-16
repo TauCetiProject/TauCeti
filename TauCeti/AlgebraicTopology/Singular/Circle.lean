@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 public import TauCeti.Topology.Sphere.StandardCircle
 
@@ -14,14 +13,13 @@ public import TauCeti.Topology.Sphere.StandardCircle
 
 The circle `S¹ ⊆ ℝ²`, with the basepoint `(1, 0)`, is oriented by the standard loop
 `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`). Its fundamental class in singular homology with
-coefficients in the unit `𝟙` of `ModuleCat R`, for a commutative ring `R`, is the class of that
-loop.
+coefficients in an object `A` of an abelian category with coproducts is the class of that loop.
 
 ## Main declarations
 
 * `TauCeti.circlePair`: the circle with its basepoint, as a topological pair.
 * `TauCeti.circleLoopPairHom`: the standard loop as a map of pairs `(I¹, ∂I¹) ⟶ (S¹, {(1, 0)})`.
-* `TauCeti.circleFundamentalClass`: the fundamental class `𝟙 ⟶ H₁(S¹; 𝟙)` of the unit circle in
+* `TauCeti.circleFundamentalClass`: the fundamental class `A ⟶ H₁(S¹; A)` of the unit circle in
   `ℝ²`, the class of the standard loop.
 -/
 
@@ -29,7 +27,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory MonoidalCategory Limits Metric
+open CategoryTheory Limits Metric
 
 namespace TauCeti
 
@@ -50,31 +48,30 @@ theorem circleLoopPairHom_fst_apply (t : (cubeBoundaryPair.{0} 1).fst) :
   rw [circleLoopPairHom]
   exact TopPair.ofSubsetMap_fst_apply _ _ t
 
-variable (R : Type) [CommRing R]
+universe u v
 
-/-- **The fundamental class of the circle**: the class of the standard loop
-`t ↦ (cos 2πt, sin 2πt)`. It is the image of the relative class of the standard `1`-simplex of the
-interval `I¹` under the loop, followed by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (A : C)
+
+/-- **The fundamental class of the circle**, with coefficients in an object `A` of an abelian
+category with coproducts: the class `A ⟶ H₁(S¹; A)` of the standard loop `t ↦ (cos 2πt, sin 2πt)`.
+It is the image of the relative class of the standard `1`-simplex of the interval `I¹` under the
+loop, followed by the inverse of `H₁(S¹; A) ≅ H₁(S¹, {(1, 0)}; A)`
 (`TauCeti.singularHomologyIsoOfSubsetSingleton`). The circle is oriented by this
 parametrization, which is also the one with which double loops are read as maps from the circle in
 `TauCeti.BasedTopologicalSpace.loopSpace2Homeomorph`. -/
 def circleFundamentalClass :
-    𝟙_ (ModuleCat.{0} R) ⟶
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) 1).obj (𝟙_ _)).obj
-        (TopCat.of Sphere1) :=
-  cubeRelClass (𝟙_ (ModuleCat.{0} R)) ≫
-    TopPair.singularHomologyMap circleLoopPairHom (𝟙_ (ModuleCat.{0} R)) 1 ≫
-      (singularHomologyIsoOfSubsetSingleton (𝟙_ (ModuleCat.{0} R)) 0 Sphere1.east).inv
+    A ⟶ ((AlgebraicTopology.singularHomologyFunctor C 1).obj A).obj (TopCat.of Sphere1) :=
+  cubeRelClass A ≫ TopPair.singularHomologyMap circleLoopPairHom A 1 ≫
+    (singularHomologyIsoOfSubsetSingleton A 0 Sphere1.east).inv
 
 /-- **Characteristic equation of the fundamental class of the circle**: it is the relative class of
 the standard `1`-simplex of the interval, pushed along the standard loop as a map of pairs, followed
-by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`. The definition body is not unfolded outside this
-module, so this equation is how consumers reach the composite. -/
+by the inverse of `H₁(S¹; A) ≅ H₁(S¹, {(1, 0)}; A)`. The definition body is not unfolded outside
+this module, so this equation is how consumers reach the composite. -/
 theorem circleFundamentalClass_def :
-    circleFundamentalClass R =
-      cubeRelClass (𝟙_ (ModuleCat.{0} R)) ≫
-        TopPair.singularHomologyMap circleLoopPairHom (𝟙_ (ModuleCat.{0} R)) 1 ≫
-          (singularHomologyIsoOfSubsetSingleton (𝟙_ (ModuleCat.{0} R)) 0 Sphere1.east).inv := by
+    circleFundamentalClass A =
+      cubeRelClass A ≫ TopPair.singularHomologyMap circleLoopPairHom A 1 ≫
+        (singularHomologyIsoOfSubsetSingleton A 0 Sphere1.east).inv := by
   rw [circleFundamentalClass]
 
 end TauCeti

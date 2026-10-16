@@ -73,7 +73,7 @@ def degreeRaising :
         (TopCat.of (X.iteratedLoopSpace 2).carrier) ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).obj
         (TopCat.of X.loopSpace.carrier) :=
-  (λ_ _).inv ≫ (circleFundamentalClass R ▷ _) ≫
+  (λ_ _).inv ≫ (circleFundamentalClass (𝟙_ (ModuleCat.{0} R)) ▷ _) ≫
     TopCat.singularHomologyCross (C := ModuleCat.{0} R) (TopCat.of Sphere1)
       (TopCat.of (X.iteratedLoopSpace 2).carrier) (𝟙_ _) (𝟙_ _) 1 p n h ≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map (λ_ (𝟙_ _)).hom).app _ ≫
@@ -86,7 +86,7 @@ induced by the evaluation `S¹ × Ω²X → ΩX`. The definition body is not unf
 module, so this equation is how consumers reach the composite. -/
 theorem degreeRaising_def :
     degreeRaising R X p n h =
-      (λ_ _).inv ≫ (circleFundamentalClass R ▷ _) ≫
+      (λ_ _).inv ≫ (circleFundamentalClass (𝟙_ (ModuleCat.{0} R)) ▷ _) ≫
         TopCat.singularHomologyCross (C := ModuleCat.{0} R) (TopCat.of Sphere1)
           (TopCat.of (X.iteratedLoopSpace 2).carrier) (𝟙_ _) (𝟙_ _) 1 p n h ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
