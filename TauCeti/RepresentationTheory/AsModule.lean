@@ -26,11 +26,10 @@ theory counts, while the objects being classified are representations.
 
 ## Main results
 
-* `Representation.asModuleEquiv_apply`, `Representation.asModuleEquiv_symm_apply`,
-  `Representation.IntertwiningMap.equivLinearMapAsModule_apply`, and
+* `Representation.asModuleEquiv_apply`, `Representation.asModuleEquiv_symm_apply`, and
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
-  identifications Mathlib leaves definitional, the one of `ρ.asModule` with `V` and the one between
-  intertwining maps and `k[G]`-linear maps, in both directions.
+  identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
+  map attached to a `k[G]`-linear map.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
 * `TauCeti.Representation.equivOfAsModuleLinearEquiv`: a `k[G]`-linear isomorphism
@@ -107,16 +106,6 @@ end Semiring
 variable {k G V W : Type*} [CommSemiring k] [Monoid G]
 variable [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
 variable {ρ : _root_.Representation k G V} {σ : _root_.Representation k G W}
-
-/-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
-`Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
-types, so it too may be erased from an application. -/
-@[simp]
-theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply
-    (f : _root_.Representation.IntertwiningMap ρ σ)
-    (x : ρ.asModule) :
-    _root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
-  (rfl)
 
 /-- **Evaluation of the intertwining map attached to a `k[G]`-linear map.** This is the inverse
 direction of `Representation.IntertwiningMap.equivLinearMapAsModule_apply`, with the changes of

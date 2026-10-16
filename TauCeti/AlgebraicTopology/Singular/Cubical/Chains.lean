@@ -180,6 +180,11 @@ theorem boundary_single {n : ℕ} (c : SingularCube X (n + 1)) (a : R) :
 def faceSwap {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : Fin (n + 2) × Fin (n + 1) :=
   (p.1.succAbove p.2, p.2.predAbove p.1)
 
+/-- The coordinate formula for the face-index involution `faceSwap`. -/
+theorem faceSwap_def {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) :
+    faceSwap p = (p.1.succAbove p.2, p.2.predAbove p.1) :=
+  (rfl)
+
 theorem faceSwap_faceSwap {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : faceSwap (faceSwap p) = p := by
   obtain ⟨i, j⟩ := p
   simp [faceSwap, Fin.succAbove_succAbove_predAbove, Fin.predAbove_predAbove_succAbove]
