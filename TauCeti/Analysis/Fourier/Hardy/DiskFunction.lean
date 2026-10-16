@@ -53,11 +53,11 @@ the value is a junk value. -/
 def diskFunction (w : ℂ) : ℂ :=
   ∑' n : ℕ, fourierCoeff (x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) n * w ^ n
 
-/-- Each Hardy coefficient is bounded by the norm of the Hardy function. -/
-theorem norm_fourierCoeff_le (n : ℕ) :
-    ‖fourierCoeff (x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) n‖ ≤ ‖x‖ := by
-  rw [← hardyBasis_repr, ← hardyBasis.repr.norm_map x]
-  exact lp.norm_apply_le_norm two_ne_zero _ n
+/-- The disk function is the coefficient series `∑' n, x̂ n * w ^ n` at every point. -/
+theorem diskFunction_def (w : ℂ) :
+    x.diskFunction w =
+      ∑' n : ℕ, fourierCoeff (x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) n * w ^ n :=
+  (rfl)
 
 /-- The Taylor series of the disk function converges absolutely on the open unit disk. -/
 theorem summable_norm_fourierCoeff_mul_pow (hw : ‖w‖ < 1) :
