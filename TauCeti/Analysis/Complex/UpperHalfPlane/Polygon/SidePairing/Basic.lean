@@ -332,6 +332,11 @@ theorem mem_cycle_iff (j i : Fin n) : i ∈ σ.cycle j ↔ ∃ m, σ.next^[m] j 
   exact ⟨Equiv.Perm.SameCycle.exists_nat_pow_eq, fun ⟨m, hm⟩ ↦
     hm ▸ Equiv.Perm.sameCycle_pow_right.2 (.refl _ _)⟩
 
+/-- A vertex `i` is on the cycle through `j` if and only if it is in the same cycle of the
+successor permutation. -/
+theorem mem_cycle_iff_sameCycle (j i : Fin n) : i ∈ σ.cycle j ↔ σ.next.SameCycle j i := by
+  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
+
 /-- A vertex lies on its own cycle. -/
 theorem self_mem_cycle (j : Fin n) : j ∈ σ.cycle j :=
   (σ.mem_cycle_iff j j).2 ⟨0, rfl⟩
