@@ -17,12 +17,6 @@ sign patterns. This file shows that the gap is detected by the narrow class grou
 map `Cl⁺(K) → Cl(K)` is injective exactly when the integer-unit signature
 `NumberField.unitSignature` is surjective.
 
-The proof is the exact sequence `Kˣ → Cl⁺(K) → Cl(K) → 1`. A principal narrow class `[(x)]⁺` is
-trivial exactly when some unit `w` of `𝓞 K` makes `w x` totally positive, that is, exactly when the
-signature of `x` is the inverse of the signature of a unit. Since every sign pattern is the
-signature of some `x`, all principal narrow classes are trivial exactly when every sign pattern is
-the signature of a unit.
-
 ## Main results
 
 * `TauCeti.NumberField.NarrowClassGroup.toClassGroup_injective_iff_unitSignature_surjective`:
@@ -48,6 +42,10 @@ units of `𝓞 K` is surjective. So a field whose units miss a sign pattern at t
 narrow class group strictly larger than its class group. -/
 theorem toClassGroup_injective_iff_unitSignature_surjective :
     Function.Injective (toClassGroup (K := K)) ↔ Function.Surjective (unitSignature (K := K)) := by
+  -- By exactness of `Kˣ → Cl⁺(K) → Cl(K) → 1`, injectivity says every principal narrow class
+  -- `[(x)]⁺` is trivial, that is, some unit `w` makes `w x` totally positive. Since every sign
+  -- pattern is the signature of some `x`, this holds exactly when every sign pattern is the
+  -- signature of a unit.
   -- Scaling `x` by a unit `w` gives a totally positive element exactly when the signature of `w`
   -- cancels that of `x`.
   have key (w : (𝓞 K)ˣ) (x : Kˣ) :

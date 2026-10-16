@@ -227,7 +227,8 @@ theorem natCard_stronglyAmbiguousClassSubgroup_eq_two_pow_of_forall_norm_ne_neg_
   have key := NarrowClassGroup.natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker hmin hgen
   -- Without a unit of norm `-1` the kernel of `Cl⁺(K) → Cl(K)` has order `2`.
   have h2 : Nat.card (NarrowClassGroup.toClassGroup (K := K)).ker = 2 :=
-    NarrowClassGroup.card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one hmin hgen hd hu
+    TauCeti.NumberField.NarrowClassGroup.card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one
+      hmin hgen hd hu
   rw [h2, natCard_narrowClassGroup_sq_eq_one_eq_two_pow hmin hgen hsf] at key
   -- `S * 2 = 2 ^ (t - 1)` forces `t ≥ 2`, so the factor `2` can be cancelled.
   have ht : 2 ≤ (ramifiedPrimes K).ncard := by
