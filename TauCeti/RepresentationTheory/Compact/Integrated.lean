@@ -164,13 +164,13 @@ private theorem conjOp_comp_weightFamily {f : C(G, 𝕜)} (hf : ∀ g h : G, f (
 
 end
 
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-
 section
 
-variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V]
+  [SMulCommClass ℝ 𝕜 V] [SMulCommClass 𝕜 ℝ V]
+  (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
 /-- **The operator by which a continuous scalar function acts on a continuous representation**,
 `∫ g, f g • π g ∂(haarProb G)`.
@@ -183,56 +183,7 @@ supplies; that is why the results below that read the operator's actual value ca
 noncomputable def integratedOperator (f : C(G, 𝕜)) : V →L[𝕜] V :=
   haarAverage G (𝕜 := 𝕜) (weightFamily π hπ f)
 
-end
-
-section
-
-variable [CompleteSpace V] (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
-
-/-- The integrated operator, evaluated at a vector. -/
-theorem integratedOperator_apply (f : C(G, 𝕜)) (v : V) :
-    integratedOperator π hπ f v = ∫ g, f g • π g v ∂haarProb G := by
-  have h := (ContinuousLinearMap.apply 𝕜 V v).haarAverage_comp_comm (G := G)
-    (weightFamily π hπ f)
-  simp only [ContinuousLinearMap.apply_apply] at h
-  rw [integratedOperator, ← h, haarAverage_apply]
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, ContinuousLinearMap.apply_apply,
-    weightFamily_apply, smul_apply]
-
-section Naturality
-
-variable {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W]
-  [SMulCommClass ℝ 𝕜 W] [CompleteSpace W]
-  (rho : ContRepresentation 𝕜 G W) (hrho : Continuous rho)
-
-/-- **Integrated operators are natural in the representation.** A continuous intertwiner commutes
-with the operators obtained by integrating the same scalar function on its source and target. -/
-theorem comp_integratedOperator
-    (T : ContIntertwiningMap π rho) (f : C(G, 𝕜)) :
-    T.toContinuousLinearMap.comp (integratedOperator π hπ f) =
-      (integratedOperator rho hrho f).comp T.toContinuousLinearMap := by
-  ext v
-  have hint : Integrable (fun g ↦ f g • π g v) (haarProb G) := by
-    exact integrable_continuousMap G
-      ⟨fun g ↦ f g • π g v, f.continuous.smul (hπ.clm_apply continuous_const)⟩
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    integratedOperator_apply, integratedOperator_apply,
-    ← T.toContinuousLinearMap.integral_comp_comm hint]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
-  beta_reduce
-  rw [map_smul]
-  congr 1
-  exact T.isIntertwining g v
-
-end Naturality
-
-end
-
 /-! ### Linearity in the acting function -/
-
-section
-
-variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
 @[simp]
 theorem integratedOperator_zero : integratedOperator π hπ (0 : C(G, 𝕜)) = 0 := by
@@ -272,6 +223,48 @@ theorem integratedOperatorₗ_apply (f : C(G, 𝕜)) :
 
 end
 
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [CompleteSpace V] (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+
+/-- The integrated operator, evaluated at a vector. -/
+theorem integratedOperator_apply (f : C(G, 𝕜)) (v : V) :
+    integratedOperator π hπ f v = ∫ g, f g • π g v ∂haarProb G := by
+  have h := (ContinuousLinearMap.apply 𝕜 V v).haarAverage_comp_comm (G := G)
+    (weightFamily π hπ f)
+  simp only [ContinuousLinearMap.apply_apply] at h
+  rw [integratedOperator, ← h, haarAverage_apply]
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, ContinuousLinearMap.apply_apply,
+    weightFamily_apply, smul_apply]
+
+section Naturality
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W]
+  [SMulCommClass ℝ 𝕜 W] [CompleteSpace W]
+  (rho : ContRepresentation 𝕜 G W) (hrho : Continuous rho)
+
+/-- **Integrated operators are natural in the representation.** A continuous intertwiner commutes
+with the operators obtained by integrating the same scalar function on its source and target. -/
+theorem comp_integratedOperator
+    (T : ContIntertwiningMap π rho) (f : C(G, 𝕜)) :
+    T.toContinuousLinearMap.comp (integratedOperator π hπ f) =
+      (integratedOperator rho hrho f).comp T.toContinuousLinearMap := by
+  ext v
+  have hint : Integrable (fun g ↦ f g • π g v) (haarProb G) := by
+    exact integrable_continuousMap G
+      ⟨fun g ↦ f g • π g v, f.continuous.smul (hπ.clm_apply continuous_const)⟩
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    integratedOperator_apply, integratedOperator_apply,
+    ← T.toContinuousLinearMap.integral_comp_comm hint]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+  beta_reduce
+  rw [map_smul]
+  congr 1
+  exact T.isIntertwining g v
+
+end Naturality
+
 /-! ### A class function acts by an intertwiner
 
 Conjugation by a fixed pair of action operators is a continuous *linear* map on operators, so it
@@ -279,7 +272,7 @@ commutes with Haar averaging; on the integrand it acts as the conjugation `g ↦
 variable, which normalized Haar measure does not see and which a class function does not see
 either. -/
 
-variable [CompleteSpace V] (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) {f : C(G, 𝕜)}
+variable {f : C(G, 𝕜)}
 
 /-- The integrated operator of a class function is fixed by conjugation:
 `π h⁻¹ ∘ π(f) ∘ π h = π(f)`. -/
