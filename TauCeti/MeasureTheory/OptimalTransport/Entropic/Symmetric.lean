@@ -92,9 +92,7 @@ theorem exists_entropicDualValue_self_eq (hc : Measurable c) (hcB : ∀ z, c z �
 
 /-- **The symmetric Gibbs representation of self-transport.** There is a bounded measurable
 self-potential `f` whose Gibbs density defines a coupling of `μ` with itself, and the finite
-entropic self-transport value is exactly `2 * ∫ f dμ`.
-The Gibbs coupling attains the entropic optimum by
-`TauCeti.IsCoupling.lintegral_add_mul_klDiv_eq_entropicTransportCost_of_eq_withDensity`. -/
+entropic self-transport value is exactly `2 * ∫ f dμ`. -/
 theorem exists_isCoupling_entropicGibbsFactor_self (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
     (hcs : c ∘ Prod.swap = c) (hε : ε ≠ 0) :
     ∃ (f : X → ℝ) (C : ℝ), Measurable f ∧ (∀ x, |f x| ≤ C) ∧
