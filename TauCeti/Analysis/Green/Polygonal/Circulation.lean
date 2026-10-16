@@ -89,12 +89,14 @@ theorem integral_circulationFun_eq_polygon {γ : ℝ → ℂ} {a b : ℝ} {N : �
         F i.succ - F i.castSucc := by
     rw [← integral_circulationFun_eq_curveIntegral_segment (hs i.castSucc_lt_succ)
       (hsegments i) P Q]
-    have hleft := hint.mono_set (show uIcc a (s i.castSucc) ⊆ uIcc a b by
+    have hleftSubset : uIcc a (s i.castSucc) ⊆ uIcc a b := by
       rw [uIcc_of_le hab]
-      exact uIcc_subset_Icc (left_mem_Icc.mpr hab) (hmem i.castSucc))
-    have hcell := hint.mono_set (show uIcc (s i.castSucc) (s i.succ) ⊆ uIcc a b by
+      exact uIcc_subset_Icc (left_mem_Icc.mpr hab) (hmem i.castSucc)
+    have hcellSubset : uIcc (s i.castSucc) (s i.succ) ⊆ uIcc a b := by
       rw [uIcc_of_le hab]
-      exact uIcc_subset_Icc (hmem i.castSucc) (hmem i.succ))
+      exact uIcc_subset_Icc (hmem i.castSucc) (hmem i.succ)
+    have hleft := hint.mono_set hleftSubset
+    have hcell := hint.mono_set hcellSubset
     exact eq_sub_iff_add_eq.mpr (by
       simpa only [F, add_comm] using
         intervalIntegral.integral_add_adjacent_intervals hleft hcell)

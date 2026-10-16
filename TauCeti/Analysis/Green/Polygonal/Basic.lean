@@ -100,11 +100,11 @@ theorem image_triangleCurve (c p q : ℂ) :
   · rintro z ((⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩) | ⟨t, ht, rfl⟩)
     · exact ⟨t, ⟨ht.1, ht.2.trans (by norm_num)⟩, triangleCurve_eq_first c p q ht⟩
     · refine ⟨t + 1, ⟨by linarith [ht.1], by linarith [ht.2]⟩, ?_⟩
-      simpa only [add_sub_cancel_right] using triangleCurve_eq_second c p q
-        (show t + 1 ∈ Icc 1 2 from ⟨by linarith [ht.1], by linarith [ht.2]⟩)
+      have hsecond : t + 1 ∈ Icc (1 : ℝ) 2 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+      simpa only [add_sub_cancel_right] using triangleCurve_eq_second c p q hsecond
     · refine ⟨t + 2, ⟨by linarith [ht.1], by linarith [ht.2]⟩, ?_⟩
-      simpa only [add_sub_cancel_right] using triangleCurve_eq_third c p q
-        (show t + 2 ∈ Icc 2 3 from ⟨by linarith [ht.1], by linarith [ht.2]⟩)
+      have hthird : t + 2 ∈ Icc (2 : ℝ) 3 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+      simpa only [add_sub_cancel_right] using triangleCurve_eq_third c p q hthird
 
 /-- The three triangle edges have planar area zero, without a nondegeneracy assumption. -/
 theorem volume_triangle_edges (c p q : ℂ) :

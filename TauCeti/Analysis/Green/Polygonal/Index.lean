@@ -69,7 +69,8 @@ theorem windingNumber_triangleCurve_eq_sum {c p q z : ℂ}
         apply triangleCurve_eq_second
         simpa only [uIcc_of_le (by norm_num : (1 : ℝ) ≤ 2)] using uIoo_subset_uIcc_self ht
       _ = _ := by
-        simpa only [show (2 : ℝ) - 1 = 1 from by norm_num, div_one] using
+        have hlength : (2 : ℝ) - 1 = 1 := by norm_num
+        simpa only [hlength, div_one] using
           Contour.windingNumber_segment_interval (p := p) (q := q) (a := 1) (b := 2)
             (by norm_num) (fun h ↦ hz (Or.inl (Or.inr h)))
   have hthird : Contour.windingNumber (triangleCurve c p q) 2 3 z =
@@ -81,7 +82,8 @@ theorem windingNumber_triangleCurve_eq_sum {c p q z : ℂ}
         apply triangleCurve_eq_third
         simpa only [uIcc_of_le (by norm_num : (2 : ℝ) ≤ 3)] using uIoo_subset_uIcc_self ht
       _ = _ := by
-        simpa only [show (3 : ℝ) - 2 = 1 from by norm_num, div_one] using
+        have hlength : (3 : ℝ) - 2 = 1 := by norm_num
+        simpa only [hlength, div_one] using
           Contour.windingNumber_segment_interval (p := q) (q := c) (a := 2) (b := 3)
             (by norm_num) (fun h ↦ hz (Or.inr h))
   rw [hfirst, hsecond, hthird]

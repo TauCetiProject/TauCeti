@@ -83,20 +83,22 @@ theorem det_triangleCoordinates (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) :
 
 /-- Triangle coordinates identify the actual closed convex hulls. -/
 theorem affineMap_image_standardTriangle (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) :
-    affineMap (triangleCoordinates c p q hdet) c '' standardTriangle = convexHull ℝ {c, p, q} := by
+    affineMap (triangleCoordinates c p q hdet).toContinuousLinearMap c '' standardTriangle =
+      convexHull ℝ {c, p, q} := by
   rw [standardTriangle_def, affineMap_image_convexHull]
   simp only [image_insert_eq, image_singleton, affineMap_apply, map_zero, zero_add,
-    triangleCoordinates_one, triangleCoordinates_I, sub_add_cancel]
+    ContinuousLinearEquiv.coe_coe, triangleCoordinates_one, triangleCoordinates_I, sub_add_cancel]
 
 /-- The actual open triangle is the image of the standard triangle interior. -/
 theorem affineMap_image_interior_standardTriangle (c p q : ℂ)
     (hdet : triangleDet c p q ≠ 0) :
-    affineMap (triangleCoordinates c p q hdet) c '' interior standardTriangle =
+    affineMap (triangleCoordinates c p q hdet).toContinuousLinearMap c ''
+      interior standardTriangle =
       interior (convexHull ℝ {c, p, q}) := by
   rw [affineMap_image_interior, affineMap_image_standardTriangle]
 
 /-- The literal three-segment triangle chain transports its actual curve-integral sum. -/
-theorem curveIntegral_triangle_affineMap (A : ℂ ≃L[ℝ] ℂ) (c p q r : ℂ) (P Q : ℂ → ℝ) :
+theorem curveIntegral_triangle_affineMap (A : ℂ →L[ℝ] ℂ) (c p q r : ℂ) (P Q : ℂ → ℝ) :
     Finsupp.linearCombination ℤ (fun γ : Arc ↦ curveIntegral (oneForm P Q) γ.2.2)
       (BoundaryChain.triangle (affineMap A c p) (affineMap A c q) (affineMap A c r)) =
     Finsupp.linearCombination ℤ
@@ -119,7 +121,8 @@ theorem volume_convexHull_triangle (c p q : ℂ) :
 /-- Area integration on an actual triangle agrees with the affine-coordinate integral. -/
 theorem integral_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) (f : ℂ → ℝ) :
     (∫ z in convexHull ℝ {c, p, q}, f z) = |triangleDet c p q| *
-      ∫ z in standardTriangle, f (affineMap (triangleCoordinates c p q hdet) c z) := by
+      ∫ z in standardTriangle,
+        f (affineMap (triangleCoordinates c p q hdet).toContinuousLinearMap c z) := by
   rw [← affineMap_image_standardTriangle c p q hdet,
     integral_affineMap_image _ _ isCompact_standardTriangle.measurableSet,
     det_triangleCoordinates]
@@ -136,17 +139,17 @@ theorem green_triangle_of_det_ne_zero {c p q : ℂ} (hdet : triangleDet c p q �
       (triangleDet c p q / |triangleDet c p q|) *
         ∫ z in convexHull ℝ {c, p, q}, curl P Q z := by
   let A := triangleCoordinates c p q hdet
-  have hTcont := (contDiff_affineMap A c (n := 1)).continuous
-  have hstd : standardTriangle ⊆ affineMap A c ⁻¹' U := by
+  have hTcont := (contDiff_affineMap A.toContinuousLinearMap c (n := 1)).continuous
+  have hstd : standardTriangle ⊆ affineMap A.toContinuousLinearMap c ⁻¹' U := by
     intro z hz
     exact hTU (affineMap_image_standardTriangle c p q hdet ▸ mem_image_of_mem _ hz)
-  have hpq := contDiffOn_affinePullback (A := A) (c := c) hP hQ
+  have hpq := contDiffOn_affinePullback (A := A.toContinuousLinearMap) (c := c) hP hQ
   have hbase := green_standardTriangle (hU.preimage hTcont) hstd hpq.1 hpq.2
   have hPd (z : ℂ) (hz : z ∈ standardTriangle) :
-      DifferentiableAt ℝ P (affineMap A c z) :=
+      DifferentiableAt ℝ P (affineMap A.toContinuousLinearMap c z) :=
     (hP _ (hstd hz)).contDiffAt (hU.mem_nhds (hstd hz)) |>.differentiableAt one_ne_zero
   have hQd (z : ℂ) (hz : z ∈ standardTriangle) :
-      DifferentiableAt ℝ Q (affineMap A c z) :=
+      DifferentiableAt ℝ Q (affineMap A.toContinuousLinearMap c z) :=
     (hQ _ (hstd hz)).contDiffAt (hU.mem_nhds (hstd hz)) |>.differentiableAt one_ne_zero
   have hi := (integrableOn_curl_affinePullback_iff A c isCompact_standardTriangle.measurableSet
     hPd hQd).mp hbase.1
@@ -154,14 +157,15 @@ theorem green_triangle_of_det_ne_zero {c p q : ℂ} (hdet : triangleDet c p q �
   refine ⟨hi, ?_⟩
   have harea := integral_curl_affinePullback A c isCompact_standardTriangle.measurableSet hPd hQd
   rw [affineMap_image_standardTriangle, det_triangleCoordinates] at harea
-  rw [← curveIntegral_segment_affineMap A c 0 1 P Q,
-    ← curveIntegral_segment_affineMap A c 1 Complex.I P Q,
-    ← curveIntegral_segment_affineMap A c 0 Complex.I P Q, harea] at hbase
-  have ht0 : affineMap A c 0 = c := by rw [affineMap_apply, map_zero, zero_add]
-  have ht1 : affineMap A c 1 = p := by
-    rw [affineMap_apply, triangleCoordinates_one, sub_add_cancel]
-  have htI : affineMap A c Complex.I = q := by
-    rw [affineMap_apply, triangleCoordinates_I, sub_add_cancel]
+  rw [← curveIntegral_segment_affineMap A.toContinuousLinearMap c 0 1 P Q,
+    ← curveIntegral_segment_affineMap A.toContinuousLinearMap c 1 Complex.I P Q,
+    ← curveIntegral_segment_affineMap A.toContinuousLinearMap c 0 Complex.I P Q, harea] at hbase
+  have ht0 : affineMap A.toContinuousLinearMap c 0 = c := by
+    rw [affineMap_apply, map_zero, zero_add]
+  have ht1 : affineMap A.toContinuousLinearMap c 1 = p := by
+    rw [affineMap_apply, ContinuousLinearEquiv.coe_coe, triangleCoordinates_one, sub_add_cancel]
+  have htI : affineMap A.toContinuousLinearMap c Complex.I = q := by
+    rw [affineMap_apply, ContinuousLinearEquiv.coe_coe, triangleCoordinates_I, sub_add_cancel]
   rw [ht0, ht1, htI] at hbase
   exact hbase.2
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Green.Polygonal.Index
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Bounds
+import TauCeti.Analysis.Contour.Winding.Number.Partition
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -47,52 +48,55 @@ theorem windingNumber_eq_sum_polygon_segments {γ : ℝ → ℂ} {a b : ℝ} {N 
   have hmem (i : Fin (N + 1)) : s i ∈ uIcc a b := by
     rw [uIcc_of_le hab, ← ha, ← hb]
     exact ⟨hs.monotone (Fin.zero_le _), hs.monotone (Fin.le_last _)⟩
-  have hint := hγ.intervalIntegrable_inv_sub_mul_deriv hz
-  let F : Fin (N + 1) → ℂ := fun i ↦
-    (2 * (Real.pi : ℂ) * I)⁻¹ * ∫ t in a..s i, (γ t - z)⁻¹ * deriv γ t
-  have hstep (i : Fin N) : Contour.windingNumber
-      (fun t : ℝ ↦ γ (s i.castSucc) + t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z =
-      F i.succ - F i.castSucc := by
-    have hic : s i.castSucc < s i.succ := hs i.castSucc_lt_succ
+  have hpv (i : Fin N) : Contour.CauchyPVExistsAt γ (s i.castSucc) (s i.succ)
+      (fun w ↦ (w - z)⁻¹) z := by
     have hsub := uIcc_subset_uIcc (hmem i.castSucc) (hmem i.succ)
-    have hcell : AbsolutelyContinuousOnInterval γ (s i.castSucc) (s i.succ) := hγ.mono hsub
+    have hcell := hγ.mono hsub
     have hzcell : z ∉ γ '' uIcc (s i.castSucc) (s i.succ) :=
       fun h ↦ hz (image_mono hsub h)
-    have hzedge : z ∉ segment ℝ (γ (s i.castSucc)) (γ (s i.succ)) := by
-      rw [segment_eq_image']
-      rintro ⟨t, ht, heq⟩
-      let u := s i.castSucc + t * (s i.succ - s i.castSucc)
-      have hu : u ∈ Icc (s i.castSucc) (s i.succ) := by
-        dsimp [u]
-        constructor <;> nlinarith [ht.1, ht.2]
-      have hratio : (u - s i.castSucc) / (s i.succ - s i.castSucc) = t := by
-        dsimp [u]
-        rw [add_sub_cancel_left, mul_div_cancel_right₀ _ (sub_pos.mpr hic).ne']
-      apply hzcell
-      refine ⟨u, (uIcc_of_le hic.le).symm ▸ hu, ?_⟩
-      rw [hsegments i u hu, hratio]
-      exact heq
-    have hw : Contour.windingNumber γ (s i.castSucc) (s i.succ) z =
-        Contour.windingNumber (fun t : ℝ ↦ γ (s i.castSucc) +
-          ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
-            (γ (s i.succ) - γ (s i.castSucc))) (s i.castSucc) (s i.succ) z := by
-      apply Contour.windingNumber_congr_curve
-      intro t ht
-      exact hsegments i t (by simpa only [uIcc_of_le hic.le] using uIoo_subset_uIcc_self ht)
-    rw [← Contour.windingNumber_segment_interval hic hzedge, ← hw,
-      hcell.windingNumber_eq_integral hzcell]
-    dsimp [F]
-    rw [← mul_sub]
-    congr 1
-    exact (intervalIntegral.integral_interval_sub_left
-      (hint.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem i.succ)))
-      (hint.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem i.castSucc)))).symm
-  simp_rw [hstep]
-  have htel : ∑ i : Fin N, (F i.succ - F i.castSucc) = F (Fin.last N) - F 0 := by
-    exact Fin.sum_univ_succ_sub_castSucc F
-  rw [htel]
-  simp only [F, ha, hb, intervalIntegral.integral_same, mul_zero, sub_zero]
-  exact hγ.windingNumber_eq_integral hz
+    exact Contour.cauchyPVExistsAt_of_avoidance hcell.continuousOn
+      (fun t ht he ↦ hzcell ⟨t, ht, he⟩) (hcell.intervalIntegrable_inv_sub_mul_deriv hzcell)
+  let t : ℕ → ℝ := fun k ↦ s (Fin.ofNat (N + 1) k)
+  have ht (i : Fin (N + 1)) : t i = s i := by simp [t]
+  have hcast (i : Fin N) : t i = s i.castSucc := ht i.castSucc
+  have hsucc (i : Fin N) : t (i + 1) = s i.succ := ht i.succ
+  have ht0 : t 0 = a := (ht 0).trans ha
+  have htN : t N = b := (ht (Fin.last N)).trans hb
+  have hsum := Contour.windingNumber_eq_sum_range (n := N) (t := t) (by
+    intro k hk
+    simpa only [← hcast, ← hsucc, Fin.val_mk] using hpv ⟨k, hk⟩)
+  rw [← Fin.sum_univ_eq_sum_range] at hsum
+  rw [ht0, htN] at hsum
+  rw [hsum]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [hcast i, hsucc i]
+  have hic : s i.castSucc < s i.succ := hs i.castSucc_lt_succ
+  have hsub := uIcc_subset_uIcc (hmem i.castSucc) (hmem i.succ)
+  have hzcell : z ∉ γ '' uIcc (s i.castSucc) (s i.succ) :=
+    fun h ↦ hz (image_mono hsub h)
+  have hzedge : z ∉ segment ℝ (γ (s i.castSucc)) (γ (s i.succ)) := by
+    rw [segment_eq_image']
+    rintro ⟨t, ht, heq⟩
+    let u := s i.castSucc + t * (s i.succ - s i.castSucc)
+    have hu : u ∈ Icc (s i.castSucc) (s i.succ) := by
+      dsimp [u]
+      constructor <;> nlinarith [ht.1, ht.2]
+    have hratio : (u - s i.castSucc) / (s i.succ - s i.castSucc) = t := by
+      dsimp [u]
+      rw [add_sub_cancel_left, mul_div_cancel_right₀ _ (sub_pos.mpr hic).ne']
+    apply hzcell
+    refine ⟨u, (uIcc_of_le hic.le).symm ▸ hu, ?_⟩
+    rw [hsegments i u hu, hratio]
+    exact heq
+  have hw : Contour.windingNumber γ (s i.castSucc) (s i.succ) z =
+      Contour.windingNumber (fun t : ℝ ↦ γ (s i.castSucc) +
+        ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
+          (γ (s i.succ) - γ (s i.castSucc))) (s i.castSucc) (s i.succ) z := by
+    apply Contour.windingNumber_congr_curve
+    intro t ht
+    exact hsegments i t (by simpa only [uIcc_of_le hic.le] using uIoo_subset_uIcc_self ht)
+  rw [← Contour.windingNumber_segment_interval hic hzedge, ← hw]
 
 /-- Away from the polygon trace and all fan edges, the actual complex winding number of a
 closed raw polygon is the sum of the actual triangle winding numbers. -/
