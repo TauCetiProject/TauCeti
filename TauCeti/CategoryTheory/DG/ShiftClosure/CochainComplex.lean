@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexShift
+public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplexShift
 public import TauCeti.CategoryTheory.DG.CochainComplex
 public import TauCeti.CategoryTheory.DG.ShiftClosure.Basic
 
@@ -27,9 +27,9 @@ against Mathlib's shift: the shift closure differential `(-1)^(s - r) d` matches
 `δ` of cochains between shifted complexes, and the shift closure composition sign
 `(-1)^((t - s) * (p + s - r))` matches the Koszul-signed composition of cochains.
 
-The identification is built from Mathlib's `CochainComplex.HomComplex.Cochain.rightShift` and
-`CochainComplex.HomComplex.Cochain.leftShift`, which differ from it by the sign
-`(-1)^(r * (r - 1) / 2)` depending only on the source shift.
+The identification is the general normalized identification of cochains between shifted
+complexes, `TauCeti.cochainShiftLinearEquiv`, precomposed with the defining identification
+`TauCeti.DGShiftClosure.dgHomEquiv` of the Hom complexes of the shift closure.
 
 ## Main definitions
 
@@ -62,49 +62,13 @@ universe v u
 
 variable (R : Type v) [CommRing R] {V : Type u} [Category.{v} V] [Preadditive V] [Linear R V]
 
-/-- The normalized identification on cochains, assembled from Mathlib's right and left shifts of
-cochains and the sign `(-1)^(r * (r - 1) / 2)`. -/
-private noncomputable def shiftCochainEquivAux (K L : CochainComplex V ℤ) (r s n : ℤ) :
-    Cochain K L (n + (s - r)) ≃ₗ[R] Cochain (K⟦r⟧) (L⟦s⟧) n :=
-  ((Cochain.rightShiftLinearEquiv R K L (n + (s - r)) s (n - r) (by omega)).trans
-    (Cochain.leftShiftLinearEquiv R K (L⟦s⟧) (n - r) r n (by omega))).trans
-      (DistribMulAction.toLinearEquiv R _ (r * (r - 1) / 2).negOnePow)
-
-private theorem shiftCochainEquivAux_v (K L : CochainComplex V ℤ) (r s n : ℤ)
-    (z : Cochain K L (n + (s - r))) (i j : ℤ) (hij : i + n = j) :
-    (shiftCochainEquivAux R K L r s n z).v i j hij =
-      (r * n).negOnePow • z.v (i + r) (j + s) (by omega) := by
-  simp only [shiftCochainEquivAux, LinearEquiv.trans_apply, DistribMulAction.toLinearEquiv_apply,
-    Cochain.rightShiftLinearEquiv_apply, Cochain.leftShiftLinearEquiv_apply, Cochain.units_smul_v]
-  rw [Cochain.leftShift_v _ r n (by omega) i j hij (i + r) (by omega),
-    Cochain.rightShift_v _ s (n - r) (by omega) (i + r) j (by omega) (j + s) (by omega)]
-  simp only [CochainComplex.shiftFunctorObjXIso, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
-    Iso.refl_inv, Category.comp_id, smul_smul, ← Int.negOnePow_add]
-  congr 1
-  · rw [Int.negOnePow_eq_iff]
-    exact ⟨r * (r - 1) / 2, by ring⟩
-  · exact Category.id_comp _
-
-private theorem δ_shiftCochainEquivAux (K L : CochainComplex V ℤ) (r s n : ℤ)
-    (z : Cochain K L (n + (s - r))) :
-    δ n (n + 1) (shiftCochainEquivAux R K L r s n z) =
-      shiftCochainEquivAux R K L r s (n + 1)
-        ((s - r).negOnePow • δ (n + (s - r)) (n + 1 + (s - r)) z) := by
-  simp only [shiftCochainEquivAux, LinearEquiv.trans_apply, DistribMulAction.toLinearEquiv_apply,
-    Cochain.rightShiftLinearEquiv_apply, Cochain.leftShiftLinearEquiv_apply, δ_units_smul,
-    Cochain.rightShift_units_smul, Cochain.leftShift_units_smul]
-  rw [Cochain.δ_leftShift _ r n (n + 1) (by omega) (n + 1 - r) (by omega),
-    Cochain.δ_rightShift _ s (n - r) (n + 1 - r) (by omega) (n + 1 + (s - r)) (by omega),
-    Cochain.leftShift_units_smul, smul_smul, smul_smul, smul_smul, Int.negOnePow_sub,
-    mul_comm s.negOnePow, mul_assoc]
-
 /-- The **normalized identification** `Hom(K, L)[s - r] ≅ Hom(K⟦r⟧, L⟦s⟧)` in degree `n`: a
 morphism `K[r] ⟶ L[s]` of degree `n` in the shift closure, that is, a cochain `z` of degree
 `n + (s - r)` from `K` to `L`, goes to the cochain from `K⟦r⟧` to `L⟦s⟧` with components
 `(-1)^(r * n) • z^(i + r, j + s)`. -/
 noncomputable def shiftCochainEquiv (X Y : DGShiftClosure (CochainComplex V ℤ)) (n : ℤ) :
     DGHom R n X Y ≃ₗ[R] DGHom R n (X.obj⟦X.shift⟧) (Y.obj⟦Y.shift⟧) :=
-  (dgHomEquiv R X Y n).trans (shiftCochainEquivAux R X.obj Y.obj X.shift Y.shift n)
+  (dgHomEquiv R X Y n).trans (cochainShiftLinearEquiv R X.obj Y.obj X.shift Y.shift n)
 
 /-- The normalized identification multiplies the underlying cochain by `(-1)^(r * n)`: its
 component `K⟦r⟧^i ⟶ L⟦s⟧^j` is `(-1)^(r * n)` times the component `K^(i + r) ⟶ L^(j + s)`. -/
@@ -115,15 +79,16 @@ theorem shiftCochainEquiv_v {X Y : DGShiftClosure (CochainComplex V ℤ)} {n : �
       (X.shift * n).negOnePow • (dgHomEquiv R X Y n f :
         Cochain X.obj Y.obj (n + (Y.shift - X.shift))).v (i + X.shift) (j + Y.shift)
           (by omega) :=
-  shiftCochainEquivAux_v R _ _ _ _ _ _ i j hij
+  cochainShiftLinearEquiv_v R _ _ _ _ _ _ i j hij
 
 private theorem δ_shiftCochainEquiv {X Y : DGShiftClosure (CochainComplex V ℤ)} {n : ℤ}
     (f : DGHom R n X Y) :
     (shiftCochainEquiv R X Y (n + 1) (dgDifferential R n f) :
         Cochain (X.obj⟦X.shift⟧) (Y.obj⟦Y.shift⟧) (n + 1)) =
       δ n (n + 1) (shiftCochainEquiv R X Y n f : Cochain (X.obj⟦X.shift⟧) (Y.obj⟦Y.shift⟧) n) :=
-  (congrArg (shiftCochainEquivAux R X.obj Y.obj X.shift Y.shift (n + 1))
-    (dgHomEquiv_dgDifferential R n f)).trans (δ_shiftCochainEquivAux R _ _ _ _ _ _).symm
+  (congrArg (cochainShiftLinearEquiv R X.obj Y.obj X.shift Y.shift (n + 1))
+    (dgHomEquiv_dgDifferential R n f)).trans
+      (δ_cochainShiftLinearEquiv R _ _ _ _ _ _ rfl _).symm
 
 /-- The DG functor `K[r] ↦ K⟦r⟧` evaluating the formal shifts of cochain complexes, acting on
 morphisms by the normalized identification `TauCeti.DGShiftClosure.shiftCochainEquiv`. -/
