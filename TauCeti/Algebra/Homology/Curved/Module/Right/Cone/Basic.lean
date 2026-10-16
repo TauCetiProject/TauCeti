@@ -595,12 +595,6 @@ theorem coneMap_id :
     Submodule.coe_zero, LinearMap.zero_apply, add_zero]
   exact Prod.mk.eta
 
-section IdentityConeFactorization
-
--- The quotient object wrappers retain the original modules in the factorization formulas.
-attribute [local implicit_reducible] dgClosedToHomotopy
-  DGHomotopyCategory.of DGHomotopyCategory.underlying
-
 /-- A closed map is null-homotopic exactly when it factors through the identity cone of its
 source via the canonical inclusion. -/
 theorem quotient_map_eq_zero_iff_factors_coneIdentity
@@ -630,7 +624,12 @@ theorem quotient_map_eq_zero_iff_factors_coneIdentity
         exact (N.grading p).add_mem (by simpa using dgRightModuleCochains.map_mem k hx.1)
           (closedHom_mem f hx.2))
       (fun x ↦ by
-        simp only [LinearMap.coprod_apply]
+        -- The commuting-map goal has reduced the coprod application through its coercion;
+        -- `LinearMap.coprod_apply` no longer occurs as a rewrite head. Express the two
+        -- stored product components before applying the public cone differential equation.
+        change N.differential (k₀ x.1 + f₀ x.2) =
+          k₀ ((cone (𝟙 (ForgetEnrichment.of _ M))).differential x).1 +
+            f₀ ((cone (𝟙 (ForgetEnrichment.of _ M))).differential x).2
         rw [cone_differential_apply, closedHom_id]
         simp only [LinearMap.id_apply, map_add, map_neg]
         erw [differential_closedHom f]
@@ -642,12 +641,13 @@ theorem quotient_map_eq_zero_iff_factors_coneIdentity
     intro x
     dsimp only [g]
     erw [closedHom_comp, closedHom_closedHomOf, closedHom_coneInclusion]
-    simp only [LinearMap.coprod_apply, LinearMap.inr_apply, map_zero, zero_add]
+    -- The closed-map evaluation has already reduced the coprod and inclusion through
+    -- their coercions. Name the resulting original-carrier expression for `map_zero`.
+    change k₀ 0 + f₀ x = f₀ x
+    rw [map_zero, zero_add]
   · rintro ⟨g, rfl⟩
     rw [Functor.map_comp]
     rw [(isZero_homotopy_cone_isIso (𝟙 (ForgetEnrichment.of _ M))).eq_of_src
-      ((dgClosedToHomotopy R).map g) 0, comp_zero]
-
-end IdentityConeFactorization
+      ((dgClosedToHomotopy R).map g) 0, CategoryTheory.Limits.comp_zero]
 
 end TauCeti.CurvedDGRightModuleCat
