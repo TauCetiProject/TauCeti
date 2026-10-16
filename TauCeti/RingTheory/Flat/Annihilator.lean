@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Ideal.TensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
+public import Mathlib.Algebra.Module.Torsion.Basic
 
 /-!
 # Annihilators under flat scalar extension
@@ -72,11 +73,12 @@ theorem annihilator_flat_baseChange [Module.Flat R S] [Module.Finite R M] :
     annihilator_flat_baseChange_generators, hg, Submodule.annihilator_top]
 
 /-- Flat scalar extension preserves the annihilator of the element `1 ⊗ₜ m`.
-The ambient module need not be finite. -/
+The ambient module need not be finite. The element annihilator is expressed in the
+canonical `Ideal.torsionOf` normal form. -/
 @[simp]
 theorem element_annihilator_flat_baseChange [Module.Flat R S] (m : M) :
-    (Submodule.span S {(1 : S) ⊗ₜ[R] m}).annihilator =
-      (Submodule.span R {m}).annihilator.map (algebraMap R S) := by
+    Ideal.torsionOf S (S ⊗[R] M) ((1 : S) ⊗ₜ[R] m) =
+      (Ideal.torsionOf R M m).map (algebraMap R S) := by
   simpa using annihilator_flat_baseChange_generators (S := S) (fun _ : Unit ↦ m)
 
 end TauCeti

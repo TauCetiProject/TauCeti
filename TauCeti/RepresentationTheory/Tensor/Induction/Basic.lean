@@ -118,6 +118,14 @@ theorem IntertwiningMap.wreathTensor_apply_tprod (f : ρ.IntertwiningMap τ) (ι
       PiTensorProduct.tprod R fun i ↦ f (m i) := by
   simp [IntertwiningMap.wreathTensor]
 
+/-- The underlying linear map applies the intertwining map in every tensor factor. -/
+@[simp] theorem IntertwiningMap.wreathTensor_toLinearMap
+    (f : ρ.IntertwiningMap τ) (ι : Type x) :
+    (f.wreathTensor ι).toLinearMap = PiTensorProduct.map fun _ ↦ f.toLinearMap := by
+  apply PiTensorProduct.ext
+  ext m
+  simp
+
 /-- Tensoring the identity intertwining map gives the identity map. -/
 @[simp]
 theorem IntertwiningMap.wreathTensor_id (ι : Type x) :
