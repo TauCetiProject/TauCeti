@@ -125,6 +125,19 @@ theorem Away.baseChangeHom_tmul_mk {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) (s : S
   simp only [val_smul, Away.val_mk]
   rw [Localization.smul_mk, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
 
+/-- The chart comparison sends a scalar-extended fixed-denominator numerator to the same
+fixed-denominator numerator after scalar extension. -/
+private theorem Away.baseChangeHom_mkLinearMap_baseChange {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    (n : ℕ) (a : S ⊗[R] 𝒜 (n • d)) :
+    Away.baseChangeHom 𝒜 S f ((Away.mkLinearMap hf n).baseChange S a) =
+      Away.mkLinearMap (Submodule.tmul_mem_baseChange_of_mem 1 hf) n
+        ((𝒜 (n • d)).toBaseChange S a) := by
+  induction a using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul s a =>
+      simp only [LinearMap.baseChange_tmul, Away.mkLinearMap_apply,
+        Away.baseChangeHom_tmul_mk, Submodule.coe_toBaseChange_tmul]
+
 /-- Every homogeneous fraction after scalar extension comes from the scalar extension of
 the original chart. No flatness is required for surjectivity. -/
 theorem Away.baseChangeHom_surjective {d : ι} (hf : f ∈ 𝒜 d) :
@@ -133,17 +146,8 @@ theorem Away.baseChangeHom_surjective {d : ι} (hf : f ∈ 𝒜 d) :
   have hf' := Submodule.tmul_mem_baseChange_of_mem (A := S) 1 hf
   obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective (fun i ↦ (𝒜 i).baseChange S) hf' z
   obtain ⟨x, hx⟩ := (𝒜 (n • d)).toBaseChange_surjective S ⟨a, ha⟩
-  let F := (Away.mkLinearMap hf n).baseChange S
-  refine ⟨F x, ?_⟩
-  have h : ∀ y, Away.baseChangeHom 𝒜 S f (F y) =
-      Away.mkLinearMap (𝒜 := fun i ↦ (𝒜 i).baseChange S) hf' n ((𝒜 (n • d)).toBaseChange S y) := by
-    intro y
-    induction y using TensorProduct.inductionOn with
-    | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-    | tmul s b =>
-      simp only [F, LinearMap.baseChange_tmul, Away.mkLinearMap_apply,
-        Away.baseChangeHom_tmul_mk, Submodule.coe_toBaseChange_tmul]
-  rw [h, hx, Away.mkLinearMap_apply]
+  refine ⟨(Away.mkLinearMap hf n).baseChange S x, ?_⟩
+  rw [Away.baseChangeHom_mkLinearMap_baseChange, hx, Away.mkLinearMap_apply]
 
 /-- Raising a numerator commutes with scalar extension and does not change the resulting
 homogeneous fraction. -/
@@ -177,19 +181,6 @@ private theorem Away.exists_eq_mkLinearMap_baseChange {f : A} {d : ι} (hf : f �
       obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective 𝒜 hf x
       refine ⟨n, s ⊗ₜ[R] (⟨a, ha⟩ : 𝒜 (n • d)), ?_⟩
       rw [LinearMap.baseChange_tmul, Away.mkLinearMap_apply]
-
-/-- The chart comparison sends a scalar-extended fixed-denominator numerator to the same
-fixed-denominator numerator after scalar extension. -/
-private theorem Away.baseChangeHom_mkLinearMap_baseChange {f : A} {d : ι} (hf : f ∈ 𝒜 d)
-    (n : ℕ) (a : S ⊗[R] 𝒜 (n • d)) :
-    Away.baseChangeHom 𝒜 S f ((Away.mkLinearMap hf n).baseChange S a) =
-      Away.mkLinearMap (Submodule.tmul_mem_baseChange_of_mem 1 hf) n
-        ((𝒜 (n • d)).toBaseChange S a) := by
-  induction a using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul s a =>
-      simp only [LinearMap.baseChange_tmul, Away.mkLinearMap_apply,
-        Away.baseChangeHom_tmul_mk, Submodule.coe_toBaseChange_tmul]
 
 /-- Multiplication by an added denominator commutes with the inclusion of a base-changed
 homogeneous component into the scalar-extended algebra. -/
