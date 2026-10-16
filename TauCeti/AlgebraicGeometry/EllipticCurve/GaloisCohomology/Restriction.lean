@@ -95,7 +95,8 @@ point of `W⁄L` over `Lˢ`. -/
 theorem nonsingular_baseChange_separableClosure {x y : SeparableClosure K}
     (h : (W⁄(SeparableClosure K)).toAffine.Nonsingular x y) :
     ((W⁄L)⁄(SeparableClosure L)).toAffine.Nonsingular (τ x) (τ y) :=
-  (W.baseChange_baseChange L (SeparableClosure L)).symm ▸
+  (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+    W.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm ▸
     (W.toAffine.baseChange_nonsingular (S := K) (f := τ) τ.injective x y).2 h
 
 open scoped Classical in
@@ -104,7 +105,9 @@ applies `τ` to the coordinates of a point. -/
 def pointCoeffBaseChange : W.PointCoeff →+ (W⁄L).PointCoeff :=
   (W⁄L).pointCoeffEquiv.toAddMonoidHom.comp <|
     (AddEquiv.cast (M := fun V : WeierstrassCurve (SeparableClosure L) => V.toAffine.Point)
-      (W.baseChange_baseChange L (SeparableClosure L)).symm).toAddMonoidHom.comp <|
+      (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+        W.map_baseChange
+          (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm).toAddMonoidHom.comp <|
     (Affine.Point.map (W' := W.toAffine) τ).comp W.pointCoeffEquiv.symm.toAddMonoidHom
 
 open scoped Classical in
@@ -116,7 +119,8 @@ theorem pointCoeffBaseChange_pointCoeffEquiv_some {x y : SeparableClosure K}
       (W⁄L).pointCoeffEquiv (.some _ _ (W.nonsingular_baseChange_separableClosure τ h)) := by
   simp only [pointCoeffBaseChange, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     AddEquiv.symm_apply_apply, Affine.Point.map_some, AddEquiv.cast_apply]
-  rw [Affine.Point.cast_some (W.baseChange_baseChange L (SeparableClosure L)).symm]
+  rw [Affine.Point.cast_some (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+    W.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm]
 
 open scoped Classical in
 /-- **`pointCoeffBaseChange τ` is equivariant** along `absoluteGaloisGroupMap τ : G_L → G_K`. -/
@@ -208,7 +212,8 @@ along `τ''`, followed by the identification of `(W⁄L)⁄M` with `W⁄M`. -/
 theorem pointCoeffBaseChange_pointCoeffBaseChange (hτ : ∀ x, τ'' x = τ' (τ x))
     (P : W.PointCoeff) :
     (W⁄L).pointCoeffBaseChange τ' (W.pointCoeffBaseChange τ P) =
-      AddEquiv.cast (M := PointCoeff) (W.baseChange_baseChange L M).symm
+      AddEquiv.cast (M := PointCoeff) (show (W⁄L)⁄M = W⁄M from
+        W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm
         (W.pointCoeffBaseChange τ'' P) := by
   obtain ⟨P, rfl⟩ := W.pointCoeffEquiv.surjective P
   rcases P with _ | ⟨x, y, h⟩
@@ -223,7 +228,9 @@ theorem torsionCoeffBaseChange_torsionCoeffBaseChange (hτ : ∀ x, τ'' x = τ'
     (P : W.TorsionCoeff m) :
     (W⁄L).torsionCoeffBaseChange τ' m (W.torsionCoeffBaseChange τ m P) =
       AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.TorsionCoeff m)
-        (W.baseChange_baseChange L M).symm (W.torsionCoeffBaseChange τ'' m P) :=
+        (show (W⁄L)⁄M = W⁄M from
+          W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm
+        (W.torsionCoeffBaseChange τ'' m P) :=
   Subtype.ext <| by
     rw [coe_torsionCoeffBaseChange, coe_torsionCoeffBaseChange, coe_cast_torsionCoeff,
       coe_torsionCoeffBaseChange, pointCoeffBaseChange_pointCoeffBaseChange W τ τ' τ'' hτ]

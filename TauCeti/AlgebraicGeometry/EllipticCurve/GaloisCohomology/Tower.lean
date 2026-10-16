@@ -81,7 +81,9 @@ along `τ` and then to `M` along `τ'` is restricting to `M` along any embedding
 followed by the identification of `(W⁄L)⁄M` with `W⁄M`. -/
 theorem pointRes_pointRes (c : H1 (AbsoluteGaloisGroup K) W.PointCoeff) :
     (W⁄L).pointRes τ' (W.pointRes τ c) =
-      explicitCoeff1Equiv _ _ (AddEquiv.cast (M := PointCoeff) (W.baseChange_baseChange L M).symm)
+      explicitCoeff1Equiv _ _
+        (AddEquiv.cast (M := PointCoeff) (show (W⁄L)⁄M = W⁄M from
+          W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm)
         continuous_of_discreteTopology continuous_of_discreteTopology (cast_pointCoeff_smul _)
         (W.pointRes τ'' c) := by
   rw [W.pointRes_eq_pointRes τ'' (compSeparableClosure τ τ'), pointRes_eq_explicitMap1,
@@ -93,7 +95,8 @@ theorem pointRes_pointRes (c : H1 (AbsoluteGaloisGroup K) W.PointCoeff) :
     (f := W.pointCoeffBaseChange τ) (ψ := absoluteGaloisGroupMap τ')
     (q := (W⁄L).pointCoeffBaseChange τ') (φ' := absoluteGaloisGroupMap (compSeparableClosure τ τ'))
     (f' := W.pointCoeffBaseChange (compSeparableClosure τ τ')) (ψ' := ContinuousMonoidHom.id _)
-    (q' := (AddEquiv.cast (M := PointCoeff) (W.baseChange_baseChange L M).symm).toAddMonoidHom)
+    (q' := (AddEquiv.cast (M := PointCoeff) (show (W⁄L)⁄M = W⁄M from
+      W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm).toAddMonoidHom)
     (hf := continuous_of_discreteTopology) (hequiv := W.pointCoeffBaseChange_smul τ)
     (hq := continuous_of_discreteTopology) (hequivq := (W⁄L).pointCoeffBaseChange_smul τ')
     (hf' := continuous_of_discreteTopology)
@@ -110,7 +113,8 @@ theorem torsionRes_torsionRes (m : ℕ) (c : H1 (AbsoluteGaloisGroup K) (W.Torsi
     (W⁄L).torsionRes τ' m (W.torsionRes τ m c) =
       explicitCoeff1Equiv _ _
         (AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.TorsionCoeff m)
-          (W.baseChange_baseChange L M).symm)
+          (show (W⁄L)⁄M = W⁄M from
+            W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm)
         continuous_of_discreteTopology continuous_of_discreteTopology (cast_torsionCoeff_smul _)
         (W.torsionRes τ'' m c) := by
   rw [W.torsionRes_eq_torsionRes τ'' (compSeparableClosure τ τ'), torsionRes_eq_explicitMap1,
@@ -125,7 +129,8 @@ theorem torsionRes_torsionRes (m : ℕ) (c : H1 (AbsoluteGaloisGroup K) (W.Torsi
     (f' := W.torsionCoeffBaseChange (compSeparableClosure τ τ') m)
     (ψ' := ContinuousMonoidHom.id _)
     (q' := (AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.TorsionCoeff m)
-      (W.baseChange_baseChange L M).symm).toAddMonoidHom)
+      (show (W⁄L)⁄M = W⁄M from
+        W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm).toAddMonoidHom)
     (hf := continuous_of_discreteTopology) (hequiv := W.torsionCoeffBaseChange_smul τ m)
     (hq := continuous_of_discreteTopology) (hequivq := (W⁄L).torsionCoeffBaseChange_smul τ' m)
     (hf' := continuous_of_discreteTopology)
