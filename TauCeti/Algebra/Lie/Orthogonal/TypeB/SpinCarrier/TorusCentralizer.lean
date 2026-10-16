@@ -26,6 +26,8 @@ image, or identify the carrier with an independently pinned simply connected gro
 ## Main declarations
 
 * `TauCeti.TypeBSpinCarrier.diagonalPoints`: the diagonal points of the spin carrier.
+* `TauCeti.TypeBSpinCarrier.centralizer_range_weightTorusPoints_eq_diagonalPoints`: over an
+  infinite field, the weight-torus centralizer is the subgroup of diagonal carrier points.
 * `TauCeti.TypeBSpinCarrier.centralizer_diagonalPoints_eq_diagonalPoints`: over an infinite field,
   the diagonal carrier points are self-centralizing.
 * `TauCeti.TypeBSpinCarrier.eq_diagonalPoints_of_le_of_isMulCommutative`: no commutative subgroup
@@ -117,24 +119,15 @@ theorem mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_basisWe
     rw [← hg.diagonal_diag]
     exact (Matrix.commute_diagonal _ _).eq
 
-/-- If the spin weights define distinct characters on torus points, the weight-torus
-centralizer is the inverse image of the ambient diagonal torus under the carrier inclusion. -/
-theorem
-    centralizer_range_weightTorusPoints_eq_comap_diagonalTorus_of_weightChar_basisWeight_injective
-    (hchar : Function.Injective fun i : Fin (dimension n) ↦ weightChar A (basisWeight n i)) :
-    Subgroup.centralizer (Set.range (weightTorusPoints n A)) =
-      (diagonalTorus A (dimension n)).comap (points n A).subtype := by
-  ext g
-  simp only [mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_basisWeight_injective
-    n hchar, Subgroup.mem_comap, Subgroup.subtype_apply, mem_diagonalTorus_iff]
-
 /-- If the spin weight characters remain distinct over a ring without zero divisors, the
-centralizer of the weight torus is exactly the diagonal carrier subgroup. -/
+centralizer of the weight torus is exactly the diagonal carrier subgroup, the inverse image of
+the ambient diagonal torus under the carrier inclusion. -/
 theorem centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective
     (hchar : Function.Injective fun i : Fin (dimension n) ↦ weightChar A (basisWeight n i)) :
-    Subgroup.centralizer (Set.range (weightTorusPoints n A)) = diagonalPoints n A :=
-  centralizer_range_weightTorusPoints_eq_comap_diagonalTorus_of_weightChar_basisWeight_injective
-    n hchar
+    Subgroup.centralizer (Set.range (weightTorusPoints n A)) = diagonalPoints n A := by
+  ext g
+  rw [mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_basisWeight_injective
+    n hchar, mem_diagonalPoints_iff]
 
 /-- If the spin weight characters remain distinct over a ring without zero divisors, the diagonal
 spin-carrier points are self-centralizing. -/
@@ -180,17 +173,9 @@ theorem mem_centralizer_range_weightTorusPoints_iff_isDiag (g : points n k) :
   exact mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_basisWeight_injective n
     (weightChar_comp_basisWeight_injective n) g
 
-/-- The centralizer of the spin weight torus over an infinite field is the inverse image of
-the ambient diagonal torus under the carrier's matrix inclusion. This is not an assertion
-that the weight torus is its own centralizer. -/
-theorem centralizer_range_weightTorusPoints_eq_comap_diagonalTorus :
-    Subgroup.centralizer (Set.range (weightTorusPoints n k)) =
-      (diagonalTorus k (dimension n)).comap (points n k).subtype := by
-  exact
-    centralizer_range_weightTorusPoints_eq_comap_diagonalTorus_of_weightChar_basisWeight_injective
-      n (weightChar_comp_basisWeight_injective n)
-
-/-- Over an infinite field, the weight-torus centralizer is the diagonal carrier subgroup. -/
+/-- Over an infinite field, the weight-torus centralizer is the diagonal carrier subgroup, the
+inverse image of the ambient diagonal torus under the carrier's matrix inclusion. This is not an
+assertion that the weight torus is its own centralizer. -/
 theorem centralizer_range_weightTorusPoints_eq_diagonalPoints :
     Subgroup.centralizer (Set.range (weightTorusPoints n k)) = diagonalPoints n k :=
   centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective n
