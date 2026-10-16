@@ -234,6 +234,19 @@ curved duplexes is the sum of the duals. -/
     dualMap (f + g) = dualMap f + dualMap g :=
   hom_ext (by simp) (by simp)
 
+/-- Transposing an odd homotopy reverses its components and negates the even-to-odd
+component. Its boundary is the transpose of the original boundary, with the pinned
+crossed-transpose convention for the differentials. -/
+@[simp]
+theorem dualMap_nullHomotopicMap {X Y : CurvedDuplex (FGModuleCat.{u} S) w}
+    [Module.Projective S X.X₀] [Module.Projective S X.X₁]
+    [Module.Projective S Y.X₀] [Module.Projective S Y.X₁]
+    (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) :
+    dualMap (nullHomotopicMap h₀ h₁) =
+      nullHomotopicMap (X := Y.dual) (Y := X.dual)
+        (-FGModuleCat.dualMap h₁) (FGModuleCat.dualMap h₀) := by
+  apply hom_ext <;> simp [add_comm]
+
 /-- The double dual of a curved duplex is a curved duplex of the *same* curvature: each of its
 differentials is the negated double transpose of the corresponding differential of the original,
 and the two minus signs cancel when the differentials are composed, so the composite is

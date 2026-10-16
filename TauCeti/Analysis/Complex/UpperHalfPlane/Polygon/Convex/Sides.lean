@@ -31,10 +31,13 @@ the closure of its interior.
   other side inequality strictly.
 * `ConvexPolygon.carrier_inter_range_sideGeodesic`: the polygon meets the supporting line of a
   side exactly in that side.
+* `ConvexPolygon.geodesicSegment_inter_interior_carrier_nonempty`: two distinct points of the
+  polygon not on a common side span a segment through the interior.
 * `ConvexPolygon.frontier_carrier`: the boundary is the union of the sides.
 * `ConvexPolygon.volume_frontier_carrier`: the boundary is a null set.
 * `ConvexPolygon.nonempty_interior_carrier`, `ConvexPolygon.closure_interior_carrier`: the
   interior is nonempty and dense in the polygon.
+* `ConvexPolygon.isPathConnected_carrier`: the polygon is path-connected.
 
 ## References
 
@@ -202,6 +205,35 @@ theorem carrier_inter_range_sideGeodesic (k : Fin n) :
         (isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hξη))]
     exact mem_range_self u
 
+/-- A finite vertex lies on a side only as one of its two endpoints. -/
+theorem eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side {j k : Fin n} {z : ℍ}
+    (hj : P.vertex j = .inl z) (hz : z ∈ P.side k) : j = k ∨ j = k + 1 := by
+  by_contra! h
+  have hleft := P.vertex_mem_extLeftHalfPlane_sideGeodesic h.1 h.2
+  rw [hj, inl_mem_extLeftHalfPlane_iff] at hleft
+  exact disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _) hleft
+    (P.side_subset_range_sideGeodesic k hz)
+
+/-- Two distinct points of a convex polygon which do not lie on a common side span a geodesic
+segment meeting the interior of the polygon. -/
+theorem geodesicSegment_inter_interior_carrier_nonempty {z w : ℍ} (hz : z ∈ P.carrier)
+    (hw : w ∈ P.carrier) (hzw : z ≠ w) (hside : ∀ k, z ∈ P.side k → w ∉ P.side k) :
+    (geodesicSegment z w ∩ interior P.carrier).Nonempty := by
+  have hd : 0 < dist z w := dist_pos.2 hzw
+  refine ⟨geodesicLine (geodesicBetween z w) (dist z w / 2),
+    (mem_geodesicSegment_iff _ _ _).2 ⟨dist z w / 2, ⟨by positivity, by linarith⟩, rfl⟩,
+    (P.mem_interior_carrier_iff _).2 fun k ↦ ?_⟩
+  refine geodesicLine_mem_leftHalfPlane_of_mem_closure (s := 0) (t := dist z w)
+    (by linarith) (by linarith) ?_ ?_ fun he ↦ hside k ?_ ?_
+  · rw [geodesicLine_geodesicBetween_zero]
+    exact P.carrier_subset_closure_leftHalfPlane k hz
+  · rw [geodesicLine_geodesicBetween_dist]
+    exact P.carrier_subset_closure_leftHalfPlane k hw
+  · exact P.carrier_inter_range_sideGeodesic k ▸
+      ⟨hz, he ▸ ⟨0, geodesicLine_geodesicBetween_zero z w⟩⟩
+  · exact P.carrier_inter_range_sideGeodesic k ▸
+      ⟨hw, he ▸ ⟨dist z w, geodesicLine_geodesicBetween_dist z w⟩⟩
+
 /-- The boundary of a convex polygon is the union of its sides. -/
 @[simp]
 theorem frontier_carrier : frontier P.carrier = ⋃ i, P.side i := by
@@ -259,5 +291,13 @@ theorem closure_interior_carrier : closure (interior P.carrier) = P.carrier := b
     rwa [geodesicLine_geodesicBetween_zero] at h
   refine mem_closure_of_tendsto hlim ?_
   filter_upwards [Ioo_mem_nhdsGT (dist_pos.2 hxp)] with t ht using hmem t ht
+
+/-- A convex polygon is path-connected: it is nonempty and contains the geodesic segment between
+any two of its points. -/
+theorem isPathConnected_carrier : IsPathConnected P.carrier := by
+  obtain ⟨p, hp⟩ := P.nonempty_interior_carrier
+  refine isPathConnected_iff.2 ⟨⟨p, interior_subset hp⟩, fun z hz w hw ↦ ?_⟩
+  exact ((isPathConnected_geodesicSegment z w).joinedIn z (left_mem_geodesicSegment z w) w
+    (right_mem_geodesicSegment z w)).mono (P.geodesicSegment_subset_carrier hz hw)
 
 end TauCeti.UpperHalfPlane.ConvexPolygon

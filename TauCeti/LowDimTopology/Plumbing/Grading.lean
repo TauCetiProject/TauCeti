@@ -48,9 +48,7 @@ source lies above that range.
 
 ## References
 
-This supplies the cubical grading needed by the lattice-homology construction in
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"). The grading
-by cube dimension and its degree-minus-one differential follow A. Némethi,
+The grading by cube dimension and its degree-minus-one differential follow A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
@@ -137,7 +135,7 @@ theorem latticeDifferentialOnGenerator_mem_degreePart
   rw [PlumbingChain.mem_degreePart]
   intro D hD
   rw [latticeDifferentialOnGenerator_def] at hD
-  obtain ⟨v, hv, hDv⟩ := Finsupp.mem_support_finsetSum D hD
+  obtain ⟨v, _, hDv⟩ := Finsupp.mem_support_finsetSum D hD
   rw [Finsupp.mem_support_iff] at hDv
   simp only [Finsupp.add_apply, Finsupp.single_apply] at hDv
   split at hDv

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
@@ -306,3 +307,36 @@ theorem exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq {n p : ℕ} (h : p ≤ 
     by rw [Equivalent.sigNeg_eq ⟨f⟩, sigNeg_realSignatureForm]⟩
 
 end QuadraticForm
+
+namespace TauCeti
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {Q : _root_.QuadraticForm ℝ V}
+
+/-- A positive definite real quadratic form is isometric to the standard sum-of-squares form
+in its dimension. -/
+theorem nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef (hQ : Q.PosDef) :
+    Nonempty (Q.IsometryEquiv
+      (Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
+        (Fin (Module.finrank ℝ V)) ℝ))) := by
+  obtain ⟨w, hw, ⟨e⟩⟩ := Q.equivalent_one_zero_neg_one_weighted_sum_squared
+  have hwpos (i : Fin (Module.finrank ℝ V)) : 0 < w i := by
+    have h := hQ (e.symm (Pi.single i 1)) (by simp)
+    rw [← e.map_app] at h
+    simpa [QuadraticMap.weightedSumSquares_apply, Pi.single_apply,
+      Finset.sum_ite_eq'] using h
+  have hwone : w = 1 := funext fun i ↦ by
+    rcases hw i with h | h | h
+    · exfalso
+      have hp := hwpos i
+      norm_num [h] at hp
+    · exact False.elim (by simpa [h] using hwpos i)
+    · exact h
+  have hstandard : QuadraticMap.weightedSumSquares ℝ w =
+      Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
+        (Fin (Module.finrank ℝ V)) ℝ) := by
+    rw [hwone, weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
+  rw [hstandard] at e
+  exact ⟨e⟩
+
+end TauCeti

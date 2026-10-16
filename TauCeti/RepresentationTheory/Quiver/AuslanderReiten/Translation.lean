@@ -40,10 +40,6 @@ universe u v w t
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
 
-local instance : Finite Q :=
-  Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
-    (fun _ _ h ↦ congrArg Sigma.fst h)
-
 /-- The partial Auslander–Reiten translation on isomorphism classes: `D Tr` away from
 projectives, and `none` on projectives. -/
 noncomputable def translate (a : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q) :

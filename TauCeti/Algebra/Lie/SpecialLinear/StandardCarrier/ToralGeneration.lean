@@ -159,6 +159,7 @@ theorem baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal
 
 /-- **A morphism out of the standard type-`A_r` carrier is determined by the numbered root
 subgroups**, with no hypothesis on the weight torus. -/
+@[ext high]
 theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (φ ψ : groupScheme r ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))

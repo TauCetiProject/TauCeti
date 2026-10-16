@@ -53,13 +53,6 @@ anti-equivalence `TauCeti.commHopfAlgCatOpEquivAffineGroupSchemeCat`.
 `hopfSpecBaseChangeIso` identifies their values on each Hopf algebra. Their natural compatibility
 is developed in `TauCeti.AlgebraicGeometry.AffineGroupScheme.BaseChange.Coordinate` as
 `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeNatIso`.
-
-## Roadmap
-
-This supplies the scheme-side base-change operation required by Layer 9 of the ReductiveGroups
-roadmap. The CFSGStatement roadmap's milestone L0 uses it to evaluate a pinned
-Chevalley--Demazure group scheme over `ℤ` after extension to an algebraic closure of a finite
-prime field.
 -/
 
 public section

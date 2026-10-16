@@ -388,6 +388,11 @@ def orderedCylinder (K : AbstractSimplicialComplex α) :
     AbstractSimplicialComplex (α × Fin 2) :=
   orderedProd K (⊤ : AbstractSimplicialComplex (Fin 2))
 
+/-- The ordered cylinder is the ordered product with the standard one-simplex. -/
+theorem orderedCylinder_def (K : AbstractSimplicialComplex α) :
+    K.orderedCylinder = K.orderedProd (⊤ : AbstractSimplicialComplex (Fin 2)) :=
+  (rfl)
+
 /-- The underlying precomplex of an ordered cylinder is the ordered product with the top
 precomplex on `Fin 2`. -/
 @[simp]

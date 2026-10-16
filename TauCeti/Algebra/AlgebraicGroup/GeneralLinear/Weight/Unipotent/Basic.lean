@@ -143,9 +143,9 @@ private theorem comul_sub_one_apply_mem (w : Fin N → ℤ) {i j : Fin N}
     Coalgebra.comul (R := R)
         ((genericMatrix R N) i j -
           (1 : Matrix (Fin N) (Fin N) (coordinateHopfAlgebra R N)) i j) ∈
-      HopfIdeal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
+      Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N)
           (Ideal.span (weightUnipotentRelationSet R w)) ⊔
-        HopfIdeal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
+        Ideal.rightTensorIdeal (R := R) (A := coordinateHopfAlgebra R N)
           (Ideal.span (weightUnipotentRelationSet R w)) := by
   let J : Ideal (coordinateHopfAlgebra R N) :=
     Ideal.span (weightUnipotentRelationSet R w)
@@ -155,17 +155,15 @@ private theorem comul_sub_one_apply_mem (w : Fin N → ℤ) {i j : Fin N}
   change Coalgebra.comul (R := R)
       ((genericMatrix R N) i j -
         (1 : Matrix (Fin N) (Fin N) (coordinateHopfAlgebra R N)) i j) ∈
-    HopfIdeal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J ⊔
-      HopfIdeal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J
+    Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N) J ⊔
+      Ideal.rightTensorIdeal (R := R) (A := coordinateHopfAlgebra R N) J
   have hker :
       RingHom.ker (Algebra.TensorProduct.map q q) =
-        HopfIdeal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J ⊔
-          HopfIdeal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J := by
-    rw [Algebra.TensorProduct.map_ker (f := q) (g := q)
-      (Ideal.Quotient.mkₐ_surjective R J) (Ideal.Quotient.mkₐ_surjective R J)]
-    rw [← RingHom.ker_coe_toRingHom q]
-    simp only [q, Ideal.Quotient.mkₐ_ker]
-    rfl
+        Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N) J ⊔
+          Ideal.rightTensorIdeal (R := R) (A := coordinateHopfAlgebra R N) J := by
+    simpa only [AlgHom.ker_coe, q, Ideal.Quotient.mkₐ_ker] using
+      q.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q
+        (Ideal.Quotient.mkₐ_surjective R J) (Ideal.Quotient.mkₐ_surjective R J)
   rw [← hker]
   apply RingHom.mem_ker.mpr
   simp only [Matrix.one_apply]
@@ -301,7 +299,7 @@ theorem weightUnipotentInclusion_def (w : Fin N → ℤ) :
     weightUnipotentInclusion R w =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R N)
           (weightUnipotentDefiningHopfIdeal R w) ≫
-        (eqToIso (groupScheme_def R N).symm).hom := by
+        eqToHom (groupScheme_def R N).symm := by
   rw [weightUnipotentInclusion, hopfIdealInclusion_def]
 
 /-- The weight-unipotent inclusion into `GL_N` is a closed immersion. -/
@@ -312,7 +310,7 @@ instance isClosedImmersion_weightUnipotentInclusion (w : Fin N → ℤ) :
 
 /-- The subgroup cut out by the weight-unipotent ideal consists exactly of matrices whose
 `(i,j)` entry agrees with the identity matrix whenever `w i ≤ w j`. -/
-@[simp]
+@[simp↓]
 theorem mem_weightUnipotentDefiningPointsSubgroup_iff (w : Fin N → ℤ)
     {A : Type*} [CommRing A] [Algebra R A]
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)

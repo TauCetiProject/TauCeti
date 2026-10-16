@@ -134,13 +134,13 @@ theorem map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso
   have hI : hopfIdealInclusion R n I ≫
       eqToHom (groupScheme_def R n) =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I := by
-    rw [← eqToIso.hom, hopfIdealInclusion_def, Category.assoc]
+    rw [hopfIdealInclusion_def, Category.assoc]
     simp
   rw [groupSchemeBaseChangeIso_hom]
   rw [← Category.assoc, ← Functor.map_comp, hI]
   rw [← Category.assoc]
   rw [map_quotientSpecι_comp_coordinateGroupSchemeBaseChangeIso R S n I I' e he]
-  rw [hopfIdealInclusion_def, eqToIso.hom]
+  rw [hopfIdealInclusion_def]
   simp only [Category.assoc]
 
 end TauCeti.GeneralLinear

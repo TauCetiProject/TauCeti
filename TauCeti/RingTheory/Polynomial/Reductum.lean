@@ -243,7 +243,7 @@ theorem reducta_eq_insert_eraseLead_reducta (p : R[X]) :
     · subst q
       exact p.self_mem_reducta
     · rw [mem_reducta] at hq
-      obtain ⟨k, hk, rfl⟩ := hq
+      obtain ⟨k, _, rfl⟩ := hq
       by_cases hkp : k ≤ p.natDegree
       · rw [mem_reducta]
         exact ⟨k, by omega, (p.reductum_eraseLead hkp).symm⟩

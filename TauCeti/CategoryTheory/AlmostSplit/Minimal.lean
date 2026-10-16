@@ -152,3 +152,31 @@ theorem ShortExact.isAlmostSplit_of_isLeftAlmostSplit (hS : S.ShortExact)
   ⟨hS, hf, hf.isRightAlmostSplit_of_minimal hS hmin⟩
 
 end CategoryTheory.ShortComplex
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable {C : Type u} [Category.{v} C]
+
+/-- Two right minimal right almost-split morphisms `f : X ⟶ Y` and `g : X' ⟶ Y`
+have an isomorphism `e : X ≅ X'` satisfying `e.hom ≫ g = f`. -/
+theorem IsRightAlmostSplit.exists_iso_of_minimal {X X' Y : C}
+    {f : X ⟶ Y} {g : X' ⟶ Y} (hf : IsRightAlmostSplit f) (hg : IsRightAlmostSplit g)
+    (hminf : ∀ b : X ⟶ X, b ≫ f = f → IsIso b)
+    (hming : ∀ b : X' ⟶ X', b ≫ g = g → IsIso b) :
+    ∃ e : X ≅ X', e.hom ≫ g = f := by
+  obtain ⟨a, hag⟩ := hg.factors X f hf.not_isSplitEpi
+  obtain ⟨b, hbf⟩ := hf.factors X' g hg.not_isSplitEpi
+  have hab : (a ≫ b) ≫ f = f := by
+    rw [Category.assoc, hbf, hag]
+  have hba : (b ≫ a) ≫ g = g := by
+    rw [Category.assoc, hag, hbf]
+  have : IsIso (a ≫ b) := hminf (a ≫ b) hab
+  have : IsIso (b ≫ a) := hming (b ≫ a) hba
+  have : Mono a := mono_of_mono a b
+  have : IsSplitEpi a := IsSplitEpi.mk' ⟨inv (b ≫ a) ≫ b, by simp [Category.assoc]⟩
+  have : IsIso a := isIso_of_mono_of_isSplitEpi a
+  exact ⟨asIso a, hag⟩
+
+end TauCeti

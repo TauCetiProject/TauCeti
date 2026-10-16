@@ -186,8 +186,6 @@ theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π
   set B : Set Y := (toMeasurable ν (ψ₀ ⁻¹' {⊥}))ᶜ with hB
   have hBmeas : MeasurableSet B := (measurableSet_toMeasurable _ _).compl
   have hνB : ν Bᶜ = 0 := by rw [hB, compl_compl, measure_toMeasurable, hψ₀bot]
-  have haeB : ∀ᵐ y ∂ν, y ∈ B := measure_eq_zero_iff_ae_notMem.1 hνB |>.mono fun _ h ↦ by
-    simpa using h
   set ψ : Y → ℝ := fun y ↦ (ψ₀ y).toReal with hψ
   have hψB : ∀ y ∈ B, ψ₀ y = (ψ y : EReal) := by
     intro y hy

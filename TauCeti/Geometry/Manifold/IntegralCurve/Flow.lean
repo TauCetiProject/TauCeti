@@ -90,7 +90,7 @@ private theorem sub_mem_maximalIntegralCurveInterval
     (ht : t ∈ maximalIntegralCurveInterval v x)
     (hs : s ∈ maximalIntegralCurveInterval v x) :
     s - t ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) := by
-  obtain ⟨a, b, h0, ht', hs', hγ⟩ :=
+  obtain ⟨a, b, _, ht', hs', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hs
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
       (Ioo (a - t) (b - t)) := by
@@ -110,7 +110,7 @@ theorem maximalIntegralCurve_add
     (hts : t + s ∈ maximalIntegralCurveInterval v x) :
     maximalIntegralCurve v x (t + s) =
       maximalIntegralCurve v (maximalIntegralCurve v x t) s := by
-  obtain ⟨a, b, h0, ht', hst', hγ⟩ :=
+  obtain ⟨a, b, _, ht', hst', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hts
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
       (Ioo (a - t) (b - t)) := by

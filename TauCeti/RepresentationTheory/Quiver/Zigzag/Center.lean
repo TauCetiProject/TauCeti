@@ -64,11 +64,8 @@ becomes the standard basis of `Option V → k`.
 
 ## References
 
-This is the fourth clause of Layer 2 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, whose
-target signature `finrank_center_zigzagAlgebra` appears in
-`TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`. See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -60,6 +60,11 @@ private def negativeA1Matrix : Matrix (Fin 1) (Fin 1) ℤ := fun _ _ => -2
 private def hyperbolicPlaneMatrix : Matrix (Fin 2) (Fin 2) ℤ := fun i j =>
   if i.val = j.val then 0 else 1
 
+private theorem hyperbolicPlaneMatrix_isSymm : hyperbolicPlaneMatrix.IsSymm := by
+  apply Matrix.IsSymm.ext
+  intro i j
+  simp only [hyperbolicPlaneMatrix, eq_comm]
+
 private def affineA1Matrix : Matrix (Fin 2) (Fin 2) ℤ := fun i j =>
   if i.val = j.val then 2 else -2
 
@@ -82,10 +87,29 @@ noncomputable def negativeA1 : IntegralLattice ℚ := by
 /-- The hyperbolic plane, with Gram matrix `!![0, 1; 1, 0]`. -/
 noncomputable def hyperbolicPlane : IntegralLattice (Fin 2 → ℚ) := by
   exact
-  ofGramMatrix (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix (by
-    apply Matrix.IsSymm.ext
-    intro i j
-    simp only [hyperbolicPlaneMatrix, eq_comm])
+  ofGramMatrix (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix hyperbolicPlaneMatrix_isSymm
+
+/-- The coordinate integral basis of the hyperbolic plane. -/
+noncomputable def hyperbolicPlaneBasis : Basis (Fin 2) ℤ hyperbolicPlane :=
+  ofGramMatrix.basis (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix hyperbolicPlaneMatrix_isSymm
+
+/-- The hyperbolic basis vectors are the standard coordinate vectors. -/
+@[simp] theorem coe_hyperbolicPlaneBasis (i : Fin 2) :
+    (hyperbolicPlaneBasis i : Fin 2 → ℚ) = Pi.single i 1 := by
+  have h := ofGramMatrix.coe_basis (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix
+    hyperbolicPlaneMatrix_isSymm i
+  exact h.trans (Pi.basisFun_apply ℚ (Fin 2) i)
+
+/-- The coordinate integral basis has the standard hyperbolic Gram matrix. -/
+@[simp] theorem gramMatrix_hyperbolicPlaneBasis :
+    hyperbolicPlane.gramMatrix hyperbolicPlaneBasis = !![0, 1; 1, 0] := by
+  have h := gramMatrix_ofGramMatrix (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix
+    hyperbolicPlaneMatrix_isSymm
+  have hg : hyperbolicPlane.gramMatrix hyperbolicPlaneBasis = hyperbolicPlaneMatrix := by
+    simpa only [hyperbolicPlane, hyperbolicPlaneBasis] using h
+  rw [hg]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [hyperbolicPlaneMatrix]
 
 /-- The degenerate affine `A₁` lattice, with Gram matrix `!![2, -2; -2, 2]`. -/
 noncomputable def affineA1 : IntegralLattice (Fin 2 → ℚ) := by

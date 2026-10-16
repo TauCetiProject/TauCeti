@@ -55,7 +55,6 @@ theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
     (hs : σ < s.re) :
     Summable fun e : ℕ ↦ ‖PowerSeries.coeff e (D.localLogSeries P) *
       ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e‖ := by
-  let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
   obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P hσ hs
   rw [D.localLogSeries_def]
   apply PowerSeries.summable_norm_coeff_logOf_mul_pow_of_zeroFree
@@ -80,7 +79,6 @@ theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
     (hs : σ < s.re) :
     Complex.exp (∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
       ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e) = D.eulerFactor P s := by
-  let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
   obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P hσ hs
   rw [D.localLogSeries_def]
   calc

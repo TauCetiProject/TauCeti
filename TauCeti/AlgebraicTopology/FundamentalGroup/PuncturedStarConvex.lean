@@ -150,7 +150,7 @@ theorem _root_.StarConvex.fundamentalGroupMulEquivInt_sphereLoop (hV : StarConve
     ← Path.Homotopic.Quotient.mk_cast]
   -- Transported to `Circle`, the loop is `Circle.expLoop`, up to the basepoint equation
   -- `sphereCircleHomeomorph p hr ((sphereCircleHomeomorph p hr).symm 1) = 1`.
-  have key : ∀ (y : Circle) (hy : y = 1) (γ : Path y y), (∀ t, γ t = Circle.expLoop t) →
+  have key : ∀ (y : Circle) (_ : y = 1) (γ : Path y y), (∀ t, γ t = Circle.expLoop t) →
       Circle.fundamentalGroupMulEquiv y
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = Multiplicative.ofAdd 1 := by
     rintro y rfl γ hγ
@@ -216,7 +216,7 @@ theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective
     (Equiv.uniqueProd _ _).bijective.comp (FundamentalGroup.prodMulEquiv u z).bijective
   have hcomp : ⇑(FundamentalGroup.map ((p.directionFrom V).comp ContinuousMap.snd) (u, z)) =
       FundamentalGroup.map (p.directionFrom V) z ∘ FundamentalGroup.map ContinuousMap.snd (u, z) :=
-    funext fun γ => FundamentalGroupoid.map_comp_map _ _ γ
+    funext fun γ => CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
   rw [hcomp]
   exact (hV.fundamentalGroup_map_directionFrom_bijective hr hS z).comp hsnd
 

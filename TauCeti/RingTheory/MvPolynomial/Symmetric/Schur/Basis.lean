@@ -250,7 +250,7 @@ theorem msymmBasis_repr_schurPoly (μ : n.Partition)
     (msymmBasis σ R n).repr ⟨schurPoly σ R μ, schurPoly_mem_symmetricHomogeneousSubmodule μ⟩ ν
       = (kostkaNumber μ ν.1 : R) := by
   rw [msymmBasis_repr_apply]
-  exact coeff_schurPoly_partWeight μ ν.1 (by rw [colLen_zero_diagramOf]; exact ν.2)
+  exact coeff_schurPoly_partWeight μ ν.1 (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.2)
 
 end CommSemiring
 

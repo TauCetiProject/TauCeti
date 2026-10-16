@@ -23,11 +23,9 @@ maps are available: a finite collection of effective representatives in divisor 
 an effective representative in the sum class. The file also records that translating the
 indexing divisor of a complete linear system by a principal divisor does not change the system.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve" and
-"Degree", by extending the existing abstract complete-linear-system API needed before the
-scheme-theoretic symmetric-power and Abel-map layers. No external mathematics is vendored; the
-proofs use Tau Ceti's `WeilDivisor`/`OrderSystem` API and Mathlib's additive subgroup and
-finite-sum lemmas.
+This extends the abstract complete-linear-system API. No external mathematics is vendored; the
+proofs use Tau Ceti's `WeilDivisor`/`OrderSystem` API and Mathlib's additive subgroup and finite-sum
+lemmas.
 -/
 
 public section

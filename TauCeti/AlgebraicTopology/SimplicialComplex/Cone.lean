@@ -167,6 +167,16 @@ theorem cone_toPreAbstractSimplicialComplex : (cone K).toPreAbstractSimplicialCo
   rw [cone, join_toPreAbstractSimplicialComplex, PreAbstractSimplicialComplex.cone]
   congr 1
 
+/-- The abstract cone satisfies the internal cone condition at its adjoined apex. -/
+theorem isCone_cone [inst : DecidableEq (α ⊕ PUnit)] (K : AbstractSimplicialComplex α) :
+    PreAbstractSimplicialComplex.IsCone (cone K).toPreAbstractSimplicialComplex
+      (Sum.inr PUnit.unit) := by
+  classical
+  rw [cone_toPreAbstractSimplicialComplex]
+  -- The pre-abstract witness uses the sum-derived equality instance; `convert` identifies
+  -- it with the caller's instance by subsingleton elimination.
+  convert PreAbstractSimplicialComplex.isCone_cone K.toPreAbstractSimplicialComplex using 1
+
 /-- A finite set is a face of the cone exactly when it is nonempty and its left projection is
 either empty or a face of the base complex.
 

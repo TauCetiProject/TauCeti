@@ -49,6 +49,8 @@ open Finset Nat
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
+
 /-- **The sum-of-squares identity for standard Young tableaux**: the squares of the numbers `f^μ`
 of standard Young tableaux, summed over the partitions `μ` of `n`, give `n !`.
 
@@ -57,7 +59,7 @@ Specht modules are a complete list of the irreducible representations of `Sₙ`,
 sum of the squares of the degrees of the irreducibles.  Equivalently, by the RSK correspondence
 the summands count the pairs of standard tableaux of a common shape. -/
 theorem sum_sq_standardCount (n : ℕ) :
-    ∑ μ : n.Partition, standardCount (diagramOf μ) ^ 2 = n ! := by
+    ∑ μ : n.Partition, standardCount (ofPartition μ) ^ 2 = n ! := by
   rw [← sum_finrank_spechtModule_sq n]
   exact Finset.sum_congr rfl fun μ _ => by rw [finrank_spechtModule μ]
 
@@ -65,18 +67,18 @@ theorem sum_sq_standardCount (n : ℕ) :
 determine the summands, each being `n !` divided by the product of the hook lengths. -/
 theorem sum_sq_factorial_div_prod_hookLength (n : ℕ) :
     ∑ μ : n.Partition,
-        (n ! / ∏ c ∈ (diagramOf μ).cells, (diagramOf μ).hookLength c) ^ 2 = n ! := by
+        (n ! / ∏ c ∈ (ofPartition μ).cells, (ofPartition μ).hookLength c) ^ 2 = n ! := by
   refine .trans (Finset.sum_congr rfl fun μ _ => ?_) (sum_sq_standardCount n)
-  rw [standardCount_eq_factorial_div_prod_hookLength, card_diagramOf]
+  rw [standardCount_eq_factorial_div_prod_hookLength, card_ofPartition]
 
 /-- **A single shape has at most `√(n !)` standard Young tableaux**, in the form `(f^μ)² ≤ n !`
 for a diagram `μ` with `n` cells. -/
 theorem standardCount_sq_le_factorial (μ : YoungDiagram) :
     standardCount μ ^ 2 ≤ μ.card ! := by
   have h := Finset.single_le_sum
-    (f := fun ν : μ.card.Partition => standardCount (diagramOf ν) ^ 2)
+    (f := fun ν : μ.card.Partition => standardCount (ofPartition ν) ^ 2)
     (fun _ _ => Nat.zero_le _) (Finset.mem_univ (shapePartition μ))
-  simp only [diagramOf_shapePartition] at h
+  simp only [ofPartition_shapePartition] at h
   rw [← sum_sq_standardCount μ.card]
   exact h
 

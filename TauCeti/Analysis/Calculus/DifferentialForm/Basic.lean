@@ -40,6 +40,30 @@ theorem extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin ω s x = extDerivWithin ω t x :=
   extDerivWithin_congr_set' x <| h.filter_mono inf_le_left
 
+/-- Iterating the exterior derivative within a set still depends only on the germ of that set. -/
+theorem extDerivWithin_extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
+    extDerivWithin (extDerivWithin ω s) s x = extDerivWithin (extDerivWithin ω t) t x := by
+  rw [extDerivWithin_congr_set h]
+  apply Filter.EventuallyEq.extDerivWithin_eq
+  · filter_upwards [h.eventuallyEq_nhds.filter_mono nhdsWithin_le_nhds] with y hy
+    exact extDerivWithin_congr_set hy
+  · exact extDerivWithin_congr_set h
+
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ}
+
+/-- The exterior derivative of a continuous linear differential form is its alternatization. -/
+@[simp]
+lemma extDeriv_eq (ω : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (x : E) :
+    extDeriv ω x = ContinuousAlternatingMap.alternatizeUncurryFin ω := by
+  simp [extDeriv]
+
+end ContinuousLinearMap
 
 end

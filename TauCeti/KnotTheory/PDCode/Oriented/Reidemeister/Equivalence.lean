@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.Jones
+public import TauCeti.KnotTheory.PDCode.Jones.Basic
 
 /-!
 # Reidemeister equivalence of oriented PD-codes

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
 public import TauCeti.AlgebraicGeometry.LineBundle.Germ
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 import all TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 
 /-!
@@ -19,8 +21,10 @@ commute with restriction to nonempty open subsets.
 
 If the differential sheaf is invertible, these maps are injective. Moreover, a rational
 differential is regular on an open subset precisely when it comes from the differential stalk
-at every point of that subset. In particular these results apply to schemes smooth of relative
-dimension one, over an arbitrary commutative base ring. This realizes the differential line
+at every point of that subset. On an open subset of dimension at most one, it suffices to check
+the codimension-one points: the generic stalk imposes no further condition. In particular these
+results apply to schemes smooth of relative dimension one, over an arbitrary commutative base
+ring. This realizes the differential line
 bundle as local lattices in its rational differential space, the input to comparing it with a
 divisor sheaf and with the canonical bundle defined using Weil differentials.
 
@@ -35,7 +39,7 @@ criterion uses `InvertibleSheaf.mem_range_genericPoint_germ_iff`.
 
 public section
 
-open CategoryTheory AlgebraicGeometry TopologicalSpace
+open CategoryTheory AlgebraicGeometry TopologicalSpace Order
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -161,6 +165,20 @@ lemma rationalDifferentialStalk_symm_D (x : X) (a : X.presheaf.stalk x) :
     rationalDifferentialStalk_germ R x hx ((X.universalDerivation R).d a),
     rationalDifferential_d, X.algebraMap_germ_eq_germToFunctionField]
 
+/-- The rational value of a differential stalk is the usual Kähler map from the local ring to
+the function field, under the differential-stalk comparison. -/
+theorem rationalDifferentialStalk_symm_apply (x : X) (η : Ω[X.presheaf.stalk x⁄R]) :
+    rationalDifferentialStalk R x ((X.relativeDifferentialsStalkEquiv R x).symm η) =
+      KaehlerDifferential.map R R (X.presheaf.stalk x) X.functionField η := by
+  have h : (rationalDifferentialStalk R x).comp
+      (X.relativeDifferentialsStalkEquiv R x).symm.toLinearMap =
+      KaehlerDifferential.map R R (X.presheaf.stalk x) X.functionField := by
+    apply LinearMap.ext_on_range (KaehlerDifferential.span_range_derivation R _)
+    intro a
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, KaehlerDifferential.map_D] using
+      rationalDifferentialStalk_symm_D R x a
+  exact DFunLike.congr_fun h η
+
 section Invertible
 
 variable [SheafOfModules.isInvertible X (X.relativeDifferentials R)]
@@ -204,6 +222,27 @@ theorem mem_range_rationalDifferential_iff (U : X.Opens) [Nonempty U]
       ((genericPoint_spec X).specializes (Set.mem_univ x)) s)) from fun _ ↦ rfl, hrange]
   exact InvertibleSheaf.mem_range_genericPoint_germ_iff
     ⟨X.relativeDifferentials R, inferInstance⟩ (U := U) (e.symm ω)
+
+/-- On an open subset of dimension at most one, a rational differential is regular precisely
+when it comes from each codimension-one differential stalk. The generic stalk imposes no
+additional condition. -/
+theorem mem_range_rationalDifferential_iff_codimensionOne (U : X.Opens) [Nonempty U]
+    (hU : ∀ y ∈ U, coheight y ≤ 1) (η : Ω[X.functionField⁄R]) :
+    η ∈ Set.range (rationalDifferential R U) ↔
+      ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+        η ∈ Set.range (rationalDifferentialStalk R (y : X)) := by
+  rw [mem_range_rationalDifferential_iff]
+  constructor
+  · exact fun h y hy ↦ h y hy
+  · intro h y hy
+    rcases eq_or_lt_of_le (hU y hy) with hdim | hdim
+    · exact h ⟨y, hdim⟩ hy
+    · have hyη : y = genericPoint X :=
+        Scheme.eq_genericPoint_of_isMax (coheight_eq_zero.mp (Order.lt_one_iff.mp hdim))
+      subst y
+      refine ⟨(relativeDifferentialsGenericStalkEquiv R).symm η, ?_⟩
+      rw [rationalDifferentialStalk_apply, TopCat.Presheaf.stalkSpecializes_refl]
+      exact (relativeDifferentialsGenericStalkEquiv R).apply_symm_apply η
 
 end Invertible
 

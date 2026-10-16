@@ -81,7 +81,7 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     (k.choose i : ℝ) * (1 + B i) * ‖iteratedFDeriv ℝ (k - i) f x‖
   have hbmem : MemLp bound p μ := by
     apply memLp_finsetSum
-    intro i hi
+    intro i _
     exact (hmem (k - i) (Nat.sub_le _ _)).norm.const_smul
       ((k.choose i : ℝ) * (1 + B i))
   have hb (n : ℕ) (x : E) : ‖iteratedFDeriv ℝ k (error n) x‖ ≤ ‖bound x‖ := by
@@ -131,7 +131,7 @@ theorem memLp_iteratedFDeriv_smul_of_bounded
   have hbmem : MemLp (fun x ↦ ∑ i ∈ Finset.range (k + 1),
       (k.choose i : ℝ) * B i * ‖iteratedFDeriv ℝ (k - i) f x‖) p μ := by
     apply memLp_finsetSum
-    intro i hi
+    intro i _
     exact (hmem (k - i) (Nat.sub_le _ _)).norm.const_smul ((k.choose i : ℝ) * B i)
   refine hbmem.mono' ((hχ.smul hf).continuous_iteratedFDeriv le_rfl
     |>.aestronglyMeasurable) (Eventually.of_forall fun x ↦ ?_)

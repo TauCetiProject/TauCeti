@@ -80,7 +80,7 @@ noncomputable def LpToL1CLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
     by_cases hp_top : p = ∞
     · simp [hp_top, measure_ne_top μ Set.univ]
     · apply ENNReal.rpow_ne_top_of_nonneg
-      · have hp0 : (0 : ENNReal) < p := (zero_lt_one.trans_le Fact.out)
+      · have _ : (0 : ENNReal) < p := (zero_lt_one.trans_le Fact.out)
         have hp_real : 1 ≤ p.toReal := by
           exact ENNReal.toReal_mono (a := (1 : ENNReal)) (b := p) hp_top Fact.out
         exact sub_nonneg.mpr (by

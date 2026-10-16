@@ -35,6 +35,8 @@ Over a field, with `a ≠ 0`:
   `discrim a b c` is a square;
 * `Polynomial.splits_quadratic_of_discrim_eq_zero`: over a perfect field, splits as soon as
   `discrim a b c = 0`;
+* `Polynomial.exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero`: over a perfect
+  field, if `discrim a b c = 0` then some `x` is a root of the quadratic and of its derivative;
 * `Polynomial.card_rootSet_quadratic_of_discrim_eq_zero`: if it splits and `discrim a b c = 0`, it
   has exactly one root;
 * `Polynomial.splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero`: in characteristic two,
@@ -105,7 +107,7 @@ identity `sq_derivative_quadratic_sub_mul_eq_C_discrim` writes `1` as an `R[X]`-
 polynomial and its derivative. -/
 theorem separable_quadratic_of_isUnit_discrim {R : Type*} [CommRing R] {a b c : R}
     (h : IsUnit (discrim a b c)) : (C a * X ^ 2 + C b * X + C c).Separable := by
-  set P := C a * X ^ 2 + C b * X + C c with hP
+  set P := C a * X ^ 2 + C b * X + C c
   have hid : derivative P ^ 2 - 4 * C a * P = C (discrim a b c) :=
     sq_derivative_quadratic_sub_mul_eq_C_discrim a b c
   have hinv : C ((h.unit⁻¹ : Rˣ) : R) * C (discrim a b c) = 1 := by
@@ -193,7 +195,7 @@ splits. Perfectness is needed in characteristic two, where `X² - c` can have va
 discriminant without a root. -/
 theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField k] {a b c : k}
     (ha : a ≠ 0) (hd : discrim a b c = 0) : (C a * X ^ 2 + C b * X + C c).Splits := by
-  set p := C a * X ^ 2 + C b * X + C c with hp
+  set p := C a * X ^ 2 + C b * X + C c
   have hdeg : p.natDegree = 2 := natDegree_quadratic ha
   have hsep : ¬ p.Separable := by
     rw [separable_quadratic_iff_discrim_ne_zero ha, not_not]
@@ -203,12 +205,25 @@ theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField 
   obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hroots
   exact Splits.of_natDegree_eq_two hdeg (mem_roots'.1 hx).2
 
+/-- Over a perfect field, a quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes
+has a double root: some `x` is a root of the quadratic and of its derivative `2 a X + b`. Away from
+characteristic two this is `x = -b / (2 a)`; in characteristic two `b = 0` and `x` is the square
+root of `c / a`, which is where perfectness is needed. -/
+theorem exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero {k : Type*} [Field k]
+    [PerfectField k] {a b c : k} (ha : a ≠ 0) (hd : discrim a b c = 0) :
+    ∃ x, a * x ^ 2 + b * x + c = 0 ∧ 2 * a * x + b = 0 := by
+  obtain ⟨x, hx⟩ := (splits_quadratic_iff_exists_root ha).1
+    (splits_quadratic_of_discrim_eq_zero ha hd)
+  refine ⟨x, hx, pow_eq_zero_iff two_ne_zero |>.1 ?_⟩
+  rw [← discrim_eq_sq_of_quadratic_eq_zero (a := a) (b := b) (c := c) (by linear_combination hx),
+    hd]
+
 /-- A split quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes has exactly one
 root. -/
 theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c : k} (ha : a ≠ 0)
     (hs : (C a * X ^ 2 + C b * X + C c).Splits) (hd : discrim a b c = 0) :
     Fintype.card ((C a * X ^ 2 + C b * X + C c).rootSet k) = 1 := by
-  set p := C a * X ^ 2 + C b * X + C c with hp
+  set p := C a * X ^ 2 + C b * X + C c
   have hdeg : p.natDegree = 2 := natDegree_quadratic ha
   have hp0 : p ≠ 0 := ne_zero_of_natDegree_gt (n := 0) (by omega)
   have hs' : (p.map (algebraMap k k)).Splits := by rwa [Algebra.algebraMap_self, map_id]
