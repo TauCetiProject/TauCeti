@@ -52,7 +52,7 @@ variable (A : Type v) [CommRing A] [Algebra R A] (I : LieIdeal R L)
 /-- The extension of scalars of the quotient map of `I` kills exactly the extension of `I`. -/
 @[simp]
 theorem ker_baseChange_mkQ : (LieHom.baseChange A I.mkQ).ker = I.baseChange A := by
-  rw [LieHom.ker_baseChange_of_surjective A I.mkQ I.mkQ_surjective, ker_mkQ]
+  rw [LieHom.ker_baseChange_of_surjective A I.mkQ I.surjective_mkQ, mkQ_ker]
 
 /-- **Extension of scalars commutes with quotients of Lie algebras.**  The extension of `L ⧸ I`
 is the quotient of the extension of `L` by the extension of `I`, for an arbitrary coefficient
@@ -67,7 +67,7 @@ noncomputable def quotientBaseChangeEquiv :
   LieEquiv.ofBijective (liftQ (I.baseChange A) (LieHom.baseChange A I.mkQ)
       (ker_baseChange_mkQ A I).ge)
     ⟨liftQ_injective _ _ _ (ker_baseChange_mkQ A I).le,
-      liftQ_surjective _ _ _ (LieHom.baseChange_surjective A I.mkQ I.mkQ_surjective)⟩
+      liftQ_surjective _ _ _ (LieHom.baseChange_surjective A I.mkQ I.surjective_mkQ)⟩
 
 @[simp]
 theorem quotientBaseChangeEquiv_mk (x : A ⊗[R] L) :
