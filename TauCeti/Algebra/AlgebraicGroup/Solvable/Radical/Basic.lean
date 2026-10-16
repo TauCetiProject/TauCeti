@@ -22,11 +22,10 @@ subgroup is a candidate. The Lie dimension of every candidate is bounded by that
 group. Hence the natural numbers occurring as candidate dimensions form a nonempty finite set,
 and one of the candidates has maximal Lie dimension.
 
-To turn a maximal-dimensional candidate into the solvable radical, one must next show that the
-scheme-theoretic multiplication image of two candidates is again a candidate. The connectedness,
-smoothness, and source-solvability results already exist; the remaining input is solvability of
-the image, for which the current image theorem requires faithful flatness of the canonical Hopf
-image inclusion.
+A maximal-dimensional candidate is the solvable radical once candidates are closed under
+scheme-theoretic multiplication images. That closure is
+`TauCeti.HopfIdeal.IsSolvableRadicalCandidate.productOfNormal` in
+`TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Product`.
 
 ## Main declarations
 
@@ -44,9 +43,8 @@ image inclusion.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and §§6.45–6.46.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
 
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap. The
-radical `R(G)` required there is the greatest connected normal smooth solvable closed subgroup;
-the maximal-dimension candidate constructed here is the first step in that construction.
+The radical `R(G)` is the greatest connected normal smooth solvable closed subgroup; the
+maximal-dimension candidate constructed here is the first step in its construction.
 -/
 
 public section

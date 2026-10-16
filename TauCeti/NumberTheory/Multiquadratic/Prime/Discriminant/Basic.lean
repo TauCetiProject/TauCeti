@@ -140,7 +140,7 @@ private theorem mod_four_eq_one_or_three_of_odd {p : ℕ} (hp : Odd p) :
   · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp1]
     exact_mod_cast hp1
   · rw [oddPrimeDiscriminant_of_mod_four_eq_three hp3]
-    have hp3z : (p : ℤ) % 4 = 3 := by
+    have _ : (p : ℤ) % 4 = 3 := by
       exact_mod_cast hp3
     omega
 
@@ -171,7 +171,7 @@ theorem oddPrimeDiscriminant_pos_iff {p : ℕ} :
 theorem oddPrimeDiscriminant_neg_iff {p : ℕ} (hp : Odd p) :
     oddPrimeDiscriminant p < 0 ↔ p % 4 = 3 := by
   rcases mod_four_eq_one_or_three_of_odd hp with hp1 | hp3
-  · have hpos : (0 : ℤ) < p := by
+  · have _ : (0 : ℤ) < p := by
       exact_mod_cast Nat.pos_of_ne_zero (by omega)
     rw [oddPrimeDiscriminant_of_mod_four_eq_one hp1]
     exact ⟨fun hneg => by omega, fun h => by omega⟩

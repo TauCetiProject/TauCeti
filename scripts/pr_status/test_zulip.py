@@ -44,6 +44,14 @@ class ReviewEmoji(unittest.TestCase):
 
 
 class MessageContent(unittest.TestCase):
+    def test_bors_marker_is_removed_only_from_the_start(self):
+        for prefix in ("[Merged by Bors] - ", "[Merged by bors] - "):
+            content = zulip.pr_message_content("12", prefix + "@title #12", "alice", [])
+            self.assertTrue(content.startswith("**@\u200btitle #\u200b12** · "))
+            self.assertNotIn(prefix, content)
+        title = "Discuss [Merged by Bors] - formatting"
+        self.assertIn(title, zulip.pr_message_content("12", title, "alice", []))
+
     def test_includes_author_and_roadmap(self):
         content = zulip.pr_message_content(
             "1520",
@@ -156,6 +164,45 @@ class Reconcile(unittest.TestCase):
         "author": "alice",
         "roadmaps": ["roadmap/PDE"],
     }
+
+    def test_bors_closed_pr_repairs_title_and_only_our_closed_reaction(self):
+        state = {**self.STATE, "merged": False, "title": "[Merged by Bors] - Old PR"}
+        content = zulip.pr_message_content("12", "Old PR", "alice", ["roadmap/PDE"])
+        message = {"id": 7, "sender_id": 42,
+                   "content": content.replace("**Old PR**", "**[Merged by Bors] - Old PR**"),
+                   "reactions": [{"emoji_name": "closed-pr", "user_id": 42},
+                                 {"emoji_name": "closed-pr", "user_id": 99},
+                                 {"emoji_name": "green_circle", "user_id": 42}]}
+        z = self.FakeZulip(message)
+        with mock.patch.object(zulip.core, "gh_api", side_effect=AssertionError("terminal PR read GitHub")):
+            changes = zulip.reconcile(z, "12", False, None, bot_id=42, state=state)
+        self.assertEqual(changes, 4)
+        self.assertEqual(z.updated, [(7, content)])
+        self.assertEqual(z.added, [(7, "merge")])
+        self.assertCountEqual(z.removed, [(7, "closed-pr"), (7, "green_circle")])
+        self.assertFalse(state["merged"])  # Presentation must not change shared PR truth.
+        repaired = {**message, "content": content,
+                    "reactions": [{"emoji_name": "merge", "user_id": 42},
+                                  {"emoji_name": "closed-pr", "user_id": 99}]}
+        z = self.FakeZulip(repaired)
+        self.assertEqual(zulip.reconcile(z, "12", False, None, bot_id=42, state=state), 0)
+
+    def test_unmerged_closed_pr_without_exact_marker_stays_closed(self):
+        for title in ("Old PR", "Discuss [Merged by Bors] - Old PR", "[Merged by Bors] Old PR"):
+            state = {**self.STATE, "merged": False, "title": title}
+            z = self.FakeZulip({"id": 7, "sender_id": 42,
+                "content": zulip.pr_message_content("12", title, "alice", ["roadmap/PDE"]), "reactions": []})
+            zulip.reconcile(z, "12", False, None, bot_id=42, state=state)
+            self.assertEqual(z.added, [(7, "closed-pr")])
+
+    def test_open_pr_with_bors_marker_keeps_open_review_state(self):
+        state = {**self.STATE, "state": "open", "merged": False, "title": "[Merged by Bors] - Old PR"}
+        z = self.FakeZulip({"id": 7, "sender_id": 42,
+            "content": zulip.pr_message_content("12", state["title"], "alice", ["roadmap/PDE"]), "reactions": []})
+        with mock.patch.object(zulip.core, "derive", return_value={
+                "lifecycle": "open", "ci": "success", "review": "approved", "review_inprogress": False}):
+            zulip.reconcile(z, "12", False, None, bot_id=42, state=state)
+        self.assertEqual(z.added, [(7, "check"), (7, "green_circle")])
 
     def test_legacy_post_is_rewritten_in_place(self):
         old = "https://github.com/FormalFrontier/TauCeti/pull/12"

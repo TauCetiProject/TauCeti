@@ -44,6 +44,8 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
 * `TauCeti.Nat.IsExactDivisor.div`: for `N ≠ 0` the complementary divisor `N / Q` is exact too.
 * `TauCeti.Nat.IsExactDivisor.ne_zero`: an exact divisor is nonzero. There is no exact divisor
   `0`, because `Nat.Coprime 0 0` is false.
+* `TauCeti.Nat.IsExactDivisor.not_sq_dvd`: an exact divisor `Q ≠ 1` of `N` has `Q ^ 2 ∤ N`; for a
+  prime `p ∣ N` the converse is `TauCeti.Nat.IsExactDivisor.of_not_sq_dvd`.
 * `TauCeti.Nat.isExactDivisor_one`, `TauCeti.Nat.isExactDivisor_self`: `1` and (for `N ≠ 0`) `N`
   itself.
 * `TauCeti.Nat.IsExactDivisor.mul`: coprime exact divisors multiply to an exact divisor, so the
@@ -110,6 +112,22 @@ whose own complement is `Q` again (`Nat.div_div_self`). At `N = 0` this fails: `
 divisor of `0`, but `0 / 1 = 0` is not. -/
 theorem IsExactDivisor.div (h : IsExactDivisor Q N) (hN : N ≠ 0) : IsExactDivisor (N / Q) N :=
   ⟨Nat.div_dvd_of_dvd h.dvd, by rw [Nat.div_div_self h.dvd hN]; exact h.coprime.symm⟩
+
+/-- **An exact divisor other than `1` divides `N` only once**: if `Q ^ 2 ∣ N`, then `Q` divides
+the complementary divisor `N / Q`, to which it is coprime, so `Q = 1`. For a prime `p ∥ N` this
+says `v_p(N) = 1`. -/
+theorem IsExactDivisor.not_sq_dvd (h : IsExactDivisor Q N) (hQ : Q ≠ 1) : ¬ Q ^ 2 ∣ N := by
+  rintro ⟨m, rfl⟩
+  have hdiv : Q ^ 2 * m / Q = Q * m := by
+    rw [pow_two, mul_assoc, Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero h.ne_zero)]
+  exact hQ (Nat.Coprime.eq_one_of_dvd h.coprime (by rw [hdiv]; exact dvd_mul_right _ _))
+
+/-- **A prime dividing `N` only once is an exact divisor**, the converse of
+`IsExactDivisor.not_sq_dvd` for a prime: if `p ∣ N/p` then `p ^ 2 ∣ N`, so `p` is prime to
+`N / p`. -/
+theorem IsExactDivisor.of_not_sq_dvd {p : ℕ} (hp : p.Prime) (hpN : p ∣ N) (hpsq : ¬ p ^ 2 ∣ N) :
+    IsExactDivisor p N :=
+  ⟨hpN, hp.coprime_iff_not_dvd.mpr fun h ↦ hpsq (pow_two p ▸ Nat.mul_dvd_of_dvd_div hpN h)⟩
 
 /-- `1` is an exact divisor of every `N`. -/
 theorem isExactDivisor_one : IsExactDivisor 1 N :=
@@ -260,6 +278,35 @@ theorem IsExactDivisor.mul_div_gcd_sq (hQ : IsExactDivisor Q N) (hR : IsExactDiv
   rw [sq, ← Nat.div_mul_div_comm (Nat.gcd_dvd_left Q R) (Nat.gcd_dvd_right Q R)]
   exact (hQ.div_gcd hR).mul hRdiv hcop
 
+/-- The least common multiple of two exact divisors of a common number is an exact divisor. -/
+theorem IsExactDivisor.lcm {Q R N : ℕ} (hQ : TauCeti.Nat.IsExactDivisor Q N)
+    (hR : TauCeti.Nat.IsExactDivisor R N) :
+    TauCeti.Nat.IsExactDivisor (Nat.lcm Q R) N := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [isExactDivisor_zero_iff.mp hQ, isExactDivisor_zero_iff.mp hR, Nat.lcm_one_left]
+    exact isExactDivisor_one
+  · have hQ' := (isExactDivisor_iff_factorization hN).mp hQ
+    have hR' := (isExactDivisor_iff_factorization hN).mp hR
+    rw [isExactDivisor_iff_factorization hN]
+    constructor
+    · exact Nat.lcm_dvd hQ'.1 hR'.1
+    · intro p
+      have hfac : (Nat.lcm Q R).factorization p = max (Q.factorization p) (R.factorization p) := by
+        rw [Nat.factorization_lcm hQ.ne_zero hR.ne_zero, Finsupp.sup_apply]
+      rcases hQ'.2 p with hQp | hQp <;> rcases hR'.2 p with hRp | hRp
+      · left
+        rw [hfac]
+        simp [hQp, hRp]
+      · right
+        rw [hfac]
+        simp [hQp, hRp]
+      · right
+        rw [hfac]
+        simp [hQp, hRp]
+      · right
+        rw [hfac]
+        simp [hQp, hRp]
+
 /-! ### Exact divisors from sets of primes -/
 
 /-- **The exact divisor of `N` supported on a set of primes:** the product
@@ -374,6 +421,59 @@ theorem IsExactDivisor.prodPrimePow_primeFactors (h : IsExactDivisor Q N) :
   rcases hfac p with h0 | h0
   · exact absurd h0 hp0
   · rw [h0]
+
+/-- Intersecting prime supports takes the greatest common divisor of their maximal-prime-power
+products. -/
+theorem prodPrimePow_gcd {N : ℕ} {s t : Finset ℕ} (hs : s ⊆ N.primeFactors) (ht : t
+    ⊆ N.primeFactors) :
+    TauCeti.Nat.prodPrimePow N (s ∩ t) =
+      Nat.gcd (TauCeti.Nat.prodPrimePow N s) (TauCeti.Nat.prodPrimePow N t) := by
+  have hs0 : prodPrimePow N s ≠ 0 := by
+    rw [prodPrimePow, Finset.prod_ne_zero_iff]
+    intro p hp
+    exact pow_ne_zero _ (Nat.prime_of_mem_primeFactors (hs hp)).ne_zero
+  have ht0 : prodPrimePow N t ≠ 0 := by
+    rw [prodPrimePow, Finset.prod_ne_zero_iff]
+    intro p hp
+    exact pow_ne_zero _ (Nat.prime_of_mem_primeFactors (ht hp)).ne_zero
+  have hst0 : prodPrimePow N (s ∩ t) ≠ 0 := by
+    rw [prodPrimePow, Finset.prod_ne_zero_iff]
+    intro p hp
+    exact pow_ne_zero _ (Nat.prime_of_mem_primeFactors (hs (Finset.mem_inter.mp hp).1)).ne_zero
+  refine Nat.eq_of_factorization_eq hst0
+    (Nat.gcd_pos_of_pos_left (prodPrimePow N t) (Nat.pos_of_ne_zero hs0)).ne' ?_
+  intro p
+  rw [factorization_prodPrimePow (Finset.inter_subset_left.trans hs),
+    Nat.factorization_gcd hs0 ht0, Finsupp.inf_apply,
+    factorization_prodPrimePow hs, factorization_prodPrimePow ht]
+  by_cases hps : p ∈ s <;> by_cases hpt : p ∈ t <;>
+    simp [hps, hpt, Finset.mem_inter]
+
+/-- Removing a contained finite support divides out its maximal-prime-power product. -/
+theorem prodPrimePow_sdiff {N : ℕ} {s t : Finset ℕ} (hts : t ⊆ s) :
+    TauCeti.Nat.prodPrimePow N (s \ t) =
+      TauCeti.Nat.prodPrimePow N s / TauCeti.Nat.prodPrimePow N t := by
+  have hpos : 0 < prodPrimePow N t := (isExactDivisor_prodPrimePow (N := N) (s := t)).pos
+  simp only [prodPrimePow] at hpos
+  unfold prodPrimePow
+  rw [← Finset.prod_sdiff hts, Nat.mul_div_cancel _ hpos]
+
+/-- Divisibility between exact divisors is equivalent to inclusion of their prime supports. -/
+theorem IsExactDivisor.dvd_iff_primeFactors_subset {Q R N : ℕ} (hQ :
+    TauCeti.Nat.IsExactDivisor Q N)
+    (hR : TauCeti.Nat.IsExactDivisor R N) :
+    Q ∣ R ↔ Q.primeFactors ⊆ R.primeFactors := by
+  constructor
+  · intro hQR
+    exact Nat.primeFactors_mono hQR hR.ne_zero
+  · intro hs
+    have hQ_eq : Q = prodPrimePow N Q.primeFactors := hQ.prodPrimePow_primeFactors.symm
+    have hR_eq : R = prodPrimePow N R.primeFactors := hR.prodPrimePow_primeFactors.symm
+    rw [hQ_eq, hR_eq]
+    rw [prodPrimePow, prodPrimePow]
+    refine ⟨∏ p ∈ R.primeFactors \ Q.primeFactors, p ^ N.factorization p, ?_⟩
+    rw [mul_comm]
+    exact (Finset.prod_sdiff hs).symm
 
 /-! ### The exact-divisor group -/
 

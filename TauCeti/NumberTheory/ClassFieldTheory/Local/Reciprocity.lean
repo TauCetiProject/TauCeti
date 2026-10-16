@@ -54,6 +54,8 @@ multiplicative form `normResidue K L : Kˣ / N_{L/K}(Lˣ) ≃* Gal(L/K)^ab` is c
 * `TauCeti.ClassFieldTheory.surjective_localArtinMap`: the local Artin map is surjective.
 * `TauCeti.ClassFieldTheory.toAdditive_normResidue`: `normResidue` is finite local reciprocity
   for every embedding.
+* `TauCeti.ClassFieldTheory.index_normGroup_of_isMulCommutative`: the norm group of a finite
+  abelian extension has index equal to the degree.
 
 ## References
 
@@ -171,5 +173,28 @@ theorem normResidue_mk (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
       (localArtinMap K L ι (Additive.ofMul a)).toMul := by
   rw [localArtinMap_apply, ← toAdditive_normResidue K L ι, MulEquiv.toAdditive_apply_apply,
     toMul_ofMul, toMul_ofMul]
+
+open scoped IsMulCommutative in
+/-- **The norm index of a finite abelian extension**: if `Gal(L/K)` is commutative, then
+`[Kˣ : N_{L/K}(Lˣ)] = [L : K]`, since the norm residue isomorphism identifies the norm quotient
+with `Gal(L/K)^ab`, which is `Gal(L/K)` itself. -/
+theorem index_normGroup_of_isMulCommutative [IsMulCommutative Gal(L/K)] :
+    (normGroup K L).index = Module.finrank K L := by
+  rw [Subgroup.index, Nat.card_congr (normResidue K L).toEquiv,
+    ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
+    IsGalois.card_aut_eq_finrank]
+
+/-- **`n`-th powers are norms when `n` kills the Galois group.** If `σ ^ n = 1` for every
+`σ ∈ Gal(L/K)`, then `(Kˣ)ⁿ ≤ N_{L/K}(Lˣ)`: the norm residue isomorphism identifies
+`Kˣ / N_{L/K}(Lˣ)` with `Gal(L/K)^ab`, a quotient of `Gal(L/K)`, so `n` kills it. -/
+theorem powerSubgroup_le_normGroup_of_exponent_dvd {n : ℕ}
+    (hn : Monoid.exponent Gal(L/K) ∣ n) : powerSubgroup Kˣ n ≤ normGroup K L := by
+  intro x hx
+  obtain ⟨y, rfl⟩ := (mem_powerSubgroup_iff n).1 hx
+  have hsurj : Function.Surjective
+      ((normResidue K L).symm.toMonoidHom.comp (Abelianization.of (G := Gal(L/K)))) :=
+    (normResidue K L).symm.surjective.comp (QuotientGroup.mk'_surjective _)
+  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
+  exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp ((MonoidHom.exponent_dvd hsurj).trans hn) _
 
 end TauCeti.ClassFieldTheory

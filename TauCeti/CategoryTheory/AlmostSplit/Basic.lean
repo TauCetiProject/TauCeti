@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+public import Mathlib.CategoryTheory.Retract
 public import TauCeti.CategoryTheory.IrreducibleMorphism
 
 /-!
@@ -208,7 +209,7 @@ theorem isRightAlmostSplit_op_iff : IsRightAlmostSplit f.op ↔ IsLeftAlmostSpli
     exact ⟨h.unop, Quiver.Hom.op_inj (by simpa using hh)⟩
   · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitMono (isSplitMono_of_isSplitEpi_op f),
       fun Z g hg ↦ ?_⟩
-    have hg' : ¬ IsSplitMono g.unop := fun hs ↦ hg (inferInstanceAs (IsSplitEpi g.unop.op))
+    have hg' : ¬ IsSplitMono g.unop := fun _ ↦ hg (inferInstanceAs (IsSplitEpi g.unop.op))
     obtain ⟨h, hh⟩ := hf.factors Z.unop g.unop hg'
     exact ⟨h.op, Quiver.Hom.unop_inj (by simpa using hh)⟩
 
@@ -222,7 +223,7 @@ theorem isLeftAlmostSplit_op_iff : IsLeftAlmostSplit f.op ↔ IsRightAlmostSplit
     exact ⟨h.unop, Quiver.Hom.op_inj (by simpa using hh)⟩
   · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitMono_op f),
       fun Z g hg ↦ ?_⟩
-    have hg' : ¬ IsSplitEpi g.unop := fun hs ↦ hg (inferInstanceAs (IsSplitMono g.unop.op))
+    have hg' : ¬ IsSplitEpi g.unop := fun _ ↦ hg (inferInstanceAs (IsSplitMono g.unop.op))
     obtain ⟨h, hh⟩ := hf.factors Z.unop g.unop hg'
     exact ⟨h.op, Quiver.Hom.unop_inj (by simpa using hh)⟩
 
@@ -291,6 +292,23 @@ theorem isLeftAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
   refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_iso e⟩
   have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
   exact h ▸ hf.comp_iso e.symm
+
+/-- Restricting a right almost split morphism to a retract through which it factors
+preserves right almost splitness. -/
+theorem IsRightAlmostSplit.retract_i_comp (hf : IsRightAlmostSplit f) {P : C}
+    (s : Retract P X) (hs : s.r ≫ s.i ≫ f = f) : IsRightAlmostSplit (s.i ≫ f) := by
+  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp s.i f), fun Z g hg ↦ ?_⟩
+  obtain ⟨a, ha⟩ := hf.factors Z g hg
+  exact ⟨a ≫ s.r, by simp [Category.assoc, hs, ha]⟩
+
+/-- Corestricting a left almost split morphism to a retract through which it factors
+preserves left almost splitness. -/
+theorem IsLeftAlmostSplit.comp_retract_r (hf : IsLeftAlmostSplit f) {P : C}
+    (s : Retract P Y) (hs : f ≫ s.r ≫ s.i = f) : IsLeftAlmostSplit (f ≫ s.r) := by
+  rw [← isRightAlmostSplit_op_iff, op_comp]
+  exact (isRightAlmostSplit_op_iff.mpr hf).retract_i_comp s.op
+    (by simpa only [Retract.op_r, Retract.op_i, ← op_comp, Category.assoc] using
+      congrArg Quiver.Hom.op hs)
 
 /-! ### Interaction with epimorphisms, monomorphisms, and irreducible morphisms -/
 

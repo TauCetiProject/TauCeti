@@ -229,7 +229,6 @@ private theorem linearIndependent_mul_pow_of_forall_linearIndependent_residue {�
     simp only [Finset.mem_sdiff, Finset.mem_singleton] at hmem
     refine lt_of_le_of_lt (hZm m hmem.2) ?_
     rw [(Q i₀).valuation_eq_exp_neg_ord hZne, WithZero.exp_lt_exp]
-    have hl₀ : (l₀ : ℕ) < ramificationIdx F (Q i₀) := l₀.2
     omega
   have hval := (Q i₀).valuation.map_sum_eq_of_lt (Finset.mem_univ i₀) hlt
   rw [hZsum, map_zero] at hval

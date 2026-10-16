@@ -151,7 +151,7 @@ theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
         change MulAction.IsPretransitive (Aut X) ((K ⋙ H).obj X)
         infer_instance
       obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Aut X) y z
-      exact ⟨K.mapIso φ, hφ⟩
+      exact ⟨.of (K.mapIso φ.asIso), hφ⟩
     exact IsFundamentalGroup.transitive_of_isGalois (F := F) (G := G) (K.obj X)
   · apply IsFundamentalGroup.non_trivial (F := F) g
     intro Y y

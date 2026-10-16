@@ -71,8 +71,7 @@ root space, so it preserves `Mμ` and is a `TauCeti.raiseLowerEnd` of
 
 ## References
 
-This is the Casimir half of the "Freudenthal's multiplicity recursion" item of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`; the string half is
+This is the Casimir half of Freudenthal's multiplicity recursion; the string half is
 `TauCeti/Algebra/Lie/Weights/Trace.lean`. Combining the trace computed here with the Casimir
 eigenvalue `⟨λ + ρ, λ + ρ⟩ - ⟨ρ, ρ⟩` of a highest weight module is what produces the recursion
 itself.

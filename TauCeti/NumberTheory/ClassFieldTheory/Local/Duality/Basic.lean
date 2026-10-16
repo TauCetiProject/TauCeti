@@ -38,6 +38,8 @@ The definitions follow the coefficient conventions of Neukirch--Schmidt--Wingber
 * `TauCeti.ClassFieldTheory.pairingToTateDual`: the morphism `A → B'` curried from a pairing
   `A × B → μₙ`.
 * `TauCeti.ClassFieldTheory.tateDualMap`: precomposition on Tate duals.
+* `TauCeti.ClassFieldTheory.tateDualInvariantsEquivHom`: the invariants of `Hom(A, μₙ)` are the
+  equivariant maps `A → μₙ`, as `ZMod n`-modules.
 * `TauCeti.ClassFieldTheory.tateDualityPairing`: evaluation cup product in complementary degrees,
   followed by a chosen local invariant on `H²(F, μₙ)`.
 
@@ -172,6 +174,43 @@ theorem tateDual_ρ_eq_self_iff (A : GalRep n F) (g : Field.absoluteGaloisGroup 
         (muNRep n F).ρ g (tateDualEquiv A φ a) := by
   rw [← (tateDualEquiv A).injective.eq_iff, tateDualEquiv_ρ]
   exact TauCeti.homAction_eq_self_iff
+
+/-- **The invariants of the Tate dual are the equivariant maps** `A → μₙ`, as `ZMod n`-modules,
+so that `H⁰(F, Hom(A, μₙ)) = Hom_{G_F}(A, μₙ)`: a homomorphism `A → μₙ` is fixed by `G_F` exactly
+when it is equivariant (`tateDual_ρ_eq_self_iff`), and every homomorphism out of the discrete `A`
+is continuous. -/
+def tateDualInvariantsEquivHom (A : GalRep n F) [DiscreteTopology A.V] :
+    (tateDual A).ρ.invariants ≃ₗ[ZMod n] (A ⟶ muNRep n F) where
+  toFun φ := ConcreteCategory.ofHom
+    ⟨⟨(tateDualEquiv A φ).toZModLinearMap n, continuous_of_discreteTopology⟩, fun g =>
+      ContinuousLinearMap.ext fun a => (tateDual_ρ_eq_self_iff A g φ.1).1 (φ.2 g) a⟩
+  map_add' φ ψ := by ext; simp [TopRep.hom_add]
+  map_smul' c φ := by
+    ext a
+    simpa [TopRep.hom_smul] using
+      DFunLike.congr_fun (ZMod.map_smul (tateDualEquiv A).toAddMonoidHom c φ.1) a
+  invFun f := ⟨(tateDualEquiv A).symm f.hom.toContinuousLinearMap.toLinearMap.toAddMonoidHom,
+    fun g => (tateDual_ρ_eq_self_iff A g _).2 fun a => by
+      simp only [AddEquiv.apply_symm_apply]
+      exact TopRep.hom_comm_apply f g a⟩
+  left_inv φ := Subtype.ext <| (tateDualEquiv A).injective <| by ext; simp
+  right_inv f := by ext; simp
+
+/-- `tateDualInvariantsEquivHom` keeps the underlying homomorphism. -/
+@[simp]
+theorem tateDualInvariantsEquivHom_apply_hom (A : GalRep n F) [DiscreteTopology A.V]
+    (φ : (tateDual A).ρ.invariants) (a : A.V) :
+    (tateDualInvariantsEquivHom A φ).hom a = tateDualEquiv A φ a :=
+  (rfl)
+
+/-- The inverse of `tateDualInvariantsEquivHom` keeps the underlying homomorphism. -/
+@[simp]
+theorem tateDualEquiv_tateDualInvariantsEquivHom_symm_apply (A : GalRep n F)
+    [DiscreteTopology A.V] (f : A ⟶ muNRep n F) (a : A.V) :
+    tateDualEquiv A ((tateDualInvariantsEquivHom A).symm f) a = f.hom a := by
+  simp only [tateDualInvariantsEquivHom, LinearEquiv.coe_symm_mk', AddEquiv.apply_symm_apply]
+  -- The continuous linear map underlying a morphism has the same coercion to functions.
+  rfl
 
 /-! ### Evaluation and contravariance -/
 

@@ -155,13 +155,15 @@ theorem barDifferential_comp_iff
       mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
       Comodule.Hom.zero_toLinearMap, sub_eq_zero] using this
 
-private theorem isHomogeneous_cofreeLift
-    (F : (M ⊗[R] TensorWords R A) →ₗ[R] N)
+/-- The cofree lift of a Taylor map of degree `r` is a map of cofree bar comodules of degree
+`r`. -/
+theorem isHomogeneous_cofreeLift {r : ℤ}
+    {F : (M ⊗[R] TensorWords R A) →ₗ[R] N}
     (hF : LinearMap.IsHomogeneous F (AInfinityRightModule.barGrading AA MM.grading).piece
-      (NN.grading.shift 1).piece 0) :
+      (NN.grading.shift 1).piece r) :
     LinearMap.IsHomogeneous (Comodule.Hom.cofreeLift (C := TensorWords R A) F).toLinearMap
       (AInfinityRightModule.barGrading AA MM.grading).piece
-      (AInfinityRightModule.barGrading AA NN.grading).piece 0 := by
+      (AInfinityRightModule.barGrading AA NN.grading).piece r := by
   let W := TensorWords.grading (AA.grading.shift 1)
   have hG (G : InternalGrading R M) : AInfinityRightModule.barGrading AA G =
       (G.shift 1).tensorProduct W := by
@@ -176,7 +178,9 @@ private theorem isHomogeneous_cofreeLift
   have hρ := (InternalGrading.isHomogeneous_assoc_symm (MM.grading.shift 1) W W).comp
     ((LinearMap.isHomogeneous_id (MM.grading.shift 1).piece).tensorProduct
       (TensorWords.isHomogeneous_deconcatenation (AA.grading.shift 1)))
-  exact (hF.tensorProduct (LinearMap.isHomogeneous_id W.piece)).comp hρ
+  have h := (hF.tensorProduct (LinearMap.isHomogeneous_id W.piece)).comp hρ
+  simp only [add_zero, zero_add] at h
+  exact h
 
 /-- Construct a module morphism from a degree-zero Taylor map satisfying the suspended component
 equation. Cofreeness supplies the bar map and reduces its differential law to this equation. -/
@@ -186,8 +190,8 @@ noncomputable def ofTaylor (F : (M ⊗[R] TensorWords R A) →ₗ[R] N)
     (h : NN.taylor ∘ₗ (Comodule.Hom.cofreeLift (C := TensorWords R A) F).toLinearMap =
       F ∘ₗ MM.barDifferential) : AInfinityRightModuleHom MM NN where
   barHom := Comodule.Hom.cofreeLift F
-  isHomogeneous_barMap := isHomogeneous_cofreeLift F hF
-  barDifferential_comp_barMap := (barDifferential_comp_iff _ (isHomogeneous_cofreeLift F hF)).2
+  isHomogeneous_barMap := isHomogeneous_cofreeLift hF
+  barDifferential_comp_barMap := (barDifferential_comp_iff _ (isHomogeneous_cofreeLift hF)).2
     (by
       have hret := (Comodule.Hom.cofreeEquiv (R := R) (C := TensorWords R A) (M := N)
         (P := M ⊗[R] TensorWords R A)).apply_symm_apply F

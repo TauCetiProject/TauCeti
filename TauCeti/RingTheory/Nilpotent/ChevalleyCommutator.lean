@@ -256,7 +256,7 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq
   obtain ⟨kz, hkz⟩ := Associative.isNilpotent_of_commutator_eq hxy hxz hyz hx
   obtain ⟨kx, hkx⟩ := hx
   obtain ⟨ky, hky⟩ := hy
-  set N := kx + ky + kz with hNdef
+  set N := kx + ky + kz with _
   have hxN : x ^ N = 0 := pow_eq_zero_of_le (by omega) hkx
   have hyN : y ^ N = 0 := pow_eq_zero_of_le (by omega) hky
   have hzN : z ^ N = 0 := pow_eq_zero_of_le (by omega) hkz

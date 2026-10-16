@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.FiniteTopology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Restrict
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Sheaf
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StableUniform
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Uniform
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Topology
 
 /-!
 # The Laurent sheaf condition on rational subsets of a stably uniform affinoid
@@ -23,14 +26,29 @@ W ∩ {|f| ≤ 1},  W ∩ {|f| ≥ 1}
 ```
 
 of `W`. Thus sections on `W` are determined on the two pieces and compatible sections glue.
-This is the local input for the induction proving that stably uniform affinoids are sheafy.
+Moreover sections on `W` carry the topology induced by restriction to the two pieces.
+This is the local input for the induction proving that stably uniform affinoids are sheafy. As a
+sheaf condition for the presheaf of sets it is
+`isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform`. Together with stability under
+rational localisation, it shows that stable uniformity satisfies
+`TauCeti.ValuationSpectrum.LaurentGluing` (`laurentGluing_isStablyUniform`), and, with the
+topological statement, `TauCeti.ValuationSpectrum.ContinuousLaurentGluing`
+(`continuousLaurentGluing_isStablyUniform`).
 
 ## Main results
 
+* `isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform`:
+  sections on a rational subset carry the topology induced by restriction to its two Laurent
+  pieces.
 * `injective_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform`:
   sections on a rational subset are determined on its two Laurent pieces.
 * `exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_isStablyUniform`:
   compatible sections on the two pieces glue over the rational subset.
+* `isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform`: the presentation-limit presheaf
+  of sets satisfies the sheaf condition for the two-piece Laurent cover of a rational subset.
+* `laurentGluing_isStablyUniform`: stable uniformity satisfies `LaurentGluing`.
+* `continuousLaurentGluing_isStablyUniform`: stable uniformity satisfies
+  `ContinuousLaurentGluing`.
 
 ## References
 
@@ -41,7 +59,7 @@ This is the local input for the induction proving that stably uniform affinoids 
 
 public section
 
-open CategoryTheory TopologicalSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition
+open CategoryTheory TopologicalSpace Topology TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
 universe v
 
@@ -49,6 +67,35 @@ namespace TauCeti.ValuationSpectrum
 
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
   [IsStablyUniform A] (P : PairOfDefinition A) {Aplus : Subring A}
+
+/-- **Topological Laurent gluing on a rational subset of a stably uniform affinoid.** Sections
+on `R(T/s)` carry the subspace topology induced by restriction to
+`R(T/s) ∩ {|f| ≤ 1}` and `R(T/s) ∩ {|f| ≥ 1}`. -/
+theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) (f : A) :
+    IsClosedEmbedding fun x : presentationLimit (P := P) Aplus W ↦
+      ((presentationLimitMap (P := P)
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
+        (presentationLimitMap (P := P)
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x) := by
+  -- The coordinate ring `A⟨T/s⟩` is stably uniform, hence uniform because it is complete and
+  -- Hausdorff.  Transport its Laurent closed embedding back through rational localization.
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
+  have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+  let _ := locUniformSpace P T s _ hden
+  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
+  have _ := isTopologicalRing_locUniformSpace P T s _ hden
+  have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
+  have _ := PairOfDefinition.isStablyUniform_completion_locTopology P T s _ hden hT
+  have _ := Huber.IsStablyUniform.isUniform
+    (A := UniformSpace.Completion (Localization.Away s))
+  exact isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensComap
+    P Aplus T s _ hden hAplus hT f
+      (isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isUniform
+        (completionLocalization P T s _ hden)
+        (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden)
+        (toCompletionLoc P T s _ hden f))
 
 /-- **Laurent injectivity on a rational subset of a stably uniform affinoid.** A section over
 `R(T/s)` is determined by its restrictions to the intersections with `{|f| ≤ 1}` and
@@ -102,6 +149,49 @@ theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_isStablyUnifor
   exact exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_locOpensComap P Aplus T s _ hden
     hAplus hT f (exists_presentationLimitMap_eq_of_laurentCoverOpen_of_isUniform _
       (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _) x hx
+
+/-- **The Laurent sheaf condition on a rational subset of a stably uniform affinoid.** Let `A` be
+a stably uniform Tate ring, `A⁺` a subring of power-bounded elements, `W` a rational subset of
+`Spa(A, A⁺)` and `f ∈ A`. The presentation-limit presheaf, as a presheaf of sets, satisfies the
+sheaf condition for the two-piece Laurent cover `W ∩ {|f| ≤ 1}`, `W ∩ {|f| ≥ 1}` of `W`. -/
+theorem isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) (f : A) :
+    (Presieve.ofArrows (fun b ↦ W ⊓ laurentCoverOpen Aplus f b)
+      fun _ ↦ homOfLE inf_le_left).IsSheafFor
+        (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+          forget _root_.TopCommRingCat) := by
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
+  exact isSheafFor_ofArrows_inf_laurentCoverOpen_of_injective P f
+    (injective_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform P hAplus hT f)
+    (exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_isStablyUniform P hAplus hT f)
+
+omit [IsStablyUniform A] in
+/-- **Stable uniformity admits Laurent gluing.** A completed rational localisation of a stably
+uniform Tate ring is stably uniform (`PairOfDefinition.isStablyUniform_completion_locTopology`),
+and over a stably uniform Tate ring two-piece Laurent covers of rational subsets glue
+(`isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform`). -/
+theorem laurentGluing_isStablyUniform :
+    LaurentGluing.{v} fun A _ _ _ _ ↦ IsStablyUniform A where
+  completion_localization P T s hT hA :=
+    have := hA
+    PairOfDefinition.isStablyUniform_completion_locTopology P T s _ _ hT
+  isSheafFor_ofArrows_inf_laurentCoverOpen P _ hA hAplus _ hW f :=
+    have := hA
+    isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform P hAplus hW f
+
+omit [IsStablyUniform A] in
+/-- **Stable uniformity admits continuous Laurent gluing.** It admits Laurent gluing
+(`laurentGluing_isStablyUniform`), and over a stably uniform Tate ring restriction from a rational
+subset to its two Laurent pieces is a closed embedding
+(`isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform`). -/
+theorem continuousLaurentGluing_isStablyUniform :
+    ContinuousLaurentGluing.{v} fun A _ _ _ _ ↦ IsStablyUniform A where
+  toLaurentGluing := laurentGluing_isStablyUniform
+  isInducing_inf_laurentCoverOpen P _ hA hAplus _ hW f :=
+    have := hA
+    (isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform P hAplus hW
+      f).isInducing
 
 end TauCeti.ValuationSpectrum
 

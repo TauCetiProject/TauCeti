@@ -114,7 +114,7 @@ theorem symPowerRep_diagGL_apply_basis (t : Fin n → kˣ) (s : Sym (Fin n) d) :
       ((s : Multiset (Fin n)).map fun i => (t i : k)).prod •
         (Pi.basisFun k (Fin n)).symmetricPower d s := by
   rw [Representation.symmetricPower_apply,
-    SymmetricPower.map_basis_symmetricPower_of_apply_basis (Pi.basisFun k (Fin n))
+    Module.Basis.map_symmetricPower_of_apply (Pi.basisFun k (Fin n))
       (stdRep k n (diagGL t)) (fun i => (t i : k)) (stdRep_diagGL_apply_basisFun t) s]
 
 /-- The product of the standard basis vectors listed by `s` has weight the multiplicity vector of

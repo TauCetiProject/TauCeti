@@ -166,7 +166,7 @@ private theorem sumCongr_slotSmoothing_true_mul_crossingMatching (T : Perm α) :
         swap (.inl (E.val q)) (.inr 2) := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _⟩ := ends_ne hqp hqe
   refine crossing_ext (E := E) (p := p) (q := q) ?_ ?_ ?_ ?_
-    (fun x hxp hxq hxe hxe' hx₁ hx₂ hx₃ hx₄ => ?_) (fun i => ?_)
+    (fun x hxp hxq hxe hxe' _ hx₂ hx₃ hx₄ => ?_) (fun i => ?_)
   all_goals (try fin_cases i) <;> simp [crossingMatching_val_apply, swap_apply_def,
     oppositeCrossingSlot_eq_swap_mul_swap, *]
 
@@ -179,7 +179,7 @@ private theorem sumCongr_slotSmoothing_false_mul_crossingMatching (T : Perm α) 
         swap (.inl (E.val q)) (.inr 0) := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _⟩ := ends_ne hqp hqe
   refine crossing_ext (E := E) (p := p) (q := q) ?_ ?_ ?_ ?_
-    (fun x hxp hxq hxe hxe' hx₁ hx₂ hx₃ hx₄ => ?_) (fun i => ?_)
+    (fun x hxp hxq hxe hxe' _ _ hx₃ hx₄ => ?_) (fun i => ?_)
   all_goals (try fin_cases i) <;> simp [crossingMatching_val_apply, swap_apply_def,
     oppositeCrossingSlot_eq_swap_mul_swap, *]
 
@@ -191,7 +191,7 @@ private theorem sumCongr_oppositeCrossingSlot_mul_crossingMatching (C : Perm α)
         swap (.inl (E.val p)) (.inr 0) * swap (.inl (E.val q)) (.inr 1) := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _⟩ := ends_ne hqp hqe
   refine crossing_ext (E := E) (p := p) (q := q) ?_ ?_ ?_ ?_
-    (fun x hxp hxq hxe hxe' hx₁ hx₂ hx₃ hx₄ => ?_) (fun i => ?_)
+    (fun x hxp hxq hxe hxe' _ _ hx₃ hx₄ => ?_) (fun i => ?_)
   all_goals (try fin_cases i) <;> simp [crossingMatching_val_apply, swap_apply_def,
     oppositeCrossingSlot_eq_swap_mul_swap, *]
 

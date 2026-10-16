@@ -55,8 +55,11 @@ None of it needs an exactness hypothesis on the constant field.
 * `TauCeti.coe_holomorphyRing_subset_integers_iff`: **Stichtenoth, Corollary 3.2.8** — the
   functions of `𝒪_S` are all regular at `P` exactly when `P ∈ S`, so `S` is recovered from
   `𝒪_S` and the two constructions are mutually inverse.
+* `TauCeti.exists_setOf_mem_integers_eq_compl`: every finite set of places is the pole set of
+  some function.
 * `TauCeti.isFractionRing_holomorphyRing`: `F` is the field of fractions of `𝒪_S` as soon as
-  some place lies outside `S`.
+  some place lies outside `S`; in particular (`TauCeti.isFractionRing_holomorphyRing_setOf_mem`)
+  of the ring of functions regular wherever a transcendental `x` is.
 * `TauCeti.exists_pow_mul_mem_holomorphyRing`: a function regular at every place of `S` at which
   `x⁻¹` is regular, for some `x ∈ 𝒪_S`, is made regular on all of `S` by a power of `x`.
 * `TauCeti.dvd_holomorphyRing_iff_forall_ord_le`: divisibility in `𝒪_S` is the pointwise
@@ -214,6 +217,16 @@ theorem isFractionRing_holomorphyRing (hF : IsFunctionField k F) {S : Set (Place
     · exact mul_comm z y
   exists_of_eq h := ⟨1, by simpa using Subtype.ext h⟩
 
+/-- **`F` is the field of fractions of `𝒪_x`**, the ring of functions regular wherever `x` is, for
+`x` transcendental over `k`: `x` has a pole, which lies outside the places at which `x` is
+regular. -/
+theorem isFractionRing_holomorphyRing_setOf_mem (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) :
+    IsFractionRing ↥(holomorphyRing {P : Place k F | x ∈ P.integers}) F := by
+  obtain ⟨P, hP⟩ := Place.exists_ord_neg hF hx
+  exact isFractionRing_holomorphyRing hF
+    ⟨P, fun h ↦ (P.mem_integers_iff_ord_nonneg.mp h).not_gt hP⟩
+
 /-! ### Clearing poles by a power of a function -/
 
 /-- A function regular at every place of `S` at which `x⁻¹` is regular is made regular on all of
@@ -229,7 +242,7 @@ theorem exists_pow_mul_mem_holomorphyRing (hF : IsFunctionField k F) {S : Set (P
   · exact ⟨0, by simp⟩
   classical
   have hT : {P : Place k F | P.ord z < 0}.Finite := Place.finite_setOf_ord_neg hF z
-  set n : ℕ := hT.toFinset.sup fun P ↦ (-P.ord z).toNat with hn
+  set n : ℕ := hT.toFinset.sup fun P ↦ (-P.ord z).toNat
   refine ⟨n, mem_holomorphyRing_iff_forall_ord_nonneg.mpr fun P hP ↦ ?_⟩
   have hxP : 0 ≤ P.ord x := mem_holomorphyRing_iff_forall_ord_nonneg.mp hx P hP
   rw [P.ord_mul (pow_ne_zero n hx0) hz0, P.ord_pow]
@@ -246,7 +259,6 @@ theorem exists_pow_mul_mem_holomorphyRing (hF : IsFunctionField k F) {S : Set (P
   have hle : (-P.ord z).toNat ≤ n :=
     Finset.le_sup (f := fun P : Place k F ↦ (-P.ord z).toNat) (hT.mem_toFinset.mpr hzP)
   have h1 : ((-P.ord z).toNat : ℤ) = -P.ord z := Int.toNat_of_nonneg (by omega)
-  have h2 : ((-P.ord z).toNat : ℤ) ≤ n := by exact_mod_cast hle
   have h3 : (n : ℤ) ≤ n * P.ord x := le_mul_of_one_le_right (Nat.cast_nonneg n) hxpos
   linarith
 
@@ -305,6 +317,26 @@ theorem coe_holomorphyRing_subset_integers_iff (hF : IsFunctionField k F)
   have hzP := h hzS
   rw [SetLike.mem_coe, P.mem_integers_iff_ord_nonneg] at hzP
   omega
+
+/-- **Every finite set of places is the pole set of a function**: for a finite set `T` of places
+of an algebraic function field there is a function regular exactly at the places outside `T`. -/
+theorem exists_setOf_mem_integers_eq_compl (hF : IsFunctionField k F) {T : Set (Place k F)}
+    (hT : T.Finite) : ∃ x : F, {P : Place k F | x ∈ P.integers} = Tᶜ := by
+  -- Each place `Q` is the only pole of some `z Q`; the sum of the `z Q` over `Q ∈ T` has a pole
+  -- at each `Q ∈ T`, where `z Q` alone has one, and no pole elsewhere.
+  choose z hzneg hzpos using fun Q : Place k F ↦ Q.exists_ord_neg_and_forall_ne_ord_nonneg hF
+  refine ⟨∑ Q ∈ hT.toFinset, z Q, Set.ext fun P ↦ ?_⟩
+  simp only [Set.mem_ofPred_eq, Set.mem_compl_iff]
+  by_cases hP : P ∈ T
+  · -- `z P` is the only summand with a pole at `P`, so it dictates the order of the sum.
+    have hz0 : z P ≠ 0 := fun h ↦ by simpa [h] using hzneg P
+    rw [P.mem_integers_iff_ord_nonneg,
+      P.ord_sum_eq_of_forall_lt (hT.mem_toFinset.mpr hP) hz0
+        fun Q _ hQP ↦ (hzneg P).trans_le (hzpos Q P (Ne.symm hQP))]
+    simpa [hP] using hzneg P
+  · refine iff_of_true (sum_mem fun Q hQ ↦ ?_) hP
+    exact P.mem_integers_iff_ord_nonneg.mpr
+      (hzpos Q P fun h ↦ hP (h ▸ hT.mem_toFinset.mp hQ))
 
 /-! ### Finitely many places: a principal ideal domain -/
 

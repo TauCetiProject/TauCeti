@@ -29,9 +29,9 @@ is invertible, `FractionalIdeal R⁰ K` being a semifield) to the free Weil-divi
 homomorphism is an **isomorphism**: a fractional ideal is recovered from its multiplicities by the
 factorization `I = ∏_v v^(count K v I)` (injectivity), and every finite integer combination of
 primes is the divisor of the corresponding product of prime ideals (surjectivity). This is the
-scheme-free, affine-chart form of the roadmap's **`Weil ≃ Cartier` dictionary**. Injectivity is
-also recorded coefficientwise as `units_eq_of_forall_count_eq`, the form in which it is used: to
-prove two invertible fractional ideals equal, compare `count` at each prime.
+scheme-free, affine-chart form of the **`Weil ≃ Cartier` dictionary**. Injectivity is also recorded
+coefficientwise as `units_eq_of_forall_count_eq`, the form in which it is used: to prove two
+invertible fractional ideals equal, compare `count` at each prime.
 
 We also connect it to the order system already built: the divisor of the principal fractional ideal
 `(x)` is exactly the principal divisor of the rational function `x`, so the isomorphism carries the
@@ -40,12 +40,9 @@ elements needed before passing to quotient-level statements, which are not prove
 The divisor of a prime `v` is the point divisor `[v]`, the sanity check that rules out a
 vacuous map.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve",
-specifically the "(smooth curve) `Weil ≃ Cartier`" dictionary realized here for the affine
-Dedekind model. It reuses
-Mathlib's `FractionalIdeal.count` factorization API (`count_mul`, `count_finsuppProd`,
-`finprod_heightOneSpectrum_factorization'`, `count_maximal_coprime`) and Tau Ceti's `WeilDivisor`
-and `OrderSystem.ofDedekindDomain` API; no external mathematics is vendored.
+This file reuses Mathlib's `FractionalIdeal.count` factorization API (`count_mul`,
+`count_finsuppProd`, `finprod_heightOneSpectrum_factorization'`, `count_maximal_coprime`) and Tau
+Ceti's `WeilDivisor` and `OrderSystem.ofDedekindDomain` API; no external mathematics is vendored.
 -/
 
 public section
@@ -190,8 +187,8 @@ variable {R K}
 
 /-- The divisor of the principal fractional ideal `(x)` of a nonzero rational function `x` is the
 principal divisor of `x`: the isomorphism carries principal fractional ideals to principal divisors.
-This is the compatibility on principal elements needed to later identify the ideal class group with
-the divisor class group `Cl(X)`; that quotient-level isomorphism is not proved here. -/
+It is the compatibility on principal elements used to identify the ideal class group with the
+divisor class group `Cl(X)` in `TauCeti.AlgebraicGeometry.WeilDivisor.Dedekind.ClassGroup`. -/
 @[simp]
 lemma fractionalIdealDivisor_toPrincipalIdeal (x : Kˣ) :
     fractionalIdealDivisor R K (Additive.ofMul (toPrincipalIdeal R K x)) =

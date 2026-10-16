@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
+public import TauCeti.NumberTheory.LocalField.Norm.Basic
 
 /-!
 # Normalized absolute values under extension of adic completions
@@ -24,6 +25,9 @@ related by
 
 * `IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension`: the normalized
   absolute value under the canonical extension of completions.
+* `IsDedekindDomain.HeightOneSpectrum.norm_norm_adicCompletion`: the field norm preserves
+  normalized absolute values. This uses `TauCeti.normalizedValuationWithZero_norm` together
+  with the residue-cardinality formula.
 
 ## References
 
@@ -72,5 +76,31 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension
     ← zpow_natCast, ← zpow_mul, Nat.cast_mul]
   congr 1
   ring
+
+/-- The field norm between adic completions preserves the residue-cardinality normalized
+absolute value. This differs from extension of scalars, which raises it to the local degree. -/
+@[simp]
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_norm_adicCompletion
+    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
+    [w.asIdeal.LiesOver v.asIdeal] (x : w.adicCompletion L) :
+    ‖Algebra.norm (v.adicCompletion K) x‖ = ‖x‖ := by
+  have : Finite (R ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  have : Finite (B ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  have := finite_of_valuativeExtension (v.adicCompletion K) (w.adicCompletion L)
+  have hval : Valued.v (Algebra.norm (v.adicCompletion K) x) =
+      Valued.v x ^ w.asIdeal.inertiaDeg R := by
+    simpa only [normalizedValuationWithZero_adicCompletion, inertiaDegree_def,
+      finrank_residueField_adicCompletion, inv_pow, inv_inj] using
+      normalizedValuationWithZero_norm (K := v.adicCompletion K) x
+  by_cases hx : x = 0
+  · simp [hx]
+  have hcard : w.asIdeal.absNorm = v.asIdeal.absNorm ^ w.asIdeal.inertiaDeg R := by
+    simpa only [natCard_residueField_adicCompletion_eq_absNorm] using
+      natCard_residueField_adicCompletion_eq_pow_inertiaDeg (K := K) (L := L) v w
+  rw [FinitePlace.norm_def, FinitePlace.norm_def, hval, map_pow,
+    WithZeroMulInt.toNNReal_neg_apply _ (by simpa using hx),
+    WithZeroMulInt.toNNReal_neg_apply _ (by simpa using hx)]
+  simp only [hcard, Nat.cast_pow, NNReal.coe_zpow,
+    ← zpow_natCast, ← zpow_mul, mul_comm]
 
 end TauCeti

@@ -63,29 +63,26 @@ theorem connectedSpace_primeSpectrum_coordinateRing
 the resulting group algebra is a domain. -/
 theorem connectedSpace_primeSpectrum_baseChange_coordinateRing
     (k : Type u) (K : Type v) [CommRing k] [CommRing K] [Algebra k K]
-    (G : FGCommGrpCat.{u}) [IsDomain (MonoidAlgebra K G)] :
+    (G : FGCommGrpCat.{w}) [IsDomain (MonoidAlgebra K G)] :
     ConnectedSpace (PrimeSpectrum
       (CommHopfAlgCat.baseChange (K := K) (coordinateRing k G).obj)) := by
-  let e := baseChangeCoordinateHopfAlgebraIso k K G
+  let e := (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv
   have := connectedSpace_primeSpectrum_coordinateRing K G
-  exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
-    (ConcreteCategory.bijective_of_isIso e.hom).1
+  exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
 
 /-- Scalar extension identifies a diagonalizable-group coordinate ring with the corresponding
 group algebra over the extension field. -/
 private noncomputable def coordinateRingBaseChangeEquiv
-    (k : Type u) [Field k] (G : FGCommGrpCat.{u})
-    (K : Type u) [Field K] [Algebra k K] :
+    (k : Type u) [Field k] (G : FGCommGrpCat.{w})
+    (K : Type v) [Field K] [Algebra k K] :
     MonoidAlgebra k G ⊗[k] K ≃+* MonoidAlgebra K G :=
   (Algebra.TensorProduct.comm k _ K).toRingEquiv.trans
-    (_root_.CommHopfAlgCat.ofIso
-      ((finiteTypeCommHopfAlgProperty K).ι.mapIso
-        (baseChangeCoordinateRingIso k K G))).toAlgEquiv.toRingEquiv
+    (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv.toRingEquiv
 
 /-- **The coordinate Hopf algebra of a unique-product diagonalizable group is geometrically
 connected.** -/
 theorem geometricallyConnected_coordinateRing
-    (k : Type u) [Field k] (G : FGCommGrpCat.{u}) [UniqueProds G] :
+    (k : Type u) [Field k] (G : FGCommGrpCat.{w}) [UniqueProds G] :
     geometricallyConnectedCommHopfAlgProperty k
       (DiagonalizableGroup.coordinateRing k G).obj := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff]
@@ -96,7 +93,7 @@ theorem geometricallyConnected_coordinateRing
 /-- **The coordinate Hopf algebra of a unique-product diagonalizable group is geometrically
 reduced.** -/
 theorem geometricallyReduced_coordinateRing
-    (k : Type u) [Field k] (G : FGCommGrpCat.{u}) [UniqueProds G] :
+    (k : Type u) [Field k] (G : FGCommGrpCat.{w}) [UniqueProds G] :
     geometricallyReducedCommHopfAlgProperty k
       (DiagonalizableGroup.coordinateRing k G).obj := by
   rw [geometricallyReducedCommHopfAlgProperty_iff]

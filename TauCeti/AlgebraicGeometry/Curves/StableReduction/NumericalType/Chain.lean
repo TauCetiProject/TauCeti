@@ -42,6 +42,9 @@ restricted to more than five components because the five-component case is its L
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end`: the
   weights along such a chain of at least five components are constant except possibly at one
   end.
+* `TauCeti.NumericalType.left_fiber_relation`, `TauCeti.NumericalType.interior_fiber_relation`
+  and `TauCeti.NumericalType.right_fiber_relation`: the fibre relations along a sequence of
+  distinct components exhausting all components whose nonconsecutive members do not meet.
 -/
 
 public section
@@ -315,7 +318,7 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
         (hc.intersection_self e he) (hc.intersection_self f hf)
         (hc.ne ha hd had) (hc.ne ha he hae) (hc.ne ha hf haf) (hc.ne hb he hbe)
         (hc.ne hb hf hbf) (hc.ne hd hf hdf) hab hbd hde hef
-    set W : ℤ := (T.weight (c 1) : ℤ) with hWdef
+    set W : ℤ := (T.weight (c 1) : ℤ)
     -- Every edge strictly inside the chain equals the weight of both of its endpoints.
     have hstep : ∀ j, 1 ≤ j → j + 2 < t →
         T.intersection (c j) (c (j + 1)) = (T.weight (c j) : ℤ) ∧
@@ -525,6 +528,73 @@ theorem IsSelfIntersectionMinusTwoChain.right_sum_eq {t : ℕ} {c : ℕ → T.Co
         hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul])
     rfl
 
+/-- For a sequence of components which are distinct below `t` and exhaust a numerical type, the
+fibre relation at any position is a sum over the positions below `t`. -/
+theorem sum_range_multiplicity_mul_intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j) (hcard : Fintype.card T.Component = t)
+    (i : ℕ) :
+    ∑ j ∈ range t, (T.multiplicity (c j) : ℤ) * T.intersection (c i) (c j) = 0 := by
+  classical
+  have hu : (range t).image c = (univ : Finset T.Component) := by
+    apply eq_univ_of_card
+    rw [card_image_of_injOn fun a ha b hb hab ↦
+      hinj a (mem_range.mp ha) b (mem_range.mp hb) hab, card_range, hcard]
+  have h := T.fiber_relation (c i)
+  rw [← hu, sum_image] at h
+  · exact h
+  · intro a ha b hb hab
+    exact hinj a (mem_range.mp ha) b (mem_range.mp hb) hab
+
+/-- For a sequence of at least two components which are distinct below `t`, exhaust a numerical
+type and meet only when consecutive, the fibre relation at the left end has only its diagonal
+and adjacent terms. -/
+theorem left_fiber_relation {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : Fintype.card T.Component = t) (ht : 2 ≤ t)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) :
+    (T.multiplicity (c 0) : ℤ) * T.intersection (c 0) (c 0) +
+      T.multiplicity (c 1) * T.intersection (c 0) (c 1) = 0 := by
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard 0
+  rw [sum_range_eq_of_eq_zero_off_pair (a := 0) (b := 1) (by omega) (by omega) (by omega)
+    (fun j hj hj0 hj1 ↦ by rw [hzero 0 (by omega) j hj hj0.symm (by omega) (by omega), mul_zero])
+    rfl] at h
+  exact h
+
+/-- For a sequence of components which are distinct below `t`, exhaust a numerical type and meet
+only when consecutive, the fibre relation at an interior position has only its diagonal and two
+adjacent terms. -/
+theorem interior_fiber_relation {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : Fintype.card T.Component = t)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t) :
+    (T.multiplicity (c (i - 1)) : ℤ) * T.intersection (c i) (c (i - 1)) +
+        T.multiplicity (c i) * T.intersection (c i) (c i) +
+      T.multiplicity (c (i + 1)) * T.intersection (c i) (c (i + 1)) = 0 := by
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard i
+  rw [sum_range_eq_of_eq_zero_off_triple (a := i - 1) (b := i) (d := i + 1)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (fun j hj hprev hself hnext ↦ by
+      rw [hzero i (by omega) j hj hself.symm (by omega) (by omega), mul_zero]) rfl] at h
+  exact h
+
+/-- For a sequence of at least two components which are distinct below `t`, exhaust a numerical
+type and meet only when consecutive, the fibre relation at the right end has only its diagonal
+and adjacent terms. -/
+theorem right_fiber_relation {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : Fintype.card T.Component = t) (ht : 2 ≤ t)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) :
+    (T.multiplicity (c (t - 2)) : ℤ) * T.intersection (c (t - 1)) (c (t - 2)) +
+      T.multiplicity (c (t - 1)) * T.intersection (c (t - 1)) (c (t - 1)) = 0 := by
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard (t - 1)
+  rw [sum_range_eq_of_eq_zero_off_pair (a := t - 2) (b := t - 1)
+    (by omega) (by omega) (by omega)
+    (fun j hj hprev hself ↦ by
+      rw [hzero (t - 1) (by omega) j hj hself.symm (by omega) (by omega), mul_zero]) rfl] at h
+  exact h
 
 /-- The weight classification of a chain of components of self-intersection `-2w`. -/
 private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : ℕ) :

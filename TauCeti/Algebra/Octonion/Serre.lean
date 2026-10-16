@@ -313,7 +313,7 @@ derivations of the three basis vectors is everything: the bracket of the upper v
 of `eᵢ` with the lower one of `eⱼ`, for `i ≠ j`, is `-3` times the special linear derivation of the
 matrix unit `Eᵢⱼ`, and every derivation is a sum of the three families
 (`TauCeti.Octonion.derivationOfTriple_surjective`). -/
-private theorem eq_top_of_upperDerivation_mem_of_lowerDerivation_mem [Invertible (3 : R)]
+theorem eq_top_of_upperDerivation_mem_of_lowerDerivation_mem [Invertible (3 : R)]
     {S : LieSubalgebra R (derivationLieAlgebra R (Octonion R))}
     (hu : ∀ i, upperDerivation (Pi.single i (1 : R)) ∈ S)
     (hl : ∀ i, lowerDerivation (Pi.single i (1 : R)) ∈ S) : S = ⊤ := by
@@ -324,7 +324,6 @@ private theorem eq_top_of_upperDerivation_mem_of_lowerDerivation_mem [Invertible
     convert hm using 2
     apply Subtype.ext
     ext a b
-    have h3 : ⅟(3 : R) * 3 = 1 := invOf_mul_self 3
     by_cases ha : a = i <;> by_cases hb : b = j <;>
       simp [Matrix.single_apply, Matrix.vecMulVec_apply, h, ha, hb] <;> grind
   have hsingle_smul : ∀ (i : Fin 3) (r : R), Pi.single i r = r • Pi.single i (1 : R) := by

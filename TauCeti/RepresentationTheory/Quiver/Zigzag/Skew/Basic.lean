@@ -48,9 +48,8 @@ ordinary zigzag relation ideal, so the two presentations agree there.
 
 ## References
 
-This is the scalar-labelled/skew-zigzag definition clause of Layer 1 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  See C. Couture, *Skew-Zigzag Algebras*,
-Definition 3.1 and Definition 3.2, https://arxiv.org/abs/1509.08405.
+See C. Couture, *Skew-Zigzag Algebras*, Definition 3.1 and Definition 3.2,
+https://arxiv.org/abs/1509.08405.
 -/
 
 public section
@@ -108,9 +107,9 @@ at a vertex are equal, which is the ordinary zigzag relation. -/
 instance : One (SkewZigzagParameter k G) where
   one :=
     { ratio _ _ _ _ _ := 1
-      ratio_self := by intro i j h; rfl
-      ratio_inv := by intro i j j' h h'; exact one_mul 1
-      ratio_cocycle := by intro i j j' j'' h h' h''; rw [one_mul, one_mul] }
+      ratio_self := by intro i j _; rfl
+      ratio_inv := by intro i j j' _ _; exact one_mul 1
+      ratio_cocycle := by intro i j j' j'' _ _ _; rw [one_mul, one_mul] }
 
 @[simp]
 theorem one_ratio {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :

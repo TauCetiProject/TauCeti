@@ -104,8 +104,8 @@ theorem exists_forall_castHom_toAdd_eq_toAdd_of_pow_two_dvd [Finite ι] (hq : (p
       map_zero' := by simp
       map_add' := fun a b ↦ by simp [ofAdd_add] }
   -- Its coefficients on the coordinates.
-  set c : ι → ZMod p := fun i ↦ χ' (Pi.single i 1, 0) with hc
-  set c₀ : ZMod p := χ' (0, 1) with hc₀
+  set c : ι → ZMod p := fun i ↦ χ' (Pi.single i 1, 0)
+  set c₀ : ZMod p := χ' (0, 1)
   have hP : ∀ x : ι → ℤ_[p], χ' (x, 0) = ∑ i, toZMod (x i) * c i := by
     intro x
     have h := congrArg (χ'.comp (AddMonoidHom.inl (ι → ℤ_[p]) (ℤ_[p] ⧸ Ideal.span {q})))

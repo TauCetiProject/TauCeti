@@ -31,9 +31,7 @@ import TauCeti.RepresentationTheory.Irreducible
 # The principal series of `GL₂(𝔽_q)` is irreducible exactly off the diagonal
 
 The principal series `Ind_B^{GL₂}(α ⊗ β)` of `GL₂(𝔽_q)` is irreducible if and only if the two
-characters `α, β : 𝔽_qˣ → ℂˣ` are distinct. This file proves that, the last of the three
-statements the character-theory roadmap asks of the principal series; the other two, its
-definition and its dimension `q + 1`, are in
+characters `α, β : 𝔽_qˣ → ℂˣ` are distinct. Its definition and its dimension `q + 1` are in
 `TauCeti/RepresentationTheory/CharacterTable/GL2/PrincipalSeries/Basic.lean`.
 
 The proof is the Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff` run against the
@@ -80,8 +78,8 @@ is `ℂ : Type`; pinning `F : Type` is what puts `GL (Fin 2) F` there too. The c
 covers finite fields presented by a `Type`-valued representative — every finite field has one, up
 to a ring isomorphism, namely `GaloisField p n` — but it does not apply *directly* to a finite
 field declared in some `Type u` with `u ≠ 0`; such a presentation first has to be transported
-along a ring isomorphism with a small model, or wait for the upstream generalization described
-next. The purely group-theoretic lemmas about the Weyl conjugation keep both an arbitrary universe
+along a ring isomorphism with a small model. The purely group-theoretic lemmas about the Weyl
+conjugation keep both an arbitrary universe
 and an arbitrary commutative ring.
 
 That pin is not a choice this file could make differently. The predicate
@@ -105,9 +103,6 @@ torus.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The Borel and the principal series": the target `simple_GL2PrincipalSeries_iff`, whose
-  name is the roadmap's.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42, §7.3, Proposition 23.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, Lecture 5.2.
@@ -218,7 +213,7 @@ This characterization supplies the Weyl-cell contribution to the principal-serie
 number. -/
 @[simp]
 theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
-    Nonempty (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+    Nonempty (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
           (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β) ≅
         (Action.res (FGModuleCat ℂ)
           (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F))).obj (GL2BorelRep F γ δ))
@@ -226,7 +221,7 @@ theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
   rw [GL2BorelRep_def, GL2BorelRep_def, GL2Borel.linearRep_def,
     GL2Borel.linearRep_def, ← FDRep.ofLinearCharacter_def,
     ← FDRep.ofLinearCharacter_def]
-  -- `resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
+  -- `Subgroup.resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
   -- abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
   change Nonempty
     ((Action.res (FGModuleCat ℂ)
@@ -263,7 +258,7 @@ the Bruhat decomposition this is the whole content of
 theorem mackeyDisjoint_weyl_iff (α β : Fˣ →* ℂˣ) :
     MackeyDisjoint (GL2BorelRep F α β) (GL2WeylElement F) ↔ α ≠ β := by
   classical
-  have hres : Simple (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+  have hres : Simple (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
       (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β)) :=
     simple_of_finrank_eq_one _ (finrank_GL2BorelRep F α β)
   have hconj : Simple ((Action.res (FGModuleCat ℂ)

@@ -50,6 +50,8 @@ Topology*, Appendix A. The local chart is Mathlib's
   zero derivative at the base point.
 * `ContinuousLinearMap.FredholmPackage.hasStrictFDerivAt_obstructionSlice_self`: the same for the
   finite-dimensional slice of the obstruction through the base point.
+* `ContinuousLinearMap.FredholmPackage.hasFDerivAt_obstructionSlice`: at any point where the
+  obstruction is differentiable, its slice derivative is the restriction to the kernel direction.
 * `ContinuousLinearMap.FredholmPackage.contDiffAt_normalFormOpenPartialHomeomorph_symm_self`: the
   inverse normal-form coordinates have the same `C^k` regularity as the original map, at the
   normal-form coordinate of the base point.
@@ -259,6 +261,18 @@ theorem obstructionSlice_apply {f : E → F} {a : E} (hf : HasStrictFDerivAt f T
     (y : pkg.decCodom.X₁) (z : pkg.decDom.X₀) :
     pkg.obstructionSlice hf y z = pkg.obstructionMap hf (y, z) := by
   rfl
+
+/-- Fixing the essential coordinate differentiates the obstruction along the inclusion of the
+inessential domain summand as the second normal-form factor: the derivative of the obstruction
+slice is the derivative of the obstruction map precomposed with `ContinuousLinearMap.inr`. -/
+theorem hasFDerivAt_obstructionSlice {f : E → F} {a : E}
+    (hf : HasStrictFDerivAt f T a) {y : pkg.decCodom.X₁ × pkg.decDom.X₀}
+    (hq : DifferentiableAt 𝕜 (pkg.obstructionMap hf) y) :
+    HasFDerivAt (pkg.obstructionSlice hf y.1)
+      ((fderiv 𝕜 (pkg.obstructionMap hf) y).comp
+        (ContinuousLinearMap.inr 𝕜 pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
+  rw [funext (pkg.obstructionSlice_apply hf y.1)]
+  exact hq.hasFDerivAt.comp y.2 (hasFDerivAt_prodMk_right (𝕜 := 𝕜) y.1 y.2)
 
 /-- At the coordinate of the base point the obstruction is the inessential-codomain component
 of `f a`. Not a `simp` lemma: `obstructionMap_apply` and

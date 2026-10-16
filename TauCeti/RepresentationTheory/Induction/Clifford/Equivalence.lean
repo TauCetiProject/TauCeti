@@ -11,10 +11,6 @@ import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Simple.Basic
 import TauCeti.RingTheory.SimpleModule.Isotypic
 
-/-
-Roadmap source: `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, Layer 5.
--/
-
 /-!
 # The representation decomposition in Clifford's theorem
 
@@ -207,15 +203,16 @@ theorem clifford_restrict_iso_of_isAtom {k : Type u} {G : Type v} [Field k] [Gro
     ∃ hfinite : Finite (G ⧸ inertia (FDRep.of σ.toRepresentation)),
       let _ := hfinite
       ∃ e : ℕ, e ≠ 0 ∧
-        Nonempty (resFDRep N W ≅ (FDRep.of σ.toRepresentation).cliffordSum e) := by
+        Nonempty (Subgroup.resFDRep N W ≅ (FDRep.of σ.toRepresentation).cliffordSum e) := by
   have : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
   obtain ⟨e, he, hcommon⟩ := Representation.exists_forall_finrank_linearMap_eq (N := N) W.ρ
   have hfinite := finite_quotient_inertia W.ρ σ hσ
   refine ⟨hfinite, e, he.ne', nonempty_fdRepIso_iff.mpr ⟨?_⟩⟩
-  -- The one definitional step: `resFDRep` is `Action.res` along `N.subtype`, which keeps the
+  -- The one definitional step: `Subgroup.resFDRep` is `Action.res` along `N.subtype`, which keeps
+  -- the
   -- carrier (`Action.res_obj_V`) and precomposes the action (`Action.res_obj_ρ`).  The equation
   -- only typechecks up to that carrier identification, so it is recorded by `rfl`.
-  have hres : (resFDRep N W).ρ = W.ρ.comp N.subtype := rfl
+  have hres : (Subgroup.resFDRep N W).ρ = W.ρ.comp N.subtype := rfl
   rw [hres, cliffordSum]
   exact (Representation.equivOfAsModuleLinearEquiv (restrictLinearEquivPi W.ρ σ hσ e hcommon ≪≫ₗ
     (Representation.ofModule'AsModuleEquiv _).symm)).trans (FDRep.ofShrinkEquiv _).symm
@@ -232,7 +229,7 @@ theorem clifford_restrict_iso {k : Type u} {G : Type v} [Field k] [Group G]
     (W : FDRep k G) [Simple W] :
     ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
       let _ := hfinite
-      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) := by
+      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (Subgroup.resFDRep N W ≅ V.cliffordSum e) := by
   classical
   let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
   obtain ⟨σ, hσ, -⟩ :=

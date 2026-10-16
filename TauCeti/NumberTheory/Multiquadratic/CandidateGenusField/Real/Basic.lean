@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 import Mathlib.NumberTheory.NumberField.CMField
 import Mathlib.RingTheory.RingHom.Unramified
 import TauCeti.FieldTheory.AlgHom
-import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 import TauCeti.NumberTheory.RamificationInertia.Tower
 
@@ -283,7 +282,7 @@ theorem exists_algHom_candidateGenusFieldReal {M : Type*} [Field M] [NumberField
         norm_num)
       (by
         rw [← IntermediateField.adjoin_eq_top_iff]
-        exact TauCeti.IntermediateField.adjoin_adjoinSimpleGen_eq_top z)
+        exact IntermediateField.adjoin_adjoinSimple_gen_eq_top z)
       (by exact_mod_cast hpos.le)
   let _ : IsUnramifiedAtInfinitePlaces (adjoin ℚ {z} : IntermediateField ℚ M) M := hinfinite
   let _ : IsTotallyReal M := IsTotallyReal.of_isUnramifiedAtInfinitePlaces

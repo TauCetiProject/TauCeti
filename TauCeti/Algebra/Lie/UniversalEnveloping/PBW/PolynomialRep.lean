@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.OfAssociative
+import TauCeti.Data.Finsupp.Order
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
 
 /-!
@@ -86,21 +87,6 @@ namespace PBWPolynomialRep
 
 -- Keep the split-off variable first so Mathlib normalizes its monomial directly.
 attribute [local simp] monomial_single_add
-
-/-- A monomial in which some variable is less than `l` splits off its least variable `μ < l`. -/
-private theorem exists_eq_single_add {l : ι} {σ : ι →₀ ℕ} (h : ¬ ∀ i ∈ σ.support, l ≤ i) :
-    ∃ (μ : ι) (τ : ι →₀ ℕ), μ < l ∧ (∀ i ∈ τ.support, μ ≤ i) ∧ σ = Finsupp.single μ 1 + τ := by
-  push Not at h
-  obtain ⟨i, hi, hil⟩ := h
-  have hne : σ.support.Nonempty := ⟨i, hi⟩
-  set μ := σ.support.min' hne
-  have hμ : μ ∈ σ.support := σ.support.min'_mem hne
-  refine ⟨μ, σ - Finsupp.single μ 1, (σ.support.min'_le i hi).trans_lt hil, fun j hj ↦ ?_, ?_⟩
-  · exact σ.support.min'_le j (Finsupp.support_tsub hj)
-  · rw [add_comm]
-    refine (tsub_add_cancel_of_le ?_).symm
-    rw [Finsupp.single_le_iff]
-    exact Nat.one_le_iff_ne_zero.2 (Finsupp.mem_support_iff.1 hμ)
 
 /-! ### The inductive step -/
 
@@ -189,7 +175,7 @@ private theorem degreeBound_step {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBou
   by_cases h : ∀ i ∈ σ.support, l ≤ i
   · rw [step_of_le b g h, sub_self]
     exact Submodule.zero_mem _
-  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := exists_eq_single_add h
+  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := σ.exists_eq_single_add_of_not_forall_le h
   have hτ : τ.degree + 1 ≤ d := by simpa [Nat.one_add] using hσ
   have hX : X μ * X l * monomial τ 1 + g (b μ) (g (b l) (monomial τ 1) - X l * monomial τ 1) +
         g ⁅b l, b μ⁆ (monomial τ 1) - X l * (X μ * monomial τ 1) =
@@ -215,7 +201,7 @@ private theorem step_congr {g g' : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound 
   rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero]
   by_cases h : ∀ i ∈ σ.support, l ≤ i
   · rw [step_of_le b g h, step_of_le b g' h]
-  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := exists_eq_single_add h
+  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := σ.exists_eq_single_add_of_not_forall_le h
   have hτmem : (monomial τ 1 : S) ∈ S≤ d :=
     monomial_mem_restrictTotalDegree (by simpa [Nat.one_add] using hσ) 1
   have hq : g (b l) (monomial τ 1) - X l * monomial τ 1 ∈ S≤ d := by
@@ -397,7 +383,7 @@ private theorem commRel (d : ℕ) : CommRel b d := by
       act b (b l) (act b (b m) (monomial τ 1)) =
         act b (b m) (act b (b l) (monomial τ 1)) + act b ⁅b l, b m⁆ (monomial τ 1) := by
     intro l m hm hml
-    obtain ⟨ν, Ψ, hνm, hνΨ, rfl⟩ := exists_eq_single_add hm
+    obtain ⟨ν, Ψ, hνm, hνΨ, rfl⟩ := τ.exists_eq_single_add_of_not_forall_le hm
     have hΨ : Ψ.degree < d := by simp at hτ; omega
     have hνl := hνm.trans hml
     have ihΨ := ih _ hΨ

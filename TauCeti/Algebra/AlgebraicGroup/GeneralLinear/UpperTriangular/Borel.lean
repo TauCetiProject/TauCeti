@@ -13,7 +13,6 @@ import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.SmoothConnec
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 
 /-!
 # Borel subgroups of `GLₙ`
@@ -96,7 +95,7 @@ theorem exists_map_inv_mul_mul_map_mem_upperTriangularGroup [IsAlgClosed k]
           pointsMulEquiv n (toConv (π : coordinateHopfAlgebra k n →ₐ[k] Q)) *
           Matrix.GeneralLinearGroup.map (algebraMap k Q) P ∈
         upperTriangularGroup (Fin n) Q := by
-  let _ : Comodule k Q (Fin n → k) := Comodule.Corestrict π.toCoalgHom
+  let _ := corestrictStandardComodule k n π
   obtain ⟨m, b, hb, -⟩ :=
     Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable
       (k := k) (H := Q) (M := Fin n → k) hconn hsolv
@@ -110,14 +109,10 @@ theorem exists_map_inv_mul_mul_map_mem_upperTriangularGroup [IsAlgClosed k]
   have hmat : pointsMulEquiv n (toConv π.toAlgHom) *
       Matrix.GeneralLinearGroup.map (algebraMap k Q) P =
       Matrix.GeneralLinearGroup.map (algebraMap k Q) P * U := by
-    have h := Module.Basis.coefficientMatrix_mul_toMatrix (C := Q) (Pi.basisFun k (Fin n)) b
-    rw [Comodule.coefficientMatrix_corestrict, coefficientMatrix_basisFun] at h
-    ext i j
-    simpa only [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.map_apply,
-      val_unitOfInvertible, Matrix.GeneralLinearGroup.val_mk'', P, U,
-      pointsMulEquiv_apply, pointToGeneralLinear_apply, genericMatrix_apply,
-      Matrix.mul_apply, Matrix.map_apply, BialgHom.toCoalgHom_apply,
-      BialgHom.coe_toAlgHom, ofConv_toConv] using congrFun (congrFun h i) j
+    ext : 1
+    simpa only [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.val_map_apply,
+      val_unitOfInvertible, Matrix.GeneralLinearGroup.val_mk'', P, U, pointsMulEquiv_apply] using
+      pointToGeneralLinear_mul_map_toMatrix k n π b
   refine ⟨P, ?_⟩
   rw [map_inv, mul_assoc, hmat, inv_mul_cancel_left]
   exact UpperTriangularGroup.mem_iff.mpr hb

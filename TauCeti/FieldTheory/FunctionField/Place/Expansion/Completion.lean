@@ -15,7 +15,8 @@ public import Mathlib.RingTheory.PowerSeries.PiTopology
 Uniformizer expansion identifies the completed valuation ring at a rational place with
 `k[[T]]`. Every coefficient sequence is realized: its polynomial partial sums are Cauchy,
 and their limit has the prescribed finite expansions. The isomorphism sends a chosen
-uniformizer to `T` and identifies the order filtrations. With the constants discrete and
+uniformizer to `T`, identifies the order filtrations, and restricts on the valuation ring
+of `F` to the uniformizer expansion before completion. With the constants discrete and
 power series given their coefficientwise topology, it is also a homeomorphism.
 
 ## References
@@ -34,85 +35,14 @@ namespace TauCeti.Place
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
 
-private noncomputable def expansionPartialSum (f : PowerSeries k) (n : ℕ) : P.Completion :=
-  ∑ i ∈ Finset.range n, algebraMap k P.Completion (PowerSeries.coeff i f) *
-    P.completionEmbedding t ^ i
-
-include ht in
-private theorem expansionPartialSum_sub_mem (f : PowerSeries k) {n m : ℕ} (hnm : n ≤ m) :
-    P.expansionPartialSum (t := t) f m - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n := by
-  rw [expansionPartialSum, expansionPartialSum, ← Finset.sum_Ico_eq_sub _ hnm]
-  apply Submodule.sum_mem
-  intro i hi
-  have hi' : (n : ℤ) ≤ (i : ℤ) := by exact_mod_cast (Finset.mem_Ico.mp hi).1
-  have hpow := P.completionPlace.mem_filtration_ord (P.completionEmbedding t ^ i)
-  simp only [ord_pow, ord_completionEmbedding, ht, mul_one] at hpow
-  apply P.completionPlace.filtration_antitone hi'
-  simpa only [zero_add] using P.completionPlace.mul_mem_filtration
-    (P.completionPlace.mem_filtration_zero_iff.mpr
-      (P.completionPlace.algebraMap_mem_integers _)) hpow
-
-include ht in
-private theorem expansionPartialSum_cauchy (f : PowerSeries k) :
-    CauchySeq (P.expansionPartialSum (t := t) f) := by
-  apply (Valued.hasBasis_uniformity P.Completion ℤᵐ⁰).cauchySeq_iff.mpr
-  intro γ _
-  obtain ⟨n, hn⟩ := WithZero.exists_exp_neg_natCast_lt
-    (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)
-  refine ⟨n, fun m hm l hl ↦ ?_⟩
-  have hdiff : P.expansionPartialSum (t := t) f l -
-      P.expansionPartialSum (t := t) f m ∈ P.completionPlace.filtration n := by
-    have hm' := P.expansionPartialSum_sub_mem ht f hm
-    have hl' := P.expansionPartialSum_sub_mem ht f hl
-    convert (P.completionPlace.filtration n).sub_mem hl' hm' using 1
-    ring
-  simp only [Set.mem_ofPred_eq]
-  rw [Valuation.restrict_lt_iff_lt_embedding]
-  simpa only [completionPlace_valuation] using
-    ((P.completionPlace.mem_filtration_iff.mp hdiff)).trans_lt hn
-
-private theorem isClosed_expansionCongruence (f : PowerSeries k) (n : ℕ) :
-    IsClosed {x : P.Completion | x - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n} := by
-  obtain ⟨s, hs0, hs⟩ := P.exists_ne_zero_ord_eq (n : ℤ)
-  have hball := Valued.isClosed_closedBall P.Completion
-    (Valued.v.restrict (P.completionEmbedding s))
-  have heq : {x : P.Completion | x - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n} =
-      (fun x : P.Completion ↦ x - P.expansionPartialSum (t := t) f n) ⁻¹'
-        {x | Valued.v.restrict x ≤ Valued.v.restrict (P.completionEmbedding s)} := by
-    ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_preimage, mem_filtration_iff,
-      completionPlace_valuation, Valuation.restrict_le_iff, valuation_completionEmbedding,
-      P.valuation_eq_exp_neg_ord hs0, hs]
-  rw [heq]
-  exact hball.preimage (continuous_id.sub continuous_const)
-
 /-- Every power series over the constants is the uniformizer expansion of an element of
 the completed valuation ring at a rational place. -/
 theorem completionPlace_powerSeriesExpansion_surjective :
     Function.Surjective (P.completionPlace.powerSeriesExpansion
       (by simpa using hP) (by simpa using ht :
-        P.completionPlace.ord (P.completionEmbedding t) = 1)) := by
-  intro f
-  obtain ⟨x, hx⟩ := cauchySeq_tendsto_of_complete (P.expansionPartialSum_cauchy ht f)
-  have hrem (n : ℕ) : x - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n := by
-    apply (P.isClosed_expansionCongruence (t := t) f n).mem_of_tendsto hx
-    filter_upwards [eventually_ge_atTop n] with m hm
-    exact P.expansionPartialSum_sub_mem ht f hm
-  have hxint : x ∈ P.completionPlace.integers := by
-    simpa [expansionPartialSum, mem_filtration_zero_iff] using hrem 0
-  refine ⟨⟨x, hxint⟩, ?_⟩
-  ext n
-  have heq := (P.completionPlace.truncatedExpansion_eq_iff (by simpa using hP)
-    (by simpa using ht : P.completionPlace.ord (P.completionEmbedding t) = 1)
-    (n + 1) ⟨x, hxint⟩ (fun i ↦ PowerSeries.coeff i f)).mpr (by
-      rw [Fin.sum_univ_eq_sum_range (fun i : ℕ ↦
-        algebraMap k P.Completion (PowerSeries.coeff i f) * P.completionEmbedding t ^ i)]
-      exact hrem (n + 1))
-  rw [P.completionPlace.coeff_powerSeriesExpansion _ _ (n + 1) _ ⟨n, by omega⟩, heq]
+        P.completionPlace.ord (P.completionEmbedding t) = 1)) :=
+  P.completionPlace.powerSeriesExpansion_surjective _ _ fun _ ↦
+    P.exists_forall_sub_mem_completionPlace_filtration
 
 /-- Uniformizer expansion identifies the completed valuation ring at a rational place with
 the power-series ring over the constants. -/
@@ -144,21 +74,29 @@ theorem sub_sum_coeff_completionIntegersEquivPowerSeries_symm_mem_filtration
     AlgEquiv.apply_symm_apply] at h
   exact h
 
-/-- The chosen uniformizer maps to the power-series variable. -/
+/-- On integral functions of the original field, uniformizer expansion in the completion is
+uniformizer expansion before completion. -/
 @[simp]
+theorem completionIntegersEquivPowerSeries_completionIntegersEmbedding (x : P.integers) :
+    P.completionIntegersEquivPowerSeries hP ht (P.completionIntegersEmbedding x) =
+      P.powerSeriesExpansion hP ht x := by
+  ext n
+  rw [P.completionIntegersEquivPowerSeries_apply hP ht,
+    P.completionPlace.coeff_powerSeriesExpansion _ _ (n + 1) _ ⟨n, by omega⟩,
+    P.coeff_powerSeriesExpansion hP ht (n + 1) x ⟨n, by omega⟩]
+  have h := P.sub_sum_truncatedExpansion_mem_filtration hP ht (n + 1) x
+  rw [← P.completionEmbedding_mem_filtration_iff] at h
+  exact congrFun ((P.completionPlace.truncatedExpansion_eq_iff _ _ (n + 1) _ _).mpr
+    (by simpa only [completionIntegersEmbedding_apply, map_sub, map_sum, map_mul,
+      map_pow, AlgHom.commutes] using h)) _
+
+/-- The chosen uniformizer maps to the power-series variable. -/
 theorem completionIntegersEquivPowerSeries_uniformizer :
     P.completionIntegersEquivPowerSeries hP ht
       (P.completionIntegersEmbedding
         ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩) = PowerSeries.X := by
-  rw [P.completionIntegersEquivPowerSeries_apply hP ht]
-  have heq : P.completionIntegersEmbedding
-      ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩ =
-      ⟨P.completionEmbedding t,
-        P.completionPlace.mem_integers_iff_ord_nonneg.mpr
-          (by simp only [ord_completionEmbedding, ht]; omega)⟩ :=
-    Subtype.ext (P.completionIntegersEmbedding_apply _)
-  rw [heq]
-  exact P.completionPlace.powerSeriesExpansion_uniformizer _ _
+  rw [completionIntegersEquivPowerSeries_completionIntegersEmbedding,
+    powerSeriesExpansion_uniformizer]
 
 section Topology
 

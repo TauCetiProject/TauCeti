@@ -21,21 +21,18 @@ inverse. In the angle parametrisation `θ ↦ diag (e^{iθ}, e^{-iθ})` this rea
 This is the `W`-invariance, on the maximal torus, of the characters of `SU(2)`, and it is what
 makes those characters functions of `cos θ`. Off the torus this is subsumed by the classification
 of the conjugacy classes of `SU(2)` by the trace: a character, being a class function, is a
-function of the trace on all of `SU(2)` (`TauCeti.SU2.character_eq_of_trace_eq`).
+function of the trace on all of `SU(2)` (`ContRepresentation.character_eq_of_trace_eq`).
 
 ## Main results
 
-* `TauCeti.SU2.character_torusHom_inv`: the character of a continuous finite-dimensional
+* `ContRepresentation.character_torusHom_inv`: the character of a continuous finite-dimensional
   representation of `SU(2)` agrees at `diag (z, z⁻¹)` and `diag (z⁻¹, z)`.
-* `TauCeti.SU2.character_torusExp_neg`: read in the angle parametrisation of the maximal torus,
+* `ContRepresentation.character_torusExp_neg`: read in the angle parametrisation of the maximal
+  torus,
   that character is an even function of the angle.
-* `TauCeti.SU2.character_eq_of_trace_eq`: that character is a function of the trace.
+* `ContRepresentation.character_eq_of_trace_eq`: that character is a function of the trace.
 
 ## References
-
-This serves the engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, "Engine case: `SU(2)` and the maximal
-torus", which needs the characters of `SU(2)` to be even functions on the maximal torus.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 18.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
@@ -44,9 +41,9 @@ torus", which needs the characters of `SU(2)` to be even functions on the maxima
 
 public section
 
-namespace TauCeti
+open TauCeti TauCeti.SU2
 
-namespace SU2
+namespace ContRepresentation
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
   (π : ContRepresentation ℂ SU2 V) (hπ : Continuous π)
@@ -82,6 +79,4 @@ theorem character_eq_of_trace_eq {g h : SU2}
   eq_of_conjInvariant_of_trace_eq
     (fun u g => ContRepresentation.character_conj π hπ g u) htr
 
-end SU2
-
-end TauCeti
+end ContRepresentation

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.LevelSetDecay
-public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness
+public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.LowerOrder
 import Mathlib.Analysis.SpecialFunctions.Log.Base
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 /-!
 # Oscillation decay for weak solutions (De Giorgi)
 
-Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ`, `n ≥ 3`, with constants `0 < λ ≤ Λ`.
+Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ`, `n ≥ 1`, with constants `0 < λ ≤ Λ`.
 This file proves the two steps of De Giorgi's proof of Hölder continuity that turn the measure
 estimates for level sets into a pointwise gain on a smaller ball.
 
@@ -34,9 +34,10 @@ estimates for level sets into a pointwise gain on a smaller ball.
   `C (r / R)^α R^{-n/2} ‖u‖_{L²(B(x₀, R))}` whenever `B(x₀, R) ⊆ Ω`.
 
 The reduction of the supremum combines De Giorgi's decay of upper level sets
-(`TauCeti.PDE.exists_sqrt_mul_measureReal_le_mul_measureReal_ball`) with local boundedness above
-a level (`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`):
-along the levels `kⱼ = M - (M - k)/2ʲ`, the set `{u ≥ kⱼ}` occupies a proportion `O(j^{-1/2})` of
+(`TauCeti.PDE.exists_sqrt_mul_measureReal_le_mul_measureReal_ball_lowerOrder`) with local
+boundedness above a level
+(`TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`): along
+the levels `kⱼ = M - (M - k)/2ʲ`, the set `{u ≥ kⱼ}` occupies a proportion `O(j^{-1/2})` of
 `B(x₀, R)`, so the `L²` mass of `(u - kⱼ)⁺` there is `O((M - kⱼ)² j^{-1/2} Rⁿ)`, and local
 boundedness gives `u ≤ kⱼ + (M - kⱼ)/2` on `B(x₀, R/2)` once `j` is large. Oscillation decay
 applies this to `u` or to `-u` at the mid level `(m + M)/2`, whichever sublevel set fills at least
@@ -47,15 +48,36 @@ of the radius agrees almost everywhere with a Hölder continuous function.
 Oscillation is tracked through explicit a.e. bounds: `u` takes values in an interval `[m', m' + L]`
 almost everywhere on a ball, rather than through an essential oscillation functional.
 
+## Lower-order terms
+
+The reduction of the supremum is proved for weak subsolutions of the full operator
+`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` with `‖b‖ ≤ β`, `c ≥ 0`, at levels `0 ≤ k ≤ M`, the setting of the
+two estimates it combines. The drift is not invariant
+under dilations, so `δ` depends on a bound `σ` for `βR/λ`. When there is no mass term, constants
+solve the equation, and shifting `u` by `k` on the ball `B(x₀, 2R)` removes the sign condition on
+the levels. Then `u` and `-u` are both subsolutions, and oscillation decay, its iteration and the
+power law hold for weak solutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`, with constants depending on `σ`.
+The bound `βr ≤ σλ` holds on every ball of radius `r ≤ R` once it holds at the radius `R`, so a
+single `δ` serves all the balls of the iteration. The estimates for `-∂ⱼ(aⁱʲ ∂ᵢu)` are the
+case `b = 0`, `σ = 0`.
+
 ## Main declarations
 
+* `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_lowerOrder`: the reduction of the supremum for
+  subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`, at nonnegative levels.
+* `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_drift`: the reduction of the supremum for
+  subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu ≤ 0`, at all levels.
 * `TauCeti.PDE.exists_ae_value_le_sub_mul_sub`: the reduction of the supremum.
-* `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le`: oscillation decay.
-* `TauCeti.PDE.exists_ae_value_mem_Icc_add_pow_mul_sub`: geometric decay of the oscillation
+* `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift`,
+  `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le`: oscillation decay.
+* `TauCeti.PDE.exists_ae_value_mem_Icc_add_pow_mul_sub_drift`,
+  `TauCeti.PDE.exists_ae_value_mem_Icc_add_pow_mul_sub`: geometric decay of the oscillation
   along the balls `B(x₀, R / 4ʲ)`.
-* `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub`: the power law
+* `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift`,
+  `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub`: the power law
   `osc(B(x₀, r)) ≤ C (r / R)^α osc(B(x₀, R))`.
-* `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral`: the interior
+* `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift`,
+  `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral`: the interior
   oscillation estimate in terms of the `L²` norm.
 
 ## References
@@ -65,6 +87,8 @@ almost everywhere on a ball, rather than through an essential oscillation functi
 * Q. Han, F. Lin, *Elliptic Partial Differential Equations*, Chapter 4.
 * L. Caffarelli, A. Vasseur, *The De Giorgi method for regularity of solutions of elliptic
   equations and its applications to fluid dynamics*, Discrete Contin. Dyn. Syst. Ser. S (2010).
+* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Theorem 8.22 (lower-order terms).
 -/
 
 public section
@@ -81,37 +105,51 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- **Reduction of the supremum (De Giorgi).** Let `2*` be the Sobolev exponent of `W^{1,2}` in
-dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`), and fix a proportion
-`θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension and the
-normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
-measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Let
-`B(x₀, 2R) ⊆ Ω` and levels `k ≤ M` be such that `u ≤ M` almost everywhere on `B(x₀, 2R)` and
-`|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Then
+/-- **Reduction of the supremum with lower-order terms (De Giorgi).** Let `n ≥ 1` be the
+dimension, and fix a proportion `θ > 0` and a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`,
+depending only on `λ`, `Λ`, `θ`, `σ`, the dimension and the normalization of the additive Haar
+measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω`
+with constants `λ, Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on
+`Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0`, that is
+`a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the energy form with drift
+`b` and mass coefficient `c`. Let `B(x₀, 2R) ⊆ Ω` with `βR ≤ σλ`, and let `0 ≤ k ≤ M` be levels
+such that `u ≤ M` almost everywhere on `B(x₀, 2R)` and `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`.
+Then
 
 `u ≤ M - δ (M - k)` almost everywhere on `B(x₀, R/2)`.
 
-No regularity of the coefficients beyond measurability is assumed. -/
-theorem exists_ae_value_le_sub_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ (∞ : ℝ≥0∞))
-    (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) {θ : ℝ} (hθ : 0 < θ) :
+The constant does not depend on `γ`. The sign conditions `c ≥ 0` and `k ≥ 0` are those of the
+underlying local boundedness and level-set decay estimates: they make the mass term
+`c u (u - l)⁺` nonnegative at every level `l ≥ k`. -/
+theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) :
     ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {c : EuclideanSpace ℝ ι → ℝ} {beta gamma : ℝ} {u : W1p mu Omega 2}
       {x₀ : EuclideanSpace ℝ ι} {R k M : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      AEStronglyMeasurable c (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
-      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → k ≤ M →
+          energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) →
+      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → beta * R ≤ σ * lam →
+      0 ≤ k → k ≤ M →
       (∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value u x ≤ M) →
       θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k} →
       ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ≤ M - δ * (M - k) := by
-  obtain ⟨C, hC, hdecay⟩ :=
-    exists_sqrt_mul_measureReal_le_mul_measureReal_ball (ι := ι) (lam := lam) (Lam := Lam) hθ
-  obtain ⟨D, hD, hbound⟩ :=
-    exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv (mu := mu)
-      (lam := lam) (Lam := Lam) hpstar hexp
+  obtain ⟨C₀, hC₀, hdecay⟩ :=
+    exists_sqrt_mul_measureReal_le_mul_measureReal_ball_lowerOrder (ι := ι) (lam := lam)
+      (Lam := Lam) hθ
+  obtain ⟨D₀, hD₀, hbound⟩ :=
+    exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+      (lam := lam) (Lam := Lam)
+  -- The constants of the two estimates, with `βR/λ` replaced by its bound `σ`.
+  set C := C₀ * √(1 + σ ^ 2)
+  set D := D₀ * (1 + σ ^ 2) ^ Fintype.card ι
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
   have hω : 0 < ω :=
     ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
@@ -123,41 +161,34 @@ theorem exists_ae_value_le_sub_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ 
   refine ⟨1 / 2 ^ (j + 1), by positivity, ?_, ?_⟩
   · rw [div_lt_one (by positivity)]
     exact one_lt_pow₀ one_lt_two (Nat.succ_ne_zero j)
-  intro Omega a u x₀ R k M h ha hu hR hball hkM hM hθk
+  intro Omega a b c beta gamma u x₀ R k M h ha hb hc hb_bound hc_bound hc_nonneg hu hR hball
+    hβR hk hkM hM hθk
   have hhalf : ball x₀ (R / 2) ⊆ ball x₀ (2 * R) := ball_subset_ball (by linarith)
   rcases hkM.eq_or_lt with rfl | hkM
   · -- Equal levels: the bound is the hypothesis `u ≤ k`.
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hhalf hM] with x hx
     simpa using hx
+  -- `(βR/λ)² ≤ σ²`, since `0 ≤ βR/λ ≤ σ`.
+  have hy : (beta * R / lam) ^ 2 ≤ σ ^ 2 :=
+    have hbeta : 0 ≤ beta :=
+      (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self (by positivity))))
+    pow_le_pow_left₀ (div_nonneg (mul_nonneg hbeta hR.le) h.pos.le)
+      ((div_le_iff₀ h.pos).2 hβR) 2
   set l := M - (M - k) / 2 ^ j
   have hlM : l ≤ M := sub_le_self _ (by positivity)
+  have hkl : k ≤ l := by
+    simp only [l]
+    rw [le_sub_comm]
+    exact div_le_self (sub_nonneg.2 hkM.le) (one_le_pow₀ one_le_two)
   have hballR : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (ball_subset_ball (by linarith)).trans hball
-  -- The upper level set `{u ≥ l}` is small, by the decay estimate. It is applied to the
-  -- restriction of `u` to `U = B(x₀, 2R)`, which has finite measure, so that `(u - k)⁺` is square
-  -- integrable on `U`.
+  -- The upper level set `{u ≥ l}` is small, by the decay estimate.
   set V := mu.real (ball x₀ R)
   set A := (mu.restrict (ball x₀ R)).real {x | l ≤ W1p.value u x}
   have hA : √j * A ≤ C * V := by
-    set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (2 * R), isOpen_ball⟩
-    have hU : U ≤ Omega := hball
-    have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-    set w := W1p.restrictL hU u
-    have hw : W1p.value w =ᵐ[mu.restrict (ball x₀ (2 * R))] W1p.value u :=
-      W1p.value_restrictL_ae hU u
-    have hlev : ∀ p : ℝ → Prop, (mu.restrict (ball x₀ R)).real {x | p (W1p.value w x)} =
-        (mu.restrict (ball x₀ R)).real {x | p (W1p.value u x)} := fun p => by
-      refine measureReal_congr (Filter.eventuallyEqSet_iff.2 ?_)
-      filter_upwards [ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hw]
-        with x hx
-      rw [hx]
-    have hMw : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value w x ≤ M := by
-      filter_upwards [hM, hw] with x hx hwx
-      rwa [hwx]
-    have hdw := hdecay (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl))
-      (energyFormH1_restrictL_nonpos hU hu) hR subset_rfl hkM
-      ((Lp.memLp _).sub (memLp_const k)).pos_part hMw ((hlev (· ≤ k)).symm ▸ hθk) j
-    rwa [hlev (M - (M - k) / 2 ^ j ≤ ·)] at hdw
+    refine (hdecay h ha hb hc hb_bound hc_bound hc_nonneg hu hR hball hk hkM hM hθk j).trans ?_
+    simp only [C]
+    gcongr
   -- Hence so is the `L²` mass of `(u - l)⁺` on `B(x₀, R)`.
   set I := ∫ x in ball x₀ R, max (W1p.value u x - l) 0 ^ 2 ∂mu
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
@@ -175,7 +206,6 @@ theorem exists_ae_value_le_sub_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ 
     have hV : V = R ^ finrank ℝ (EuclideanSpace ℝ ι) * ω := mu.addHaar_real_ball_of_pos x₀ hR
     rw [hP, hV, finrank_euclideanSpace,
       inv_mul_cancel_left₀ (pow_pos hR _).ne']
-  have hP0 : 0 < P := Real.rpow_pos_of_pos hR _
   have hDPA : D * P * √A ≤ 1 / 2 := by
     have hsq : (D * P * √A) ^ 2 ≤ (1 / 2) ^ 2 := by
       rw [mul_pow, Real.sq_sqrt measureReal_nonneg]
@@ -192,43 +222,143 @@ theorem exists_ae_value_le_sub_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ 
         ring
       _ ≤ (M - l) * (1 / 2) := mul_le_mul_of_nonneg_left hDPA (sub_nonneg.2 hlM)
       _ = (M - l) / 2 := by ring
-  -- Local boundedness above the level `l`.
-  filter_upwards [hbound (k := l) h ha hu hR hballR] with x hx
-  calc W1p.value u x ≤ l + D * P * √I := hx
+  -- Local boundedness above the level `l ≥ 0`, whose constant is at most `D`.
+  have hDy : D₀ * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι * P * √I ≤ D * P * √I := by
+    simp only [D]
+    gcongr
+  filter_upwards [hbound (k := l) h ha hb hc hb_bound hc_bound hc_nonneg hu (hk.trans hkl) hR
+    hballR] with x hx
+  calc W1p.value u x ≤ l + D * P * √I := hx.trans (by linarith)
     _ ≤ l + (M - l) / 2 := by linarith
     _ = M - 1 / 2 ^ (j + 1) * (M - k) := by
         simp only [l, pow_succ]
         field_simp
         ring
 
-/-- **Oscillation decay for weak solutions (De Giorgi).** Let `2*` be the Sobolev exponent of
-`W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There
-is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
-Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is
-`a(u, v) = 0` for every `v ∈ H¹₀(Ω)`. Let `B(x₀, 2R) ⊆ Ω` and `m, M` be such that
-`m ≤ u ≤ M` almost everywhere on `B(x₀, 2R)`. Then almost everywhere on `B(x₀, R/2)`, either
+/-- **Reduction of the supremum with a drift (De Giorgi).** Let `n ≥ 1` be the dimension, and fix
+a proportion `θ > 0` and a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, depending only on `λ`,
+`Λ`, `θ`, `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that
+the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
+let `b` be measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, where
+`a(·, ·)` is the energy form with drift `b` and no mass term. Let `B(x₀, 2R) ⊆ Ω` with
+`βR ≤ σλ`, and let `k ≤ M` be levels such that `u ≤ M` almost everywhere on `B(x₀, 2R)` and
+`|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Then
+
+`u ≤ M - δ (M - k)` almost everywhere on `B(x₀, R/2)`.
+
+Without a mass term, constants solve the equation, so no sign condition on the levels is needed:
+on the ball `B(x₀, 2R)`, the shifted function `u - k` is again a weak subsolution
+(`TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`), to which
+`TauCeti.PDE.exists_ae_value_le_sub_mul_sub_lowerOrder` applies at the levels `0 ≤ M - k`. -/
+theorem exists_ae_value_le_sub_mul_sub_drift [Nonempty ι] {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) :
+    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {beta : ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R k M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a b 0 u (v : W1p mu Omega 2) ≤ 0) →
+      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → beta * R ≤ σ * lam →
+      k ≤ M →
+      (∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value u x ≤ M) →
+      θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k} →
+      ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ≤ M - δ * (M - k) := by
+  obtain ⟨δ, hδ0, hδ1, hred⟩ :=
+    exists_ae_value_le_sub_mul_sub_lowerOrder (mu := mu) (lam := lam) (Lam := Lam) hθ σ
+  refine ⟨δ, hδ0, hδ1, ?_⟩
+  intro Omega a b beta u x₀ R k M h ha hb hb_bound hu hR hball hβR hkM hM hθk
+  -- Shift the restriction of `u` to `U = B(x₀, 2R)` by `-k`.
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (2 * R), isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hmono : mu.restrict U ≤ mu.restrict Omega := Measure.restrict_mono hball le_rfl
+  set w : W1p mu U 2 := W1p.restrictL hU u + W1p.const (-k)
+  have hw : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value w x = W1p.value u x - k := by
+    filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) (-k),
+      W1p.value_restrictL_ae hU u] with x h1 h2
+    rw [h1, h2, sub_eq_add_neg]
+  have hwR : ∀ᵐ x ∂mu.restrict (ball x₀ R), W1p.value w x = W1p.value u x - k :=
+    ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hw
+  have hred' := hred (Omega := U) (b := b) (c := 0) (gamma := 0) (u := w) (k := 0) (M := M - k)
+    (h.mono_set hball) (ha.mono_measure hmono) (hb.mono_measure hmono) aestronglyMeasurable_const
+    (fun x hx => hb_bound x (hball hx)) (fun _ _ => by simp) (fun _ _ => le_rfl)
+    (energyFormH1_restrictL_add_const_nonpos hU hu (-k)) hR subset_rfl hβR le_rfl
+    (sub_nonneg.2 hkM) (by filter_upwards [hM, hw] with x hx hwx; rw [hwx]; linarith)
+    (by
+      refine hθk.trans_eq (measureReal_congr (Filter.eventuallyEqSet_iff.2 ?_))
+      filter_upwards [hwR] with x hx
+      rw [hx, sub_nonpos])
+  filter_upwards [hred', ae_restrict_of_ae_restrict_of_subset
+    (ball_subset_ball (by linarith)) hw] with x hx hwx
+  rw [hwx] at hx
+  linarith
+
+/-- **Reduction of the supremum (De Giorgi).** Let `n ≥ 1` be the dimension, and fix a proportion
+`θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension and the
+normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
+measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
+subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Let
+`B(x₀, 2R) ⊆ Ω` and levels `k ≤ M` be such that `u ≤ M` almost everywhere on `B(x₀, 2R)` and
+`|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Then
+
+`u ≤ M - δ (M - k)` almost everywhere on `B(x₀, R/2)`.
+
+No regularity of the coefficients beyond measurability is assumed. This is the case `b = 0` of
+`TauCeti.PDE.exists_ae_value_le_sub_mul_sub_drift`. -/
+theorem exists_ae_value_le_sub_mul_sub [Nonempty ι] {θ : ℝ} (hθ : 0 < θ) :
+    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R k M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
+      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → k ≤ M →
+      (∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value u x ≤ M) →
+      θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k} →
+      ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ≤ M - δ * (M - k) := by
+  obtain ⟨δ, hδ0, hδ1, hred⟩ :=
+    exists_ae_value_le_sub_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam) hθ 0
+  exact ⟨δ, hδ0, hδ1, fun h ha hu hR hball hkM hM hθk =>
+    hred (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hR hball (by simp)
+      hkM hM hθk⟩
+
+/-- **Oscillation decay for weak solutions with a drift (De Giorgi).** Let `n ≥ 1` be the
+dimension, and fix a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`,
+`σ`, the dimension and the normalization of the additive Haar measure `mu`, such that the
+following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let
+`b` be measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the
+energy form with drift `b` and no mass term. Let `B(x₀, 2R) ⊆ Ω` with `βR ≤ σλ`, and let `m, M`
+be such that `m ≤ u ≤ M` almost everywhere on `B(x₀, 2R)`. Then almost everywhere on
+`B(x₀, R/2)`, either
 
 `u ≤ M - δ (M - m)` throughout, or `m + δ (M - m) ≤ u` throughout.
 
 In particular the essential oscillation of `u` on `B(x₀, R/2)` is at most `(1 - δ)(M - m)`. -/
-theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift [Nonempty ι] (σ : ℝ) :
     ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
-      {x₀ : EuclideanSpace ℝ ι} {R m M : ℝ},
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {beta : ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R m M : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
-      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b 0 u (v : W1p mu Omega 2) = 0) →
+      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → beta * R ≤ σ * lam →
       (∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), m ≤ W1p.value u x ∧ W1p.value u x ≤ M) →
       (∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ≤ M - δ * (M - m)) ∨
         ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), m + δ * (M - m) ≤ W1p.value u x := by
   obtain ⟨δ, hδ0, hδ1, hred⟩ :=
-    exists_ae_value_le_sub_mul_sub (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp
-      (by norm_num : (0 : ℝ) < 1 / 2)
+    exists_ae_value_le_sub_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam)
+      (by norm_num : (0 : ℝ) < 1 / 2) σ
   refine ⟨δ / 2, by positivity, by linarith, ?_⟩
-  intro Omega a u x₀ R m M h ha hu hR hball hmM'
+  intro Omega a b beta u x₀ R m M h ha hb hb_bound hu hR hball hβR hmM'
   have hmM : m ≤ M := by
     have : (ae (mu.restrict (ball x₀ (2 * R)))).NeBot :=
       ae_restrict_neBot.2 (measure_ball_pos mu x₀ (by linarith)).ne'
@@ -247,19 +377,18 @@ theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le {pstar : ℝ≥0∞}
       (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k}
   · -- `{u ≤ k}` fills half of the ball: the supremum drops.
     left
-    filter_upwards [hred h ha (fun v _ => (hu v).le) hR hball hkM
+    filter_upwards [hred h ha hb hb_bound (fun v _ => (hu v).le) hR hball hβR hkM
       (by filter_upwards [hmM'] with x hx using hx.2) hθ] with x hx
     calc W1p.value u x ≤ M - δ * (M - k) := hx
       _ = M - δ / 2 * (M - m) := by simp only [k]; ring
   · -- Otherwise `{u ≥ k}` fills half of the ball: the infimum rises, by the same argument
     -- applied to the subsolution `-u`.
     right
-    have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-      simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+    have hneg := W1p.value_neg_ae u
     have hu' : ∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) ≤ 0 := fun v _ => by
-      rw [← neg_one_smul ℝ u, energyFormH1_smul_left, hu v, mul_zero]
+          energyFormH1 a b 0 (-u) (v : W1p mu Omega 2) ≤ 0 := fun v _ => by
+      rw [energyFormH1_neg_left, hu v, neg_zero]
     have hM' : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value (-u) x ≤ -m := by
       filter_upwards [hmM', ae_restrict_of_ae_restrict_of_subset hball hneg] with x hx hxn
       rw [hxn, Pi.neg_apply, neg_le_neg_iff]
@@ -279,38 +408,70 @@ theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le {pstar : ℝ≥0∞}
         rw [measureReal_congr hset]
         exact measureReal_mono fun x (hx : ¬W1p.value u x ≤ k) => (not_le.1 hx).le
       linarith
-    filter_upwards [hred h ha hu' hR hball (neg_le_neg hmk) hM' hθ',
+    filter_upwards [hred h ha hb hb_bound hu' hR hball hβR (neg_le_neg hmk) hM' hθ',
       ae_restrict_of_ae_restrict_of_subset ((ball_subset_ball (by linarith)).trans hball) hneg]
       with x hx hxn
     rw [hxn, Pi.neg_apply] at hx
     calc m + δ / 2 * (M - m) = m + δ * (k - m) := by simp only [k]; ring
       _ ≤ W1p.value u x := by linarith
 
-/-- **Iterated oscillation decay (De Giorgi).** Let `2*` be the Sobolev exponent of `W^{1,2}` in
-dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There is
-`δ ∈ (0, 1)`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
+/-- **Oscillation decay for weak solutions (De Giorgi).** Let `n ≥ 1` be the dimension. There
+is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
 Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If
-`B(x₀, R) ⊆ Ω` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then for every `j`, almost
-everywhere on `B(x₀, R / 4ʲ)` the function `u` takes values in an interval of length
-`(1 - δ)ʲ (M - m)`. -/
-theorem exists_ae_value_mem_Icc_add_pow_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ (∞ : ℝ≥0∞))
-    (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is
+`a(u, v) = 0` for every `v ∈ H¹₀(Ω)`. Let `B(x₀, 2R) ⊆ Ω` and `m, M` be such that
+`m ≤ u ≤ M` almost everywhere on `B(x₀, 2R)`. Then almost everywhere on `B(x₀, R/2)`, either
+
+`u ≤ M - δ (M - m)` throughout, or `m + δ (M - m) ≤ u` throughout.
+
+In particular the essential oscillation of `u` on `B(x₀, R/2)` is at most `(1 - δ)(M - m)`. This
+is the case `b = 0` of `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift`. -/
+theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le [Nonempty ι] :
     ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {x₀ : EuclideanSpace ℝ ι} {R m M : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
-      0 < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), m ≤ W1p.value u x ∧ W1p.value u x ≤ M) →
+      (∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ≤ M - δ * (M - m)) ∨
+        ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), m + δ * (M - m) ≤ W1p.value u x := by
+  obtain ⟨δ, hδ0, hδ1, hdecay⟩ :=
+    exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift (mu := mu) (lam := lam) (Lam := Lam) 0
+  exact ⟨δ, hδ0, hδ1, fun h ha hu hR hball hmM =>
+    hdecay (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hR hball (by simp)
+      hmM⟩
+
+/-- **Iterated oscillation decay with a drift (De Giorgi).** Let `n ≥ 1` be the dimension, and
+fix a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `σ`, the
+dimension and the normalization of the additive Haar measure `mu`, such that the following holds.
+Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `b` be measurable
+with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. If
+`B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then for every `j`,
+almost everywhere on `B(x₀, R / 4ʲ)` the function `u` takes values in an interval of length
+`(1 - δ)ʲ (M - m)`.
+
+The bound `βr ≤ σλ` needed at each step holds on every ball of radius `r ≤ R`, which is why a
+single `δ` serves all the balls `B(x₀, R / 4ʲ)`. -/
+theorem exists_ae_value_mem_Icc_add_pow_mul_sub_drift [Nonempty ι] (σ : ℝ) :
+    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {beta : ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R m M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b 0 u (v : W1p mu Omega 2) = 0) →
+      0 < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → beta * R ≤ σ * lam →
       (∀ᵐ x ∂mu.restrict (ball x₀ R), W1p.value u x ∈ Icc m M) →
       ∀ j : ℕ, ∃ m' : ℝ, ∀ᵐ x ∂mu.restrict (ball x₀ (R / 4 ^ j)),
         W1p.value u x ∈ Icc m' (m' + (1 - δ) ^ j * (M - m)) := by
   obtain ⟨δ, hδ0, hδ1, hdecay⟩ :=
-    exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le (mu := mu) (lam := lam) (Lam := Lam)
-      hpstar hexp
+    exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift (mu := mu) (lam := lam) (Lam := Lam) σ
   refine ⟨δ, hδ0, hδ1, ?_⟩
-  intro Omega a u x₀ R m M h ha hu hR hball hmM j
+  intro Omega a b beta u x₀ R m M h ha hb hb_bound hu hR hball hβR hmM j
+  have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self hR)))
   induction j with
   | zero => exact ⟨m, by simpa using hmM⟩
   | succ j ih =>
@@ -321,17 +482,20 @@ theorem exists_ae_value_mem_Icc_add_pow_mul_sub {pstar : ℝ≥0∞} (hpstar : p
     have h2r : R / 4 ^ j = 2 * r := by rw [hr_def]; ring
     have hr2 : R / 4 ^ (j + 1) = r / 2 := by rw [hr_def, pow_succ]; ring
     have hr : 0 < r := by positivity
-    have hball' : ball x₀ (2 * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := by
-      refine (ball_subset_ball ?_).trans hball
+    have hrR : 2 * r ≤ R := by
       rw [← h2r]
       exact div_le_self hR.le (one_le_pow₀ (by norm_num))
+    have hball' : ball x₀ (2 * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
+      (ball_subset_ball hrR).trans hball
+    have hβr : beta * r ≤ σ * lam :=
+      (mul_le_mul_of_nonneg_left (by linarith) hbeta).trans hβR
     rw [h2r] at hm'
     have hhalf : ball x₀ (r / 2) ⊆ ball x₀ (2 * r) := ball_subset_ball (by linarith)
     have hmM' : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)),
         m' ≤ W1p.value u x ∧ W1p.value u x ≤ m' + L := by
       filter_upwards [hm'] with x hx using mem_Icc.1 hx
     rw [hr2]
-    rcases hdecay h ha hu hr hball' hmM' with hle | hge
+    rcases hdecay h ha hb hb_bound hu hr hball' hβr hmM' with hle | hge
     · -- The supremum drops: the lower bound `m'` is unchanged.
       refine ⟨m', ?_⟩
       filter_upwards [hle, ae_restrict_of_ae_restrict_of_subset hhalf hmM'] with x hx hx'
@@ -346,32 +510,58 @@ theorem exists_ae_value_mem_Icc_add_pow_mul_sub {pstar : ℝ≥0∞} (hpstar : p
       · simp only [L, pow_succ]
         ring
 
-/-- **Power-law oscillation decay (De Giorgi).** Let `2*` be the Sobolev exponent of `W^{1,2}` in
-dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There are
-`α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the normalization of the
-additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
-elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If `B(x₀, R) ⊆ Ω` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then
-for every radius `0 < r ≤ R`, almost everywhere on `B(x₀, r)` the function `u` takes values in
-an interval of length `C (r / R)^α (M - m)`.
-
-The exponent is `α = min (log(1/(1 - δ)) / log 4) 1`, where `δ` is the constant of
-`TauCeti.PDE.exists_ae_value_mem_Icc_add_pow_mul_sub`, and `C = 4^α`; the cap at `1` is the
-range in which the estimate yields Hölder continuity. -/
-theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
-    ∃ α C : ℝ, 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+/-- **Iterated oscillation decay (De Giorgi).** Let `n ≥ 1` be the dimension. There is
+`δ ∈ (0, 1)`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
+Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
+`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If
+`B(x₀, R) ⊆ Ω` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then for every `j`, almost
+everywhere on `B(x₀, R / 4ʲ)` the function `u` takes values in an interval of length
+`(1 - δ)ʲ (M - m)`. This is the case `b = 0` of
+`TauCeti.PDE.exists_ae_value_mem_Icc_add_pow_mul_sub_drift`. -/
+theorem exists_ae_value_mem_Icc_add_pow_mul_sub [Nonempty ι] :
+    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
-      {x₀ : EuclideanSpace ℝ ι} {R r m M : ℝ},
+      {x₀ : EuclideanSpace ℝ ι} {R m M : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
-      0 < r → r ≤ R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      0 < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ᵐ x ∂mu.restrict (ball x₀ R), W1p.value u x ∈ Icc m M) →
+      ∀ j : ℕ, ∃ m' : ℝ, ∀ᵐ x ∂mu.restrict (ball x₀ (R / 4 ^ j)),
+        W1p.value u x ∈ Icc m' (m' + (1 - δ) ^ j * (M - m)) := by
+  obtain ⟨δ, hδ0, hδ1, hiter⟩ :=
+    exists_ae_value_mem_Icc_add_pow_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam) 0
+  exact ⟨δ, hδ0, hδ1, fun h ha hu hR hball hmM =>
+    hiter (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hR hball (by simp)
+      hmM⟩
+
+/-- **Power-law oscillation decay with a drift (De Giorgi).** Let `n ≥ 1` be the dimension, and
+fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, `σ`,
+the dimension and the normalization of the additive Haar measure `mu`, such that the following
+holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `b` be
+measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. If `B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `u ∈ [m, M]` almost everywhere on
+`B(x₀, R)`, then for every radius `0 < r ≤ R`, almost everywhere on `B(x₀, r)` the function `u`
+takes values in an interval of length `C (r / R)^α (M - m)`.
+
+The exponent is `α = min (log(1/(1 - δ)) / log 4) 1`, where `δ` is the constant of
+`TauCeti.PDE.exists_ae_value_mem_Icc_add_pow_mul_sub_drift`, and `C = 4^α`; the cap at `1` is the
+range in which the estimate yields Hölder continuity. -/
+theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift [Nonempty ι] (σ : ℝ) :
+    ∃ α C : ℝ, 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {beta : ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R r m M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b 0 u (v : W1p mu Omega 2) = 0) →
+      0 < r → r ≤ R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → beta * R ≤ σ * lam →
       (∀ᵐ x ∂mu.restrict (ball x₀ R), W1p.value u x ∈ Icc m M) →
       ∃ m' : ℝ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
         W1p.value u x ∈ Icc m' (m' + C * (r / R) ^ α * (M - m)) := by
   obtain ⟨δ, hδ0, hδ1, hiter⟩ :=
-    exists_ae_value_mem_Icc_add_pow_mul_sub (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp
+    exists_ae_value_mem_Icc_add_pow_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam) σ
   have hδ' : 0 < 1 - δ := sub_pos.2 hδ1
   -- The exponent `α₀` is defined by `4^(-α₀) = 1 - δ`; the Hölder exponent is `α = min α₀ 1`.
   set α₀ := Real.logb 4 (1 - δ)⁻¹ with hα₀_def
@@ -379,10 +569,10 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub {pstar : ℝ≥0∞}
   have h4α₀ : (4 : ℝ) ^ (-α₀) = 1 - δ := by
     rw [Real.rpow_neg (by norm_num), hα₀_def, Real.rpow_logb (by norm_num) (by norm_num)
       (inv_pos.2 hδ'), inv_inv]
-  set α := min α₀ 1 with hα_def
+  set α := min α₀ 1
   have hα : 0 < α := lt_min hα₀ one_pos
   refine ⟨α, 4 ^ α, hα, min_le_right _ _, by positivity, ?_⟩
-  intro Omega a u x₀ R r m M h ha hu hr hrR hball hmM
+  intro Omega a b beta u x₀ R r m M h ha hb hb_bound hu hr hrR hball hβR hmM
   have hR : 0 < R := hr.trans_le hrR
   have hmM' : m ≤ M := by
     have : (ae (mu.restrict (ball x₀ R))).NeBot :=
@@ -392,7 +582,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub {pstar : ℝ≥0∞}
   -- Choose `j` with `4ʲ ≤ R / r < 4ʲ⁺¹`, so that `B(x₀, r) ⊆ B(x₀, R / 4ʲ)` and
   -- `(1 - δ)ʲ = (4ʲ)^(-α₀) ≤ (4ʲ)^(-α) ≤ (4 r / R)^α`.
   obtain ⟨j, hj, hj'⟩ := exists_nat_pow_near ((one_le_div hr).2 hrR) (by norm_num : (1 : ℝ) < 4)
-  obtain ⟨m', hm'⟩ := hiter h ha hu hR hball hmM j
+  obtain ⟨m', hm'⟩ := hiter h ha hb hb_bound hu hR hball hβR hmM j
   have hsub : ball x₀ r ⊆ ball x₀ (R / 4 ^ j) := by
     refine ball_subset_ball ?_
     rw [le_div_iff₀ (by positivity), mul_comm, ← le_div_iff₀ hr]
@@ -419,47 +609,85 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub {pstar : ℝ≥0∞}
   refine mem_Icc.2 ⟨(mem_Icc.1 hx).1, (mem_Icc.1 hx).2.trans ?_⟩
   gcongr
 
-/-- **De Giorgi's interior oscillation estimate.** Let `2*` be the Sobolev exponent of `W^{1,2}`
-in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There are
+/-- **Power-law oscillation decay (De Giorgi).** Let `n ≥ 1` be the dimension. There are
 `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the normalization of the
 additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If `B(x₀, R) ⊆ Ω` and `0 < r ≤ R/2`, then almost everywhere on `B(x₀, r)`
-the function `u` takes values in an interval of length
+`-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If `B(x₀, R) ⊆ Ω` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then
+for every radius `0 < r ≤ R`, almost everywhere on `B(x₀, r)` the function `u` takes values in
+an interval of length `C (r / R)^α (M - m)`. This is the case `b = 0` of
+`TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift`. -/
+theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub [Nonempty ι] :
+    ∃ α C : ℝ, 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R r m M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
+      0 < r → r ≤ R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ᵐ x ∂mu.restrict (ball x₀ R), W1p.value u x ∈ Icc m M) →
+      ∃ m' : ℝ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
+        W1p.value u x ∈ Icc m' (m' + C * (r / R) ^ α * (M - m)) := by
+  obtain ⟨α, C, hα, hα1, hC, hpow⟩ :=
+    exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam) 0
+  exact ⟨α, C, hα, hα1, hC, fun h ha hu hr hrR hball hmM =>
+    hpow (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hr hrR hball
+      (by simp) hmM⟩
+
+/-- **De Giorgi's interior oscillation estimate with a drift.** Let `n ≥ 1` be the dimension,
+and fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`,
+`σ`, the dimension and the normalization of the additive Haar measure `mu`, such that the
+following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let
+`b` be measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. If `B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `0 < r ≤ R/2`, then almost
+everywhere on `B(x₀, r)` the function `u` takes values in an interval of length
 
 `C (r / R)^α R^{-n/2} ‖u‖_{L²(B(x₀, R))}`.
 
 No bound on `u` is assumed: the oscillation of `u` on `B(x₀, R/2)` is controlled by its `L²`
-norm through De Giorgi's local boundedness theorem, and the power law
-`TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub` propagates it to smaller balls. This
-is the a-priori estimate behind the interior Hölder continuity of weak solutions. -/
-theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+norm through De Giorgi's local boundedness theorem
+(`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`), and the
+power law `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift` propagates it to
+smaller balls. -/
+theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift [Nonempty ι]
+    (σ : ℝ) :
     ∃ α C : ℝ, 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
-      {x₀ : EuclideanSpace ℝ ι} {R r : ℝ},
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {beta : ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R r : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b 0 u (v : W1p mu Omega 2) = 0) →
       0 < r → r ≤ R / 2 → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      beta * R ≤ σ * lam →
       ∃ m' : ℝ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
         W1p.value u x ∈ Icc m' (m' + C * (r / R) ^ α * (R ^ (-(Fintype.card ι : ℝ) / 2) *
           √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu))) := by
-  obtain ⟨D, hD, hbound⟩ :=
-    exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
-      hpstar hexp
+  obtain ⟨D₀, hD₀, hbound⟩ :=
+    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+      (lam := lam) (Lam := Lam)
   obtain ⟨α, C, hα, hα1, hC, hpow⟩ :=
-    exists_ae_value_mem_Icc_add_mul_rpow_mul_sub (mu := mu) (lam := lam) (Lam := Lam)
-      hpstar hexp
+    exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam) σ
+  set D := D₀ * (1 + σ ^ 2) ^ Fintype.card ι
   refine ⟨α, C * 2 ^ α * (2 * D), hα, hα1, by positivity, ?_⟩
-  intro Omega a u x₀ R r h ha hu hr hrR hball
+  intro Omega a b beta u x₀ R r h ha hb hb_bound hu hr hrR hball hβR
   have hR : 0 < R := by linarith
+  have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self hR)))
+  -- `(βR/λ)² ≤ σ²`, since `0 ≤ βR/λ ≤ σ`.
+  have hy : (beta * R / lam) ^ 2 ≤ σ ^ 2 :=
+    pow_le_pow_left₀ (div_nonneg (mul_nonneg hbeta hR.le) h.pos.le) ((div_le_iff₀ h.pos).2 hβR) 2
   set K := D * R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   -- Local boundedness: `u ∈ [-K, K]` on `B(x₀, R/2)`.
   have hK : ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ∈ Icc (-K) K := by
-    filter_upwards [hbound h ha hu hR hball] with x hx
-    exact mem_Icc.2 (abs_le.1 hx)
-  obtain ⟨m', hm'⟩ := hpow h ha hu hr hrR ((ball_subset_ball (half_le_self hR.le)).trans hball) hK
+    filter_upwards [hbound (gamma := 0) h ha hb aestronglyMeasurable_const hb_bound
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hu hR hball] with x hx
+    refine mem_Icc.2 (abs_le.1 (hx.trans ?_))
+    simp only [K, D]
+    gcongr
+  obtain ⟨m', hm'⟩ := hpow h ha hb hb_bound hu hr hrR
+    ((ball_subset_ball (half_le_self hR.le)).trans hball)
+    ((mul_le_mul_of_nonneg_left (half_le_self hR.le) hbeta).trans hβR) hK
   refine ⟨m', ?_⟩
   have hrpow : (r / (R / 2)) ^ α = 2 ^ α * (r / R) ^ α := by
     rw [← Real.mul_rpow (by norm_num) (by positivity)]
@@ -470,6 +698,36 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral {psta
     rw [hrpow]
     ring
   rwa [heq] at hm'
+
+/-- **De Giorgi's interior oscillation estimate.** Let `n ≥ 1` be the dimension. There are
+`α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the normalization of the
+additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
+elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If `B(x₀, R) ⊆ Ω` and `0 < r ≤ R/2`, then almost everywhere on `B(x₀, r)`
+the function `u` takes values in an interval of length
+
+`C (r / R)^α R^{-n/2} ‖u‖_{L²(B(x₀, R))}`.
+
+This is the a-priori estimate behind the interior Hölder continuity of weak solutions, and the
+case `b = 0` of
+`TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift`. -/
+theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
+    ∃ α C : ℝ, 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R r : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
+      0 < r → r ≤ R / 2 → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∃ m' : ℝ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
+        W1p.value u x ∈ Icc m' (m' + C * (r / R) ^ α * (R ^ (-(Fintype.card ι : ℝ) / 2) *
+          √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu))) := by
+  obtain ⟨α, C, hα, hα1, hC, hosc⟩ :=
+    exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift (mu := mu)
+      (lam := lam) (Lam := Lam) 0
+  exact ⟨α, C, hα, hα1, hC, fun h ha hu hr hrR hball =>
+    hosc (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hr hrR hball
+      (by simp)⟩
 
 end PDE
 

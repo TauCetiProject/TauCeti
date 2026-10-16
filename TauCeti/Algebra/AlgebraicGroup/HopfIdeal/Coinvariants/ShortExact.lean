@@ -19,6 +19,8 @@ The subgroup may be nonreduced, and the field need not be perfect.
 
 This combines `faithfullyFlat_coinvariantsι`, `kernelHopfIdeal_coinvariantsι_eq`,
 and `isShortExact_mkQuotient_kernelHopfIdeal`, without using fppf sheaves.
+When the subgroup is finite and central, the quotient projection is a central isogeny
+(`isCentralIsogeny_coinvariantsι`).
 
 ## References
 
@@ -27,6 +29,8 @@ and `isShortExact_mkQuotient_kernelHopfIdeal`, without using fppf sheaves.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 namespace TauCeti.CommHopfAlgCat
 
@@ -44,5 +48,18 @@ theorem isShortExact_coinvariantsι_mkQuotient (hI : I.IsNormal) :
     (coinvariantsι hI) (faithfullyFlat_coinvariantsι hI)
   rw [kernelHopfIdeal_coinvariantsι_eq hI] at h
   exact h
+
+/-- The projection from a geometrically reduced finite-type affine group to its quotient
+by a finite central subgroup is a central isogeny. The subgroup may be nonreduced,
+and the field need not be perfect. -/
+theorem isCentralIsogeny_coinvariantsι (hI : I.IsCentral)
+    (hfinite : Module.Finite k (H ⧸ I.toIdeal)) :
+    IsCentralIsogeny (coinvariantsι hI.isNormal) := by
+  have hseq := isShortExact_coinvariantsι_mkQuotient hI.isNormal
+  have hisog := hseq.isIsogeny_iff_moduleFinite.mpr hfinite
+  rw [isCentralIsogeny_iff]
+  refine ⟨hisog.finite, hisog.faithfullyFlat, ?_⟩
+  rw [kernelHopfIdeal_coinvariantsι_eq]
+  exact hI
 
 end TauCeti.CommHopfAlgCat

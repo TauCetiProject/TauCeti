@@ -33,6 +33,8 @@ The Selmer group of the fraction field of `B` relative to these primes is
 
 * `IsDedekindDomain.HeightOneSpectrum.liesOver_under`: the `LiesOver` instance relating a prime
   to its contraction, which the `under`-indexed results downstream need.
+* `IsDedekindDomain.HeightOneSpectrum.under_eq_of_liesOver`: a prime lying over `v` contracts
+  to `v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_surjective`: every height one prime of `R` lies
   under one of `B`.
 * `IsDedekindDomain.HeightOneSpectrum.under_under`: contraction through a tower agrees with
@@ -82,6 +84,12 @@ stated at `under R w` and consuming a `LiesOver` hypothesis, such as
 instance liesOver_under (w : HeightOneSpectrum B) :
     w.asIdeal.LiesOver (under R w).asIdeal :=
   ⟨rfl⟩
+
+variable {R B} in
+/-- A height one prime of `B` lying over the height one prime `v` of `R` contracts to `v`. -/
+theorem under_eq_of_liesOver {v : HeightOneSpectrum R} {w : HeightOneSpectrum B}
+    (hw : w.asIdeal.LiesOver v.asIdeal) : under R w = v :=
+  asIdeal_injective hw.over.symm
 
 /-- **Every height one prime of `R` lies under one of `B`**, for an integral extension of domains
 with injective algebra map: contraction `HeightOneSpectrum B → HeightOneSpectrum R` is
@@ -190,8 +198,8 @@ prime of `R`. The extension need not be integral, and `R` need not be Dedekind. 
 instance finite_liesOver [IsDedekindDomain B] (v : HeightOneSpectrum R) :
     Finite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} := by
   have h := Ideal.finite_factors (Ideal.map_ne_bot_of_ne_bot (S := B) v.ne_bot)
-  exact (h.subset fun w hw ↦ Ideal.dvd_iff_le.mpr
-    (Ideal.map_le_iff_le_comap.mpr (le_of_eq hw.over))).to_subtype
+  exact (h.subset (t := {w : HeightOneSpectrum B | w.asIdeal.LiesOver v.asIdeal}) fun w hw ↦
+    Ideal.dvd_iff_le.mpr (Ideal.map_le_iff_le_comap.mpr (le_of_eq hw.over))).to_subtype
 
 end
 

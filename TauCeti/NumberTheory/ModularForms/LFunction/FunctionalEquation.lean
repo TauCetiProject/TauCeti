@@ -119,7 +119,6 @@ theorem resToImagAxis_slash_frickeGL (F : ℍ → ℂ) {t : ℝ} (ht : 0 < t) :
         resToImagAxis F (1 / t / Real.sqrt N) := by
   have hN : 0 < Real.sqrt N := Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)
   have hNc : (Real.sqrt N : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hN.ne'
-  have htc : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
   have hsqN : (Real.sqrt N : ℂ) * (Real.sqrt N : ℂ) = (N : ℂ) := by
     rw [← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg N)]
     norm_cast

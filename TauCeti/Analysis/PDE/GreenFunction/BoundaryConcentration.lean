@@ -42,7 +42,6 @@ theorem ballPoissonKernel_le_of_dist_le_half_of_le_dist {x z : EuclideanSpace �
   by_cases hn : n = 0
   · subst n
     simp [ballPoissonKernel_def]
-  have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
   have hvol := volume_real_unitBall_pos n
   have hnorm : delta / 2 ≤ ‖x - y‖ := by
     rw [← dist_eq_norm]

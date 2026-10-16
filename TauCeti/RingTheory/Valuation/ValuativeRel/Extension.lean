@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
+public import Mathlib.RingTheory.Algebraic.Basic
+import Mathlib.RingTheory.Localization.Integral
+import Mathlib.RingTheory.Valuation.Integral
 
 /-!
 # Valuation extensions from valuative relations
@@ -19,6 +22,10 @@ This file supplies the canonical bridge for the valuations attached to valuative
 allows Mathlib's valuation-extension API, including its algebra maps between valuation rings and
 residue fields, to be used directly from a `ValuativeExtension` hypothesis.
 
+In an algebraic field extension, the nonzero values of the base field are coinitial among the
+nonzero values of the extension. This provides the small base-field elements needed to compare
+the two valuative topologies.
+
 ## Main results
 
 * `TauCeti.ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
@@ -26,6 +33,8 @@ residue fields, to be used directly from a `ValuativeExtension` hypothesis.
   canonical valuation on `A`.
 * `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
 * `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
+* `IsAlgebraic.exists_ne_zero_vle`: a nonzero algebraic element has value at least that of some
+  nonzero base-field element.
 -/
 
 public section
@@ -77,3 +86,26 @@ theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
   Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
 
 end TauCeti
+
+variable {K L : Type*} [Field K] [Field L] [ValuativeRel L] [Algebra K L]
+
+/-- In a valued field extension, every nonzero algebraic element has value at least
+that of some nonzero base-field element. -/
+theorem IsAlgebraic.exists_ne_zero_vle {y : L} (halg : IsAlgebraic K y) (hy : y ≠ 0) :
+    ∃ x : K, x ≠ 0 ∧ algebraMap K L x ≤ᵥ y := by
+  -- Clear denominators over the base valuation ring, then use integrally closedness of the
+  -- target valuation ring to bound the resulting multiple of `y⁻¹`.
+  let v := (valuation L).comap (algebraMap K L)
+  have : Valuation.HasExtension v (valuation L) := ⟨.refl⟩
+  obtain ⟨a, ha⟩ := halg.inv.isIntegral.exists_multiple_integral_of_isLocalization
+    (nonZeroDivisors v.integer) y⁻¹
+  have hai : IsIntegral (valuation L).integer (a • y⁻¹) := ha.tower_top
+  have hav : valuation L (a • y⁻¹) ≤ 1 :=
+    (Valuation.integer.integers (valuation L)).isIntegral_iff_v_le_one.mp hai
+  have hyv : 0 < valuation L y := zero_lt_iff.mpr (by simpa using hy)
+  refine ⟨a, ?_, ?_⟩
+  · exact_mod_cast (nonZeroDivisors.ne_zero a.property)
+  · rw [(valuation L).vle_iff_le]
+    simpa [Submonoid.smul_def, Algebra.smul_def,
+      IsScalarTower.algebraMap_apply v.integer K L,
+      Algebra.algebraMap_ofSubring, mul_inv_le_iff₀ hyv] using hav

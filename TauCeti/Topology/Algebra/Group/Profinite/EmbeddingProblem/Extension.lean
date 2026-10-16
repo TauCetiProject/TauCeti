@@ -62,7 +62,9 @@ theorem _root_.GroupExtension.exists_splitting_continuous_of_isProjective
     (S : GroupExtension M E G) (hinl : Continuous S.inl) (hrh : Continuous S.rightHom)
     (hM : IsProP p M) (hG : IsProP p G) (hproj : IsProjective.{u, v, u} p G) :
     ∃ s : S.Splitting, Continuous ⇑s := by
-  have hE : IsProP p E := S.isProP hinl hrh hM hG
+  have hE : IsProP p E :=
+    S.isProP hinl (MonoidHom.isOpenQuotientMap_of_isQuotientMap
+      (Topology.IsQuotientMap.of_surjective_continuous S.rightHom_surjective hrh)).isOpenMap hM hG
   obtain ⟨σ, hσ⟩ := hproj.exists_continuous_lift hE ⟨S.rightHom, hrh⟩ S.rightHom_surjective
     (ContinuousMonoidHom.id G)
   obtain ⟨s, hs, -⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh σ hσ

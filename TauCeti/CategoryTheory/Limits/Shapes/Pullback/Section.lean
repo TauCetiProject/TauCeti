@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
+public import Mathlib.CategoryTheory.Limits.Shapes.KernelPair
 
 /-!
 # Base change of the second factor of a pullback, and sections
@@ -34,6 +34,8 @@ When `s = a ≫ σ` for a section `σ` of `π`, `pullbackSection π a s hs` is t
 
 * `CategoryTheory.Limits.pullback.mapSnd_id` and `CategoryTheory.Limits.pullback.mapSnd_comp`:
   `pullback.mapSnd` preserves identities and composition.
+* `CategoryTheory.Limits.pullback.isKernelPair_mapSnd`: base change of the second factor along
+  the two projections `T ×_S T ⟶ T` is the kernel pair of `pullback.fst π p : Y ×_S T ⟶ Y`.
 * `CategoryTheory.Limits.pullbackSection_comp_mapSnd`: `pullbackSection` is natural across
   `pullback.mapSnd`.
 
@@ -94,6 +96,14 @@ theorem pullback.mapSnd_comp (π : Y ⟶ S) (a : T ⟶ S) (a' : T' ⟶ S) (a'' :
     pullback.mapSnd π a' a'' l hl ≫ pullback.mapSnd π a a' k hk =
       pullback.mapSnd π a a'' (l ≫ k) (by rw [Category.assoc, hk, hl]) := by
   ext <;> simp
+
+/-- Base change of the second factor along the two projections `T ×_S T ⟶ T` is the kernel pair
+of the first projection `Y ×_S T ⟶ Y`. -/
+theorem pullback.isKernelPair_mapSnd (π : Y ⟶ S) (p : T ⟶ S) [HasPullback p p] [HasPullback π p]
+    [HasPullback π (pullback.fst p p ≫ p)] :
+    IsKernelPair (pullback.fst π p) (pullback.mapSnd π p _ (pullback.fst p p) rfl)
+      (pullback.mapSnd π p _ (pullback.snd p p) pullback.condition.symm) := by
+  convert (IsKernelPair.of_hasPullback p).pullback π <;> ext <;> simp
 
 /-- The section of `pullback.snd π a` induced by a lift `s` of `a` through `π`: its first
 projection is `s` and its second projection is the identity of `T`. -/

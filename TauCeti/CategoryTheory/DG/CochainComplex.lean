@@ -31,6 +31,8 @@ conventions of every later differential graded construction.
 * `TauCeti.dgDifferential_linearHomComplex`, `TauCeti.dgId_linearHomComplex` and
   `TauCeti.dgComp_linearHomComplex`: the differential, identity and composition of this
   differential graded category.
+* `TauCeti.xIsoOfEq_hom_v` and `TauCeti.dgComp_v`: component formulas for degree transport and
+  composition.
 
 ## References
 
@@ -80,5 +82,22 @@ theorem dgComp_linearHomComplex {F G K : CochainComplex C ℤ} {p q n : ℤ}
     exact ι_linearHomComplexEnrichedComp R F G K p q n h
   rw [← dgCompMap_tmul, hmap]
   exact cochainCompTensor_braiding_tmul R F G K p q n h z₁ z₂
+
+/-- Degree transport of a cochain does not change its components. -/
+theorem xIsoOfEq_hom_v {K L : CochainComplex C ℤ} {a b : ℤ} (h : a = b)
+    (z : DGHom R a K L) (p q : ℤ) (hpq : p + b = q) :
+    (((dgHomComplex R K L).XIsoOfEq h).hom z : Cochain K L b).v p q hpq =
+      (z : Cochain K L a).v p q (by omega) := by
+  subst h
+  rfl
+
+/-- The component of the DG composition of cochains is their componentwise composition with
+the Koszul sign. -/
+theorem dgComp_v {K L M : CochainComplex C ℤ} {a b c : ℤ} (z₁ : DGHom R a K L)
+    (z₂ : DGHom R b L M) (h : a + b = c) (x y w : ℤ) (h₁ : x + a = y) (h₂ : y + b = w) :
+    (dgComp R z₁ z₂ h : Cochain K M c).v x w (by omega) =
+      (a * b).negOnePow • ((z₁ : Cochain K L a).v x y h₁ ≫ (z₂ : Cochain L M b).v y w h₂) := by
+  rw [dgComp_linearHomComplex, Cochain.units_smul_v]
+  exact congrArg _ (Cochain.comp_v (z₁ : Cochain K L a) (z₂ : Cochain L M b) h x y w h₁ h₂)
 
 end TauCeti

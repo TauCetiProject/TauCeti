@@ -153,6 +153,19 @@ theorem of_exact
     let _ := hsW j hj.2
     exact subsingleton_of_exact (hfg j)
 
+/-- A degreewise injective map into a finitely Laurent-supported family shows finite Laurent
+support of the source. -/
+theorem of_injective
+    {W : ℤ → Type v'} [∀ j, AddCommGroup (W j)] [∀ j, Module k (W j)]
+    (hW : HasFiniteLaurentSupport k W) (f : ∀ j, V j →ₗ[k] W j)
+    (hf : ∀ j, Function.Injective (f j)) : HasFiniteLaurentSupport k V := by
+  obtain ⟨s, hs⟩ := hW.exists_finset
+  refine of_finset (fun j => ?_) s fun j hj => ?_
+  · let _ := hW.finiteDimensional j
+    exact FiniteDimensional.of_injective (f j) (hf j)
+  · let _ := hs j hj
+    exact (hf j).subsingleton
+
 /-- A finite Laurent support is preserved by translating the degree index. -/
 theorem reindex_add (h : HasFiniteLaurentSupport k V) (r : ℤ) :
     HasFiniteLaurentSupport k (fun j => V (j + r)) := by

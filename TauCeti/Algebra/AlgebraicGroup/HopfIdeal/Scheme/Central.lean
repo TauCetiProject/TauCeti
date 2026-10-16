@@ -26,8 +26,7 @@ commutative group-object structure on the canonical Hopf-ideal quotient spectrum
 * J. S. Milne, *Algebraic Groups* (2017), Sections 1.k and 2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 
-This supplies a structural property of central closed subgroups used by the center in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap.
+This supplies a structural property of central closed subgroups used by the center.
 -/
 
 public section

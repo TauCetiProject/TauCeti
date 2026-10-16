@@ -87,12 +87,8 @@ theorem ncard_sameCycle_and_eq_mul_minimalPeriod [Finite α] (h : Semiconj f σ 
   have hσx : IsPeriodicPt σ (orderOf σ) x := by
     rw [IsPeriodicPt, IsFixedPt, ← coe_pow, pow_orderOf_eq_one, one_apply]
   have hk : 0 < k := (hσx.map h).minimalPeriod_pos (orderOf_pos σ)
-  have hcard : {y | (σ ^ k).SameCycle x y}.ncard = minimalPeriod (σ ^ k) x := by
-    simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
-      Nat.card_eq_fintype_card]
-    exact (minimalPeriod_eq_card (a := σ ^ k) (b := x)).symm
-  rw [h.setOf_sameCycle_and_eq, hcard, coe_pow, minimalPeriod_iterate_eq_div_gcd hk.ne',
-    Nat.gcd_eq_right (h.minimalPeriod_dvd x)]
+  rw [h.setOf_sameCycle_and_eq, ncard_setOf_sameCycle, coe_pow,
+    minimalPeriod_iterate_eq_div_gcd hk.ne', Nat.gcd_eq_right (h.minimalPeriod_dvd x)]
   exact Nat.div_mul_cancel (h.minimalPeriod_dvd x)
 
 end Function.Semiconj

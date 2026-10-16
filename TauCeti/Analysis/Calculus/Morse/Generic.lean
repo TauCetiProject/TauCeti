@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Analysis.Normed.Module.FiniteDimension
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Almost every linear perturbation of a function is Morse
@@ -247,8 +247,9 @@ theorem ae_hasNondegenerateCriticalPointsOn_sub_inner [MeasurableSpace E] [Borel
     ext v
     simp [toDual_apply_apply]
   rw [hpre]
-  exact (((toDual ℝ E).toContinuousLinearEquiv).quasiMeasurePreserving_addHaar μ
-    addHaar).preimage_null hbad
+  simpa only [ContinuousLinearEquiv.toContinuousAddEquiv_coe] using
+    ((toDual ℝ E).toContinuousLinearEquiv.toContinuousAddEquiv.quasiMeasurePreserving_addHaar μ
+      addHaar).preimage_null hbad
 
 /-- The vectors `v` for which subtracting `⟪v, ·⟫` makes a `C²` function Morse on an open set are
 dense. As above, the Haar measure witnessing the density is internal to the proof, so the

@@ -165,7 +165,7 @@ This is the formal-series form of `-(-P) = P` for the group law near the origin.
 theorem subst_formalInverse_self :
     PowerSeries.subst (formalInverse W) (formalInverse W) = PowerSeries.X := by
   have hu := mul_invOfUnit_formalInverseDenom W
-  have hinv := PowerSeries.ringHom_invOfUnit
+  have hinv := PowerSeries.map_invOfUnit
     (PowerSeries.substAlgHom (hasSubst_formalInverse W)) (D := formalInverseDenom W)
     (u := 1) (v := 1) (constantCoeff_formalInverseDenom W)
     (by rw [PowerSeries.coe_substAlgHom, subst_formalInverse_formalInverseDenom W]
@@ -173,14 +173,8 @@ theorem subst_formalInverse_self :
   rw [PowerSeries.coe_substAlgHom] at hinv
   have hdouble : PowerSeries.invOfUnit (PowerSeries.invOfUnit (formalInverseDenom W) 1) 1 =
       formalInverseDenom W := by
-    have h2 : PowerSeries.invOfUnit (formalInverseDenom W) 1 *
-        PowerSeries.invOfUnit (PowerSeries.invOfUnit (formalInverseDenom W) 1) 1 = 1 :=
-      PowerSeries.mul_invOfUnit _ 1 (by simp [PowerSeries.constantCoeff_invOfUnit])
-    calc PowerSeries.invOfUnit (PowerSeries.invOfUnit (formalInverseDenom W) 1) 1
-        = formalInverseDenom W * (PowerSeries.invOfUnit (formalInverseDenom W) 1 *
-            PowerSeries.invOfUnit (PowerSeries.invOfUnit (formalInverseDenom W) 1) 1) := by
-          rw [← mul_assoc, hu, one_mul]
-      _ = formalInverseDenom W := by rw [h2, mul_one]
+    exact (left_inv_eq_right_inv hu
+      (PowerSeries.mul_invOfUnit _ 1 (by simp))).symm
   have hexp : PowerSeries.subst (formalInverse W) (formalInverse W) =
       -(formalInverse W * PowerSeries.subst (formalInverse W)
         (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
@@ -210,7 +204,7 @@ theorem map_formalInverseDenom :
 @[simp]
 theorem map_formalInverse :
     formalInverse (W.map φ) = PowerSeries.map φ (formalInverse W) := by
-  have hinv := PowerSeries.ringHom_invOfUnit (PowerSeries.map φ) (D := formalInverseDenom W)
+  have hinv := PowerSeries.map_invOfUnit (PowerSeries.map φ) (D := formalInverseDenom W)
     (u := 1) (v := 1) (constantCoeff_formalInverseDenom W)
     (by rw [show (PowerSeries.map φ (formalInverseDenom W) : PowerSeries S) =
           formalInverseDenom (W.map φ) from (map_formalInverseDenom W φ).symm]

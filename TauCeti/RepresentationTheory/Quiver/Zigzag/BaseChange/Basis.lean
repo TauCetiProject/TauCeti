@@ -17,9 +17,9 @@ without isolated vertices. The same incident edges are used over both coefficien
 
 public section
 
-namespace TauCeti
+namespace SimpleGraph
 
-open PathAlgebra DoubledQuiver
+open TauCeti TauCeti.PathAlgebra TauCeti.DoubledQuiver
 
 universe u w z
 
@@ -42,4 +42,4 @@ theorem skewZigzagBaseChange_skewZigzagBasisFun (f : k →+* l)
       skewZigzagVolume_def, backtrackElem_eq_ofPath,
       skewZigzagBaseChange_skewZigzagMk_ofPath, backtrackElem_eq_ofPath]
 
-end TauCeti
+end SimpleGraph

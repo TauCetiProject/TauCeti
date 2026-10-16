@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.SpinorNormImage
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Proper
-import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact
+import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact.Basic
 
 /-!
 # Low-rank compact-open reference families
@@ -47,14 +47,6 @@ open _root_.QuadraticMap
 open scoped TensorProduct Topology
 
 noncomputable section
-
-/-- The canonical invertibility witness for two over the rationals. -/
-local instance lowRankInvertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
-/-- The canonical invertibility witness for two over a `p`-adic field. -/
-local instance lowRankInvertibleTwoPadic (p : Nat.Primes) : Invertible (2 : ℚ_[p]) :=
-  invertibleOfNonzero two_ne_zero
 
 /-- A direct witness keeps the base-change dimension calculation within the deterministic
 instance-search budget. -/

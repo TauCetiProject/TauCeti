@@ -37,8 +37,6 @@ weights and avoidance of marked squares without requiring the two cuts to be dis
 
 ## References
 
-This supplies the shared domain relation for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`".
 The repartition argument follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
 Chapter 4.6.
 -/
