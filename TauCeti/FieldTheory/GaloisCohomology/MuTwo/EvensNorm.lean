@@ -98,11 +98,7 @@ theorem coordC_kummerInd (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.fi
     (a : Lˣ) (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) (s : AbsoluteGaloisGroup K)
     (hs : s ∉ galoisSubgroup K L σ) {x : L} (hx : x ∉ Set.range (algebraMap K L))
     (h : AbsoluteGaloisGroup K) : coordC (kummerInd σ hdeg a r hr s hs h) = rootSign (σ x) h := by
-  have hG := mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two K L σ hdeg hx (g := h)
-  rw [kummerInd_def, coordC_indexTwoInd]
-  by_cases hh : h ∈ galoisSubgroup K L σ
-  · rw [Subgroup.toAdd_indexTwoCharacter_of_mem _ hh, rootSign_of_apply_eq (hG.1 hh)]
-  · rw [Subgroup.toAdd_indexTwoCharacter_of_notMem _ hh, rootSign_of_apply_ne (mt hG.2 hh)]
+  rw [kummerInd_def, coordC_indexTwoInd, toAdd_indexTwoCharacter_galoisSubgroup_eq_rootSign σ _ hx]
 
 /-- The pullback `c_{D₁₆} ∘ (ρ_a × ρ_a)` of the `D₁₆` extension cocycle along `kummerInd` is
 continuous: `ρ_a` is locally constant, because `galoisSubgroup K L σ` is open and the Kummer
@@ -130,6 +126,13 @@ theorem galoisEvens2_kummerClass_eq_pullback [Invertible (2 : L)]
           kummerInd σ hdeg a r hr s hs q.2))
         (continuous_wreathD16Cocycle_kummerInd σ hdeg a r hr s hs)
         (fun g h j => by simp only [map_mul]; exact wreathD16Cocycle_isCocycle _ _ _) := by
+  -- Instance search does not find local compactness within its default budget under these
+  -- imports, so assemble it from the Krull topology being compact and Hausdorff.
+  have : LocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    have : R1Space (AbsoluteGaloisGroup K) := @T2Space.r1Space _ _ krullTopology_t2
+    have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+      ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
+    WeaklyLocallyCompactSpace.locallyCompactSpace
   rw [galoisEvens_def, galoisF2Iso_inv_kummerClass σ a r hr,
     evensNormIndexTwo_eq_ind_pullback _ _ s hs, f2CocycleClass_def]
   simp only [kummerInd_def]

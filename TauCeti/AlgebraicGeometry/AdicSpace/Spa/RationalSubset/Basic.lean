@@ -79,6 +79,8 @@ layer deferred above.
   the denominator by the same unit does not change the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` : the whole spectrum is the
   rational subset `R({1}/1)` — Wedhorn's "`Spa (A, A⁺)` itself is rational".
+* `TauCeti.ValuationSpectrum.mem_rationalSubset_singleton_one_iff` : `R({1}/s)` is the locus
+  `v(s) ≥ 1`.
 * `TauCeti.ValuationSpectrum.val_preimage_rationalSubset` : on the subtype `spa A⁺`, a
   rational subset is just the trace of its ambient basic open.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_rationalSubset` : a rational subset is
@@ -272,6 +274,14 @@ theorem rationalSubset_singleton_one (Aplus : Subring A) :
   refine Set.inter_eq_left.mpr fun v _ => (mem_basicOpenFinset_iff _ _ _).mpr ?_
   exact ⟨fun t ht => by simp [Finset.mem_singleton.mp ht],
     v.toValuativeRel.not_vle_one_zero⟩
+
+/-- At a point of the adic spectrum, membership in `R({1}/s)` is `v(1) ≤ v(s)`: the nonvanishing
+of `s` is automatic, since `v(s) = 0` would force `v(1) = 0`. -/
+theorem mem_rationalSubset_singleton_one_iff {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus)
+    (s : A) : v ∈ rationalSubset Aplus {1} s ↔ v.toValuativeRel.vle 1 s := by
+  simp only [mem_rationalSubset_iff, hv, Finset.mem_singleton, forall_eq, true_and]
+  exact ⟨And.left, fun h ↦ ⟨h, fun h0 ↦ v.toValuativeRel.not_vle_one_zero
+    (v.toValuativeRel.vle_trans h h0)⟩⟩
 
 /-- On the subtype `spa A⁺`, the preimage of `R(T/s)` is the preimage of the ambient basic
 open `Spv(A)(T/s)`: the `spa A⁺` condition is automatic from the subtype. This is the form used

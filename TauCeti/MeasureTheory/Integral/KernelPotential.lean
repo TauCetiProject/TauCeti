@@ -63,6 +63,14 @@ theorem integrable_prod_comp_sub_mul (hk : Integrable k ν) (hmk : Measurable k)
           (fun z ↦ norm_mul_le _ _)
       _ = (∫ z : G, ‖k z‖ ∂ν) * ‖v t‖ := by
         rw [integral_mul_const, integral_sub_right_eq_self (fun z : G ↦ ‖k z‖)]
+omit [IsLocallyFiniteMeasure ν] [ν.InnerRegularCompactLTTop] in
+/-- An integrable kernel with integrable weights and measurable shifts has an integrable
+weighted potential after integrating over the shifts. -/
+theorem integral_comp_sub_mul [NormedSpace ℝ K] (hk : Integrable k ν) (hmk : Measurable k)
+    {c : α → G} {v : α → K} (hc : AEMeasurable c μ) (hv : Integrable v μ) :
+    Integrable (fun z ↦ ∫ t, k (z - c t) * v t ∂μ) ν :=
+  (hk.integrable_prod_comp_sub_mul hmk hc hv).integral_prod_right
+
 end Potential
 
 section Weighted

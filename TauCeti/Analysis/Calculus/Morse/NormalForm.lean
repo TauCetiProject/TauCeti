@@ -214,7 +214,7 @@ theorem exists_congruence_of_symmetric_family
   set adj : (E →L[ℝ] E) →L[ℝ] (E →L[ℝ] E) :=
     (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).comp
       (((ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) (E →L[ℝ] ℝ)).flip
-          (B₀ : E →L[ℝ] E →L[ℝ] ℝ)).comp
+          (G' := E →L[ℝ] E →L[ℝ] ℝ) (B₀ : E →L[ℝ] E →L[ℝ] ℝ)).comp
         ((ContinuousLinearMap.compL ℝ E E ℝ).flip)) with hadjdef
   have adj_spec : ∀ (T : E →L[ℝ] E) (w w' : E), B₀ (adj T w) w' = B₀ w (T w') := by
     intro T w w'

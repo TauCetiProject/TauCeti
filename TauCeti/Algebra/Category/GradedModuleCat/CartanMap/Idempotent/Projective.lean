@@ -166,9 +166,10 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalId
         rw [sum_freeIdempotentProjection_inclusion he he₀ hI d, Category.id_comp, hσ]
   have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (k := k) hM
   -- A sum equal to the identity in the local endomorphism ring has an invertible summand.
-  have hunit : IsUnit (∑ r : J, ∑ i : I, α r i ≫ β r i : End M) := by
-    rw [hsum]
-    exact isUnit_one
+  have hunit : IsUnit (∑ r : J, ∑ i : I, End.of (α r i ≫ β r i)) := by
+    convert isUnit_one (M := End M)
+    apply End.ext
+    simpa only [End.sum_asHom, End.one_asHom] using hsum
   obtain ⟨r, -, hr⟩ := IsLocalRing.exists_of_isUnit_sum hunit
   obtain ⟨i, -, hi⟩ := IsLocalRing.exists_of_isUnit_sum hr
   have hcomp : IsIso (α r i ≫ β r i) := (isUnit_iff_isIso _).1 hi

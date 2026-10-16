@@ -22,7 +22,9 @@ metric gradient flows.
 The main results concern an absolutely continuous curve `γ` on `[a, b]` and `1 ≤ p`.
 
 * The **Hölder estimate** `d(γ s, γ u) ^ p ≤ |u - s| ^ (p - 1) * A_p(γ; s, u)`: for `1 < p`, a
-  curve of finite `p`-action is `(1 - 1 / p)`-Hölder continuous.
+  curve of finite `p`-action is `(1 - 1 / p)`-Hölder continuous. Applied on each cell of a
+  uniform grid of step `h`, it bounds the discrete action
+  `∑ k, d(γ t_k, γ t_(k+1)) ^ p * h ^ (1 - p)` of the samples at the grid times by `A_p(γ)`.
 * The **difference-quotient formula**: the action is the limit, as `h → 0⁺`, of the integrated
   difference quotients `∫_a^(b - h) (d(γ t, γ (t + h)) / h) ^ p dt`. Each of these is at most the
   action, by the Hölder estimate on the windows `[t, t + h]` and Tonelli's theorem, and the action
@@ -50,13 +52,20 @@ space `W^{1,p}` on an interval by difference quotients.
 ## Main results
 
 * `AbsolutelyContinuousOnInterval.edist_rpow_le_mul_curveAction`: the Hölder estimate.
+* `TauCeti.curveAction_eq_sum_range`: the action splits over the cells of a uniform grid.
+* `TauCeti.sum_edist_rpow_mul_rpow_one_sub_le_curveAction`: the discrete action of the samples at
+  the grid times is at most the action.
 * `AbsolutelyContinuousOnInterval.lintegral_edist_div_rpow_le_curveAction` and
   `AbsolutelyContinuousOnInterval.tendsto_lintegral_edist_div_rpow`: the integrated difference
   quotients are bounded by the action and converge to it.
+* `TauCeti.absolutelyContinuousOnInterval_of_sum_edist_rpow_le`: for `1 < p`, a curve satisfying
+  the Hölder estimate on finite unions of intervals is absolutely continuous.
 * `TauCeti.absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top`: for `1 < p`, pointwise
   limits of curves with bounded actions are absolutely continuous.
 * `TauCeti.curveAction_le_liminf` and `TauCeti.curveAction_le_liminf_of_one_lt`: lower
   semicontinuity of the action under pointwise convergence.
+* `TauCeti.isClosed_setOfPred_absolutelyContinuousOnInterval_and_curveAction_le`: for `1 < p`, the
+  absolutely continuous paths of action at most `C < ∞` form a closed subset of `C([a, b], X)`.
 * `TauCeti.measurable_curveAction` and `TauCeti.measurable_curveAction_IccExtend`: measurability
   of the action in a measurable family of continuous curves and on the path space `C([a, b], X)`.
 
@@ -97,6 +106,12 @@ theorem curveAction_def (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
     curveAction p γ a b = ∫⁻ t in Ι a b, metricDerivative γ t ^ p :=
   (rfl)
 
+/-- Post-composing a curve with an isometry leaves its `p`-action unchanged. -/
+theorem _root_.Isometry.curveAction_comp {Y : Type*} [PseudoEMetricSpace Y] {f : X → Y}
+    (hf : Isometry f) (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
+    curveAction p (f ∘ γ) a b = curveAction p γ a b := by
+  simp only [curveAction_def, hf.metricDerivative_comp]
+
 /-- The `p`-action does not depend on the orientation of the interval. -/
 theorem curveAction_comm (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
     curveAction p γ a b = curveAction p γ b a := by
@@ -122,6 +137,33 @@ theorem curveAction_add (p : ℝ) (γ : ℝ → X) {a b c : ℝ} (hb : b ∈ uIc
     exact Ioc_disjoint_Ioc_of_le le_rfl
   · rw [uIoc_of_ge hba, uIoc_of_ge hcb]
     exact (Ioc_disjoint_Ioc_of_le le_rfl).symm
+
+/-- The grid time `a + k * h`, `k ≤ N`, of a uniform grid of step `h ≥ 0` lies in
+`[a, a + N * h]`. -/
+theorem add_natCast_mul_mem_Icc (a : ℝ) {h : ℝ} (hh : 0 ≤ h) {k N : ℕ} (hk : k ≤ N) :
+    a + k * h ∈ Icc a (a + N * h) :=
+  ⟨le_add_of_nonneg_right (by positivity), by gcongr⟩
+
+/-- The cell `[a + k * h, a + (k + 1) * h]`, `k < N`, of a uniform grid of step `h ≥ 0` lies in
+`[a, a + N * h]`. -/
+theorem Icc_add_natCast_mul_subset_Icc (a : ℝ) {h : ℝ} (hh : 0 ≤ h) {k N : ℕ} (hk : k < N) :
+    Icc (a + k * h) (a + (k + 1) * h) ⊆ Icc a (a + N * h) := by
+  have hsucc := add_natCast_mul_mem_Icc a hh hk
+  rw [Nat.cast_succ] at hsucc
+  exact Icc_subset_Icc (add_natCast_mul_mem_Icc a hh hk.le).1 hsucc.2
+
+/-- The `p`-action over `[a, a + n * h]` is the sum of the actions over the cells
+`[a + k * h, a + (k + 1) * h]` of the uniform grid of step `h`. -/
+theorem curveAction_eq_sum_range (p : ℝ) (γ : ℝ → X) (a h : ℝ) (n : ℕ) :
+    curveAction p γ a (a + n * h) =
+      ∑ k ∈ Finset.range n, curveAction p γ (a + k * h) (a + (k + 1) * h) := by
+  induction n with
+  | zero => simp [curveAction_self]
+  | succ n ih =>
+    rw [Finset.sum_range_succ, ← ih, curveAction_add, Nat.cast_succ]
+    rcases le_total 0 h with hh | hh
+    · exact Icc_subset_uIcc (by exact_mod_cast add_natCast_mul_mem_Icc a hh (Nat.le_succ n))
+    · refine Icc_subset_uIcc' ⟨?_, ?_⟩ <;> nlinarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
 
 /-- The `p`-action of a `K`-Lipschitz curve over the interval between `a` and `b` is at most
 `K ^ p` times the length of the interval. -/
@@ -180,6 +222,36 @@ theorem _root_.AbsolutelyContinuousOnInterval.edist_rpow_le_mul_curveAction
     _ = edist s u ^ (p - 1) * curveAction p γ s u := by
         rw [Measure.restrict_apply_univ, Real.volume_uIoc, curveAction_def, edist_dist s u,
           Real.dist_eq, abs_sub_comm]
+
+/-- **The discrete action of grid samples is at most the action.** For `1 ≤ p` and a curve `γ`
+absolutely continuous on `[a, a + N * h]` with `h > 0`, the samples at the grid times `a + k * h`
+satisfy `∑ k < N, d(γ (a + k * h), γ (a + (k + 1) * h)) ^ p * h ^ (1 - p) ≤ A_p(γ)`, by the Hölder
+estimate on each cell. The left side is the action of the polygonal interpolation of the samples
+(`TauCeti.curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpolation`). -/
+theorem sum_edist_rpow_mul_rpow_one_sub_le_curveAction {h : ℝ} {N : ℕ} (hh : 0 < h) (hp : 1 ≤ p)
+    (hγ : AbsolutelyContinuousOnInterval γ a (a + N * h)) :
+    ∑ k ∈ Finset.range N,
+        edist (γ (a + k * h)) (γ (a + (k + 1) * h)) ^ p * ENNReal.ofReal h ^ (1 - p) ≤
+      curveAction p γ a (a + N * h) := by
+  rw [curveAction_eq_sum_range]
+  refine Finset.sum_le_sum fun k hk ↦ ?_
+  have hk := Finset.mem_range.1 hk
+  have hcell := Icc_add_natCast_mul_subset_Icc a hh.le hk
+  have hle : a + k * h ≤ a + (k + 1) * h := by linarith
+  have hc0 : ENNReal.ofReal h ≠ 0 := by simpa using hh
+  have hdiff : a + k * h - (a + (k + 1) * h) = -h := by ring
+  have hstep : edist (a + k * h) (a + (k + 1) * h) = ENNReal.ofReal h := by
+    rw [edist_dist, Real.dist_eq, hdiff, abs_neg, abs_of_pos hh]
+  calc edist (γ (a + k * h)) (γ (a + (k + 1) * h)) ^ p * ENNReal.ofReal h ^ (1 - p)
+      ≤ ENNReal.ofReal h ^ (p - 1) * curveAction p γ (a + k * h) (a + (k + 1) * h) *
+          ENNReal.ofReal h ^ (1 - p) := by
+        gcongr
+        rw [← hstep]
+        exact hγ.edist_rpow_le_mul_curveAction hp (Icc_subset_uIcc (hcell (left_mem_Icc.2 hle)))
+          (Icc_subset_uIcc (hcell (right_mem_Icc.2 hle)))
+    _ = curveAction p γ (a + k * h) (a + (k + 1) * h) := by
+        rw [mul_comm, ← mul_assoc, ← ENNReal.rpow_add _ _ hc0 ENNReal.ofReal_ne_top,
+          sub_add_sub_cancel, sub_self, ENNReal.rpow_zero, one_mul]
 
 /-- The two endpoints of a window `[t, t + h]` starting at `t ∈ Ioc a (b - h)` lie in `[a, b]`. -/
 private lemma mem_uIcc_of_mem_Ioc_sub {h t : ℝ} (hh : 0 ≤ h) (ht : t ∈ Ioc a (b - h)) :
@@ -321,6 +393,52 @@ private lemma _root_.AbsolutelyContinuousOnInterval.sum_edist_rpow_le_mul_curveA
         rw [Measure.restrict_apply_univ, curveAction_def]
         gcongr
 
+/-- **A criterion for absolute continuity.** For `1 < p`, a curve `γ` is absolutely continuous
+on `[a, b]` if, for some finite `C`, every finite disjoint family of intervals in `[a, b]` satisfies
+the Hölder-type bound `(∑ d(γ sᵢ, γ tᵢ)) ^ p ≤ |⋃ (sᵢ, tᵢ]| ^ (p - 1) * C`, as a curve of
+`p`-action at most `C` does. -/
+theorem absolutelyContinuousOnInterval_of_sum_edist_rpow_le (hp : 1 < p) {C : ℝ≥0∞}
+    (hC : C ≠ ∞)
+    (h : ∀ E ∈ AbsolutelyContinuousOnInterval.disjWithin a b,
+      (∑ i ∈ Finset.range E.1, edist (γ (E.2 i).1) (γ (E.2 i).2)) ^ p ≤
+        volume (⋃ i ∈ Finset.range E.1, Ι (E.2 i).1 (E.2 i).2) ^ (p - 1) * C) :
+    AbsolutelyContinuousOnInterval γ a b := by
+  -- The measure of the union of the intervals of a disjoint family in `[a, b]`.
+  let V (E : ℕ × (ℕ → ℝ × ℝ)) : ℝ≥0∞ :=
+    volume.restrict (Ι a b) (⋃ i ∈ Finset.range E.1, Ι (E.2 i).1 (E.2 i).2)
+  have key : ∀ E ∈ AbsolutelyContinuousOnInterval.disjWithin a b,
+      ∑ i ∈ Finset.range E.1, edist (γ (E.2 i).1) (γ (E.2 i).2) ≤ (V E ^ (p - 1) * C) ^ p⁻¹ := by
+    rintro ⟨k, I⟩ hE
+    have hVU : V (k, I) = volume (⋃ i ∈ Finset.range k, Ι (I i).1 (I i).2) :=
+      Measure.restrict_eq_self _
+        (AbsolutelyContinuousOnInterval.biUnion_uIoc_subset_of_mem_disjWithin hE)
+    rw [hVU]
+    exact (ENNReal.le_rpow_inv_iff (by positivity)).2 (h _ hE)
+  -- The bound tends to zero with the total length of the family.
+  have hΦ : Tendsto (fun x : ℝ≥0∞ ↦ (x ^ (p - 1) * C) ^ p⁻¹) (𝓝 0) (𝓝 0) := by
+    have h₁ : Tendsto (fun x : ℝ≥0∞ ↦ x ^ (p - 1) * C) (𝓝 0) (𝓝 0) := by
+      simpa [ENNReal.zero_rpow_of_pos (sub_pos.2 hp)] using
+        ENNReal.Tendsto.mul_const ((ENNReal.continuous_rpow_const (y := p - 1)).tendsto 0)
+          (Or.inr hC)
+    simpa [ENNReal.zero_rpow_of_pos (inv_pos.2 (zero_lt_one.trans hp)), Function.comp_def] using
+      ((ENNReal.continuous_rpow_const (y := p⁻¹)).tendsto 0).comp h₁
+  have hT : Tendsto (fun E ↦ ((V E ^ (p - 1) * C) ^ p⁻¹).toReal)
+      (AbsolutelyContinuousOnInterval.totalLengthFilter ⊓
+        𝓟 (AbsolutelyContinuousOnInterval.disjWithin a b)) (𝓝 0) := by
+    have := (ENNReal.continuousAt_toReal ENNReal.zero_ne_top).tendsto.comp (hΦ.comp
+      (AbsolutelyContinuousOnInterval.tendsto_volume_restrict_totalLengthFilter_disjWithin_nhds_zero
+        a b))
+    rwa [ENNReal.toReal_zero] at this
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ Finset.sum_nonneg fun _ _ ↦ dist_nonneg) ?_ hT
+  filter_upwards [eventually_inf_principal.2 (Eventually.of_forall fun _ hE ↦ hE)] with E hE
+  have hne : (V E ^ (p - 1) * C) ^ p⁻¹ ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg (by positivity) (ENNReal.mul_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by linarith) (ne_top_of_le_ne_top
+        (by simp [Real.volume_uIoc]) (measure_mono (subset_univ _)))) hC)
+  rw [← ENNReal.ofReal_le_iff_le_toReal hne,
+    ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ dist_nonneg]
+  simpa only [← edist_dist] using key E hE
+
 end AbsolutelyContinuous
 
 section LowerSemicontinuous
@@ -338,49 +456,16 @@ theorem absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top (hp : 1 < p)
   obtain ⟨C, hAC, hC⟩ := exists_between (lt_top_iff_ne_top.2 hA)
   have hfreq : ∃ᶠ i in l, curveAction p (γs i) a b < C := frequently_lt_of_liminf_lt
     (by isBoundedDefault) hAC
-  -- The measure of the union of the intervals of a disjoint family in `[a, b]`.
-  let V (E : ℕ × (ℕ → ℝ × ℝ)) : ℝ≥0∞ :=
-    volume.restrict (Ι a b) (⋃ i ∈ Finset.range E.1, Ι (E.2 i).1 (E.2 i).2)
   -- The Hölder estimate on the union of the intervals bounds the distances along `γ`.
-  have key : ∀ E ∈ AbsolutelyContinuousOnInterval.disjWithin a b,
-      ∑ i ∈ Finset.range E.1, edist (γ (E.2 i).1) (γ (E.2 i).2) ≤ (V E ^ (p - 1) * C) ^ p⁻¹ := by
-    rintro ⟨k, I⟩ hE
-    set U := ⋃ i ∈ Finset.range k, Ι (I i).1 (I i).2
-    have hVU : V (k, I) = volume U := Measure.restrict_eq_self _
-      (AbsolutelyContinuousOnInterval.biUnion_uIoc_subset_of_mem_disjWithin hE)
-    have hsum : Tendsto (fun i ↦ (∑ j ∈ Finset.range k, edist (γs i (I j).1) (γs i (I j).2)) ^ p)
-        l (𝓝 ((∑ j ∈ Finset.range k, edist (γ (I j).1) (γ (I j).2)) ^ p)) :=
-      (ENNReal.continuous_rpow_const.tendsto _).comp (tendsto_finsetSum _ fun j hj ↦
-        (hlim _ (hE.1 j hj).1).edist (hlim _ (hE.1 j hj).2))
-    have hle : _ ≤ volume U ^ (p - 1) * C := le_of_tendsto_of_frequently hsum
-      ((hfreq.and_eventually hγs).mono fun i hi ↦
-        (hi.2.sum_edist_rpow_le_mul_curveAction hp.le hE).trans (by gcongr; exact hi.1.le))
-    rw [hVU]
-    exact (ENNReal.le_rpow_inv_iff (by positivity)).2 hle
-  -- The bound tends to zero with the total length of the family.
-  have hΦ : Tendsto (fun x : ℝ≥0∞ ↦ (x ^ (p - 1) * C) ^ p⁻¹) (𝓝 0) (𝓝 0) := by
-    have h₁ : Tendsto (fun x : ℝ≥0∞ ↦ x ^ (p - 1) * C) (𝓝 0) (𝓝 0) := by
-      simpa [ENNReal.zero_rpow_of_pos (sub_pos.2 hp)] using
-        ENNReal.Tendsto.mul_const ((ENNReal.continuous_rpow_const (y := p - 1)).tendsto 0)
-          (Or.inr hC.ne)
-    simpa [ENNReal.zero_rpow_of_pos (inv_pos.2 (zero_lt_one.trans hp)), Function.comp_def] using
-      ((ENNReal.continuous_rpow_const (y := p⁻¹)).tendsto 0).comp h₁
-  have hT : Tendsto (fun E ↦ ((V E ^ (p - 1) * C) ^ p⁻¹).toReal)
-      (AbsolutelyContinuousOnInterval.totalLengthFilter ⊓
-        𝓟 (AbsolutelyContinuousOnInterval.disjWithin a b)) (𝓝 0) := by
-    have := (ENNReal.continuousAt_toReal ENNReal.zero_ne_top).tendsto.comp (hΦ.comp
-      (AbsolutelyContinuousOnInterval.tendsto_volume_restrict_totalLengthFilter_disjWithin_nhds_zero
-        a b))
-    rwa [ENNReal.toReal_zero] at this
-  refine squeeze_zero' (Eventually.of_forall fun _ ↦ Finset.sum_nonneg fun _ _ ↦ dist_nonneg) ?_ hT
-  filter_upwards [eventually_inf_principal.2 (Eventually.of_forall fun _ hE ↦ hE)] with E hE
-  have hne : (V E ^ (p - 1) * C) ^ p⁻¹ ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg (by positivity) (ENNReal.mul_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg (by linarith) (ne_top_of_le_ne_top
-        (by simp [Real.volume_uIoc]) (measure_mono (subset_univ _)))) hC.ne)
-  rw [← ENNReal.ofReal_le_iff_le_toReal hne,
-    ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ dist_nonneg]
-  simpa only [← edist_dist] using key E hE
+  refine absolutelyContinuousOnInterval_of_sum_edist_rpow_le hp hC.ne ?_
+  rintro ⟨k, I⟩ hE
+  have hsum : Tendsto (fun i ↦ (∑ j ∈ Finset.range k, edist (γs i (I j).1) (γs i (I j).2)) ^ p)
+      l (𝓝 ((∑ j ∈ Finset.range k, edist (γ (I j).1) (γ (I j).2)) ^ p)) :=
+    (ENNReal.continuous_rpow_const.tendsto _).comp (tendsto_finsetSum _ fun j hj ↦
+      (hlim _ (hE.1 j hj).1).edist (hlim _ (hE.1 j hj).2))
+  exact le_of_tendsto_of_frequently hsum
+    ((hfreq.and_eventually hγs).mono fun i hi ↦
+      (hi.2.sum_edist_rpow_le_mul_curveAction hp.le hE).trans (by gcongr; exact hi.1.le))
 
 /-- **Lower semicontinuity of the action.** If curves `γs i`, eventually absolutely continuous on
 `[a, b]`, converge pointwise on `[a, b]` along a countably generated filter to a curve `γ`
@@ -441,6 +526,31 @@ theorem curveAction_le_liminf_of_one_lt [l.IsCountablyGenerated] (hp : 1 < p)
     exact le_top
   · exact curveAction_le_liminf hp.le hγs
       (absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top hp hγs hlim hA) hlim
+
+/-- **Closedness of action sublevels in path space.** For `1 < p` and `C ≠ ∞`, the paths in
+`C([a, b], X)` that are absolutely continuous on `[a, b]` with `p`-action at most `C` form a closed
+set for the uniform topology. The bound `C ≠ ∞` is needed: uniform limits of absolutely continuous
+paths need not be absolutely continuous. -/
+theorem isClosed_setOfPred_absolutelyContinuousOnInterval_and_curveAction_le (hab : a ≤ b)
+    (hp : 1 < p) {C : ℝ≥0∞} (hC : C ≠ ∞) :
+    IsClosed {γ : C(Icc a b, X) | AbsolutelyContinuousOnInterval (IccExtend hab γ) a b ∧
+      curveAction p (IccExtend hab γ) a b ≤ C} := by
+  refine isClosed_iff_clusterPt.2 fun γ hγ ↦ ?_
+  set S := {γ : C(Icc a b, X) | AbsolutelyContinuousOnInterval (IccExtend hab γ) a b ∧
+    curveAction p (IccExtend hab γ) a b ≤ C}
+  -- Approach `γ` through paths of the sublevel set.
+  have : (𝓝 γ ⊓ 𝓟 S).NeBot := hγ
+  have hS : ∀ᶠ δ in 𝓝 γ ⊓ 𝓟 S, δ ∈ S := mem_inf_of_right (mem_principal_self S)
+  have hlim (t : ℝ) (_ : t ∈ uIcc a b) : Tendsto (fun δ : C(Icc a b, X) ↦ IccExtend hab δ t)
+      (𝓝 γ ⊓ 𝓟 S) (𝓝 (IccExtend hab γ t)) := by
+    simp only [IccExtend_apply]
+    exact ((continuous_eval_const _).tendsto γ).mono_left inf_le_left
+  have hle : liminf (fun δ : C(Icc a b, X) ↦ curveAction p (IccExtend hab δ) a b)
+      (𝓝 γ ⊓ 𝓟 S) ≤ C :=
+    liminf_le_of_frequently_le' (hS.mono fun _ hδ ↦ hδ.2).frequently
+  have hAC := hS.mono fun _ hδ ↦ hδ.1
+  exact ⟨absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top hp hAC hlim
+    (ne_top_of_le_ne_top hC hle), (curveAction_le_liminf_of_one_lt hp hAC hlim).trans hle⟩
 
 end LowerSemicontinuous
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Semisimple
+public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.Projection.Block
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import TauCeti.Analysis.InnerProductSpace.Sylvester
@@ -83,15 +84,9 @@ theorem mul_norm_starProjection_comp_starProjection_le_norm_sub {A B : E →L[�
   -- Reduce to the separated Sylvester bound. The extensions `A' = A P_U + (c + g) P_{Uᗮ}` and
   -- `B' = B P_W + c P_{Wᗮ}` have quadratic forms bounded below by `c + g` and above by `c` on all
   -- of `E`, and `X = P_W P_U` satisfies `B' X - X A' = P_W (B - A) P_U`.
-  -- `Wᗮ` is invariant under the symmetric operator `B`, so `B` commutes with `P_W`.
-  have hW' : ∀ x ∈ Wᗮ, B x ∈ Wᗮ := fun x hx ↦
-    LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hB (p := W)
-      (fun y hy ↦ hW y hy) hx
-  have hcomm (y : E) : B (W.starProjection y) = W.starProjection (B y) := by
-    have h := (IsIdempotentElem.commute_iff W.isIdempotentElem_starProjection (T := B)).mpr
-      ⟨by rw [range_starProjection]; exact fun y hy ↦ hW y hy,
-        by rw [ker_starProjection]; exact fun y hy ↦ hW' y hy⟩
-    simpa using congr($(h.eq) y).symm
+  -- `W` is invariant under the symmetric operator `B`, so `B` commutes with `P_W`.
+  have hcomm (y : E) : B (W.starProjection y) = W.starProjection (B y) :=
+    (hB.starProjection_apply_comm (fun y hy ↦ hW y hy) y).symm
   -- On `X = P_W P_U`, the Sylvester operator of the extensions `B P_W + c P_{Wᗮ}` and
   -- `A P_U + (c + g) P_{Uᗮ}` is `P_W (B - A) P_U`.
   set A' := A ∘L U.starProjection + ((c + g : ℝ) : 𝕜) • Uᗮ.starProjection

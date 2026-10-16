@@ -200,15 +200,11 @@ theorem range_layerInv :
   -- Restricted to the layer of the kernel `V/V'`, the class has invariant `[U : V] • x = 0`.
   have hres : (L'.subgroupRestriction T.galHom.ker).cohomologyRes (unitsFormation K) 2 y = 0 := by
     refine layerInv_injective K _ ?_
-    rw [layerInv_cohomologyRes, map_zero, hinv, L'.relativeDegree_subgroupRestriction,
-      Subgroup.index_ker, MonoidHom.range_eq_top.2 T.galHom_surjective, Subgroup.card_top,
-      ← NormalLayer.degree_eq_natCard_gal]
+    rw [layerInv_cohomologyRes, map_zero, hinv, T.relativeDegree_subgroupRestriction_ker]
     exact AddSubgroup.torsionBy.nsmul_iff.1 hx
   -- By the inflation-restriction sequence and Hilbert 90, the class is inflated from `V ◁ U`.
-  obtain ⟨z, hz⟩ : y ∈ LinearMap.range (T.cohomologyInfl (unitsFormation K) 2).hom :=
-    (T.range_cohomologyInfl_eq_ker_cohomologyRes (unitsFormation K) 1 fun i hi => by
-      obtain rfl : i = 0 := Nat.lt_one_iff.1 hi
-      exact subsingleton_h1_unitsFormation _).ge hres
+  obtain ⟨z, hz⟩ := T.exists_cohomologyInfl_eq_of_cohomologyRes_eq_zero (unitsFormation K)
+    (subsingleton_h1_unitsFormation _) hres
   exact ⟨z, (layerInv_cohomologyInfl K T z).symm.trans (congrArg (layerInv K L') hz |>.trans hinv)⟩
 
 /-- **Conjugation preserves the invariant**: for `g : G_K`, the conjugate class in the conjugate

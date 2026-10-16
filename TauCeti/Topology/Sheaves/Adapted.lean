@@ -207,7 +207,7 @@ private def pushforwardSquare :
       (inducedMapIso B f).op (Opens.map f.hom).op (inducedFunctor (Subtype.val : B → Opens X)).op :=
   TwoSquare.mk _ _ _ _ (𝟙 _)
 
-private instance : IsIso (pushforwardSquare B f).natTrans := inferInstanceAs (IsIso (𝟙 _))
+private instance : IsIso (pushforwardSquare B f) := inferInstanceAs (IsIso (𝟙 _))
 
 /-- The components of the identity two-square `pushforwardSquare` are identities, read along the
 definitional equality of the two spellings of `f⁻¹(U)` for a member `U` of the preimage of `B`:
@@ -215,7 +215,7 @@ as the preimage of `U`, and as the member of `B` that `U` is read as. `F` maps t
 identities. -/
 private theorem map_pushforwardSquare_natTrans_app
     (b : (InducedCategory (Opens Y) (Subtype.val : (Opens.map f.hom).obj ⁻¹' B → Opens Y))ᵒᵖ) :
-    F.map ((pushforwardSquare B f).natTrans.app b) =
+    F.map ((pushforwardSquare B f).app b) =
       𝟙 (F.obj ((Opens.map f.hom).op.obj ((inducedFunctor _).op.obj b))) :=
   F.map_id _
 
@@ -303,7 +303,7 @@ private instance (W : Opens U) :
 identities. -/
 private theorem map_restrictSquare_natTrans_app
     (b : (InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U))ᵒᵖ) :
-    F.map ((restrictSquare B hf).natTrans.app b) =
+    F.map ((restrictSquare B hf).app b) =
       𝟙 (F.obj (hf.functor.op.obj ((inducedFunctor _).op.obj b))) :=
   F.map_id _
 
