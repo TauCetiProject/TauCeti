@@ -75,7 +75,7 @@ private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
         (e s ^ n) *ᵥ v b j =
           ((P.chainBotCoeff s j + 1).ascFactorial n : ℚ) • v b k := by
   have : Module.IsReflexive ℚ M := .of_isPerfPair P.toLinearMap
-  have : IsAddTorsionFree M := .of_isTorsionFree ℚ M
+  have : HasUniqueDiv M := .of_isTorsionFree ℚ M
   let _i := P.indexNeg
   -- Keep the root index and its coefficient in the induction invariant: the successor step needs
   -- both dependent witnesses, so splitting it off would merely restate the whole invariant.
@@ -148,7 +148,7 @@ private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
         rw [e_mulVec_v_eq_zero s hzero hroot, smul_zero]
 
 private lemma e_mulVec_v_self_eq_zero (s : b.support) : e s *ᵥ v b s = 0 := by
-  have : IsAddTorsionFree M := .of_isTorsionFree ℚ M
+  have : HasUniqueDiv M := .of_isTorsionFree ℚ M
   have hzero : P.root s + P.root s ≠ 0 := by
     intro h
     apply P.ne_zero s

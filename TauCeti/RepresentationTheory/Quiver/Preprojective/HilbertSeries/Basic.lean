@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex
 
 /-!
 # The matrix Hilbert series of a preprojective algebra
@@ -22,7 +22,7 @@ H(t)_{j,i} = ∑_n dim (e_j Π_n e_i) tⁿ        (TauCeti.preprojectiveHilbertS
 ```
 
 Restricting the Koszul complex of the vertex module `S_v` (see
-`TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex`) to degree `m + 2` and cutting it
+`TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex`) to degree `m + 2` and cutting it
 down on the right by `e_i` gives the sequence
 
 ```text
@@ -169,6 +169,24 @@ theorem preprojectiveMk_ofArrow_mul_mem_preprojectiveCorner {n : ℕ} {i j l : S
   · rw [mul_assoc, mul_assoc (preprojectiveMk k Q (ofArrow b)),
       mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner hx, ← mul_assoc, ← map_mul,
       ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
+
+/-- **Distinct graded corners meet only in `0`**: `e_j Π_m e_i` and `e_{j'} Π_n e_{i'}` are disjoint
+unless `m = n`, `i = i'` and `j = j'`. -/
+theorem disjoint_preprojectiveCorner {m n : ℕ} {i i' j j' : Symmetrify Q}
+    (h : m ≠ n ∨ i ≠ i' ∨ j ≠ j') :
+    Disjoint (preprojectiveCorner k Q m i j) (preprojectiveCorner k Q n i' j') := by
+  rw [Submodule.disjoint_def]
+  intro x hx hx'
+  rcases h with hmn | hi | hj
+  · exact Submodule.disjoint_def.1
+      ((isInternal_preprojectiveGrade k Q).submodule_iSupIndep.pairwiseDisjoint hmn) x
+      (mem_preprojectiveCorner_iff.1 hx).1 (mem_preprojectiveCorner_iff.1 hx').1
+  · rw [← mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner hx',
+      ← mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner hx, mul_assoc, ← map_mul,
+      vertexIdempotent_mul_vertexIdempotent_of_ne hi, map_zero, mul_zero]
+  · rw [← preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hx,
+      ← preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hx', ← mul_assoc, ← map_mul,
+      vertexIdempotent_mul_vertexIdempotent_of_ne hj, map_zero, zero_mul]
 
 end Corner
 
@@ -629,6 +647,36 @@ theorem mul_preprojectiveHilbertSeries_eq_one_iff :
     · exact (hdeg m v i).2 fun y hy => h v y (by
         rw [doubledVertexIdempotent_def]
         exact preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hy)
+
+/-- **The Koszul defect is nonnegative.** Let `A` be the arrow-count matrix of the doubled quiver,
+`A_{v,w} = #(w ⟶ v)`, and `H` the matrix Hilbert series of `Π`. Every coefficient of every entry of
+`((1 + X²) I - X A) H` is at least the corresponding coefficient of the identity matrix. Indeed the
+two agree in degrees `0` and `1`, and in degree `m + 2` their difference is the dimension of the
+space `K_m(i, v)` of `y ∈ e_v Π_m e_i` killed by the reverse `b*` of every arrow `b` into `v`. -/
+theorem coeff_one_le_coeff_mul_preprojectiveHilbertSeries (n : ℕ) (v i : Q) :
+    coeff n ((1 : Matrix Q Q ℤ⟦X⟧) v i) ≤
+      coeff n (((((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix Q Q ℤ⟦X⟧) -
+        (X : ℤ⟦X⟧) • Matrix.of fun v w : Q =>
+          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧)) *
+        preprojectiveHilbertSeries k Q) v i) := by
+  obtain _ | _ | m := n
+  · rw [coeff_zero_mul_preprojectiveHilbertSeries, Matrix.one_apply]
+    split_ifs <;> simp
+  · rw [coeff_one_mul_preprojectiveHilbertSeries, Matrix.one_apply]
+    split_ifs <;> simp [coeff_one]
+  · have h0 : coeff (m + 2) ((1 : Matrix Q Q ℤ⟦X⟧) v i) = 0 := by
+      rw [Matrix.one_apply]
+      split_ifs <;> simp [coeff_one]
+    rw [h0, coeff_add_two_mul_preprojectiveHilbertSeries, sub_nonneg, Nat.cast_le,
+      finrank_preprojectiveCorner_add_two_add_finrank_preprojectiveCorner]
+    -- The vertices of the doubled quiver are those of `Q`.
+    rw [Fintype.sum_equiv (Equiv.ofBijective _ symmetrify_of_obj_bijective)
+      (fun w : Q => Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
+        Module.finrank k (preprojectiveCorner k Q (m + 1) (Symmetrify.of.obj i)
+          (Symmetrify.of.obj w)))
+      (fun w : Symmetrify Q => Fintype.card (w ⟶ Symmetrify.of.obj v) *
+        Module.finrank k (preprojectiveCorner k Q (m + 1) (Symmetrify.of.obj i) w)) fun _ => rfl]
+    exact Nat.le_add_right _ _
 
 end HilbertSeries
 

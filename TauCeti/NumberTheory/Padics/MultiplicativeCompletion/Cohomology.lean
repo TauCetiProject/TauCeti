@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Reciprocity
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.NumberTheory.ClassFieldTheory.Local.CohomologicalDimension.Strict
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Sylow

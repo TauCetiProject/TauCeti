@@ -202,7 +202,7 @@ theorem character_pow_eq_character_of_coprime (X : FDRep ℚ G) {g : G} {n j : �
     X.character (g ^ j) = X.character g := by
   let K := AlgebraicClosure ℚ
   let Y : FDRep K G := FDRep.of (Representation.baseChange K X.ρ)
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   obtain ⟨σ, hσ⟩ := hζ.exists_algEquiv_apply_eq_pow_of_coprime hj
   have hmap : σ (Y.character g) = Y.character (g ^ j) :=
     Representation.map_character_eq_character_pow_of_isPrimitiveRoot Y.ρ hζ

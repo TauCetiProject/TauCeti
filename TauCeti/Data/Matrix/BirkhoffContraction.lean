@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Fintype.Lattice
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
 
 /-!
@@ -42,6 +43,9 @@ iteration) a contraction for Hilbert's projective metric.
   for proportional positive vectors.
 * `TauCeti.hilbertProjectiveDist_smul_left`, `TauCeti.hilbertProjectiveDist_mul_left` and
   `TauCeti.hilbertProjectiveDist_inv`: invariance under rescaling, diagonal scaling and inversion.
+* `Matrix.projectiveDiameter_le_two_mul_log_div` and `Matrix.tanh_projectiveDiameter_div_four_le`:
+  if the entries of `K` lie between `m > 0` and `M`, then `Δ(K) ≤ 2 * log (M / m)` and
+  `tanh (Δ(K) / 4) ≤ (M - m) / (M + m)`.
 * `Matrix.hilbertProjectiveDist_mulVec_le_projectiveDiameter`: the images of nonnegative vectors
   under a positive matrix lie within its projective diameter of each other.
 * `Matrix.hilbertProjectiveDist_mulVec_le`: **Birkhoff's contraction theorem**,
@@ -253,6 +257,42 @@ theorem projectiveDiameter_le {K : Matrix ι κ ℝ} {C : ℝ}
     (h : ∀ i i' j j', log (K i j * K i' j' / (K i j' * K i' j)) ≤ C) (hC : 0 ≤ C) :
     K.projectiveDiameter ≤ C :=
   Real.iSup_le (fun j ↦ Real.iSup_le (fun j' ↦ hilbertProjectiveDist_le (h · · j j') hC) hC) hC
+
+omit [Finite ι] [Finite κ] in
+/-- The projective diameter of a matrix whose entries lie between `m > 0` and `M` is at most
+`2 * log (M / m)`. -/
+theorem projectiveDiameter_le_two_mul_log_div {K : Matrix ι κ ℝ} {m M : ℝ} (hm : 0 < m)
+    (hmM : m ≤ M) (hmK : ∀ i j, m ≤ K i j) (hKM : ∀ i j, K i j ≤ M) :
+    K.projectiveDiameter ≤ 2 * log (M / m) := by
+  have hM : 0 < M := hm.trans_le hmM
+  have hK : ∀ i j, 0 < K i j := fun i j ↦ hm.trans_le (hmK i j)
+  refine projectiveDiameter_le (fun i i' j j' ↦ ?_)
+    (mul_nonneg zero_le_two (log_nonneg ((one_le_div hm).2 hmM)))
+  rw [two_mul, ← log_mul (div_pos hM hm).ne' (div_pos hM hm).ne', div_mul_div_comm]
+  exact log_le_log (div_pos (mul_pos (hK i j) (hK i' j')) (mul_pos (hK i j') (hK i' j)))
+    (div_le_div₀ (mul_pos hM hM).le (mul_le_mul (hKM i j) (hKM i' j') (hK i' j').le hM.le)
+      (mul_pos hm hm) (mul_le_mul (hmK i j') (hmK i' j) hm.le (hK i j').le))
+
+omit [Finite ι] [Finite κ] in
+/-- Birkhoff's contraction factor of a matrix whose entries lie between `m > 0` and `M` is at most
+`(M - m) / (M + m)`. -/
+theorem tanh_projectiveDiameter_div_four_le {K : Matrix ι κ ℝ} {m M : ℝ} (hm : 0 < m)
+    (hmM : m ≤ M) (hmK : ∀ i j, m ≤ K i j) (hKM : ∀ i j, K i j ≤ M) :
+    tanh (K.projectiveDiameter / 4) ≤ (M - m) / (M + m) := by
+  have hM : 0 < M := hm.trans_le hmM
+  -- `tanh (log r / 2) = (r - 1) / (r + 1)`, computed with `s = exp (log r / 2)`, `s * s = r`
+  set s := exp (log (M / m) / 2) with hs_def
+  have hs : s * s = M / m := by rw [hs_def, ← exp_add, add_halves, exp_log (div_pos hM hm)]
+  have hspos : 0 < s := exp_pos _
+  calc tanh (K.projectiveDiameter / 4) ≤ tanh (log (M / m) / 2) :=
+        tanh_strictMono.monotone (by
+          linarith [projectiveDiameter_le_two_mul_log_div hm hmM hmK hKM])
+    _ = (s * s - 1) / (s * s + 1) := by
+        rw [tanh_eq, exp_neg, ← hs_def]
+        field_simp
+    _ = (M - m) / (M + m) := by
+        rw [hs]
+        field_simp
 
 /-- A matrix and its transpose have the same projective diameter: both are the supremum of the
 same logarithmic cross ratios of entries. -/

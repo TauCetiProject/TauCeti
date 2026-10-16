@@ -62,6 +62,7 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
   of `GC⁻`.
 * `TauCeti.OddComponentGridDiagram.bigradedChainMinusPiece`: the homogeneous piece of `GC⁻` in one
   bidegree.
+* `TauCeti.OddComponentGridDiagram.bigradedChainMinusGrading`: the bundled chain bigrading.
 * `TauCeti.OddComponentGridDiagram.alexanderChainMinusPiece` and
   `TauCeti.OddComponentGridDiagram.alexanderChainMinusGrading`: the Alexander-homogeneous pieces of
   `GC⁻` and the internal grading they form.
@@ -514,6 +515,27 @@ theorem isInternal_bigradedChainMinusPiece (R : Type*) [CommRing R] :
   DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
     (G.iSupIndep_bigradedChainMinusPiece R) (G.iSup_bigradedChainMinusPiece_eq_top R)
 
+/-- The internal `(O-Maslov, Alexander)` grading of the unblocked chain module `GC⁻`. -/
+noncomputable def bigradedChainMinusGrading (R : Type*) [CommRing R] :
+    InternalGrading R (GridChainMinus R n) (ℤ × ℤ) :=
+  ⟨G.bigradedChainMinusPiece R, G.isInternal_bigradedChainMinusPiece R⟩
+
+/-- The pieces of the bundled chain grading are the bigraded chain pieces. -/
+@[simp]
+theorem bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ) :
+    (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g := by
+  rw [bigradedChainMinusGrading]
+
+/-- The unblocked grid differential is homogeneous of bidegree `(-1, 0)`. -/
+theorem isHomogeneous_unblockedDifferential_bigradedChainMinusGrading
+    (R : Type*) [CommRing R] :
+    LinearMap.IsHomogeneous (G.1.unblockedDifferential R)
+      (G.bigradedChainMinusGrading R).piece (G.bigradedChainMinusGrading R).piece (-(1, 0)) := by
+  rw [LinearMap.isHomogeneous_def]
+  intro g c hc
+  simp only [bigradedChainMinusGrading] at hc ⊢
+  simpa only [sub_eq_add_neg] using G.unblockedDifferential_mem_bigradedChainMinusPiece hc
+
 /-! ### The Alexander grading of `GC⁻` -/
 
 /-- The Alexander-homogeneous piece of the unblocked grid chain module `GC⁻` in degree `a`: the
@@ -570,7 +592,7 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
   intro c hc hc'
   have hcompl : c ∈ G.bigradedChainMinusSupported R {g | g.2 ≠ a} :=
     iSup₂_le (fun b hb ↦ G.bigradedChainMinusSupported_mono
-      fun g (hg : g.2 = b) ↦ by simpa [hg] using hb) hc'
+      (S := {g | g.2 = b}) (T := {g | g.2 ≠ a}) fun g (hg : g.2 = b) ↦ by simpa [hg] using hb) hc'
   refine Finsupp.ext fun z ↦ ?_
   rw [Finsupp.zero_apply, ← MvPolynomial.support_eq_empty, Finset.eq_empty_iff_forall_notMem]
   exact fun e he ↦ hcompl z e he (hc z e he)

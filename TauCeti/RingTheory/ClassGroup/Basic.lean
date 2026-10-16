@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # Complements on the ideal class group
@@ -28,6 +28,8 @@ trivial class, and the class `[v]` of a height one prime.
 * `ClassGroup.mk_toPrincipalIdeal`: a principal fractional ideal has trivial class. This is the
   `simp` form of `ClassGroup.mk_eq_one_iff` for the one witness that arises in practice, and it
   holds over any domain.
+* `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
+  same class, over any domain and any choice of fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk0`: the defining formula for `[v]`, as
   `ClassGroup.mk0` of `v.asIdeal`. This needs no fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk`: `[v]` is the class of `v.asIdeal` seen
@@ -41,7 +43,7 @@ consumers of these do not.
 
 Split out of material adapted from Michael Stoll's elliptic-curves formalisation
 (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/FractionalIdeal.lean`
-at the roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
+at revision `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
 convention for adapted material, the upstream authorship is credited here rather than in the
 copyright header.
 -/
@@ -68,6 +70,26 @@ lemma ClassGroup.mk_toPrincipalIdeal {R : Type*} [CommRing R] [IsDomain R] {K : 
     [Algebra R K] [IsFractionRing R K] (x : Kˣ) :
     ClassGroup.mk K (toPrincipalIdeal R K x) = 1 :=
   ClassGroup.mk_eq_one_iff_exists.mpr ⟨x, rfl⟩
+
+-- Extracted from the point-to-class surjectivity argument, adapted from Chris Birkbeck's
+-- AINTLIB (`github.com/CBirkbeck/AINTLIB`), `HasseWeil/Pic0/ToClassSurjective.lean`
+-- (`dev/hasse-weil @ 513e83879e2f`, Apache-2.0).
+/-- Replacing an invertible fractional ideal by its integral numerator does not change its ideal
+class. -/
+@[simp]
+theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Field K]
+    [Algebra R K] [IsFractionRing R K] (I : (FractionalIdeal R⁰ K)ˣ) :
+    let hnum : IsUnit (I.1.num : FractionalIdeal R⁰ K) :=
+      FractionalIdeal.isUnit_num_iff.mpr I.isUnit
+    ClassGroup.mk K hnum.unit = ClassGroup.mk K I := by
+  dsimp only
+  let u : Kˣ := (IsLocalization.map_units K I.1.den).unit
+  have hnum : (FractionalIdeal.isUnit_num_iff.mpr I.isUnit).unit =
+      toPrincipalIdeal R K u * I := by
+    apply Units.ext
+    simp only [IsUnit.unit_spec, Units.val_mul, coe_toPrincipalIdeal, u]
+    exact (FractionalIdeal.den_mul_self_eq_num' R⁰ K I.1).symm
+  rw [hnum, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul]
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 

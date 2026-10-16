@@ -1,0 +1,195 @@
+name: Warm official dependencies
+run-name: warm dependencies pr=${{ inputs.pr || github.event.pull_request.number || 'main' }} cold=${{ inputs.cold || false }} capacity=${{ inputs.capacity || false }}
+
+# This main-defined producer runs no TauCeti source or candidate scripts. It warms
+# only official Lean releases and Mathlib's compressed download store, before a
+# candidate's full compilation. No Lake/R2 publication secret is available here.
+on:
+  push:
+    branches: [main]
+    paths: [lean-toolchain, lake-manifest.json, .github/workflows/warm-dependencies.yml, .github/actions/restore-lean-toolchain/**, scripts/toolchain_snapshot.py, scripts/prepare_dependency_warm.py]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths: [lean-toolchain, lake-manifest.json]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Optional upstream PR number; pins must pass the existing bump validator
+        type: string
+        default: ''
+      cold:
+        description: Skip snapshots and fetch official dependencies from scratch
+        type: boolean
+        default: false
+      capacity:
+        description: Run three concurrent dependency/sandbox probes on the staging runner shape
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# Keep distinct candidates independent. Never cancel a running cache writer.
+concurrency:
+  group: warm-dependencies-${{ github.event.pull_request.number || inputs.pr || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  warm:
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        replica: ${{ fromJSON(inputs.capacity && '[1,2,3]' || '[1]') }}
+    # Existing provisioned staging shape; ordinary priority leaves bors first.
+    runs-on: [nscloud-ubuntu-24.04-amd64-8x16-with-features, 'namespace-features:container.privileged=true']
+    steps:
+      - name: Checkout immutable trusted tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve immutable pins and validate before any dependency code executes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr || github.event.pull_request.number }}
+          EVENT_HEAD: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$EVENT_HEAD"
+          policy_base=$(gh api repos/TauCetiProject/TauCeti/git/ref/heads/main --jq .object.sha)
+          [[ "$policy_base" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin "$policy_base"
+          if [ -n "$PR" ]; then
+            [[ "$PR" =~ ^[1-9][0-9]*$ ]]
+            metadata=$(gh api "repos/TauCetiProject/TauCeti/pulls/$PR")
+            test "$(jq -r .base.ref <<< "$metadata")" = main
+            test "$(jq -r .base.repo.full_name <<< "$metadata")" = TauCetiProject/TauCeti
+            head=$(jq -r .head.sha <<< "$metadata")
+            [[ "$head" =~ ^[0-9a-f]{40}$ ]]
+            git fetch --no-tags origin "$head"
+          fi
+          python3 scripts/prepare_dependency_warm.py . "$head" warm-input --base "$policy_base"
+          # Lake's ancestor reader gets immutable objects, never candidate worktree files.
+          git clone --no-checkout --shared . warm-git
+          mv warm-git/.git warm-input/project/.git
+          rmdir warm-git
+          git -C warm-input/project update-ref refs/heads/warm "$head"
+          git -C warm-input/project symbolic-ref HEAD refs/heads/warm
+          echo "Warm input: $head; policy base: $policy_base; workflow: ${{ github.workflow_sha }}; replica: ${{ matrix.replica }}"
+
+      - name: Install elan (trusted, pinned + checksum)
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Restore or install the exact official toolchain
+        id: lean
+        uses: ./.github/actions/restore-lean-toolchain
+        with:
+          project-dir: warm-input/project
+          tooling-dir: .
+          cold: ${{ inputs.cold && 'true' || 'false' }}
+
+      - name: Bind the official installation to its producer and pin
+        if: steps.lean.outputs.cache-hit != 'true'
+        env:
+          SNAPSHOT: ${{ steps.lean.outputs.path }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          python3 scripts/toolchain_snapshot.py seal warm-input/project/lean-toolchain \
+            --root "$SNAPSHOT" --revision "$WORKFLOW_SHA" --run-id "$GITHUB_RUN_ID"
+
+      - name: Save the official toolchain before any source compilation
+        if: steps.lean.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.lean.outputs.path }}
+          key: ${{ steps.lean.outputs.key }}
+
+      - name: Restore official Mathlib downloads
+        id: mathlib
+        uses: ./.github/actions/restore-mathlib-ltars
+        with:
+          project-dir: warm-input/project
+          cold: ${{ inputs.cold && 'true' || 'false' }}
+
+      - name: Fetch official Mathlib dependencies and require a complete cache
+        env:
+          MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd warm-input/project
+          if ! lake exe cache get 2>&1 | tee "$RUNNER_TEMP/mathlib-cache.log"; then
+            lake exe cache get! 2>&1 | tee "$RUNNER_TEMP/mathlib-cache.log"
+          fi
+          ! grep -qF 'some files were not found in the cache' "$RUNNER_TEMP/mathlib-cache.log"
+          lake exe cache clean
+
+      - name: Save only official compressed downloads
+        if: steps.mathlib.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.mathlib.outputs.cache-dir }}/*.ltar
+          key: ${{ steps.mathlib.outputs.cache-primary-key }}
+
+      - name: Check eligible parent cache availability (read only)
+        env:
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+          LAKE_CACHE_MAX_REVS: '1000'
+          LAKE_CACHE_DIR: ${{ github.workspace }}/warm-input/project/.lake/cache
+        run: |
+          if [ -n "$PUBLIC_ARTIFACT_ENDPOINT" ] && [ -n "$PUBLIC_REVISION_ENDPOINT" ]; then
+            bash scripts/lake-cache-get.sh warm-input/project
+          fi
+
+      - name: Install the staging sandbox binary and probe the cache boundary
+        env:
+          BWRAP_VER: 0.9.0-1build1
+          BWRAP_DEB_SHA256: dde30d1f24da50446d647ed504ec8dc5a714f171974d054c70a589b48ba38b48
+          BWRAP_SHA256: 3e33f8255e1411ada346db27028c25ef5ba4fa3327754a2321ea4c8732a3bc10
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${BWRAP_VER}_amd64.deb" -o bwrap.deb
+          echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -
+          sudo dpkg -i bwrap.deb >/dev/null
+          echo "${BWRAP_SHA256}  /usr/bin/bwrap" | sha256sum -c -
+          rm -f bwrap.deb
+          # The same privileged Namespace job container used by staging normally has
+          # no host AppArmor restriction. Grant only bwrap userns if it does.
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = 1 ]; then
+            printf '%s\n' 'abi <abi/4.0>,' 'include <tunables/global>' \
+              'profile bwrap /usr/bin/bwrap flags=(unconfined) {' '  userns,' '}' \
+              | sudo tee /etc/apparmor.d/bwrap >/dev/null
+            sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          fi
+          bash scripts/probe_dependency_sandbox.sh
+
+      - name: Record capacity probe
+        if: inputs.capacity
+        run: |
+          # Hold all three dependency consumers briefly to measure overlapping availability.
+          # This requests no bors dispatch, build status, approval, merge or credentials.
+          date -u +'%Y-%m-%dT%H:%M:%SZ'
+          nproc
+          free -m
+          sleep 60
+          date -u +'%Y-%m-%dT%H:%M:%SZ'

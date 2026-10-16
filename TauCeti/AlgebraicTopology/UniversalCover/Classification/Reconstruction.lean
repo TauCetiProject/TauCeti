@@ -111,7 +111,7 @@ private theorem fiberEquivOrbitAux_apply_monodromy_basepoint (a : A)
     (g : FundamentalGroup X x0) :
     (fiberEquivOrbitAux x0 a
         ((isCoveringMap_subgroupQuotientProj x0
-          (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy g
+          (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy g.toPath
           (SubgroupQuotient.basepointFiber x0
             (MulAction.stabilizer (FundamentalGroup X x0) a))) : A) =
       g • a := by
@@ -131,7 +131,7 @@ private theorem fiberEquivOrbitAux_apply_monodromy (a : A) (g : FundamentalGroup
     (e : subgroupQuotientProj x0 (MulAction.stabilizer (FundamentalGroup X x0) a) ⁻¹' {x0}) :
     fiberEquivOrbitAux x0 a
         ((isCoveringMap_subgroupQuotientProj x0
-          (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy g e) =
+          (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy g.toPath e) =
       g • fiberEquivOrbitAux x0 a e := by
   -- the quotient is path connected, so every point of the fibre is a monodromy translate of the
   -- distinguished point,
@@ -141,13 +141,13 @@ private theorem fiberEquivOrbitAux_apply_monodromy (a : A) (g : FundamentalGroup
   -- so the iterated translate is the translate by a product, fundamental-group multiplication
   -- reversing path concatenation,
   have hmul : (isCoveringMap_subgroupQuotientProj x0
-        (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy g
+        (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy g.toPath
       ((isCoveringMap_subgroupQuotientProj x0
-        (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy d
+        (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy d.toPath
         (SubgroupQuotient.basepointFiber x0
           (MulAction.stabilizer (FundamentalGroup X x0) a))) =
       (isCoveringMap_subgroupQuotientProj x0
-        (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy (g * d)
+        (MulAction.stabilizer (FundamentalGroup X x0) a)).monodromy (g * d).toPath
         (SubgroupQuotient.basepointFiber x0
           (MulAction.stabilizer (FundamentalGroup X x0) a)) := by
     rw [FundamentalGroup.mul_def, IsCoveringMap.monodromy_trans_apply]
@@ -191,7 +191,7 @@ given action of the fundamental group on the orbit of `a`. -/
 theorem stabilizerCoverFiberEquivOrbit_apply_monodromy (a : A) (g : FundamentalGroup X x0)
     (e : ⇑(stabilizerCover x0 a).proj ⁻¹' {x0}) :
     stabilizerCoverFiberEquivOrbit x0 a
-        ((stabilizerCover x0 a).isCoveringMap_proj.monodromy g e) =
+        ((stabilizerCover x0 a).isCoveringMap_proj.monodromy g.toPath e) =
       g • stabilizerCoverFiberEquivOrbit x0 a e := by
   -- the reconstructed cover is by definition the subgroup cover of the stabilizer, so it suffices
   -- to prove the statement there, where the fibre transport lemma applies
@@ -200,7 +200,7 @@ theorem stabilizerCoverFiberEquivOrbit_apply_monodromy (a : A) (g : FundamentalG
       fiberEquivOrbitAux x0 a (subgroupCoverFiberEquivSubgroupQuotient x0
           (MulAction.stabilizer (FundamentalGroup X x0) a)
           ((subgroupCover x0 (MulAction.stabilizer
-            (FundamentalGroup X x0) a)).isCoveringMap_proj.monodromy g e')) =
+            (FundamentalGroup X x0) a)).isCoveringMap_proj.monodromy g.toPath e')) =
         g • fiberEquivOrbitAux x0 a (subgroupCoverFiberEquivSubgroupQuotient x0
           (MulAction.stabilizer (FundamentalGroup X x0) a) e') := by
     rw [subgroupCoverFiberEquivSubgroupQuotient_apply_monodromy]
@@ -236,7 +236,7 @@ theorem transitiveActionFiberEquiv_apply_monodromy
     [MulAction.IsPretransitive (FundamentalGroup X x0) A] (a : A) (g : FundamentalGroup X x0)
     (e : ⇑(stabilizerCover x0 a).proj ⁻¹' {x0}) :
     transitiveActionFiberEquiv x0 a
-        ((stabilizerCover x0 a).isCoveringMap_proj.monodromy g e) =
+        ((stabilizerCover x0 a).isCoveringMap_proj.monodromy g.toPath e) =
       g • transitiveActionFiberEquiv x0 a e := by
   simp only [transitiveActionFiberEquiv, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply]
   exact (congrArg Subtype.val (stabilizerCoverFiberEquivOrbit_apply_monodromy x0 a g e)).trans

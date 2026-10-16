@@ -7,6 +7,10 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.Order.Compact
+public import Mathlib.Analysis.Calculus.Deriv.Prod
+public import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Planar cells between continuous graphs
@@ -15,10 +19,13 @@ The vertical region between two graphs includes both graphs and the two endpoint
 horizontal region swaps the two coordinates. Continuous graphs on the base interval suffice for
 compactness and a null frontier; no differentiability or absolute continuity is required.
 
-Degenerate fibers and empty fibers are allowed by the geometric API.
+Degenerate fibers and empty fibers are allowed by the geometric API. The coordinate API
+selects either cell direction and its graph parametrization.
 -/
 
 public section
+
+noncomputable section
 
 open MeasureTheory Set
 open scoped Topology
@@ -32,6 +39,102 @@ def verticalRegion (a b : ℝ) (lower upper : ℝ → ℝ) : Set ℂ :=
 /-- A closed horizontal region between two real graphs over `[a,b]`. -/
 def horizontalRegion (a b : ℝ) (lower upper : ℝ → ℝ) : Set ℂ :=
   {z | z.im ∈ Icc a b ∧ z.re ∈ Icc (lower z.im) (upper z.im)}
+
+/-- The coordinate used by a directional Green identity. -/
+inductive Coordinate
+  | re
+  | im
+
+namespace Coordinate
+
+/-- The sign of the ordered base and fiber coordinates relative to the positive plane. -/
+def orientation : Coordinate → ℤ
+  | .re => 1
+  | .im => -1
+
+@[simp]
+theorem orientation_re : Coordinate.re.orientation = 1 := (rfl)
+
+@[simp]
+theorem orientation_im : Coordinate.im.orientation = -1 := (rfl)
+
+/-- The real linear coordinate projection. -/
+def proj : Coordinate → ℂ →L[ℝ] ℝ
+  | re => Complex.reCLM
+  | im => Complex.imCLM
+
+/-- A graph parametrized by the chosen coordinate. -/
+def graph (d : Coordinate) (g : ℝ → ℝ) : ℝ → ℂ :=
+  match d with
+  | re => fun t ↦ ⟨t, g t⟩
+  | im => fun t ↦ ⟨g t, t⟩
+
+@[simp]
+theorem proj_re : Coordinate.re.proj = Complex.reCLM := (rfl)
+
+@[simp]
+theorem proj_im : Coordinate.im.proj = Complex.imCLM := (rfl)
+
+@[simp]
+theorem graph_re_apply (g : ℝ → ℝ) (t : ℝ) : Coordinate.re.graph g t = ⟨t, g t⟩ := (rfl)
+
+@[simp]
+theorem graph_im_apply (g : ℝ → ℝ) (t : ℝ) : Coordinate.im.graph g t = ⟨g t, t⟩ := (rfl)
+
+@[simp]
+theorem proj_graph (d : Coordinate) (g : ℝ → ℝ) (t : ℝ) : d.proj (d.graph g t) = t := by
+  cases d <;> simp [proj, graph]
+
+/-- Express a coordinate graph through the inverse real-product equivalence. -/
+private theorem graph_eq_comp (d : Coordinate) (g : ℝ → ℝ) :
+    d.graph g = Complex.equivRealProdCLM.symm.toContinuousLinearMap ∘
+      (match d with | re => fun t ↦ (t, g t) | im => fun t ↦ (g t, t)) := by
+  cases d <;> rfl
+
+/-- Continuity of a graph in either coordinate. -/
+theorem continuousOn_graph (d : Coordinate) {g : ℝ → ℝ} {s : Set ℝ}
+    (hg : ContinuousOn g s) : ContinuousOn (d.graph g) s := by
+  rw [graph_eq_comp]
+  cases d
+  · exact Complex.equivRealProdCLM.symm.toContinuousLinearMap.continuous.comp_continuousOn
+      (continuousOn_id.prodMk hg)
+  · exact Complex.equivRealProdCLM.symm.toContinuousLinearMap.continuous.comp_continuousOn
+      (hg.prodMk continuousOn_id)
+
+/-- A graph is differentiable at every differentiability point of its graph function. -/
+theorem differentiableAt_graph (d : Coordinate) {g : ℝ → ℝ} {t : ℝ}
+    (hg : DifferentiableAt ℝ g t) : DifferentiableAt ℝ (d.graph g) t := by
+  rw [graph_eq_comp]
+  cases d
+  · exact (Complex.equivRealProdCLM.symm.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t
+      ((hasDerivAt_id t).prodMk hg.hasDerivAt)).differentiableAt
+  · exact (Complex.equivRealProdCLM.symm.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t
+      (hg.hasDerivAt.prodMk (hasDerivAt_id t))).differentiableAt
+
+/-- The planar region between two graphs in either base-coordinate direction. -/
+def region (d : Coordinate) (a b : ℝ) (lower upper : ℝ → ℝ) : Set ℂ :=
+  match d with
+  | .re => verticalRegion a b lower upper
+  | .im => horizontalRegion a b lower upper
+
+@[simp] theorem region_re (a b : ℝ) (lower upper : ℝ → ℝ) :
+    Coordinate.re.region a b lower upper = verticalRegion a b lower upper := by rfl
+
+@[simp] theorem region_im (a b : ℝ) (lower upper : ℝ → ℝ) :
+    Coordinate.im.region a b lower upper = horizontalRegion a b lower upper := by rfl
+
+/-- A coordinate graph composed with a differentiable parameter is differentiable when its
+coordinate lies in the base interval and avoids the exceptional levels and endpoints. -/
+theorem differentiableAt_graph_comp (d : Coordinate) {g θ : ℝ → ℝ} {a b t : ℝ}
+    {S : Set ℝ} (hg : ∀ x ∈ Ioo a b \ S, DifferentiableAt ℝ g x)
+    (hθ : DifferentiableAt ℝ θ t) (hmem : θ t ∈ Icc a b)
+    (havoid : θ t ∉ S ∪ {a, b}) : DifferentiableAt ℝ (d.graph g ∘ θ) t := by
+  have hi : θ t ∈ Ioo a b := by
+    rw [← Icc_sdiff_both]
+    exact ⟨hmem, fun h ↦ havoid (Or.inr h)⟩
+  exact (d.differentiableAt_graph (hg (θ t) ⟨hi, fun h ↦ havoid (Or.inl h)⟩)).comp t hθ
+
+end Coordinate
 
 variable {a b : ℝ} {lower upper : ℝ → ℝ} {z : ℂ}
 
@@ -68,8 +171,8 @@ theorem verticalRegion_fiber_of_notMem {x : ℝ} (hx : x ∉ Icc a b) :
 theorem isClosed_verticalRegion (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) : IsClosed (verticalRegion a b lower upper) := by
   have hc : IsClosed {z : ℂ | z.re ∈ Icc a b} := isClosed_Icc.preimage Complex.continuous_re
-  have hl' := hl.comp Complex.continuous_re.continuousOn (fun _ hx ↦ hx)
-  have hu' := hu.comp Complex.continuous_re.continuousOn (fun _ hx ↦ hx)
+  have hl' := hl.comp Complex.continuous_re.continuousOn (Set.mapsTo_preimage _ _)
+  have hu' := hu.comp Complex.continuous_re.continuousOn (Set.mapsTo_preimage _ _)
   convert (hc.isClosed_le hl' Complex.continuous_im.continuousOn).inter
     (hc.isClosed_le Complex.continuous_im.continuousOn hu') using 1
   ext z

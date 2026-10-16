@@ -102,7 +102,7 @@ theorem hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub [OpensMeasurableSpace 
   have h1 : Tendsto (fun i => ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u i x ∂μ) l
       (𝓝 (∫ x, lineDeriv ℝ (φ : E → ℝ) x v • w x ∂μ)) :=
     tendsto_integral_smul_of_tendsto_lintegral_enorm_sub hK'
-      (fun x hx => lineDeriv_eq_zero_of_notMem_tsupport φ (fun hm => hx (φ.tsupport_subset hm)) v)
+      (fun x hx => lineDeriv_of_notMem_tsupport (fun hm => hx (φ.tsupport_subset hm)) v)
       (fun i => integrable_lineDeriv_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn φ v)
       (integrable_lineDeriv_smul_of_locallyIntegrableOn hw φ v) hu
   have h2 : Tendsto (fun i => ∫ x, (φ : E → ℝ) x • u' i x ∂μ) l
