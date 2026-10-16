@@ -102,11 +102,13 @@ theorem exists_isOpen_contDiffOn_implicitFunction {u : E₁ × E₂} {f : E₁ �
   let U : Set E₁ := (fun x ↦ (f u, x)) ⁻¹' e.target
   have hU : IsOpen U := e.open_target.preimage (continuous_const.prodMk continuous_id)
   have hue : u ∈ e.source := by
+    -- Restricting `e₀` to `s` replaces its source by `e₀.source ∩ s`.
     change u ∈ e₀.source ∩ s
     refine ⟨?_, hu⟩
     simpa only [e₀, φ, HasStrictFDerivAt.pt_implicitFunctionDataOfProdDomain] using
       φ.hasStrictFDerivAt.mem_toOpenPartialHomeomorph_source
   have huU : u.1 ∈ U := by
+    -- Membership in `U` unfolds to membership of the corresponding slice point in `e.target`.
     change (f u, u.1) ∈ e.target
     simpa only [e, OpenPartialHomeomorph.coe_restrOpen, e₀, φ,
       HasStrictFDerivAt.toOpenPartialHomeomorph_coe, ImplicitFunctionData.prodFun_apply,
