@@ -203,9 +203,7 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
 
 /-- **A homeomorphism onto an open subset of `ℂ` with holomorphic inverse is a holomorphic chart.**
 On a complex curve, an open partial homeomorphism `e : X → ℂ` whose inverse is `C^n` on the target,
-for some `n ≠ 0`, belongs to the maximal `C^n` atlas. The transition from `e` to a chart of `X` is
-then a holomorphic open partial homeomorphism of `ℂ`, so its inverse is holomorphic
-(`TauCeti.OpenPartialHomeomorph.differentiableOn_symm`), hence `C^n` too. -/
+for some `n ≠ 0`, belongs to the maximal `C^n` atlas. -/
 theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : ℕ∞ω} (hn : n ≠ 0)
     [IsManifold 𝓘(ℂ) n X] (e : OpenPartialHomeomorph X ℂ)
     (he : ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n e.symm e.target) : e ∈ maximalAtlas 𝓘(ℂ) n X := by

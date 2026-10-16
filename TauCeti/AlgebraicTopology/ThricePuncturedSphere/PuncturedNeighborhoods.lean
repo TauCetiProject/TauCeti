@@ -39,6 +39,8 @@ punctures: their pairwise disjointness lets the three fillings be performed inde
   neighborhood of each and its coordinate `z ↦ 2 * z`, `z ↦ 2 * (1 - z)` or `z ↦ 2 / z`, valued in
   the punctured unit disc. These index the three neighborhoods uniformly, so that a construction
   over all three punctures is made once.
+* `Puncture.coordInv` and `Puncture.coordInv_coord`: the inverse coordinate on `ℂ` and its
+  compatibility with the puncture coordinate.
 -/
 
 public section
@@ -408,6 +410,34 @@ theorem coe_coord_inf (z : inf.neighborhood) :
     (inf.coord z : ℂ) = 2 / (z : ThricePuncturedSphere) :=
   (congrArg (2 * ·) (coe_puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf z)).trans
     (mul_one_div _ _)
+
+/-- The inverse puncture coordinate on `ℂ`: `w / 2` at `0`, `1 - w / 2` at `1`, and `2 / w`
+at `∞`. -/
+noncomputable def coordInv : Puncture → ℂ → ℂ
+  | .zero, w => w / 2
+  | .one, w => 1 - w / 2
+  | .inf, w => 2 / w
+
+/-- The inverse coordinate at the puncture `0`. -/
+@[simp]
+theorem coordInv_zero : coordInv zero = fun w => w / 2 :=
+  (rfl)
+
+/-- The inverse coordinate at the puncture `1`. -/
+@[simp]
+theorem coordInv_one : coordInv one = fun w => 1 - w / 2 :=
+  (rfl)
+
+/-- The inverse coordinate at the puncture `∞`. -/
+@[simp]
+theorem coordInv_inf : coordInv inf = fun w => 2 / w :=
+  (rfl)
+
+/-- Applying the inverse puncture coordinate to the coordinate of a point recovers its affine
+complex coordinate. -/
+theorem coordInv_coord (q : Puncture) (y : q.neighborhood) :
+    coordInv q (q.coord y) = ((y : ThricePuncturedSphere) : ℂ) := by
+  cases q <;> simp [coordInv]
 
 end Puncture
 

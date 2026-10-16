@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Manifold.Instances.PunctureFilling
 
 import TauCeti.Geometry.Manifold.Complex.Chart
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.Puncture
 
 /-!
 # The complex charts of the filled cover
@@ -73,27 +74,6 @@ open scoped ContDiff Manifold
 /-- The punctured unit disc of `ℂ`, as a subtype. -/
 local notation "𝔻*" => Set.Elem (ball (0 : ℂ) 1 \ {0})
 
-namespace ThricePuncturedSphere.Puncture
-
-/-- The inverse of the standard coordinate of the punctured neighbourhood of a puncture, as a
-function on `ℂ`: `w ↦ w / 2` at `0`, `w ↦ 1 - w / 2` at `1` and `w ↦ 2 / w` at `∞`. -/
-private def coordInv : Puncture → ℂ → ℂ
-  | .zero, w => w / 2
-  | .one, w => 1 - w / 2
-  | .inf, w => 2 / w
-
-private theorem coordInv_coord (q : Puncture) (y : q.neighborhood) :
-    coordInv q (q.coord y) = ((y : ThricePuncturedSphere) : ℂ) := by
-  cases q <;> simp [coordInv]
-
-private theorem differentiableAt_coordInv (q : Puncture) {w : ℂ} (hw : w ≠ 0) :
-    DifferentiableAt ℂ (coordInv q) w := by
-  cases q
-  · exact differentiableAt_id.div_const 2
-  · exact (differentiableAt_id.div_const 2).const_sub 1
-  · exact (differentiableAt_const 2).div differentiableAt_id hw
-
-end ThricePuncturedSphere.Puncture
 
 variable {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphere}
 
