@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Functor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 
 /-!
-# The right dual functor is monoidal
+# The right dual functor is a monoidal equivalence
 
 Mathlib's `CategoryTheory.rightDualFunctor C : C ⥤ (Cᵒᵖ)ᴹᵒᵖ` sends an object `X` of a right rigid
 monoidal category to its right dual `Xᘁ` and a morphism `f` to its right adjoint mate `fᘁ`. Its
@@ -24,6 +24,11 @@ coherence conditions are first proved in `C`, for arbitrary objects with right d
 identities between mates; there the comparisons are mates of identities and every coherence
 morphism is a mate of a coherence morphism (`TauCeti.CategoryTheory.Monoidal.Rigid.Mate`).
 
+In a rigid monoidal category, the right dual functor is also an equivalence of categories. Full
+faithfulness follows because taking a left adjoint mate undoes taking a right adjoint mate, while
+essential surjectivity follows because every object is the right dual of its left dual. Together
+with the strong monoidal structure, this makes the right dual functor a monoidal equivalence.
+
 ## Main declarations
 
 * `TauCeti.rightDualTensorIso_hom_naturality`: naturality of `rightDualTensorIso`;
@@ -33,7 +38,11 @@ morphism is a mate of a coherence morphism (`TauCeti.CategoryTheory.Monoidal.Rig
 * `TauCeti.rightDualFunctorCoreMonoidal` and the instance `TauCeti.rightDualFunctorMonoidal`: the
   strong monoidal structure on `rightDualFunctor C`, with structure morphisms given by
   `TauCeti.rightDualFunctor_ε`, `TauCeti.rightDualFunctor_η`, `TauCeti.rightDualFunctor_μ` and
-  `TauCeti.rightDualFunctor_δ`.
+  `TauCeti.rightDualFunctor_δ`;
+* `TauCeti.rightDualFunctorFullyFaithful`: the explicit full-faithfulness structure whose preimage
+  operation takes left adjoint mates;
+* `TauCeti.rightDualFunctorIsEquivalence`: right duality is an equivalence; together with its
+  `Functor.Monoidal` instance, it is a monoidal equivalence.
 
 ## References
 
@@ -178,5 +187,65 @@ theorem rightDualFunctor_μ (X Y : C) :
 theorem rightDualFunctor_δ (X Y : C) :
     δ (rightDualFunctor C) X Y = (rightDualTensorIso X Y).inv.op.mop :=
   (rfl)
+
+end TauCeti
+
+namespace TauCeti
+
+variable (C : Type u) [Category.{v} C] [MonoidalCategory C]
+
+section RightRigid
+
+variable [RightRigidCategory C]
+
+/-- The right dual functor is fully faithful. Its inverse on each hom-set takes left adjoint
+mates. -/
+def rightDualFunctorFullyFaithful : (rightDualFunctor C).FullyFaithful where
+  preimage {X Y} f := by
+    -- Expose the object formula through the two opposite-category wrappers so the left mate has
+    -- the original objects `X` and `Y` as its endpoints.
+    change mop (op Xᘁ) ⟶ mop (op Yᘁ) at f
+    exact leftAdjointMate f.unmop.unop
+  map_preimage {X Y} f := by
+    -- Expose both the object and morphism formulas before cancelling the wrapper constructors.
+    change mop (op Xᘁ) ⟶ mop (op Yᘁ) at f
+    simp only [rightDualFunctor_map]
+    apply Quiver.Hom.unmop_inj
+    apply Quiver.Hom.unop_inj
+    exact rightAdjointMate_leftAdjointMate f.unmop.unop
+  preimage_map f := leftAdjointMate_rightAdjointMate f
+
+/-- The preimage operation for the full faithfulness of the right dual functor takes left adjoint
+mates. -/
+@[simp]
+theorem rightDualFunctorFullyFaithful_preimage {X Y : C}
+    (f : mop (op Xᘁ) ⟶ mop (op Yᘁ)) :
+    (rightDualFunctorFullyFaithful C).preimage f = leftAdjointMate f.unmop.unop := by
+  rfl
+
+/-- The right dual functor of a right rigid monoidal category is faithful. -/
+instance rightDualFunctorFaithful : (rightDualFunctor C).Faithful :=
+  (rightDualFunctorFullyFaithful C).faithful
+
+/-- The right dual functor of a right rigid monoidal category is full. -/
+instance rightDualFunctorFull : (rightDualFunctor C).Full :=
+  (rightDualFunctorFullyFaithful C).full
+
+end RightRigid
+
+section Rigid
+
+variable [RigidCategory C]
+
+/-- The right dual functor of a rigid monoidal category is an equivalence of categories. -/
+instance rightDualFunctorIsEquivalence : (rightDualFunctor C).IsEquivalence where
+  essSurj :=
+    { mem_essImage := fun X =>
+        ⟨ᘁ(X.unmop.unop),
+          ⟨(mopFunctor (Cᵒᵖ)).mapIso
+            (rightDualIso (RightRigidCategory.rightDual (ᘁ(X.unmop.unop))).exact
+              (LeftRigidCategory.leftDual (X.unmop.unop)).exact).symm.op⟩⟩ }
+
+end Rigid
 
 end TauCeti
