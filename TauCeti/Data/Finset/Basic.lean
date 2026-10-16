@@ -38,8 +38,10 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
-* `Finset.neg_one_pow_card_filter_lt_mul_insert` shows that inserting a new element and deleting an
-  existing element of an ordered finset in either order gives opposite Koszul signs.
+* `Finset.neg_one_pow_card_filter_lt_mul_insert` and
+  `Finset.neg_one_pow_card_filter_lt_mul_erase` show that inserting a new element and deleting an
+  existing element of an ordered finset in either order, or deleting two distinct elements in
+  either order, gives opposite Koszul signs.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -407,6 +409,28 @@ theorem neg_one_pow_card_filter_lt_mul_insert {α R : Type*} [LinearOrder α] [R
     simp only [filter_insert, h.not_gt, ↓reduceIte, filter_erase, ← card_erase_add_one hkc,
       pow_succ]
     simp [← pow_add, add_comm]
+
+/-- **Deleting two distinct elements of an ordered finset in either order gives opposite Koszul
+signs.** -/
+theorem neg_one_pow_card_filter_lt_mul_erase {α R : Type*} [LinearOrder α] [Ring R]
+    {s : Finset α} {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i ≠ j) :
+    (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card =
+      -((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase j | k < i}).card) := by
+  have herase (t : Finset α) : {k ∈ t.erase i | k < i} = {k ∈ t | k < i} := by
+    rw [filter_erase, erase_eq_of_notMem (by simp)]
+  have h := neg_one_pow_card_filter_lt_mul_insert (R := R) (notMem_erase i s)
+    (mem_erase.2 ⟨hij.symm, hj⟩)
+  rw [insert_erase hi, erase_right_comm, herase, herase] at h
+  calc (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card
+    _ = ((-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s | k < j}).card) *
+          ((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card) := by
+        simp only [← pow_add]
+        exact neg_one_pow_congr (by grind)
+    _ = -((-1 : R) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase j | k < i}).card) := by
+        rw [h, neg_mul]
+        congr 1
+        simp only [← pow_add]
+        exact neg_one_pow_congr (by grind)
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/

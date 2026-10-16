@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Group.DenseRange
 
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+
 /-!
 # Open ideals of a Huber ring
 
@@ -47,6 +49,9 @@ the chosen pair of definition.
 * `TauCeti.Huber.PairOfDefinition.exists_forall_mem_idealImage_exists_sum_eq`: if a finite set `T`
   spans an ideal containing a neighbourhood of zero, then a basic neighbourhood of zero
   consists of `T`-combinations whose *coefficients* lie in any prescribed basic neighbourhood.
+* `TauCeti.Huber.PairOfDefinition.isAdic_map_idealOfDefinition`: for compatible rings of
+  definition, a continuous map extending the source ideal of definition to an open ambient ideal
+  makes its extension an ideal of definition in the target ring of definition.
 * `TauCeti.Huber.PairOfDefinition.addSubgroupClosure_pow_mul_mem_nhds`: for any subset `T`
   whose span is a neighbourhood of zero, every `Tᵐ · U` generates a neighbourhood of zero when
   `U` is one.
@@ -333,6 +338,63 @@ theorem addSubgroupClosure_pow_mul_mem_nhds (P : PairOfDefinition A) {T U : Set 
   obtain ⟨w, hw, hwa⟩ := hN a ha
   rw [← hwa]
   exact sum_mem fun t ht ↦ AddSubgroup.subset_closure ⟨t, hFT ht, w t, hr (hw t ht), rfl⟩
+
+section
+
+open Topology
+
+variable {B : Type*} [CommRing B] [TopologicalSpace B]
+  [IsTopologicalRing A] [IsTopologicalRing B]
+
+omit [SeparatelyContinuousAdd A]
+
+omit [IsTopologicalRing A] in
+/-- For compatible rings of definition, a continuous map extending a source ideal of definition
+to an open ambient ideal makes its extension an ideal of definition in the target subring. -/
+theorem isAdic_map_idealOfDefinition (P : PairOfDefinition A) (Q : PairOfDefinition B)
+    (f : A →+* B) (h : ∀ a ∈ P.ringOfDefinition, f a ∈ Q.ringOfDefinition)
+    (hf : Continuous f) (hopen : IsOpen (P.extendedIdealOfDefinition.map f : Set B)) :
+    IsAdic (P.idealOfDefinition.map (f.restrict _ _ h)) := by
+  classical
+  let f₀ := f.restrict _ _ h
+  have hc : Continuous f₀ := (hf.comp continuous_subtype_val).subtype_mk _
+  have hrad := P.isAdic_idealOfDefinition.map_le_radical_of_continuous
+    Q.isAdic_idealOfDefinition hc
+  apply Q.isAdic_idealOfDefinition.isAdic_iff_isOpen_and_exists_pow_le.mpr
+  refine ⟨?_, Ideal.exists_pow_le_of_le_radical_of_fg hrad
+    (P.fg_idealOfDefinition.map f₀)⟩
+  obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
+  let T := G.image (fun a : P.ringOfDefinition ↦ f (a : A))
+  have hT : Ideal.span (T : Set B) = P.extendedIdealOfDefinition.map f := by
+    rw [P.extendedIdealOfDefinition_def, ← hG, Ideal.map_map, Ideal.map_span]
+    simp [T, Finset.coe_image, RingHom.coe_comp]
+  obtain ⟨n, hn⟩ := Q.exists_forall_mem_idealImage_exists_sum_eq T
+    (hT ▸ hopen.mem_nhds (Ideal.zero_mem _)) 0
+  apply (P.idealOfDefinition.map f₀).toAddSubgroup.isOpen_of_mem_nhds
+  apply Filter.mem_of_superset (Q.isAdic_idealOfDefinition.hasBasis_nhds_zero.mem_of_mem
+    (i := n) trivial)
+  intro a ha
+  obtain ⟨w, hw, heq⟩ := hn a ((Q.mem_idealImage n).mpr ⟨a, ha, rfl⟩)
+  have hwQ : ∀ t ∈ T, w t ∈ Q.ringOfDefinition :=
+    fun t ht ↦ Q.idealImage_le_ringOfDefinition 0 (hw t ht)
+  have htQ : ∀ t ∈ T, t ∈ Q.ringOfDefinition := by
+    intro t ht
+    obtain ⟨g, -, rfl⟩ := Finset.mem_image.mp ht
+    exact h g g.2
+  have heq' : ∑ t ∈ T.attach, (⟨t.1, htQ t.1 t.2⟩ : Q.ringOfDefinition) *
+      ⟨w t.1, hwQ t.1 t.2⟩ = a := by
+    apply Subtype.ext
+    simpa using heq
+  rw [← heq']
+  apply sum_mem
+  intro t ht
+  apply Ideal.mul_mem_right
+  obtain ⟨g, hg, hgt⟩ := Finset.mem_image.mp t.2
+  have hgI : g ∈ P.idealOfDefinition := hG ▸ Ideal.subset_span hg
+  convert Ideal.mem_map_of_mem f₀ hgI using 1
+  exact Subtype.ext hgt.symm
+
+end
 
 end PairOfDefinition
 

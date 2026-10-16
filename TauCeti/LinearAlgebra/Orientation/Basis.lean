@@ -17,6 +17,21 @@ basis. Empty index types are included, so both zero-dimensional orientations ret
 public section
 noncomputable section
 
+namespace Module.Basis
+
+variable {R E ι : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup E] [Module R E] [Fintype ι] [DecidableEq ι]
+
+/-- Two bases have opposite orientations exactly when their change-of-basis determinant is
+negative. -/
+theorem orientation_eq_neg_iff_det_neg (b c : Basis ι R E) :
+    b.orientation = -c.orientation ↔ b.det c < 0 := by
+  rw [← c.orientation_ne_iff_eq_neg, ne_eq, b.orientation_eq_iff_det_pos,
+    not_lt, le_iff_lt_or_eq]
+  simp only [(b.isUnit_det c).ne_zero, or_false]
+
+end Module.Basis
+
 namespace Orientation
 
 section CommRing
