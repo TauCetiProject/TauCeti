@@ -31,7 +31,7 @@ structure FiniteColored3Pattern (κ : Type*) where
   /-- The number of labeled vertices. -/
   k : ℕ
   /-- The color of each unordered triple of labels. -/
-  pattern : {s : Finset (Fin k) // s.card = 3} → κ
+  pattern : Set.powersetCard (Fin k) 3 → κ
 
 namespace FiniteColored3Pattern
 
@@ -44,7 +44,7 @@ abbrev const (k : ℕ) (c : κ) : FiniteColored3Pattern κ := ⟨k, fun _ ↦ c�
 theorem k_const (k : ℕ) (c : κ) : (const k c).k = k := (rfl)
 
 @[simp]
-theorem pattern_const (k : ℕ) (c : κ) (s : {s : Finset (Fin k) // s.card = 3}) :
+theorem pattern_const (k : ℕ) (c : κ) (s : Set.powersetCard (Fin k) 3) :
     (const k c).pattern s = c := (rfl)
 
 end FiniteColored3Pattern
@@ -56,20 +56,20 @@ variable {κ V : Type*}
 /-- An injection realizes the pattern if it preserves every triple color. -/
 def IsInducedCopy (H : Colored3Graph κ V) (F : FiniteColored3Pattern κ) (f : Fin F.k ↪ V) :
     Prop :=
-  ∀ s : {s : Finset (Fin F.k) // s.card = 3},
-    H.color ⟨s.val.map f, by simp [s.property]⟩ = F.pattern s
+  ∀ s : Set.powersetCard (Fin F.k) 3,
+    H.color (Set.powersetCard.map 3 f s) = F.pattern s
 
 theorem isInducedCopy_iff (H : Colored3Graph κ V) (F : FiniteColored3Pattern κ)
     (f : Fin F.k ↪ V) :
-    H.IsInducedCopy F f ↔ ∀ s : {s : Finset (Fin F.k) // s.card = 3},
-      H.color ⟨s.val.map f, by simp [s.property]⟩ = F.pattern s := Iff.rfl
+    H.IsInducedCopy F f ↔ ∀ s : Set.powersetCard (Fin F.k) 3,
+      H.color (Set.powersetCard.map 3 f s) = F.pattern s := Iff.rfl
 
 /-- A pattern with fewer than three vertices has no triple constraints. -/
 theorem isInducedCopy_of_lt_three (H : Colored3Graph κ V) (F : FiniteColored3Pattern κ)
     (h : F.k < 3) (f : Fin F.k ↪ V) : H.IsInducedCopy F f := by
   intro s
   have := Finset.card_le_univ s.val
-  simp only [Fintype.card_fin, s.property] at this
+  simp only [Fintype.card_fin, Set.powersetCard.card_eq] at this
   omega
 
 /-- Restricting the host composes the underlying injection. -/
@@ -77,7 +77,7 @@ theorem isInducedCopy_of_lt_three (H : Colored3Graph κ V) (F : FiniteColored3Pa
 theorem isInducedCopy_comap_iff {W : Type*} (H : Colored3Graph κ V)
     (F : FiniteColored3Pattern κ) (f : W ↪ V) (g : Fin F.k ↪ W) :
     (H.comap f).IsInducedCopy F g ↔ H.IsInducedCopy F (g.trans f) := by
-  simp only [isInducedCopy_iff, color_comap, Finset.map_map]
+  simp only [isInducedCopy_iff, color_comap, Set.powersetCard.map, Finset.map_map]
 
 variable [Fintype V]
 

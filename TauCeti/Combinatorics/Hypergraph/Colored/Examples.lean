@@ -21,7 +21,8 @@ open Colored3Graph
 
 -- Reordering the vertices of a triple does not change its color.
 example (H : Colored3Graph Bool (Fin 3)) :
-    H.color ⟨{0, 1, 2}, by decide⟩ = H.color ⟨{2, 1, 0}, by decide⟩ := by
+    H.color (Set.powersetCard.ofCard (s := {0, 1, 2}) (by decide)) =
+      H.color (Set.powersetCard.ofCard (s := {2, 1, 0}) (by decide)) := by
   congr 1
   decide
 
@@ -39,7 +40,7 @@ example : (const false : Colored3Graph Bool (Fin 3)).inducedCopyCount
 example : (const true : Colored3Graph Bool (Fin 3)).inducedCopyCount
     (FiniteColored3Pattern.const 3 false) = 0 := by
   apply inducedCopyCount_const_eq_zero
-  exact ⟨⟨Finset.univ, by decide⟩, by decide⟩
+  exact ⟨Set.powersetCard.ofCard (s := Finset.univ) (by decide), by decide⟩
 
 -- No triples means no color constraints, even for an arbitrary palette and host coloring.
 example {κ : Type*} (H : Colored3Graph κ (Fin 3)) (F : FiniteColored3Pattern κ)

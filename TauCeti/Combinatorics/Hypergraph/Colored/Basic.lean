@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Set.PowersetCard
 
 /-!
 # Totally colored three-uniform hypergraphs
@@ -26,7 +26,7 @@ namespace TauCeti
 @[ext]
 structure Colored3Graph (κ : Type*) (V : Type*) where
   /-- The color of each three-element vertex set. -/
-  color : {s : Finset V // s.card = 3} → κ
+  color : Set.powersetCard V 3 → κ
 
 namespace Colored3Graph
 
@@ -36,28 +36,28 @@ variable {κ V W U : Type*}
 def const (c : κ) : Colored3Graph κ V := ⟨fun _ ↦ c⟩
 
 @[simp]
-theorem color_const (c : κ) (s : {s : Finset V // s.card = 3}) :
+theorem color_const (c : κ) (s : Set.powersetCard V 3) :
     (const c : Colored3Graph κ V).color s = c := (rfl)
 
 /-- Restrict a coloring along an injective vertex map. -/
 def comap (H : Colored3Graph κ V) (f : W ↪ V) : Colored3Graph κ W where
-  color s := H.color ⟨s.val.map f, by simp [s.property]⟩
+  color s := H.color (Set.powersetCard.map 3 f s)
 
 @[simp]
 theorem color_comap (H : Colored3Graph κ V) (f : W ↪ V)
-    (s : {s : Finset W // s.card = 3}) :
-    (H.comap f).color s = H.color ⟨s.val.map f, by simp [s.property]⟩ := (rfl)
+    (s : Set.powersetCard W 3) :
+    (H.comap f).color s = H.color (Set.powersetCard.map 3 f s) := (rfl)
 
 @[simp]
 theorem comap_refl (H : Colored3Graph κ V) : H.comap (Function.Embedding.refl V) = H := by
   ext s
-  simp
+  simp [Set.powersetCard.map]
 
 @[simp]
 theorem comap_trans (H : Colored3Graph κ V) (f : W ↪ V) (g : U ↪ W) :
     (H.comap f).comap g = H.comap (g.trans f) := by
   ext s
-  simp [Finset.map_map]
+  simp [Set.powersetCard.map, Finset.map_map]
 
 @[simp]
 theorem comap_const (c : κ) (f : W ↪ V) : (const c).comap f = const c := by
