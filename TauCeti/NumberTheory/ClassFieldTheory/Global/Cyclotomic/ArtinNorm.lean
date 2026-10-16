@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Archimedean.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Cyclotomic
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Units
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
@@ -47,11 +48,22 @@ finiteness of the support of `w ↦ χ_p(Art_w(x))`: at a place not above `p` wh
 the unramified formula `χ_p(Art_w(x)) = q_w ^ {v_w(x)}`
 (`TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap`) gives `1`.
 
+The same functoriality controls the Artin symbols of local norms. If `L` contains a primitive
+`pⁿ`-th root of unity, every completion `L_w` does, so `χ_p(Art_w(u)) ≡ 1 mod pⁿ` for every
+`u ∈ L_wˣ`; hence `χ_p(Art_v(a)) ≡ 1 mod pⁿ` for every local norm `a` from `K_v ⊗[K] L`, at finite
+and at infinite places alike.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_normUnits_eq_finprod`
   and `abelianizedLocalCyclotomicCharacter_infiniteArtinAt_normUnits_eq_finprod`: the value at a
   place `v` of `K` on the norm is the product of the values at the places `w ∣ v`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm`: norm
+  functoriality of the character of archimedean Artin symbols for one place `w ∣ v`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_mem_unitsPrincipal` and
+  `abelianizedLocalCyclotomicCharacter_infiniteArtinAt_mem_unitsPrincipal`: if `L` contains a
+  primitive `pⁿ`-th root of unity, the character of the Artin symbol of a local norm from
+  `K_v ⊗[K] L` lies in `U^(n) = 1 + pⁿ ℤ_p`.
 * `TauCeti.ClassFieldTheory.hasFiniteMulSupport_abelianizedLocalCyclotomicCharacter_artinMap`:
   for `x ∈ Kˣ`, `χ_p(Art_v(x)) = 1` at all but finitely many finite places `v`.
 * `TauCeti.ClassFieldTheory.finprod_abelianizedLocalCyclotomicCharacter_artinMap_normUnits`
@@ -71,7 +83,7 @@ namespace TauCeti.ClassFieldTheory
 
 open Function IsDedekindDomain NumberField
 open _root_.ValuativeRel
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension NumberField.LiesOver TensorProduct
 
 variable (p : ℕ) [Fact p.Prime]
 variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
@@ -109,6 +121,26 @@ theorem abelianizedLocalCyclotomicCharacter_artinMap_normUnits_eq_finprod
   simp only [Units.coe_prod, Algebra.coe_normUnits, Units.coe_map, MonoidHom.coe_ofClass]
   exact algebraMap_norm_eq_prod_norm L v (x : L)
 
+omit [NumberField L] in
+/-- **The cyclotomic character of archimedean Artin symbols along a local norm**, the
+archimedean analogue of `abelianizedLocalCyclotomicCharacter_artinMap_norm`. For a place `w` of
+`L` over the infinite place `v` of `K` and `x ∈ L_wˣ`, the `p`-adic cyclotomic character of
+`Art_w(x)` is that of `Art_v(N_{L_w/K_v} x)`. -/
+theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm (v : InfinitePlace K)
+    (w : InfinitePlace L) [w.LiesOver v] (x : w.Completionˣ) :
+    abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w x) =
+      abelianizedLocalCyclotomicCharacter p v.Completion
+        (infiniteArtinAt v (Algebra.normUnits v.Completion x)) := by
+  have : CharZero v.Completion :=
+    charZero_of_injective_algebraMap (algebraMap K v.Completion).injective
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (infiniteArtinAt w x)
+  let iota : w.Completion →ₐ[v.Completion] SeparableClosure v.Completion := IsSepClosed.lift
+  have hx : Algebra.normUnits v.Completion x =
+      Units.map (Algebra.norm v.Completion : w.Completion →* v.Completion) x :=
+    Units.ext (by simp)
+  rw [← hτ, abelianizedLocalCyclotomicCharacter_mk, hx, ← infiniteArtinAt_norm w v iota x τ hτ,
+    abelianizedLocalCyclotomicCharacter_mk, localCyclotomicCharacter_absoluteGaloisGroupExtend]
+
 /-- **Norm functoriality at an infinite place.** For `x ∈ Lˣ` and an infinite place `v` of `K`,
 the `p`-adic cyclotomic character of the archimedean Artin symbol of `N_{L/K} x` at `v` is the
 product of those of the archimedean Artin symbols of `x` at the places of `L` above `v`. -/
@@ -125,22 +157,55 @@ theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_normUnits_eq_finprod
       abelianizedLocalCyclotomicCharacter p w.1.Completion
           (infiniteArtinAt w.1 (Units.map (algebraMap L w.1.Completion) x)) =
         abelianizedLocalCyclotomicCharacter p v.Completion
-          (infiniteArtinAt v (Units.map (Algebra.norm v.Completion)
+          (infiniteArtinAt v (Algebra.normUnits v.Completion
             (Units.map (algebraMap L w.1.Completion : L →* w.1.Completion) x))) := by
     have := w.2
-    have : CharZero v.Completion :=
-      charZero_of_injective_algebraMap (algebraMap K v.Completion).injective
-    obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective
-      (infiniteArtinAt w.1 (Units.map (algebraMap L w.1.Completion) x))
-    let iota : w.1.Completion →ₐ[v.Completion] SeparableClosure v.Completion := IsSepClosed.lift
-    rw [← hτ, ← infiniteArtinAt_norm w.1 v iota _ τ hτ, abelianizedLocalCyclotomicCharacter_mk,
-      abelianizedLocalCyclotomicCharacter_mk, localCyclotomicCharacter_absoluteGaloisGroupExtend]
+    exact abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm p v w.1 _
   rw [finprod_eq_prod_of_fintype]
   simp only [h, ← map_prod]
   congr 2
   refine Units.ext ?_
   simp only [Units.coe_prod, Algebra.coe_normUnits, Units.coe_map, MonoidHom.coe_ofClass]
   exact GlobalNumberFields.algebraMap_norm_eq_prod_norm_infiniteCompletion L v (x : L)
+
+/-! ### Local norms from an extension containing roots of unity -/
+
+/-- **Local norms from an extension containing `μ_{pⁿ}`, at a finite place.** If `L` contains a
+primitive `pⁿ`-th root of unity, then for every local norm `a` from `K_v ⊗[K] L` at a finite place
+`v` of `K`, the `p`-adic cyclotomic character of `Art_v(a)` is `≡ 1 mod pⁿ`. -/
+theorem abelianizedLocalCyclotomicCharacter_artinMap_mem_unitsPrincipal {n : ℕ} {ζ : L}
+    (hζ : IsPrimitiveRoot ζ (p ^ n)) (v : HeightOneSpectrum (𝓞 K)) {a : (v.adicCompletion K)ˣ}
+    (ha : a ∈ (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range) :
+    abelianizedLocalCyclotomicCharacter p (v.adicCompletion K)
+        (artinMap (v.adicCompletion K) a) ∈ unitsPrincipal p n := by
+  classical
+  obtain ⟨u, rfl⟩ := (mem_range_normUnits_adicCompletion_iff K L v a).1 ha
+  let _ : Fintype {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
+    Fintype.ofFinite _
+  rw [finprod_eq_prod_of_fintype, map_prod, map_prod]
+  refine Subgroup.prod_mem _ fun w _ ↦ ?_
+  have := w.2
+  rw [← abelianizedLocalCyclotomicCharacter_artinMap_norm (v.adicCompletion K) p (u w)]
+  exact abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal
+    ⟨_, hζ.map_of_injective (algebraMap L (w.1.adicCompletion L)).injective⟩ _
+
+/-- **Local norms from an extension containing `μ_{pⁿ}`, at an infinite place.** If `L` contains a
+primitive `pⁿ`-th root of unity, then for every local norm `a` from `K_v ⊗[K] L` at an infinite
+place `v` of `K`, the `p`-adic cyclotomic character of the archimedean Artin symbol `Art_v(a)` is
+`≡ 1 mod pⁿ`. -/
+theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_mem_unitsPrincipal {n : ℕ} {ζ : L}
+    (hζ : IsPrimitiveRoot ζ (p ^ n)) (v : InfinitePlace K) {a : v.Completionˣ}
+    (ha : a ∈ (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range) :
+    abelianizedLocalCyclotomicCharacter p v.Completion (infiniteArtinAt v a) ∈
+      unitsPrincipal p n := by
+  classical
+  obtain ⟨u, rfl⟩ := (mem_range_normUnits_completion_iff K L v a).1 ha
+  rw [finprod_eq_prod_of_fintype, map_prod, map_prod]
+  refine Subgroup.prod_mem _ fun w _ ↦ ?_
+  have := w.2
+  rw [← abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm p v w.1 (u w)]
+  exact abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal
+    ⟨_, hζ.map_of_injective (algebraMap L w.1.Completion).injective⟩ _
 
 /-! ### Over all places -/
 

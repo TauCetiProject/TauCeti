@@ -374,28 +374,28 @@ private def s1 : K.X (-1) ⟶ K.X (-2) :=
 
 private theorem source_bottom_contract : K.d (-3) (-2) ≫ s2 h = 𝟙 _ := by
   calc
-    _ = h.minusThreeIso.symm.conj (d3 h ≫ (-pQ)) := by
-      simp [Iso.conj_apply, s2, source_d3_eq h, Category.assoc]
-    _ = 𝟙 _ := by rw [bottom_contract, Iso.conj_id]
+    _ = (h.minusThreeIso.symm.conj (End.of (d3 h ≫ (-pQ)))).asHom := by
+      simp [Iso.conj_apply_asHom, s2, source_d3_eq h, Category.assoc]
+    _ = 𝟙 _ := by rw [bottom_contract]; exact congrArg End.asHom (map_one _)
 private theorem source_lower_contract :
     K.d (-2) (-1) ≫ s1 h + s2 h ≫ K.d (-3) (-2) +
       projectionMinusTwo h ≫ inclusionMinusTwo h = 𝟙 _ := by
   calc
-    _ = h.minusTwoIso.symm.conj
+    _ = (h.minusTwoIso.symm.conj (End.of
         ((d2 h ≫ (-biprod.fst ≫ iU) + (-pQ) ≫ d3 h + p2 h ≫ j2 h) :
-          A ⊞ (U ⊞ Q) ⟶ A ⊞ (U ⊞ Q)) := by
-      simp [Iso.conj_apply, s1, s2, projectionMinusTwo, inclusionMinusTwo,
+          A ⊞ (U ⊞ Q) ⟶ A ⊞ (U ⊞ Q)))).asHom := by
+      simp [Iso.conj_apply_asHom, s1, s2, projectionMinusTwo, inclusionMinusTwo,
         source_d3_eq h, source_d2_eq h, Preadditive.comp_add,
         Preadditive.add_comp, Category.assoc]
-    _ = 𝟙 _ := by rw [lower_contract, Iso.conj_id]
+    _ = 𝟙 _ := by rw [lower_contract]; exact congrArg End.asHom (map_one _)
 private theorem source_upper_contract :
     s1 h ≫ K.d (-2) (-1) + projectionMinusOne h ≫ inclusionMinusOne h = 𝟙 _ := by
   calc
-    _ = h.minusOneIso.symm.conj
-        (((-biprod.fst ≫ iU) ≫ d2 h + p1 h ≫ biprod.inr) : U ⊞ B ⟶ U ⊞ B) := by
-      simp [Iso.conj_apply, s1, projectionMinusOne, inclusionMinusOne,
+    _ = (h.minusOneIso.symm.conj (End.of
+        (((-biprod.fst ≫ iU) ≫ d2 h + p1 h ≫ biprod.inr) : U ⊞ B ⟶ U ⊞ B))).asHom := by
+      simp [Iso.conj_apply_asHom, s1, projectionMinusOne, inclusionMinusOne,
         source_d2_eq h, Preadditive.comp_add, Preadditive.add_comp, Category.assoc]
-    _ = 𝟙 _ := by rw [upper_contract, Iso.conj_id]
+    _ = 𝟙 _ := by rw [upper_contract]; exact congrArg End.asHom (map_one _)
 
 private theorem δ_singles :
     δ (-1) 0 (Cochain.single (s2 h) (-1) + Cochain.single (s1 h) (-1)) =

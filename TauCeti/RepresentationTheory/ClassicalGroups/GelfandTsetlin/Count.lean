@@ -44,6 +44,7 @@ its determinant twist `(1, 0, -1)` both carry exactly `8` patterns.
 ## Main definitions
 
 * `TauCeti.interlacingFinset`: the sequences interlacing a given one, as a `Finset`.
+* `TauCeti.interlacingWeights`: the dominant weights interlacing a given one, as a `Finset`.
 
 ## Main results
 
@@ -96,6 +97,22 @@ theorem card_interlacingFinset (l : Fin (n + 1) → ℤ) :
     (interlacingFinset l).card = ∏ i : Fin n, (l i.castSucc + 1 - l i.succ).toNat := by
   rw [interlacingFinset, Pi.card_Icc]
   exact Finset.prod_congr rfl fun i _ => Int.card_Icc _ _
+
+/-- The dominant weights interlacing a dominant weight `l`, as a `Finset`.
+
+A sequence interlacing a weakly decreasing sequence is itself weakly decreasing
+(`TauCeti.Interlaces.antitone`), so these are the members of `TauCeti.interlacingFinset l`, each
+read as a dominant weight.  They index the branching rule for the rational representation `V_l` of
+`GL (n + 1)` restricted along `GL n ↪ GL (n + 1)`. -/
+noncomputable def interlacingWeights (l : DominantWeight (n + 1)) : Finset (DominantWeight n) :=
+  (interlacingFinset l.1).preimage Subtype.val Subtype.val_injective.injOn
+
+/-- The members of `TauCeti.interlacingWeights l` are exactly the dominant weights interlacing
+`l`. -/
+@[simp]
+theorem mem_interlacingWeights {l : DominantWeight (n + 1)} {m : DominantWeight n} :
+    m ∈ interlacingWeights l ↔ Interlaces l.1 m.1 := by
+  rw [interlacingWeights, Finset.mem_preimage, mem_interlacingFinset]
 
 namespace GTPattern
 

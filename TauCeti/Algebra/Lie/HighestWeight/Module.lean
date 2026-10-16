@@ -355,7 +355,7 @@ theorem genWeightSpace_eq_span_singleton_of_isHighestWeightVector_of_lieSpan_eq_
     obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp hm
     rw [lie_add]
     refine add_mem ?_ (Submodule.mem_sup_right
-      (lie_mem_genWeightSpaceSpan_of_mem_negativeNilradical
+      (lie_mem_genWeightSpaceSpan_of_mem_negativeNilradical (S := strictLowerSet b lam)
         (fun _ hgamma _ hchi => add_mem_strictLowerSet hgamma hchi.1) hx hz))
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
     rw [lie_smul]

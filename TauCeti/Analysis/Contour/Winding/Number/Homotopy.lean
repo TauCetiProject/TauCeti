@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Path
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Analysis.Contour.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Curve.Approximation
 import TauCeti.Analysis.Contour.NullHomologous
 import TauCeti.Analysis.Contour.Winding.Proximity
@@ -24,8 +26,6 @@ the resulting smooth paths with proximity invariance of the winding number.
 
 ## Main results
 
-* `windingNumber_eq_two_pi_I_inv_mul_curveIntegral` identifies Tau Ceti's raw-function winding
-  number of a piecewise-`C¹` path with Mathlib's curve integral of the Cauchy-kernel `1`-form.
 * `windingNumber_eq_of_pathHomotopy` proves homotopy invariance without any
   regularity hypothesis on the homotopy.
 * `curveIntegral_inv_sub_smul_id_eq_of_pathHomotopy` is its curve-integral form: such a homotopy
@@ -36,8 +36,8 @@ the resulting smooth paths with proximity invariance of the winding number.
 ## Provenance
 
 The regularization step is `exists_contDiff_eq_endpoints_dist_lt`, which reuses Mathlib's
-`bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of the classical
-winding number is standard complex analysis.
+`bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of the
+classical winding number is standard complex analysis; see L. Ahlfors, *Complex Analysis*, Ch. 4.
 -/
 
 public section
@@ -48,25 +48,6 @@ open scoped unitInterval
 open MeasureTheory Set
 
 namespace TauCeti.Contour
-
-/-- For a piecewise-`C¹` path avoiding `w`, its winding number about `w` is the normalized curve
-integral of the closed `1`-form `z ↦ (z - w)⁻¹ dz`. This is the bridge from Tau Ceti's raw-function
-winding number to Mathlib's path-based curve integral. -/
-theorem windingNumber_eq_two_pi_I_inv_mul_curveIntegral {x y w : ℂ} {p : Path x y}
-    (hp : IsPiecewiseC1On p.extend 0 1) (havoid : ∀ t : Set.Icc (0 : ℝ) 1, p t ≠ w) :
-    windingNumber p.extend 0 1 w =
-      (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
-        ∫ᶜ z in p, (z - w)⁻¹ • ContinuousLinearMap.id ℂ ℂ := by
-  have havoid_extend : ∀ t ∈ Set.uIcc (0 : ℝ) 1, p.extend t ≠ w := by
-    rw [Set.uIcc_of_le zero_le_one]
-    intro t ht
-    rw [Path.extend_apply p ht]
-    exact havoid ⟨t, ht⟩
-  rw [windingNumber_eq_integral_of_avoidance hp.continuousOn havoid_extend
-      (intervalIntegrable_inv_sub_mul_deriv hp.continuousOn havoid_extend
-        hp.intervalIntegrable_deriv),
-    curveIntegral_eq_intervalIntegral_deriv]
-  simp only [smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
 
 /-- A continuous path homotopy avoiding `w` stays a uniformly positive distance from `w`, since
 its domain is the compact unit square. -/
@@ -216,8 +197,10 @@ theorem curveIntegral_inv_sub_smul_id_eq_of_pathHomotopy {x y w : ℂ} {p q : Pa
     mul_ne_zero (mul_ne_zero two_ne_zero (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero))
       Complex.I_ne_zero
   have hwind := windingNumber_eq_of_pathHomotopy φ hp hq fun st => haway _ ⟨st, rfl⟩
-  rw [windingNumber_eq_two_pi_I_inv_mul_curveIntegral hp (fun t ↦ haway _ ⟨(0, t), by simp⟩),
-    windingNumber_eq_two_pi_I_inv_mul_curveIntegral hq (fun t ↦ haway _ ⟨(1, t), by simp⟩)] at hwind
+  rw [hp.absolutelyContinuousOnInterval.windingNumber_eq_two_pi_I_inv_mul_curveIntegral
+      (fun t ↦ haway _ ⟨(0, t), by simp⟩),
+    hq.absolutelyContinuousOnInterval.windingNumber_eq_two_pi_I_inv_mul_curveIntegral
+      (fun t ↦ haway _ ⟨(1, t), by simp⟩)] at hwind
   exact mul_left_cancel₀ (inv_ne_zero hne) hwind
 
 /-- Null-homology in `Ω` is invariant under an arbitrary continuous path homotopy whose image lies

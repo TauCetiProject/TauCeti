@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Universal
+-- Proof-only: the elementary order-two criterion `P + P = 0 ↔ ψ₂(x, y) = 0`, from which the
+-- `addOrderOf` form below is derived.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 -- Proof-only: the two evaluation bridges `ψₙ = Ψₙ` and `Ψₙ ² = ΨSqₙ` on the curve, which turn the
 -- `ψ`-vanishing criterion below into one on `ΨSqₙ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
@@ -118,9 +121,10 @@ is the statement the Nagell–Lutz layer consumes.
 * `WeierstrassCurve.zsmul_eq_zero_of_evalEval_ψ_eq_zero`: **the converse** — a vanishing `ψₙ` at
   a nonsingular point forces `n • P = 0`. Unrestricted in `n`, and so an annihilation statement
   rather than a torsion one: at `n = 0` both sides hold of every point.
-* `WeierstrassCurve.addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero`: those two directions packaged as
-  the characterisation of two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`. Its contrapositive is
-  what discharges the `addOrderOf ≠ 2` guard the Nagell–Lutz theorems carry.
+* `WeierstrassCurve.addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero`: the characterisation of
+  two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`, read off from the doubling formula through
+  `Affine.Point.some_add_self_eq_zero_iff`. Its contrapositive is what discharges the
+  `addOrderOf ≠ 2` guard the Nagell–Lutz theorems carry.
 
 ## Provenance
 
@@ -1140,11 +1144,9 @@ lemma zsmul_fromAffine_eq_zero_iff [DecidableEq F] {E : WeierstrassCurve F}
   rw [zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero, natCast_zsmul]
 
 /-- **Two-torsion is exactly the vanishing of `ψ₂`.** For a nonsingular affine point, having order
-two and `ψ₂` vanishing there are the same condition. Forwards, order two gives `2 • P = 0` and
-`evalEval_ψ_eq_zero_of_zsmul_eq_zero` at `n = 2` reads off the vanishing; backwards,
-`zsmul_eq_zero_of_evalEval_ψ_eq_zero` at `n = 2` gives `2 • P = 0`, so the order divides `2`, and
-a `.some` point is never `0`, which rules out `1`. Both directions cross between `ψ 2` and `ψ₂`
-by `ψ_two`.
+two and `ψ₂` vanishing there are the same condition. This is
+`Affine.Point.some_add_self_eq_zero_iff` (`P + P = 0 ↔ ψ₂(x, y) = 0`, from the doubling formula)
+read through `addOrderOf`: a `.some` point is never `0`, so `2 • P = 0` means order exactly `2`.
 
 Stated over the point's own field, with no arithmetic on the coefficients: consumers working over
 a fraction field transport their hypothesis across `algebraMap` at the call site.
@@ -1155,21 +1157,9 @@ directions are wanted — the `≠`-form below is what discharges Nagell–Lutz'
 theorem addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
     (hns : W.toAffine.Nonsingular x y) :
     addOrderOf (Affine.Point.some _ _ hns) = 2 ↔ W.ψ₂.evalEval x y = 0 := by
-  constructor
-  · intro h2
-    have h2P : (2 : ℕ) • Affine.Point.some _ _ hns = 0 := by
-      rw [← h2]; exact addOrderOf_nsmul_eq_zero _
-    have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns 2 (zsmul_fromAffine_eq_zero_iff.mpr h2P)
-    rwa [WeierstrassCurve.ψ_two] at hψ
-  · intro hψ
-    have h2P : (2 : ℕ) • Affine.Point.some _ _ hns = 0 :=
-      zsmul_fromAffine_eq_zero_iff.mp
-        (zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns 2 (by rwa [WeierstrassCurve.ψ_two]))
-    have hne_one : addOrderOf (Affine.Point.some _ _ hns) ≠ 1 := fun h ↦
-      Affine.Point.some_ne_zero hns (AddMonoid.addOrderOf_eq_one_iff.mp h)
-    rcases (Nat.dvd_prime Nat.prime_two).mp (addOrderOf_dvd_iff_nsmul_eq_zero.mpr h2P) with h | h
-    · exact absurd h hne_one
-    · exact h
+  rw [ψ₂, ← Affine.Point.some_add_self_eq_zero_iff hns, ← two_nsmul]
+  exact ⟨fun h ↦ h ▸ addOrderOf_nsmul_eq_zero _,
+    fun h ↦ addOrderOf_eq_prime h (Affine.Point.some_ne_zero hns)⟩
 
 
 end WeierstrassCurve

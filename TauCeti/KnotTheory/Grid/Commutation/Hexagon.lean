@@ -232,6 +232,41 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridHexagonBetween a s s' x y) (G 
     rw [G.mem_XSet] at hp
     exact h p.1 hmem.1.1 hmem.1.2 (hp ▸ hmem.2)
 
+/-- Transfer a hexagon to new endpoint states when its underlying toroidal rectangle is
+unchanged. The turn side and both intersection rows are preserved. -/
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridHexagonBetween a s s' x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridHexagonBetween a s s' u v where
+  toGridRectangleBetween := r
+  right_eq := by
+    have hs := congrArg GridRectangle.right h
+    simpa only [GridRectangleBetween.toGridRectangle_right] using hs.trans P.right_eq
+  lower_mem := by
+    have hb := congrArg GridRectangle.bottom h
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_bottom,
+      GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.bottom_def,
+      GridRectangleBetween.top_def] at hb ht
+    simpa only [hb, ht] using P.lower_mem
+  upper_mem := by
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.top_def] at ht
+    simpa only [ht] using P.upper_mem
+
+/-- The rectangle underlying the transferred hexagon is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridHexagonBetween a s s' x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := (rfl)
+
+/-- The squares covered by a hexagon depend only on its underlying toroidal rectangle. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridHexagonBetween a s s' x y) (Q : GridHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  ext p
+  simp only [mem_coveredSquares, h]
+
 end GridHexagonBetween
 
 /-- The combinatorial shape of a hexagon whose initial side turns at both intersection points, for
@@ -360,6 +395,41 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridInitialHexagonBetween a s s' x
     simp only [coveredSquares, Finset.mem_product, Finset.mem_erase] at hmem
     rw [G.mem_XSet] at hp
     exact h p.1 hmem.1.1 hmem.1.2 (hp ▸ hmem.2)
+
+/-- Transfer a hexagon to new endpoint states when its underlying toroidal rectangle is
+unchanged. The turn side and both intersection rows are preserved. -/
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridInitialHexagonBetween a s s' x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridInitialHexagonBetween a s s' u v where
+  toGridRectangleBetween := r
+  left_eq := by
+    have hs := congrArg GridRectangle.left h
+    simpa only [GridRectangleBetween.toGridRectangle_left] using hs.trans P.left_eq
+  lower_mem := by
+    have hb := congrArg GridRectangle.bottom h
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_bottom,
+      GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.bottom_def,
+      GridRectangleBetween.top_def] at hb ht
+    simpa only [hb, ht] using P.lower_mem
+  upper_mem := by
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.top_def] at ht
+    simpa only [ht] using P.upper_mem
+
+/-- The rectangle underlying the transferred hexagon is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridInitialHexagonBetween a s s' x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := (rfl)
+
+/-- The squares covered by a hexagon depend only on its underlying toroidal rectangle. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridInitialHexagonBetween a s s' x y) (Q : GridInitialHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  ext p
+  simp only [mem_coveredSquares, h]
 
 end GridInitialHexagonBetween
 

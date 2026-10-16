@@ -24,7 +24,7 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 Scalar extension along a commutative `K`-algebra `L` distributes over the tensor product, commutes
 with passing to the opposite algebra, and composes in stages:
 
-* `TauCeti.lid_rTensor_distribBaseChange_symm`: pairing against a linear functional commutes with
+* `LinearMap.lid_rTensor_distribBaseChange_symm`: pairing against a linear functional commutes with
   distributing scalar extension over a tensor product.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
@@ -33,8 +33,9 @@ with passing to the opposite algebra, and composes in stages:
 * `TauCeti.Algebra.TensorProduct.baseChangeOpAlgEquiv`: `L ⊗[K] Aᵐᵒᵖ ≃ₐ[L] (L ⊗[K] A)ᵐᵒᵖ`;
 * `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`:
   `M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A` for a tower `K → L → M`.
-* `TauCeti.Algebra.TensorProduct.baseChangeTowerRingEquiv`: the same tower comparison with tensor
-  factors in coordinate-ring order, `(L ⊗[K] A) ⊗[L] M ≃+* A ⊗[K] M`.
+* `TauCeti.Algebra.TensorProduct.baseChangeTowerRightAlgEquiv`: the same tower comparison as an
+  `M`-algebra equivalence with tensor factors in coordinate-ring order,
+  `(L ⊗[K] A) ⊗[L] M ≃ₐ[M] A ⊗[K] M`.
 * `TauCeti.Algebra.TensorProduct.baseChangeAutHom`: the base change `σ ↦ id ⊗ σ` of
   automorphisms of `L` along a commutative algebra `A`, acting on `A ⊗[K] L`.
 * `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
@@ -51,10 +52,9 @@ All four equivalences are opaque: their bodies are not `@[expose]`d. The `_tmul`
 Mathlib linear equivalence. Equalities of algebra-map composites record compatibility with
 fourfold tensor interchange and with scalar extension in stages.
 
-Mathlib's `Algebra.TensorProduct.cancelBaseChange` is the third equivalence for a **commutative**
-algebra being extended; the algebras this file exists to serve are central simple, so they are not
-commutative in general, and the hypothesis has to go along with the chance to reuse that
-definition.
+Mathlib's `Algebra.TensorProduct.cancelBaseChange` supplies the tower comparison for a commutative
+algebra being extended. The tower comparisons here also support noncommutative algebras, including
+central simple algebras.
 
 These are statements about scalar extension as such, with no central-simplicity hypotheses. They
 supply the compatibility isomorphisms needed to extend central simple algebras, Brauer classes,
@@ -75,7 +75,8 @@ universe u v w x
 
 /-- Pairing the scalar factor against an `R`-linear functional commutes with distributing scalar
 extension over a tensor product. -/
-theorem lid_rTensor_distribBaseChange_symm {R : Type u} {A : Type v} {M : Type w} {N : Type x}
+theorem _root_.LinearMap.lid_rTensor_distribBaseChange_symm
+    {R : Type u} {A : Type v} {M : Type w} {N : Type x}
     [CommSemiring R] [CommSemiring A] [Algebra R A] [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] (l : A →ₗ[R] R) (y : A ⊗[R] M) (n : N) :
     TensorProduct.lid R (M ⊗[R] N) (l.rTensor (M ⊗[R] N)
@@ -274,31 +275,34 @@ end Tower
 
 section RightTower
 
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+
 variable (K L A M : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
   [Semiring A] [Algebra K A] [CommSemiring M] [Algebra K M] [Algebra L M]
   [IsScalarTower K L M]
 
 /-- Successive scalar extension, with tensor factors in coordinate-ring order, agrees with direct
-scalar extension, also for noncommutative `A`. -/
-noncomputable def baseChangeTowerRingEquiv :
-    ((L ⊗[K] A) ⊗[L] M) ≃+* (A ⊗[K] M) :=
-  (Algebra.TensorProduct.comm L (L ⊗[K] A) M).toRingEquiv.trans
-    ((baseChangeTowerAlgEquiv K L A M).toRingEquiv.trans
-      (Algebra.TensorProduct.comm K M A).toRingEquiv)
+scalar extension as an `M`-algebra, also for noncommutative `A`. Both `M`-algebra structures act
+through the right tensor factor. Mathlib's `Algebra.TensorProduct.commRight` transports the
+left-factor tower comparison to this order. -/
+def baseChangeTowerRightAlgEquiv :
+    ((L ⊗[K] A) ⊗[L] M) ≃ₐ[M] (A ⊗[K] M) :=
+  (Algebra.TensorProduct.commRight L M (L ⊗[K] A)).symm.trans
+    ((baseChangeTowerAlgEquiv K L A M).trans (Algebra.TensorProduct.commRight K M A))
 
 /-- The coordinate-ring-order tower comparison sends nested pure tensors to pure tensors. -/
 @[simp]
-theorem baseChangeTowerRingEquiv_tmul_tmul (l : L) (a : A) (m : M) :
-    baseChangeTowerRingEquiv K L A M ((l ⊗ₜ[K] a) ⊗ₜ[L] m) = a ⊗ₜ[K] (l • m) := by
-  simp [baseChangeTowerRingEquiv]
+theorem baseChangeTowerRightAlgEquiv_tmul_tmul (l : L) (a : A) (m : M) :
+    baseChangeTowerRightAlgEquiv K L A M ((l ⊗ₜ[K] a) ⊗ₜ[L] m) = a ⊗ₜ[K] (l • m) := by
+  simp [baseChangeTowerRightAlgEquiv]
 
 /-- The inverse coordinate-ring-order tower comparison sends pure tensors to nested pure
 tensors. -/
 @[simp]
-theorem baseChangeTowerRingEquiv_symm_tmul (a : A) (m : M) :
-    (baseChangeTowerRingEquiv K L A M).symm (a ⊗ₜ[K] m) =
+theorem baseChangeTowerRightAlgEquiv_symm_tmul (a : A) (m : M) :
+    (baseChangeTowerRightAlgEquiv K L A M).symm (a ⊗ₜ[K] m) =
       (1 ⊗ₜ[K] a) ⊗ₜ[L] m := by
-  simp [baseChangeTowerRingEquiv]
+  simp [baseChangeTowerRightAlgEquiv]
 
 end RightTower
 

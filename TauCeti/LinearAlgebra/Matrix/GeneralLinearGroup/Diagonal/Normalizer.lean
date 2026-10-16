@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 
 /-!
 # The normalizer of the diagonal torus
@@ -27,6 +28,10 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 * `TauCeti.permutationGL`: the permutation-matrix embedding in `GL`.
 * `TauCeti.coe_permutationGL_inv_mul_mul_permutationGL_apply`: conjugation by a permutation matrix
   relabels both matrix indices.
+* `TauCeti.permutationGL_mul_mul_inv`: conjugation by a permutation matrix is reindexing along
+  the permutation, `Equiv.reindexGL`.
+* `TauCeti.map_permutationGL`: a ring homomorphism maps permutation matrices to permutation
+  matrices.
 * `TauCeti.diagGL_mul_permutationGL`: moving a permutation matrix past a diagonal one relabels
   the diagonal entries.
 * `TauCeti.exists_eq_diagGL_mul_permutationGL_of_forall_ne`: an invertible matrix whose
@@ -94,6 +99,16 @@ theorem coe_permutationGL_inv_mul_mul_permutationGL_apply {ι : Type*} [Fintype 
   rw [coe_mul_permutationGL_apply, ← map_inv, Units.val_mul, permutationGL_coe, inv_inv,
     Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, id]
 
+/-- Conjugation by `permutationGL σ` reindexes both matrix indices along `σ`. -/
+theorem permutationGL_mul_mul_inv {ι : Type*} [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι)
+    (g : GL ι k) :
+    permutationGL (k := k) σ * g * (permutationGL (k := k) σ)⁻¹ = σ.reindexGL k g := by
+  rw [mul_inv_eq_iff_eq_mul]
+  ext i j
+  rw [coe_mul_permutationGL_apply, Units.val_mul, permutationGL_coe, Equiv.Perm.permMatrix,
+    PEquiv.toMatrix_toPEquiv_mul, Equiv.coe_reindexGL]
+  simp [Equiv.Perm.inv_def]
+
 /-- Conjugating a diagonal matrix by a permutation matrix relabels its diagonal entries. -/
 @[simp]
 theorem permutationGL_mul_diagGL_mul_inv (σ : Equiv.Perm (Fin n)) (t : Fin n → kˣ) :
@@ -140,6 +155,14 @@ theorem permutationGL_mem_normalizer (σ : Equiv.Perm (Fin n)) :
     exact ⟨fun i ↦ t (σ i), hback'.symm⟩
 
 end Permutation
+
+/-- A ring homomorphism maps the permutation matrix of `σ` to the permutation matrix of `σ`. -/
+@[simp]
+theorem map_permutationGL {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι) :
+    Matrix.GeneralLinearGroup.map f (permutationGL (k := R) σ) = permutationGL (k := S) σ := by
+  ext i j
+  simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, apply_ite f]
 
 /-- In dimensions zero and one, the diagonal normalizer quotient is trivial over any
 semiring. -/

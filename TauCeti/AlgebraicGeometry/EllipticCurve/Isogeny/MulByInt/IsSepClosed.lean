@@ -188,10 +188,6 @@ elements. -/
 theorem torsionMapAlong_bijective_of_natCard {N : ℤ} (hN : (N : F) ≠ 0)
     (hF : Nat.card (AddSubgroup.torsionBy W.toAffine.Point N) = N.natAbs ^ 2) :
     Function.Bijective (W.torsionMapAlong f N) := by
-  have hinj : Function.Injective (W.torsionMapAlong f N) := fun S T h ↦ by
-    have h' := congrArg Subtype.val h
-    rw [coe_torsionMapAlong_apply, coe_torsionMapAlong_apply] at h'
-    exact Subtype.ext (Affine.Point.mapAlong_injective f f.injective h')
   -- both groups have `N²` elements
   have hK : Nat.card (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) = N.natAbs ^ 2 := by
     convert (W.map f).natCard_torsionBy (by rwa [← map_intCast f, map_ne_zero] : (N : K) ≠ 0) with P
@@ -201,7 +197,7 @@ theorem torsionMapAlong_bijective_of_natCard {N : ℤ} (hN : (N : F) ≠ 0)
     Nat.finite_of_card_ne_zero (by
       rw [hK]
       exact pow_ne_zero 2 (Int.natAbs_ne_zero.mpr (by rintro rfl; exact hN Int.cast_zero)))
-  exact hinj.bijective_of_nat_card_le (hK.trans hF.symm).le
+  exact (W.torsionMapAlong_injective f N).bijective_of_nat_card_le (hK.trans hF.symm).le
 
 /-- **The `N`-torsion does not grow from one separably closed field to another**: for `N`
 invertible, `E[N](F) → E[N](K)` is bijective, both groups having `N²` elements. -/
