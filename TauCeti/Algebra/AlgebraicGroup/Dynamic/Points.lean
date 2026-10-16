@@ -167,6 +167,13 @@ theorem pointsHom_apply (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
     pointsHom A l u = AlgHom.mapDomain l (toConv (laurentEval (R := R) u)) := by
   simp [pointsHom, MultiplicativeGroup.pointsMulEquiv_symm_apply]
 
+/-- The opposite cocharacter evaluates at the inverse unit. -/
+@[simp]
+theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
+    pointsHom A l.oppositeCocharacter u = pointsHom A l u⁻¹ := by
+  ext h
+  simp [pointsHom_apply, AlgHom.mapDomain_apply, laurentEval_invert]
+
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/
 theorem pointsHom_commute (l : H →ₐc[R] LaurentPolynomial R) (u v : Aˣ) :
@@ -239,13 +246,6 @@ end Bialgebra
 section HopfAlgebra
 
 variable [HopfAlgebra R H]
-
-/-- The opposite cocharacter evaluates at the inverse unit. -/
-@[simp]
-theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
-    pointsHom A l.oppositeCocharacter u = pointsHom A l u⁻¹ := by
-  ext h
-  simp [pointsHom_apply, AlgHom.mapDomain_apply, laurentEval_invert]
 
 /-- The generic value of the opposite cocharacter is the inverse generic value. -/
 @[simp]
