@@ -579,9 +579,21 @@ theorem IsPLHomeomorphPackage.trans {A B C : PreAbstractSimplicialComplex ι}
   · intro y
     simp only [Function.comp_apply, he₂inv y, he₁inv (e₂.symm y), Homeomorph.symm_trans_apply]
 
-/-- Finite stellar equivalences admit a PL homeomorphism package, by induction on their moves. -/
-theorem StellarEquivalent.exists_isPLHomeomorphPackage
-    (h : StellarEquivalent K L) (hfin : K.faces.Finite) : IsPLHomeomorphPackage K L := by
+/-- A finite stellar equivalence identifies its weak polyhedra by maps that are piecewise linear
+in their ambient barycentric coordinates. The two `IsPLOn` statements are the coordinate formulas
+needed to transport local PL charts across a sequence of stellar moves. -/
+theorem StellarEquivalent.exists_homeomorph_isPLOn
+    (h : StellarEquivalent K L) (hfin : K.faces.Finite) :
+    ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
+        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L},
+      ∃ f g : (ι → ℝ) → (ι → ℝ),
+        IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ K} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ L} => (x.1.1 : ι → ℝ)) ∧
+        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
+        (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := by
+  change IsPLHomeomorphPackage K L
   have hQ : (K.faces.Finite ↔ L.faces.Finite) ∧
       ∀ hfin : K.faces.Finite, IsPLHomeomorphPackage K L := by
     refine StellarEquivalent.induction_on h
@@ -598,22 +610,6 @@ theorem StellarEquivalent.exists_isPLHomeomorphPackage
       exact ⟨ihAB.1.trans ihBC.1, fun hfin =>
         (ihAB.2 hfin).trans (ihBC.2 (ihAB.1.mp hfin))⟩
   exact hQ.2 hfin
-
-/-- A finite stellar equivalence identifies its weak polyhedra by maps that are piecewise linear
-in their ambient barycentric coordinates. The two `IsPLOn` statements are the coordinate formulas
-needed to transport local PL charts across a sequence of stellar moves. -/
-theorem StellarEquivalent.exists_homeomorph_isPLOn
-    (h : StellarEquivalent K L) (hfin : K.faces.Finite) :
-    ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
-        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L},
-      ∃ f g : (ι → ℝ) → (ι → ℝ),
-        IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-          x.1.support ∈ K} => (x.1.1 : ι → ℝ)) ∧
-        IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-          x.1.support ∈ L} => (x.1.1 : ι → ℝ)) ∧
-        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
-        (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := by
-  exact h.exists_isPLHomeomorphPackage hfin
 
 /-- Stellar equivalent finite precomplexes have homeomorphic weak polyhedra. -/
 theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L)
