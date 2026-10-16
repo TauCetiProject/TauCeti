@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+
 /-!
 # Naturality of the Hurewicz map in degree one
 
@@ -86,9 +88,10 @@ theorem homologyMap_H₁AddEquivHomology_hurewiczAb {x : X}
         (FundamentalGroup.map f.hom x) a.toMul))) := by
   induction a using Additive.rec with | ofMul a =>
   induction a using Quot.ind with | mk p =>
+  obtain ⟨p⟩ := p
   induction p using Path.Homotopic.Quotient.ind with | mk γ =>
   rw [Abelianization.mk_eq_of, toMul_ofMul, Abelianization.map_of,
-    FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map, hurewiczAb_ofMul_of_mk,
+    FundamentalGroup.map_fromPath f.hom x γ, hurewiczAb_ofMul_of_mk,
     hurewiczAb_ofMul_of_mk, homologyMap_H₁AddEquivHomology_loopClass]
 
 /-- **Naturality of the Hurewicz isomorphism** of path-connected spaces. -/
@@ -108,8 +111,11 @@ point along a path. -/
 theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
     (a : FundamentalGroup X x) :
     hurewicz₁ X x' (FundamentalGroup.fundamentalGroupMulEquivOfPath p a) = hurewicz₁ X x a := by
+  obtain ⟨a⟩ := a
   induction a using Path.Homotopic.Quotient.ind with | mk γ =>
-  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply, ← Path.Homotopic.Quotient.mk_symm,
+  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  dsimp only
+  rw [← Path.Homotopic.Quotient.mk_symm,
     ← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_trans, hurewicz₁_mk,
     hurewicz₁_mk]
   congr 1

@@ -83,12 +83,12 @@ end TauCeti.LaurentSeries
 namespace TauCeti
 
 /-- Multiplication by a constant of the Laurent-series algebra structure agrees with the
-coefficientwise scalar action. -/
-theorem laurentSeries_algebraMap_mul_eq_smul {R : Type*} [CommSemiring R]
-    (c : R) (f : LaurentSeries R) :
-    algebraMap R (LaurentSeries R) c * f = c • f := by
-  ext n
-  rw [LaurentSeries.coeff_algebraMap_mul, HahnSeries.coeff_smul, smul_eq_mul]
+coefficientwise scalar action, for Laurent series with coefficients in any `R`-algebra. -/
+theorem laurentSeries_algebraMap_mul_eq_smul {R A : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] (c : R) (f : LaurentSeries A) :
+    algebraMap R (LaurentSeries A) c * f = c • f := by
+  rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply, HahnSeries.ofPowerSeries_C,
+    HahnSeries.C_mul_eq_smul, algebraMap_smul]
 
 end TauCeti
 

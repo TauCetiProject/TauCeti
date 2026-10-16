@@ -13,11 +13,11 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 # Continuity of the Fourier–Stieltjes transform on a Pontryagin dual
 
 The Fourier–Stieltjes transform of a tight finite positive measure on the Pontryagin dual is
-continuous on the original locally compact group. Together with its positive-definiteness,
-this supplies the measure-to-function direction of Bochner representation on locally compact
-abelian groups for regular measures. A compact set carries almost all of the measure; character
-evaluation is uniformly continuous there near each fixed group element, while the complement
-contributes at most its small mass.
+continuous on the original additive monoid when its topology is weakly locally compact.
+For locally compact abelian groups, together with its positive-definiteness, this supplies
+the measure-to-function direction of Bochner representation for regular measures.
+A compact set carries almost all of the measure; character evaluation is uniformly continuous
+there near each fixed monoid element, while the complement contributes at most its small mass.
 
 This is the standard compact truncation argument for Fourier–Stieltjes transforms; see
 G. B. Folland, *A Course in Abstract Harmonic Analysis*, Chapter 4.
@@ -26,10 +26,11 @@ G. B. Folland, *A Course in Abstract Harmonic Analysis*, Chapter 4.
 public section
 
 open MeasureTheory
+open scoped Topology
 
 namespace TauCeti
 
-variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [LocallyCompactSpace G]
+variable {G : Type*} [AddMonoid G] [TopologicalSpace G] [WeaklyLocallyCompactSpace G]
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
 
@@ -51,72 +52,33 @@ theorem _root_.MeasureTheory.FiniteMeasure.continuous_pontryaginMeasureTransform
       (ENNReal.ofReal (ε / 8)) (ENNReal.ofReal_pos.mpr (by positivity))
   have hKmeas : MeasurableSet K := hK.isClosed.measurableSet
   have htail : μ.toMeasure.real Kᶜ ≤ ε / 8 := by
-    have hle := hKmass μ.toMeasure (Set.mem_singleton _)
-    -- Real measure is the finite ENNReal measure converted to a real number.
-    change (μ.toMeasure Kᶜ).toReal ≤ ε / 8
-    have ht := ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
-    rw [ENNReal.toReal_ofReal (by positivity)] at ht
-    exact ht
+    simpa only [measureReal_def, ENNReal.toReal_ofReal (by positivity : 0 ≤ ε / 8)] using
+      ENNReal.toReal_mono ENNReal.ofReal_ne_top (hKmass μ.toMeasure (Set.mem_singleton _))
   let δ := ε / (4 * C)
   have hδ : 0 < δ := by dsimp [δ]; positivity
-  let U : Set (G × PontryaginDual (Multiplicative G)) :=
-    {p | ‖(p.2 (Multiplicative.ofAdd p.1) : ℂ) -
-      (p.2 (Multiplicative.ofAdd g) : ℂ)‖ < δ}
-  have hUopen : IsOpen U := by
-    dsimp [U]
-    apply isOpen_lt
-    · apply Continuous.norm
-      apply Continuous.sub
-      · have h : Continuous (fun p : PontryaginDual (Multiplicative G) × Multiplicative G =>
-            (p.1 p.2 : Circle)) := by
-            -- PontryaginDual is the continuous-monoid-hom type with its compact-open topology.
-            change Continuous (fun p : (Multiplicative G →ₜ* Circle) × Multiplicative G => p.1 p.2)
-            exact continuous_eval
-        exact (LipschitzWith.subtype_val (Submonoid.unitSphere ℂ).carrier).continuous.comp
-          (h.comp (continuous_snd.prodMk
-            (continuous_ofAdd.comp continuous_fst)))
-      · exact (PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)).comp
-          continuous_snd
-    · exact continuous_const
-  have hUcontains : ({g} : Set G) ×ˢ K ⊆ U := by
-    rintro ⟨x, χ⟩ ⟨hx, -⟩
-    simp only [Set.mem_singleton_iff] at hx
-    subst x
-    simpa [U] using hδ
-  obtain ⟨N, V, hNopen, _, hgN, hKV, hNU⟩ :=
-    generalized_tube_lemma (isCompact_singleton (x := g)) hK hUopen hUcontains
-  refine Filter.mem_of_superset (hNopen.mem_nhds (hgN (Set.mem_singleton g))) ?_
-  intro x hx
+  -- Joint evaluation and compactness give a common bound for all characters in K.
+  have heval : Continuous (fun p : G × PontryaginDual (Multiplicative G) =>
+      (p.2 (Multiplicative.ofAdd p.1) : ℂ)) :=
+    continuous_subtype_val.comp
+      ((continuous_eval (F := Multiplicative G →ₜ* Circle)).comp
+        (continuous_snd.prodMk (continuous_ofAdd.comp continuous_fst)))
+  have hnear : ∀ᶠ x in 𝓝 g, ∀ χ ∈ K,
+      ‖(χ (Multiplicative.ofAdd x) : ℂ) - (χ (Multiplicative.ofAdd g) : ℂ)‖ ≤ δ := by
+    apply hK.eventually_forall_of_forall_eventually
+    intro χ _
+    have hcont := (heval.sub
+      ((PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)).comp
+        continuous_snd)).norm
+    exact (hcont.continuousAt.eventually_lt continuousAt_const
+      (by simpa using hδ)).mono fun _ h => h.le
+  filter_upwards [hnear] with x hx
   -- The ball basis expresses continuity through the distance between transform values.
   change dist (μ.pontryaginMeasureTransform x) (μ.pontryaginMeasureTransform g) < ε
   rw [dist_eq_norm]
-  have hsmall (χ : PontryaginDual (Multiplicative G)) (hχ : χ ∈ K) :
-      ‖(χ (Multiplicative.ofAdd x) : ℂ) -
-        (χ (Multiplicative.ofAdd g) : ℂ)‖ ≤ δ := by
-    have hlt : ‖(χ (Multiplicative.ofAdd x) : ℂ) -
-        (χ (Multiplicative.ofAdd g) : ℂ)‖ < δ := by
-      simpa [U] using hNU (show (x, χ) ∈ N ×ˢ V from ⟨hx, hKV hχ⟩)
-    exact hlt.le
   have hint (y : G) : Integrable
       (fun χ : PontryaginDual (Multiplicative G) =>
         (χ (Multiplicative.ofAdd y) : ℂ)) μ.toMeasure :=
     PontryaginDual.integrable_coe_eval (Multiplicative.ofAdd y)
-  have hcenter :
-      ‖(∫ χ in K, (χ (Multiplicative.ofAdd x) : ℂ) ∂μ.toMeasure) -
-        (∫ χ in K, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure)‖ ≤
-          δ * μ.toMeasure.real K := by
-    rw [← integral_sub (hint x).integrableOn (hint g).integrableOn]
-    exact norm_setIntegral_le_of_norm_le_const (measure_lt_top μ.toMeasure K)
-      (fun χ hχ => hsmall χ hχ)
-  have htail' (y : G) :
-      ‖(∫ χ, (χ (Multiplicative.ofAdd y) : ℂ) ∂μ.toMeasure) -
-        (∫ χ in K, (χ (Multiplicative.ofAdd y) : ℂ) ∂μ.toMeasure)‖ ≤
-          μ.toMeasure.real Kᶜ := by
-    simpa using norm_integral_sub_setIntegral_le
-      (μ := μ.toMeasure) (C := 1)
-      (f := fun χ : PontryaginDual (Multiplicative G) =>
-        (χ (Multiplicative.ofAdd y) : ℂ))
-      (Filter.Eventually.of_forall fun χ => by simp) hKmeas (hint y)
   have hmass : μ.toMeasure.real K ≤ C := by
     exact (measureReal_mono (μ := μ.toMeasure) (Set.subset_univ K)).trans
       (by dsimp [C]; linarith)
@@ -124,26 +86,21 @@ theorem _root_.MeasureTheory.FiniteMeasure.continuous_pontryaginMeasureTransform
     calc
       δ * μ.toMeasure.real K ≤ δ * C := mul_le_mul_of_nonneg_left hmass hδ.le
       _ = ε / 4 := by dsimp [δ]; field_simp
-  let A : ℂ := ∫ χ, (χ (Multiplicative.ofAdd x) : ℂ) ∂μ.toMeasure
-  let B : ℂ := ∫ χ in K, (χ (Multiplicative.ofAdd x) : ℂ) ∂μ.toMeasure
-  let D : ℂ := ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
-  let E : ℂ := ∫ χ in K, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
+  -- Split the integral of the difference into the small compact part and the bounded tail.
   rw [FiniteMeasure.pontryaginMeasureTransform_apply,
-    FiniteMeasure.pontryaginMeasureTransform_apply]
-  -- Name the four integrals to make the two triangle inequalities transparent.
-  change ‖A - D‖ < ε
-  calc
-    ‖A - D‖ ≤ ‖A - B‖ + ‖B - E‖ + ‖E - D‖ := by
-      calc
-        _ ≤ ‖A - B‖ + ‖B - D‖ := norm_sub_le_norm_sub_add_norm_sub A B D
-        _ ≤ _ := by
-          simpa only [add_assoc] using
-            add_le_add_right (norm_sub_le_norm_sub_add_norm_sub B E D) ‖A - B‖
-    _ ≤ μ.toMeasure.real Kᶜ + δ * μ.toMeasure.real K +
-          μ.toMeasure.real Kᶜ := by
-          exact add_le_add (add_le_add (htail' x) hcenter)
-            (by simpa [norm_sub_rev] using htail' g)
-    _ < ε := by linarith
+    FiniteMeasure.pontryaginMeasureTransform_apply, ← integral_sub (hint x) (hint g),
+    ← integral_add_compl (f := fun χ => (χ (Multiplicative.ofAdd x) : ℂ) -
+      (χ (Multiplicative.ofAdd g) : ℂ)) hKmeas ((hint x).sub (hint g))]
+  refine (norm_add_le _ _).trans_lt ?_
+  have hcenter := norm_setIntegral_le_of_norm_le_const
+    (measure_lt_top μ.toMeasure K) hx
+  have htail' : ‖∫ χ in Kᶜ, (χ (Multiplicative.ofAdd x) : ℂ) -
+      (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure‖ ≤ 2 * μ.toMeasure.real Kᶜ :=
+    norm_setIntegral_le_of_norm_le_const (measure_lt_top μ.toMeasure Kᶜ) fun χ _ => by
+      simpa only [Circle.norm_coe, one_add_one_eq_two] using
+        norm_sub_le (χ (Multiplicative.ofAdd x) : ℂ)
+          (χ (Multiplicative.ofAdd g) : ℂ)
+  linarith
 
 end TauCeti
 

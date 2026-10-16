@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Quotient
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Truncation
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.ParabolicCycle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Tessellation
+import TauCeti.Analysis.Complex.Fuchsian.Polygon.CuspDatum
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -81,29 +82,17 @@ theorem exists_cuspDatum_isCompact_carrier_diff_iUnion_horodisc
         ∀ B : {i : Fin n // (P.vertex i).isRight} → ℝ,
           IsCompact (P.carrier \ ⋃ i, horodisc (E i) (B i)) := by
   classical
-  -- Choose data only at ideal vertices; finite vertices carry no auxiliary cusp data.
-  have hex (i : {i : Fin n // (P.vertex i).isRight}) :
-      ∃ E : Γ.CuspDatum, P.vertex i = .inr E.cusp := by
-    obtain ⟨c, hc⟩ := Sum.isRight_iff.mp i.property
-    obtain ⟨E, hE⟩ := (hcusp i c hc).exists_cuspDatum_cusp_eq
-    exact ⟨E, by rw [hE]; exact hc⟩
-  choose E hE using hex
+  obtain ⟨E, hE, g, hgE, hg⟩ := P.exists_cuspDatum_scaling hcusp
   refine ⟨E, hE, fun B ↦ ?_⟩
-  let g (i : Fin n) : PSL(2, ℝ) :=
-    if hi : (P.vertex i).isRight then (E ⟨i, hi⟩).scaling else 1
   let B' (i : Fin n) : ℝ := if hi : (P.vertex i).isRight then B ⟨i, hi⟩ else 0
-  have hg (i : Fin n) (c : OnePoint ℝ) (hi : P.vertex i = .inr c) : g i • c = ∞ := by
-    have hright : (P.vertex i).isRight := by simp [hi]
-    have heq : (E ⟨i, hright⟩).cusp = c := Sum.inr.inj ((hE ⟨i, hright⟩).symm.trans hi)
-    simpa only [g, dite_eq_left hright, heq] using (E ⟨i, hright⟩).scaling_smul_cusp
   convert P.isCompact_carrier_diff_iUnion g hg B' using 2
   ext z
   simp only [mem_iUnion, mem_horodisc, mem_ofPred_eq]
   constructor
   · rintro ⟨⟨i, hi⟩, hz⟩
-    exact ⟨i, hi, by simpa only [g, B', dite_eq_left hi] using hz⟩
+    exact ⟨i, hi, by simpa only [hgE i hi, B', dite_eq_left hi] using hz⟩
   · rintro ⟨i, hi, hz⟩
-    exact ⟨⟨i, hi⟩, by simpa only [g, B', dite_eq_left hi] using hz⟩
+    exact ⟨⟨i, hi⟩, by simpa only [hgE i hi, B', dite_eq_left hi] using hz⟩
 
 /-- A convex polygon meeting every orbit and having only cuspidal ideal vertices gives a
 compact set of representatives outside any prescribed family of cusp horodiscs. The family

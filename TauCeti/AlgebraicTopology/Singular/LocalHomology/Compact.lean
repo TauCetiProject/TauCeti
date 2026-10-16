@@ -18,11 +18,13 @@ the local homology `Hₖ(M, M ∖ A)` (`TauCeti.localHomology`) with coefficient
 vanishes above the dimension (`TauCeti.isZero_localHomology_of_isCompact`), and that in degree
 `n` a class is determined by its restrictions `Hₙ(M, M ∖ A) ⟶ Hₙ(M, M ∖ {x})` to the points of
 `A` (`TauCeti.eq_zero_of_forall_localHomologyRestriction_eq_zero` and
-`TauCeti.localHomology_ext_of_isCompact`). This is the uniqueness half of the statement that a
-compatible family of local classes `αₓ ∈ Hₙ(M, M ∖ {x})`, `x ∈ A`, comes from a unique class of
-`Hₙ(M, M ∖ A)`, which for `A = M` compact produces fundamental classes; existence is not proved
-here. For compact `M` itself, `A = M` shows that the singular homology `Hₖ(M)` vanishes for
-`k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
+`TauCeti.localHomology_ext_of_isCompact`). Conversely, a family of local classes
+`αₓ ∈ Hₙ(M, M ∖ {x})`, `x ∈ A`, that is locally the family of restrictions of a single class comes
+from a class of `Hₙ(M, M ∖ A)` (`TauCeti.exists_localHomologyRestriction_eq_of_isCompact`), so
+from exactly one (`TauCeti.existsUnique_localHomologyRestriction_eq_of_isCompact`). For `M`
+compact and `A = M`, applied to local generators that vary in this way, this is the class that
+becomes a fundamental class. For compact `M`, `A = M` also shows that the singular homology `Hₖ(M)`
+vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
 
 ## Main results
 
@@ -31,6 +33,10 @@ here. For compact `M` itself, `A = M` shows that the singular homology `Hₖ(M)`
   restriction to every point of `A` vanishes is zero.
 * `TauCeti.localHomology_ext_of_isCompact`: two classes of `Hₙ(M, M ∖ A)` with the same
   restrictions to the points of `A` are equal.
+* `TauCeti.exists_localHomologyRestriction_eq_of_isCompact` and
+  `TauCeti.existsUnique_localHomologyRestriction_eq_of_isCompact`: a family of local classes at
+  the points of `A` that is locally the family of restrictions of a single class is the family of
+  restrictions of exactly one class of `Hₙ(M, M ∖ A)`.
 * `TauCeti.isZero_singularHomology_of_compactSpace`: `Hₖ(M) = 0` for compact `M` and `k > n`.
 
 ## References
@@ -72,6 +78,13 @@ of two closed sets.
   to its centre is an isomorphism.
 * **Compact sets.** A compact set is a finite union of compact sets each lying in the source of
   a chart, and the intersection of two such pieces lies in a chart again.
+
+Existence runs along the same sequence in the other direction: classes along `A` and `B` that
+agree on `A ∩ B` come from a class along `A ∪ B` by exactness at the middle term
+(`TauCeti.exists_localHomologyRestriction_union_eq`). For classes restricting to a given family of
+local classes, agreement on `A ∩ B` follows from uniqueness along the compact set `A ∩ B`, and a
+compact `A` is a finite union of compact pieces along each of which the family is restricted from
+a single class.
 -/
 
 /-- The conclusion of Hatcher's Lemma 3.27 for a set `S`, apart from existence: local homology
@@ -250,6 +263,77 @@ theorem localHomology_ext_of_isCompact (hn : finrank ℝ E = n) (hA : IsCompact 
     α = β :=
   sub_eq_zero.1 (eq_zero_of_forall_localHomologyRestriction_eq_zero N hn hA _ fun x hx ↦ by
     rw [map_sub, h x hx, sub_self])
+
+/-- A class of `Hₙ(M, M ∖ S)` restricting to `α x` at every point `x` of `S`. -/
+private def Glues (α : ∀ x : M, (localHomology N {x} n : ModuleCat.{w} Λ)) (S : Set M) : Prop :=
+  ∃ γ : (localHomology N S n : ModuleCat.{w} Λ),
+    ∀ x (hx : x ∈ S), localHomologyRestriction N (singleton_subset_iff.2 hx) n γ = α x
+
+/-- **The gluing step.** Classes along compact sets `S` and `T` restricting to the same family
+glue to a class along `S ∪ T`: they agree on `S ∩ T` by uniqueness. -/
+private lemma Glues.union (hn : finrank ℝ E = n)
+    {α : ∀ x : M, (localHomology N {x} n : ModuleCat.{w} Λ)} {S T : Set M} (hS : IsCompact S)
+    (hT : IsCompact T) (hαS : Glues N α S) (hαT : Glues N α T) : Glues N α (S ∪ T) := by
+  obtain ⟨γS, hγS⟩ := hαS
+  obtain ⟨γT, hγT⟩ := hαT
+  obtain ⟨γ, hγ₁, hγ₂⟩ := exists_localHomologyRestriction_union_eq N hS.isClosed hT.isClosed γS γT
+    (localHomology_ext_of_isCompact N hn (hS.inter_right hT.isClosed) fun x hx ↦ by
+      rw [localHomologyRestriction_comp_apply, localHomologyRestriction_comp_apply, hγS x hx.1,
+        hγT x hx.2])
+  refine ⟨γ, fun x hx ↦ ?_⟩
+  rcases hx with hx | hx
+  · rw [← hγS x hx, ← hγ₁, localHomologyRestriction_comp_apply]
+  · rw [← hγT x hx, ← hγ₂, localHomologyRestriction_comp_apply]
+
+/-- **Existence of local homology classes of a compact set.** Let `A` be a compact subset of a
+Hausdorff space modelled on a real normed space of dimension `n`, and let `α x ∈ Hₙ(M, M ∖ {x})`
+be local classes that are locally restrictions of a single class: every `x ∈ A` has a
+neighbourhood `U` within `A` and a class of `Hₙ(M, M ∖ U)` restricting to `α y` at each point
+`y ∈ U ∩ A`. Then some class of `Hₙ(M, M ∖ A)` restricts to `α x` at every `x ∈ A`. This is the
+existence part of Hatcher's Lemma 3.27(a). -/
+theorem exists_localHomologyRestriction_eq_of_isCompact (hn : finrank ℝ E = n) (hA : IsCompact A)
+    (α : ∀ x : M, (localHomology N {x} n : ModuleCat.{w} Λ))
+    (hα : ∀ x ∈ A, ∃ U ∈ 𝓝[A] x, ∃ β : (localHomology N U n : ModuleCat.{w} Λ),
+      ∀ y (hy : y ∈ U), y ∈ A → localHomologyRestriction N (singleton_subset_iff.2 hy) n β = α y) :
+    ∃ γ : (localHomology N A n : ModuleCat.{w} Λ),
+      ∀ x (hx : x ∈ A), localHomologyRestriction N (singleton_subset_iff.2 hx) n γ = α x := by
+  have := ChartedSpace.locallyCompactSpace E M
+  -- Induct over `A`: the part of `A` in `t` lies in a compact `K ⊆ A` along which the family glues.
+  obtain ⟨K, hKc, hAK, hKA, hglue⟩ : ∃ K, IsCompact K ∧ A ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K := by
+    refine hA.induction_on (p := fun t ↦ ∃ K, IsCompact K ∧ t ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K)
+      ⟨∅, isCompact_empty, by simp, empty_subset _, 0, fun x hx ↦ hx.elim⟩
+      (fun s t hst ⟨K, hKc, htK, hKA, hK⟩ ↦
+        ⟨K, hKc, (inter_subset_inter_left _ hst).trans htK, hKA, hK⟩)
+      (fun s t ⟨K, hKc, hsK, hKA, hK⟩ ⟨L, hLc, htL, hLA, hL⟩ ↦
+        ⟨K ∪ L, hKc.union hLc, union_inter_distrib_right s t A ▸ union_subset_union hsK htL,
+          union_subset hKA hLA, hK.union N hn hKc hLc hL⟩) fun x hx ↦ ?_
+    obtain ⟨U, hU, β, hβ⟩ := hα x hx
+    obtain ⟨V, hV, hVU⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hU
+    obtain ⟨K, hK, hKV, hKc⟩ := local_compact_nhds hV
+    have hAK : A ∩ K ⊆ U := fun y hy ↦ hVU ⟨hKV hy.2, hy.1⟩
+    refine ⟨K, mem_nhdsWithin_of_mem_nhds hK, A ∩ K, hA.inter_right hKc.isClosed,
+      fun y hy ↦ ⟨hy.2, hy.1⟩, inter_subset_left, localHomologyRestriction N hAK n β,
+      fun y hy ↦ ?_⟩
+    rw [localHomologyRestriction_comp_apply]
+    exact hβ y (hAK hy) hy.1
+  rwa [subset_antisymm hKA (inter_self A ▸ hAK)] at hglue
+
+/-- **Local homology classes of a compact set are glued from local data.** Let `A` be a compact
+subset of a Hausdorff space modelled on a real normed space of dimension `n`, and let
+`α x ∈ Hₙ(M, M ∖ {x})` be local classes such that every `x ∈ A` has a neighbourhood `U` within `A`
+and a class of `Hₙ(M, M ∖ U)` restricting to `α y` at each point `y ∈ U ∩ A`. Then exactly one
+class of `Hₙ(M, M ∖ A)` restricts to `α x` at every `x ∈ A`. This is Hatcher's Lemma 3.27(a),
+with the continuous section of the covering space `M_R` there replaced by its defining property:
+locally, the family is the family of restrictions of a single class. -/
+theorem existsUnique_localHomologyRestriction_eq_of_isCompact (hn : finrank ℝ E = n)
+    (hA : IsCompact A) (α : ∀ x : M, (localHomology N {x} n : ModuleCat.{w} Λ))
+    (hα : ∀ x ∈ A, ∃ U ∈ 𝓝[A] x, ∃ β : (localHomology N U n : ModuleCat.{w} Λ),
+      ∀ y (hy : y ∈ U), y ∈ A → localHomologyRestriction N (singleton_subset_iff.2 hy) n β = α y) :
+    ∃! γ : (localHomology N A n : ModuleCat.{w} Λ),
+      ∀ x (hx : x ∈ A), localHomologyRestriction N (singleton_subset_iff.2 hx) n γ = α x := by
+  obtain ⟨γ, hγ⟩ := exists_localHomologyRestriction_eq_of_isCompact N hn hA α hα
+  exact ⟨γ, hγ, fun δ hδ ↦ localHomology_ext_of_isCompact N hn hA fun x hx ↦ by
+    rw [hδ x hx, hγ x hx]⟩
 
 /-- **The homology of a compact manifold vanishes above the dimension.** For a compact Hausdorff
 space modelled on a real normed space of dimension `n`, `Hₖ(M) = 0` for `k > n`: it is the local

@@ -365,7 +365,7 @@ theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
   intro x y hxy
   apply hinjective
   simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
-    LinearMap.baseChange_eq_ltensor] using hxy
+    LinearMap.baseChange_eq_lTensor] using hxy
 
 namespace TauCeti
 

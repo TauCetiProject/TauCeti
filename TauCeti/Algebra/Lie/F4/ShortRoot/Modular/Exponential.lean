@@ -93,7 +93,7 @@ theorem f4ShortRootBaseChangeInclusion_injective {A : Type*} [CommRing A]
     Function.Injective (f4ShortRootBaseChangeInclusion (A := A)) := by
   let _ : Module.Free (ZMod 2) A := Module.Free.of_divisionRing (ZMod 2) A
   have hbase : Function.Injective ((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A) := by
-    rw [LinearMap.baseChange_eq_ltensor]
+    rw [LinearMap.baseChange_eq_lTensor]
     exact Module.Flat.lTensor_preserves_injective_linearMap f4ShortRootLieIdeal.incl.toLinearMap
       f4ShortRootLieIdeal.incl_injective
   intro x y hxy

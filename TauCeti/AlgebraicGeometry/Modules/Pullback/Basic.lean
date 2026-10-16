@@ -392,6 +392,16 @@ lemma _root_.TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ (M N : Z.Mod
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) := by
   rw [pullback_comp_δ, Iso.hom_inv_id_app_assoc]
 
+/-- The identification of the pullbacks along equal morphisms is compatible with their tensor
+comparisons `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`. -/
+@[reassoc]
+lemma pullbackCongr_hom_app_comp_δ {f' : X ⟶ Y} (hf : f = f') (M N : Y.Modules) :
+    (pullbackCongr hf).hom.app (M ⊗ N) ≫ Functor.OplaxMonoidal.δ (pullback f') M N =
+      Functor.OplaxMonoidal.δ (pullback f) M N ≫
+        ((pullbackCongr hf).hom.app M ⊗ₘ (pullbackCongr hf).hom.app N) := by
+  subst hf
+  simp [pullbackCongr]
+
 end Monoidal
 
 section Over

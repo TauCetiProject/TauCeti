@@ -106,7 +106,7 @@ theorem contMDiff_prod_zpow_complexTorusAmbient (a : ι → ℤ) (n : ℕ∞ω) 
   let _ := complexTorusChartedSpace e
   have hL : ContDiffOn ℂ n (fun z : ι → ℂ ↦ ∏ i, z i ^ a i) {z : ι → ℂ | ∀ i, z i ≠ 0} :=
     fun _ hz ↦ (contDiffAt_prod fun i _ ↦
-      (contDiff_apply ℂ ℂ i).contDiffAt.zpow (Or.inl (hz i))).contDiffWithinAt
+      (contDiff_apply ℂ (fun _ ↦ ℂ) i).contDiffAt.zpow (Or.inl (hz i))).contDiffWithinAt
   exact hL.contMDiffOn.comp_contMDiff (contMDiff_complexTorusAmbient e n)
     fun x ↦ complexTorusAmbient_ne_zero e x
 
@@ -141,7 +141,7 @@ theorem contMDiff_complexTorusMap [Fintype ι'] (f : N →+ N') (n : ℕ∞ω) :
       (ComplexTorus N') _ (complexTorusChartedSpace e') n (complexTorusMap f) := by
   let _ := complexTorusChartedSpace e
   apply ContMDiff.of_comp_isOpenEmbedding (isOpenEmbedding_complexTorusAmbient e')
-  rw [contMDiff_pi_space]
+  rw [contMDiff_pi_module_iff]
   intro j
   exact (contMDiff_prod_zpow_complexTorusAmbient e _ n).congr fun x ↦
     complexTorusAmbient_complexTorusMap e e' f x j

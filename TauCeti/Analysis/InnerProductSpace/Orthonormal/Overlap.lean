@@ -179,6 +179,12 @@ theorem sum_range_sq_cosPrincipalAngles {u : ι → E} {v : κ → E} (hu : Orth
   by_contra h
   exact Finsupp.mem_support_iff.mp hk (cosPrincipalAngles_of_card_le_right hu hv (not_lt.mp h))
 
+/-- The sum of the first `n` principal cosines is the `n`-th Ky Fan sum of the overlap operator. -/
+theorem sum_range_cosPrincipalAngles_eq_kyFanSum {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) (n : ℕ) :
+    ∑ k ∈ Finset.range n, cosPrincipalAngles hu hv k = (overlapOperator 𝕜 u v).kyFanSum n := by
+  rw [LinearMap.kyFanSum_def, cosPrincipalAngles_def]
+
 /-! ### The squared Frobenius sine -/
 
 /-- The squared Frobenius sine `sin²_F Θ = ∑ₖ (1 - cos² θₖ)` between the spans of two orthonormal

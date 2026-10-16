@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
-public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower
+public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.Basic
 
 /-!
 # Symmetric powers of presheaves of modules

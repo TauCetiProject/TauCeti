@@ -309,7 +309,7 @@ dynamic Levi inclusion transported through the representing isomorphisms. -/
 theorem mapPointsFunctor_weightLeviToParabolicCoordinateMap_app (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R)
     (z : HopfAlgebra.points (R := R) (H := weightLeviCoordinateHopfAlgebra R w) A) :
-    (CommHopfAlgCat.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w)).app A z =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w)).app A z =
       (weightParabolicPointsIso R w).inv.app A
         (Cocharacter.leviToParabolic A (weightCocharacter (R := R) w)
           ((weightLeviPointsIso R w).hom.app A z)) := by
