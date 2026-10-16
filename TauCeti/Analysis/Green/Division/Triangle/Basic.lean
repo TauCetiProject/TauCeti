@@ -94,12 +94,13 @@ theorem standardTriangleCell_a : standardTriangleCell.a = 0 := by
 theorem standardTriangleCell_b : standardTriangleCell.b = 1 := by
   simp [standardTriangleCell]
 
-@[simp]
+-- Normalize concrete bounds before the general extension-to-subtype simplification.
+@[simp high]
 theorem standardTriangleCell_lowerFun {x : ℝ} (hx : x ∈ Icc (0 : ℝ) 1) :
     standardTriangleCell.lowerFun x = 0 := by
   simp [standardTriangleCell, hx]
 
-@[simp]
+@[simp high]
 theorem standardTriangleCell_upperFun {x : ℝ} (hx : x ∈ Icc (0 : ℝ) 1) :
     standardTriangleCell.upperFun x = 1 - x := by
   simp [standardTriangleCell, hx]
