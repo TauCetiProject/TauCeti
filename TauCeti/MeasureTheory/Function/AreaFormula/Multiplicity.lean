@@ -125,6 +125,23 @@ theorem lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv
   intro i _ j _ hij
   exact (hpd hij).mono inter_subset_left inter_subset_left
 
+/-- Restricting the parameters of a Lipschitz map to its differentiability points with
+nonzero Jacobian preserves weighted fiber sums almost everywhere for normalized Hausdorff
+measure. Neither the parameter set nor the weight needs to be measurable. -/
+theorem tsum_fiber_inter_setOf_regular_ae_eq (s : Set U) (g : U → ℝ≥0∞)
+    {K : ℝ≥0} (hf : LipschitzWith K f) :
+    (fun y ↦ ∑' x : ↥((s ∩ {x | DifferentiableAt ℝ f x ∧
+      (fderiv ℝ f x).normDet ≠ 0}) ∩ f ⁻¹' {y}), g x) =ᵐ[μHE[finrank ℝ U]]
+      fun y ↦ ∑' x : ↥(s ∩ f ⁻¹' {y}), g x := by
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp
+    hf.euclideanHausdorffMeasure_image_compl_setOf_regular] with y hy
+  apply tsum_congr_set_coe g
+  ext x
+  have hx : f x = y → DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0 :=
+    fun h ↦ not_not.1 fun hx ↦ hy ⟨x, hx, h⟩
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_singleton_iff]
+  aesop
+
 end TauCeti
 
 namespace LipschitzWith
@@ -178,15 +195,9 @@ theorem aemeasurable_tsum_fiber (hf : LipschitzWith K f) (hs : NullMeasurableSet
   have hinj (x : U) (hx : x ∈ G) : Injective (fderiv ℝ f x) :=
     LinearMap.ker_eq_bot.1
       (not_not.1 fun h ↦ hx.2 (LinearMap.normDet_eq_zero_iff_ker_ne_bot.2 h))
-  refine (measurable_tsum_fiber_of_injective_fderiv (ht.inter hG)
-    (fun x hx ↦ hx.2.1) (fun x hx ↦ hinj x hx.2) hg).aemeasurable.congr ?_
-  filter_upwards [measure_eq_zero_iff_ae_notMem.mp
-    hf.euclideanHausdorffMeasure_image_compl_setOf_regular] with y hy
-  apply tsum_congr_set_coe g
-  ext x
-  have hx : f x = y → x ∈ G := fun h ↦ not_not.1 fun hx ↦ hy ⟨x, hx, h⟩
-  simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
-  aesop
+  exact (measurable_tsum_fiber_of_injective_fderiv (ht.inter hG)
+    (fun x hx ↦ hx.2.1) (fun x hx ↦ hinj x hx.2) hg).aemeasurable.congr
+      (tsum_fiber_inter_setOf_regular_ae_eq t g hf)
 
 /-- **The weighted area formula with multiplicity.** Integrating the geometric Jacobian
 of a Lipschitz map against a nonnegative measurable weight equals the normalized Hausdorff
@@ -213,14 +224,7 @@ theorem lintegral_normDet_fderiv_mul_eq_lintegral_tsum (hf : LipschitzWith K f)
   rw [← lintegral_inter_add_sdiff _ t hG, hzero, add_zero,
     lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv (ht.inter hG)
       (fun x hx ↦ hx.2.1) (fun x hx ↦ ?_) hg]
-  · apply lintegral_congr_ae
-    filter_upwards [measure_eq_zero_iff_ae_notMem.mp
-      hf.euclideanHausdorffMeasure_image_compl_setOf_regular] with y hy
-    apply tsum_congr_set_coe g
-    ext x
-    have hx : f x = y → x ∈ G := fun h ↦ not_not.1 fun hx ↦ hy ⟨x, hx, h⟩
-    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
-    aesop
+  · exact lintegral_congr_ae (tsum_fiber_inter_setOf_regular_ae_eq t g hf)
   · exact LinearMap.ker_eq_bot.1
       (not_not.1 fun h ↦ hx.2.2 (LinearMap.normDet_eq_zero_iff_ker_ne_bot.2 h))
 
