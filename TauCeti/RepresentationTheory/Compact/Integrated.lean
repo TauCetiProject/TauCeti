@@ -37,22 +37,22 @@ isotypic projector is in
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.integratedOperator`: the operator `∫ g, f g • π g` by which a
+* `ContRepresentation.integratedOperator`: the operator `∫ g, f g • π g` by which a
   continuous scalar function acts on a continuous representation.
-* `TauCeti.ContRepresentation.integratedOperatorₗ`: the same, linear in the acting function.
-* `TauCeti.ContRepresentation.integratedIntertwiner`: the integrated operator of a class function,
+* `ContRepresentation.integratedOperatorₗ`: the same, linear in the acting function.
+* `ContRepresentation.integratedIntertwiner`: the integrated operator of a class function,
   packaged as a continuous self-intertwiner.
 
 ## Main results
 
-* `TauCeti.ContRepresentation.trace_integratedOperator`: the trace of the integrated operator is
+* `ContRepresentation.trace_integratedOperator`: the trace of the integrated operator is
   `∫ g, f g · χ_π g`.
 * `ContRepresentation.comp_integratedOperator`: integrated operators are natural with
   respect to continuous intertwiners.
-* `TauCeti.ContRepresentation.integratedOperator_comp`: a class function acts by an intertwiner.
-* `TauCeti.ContRepresentation.integratedOperator_eq_smul_id`: **a class function acts on a
+* `ContRepresentation.integratedOperator_comp`: a class function acts by an intertwiner.
+* `ContRepresentation.integratedOperator_eq_smul_id`: **a class function acts on a
   finite-dimensional irreducible representation by the scalar `(dim V)⁻¹ · ∫ g, f g · χ_π g`.**
-* `TauCeti.ContRepresentation.integratedOperator_eq_zero`: it acts as zero when that integral
+* `ContRepresentation.integratedOperator_eq_zero`: it acts as zero when that integral
   vanishes.
 
 ## Implementation notes
@@ -67,7 +67,7 @@ family valued in the operator space `V →L[𝕜] V`, so it inherits that averag
 Bochner integral reads is completeness of that codomain, and `[CompleteSpace V]` is what supplies
 it; failing that, the average is the integral's junk value `0` rather than the classical integrated
 form `π(f)`. Completeness therefore enters with
-`TauCeti.ContRepresentation.integratedOperator_apply`, finite-dimensionality with the trace, and
+`ContRepresentation.integratedOperator_apply`, finite-dimensionality with the trace, and
 algebraic closedness of the scalars with Schur's lemma. The integrated operator
 of the trivial group action and other structural identities are not developed here: what the
 character projections need is linearity in `f`, the trace, and the scalar theorem.
@@ -86,17 +86,13 @@ Groups*, Springer GTM 98 (1985), Chapter II.
 
 public section
 
-open _root_.ContRepresentation
-
-open MeasureTheory
-
-namespace TauCeti
+open MeasureTheory TauCeti
 
 namespace ContRepresentation
 
 section Conjugation
 
-variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Conjugating the group variable, as a continuous self-map of the group. -/
 private def conjMap (h : G) : C(G, G) :=
@@ -106,12 +102,13 @@ private def conjMap (h : G) : C(G, G) :=
 private theorem conjMap_apply (h g : G) : conjMap h g = h⁻¹ * (g * h) :=
   (rfl)
 
-variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+variable {𝕜 W : Type*} [NontriviallyNormedField 𝕜]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
 
 /-- Haar averaging does not see the conjugation of the group variable: it is a right translation
 followed by a left translation. -/
-private theorem haarAverage_comp_conjMap {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-    [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] (F : C(G, W)) (h : G) :
+private theorem haarAverage_comp_conjMap (F : C(G, W)) (h : G) :
     haarAverage G (𝕜 := 𝕜) (F.comp (conjMap h)) = haarAverage G (𝕜 := 𝕜) F := by
   rw [conjMap, ← ContinuousMap.comp_assoc, haarAverage_comp_mulRight, haarAverage_comp_mulLeft]
 
@@ -121,8 +118,8 @@ section Integrated
 
 section
 
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-  (π : ContRepresentation 𝕜 G V)
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [Group G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] (π : ContRepresentation 𝕜 G V)
 
 /-- Conjugation `S ↦ π h⁻¹ ∘ S ∘ π h`, packaged as a continuous linear map on operators. -/
 private noncomputable def conjOp (h : G) : (V →L[𝕜] V) →L[𝕜] V →L[𝕜] V :=
@@ -210,7 +207,7 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace �
 
 /-- **Integrated operators are natural in the representation.** A continuous intertwiner commutes
 with the operators obtained by integrating the same scalar function on its source and target. -/
-theorem _root_.ContRepresentation.comp_integratedOperator
+theorem comp_integratedOperator
     (T : ContIntertwiningMap π rho) (f : C(G, 𝕜)) :
     T.toContinuousLinearMap.comp (integratedOperator π hπ f) =
       (integratedOperator rho hrho f).comp T.toContinuousLinearMap := by
@@ -338,7 +335,7 @@ variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
 /-- **The trace of the integrated operator is the Haar integral of `f · χ_π`.** No hypothesis on
 `f` is needed. This is what fixes the normalizing factor in
-`TauCeti.ContRepresentation.integratedOperator_eq_smul_id`. -/
+`ContRepresentation.integratedOperator_eq_smul_id`. -/
 theorem trace_integratedOperator (f : C(G, 𝕜)) :
     LinearMap.trace 𝕜 V (integratedOperator π hπ f : V →ₗ[𝕜] V)
       = ∫ g, f g * character π hπ g ∂haarProb G := by
@@ -378,5 +375,3 @@ theorem integratedOperator_eq_zero (hf : ∀ g h : G, f (h * g * h⁻¹) = f g)
 end Trace
 
 end ContRepresentation
-
-end TauCeti
