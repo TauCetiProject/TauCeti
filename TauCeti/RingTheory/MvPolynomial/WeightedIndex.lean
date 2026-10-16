@@ -8,6 +8,9 @@ module
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.NNRat.BigOperators
 public import Mathlib.Basic.ENNReal.BigOperators
+public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 
 /-!
@@ -21,10 +24,30 @@ it finite. The reciprocal weights distinguish this index from a weighted total d
 Division takes place in `ℝ≥0∞`: a positive exponent in a coordinate of weight zero has
 infinite cost. The constant jet has cost zero, even when some weights vanish.
 
+The index behaves like an order of vanishing. Over a semiring without zero divisors it is
+additive on products, because the lowest weighted homogeneous components of the Taylor shifts
+multiply to a nonzero component of the product. A Hasse derivative `∂^d` lowers it by at most
+the weight of `d`, scaling all weights by `c` divides it by `c`, and renaming the variables
+injectively preserves it. A univariate polynomial placed in one coordinate has its root
+multiplicity divided by that coordinate's weight as index. These rules are the calculus of
+indices used for auxiliary polynomials in the proof of Roth's theorem.
+
+## Main results
+
+* `MvPolynomial.weightedIndex_mul`: `Ind(P Q) = Ind(P) + Ind(Q)` without zero divisors.
+* `MvPolynomial.weightedIndex_le_weightedIndex_hasseDeriv_add`:
+  `Ind(P) ≤ Ind(∂^d P) + ∑ j, d j / r j`.
+* `MvPolynomial.weightedIndex_smul_weight`: the index for the weights `c • r` is the index
+  for `r` divided by `c`.
+* `MvPolynomial.weightedIndex_rename`: renaming along an injective map preserves the index.
+* `MvPolynomial.weightedIndex_toMvPolynomial`: a univariate polynomial placed in the
+  coordinate `i` has index `rootMultiplicity / r i`.
+
 ## References
 
 * L. Pottmeyer, [*Diophantine Approximation*](https://esaga.uni-due.de/f/lukas.pottmeyer/DioApp.pdf)
-  (2022), §2.6, Definition 2.6.2 and Example 2.6.3.
+  (2022), §2.6, Definition 2.6.2, Example 2.6.3 and Exercise 2.19; §3.4, Lemma 3.4.3 and
+  §§3.4.6–3.4.7.
 -/
 
 public section
@@ -119,6 +142,12 @@ theorem exists_weightedIndex_eq_weight {r : σ → ℕ} {a : σ → R}
   refine le_iInf fun e ↦ le_iInf fun he ↦ hmin e ?_
   simpa only [mem_support_iff, coeff_taylor] using he
 
+/-- A polynomial whose Taylor shift vanishes has infinite index. Over a ring this happens only
+for the zero polynomial. -/
+theorem weightedIndex_eq_top_of_taylor_eq_zero (r : σ → ℕ) {a : σ → R}
+    {P : MvPolynomial σ R} (hP : taylor a P = 0) : weightedIndex r a P = ⊤ :=
+  top_unique <| le_iInf₂ fun d hd ↦ (hd (by rw [← coeff_taylor, hP]; simp)).elim
+
 /-- Index zero detects nonvanishing at the center, without a positivity condition on the
 weights. -/
 @[simp]
@@ -165,6 +194,64 @@ theorem weightedIndex_monomial_zero (r : σ → ℕ) (d : σ →₀ ℕ) {c : R}
       simpa only [Finsupp.weight_apply, Finsupp.sum, nsmul_eq_mul, div_eq_mul_inv] using he
     exact lt_irrefl _ he'
 
+/-- The index of a product is at least the sum of the indices of the factors. -/
+theorem le_weightedIndex_mul (r : σ → ℕ) (a : σ → R) (P Q : MvPolynomial σ R) :
+    weightedIndex r a P + weightedIndex r a Q ≤ weightedIndex r a (P * Q) := by
+  classical
+  refine le_iInf₂ fun d hd ↦ ?_
+  rw [hasseDeriv_mul, map_sum] at hd
+  obtain ⟨x, hx, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hd
+  rw [map_mul] at hne
+  rw [← Finset.mem_antidiagonal.mp hx, map_add]
+  exact add_le_add (weightedIndex_le (left_ne_zero_of_mul hne))
+    (weightedIndex_le (right_ne_zero_of_mul hne))
+
+/-- A Hasse derivative `∂^d` lowers the index by at most the weight of `d`:
+`Ind(P) ≤ Ind(∂^d P) + ∑ j, d j / r j`. -/
+theorem weightedIndex_le_weightedIndex_hasseDeriv_add (r : σ → ℕ) (a : σ → R)
+    (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    weightedIndex r a P ≤
+      weightedIndex r a (hasseDeriv d P) + d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) := by
+  rw [← tsub_le_iff_right]
+  refine le_iInf₂ fun e he ↦ ?_
+  have hcomp := congrArg (eval a) (LinearMap.congr_fun (hasseDeriv_comp e d) P)
+  rw [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul] at hcomp
+  have hne : eval a (hasseDeriv (e + d) P) ≠ 0 := fun h ↦ he (by rw [hcomp, h, smul_zero])
+  rw [tsub_le_iff_right, ← map_add]
+  exact weightedIndex_le hne
+
+/-- Multiplying every weight by a positive integer `c` divides the index by `c`. -/
+theorem weightedIndex_smul_weight {c : ℕ} (hc : c ≠ 0) (r : σ → ℕ) (a : σ → R)
+    (P : MvPolynomial σ R) :
+    weightedIndex (c • r) a P = weightedIndex r a P / c := by
+  have hw : (fun j ↦ (((c • r) j : ℕ) : ℝ≥0∞)⁻¹) =
+      (c : ℝ≥0∞)⁻¹ • fun j ↦ (r j : ℝ≥0∞)⁻¹ := by
+    ext j
+    simp [ENNReal.mul_inv]
+  simp only [weightedIndex, hw, Finsupp.weight_smul_left, smul_eq_mul,
+    ENNReal.iInf_div_of_ne (Nat.cast_ne_zero.mpr hc) (ENNReal.natCast_ne_top c),
+    ENNReal.div_eq_inv_mul]
+
+/-- Renaming the variables along an injective map preserves the index, when the center and the
+weights are pulled back along the map. -/
+theorem weightedIndex_rename {τ : Type*} {f : σ → τ} (hf : Function.Injective f)
+    (r : τ → ℕ) (b : τ → R) (P : MvPolynomial σ R) :
+    weightedIndex r b (rename f P) = weightedIndex (r ∘ f) (b ∘ f) P := by
+  apply le_antisymm
+  · refine le_iInf₂ fun d hd ↦ ?_
+    have hd' : eval b (hasseDeriv (d.mapDomain f) (rename f P)) ≠ 0 := by
+      rwa [← coeff_taylor, taylor_rename, coeff_rename_mapDomain f hf, coeff_taylor]
+    exact (weightedIndex_le hd').trans_eq
+      (Finsupp.linearCombination_mapDomain (v' := fun j ↦ (r j : ℝ≥0∞)⁻¹) (f := f) (l := d))
+  · refine le_iInf₂ fun d hd ↦ ?_
+    rw [← coeff_taylor, taylor_rename] at hd
+    obtain ⟨u, rfl, hu⟩ : ∃ u, u.mapDomain f = d ∧ (taylor (b ∘ f) P).coeff u ≠ 0 := by
+      by_contra! h
+      exact hd (coeff_rename_eq_zero f _ d h)
+    rw [coeff_taylor] at hu
+    exact (weightedIndex_le hu).trans_eq
+      (Finsupp.linearCombination_mapDomain (v' := fun j ↦ (r j : ℝ≥0∞)⁻¹) (f := f) (l := u)).symm
+
 example : weightedIndex ![1, 2] 0
     (X 0 * X 1 : MvPolynomial (Fin 2) ℚ) = 3 / 2 := by
   have hm : (X 0 * X 1 : MvPolynomial (Fin 2) ℚ) =
@@ -179,26 +266,128 @@ example : weightedIndex ![1, 2] 0
     _ = (2 + 1) / 2 := (ENNReal.add_div).symm
     _ = 3 / 2 := by norm_num
 
+section NoZeroDivisors
+
+variable [NoZeroDivisors R]
+
+/-- Over a semiring without zero divisors, the index of a product is the sum of the indices.
+This holds for all weights, including zero weights and infinite indices. -/
+theorem weightedIndex_mul (r : σ → ℕ) (a : σ → R) (P Q : MvPolynomial σ R) :
+    weightedIndex r a (P * Q) = weightedIndex r a P + weightedIndex r a Q := by
+  classical
+  refine le_antisymm ?_ (le_weightedIndex_mul r a P Q)
+  by_cases hP : taylor a P = 0
+  · simp [weightedIndex_eq_top_of_taylor_eq_zero r hP]
+  by_cases hQ : taylor a Q = 0
+  · simp [weightedIndex_eq_top_of_taylor_eq_zero r hQ]
+  obtain ⟨d, hd, hPd⟩ := exists_weightedIndex_eq_weight (r := r) hP
+  obtain ⟨e, he, hQe⟩ := exists_weightedIndex_eq_weight (r := r) hQ
+  set w : σ → ℝ≥0∞ := fun j ↦ (r j : ℝ≥0∞)⁻¹
+  rw [hPd, hQe]
+  by_cases hp : d.weight w = ⊤
+  · simp [hp]
+  by_cases hq : e.weight w = ⊤
+  · simp [hq]
+  -- The product of the lowest weighted homogeneous components of the Taylor shifts is
+  -- nonzero, and it is the lowest weighted homogeneous component of the shifted product.
+  set P₀ := weightedHomogeneousComponent w (d.weight w) (taylor a P)
+  set Q₀ := weightedHomogeneousComponent w (e.weight w) (taylor a Q)
+  have hP₀ : P₀.coeff d ≠ 0 := by
+    simpa [P₀, coeff_weightedHomogeneousComponent, coeff_taylor] using hd
+  have hQ₀ : Q₀.coeff e ≠ 0 := by
+    simpa [Q₀, coeff_weightedHomogeneousComponent, coeff_taylor] using he
+  obtain ⟨g, hg⟩ := ne_zero_iff.mp
+    (mul_ne_zero (ne_zero_iff.mpr ⟨d, hP₀⟩) (ne_zero_iff.mpr ⟨e, hQ₀⟩))
+  have hwg : g.weight w = d.weight w + e.weight w :=
+    ((weightedHomogeneousComponent_isWeightedHomogeneous _ _).mul
+      (weightedHomogeneousComponent_isWeightedHomogeneous _ _)) hg
+  have hcoeff : (P₀ * Q₀).coeff g = (taylor a (P * Q)).coeff g := by
+    rw [map_mul, coeff_mul, coeff_mul]
+    refine Finset.sum_congr rfl fun x hx ↦ ?_
+    simp only [P₀, Q₀, coeff_weightedHomogeneousComponent]
+    by_cases h0 : (taylor a P).coeff x.1 * (taylor a Q).coeff x.2 = 0
+    · split_ifs <;> simp [h0]
+    have h₁ : d.weight w ≤ x.1.weight w := hPd ▸
+      weightedIndex_le (by rw [← coeff_taylor]; exact left_ne_zero_of_mul h0)
+    have h₂ : e.weight w ≤ x.2.weight w := hQe ▸
+      weightedIndex_le (by rw [← coeff_taylor]; exact right_ne_zero_of_mul h0)
+    have hsum : x.1.weight w + x.2.weight w = d.weight w + e.weight w := by
+      rw [← map_add, Finset.mem_antidiagonal.mp hx, hwg]
+    have e₁ : x.1.weight w = d.weight w :=
+      (ENNReal.le_of_add_le_add_right hq (hsum ▸ add_le_add le_rfl h₂)).antisymm h₁
+    have e₂ : x.2.weight w = e.weight w :=
+      (ENNReal.le_of_add_le_add_left hp (hsum ▸ add_le_add h₁ le_rfl)).antisymm h₂
+    simp [e₁, e₂]
+  rw [← hwg]
+  exact weightedIndex_le (by rw [← coeff_taylor, ← hcoeff]; exact hg)
+
+/-- Over a nontrivial semiring without zero divisors, the index of `P ^ n` is `n` times the
+index of `P`. -/
+theorem weightedIndex_pow [Nontrivial R] (r : σ → ℕ) (a : σ → R) (P : MvPolynomial σ R)
+    (n : ℕ) : weightedIndex r a (P ^ n) = n • weightedIndex r a P := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, weightedIndex_mul, ih, succ_nsmul]
+
+/-- Over a nontrivial semiring without zero divisors, the index of a finite product is the sum
+of the indices of its factors. -/
+theorem weightedIndex_prod [Nontrivial R] {ι : Type*} (r : σ → ℕ) (a : σ → R)
+    (P : ι → MvPolynomial σ R) (s : Finset ι) :
+    weightedIndex r a (∏ i ∈ s, P i) = ∑ i ∈ s, weightedIndex r a (P i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.prod_insert hi, Finset.sum_insert hi, weightedIndex_mul, ih]
+
+end NoZeroDivisors
+
 end Semiring
 
 section Ring
 
 variable [CommRing R]
 
+/-- A nonzero univariate polynomial placed in the coordinate `i` has as index its root
+multiplicity at `a i` divided by the weight of `i`. This includes zero weights. -/
+theorem weightedIndex_toMvPolynomial (r : σ → ℕ) (a : σ → R) (i : σ) {p : Polynomial R}
+    (hp : p ≠ 0) :
+    weightedIndex r a (p.toMvPolynomial i) =
+      (p.rootMultiplicity (a i) : ℝ≥0∞) / (r i : ℝ≥0∞) := by
+  classical
+  have hwt (k : ℕ) : (Finsupp.single i k).weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) =
+      (k : ℝ≥0∞) / (r i : ℝ≥0∞) := by
+    rw [Finsupp.weight_single, nsmul_eq_mul, div_eq_mul_inv]
+  have hjet (k : ℕ) : eval a (hasseDeriv (Finsupp.single i k) (p.toMvPolynomial i)) =
+      (Polynomial.taylor (a i) p).coeff k := by
+    rw [hasseDeriv_single_toMvPolynomial, eval_toMvPolynomial, Polynomial.taylor_coeff]
+  have hm : p.rootMultiplicity (a i) = (Polynomial.taylor (a i) p).natTrailingDegree := by
+    rw [Polynomial.rootMultiplicity_eq_natTrailingDegree, Polynomial.taylor_apply]
+  apply le_antisymm
+  · rw [hm, ← hwt]
+    refine weightedIndex_le ?_
+    rw [hjet]
+    exact mt Polynomial.trailingCoeff_eq_zero.mp (by simpa using hp)
+  · refine le_iInf₂ fun d hd ↦ ?_
+    have hd' : d = Finsupp.single i (d i) := by
+      ext j
+      by_cases hj : j = i
+      · subst hj
+        simp
+      · rw [Finsupp.single_eq_of_ne hj]
+        by_contra h
+        exact hd (by rw [hasseDeriv_toMvPolynomial_eq_zero (Ne.symm hj) h, map_zero])
+    rw [hd', hjet] at hd
+    rw [hd', hwt, hm]
+    gcongr
+    exact_mod_cast Polynomial.natTrailingDegree_le_of_ne_zero hd
+
 /-- A power of a centered coordinate has its exponent divided by the coordinate's weight
 as index. This includes exponent zero and zero weights. -/
 theorem weightedIndex_X_sub_C_pow [Nontrivial R] (r : σ → ℕ) (a : σ → R) (i : σ)
     (m : ℕ) : weightedIndex r a ((X i - C (a i)) ^ m) =
       (m : ℝ≥0∞) / (r i : ℝ≥0∞) := by
-  have ht : taylor a ((X i - C (a i)) ^ m) = monomial (Finsupp.single i m) (1 : R) := by
-    simp [X_pow_eq_monomial]
-  calc
-    weightedIndex r a ((X i - C (a i)) ^ m) =
-        weightedIndex r 0 (taylor a ((X i - C (a i)) ^ m)) := by
-      rw [weightedIndex_taylor, zero_add]
-    _ = (m : ℝ≥0∞) / (r i : ℝ≥0∞) := by
-      rw [ht, weightedIndex_monomial_zero _ _ one_ne_zero, Finsupp.weight_single]
-      simp [nsmul_eq_mul, div_eq_mul_inv]
+  simpa [Polynomial.rootMultiplicity_X_sub_C_pow] using
+    weightedIndex_toMvPolynomial r a i ((Polynomial.monic_X_sub_C (a i)).pow m).ne_zero
 
 /-- Positive weights make the index of every nonzero polynomial finite. -/
 theorem weightedIndex_ne_top {r : σ → ℕ} (hr : ∀ j, r j ≠ 0) (a : σ → R)
