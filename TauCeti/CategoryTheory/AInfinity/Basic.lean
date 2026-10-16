@@ -21,9 +21,10 @@ of degree `2 - n`, subject to the Stasheff identities on every composable string
 
 The structure is stored as an `A∞` algebra on the total module of morphisms
 `⨁ (X, Y), Hom(X, Y)` with its degreewise grading, whose operations are path-compatible
-(`TauCeti.GradedLinearQuiver.IsPathCompatible`): they send a composable string to a morphism
-between its endpoints, and every other string to zero.  A path-compatible operation is determined
-by its values on composable strings, so this is exactly the data of the operations `mₙ` above.
+along the identity of objects (`TauCeti.GradedLinearQuiver.IsPathCompatible`): they send a
+composable string to a morphism between its endpoints, and every other string to zero.  A
+path-compatible operation is determined by its values on composable strings, so this is exactly the
+data of the operations `mₙ` above.
 The stored law is therefore the square-zero law `b ∘ b = 0` of the suspended bar coderivation of
 the total module, as for `TauCeti.AInfinityAlgebra`.  On a word of morphisms which is not
 composable every term of the Stasheff identities vanishes, so these identities on the total module
@@ -83,7 +84,7 @@ structure AInfinityCategory (R : Type w) [CommRing R] (C : Type u)
   /-- Every operation of positive arity sends composable strings to morphisms between their
   endpoints, and other strings to zero.  The nullary operation vanishes, so it is path-compatible
   automatically (`TauCeti.AInfinityCategory.isPathCompatible_m`). -/
-  isPathCompatible_m_of_pos (n : ℕ) (hn : 0 < n) : IsPathCompatible (m n)
+  isPathCompatible_m_of_pos (n : ℕ) (hn : 0 < n) : IsPathCompatible id (m n)
 
 namespace AInfinityCategory
 
@@ -100,7 +101,7 @@ variable (𝒞 : AInfinityCategory R C)
 
 /-- Every operation of an `A∞` category sends composable strings to morphisms between their
 endpoints, and other strings to zero. -/
-theorem isPathCompatible_m (n : ℕ) : IsPathCompatible (𝒞.m n) := by
+theorem isPathCompatible_m (n : ℕ) : IsPathCompatible id (𝒞.m n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [𝒞.m_zero]
     exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
@@ -154,10 +155,13 @@ strings. -/
 theorem ext_pathOperation {𝒞 𝒞' : AInfinityCategory R C}
     (h : ∀ (n : ℕ) (X : Fin (n + 1) → C), 𝒞.pathOperation X = 𝒞'.pathOperation X) :
     𝒞 = 𝒞' := by
-  refine ext <| funext fun n ↦ (𝒞.isPathCompatible_m n).ext (𝒞'.isPathCompatible_m n) fun X x ↦ ?_
+  refine ext <| funext fun n ↦ ?_
+  rcases n with _ | n
+  · rw [𝒞.m_zero, 𝒞'.m_zero]
+  refine (𝒞.isPathCompatible_m _).ext (𝒞'.isPathCompatible_m _) fun X x ↦ ?_
   have e := InternalGrading.multilinearMap_ext
-    (f := (𝒞.m n).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
-    (g := (𝒞'.m n).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+    (f := (𝒞.m (n + 1)).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+    (g := (𝒞'.m (n + 1)).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
     (fun i ↦ grading (R := R) (X i.rev.castSucc) (X i.rev.succ)) fun d y hy ↦ by
       rw [MultilinearMap.compLinearMap_apply, MultilinearMap.compLinearMap_apply,
         ← 𝒞.homInclusion_pathOperation X d fun i ↦ ⟨y i, hy i⟩,
