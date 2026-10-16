@@ -89,42 +89,86 @@ instance (P : DyadicJordanProfile) : DecidablePred P.IsFree := fun i ↦
 /-- The number `t` of type-I constituents. -/
 def typeICount (P : DyadicJordanProfile) : ℕ := P.typeI.card
 
+/-- The number of type-I constituents is the cardinality of the type-I scale set. -/
+theorem typeICount_def (P : DyadicJordanProfile) : P.typeICount = P.typeI.card := (rfl)
+
 /-- The number `b` of adjacent pairs of type-I constituents. -/
 def adjacentTypeICount (P : DyadicJordanProfile) : ℕ :=
   (P.typeI.filter fun i ↦ i + 1 ∈ P.typeI).card
+
+/-- The adjacent type-I count is the number of type-I scales whose successor is type I. -/
+theorem adjacentTypeICount_def (P : DyadicJordanProfile) :
+    P.adjacentTypeICount = (P.typeI.filter fun i ↦ i + 1 ∈ P.typeI).card := (rfl)
 
 /-- The number `c`, the sum of the ranks of the nonempty type-II constituents. -/
 def typeIIRank (P : DyadicJordanProfile) : ℕ :=
   ∑ i ∈ P.ranks.support.filter fun i ↦ i ∉ P.typeI, P.ranks i
 
+/-- The total type-II rank is the sum of the ranks at non-type-I scales in the support. -/
+theorem typeIIRank_def (P : DyadicJordanProfile) :
+    P.typeIIRank = ∑ i ∈ P.ranks.support.filter fun i ↦ i ∉ P.typeI, P.ranks i := (rfl)
+
 /-- The sum `∑ i * n_i * (n_i + 1) / 2` of the diagonal contributions `d_i`. -/
 def diagonalExponent (P : DyadicJordanProfile) : ℕ :=
   ∑ i ∈ P.ranks.support, i * (P.ranks i * (P.ranks i + 1) / 2)
+
+/-- The diagonal exponent is the weighted sum of the triangular constituent ranks. -/
+theorem diagonalExponent_def (P : DyadicJordanProfile) :
+    P.diagonalExponent =
+      ∑ i ∈ P.ranks.support, i * (P.ranks i * (P.ranks i + 1) / 2) := (rfl)
 
 /-- The cross term `∑_{i < j} (j - i) * n_i * n_j` occurring in `N_M`. -/
 def distanceCrossExponent (P : DyadicJordanProfile) : ℕ :=
   ∑ i ∈ P.ranks.support,
     ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, (j - i) * P.ranks i * P.ranks j
 
+/-- The distance cross exponent is the pairwise rank product weighted by the scale gap. -/
+theorem distanceCrossExponent_def (P : DyadicJordanProfile) :
+    P.distanceCrossExponent =
+      ∑ i ∈ P.ranks.support,
+        ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, (j - i) * P.ranks i * P.ranks j := (rfl)
+
 /-- The cross term `∑_{i < j} j * n_i * n_j` occurring in `N_Q`. -/
 def upperCrossExponent (P : DyadicJordanProfile) : ℕ :=
   ∑ i ∈ P.ranks.support,
     ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, j * P.ranks i * P.ranks j
+
+/-- The upper cross exponent weights each pairwise rank product by its larger scale index. -/
+theorem upperCrossExponent_def (P : DyadicJordanProfile) :
+    P.upperCrossExponent =
+      ∑ i ∈ P.ranks.support,
+        ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, j * P.ranks i * P.ranks j := (rfl)
 
 /-- The cross term `∑_{i < j} i * n_i * n_j` occurring in Cho's formula for `N`. -/
 def lowerCrossExponent (P : DyadicJordanProfile) : ℕ :=
   ∑ i ∈ P.ranks.support,
     ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, i * P.ranks i * P.ranks j
 
+/-- The lower cross exponent weights each pairwise rank product by its smaller scale index. -/
+theorem lowerCrossExponent_def (P : DyadicJordanProfile) :
+    P.lowerCrossExponent =
+      ∑ i ∈ P.ranks.support,
+        ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, i * P.ranks i * P.ranks j := (rfl)
+
 /-- Cho's exponent `N_M` attached to dyadic Jordan data. -/
 def nM (P : DyadicJordanProfile) : ℕ :=
   (∑ i ∈ P.typeI, (2 * P.ranks i - 1)) + P.distanceCrossExponent +
     2 * P.adjacentTypeICount
 
+/-- Cho's exponent `N_M` in terms of the type-I, distance, and adjacency contributions. -/
+theorem nM_def (P : DyadicJordanProfile) :
+    P.nM = (∑ i ∈ P.typeI, (2 * P.ranks i - 1)) + P.distanceCrossExponent +
+      2 * P.adjacentTypeICount := (rfl)
+
 /-- Cho's exponent `N_Q` attached to dyadic Jordan data. -/
 def nQ (P : DyadicJordanProfile) : ℕ :=
   (∑ i ∈ P.typeI, 2 * P.ranks i) + P.upperCrossExponent + P.diagonalExponent +
     P.adjacentTypeICount + P.typeIIRank
+
+/-- Cho's exponent `N_Q` in terms of its constituent-rank and parity statistics. -/
+theorem nQ_def (P : DyadicJordanProfile) :
+    P.nQ = (∑ i ∈ P.typeI, 2 * P.ranks i) + P.upperCrossExponent +
+      P.diagonalExponent + P.adjacentTypeICount + P.typeIIRank := (rfl)
 
 /-- The density exponent `N = N_Q - N_M` attached to dyadic Jordan data.
 
@@ -134,6 +178,11 @@ the former. The theorem `densityExponent_eq` gives Cho's displayed order of term
 def densityExponent (P : DyadicJordanProfile) : ℕ :=
   P.typeICount - P.adjacentTypeICount + P.lowerCrossExponent + P.diagonalExponent +
     P.typeIIRank
+
+/-- Cho's density exponent in terms of the type, cross, diagonal, and adjacency statistics. -/
+theorem densityExponent_def (P : DyadicJordanProfile) :
+    P.densityExponent = P.typeICount - P.adjacentTypeICount + P.lowerCrossExponent +
+      P.diagonalExponent + P.typeIIRank := (rfl)
 
 /-- A scale declared to have type I has positive rank. -/
 theorem rank_pos_of_mem_typeI (P : DyadicJordanProfile) {i : ℕ} (hi : i ∈ P.typeI) :
