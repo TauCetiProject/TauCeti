@@ -13,15 +13,15 @@ public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 /-!
 # Punctures of complex-charted spaces
 
-A finite set does not disconnect a connected space locally modelled on the complex plane.  The
-proof first uses a punctured coordinate ball to remove one point, then iterates inside the open
-complement of the points already removed.
+A finite set does not disconnect a connected space locally modelled on the complex plane.
 
 This is the topological input for restricting a map of connected Riemann surfaces away from
 finitely many fibres: the remaining open surface is still path-connected.
 
 ## Main declarations
 
+* `exists_mem_nhds_isConnected_diff_singleton_of_chartedSpace_complex`: every point of a
+  complex-charted space has a neighbourhood that stays connected once the point is removed.
 * `isConnected_compl_singleton_of_chartedSpace_complex`: removing one point from a connected
   complex-charted space leaves it connected.
 * `Set.Finite.isPathConnected_compl_of_chartedSpace_complex`: the complement of a finite set in a
@@ -41,8 +41,11 @@ namespace TauCeti
 variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [ConnectedSpace X]
 
 omit [ConnectedSpace X] in
-private theorem isConnected_chart_ball_sdiff_singleton (p : X) :
+/-- Every point `p` of a space charted over `ℂ` has a neighbourhood `U` for which the punctured
+neighbourhood `U \ {p}` is connected. -/
+theorem exists_mem_nhds_isConnected_diff_singleton_of_chartedSpace_complex (p : X) :
     ∃ U ∈ 𝓝 p, IsConnected (U \ {p}) := by
+  -- Pull back a punctured coordinate ball around `p` through the chart at `p`.
   let e := chartAt ℂ p
   have htarget : e.target ∈ 𝓝 (e p) := e.open_target.mem_nhds (e.map_source (mem_chart_source ℂ p))
   obtain ⟨r, hr, hrsub⟩ := Metric.mem_nhds_iff.mp htarget
@@ -58,8 +61,7 @@ private theorem isConnected_chart_ball_sdiff_singleton (p : X) :
     · rintro ⟨y, ⟨hyball, hyne⟩, rfl⟩
       have hytarget : y ∈ e.target := hrsub hyball
       refine ⟨⟨e.map_target hytarget, ?_⟩, ?_⟩
-      · change e (e.symm y) ∈ ball (e p) r
-        rwa [e.right_inv hytarget]
+      · rwa [mem_preimage, e.right_inv hytarget]
       · intro h
         apply hyne
         rw [mem_singleton_iff]
@@ -74,7 +76,7 @@ private theorem isConnected_chart_ball_sdiff_singleton (p : X) :
 theorem isConnected_compl_singleton_of_chartedSpace_complex (p : X) :
     IsConnected ({p}ᶜ : Set X) := by
   let _ := ChartedSpace.t1Space ℂ X
-  obtain ⟨U, hU, hUp⟩ := isConnected_chart_ball_sdiff_singleton p
+  obtain ⟨U, hU, hUp⟩ := exists_mem_nhds_isConnected_diff_singleton_of_chartedSpace_complex p
   exact isConnected_compl_singleton_of_mem_nhds p hU hUp
 
 end TauCeti
@@ -87,6 +89,8 @@ variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [ConnectedSpace 
 theorem isConnected_compl_of_chartedSpace_complex {s : Set X} (hs : s.Finite) :
     IsConnected sᶜ := by
   let _ := ChartedSpace.t1Space ℂ X
+  -- Remove the points one at a time, each inside the open complement of the points already
+  -- removed, which is again a connected complex-charted space.
   induction s, hs using Set.Finite.induction_on with
   | empty => simpa using (isConnected_univ : IsConnected (univ : Set X))
   | @insert p s hp hs ih =>

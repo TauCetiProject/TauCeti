@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
-public import TauCeti.Geometry.Manifold.Puncture
+public import TauCeti.Geometry.Manifold.Complex.Puncture
 
 import TauCeti.Data.Set.Restrict
 
