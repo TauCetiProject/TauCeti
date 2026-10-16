@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Enriched.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
 /-!
 # Differential graded categories

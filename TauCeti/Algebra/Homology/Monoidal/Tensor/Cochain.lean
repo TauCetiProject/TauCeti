@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Linear
 public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
