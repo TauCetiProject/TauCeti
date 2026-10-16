@@ -51,8 +51,14 @@ theorem add_smul_interpolation {A B : Set E} (hA : Convex 𝕜 A) (hB : Convex �
     {p q s t : 𝕜} (hp : 0 ≤ p) (hq : 0 ≤ q) (hpq : p + q = 1)
     (hs : 0 ≤ s) (ht : 0 ≤ t) :
     p • (A + s • B) + q • (A + t • B) = A + (p * s + q * t) • B := by
-  rw [Set.smul_set_add, Set.smul_set_add, smul_smul, smul_smul, add_add_add_comm,
-    ← hA.add_smul hp hq, hpq, one_smul, ← hB.add_smul (mul_nonneg hp hs) (mul_nonneg hq ht)]
+  have hA' : p • A + q • A = A := by rw [← hA.add_smul hp hq, hpq, one_smul]
+  have hB' : (p * s) • B + (q * t) • B = (p * s + q * t) • B :=
+    (hB.add_smul (mul_nonneg hp hs) (mul_nonneg hq ht)).symm
+  calc p • (A + s • B) + q • (A + t • B)
+      = (p • A + q • A) + ((p * s) • B + (q * t) • B) := by
+        simp only [Set.smul_set_add, smul_smul]
+        exact add_add_add_comm _ _ _ _
+    _ = A + (p * s + q * t) • B := by rw [hA', hB']
 
 /-- Convex-combination form of `Convex.add_smul_interpolation`, parametrized by
 `u ∈ [0, 1]`. -/

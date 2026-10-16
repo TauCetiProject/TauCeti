@@ -28,13 +28,7 @@ namespace Set
 variable {α E : Type*} [AddMonoid E] [DistribSMul α E]
 
 /-- Scalar multiplication distributes over Minkowski addition of sets. -/
-@[simp] theorem smul_set_add (c : α) (A B : Set E) : c • (A + B) = c • A + c • B := by
-  ext x
-  simp only [Set.mem_smul_set, Set.mem_add]
-  constructor
-  · rintro ⟨_, ⟨a, ha, b, hb, rfl⟩, rfl⟩
-    exact ⟨c • a, ⟨a, ha, rfl⟩, c • b, ⟨b, hb, rfl⟩, (smul_add c a b).symm⟩
-  · rintro ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩
-    exact ⟨a + b, ⟨a, ha, b, hb, rfl⟩, smul_add c a b⟩
+@[simp] theorem smul_set_add (c : α) (A B : Set E) : c • (A + B) = c • A + c • B :=
+  image_image2_distrib (smul_add c)
 
 end Set
