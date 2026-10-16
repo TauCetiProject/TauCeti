@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.PiTensorProduct.ProjectiveTopology
+public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Topology
 public import TauCeti.Analysis.LocallyConvex.Multilinear
 
 /-!
