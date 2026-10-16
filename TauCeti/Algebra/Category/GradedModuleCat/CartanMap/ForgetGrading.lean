@@ -260,6 +260,7 @@ theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_toLinearMap
 
 /-- On a specialized graded module class, the simple-family equivalence returns its underlying
 ungraded class. -/
+@[simp]
 theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_mk_of
     (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i))
     (M : (gradedFiniteModules 𝒜').FullSubcategory) :
@@ -274,6 +275,7 @@ theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_mk_of
 
 /-- The inverse simple-family comparison sends an ungraded simple basis class to the
 corresponding specialized graded class. -/
+@[simp]
 theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_symm_simple
     (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) (i : I) :
     (gradedFiniteModulesForgetK0EquivOfSimpleFamilies (𝒜' := 𝒜') S T he he₀ hne hself hS
