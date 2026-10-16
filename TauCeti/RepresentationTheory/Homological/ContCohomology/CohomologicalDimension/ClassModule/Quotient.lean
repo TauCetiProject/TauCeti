@@ -68,8 +68,10 @@ theorem abelianizationProPExtensionKernel_le_of_isPGroup_map (p : ℕ)
     exact (Subgroup.map_eq_bot_iff _).mpr (by simpa using hcomm)
   have : IsMulCommutative H := Subgroup.commutator_self_eq_bot_iff.mp hHcomm
   have h := abelianizationProPExtensionKernel_le_ker p V
-    (ContinuousMonoidHom.quotientMk U.toSubgroup) H (isClosed_discrete _)
-    (isProP_iff_isPGroup.mpr hpro) (Subgroup.le_comap_map _ V)
-  rwa [ContinuousMonoidHom.coe_quotientMk, QuotientGroup.ker_mk'] at h
+    (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) H (isClosed_discrete _)
+    (isProP_iff_isPGroup.mpr hpro) (by
+      simpa only [Subgroup.coe_quotientMkContinuousMonoidHom] using
+        Subgroup.le_comap_map (QuotientGroup.mk' U.toSubgroup) V)
+  rwa [Subgroup.coe_quotientMkContinuousMonoidHom, QuotientGroup.ker_mk'] at h
 
 end TauCeti

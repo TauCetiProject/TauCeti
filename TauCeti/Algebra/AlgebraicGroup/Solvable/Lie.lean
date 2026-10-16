@@ -140,7 +140,7 @@ theorem isSolvable_points_of_isSolvable_lie (A : Type w) [CommRing A] [Algebra k
   obtain ⟨n, f, hf⟩ := exists_upperTriangular_surjective_of_isSolvable_lie (H := H)
   let _ := GeneralLinear.UpperTriangular.isSolvable_points k A n
   exact Group.isSolvable_of_isSolvable_injective
-    (f := AlgHom.mapDomain (A := A) f.hom)
+    (f := BialgHom.mapDomain (A := A) f.hom)
     (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f hf (CommAlgCat.of k A))
 
 /-- A connected affine group with solvable Lie algebra is geometrically solvable, in

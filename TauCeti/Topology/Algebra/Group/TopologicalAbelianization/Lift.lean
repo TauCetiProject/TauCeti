@@ -58,24 +58,24 @@ theorem topologicalClosure_commutator_le_ker (f : G →ₜ* A) :
 /-- **The universal property of the topological abelianization.** A continuous homomorphism from
 `G` to a commutative `T1` group factors through `TopologicalAbelianization G`. -/
 noncomputable def lift (f : G →ₜ* A) : TopologicalAbelianization G →ₜ* A :=
-  ContinuousMonoidHom.quotientLift _ f (topologicalClosure_commutator_le_ker f)
+  ContinuousMonoidHom.quotientLift f _ (topologicalClosure_commutator_le_ker f)
 
 /-- The lift of `f` evaluates as `f` on the class of an element. -/
 @[simp]
 theorem lift_mk (f : G →ₜ* A) (x : G) : lift f (x : TopologicalAbelianization G) = f x :=
-  ContinuousMonoidHom.quotientLift_mk _ f _ x
+  ContinuousMonoidHom.quotientLift_mk f _ _ x
 
 /-- The lift of `f` composed with the projection is `f`. -/
 @[simp]
 theorem lift_comp_quotientMk (f : G →ₜ* A) :
-    (lift f).comp (ContinuousMonoidHom.quotientMk (commutator G).topologicalClosure) = f :=
-  ContinuousMonoidHom.quotientLift_comp_quotientMk _ f _
+    (lift f).comp (Subgroup.quotientMkContinuousMonoidHom (commutator G).topologicalClosure) = f :=
+  ContinuousMonoidHom.quotientLift_comp_quotientMk f _ _
 
 /-- A continuous homomorphism out of the topological abelianization that agrees with `f` on
 classes is the lift of `f`. -/
 theorem lift_unique (f : G →ₜ* A) (g : TopologicalAbelianization G →ₜ* A)
     (hg : ∀ x : G, g (x : TopologicalAbelianization G) = f x) : g = lift f :=
-  ContinuousMonoidHom.quotientLift_unique _ f _ g hg
+  ContinuousMonoidHom.quotientLift_unique f _ _ g hg
 
 end Lift
 

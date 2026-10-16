@@ -27,7 +27,7 @@ The equivalence sends a point `f : (H₁ ⊗[R] H₂) →ₐ[R] A` to its two re
 `Algebra.TensorProduct.productMap f₁ f₂ : x ⊗ₜ y ↦ f₁ x * f₂ y`. Both restrictions are
 instances of pre-composition with the bialgebra morphisms from
 `TauCeti.Algebra.Bialgebra.TensorProduct`, so the restriction map is a monoid homomorphism by
-`TauCeti.AlgHom.mapDomain`; Mathlib's product map is its inverse by the universal property.
+`BialgHom.mapDomain`; Mathlib's product map is its inverse by the universal property.
 
 ## Main definitions
 
@@ -48,7 +48,7 @@ The tensor-product bialgebra structure and its unit and identity
 isomorphisms are from Mathlib's `Mathlib.RingTheory.Bialgebra.TensorProduct`; the universal
 property `Algebra.TensorProduct.lift` is from Mathlib's
 `Mathlib.RingTheory.TensorProduct.Maps`. The convolution monoid and its contravariant
-functoriality `TauCeti.AlgHom.mapDomain` are Tau Ceti's existing functor-of-points
+functoriality `BialgHom.mapDomain` are Tau Ceti's existing functor-of-points
 infrastructure, built on the Mathlib convolution monoid of Yaël Dillies, Michał Mrugała and
 Yunzhou Xie.
 -/
@@ -73,11 +73,11 @@ inclusions `includeLeft` and `includeRight`. -/
 noncomputable def restrictHom :
     WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A) →*
       WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A) :=
-  (AlgHom.mapDomain includeLeft).prod (AlgHom.mapDomain includeRight)
+  (BialgHom.mapDomain includeLeft).prod (BialgHom.mapDomain includeRight)
 
 @[simp]
 theorem restrictHom_apply (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
-    restrictHom f = (AlgHom.mapDomain includeLeft f, AlgHom.mapDomain includeRight f) := (rfl)
+    restrictHom f = (BialgHom.mapDomain includeLeft f, BialgHom.mapDomain includeRight f) := (rfl)
 
 /-- The convolution monoid of `R`-algebra homomorphisms out of a tensor product of
 bialgebras `H₁ ⊗[R] H₂` is the product of the convolution monoids out of `H₁` and `H₂`.
@@ -92,12 +92,12 @@ noncomputable def pointsMulEquiv :
   invFun p := toConv (Algebra.TensorProduct.productMap p.1.ofConv p.2.ofConv)
   left_inv f := by
     apply WithConv.ofConv_injective
-    simp only [restrictHom_apply, AlgHom.mapDomain_apply, ofConv_toConv,
+    simp only [restrictHom_apply, BialgHom.mapDomain_apply, ofConv_toConv,
       includeLeft_toAlgHom, includeRight_toAlgHom,
       _root_.AlgHom.productMap_comp_includeLeft_includeRight]
   right_inv p := by
     obtain ⟨f₁, f₂⟩ := p
-    simp only [restrictHom_apply, AlgHom.mapDomain_apply,
+    simp only [restrictHom_apply, BialgHom.mapDomain_apply,
       includeLeft_toAlgHom, includeRight_toAlgHom, Algebra.TensorProduct.productMap_left,
       Algebra.TensorProduct.productMap_right,
       toConv_ofConv]
@@ -106,7 +106,7 @@ noncomputable def pointsMulEquiv :
 @[simp]
 theorem pointsMulEquiv_apply (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
     pointsMulEquiv f =
-      (AlgHom.mapDomain includeLeft f, AlgHom.mapDomain includeRight f) := (rfl)
+      (BialgHom.mapDomain includeLeft f, BialgHom.mapDomain includeRight f) := (rfl)
 
 @[simp]
 theorem pointsMulEquiv_symm_apply
@@ -151,9 +151,9 @@ theorem restrictHom_mapValue (φ : A →ₐ[R] B)
   rw [restrictHom_apply, restrictHom_apply]
   exact Prod.ext
     (DFunLike.congr_fun
-      (AlgHom.mapValue_mapDomain (H₁ := H₁) (H₂ := H₁ ⊗[R] H₂) includeLeft φ) f)
+      (BialgHom.mapValue_mapDomain (H₁ := H₁) (H₂ := H₁ ⊗[R] H₂) includeLeft φ) f)
     (DFunLike.congr_fun
-      (AlgHom.mapValue_mapDomain (H₁ := H₂) (H₂ := H₁ ⊗[R] H₂) includeRight φ) f)
+      (BialgHom.mapValue_mapDomain (H₁ := H₂) (H₂ := H₁ ⊗[R] H₂) includeRight φ) f)
 
 /-- The product-points equivalence is natural in the value algebra.
 

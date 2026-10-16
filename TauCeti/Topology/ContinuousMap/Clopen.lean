@@ -138,6 +138,22 @@ theorem restrict_zeroExtendClopen (s : Clopens X) (f : C(s, E)) :
   ext x
   exact zeroExtendClopen_apply_mem (R := R) s f x.2
 
+/-- A continuous function is the sum of the extensions by zero of its restrictions to a clopen
+subset and to the complementary clopen. -/
+theorem zeroExtendClopen_restrict_add_compl (s : Clopens X) (f : C(X, E)) :
+    zeroExtendClopen R s (f.restrict s) +
+      zeroExtendClopen R sᶜ (f.restrict ((sᶜ : Clopens X) : Set X)) = f := by
+  ext x
+  by_cases hx : x ∈ s
+  · have hxc : x ∉ sᶜ := by simpa [← SetLike.mem_coe] using hx
+    rw [add_apply, zeroExtendClopen_apply_mem s _ hx, zeroExtendClopen_apply_not_mem _ _ hxc,
+      add_zero]
+    exact restrict_apply_mk f _ x hx
+  · have hxc : x ∈ sᶜ := by simpa [← SetLike.mem_coe] using hx
+    rw [add_apply, zeroExtendClopen_apply_not_mem s _ hx, zeroExtendClopen_apply_mem _ _ hxc,
+      zero_add]
+    exact restrict_apply_mk f _ x hxc
+
 end Module
 
 section Ring

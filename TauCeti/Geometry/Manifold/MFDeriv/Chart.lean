@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -234,5 +235,22 @@ theorem contMDiffAt_chartAt_comp {n : WithTop ℕ∞} (x : N) :
   exact contMDiffAt_iff.2 ⟨(chartAt X x).continuousAt (mem_chart_source X x),
     contDiffWithinAt_id.congr_of_eventuallyEq (writtenInExtChartAt_chartAt_comp_eventuallyEq x)
       (writtenInExtChartAt_chartAt_comp x (mem_extChartAt_target x))⟩
+
+section ChartOverlap
+
+/-- On a subset of a chart overlap, the derivative of the extended coordinate change is its
+Fréchet derivative within the full model range, including at boundary and corner points. -/
+theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    ∀ y ∈ (extChartAt I α) '' s,
+      HasFDerivWithinAt ((extChartAt I α).symm ≫ extChartAt I β)
+        (fderivWithin 𝕜 (extChartAt I β ∘ (extChartAt I α).symm) (Set.range I) y)
+        ((extChartAt I α) '' s) y := by
+  rintro _ ⟨x, hx, rfl⟩
+  exact (hasFDerivWithinAt_tangentCoordChange (I := I) (hsub hx)).mono fun y hy ↦ by
+    obtain ⟨z, hz, rfl⟩ := hy
+    exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
+
+end ChartOverlap
 
 end TauCeti

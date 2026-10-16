@@ -424,8 +424,9 @@ theorem rootSubgroupCoordinateMap_apply_X (root : GLSymplecticFin.RootSubgroupIn
     (mapPointsFunctor_rootSubgroupCoordinateMap_app root (CommAlgCat.of R A) q)
   rw [pointsMulEquiv_coe, pointsMulEquiv_rootSubgroupPoints,
     GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at h
-  -- The point functor hides the algebra-hom carrier under categorical coercions.
-  -- Present the two precompositions and the universal identity point explicitly.
+  erw [CommHopfAlgCat.quotientPointsHom_apply_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at h
+  -- Evaluate the universal identity point after the two coordinate morphisms.
   change (rootSubgroupCoordinateMap (R := R) root).hom
     ((CommHopfAlgCat.mkQuotient
       (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)).hom

@@ -425,8 +425,10 @@ private theorem abelianizationProPInfl1_injective_and_range (hp : p.Prime)
             (FixedPoints.addSubgroup N M) _ e.toAddMonoidHom he.1
               (transferLeFixedPointsEquiv_smul p hVW hV hp h) c _)).symm
         rw [AddSubgroup.coe_subtype, AddEquiv.coe_toAddMonoidHom, coe_transferLeFixedPointsEquiv]
-        exact congrArg _ (congrArg _ ((quotientQuotientContinuousMulEquiv_mk V W hVW g).trans
-          (QuotientGroup.mapOfLE_mk hVW g).symm).symm)
+        simpa only [Subgroup.quotientMkContinuousMonoidHom_apply,
+          ContinuousMonoidHom.coe_mk, ContinuousMonoidHom.coe_coe] using
+          congrArg _ (congrArg _ ((quotientQuotientContinuousMulEquiv_mk V W hVW g).trans
+            (QuotientGroup.mapOfLE_mk hVW g).symm).symm)
   -- Inflation is injective with image the kernel of restriction, and `j` is bijective.
   refine ⟨fun x y hxy ↦ j.injective (explicitInfl1_injective _ _ _ (by rw [← key, ← key, hxy])),
     ?_⟩
@@ -501,11 +503,13 @@ private theorem abelianizationProPInfl2_injective_and_range (hp : p.Prime)
                 (transferLeFixedPointsEquiv_smul p hVW hV hp h) c _ _)).symm
           rw [AddSubgroup.coe_subtype, AddEquiv.coe_toAddMonoidHom]
           rw [coe_transferLeFixedPointsEquiv]
-          exact congrArg _ (congrArg _ (Prod.ext
-            ((quotientQuotientContinuousMulEquiv_mk V W hVW g).trans
-              (QuotientGroup.mapOfLE_mk hVW g).symm).symm
-            ((quotientQuotientContinuousMulEquiv_mk V W hVW g').trans
-              (QuotientGroup.mapOfLE_mk hVW g').symm).symm))
+          simpa only [Subgroup.quotientMkContinuousMonoidHom_apply,
+            ContinuousMonoidHom.coe_mk, ContinuousMonoidHom.coe_coe] using
+            congrArg _ (congrArg _ (Prod.ext
+              ((quotientQuotientContinuousMulEquiv_mk V W hVW g).trans
+                (QuotientGroup.mapOfLE_mk hVW g).symm).symm
+              ((quotientQuotientContinuousMulEquiv_mk V W hVW g').trans
+                (QuotientGroup.mapOfLE_mk hVW g').symm).symm))
   -- Inflation is injective with image the kernel of restriction when `H¹(N, M)` vanishes, and
   -- `j` is bijective.
   refine ⟨fun x y hxy ↦ j.injective (explicitInfl2_injective _ _ _ (by rw [← key, ← key, hxy])),

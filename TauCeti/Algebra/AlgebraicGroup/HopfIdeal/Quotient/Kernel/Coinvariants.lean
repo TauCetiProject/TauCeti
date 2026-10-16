@@ -73,9 +73,9 @@ theorem mem_coinvariants_kernelHopfIdeal_iff (f : H ⟶ K) (x : K) :
     apply HopfIdeal.mem_coinvariants_iff_forall_mul.mpr
     intro A g n hn
     apply hx A (g * n) g
-    simp only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply]
-    apply (AlgHom.mapDomain (A := A) f.hom).eq_iff.mpr
-    simpa only [inv_mul_cancel_left, MonoidHom.mem_ker, AlgHom.mapDomain_apply] using
+    simp only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply]
+    apply (BialgHom.mapDomain (A := A) f.hom).eq_iff.mpr
+    simpa only [inv_mul_cancel_left, MonoidHom.mem_ker, BialgHom.mapDomain_apply] using
       (mapPointsFunctor_app_eq_one_iff f A n).mpr hn
 
 /-- If the coordinate map is effective, the functions invariant under its kernel are precisely

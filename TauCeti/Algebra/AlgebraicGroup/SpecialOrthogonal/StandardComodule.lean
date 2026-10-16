@@ -142,11 +142,11 @@ theorem basePointsRepresentation_eq_mulVec
   rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom g,
     GeneralLinear.basePointsRepresentation_eq_mulVec]
   have hpoint :
-      AlgHom.mapDomain (coordinateMap R n).hom g =
+      BialgHom.mapDomain (coordinateMap R n).hom g =
         CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
           (CommAlgCat.of R R) g := by
-    rw [coordinateMap_def, AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    rw [coordinateMap_def, BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
   rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe]
 
 /-- A scalar point in the standard representation of `SOₙ`, for `n ≠ 0`, has scalar a square

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
 
 /-!
 # Smoothness and differentiation of paired wedges
@@ -15,6 +17,10 @@ Families of alternating maps can be wedged without loss of regularity. The pairi
 vary: differentiating the paired wedge gives three terms, one for each input. For a fixed pairing
 the first term vanishes. The relative statements apply to arbitrary sets, including chart ranges
 of manifolds with boundary or corners.
+
+For a fixed pairing, alternatizing this derivative gives the Leibniz rule for the exterior
+derivative, `d (φ ∧ ψ) = dφ ∧ ψ + (-1) ^ k • φ ∧ dψ` for a `k`-form `φ`
+(`TauCeti.extDerivWithin_pairedWedge`).
 
 The construction uses `ContinuousAlternatingMap.pairedWedgeCLM` and Mathlib's calculus of
 application of continuous linear maps. These results provide the coefficient calculus for wedge
@@ -223,5 +229,52 @@ theorem fderiv_pairedWedge_apply (hμ : DifferentiableAt ℝ μ x)
   simpa only [fderivWithin_univ] using
     fderivWithin_pairedWedge_apply uniqueDiffWithinAt_univ hμ.differentiableWithinAt
       hφ.differentiableWithinAt hψ.differentiableWithinAt v
+
+section Leibniz
+
+variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+  {k l : ℕ} {s : Set E} {x : E}
+  {φ : E → E [⋀^Fin k]→L[ℝ] F₁} {ψ : E → E [⋀^Fin l]→L[ℝ] F₂}
+
+/-- The Leibniz rule for the exterior derivative of a paired wedge within a set:
+`d (φ ∧ ψ) = dφ ∧ ψ + (-1) ^ k • φ ∧ dψ` for a `k`-form `φ` and a fixed continuous bilinear
+pairing. The degrees `k + 1 + l` and `k + (l + 1)` are identified with `k + l + 1` by `Fin.cast`. -/
+theorem extDerivWithin_pairedWedge (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hs : UniqueDiffWithinAt ℝ s x)
+    (hφ : DifferentiableWithinAt ℝ φ s x) (hψ : DifferentiableWithinAt ℝ ψ s x)
+    (v : Fin (k + l + 1) → E) :
+    extDerivWithin (fun y ↦ pairedWedge μ μ.continuous₂ (φ y) (ψ y)) s x v =
+      pairedWedge μ μ.continuous₂ (extDerivWithin φ s x) (ψ x)
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • pairedWedge μ μ.continuous₂ (φ x) (extDerivWithin ψ s x)
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  have hderiv : fderivWithin ℝ (fun y ↦ pairedWedge μ μ.continuous₂ (φ y) (ψ y)) s x =
+      ((pairedWedgeCLM μ).flip (ψ x)).comp (fderivWithin ℝ φ s x) +
+        (pairedWedgeCLM μ (φ x)).comp (fderivWithin ℝ ψ s x) := by
+    ext1 w
+    rw [fderivWithin_pairedWedge_apply (μ := fun _ ↦ μ) hs
+      (differentiableWithinAt_const μ) hφ hψ w]
+    simp
+  rw [extDerivWithin, hderiv, alternatizeUncurryFin_add, ContinuousAlternatingMap.add_apply,
+    alternatizeUncurryFin_pairedWedgeCLM_flip_comp_apply,
+    alternatizeUncurryFin_pairedWedgeCLM_comp_apply, extDerivWithin, extDerivWithin]
+
+/-- The Leibniz rule for the exterior derivative of a paired wedge:
+`d (φ ∧ ψ) = dφ ∧ ψ + (-1) ^ k • φ ∧ dψ` for a `k`-form `φ` and a fixed continuous bilinear
+pairing. -/
+theorem extDeriv_pairedWedge (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hφ : DifferentiableAt ℝ φ x)
+    (hψ : DifferentiableAt ℝ ψ x) (v : Fin (k + l + 1) → E) :
+    extDeriv (fun y ↦ pairedWedge μ μ.continuous₂ (φ y) (ψ y)) x v =
+      pairedWedge μ μ.continuous₂ (extDeriv φ x) (ψ x)
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • pairedWedge μ μ.continuous₂ (φ x) (extDeriv ψ x)
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  simpa only [extDerivWithin_univ] using
+    extDerivWithin_pairedWedge μ uniqueDiffWithinAt_univ hφ.differentiableWithinAt
+      hψ.differentiableWithinAt v
+
+end Leibniz
 
 end TauCeti

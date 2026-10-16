@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.FixedField
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -14,14 +16,15 @@ import TauCeti.GroupTheory.QuotientGroup.Basic
 
 Let `M / K` be a Galois extension of number fields with group `G`, let `H` be a subgroup of `G`
 with fixed field `E = M ^ H`, and let `Q` be a prime of `𝓞 M` above a prime `p` of `𝓞 K`, with
-decomposition group `D`. The double coset law of `TauCeti/NumberTheory/RamificationInertia/
-DoubleCoset/Basic.lean` indexes the primes of `𝓞 E` above `p` by `H \ G / D`. This file reads
-the same law on the left cosets `G ⧸ H`, where `D` acts by translation: the coset `τ H` is
-attached to the prime `τ⁻¹ Q ∩ 𝓞 E` (`Ideal.primesOverOfCoset`), two cosets are attached to the
-same prime exactly when they lie in one `D`-orbit, every prime arises, and the `D`-orbit of `τ H`
-has `e · f` elements, where `e` and `f` are the ramification index and the residue degree of the
-attached prime over `p`. Altogether, the multiset of the sizes of the `D`-orbits on `G ⧸ H` is
-the multiset of the local degrees `e · f` over the primes of `𝓞 E` above `p`.
+decomposition group `D`. The double coset law
+`Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant` indexes the primes of `𝓞 E` above `p`
+by `H \ G / D`. This file reads the same law on the left cosets `G ⧸ H`, where `D` acts by
+translation: the coset `τ H` is attached to the prime `τ⁻¹ Q ∩ 𝓞 E`
+(`Ideal.primesOverOfCoset`), two cosets are attached to the same prime exactly when they lie in
+one `D`-orbit, every prime arises, and the `D`-orbit of `τ H` has `e · f` elements, where `e`
+and `f` are the ramification index and the residue degree of the attached prime over `p`.
+Altogether, the multiset of the sizes of the `D`-orbits on `G ⧸ H` is the multiset of the local
+degrees `e · f` over the primes of `𝓞 E` above `p`.
 
 This is the form of the double coset law that Dedekind's theorem uses: when `E = K(α)` for a root
 `α` of an irreducible polynomial, `G ⧸ H` is the set of roots. If moreover `p` is unramified in
@@ -72,7 +75,7 @@ noncomputable def primesOverOfCoset : (M ≃ₐ[K] M) ⧸ H → p.primesOver (�
       ⟨by rw [under_under]; exact (inferInstance : (τ⁻¹ • Q).LiesOver p).over⟩⟩) fun τ τ' h => by
     apply Subtype.ext
     dsimp only
-    rw [under_fixedField_eq_iff_mem_orbit]
+    rw [under_eq_iff_mem_orbit H]
     refine ⟨⟨τ⁻¹ * τ', QuotientGroup.leftRel_apply.mp h⟩, ?_⟩
     simp only [Subgroup.smul_def, smul_smul, mul_inv_cancel_right]
 
@@ -92,7 +95,7 @@ theorem primesOverOfCoset_eq_iff (x y : (M ≃ₐ[K] M) ⧸ H) :
   induction x using QuotientGroup.induction_on with | H τ => ?_
   induction y using QuotientGroup.induction_on with | H τ' => ?_
   rw [Subtype.ext_iff, coe_primesOverOfCoset_mk, coe_primesOverOfCoset_mk,
-    under_fixedField_eq_iff_mem_orbit, mem_orbit_iff, mem_orbit_iff]
+    under_eq_iff_mem_orbit H, mem_orbit_iff, mem_orbit_iff]
   constructor
   · rintro ⟨h, hh⟩
     rw [Subgroup.smul_def, smul_smul] at hh
@@ -114,7 +117,7 @@ theorem primesOverOfCoset_eq_iff (x y : (M ≃ₐ[K] M) ⧸ H) :
 theorem primesOverOfCoset_surjective [IsGalois K M] :
     Function.Surjective (primesOverOfCoset p Q H) := by
   rintro ⟨𝔮, h𝔮, h𝔮p⟩
-  obtain ⟨σ, hσ⟩ := exists_smul_under_fixedField_eq p Q H 𝔮
+  obtain ⟨σ, hσ⟩ := Q.exists_smul_under_eq (M ≃ₐ[K] M) p (𝓞 ↥(fixedField H)) 𝔮
   exact ⟨((σ⁻¹ : M ≃ₐ[K] M) : (M ≃ₐ[K] M) ⧸ H),
     Subtype.ext (by rw [coe_primesOverOfCoset_mk, inv_inv]; exact hσ)⟩
 
