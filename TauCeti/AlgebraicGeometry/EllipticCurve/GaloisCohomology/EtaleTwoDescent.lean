@@ -96,7 +96,7 @@ theorem factorRoot_polynomialY (p : W.toAffine.f.Factors) :
 
 omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
 /-- Invertibility of `2` passes from the ground field to every factor field. -/
-theorem isUnit_two_factor (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K)) :
+private theorem isUnit_two_factor (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K)) :
     IsUnit ((2 : ℕ) : 𝕃 p) := by
   simpa only [map_natCast] using h2.map (ι p)
 
@@ -168,9 +168,8 @@ private theorem explicitFactor_eq_twoDescentUnit (p : W.toAffine.f.Factors)
         (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
         (W.toAffine.pointMap (𝕃 p) P)) := by
   match P with
-  | .zero =>
-      have hP : W.toAffine.pointMap (𝕃 p) .zero = 0 := map_zero _
-      rw [show W.toAffine.μ₀ .zero = 1 from W.toAffine.μ₀_zero, map_one, Pi.one_apply, hP,
+  | 0 =>
+      rw [W.toAffine.μ₀_zero, map_one, Pi.one_apply, map_zero,
         WeierstrassCurve.twoDescentUnit_zero, QuotientGroup.mk_one]
   | .some x y h =>
       rw [WeierstrassCurve.Affine.μ₀_some]
@@ -216,10 +215,11 @@ def factorTorsionCharacter (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : 
 
 omit [DecidableEq K] in
 /-- `factorTorsionCharacter` is the two-torsion character of the universal root point. -/
-theorem factorTorsionCharacter_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K)) :
+theorem factorTorsionCharacter_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K))
+    (h2p : IsUnit ((2 : ℕ) : 𝕃 p)) :
     factorTorsionCharacter W p h2 =
       (W.baseChange (𝕃 p)).twoTorsionCharacter
-        (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) (isUnit_two_factor W p h2) :=
+        (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) h2p :=
   (rfl)
 
 /-- Restriction to a factor field followed by the Weil-pairing character of its universal root. -/
@@ -245,10 +245,10 @@ noncomputable def rootwiseKummerClass (p : W.toAffine.f.Factors)
 omit [DecidableEq K] in
 /-- `rootwiseKummerClass` is the additive Kummer class of the rootwise descent unit. -/
 theorem rootwiseKummerClass_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K))
-    (P : W.toAffine.Point) :
+    (h2p : IsUnit ((2 : ℕ) : 𝕃 p)) (P : W.toAffine.Point) :
     rootwiseKummerClass W p h2 P =
       Multiplicative.toAdd
-        (kummerMap (𝕃 p) 2 (isUnit_two_factor W p h2)
+        (kummerMap (𝕃 p) 2 h2p
           ((W.baseChange (𝕃 p)).twoDescentUnit
             (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
             (W.toAffine.pointMap (𝕃 p) P))) :=
@@ -276,7 +276,7 @@ theorem factorCohomologicalMap_kummerMap (p : W.toAffine.f.Factors)
       rootwiseKummerClass W p h2 P := by
   let h2p : IsUnit ((2 : ℕ) : 𝕃 p) := isUnit_two_factor W p h2
   rw [factorCohomologicalMap_apply, W.torsionRes_kummerMap τ h2 P]
-  simpa only [factorTorsionCharacter_def, rootwiseKummerClass_def] using
+  simpa only [factorTorsionCharacter_def W p h2 h2p, rootwiseKummerClass_def W p h2 h2p] using
     (W.baseChange (𝕃 p)).explicitCoeff1_twoTorsionCharacter_kummerMap
       (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) h2p
       (W.toAffine.pointMap (𝕃 p) P)
