@@ -63,6 +63,17 @@ noncomputable def tensorInducedTransitivityLinearEquiv :
             (leftTransversalRep_mk U s) q).2) := by
   simp [tensorInducedTransitivityLinearEquiv]
 
+/-- The inverse linear regrouping expands a pure tensor according to the two coset indices. -/
+theorem tensorInducedTransitivityLinearEquiv_symm_tprod (m : G ⧸ V → M) :
+    (tensorInducedTransitivityLinearEquiv (R := R) hVU s).symm
+        (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R (fun a ↦ PiTensorProduct.tprod R (fun b ↦
+        m ((quotientEquivProdOfLE' hVU (leftTransversalRep U s)
+          (leftTransversalRep_mk U s)).symm (a, b)))) := by
+  apply (tensorInducedTransitivityLinearEquiv hVU s).injective
+  simp only [LinearEquiv.apply_symm_apply, tensorInducedTransitivityLinearEquiv_tprod,
+    Equiv.symm_apply_apply, Prod.mk.eta]
+
 /-- Tensor induction is transitive along a subgroup tower, with the composite transversal on
 the direct induction. The representation of `V` is restricted to `V.subgroupOf U` through its
 canonical equivalence with `V`. -/
