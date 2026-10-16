@@ -13,10 +13,11 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 /-!
 # Ext Poincaré series
 
-For graded modules `M` and `N`, the **bigraded Ext Poincaré series** records every finite
-dimension `dim_k Extⁿ(M,N{j})` in bidegree `(n,j)`.  It is truncated below a cohomological
-degree `b`; when `b` is a vanishing bound, it records the complete bigraded Ext space.  Its
-support is diagonal exactly when all off-diagonal groups `Extⁿ(M,N{j})`, `n ≠ j`, vanish.
+For objects `X` and `Y` of a `k`-linear abelian category with a grading-shift autoequivalence
+`e`, the **bigraded Ext Poincaré series** records every finite dimension `dim_k Extⁿ(X,Y{j})` in
+bidegree `(n,j)`.  It is truncated below a cohomological degree `b`; when `b` is a vanishing
+bound, it records the complete bigraded Ext space.  Its support is diagonal exactly when all
+off-diagonal groups `Extⁿ(X,Y{j})`, `n ≠ j`, vanish.
 
 For graded modules `M` and `N`, the **diagonal Ext Poincaré polynomial**
 `TauCeti.diagonalExtPoincarePolynomial` is `∑ n < b, finrank_k Extⁿ(M,N{n}) tⁿ`, truncated below
@@ -35,7 +36,8 @@ large `b` (`TauCeti.diagonalExtPoincarePolynomial_eq_of_le` and
 
 ## Main definitions and results
 
-* `TauCeti.bigradedExtPoincareSeries`: the complete truncated bigraded dimension of Ext.
+* `TauCeti.bigradedExtPoincareSeries`: the complete truncated bigraded dimension of Ext, with
+  its defining double sum `TauCeti.bigradedExtPoincareSeries_def`.
 * `TauCeti.isDiagonal_bigradedExtPoincareSeries_iff`: diagonal support is equivalent to
   off-diagonal Ext-vanishing when the truncation is a vanishing bound.
 * `TauCeti.diagonalExtPoincarePolynomial` and `TauCeti.diagonalExtPoincareMatrix`: the
@@ -53,102 +55,69 @@ namespace TauCeti
 
 open AddMonoidAlgebra CategoryTheory CategoryTheory.Abelian
 
-universe w v uk uA
+universe w v uk uA u v' t
 
-variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
-  {I : Type*}
+section Bigraded
 
-variable (k) in
-/-- The **bigraded Ext Poincaré series** of two graded modules, truncated below cohomological
-degree `b`.  Its coefficient in bidegree `(n,j)` is `dim_k Extⁿ(M,N{j})` for `n < b` and zero
-otherwise.  The finite internal support hypothesis makes every cohomological slice a genuine
-finite sum. -/
-noncomputable def bigradedExtPoincareSeries (M N : GradedModuleCat.{v} 𝒜)
-    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N) (b : ℕ) :
-    Bigraded.Series :=
+variable {C : Type u} [Category.{v'} C] [Abelian C]
+  {k : Type t} [Field k] [Linear k C] [HasExt.{w} C] {e : C ≌ C} {X Y : C}
+
+variable (k e) in
+/-- The **bigraded Ext Poincaré series** of two objects, truncated below cohomological
+degree `b`.  Its coefficient in bidegree `(n,j)` is `dim_k Extⁿ(X,Y{j})` for `n < b` and zero
+otherwise, where `{j}` is the `j`-fold power of the grading-shift autoequivalence `e`.  The
+finite internal support hypothesis makes every cohomological slice a genuine finite sum. -/
+noncomputable def bigradedExtPoincareSeries (h : IsGradedExtInternallyFinite.{w} k e X Y)
+    (b : ℕ) : Bigraded.Series :=
   ∑ n ∈ Finset.range b,
     ∑ j ∈ (h.finiteLaurentSupport n).finite_finrankSupport.toFinset,
-      single ((n : ℤ), j) (Module.finrank k
-        (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j))
+      single ((n : ℤ), j) (Module.finrank k (GradedExt.{w} e X Y n j))
 
-variable (k) in
+variable (k e) in
+/-- The bigraded Ext Poincaré series is the truncated double sum of the monomials
+`dim_k Extⁿ(X,Y{j}) · (n,j)` over the finite internal support of each cohomological degree. -/
+theorem bigradedExtPoincareSeries_def (h : IsGradedExtInternallyFinite.{w} k e X Y) (b : ℕ) :
+    bigradedExtPoincareSeries.{w} k e h b =
+      ∑ n ∈ Finset.range b,
+        ∑ j ∈ (h.finiteLaurentSupport n).finite_finrankSupport.toFinset,
+          single ((n : ℤ), j) (Module.finrank k (GradedExt.{w} e X Y n j)) := by
+  rw [bigradedExtPoincareSeries]
+
+variable (k e) in
 /-- The coefficient of the bigraded Ext Poincaré series in bidegree `(n,j)` is
-`dim_k Extⁿ(M,N{j})` below the truncation degree and zero from it on. -/
+`dim_k Extⁿ(X,Y{j})` below the truncation degree and zero from it on. -/
 @[simp]
-theorem coeff_bigradedExtPoincareSeries (M N : GradedModuleCat.{v} 𝒜)
-    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N)
+theorem coeff_bigradedExtPoincareSeries (h : IsGradedExtInternallyFinite.{w} k e X Y)
     (b n : ℕ) (j : ℤ) :
-    (bigradedExtPoincareSeries.{w} k M N h b).coeff ((n : ℤ), j) =
-      if n < b then Module.finrank k
-        (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) else 0 := by
+    (bigradedExtPoincareSeries.{w} k e h b).coeff ((n : ℤ), j) =
+      if n < b then Module.finrank k (GradedExt.{w} e X Y n j) else 0 := by
   classical
-  suffices (∑ n' ∈ Finset.range b,
-      ∑ j' ∈ (h.finiteLaurentSupport n').finite_finrankSupport.toFinset,
-        if n' = n ∧ j' = j then Module.finrank k
-          (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n' j') else 0) =
-      if n < b then Module.finrank k
-        (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) else 0 by
-    simpa [bigradedExtPoincareSeries, Finsupp.single_apply] using this
-  by_cases hn : n < b
-  · simp only [hn, ↓reduceIte]
-    rw [Finset.sum_eq_single n]
-    · by_cases hj : Module.finrank k
-        (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) = 0
-      · rw [hj]
-        apply Finset.sum_eq_zero
-        intro j' _
-        by_cases hj' : j' = j
-        · subst j'
-          simp [hj]
-        · simp [hj']
-      · have hjmem : j ∈ (h.finiteLaurentSupport n).finite_finrankSupport.toFinset := by
-          simpa [Function.mem_support] using hj
-        rw [Finset.sum_eq_single j]
-        · simp
-        · intro j' _ hj'
-          simp [hj']
-        · exact fun hjnot ↦ (hjnot hjmem).elim
-    · intro n' _ hn'
-      apply Finset.sum_eq_zero
-      intro j' _
-      simp [hn']
-    · exact fun hnnot ↦ (hnnot (Finset.mem_range.mpr hn)).elim
-  · simp only [hn, ↓reduceIte]
-    apply Finset.sum_eq_zero
-    intro n' hn'mem
-    have hn' : n' ≠ n := by
-      intro h
-      subst n'
-      exact hn (Finset.mem_range.mp hn'mem)
-    apply Finset.sum_eq_zero
-    intro j' _
-    simp [hn']
+  simp only [bigradedExtPoincareSeries_def, coeff_sum, Finsupp.finsetSum_apply, coeff_single,
+    Finsupp.single_apply, Prod.mk.injEq, Nat.cast_inj, ite_and, Finset.sum_ite_irrel,
+    Finset.sum_const_zero, Finset.sum_ite_eq', Finset.mem_range, Set.Finite.mem_toFinset,
+    Function.mem_support]
+  split_ifs <;> simp_all
 
-variable (k) in
+variable (k e) in
 /-- The bigraded Ext Poincaré series has no negative cohomological degrees. -/
 @[simp]
-theorem coeff_bigradedExtPoincareSeries_negSucc (M N : GradedModuleCat.{v} 𝒜)
-    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N)
+theorem coeff_bigradedExtPoincareSeries_negSucc (h : IsGradedExtInternallyFinite.{w} k e X Y)
     (b n : ℕ) (j : ℤ) :
-    (bigradedExtPoincareSeries.{w} k M N h b).coeff (Int.negSucc n, j) = 0 := by
+    (bigradedExtPoincareSeries.{w} k e h b).coeff (Int.negSucc n, j) = 0 := by
   classical
   simp [bigradedExtPoincareSeries]
 
 /-- Raising the truncation degree past a cohomological vanishing bound does not change the
 bigraded Ext Poincaré series. -/
-theorem bigradedExtPoincareSeries_eq_of_le
-    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N)
-    {b b' : ℕ}
-    (hb : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) M N b) (hbb' : b ≤ b') :
-    bigradedExtPoincareSeries.{w} k M N h b' =
-      bigradedExtPoincareSeries.{w} k M N h b := by
+theorem bigradedExtPoincareSeries_eq_of_le (h : IsGradedExtInternallyFinite.{w} k e X Y)
+    {b b' : ℕ} (hb : IsGradedExtBoundedBy.{w} e X Y b) (hbb' : b ≤ b') :
+    bigradedExtPoincareSeries.{w} k e h b' = bigradedExtPoincareSeries.{w} k e h b := by
   ext g
   obtain ⟨m, j⟩ := g
   by_cases hm : 0 ≤ m
   · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hm
-    rw [coeff_bigradedExtPoincareSeries k M N h b' n j,
-      coeff_bigradedExtPoincareSeries k M N h b n j]
+    rw [coeff_bigradedExtPoincareSeries k e h b' n j,
+      coeff_bigradedExtPoincareSeries k e h b n j]
     by_cases hn : n < b
     · simp [hn, hn.trans_le hbb']
     · have hbn : b ≤ n := Nat.le_of_not_gt hn
@@ -162,18 +131,15 @@ theorem bigradedExtPoincareSeries_eq_of_le
 
 /-- With a genuine cohomological vanishing bound, the bigraded Ext Poincaré series is diagonal
 exactly when every off-diagonal bigraded Ext group vanishes. -/
-theorem isDiagonal_bigradedExtPoincareSeries_iff
-    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N) {b : ℕ}
-    (hb : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) M N b) :
-    Bigraded.IsDiagonal (bigradedExtPoincareSeries.{w} k M N h b) ↔
-      ∀ (n : ℕ) (j : ℤ), (n : ℤ) ≠ j →
-        Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) := by
+theorem isDiagonal_bigradedExtPoincareSeries_iff (h : IsGradedExtInternallyFinite.{w} k e X Y)
+    {b : ℕ} (hb : IsGradedExtBoundedBy.{w} e X Y b) :
+    Bigraded.IsDiagonal (bigradedExtPoincareSeries.{w} k e h b) ↔
+      ∀ (n : ℕ) (j : ℤ), (n : ℤ) ≠ j → Subsingleton (GradedExt.{w} e X Y n j) := by
   constructor
   · intro hdiag n j hnj
     by_cases hn : n < b
     · let _ := (h.finiteLaurentSupport n).finiteDimensional j
-      rw [← Module.finrank_zero_iff (R := k)
-        (M := GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j)]
+      rw [← Module.finrank_zero_iff (R := k) (M := GradedExt.{w} e X Y n j)]
       have := (Bigraded.isDiagonal_iff _).1 hdiag (n : ℤ) j hnj
       simpa [hn] using this
     · exact hb.subsingleton (Nat.le_of_not_gt hn) j
@@ -182,16 +148,21 @@ theorem isDiagonal_bigradedExtPoincareSeries_iff
     intro m j hmj
     by_cases hm : 0 ≤ m
     · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hm
-      rw [coeff_bigradedExtPoincareSeries k M N h b n j]
+      rw [coeff_bigradedExtPoincareSeries k e h b n j]
       split
       · let _ := hoff n j hmj
-        exact Module.finrank_zero_of_subsingleton (R := k)
-          (M := GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j)
+        exact Module.finrank_zero_of_subsingleton (R := k) (M := GradedExt.{w} e X Y n j)
       · rfl
     · cases m with
       | ofNat n => exact (hm (Int.natCast_nonneg n)).elim
       | negSucc n =>
           rw [coeff_bigradedExtPoincareSeries_negSucc]
+
+end Bigraded
+
+variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+  {I : Type*}
 
 variable (k) in
 /-- The **diagonal Ext Poincaré polynomial** `∑ n < b, finrank_k Extⁿ(M,N{n}) tⁿ` of two graded

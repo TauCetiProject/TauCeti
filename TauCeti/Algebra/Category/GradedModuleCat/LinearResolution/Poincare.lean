@@ -61,7 +61,7 @@ theorem IsMinimal.isLinear_iff_isDiagonal_bigradedExtPoincareSeries (hr : r.IsMi
       ∀ (N : GradedModuleCat.{v} 𝒜) (hNfinite : Module.Finite k N) (hNsimple : Simple N)
         (hNzero : ∀ q, q ≠ 0 → N.grading.piece q = ⊥) (b : ℕ)
         (_hb : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) M N b),
-          Bigraded.IsDiagonal (bigradedExtPoincareSeries.{w} k M N
+          Bigraded.IsDiagonal (bigradedExtPoincareSeries.{w} k (GradedModuleCat.shift 𝒜)
             (hadm N hNfinite hNsimple hNzero).internallyFinite b) := by
   constructor
   · intro hlinear N hNfinite hNsimple hNzero b hb
