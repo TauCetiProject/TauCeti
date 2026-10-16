@@ -49,7 +49,8 @@ noncomputable def reindex (e : ι ≃ κ) :
     refine ⟨{s}, 1, ?_⟩
     rw [Finset.sup_singleton]
     intro x
-    simp [T, seminormFamily_apply]
+    simpa [T, seminormFamily_apply] using
+      (projectiveSeminormOf_reindex (fun i => (s i).sup (p i)) e x.toPiTensorProduct).le
   · refine WithSeminorms.continuous_of_isBounded
       (withSeminorms (fun j => p (e.symm j))) (withSeminorms p) T.symm.toLinearMap ?_
     intro s

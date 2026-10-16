@@ -162,15 +162,4 @@ theorem projectiveSeminormOf_reindex (p : ∀ i, Seminorm 𝕜 (E i)) (e : ι �
       (e.symm.prod_comp (fun i => p i (m i))).symm
   exact (hforward x).antisymm (by simpa only [LinearEquiv.symm_apply_apply] using hbackward (T x))
 
-/-- Projective seminorms formed from finite suprema of defining factor seminorms are unchanged
-by reindexing both the factors and the finite selections. -/
-@[simp]
-theorem projectiveSeminormOf_finsetSup_reindex {σ : ι → Type*}
-    (p : ∀ i, SeminormFamily 𝕜 (E i) (σ i)) (s : ∀ i, Finset (σ i)) (e : ι ≃ κ)
-    (x : ⨂[𝕜] i, E i) :
-    PiTensorProduct.projectiveSeminormOf (fun j => (s (e.symm j)).sup (p (e.symm j)))
-      (PiTensorProduct.reindex 𝕜 E e x) =
-        PiTensorProduct.projectiveSeminormOf (fun i => (s i).sup (p i)) x :=
-  projectiveSeminormOf_reindex (fun i => (s i).sup (p i)) e x
-
 end TauCeti
