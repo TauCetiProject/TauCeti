@@ -75,27 +75,6 @@ variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteD
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V] [BorelSpace V] {f : U → V} {s : Set U}
 
-/-- If `h` factors on `s` through a `1`-Lipschitz map `p` and a map `g` injective on `s` with
-injective derivatives `g'`, then the area formula for `g` bounds `μHE[m] (h '' s)`. -/
-private theorem euclideanHausdorffMeasure_image_le_lintegral_normDet {W X : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] [MeasurableSpace W]
-    [BorelSpace W] [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] {h : U → X} {g : U → W}
-    {g' : U → U →L[ℝ] W} {p : W → X} (hs : MeasurableSet s) (hp : LipschitzWith 1 p)
-    (hpg : ∀ x ∈ s, p (g x) = h x) (hg : ∀ x ∈ s, HasFDerivAt g (g' x) x)
-    (hg' : ∀ x ∈ s, Injective (g' x)) (hinj : InjOn g s) :
-    μHE[finrank ℝ U] (h '' s) ≤ ∫⁻ x in s, ENNReal.ofReal (g' x).normDet := by
-  have himage : h '' s = p '' (g '' s) := by
-    rw [image_image]
-    exact (image_congr fun x hx => hpg x hx).symm
-  calc μHE[finrank ℝ U] (h '' s) ≤ 1 ^ finrank ℝ U * μHE[finrank ℝ U] (g '' s) := by
-        rw [himage]
-        simpa using (hp.lipschitzOnWith (s := g '' s)).euclideanHausdorffMeasure_image_le _
-    _ = ∫⁻ x in s, ENNReal.ofReal (g' x).normDet := by
-        rw [one_pow, one_mul,
-          ← lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs
-            (fun x hx => (hg x hx).differentiableAt) (fun x hx => (hg x hx).fderiv ▸ hg' x hx) hinj]
-        exact setLIntegral_congr_fun hs fun x hx => by rw [(hg x hx).fderiv]
-
 /-- The zero Jacobian statement on a bounded measurable piece on which the derivative is
 bounded. -/
 private theorem euclideanHausdorffMeasure_image_eq_zero_of_bounded (hs : MeasurableSet s)
