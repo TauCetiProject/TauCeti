@@ -67,20 +67,20 @@ variable (N : Subgroup G) [N.Normal]
 
 /-- The projection `G → G ⧸ N` and the inclusion `Aᴺ ↪ A` form a compatible pair. -/
 theorem subgroupSubtype_quotientMk_smul (g : G) (a : FixedPoints.subgroup N A) :
-    ContinuousMonoidHom.subgroupSubtype _ (ContinuousMonoidHom.quotientMk N g • a) =
+    ContinuousMonoidHom.subgroupSubtype _ (Subgroup.quotientMkContinuousMonoidHom N g • a) =
       g • ContinuousMonoidHom.subgroupSubtype _ a :=
   coe_quotient_smul_fixedPoints_subgroup g a
 
 /-- **Inflation** `H¹(G ⧸ N, Aᴺ) → H¹(G, A)`: the map induced by the projection `G → G ⧸ N` and the
 inclusion of the fixed points `Aᴺ ↪ A`. -/
 def infl : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A) → NonabelianH1 G A :=
-  map (ContinuousMonoidHom.quotientMk N) (ContinuousMonoidHom.subgroupSubtype _)
+  map (Subgroup.quotientMkContinuousMonoidHom N) (ContinuousMonoidHom.subgroupSubtype _)
     (subgroupSubtype_quotientMk_smul N)
 
 /-- Inflation composes a representing cocycle with the projection `G → G ⧸ N`. -/
 theorem infl_mk (f : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
     infl N (mk f) =
-      mk (f.map (ContinuousMonoidHom.quotientMk N) (ContinuousMonoidHom.subgroupSubtype _)
+      mk (f.map (Subgroup.quotientMkContinuousMonoidHom N) (ContinuousMonoidHom.subgroupSubtype _)
         (subgroupSubtype_quotientMk_smul N)) :=
   map_mk _ _ _ f
 
@@ -134,7 +134,7 @@ theorem coe_descend_apply (hf : ∀ n ∈ N, f n = 1) (g : G) :
 /-- Inflating the descended cocycle recovers the original cocycle. -/
 @[simp]
 theorem map_descend (hf : ∀ n ∈ N, f n = 1) :
-    (f.descend N hf).map (ContinuousMonoidHom.quotientMk N)
+    (f.descend N hf).map (Subgroup.quotientMkContinuousMonoidHom N)
       (ContinuousMonoidHom.subgroupSubtype _) (subgroupSubtype_quotientMk_smul N) = f :=
   ext fun g ↦ by simp
 
@@ -157,7 +157,7 @@ theorem infl_injective : Function.Injective (infl (A := A) N) := by
   -- The cocycle identity at the elements of `N` forces the witness `a` into `Aᴺ`.
   have haN : a ∈ FixedPoints.subgroup N A := fun n ↦ by
     have hn := ha n
-    simp only [Cocycle.map_apply, ContinuousMonoidHom.quotientMk_apply,
+    simp only [Cocycle.map_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
       (QuotientGroup.eq_one_iff (n : G)).mpr n.2, Cocycle.apply_one,
       ContinuousMonoidHom.subgroupSubtype_apply, OneMemClass.coe_one, mul_one] at hn
     rw [eq_comm, inv_mul_eq_one] at hn

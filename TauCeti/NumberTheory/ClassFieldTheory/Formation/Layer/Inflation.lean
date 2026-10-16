@@ -161,7 +161,7 @@ private theorem h2EquivExplicit_H2π (c : cocycles₂ (L.rep F)) :
 `(u, v) ↦ c (u V, v V)` on the ground subgroup `U`, with values in `M` (`inflCocycle2_apply`).
 Its class is `explicitInfl2 L e he [c]` (`explicitInfl2_H2π`). -/
 def inflCocycle2 (c : cocycles₂ (L.rep F)) : Z2 L.ground.toSubgroup M :=
-  cocyclesMap2 _ _ _ _ (ContinuousMonoidHom.quotientMk _)
+  cocyclesMap2 _ _ _ _ (Subgroup.quotientMkContinuousMonoidHom _)
     (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M).subtype
     (continuous_fixedPoints_addSubgroup_subtype _ _ _)
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).fixedPoints_subtype_quotientMk_smul

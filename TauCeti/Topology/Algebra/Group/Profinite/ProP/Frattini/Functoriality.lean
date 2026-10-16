@@ -57,13 +57,13 @@ homomorphism of groups equipped with topologies. Its value on a class is given b
 def frattiniQuotientMap (hp : p.Prime) (f : G →ₜ* H) :
     (G ⧸ proPFrattini p G) →ₜ* (H ⧸ proPFrattini p H) :=
   ContinuousMonoidHom.quotientLift (proPFrattini p G)
-    ((ContinuousMonoidHom.quotientMk (proPFrattini p H)).comp f)
+    ((Subgroup.quotientMkContinuousMonoidHom (proPFrattini p H)).comp f)
     (by
       intro g hg
       rw [MonoidHom.mem_ker]
       simpa only [ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
         ContinuousMonoidHom.coe_comp, Function.comp_apply,
-        ContinuousMonoidHom.quotientMk_apply] using
+        Subgroup.quotientMkContinuousMonoidHom_apply] using
         (QuotientGroup.eq_one_iff (f g)).mpr
           (f.toMonoidHom.proPFrattini_le_comap_of_prime hp f.continuous hg))
 
@@ -74,7 +74,7 @@ theorem frattiniQuotientMap_mk (hp : p.Prime) (f : G →ₜ* H) (g : G) :
       (f g : H ⧸ proPFrattini p H) := by
   rw [frattiniQuotientMap, ContinuousMonoidHom.quotientLift_mk,
     ContinuousMonoidHom.coe_comp, Function.comp_apply,
-    ContinuousMonoidHom.quotientMk_apply]
+    Subgroup.quotientMkContinuousMonoidHom_apply]
 
 /-- The identity homomorphism induces the identity on the pro-`p` Frattini quotient. -/
 @[simp]

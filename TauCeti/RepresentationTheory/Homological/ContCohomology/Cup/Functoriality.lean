@@ -220,7 +220,7 @@ theorem cup_infl (N : Subgroup G) [N.Normal]
     (ContinuousCohomology.infl N Z (m + n) (Pinv.cup m n a b) :) =
       (P.cup m n (ContinuousCohomology.infl N X m a) (ContinuousCohomology.infl N Y n b) :) := by
   simp only [ContinuousCohomology.infl_def]
-  exact Pinv.cup_map P (ContinuousMonoidHom.quotientMk N) (TopRep.quotientToInvariantsι X N)
+  exact Pinv.cup_map P (Subgroup.quotientMkContinuousMonoidHom N) (TopRep.quotientToInvariantsι X N)
     (TopRep.quotientToInvariantsι Y N) (TopRep.quotientToInvariantsι Z N) hPinv m n a b
 
 end Instances
