@@ -216,13 +216,6 @@ theorem inChartAt_mextDeriv [IsManifold I 2 M]
     φ.inChartAt_mextDerivWithin (s := univ) (uniqueMDiffOn_univ (I := I)) hz (mem_univ _)
       (by simp) (by simpa only [preimage_univ, univ_inter] using hφ)
 
-/-- Scalar localization of a form multiplies its coordinate expression by the pulled-back scalar. -/
-theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ k) (α : M) (y : E) :
-    inChartAt (I := I) (fun x ↦ f x • φ x) α y =
-      f ((extChartAt I α).symm y) • φ.inChartAt α y := by
-  ext v
-  simp only [inChartAt_apply, ContinuousAlternatingMap.smul_apply]
-
 /-- The scalar coefficient of a manifold top form transforms by the signed Jacobian between
 preferred charts, including derivatives taken within the model range at the boundary. -/
 theorem inChartAt_apply_basis_eq_det_mul [IsManifold I 1 M] (φ : RoughForm I M ℝ k)
