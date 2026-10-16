@@ -170,7 +170,7 @@ theorem card_orbit_stabilizer_coset (x : G ⧸ H) :
   rw [coe_primesOverOfCoset_mk,
     ramificationIdx_mul_inertiaDeg_under_eq_relIndex (τ⁻¹ • Q) H C,
     stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-    TauCeti.map_conj_eq_conj_smul, TauCeti.card_orbit_quotientGroup_mk]
+    TauCeti.map_conj_eq_conj_smul, Subgroup.card_orbit_quotientGroup_mk]
 
 variable [FaithfulSMul C B]
 

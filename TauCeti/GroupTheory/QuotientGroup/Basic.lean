@@ -37,7 +37,7 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 ## Main statements
 
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
-* `TauCeti.card_orbit_quotientGroup_mk`: the size of the `K`-orbit of `sH` is the relative
+* `Subgroup.card_orbit_quotientGroup_mk`: the size of the `K`-orbit of `sH` is the relative
   index of `H` in the conjugate of `K` by `s⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
@@ -105,7 +105,7 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
 
 /-- The size of the orbit of `sH` under a subgroup `K` is the relative index of `H` in the
 conjugate of `K` by `s⁻¹`. -/
-theorem card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
+theorem _root_.Subgroup.card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
     Nat.card (orbit K ((s : G) : G ⧸ H)) =
       H.relIndex (MulAut.conj s⁻¹ • K) := by
   rw [← TauCeti.map_conj_eq_conj_smul]
