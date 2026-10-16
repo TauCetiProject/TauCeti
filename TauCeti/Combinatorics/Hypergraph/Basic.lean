@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Hypergraph.Basic
 public import Mathlib.Data.Fintype.Powerset
+public import Mathlib.Data.Finset.Slice
 public import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.Positivity
@@ -75,6 +76,10 @@ theorem ext {H G : UniformHypergraph r V} (h : H.edges = G.edges) : H = G := by
   cases G
   congr
 
+/-- The edges form an `r`-sized family of finsets, so Mathlib's `Set.Sized` API applies to them. -/
+theorem sized_edges (H : UniformHypergraph r V) : (H.edges : Set (Finset V)).Sized r :=
+  fun e he => H.edge_card e he
+
 /-! ### Mathlib's set-based carrier -/
 
 /-- The corresponding Mathlib `Hypergraph`: the whole vertex type as vertex set, and the edges
@@ -113,7 +118,7 @@ theorem edges_empty : (empty r V).edges = ∅ := (rfl)
 /-- The **complete** `r`-uniform hypergraph on a finite vertex type: every `r`-element finset is an
 edge. -/
 def complete (r : ℕ) (V : Type*) [Fintype V] : UniformHypergraph r V :=
-  ⟨univ.powersetCard r, fun _ he => (Finset.mem_powersetCard.mp he).2⟩
+  ⟨univ.powersetCard r, fun _ he => Set.sized_powersetCard univ r he⟩
 
 /-- The edges of the complete hypergraph are exactly the `r`-element finsets. -/
 @[simp]
@@ -123,16 +128,13 @@ theorem mem_edges_complete [Fintype V] {e : Finset V} :
 
 /-- Every edge set lies in the edge set of the complete hypergraph. -/
 theorem edges_subset_powersetCard [Fintype V] (H : UniformHypergraph r V) :
-    H.edges ⊆ univ.powersetCard r := fun e he =>
-  Finset.mem_powersetCard.mpr ⟨Finset.subset_univ e, H.edge_card e he⟩
+    H.edges ⊆ univ.powersetCard r :=
+  H.sized_edges.subset_powersetCard_univ
 
 /-- An `r`-uniform hypergraph has at most `(card V).choose r` edges. -/
 theorem card_edges_le [Fintype V] (H : UniformHypergraph r V) :
-    #H.edges ≤ (Fintype.card V).choose r := by
-  classical
-  calc #H.edges ≤ #(univ.powersetCard r : Finset (Finset V)) :=
-        Finset.card_le_card H.edges_subset_powersetCard
-    _ = (Fintype.card V).choose r := by rw [Finset.card_powersetCard, Finset.card_univ]
+    #H.edges ≤ (Fintype.card V).choose r :=
+  H.sized_edges.card_le
 
 /-- The complete hypergraph has `(card V).choose r` edges. -/
 theorem card_edges_complete [Fintype V] :
