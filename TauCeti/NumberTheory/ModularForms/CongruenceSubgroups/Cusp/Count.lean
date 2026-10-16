@@ -1,0 +1,329 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+public import Mathlib.Data.ZMod.Units
+import Mathlib.Data.Nat.Totient
+
+/-!
+# The cusps of `Γ₀(N)`
+
+The number of cusps of `Γ₀(N)` is `ε∞ = ∑_{g ∣ N} φ(gcd(g, N / g))`, the cusp count in the
+dimension formulas for `Γ₀(N)`. Cusps are counted as the cusp orbits of the effective image of
+`Γ₀(N)` in `PSL(2, ℝ)`, the boundary orbits adjoined to its analytic quotient.
+
+Every cusp is `γ • ∞` for some `γ ∈ SL(2, ℤ)`. For `γ` and `γ'` with bottom rows `(c, d)` and
+`(c', d')`, the cusps `γ • ∞` and `γ' • ∞` are `Γ₀(N)`-equivalent exactly when
+`N ∣ c d' - c' d + j c c'` for some integer `j`. This congruence is detected by the *label* of
+`γ`: the divisor `g = gcd(c, N)` of `N`, together with the residue of `(c / g) / d` modulo
+`gcd(g, N / g)`, which is a unit. Every divisor and every unit residue occur, so the cusps of
+`Γ₀(N)` are in bijection with the pairs `(g, x)` with `g ∣ N` and
+`x ∈ (ℤ / gcd(g, N / g))ˣ`.
+
+## Main definitions
+
+* `TauCeti.gamma0CuspLabel`: the label `(g, x)` of `γ ∈ SL(2, ℤ)`.
+* `TauCeti.gamma0CuspOrbitEquiv`: the cusp orbits of `Γ₀(N)` are in bijection with the labels.
+
+## Main results
+
+* `TauCeti.cuspOrbitOfSL2Z_Gamma0_eq_iff`: the congruence criterion for equivalence of cusps.
+* `TauCeti.gamma0CuspLabel_eq_iff`: two matrices have the same label exactly when they
+  represent the same cusp.
+* `TauCeti.card_cuspOrbit_Gamma0`: the cusp count `ε∞ = ∑_{g ∣ N} φ(gcd(g, N / g))`.
+* `TauCeti.card_cuspOrbit_Gamma0_of_prime`: `Γ₀(p)` has two cusps.
+
+## References
+
+* F. Diamond and J. Shurman, *A First Course in Modular Forms*, §3.8.
+* G. Shimura, *Introduction to the Arithmetic Theory of Automorphic Functions*, §1.6,
+  Proposition 1.43.
+-/
+
+public section
+
+open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup ModularGroup
+open scoped MatrixGroups
+
+namespace TauCeti
+
+variable {N : ℕ}
+
+/-! ### Arithmetic of the congruence `N ∣ c d' - c' d + j c c'` -/
+
+/-- If `N ∣ c d' - c' d + j c c'` and `c` is prime to `d`, then `gcd(c, N)` divides `c'`. -/
+private theorem gcd_dvd_of_dvd {c d c' d' j : ℤ} (hcd : IsCoprime c d)
+    (h : (N : ℤ) ∣ c * d' - c' * d + j * c * c') : (Int.gcd c N : ℤ) ∣ c' := by
+  have hc : (Int.gcd c N : ℤ) ∣ c := Int.gcd_dvd_left ..
+  have h' : (Int.gcd c N : ℤ) ∣ c' * d := by
+    have := dvd_sub (dvd_add (hc.mul_right d') ((hc.mul_left j).mul_right c'))
+      ((Int.gcd_dvd_right ..).trans h)
+    convert this using 1
+    ring
+  exact (hcd.of_isCoprime_of_dvd_left hc).dvd_of_dvd_mul_right h'
+
+/-- The congruence `N ∣ c d' - c' d + j c c'` between coprime pairs forces
+`gcd(c, N) = gcd(c', N)`. -/
+private theorem gcd_eq_of_dvd {c d c' d' j : ℤ} (hcd : IsCoprime c d) (hcd' : IsCoprime c' d')
+    (h : (N : ℤ) ∣ c * d' - c' * d + j * c * c') : Int.gcd c N = Int.gcd c' N := by
+  have h' : (N : ℤ) ∣ c' * d - c * d' + -j * c' * c := by
+    convert dvd_neg.mpr h using 1
+    ring
+  exact Nat.dvd_antisymm (Int.dvd_gcd (gcd_dvd_of_dvd hcd h) (Int.gcd_dvd_right ..))
+    (Int.dvd_gcd (gcd_dvd_of_dvd hcd' h') (Int.gcd_dvd_right ..))
+
+/-- Write `N = g m`, `c = g c₁` and `c' = g c₁'`. Then `N ∣ c d' - c' d + j c c'` implies
+`gcd(g, m) ∣ c₁ d' - c₁' d`. -/
+private theorem dvd_sub_of_dvd {g m : ℕ} {c c₁ d c' c₁' d' j : ℤ} (hg : g ≠ 0)
+    (hN : (N : ℤ) = g * m) (hc : c = g * c₁) (hc' : c' = g * c₁')
+    (h : (N : ℤ) ∣ c * d' - c' * d + j * c * c') :
+    (Nat.gcd g m : ℤ) ∣ c₁ * d' - c₁' * d := by
+  subst hc hc'
+  rw [hN, show (g : ℤ) * c₁ * d' - g * c₁' * d + j * (g * c₁) * (g * c₁') =
+    g * (c₁ * d' - c₁' * d + j * g * c₁ * c₁') by ring] at h
+  have hm := (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right g m)).trans
+    (Int.dvd_of_mul_dvd_mul_left (by exact_mod_cast hg) h)
+  have hg' : (Nat.gcd g m : ℤ) ∣ j * g * c₁ * c₁' :=
+    ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left g m)).mul_left j).mul_right _ |>.mul_right _
+  simpa using dvd_sub hm hg'
+
+/-- Conversely, if `c₁` and `c₁'` are prime to `m` and `gcd(g, m) ∣ c₁ d' - c₁' d`, then some
+`j` satisfies `N ∣ c d' - c' d + j c c'`. -/
+private theorem exists_dvd_of_dvd_sub {g m : ℕ} {c c₁ d c' c₁' d' : ℤ}
+    (hN : (N : ℤ) = g * m) (hc : c = g * c₁) (hc' : c' = g * c₁')
+    (hc₁ : IsCoprime c₁ m) (hc₁' : IsCoprime c₁' m)
+    (h : (Nat.gcd g m : ℤ) ∣ c₁ * d' - c₁' * d) :
+    ∃ j : ℤ, (N : ℤ) ∣ c * d' - c' * d + j * c * c' := by
+  subst hc hc'
+  obtain ⟨w, hw⟩ := h
+  obtain ⟨u, v, huv⟩ := hc₁.mul_left hc₁'
+  have he := Nat.gcd_eq_gcd_ab g m
+  refine ⟨-(Nat.gcdA g m * u * w),
+    Nat.gcdB g m * w + g * Nat.gcdA g m * v * w, ?_⟩
+  rw [hN]
+  linear_combination (g : ℤ) * hw + g * w * he - g ^ 2 * Nat.gcdA g m * w * huv
+
+/-! ### The divisor `gcd(c, N)` -/
+
+private theorem eq_gcd_mul_ediv (c : ℤ) : c = Int.gcd c N * (c / Int.gcd c N) :=
+  (Int.mul_ediv_cancel' (Int.gcd_dvd_left ..)).symm
+
+private theorem natCast_eq_gcd_mul (c : ℤ) : (N : ℤ) = Int.gcd c N * (N / Int.gcd c N : ℕ) := by
+  exact_mod_cast (Nat.mul_div_cancel' (Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right c N))).symm
+
+/-- The entry `d` of a bottom row `(c, d)` is a unit modulo
+`gcd(gcd(c, N), N / gcd(c, N))`. -/
+private theorem isCoprime_gcd_gcd {c d : ℤ} (hcd : IsCoprime c d) :
+    IsCoprime d (Nat.gcd (Int.gcd c N) (N / Int.gcd c N) : ℤ) :=
+  hcd.symm.of_isCoprime_of_dvd_right
+    ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left ..)).trans (Int.gcd_dvd_left ..))
+
+/-- Two residues `c₁ / d` and `c₁' / d'` modulo `gcd(g, N / g)` agree, with `g = g'`, exactly
+when `gcd(g, N / g) ∣ c₁ d' - c₁' d`. -/
+private theorem heq_unitOfIsCoprime_div_iff {g g' : ℕ} (hg : g = g') {c d c' d' : ℤ}
+    (hc : IsCoprime c (Nat.gcd g (N / g) : ℤ)) (hd : IsCoprime d (Nat.gcd g (N / g) : ℤ))
+    (hc' : IsCoprime c' (Nat.gcd g' (N / g') : ℤ))
+    (hd' : IsCoprime d' (Nat.gcd g' (N / g') : ℤ)) :
+    HEq (ZMod.unitOfIsCoprime c hc / ZMod.unitOfIsCoprime d hd)
+        (ZMod.unitOfIsCoprime c' hc' / ZMod.unitOfIsCoprime d' hd') ↔
+      (Nat.gcd g (N / g) : ℤ) ∣ c * d' - c' * d := by
+  subst hg
+  rw [heq_iff_eq, div_eq_div_iff_mul_eq_mul, Units.ext_iff, Units.val_mul, Units.val_mul,
+    ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime,
+    ZMod.coe_unitOfIsCoprime, ← Int.cast_mul, ← Int.cast_mul,
+    ZMod.intCast_eq_intCast_iff_dvd_sub, ← dvd_neg, neg_sub]
+
+variable [NeZero N]
+
+private theorem gcd_pos (c : ℤ) : 0 < Int.gcd c N :=
+  Int.gcd_pos_of_ne_zero_right c (by exact_mod_cast NeZero.ne N)
+
+private theorem gcd_mem_divisors (c : ℤ) : Int.gcd c N ∈ N.divisors :=
+  Nat.mem_divisors.mpr ⟨Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..), NeZero.ne N⟩
+
+private theorem isCoprime_ediv_gcd (c : ℤ) :
+    IsCoprime (c / Int.gcd c N) ((N / Int.gcd c N : ℕ) : ℤ) := by
+  rw [Int.isCoprime_iff_gcd_eq_one, Int.natCast_div]
+  exact Int.gcd_div_gcd_div_gcd (gcd_pos c)
+
+/-- The quotient `c / gcd(c, N)` is a unit modulo `gcd(gcd(c, N), N / gcd(c, N))`. -/
+private theorem isCoprime_ediv_gcd_gcd (c : ℤ) :
+    IsCoprime (c / Int.gcd c N)
+      (Nat.gcd (Int.gcd c N) (N / Int.gcd c N) : ℤ) :=
+  (isCoprime_ediv_gcd c).of_isCoprime_of_dvd_right
+    (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right ..))
+
+/-! ### Equivalence of cusps -/
+
+/-- **The criterion for equivalence of cusps of `Γ₀(N)`.** For `γ` and `γ'` with bottom rows
+`(c, d)` and `(c', d')`, the cusps `γ • ∞` and `γ' • ∞` are `Γ₀(N)`-equivalent exactly when
+`N ∣ c d' - c' d + j c c'` for some integer `j`. -/
+theorem cuspOrbitOfSL2Z_Gamma0_eq_iff (γ γ' : SL(2, ℤ)) :
+    (Gamma0 N).cuspOrbitOfSL2Z γ = (Gamma0 N).cuspOrbitOfSL2Z γ' ↔
+      ∃ j : ℤ, (N : ℤ) ∣ γ 1 0 * γ' 1 1 - γ' 1 0 * γ 1 1 + j * γ 1 0 * γ' 1 0 := by
+  rw [Subgroup.cuspOrbitOfSL2Z_eq_iff]
+  constructor
+  · rintro ⟨h, hh, hM⟩
+    obtain ⟨M, hMdef⟩ : ∃ M, γ⁻¹ * h * γ' = M := ⟨_, rfl⟩
+    have hh' : h = γ * M * γ'⁻¹ := by rw [← hMdef]; group
+    subst hh'
+    rw [hMdef] at hM
+    have hdet := M.det_coe
+    rw [det_fin_two, hM, mul_zero, sub_zero] at hdet
+    rw [mem_Gamma0_iff_dvd] at hh
+    simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two, of_apply,
+      cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one, hM] at hh
+    rcases Int.eq_one_or_neg_one_of_mul_eq_one' hdet with ⟨h0, h1⟩ | ⟨h0, h1⟩
+    · refine ⟨-M 0 1, ?_⟩
+      rw [h0, h1] at hh
+      convert hh using 1
+      ring
+    · refine ⟨M 0 1, ?_⟩
+      rw [h0, h1] at hh
+      convert dvd_neg.mpr hh using 1
+      ring
+  · rintro ⟨j, hj⟩
+    refine ⟨γ * T ^ (-j) * γ'⁻¹, ?_, ?_⟩
+    · rw [mem_Gamma0_iff_dvd]
+      simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
+        of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one, coe_T_zpow]
+      convert hj using 1
+      ring
+    · rw [show γ⁻¹ * (γ * T ^ (-j) * γ'⁻¹) * γ' = T ^ (-j) by group, coe_T_zpow]
+      rfl
+
+/-! ### Labels of cusps -/
+
+variable (N) in
+/-- **The label of the cusp `γ • ∞` of `Γ₀(N)`.** For `γ ∈ SL(2, ℤ)` with bottom row `(c, d)`,
+it is the divisor `g = gcd(c, N)` of `N` together with the unit `(c / g) / d` modulo
+`gcd(g, N / g)`. Matrices representing the same cusp have the same label
+(`gamma0CuspLabel_eq_iff`), and `gamma0CuspOrbitEquiv` is the resulting bijection. -/
+noncomputable def gamma0CuspLabel (γ : SL(2, ℤ)) :
+    Σ g : N.divisors, (ZMod (Nat.gcd g (N / g)))ˣ :=
+  ⟨⟨Int.gcd (γ 1 0) N, gcd_mem_divisors (γ 1 0)⟩,
+    ZMod.unitOfIsCoprime (γ 1 0 / Int.gcd (γ 1 0) N) (isCoprime_ediv_gcd_gcd (γ 1 0)) /
+      ZMod.unitOfIsCoprime (γ 1 1) (isCoprime_gcd_gcd (bottom_row_coprime γ))⟩
+
+/-- The divisor in the label of `γ` is `gcd(c, N)`, for `c` the lower-left entry of `γ`. -/
+@[simp]
+theorem coe_gamma0CuspLabel_fst (γ : SL(2, ℤ)) :
+    ((gamma0CuspLabel N γ).1 : ℕ) = Int.gcd (γ 1 0) N :=
+  (rfl)
+
+/-- The residue in the label of `γ` is `(c / g) / d`, for `(c, d)` the bottom row of `γ` and
+`g = gcd(c, N)`: its product with `d` is `c / g`. -/
+theorem coe_gamma0CuspLabel_snd_mul (γ : SL(2, ℤ)) :
+    ((gamma0CuspLabel N γ).2 : ZMod (Nat.gcd (gamma0CuspLabel N γ).1
+      (N / (gamma0CuspLabel N γ).1))) * (γ 1 1 : ℤ) = (γ 1 0 / Int.gcd (γ 1 0) N : ℤ) := by
+  rw [gamma0CuspLabel]
+  dsimp only
+  rw [← ZMod.coe_unitOfIsCoprime (γ 1 1) (isCoprime_gcd_gcd (bottom_row_coprime γ)),
+    ← Units.val_mul, div_mul_cancel, ZMod.coe_unitOfIsCoprime]
+
+/-- Two matrices have the same label exactly when their bottom rows `(c, d)` and `(c', d')`
+satisfy `N ∣ c d' - c' d + j c c'` for some integer `j`. -/
+theorem gamma0CuspLabel_eq_iff_exists_dvd (γ γ' : SL(2, ℤ)) :
+    gamma0CuspLabel N γ = gamma0CuspLabel N γ' ↔
+      ∃ j : ℤ, (N : ℤ) ∣ γ 1 0 * γ' 1 1 - γ' 1 0 * γ 1 1 + j * γ 1 0 * γ' 1 0 := by
+  rw [gamma0CuspLabel, gamma0CuspLabel, Sigma.mk.inj_iff, Subtype.mk.injEq]
+  constructor
+  · rintro ⟨hg, hx⟩
+    rw [heq_unitOfIsCoprime_div_iff hg, ← hg] at hx
+    exact exists_dvd_of_dvd_sub (natCast_eq_gcd_mul (γ 1 0)) (eq_gcd_mul_ediv _)
+      (hg ▸ eq_gcd_mul_ediv _) (isCoprime_ediv_gcd _) (hg ▸ isCoprime_ediv_gcd _) hx
+  · rintro ⟨j, h⟩
+    have hg := gcd_eq_of_dvd (bottom_row_coprime γ) (bottom_row_coprime γ') h
+    refine ⟨hg, (heq_unitOfIsCoprime_div_iff hg ..).mpr ?_⟩
+    rw [← hg]
+    exact dvd_sub_of_dvd (gcd_pos _).ne' (natCast_eq_gcd_mul (γ 1 0)) (eq_gcd_mul_ediv _)
+      (hg ▸ eq_gcd_mul_ediv _) h
+
+/-- Every divisor `g` of `N` and every unit modulo `gcd(g, N / g)` is a label: that of a matrix
+with bottom row `(g, d)`. -/
+theorem gamma0CuspLabel_surjective : Function.Surjective (gamma0CuspLabel N) := by
+  rintro ⟨⟨g, hg⟩, x⟩
+  have hgN : g ∣ N := Nat.dvd_of_mem_divisors hg
+  have : NeZero g := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors hg)⟩
+  obtain ⟨y, hy⟩ := ZMod.unitsMap_surjective (Nat.gcd_dvd_left g (N / g)) x⁻¹
+  have hgd : IsCoprime (g : ℤ) ((y : ZMod g).val : ℤ) :=
+    Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime y).symm
+  have hmem : ![(g : ℤ), ((y : ZMod g).val : ℤ)] ∈
+      {cd : Fin 2 → ℤ | IsCoprime (cd 0) (cd 1)} := hgd
+  obtain ⟨γ, -, hγ⟩ := bottom_row_surj hmem
+  have hc : γ 1 0 = g := congrFun hγ 0
+  have hd : γ 1 1 = ((y : ZMod g).val : ℤ) := congrFun hγ 1
+  have hgcd : Int.gcd (γ 1 0) N = g := by
+    rw [hc, Int.gcd_natCast_natCast, Nat.gcd_eq_left hgN]
+  have h1 : γ 1 0 / Int.gcd (γ 1 0) N = 1 := by
+    rw [hgcd, hc]
+    exact Int.ediv_self (by exact_mod_cast NeZero.ne g)
+  refine ⟨γ, ?_⟩
+  subst hgcd
+  rw [gamma0CuspLabel]
+  refine Sigma.ext rfl (heq_of_eq ?_)
+  dsimp only
+  rw [div_eq_iff_eq_mul, Units.ext_iff, Units.val_mul, ZMod.coe_unitOfIsCoprime,
+    ZMod.coe_unitOfIsCoprime, h1, hd, Int.cast_natCast, ZMod.natCast_val,
+    ← ZMod.unitsMap_val (Nat.gcd_dvd_left _ _), hy,
+    Int.cast_one, Units.mul_inv]
+
+/-- Two matrices have the same label exactly when they represent the same cusp of `Γ₀(N)`. -/
+theorem gamma0CuspLabel_eq_iff (γ γ' : SL(2, ℤ)) :
+    gamma0CuspLabel N γ = gamma0CuspLabel N γ' ↔
+      (Gamma0 N).cuspOrbitOfSL2Z γ = (Gamma0 N).cuspOrbitOfSL2Z γ' := by
+  rw [gamma0CuspLabel_eq_iff_exists_dvd, cuspOrbitOfSL2Z_Gamma0_eq_iff]
+
+variable (N) in
+/-- **The cusps of `Γ₀(N)`** are in bijection with the pairs `(g, x)` of a divisor `g` of `N`
+and a unit `x` modulo `gcd(g, N / g)`. The cusp `γ • ∞` corresponds to the label of `γ`
+(`gamma0CuspOrbitEquiv_cuspOrbitOfSL2Z`). -/
+noncomputable def gamma0CuspOrbitEquiv :
+    ((Gamma0 N).map sl2zToPSL2R).CuspOrbit ≃ Σ g : N.divisors, (ZMod (Nat.gcd g (N / g)))ˣ :=
+  Equiv.ofBijective
+    (fun C ↦ gamma0CuspLabel N (Function.surjInv (Gamma0 N).cuspOrbitOfSL2Z_surjective C))
+    ⟨fun C C' h ↦ by
+      rwa [gamma0CuspLabel_eq_iff, Function.surjInv_eq (Gamma0 N).cuspOrbitOfSL2Z_surjective,
+        Function.surjInv_eq (Gamma0 N).cuspOrbitOfSL2Z_surjective] at h,
+    fun x ↦ by
+      obtain ⟨γ, rfl⟩ := gamma0CuspLabel_surjective x
+      exact ⟨(Gamma0 N).cuspOrbitOfSL2Z γ,
+        (gamma0CuspLabel_eq_iff _ _).mpr (Function.surjInv_eq _ _)⟩⟩
+
+/-- The cusp `γ • ∞` of `Γ₀(N)` corresponds to the label of `γ`. -/
+@[simp]
+theorem gamma0CuspOrbitEquiv_cuspOrbitOfSL2Z (γ : SL(2, ℤ)) :
+    gamma0CuspOrbitEquiv N ((Gamma0 N).cuspOrbitOfSL2Z γ) = gamma0CuspLabel N γ :=
+  (gamma0CuspLabel_eq_iff _ _).mpr (Function.surjInv_eq _ _)
+
+/-- The cusp with the label of `γ` is `γ • ∞`. -/
+@[simp]
+theorem gamma0CuspOrbitEquiv_symm_gamma0CuspLabel (γ : SL(2, ℤ)) :
+    (gamma0CuspOrbitEquiv N).symm (gamma0CuspLabel N γ) = (Gamma0 N).cuspOrbitOfSL2Z γ :=
+  (Equiv.symm_apply_eq _).mpr (gamma0CuspOrbitEquiv_cuspOrbitOfSL2Z γ).symm
+
+variable (N) in
+/-- **The cusp count `ε∞` of `Γ₀(N)`**: the number of cusps of `Γ₀(N)` is
+`∑_{g ∣ N} φ(gcd(g, N / g))`. -/
+theorem card_cuspOrbit_Gamma0 :
+    Nat.card ((Gamma0 N).map sl2zToPSL2R).CuspOrbit =
+      ∑ g ∈ N.divisors, Nat.totient (Nat.gcd g (N / g)) := by
+  rw [Nat.card_congr (gamma0CuspOrbitEquiv N), Nat.card_sigma, ← Finset.sum_coe_sort N.divisors]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  have : NeZero (Nat.gcd g (N / g)) :=
+    ⟨Nat.gcd_ne_zero_left (Nat.ne_of_gt (Nat.pos_of_mem_divisors g.2))⟩
+  rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
+
+/-- `Γ₀(p)` has two cusps, `∞` and `0`, for a prime `p`. -/
+theorem card_cuspOrbit_Gamma0_of_prime {p : ℕ} [Fact p.Prime] :
+    Nat.card ((Gamma0 p).map sl2zToPSL2R).CuspOrbit = 2 := by
+  have hp := (Fact.out : p.Prime)
+  rw [card_cuspOrbit_Gamma0, hp.divisors, Finset.sum_pair hp.one_lt.ne, Nat.div_self hp.pos]
+  simp
+
+end TauCeti

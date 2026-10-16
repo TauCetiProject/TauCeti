@@ -14,8 +14,10 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 Every finite-index subgroup of `SL(2, ℤ)` gives a cofinite subgroup of `PSL(2, ℝ)`.
 Its parabolic fixed points are exactly the rational boundary points: equivalently, the
 orbit of infinity under the full modular group. The subgroup can split this one modular
-orbit into several cusp orbits. These facts allow the compactified Fuchsian quotient and
-its cusp charts to be used for congruence modular curves.
+orbit into several cusp orbits: every cusp orbit is that of `γ • ∞` for some `γ ∈ SL(2, ℤ)`,
+and two such orbits agree exactly when `γ⁻¹ h γ'` fixes `∞` for some `h` in the subgroup.
+These facts allow the compactified Fuchsian quotient and its cusp charts to be used for
+congruence modular curves, and reduce counting cusps to arithmetic in `SL(2, ℤ)`.
 
 ## References
 
@@ -26,6 +28,16 @@ public noncomputable section
 
 open Matrix Matrix.ProjectiveSpecialLinearGroup MulAction OnePoint Subgroup
 open scoped MatrixGroups
+
+namespace TauCeti
+
+/-- An element of `SL(2, ℤ)` fixes `∞ ∈ OnePoint ℝ` exactly when its lower-left entry vanishes. -/
+theorem sl2zToPSL2R_smul_infty_eq_infty_iff (g : SL(2, ℤ)) :
+    sl2zToPSL2R g • (∞ : OnePoint ℝ) = ∞ ↔ g 1 0 = 0 := by
+  rw [sl2zToPSL2R_apply, mk_smul_infty_eq_infty_iff]
+  simp
+
+end TauCeti
 
 namespace Subgroup
 
@@ -84,5 +96,52 @@ theorem isCuspPoint_map_sl2zToPSL2R_iff_rat (c : OnePoint ℝ) :
     finiteRelIndex_map_sl2zToPSL2R H
   exact (Subgroup.isCuspPoint_iff_of_isFiniteRelIndex hle).trans
     ((TauCeti.ModularGroup.isCuspPoint_iff_isCusp c).trans isCusp_SL2Z_iff)
+
+/-- The point `γ • ∞` of the projective boundary is a cusp point of the effective image of a
+finite-index subgroup of `SL(2, ℤ)`. -/
+theorem isCuspPoint_map_sl2zToPSL2R_smul_infty (γ : SL(2, ℤ)) :
+    (H.map sl2zToPSL2R).IsCuspPoint (sl2zToPSL2R γ • (∞ : OnePoint ℝ)) := by
+  rw [isCuspPoint_map_sl2zToPSL2R_iff_orbit_infty]
+  exact mem_orbit_iff.mpr ⟨⟨sl2zToPSL2R γ,
+    TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R ▸ ⟨γ, rfl⟩⟩, rfl⟩
+
+/-- The cusp orbit of `γ • ∞` for the effective image of a finite-index subgroup `H` of
+`SL(2, ℤ)`. -/
+def cuspOrbitOfSL2Z (γ : SL(2, ℤ)) : (H.map sl2zToPSL2R).CuspOrbit :=
+  (H.map sl2zToPSL2R).cuspOrbitMk
+    ⟨sl2zToPSL2R γ • ∞, mem_cuspPoints.mpr (H.isCuspPoint_map_sl2zToPSL2R_smul_infty γ)⟩
+
+/-- The cusp orbit of `γ • ∞`, as a boundary orbit. -/
+@[simp]
+theorem cuspOrbitOfSL2Z_val (γ : SL(2, ℤ)) :
+    (H.cuspOrbitOfSL2Z γ : (H.map sl2zToPSL2R).BoundaryOrbit) =
+      Quotient.mk'' (sl2zToPSL2R γ • (∞ : OnePoint ℝ)) :=
+  cuspOrbitMk_val _
+
+/-- Every cusp orbit of a finite-index subgroup of `SL(2, ℤ)` is the orbit of `γ • ∞` for some
+`γ ∈ SL(2, ℤ)`. -/
+theorem cuspOrbitOfSL2Z_surjective : Function.Surjective H.cuspOrbitOfSL2Z := by
+  intro C
+  obtain ⟨⟨c, hc⟩, rfl⟩ := cuspOrbitMk_surjective C
+  obtain ⟨⟨_, p, rfl⟩, rfl⟩ := mem_orbit_iff.mp
+    ((isCuspPoint_map_sl2zToPSL2R_iff_orbit_infty H c).mp (mem_cuspPoints.mp hc))
+  induction p using QuotientGroup.induction_on with
+  | H γ => exact ⟨γ, by simp [cuspOrbitOfSL2Z]⟩
+
+/-- **The cusp orbits of `γ • ∞` and `γ' • ∞` agree** exactly when `γ⁻¹ h γ'` fixes `∞`, that is
+has vanishing lower-left entry, for some `h ∈ H`. -/
+theorem cuspOrbitOfSL2Z_eq_iff (γ γ' : SL(2, ℤ)) :
+    H.cuspOrbitOfSL2Z γ = H.cuspOrbitOfSL2Z γ' ↔ ∃ h ∈ H, (γ⁻¹ * h * γ') 1 0 = 0 := by
+  have key (h : SL(2, ℤ)) : sl2zToPSL2R h • sl2zToPSL2R γ' • (∞ : OnePoint ℝ) =
+      sl2zToPSL2R γ • ∞ ↔ (γ⁻¹ * h * γ') 1 0 = 0 := by
+    rw [← TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff, map_mul, map_mul, map_inv, mul_smul,
+      mul_smul, inv_smul_eq_iff]
+  rw [cuspOrbitOfSL2Z, cuspOrbitOfSL2Z, cuspOrbitMk_eq_iff, mem_orbit_iff]
+  simp only [Subtype.exists, Subgroup.mk_smul, Subgroup.mem_map, exists_prop]
+  constructor
+  · rintro ⟨_, ⟨h, hh, rfl⟩, hγ⟩
+    exact ⟨h, hh, (key h).mp hγ⟩
+  · rintro ⟨h, hh, hγ⟩
+    exact ⟨_, ⟨h, hh, rfl⟩, (key h).mpr hγ⟩
 
 end Subgroup
