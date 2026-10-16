@@ -25,8 +25,9 @@ in `ℤ₂` directly.
 At a finite level there are two branches. If `2^f ∣ α`, the orientation image is
 `{±1} × U^(f)`. If `α` has exact divisibility depth `g < f`, the image is the twisted
 procyclic subgroup `U^[g]`. The same twisted statement at rank two has no level parameter, while
-the endpoint `α = 0`, `f = ∞` has image `{±1}`. In every case the isomorphism preserves the
-marked character values prescribed by Labute's Theorem 4.
+the endpoint `α = 0`, `f = ∞` is already covered by
+`TauCeti.isDemushkin_marked_of_q_two_even_top`. In every case the isomorphism preserves the marked
+character values prescribed by Labute's Theorem 4.
 
 ## Main results
 
@@ -35,7 +36,6 @@ marked character values prescribed by Labute's Theorem 4.
 * `TauCeti.isDemushkin_marked_of_q_two_even_twisted_padic`: the branch with image `U^[g]`.
 * `TauCeti.isDemushkin_marked_of_q_two_even_padic`: both finite-level branches in one statement.
 * `TauCeti.isDemushkin_marked_of_q_two_rank_two_padic`: the rank-two twisted branch.
-* `TauCeti.isDemushkin_marked_of_q_two_even_top_padic`: the endpoint with image `{±1}`.
 
 ## References
 
@@ -184,42 +184,5 @@ theorem isDemushkin_marked_of_q_two_rank_two_padic (hG : IsDemushkin 2 G)
     demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordTwoEvenPadic hG hα₂
       (by omega) even_two one_lt_two e
   exact ⟨e, htrivial 0 (by norm_num) (by norm_num), hsecond⟩
-
-/-- **The marked endpoint with a `2`-adic exponent.**
-An even-rank Demushkin pro-`2` group whose orientation image is `{±1}` is isomorphic to the
-presentation with `α = 0` and no `x₃` power. Its canonical character is `-1` on `x₂` and
-trivial on every other marked generator. -/
-theorem isDemushkin_marked_of_q_two_even_top_padic (hG : IsDemushkin 2 G)
-    (heven : Even (demushkinRank hG))
-    (hrange : (demushkinCharacter hG).toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ)) :
-    ∃ e : G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG))
-        {demushkinWordTwoEvenPadic (isProP_freeProP 2 (Fin (demushkinRank hG))) 0 0
-          (demushkinRank hG) (freeProPGen 2 (demushkinRank hG))},
-      demushkinCharacter hG
-          (e.symm (presentedProPGen 2 (demushkinRank hG) _ 1)) = -1 ∧
-        ∀ i : ℕ, i ≠ 1 → i < demushkinRank hG →
-          demushkinCharacter hG
-            (e.symm (presentedProPGen 2 (demushkinRank hG) _ i)) = 1 := by
-  have hn : 1 < demushkinRank hG := by
-    obtain ⟨k, hk⟩ := heven
-    have := hG.demushkinRank_pos
-    omega
-  let hH := isDemushkin_presentedProP_demushkinWordTwoEvenPadic heven (by omega) (dvd_zero 2)
-    (dvd_zero 2)
-  have hrank := demushkinRank_presentedProP_demushkinWordTwoEvenPadic (dvd_zero 2) (dvd_zero 2) hH
-  have hHrange :=
-    range_demushkinCharacter_eq_zpowers_neg_one_of_equiv_demushkinWordTwoEvenPadic hH rfl
-      (fun _ ↦ rfl) heven (by omega) (ContinuousMulEquiv.refl _)
-  obtain ⟨e⟩ := hG.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq hH
-    (hrange.trans hHrange.symm) hrank.symm
-  obtain ⟨hsecond, hfourth, htrivial⟩ :=
-    demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordTwoEvenPadic hG (dvd_zero 2)
-      (fun _ ↦ dvd_zero 2) heven (by omega) e
-  refine ⟨e, Units.ext ?_, fun i hi hi' ↦ ?_⟩
-  · simpa using hsecond
-  · by_cases hi₃ : i = 3
-    · subst i
-      exact Units.ext (by simpa using hfourth (by omega))
-    · exact htrivial i hi hi₃
 
 end TauCeti
