@@ -22,9 +22,9 @@ adjoining a vertex over a fresh index makes a finite vertex restriction of the j
 ## Main definitions
 
 * `TauCeti.indexedJoin`: the join of a type-valued family.
-* `TauCeti.indexedJoinMap`: the simplicial map induced by maps of the family members.
+* `TauCeti.indexedJoinMap`: maps induced by injective changes of indices and family maps.
 * `TauCeti.finiteSubjoin`: the join restricted to a finite set of indices.
-* `TauCeti.finiteSubjoinInclusion`: the simplicial inclusion into the full indexed join.
+* `TauCeti.subjoinInclusion`: the simplicial inclusion of the join on a subset of indices.
 
 ## Main results
 
@@ -41,9 +41,10 @@ open AbstractSimplicialComplex
 
 namespace TauCeti
 
-universe u v w z
+universe u v w z u₁ u₂
 
-variable {ι : Type u} {A : ι → Type v} {B : ι → Type w} {C : ι → Type z}
+variable {ι : Type u} {κ : Type u₁} {μ : Type u₂}
+  {A : ι → Type v} {B : κ → Type w} {C : μ → Type z}
 
 attribute [local instance] Classical.decEq
 
@@ -73,65 +74,54 @@ theorem card_image_fst_eq_of_mem_indexedJoin {σ : Finset (Σ i, A i)}
     (hσ : σ ∈ indexedJoin A) : (σ.image Sigma.fst).card = σ.card := by
   rw [Finset.card_image_iff.mpr (mem_indexedJoin_iff.mp hσ).2]
 
-/-- Maps between corresponding members of two families induce a simplicial map of their indexed
-joins. -/
-def indexedJoinMap (f : ∀ i, A i → B i) :
+/-- Two vertices of a face of an indexed join with the same index are equal. -/
+theorem eq_of_mem_indexedJoin {σ : Finset (Σ i, A i)} (hσ : σ ∈ indexedJoin A)
+    {v w : Σ i, A i} (hv : v ∈ σ) (hw : w ∈ σ) (h : v.1 = w.1) : v = w :=
+  (mem_indexedJoin_iff.mp hσ).2 hv hw h
+
+/-- An injective map of indices and maps of the family members induce a simplicial map of
+indexed joins. The maps of the family members need not be injective. -/
+def indexedJoinMap (e : ι → κ) (he : Function.Injective e) (f : ∀ i, A i → B (e i)) :
     PreAbstractSimplicialComplex.SimplicialMap
       (indexedJoin A).toPreAbstractSimplicialComplex
       (indexedJoin B).toPreAbstractSimplicialComplex where
-  toFun v := ⟨v.1, f v.1 v.2⟩
+  toFun := Sigma.map e f
   map_face' := by
     intro σ hσ
     rw [AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
-    rw [mem_indexedJoin_iff] at hσ
     refine mem_indexedJoin_iff.mpr ⟨hσ.1.image _, ?_⟩
-    rw [Finset.coe_image]
-    exact Set.InjOn.image_of_comp
-      (f := fun v : (Σ i, A i) => (⟨v.1, f v.1 v.2⟩ : Σ i, B i)) (g := Sigma.fst)
-      (fun x hx y hy hxy => hσ.2 hx hy hxy)
+    intro v hv w hw heq
+    obtain ⟨v', hv', rfl⟩ := Finset.mem_image.mp hv
+    obtain ⟨w', hw', rfl⟩ := Finset.mem_image.mp hw
+    exact congrArg (Sigma.map e f) (eq_of_mem_indexedJoin hσ hv' hw' (he heq))
 
-/-- The vertex function underlying the simplicial map of indexed joins. -/
+/-- The vertex function underlying an indexed-join map. -/
 @[simp]
-theorem indexedJoinMap_apply (f : ∀ i, A i → B i) (v : Σ i, A i) :
-    indexedJoinMap f v = ⟨v.1, f v.1 v.2⟩ :=
+theorem indexedJoinMap_apply (e : ι → κ) (he : Function.Injective e)
+    (f : ∀ i, A i → B (e i)) (v : Σ i, A i) :
+    indexedJoinMap e he f v = ⟨e v.1, f v.1 v.2⟩ :=
   (rfl)
 
-/-- The identity family map induces the identity simplicial map of an indexed join. -/
+/-- The identity on indices and family members induces the identity simplicial map. -/
 @[simp]
 theorem indexedJoinMap_id :
-    indexedJoinMap (fun _ => id) =
+    indexedJoinMap id Function.injective_id (fun _ x => x) =
       PreAbstractSimplicialComplex.SimplicialMap.id
         (indexedJoin A).toPreAbstractSimplicialComplex := by
-  apply PreAbstractSimplicialComplex.SimplicialMap.ext
-  funext v
-  calc
-    (indexedJoinMap (fun _ => id)).toFun v = indexedJoinMap (fun _ => id) v := rfl
-    _ = ⟨v.1, v.2⟩ := indexedJoinMap_apply _ v
-    _ = (PreAbstractSimplicialComplex.SimplicialMap.id
-        (indexedJoin A).toPreAbstractSimplicialComplex).toFun v := by
-      exact (PreAbstractSimplicialComplex.SimplicialMap.id_apply
-        (K := (indexedJoin A).toPreAbstractSimplicialComplex) v).symm
+  apply DFunLike.ext
+  intro v
+  simp
 
-/-- Indexed-join maps preserve composition of maps between family members. -/
+/-- Indexed-join maps preserve composition of injective index maps and family maps. -/
 @[simp]
-theorem indexedJoinMap_comp (g : ∀ i, B i → C i) (f : ∀ i, A i → B i) :
-    indexedJoinMap (fun i => g i ∘ f i) =
-      (indexedJoinMap g).comp (indexedJoinMap f) := by
-  apply PreAbstractSimplicialComplex.SimplicialMap.ext
-  funext v
-  calc
-    (indexedJoinMap (fun i => g i ∘ f i)).toFun v =
-        indexedJoinMap (fun i => g i ∘ f i) v := rfl
-    _ = ⟨v.1, g v.1 (f v.1 v.2)⟩ := indexedJoinMap_apply _ v
-    _ = ((indexedJoinMap g).comp (indexedJoinMap f)).toFun v := by
-      symm
-      calc
-        ((indexedJoinMap g).comp (indexedJoinMap f)).toFun v =
-            (indexedJoinMap g).comp (indexedJoinMap f) v := rfl
-        _ = indexedJoinMap g (indexedJoinMap f v) :=
-          PreAbstractSimplicialComplex.SimplicialMap.comp_apply _ _ _
-        _ = ⟨v.1, g v.1 (f v.1 v.2)⟩ := by
-          rw [indexedJoinMap_apply, indexedJoinMap_apply]
+theorem indexedJoinMap_comp (e : ι → κ) (he : Function.Injective e)
+    (g : κ → μ) (hg : Function.Injective g) (h : ∀ j, B j → C (g j))
+    (f : ∀ i, A i → B (e i)) :
+    indexedJoinMap (g ∘ e) (hg.comp he) (fun i x => h (e i) (f i x)) =
+      (indexedJoinMap g hg h).comp (indexedJoinMap e he f) := by
+  apply DFunLike.ext
+  intro v
+  simp
 
 attribute [-instance] Sigma.instDecidableEqSigma instDecidableEqSigma in
 /-- Barycentric-coordinate characterization of the realization of an indexed join.  Besides the
@@ -171,7 +161,7 @@ theorem realization_apply_eq_zero_of_fst_eq {x : (indexedJoin A).Realization}
       (Finsupp.mem_support_iff.mpr hv) (Finsupp.mem_support_iff.mpr hw) hvw)
 
 /-- The subjoin of a family supported on a finite set of indices. -/
-def finiteSubjoin (A : ι → Type v) (s : Finset ι) :
+abbrev finiteSubjoin (A : ι → Type v) (s : Finset ι) :
     AbstractSimplicialComplex (Σ i : s, A i.1) :=
   indexedJoin fun i : s => A i.1
 
@@ -187,41 +177,29 @@ theorem mem_finiteSubjoin_iff {s : Finset ι} {σ : Finset (Σ i : s, A i.1)} :
   · rintro ⟨hne, hinj⟩
     exact ⟨hne, fun x hx y hy hxy => hinj hx hy (congrArg Subtype.val hxy)⟩
 
-/-- The canonical simplicial inclusion of a finite subjoin into the full indexed join. -/
-def finiteSubjoinInclusion (A : ι → Type v) (s : Finset ι) :
+/-- The simplicial inclusion of the subjoin on any subset of indices into the full join. -/
+def subjoinInclusion (A : ι → Type v) (s : Set ι) :
     PreAbstractSimplicialComplex.SimplicialMap
-      (finiteSubjoin A s).toPreAbstractSimplicialComplex
-      (indexedJoin A).toPreAbstractSimplicialComplex where
-  toFun v := ⟨v.1.1, v.2⟩
-  map_face' := by
-    intro σ hσ
-    rw [AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
-    rw [mem_finiteSubjoin_iff] at hσ
-    refine mem_indexedJoin_iff.mpr ⟨hσ.1.image _, ?_⟩
-    rw [Finset.coe_image]
-    exact Set.InjOn.image_of_comp
-      (f := fun v : (Σ i : s, A i.1) => (⟨v.1.1, v.2⟩ : Σ i, A i)) (g := Sigma.fst)
-      (fun x hx y hy hxy => hσ.2 hx hy hxy)
+      (indexedJoin fun i : s => A i).toPreAbstractSimplicialComplex
+      (indexedJoin A).toPreAbstractSimplicialComplex :=
+  indexedJoinMap Subtype.val Subtype.val_injective (fun _ => id)
 
-/-- The finite-subjoin inclusion sends a labelled vertex to the same labelled vertex in the full
-join. -/
+/-- A subjoin inclusion preserves the labelled vertex. -/
 @[simp]
-theorem finiteSubjoinInclusion_apply (A : ι → Type v) (s : Finset ι)
-    (v : Σ i : s, A i.1) : finiteSubjoinInclusion A s v = ⟨v.1.1, v.2⟩ :=
+theorem subjoinInclusion_apply (A : ι → Type v) (s : Set ι)
+    (v : Σ i : s, A i) : subjoinInclusion A s v = ⟨v.1.1, v.2⟩ :=
   (rfl)
 
-/-- The finite-subjoin inclusion is injective on vertices. -/
-theorem finiteSubjoinInclusion_injective (A : ι → Type v) (s : Finset ι) :
-    Function.Injective (finiteSubjoinInclusion A s) := by
-  intro x y hxy
-  apply Sigma.ext (Subtype.ext (congrArg Sigma.fst hxy))
-  exact (Sigma.mk.inj_iff.mp hxy).2
+/-- The subjoin inclusion is injective on vertices. -/
+theorem subjoinInclusion_injective (A : ι → Type v) (s : Set ι) :
+    Function.Injective (subjoinInclusion A s) :=
+  Subtype.val_injective.sigma_map (fun _ => Function.injective_id)
 
 /-- The continuous inclusion of the realization of a finite subjoin into the realization of the
 full indexed join. -/
 def finiteSubjoinRealizationInclusion (A : ι → Type v) (s : Finset ι) :
     C((finiteSubjoin A s).Realization, (indexedJoin A).Realization) :=
-  (finiteSubjoinInclusion A s).realizationMap
+  (subjoinInclusion A s).realizationMap
 
 /-- The realization inclusion pushes barycentric coordinates forward along the vertex inclusion.
 -/
@@ -229,7 +207,7 @@ def finiteSubjoinRealizationInclusion (A : ι → Type v) (s : Finset ι) :
 theorem finiteSubjoinRealizationInclusion_val (A : ι → Type v) (s : Finset ι)
     (x : (finiteSubjoin A s).Realization) :
     (finiteSubjoinRealizationInclusion A s x : (Σ i, A i) →₀ ℝ) =
-      Finsupp.mapDomain (finiteSubjoinInclusion A s) x.1 := by
+      Finsupp.mapDomain (subjoinInclusion A s) x.1 := by
   rw [finiteSubjoinRealizationInclusion,
     PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val]
 
@@ -237,7 +215,7 @@ theorem finiteSubjoinRealizationInclusion_val (A : ι → Type v) (s : Finset ι
 theorem finiteSubjoinRealizationInclusion_injective (A : ι → Type v) (s : Finset ι) :
     Function.Injective (finiteSubjoinRealizationInclusion A s) :=
   (PreAbstractSimplicialComplex.SimplicialMap.realizationMap_injective_iff
-    (finiteSubjoinInclusion A s)).mpr (finiteSubjoinInclusion_injective A s)
+    (subjoinInclusion A s)).mpr (subjoinInclusion_injective A s)
 
 /-- The realization inclusion of a finite subjoin sends each vertex to the corresponding vertex
 of the full indexed join. -/
@@ -246,9 +224,9 @@ theorem finiteSubjoinRealizationInclusion_vertex (A : ι → Type v) (s : Finset
     (v : Σ i : s, A i.1) :
     finiteSubjoinRealizationInclusion A s ((finiteSubjoin A s).vertex v) =
       (indexedJoin A).vertex ⟨v.1.1, v.2⟩ := by
-  rw [finiteSubjoinRealizationInclusion,
-    PreAbstractSimplicialComplex.SimplicialMap.realizationMap_vertex,
-    finiteSubjoinInclusion_apply]
+  apply Subtype.ext
+  simp only [finiteSubjoinRealizationInclusion_val, AbstractSimplicialComplex.vertex_val,
+    Finsupp.mapDomain_single, subjoinInclusion_apply]
 
 section IsCone
 
