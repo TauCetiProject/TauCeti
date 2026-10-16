@@ -67,7 +67,7 @@ namespace WeierstrassCurve
 
 open TauCeti TauCeti.ContCohomology IsDedekindDomain ValuativeRel
 
-/-! ### Classes unramified outside `S` -/
+/-! ### Weil pairings on classes unramified outside `S` -/
 
 section Dedekind
 
@@ -78,40 +78,7 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
   (S : Set (HeightOneSpectrum R)) (m : ℕ)
 
-/-- **The classes of `H¹(G_K, E[m])` unramified outside `S`**: those whose restriction to the
-completion `K_v` along `τ v`, for every prime `v ∉ S`, is unramified, that is, vanishes on the
-inertia subgroup of `K_v`. -/
-def unramifiedOutsideTorsionCohomology :
-    AddSubgroup (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :=
-  ⨅ (v : HeightOneSpectrum R) (_ : v ∉ S),
-    ((W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m).comap (W.torsionRes (τ v) m)
-
 variable {W τ S m}
-
-/-- A class is unramified outside `S` exactly when its restriction to every `K_v` with `v ∉ S`
-is unramified. -/
-@[simp]
-theorem mem_unramifiedOutsideTorsionCohomology_iff
-    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} :
-    c ∈ W.unramifiedOutsideTorsionCohomology τ S m ↔
-      ∀ v ∉ S, W.torsionRes (τ v) m c ∈ (W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m := by
-  simp only [unramifiedOutsideTorsionCohomology, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
-
-/-- **Selmer classes are unramified outside the bad primes.** If `W` has good reduction at every
-prime `v ∉ S` and no prime outside `S` divides `m`, then every class of the `m`-Selmer group
-relative to the completions `K_v` is unramified outside `S`. -/
-theorem selmerGroup_le_unramifiedOutsideTorsionCohomology
-    (hgood : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K)),
-      (integralModel 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K))).IsElliptic)
-    (hS : ∀ v ∉ S, (m : R) ∉ v.asIdeal) :
-    W.selmerGroup τ m ≤ W.unramifiedOutsideTorsionCohomology τ S m := by
-  intro c hc
-  rw [mem_unramifiedOutsideTorsionCohomology_iff]
-  intro v hv
-  obtain ⟨_, _⟩ := hgood v hv
-  refine W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v ?_ hc
-  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
-  exact hS v hv
 
 open scoped Classical in
 /-- **The Weil pairing preserves being unramified outside `S`.** For a rational point
