@@ -117,7 +117,7 @@ theorem fullyExchangeable_coordinateMarginals_of_invariant
       fun i => P.coordinateMarginals (τ i)) =
       coordinateMarginals ∘ fun P => P.map (permReindex τ) := by
     funext P
-    exact (coordinateMarginals_map_permReindex P τ).symm
+    exact (coordinateMarginals_map_reindex P τ).symm
   calc
     π.map (fun P => fun i => P.coordinateMarginals (τ i)) =
         π.map (coordinateMarginals ∘

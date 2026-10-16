@@ -121,10 +121,10 @@ theorem measurable_coordinateMarginals :
   Measurable.of_eval fun i =>
     measurable_probabilityMeasure_map (measurable_pi_apply i)
 
-/-- Coordinate marginals are equivariant under a permutation of path coordinates. -/
+/-- Coordinate marginals commute with an arbitrary selection of coordinates. -/
 @[simp]
-theorem _root_.MeasureTheory.ProbabilityMeasure.coordinateMarginals_map_permReindex
-    (P : ProbabilityMeasure (ι → α)) (τ : Equiv.Perm ι) :
+theorem _root_.MeasureTheory.ProbabilityMeasure.coordinateMarginals_map_reindex
+    {κ : Type*} (P : ProbabilityMeasure (ι → α)) (τ : κ → ι) :
     (P.map (fun x i => x (τ i))).coordinateMarginals =
       fun i => P.coordinateMarginals (τ i) := by
   funext i
@@ -158,14 +158,15 @@ theorem measurable_codedCoordinateMarginals [MeasurableSpace.CountablyGenerated 
 
 /-- Coding commutes with reindexing the coordinate marginals. -/
 @[simp]
-theorem _root_.MeasureTheory.ProbabilityMeasure.codedCoordinateMarginals_map_permReindex
-    [MeasurableSpace.CountablyGenerated α] (P : ProbabilityMeasure (ι → α)) (τ : Equiv.Perm ι) :
+theorem _root_.MeasureTheory.ProbabilityMeasure.codedCoordinateMarginals_map_reindex
+    {κ : Type*} [MeasurableSpace.CountablyGenerated α]
+    (P : ProbabilityMeasure (ι → α)) (τ : κ → ι) :
     (P.map (fun x i => x (τ i))).codedCoordinateMarginals =
       fun i => P.codedCoordinateMarginals (τ i) := by
   funext i
   simp only [codedCoordinateMarginals_apply]
   exact congrArg probabilityMeasureCode
-    (congrFun (coordinateMarginals_map_permReindex P τ) i)
+    (congrFun (coordinateMarginals_map_reindex P τ) i)
 
 end CoordinateMarginals
 
