@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import TauCeti.Analysis.Sobolev.Trace.Hyperplane
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -38,17 +39,6 @@ open MeasureTheory Set TopologicalSpace Topology
 open scoped Distributions Gradient ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E]
-
-/-- The open half-space to the right of the normal coordinate `a` in the Euclidean product
-`ℝ × E`. -/
-def normalHalfSpace (a : ℝ) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨{x | a < (WithLp.ofLp x).1},
-    isOpen_lt continuous_const (WithLp.prod_continuous_ofLp 2 ℝ E).fst⟩
-
-/-- Membership in the normal-coordinate half-space is a strict inequality. -/
-@[simp]
-theorem mem_normalHalfSpace (a : ℝ) (x : WithLp 2 (ℝ × E)) :
-    x ∈ normalHalfSpace (E := E) a ↔ a < (WithLp.ofLp x).1 := Iff.rfl
 
 variable [MeasurableSpace E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
@@ -91,7 +81,8 @@ private theorem norm_hyperplaneTrace_ofTestFunction_le (a : ℝ)
       filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae a φ] with y hy
       simp only [hy, Real.norm_eq_abs, sq_abs]
     _ ≤ _ := (integral_hyperplane_sq_le_integral_halfSpace_sq_add_norm_fderiv_sq
-      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport a).trans_eq henergy
+      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport a).trans_eq
+        (by simpa only [coe_normalHalfSpace, v] using henergy)
 
 /-- The flat `H¹` trace is controlled by the Sobolev norm on the right-hand half-space alone. -/
 theorem W1p.norm_hyperplaneTrace_le_norm_restrictL (a : ℝ)

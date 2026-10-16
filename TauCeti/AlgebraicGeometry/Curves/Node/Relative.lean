@@ -48,7 +48,7 @@ private theorem affineAtWorstNodalOfRelativeDimensionOne_source_iso
     affineAtWorstNodalOfRelativeDimensionOne (e.hom ≫ f) := by
   obtain ⟨R, _, i, hi⟩ := h
   refine ⟨R, inferInstance, i, ?_⟩
-  exact hi.comp_of_isOpenImmersion e.hom
+  exact hi.comp_of_etale e.hom
 
 private theorem affineAtWorstNodalOfRelativeDimensionOne_target_iso
     {X Y S : Scheme.{u}} (e : Y ≅ S) (f : X ⟶ Y) [IsAffine Y]
@@ -153,7 +153,7 @@ private theorem affineAtWorstNodalOfRelativeDimensionOne_comp_of_isOpenImmersion
     (h : affineAtWorstNodalOfRelativeDimensionOne f) :
     affineAtWorstNodalOfRelativeDimensionOne (i ≫ f) := by
   rw [affineAtWorstNodalOfRelativeDimensionOne_iff_isoSpec] at h ⊢
-  exact h.comp_of_isOpenImmersion i
+  exact h.comp_of_etale i
 
 private theorem affineAtWorstNodalOfRelativeDimensionOne_of_openCover
     {X Y : Scheme.{u}} [IsAffine Y] (f : X ⟶ Y) (U : X.OpenCover)
