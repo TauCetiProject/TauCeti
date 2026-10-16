@@ -23,8 +23,6 @@ induces `f`.
 
 ## Main definitions
 
-* `TauCeti.classicalDGLocalSystemPreimage`: the morphism of local systems inducing a given
-  morphism of DG local systems.
 * `TauCeti.classicalDGLocalSystemFunctorFullyFaithful`: the functor from classical to DG local
   systems is fully faithful.
 
@@ -32,7 +30,9 @@ induces `f`.
 
 * `TauCeti.classicalDGLocalSystem_hom_naturality`: a morphism of DG local systems commutes with
   the monodromy.
-* `TauCeti.classicalDGLocalSystemMap_preimage`: the preimage induces the given morphism.
+
+The extension of an equivariant map is a private construction: the interface is the `Full`
+instance, so that the round trips are those of `CategoryTheory.Functor.preimage`.
 
 ## References
 
@@ -84,10 +84,10 @@ private theorem fiberHom_apply {L L' : LocalCoefficientSystem.{u, u, w} R X}
 
 variable [PathConnectedSpace X]
 
-/-- **The preimage of a morphism of DG local systems**: on a path-connected space, a morphism
+/-- The preimage of a morphism of DG local systems: on a path-connected space, a morphism
 `f : L_x → L'_x` of DG local systems commutes with the monodromy, so it extends to a morphism of
 local systems `L ⟶ L'` by transport along paths from the basepoint. -/
-def classicalDGLocalSystemPreimage {L L' : LocalCoefficientSystem.{u, u, w} R X}
+private def classicalDGLocalSystemPreimage {L L' : LocalCoefficientSystem.{u, u, w} R X}
     (f : classicalDGLocalSystem x L ⟶ classicalDGLocalSystem x L') : L ⟶ L' :=
   Groupoid.natTransOfEnd (FundamentalGroupoid.nonempty_hom _) (fiberHom f) fun g ↦ by
     ext m
@@ -95,16 +95,16 @@ def classicalDGLocalSystemPreimage {L L' : LocalCoefficientSystem.{u, u, w} R X}
     exact classicalDGLocalSystem_hom_naturality f (FundamentalGroup.fromArrow g) m
 
 /-- The component of the preimage at the basepoint is the given morphism. -/
-@[simp]
-theorem classicalDGLocalSystemPreimage_app_mk_apply {L L' : LocalCoefficientSystem.{u, u, w} R X}
+private theorem classicalDGLocalSystemPreimage_app_mk_apply
+    {L L' : LocalCoefficientSystem.{u, u, w} R X}
     (f : classicalDGLocalSystem x L ⟶ classicalDGLocalSystem x L')
     (m : L.obj (FundamentalGroupoid.mk x)) :
     (classicalDGLocalSystemPreimage f).app (FundamentalGroupoid.mk x) m = f m := by
   rw [classicalDGLocalSystemPreimage, Groupoid.natTransOfEnd_app_self, fiberHom_apply]
 
-/-- **The preimage induces the given morphism of DG local systems.** -/
-@[simp]
-theorem classicalDGLocalSystemMap_preimage {L L' : LocalCoefficientSystem.{u, u, w} R X}
+/-- The preimage induces the given morphism of DG local systems. -/
+private theorem classicalDGLocalSystemMap_preimage
+    {L L' : LocalCoefficientSystem.{u, u, w} R X}
     (f : classicalDGLocalSystem x L ⟶ classicalDGLocalSystem x L') :
     classicalDGLocalSystemMap (classicalDGLocalSystemPreimage f) = f :=
   DGRightModuleCat.hom_ext (M := classicalDGLocalSystem x L) (N := classicalDGLocalSystem x L')
