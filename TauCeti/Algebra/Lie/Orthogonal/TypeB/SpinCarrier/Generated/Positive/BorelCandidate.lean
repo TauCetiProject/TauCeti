@@ -211,7 +211,7 @@ theorem isBorelCandidate_carrierDefiningIdeal :
   let e : (FiniteTypeCommHopfAlgCat.quotient
       (FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra n k))
       (carrierDefiningIdeal n k)).obj ≅ coordinateHopfAlgebra n k :=
-    CommHopfAlgCat.quotientIsoOfKerOfSurjectiveEq
+    _root_.CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq
       (restriction n k) (restriction_surjective n k) (kerOfSurjective_restriction n k)
   exact HopfIdeal.IsBorelCandidate.mk
     ((smoothCommHopfAlgProperty k).prop_of_iso e.symm (smooth_coordinateHopfAlgebra n k))

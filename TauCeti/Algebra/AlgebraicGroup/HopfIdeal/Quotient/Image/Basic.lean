@@ -43,6 +43,8 @@ that geometric compatibility is not formalized here.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti
