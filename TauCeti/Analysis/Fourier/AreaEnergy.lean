@@ -6,17 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
-public import TauCeti.Analysis.Green.Examples.CurveArea.Basic
+public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
-# Signed area and the area–energy inequality for closed plane curves
+# The area–energy inequality for closed plane curves
 
 For a plane curve `γ = x + i y : ℝ → ℂ` on `[a, b]`, its **signed area** is the boundary integral
-`½ ∫ₐᵇ (x y' - y x')` (`TauCeti.signedArea`), the circulation of the area form
-`(x dy - y dx) / 2` along `γ`. For a circle traversed once counterclockwise it is the area of the
-disc (`TauCeti.signedArea_circleMap_zero`).
+`½ ∫ₐᵇ (x y' - y x')` (`TauCeti.signedArea`, defined in
+`TauCeti.Analysis.Green.Examples.CurveArea.SignedArea`).
 
 The main result is the sharp **area–energy inequality** for absolutely continuous closed curves
 with square-integrable derivative,
@@ -39,10 +38,6 @@ The proof is Fourier-analytic and works directly at absolutely continuous regula
 `(b - a) ∫ ‖γ'‖² = 4π² ∑ n² ‖c n‖²`. Since `n² ≥ ± n` for integers, with equality only at `0`
 and `± 1`, both the inequality and its equality cases follow, since a continuous function on
 `[a, b]` is determined by its Fourier coefficients.
-
-## Main definitions
-
-* `TauCeti.signedArea`: the signed area `½ ∫ (x y' - y x')` of a plane curve on an interval.
 
 ## Main results
 
@@ -69,54 +64,9 @@ namespace TauCeti
 
 variable {a b : ℝ}
 
-/-- The **signed area** `½ ∫ₐᵇ (x y' - y x')` of the plane curve `γ = x + i y` on `[a, b]`,
-computed from its velocity `deriv γ`. For an absolutely continuous curve any almost-everywhere
-derivative may be used in place of `deriv γ` (`TauCeti.signedArea_eq_of_ae_hasDerivAt`). -/
-noncomputable def signedArea (γ : ℝ → ℂ) (a b : ℝ) : ℝ :=
-  (∫ t in a..b, ((γ t).re * (deriv γ t).im - (γ t).im * (deriv γ t).re)) / 2
-
-/-- The defining formula of `TauCeti.signedArea`. -/
-theorem signedArea_def (γ : ℝ → ℂ) (a b : ℝ) :
-    signedArea γ a b =
-      (∫ t in a..b, ((γ t).re * (deriv γ t).im - (γ t).im * (deriv γ t).re)) / 2 :=
-  (rfl)
-
-/-- The signed area may be computed from any almost-everywhere derivative of the curve. -/
-theorem signedArea_eq_of_ae_hasDerivAt {γ γ' : ℝ → ℂ}
-    (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) :
-    signedArea γ a b =
-      (∫ t in a..b, ((γ t).re * (γ' t).im - (γ t).im * (γ' t).re)) / 2 := by
-  rw [signedArea_def, intervalIntegral.integral_congr_ae]
-  filter_upwards [hγ'] with t ht hmem
-  rw [(ht hmem).deriv]
-
-/-- The signed area is the circulation along `γ` of the area form `(x dy - y dx) / 2`, whose
-coefficients are `TauCeti.Green.Examples.areaP` and `TauCeti.Green.Examples.areaQ`. -/
-theorem signedArea_eq_integral_circulationFun (γ : ℝ → ℂ) (a b : ℝ) :
-    signedArea γ a b =
-      ∫ t in a..b, Green.circulationFun Green.Examples.areaP Green.Examples.areaQ γ t := by
-  rw [signedArea_def, ← intervalIntegral.integral_div]
-  congr 1
-  funext t
-  simp only [Green.circulationFun, Green.Examples.areaP_apply, Green.Examples.areaQ_apply]
-  ring
-
-/-- A circle of radius `R` about the origin, traversed once counterclockwise, has signed area
-`π R²`. -/
-theorem signedArea_circleMap_zero (R : ℝ) : signedArea (circleMap 0 R) 0 (2 * π) = π * R ^ 2 := by
-  rw [signedArea_eq_integral_circulationFun,
-    Green.Examples.integral_circulationFun_area_circleMap]
-
 section AreaEnergy
 
 variable {γ γ' : ℝ → ℂ}
-
-/-- The squared norm of a square-integrable function is interval integrable. -/
-private theorem intervalIntegrable_norm_sq {f : ℝ → ℂ} (hab : a ≤ b)
-    (hf : MemLp f 2 (volume.restrict (Ioc a b))) :
-    IntervalIntegrable (fun t ↦ ‖f t‖ ^ 2) volume a b :=
-  (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2
-    ((memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).1 hf)
 
 /-- **The Fourier series of the signed area.** For an absolutely continuous closed curve with
 square-integrable derivative, the signed area is `π ∑ n ‖c n‖²`, where `c n` are the Fourier
@@ -155,9 +105,12 @@ theorem hasSum_mul_sq_fourierCoeffOn_signedArea (hab : a < b)
     simp only [hh, Complex.sq_norm, Complex.normSq_apply, sub_re, sub_im, mul_re, mul_im,
       ofReal_re, ofReal_im, I_re, I_im]
     ring
-  have hE := intervalIntegrable_norm_sq hab.le hL2
-  have hG := intervalIntegrable_norm_sq hab.le hγL2
-  have hH := intervalIntegrable_norm_sq hab.le hhL2
+  have hE := (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
+    (hL2.integrable_norm_pow two_ne_zero)
+  have hG := (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
+    (hγL2.integrable_norm_pow two_ne_zero)
+  have hH := (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
+    (hhL2.integrable_norm_pow two_ne_zero)
   have hS : (∫ t in a..b, ((γ t).re * (γ' t).im - (γ t).im * (γ' t).re)) =
       ((∫ t in a..b, ‖γ' t‖ ^ 2) + k ^ 2 * (∫ t in a..b, ‖γ t‖ ^ 2) -
         ∫ t in a..b, ‖h t‖ ^ 2) / (2 * k) := by
@@ -196,13 +149,6 @@ private theorem hasSum_energy_sub_signedArea (hab : a < b)
     ring
   · field_simp
 
-/-- For `s = ± 1` and every integer `n`, `n² - s n = n (n - s) ≥ 0`. -/
-private theorem sq_sub_mul_nonneg {s : ℤ} (hs : s = 1 ∨ s = -1) (n : ℤ) :
-    0 ≤ (n : ℝ) ^ 2 - s * n := by
-  have : (0 : ℤ) ≤ n ^ 2 - s * n := by
-    rcases hs with rfl | rfl <;> rcases le_or_gt n 0 with hn | hn <;> nlinarith
-  exact_mod_cast this
-
 /-- The equality case of the area–energy inequality in orientation `s = ± 1`. -/
 private theorem mul_integral_norm_sq_eq_iff (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b)
@@ -214,7 +160,11 @@ private theorem mul_integral_norm_sq_eq_iff (hab : a < b)
   have hsum := hasSum_energy_sub_signedArea hab hγ hγ' hγab hL2 s
   have hnn (n : ℤ) :
       0 ≤ 4 * π ^ 2 * ((n : ℝ) ^ 2 - s * n) * ‖fourierCoeffOn hab γ n‖ ^ 2 := by
-    have := sq_sub_mul_nonneg hs n
+    have : s * n ≤ n ^ 2 := by
+      rcases hs with rfl | rfl
+      · simpa using Int.le_self_sq n
+      · simpa using Int.le_self_sq (-n)
+    have : 0 ≤ (n : ℝ) ^ 2 - s * n := sub_nonneg.2 (by exact_mod_cast this)
     positivity
   have hmodelc (c w : ℂ) :
       ContinuousOn (fun t : ℝ ↦ c + w * fourier s (t : AddCircle (b - a))) [[a, b]] :=
@@ -234,8 +184,8 @@ private theorem mul_integral_norm_sq_eq_iff (hab : a < b)
     · rw [h0, add_zero]
     · rw [hs', zero_add]
     · have hne : (n : ℝ) ^ 2 - s * n ≠ 0 := by
-        rw [show (n : ℝ) ^ 2 - s * n = n * (n - s) by ring]
-        exact mul_ne_zero (by exact_mod_cast h0) (sub_ne_zero.2 (by exact_mod_cast hs'))
+        rw [sq, ← sub_mul]
+        exact mul_ne_zero (sub_ne_zero.2 (by exact_mod_cast hs')) (by exact_mod_cast h0)
       simpa [hne, Real.pi_ne_zero] using congr_fun hzero n
   · rintro ⟨c, w, hcw⟩
     -- The Fourier coefficients of `γ` are those of the circle, supported on `0` and `s`.
@@ -266,7 +216,11 @@ theorem four_pi_mul_abs_signedArea_le (hab : a < b) (hγ : AbsolutelyContinuousO
   have h (s : ℤ) (hs : s = 1 ∨ s = -1) :
       s * (4 * π * signedArea γ a b) ≤ (b - a) * ∫ t in a..b, ‖γ' t‖ ^ 2 :=
     sub_nonneg.1 ((hasSum_energy_sub_signedArea hab hγ hγ' hγab hL2 s).nonneg fun n ↦ by
-      have := sq_sub_mul_nonneg hs n
+      have : s * n ≤ n ^ 2 := by
+        rcases hs with rfl | rfl
+        · simpa using Int.le_self_sq n
+        · simpa using Int.le_self_sq (-n)
+      have : 0 ≤ (n : ℝ) ^ 2 - s * n := sub_nonneg.2 (by exact_mod_cast this)
       positivity)
   have h₁ := h 1 (Or.inl rfl)
   have h₂ := h (-1) (Or.inr rfl)
