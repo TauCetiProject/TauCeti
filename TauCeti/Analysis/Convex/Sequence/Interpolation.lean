@@ -16,14 +16,15 @@ import Mathlib.Tactic.Linarith
 A real sequence `f : ℕ → ℝ` has a canonical piecewise-affine interpolation
 `linearInterpolate f : ℝ → ℝ`, affine on every interval `[n, n + 1]` and equal to `f n`
 at each natural number `n`. For a height sequence `h : ℕ → WithTop ℝ`, the real
-interval spanned by its finite domain is `interpolationDomain h`, and the interpolation
-of its real heights is considered only there.
+points whose floor and ceiling have finite height form `interpolationDomain h`, and the
+interpolation of its real heights is considered only there. When the finite domain is
+order connected, this is the real interval that it spans.
 
 The main theorem identifies discrete convexity with real convexity of this
-interpolation on that interval. This lets results about `ConvexOn` be imported for
+interpolation on that domain. This lets results about `ConvexOn` be imported for
 convex height sequences, while the discrete predicate `IsConvexSeq` remains the one
-used for coefficient arguments. The convexity domain is the real interval, not the
-nonconvex set of integer points. The interpolation is only one convex extension: for
+used for coefficient arguments. In the convex case, the domain is the spanned real
+interval, not just the set of integer points. The interpolation is only one convex extension: for
 `h n = n ^ 2`, both it and `x ↦ x ^ 2` are convex functions on `[0, ∞)` extending the
 same heights, and `isConvexSeq_of_convexOn` accepts any such extension.
 
@@ -108,9 +109,10 @@ theorem linearInterpolate_mono {f g : ℕ → ℝ} (hfg : f ≤ g) {x : ℝ} (hx
 
 /-! ### The real domain of a height sequence -/
 
-/-- The real points spanned by the finite domain of a height sequence: the nonnegative
-reals whose floor and ceiling both carry finite heights. When the finite domain is the
-integer interval `[l, u]` or `[l, ∞)`, this is the corresponding real interval. -/
+/-- The interpolation domain of a height sequence: the nonnegative reals whose floor and
+ceiling both carry finite heights. When the finite domain is order connected, this is the
+real interval that it spans; in particular, integer domains `[l, u]` and `[l, ∞)` give the
+corresponding real intervals. -/
 def interpolationDomain (h : ℕ → WithTop ℝ) : Set ℝ :=
   {x | 0 ≤ x ∧ h ⌊x⌋₊ ≠ ⊤ ∧ h ⌈x⌉₊ ≠ ⊤}
 
@@ -282,17 +284,19 @@ theorem isConvexSeq_of_convexOn {s : Set ℝ} {F : ℝ → ℝ} (hF : ConvexOn �
   linarith
 
 /-- **Convexity through interpolation.** A height sequence is convex exactly when the
-piecewise-affine interpolation of its real heights is convex on the real interval spanned
-by its finite domain. The empty and singleton domains are included. -/
+piecewise-affine interpolation of its real heights is convex on `interpolationDomain h`.
+For a convex height sequence this domain is the real interval spanned by its finite domain.
+The empty and singleton domains are included. -/
 theorem isConvexSeq_iff_convexOn_linearInterpolate :
     IsConvexSeq h ↔
       ConvexOn ℝ (interpolationDomain h) (linearInterpolate fun n => (h n).untop₀) :=
   ⟨IsConvexSeq.convexOn_linearInterpolate, fun hF => isConvexSeq_of_convexOn hF
     (fun _ => natCast_mem_interpolationDomain.symm) fun n _ => linearInterpolate_natCast _ n⟩
 
-/-- A height sequence is convex exactly when some convex function on the real interval
-spanned by its finite domain takes its heights at the integer points. Such an extension
-is not unique; the interpolation is one choice. -/
+/-- A height sequence is convex exactly when some function on `interpolationDomain h` is
+convex there and takes its heights at the integer points. For a convex height sequence,
+this domain is the real interval spanned by its finite domain. Such an extension is not
+unique; the interpolation is one choice. -/
 theorem isConvexSeq_iff_exists_convexOn :
     IsConvexSeq h ↔ ∃ F : ℝ → ℝ, ConvexOn ℝ (interpolationDomain h) F ∧
       ∀ n, h n ≠ ⊤ → F n = (h n).untop₀ :=
