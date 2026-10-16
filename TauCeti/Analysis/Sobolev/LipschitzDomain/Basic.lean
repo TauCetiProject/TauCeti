@@ -183,6 +183,20 @@ section Chart
 variable {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
 
+/-- **Membership in chart coordinates.** A point `z` of the chart cylinder corresponds to a point
+of `Omega` exactly when it lies strictly above the graph of `φ`. -/
+theorem IsLipschitzChartWith.symm_mem_iff (h : Omega.IsLipschitzChartWith L e φ a b)
+    {z : WithLp 2 (ℝ × E)} (hz : z ∈ normalCylinder a b) :
+    e.symm z ∈ Omega ↔ φ z.snd < z.fst :=
+  h.2.2.2.2 z hz
+
+/-- **Membership through a chart.** A point `x` whose coordinates `e x` lie in the chart cylinder
+belongs to `Omega` exactly when `e x` lies strictly above the graph of `φ`. -/
+theorem IsLipschitzChartWith.mem_iff (h : Omega.IsLipschitzChartWith L e φ a b)
+    {x : WithLp 2 (ℝ × E)} (hx : e x ∈ normalCylinder a b) :
+    x ∈ Omega ↔ φ (e x).snd < (e x).fst := by
+  simpa using h.symm_mem_iff hx
+
 /-- A Lipschitz boundary chart remains valid after increasing the allowed Lipschitz constant. -/
 theorem IsLipschitzChartWith.weaken (h : Omega.IsLipschitzChartWith L e φ a b) {L' : ℝ≥0}
     (hLL' : L ≤ L') : Omega.IsLipschitzChartWith L' e φ a b :=
@@ -193,7 +207,7 @@ cylinder with positive radii, with the same coordinates and graph. -/
 theorem IsLipschitzChartWith.mono_radii (h : Omega.IsLipschitzChartWith L e φ a b)
     {a' b' : ℝ} (ha' : 0 < a') (hb' : 0 < b') (haa' : a' ≤ a) (hbb' : b' ≤ b) :
     Omega.IsLipschitzChartWith L e φ a' b' :=
-  ⟨ha', hb', h.2.2.1, h.2.2.2.1, fun z hz ↦ h.2.2.2.2 z (normalCylinder_mono haa' hbb' hz)⟩
+  ⟨ha', hb', h.2.2.1, h.2.2.2.1, fun _ hz ↦ h.symm_mem_iff (normalCylinder_mono haa' hbb' hz)⟩
 
 /-- The preimage of the chart cylinder is a neighbourhood of the centre of the chart. -/
 theorem IsLipschitzChartWith.preimage_normalCylinder_mem_nhds
@@ -212,7 +226,7 @@ theorem IsLipschitzChartWith.image_affineIsometryEquiv
     simpa only [Function.comp_apply, AffineIsometryEquiv.symm_symm] using
       congrFun (AffineIsometryEquiv.coe_symm_trans g.symm e) z
   rw [hchart, g.injective.mem_set_image]
-  exact h.2.2.2.2 z hz
+  exact h.symm_mem_iff hz
 
 end Chart
 
