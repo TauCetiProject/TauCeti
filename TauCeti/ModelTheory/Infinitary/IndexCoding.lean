@@ -95,15 +95,18 @@ theorem trans_encode (c₁ : IndexCoding ι κ) (c₂ : IndexCoding κ μ) (i : 
 theorem trans_decode (c₁ : IndexCoding ι κ) (c₂ : IndexCoding κ μ) (m : μ) :
     (c₁.trans c₂).decode m = (c₂.decode m).bind c₁.decode := (rfl)
 
+/-- Composing the identity coding before a coding leaves it unchanged. -/
 @[simp]
 theorem id_trans (c : IndexCoding ι κ) : (IndexCoding.id ι).trans c = c := by
   refine ext rfl (funext fun k ↦ ?_)
   simp only [trans, IndexCoding.id]
   rcases c.decode k with _ | i <;> rfl
 
+/-- Composing a coding with the identity coding leaves it unchanged. -/
 @[simp]
 theorem trans_id (c : IndexCoding ι κ) : c.trans (IndexCoding.id κ) = c := (rfl)
 
+/-- Composition of index codings is associative. -/
 theorem trans_assoc (c₁ : IndexCoding ι κ) (c₂ : IndexCoding κ μ) (c₃ : IndexCoding μ ν) :
     (c₁.trans c₂).trans c₃ = c₁.trans (c₂.trans c₃) := by
   refine ext rfl (funext fun m ↦ ?_)
@@ -158,10 +161,8 @@ theorem ofEncodable_encode [Encodable ι] (i : ι) :
 theorem ofEncodable_decode [Encodable ι] (n : ℕ) :
     (ofEncodable ι).decode n = Encodable.decode (α := ι) n := (rfl)
 
-/-- The coding induced by an equivalence of carriers. Its `decode` is total, so reindexing
-along it introduces no padding: this is the case of genuine syntactic transport (in
-particular the `ULift` universe adjustment), as opposed to an arbitrary coding, which
-preserves semantics but pads. -/
+/-- The coding induced by an equivalence of carriers. Its decoder always returns the inverse
+image, so padding along it never selects the default branch. -/
 def ofEquiv (e : ι ≃ κ) : IndexCoding ι κ :=
   ⟨e, fun k ↦ some (e.symm k), fun i ↦ by simp⟩
 
@@ -172,6 +173,7 @@ theorem ofEquiv_encode (e : ι ≃ κ) (i : ι) : (ofEquiv e).encode i = e i := 
 theorem ofEquiv_decode (e : ι ≃ κ) (k : κ) :
     (ofEquiv e).decode k = some (e.symm k) := (rfl)
 
+/-- The coding induced by the identity equivalence is the identity coding. -/
 @[simp]
 theorem ofEquiv_refl : ofEquiv (Equiv.refl ι) = IndexCoding.id ι := by
   refine ext rfl (funext fun i ↦ ?_)
@@ -192,6 +194,7 @@ def pad {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) : κ
 theorem pad_apply {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) (k : κ) :
     c.pad default f k = (c.decode k).elim default f := (rfl)
 
+/-- Padding at an encoded index recovers the original branch. -/
 theorem pad_encode {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) (i : ι) :
     c.pad default f (c.encode i) = f i := by
   rw [pad, c.decode_encode]; rfl
@@ -206,6 +209,7 @@ theorem pad_of_decode_some {β : Sort*} (c : IndexCoding ι κ) {default : β} {
     {i : ι} (h : c.decode k = some i) : c.pad default f k = f i := by
   rw [pad, h]; rfl
 
+/-- Padding along the identity coding leaves the family unchanged. -/
 @[simp]
 theorem id_pad {β : Sort*} (default : β) (f : ι → β) :
     (IndexCoding.id ι).pad default f = f := (rfl)
@@ -226,7 +230,7 @@ theorem comp_pad {β γ : Sort*} (c : IndexCoding ι κ) (g : β → γ) (defaul
 
 /-- Universal quantification is unchanged by padding with `True`. -/
 @[simp]
-theorem forall_pad_iff (c : IndexCoding ι κ) (p : ι → Prop) :
+theorem forall_pad_true_iff (c : IndexCoding ι κ) (p : ι → Prop) :
     (∀ k, c.pad True p k) ↔ ∀ i, p i := by
   constructor
   · intro h i
@@ -238,7 +242,7 @@ theorem forall_pad_iff (c : IndexCoding ι κ) (p : ι → Prop) :
 
 /-- Existential quantification is unchanged by padding with `False`. -/
 @[simp]
-theorem exists_pad_iff (c : IndexCoding ι κ) (p : ι → Prop) :
+theorem exists_pad_false_iff (c : IndexCoding ι κ) (p : ι → Prop) :
     (∃ k, c.pad False p k) ↔ ∃ i, p i := by
   constructor
   · rintro ⟨k, hk⟩
