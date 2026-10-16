@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Generator
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
+import TauCeti.Algebra.Category.ModuleCat.Presheaf.FreeYoneda
 
 /-!
 # Free sheaves of modules on representables
@@ -81,14 +82,13 @@ lemma freeYonedaEquiv_naturality {U V : C} (i : U ⟶ V) (M : SheafOfModules.{v}
       ((((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).homEquiv _ _ m).app
         (op V)) (ModuleCat.freeMk (𝟙 V)))
   rw [ModuleCat.free_map_apply]
-  have hn := PresheafOfModules.naturality_apply
-    ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).homEquiv _ _ m)
-    i.op (ModuleCat.freeMk (𝟙 V))
-  dsimp only [PresheafOfModules.free, PresheafOfModules.freeObj] at hn
-  erw [ModuleCat.freeDesc_apply] at hn
+  have hn := TauCeti.PresheafOfModules.freeYonedaEquiv_symm_app_freeMk
+    (PresheafOfModules.freeYonedaEquiv
+      ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).homEquiv _ _ m)) i
+  rw [Equiv.symm_apply_apply] at hn
   -- Restriction of scalars along the identity changes only the module presentation.
   change (((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).homEquiv _ _ m).app
-      (op U)) (ModuleCat.freeMk (i ≫ 𝟙 V)) =
+      (op U)) (ModuleCat.freeMk i) =
     M.val.map i.op
       ((((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).homEquiv _ _ m).app
         (op V)) (ModuleCat.freeMk (𝟙 V))) at hn
