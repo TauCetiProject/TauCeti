@@ -61,6 +61,7 @@ theorem zero : BFEquiv (L := L) (0 : Ordinal.{o}) n a b ↔ SameAtomicType (L :=
   simp [BFEquiv]
 
 /-- The successor step consists of the previous level and the two extension requirements. -/
+@[simp]
 theorem add_one (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
     BFEquiv (L := L) (α + 1) n a b ↔
       BFEquiv (L := L) α n a b ∧
@@ -143,7 +144,7 @@ theorem trans {α : Ordinal.{o}} (hab : BFEquiv (L := L) α n a b)
     exact (limit hα a c).mpr fun β hβ =>
       ih β hβ ((limit hα a b).mp hab β hβ) ((limit hα b c).mp hbc β hβ)
 
-/-- Reversing the tuples does not change back-and-forth equivalence. -/
+/-- Swapping the two tuples does not change back-and-forth equivalence. -/
 theorem symm_iff (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
     BFEquiv (L := L) α n a b ↔ BFEquiv (L := L) α n b a := ⟨symm, symm⟩
 
