@@ -58,6 +58,7 @@ def circleLoop : C(Fin 1 → I, Sphere1) where
 theorem circleLoop_apply_zero (t : Fin 1 → I) :
     (circleLoop t : EuclideanSpace ℝ (Fin 2)) 0 = cos (2 * π * t 0) := by
   rw [circleLoop]
+  -- unfolding the bundled map leaves exactly this coordinate formula
   rfl
 
 /-- The second coordinate of the standard loop at `t` is `sin 2πt`. -/
@@ -65,23 +66,14 @@ theorem circleLoop_apply_zero (t : Fin 1 → I) :
 theorem circleLoop_apply_one (t : Fin 1 → I) :
     (circleLoop t : EuclideanSpace ℝ (Fin 2)) 1 = sin (2 * π * t 0) := by
   rw [circleLoop]
+  -- unfolding the bundled map leaves exactly this coordinate formula
   rfl
 
 /-- If `cos` and `sin` agree at `2πa` and `2πb`, then `a` and `b` differ by an integer. -/
 theorem exists_int_eq_add_of_cos_sin_eq {a b : ℝ} (hc : cos (2 * π * a) = cos (2 * π * b))
     (hs : sin (2 * π * a) = sin (2 * π * b)) : ∃ n : ℤ, a = b + n := by
-  have h : Complex.exp ((2 * π * a : ℝ) * Complex.I) =
-      Complex.exp ((2 * π * b : ℝ) * Complex.I) := by
-    refine Complex.ext ?_ ?_
-    · rw [Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_re, hc]
-    · rw [Complex.exp_ofReal_mul_I_im, Complex.exp_ofReal_mul_I_im, hs]
-  obtain ⟨n, hn⟩ := Complex.exp_eq_exp_iff_exists_int.1 h
+  obtain ⟨n, hn⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (Real.Angle.cos_sin_inj hc hs)
   refine ⟨n, ?_⟩
-  have him := congrArg Complex.im hn
-  simp only [Complex.ofReal_mul, Complex.ofReal_ofNat, Complex.mul_im, Complex.mul_re,
-    Complex.re_ofNat, Complex.ofReal_re, Complex.im_ofNat, Complex.ofReal_im, mul_zero, sub_zero,
-    zero_mul, add_zero, Complex.I_im, mul_one, Complex.I_re, Complex.add_im, Complex.intCast_re,
-    Complex.intCast_im, sub_self] at him
   have hpi : (2 * π) ≠ 0 := by positivity
   exact mul_left_cancel₀ hpi (by linarith)
 

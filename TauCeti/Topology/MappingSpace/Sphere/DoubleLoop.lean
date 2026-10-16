@@ -59,22 +59,11 @@ def loopSpace2Homeomorph :
       BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint :=
   (basedMapCircleHomeomorph X.loopSpace).symm
 
-/-- Reading the double loop `γ` as a based map from the circle and back gives `γ`. -/
-theorem basedMapCircleHomeomorph_loopSpace2Homeomorph (γ : (X.iteratedLoopSpace 2).carrier) :
-    basedMapCircleHomeomorph X.loopSpace (loopSpace2Homeomorph X γ) = γ :=
-  (basedMapCircleHomeomorph X.loopSpace).apply_symm_apply γ
-
 /-- A double loop as a map from the circle to the loop space. -/
 def loopSpace2ToMapCircle : C((X.iteratedLoopSpace 2).carrier, C(Sphere1, X.loopSpace.carrier)) :=
-  ⟨fun γ => (loopSpace2Homeomorph X γ).1,
-    continuous_subtype_val.comp (loopSpace2Homeomorph X).continuous⟩
-
-/-- The double loop as a map from the circle is the underlying map of the based map. -/
-theorem loopSpace2ToMapCircle_apply (γ : (X.iteratedLoopSpace 2).carrier) :
-    loopSpace2ToMapCircle X γ = (loopSpace2Homeomorph X γ).1 := by
-  rw [loopSpace2ToMapCircle]
-  -- unfolding the bundled map leaves the underlying map of the based map
-  rfl
+  (⟨Subtype.val, continuous_subtype_val⟩ :
+    C(BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint,
+      C(Sphere1, X.loopSpace.carrier))).comp (loopSpace2Homeomorph X : C(_, _))
 
 /-- The embedding of the double loop space in the space of maps from the circle to the loop space
 is a topological embedding. -/
@@ -103,20 +92,30 @@ theorem loopSpace2Homeomorph_map (f : Hom X Y) (γ : (X.iteratedLoopSpace 2).car
     loopSpace2Homeomorph Y (f.iteratedLoopSpace 2 γ) =
       BasedMap.map f.loopSpace.toContinuousMap f.loopSpace.map_basepoint
         (loopSpace2Homeomorph X γ) := by
-  apply (basedMapCircleHomeomorph Y.loopSpace).injective
   have e : f.iteratedLoopSpace 2 γ = f.loopSpace.iteratedLoopSpace 1 γ := by
     rw [Hom.iteratedLoopSpace_succ]
     -- `Ω^[2] X` is `Ω^[1] (Ω X)` by definition of the iterate, so both maps agree
     rfl
-  rw [basedMapCircleHomeomorph_map f.loopSpace, basedMapCircleHomeomorph_loopSpace2Homeomorph,
-    basedMapCircleHomeomorph_loopSpace2Homeomorph, e]
+  apply (basedMapCircleHomeomorph Y.loopSpace).injective
+  -- `Ω^[2] X` is `Ω^[1] (Ω X)` by definition, so `apply_symm_apply` applies up to this unfolding
+  have h1 : basedMapCircleHomeomorph Y.loopSpace
+      (loopSpace2Homeomorph Y (f.iteratedLoopSpace 2 γ)) = f.iteratedLoopSpace 2 γ :=
+    (basedMapCircleHomeomorph Y.loopSpace).apply_symm_apply _
+  have h2 : basedMapCircleHomeomorph X.loopSpace (loopSpace2Homeomorph X γ) = γ :=
+    (basedMapCircleHomeomorph X.loopSpace).apply_symm_apply _
+  rw [h1, basedMapCircleHomeomorph_map f.loopSpace, h2, e]
 
 /-- **Naturality of the embedding `Ω²X → Map(S¹, ΩX)`** in the based space `X`. -/
 theorem loopSpace2ToMapCircle_map (f : Hom X Y) (γ : (X.iteratedLoopSpace 2).carrier) :
     loopSpace2ToMapCircle Y (f.iteratedLoopSpace 2 γ) =
       f.loopSpace.toContinuousMap.comp (loopSpace2ToMapCircle X γ) := by
-  rw [loopSpace2ToMapCircle_apply, loopSpace2ToMapCircle_apply, loopSpace2Homeomorph_map]
-  exact ContinuousMap.ext fun b => BasedMap.map_apply _ _ _ b
+  refine ContinuousMap.ext fun b => ?_
+  rw [loopSpace2ToMapCircle, loopSpace2ToMapCircle, ContinuousMap.comp_apply,
+    ContinuousMap.comp_apply]
+  -- the coercions of the homeomorphisms to bundled maps evaluate as the homeomorphisms
+  change (loopSpace2Homeomorph Y (f.iteratedLoopSpace 2 γ)).1 b = _
+  rw [loopSpace2Homeomorph_map]
+  exact BasedMap.map_apply _ _ _ b
 
 /-- **Naturality of the evaluation `S¹ × Ω²X → ΩX`** in the based space `X`. -/
 theorem evalCircle_map (f : Hom X Y) (z : Sphere1) (γ : (X.iteratedLoopSpace 2).carrier) :
