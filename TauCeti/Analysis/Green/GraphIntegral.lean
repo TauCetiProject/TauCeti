@@ -100,20 +100,6 @@ theorem hasHenstockIntervalIntegral_graph_reparam (d : Coordinate) {a b c e : �
   filter_upwards [hproj'] with t ht
   simp only [ht, smul_eq_mul, mul_comm]
 
-/-- Gauge integration on a graph equals the ordinary integral over its base coordinate. -/
-theorem hasHenstockIntervalIntegral_graph (d : Coordinate) {a b : ℝ}
-    {graph : ℝ → ℝ} {P : ℂ → ℝ} {S : Set ℝ} (hS : S.Countable)
-    (hgraph : ContinuousOn graph (uIcc a b))
-    (hdgraph : ∀ t ∈ uIoo a b \ S, DifferentiableAt ℝ graph t)
-    (hP : ContinuousOn P (d.graph graph '' uIcc a b)) :
-    TauCeti.BoxIntegral.HasHenstockIntervalIntegral
-      (fun t ↦ P (d.graph graph t) * d.proj (deriv (d.graph graph) t))
-      a b (∫ t in a..b, P (d.graph graph t)) := by
-  simpa only [Function.comp_id, id_eq] using
-    hasHenstockIntervalIntegral_graph_reparam d countable_empty hS hgraph hdgraph hP
-      (θ := id) (θ' := fun _ ↦ 1) continuousOn_id (fun t _ ↦ hasDerivAt_id t)
-      (fun _ ht ↦ ht)
-
 /-- A raw curve with constant projection contributes zero to that coordinate one-form.
 No regularity of its other coordinate or of the field is needed. -/
 theorem hasHenstockIntervalIntegral_of_projection_constant (L : ℂ →L[ℝ] ℝ) {a b c : ℝ}
