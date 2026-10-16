@@ -190,7 +190,9 @@ private theorem leftUnderlying_homogeneous :
     (fun c x ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) x)
     (refl_smul (k := k)) (bimoduleTensorUnderlyingEquiv_isHomogeneous Γ Δ Θ M N)
     (by simpa only [LinearEquiv.refl_toLinearMap] using LinearMap.isHomogeneous_id P.grading.piece)
-  simpa only [leftUnderlying, add_zero] using
+  simpa only [LinearMap.isHomogeneous_def, leftUnderlying, LinearEquiv.coe_coe,
+    LinearEquiv.coe_trans, Function.comp_apply, BalancedTensorProduct.congr_apply,
+    LinearMap.comp_apply, add_zero] using
     h.comp (bimoduleModuleTensorUnderlyingEquiv_isHomogeneous Γ Θ MN P)
 
 private theorem rightUnderlying_homogeneous :
@@ -204,7 +206,9 @@ private theorem rightUnderlying_homogeneous :
     (fun b x ↦ bimoduleModuleTensorUnderlyingEquiv_smul Δ Θ N P b x)
     (by simpa only [LinearEquiv.refl_toLinearMap] using LinearMap.isHomogeneous_id M.grading.piece)
     (bimoduleModuleTensorUnderlyingEquiv_isHomogeneous Δ Θ N P)
-  simpa only [rightUnderlying, add_zero] using
+  simpa only [LinearMap.isHomogeneous_def, rightUnderlying, LinearEquiv.coe_coe,
+    LinearEquiv.coe_trans, Function.comp_apply, BalancedTensorProduct.congr_apply,
+    LinearMap.comp_apply, add_zero] using
     h.comp (bimoduleModuleTensorUnderlyingEquiv_isHomogeneous Γ Δ M NP)
 
 private theorem assocCarrier_mem {r : ℤ} {x : L} (hx : x ∈ (L).grading.piece r) :

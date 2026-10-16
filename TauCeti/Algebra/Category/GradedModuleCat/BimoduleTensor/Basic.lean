@@ -373,7 +373,8 @@ theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N')
   exact BalancedTensorProduct.tmul_smul k B _ _ _
 
 /-- Balanced tensor action of graded bimodules on graded left modules. -/
-@[implicit_reducible]
+-- Expose the object assignment so action maps and associator components have computed types.
+@[expose, implicit_reducible]
 noncomputable def bimoduleModuleTensor :
     GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece ⥤
       GradedModuleCat.{vN} Δ.piece ⥤ GradedModuleCat.{max vM vN} Γ.piece where
