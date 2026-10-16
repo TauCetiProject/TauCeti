@@ -56,11 +56,8 @@ alternating-map-valued form. -/
 theorem differentiableAt_manifoldOneForm_inChartAt (c : ℂ) {P Q : ℂ → ℝ} {z : ℂ}
     (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
     DifferentiableAt ℝ ((manifoldOneForm P Q).inChartAt c) z := by
-  have heq : oneForm P Q = fun x ↦ P x • Complex.reCLM + Q x • Complex.imCLM := by
-    ext x v
-    simp [oneForm_apply]
   have hlin : DifferentiableAt ℝ (oneForm P Q) z := by
-    rw [heq]
+    rw [oneForm_eq_clm]
     exact (hP.smul_const Complex.reCLM).add (hQ.smul_const Complex.imCLM)
   rw [manifoldOneForm_inChartAt]
   exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := ℂ) (F := ℝ)
