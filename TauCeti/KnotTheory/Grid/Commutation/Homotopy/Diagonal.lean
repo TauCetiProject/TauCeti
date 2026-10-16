@@ -240,48 +240,48 @@ private theorem exists_rectangleHexagon_side_iff (x : GridState n) (i : Bool) :
       -- The terminal-side hexagon occupies column a and reads the swapped rows of a and b.
       let m := x.swapColumns a b
       let r := GridRectangleBetween.ofSwapColumns x m a b C.column_ne_next rfl
-      let q := GridRectangleBetween.ofSwapColumns m x a b C.column_ne_next
-        (GridState.swapColumns_swapColumns _ _ _).symm
-      let P : GridHexagonBetween a C.oppositeTurnRow C.turnRow m x :=
-        { toGridRectangleBetween := q
-          right_eq := by simp only [q, GridRectangleBetween.ofSwapColumns_right]
-          lower_mem := by simpa only [q, GridRectangleBetween.ofSwapColumns_left,
-            GridRectangleBetween.ofSwapColumns_right, m, GridState.swapColumns_apply,
-            Equiv.swap_apply_left, Equiv.swap_apply_right] using hs
-          upper_mem := by simpa only [q, GridRectangleBetween.ofSwapColumns_right,
-            m, GridState.swapColumns_apply, Equiv.swap_apply_right] using ht }
+      let P := GridHexagonBetween.ofSwapColumns m a C.column_ne_next
+        (by simpa only [m, GridState.swapColumns_apply,
+          Equiv.swap_apply_left, Equiv.swap_apply_right] using hs)
+        (by simpa only [m, GridState.swapColumns_apply,
+          Equiv.swap_apply_right] using ht)
+      -- Transport the witness and its side equation together so its constructor projection
+      -- remains available after cancelling the double swap.
+      obtain ⟨P, hP⟩ : ∃ P : GridHexagonBetween a C.oppositeTurnRow C.turnRow m x,
+          P.left = a := by
+        rw [← GridState.swapColumns_swapColumns a b x]
+        exact ⟨P, GridHexagonBetween.ofSwapColumns_left ..⟩
       refine ⟨⟨_, r, Sum.inl P⟩, ?_, rfl⟩
       apply (G.mem_rectangleHexagonDecompositions_diagonal_iff C _).mpr
       simpa only [GridRectangleHexagonDecomposition.hexagon,
         GridRectangleHexagonDecomposition.rectangle,
         GridCommutationHexagonBetween.toGridRectangleBetween_inl] using
         ((P.isEmpty_and_isEmpty_iff r).mpr
-          ⟨by simp only [r, P, q, GridRectangleBetween.ofSwapColumns_left],
-            by simp only [P, q, GridRectangleBetween.ofSwapColumns_left]⟩).symm
+          ⟨by simpa only [r, GridRectangleBetween.ofSwapColumns_left] using hP.symm,
+            hP⟩).symm
     | false =>
       rintro ⟨hs, ht⟩
       have hbc : b ≠ c := (finRotate n).injective.ne C.column_ne_next
       -- The initial-side hexagon occupies column b and reads the swapped rows of b and c.
       let m := x.swapColumns b c
       let r := GridRectangleBetween.ofSwapColumns x m b c hbc rfl
-      let q := GridRectangleBetween.ofSwapColumns m x b c hbc
-        (GridState.swapColumns_swapColumns _ _ _).symm
-      let P : GridInitialHexagonBetween a C.turnRow C.oppositeTurnRow m x :=
-        { toGridRectangleBetween := q
-          left_eq := by simp only [q, GridRectangleBetween.ofSwapColumns_left]
-          lower_mem := by simpa only [q, GridRectangleBetween.ofSwapColumns_left,
-            GridRectangleBetween.ofSwapColumns_right, m, GridState.swapColumns_apply,
-            Equiv.swap_apply_left, Equiv.swap_apply_right] using hs
-          upper_mem := by simpa only [q, GridRectangleBetween.ofSwapColumns_right,
-            m, GridState.swapColumns_apply, Equiv.swap_apply_right] using ht }
+      let P := GridInitialHexagonBetween.ofSwapColumns m c hbc.symm
+        (by simpa only [m, GridState.swapColumns_apply,
+          Equiv.swap_apply_left, Equiv.swap_apply_right] using hs)
+        (by simpa only [m, GridState.swapColumns_apply,
+          Equiv.swap_apply_right] using ht)
+      obtain ⟨P, hP⟩ : ∃ P : GridInitialHexagonBetween a C.turnRow C.oppositeTurnRow m x,
+          P.right = c := by
+        rw [← GridState.swapColumns_swapColumns b c x]
+        exact ⟨P, GridInitialHexagonBetween.ofSwapColumns_right ..⟩
       refine ⟨⟨_, r, Sum.inr P⟩, ?_, rfl⟩
       apply (G.mem_rectangleHexagonDecompositions_diagonal_iff C _).mpr
       simpa only [GridRectangleHexagonDecomposition.hexagon,
         GridRectangleHexagonDecomposition.rectangle,
         GridCommutationHexagonBetween.toGridRectangleBetween_inr] using
         ((P.isEmpty_and_isEmpty_iff r).mpr
-          ⟨by simp only [r, P, q, GridRectangleBetween.ofSwapColumns_left],
-            by simp only [P, q, GridRectangleBetween.ofSwapColumns_right]⟩).symm
+          ⟨by simpa only [r, GridRectangleBetween.ofSwapColumns_left] using P.left_eq.symm,
+            hP⟩).symm
 
 /-- The number of returning rectangle--hexagon annuli is the sum of the two ordered-turn
 indicators, one for each column adjacent to the replaced line. -/
