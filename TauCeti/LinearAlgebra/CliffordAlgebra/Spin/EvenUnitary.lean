@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.Star.Subsemiring
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 
 /-!
@@ -40,6 +41,8 @@ functoriality API.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
 * `CliffordAlgebra.rightIotaEven_spinGroup_smul` transports the Spin action after right
   multiplication by a vector of quadratic value `-1`.
+* `CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply` identifies the
+  even-unitary carrier map with the basic inclusion of Spin in the even Clifford subalgebra.
 -/
 
 public section
@@ -567,6 +570,13 @@ theorem coe_spinGroupToEvenUnitary_apply (x : spinGroup Q) :
     (spinGroupToEvenUnitary Q x : (CliffordAlgebra Q)ˣ) = spinGroup.toUnits x := by
   apply Units.ext
   rfl
+
+/-- The even part of a Spin element is unchanged by the map to the even-unitary carrier. -/
+@[simp]
+theorem evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply (x : spinGroup Q) :
+    evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q x) = spinGroupToEven Q x := by
+  apply Subtype.ext
+  simp
 
 /-- The canonical map from Spin to the even unitary carrier is injective. -/
 theorem spinGroupToEvenUnitary_injective :

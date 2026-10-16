@@ -26,6 +26,8 @@ Only the second measure needs to be s-finite.
   almost-everywhere strongly measurable, function;
 * `TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm` — the `Lᵖ(μ ⊗ ν)` seminorm of `f` is the `Lᵖ(μ)`
   seminorm of its section seminorms.
+* `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
+  of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 -/
 
 public section
@@ -160,5 +162,36 @@ theorem eLpNorm_prod_eq_eLpNorm_eLpNorm [SFinite ν] {f : α × β → ε}
   refine lintegral_congr fun x ↦ ?_
   rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp (hsec x)]
   simp only [enorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr]
+
+/-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
+is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every
+exponent, including `p = ∞`. -/
+theorem eLpNorm_prod_smul [SFinite ν] {𝕜 E : Type*} [NormedDivisionRing 𝕜] [NormedAddCommGroup E]
+    [Module 𝕜 E] [NormSMulClass 𝕜 E] {f : α → 𝕜} {g : β → E} (hf : AEStronglyMeasurable f μ)
+    (hg : AEStronglyMeasurable g ν) :
+    eLpNorm (fun z : α × β ↦ f z.1 • g z.2) p (μ.prod ν) = eLpNorm f p μ * eLpNorm g p ν := by
+  rw [eLpNorm_prod_eq_eLpNorm_eLpNorm (f := fun z : α × β ↦ f z.1 • g z.2)
+    (hf.comp_fst.smul hg.comp_snd)]
+  -- Each section is a constant multiple of `g`.
+  have hsec (x : α) : eLpNorm (fun y ↦ f x • g y) p ν = ‖f x‖ₑ * eLpNorm g p ν :=
+    eLpNorm_const_smul (f x) g p ν
+  simp only [hsec]
+  set c := eLpNorm g p ν
+  have hfc : AEStronglyMeasurable (fun x ↦ ‖f x‖ₑ * c) μ :=
+    (hf.enorm.mul_const c).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [eLpNorm_exponent_zero hfc, eLpNorm_exponent_zero hf, zero_mul]
+  rcases eq_or_ne p ∞ with rfl | hp
+  · rw [eLpNorm_exponent_top hfc, eLpNorm_exponent_top hf, eLpNormEssSup_eq_essSup_enorm,
+      eLpNormEssSup_eq_essSup_enorm]
+    simp only [enorm_eq_self]
+    simp_rw [mul_comm _ c]
+    exact ENNReal.essSup_const_mul
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hfc,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf]
+  simp only [enorm_eq_self, ENNReal.mul_rpow_of_nonneg _ _ hr.le]
+  rw [lintegral_mul_const'' _ (hf.enorm.pow_const _),
+    ENNReal.mul_rpow_of_nonneg _ _ (by positivity), one_div, ENNReal.rpow_rpow_inv hr.ne']
 
 end TauCeti
