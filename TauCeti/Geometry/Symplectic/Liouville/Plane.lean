@@ -27,7 +27,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace Prod
 
 /-- The constant coordinate one-form `dx` on `ℝ × ℝ`. -/
 def realPlaneDx (_ : ℝ × ℝ) : (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] ℝ :=
@@ -92,8 +92,9 @@ theorem extDeriv_realPlaneXDy (p : ℝ × ℝ) :
   rw [realPlaneXDy_eq_liouvilleFormCLM]
   ext v
   rw [ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply]
+  -- Normalize the two arguments as a tuple so the wedge evaluation simp lemma applies.
   rw [show v = ![v 0, v 1] by funext i; fin_cases i <;> rfl]
   simp [realPlaneXDyBilinear]
   ring_nf
 
-end TauCeti
+end Prod
