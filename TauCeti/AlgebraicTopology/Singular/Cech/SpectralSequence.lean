@@ -21,8 +21,10 @@ Mathlib's cohomological spectral objects, the usual term `E¹_{p,q}` occurs at
 
 For a finite cover the first page vanishes in Čech degrees at least the cardinality of the
 indexing type. The row-filtration convergence theorem therefore gives a bounded spectral
-sequence. When the family covers the ambient space, its abutment is singular homology, through
-the augmentation of the total Čech--singular complex.
+sequence: since `cechSpectralSequence` is an abbreviation, the stabilization of its pages is
+`(cechDoubleComplex U R).flip.rowFiltrationSpectralSequencePageXIsoEInfty`. When the family
+covers the ambient space, its abutment is singular homology, through the augmentation of the
+total Čech--singular complex.
 
 ## References
 
@@ -139,15 +141,5 @@ def cechSpectralSequenceAbutmentIso (hU : ⋃ i, (U i : Set X) = Set.univ) (n : 
   haveI : QuasiIso (cechTotalAugmentation U R) := quasiIso_cechTotalAugmentation U R hU
   exact (cechDoubleComplex U R).columnFiltrationAbutmentIso n ≪≫
     isoOfQuasiIsoAt (cechTotalAugmentation U R) n
-
-/-- Every term of the Čech--singular spectral sequence stabilizes after finitely many pages to
-the corresponding graded piece of the abutment filtration. -/
-def cechSpectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
-    (h₀ : pq.2 + 2 ≤ r) (h₃ : 2 < pq.1 + 2 * pq.2 + r) :
-    ((cechSpectralSequence U R).page r).X pq ≅
-      (CochainComplex.spectralObject
-        (CochainComplex.filtrationFunctor (cechDoubleComplex U R).flip.rowFiltration
-          (cechDoubleComplex U R).flip.monotone_rowFiltration)).EInfty pq.2 (pq.1 + pq.2) :=
-  (cechDoubleComplex U R).flip.rowFiltrationSpectralSequencePageXIsoEInfty r hr pq h₀ h₃
 
 end TauCeti
