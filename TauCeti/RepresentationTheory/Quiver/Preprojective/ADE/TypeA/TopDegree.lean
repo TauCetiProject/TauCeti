@@ -182,19 +182,6 @@ theorem signlessPreprojectiveMk_ofArrow_mul_AValley_zero
     Submodule.mem_bot] at hgrade
   exact hgrade
 
-/-- The top valley is fixed by the terminal idempotent and is killed by all the reverse arrows
-which define the left map of the Koszul complex. -/
-private theorem signlessPreprojectiveAValley_zero_ker_conditions
-    (a : Fin (DynkinType.A n).rank) :
-    σ (vertexIdempotent k (vertex AG a.rev)) *
-        signlessPreprojectiveAValley k a a.rev 0 =
-      signlessPreprojectiveAValley k a a.rev 0 ∧
-    ∀ (i : Q) (b : i ⟶ vertex AG a.rev),
-      σ (ofArrow (Quiver.reverse b)) * signlessPreprojectiveAValley k a a.rev 0 = 0 := by
-  refine ⟨signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner
-    (signlessPreprojectiveAValley_zero_mem_top_corner k a), fun i b => ?_⟩
-  exact signlessPreprojectiveMk_ofArrow_mul_AValley_zero k a (Quiver.reverse b)
-
 /-- The top valley from `a` to `a.rev`, regarded as an element of the right vertex projective at
 `a.rev`. -/
 noncomputable def signlessPreprojectiveATopValley
@@ -202,7 +189,8 @@ noncomputable def signlessPreprojectiveATopValley
     signlessPreprojectiveRightProjective k (vertex AG a.rev) :=
   ⟨op (signlessPreprojectiveAValley k a a.rev 0),
     (mem_signlessPreprojectiveRightProjective_iff k _ _).2
-      (signlessPreprojectiveAValley_zero_ker_conditions k a).1⟩
+      (signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner
+        (signlessPreprojectiveAValley_zero_mem_top_corner k a))⟩
 
 /-- The underlying algebra element of the top valley in the right vertex projective. -/
 @[simp]
@@ -221,7 +209,7 @@ theorem signlessPreprojectiveATopValley_mem_ker
   apply unop_injective
   simpa only [unop_signlessPreprojectiveKoszulLeft_apply,
     unop_signlessPreprojectiveATopValley, Pi.zero_apply, Submodule.coe_zero, unop_zero] using
-      (signlessPreprojectiveAValley_zero_ker_conditions k a).2 i b
+      signlessPreprojectiveMk_ofArrow_mul_AValley_zero k a (Quiver.reverse b)
 
 end CommRing
 

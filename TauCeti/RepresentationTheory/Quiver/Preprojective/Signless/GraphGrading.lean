@@ -38,9 +38,8 @@ theorem signlessArrow_mem_grade_one (i j : ℕ) :
   classical
   by_cases hbounds : i < n ∧ j < n
   · by_cases hadj : G.Adj ⟨i, hbounds.1⟩ ⟨j, hbounds.2⟩
-    · change signlessArrow k G (↑(⟨i, hbounds.1⟩ : Fin n))
-          (↑(⟨j, hbounds.2⟩ : Fin n)) ∈ _
-      rw [signlessArrow_of_adj k hadj]
+    · -- `signlessArrow_of_adj` has `Fin n` endpoints, whose values are definitionally `i`, `j`.
+      rw [show signlessArrow k G i j = _ from signlessArrow_of_adj k hadj]
       exact signlessPreprojectiveMk_mem_grade k _ (ofArrow_mem_grade_one _)
     · rw [signlessArrow_eq_zero k (fun hi hj h => hadj h)]
       exact Submodule.zero_mem _
