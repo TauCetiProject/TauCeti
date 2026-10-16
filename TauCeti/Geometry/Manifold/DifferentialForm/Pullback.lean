@@ -29,8 +29,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Set
-open scoped Manifold
+open Set Filter
+open scoped Manifold Topology
 
 variable {E H M E' H' M' E'' H'' M'' : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -171,6 +171,21 @@ theorem bundleMpullbackWithin_comp_at {f : M → M'} {g : M' → M''}
   ext v
   simp [mfderivWithin_comp x hg hf hst hs]
 
+/-- The chain rule for bundle-valued pullbacks when the intermediate set condition holds only
+locally at the base point. -/
+theorem bundleMpullbackWithin_comp_of_preimage_mem_nhdsWithin
+    {f : M → M'} {g : M' → M''} {s : Set M} {t : Set M'} {x : M}
+    (hf : MDifferentiableWithinAt I I' f s x)
+    (hg : MDifferentiableWithinAt I' I'' g t (f x))
+    (hst : f ⁻¹' t ∈ 𝓝[s] x) (hs : UniqueMDiffWithinAt I s x)
+    (ω : RoughBundleForm I'' M'' V k) :
+    bundleMpullbackWithin I I'' (g ∘ f) s ω x =
+      bundleMpullbackWithin I I' f s (bundleMpullbackWithin I' I'' g t ω) x := by
+  ext v
+  simp only [bundleMpullbackWithin_apply]
+  rw [mfderivWithin_comp_of_preimage_mem_nhdsWithin x hg hf hst hs]
+  rfl
+
 /-- The chain rule for bundle-valued pullback at one point. -/
 theorem bundleMpullback_comp_at {f : M → M'} {g : M' → M''} {x : M}
     (hf : MDifferentiableAt I I' f x) (hg : MDifferentiableAt I' I'' g (f x))
@@ -297,6 +312,18 @@ theorem mpullbackWithin_comp_at {f : M → M'} {g : M' → M''}
     mpullbackWithin I I'' (g ∘ f) s ω x =
       mpullbackWithin I I' f s (mpullbackWithin I' I'' g t ω) x :=
   bundleMpullbackWithin_comp_at hf hg hst hs ω
+
+/-- The within-set chain rule for fixed-coefficient forms with a local intermediate-set
+condition. -/
+theorem mpullbackWithin_comp_of_preimage_mem_nhdsWithin
+    {f : M → M'} {g : M' → M''} {s : Set M} {t : Set M'} {x : M}
+    (hf : MDifferentiableWithinAt I I' f s x)
+    (hg : MDifferentiableWithinAt I' I'' g t (f x))
+    (hst : f ⁻¹' t ∈ 𝓝[s] x) (hs : UniqueMDiffWithinAt I s x)
+    (ω : RoughForm I'' M'' F k) :
+    mpullbackWithin I I'' (g ∘ f) s ω x =
+      mpullbackWithin I I' f s (mpullbackWithin I' I'' g t ω) x :=
+  bundleMpullbackWithin_comp_of_preimage_mem_nhdsWithin hf hg hst hs ω
 
 /-- The chain rule for fixed-coefficient forms at a point. -/
 theorem mpullback_comp_at {f : M → M'} {g : M' → M''} {x : M}

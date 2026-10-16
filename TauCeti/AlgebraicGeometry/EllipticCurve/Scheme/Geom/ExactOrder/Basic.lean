@@ -120,6 +120,16 @@ def IsOfExactOrder (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) : P
 
 variable {E}
 
+/-- A point `P` has exact order `N` exactly when the closed subscheme of `[P] + ⋯ + [NP]` is a
+subgroup scheme of `E`. -/
+theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} :
+    E.IsOfExactOrder P N ↔
+      ∃ _ : GrpObj (Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap) :=
+  Iff.rfl
+
 /-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
 `N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product
 of two points of `D` and on the inverse of a point of `D`. -/
@@ -277,7 +287,6 @@ theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
   -- The inclusion of `[0]` factors through the zero section, so it is the zero homomorphism.
   have hi₁ : i = 1 := by
     have hle : E.zero.ker ≤ i.left.ker := hi.ge
-    have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
     have key : (IsClosedImmersion.lift E.zero i.left hle ≫ E.zero) ≫ E.structureMap ≫ E.zero =
         IsClosedImmersion.lift E.zero i.left hle ≫ E.zero := by
       rw [Category.assoc, zero_comp_structureMap_assoc]

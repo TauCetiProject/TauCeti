@@ -71,13 +71,13 @@ private lemma convMul_comp_mul'
     toConv ((toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
         toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)).ofConv ∘ₗ
           LinearMap.mul' R A) =
-      LinearMap.mulTensor 1 (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
+      WithConv.mulTensor 1 (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)) +
-        LinearMap.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
+        WithConv.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)) 1 +
-        (LinearMap.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
+        (WithConv.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
             (toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)) +
-          LinearMap.mulTensor (toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
+          WithConv.mulTensor (toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
             (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))) := by
   have h := LinearMap.convMul_comp_coalgHom_distrib
     (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
@@ -89,8 +89,8 @@ private lemma convMul_comp_mul'
   rw [show (_root_.Bialgebra.mulCoalgHom R A).toLinearMap = LinearMap.mul' R A from rfl,
     ofConv_toConv, ofConv_toConv] at h
   rw [h, toConv_ofConv, toConv_coe_comp_mul', toConv_coe_comp_mul', add_mul, mul_add,
-    mul_add, LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul,
-    LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul]
+    mul_add, WithConv.mulTensor_convMul, WithConv.mulTensor_convMul,
+    WithConv.mulTensor_convMul, WithConv.mulTensor_convMul]
   simp only [one_mul, mul_one]
   abel
 
@@ -108,7 +108,7 @@ private lemma convMul_ofConv_mul (d₁ d₂ : Derivation R A (Bialgebra.CounitAl
         (d₁ a * d₂ b + d₂ a * d₁ b) := by
   have h := congrArg (fun F => F.ofConv (a ⊗ₜ[R] b)) (convMul_comp_mul' d₁ d₂)
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.mul'_apply,
-    ofConv_add, LinearMap.add_apply, LinearMap.mulTensor_apply_tmul, LinearMap.convOne_apply,
+    ofConv_add, LinearMap.add_apply, WithConv.mulTensor_apply_tmul, LinearMap.convOne_apply,
     Bialgebra.CounitAlgebra.algebraMap_base, Derivation.coeFn_coe] at h
   rw [h, ← Bialgebra.CounitAlgebra.algebraMap_apply R A B a,
     ← Bialgebra.CounitAlgebra.algebraMap_apply R A B b, ← Algebra.commutes,

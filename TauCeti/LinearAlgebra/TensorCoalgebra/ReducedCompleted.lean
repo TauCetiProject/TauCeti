@@ -338,3 +338,13 @@ theorem existsUnique_of_compatible_truncations (x : ℕ → ReducedTensorWords R
 
 end CompletedReducedTensorWords
 end TauCeti
+
+namespace TauCeti.CompletedReducedTensorWords
+
+variable (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The tensor-length filtration of completed reduced tensor words is complete and separated. -/
+theorem isCompleteFiltration_filtration : IsCompleteFiltration (filtration R M) :=
+  isCompleteFiltration_pi Subtype.val _ fun n x ↦ mem_filtration R M x n
+
+end TauCeti.CompletedReducedTensorWords

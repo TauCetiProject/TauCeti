@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.FieldTheory.GaloisCohomology.Inflation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 
 /-!
 # The Brauer group as continuous cohomology, and its finite layers

@@ -116,29 +116,18 @@ open cover `U` of `X` and coefficients in an abelian category, the augmentation 
 Čech--singular complex onto the singular chains of `X` is a quasi-isomorphism. -/
 theorem quasiIso_openCoverSingularTotalAugmentation (hU : ⋃ i, (U i : Set X) = Set.univ) :
     QuasiIso (openCoverSingularTotalAugmentation U R) := by
-  -- The total complex is quasi-isomorphic to the chains which are small for `U`, since the rows
-  -- of the bicomplex resolve them.
-  have h₁ := HomologicalComplex₂.quasiIso_totalAugmentation_of_rows
-    (openCoverSmallSingularAugmentation U R) fun q ↦ by
-      rw [← openCoverSmallSingularAugmentationRowHomotopyEquiv_hom]
-      infer_instance
   -- The small chains include into all singular chains by a chain homotopy equivalence.
-  have h₂ : QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι
+  have : QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι
       R) := by
     rw [← smallSingularChainHomotopyEquiv_hom R (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen) hU]
     infer_instance
-  have e : openCoverSingularTotalAugmentation U R =
-      (openCoverSingularBicomplex U R).totalAugmentation
-          ((openCoverSmallSingularAugmentation U R).f 0 ≫
-            (HomologicalComplex.singleObjXSelf _ 0 _).hom)
-          (HomologicalComplex₂.d_comp_f_zero_singleObjXSelf_hom _
-            (openCoverSmallSingularAugmentation U R)) ≫
-        SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R := by
-    rw [HomologicalComplex₂.totalAugmentation_comp, openCoverSingularTotalAugmentation]
-    congr 1
-    exact (openCoverSmallSingularAugmentation_f_zero_comp U R).symm
-  rw [e]
-  exact quasiIso_comp _ _ (hφ := h₁) (hφ' := h₂)
+  -- The rows of the bicomplex resolve the chains which are small for `U`.
+  exact HomologicalComplex₂.quasiIso_totalAugmentation_of_rows_of_quasiIso
+    (openCoverSmallSingularAugmentation U R) (fun q ↦ by
+      rw [← openCoverSmallSingularAugmentationRowHomotopyEquiv_hom]
+      infer_instance)
+    (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R) _
+    (openCoverSmallSingularAugmentation_f_zero_comp U R)
 
 end Abelian
 

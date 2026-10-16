@@ -15,9 +15,6 @@ The canonical map from a complete Hausdorff coefficient ring to a stalk factors 
 global sections. Pulling back the stalk valuation along this map recovers the point of the
 adic spectrum. This connects pullback on global sections with pullback of valuations.
 
-The construction uses `toPresentationLimit` and the rational-germ characterisation of
-`presentationLimitStalkValuation`.
-
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §8.1.
@@ -60,6 +57,8 @@ theorem presentationLimitGlobalGerm_def (x : spa Aplus) :
         eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus (Opposite.op ⊤)).symm ≫
         (presentationLimitPresheafInCommRingCat P Aplus).germ ⊤ x (Opens.mem_top x)).hom := (rfl)
 
+-- The proof uses `toPresentationLimit` and the rational-germ characterisation of
+-- `presentationLimitStalkValuation`.
 /-- Pulling the stalk valuation back along the canonical global germ map recovers the point
 of the original adic spectrum. -/
 -- Not `@[simp]`: simp normalises the underlying presheaf in the stalk type before matching.

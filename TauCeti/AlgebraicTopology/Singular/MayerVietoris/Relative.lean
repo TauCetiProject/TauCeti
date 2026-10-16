@@ -46,6 +46,8 @@ small-chain theorem for the cover of `U ∪ V` by `U` and `V` identifies the rel
   `TopCat.relativeMayerVietoris_exact₃`: exactness at `Hₘ(X, U ∩ V)`, at
   `Hₙ(X, U) ⊞ Hₙ(X, V)` and at `Hₙ(X, U ∪ V)`.
 * `TopCat.epi_relativeMayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `TopCat.mono_relativeMayerVietorisToBiprod`: injectivity of the first map when
+  `Hₖ₊₁(X, U ∪ V)` vanishes.
 * `TopCat.relativeMayerVietorisToBiprod_naturality`,
   `TopCat.relativeMayerVietorisFromBiprod_naturality`, `TopCat.relativeMayerVietorisδ_naturality`:
   the maps of the sequence are natural in maps `f : X ⟶ Y` carrying `U` into `U'` and `V` into
@@ -353,6 +355,14 @@ lemma relativeMayerVietoris_exact₁ (n m : ℕ) (h : m + 1 = n := by lia) :
     (Iso.refl _) (Iso.refl _) ?_ ?_
   · simp [homologyMap_smallPairToUnion_comp_relativeMayerVietorisδ R hU hV n m h]
   · simp [relativeMayerVietorisToBiprod_eq]
+
+include hU hV in
+/-- If `Hₖ₊₁(X, U ∪ V)` vanishes, the first map `Hₖ(X, U ∩ V) ⟶ Hₖ(X, U) ⊞ Hₖ(X, V)` of the
+relative Mayer–Vietoris sequence is a monomorphism. -/
+lemma mono_relativeMayerVietorisToBiprod {k : ℕ}
+    (h : IsZero ((TopPair.ofSubset (U ∪ V)).singularHomology R (k + 1))) :
+    Mono (relativeMayerVietorisToBiprod R U V k) :=
+  (relativeMayerVietoris_exact₁ R hU hV (k + 1) k).mono_g (h.eq_of_src _ _)
 
 include hU hV in
 /-- **Exactness of the relative Mayer–Vietoris sequence at `Hₙ(X, U) ⊞ Hₙ(X, V)`.** -/

@@ -438,10 +438,10 @@ theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLif
     Subgroup.zpowers
       (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by
   set F := unramifiedExtension K (AlgebraicClosure K) f
-  let := finiteExtensionValuativeRel K F
-  let := finiteExtensionNormedFieldTopology K F
+  let := algebraicExtensionValuativeRel K F
+  let := algebraicExtensionNormedFieldTopology K F
   have := finiteExtension_isNonarchimedeanLocalField K F
-  have := finiteExtension_valuativeExtension K F
+  have := algebraicExtension_valuativeExtension K F
   have : IsUnramified K F := isUnramified_unramifiedExtension hf
   rw [hσ.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv, zpowers_frobeniusAlgEquiv]
 

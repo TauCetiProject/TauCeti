@@ -35,6 +35,9 @@ The last two steps do not depend on how the closure step was obtained, and are p
   its target — the form the strict-morphism material will consume, where what matters is not that
   images are open but that the target's topology is determined by the source's.
 
+The other two implications of Wedhorn's Theorem 6.16, that an open linear map is surjective and that
+a continuous one has a complete target, are in `TauCeti.Topology.Algebra.OpenMapping.Converse`.
+
 Mathlib's `MonoidHom.isOpenMap_of_sigmaCompact` proves openness for a continuous surjection from
 a σ-compact source onto a T2 Baire target group (locally compact groups being the standard
 example of such a target). Neither theorem implies the other: both ask the target to be Baire,

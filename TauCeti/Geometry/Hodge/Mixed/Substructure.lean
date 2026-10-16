@@ -104,7 +104,7 @@ theorem iSup₂_deligneSplittingFamily_inf (h : mhs.IsSubstructure U) (P : ℤ �
         rationalToComplexSubmodule hℚ hℂ U =
       ⨆ (pq : ℤ × ℤ) (_ : P pq),
         rationalToComplexSubmodule hℚ hℂ U ⊓ mhs.deligneSplittingFamily pq := by
-  have key := TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂
+  have key := iSupIndep.iSup₂_inf_iSup_eq_iSup₂
     (A := mhs.deligneSplittingFamily)
     (B := fun pq ↦ rationalToComplexSubmodule hℚ hℂ U ⊓ mhs.deligneSplittingFamily pq)
     mhs.iSupIndep_deligneSplittingFamily (fun _ ↦ inf_le_right) P

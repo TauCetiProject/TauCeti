@@ -54,6 +54,7 @@ at `0` while releasing the first.
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
+* `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
   coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
   of `I^(Option N)`.
@@ -74,6 +75,12 @@ theorem Cube.boundary_option_iff {N : Type*} {y : I^(Option N)} :
     exacts [Or.inl hk, Or.inr ⟨k, hk⟩]
   · rintro (h | ⟨k, hk⟩)
     exacts [⟨none, h⟩, ⟨some k, hk⟩]
+
+open scoped Topology unitInterval in
+/-- The cube over an empty index type is a point, and its boundary is empty. -/
+@[simp]
+theorem Cube.boundary_eq_empty {N : Type*} [IsEmpty N] : Cube.boundary N = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ ⟨i, _⟩ ↦ isEmptyElim i
 
 open scoped Topology unitInterval in
 /-- A point of the cube `I^(Fin (n + 1))` lies on its boundary exactly when its first coordinate

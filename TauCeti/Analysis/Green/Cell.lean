@@ -68,8 +68,8 @@ theorem verticalRegion_fiber_of_notMem {x : ℝ} (hx : x ∉ Icc a b) :
 theorem isClosed_verticalRegion (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) : IsClosed (verticalRegion a b lower upper) := by
   have hc : IsClosed {z : ℂ | z.re ∈ Icc a b} := isClosed_Icc.preimage Complex.continuous_re
-  have hl' := hl.comp Complex.continuous_re.continuousOn (fun _ hx ↦ hx)
-  have hu' := hu.comp Complex.continuous_re.continuousOn (fun _ hx ↦ hx)
+  have hl' := hl.comp Complex.continuous_re.continuousOn (Set.mapsTo_preimage _ _)
+  have hu' := hu.comp Complex.continuous_re.continuousOn (Set.mapsTo_preimage _ _)
   convert (hc.isClosed_le hl' Complex.continuous_im.continuousOn).inter
     (hc.isClosed_le Complex.continuous_im.continuousOn hu') using 1
   ext z
@@ -144,15 +144,15 @@ theorem volume_frontier_verticalRegion_eq_zero (hl : ContinuousOn lower (Icc a b
         (Complex.volume_setOf_re_mem_Icc_im_eq hu)
 
 /-- The horizontal region is the coordinate swap of the vertical region. -/
-theorem preimage_coordinateSwap_verticalRegion :
-    Complex.coordinateSwap ⁻¹' verticalRegion a b lower upper =
+theorem preimage_coordinateSwapCLE_verticalRegion :
+    Complex.coordinateSwapCLE ⁻¹' verticalRegion a b lower upper =
       horizontalRegion a b lower upper := by
   ext z
   simp
 
 /-- The vertical region is the coordinate swap of the horizontal region. -/
-theorem preimage_coordinateSwap_horizontalRegion :
-    Complex.coordinateSwap ⁻¹' horizontalRegion a b lower upper =
+theorem preimage_coordinateSwapCLE_horizontalRegion :
+    Complex.coordinateSwapCLE ⁻¹' horizontalRegion a b lower upper =
       verticalRegion a b lower upper := by
   ext z
   simp
@@ -160,8 +160,9 @@ theorem preimage_coordinateSwap_horizontalRegion :
 /-- A horizontal region with continuous graphs is compact. -/
 theorem isCompact_horizontalRegion (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) : IsCompact (horizontalRegion a b lower upper) := by
-  rw [← preimage_coordinateSwap_verticalRegion]
-  exact Complex.coordinateSwap.isCompact_preimage.mpr (isCompact_verticalRegion hl hu)
+  rw [← preimage_coordinateSwapCLE_verticalRegion]
+  exact Complex.coordinateSwapCLE.toHomeomorph.isCompact_preimage.mpr
+    (isCompact_verticalRegion hl hu)
 
 /-- A horizontal region with continuous graphs is measurable. -/
 theorem measurableSet_horizontalRegion (hl : ContinuousOn lower (Icc a b))
@@ -172,8 +173,10 @@ theorem measurableSet_horizontalRegion (hl : ContinuousOn lower (Icc a b))
 theorem volume_frontier_horizontalRegion_eq_zero (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) :
     volume (frontier (horizontalRegion a b lower upper)) = 0 := by
-  rw [← preimage_coordinateSwap_verticalRegion, ← Complex.coordinateSwap.preimage_frontier]
-  exact (Complex.measurePreserving_coordinateSwap.measure_preimage
+  rw [← preimage_coordinateSwapCLE_verticalRegion,
+    ← Complex.coordinateSwapCLE.isOpenMap.preimage_frontier_eq_frontier_preimage
+      Complex.coordinateSwapCLE.continuous]
+  exact (Complex.measurePreserving_coordinateSwapCLE.measure_preimage
     isClosed_frontier.measurableSet.nullMeasurableSet).trans
       (volume_frontier_verticalRegion_eq_zero hl hu)
 
