@@ -19,8 +19,8 @@ the identity algebra map returns the original curve, together with the resulting
 `WeierstrassCurve.Affine.Point.equivBaseChangeSelf` of the point groups of `W` and `W⁄F`, the
 Weierstrass equation of `W⁄A` written with the coefficients of `W` mapped along `algebraMap`, the
 base-change homomorphism `WeierstrassCurve.Affine.pointMap : W(K) →+ W(L)` on points along a
-field extension `L/K`, and a coordinate descent lemma for points whose abscissa is already
-rational.
+field extension `L/K`, the transitivity `WeierstrassCurve.baseChange_baseChange` of base change in
+a tower, and a coordinate descent lemma for points whose abscissa is already rational.
 
 `pointMap` is Mathlib's `WeierstrassCurve.Affine.Point.map` and is not a new construction: the
 only content is the alignment of `W` with `W⁄K`, which `baseChange_self` supplies and Mathlib's
@@ -72,6 +72,17 @@ lemma equation_baseChange_iff (x y : A) :
     WeierstrassCurve.map_a₃, WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆]
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+/-- **Base change is transitive**: for a tower `R → A → B`, the base change of `W⁄A` to `B` is
+the base change of `W` to `B`. -/
+lemma baseChange_baseChange {R : Type*} [CommRing R] (W : WeierstrassCurve R) (A B : Type*)
+    [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] [Algebra A B] [IsScalarTower R A B] :
+    (W⁄A)⁄B = W⁄B :=
+  W.map_baseChange (IsScalarTower.toAlgHom R A B)
+
+end WeierstrassCurve
 
 namespace WeierstrassCurve.Affine.Point
 
