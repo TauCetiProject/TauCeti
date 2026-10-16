@@ -96,10 +96,6 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
 
 /-! ### The two-sided root string -/
 
-private theorem neg_natCast_zsmul (alpha : Dual K H) (j : ℕ) :
-    (-(j : ℤ)) • alpha = j • (-alpha) := by
-  rw [neg_zsmul, natCast_zsmul, smul_neg]
-
 section StringTerm
 
 variable [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
@@ -131,21 +127,11 @@ private theorem stringTerm_neg_natCast (mu alpha : Dual K H) (j : ℕ) :
     stringTerm M mu alpha (-(j : ℤ)) =
       -((finrank K (genWeightSpace M ((mu + j • (-alpha) : Dual K H) : H → K)) : K) *
         invForm (mu + j • (-alpha)) (-alpha)) := by
-  rw [stringTerm, neg_natCast_zsmul, map_neg, mul_neg, neg_neg]
+  rw [stringTerm, neg_zsmul, natCast_zsmul, smul_neg, map_neg, mul_neg, neg_neg]
 
 end StringTerm
 
-variable [CharZero K] [H.IsCartanSubalgebra]
-
-private theorem coe_add_zsmul [FiniteDimensional K L] (mu : Dual K H) (alpha : Weight K H L)
-    (i : ℤ) :
-    ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = i • (⇑alpha : H → K) + (mu : H → K) := by
-  ext x
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, Weight.toLinear_apply, Pi.add_apply,
-    Pi.smul_apply]
-  abel
-
-variable [FiniteDimensional K M]
+variable [CharZero K] [H.IsCartanSubalgebra] [FiniteDimensional K M]
 
 /-- Past a uniform bound every rung of the two-sided string is missing. -/
 private theorem exists_forall_genWeightSpace_add_zsmul_eq_bot {alpha : Dual K H}
@@ -161,8 +147,7 @@ private theorem exists_forall_genWeightSpace_add_zsmul_eq_bot {alpha : Dual K H}
     rw [natCast_zsmul]
     exact hN₁ j (by omega)
   · obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = -(j : ℤ) := ⟨(-i).toNat, by omega⟩
-    rw [neg_natCast_zsmul]
-    exact hN₂ j (by omega)
+    simpa only [neg_zsmul, natCast_zsmul, smul_neg] using hN₂ j (by omega)
 
 variable [IsKilling K L] [FiniteDimensional K L]
 
@@ -237,7 +222,8 @@ private theorem stringTerm_add_stringTerm_eq_zero {alpha : Weight K H L} {mu : D
         ((mu + i • (alpha : Dual K H) : Dual K H) : H → K)) : K) := by
     have hkey := finrank_weightSpace_neg_sub_zsmul_add (M := M) (α := alpha) (χ := (mu : H → K))
       hn i
-    rw [coe_add_zsmul mu alpha, coe_add_zsmul mu alpha, genWeightSpace_eq_weightSpace,
+    rw [LinearMap.coe_add, LinearMap.coe_add, LinearMap.coe_smul, LinearMap.coe_smul,
+      Weight.coe_coe, add_comm ⇑mu, add_comm ⇑mu, genWeightSpace_eq_weightSpace,
       genWeightSpace_eq_weightSpace]
     exact_mod_cast hkey
   have hform : invForm (mu + i • (alpha : Dual K H)) (alpha : Dual K H) +
@@ -316,8 +302,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
   have hbotNeg : ∀ j : ℕ, N ≤ j →
       genWeightSpace M ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K) = ⊥ := by
     intro j hj
-    have h := hN (-(j : ℤ)) (by omega)
-    rwa [neg_natCast_zsmul] at h
+    simpa only [neg_zsmul, natCast_zsmul, smul_neg] using hN (-(j : ℤ)) (by omega)
   by_cases hint : ∃ n : ℤ, mu (IsKilling.coroot alpha) = (n : K)
   case neg =>
     -- No rung of the string is a weight at all, so every term in sight vanishes.
@@ -333,8 +318,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
     have hemptyNeg : weightString M (neg_ne_zero.mpr halphaD) mu = ∅ := by
       rw [weightString_eq_empty_iff]
       intro j
-      have h := hbot (-(j : ℤ))
-      rwa [neg_natCast_zsmul] at h
+      simpa only [neg_zsmul, natCast_zsmul, smul_neg] using hbot (-(j : ℤ))
     have hmu : finrank K (genWeightSpace M (mu : H → K)) = 0 := by
       refine LieSubmodule.finrank_eq_zero_of_eq_bot ?_
       have h := hbot 0
