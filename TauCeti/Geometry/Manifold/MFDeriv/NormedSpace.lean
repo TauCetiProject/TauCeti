@@ -18,6 +18,7 @@ with `F`, so one vanishes exactly when the other does.
 ## Main results
 
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 -/
 
 public section
@@ -39,5 +40,11 @@ theorem mvfderiv_eq_zero_iff {g : M → F} {x : M} :
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [mvfderiv, h]⟩
   ext u
   simpa [mvfderiv] using congrArg (fun L ↦ L u) h
+
+/-- The derivative of `-g` vanishes at `x` if and only if the derivative of `g` does. -/
+@[simp]
+theorem mfderiv_neg_eq_zero_iff {g : M → F} {x : M} :
+    mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0 := by
+  rw [← mvfderiv_eq_zero_iff, mvfderiv_neg, neg_eq_zero, mvfderiv_eq_zero_iff]
 
 end TauCeti
