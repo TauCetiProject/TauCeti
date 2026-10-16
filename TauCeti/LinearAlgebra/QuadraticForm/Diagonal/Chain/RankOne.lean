@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
 
 /-!
