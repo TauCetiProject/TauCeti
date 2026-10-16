@@ -27,16 +27,17 @@ in `Extⁿ(X, Y{j})` gives a class in `Extⁿ(U X, U Y)`. Summing over the inter
 ```
 
 `TauCeti.GradedModuleCat.gradedExtForget`. It is natural in both variables and commutes with the
-connecting maps of the long exact `Ext` sequences in both variables. In degree zero it is the
-decomposition of an ungraded module map into its homogeneous parts,
-`TauCeti.GradedModuleCat.gradedExtZeroForgetEquiv`.
+connecting maps of the long exact `Ext` sequences in both variables. In degree zero, when `𝒜` is
+a grading of `A` and `X` is finitely generated, it is the decomposition of an ungraded module map
+into its homogeneous parts, `TauCeti.GradedModuleCat.gradedExtZeroForgetEquiv`.
 
 If `A` is left Noetherian and `X` is finitely generated, the map is bijective in every degree.
 The proof shifts dimension along a finite graded free presentation `0 → K → F → X → 0`, whose
 kernel is again finitely generated, using the five lemma on the two contravariant long exact
 `Ext` sequences. The resulting isomorphisms make `(U X, U Y)` a comparison pair in the sense of
-`TauCeti.IsGradedExtComparison`, under which the q-Euler characteristic specializes at `q = 1` to
-the ordinary Ext-Euler characteristic.
+`TauCeti.IsGradedExtComparison`. For such a pair that is moreover graded Euler-admissible
+(`TauCeti.IsGradedEulerAdmissible`), the q-Euler characteristic therefore specializes at `q = 1`
+to the ordinary Ext-Euler characteristic.
 
 ## Main definitions
 
@@ -51,6 +52,11 @@ the ordinary Ext-Euler characteristic.
 * `TauCeti.GradedModuleCat.gradedExtForgetComponent_extClass_comp` and
   `TauCeti.GradedModuleCat.gradedExtForgetComponent_comp_extClass`: compatibility with the
   connecting maps in the source and in the target.
+* `TauCeti.GradedModuleCat.gradedExtForget_comp_lmap_precomp_mk₀`,
+  `TauCeti.GradedModuleCat.gradedExtForget_comp_lmap_postcomp_mk₀`,
+  `TauCeti.GradedModuleCat.gradedExtForget_comp_lmap_precomp_extClass` and
+  `TauCeti.GradedModuleCat.gradedExtForget_comp_lmap_postcomp_extClass`: the same naturality and
+  connecting-map compatibilities for the whole direct-sum comparison.
 * `TauCeti.GradedModuleCat.gradedExtForget_zero`: in degree zero the comparison is the
   homogeneous decomposition of module maps.
 * `TauCeti.GradedModuleCat.gradedExtForget_bijective`: the comparison is bijective for a finitely
@@ -63,6 +69,11 @@ the ordinary Ext-Euler characteristic.
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Lecture Notes in Mathematics
   1836, Springer (2004), Section 2.4, for graded `Hom` and `Ext` of a finitely generated module
   over a Noetherian graded ring and their agreement with the ungraded groups.
+* The dimension-shifting proof of `TauCeti.GradedModuleCat.gradedExtForget_bijective` follows
+  Mathlib's `CategoryTheory.Functor.mapExt_bijective_of_preservesProjectiveObjects`
+  (`Mathlib.Algebra.Homology.DerivedCategory.Ext.MapBijective`), adapted from a single fully
+  faithful functor to a direct sum over internal degrees, and from an arbitrary projective
+  presentation to a finite graded free one so that the kernel stays finitely generated.
 -/
 
 public section
@@ -197,7 +208,7 @@ theorem gradedExtForget_zero (X Y : GradedModuleCat.{uA} 𝒜) [GradedAlgebra �
   rfl
 
 /-- The comparison commutes with precomposition by a graded map, on the whole direct sum. -/
-private theorem gradedExtForget_comp_lmap_mk₀ {X' X Y : GradedModuleCat.{uA} 𝒜} (f : X' ⟶ X)
+theorem gradedExtForget_comp_lmap_precomp_mk₀ {X' X Y : GradedModuleCat.{uA} 𝒜} (f : X' ⟶ X)
     (n : ℕ) :
     gradedExtForget 𝒜 X' Y n ∘ₗ
         DirectSum.lmap (fun j ↦ (Ext.mk₀ f).precompOfLinear k
@@ -209,8 +220,21 @@ private theorem gradedExtForget_comp_lmap_mk₀ {X' X Y : GradedModuleCat.{uA} �
   simp [DirectSum.lof_eq_of, gradedExtForget_of, ← gradedExtForgetComponent_apply,
     gradedExtForgetComponent_mk₀_comp]
 
+/-- The comparison commutes with postcomposition by a graded map, on the whole direct sum. -/
+theorem gradedExtForget_comp_lmap_postcomp_mk₀ {X Y Y' : GradedModuleCat.{uA} 𝒜} (g : Y ⟶ Y')
+    (n : ℕ) :
+    gradedExtForget 𝒜 X Y' n ∘ₗ
+        DirectSum.lmap (fun j ↦ (Ext.mk₀ (((shift 𝒜) ^ j).functor.map g)).postcompOfLinear k
+          X (add_zero n)) =
+      (Ext.mk₀ (toModuleCat.map g)).postcompOfLinear k _ (add_zero n) ∘ₗ
+        gradedExtForget 𝒜 X Y n := by
+  classical
+  refine DirectSum.linearMap_ext k fun j ↦ LinearMap.ext fun x ↦ ?_
+  simp [DirectSum.lof_eq_of, gradedExtForget_of, ← gradedExtForgetComponent_apply,
+    gradedExtForgetComponent_comp_mk₀]
+
 /-- The comparison commutes with the connecting maps in the source, on the whole direct sum. -/
-private theorem gradedExtForget_comp_lmap_extClass {S : ShortComplex (GradedModuleCat.{uA} 𝒜)}
+theorem gradedExtForget_comp_lmap_precomp_extClass {S : ShortComplex (GradedModuleCat.{uA} 𝒜)}
     (hS : S.ShortExact) (Y : GradedModuleCat.{uA} 𝒜) (n : ℕ) :
     gradedExtForget 𝒜 S.X₃ Y (n + 1) ∘ₗ
         DirectSum.lmap (fun j ↦ hS.extClass.precompOfLinear k
@@ -221,6 +245,23 @@ private theorem gradedExtForget_comp_lmap_extClass {S : ShortComplex (GradedModu
   refine DirectSum.linearMap_ext k fun j ↦ LinearMap.ext fun x ↦ ?_
   simp [DirectSum.lof_eq_of, gradedExtForget_of, ← gradedExtForgetComponent_apply,
     gradedExtForgetComponent_extClass_comp]
+
+/-- The comparison commutes with the connecting maps in the target, on the whole direct sum. -/
+theorem gradedExtForget_comp_lmap_postcomp_extClass {S : ShortComplex (GradedModuleCat.{uA} 𝒜)}
+    (hS : S.ShortExact) (X : GradedModuleCat.{uA} 𝒜) (n : ℕ) :
+    gradedExtForget 𝒜 X S.X₁ (n + 1) ∘ₗ
+        DirectSum.lmap (M := GradedExt.{w} (shift 𝒜) X S.X₃ n)
+          (N := GradedExt.{w} (shift 𝒜) X S.X₁ (n + 1))
+          (fun j ↦ (hS.map_of_exact ((shift 𝒜) ^ j).functor).extClass.postcompOfLinear k X rfl) =
+      (hS.map_of_exact toModuleCat).extClass.postcompOfLinear k _ rfl ∘ₗ
+        gradedExtForget 𝒜 X S.X₃ n := by
+  classical
+  refine DirectSum.linearMap_ext k fun j ↦ LinearMap.ext fun x ↦ ?_
+  simp only [ShortComplex.map_X₃, ShortComplex.map_X₁, LinearMap.coe_comp, Function.comp_apply,
+    DirectSum.lof_eq_of, DirectSum.lmap_of, LinearMap.flip_apply,
+    Ext.bilinearCompOfLinear_apply_apply, gradedExtForget_of, ← gradedExtForgetComponent_apply,
+    coe_postcompOfLinear]
+  exact gradedExtForgetComponent_comp_extClass hS X rfl x
 
 /-- **Graded and ungraded `Ext` agree after summing over internal degrees.** Over a left
 Noetherian graded algebra, for a finitely generated graded module `X` and any graded module `Y`,
@@ -258,8 +299,8 @@ theorem gradedExtForget_bijective [GradedAlgebra 𝒜] [IsNoetherianRing A]
       (hS'.extClass.precompOfLinear k _ (add_comm 1 n))
       (gradedExtForget 𝒜 S.X₂ Y n) (gradedExtForget 𝒜 S.X₁ Y n)
       (gradedExtForget 𝒜 S.X₃ Y (n + 1))
-      (gradedExtForget_comp_lmap_mk₀ S.f n).symm
-      (gradedExtForget_comp_lmap_extClass hS Y n).symm
+      (gradedExtForget_comp_lmap_precomp_mk₀ S.f n).symm
+      (gradedExtForget_comp_lmap_precomp_extClass hS Y n).symm
       (Function.Exact.directSum fun j ↦ (ShortComplex.ab_exact_iff_function_exact _).1
         (Ext.contravariant_sequence_exact₁' hS _ n (n + 1) (add_comm 1 n)))
       ((ShortComplex.ab_exact_iff_function_exact _).1
