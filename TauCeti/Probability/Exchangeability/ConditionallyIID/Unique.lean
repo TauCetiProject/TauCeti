@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Moments
--- Non-public: `measurable_probabilityMeasure_toMeasure_apply_toReal` evaluates a random measure at
--- a fixed measurable set in the `.toReal` form.
+-- Non-public: fixed-set evaluations in the `.toReal` form and a.e. extensionality of random
+-- probability measures.
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
--- Non-public: the countable set algebra that compares two random measures set by set.
-import Mathlib.MeasureTheory.SetAlgebra
 
 /-!
 # Almost sure uniqueness of the directing measure
@@ -46,7 +44,8 @@ marginal law of `Xᵢ`, that the mixture predicate would leave free. The centred
 are therefore uncorrelated with common variance `∫ q - ∫ q²`, so the averages of `eᵢ` converge to
 `q` with mean square error `O(1/n)`, hence in `L²` at rate `O(1/√n)`. Both directing measures are
 approximated by the *same* averages, so the triangle inequality forces `∫ (q - q')² = 0` for every
-measurable `B`, and a countable generating set algebra promotes that to a.e. equality of the random
+measurable `B`. The general extensionality theorem
+`ProbabilityMeasure.ae_eq_of_forall_apply_ae_eq` promotes this to a.e. equality of the random
 measures themselves.
 
 The hypothesis `[MeasurableSpace.CountablyGenerated α]` is what the final promotion needs, and is
@@ -215,31 +214,6 @@ theorem ConditionallyIIDWith.ae_measure_apply_eq [IsFiniteMeasure μ]
   simp only [hd_def] at hd0
   linarith
 
-/-- Almost sure equality of two random probability measures follows from a.e. equality of their
-masses on each fixed measurable set, when the σ-algebra is countably generated. Private: the final
-promotion step, phrased for the two witnesses at hand.
-
-The countable-set-algebra argument is adapted from `TauCeti.MeasureTheory.Measure.FiniteMeasure`,
-where the same `generateSetAlgebra (countableGeneratingSet α)` idiom pins a finite measure down from
-its values on a countable set algebra (there, to prove that singletons are measurable). -/
-private theorem ae_eq_of_forall_apply_ae_eq [CountablyGenerated α]
-    (h : ∀ s : Set α, MeasurableSet s →
-      (fun ω => (ν ω : Measure α) s) =ᵐ[μ] fun ω => (ν' ω : Measure α) s) :
-    ν =ᵐ[μ] ν' := by
-  set 𝒜 := generateSetAlgebra (countableGeneratingSet α) with h𝒜
-  have hcount : 𝒜.Countable := countable_generateSetAlgebra countable_countableGeneratingSet
-  have halg : IsSetAlgebra 𝒜 := isSetAlgebra_generateSetAlgebra
-  have hgen : ‹MeasurableSpace α› = generateFrom 𝒜 := by
-    rw [h𝒜, generateFrom_generateSetAlgebra_eq, generateFrom_countableGeneratingSet]
-  have hmeas : ∀ s ∈ 𝒜, MeasurableSet s := fun s hs => hgen ▸ measurableSet_generateFrom hs
-  have hall : ∀ᵐ ω ∂μ, ∀ s ∈ 𝒜, (ν ω : Measure α) s = (ν' ω : Measure α) s := by
-    rw [ae_ball_iff hcount]
-    exact fun s hs => h s (hmeas s hs)
-  filter_upwards [hall] with ω hω
-  have := (ν ω).2
-  refine Subtype.ext (ext_of_generate_finite 𝒜 hgen (fun s hs t ht _ => halg.inter_mem hs ht)
-    (fun s hs => hω s hs) (hω _ halg.univ_mem))
-
 /-- **The directing measure is almost surely unique.** Two witnesses of `ConditionallyIIDWith` for
 the same process agree almost everywhere.
 
@@ -255,7 +229,7 @@ including zero. -/
 theorem conditionallyIID_ae_unique [IsFiniteMeasure μ] [CountablyGenerated α]
     (h : ConditionallyIIDWith μ X ν)
     (h' : ConditionallyIIDWith μ X ν') : ν =ᵐ[μ] ν' :=
-  ae_eq_of_forall_apply_ae_eq fun _ hs => h.ae_measure_apply_eq h' hs
+  ProbabilityMeasure.ae_eq_of_forall_apply_ae_eq fun _ hs => h.ae_measure_apply_eq h' hs
 
 end Probability
 

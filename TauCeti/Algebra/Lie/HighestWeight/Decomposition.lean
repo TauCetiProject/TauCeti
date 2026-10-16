@@ -147,8 +147,10 @@ theorem natCard_eq_isotypicMultiplicity_irreducibleQuotient {lam : Dual K H}
           ⟨e.trans (hc i).some⟩).symm
     · exact fun hi ↦ ⟨(hi ▸ (hc i).some).symm⟩
   rw [LieModule.isotypicMultiplicity_eq_ncard_of_isInternal N h hirr, hset]
-  -- `Set.ncard` is `Nat.card` of the coercion, and `↥{i | c i = lam}` is `{i // c i = lam}`.
-  exact Nat.card_coe_set_eq _
+  -- `Set.ncard` is `Nat.card` of the coercion, and `↥{i | c i = lam}` is equivalent to
+  -- `{i // c i = lam}`.
+  rw [← Nat.card_coe_set_eq]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ by simp)
 
 end Count
 

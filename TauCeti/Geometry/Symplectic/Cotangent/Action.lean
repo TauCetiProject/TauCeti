@@ -194,9 +194,8 @@ theorem integral_strongDualCotangentSymplecticForm_eq_cotangentAction_sub (hab :
       cotangentAction h₀ h₁ (fun t ↦ u (a, t)) - cotangentAction h₀ h₁ (fun t ↦ u (b, t)) := by
   -- the Liouville form as a continuous bilinear map, `B x v = λ_x(v)`
   let B : (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
-    ((ContinuousLinearMap.compL ℝ (V × StrongDual ℝ V) V ℝ).flip
-      (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V))).comp
-      (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V))
+    (ContinuousLinearMap.id ℝ (StrongDual ℝ V)).bilinearComp
+      (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)) (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V))
   have hB : ∀ x v, B x v = cotangentLiouvilleForm x (fun _ ↦ v) := fun x v ↦ by simp [B]
   have hdiff : ∀ z ∈ Icc a b ×ˢ Icc 0 1, DifferentiableAt ℝ u z := fun z hz ↦
     (hu z hz).differentiableAt (by norm_num)

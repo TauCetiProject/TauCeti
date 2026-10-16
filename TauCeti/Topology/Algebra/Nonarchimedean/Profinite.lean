@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
+public import Mathlib.Topology.Separation.Connected
 
 /-!
 # Profinite groups are nonarchimedean

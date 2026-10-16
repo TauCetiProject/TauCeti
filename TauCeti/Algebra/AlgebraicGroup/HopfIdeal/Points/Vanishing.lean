@@ -79,11 +79,11 @@ private theorem quotientEval_separates (S : Subgroup (WithConv (H →ₐ[k] k)))
 private theorem comul_mem_pointKernelIdeal (S : Subgroup (WithConv (H →ₐ[k] k)))
     {x : H} (hx : x ∈ pointKernelIdeal S) :
     Coalgebra.comul (R := k) x ∈
-      leftTensorIdeal (R := k) (H := H) (pointKernelIdeal S) ⊔
-        rightTensorIdeal (R := k) (H := H) (pointKernelIdeal S) := by
+      Ideal.leftTensorIdeal (R := k) (B := H) (pointKernelIdeal S) ⊔
+        Ideal.rightTensorIdeal (R := k) (A := H) (pointKernelIdeal S) := by
   let q := Ideal.Quotient.mkₐ k (pointKernelIdeal S)
   have hker : RingHom.ker q = pointKernelIdeal S := Ideal.Quotient.mkₐ_ker k (pointKernelIdeal S)
-  rw [← hker, ← ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
+  rw [← hker, ← AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
     (Ideal.Quotient.mkₐ_surjective k _) (Ideal.Quotient.mkₐ_surjective k _), RingHom.mem_ker]
   apply tensor_eq_zero_of_forall_productMap_eq_zero
     (quotientEval S) (quotientEval S) (quotientEval_separates S) (quotientEval_separates S)

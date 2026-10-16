@@ -63,7 +63,7 @@ open Polynomial
 
 attribute [local instance] Classical.propDecidable
 attribute [local instance] TauCeti.moduleNNRat
-attribute [local instance] BinomialRing.toIsAddTorsionFree
+attribute [local instance] BinomialRing.toHasUniqueDiv
 
 /-! ## The polynomial basis -/
 

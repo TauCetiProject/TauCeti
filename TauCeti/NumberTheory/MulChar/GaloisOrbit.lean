@@ -151,8 +151,9 @@ theorem ncard_galoisOrbit (χ : MulChar M R) : χ.galoisOrbit.ncard = (orderOf �
       ↑({a ∈ Finset.range (orderOf χ) | (orderOf χ).Coprime a}) := by
     ext a
     simp
-  rw [galoisOrbit_eq_image, (pow_injOn_Iio_orderOf.mono fun a ha ↦ ha.1).ncard_image,
+  rw [galoisOrbit_eq_image, (pow_injOn_Iio_orderOf.mono ?_).ncard_image,
     h, Set.ncard_coe_finset, Nat.totient]
+  exact fun a ha ↦ ha.1
 
 /-- On a monoid with finitely many units, every Galois orbit is finite. -/
 theorem finite_galoisOrbit (χ : MulChar M R) : χ.galoisOrbit.Finite :=

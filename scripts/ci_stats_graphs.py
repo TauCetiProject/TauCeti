@@ -9,9 +9,17 @@ The database is the `ci.sqlite.gz` asset of https://github.com/TauCetiProject/Ta
   ci-fleet-72h.svg   the fleet timeline for the last 72 hours in 10-minute bins
   ci-fleet-30d.svg   the same for the last 30 days in 2-hour bins
   ci-stats.json      the binned series behind both, for anyone who wants the numbers
+  ci-freshness.json  group status, available-source cutoffs, known published cutoffs and gaps
 
-and the charts of ci_daily_graphs.py (daily build duration, waits, phases, failures, runner-minutes,
-merge validation and runner picker, plus timestamped merge backlog and bors staging runs).
+Also writes the charts of ci_daily_graphs.py (daily build duration, waits, phases, failures,
+runner-minutes, merge validation and runner picker, plus timestamped backlog and staging runs).
+
+Stale daily charts redraw through their dated coverage so historical corrections can publish;
+stale relative-time groups preserve their assets. Query, rendering and SVG-validation failures
+leave existing assets intact. Validated files are replaced sequentially; filesystem errors during
+replacement may leave a partial group, reported as an error. All stale groups still fail the
+freshness check. Published cutoffs are null when no previous freshness report establishes the
+fallback coverage; source cutoffs remain separate.
 
 The fleet timeline has three panels on one time axis, after Marcelo Lynch's mathlib4 fleet graph:
 
@@ -50,7 +58,8 @@ BUILD_JOBS = {"sandboxed-build", "verify", "build", "performance-gate"}
 # Queue waits cannot exceed GitHub's 24-hour queue limit, nor runs its 6-hour job limit, so a job
 # overlapping the window was created no more than this long before it.
 LOOKBACK = 30 * 3600
-# Refuse to redraw from data older than this: the freshness report should say so instead.
+# Beyond this age, preserve relative-time charts and report stale coverage. Historical daily
+# charts still redraw through their own coverage to incorporate corrected records.
 MAX_STALENESS = 36 * 3600
 
 # (key, label, colour); stacking order bottom to top.
@@ -350,56 +359,162 @@ def download(dest: Path):
             shutil.copyfileobj(src, dst)
 
 
+def contiguous_coverage(db, stream):
+    """Union a stream's intervals and stop its daily charts at the first gap.
+
+    Stream schema: https://github.com/TauCetiProject/TauCetiCI/pull/16
+    """
+    try:
+        intervals = sorted((ts(lo),ts(hi)) for lo,hi in db.execute(
+            "SELECT since,complete_to FROM stream_coverage WHERE repo='TauCeti' AND stream=?", (stream,))
+            if ts(hi)>ts(lo))
+    except sqlite3.OperationalError:
+        return None,None
+    if not intervals:
+        return None,None
+    start,end = intervals[0]
+    for lo,hi in intervals[1:]:
+        if lo>end:
+            break
+        end=max(end,hi)
+    return start,end
+
+
+def chart_cutoffs(db, now, override=None):
+    """Coverage follows each input stream; newer recorded staging data may be partial."""
+    def one(query, args=()):
+        try:
+            row = db.execute(query, args).fetchone()
+            return ts(row[0]) if row and row[0] else None
+        except sqlite3.OperationalError:
+            return None
+    try:
+        covered = {repo: ts(end) for repo, end in db.execute('SELECT repo,complete_to FROM coverage')}
+    except sqlite3.OperationalError:
+        covered = {}
+    fleet = min(covered.values()) if covered else None
+    _, builds = contiguous_coverage(db,'build-jobs')
+    _, details = contiguous_coverage(db,'details')
+    queue = one('SELECT MAX(observed_at) FROM merge_observations')
+    inventory = one("SELECT MAX(complete_to) FROM stream_coverage WHERE repo='TauCeti' AND stream='inventory'")
+    if inventory is None:
+        inventory = covered.get('TauCeti')
+    recorded = one("SELECT MAX(created_at) FROM runs WHERE repo='TauCeti' AND workflow=?",
+                   (ci_daily_graphs.PR_BUILD,))
+    staging = max((t for t in (inventory, None if recorded is None else recorded+0.001) if t is not None), default=None)
+    ends = {'fleet': fleet, 'daily': builds if builds is not None else covered.get('TauCeti'),
+            'details': details if details is not None else covered.get('TauCeti'),
+            'queue': None if queue is None else queue+0.001,
+            'staging': staging}
+    return {name: min(override,end) if override is not None and end is not None else override if override is not None else min(now, end) if end is not None else None
+            for name, end in ends.items()}
+
+
+def write_charts(out: Path, files: dict[str, str]):
+    """Validate every SVG before creating the output directory or replacing any chart."""
+    for svg in files.values():
+        ET.fromstring(svg)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, svg in files.items():
+        (out/name).write_text(svg)
+
+
+def generate(db, out, now, override=None):
+    """Publish independent groups, including dated historical corrections, and report freshness."""
+    out.mkdir(parents=True, exist_ok=True)
+    ends = chart_cutoffs(db, now, override)
+    annotations = []
+    try:
+        annotations = [(ts(a), text) for a, text in db.execute('SELECT at,text FROM annotations')]
+    except sqlite3.OperationalError:
+        pass
+    try:
+        previous = json.loads((out/'ci-freshness.json').read_text()).get('groups', {})
+    except (OSError,ValueError):
+        previous = {}
+    detail_assets = {'ci-build-phases.svg','ci-failures.svg'}
+    status, errors = {}, {}
+    for group, until in ends.items():
+        status[group] = {'source_through': iso(until) if until is not None else None,
+                         'published_through': previous.get(group,{}).get('published_through')}
+        stale = until is None or override is None and now-until > MAX_STALENESS
+        if stale:
+            reason = 'no coverage' if until is None else f'coverage older than {MAX_STALENESS//3600} hours'
+            status[group].update(status='stale', reason=reason, files=[])
+            errors[group] = f'{group}: {reason}'
+            if until is None or group not in ('daily','details'):
+                continue
+        try:
+            stats, files = {}, {}
+            if group == 'fleet':
+                for name, hours, step_min, title in [('72h', 72, 10, 'CI fleet, last 72 hours'),
+                                                    ('30d', 30*24, 120, 'CI fleet, last 30 days')]:
+                    end = until//(step_min*60)*(step_min*60)
+                    start = end-hours*3600
+                    data = bin_series(load_jobs(db, start, end), start, end, step_min*60)
+                    stats[name] = data
+                    subtitle = (f'{step_min}-minute bins, data through {fmt_time(end, True)}; '
+                                'all TauCetiProject repositories')
+                    files[f'ci-fleet-{name}.svg'] = render(data, title, subtitle, annotations)
+            elif group in ('daily','details'):
+                assets = detail_assets if group == 'details' else set(ci_daily_graphs.ASSET_NAMES)-detail_assets
+                start,_ = contiguous_coverage(db,'details' if group=='details' else 'build-jobs')
+                files = ci_daily_graphs.charts(db, until, other_jobs_until=ends['fleet'] or 0, assets=assets, covered_since=start)
+                if not files:
+                    raise ValueError('no complete UTC days within contiguous source coverage')
+            else:
+                files = ci_daily_graphs.merge_charts(db, until, include_queue=group == 'queue',
+                                                     include_staging=group == 'staging')
+            gaps = 0
+            if group in ('fleet','daily','details'):
+                try:
+                    streams = ('details','jobs','attempt') if group == 'details' else ('jobs','attempt')
+                    placeholders = ','.join('?' for _ in streams)
+                    gaps = db.execute(f"""SELECT COUNT(*) FROM collection_gaps WHERE stream IN ({placeholders})
+                        AND created_at>=? AND created_at<? AND (?='fleet' OR repo='TauCeti')""",
+                        (*streams,iso(until-(30 if group == 'fleet' else 90)*86400),iso(until),group)).fetchone()[0]
+                except sqlite3.OperationalError:
+                    pass
+                if gaps:
+                    for name, svg in files.items():
+                        height = float(ET.fromstring(svg).attrib['viewBox'].split()[3])
+                        note = f'<text class="note" x="64" y="{height-8:g}">Source gaps: {gaps} unavailable job, attempt or detail records</text>'
+                        files[name] = svg.replace('</svg>',note+'</svg>')
+            # A failed group never replaces another group's good data. Parse
+            # every SVG in this group before replacing any of its fallbacks.
+            write_charts(out, files)
+            if group == 'fleet':
+                (out/'ci-stats.json').write_text(json.dumps(stats, separators=(',', ':')))
+            status[group].update(status='stale' if stale else 'updated', files=list(files),
+                                 published_through=iso(until), gaps=gaps)
+        except Exception as e:
+            reason = f'{status[group]["reason"]}; redraw failed: {e}' if stale else str(e)
+            status[group].update(status='error', reason=reason, files=[])
+            errors[group] = f'{group}: {reason}'
+    (out/'ci-freshness.json').write_text(json.dumps(
+        {'generated_at': iso(now), 'groups': status}, indent=2)+'\n')
+    return list(errors.values())
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--db", default="ci.sqlite")
     ap.add_argument("--download", action="store_true", help="fetch the database from TauCetiCI first")
     ap.add_argument("--out-dir", default=".")
     ap.add_argument("--until", default=None,
-                    help="ISO end time, UTC (default: where the data is complete)")
+                    help="ISO end time, UTC (default: each chart's own coverage)")
     args = ap.parse_args(argv)
     dbp = Path(args.db)
     if args.download:
         download(dbp)
-    db = sqlite3.connect(dbp)
-    # End where every repository's runs are recorded, not at the wall clock: past that point an
-    # empty bin would mean "not collected yet", and would draw as an idle fleet.
     now = dt.datetime.now(UTC).timestamp()
-    covered = [ts(c) for (c,) in db.execute("SELECT complete_to FROM coverage")]
-    if not covered and not args.until:
-        sys.exit("the CI database records no coverage; not drawing charts that could not say where it ends")
-    watermark = min(covered) if covered else now
-    until = ts(args.until) if args.until else min(now, watermark)
-    if not args.until and now - until > MAX_STALENESS:
-        sys.exit(f"CI data is complete only to {iso(until)}, more than "
-                 f"{MAX_STALENESS // 3600} hours ago; not redrawing the charts from it")
-    annotations = []
+    db = sqlite3.connect(dbp)
     try:
-        annotations = [(ts(a), text) for a, text in db.execute("SELECT at, text FROM annotations")]
-    except sqlite3.OperationalError:
-        pass
-    out = Path(args.out_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    stats, svgs = {}, {}
-    for name, hours, step_min, title in [("72h", 72, 10, "CI fleet, last 72 hours"),
-                                         ("30d", 30 * 24, 120, "CI fleet, last 30 days")]:
-        until_b = until // (step_min * 60) * (step_min * 60)
-        since = until_b - hours * 3600
-        data = bin_series(load_jobs(db, since, until_b), since, until_b, step_min * 60)
-        stats[name] = data
-        subtitle = (f"{step_min}-minute bins, data through {fmt_time(until_b, True)}; "
-                    "all TauCetiProject repositories")
-        svgs[name] = render(data, title, subtitle, annotations)
-        ET.fromstring(svgs[name])  # refuse to publish a malformed SVG
-    files = {f"ci-fleet-{name}.svg": svg for name, svg in svgs.items()}
-    files.update(ci_daily_graphs.charts(db, until))
-    files.update(ci_daily_graphs.merge_charts(db, until))
-    for svg in files.values():
-        ET.fromstring(svg)  # refuse to publish a malformed SVG
-    # Written only once every chart has rendered and parsed, so a failure leaves the fallbacks.
-    for name, svg in files.items():
-        (out / name).write_text(svg)
-    (out / "ci-stats.json").write_text(json.dumps(stats, separators=(",", ":")))
+        errors = generate(db, Path(args.out_dir), now, ts(args.until) if args.until else None)
+    finally:
+        db.close()
+    if errors:
+        sys.exit('; '.join(errors))
 
 
 if __name__ == "__main__":

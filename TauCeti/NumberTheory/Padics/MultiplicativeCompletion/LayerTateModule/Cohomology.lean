@@ -143,9 +143,9 @@ theorem nonempty_layerTateModule (K L : Type u) [Field L] [Field K] [Algebra K L
         simp [AlgEquiv.mul_apply] }
   obtain ⟨Y⟩ := @nonempty_layerTateModule_of_type p _ (Shrink.{0} L) (Shrink.{0} K) _ _ _ _ hL _ hst
     hG
-  exact LayerTateModule.nonempty_of_equiv φ (padicCompletionUnitsCongr p eL.symm)
-    (padicCompletionUnitsCongr_smul p eL.symm)
-    (fun σ x ↦ padicCompletionUnitsCongr_aut p K eL.symm σ (φ σ) (fun y ↦ by
+  exact LayerTateModule.nonempty_of_equiv φ (padicCompletionUnitsCongr p eL.symm.toMulEquiv)
+    (padicCompletionUnitsCongr_smul p eL.symm.toMulEquiv)
+    (fun σ x ↦ padicCompletionUnitsCongr_aut p K eL.symm.toMulEquiv σ (φ σ) (fun y ↦ by
       -- `φ σ` is the conjugate of `σ` by `eL`.
       change eL.symm (σ (eL (eL.symm y))) = eL.symm (σ y)
       simp) x) Y

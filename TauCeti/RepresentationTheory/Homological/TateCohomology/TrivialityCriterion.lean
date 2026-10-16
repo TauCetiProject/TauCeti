@@ -144,7 +144,7 @@ theorem isZero_of_forall_isPGroup {q : ℕ}
   obtain ⟨P⟩ : Nonempty (Sylow p S) := inferInstance
   -- Restriction to `P ≤ S` is restriction to the image of `P` in `G`.
   refine ⟨P, (isZero_succ_of_isPGroup A p (h₁ p) (h₂ p) ((P : Subgroup S).map S.subtype)
-    (P.isPGroup'.map S.subtype) n).of_iso ?_⟩
+    (P.isPGroup.map S.subtype) n).of_iso ?_⟩
   exact groupCohomology.mapIso ((P : Subgroup S).equivMapOfInjective S.subtype
     S.subtype_injective) (LinearEquiv.refl k _) (fun _ => rfl) (n + 1)
 

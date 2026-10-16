@@ -58,6 +58,8 @@ space `W^{1,p}` on an interval by difference quotients.
 * `AbsolutelyContinuousOnInterval.lintegral_edist_div_rpow_le_curveAction` and
   `AbsolutelyContinuousOnInterval.tendsto_lintegral_edist_div_rpow`: the integrated difference
   quotients are bounded by the action and converge to it.
+* `TauCeti.absolutelyContinuousOnInterval_of_sum_edist_rpow_le`: for `1 < p`, a curve satisfying
+  the Hölder estimate on finite unions of intervals is absolutely continuous.
 * `TauCeti.absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top`: for `1 < p`, pointwise
   limits of curves with bounded actions are absolutely continuous.
 * `TauCeti.curveAction_le_liminf` and `TauCeti.curveAction_le_liminf_of_one_lt`: lower
@@ -391,6 +393,52 @@ private lemma _root_.AbsolutelyContinuousOnInterval.sum_edist_rpow_le_mul_curveA
         rw [Measure.restrict_apply_univ, curveAction_def]
         gcongr
 
+/-- **A criterion for absolute continuity.** For `1 < p`, a curve `γ` is absolutely continuous
+on `[a, b]` if, for some finite `C`, every finite disjoint family of intervals in `[a, b]` satisfies
+the Hölder-type bound `(∑ d(γ sᵢ, γ tᵢ)) ^ p ≤ |⋃ (sᵢ, tᵢ]| ^ (p - 1) * C`, as a curve of
+`p`-action at most `C` does. -/
+theorem absolutelyContinuousOnInterval_of_sum_edist_rpow_le (hp : 1 < p) {C : ℝ≥0∞}
+    (hC : C ≠ ∞)
+    (h : ∀ E ∈ AbsolutelyContinuousOnInterval.disjWithin a b,
+      (∑ i ∈ Finset.range E.1, edist (γ (E.2 i).1) (γ (E.2 i).2)) ^ p ≤
+        volume (⋃ i ∈ Finset.range E.1, Ι (E.2 i).1 (E.2 i).2) ^ (p - 1) * C) :
+    AbsolutelyContinuousOnInterval γ a b := by
+  -- The measure of the union of the intervals of a disjoint family in `[a, b]`.
+  let V (E : ℕ × (ℕ → ℝ × ℝ)) : ℝ≥0∞ :=
+    volume.restrict (Ι a b) (⋃ i ∈ Finset.range E.1, Ι (E.2 i).1 (E.2 i).2)
+  have key : ∀ E ∈ AbsolutelyContinuousOnInterval.disjWithin a b,
+      ∑ i ∈ Finset.range E.1, edist (γ (E.2 i).1) (γ (E.2 i).2) ≤ (V E ^ (p - 1) * C) ^ p⁻¹ := by
+    rintro ⟨k, I⟩ hE
+    have hVU : V (k, I) = volume (⋃ i ∈ Finset.range k, Ι (I i).1 (I i).2) :=
+      Measure.restrict_eq_self _
+        (AbsolutelyContinuousOnInterval.biUnion_uIoc_subset_of_mem_disjWithin hE)
+    rw [hVU]
+    exact (ENNReal.le_rpow_inv_iff (by positivity)).2 (h _ hE)
+  -- The bound tends to zero with the total length of the family.
+  have hΦ : Tendsto (fun x : ℝ≥0∞ ↦ (x ^ (p - 1) * C) ^ p⁻¹) (𝓝 0) (𝓝 0) := by
+    have h₁ : Tendsto (fun x : ℝ≥0∞ ↦ x ^ (p - 1) * C) (𝓝 0) (𝓝 0) := by
+      simpa [ENNReal.zero_rpow_of_pos (sub_pos.2 hp)] using
+        ENNReal.Tendsto.mul_const ((ENNReal.continuous_rpow_const (y := p - 1)).tendsto 0)
+          (Or.inr hC)
+    simpa [ENNReal.zero_rpow_of_pos (inv_pos.2 (zero_lt_one.trans hp)), Function.comp_def] using
+      ((ENNReal.continuous_rpow_const (y := p⁻¹)).tendsto 0).comp h₁
+  have hT : Tendsto (fun E ↦ ((V E ^ (p - 1) * C) ^ p⁻¹).toReal)
+      (AbsolutelyContinuousOnInterval.totalLengthFilter ⊓
+        𝓟 (AbsolutelyContinuousOnInterval.disjWithin a b)) (𝓝 0) := by
+    have := (ENNReal.continuousAt_toReal ENNReal.zero_ne_top).tendsto.comp (hΦ.comp
+      (AbsolutelyContinuousOnInterval.tendsto_volume_restrict_totalLengthFilter_disjWithin_nhds_zero
+        a b))
+    rwa [ENNReal.toReal_zero] at this
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ Finset.sum_nonneg fun _ _ ↦ dist_nonneg) ?_ hT
+  filter_upwards [eventually_inf_principal.2 (Eventually.of_forall fun _ hE ↦ hE)] with E hE
+  have hne : (V E ^ (p - 1) * C) ^ p⁻¹ ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg (by positivity) (ENNReal.mul_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by linarith) (ne_top_of_le_ne_top
+        (by simp [Real.volume_uIoc]) (measure_mono (subset_univ _)))) hC)
+  rw [← ENNReal.ofReal_le_iff_le_toReal hne,
+    ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ dist_nonneg]
+  simpa only [← edist_dist] using key E hE
+
 end AbsolutelyContinuous
 
 section LowerSemicontinuous
@@ -408,49 +456,16 @@ theorem absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top (hp : 1 < p)
   obtain ⟨C, hAC, hC⟩ := exists_between (lt_top_iff_ne_top.2 hA)
   have hfreq : ∃ᶠ i in l, curveAction p (γs i) a b < C := frequently_lt_of_liminf_lt
     (by isBoundedDefault) hAC
-  -- The measure of the union of the intervals of a disjoint family in `[a, b]`.
-  let V (E : ℕ × (ℕ → ℝ × ℝ)) : ℝ≥0∞ :=
-    volume.restrict (Ι a b) (⋃ i ∈ Finset.range E.1, Ι (E.2 i).1 (E.2 i).2)
   -- The Hölder estimate on the union of the intervals bounds the distances along `γ`.
-  have key : ∀ E ∈ AbsolutelyContinuousOnInterval.disjWithin a b,
-      ∑ i ∈ Finset.range E.1, edist (γ (E.2 i).1) (γ (E.2 i).2) ≤ (V E ^ (p - 1) * C) ^ p⁻¹ := by
-    rintro ⟨k, I⟩ hE
-    set U := ⋃ i ∈ Finset.range k, Ι (I i).1 (I i).2
-    have hVU : V (k, I) = volume U := Measure.restrict_eq_self _
-      (AbsolutelyContinuousOnInterval.biUnion_uIoc_subset_of_mem_disjWithin hE)
-    have hsum : Tendsto (fun i ↦ (∑ j ∈ Finset.range k, edist (γs i (I j).1) (γs i (I j).2)) ^ p)
-        l (𝓝 ((∑ j ∈ Finset.range k, edist (γ (I j).1) (γ (I j).2)) ^ p)) :=
-      (ENNReal.continuous_rpow_const.tendsto _).comp (tendsto_finsetSum _ fun j hj ↦
-        (hlim _ (hE.1 j hj).1).edist (hlim _ (hE.1 j hj).2))
-    have hle : _ ≤ volume U ^ (p - 1) * C := le_of_tendsto_of_frequently hsum
-      ((hfreq.and_eventually hγs).mono fun i hi ↦
-        (hi.2.sum_edist_rpow_le_mul_curveAction hp.le hE).trans (by gcongr; exact hi.1.le))
-    rw [hVU]
-    exact (ENNReal.le_rpow_inv_iff (by positivity)).2 hle
-  -- The bound tends to zero with the total length of the family.
-  have hΦ : Tendsto (fun x : ℝ≥0∞ ↦ (x ^ (p - 1) * C) ^ p⁻¹) (𝓝 0) (𝓝 0) := by
-    have h₁ : Tendsto (fun x : ℝ≥0∞ ↦ x ^ (p - 1) * C) (𝓝 0) (𝓝 0) := by
-      simpa [ENNReal.zero_rpow_of_pos (sub_pos.2 hp)] using
-        ENNReal.Tendsto.mul_const ((ENNReal.continuous_rpow_const (y := p - 1)).tendsto 0)
-          (Or.inr hC.ne)
-    simpa [ENNReal.zero_rpow_of_pos (inv_pos.2 (zero_lt_one.trans hp)), Function.comp_def] using
-      ((ENNReal.continuous_rpow_const (y := p⁻¹)).tendsto 0).comp h₁
-  have hT : Tendsto (fun E ↦ ((V E ^ (p - 1) * C) ^ p⁻¹).toReal)
-      (AbsolutelyContinuousOnInterval.totalLengthFilter ⊓
-        𝓟 (AbsolutelyContinuousOnInterval.disjWithin a b)) (𝓝 0) := by
-    have := (ENNReal.continuousAt_toReal ENNReal.zero_ne_top).tendsto.comp (hΦ.comp
-      (AbsolutelyContinuousOnInterval.tendsto_volume_restrict_totalLengthFilter_disjWithin_nhds_zero
-        a b))
-    rwa [ENNReal.toReal_zero] at this
-  refine squeeze_zero' (Eventually.of_forall fun _ ↦ Finset.sum_nonneg fun _ _ ↦ dist_nonneg) ?_ hT
-  filter_upwards [eventually_inf_principal.2 (Eventually.of_forall fun _ hE ↦ hE)] with E hE
-  have hne : (V E ^ (p - 1) * C) ^ p⁻¹ ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg (by positivity) (ENNReal.mul_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg (by linarith) (ne_top_of_le_ne_top
-        (by simp [Real.volume_uIoc]) (measure_mono (subset_univ _)))) hC.ne)
-  rw [← ENNReal.ofReal_le_iff_le_toReal hne,
-    ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ dist_nonneg]
-  simpa only [← edist_dist] using key E hE
+  refine absolutelyContinuousOnInterval_of_sum_edist_rpow_le hp hC.ne ?_
+  rintro ⟨k, I⟩ hE
+  have hsum : Tendsto (fun i ↦ (∑ j ∈ Finset.range k, edist (γs i (I j).1) (γs i (I j).2)) ^ p)
+      l (𝓝 ((∑ j ∈ Finset.range k, edist (γ (I j).1) (γ (I j).2)) ^ p)) :=
+    (ENNReal.continuous_rpow_const.tendsto _).comp (tendsto_finsetSum _ fun j hj ↦
+      (hlim _ (hE.1 j hj).1).edist (hlim _ (hE.1 j hj).2))
+  exact le_of_tendsto_of_frequently hsum
+    ((hfreq.and_eventually hγs).mono fun i hi ↦
+      (hi.2.sum_edist_rpow_le_mul_curveAction hp.le hE).trans (by gcongr; exact hi.1.le))
 
 /-- **Lower semicontinuity of the action.** If curves `γs i`, eventually absolutely continuous on
 `[a, b]`, converge pointwise on `[a, b]` along a countably generated filter to a curve `γ`

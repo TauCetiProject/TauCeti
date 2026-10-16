@@ -225,8 +225,8 @@ theorem image_unitCube_of_contDiffOn {ι G : Type*} [Fintype ι] [NormedAddCommG
   have hmaps : Set.MapsTo T (Icc (0 : Fin d → ℝ) 1) (Icc (0 : ι → ℝ) 1) :=
     fun y hy ↦ ⟨fun i ↦ hy.1 _, fun i ↦ hy.2 _⟩
   have hdiff : ContDiffOn ℝ 1 (f ∘ T) (Icc (0 : Fin d → ℝ) 1) :=
-    ContDiffOn.comp hf (ContDiff.contDiffOn (contDiff_pi.mpr fun i ↦ contDiff_apply ℝ ℝ (e i)))
-      hmaps
+    ContDiffOn.comp hf
+      (ContDiff.contDiffOn (contDiff_pi.mpr fun i ↦ contDiff_apply ℝ (fun _ ↦ ℝ) (e i))) hmaps
   -- A `C¹` map is Lipschitz on the compact convex cube, so `f ∘ T` is a single chart.
   obtain ⟨C, hC⟩ :=
     ContDiffOn.exists_lipschitzOnWith hdiff one_ne_zero (convex_Icc _ _) isCompact_Icc

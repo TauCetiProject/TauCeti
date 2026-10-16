@@ -36,9 +36,11 @@ isomorphism of groups, and under translation:
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`.
 
-All of these have additive versions. Finally, `Subgroup.sum_out_smul_eq_relIndex_nsmul` sums an
-orbit map along a tower: for `K ≤ H` and an element `m` of an additive `G`-module fixed by `H`, the
-sum of `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
+All of these have additive versions. The tower-coordinate reconstruction rules retain the inverse
+laws after the coordinate maps themselves have been evaluated on quotients. Finally,
+`Subgroup.sum_out_smul_eq_relIndex_nsmul` sums an orbit map along a tower: for `K ≤ H` and an
+element `m` of an additive `G`-module fixed by `H`, the sum of `q.out • m` over the cosets of `K`
+is `[H : K]` times the sum over the cosets of `H`.
 -/
 
 public section
@@ -89,6 +91,52 @@ theorem groupEquivQuotientProdSubgroup_apply_fst (g : α) :
 theorem groupEquivQuotientProdSubgroup_apply_snd_coe (g : α) :
     ((groupEquivQuotientProdSubgroup (s := s) g).2 : α) = (g : α ⧸ s).out⁻¹ * g := by
   rw [groupEquivQuotientProdSubgroup_apply]
+
+section QuotientTower
+
+variable {G : Type*} [Group G] {U V : Subgroup G} (hVU : V ≤ U)
+  (f : G ⧸ U → G) (hf : Function.RightInverse f QuotientGroup.mk)
+
+/-- Reassemble the two tower coordinates after evaluating the inverse quotient map.
+
+The before-simp rule preserves the coordinate inverse law before the coordinates themselves
+expand to quotient maps. -/
+@[simp↓] theorem quotientEquivProdOfLE'_reconstruct (q : G ⧸ V) :
+    Quotient.map' (fun b : U ↦ f (quotientEquivProdOfLE' hVU f hf q).1 * b)
+      (fun b c h ↦ by
+        rw [QuotientGroup.leftRel_apply] at h ⊢
+        rwa [mul_inv_rev, mul_assoc, inv_mul_cancel_left])
+      (quotientEquivProdOfLE' hVU f hf q).2 = q := by
+  simpa only [quotientEquivProdOfLE'_symm_apply] using
+    (quotientEquivProdOfLE' hVU f hf).symm_apply_apply q
+
+/-- The evaluated first coordinate of the inverse tower map is its outer coset. -/
+@[simp↓] theorem quotientEquivProdOfLE'_map_fst_symm (a : G ⧸ U) (b : U ⧸ V.subgroupOf U) :
+    Quotient.map' id (fun _ _ h ↦ QuotientGroup.leftRel_apply.mpr
+        (hVU (QuotientGroup.leftRel_apply.mp h)))
+      ((quotientEquivProdOfLE' hVU f hf).symm (a, b)) = a := by
+  simpa only [quotientEquivProdOfLE'_apply] using
+    congrArg Prod.fst ((quotientEquivProdOfLE' hVU f hf).apply_symm_apply (a, b))
+
+/-- The evaluated second coordinate of the inverse tower map is its inner coset. -/
+@[simp↓] theorem quotientEquivProdOfLE'_map_snd_symm (a : G ⧸ U) (b : U ⧸ V.subgroupOf U) :
+    Quotient.map' (fun g : G ↦
+      (⟨(f (Quotient.mk'' g))⁻¹ * g,
+        QuotientGroup.leftRel_apply.mp (Quotient.exact' (hf g))⟩ : U))
+      (fun b c h ↦ by
+        rw [QuotientGroup.leftRel_apply]
+        -- Compare the subgroup-of relation in the ambient group before using `hVU`.
+        change ((f b)⁻¹ * b)⁻¹ * ((f c)⁻¹ * c) ∈ V
+        have key : f b = f c :=
+          congrArg f (Quotient.sound'
+            (QuotientGroup.leftRel_apply.mpr (hVU (QuotientGroup.leftRel_apply.mp h))))
+        rwa [key, mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left,
+          ← QuotientGroup.leftRel_apply])
+      ((quotientEquivProdOfLE' hVU f hf).symm (a, b)) = b := by
+  simpa only [quotientEquivProdOfLE'_apply] using
+    congrArg Prod.snd ((quotientEquivProdOfLE' hVU f hf).apply_symm_apply (a, b))
+
+end QuotientTower
 
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
 `p.out * k.out` of the chosen representatives of the cosets `p ∈ G ⧸ H` and

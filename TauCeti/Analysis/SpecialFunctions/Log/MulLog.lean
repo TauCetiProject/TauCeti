@@ -24,6 +24,8 @@ up a small amount of its value is bounded by that same tangent line.
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
 * `TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub`: for `0 < a` and `0 ≤ u`, the gap
   between the graph and the supporting line at `a` is at least `(√u - √a) ^ 2`.
+* `TauCeti.mul_log_sub_mul_log_sub_le_sq_div`: for `0 < a` and `0 ≤ u`, that gap is at most
+  `(u - a) ^ 2 / a`.
 * `Real.sq_sub_le_mul_sub_mul_log_sub_log`: for `0 < p, q ≤ M`,
   `(p - q) ^ 2 ≤ M * ((p - q) * (log p - log q))`, the strong monotonicity of the logarithm on
   `(0, M]`.
@@ -141,5 +143,23 @@ theorem sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub {a u : ℝ} (ha : 0 < a) (hu
   rw [sqrt_sq hs.le, sqrt_sq hc.le, log_pow, log_pow]
   push_cast
   nlinarith [mul_le_mul_of_nonneg_left hlog (sq_nonneg s)]
+
+/-- The gap between the convex function `u ↦ u * log u` and its supporting line at a positive
+point `a` is at most quadratic in `u - a`: for every nonnegative `u`,
+`u * log u - a * log a - (u - a) * (log a + 1) ≤ (u - a) ^ 2 / a`. The left side is
+`u * log (u / a) - u + a`, a relative-entropy integrand, and the right side the corresponding
+`χ²` integrand. Together with `Real.mul_log_sub_mul_log_ge`, the gap lies between `0` and
+`(u - a) ^ 2 / a`, so it is `O((u - a) ^ 2)`. -/
+theorem mul_log_sub_mul_log_sub_le_sq_div {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u) :
+    u * log u - a * log a - (u - a) * (log a + 1) ≤ (u - a) ^ 2 / a := by
+  rw [le_div_iff₀ ha]
+  rcases hu.eq_or_lt with rfl | hu
+  · simp only [log_zero, mul_zero, zero_sub]
+    nlinarith
+  have hlog : log u - log a ≤ u / a - 1 := by
+    rw [← log_div hu.ne' ha.ne']
+    exact log_le_sub_one_of_pos (div_pos hu ha)
+  have hua : u / a * a = u := div_mul_cancel₀ u ha.ne'
+  nlinarith [mul_le_mul_of_nonneg_left hlog (mul_nonneg hu.le ha.le)]
 
 end TauCeti
