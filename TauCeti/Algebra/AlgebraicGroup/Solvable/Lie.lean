@@ -6,9 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
+public import TauCeti.Algebra.AlgebraicGroup.Representation.TriangularEmbedding
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
-public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Triangular
 public import Mathlib.Algebra.Lie.Solvable
 import Mathlib.Algebra.Lie.LieTheorem
 import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
@@ -110,28 +109,9 @@ upper-triangular general linear group, in characteristic zero over an algebraica
 The surjection is in the contravariant coordinate direction. -/
 theorem exists_upperTriangular_surjective_of_isSolvable_lie :
     ∃ (n : ℕ) (f : GeneralLinear.UpperTriangular.coordinateHopfAlgebra k n ⟶ H.obj),
-      Function.Surjective f.hom := by
-  obtain ⟨M, hfinite, hcoeff⟩ :=
-    Comodule.exists_finite_subcomodule_matrixCoefficientSubalgebra_eq_top (k := k) (C := H)
-  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
-  let _ : Module.Finite k M := hfinite
-  obtain ⟨n, b, htri, -⟩ :=
-    Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable_lie
-      (H := H) (M := M)
-  let π : GeneralLinear.coordinateHopfAlgebra k n ⟶ H.obj :=
-    CommHopfAlgCat.ofHom (Comodule.coordinateBialgHom (H := H) b)
-  have hπ : Function.Surjective π.hom.toAlgHom := by
-    rw [← AlgHom.range_eq_top]
-    apply top_unique
-    rw [← hcoeff]
-    exact Comodule.matrixCoefficientSubalgebra_le_coordinateBialgHom_range b
-  have hker := GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker k n
-    π.hom.toAlgHom (fun i j hji ↦ by
-      simpa only [π, CommHopfAlgCat.hom_ofHom, BialgHom.coe_toAlgHom,
-        Comodule.coordinateBialgHom_X] using htri hji)
-  let f := CommHopfAlgCat.liftQuotient
-    (GeneralLinear.UpperTriangular.definingHopfIdeal k n) π hker
-  exact ⟨n, f, CommHopfAlgCat.liftQuotient_surjective_of_surjective _ π hker hπ⟩
+      Function.Surjective f.hom :=
+  exists_upperTriangular_surjective_of_weight_vectors fun _ _ _ _ _ _ ↦
+    Comodule.hasNonzeroWeightVector_of_isSolvable_lie
 
 /-- Every commutative-algebra-valued point group of a connected affine group with solvable
 Lie algebra is solvable, in characteristic zero over an algebraically closed field. -/
