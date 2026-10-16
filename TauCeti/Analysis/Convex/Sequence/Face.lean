@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Supporting
+import Mathlib.Data.Set.Finite.Lemmas
 import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Order.Interval.Set.OrdConnectedLinear
 import Mathlib.Tactic.Linarith
@@ -21,8 +22,11 @@ and consists of every integer between them.
 The predicate `IsFiniteFace h σ l u` records these endpoints while leaving the supporting
 intercept implicit. The intercept is nevertheless unique, and equals the supporting value at
 `σ`. In particular, every nonempty convex height sequence with bounded finite domain has a
-finite face at every real slope. These absolute endpoints are the geometric interface later used
-to identify extremal coefficients and count slope multiplicities.
+finite face at every real slope. A finite edge whose slope is strictly greater than `σ`
+also guarantees a finite face of slope `σ`, with both endpoints at or before that edge.
+Thus unbounded finite edge slopes guarantee finite faces at every real slope, even on an
+unbounded domain. These absolute endpoints are the geometric interface later used to identify
+extremal coefficients and count slope multiplicities.
 
 ## References
 
@@ -229,5 +233,79 @@ theorem IsConvexSeq.exists_isFiniteFace_of_finiteDomain {h : ℕ → WithTop ℝ
   apply hh.exists_isFiniteFace_of_finiteDomain_eq_Icc hle
   intro n
   simpa only [s, Set.mem_ofPred_eq, Set.mem_Icc] using Set.ext_iff.mp hseq n
+
+/-- Contact with a supporting line of slope `σ` occurs at or before any finite edge
+whose slope is strictly greater than `σ`. -/
+theorem IsConvexSeq.supportingFace_subset_Iic_of_lt_unitSlope {h : ℕ → WithTop ℝ}
+    (hh : IsConvexSeq h) {σ c : ℝ} (hc : IsSupportingLine h σ c)
+    {m : ℕ} (hm : m ∈ finiteEdges h) (hσ : σ < unitSlope h m) :
+    supportingFace h σ c ⊆ Set.Iic m := by
+  have hmf := mem_finiteEdges.mp hm
+  intro n hn
+  by_contra hnm
+  have hmn : m < n := lt_of_not_ge hnm
+  have hn_top : h n ≠ ⊤ := by
+    rw [mem_supportingFace] at hn
+    rw [hn]
+    exact WithTop.coe_ne_top
+  have hs := hh.mul_slope_le_sub hmf.1 hn_top hmf.1 hmf.2 hmn.le le_rfl
+  rw [Nat.cast_sub hmn.le] at hs
+  have hcm := hc m
+  rw [← WithTop.coe_untop₀_of_ne_top hmf.1, WithTop.coe_le_coe] at hcm
+  have hn_real : (h n).untop₀ = c + σ * n := by
+    rw [mem_supportingFace] at hn
+    rw [hn, WithTop.untop₀_coe]
+  rw [hn_real] at hs
+  nlinarith [mul_pos (sub_pos.mpr hσ)
+    (sub_pos.mpr (Nat.cast_lt.mpr hmn) : (0 : ℝ) < n - m)]
+
+/-- A finite edge of slope strictly greater than `σ` guarantees a finite nonempty face
+of slope `σ`. Its right endpoint, and hence also its left endpoint, is at most the edge
+index. The finite domain itself need not be bounded. -/
+theorem IsConvexSeq.exists_isFiniteFace_of_lt_unitSlope {h : ℕ → WithTop ℝ}
+    (hh : IsConvexSeq h) {σ : ℝ} {m : ℕ} (hm : m ∈ finiteEdges h)
+    (hσ : σ < unitSlope h m) :
+    ∃ l u : ℕ, IsFiniteFace h σ l u ∧ u ≤ m := by
+  have hmf := mem_finiteEdges.mp hm
+  let s : Set ℕ := {n | n ≤ m ∧ h n ≠ ⊤}
+  have hs : s.Finite := (Set.finite_Iic m).subset fun _ hn ↦ hn.1
+  obtain ⟨i, hi, hmin⟩ := Set.exists_min_image s
+    (fun n ↦ (h n).untop₀ - σ * n) hs ⟨m, le_rfl, hmf.1⟩
+  let c := (h i).untop₀ - σ * i
+  have hcm : c ≤ (h m).untop₀ - σ * m := hmin m ⟨le_rfl, hmf.1⟩
+  have hc : IsSupportingLine h σ c := by
+    intro n
+    by_cases hn : h n = ⊤
+    · simp [hn]
+    rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe]
+    by_cases hnm : n ≤ m
+    · have hcn : c ≤ (h n).untop₀ - σ * n := hmin n ⟨hnm, hn⟩
+      linarith
+    · have hmn : m ≤ n := (lt_of_not_ge hnm).le
+      have htail := hh.mul_slope_le_sub hmf.1 hn hmf.1 hmf.2 hmn le_rfl
+      rw [Nat.cast_sub hmn] at htail
+      have hprod := mul_nonneg (sub_nonneg.mpr hσ.le)
+        (sub_nonneg.mpr (Nat.cast_le.mpr hmn) : (0 : ℝ) ≤ n - m)
+      nlinarith
+  have hcontact : i ∈ supportingFace h σ c := by
+    rw [mem_supportingFace, ← WithTop.coe_untop₀_of_ne_top hi.2, WithTop.coe_eq_coe]
+    dsimp [c]
+    ring
+  have hsub := hh.supportingFace_subset_Iic_of_lt_unitSlope hc hm hσ
+  obtain ⟨l, u, hf⟩ := hh.exists_isFiniteFace_of_finite_supportingFace hc
+    ((Set.finite_Iic m).subset hsub) ⟨i, hcontact⟩
+  refine ⟨l, u, hf, ?_⟩
+  obtain ⟨d, hd, hface⟩ := hf.exists_intercept
+  exact hh.supportingFace_subset_Iic_of_lt_unitSlope hd hm hσ
+    (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+
+/-- Unbounded slopes on the finite edges of a convex height sequence guarantee a
+finite nonempty face at every real slope. -/
+theorem IsConvexSeq.exists_isFiniteFace_of_unbounded_unitSlope {h : ℕ → WithTop ℝ}
+    (hh : IsConvexSeq h) (hunbounded : ¬ BddAbove (unitSlope h '' finiteEdges h))
+    (σ : ℝ) : ∃ l u : ℕ, IsFiniteFace h σ l u := by
+  obtain ⟨s, ⟨m, hm, rfl⟩, hσ⟩ := not_bddAbove_iff.mp hunbounded σ
+  obtain ⟨l, u, hf, _⟩ := hh.exists_isFiniteFace_of_lt_unitSlope hm hσ
+  exact ⟨l, u, hf⟩
 
 end TauCeti
