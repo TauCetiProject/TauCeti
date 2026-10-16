@@ -129,7 +129,7 @@ theorem commutatorElement_differenceShortRootUnit_differenceShortRootUnit
     commute_transvectionUnit hIJ hK'I'
       (finSumFinEquiv_inl_ne_inr j k) (finSumFinEquiv_inr_ne_inl i i) _ _
   rw [TauCeti.commutatorElement_mul_mul_eq_mul_of_commute hBC hAD
-    (by simpa only [hBD] using hCQ) (by simpa only [hBD] using hAQ), hAC, hBD]
+    (by simpa only [hBD] using hCQ.mul_left hAQ), hAC, hBD]
 
 /-- **The multiply-laced Chevalley relation in the standard symplectic group.** The commutator
 of `x_{eᵢ-eⱼ}(a)` and `x_{2eⱼ}(b)` is the product of the two remaining root subgroups in
