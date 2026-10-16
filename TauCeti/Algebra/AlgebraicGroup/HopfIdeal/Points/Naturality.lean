@@ -26,6 +26,8 @@ not just a subgroup at each individual algebra.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 
 namespace TauCeti

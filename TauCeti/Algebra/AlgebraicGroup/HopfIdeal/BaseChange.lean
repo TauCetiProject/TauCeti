@@ -92,6 +92,8 @@ Chevalley--Demazure carrier presented as a Hopf-ideal quotient. See J. S. Milne,
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory TensorProduct
 
 namespace TauCeti.CommHopfAlgCat
