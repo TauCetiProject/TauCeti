@@ -28,10 +28,17 @@ tensor product of morphisms is the reversed tensor product of their mates, and t
 associator and the unitors are again an associator and unitors. These are the identities that
 make the right dual functor `C ⥤ (Cᵒᵖ)ᴹᵒᵖ` monoidal.
 
+Taking a left adjoint mate and then a right adjoint mate, or conversely, recovers the original
+morphism.
+
 ## Main declarations
 
 * `CategoryTheory.ExactPairing.rightHom_ext`: morphisms into a right dual agree once they agree
-  after evaluation;
+  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext`: morphisms out of a left member
+  agree once they agree after coevaluation;
+* `CategoryTheory.leftAdjointMate_rightAdjointMate` and
+  `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
+  original morphism;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` and
   `CategoryTheory.ExactPairing.coevaluation_comp_rightMate`, with `rightMate_id` and
@@ -49,6 +56,9 @@ make the right dual functor `C ⥤ (Cᵒᵖ)ᴹᵒᵖ` monoidal.
 ## References
 
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §2.10
+* [leanprover-community/mathlib4#42145](https://github.com/leanprover-community/mathlib4/pull/42145),
+  for the explicit-pairing form of `CategoryTheory.ExactPairing.leftHom_ext` and the two
+  mate-inverse lemmas
 -/
 
 public section
@@ -70,6 +80,12 @@ theorem rightHom_ext {X Y A : C} [ExactPairing X Y] {f g : A ⟶ Y}
   have := @tensorRightHomEquiv_whiskerRight_comp_evaluation C _ _ X A ⟨Y⟩
   rw [← cancel_mono (λ_ Y).inv]
   exact (this f).symm.trans ((congrArg _ h).trans (this g))
+
+/-- Two morphisms out of the left member `X` of an exact pairing agree as soon as they agree
+after the coevaluation of the pairing. -/
+theorem leftHom_ext {X Y A : C} [ExactPairing X Y] {f g : X ⟶ A}
+    (h : η_ X Y ≫ f ▷ Y = η_ X Y ≫ g ▷ Y) : f = g := by
+  simpa using congrArg (tensorRightHomEquiv (𝟙_ C) X Y A).symm h
 
 /-- The right adjoint mate `Y' ⟶ X'` of `f : X ⟶ Y`, with respect to explicitly given exact
 pairings `(X, X')` and `(Y, Y')`: Mathlib's `CategoryTheory.rightAdjointMate` with the given
@@ -202,6 +218,31 @@ theorem rightDualIso_hom {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : 
     exact @rightAdjointMate_comp_evaluation C _ _ X X ⟨Y₂⟩ ⟨Y₁⟩ (𝟙 X))
 
 end CategoryTheory.ExactPairing
+
+namespace CategoryTheory
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
+/-- Taking the left adjoint mate of a right adjoint mate recovers the original morphism. -/
+@[simp]
+theorem leftAdjointMate_rightAdjointMate {X Y : C} [HasRightDual X] [HasRightDual Y]
+    (f : X ⟶ Y) : leftAdjointMate (fᘁ) = f := by
+  apply ExactPairing.leftHom_ext (Y := Xᘁ)
+  calc
+    _ = η_ Y Yᘁ ≫ Y ◁ fᘁ := coevaluation_comp_leftAdjointMate (fᘁ)
+    _ = _ := coevaluation_comp_rightAdjointMate f
+
+/-- Taking the right adjoint mate of a left adjoint mate recovers the original morphism. -/
+@[simp]
+theorem rightAdjointMate_leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual Y]
+    (f : X ⟶ Y) : rightAdjointMate (leftAdjointMate f) = f := by
+  apply ExactPairing.rightHom_ext (X := ᘁY)
+  calc
+    _ = X ◁ leftAdjointMate f ≫ ε_ (ᘁX) X :=
+      rightAdjointMate_comp_evaluation (leftAdjointMate f)
+    _ = _ := leftAdjointMate_comp_evaluation f
+
+end CategoryTheory
 
 namespace TauCeti
 
