@@ -10,6 +10,8 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.DeFinetti
 -- Public: the coding map and the barycenter identity it satisfies appear in every statement.
 public import TauCeti.Probability.DeFinetti.Coding
+-- Public: the coded entries and general row-sampling laws are used by array representations.
+public import TauCeti.Probability.Process.Array.RowCoding
 -- Non-public: the mixture form of a row path law is used only inside proofs.
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
@@ -157,13 +159,6 @@ theorem separatelyExchangeable_unitIntervalCoding
     _ = (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
           fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 :=
         (map_prod_unitIntervalCoding_array π).symm
-
-/-- Every entry of a coded array is measurable in the parameter and the noise. -/
-theorem measurable_unitIntervalCoding_entry (p : ℕ × ℕ) :
-    Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) =>
-      unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 :=
-  (measurable_pi_apply p.2).comp ((measurable_uncurry_unitIntervalCoding (ℕ → α)).comp
-    (measurable_fst.prodMk ((measurable_pi_apply p.1).comp measurable_snd)))
 
 /-- **The coding representation of a separately exchangeable array.** Over a nonempty standard
 Borel state space, the law of a separately exchangeable array is the law of the array coded by a
