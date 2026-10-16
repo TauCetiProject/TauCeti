@@ -58,6 +58,8 @@ public section
 
 namespace TauCeti.Hodge.StandardWeightOne
 
+open IsBaseChange
+
 open Matrix
 open scoped TensorProduct
 
@@ -329,8 +331,8 @@ theorem polarization_Qint : (polarization l).Qint = riemannForm l :=
 theorem polarization_Q : (polarization l).Q = toBilin' (J l ℂ) := by
   rw [Polarization.Q_def, polarization_Qint]
   symm
-  refine integralFormBaseChange_unique _ _ _ fun x y ↦ ?_
-  rw [riemannForm, toBilin'_apply', toBilin'_apply', ← eq_intCast (Int.castRingHom ℂ),
+  refine bilinForm_unique _ _ _ fun x y ↦ ?_
+  rw [riemannForm, toBilin'_apply', toBilin'_apply', algebraMap_int_eq,
     RingHom.map_dotProduct]
   exact congrArg _ (J_mulVec_comp_cast l y)
 

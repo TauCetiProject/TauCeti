@@ -53,6 +53,9 @@ of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq
   of `p` at `a`, and the Lazard evaluation is that Taylor coefficient.
 * `MvPolynomial.lazardEval_mul`, `MvPolynomial.lazardExponent_mul`: without zero divisors, Lazard
   evaluation is multiplicative and the removed exponents add.
+* `MvPolynomial.lazardEval_add_of_lazardValuation_lt`,
+  `MvPolynomial.lazardExponent_add_of_lazardValuation_lt`: a summand of strictly smaller Lazard
+  valuation determines the Lazard evaluation and the removed exponents of a sum.
 
 ## References
 
@@ -244,6 +247,30 @@ theorem lazardExponent_eq_zero_iff {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) {
   rw [← constantCoeff_taylor, constantCoeff_eq, ← h, coeff_taylor_lazardExponent]
   exact lazardEval_ne_zero hp a
 
+/-- If `p` has strictly smaller Lazard valuation at `a` than `q`, then Lazard evaluation removes
+the same powers from `p + q` as from `p`. -/
+theorem lazardExponent_add_of_lazardValuation_lt {p q : MvPolynomial (Fin n) S} {a : Fin n → S}
+    (h : p.lazardValuation a < q.lazardValuation a) :
+    (p + q).lazardExponent a = p.lazardExponent a := by
+  have hp : p ≠ 0 := by simpa using h.ne_top
+  have hv := lazardValuation_add_of_lt h
+  have hpq : p + q ≠ 0 := by
+    rw [Ne, ← lazardValuation_eq_top_iff (a := a), hv]
+    exact h.ne_top
+  rw [lazardValuation_eq_lazardExponent hpq, lazardValuation_eq_lazardExponent hp] at hv
+  exact toLex.injective (WithTop.coe_injective hv)
+
+/-- If `p` has strictly smaller Lazard valuation at `a` than `q`, then `p + q` has the Lazard
+evaluation of `p` at `a`. -/
+theorem lazardEval_add_of_lazardValuation_lt {p q : MvPolynomial (Fin n) S} {a : Fin n → S}
+    (h : p.lazardValuation a < q.lazardValuation a) :
+    (p + q).lazardEval a = p.lazardEval a := by
+  have hp : p ≠ 0 := by simpa using h.ne_top
+  have hq : (taylor a q).coeff (p.lazardExponent a) = 0 :=
+    coeff_taylor_eq_zero_of_lt_lazardValuation (by rwa [← lazardValuation_eq_lazardExponent hp])
+  rw [← coeff_taylor_lazardExponent, lazardExponent_add_of_lazardValuation_lt h]
+  simp [hq, coeff_taylor_lazardExponent]
+
 /-- Lazard evaluation removes exactly one power of `Xᵢ - aᵢ` from `Xᵢ - aᵢ`. -/
 @[simp]
 theorem lazardExponent_X_sub_C [Nontrivial S] (a : Fin n → S) (i : Fin n) :
@@ -293,6 +320,47 @@ theorem lazardExponent_mul {p q : MvPolynomial (Fin n) S} (hp : p ≠ 0) (hq : q
     simp only [← Polynomial.natTrailingDegree_taylor, map_mul, Polynomial.taylor_mul,
       Polynomial.trailingCoeff_mul, Polynomial.natTrailingDegree_mul hP hQ, Finsupp.cons_add_cons]
     rw [ih (by simpa using hP) (by simpa using hQ)]
+
+/-- Lazard evaluation as a multiplicative map preserving zero and one. It need not
+preserve addition: cancellation can change the first surviving Taylor coefficient. -/
+noncomputable def lazardEvalHom (a : Fin n → S) : MvPolynomial (Fin n) S →*₀ S where
+  toFun p := p.lazardEval a
+  map_zero' := lazardEval_zero a
+  map_one' := by simpa using lazardEval_C (1 : S) a
+  map_mul' p q := lazardEval_mul p q a
+
+/-- The multiplicative Lazard evaluation map evaluates a polynomial by Lazard evaluation. -/
+@[simp]
+theorem lazardEvalHom_apply (a : Fin n → S) (p : MvPolynomial (Fin n) S) :
+    lazardEvalHom a p = p.lazardEval a := (rfl)
+
+/-- The exponents removed from a power of a nonzero polynomial are multiplied by the power. -/
+theorem lazardExponent_pow {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
+    (a : Fin n → S) (k : ℕ) : (p ^ k).lazardExponent a = k • p.lazardExponent a := by
+  rcases subsingleton_or_nontrivial S with hS | hS
+  · exact False.elim (hp (by ext d; exact Subsingleton.elim _ _))
+  induction k with
+  | zero => simpa using lazardExponent_C (1 : S) a
+  | succ k ih => rw [pow_succ, lazardExponent_mul (pow_ne_zero _ hp) hp, ih, succ_nsmul]
+
+/-- The exponents removed from a product of nonzero polynomials are the sum of their exponents. -/
+theorem lazardExponent_prod {ι : Type*} (s : Finset ι)
+    (p : ι → MvPolynomial (Fin n) S)
+    (hp : ∀ i ∈ s, p i ≠ 0) (a : Fin n → S) :
+    (∏ i ∈ s, p i).lazardExponent a = ∑ i ∈ s, (p i).lazardExponent a := by
+  classical
+  rcases subsingleton_or_nontrivial S with hS | hS
+  · have hz (q : MvPolynomial (Fin n) S) : q = 0 := by
+      ext d
+      exact Subsingleton.elim _ _
+    simp [hz]
+  induction s using Finset.induction_on with
+  | empty => simpa using lazardExponent_C (1 : S) a
+  | @insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi,
+      lazardExponent_mul (hp i (Finset.mem_insert_self _ _))
+        (Finset.prod_ne_zero_iff.mpr fun j hj ↦ hp j (Finset.mem_insert_of_mem hj)),
+      ih (fun j hj ↦ hp j (Finset.mem_insert_of_mem hj))]
 
 end NoZeroDivisors
 

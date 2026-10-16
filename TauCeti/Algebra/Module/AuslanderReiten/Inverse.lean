@@ -41,6 +41,23 @@ section RightTranspose
 
 variable {A : Type u} [Ring A] {N : ModuleCat.{v} Aᵐᵒᵖ}
 
+/-- Minimal right presentations of isomorphic modules compute isomorphic left transposes. -/
+theorem nonempty_linearEquiv_rightTranspose (Q : FiniteProjectivePresentation N)
+    {N' : ModuleCat.{w} Aᵐᵒᵖ} (P : FiniteProjectivePresentation N')
+    (f : N ≃ₗ[Aᵐᵒᵖ] N')
+    (hQ : IsMinimalProjectivePresentation Q.p Q.π)
+    (hP : IsMinimalProjectivePresentation P.p P.π) :
+    Nonempty (Q.rightTranspose ≃ₗ[A] P.rightTranspose) := by
+  obtain ⟨e⟩ := (hQ.comp_linearEquiv f).nonempty_linearEquiv_auslanderReitenTranspose hP
+  exact ⟨(Q.rightTransposeEquiv.trans e).trans P.rightTransposeEquiv.symm⟩
+
+/-- A minimal right transpose vanishes exactly on projective right modules. -/
+theorem subsingleton_rightTranspose_iff_projective (Q : FiniteProjectivePresentation N)
+    (hQ : IsMinimalProjectivePresentation Q.p Q.π) :
+    Subsingleton Q.rightTranspose ↔ Module.Projective Aᵐᵒᵖ N :=
+  Q.rightTransposeEquiv.toEquiv.subsingleton_congr.trans
+    hQ.subsingleton_auslanderReitenTranspose_iff_projective
+
 /-- A finite minimal right transpose is projective exactly when its source is projective.
 Neither finite length nor indecomposability of the source is required. -/
 @[simp]

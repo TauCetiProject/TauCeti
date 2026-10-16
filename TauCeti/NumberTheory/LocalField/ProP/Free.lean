@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.CohomFp
+public import TauCeti.NumberTheory.LocalField.ProP.Inflation
 public import TauCeti.NumberTheory.LocalField.ProP.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Serre
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomologicalDimension
@@ -27,11 +28,16 @@ groups.
 
 ## Main results
 
-* `TauCeti.subsingleton_cohomFp_two_absoluteGaloisGroupProP_of_not_mu`: `H²(G_K(p), 𝔽_p) = 0`.
+* `TauCeti.subsingleton_cohomFp_two_absoluteGaloisGroupProP_of_not_mu` and
+  `TauCeti.finrank_cohomFp_two_absoluteGaloisGroupProP_of_not_mu`: `H²(G_K(p), 𝔽_p) = 0`.
 * `TauCeti.cohomologicalDimensionAt_absoluteGaloisGroupProP_le_one_of_not_mu`:
   `cd_p G_K(p) ≤ 1`.
 * `TauCeti.finrank_cohomFp_one_absoluteGaloisGroupProP_of_not_mu`:
   `dim H¹(G_K(p), 𝔽_p) = [K : ℚ_[p]] + 1`.
+* `TauCeti.finrank_cohomFp_one_absoluteGaloisGroupProP` and
+  `TauCeti.topologicalGeneratorRankNat_absoluteGaloisGroupProP`: the Euler-characteristic
+  identities `dim H¹(G_K(p), 𝔽_p) = 1 + dim H²(G_K(p), 𝔽_p) + [K : ℚ_[p]]` and
+  `d(G_K(p)) = 1 + dim H²(G_K(p), 𝔽_p) + [K : ℚ_[p]]`.
 * `TauCeti.topologicalGeneratorRankNat_absoluteGaloisGroupProP_of_not_mu`: `G_K(p)` has
   `[K : ℚ_[p]] + 1` topological generators.
 * `TauCeti.nonempty_continuousMulEquiv_freeProP_of_not_mu`: `G_K(p)` is the free pro-`p` group
@@ -63,6 +69,31 @@ theorem subsingleton_cohomFp_two_absoluteGaloisGroupProP_of_not_mu
   have := subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu p K hmu
   (inflH2AbsoluteGaloisProP_injective p K).subsingleton
 
+/-- If a nonarchimedean local field `K` contains no primitive `p`th root of unity, with `p`
+invertible in `K`, then `dim H²(G_K(p), 𝔽_p) = 0`. -/
+theorem finrank_cohomFp_two_absoluteGaloisGroupProP_of_not_mu
+    (hmu : ¬ ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    Module.finrank (ZMod p) (cohomFp p (absoluteGaloisGroupProP p K) 2) = 0 := by
+  have := subsingleton_cohomFp_two_absoluteGaloisGroupProP_of_not_mu p K hmu
+  exact Module.finrank_zero_of_subsingleton
+
+/-- Degree-two cohomology of the maximal pro-`p` Galois group of a local field is finite
+when `p` is nonzero in the field, as it injects into `H²(G_K, 𝔽_p)` by inflation. -/
+instance finite_cohomFp_two_absoluteGaloisGroupProP :
+    Finite (cohomFp p (absoluteGaloisGroupProP p K) 2) :=
+  Finite.of_injective _ (inflH2AbsoluteGaloisProP_injective p K)
+
+/-- For a nonarchimedean local field `K` in which `p` is invertible, `H²(G_K(p), 𝔽_p)` and
+`H²(G_K, 𝔽_p)` have the same `𝔽_p`-dimension: both are `1` when `μ_p ⊆ K` and `0` when
+`μ_p ⊄ K`. -/
+theorem finrank_cohomFp_two_absoluteGaloisGroupProP :
+    Module.finrank (ZMod p) (cohomFp p (absoluteGaloisGroupProP p K) 2) =
+      Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 2) := by
+  by_cases hmu : ∃ ζ : K, IsPrimitiveRoot ζ p
+  · exact (inflH2AbsoluteGaloisProP p K hmu).finrank_eq
+  · rw [finrank_cohomFp_two_absoluteGaloisGroupProP_of_not_mu p K hmu,
+      finrank_cohomFp_two_absoluteGaloisGroup_of_not_mu p K hmu]
+
 /-- **`cd_p G_K(p) ≤ 1`** for a nonarchimedean local field `K` containing no primitive `p`th root
 of unity, `p` being invertible in `K`: for the pro-`p` group `G_K(p)` this is the vanishing of
 `H²(G_K(p), 𝔽_p)`. -/
@@ -85,6 +116,28 @@ theorem finrank_cohomFp_one_absoluteGaloisGroupProP_of_not_mu
       Module.finrank ℚ_[p] K + 1 :=
   (inflH1AbsoluteGaloisProP p K).finrank_eq.trans
     (finrank_cohomFp_one_absoluteGaloisGroup_of_not_mu p K hmu)
+
+/-- **The Euler-characteristic identity for `G_K(p)`** over a finite compatible extension `K` of
+`ℚ_[p]`: `dim H¹(G_K(p), 𝔽_p) = 1 + dim H²(G_K(p), 𝔽_p) + [K : ℚ_[p]]`. -/
+theorem finrank_cohomFp_one_absoluteGaloisGroupProP :
+    Module.finrank (ZMod p) (cohomFp p (absoluteGaloisGroupProP p K) 1) =
+      1 + Module.finrank (ZMod p) (cohomFp p (absoluteGaloisGroupProP p K) 2) +
+        Module.finrank ℚ_[p] K := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : NeZero (p : K) := ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
+  rw [(inflH1AbsoluteGaloisProP p K).finrank_eq, finrank_cohomFp_two_absoluteGaloisGroupProP p K,
+    finrank_cohomFp_one_absoluteGaloisGroup p K]
+
+/-- For a finite compatible extension `K` of `ℚ_[p]`, the topological generator rank of `G_K(p)`
+is `1 + dim H²(G_K(p), 𝔽_p) + [K : ℚ_[p]]`: `[K : ℚ_[p]] + 2` when `μ_p ⊆ K` and
+`[K : ℚ_[p]] + 1` when `μ_p ⊄ K`. -/
+theorem topologicalGeneratorRankNat_absoluteGaloisGroupProP
+    (hfg : IsTopologicallyFinitelyGenerated (absoluteGaloisGroupProP p K)) :
+    topologicalGeneratorRankNat (absoluteGaloisGroupProP p K) hfg =
+      1 + Module.finrank (ZMod p) (cohomFp p (absoluteGaloisGroupProP p K) 2) +
+        Module.finrank ℚ_[p] K :=
+  ((isProP_absoluteGaloisGroupProP p K).finrank_cohomFp_one hfg).symm.trans
+    (finrank_cohomFp_one_absoluteGaloisGroupProP p K)
 
 /-- If a finite compatible extension `K` of `ℚ_[p]` contains no primitive `p`th root of unity, its
 maximal pro-`p` Galois group has exactly `[K : ℚ_[p]] + 1` topological generators. -/

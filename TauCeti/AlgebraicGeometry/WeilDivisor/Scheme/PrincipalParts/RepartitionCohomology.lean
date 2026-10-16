@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Repart
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.FunctionField.Differential.Weil
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
-public import TauCeti.Topology.KrullDimension
+public import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # First cohomology as a repartition quotient

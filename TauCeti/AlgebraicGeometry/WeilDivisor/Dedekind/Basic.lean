@@ -17,12 +17,12 @@ import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 # The order system of a Dedekind domain
 
 The abstract `OrderSystem` of `TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic` packages the
-order-of-vanishing data needed to build principal divisors and the divisor class group. This
-file supplies the roadmap's intended *concrete* instance of that data: a Dedekind domain `R`
-with fraction field `K`. Its height-one spectrum `HeightOneSpectrum R` is the set of
-codimension-one points of `Spec R` (an affine model of a curve, or the ring of integers of a
-number field), and the `v`-adic valuation gives each point an order-of-vanishing homomorphism
-on the multiplicative group `Kˣ` of nonzero rational functions.
+order-of-vanishing data needed to build principal divisors and the divisor class group. This file
+supplies a *concrete* instance of that data: a Dedekind domain `R` with fraction field `K`. Its
+height-one spectrum `HeightOneSpectrum R` is the set of codimension-one points of `Spec R` (an
+affine model of a curve, or the ring of integers of a number field), and the `v`-adic valuation
+gives each point an order-of-vanishing homomorphism on the multiplicative group `Kˣ` of nonzero
+rational functions.
 
 Concretely we build:
 
@@ -38,16 +38,9 @@ Concretely we build:
 * the sanity check that the principal divisor of a nonzero *integral* element is effective
   (an element of `R` has no poles).
 
-The roadmap explicitly anticipates this instantiation: "Instantiate `G` with `Additive Kˣ`
-for the multiplicative group of a function field `K`: then `ord x` is the order of vanishing
-`ord_x(f)`". This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A ("Divisors on
-a curve: Weil divisors `⊕_x ℤ`", "principal divisors", "`Cl(X)`"), grounding the abstract
-order-system API in Mathlib's Dedekind-domain adic valuations.
-
-We do *not* claim the weighted-degree-zero property here: for a general Dedekind domain (e.g.
-`ℤ`) there is no product formula, so a principal divisor need not have degree zero. That holds
-only for proper curves over a field (and number fields with the archimedean places included),
-and is later geometric input.
+We do *not* claim the weighted-degree-zero property here: for a general Dedekind domain (e.g. `ℤ`)
+there is no product formula, so a principal divisor need not have degree zero. That holds only for
+proper curves over a field (and number fields with the archimedean places included).
 
 This reuses Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero` (the multiplicative
 `v`-adic valuation `Kˣ →* Multiplicative ℤ`, whose multiplicativity `adicOrd` inherits), and

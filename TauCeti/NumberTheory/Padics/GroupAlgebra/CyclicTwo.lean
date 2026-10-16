@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 
 /-!
@@ -44,7 +45,6 @@ of `σ`: `ℚ₂[C₂] ≃ₐ[ℚ₂] ℚ₂ × ℚ₂`. This is `MonoidAlgebra.
 field `ℚ₂`, in which `2` is invertible. -/
 noncomputable def monoidAlgebraRatPadicCyclicTwoEquiv :
     MonoidAlgebra ℚ_[2] (Multiplicative (ZMod 2)) ≃ₐ[ℚ_[2]] ℚ_[2] × ℚ_[2] :=
-  letI : Invertible (2 : ℚ_[2]) := invertibleOfNonzero two_ne_zero
   MonoidAlgebra.cyclicTwoEquivProd ℚ_[2]
 
 /-- The dyadic splitting sends the monomial `r·g` to `(r, r · sign g)`. -/

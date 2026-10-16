@@ -6,52 +6,50 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.CompactlyGenerated.Basic
+import Mathlib.Order.Bounds.OrderIso
 
 /-!
-# Independent families and compactness
+# Compact elements and independent families
 
-This file records lattice consequences of independence that involve compact elements and compact
-generation.
+This file records preservation of compact elements by order isomorphisms and lattice consequences
+of independence that involve compact elements and compact generation.
 
 ## Main declarations
 
-* `TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement`: an independent family whose supremum
+* `iSupIndep.finite_ne_bot_of_isCompactElement`: an independent family whose supremum
   is a compact element has only finitely many nonzero members. Compactness confines the whole
   family to a finite subfamily, and independence then forces every index outside it to be `⊥`.
   This is the compactness variant of Mathlib's
   `WellFoundedGT.finite_ne_bot_of_iSupIndep`, which instead assumes the ascending
   chain condition.
-* `TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂`: a partial supremum of an independent family
+* `iSupIndep.iSup₂_inf_iSup_eq_iSup₂`: a partial supremum of an independent family
   meets the total supremum of a pointwise dominated family in its corresponding partial supremum.
-* `TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and`: two partial suprema of an independent
+* `iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and`: two partial suprema of an independent
   family meet in the supremum over the intersection of their index predicates.
 * `OrderIso.isCompactElement` and `OrderIso.isCompactElement_iff`: an order isomorphism of
-  complete lattices preserves and reflects compactness of elements.
+  preorders preserves and reflects compactness of elements.
 -/
 
 public section
 
-/-- An order isomorphism of complete lattices sends compact elements to compact elements. -/
-theorem OrderIso.isCompactElement {α β : Type*} [CompleteLattice α] [CompleteLattice β]
+/-- An order isomorphism of preorders sends compact elements to compact elements. -/
+theorem OrderIso.isCompactElement {α β : Type*} [Preorder α] [Preorder β]
     (f : α ≃o β) {a : α} (ha : IsCompactElement a) : IsCompactElement (f a) := by
-  rw [isCompactElement_iff_le_of_directed_sSup_le] at ha ⊢
-  intro s hs hdir hle
-  obtain ⟨x, ⟨y, hy, rfl⟩, hay⟩ := ha (f.symm '' s) (hs.image _)
+  intro s u hs hdir hlub hle
+  obtain ⟨x, ⟨y, hy, rfl⟩, hay⟩ := ha (f.symm '' s) (f.symm u) (hs.image _)
     (hdir.mono_comp fun _ _ h ↦ f.symm.monotone h)
-    (by rw [sSup_image, ← f.symm.map_sSup]; exact f.le_symm_apply.mpr hle)
+    (f.symm.isLUB_image'.mpr hlub) (f.le_symm_apply.mpr hle)
   exact ⟨y, hy, f.le_symm_apply.mp hay⟩
 
-/-- An order isomorphism of complete lattices preserves and reflects compactness of elements. -/
+/-- An order isomorphism of preorders preserves and reflects compactness of elements. -/
 @[simp]
-theorem OrderIso.isCompactElement_iff {α β : Type*} [CompleteLattice α] [CompleteLattice β]
+theorem OrderIso.isCompactElement_iff {α β : Type*} [Preorder α] [Preorder β]
     (f : α ≃o β) {a : α} : IsCompactElement (f a) ↔ IsCompactElement a :=
   ⟨fun h ↦ by simpa using f.symm.isCompactElement h, f.isCompactElement⟩
 
-namespace TauCeti
-
 /-- An independent family whose supremum is a compact element has only finitely many nonzero
 members. -/
-theorem finite_ne_bot_of_iSupIndep_of_isCompactElement {α ι : Type*} [CompleteLattice α]
+theorem iSupIndep.finite_ne_bot_of_isCompactElement {α ι : Type*} [CompleteLattice α]
     {a : ι → α} (ha : iSupIndep a)
     (hc : IsCompactElement (⨆ i, a i)) : {i | a i ≠ ⊥}.Finite := by
   obtain ⟨s, hs⟩ := hc.exists_finset_of_le_iSup a le_rfl
@@ -85,10 +83,8 @@ theorem iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and {α ι : Type*} [CompleteLa
     (⨆ (i) (_ : P i), A i) ⊓ (⨆ (i) (_ : Q i), A i) =
       ⨆ (i) (_ : P i ∧ Q i), A i := by
   classical
-  have h := TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂
+  have h := iSupIndep.iSup₂_inf_iSup_eq_iSup₂
     (A := A) (B := fun i ↦ if Q i then A i else ⊥) hA
     (fun i ↦ by split <;> simp_all) P
   simp only [iSup_ite, iSup_bot, sup_bot_eq] at h
   simpa only [iSup_and] using h
-
-end TauCeti

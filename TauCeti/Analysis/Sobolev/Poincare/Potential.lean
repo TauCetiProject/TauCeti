@@ -286,7 +286,6 @@ theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : 
   set ω := μ.real (ball (0 : E) 1)
   set P := ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (n : ℝ)) ∂μ
   have hn0 : n ≠ 0 := finrank_pos.ne'
-  have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
   have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
     measure_ball_lt_top.ne
   obtain ⟨ρ₀, hρ₀⟩ := h2u.isBounded.subset_closedBall x

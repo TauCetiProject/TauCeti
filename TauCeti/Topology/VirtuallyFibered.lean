@@ -92,7 +92,7 @@ end IsVirtuallyFibered
 /-- Being virtually fibered is invariant under homeomorphisms. -/
 theorem _root_.Homeomorph.isVirtuallyFibered_iff {M' : Type u} [TopologicalSpace M']
     (e : M ≃ₜ M') : IsVirtuallyFibered M ↔ IsVirtuallyFibered M' := by
-  suffices ∀ {M M' : Type u} [TopologicalSpace M] [TopologicalSpace M'] (e : M ≃ₜ M'),
+  suffices ∀ {M M' : Type u} [TopologicalSpace M] [TopologicalSpace M'] (_ : M ≃ₜ M'),
       IsVirtuallyFibered M → IsVirtuallyFibered M' from ⟨this e, this e.symm⟩
   intro M M' _ _ e ⟨N, _, _, p, hp, hN⟩
   exact ⟨N, inferInstance, inferInstance, e ∘ p, hp.homeomorph_comp e, hN⟩

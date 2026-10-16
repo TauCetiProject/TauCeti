@@ -13,7 +13,12 @@ public import TauCeti.CategoryTheory.Monoidal.Internal.Module
 
 A commutative monoid object in `X.Modules` has a commutative `Γ(X, U)`-algebra of sections
 on each open `U`. Restriction is a ring homomorphism, giving a presheaf of commutative rings
-under the structure presheaf of `X`.
+under the structure presheaf of `X`, and this presheaf is a sheaf.
+
+Conversely, a morphism of presheaves of section rings compatible with the structure maps is a
+morphism of commutative `𝒪ₓ`-algebras (`CategoryTheory.CommMon.homOfSectionsPresheaf`). This
+lets algebra morphisms and isomorphisms be constructed sectionwise, for instance by extending
+ring maps given on affine opens.
 
 These constructions use Mathlib's `Functor.mapCommMon` and the equivalence between monoid
 objects in modules and algebras, applied to the lax braided sections functor.
@@ -138,6 +143,143 @@ def _root_.CategoryTheory.CommMon.toSectionsPresheaf : X.presheaf ⟶ A.sections
 @[simp]
 lemma _root_.CategoryTheory.CommMon.toSectionsPresheaf_app (U : X.Opensᵒᵖ) :
     A.toSectionsPresheaf.app U = CommRingCat.ofHom (algebraMap Γ(X, U.unop) Γ(A.X, U.unop)) :=
+  (rfl)
+
+/-- The presheaf of section rings of a commutative `𝒪ₓ`-algebra is a sheaf: its underlying
+presheaf of sets is that of the sheaf of modules `A.X`. -/
+lemma _root_.CategoryTheory.CommMon.isSheaf_sectionsPresheaf :
+    TopCat.Presheaf.IsSheaf (X := X) A.sectionsPresheaf := by
+  rw [TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget CommRingCat)]
+  have h := (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget AddCommGrpCat) A.X.presheaf).mp
+    A.X.isSheaf
+  -- Both presheaves of sets have the sections `Γ(A.X, U)` as values, and restriction agrees by
+  -- `CommMon.restrictSections_apply`.
+  refine TopCat.Presheaf.isSheaf_of_iso (F := A.X.presheaf ⋙ forget AddCommGrpCat)
+    (NatIso.ofComponents (fun U ↦ Iso.refl ((A.X.presheaf ⋙ forget AddCommGrpCat).obj U))
+      fun i ↦ ?_) h
+  ext x
+  exact A.restrictSections_apply i.unop x |>.symm
+
+variable {A} {B : CommMon X.Modules}
+
+/-- The unit of a commutative `𝒪ₓ`-algebra sends a regular function to its image under the
+structure map. -/
+private lemma one_app_eq_algebraMap (A : CommMon X.Modules) (U : X.Opens) (r : Γ(X, U)) :
+    (MonObj.one (X := A.X)).app U r = algebraMap Γ(X, U) Γ(A.X, U) r := by
+  rw [CommMon.sections_algebraMap_def, Scheme.Modules.sectionsFunctor_ε]
+  rfl
+
+/-- Scalar multiplication on sections of a commutative `𝒪ₓ`-algebra is multiplication by the
+image under the structure map. -/
+private lemma smul_eq_algebraMap_mul (A : CommMon X.Modules) (U : X.Opens) (r : Γ(X, U))
+    (x : Γ(A.X, U)) : r • x = algebraMap Γ(X, U) Γ(A.X, U) r * x :=
+  Algebra.smul_def r x
+
+/-- The module morphism underlying `CategoryTheory.CommMon.homOfSectionsPresheaf`: compatibility
+with the structure maps makes the ring maps on sections `Γ(X, U)`-linear. -/
+private def moduleHomOfSectionsPresheaf (φ : A.sectionsPresheaf ⟶ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) : A.X ⟶ B.X :=
+  ⟨PresheafOfModules.homMk
+    { app U := AddCommGrpCat.ofHom (φ.app U).hom.toAddMonoidHom
+      naturality U V i := by
+        ext x
+        have hx : φ.app V (A.restrictSections i.unop x) =
+            B.restrictSections i.unop (φ.app U x) :=
+          congrArg (fun f ↦ f.hom x) (φ.naturality i)
+        exact (congrArg (φ.app V) (A.restrictSections_apply i.unop x).symm).trans
+          (hx.trans (B.restrictSections_apply i.unop _)) }
+    fun U r x ↦ by
+      have hr : φ.app U (algebraMap Γ(X, U.unop) Γ(A.X, U.unop) r) =
+          algebraMap Γ(X, U.unop) Γ(B.X, U.unop) r := by
+        have hU := NatTrans.congr_app h U
+        rw [NatTrans.comp_app, CommMon.toSectionsPresheaf_app,
+          CommMon.toSectionsPresheaf_app] at hU
+        exact congrArg (fun f ↦ f.hom r) hU
+      exact (congrArg (φ.app U) (smul_eq_algebraMap_mul A U.unop r x)).trans
+        ((map_mul (φ.app U).hom _ _).trans ((congrArg (· * φ.app U x) hr).trans
+          (smul_eq_algebraMap_mul B U.unop r (φ.app U x)).symm))⟩
+
+private lemma isMonHom_moduleHomOfSectionsPresheaf (φ : A.sectionsPresheaf ⟶ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) :
+    IsMonHom (moduleHomOfSectionsPresheaf φ h) where
+  one_hom := by
+    refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+    ext r
+    have hU := NatTrans.congr_app h (op U)
+    rw [NatTrans.comp_app, CommMon.toSectionsPresheaf_app,
+      CommMon.toSectionsPresheaf_app] at hU
+    exact (congrArg (φ.app (op U)) (one_app_eq_algebraMap A U r)).trans
+      ((congrArg (fun f ↦ f.hom r) hU).trans (one_app_eq_algebraMap B U r).symm)
+  mul_hom := by
+    -- Morphisms out of the sheafified tensor product are determined on pure tensors of
+    -- sections, where both sides compute products of sections.
+    apply SheafOfModules.tensor_hom_ext
+    ext U : 1
+    apply ModuleCat.MonoidalCategory.tensor_ext
+    intro x y
+    let S := Scheme.Modules.sectionsFunctor (X := X) U.unop
+    let m := moduleHomOfSectionsPresheaf φ h
+    -- The sections over `U` of the tensor map of `forget` are the tensor map of the lax
+    -- monoidal sections functor `S`; `change` records this definitional presentation, in which
+    -- `CommMon.sections_mul_def` describes both multiplications.
+    change S.map (MonObj.mul ≫ m) (Functor.LaxMonoidal.μ S A.X A.X (x ⊗ₜ y)) =
+      S.map ((m ⊗ₘ m) ≫ MonObj.mul) (Functor.LaxMonoidal.μ S A.X A.X (x ⊗ₜ y))
+    have hnat := congrArg (fun f ↦ f.hom (x ⊗ₜ y)) (Functor.LaxMonoidal.μ_natural S m m)
+    rw [ModuleCat.comp_apply, ModuleCat.comp_apply] at hnat
+    have hmul : ∀ a b : Γ(A.X, U.unop), φ.app U (a * b) = φ.app U a * φ.app U b :=
+      fun a b ↦ map_mul (φ.app U).hom a b
+    rw [S.map_comp, S.map_comp, ModuleCat.comp_apply, ModuleCat.comp_apply]
+    refine ((congrArg (φ.app U) (CommMon.sections_mul_def A U.unop x y)).symm.trans
+      (hmul x y)).trans ((CommMon.sections_mul_def B U.unop _ _).trans ?_)
+    exact congrArg (S.map MonObj.mul) ((congrArg (Functor.LaxMonoidal.μ S B.X B.X).hom
+      (ModuleCat.MonoidalCategory.tensorHom_tmul (S.map m) (S.map m) x y)).symm.trans hnat)
+
+/-- A morphism of presheaves of section rings compatible with the structure maps from the
+structure presheaf is a morphism of commutative `𝒪ₓ`-algebras. -/
+def _root_.CategoryTheory.CommMon.homOfSectionsPresheaf
+    (φ : A.sectionsPresheaf ⟶ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) : A ⟶ B :=
+  CommMon.homMk
+    { hom := moduleHomOfSectionsPresheaf φ h
+      isMonHom_hom := isMonHom_moduleHomOfSectionsPresheaf φ h }
+
+/-- On sections, the morphism of algebras built from a morphism of section rings is that
+morphism. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.homOfSectionsPresheaf_hom_hom_app_apply
+    (φ : A.sectionsPresheaf ⟶ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) (U : X.Opens) (x : Γ(A.X, U)) :
+    (CommMon.homOfSectionsPresheaf φ h).hom.hom.app U x = φ.app (op U) x :=
+  (rfl)
+
+/-- An isomorphism of presheaves of section rings compatible with the structure maps from the
+structure presheaf is an isomorphism of commutative `𝒪ₓ`-algebras. -/
+def _root_.CategoryTheory.CommMon.isoOfSectionsPresheaf
+    (e : A.sectionsPresheaf ≅ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ e.hom = B.toSectionsPresheaf) : A ≅ B where
+  hom := CommMon.homOfSectionsPresheaf e.hom h
+  inv := CommMon.homOfSectionsPresheaf e.inv
+    (by rw [← h, Category.assoc, e.hom_inv_id, Category.comp_id])
+  hom_inv_id := by
+    ext U x
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app e.hom_inv_id (op U)) x
+  inv_hom_id := by
+    ext U x
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app e.inv_hom_id (op U)) x
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.isoOfSectionsPresheaf_hom
+    (e : A.sectionsPresheaf ≅ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ e.hom = B.toSectionsPresheaf) :
+    (CommMon.isoOfSectionsPresheaf e h).hom = CommMon.homOfSectionsPresheaf e.hom h :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.isoOfSectionsPresheaf_inv
+    (e : A.sectionsPresheaf ≅ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ e.hom = B.toSectionsPresheaf) :
+    (CommMon.isoOfSectionsPresheaf e h).inv = CommMon.homOfSectionsPresheaf e.inv
+      (by rw [← h, Category.assoc, e.hom_inv_id, Category.comp_id]) :=
   (rfl)
 
 end

@@ -94,7 +94,6 @@ private theorem eq_one_or_eq_of_four_mul_eq_sq_add {n m A B : ℤ} (hn : 1 < n) 
     have h4 : A ^ 2 = 4 * m := by linarith [h, sq_nonneg A]
     have h2 : (2 : ℤ) ∣ A := Int.prime_two.dvd_of_dvd_pow ⟨2 * m, by rw [h4]; ring⟩
     obtain ⟨c, rfl⟩ := h2
-    have hc : (4 : ℤ) * c ^ 2 = 4 * m := by linear_combination h4
     have hmc : m = c ^ 2 := by linarith
     exact eq_one_of_squarefree_of_eq_sq hmsf hmc
   · have hB1 : 1 ≤ B ^ 2 := by

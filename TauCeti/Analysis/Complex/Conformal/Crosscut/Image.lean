@@ -360,9 +360,9 @@ theorem nonempty_frontier_inter_closure_image_inter_sphere (hUo : IsOpen U)
 a small connected boundary set.** For `f` holomorphic and injective on an open `U` with bounded
 image and `frontier (f '' U)` uniformly locally connected, every `ε > 0` admits a single `δ > 0` —
 independent of the centre `ζ` and the radius `ρ` of the cutting circle — such that whenever
-`f '' (U ∩ sphere ζ ρ)` has diameter less than `δ`, the middle piece is contained in a connected
-subset of `frontier (f '' U)` of diameter at most `ε`. The cut is asked to reach `frontier U`,
-which for a circular crosscut of a disc is
+`f '' (U ∩ sphere ζ ρ)` has diameter less than `δ`, the middle piece is contained in a bounded
+connected subset of `frontier (f '' U)` of diameter at most `ε`. The cut is asked to reach
+`frontier U`, which for a circular crosscut of a disc is
 `TauCeti.nonempty_frontier_ball_inter_closure_ball_inter_sphere`; a cut missing `frontier U`
 altogether has an empty middle piece and nothing to enclose.
 
@@ -384,7 +384,7 @@ theorem exists_isConnected_subset_frontier_image_of_diam_lt (hUo : IsOpen U)
     ∃ δ > 0, ∀ ζ : ℂ, ∀ ρ : ℝ, (frontier U ∩ closure (U ∩ sphere ζ ρ)).Nonempty →
       diam (f '' (U ∩ sphere ζ ρ)) < δ →
         ∃ S ⊆ frontier (f '' U), IsConnected S ∧
-          frontier (f '' U) ∩ closure (f '' (U ∩ sphere ζ ρ)) ⊆ S ∧ diam S ≤ ε := by
+          frontier (f '' U) ∩ closure (f '' (U ∩ sphere ζ ρ)) ⊆ S ∧ IsBounded S ∧ diam S ≤ ε := by
   obtain ⟨δ, hδ, hencl⟩ := hulc.exists_isConnected_superset hε
   refine ⟨δ, hδ, fun ζ ρ ⟨w, hw⟩ hdiam => ?_⟩
   have hcut : IsBounded (f '' (U ∩ sphere ζ ρ)) := hb.subset (image_mono inter_subset_left)

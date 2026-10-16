@@ -16,9 +16,9 @@ when it and all its first directional derivatives lie in `H^s`. One direction is
 This file proves the other direction, which needs the derivatives only along an orthonormal
 basis.
 
-The proof writes the Bessel potential of order `2` as `1 - (2π)⁻² Δ`, with `Δ` the sum of the
-second derivatives along the basis, and applies the Bessel potential of order `-1` to both
-sides. The `2π` comes from Mathlib's normalisation of the Fourier transform.
+Use the regularity criteria to characterize Sobolev membership through directional derivatives,
+either in all directions or along an orthonormal basis. The order-two operator identity relates
+the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Fourier normalization.
 
 ## Main declarations
 
@@ -29,6 +29,8 @@ sides. The `2π` comes from Mathlib's normalisation of the Fourier transform.
   orthonormal basis lie in `H^s`, then `f` lies in `H^{s+1}`.
 * `TemperedDistribution.memSobolev_add_one_iff`: `f ∈ H^{s+1}` exactly when `f ∈ H^s` and
   `∂_m f ∈ H^s` for every direction `m`.
+* `TemperedDistribution.memSobolev_natCast_add_one_iff`: at a natural order `k`, `f ∈ H^{k+1}`
+  exactly when `f ∈ H^0` and `∂_m f ∈ H^k` for every direction `m`.
 
 ## References
 
@@ -115,6 +117,19 @@ theorem memSobolev_add_one_iff {s : ℝ} {f : 𝓢'(E, F)} :
     MemSobolev (s + 1) 2 f ↔ MemSobolev s 2 f ∧ ∀ m : E, MemSobolev s 2 (∂_{m} f) := by
   refine ⟨fun hf => ⟨hf.mono (by linarith), fun m => by simpa using hf.lineDerivOp (m := m)⟩,
     fun h => memSobolev_add_one_of_lineDerivOp (stdOrthonormalBasis ℝ E) h.1 fun i => h.2 _⟩
+
+/-- At a natural order `k`, a tempered distribution lies in `H^{k+1}` exactly when it lies in
+`H^0` and all its first directional derivatives lie in `H^k`. -/
+theorem memSobolev_natCast_add_one_iff {k : ℕ} {f : 𝓢'(E, F)} :
+    MemSobolev ((k : ℝ) + 1) 2 f ↔ MemSobolev 0 2 f ∧ ∀ m : E, MemSobolev k 2 (∂_{m} f) := by
+  induction k generalizing f with
+  | zero => simpa using memSobolev_add_one_iff (s := 0) (f := f)
+  | succ k ih =>
+      -- `H^{k+1}` is `H^0` together with `H^k` for the derivatives, and the latter is implied by
+      -- `H^{k+1}` for the derivatives.
+      rw [Nat.cast_succ, memSobolev_add_one_iff, ih]
+      exact ⟨fun h => ⟨h.1.1, h.2⟩,
+        fun h => ⟨⟨h.1, fun m => (h.2 m).mono (by linarith)⟩, h.2⟩⟩
 
 end inner
 

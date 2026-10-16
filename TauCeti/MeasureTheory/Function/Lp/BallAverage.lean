@@ -238,18 +238,40 @@ end Translation
 
 section Estimates
 
-variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [ProperSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [CompleteSpace F] {mu : Measure E} [mu.IsAddHaarMeasure] {f : E → F} {p : ℝ≥0∞} {r : ℝ}
+variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [ProperSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {f : E → F} {p : ℝ≥0∞} {r : ℝ}
 
-omit [BorelSpace E] in
 /-- The ball average of a constant is that constant: the normalization is the intended one. -/
 @[simp]
-theorem ballAverage_const (hr : 0 < r) (c : F) (x : E) :
+theorem ballAverage_const [CompleteSpace F] (hr : 0 < r) (c : F) (x : E) :
     ballAverage mu r (fun _ => c) x = c :=
   setAverage_const (measure_ball_pos mu x hr).ne' measure_ball_lt_top.ne c
 
-omit [CompleteSpace F] in
+/-- The analytic core shared by the two `Lᵖ` estimates below: after Hölder's inequality in the
+translation variable and Tonelli's theorem, an integral of averages over the ball of radius `r`
+becomes an average, over the translations of size less than `r`, of integrals. -/
+private theorem lintegral_enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) {G : E → E → F}
+    (hG : StronglyMeasurable (Function.uncurry G)) (hr : 0 < r) :
+    ∫⁻ x, ‖⨍ e in ball (0 : E) r, G x e ∂mu‖ₑ ^ q ∂mu ≤
+      (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ∫⁻ x, ‖G x e‖ₑ ^ q ∂mu ∂mu := by
+  have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
+  have hjoint : Measurable fun z : E × E => ‖G z.1 z.2‖ₑ ^ q :=
+    ENNReal.continuous_rpow_const.measurable.comp hG.enorm
+  calc ∫⁻ x, ‖⨍ e in ball (0 : E) r, G x e ∂mu‖ₑ ^ q ∂mu
+      ≤ ∫⁻ x, (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
+        lintegral_mono fun x => enorm_setAverage_rpow_le hq
+          (hG.comp_measurable measurable_prodMk_left).aestronglyMeasurable hV0
+          measure_ball_lt_top.ne
+    _ = (mu (ball (0 : E) r))⁻¹ *
+          ∫⁻ x, ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
+        lintegral_const_mul' _ _ (by finiteness)
+    _ = (mu (ball (0 : E) r))⁻¹ *
+          ∫⁻ e in ball (0 : E) r, ∫⁻ x, ‖G x e‖ₑ ^ q ∂mu ∂mu := by
+        rw [lintegral_lintegral_swap hjoint.aemeasurable]
+
+variable [BorelSpace E]
+
 /-- The ball average of a strongly measurable function is strongly measurable: recentred at the
 origin it is a constant multiple of an integral in the translation variable. -/
 theorem stronglyMeasurable_ballAverage (hf : StronglyMeasurable f) :
@@ -264,7 +286,6 @@ theorem stronglyMeasurable_ballAverage (hf : StronglyMeasurable f) :
   rw [heq]
   exact (StronglyMeasurable.integral_prod_right' hj).const_smul _
 
-omit [CompleteSpace F] in
 /-- The `L^∞` bound on the ball average: it is controlled by the `Lᵖ` seminorm of `f`, at the
 cost of the volume factor `μ (ball 0 r) ^ (-1/p)`, which blows up as `r → 0`. -/
 theorem enorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStronglyMeasurable f mu)
@@ -276,7 +297,6 @@ theorem enorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStronglyMe
     (by rw [hball]; exact measure_ball_lt_top.ne)).trans ?_
   exact mul_le_mul' le_rfl (eLpNorm_mono_measure _ Measure.restrict_le_self)
 
-omit [CompleteSpace F] in
 /-- The increment of the ball average is the ball average of the increment. -/
 theorem ballAverage_sub_ballAverage (hp : 1 ≤ p) (hf : MemLp f p mu) (e x : E) :
     ballAverage mu r f (x + e) - ballAverage mu r f x =
@@ -289,7 +309,6 @@ theorem ballAverage_sub_ballAverage (hp : 1 ≤ p) (hf : MemLp f p mu) (e x : E)
     ← setAverage_sub ((hshift.restrict _).integrable hp) ((hf.restrict _).integrable hp)]
   simp [Pi.sub_apply]
 
-omit [CompleteSpace F] in
 /-- **The equicontinuity estimate**: the ball average moves by at most the `Lᵖ` modulus of
 continuity of `f` itself, up to the scale-dependent volume factor
 `μ (ball 0 r) ^ (-1/p)`. Thus, at each fixed positive `r`, a family whose translates move
@@ -304,7 +323,6 @@ theorem enorm_ballAverage_add_sub_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞
   exact enorm_ballAverage_le hp hp'
     (hshift.aestronglyMeasurable.sub hf.aestronglyMeasurable) hr x
 
-omit [CompleteSpace F] in
 /-- At a fixed positive scale, the ball averages of a family of `Lᵖ` functions whose translation
 increments are uniformly small in `Lᵖ` form a uniformly equicontinuous family. -/
 theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
@@ -335,7 +353,6 @@ theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
   rw [dist_eq_norm, ← norm_neg, neg_sub]
   linarith
 
-omit [CompleteSpace F] in
 /-- At every positive scale, the ball average of an `Lᵖ` function is continuous. -/
 theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p mu)
     (hr : 0 < r) : Continuous (ballAverage mu r f) := by
@@ -363,6 +380,39 @@ theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p 
   have hxy : x + (y - x) = y := by abel
   rwa [hxy] at hbound
 
+/-- **The ball average is an `Lᵖ` contraction**, for `1 ≤ p < ∞`. This is Minkowski's integral
+inequality for the normalized indicator of a ball; it is the reason the smoothing operator does
+not have to be undone quantitatively. -/
+theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStronglyMeasurable f mu)
+    (hr : 0 < r) : eLpNorm (ballAverage mu r f) p mu ≤ eLpNorm f p mu := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hq : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
+  have _ : (0 : ℝ) < p.toReal := one_pos.trans_le hq
+  have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
+  have hVt : mu (ball (0 : E) r) ≠ ∞ := measure_ball_lt_top.ne
+  rw [ballAverage_congr_ae hf.ae_eq_mk, eLpNorm_congr_ae hf.ae_eq_mk]
+  set g := hf.mk f with _
+  have hgm : StronglyMeasurable g := hf.stronglyMeasurable_mk
+  have hcore := lintegral_enorm_setAverage_rpow_le (mu := mu) (q := p.toReal) hq
+    (G := fun x e => g (x + e)) (hgm.comp_measurable (measurable_fst.add measurable_snd)) hr
+  simp only [← ballAverage_eq_setAverage_ball_zero] at hcore
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp'
+      (stronglyMeasurable_ballAverage hgm).aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hgm.aestronglyMeasurable]
+  refine ENNReal.rpow_le_rpow (hcore.trans_eq ?_) (by positivity)
+  have hslice : ∀ e : E, ∫⁻ x, ‖g (x + e)‖ₑ ^ p.toReal ∂mu = ∫⁻ x, ‖g x‖ₑ ^ p.toReal ∂mu :=
+    fun e => lintegral_add_right_eq_self (fun y => ‖g y‖ₑ ^ p.toReal) e
+  rw [setLIntegral_congr_fun measurableSet_ball fun e _ => hslice e, setLIntegral_const,
+    ← mul_assoc, mul_comm (mu (ball (0 : E) r))⁻¹, mul_assoc, ENNReal.inv_mul_cancel hV0 hVt,
+    mul_one]
+
+/-- At every positive scale, taking the ball average preserves membership in `Lᵖ`. -/
+theorem memLp_ballAverage (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hr : 0 < r) : MemLp (ballAverage mu r f) p mu :=
+  lt_of_le_of_lt (eLpNorm_ballAverage_le hp hp' hf.aestronglyMeasurable hr) hf.eLpNorm_lt_top
+
+variable [CompleteSpace F]
+
 /-- Writing the deviation of `f` from its ball average as an average of increments. -/
 theorem ballAverage_sub_self (hp : 1 ≤ p) (hf : MemLp f p mu) (hr : 0 < r) (x : E) :
     ballAverage mu r f x - f x = ⨍ e in ball (0 : E) r, (f (x + e) - f x) ∂mu := by
@@ -380,62 +430,6 @@ theorem ballAverage_sub_self (hp : 1 ≤ p) (hf : MemLp f p mu) (hr : 0 < r) (x 
       simpa only [Pi.sub_apply] using
         (setAverage_sub ((hshift.restrict _).integrable hp)
           (integrableOn_const measure_ball_lt_top.ne)).symm
-
-omit [BorelSpace E] [CompleteSpace F] in
-/-- The analytic core shared by the two `Lᵖ` estimates below: after Hölder's inequality in the
-translation variable and Tonelli's theorem, an integral of averages over the ball of radius `r`
-becomes an average, over the translations of size less than `r`, of integrals. -/
-private theorem lintegral_enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) {G : E → E → F}
-    (hG : StronglyMeasurable (Function.uncurry G)) (hr : 0 < r) :
-    ∫⁻ x, ‖⨍ e in ball (0 : E) r, G x e ∂mu‖ₑ ^ q ∂mu ≤
-      (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ∫⁻ x, ‖G x e‖ₑ ^ q ∂mu ∂mu := by
-  have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
-  have hjoint : Measurable fun z : E × E => ‖G z.1 z.2‖ₑ ^ q :=
-    ENNReal.continuous_rpow_const.measurable.comp hG.enorm
-  calc ∫⁻ x, ‖⨍ e in ball (0 : E) r, G x e ∂mu‖ₑ ^ q ∂mu
-      ≤ ∫⁻ x, (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
-        lintegral_mono fun x => enorm_setAverage_rpow_le hq
-          (hG.comp_measurable measurable_prodMk_left).aestronglyMeasurable hV0
-          measure_ball_lt_top.ne
-    _ = (mu (ball (0 : E) r))⁻¹ *
-          ∫⁻ x, ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
-        lintegral_const_mul' _ _ (by finiteness)
-    _ = (mu (ball (0 : E) r))⁻¹ *
-          ∫⁻ e in ball (0 : E) r, ∫⁻ x, ‖G x e‖ₑ ^ q ∂mu ∂mu := by
-        rw [lintegral_lintegral_swap hjoint.aemeasurable]
-
-omit [CompleteSpace F] in
-/-- **The ball average is an `Lᵖ` contraction**, for `1 ≤ p < ∞`. This is Minkowski's integral
-inequality for the normalized indicator of a ball; it is the reason the smoothing operator does
-not have to be undone quantitatively. -/
-theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStronglyMeasurable f mu)
-    (hr : 0 < r) : eLpNorm (ballAverage mu r f) p mu ≤ eLpNorm f p mu := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hq : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
-  have hq0 : (0 : ℝ) < p.toReal := one_pos.trans_le hq
-  have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
-  have hVt : mu (ball (0 : E) r) ≠ ∞ := measure_ball_lt_top.ne
-  rw [ballAverage_congr_ae hf.ae_eq_mk, eLpNorm_congr_ae hf.ae_eq_mk]
-  set g := hf.mk f with hg
-  have hgm : StronglyMeasurable g := hf.stronglyMeasurable_mk
-  have hcore := lintegral_enorm_setAverage_rpow_le (mu := mu) (q := p.toReal) hq
-    (G := fun x e => g (x + e)) (hgm.comp_measurable (measurable_fst.add measurable_snd)) hr
-  simp only [← ballAverage_eq_setAverage_ball_zero] at hcore
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp'
-      (stronglyMeasurable_ballAverage hgm).aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hgm.aestronglyMeasurable]
-  refine ENNReal.rpow_le_rpow (hcore.trans_eq ?_) (by positivity)
-  have hslice : ∀ e : E, ∫⁻ x, ‖g (x + e)‖ₑ ^ p.toReal ∂mu = ∫⁻ x, ‖g x‖ₑ ^ p.toReal ∂mu :=
-    fun e => lintegral_add_right_eq_self (fun y => ‖g y‖ₑ ^ p.toReal) e
-  rw [setLIntegral_congr_fun measurableSet_ball fun e _ => hslice e, setLIntegral_const,
-    ← mul_assoc, mul_comm (mu (ball (0 : E) r))⁻¹, mul_assoc, ENNReal.inv_mul_cancel hV0 hVt,
-    mul_one]
-
-omit [CompleteSpace F] in
-/-- At every positive scale, taking the ball average preserves membership in `Lᵖ`. -/
-theorem memLp_ballAverage (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (hr : 0 < r) : MemLp (ballAverage mu r f) p mu :=
-  lt_of_le_of_lt (eLpNorm_ballAverage_le hp hp' hf.aestronglyMeasurable hr) hf.eLpNorm_lt_top
 
 /-- The `Lᵖ` approximation estimate for a strongly measurable representative. -/
 private theorem eLpNorm_ballAverage_sub_le_of_stronglyMeasurable (hp : 1 ≤ p) (hp' : p ≠ ∞)

@@ -104,6 +104,26 @@ theorem f4ShortRootQuotientToIdealEquiv_mkQ_quotientLift (a : Fin 26) :
   simpa only [f4ShortRootSubspace_mkQ_quotientLift] using
     f4ShortRootQuotientToIdealEquiv_basis a
 
+/-- Evaluation of the quotient-to-ideal equivalence on a long root vector. -/
+theorem f4ShortRootQuotientToIdealEquiv_mkQ_rootVector
+    (γ : Fin 48) (hγ : f4Length γ = 2) :
+    f4ShortRootQuotientToIdealEquiv
+        (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
+      f4ShortRootLieIdealBasis
+        (f4ShortRootWeightIndexEquiv.symm (Sum.inl
+          ⟨f4SpecialIsogenyIndexEquiv γ, by
+            exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩)) := by
+  let i : F4ShortRootIndex :=
+    ⟨f4SpecialIsogenyIndexEquiv γ, by
+      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩
+  have hq := f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis γ hγ
+  calc
+    _ = f4ShortRootQuotientToIdealEquiv
+        (f4ShortRootQuotientBasis
+          (f4ShortRootWeightIndexEquiv.symm (Sum.inl i))) :=
+      congrArg f4ShortRootQuotientToIdealEquiv hq
+    _ = _ := f4ShortRootQuotientToIdealEquiv_basis _
+
 /-- The first-order quotient column of a numbered signed simple root. -/
 noncomputable def f4ShortRootQuotientFirstColumn
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) :

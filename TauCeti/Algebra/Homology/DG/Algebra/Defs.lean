@@ -91,11 +91,10 @@ an arbitrary left factor, without a homogeneity hypothesis. -/
 theorem map_mul_of_leibniz_of_map_eq_zero
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
     (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
-  classical
-  conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_mul, map_sum]
-  conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜 a, map_sum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [hl (SetLike.coe_mem _) b, hb, mul_zero, smul_zero, add_zero]
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | homogeneous a => simp [hl a.property b, hb]
+  | add a a' ha ha' => simp [add_mul, ha, ha']
 
 end Leibniz
 
@@ -155,13 +154,13 @@ theorem isNonUnitalDGAlgebra_zero (𝒜 : ℤ → Submodule R A) [SetLike.Graded
 
 end NonUnital
 
-section Unital
+section UnitalLeibniz
 
-variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
-  [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+variable {A σ : Type*} [NonAssocRing A] [SetLike σ A] {𝒜 : ℤ → σ}
+  [SetLike.GradedOne 𝒜] {d : A → A}
 
-/-- A linear map satisfying the graded Leibniz rule annihilates the unit: the rule for `1 * 1`
-reads `d 1 = d 1 + d 1`. -/
+/-- A function satisfying the graded Leibniz rule annihilates the unit: the rule for `1 * 1`
+reads `d 1 = d 1 + d 1`. Neither additivity nor a direct-sum decomposition is needed. -/
 theorem map_one_eq_zero_of_leibniz
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b)) :
     d 1 = 0 := by
@@ -169,11 +168,26 @@ theorem map_one_eq_zero_of_leibniz
   simp only [mul_one, one_mul, Int.negOnePow_zero, one_smul] at key
   exact left_eq_add.mp key
 
-/-- A linear map satisfying the graded Leibniz rule annihilates the image of the ground ring. -/
+end UnitalLeibniz
+
+section AlgebraLeibniz
+
+variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
+  [SetLike.GradedOne 𝒜] {d : A →ₗ[R] A}
+
+/-- A linear map satisfying the graded Leibniz rule annihilates the image of the ground semiring.
+Only the unit's degree-zero membership is needed from the grading. -/
 theorem map_algebraMap_of_leibniz
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
     (r : R) : d (algebraMap R A r) = 0 := by
   rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz hl, smul_zero]
+
+end AlgebraLeibniz
+
+section Unital
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
+  [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
 
 /-- A **differential graded algebra**: an internally `ℤ`-graded `R`-algebra `𝒜` on a carrier `A`
 together with an `R`-linear map `d` which raises degree by one, squares to zero, and satisfies the

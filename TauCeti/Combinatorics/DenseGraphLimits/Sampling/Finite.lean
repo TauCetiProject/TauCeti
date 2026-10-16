@@ -206,7 +206,7 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
       (fun S => SimpleGraph.fromEdgeSet (↑(B ∪ S) : Set (Sym2 (Fin n))))
       ?_ ?_ ?_ ?_ ?_
     -- The edges a graph uses outside `A` are undecided edges.
-    · intro H hH
+    · intro H _
       rw [Finset.mem_powerset]
       intro e he
       rw [Finset.mem_sdiff] at he ⊢

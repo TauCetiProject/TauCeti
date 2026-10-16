@@ -81,7 +81,7 @@ theorem finite_openSubgroup_index_eq_of_ne_zero (hG : IsTopologicallyFinitelyGen
       rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, U.2]⟩
   set e : ∀ U : S, (G ⧸ (U.1 : Subgroup G)) ≃ Fin n := fun U ↦ (hcard U).some
   -- The permutation representation of `G` on the cosets of `U`, read on `Fin n`.
-  set ψ : ∀ U : S, G →* Equiv.Perm (Fin n) := fun U ↦
+  set ψ : ∀ _ : S, G →* Equiv.Perm (Fin n) := fun U ↦
     ((e U).permCongrHom : Equiv.Perm (G ⧸ (U.1 : Subgroup G)) →* Equiv.Perm (Fin n)).comp
       (MulAction.toPermHom G (G ⧸ (U.1 : Subgroup G))) with hψ
   have hker : ∀ U : S, ((ψ U).ker : Subgroup G) = (U.1 : Subgroup G).normalCore := fun U ↦ by

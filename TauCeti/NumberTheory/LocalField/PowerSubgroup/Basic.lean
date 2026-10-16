@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
@@ -52,18 +53,14 @@ The openness results are stated in `PowerSubgroup.Open`, including the general c
 * `TauCeti.card_powerClasses`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · q ^ v_K(n)` for `(n : K) ≠ 0`.
 * `TauCeti.card_powerClasses_eq_mul_inv_normalizedAbsoluteValue`: the same count as an equality
   `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · ‖n‖_K⁻¹` in `ℚ≥0`, with `‖·‖_K` the normalized absolute value.
-* `TauCeti.finiteIndex_range_powMonoidHom`: `(Kˣ)ⁿ` has finite index in `Kˣ` for `(n : K) ≠ 0`.
-* `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: the `n`-th power map carries
-  `U(K,i+1)` onto itself.
+* `TauCeti.finiteIndex_range_powMonoidHom`: `(Kˣ)ⁿ` has finite index in `Kˣ` for `(n : K) ≠ 0`,
+  so the group `TauCeti.powerClassQuotient Kˣ n` of power classes is finite
+  (`TauCeti.finite_powerClassQuotient_units`).
 * `TauCeti.unitFiltration_one_le_range_powMonoidHom_of_isUnit`: every principal unit is an
   `n`-th power, `U(K,1) ≤ (Kˣ)ⁿ`.
 * `TauCeti.unitsMap_subtype_mem_range_powMonoidHom_iff` and
   `TauCeti.isSquare_unitsMap_subtype_iff`: a unit of `𝒪[K]` is an `n`-th power, respectively a
   square, in `K` exactly when its residue is one in `𝓀[K]`.
-* `TauCeti.disjoint_rootsOfUnity_unitFiltration_one_of_isUnit`: no nontrivial `n`-th root of
-  unity is a principal unit.
-* `TauCeti.powMonoidHom_unitFiltration_succ_bijective_of_isUnit`: the `n`-th power map is a
-  bijection of `U(K,i+1)`.
 * `TauCeti.card_powerClasses_eq_of_index_unitFiltration_one`: the power-class count reduces to
   the index/kernel ratio of the power map on the principal units.
 * `TauCeti.card_powerClasses_of_isUnit`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K)`.
@@ -98,17 +95,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- For `n` invertible in `𝒪[K]`, the `n`-th power map carries each positive-depth step
-`U(K,i+1)` of the unit filtration onto itself. This is the case `v_K(n) = 0` of
-`map_powMonoidHom_unitFiltration`. -/
-theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
-    (i : ℕ) :
-    (unitFiltration K (i + 1)).map (powMonoidHom n) = unitFiltration K (i + 1) := by
-  have hnK := natCast_ne_zero_of_isUnit hn
-  have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
-  simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) fun p hp hpK hpn ↦
-    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK (hv ▸ i.succ_pos) hp hpK hpn
 
 /-- For `n` invertible in `𝒪[K]`, every principal unit of `K` is an `n`-th power. -/
 theorem unitFiltration_one_le_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
@@ -184,29 +170,6 @@ theorem isSquare_unitsMap_subtype_iff (h2 : IsUnit (2 : 𝒪[K])) (u : 𝒪[K]ˣ
   have h2' : IsUnit ((2 : ℕ) : 𝒪[K]) := by simpa using h2
   have h := unitsMap_subtype_mem_range_powMonoidHom_iff h2' u
   simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm] using h
-
-/-- For `n` invertible in `𝒪[K]`, the only `n`-th root of unity in `K` that is a principal unit
-is `1`: the groups `μ_n(K)` and `U(K,1)` intersect trivially. This is the case `v_K(n) = 0` of
-`disjoint_rootsOfUnity_unitFiltration`. -/
-theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
-    Disjoint (rootsOfUnity n K) (unitFiltration K 1) := by
-  have hnK := natCast_ne_zero_of_isUnit hn
-  exact disjoint_rootsOfUnity_unitFiltration hnK fun p hp hpK hpn ↦
-    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK
-      (natCastValuation_eq_zero_of_isUnit K hnK hn ▸ Nat.one_pos) hp hpK hpn
-
-/-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
-`U(K,i+1)` of the unit filtration. -/
-theorem powMonoidHom_unitFiltration_succ_bijective_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
-    (i : ℕ) :
-    Function.Bijective (powMonoidHom n : unitFiltration K (i + 1) →* unitFiltration K (i + 1)) := by
-  refine ⟨(MonoidHom.ker_eq_bot_iff _).mp <| eq_bot_iff.mpr fun x hx ↦ Subtype.ext ?_,
-    MonoidHom.range_eq_top.mp ?_⟩
-  · refine Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hn)
-      ((mem_rootsOfUnity n (x : Kˣ)).mpr ?_) (unitFiltration_antitone (Nat.le_add_left 1 i) x.2)
-    simpa using congrArg Subtype.val (MonoidHom.mem_ker.mp hx)
-  · rw [← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
-      map_powMonoidHom_unitFiltration_succ_of_isUnit hn i, Subgroup.subgroupOf_self]
 
 /-- **Reduction of the power-class count to the principal units.** Suppose the `n`-th power map
 on `U(K,1)` has index `#U(K,1)[n] · c`. Then
@@ -392,6 +355,13 @@ every nonzero `n`. -/
 instance instFiniteIndexRangePowMonoidHom [CharZero K] {n : ℕ} [NeZero n] :
     (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex :=
   finiteIndex_range_powMonoidHom (Nat.cast_ne_zero.2 (NeZero.ne n))
+
+/-- When `n` is nonzero in `K`, the group `Kˣ ⧸ (Kˣ)ⁿ` of `n`-th power classes is finite. -/
+instance finite_powerClassQuotient_units {n : ℕ} [NeZero (n : K)] :
+    Finite (powerClassQuotient Kˣ n) :=
+  have : (powerSubgroup Kˣ n).FiniteIndex :=
+    powerSubgroup_eq_range_powMonoidHom Kˣ n ▸ finiteIndex_range_powMonoidHom (NeZero.ne (n : K))
+  Subgroup.finite_quotient_of_finiteIndex
 
 /-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
 invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the

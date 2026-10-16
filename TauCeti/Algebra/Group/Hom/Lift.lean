@@ -11,9 +11,9 @@ public import Mathlib.Data.Set.Operations
 /-!
 # Lifting homomorphisms through injections
 
-A homomorphism whose values lie in the range of an injective homomorphism lifts uniquely
-through it. This gives coefficient descent whenever the coefficient map is injective and
-the values of a character already lie in its image.
+A multiplicative or additive homomorphism whose values lie in the range of an injective
+homomorphism lifts uniquely through it. This gives coefficient descent whenever the coefficient
+map is injective and the values of a character already lie in its image.
 -/
 
 public section
@@ -24,6 +24,8 @@ variable {M N P : Type*} [MulOne M] [MulOne N] [MulOne P]
 
 /-- A homomorphism lifts uniquely through an injective homomorphism if its values lie in the
 range of that homomorphism. -/
+@[to_additive /-- An additive homomorphism lifts uniquely through an injective additive
+homomorphism if its values lie in the range of that homomorphism. -/]
 theorem existsUnique_comp_eq_of_injective (χ : M →* P) (f : N →* P)
     (hf : Function.Injective f) (hχ : ∀ g, χ g ∈ Set.range f) :
     ∃! ψ : M →* N, f.comp ψ = χ := by

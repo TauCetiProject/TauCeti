@@ -256,7 +256,7 @@ theorem symplecticSpecialIsogeny_map {S : Type*} [CommRing S] (f : R →+* S)
 theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     symplecticSpecialIsogeny (symplecticSpecialIsogeny g) = g.map (· ^ 2) := by
-  have h2 : (2 : R) = 0 := CharTwo.two_eq_zero
+  have _ : (2 : R) = 0 := CharTwo.two_eq_zero
   have h01 := pairMinor_row_add_eq_neg_jFin hg (0, 1)
   have h02 := pairMinor_row_add_eq_neg_jFin hg (0, 2)
   have h03 := pairMinor_row_add_eq_neg_jFin hg (0, 3)

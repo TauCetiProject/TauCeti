@@ -74,8 +74,7 @@ theorem cocharacterMap_id (T : MultiplicativeTypeCommHopfAlgCat k) :
     cocharacterMap (𝟙 T) = LinearMap.id := by
   apply LinearMap.ext
   intro y
-  apply (cocharacterLatticeLinearEquivDual T).injective
-  apply LinearMap.ext
+  apply cocharacterLattice_ext
   intro x
   simp
 
@@ -86,8 +85,7 @@ theorem cocharacterMap_comp {S T U : MultiplicativeTypeCommHopfAlgCat k}
     cocharacterMap (f ≫ g) = cocharacterMap f ∘ₗ cocharacterMap g := by
   apply LinearMap.ext
   intro y
-  apply (cocharacterLatticeLinearEquivDual S).injective
-  apply LinearMap.ext
+  apply cocharacterLattice_ext
   intro x
   simp
 
@@ -98,8 +96,7 @@ theorem cocharacterMap_smul
     (σ : Field.absoluteGaloisGroup k) (y : cocharacterLattice T) :
     cocharacterMap f (cocharacterGaloisRepresentation T σ y) =
       cocharacterGaloisRepresentation S σ (cocharacterMap f y) := by
-  apply (cocharacterLatticeLinearEquivDual S).injective
-  apply LinearMap.ext
+  apply cocharacterLattice_ext
   intro x
   rw [cocharacterLatticeLinearEquivDual_cocharacterMap_apply,
     cocharacterGaloisRepresentation_apply_apply,

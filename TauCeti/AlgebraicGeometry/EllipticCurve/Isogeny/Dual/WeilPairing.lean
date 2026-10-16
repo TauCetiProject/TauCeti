@@ -8,37 +8,55 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.DivisorPullback
+-- Proof-only: every isogeny is a separable one after a Frobenius power, Frobenius acts on points
+-- by the `p ^ r`-power map of the field, `E[N]` does not grow under that map, the pairing is
+-- functorial under change of field, a morphism acts additively on points, and the `p ^ r`-power
+-- map raises a unit to its `p ^ r`-th power.
+import TauCeti.Algebra.CharP.Frobenius.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Point
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.BaseChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 
 /-!
 # The Weil pairing and the dual isogeny
 
-Let `φ : W₁ → W₂` be a separable isogeny of elliptic curves over a separably closed field `F`, and
-`N` a positive integer invertible in `F`. The dual `φ̂ : W₂ → W₁` is adjoint to `φ` for the Weil
-pairing (Silverman III.8.2):
+Let `φ : W₁ → W₂` be an isogeny of elliptic curves over a separably closed field `F`, and `N` a
+positive integer invertible in `F`. The dual `φ̂ : W₂ → W₁` is adjoint to `φ` for the Weil pairing
+(Silverman III.8.2):
 
     e_N(φ S, T) = e_N(S, φ̂ T)    for `S ∈ W₁[N]` and `T ∈ W₂[N]`,
 
-and consequently `e_N(φ S, φ T) = e_N(S, T) ^ deg φ`.
+and consequently `e_N(φ S, φ T) = e_N(S, T) ^ deg φ`. No separability is assumed.
 
-The proof is Silverman's. Let `g` be a function on `W₂` with divisor `[N]^* (T) - [N]^* (O)`, the
-function from which `e_N(·, T)` is built. Over a separably closed field the pullback `φ^* (T)` is
-the fibre `∑_{φ P = T} (P)`, a translate of the kernel, so `φ^* ((T) - (O))` is a degree-zero
-divisor whose sum is `deg φ • P₀ = φ̂ (φ P₀) = φ̂ T` for any `P₀` over `T`. Hence
-`φ^* ((T) - (O)) - ((φ̂ T) - (O))` is the divisor of a function `h`. Since `φ` commutes with `[N]`,
-the function `φ^* g / [N]^* h` has divisor `[N]^* (φ̂ T) - [N]^* (O)`, so it computes
-`e_N(·, φ̂ T)`. Translation by an `N`-torsion point fixes `[N]^* h`, and moves `φ^* g` to
+For a separable isogeny the proof is Silverman's. Let `g` be a function on `W₂` with divisor
+`[N]^* (T) - [N]^* (O)`, the function from which `e_N(·, T)` is built. Over a separably closed field
+the pullback `φ^* (T)` is the fibre `∑_{φ P = T} (P)`, a translate of the kernel, so
+`φ^* ((T) - (O))` is a degree-zero divisor whose sum is `deg φ • P₀ = φ̂ (φ P₀) = φ̂ T` for any
+`P₀` over `T`. Hence `φ^* ((T) - (O)) - ((φ̂ T) - (O))` is the divisor of a function `h`. Since `φ`
+commutes with `[N]`, the function `φ^* g / [N]^* h` has divisor `[N]^* (φ̂ T) - [N]^* (O)`, so it
+computes `e_N(·, φ̂ T)`. Translation by an `N`-torsion point fixes `[N]^* h`, and moves `φ^* g` to
 `φ^* (τ_{φ S}^* g)`, so `e_N(S, φ̂ T) = φ^* (τ_{φ S}^* g / g) = e_N(φ S, T)`.
+
+An arbitrary isogeny is `φ = φₛ ∘ Fʳ` with `φₛ` separable and `Fʳ : W₁ → W₁⁽ᵖʳ⁾` the `r`-fold
+relative Frobenius (Silverman II.2.12), and `φ̂ = F̂ʳ ∘ φ̂ₛ`, so it remains to treat `Fʳ`. On points
+`Fʳ` is the transport of points along the `p ^ r`-power map `σ` of `F`, which is bijective on
+`N`-torsion; writing `T = Fʳ T₀`, the dual sends `T` to `F̂ʳ (Fʳ T₀) = p ^ r • T₀`. Functoriality of
+the pairing under the change of field `σ` (Silverman III.8.1) then gives
+`e_N(Fʳ S, Fʳ T₀) = σ (e_N(S, T₀)) = e_N(S, T₀) ^ p ^ r = e_N(S, p ^ r • T₀)`.
 
 ## Main results
 
 * `TauCeti.Isogeny.exists_principal_eq_divisorPullback_sub`: `φ^* ((T) - (O))` and
-  `(φ̂ T) - (O)` differ by a principal divisor.
+  `(φ̂ T) - (O)` differ by a principal divisor, for separable `φ`.
 * `TauCeti.Isogeny.weilPairing_eq_weilPairing_dual`: **`e_N(φ S, T) = e_N(S, φ̂ T)`**.
 * `TauCeti.Isogeny.weilPairing_eq_degree_nsmul_weilPairing`: `e_N(φ S, φ T) = e_N(S, T) ^ deg φ`.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6.1 and III.8.2.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.12, III.6.1, III.8.1
+  and III.8.2.
 -/
 
 public section
@@ -49,7 +67,6 @@ open AlgebraicGeometry WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
-  (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
 local instance : IsIntegrallyClosed W₁.CoordinateRing := W₁.isIntegrallyClosed_coordinateRing
 local instance : IsIntegrallyClosed W₂.CoordinateRing := W₂.isIntegrallyClosed_coordinateRing
@@ -57,6 +74,10 @@ local instance : IsDedekindDomain W₁.CoordinateRing :=
   W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 local instance : IsDedekindDomain W₂.CoordinateRing :=
   W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
+
+section Separable
+
+variable (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
 /-- **`φ^* ((T) - (O))` is linearly equivalent to `(φ̂ T) - (O)`**: their difference is principal,
 over a separably closed field (Silverman III.6.1). Its sum is `deg φ • P₀ - φ̂ T` for any `P₀` over
@@ -127,13 +148,10 @@ private theorem divisorPullback_divisorPullback_mulByIntIsogeny {hψ₁ : psiFun
 
 variable [NeZero N] (hN : (N : F) ≠ 0)
 
-/-- **The dual isogeny is adjoint to `φ` for the Weil pairing**: `e_N(φ S, T) = e_N(S, φ̂ T)` for
-`S ∈ W₁[N]` and `T ∈ W₂[N]`, where `φ` is a separable isogeny over a separably closed field in
-which `N` is invertible (Silverman III.8.2). The images `φ S` and `φ̂ T` are given as the torsion
-points `S'` and `T'`. -/
-theorem weilPairing_eq_weilPairing_dual {S : Submodule.torsionBy ℤ W₁.Point (N : ℤ)}
-    {T : Submodule.torsionBy ℤ W₂.Point (N : ℤ)} {S' : Submodule.torsionBy ℤ W₂.Point (N : ℤ)}
-    {T' : Submodule.torsionBy ℤ W₁.Point (N : ℤ)}
+/-- The separable case of `weilPairing_eq_weilPairing_dual`, by Silverman's divisor argument. -/
+private theorem weilPairing_eq_weilPairing_dual_of_isSeparable
+    {S : Submodule.torsionBy ℤ W₁.Point (N : ℤ)} {T : Submodule.torsionBy ℤ W₂.Point (N : ℤ)}
+    {S' : Submodule.torsionBy ℤ W₂.Point (N : ℤ)} {T' : Submodule.torsionBy ℤ W₁.Point (N : ℤ)}
     (hS : (Hom.ofIsogeny φ).pointMap S = S') (hT : (Hom.ofIsogeny φ.dual).pointMap T = T') :
     weilPairing W₂ N hN S' T = weilPairing W₁ N hN S T' := by
   have hchar : ((N : ℤ) : F) ≠ 0 := by rwa [Int.cast_natCast]
@@ -184,18 +202,93 @@ theorem weilPairing_eq_weilPairing_dual {S : Submodule.torsionBy ℤ W₁.Point 
     map_mul, map_inv₀, hfix]
   field_simp
 
-/-- **A separable isogeny scales the Weil pairing by its degree**:
+end Pairing
+
+end Separable
+
+/-! ### Adjointness for an arbitrary isogeny -/
+
+section General
+
+variable (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0)
+
+/-- `φ` is adjoint to its dual for the Weil pairing `e_N`: `e_N(φ S, T) = e_N(S, φ̂ T)`. -/
+private def IsWeilAdjoint {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+    (φ : Isogeny W₁ W₂) : Prop :=
+  ∀ ⦃S : Submodule.torsionBy ℤ W₁.Point (N : ℤ)⦄ ⦃T : Submodule.torsionBy ℤ W₂.Point (N : ℤ)⦄
+    ⦃S' : Submodule.torsionBy ℤ W₂.Point (N : ℤ)⦄ ⦃T' : Submodule.torsionBy ℤ W₁.Point (N : ℤ)⦄,
+    (Hom.ofIsogeny φ).pointMap S = S' → (Hom.ofIsogeny φ.dual).pointMap T = T' →
+      weilPairing W₂ N hN S' T = weilPairing W₁ N hN S T'
+
+/-- The `r`-fold relative Frobenius is adjoint to its dual: on points it is the transport along the
+`p ^ r`-power map `σ` of `F`, and `e_N(σ S, σ T₀) = σ (e_N(S, T₀)) = e_N(S, p ^ r • T₀)`. -/
+private theorem isWeilAdjoint_iterateRelativeFrobeniusIsogeny (p : ℕ) [ExpChar F p]
+    (W : WeierstrassCurve.Affine F) [W.IsElliptic] (r : ℕ) :
+    IsWeilAdjoint N hN (iterateRelativeFrobeniusIsogeny p W r) := by
+  intro S T S' T' hS hT
+  have hchar : ((N : ℤ) : F) ≠ 0 := by rwa [Int.cast_natCast]
+  -- every `N`-torsion point of the Frobenius twist is the image of one of `W`
+  obtain ⟨T₀, rfl⟩ :=
+    (WeierstrassCurve.torsionMapAlong_bijective W (iterateFrobenius F p r) hchar).2 T
+  have hmap (P : Submodule.torsionBy ℤ W.Point (N : ℤ)) :
+      ((WeierstrassCurve.torsionMapAlong W (iterateFrobenius F p r) N P : _) : _) =
+        (Hom.ofIsogeny (iterateRelativeFrobeniusIsogeny p W r)).pointMap P := by
+    rw [WeierstrassCurve.coe_torsionMapAlong_apply, pointMap_iterateRelativeFrobeniusIsogeny]
+  obtain rfl : S' = WeierstrassCurve.torsionMapAlong W (iterateFrobenius F p r) N S :=
+    Subtype.ext (by rw [hmap, hS])
+  -- the dual sends `Fʳ T₀` to `deg Fʳ • T₀ = p ^ r • T₀`
+  obtain rfl : T' = (p ^ r) • T₀ := Subtype.ext (by
+    rw [← hT, hmap, pointMap_dual_pointMap, degree_iterateRelativeFrobeniusIsogeny,
+      Submodule.coe_smul_of_tower])
+  rw [WeierstrassCurve.weilPairing_torsionMapAlong W _ N hN, map_nsmul]
+  refine Additive.toMul.injective (Subtype.ext ?_)
+  exact (TauCeti.map_iterateFrobenius_unit_eq_pow F p r _).trans (by simp)
+
+/-- Adjointness to the dual passes to composites, since `(ψ ∘ φ)^ = φ̂ ∘ ψ̂`. -/
+private theorem IsWeilAdjoint.comp {W₁ W₂ W₃ : WeierstrassCurve.Affine F} [W₁.IsElliptic]
+    [W₂.IsElliptic] [W₃.IsElliptic] {φ : Isogeny W₁ W₂} {ψ : Isogeny W₂ W₃}
+    (hφ : IsWeilAdjoint N hN φ) (hψ : IsWeilAdjoint N hN ψ) :
+    IsWeilAdjoint N hN (ψ.comp φ) := by
+  intro S T S' T' hS hT
+  rw [← Hom.ofIsogeny_comp_ofIsogeny, Hom.comp_pointMap] at hS
+  rw [← dual_comp_dual, ← Hom.ofIsogeny_comp_ofIsogeny, Hom.comp_pointMap] at hT
+  -- pass through the `N`-torsion points `φ S` and `ψ̂ T` of `W₂`
+  refine (hψ (S := torsionByMap _ (Hom.ofIsogeny φ).pointMapHom.toIntLinearMap S)
+    (T' := torsionByMap _ (Hom.ofIsogeny ψ.dual).pointMapHom.toIntLinearMap T) ?_ ?_).trans
+      (hφ ?_ ?_)
+  · simpa using hS
+  · simp
+  · simp
+  · simpa using hT
+
+/-- **The dual isogeny is adjoint to `φ` for the Weil pairing**: `e_N(φ S, T) = e_N(S, φ̂ T)` for
+`S ∈ W₁[N]` and `T ∈ W₂[N]`, where `φ` is any isogeny over a separably closed field in which `N`
+is invertible (Silverman III.8.2). The images `φ S` and `φ̂ T` are given as the torsion points
+`S'` and `T'`. -/
+theorem weilPairing_eq_weilPairing_dual (φ : Isogeny W₁ W₂)
+    {S : Submodule.torsionBy ℤ W₁.Point (N : ℤ)} {T : Submodule.torsionBy ℤ W₂.Point (N : ℤ)}
+    {S' : Submodule.torsionBy ℤ W₂.Point (N : ℤ)} {T' : Submodule.torsionBy ℤ W₁.Point (N : ℤ)}
+    (hS : (Hom.ofIsogeny φ).pointMap S = S') (hT : (Hom.ofIsogeny φ.dual).pointMap T = T') :
+    weilPairing W₂ N hN S' T = weilPairing W₁ N hN S T' := by
+  obtain ⟨p, _⟩ : ∃ p, ExpChar F p := ⟨_, ringExpChar.expChar F⟩
+  -- `φ = φₛ ∘ Fʳ` with `φₛ` separable
+  obtain ⟨r, φₛ, _, rfl⟩ := exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq p φ
+  exact (isWeilAdjoint_iterateRelativeFrobeniusIsogeny N hN p W₁ r).comp N hN
+    (fun _ _ _ _ ↦ φₛ.weilPairing_eq_weilPairing_dual_of_isSeparable N hN) hS hT
+
+/-- **An isogeny scales the Weil pairing by its degree**:
 `e_N(φ S, φ T) = e_N(S, T) ^ deg φ` for `S, T ∈ W₁[N]`, written additively, since
 `φ̂ (φ T) = deg φ • T` (Silverman III.8.2). The images `φ S` and `φ T` are given as the torsion
 points `S'` and `T'`. -/
-theorem weilPairing_eq_degree_nsmul_weilPairing {S T : Submodule.torsionBy ℤ W₁.Point (N : ℤ)}
+theorem weilPairing_eq_degree_nsmul_weilPairing (φ : Isogeny W₁ W₂)
+    {S T : Submodule.torsionBy ℤ W₁.Point (N : ℤ)}
     {S' T' : Submodule.torsionBy ℤ W₂.Point (N : ℤ)} (hS : (Hom.ofIsogeny φ).pointMap S = S')
     (hT : (Hom.ofIsogeny φ).pointMap T = T') :
     weilPairing W₂ N hN S' T' = φ.degree • weilPairing W₁ N hN S T := by
   rw [φ.weilPairing_eq_weilPairing_dual N hN hS (T' := φ.degree • T)
     (by rw [← hT, pointMap_dual_pointMap, Submodule.coe_smul_of_tower]), map_nsmul]
 
-end Pairing
+end General
 
 end TauCeti.Isogeny
 

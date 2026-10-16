@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -163,6 +163,15 @@ theorem integralForm_cast (L : IntegralLattice V) (x y : L) :
   rw [integralForm, LinearMap.comp_apply, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
   exact L.form.dualSubmodulePairing_spec (Submodule.inclusion L.le_dual x) y
 
+/-- An inclusion of carriers with the same ambient form preserves the integral form. -/
+theorem integralForm_inclusion (L M : IntegralLattice V) (hform : L.form = M.form)
+    (hle : L.carrier ≤ M.carrier) (x y : L) :
+    M.integralForm (Submodule.inclusion hle x) (Submodule.inclusion hle y) =
+      L.integralForm x y := by
+  apply Int.cast_injective (α := ℚ)
+  rw [M.integralForm_cast, L.integralForm_cast, hform]
+  simp only [Submodule.coe_inclusion]
+
 /-- The induced integral form is symmetric. -/
 theorem isSymm_integralForm (L : IntegralLattice V) : L.integralForm.IsSymm := by
   constructor
@@ -180,12 +189,12 @@ def ofSubmodule (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.Bili
   le_dual := hle
 
 @[simp]
-theorem ofSubmodule_carrier (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_carrier (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).carrier = S := (rfl)
 
 @[simp]
-theorem ofSubmodule_form (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_form (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).form = B := (rfl)
 
