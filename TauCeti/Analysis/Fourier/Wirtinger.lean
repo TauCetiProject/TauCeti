@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
+import TauCeti.Analysis.Fourier.SpectralGap
 
 /-!
 # Wirtinger's inequality for periodic functions
@@ -79,7 +80,8 @@ private theorem fourier_one_coe_eq (t : ℝ) :
       ((2 * π * t / (b - a) : ℝ) : ℂ) * I := by
     push_cast
     ring
-  rw [fourier_coe_apply, this, exp_mul_I, ← ofReal_cos, ← ofReal_sin]
+  rw [fourier_coe_apply, this, exp_mul_I]
+  simp
 
 /-- The Fourier mode of frequency `-1` on `[a, b]` in terms of the cosine and sine of
 `2π t / (b - a)`. -/
@@ -90,8 +92,8 @@ private theorem fourier_neg_one_coe_eq (t : ℝ) :
       ((-(2 * π * t / (b - a)) : ℝ) : ℂ) * I := by
     push_cast
     ring
-  rw [fourier_coe_apply, this, exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_neg, Real.sin_neg,
-    ofReal_neg, neg_mul, ← sub_eq_add_neg]
+  rw [fourier_coe_apply, this, exp_mul_I]
+  simp [sub_eq_add_neg]
 
 /-- A first harmonic on `[a, b]` has no Fourier coefficients outside the frequencies `±1`. -/
 private theorem fourierCoeffOn_cos_smul_add_sin_smul (hab : a < b) (u v : ℂ) {n : ℤ}
@@ -116,9 +118,8 @@ private theorem fourierCoeffOn_cos_smul_add_sin_smul (hab : a < b) (u v : ℂ) {
   -- By definition, `fourierCoeffOn` is the Fourier coefficient of the `liftIoc` periodization.
   change fourierCoeff (AddCircle.liftIoc (b - a) a _) n = 0
   rw [hG, ContinuousMap.coe_add, ContinuousMap.coe_smul, ContinuousMap.coe_smul,
-    fourierCoeff.add ((hint 1).smul _) ((hint (-1)).smul _), Pi.add_apply,
-    fourierCoeff.const_smul, fourierCoeff.const_smul, fourierCoeff_fourier, fourierCoeff_fourier]
-  simp [hn₁, hn₂]
+    fourierCoeff.add ((hint 1).smul _) ((hint (-1)).smul _)]
+  simp [fourierCoeff.const_smul, fourierCoeff_fourier, hn₁, hn₂]
 
 /-- A continuous closed curve on `[a, b]` whose Fourier coefficients vanish outside the
 frequencies `±1` is a first harmonic at every point of `[a, b]`. -/
@@ -187,33 +188,49 @@ private theorem integral_norm_sq_le_and_eq_iff_of_fourierCoeffOn_zero (hab : a <
   have hK (n : ℤ) : K * (2 * π * (n : ℝ) / (b - a)) ^ 2 = (n : ℝ) ^ 2 := by
     simp only [K]
     field_simp
-  have hle (n : ℤ) : ‖c n‖ ^ 2 ≤ K * ((2 * π * (n : ℝ) / (b - a)) ^ 2 * ‖c n‖ ^ 2) := by
-    rw [← mul_assoc, hK]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [c, h0]
-    · have : (1 : ℝ) ≤ (n : ℝ) ^ 2 :=
-        mod_cast (one_le_sq_iff_one_le_abs _).2 (Int.one_le_abs hn)
-      nlinarith [sq_nonneg ‖c n‖]
-  refine ⟨le_of_mul_le_mul_left (hasSum_le hle hP hE) hinv, ?_⟩
-  rw [← mul_right_inj' hinv.ne']
+  let _ : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
+  let G₀ := AddCircle.liftIoc (b - a) a g
+  have hG₀ : MemLp G₀ 2 AddCircle.haarAddCircle := by
+    have hab' : a + (b - a) = b := by ring
+    have hgL2' : MemLp g 2 (volume.restrict (Ioc a (a + (b - a)))) := by
+      rw [hab']
+      exact hgL2
+    exact hgL2'.memLp_liftIoc.haarAddCircle
+  let G : Lp ℂ 2 AddCircle.haarAddCircle := hG₀.toLp
+  have hGc (n : ℤ) : fourierCoeff G n = c n := by
+    simp [G, G₀, c, fourierCoeff_congr_ae hG₀.coeFn_toLp, fourierCoeff_liftIoc_eq]
+  have hGnorm : (∫ t, ‖G t‖ ^ 2 ∂AddCircle.haarAddCircle) =
+      (b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2 := by
+    calc
+      (∫ t, ‖G t‖ ^ 2 ∂AddCircle.haarAddCircle) =
+          ∑' n : ℤ, ‖fourierCoeff G n‖ ^ 2 := (tsum_sq_fourierCoeff G).symm
+      _ = ∑' n : ℤ, ‖c n‖ ^ 2 := tsum_congr fun n => by rw [hGc]
+      _ = (b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2 := hP.tsum_eq
+  have hGenergy : HasSum (fun n : ℤ => (n : ℝ) ^ 2 * ‖fourierCoeff G n‖ ^ 2)
+      ((b - a)⁻¹ * (K * ∫ x in a..b, ‖g' x‖ ^ 2)) := by
+    convert hE using 1
+    funext n
+    rw [hGc, ← mul_assoc, hK]
+  have hGzero : fourierCoeff G 0 = 0 := by rw [hGc]; exact h0
+  have hle' : (b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2 ≤
+      (b - a)⁻¹ * (K * ∫ x in a..b, ‖g' x‖ ^ 2) := by
+    rw [← hGnorm, ← hGenergy.tsum_eq]
+    exact integral_norm_sq_le_tsum_frequency_sq_fourierCoeff G hGzero hGenergy.summable
+  refine ⟨le_of_mul_le_mul_left hle' hinv, ?_⟩
   constructor
-  · -- A nonzero coefficient of frequency `|n| ≥ 2` makes the comparison strict.
-    intro heq n hn₁ hn₂
-    by_contra hcn
-    have hn₀ : n ≠ 0 := by
-      rintro rfl
-      exact hcn h0
-    have hn : (1 : ℝ) < (n : ℝ) ^ 2 := by
-      have : (1 : ℤ) < n ^ 2 := by
-        rcases (by omega : n ≤ -2 ∨ 2 ≤ n) with h | h <;> nlinarith
-      exact_mod_cast this
-    have hlt : ‖c n‖ ^ 2 < K * ((2 * π * (n : ℝ) / (b - a)) ^ 2 * ‖c n‖ ^ 2) := by
-      rw [← mul_assoc, hK]
-      have := sq_pos_of_pos (norm_pos_iff.2 hcn)
-      nlinarith
-    exact (hasSum_lt hle hlt hP hE).ne heq
+  · intro heq
+    have heq' := congrArg (fun x : ℝ => (b - a)⁻¹ * x) heq
+    rw [← hGnorm, ← hGenergy.tsum_eq] at heq'
+    obtain ⟨u, v, hG⟩ := (integral_norm_sq_eq_tsum_frequency_sq_fourierCoeff_iff
+      G hGzero hGenergy.summable).1 heq'
+    intro n hn₁ hn₂
+    classical
+    rw [← hGc, ← fourierBasis_repr, HilbertBasis.repr_apply_apply, hG, coe_fourierBasis]
+    simp [inner_add_right, inner_smul_right,
+      orthonormal_iff_ite.mp (orthonormal_fourier (T := b - a)), hn₁, hn₂]
   · -- Otherwise the two series agree term by term.
     intro hc
+    apply mul_left_cancel₀ hinv.ne'
     refine hP.unique ?_
     convert hE using 1
     funext n
