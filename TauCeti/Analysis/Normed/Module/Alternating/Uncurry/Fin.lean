@@ -31,6 +31,8 @@ be combined with other permutation sums, such as those defining wedge products.
   above.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
   formula.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum`: the same
+  formula normalized by `n!`, in characteristic zero.
 -/
 
 public section
@@ -79,5 +81,15 @@ theorem factorial_smul_alternatizeUncurryFin_apply (f : E →L[𝕜] E [⋀^Fin 
   rw [h, alternatizeUncurryFin_apply, Finset.smul_sum]
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [smul_comm]
+
+/-- In characteristic zero, the alternatization of a linear family of `n`-forms is the signed sum
+over all permutations of the uncurried map, normalized by `n!`. -/
+theorem alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum [CharZero 𝕜]
+    (f : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (v : Fin (n + 1) → E) :
+    alternatizeUncurryFin f v = (n.factorial : 𝕜)⁻¹ •
+      ∑ σ : Equiv.Perm (Fin (n + 1)),
+        Equiv.Perm.sign σ • f (v (σ 0)) (fun i => v (σ i.succ)) := by
+  rw [← factorial_smul_alternatizeUncurryFin_apply, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero), one_smul]
 
 end ContinuousAlternatingMap

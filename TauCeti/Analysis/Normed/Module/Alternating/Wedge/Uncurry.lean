@@ -46,15 +46,6 @@ variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
   {k l : ℕ}
 
-/-- The alternatization of a linear family of `k`-forms, as a permutation sum normalized by `k!`. -/
-private theorem alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (f : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
-    (v : Fin (k + 1) → E) :
-    alternatizeUncurryFin f v = (k.factorial : ℝ)⁻¹ •
-      ∑ σ : Perm (Fin (k + 1)), Perm.sign σ • f (v (σ 0)) (fun i => v (σ i.succ)) := by
-  rw [← factorial_smul_alternatizeUncurryFin_apply, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul,
-    inv_mul_cancel₀ (by positivity), one_smul]
-
 /-- The paired wedge of an alternatized linear family with a fixed form, as a single signed
 permutation sum. -/
 private theorem pairedWedge_alternatizeUncurryFin_left_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
