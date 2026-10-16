@@ -12,8 +12,7 @@ import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 /-!
 # Binary isometries and reflected proper classes
 
-The determinant of a lattice isometry detects whether it preserves or reverses the orientation
-of an integral binary basis. An improper automorphism exists exactly when the primitive norm
+An improper automorphism of an integral binary lattice exists exactly when its primitive norm
 form is properly equivalent to its reflection `(a, -b, c)`. Consequently the special orthogonal
 group has index two exactly in this case, and otherwise has index one.
 
@@ -36,23 +35,6 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable {W : Type*} [AddCommGroup W] [Module ℚ W]
 variable {L : IntegralLattice V} (b : Basis (Fin 2) ℤ L)
 variable {M : IntegralLattice W}
-
-namespace Isometry
-
-/-- A lattice isometry preserves a binary basis orientation exactly when its determinant is one. -/
-theorem orientation_map_eq_iff (e : Isometry L L) :
-    (b.map e.carrierEquiv).orientation = b.orientation ↔ det L e = 1 := by
-  rw [Basis.orientation_comp_linearEquiv_eq_iff_det_pos, ← coe_det]
-  rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
-
-/-- A lattice isometry reverses a binary basis orientation exactly when its determinant is minus
-one. -/
-theorem orientation_map_eq_neg_iff (e : Isometry L L) :
-    (b.map e.carrierEquiv).orientation = -b.orientation ↔ det L e = -1 := by
-  rw [Basis.orientation_comp_linearEquiv_eq_neg_iff_det_neg, ← coe_det]
-  rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
-
-end Isometry
 
 /-- Transporting a carrier basis between lattices by an isometry preserves its norm form. -/
 theorem binaryNormForm_map_isometry (e : Isometry L M) :

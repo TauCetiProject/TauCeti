@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
 public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.Orientation
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 
 /-!
@@ -34,6 +35,9 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 
 * `TauCeti.IntegralLattice.Isometry.carrierEquivHom_injective`: a self-isometry is determined by
   its restriction to the carrier.
+* `TauCeti.IntegralLattice.Isometry.orientation_map_eq_iff` and
+  `TauCeti.IntegralLattice.Isometry.orientation_map_eq_neg_iff`: the determinant detects whether
+  a self-isometry preserves or reverses the orientation of any finite carrier basis.
 * `TauCeti.IntegralLattice.index_specialOrthogonalGroup_le_two`: `SO(L)` has index at most two.
 * `TauCeti.IntegralLattice.Isometry.det_neg`: the determinant of negation is `(-1) ^ rank L`.
 
@@ -110,6 +114,24 @@ theorem coe_det (e : Isometry L L) :
 /-- The determinant of a self-isometry is `1` or `-1`. -/
 theorem det_eq_one_or_neg_one (e : Isometry L L) : det L e = 1 ∨ det L e = -1 :=
   Int.units_eq_one_or (det L e)
+
+/-- A self-isometry preserves a finite carrier basis orientation exactly when its determinant
+is one. -/
+theorem orientation_map_eq_iff {ι : Type*} [Fintype ι] (b : Module.Basis ι ℤ L)
+    (e : Isometry L L) :
+    (b.map e.carrierEquiv).orientation = b.orientation ↔ det L e = 1 := by
+  classical
+  rw [Module.Basis.orientation_comp_linearEquiv_eq_iff_det_pos, ← coe_det]
+  rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
+
+/-- A self-isometry reverses a finite carrier basis orientation exactly when its determinant
+is minus one. -/
+theorem orientation_map_eq_neg_iff {ι : Type*} [Fintype ι] (b : Module.Basis ι ℤ L)
+    (e : Isometry L L) :
+    (b.map e.carrierEquiv).orientation = -b.orientation ↔ det L e = -1 := by
+  classical
+  rw [Module.Basis.orientation_comp_linearEquiv_eq_neg_iff_det_neg, ← coe_det]
+  rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
 
 /-- Negation is a self-isometry of every integral lattice: the element `-1` of `O(L)`. -/
 def neg (L : IntegralLattice V) : Isometry L L where
