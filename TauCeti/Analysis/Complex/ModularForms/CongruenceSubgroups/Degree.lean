@@ -18,7 +18,7 @@ A subgroup `H ≤ SL(2, ℤ)` acts on the upper half-plane through its image `H.
 `PSL(2, ℝ)`, a subgroup of the level-one group `PSL(2, ℤ)`. The inclusion induces the map
 `X(H) → X(1)` of compactified quotients, whose degree is the index of the inclusion
 (`Subgroup.degree_compactifiedQuotientMap`), and that index is `[SL(2, ℤ) : ±H]`
-(`Subgroup.relIndex_map_sl2zToPSL2R`), equivalently the index `[PSL(2, ℤ) : H̄]` of the image of
+(`Subgroup.relIndex_map_sl2zToPSL2R`), equivalently the index in `PSL(2, ℤ)` of the image of
 `H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_center`). It is not `[SL(2, ℤ) : H]` in general: the
 two differ by a factor `2` exactly when `-I ∉ H`.
 
@@ -51,8 +51,8 @@ namespace Subgroup
 variable (H : Subgroup SL(2, ℤ))
 
 /-- **The degree of `X(H) → X(1)`.** For a finite-index subgroup `H ≤ SL(2, ℤ)`, the map of
-compactified modular curves induced by `H ≤ SL(2, ℤ)` has degree `[SL(2, ℤ) : ±H]`, the index
-`[PSL(2, ℤ) : H̄]` of the image of `H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_center`). -/
+compactified modular curves induced by `H ≤ SL(2, ℤ)` has degree `[SL(2, ℤ) : ±H]`, which is the
+index of the image of `H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_center`). -/
 theorem degree_compactifiedQuotientMap_map_sl2zToPSL2R [H.FiniteIndex] :
     degree (compactifiedQuotientMap H.map_sl2zToPSL2R_le_range) = H.withCenter.index := by
   rw [degree_compactifiedQuotientMap, ← relIndex, relIndex_map_sl2zToPSL2R]
@@ -79,7 +79,8 @@ theorem degree_compactifiedQuotientMap_Gamma0_mul_prod_primeFactors :
   rw [degree_compactifiedQuotientMap_Gamma0, Gamma0_index_mul_prod_primeFactors (NeZero.ne N)]
 
 /-- **The degree of `X₁(N) → X(1)` for `N ≥ 3`** is half of `[SL(2, ℤ) : Γ₁(N)]`: there
-`-I ∉ Γ₁(N)`, so each point of `PSL(2, ℤ) ⧸ Γ̄₁(N)` comes from two cosets of `Γ₁(N)`. -/
+`-I ∉ Γ₁(N)`, so each coset by the image of `Γ₁(N)` in `PSL(2, ℤ)` comes from two cosets of
+`Γ₁(N)`. -/
 theorem two_mul_degree_compactifiedQuotientMap_Gamma1 (hN : 3 ≤ N) :
     2 * degree (Subgroup.compactifiedQuotientMap (Gamma1 N).map_sl2zToPSL2R_le_range) =
       (Gamma1 N).index := by

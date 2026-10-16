@@ -310,7 +310,8 @@ theorem withCenter_eq_self_iff {G : Type*} [Group G] {Γ : Subgroup G} :
   sup_eq_left
 
 /-- **The image of `Γ` modulo the centre has the index of `Γ.withCenter`.** The projection
-`G → G ⧸ Z(G)` is surjective with kernel the centre, so `[G ⧸ Z(G) : Γ̄] = [G : Γ·Z(G)]`; for
+`G → G ⧸ Z(G)` is surjective with kernel the centre, so the image of `Γ` has index
+`[G : Γ·Z(G)]`; for
 `G = SL(2, ℤ)` this is the index of the image of `Γ` in `PSL(2, ℤ)`. -/
 theorem index_map_mk'_center {G : Type*} [Group G] (Γ : Subgroup G) :
     (Γ.map (QuotientGroup.mk' (Subgroup.center G))).index = Γ.withCenter.index := by
