@@ -63,9 +63,11 @@ private noncomputable def unitaryToNormOneUnits :
   (((Units.map (equivToSubalgebra D hD).toMonoidHom).comp Unitary.toUnits).codRestrict
     (normOneUnits D hD) fun z ↦ by
       rw [mem_normOneUnits_iff, MonoidHom.comp_apply, Units.coe_map,
-        Unitary.val_toUnits_apply, MulEquiv.coe_toMonoidHom]
-      dsimp only [AlgEquiv.toMulEquiv]
-      rw [MulEquiv.coe_mk, AlgEquiv.coe_toEquiv, norm_equivToSubalgebra]
+        Unitary.val_toUnits_apply]
+      -- `Units.map` views the algebra equivalence as a monoid homomorphism;
+      -- this conversion exposes the same algebra map for the norm computation.
+      change _root_.Algebra.norm ℤ (equivToSubalgebra D hD (z : _)) = 1
+      rw [norm_equivToSubalgebra]
       exact QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property)
 
 private theorem unitaryToNormOneUnits_bijective :
