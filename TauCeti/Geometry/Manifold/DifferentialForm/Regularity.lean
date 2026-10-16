@@ -199,6 +199,26 @@ theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
   mem_smoothForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
     (mem_smoothForms.mp hφ) (by simp)
 
+/-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
+theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M]
+    [IsManifold 𝓘(ℝ, E) 1 M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {n : WithTop ℕ∞}
+    (φ : RoughForm 𝓘(ℝ, E) M F k) :
+    IsSmoothForm 𝓘(ℝ, E) n φ := by
+  rw [isSmoothForm_def]
+  intro x
+  rw [Bundle.contMDiffAt_section x, contMDiffAt_iff_source,
+    contMDiffWithinAt_iff_contDiffWithinAt]
+  have hflat (f : E →
+      E [⋀^Fin k]→L[ℝ] F)
+      (s : Set (E)) (z : E) :
+      ContDiffWithinAt ℝ n f s z := by
+    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
+    rw [he]
+    exact contDiffWithinAt_const
+  exact hflat _ _ _
+
 variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :

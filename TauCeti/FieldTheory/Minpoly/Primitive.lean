@@ -41,6 +41,8 @@ clears the denominator of `x`.
 * `TauCeti.isPrimitive_primitiveMinpoly`, `TauCeti.leadingCoeff_primitiveMinpoly_pos`,
   `TauCeti.irreducible_primitiveMinpoly`, `TauCeti.aeval_primitiveMinpoly`: `F_x` is primitive,
   has positive leading coefficient, and for algebraic `x` is irreducible and vanishes at `x`.
+* `TauCeti.rootSet_primitiveMinpoly`: for algebraic `x`, `F_x` and `minpoly ℚ x` have the same
+  roots in every field of characteristic zero.
 * `TauCeti.primitiveMinpoly_dvd_iff`: for algebraic `x`, `F_x ∣ P` in `ℤ[X]` iff `P(x) = 0`.
 * `TauCeti.primitiveMinpoly_eq_of_irreducible`: the uniqueness characterisation of `F_x`.
 * `TauCeti.primitiveMinpoly_eq_minpoly_int`: `F_x = minpoly ℤ x` for `x` integral over `ℤ`.
@@ -147,6 +149,15 @@ theorem aeval_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
     aeval x (primitiveMinpoly x) = 0 := by
   rw [← aeval_map_algebraMap ℚ, algebraMap_int_eq, map_primitiveMinpoly hx, aeval_mul,
     minpoly.aeval, mul_zero]
+
+/-- For algebraic `x`, the primitive minimal polynomial has the same roots as `minpoly ℚ x` in
+every field of characteristic zero: its image in `ℚ[X]` is a nonzero multiple of `minpoly ℚ x`. -/
+theorem rootSet_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) (K : Type*) [Field K]
+    [CharZero K] : (primitiveMinpoly x).rootSet K = (minpoly ℚ x).rootSet K := by
+  ext z
+  rw [mem_rootSet, mem_rootSet, ← aeval_map_algebraMap ℚ, algebraMap_int_eq,
+    map_primitiveMinpoly hx, aeval_mul, aeval_C]
+  simp [minpoly.ne_zero hx.isIntegral]
 
 /-- The primitive minimal polynomial has the degree of `x` over `ℚ`. For transcendental `x` both
 sides are `0`. -/

@@ -81,8 +81,7 @@ private def epsilon : Z ⟶ W :=
 
 /-- The degree-zero projection after eliminating the two identity blocks. -/
 def projectionZero : K.X 0 ⟶ Z :=
-  h.zeroIso.hom ≫ (biprod.fst - (biprod.snd ≫ biprod.snd) ≫
-    (h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom ≫ biprod.fst))
+  h.zeroIso.hom ≫ (biprod.fst - pU ≫ delta h)
 
 /-- The corrected projection subtracts the bottom differential's surviving component. -/
 theorem projectionZero_def :
@@ -92,8 +91,7 @@ theorem projectionZero_def :
 
 /-- The degree-zero inclusion corrected by the differential into the upper identity block. -/
 def inclusionZero : Z ⟶ K.X 0 :=
-  (biprod.inl - (biprod.inl ≫ h.zeroIso.inv ≫ K.d 0 1 ≫ h.oneIso.hom) ≫
-    (biprod.inl ≫ biprod.inr)) ≫ h.zeroIso.inv
+  (biprod.inl - epsilon h ≫ iW) ≫ h.zeroIso.inv
 
 /-- The corrected inclusion subtracts the surviving component of the top differential. -/
 theorem inclusionZero_def :
@@ -111,11 +109,11 @@ private theorem d_projectionZero : K.d (-1) 0 ≫ projectionZero h = 0 := by
 private theorem inclusionZero_d : inclusionZero h ≫ K.d 0 1 = 0 := by
   rw [← cancel_mono h.oneIso.hom, zero_comp]
   have hw := h.inl_inr_d
-  simp only [inclusionZero, Preadditive.sub_comp, Category.assoc, hw,
+  simp only [inclusionZero_def, Preadditive.sub_comp, Category.assoc, hw,
     Category.comp_id, sub_self]
 
 private theorem inclusionZero_projectionZero : inclusionZero h ≫ projectionZero h = 𝟙 Z := by
-  simp [inclusionZero, projectionZero, Category.assoc]
+  simp [inclusionZero, projectionZero, pU, iW, Category.assoc]
 
 private def normalFirst : U ⟶ Z ⊞ (W ⊞ U) :=
   h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom
@@ -177,7 +175,6 @@ private theorem middle_contract : K.d 0 1 ≫ s1 h + s0 h ≫ K.d (-1) 0 +
   have hn := congrArg (fun f ↦ h.zeroIso.hom ≫ f ≫ h.zeroIso.inv)
     (normal_contraction h)
   simpa only [s0, s1, normalFirst, normalLast, projectionZero, inclusionZero,
-    delta, epsilon, iW, pU,
     Preadditive.comp_add, Preadditive.add_comp, Category.assoc,
     Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id, Category.id_comp] using hn
 
@@ -250,7 +247,7 @@ def toContraction : TauCeti.Contraction K
   δ_homotopy := δ_singles h
 
 /-- The degree-zero projection is the corrected projection to the surviving summand. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_proj_f_zero :
     (h.toContraction.proj).f 0 ≫ (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 Z).hom =
       h.projectionZero := by
@@ -258,7 +255,7 @@ theorem toContraction_proj_f_zero :
     Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- The contraction's degree-zero inclusion is the corrected inclusion of the surviving summand. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_incl_f_zero :
     (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 Z).inv ≫
       (h.toContraction.incl).f 0 = h.inclusionZero := by
