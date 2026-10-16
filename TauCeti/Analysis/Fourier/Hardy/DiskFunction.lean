@@ -154,7 +154,7 @@ theorem tendstoLocallyUniformlyOn_diskFunction :
     FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using h
 
 /-- The pointwise bound `‖F_x w‖ ≤ ‖x‖ / √(1 - ‖w‖ ^ 2)` on the open unit disk, obtained by
-pairing the coefficient sequence of `x` with the square-summable sequence `(w̄ ^ n)` in `ℓ²`. -/
+pairing the coefficient sequence of `x` with the square-summable sequence `(conj w ^ n)` in `ℓ²`. -/
 theorem norm_diskFunction_le (hw : ‖w‖ < 1) :
     ‖x.diskFunction w‖ ≤ ‖x‖ / √(1 - ‖w‖ ^ 2) := by
   have hw2 : ‖w‖ ^ 2 < 1 := by nlinarith [norm_nonneg w]
