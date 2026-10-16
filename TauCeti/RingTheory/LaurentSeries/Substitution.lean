@@ -177,10 +177,7 @@ theorem derivative_substAlgHom (f : K⸨X⸩) :
     _root_.LaurentSeries.derivative_mul, hpow, hseries,
     _root_.LaurentSeries.derivative_single_mul_coe]
   simp only [map_add, map_mul, substAlgHom_single, substAlgHom_coe]
-  simp only [HahnSeries.C_one, mul_one, smul_eq_mul, zsmul_eq_mul]
-  rw [show HahnSeries.C (f.order : K) = (f.order : K⸨X⸩) by
-    rw [← _root_.LaurentSeries.algebraMap_apply]
-    exact map_intCast _ _]
+  simp only [HahnSeries.C_one, mul_one, smul_eq_mul, zsmul_eq_mul, map_intCast]
   ring
 
 /-- Substituting `φ` and then `ψ` is substituting `φ (ψ)`. The hypotheses on `φ (ψ)` follow from
