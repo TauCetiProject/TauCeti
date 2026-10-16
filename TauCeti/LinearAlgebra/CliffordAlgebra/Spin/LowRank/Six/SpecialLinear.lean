@@ -797,11 +797,6 @@ end Polarization
 
 /-! ### Three hyperbolic planes -/
 
-private theorem spinGroupToEven_eq_evenUnitaryGroupEvenPart {V : Type*} [AddCommGroup V]
-    [Module K V] {Q : QuadraticForm K V} (s : spinGroup Q) :
-    spinGroupToEven Q s = evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s) :=
-  Subtype.ext (by simp [coe_evenUnitaryGroupEvenPart])
-
 section Hyperbolic
 
 variable (K) [NeZero (2 : K)]
@@ -818,7 +813,7 @@ private theorem det_hyperbolicSixEvenUnitaryEquivGeneralLinear
   have h := hyperbolicSixEvenEquivMatrixProd_apply K (evenUnitaryGroupEvenPart _ x)
   rw [SpinPolarizationData.evenCliffordEquivProdMatrix_apply] at h
   rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  exact (congrArg (fun p ↦ Matrix.det p.1) h).trans (Algebra.det_endAlgEquivMatrix _ _ _ _)
+  simpa using congrArg (fun p ↦ Matrix.det p.1) h
 
 private theorem hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq
     {x y : evenUnitaryGroup (splitEvenForm K 3)}
@@ -844,13 +839,13 @@ theorem mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGe
   rw [det_hyperbolicSixEvenUnitaryEquivGeneralLinear]
   constructor
   · rintro ⟨s, rfl⟩
-    rw [← spinGroupToEven_eq_evenUnitaryGroupEvenPart]
+    rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
     exact det_spinPlusAction_spinGroupToEven_of_basis _ _ (splitEvenBasis K 3) s
   · intro h
     obtain ⟨s, hs⟩ := exists_spinPlusAction_spinGroupToEven_eq_of_basis _
       (splitEvenPolarization_line K 3) (splitEvenBasis K 3) _ h
     replace hs := (congrArg (spinPlusAction _ _ (splitEvenPolarization_line K 3))
-      (spinGroupToEven_eq_evenUnitaryGroupEvenPart s).symm).trans hs
+      (evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply _ s)).trans hs
     exact MonoidHom.mem_range.mpr ⟨s, (hyperbolicSixEvenUnitaryEquivGeneralLinear K).injective
       (hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq K hs)⟩
 

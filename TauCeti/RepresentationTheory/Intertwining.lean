@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
 # Intertwining maps: images, and the action of the monoid algebra
@@ -35,6 +36,7 @@ caller has already done.
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
+* `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
 
 ## Main results
 
@@ -130,6 +132,48 @@ end lcomp
 end Representation.IntertwiningMap
 
 namespace Representation.Equiv
+
+section Basis
+
+variable {A G V W ι : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [Finite ι]
+
+/-- A linear identification with a based module is an equivalence of representations when the
+two actions have the same coordinates in that basis. -/
+noncomputable def ofBasisAction (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) : ρ.Equiv σ := by
+  refine .mk (e.trans b.equivFun) ?_
+  intro g
+  apply LinearMap.ext
+  intro v
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply]
+  rw [haction]
+  exact (hcoordinates g (e v)).symm
+
+/-- The equivalence built by `ofBasisAction` sends a vector to its coordinates after applying the
+given linear equivalence. -/
+@[simp]
+theorem ofBasisAction_apply (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) (v : V) :
+    ofBasisAction ρ σ e b a haction hcoordinates v = b.equivFun (e v) :=
+  (rfl)
+
+/-- The inverse of the equivalence built by `ofBasisAction` reconstructs a vector from its
+coordinates and applies the inverse of the given linear equivalence. -/
+@[simp]
+theorem ofBasisAction_symm_apply (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) (w : ι → A) :
+    (ofBasisAction ρ σ e b a haction hcoordinates).symm w =
+      e.symm (b.equivFun.symm w) :=
+  (rfl)
+
+end Basis
 
 section Tensor
 

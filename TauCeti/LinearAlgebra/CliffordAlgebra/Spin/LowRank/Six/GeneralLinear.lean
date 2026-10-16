@@ -343,15 +343,6 @@ universe u
 
 variable (K : Type u) [Field K]
 
-private theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 6 := by
-  simp [SplitEvenSpace]
-
-private theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
-  Submodule.finrank_eq_zero.not.1 <| by
-    rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-      ((hyperbolicSix_finrank K).trans (by norm_num : 6 = 2 * 3))]
-    norm_num
-
 variable [NeZero (2 : K)]
 
 /-- The invertibility witness used by the characteristic-not-two Clifford APIs. -/
@@ -363,17 +354,16 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
     even (splitEvenForm K 3) ≃ₐ[K]
       Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K := by
   simpa using (splitEvenPolarization K 3).evenCliffordEquivProdMatrix
-    (hyperbolicSix_W_ne_bot K) ((hyperbolicSix_finrank K).trans (by norm_num : 6 = 2 * 3))
+    (l := 3)
+    (splitEvenPolarization_W_ne_bot K (by norm_num))
+      ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =
       (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
-        (Submodule.finrank_eq_zero.not.1 <| by
-          rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-            (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 3) = 2 * 3)]
-          norm_num)
-        (by simp [SplitEvenSpace]) x := by
+        (splitEvenPolarization_W_ne_bot K (by norm_num))
+        (finrank_splitEvenSpace K 3) x := by
   simp [hyperbolicSixEvenEquivMatrixProd]
 
 /-- The even unitary group of three hyperbolic planes is the four-dimensional general linear
@@ -381,7 +371,8 @@ group. In particular, specializing `K` to `ℚ` gives the split rational six-dim
 noncomputable def hyperbolicSixEvenUnitaryEquivGeneralLinear :
     evenUnitaryGroup (splitEvenForm K 3) ≃* Matrix.GeneralLinearGroup (Fin 4) K :=
   (hyperbolicSixEvenEquivMatrixProd K).evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-    (nondegenerate_splitEvenForm K 3) (hyperbolicSix_finrank K)
+    (nondegenerate_splitEvenForm K 3)
+      ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
 /-- The hyperbolic general linear equivalence is the first half-spin matrix component. -/
 @[simp]
