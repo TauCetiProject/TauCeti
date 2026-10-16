@@ -25,6 +25,19 @@ namespace TauCeti.Manifold
 
 open Riemannian.Tensor
 
+/-- The canonical identification of a tangent space of a real inner-product space with the
+model space preserves inner products. -/
+theorem inner_tangentSpace_vectorSpace {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {x : F}
+    (v w : TangentSpace 𝓘(ℝ, F) x) :
+    inner ℝ v w = inner ℝ (NormedSpace.fromTangentSpace x v)
+      (NormedSpace.fromTangentSpace x w) := by
+  -- `TangentSpace` is a type synonym for `F`, `fromTangentSpace` is its
+  -- canonical `tangentSpaceCastModel`, and the standard metric has `innerSL` as
+  -- its inner product. This is the same definitional transport used by
+  -- Mathlib's `norm_tangentSpace_vectorSpace`.
+  rfl
+
 /-- On a flat inner product space with its standard Riemannian metric, the manifold gradient is
 Mathlib's `gradient`. -/
 theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -36,18 +49,10 @@ theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSp
   apply (NormedSpace.fromTangentSpace x).injective
   apply ext_inner_right ℝ
   intro v
-  have hinner (a b : TangentSpace 𝓘(ℝ, F) x) :
-      inner ℝ a b = inner ℝ (NormedSpace.fromTangentSpace x a)
-        (NormedSpace.fromTangentSpace x b) := by
-    -- `TangentSpace` is a type synonym for `F`, `fromTangentSpace` is its
-    -- canonical `tangentSpaceCastModel`, and the standard metric has `innerSL` as
-    -- its inner product. This is the same definitional transport used by
-    -- Mathlib's `norm_tangentSpace_vectorSpace`.
-    rfl
   calc
     inner ℝ (NormedSpace.fromTangentSpace x (mgradient 𝓘(ℝ, F) f x)) v =
       inner ℝ (mgradient 𝓘(ℝ, F) f x) ((NormedSpace.fromTangentSpace x).symm v) := by
-        simpa using (hinner (mgradient 𝓘(ℝ, F) f x)
+        simpa using (inner_tangentSpace_vectorSpace (mgradient 𝓘(ℝ, F) f x)
           ((NormedSpace.fromTangentSpace x).symm v)).symm
     _ = inner ℝ (gradient f x) v := by
       rw [inner_mgradient, ← InnerProductSpace.toDual_apply_apply, toDual_gradient]

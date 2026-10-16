@@ -118,7 +118,7 @@ theorem HasGaloisLabel.exists_isRoot_specialize_quarticD4Spec_iff (h : HasGalois
     (hf : f.Monic) :
     (∃ a : F, (quarticD4Spec.specialize F f).IsRoot a) ↔ (j : ℕ) ≤ 2 := by
   rw [h.exists_isRoot_specialize_iff hf quarticD4Spec
-      ((separable_quarticD4Spec_specialize_iff hf h.natDegree_eq).2 h.separable),
+      ((resolventSeparationEvidence_quarticD4Spec_iff hf h.natDegree_eq).2 h.separable),
     quarticD4Spec_H, exists_le_map_conj_referenceSubgroup_four_two_iff]
 
 /-- **The discriminant reads the parity of a quartic label.** Away from characteristic `2`, the
