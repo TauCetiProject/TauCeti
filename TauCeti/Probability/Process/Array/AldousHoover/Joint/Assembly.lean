@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
+public import TauCeti.Probability.Process.Array.AldousHoover.Basic
 
 /-!
 # Assembling directed joint Aldous--Hoover codings

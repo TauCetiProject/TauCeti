@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
+public import Mathlib.RingTheory.Invariant.Galois
 
 /-!
 # Galois groups of integral closures
@@ -35,6 +36,18 @@ extension `M / K` and a subgroup `H` of `Gal(M/K)`, with `C` the integral closur
 -/
 
 public section
+
+/-- The action of `Gal(L/K)` on an integral closure `B` of `A` in `L` commutes with the action of
+`A`, since it is the restriction of the action by `K`-algebra automorphisms of `L`. -/
+theorem IsIntegralClosure.smulCommClass (A K L B : Type*)
+    [CommRing A] [CommRing B] [Field K] [Field L]
+    [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
+    [Algebra A B] [Algebra B L] [IsScalarTower A B L]
+    [IsFractionRing A K] [IsIntegralClosure B A L] [Algebra.IsAlgebraic K L] :
+    letI := IsIntegralClosure.MulSemiringAction A K L B
+    SMulCommClass (L ≃ₐ[K] L) A B :=
+  letI := IsIntegralClosure.MulSemiringAction A K L B
+  ⟨fun σ a b ↦ map_smul (galRestrict A K L B σ) a b⟩
 
 namespace IsGaloisGroup
 

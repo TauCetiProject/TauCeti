@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.DoubleCoset.Map
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.FixedField
 
 /-!
 # Naturality of the double-coset splitting law
