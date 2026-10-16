@@ -75,6 +75,8 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 
 namespace TauCeti.CommHopfAlgCat

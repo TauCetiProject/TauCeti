@@ -83,9 +83,9 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
 * `TauCeti.Lie.isClosed_setOf_forall_lieExp_smul_mem`: the candidate Lie algebra is a closed
   subset of `𝔤`.
 * `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`: the Lie algebra of `K` is invariant under the
-  adjoint action of `K`.
-* `TauCeti.Lie.lieSubalgebraOfSubgroup_le_comap_Ad_sub_id`: the same, in the form `Ad g - 1` maps
-  `Lie(K)` into itself, as `Submodule.mapQ` consumes it.
+  adjoint action of the normalizer of `K`.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_le_comap_Ad_sub_id`: for `g` in the normalizer of `K`,
+  `Ad g - 1` maps `Lie(K)` into itself, in the form that `Submodule.mapQ` consumes.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
   intersection is the intersection of the Lie algebras.
 
@@ -156,16 +156,16 @@ theorem isClosed_setOf_forall_lieExp_smul_mem {K : Subgroup G} (hK : IsClosed (K
   refine isClosed_iInter fun t => hK.preimage ?_
   exact (contMDiff_lieExp (I := I) (G := G)).continuous.comp (continuous_const_smul t)
 
-/-- The adjoint action of an element of `K` preserves the defining condition: conjugating the
-one-parameter subgroup of `Y` by `g ∈ K` is the one-parameter subgroup of `Ad g Y`, and stays
-inside `K`. -/
-theorem lieExp_smul_Ad_mem {K : Subgroup G} {g : G} (hg : g ∈ K)
+/-- The adjoint action of an element of the normalizer of `K` preserves the defining condition:
+conjugating the one-parameter subgroup of `Y` by `g ∈ N(K)` is the one-parameter subgroup of
+`Ad g Y`, and stays inside `K`. -/
+theorem lieExp_smul_Ad_mem {K : Subgroup G} {g : G} (hg : g ∈ Subgroup.normalizer (K : Set G))
     {Y : LeftInvariantDerivation I G} (hY : ∀ t : ℝ, lieExp (I := I) (t • Y) ∈ K) (t : ℝ) :
     lieExp (I := I) (t • Ad (I := I) g Y) ∈ K := by
   have hconj : lieExp (I := I) (t • Ad (I := I) g Y) = g * lieExp (I := I) (t • Y) * g⁻¹ := by
     rw [← map_smul, conj_lieExp (I := I) g (t • Y)]
   rw [hconj]
-  exact K.mul_mem (K.mul_mem hg (hY t)) (K.inv_mem hg)
+  exact (Subgroup.mem_normalizer_iff.mp hg _).mp (hY t)
 
 /-! ### The derivative of the adjoint orbit -/
 
@@ -250,7 +250,8 @@ theorem lieExp_smul_lie_mem {K : Subgroup G} (hK : IsClosed (K : Set G))
   -- The adjoint orbit of `Y` along the one-parameter subgroup of `X`.
   set φ : ℝ → LeftInvariantDerivation I G := fun s => Ad (I := I) (lieExp (I := I) (s • X)) Y
     with hφ
-  have hφmem : ∀ s : ℝ, φ s ∈ S := fun s => lieExp_smul_Ad_mem (hX s) hY
+  have hφmem : ∀ s : ℝ, φ s ∈ S := fun s =>
+    lieExp_smul_Ad_mem (Subgroup.le_normalizer (hX s)) hY
   have hφzero : φ 0 = Y := by simp [hφ]
   have hderiv : HasDerivAt φ ⁅X, Y⁆ 0 := hasDerivAt_Ad_lieExp_smul_apply_zero X Y
   -- A difference quotient of a curve in `S` stays in `S`, and `S` is closed.
@@ -385,24 +386,24 @@ theorem lieSubalgebraOfSubgroup_top :
   eq_top_iff.mpr fun _ _ =>
     mem_lieSubalgebraOfSubgroup_of_forall fun _ => Subgroup.mem_top _
 
-/-- **The Lie algebra of `K` is invariant under the adjoint action of `K`.** Conjugating by `g ∈ K`
-carries the one-parameter subgroup of `X` to the one of `Ad g X`, which therefore also stays in `K`.
-This is the bundled form of `lieExp_smul_Ad_mem`, the statement that makes the adjoint orbit of the
-bracket proof run inside `𝔨`. No hypothesis on `K` is needed: `Ad g` is an automorphism of `𝔤`
-preserving the generating set, hence preserves the subalgebra it generates. Invariance under `Ad g`
-for `g` outside `K` — which for a normal `K` would say that `𝔨` is an ideal of `𝔤` — is not
-asserted here. -/
+/-- **The Lie algebra of `K` is invariant under the adjoint action of the normalizer of `K`.**
+Conjugating by `g ∈ N(K)` carries the one-parameter subgroup of `X` to the one of `Ad g X`, which
+therefore also stays in `K`. This is the bundled form of `lieExp_smul_Ad_mem`, the statement that
+makes the adjoint orbit of the bracket proof run inside `𝔨`. No hypothesis on `K` is needed:
+`Ad g` is an automorphism of `𝔤` preserving the generating set, hence preserves the subalgebra it
+generates. -/
 theorem Ad_mem_lieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
-    (hg : g ∈ K) {X : LeftInvariantDerivation I G}
+    (hg : g ∈ Subgroup.normalizer (K : Set G)) {X : LeftInvariantDerivation I G}
     (hX : X ∈ lieSubalgebraOfSubgroup (I := I) K) :
     Ad (I := I) g X ∈ lieSubalgebraOfSubgroup (I := I) K :=
   lieSubalgebraOfSubgroup_le_iff
       (L := (lieSubalgebraOfSubgroup (I := I) K).comap (Ad (I := I) g).toLieHom)
       |>.mpr (fun _ hY => mem_lieSubalgebraOfSubgroup_of_forall (lieExp_smul_Ad_mem hg hY)) hX
 
-/-- **`Ad g - 1` preserves the Lie algebra of `K` for `g ∈ K`**, in the form that lets it descend
-to the quotient `𝔤 ⧸ Lie(K)` through `Submodule.mapQ`. -/
-theorem lieSubalgebraOfSubgroup_le_comap_Ad_sub_id {K : Subgroup G} {g : G} (hg : g ∈ K) :
+/-- **`Ad g - 1` preserves the Lie algebra of `K` for `g ∈ N(K)`**, in the form that lets it
+descend to the quotient `𝔤 ⧸ Lie(K)` through `Submodule.mapQ`. -/
+theorem lieSubalgebraOfSubgroup_le_comap_Ad_sub_id {K : Subgroup G} {g : G}
+    (hg : g ∈ Subgroup.normalizer (K : Set G)) :
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule ≤
       Submodule.comap ((Ad (I := I) g).toLinearEquiv.toLinearMap - LinearMap.id)
         (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=

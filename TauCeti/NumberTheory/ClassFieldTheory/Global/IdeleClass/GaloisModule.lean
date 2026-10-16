@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Level
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SIdeles
+public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!
@@ -29,6 +30,13 @@ degree (`NormalLayer.ideleClassCohomologyEquiv`), its Tate cohomology is the Tat
 its Herbrand quotient is `h(C_E)`, computed for the action of `Gal(E/F)`
 (`NormalLayer.herbrandQuotient_rep_globalFormation`).
 
+For a finite Galois extension `L/K` given abstractly, the layer of `fixingOpenNormalSubgroup K L`
+has fixed field the image `E` of a `K`-embedding `ι : L →ₐ[K] Kˢ`, and `C_E` is `C_L` transported
+along `ι`. A `K`-isomorphism of extensions identifies the cohomology of their idele classes
+(`ideleClassCohomologyCongr`), so the cohomology of the layer is `Hⁿ(Gal(L/K), C_L)`
+(`globalLayerCohomologyEquiv`). This is the form in which vanishing statements on the layers of
+`globalFormation K`, such as that of `H¹`, apply to the idele classes of a finite Galois extension.
+
 The reductions of `TauCeti.NumberTheory.ClassFieldTheory.Formation.PrimeDegree` derive the
 vanishing of `H¹` and the bound `#H² ∣ [U : V]` for a layer from the two fundamental inequalities
 on all the layers of prime degree inside it, and the ground subgroups of those layers are proper
@@ -49,6 +57,12 @@ quotient of the idele classes of a cyclic extension `E/F` of number fields, whic
   layer is `Hⁿ_T(Gal(E/F), C_E)`.
 * `TauCeti.ClassFieldTheory.NormalLayer.herbrandQuotient_rep_globalFormation`: the Herbrand
   quotient of the layer is `h(C_E)`.
+* `TauCeti.ClassFieldTheory.ideleClassCohomologyCongr`: a `K`-isomorphism `L ≃ₐ[K] M` identifies
+  `Hⁿ(Aut(L/K), C_L)` with `Hⁿ(Aut(M/K), C_M)`.
+* `TauCeti.ClassFieldTheory.globalLayerCohomologyEquiv`: the cohomology of the layer of a finite
+  Galois extension `L/K` is `Hⁿ(Gal(L/K), C_L)`.
+* `TauCeti.ClassFieldTheory.subsingleton_groupCohomology_ideleClassRep_iff_subsingleton_H`:
+  `Hⁿ(Gal(L/K), C_L)` vanishes exactly when the cohomology of the layer does.
 
 ## References
 
@@ -173,3 +187,90 @@ theorem herbrandQuotient_rep_globalFormation :
   rw [TateCohomology.herbrandQuotient_def, TateCohomology.herbrandQuotient_def, h 0, h (-1)]
 
 end TauCeti.ClassFieldTheory.NormalLayer
+
+namespace TauCeti.ClassFieldTheory
+
+variable {K : Type} [Field K] {L : Type} [Field L] [NumberField L] [Algebra K L]
+
+/-! ### Transport along isomorphisms of extensions -/
+
+section Congr
+
+variable {M : Type} [Field M] [NumberField M] [Algebra K M]
+
+/-- **The cohomology of the idele classes is invariant under isomorphism of extensions**: a
+`K`-isomorphism `e : L ≃ₐ[K] M` identifies `Hⁿ(Aut(L/K), C_L)` with `Hⁿ(Aut(M/K), C_M)`, along
+conjugation by `e` on the automorphism groups (`AlgEquiv.autCongr`) and transport of idele classes
+on the coefficients (`GlobalNumberFields.ideleClassEquiv`). -/
+def ideleClassCohomologyCongr (e : L ≃ₐ[K] M) (n : ℕ) :
+    groupCohomology (ideleClassRep K L) n ≃+ groupCohomology (ideleClassRep K M) n :=
+  (groupCohomology.mapIso e.autCongr
+    (GlobalNumberFields.ideleClassEquiv (e : L ≃+* M)).toAdditive.toIntLinearEquiv
+    (fun σ ↦ LinearMap.ext fun c ↦
+      congrArg Additive.ofMul (GlobalNumberFields.ideleClassEquiv_smul e σ (Additive.toMul c)))
+    n).toLinearEquiv.toAddEquiv
+
+/-- `ideleClassCohomologyCongr e` is the isomorphism `groupCohomology.mapIso` along `e.autCongr`
+and the transport of idele classes. -/
+theorem ideleClassCohomologyCongr_apply (e : L ≃ₐ[K] M) (n : ℕ)
+    (x : groupCohomology (ideleClassRep K L) n) :
+    ideleClassCohomologyCongr e n x =
+      (groupCohomology.mapIso e.autCongr
+        (GlobalNumberFields.ideleClassEquiv (e : L ≃+* M)).toAdditive.toIntLinearEquiv
+        (fun σ ↦ LinearMap.ext fun c ↦
+          congrArg Additive.ofMul (GlobalNumberFields.ideleClassEquiv_smul e σ (Additive.toMul c)))
+        n).hom x :=
+  (rfl)
+
+end Congr
+
+/-! ### The layer of a finite Galois extension -/
+
+section Layer
+
+variable [NumberField K] [IsGalois K L]
+
+/-- **The cohomology of the layer of a finite Galois extension is the Galois cohomology of its
+idele classes**: for `L/K` finite Galois and a `K`-embedding `ι : L →ₐ[K] Kˢ`, the cohomology of
+the layer of `fixingOpenNormalSubgroup K L` in the idele-class formation is `Hⁿ(Gal(L/K), C_L)` in
+every degree `n`. The layer is read on the image `E` of `ι` (`ideleClassCohomologyEquiv`), whose
+Galois group is identified with `Gal(L/K)` by restriction along `ι` (`layerGalEquiv`), and `C_E`
+is identified with `C_L` along `ι` (`ideleClassCohomologyCongr`). -/
+def globalLayerCohomologyEquiv (ι : L →ₐ[K] SeparableClosure K) (n : ℕ) :
+    (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).H (globalFormation K) n ≃+
+      groupCohomology (ideleClassRep K L) n :=
+  haveI : NumberField ι.fieldRange :=
+    have : FiniteDimensional K ι.fieldRange := ι.equivFieldRange.toLinearEquiv.finiteDimensional
+    .of_module_finite K _
+  ((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ideleClassCohomologyEquiv
+    (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup ι)
+    (e := (layerGalEquiv ι).trans ι.equivFieldRange.autCongr)
+    (coe_autCongr_layerGalEquiv_mk_apply ι) n).trans
+    (ideleClassCohomologyCongr ι.equivFieldRange.symm n)
+
+/-- `globalLayerCohomologyEquiv ι` reads the layer on the image of `ι`
+(`NormalLayer.ideleClassCohomologyEquiv`) and transports the result to `L` along `ι`
+(`ideleClassCohomologyCongr`). -/
+theorem globalLayerCohomologyEquiv_apply (ι : L →ₐ[K] SeparableClosure K) (n : ℕ)
+    [NumberField ι.fieldRange]
+    (x : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).H (globalFormation K) n) :
+    globalLayerCohomologyEquiv ι n x =
+      ideleClassCohomologyCongr ι.equivFieldRange.symm n
+        ((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ideleClassCohomologyEquiv
+          (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup ι)
+          (e := (layerGalEquiv ι).trans ι.equivFieldRange.autCongr)
+          (coe_autCongr_layerGalEquiv_mk_apply ι) n x) :=
+  (rfl)
+
+/-- **The idele-class cohomology of a finite Galois extension vanishes with that of its layer**:
+for `L/K` finite Galois, `Hⁿ(Gal(L/K), C_L)` is trivial exactly when `Hⁿ` of the layer of
+`fixingOpenNormalSubgroup K L` in the idele-class formation is. -/
+theorem subsingleton_groupCohomology_ideleClassRep_iff_subsingleton_H (n : ℕ) :
+    Subsingleton (groupCohomology (ideleClassRep K L) n) ↔
+      Subsingleton
+        ((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).H (globalFormation K) n) :=
+  (globalLayerCohomologyEquiv IsSepClosed.lift n).subsingleton_congr.symm
+
+end Layer
+
+end TauCeti.ClassFieldTheory

@@ -282,7 +282,7 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
 omit [GradedAlgebra 𝒜] in
 include he hspan in
 /-- A degree-zero element of `A eᵢ` is a scalar multiple of `eᵢ`. -/
-private theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
+theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
     (hxi : x ∈ (Ideal.span {e i} : Ideal A)) : ∃ c : k, x = c • e i := by
   classical
   have hmul : ∀ y ∈ Submodule.span k (Set.range e), ∃ c : k, y * e i = c • e i := by

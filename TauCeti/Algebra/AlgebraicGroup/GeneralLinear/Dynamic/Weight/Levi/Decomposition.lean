@@ -209,13 +209,10 @@ private theorem mapPointsFunctor_apply_eq_mapValue_generic
         ((CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R K)
           (show HopfAlgebra.points (R := R) (H := K) (CommAlgCat.of R K) from
             toConv (AlgHom.id R K))) := by
-  -- The application lemmas cannot rewrite the cross-universe `pointsFunctor.obj` carrier at
-  -- implicit transparency. Expose `CommHopfAlgCat.Hom.mapPointsFunctor`, `mapValue`, and
-  -- `WithConv` so both sides
-  -- become the underlying pre- and post-compositions of algebra homomorphisms.
-  change toConv (g.ofConv.comp φ.hom) =
-    AlgHom.mapValue g.ofConv (toConv ((AlgHom.id R K).comp φ.hom.toAlgHom))
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   simp only [AlgHom.mapValue_apply, AlgHom.id_comp]
+  rfl
 
 -- The representing isomorphism sends the generic parabolic point to a point whose base change
 -- along `g : O(P(w)) → A` is the dynamic-parabolic point represented by `g`. The explicit
@@ -291,8 +288,8 @@ theorem weightParabolicLimitCoordinateMap_comp_weightLeviToParabolicCoordinateMa
   -- The points functor is contravariant, so the coordinate composite appears in reverse order.
   -- Writing it as `CommHopfAlgCat.Hom.mapPointsFunctor` lets the two representing-map theorems
   -- rewrite it.
-  change CommHopfAlgCat.Hom.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w) ≫
-      CommHopfAlgCat.Hom.mapPointsFunctor (weightParabolicLimitCoordinateMap R w) = 𝟙 _
+  rw [CommHopfAlgCat.pointsFunctor_map, CommHopfAlgCat.pointsFunctor_map]
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_comp, CommHopfAlgCat.Hom.mapPointsFunctor_id]
   rw [mapPointsFunctor_weightParabolicLimitCoordinateMap_sameUniverse,
     mapPointsFunctor_weightLeviToParabolicCoordinateMap_comp_weightParabolicLimitPointsMap]
 

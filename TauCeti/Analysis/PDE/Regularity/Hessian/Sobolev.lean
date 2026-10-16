@@ -20,7 +20,8 @@ import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 /-!
 # The Calderón–Zygmund estimate for strong solutions in `W^{2,p}(ℝⁿ)`
 
-For `n ≥ 3` and `1 < p < ∞`, this file proves the `W^{2,p}` estimate of the Hessian on the whole
+For every dimension `n` and `1 < p < ∞`, this file proves the `W^{2,p}` estimate of the Hessian on
+the whole
 space for constant-coefficient operators, and in particular for the Laplacian. Here `D²u` is the
 highest recorded weak derivative `TauCeti.Wkp.iteratedGradient 1 u`, the weak Hessian as an `Lᵖ`
 field of endomorphisms of `ℝⁿ` with the operator norm, so that `⟪D²u(x) eᵢ, eⱼ⟫` is the weak
@@ -108,8 +109,8 @@ private theorem norm_iteratedGradient_ofTestFunctionₗ_le {c : ℝ} (hc : 0 ≤
     _ = c * lpNorm L p volume := by
         rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc, lpNorm]
 
-/-- **The Calderón–Zygmund estimate for constant coefficients in `W^{2,p}(ℝⁿ)`.** Let `n ≥ 3`
-and `1 < p < ∞`. There is a constant `C`, depending only on `n` and `p`, such that for every
+/-- **The Calderón–Zygmund estimate for constant coefficients in `W^{2,p}(ℝⁿ)`.** Let `1 < p < ∞`,
+in any dimension `n`. There is a constant `C`, depending only on `n` and `p`, such that for every
 matrix `A` with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, every `u ∈ W^{2,p}(ℝⁿ)` solving
 `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere, with `f ∈ Lᵖ(ℝⁿ)`, satisfies
 
@@ -117,7 +118,7 @@ matrix `A` with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, every `u ∈ W^{2,p
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
 endomorphisms of `ℝⁿ`. -/
-theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq (hn : 3 ≤ n)
+theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -128,7 +129,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq (hn : 3 ≤
           EuclideanSpace.single j 1⟫_ℝ = f x) →
         ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
   obtain ⟨C, hC⟩ :=
-    PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real hn hp hp_top
+    PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real hp hp_top
   refine ⟨C, fun {A lam} hlam hA u f hf => ?_⟩
   set T := Matrix.contraction A
   have hvol : ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
@@ -171,8 +172,8 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq (hn : 3 ≤
   rw [hTH]
   exact norm_iteratedGradient_ofTestFunctionₗ_le (by positivity) hLfin φ h
 
-/-- **The Calderón–Zygmund estimate for strong solutions in `W^{2,p}(ℝⁿ)`.** Let `n ≥ 3` and
-`1 < p < ∞`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f` with
+/-- **The Calderón–Zygmund estimate for strong solutions in `W^{2,p}(ℝⁿ)`.** Let `1 < p < ∞`, in
+any dimension `n`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f` with
 `f ∈ Lᵖ(ℝⁿ)` strongly, in the sense that the trace of the weak Hessian of `u` is `f` in `Lᵖ`,
 satisfies
 
@@ -180,14 +181,14 @@ satisfies
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
 endomorphisms of `ℝⁿ`. -/
-theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq (hn : 3 ≤ n)
+theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) ⊤ p 2)
       (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
         (⊤ : Opens (EuclideanSpace ℝ (Fin n))))),
       (traceCLM ℝ (EuclideanSpace ℝ (Fin n))).compLpL p _ (Wkp.iteratedGradient 1 u) = f →
       ‖Wkp.iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq hn hp hp_top
+  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq hp hp_top
   refine ⟨C, fun u f hf => ?_⟩
   -- The Laplacian has the identity matrix as constant coefficients, and contracting with the
   -- identity matrix is the trace.
@@ -201,15 +202,16 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq (hn : 3 
     rw [← hf, hx (by simp), Matrix.contraction_apply])
   rwa [div_one] at h
 
-/-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)`, against test functions.** Let `n ≥ 3` and
-`1 < p < ∞`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f` with
+/-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)`, against test functions.** Let `1 < p < ∞`,
+in any dimension `n`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f`
+with
 `f ∈ Lᵖ(ℝⁿ)`, in the sense that `∫ Δφ • u = ∫ φ • f` for every test function `φ`, satisfies
 
 `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}`,
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
 endomorphisms of `ℝⁿ`. -/
-theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq (hn : 3 ≤ n)
+theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) ⊤ p 2)
       (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
@@ -217,7 +219,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq (
       (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ),
         ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • Wkp.value 2 u x = ∫ x, φ x • f x) →
       ‖Wkp.iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq hn hp hp_top
+  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq hp hp_top
   refine ⟨C, fun u f hf => hC u f ?_⟩
   -- A solution against test functions is a strong solution: the trace of its weak Hessian is `f`.
   have hloc : LocallyIntegrableOn (f : EuclideanSpace ℝ (Fin n) → ℝ) ⊤ volume :=
