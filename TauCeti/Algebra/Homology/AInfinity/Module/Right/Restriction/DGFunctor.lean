@@ -216,9 +216,6 @@ variable {R : Type u} {A : Type u} {B : Type u} [CommRing R]
 /-- **Restriction along an `A∞` morphism `f : A ⟶ B` as a DG functor** from the DG category of right
 `A∞` modules over `B` to that over `A`: it restricts modules along `f`, and restricts the cochains
 of the morphism complexes (`TauCeti.AInfinityRightModule.homCochains.restrictScalars`). -/
--- The body is exposed so that the object map reduces to that of the restriction functor in the
--- types of the characteristic equations, as for `CategoryTheory.EnrichedFunctor.ofDGMap`.
-@[expose]
 noncomputable def restrictScalarsDGFunctor :
     EnrichedFunctor (CochainComplex (ModuleCat.{u} R) ℤ) (AInfinityRightModuleCat.{u, u, u} BB)
       (AInfinityRightModuleCat.{u, u, u} AA) :=
@@ -246,13 +243,31 @@ theorem restrictScalarsDGFunctor_obj (M : AInfinityRightModuleCat.{u, u, u} BB) 
     (restrictScalarsDGFunctor f).obj M = (restrictScalars f).obj M :=
   (rfl)
 
+/-- Transport homogeneous morphisms from the objects of the restriction DG functor to the
+corresponding objects of the underlying restriction functor. -/
+noncomputable def dgHomLinearEquivRestrictScalarsDGFunctor
+    (M N : AInfinityRightModuleCat.{u, u, u} BB) (n : ℤ) :
+    DGHom R n ((restrictScalarsDGFunctor f).obj M) ((restrictScalarsDGFunctor f).obj N) ≃ₗ[R]
+      DGHom R n ((restrictScalars f).obj M) ((restrictScalars f).obj N) :=
+  LinearEquiv.cast (R := R)
+    (M := fun P : AInfinityRightModuleCat.{u, u, u} AA ×
+        AInfinityRightModuleCat.{u, u, u} AA ↦ DGHom R n P.1 P.2) <|
+      congrArg₂ (·, ·) (restrictScalarsDGFunctor_obj f M)
+        (restrictScalarsDGFunctor_obj f N)
+
 /-- The restriction DG functor restricts cochains of the morphism complexes. -/
 @[simp]
 theorem dgHomLinearEquivCochains_dgMap_restrictScalarsDGFunctor
     {M N : AInfinityRightModuleCat.{u, u, u} BB} {n : ℤ} (φ : DGHom R n M N) :
-    dgHomLinearEquivCochains ((restrictScalarsDGFunctor f).obj M)
-        ((restrictScalarsDGFunctor f).obj N) n ((restrictScalarsDGFunctor f).dgMap n φ) =
+    dgHomLinearEquivCochains ((restrictScalars f).obj M) ((restrictScalars f).obj N) n
+        (dgHomLinearEquivRestrictScalarsDGFunctor f M N n
+          ((restrictScalarsDGFunctor f).dgMap n φ)) =
       homCochains.restrictScalars f n (dgHomLinearEquivCochains M N n φ) := by
+  have hM := restrictScalarsDGFunctor_obj f M
+  have hN := restrictScalarsDGFunctor_obj f N
+  cases hM
+  cases hN
+  simp only [dgHomLinearEquivRestrictScalarsDGFunctor]
   rw [EnrichedFunctor.dgMap_apply]
   -- The degree-`n` component of the chain map of `EnrichedFunctor.ofDGMap` is the prescribed map.
   exact LinearEquiv.apply_symm_apply _ _
@@ -262,14 +277,16 @@ of a module morphism `φ`, it is the closed degree-zero morphism of the restrict
 @[simp]
 theorem dgMap_restrictScalarsDGFunctor_homEquivDGCycles
     {M N : AInfinityRightModuleCat.{u, u, u} BB} (φ : M ⟶ N) :
-    (restrictScalarsDGFunctor f).dgMap 0 (homEquivDGCycles M N φ : DGHom R 0 M N) =
-      (homEquivDGCycles ((restrictScalarsDGFunctor f).obj M) ((restrictScalarsDGFunctor f).obj N)
+    dgHomLinearEquivRestrictScalarsDGFunctor f M N 0
+        ((restrictScalarsDGFunctor f).dgMap 0
+          (homEquivDGCycles M N φ : DGHom R 0 M N)) =
+      (homEquivDGCycles ((restrictScalars f).obj M) ((restrictScalars f).obj N)
         ((restrictScalars f).map φ) : DGHom R 0 _ _) := by
   have hφ : dgHomLinearEquivCochains M N 0 (homEquivDGCycles M N φ : DGHom R 0 M N) =
       ⟨φ.barMap, φ.barMap_mem_homCochains⟩ :=
     Subtype.ext (coe_homEquivDGCycles_apply φ)
-  apply (dgHomLinearEquivCochains ((restrictScalarsDGFunctor f).obj M)
-    ((restrictScalarsDGFunctor f).obj N) 0).injective
+  apply (dgHomLinearEquivCochains ((restrictScalars f).obj M)
+    ((restrictScalars f).obj N) 0).injective
   rw [dgHomLinearEquivCochains_dgMap_restrictScalarsDGFunctor, hφ]
   exact Subtype.ext <| (homCochains.coe_restrictScalars_barMap f φ).trans
     (coe_homEquivDGCycles_apply ((restrictScalars f).map φ)).symm
