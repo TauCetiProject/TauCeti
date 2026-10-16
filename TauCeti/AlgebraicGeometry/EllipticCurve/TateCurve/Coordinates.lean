@@ -249,5 +249,3 @@ theorem tateUniformizationY_inv (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ) :
   ring
 
 end TauCeti
-
-end
