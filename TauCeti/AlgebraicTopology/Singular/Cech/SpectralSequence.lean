@@ -64,21 +64,46 @@ def cechColumnHomologyIso (p q : ℕ)
           {s : Finset ι // #s = p + 1} → C) := by
   let F : {s : Finset ι // #s = p + 1} → ChainComplex C ℕ :=
     fun s ↦ (cechSingularChains U R).obj (op s.1)
-  let t : Cofan F := Cofan.mk ((cechDoubleComplex U R).X p)
-    (fun s ↦ cechDoubleComplexι U R (p := p) s)
   let H := HomologicalComplex.homologyFunctor C (down ℕ) q
-  let hH : IsColimit (H.mapCocone t) :=
-    isColimitOfPreserves H (isColimitCechDoubleComplexCofan U R p)
-  -- `mapCocone` hides the homology functor applied to the column behind a categorical wrapper;
-  -- display that wrapper so its universal property gives the desired comparison directly.
-  change (H.mapCocone t).pt ≅ ∐ (fun s ↦
-    H.obj ((cechSingularChains U R).obj (op s.1)) :
-      {s : Finset ι // #s = p + 1} → C)
-  let e := Discrete.compNatIsoDiscrete F H
-  let c := colimit.cocone (Discrete.functor (H.obj ∘ F))
-  let hc : IsColimit ((Cocone.precompose e.hom).obj c) :=
-    (IsColimit.precomposeHomEquiv e c).symm (colimit.isColimit _)
-  exact hH.coconePointUniqueUpToIso hc
+  exact (isColimitCofanMkObjOfIsColimit H F _
+    (isColimitCechDoubleComplexCofan U R p)).coconePointUniqueUpToIso
+      (coproductIsCoproduct _)
+
+/-- The column-homology comparison sends the homology map of each summand inclusion to the
+corresponding coproduct inclusion. -/
+@[reassoc (attr := simp)]
+lemma homologyMap_cechDoubleComplexι_cechColumnHomologyIso_hom (p q : ℕ)
+    [HasExactColimitsOfShape (Discrete {s : Finset ι // #s = p + 1}) C]
+    (s : {s : Finset ι // #s = p + 1}) :
+    HomologicalComplex.homologyMap (cechDoubleComplexι U R (p := p) s) q ≫
+        (cechColumnHomologyIso U R p q).hom =
+      Sigma.ι (fun s : {s : Finset ι // #s = p + 1} ↦
+        (HomologicalComplex.homologyFunctor C (down ℕ) q).obj
+          ((cechSingularChains U R).obj (op s.1))) s := by
+  exact IsColimit.comp_coconePointUniqueUpToIso_hom
+    (isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor C (down ℕ) q)
+      (fun s : {s : Finset ι // #s = p + 1} ↦
+        (cechSingularChains U R).obj (op s.1)) _
+      (isColimitCechDoubleComplexCofan U R p))
+    (coproductIsCoproduct _) ⟨s⟩
+
+/-- Composing a coproduct inclusion with the inverse column-homology comparison recovers the
+homology map of the corresponding summand inclusion. -/
+@[reassoc (attr := simp)]
+lemma ι_cechColumnHomologyIso_inv (p q : ℕ)
+    [HasExactColimitsOfShape (Discrete {s : Finset ι // #s = p + 1}) C]
+    (s : {s : Finset ι // #s = p + 1}) :
+    Sigma.ι (fun s : {s : Finset ι // #s = p + 1} ↦
+        (HomologicalComplex.homologyFunctor C (down ℕ) q).obj
+          ((cechSingularChains U R).obj (op s.1))) s ≫
+        (cechColumnHomologyIso U R p q).inv =
+      HomologicalComplex.homologyMap (cechDoubleComplexι U R (p := p) s) q := by
+  exact IsColimit.comp_coconePointUniqueUpToIso_inv
+    (isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor C (down ℕ) q)
+      (fun s : {s : Finset ι // #s = p + 1} ↦
+        (cechSingularChains U R).obj (op s.1)) _
+      (isColimitCechDoubleComplexCofan U R p))
+    (coproductIsCoproduct _) ⟨s⟩
 
 /-- **The first page of the Čech--singular spectral sequence.** In conventional homological
 coordinates, `E¹_{p,q}` is the coproduct of `H_q` of the `(p + 1)`-fold intersections. -/
