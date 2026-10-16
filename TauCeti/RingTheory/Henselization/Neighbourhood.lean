@@ -87,14 +87,15 @@ theorem isNeighbourhood_of_algEquiv {B : Type v} [CommRing B] [Algebra R B]
 theorem isNeighbourhood_self : IsNeighbourhood I (CommAlgCat.of R R) :=
   isNeighbourhood_of_algEquiv I AlgEquiv.refl
 
-/-- Two maps out of a neighbourhood agree after quotienting their target by the extended ideal. -/
-theorem quotient_mk_eq_of_isNeighbourhood {B C : Type v} [CommRing B] [CommRing C]
-    [Algebra R B] [Algebra R C] (hB : IsNeighbourhood I (CommAlgCat.of R B))
+/-- Two maps out of an algebra whose reduced map is surjective (for instance, a neighbourhood)
+agree after quotienting their target by the extended ideal. -/
+theorem quotient_mk_eq_of_reducedMap_surjective {B C : Type v} [CommRing B] [CommRing C]
+    [Algebra R B] [Algebra R C] (hB : Function.Surjective (reducedMap I B))
     (f g : B →ₐ[R] C) (b : B) :
     Ideal.Quotient.mk (I.map (algebraMap R C)) (f b) =
       Ideal.Quotient.mk (I.map (algebraMap R C)) (g b) := by
   -- Modulo `I`, the element `b` is the image of some `r : R`, which every algebra map preserves.
-  obtain ⟨r, hr⟩ := hB.2.2 (Ideal.Quotient.mk (I.map (algebraMap R B)) b)
+  obtain ⟨r, hr⟩ := hB (Ideal.Quotient.mk (I.map (algebraMap R B)) b)
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
   rw [reducedMap_mk, Ideal.Quotient.eq] at hr
   have key (h : B →ₐ[R] C) : Ideal.Quotient.mk (I.map (algebraMap R C)) (h b) =

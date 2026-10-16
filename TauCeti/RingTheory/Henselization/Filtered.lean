@@ -48,7 +48,8 @@ theorem parallel_equalization {B C : Neighbourhood.{u, v} I} (f g : B ⟶ C) :
       ((Ideal.Quotient.mkₐ R J).comp f').comp (Algebra.TensorProduct.lmul' R) := by
     ext b
     · simp [d]
-    · simpa [d] using quotient_mk_eq_of_isNeighbourhood I B.property g' f' b
+    · simpa [d] using quotient_mk_eq_of_reducedMap_surjective I
+        ((isNeighbourhood_iff I _).mp B.property).2.2 g' f' b
   have heker : Algebra.TensorProduct.lmul' R e = 0 :=
     RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)
   have hs : IsUnit (Ideal.Quotient.mk J (1 - d e)) := by
