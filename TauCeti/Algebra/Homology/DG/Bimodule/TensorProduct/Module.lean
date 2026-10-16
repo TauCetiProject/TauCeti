@@ -198,14 +198,18 @@ theorem tensorBimoduleFunctor_map_app (f : M ⟶ M')
     (N : DGBimoduleCat.{uR, uB, uC, uN} hB hC) :
     (tensorBimoduleFunctor.map f).app N = tensorBimoduleMap f (𝟙 N) := (rfl)
 
+/-- For a fixed right DG module `M`, the partial functor `N ↦ M ⊗_B N` is additive. -/
 instance (M : DGRightModuleCat.{uR, uB, uM} hB) :
     ((tensorBimoduleFunctor (hC := hC)).obj M).Additive where
   map_add := by intros; unfold tensorBimoduleFunctor; exact tensorBimoduleMap_add_right _ _ _
 
+/-- For a fixed right DG module `M`, the partial functor `N ↦ M ⊗_B N` is `R`-linear. -/
 instance (M : DGRightModuleCat.{uR, uB, uM} hB) :
     ((tensorBimoduleFunctor (hC := hC)).obj M).Linear R where
   map_smul := by intros; unfold tensorBimoduleFunctor; exact tensorBimoduleMap_smul_right _ _ _
 
+/-- The tensor bifunctor is additive in the right-module variable: `M ↦ (N ↦ M ⊗_B N)` is an
+additive functor into the functor category. -/
 instance : (tensorBimoduleFunctor.{uR, uB, uC, uM, uN}
     (hB := hB) (hC := hC)).Additive where
   map_add := by
@@ -215,6 +219,8 @@ instance : (tensorBimoduleFunctor.{uR, uB, uC, uM, uN}
     unfold tensorBimoduleFunctor
     exact tensorBimoduleMap_add_left _ _ _
 
+/-- The tensor bifunctor is `R`-linear in the right-module variable: `M ↦ (N ↦ M ⊗_B N)` is an
+`R`-linear functor into the functor category. -/
 instance : (tensorBimoduleFunctor.{uR, uB, uC, uM, uN}
     (hB := hB) (hC := hC)).Linear R where
   map_smul := by
