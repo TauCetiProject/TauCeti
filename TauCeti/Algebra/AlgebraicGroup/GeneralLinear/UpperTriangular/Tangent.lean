@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 /-!
 # Solvability of the upper triangular tangent Lie algebra
 
-The Lie algebra of the upper triangular general linear group is solvable over a Noetherian
+The Lie algebra of the upper triangular general linear group is solvable over every
 commutative coefficient ring. The weight-parabolic tangent equivalence identifies it with
 upper triangular matrices. This lets solvability pass to the Lie algebra of a group embedded
 in the upper triangular group, as in the Lie--Kolchin theorem.
@@ -32,8 +32,8 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {R : Type u} [CommRing R] {B : Type v} [CommRing B] [Algebra R B]
 
 /-- The coefficient-valued tangent Lie algebra of the upper triangular general linear group
-is solvable over every Noetherian commutative coefficient ring. -/
-instance isSolvable_tangentLieAlgebra [IsNoetherianRing B] (n : ℕ) :
+is solvable over every commutative coefficient ring. -/
+instance isSolvable_tangentLieAlgebra (n : ℕ) :
     LieAlgebra.IsSolvable
       (Derivation R (coordinateHopfAlgebra R n)
         (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) := by

@@ -9,8 +9,6 @@ public import TauCeti.Algebra.Lie.GeneralLinear.RootSpace
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 public import Mathlib.Algebra.Lie.Nilpotent
 public import Mathlib.Algebra.Lie.Solvable
-import Mathlib.Algebra.Lie.Engel
-import Mathlib.Algebra.Lie.AdjointAction.Basic
 
 /-!
 # The standard Borel subalgebra of `gl n R`, and the two nilpotent triangles
@@ -90,9 +88,9 @@ makes `𝔫⁺` the right object here regardless is that it is the span of the r
 (`TauCeti.strictUpperTriangular_toSubmodule_eq_iSup`), which over a domain away from characteristic
 two is the sum of the positive root spaces
 (`TauCeti.strictUpperTriangular_toSubmodule_eq_iSup_rootSpace`), and which is what the highest
-weight theory downstream uses. Over a Noetherian coefficient ring, Engel's theorem proves that
-`𝔫⁺` is nilpotent, and containment of brackets in `𝔫⁺` proves that the upper triangular Lie
-algebra is solvable.
+weight theory downstream uses. The filtration by distance above the diagonal proves that
+`𝔫⁺` is nilpotent over every commutative ring, and containment of brackets in `𝔫⁺` proves that
+the upper triangular Lie algebra is solvable.
 
 The index type carries both `[DecidableEq n]`, for the matrix units, and `[LinearOrder n]`, which
 is what "upper triangular" refers to. The decidable equality stays a hypothesis of its own rather
@@ -111,8 +109,7 @@ is a nonunital associative subalgebra; but over a nontrivial `R` it does not con
 Mathlib `Subalgebra`, which is unital, and it cannot be read off one along
 `lieSubalgebraOfSubalgebra` the way `TauCeti.upperTriangular` is.
 
-Except for the nilpotence and solvability instances, which assume a Noetherian coefficient ring,
-everything here holds over an arbitrary commutative ring. Another exception is
+Everything here holds over an arbitrary commutative ring, except for
 `TauCeti.strictUpperTriangular_toSubmodule_eq_iSup_rootSpace`, which identifies the individual
 summands with root spaces and so inherits the `[IsDomain R]` and `(2 : R) ≠ 0` hypotheses of
 `TauCeti.rootSpace_glWeightSub_eq_span`: in characteristic two `εᵢ - εⱼ = εⱼ - εᵢ`, so the root
@@ -490,22 +487,66 @@ theorem exists_mem_strictLowerTriangular_add_mem_upperTriangular (A : Matrix n n
 
 /-! ### Nilpotence and solvability -/
 
-/-- Over a Noetherian commutative ring, the strictly upper triangular matrix Lie algebra is
+/-- Over every commutative ring, the strictly upper triangular matrix Lie algebra is
 nilpotent. This includes empty matrix index types. -/
-instance isNilpotent_strictUpperTriangular [IsNoetherianRing R] :
+instance isNilpotent_strictUpperTriangular :
     LieRing.IsNilpotent (strictUpperTriangular R n) := by
-  -- The matrix nilpotence theorem uses the order's decidable equality in its ring structure.
-  cases Subsingleton.elim ‹DecidableEq n› (inferInstance : LinearOrder n).toDecidableEq
-  apply (LieAlgebra.isNilpotent_iff_forall (R := R)).mpr
-  intro x
-  apply LieAlgebra.isNilpotent_ad_of_isNilpotent
-  exact Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero
-    (strictUpperTriangular_le_upperTriangular x.property)
-    (apply_diag_eq_zero_of_mem_strictUpperTriangular x.property)
+  let e := (Fintype.orderIsoFinOfCardEq n rfl).symm
+  -- The k-th filtration term vanishes at distances at most k above the diagonal.
+  let F (k : ℕ) : Submodule R (strictUpperTriangular R n) :=
+    { carrier := {A | ∀ i j, (e j : ℕ) < (e i : ℕ) + k + 1 → (A : Matrix n n R) i j = 0}
+      zero_mem' := by intro i j hij; rfl
+      add_mem' := by intro A B hA hB i j hij; simp [hA i j hij, hB i j hij]
+      smul_mem' := by intro c A hA i j hij; simp [hA i j hij] }
+  have hbracket (k) (A B : strictUpperTriangular R n) (hB : B ∈ F k) :
+      ⁅A, B⁆ ∈ F (k + 1) := by
+    intro i j hij
+    -- Unpack the subtype bracket to compute its two matrix products entrywise.
+    change ((A : Matrix n n R) * B - (B : Matrix n n R) * A) i j = 0
+    rw [Matrix.sub_apply, Matrix.mul_apply, Matrix.mul_apply]
+    have hAB : ∑ l, (A : Matrix n n R) i l * (B : Matrix n n R) l j = 0 := by
+      refine Finset.sum_eq_zero fun l _ => ?_
+      by_cases hil : i < l
+      · have hil' : (e i : ℕ) < (e l : ℕ) := e.lt_iff_lt.mpr hil
+        rw [hB l j (by omega), mul_zero]
+      · rw [mem_strictUpperTriangular_iff.mp A.property i l (not_lt.mp hil), zero_mul]
+    have hBA : ∑ l, (B : Matrix n n R) i l * (A : Matrix n n R) l j = 0 := by
+      refine Finset.sum_eq_zero fun l _ => ?_
+      by_cases hlj : l < j
+      · have hlj' : (e l : ℕ) < (e j : ℕ) := e.lt_iff_lt.mpr hlj
+        rw [hB i l (by omega), zero_mul]
+      · rw [mem_strictUpperTriangular_iff.mp A.property l j (not_lt.mp hlj), mul_zero]
+    rw [hAB, hBA, sub_zero]
+  -- The lower central series lies in this filtration by induction on brackets.
+  have hseries (k) :
+      (LieModule.lowerCentralSeries R (strictUpperTriangular R n)
+        (strictUpperTriangular R n) k).toSubmodule ≤ F k := by
+    induction k with
+    | zero =>
+      intro A _ i j hij
+      apply mem_strictUpperTriangular_iff.mp A.property
+      apply e.le_iff_le.mp
+      -- Fin comparison is definitionally comparison of the underlying natural numbers.
+      change (e j : ℕ) ≤ (e i : ℕ)
+      omega
+    | succ k ih =>
+      rw [LieModule.lowerCentralSeries_succ, LieSubmodule.lieIdeal_oper_eq_linear_span]
+      refine Submodule.span_le.mpr ?_
+      rintro _ ⟨A, B, rfl⟩
+      exact hbracket k A B (ih B.property)
+  -- At the number of indices every entry vanishes, including for an empty index type.
+  apply LieModule.IsNilpotent.mk (R := R)
+    (L := strictUpperTriangular R n) (M := strictUpperTriangular R n) (k := Fintype.card n)
+  apply le_bot_iff.mp
+  intro A hA
+  rw [LieSubmodule.mem_bot]
+  apply Subtype.ext
+  ext i j
+  exact hseries _ hA i j (by have := (e j).isLt; omega)
 
-/-- Over a Noetherian commutative ring, the upper triangular matrix Lie algebra is solvable.
+/-- Over every commutative ring, the upper triangular matrix Lie algebra is solvable.
 Its first derived ideal is contained in the strictly upper triangular matrices. -/
-instance isSolvable_upperTriangular [IsNoetherianRing R] :
+instance isSolvable_upperTriangular :
     LieAlgebra.IsSolvable (upperTriangular R n) := by
   let I := strictUpperTriangularIdeal R n
   -- The ideal inside the upper triangle and the strict-upper subalgebra have the same matrices;
