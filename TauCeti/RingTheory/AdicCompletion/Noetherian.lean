@@ -27,9 +27,9 @@ rings and to finitely generated ideals with Noetherian quotient.
 
 * `Ideal.isNoetherianRing_of_isAdicComplete`: an `I`-adically complete ring with `I`
   finitely generated and `R ⧸ I` Noetherian is Noetherian.
-* `AdicCompletion.isNoetherianRing_of_fg`: the completion along a finitely generated ideal `I` is
-  Noetherian when `R ⧸ I` is.
-* `AdicCompletion.isNoetherianRing`: the adic completion of a Noetherian ring is Noetherian.
+* `Ideal.isNoetherianRing_adicCompletion_of_fg`: the completion along a finitely generated ideal
+  `I` is Noetherian when `R ⧸ I` is.
+* `Ideal.isNoetherianRing_adicCompletion`: the adic completion of a Noetherian ring is Noetherian.
 
 ## References
 
@@ -190,25 +190,23 @@ theorem isNoetherianRing_of_isAdicComplete (I : Ideal R) (hI : I.FG) [IsAdicComp
   rw [le_antisymm hJ (Ideal.span_le.mpr (Set.range_subset_iff.mpr hgJ))]
   exact Submodule.fg_span (Set.finite_range g)
 
-end Ideal
-
-namespace AdicCompletion
-
 variable (I)
 
 /-- The adic completion along a finitely generated ideal `I` is Noetherian as soon as `R ⧸ I` is:
 it is complete for the extended ideal `I • R̂`, with quotient `R̂ ⧸ I • R̂ ≃ R ⧸ I`. -/
-theorem isNoetherianRing_of_fg (hI : I.FG) [IsNoetherianRing (R ⧸ I)] :
+theorem isNoetherianRing_adicCompletion_of_fg (hI : I.FG) [IsNoetherianRing (R ⧸ I)] :
     IsNoetherianRing (AdicCompletion I R) := by
-  have := isAdicComplete_self I hI
+  have := AdicCompletion.isAdicComplete_self I hI
   have : IsNoetherianRing (AdicCompletion I R ⧸ I.map (algebraMap R (AdicCompletion I R))) :=
-    isNoetherianRing_of_ringEquiv _ ((Ideal.quotEquivOfEq (ker_evalOneₐ_eq_map I hI)).symm.trans
-      (RingHom.quotientKerEquivOfSurjective (evalOneₐ_surjective I))).symm
+    isNoetherianRing_of_ringEquiv _
+      ((Ideal.quotEquivOfEq (AdicCompletion.ker_evalOneₐ_eq_map I hI)).symm.trans
+        (RingHom.quotientKerEquivOfSurjective (AdicCompletion.evalOneₐ_surjective I))).symm
   exact Ideal.isNoetherianRing_of_isAdicComplete
     (I.map (algebraMap R (AdicCompletion I R))) (hI.map _)
 
 /-- The adic completion of a Noetherian ring along any ideal is Noetherian. -/
-instance isNoetherianRing [IsNoetherianRing R] : IsNoetherianRing (AdicCompletion I R) :=
-  isNoetherianRing_of_fg I (IsNoetherian.noetherian I)
+instance isNoetherianRing_adicCompletion [IsNoetherianRing R] :
+    IsNoetherianRing (AdicCompletion I R) :=
+  isNoetherianRing_adicCompletion_of_fg I (IsNoetherian.noetherian I)
 
-end AdicCompletion
+end Ideal

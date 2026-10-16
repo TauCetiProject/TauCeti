@@ -10,15 +10,15 @@ import TauCeti.RingTheory.AdicCompletion.Noetherian
 /-!
 # Examples of Noetherian adic completions
 
-The completions `ℤ_p = AdicCompletion (p) ℤ` and `k⟦t⟧ = AdicCompletion (t) k[t]` are Noetherian,
-by the completion instance. The polynomial ring `k[X₀, X₁, …]` is complete for the finitely
-generated zero ideal but is not Noetherian, so the hypothesis that `R ⧸ I` be Noetherian cannot be
-dropped from `Ideal.isNoetherianRing_of_isAdicComplete`.
+The completions of `ℤ` along `(p)` and of `k[t]` along `(t)` are Noetherian by the completion
+instance. The polynomial ring `k[X₀, X₁, …]` is complete for the finitely generated zero ideal but
+is not Noetherian, so the hypothesis that `R ⧸ I` be Noetherian cannot be dropped from
+`Ideal.isNoetherianRing_of_isAdicComplete`.
 -/
 
 open MvPolynomial
 
--- The `p`-adic completion of `ℤ` is Noetherian.
+-- The completion of `ℤ` along the principal ideal `(p)` is Noetherian.
 example (p : ℤ) : IsNoetherianRing (AdicCompletion (Ideal.span {p} : Ideal ℤ) ℤ) := inferInstance
 
 -- The `t`-adic completion of `k[t]` is Noetherian.
