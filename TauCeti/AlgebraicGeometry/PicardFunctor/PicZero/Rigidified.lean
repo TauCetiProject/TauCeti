@@ -34,10 +34,11 @@ scheme require further geometric input and are not asserted here.
 * `TauCeti.AlgebraicGeometry.rigidifiedPicardDegreeZeroFunctor`: these classes as a presheaf of
   commutative groups;
 * `TauCeti.AlgebraicGeometry.rigidifiedPicardDegreeZeroFunctorIso`: the natural comparison with
-  `relativePicardDegreeZeroFunctor`;
+  `relativePicardDegreeZeroFunctor`, with components `rigidifiedPicardDegreeZeroToRelative` and
+  `relativePicardDegreeZeroToRigidified`;
 * `TauCeti.AlgebraicGeometry.rigidifiedPicardDegreeZeroFunctorIso_hom_comp_
-    relativePicardDegreeZeroFunctorι`: compatibility of the comparison with the inclusions into
-  the full rigidified and relative Picard presheaves.
+    relativePicardDegreeZeroFunctorι` and its inverse counterpart: compatibility of the comparison
+  with the inclusions into the full rigidified and relative Picard presheaves.
 
 ## References
 
@@ -307,21 +308,66 @@ def rigidifiedPicardDegreeZeroFunctorIso :
       exact (rigidifiedPicardFunctorIso f x₀ hx₀).inv_hom_id_app_apply T
         ((relativePicardDegreeZeroFunctorι f).app T c) }
 
+/-- Forgetting the rigidification of a degree-zero rigidified class and then forgetting the
+degree-zero condition is the comparison of the full rigidified and relative Picard presheaves. -/
+@[reassoc (attr := simp)]
+theorem rigidifiedPicardDegreeZeroToRelative_comp_relativePicardDegreeZeroFunctorι :
+    rigidifiedPicardDegreeZeroToRelative f x₀ hx₀ ≫ relativePicardDegreeZeroFunctorι f =
+      rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ ≫
+        (rigidifiedPicardFunctorIso f x₀ hx₀).hom := by
+  ext T a
+  rw [NatTrans.comp_app, CommGrpCat.comp_apply, NatTrans.comp_app, CommGrpCat.comp_apply,
+    rigidifiedPicardDegreeZeroToRelative_app_apply,
+    relativePicardDegreeZeroFunctorι_app_toRelativeHom]
+
+/-- Restoring the rigidification of a degree-zero relative Picard class and then forgetting the
+degree-zero condition is the inverse comparison of the full Picard presheaves. -/
+@[reassoc (attr := simp)]
+theorem relativePicardDegreeZeroToRigidified_comp_rigidifiedPicardDegreeZeroFunctorι :
+    relativePicardDegreeZeroToRigidified f x₀ hx₀ ≫ rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ =
+      relativePicardDegreeZeroFunctorι f ≫ (rigidifiedPicardFunctorIso f x₀ hx₀).inv := by
+  ext T c
+  rw [NatTrans.comp_app, CommGrpCat.comp_apply, NatTrans.comp_app, CommGrpCat.comp_apply,
+    relativePicardDegreeZeroToRigidified_app_apply,
+    rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom]
+
+/-- The forward map of `rigidifiedPicardDegreeZeroFunctorIso` forgets the rigidification. -/
+@[simp]
+lemma rigidifiedPicardDegreeZeroFunctorIso_hom :
+    (rigidifiedPicardDegreeZeroFunctorIso f x₀ hx₀).hom =
+      rigidifiedPicardDegreeZeroToRelative f x₀ hx₀ := by
+  unfold rigidifiedPicardDegreeZeroFunctorIso
+  rfl
+
+/-- The inverse map of `rigidifiedPicardDegreeZeroFunctorIso` restores the normalized
+rigidification. -/
+@[simp]
+lemma rigidifiedPicardDegreeZeroFunctorIso_inv :
+    (rigidifiedPicardDegreeZeroFunctorIso f x₀ hx₀).inv =
+      relativePicardDegreeZeroToRigidified f x₀ hx₀ := by
+  unfold rigidifiedPicardDegreeZeroFunctorIso
+  rfl
+
 /-- The comparison between the degree-zero functors is the restriction of the comparison between
 the full rigidified and relative Picard presheaves. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem rigidifiedPicardDegreeZeroFunctorIso_hom_comp_relativePicardDegreeZeroFunctorι :
     (rigidifiedPicardDegreeZeroFunctorIso f x₀ hx₀).hom ≫
         relativePicardDegreeZeroFunctorι f =
       rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ ≫
         (rigidifiedPicardFunctorIso f x₀ hx₀).hom := by
-  ext T a
-  change (relativePicardDegreeZeroFunctorι f).app T
-      ((rigidifiedPicardDegreeZeroToRelative f x₀ hx₀).app T a) =
-    (rigidifiedPicardFunctorIso f x₀ hx₀).hom.app T
-      ((rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T a)
-  rw [rigidifiedPicardDegreeZeroToRelative_app_apply,
-    relativePicardDegreeZeroFunctorι_app_toRelativeHom]
+  rw [rigidifiedPicardDegreeZeroFunctorIso_hom,
+    rigidifiedPicardDegreeZeroToRelative_comp_relativePicardDegreeZeroFunctorι]
+
+/-- The inverse comparison between the degree-zero functors is the restriction of the inverse
+comparison between the full relative and rigidified Picard presheaves. -/
+@[reassoc]
+theorem rigidifiedPicardDegreeZeroFunctorIso_inv_comp_rigidifiedPicardDegreeZeroFunctorι :
+    (rigidifiedPicardDegreeZeroFunctorIso f x₀ hx₀).inv ≫
+        rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ =
+      relativePicardDegreeZeroFunctorι f ≫ (rigidifiedPicardFunctorIso f x₀ hx₀).inv := by
+  rw [rigidifiedPicardDegreeZeroFunctorIso_inv,
+    relativePicardDegreeZeroToRigidified_comp_rigidifiedPicardDegreeZeroFunctorι]
 
 end
 
