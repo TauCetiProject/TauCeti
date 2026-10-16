@@ -17,10 +17,10 @@ graded corner dimensions are one in degree `n - 1` at source `a`, and zero every
 This identifies both the degree and the vertex permutation of the almost-Koszul defect.
 
 The top valleys and the Frobenius functional come from the type-A top-degree and
-self-injectivity modules. Nondegeneracy of the Frobenius pairing shows that its restriction to
-the left Koszul kernel is injective: every positive-length path kills that kernel, and vertex
-idempotents act by either zero or the identity. The functional takes value one on the top
-valley, so it also gives the coefficient of every kernel element in this basis.
+self-injectivity modules. Use `mem_ker_signlessPreprojectiveKoszulLeft_A_iff` to express
+elements of the left-end defect of the vertex Koszul complex as scalar multiples of the top
+valley. The finrank formulas give its total dimension and locate its unique nonzero graded
+corner, specifying the defect degree and vertex permutation.
 
 These statements hold over every field, including characteristic two, and include `A₁`.
 They concern the signless algebra of the doubled graph; no orientation or quadratic zigzag
