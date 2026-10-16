@@ -219,6 +219,26 @@ theorem ideleClassEquiv_symm (e : L ≃+* M) : (ideleClassEquiv e).symm = ideleC
     rw [Units.coe_map, Units.coe_map, ← adeleEquiv_symm]
     exact ((adeleEquiv L M e).apply_symm_apply a).symm
 
+/-- Transport of idele classes along the identity field isomorphism is the identity. -/
+@[simp]
+theorem ideleClassEquiv_refl : ideleClassEquiv (RingEquiv.refl L) = MulEquiv.refl _ := by
+  ext c
+  induction c using QuotientGroup.induction_on with
+  | H a =>
+    rw [ideleClassEquiv_mk, adeleEquiv_refl]
+    rfl
+
+/-- Transport of idele classes respects composition of field isomorphisms. -/
+@[simp]
+theorem ideleClassEquiv_trans {N : Type*} [Field N] [NumberField N] (e : L ≃+* M)
+    (f : M ≃+* N) :
+    (ideleClassEquiv e).trans (ideleClassEquiv f) = ideleClassEquiv (e.trans f) := by
+  ext c
+  induction c using QuotientGroup.induction_on with
+  | H a =>
+    rw [MulEquiv.trans_apply, ideleClassEquiv_mk, ideleClassEquiv_mk, ideleClassEquiv_mk]
+    exact congrArg _ (Units.ext (RingEquiv.congr_fun (adeleEquiv_trans L M N e f) a))
+
 variable [Algebra K M]
 
 /-- **Transport of idele classes is Galois equivariant**: along a `K`-isomorphism `e : L ≃ₐ[K] M`,
