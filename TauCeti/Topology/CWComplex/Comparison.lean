@@ -133,14 +133,6 @@ lemma isoBot_inv_classicalRoundTripIso_hom_app_zero :
     (c.classicalRoundTripStageHomeomorph 0 (c.isoBot.inv x)))
   exact h.symm.trans (ConcreteCategory.congr_hom c.fac x)
 
-/-- The round trip preserves the attachment indices in every dimension. -/
-def classicalRoundTripCellEquiv (n : ℕ) :
-    letI := c.toRelCWComplex
-    ((TauCeti.toRelativeCWComplex (univ : Set Y)).attachCells n (not_isMax n)).ι ≃
-      (c.attachCells n (not_isMax n)).ι := by
-  letI := c.toRelCWComplex
-  exact c.toRelCWComplexCellEquiv n
-
 /-- After identifying the target, the cell inclusions of the categorical round trip are the
 original cell inclusions. -/
 lemma classicalRoundTrip_cells_ι_apply (n : ℕ)
@@ -150,7 +142,7 @@ lemma classicalRoundTrip_cells_ι_apply (n : ℕ)
     letI := c.toRelCWComplex
     (((⟨n, not_isMax n, i⟩ : (TauCeti.toRelativeCWComplex (univ : Set Y)).Cells).ι z :
       (univ : Set Y)) : Y) =
-      (⟨n, not_isMax n, c.classicalRoundTripCellEquiv n i⟩ : c.Cells).ι z := by
+      (⟨n, not_isMax n, c.toRelCWComplexCellEquiv n i⟩ : c.Cells).ι z := by
   let _ := c.toRelCWComplex
   rw [TauCeti.coe_toRelativeCWComplex_cells_ι_apply]
   exact c.toRelCWComplex_map_disk n i z
@@ -162,12 +154,6 @@ namespace TauCeti
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {D : Set X}
   (C : Set X) [RelCWComplex C D]
 
-/-- The cells obtained from a classical relative CW complex by passing to the categorical
-structure and back correspond to its original cells in each dimension. -/
-def categoricalRoundTripCellEquiv (n : ℕ) :
-    (toRelativeCWComplex C).toRelCWComplex.cell n ≃ cell C n :=
-  (toRelativeCWComplex C).toRelCWComplexCellEquiv n
-
 /-- The characteristic maps recovered by the classical round trip agree with the original
 maps on the closed unit ball, after inclusion of the complex into its ambient space. -/
 lemma categoricalRoundTrip_map_apply (n : ℕ)
@@ -175,11 +161,10 @@ lemma categoricalRoundTrip_map_apply (n : ℕ)
     (x : closedBall (0 : Fin n → ℝ) 1) :
     letI := (toRelativeCWComplex C).toRelCWComplex
     (map (C := (univ : Set C)) n i x : X) =
-      map n (categoricalRoundTripCellEquiv C n i) x := by
+      map n ((toRelativeCWComplex C).toRelCWComplexCellEquiv n i) x := by
   rw [(toRelativeCWComplex C).toRelCWComplex_map_apply]
   rw [coe_toRelativeCWComplex_cells_ι_apply]
-  simp only [Homeomorph.apply_symm_apply, categoricalRoundTripCellEquiv]
-  rfl
+  simp only [Homeomorph.apply_symm_apply]
 
 /-- The skeleta of the recovered classical structure are exactly the original skeleta after
 inclusion into the ambient space. This includes the base, at stage zero. -/
