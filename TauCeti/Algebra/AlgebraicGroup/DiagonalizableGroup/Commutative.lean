@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.Trigonalizable
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
