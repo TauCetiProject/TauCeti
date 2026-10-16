@@ -159,14 +159,13 @@ theorem kummerField_inf_comap_eq [(powMonoidHom n : Kˣ →* Kˣ).range.IsFinite
   set Δ' := Δ ⊓ (powMonoidHom n : Lˣ →* Lˣ).range.comap (Units.map (algebraMap K L : K →* L))
   have hle : kummerField E n Δ' ≤ L := by
     refine kummerField_le_iff.2 fun a ha x hx ↦ ?_
-    -- An `n`-th root of `a = bⁿ`, `b ∈ L`, differs from `b` by an `n`-th root of unity of `K`.
+    -- The existing root-membership criterion transfers membership between equal powers.
     obtain ⟨b, hb⟩ := (Subgroup.mem_inf.1 ha).2
     have hpow : x ^ n = ((b : L) : E) ^ n := by
       have := congrArg (fun u : Lˣ ↦ ((u : L) : E)) hb
       simp only [powMonoidHom_apply, Units.val_pow_eq_pow_val, IntermediateField.coe_pow] at this
       simpa [this] using hx
-    obtain ⟨z, rfl⟩ := exists_eq_algebraMap_mul_of_pow_eq (K := K) hpow
-    exact L.mul_mem (L.algebraMap_mem z) (b : L).2
+    exact (L.exists_mem_pow_eq_iff_of_pow_eq hpow).mp ⟨_, (b : L).2, rfl⟩
   have : FiniteDimensional K L := .of_injective (IntermediateField.inclusion hL).toLinearMap
     (IntermediateField.inclusion hL).injective
   have := Subgroup.isFiniteRelIndex_of_le_right (powMonoidHom n : Kˣ →* Kˣ).range
