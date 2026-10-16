@@ -62,6 +62,9 @@ local Kummer map serve as the local condition at `L` of the `m`-Selmer group.
 * `WeierstrassCurve.pointCoeffBaseChange_pointCoeffBaseChange`,
   `WeierstrassCurve.torsionCoeffBaseChange_torsionCoeffBaseChange`: the maps compose in a tower
   `K → L → M`, up to the identification of `(W⁄L)⁄M` with `W⁄M`.
+* `WeierstrassCurve.pointCoeffBaseChange_bijective`,
+  `WeierstrassCurve.torsionCoeffBaseChange_bijective`: the coordinate maps along a bijective
+  embedding of separable closures are bijective.
 * `WeierstrassCurve.pointRes_torsionCoeffIncl`: restriction commutes with
   `H¹(G, E[m]) → H¹(G, E)`.
 * `WeierstrassCurve.torsionRes_kummerMap`: restriction commutes with the Kummer maps.
@@ -196,6 +199,35 @@ theorem torsionCoeffBaseChange_comp (σ : AbsoluteGaloisGroup K) (m : ℕ)
   apply Subtype.ext
   rw [coe_torsionCoeffBaseChange, coe_torsionCoeffBaseChange, coe_smul_torsionCoeff,
     pointCoeffBaseChange_comp]
+
+/-! ### Bijectivity along a bijective embedding -/
+
+variable {τ} in
+open scoped Classical in
+/-- **Along a bijective embedding of separable closures, `E(Kˢ) → E(Lˢ)` is bijective.** -/
+theorem pointCoeffBaseChange_bijective (hτ : Function.Bijective τ) :
+    Function.Bijective (W.pointCoeffBaseChange τ) := by
+  let e : SeparableClosure K ≃ₐ[K] SeparableClosure L := AlgEquiv.ofBijective τ hτ
+  -- The point map along `τ` is injective, with right inverse the point map along `e.symm`.
+  have hmap : Function.Bijective (Affine.Point.map (W' := W.toAffine) τ) := by
+    refine ⟨Affine.Point.map_injective _, fun Q ↦ ⟨Affine.Point.map e.symm.toAlgHom Q, ?_⟩⟩
+    rcases Q with _ | ⟨x, y, h⟩
+    · rfl
+    · simp only [Affine.Point.map_some]
+      congr <;> exact e.apply_symm_apply _
+  simp only [pointCoeffBaseChange, AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom]
+  exact (W⁄L).pointCoeffEquiv.bijective.comp <| (AddEquiv.cast _).bijective.comp <|
+    hmap.comp W.pointCoeffEquiv.symm.bijective
+
+variable {τ} in
+/-- **Along a bijective embedding of separable closures, `E(Kˢ)[m] → E(Lˢ)[m]` is bijective.** -/
+theorem torsionCoeffBaseChange_bijective (hτ : Function.Bijective τ) :
+    Function.Bijective (W.torsionCoeffBaseChange τ m) := by
+  -- `torsionCoeffBaseChange τ m` is the transport of `m`-torsion along `pointCoeffBaseChange τ`.
+  let e := AddEquiv.ofBijective (W.pointCoeffBaseChange τ) (W.pointCoeffBaseChange_bijective hτ)
+  have h : ⇑(W.torsionCoeffBaseChange τ m) = e.torsionByCongr m := funext fun _ ↦ Subtype.ext <| by
+    rw [coe_torsionCoeffBaseChange, AddEquiv.torsionByCongr_apply_coe, AddEquiv.ofBijective_apply]
+  exact h ▸ (e.torsionByCongr m).bijective
 
 /-! ### Towers of extensions
 
