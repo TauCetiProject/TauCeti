@@ -128,12 +128,6 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
 
-private theorem ball_half_subset_ball (x₀ : EuclideanSpace ℝ ι) (R : ℝ) :
-    Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R := by
-  rcases le_or_gt 0 R with hR | hR
-  · exact Metric.ball_subset_ball (half_le_self hR)
-  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
-
 /-! ### De Giorgi's classes and iteration in `L²` -/
 
 section L2
@@ -152,7 +146,9 @@ private theorem value_restrictL_ae_ball_half_and_setIntegral_comp_eq
   have hw : W1p.value (W1p.restrictL (U := U) hball u) =ᵐ[mu.restrict (Metric.ball x₀ R)]
       W1p.value u :=
     W1p.value_restrictL_ae (U := U) hball u
-  exact ⟨ae_restrict_of_ae_restrict_of_subset (ball_half_subset_ball x₀ R) hw,
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R := fun x hx =>
+    Metric.mem_ball.2 (by linarith [Metric.mem_ball.1 hx, @dist_nonneg _ _ x x₀])
+  exact ⟨ae_restrict_of_ae_restrict_of_subset hhalf hw,
     integral_congr_ae (hw.mono fun _ hx => congrArg f hx)⟩
 
 /-- **De Giorgi's energy recursion.** Suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality
@@ -842,8 +838,8 @@ theorem ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le
     refine integral_congr_ae ?_
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hball hneg_ae] with x hx
     rw [hx, Pi.neg_apply, neg_sq]
-  have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    (ball_half_subset_ball x₀ R).trans hball
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := fun x hx =>
+    hball (Metric.mem_ball.2 (by linarith [Metric.mem_ball.1 hx, @dist_nonneg _ _ x x₀]))
   filter_upwards [hpos, hneg, ae_restrict_of_ae_restrict_of_subset hhalf hneg_ae]
     with x hx hx' hxn
   rw [hxn, Pi.neg_apply] at hx'
