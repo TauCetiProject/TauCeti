@@ -40,12 +40,12 @@ the carrier identified with an independently pinned simply connected group schem
 * J. S. Milne, *Algebraic Groups* (2017), §10.a and §21.1.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1–2.
-
-The matrix calculation is the general Kostant root-subgroup tangent theorem of
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Tangent`; the root-vector
-interface follows the type-`D` spin carrier in
-`TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Differential`.
 -/
+
+-- The matrix calculation is the general Kostant root-subgroup tangent theorem of
+-- `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Tangent`; the root-vector
+-- interface follows the type-`D` spin carrier in
+-- `TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Differential`.
 
 public section
 

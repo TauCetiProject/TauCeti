@@ -26,8 +26,7 @@ the normalized differentials used in a pinning. It does not prove cotangent proj
 root lines exhaust their weight spaces, maximality of the torus, or the existence of a Borel
 subgroup, and the carrier is not identified with an independently pinned simply connected group
 scheme of type `Bₙ₊₁`. As in the generic adjoint API, projectivity refers to the cotangent
-algebra's integer module. When stating these hypotheses over `ℤ`, give `Algebra.toModule` and
-`Ideal.instModuleCotangentOfAlgebra` local instance priority over the additive-group module.
+algebra's integer module.
 
 ## Main results
 
@@ -45,12 +44,13 @@ algebra's integer module. When stating these hypotheses over `ℤ`, give `Algebr
 * J. S. Milne, *Algebraic Groups* (2017), §§10.a and 21.1.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate II.
-
-The weight-space interpretation uses `TauCeti.HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus`,
-and the argument follows the type-`D` spin carrier in
-`TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Weights`. The matrix support calculation is
-`TauCeti.TypeBSpinCarrier.rootIntMatrix_eq_zero_of_weight_ne`.
 -/
+
+-- The weight-space interpretation uses
+-- `TauCeti.HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus`, and the argument follows the
+-- type-`D` spin carrier in
+-- `TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Weights`. The matrix support calculation
+-- is `TauCeti.TypeBSpinCarrier.rootIntMatrix_eq_zero_of_weight_ne`.
 
 public section
 
@@ -60,6 +60,8 @@ namespace TauCeti.TypeBSpinCarrier
 
 noncomputable section
 
+-- Cotangent-projectivity hypotheses over `ℤ` are stated with `Algebra.toModule` and
+-- `Ideal.instModuleCotangentOfAlgebra` given local priority over the additive-group module.
 attribute [local instance high] Algebra.toModule
 -- Keep the cotangent algebra module rather than the generic integer module on its additive group.
 attribute [local instance high] Ideal.instModuleCotangentOfAlgebra

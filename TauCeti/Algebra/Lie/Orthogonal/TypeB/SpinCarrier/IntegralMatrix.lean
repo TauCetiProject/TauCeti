@@ -14,14 +14,16 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 The invariant spin lattice gives an integral matrix for each numbered simple root generator.
 Each generator squares to zero, so its root subgroup points are `1 + u X` over any commutative
 ring. Each matrix is supported on the pairs of basis vectors whose integral spin weights differ
-by the signed simple root of its generator. The matrix construction, its column formulas, and
-this weight support use the generic Kostant lattice API. The carrier interface follows
-`TauCeti.Algebra.Lie.Symplectic.StandardCarrier.IntegralMatrix`.
+by the signed simple root of its generator.
 
 ## References
 
 C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
 -/
+
+-- The matrix construction, its column formulas, and the weight support use the generic Kostant
+-- lattice API. The carrier interface follows
+-- `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.IntegralMatrix`.
 
 public section
 
