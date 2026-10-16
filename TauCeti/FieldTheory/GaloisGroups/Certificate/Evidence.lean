@@ -194,7 +194,7 @@ ring. -/
 theorem HasSexticRoot.isRoot_map {F : Type*} [CommRing F] {f : ℤ[X]} {a : ℤ}
     (h : HasSexticRoot f a) :
     ((resolventSextic f).map (Int.castRingHom F)).IsRoot (a : F) :=
-  h.isRoot.map
+  h.isRoot.map (Int.castRingHom F)
 
 /-- Resolvent evidence gives a root of the rational specialization of the quintic
 `F₂₀`-resolvent. -/
