@@ -5,9 +5,8 @@ Cover authenticated dispatch, malformed and changing authority/run bindings,
 expiry, completed work, observed reruns, API failure and idempotent normal
 cancellation. No test sends production HTTP or creates approval authority.
 """
-import copy
 import unittest
-from cancel_bors_candidate import cancel, validate_event, validate_authority, validate_run, Refused
+from cancel_bors_candidate import cancel, validate_authority, validate_run, Refused
 
 
 class CancellationTest(unittest.TestCase):
