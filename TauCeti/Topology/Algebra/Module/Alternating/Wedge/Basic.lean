@@ -42,18 +42,14 @@ paired-wedge design follows Yury Kudryashov's `DeRhamCohomology` project.
 
 public section
 
-open TensorProduct
+open TensorProduct TauCeti
 
 namespace ContinuousAlternatingMap
 
-section Topological
-
 variable {E F₁ F₂ F₃ : Type*}
-  [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E]
+  [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
   [AddCommGroup F₁] [Module ℝ F₁] [TopologicalSpace F₁]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
   [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
   [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
   [IsTopologicalAddGroup F₃] [ContinuousSMul ℝ F₃]
 
@@ -62,8 +58,6 @@ noncomputable def pairingLinear (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
     F₁ ⊗[ℝ] F₂ →ₗ[ℝ] F₃ :=
   TensorProduct.lift ((ContinuousLinearMap.coeLM ℝ).comp μ.toLinearMap)
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The pairing-induced linear map evaluates pure tensors by the original pairing. -/
 @[simp]
 theorem pairingLinear_tmul (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : F₁) (y : F₂) :
@@ -78,9 +72,6 @@ noncomputable def wedgeWithUnalternated {k l : ℕ} (μ : F₁ →L[ℝ] F₂ �
     (MultilinearMap.domCoprod φ.toAlternatingMap.toMultilinearMap
       ψ.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The tensor-product construction of the unalternated paired wedge. -/
 theorem wedgeWithUnalternated_def {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
@@ -89,9 +80,6 @@ theorem wedgeWithUnalternated_def {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ
         ((MultilinearMap.domCoprod φ.toAlternatingMap.toMultilinearMap
           ψ.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv) := (rfl)
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
-  [ContinuousAdd E] [ContinuousSMul ℝ E] in
 /-- Evaluation of the unalternated pairing on concatenated vectors. -/
 @[simp]
 theorem wedgeWithUnalternated_apply {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -116,9 +104,6 @@ noncomputable def wedgeWithUnalternatedContinuous {k l : ℕ}
       rw [hfun]
       fun_prop }
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- Evaluation of the continuous unalternated pairing on concatenated vectors. -/
 theorem wedgeWithUnalternatedContinuous_apply {k l : ℕ}
     (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -137,9 +122,6 @@ noncomputable def pairedWedge {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F�
   (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
     (wedgeWithUnalternatedContinuous μ hμ φ ψ).alternatization
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The pointwise formula for the paired wedge in all degrees. -/
 theorem pairedWedge_apply {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
@@ -155,9 +137,6 @@ theorem pairedWedge_apply {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     wedgeWithUnalternatedContinuous_apply]
   simp only [Function.comp_apply]
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- On one-forms, the paired wedge is the usual two-term alternating product. -/
 @[simp]
 theorem pairedWedge_apply_one_one {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
@@ -170,9 +149,6 @@ theorem pairedWedge_apply_one_one {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
     Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
   simp [Fin.fin_one_eq_zero, Matrix.cons_fin_one, sub_eq_add_neg]
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The underlying alternating map of the paired wedge is the alternatization of its unalternated
 multilinear pairing, divided by `k! l!`. -/
 @[simp]
@@ -187,16 +163,11 @@ theorem pairedWedge_toAlternatingMap {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[
     _root_.smul_apply, MultilinearMap.alternatization_apply,
     MultilinearMap.domDomCongr_apply, ContinuousAlternatingMap.wedgeWithUnalternated_apply]
 
-variable {E' : Type*} [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']
-  [ContinuousAdd E'] [ContinuousSMul ℝ E']
-
-omit [ContinuousAdd E] [ContinuousSMul ℝ E] [IsTopologicalAddGroup F₁]
-  [ContinuousSMul ℝ F₁] [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
-  [ContinuousAdd E'] [ContinuousSMul ℝ E'] in
 /-- Precomposing both inputs of a paired wedge by a continuous linear map is the same as
 precomposing the resulting wedge. -/
 @[simp]
-theorem pairedWedge_compContinuousLinearMap {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem pairedWedge_compContinuousLinearMap {E' : Type*} [AddCommGroup E'] [Module ℝ E']
+    [TopologicalSpace E'] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
     (f : E' →L[ℝ] E) :
@@ -206,11 +177,9 @@ theorem pairedWedge_compContinuousLinearMap {k l : ℕ} (μ : F₁ →L[ℝ] F�
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, pairedWedge_apply,
     Function.comp_def]
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The paired wedge is additive in its first alternating map. -/
 @[simp]
-theorem pairedWedge_add_left {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem pairedWedge_add_left [ContinuousAdd F₁] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
     (φ φ' : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
     pairedWedge μ hμ (φ + φ') ψ = pairedWedge μ hμ φ ψ + pairedWedge μ hμ φ' ψ := by
@@ -218,11 +187,9 @@ theorem pairedWedge_add_left {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F�
   simp only [pairedWedge_apply, ContinuousAlternatingMap.add_apply, map_add, _root_.add_apply,
     smul_add, Finset.sum_add_distrib]
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁] [ContinuousSMul ℝ F₂] in
 /-- The paired wedge is additive in its second alternating map. -/
 @[simp]
-theorem pairedWedge_add_right {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem pairedWedge_add_right [ContinuousAdd F₂] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ ψ' : E [⋀^Fin l]→L[ℝ] F₂) :
     pairedWedge μ hμ φ (ψ + ψ') = pairedWedge μ hμ φ ψ + pairedWedge μ hμ φ ψ' := by
@@ -230,11 +197,9 @@ theorem pairedWedge_add_right {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F�
   simp only [pairedWedge_apply, ContinuousAlternatingMap.add_apply, map_add,
     smul_add, Finset.sum_add_distrib]
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The paired wedge respects scalar multiplication in its first alternating map. -/
 @[simp]
-theorem pairedWedge_smul_left {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem pairedWedge_smul_left [ContinuousConstSMul ℝ F₁] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (c : ℝ)
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
     pairedWedge μ hμ (c • φ) ψ = c • pairedWedge μ hμ φ ψ := by
@@ -242,11 +207,9 @@ theorem pairedWedge_smul_left {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F�
   simp only [pairedWedge_apply, ContinuousAlternatingMap.smul_apply, map_smul,
     _root_.smul_apply, Finset.smul_sum, smul_comm _ c]
 
-omit [ContinuousAdd E] [ContinuousSMul ℝ E]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁] [IsTopologicalAddGroup F₂] in
 /-- The paired wedge respects scalar multiplication in its second alternating map. -/
 @[simp]
-theorem pairedWedge_smul_right {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem pairedWedge_smul_right [ContinuousConstSMul ℝ F₂] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (c : ℝ)
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
     pairedWedge μ hμ φ (c • ψ) = c • pairedWedge μ hμ φ ψ := by
@@ -254,22 +217,6 @@ theorem pairedWedge_smul_right {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F
   simp only [pairedWedge_apply, ContinuousAlternatingMap.smul_apply, map_smul,
     Finset.smul_sum, smul_comm _ c]
 
-end Topological
-
-open TauCeti
-
-section PairingOperations
-
-variable {E F₁ F₂ F₃ : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-  [AddCommGroup F₁] [Module ℝ F₁] [TopologicalSpace F₁]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
-  [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
-  [IsTopologicalAddGroup F₃] [ContinuousSMul ℝ F₃]
-
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- Postcomposing the pairing postcomposes the paired wedge. -/
 @[simp]
 theorem pairedWedge_postcomp {F₄ : Type*} [AddCommGroup F₄] [Module ℝ F₄]
@@ -290,8 +237,6 @@ theorem pairedWedge_postcomp {F₄ : Type*} [AddCommGroup F₄] [Module ℝ F₄
   funext sigma
   exact (nu.map_smul_of_tower (Equiv.Perm.sign sigma) _).symm
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The paired wedge is additive in the pairing. -/
 @[simp]
 theorem pairedWedge_add_pairing {k l : ℕ} (mu nu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -308,8 +253,6 @@ theorem pairedWedge_add_pairing {k l : ℕ} (mu nu : F₁ →L[ℝ] F₂ →L[�
     Finset.smul_sum, smul_add]
   rw [Finset.sum_add_distrib]
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The paired wedge respects scalar multiplication of the pairing. -/
 @[simp]
 theorem pairedWedge_smul_pairing {k l : ℕ} (c : ℝ) (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -324,8 +267,6 @@ theorem pairedWedge_smul_pairing {k l : ℕ} (c : ℝ) (mu : F₁ →L[ℝ] F₂
   simp only [pairedWedge_apply, ContinuousAlternatingMap.smul_apply, _root_.smul_apply,
     Finset.smul_sum, smul_comm _ c]
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- Negating the pairing negates the paired wedge. -/
 @[simp]
 theorem pairedWedge_neg_pairing {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -340,8 +281,6 @@ theorem pairedWedge_neg_pairing {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] 
   simp only [pairedWedge_apply, _root_.neg_apply, ContinuousAlternatingMap.neg_apply,
     smul_neg, Finset.sum_neg_distrib]
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The paired wedge for the zero pairing is zero. -/
 @[simp]
 theorem pairedWedge_zero_pairing {k l : ℕ} (phi : E [⋀^Fin k]→L[ℝ] F₁)
@@ -354,30 +293,30 @@ theorem pairedWedge_zero_pairing {k l : ℕ} (phi : E [⋀^Fin k]→L[ℝ] F₁)
   simp only [pairedWedge_apply, _root_.zero_apply, smul_zero, Finset.sum_const_zero,
     ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
-omit [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- Wedge with the zero form on the left is zero. -/
 @[simp]
 theorem pairedWedge_zero_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     pairedWedge mu hmu (0 : E [⋀^Fin k]→L[ℝ] F₁) psi = 0 := by
-  simpa only [zero_smul] using
-    pairedWedge_smul_left mu hmu (0 : ℝ) (0 : E [⋀^Fin k]→L[ℝ] F₁) psi
+  ext v
+  simp only [pairedWedge_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, _root_.map_zero,
+    _root_.zero_apply, smul_zero, Finset.sum_const_zero]
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁] in
 /-- Wedge with the zero form on the right is zero. -/
 @[simp]
 theorem pairedWedge_zero_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) :
     pairedWedge mu hmu phi (0 : E [⋀^Fin l]→L[ℝ] F₂) = 0 := by
-  simpa only [zero_smul] using
-    pairedWedge_smul_right mu hmu (0 : ℝ) phi (0 : E [⋀^Fin l]→L[ℝ] F₂)
+  ext v
+  simp only [pairedWedge_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, _root_.map_zero,
+    smul_zero, Finset.sum_const_zero]
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁] in
 /-- The flip identity: swapping the two forms of a paired wedge flips the pairing and costs the
 graded sign `(-1) ^ (k * l)`. This holds for every pairing. -/
-theorem pairedWedge_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
+    {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
     pairedWedge mu hmu phi psi v =
@@ -421,7 +360,8 @@ theorem pairedWedge_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
   simp
 
 /-- Anticommutation of a paired wedge along a skew-symmetric pairing. -/
-theorem pairedWedge_anticomm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+theorem pairedWedge_anticomm [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
+    {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (hskew : ∀ a b, mu a b = -mu b a)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁)
@@ -437,7 +377,8 @@ theorem pairedWedge_anticomm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F�
     smul_neg]
 
 /-- Graded commutativity of the paired wedge along a symmetric pairing. -/
-theorem pairedWedge_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+theorem pairedWedge_comm [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
+    {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (hsymm : ∀ a b, mu a b = mu b a)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁) (v : Fin (k + l) → E) :
@@ -450,22 +391,14 @@ theorem pairedWedge_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
   rw [pairedWedge_flip]
   simp only [hflip]
 
-end PairingOperations
-
 section InteriorProduct
-open Equiv
-variable {E F₁ F₂ F₃ : Type*}
-  [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-  [AddCommGroup F₁] [Module ℝ F₁] [TopologicalSpace F₁]
-  [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
-  [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
-  [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
-  [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
-  [IsTopologicalAddGroup F₃] [ContinuousSMul ℝ F₃]
-  {k l : ℕ}
 
-omit [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂] in
-private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+open Equiv
+
+variable {k l : ℕ}
+
+private lemma sum_sign_smul_insertNth_castAdd [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
+    (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (k + 1)) :
     (-1 : ℤ) ^ (Fin.castAdd (l + 1) i : ℕ) • ∑ τ : Perm (Fin (k + 1 + l)), Perm.sign τ •
@@ -489,8 +422,8 @@ private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ
     fun sigma => ?_
   simp [Perm.sign_permCongr]
 
-omit [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁] in
-private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+private lemma sum_sign_smul_insertNth_natAdd [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
+    (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (l + 1)) :
     (-1 : ℤ) ^ (Fin.natAdd (k + 1) i : ℕ) • ∑ τ : Perm (Fin (k + 1 + l)), Perm.sign τ •
@@ -514,7 +447,10 @@ private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ]
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (k + 1) • φ ∧ ι_v ψ` for a `(k + 1)`-form `φ`.
 This is the topological counterpart of `ContinuousAlternatingMap.curryLeft_pairedWedge` and the
 formula of Lee, *Introduction to Smooth Manifolds*, 2nd ed., Lemma 14.13. -/
-theorem curryLeftTopological_pairedWedge (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem curryLeftTopological_pairedWedge
+    [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
+    [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
+    (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁)
     (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
