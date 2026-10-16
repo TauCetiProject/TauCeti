@@ -60,28 +60,29 @@ private theorem terminal_pair_markings {x y z : GridState n}
   have ht : C.oppositeTurnRow ∈ Grid.cIco Q.bottom Q.top := by
     simpa only [C.reverse_turnRow] using Q.turn_mem_cIco_bottom_top
   rw [htop] at ht
-  have hne := C.column_ne_next
-  simp only [P.mem_coveredSquares, Q.mem_coveredSquares,
-    GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
-    GridRectangleBetween.toGridRectangle_top, C.reverse_column, C.reverse_turnRow, P.right_eq,
-    (Q.right_eq.trans (congrArg (finRotate n) C.reverse_column))]
   rcases eq_or_ne c a with rfl | hca
-  · simp only [Equiv.swap_apply_left, hne, Ne.symm hne, ne_eq, not_false_eq_true,
-      not_true_eq_false, false_and, true_and, false_or, Grid.right_notMem_cIco]
+  · have hQ := Q.mk_mem_coveredSquares_right_column (M a)
+    simp only [C.reverse_column, C.reverse_turnRow] at hQ
+    simp only [Equiv.swap_apply_left, P.mk_mem_coveredSquares_left_column,
+      hQ, ne_eq, not_true_eq_false, false_and]
     simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq,
       ← Fin.val_inj] at hs ht ha hrow ⊢
     constructor <;> constructor <;> intro h <;> split_ifs at * <;> grind
   · rcases eq_or_ne c b with rfl | hcb
-    · simp only [Equiv.swap_apply_right, hne, Ne.symm hne, Grid.right_notMem_cIco,
-        ne_eq, not_false_eq_true, not_true_eq_false, false_and, true_and, false_or,
+    · have hQ := Q.mk_mem_coveredSquares_left_column (M b)
+      have hQrect := Q.mk_notMem_toGridRectangle_coveredSquares_right_column (M b)
+      simp only [C.reverse_column, C.reverse_turnRow] at hQ hQrect
+      simp only [Equiv.swap_apply_right, P.mk_mem_coveredSquares_right_column,
+        P.mk_notMem_toGridRectangle_coveredSquares_right_column, hQ, hQrect,
         htop]
       simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq,
         ← Fin.val_inj] at hs ht hb hrow ⊢
       constructor <;> constructor <;> intro h <;> split_ifs at * <;> grind
-    · simp only [Equiv.swap_apply_of_ne_of_ne hca hcb, hca, hcb,
-        false_and, false_or]
+    · have hQ := Q.mem_coveredSquares_iff_of_ne (p := (c, M c))
+        (by simpa only [C.reverse_column] using hca)
+        (by simpa only [C.reverse_column] using hcb)
+      simp only [Equiv.swap_apply_of_ne_of_ne hca hcb,
+        P.mem_coveredSquares_iff_of_ne (p := (c, M c)) hca hcb, hQ]
       tauto
 
 private theorem terminal_pair_rows {x y z : GridState n}
@@ -165,6 +166,7 @@ noncomputable def recutTerminalPentagonPair {x y z : GridState n}
   ⟨E.middle, E.first, .inl (G.terminal_pair_hexagon C P Q hcol hp hq).choose⟩
 
 /-- Forgetting the two turns in the promoted composite gives the canonical rectangle recut. -/
+@[simp]
 theorem recutTerminalPentagonPair_toRectangleDecomposition {x y z : GridState n}
     (P : GridPentagonBetween a C.turnRow x y)
     (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z)
@@ -321,6 +323,7 @@ theorem recutTerminalPentagonPair_mem_rectangleHexagonDecompositions {x y z : Gr
 
 /-- Recutting this terminal-side pentagon pair preserves its polynomial weight, over any
 commutative semiring. -/
+@[simp]
 theorem rectangleHexagonWeight_recutTerminalPentagonPair
     (R : Type*) [CommSemiring R] {x y z : GridState n}
     (P : GridPentagonBetween a C.turnRow x y)
