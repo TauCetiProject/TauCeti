@@ -469,46 +469,7 @@ namespace TauCeti.GradedProjectiveResolution
 
 open CategoryTheory CategoryTheory.Abelian GradedModuleCat
 
-universe w uk uA uI v u
-
-section Recursion
-
-variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A}
-
-/-- Iterating minimal projective surjections along successive kernels gives a minimal resolution.
-The property `S` of the successive kernels is propagated, and the property `T` holds for every
-term. -/
-private theorem exists_isMinimal_of_forall_cover (S T : GradedModuleCat.{u} 𝒜 → Prop)
-    (hcover : ∀ N, S N → ∃ (P : GradedModuleCat.{u} 𝒜) (π : P ⟶ N), Module.Projective A P ∧
-      Function.Surjective π.hom ∧
-      (∀ x, π.hom x = 0 → x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P)) ∧
-      T P ∧ S (kernelObj π))
-    (M : GradedModuleCat.{u} 𝒜) (hM : S M) :
-    ∃ r : GradedProjectiveResolution.{uk, uA, u, u} 𝒜 M.grading,
-      r.IsMinimal ∧ ∀ n, T (r.termObj n) := by
-  choose P π hP hπ hmin hT hS using fun N : {N // S N} => hcover N.1 N.2
-  -- The successive kernels, starting from `M`.
-  let K : ℕ → {N // S N} := fun n => Nat.rec ⟨M, hM⟩ (fun _ N => ⟨kernelObj (π N), hS N⟩) n
-  refine ⟨{
-    X := fun n => P (K n)
-    grading := fun n => (P (K n)).grading
-    projective := fun n => hP (K n)
-    d := fun n => (π (K (n + 1)) ≫ kernelι (π (K n))).hom
-    π := (π (K 0)).hom
-    isHomogeneous_d := fun n => (π (K (n + 1)) ≫ kernelι (π (K n))).isHomogeneous
-    isHomogeneous_π := (π (K 0)).isHomogeneous
-    surjective_π := hπ (K 0)
-    exact_d_π := by
-      rw [GradedModuleCat.hom_comp, hom_kernelι]
-      exact (hπ (K (0 + 1))).comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map _)
-    exact_d_d := fun n => by
-      rw [GradedModuleCat.hom_comp, hom_kernelι, GradedModuleCat.hom_comp, hom_kernelι,
-        (Submodule.injective_subtype _).comp_exact_iff_exact]
-      exact (hπ (K (n + 2))).comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map _) },
-    isMinimal_iff.mpr fun n x => hmin (K n) _ (π (K (n + 1)) |>.hom x).2, fun n => hT (K n)⟩
-
-end Recursion
+universe w uk uA uI v
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {I : Type uI} [Fintype I] {e : I → A}
