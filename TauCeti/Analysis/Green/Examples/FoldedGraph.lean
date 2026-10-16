@@ -178,6 +178,17 @@ def squaredFoldedGraphPath : Path (-1 : ℂ) 1 :=
     (foldedGraphPath.continuous_extend.comp (by fun_prop)).continuousOn
     (by simp) (by simp)
 
+/-- The squared parameter traverses the original fold with real coordinate `2t² - 1`. -/
+@[simp]
+theorem squaredFoldedGraphPath_apply (t : unitInterval) :
+    squaredFoldedGraphPath t =
+      (⟨2 * (t : ℝ) ^ 2 - 1, 1 - |2 * (t : ℝ) ^ 2 - 1|⟩ : ℂ) := by
+  have ht : (t : ℝ) ^ 2 ∈ Icc (0 : ℝ) 1 :=
+    ⟨sq_nonneg _, by nlinarith [t.property.1, t.property.2]⟩
+  -- Evaluate the Path.ofLine definition before restricting its squared parameter to the interval.
+  change foldedGraphPath.extend ((t : ℝ) ^ 2) = _
+  rw [Path.extend_apply _ ht, foldedGraphPath_apply]
+
 /-- A finite graph-piece comparison also retains an actual nonlinear parametrization of the
 original whole arc. Its countable-fiber and derivative premises are proved from the square map. -/
 theorem squaredFoldedGraphPath_subdivision {U : Set ℂ}
@@ -228,6 +239,10 @@ theorem squaredFoldedGraphPath_symm_nullChain {U : Set ℂ}
 def backtrackingFoldedGraphPath : Path (-1 : ℂ) 1 :=
   foldedGraphPath.trans (foldedGraphPath.symm.trans foldedGraphPath)
 
+/-- The backtracking path concatenates the forward fold, its reversal and the forward fold. -/
+theorem backtrackingFoldedGraphPath_def : backtrackingFoldedGraphPath =
+    foldedGraphPath.trans (foldedGraphPath.symm.trans foldedGraphPath) := by rfl
+
 /-- Backtracking is present in the actual base coordinate, not just in an auxiliary
 certificate: the path visits x=1 before returning to x=-1. -/
 theorem not_monotone_re_backtrackingFoldedGraphPath :
@@ -235,7 +250,7 @@ theorem not_monotone_re_backtrackingFoldedGraphPath :
   intro h
   have hle : (⟨1 / 2, by norm_num⟩ : unitInterval) ≤ ⟨3 / 4, by norm_num⟩ := by norm_num
   have hh := h hle
-  norm_num [backtrackingFoldedGraphPath, Path.trans_apply, Path.symm_apply,
+  norm_num [backtrackingFoldedGraphPath_def, Path.trans_apply, Path.symm_apply,
     foldedGraphPath_apply] at hh
 
 /-- The three actual traversals have a geometric refinement with cancellation of the
