@@ -237,12 +237,27 @@ instance (K : CochainComplex.Bounded C) : HasCompression n K.obj :=
   hasCompression_of_bounded n K.property
 
 /-- The `n`-periodic compression of bounded cochain complexes. -/
--- Exposed so that its objects are definitionally the compressions of the underlying complexes.
-@[expose, simps]
 noncomputable def compressionFunctor :
     CochainComplex.Bounded C ⥤ HomologicalComplex C (ComplexShape.up (ZMod n)) where
   obj K := compression n K.obj
   map f := compressionMap n f.hom
+
+/-- The compression functor sends a bounded complex to the compression of its underlying
+complex. -/
+@[simp]
+lemma compressionFunctor_obj (K : CochainComplex.Bounded C) :
+    (compressionFunctor n).obj K = compression n K.obj :=
+  (rfl)
+
+/-- The compression functor acts on a morphism by compressing the underlying chain map, after
+transporting along the object equations. -/
+@[simp]
+lemma compressionFunctor_map {K L : CochainComplex.Bounded C} (f : K ⟶ L) :
+    (compressionFunctor n).map f =
+      eqToHom (compressionFunctor_obj n K) ≫ compressionMap n f.hom ≫
+        eqToHom (compressionFunctor_obj n L).symm := by
+  change compressionMap n f.hom = 𝟙 _ ≫ compressionMap n f.hom ≫ 𝟙 _
+  simp
 
 end Bounded
 
@@ -319,8 +334,6 @@ instance (K : HomotopyCategory.Bounded C) : HasCompression n (rep K) :=
 
 /-- The `n`-periodic compression of bounded cochain complexes, descended to their homotopy
 category. It sends the class of a bounded complex to the class of its compression. -/
--- Exposed so that its objects are definitionally the classes of compressions.
-@[expose]
 noncomputable def homotopyCompressionFunctor :
     HomotopyCategory.Bounded C ⥤ HomotopyCategory C (ComplexShape.up (ZMod n)) where
   obj K := (HomotopyCategory.quotient C _).obj (compression n (rep K))
@@ -339,16 +352,20 @@ complex. -/
 lemma homotopyCompressionFunctor_obj (K : HomotopyCategory.Bounded C) :
     (homotopyCompressionFunctor n).obj K =
       (HomotopyCategory.quotient C _).obj (compression n (rep K)) :=
-  rfl
+  (rfl)
 
-/-- The descended compression acts on a morphism through any representing chain map. -/
+/-- The descended compression acts on a morphism through any representing chain map, after
+transporting along the object equations. -/
 lemma homotopyCompressionFunctor_map {K L : HomotopyCategory.Bounded C} (f : K ⟶ L)
     (g : rep K ⟶ rep L)
     (hg : (HomotopyCategory.quotient C _).map g =
       eqToHom (quotient_obj_rep K) ≫ f.hom ≫ eqToHom (quotient_obj_rep L).symm) :
     (homotopyCompressionFunctor n).map f =
-      (HomotopyCategory.quotient C _).map (compressionMap n g) :=
-  quotientCompressionMap_eq n g _ hg
+      eqToHom (homotopyCompressionFunctor_obj n K) ≫
+        (HomotopyCategory.quotient C _).map (compressionMap n g) ≫
+          eqToHom (homotopyCompressionFunctor_obj n L).symm := by
+  change quotientCompressionMap n _ = 𝟙 _ ≫ _ ≫ 𝟙 _
+  simpa using quotientCompressionMap_eq n g _ hg
 
 instance : (homotopyCompressionFunctor (C := C) n).Additive where
   map_add {K L f g} := by
