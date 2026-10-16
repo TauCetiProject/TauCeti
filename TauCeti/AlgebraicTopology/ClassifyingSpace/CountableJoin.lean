@@ -20,7 +20,7 @@ preserving the base point and respecting identities and composition.
 
 * `TauCeti.universalGSpace`: the realization of the countable join of copies of `G`.
 * `TauCeti.universalGSpaceBasepoint`: the distinguished vertex over index zero.
-* `TauCeti.universalGSpaceMap`: the map induced by a homomorphism.
+* `MonoidHom.universalGSpaceMap`: the map induced by a homomorphism.
 
 ## References
 
@@ -31,11 +31,11 @@ public section
 
 noncomputable section
 
+universe u v
+
 namespace TauCeti
 
 attribute [local instance] Classical.decEq
-
-universe u v
 
 /-- Milnor's countable join of copies of a type, realized with the weak topology. -/
 abbrev universalGSpace (G : Type u) : Type _ :=
@@ -53,14 +53,20 @@ theorem universalGSpaceBasepoint_val (G : Type u) [One G] :
     (universalGSpaceBasepoint G : (Σ _ : ℕ, G) →₀ ℝ) = Finsupp.single ⟨0, 1⟩ 1 := by
   rw [universalGSpaceBasepoint, AbstractSimplicialComplex.vertex_val]
 
-variable {G : Type u} {H : Type v} [MulOneClass G] [MulOneClass H]
+end TauCeti
+
+namespace MonoidHom
+
+open TauCeti
+
+variable {G : Type u} {H : Type v} [MulOne G] [MulOne H]
 
 /-- A homomorphism induces a continuous map of Milnor total spaces by applying it to
 vertex labels and leaving indices unchanged. -/
 noncomputable def universalGSpaceMap (φ : G →* H) : C(universalGSpace G, universalGSpace H) := by
   classical
   letI : DecidableEq ℕ := Classical.decEq ℕ
-  exact (indexedJoinMap id Function.injective_id (fun _ : ℕ => φ)).realizationMap
+  exact (indexedJoinMap _root_.id Function.injective_id (fun _ : ℕ => φ)).realizationMap
 
 /-- The induced map pushes forward barycentric coordinates. -/
 @[simp]
@@ -71,6 +77,7 @@ theorem universalGSpaceMap_val (φ : G →* H) (x : universalGSpace G) :
   let : DecidableEq ℕ := Classical.decEq ℕ
   simp [universalGSpaceMap]
 
+/-- The map induced by a homomorphism preserves the distinguished base point. -/
 @[simp]
 theorem universalGSpaceMap_basepoint (φ : G →* H) :
     universalGSpaceMap φ (universalGSpaceBasepoint G) = universalGSpaceBasepoint H := by
@@ -89,7 +96,7 @@ theorem universalGSpaceMap_id :
 
 /-- The induced continuous map respects composition. -/
 @[simp]
-theorem universalGSpaceMap_comp {K : Type*} [MulOneClass K] (ψ : H →* K) (φ : G →* H) :
+theorem universalGSpaceMap_comp {K : Type*} [MulOne K] (ψ : H →* K) (φ : G →* H) :
     universalGSpaceMap (ψ.comp φ) = (universalGSpaceMap ψ).comp (universalGSpaceMap φ) := by
   classical
   let : DecidableEq ℕ := Classical.decEq ℕ
@@ -98,4 +105,4 @@ theorem universalGSpaceMap_comp {K : Type*} [MulOneClass K] (ψ : H →* K) (φ 
     ← indexedJoinMap_comp]
   congr 1
 
-end TauCeti
+end MonoidHom
