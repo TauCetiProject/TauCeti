@@ -246,7 +246,7 @@ open scoped AdicCompletionExtension NumberField.LiesOver in
 number field `L` over `K`, then at every finite place `v` of `K` the coordinate of an idele norm
 from `L` has Hilbert symbol `1` with `b`. It is a product of norms from completions `L_w` in which
 `b` is a square, so it is a norm from `K_v(√b)`. -/
-@[simp] theorem hilbertSymbol_ideleFiniteCoord_ideleNormMap (hb : IsSquare (algebraMap K L b))
+@[simp↓] theorem hilbertSymbol_ideleFiniteCoord_ideleNormMap (hb : IsSquare (algebraMap K L b))
     (x : IdeleGroup (𝓞 L) L) (v : HeightOneSpectrum (𝓞 K)) :
     hilbertSymbol (v.ideleFiniteCoord (GlobalNumberFields.ideleNormMap K L x))
       (v.unitAtFinitePlace b) = 1 := by
@@ -266,7 +266,7 @@ open scoped NumberField.LiesOver in
 /-- **The infinite coordinates of an idele norm are local norms.** If `b ∈ Kˣ` is a square in a
 number field `L` over `K`, then at every infinite place `v` of `K` the coordinate of an idele norm
 from `L` has Hilbert symbol `1` with `b`. -/
-@[simp] theorem hilbertSymbol_ideleInfiniteCoord_ideleNormMap (hb : IsSquare (algebraMap K L b))
+@[simp↓] theorem hilbertSymbol_ideleInfiniteCoord_ideleNormMap (hb : IsSquare (algebraMap K L b))
     (x : IdeleGroup (𝓞 L) L) (v : InfinitePlace K) :
     hilbertSymbol (v.ideleInfiniteCoord (GlobalNumberFields.ideleNormMap K L x))
       (Units.map (algebraMap K v.Completion).toMonoidHom b) = 1 := by
