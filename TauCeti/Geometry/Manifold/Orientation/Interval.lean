@@ -89,26 +89,19 @@ theorem Manifold.Orientation.map_orientationAt_interval (x : Icc a b) :
   rw [orientationAt_interval]
   let B := (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis
   let R := Module.Basis.singleton (Fin 1) ℝ
-  let e : EuclideanSpace ℝ (Fin 1) ≃L[ℝ] ℝ :=
-    if (x : ℝ) < b then PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)
-    else (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).trans (ContinuousLinearEquiv.neg ℝ)
-  -- Tangent fibers are model copies; state the orientation calculation in that model.
-  change _root_.Orientation.map (Fin 1) e.toLinearEquiv
-    (if (x : ℝ) < b then B.orientation else -B.orientation) = R.orientation
   by_cases hx : (x : ℝ) < b
   · rw [ite_eq_left hx, ← Module.Basis.orientation_map]
-    have he : B.map e.toLinearEquiv = R := by
+    have he : B.map (subtypeValIccTangentEquiv x).toLinearEquiv = R := by
       ext i
       rw [Subsingleton.elim i 0]
-      simp [B, R, e, hx, EuclideanSpace.basisFun_apply,
-        PiLp.equivOfUnique_apply]
+      simp [B, R, hx, EuclideanSpace.basisFun_apply]
     exact congrArg Module.Basis.orientation he
   · rw [ite_eq_right hx, _root_.Orientation.map_neg, ← Module.Basis.orientation_map]
-    have he : B.map e.toLinearEquiv = R.unitsSMul (fun _ ↦ -1) := by
+    have he : B.map (subtypeValIccTangentEquiv x).toLinearEquiv =
+        R.unitsSMul (fun _ ↦ -1) := by
       ext i
       rw [Subsingleton.elim i 0]
-      simp [B, R, e, hx, EuclideanSpace.basisFun_apply,
-        PiLp.equivOfUnique_apply, Module.Basis.unitsSMul_apply]
+      simp [B, R, hx, EuclideanSpace.basisFun_apply, Module.Basis.unitsSMul_apply]
     rw [he, Module.Basis.orientation_unitsSMul]
     simp only [Fin.prod_univ_one, inv_neg, inv_one]
     rw [Module.Ray.units_smul_of_neg (-1) (by norm_num)]

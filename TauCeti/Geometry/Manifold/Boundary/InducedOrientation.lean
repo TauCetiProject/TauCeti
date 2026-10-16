@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Derivative
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # The induced boundary orientation
@@ -26,82 +25,7 @@ noncomputable section
 open Set
 open scoped Manifold
 
-namespace Orientation
 
-open TauCeti
-
-open Classical in
-/-- The outward-first orientation on the coordinate-zero boundary of an oriented half-space. -/
-def halfSpaceBoundaryOrientation {n : ℕ}
-    (o : Orientation ℝ (EuclideanSpace ℝ (Fin (n + 1))) (Fin (n + 1))) :
-    Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n) :=
-  if o = (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.orientation then
-    -(EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation
-  else (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation
-
-/-- The standard positive ambient basis induces the negative standard boundary orientation,
-including in dimension zero. -/
-@[simp]
-theorem halfSpaceBoundaryOrientation_basisFun (n : ℕ) :
-    halfSpaceBoundaryOrientation (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.orientation =
-      -(EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation := by
-  simp only [halfSpaceBoundaryOrientation, ↓reduceIte]
-
-/-- Reversing the ambient model orientation reverses its boundary orientation. -/
-@[simp]
-theorem halfSpaceBoundaryOrientation_neg {n : ℕ}
-    (o : Orientation ℝ (EuclideanSpace ℝ (Fin (n + 1))) (Fin (n + 1))) :
-    halfSpaceBoundaryOrientation (-o) = -halfSpaceBoundaryOrientation o := by
-  classical
-  let e := (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.orientation
-  let f := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation
-  have heq : (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.orientation = e := rfl
-  have he : - -e = e := _root_.neg_neg e
-  have hf : - -f = f := _root_.neg_neg f
-  have hn : -e ≠ e := (Module.Ray.ne_neg_self e).symm
-  rcases Orientation.eq_or_eq_neg o e (by simp) with h | h
-  · simp only [halfSpaceBoundaryOrientation, h, heq,
-      hn, ↓reduceIte]
-    exact hf.symm
-  · simp only [halfSpaceBoundaryOrientation, h, heq,
-      he, hn, ↓reduceIte]
-
-
-/-- The boundary model orientation is characterized by placing an outward vector first. -/
-theorem halfSpaceBoundaryOrientation_spec {n : ℕ}
-    (o : Orientation ℝ (EuclideanSpace ℝ (Fin (n + 1))) (Fin (n + 1)))
-    {v : EuclideanSpace ℝ (Fin (n + 1))} (hv : v 0 < 0)
-    (b : Module.Basis (Fin n) ℝ (EuclideanSpace ℝ (Fin n)))
-    (b' : Module.Basis (Fin (n + 1)) ℝ (EuclideanSpace ℝ (Fin (n + 1))))
-    (hb' : ⇑b' = Fin.cons v (fun i ↦ euclideanHalfSpaceBoundaryParam n (b i))) :
-    b.orientation = halfSpaceBoundaryOrientation o ↔ b'.orientation = o := by
-  classical
-  let e := (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis
-  let f := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
-  have heq : (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.orientation =
-      e.orientation := rfl
-  have hd : e.det b' = v 0 * f.det b := by
-    rw [hb']
-    exact EuclideanSpace.det_cons_boundary v b
-  have hp : b.orientation = f.orientation ↔ 0 < f.det b :=
-    eq_comm.trans (f.orientation_eq_iff_det_pos b)
-  have hp' : b'.orientation = e.orientation ↔ 0 < e.det b' :=
-    eq_comm.trans (e.orientation_eq_iff_det_pos b')
-  rcases e.orientation_eq_or_eq_neg o with h | h
-  · rw [h]
-    simp only [halfSpaceBoundaryOrientation, heq,
-      ↓reduceIte]
-    rw [← f.orientation_ne_iff_eq_neg, ne_comm, b.orientation_ne_iff_eq_neg,
-      f.orientation_eq_neg_iff_det_neg b, hp', hd]
-    exact (smul_pos_iff_of_neg_left hv).symm
-  · rw [h]
-    simp only [halfSpaceBoundaryOrientation, heq,
-      (Module.Ray.ne_neg_self e.orientation).symm, ↓reduceIte]
-    rw [hp, ← e.orientation_ne_iff_eq_neg, ne_comm, b'.orientation_ne_iff_eq_neg,
-      e.orientation_eq_neg_iff_det_neg b', hd]
-    exact (smul_neg_iff_of_neg_left hv).symm
-
-end Orientation
 
 namespace TauCeti.Manifold.OrientationLift
 
@@ -268,25 +192,6 @@ theorem orientationAt_boundaryOrientation_model (n : ℕ)
         (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.orientation (by simp))) x =
       -(EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation := by
   rw [orientationAt_boundaryOrientation, Manifold.Orientation.orientationAt_model]
-  simp only [Orientation.halfSpaceBoundaryOrientation, ↓reduceIte]
-  rfl
+  exact Orientation.halfSpaceBoundaryOrientation_basisFun n
 
 end TauCeti
-
-namespace Orientation
-
-/-- The actual half-space boundary orientation changes the relative standard-basis sign by
-minus one in every dimension, including dimension zero. -/
-theorem signBasis_halfSpaceBoundaryOrientation {n : ℕ}
-    (o : Orientation ℝ (EuclideanSpace ℝ (Fin (n + 1))) (Fin (n + 1))) :
-    Orientation.signBasis (halfSpaceBoundaryOrientation o)
-        (EuclideanSpace.basisFun (Fin n) ℝ).toBasis =
-      -Orientation.signBasis o (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis := by
-  rcases (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.orientation_eq_or_eq_neg o with h | h
-  · rw [h]
-    simp
-  · rw [h]
-    simp only [halfSpaceBoundaryOrientation_neg, halfSpaceBoundaryOrientation_basisFun,
-      Orientation.signBasis_neg, Orientation.signBasis_orientation]
-
-end Orientation

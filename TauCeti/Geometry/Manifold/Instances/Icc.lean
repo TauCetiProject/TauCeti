@@ -182,12 +182,38 @@ theorem tangentCoordChange_Icc (α β x : Icc a b)
     simp only [hβ, ↓reduceIte, neg_one_mul]
     rw [← neg_smul, hlin]
 
-/-- The derivative of interval inclusion, identified with the real target model, as an
-invertible continuous linear map. Its own-chart sign changes at the right endpoint. -/
-@[expose]
-noncomputable def subtypeValIccTangentEquiv (x : Icc a b) : TangentSpace (𝓡∂ 1) x ≃L[ℝ] ℝ :=
+/-- The derivative of interval inclusion, on its canonical tangent model and identified with
+the real target model, as an invertible continuous linear map. Its own-chart sign changes
+at the right endpoint. -/
+noncomputable def subtypeValIccTangentEquiv (x : Icc a b) :
+    EuclideanSpace ℝ (Fin 1) ≃L[ℝ] ℝ :=
   if (x : ℝ) < b then PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)
   else (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).trans (ContinuousLinearEquiv.neg ℝ)
+
+omit hab in
+/-- The interval inclusion tangent equivalence is the signed coordinate projection. -/
+@[simp]
+theorem subtypeValIccTangentEquiv_apply (x : Icc a b) (v : EuclideanSpace ℝ (Fin 1)) :
+    subtypeValIccTangentEquiv x v =
+      (if (x : ℝ) < b then (1 : ℝ) else -1) *
+        EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0 v := by
+  by_cases hx : (x : ℝ) < b <;>
+    simp only [subtypeValIccTangentEquiv, hx, ↓reduceIte, one_mul, neg_one_mul]
+  all_goals rfl
+
+omit hab in
+/-- The inverse interval tangent equivalence multiplies the real coordinate by the chart sign. -/
+@[simp]
+theorem subtypeValIccTangentEquiv_symm_apply (x : Icc a b) (r : ℝ) (i : Fin 1) :
+    EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) i ((subtypeValIccTangentEquiv x).symm r) =
+      (if (x : ℝ) < b then (1 : ℝ) else -1) * r := by
+  rw [Subsingleton.elim i 0]
+  have h := subtypeValIccTangentEquiv_apply x ((subtypeValIccTangentEquiv x).symm r)
+  rw [ContinuousLinearEquiv.apply_symm_apply] at h
+  by_cases hx : (x : ℝ) < b
+  · simpa only [hx, ↓reduceIte, one_mul] using h.symm
+  · simp only [hx, ↓reduceIte, neg_one_mul] at h ⊢
+    linarith
 
 /-- The tangent equivalence is the actual inclusion derivative, with the canonical real
 model tangent identification on its target. -/
