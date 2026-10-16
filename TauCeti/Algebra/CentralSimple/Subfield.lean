@@ -363,8 +363,11 @@ section RightMultiplication
 
 open Module
 
-variable {K : Type*} [Field K] {A : Type*} [Ring A] [Algebra K A] (L : Type*) [Field L]
-  [Algebra K L] {B : Type*} [Ring B] [Algebra L B] [Algebra K B] [IsScalarTower K L B]
+section Semiring
+
+variable {K : Type*} [CommSemiring K] {A : Type*} [Semiring A] [Algebra K A]
+  (L : Type*) [CommSemiring L] [Algebra K L] {B : Type*} [Semiring B]
+  [Algebra L B] [Algebra K B] [IsScalarTower K L B]
 
 /-! ### Right multiplication through `g` -/
 
@@ -372,7 +375,7 @@ namespace BaseChangeModule
 
 variable (g : B →ₐ[K] A)
 
-/-- The action of `L ⊗[K] A` on `A` through the subfield `g ∘ algebraMap L B` commutes with right
+/-- The action of `L ⊗[K] A` on `A` through `g ∘ algebraMap L B` commutes with right
 multiplication by the image of `g`. -/
 theorem toEnd_mul_apply (r : L ⊗[K] A) (x : A) (b : B) :
     toEnd (g.comp (IsScalarTower.toAlgHom K L B)) r (x * g b) =
@@ -431,7 +434,14 @@ theorem mulRightAlgHom_of (b : Bᵐᵒᵖ) (x : A) :
 
 end BaseChangeModule
 
+end Semiring
+
 /-! ### The centralizer of the subfield -/
+
+section FiniteDimensional
+
+variable {K : Type*} [Field K] {A : Type*} [Ring A] [Algebra K A] (L : Type*) [Field L]
+  [Algebra K L] {B : Type*} [Ring B] [Algebra L B] [Algebra K B] [IsScalarTower K L B]
 
 variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A] [IsSimpleRing B]
 
@@ -472,6 +482,8 @@ theorem mulRightAlgHom_bijective
     (f := (mulRightAlgHom L g).toLinearMap) hX.symm).1 hinj
 
 end BaseChangeModule
+
+end FiniteDimensional
 
 end RightMultiplication
 
