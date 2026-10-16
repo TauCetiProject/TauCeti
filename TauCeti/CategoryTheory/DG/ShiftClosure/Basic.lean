@@ -82,36 +82,6 @@ namespace DGShiftClosure
 
 variable (R : Type v) [CommRing R] {C : Type u} [DGCategory R C]
 
-/-! ### Degree transport -/
-
-/-- Transport of a homogeneous morphism of `C` along an equality of degrees. -/
-private noncomputable def castDeg {X Y : C} {p p' : ℤ} (hp : p = p') :
-    DGHom R p X Y →ₗ[R] DGHom R p' X Y :=
-  ((dgHomComplex R X Y).XIsoOfEq hp).hom.hom
-
-private theorem castDeg_self {X Y : C} {p : ℤ} (hp : p = p) (f : DGHom R p X Y) :
-    castDeg R hp f = f := by
-  simp [castDeg]
-
-private theorem castDeg_dgComp {X Y Z : C} {p p' q n n' : ℤ} (hp : p = p') (hn : n = n')
-    (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p' + q = n') :
-    dgComp R (castDeg R hp f) g h = castDeg R hn (dgComp R f g (by omega)) := by
-  subst hp hn
-  simp [castDeg]
-
-private theorem dgComp_castDeg {X Y Z : C} {p q q' n n' : ℤ} (hq : q = q') (hn : n = n')
-    (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p + q' = n') :
-    dgComp R f (castDeg R hq g) h = castDeg R hn (dgComp R f g (by omega)) := by
-  subst hq hn
-  simp [castDeg]
-
-private theorem d_castDeg {X Y : C} {a b a' b' : ℤ} (h : a = b) (h' : a' = b')
-    (f : DGHom R a X Y) :
-    ((dgHomComplex R X Y).d b b').hom (castDeg R h f) =
-      castDeg R h' (((dgHomComplex R X Y).d a a').hom f) := by
-  subst h h'
-  simp [castDeg]
-
 /-! ### The Hom-complex data -/
 
 /-- The Hom complex `Hom(X[r], Y[s]) = Hom(X, Y)[s - r]` of the shift closure. -/

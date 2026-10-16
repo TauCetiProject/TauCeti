@@ -117,13 +117,6 @@ theorem shiftCochainEquiv_v {X Y : DGShiftClosure (CochainComplex V ℤ)} {n : �
           (by omega) :=
   shiftCochainEquivAux_v R _ _ _ _ _ _ i j hij
 
-private theorem xIsoOfEq_hom_v {K L : CochainComplex V ℤ} {a b : ℤ} (h : a = b)
-    (z : DGHom R a K L) (p q : ℤ) (hpq : p + b = q) :
-    (((dgHomComplex R K L).XIsoOfEq h).hom z : Cochain K L b).v p q hpq =
-      (z : Cochain K L a).v p q (by omega) := by
-  subst h
-  rfl
-
 private theorem δ_shiftCochainEquiv {X Y : DGShiftClosure (CochainComplex V ℤ)} {n : ℤ}
     (f : DGHom R n X Y) :
     (shiftCochainEquiv R X Y (n + 1) (dgDifferential R n f) :
@@ -131,13 +124,6 @@ private theorem δ_shiftCochainEquiv {X Y : DGShiftClosure (CochainComplex V ℤ
       δ n (n + 1) (shiftCochainEquiv R X Y n f : Cochain (X.obj⟦X.shift⟧) (Y.obj⟦Y.shift⟧) n) :=
   (congrArg (shiftCochainEquivAux R X.obj Y.obj X.shift Y.shift (n + 1))
     (dgHomEquiv_dgDifferential R n f)).trans (δ_shiftCochainEquivAux R _ _ _ _ _ _).symm
-
-private theorem dgComp_v {K L M : CochainComplex V ℤ} {a b c : ℤ} (z₁ : DGHom R a K L)
-    (z₂ : DGHom R b L M) (h : a + b = c) (x y w : ℤ) (h₁ : x + a = y) (h₂ : y + b = w) :
-    (dgComp R z₁ z₂ h : Cochain K M c).v x w (by omega) =
-      (a * b).negOnePow • ((z₁ : Cochain K L a).v x y h₁ ≫ (z₂ : Cochain L M b).v y w h₂) := by
-  rw [dgComp_linearHomComplex, Cochain.units_smul_v]
-  exact congrArg _ (Cochain.comp_v (z₁ : Cochain K L a) (z₂ : Cochain L M b) h x y w h₁ h₂)
 
 /-- The DG functor `K[r] ↦ K⟦r⟧` evaluating the formal shifts of cochain complexes, acting on
 morphisms by the normalized identification `TauCeti.DGShiftClosure.shiftCochainEquiv`. -/

@@ -50,6 +50,7 @@ category; that category and its quotient by homotopy are not built here.
   `g ∘ f = (-1) ^ (p * q) • dgComp f g`.
 * `TauCeti.dgId_dgComp` and `TauCeti.dgComp_dgId`: the identity is a two-sided unit.
 * `TauCeti.dgDifferential_dgId`: the identity is a cycle.
+* `TauCeti.castDeg`: transport a homogeneous morphism along an equality of degrees.
 
 ## References
 
@@ -95,6 +96,29 @@ theorem dgDifferential_dgDifferential {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     dgDifferential R (n + 1) (dgDifferential R n f) = 0 := by
   rw [← ModuleCat.comp_apply, (dgHomComplex R X Y).d_comp_d]
   simp
+
+/-! ### Degree transport -/
+
+/-- Transport a homogeneous morphism along an equality of degrees. -/
+-- The body is exposed so dependent statements can reduce the transported degree and identify
+-- the resulting map with `HomologicalComplex.XIsoOfEq`.
+@[expose]
+noncomputable def castDeg {X Y : C} {p p' : ℤ} (hp : p = p') :
+    DGHom R p X Y →ₗ[R] DGHom R p' X Y :=
+  ((dgHomComplex R X Y).XIsoOfEq hp).hom.hom
+
+/-- Transport along a self-equality of degrees leaves a homogeneous morphism unchanged. -/
+theorem castDeg_self {X Y : C} {p : ℤ} (hp : p = p) (f : DGHom R p X Y) :
+    castDeg R hp f = f := by
+  simp [castDeg]
+
+/-- Degree transport commutes with a differential between arbitrary equal indices. -/
+theorem d_castDeg {X Y : C} {a b a' b' : ℤ} (h : a = b) (h' : a' = b')
+    (f : DGHom R a X Y) :
+    ((dgHomComplex R X Y).d b b').hom (castDeg R h f) =
+      castDeg R h' (((dgHomComplex R X Y).d a a').hom f) := by
+  subst h h'
+  simp [castDeg]
 
 /-! ### Composition -/
 
@@ -174,6 +198,20 @@ theorem units_smul_dgComp {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X
 theorem dgComp_units_smul {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X Y)
     (g : DGHom R q Y Z) (h : p + q = n) : dgComp R f (u • g) h = u • dgComp R f g h := by
   simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, dgComp_smul]
+
+/-- Degree transport in the first argument commutes with DG composition. -/
+theorem castDeg_dgComp {X Y Z : C} {p p' q n n' : ℤ} (hp : p = p') (hn : n = n')
+    (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p' + q = n') :
+    dgComp R (castDeg R hp f) g h = castDeg R hn (dgComp R f g (by omega)) := by
+  subst hp hn
+  simp [castDeg]
+
+/-- Degree transport in the second argument commutes with DG composition. -/
+theorem dgComp_castDeg {X Y Z : C} {p q q' n n' : ℤ} (hq : q = q') (hn : n = n')
+    (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p + q' = n') :
+    dgComp R f (castDeg R hq g) h = castDeg R hn (dgComp R f g (by omega)) := by
+  subst hq hn
+  simp [castDeg]
 
 theorem sum_dgComp {ι : Type*} (s : Finset ι) {X Y Z : C} {p q n : ℤ} (f : ι → DGHom R p X Y)
     (g : DGHom R q Y Z) (h : p + q = n) :
