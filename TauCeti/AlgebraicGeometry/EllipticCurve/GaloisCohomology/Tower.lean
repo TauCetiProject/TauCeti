@@ -45,6 +45,12 @@ kernel of restriction to `L` (Silverman, the proof of X.4.2).
   `Sha(E/L)`.
 * `WeierstrassCurve.torsionRes_mem_selmerGroup`: restriction maps `Sel_m(E/K)` into `Sel_m(E/L)`.
 
+## Implementation notes
+
+The identification of `(W⁄L)⁄M` with `W⁄M` is Mathlib's `WeierstrassCurve.map_baseChange` at
+`IsScalarTower.toAlgHom K L M`, restated by `show` in terms of base change, as in
+`WeierstrassCurve.pointCoeffBaseChange_pointCoeffBaseChange`.
+
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], X.4.
@@ -68,13 +74,6 @@ section Tower
 variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
   (τ' : SeparableClosure L →ₐ[L] SeparableClosure M)
   (τ'' : SeparableClosure K →ₐ[K] SeparableClosure M)
-
-/-- The composite `Kˢ → Lˢ → Mˢ` of embeddings of separable closures in a tower `K → L → M`. -/
-private abbrev compSeparableClosure : SeparableClosure K →ₐ[K] SeparableClosure M :=
-  have : IsScalarTower K L (SeparableClosure M) := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply K M (SeparableClosure M),
-      IsScalarTower.algebraMap_apply K L M, ← IsScalarTower.algebraMap_apply L M]
-  (τ'.restrictScalars K).comp τ
 
 /-- **Restriction on `H¹(G_K, E(Kˢ))` is transitive** in a tower `K → L → M`: restricting to `L`
 along `τ` and then to `M` along `τ'` is restricting to `M` along any embedding `τ'' : Kˢ → Mˢ`,
@@ -103,9 +102,10 @@ theorem pointRes_pointRes (c : H1 (AbsoluteGaloisGroup K) W.PointCoeff) :
     (hequiv' := W.pointCoeffBaseChange_smul (compSeparableClosure τ τ'))
     (hq' := continuous_of_discreteTopology) (hequivq' := cast_pointCoeff_smul _)
     (hφ := ContinuousMonoidHom.ext fun g ↦
-      absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' _ (fun _ ↦ rfl) g)
+      (absoluteGaloisGroupMap_compSeparableClosure τ τ' g).symm)
     (hqf := AddMonoidHom.ext fun P ↦
-      W.pointCoeffBaseChange_pointCoeffBaseChange τ τ' _ (fun _ ↦ rfl) P) (x := c)
+      W.pointCoeffBaseChange_pointCoeffBaseChange τ τ' _ (compSeparableClosure_apply τ τ') P)
+    (x := c)
 
 /-- **Restriction on `H¹(G_K, E(Kˢ)[m])` is transitive** in a tower `K → L → M`, as in
 `WeierstrassCurve.pointRes_pointRes`. -/
@@ -137,9 +137,10 @@ theorem torsionRes_torsionRes (m : ℕ) (c : H1 (AbsoluteGaloisGroup K) (W.Torsi
     (hequiv' := W.torsionCoeffBaseChange_smul (compSeparableClosure τ τ') m)
     (hq' := continuous_of_discreteTopology) (hequivq' := cast_torsionCoeff_smul _)
     (hφ := ContinuousMonoidHom.ext fun g ↦
-      absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' _ (fun _ ↦ rfl) g)
+      (absoluteGaloisGroupMap_compSeparableClosure τ τ' g).symm)
     (hqf := AddMonoidHom.ext fun P ↦
-      W.torsionCoeffBaseChange_torsionCoeffBaseChange τ τ' _ (fun _ ↦ rfl) m P) (x := c)
+      W.torsionCoeffBaseChange_torsionCoeffBaseChange τ τ' _ (compSeparableClosure_apply τ τ') m P)
+    (x := c)
 
 /-- A class of `H¹(G_K, E(Kˢ))` restricts to zero along the tower `K → L → M` exactly when it
 restricts to zero along any embedding `Kˢ → Mˢ`. -/

@@ -197,7 +197,11 @@ theorem torsionCoeffBaseChange_comp (σ : AbsoluteGaloisGroup K) (m : ℕ)
   rw [coe_torsionCoeffBaseChange, coe_torsionCoeffBaseChange, coe_smul_torsionCoeff,
     pointCoeffBaseChange_comp]
 
-/-! ### Towers of extensions -/
+/-! ### Towers of extensions
+
+The identification of `(W⁄L)⁄M` with `W⁄M` is Mathlib's `WeierstrassCurve.map_baseChange` at
+`IsScalarTower.toAlgHom K L M`, whose underlying ring homomorphism is `algebraMap L M`; the `show`
+in the statements below only restates it in terms of base change. -/
 
 section Tower
 
