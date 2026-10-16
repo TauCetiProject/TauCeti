@@ -27,8 +27,11 @@ the geometric representability and local-constancy theorems and is not asserted 
 
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFppfSheaf`: the fppf sheafification of the
   degree-zero relative Picard presheaf;
+* `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroToFppfSheaf`: its sheafification map;
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFppfSheafι`: the monomorphism from the
-  degree-zero sheaf to the relative Picard fppf sheaf.
+  degree-zero sheaf to the relative Picard fppf sheaf, compatible with the sheafification maps;
+* `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFppfSheafHomEquiv`: the universal property
+  of the degree-zero sheafification.
 
 ## References
 
@@ -110,6 +113,23 @@ theorem relativePicardDegreeZeroFppfSheaf_obj :
   exact congrArg (fun F : Sheaf (Scheme.fppfTopology.over S) AddCommGrpCat.{u + 1} ↦ F.obj)
     (relativePicardDegreeZeroFppfSheaf_eq f)
 
+/-- The canonical map from the degree-zero relative Picard presheaf to its fppf
+sheafification. -/
+def relativePicardDegreeZeroToFppfSheaf :
+    relativePicardDegreeZeroAddPresheaf f ⟶ (relativePicardDegreeZeroFppfSheaf f).obj :=
+  (toSheafify (Scheme.fppfTopology.over S) (relativePicardDegreeZeroAddPresheaf f) :
+      relativePicardDegreeZeroAddPresheaf f ⟶
+        sheafify (Scheme.fppfTopology.over S) (relativePicardDegreeZeroAddPresheaf f)) ≫
+    eqToHom (relativePicardDegreeZeroFppfSheaf_obj f).symm
+
+/-- The canonical map to the degree-zero relative Picard fppf sheaf is the unit of fppf
+sheafification. -/
+theorem relativePicardDegreeZeroToFppfSheaf_eq :
+    relativePicardDegreeZeroToFppfSheaf f =
+      toSheafify (Scheme.fppfTopology.over S) (relativePicardDegreeZeroAddPresheaf f) ≫
+        eqToHom (relativePicardDegreeZeroFppfSheaf_obj f).symm := by
+  rw [relativePicardDegreeZeroToFppfSheaf]
+
 /-- The inclusion of the degree-zero relative Picard fppf sheaf into the full relative Picard
 fppf sheaf, obtained by sheafifying the inclusion of presheaves. -/
 def relativePicardDegreeZeroFppfSheafι :
@@ -133,6 +153,39 @@ theorem relativePicardDegreeZeroFppfSheafι_eq :
 instance : Mono (relativePicardDegreeZeroFppfSheafι f) := by
   unfold relativePicardDegreeZeroFppfSheafι
   infer_instance
+
+/-- The inclusion of degree-zero fppf sheaves is compatible with the canonical maps from the
+degree-zero and full relative Picard presheaves to their fppf sheafifications. -/
+@[reassoc (attr := simp)]
+theorem relativePicardDegreeZeroToFppfSheaf_comp_relativePicardDegreeZeroFppfSheafι_hom :
+    relativePicardDegreeZeroToFppfSheaf f ≫ (relativePicardDegreeZeroFppfSheafι f).hom =
+      relativePicardDegreeZeroAddPresheafι f ≫ relativePicardToFppfSheaf f := by
+  rw [relativePicardToFppfSheaf_eq, ← Category.assoc, toSheafify_naturality]
+  simp [relativePicardDegreeZeroToFppfSheaf, relativePicardDegreeZeroFppfSheafι, sheafifyMap]
+
+/-- **Universal property of the degree-zero relative Picard fppf sheaf.** Maps from its
+sheafification to an fppf sheaf `F` are naturally equivalent to maps from the additive
+degree-zero presheaf to the underlying presheaf of `F`. -/
+def relativePicardDegreeZeroFppfSheafHomEquiv
+    (F : Sheaf (Scheme.fppfTopology.over S) AddCommGrpCat.{u + 1}) :
+    (relativePicardDegreeZeroFppfSheaf f ⟶ F) ≃
+      (relativePicardDegreeZeroAddPresheaf f ⟶ F.obj) :=
+  (Iso.homCongr (eqToIso (relativePicardDegreeZeroFppfSheaf_eq f)) (Iso.refl F)).trans <|
+    (sheafificationAdjunction (Scheme.fppfTopology.over S) AddCommGrpCat.{u + 1}).homEquiv
+      (relativePicardDegreeZeroAddPresheaf f) F
+
+/-- The universal-property equivalence restricts a sheaf morphism along the canonical map from
+the degree-zero relative Picard presheaf. -/
+@[simp]
+theorem relativePicardDegreeZeroFppfSheafHomEquiv_apply
+    (F : Sheaf (Scheme.fppfTopology.over S) AddCommGrpCat.{u + 1})
+    (g : relativePicardDegreeZeroFppfSheaf f ⟶ F) :
+    relativePicardDegreeZeroFppfSheafHomEquiv f F g =
+      relativePicardDegreeZeroToFppfSheaf f ≫ g.hom := by
+  rw [relativePicardDegreeZeroFppfSheafHomEquiv]
+  dsimp only [Equiv.trans_apply, Iso.homCongr_apply]
+  rw [Adjunction.homEquiv_unit]
+  simp [relativePicardDegreeZeroToFppfSheaf, Category.assoc]
 
 end
 
