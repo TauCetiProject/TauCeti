@@ -116,11 +116,7 @@ theorem twistedCubicalChainConstantEquiv_boundary (n : ℕ) :
     CubicalChain.boundary_single]
   simp only [Int.reduceNeg, ContinuousMap.comp_apply, Functor.const_obj_obj,
     Functor.const_obj_map, ModuleCat.hom_id, LinearMap.id_coe, id_eq]
-  have hface (i : Fin (n + 1)) (t : unitInterval) :
-      c.comp (SingularCube.face i t (ContinuousMap.id _)) = SingularCube.face i t c := by
-    ext x
-    simp
-  simp_rw [hface]
+  simp_rw [SingularCube.comp_face_id]
   simp only [← Int.cast_smul_eq_zsmul R, Int.cast_pow, Int.cast_neg, Int.cast_one]
 
 /-- Under the constant-coefficient equivalence, the locally coefficiented degenerate chains are
