@@ -64,14 +64,15 @@ endomorphism of `𝔤 ⧸ Lie(K)` induced by `Ad t⁻¹ - 1`. -/
 def weylDensity (K : Subgroup G) (t : K) : ℝ :=
   |LinearMap.det
     (Submodule.mapQ _ _ ((Ad (I := I) ((t : G)⁻¹)).toLinearEquiv.toLinearMap - LinearMap.id)
-      (lieSubalgebraOfSubgroup_le_comap_Ad_sub_id (K.inv_mem t.2)))|
+      (lieSubalgebraOfSubgroup_le_comap_Ad_sub_id (Subgroup.le_normalizer (K.inv_mem t.2))))|
 
 theorem weylDensity_def (K : Subgroup G) (t : K) :
     weylDensity (I := I) K t =
       |LinearMap.det
         (Submodule.mapQ _ _
           ((Ad (I := I) ((t : G)⁻¹)).toLinearEquiv.toLinearMap - LinearMap.id)
-          (lieSubalgebraOfSubgroup_le_comap_Ad_sub_id (K.inv_mem t.2)))| := by
+          (lieSubalgebraOfSubgroup_le_comap_Ad_sub_id
+            (Subgroup.le_normalizer (K.inv_mem t.2))))| := by
   rw [weylDensity]
 
 @[simp]

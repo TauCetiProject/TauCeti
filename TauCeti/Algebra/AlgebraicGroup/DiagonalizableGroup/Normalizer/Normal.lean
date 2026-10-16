@@ -86,13 +86,13 @@ private theorem isNormal_map_mkBialgHom_normalizerHopfIdeal_of_le_normalizer (I 
     refine fun A ↦ ⟨fun n hn g ↦ ?_⟩
     rw [CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff (CommHopfAlgCat.mkQuotient
         (_root_.CommHopfAlgCat.of R H) (normalizerHopfIdeal π hπ)),
-      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply] at hn ⊢
-    have hg : AlgHom.mapDomain (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of R H)
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply] at hn ⊢
+    have hg : BialgHom.mapDomain (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of R H)
         (normalizerHopfIdeal π hπ)).hom g ∈ universalNormalizerPoints π A := by
       rw [← quotientPointsSubgroup_normalizerHopfIdeal π hπ,
         CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
       intro x hx
-      rw [AlgHom.mapDomain_apply_apply, CommHopfAlgCat.mkQuotient_apply,
+      rw [BialgHom.mapDomain_apply_apply, CommHopfAlgCat.mkQuotient_apply,
         Ideal.Quotient.mkₐ_eq_mk,
         Ideal.Quotient.eq_zero_iff_mem.mpr (HopfIdeal.mem_toIdeal.mpr hx), map_zero]
     rw [map_mul, map_mul, map_inv]
@@ -118,8 +118,8 @@ theorem isNormal_map_centralizerHopfIdeal_mkBialgHom_normalizerHopfIdeal :
   intro B _ _ φ t
   have hφ := (mem_universalNormalizerPoints π A g).mp hg (CommAlgCat.of R B) φ
   obtain ⟨t', ht'⟩ := (Subgroup.mem_normalizer_iff''.mp hφ _).mp ⟨t, rfl⟩
-  have ht : AlgHom.mapDomain π t =
-      AlgHom.mapValue φ g * AlgHom.mapDomain π t' * (AlgHom.mapValue φ g)⁻¹ := by
+  have ht : BialgHom.mapDomain π t =
+      AlgHom.mapValue φ g * BialgHom.mapDomain π t' * (AlgHom.mapValue φ g)⁻¹ := by
     rw [ht']
     group
   rw [map_mul, map_mul, map_inv, ht]

@@ -36,6 +36,7 @@ monic rational minimal polynomial does not satisfy the identity.
 
 ## Main results
 
+* `Polynomial.gaussNorm_eq_iSup`: the Gauss norm is the supremum over all weighted coefficients.
 * `Polynomial.gaussNorm_map_eq_one_of_contentIdeal_eq_top`: a polynomial whose content ideal is
   the unit ideal has Gauss norm of radius one equal to `1` after mapping along `φ : A →+* R`, at a
   nonarchimedean absolute value `v` with `v (φ a) ≤ 1` for every `a : A`.
@@ -57,6 +58,14 @@ monic rational minimal polynomial does not satisfy the identity.
 public section
 
 namespace Polynomial
+
+/-- A polynomial Gauss norm is the supremum over all weighted coefficients, including the
+zero coefficients outside its support. -/
+theorem gaussNorm_eq_iSup {R F : Type*} [Semiring R] [FunLike F R ℝ]
+    [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] (p : R[X]) (v : F) {c : ℝ}
+    (hc : 0 ≤ c) : p.gaussNorm v c = ⨆ i : ℕ, v (p.coeff i) * c ^ i := by
+  rw [← gaussNorm_coe_powerSeries v p hc, PowerSeries.gaussNorm_eq]
+  simp only [coeff_coe]
 
 section Semiring
 

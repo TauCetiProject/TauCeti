@@ -232,7 +232,7 @@ theorem degree_eq_one_of_constantCompositum_eq_top [Normal k k'] (hF : IsFunctio
     rw [Polynomial.map_map, show ι.comp (algebraMap k k') =
         (algebraMap P.ResidueField P'.ResidueField).comp (algebraMap k P.ResidueField) from
         RingHom.ext fun c ↦ (hcomp c).symm, ← Polynomial.map_map]
-    exact hroot.map
+    exact hroot.map (algebraMap P.ResidueField P'.ResidueField)
   rw [degree_eq_one_iff_algebraMap_surjective]
   intro y
   have hy : y ∈ Submodule.span P.ResidueField (Set.range ι) := by
