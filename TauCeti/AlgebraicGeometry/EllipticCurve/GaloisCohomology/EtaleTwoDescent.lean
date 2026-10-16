@@ -23,7 +23,7 @@ pairing character attached to this point to the restricted cohomological Kummer 
 the `p`-component of the explicit descent map.
 
 This is the factorwise compatibility needed to assemble the explicit and cohomological
-`2`-Selmer groups.
+`2`-Selmer groups. The rootwise identity is the classical calculation in Silverman X.1.4.
 
 ## Main definitions
 
@@ -38,19 +38,6 @@ This is the factorwise compatibility needed to assemble the explicit and cohomol
   power class of the rootwise descent unit.
 * `TauCeti.TwoDescent.factorCohomologicalMap_kummerMap`: the factorwise cohomological image of
   the Kummer class of `P` is the Kummer class of that same rootwise descent unit.
-
-Together these are the factorwise comparison. The remaining roadmap target is to assemble the
-factors and identify the explicit and cohomological local conditions.
-
-## Roadmap
-
-This advances `TauCetiRoadmap/EllipticCurves/README.md`, Layer 7, the target comparing the
-explicit étale-algebra `2`-Selmer group with the abstract cohomological `Sel₂(E/K)`.
-
-## Provenance
-
-The comparison proof is new glue over the existing `TwoDescent`, `Restriction`, and `XSubT`
-APIs; no code is copied. The rootwise identity is the classical calculation in Silverman X.1.4.
 
 ## References
 
@@ -109,7 +96,7 @@ theorem factorRoot_polynomialY (p : W.toAffine.f.Factors) :
 
 omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
 /-- Invertibility of `2` passes from the ground field to every factor field. -/
-private theorem isUnit_two_factor (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K)) :
+theorem isUnit_two_factor (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K)) :
     IsUnit ((2 : ℕ) : 𝕃 p) := by
   simpa only [map_natCast] using h2.map (ι p)
 
@@ -132,6 +119,43 @@ theorem explicitFactor_apply (p : W.toAffine.f.Factors) (m : W.toAffine.M) :
         (AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero W.toAffine.squarefree_f 2 m p) :=
   (rfl)
 
+omit [DecidableEq K] [W.IsElliptic] in
+/-- If `x = θ` in the factor field, the cofactor `f / (X - x)` takes there the value
+`c_T = -W_X(θ, 0)` of the rootwise descent unit at the `2`-torsion point `(θ, 0)`. -/
+private theorem mk_fCofactor_of_eq (p : W.toAffine.f.Factors) {x : K} (hxe : ι p x = θ p) :
+    AdjoinRoot.mk (p : K[X]) (W.toAffine.fCofactor x) =
+      -(W.baseChange (𝕃 p)).toAffine.polynomialX.evalEval (θ p) 0 := by
+  let : (W.baseChange (𝕃 p)).toAffine.IsCharNeTwoNF :=
+    W.toAffine.isCharNeTwoNF_map (ι p)
+  rw [AdjoinRoot.algebraMap_eq] at hxe
+  simp only [WeierstrassCurve.Affine.fCofactor, map_add, map_mul, map_pow, AdjoinRoot.mk_X,
+    AdjoinRoot.mk_C, hxe, WeierstrassCurve.Affine.evalEval_polynomialX,
+    WeierstrassCurve.a₁_of_isCharNeTwoNF, WeierstrassCurve.baseChange, WeierstrassCurve.map_a₂,
+    WeierstrassCurve.map_a₄, AdjoinRoot.algebraMap_eq]
+  ring
+
+omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
+/-- At a root `x` of the `2`-division cubic with `x ≠ θ` in the factor field, the cofactor
+`f / (X - x)` vanishes there. -/
+private theorem mk_fCofactor_of_ne (p : W.toAffine.f.Factors) {x : K}
+    (hx : W.toAffine.f.eval x = 0) (hxe : ι p x ≠ θ p) :
+    AdjoinRoot.mk (p : K[X]) (W.toAffine.fCofactor x) = 0 := by
+  have hprod : AdjoinRoot.mk (p : K[X]) (W.toAffine.fCofactor x * (X - C x)) = 0 := by
+    rw [← W.toAffine.f_eq_mul_of_eval_eq_zero hx]
+    exact AdjoinRoot.mk_eq_zero.mpr p.dvd
+  rw [map_mul, map_sub, AdjoinRoot.mk_X, AdjoinRoot.mk_C, ← AdjoinRoot.algebraMap_eq] at hprod
+  exact (mul_eq_zero.mp hprod).resolve_right (sub_ne_zero.mpr hxe.symm)
+
+omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
+/-- A non-root `x` of the `2`-division cubic is distinct from `θ` in the factor field. -/
+private theorem ne_root_of_eval_f_ne_zero (p : W.toAffine.f.Factors) {x : K}
+    (hx : W.toAffine.f.eval x ≠ 0) : ι p x ≠ θ p := by
+  intro he
+  apply hx
+  apply (ι p).injective
+  rw [map_zero, ← Polynomial.eval₂_at_apply, he, ← Polynomial.aeval_def, AdjoinRoot.aeval_eq]
+  exact AdjoinRoot.mk_eq_zero.mpr p.dvd
+
 omit [DecidableEq K] in
 open scoped Classical in
 /- The component at an irreducible factor of the explicit étale-algebra descent map is the
@@ -143,80 +167,31 @@ private theorem explicitFactor_eq_twoDescentUnit (p : W.toAffine.f.Factors)
       QuotientGroup.mk ((W.baseChange (𝕃 p)).twoDescentUnit
         (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
         (W.toAffine.pointMap (𝕃 p) P)) := by
-  let : (W.baseChange (𝕃 p)).toAffine.IsCharNeTwoNF :=
-    W.toAffine.isCharNeTwoNF_map (ι p)
   match P with
   | .zero =>
-      have hμ : W.toAffine.μ₀ (.zero) = 1 := W.toAffine.μ₀_zero
-      have hP : W.toAffine.pointMap (𝕃 p) (.zero) = 0 := map_zero _
-      rw [hμ, map_one, Pi.one_apply, hP, WeierstrassCurve.twoDescentUnit_zero,
-        QuotientGroup.mk_one]
+      have hP : W.toAffine.pointMap (𝕃 p) .zero = 0 := map_zero _
+      rw [show W.toAffine.μ₀ .zero = 1 from W.toAffine.μ₀_zero, map_one, Pi.one_apply, hP,
+        WeierstrassCurve.twoDescentUnit_zero, QuotientGroup.mk_one]
   | .some x y h =>
       rw [WeierstrassCurve.Affine.μ₀_some]
       by_cases hx : W.toAffine.f.eval x = 0
-      · rw [W.toAffine.μX_of_eval_f_eq_zero hx,
-          AdjoinRoot.modPowEquivPiFactors_unit]
-        apply congrArg QuotientGroup.mk
-        apply Units.ext
+      · rw [W.toAffine.μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
+        refine congrArg QuotientGroup.mk (Units.ext ?_)
         simp only [IsUnit.unit_spec]
-        rw [W.toAffine.pointMap_some]
-        rw [AdjoinRoot.projFactor_mk, map_add, map_sub, AdjoinRoot.mk_C,
-          AdjoinRoot.mk_X]
+        rw [W.toAffine.pointMap_some, AdjoinRoot.projFactor_mk, map_add, map_sub,
+          AdjoinRoot.mk_C, AdjoinRoot.mk_X, ← AdjoinRoot.algebraMap_eq]
         by_cases hxe : ι p x = θ p
-        · rw [WeierstrassCurve.coe_twoDescentUnit_some_of_eq _ _ _ _ hxe]
-          rw [AdjoinRoot.algebraMap_eq] at hxe
-          rw [hxe,
-            sub_self, zero_add, ← AdjoinRoot.aeval_eq]
-          simp only [AdjoinRoot.aeval_eq, map_add, map_pow, AdjoinRoot.mk_X, map_mul,
-            AdjoinRoot.mk_C]
-          rw [WeierstrassCurve.Affine.evalEval_polynomialX,
-            WeierstrassCurve.a₁_of_isCharNeTwoNF]
-          simp only [zero_mul, zero_sub, neg_neg]
-          rw [hxe]
-          rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₂,
-            WeierstrassCurve.map_a₄, AdjoinRoot.algebraMap_eq]
-          ring
-        · rw [WeierstrassCurve.coe_twoDescentUnit_some_of_ne _ _ _ _ hxe]
-          rw [AdjoinRoot.algebraMap_eq] at hxe
-          have hprod : AdjoinRoot.mk (p : K[X]) (W.toAffine.fCofactor x) *
-              (θ p - AdjoinRoot.of (p : K[X]) x) = 0 := by
-            calc
-              _ = AdjoinRoot.mk (p : K[X])
-                  (W.toAffine.fCofactor x * (X - C x)) := by
-                    rw [map_mul, map_sub, AdjoinRoot.mk_X, AdjoinRoot.mk_C]
-              _ = AdjoinRoot.mk (p : K[X]) W.toAffine.f := by
-                    exact congrArg (AdjoinRoot.mk (p : K[X]))
-                      (W.toAffine.f_eq_mul_of_eval_eq_zero hx).symm
-              _ = 0 := AdjoinRoot.mk_eq_zero.mpr p.dvd
-          have hc : AdjoinRoot.mk (p : K[X]) (W.toAffine.fCofactor x) = 0 :=
-            (mul_eq_zero.mp hprod).resolve_right (sub_ne_zero.mpr (Ne.symm hxe))
-          rw [hc, add_zero, AdjoinRoot.algebraMap_eq]
-      · rw [W.toAffine.μX_of_eval_f_ne_zero hx,
-          AdjoinRoot.modPowEquivPiFactors_unit]
-        apply congrArg QuotientGroup.mk
-        apply Units.ext
+        · rw [WeierstrassCurve.coe_twoDescentUnit_some_of_eq _ _ _ _ hxe,
+            mk_fCofactor_of_eq W p hxe, hxe, sub_self, zero_add]
+        · rw [WeierstrassCurve.coe_twoDescentUnit_some_of_ne _ _ _ _ hxe,
+            mk_fCofactor_of_ne W p hx hxe, add_zero]
+      · rw [W.toAffine.μX_of_eval_f_ne_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
+        refine congrArg QuotientGroup.mk (Units.ext ?_)
         simp only [IsUnit.unit_spec]
-        rw [W.toAffine.pointMap_some]
-        rw [AdjoinRoot.projFactor_mk, map_sub, AdjoinRoot.mk_C,
-          AdjoinRoot.mk_X]
-        have hxe : ι p x ≠ θ p := by
-          intro he
-          apply hx
-          apply (ι p).injective
-          rw [map_zero]
-          have hroot : (W.baseChange (𝕃 p)).toAffine.f.eval (θ p) = 0 := by
-            simpa using (WeierstrassCurve.Affine.equation_iff_eval_f_eq_sq
-              (W := (W.baseChange (𝕃 p)).toAffine) (θ p) 0).mp
-                (factorRoot_equation W p)
-          calc
-            ι p (W.toAffine.f.eval x) =
-                (W.baseChange (𝕃 p)).toAffine.f.eval (ι p x) :=
-              (W.toAffine.eval_baseChange_f (𝕃 p) x).symm
-            _ = (W.baseChange (𝕃 p)).toAffine.f.eval (θ p) :=
-              congrArg (fun z => (W.baseChange (𝕃 p)).toAffine.f.eval z) he
-            _ = 0 := hroot
-        rw [WeierstrassCurve.coe_twoDescentUnit_some_of_ne _ _ _ _ hxe]
-        rw [AdjoinRoot.algebraMap_eq]
+        rw [W.toAffine.pointMap_some, AdjoinRoot.projFactor_mk, map_sub, AdjoinRoot.mk_C,
+          AdjoinRoot.mk_X, ← AdjoinRoot.algebraMap_eq,
+          WeierstrassCurve.coe_twoDescentUnit_some_of_ne _ _ _ _
+            (ne_root_of_eval_f_ne_zero W p hx)]
 
 omit [DecidableEq K] in
 open scoped Classical in
@@ -239,6 +214,14 @@ def factorTorsionCharacter (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : 
   (W.baseChange (𝕃 p)).twoTorsionCharacter
     (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) (isUnit_two_factor W p h2)
 
+omit [DecidableEq K] in
+/-- `factorTorsionCharacter` is the two-torsion character of the universal root point. -/
+theorem factorTorsionCharacter_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K)) :
+    factorTorsionCharacter W p h2 =
+      (W.baseChange (𝕃 p)).twoTorsionCharacter
+        (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) (isUnit_two_factor W p h2) :=
+  (rfl)
+
 /-- Restriction to a factor field followed by the Weil-pairing character of its universal root. -/
 noncomputable def factorCohomologicalMap (p : W.toAffine.f.Factors)
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
@@ -260,7 +243,20 @@ noncomputable def rootwiseKummerClass (p : W.toAffine.f.Factors)
         (W.toAffine.pointMap (𝕃 p) P)))
 
 omit [DecidableEq K] in
-private theorem factorCohomologicalMap_apply (p : W.toAffine.f.Factors)
+/-- `rootwiseKummerClass` is the additive Kummer class of the rootwise descent unit. -/
+theorem rootwiseKummerClass_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K))
+    (P : W.toAffine.Point) :
+    rootwiseKummerClass W p h2 P =
+      Multiplicative.toAdd
+        (kummerMap (𝕃 p) 2 (isUnit_two_factor W p h2)
+          ((W.baseChange (𝕃 p)).twoDescentUnit
+            (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
+            (W.toAffine.pointMap (𝕃 p) P))) :=
+  (rfl)
+
+omit [DecidableEq K] in
+/-- `factorCohomologicalMap` applies the universal-root character to the restricted class. -/
+theorem factorCohomologicalMap_apply (p : W.toAffine.f.Factors)
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
     (h2 : IsUnit ((2 : ℕ) : K))
     (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
@@ -280,7 +276,7 @@ theorem factorCohomologicalMap_kummerMap (p : W.toAffine.f.Factors)
       rootwiseKummerClass W p h2 P := by
   let h2p : IsUnit ((2 : ℕ) : 𝕃 p) := isUnit_two_factor W p h2
   rw [factorCohomologicalMap_apply, W.torsionRes_kummerMap τ h2 P]
-  simpa only [factorTorsionCharacter, rootwiseKummerClass] using
+  simpa only [factorTorsionCharacter_def, rootwiseKummerClass_def] using
     (W.baseChange (𝕃 p)).explicitCoeff1_twoTorsionCharacter_kummerMap
       (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) h2p
       (W.toAffine.pointMap (𝕃 p) P)
