@@ -11,10 +11,11 @@ import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.RealRoots
 /-!
 # Constructing ordered analytic roots of Lazard evaluations
 
-Locally constant finite Lazard valuations of the leading coefficient, trailing coefficient,
+Locally constant finite Lazard valuations of the leading coefficient, constant coefficient,
 and discriminant along real analytic centers construct strictly ordered real analytic root
-sections of the Lazard evaluations. Their multiplicities are positive and locally constant.
-The ordinary fibers may be nullified: the sections enumerate the nonzero Lazard evaluations.
+sections of the Lazard evaluations. Their multiplicities are positive and locally constant,
+and the vector of removed base exponents is constant on the same neighborhood. The ordinary
+fibers may be nullified: the sections enumerate the nonzero Lazard evaluations.
 
 The sections include repeated finite Laurent limits with their multiplicities; branches with
 poles contribute no finite root. Finite-valuation hypotheses exclude zero formal polynomials,
@@ -36,9 +37,9 @@ variable {ι : Type*} [Fintype ι] {n : ℕ}
 
 /-- Finite locally constant Lazard valuations of the formal leading coefficient, constant
 coefficient, and discriminant along analytic centers construct all real roots of nearby
-Lazard evaluations as a strictly ordered analytic list, with constant positive multiplicities.
-The number of real roots is constructed and may be zero. Ordinary fibers may be nullified,
-and no positive-degree assumption is needed. -/
+Lazard evaluations as a strictly ordered analytic list, with constant removed base exponent
+and constant positive multiplicities. The number of real roots is constructed and may be zero.
+Ordinary fibers may be nullified, and no positive-degree assumption is needed. -/
 theorem exists_analyticOnNhd_ordered_lazardEval_roots
     (p : Polynomial (MvPolynomial (Fin n) ℝ))
     {φ : (ι → ℝ) → Fin n → ℝ} {a : ι → ℝ}
@@ -52,6 +53,8 @@ theorem exists_analyticOnNhd_ordered_lazardEval_roots
     ∃ k : ℕ, ∃ t : Fin k → (ι → ℝ) → ℝ, ∃ U : Set (ι → ℝ),
       IsOpen U ∧ a ∈ U ∧
       (∀ x ∈ U, F x ≠ 0) ∧
+      (∀ x ∈ U, q.lazardExponent (Polynomial.C ∘ φ x) =
+        q.lazardExponent (Polynomial.C ∘ φ a)) ∧
       (∀ i, AnalyticOnNhd ℝ (t i) U) ∧
       (∀ x ∈ U, StrictMono (fun i ↦ t i x)) ∧
       (∀ x ∈ U, ∀ z, (F x).IsRoot z ↔ ∃ i, t i x = z) ∧
@@ -145,12 +148,24 @@ theorem exists_analyticOnNhd_ordered_lazardEval_roots
       ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm.trans
         (MvPolynomial.optionEquivRight ℝ (Fin n))).injective.ne hp
   -- Finite Laurent limits supply the real divided family, including nullified fibers.
-  exact TauCeti.exists_analyticOnNhd_ordered_real_roots_of_finite_laurent_limits
-    (fun i ↦ hs i _ hzR) hv' hv0 hu' hu0 hnorm'
-    (by simpa only [comp_apply] using hL')
-    (by simpa only [comp_apply] using hD') hscale' (fun i _ ↦ hw i)
-    (hlocal.mono fun b hb hb0 i _ ↦ hb.2 hb0 i) hroots
-    (Eventually.of_forall fun x ↦ MvPolynomial.lazardEval_ne_zero hq _)
-    ((ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM).analyticAt a)
+  have hroots' := hroots.mono fun _ hx ↦ hx.1
+  have hexponent := hroots.mono fun _ hx ↦ hx.2
+  obtain ⟨k, t, U, hU, haU, hF, ht, hmono, hroot, hpos, hmult⟩ :=
+    TauCeti.exists_analyticOnNhd_ordered_real_roots_of_finite_laurent_limits
+      (fun i ↦ hs i _ hzR) hv' hv0 hu' hu0 hnorm'
+      (by simpa only [comp_apply] using hL')
+      (by simpa only [comp_apply] using hD') hscale' (fun i _ ↦ hw i)
+      (hlocal.mono fun b hb hb0 i _ ↦ hb.2 hb0 i) hroots'
+      (Eventually.of_forall fun x ↦ MvPolynomial.lazardEval_ne_zero hq _)
+      ((ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM).analyticAt a)
+  obtain ⟨W, hWU, hW, haW⟩ := _root_.mem_nhds_iff.1 hexponent
+  refine ⟨k, t, U ∩ W, hU.inter hW, ⟨haU, haW⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact fun x hx ↦ hF x hx.1
+  · exact fun x hx ↦ hWU hx.2
+  · exact fun i ↦ (ht i).mono inter_subset_left
+  · exact fun x hx ↦ hmono x hx.1
+  · exact fun x hx ↦ hroot x hx.1
+  · exact hpos
+  · exact fun x hx ↦ hmult x hx.1
 
 end Polynomial
