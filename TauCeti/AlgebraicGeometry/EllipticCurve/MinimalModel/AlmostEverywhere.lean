@@ -66,13 +66,9 @@ theorem eventually_isElliptic_integralModel_adicCompletion (W : WeierstrassCurve
   have hI : IsIntegral 𝒪[v.adicCompletion K] (W.baseChange (v.adicCompletion K)) :=
     isIntegral_of_exists_lift _ h₁ h₂ h₃ h₄ h₆
   refine ⟨hI, ?_⟩
-  rw [isElliptic_iff, (Valuation.integer.integers _).isUnit_iff_valuation_eq_one,
-    (ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
-      (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)).eq_one_iff_eq_one,
-    integralModel_Δ_eq, baseChange, map_Δ]
-  simpa only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-    Algebra.algebraMap_self_apply, HeightOneSpectrum.valuedAdicCompletion_eq_valuation']
-    using hΔ'
+  rw [isElliptic_iff]
+  exact (isUnit_integer_adicCompletion_iff_valuation_eq_one R v
+    (by rw [integralModel_Δ_eq, baseChange, map_Δ])).mpr hΔ'
 
 /-- Outside a finite set containing any prescribed finite set of primes, an elliptic equation
 has an elliptic integral model and a nonzero multiplier is prime to the residue characteristic.
