@@ -18,7 +18,7 @@ the completions `K_v` with the rank of `W` and with discriminant the image of th
 `W`. Let `α, β ∈ Kˣ`, with `β` positive at every real place, be such that
 
 ```text
-W_v ≅ U_v   ⟺   (α, β)_v = 1     at every finite place v.
+W_v ≅ U_v   ↔   (α, β)_v = 1     at every finite place v.
 ```
 
 With the correction planes `P = ⟨1, -β⟩` and `P' = ⟨α, -αβ⟩`, this file proves:
@@ -160,7 +160,7 @@ theorem discr_eq_of_weightedSumSquares_neg_self_mul_prod_equivalent [FiniteDimen
 
 /-- **The corrected global form.** Let `W` be a regular form over `K` of rank `n`, let `U_v` be
 regular forms over the completions with rank `n` and the discriminant of `W_v`, and let
-`α, β ∈ Kˣ`, with `β` positive at every real place, satisfy `W_v ≅ U_v ⟺ (α, β)_v = 1` at every
+`α, β ∈ Kˣ`, with `β` positive at every real place, satisfy `W_v ≅ U_v ↔ (α, β)_v = 1` at every
 finite place. If `⟨α, -αβ⟩` is represented by `⟨1, -β⟩ ⊥ W` over `K`, then there is a regular
 form `Q` on `Fin n → K` with the discriminant of `W`, with `Q_v ≅ U_v` at every finite place and
 with `Q_w ≅ W_w` at every real place. -/
