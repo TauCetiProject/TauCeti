@@ -38,5 +38,7 @@ theorem Nat.divModEquiv_symm_finProdFinEquiv (m n : ℕ) [NeZero m] [NeZero n]
     (i : ℕ) (r : Fin n) (j : Fin m) :
     (Nat.divModEquiv (n * m)).symm (i, finProdFinEquiv (r, j)) =
       (Nat.divModEquiv m).symm (i * n + r, j) := by
+  -- Evaluate the inverse quotient-remainder maps and the underlying natural number of the
+  -- finite-product index by definition; this leaves a polynomial identity for `ring`.
   change i * (n * m) + (j + m * r) = (i * n + r) * m + j
   ring
