@@ -78,7 +78,7 @@ theorem isUnipotentPoint_derived_of_isSolvable
   rw [← LinearMap.isNilpotent_toMatrix_iff (b.baseChange k),
     _root_.map_sub (LinearMap.toMatrix (b.baseChange k) (b.baseChange k)),
     LinearMap.toMatrix_one, Comodule.toMatrix_endOfPoint]
-  simpa only [AlgHom.mapDomain_apply, ofConv_toConv,
+  simpa only [BialgHom.mapDomain_apply, ofConv_toConv,
     Bialgebra.Quotient.mkBialgHom_toAlgHom] using hu.isNilpotent_sub_one
 
 /-- The derived subgroup of a reduced connected solvable affine group over an algebraically

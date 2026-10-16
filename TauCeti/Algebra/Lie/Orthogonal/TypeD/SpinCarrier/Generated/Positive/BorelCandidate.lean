@@ -151,7 +151,7 @@ theorem upperTriangular_comap_le_definingIdeal :
           Matrix.GeneralLinearGroup (Fin (dimension n)) B) := by
       rw [GeneralLinear.pointsMulEquiv_apply,
         ← generatedCoordinateMap_comp_generatedCoordinateLift]
-      simpa only [AlgHom.mapDomain_apply, q, B, ofConv_toConv, AlgHom.id_comp,
+      simpa only [BialgHom.mapDomain_apply, q, B, ofConv_toConv, AlgHom.id_comp,
         _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom] using h
     rw [hpoint, map_permutationGL, permutationGL_mul_mul_inv]
     exact (isUpperUnitriangular_reindexGL_rootSubgroupPoints_inl n hn i B
