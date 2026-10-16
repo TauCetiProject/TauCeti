@@ -19,8 +19,8 @@ empty structures with different nullary relations from becoming equivalent at a 
 
 The equivalence laws and lowering of the ordinal are the basic tools for internal stabilization
 and for the characteristic formulas of tuples. No countability or nonemptiness is assumed.
-As with `SameAtomicType`, the language is required to be relational, so the initial level
-compares all atomic formulas.
+As with `SameAtomicType`, equivalence at any level entails that the language is relational,
+so the initial level compares all atomic formulas. Reflexivity requires `[L.IsRelational]`.
 
 The recursion follows Cameron Freer's `cameronfreer/infinitary-logic`,
 `InfinitaryLogic/Scott/BackAndForth.lean`. Here the ordinal universe is independent of the
@@ -35,7 +35,7 @@ namespace TauCeti
 
 open FirstOrder Fin
 
-variable {L : Language.{u, v}} [L.IsRelational]
+variable {L : Language.{u, v}}
 variable {M : Type w} {N : Type w'} {P : Type w''}
 variable [L.Structure M] [L.Structure N] [L.Structure P]
 
@@ -97,7 +97,7 @@ theorem sameAtomicType {α : Ordinal.{o}} (h : BFEquiv (L := L) α n a b) :
 
 /-- Every tuple is back-and-forth equivalent to itself. -/
 @[refl, simp]
-theorem refl (α : Ordinal.{o}) (a : Fin n → M) : BFEquiv (L := L) α n a a := by
+theorem refl [L.IsRelational] (α : Ordinal.{o}) (a : Fin n → M) : BFEquiv (L := L) α n a a := by
   induction α using Ordinal.limitRecOn generalizing n with
   | zero => exact zero.mpr (SameAtomicType.refl a)
   | add_one α ih =>
