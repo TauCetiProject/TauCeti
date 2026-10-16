@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
 /-!
@@ -47,6 +46,23 @@ def Sphere2.north : Sphere2 :=
 def Sphere2.south : Sphere2 :=
   ⟨!₂[-1, 0, 0], by simp [EuclideanSpace.norm_eq, Fin.sum_univ_three]⟩
 
+/-- The north pole, as a vector of `ℝ³`, is `(1, 0, 0)`. -/
+@[simp]
+theorem Sphere2.coe_north : (Sphere2.north : EuclideanSpace ℝ (Fin 3)) = !₂[1, 0, 0] := by
+  rw [Sphere2.north]
+
+/-- The south pole, as a vector of `ℝ³`, is `(-1, 0, 0)`. -/
+@[simp]
+theorem Sphere2.coe_south : (Sphere2.south : EuclideanSpace ℝ (Fin 3)) = !₂[-1, 0, 0] := by
+  rw [Sphere2.south]
+
+/-- The north and south poles are distinct. -/
+theorem Sphere2.north_ne_south : Sphere2.north ≠ Sphere2.south := by
+  intro h
+  have h0 := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 0) h
+  simp at h0
+  norm_num at h0
+
 /-- The map `I × S¹ → S²`, `(t, z) ↦ (cos πt, sin πt · z)`. -/
 def suspensionToSphere : C(I × Circle, Sphere2) where
   toFun p :=
@@ -69,22 +85,29 @@ def suspensionToSphere : C(I × Circle, Sphere2) where
     · simp only [Fin.reduceFinMk]
       fun_prop
 
+/-- The coordinate `0` of the collapse is `cos (π t)`. -/
 @[simp]
 theorem suspensionToSphere_apply_zero (p : I × Circle) :
     (suspensionToSphere p : EuclideanSpace ℝ (Fin 3)) 0 = cos (π * p.1) := by
   rw [suspensionToSphere]
+  -- unfolding the bundled map leaves exactly this coordinate formula
   rfl
 
+/-- The coordinate `1` of the collapse is `sin (π t)` times the real part of the circle point. -/
 @[simp]
 theorem suspensionToSphere_apply_one (p : I × Circle) :
     (suspensionToSphere p : EuclideanSpace ℝ (Fin 3)) 1 = sin (π * p.1) * (p.2 : ℂ).re := by
   rw [suspensionToSphere]
+  -- unfolding the bundled map leaves exactly this coordinate formula
   rfl
 
+/-- The coordinate `2` of the collapse is `sin (π t)` times the imaginary part of the circle
+point. -/
 @[simp]
 theorem suspensionToSphere_apply_two (p : I × Circle) :
     (suspensionToSphere p : EuclideanSpace ℝ (Fin 3)) 2 = sin (π * p.1) * (p.2 : ℂ).im := by
   rw [suspensionToSphere]
+  -- unfolding the bundled map leaves exactly this coordinate formula
   rfl
 
 /-- The collapse sends exactly the end `{0} × S¹` to the north pole. -/
@@ -95,7 +118,7 @@ theorem suspensionToSphere_eq_north_iff (p : I × Circle) :
   · intro h
     have h0 := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 0) h
     simp only [suspensionToSphere_apply_zero] at h0
-    refine cos_pi_mul_injOn (Set.mem_univ _) (Set.mem_univ _) ?_
+    refine cos_pi_mul_injective ?_
     simpa [Sphere2.north] using h0
   · intro h
     refine Subtype.ext ?_
@@ -110,7 +133,7 @@ theorem suspensionToSphere_eq_south_iff (p : I × Circle) :
   · intro h
     have h0 := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 0) h
     simp only [suspensionToSphere_apply_zero] at h0
-    refine cos_pi_mul_injOn (Set.mem_univ _) (Set.mem_univ _) ?_
+    refine cos_pi_mul_injective ?_
     simpa [Sphere2.south] using h0
   · intro h
     refine Subtype.ext ?_
@@ -127,7 +150,7 @@ theorem eq_or_of_suspensionToSphere_eq {p p' : I × Circle}
   have h2 := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 2) h
   simp only [suspensionToSphere_apply_zero, suspensionToSphere_apply_one,
     suspensionToSphere_apply_two] at hc h1 h2
-  have ht : p.1 = p'.1 := cos_pi_mul_injOn (Set.mem_univ _) (Set.mem_univ _) hc
+  have ht : p.1 = p'.1 := cos_pi_mul_injective hc
   by_cases h0 : p.1 = 0
   · exact Or.inr (Or.inl ⟨h0, ht ▸ h0⟩)
   by_cases h1' : p.1 = 1
@@ -151,6 +174,7 @@ theorem suspensionToSphere_surjective : Function.Surjective suspensionToSphere :
   have hθ1 : θ ≤ π := arccos_le_pi _
   let t : I := ⟨θ / π, div_nonneg hθ0 pi_pos.le, (div_le_one pi_pos).2 hθ1⟩
   have htθ : π * (t : ℝ) = θ := by
+    -- `t` was defined with underlying real number `θ / π`
     have ht : (t : ℝ) = θ / π := rfl
     rw [ht]
     field_simp

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Circle
-public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.Connected.PathConnected
-public import Mathlib.Topology.UnitInterval
 
 /-!
 # Paths of free loops and the contractible free loops
@@ -77,6 +75,7 @@ def constContractibleLoop : C(Q, contractibleLoops Q) :=
 theorem coe_constContractibleLoop (q : Q) :
     (constContractibleLoop q : C(Circle, Q)) = ContinuousMap.const Circle q := by
   rw [constContractibleLoop]
+  -- the underlying free loop of the subtype element built there is the constant loop
   rfl
 
 /-- The constant loops form a topological embedding `Q → 𝓛₀Q`: evaluation at the point
@@ -117,6 +116,7 @@ def constLoopPathHomeomorph : ConstLoopPath Q ≃ₜ ContractibleConstLoopPath Q
   invFun r := ⟨(ContinuousMap.mk Subtype.val continuous_subtype_val).comp r.1,
     ⟨r.2.1.choose, congrArg Subtype.val r.2.1.choose_spec⟩,
     ⟨r.2.2.choose, congrArg Subtype.val r.2.2.choose_spec⟩⟩
+  -- both composites rebuild the same data, by the definitional eta rules for subtypes
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by
@@ -132,6 +132,7 @@ def constLoopPathHomeomorph : ConstLoopPath Q ≃ₜ ContractibleConstLoopPath Q
 theorem coe_constLoopPathHomeomorph (p : ConstLoopPath Q) (t : I) :
     ((constLoopPathHomeomorph p).1 t : C(Circle, Q)) = p.1 t := by
   rw [constLoopPathHomeomorph]
+  -- the underlying free loop at `t` is `p.1 t`, by construction of `toFun`
   rfl
 
 variable (Q) in

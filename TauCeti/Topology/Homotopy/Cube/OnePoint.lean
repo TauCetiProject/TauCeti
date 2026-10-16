@@ -54,6 +54,7 @@ to the image of the cube point in the ball. -/
 theorem cubeToOnePoint_apply (z : N → I) :
     cubeToOnePoint N z = unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ) := by
   rw [cubeToOnePoint]
+  -- unfolding the bundled map leaves exactly the displayed composite
   rfl
 
 /-- The collapse of the cube sends a point to `∞` exactly when it lies on the boundary. -/

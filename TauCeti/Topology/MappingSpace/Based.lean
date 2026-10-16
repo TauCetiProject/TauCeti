@@ -62,6 +62,7 @@ def map (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) : BasedMap B Y b�
 theorem map_apply (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) (b : B) :
     (map g hg f).1 b = g (f.1 b) := by
   rw [map]
+  -- the underlying map of the subtype element built in `map` is `g.comp f.1`
   rfl
 
 /-- The map induced by the identity is the identity. -/
@@ -96,6 +97,7 @@ def precompGenLoop (f : BasedMap B X b₀ x) : Ω^ N X x :=
 theorem precompGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
     precompGenLoop q b₀ hb f z = f.1 (q z) := by
   rw [precompGenLoop]
+  -- the underlying map of the subtype element built in `precompGenLoop` is `f.1.comp q`
   rfl
 
 variable (hbi : ∀ z, q z = b₀ ↔ z ∈ Cube.boundary N)
