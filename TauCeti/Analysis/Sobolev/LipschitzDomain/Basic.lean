@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Affine.Isometry
+public import TauCeti.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Analysis.InnerProductSpace.Basic
@@ -95,32 +95,6 @@ theorem smul_normalCylinder {c : ℝ} (hc : 0 < c) (a b : ℝ) :
   rw [mem_smul_set_iff_inv_smul_mem₀ hc.ne']
   simp only [mem_normalCylinder, WithLp.smul_fst, WithLp.smul_snd, smul_eq_mul, norm_smul,
     norm_inv, Real.norm_eq_abs, abs_of_pos hc, inv_mul_lt_iff₀ hc, lt_inv_mul_iff₀ hc, mul_neg]
-
-section DilateConj
-
-variable {𝕜 V V₂ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [SeminormedAddCommGroup V₂] [NormedSpace 𝕜 V₂]
-
-/-- The conjugate `y ↦ c • e (c⁻¹ • y)` of an affine isometry `e` by the dilation by `c`. It has
-the linear part of `e` and translation part `c • e 0`, so it is again an affine isometry. -/
-def dilateConj (c : 𝕜) (e : V ≃ᵃⁱ[𝕜] V₂) : V ≃ᵃⁱ[𝕜] V₂ :=
-  e.linearIsometryEquiv.toAffineIsometryEquiv.trans (AffineIsometryEquiv.constVAdd 𝕜 V₂ (c • e 0))
-
-/-- The dilation conjugate of `e` sends `c • y` to `c • e y`. -/
-@[simp]
-theorem dilateConj_smul (c : 𝕜) (e : V ≃ᵃⁱ[𝕜] V₂) (y : V) :
-    dilateConj c e (c • y) = c • e y := by
-  have he : e y = e.linearIsometryEquiv y + e 0 := by simpa using e.map_vadd 0 y
-  simp [dilateConj, he, smul_add, add_comm]
-
-/-- The inverse of the dilation conjugate of `e` by `c ≠ 0` is the dilation conjugate of
-`e.symm`, written out pointwise. -/
-theorem dilateConj_symm_apply {c : 𝕜} (hc : c ≠ 0) (e : V ≃ᵃⁱ[𝕜] V₂) (z : V₂) :
-    (dilateConj c e).symm z = c • e.symm (c⁻¹ • z) := by
-  rw [AffineIsometryEquiv.symm_apply_eq, dilateConj_smul, AffineIsometryEquiv.apply_symm_apply,
-    smul_inv_smul₀ hc]
-
-end DilateConj
 
 end TauCeti
 
@@ -299,13 +273,10 @@ theorem IsLipschitzChartWith.smul {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ�
       (c * a) (c * b) := by
   obtain ⟨ha, hb, hφ0, hφ, hOmega⟩ := h
   refine ⟨mul_pos hc ha, mul_pos hc hb, by simp [hφ0], ?_, fun z hz ↦ ?_⟩
-  · refine LipschitzWith.of_dist_le_mul fun y z ↦ ?_
-    have hyz := hφ.dist_le_mul (c⁻¹ • y) (c⁻¹ • z)
-    rw [dist_smul₀, Real.norm_eq_abs, abs_inv, abs_of_pos hc] at hyz
-    rw [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos hc, ← Real.dist_eq]
-    calc c * dist (φ (c⁻¹ • y)) (φ (c⁻¹ • z)) ≤ c * (L * (c⁻¹ * dist y z)) :=
-          mul_le_mul_of_nonneg_left hyz hc.le
-      _ = L * dist y z := by field_simp
+  · have hL : ‖c‖₊ * L * ‖c⁻¹‖₊ = L := by
+      rw [mul_comm, ← mul_assoc, ← nnnorm_mul, inv_mul_cancel₀ hc.ne', nnnorm_one, one_mul]
+    simpa only [hL, Function.comp_def, smul_eq_mul] using
+      ((lipschitzWith_smul c).comp hφ).comp (lipschitzWith_smul c⁻¹)
   · rw [← smul_normalCylinder hc, mem_smul_set_iff_inv_smul_mem₀ hc.ne'] at hz
     rw [dilateConj_symm_apply hc.ne', smul_mem_smul_set_iff₀ hc.ne', hOmega _ hz]
     simp only [WithLp.smul_fst, WithLp.smul_snd, smul_eq_mul]
