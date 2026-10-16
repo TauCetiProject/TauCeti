@@ -7,6 +7,7 @@ module
 
 import TauCeti.Topology.Path.Extend.Basic
 public import TauCeti.Analysis.Green.BoundaryChain.PiecewiseGraph
+public import TauCeti.MeasureTheory.Integral.CurveIntegral.Henstock
 
 /-!
 # Geometric comparison of directional boundary chains
@@ -26,20 +27,6 @@ noncomputable section
 open MeasureTheory Set
 
 namespace TauCeti.Green.BoundaryChain
-
-/-- Every path with constant selected coordinate has zero gauge coordinate integral. -/
-theorem hasIntegral_of_coordinate_constant (L : ℂ →L[ℝ] ℝ) {p q : ℂ} (γ : Path p q)
-    (hγ : ∀ t : unitInterval, L (γ t) = L p) (P : ℂ → ℝ) :
-    BoxIntegral.HasIntegral (TauCeti.BoxIntegral.intervalBox 0 1 zero_lt_one)
-      BoxIntegral.IntegrationParams.Henstock
-      (fun t ↦ P (γ.extend (t 0)) * L (deriv γ.extend (t 0)))
-      BoxIntegral.BoxAdditiveMap.volume 0 := by
-  have hc (t : ℝ) : L (γ.extend t) = L p :=
-    (γ.forall_extend_iff (P := fun z ↦ L z = L p)).mpr hγ t
-  have hi := hasHenstockIntervalIntegral_of_projection_constant L (a := 0) (b := 1)
-    (γ := γ.extend) (c := L p) hc P
-  rw [TauCeti.BoxIntegral.hasHenstockIntervalIntegral_iff_of_lt zero_lt_one] at hi
-  exact hi
 
 /-- The integral of a graph-supported chain is the integral primitive evaluated at its
 endpoint boundary. This is the telescoping mechanism behind all graph comparisons. -/
@@ -155,7 +142,7 @@ theorem NullChain.integrable_and_integral_eq_zero {d : Coordinate} {U : Set ℂ}
   | add h₁ h₂ ih₁ ih₂ => exact ⟨ih₁.1.add ih₂.1, by simp [ih₁.2, ih₂.2]⟩
   | neg h ih => exact ⟨integrable_neg_iff.mpr ih.1, by simp [ih.2]⟩
   | constant γ hγ =>
-    have hi := hasIntegral_of_coordinate_constant d.proj γ hγ P
+    have hi := TauCeti.BoxIntegral.hasIntegral_Henstock_of_path_projection_constant d.proj γ hγ P
     exact ⟨(integrable_ofPath_iff _ _ _).2 hi.integrable,
       by simpa only [integral_ofPath, arcIntegral_def] using hi.integral_eq⟩
   | graph hgraph harcs hboundary =>

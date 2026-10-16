@@ -100,13 +100,4 @@ theorem hasHenstockIntervalIntegral_graph_reparam (d : Coordinate) {a b c e : �
   filter_upwards [hproj'] with t ht
   simp only [ht, smul_eq_mul, mul_comm]
 
-/-- A raw curve with constant projection contributes zero to that coordinate one-form.
-No regularity of its other coordinate or of the field is needed. -/
-theorem hasHenstockIntervalIntegral_of_projection_constant (L : ℂ →L[ℝ] ℝ) {a b c : ℝ}
-    {γ : ℝ → ℂ} (hγ : ∀ t, L (γ t) = c) (P : ℂ → ℝ) :
-    TauCeti.BoxIntegral.HasHenstockIntervalIntegral (fun t ↦ P (γ t) * L (deriv γ t)) a b 0 := by
-  have hd (t : ℝ) : L (deriv γ t) = 0 := L.apply_deriv_eq_zero_of_forall_eq hγ t
-  simpa only [hd, mul_zero, Pi.zero_def] using
-    TauCeti.BoxIntegral.hasHenstockIntervalIntegral_zero (E := ℝ) a b
-
 end TauCeti.Green

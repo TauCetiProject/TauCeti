@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Green.BoundaryChain.Basic
 public import TauCeti.Analysis.Green.Basic
-public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 
 /-!
 # Gauge-chain and Bochner curve integrals
