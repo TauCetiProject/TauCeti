@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import Mathlib.Analysis.Calculus.DifferentialForm.VectorField
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
@@ -56,7 +57,10 @@ private theorem inChartAt_apply_mpullbackWithin_eventuallyEq
   funext i
   exact (isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse _
 
-private theorem fderivWithin_inChartAt_apply_mpullbackWithin
+/-- In the preferred chart at `x`, differentiating the evaluation of a form's coordinate
+expression on the coordinate expressions of vector fields gives the manifold derivative of the
+evaluation of the form on the fields. -/
+theorem fderivWithin_inChartAt_apply_mpullbackWithin
     (φ : RoughForm I M F k) (V : Fin k → (y : M) → TangentSpace I y)
     (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x)
       ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x))
@@ -103,21 +107,12 @@ theorem mextDerivWithin_apply_vectorField {n : ℕ}
   have hV' : ∀ i, DifferentiableWithinAt ℝ (V' i) s' (extChartAt I x x) := by
     exact fun i ↦ (hV i).differentiableWithinAt_mpullbackWithin_extChartAt_symm
   -- At the chart centre, the tangent coordinates and the transported bracket are unchanged.
-  have hvalue (i : Fin (n + 2)) : V' i (extChartAt I x x) = V i x := by
-    dsimp only [V']
-    rw [VectorField.mpullbackWithin_apply, extChartAt_to_inv]
-    exact mfderivWithin_extChartAt_symm_inverse_apply _
+  have hvalue (i : Fin (n + 2)) : V' i (extChartAt I x x) = V i x :=
+    VectorField.mpullbackWithin_extChartAt_symm_self (V i) x
   have hbracket (i j : Fin (n + 2)) :
       lieBracketWithin ℝ (V' i) (V' j) s' (extChartAt I x x) =
-        mlieBracketWithin I (V i) (V j) s x := by
-    have hinverse : (mfderiv I 𝓘(ℝ, E) (extChartAt I x) x).inverse =
-        ContinuousLinearMap.id ℝ E := by
-      have heq := congrArg (fun f : E →L[ℝ] E ↦ f.inverse)
-        (mfderiv_extChartAt_self (I := I) (x := x))
-      exact heq.trans ContinuousLinearMap.inverse_id
-    rw [mlieBracketWithin_apply]
-    exact (congrArg (fun f : E →L[ℝ] E ↦
-      f (lieBracketWithin ℝ (V' i) (V' j) s' (extChartAt I x x))) hinverse).symm
+        mlieBracketWithin I (V i) (V j) s x :=
+    VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm (V i) (V j) s x
   -- Apply the flat invariant formula, then transport its directional terms by germ equality.
   rw [mextDerivWithin_def]
   have hflat := extDerivWithin_apply_vectorField hφ' hV' hs
