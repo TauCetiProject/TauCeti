@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.NumberTheory.Height.MahlerMeasure
 
 import Mathlib.Analysis.Complex.IsIntegral
+import TauCeti.NumberTheory.NumberField.AdjoinPair
 
 /-!
 # The house of an algebraic number
@@ -60,7 +61,7 @@ of bounded degree and bounded house.
 
 public section
 
-open Polynomial IntermediateField
+open Polynomial
 
 namespace TauCeti
 
@@ -141,19 +142,15 @@ private lemma house_coe {K : IntermediateField ℚ F} [NumberField K] (a : K) :
     house (a : F) = NumberField.house a := by
   rw [← IntermediateField.algebraMap_apply, house_map, house_eq_numberField_house]
 
-/-- Two algebraic elements of `F` lie in a common intermediate number field. -/
-private lemma exists_numberField_mem {x y : F} (hx : IsAlgebraic ℚ x) (hy : IsAlgebraic ℚ y) :
-    ∃ (K : IntermediateField ℚ F) (_ : NumberField K) (a b : K), (a : F) = x ∧ (b : F) = y := by
-  have := finiteDimensional_adjoin_pair hx.isIntegral hy.isIntegral
-  exact ⟨ℚ⟮x, y⟯, {}, ⟨x, subset_adjoin _ _ (by simp)⟩, ⟨y, subset_adjoin _ _ (by simp)⟩, rfl, rfl⟩
-
 /-- The house of a rational number is its absolute value, independently of the field containing
 it. -/
 @[simp]
 theorem house_ratCast (q : ℚ) : house (q : F) = |(q : ℝ)| := by
-  classical
-  rw [house_def, ← eq_ratCast (algebraMap ℚ F), minpoly.eq_X_sub_C, rootSet_def, aroots_X_sub_C,
-    Multiset.toFinset_singleton, Finset.coe_singleton, ciSup_unique]
+  have hroots : (minpoly ℚ (q : F)).rootSet ℂ = {(q : ℂ)} := by
+    rw [← eq_ratCast (algebraMap ℚ F), minpoly.eq_X_sub_C]
+    ext z
+    simp [mem_rootSet_of_ne (X_sub_C_ne_zero _), sub_eq_zero]
+  rw [house_def, hroots]
   simp
 
 /-- The house of an integer is its absolute value. -/
@@ -229,9 +226,9 @@ theorem house_eq_one_iff {x : F} (hx : IsIntegral ℤ x) :
     rw [hxn, house_one] at h
     exact ((pow_eq_one_iff_of_nonneg (house_nonneg x) hn.ne').mp h.symm)
 
-/-- The house is at most the Mahler measure. For an algebraic `x` the largest conjugate modulus is
-one factor `max(1, |z|)` of `M(x) = a₀ ∏ max(1, |z|)`; for transcendental `x` this reads
-`0 ≤ 1`. -/
+/-- The house is at most the Mahler measure. For an algebraic `x` the largest conjugate modulus
+`|z|` is bounded by its factor `max(1, |z|)` of `M(x) = a₀ ∏ max(1, |z|)`, and the other factors
+are at least `1`; for transcendental `x` this reads `0 ≤ 1`. -/
 theorem house_le_mahlerMeasure (x : F) : house x ≤ mahlerMeasure x := by
   classical
   refine (house_le_iff (zero_le_one.trans (one_le_mahlerMeasure x))).2 fun z hz ↦ ?_
