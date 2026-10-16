@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic
-import TauCeti.Topology.Maps.Basic
 
 /-!
 # Topological branched covers of the sphere with branch values in `{0, 1, ∞}`
@@ -187,8 +186,9 @@ theorem finsum_mem_preimage_singleton_localDegree (y : OnePoint ℂ) :
     (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq
       ((hU z).2.mem_nhds (hU z).1)
   -- Since `π` is closed, the fibres near `y` lie in the union of the `V z`.
-  have ht := X.isProperMap.isClosedMap.eventually_preimage_singleton_subset_biUnion (y := y)
-    fun z _ => (hVo z).mem_nhds (hzV z)
+  have ht : ∀ᶠ y' in 𝓝 y, X.π ⁻¹' {y'} ⊆ ⋃ z ∈ F, V z :=
+    X.isProperMap.isClosedMap.eventually_nhds_fiber y fun z hz ↦
+      Filter.Eventually.mono ((hVo z).mem_nhds (hzV z)) fun _ hV ↦ mem_biUnion hz hV
   have hnear : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked ∧ X.π ⁻¹' {y'} ⊆ ⋃ z ∈ F, V z ∧
       ∀ z ∈ F, (V z ∩ X.π ⁻¹' {y'}).ncard = X.localDegree z := by
     have hmarked : (marked \ {y})ᶜ ∈ 𝓝 y :=
