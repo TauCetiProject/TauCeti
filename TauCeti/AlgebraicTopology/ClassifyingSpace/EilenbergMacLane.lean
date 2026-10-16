@@ -103,11 +103,9 @@ variable (G)
 groups vanish, and its fundamental group is `G`. -/
 theorem isEilenbergMacLaneSpaceOne_classifyingSpace :
     IsEilenbergMacLaneSpaceOne G (classifyingSpace G) (classifyingSpaceBasepoint G) :=
-  .mk ((isQuotientCoveringMap_classifyingSpaceProj G).isCoveringMap
-      |>.isAspherical_of_subsingleton_homotopyGroup (classifyingSpaceProj_surjective G)
-        (classifyingSpaceProj_universalGSpaceBasepoint G)
-        fun n => subsingleton_homotopyGroup_universalGSpace G (n + 1) _)
-    ⟨classifyingSpaceFundamentalGroupMulEquiv G⟩
+  (isQuotientCoveringMap_classifyingSpaceProj G).isEilenbergMacLaneSpaceOne
+    (classifyingSpaceProj_universalGSpaceBasepoint G)
+    fun n => subsingleton_homotopyGroup_universalGSpace G (n + 1) _
 
 /-- Every homotopy group of the classifying space in dimension at least two is trivial, at every
 base point. -/
