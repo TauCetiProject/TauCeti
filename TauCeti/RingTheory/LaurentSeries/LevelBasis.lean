@@ -16,15 +16,15 @@ For a positive integer `d`, every Laurent series has a unique decomposition
 `f = ∑ r : Fin d, X ^ r * expand d (contract d f r)`.
 
 Here `contract d f r` retains the coefficients of `f` in the congruence class `r` modulo `d`
-and divides their exponents by `d`. This realizes the Laurent-series field in the variable `u`
-as a degree-`d` extension of the Laurent-series field in `t = u ^ d`, with power basis
-`1, u, ..., u ^ (d - 1)`.
+and sends each exponent `d * k + r` to `k`. This realizes the Laurent-series field in the
+variable `u` as a degree-`d` extension of the Laurent-series field in `t = u ^ d`, with power
+basis `1, u, ..., u ^ (d - 1)`.
 
 The source and target fields have the same underlying Laurent-series type but different algebra
-structures. `LaurentSeries.Level K d` is therefore a wrapped copy of `K⸨X⸩`, with the base-field
-map given by `LaurentSeries.expand K d`. It embeds into the Puiseux field as its actual level-`d`
-subfield. Transporting the power basis proves that this subfield has degree `d`; since every
-Puiseux series lies in some level, the Puiseux field is algebraic over `K⸨X⸩` in every
+structures. `TauCeti.LaurentSeries.Level K d` is therefore a wrapped copy of `K⸨X⸩`, with the
+base-field map given by `LaurentSeries.expand K d`. It embeds into the Puiseux field as its actual
+level-`d` subfield. Transporting the power basis proves that this subfield has degree `d`; since
+every Puiseux series lies in some level, the Puiseux field is algebraic over `K⸨X⸩` in every
 characteristic.
 
 The contraction and decomposition API follows the design proposed in
@@ -33,8 +33,8 @@ The contraction and decomposition API follows the design proposed in
 ## Main definitions
 
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
-* `LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d`.
-* `LaurentSeries.Level.powerBasis`: the power basis `1, u, ..., u ^ (d - 1)`.
+* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d`.
+* `TauCeti.LaurentSeries.Level.powerBasis`: the power basis `1, u, ..., u ^ (d - 1)`.
 * `TauCeti.puiseuxField.level`: the actual level-`d` intermediate field in the Puiseux field.
 * `TauCeti.puiseuxField.levelPowerBasis`: its transported power basis.
 
@@ -49,48 +49,10 @@ The contraction and decomposition API follows the design proposed in
 
 public section
 
-open HahnSeries
+open HahnSeries LaurentSeries
 open scoped LaurentSeries
 
-namespace LaurentSeries
-
-variable {R : Type*}
-
-/-- The `r`-th exponent-congruence component of a Laurent series. Its coefficient at `k` is the
-coefficient of the original series at `d * k + r`. -/
-noncomputable def contract [Zero R] (d : ℕ+) (f : R⸨X⸩) (r : Fin d) : R⸨X⸩ :=
-  ofSuppBddBelow (fun k : ℤ ↦ f.coeff ((d : ℤ) * k + r)) <| by
-    refine ⟨min 0 f.order, ?_⟩
-    intro k hk
-    rw [Function.mem_support] at hk
-    by_contra hle
-    have hklt : k < min 0 f.order := lt_of_not_ge hle
-    have hkneg : k < 0 := hklt.trans_le (min_le_left _ _)
-    have hrnonneg : (0 : ℤ) ≤ r := by exact_mod_cast r.val.zero_le
-    have hrlt : (r : ℤ) < d := by exact_mod_cast r.isLt
-    have hdpos : (0 : ℤ) < d := by exact_mod_cast d.pos
-    have hindex : (d : ℤ) * k + r < f.order := by
-      have : (d : ℤ) * k + r ≤ k := by nlinarith
-      exact this.trans_lt (hklt.trans_le (min_le_right _ _))
-    exact hk (coeff_eq_zero_of_lt_order hindex)
-
-/-- The coefficient formula for an exponent-congruence component. -/
-@[simp]
-theorem coeff_contract [Zero R] (d : ℕ+) (f : R⸨X⸩) (r : Fin d) (k : ℤ) :
-    (contract d f r).coeff k = f.coeff ((d : ℤ) * k + r) := (rfl)
-
-/-- Contraction is additive. -/
-@[simp]
-theorem contract_add [AddCommMonoid R] (d : ℕ+) (f g : R⸨X⸩) (r : Fin d) :
-    contract d (f + g) r = contract d f r + contract d g r := by
-  ext k
-  simp
-
-/-- Every congruence component of the zero series is zero. -/
-@[simp]
-theorem contract_zero [Zero R] (d : ℕ+) (r : Fin d) : contract d (0 : R⸨X⸩) r = 0 := by
-  ext k
-  simp
+namespace TauCeti.LaurentSeries
 
 /-- A wrapped copy of the Laurent-series field at ramified level `d`. Its field structure is the
 usual one, while its `K⸨X⸩`-algebra structure sends the base parameter to the `d`-th power of the
@@ -144,34 +106,6 @@ end Level
 
 variable {K : Type*} [Field K]
 
-/-- At exponent `d * k + r`, a sum of expanded congruence components recovers coefficient `k`
-of component `r`. -/
-theorem coeff_sum_single_mul_expand {A : Type*} [CommSemiring A] (d : ℕ+)
-    (g : Fin d → A⸨X⸩) (r : Fin d) (k : ℤ) :
-    (∑ s : Fin d, single (s : ℤ) 1 * expand A d (g s)).coeff ((d : ℤ) * k + r) =
-      (g r).coeff k := by
-  simp only [coeff_sum, coeff_single_mul, one_mul]
-  rw [Finset.sum_eq_single r]
-  · convert coeff_expand_mul d (g r) k using 1
-    simp
-  · intro s _ hsr
-    apply coeff_expand_of_not_dvd
-    intro hdiv
-    obtain ⟨q, hq⟩ := hdiv
-    have hmod : (r : ℤ) - s = (d : ℤ) * (q - k) := by
-      linear_combination hq
-    have hrlt : (r : ℤ) < d := by exact_mod_cast r.isLt
-    have hslt : (s : ℤ) < d := by exact_mod_cast s.isLt
-    have hrnonneg : (0 : ℤ) ≤ r := by exact_mod_cast r.val.zero_le
-    have hsnonneg : (0 : ℤ) ≤ s := by exact_mod_cast s.val.zero_le
-    have hdpos : (0 : ℤ) < d := by exact_mod_cast d.pos
-    have hrslt : (r : ℤ) - s < d := by omega
-    have hneg : -(d : ℤ) < (r : ℤ) - s := by omega
-    have hqk : q - k = 0 := by nlinarith [hmod]
-    have hrs : (r : ℤ) = s := by rw [hqk, mul_zero] at hmod; omega
-    exact hsr (Fin.ext (by exact_mod_cast hrs.symm))
-  · simp
-
 namespace Level
 
 private noncomputable def combination (d : ℕ+) :
@@ -205,28 +139,6 @@ private theorem coeff_combination_mul_add (d : ℕ+) (g : Fin d → K⸨X⸩) (r
   exact coeff_sum_single_mul_expand d g r k
 
 end Level
-
-/-- A Laurent series is the sum of its expanded exponent-congruence components. -/
-theorem sum_single_mul_expand_contract {A : Type*} [CommSemiring A] (d : ℕ+) (f : A⸨X⸩) :
-    ∑ r : Fin d, single (r : ℤ) 1 * expand A d (contract d f r) = f := by
-  ext z
-  let r : Fin d := ⟨(z % d).toNat, by
-    rw [← Int.ofNat_lt, Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
-    exact Int.emod_lt_of_pos _ (by exact_mod_cast d.pos)⟩
-  let k := z / (d : ℤ)
-  have hr : (r : ℤ) = z % d := by
-    simp only [r]
-    rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
-  have hz : (d : ℤ) * k + r = z := by
-    rw [hr, add_comm, Int.emod_add_mul_ediv]
-  rw [← hz, coeff_sum_single_mul_expand, coeff_contract, hz]
-
-/-- The components in an expansion by exponent congruence classes are unique. -/
-theorem contract_eq_of_sum_eq {A : Type*} [CommSemiring A] (d : ℕ+) (g : Fin d → A⸨X⸩)
-    (f : A⸨X⸩) (h : ∑ r : Fin d, single (r : ℤ) 1 * expand A d (g r) = f) (r : Fin d) :
-    contract d f r = g r := by
-  ext k
-  rw [coeff_contract, ← h, coeff_sum_single_mul_expand]
 
 namespace Level
 
@@ -313,6 +225,27 @@ noncomputable def powerBasis (K : Type*) [Field K] (d : ℕ+) :
   basis := basis K d
   basis_eq_pow := basis_apply K d
 
+/-- The generator of the level power basis is the level parameter. -/
+@[simp]
+theorem powerBasis_gen (K : Type*) [Field K] (d : ℕ+) :
+    (powerBasis K d).gen = parameter K d := by
+  simp only [powerBasis]
+
+/-- The dimension of the level power basis is `d`. -/
+@[simp]
+theorem powerBasis_dim (K : Type*) [Field K] (d : ℕ+) :
+    (powerBasis K d).dim = d := by
+  rw [powerBasis]
+
+/-- The basis underlying the level power basis is the congruence-class basis. -/
+@[simp]
+theorem powerBasis_basis (K : Type*) [Field K] (d : ℕ+) :
+    (powerBasis K d).basis.reindex (finCongr (powerBasis_dim K d)) = basis K d := by
+  simp only [powerBasis]
+  ext i : 1
+  rw [Module.Basis.reindex_apply]
+  congr
+
 /-- A ramified Laurent-series level is finite-dimensional over the base Laurent field. -/
 noncomputable instance moduleFinite (K : Type*) [Field K] (d : ℕ+) :
     Module.Finite K⸨X⸩ (Level K d) :=
@@ -339,15 +272,6 @@ theorem coe_toPuiseux (K : Type*) [Field K] (d : ℕ+) (f : Level K d) :
       ramifiedEmbedding K d (ringEquivLaurentSeries K d f) := by
   exact TauCeti.puiseuxField.coe_levelEmbedding d (ringEquivLaurentSeries K d f)
 
-/-- The embedding of a ramified Laurent-series level into the Puiseux field is injective. -/
-theorem toPuiseux_injective (K : Type*) [Field K] (d : ℕ+) :
-    Function.Injective (toPuiseux K d) := by
-  intro f g h
-  apply (ringEquivLaurentSeries K d).injective
-  apply ramifiedEmbedding_injective d
-  simpa only [coe_toPuiseux] using congrArg (fun x : TauCeti.puiseuxField K ↦
-    (x : HahnSeries ℚ K)) h
-
 /-- The abstract level embedding agrees with `puiseuxField.levelEmbedding` on the underlying
 Laurent series. -/
 @[simp]
@@ -359,7 +283,7 @@ theorem toPuiseux_apply (K : Type*) [Field K] (d : ℕ+) (f : Level K d) :
 
 end Level
 
-end LaurentSeries
+end TauCeti.LaurentSeries
 
 namespace TauCeti.puiseuxField
 
@@ -386,10 +310,42 @@ noncomputable def levelEquiv (K : Type*) [Field K] (d : ℕ+) :
     LaurentSeries.Level K d ≃ₐ[K⸨X⸩] level K d :=
   (LaurentSeries.Level.toPuiseux K d).equivFieldRange
 
+/-- The level equivalence is the level embedding after coercion to the Puiseux field. -/
+@[simp]
+theorem coe_levelEquiv_apply (K : Type*) [Field K] (d : ℕ+)
+    (f : LaurentSeries.Level K d) :
+    ((levelEquiv K d f : level K d) : TauCeti.puiseuxField K) =
+      LaurentSeries.Level.toPuiseux K d f := by
+  rw [levelEquiv]
+  exact AlgHom.equivFieldRange_apply_coe (LaurentSeries.Level.toPuiseux K d) f
+
 /-- The transported power basis of the actual level-`d` subfield of the Puiseux field. -/
 noncomputable def levelPowerBasis (K : Type*) [Field K] (d : ℕ+) :
     PowerBasis K⸨X⸩ (level K d) :=
   (LaurentSeries.Level.powerBasis K d).map (levelEquiv K d)
+
+/-- The generator of the actual level power basis is the image of the level parameter. -/
+@[simp]
+theorem levelPowerBasis_gen (K : Type*) [Field K] (d : ℕ+) :
+    (levelPowerBasis K d).gen =
+      levelEquiv K d (LaurentSeries.Level.parameter K d) := by
+  rw [levelPowerBasis, PowerBasis.map_gen, LaurentSeries.Level.powerBasis_gen]
+
+/-- The dimension of the actual level power basis is `d`. -/
+@[simp]
+theorem levelPowerBasis_dim (K : Type*) [Field K] (d : ℕ+) :
+    (levelPowerBasis K d).dim = d := by
+  rw [levelPowerBasis, PowerBasis.map_dim, LaurentSeries.Level.powerBasis_dim]
+
+/-- The basis of the actual level is the transported congruence-class basis. -/
+@[simp]
+theorem levelPowerBasis_basis (K : Type*) [Field K] (d : ℕ+) :
+    (levelPowerBasis K d).basis.reindex (finCongr (levelPowerBasis_dim K d)) =
+      (LaurentSeries.Level.basis K d).map (levelEquiv K d).toLinearEquiv := by
+  unfold levelPowerBasis LaurentSeries.Level.powerBasis
+  ext i : 1
+  rw [Module.Basis.reindex_apply]
+  congr
 
 /-- The level-`d` Puiseux subfield has degree `d` over `K⸨X⸩`. -/
 theorem level_finrank (K : Type*) [Field K] (d : ℕ+) :
