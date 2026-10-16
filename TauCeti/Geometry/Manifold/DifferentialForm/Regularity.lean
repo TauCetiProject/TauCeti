@@ -202,15 +202,16 @@ theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
 /-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
 theorem isSmoothForm_zeroDim {M : Type*} [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 0)) M]
-    [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 M] {n : WithTop ℕ∞} (g : M → ℝ) :
-    IsSmoothForm 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) n
-      (RoughForm.ofFunction 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) g) := by
+    [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {n : WithTop ℕ∞}
+    (φ : RoughForm 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) M F k) :
+    IsSmoothForm 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) n φ := by
   rw [isSmoothForm_def]
   intro x
   rw [Bundle.contMDiffAt_section x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   have hflat (f : EuclideanSpace ℝ (Fin 0) →
-      EuclideanSpace ℝ (Fin 0) [⋀^Fin 0]→L[ℝ] ℝ)
+      EuclideanSpace ℝ (Fin 0) [⋀^Fin k]→L[ℝ] F)
       (s : Set (EuclideanSpace ℝ (Fin 0))) (z : EuclideanSpace ℝ (Fin 0)) :
       ContDiffWithinAt ℝ n f s z := by
     have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)

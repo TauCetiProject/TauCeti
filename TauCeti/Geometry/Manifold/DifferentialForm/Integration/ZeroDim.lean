@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
 # Direct integration of zero-dimensional forms
@@ -45,7 +45,7 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
   have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ)
       (RoughForm.ofFunction 𝓘(ℝ, E) g)) :=
     isCompact_singleton.of_isClosed_subset (_root_.isClosed_tsupport _) hs
-  have hi := (isSmoothForm_zeroDim (n := 0) g).integrableTopForm hc b
+  have hi := (isSmoothForm_zeroDim (n := 0) (RoughForm.ofFunction 𝓘(ℝ, E) g)).integrableTopForm hc b
   rw [integralTopForm_eq_chartIntegral l _ hi x
     (by simpa only [extChartAt_source_zeroDim] using hs), l.chartIntegral_eq_integral _ b x]
   have ht (y : E) : y ∈ (extChartAt 𝓘(ℝ, E) x).target := by
@@ -61,30 +61,10 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
     simp only [hx, ContinuousAlternatingMap.constOfIsEmpty_apply]
   simp_rw [hcoef]
   rw [integral_const, measureReal_def, Module.Basis.addHaar_univ_of_isEmpty,
-    ENNReal.toReal_one, one_smul,
-    Manifold.Orientation.orientationAt_mk,
-    Manifold.OrientationLift.orientationAt_eq, Manifold.OrientationLift.chartOrientation_eq_ite]
-  by_cases hsign : l.sign x ⟨x, mem_chart_source E x⟩ = 1
-  · simp only [hsign, ↓reduceIte]
-    rw [Manifold.OrientationLift.signAt_of_mem _ (mem_chart_source E x), hsign]
-    simp only [Units.val_one, Int.cast_one, one_mul]
-    rfl
-  · have hn : l.sign x ⟨x, mem_chart_source E x⟩ = -1 :=
-      (Int.units_eq_one_or (l.sign x ⟨x, mem_chart_source E x⟩)).resolve_left hsign
-    simp only [hsign, ↓reduceIte]
-    rw [Manifold.OrientationLift.signAt_of_mem _ (mem_chart_source E x), hn]
-    have he :
-        (Orientation.signBasis (-l.modelOrientation)
-          (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis : ℝ) =
-        -(Orientation.signBasis l.modelOrientation b : ℝ) := by
-      simpa only [b, Units.val_neg, Int.cast_neg] using
-        congrArg (fun u : ℤˣ ↦ (u : ℝ)) (_root_.Orientation.signBasis_neg l.modelOrientation b)
-    -- The orientation on the tangent fibre is definitionally the model orientation on E,
-    -- but rw does not match their inferred module instances. Identify that fibre explicitly.
-    change _ = (Orientation.signBasis (-l.modelOrientation) b : ℝ) * g x
-    rw [he]
-    simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
-    ring
+    ENNReal.toReal_one, one_smul, Manifold.Orientation.orientationAt_mk,
+    Manifold.OrientationLift.signBasis_orientationAt]
+  simp only [Units.val_mul, Int.cast_mul]
+  ring
 
 /-- On a finite zero-dimensional manifold the actual integral is the signed sum of values.
 The signs come from its tangent orientations, and the point masses are normalized to one. -/
