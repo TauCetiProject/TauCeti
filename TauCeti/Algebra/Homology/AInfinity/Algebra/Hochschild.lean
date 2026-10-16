@@ -79,12 +79,14 @@ theorem hochschildDifferential_def (q : ℤ) (F : ReducedTensorWords R A →ₗ[
   (rfl)
 
 /-- The Hochschild differential is additive. -/
+@[simp]
 theorem hochschildDifferential_add (q : ℤ) (F₁ F₂ : ReducedTensorWords R A →ₗ[R] A) :
     𝒜.hochschildDifferential q (F₁ + F₂) =
       𝒜.hochschildDifferential q F₁ + 𝒜.hochschildDifferential q F₂ :=
   gerstenhaberBracket_add_right _ _ _ _ _
 
 /-- The Hochschild differential is `R`-linear. -/
+@[simp]
 theorem hochschildDifferential_smul (q : ℤ) (c : R) (F : ReducedTensorWords R A →ₗ[R] A) :
     𝒜.hochschildDifferential q (c • F) = c • 𝒜.hochschildDifferential q F :=
   gerstenhaberBracket_smul_right _ _ _ _ _

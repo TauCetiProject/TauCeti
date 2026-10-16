@@ -105,11 +105,13 @@ theorem letter_comp_gradedCoderiv_comp_gradedCoderiv (F g : ReducedTensorWords R
   rw [← LinearMap.comp_assoc, letter_comp_gradedCoderiv, brace_def]
 
 /-- The brace is additive in its first argument. -/
+@[simp]
 theorem brace_add_left (F₁ F₂ g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     brace G (F₁ + F₂) g q = brace G F₁ g q + brace G F₂ g q :=
   LinearMap.add_comp _ _ _
 
 /-- The brace is `R`-linear in its first argument. -/
+@[simp]
 theorem brace_smul_left (c : R) (F g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     brace G (c • F) g q = c • brace G F g q :=
   LinearMap.smul_comp _ _ _
@@ -121,6 +123,7 @@ theorem brace_zero_left (g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
   LinearMap.zero_comp _
 
 /-- The brace is additive in its second argument, since the graded Taylor expansion is. -/
+@[simp]
 theorem brace_add_right (F g₁ g₂ : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     brace G F (g₁ + g₂) q = brace G F g₁ q + brace G F g₂ q := by
   have h := congrArg Subtype.val (map_add (gradedCoderivEquivTaylor G q).symm g₁ g₂)
@@ -128,6 +131,7 @@ theorem brace_add_right (F g₁ g₂ : ReducedTensorWords R M →ₗ[R] M) (q : 
   rw [brace_def, h, LinearMap.comp_add, brace_def, brace_def]
 
 /-- The brace is `R`-linear in its second argument, since the graded Taylor expansion is. -/
+@[simp]
 theorem brace_smul_right (c : R) (F g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     brace G F (c • g) q = c • brace G F g q := by
   have h := congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c g)
@@ -152,6 +156,7 @@ theorem gerstenhaberBracket_def (p q : ℤ) (F g : ReducedTensorWords R M →ₗ
   (rfl)
 
 /-- The Gerstenhaber bracket is additive in its first argument. -/
+@[simp]
 theorem gerstenhaberBracket_add_left (p q : ℤ) (F₁ F₂ g : ReducedTensorWords R M →ₗ[R] M) :
     gerstenhaberBracket G p q (F₁ + F₂) g =
       gerstenhaberBracket G p q F₁ g + gerstenhaberBracket G p q F₂ g := by
@@ -159,6 +164,7 @@ theorem gerstenhaberBracket_add_left (p q : ℤ) (F₁ F₂ g : ReducedTensorWor
   abel
 
 /-- The Gerstenhaber bracket is additive in its second argument. -/
+@[simp]
 theorem gerstenhaberBracket_add_right (p q : ℤ) (F g₁ g₂ : ReducedTensorWords R M →ₗ[R] M) :
     gerstenhaberBracket G p q F (g₁ + g₂) =
       gerstenhaberBracket G p q F g₁ + gerstenhaberBracket G p q F g₂ := by
@@ -166,6 +172,7 @@ theorem gerstenhaberBracket_add_right (p q : ℤ) (F g₁ g₂ : ReducedTensorWo
   abel
 
 /-- The Gerstenhaber bracket is `R`-linear in its first argument. -/
+@[simp]
 theorem gerstenhaberBracket_smul_left (p q : ℤ) (c : R)
     (F g : ReducedTensorWords R M →ₗ[R] M) :
     gerstenhaberBracket G p q (c • F) g = c • gerstenhaberBracket G p q F g := by
@@ -173,6 +180,7 @@ theorem gerstenhaberBracket_smul_left (p q : ℤ) (c : R)
     smul_sub, smul_comm c]
 
 /-- The Gerstenhaber bracket is `R`-linear in its second argument. -/
+@[simp]
 theorem gerstenhaberBracket_smul_right (p q : ℤ) (c : R)
     (F g : ReducedTensorWords R M →ₗ[R] M) :
     gerstenhaberBracket G p q F (c • g) = c • gerstenhaberBracket G p q F g := by
