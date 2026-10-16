@@ -35,9 +35,8 @@ constant. At the origin the family is the identity, hence that constant is `(X -
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, §2.1.
 
-This completes the pointwise unipotence assertion implicit in the dynamic route to parabolic and
-Levi subgroups in Layer 7 of the ReductiveGroups roadmap, using the representation-theoretic
-definition from Layer 5.
+This proves the pointwise unipotence assertion implicit in the dynamic route to parabolic and Levi
+subgroups, using the representation-theoretic definition of unipotence.
 -/
 
 public section

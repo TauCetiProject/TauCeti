@@ -26,10 +26,6 @@ those maps with characters. The lemmas here spell out the values on the group-li
 `1 ⊗ single g 1`, the inverse map, and compatibility with the contravariant functoriality
 in `G`.
 
-This advances the ReductiveGroups roadmap, Layer 0 ("Base change. `K ⊗[k] A` as a Hopf
-algebra over `K`") and Layer 4 ("Diagonalizable groups and groups of multiplicative type:
-`M ↦ D(M) = Spec k[M]`").
-
 ## Main declarations
 
 * `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv`: the multiplicative equivalence

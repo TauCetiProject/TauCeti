@@ -20,12 +20,11 @@ symplectic forms `ω₁`, `ω₂` assemble into the direct-sum symplectic form
 basic API, and proves the payoff: a direct sum of tame (respectively compatible) pairs is again
 tame (respectively compatible).
 
-This is the pointwise linear algebra of product symplectic manifolds, which the analytic
-Heegaard Floer roadmap needs before the symmetric-product geometry of `Sym^g(Σ)`: the standard
-model and every fiberwise compatibility argument decomposes over a direct sum. It complements
-the *doubling* structure `TauCeti.AlmostComplexStructure.product` on `V × V` (which mixes the two
-coordinates, `(x, y) ↦ (-y, x)`); the construction here is the componentwise direct sum instead,
-following Mathlib's `LinearMap.prodMap` naming convention.
+This is the pointwise linear algebra of product symplectic manifolds: the standard model and every
+fiberwise compatibility argument decomposes over a direct sum. It complements the *doubling*
+structure `TauCeti.AlmostComplexStructure.product` on `V × V` (which mixes the two coordinates,
+`(x, y) ↦ (-y, x)`); the construction here is the componentwise direct sum instead, following
+Mathlib's `LinearMap.prodMap` naming convention.
 
 ## Main declarations
 

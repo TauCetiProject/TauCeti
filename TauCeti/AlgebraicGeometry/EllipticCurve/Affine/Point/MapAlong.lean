@@ -22,8 +22,8 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
 * `WeierstrassCurve.Affine.Point.mapAlong`: the map `W.Point → (W.map f).Point`, over
   arbitrary commutative rings.
 * `WeierstrassCurve.Affine.Point.mapAlong_neg`, `mapAlong_id`,
-  `mapAlong_mapAlong` and `mapAlong_injective`: the functorial API, over arbitrary
-  commutative rings, mirroring Mathlib's
+  `mapAlong_mapAlong`, `mapAlong_injective` and `mapAlong_surjective` (for bijective `f`): the
+  functorial API, over arbitrary commutative rings, mirroring Mathlib's
   `Affine.Point.map_id`, `map_map` and `map_injective` for the `AlgHom` version. Both curve
   equalities — `W.map (RingHom.id R) = W` and `(W.map f).map g = W.map (g.comp f)` — hold by
   definition, so the identity and composition laws are stated with no transport.
@@ -36,7 +36,7 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
 * `WeierstrassCurve.Affine.Point.mapAlong_add` and `mapAlong_zsmul`: over fields the transport is
   additive and commutes with integer multiples.
 * `WeierstrassCurve.torsionMapAlong`: over fields, its restriction `E[N] → (W.map f)[N]` to the
-  `N`-torsion.
+  `N`-torsion, injective by `WeierstrassCurve.torsionMapAlong_injective`.
 
 `Affine.Point.map` is already an `AddMonoidHom`, so installing `f.toAlgebra` locally and rewriting
 with `mapAlong_eq_map` gives `map_add`, `map_zero` and `map_zsmul` from Mathlib directly, including
@@ -144,6 +144,17 @@ lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_injective
   · obtain ⟨hx, hy⟩ := Affine.Point.some.inj hP
     simp only [hf hx, hf hy]
 
+/-- **The point map along a bijective ring homomorphism is surjective**: the coordinates of a
+point of `W.map f` have preimages under `f`, and nonsingularity transports back along
+`Affine.map_nonsingular`. Over a perfect field this applies to the iterated Frobenius. -/
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_surjective (hf' : Function.Surjective f) :
+    Function.Surjective (WeierstrassCurve.Affine.Point.mapAlong f hf (W := W)) := by
+  rintro (_ | ⟨x, y, h⟩)
+  · exact ⟨0, rfl⟩
+  · obtain ⟨x, rfl⟩ := hf' x
+    obtain ⟨y, rfl⟩ := hf' y
+    exact ⟨.some x y ((Affine.map_nonsingular W.toAffine hf x y).mp h), rfl⟩
+
 section Field
 
 variable {F K : Type*} [Field F] [Field K] [DecidableEq F] [DecidableEq K] [Algebra F K]
@@ -213,6 +224,13 @@ theorem _root_.WeierstrassCurve.coe_torsionMapAlong_apply (N : ℤ)
     (W.torsionMapAlong f N S : (W.map f).toAffine.Point) =
       (S : W.toAffine.Point).mapAlong f f.injective := by
   simp [WeierstrassCurve.torsionMapAlong]
+
+variable (W) in
+/-- **The torsion map is injective**, since the point map is. -/
+theorem _root_.WeierstrassCurve.torsionMapAlong_injective (N : ℤ) :
+    Function.Injective (W.torsionMapAlong f N) := fun S T h ↦
+  Subtype.ext (WeierstrassCurve.Affine.Point.mapAlong_injective f f.injective
+    (by simpa using congrArg Subtype.val h))
 
 end FieldHom
 

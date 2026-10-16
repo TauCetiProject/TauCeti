@@ -38,9 +38,26 @@ which reindex a sum over antidiagonals to a rectangle.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
 * `two_mul_sum_range_pair`: twice the sum of the products over the pairs `i < j < k` is the
   square of the sum minus the sum of the squares.
+* `Finset.sum_range_succ_eq_sum_range_add`: regroup a sum whose successive terms split into
+  adjacent contributions, retaining the final boundary term.
 -/
 
 public section
+
+namespace Finset
+
+/-- Regroup a sum whose initial term is `g 0` and whose successive terms are
+`g (k + 1) + h k`, retaining the final contribution `g n`. -/
+theorem sum_range_succ_eq_sum_range_add {M : Type*} [AddCommMonoid M]
+    {f g h : ℕ → M} {n : ℕ} (hzero : f 0 = g 0)
+    (hsucc : ∀ k < n, f (k + 1) = g (k + 1) + h k) :
+    ∑ k ∈ range (n + 1), f k = (∑ k ∈ range n, (g k + h k)) + g n := by
+  rw [sum_range_succ', hzero,
+    sum_congr rfl (fun k hk ↦ hsucc k (mem_range.mp hk)), sum_add_distrib, sum_add_distrib]
+  have hshift := (sum_range_succ' g n).symm.trans (sum_range_succ g n)
+  simpa only [add_assoc, add_left_comm, add_comm] using congrArg (· + ∑ k ∈ range n, h k) hshift
+
+end Finset
 
 namespace TauCeti
 

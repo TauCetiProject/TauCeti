@@ -17,10 +17,7 @@ category. For a fixed coalgebra `C` over a commutative semiring `R`, objects are
 `R`-semimodules with a right `C`-coaction and morphisms are the comodule morphisms already
 defined by `Comodule.Hom`.
 
-The reductive-groups roadmap asks for the category of finite-dimensional comodules over a
-Hopf algebra as the representation category of an affine group scheme. This file supplies the
-underlying bundled category and its forgetful functor to `SemimoduleCat`; finiteness, tensor
-products, duals, and the Hopf-algebra specialization can be added on top.
+The file also supplies the forgetful functor to `SemimoduleCat`.
 
 ## Main definitions
 
@@ -31,9 +28,8 @@ products, duals, and the Hopf-algebra specialization can be added on top.
 
 ## References
 
-This is the categorical packaging of the standard right-comodule definition, added for
-Layer 1 of the Tau Ceti reductive-groups roadmap: "Comodules over a coalgebra/Hopf algebra".
-The bundled-category API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
+This is the categorical packaging of the standard right-comodule definition. The bundled-category
+API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
 `Mathlib.LinearAlgebra.QuadraticForm.QuadraticModuleCat`.
 -/
 
@@ -88,6 +84,10 @@ instance category : Category (ComoduleCat.{u, v, w} R C) where
   id M := Comodule.Hom.id R C M
   comp f g := Comodule.Hom.comp g f
 
+/-- Categorical morphisms use the function coercion of their underlying comodule morphisms. -/
+instance homFunLike (M N : ComoduleCat.{u, v, w} R C) : FunLike (M ⟶ N) M N :=
+  inferInstanceAs (FunLike (Comodule.Hom R C M N) M N)
+
 /-- The zero structure on categorical morphisms is the zero comodule morphism. -/
 instance homZero (M N : ComoduleCat.{u, v, w} R C) : Zero (M ⟶ N) :=
   inferInstanceAs (Zero (Comodule.Hom R C M N))
@@ -95,6 +95,14 @@ instance homZero (M N : ComoduleCat.{u, v, w} R C) : Zero (M ⟶ N) :=
 /-- Addition of categorical morphisms is pointwise addition of comodule morphisms. -/
 instance homAdd (M N : ComoduleCat.{u, v, w} R C) : Add (M ⟶ N) :=
   inferInstanceAs (Add (Comodule.Hom R C M N))
+
+/-- Categorical morphisms reuse pointwise zero evaluation of comodule morphisms. -/
+instance homIsZeroApply (M N : ComoduleCat.{u, v, w} R C) : IsZeroApply (M ⟶ N) :=
+  inferInstanceAs (IsZeroApply (Comodule.Hom R C M N))
+
+/-- Categorical morphisms reuse pointwise addition evaluation of comodule morphisms. -/
+instance homIsAddApply (M N : ComoduleCat.{u, v, w} R C) : IsAddApply (M ⟶ N) :=
+  inferInstanceAs (IsAddApply (Comodule.Hom R C M N))
 
 /-- Categorical morphisms form an additive commutative monoid under pointwise operations. -/
 instance homAddCommMonoid (M N : ComoduleCat.{u, v, w} R C) : AddCommMonoid (M ⟶ N) :=
@@ -135,7 +143,6 @@ theorem hom_ofHom {M N : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
   rfl
 
 /-- Turning a categorical morphism into an unbundled comodule morphism and back is the identity. -/
-@[simp]
 theorem ofHom_hom {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
     ofHom (R := R) (C := C) (ConcreteCategory.hom (C := ComoduleCat R C) f) = f :=
   rfl
@@ -184,12 +191,10 @@ theorem toLinearMap_comp {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g : 
   rfl
 
 /-- The identity morphism acts as the identity function. -/
-@[simp]
 theorem id_apply (M : ComoduleCat.{u, v, w} R C) (m : M) : (𝟙 M : M ⟶ M) m = m :=
   rfl
 
 /-- Composition of morphisms acts by ordinary function composition. -/
-@[simp]
 theorem comp_apply {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g : N ⟶ P) (m : M) :
     (f ≫ g) m = g (f m) :=
   rfl
@@ -230,28 +235,19 @@ theorem zero_apply {M N : ComoduleCat.{u, v, w} R C} (m : M) : (0 : M ⟶ N) m =
   rfl
 
 /-- Addition of morphisms acts by pointwise addition. -/
-@[simp]
 theorem add_apply {M N : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (m : M) : (f + g) m = f m + g m :=
   rfl
 
 /-- Natural-number scalar multiplication of morphisms acts by pointwise natural-number scalar
 multiplication. -/
-@[simp]
 theorem nsmul_apply {M N : ComoduleCat.{u, v, w} R C} (n : ℕ) (f : M ⟶ N) (m : M) :
     (n • f) m = n • f m :=
   Comodule.Hom.nsmul_apply n f m
 
 /-- Scalar multiplication of morphisms acts by pointwise scalar multiplication. -/
-@[simp]
 theorem smul_apply {M N : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (m : M) :
     (r • f) m = r • f m :=
   rfl
-
-/-- Finite sums of morphisms act by pointwise finite sums. -/
-@[simp]
-theorem sum_apply {ι : Type*} {M N : ComoduleCat.{u, v, w} R C} (s : Finset ι)
-    (f : ι → (M ⟶ N)) (m : M) : (∑ i ∈ s, f i) m = ∑ i ∈ s, f i m :=
-  Comodule.Hom.sum_apply s f m
 
 /-- Composition in `ComoduleCat` is additive in the left morphism. -/
 @[simp]
@@ -416,13 +412,11 @@ theorem isoOfLinearEquiv_inv_toLinearMap {M N : ComoduleCat.{u, v, w} R C} (e : 
   rfl
 
 /-- The forward morphism of `isoOfLinearEquiv` applies as the original linear equivalence. -/
-@[simp]
 theorem isoOfLinearEquiv_hom_apply {M N : ComoduleCat.{u, v, w} R C} (e : M ≃ₗ[R] N) (h) (m : M) :
     (isoOfLinearEquiv (R := R) (C := C) e h).hom m = e m :=
   rfl
 
 /-- The inverse morphism of `isoOfLinearEquiv` applies as the inverse linear equivalence. -/
-@[simp]
 theorem isoOfLinearEquiv_inv_apply {M N : ComoduleCat.{u, v, w} R C} (e : M ≃ₗ[R] N) (h) (n : N) :
     (isoOfLinearEquiv (R := R) (C := C) e h).inv n = e.symm n :=
   rfl

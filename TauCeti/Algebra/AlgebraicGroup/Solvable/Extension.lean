@@ -39,10 +39,6 @@ kernel condition is also necessary once the source is solvable.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This supplies extension closure for the "Lie--Kolchin; solvable groups" milestone in Layer 5 of
-the ReductiveGroups roadmap. Together with closed-subgroup and product closure, it is part of the
-subgroup calculus needed for the solvable radical in Layer 6.
 -/
 
 public section

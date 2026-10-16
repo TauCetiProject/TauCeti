@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
-public import TauCeti.CategoryTheory.Simple
+public import TauCeti.CategoryTheory.Simple.Basic
 
 /-!
 # Exhaustive families of graded simple modules

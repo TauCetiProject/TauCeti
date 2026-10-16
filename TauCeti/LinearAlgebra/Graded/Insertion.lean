@@ -211,6 +211,30 @@ theorem apply_replaceBlock {α β : Type*} (g : α → β) (x : ℕ → α) (p s
 
 end TauCeti
 
+namespace MultilinearMap
+
+open TauCeti
+
+/-- Evaluating an operation on a tuple whose replaced entry is scaled scales the value: the
+replaced entry sits in a single slot, in which the operation is linear. -/
+theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
+    {R : Type uR} {A : Type uA} [Semiring R] [AddCommMonoid A] [Module R A]
+    [AddCommMonoid N] [Module R N]
+    (f : MultilinearMap R (fun _ : Fin u ↦ A) N)
+    (x : ℕ → A) {p : ℕ} (s : ℕ) (hp : p < u) (c : R) (v : A) :
+    evalNat f (replaceBlock x p s (c • v)) = c • evalNat f (replaceBlock x p s v) := by
+  have hupd (w : A) : (fun i : Fin u ↦ replaceBlock x p s w i.1) =
+      Function.update (fun i : Fin u ↦ replaceBlock x p s v i.1) ⟨p, hp⟩ w := by
+    funext i
+    by_cases hi : i = ⟨p, hp⟩
+    · subst i
+      simp
+    · have h : (i : ℕ) ≠ p := by simpa [Fin.ext_iff] using hi
+      simp [replaceBlock, Function.update_of_ne hi, h]
+  rw [evalNat_def, evalNat_def, hupd (c • v), MultilinearMap.map_update_smul, ← hupd v]
+
+end MultilinearMap
+
 namespace Fin
 
 /-- Identify a prefix, inserted block, and suffix with their total finite arity. -/

@@ -20,10 +20,8 @@ are multiplicative.
 The relative-homotopy product constructions are due to Praneeth Kolichala and come from
 `Mathlib.Topology.Homotopy.Product`.
 
-This is the product prerequisite for the torus calculation requested in
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13: combining the indexed-product
-equivalence with the vanishing of the higher homotopy groups of a circle computes the higher
-homotopy groups of a torus.
+Combining the indexed-product equivalence with the vanishing of the higher homotopy groups of a
+circle computes the higher homotopy groups of a torus.
 
 ## Main declarations
 

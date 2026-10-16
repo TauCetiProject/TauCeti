@@ -35,6 +35,7 @@ the closure of its interior.
 * `ConvexPolygon.volume_frontier_carrier`: the boundary is a null set.
 * `ConvexPolygon.nonempty_interior_carrier`, `ConvexPolygon.closure_interior_carrier`: the
   interior is nonempty and dense in the polygon.
+* `ConvexPolygon.isPathConnected_carrier`: the polygon is path-connected.
 
 ## References
 
@@ -259,5 +260,13 @@ theorem closure_interior_carrier : closure (interior P.carrier) = P.carrier := b
     rwa [geodesicLine_geodesicBetween_zero] at h
   refine mem_closure_of_tendsto hlim ?_
   filter_upwards [Ioo_mem_nhdsGT (dist_pos.2 hxp)] with t ht using hmem t ht
+
+/-- A convex polygon is path-connected: it is nonempty and contains the geodesic segment between
+any two of its points. -/
+theorem isPathConnected_carrier : IsPathConnected P.carrier := by
+  obtain ⟨p, hp⟩ := P.nonempty_interior_carrier
+  refine isPathConnected_iff.2 ⟨⟨p, interior_subset hp⟩, fun z hz w hw ↦ ?_⟩
+  exact ((isPathConnected_geodesicSegment z w).joinedIn z (left_mem_geodesicSegment z w) w
+    (right_mem_geodesicSegment z w)).mono (P.geodesicSegment_subset_carrier hz hw)
 
 end TauCeti.UpperHalfPlane.ConvexPolygon

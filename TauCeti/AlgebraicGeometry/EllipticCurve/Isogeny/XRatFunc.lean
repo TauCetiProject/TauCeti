@@ -250,14 +250,11 @@ theorem xCoord_pointMap_ofIsogeny_some (h : W₁.Nonsingular x y)
   rw [Point.equivBaseChangeSelf_some, Hom.tautologicalPoint_ofIsogeny,
     ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero _),
     coe_pointEquivDegreeOnePlace_some, some_sub_baseChange_mem_polePoints_iff,
-    Place.valuation_ofPrime, CoordinatePullback.xCoord_tautologicalPoint, ← AdjoinRoot.mk_C,
-    ← CoordinateRing.mk, ← fieldPullback_algebraMap, ← genericX_def] at hQ
-  by_contra hne'
-  have h1 := Valuation.map_sub_lt _ hQ.1 (valuation_fieldPullback_genericX_sub_lt_one h.left hd)
-  rw [sub_sub_sub_cancel_left, ← map_sub, ← Place.valuation_ofPrime (k := F),
-    (Place.ofPrime F W₁.FunctionField _).isTrivialOn.eq_one _ (sub_ne_zero.mpr (Ne.symm hne'))]
-    at h1
-  exact lt_irrefl _ h1
+    CoordinatePullback.xCoord_tautologicalPoint, ← AdjoinRoot.mk_C, ← CoordinateRing.mk,
+    ← fieldPullback_algebraMap, ← genericX_def] at hQ
+  have hR := valuation_fieldPullback_genericX_sub_lt_one h.left hd
+  rw [← Place.valuation_ofPrime (k := F)] at hR
+  exact Place.eq_of_valuation_sub_lt_one _ hQ.1 hR
 
 end PointMap
 

@@ -68,10 +68,6 @@ root is what forces its weight to be dominant integral.
 
 ## References
 
-This is the "integrality of weights (the `sl₂` reduction)" item of Layer 2 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`weight_apply_coroot_isInt` is `TauCeti.exists_int_apply_coroot`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Chapter VI, §20.
 
 `TauCeti.genWeightSpaceOf_coroot_eq_bot_of_forall_ne_intCast` extracts an honest eigenvector from a

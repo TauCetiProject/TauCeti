@@ -51,7 +51,7 @@ variable [Ring A] [Algebra R A]
 theorem ker_baseChange_of_flat [Module.Flat R A] (f : M →ₗ[R] N) :
     ker (f.baseChange A) = (ker f).baseChange A := by
   have h : Function.Exact ((ker f).subtype.baseChange A) (f.baseChange A) := by
-    simpa only [baseChange_eq_ltensor] using
+    simpa only [baseChange_eq_lTensor] using
       Module.Flat.lTensor_exact A f.exact_subtype_ker_map
   exact h.linearMap_ker_eq
 

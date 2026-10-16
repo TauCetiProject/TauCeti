@@ -23,7 +23,7 @@ arbitrary module of "coefficients".
 
 The cofree comodule structure is provided as an explicit named definition `Comodule.cofree`,
 not as a global instance: an `R`-module can carry many coactions, and the cofree one (which on
-`M ⊗[R] C` would otherwise clash with a future tensor product of comodules) should be selected
+`M ⊗[R] C` would otherwise clash with a tensor product of comodules) should be selected
 explicitly. This follows the convention already used for `Comodule.trivial` and
 `Comodule.groupLike`.
 
@@ -41,11 +41,8 @@ explicitly. This follows the convention already used for `Comodule.trivial` and
 
 ## References
 
-This is the cofree (coinduced) comodule of a coalgebra; see for example Sweedler, *Hopf
-Algebras*, Chapter 2. It is added for the Layer 1 target "Comodules over a coalgebra/Hopf
-algebra" of the Tau Ceti reductive-groups roadmap,
-`ReductiveGroups/README.md` in TauCetiRoadmap, specifically the regular/cofree representations and
-the adjunction underlying the embedding theorem.
+This is the cofree (coinduced) comodule of a coalgebra; see for example Sweedler, *Hopf Algebras*,
+Chapter 2.
 -/
 
 @[expose] public section

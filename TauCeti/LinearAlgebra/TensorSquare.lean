@@ -200,12 +200,7 @@ theorem toTensorPower_ιMulti_two {R : Type} {M : Type*}
       PiTensorProduct.tprod R f -
         PiTensorProduct.tprod R (fun i ↦ f (Equiv.swap 0 1 i)) := by
   classical
-  have hperm : (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
-      {1, Equiv.swap 0 1} := by
-    ext e
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
-    exact TauCeti.perm_fin_two_eq_one_or_swap e
-  rw [exteriorPower.toTensorPower_apply_ιMulti, hperm,
+  rw [exteriorPower.toTensorPower_apply_ιMulti, TauCeti.univ_perm_fin_two,
     Finset.sum_insert (by decide), Finset.sum_singleton]
   rw [Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
   simp [sub_eq_add_neg]

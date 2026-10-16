@@ -41,9 +41,6 @@ to membership in `H ⊗ I`.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This supplies the normal-subgroup input for the component-group quotient in Layer 3, “Identity
-component `G°` and component group `π₀(G)`”, of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -81,7 +78,7 @@ private theorem inversionHomeomorph_kernelPoint (g : WithConv (H →ₐ[k] k)) :
   congr 1
   ext h
   simp only [AlgHom.comp_apply, _root_.HopfAlgebra.antipodeAlgHom_apply,
-    WithConv.convInv_def, ofConv_toConv, AlgHom.antipodeComp_apply]
+    WithConv.algHom_inv_def, ofConv_toConv, AlgHom.antipodeComp_apply]
 
 omit [IsAlgClosed k] [Algebra.FiniteType k H] in
 /-- Left translation, expressed as inversion followed by right translation and inversion. -/

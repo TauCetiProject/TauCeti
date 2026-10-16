@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Asymptotic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.DSlope
+import TauCeti.Analysis.Complex.Conformal.Reflection.Primitive
 
 /-!
 # Logarithmic Schwarz--Christoffel ends at finite prevertices
@@ -17,7 +19,8 @@ A real prevertex with total exponent `-1` represents an end at infinity, not a f
 polygon vertex. If `C` is its nonzero prevertex coefficient, the normalized primitive has
 local form `C * log (z - p) + H z`, with `H` holomorphic across `p`. In particular the
 primitive escapes to infinity along every approach to `p` through the upper half-plane,
-including tangential approaches.
+including tangential approaches. The normalized remainder commutes with conjugation,
+which gives a real-symmetric exponential coordinate at the end.
 
 These local ends allow Schwarz--Christoffel data to describe polygons with several vertices
 at infinity. The results impose no integrability conditions at the other prevertices, and
@@ -33,6 +36,7 @@ univalence or identify the image domain.
 public section
 
 open Bornology Complex Filter Metric Set Topology UpperHalfPlane
+open scoped ComplexConjugate
 
 namespace TauCeti
 
@@ -40,20 +44,26 @@ variable {ι : Type*} [Fintype ι]
 
 /-- At a real prevertex with total exponent `-1`, subtracting the prevertex coefficient times
 `log (z - p)` from the Schwarz--Christoffel primitive gives a holomorphic function across
-that prevertex. The equality holds on an entire upper half-disc, not just along a ray. -/
+that prevertex. The equality holds on an entire upper half-disc, not just along a ray.
+After subtracting its value at `p` and dividing by the coefficient, the holomorphic remainder
+commutes with conjugation on the full disc. -/
 theorem exists_analyticOnNhd_eq_schwarzChristoffelPrimitive_sub_log_of_sum_eq_neg_one
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p : ℝ)
     (he : ∑ i with a i = p, e i = -1) :
     ∃ (H : ℂ → ℂ) (r : ℝ), 0 < r ∧ AnalyticOnNhd ℂ H (ball (p : ℂ) r) ∧
+      (∀ z ∈ ball (p : ℂ) r,
+        (H (conj z) - H p) / schwarzChristoffelPrevertexCoefficient a e p =
+          conj ((H z - H p) / schwarzChristoffelPrevertexCoefficient a e p)) ∧
       ∀ z ∈ ball (p : ℂ) r ∩ upperHalfPlaneSet,
         schwarzChristoffelPrimitive a e z₀ z -
           schwarzChristoffelPrevertexCoefficient a e p * log (z - (p : ℂ)) = H z := by
-  obtain ⟨g, hg, hgp, hfactor⟩ :=
+  obtain ⟨g, hg, hgp, hsym, hfactor⟩ :=
     exists_analyticAt_schwarzChristoffelIntegrand_eq_cpow_mul a e p
   obtain ⟨r, hr, hgr⟩ := Metric.eventually_nhds_iff.mp
-    (hg.eventually_analyticAt.mono fun _ h => h.differentiableAt)
+    ((hg.eventually_analyticAt.mono fun _ h => h.differentiableAt).and
+      (eventually_dslope_div_const_conj p (schwarzChristoffelPrevertexCoefficient a e p) hsym))
   have hgd : DifferentiableOn ℂ g (ball (p : ℂ) r) := fun z hz =>
-    (hgr hz).differentiableWithinAt
+    (hgr hz).1.differentiableWithinAt
   -- The divided difference removes the simple pole from the derivative.
   have hds : DifferentiableOn ℂ (dslope g (p : ℂ)) (ball (p : ℂ) r) :=
     (differentiableOn_dslope (ball_mem_nhds _ hr)).mpr hgd
@@ -76,7 +86,27 @@ theorem exists_analyticOnNhd_eq_schwarzChristoffelPrimitive_sub_log_of_sum_eq_ne
   obtain ⟨H, hH, heq⟩ := exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hds hderiv
   have hHd : DifferentiableOn ℂ H (ball (p : ℂ) r) := fun z hz =>
     (hH z hz).differentiableAt.differentiableWithinAt
-  exact ⟨H, r, hr, hHd.analyticOnNhd isOpen_ball, fun z hz => (heq hz).symm⟩
+  let C := schwarzChristoffelPrevertexCoefficient a e p
+  let K : ℂ → ℂ := fun z => (H z - H p) / C
+  have hconjmem {z : ℂ} (hz : z ∈ ball (p : ℂ) r) : conj z ∈ ball (p : ℂ) r := by
+    have hd : dist (conj z) (p : ℂ) = dist z (p : ℂ) := by
+      simpa only [conj_ofReal] using dist_conj_conj z (p : ℂ)
+    simpa only [mem_ball, hd] using hz
+  have hK (z : ℂ) (hz : z ∈ ball (p : ℂ) r) :
+      HasDerivAt K (dslope g (p : ℂ) z / C) z :=
+    ((hH z hz).sub_const (H p)).div_const C
+  -- Normalize the primitive at the real centre; derivative symmetry fixes its additive constant.
+  have hKsym {z : ℂ} (hz : z ∈ ball (p : ℂ) r) : K (conj z) = conj (K z) := by
+    have h := sub_conj_eq_conj_sub_of_deriv_conj isOpen_ball
+      (convex_ball (p : ℂ) r).isPreconnected (fun _ hz => hconjmem hz)
+      (fun z hz => (hK z hz).differentiableAt.differentiableWithinAt)
+      (fun z hz => by
+        rw [(hK (conj z) (hconjmem hz)).deriv, (hK z hz).deriv]
+        exact (hgr hz).2)
+      (mem_ball_self hr) hz
+    simpa [K] using h
+  exact ⟨H, r, hr, hHd.analyticOnNhd isOpen_ball, fun _ hz => hKsym hz,
+    fun z hz => (heq hz).symm⟩
 
 /-- After dividing by its nonzero prevertex coefficient, a logarithmic Schwarz--Christoffel
 end has real part tending to negative infinity, uniformly over upper-half-plane approaches. -/
@@ -86,7 +116,7 @@ theorem tendsto_re_schwarzChristoffelPrimitive_div_coefficient_atBot_of_sum_eq_n
     Tendsto (fun z => (schwarzChristoffelPrimitive a e z₀ z /
       schwarzChristoffelPrevertexCoefficient a e p).re)
       (𝓝[upperHalfPlaneSet] (p : ℂ)) atBot := by
-  obtain ⟨H, r, hr, hH, heq⟩ :=
+  obtain ⟨H, r, hr, hH, _, heq⟩ :=
     exists_analyticOnNhd_eq_schwarzChristoffelPrimitive_sub_log_of_sum_eq_neg_one a e z₀ p he
   have hC := schwarzChristoffelPrevertexCoefficient_ne_zero a e p
   have hnorm : Tendsto (fun z : ℂ => ‖z - (p : ℂ)‖)

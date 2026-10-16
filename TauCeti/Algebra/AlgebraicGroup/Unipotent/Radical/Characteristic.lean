@@ -34,8 +34,7 @@ quotient map is therefore an isomorphism.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and §§6.45--6.46.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
 
-This supplies the characteristic and idempotence API for the unipotent-radical construction in
-Layer 5, "The unipotent radical", of the ReductiveGroups roadmap.
+This supplies the characteristic and idempotence API for the unipotent-radical construction.
 -/
 
 public section

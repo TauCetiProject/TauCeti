@@ -47,6 +47,22 @@ public section
 
 namespace Representation.IntertwiningMap
 
+/-- Two intertwining maps out of a product agree if they agree on both inclusions. -/
+@[ext 1100]
+theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+    [AddCommMonoid U] [Module A U]
+    {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+    {f g : IntertwiningMap (ρ.prod σ) τ}
+    (hl : f.comp (inl A ρ σ) = g.comp (inl A ρ σ))
+    (hr : f.comp (inr A ρ σ) = g.comp (inr A ρ σ)) : f = g := by
+  apply ext
+  apply LinearMap.prod_ext
+  -- The underlying linear maps of the inclusions and compositions are definitionally
+  -- `LinearMap.inl`, `LinearMap.inr`, and `LinearMap.comp`.
+  · exact congrArg IntertwiningMap.toLinearMap hl
+  · exact congrArg IntertwiningMap.toLinearMap hr
+
 variable {A G V W : Type*} [CommSemiring A] [Monoid G]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
   {ρ : Representation A G V} {σ : Representation A G W}

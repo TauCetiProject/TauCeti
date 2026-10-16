@@ -32,6 +32,9 @@ All three statements hold on normalized chains as well.
   and their normalized versions.
 * `TauCeti.CubicalChain.augment_crossProduct`,
   `TauCeti.NormalizedCubicalChain.augment_crossProduct`.
+* `TauCeti.NormalizedCubicalChain.map_crossProduct_map_assoc`: associativity of push-forwards of
+  iterated cross products, the common form of the associativity of products and actions built
+  from the cross product.
 
 ## References
 
@@ -164,6 +167,41 @@ theorem crossProduct_assoc (a : NormalizedCubicalChain X R p) (b : NormalizedCub
       | H c =>
         rw [crossProduct_mk, crossProduct_mk, crossProduct_mk, crossProduct_mk, map_mk, cast_mk,
           CubicalChain.crossProduct_assoc]
+
+/-- **Associativity of push-forwards of iterated cross products.**  Two ways of combining three
+factors, `g ∘ (f × id)` on `(X × Y) × Z` and `g' ∘ (id × f')` on `X × (Y × Z)`, which agree
+through the associator give the same chains, after the reindexing `(p + q) + r = p + (q + r)`. -/
+theorem map_crossProduct_map_assoc {U W V : Type*} [TopologicalSpace U] [TopologicalSpace W]
+    [TopologicalSpace V] {f : C(X × Y, U)} {g : C(U × Z, V)} {f' : C(Y × Z, W)}
+    {g' : C(X × W, V)}
+    (h : g.comp (f.prodMap (ContinuousMap.id Z)) =
+      g'.comp (((ContinuousMap.id X).prodMap f').comp
+        (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z))))
+    (a : NormalizedCubicalChain X R p) (b : NormalizedCubicalChain Y R q)
+    (c : NormalizedCubicalChain Z R r) :
+    cast R (Nat.add_assoc p q r) (map R g (p + q + r)
+        (crossProduct U Z R (p + q) r (map R f (p + q) (crossProduct X Y R p q a b)) c)) =
+      map R g' (p + (q + r))
+        (crossProduct X W R p (q + r) a (map R f' (q + r) (crossProduct Y Z R q r b c))) := by
+  -- `a × (b × c)` is the reindexed push-forward of `(a × b) × c` along the associator.
+  have hW : crossProduct X (Y × Z) R p (q + r) a (crossProduct Y Z R q r b c) =
+      cast R (Nat.add_assoc p q r)
+        (map R (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z)) (p + q + r)
+          (crossProduct (X × Y) Z R (p + q) r (crossProduct X Y R p q a b) c)) := by
+    rw [crossProduct_assoc, cast_cast, cast_rfl]
+  -- Push the inner push-forwards out of the cross products.
+  have hl : crossProduct U Z R (p + q) r (map R f (p + q) (crossProduct X Y R p q a b)) c =
+      map R (f.prodMap (ContinuousMap.id Z)) (p + q + r)
+        (crossProduct (X × Y) Z R (p + q) r (crossProduct X Y R p q a b) c) := by
+    rw [map_crossProduct, map_id, LinearMap.id_apply]
+  have hr : crossProduct X W R p (q + r) a (map R f' (q + r) (crossProduct Y Z R q r b c)) =
+      map R ((ContinuousMap.id X).prodMap f') (p + (q + r))
+        (crossProduct X (Y × Z) R p (q + r) a (crossProduct Y Z R q r b c)) := by
+    rw [map_crossProduct, map_id, LinearMap.id_apply]
+  rw [hl, hr, hW, map_cast, map_cast]
+  congr 1
+  rw [← LinearMap.comp_apply (map R g (p + q + r)), ← map_comp, h, map_comp, map_comp,
+    LinearMap.comp_apply, LinearMap.comp_apply]
 
 /-- A point on the left is a unit for the cross product of normalized chains. -/
 theorem crossProduct_point_left (x : X) (b : NormalizedCubicalChain Y R q) :

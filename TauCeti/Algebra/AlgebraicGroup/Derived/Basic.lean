@@ -46,9 +46,6 @@ derived subgroup is trivial.
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d, especially Propositions 6.17 and 6.18.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
-
-This supplies `G_der`, required in Layer 6 of the ReductiveGroups roadmap, and the
-scheme-theoretic derived subgroup left outstanding by the Layer 5 solvability development.
 -/
 
 public section
@@ -202,7 +199,7 @@ theorem le_derivedDefiningIdeal_iff_isNormal_and_isMulCommutative_pointQuotient
     -- Their product map is the lifted identity on the tensor product.
     have hproduct : Algebra.TensorProduct.productMap g.ofConv h.ofConv =
         up := by
-      simp [g, h, AffineGroup.Product.productMap_restrict]
+      simp [g, h, _root_.AlgHom.productMap_comp_includeLeft_includeRight]
     have heval := DFunLike.congr_fun
       (HopfAlgebra.productMap_comp_commutatorAlgHom g h) x
     rw [hproduct] at heval

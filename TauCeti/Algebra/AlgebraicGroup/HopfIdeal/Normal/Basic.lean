@@ -44,9 +44,8 @@ cut out by `J`, namely its normal closure.
 
 ## References
 
-The coordinate criterion is the usual adjoint-coaction characterization of a normal closed
-subgroup; see J. S. Milne, *Algebraic Groups* (2017), §3.5 and §10.20. This is the normality
-prerequisite in Layer 3, “Normality and quotients”, of the ReductiveGroups roadmap.
+The coordinate criterion is the usual adjoint-coaction characterization of a normal closed subgroup;
+see J. S. Milne, *Algebraic Groups* (2017), §3.5 and §10.20.
 -/
 
 public section
@@ -55,7 +54,7 @@ open WithConv
 
 namespace TauCeti
 
-universe u v w
+universe u v v' w
 
 namespace HopfIdeal
 
@@ -263,7 +262,7 @@ end CommHopfAlgCat
 namespace HopfIdeal
 
 variable {R : Type u} [CommRing R]
-variable {H K : Type v} [CommRing H] [CommRing K]
+variable {H : Type v} {K : Type v'} [CommRing H] [CommRing K]
 variable [HopfAlgebra R H] [HopfAlgebra R K]
 
 /-- Pulling a normal Hopf ideal back along a bijective bialgebra morphism preserves normality. -/
@@ -276,8 +275,14 @@ theorem IsNormal.comapOfSurjective_of_bijective {I : HopfIdeal R K} (hI : I.IsNo
   intro A
   let e := BialgEquiv.ofBijective f ⟨hinj, hsurj⟩
   let E := AlgHom.mapDomainMulEquiv (A := A) e
-  have hmem := CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
-    f hinj hsurj I A
+  have he : (e : H →ₐc[R] K) = f := by
+    ext x
+    exact congrFun (BialgEquiv.coe_ofBijective f ⟨hinj, hsurj⟩) x
+  have hmem (x) : E x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H)
+      (I.comapOfSurjective f hsurj) A ↔
+      x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
+    rw [AlgHom.mapDomainMulEquiv_apply, he]
+    exact f.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff hsurj I A x
   constructor
   intro n hn g
   have hn' : E.symm n ∈ CommHopfAlgCat.quotientPointsSubgroup

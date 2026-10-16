@@ -34,9 +34,6 @@ with the defining action of its weight shows that every nonzero entry determines
 
 * J. S. Milne, *Algebraic Groups* (2017), §21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §26.3.
-
-This completes the adjoint-root classification for the `GL_n` worked example in Layer 7, "Root
-datum of `(G,T)`", of the ReductiveGroups roadmap.
 -/
 
 public section

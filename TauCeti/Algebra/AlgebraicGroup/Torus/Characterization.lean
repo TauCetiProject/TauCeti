@@ -31,9 +31,6 @@ generation then identifies it with a finite-rank free abelian group.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This completes the intrinsic characterization of tori required by Layer 4, "Tori: split and
-non-split", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -47,6 +44,8 @@ universe u
 private theorem exists_mulEquiv_finsupp_int
     (G : Type u) [CommGroup G] [Group.FG G] [IsMulTorsionFree G] :
     ∃ n : ℕ, Nonempty (G ≃* Multiplicative (Fin n →₀ ℤ)) := by
+  have : HasUniqueRoots G :=
+    ⟨fun _ hn _ _ h ↦ eq_of_pow_eq_pow_of_commute hn (Commute.all _ _) h⟩
   let _ : Module.Finite ℤ (Additive G) :=
     Module.Finite.iff_addGroup_fg.mpr (inferInstance : AddGroup.FG (Additive G))
   let _ : Module.IsTorsionFree ℤ (Additive G) := inferInstance

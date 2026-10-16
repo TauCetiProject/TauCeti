@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
-public import TauCeti.AlgebraicGeometry.Curves.Node.Basic
+public import TauCeti.AlgebraicGeometry.Curves.Node.Locality
 public import TauCeti.RingTheory.Node.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Node
@@ -21,7 +21,7 @@ This file describes the blowup `Proj A[It]` of `Spec A` along `V(I)` as a scheme
 
 * it is covered by three open charts, the `π`-chart `Spec R[u, v] ⧸ (uv - πⁿ)` and, for each
   coordinate, the chart `Spec R[x, t] ⧸ (xt - π)`;
-* consequently it is flat, locally of finite presentation and of pure relative dimension one over
+* consequently its structure morphism is at worst nodal of relative dimension one over
   `Spec R`, like `Spec A` itself.
 
 When `R` is a discrete valuation ring with uniformizer `π`, the coordinate charts are regular and
@@ -52,6 +52,8 @@ nodes of thickness one, regular at their origin
 * `TauCeti.NodeAlgebra.flat_blowup`, `TauCeti.NodeAlgebra.locallyOfFinitePresentation_blowup`,
   `TauCeti.NodeAlgebra.pureRelativeDimension_blowup`: the blowup is flat, locally of finite
   presentation and of pure relative dimension one over `Spec R`.
+* `TauCeti.NodeAlgebra.atWorstNodalOfRelativeDimensionOne_blowup`: the blowup remains a nodal
+  relative curve over `Spec R`.
 * `TauCeti.NodeAlgebra.isRegularLocalRing_stalk_blowup_iff`: over a discrete valuation ring,
   every local ring of the blowup is regular exactly when `n ≤ 1`.
 
@@ -249,6 +251,15 @@ theorem pureRelativeDimension_blowup (hπ : π ∈ nonZeroDivisors R) :
   intro j
   rw [blowupOpenCover_f_blowupToSpec n hπ j]
   exact pureRelativeDimension_spec _
+
+/-- Blowing up the origin of `xy = π^(n+2)` preserves nodality over the base. This holds for
+any nonzerodivisor `π` in a commutative ring: the three charts are the nodal relative curves
+`uv = π^n` and `xt = π`. -/
+theorem atWorstNodalOfRelativeDimensionOne_blowup (hπ : π ∈ nonZeroDivisors R) :
+    AtWorstNodalOfRelativeDimensionOne (blowupToSpec π n) := by
+  refine AtWorstNodalOfRelativeDimensionOne.of_openCover (blowupOpenCover n hπ) fun j ↦ ?_
+  rw [blowupOpenCover_f_blowupToSpec n hπ j]
+  exact atWorstNodalOfRelativeDimensionOne _
 
 /-! ### Regularity of the blowup over a discrete valuation ring -/
 

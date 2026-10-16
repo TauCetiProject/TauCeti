@@ -24,9 +24,8 @@ proves that the weights of an integrable module are stable under the reflection 
 
 `M` is **not** assumed finite-dimensional, and that is the point. For a finite-dimensional module
 `TauCeti/Algebra/Lie/Weights/WeylInvariance.lean` already proves the stronger statement that the
-reflections preserve the weight *multiplicities*. But the modules Layer 4 of the highest weight
-roadmap has to bound are the irreducible highest weight modules `L(λ)`, whose
-finite-dimensionality is the thing to be proved; what is available for them beforehand is
+reflections preserve the weight *multiplicities*. But for an irreducible highest weight module
+`L(λ)` finite-dimensionality is what has to be proved, and what is available beforehand is
 integrability (`TauCeti/Algebra/Lie/HighestWeight/Integrable.lean`). Reflection stability of the
 weight support, together with the weight cone `λ - Q⁺`, is what confines those weights to a finite
 set.
@@ -67,10 +66,6 @@ on the summand `M_{k α + χ} ⊓ N` by `2 k + m` and these scalars are distinct
   reflection being an involution.
 
 ## References
-
-This is the weight-stability half of the "weight-cone bound" milestone of Layer 4, "the
-classification of finite-dimensional irreducibles", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2.
 * V. G. Kac, *Infinite Dimensional Lie Algebras*, 3rd ed., §3.6.

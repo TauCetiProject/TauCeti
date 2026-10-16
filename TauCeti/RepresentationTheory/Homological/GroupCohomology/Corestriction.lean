@@ -5,6 +5,8 @@ Authors: Claude, Codex
 -/
 module
 
+public import Mathlib.GroupTheory.PGroup
+public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Shapiro
@@ -59,6 +61,8 @@ restrictions.
   by the order of the group.
 * `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
   vanishes when the order of the group is a unit of the coefficient ring.
+* `groupCohomology.zmultiples_map_subtype_eq_top`: a class of full `p`-order restricts to a
+  generator on a `p`-subgroup whose cohomology has the order of the subgroup.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
 
@@ -445,6 +449,37 @@ theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   obtain ⟨c, hc⟩ := h.exists_left_inv
   rw [← one_smul k x, ← hc, mul_smul, Nat.cast_smul_eq_nsmul, natCard_nsmul_eq_zero, smul_zero]
+
+/-- **A class of full `p`-order restricts to a generator on a `p`-subgroup.** Let `u ∈ Hⁿ(G, A)`
+have order divisible by the `p`-part of `#G`, and let `S` be a `p`-subgroup of `G` with
+`#Hⁿ(S, A) = #S`. Then the restriction of `u` generates `Hⁿ(S, A)`: corestriction carries it to
+`[G : S] • u`, whose order is divisible by `#S`. -/
+theorem zmultiples_map_subtype_eq_top {p : ℕ} [Fact p.Prime] {A : Rep k G} {n : ℕ}
+    {u : groupCohomology A n} (hu : p ^ padicValNat p (Nat.card G) ∣ addOrderOf u)
+    {S : Subgroup G} (hS : IsPGroup p S)
+    (hcard : Nat.card (groupCohomology (res S.subtype A) n) = Nat.card S) :
+    AddSubgroup.zmultiples (map S.subtype (𝟙 (res S.subtype A)) n u) = ⊤ := by
+  set v := map S.subtype (𝟙 (res S.subtype A)) n u
+  have : Finite (groupCohomology (res S.subtype A) n) :=
+    Nat.finite_of_card_ne_zero (hcard ▸ Nat.card_pos.ne')
+  obtain ⟨b, hb⟩ := hS.exists_card_eq
+  -- `addOrderOf v • [G : S] • u = cor (addOrderOf v • v) = 0`, so `#S ∣ addOrderOf v`.
+  have hcor := TauCeti.groupCohomology.map_subtype_id_comp_corestriction_apply S A n u
+  have hm : (addOrderOf v * S.index) • u = 0 := by
+    rw [mul_comm, mul_nsmul, ← hcor, ← map_nsmul, addOrderOf_nsmul_eq_zero, map_zero]
+  have hm0 : addOrderOf v ≠ 0 := (addOrderOf_pos v).ne'
+  have hi0 : S.index ≠ 0 := Subgroup.index_ne_zero_of_finite
+  have hval : padicValNat p S.index + b ≤ padicValNat p (addOrderOf v * S.index) := by
+    rw [← padicValNat_dvd_iff_le (mul_ne_zero hm0 hi0)]
+    refine dvd_trans ?_ ((hu.trans (addOrderOf_dvd_of_nsmul_eq_zero hm)))
+    rw [← S.index_mul_card, hb, padicValNat.mul hi0 (pow_ne_zero _ (Fact.out : p.Prime).ne_zero),
+      padicValNat.prime_pow]
+  rw [padicValNat.mul hm0 hi0] at hval
+  have hpb : p ^ b ∣ addOrderOf v := (padicValNat_dvd_iff_le hm0).2 (by omega)
+  have hord : addOrderOf v = Nat.card (groupCohomology (res S.subtype A) n) := by
+    rw [hcard, hb]
+    exact Nat.dvd_antisymm (hb ▸ hcard ▸ addOrderOf_dvd_natCard v) hpb
+  exact AddSubgroup.eq_top_of_card_eq _ ((Nat.card_zmultiples v).trans hord)
 
 end groupCohomology
 

@@ -46,6 +46,10 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
   element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
   the maximal ideal.
+* `IsDedekindDomain.HeightOneSpectrum.isLocalization_valuationSubring`: the adic valuation ring
+  is a localization at the prime, exposing Mathlib's quotient-to-residue equivalence.
+* `IsDedekindDomain.HeightOneSpectrum.finite_residueField_valuationSubring`: its residue field is
+  finite whenever the quotient of the original domain by the prime is finite.
 * `IsDedekindDomain.HeightOneSpectrum.isTrivialOn_valuation`: adic valuations are trivial on
   semifield constants.
 * `IsDedekindDomain.HeightOneSpectrum.exists_mem_intValuation_eq_exp_neg_one`: a set generating a
@@ -224,6 +228,33 @@ theorem algebraMap_mem_maximalIdeal_valuationSubring_iff (v : HeightOneSpectrum 
       r ∈ v.asIdeal := by
   rw [Valuation.mem_maximalIdeal_iff, ← ValuationSubring.algebraMap_apply,
     ← IsScalarTower.algebraMap_apply, v.valuation_lt_one_iff_mem]
+
+variable (v : HeightOneSpectrum R)
+
+/-- The valuation ring at `v` is a localization at `v.asIdeal`, for any algebra structure
+compatible with its inclusion in the fraction field. This exposes Mathlib's localization API,
+including `IsLocalization.AtPrime.equivQuotMaximalIdeal`. -/
+instance isLocalization_valuationSubring
+    [Algebra R (v.valuation K).valuationSubring]
+    [IsScalarTower R (v.valuation K).valuationSubring K] :
+    IsLocalization.AtPrime (v.valuation K).valuationSubring v.asIdeal := by
+  let e : valuationSubringAtPrime K v ≃ₐ[R] (v.valuation K).valuationSubring :=
+    { RingEquiv.subringCongr (congrArg ValuationSubring.toSubring
+        (v.valuationSubringAtPrime_eq_valuationSubring (K := K))) with
+      commutes' := fun r ↦ by
+        apply Subtype.ext
+        exact (IsScalarTower.algebraMap_apply R (valuationSubringAtPrime K v) K r).symm.trans
+          (IsScalarTower.algebraMap_apply R (v.valuation K).valuationSubring K r) }
+  exact IsLocalization.isLocalization_of_algEquiv v.asIdeal.primeCompl e
+
+/-- The valuation residue field at `v` is finite when the quotient by `v` is finite. -/
+instance finite_residueField_valuationSubring
+    [Algebra R (v.valuation K).valuationSubring]
+    [IsScalarTower R (v.valuation K).valuationSubring K] [Finite (R ⧸ v.asIdeal)] :
+    Finite (IsLocalRing.ResidueField (v.valuation K).valuationSubring) :=
+  Finite.of_equiv (R ⧸ v.asIdeal)
+    (IsLocalization.AtPrime.equivQuotMaximalIdeal v.asIdeal
+      (v.valuation K).valuationSubring).toEquiv
 
 end IsDedekindDomain.HeightOneSpectrum
 

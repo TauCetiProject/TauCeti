@@ -279,14 +279,14 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
 `Fintype.equivFin σ`, the Schur polynomial of `μ` times the renamed staircase alternant equals
 the renamed alternant of the beta-numbers of its Young diagram. -/
 theorem schurPoly_mul_alternant {σ : Type*} [Fintype σ] {n : ℕ} (μ : n.Partition)
-    (hμ : (diagramOf μ).colLen 0 ≤ Fintype.card σ) :
+    (hμ : (YoungDiagram.ofPartition μ).colLen 0 ≤ Fintype.card σ) :
     schurPoly σ R μ *
         rename (Fintype.equivFin σ).symm
           (alternant (Fin (Fintype.card σ)) R (fun j => Fintype.card σ - 1 - j)) =
       rename (Fintype.equivFin σ).symm
         (alternant (Fin (Fintype.card σ)) R
-          (fun j => (diagramOf μ).betaNumber (Fintype.card σ) j)) := by
+          (fun j => (YoungDiagram.ofPartition μ).betaNumber (Fintype.card σ) j)) := by
   rw [schurPoly_eq_rename, ← map_mul,
-    diagramSchurPoly_mul_alternant (Fintype.card σ) (diagramOf μ) hμ]
+    diagramSchurPoly_mul_alternant (Fintype.card σ) (YoungDiagram.ofPartition μ) hμ]
 
 end TauCeti

@@ -22,10 +22,7 @@ dφ (Ad(g)(d)) = Ad(g ∘ φ)(dφ(d)).
 ```
 
 This file proves that identity directly from functoriality of convolution and packages it as an
-intertwining identity for the adjoint representations. It synchronizes the differential and
-adjoint-action parts of Layer 2 of the ReductiveGroups roadmap; in particular, it is the
-functoriality needed when tangent Lie algebras of closed subgroups are used inside an ambient
-group.
+intertwining identity for the adjoint representations.
 
 ## Main declarations
 

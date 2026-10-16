@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+public import Mathlib.FieldTheory.Separable
 
 /-!
 # Intermediate fields along an algebra equivalence
@@ -29,11 +30,16 @@ subfield dictionary in `TauCeti/FieldTheory/Galois/SubfieldDictionary.lean`.
   `IntermediateField F K ≃o IntermediateField F L` induced by `e : K ≃ₐ[F] L`, with
   `IntermediateField.orderIsoMapComap_apply` and `IntermediateField.orderIsoMapComap_symm_apply`
   giving its two directions as `map` and `comap`.
+* `IntermediateField.isSeparable_map` and `IntermediateField.isSeparable_adjoin_simple_map`: if
+  `K` is separable over `E`, then `L` is separable over `E.map e`; in particular separability
+  over `F⟮x⟯` transfers to separability over `F⟮e x⟯`.
 
 The name follows Mathlib's `Submodule.orderIsoMapComap`, the same construction for submodules.
 -/
 
 public section
+
+open scoped IntermediateField
 
 namespace IntermediateField
 
@@ -65,6 +71,20 @@ theorem orderIsoMapComap_apply (e : K ≃ₐ[F] L) (E : IntermediateField F K) :
 theorem orderIsoMapComap_symm_apply (e : K ≃ₐ[F] L) (S : IntermediateField F L) :
     (orderIsoMapComap e).symm S = S.comap e.toAlgHom :=
   (rfl)
+
+/-- **Separability is transported along an algebra equivalence**: if `K` is separable over an
+intermediate field `E`, then `L` is separable over the image `E.map e`. -/
+theorem isSeparable_map (e : K ≃ₐ[F] L) (E : IntermediateField F K) [Algebra.IsSeparable E K] :
+    Algebra.IsSeparable (E.map e.toAlgHom) L :=
+  Algebra.IsSeparable.of_equiv_equiv (E.equivMap e.toAlgHom).toRingEquiv e.toRingEquiv
+    (RingHom.ext fun _ ↦ rfl)
+
+/-- If `K` is separable over `F⟮x⟯`, then `L` is separable over `F⟮e x⟯`, the image of `F⟮x⟯`
+under `e`. -/
+theorem isSeparable_adjoin_simple_map (e : K ≃ₐ[F] L) {x : K} [Algebra.IsSeparable F⟮x⟯ K] :
+    Algebra.IsSeparable F⟮e x⟯ L := by
+  have h := isSeparable_map e F⟮x⟯
+  rwa [adjoin_map, Set.image_singleton, AlgEquiv.coe_toAlgHom] at h
 
 end IntermediateField
 

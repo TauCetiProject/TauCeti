@@ -39,9 +39,6 @@ that geometric compatibility is not formalized here.
 * Mathlib's `AlgebraicGeometry.specTargetImage`, `specTargetImageRingHom`, and
   `specTargetImageFactorization` in `Mathlib.AlgebraicGeometry.AffineScheme`, whose affine
   scheme-theoretic image construction this Hopf-level quotient factorization mirrors.
-
-This is image infrastructure for Layer 3, "Subgroups, quotients, components", of the
-ReductiveGroups roadmap.
 -/
 
 public section

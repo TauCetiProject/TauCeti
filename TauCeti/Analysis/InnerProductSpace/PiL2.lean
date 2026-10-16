@@ -27,12 +27,24 @@ Borel measurable structure on the scalar field.
 
 The Euclidean norm bounds the sum of coordinate norms by the square root of the number of
 coordinates. This finite-dimensional Cauchy--Schwarz estimate also controls matrix actions
-from entrywise bounds.
+from entrywise bounds. In the same way the Euclidean distance is at most `√n` times the sup
+distance of the coordinate vectors, which places cubes inside Euclidean balls.
 
 ## Additional result
 
 * `EuclideanSpace.sum_norm_le_sqrt_card_mul_norm`: the sum of coordinate norms is at most the
   square root of the coordinate count times the Euclidean norm.
+* `EuclideanSpace.dist_le_sqrt_card_mul_dist_ofLp`: the Euclidean distance is at most `√n` times
+  the sup distance of the coordinate vectors.
+* `EuclideanSpace.preimage_ofLp_closedBall_subset_closedBall`,
+  `EuclideanSpace.preimage_ofLp_ball_subset_ball`: a cube of half-side `r` lies in the
+  concentric Euclidean ball of radius `√n * r`.
+* `PiLp.dist_ofLp_le`: the sup distance of the coordinate vectors is at most the `L^p` distance,
+  `1 ≤ p`.
+* `PiLp.closedBall_subset_preimage_ofLp_closedBall`, `PiLp.ball_subset_preimage_ofLp_ball`: a
+  ball of radius `r` in `PiLp p β`, `1 ≤ p`, lies in the concentric sup-norm ball of radius `r`;
+  for Euclidean space, in the concentric cube of half-side `r`.
+* `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 
 ## Source
 
@@ -51,6 +63,10 @@ open scoped BigOperators
 namespace EuclideanSpace
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+
+/-- The square root of the dimension of a nonzero Euclidean space is positive. -/
+theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
+  Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
 
 /--
 **`ℓ¹ ≤ √card · ℓ²` on Euclidean space.** For `x : EuclideanSpace 𝕜 ι`,
@@ -71,7 +87,58 @@ theorem sum_norm_le_sqrt_card_mul_norm
     rw [hrw, hnorm]; exact hcs
   exact (abs_le_of_sq_le_sq' hsq hrhs_nonneg).2
 
+/-- The Euclidean distance between two points is at most the square root of the coordinate count
+times the sup distance between their coordinate vectors. -/
+theorem dist_le_sqrt_card_mul_dist_ofLp (x y : EuclideanSpace 𝕜 ι) :
+    dist x y ≤ Real.sqrt (Fintype.card ι) * dist (WithLp.ofLp x) (WithLp.ofLp y) := by
+  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => 𝕜)).dist_le_mul (WithLp.ofLp x)
+    (WithLp.ofLp y)
+  have hc : (((Fintype.card ι : NNReal) ^ (1 / (2 : ENNReal)).toReal : NNReal) : ℝ) =
+      Real.sqrt (Fintype.card ι) := by
+    rw [NNReal.coe_rpow, NNReal.coe_natCast, Real.sqrt_eq_rpow]
+    norm_num
+  rwa [hc, WithLp.toLp_ofLp, WithLp.toLp_ofLp] at h
+
+/-- The cube of half-side `r` about `ofLp x` lies in the Euclidean ball of radius `√n * r`
+about `x`. -/
+theorem preimage_ofLp_closedBall_subset_closedBall (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
+    WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r ⊆
+      Metric.closedBall x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
+  (dist_le_sqrt_card_mul_dist_ofLp y x).trans
+    (mul_le_mul_of_nonneg_left hy (Real.sqrt_nonneg _))
+
+/-- The open cube of half-side `r` about `ofLp x` lies in the open Euclidean ball of radius
+`√n * r` about `x`. -/
+theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
+    WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r ⊆
+      Metric.ball x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
+  (dist_le_sqrt_card_mul_dist_ofLp y x).trans_lt
+    (mul_lt_mul_of_pos_left hy sqrt_card_pos)
+
 end EuclideanSpace
+
+namespace PiLp
+
+variable {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι] {β : ι → Type*}
+  [∀ i, PseudoMetricSpace (β i)]
+
+/-- The sup distance of the coordinate vectors is at most the `L^p` distance, `1 ≤ p`. -/
+theorem dist_ofLp_le (x y : PiLp p β) : dist (WithLp.ofLp x) (WithLp.ofLp y) ≤ dist x y := by
+  simpa only [NNReal.coe_one, one_mul] using (lipschitzWith_ofLp p β).dist_le_mul x y
+
+/-- The closed ball of radius `r` about `x` lies in the closed sup-norm ball of radius `r` about
+`ofLp x`. -/
+theorem closedBall_subset_preimage_ofLp_closedBall (x : PiLp p β) (r : ℝ) :
+    Metric.closedBall x r ⊆ WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r := fun y hy =>
+  (dist_ofLp_le y x).trans hy
+
+/-- The open ball of radius `r` about `x` lies in the open sup-norm ball of radius `r` about
+`ofLp x`. -/
+theorem ball_subset_preimage_ofLp_ball (x : PiLp p β) (r : ℝ) :
+    Metric.ball x r ⊆ WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r := fun y hy =>
+  (dist_ofLp_le y x).trans_lt hy
+
+end PiLp
 
 namespace TauCeti
 

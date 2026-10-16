@@ -46,9 +46,8 @@ The isogeny and central-kernel interfaces and their proof organization are adapt
 formalizations in `TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Basic` and
 `TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Coordinate`.
 
-This supplies the central-isogeny interface requested in Layer 6, "Reductive and semisimple
-groups", of `TauCetiRoadmap/ReductiveGroups/README.md`. It builds on the existing
-scheme-theoretic kernel and central Hopf-ideal APIs.
+This supplies the central-isogeny interface. It builds on the scheme-theoretic kernel and central
+Hopf-ideal APIs.
 -/
 
 public section
@@ -283,7 +282,7 @@ theorem isCentralIsogeny_id (H : _root_.CommHopfAlgCat.{v} R) :
 /-- An isogeny is surjective on points valued in an algebraically closed field. -/
 theorem IsIsogeny.mapPointsFunctor_app_surjective (hf : IsIsogeny f)
     (F : Type w) [Field F] [Algebra R F] [IsAlgClosed F] :
-    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of R F)) :=
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R F)) :=
   mapPointsFunctor_app_surjective_of_faithfullyFlat F f hf.finiteType hf.faithfullyFlat
 
 end TauCeti.CommHopfAlgCat

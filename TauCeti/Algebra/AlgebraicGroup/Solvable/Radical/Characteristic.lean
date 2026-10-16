@@ -34,8 +34,7 @@ the solvable radical of `R(H)` is all of `R(H)`.
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 * Formal template: `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Characteristic`.
 
-This supplies the characteristic and idempotence API for the solvable-radical construction in
-Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap.
+This supplies the characteristic and idempotence API for the solvable-radical construction.
 -/
 
 public section

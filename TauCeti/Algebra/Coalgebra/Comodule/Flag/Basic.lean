@@ -31,6 +31,8 @@ representation into `Uₙ`.
   quotient-by-preceding-span criterion for an upper-triangular coefficient matrix with prescribed
   diagonal.
 * `TauCeti.Comodule.coefficientMatrix_isUpperUnitriangular_iff`: its unitriangular special case.
+* `TauCeti.Comodule.coefficientMatrix_isUpperTriangular_iff`: stability of every initial
+  basis span characterizes upper triangularity over a commutative semiring.
 * `TauCeti.Comodule.flagSubcomodule`: the standard flag of an upper-triangular comodule, bundled as
   subcomodules.
 * `TauCeti.Comodule.quotient_mk_basis_ne_zero`: each successive basis class is nonzero in the
@@ -210,5 +212,34 @@ theorem quotientCoact_flagSubcomodule_mk_basis
   exact (coefficientMatrix_isUpperUnitriangular_iff b).mp h i
 
 end
+
+section Semiring
+
+variable {R C V : Type*} [CommSemiring R]
+  [AddCommMonoid C] [Module R C] [Coalgebra R C]
+  [AddCommMonoid V] [Module R V] [Comodule R C V] {n : ℕ}
+
+/-- A coefficient matrix is upper triangular exactly when every initial basis span is the
+underlying submodule of a subcomodule. -/
+theorem coefficientMatrix_isUpperTriangular_iff (b : Basis (Fin n) R V) :
+    (coefficientMatrix (C := C) b).IsUpperTriangular ↔
+      ∀ r : Fin (n + 1), ∃ N : Subcomodule R C V, N.toSubmodule = b.flag r := by
+  constructor
+  · intro h r
+    have hs : b.coordinateSpanIsStable (C := C) {a | a.castSucc < r} := by
+      rw [b.coordinateSpanIsStable_iff]
+      intro i hi j hj
+      apply h
+      exact Fin.castSucc_lt_castSucc_iff.mp (lt_of_lt_of_le hj (le_of_not_gt hi))
+    exact ⟨b.coordinateSpanSubcomodule _ hs, b.coordinateSpanSubcomodule_toSubmodule _ hs⟩
+  · intro h i j hji
+    obtain ⟨N, hN⟩ := h j.succ
+    have hs := (b.exists_subcomodule_toSubmodule_eq_span_iff_coordinateSpanIsStable
+      {a | a.castSucc < j.succ}).mp ⟨N, hN⟩
+    rw [b.coordinateSpanIsStable_iff] at hs
+    exact hs i (by simpa only [Set.mem_ofPred_eq, Fin.castSucc_lt_succ_iff, id_eq] using
+      (not_le_of_gt hji)) j (by simp)
+
+end Semiring
 
 end TauCeti.Comodule

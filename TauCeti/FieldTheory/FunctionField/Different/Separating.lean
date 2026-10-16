@@ -18,12 +18,16 @@ Let `F / k` be an algebraic function field and `x` a separating element, so that
 finite separable extension. Only finitely many places of `F` ramify over `k(x)`
 (`TauCeti.Place.finite_setOf_differentExponent_ne_zero`). A rational place `P` of `F` that is not
 a pole of `x` lies over a rational finite place of `k(x)`, the zero of `X - a` for some `a ∈ k`;
-if `P` is unramified there, `x - a` is a prime element at `P`.
+if `P` is unramified there, `x - a` is a prime element at `P`. A place of arbitrary degree that
+is not a pole of `x` lies over the zero of some irreducible `q ∈ k[X]`, and if it is unramified
+there, `q(x)` is a prime element.
 
 ## Main results
 
 * `TauCeti.Place.finite_setOf_forall_ord_sub_algebraMap_ne_one`: at all but finitely many rational
   places that are not poles of a separating `x`, some `x - a` is a prime element.
+* `TauCeti.Place.finite_setOf_forall_irreducible_ord_aeval_ne_one`: at all but finitely many places
+  that are not poles of a separating `x`, some `q(x)` with `q` irreducible is a prime element.
 -/
 
 public section
@@ -62,6 +66,34 @@ theorem finite_setOf_forall_ord_sub_algebraMap_ne_one (hF : IsFunctionField k F)
     refine hne a ?_
     rw [← hX, IsScalarTower.algebraMap_apply k (RatFunc k) F, RatFunc.algebraMap_eq_C, ← map_sub,
       ord_algebraMap_restrict k (RatFunc k) P, h, ord_adicOfIrreducible_X_sub_C_self, ← he,
+      Nat.cast_one, mul_one]
+
+/-- **Almost every place has a prime element `q(x)`**: for a separating element `x`, only finitely
+many places `P` with `ord_P x ≥ 0` admit no irreducible `q ∈ k[X]` with `ord_P q(x) = 1`. -/
+theorem finite_setOf_forall_irreducible_ord_aeval_ne_one (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    {P : Place k F | 0 ≤ P.ord x ∧
+      ∀ q : Polynomial k, Irreducible q → P.ord (Polynomial.aeval x q) ≠ 1}.Finite := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  let _ := isFunctionField_iff_functionField.mp hF
+  let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
+  have hX := algebraMap_ratFuncAlgebraOfTranscendental_X hx
+  refine (finite_setOf_differentExponent_ne_zero (k' := k) (F' := F) k (RatFunc k)
+    (IsFunctionField.ratFunc k)).subset fun P ⟨hx0, hne⟩ ↦ ?_
+  refine (differentExponent_pos_of_one_lt_ramificationIdx k (RatFunc k) P ?_).ne'
+  refine lt_of_le_of_ne (ramificationIdx_pos (RatFunc k) P) fun he ↦ ?_
+  rcases eq_infty_or_exists_eq_adicOfIrreducible (P.restrict k (RatFunc k)) with h | ⟨q, hq, h⟩
+  · -- `x` would have a pole at `P`, lying over the pole of `X`.
+    rw [← hX, ord_algebraMap_restrict k (RatFunc k) P, h, ord_infty, RatFunc.intDegree_X,
+      ← he] at hx0
+    omega
+  · -- `q(x)` is a prime element at `P`, lying unramified over the zero of `q`.
+    classical
+    refine hne q hq ?_
+    rw [← hX, Polynomial.aeval_algebraMap_apply, RatFunc.aeval_X_left_eq_algebraMap,
+      ord_algebraMap_restrict k (RatFunc k) P, h,
+      ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left (Associated.refl _), ← he,
       Nat.cast_one, mul_one]
 
 end Place

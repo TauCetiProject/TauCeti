@@ -100,7 +100,7 @@ private noncomputable abbrev legPair (U : OpenNormalSubgroup G) :
       ofDiscreteModule ℤ G M :=
   ofDiscreteModulePair (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
     (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-    (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)
+    U.toSubgroup.fixedPoints_subtype_quotientMk_smul
 
 omit [IsTopologicalGroup G] in
 /-- The comparison pair acts on underlying modules as the inclusion `M^U → M`. -/

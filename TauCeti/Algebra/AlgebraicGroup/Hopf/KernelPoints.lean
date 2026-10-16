@@ -44,8 +44,7 @@ closed-subgroup inclusion assumes the source Hopf algebra `H` is commutative.
 
 ## References
 
-This is a Layer 3 prerequisite for `TauCetiRoadmap/ReductiveGroups/README.md`, "Hopf ideals
-↔ closed subgroup schemes", specifically the kernels part of the Hopf-ideal dictionary. It
+This is the kernels part of the dictionary between Hopf ideals and closed subgroup schemes. It
 uses the first isomorphism theorem `TauCeti.HopfIdeal.kerLiftBialgEquiv` and the
 contravariant points functoriality `TauCeti.AlgHom.mapDomainMulEquiv`.
 -/
@@ -197,7 +196,7 @@ theorem quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor
     {H K : _root_.CommHopfAlgCat.{v} R} (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (A : CommAlgCat.{x} R) :
     CommHopfAlgCat.quotientPointsSubgroup H (kerOfSurjective f.hom hf) A =
-      ((CommHopfAlgCat.mapPointsFunctor f).app A).hom.range :=
+      ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A).hom.range :=
   quotientPointsSubgroup_kerOfSurjective_eq_range f.hom hf A
 
 end CommSource

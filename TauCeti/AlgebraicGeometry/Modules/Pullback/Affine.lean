@@ -22,7 +22,7 @@ for the same comparison over an arbitrary target
 `TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent`).
 
 The strong symmetric monoidal pullback on quasicoherent sheaves is packaged in
-`TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal`.
+`TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic`.
 
 ## References
 

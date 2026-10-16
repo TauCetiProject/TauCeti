@@ -364,10 +364,10 @@ noncomputable def recutLeftEqLeft
   let E := D.toRectangleDecomposition.recut hone hempty.1 hempty.2
   exact {
     middle := E.middle
-    pentagon := GridPentagonBetween.ofRightEq E.first
+    first := GridPentagonBetween.ofRightEq E.first
       (D.recut_first_right_of_left_eq_left hcommon hone hrectangle hpentagon)
       (D.turn_mem_recut_first_of_left_eq_left hcommon hone hrectangle hpentagon)
-    rectangle := E.second }
+    second := E.second }
 
 /-- Forgetting the turn point after the common-initial-side overlap construction recovers the
 generic one-common-side rectangle recut. -/
@@ -501,15 +501,9 @@ their initial sides differ. -/
 theorem hasOneCommonSide_of_right_eq_right (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hother : D.rectangle.left ≠ D.pentagon.left) :
-    D.toRectangleDecomposition.HasOneCommonSide := by
-  apply D.toRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨D.pentagon.right, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
-      toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
-      toRectangleDecomposition_second_right, hcommon] at hc
-    grind
+    D.toRectangleDecomposition.HasOneCommonSide :=
+  D.toRectangleDecomposition.hasOneCommonSide_of_right_eq_right
+    (by simpa using hcommon) (by simpa using hother)
 
 /-- When the rectangle and pentagon share their terminal side, their underlying rectangle
 decomposition's recut is classified by the original common-terminal-side orientation. -/

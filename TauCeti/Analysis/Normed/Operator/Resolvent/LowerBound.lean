@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.SmulSub
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Characterization
 
 /-!
 # Resolvents from lower bounds
@@ -43,32 +44,13 @@ theorem _root_.LinearPMap.mem_resolventSet_of_surjective_of_norm_le
     (hsurj : Function.Surjective fun x : A.domain => z • (x : E) - A x)
     (hc : 0 < c) (hbound : ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖) :
     z ∈ A.resolventSet := by
-  have hinj : Function.Injective (A.smulSub z) := fun x y h =>
-    smul_sub_injective_of_norm_le hc hbound (by simpa only [smulSub_apply] using h)
-  have hsurj' : Function.Surjective (A.smulSub z) := by
-    intro y
-    obtain ⟨x, hx⟩ := hsurj y
-    exact ⟨x, by rw [smulSub_apply]; exact hx⟩
-  let e := LinearEquiv.ofBijective (A.smulSub z) ⟨hinj, hsurj'⟩
-  let J : E →ₗ[𝕜] E := A.domain.subtype.comp e.symm.toLinearMap
-  have hJ (y : E) : J y = (e.symm y : E) := by
-    simp only [J, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.subtype_apply]
-  have hright (y : E) : z • (e.symm y : E) - A (e.symm y) = y := by
-    rw [← smulSub_apply]
-    exact e.apply_symm_apply y
+  obtain ⟨J, hJ, hright, hleft⟩ :=
+    exists_linearMap_inverse_smul_sub ⟨smul_sub_injective_of_norm_le hc hbound, hsurj⟩
   have hnorm (y : E) : ‖J y‖ ≤ c⁻¹ * ‖y‖ := by
-    rw [hJ, le_inv_mul_iff₀ hc]
-    simpa only [hright] using hbound (e.symm y)
-  let R := J.mkContinuous c⁻¹ hnorm
-  have hR (y : E) : R y = (e.symm y : E) := by
-    rw [LinearMap.mkContinuous_apply, hJ]
-  refine IsResolventAt.mem_resolventSet (R := R) ⟨fun y => ?_, fun y => ?_, fun x => ?_⟩
-  · rw [hR]
-    exact (e.symm y).property
-  · have hx : (⟨R y, by rw [hR]; exact (e.symm y).property⟩ : A.domain) = e.symm y :=
-      Subtype.ext (hR y)
-    simpa only [hx, hR] using hright y
-  · rw [hR, ← smulSub_apply]
-    exact congrArg Subtype.val (e.symm_apply_apply x)
+    rw [le_inv_mul_iff₀ hc]
+    simpa only [hright] using hbound ⟨J y, hJ y⟩
+  refine IsResolventAt.mem_resolventSet (R := J.mkContinuous c⁻¹ hnorm)
+    (isResolventAt_iff_surjective_and_apply_smul_sub.mpr ⟨hsurj, fun x => ?_⟩)
+  rw [LinearMap.mkContinuous_apply, hleft]
 
 end TauCeti

@@ -191,13 +191,19 @@ private theorem op_quotientMk_smul_eq_quotientMk_op_smul (hM : IsDGRightModule h
       Ideal.Quotient.mk h.boundaries.op.asIdeal (op z) • x :=
   rfl
 
-/-- The action on module cohomology is computed by acting with a cycle representative. -/
+/-- The action on module cohomology is computed by acting with a cycle representative: the
+cohomology class of `w.unop` acts as `w` does, through the opposite cycle algebra. -/
+-- The scalar is taken in `(h.cycles)ᵐᵒᵖ` rather than written as `op z` for a cycle `z`. Both
+-- state the same fact, but `op z • x` would put `MulOpposite.op` applied to a `SetLike` element
+-- under a `•`, which sends `simp` through `IsCentralScalar.op_smul_eq_smul` and so on to the
+-- nonexistent `SMul h.cycles hM.Cohomology`; refuting that costs more than the default instance
+-- budget, because the carrier is a coercion and the search enumerates the algebraic hierarchy.
 @[simp]
 theorem op_quotientMk_smul (hM : IsDGRightModule h ℳ dM)
-    (z : h.cycles) (x : hM.Cohomology) :
-    op (Ideal.Quotient.mk h.boundaries.asIdeal z) • x = op z • x := by
+    (w : (h.cycles)ᵐᵒᵖ) (x : hM.Cohomology) :
+    op (Ideal.Quotient.mk h.boundaries.asIdeal w.unop) • x = w • x := by
   rw [hM.op_quotientMk_smul_eq_quotientMk_op_smul]
-  exact hM.isTorsionBySet_boundaries.mk_smul (op z) x
+  simpa only [op_unop] using hM.isTorsionBySet_boundaries.mk_smul w x
 
 section Grading
 

@@ -257,18 +257,16 @@ theorem induction_on {motive : PresentedK0 rels → Prop} (x : PresentedK0 rels)
     (zero : motive 0) (of : ∀ X : C, motive (PresentedK0.of X))
     (add : ∀ a b, motive a → motive b → motive (a + b))
     (neg : ∀ a, motive a → motive (-a)) : motive x := by
-  let S : AddSubgroup (PresentedK0 rels) :=
-    { carrier := {a | motive a}
-      zero_mem' := zero
-      add_mem' := fun ha hb => add _ _ ha hb
-      neg_mem' := fun ha => neg _ ha }
-  have hS : AddSubgroup.closure (Set.range (PresentedK0.of : C → PresentedK0 rels)) ≤ S := by
-    rw [AddSubgroup.closure_le]
-    rintro _ ⟨X, rfl⟩
+  have hx : x ∈ AddSubgroup.closure (Set.range (PresentedK0.of : C → PresentedK0 rels)) := by
+    rw [closure_range_of]
+    exact AddSubgroup.mem_top x
+  induction hx using AddSubgroup.closure_induction with
+  | mem _ h =>
+    obtain ⟨X, rfl⟩ := h
     exact of X
-  refine hS ?_
-  rw [closure_range_of]
-  trivial
+  | zero => exact zero
+  | add _ _ _ _ ha hb => exact add _ _ ha hb
+  | neg _ _ ha => exact neg _ ha
 
 section HomExt
 

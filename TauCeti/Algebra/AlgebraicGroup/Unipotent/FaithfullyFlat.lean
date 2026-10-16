@@ -27,9 +27,6 @@ along `f` therefore transfers geometric unipotence from its source affine group 
 
 * The Stacks Project, Tags 00HQ and 00FV, for algebraically closed points of faithfully flat
   finite-type algebras.
-
-This is an algebraically-closed-point bridge for Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -58,7 +55,7 @@ theorem of_faithfullyFlat (f : H ⟶ K) (hfinite : f.hom.toAlgHom.FiniteType)
   have hqunipotent := (hK q).mapDomain f.hom
   have hmap : AlgHom.mapDomain f.hom q = g := by
     rw [AlgHom.mapDomain_apply]
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hq
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hq
     exact hq
   rw [hmap] at hqunipotent
   exact hqunipotent

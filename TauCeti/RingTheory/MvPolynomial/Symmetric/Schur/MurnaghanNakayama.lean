@@ -47,6 +47,8 @@ open MvPolynomial Finset
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
+
 variable {R : Type*} [CommRing R]
 
 open scoped Classical in
@@ -59,9 +61,9 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
     (hr : 0 < r) :
     psum (Fin N) R r * alternant (Fin N) R (fun j => ν.betaNumber N j) =
       ∑ μ : (ν.card + r).Partition with
-          (diagramOf μ).IsRimHook ν ∧ (diagramOf μ).colLen 0 ≤ N,
-        (-1) ^ (diagramOf μ).rimHookHeight ν *
-          alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N j) := by
+          (ofPartition μ).IsRimHook ν ∧ (ofPartition μ).colLen 0 ≤ N,
+        (-1) ^ (ofPartition μ).rimHookHeight ν *
+          alternant (Fin N) R (fun j => (ofPartition μ).betaNumber N j) := by
   -- The power-sum rule expands `p_r * a_β` as the sum of `a_(β + r e_j)` over bead moves.
   -- The bialternant identity identifies `a_β` with `s_ν * a_δ`.
   set β : Fin N → ℕ := fun j => ν.betaNumber N j with hβ
@@ -78,23 +80,23 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
     rw [Function.update_of_ne hij, Function.update_self, hi]]
   -- Every other bead move adds a rim hook meeting rows `a ≤ i ≤ j`, with `j` its bottom row.
   have hex : ∀ j : Fin N, (∀ i, β i ≠ β j + r) → ∃ μ : (ν.card + r).Partition,
-      ((diagramOf μ).IsRimHook ν ∧ (diagramOf μ).colLen 0 ≤ N) ∧
-        ∃ a, (diagramOf μ).rimHookRows ν = Icc a (j : ℕ) := by
+      ((ofPartition μ).IsRimHook ν ∧ (ofPartition μ).colLen 0 ≤ N) ∧
+        ∃ a, (ofPartition μ).rimHookRows ν = Icc a (j : ℕ) := by
     intro j hj
     obtain ⟨μ, hμ, hμN, hcard, a, hab⟩ :=
       YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc hν j.isLt fun i hi => hj ⟨i, hi⟩
-    exact ⟨toPartition μ hcard, by rw [diagramOf_toPartition]; exact ⟨hμ, hμN⟩, a,
-      by rw [diagramOf_toPartition, hab]⟩
+    exact ⟨μ.toPartition hcard, by rw [YoungDiagram.ofPartition_toPartition]; exact ⟨hμ, hμN⟩, a,
+      by rw [YoungDiagram.ofPartition_toPartition, hab]⟩
   choose! f hfS hfrows using hex
   -- The resulting beta-numbers differ by the cycle `(a a+1 ⋯ j)`, whose sign is the
   -- rim hook weight `(-1) ^ (j - a)`.
   have hterm : ∀ (μ : (ν.card + r).Partition) (a : ℕ) (j : Fin N)
-      (hμ : (diagramOf μ).IsRimHook ν) (hab : (diagramOf μ).rimHookRows ν = Icc a (j : ℕ)),
-      Function.update β j (β j + r) = (fun i : Fin N => (diagramOf μ).betaNumber N i) ∘
+      (hμ : (ofPartition μ).IsRimHook ν) (hab : (ofPartition μ).rimHookRows ν = Icc a (j : ℕ)),
+      Function.update β j (β j + r) = (fun i : Fin N => (ofPartition μ).betaNumber N i) ∘
         Fin.cycleIcc ⟨a, (hμ.le_of_rimHookRows_eq_Icc hab).trans_lt j.isLt⟩ j := by
     intro μ a j hμ hab
     have hu := hμ.update_betaNumber_eq_comp_cycleIcc hab j.isLt
-    rwa [card_diagramOf, Nat.add_sub_cancel_left] at hu
+    rwa [card_ofPartition, Nat.add_sub_cancel_left] at hu
   refine sum_bij (fun j _ => f j)
     (fun j hj => mem_filter.mpr ⟨mem_univ _, hfS j (mem_filter.mp hj).2⟩) ?_ ?_ ?_
   · -- Distinct bead moves give distinct rim hooks: the bottom row of the hook is the moved row.
@@ -112,11 +114,12 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
     obtain ⟨a, b, -, hab⟩ := hrim.exists_rimHookRows_eq_Icc
     have hbN : b < N := (hrim.lt_colLen_of_rimHookRows_eq_Icc hab).trans_le hμN
     have hfree : ∀ i, β i ≠ β ⟨b, hbN⟩ + r := fun i => by
-      simpa [hβ, card_diagramOf] using hrim.betaNumber_ne_betaNumber_add hab i.isLt hbN
+      simpa [hβ, card_ofPartition] using hrim.betaNumber_ne_betaNumber_add hab i.isLt hbN
     refine ⟨⟨b, hbN⟩, mem_filter.mpr ⟨mem_univ _, hfree⟩, ?_⟩
     obtain ⟨a', hab'⟩ := hfrows _ hfree
-    exact diagramOf_injective ((hfS _ hfree).1.eq_of_card_eq_of_rimHookRows_eq_Icc hrim
-      (by rw [card_diagramOf, card_diagramOf]) hab' hab)
+    exact YoungDiagram.ofPartition_injective
+      ((hfS _ hfree).1.eq_of_card_eq_of_rimHookRows_eq_Icc hrim
+        (by rw [card_ofPartition, card_ofPartition]) hab' hab)
   · intro j hj
     obtain ⟨a, hab⟩ := hfrows j (mem_filter.mp hj).2
     have hrim := (hfS j (mem_filter.mp hj).2).1
@@ -135,13 +138,13 @@ each weighted by `(-1)` to the height of its rim hook:
 polynomials of the diagrams with more than `N` rows vanish on both sides. -/
 theorem psum_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) {r : ℕ} (hr : 0 < r) :
     psum (Fin N) R r * diagramSchurPoly N R ν =
-      ∑ μ : (ν.card + r).Partition with (diagramOf μ).IsRimHook ν,
-        (-1) ^ (diagramOf μ).rimHookHeight ν * diagramSchurPoly N R (diagramOf μ) := by
+      ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsRimHook ν,
+        (-1) ^ (ofPartition μ).rimHookHeight ν * diagramSchurPoly N R (ofPartition μ) := by
   -- Prove the identity over `ℤ`, where the nonzero Vandermonde alternant `a_δ` can be
   -- cancelled in `ℤ[x]`, then map its integer coefficients to the target commutative ring.
   suffices hℤ : psum (Fin N) ℤ r * diagramSchurPoly N ℤ ν =
-      ∑ μ : (ν.card + r).Partition with (diagramOf μ).IsRimHook ν,
-        (-1) ^ (diagramOf μ).rimHookHeight ν * diagramSchurPoly N ℤ (diagramOf μ) by
+      ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsRimHook ν,
+        (-1) ^ (ofPartition μ).rimHookHeight ν * diagramSchurPoly N ℤ (ofPartition μ) by
     have h := congrArg (MvPolynomial.map (Int.castRingHom R)) hℤ
     simpa [map_diagramSchurPoly, psum, map_sum] using h
   by_cases hν : ν.colLen 0 ≤ N
@@ -167,7 +170,7 @@ theorem psum_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) {r : ℕ} (hr : 
       have : (N, 0) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr hν'
       rw [YoungDiagram.mem_iff_lt_rowLen, h0] at this
       omega
-    have hμN : N < (diagramOf μ).colLen 0 := by
+    have hμN : N < (ofPartition μ).colLen 0 := by
       by_contra h
       exact hN (Nat.eq_zero_of_le_zero ((YoungDiagram.rowLen_le_of_le hle N).trans
         (YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp h)).le))
@@ -182,10 +185,10 @@ rim hook as complement, `ht` being the height of that rim hook. -/
 theorem psum_mul_schurPoly {σ : Type*} [Fintype σ] {n : ℕ} (ν : n.Partition) {r : ℕ}
     (hr : 0 < r) :
     psum σ R r * schurPoly σ R ν =
-      ∑ μ : (n + r).Partition with (diagramOf μ).IsRimHook (diagramOf ν),
-        (-1) ^ (diagramOf μ).rimHookHeight (diagramOf ν) * schurPoly σ R μ := by
-  have h := psum_mul_diagramSchurPoly (R := R) (N := Fintype.card σ) (diagramOf ν) hr
-  rw [card_diagramOf] at h
+      ∑ μ : (n + r).Partition with (ofPartition μ).IsRimHook (ofPartition ν),
+        (-1) ^ (ofPartition μ).rimHookHeight (ofPartition ν) * schurPoly σ R μ := by
+  have h := psum_mul_diagramSchurPoly (R := R) (N := Fintype.card σ) (ofPartition ν) hr
+  rw [card_ofPartition] at h
   have h' := congrArg (rename (Fintype.equivFin σ).symm) h
   rw [map_mul, rename_psum, ← schurPoly_eq_rename] at h'
   rw [h', map_sum]

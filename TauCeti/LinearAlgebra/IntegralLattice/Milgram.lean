@@ -51,6 +51,8 @@ for `m < 0` is the negative of `⟨-2m⟩`.
   Milgram's theorem.
 * `TauCeti.IntegralLattice.eight_dvd_sigPos_sub_sigNeg_of_isUnimodular`: the signature of an
   even unimodular lattice is divisible by `8`.
+* `TauCeti.IntegralLattice.eight_dvd_finrank_of_isEven_isUnimodular_isPosDef`: the rank of a
+  positive definite even unimodular lattice is divisible by `8`.
 
 ## References
 
@@ -374,5 +376,15 @@ theorem eight_dvd_sigPos_sub_sigNeg_of_isUnimodular (hL : L.IsEven) (hU : L.IsUn
   have h8 := (ZMod.intCast_zmod_eq_zero_iff_dvd ((L.sigPos : ℤ) - L.sigNeg) 8).mp
   push_cast at h8
   exact_mod_cast h8 h.symm
+
+/-- The rank of any positive definite even unimodular integral lattice is divisible by eight. -/
+theorem eight_dvd_finrank_of_isEven_isUnimodular_isPosDef (hE : L.IsEven) (hU : L.IsUnimodular)
+    (hP : L.IsPosDef) : 8 ∣ Module.finrank ℚ V := by
+  obtain ⟨hNull, hNeg⟩ := L.isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero.mp hP
+  have hSig := L.signature_sum_eq_finrank
+  have hDiv := L.eight_dvd_sigPos_sub_sigNeg_of_isUnimodular hE hU
+  simp only [hNull, hNeg, add_zero, Nat.cast_zero, sub_zero] at hSig hDiv
+  rw [← hSig]
+  exact_mod_cast hDiv
 
 end TauCeti.IntegralLattice

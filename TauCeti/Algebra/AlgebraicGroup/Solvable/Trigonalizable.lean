@@ -46,9 +46,6 @@ enters, is not proved here.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Theorem 6.3.1, whose commutative case is proved here.
 * A. Borel, *Linear Algebraic Groups*, §10.5.
-
-This advances the "Lie--Kolchin; solvable groups" milestone in Layer 5 of the ReductiveGroups
-roadmap.
 -/
 
 public section

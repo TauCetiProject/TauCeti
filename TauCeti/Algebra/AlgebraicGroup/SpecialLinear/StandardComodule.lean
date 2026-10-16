@@ -44,7 +44,7 @@ The construction and the invariant-subspace argument extend
 is new here.
 
 Faithfulness and simplicity are the representation-theoretic inputs for proving that `SL_n` is
-reductive, one of the worked examples accompanying Layer 6 of the ReductiveGroups roadmap.
+reductive.
 -/
 
 public section

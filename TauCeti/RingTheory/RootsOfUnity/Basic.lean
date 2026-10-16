@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Basic
+public import Mathlib.RingTheory.Ideal.Defs
+public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
 /-!
 # Basic results on roots of unity
 
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
-and counts the square roots of unity in a domain in which `2 ≠ 0`. For a prime `p` it relates the
-triviality of the `p`th roots of unity to the absence of a primitive one. It also records that
+and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
+`n`-th roots of unity divides `n`. For a prime `p` it relates the triviality of the `p`th roots of
+unity to the absence of a primitive one. It also records that
 roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
 Finally, it identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots
 of unity.
@@ -34,6 +36,7 @@ of unity.
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
+* `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
@@ -67,18 +70,9 @@ ideal not containing its order is equal to `1`. -/
 theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n : ℕ}
     (hn : (n : R) ∉ I) {ζ : R} (hζ : ζ ^ n = 1) (hmem : ζ - 1 ∈ I) : ζ = 1 := by
   by_contra hne
-  have hgeom : ∑ i ∈ Finset.range n, ζ ^ i = 0 := by
-    have h := geom_sum_mul ζ n
-    rw [hζ, sub_self] at h
-    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr hne)
-  have hres : Ideal.Quotient.mk I ζ = 1 := by
-    have h : Ideal.Quotient.mk I (ζ - 1) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
-    rwa [map_sub, map_one, sub_eq_zero] at h
-  refine hn ?_
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast]
-  have h := congrArg (Ideal.Quotient.mk I) hgeom
-  rw [map_sum, map_zero] at h
-  simpa [map_pow, hres] using h
+  have : Nontrivial R := ⟨⟨ζ, 1, hne⟩⟩
+  let : IsDomain R := NoZeroDivisors.to_isDomain R
+  exact hn (I.mem_of_dvd (sub_one_dvd_natCast_of_pow_eq_one hζ hne) hmem)
 
 /-- In a commutative ring in which `2 ≠ 0`, `-1` is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.neg_one_of_two_ne_zero (h2 : (2 : R) ≠ 0) :
@@ -92,6 +86,15 @@ elements. -/
 theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
   (IsPrimitiveRoot.neg_one_of_two_ne_zero h2).card_rootsOfUnity
+
+/-- In a domain, the number of `n`-th roots of unity divides `n`: they form a cyclic group, and its
+exponent divides `n`. -/
+theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n R) ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact dvd_zero _
+  have : NeZero n := ⟨hn⟩
+  rw [← IsCyclic.exponent_eq_card]
+  exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
 
 /-- In a commutative ring in which `2 ≠ 0`, the negative of a primitive `n`-th root of unity of
 odd order `n` is a primitive `2n`-th root of unity. -/

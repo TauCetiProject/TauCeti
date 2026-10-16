@@ -42,8 +42,7 @@ solvability survives arbitrary field extension without a smoothness hypothesis.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-These results supply the image-solvability and scalar-extension steps for the solvable radical in
-Layer 6 of the ReductiveGroups roadmap.
+These results supply the image-solvability and scalar-extension steps for the solvable radical.
 -/
 
 public section
@@ -208,7 +207,7 @@ homomorphism. -/
       rw [ih, ih]
       simpa only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
         Bialgebra.TensorProduct.includeRight_toAlgHom] using
-        AffineGroup.Product.productMap_restrict q
+        _root_.AlgHom.productMap_comp_includeLeft_includeRight q
 
 /-- Evaluating the universal point at a tree of points gives the corresponding derived word. -/
 @[simp] private theorem mapValue_universalDerivedWord {A : Type w} [CommRing A] [Algebra k A]
