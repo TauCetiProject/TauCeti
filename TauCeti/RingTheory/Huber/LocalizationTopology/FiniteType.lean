@@ -598,11 +598,22 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
       Pair.Hom.toRingHom_weightedCompletionHom] at heι'
     simp only [σ, Pair.Hom.toRingHom_comp, RingHom.comp_apply]
     rw [heι', hβC, hθC, hρC]
+  have hσX (j : Fin m) :
+      σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd 1 j)) :
+        weightedRestrictedSubring Z hZ) = (divBy (t j) s : S) := by
+    simpa only [σ, Pair.Hom.toRingHom_comp, RingHom.comp_apply, e,
+      Pair.Hom.toRingHom_iterateSplitHom, β', θ', β,
+      iterateSplitHom_coe_weightedX hR hWD hZ hRZ hZW, iterateVar_natAdd,
+      weightedMapCompletion_coe, weightedMap_weightedX, WB, hθY j,
+      Completion.coe_mul, map_mul, ρ,
+      toRingHom_weightedRationalEvalPairHom, Q, weightedRationalEvalHom_coe_weightedC,
+      weightedRationalEvalHom_coe_weightedX, toCompletionLoc_apply] using
+      congrArg (fun x : S ↦ (x : Completion S)) (algebraMap_mul_invSelf (t j) s)
   have hσquot : σ.IsQuotientMapping := by
     apply isQuotientMapping_of_presentation P V hP T s S hden π hπ σ hσ ι hσι
     intro a
     -- Every rational fraction is the image of an extra unweighted variable.
-    obtain ⟨j, hj, htj⟩ := hcover 0 a (by
+    obtain ⟨j, _, htj⟩ := hcover 0 a (by
       dsimp only [Q]
       rw [rationalWeight_apply]
       exact Set.mem_insert_of_mem s a.2)
@@ -612,15 +623,7 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
     simp only [map_one, one_mul] at hmem
     have hval : σ.toRingHom (weightedX Z hZ l : weightedRestrictedSubring Z hZ) =
         (divBy (a : B) s : S) := by
-      simp only [σ, Pair.Hom.toRingHom_comp, RingHom.comp_apply, e, l,
-        Pair.Hom.toRingHom_iterateSplitHom, β', θ']
-      rw [iterateSplitHom_coe_weightedX hR hWD hZ hRZ hZW, iterateVar_natAdd,
-        weightedMapCompletion_coe, weightedMap_weightedX, hθY, htj, hj,
-        Completion.coe_mul, map_mul]
-      simp only [ρ, toRingHom_weightedRationalEvalPairHom]
-      rw [weightedRationalEvalHom_coe_weightedC P T s S hden hQ,
-        weightedRationalEvalHom_coe_weightedX P T s S hden hQ,
-        toCompletionLoc_apply, ← Completion.coe_mul, mul_comm, invSelf_mul_algebraMap]
+      simpa only [l, htj] using hσX j
     exact Subring.mem_map.mpr ⟨_, hmem, hval⟩
   refine Pair.Hom.isTopologicallyFiniteType_iff.mpr
     ⟨k + (1 + m), Z, fun i ↦ Fin.addCases (fun j ↦ by simpa [Z] using hRfin j)
@@ -632,10 +635,9 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
   have hιA : ι.toRingHom (algebraMap A D a) = algebraMap A _ a := by
     dsimp only [ι, D]
     simp [algebraMap_completion_weightedRestrictedSubring_apply]
-  rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_weightedCompletionHom,
-    RingHom.comp_apply, ← hιA, hσι, Pair.Hom.toRingHom_comp, toRingHom_toCompletionLocHom,
-    RingHom.comp_apply]
-  exact congrArg (toCompletionLoc P T s S hden) (RingHom.congr_fun hπA a)
+  simpa only [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_weightedCompletionHom,
+    RingHom.comp_apply, ← hιA, hσι, toRingHom_toCompletionLocHom] using
+    congrArg (toCompletionLoc P T s S hden) (RingHom.congr_fun hπA a)
 
 end TauCeti.Huber.PairOfDefinition
 
