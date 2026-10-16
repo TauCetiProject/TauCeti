@@ -37,8 +37,6 @@ public section
 
 open PowerSeries
 
-namespace TauCeti
-
 namespace RingHom
 
 /-- The terms of a power series are absolutely summable after applying a coefficient map with
@@ -142,6 +140,8 @@ theorem norm_evalBoundedSeries_le_one {R K : Type*} [Semiring R]
     _ ≤ 1 := by simpa only [one_mul] using pow_le_one₀ (norm_nonneg q) hq.le
 
 end RingHom
+
+namespace TauCeti
 
 /-- The terms of an integer-coefficient power series are absolutely summable at a parameter of
 norm below one in a non-archimedean normed ring. -/
