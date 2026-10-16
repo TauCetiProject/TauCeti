@@ -47,8 +47,8 @@ noncomputable def ofIdealOfPointsSubgroup (I : Ideal H)
     exact Ideal.Quotient.mkₐ_ker R I
   have hq : I ≤ RingHom.ker q := hqker.symm.le
   have hcomul {x : H} (hx : x ∈ I) :
-      Coalgebra.comul (R := R) x ∈ leftTensorIdeal R H I ⊔
-        rightTensorIdeal R H I := by
+      Coalgebra.comul (R := R) x ∈ Ideal.leftTensorIdeal R H I ⊔
+        Ideal.rightTensorIdeal R H I := by
     let A := CommAlgCat.of R (Q ⊗[R] Q)
     let g : WithConv (H →ₐ[R] A) :=
       toConv ((Algebra.TensorProduct.includeLeft : Q →ₐ[R] Q ⊗[R] Q).comp q)
@@ -66,7 +66,7 @@ noncomputable def ofIdealOfPointsSubgroup (I : Ideal H)
       dsimp [g, h, A]
       ext a <;> simp
     rw [AlgHom.convMul_apply, hmap] at hzero
-    have hker := ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
+    have hker := AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
       (Ideal.Quotient.mkₐ_surjective R I) (Ideal.Quotient.mkₐ_surjective R I)
     rw [hqker] at hker
     exact hker ▸ RingHom.mem_ker.mpr hzero

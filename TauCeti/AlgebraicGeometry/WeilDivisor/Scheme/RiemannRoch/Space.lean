@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
 public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Picard
-public import TauCeti.Topology.KrullDimension
+public import TauCeti.Topology.KrullDimension.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!

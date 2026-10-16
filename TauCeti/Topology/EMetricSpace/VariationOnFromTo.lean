@@ -82,3 +82,35 @@ theorem strictMonoOn_variationOnFromTo (hf : LocallyBoundedVariationOn f s)
   exact hxy.ne (hinj hx hy (dist_le_zero.mp hdist))
 
 end LocallyBoundedVariationOn
+
+namespace LocallyBoundedVariationOn
+
+variable {α X : Type*} [LinearOrder α] [DenselyOrdered α] [MetricSpace X]
+  {f : α → X} {a b c : α}
+
+/-- Injectivity on the interior of an interval makes cumulative variation strictly increasing
+on the closed interval. Thus equal endpoint values do not obstruct the arclength coordinate. -/
+theorem strictMonoOn_variationOnFromTo_of_injOn_Ioo
+    (hf : LocallyBoundedVariationOn f (Icc a b)) (hc : c ∈ Icc a b)
+    (hinj : InjOn f (Ioo a b)) :
+    StrictMonoOn (variationOnFromTo f (Icc a b) c) (Icc a b) := by
+  have hm := variationOnFromTo.monotoneOn hf hc
+  intro x hx y hy hxy
+  refine lt_of_le_of_ne (hm hx hy hxy.le) ?_
+  intro heq
+  -- A flat cumulative variation would identify two distinct interior values of the curve.
+  obtain ⟨u, hxu, huy⟩ := exists_between hxy
+  obtain ⟨v, huv, hvy⟩ := exists_between huy
+  have hu : u ∈ Icc a b := ⟨hx.1.trans hxu.le, huy.le.trans hy.2⟩
+  have hv : v ∈ Icc a b := ⟨hu.1.trans huv.le, hvy.le.trans hy.2⟩
+  have heu : variationOnFromTo f (Icc a b) c u = variationOnFromTo f (Icc a b) c x :=
+    le_antisymm ((hm hu hy huy.le).trans_eq heq.symm) (hm hx hu hxu.le)
+  have hev : variationOnFromTo f (Icc a b) c v = variationOnFromTo f (Icc a b) c x :=
+    le_antisymm ((hm hv hy hvy.le).trans_eq heq.symm)
+      (hm hx hv (hxu.trans huv).le)
+  have hd := hf.dist_le_abs_sub_variationOnFromTo hc hu hv
+  rw [heu, hev, sub_self, abs_zero] at hd
+  exact huv.ne (hinj ⟨hx.1.trans_lt hxu, huy.trans_le hy.2⟩
+    ⟨hu.1.trans_lt huv, hvy.trans_le hy.2⟩ (dist_le_zero.mp hd))
+
+end LocallyBoundedVariationOn
