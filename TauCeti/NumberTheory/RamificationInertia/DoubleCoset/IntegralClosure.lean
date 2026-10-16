@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.IsGaloisGroup.Dedekind
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Inertia
 public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
@@ -86,15 +86,6 @@ section Bijection
 
 variable [IsDomain A] [IsIntegrallyClosed A]
 
-omit [IsScalarTower A K M] [IsGalois K M] [IsIntegrallyClosed A] in
-include A in
-/-- The subgroup `H` is a Galois group of `B` over `C`, and `C` embeds in `B`. -/
-theorem _root_.TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul :
-    IsGaloisGroup H C B ∧ FaithfulSMul C B := by
-  have : FaithfulSMul C (fixedField H) := IsIntegralClosure.faithfulSMul A C (fixedField H)
-  have : FaithfulSMul C M := .trans C (fixedField H) M
-  exact ⟨IsGaloisGroup.of_isIntegralClosure_fixedField A H C B, .tower_bot C B M⟩
-
 /-- **The double coset law over an integrally closed base.** For `M / K` finite Galois with
 group `G`, a subgroup `H` of `G`, the integral closures `B` and `C` of `A` in `M` and in `M ^ H`,
 and a prime `Q` of `B` above `p` with decomposition group `D`, the primes of `C` above `p` are
@@ -138,29 +129,6 @@ end Bijection
 section Dedekind
 
 variable [IsDedekindDomain A]
-
-include K M in
-/-- Over a Dedekind base, `B` is a finite flat `A`-algebra and a domain, with Galois group
-`Gal(M/K)`. -/
-theorem _root_.TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup :
-    IsDomain B ∧ Module.Finite A B ∧ Module.Flat A B ∧ IsGaloisGroup Gal(M/K) A B := by
-  have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain _
-  have : FaithfulSMul A M := .trans A K M
-  exact ⟨inferInstance, IsIntegralClosure.finite A K M B, TauCeti.IsIntegralClosure.flat A M B,
-    IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M⟩
-
-omit [Algebra A M] [IsScalarTower A K M] [Algebra C M] [IsScalarTower C (fixedField H) M] in
-include K M H in
-/-- Over a Dedekind base, `C` is a Dedekind domain and a finite flat `A`-algebra. -/
-theorem _root_.TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField :
-    IsDedekindDomain C ∧ Module.Finite A C ∧ Module.Flat A C := by
-  have : IsDomain C := (IsIntegralClosure.algebraMap_injective C A (fixedField H)).isDomain _
-  have : Algebra.IsSeparable K (fixedField H) :=
-    Algebra.isSeparable_tower_bot_of_isSeparable K (fixedField H) M
-  have : IsDedekindDomain C := IsIntegralClosure.isDedekindDomain A K (fixedField H) C
-  have : FaithfulSMul A (fixedField H) := .trans A K (fixedField H)
-  exact ⟨inferInstance, IsIntegralClosure.finite A K (fixedField H) C,
-    TauCeti.IsIntegralClosure.flat A (fixedField H) C⟩
 
 omit [Q.IsPrime] in
 /-- **The local degree of `σ Q ∩ C` is an index of decomposition groups**:

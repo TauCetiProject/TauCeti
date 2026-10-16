@@ -32,6 +32,8 @@ extension `M / K` and a subgroup `H` of `Gal(M/K)`, with `C` the integral closur
   base `A` in `L` and in `M`.
 * `IsGaloisGroup.of_isIntegralClosure_fixedField`: a subgroup `H` of `Gal(M/K)` is a Galois group
   of the integral closures of a common base in `M ^ H` and in `M`.
+* `TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul`: the same, bundled with
+  the injectivity of `C → B`, as used to set up instances for the fixed-field integral closure.
 -/
 
 public section
@@ -111,6 +113,14 @@ theorem of_isIntegralClosure_fixedField : IsGaloisGroup H C B :=
   have : IsGaloisGroup H (fixedField H) M :=
     of_mulEquiv_algEquiv (subgroupEquivAlgEquiv H) fun _ _ ↦ rfl
   of_isIntegralClosure_tower H A K (fixedField H) M C B
+
+include A in
+/-- The subgroup `H` is a Galois group of `B` over `C`, and `C` embeds in `B`. -/
+theorem _root_.TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul :
+    IsGaloisGroup H C B ∧ FaithfulSMul C B := by
+  have : FaithfulSMul C (fixedField H) := IsIntegralClosure.faithfulSMul A C (fixedField H)
+  have : FaithfulSMul C M := .trans C (fixedField H) M
+  exact ⟨IsGaloisGroup.of_isIntegralClosure_fixedField A H C B, .tower_bot C B M⟩
 
 end FixedField
 

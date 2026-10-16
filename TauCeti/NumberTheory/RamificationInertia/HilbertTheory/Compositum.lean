@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.IntegralClosu
 public import TauCeti.NumberTheory.RamificationInertia.HilbertTheory.Unramified
 public import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.RamificationInertia.Splitting
+import TauCeti.RingTheory.IsGaloisGroup.Dedekind
 
 /-!
 # Splitting and unramified primes in composita over a Dedekind base
