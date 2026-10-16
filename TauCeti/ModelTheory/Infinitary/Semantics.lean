@@ -38,9 +38,16 @@ finitary formulas.
 
 * Adapted from `Mathlib/ModelTheory/Infinitary/Semantics.lean` in
   `leanprover-community/mathlib4#42758` (Apache 2.0) at commit
-  `2264c2c872bb642ab519aa2288d53110f07af37d`. The realization recursion agrees with
-  `Palomar/Challenge.lean` in `cameronfreer/vaught-conjecture-palomar` at commit
-  `c69ad137438e2f656dc057db7ec29c30d481f7b4`. The laws for the binary connectives are added here.
+  `2264c2c872bb642ab519aa2288d53110f07af37d`. This is the realization on which
+  `cameronfreer/infinitary-logic` runs, at checkpoint `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`,
+  importing it from `cameronfreer/mathlib4` at commit `346a4bd3f95e8591976c91259badc6d2c300f638`.
+  The realization recursion agrees with `Palomar/Challenge.lean` in
+  `cameronfreer/vaught-conjecture-palomar` at commit `c69ad137438e2f656dc057db7ec29c30d481f7b4`.
+* Divergences from the source API: realization laws for the added binary connectives
+  (`realize_inf`, `realize_sup`, `realize_iff`); `Realize`, `FormulaInf.Realize` and
+  `SentenceInf.Realize` are not exposed, with the simp bridges `FormulaInf.realize_def` and
+  `SentenceInf.realize_def` in their place; `realize_alls` and `realize_exs` are stated for
+  bounded realization at the empty valuation of the bound-variable slots, their simp-normal form.
 -/
 
 public section

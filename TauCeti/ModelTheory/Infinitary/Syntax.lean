@@ -48,9 +48,15 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
 
 * Adapted from `Mathlib/ModelTheory/Infinitary/Syntax.lean` in
   `leanprover-community/mathlib4#42758` (Apache 2.0) at commit
-  `2264c2c872bb642ab519aa2288d53110f07af37d`. The core agrees with `Palomar/Challenge.lean` in
-  `cameronfreer/vaught-conjecture-palomar` at commit `c69ad137438e2f656dc057db7ec29c30d481f7b4`.
-  The binary connectives are added here.
+  `2264c2c872bb642ab519aa2288d53110f07af37d`. This is the fixed-carrier syntax on which
+  `cameronfreer/infinitary-logic` runs, at checkpoint `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`,
+  importing it from `cameronfreer/mathlib4` at commit `346a4bd3f95e8591976c91259badc6d2c300f638`.
+  The core agrees with `Palomar/Challenge.lean` in `cameronfreer/vaught-conjecture-palomar` at
+  commit `c69ad137438e2f656dc057db7ec29c30d481f7b4`.
+* Divergences from the source API: the binary connectives `⊓`, `⊔` and `iff` are added; the
+  definition bodies are not exposed, except those of the match patterns `not` and `ex`, and are
+  used through the defining equations `bot_def`, `top_def`, `inf_def`, `sup_def`, `iff_def`,
+  `alls_zero`, `alls_succ`, `exs_zero`, `exs_succ` and the `toInf_*` equations.
 -/
 
 public section
