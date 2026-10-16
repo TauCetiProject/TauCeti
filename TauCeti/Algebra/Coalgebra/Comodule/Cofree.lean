@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Coalgebra.Hom
 public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
 /-!
@@ -326,6 +327,40 @@ theorem cofreeLift_rid_comp_lTensor_counit_comp [Comodule R C P] (φ : Hom R C P
   (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).symm_apply_apply φ
 
 end Hom
+
+/-- A linear map `E` into a cofree comodule whose coaction factors as `(E ⊗ id) ∘ ρ`, for some
+linear map `ρ : P → P ⊗[R] C`, is determined by its counit component `π ∘ E`: it equals
+`(π ∘ E ⊗ id) ∘ ρ`, where `π` applies the counit and the right unitor.  For `ρ` the coaction of a
+comodule this is the uniqueness half of the cofree universal property; other choices of `ρ` cover
+maps which are compatible with the coactions along a coalgebra morphism. -/
+theorem eq_rTensor_comp_of_coact_comp_eq (ρ : P →ₗ[R] P ⊗[R] C) {E : P →ₗ[R] M ⊗[R] C}
+    (hE : coact (R := R) (C := C) (M := M ⊗[R] C) ∘ₗ E = E.rTensor C ∘ₗ ρ) :
+    E = ((TensorProduct.rid R M).toLinearMap ∘ₗ
+      (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ E).rTensor C ∘ₗ ρ := by
+  refine LinearMap.ext fun p ↦ ?_
+  have h := LinearMap.congr_fun hE p
+  rw [LinearMap.comp_apply, cofree_coact_eq_cofreeCoact] at h
+  rw [LinearMap.comp_apply, LinearMap.rTensor_comp, LinearMap.rTensor_comp,
+    LinearMap.comp_apply, LinearMap.comp_apply, ← LinearMap.comp_apply (E.rTensor C), ← h,
+    Hom.cofree_retract]
+
+/-- Tensoring with a coalgebra morphism `φ : C → D` is compatible with the cofree coactions:
+`(id ⊗ φ)` followed by the coaction of `M ⊗[R] D` is the coaction of `M ⊗[R] C` followed by
+`(id ⊗ φ) ⊗ φ`. -/
+theorem coact_comp_lTensor_coalgHom {D : Type*} [AddCommMonoid D] [Module R D] [Coalgebra R D]
+    (φ : C →ₗc[R] D) :
+    coact (R := R) (C := D) (M := M ⊗[R] D) ∘ₗ (φ : C →ₗ[R] D).lTensor M =
+      TensorProduct.map ((φ : C →ₗ[R] D).lTensor M) (φ : C →ₗ[R] D) ∘ₗ
+        coact (R := R) (C := C) (M := M ⊗[R] C) := by
+  refine TensorProduct.ext' fun m c ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.lTensor_tmul, cofree_coact_tmul]
+  have h : TensorProduct.map (φ : C →ₗ[R] D) (φ : C →ₗ[R] D) (Coalgebra.comul c) =
+      Coalgebra.comul ((φ : C →ₗ[R] D) c) :=
+    CoalgHomClass.map_comp_comul_apply φ c
+  rw [← h]
+  induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
+  | tmul a b => simp
 
 end Comodule
 

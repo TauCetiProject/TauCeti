@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.Lie.E7.Minuscule.ClosedGenerators
 
@@ -95,21 +94,9 @@ theorem tangentMatrix_derivationComp_rootSubgroupToBaseChangeCoordinateMap
           (derivationComp (B := B) (rootSubgroupToBaseChangeCoordinateMap R k).hom d)) =
       AdditiveGroup.gaTangentLinearEquiv d •
         (Sum.elim raisingMatrix loweringMatrix k).map (Int.cast : ℤ → B) := by
-  ext a b
-  rw [GeneralLinear.tangentMatrix_apply, algEquivSelf_derivationComp_apply,
-    algEquivSelf_derivationComp_apply, ← GeneralLinear.genericMatrix_apply]
-  have hentry := congrFun (congrFun (map_genericMatrix_rootSubgroup R k) a) b
-  rw [Matrix.map_apply, AlgHom.comp_apply] at hentry
-  rw [hentry]
-  have hone : d ((1 : Matrix (Fin 56) (Fin 56)
-      (AdditiveGroup.coordinateHopfAlgebra R)) a b) = 0 := by
-    classical
-    by_cases hab : a = b <;> simp [Matrix.one_apply, hab]
-  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, smul_eq_mul,
-    map_add, Derivation.leibniz, Derivation.map_intCast, smul_zero, zero_add, hone,
-    AdditiveGroup.gaTangentLinearEquiv_apply, Int.cast_smul_eq_zsmul, zsmul_eq_mul,
-    map_mul, map_intCast]
-  ring
+  rw [← LinearMap.comp_apply, ← derivationComp_comp]
+  exact GeneralLinear.tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix _ _
+    (map_genericMatrix_rootSubgroup R k) d
 
 /-- The unit tangent vector of the numbered transported root subgroup, viewed intrinsically
 in the specialized integral carrier. -/

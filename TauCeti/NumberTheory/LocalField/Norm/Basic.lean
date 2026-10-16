@@ -136,9 +136,8 @@ theorem normalizedValuation_norm (x : Lˣ) :
     simp only [y, map_mul, map_pow, map_inv]
     rw [hu]
     simp
-  have hnorm : Algebra.normUnits K u = t ^ Module.finrank K L := by
-    apply Units.ext
-    simp [u, Algebra.norm_algebraMap]
+  have hnorm : Algebra.normUnits K u = t ^ Module.finrank K L :=
+    Algebra.normUnits_unitsMap_algebraMap K t
   have hmap : (normalizedValuation K (Algebra.normUnits K u)).toAdd =
       Module.finrank K L * (normalizedValuation L x).toAdd := by
     rw [hnorm, map_pow, ht, toAdd_pow, nsmul_eq_mul]
@@ -353,7 +352,7 @@ theorem not_map_normUnits_unitFiltration_le_succ (hn : IsUnit (Module.finrank K 
   intro h
   obtain ⟨x, hx, hx'⟩ := IsConcreteLE.exists_of_lt (unitFiltration_succ_lt (K := K) hi)
   have hN : Algebra.normUnits K (Units.map (algebraMap K L : K →* L) x) =
-      x ^ Module.finrank K L := Units.ext <| by simp [Algebra.norm_algebraMap]
+      x ^ Module.finrank K L := Units.ext <| by simp
   have hxn := h (Subgroup.mem_map_of_mem _ (unitsMap_algebraMap_mem_unitFiltration hx))
   rw [hN, pow_mem_unitFiltration_succ_iff_of_isUnit hn
     (unitFiltration_antitone (Nat.one_le_iff_ne_zero.2 hi) hx)] at hxn

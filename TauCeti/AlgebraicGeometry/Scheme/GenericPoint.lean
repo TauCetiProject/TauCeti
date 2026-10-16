@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 public import Mathlib.AlgebraicGeometry.Stalk
 
-import TauCeti.Topology.KrullDimension
+import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # The generic point of an irreducible scheme and the specialization order

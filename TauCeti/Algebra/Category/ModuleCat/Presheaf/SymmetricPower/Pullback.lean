@@ -113,8 +113,8 @@ def pullbackSymmetricPowerComparison (n : ℕ) :
     PresheafOfModulesOfCommRing.symmetricPower n ⋙ PresheafOfModulesOfCommRing.pullback α ⟶
       PresheafOfModulesOfCommRing.pullback α ⋙ PresheafOfModulesOfCommRing.symmetricPower n :=
   let A := PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α
-  ((mateEquiv A A).symm (TwoSquare.mk _ _ _ _
-    (pushforwardSymmetricPowerComparison α n))).natTrans
+  (mateEquiv A A).symm (TwoSquare.mk _ _ _ _
+    (pushforwardSymmetricPowerComparison α n))
 
 /-- The adjunction equation characterizes the canonical pullback comparison. -/
 @[reassoc (attr := simp)]
