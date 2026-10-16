@@ -14,10 +14,11 @@ import TauCeti.Topology.LocallyConnected
 # Inverted polygonal frontiers are locally connected
 
 The frontier of a polygonal domain with several vertices at infinity, such as a strip, is a
-finite union of closed segments and closed rays. Every ray runs off to infinity, so on the Riemann
-sphere the frontier passes through infinity several times and is not a Jordan curve. Inverting
-the domain about an exterior point `q`, `z ↦ (z - q)⁻¹`, gives a bounded domain whose frontier is
-the inverted frontier together with `0`, the image of infinity. Each inverted segment is an arc,
+finite union of closed segments and closed rays. On the Riemann sphere such a frontier can pass
+through infinity several times, as the two boundary lines of a strip do, and then it is not a
+Jordan curve; so local connectedness is proved here without the Jordan property. Inverting the
+domain about an exterior point `q`, `z ↦ (z - q)⁻¹`, gives a bounded domain whose frontier is the
+inverted frontier together with `0`, the image of infinity. Each inverted segment is an arc,
 and each inverted ray, closed up by `0`, is an arc ending at `0`. A finite union of arcs is
 locally connected, so the inverted frontier is locally connected.
 
@@ -35,6 +36,9 @@ whose inverted coordinate is continuous on the closed half-plane.
 * `TauCeti.locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq`: an unbounded open set
   whose frontier is a finite union of closed segments and closed rays has locally connected
   frontier after inversion about a point outside its closure.
+* `TauCeti.continuousOn_inv_sub_lineMap`, `TauCeti.insert_zero_image_inv_sub_ray_eq`,
+  `TauCeti.continuousOn_div_ray`: continuous parametrizations by `[0, 1]` of an inverted closed
+  segment and of an inverted closed ray closed up by `0`.
 
 ## References
 
@@ -53,7 +57,7 @@ variable {q : ℂ}
 
 /-- The inverted affine parametrization of a closed segment avoiding `q` is continuous on
 `[0, 1]`. -/
-private theorem continuousOn_inv_sub_lineMap {x y : ℂ} (hq : q ∉ segment ℝ x y) :
+theorem continuousOn_inv_sub_lineMap {x y : ℂ} (hq : q ∉ segment ℝ x y) :
     ContinuousOn (fun s : ℝ => (AffineMap.lineMap x y s - q)⁻¹) (Icc 0 1) := by
   refine ContinuousOn.inv₀ (by fun_prop) fun s hs h => hq ?_
   rw [segment_eq_image_lineMap]
@@ -72,7 +76,7 @@ private theorem div_eq_inv_sub_ray {p d : ℂ} {s : ℝ} (hs : s ≠ 0) :
 
 /-- Inverting a closed ray avoiding `q` about `q` and adding `0`, the image of its point at
 infinity, gives the image of `[0, 1]` under `s ↦ s / (s * (p - q) + (1 - s) * d)`. -/
-private theorem insert_zero_image_inv_sub_ray_eq {p d : ℂ} :
+theorem insert_zero_image_inv_sub_ray_eq {p d : ℂ} :
     insert 0 ((fun z : ℂ => (z - q)⁻¹) '' ((fun t : ℝ => p + (t : ℂ) * d) '' Ici 0)) =
       (fun s : ℝ => (s : ℂ) / (s * (p - q) + (1 - s) * d)) '' Icc 0 1 := by
   refine Subset.antisymm (insert_subset ⟨0, ⟨le_rfl, zero_le_one⟩, by simp⟩ ?_) ?_
@@ -94,7 +98,7 @@ private theorem insert_zero_image_inv_sub_ray_eq {p d : ℂ} :
 /-- The parametrization `s ↦ s / (s * (p - q) + (1 - s) * d)` of an inverted closed ray avoiding
 `q` is continuous on `[0, 1]`: its denominator is `d ≠ 0` at `s = 0`, and `s` times a nonzero
 difference `p + t * d - q` for `s > 0`. -/
-private theorem continuousOn_div_ray {p d : ℂ} (hd : d ≠ 0)
+theorem continuousOn_div_ray {p d : ℂ} (hd : d ≠ 0)
     (hq : q ∉ (fun t : ℝ => p + (t : ℂ) * d) '' Ici 0) :
     ContinuousOn (fun s : ℝ => (s : ℂ) / (s * (p - q) + (1 - s) * d)) (Icc 0 1) := by
   refine ContinuousOn.div (by fun_prop) (by fun_prop) fun s hs h => ?_
