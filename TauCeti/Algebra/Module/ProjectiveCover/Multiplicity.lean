@@ -84,7 +84,7 @@ theorem IsProjectiveCover.finrank_linearMap_eq_finrank_end {f : P →ₗ[A] S}
     (hf : IsProjectiveCover f) (e : T ≃ₗ[A] S) :
     Module.finrank k (P →ₗ[A] T) = Module.finrank k (Module.End A S) := by
   rw [← (hf.homEquivOfIsSemisimpleModule k (T := T)).finrank_eq,
-    ← (homCongrRight k (S := S) e).finrank_eq]
+    ← (LinearEquiv.homCongrRight k (S := S) e).finrank_eq]
 
 omit [Module k S] [IsScalarTower k A S] in
 /-- **The off-diagonal value of the projective/simple pairing.** Between a projective cover of `S`

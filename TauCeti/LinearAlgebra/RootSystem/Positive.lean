@@ -355,7 +355,7 @@ This is what makes the cone an order on weights: `μ ≤ λ` defined by `λ - μ
 and a weight cannot be reached from itself through a nonempty chain of positive roots. -/
 theorem isPointed_posRootCone : (posRootCone P b).IsPointed := by
   classical
-  refine AddSubmonoid.IsPointed.mk fun u hu hu' => ?_
+  intro u hu hu'
   obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hu
   obtain ⟨g, hg⟩ := (mem_posRootCone P b).mp hu'
   have huv : (∑ j ∈ b.support, f j • P.root j) + ∑ j ∈ b.support, g j • P.root j = 0 := by
@@ -413,8 +413,8 @@ legitimate because the simple roots are linearly independent, leaves `αⱼ` a n
 This is the combinatorial input to the integrability relation of a highest weight module: it is
 what confines a positive root vector raising the weight `lam - (n + 1) αᵢ` to the single direction
 `αᵢ`. -/
-theorem eq_of_nsmul_root_sub_root_mem_posRootCone [Finite ι] [IsAddTorsionFree M]
-    [IsAddTorsionFree N] {i : ι} (hi : i ∈ b.support) {j : ι} (hj : j ∈ posRoots P b) {n : ℕ}
+theorem eq_of_nsmul_root_sub_root_mem_posRootCone [Finite ι] [HasUniqueDiv M]
+    [HasUniqueDiv N] {i : ι} (hi : i ∈ b.support) {j : ι} (hj : j ∈ posRoots P b) {n : ℕ}
     (h : n • P.root i - P.root j ∈ posRootCone P b) : j = i := by
   classical
   obtain ⟨c, -, hc⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b hj

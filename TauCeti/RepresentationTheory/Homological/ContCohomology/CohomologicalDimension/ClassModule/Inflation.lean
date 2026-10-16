@@ -69,6 +69,9 @@ same holds when `H¹(W.map (mk' V), V^ab(p))` vanishes, by
 
 public section
 
+open Subgroup (quotientSubgroupOfEquivMap quotientQuotientContinuousMulEquiv
+  quotientQuotientContinuousMulEquiv_mk)
+
 namespace TauCeti
 
 open ContCohomology
@@ -337,7 +340,7 @@ theorem. -/
 private theorem transferLeFixedPointsEquiv_smul (hp : p.Prime)
     (h : strictCohomologicalDimensionAt.{u} p G ≤ 2)
     (q : (G ⧸ V) ⧸ W.map (QuotientGroup.mk' V)) (x : Additive (abelianizationProP p G W)) :
-    transferLeFixedPointsEquiv p hVW hV hp h (quotientQuotientContinuousMulEquiv V W hVW hV q • x) =
+    transferLeFixedPointsEquiv p hVW hV hp h (quotientQuotientContinuousMulEquiv V W hVW q • x) =
       q • transferLeFixedPointsEquiv p hVW hV hp h x := by
   induction q using QuotientGroup.induction_on with
   | H γ =>
@@ -399,7 +402,7 @@ private theorem abelianizationProPInfl1_injective_and_range (hp : p.Prime)
   let e := transferLeFixedPointsEquiv p hVW hV hp h
   have he := continuous_transferLeFixedPointsEquiv p hVW hV hp h
   let j := explicitMap1Equiv (G ⧸ W) (Additive (abelianizationProP p G W)) ((G ⧸ V) ⧸ N)
-    (FixedPoints.addSubgroup N M) (quotientQuotientContinuousMulEquiv V W hVW hV) e he.1 he.2
+    (FixedPoints.addSubgroup N M) (quotientQuotientContinuousMulEquiv V W hVW) e he.1 he.2
     (transferLeFixedPointsEquiv_smul p hVW hV hp h)
   -- `i` is inflation after `j`: the two pulled-back cocycles agree at every `g : G`.
   have key (x) : abelianizationProPInfl1 p hVW hV x = explicitInfl1 (G ⧸ V) M N (j x) := by
@@ -422,7 +425,7 @@ private theorem abelianizationProPInfl1_injective_and_range (hp : p.Prime)
             (FixedPoints.addSubgroup N M) _ e.toAddMonoidHom he.1
               (transferLeFixedPointsEquiv_smul p hVW hV hp h) c _)).symm
         rw [AddSubgroup.coe_subtype, AddEquiv.coe_toAddMonoidHom, coe_transferLeFixedPointsEquiv]
-        exact congrArg _ (congrArg _ ((quotientQuotientContinuousMulEquiv_mk V W hVW hV g).trans
+        exact congrArg _ (congrArg _ ((quotientQuotientContinuousMulEquiv_mk V W hVW g).trans
           (QuotientGroup.mapOfLE_mk hVW g).symm).symm)
   -- Inflation is injective with image the kernel of restriction, and `j` is bijective.
   refine ⟨fun x y hxy ↦ j.injective (explicitInfl1_injective _ _ _ (by rw [← key, ← key, hxy])),
@@ -472,7 +475,7 @@ private theorem abelianizationProPInfl2_injective_and_range (hp : p.Prime)
   let e := transferLeFixedPointsEquiv p hVW hV hp h
   have he := continuous_transferLeFixedPointsEquiv p hVW hV hp h
   let j := explicitMap2Equiv (G ⧸ W) (Additive (abelianizationProP p G W)) ((G ⧸ V) ⧸ N)
-    (FixedPoints.addSubgroup N M) (quotientQuotientContinuousMulEquiv V W hVW hV) e he.1 he.2
+    (FixedPoints.addSubgroup N M) (quotientQuotientContinuousMulEquiv V W hVW) e he.1 he.2
     (transferLeFixedPointsEquiv_smul p hVW hV hp h)
   -- `i` is inflation after `j`: the two pulled-back cocycles agree at every pair from `G`.
   have key (x) : abelianizationProPInfl2 p hVW hV x = explicitInfl2 (G ⧸ V) M N (j x) := by
@@ -499,9 +502,9 @@ private theorem abelianizationProPInfl2_injective_and_range (hp : p.Prime)
           rw [AddSubgroup.coe_subtype, AddEquiv.coe_toAddMonoidHom]
           rw [coe_transferLeFixedPointsEquiv]
           exact congrArg _ (congrArg _ (Prod.ext
-            ((quotientQuotientContinuousMulEquiv_mk V W hVW hV g).trans
+            ((quotientQuotientContinuousMulEquiv_mk V W hVW g).trans
               (QuotientGroup.mapOfLE_mk hVW g).symm).symm
-            ((quotientQuotientContinuousMulEquiv_mk V W hVW hV g').trans
+            ((quotientQuotientContinuousMulEquiv_mk V W hVW g').trans
               (QuotientGroup.mapOfLE_mk hVW g').symm).symm))
   -- Inflation is injective with image the kernel of restriction when `H¹(N, M)` vanishes, and
   -- `j` is bijective.

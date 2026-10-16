@@ -64,6 +64,7 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
   `[U^(f) : U^(f+k)] = p ^ k` for `f ≥ 1`.
 * `TauCeti.exists_mem_unitsPrincipal_and_notMem_succ`: every unit other than `1` has an exact
   level.
+* `TauCeti.neg_one_notMem_unitsPrincipal`: `-1 ∉ U^(f)` once `p ^ f > 2`.
 * `TauCeti.neg_one_mem_unitsPrincipal_two_iff`, `TauCeti.neg_mem_unitsPrincipal_two_two_iff`:
   in `ℤ_2ˣ`, `-1 ∉ U^(f)` for `f ≥ 2`, and `u ≡ ±1 mod 4` with exactly one sign;
   `TauCeti.inv_mul_mem_unitsPrincipal_two_succ`: two dyadic units of the same exact level are
@@ -284,6 +285,13 @@ theorem neg_one_mem_unitsPrincipal_two_iff {f : ℕ} :
     one_add_one_eq_two, dvd_neg,
     ← pow_dvd_pow_iff (by norm_num : (2 : ℤ_[2]) ≠ 0) PadicInt.p_nonunit (n := f) (m := 1),
     pow_one]
+
+/-- `-1 ∉ U^(f)` once `p ^ f > 2`: then `-1 ≢ 1 mod p ^ f`. -/
+theorem neg_one_notMem_unitsPrincipal {f : ℕ} (h : 2 < p ^ f) :
+    (-1 : ℤ_[p]ˣ) ∉ unitsPrincipal p f := by
+  have : Fact (2 < p ^ f) := ⟨h⟩
+  rw [mem_unitsPrincipal_iff_toZModPow, Units.val_neg, Units.val_one, map_neg, map_one]
+  exact ZMod.neg_one_ne_one
 
 /-- `U^(2) = 1 + 4ℤ_2` has index `2` in `ℤ_2ˣ` and does not contain `-1`, so a dyadic unit `u`
 lies outside `1 + 4ℤ_2` iff `-u` lies inside: `u ≡ 1` or `u ≡ -1 mod 4`, and not both. -/

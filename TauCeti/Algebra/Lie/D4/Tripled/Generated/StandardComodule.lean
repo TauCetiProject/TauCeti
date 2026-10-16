@@ -93,12 +93,12 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (g : Matrix.GeneralLinearGroup (Fin 24) B))
     (baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap R B i q)
   have hcoe := coe_baseChangePointsMulEquiv_apply R B
-    ((CommHopfAlgCat.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap R i)).app B q)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap R i)).app B q)
   rw [hcoe] at h
   -- The functor component uses an indexed presentation of the same algebra-valued points.
   erw [← mapPointsFunctor_coordinateMap_app, GeneralLinear.pointsMulEquiv_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   exact h
 
 /-- The standard right comodule of the generated tripled type-D₄ subgroup. -/

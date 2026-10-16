@@ -82,6 +82,9 @@ completeness.
   has the same value as the barycenter problem.
 * `TauCeti.WassersteinSpace.exists_isFrechetBarycenter_sum_smul_dirac` — on a proper space, every
   law `∑ j, w j • δ_{μ j}` on `P_p(X)` has a Fréchet barycenter.
+* `TauCeti.WassersteinSpace.exists_ae_isFrechetBarycenter_sum_smul_dirac` — conversely, every such
+  barycenter is the first marginal of a joint law with a multi-coupling of the laws `μ j`, under
+  which almost every point is a pointwise barycenter of its configuration.
 * `TauCeti.sum_mul_wassersteinEDist_sq_map_le` — the barycentric cost of the weighted mean of a
   multi-coupling is at most its multi-marginal cost.
 * `TauCeti.exists_isMultiCoupling_lintegral_add_wassersteinEDist_sq_le` — every probability law
@@ -347,27 +350,17 @@ theorem isFrechetBarycenter_two_iff_exists_isMinOn_lintegral_map_eq (hw : ∑ i,
           {γ' | Measure.IsMultiCoupling γ' (fun i ↦ ((μ i : ProbabilityMeasure E) : Measure E))}
           γ ∧
         γ.map (fun x ↦ ∑ j, (w j : ℝ) • x j) = ((ν : ProbabilityMeasure E) : Measure E) := by
-  set μ' := fun i ↦ ((μ i : ProbabilityMeasure E) : Measure E)
-  have hd : Measurable fun z : E × E ↦ edist z.1 z.2 := measurable_edist
-  have hfin := WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (w := w) μ ν
-  rw [WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn ENNReal.ofNat_ne_top μ ν,
-    isMinOn_univ_iff]
-  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] at hfin ⊢
-  refine ⟨fun h ↦ ?_, fun ⟨γ, hγ, hmin, hγν⟩ z ↦ ?_⟩
-  · -- A competitor of finite cost has finite second moment, so it is a point of `P₂ (E)`.
-    refine exists_isMinOn_lintegral_map_eq hw
-      (isMinOn_iff.2 fun ν' (hν' : IsProbabilityMeasure ν') ↦ ?_) hfin
-    by_cases htop : ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 ν' (μ' i) ^ 2 = ∞
-    · exact htop ▸ le_top
-    obtain ⟨i₀, -, hi₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
-    have hmom := hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top hd (Finset.mem_univ i₀)
-      (ENNReal.coe_ne_zero.2 hi₀) (μ i₀).hasFiniteMoment two_pos
-      (by simpa only [ENNReal.rpow_two] using htop)
-    have hc : ((WassersteinSpace.mk ⟨ν', hν'⟩ hmom : ProbabilityMeasure E) : Measure E) = ν' :=
-      congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
-    have hz := h (WassersteinSpace.mk ⟨ν', hν'⟩ hmom)
-    rwa [hc] at hz
-  · have hmin' := isMinOn_sum_mul_wassersteinEDist_sq_map hw hγ hmin
+  refine ⟨fun h ↦ ?_, fun ⟨γ, hγ, hmin, hγν⟩ ↦ ?_⟩
+  · have hfin := WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (w := w) μ ν
+    have hmin := WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter
+      ENNReal.ofNat_ne_top hw h
+    simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] at hfin hmin
+    exact exists_isMinOn_lintegral_map_eq hw hmin hfin
+  · rw [WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn ENNReal.ofNat_ne_top μ ν,
+      isMinOn_univ_iff]
+    intro z
+    simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat]
+    have hmin' := isMinOn_sum_mul_wassersteinEDist_sq_map hw hγ hmin
     rw [hγν] at hmin'
     exact isMinOn_iff.1 hmin' ((z : ProbabilityMeasure E) : Measure E)
       (inferInstance : IsProbabilityMeasure ((z : ProbabilityMeasure E) : Measure E))
@@ -508,6 +501,57 @@ theorem WassersteinSpace.exists_isFrechetBarycenter_sum_smul_dirac [Fact (1 ≤ 
   simp only [hνc]
   exact isMinOn_iff.1 hνmin _
     (inferInstance : IsProbabilityMeasure ((z : ProbabilityMeasure X) : Measure X))
+
+/-- **Every Wasserstein barycenter is a mixture of pointwise barycenters.** On a proper metric
+space, for `1 ≤ p < ∞` and weights summing to `1`, let `ν` be a `p`-Fréchet barycenter in `P_p(X)`
+of the finitely supported law `∑ j, w j • δ_{μ j}`. Then `ν` is the first marginal of a joint law
+`Γ` of a point and a configuration, whose second marginal is a multi-coupling of the laws `μ j`,
+such that for `Γ`-almost every pair `(y, x)` the point `y` is a `p`-Fréchet barycenter of the
+weighted law `∑ j, w j • δ_{x j}`. -/
+theorem WassersteinSpace.exists_ae_isFrechetBarycenter_sum_smul_dirac [Fact (1 ≤ p)]
+    (hp_top : p ≠ ∞) (hw : ∑ j, w j = 1) {μ : J → WassersteinSpace p X}
+    {ν : WassersteinSpace p X} (hν : IsFrechetBarycenter p (∑ j, w j • Measure.dirac (μ j)) ν) :
+    ∃ Γ : Measure (X × (J → X)), Γ.fst = ((ν : ProbabilityMeasure X) : Measure X) ∧
+      Measure.IsMultiCoupling Γ.snd (fun j ↦ ((μ j : ProbabilityMeasure X) : Measure X)) ∧
+      ∀ᵐ q ∂Γ, IsFrechetBarycenter p (∑ j, w j • Measure.dirac (q.2 j)) q.1 := by
+  have hp : 1 ≤ p := Fact.out
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  set μ' := fun j ↦ ((μ j : ProbabilityMeasure X) : Measure X)
+  obtain ⟨Γ, hΓfst, hΓ, hW⟩ :=
+    exists_glue_wassersteinEDist_rpow_eq hp0 hp_top μ' ((ν : ProbabilityMeasure X) : Measure X)
+  refine ⟨Γ, hΓfst, hΓ, ?_⟩
+  -- `f q` is the weighted cost of the point `q.1` against the configuration `q.2`, and `c q.2` is
+  -- its least value over all points.
+  set f : X × (J → X) → ℝ≥0∞ := fun q ↦ ∑ j, (w j : ℝ≥0∞) * edist q.1 (q.2 j) ^ p.toReal
+  set c : (J → X) → ℝ≥0∞ := fun x ↦ ⨅ z, ∑ j, (w j : ℝ≥0∞) * edist z (x j) ^ p.toReal
+  have hc : Continuous c := by
+    have := continuous_iInf_frechetPower_sum_smul_dirac (X := X) hp hp_top hw
+    simpa only [frechetPower_sum_smul_dirac, ENNReal.smul_def, smul_eq_mul] using this
+  have hm (j : J) : Measurable fun q : X × (J → X) ↦ edist q.1 (q.2 j) ^ p.toReal := by
+    fun_prop
+  have hf : Measurable f := Finset.measurable_sum _ fun j _ ↦ (hm j).const_mul _
+  have hcf (q : X × (J → X)) : c q.2 ≤ f q := iInf_le _ q.1
+  -- The weighted cost of `Γ` is the barycentric cost of `ν`, which is finite.
+  have hΓf : ∫⁻ q, f q ∂Γ = ∑ j, (w j : ℝ≥0∞) *
+      wassersteinEDist p ((ν : ProbabilityMeasure X) : Measure X) (μ' j) ^ p.toReal := by
+    simp only [f, hW, ← lintegral_const_mul _ (hm _)]
+    exact lintegral_finsetSum _ fun j _ ↦ (hm j).const_mul _
+  have hfin : ∫⁻ q, f q ∂Γ ≠ ∞ := hΓf ▸ WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top μ ν
+  -- That cost is at most the least multi-marginal cost, attained here by the law of `q.2`.
+  have hle : ∫⁻ q, f q ∂Γ ≤ ∫⁻ q, c q.2 ∂Γ := by
+    have hmin := WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter
+      hp_top hw hν
+    rw [hΓf, ← lintegral_map hc.measurable measurable_snd]
+    refine le_trans ?_ (iInf₂_le (f := fun (γ : Measure (J → X))
+      (_ : Measure.IsMultiCoupling γ μ') ↦ ∫⁻ x, c x ∂γ) Γ.snd hΓ)
+    rw [← iInf_sum_mul_wassersteinEDist_rpow_eq hp hp_top hw μ']
+    exact le_iInf₂ fun ν' hν' ↦ isMinOn_iff.1 hmin ν' hν'
+  -- Hence the weighted cost of `q.1` equals its least value almost everywhere.
+  have hae : (fun q ↦ c q.2) =ᵐ[Γ] f :=
+    ae_eq_of_ae_le_of_lintegral_le (.of_forall hcf) (ne_top_of_le_ne_top hfin
+      (lintegral_mono hcf)) hf.aemeasurable hle
+  filter_upwards [hae] with q hq
+  exact (isFrechetBarycenter_sum_smul_dirac_iff hp0 hp_top).2 hq.symm
 
 end Proper
 

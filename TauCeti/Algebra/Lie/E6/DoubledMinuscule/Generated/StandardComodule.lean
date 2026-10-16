@@ -98,7 +98,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
     matrixWeight R definingIdeal_def i B q
   -- The point functor's component uses the indexed presentation of the same points.
-  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, coe_rootSubgroupPoints]
   exact h
 

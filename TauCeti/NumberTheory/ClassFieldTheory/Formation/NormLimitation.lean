@@ -26,7 +26,10 @@ N_{L/F} = N_{K/F} ∘ N_{L/K},
 
 where `N_{L/K} : A^{V'} → A^V` is the norm between the two top levels
 (`LayerRefinement.topNorm`). Consequently every norm from the larger layer is a norm from the
-smaller one (`LayerRefinement.normSubgroup_le_map`).
+smaller one (`LayerRefinement.normSubgroup_le_map`). The same factorization through the norm
+`Formation.levelNorm` from an intermediate level, which need not be normal, shows that a norm from
+`L` is a norm from every intermediate field `F ⊆ E ⊆ L`
+(`NormalLayer.normSubgroup_le_range_levelNorm`).
 
 The layers `V ◁ G` of the open normal subgroups `V` of `G` all have the ground level `A^G`, the
 level of the ground field. Reading their norm subgroups there gives one family
@@ -66,6 +69,9 @@ abelian layer.
   read in the ground level of a refinement `V' ◁ G`.
 * `TauCeti.ClassFieldTheory.Formation.normSubgroup_mono`: the norm subgroup of `V ◁ G` is monotone
   in `V`.
+* `TauCeti.ClassFieldTheory.NormalLayer.normSubgroup_le_range_levelNorm` and
+  `TauCeti.ClassFieldTheory.Formation.normSubgroup_le_range_levelNorm`: a norm from a layer is a
+  norm from every intermediate level, normal or not.
 * `TauCeti.ClassFieldTheory.ClassFormation.map_normSubgroup_eq_iff`: in a class formation a
   refinement keeps the norm subgroup exactly when it keeps the order of the abelianized Galois
   group.
@@ -104,6 +110,17 @@ theorem norm_apply_coe_eq_explicitCor0Le (x : F.level L.top) :
         (OpenSubgroup.toSubgroup_le.2 L.top_le_ground) (F.levelEquivH0 L.top x) : F.toRep.V) := by
   rw [← F.levelEquivH0_levelNorm L.top_le_ground, ← toAddMonoidHom_norm,
     Formation.levelEquivH0_apply_coe, LinearMap.toAddMonoidHom_coe]
+
+/-- **A norm from a layer is a norm from every intermediate level.** If `V ≤ W ≤ U` for the layer
+`V ◁ U`, then `N_{U/V}(A^V) ⊆ N_{U/W}(A^W)`, the subgroup `W` not being required to be normal in
+`U`: in field notation, for `F ⊆ E ⊆ K` with `K/F` Galois, a norm from `K` is a norm from `E`. -/
+theorem normSubgroup_le_range_levelNorm {W : OpenSubgroup G} (hT : L.top ≤ W)
+    (hW : W ≤ L.ground) : (L.normSubgroup F).toAddSubgroup ≤ (F.levelNorm hW).range := by
+  intro y hy
+  obtain ⟨x, rfl⟩ := (L.mem_normSubgroup F).1 hy
+  refine ⟨F.levelNorm hT x, ?_⟩
+  rw [← AddMonoidHom.comp_apply, ← F.levelNorm_trans, ← toAddMonoidHom_norm,
+    LinearMap.toAddMonoidHom_coe]
 
 end NormalLayer
 
@@ -220,6 +237,29 @@ theorem normSubgroup_top : F.normSubgroup (openNormalSubgroupTop G) = ⊤ := by
     rw [NormalLayer.top_ofOpenNormal, NormalLayer.ground_ofOpenNormal]
     exact OpenSubgroup.toSubgroup_injective (openNormalSubgroupTop_toSubgroup G)
   rw [normSubgroup, NormalLayer.normSubgroup_eq_top_of_top_eq_ground _ F hV, Submodule.comap_top]
+
+/-- **A norm from the layer of `V` is a norm from every open subgroup containing `V`.** For an open
+subgroup `W ≥ V`, not necessarily normal, the norm subgroup of `V ◁ G` lies in the image of the
+norm `N_{G/W} : A^W → A^G`: in field notation, for a finite extension `E/K` inside the Galois
+extension `L/K` cut out by `V`, `N_{L/K}(A_L) ⊆ N_{E/K}(A_E)`. -/
+theorem normSubgroup_le_range_levelNorm {V : OpenNormalSubgroup G} {W : OpenSubgroup G}
+    (h : V.toOpenSubgroup ≤ W) :
+    (F.normSubgroup V).toAddSubgroup ≤ (F.levelNorm (le_top : W ≤ ⊤)).range := by
+  intro a ha
+  have hW : W ≤ (NormalLayer.ofOpenNormal V).ground := by
+    rw [NormalLayer.ground_ofOpenNormal]
+    exact le_top
+  obtain ⟨y, hy⟩ := NormalLayer.normSubgroup_le_range_levelNorm _ F
+    (by rwa [NormalLayer.top_ofOpenNormal]) hW (mem_normSubgroup.1 ha)
+  refine ⟨y, Subtype.ext ?_⟩
+  -- The ground subgroup of `V ◁ G` is `⊤` only propositionally, so the norm from `A^W` to it and
+  -- the norm from `A^W` to `A^G` are compared on the ambient module after substituting.
+  have key : ∀ {U U' : OpenSubgroup G} (_ : U = U') (hU : W ≤ U) (hU' : W ≤ U'),
+      (F.levelNorm hU y : F.toRep.V) = (F.levelNorm hU' y : F.toRep.V) := by
+    rintro U _ rfl hU hU'
+    rfl
+  rw [key (NormalLayer.ground_ofOpenNormal V).symm le_top hW, hy,
+    NormalLayer.groundEquivOfOpenNormal_apply_coe]
 
 end Formation
 

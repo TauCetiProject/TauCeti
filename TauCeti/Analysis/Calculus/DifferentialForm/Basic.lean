@@ -40,6 +40,15 @@ theorem extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin ω s x = extDerivWithin ω t x :=
   extDerivWithin_congr_set' x <| h.filter_mono inf_le_left
 
+/-- Iterating the exterior derivative within a set still depends only on the germ of that set. -/
+theorem extDerivWithin_extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
+    extDerivWithin (extDerivWithin ω s) s x = extDerivWithin (extDerivWithin ω t) t x := by
+  rw [extDerivWithin_congr_set h]
+  apply Filter.EventuallyEq.extDerivWithin_eq
+  · filter_upwards [h.eventuallyEq_nhds.filter_mono nhdsWithin_le_nhds] with y hy
+    exact extDerivWithin_congr_set hy
+  · exact extDerivWithin_congr_set h
+
 end TauCeti
 
 namespace ContinuousLinearMap

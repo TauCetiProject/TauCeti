@@ -123,7 +123,6 @@ theorem subjoinInclusion_injective [DecidableEq (Σ i, A i)] (s : Set I) :
 
 /-- Barycentric coordinates of the join are nonnegative, sum to one, and have at most one
 nonzero coordinate at each index. -/
-@[simp]
 theorem mem_sigmaJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
     x ∈ (standardGeometricComplex (sigmaJoin A)).space ↔
       (∀ v, 0 ≤ x v) ∧ x.sum (fun _ r => r) = 1 ∧

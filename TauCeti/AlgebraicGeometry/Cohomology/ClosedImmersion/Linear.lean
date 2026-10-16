@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.Cohomology.FiniteMorphism
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
 /-!
 # Linear cohomology comparison for closed immersions
@@ -20,6 +22,10 @@ Over a field, this preserves cohomology dimensions and truncated Euler character
 In particular, finite-dimensionality may be proved on an ambient projective scheme and
 transferred to a closed subscheme. These comparisons impose no coherence, Noetherianity,
 or properness assumptions on the schemes or coefficient sheaves.
+
+If the source is finite over the field, the truncated Euler characteristic of the pushed-forward
+structure sheaf is the rank of the source over the field
+(`Scheme.Hom.eulerCharBelow_pushforward_structureSheaf`).
 
 ## References
 
@@ -144,6 +150,32 @@ theorem eulerCharBelow_pushforward (M : X.Modules) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih => simp only [eulerCharBelow_succ, finrank_cohomology_pushforward, ih]
+
+/-- The Euler characteristic of the direct image of the structure sheaf of a scheme finite over
+`k` is its rank over `k`. Here the Euler characteristic may be truncated at any positive degree
+`n + 1`, since all positive cohomology of the finite scheme vanishes. -/
+theorem eulerCharBelow_pushforward_structureSheaf [IsFinite (X ↘ Spec (.of k))]
+    (s : Spec (.of k)) (n : ℕ) :
+    eulerCharBelow k Y ((pushforward f).obj (SheafOfModules.unit X.ringCatSheaf)) (n + 1) =
+      (X ↘ Spec (.of k)).finrank s := by
+  let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+  -- Truncating above degree zero only adds the vanishing positive-degree terms.
+  have hM : eulerCharBelow k X M (n + 1) = eulerCharBelow k X M 1 := by
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      have := subsingleton_cohomology_succ_of_isFinite (X ↘ Spec (.of k)) M n
+      rw [eulerCharBelow_succ, ih, Module.finrank_zero_of_subsingleton (M := Cohomology M (n + 1)),
+        Nat.cast_zero, mul_zero, add_zero]
+  refine (eulerCharBelow_pushforward f k M (n + 1)).trans ?_
+  rw [hM, eulerCharBelow_succ, eulerCharBelow_zero, pow_zero, one_mul, zero_add,
+    finrank_cohomology_zero_eq_finrank_globalSections]
+  let _ : Algebra k Γ(X, ⊤) := (baseRingToGlobalSections k X).toAlgebra
+  have h : algebraMap k Γ(X, ⊤) =
+      ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop).hom :=
+    RingHom.ext fun r ↦ baseRingToGlobalSections_apply k X r
+  rw [Scheme.Hom.finrank_eq_finrank_of_field _ h s]
+  rfl
 
 end Field
 
