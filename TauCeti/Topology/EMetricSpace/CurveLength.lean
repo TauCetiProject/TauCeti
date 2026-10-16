@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
-public import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
+public import TauCeti.Geometry.Euclidean.Volume.Measure
 public import TauCeti.Topology.Connected.HausdorffMeasure
 
 /-!
