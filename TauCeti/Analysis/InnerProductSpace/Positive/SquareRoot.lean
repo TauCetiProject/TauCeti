@@ -27,8 +27,10 @@ polar decomposition.
 * `LinearMap.IsPositive.sqrt_sq`: its square is the original endomorphism.
 * `LinearMap.IsPositive.sqrt_unique`: uniqueness among positive square roots.
 * `LinearMap.operatorAbs`: the modulus `sqrt (A† A)` of a rectangular linear map.
+* `LinearMap.IsPositive.eq_operatorAbs`: uniqueness among positive square roots of `A† A`.
 * `LinearMap.norm_operatorAbs_apply`: `‖|A|x‖ = ‖Ax‖`.
 * `LinearMap.ker_operatorAbs`, `LinearMap.range_operatorAbs`: the kernel and range of the modulus.
+* `LinearMap.operatorAbs_injective_iff`: the modulus is injective exactly when the map is.
 * `LinearMap.commute_operatorAbs_of_commute`: an endomorphism commuting with `A† A` commutes
   with `|A|`.
 * `LinearMap.commute_operatorAbs`: a normal endomorphism commutes with its modulus.
@@ -163,6 +165,12 @@ theorem operatorAbs_sq (A : E →ₗ[𝕜] F) :
     A.operatorAbs ∘ₗ A.operatorAbs = A.adjoint ∘ₗ A :=
   (isPositive_adjoint_comp_self A).sqrt_sq
 
+/-- The modulus is the unique positive endomorphism whose square is the source Gram operator
+`A† A`. -/
+theorem IsPositive.eq_operatorAbs {A : E →ₗ[𝕜] F} {S : E →ₗ[𝕜] E} (hS : S.IsPositive)
+    (h : S ∘ₗ S = A.adjoint ∘ₗ A) : S = A.operatorAbs :=
+  (isPositive_adjoint_comp_self A).sqrt_unique hS h
+
 /-- The modulus and the original map have the same pointwise norms. -/
 @[simp]
 theorem norm_operatorAbs_apply (A : E →ₗ[𝕜] F) (x : E) :
@@ -176,6 +184,12 @@ theorem norm_operatorAbs_apply (A : E →ₗ[𝕜] F) (x : E) :
 @[simp]
 theorem ker_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.ker = A.ker := by
   rw [operatorAbs, (isPositive_adjoint_comp_self A).ker_sqrt, ker_adjoint_comp_self]
+
+/-- The modulus of a map is injective exactly when the map is. -/
+@[simp]
+theorem operatorAbs_injective_iff {A : E →ₗ[𝕜] F} :
+    Function.Injective A.operatorAbs ↔ Function.Injective A := by
+  rw [← ker_eq_bot, ← ker_eq_bot, ker_operatorAbs]
 
 /-- The range of the modulus is the orthogonal complement of the original map's kernel. -/
 @[simp]

@@ -130,7 +130,7 @@ theorem hilbertProductFormula_of_coe_eq_ratCast (a b : Kˣ) {q : ℚ} (hb : (b :
   have hN : 0 < N := Nat.mul_pos (by decide) (Int.natAbs_pos.2
     (mul_ne_zero (Rat.num_ne_zero.2 hq) (Int.natCast_ne_zero.2 q.den_nz)))
   have : NeZero N := ⟨hN.ne'⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) N
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) N
   obtain ⟨s, hs⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap K (SeparableClosure K) b) 2
   have hsq : s ^ 2 = (q : SeparableClosure K) := by rw [hs, hb, map_ratCast]
   refine hilbertProductFormula_of_mem_adjoin a b hs hN.ne' ?_

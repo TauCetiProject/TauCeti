@@ -41,7 +41,7 @@ inclusion is the usual quotient-points homomorphism. -/
 @[simp]
 theorem grpObjPointsMulEquiv_comp_quotientGrpObjInclusion
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H)
-    (X : (CommAlgCat.{u} R)ᵒᵖ) (q : X ⟶ grpObj (quotient H I)) :
+    (X : (CommAlgCat.{u} R)ᵒᵖ) (q : X ⟶ CommHopfAlgCat.grpObj (quotient H I)) :
     grpObjPointsMulEquiv H X (q ≫ quotientGrpObjInclusion H I) =
       quotientPointsHom H I X.unop (grpObjPointsMulEquiv (quotient H I) X q) := by
   rw [quotientGrpObjInclusion_def]

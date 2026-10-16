@@ -89,4 +89,13 @@ abbrev galoisClassModuleExtension :
     (quotientGaloisSubgroupEquiv K L j) (fun q x ↦ by
       rw [galoisClassModuleAction_smul, ContinuousMulEquiv.symm_apply_apply])
 
+/-- The arithmetic class-module extension projects a class of an absolute Galois
+automorphism to its restriction to the embedded finite extension. -/
+theorem galoisClassModuleExtension_rightHom_mk (s : AbsoluteGaloisGroup K) :
+    let := galoisClassModuleAction p K L j
+    (galoisClassModuleExtension p K L j).toGroupExtension.rightHom (QuotientGroup.mk s) =
+      j.restrictNormalHom s := by
+  let := galoisClassModuleAction p K L j
+  simp [galoisClassModuleExtension, abelianizationProPExtension_rightHom]
+
 end TauCeti

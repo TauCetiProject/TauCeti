@@ -175,7 +175,7 @@ private theorem exists_isMinimal_smul_valuation (v : HeightOneSpectrum O)
     rw [obstructionExponentAt_smul] at h0
     omega
   have hu : v.valuation K D.u = WithZero.exp (-obstructionExponentAt O v W) := by
-    rw [Valuation.valuation_eq_exp_neg_ord _ D.u.ne_zero, hord]
+    rw [Valuation.valuation_eq_exp_neg_ord _ ((v.valuation K).ne_zero_iff.mpr D.u.ne_zero), hord]
   have hf := obstructionExponentAt_nonneg_of_isIntegral O v W
   obtain ⟨u₀, hu₀⟩ := hv.exists_of_le_one (r := (D.u : K)) (by
     rw [hu, ← WithZero.exp_zero, WithZero.exp_le_exp]; omega)
@@ -326,7 +326,7 @@ private theorem ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq
     FractionalIdeal.coeIdeal_ne_zero.2 (weierstrassDefectIdeal_ne_bot O W)
   have hu₀ : u ≠ 0 := by
     rintro rfl
-    exact hJ (by rw [hu, FractionalIdeal.spanSingleton_zero, zero_mul])
+    exact hJ (by rw [hu, map_zero (FractionalIdeal.spanSingleton _), zero_mul])
   -- Comparing multiplicities: `fᵥ(W) = ord_v u + [v = v₀]`.
   have hcount (v : HeightOneSpectrum O) : obstructionExponentAt O v W =
       (v.valuation K).ord u + if v₀ = v then 1 else 0 := by
@@ -363,7 +363,8 @@ theorem exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq
     have := hDmin v₀
     obtain ⟨hr, hs, ht⟩ := hrst v₀
     refine isIntegral_smul_of_valuation_sub_le v₀ W C (D v₀) ?_ ?_ ?_ ?_
-    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _ hu₀, hord₀,
+    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _
+        ((v₀.valuation K).ne_zero_iff.mpr hu₀), hord₀,
         WithZero.exp_le_exp]
       omega
     · rw [hDu]; exact hr
@@ -372,7 +373,8 @@ theorem exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq
   · have := hDmin v
     obtain ⟨hr, hs, ht⟩ := hrst v
     refine isMinimal_smul_of_valuation_sub_le v W C (D v) ?_ ?_ ?_ ?_
-    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _ hu₀, hord v hv]
+    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _
+        ((v.valuation K).ne_zero_iff.mpr hu₀), hord v hv]
     · rw [hDu]; exact hr
     · rw [hDu]; exact hs
     · rw [hDu]; exact ht

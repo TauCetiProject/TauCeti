@@ -185,7 +185,8 @@ theorem finiteComponent_eq_one_of_mem_unitFiltration (χ : HeckeCharacter K)
     {v : HeightOneSpectrum (𝓞 K)} {u : (v.adicCompletion K)ˣ}
     (hu : u ∈ TauCeti.unitFiltration (v.adicCompletion K) (χ.conductorExponent v)) :
     χ.finiteComponent v u = 1 :=
-  Nat.sInf_mem (χ.exists_finiteComponent_eq_one v) u hu
+  Nat.sInf_mem (s := {n | ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
+    χ.finiteComponent v u = 1}) (χ.exists_finiteComponent_eq_one v) u hu
 
 /-- **The characterizing property of the conductor exponent**: `a_v(χ) ≤ n` exactly when the
 component of `χ` at `v` is trivial on `U(K_v, n)`. -/

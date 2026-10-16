@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 
 /-!
 # The exterior derivative squares to zero
@@ -48,13 +47,9 @@ theorem mextDerivWithin_mextDerivWithin (φ : RoughForm I M F k) {s : Set M}
     mextDerivWithin (mextDerivWithin φ s) s x = 0 := by
   let t : Set E := (extChartAt I x).symm ⁻¹' s ∩ range I
   let a : Set E := (extChartAt I x).symm ⁻¹' s ∩ (extChartAt I x).target
-  have hdiff {y : M} (hy : y ∈ s) :=
-    (φ.contDiffWithinAt_inChartAt (hφ y hy)).differentiableWithinAt (by norm_num)
   have heq : RoughForm.inChartAt (I := I) (mextDerivWithin φ s) x =ᶠ[𝓝[t] (extChartAt I x x)]
-      extDerivWithin (φ.inChartAt x) t := by
-    filter_upwards [nhdsWithin_mono _ inter_subset_right
-      (extChartAt_target_mem_nhdsWithin (I := I) x), self_mem_nhdsWithin] with z hz hzt
-    exact φ.inChartAt_mextDerivWithin hs hz hzt.1 (hsc hzt.1) (hdiff hzt.1)
+      extDerivWithin (φ.inChartAt x) t :=
+    φ.inChartAt_mextDerivWithin_eventuallyEq (hφ.of_le (by norm_num)) hs hsc x
   have hpoint : RoughForm.inChartAt (I := I) (mextDerivWithin φ s) x (extChartAt I x x) =
       extDerivWithin (φ.inChartAt x) t (extChartAt I x x) :=
     heq.self_of_nhdsWithin ⟨by simpa only [mem_preimage, extChartAt_to_inv] using hx,

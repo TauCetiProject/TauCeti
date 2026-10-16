@@ -108,7 +108,9 @@ theorem torsion_curveX3SubXAddOne_eq_bot :
       curveX3SubXAddOne.card_nsmul_reductionHom_baseChange_eq_zero w 5 hw P) hP
 
 /-- The rational point group of `y² = x³ - x + 1` is torsion-free. -/
-instance : IsAddTorsionFree (curveX3SubXAddOne.baseChange ℚ).toAffine.Point :=
-  AddCommGroup.isAddTorsionFree_iff_torsion_eq_bot.mpr torsion_curveX3SubXAddOne_eq_bot
+instance : HasUniqueDiv (curveX3SubXAddOne.baseChange ℚ).toAffine.Point where
+  nsmul_right_injective _ hn a b h :=
+    (AddCommGroup.isAddTorsionFree_iff_torsion_eq_bot.mpr
+      torsion_curveX3SubXAddOne_eq_bot).eq_of_nsmul_eq_nsmul_of_addCommute hn (.all a b) h
 
 end TauCeti.WorkedExamples

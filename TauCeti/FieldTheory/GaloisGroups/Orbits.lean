@@ -279,7 +279,7 @@ theorem irreducible_map_iff_isPretransitive_fixingSubgroup [Normal F E]
     (by rwa [natDegree_map]), ← isPretransitive_algEquiv_rootSet_iff_gal]
   -- The roots of `p` over `F` and over `K` are the same subset of `E`.
   let g : p.rootSet E ≃ (p.map (algebraMap F K)).rootSet E :=
-    Equiv.subtypeEquivProp (rootSet_map E K p).symm
+    Equiv.subtypeEquivProp (congrArg (fun s x ↦ x ∈ s) (rootSet_map E K p).symm)
   -- `fixingSubgroupEquiv` preserves the underlying function of an automorphism, and `g`
   -- preserves the underlying root, so both sides of equivariance reduce to `⟨σ x, _⟩`.
   exact (MulAction.isPretransitive_congr (φ := K.fixingSubgroupEquiv)
@@ -400,7 +400,7 @@ theorem _root_.Polynomial.Gal.galActionAux_isPretransitive (hp : Irreducible p) 
 
 /-- The roots of an irreducible polynomial in its splitting field are identified with the orbit
 of a chosen root, preserving the underlying field element. -/
-def rootSetEquivOrbit (hp : Irreducible p) {α : p.SplittingField}
+noncomputable def rootSetEquivOrbit (hp : Irreducible p) {α : p.SplittingField}
     (hα : α ∈ p.rootSet p.SplittingField) : p.rootSet p.SplittingField ≃ MulAction.orbit p.Gal α :=
   Set.equivOfEq (by
     ext β
@@ -438,7 +438,7 @@ theorem rootSetEquivOrbit_smul (hp : Irreducible p) {α : p.SplittingField}
   rfl
 
 /-- The root-to-orbit identification as an equivariant map. -/
-def rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
+noncomputable def rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
     (hα : α ∈ p.rootSet p.SplittingField) :
     p.rootSet p.SplittingField →[p.Gal] MulAction.orbit p.Gal α :=
   { toFun := rootSetEquivOrbit hp hα

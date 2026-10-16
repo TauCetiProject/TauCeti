@@ -67,6 +67,10 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
   `E[n]` is the inverse image `[n]⁻¹[0]` of the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_torsion_hom`: `E[n]` is
   locally of finite presentation over `S`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.subschemeι_ker_torsionι_left_structureMap`: the
+  closed subscheme of the ideal sheaf of `E[n]` is `E[n]` over `S`, so it is locally of finite
+  presentation over `S` as well
+  (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_ker_torsionι_left`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap`: the `n`-torsion commutes
   with base change.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap_torsionι` and
@@ -106,7 +110,7 @@ noncomputable def torsion : Grp (Over S) :=
 /-- **The `n`-torsion is the kernel of the endomorphism `n`.** The `n`-torsion of `E` is the kernel
 of the image in `Grp (Over S)` of the integer `n` of the endomorphism ring `End E.toCommGrp`. -/
 theorem torsion_eq_kernel :
-    E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp)) := by
+    E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp).asHom) := by
   rw [torsion, GroupScheme.torsion_eq_kernel]
 
 /-- The inclusion `E[n] ⟶ E` of the `n`-torsion of `E`, a morphism of `Over S`. -/
@@ -234,12 +238,8 @@ theorem torsionι_left_structureMap :
 
 /-- **The `n`-torsion is a closed subscheme.** The inclusion `E[n] ⟶ E` is a closed immersion,
 being the base change of the zero section of the separated morphism `E ⟶ S`. -/
-instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).left := by
-  have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
-    rw [zero_comp_structureMap]
-    infer_instance
-  have : IsClosedImmersion E.zero := .of_comp E.zero E.structureMap
-  exact MorphismProperty.of_isPullback (E.isPullback_torsion n).flip this
+instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).left :=
+  MorphismProperty.of_isPullback (E.isPullback_torsion n).flip E.isClosedImmersion_zero
 
 /-- **`E[n]` is the inverse image of the zero section under `[n]`**: the ideal sheaf of the closed
 subscheme `E[n]` of `E` is the inverse image along `[n]` of the ideal sheaf of the zero section. -/
@@ -258,6 +258,19 @@ instance isProper_torsion_hom : IsProper (E.torsion n).X.hom := by
 instance locallyOfFinitePresentation_torsion_hom :
     LocallyOfFinitePresentation (E.torsion n).X.hom :=
   MorphismProperty.of_isPullback (E.isPullback_torsion n) inferInstance
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is `E[n]` over `S`. -/
+theorem subschemeι_ker_torsionι_left_structureMap :
+    (E.torsionι n).left.ker.subschemeι ≫ E.structureMap =
+      inv (E.torsionι n).left.toImage ≫ (E.torsion n).X.hom := by
+  rw [IsIso.eq_inv_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, torsionι_left_structureMap]
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is locally of finite presentation over
+`S`. -/
+instance locallyOfFinitePresentation_ker_torsionι_left :
+    LocallyOfFinitePresentation ((E.torsionι n).left.ker.subschemeι ≫ E.structureMap) := by
+  rw [subschemeι_ker_torsionι_left_structureMap]
+  infer_instance
 
 /-! ### Base change -/
 
@@ -329,6 +342,50 @@ theorem ker_torsionι_left_of_isPullback :
   Scheme.IdealSheafData.ker_eq_comap_of_isPullback _ (isPullback_torsionMap_torsionι n hg h0).flip
 
 end BaseChange
+
+/-! ### The universal point of `E[N]` -/
+
+section UniversalPoint
+
+variable (N : ℕ) [NeZero N]
+
+/-- **The universal point of `E[N]`.** The homomorphism `ℤ/Nℤ →* E(E[N])` sending `a` to `aP`,
+where `P` is the inclusion of `E[N]` into `E`, viewed as a point of `E` with values in `E[N]`.
+Every homomorphism `ℤ/Nℤ →* E(Z)`, for `Z` over `S`, factors uniquely through it
+(`existsUnique_comp_torsionPointHom`). -/
+noncomputable def torsionPointHom : Multiplicative (ZMod N) →*
+    ((E.torsion N).X ⟶ Over.mk E.structureMap) :=
+  (zmodMonoidHomEquiv N _).symm ⟨E.torsionι N, by rw [← zpow_natCast, torsionι_zpow]⟩
+
+/-- The universal point of `E[N]` sends `a` to `aP`. -/
+@[simp]
+theorem torsionPointHom_ofAdd (a : ZMod N) :
+    E.torsionPointHom N (.ofAdd a) = E.torsionι N ^ a.val :=
+  zmodMonoidHomEquiv_symm_apply _ _
+
+/-- The universal point of `E[N]` sends `1` to the inclusion `P` of `E[N]` into `E`. -/
+theorem torsionPointHom_ofAdd_one : E.torsionPointHom N (.ofAdd 1) = E.torsionι N :=
+  (coe_zmodMonoidHomEquiv_apply _).symm.trans <| by
+    rw [torsionPointHom, Equiv.apply_symm_apply]
+
+/-- **`E[N]` represents homomorphisms from `ℤ/Nℤ`.** Every homomorphism `φ : ℤ/Nℤ →* E(Z)`, for
+`Z` over `S`, is `a ↦ x ≫ torsionPointHom E N a` for a unique point `x` of `E[N]` with values in
+`Z`, namely the point of `E[N]` given by `φ 1`. -/
+theorem existsUnique_comp_torsionPointHom {Z : Over S}
+    (φ : Multiplicative (ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
+    ∃! x : Z ⟶ (E.torsion N).X, ∀ a, x ≫ E.torsionPointHom N a = φ a := by
+  let e := zmodMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).2⟩
+  refine ⟨P, fun a ↦ ?_, fun x hx ↦ torsion_hom_ext ?_⟩
+  · -- write `a = a₁`, so that `φ a = φ 1 ^ a₁`
+    obtain ⟨a₁, rfl⟩ : ∃ a₁ : ZMod N, Multiplicative.ofAdd a₁ = a := ⟨a.toAdd, rfl⟩
+    have hφ := zmodMonoidHomEquiv_symm_apply (e φ) a₁
+    rw [e.symm_apply_apply] at hφ
+    rw [hφ]
+    simp [P, MonObj.comp_pow]
+  · simpa [P, e, -torsionPointHom_ofAdd, torsionPointHom_ofAdd_one] using hx (.ofAdd 1)
+
+end UniversalPoint
 
 /-! ### Pairs of points of `E[N]` -/
 

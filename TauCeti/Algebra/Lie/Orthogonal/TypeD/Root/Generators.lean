@@ -217,8 +217,8 @@ theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_chain {K M : Type*} [CommRing
         Matrix.single (.inr (chainNext n i hi)) (.inr i) 1 := by
     rw [raisingMatrix_of_chain n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The fork raising matrix sends a coordinate basis vector to the alternating pair selected by
@@ -234,8 +234,8 @@ theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_fork {K M : Type*} [CommRing 
         Matrix.single (.inl (forkRight n hn)) (.inr (forkLeft n hn)) 1 := by
     rw [raisingMatrix_of_fork n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- A chain lowering matrix sends a coordinate basis vector to the difference of its two
@@ -251,8 +251,8 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_chain {K M : Type*} [CommRin
         Matrix.single (.inr i) (.inr (chainNext n i hi)) 1 := by
     rw [loweringMatrix_of_chain n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The fork lowering matrix sends a coordinate basis vector to the alternating pair selected by
@@ -268,8 +268,8 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_fork {K M : Type*} [CommRing
         Matrix.single (.inr (forkLeft n hn)) (.inl (forkRight n hn)) 1 := by
     rw [loweringMatrix_of_fork n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The explicit raising matrix is skew-adjoint for the split type-`D` Gram matrix. -/
