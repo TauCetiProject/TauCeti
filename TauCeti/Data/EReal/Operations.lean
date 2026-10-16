@@ -66,10 +66,23 @@ theorem _root_.WithTop.toEReal_coe (r : ℝ) : (r : WithTop ℝ).toEReal = (r : 
 @[simp]
 theorem _root_.WithTop.toEReal_top : (⊤ : WithTop ℝ).toEReal = ⊤ := (rfl)
 
+/-- The inclusion into `EReal` never takes the value `⊥`. -/
+@[simp]
+theorem _root_.WithTop.toEReal_ne_bot (x : WithTop ℝ) : x.toEReal ≠ ⊥ := WithBot.coe_ne_bot
+
 /-- The inclusion into `EReal` preserves and reflects order. -/
 @[simp]
 theorem _root_.WithTop.toEReal_le_toEReal_iff {x y : WithTop ℝ} :
     x.toEReal ≤ y.toEReal ↔ x ≤ y := WithBot.coe_le_coe
+
+/-- The inclusion into `EReal` preserves and reflects strict order. -/
+@[simp]
+theorem _root_.WithTop.toEReal_lt_toEReal_iff {x y : WithTop ℝ} :
+    x.toEReal < y.toEReal ↔ x < y := WithBot.coe_lt_coe
+
+/-- The inclusion from `WithTop ℝ` into `EReal` is injective. -/
+theorem _root_.WithTop.toEReal_injective : Function.Injective WithTop.toEReal :=
+  WithBot.coe_injective
 
 /-- A height maps to `⊤` in `EReal` exactly when it was already `⊤`. -/
 @[simp]
