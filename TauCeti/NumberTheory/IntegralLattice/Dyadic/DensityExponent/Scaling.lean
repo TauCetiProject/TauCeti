@@ -75,10 +75,6 @@ theorem shift_ranks_succ (P : DyadicJordanProfile) (i : ℕ) :
   rw [shift_ranks_eq, ← succEmbedding_apply]
   exact Finsupp.embDomain_apply_self _ _ _
 
-private theorem shift_ranks_embedding (P : DyadicJordanProfile) (i : ℕ) :
-    P.shift.ranks (succEmbedding i) = P.ranks i :=
-  P.shift_ranks_succ i
-
 /-- The shifted profile has a type-I constituent at scale `2 ^ (i + 1)` exactly when the
 original profile has one at scale `2 ^ i`. -/
 @[simp]
@@ -187,7 +183,7 @@ theorem upperCrossExponent_shift (P : DyadicJordanProfile) :
   rw [Finset.sum_map]
   simp_rw [shift_support_filter_lt]
   simp_rw [Finset.sum_map]
-  simp only [shift_ranks_embedding]
+  simp only [succEmbedding_apply, shift_ranks_succ]
   rw [← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl
   intro i hi
@@ -195,7 +191,7 @@ theorem upperCrossExponent_shift (P : DyadicJordanProfile) :
   apply Finset.sum_congr
   · rfl
   · intro j hj
-    rw [succEmbedding_apply, Nat.succ_mul, Nat.add_mul]
+    rw [Nat.succ_mul, Nat.add_mul]
 
 /-- Shifting every scale adds the triangular rank sum to the diagonal term. -/
 theorem diagonalExponent_shift (P : DyadicJordanProfile) :
@@ -205,7 +201,7 @@ theorem diagonalExponent_shift (P : DyadicJordanProfile) :
   rw [Finset.sum_map, ← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl
   intro i hi
-  rw [shift_ranks_embedding]
+  rw [succEmbedding_apply, shift_ranks_succ]
   exact Nat.succ_mul i (P.ranks i * (P.ranks i + 1) / 2)
 
 /-- Cho's exponent `N_M` is invariant under multiplying all dyadic scales by `2`. -/
