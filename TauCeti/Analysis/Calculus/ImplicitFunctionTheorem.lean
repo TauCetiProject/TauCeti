@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Implicit
+public import Mathlib.Analysis.Calculus.ImplicitContDiff
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
@@ -35,14 +35,17 @@ not only at the origin: enough to compare two implicit-function charts smoothly,
 manifold structure on a level set asks for.
 
 Mathlib's `ImplicitFunctionData.contDiffAt_implicitFunction` is a `C^n` implicit function theorem
-for the same data. It is not usable here: it is stated over `[RCLike 𝕜]` and assumes `n ≠ 0`,
+for the same data. It does not cover the complemented-kernel results below: it is stated over
+`[RCLike 𝕜]` and assumes `n ≠ 0`,
 whereas the results below hold over an arbitrary `[NontriviallyNormedField K]` — the generality in
 which the underlying homeomorphism, and its consumer `TauCeti.levelSetChart`, are stated — and for
-every `n : ℕ∞ω`. Consumers that are content with `RCLike` scalars and `n ≠ 0` should prefer
-Mathlib's lemma.
+every `n : ℕ∞ω`. For product domains over `RCLike` scalars, this file strengthens Mathlib's
+pointwise conclusion to smoothness on one open neighbourhood.
 
 ## Main results
 
+* `ContDiff.exists_isOpen_contDiffOn_implicitFunction`: a globally `C^n` equation with invertible
+  partial derivative has an implicit function which is `C^n` on one open neighbourhood.
 * `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_symm_self`: the inverse
   homeomorphism sends `(f a, 0)` back to the base point `a`.
 * `HasStrictFDerivAt.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented`: the
@@ -69,6 +72,57 @@ public section
 
 open Filter Set
 open scoped ContDiff Topology
+
+namespace ContDiff
+
+variable {𝕜 E₁ E₂ F : Type*} [RCLike 𝕜]
+variable [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [CompleteSpace E₁]
+variable [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [CompleteSpace E₂]
+variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- A globally `C^n` equation on a product whose derivative in the second variable is invertible
+has an implicit function which is `C^n` on one open neighbourhood of the base parameter.
+
+Mathlib proves smoothness at the base point. The local inverse used in that proof is smooth on its
+whole open target, so restricting that target to the slice through the equation value gives a
+single neighbourhood on which the implicit function is smooth. This distinction matters at
+infinite regularity, where pointwise smoothness need not provide one neighbourhood valid for all
+finite orders. -/
+theorem exists_isOpen_contDiffOn_implicitFunction {u : E₁ × E₂} {f : E₁ × E₂ → F}
+    {n : ℕ∞ω} (hf : ContDiff 𝕜 n f) (hn : n ≠ 0)
+    (hi : (fderiv 𝕜 f u ∘L ContinuousLinearMap.inr 𝕜 E₁ E₂).IsInvertible) :
+    ∃ U : Set E₁, IsOpen U ∧ u.1 ∈ U ∧
+      ContDiffOn 𝕜 n (hf.contDiffAt.implicitFunction hn hi) U := by
+  let hfu : ContDiffAt 𝕜 n f u := hf.contDiffAt
+  let hstrict := hfu.hasStrictFDerivAt hn
+  let φ := hstrict.implicitFunctionDataOfProdDomain hi
+  let e := φ.hasStrictFDerivAt.toOpenPartialHomeomorph φ.prodFun
+  let U : Set E₁ := (fun x ↦ (f u, x)) ⁻¹' e.target
+  have hU : IsOpen U := e.open_target.preimage (continuous_const.prodMk continuous_id)
+  have huU : u.1 ∈ U := by
+    change (f u, u.1) ∈ e.target
+    simpa only [e, φ, HasStrictFDerivAt.toOpenPartialHomeomorph_coe,
+      ImplicitFunctionData.prodFun_apply,
+      HasStrictFDerivAt.leftFun_implicitFunctionDataOfProdDomain,
+      HasStrictFDerivAt.rightFun_implicitFunctionDataOfProdDomain,
+      HasStrictFDerivAt.pt_implicitFunctionDataOfProdDomain] using
+        e.map_source φ.hasStrictFDerivAt.mem_toOpenPartialHomeomorph_source
+  have hprod : ContDiff 𝕜 n φ.prodFun := by
+    convert hf.prodMk contDiff_fst using 1
+    funext x
+    simp only [ImplicitFunctionData.prodFun_apply, φ,
+      HasStrictFDerivAt.leftFun_implicitFunctionDataOfProdDomain,
+      HasStrictFDerivAt.rightFun_implicitFunctionDataOfProdDomain]
+  have hinv : ContDiffOn 𝕜 n e.symm e.target :=
+    φ.hasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm hprod.contDiffOn
+  refine ⟨U, hU, huU, ?_⟩
+  have hcomp : ContDiffOn 𝕜 n (fun x ↦ (e.symm (f u, x)).2) U :=
+    (hinv.comp (contDiffOn_const.prodMk contDiffOn_id) fun _ hx ↦ hx).snd
+  simpa only [hfu, hstrict, φ, e, U, ContDiffAt.implicitFunction_def,
+    HasStrictFDerivAt.implicitFunctionOfProdDomain_def,
+    ImplicitFunctionData.implicitFunction_def, Function.curry_apply] using hcomp
+
+end ContDiff
 
 namespace ContinuousLinearMap
 
