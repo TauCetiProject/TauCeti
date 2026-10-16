@@ -52,14 +52,14 @@ def classicalRoundTripStageHomeomorph (n : ℕ) :
     (Homeomorph.setCongr (c.range_incl_app_eq_toRelCWComplex_skeletonLT n))
 
 /-- The stage comparison is the original inclusion, read in the corresponding skeleton. -/
-lemma classicalRoundTripStageHomeomorph_apply_coe (n : ℕ) (x : c.F.obj n) :
+@[simp↓] lemma classicalRoundTripStageHomeomorph_apply_coe (n : ℕ) (x : c.F.obj n) :
     letI := c.toRelCWComplex
     (c.classicalRoundTripStageHomeomorph n x : Y) = c.incl.app n x :=
   (rfl)
 
 /-- The inverse stage comparison recovers the point of the original stage with the specified
 image in the target. -/
-lemma classicalRoundTripStageHomeomorph_symm_apply_coe (n : ℕ)
+@[simp↓] lemma classicalRoundTripStageHomeomorph_symm_apply_coe (n : ℕ)
     (x : letI := c.toRelCWComplex; TauCeti.skeletonObj (univ : Set Y) n) :
     letI := c.toRelCWComplex
     c.incl.app n ((c.classicalRoundTripStageHomeomorph n).symm x) = (x : Y) := by
