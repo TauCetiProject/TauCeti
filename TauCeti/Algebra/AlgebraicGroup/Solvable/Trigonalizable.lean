@@ -32,7 +32,7 @@ enters, is not proved here.
 
 ## Main declarations
 
-* `TauCeti.Comodule.exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable` and
+* `Submodule.exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable` and
   `TauCeti.Comodule.hasNonzeroWeightVector_of_basePointsRepresentation_stable`: a nonzero vector
   spanning a point-stable line is a weight vector.
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_pairwise_commute`: commuting point actions produce a
@@ -68,7 +68,7 @@ variable [AddCommGroup M] [Module k M] [Comodule k H M]
 
 /-- A nonzero vector spanning a submodule preserved by every base-valued point lies in a
 group-like weight space. -/
-theorem exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable
+theorem _root_.Submodule.exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable
     [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
     (p : Submodule k M) (v : M) (hv : v ≠ 0) (hspan : p = k ∙ v)
     (hact : ∀ (g : WithConv (H →ₐ[k] k)) {m : M}, m ∈ p →
@@ -94,7 +94,7 @@ theorem hasNonzeroWeightVector_of_basePointsRepresentation_stable
       basePointsRepresentation (R := k) (H := H) M g m ∈ p) :
     HasNonzeroWeightVector k H M := by
   obtain ⟨c, hc⟩ :=
-    exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable p v hv hspan hact
+    p.exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable v hv hspan hact
   exact hasNonzeroWeightVector_iff.mpr
     ⟨v, c.val, hv, c.isGroupLikeElem_val, _root_.GroupLike.mem_weightSpace.mp hc⟩
 

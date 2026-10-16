@@ -34,8 +34,6 @@ which is semisimple, but it is not diagonalizable.
 * `TauCeti.Comodule.iSup_groupLikeWeightSpace_eq_top_of_isSemisimple`: a finite-dimensional
   representation on which the points act by commuting semisimple operators is spanned by its
   weight spaces.
-* `TauCeti.Comodule.isSemisimple_basePointsRepresentation`: a semisimple point acts semisimply on
-  every finite-dimensional representation.
 * `TauCeti.HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint`: a reduced commutative
   affine group whose points are semisimple is diagonalizable.
 * `TauCeti.torusCommHopfAlgProperty_of_isSemisimplePoint`: if it is moreover connected, it is a
@@ -80,8 +78,8 @@ theorem iSup_groupLikeWeightSpace_eq_top_of_isSemisimple [FiniteDimensional k M]
   refine iSup_le fun χ v hv ↦ ?_
   rcases eq_or_ne v 0 with rfl | hv0
   · exact zero_mem _
-  obtain ⟨c, hc⟩ := exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable
-    (k ∙ v) v hv0 rfl fun g m hm ↦ by
+  obtain ⟨c, hc⟩ := (k ∙ v).exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable
+    v hv0 rfl fun g m hm ↦ by
       obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hm
       rw [map_smul, Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp hv g),
         smul_smul]
@@ -89,23 +87,6 @@ theorem iSup_groupLikeWeightSpace_eq_top_of_isSemisimple [FiniteDimensional k M]
   exact Submodule.mem_iSup_of_mem c hc
 
 end WeightSpaces
-
-variable {k : Type u} {H : Type v} {M : Type u}
-variable [Field k] [CommRing H] [HopfAlgebra k H]
-variable [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-
-/-- A semisimple base-valued point acts by a semisimple operator on every finite-dimensional
-comodule. -/
-theorem isSemisimple_basePointsRepresentation {g : WithConv (H →ₐ[k] k)}
-    (hg : HopfAlgebra.IsSemisimplePoint g) :
-    (basePointsRepresentation (R := k) (H := H) M g).IsSemisimple := by
-  refine (LinearEquiv.isSemisimple_iff (f := endOfPoint M g.ofConv) _ (TensorProduct.lid k M)
-    ?_).mp ((HopfAlgebra.isSemisimplePoint_iff_forall_isSemisimple_endOfPoint g).mp hg
-      (FGComoduleCat.of (R := k) (C := H) M))
-  refine TensorProduct.ext' fun a m ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, endOfPoint_tmul,
-    endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-  simp
 
 end Comodule
 
@@ -126,7 +107,7 @@ theorem groupLikeSetSpan_eq_top_of_isSemisimplePoint
   have _ : Module.Finite k N := hNfin
   exact Comodule.iSup_groupLikeWeightSpace_eq_top_of_isSemisimple
     (fun g h _ ↦ (Commute.all g h).map (Comodule.basePointsRepresentation (R := k) (H := H) N))
-    fun g ↦ Comodule.isSemisimple_basePointsRepresentation (hss g)
+    fun g ↦ (hss g).isSemisimple_basePointsRepresentation
 
 end HopfAlgebra
 
