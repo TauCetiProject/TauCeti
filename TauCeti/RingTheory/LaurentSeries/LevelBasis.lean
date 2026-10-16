@@ -27,6 +27,13 @@ level-`d` subfield. Transporting the power basis proves that this subfield has d
 every Puiseux series lies in some level, the Puiseux field is algebraic over `K⸨X⸩` in every
 characteristic.
 
+The actual levels form a lattice of intermediate fields mirroring divisibility: level `n` lies in
+level `m` exactly when `n ∣ m`, the intersection of levels `n` and `m` is level `gcd n m`, their
+compositum is level `lcm n m`, level one is `K⸨X⸩` and the levels exhaust the Puiseux field. For
+the compositum, a Bézout relation writes the parameter `t ^ (1 / lcm n m)` as a product of integer
+powers of `t ^ (1 / n)` and `t ^ (1 / m)`, and the power basis shows that this parameter generates
+its level.
+
 The contraction and decomposition API follows the design proposed in
 [Mathlib PR #42313](https://github.com/leanprover-community/mathlib4/pull/42313).
 
@@ -45,6 +52,10 @@ The contraction and decomposition API follows the design proposed in
 * `TauCeti.puiseuxField.level_finrank`: level `d` has degree `d` over `K⸨X⸩`.
 * `TauCeti.puiseuxField.isAlgebraic_laurentSeries`: every Puiseux series is algebraic over
   `K⸨X⸩`.
+* `TauCeti.puiseuxField.level_le_level_iff`: level `n` lies in level `m` exactly when `n ∣ m`.
+* `TauCeti.puiseuxField.level_inf_level`: levels `n` and `m` intersect in level `gcd n m`.
+* `TauCeti.puiseuxField.level_sup_level`: levels `n` and `m` generate level `lcm n m`.
+* `TauCeti.puiseuxField.iSup_level`: the levels exhaust the Puiseux field.
 -/
 
 public section
@@ -370,5 +381,109 @@ theorem isAlgebraic_laurentSeries (K : Type*) [Field K] :
   have hfx' : levelEmbedding K d f = x := hfx
   rw [hfx'] at hmap
   exact hmap.isAlgebraic
+
+/-- The generator of the level-`d` power basis is the monomial `t ^ (1 / d)`. -/
+theorem coe_levelPowerBasis_gen (K : Type*) [Field K] (d : ℕ+) :
+    (((levelPowerBasis K d).gen : TauCeti.puiseuxField K) : HahnSeries ℚ K) =
+      single (d⁻¹ : ℚ) 1 := by
+  simp
+
+/-- The level parameters are compatible: if `L = e * k`, then `(t ^ (1 / L)) ^ k = t ^ (1 / e)`. -/
+theorem coe_levelPowerBasis_gen_pow (K : Type*) [Field K] {e L : ℕ+} {k : ℕ}
+    (h : (L : ℕ) = e * k) :
+    ((levelPowerBasis K L).gen : TauCeti.puiseuxField K) ^ k = (levelPowerBasis K e).gen := by
+  apply Subtype.ext
+  rw [SubmonoidClass.coe_pow, coe_levelPowerBasis_gen, coe_levelPowerBasis_gen, single_pow,
+    one_pow]
+  have hk : (k : ℚ) ≠ 0 := by
+    have := L.ne_zero
+    rw [h] at this
+    exact_mod_cast right_ne_zero_of_mul this
+  have hL : (L : ℚ) = e * k := by exact_mod_cast h
+  rw [nsmul_eq_mul, hL]
+  field_simp
+
+/-- For `n ∣ m`, level `n` is contained in level `m`. -/
+theorem level_le_level_of_dvd (K : Type*) [Field K] {n m : ℕ+} (h : n ∣ m) :
+    level K n ≤ level K m := fun x hx ↦ by
+  rw [mem_level_iff] at hx ⊢
+  exact range_levelEmbedding_le_of_dvd h hx
+
+/-- Level `n` is contained in level `m` exactly when `n ∣ m`. -/
+@[simp]
+theorem level_le_level_iff (K : Type*) [Field K] {n m : ℕ+} :
+    level K n ≤ level K m ↔ n ∣ m := by
+  refine ⟨fun h ↦ ?_, level_le_level_of_dvd K⟩
+  rw [← range_ramifiedEmbedding_le_iff (R := K)]
+  intro x hx
+  obtain ⟨f, rfl⟩ := (AlgHom.mem_range _).mp hx
+  have hf := h ((mem_level_iff K n (levelEmbedding K n f)).mpr ⟨f, rfl⟩)
+  rwa [mem_level_iff, mem_range_levelEmbedding_iff, coe_levelEmbedding] at hf
+
+/-- Level one is the base field `K⸨X⸩`. -/
+@[simp]
+theorem level_one (K : Type*) [Field K] : level K 1 = ⊥ := by
+  ext x
+  simp only [mem_level_iff, IntermediateField.mem_bot, AlgHom.mem_range, Set.mem_range,
+    algebraMap_laurentSeries_apply]
+
+/-- The intersection of levels `n` and `m` is level `gcd n m`. -/
+@[simp]
+theorem level_inf_level (K : Type*) [Field K] (n m : ℕ+) :
+    level K n ⊓ level K m = level K (n.gcd m) := by
+  ext x
+  rw [IntermediateField.mem_inf]
+  simp only [mem_level_iff, mem_range_levelEmbedding_iff]
+  rw [← Algebra.mem_inf, range_ramifiedEmbedding_inf]
+
+/-- The compositum of levels `n` and `m` is level `lcm n m`. -/
+@[simp]
+theorem level_sup_level (K : Type*) [Field K] (n m : ℕ+) :
+    level K n ⊔ level K m = level K (n.lcm m) := by
+  refine le_antisymm (sup_le (level_le_level_of_dvd K (n.dvd_lcm_left m))
+    (level_le_level_of_dvd K (n.dvd_lcm_right m))) ?_
+  set L := n.lcm m
+  set u : TauCeti.puiseuxField K := ((levelPowerBasis K L).gen : TauCeti.puiseuxField K)
+  -- Write `n = a * g` and `m = b * g` with `g = gcd n m` and `a`, `b` coprime, so that
+  -- `L = n * b = m * a`. Then `u ^ b` and `u ^ a` are the parameters of levels `n` and `m`,
+  -- and a Bézout relation `a * A + b * B = 1` gives `u = (u ^ a) ^ A * (u ^ b) ^ B`.
+  obtain ⟨a, b, hab, hn, hm⟩ := Nat.exists_coprime (n : ℕ) m
+  have hg : 0 < Nat.gcd n m := Nat.gcd_pos_of_pos_left _ n.pos
+  have hLn : (L : ℕ) = n * b := by
+    refine Nat.eq_of_mul_eq_mul_left hg ?_
+    rw [PNat.lcm_coe, Nat.gcd_mul_lcm]
+    calc (n : ℕ) * m = n * (b * Nat.gcd n m) := congrArg _ hm
+      _ = Nat.gcd n m * (n * b) := by ring
+  have hLm : (L : ℕ) = m * a := by
+    rw [hLn]
+    calc (n : ℕ) * b = a * Nat.gcd n m * b := by rw [← hn]
+      _ = b * Nat.gcd n m * a := by ring
+      _ = m * a := by rw [← hm]
+  have hu0 : u ≠ 0 := by
+    intro h
+    apply single_ne_zero (one_ne_zero (α := K)) (a := (L⁻¹ : ℚ))
+    rw [← coe_levelPowerBasis_gen, ← ZeroMemClass.coe_zero (TauCeti.puiseuxField K)]
+    exact congrArg Subtype.val h
+  have hu : u ∈ level K n ⊔ level K m := by
+    have h1 : u = (u ^ a) ^ (a.gcdA b) * (u ^ b) ^ (a.gcdB b) := by
+      rw [← zpow_natCast, ← zpow_natCast, ← zpow_mul, ← zpow_mul, ← zpow_add₀ hu0,
+        ← Nat.gcd_eq_gcd_ab, hab, Nat.cast_one, zpow_one]
+    rw [h1, coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
+    exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.2) _)
+      (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.2) _)
+  intro x hx
+  obtain ⟨f, hf⟩ := (levelPowerBasis K L).exists_eq_aeval' ⟨x, hx⟩
+  have hx' : x = Polynomial.aeval u f := by
+    rw [IntermediateField.aeval_coe, ← hf]
+  rw [hx']
+  exact Algebra.adjoin_le (Set.singleton_subset_iff.mpr hu)
+    (Polynomial.aeval_mem_adjoin_singleton _ _)
+
+/-- The levels exhaust the Puiseux field. -/
+@[simp]
+theorem iSup_level (K : Type*) [Field K] : ⨆ d : ℕ+, level K d = ⊤ := by
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  obtain ⟨d, hd⟩ := exists_mem_range_levelEmbedding x
+  exact le_iSup (level K) d ((mem_level_iff K d x).mpr hd)
 
 end TauCeti.puiseuxField
