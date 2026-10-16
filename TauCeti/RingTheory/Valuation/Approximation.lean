@@ -71,10 +71,11 @@ its value group. This changes neither comparisons nor equivalence of valuations.
 A division ring is needed already here: an `AbsoluteValue` vanishes only at `0`, whereas a
 valuation on a general ring may have nontrivial support. -/
 noncomputable def toRealAbsoluteValue (v : Valuation K ℤᵐ⁰) : AbsoluteValue K ℝ :=
-  @toAbsoluteValue K ℝ ℤᵐ⁰ _ _ _ _ Real.partialOrder (by infer_instance) (by infer_instance) v
+  @toAbsoluteValue K ℝ ℤᵐ⁰ _ _ _ Real.partialOrder (by infer_instance) (by infer_instance) v
     withZeroMulIntToReal
     (fun {_ _} h ↦ withZeroMulIntToReal_monotone h)
     (fun _ ↦ map_eq_zero _)
+    (fun _ ↦ v.zero_iff)
 
 @[simp]
 theorem toRealAbsoluteValue_apply (v : Valuation K ℤᵐ⁰) (x : K) :
