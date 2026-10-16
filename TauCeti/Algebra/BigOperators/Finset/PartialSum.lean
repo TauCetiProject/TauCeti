@@ -107,13 +107,13 @@ theorem prefixSum_smul {R : Type*} [DistribSMul R M] (k : ℕ) (c : R) (x : Fin 
   (map_prefixSum (DistribSMul.toAddMonoidHom M c) k x).symm
 
 /-- Prefix sums are monotone in the tuple for the coordinatewise order. -/
-theorem prefixSum_mono [PartialOrder M] [IsOrderedAddMonoid M] (k : ℕ) {x y : Fin n → M}
+theorem prefixSum_mono [Preorder M] [IsOrderedAddMonoid M] (k : ℕ) {x y : Fin n → M}
     (h : x ≤ y) : prefixSum k x ≤ prefixSum k y :=
   sum_le_sum fun i _ ↦ h i
 
 /-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
 prefix sum of length `k` of `x` is at most that of `y`. -/
-theorem prefixSum_le_of_sum_le [PartialOrder M] [IsOrderedCancelAddMonoid M] {k : ℕ}
+theorem prefixSum_le_of_sum_le [Preorder M] [IsOrderedCancelAddMonoid M] {k : ℕ}
     {x y : Fin n → M} (hsum : ∑ i, x i ≤ ∑ i, y i) (h : ∀ i : Fin n, k ≤ (i : ℕ) → y i ≤ x i) :
     prefixSum k x ≤ prefixSum k y := by
   have htail : ∑ i : Fin n with ¬i.val < k, y i ≤ ∑ i : Fin n with ¬i.val < k, x i :=
