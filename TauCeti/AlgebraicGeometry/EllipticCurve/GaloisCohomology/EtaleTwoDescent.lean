@@ -94,12 +94,6 @@ theorem factorRoot_polynomialY (p : W.toAffine.f.Factors) :
     WeierstrassCurve.a₁_of_isCharNeTwoNF, WeierstrassCurve.a₃_of_isCharNeTwoNF]
   ring
 
-omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
-/-- Invertibility of `2` passes from the ground field to every factor field. -/
-private theorem isUnit_two_factor (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : K)) :
-    IsUnit ((2 : ℕ) : 𝕃 p) := by
-  simpa only [map_natCast] using h2.map (ι p)
-
 /-- Projection of an étale-algebra square class to the power classes of one irreducible factor. -/
 noncomputable def explicitFactor (p : W.toAffine.f.Factors) :
     W.toAffine.M →* powerClassQuotient (𝕃 p)ˣ 2 :=
@@ -211,7 +205,8 @@ def factorTorsionCharacter (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : 
     (W.baseChange (𝕃 p)).TorsionCoeff 2 →+[AbsoluteGaloisGroup (𝕃 p)]
       KummerCoeff (𝕃 p) 2 :=
   (W.baseChange (𝕃 p)).twoTorsionCharacter
-    (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) (isUnit_two_factor W p h2)
+    (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
+    (by simpa only [map_natCast] using h2.map (ι p))
 
 omit [DecidableEq K] in
 /-- `factorTorsionCharacter` is the two-torsion character of the universal root point. -/
@@ -237,7 +232,7 @@ noncomputable def rootwiseKummerClass (p : W.toAffine.f.Factors)
     (h2 : IsUnit ((2 : ℕ) : K)) (P : W.toAffine.Point) :
     H1 (AbsoluteGaloisGroup (𝕃 p)) (KummerCoeff (𝕃 p) 2) :=
   Multiplicative.toAdd
-    (kummerMap (𝕃 p) 2 (isUnit_two_factor W p h2)
+    (kummerMap (𝕃 p) 2 (by simpa only [map_natCast] using h2.map (ι p))
       ((W.baseChange (𝕃 p)).twoDescentUnit
         (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
         (W.toAffine.pointMap (𝕃 p) P)))
@@ -274,7 +269,7 @@ theorem factorCohomologicalMap_kummerMap (p : W.toAffine.f.Factors)
     (h2 : IsUnit ((2 : ℕ) : K)) (P : W.toAffine.Point) :
     factorCohomologicalMap W p τ h2 (W.kummerMap 2 h2 P) =
       rootwiseKummerClass W p h2 P := by
-  let h2p : IsUnit ((2 : ℕ) : 𝕃 p) := isUnit_two_factor W p h2
+  have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
   rw [factorCohomologicalMap_apply, W.torsionRes_kummerMap τ h2 P]
   simpa only [factorTorsionCharacter_def W p h2 h2p, rootwiseKummerClass_def W p h2 h2p] using
     (W.baseChange (𝕃 p)).explicitCoeff1_twoTorsionCharacter_kummerMap
