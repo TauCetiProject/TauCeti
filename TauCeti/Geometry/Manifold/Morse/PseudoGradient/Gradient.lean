@@ -87,6 +87,8 @@ theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
     have hdf : mvfderiv 𝓘(ℝ, E) f y v =
         ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
           φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
+      -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
+      -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
       rw [mvfderiv, ContinuousLinearMap.comp_apply,
         mfderiv_eq_fderiv_comp_of_eqOn φ.mem_maximalAtlas φ.eqOn_quadratic hy
           (φ.differentiableAt_quadratic _)]
