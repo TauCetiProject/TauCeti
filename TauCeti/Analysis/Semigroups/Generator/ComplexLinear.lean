@@ -36,6 +36,8 @@ complex continuous linear map. It does not introduce a parallel complex semigrou
 * `StronglyContinuousSemigroup.mem_complexDomain_iff`: membership agrees with the real domain.
 * `StronglyContinuousSemigroup.complexGenerator`: the real generator bundled as a complex
   `LinearPMap` on the same domain.
+* `StronglyContinuousSemigroup.complexGenerator_commute`: a bounded complex-linear operator
+  commuting with the semigroup preserves the complex generator domain and intertwines its action.
 * `StronglyContinuousSemigroup.dense_complexDomain`: the complex generator domain is dense.
 * `StronglyContinuousSemigroup.isClosed_complexGenerator`: the complex generator is closed.
 * `StronglyContinuousSemigroup.complexGenerator_restrictScalars`: restricting the complex
@@ -194,6 +196,35 @@ theorem complexGenerator_apply (S : StronglyContinuousSemigroup X)
       rw [S.generator_domain]
       exact x.property⟩ :=
   (rfl)
+
+/-- A bounded complex-linear operator commuting with a complex-linear strongly continuous
+semigroup preserves its complex generator domain and intertwines the generator action. -/
+theorem complexGenerator_commute (S : StronglyContinuousSemigroup X)
+    (hS : S.IsComplexLinear) (T : X →L[ℂ] X)
+    (hT : ∀ (s : ℝ≥0) (y : X), S s (T y) = T (S s y))
+    (x : (S.complexGenerator hS).domain) :
+    ∃ hmem : T (x : X) ∈ (S.complexGenerator hS).domain,
+      S.complexGenerator hS ⟨T (x : X), hmem⟩ = T (S.complexGenerator hS x) := by
+  have hxR : (x : X) ∈ S.domain := by
+    rw [← S.mem_complexDomain_iff hS, ← S.complexGenerator_domain hS]
+    exact x.property
+  obtain ⟨hmemR, hcommR⟩ :=
+    S.generator_commute_of_commute (T.restrictScalars ℝ)
+      (fun s y => by
+        simpa only [ContinuousLinearMap.coe_restrictScalars'] using hT s y)
+      ⟨(x : X), hxR⟩
+  have hmemReal : T (x : X) ∈ S.domain := by
+    simpa only [ContinuousLinearMap.coe_restrictScalars'] using hmemR
+  have hmem : T (x : X) ∈ (S.complexGenerator hS).domain := by
+    simpa only [S.complexGenerator_domain hS, S.mem_complexDomain_iff hS] using hmemReal
+  refine ⟨hmem, ?_⟩
+  calc
+    S.complexGenerator hS ⟨T (x : X), hmem⟩ =
+        S.generator ⟨T (x : X), by rw [S.generator_domain]; exact hmemReal⟩ :=
+      S.complexGenerator_apply hS _
+    _ = T (S.generator ⟨(x : X), by rw [S.generator_domain]; exact hxR⟩) := by
+      simpa only [ContinuousLinearMap.coe_restrictScalars'] using hcommR
+    _ = T (S.complexGenerator hS x) := by rw [S.complexGenerator_apply hS x]
 
 /-- The domain of the complex generator is dense. -/
 theorem dense_complexDomain [CompleteSpace X] (S : StronglyContinuousSemigroup X)

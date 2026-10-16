@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Basic
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
+import TauCeti.Geometry.Convex.Cone.Face.Exposed
 
 /-!
 # Homogeneous-coordinate characters of the projective-space fan
@@ -19,7 +20,9 @@ of the standard projective chart `X_k ≠ 0`, with these characters as its coord
 The explicit semigroup equivalence computes the exponent of each ratio by pairing with the
 corresponding ray. It supplies homogeneous coordinates for affine complex points without
 choosing a second lattice basis. The character addition law gives the change of ratios
-`X_j / X_l = (X_j / X_k) * (X_k / X_l)` on overlaps.
+`X_j / X_l = (X_j / X_k) * (X_k / X_l)` on overlaps. The real-linear extension of
+the ratio character cuts out the intersection of two maximal cones, so face localization
+identifies the overlap of the affine charts by the nonvanishing of that ratio.
 
 ## References
 
@@ -77,6 +80,63 @@ theorem mem_dualSemigroup_projectiveSpaceCone (hi : IsIntegralLattice i)
   rw [projectiveSpaceCone_def, mem_dualSemigroup_hull_image]
   simp
 
+/-- A homogeneous ratio is regular on a projective cone whenever its denominator ray is
+omitted. The numerator is allowed to be the denominator, giving the zero character. -/
+theorem projectiveSpaceRatioCharacter_mem_dualSemigroup (hi : IsIntegralLattice i)
+    (j k : Option ι) {S : Set (Option ι)} (hk : k ∉ S) :
+    projectiveSpaceRatioCharacter b j k ∈ dualSemigroup hi (projectiveSpaceCone b i S) := by
+  classical
+  rw [mem_dualSemigroup_projectiveSpaceCone]
+  intro l hl
+  have hlk : k ≠ l := fun h ↦ hk (h ▸ hl)
+  simp only [projectiveSpaceRatioCharacter_apply_generator, hlk, ↓reduceIte, sub_zero]
+  split_ifs <;> norm_num
+
+/-- The real-linear extension of the ratio character cuts out the intersection of the two
+maximal cones. The affine chart of this face is the overlap of the projective charts. -/
+theorem projectiveSpaceCone_inf_ker_ratioCharacter (hi : IsIntegralLattice i)
+    (k l : Option ι) :
+    projectiveSpaceCone b i {k}ᶜ ⊓ PointedCone.ofSubmodule
+      (LinearMap.ker (hi.realCharacter (projectiveSpaceRatioCharacter b l k))) =
+      projectiveSpaceCone b i {k}ᶜ ⊓ projectiveSpaceCone b i {l}ᶜ := by
+  classical
+  let Φ := Fan.projectiveSpace b hi
+  have hk : projectiveSpaceCone b i {k}ᶜ ∈ Φ.cones :=
+    (Fan.mem_projectiveSpace_cones b hi).2 ⟨_, by simp, rfl⟩
+  have hl : projectiveSpaceCone b i {l}ᶜ ∈ Φ.cones :=
+    (Fan.mem_projectiveSpace_cones b hi).2 ⟨_, by simp, rfl⟩
+  have hm := projectiveSpaceRatioCharacter_mem_dualSemigroup b hi l k (S := {k}ᶜ) (by simp)
+  refine PointedCone.inf_ker_eq_of_eq_hull (projectiveSpaceCone_def b _)
+    (Φ.inf_isFaceOf_left hk hl) ?_ ?_
+  · intro x hx
+    apply (mem_dualSemigroup hi _).1 hm
+    rw [projectiveSpaceCone_def]
+    exact PointedCone.subset_hull hx
+  · rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+    have hjk : j ≠ k := by simpa using hj
+    constructor
+    · intro hzero
+      have hjl : j ≠ l := by
+        intro h
+        subst j
+        simp [hi.realCharacter_apply, projectiveSpaceRatioCharacter_apply_generator,
+          Ne.symm hjk] at hzero
+      constructor
+      · rw [projectiveSpaceCone_def]
+        exact PointedCone.subset_hull ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+      · rw [projectiveSpaceCone_def]
+        exact PointedCone.subset_hull ⟨_, ⟨j, by simpa using hjl, rfl⟩, rfl⟩
+    · intro hx
+      have hneg := projectiveSpaceRatioCharacter_mem_dualSemigroup b hi k l (S := {l}ᶜ) (by simp)
+      have h₁ := (mem_dualSemigroup hi _).1 hm hx.1
+      have h₂ := (mem_dualSemigroup hi _).1 hneg hx.2
+      have hsum := projectiveSpaceRatioCharacter_add b l k l
+      rw [projectiveSpaceRatioCharacter_self] at hsum
+      have hneg' : projectiveSpaceRatioCharacter b k l =
+          -projectiveSpaceRatioCharacter b l k := eq_neg_of_add_eq_zero_right hsum
+      rw [hneg', map_neg, LinearMap.neg_apply] at h₂
+      exact le_antisymm (neg_nonneg.mp h₂) h₁
+
 /-- A character is determined by its pairings with all projective-space rays but one. -/
 theorem projectiveSpaceCharacter_ext (k : Option ι) {m m' : N →+ ℤ}
     (h : ∀ j ≠ k, m (projectiveSpaceGenerator b j) = m' (projectiveSpaceGenerator b j)) :
@@ -103,12 +163,7 @@ theorem projectiveSpaceCharacter_ext (k : Option ι) {m m' : N →+ ℤ}
 noncomputable def projectiveSpaceChartCharacter (hi : IsIntegralLattice i) (k : Option ι)
     (j : {j : Option ι // j ≠ k}) : dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ) :=
   ⟨projectiveSpaceRatioCharacter b j k,
-    (mem_dualSemigroup_projectiveSpaceCone b hi _ _).2 fun l hl ↦ by
-      classical
-      have hlk : l ≠ k := by simpa using hl
-      simp only [projectiveSpaceRatioCharacter_apply_generator, Ne.symm hlk, ↓reduceIte,
-        sub_zero]
-      split_ifs <;> norm_num⟩
+    projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j k (by simp)⟩
 
 @[simp]
 theorem coe_projectiveSpaceChartCharacter (hi : IsIntegralLattice i) (k : Option ι)

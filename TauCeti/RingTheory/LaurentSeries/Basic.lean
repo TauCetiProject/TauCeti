@@ -18,7 +18,9 @@ action `HahnSeries.instSMul` found by default.
 
 This file records that the algebra actions form a scalar tower `R → A⟦X⟧ → A⸨X⸩`. This is what
 fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require to extend an
-`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`.
+`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. Over a field `K`, it also records that
+a nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is
+a unit of `K⟦X⟧`.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
@@ -32,7 +34,8 @@ series `φ` of order one over a field and every integer `n`: it is `1` for `n = 
 otherwise. This is the formal statement that the residue is unchanged by the substitution
 `X ↦ φ`. For `n ≠ -1` in characteristic zero, `φ ^ n * φ'` is the derivative of
 `φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when `p ∣ n + 1`, and the proof
-uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
+uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead. By linearity this
+extends to every Laurent series: a substitution `X ↦ φ` preserves the residue of `f(X) dX`.
 
 ## Main results
 
@@ -42,12 +45,16 @@ uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
   structure acts coefficientwise.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action.
+* `TauCeti.LaurentSeries.valuation_eq_exp_neg_order`: a nonzero Laurent series `f` has valuation
+  `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative`: the derivative of Laurent series extends that of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
   `m`, so does `f' - m X⁻¹ f`.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` of order one is `1` if `n = -1` and `0` otherwise.
+* `LaurentSeries.coeff_neg_one_map_mul_derivative`: the residue of `f(φ) φ'` is the residue of
+  `f`, for the substitution `X ↦ φ`.
 
 ## References
 
@@ -77,6 +84,43 @@ theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
     (algebraMap R R⸨X⸩ c * f).coeff n = c * f.coeff n := by
   rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C,
     HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul]
+
+section Valuation
+
+open HahnSeries PowerSeries WithZero
+
+variable {K : Type*} [Field K]
+
+/-- A unit of `K⟦X⟧`, that is a power series of nonzero constant coefficient, has valuation one
+in `K⸨X⸩`. -/
+theorem valuation_coe_of_isUnit {h : K⟦X⟧} (hh : IsUnit h) : Valued.v (h : K⸨X⸩) = 1 :=
+  Valuation.Integers.one_of_isUnit' hh fun g ↦ (_root_.LaurentSeries.val_le_one_iff_eq_coe K _).mpr
+    ⟨g, rfl⟩
+
+/-- The power series part of a nonzero Laurent series is a unit: its constant coefficient is the
+leading coefficient. -/
+theorem isUnit_powerSeriesPart {f : K⸨X⸩} (hf : f ≠ 0) : IsUnit f.powerSeriesPart := by
+  rw [isUnit_iff_constantCoeff, ← coeff_zero_eq_constantCoeff_apply,
+    _root_.LaurentSeries.powerSeriesPart_coeff, Nat.cast_zero, add_zero, isUnit_iff_ne_zero]
+  exact coeff_order_eq_zero.not.mpr hf
+
+/-- A nonzero Laurent series `f` has valuation `exp (-ord f)`. -/
+theorem valuation_eq_exp_neg_order {f : K⸨X⸩} (hf : f ≠ 0) : Valued.v f = exp (-f.order) := by
+  nth_rw 1 [← f.single_order_mul_powerSeriesPart]
+  rw [map_mul, valuation_coe_of_isUnit (isUnit_powerSeriesPart hf), mul_one,
+    _root_.LaurentSeries.valuation_single_zpow]
+
+/-- A nonzero power series `g` has valuation `exp (-ord g)` in `K⸨X⸩`. -/
+theorem valuation_coe {g : K⟦X⟧} (hg : g ≠ 0) :
+    Valued.v (g : K⸨X⸩) = exp (-(g.order.toNat : ℤ)) := by
+  have hu : IsUnit g.divXPowOrder := by
+    rw [isUnit_iff_constantCoeff, isUnit_iff_ne_zero]
+    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hg
+  nth_rw 1 [← X_pow_order_mul_divXPowOrder (f := g)]
+  rw [PowerSeries.coe_mul, map_mul, PowerSeries.coe_pow, _root_.LaurentSeries.valuation_X_pow,
+    valuation_coe_of_isUnit hu, mul_one]
+
+end Valuation
 
 end TauCeti.LaurentSeries
 
@@ -241,3 +285,60 @@ theorem coeff_neg_one_coe_zpow_mul_derivative {k : Type*} [Field k] {φ : k⟦X�
       simp [show Int.negSucc (m + 1) ≠ -1 by omega]
 
 end PowerSeries
+
+namespace LaurentSeries
+
+open HahnSeries
+
+/-- **Residues are invariant under substitution.** Let `ψ` be a ring endomorphism of `K⸨X⸩`
+fixing the constants, sending power series to power series, and sending `X` to a power series `φ`
+of order one, such as the substitution `X ↦ φ`. Then the coefficient of `X⁻¹` in `ψ f * φ'` is
+the coefficient of `X⁻¹` in `f`: the residue of `f(X) dX` equals that of `f(φ) dφ`. -/
+theorem coeff_neg_one_map_mul_derivative {K : Type*} [Field K] (ψ : K⸨X⸩ →+* K⸨X⸩)
+    (hC : ∀ c : K, ψ (C c) = C c)
+    (hψ : ∀ f : K⸨X⸩, Valued.v f ≤ 1 → Valued.v (ψ f) ≤ 1) {φ : K⟦X⟧} (hφ : φ.order = 1)
+    (hX : ψ (single 1 1) = φ) (f : K⸨X⸩) :
+    (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+  -- Both sides vanish on power series.
+  have base (f : K⸨X⸩) (hf : Valued.v f ≤ 1) :
+      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+    obtain ⟨F, rfl⟩ := (val_le_one_iff_eq_coe K f).mp hf
+    obtain ⟨G, hG⟩ := (val_le_one_iff_eq_coe K (ψ F)).mp (hψ F hf)
+    rw [← hG, ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul, PowerSeries.coeff_coe,
+      PowerSeries.coeff_coe]
+    simp
+  -- Both sides agree on monomials, by the residue of `φ ^ j * φ'`.
+  have mono (j : ℤ) (c : K) :
+      (ψ (single j c) * derivative K (φ : K⸨X⸩)).coeff (-1) = (single j c : K⸨X⸩).coeff (-1) := by
+    -- The substitution sends `c X ^ j` to `c φ ^ j`.
+    have h : ψ (single j c) = C c * (φ : K⸨X⸩) ^ j := by
+      rw [← hC, ← hX, ← map_zpow₀, ← map_mul]
+      simp [← RatFunc.single_zpow]
+    rw [h, mul_assoc, C_mul_eq_smul, coeff_smul,
+      PowerSeries.coeff_neg_one_coe_zpow_mul_derivative hφ]
+    simp [coeff_single, eq_comm]
+  -- Induction on the order of the pole.
+  have key (d : ℕ) (f : K⸨X⸩) (hf : Valued.v f ≤ WithZero.exp (d : ℤ)) :
+      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+    induction d generalizing f with
+    | zero => exact base f (by simpa using hf)
+    | succ d ih =>
+      set s : K⸨X⸩ := single (-((d + 1 : ℕ) : ℤ)) (f.coeff (-((d + 1 : ℕ) : ℤ)))
+      have hg : Valued.v (f - s) ≤ WithZero.exp (d : ℤ) := by
+        rw [← neg_neg (d : ℤ), valuation_le_iff_coeff_lt_eq_zero]
+        intro n hn
+        rw [← neg_neg ((d + 1 : ℕ) : ℤ), valuation_le_iff_coeff_lt_eq_zero] at hf
+        rw [coeff_sub]
+        rcases lt_or_eq_of_le (show n ≤ -((d + 1 : ℕ) : ℤ) by omega) with h | rfl
+        · rw [hf n h, coeff_single_of_ne h.ne, sub_zero]
+        · rw [coeff_single_same, sub_self]
+      calc (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1)
+          = (ψ (f - s) * derivative K (φ : K⸨X⸩)).coeff (-1) +
+              (ψ s * derivative K (φ : K⸨X⸩)).coeff (-1) := by
+            rw [map_sub, sub_mul, coeff_sub, sub_add_cancel]
+        _ = f.coeff (-1) := by rw [ih _ hg, mono, coeff_sub, sub_add_cancel]
+  refine key (-f.order).toNat f ?_
+  rw [← neg_neg ((-f.order).toNat : ℤ), valuation_le_iff_coeff_lt_eq_zero]
+  exact fun n hn ↦ coeff_eq_zero_of_lt_order (by omega)
+
+end LaurentSeries

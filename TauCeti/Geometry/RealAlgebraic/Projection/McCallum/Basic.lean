@@ -149,7 +149,7 @@ theorem mcCallumProjection_mono (hF : F ⊆ F') (hB : B ⊆ B') :
 
 namespace IsIrreducibleBasis
 
-variable [IsDomain R] [UniqueFactorizationMonoid R]
+variable [IsDomain R]
 
 /-- **Independence of the basis.** For two irreducible bases `B` and `B'` of the same family,
 every element of the McCallum projection with respect to `B'` is associated to an element of the
@@ -197,7 +197,7 @@ theorem natDegree_map_eq_of_mcCallumProjection
 
 namespace IsIrreducibleBasis
 
-variable [IsDomain R] [UniqueFactorizationMonoid R] [IsDomain A] [IsDomain A']
+variable [IsDomain R] [IsDomain A] [IsDomain A']
 
 /-- If the same elements of the McCallum projection vanish under specializations `φ` and `ψ` into
 domains, then a member of the family is nullified by `φ` exactly when it is nullified by `ψ`. -/
