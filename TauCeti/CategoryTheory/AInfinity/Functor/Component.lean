@@ -134,9 +134,10 @@ theorem isHomogeneous_component {n : ℕ} (X : Fin (n + 1) → C) :
   exact ℱ.component_mem_piece X d f hf
 
 /-- The component of an `A∞` functor in arity one is its map on the corresponding Hom
-module.  The dependent input tuple is written with `Fin.cases` so its endpoints compute without
-any equality casts. -/
+module. -/
 theorem component_one_apply (X Y : C) (f : homModule (R := R) X Y) :
+    -- The dependent input tuple is written with `Fin.cases` so its endpoints compute without
+    -- any equality casts.
     let x := Fin.cases (motive := fun i ↦ homModule (R := R)
       (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ)) f fun i ↦ i.elim0
     ℱ.component ![X, Y] x = ℱ.map X Y f := by
