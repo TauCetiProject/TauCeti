@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LocallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Boundary
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Dimension
-import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
-import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
 # The closed-orbit lemma for projective orbits
@@ -17,11 +15,13 @@ import TauCeti.Topology.KrullDimension.Irreducible
 Let `O` be the orbit of a line `[m]` in the projective space `P(V)` of a finite-dimensional
 representation of an affine group of finite type over an algebraically closed field `k`, that
 is, the full image of the projective orbit morphism. Since `O` is locally closed, its boundary
-`closure O \ O` is closed.
+`closure O \ O` is closed (`TauCeti.Comodule.isClosed_closure_diff_range_projectiveOrbitMap`, in
+`ProjectiveOrbit/LocallyClosed.lean`).
 
-If the spectrum of the coordinate Hopf algebra is irreducible, so is `O`, and `O` is a nonempty
-open part of its irreducible closure; hence `O` and `closure O` have the same Krull dimension and
-the boundary, a proper closed subset of `closure O`, has strictly smaller dimension. The orbit of
+If the spectrum of the coordinate Hopf algebra is irreducible, so is `O`, and the boundary has
+strictly smaller Krull dimension than `O`
+(`TauCeti.Comodule.topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt`, in
+`ProjectiveOrbit/Dimension.lean`). The orbit of
 a line `[m']` in the boundary lies in the boundary
 (`TauCeti.Comodule.closure_range_projectiveOrbitMap_subset_boundary`, in
 `ProjectiveOrbit/Boundary.lean`), so it has strictly smaller dimension than `O`. A nonempty
@@ -35,14 +35,6 @@ Neither smoothness nor reducedness of the group is assumed.
 
 ## Main declarations
 
-* `TauCeti.Comodule.isIrreducible_range_projectiveOrbitMap`: the orbit of a line under an
-  irreducible group is irreducible.
-* `TauCeti.Comodule.isClosed_closure_diff_range_projectiveOrbitMap`: the boundary of an orbit
-  is closed.
-* `TauCeti.Comodule.topologicalKrullDim_closure_range_projectiveOrbitMap`: an orbit and its
-  closure have the same Krull dimension.
-* `TauCeti.Comodule.topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt`: the boundary
-  of an orbit has strictly smaller Krull dimension than the orbit.
 * `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_lt`: the orbit of a line in the
   boundary of `O` has strictly smaller Krull dimension than `O`.
 * `TauCeti.Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem_closure`,
@@ -68,66 +60,13 @@ namespace TauCeti.Comodule
 
 universe u
 
-section CommRing
-
-variable {R H M : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
-  [AddCommMonoid M] [Module R M] [Comodule R H M] [Module.Finite R M] [Module.Projective R M]
-
-/-- The orbit of a line under an affine group with irreducible spectrum is irreducible. -/
-theorem isIrreducible_range_projectiveOrbitMap [IrreducibleSpace (PrimeSpectrum H)]
-    (m : M) (hm : Module.IsUnimodular R m) :
-    IsIrreducible (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  rw [← Set.image_univ]
-  exact (IrreducibleSpace.isIrreducible_univ (PrimeSpectrum H)).image _
-    (projectiveOrbitMap (H := H) m hm).continuous.continuousOn
-
-end CommRing
-
 variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
   [Algebra.FiniteType k H] [AddCommGroup M] [Module k M] [Comodule k H M]
   [Module.Finite k M]
 
-/-- The boundary `closure O \ O` of the orbit `O` of a line is closed, because the orbit is
-locally closed. -/
-theorem isClosed_closure_diff_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodular k m) :
-    IsClosed (closure (Set.range (projectiveOrbitMap (H := H) m hm)) \
-      Set.range (projectiveOrbitMap (H := H) m hm)) :=
-  isOpen_compl_iff.mp (isLocallyClosed_range_projectiveOrbitMap (H := H) m hm).isOpen_coborder
-
-/-- If the spectrum of the group is irreducible, the orbit of a line has the Krull dimension of
-its closure: it is a nonempty open part of its irreducible closure. -/
-theorem topologicalKrullDim_closure_range_projectiveOrbitMap [IrreducibleSpace (PrimeSpectrum H)]
-    (m : M) (hm : Module.IsUnimodular k m) :
-    topologicalKrullDim (closure (Set.range (projectiveOrbitMap (H := H) m hm))) =
-      topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  have hO := isLocallyClosed_range_projectiveOrbitMap (H := H) m hm
-  have h := TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType
-    (SymmetricAlgebra.projToSpec k (Module.Dual k M))
-    (isIrreducible_range_projectiveOrbitMap m hm).closure isClosed_closure hO.isOpen_coborder
-    ⟨_, subset_closure ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩,
-      subset_coborder ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩⟩
-  rwa [Set.inter_comm, coborder_inter_closure, eq_comm] at h
-
-/-- If the spectrum of the group is irreducible, the boundary `closure O \ O` of the orbit `O`
-of a line has strictly smaller Krull dimension than `O`. -/
-theorem topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt
-    [IrreducibleSpace (PrimeSpectrum H)] (m : M) (hm : Module.IsUnimodular k m) :
-    topologicalKrullDim ↥(closure (Set.range (projectiveOrbitMap (H := H) m hm)) \
-        Set.range (projectiveOrbitMap (H := H) m hm)) <
-      topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  have hdim := topologicalKrullDim_closure_range_projectiveOrbitMap (H := H) m hm
-  rw [← hdim]
-  refine (isIrreducible_range_projectiveOrbitMap m hm).closure.topologicalKrullDim_lt
-    (isClosed_closure_diff_range_projectiveOrbitMap m hm)
-    (Set.sdiff_ssubset_left_iff.mpr ?_)
-    (hdim ▸ topologicalKrullDim_range_projectiveOrbitMap_ne_top m hm)
-  exact ⟨_, subset_closure ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩,
-    AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩
-
 /-- **Boundary orbits are smaller.** If the spectrum of the group is irreducible and the line
 `[m']` lies in the boundary `closure O \ O` of the orbit `O` of `[m]`, then the orbit of `[m']`
-has strictly smaller Krull dimension than `O`. The orbit of `[m']` lies in the boundary by
-`closure_range_projectiveOrbitMap_subset_boundary`. -/
+has strictly smaller Krull dimension than `O`. -/
 theorem topologicalKrullDim_range_projectiveOrbitMap_lt [IrreducibleSpace (PrimeSpectrum H)]
     {m m' : M} (hm : Module.IsUnimodular k m) (hm' : Module.IsUnimodular k m')
     (hm'O : projectiveOrbitMap (H := H) m' hm'
@@ -136,6 +75,7 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_lt [IrreducibleSpace (Prime
         Set.range (projectiveOrbitMap (H := H) m hm)) :
     topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m' hm')) <
       topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  -- The orbit of `[m']` lies in the boundary, which is smaller than `O`.
   refine lt_of_le_of_lt ?_ (topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt m hm)
   exact (Topology.IsEmbedding.inclusion (subset_closure.trans
     (closure_range_projectiveOrbitMap_subset_boundary m hm m' hm' hm'O))).isInducing
@@ -178,9 +118,7 @@ theorem isClosed_range_projectiveOrbitMap_of_forall_mem [IrreducibleSpace (Prime
     hmin m' hm' (closure_minimal hmZ hZ h)
 
 /-- **Existence of closed orbits.** If the spectrum of the group is irreducible, the closure of
-the orbit of every line contains a closed orbit of a line. The proof is by induction on the
-Krull dimension of the orbit: a nonclosed orbit has a line in its boundary, and the orbit of
-that line is smaller and lies in the boundary. -/
+the orbit of every line contains a closed orbit of a line. -/
 theorem exists_isClosed_range_projectiveOrbitMap_subset_closure
     [IrreducibleSpace (PrimeSpectrum H)] (m : M) (hm : Module.IsUnimodular k m) :
     ∃ (m' : M) (hm' : Module.IsUnimodular k m'),
@@ -189,6 +127,8 @@ theorem exists_isClosed_range_projectiveOrbitMap_subset_closure
           closure (Set.range (projectiveOrbitMap (H := H) m hm)) := by
   obtain ⟨d, hd⟩ : ∃ d, topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) = d :=
     ⟨_, rfl⟩
+  -- Induction on the Krull dimension of the orbit: a nonclosed orbit has a line in its boundary,
+  -- and the orbit of that line is smaller and lies in the boundary.
   induction d using WellFoundedLT.induction generalizing m with
   | ind d ih =>
   by_cases hclosed : IsClosed (Set.range (projectiveOrbitMap (H := H) m hm))
