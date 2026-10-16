@@ -11,7 +11,7 @@ public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
 public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
 public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.AlgebraicTopology.SimplexCategory.Subinterval
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 

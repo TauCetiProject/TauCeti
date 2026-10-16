@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.Monoidal
-public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Cochain
 public import TauCeti.AlgebraicTopology.SimplicialSet.AlexanderWhitney
 
 /-!
