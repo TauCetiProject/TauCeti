@@ -312,6 +312,13 @@ protected noncomputable def id (𝒞 : AInfinityCategory R C) : AInfinityFunctor
 @[simp]
 theorem id_obj (𝒞 : AInfinityCategory R C) (X : C) : (AInfinityFunctor.id 𝒞).obj X = X := (rfl)
 
+/-- The `A∞` morphism of total algebras of the identity `A∞` functor is the strict morphism of the
+identity strict functor, so its components above arity one vanish. -/
+@[simp]
+theorem id_toAInfinityHom (𝒞 : AInfinityCategory R C) :
+    (AInfinityFunctor.id 𝒞).toAInfinityHom =
+      (AInfinityStrictFunctor.id 𝒞).totalHom.toAInfinityHom := (rfl)
+
 @[simp]
 theorem id_map (𝒞 : AInfinityCategory R C) (X Y : C) :
     (AInfinityFunctor.id 𝒞).map X Y = LinearMap.id :=

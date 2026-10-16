@@ -229,8 +229,10 @@ to zero.
 
 The operations of an `A∞` category on `C` are the path-compatible operations along `id`, and the
 components of an `A∞` functor are path-compatible along its object map.  Since a multilinear map on
-a direct sum is determined by its values on the summands, a path-compatible operation is
-determined by its values on composable strings. -/
+a direct sum is determined by its values on the summands, a path-compatible operation of positive
+arity is determined by its values on composable strings (`IsPathCompatible.ext`).  In arity zero
+there may be no composable string to constrain the operation: when `C` is empty, every nullary
+operation is path-compatible. -/
 structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] (φ : C → C')
     {n : ℕ} (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')) : Prop where
   /-- A composable string is sent to a morphism between the images of the endpoints of the
