@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticOrder.Product
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -14,7 +15,8 @@ import Mathlib.Tactic.Ring
 # Explicit lattices over the split product order
 
 The lattice `sℤ × 0 + ℤ(c, 1)` is a module over the actual congruence product order.
-When `c` is coprime to `s`, multiplication of these modules multiplies `c` modulo `s`.
+When `s`, `c`, and `d` are jointly coprime, multiplication of the modules with coefficients
+`c` and `d` gives the module with coefficient `c * d`.
 Equality is exactly congruence of the coefficients modulo `s`, and coprime coefficients
 give invertible modules.
 
@@ -106,8 +108,9 @@ theorem mem_splitModule_iff_exists (s c : ℤ) (z : ℤ × ℤ) :
   · rintro ⟨r, rfl⟩
     exact (mem_productSubalgebra s (r : ℤ × ℤ)).mp r.property
 
-/-- Multiplication of actual product-order modules multiplies their congruence coefficients. -/
-@[simp] theorem splitModule_mul (s c d : ℤ) (hc : IsCoprime s c) :
+/-- Joint coprimality of the modulus and both coefficients makes multiplication of the actual
+product-order modules multiply their congruence coefficients. -/
+@[simp] theorem splitModule_mul (s c d : ℤ) (hcd : IsCoprime s (Int.gcd c d)) :
     splitModule s c * splitModule s d = splitModule s (c * d) := by
   apply le_antisymm
   · apply Submodule.mul_le.mpr
@@ -121,16 +124,22 @@ theorem mem_splitModule_iff_exists (s c : ℤ) (z : ℤ × ℤ) :
   · intro z hz
     obtain ⟨x, y, rfl⟩ := (mem_splitModule_iff_exists s (c * d) z).mp hz
     have hfirst : (s, 0) ∈ splitModule s c * splitModule s d := by
-      obtain ⟨u, v, huv⟩ := hc
+      -- Bézout combines the generators with first coordinates s², sc, and sd.
+      obtain ⟨u, v, huv⟩ := hcd
+      rw [Int.gcd_eq_gcd_ab] at huv
       have hss := Submodule.mul_mem_mul (first_mem_splitModule s c)
         (first_mem_splitModule s d)
       have hcs := Submodule.mul_mem_mul (second_mem_splitModule s c)
         (first_mem_splitModule s d)
-      have h := ((splitModule s c * splitModule s d).restrictScalars ℤ).add_mem
-        (((splitModule s c * splitModule s d).restrictScalars ℤ).smul_mem u hss)
-        (((splitModule s c * splitModule s d).restrictScalars ℤ).smul_mem v hcs)
+      have hsd := Submodule.mul_mem_mul (first_mem_splitModule s c)
+        (second_mem_splitModule s d)
+      let M := (splitModule s c * splitModule s d).restrictScalars ℤ
+      have h := M.add_mem
+        (M.add_mem (M.smul_mem u hss) (M.smul_mem (v * Int.gcdA c d) hcs))
+        (M.smul_mem (v * Int.gcdB c d) hsd)
       have heq : u • (((s, 0) : ℤ × ℤ) * (s, 0)) +
-          v • (((c, 1) : ℤ × ℤ) * (s, 0)) = (s, 0) := by
+          (v * Int.gcdA c d) • (((c, 1) : ℤ × ℤ) * (s, 0)) +
+          (v * Int.gcdB c d) • (((s, 0) : ℤ × ℤ) * (d, 1)) = (s, 0) := by
         ext
         · simp only [Prod.fst_add, Prod.fst_mul, zsmul_eq_mul]
           linear_combination s * huv
@@ -155,7 +164,9 @@ theorem isUnit_splitModule (s c : ℤ) (hc : IsCoprime s c) :
   have hcv : s ∣ c * v - 1 := by
     refine ⟨-u, ?_⟩
     linear_combination huv
-  have hmul := splitModule_mul s c v ⟨u, v, huv⟩
+  have hcoprime : IsCoprime s c := ⟨u, v, huv⟩
+  have hmul := splitModule_mul s c v
+    (hcoprime.of_isCoprime_of_dvd_right (Int.gcd_dvd_left _ _))
   rw [(splitModule_eq_iff_dvd_sub s (c * v) 1).mpr hcv, splitModule_one] at hmul
   exact IsUnit.of_mul_eq_one (splitModule s v) hmul
 

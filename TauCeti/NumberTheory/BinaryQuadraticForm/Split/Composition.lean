@@ -161,7 +161,8 @@ def splitProperClassModule (s : ℕ) [NeZero s] :
       _ = 1 := splitModule_one s
   map_mul' p q := by
     rw [map_mul, splitModule_mul _ _ _
-      (isCoprime_unit_val s (splitProperClassEquivUnits s p))]
+      ((isCoprime_unit_val s (splitProperClassEquivUnits s p)).of_isCoprime_of_dvd_right
+        (Int.gcd_dvd_left _ _))]
     apply splitModule_eq_of_cast_eq
     simp only [Int.cast_natCast, Int.cast_mul, ZMod.natCast_zmod_val, Units.val_mul]
 
