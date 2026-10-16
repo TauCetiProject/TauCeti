@@ -41,7 +41,6 @@ condition by the trace.
 
 ## Main declarations
 
-* `TauCeti.normalEpigraph`: the region above the graph.
 * `TauCeti.W1p.normalEpigraphEquivL`: `W^{1,p}` of the region is isomorphic to `W^{1,p}` of the
   half-space, with `TauCeti.W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff`.
 * `TauCeti.W1p.normalEpigraphTrace`: the trace on the graph, with
@@ -68,33 +67,6 @@ open MeasureTheory Set TopologicalSpace
 open scoped ENNReal NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-! ### The region above a graph -/
-
-omit [InnerProductSpace ℝ E] in
-/-- The open region `{x | φ x.snd < x.fst}` above the graph of a continuous function
-`φ : E → ℝ` in the Euclidean product `ℝ × E`. -/
-def normalEpigraph (φ : C(E, ℝ)) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨{x | φ x.snd < x.fst}, isOpen_lt (by fun_prop) (by fun_prop)⟩
-
-omit [InnerProductSpace ℝ E] in
-@[simp]
-theorem mem_normalEpigraph (φ : C(E, ℝ)) (x : WithLp 2 (ℝ × E)) :
-    x ∈ normalEpigraph φ ↔ φ x.snd < x.fst :=
-  Iff.rfl
-
-omit [InnerProductSpace ℝ E] in
-/-- As a set, the region above the graph is `{x | φ x.snd < x.fst}`. -/
-theorem coe_normalEpigraph (φ : C(E, ℝ)) :
-    (normalEpigraph φ : Set (WithLp 2 (ℝ × E))) = {x | φ x.snd < x.fst} :=
-  Set.ext (mem_normalEpigraph φ)
-
-omit [InnerProductSpace ℝ E] in
-/-- The region above the graph of `0` is the half-space `{0 < t}`. -/
-@[simp]
-theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0 := by
-  ext x
-  simp
 
 private theorem one_le_one_add (K : ℝ≥0) : (1 : ℝ) ≤ 1 + K :=
   le_add_of_nonneg_right K.coe_nonneg
