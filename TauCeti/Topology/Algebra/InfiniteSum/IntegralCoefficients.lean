@@ -28,6 +28,9 @@ homomorphism whose image has norm at most one. In a commutative target ring, bot
 are ring homomorphisms. Evaluation has norm at most one, at most the norm of the parameter for an
 integral series without constant term, and multiplication by an evaluated formal unit preserves
 norms, even when the ring norm is only submultiplicative.
+
+Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
+variables at a pair of parameters in the open unit ball.
 -/
 
 public section
@@ -60,7 +63,7 @@ theorem summable_map_coeff_mul_pow {R K : Type*} [Semiring R]
 /-- Evaluation of a formal power series after applying a coefficient ring homomorphism whose
 image has norm at most one. The defining sum converges at every parameter of norm less than one,
 without requiring a linear topology on the target. -/
-@[expose] noncomputable def evalBoundedSeries {R K : Type*} [Semiring R]
+noncomputable def evalBoundedSeries {R K : Type*} [Semiring R]
     [NormedCommRing K] [CompleteSpace K]
     (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ 1) (q : K) (hq : ‖q‖ < 1) : R⟦X⟧ →+* K where
   toFun f := ∑' n : ℕ, φ (coeff n f) * q ^ n
@@ -221,6 +224,50 @@ in a complete non-archimedean normed commutative ring with `‖1‖ = 1`. -/
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) {f : ℤ⟦X⟧} (hf : IsUnit f) :
     ‖evalIntSeries q hq f‖ = 1 := by
   simpa only [one_mul, norm_one] using norm_mul_evalIntSeries_of_isUnit 1 q hq hf
+
+/-- A product of two elements in the open unit ball again belongs to the open unit ball. -/
+theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : ‖u‖ < 1)
+    (hv : ‖v‖ < 1) : ‖u * v‖ < 1 := by
+  calc
+    ‖u * v‖ ≤ ‖u‖ * ‖v‖ := norm_mul_le _ _
+    _ ≤ ‖u‖ := by
+      simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
+    _ < 1 := hu
+
+/-- Iterated evaluation of an integral bivariate power series at two parameters in the open unit
+ball. The inner variable is evaluated at `u`, and the outer variable at `v`. -/
+noncomputable def evalIntBivariateSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K] [IsUltrametricDist K]
+    (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) : ℤ⟦X⟧⟦X⟧ →+* K :=
+  evalBoundedSeries (evalIntSeries u hu) (norm_evalIntSeries_le_one u hu) v hv
+
+/-- Bivariate integral evaluation is the iterated convergent sum of the coefficients. -/
+theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K] [IsUltrametricDist K]
+    (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧⟦X⟧) :
+    evalIntBivariateSeries u hu v hv f =
+      ∑' b : ℕ, (∑' a : ℕ, ((coeff a (coeff b f) : ℤ) : K) * u ^ a) * v ^ b := by
+  rw [evalIntBivariateSeries, evalBoundedSeries_apply]
+  apply tsum_congr
+  intro b
+  rw [evalIntSeries_apply]
+
+/-- Bivariate evaluation of a series constant in the outer variable is its evaluation at the
+inner parameter. -/
+@[simp]
+theorem evalIntBivariateSeries_C {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K] [IsUltrametricDist K]
+    (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧) :
+    evalIntBivariateSeries u hu v hv (C f) = evalIntSeries u hu f := by
+  exact evalBoundedSeries_C _ _ v hv f
+
+/-- Bivariate evaluation sends the outer formal parameter to the outer chosen element. -/
+@[simp]
+theorem evalIntBivariateSeries_X {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K] [IsUltrametricDist K]
+    (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) :
+    evalIntBivariateSeries u hu v hv (X : ℤ⟦X⟧⟦X⟧) = v := by
+  exact evalBoundedSeries_X _ _ v hv
 
 end TauCeti
 
