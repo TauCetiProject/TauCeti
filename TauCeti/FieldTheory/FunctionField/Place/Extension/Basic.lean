@@ -78,8 +78,9 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.ord_smul_of_restrict_eq`: `ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`
   for `c` in the subfield `F₁` and `P` over the place `P₁` of `F₁`.
 * `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: arbitrary families of functions
-  of `F` with a pole at one place over `P₁` each, and regular at the others, are linearly
-  independent over `F₁`.
+  of `F`, each regular at the other indexed places over `P₁`, are linearly independent over
+  `F₁` if each has a pole at its own place, except that one distinguished nonzero function
+  may have order zero at its place.
 * `TauCeti.Place.ramificationIdx_mul_relativeDegree_le_finrank`: `e(P' ∣ P) · f(P' ∣ P) ≤
   [F' : F]`, with `TauCeti.Place.ramificationIdx_le_finrank` and
   `TauCeti.Place.relativeDegree_le_finrank` its two halves (Stichtenoth, Corollary 3.1.12).
