@@ -26,9 +26,8 @@ vertex dimensions `dim_k(eᵢ X)` of the underlying module, and the factor `q⁻
 becomes `1`. The result is the ungraded formula `TauCeti.extEuler_eq_eulerForm_dimVector`.
 
 The graded/ungraded `Ext` comparison hypothesis `TauCeti.IsGradedExtComparison` gives the same
-numerical identity in general. Here the identity is proved directly; it is then used in
-`TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.ExtComparison` to construct the
-comparison over a path algebra.
+numerical identity in general. Here the identity is proved directly from the two Ringel
+formulas.
 
 ## Main results
 
