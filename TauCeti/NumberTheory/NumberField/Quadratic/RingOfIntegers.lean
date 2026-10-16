@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
-import Mathlib.NumberTheory.LegendreSymbol.Basic
+import TauCeti.NumberTheory.LegendreSymbol.NormForm
 import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
@@ -468,23 +468,18 @@ theorem isSquare_neg_one_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) {p : ℕ} [Fact p.Prime]
     (hpd : (p : ℤ) ∣ d) {z : 𝓞 K} (hz : Algebra.norm ℚ (z : K) = -1) :
     IsSquare (-1 : ZMod p) := by
-  obtain ⟨A, B, hAB⟩ := exists_sq_sub_mul_sq_eq_four_mul_norm hmin hgen hsf z
-  have hzℤ : Algebra.norm ℤ z = -1 := by exact_mod_cast (Algebra.coe_norm_int z).trans hz
-  have hd : (d : ZMod p) = 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd d p).mpr hpd
-  have hA : (A : ZMod p) ^ 2 = -4 := by
-    have h := congrArg (Int.cast : ℤ → ZMod p) hAB
-    push_cast [hzℤ, hd] at h
-    linear_combination h
   by_cases hp2 : p = 2
   · subst hp2
     exact ⟨1, rfl⟩
-  · have h2 : (2 : ZMod p) ≠ 0 := by
-      intro h
-      have h2p : p ∣ 2 := (ZMod.natCast_eq_zero_iff 2 p).mp (by exact_mod_cast h)
-      exact hp2 ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h2p)
-    refine ⟨A / 2, ?_⟩
-    field_simp
-    linear_combination -hA
+  obtain ⟨A, B, hAB⟩ := exists_sq_sub_mul_sq_eq_four_mul_norm hmin hgen hsf z
+  have hzℤ : Algebra.norm ℤ z = -1 := by exact_mod_cast (Algebra.coe_norm_int z).trans hz
+  have hp1 : ¬ (p : ℤ) ∣ -1 := by
+    rw [Int.dvd_neg, Int.natCast_dvd_ofNat, Nat.dvd_one]
+    exact (Fact.out : p.Prime).ne_one
+  have h := jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq Fact.out hp2 hpd hp1
+    (by rw [hAB, hzℤ])
+  rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym.eq_one_iff p (by simp)] at h
+  exact_mod_cast h
 
 /-- **No algebraic integer has norm `-1` when a prime `p ≡ 3 (mod 4)` divides the radicand**,
 since `-1` is not a square modulo such a prime. In particular no unit of `𝓞 K` has norm `-1`. -/
