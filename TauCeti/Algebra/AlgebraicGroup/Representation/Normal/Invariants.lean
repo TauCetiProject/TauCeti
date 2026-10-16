@@ -9,6 +9,10 @@ public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeights
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
 /-!
 # Invariants of normal closed subgroups
@@ -28,11 +32,13 @@ The definition deliberately says `basePointFixedSubmodule`: without a point-sepa
 hypothesis, base-valued points need not detect scheme-theoretic invariants. The normality and
 stability results require no reducedness, finite-type, or field hypotheses.
 
-For a reduced ambient group of finite type over an algebraically closed field,
-`HopfIdeal.IsNormal.weightSpaceOneSubcomodule` instead constructs the scheme-theoretic invariant
-representation. It is the subgroup's trivial-character weight space, which normality makes
-ambient-stable. The subgroup itself need not be reduced. Its points over every commutative
-value algebra act trivially on these invariant vectors.
+Over any field, `HopfIdeal.IsNormal.weightSpaceOneSubcomodule` instead constructs the
+scheme-theoretic invariant representation, the subgroup's trivial-character weight space. A vector
+is invariant exactly when its matrix coefficients lie in the coinvariants of `I`, the functions
+invariant under right translation by the subgroup. For a normal subgroup these coinvariants are
+also invariant under left translation, and this makes the invariant vectors ambient-stable. The
+coaction on them then has coefficients in the coinvariants, the coordinate ring of the quotient
+group. Neither group needs to be reduced or of finite type.
 
 The group-representation step is Mathlib's `Representation.toInvariants`; this file adds the
 Hopf-ideal and comodule interface around it rather than repeating the normal-subgroup conjugation
@@ -51,13 +57,18 @@ argument.
 * `TauCeti.HopfIdeal.IsNormal.endOfPoint_one_tmul_mem_basePointFixedSubmodule_baseChange`:
   pointwise
   stability in the scalar-extension form used to detect subcomodules.
+* `TauCeti.HopfIdeal.mem_weightSpace_one_iff_coact_mem_range`: a vector is invariant under the
+  closed subgroup exactly when its matrix coefficients are coinvariants.
 * `TauCeti.HopfIdeal.IsNormal.weightSpaceOneSubcomodule`: the scheme-theoretic invariant
-  representation, admitting nonreduced normal subgroups.
+  representation of a normal subgroup, over any field.
+* `TauCeti.HopfIdeal.IsNormal.coact_mem_range_lTensor_coinvariants`: its coaction has
+  coefficients in the coordinate ring of the quotient group.
 
 ## References
 
-* J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
+* J. C. Jantzen, *Representations of Algebraic Groups*, I.2 and I.6.
 * T. A. Springer, *Linear Algebraic Groups*, §2.2.
+* W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.3.
 -/
 
 public section
@@ -181,31 +192,137 @@ theorem mem_basePointFixedSubmodule_iff_quotient_coact_eq_tmul_one
 
 end GeometricDetection
 
-section SchemeTheoretic
+section Field
 
 variable {k : Type u} {A : Type v} {V : Type w}
-variable [Field k] [IsAlgClosed k] [CommRing A] [HopfAlgebra k A]
-variable [Algebra.FiniteType k A] [IsReduced A]
-variable [AddCommGroup V] [Module k V] [Comodule k A V]
+variable [Field k] [CommRing A] [HopfAlgebra k A]
+variable [AddCommMonoid V] [Module k V] [Comodule k A V]
 variable {I : HopfIdeal k A}
 
+/-- **Invariant vectors have invariant matrix coefficients.** Over a field, a vector is fixed by
+the closed subgroup cut out by `I` exactly when its coaction has coefficients in the coinvariants
+of `I`, the functions invariant under right translation by that subgroup. -/
+theorem mem_weightSpace_one_iff_coact_mem_range {v : V} :
+    v ∈ I.weightSpace V 1 ↔
+      Comodule.coact (R := k) (C := A) v ∈
+        LinearMap.range ((Subalgebra.toSubmodule I.coinvariants).subtype.lTensor V) := by
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  let Q := A ⧸ I.toIdeal
+  set B := Subalgebra.toSubmodule I.coinvariants
+  let π : A →ₗ[k] Q := (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap
+  rw [mem_weightSpace, GroupLike.val_one]
+  constructor
+  · intro hv
+    -- The coinvariants are the equalizer of `(id ⊗ π) ∘ Δ` and `· ⊗ 1`; flatness of `V` makes
+    -- `V ⊗ B` the equalizer of the two maps after tensoring with `V`.
+    let f : A →ₗ[k] A ⊗[k] Q := π.lTensor A ∘ₗ Coalgebra.comul
+    let g : A →ₗ[k] A ⊗[k] Q := (TensorProduct.mk k A Q).flip 1
+    have hmap (y : A ⊗[k] A) :
+        Algebra.TensorProduct.map (AlgHom.id k A) (Ideal.Quotient.mkₐ k I.toIdeal) y =
+          π.lTensor A y := by
+      induction y with
+      | tmul a b => simp [π]
+      | add y z hy hz => simp [hy, hz]
+    have hB : B = LinearMap.eqLocus f g := by
+      ext x
+      simp [B, mem_coinvariants_iff, hmap, f, g]
+    have hf : f.lTensor V (Comodule.coact (R := k) (C := A) v) =
+        TensorProduct.assoc k V A Q (Comodule.coact (R := k) (C := A) v ⊗ₜ[k] 1) := by
+      have hv' : π.lTensor V (Comodule.coact (R := k) (C := A) v) = v ⊗ₜ[k] 1 := hv
+      rw [LinearMap.lTensor_comp_apply, ← Comodule.coassoc_apply, LinearMap.lTensor,
+        LinearMap.lTensor, TensorProduct.map_map_assoc, TensorProduct.map_id, LinearMap.rTensor,
+        TensorProduct.map_map, LinearMap.id_comp, LinearMap.comp_id,
+        ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_apply, hv', LinearMap.rTensor_tmul]
+    have hg (y : V ⊗[k] A) : g.lTensor V y = TensorProduct.assoc k V A Q (y ⊗ₜ[k] 1) := by
+      induction y with
+      | tmul a b => simp [g]
+      | add y z hy hz => simp [hy, hz, TensorProduct.add_tmul]
+    have hmem : Comodule.coact (R := k) (C := A) v ∈ LinearMap.eqLocus
+        (TensorProduct.AlgebraTensorModule.lTensor k V f)
+        (TensorProduct.AlgebraTensorModule.lTensor k V g) := by
+      rw [LinearMap.mem_eqLocus, TensorProduct.AlgebraTensorModule.coe_lTensor,
+        TensorProduct.AlgebraTensorModule.coe_lTensor, hf, hg]
+    rw [Module.Flat.eqLocus_lTensor_eq] at hmem
+    obtain ⟨y, hy⟩ := hmem
+    rw [hB]
+    exact ⟨y, by rw [← hy, TensorProduct.AlgebraTensorModule.coe_lTensor]⟩
+  · rintro ⟨x, hx⟩
+    -- On the coinvariants, `π` is the counit followed by the unit.
+    have hπ : π ∘ₗ B.subtype =
+        Algebra.linearMap k Q ∘ₗ Coalgebra.counit ∘ₗ B.subtype := by
+      ext ⟨a, ha⟩
+      simpa [π] using mk_eq_algebraMap_counit_of_mem_coinvariants ha
+    rw [← LinearMap.lTensor, ← hx, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hπ,
+      LinearMap.lTensor_comp, LinearMap.lTensor_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+      hx, Comodule.lTensor_counit_coact]
+    simp
+
+/-- **Invariants of a normal subgroup are stable under the ambient group.** Over a field, the
+coaction maps a vector fixed by the normal closed subgroup cut out by `I` into the tensor product
+of those fixed vectors with `A`. -/
+theorem IsNormal.coact_mem_range_rTensor_weightSpace_one (hI : I.IsNormal) {v : V}
+    (hv : v ∈ I.weightSpace V 1) :
+    Comodule.coact (R := k) (C := A) v ∈
+      LinearMap.range ((I.weightSpace V 1).subtype.rTensor A) := by
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  let Q := A ⧸ I.toIdeal
+  let B := Subalgebra.toSubmodule I.coinvariants
+  let π : A →ₗ[k] Q := (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap
+  let F : V →ₗ[k] V ⊗[k] Q :=
+    π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A) - (TensorProduct.mk k V Q).flip 1
+  have hW : I.weightSpace V 1 = LinearMap.ker F := by
+    ext w
+    simp [F, π, mem_weightSpace, sub_eq_zero, LinearMap.lTensor]
+  obtain ⟨x, hx⟩ := mem_weightSpace_one_iff_coact_mem_range.1 hv
+  -- Coinvariants of a normal Hopf ideal are left coinvariants.
+  have hleft : π.rTensor A ∘ₗ Coalgebra.comul ∘ₗ B.subtype =
+      TensorProduct.mk k Q A 1 ∘ₗ B.subtype := by
+    ext ⟨b, hb⟩
+    simpa using IsNormal.rTensor_mkₐ_comul_of_mem_coinvariants
+      (H := _root_.CommHopfAlgCat.of k A) (I := I) hI ((Subalgebra.mem_toSubmodule _).1 hb)
+  -- Restricting the matrix coefficients of `v` to the subgroup gives the trivial coaction.
+  have hF : F.rTensor A (Comodule.coact (R := k) (C := A) v) = 0 := by
+    have hone (y : V ⊗[k] A) :
+        TensorProduct.assoc k V Q A (((TensorProduct.mk k V Q).flip 1).rTensor A y) =
+          (TensorProduct.mk k Q A 1).lTensor V y := by
+      induction y with
+      | tmul a b => simp
+      | add y z hy hz => simp [hy, hz]
+    have hcoact : TensorProduct.assoc k V Q A
+        ((π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
+          (Comodule.coact (R := k) (C := A) v)) =
+        (TensorProduct.mk k Q A 1).lTensor V (Comodule.coact (R := k) (C := A) v) := by
+      rw [LinearMap.rTensor_comp_apply, LinearMap.lTensor, LinearMap.rTensor,
+        ← TensorProduct.map_map_assoc, ← LinearMap.rTensor, ← LinearMap.lTensor,
+        Comodule.coassoc_apply, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, ← hx,
+        ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, LinearMap.comp_assoc, hleft,
+        LinearMap.lTensor_comp, LinearMap.comp_apply]
+    have hsub : F.rTensor A (Comodule.coact (R := k) (C := A) v) =
+        (π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
+            (Comodule.coact (R := k) (C := A) v) -
+          ((TensorProduct.mk k V Q).flip 1).rTensor A (Comodule.coact (R := k) (C := A) v) := by
+      simp only [F, LinearMap.rTensor_sub]
+      rfl
+    apply (TensorProduct.assoc k V Q A).injective
+    rw [hsub, map_sub, hcoact, hone, sub_self, map_zero]
+  have hexact := LinearMap.exact_iff.mp
+    (Module.Flat.rTensor_exact A (LinearMap.exact_subtype_ker_map F))
+  rw [hW, ← hexact]
+  exact hF
+
 variable (V) in
-/-- Scheme-theoretic invariants of a normal closed subgroup form an ambient subrepresentation.
-Only the ambient group is required to be reduced; the subgroup can be nonreduced. -/
+/-- **The invariants of a normal closed subgroup form an ambient subrepresentation.** Over a
+field, the vectors fixed by the normal closed subgroup cut out by `I` form a subcomodule. Neither
+the ambient group nor the subgroup needs to be reduced or of finite type. -/
 noncomputable def IsNormal.weightSpaceOneSubcomodule (hI : I.IsNormal) : Subcomodule k A V :=
-  Subcomodule.ofEndOfPointStable (K := k) (I.weightSpace V 1) fun g v hv ↦ by
-    have h := basePointsRepresentation_mem_weightSpace (WithConv.toConv g)
-      (hI.le_conjugate _) hv
-    simp only [map_one] at h
-    rw [Comodule.endOfPoint_tmul, one_smul,
-      Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-    exact Submodule.tmul_mem_baseChange_of_mem _ h
+  Subcomodule.ofSubmodule (I.weightSpace V 1) fun _ hv ↦
+    hI.coact_mem_range_rTensor_weightSpace_one hv
 
 /-- Normal-subgroup invariants are the weight space of the trivial character. -/
 @[simp]
 theorem IsNormal.weightSpaceOneSubcomodule_toSubmodule (hI : I.IsNormal) :
     (hI.weightSpaceOneSubcomodule V).toSubmodule = I.weightSpace V 1 :=
-  Subcomodule.ofEndOfPointStable_toSubmodule _ _
+  (rfl)
 
 /-- An ambient vector belongs to the normal-subgroup invariant representation precisely when
 its coaction restricts to the trivial coaction on the subgroup. -/
@@ -216,6 +333,34 @@ theorem IsNormal.mem_weightSpaceOneSubcomodule (hI : I.IsNormal) {v : V} :
           (Comodule.coact (R := k) (C := A) v) = v ⊗ₜ[k] (1 : A ⧸ I.toIdeal) := by
   rw [← Subcomodule.mem_toSubmodule, hI.weightSpaceOneSubcomodule_toSubmodule,
     mem_weightSpace, GroupLike.val_one]
+
+/-- **The quotient group acts on the invariants of a normal subgroup.** Over a field, the coaction
+on the vectors fixed by a normal closed subgroup has coefficients in the coinvariants of `I`, the
+coordinate ring of the quotient group. -/
+theorem IsNormal.coact_mem_range_lTensor_coinvariants (hI : I.IsNormal)
+    (w : hI.weightSpaceOneSubcomodule V) :
+    Comodule.coact (R := k) (C := A) w ∈ LinearMap.range
+      ((Subalgebra.toSubmodule I.coinvariants).subtype.lTensor
+        (hI.weightSpaceOneSubcomodule V)) := by
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  have hrange : Comodule.coact (R := k) (C := A) (w : V) ∈
+      LinearMap.range (TensorProduct.map (I.weightSpace V 1).subtype
+        (Subalgebra.toSubmodule I.coinvariants).subtype) := by
+    rw [Submodule.range_map_subtype_subtype]
+    exact ⟨mem_weightSpace_one_iff_coact_mem_range.1 w.2,
+      hI.coact_mem_range_rTensor_weightSpace_one w.2⟩
+  obtain ⟨z, hz⟩ := hrange
+  let W := hI.weightSpaceOneSubcomodule V
+  let e : I.weightSpace V 1 →ₗ[k] W :=
+    { toFun x := ⟨x, x.2⟩
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+  refine ⟨e.rTensor _ z, ?_⟩
+  apply Module.Flat.rTensor_preserves_injective_linearMap (SMulMemClass.subtype W)
+    Subtype.val_injective
+  rw [Subcomodule.subtype_rTensor_coact, ← hz, ← LinearMap.comp_apply (LinearMap.lTensor _ _),
+    LinearMap.lTensor_comp_rTensor, ← LinearMap.comp_apply, LinearMap.rTensor_comp_map]
+  rfl
 
 /-- Every algebra-valued subgroup point fixes the scalar extension of an invariant vector. -/
 theorem IsNormal.endOfPoint_comp_mkₐ_tmul_of_mem_weightSpaceOneSubcomodule
@@ -229,7 +374,7 @@ theorem IsNormal.endOfPoint_comp_mkₐ_tmul_of_mem_weightSpaceOneSubcomodule
   simpa only [GroupLike.val_one, map_one, mul_one] using
     endOfPoint_comp_mkₐ_tmul_of_mem_weightSpace g b hv'
 
-end SchemeTheoretic
+end Field
 
 namespace IsNormal
 

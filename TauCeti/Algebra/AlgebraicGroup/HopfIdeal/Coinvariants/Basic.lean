@@ -60,6 +60,8 @@ This file sets up that candidate and proves its Hopf-algebraic closure propertie
 * `TauCeti.HopfIdeal.IsNormal.antipode_mem_coinvariants`: stability under the antipode.
 * `TauCeti.HopfIdeal.IsNormal.comul_mem_range_rTensor_of_mem_coinvariants`: the right coideal
   property for a normal Hopf ideal.
+* `TauCeti.HopfIdeal.IsNormal.rTensor_mkₐ_comul_of_mem_coinvariants`: coinvariants of a normal
+  Hopf ideal are also invariant under left translation by the subgroup.
 * `TauCeti.HopfIdeal.IsNormal.coinvariantsSubcoalgebra`: the coinvariants of a normal Hopf ideal
   as a subcoalgebra.
 
@@ -328,6 +330,26 @@ theorem IsNormal.comul_mem_range_rTensor_of_mem_coinvariants [Module.Flat R H] (
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at this
   rw [← this, hy, ← TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply,
     TauCeti.HopfAlgebra.antipode_antipode]
+
+/-- **Coinvariants of a normal Hopf ideal are left coinvariants.** Over a flat Hopf algebra, a
+function invariant under right translation by a normal subgroup `N` is also invariant under left
+translation by `N`: `(π ⊗ id) (Δ h) = 1 ⊗ h`. -/
+theorem IsNormal.rTensor_mkₐ_comul_of_mem_coinvariants [Module.Flat R H] (hI : I.IsNormal)
+    (hh : h ∈ I.coinvariants) :
+    (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap.rTensor H (Coalgebra.comul (R := R) h) =
+      (1 : H ⧸ I.toIdeal) ⊗ₜ[R] h := by
+  -- Write `Δ h` with left factors in the coinvariants, on which `π` is the counit.
+  let B := Subalgebra.toSubmodule I.coinvariants
+  let π : H →ₗ[R] H ⧸ I.toIdeal := (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+  obtain ⟨y, hy⟩ := hI.comul_mem_range_rTensor_of_mem_coinvariants hh
+  have hπ : π ∘ₗ B.subtype =
+      Algebra.linearMap R (H ⧸ I.toIdeal) ∘ₗ Coalgebra.counit ∘ₗ B.subtype := by
+    ext ⟨x, hx⟩
+    simpa [π] using mk_eq_algebraMap_counit_of_mem_coinvariants hx
+  rw [← hy, ← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hπ, LinearMap.rTensor_comp,
+    LinearMap.rTensor_comp, LinearMap.comp_apply, LinearMap.comp_apply, hy,
+    Coalgebra.rTensor_counit_comul]
+  simp
 
 /-- **The coinvariants of a normal Hopf ideal form a subcoalgebra**, when `H` and
 `H ⧸ H^{co H/I}` are flat, for instance over a field. Together with

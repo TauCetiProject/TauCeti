@@ -11,13 +11,13 @@ public import TauCeti.Algebra.Coalgebra.Comodule.LinearHom
 /-!
 # Normal-subgroup equivariant linear maps
 
-For the normal closed subgroup cut out by a Hopf ideal `I` in a reduced finite-type
-Hopf algebra `H` over an algebraically closed field, the subgroup-invariant vectors in the
-linear Hom comodule form an ambient subcomodule. The source is finite-dimensional and the
-target is arbitrary; the Hom criteria work over any commutative base ring with a finite
-projective source. Its elements are exactly the maps intertwining the subgroup's actions over
-its coordinate algebra, equivalently over every commutative coefficient algebra. No reducedness
-is assumed for the subgroup or for the coefficient algebra.
+For the normal closed subgroup cut out by a Hopf ideal `I` in a commutative Hopf algebra `H`
+over a field, the subgroup-invariant vectors in the linear Hom comodule form an ambient
+subcomodule. The source is finite-dimensional and the target is arbitrary; the Hom criteria
+work over any commutative base ring with a finite projective source. Its elements are exactly
+the maps intertwining the subgroup's actions over its coordinate algebra, equivalently over
+every commutative coefficient algebra. No reducedness is assumed for the subgroup or for the
+coefficient algebra.
 
 Applied to endomorphisms of a representation spanned by subgroup character spaces, this is the
 conjugation representation on subgroup-equivariant endomorphisms. Such endomorphisms preserve
@@ -150,8 +150,7 @@ theorem mem_weightSpace_linearHom_one_iff_forall_mapsTo_weightSpace
 
 section Normal
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
-variable [HopfAlgebra k H] [Algebra.FiniteType k H] [IsReduced H]
+variable {k : Type u} [Field k] [HopfAlgebra k H]
 variable {V : Type w} {W : Type x}
 variable [AddCommGroup V] [Module k V] [Comodule k H V]
 variable [AddCommGroup W] [Module k W] [Comodule k H W]
