@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
-import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
 # Commutative groups of semisimple elements are diagonalizable
@@ -31,9 +30,6 @@ which is semisimple, but it is not diagonalizable.
 
 ## Main declarations
 
-* `TauCeti.Comodule.iSup_groupLikeWeightSpace_eq_top_of_isSemisimple`: a finite-dimensional
-  representation on which the points act by commuting semisimple operators is spanned by its
-  weight spaces.
 * `TauCeti.HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint`: a reduced commutative
   affine group whose points are semisimple is diagonalizable.
 * `TauCeti.torusCommHopfAlgProperty_of_isSemisimplePoint`: if it is moreover connected, it is a
@@ -52,43 +48,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u v w
-
-namespace Comodule
-
-section WeightSpaces
-
-variable {k : Type u} {H : Type v} {M : Type w}
-variable [Field k] [CommRing H] [HopfAlgebra k H]
-variable [AddCommGroup M] [Module k M] [Comodule k H M]
-variable [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
-
-/-- If the base-valued points of a reduced finite-type Hopf algebra over an algebraically closed
-field act on a finite-dimensional comodule by pairwise-commuting semisimple operators, then the
-comodule is spanned by its group-like weight spaces. -/
-theorem iSup_groupLikeWeightSpace_eq_top_of_isSemisimple [FiniteDimensional k M]
-    (hcomm : Pairwise fun g h : WithConv (H →ₐ[k] k) ↦
-      Commute (basePointsRepresentation (R := k) (H := H) M g)
-        (basePointsRepresentation (R := k) (H := H) M h))
-    (hss : ∀ g : WithConv (H →ₐ[k] k),
-      (basePointsRepresentation (R := k) (H := H) M g).IsSemisimple) :
-    ⨆ c : GroupLike k H, _root_.GroupLike.weightSpace (M := M) c = ⊤ := by
-  rw [eq_top_iff, ← iSup_iInf_eigenspace_eq_top_of_isSemisimple
-    (fun g ↦ basePointsRepresentation (R := k) (H := H) M g) hcomm hss]
-  refine iSup_le fun χ v hv ↦ ?_
-  rcases eq_or_ne v 0 with rfl | hv0
-  · exact zero_mem _
-  obtain ⟨c, hc⟩ := (k ∙ v).exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable
-    v hv0 rfl fun g m hm ↦ by
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hm
-      rw [map_smul, Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp hv g),
-        smul_smul]
-      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)
-  exact Submodule.mem_iSup_of_mem c hc
-
-end WeightSpaces
-
-end Comodule
+universe u
 
 namespace HopfAlgebra
 

@@ -14,8 +14,10 @@ public import TauCeti.Algebra.Coalgebra.Comodule.PointAction
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
+public import Mathlib.LinearAlgebra.Semisimple
 import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
 # The points action of a comodule, by automorphisms
@@ -45,6 +47,9 @@ action transports across `R ⊗[R] V ≃ₗ[R] V` to a representation on `V` its
 * `Submodule.exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable` and
   `TauCeti.Comodule.hasNonzeroWeightVector_of_basePointsRepresentation_stable`: a nonzero vector
   spanning a point-stable line is a weight vector.
+* `TauCeti.Comodule.iSup_groupLikeWeightSpace_eq_top_of_isSemisimple`: a finite-dimensional
+  comodule on which the base-valued points act by commuting semisimple operators is spanned by
+  its weight spaces.
 -/
 
 public section
@@ -274,6 +279,30 @@ theorem hasNonzeroWeightVector_of_basePointsRepresentation_stable
     p.exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable v hv hspan hact
   exact hasNonzeroWeightVector_iff.mpr
     ⟨v, c.val, hv, c.isGroupLikeElem_val, _root_.GroupLike.mem_weightSpace.mp hc⟩
+
+/-- If the base-valued points of a reduced finite-type Hopf algebra over an algebraically closed
+field act on a finite-dimensional comodule by pairwise-commuting semisimple operators, then the
+comodule is spanned by its group-like weight spaces. -/
+theorem iSup_groupLikeWeightSpace_eq_top_of_isSemisimple
+    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H] [FiniteDimensional k M]
+    (hcomm : Pairwise fun g h : WithConv (H →ₐ[k] k) ↦
+      Commute (basePointsRepresentation (R := k) (H := H) M g)
+        (basePointsRepresentation (R := k) (H := H) M h))
+    (hss : ∀ g : WithConv (H →ₐ[k] k),
+      (basePointsRepresentation (R := k) (H := H) M g).IsSemisimple) :
+    ⨆ c : GroupLike k H, _root_.GroupLike.weightSpace (M := M) c = ⊤ := by
+  rw [eq_top_iff, ← iSup_iInf_eigenspace_eq_top_of_isSemisimple
+    (fun g ↦ basePointsRepresentation (R := k) (H := H) M g) hcomm hss]
+  refine iSup_le fun χ v hv ↦ ?_
+  rcases eq_or_ne v 0 with rfl | hv0
+  · exact zero_mem _
+  obtain ⟨c, hc⟩ := (k ∙ v).exists_mem_groupLikeWeightSpace_of_basePointsRepresentation_stable
+    v hv0 rfl fun g m hm ↦ by
+      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hm
+      rw [map_smul, Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp hv g),
+        smul_smul]
+      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)
+  exact Submodule.mem_iSup_of_mem c hc
 
 end StableLineDetection
 
