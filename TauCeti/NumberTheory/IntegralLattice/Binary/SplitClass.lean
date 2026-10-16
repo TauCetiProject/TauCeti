@@ -111,7 +111,7 @@ theorem hyperbolicPlane_binaryProperClass_eq_splitProperClassMk
   rw [hyperbolicPlane_binarySplitProperClass, BinaryQuadraticForm.splitProperClassMk_one]
 
 /-- The hyperbolic plane's split class maps to the actual product order's unit module. -/
-@[simp] theorem hyperbolicPlane_splitProperClassModule
+theorem hyperbolicPlane_splitProperClassModule
     (o : Orientation ℤ hyperbolicPlane (Fin 2)) :
     BinaryQuadraticForm.splitProperClassModule 1
       (hyperbolicPlane.binarySplitProperClass (by simp) 1 (by simp) o) = 1 := by
