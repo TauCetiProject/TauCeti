@@ -38,6 +38,8 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
+* `Finset.neg_one_pow_card_filter_lt_mul_insert` shows that inserting a new element and deleting an
+  existing element of an ordered finset in either order gives opposite Koszul signs.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -385,6 +387,26 @@ theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] 
     exact hsign _ _
   rw [sum_congr rfl hterm, ← mul_sum, sum_Icc_neg_one_pow_card_sub_card_left]
   split_ifs with h <;> simp [h]
+
+/-- **Inserting a new element and deleting an existing element of an ordered finset in either order
+gives opposite Koszul signs.** For `c ∉ s` and `k ∈ s` in a linear order, the sign of inserting `c`
+into `s` and then deleting `k` is the opposite of the sign of deleting `k` from `s` and then
+inserting `c`. -/
+theorem neg_one_pow_card_filter_lt_mul_insert {α R : Type*} [LinearOrder α] [Ring R]
+    {s : Finset α} {c k : α} (hc : c ∉ s) (hk : k ∈ s) :
+    (-1 : R) ^ ({j ∈ s | j < c}).card * (-1) ^ ({j ∈ insert c s | j < k}).card =
+      -((-1) ^ ({j ∈ s | j < k}).card * (-1) ^ ({j ∈ s.erase k | j < c}).card) := by
+  have hck : c ≠ k := fun h ↦ hc (h ▸ hk)
+  rcases hck.lt_or_gt with h | h
+  · have hcs : c ∉ {j ∈ s | j < k} := by simp [hc]
+    have hkc : k ∉ {j ∈ s | j < c} := by simp [h.not_gt]
+    simp only [filter_insert, h, ↓reduceIte, card_insert_of_notMem hcs, filter_erase,
+      erase_eq_of_notMem hkc, pow_succ]
+    simp [← pow_add, add_comm]
+  · have hkc : k ∈ {j ∈ s | j < c} := mem_filter.2 ⟨hk, h⟩
+    simp only [filter_insert, h.not_gt, ↓reduceIte, filter_erase, ← card_erase_add_one hkc,
+      pow_succ]
+    simp [← pow_add, add_comm]
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/

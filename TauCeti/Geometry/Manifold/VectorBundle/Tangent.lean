@@ -34,6 +34,8 @@ inverse tangent-bundle trivializations act componentwise.
 
 ## Main results
 
+* `TauCeti.Manifold.mfderiv_atlas_eq_continuousLinearMapAt`: the derivative of an atlas chart
+  is the actual continuous linear map of its tangent-core trivialization.
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
@@ -95,6 +97,22 @@ variable
 section BasePoint
 
 variable [IsManifold I 1 M]
+
+/-- The derivative of an atlas chart reads tangent vectors in that chart's core trivialization. -/
+theorem mfderiv_atlas_eq_continuousLinearMapAt (e : atlas H M) {x : M}
+    (hx : x ∈ e.val.source) :
+    mfderiv I I e.val x =
+      ((tangentBundleCore I M).localTriv e).continuousLinearMapAt 𝕜 x := by
+  rw [(tangentBundleCore I M).localTriv_continuousLinearMapAt hx,
+    (mdifferentiableAt_atlas e.property hx).mfderiv]
+  simp only [writtenInExtChartAt, extChartAt_self_eq]
+  rw [tangentBundleCore_coordChange, tangentBundleCore_indexAt, achart_val]
+  simp only [extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_assoc]
+  -- At this foundational bridge, both implementation casts identify the tangent fibre with E.
+  ext v
+  simp only [ContinuousLinearMap.comp_apply, tangentSpaceCastModel]
+  rfl
+
 
 /-- Read in the canonical trivialization at `x`, a tangent vector at `x` itself is its own
 coordinate vector: the trivialization is built from the chart at `x`, whose transition function

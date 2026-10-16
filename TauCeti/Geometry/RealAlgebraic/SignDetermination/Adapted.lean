@@ -90,7 +90,7 @@ theorem exists_isUnit_fullMatrix_submatrix [DecidableEq C] (columns : C → J �
     exact rank_fullMatrix_columns columns hinj
   let e : C ≃ s := Fintype.equivOfCardEq hcard.symm
   refine ⟨⟨Subtype.val ∘ e, Subtype.val_injective.comp e.injective⟩, ?_⟩
-  exact Matrix.linearIndependent_rows_iff_isUnit.mp (hliN.comp e e.injective)
+  exact Matrix.linearIndependent_row_iff_isUnit.mp (hliN.comp e e.injective)
 
 end TauCeti.SignDetermination
 

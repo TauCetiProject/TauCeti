@@ -58,6 +58,10 @@ All the following declarations are in the `TauCeti` namespace.
   Wasserstein distance from a Dirac law;
 * `WassersteinSpace.isTightMeasureSet_of_isBounded` — on a proper space, bounded sets of `P_p (X)`
   are tight;
+* `WassersteinSpace.isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le` and
+  `WassersteinSpace.isCompact_closure_iff_exists_setLIntegral_edist_rpow_le` — on a proper space,
+  uniformly small `p`-moment tails imply tightness, so they alone characterize relatively compact
+  sets of `P_p (X)`;
 * `WassersteinSpace.hasFiniteMoment_of_isBounded_of_tendsto` — a narrow limit of a bounded family
   of `P_p (X)` has finite `p`-moment;
 * `WassersteinSpace.exists_strictMono_tendsto_of_isBounded_of_isTightMeasureSet` — a bounded tight
@@ -290,7 +294,58 @@ theorem isTightMeasureSet_of_isBounded [StandardBorelSpace X] [ProperSpace X]
     mul_comm]
   exact (ofReal_mul_measure_compl_closedBall_le_wassersteinEDist x _ r).trans (hbound μ hμ)
 
+omit [SecondCountableTopology X] [Fact (1 ≤ p)] in
+/-- **Uniformly small moment tails give tightness on a proper space.** On a proper pseudometric
+space, if the `p`-moments about `x` of a set of laws of `P_p (X)` have uniformly small tails, then
+the laws form a tight family: outside the closed ball of radius `r ≥ 1` about `x`, the mass of a
+law is at most the part of its `p`-moment coming from distance at least `r`. -/
+theorem isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le [ProperSpace X] (x : X)
+    {S : Set (WassersteinSpace p X)}
+    (hU : ∀ ε : ℝ≥0∞, 0 < ε → ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y},
+      edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≤ ε) :
+    IsTightMeasureSet {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} := by
+  refine isTightMeasureSet_of_tendsto_measure_compl_closedBall (x := x) ?_
+  refine ENNReal.tendsto_atTop_zero.2 fun ε hε ↦ ?_
+  obtain ⟨R, hR⟩ := hU ε hε
+  refine ⟨max R 1, fun r hr ↦ iSup₂_le fun ν ⟨μ, hμ, hν⟩ ↦ hν ▸ ?_⟩
+  -- Off the closed ball of radius `r ≥ max R 1`, the distance to `x` is at least `1` and `R`.
+  have hr1 : (1 : ℝ) ≤ r := (le_max_right _ _).trans hr
+  have hsub : (Metric.closedBall x r)ᶜ ⊆ {y | R ≤ nndist x y} := fun y hy ↦ by
+    have hy : r < dist x y := by simpa [dist_comm] using hy
+    exact_mod_cast ((le_max_left _ _).trans hr).trans hy.le
+  calc ((μ : ProbabilityMeasure X) : Measure X) (Metric.closedBall x r)ᶜ
+      = ∫⁻ _ in (Metric.closedBall x r)ᶜ, 1 ∂((μ : ProbabilityMeasure X) : Measure X) :=
+        (setLIntegral_one _).symm
+    _ ≤ ∫⁻ y in (Metric.closedBall x r)ᶜ, edist x y ^ p.toReal
+          ∂((μ : ProbabilityMeasure X) : Measure X) := by
+        refine setLIntegral_mono' Metric.isClosed_closedBall.measurableSet.compl fun y hy ↦ ?_
+        have hy : r < dist x y := by simpa [dist_comm] using hy
+        refine (ENNReal.one_rpow p.toReal).symm.le.trans
+          (ENNReal.rpow_le_rpow ?_ ENNReal.toReal_nonneg)
+        rw [edist_dist]
+        exact ENNReal.one_le_ofReal.2 (hr1.trans hy.le)
+    _ ≤ ε := (lintegral_mono_set hsub).trans (hR μ hμ)
+
 end Tight
+
+section Proper
+
+variable {X : Type*} {p : ℝ≥0∞} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [ProperSpace X] [Fact (1 ≤ p)]
+
+/-- **Relatively compact sets of the Wasserstein space of a proper space.** On a proper metric
+space and for a finite exponent `1 ≤ p < ∞`, a set of laws of finite `p`-moment is relatively
+compact in `P_p (X)` exactly when its `p`-moments about a basepoint `x` have uniformly small tails;
+tightness is then automatic. -/
+theorem isCompact_closure_iff_exists_setLIntegral_edist_rpow_le (hp : p ≠ ∞) (x : X)
+    {S : Set (WassersteinSpace p X)} :
+    IsCompact (closure S) ↔
+      ∀ ε : ℝ≥0∞, 0 < ε → ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y},
+        edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≤ ε := by
+  rw [isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le hp x]
+  exact ⟨And.right, fun h ↦ ⟨isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le x h, h⟩⟩
+
+end Proper
 
 
 section Narrow

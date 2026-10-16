@@ -46,7 +46,7 @@ where `R` has prime characteristic `p`.
 ## References
 
 The additive-group points dictionary `TauCeti.AdditiveGroup.gaPointsMulEquiv` and the
-coordinate-bialgebra functoriality `TauCeti.AlgHom.mapDomain` are Tau Ceti's. The freshman's
+coordinate-bialgebra functoriality `BialgHom.mapDomain` are Tau Ceti's. The freshman's
 dream `add_pow_expChar`, the symmetric-algebra bialgebra structure, and the bialgebra-hom
 constructor `BialgHom.ofAlgHom` are Mathlib's.
 -/
@@ -134,7 +134,7 @@ variable {A : Type v} [CommSemiring A] [Algebra R A]
 its `p`-th power, `a ↦ aᵖ`. -/
 noncomputable def frobeniusEnd :
     WithConv (SymmetricAlgebra R R →ₐ[R] A) →* WithConv (SymmetricAlgebra R R →ₐ[R] A) :=
-  AlgHom.mapDomain (frobeniusBialgHom R p)
+  BialgHom.mapDomain (frobeniusBialgHom R p)
 
 /-- **The Frobenius endomorphism acts as `a ↦ aᵖ` on points.** Reading a `𝔾ₐ`-point off on the
 generator `x = ι 1`, the Frobenius endomorphism raises the resulting element of `A` to its `p`-th
@@ -146,7 +146,7 @@ simp-normal form. -/
 theorem toAdd_gaPointsMulEquiv_frobeniusEnd (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv (frobeniusEnd R p F)) =
       Multiplicative.toAdd (gaPointsMulEquiv F) ^ p := by
-  simp only [toAdd_gaPointsMulEquiv, frobeniusEnd, AlgHom.mapDomain_apply_apply,
+  simp only [toAdd_gaPointsMulEquiv, frobeniusEnd, BialgHom.mapDomain_apply_apply,
     frobeniusBialgHom_ι_one, map_pow]
 
 variable {B : Type w} [CommSemiring B] [Algebra R B]
@@ -156,7 +156,7 @@ value-algebra functoriality `AlgHom.mapValue`. -/
 theorem mapValue_frobeniusEnd (χ : A →ₐ[R] B) :
     (frobeniusEnd R p (A := B)).comp (AlgHom.mapValue (H := SymmetricAlgebra R R) χ) =
       (AlgHom.mapValue (H := SymmetricAlgebra R R) χ).comp (frobeniusEnd R p (A := A)) :=
-  AlgHom.mapValue_mapDomain (frobeniusBialgHom R p) χ
+  BialgHom.mapValue_mapDomain (frobeniusBialgHom R p) χ
 
 end AdditiveGroup
 

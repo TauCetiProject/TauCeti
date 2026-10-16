@@ -33,6 +33,8 @@ they differ.
   `y ≫ a` and `y ≫ b` is the preimage under `y` of the image of the equalizer of `a` and `b`.
 * `TauCeti.AlgebraicGeometry.isEmpty_equalizer_comp_iff`: the equalizer of `y ≫ a` and `y ≫ b`
   is empty exactly when the image of `y` misses the equalizer of `a` and `b`.
+* `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_of_isPullback`: viewing points of a base
+  change as points of the original scheme preserves and reflects emptiness of their equalizer.
 * `TauCeti.AlgebraicGeometry.range_equalizer_ι_left_of_section`: the image of the equalizer of
   two sections is the set of points of the base at which they agree.
 * `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_forall_ne`: two sections have empty equalizer
@@ -98,6 +100,37 @@ theorem isEmpty_equalizer_comp_iff (y : Z ⟶ Y) (a b : Y ⟶ W) :
       Disjoint (Set.range y.left) (Set.range (equalizer.ι a b).left) := by
   rw [← Set.range_eq_empty_iff, range_equalizer_ι_left_comp, Set.preimage_eq_empty_iff,
     disjoint_comm]
+
+/-- Changing the base of a pullback does not change whether the equalizer of two points
+is empty. Here `a` and `b` are the images of `x` and `y` under the pullback projection,
+and `e` identifies their base map `f'` with `Z.hom ≫ f`. -/
+theorem isEmpty_equalizer_iff_of_isPullback {S' : Scheme.{u}} {X : Over S} {X' Z : Over S'}
+    {f : S' ⟶ S} {g : X'.left ⟶ X.left} (hg : IsPullback g X'.hom X.hom f)
+    {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f') (x y : Z ⟶ X') (a b : Over.mk f' ⟶ X)
+    (hx : x.left ≫ g = a.left) (hy : y.left ≫ g = b.left) :
+    IsEmpty (equalizer x y).left ↔ IsEmpty (equalizer a b).left := by
+  subst f'
+  constructor
+  · intro h
+    let ι := equalizer.ι a b
+    let V : Over S' := Over.mk (ι.left ≫ Z.hom)
+    let v : V ⟶ Z := Over.homMk ι.left
+    have hv : v ≫ x = v ≫ y := by
+      ext1
+      apply hg.hom_ext
+      · have hc := congrArg CommaMorphism.left (equalizer.condition a b)
+        simpa only [v, Over.comp_left, Over.homMk_left, Category.assoc, hx, hy] using hc
+      · simp
+    exact Function.isEmpty (equalizer.lift v hv).left
+  · intro h
+    let ι := equalizer.ι x y
+    let V : Over S := Over.mk (ι.left ≫ Z.hom ≫ f)
+    let v : V ⟶ Over.mk (Z.hom ≫ f) := Over.homMk ι.left (by simp [V])
+    have hv : v ≫ a = v ≫ b := by
+      ext1
+      have hc := congrArg (fun k ↦ k.left ≫ g) (equalizer.condition x y)
+      simpa only [v, Over.comp_left, Over.homMk_left, Category.assoc, hx, hy] using hc
+    exact Function.isEmpty (equalizer.lift v hv).left
 
 /-- **Where two sections agree.** For sections `Q` and `R` of a scheme `X` over `S`, the image of
 their equalizer is the set of points of `S` at which `Q` and `R` take the same value. -/

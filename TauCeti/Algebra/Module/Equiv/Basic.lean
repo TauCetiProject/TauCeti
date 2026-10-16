@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
-public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Equiv
 
 /-!
@@ -19,10 +19,15 @@ evaluation lemma, in the `simp`-normal form that rewrites an application of
 `LinearEquiv.smulOfUnit` to a scalar multiplication. It also records how a linear automorphism,
 viewed as a permutation of the module through `MulAction.toPermHom`, moves the set underlying a
 submodule.
+Postcomposition with an isomorphism of targets also transports hom spaces over auxiliary
+scalars, even when the ring defining the linear maps is noncommutative.
 For coordinate transport, forgetting linearity gives the corresponding additive word
 equivalence, with the same direction on coordinates.
 
 ## Main results
+
+* `LinearEquiv.homCongrRight`: an isomorphism of targets induces an equivalence of hom spaces
+  over the auxiliary scalar semiring.
 
 * `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
   kernels and ranges across an intertwining semilinear equivalence.
@@ -51,6 +56,37 @@ theorem funCongrLeft_toAddMonoidHom (e : κ ≃ ι) :
   simp
 
 end Coordinates
+
+section HomCongrRight
+
+variable (k : Type*) {A : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+variable {S : Type*} [AddCommMonoid S] [Module A S]
+variable {N : Type*} [AddCommMonoid N] [Module A N] [Module k N] [IsScalarTower k A N]
+variable {P : Type*} [AddCommMonoid P] [Module A P] [Module k P] [IsScalarTower k A P]
+
+/-- **Isomorphic targets give isomorphic hom spaces.**  An `A`-linear isomorphism `e : N ≃ₗ[A] P`
+carries `S →ₗ[A] N` to `S →ₗ[A] P` by postcomposition, `k`-linearly.
+
+This is `LinearEquiv.congrRight` with the auxiliary scalars `k` in place of a commutativity
+assumption on `A`: since `A` is not assumed commutative the hom spaces are not `A`-modules, and
+`k`, acting on the targets compatibly with `A`, supplies the linear structure instead.  The two
+directions are `LinearMap.compRight`. -/
+def homCongrRight (e : N ≃ₗ[A] P) : (S →ₗ[A] N) ≃ₗ[k] (S →ₗ[A] P) :=
+  LinearEquiv.ofLinearMap (LinearMap.compRight (M := S) k (e : N →ₗ[A] P))
+    (LinearMap.compRight (M := S) k (e.symm : P →ₗ[A] N))
+    (by ext f s; simp) (by ext f s; simp)
+
+@[simp]
+theorem homCongrRight_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] N) (s : S) :
+    homCongrRight k (S := S) e f s = e (f s) :=
+  (rfl)
+
+@[simp]
+theorem homCongrRight_symm_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] P) (s : S) :
+    (homCongrRight k (S := S) e).symm f s = e.symm (f s) :=
+  (rfl)
+
+end HomCongrRight
 
 section Intertwining
 

@@ -38,7 +38,7 @@ pentagon's top row and the turn row lies below the rectangle's top row, the seco
 ends on `b` instead. The recut then stays among rectangle--pentagon terms, as the partner of a
 common-terminal-side self-pair (`GridDiagram.terminalSelfPairs`). This file is the half-turn
 mirror of the mixed `left = right` overlap of initial-side pentagons in
-`TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.LeftRight`.
+`TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.LeftRight.Basic`.
 
 ## Main definitions
 

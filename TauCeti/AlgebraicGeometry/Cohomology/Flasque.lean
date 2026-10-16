@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 public import TauCeti.Topology.Sheaves.Flasque
@@ -17,6 +18,10 @@ all of its restriction maps are surjective. `TauCeti/Topology/Sheaves/Flasque.le
 flasque abelian sheaf has no higher cohomology; this file transports that statement to the
 cohomology `Hⁿ(X, M)` of `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` and applies it to the
 sheaf `𝒦_X` of rational functions on an irreducible scheme.
+
+Injective objects in the category of module sheaves are flasque by
+`SheafOfModules.isFlasque_of_injective`. Thus the vanishing instances here also apply to
+module-injective coefficients, including the terms of module-injective resolutions.
 
 The sheaf `𝒦_X` is constant with value the function field on nonempty open subsets and zero on
 the empty one, so it is flasque. Consequently, for every short exact sequence
@@ -73,6 +78,13 @@ noncomputable section
 namespace Scheme.Modules
 
 variable {X : Scheme.{u}}
+
+/-- Injective scheme modules are flasque. This delegate keeps instance synthesis on the
+scheme-module presentation of the underlying presheaf. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFlasque_of_injective
+    (M : X.Modules) [hM : Injective M] : M.presheaf.IsFlasque := by
+  have : @Injective (_root_.SheafOfModules.{u} X.ringCatSheaf) _ M := hM
+  exact _root_.SheafOfModules.isFlasque_of_injective M
 
 /-- A flasque sheaf of modules has vanishing cohomology over every open subset in every positive
 degree. -/

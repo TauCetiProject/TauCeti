@@ -39,6 +39,9 @@ Layer 2 target "the Lie algebra of a closed subgroup".
   that image.
 * `TauCeti.HopfIdeal.lieSubalgebra_map`: tangent Lie algebras commute with inverse images of
   closed subgroups under arbitrary group homomorphisms.
+* `TauCeti.HopfIdeal.derivationComp_mem_lieSubalgebra_comapOfSurjective_iff`: along a closed
+  immersion, the differential identifies the tangent Lie algebra of a closed subgroup with that of
+  its image.
 
 ## References
 
@@ -90,7 +93,7 @@ theorem quotientLieHom_adDerivation (I : HopfIdeal R H)
       (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
     quotientLieHom I (Derivation.adDerivation B g d) =
       Derivation.adDerivation B
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
+        (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
           (Bialgebra.Quotient.mkBialgHom I.toIdeal) g)
         (quotientLieHom I d) := by
   rw [quotientLieHom_apply, quotientLieHom_apply]
@@ -298,6 +301,17 @@ theorem lieSubalgebra_map {K : Type*} [CommRing K] [HopfAlgebra R K]
   rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _ hspan]
   simp only [Set.forall_mem_image, derivationComp_apply]
   exact ⟨fun h x hx ↦ h hx, fun h x hx ↦ h x hx⟩
+
+/-- Along a closed immersion given by a surjective coordinate morphism `f`, precomposition with `f`
+identifies the tangent Lie algebra of a closed subgroup with that of its image (the subgroup cut
+out by `J.comapOfSurjective f`). -/
+theorem derivationComp_mem_lieSubalgebra_comapOfSurjective_iff {K : Type*} [CommRing K]
+    [HopfAlgebra R K] (J : HopfIdeal R K) (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (d : Derivation R K (Bialgebra.CounitAlgebra R K B)) :
+    derivationComp (B := B) f d ∈ lieSubalgebra (B := B) (J.comapOfSurjective f hf) ↔
+      d ∈ lieSubalgebra (B := B) J := by
+  conv_rhs => rw [← map_comapOfSurjective J f hf]
+  rw [lieSubalgebra_map, LieSubalgebra.mem_comap, derivationCompLieHom_apply]
 
 /-- The Lie algebra of the quotient Hopf algebra is canonically Lie-equivalent to its image in
 the ambient tangent Lie algebra. -/

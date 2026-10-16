@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.HilbertInvariant
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Invariant
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 import TauCeti.FieldTheory.GaloisCohomology.MuTwo.LocalSymbol

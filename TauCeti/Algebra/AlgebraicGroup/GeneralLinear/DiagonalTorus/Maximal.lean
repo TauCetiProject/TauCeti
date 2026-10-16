@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # Maximality of the diagonal torus in the general linear group
@@ -90,7 +91,7 @@ noncomputable def diagonalTorusCoordinateIso :
       DiagonalizableGroup.coordinateRing k
         (SplitTorus.characterGroup (ULift.{u} (Fin n))) :=
   ObjectProperty.isoMk _ <|
-    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
       (diagonalTorusCoordinateMap_surjective k n)
 
 /-- The diagonal-torus quotient isomorphism identifies the quotient morphism with the canonical
@@ -103,7 +104,7 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
           (diagonalTorusDefiningIdeal k n) ≫
         (diagonalTorusCoordinateIso k n).hom =
       ObjectProperty.homMk (diagonalTorusCoordinateMap (R := k) (N := n)) :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
@@ -149,25 +150,11 @@ grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
         (diagonalTorusDefiningIdeal k n) A =
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
   HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 variable [IsAlgClosed k]
-
-private instance instNontrivialUnitsOfInfiniteField {F : Type*} [Field F] [Infinite F] :
-    Nontrivial Fˣ := by
-  let U := {x : F // x ∈ ({0} : Set F)ᶜ}
-  let _ : Infinite U := (Set.toFinite ({0} : Set F)).infinite_compl.to_subtype
-  obtain ⟨x, y, hxy⟩ := exists_pair_ne U
-  refine ⟨Units.mk0 x (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using x.property),
-    Units.mk0 y (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using y.property), ?_⟩
-  intro h
-  apply hxy
-  apply Subtype.ext
-  exact congrArg Units.val h
 
 omit [IsAlgClosed k] in
 private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :

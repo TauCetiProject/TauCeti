@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -323,6 +325,14 @@ theorem isCongrOne_iff {𝔪 : Modulus K} {x : Kˣ} :
         ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
   Iff.rfl
 
+/-- Multiplicative congruence is the finite ideal congruence together with the selected
+real-place positivity conditions. -/
+theorem isCongrOne_iff_mem_congruenceSubgroup_and_pos {𝔪 : Modulus K} {x : Kˣ} :
+    IsCongrOne 𝔪 x ↔
+      x ∈ Ideal.congruenceSubgroup 𝔪.finitePart K 𝔪.finitePart_ne_bot ∧
+        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+  simp only [isCongrOne_iff, Ideal.mem_congruenceSubgroup_iff, Modulus.exponent_def]
+
 namespace IsCongrOne
 
 variable {𝔪 : Modulus K} {x : Kˣ}
@@ -346,17 +356,16 @@ theorem valuation_sub_one_lt_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum
 /-- **An element congruent to one is a unit at the primes dividing the finite part.** -/
 theorem valuation_eq_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum (𝓞 K)}
     (hv : v.asIdeal ∣ 𝔪.finitePart) : v.valuation K (x : K) = 1 := by
-  have h := Valuation.map_one_add_of_lt (v.valuation K) (hx.valuation_sub_one_lt_one hv)
-  rwa [add_sub_cancel] at h
+  exact Ideal.valuation_eq_one_of_mem_congruenceSubgroup
+    (isCongrOne_iff_mem_congruenceSubgroup_and_pos.mp hx).1 hv
 
 /-- **Congruence is antitone in the modulus.**  An element congruent to one modulo the larger
 modulus `𝔫` is congruent to one modulo every divisor `𝔪` of `𝔫`: the exponents can only have
 shrunk and fewer real places are constrained. -/
 theorem mono {𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (hx : IsCongrOne 𝔫 x) : IsCongrOne 𝔪 x := by
-  refine ⟨fun v hv ↦ ?_, fun w hw ↦ hx.pos ((Modulus.dvd_iff.mp h).2 hw)⟩
-  refine (hx.valuation_sub_one_le (hv.trans (Modulus.dvd_iff.mp h).1)).trans
-    (WithZero.exp_le_exp.mpr ?_)
-  exact neg_le_neg (Int.ofNat_le.mpr (Modulus.exponent_mono h v))
+  rw [isCongrOne_iff_mem_congruenceSubgroup_and_pos] at hx ⊢
+  exact ⟨Ideal.congruenceSubgroup_antitone (Modulus.dvd_iff.mp h).1 hx.1,
+    fun w hw ↦ hx.2 w ((Modulus.dvd_iff.mp h).2 hw)⟩
 
 end IsCongrOne
 
@@ -370,28 +379,14 @@ def congruenceSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
     · simp
   mul_mem' := by
     rintro x y hx hy
-    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · -- `xy - 1 = x (y - 1) + (x - 1)`, and `x` is a unit at `v`.
-      have hxy : ((x * y : Kˣ) : K) - 1 = (x : K) * ((y : K) - 1) + ((x : K) - 1) := by
-        push_cast; ring
-      refine le_trans (hxy ▸ Valuation.map_add (v.valuation K) _ _) (max_le ?_ ?_)
-      · rw [map_mul, hx.valuation_eq_one hv, one_mul]
-        exact hy.valuation_sub_one_le hv
-      · exact hx.valuation_sub_one_le hv
-    · have := mul_pos (hx.pos hw) (hy.pos hw)
-      rwa [← map_mul, ← Units.val_mul] at this
+    simp only [Set.mem_ofPred_eq, isCongrOne_iff_mem_congruenceSubgroup_and_pos] at hx hy ⊢
+    refine ⟨mul_mem hx.1 hy.1, fun w hw ↦ ?_⟩
+    simpa only [Units.val_mul, map_mul] using mul_pos (hx.2 w hw) (hy.2 w hw)
   inv_mem' := by
     rintro x hx
-    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · have hne : (x : K) ≠ 0 := x.ne_zero
-      have hxy : ((x⁻¹ : Kˣ) : K) - 1 = -(((x : K) - 1) * (x : K)⁻¹) := by
-        rw [Units.val_inv_eq_inv_val]
-        field_simp
-        ring
-      rw [hxy, Valuation.map_neg, map_mul, map_inv₀, hx.valuation_eq_one hv, inv_one, mul_one]
-      exact hx.valuation_sub_one_le hv
-    · have := inv_pos.mpr (hx.pos hw)
-      rwa [← map_inv₀, ← Units.val_inv_eq_inv_val] at this
+    simp only [Set.mem_ofPred_eq, isCongrOne_iff_mem_congruenceSubgroup_and_pos] at hx ⊢
+    refine ⟨inv_mem hx.1, fun w hw ↦ ?_⟩
+    simpa only [Units.val_inv_eq_inv_val, map_inv₀] using inv_pos.mpr (hx.2 w hw)
 
 @[simp] theorem mem_congruenceSubgroup {𝔪 : Modulus K} {x : Kˣ} :
     x ∈ congruenceSubgroup 𝔪 ↔ IsCongrOne 𝔪 x := Iff.rfl
@@ -403,19 +398,17 @@ theorem congruenceSubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) 
 
 /-- The subgroup of `Kˣ` of elements that are units at every prime dividing the finite part of the
 modulus.  This is the domain of reduction to the residue units. -/
-def primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
-  carrier := {x | ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
-    v.valuation K (x : K) = 1}
-  one_mem' := by simp
-  mul_mem' := fun hx hy v hv ↦ by
-    rw [Units.val_mul, map_mul, hx v hv, hy v hv, one_mul]
-  inv_mem' := fun hx v hv ↦ by
-    rw [Units.val_inv_eq_inv_val, map_inv₀, hx v hv, inv_one]
+noncomputable abbrev primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ :=
+  (𝔪.support : Set (HeightOneSpectrum (𝓞 K)))ᶜ.unit K
 
-@[simp] theorem mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ} :
+@[simp↓] theorem mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ} :
     x ∈ primeToSubgroup 𝔪 ↔
-      ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 :=
-  Iff.rfl
+      ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 := by
+  -- Mathlib has no S-unit membership lemma; unfold the defining valuation condition.
+  change (∀ v ∉ (𝔪.support : Set (HeightOneSpectrum (𝓞 K)))ᶜ,
+    v.valuation K (x : K) = 1) ↔ _
+  simp only [Set.mem_compl_iff, Finset.mem_coe,
+    not_not, Modulus.mem_support_iff]
 
 /-- A larger finite part has a smaller prime-to subgroup.  This is the carrier map used when
 changing the finite part in a reduction statement. -/
@@ -431,7 +424,7 @@ theorem primeToSubgroup_le_of_dvd {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart �
 the principal ideal of an element congruent to one prime to the modulus. -/
 theorem congruenceSubgroup_le_primeToSubgroup (𝔪 : Modulus K) :
     congruenceSubgroup 𝔪 ≤ primeToSubgroup 𝔪 :=
-  fun _ hx v hv ↦ hx.valuation_eq_one (v := v) hv
+  fun _ hx ↦ mem_primeToSubgroup.mpr fun v hv ↦ hx.valuation_eq_one (v := v) hv
 
 /-- The units of `𝓞 K` congruent to one modulo `𝔪`.  Its index in `(𝓞 K)ˣ` is the unit correction
 in the ray class number formula. -/

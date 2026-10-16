@@ -168,6 +168,29 @@ theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
       rw [integral_const_mul, setIntegral_indicator hS]
 
 omit [DecidableEq ι] in
+/-- Bound the zeroth-order term of a Caccioppoli inequality by an integral over a set containing
+the support of a cutoff with `ψ² ≤ 1`. The comparison function may dominate the Sobolev value only
+almost everywhere. -/
+theorem W1p.setIntegral_sq_mul_value_sq_le (w : W1p mu Omega 2) {ψ : EuclideanSpace ℝ ι → ℝ}
+    (hψ : AEStronglyMeasurable ψ (mu.restrict Omega)) (hψ1 : ∀ x, ψ x ^ 2 ≤ 1)
+    {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S) (hts : tsupport ψ ⊆ S)
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : Integrable g (mu.restrict Omega))
+    (hwg : ∀ᵐ x ∂mu.restrict Omega, W1p.value w x ^ 2 ≤ g x) :
+    ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+      ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+  rw [← setIntegral_indicator hS]
+  refine integral_mono_ae ((W1p.integrable_value_sq w).bdd_mul (hψ.pow 2) (c := 1)
+    (Filter.Eventually.of_forall fun x => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+      exact hψ1 x)) (hg.indicator hS) ?_
+  filter_upwards [hwg] with x hx
+  by_cases hxS : x ∈ S
+  · rw [indicator_of_mem hxS]
+    exact (mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)).trans hx
+  · rw [indicator_of_notMem hxS, image_eq_zero_of_notMem_tsupport fun hx' => hxS (hts hx')]
+    simp
+
+omit [DecidableEq ι] in
 open Filter Metric in
 /-- **Localizing a cutoff Caccioppoli inequality to concentric balls.** There is a constant
 `C > 0`, depending only on the dimension, such that the following holds for every additive Haar
@@ -222,25 +245,11 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
       (by rw [inter_eq_right.2 hball])
   -- `ψ² ≤ 1` on `B(x₀, R)`, and `ψ` vanishes off it.
   have hzeroth : ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
-      ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu := by
-    have hψ1 : ∀ x, ψ x ^ 2 ≤ 1 := fun x => by
+      ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
+    (W1p.setIntegral_sq_mul_value_sq_le w hψ.continuous.aestronglyMeasurable (fun x => by
       obtain ⟨h0, h1⟩ := hrange (mem_range_self x)
-      exact pow_le_one₀ h0 h1
-    calc ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
-        ≤ ∫ x in Omega, (ball x₀ R).indicator (fun x => W1p.value w x ^ 2) x ∂mu :=
-          integral_mono ((W1p.integrable_value_sq w).bdd_mul
-            (hψ.continuous.pow 2).aestronglyMeasurable (c := 1) (Eventually.of_forall fun x => by
-              rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-              exact hψ1 x))
-            ((W1p.integrable_value_sq w).indicator measurableSet_ball) fun x => by
-              by_cases hxR : x ∈ ball x₀ R
-              · rw [indicator_of_mem hxR]
-                exact mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)
-              · rw [indicator_of_notMem hxR,
-                  image_eq_zero_of_notMem_tsupport (fun hx' => hxR (htsR hx'))]
-                simp
-      _ = ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu := by
-        rw [setIntegral_indicator measurableSet_ball, inter_eq_right.2 hball]
+      exact pow_le_one₀ h0 h1) measurableSet_ball htsR (W1p.integrable_value_sq w)
+      (Eventually.of_forall fun x => le_rfl)).trans_eq (by rw [inter_eq_right.2 hball])
   calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
       ≤ A * (G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu)
           + B * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=

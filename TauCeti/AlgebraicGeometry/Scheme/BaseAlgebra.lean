@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.ResidueField
 
@@ -26,6 +27,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 * `Scheme.fromSpecStalk_comp_over`: the spectrum of a stalk maps to `X` over the affine base.
 * `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over`: a `k`-algebra map of function fields
   gives a morphism over the affine base between the spectra of the function fields.
+* `Scheme.Hom.functionFieldAlgHom`: conversely, the pullback of rational functions along a
+  dominant morphism over the affine base is a `k`-algebra map of function fields.
 * `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
   algebra structures.
 * `Scheme.baseStalkFunctionFieldIsScalarTower`: compatibility of the base, stalk, and
@@ -235,6 +238,51 @@ theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_
   exact hf c
 
 end CommRing
+
+section FunctionFieldMap
+
+variable (k : Type u) [CommRing k] {X Y Z : Scheme.{u}} [X.Over (Spec (.of k))]
+  [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral X] [IsIntegral Y] [IsIntegral Z]
+
+/-- The pullback of rational functions along a dominant morphism of integral schemes over
+`Spec k` is compatible with the `k`-algebra structures of the function fields. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap (f : X ⟶ Y)
+    [f.IsOver (Spec (.of k))] [IsDominant f] (c : k) :
+    f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c := by
+  have h : Spec.map (CommRingCat.ofHom (algebraMap k Y.functionField) ≫ f.functionFieldMap) =
+      Spec.map (CommRingCat.ofHom (algebraMap k X.functionField)) := by
+    rw [Spec.map_comp, ← Scheme.fromSpecStalk_genericPoint_comp_over,
+      ← Scheme.fromSpecStalk_genericPoint_comp_over,
+      Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk_assoc, comp_over]
+  exact congr($(Spec.map_injective h) c)
+
+/-- The pullback of rational functions `f^* : k(Y) → k(X)` along a dominant morphism `f : X ⟶ Y`
+of integral schemes over `Spec k`, as a `k`-algebra homomorphism. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom (f : X ⟶ Y)
+    [f.IsOver (Spec (.of k))] [IsDominant f] : Y.functionField →ₐ[k] X.functionField where
+  __ := f.functionFieldMap.hom
+  commutes' := f.functionFieldMap_algebraMap k
+
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_apply (f : X ⟶ Y)
+    [f.IsOver (Spec (.of k))] [IsDominant f] (a : Y.functionField) :
+    f.functionFieldAlgHom k a = f.functionFieldMap a :=
+  (rfl)
+
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_id :
+    Scheme.Hom.functionFieldAlgHom k (𝟙 X) = AlgHom.id k X.functionField := by
+  ext
+  simp
+
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+    [f.IsOver (Spec (.of k))] [g.IsOver (Spec (.of k))] [IsDominant f] [IsDominant g] :
+    (f ≫ g).functionFieldAlgHom k = (f.functionFieldAlgHom k).comp (g.functionFieldAlgHom k) := by
+  ext
+  simp
+
+end FunctionFieldMap
 
 section RationalFunctions
 

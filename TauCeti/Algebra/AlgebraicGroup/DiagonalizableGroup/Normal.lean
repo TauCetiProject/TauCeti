@@ -96,8 +96,8 @@ private theorem commute_mapDomain_of_isNormal
     (hN : (HopfIdeal.kerOfSurjective π hπ).IsNormal)
     {A : Type*} [CommRing A] [Algebra k A]
     (g : WithConv (H →ₐ[k] A)) (t : WithConv (MonoidAlgebra k X →ₐ[k] A)) :
-    Commute g (AlgHom.mapDomain π t) := by
-  have hconj : g * AlgHom.mapDomain π t * g⁻¹ = AlgHom.mapDomain π t := by
+    Commute g (BialgHom.mapDomain π t) := by
+  have hconj : g * BialgHom.mapDomain π t * g⁻¹ = BialgHom.mapDomain π t := by
     apply ofConv_injective
     apply AlgHom.ext
     intro x
@@ -112,7 +112,7 @@ private theorem commute_mapDomain_of_isNormal
       | tmul a b => simp
     rw [hmap] at h
     rw [← AlgHom.comp_apply, HopfAlgebra.productMap_comp_conjugationAlgHom] at h
-    simpa [AlgHom.mapDomain_apply] using h
+    simpa [BialgHom.mapDomain_apply] using h
   exact (commute_iff_eq _ _).mpr (mul_inv_eq_iff_eq_mul.mp hconj)
 
 /-- A normal diagonalizable closed subgroup of a reduced connected finite-type affine group
@@ -129,7 +129,7 @@ theorem isCentral_kerOfSurjective_of_isNormal
   obtain ⟨t, rfl⟩ := hg
   rw [HopfAlgebra.isCentralPoint_def]
   intro B _ _ φ h
-  have hnat := DFunLike.congr_fun (AlgHom.mapValue_mapDomain π φ).symm t
+  have hnat := DFunLike.congr_fun (BialgHom.mapValue_mapDomain π φ).symm t
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at hnat
   rw [hnat]
   exact (commute_mapDomain_of_isNormal π hπ hN h (AlgHom.mapValue φ t)).symm
