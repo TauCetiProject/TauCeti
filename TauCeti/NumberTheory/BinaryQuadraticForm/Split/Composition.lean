@@ -16,7 +16,8 @@ import Mathlib.Algebra.Group.TransferInstance
 Primitive forms of nonzero square discriminant `s²` have triangular proper representatives
 `sxy + cy²`. Their coefficients `c` classify the proper classes by the units of `ZMod s`.
 Multiplication of these residues defines composition, and agrees with multiplication of
-the explicit modules over the actual congruence product order.
+the explicit modules over the actual congruence product order. The canonical forgetful map
+embeds these classes into the existing proper-class quotient of all integral forms.
 
 ## References
 
@@ -36,11 +37,41 @@ open QuadraticOrder
 abbrev SplitProperClass (s : ℕ) :=
   MulAction.orbitRel.Quotient SL(2, ℤ) (primitiveForms ((s : ℤ) ^ 2))
 
+/-- Forget the primitive square-discriminant restriction on a proper class. -/
+def splitProperClassToProperClass (s : ℕ) :
+    SplitProperClass s →
+      MulAction.orbitRel.Quotient SL(2, ℤ) (BinaryQuadraticForm ℤ) :=
+  Quotient.map' (fun f : primitiveForms ((s : ℤ) ^ 2) ↦ f.val) fun f g h ↦ by
+    simpa only [SubMulAction.orbitRel_of_subMul, Setoid.comap_rel] using h
+
+/-- Forgetting the restriction preserves the underlying representative. -/
+@[simp] theorem splitProperClassToProperClass_mk (s : ℕ)
+    (f : primitiveForms ((s : ℤ) ^ 2)) :
+    splitProperClassToProperClass s (Quotient.mk _ f) = Quotient.mk'' f.val := by
+  rfl
+
+/-- Forgetting the restriction does not identify distinct split proper classes. -/
+theorem splitProperClassToProperClass_injective (s : ℕ) :
+    Function.Injective (splitProperClassToProperClass s) := by
+  intro p q
+  refine Quotient.inductionOn₂ p q ?_
+  intro f g h
+  rw [splitProperClassToProperClass_mk, splitProperClassToProperClass_mk] at h
+  apply Quotient.sound
+  simpa only [SubMulAction.orbitRel_of_subMul, Setoid.comap_rel] using (Quotient.exact h)
+
 /-- The proper class of the triangular representative with coefficient `c`. -/
 def splitProperClassMk (s : ℕ) (c : ℤ) (hc : IsCoprime (s : ℤ) c) : SplitProperClass s :=
   Quotient.mk _ ⟨splitTriangularForm s c,
     (mem_primitiveForms _ _).mpr
       ⟨discrim_splitTriangularForm s c, (isPrimitive_splitTriangularForm s c).mpr hc⟩⟩
+
+/-- The triangular class forgets to the existing raw proper class of its form. -/
+@[simp] theorem splitProperClassToProperClass_splitProperClassMk (s : ℕ) (c : ℤ)
+    (hc : IsCoprime (s : ℤ) c) :
+    splitProperClassToProperClass s (splitProperClassMk s c hc) =
+      Quotient.mk'' (splitTriangularForm s c) := by
+  rfl
 
 /-- Triangular representatives give the same proper class exactly when their coefficients
 have the same residue modulo the nonzero square root. -/
