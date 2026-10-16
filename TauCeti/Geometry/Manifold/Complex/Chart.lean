@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
 # Chart transitions of a complex curve are analytic
@@ -29,7 +30,8 @@ The same argument shows that a map between complex curves that is holomorphic ne
 analytic representative in any charts of the maximal atlases at the point and its image. It follows
 that a holomorphic map between complex curves is `C^n` for every `n`. The complex inverse function
 theorem also shows that the inverse of a holomorphic homeomorphism of complex curves is
-holomorphic.
+holomorphic, and that a homeomorphism from an open subset of a complex curve onto an open subset of
+`ℂ` is a chart of the maximal atlas as soon as its inverse is holomorphic.
 
 ## Main declarations
 
@@ -42,6 +44,8 @@ holomorphic.
 * `MDifferentiable.contMDiff`: a holomorphic map between complex curves is `C^n` for every `n`.
 * `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
   curves is holomorphic.
+* `OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm`: a homeomorphism from an open subset
+  of a complex curve onto an open subset of `ℂ` whose inverse is holomorphic is a holomorphic chart.
 -/
 
 public section
@@ -194,6 +198,38 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
       (c.open_source.mem_nhds hcx)] with y' hy' hgy'
   simp only [Function.comp_apply, G, c'.left_inv hy']
   exact (c.left_inv hgy').symm
+
+/-! ### Charts with holomorphic inverse -/
+
+/-- **A homeomorphism onto an open subset of `ℂ` with holomorphic inverse is a holomorphic chart.**
+On a complex curve, an open partial homeomorphism `e : X → ℂ` whose inverse is `C^n` on the target,
+for some `n ≠ 0`, belongs to the maximal `C^n` atlas. The transition from `e` to a chart of `X` is
+then a holomorphic open partial homeomorphism of `ℂ`, so its inverse is holomorphic
+(`TauCeti.OpenPartialHomeomorph.differentiableOn_symm`), hence `C^n` too. -/
+theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : ℕ∞ω} (hn : n ≠ 0)
+    [IsManifold 𝓘(ℂ) n X] (e : OpenPartialHomeomorph X ℂ)
+    (he : ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n e.symm e.target) : e ∈ maximalAtlas 𝓘(ℂ) n X := by
+  refine e.mem_maximalAtlas_of_contMDiffOn (fun x hx ↦ ?_) he
+  let c := chartAt ℂ x
+  have hc : c ∈ maximalAtlas 𝓘(ℂ) n X := chart_mem_maximalAtlas x
+  have hxc : x ∈ c.source := mem_chart_source ℂ x
+  -- The transition `f = c ∘ e.symm` is a holomorphic open partial homeomorphism of `ℂ`, so its
+  -- inverse `e ∘ c.symm` is holomorphic, hence `C^n`.
+  let f := e.symm ≫ₕ c
+  have hf : ContDiffOn ℂ n f f.source := by
+    rw [← contMDiffOn_iff_contDiffOn]
+    exact (contMDiffOn_of_mem_maximalAtlas hc).comp (he.mono inter_subset_left)
+      inter_subset_right
+  have hex : e x ∈ f.source := e.toPartialEquiv.mem_symm_trans_source hx hxc
+  have hcx : c x ∈ f.target := by
+    simpa [f, e.left_inv hx] using f.map_source hex
+  have hsymm : ContDiffAt ℂ n f.symm (c x) :=
+    ((OpenPartialHomeomorph.differentiableOn_symm (hf.differentiableOn hn)).contDiffOn
+      f.open_target).contDiffAt (f.open_target.mem_nhds hcx)
+  refine ((hsymm.contMDiffAt.comp x (contMDiffAt_of_mem_maximalAtlas hc hxc)).congr_of_eventuallyEq
+    ?_).contMDiffWithinAt
+  filter_upwards [c.open_source.mem_nhds hxc] with y hy
+  simp [f, c.left_inv hy]
 
 end TauCeti
 
