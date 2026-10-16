@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Homotopy.Cube.Basic
 
@@ -65,14 +66,6 @@ theorem circleLoop_apply_one (t : Fin 1 → I) :
   -- unfolding the bundled map leaves exactly this coordinate formula
   rfl
 
-/-- If `cos` and `sin` agree at `2πa` and `2πb`, then `a` and `b` differ by an integer. -/
-theorem exists_int_eq_add_of_cos_sin_eq {a b : ℝ} (hc : cos (2 * π * a) = cos (2 * π * b))
-    (hs : sin (2 * π * a) = sin (2 * π * b)) : ∃ n : ℤ, a = b + n := by
-  obtain ⟨n, hn⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (Real.Angle.cos_sin_inj hc hs)
-  refine ⟨n, ?_⟩
-  have hpi : (2 * π) ≠ 0 := by positivity
-  exact mul_left_cancel₀ hpi (by linarith)
-
 /-- The standard loop sends a point of the interval to `(1, 0)` exactly when it is an end point. -/
 @[simp]
 theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
@@ -110,7 +103,7 @@ theorem eq_or_of_circleLoop_eq {t t' : Fin 1 → I} (h : circleLoop t = circleLo
   have hc := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
   have hs := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 1) h
   simp only [circleLoop_apply_zero, circleLoop_apply_one] at hc hs
-  obtain ⟨n, hn⟩ := exists_int_eq_add_of_cos_sin_eq hc hs
+  obtain ⟨n, hn⟩ := Real.exists_int_eq_add_of_cos_sin_eq hc hs
   have ha := (t 0).2
   have hb := (t' 0).2
   have h1 : (-1 : ℝ) ≤ n := by linarith [ha.1, ha.2, hb.1, hb.2]
