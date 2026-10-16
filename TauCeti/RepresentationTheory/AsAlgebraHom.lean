@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # The monoid-algebra action of a representation
@@ -137,11 +138,8 @@ an isomorphism `e : G ≃* H` is acting by `x` through the representation pulled
 theorem asAlgebraHom_domCongr {H : Type*} [Monoid H] (ρ : Representation k H V) (e : G ≃* H)
     (x : MonoidAlgebra k G) :
     ρ.asAlgebraHom (MonoidAlgebra.domCongr k k e x) =
-      Representation.asAlgebraHom (ρ.comp e.toMonoidHom) x := by
-  have h : ρ.asAlgebraHom.comp (MonoidAlgebra.domCongr k k e).toAlgHom =
-      Representation.asAlgebraHom (ρ.comp e.toMonoidHom) :=
-    MonoidAlgebra.algHom_ext (fun g => by simp) (Subsingleton.elim _ _)
-  exact DFunLike.congr_fun h x
+      Representation.asAlgebraHom (ρ.comp e.toMonoidHom) x :=
+  MonoidAlgebra.lift_mapDomain ρ e.toMonoidHom x
 
 /-- **The action of an element of the monoid algebra of a finite monoid** is the combination
 `∑ g, x g • ρ g` of the operators of the representation, weighted by the coefficients of `x`. -/

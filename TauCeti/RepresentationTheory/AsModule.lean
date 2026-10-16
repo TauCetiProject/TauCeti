@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.CategoryTheory.Skeletal
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.RepresentationTheory.FDRep
 public import TauCeti.RepresentationTheory.Subrepresentation
 
@@ -232,13 +233,12 @@ noncomputable def _root_.Representation.linearEquivAsModuleComp (f : H →* G)
   invFun := e.symm
   map_add' := e.map_add
   map_smul' a x := by
-    have hcomp : ρ.asAlgebraHom.comp (MonoidAlgebra.mapDomainAlgHom k k f) =
-        _root_.Representation.asAlgebraHom (ρ.comp f) :=
-      MonoidAlgebra.algHom_ext (fun c ↦ by simp) (Subsingleton.elim _ _)
-    -- Both `asModule`s are `V`, on which `a` acts through the respective `asAlgebraHom`.
+    -- The two semireducible `asModule` carriers are `V`; read their actions through
+    -- `asAlgebraHom` before rewriting across the carrier change.
     change e (a • x) = _root_.Representation.asAlgebraHom (ρ.comp f) a (e x)
-    rw [hQ, e.map_smul, ← hcomp]
-    rfl
+    rw [hQ, e.map_smul]
+    exact congrArg (fun T : Module.End k V ↦ T (e x))
+      (MonoidAlgebra.lift_mapDomain ρ f a)
   left_inv := e.left_inv
   right_inv := e.right_inv
 
