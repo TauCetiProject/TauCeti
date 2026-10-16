@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # A Morse–Smale function on the plane
@@ -217,9 +215,9 @@ theorem hasNondegenerateCriticalPointsOn_cosAddHalfSq :
     HasNondegenerateCriticalPointsOn cosAddHalfSq univ :=
   hasNondegenerateCriticalPointsOn_iff.2 fun _ _ hz ↦ isNondegenerateCriticalPoint_cosAddHalfSq hz
 
-/-- At a critical point with `cos x = -1`, a minimum, the Morse index is `0`. -/
-theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2)}
-    (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = -1) :
+/-- At a critical point with `cos x = -1`, the Morse index is `0`. -/
+private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
+    {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = -1) :
     morseIndex cosAddHalfSq z = 0 := by
   have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hz
   refine hnd.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.1 fun u hu ↦ ?_
@@ -236,8 +234,8 @@ theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2
   · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 0), sq_nonneg (u 1)]
   · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 1), sq_nonneg (u 0)]
 
-/-- At a critical point with `cos x = 1`, a saddle, the Morse index is `1`. -/
-theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
+/-- At a critical point with `cos x = 1`, the Morse index is `1`. -/
+private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
     (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = 1) :
     morseIndex cosAddHalfSq z = 1 := by
   have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hz
@@ -253,6 +251,43 @@ theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
   have hle : morseIndex cosAddHalfSq z ≤ 2 := by
     simpa using morseIndex_le_finrank (f := cosAddHalfSq) (x := z)
   omega
+
+/-- The Morse index of `cos x + y² / 2` at a point depends only on `cos` of its first coordinate,
+because so does the Hessian quadratic form; criticality in the second coordinate plays no role. -/
+private theorem morseIndex_cosAddHalfSq_congr {z w : EuclideanSpace ℝ (Fin 2)}
+    (h : Real.cos (z 0) = Real.cos (w 0)) :
+    morseIndex cosAddHalfSq z = morseIndex cosAddHalfSq w := by
+  rw [morseIndex_def, morseIndex_def]
+  congr 1
+  exact QuadraticMap.ext fun u ↦ by
+    rw [hessianQuadraticForm_cosAddHalfSq, hessianQuadraticForm_cosAddHalfSq, h]
+
+/-- The point `(z 0, 0)` of the `x`-axis below `z`; it is critical when `sin (z 0) = 0`. -/
+private noncomputable abbrev onAxis (z : EuclideanSpace ℝ (Fin 2)) : EuclideanSpace ℝ (Fin 2) :=
+  EuclideanSpace.single 0 (z 0)
+
+private theorem fderiv_cosAddHalfSq_onAxis {z : EuclideanSpace ℝ (Fin 2)}
+    (h : Real.cos (z 0) = 1 ∨ Real.cos (z 0) = -1) : fderiv ℝ cosAddHalfSq (onAxis z) = 0 := by
+  refine fderiv_cosAddHalfSq_eq_zero_iff.2 ⟨?_, by simp⟩
+  have := Real.sin_sq_add_cos_sq (z 0)
+  have hs : Real.sin (z 0) ^ 2 = 0 := by rcases h with h | h <;> rw [h] at this <;> linarith
+  simpa using pow_eq_zero_iff (two_ne_zero) |>.1 hs
+
+/-- At a point with `cos x = -1`, a minimum when it is critical, the Morse index is `0`. -/
+theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2)}
+    (hc : Real.cos (z 0) = -1) : morseIndex cosAddHalfSq z = 0 := by
+  have hw : Real.cos (onAxis z 0) = -1 := by simpa using hc
+  rw [morseIndex_cosAddHalfSq_congr (w := onAxis z) (by rw [hc, hw]),
+    morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
+      (fderiv_cosAddHalfSq_onAxis (Or.inr hc)) hw]
+
+/-- At a point with `cos x = 1`, a saddle when it is critical, the Morse index is `1`. -/
+theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
+    (hc : Real.cos (z 0) = 1) : morseIndex cosAddHalfSq z = 1 := by
+  have hw : Real.cos (onAxis z 0) = 1 := by simpa using hc
+  rw [morseIndex_cosAddHalfSq_congr (w := onAxis z) (by rw [hc, hw]),
+    morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one
+      (fderiv_cosAddHalfSq_onAxis (Or.inl hc)) hw]
 
 /-- The negative-gradient flow of `cos x + y² / 2`. -/
 local notation "Φ" => negativeGradientFlow cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq
@@ -401,7 +436,7 @@ private theorem span_sup_span_eq_top_of_saddle {q : EuclideanSpace ℝ (Fin 2)}
       _ = K := Submodule.tangentConeAt_eq K hKc hqK
   have hUdim : Module.finrank ℝ U = 1 := by
     rw [hnd.finrank_span_tangentConeAt_unstableSet contDiff_cosAddHalfSq
-      lipschitzWith_gradient_cosAddHalfSq hqu, morseIndex_cosAddHalfSq_of_cos_eq_one hq hc]
+      lipschitzWith_gradient_cosAddHalfSq hqu, morseIndex_cosAddHalfSq_of_cos_eq_one hc]
   -- The vertical direction is tangent to the stable set.
   have he₁ : e₁ ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet Φ q) q) := by
     have hq' : q = q 0 • e₀ + (0 : ℝ) • e₁ := by
@@ -464,7 +499,7 @@ theorem isMorseSmale_cosAddHalfSq :
     have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hq
     have h := hnd.finrank_span_tangentConeAt_stableSet_add_morseIndex contDiff_cosAddHalfSq
       lipschitzWith_gradient_cosAddHalfSq hys
-    rw [morseIndex_cosAddHalfSq_of_cos_eq_neg_one hq hc, add_zero] at h
+    rw [morseIndex_cosAddHalfSq_of_cos_eq_neg_one hc, add_zero] at h
     rw [Submodule.eq_top_of_finrank_eq h, sup_top_eq]
 
 variable {p q : EuclideanSpace ℝ (Fin 2)}
@@ -484,14 +519,13 @@ theorem exists_isManifold_cosAddHalfSq_saddle_min (hp : fderiv ℝ cosAddHalfSq 
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet
     contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
     (isNondegenerateCriticalPoint_cosAddHalfSq hq) ?_
-  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hp hpc,
-    morseIndex_cosAddHalfSq_of_cos_eq_neg_one hq hqc]
+  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hpc,
+    morseIndex_cosAddHalfSq_of_cos_eq_neg_one hqc]
 
 /-- **Level slices of the connecting locus from a saddle to a minimum are manifolds of dimension
 `0`.** For a saddle `p` and a minimum `q`, each level slice `W^u(p) ∩ W^s(q) ∩ {f = c}` is a
-manifold of dimension `0`. For `f q < c < f p` (for `p = (0, 0)`, `q = (π, 0)`: `-1 < c < 1`) it
-meets each trajectory from `p` to `q` exactly once, so it models the unparametrized trajectories;
-for other levels it is empty. -/
+`C¹` manifold of dimension `0`, modelled on any subspace of dimension `0`, and its inclusion into
+the plane is `C¹`. -/
 theorem exists_isManifold_cosAddHalfSq_saddle_min_level (hp : fderiv ℝ cosAddHalfSq p = 0)
     (hpc : Real.cos (p 0) = 1) (hq : fderiv ℝ cosAddHalfSq q = 0) (hqc : Real.cos (q 0) = -1)
     {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} (hL : Module.finrank ℝ L = 0) (c : ℝ) :
@@ -505,7 +539,7 @@ theorem exists_isManifold_cosAddHalfSq_saddle_min_level (hp : fderiv ℝ cosAddH
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet_level
     contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
     (isNondegenerateCriticalPoint_cosAddHalfSq hq) ?_
-  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hp hpc,
-    morseIndex_cosAddHalfSq_of_cos_eq_neg_one hq hqc]
+  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hpc,
+    morseIndex_cosAddHalfSq_of_cos_eq_neg_one hqc]
 
 end TauCeti
