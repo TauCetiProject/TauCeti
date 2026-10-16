@@ -5,19 +5,37 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
-public import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
-# Additive Haar nullness from Hausdorff dimension
+# Hausdorff measure and additive Haar measure
 
-A set of Hausdorff dimension below the dimension of its ambient finite-dimensional real normed
-space is null for every normalization of additive Haar measure.
+In dimension one, Euclidean-normalized Hausdorff measure agrees with raw Hausdorff measure. A set
+of Hausdorff dimension below the dimension of its ambient finite-dimensional real normed space is
+null for every normalization of additive Haar measure.
 -/
 
 public section
 
 namespace MeasureTheory
+
+namespace Measure
+
+variable {X : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+
+/-- In dimension one the Euclidean normalization constant is `1`, so `μHE[1] = μH[1]`. -/
+theorem euclideanHausdorffMeasure_one : (μHE[1] : Measure X) = μH[1] := by
+  have hreal : (μHE[1] : Measure ℝ) = volume := by
+    simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
+  have hscalar :
+      addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin 1))) μH[(1 : ℕ)] = 1 := by
+    have h := congrArg (fun μ : Measure ℝ ↦ μ (Set.Icc 0 1)) hreal
+    simpa [euclideanHausdorffMeasure_def, smul_apply, hausdorffMeasure_real,
+      Real.volume_Icc] using h
+  rw [euclideanHausdorffMeasure_def, hscalar, one_smul, Nat.cast_one]
+
+end Measure
 
 /-- A set of smaller Hausdorff dimension than its ambient real normed space is null for every
 additive Haar measure. -/

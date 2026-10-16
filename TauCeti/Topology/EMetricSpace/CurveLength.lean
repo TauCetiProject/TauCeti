@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
+public import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 public import TauCeti.Topology.Connected.HausdorffMeasure
 
 /-!
@@ -34,18 +34,6 @@ namespace ContinuousOn
 
 variable {X : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 variable {γ : ℝ → X} {a b : ℝ}
-
-/-- In dimension one the Euclidean normalization constant is `1`, so `μHE[1] = μH[1]`. -/
-private theorem euclideanHausdorffMeasure_one_eq : (μHE[1] : Measure X) = μH[1] := by
-  have hreal : (μHE[1] : Measure ℝ) = volume := by
-    simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
-  have hscalar :
-      Measure.addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin 1)))
-        μH[(1 : ℕ)] = 1 := by
-    have h := congrArg (fun μ : Measure ℝ ↦ μ (Icc 0 1)) hreal
-    simpa [Measure.euclideanHausdorffMeasure_def, Measure.smul_apply,
-      hausdorffMeasure_real, Real.volume_Icc] using h
-  rw [Measure.euclideanHausdorffMeasure_def, hscalar, one_smul, Nat.cast_one]
 
 private theorem sum_edist_le_hausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
     (hinj : InjOn γ (Icc a b)) {n : ℕ} {u : ℕ → ℝ}
@@ -107,7 +95,7 @@ theorem eVariationOn_le_hausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
 one-dimensional Hausdorff measure of its trace. This also covers empty and singleton intervals. -/
 theorem eVariationOn_le_euclideanHausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
     (hinj : InjOn γ (Icc a b)) : eVariationOn γ (Icc a b) ≤ μHE[1] (γ '' Icc a b) := by
-  rw [euclideanHausdorffMeasure_one_eq]
+  rw [Measure.euclideanHausdorffMeasure_one]
   exact hγ.eVariationOn_le_hausdorffMeasure_image hinj
 
 /-- A continuous injective arc with finite raw Hausdorff length has bounded variation. -/
@@ -200,7 +188,7 @@ theorem eVariationOn_le_euclideanHausdorffMeasure_image_of_injOn_Ico
     (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
     (hclosed : γ a = γ b) :
     eVariationOn γ (Icc a b) ≤ μHE[1] (γ '' Icc a b) := by
-  rw [euclideanHausdorffMeasure_one_eq]
+  rw [Measure.euclideanHausdorffMeasure_one]
   exact hγ.eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico hinj hclosed
 
 /-- A continuous simple closed curve with finite raw Hausdorff length has bounded variation. -/
