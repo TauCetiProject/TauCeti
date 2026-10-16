@@ -152,7 +152,7 @@ theorem lazardProjection_subset_mcCallumProjection :
 
 namespace IsIrreducibleBasis
 
-variable [IsDomain R] [UniqueFactorizationMonoid R]
+variable [IsDomain R]
 
 /-! ### Independence of the basis -/
 
