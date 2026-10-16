@@ -65,11 +65,9 @@ abbrev finiteAdelicSpinDoubleCoset : Type _ :=
   DoubleCoset.Quotient (U.finiteAdelicSpinDiagonal.range : Set U.finiteAdelicSpin)
     (integralSubgroup U.spin : Set U.finiteAdelicSpin)
 
-variable [FiniteDimensional ℚ V]
-
 /-- The finite adelic special-orthogonal double-coset set
 `SO(V)(ℚ) \ SO(V)(𝔸_f) / ∏_p U_p^{SO}`. -/
-abbrev finiteAdelicSpecialOrthogonalDoubleCoset : Type _ :=
+abbrev finiteAdelicSpecialOrthogonalDoubleCoset [FiniteDimensional ℚ V] : Type _ :=
   DoubleCoset.Quotient
     (U.finiteAdelicSpecialOrthogonalDiagonal.range : Set U.finiteAdelicSpecialOrthogonal)
     (integralSubgroup U.specialOrthogonal : Set U.finiteAdelicSpecialOrthogonal)
@@ -84,7 +82,6 @@ def finiteAdelicOrthogonalDoubleCosetMapOfLE
         Set U.finiteAdelicOrthogonal) K :=
   DoubleCoset.quotientMapOfLERight U.finiteAdelicOrthogonalDiagonal.range hK
 
-omit [FiniteDimensional ℚ V] in
 /-- Enlarging the orthogonal right subgroup preserves representatives. -/
 @[simp]
 theorem finiteAdelicOrthogonalDoubleCosetMapOfLE_apply_mk
@@ -96,7 +93,6 @@ theorem finiteAdelicOrthogonalDoubleCosetMapOfLE_apply_mk
       DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range K x :=
   DoubleCoset.quotientMapOfLERight_apply_mk U.finiteAdelicOrthogonalDiagonal.range hK x
 
-omit [FiniteDimensional ℚ V] in
 /-- The finite adelic orthogonal double-coset map obtained by enlarging the right subgroup is
 surjective. -/
 theorem finiteAdelicOrthogonalDoubleCosetMapOfLE_surjective
@@ -116,7 +112,6 @@ def finiteAdelicOrthogonalDoubleCosetConj (g : U.finiteAdelicOrthogonal) :
   DoubleCoset.quotientConjRight U.finiteAdelicOrthogonalDiagonal.range
     (integralSubgroup U.orthogonal) g
 
-omit [FiniteDimensional ℚ V] in
 /-- Orthogonal right translation sends the class of `x` to the class of `x * g`. -/
 theorem finiteAdelicOrthogonalDoubleCosetConj_apply_mk (g x : U.finiteAdelicOrthogonal) :
     U.finiteAdelicOrthogonalDoubleCosetConj g
@@ -129,7 +124,6 @@ theorem finiteAdelicOrthogonalDoubleCosetConj_apply_mk (g x : U.finiteAdelicOrth
   DoubleCoset.quotientConjRight_apply_mk U.finiteAdelicOrthogonalDiagonal.range
     (integralSubgroup U.orthogonal) g x
 
-omit [FiniteDimensional ℚ V] in
 /-- The inverse orthogonal right translation sends the class of `y` to the class of `y * g⁻¹`. -/
 theorem finiteAdelicOrthogonalDoubleCosetConj_symm_apply_mk (g y : U.finiteAdelicOrthogonal) :
     (U.finiteAdelicOrthogonalDoubleCosetConj g).symm
@@ -148,7 +142,6 @@ def finiteAdelicSpinDoubleCosetMapOfLE
       DoubleCoset.Quotient (U.finiteAdelicSpinDiagonal.range : Set U.finiteAdelicSpin) K :=
   DoubleCoset.quotientMapOfLERight U.finiteAdelicSpinDiagonal.range hK
 
-omit [FiniteDimensional ℚ V] in
 /-- Enlarging the Spin right subgroup preserves representatives. -/
 @[simp]
 theorem finiteAdelicSpinDoubleCosetMapOfLE_apply_mk
@@ -159,7 +152,6 @@ theorem finiteAdelicSpinDoubleCosetMapOfLE_apply_mk
       DoubleCoset.mk U.finiteAdelicSpinDiagonal.range K x :=
   DoubleCoset.quotientMapOfLERight_apply_mk U.finiteAdelicSpinDiagonal.range hK x
 
-omit [FiniteDimensional ℚ V] in
 /-- The finite adelic Spin double-coset map obtained by enlarging the right subgroup is
 surjective. -/
 theorem finiteAdelicSpinDoubleCosetMapOfLE_surjective
@@ -177,7 +169,6 @@ def finiteAdelicSpinDoubleCosetConj (g : U.finiteAdelicSpin) :
           Set U.finiteAdelicSpin) :=
   DoubleCoset.quotientConjRight U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) g
 
-omit [FiniteDimensional ℚ V] in
 /-- Spin right translation sends the class of `x` to the class of `x * g`. -/
 theorem finiteAdelicSpinDoubleCosetConj_apply_mk (g x : U.finiteAdelicSpin) :
     U.finiteAdelicSpinDoubleCosetConj g
@@ -188,7 +179,6 @@ theorem finiteAdelicSpinDoubleCosetConj_apply_mk (g x : U.finiteAdelicSpin) :
   DoubleCoset.quotientConjRight_apply_mk U.finiteAdelicSpinDiagonal.range
     (integralSubgroup U.spin) g x
 
-omit [FiniteDimensional ℚ V] in
 /-- The inverse Spin right translation sends the class of `y` to the class of `y * g⁻¹`. -/
 theorem finiteAdelicSpinDoubleCosetConj_symm_apply_mk (g y : U.finiteAdelicSpin) :
     (U.finiteAdelicSpinDoubleCosetConj g).symm
@@ -198,6 +188,10 @@ theorem finiteAdelicSpinDoubleCosetConj_symm_apply_mk (g y : U.finiteAdelicSpin)
       DoubleCoset.mk U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) (y * g⁻¹) :=
   DoubleCoset.quotientConjRight_symm_apply_mk U.finiteAdelicSpinDiagonal.range
     (integralSubgroup U.spin) g y
+
+section SpecialOrthogonal
+
+variable [FiniteDimensional ℚ V]
 
 /-- Enlarging the right subgroup of the finite adelic special-orthogonal class set gives a
 surjection. -/
@@ -270,6 +264,8 @@ theorem finiteAdelicSpecialOrthogonalDoubleCosetConj_symm_apply_mk
   DoubleCoset.quotientConjRight_symm_apply_mk U.finiteAdelicSpecialOrthogonalDiagonal.range
     (integralSubgroup U.specialOrthogonal) g y
 
+end SpecialOrthogonal
+
 /-! ### Change of quadratic space and compatible tuple -/
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {Q' : QuadraticForm ℚ W}
@@ -291,7 +287,6 @@ def finiteAdelicOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q')
     (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.orthogonal U'.orthogonal φ hφ)
 
-omit [FiniteDimensional ℚ V] in
 /-- Change of orthogonal tuple applies the componentwise equivalence to representatives. -/
 @[simp]
 theorem finiteAdelicOrthogonalDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q')
@@ -314,7 +309,6 @@ theorem finiteAdelicOrthogonalDoubleCosetCongr_apply_mk (U' : OrthogonalCompactO
     (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.orthogonal U'.orthogonal φ hφ) x
 
-omit [FiniteDimensional ℚ V] in
 /-- The inverse change of orthogonal tuple applies the inverse componentwise equivalence to
 representatives. -/
 @[simp]
@@ -354,7 +348,6 @@ def finiteAdelicSpinDoubleCosetCongr (U' : OrthogonalCompactOpens Q')
     (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ)
 
-omit [FiniteDimensional ℚ V] in
 /-- Change of Spin tuple applies the componentwise equivalence to representatives. -/
 @[simp]
 theorem finiteAdelicSpinDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q')
@@ -374,7 +367,6 @@ theorem finiteAdelicSpinDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q
     (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ) x
 
-omit [FiniteDimensional ℚ V] in
 /-- The inverse change of Spin tuple applies the inverse componentwise equivalence to
 representatives. -/
 @[simp]
@@ -395,7 +387,7 @@ theorem finiteAdelicSpinDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOp
     (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ) y
 
-variable [FiniteDimensional ℚ W]
+variable [FiniteDimensional ℚ V] [FiniteDimensional ℚ W]
 
 /-- Componentwise equivalences which preserve every special-orthogonal reference subgroup and
 carry the rational diagonal subgroup onto the target diagonal subgroup identify the finite adelic
