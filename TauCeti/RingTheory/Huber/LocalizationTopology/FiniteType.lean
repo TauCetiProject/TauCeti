@@ -497,6 +497,12 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
   let EV := (V.weighted hQ).completion
   let ρ := weightedRationalEvalPairHom P V hP T s S hden hQ
   let b : Fin 1 → E := fun i ↦ (weightedX Q hQ i : weightedRestrictedSubring Q hQ)
+  have hρC (a : B) : ρ.toRingHom (algebraMap B E a) = toCompletionLoc P T s S hden a := by
+    exact RingHom.congr_fun
+      (weightedRationalEvalHom_comp_algebraMap P T s S hden hQ) a
+  have hρX (i : Fin 1) :
+      ρ.toRingHom (b i) = ((IsLocalization.Away.invSelf s : S) : Completion S) := by
+    exact weightedRationalEvalHom_coe_weightedX P T s S hden hQ i
   -- Adapt the presentation of `Huber.IsTopologicallyFiniteType.comp`: move the second weights
   -- to the original base and add
   -- unweighted variables for their generators. Choose the new weights using the plus ring.
@@ -542,6 +548,12 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
   have hZW : ∀ j, algebraMap A D '' Z (Fin.natAdd k j) = WD j := fun j ↦
     Fin.addCases (fun i ↦ by simp [Z, WD]) (fun i ↦ by simp [Z, WD]) j
   let e := U.iterateSplitHom hR hWD hZ hRZ hZW
+  have heX (j : Fin (1 + m)) :
+      e.toRingHom (weightedX Z hZ (Fin.natAdd k j) : weightedRestrictedSubring Z hZ) =
+        (weightedX WD hWD j : weightedRestrictedSubring WD hWD) := by
+    dsimp only [e]
+    rw [Pair.Hom.toRingHom_iterateSplitHom, iterateSplitHom_coe_weightedX,
+      iterateVar_natAdd]
   -- Only plus-ring preservation is needed for the two middle maps. Their composite will be
   -- a quotient mapping by the rational generator criterion, avoiding intermediate integrality.
   have hθC (a : B) : θ (algebraMap B _ a) = algebraMap B E a :=
@@ -567,12 +579,22 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
             obtain rfl : a = 1 := ha
             rw [hθY, map_one, one_mul]
             exact V.weightedC_mul_weightedX_mem_weighted_completion_plus hQ (ht l)) }
+  have hθ'Y (j : Fin m) :
+      θ'.toRingHom (weightedX WB hWB (Fin.natAdd 1 j) : weightedRestrictedSubring WB hWB) =
+        algebraMap B E (t j) * b (idx j) := by
+    simpa only [θ', Completion.coe_mul,
+      ← algebraMap_completion_weightedRestrictedSubring_apply] using hθY j
   let β' : Pair.Hom (((U.weighted hR).completion).weighted hWD).completion
       (V.weighted hWB).completion :=
     { toRingHom := β
       continuous_toRingHom := continuous_weightedMapCompletion ..
       map_mem_plus := Pair.weighted_completion_plus_le_comap_weightedMapCompletion _ π hWB
         fun i ↦ (hmap i).subset }
+  have hβX (j : Fin (1 + m)) :
+      β'.toRingHom (weightedX WD hWD j : weightedRestrictedSubring WD hWD) =
+        (weightedX WB hWB j : weightedRestrictedSubring WB hWB) := by
+    dsimp only [β', β]
+    rw [weightedMapCompletion_coe, weightedMap_weightedX]
   let σ := ρ.comp (θ'.comp (β'.comp e))
   have hσ : IsOpenQuotientMap σ.toRingHom := by
     simpa only [σ, Pair.Hom.toRingHom_comp, RingHom.coe_comp, Function.comp_assoc]
@@ -590,9 +612,6 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
       dsimp only [β, D]
       rw [algebraMap_completion_weightedRestrictedSubring_apply, weightedMapCompletion_coe,
         weightedMap_weightedC, algebraMap_completion_weightedRestrictedSubring_apply]
-    have hρC (a : B) : ρ.toRingHom (algebraMap B E a) = toCompletionLoc P T s S hden a := by
-      exact RingHom.congr_fun
-        (weightedRationalEvalHom_comp_algebraMap P T s S hden hQ) a
     have heι' := RingHom.congr_fun (congrArg Pair.Hom.toRingHom heι) a
     simp only [Pair.Hom.toRingHom_comp, RingHom.comp_apply,
       Pair.Hom.toRingHom_weightedCompletionHom] at heι'
@@ -601,14 +620,9 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
   have hσX (j : Fin m) :
       σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd 1 j)) :
         weightedRestrictedSubring Z hZ) = (divBy (t j) s : S) := by
-    simpa only [σ, Pair.Hom.toRingHom_comp, RingHom.comp_apply, e,
-      Pair.Hom.toRingHom_iterateSplitHom, β', θ', β,
-      iterateSplitHom_coe_weightedX hR hWD hZ hRZ hZW, iterateVar_natAdd,
-      weightedMapCompletion_coe, weightedMap_weightedX, WB, hθY j,
-      Completion.coe_mul, map_mul, ρ,
-      toRingHom_weightedRationalEvalPairHom, Q, weightedRationalEvalHom_coe_weightedC,
-      weightedRationalEvalHom_coe_weightedX, toCompletionLoc_apply] using
-      congrArg (fun x : S ↦ (x : Completion S)) (algebraMap_mul_invSelf (t j) s)
+    simp only [σ, Pair.Hom.toRingHom_comp, RingHom.comp_apply]
+    rw [heX, hβX, hθ'Y, map_mul, hρC, hρX, toCompletionLoc_apply, ← Completion.coe_mul]
+    exact congrArg (fun x : S ↦ (x : Completion S)) (algebraMap_mul_invSelf (t j) s)
   have hσquot : σ.IsQuotientMapping := by
     apply isQuotientMapping_of_presentation P V hP T s S hden π hπ σ hσ ι hσι
     intro a
