@@ -12,8 +12,9 @@ public import Mathlib.LinearAlgebra.TensorProduct.Lift
 /-!
 # Base change of endomorphisms of a scalar extension
 
-Let `M` be a module over a commutative semiring `R`, and let `f : A →ₐ[R] B` be a morphism of
-commutative `R`-algebras. Scalar extension of `M` is compared by the `f`-semilinear map
+Let `M` be a module over a commutative semiring `R`, and let `f : A →ₐ[R] B` be a morphism from
+an `R`-algebra `A` to a commutative `R`-algebra `B`. Scalar extension of `M` is compared by the
+`f`-semilinear map
 
 ```text
 LinearMap.rTensor M f.toLinearMap : A ⊗[R] M → B ⊗[R] M.
@@ -24,7 +25,8 @@ An `A`-linear endomorphism of `A ⊗[R] M` transports along this comparison to a
 that the transport square characterizes it, and records that it is additive and multiplicative
 in the endomorphism, and functorial in the value algebra. It also transports the two
 compatibilities needed for monoidal arguments: naturality in `M` and the tensor comparison
-`(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)`.
+`(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)`. The scalar-endomorphism, polynomial-evaluation,
+and tensor-comparison results additionally require `A` to be commutative.
 
 The name follows `AlgHom.mapValue`, which transports an algebra-valued point along a
 morphism of value algebras; the two are compatible in
@@ -52,9 +54,11 @@ open scoped TensorProduct
 namespace TauCeti
 
 variable {R A B C M N : Type*} [CommSemiring R]
-variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
-variable [CommSemiring C] [Algebra R C]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+section Semiring
+
+variable [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
 
 /-- The comparison `A ⊗[R] M → B ⊗[R] M` of scalar extensions induced by a morphism `f` of
 value algebras is semilinear over `f`. -/
@@ -64,6 +68,10 @@ theorem rTensor_algHom_smul (f : A →ₐ[R] B) (a : A) (z : A ⊗[R] M) :
   induction z using TensorProduct.inductionOn with
   | tmul x m => simp [TensorProduct.smul_tmul', smul_eq_mul, map_mul]
   | add x y hx hy => simp [smul_add, hx, hy]
+
+end Semiring
+
+variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
 
 /-- On pure tensors, the comparison maps of scalar extensions intertwine the tensor comparisons
 `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two value algebras. -/
@@ -92,9 +100,12 @@ open TauCeti
 open Polynomial
 
 variable {R A B C M N : Type*} [CommSemiring R]
-variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
-variable [CommSemiring C] [Algebra R C]
+variable [CommSemiring B] [Algebra R B] [CommSemiring C] [Algebra R C]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+section Semiring
+
+variable [Semiring A] [Algebra R A]
 
 /-- Base change of an endomorphism of a scalar extension along a morphism `f : A →ₐ[R] B` of
 value algebras: the unique `B`-linear endomorphism of `B ⊗[R] M` compatible with `φ` along the
@@ -176,16 +187,6 @@ theorem mapValue_add (f : A →ₐ[R] B) (φ ψ : Module.End A (A ⊗[R] M)) :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     LinearMap.add_apply, mapValue_rTensor_apply, map_add]
 
-/-- Scalar extension carries scalar endomorphisms to the corresponding scalar endomorphisms. -/
-@[simp]
-theorem mapValue_algebraMap (f : A →ₐ[R] B) (a : A) :
-    mapValue f (algebraMap A (Module.End A (A ⊗[R] M)) a) =
-      algebraMap B (Module.End B (B ⊗[R] M)) (f a) := by
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro b m
-  simp only [mapValue_tmul, Module.algebraMap_end_apply, LinearMap.rTensor_tmul,
-    AlgHom.toLinearMap_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one, mul_comm]
-
 /-- Base change of endomorphisms of a scalar extension, as a ring homomorphism. -/
 noncomputable def mapValueRingHom (f : A →ₐ[R] B) :
     Module.End A (A ⊗[R] M) →+* Module.End B (B ⊗[R] M) where
@@ -201,20 +202,6 @@ theorem mapValueRingHom_apply (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M
     mapValueRingHom f φ = mapValue f φ := by
   simp [mapValueRingHom]
 
-/-- Evaluating a polynomial at an endomorphism and then extending scalars is the same as mapping
-the polynomial coefficients and evaluating at the extended endomorphism. -/
-@[simp]
-theorem mapValue_aeval (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M)) (p : A[X]) :
-    mapValue f (aeval φ p) = aeval (mapValue f φ) (p.map f.toRingHom) := by
-  have hcomp :
-      (algebraMap B (Module.End B (B ⊗[R] M))).comp f.toRingHom =
-        (mapValueRingHom f).comp
-          (algebraMap A (Module.End A (A ⊗[R] M))) := by
-    ext a
-    simp
-  simpa only [mapValueRingHom_apply] using
-    Polynomial.map_aeval_eq_aeval_map hcomp p φ
-
 /-- Base change of automorphisms of a scalar extension, as a group homomorphism. -/
 noncomputable def mapValueGL (f : A →ₐ[R] B) :
     LinearMap.GeneralLinearGroup A (A ⊗[R] M) →*
@@ -228,13 +215,6 @@ theorem mapValueGL_coe (f : A →ₐ[R] B) (φ : LinearMap.GeneralLinearGroup A 
     (mapValueGL f φ : Module.End B (B ⊗[R] M)) =
       mapValue f (φ : Module.End A (A ⊗[R] M)) := by
   simp [mapValueGL]
-
-/-- Base change along the identity morphism of value algebras is the identity. -/
-@[simp]
-theorem mapValue_id (φ : Module.End A (A ⊗[R] M)) :
-    mapValue (AlgHom.id R A) φ = φ := by
-  refine (eq_mapValue (AlgHom.id R A) φ φ ?_).symm
-  simp [LinearMap.rTensor_id]
 
 /-- Base change along a composite of morphisms of value algebras is the composite of base
 changes. -/
@@ -262,6 +242,43 @@ theorem baseChange_comp_mapValue (f : A →ₐ[R] B) (u : M →ₗ[R] N)
     mapValue_tmul, one_smul, LinearMap.baseChange_tmul] at hm ⊢
   rw [← LinearMap.rTensor_baseChange, hm]
 
+end Semiring
+
+section CommSemiring
+
+variable [CommSemiring A] [Algebra R A]
+
+/-- Scalar extension carries scalar endomorphisms to the corresponding scalar endomorphisms. -/
+@[simp]
+theorem mapValue_algebraMap (f : A →ₐ[R] B) (a : A) :
+    mapValue f (algebraMap A (Module.End A (A ⊗[R] M)) a) =
+      algebraMap B (Module.End B (B ⊗[R] M)) (f a) := by
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro b m
+  simp only [mapValue_tmul, Module.algebraMap_end_apply, LinearMap.rTensor_tmul,
+    AlgHom.toLinearMap_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one, mul_comm]
+
+/-- Evaluating a polynomial at an endomorphism and then extending scalars is the same as mapping
+the polynomial coefficients and evaluating at the extended endomorphism. -/
+@[simp]
+theorem mapValue_aeval (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M)) (p : A[X]) :
+    mapValue f (aeval φ p) = aeval (mapValue f φ) (p.map f.toRingHom) := by
+  have hcomp :
+      (algebraMap B (Module.End B (B ⊗[R] M))).comp f.toRingHom =
+        (mapValueRingHom f).comp
+          (algebraMap A (Module.End A (A ⊗[R] M))) := by
+    ext a
+    simp
+  simpa only [mapValueRingHom_apply] using
+    Polynomial.map_aeval_eq_aeval_map hcomp p φ
+
+/-- Base change along the identity morphism of value algebras is the identity. -/
+@[simp]
+theorem mapValue_id (φ : Module.End A (A ⊗[R] M)) :
+    mapValue (AlgHom.id R A) φ = φ := by
+  refine (eq_mapValue (AlgHom.id R A) φ φ ?_).symm
+  simp [LinearMap.rTensor_id]
+
 /-- Base change preserves the tensor comparison: a tensor-compatibility square over `A`
 transports to the corresponding square over `B`. -/
 theorem distribBaseChange_comp_mapValue (f : A →ₐ[R] B)
@@ -287,5 +304,7 @@ theorem distribBaseChange_comp_mapValue (f : A →ₐ[R] B)
     TensorProduct.map_tmul, mapValue_tmul, one_smul,
     TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, one_mul]
   rw [distribBaseChange_symm_rTensor_tmul, hmn]
+
+end CommSemiring
 
 end Module.End
