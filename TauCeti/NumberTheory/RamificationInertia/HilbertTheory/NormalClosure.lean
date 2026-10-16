@@ -32,8 +32,6 @@ they need be neither finite nor perfect.
 
 ## Main results
 
-* `Ideal.forall_stabilizer_le_normalCore_iff`: the decomposition groups above a prime all lie in
-  a subgroup exactly when they all lie in its normal core.
 * `Ideal.ncard_primesOver_normalCore_eq_finrank_iff_of_isIntegralClosure`: complete splitting in
   `M ^ H` and in its normal closure `M ^ (normalCore H)`.
 * `Ideal.ncard_primesOver_eq_finrank_iff_of_normalClosure_eq_top_of_isIntegralClosure`: when `M`
@@ -50,24 +48,6 @@ open IntermediateField MulAction
 open scoped Pointwise
 
 namespace Ideal
-
-section Conjugation
-
-variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G]
-  [MulSemiringAction G B] [SMulCommClass G A B]
-
-/-- **Decomposition groups and the normal core.** If `G` acts on `B` by `A`-algebra
-automorphisms, then the decomposition groups of the primes of `B` above an ideal `p` of `A` all
-lie in a subgroup `H` exactly when they all lie in the normal core of `H`. This holds because
-the decomposition group of `σ • Q` is the conjugate of that of `Q` by `σ`. -/
-theorem forall_stabilizer_le_normalCore_iff (p : Ideal A) (H : Subgroup G) :
-    (∀ Q ∈ p.primesOver B, stabilizer G Q ≤ H.normalCore) ↔
-      ∀ Q ∈ p.primesOver B, stabilizer G Q ≤ H := by
-  refine ⟨fun h Q hQ ↦ (h Q hQ).trans H.normalCore_le, fun h Q ⟨_, _⟩ g hg σ ↦ ?_⟩
-  refine h (σ • Q) ⟨inferInstance, inferInstance⟩ ?_
-  rw [mem_stabilizer_iff, mul_smul, mul_smul, inv_smul_smul, mem_stabilizer_iff.1 hg]
-
-end Conjugation
 
 variable {A K M B : Type*} [CommRing A] [IsDedekindDomain A] [Field K] [Algebra A K]
   [IsFractionRing A K] [Field M] [Algebra K M] [FiniteDimensional K M] [IsGalois K M]
