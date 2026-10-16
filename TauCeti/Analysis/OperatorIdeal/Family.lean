@@ -72,6 +72,8 @@ structure OperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜] where
       (L : F →L[𝕜] G) (A : E →L[𝕜] F) (R : H →L[𝕜] E),
       gauge (L ∘L A ∘L R) ≤ ‖L‖ₑ * gauge A * ‖R‖ₑ
 
+attribute [simp] OperatorIdealFamily.gauge_smul
+
 /-- A symmetric operator-ideal family is an operator-ideal family whose diagonal-universe gauge
 is invariant under adjoints. -/
 structure SymmetricOperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜]
