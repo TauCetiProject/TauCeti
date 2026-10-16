@@ -58,22 +58,35 @@ theorem integral_inner_deriv_add_apply_eq_integral_inner_neg_deriv_add_apply
   have hAuv : Integrable (fun s ↦ ⟪u s, A s (v s)⟫_ℝ) :=
     (hu.continuous.inner (hA.clm_apply hv.continuous)).integrable_of_hasCompactSupport <|
       hcu.mono fun s hs hus ↦ hs (by simp [hus])
-  have hderiv (s : ℝ) : HasDerivAt (fun t ↦ ⟪u t, v t⟫_ℝ)
-      (⟪deriv u s, v s⟫_ℝ + ⟪u s, deriv v s⟫_ℝ) s :=
-    by
-      have h := (hu.differentiable one_ne_zero s).hasDerivAt.inner ℝ
-        (hv.differentiable one_ne_zero s).hasDerivAt
-      rwa [add_comm] at h
-  have hpair : HasCompactSupport (fun s ↦ ⟪u s, v s⟫_ℝ) :=
-    hcu.mono fun s hs hus ↦ hs (by simp [hus])
-  have hzero : (∫ s, ⟪deriv u s, v s⟫_ℝ) + ∫ s, ⟪u s, deriv v s⟫_ℝ = 0 := by
-    simpa only [integral_add hduv hudv] using
-      integral_eq_zero_of_hasDerivAt_of_integrable hderiv (hduv.add hudv)
-        ((hu.continuous.inner hv.continuous).integrable_of_hasCompactSupport hpair)
-  have hneg : Integrable (fun s ↦ -⟪u s, deriv v s⟫_ℝ) := hudv.neg
+  have hibp : (∫ s, ⟪u s, deriv v s⟫_ℝ) = -∫ s, ⟪deriv u s, v s⟫_ℝ :=
+    integral_bilinear_hasDerivAt_right_eq_neg_left_of_integrable (L := innerSL ℝ)
+      (fun s _ ↦ (hu.differentiable one_ne_zero s).hasDerivAt)
+      (fun s _ ↦ (hv.differentiable one_ne_zero s).hasDerivAt) hudv hduv
+      ((hu.continuous.inner hv.continuous).integrable_of_hasCompactSupport <|
+        hcu.mono fun s hs hus ↦ hs (by simp [hus]))
   simp only [inner_add_left, inner_add_right, inner_neg_right, (hsym _).apply_clm]
-  rw [integral_add hduv hAuv, integral_add hneg hAuv, integral_neg]
-  linarith
+  rw [integral_add hduv hAuv, integral_add (f := fun s ↦ -⟪u s, deriv v s⟫_ℝ) hudv.neg hAuv,
+    integral_neg, hibp, neg_neg]
+
+/-- The hypotheses of the forward trajectory estimates on the coefficient family `A` transfer to
+the negated family `-A`. -/
+private theorem neg_trajectory_hypotheses
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+    {Aminus Aplus : E →L[ℝ] E} {α : ℝ}
+    (hminus : ∀ w, α * ‖w‖ ≤ ‖Aminus w‖) (hplus : ∀ w, α * ‖w‖ ≤ ‖Aplus w‖)
+    (hdbot : Tendsto (deriv A) atBot (nhds 0)) (hdtop : Tendsto (deriv A) atTop (nhds 0)) :
+    ContDiff ℝ 1 (-A) ∧ (∀ s, ((-A) s).toLinearMap.IsSymmetric) ∧
+      (∀ w, α * ‖w‖ ≤ ‖(-Aminus) w‖) ∧ (∀ w, α * ‖w‖ ≤ ‖(-Aplus) w‖) ∧
+      Tendsto (deriv (-A)) atBot (nhds 0) ∧ Tendsto (deriv (-A)) atTop (nhds 0) :=
+  ⟨hA.neg, fun s ↦ by simpa using LinearMap.IsSymmetric.zero.sub (hsym s),
+    by simpa using hminus, by simpa using hplus,
+    by simpa [deriv.neg'] using hdbot.neg, by simpa [deriv.neg'] using hdtop.neg⟩
+
+/-- The operator `d/ds - A(s)` applied to `w` has the same norm as `-d/ds + A(s)`. -/
+private theorem norm_deriv_add_neg_apply (w : ℝ → E) (s : ℝ) :
+    ‖deriv w s + (-A) s (w s)‖ = ‖-deriv w s + A s (w s)‖ := by
+  rw [← norm_neg]
+  simp [add_comm]
 
 /-- **Global coercivity for the formal adjoint.** Under the asymptotic hypotheses for a symmetric
 coefficient family, `-d/ds + A(s)` satisfies a global estimate with a compact-interval `L²` error.
@@ -87,36 +100,13 @@ theorem exists_pos_nonneg_forall_integral_norm_neg_deriv_add_sq_add_mul_integral
     ∃ R > 0, ∃ C ≥ 0, ∀ (w : ℝ → E), ContDiff ℝ 1 w → HasCompactSupport w →
       (∫ s, ‖deriv w s‖ ^ 2) + (α ^ 2 / 2) * (∫ s, ‖w s‖ ^ 2) ≤
         (∫ s, ‖-deriv w s + A s (w s)‖ ^ 2) + C * ∫ s in Icc (-R) R, ‖w s‖ ^ 2 := by
-  let B : ℝ → E →L[ℝ] E := fun s ↦ -A s
-  have hB : ContDiff ℝ 1 B := hA.neg
-  have hBsym : ∀ s, (B s).toLinearMap.IsSymmetric := by
-    intro s x y
-    calc
-      ⟪(B s) x, y⟫_ℝ = -⟪A s x, y⟫_ℝ := by simp [B]
-      _ = -⟪x, A s y⟫_ℝ := congrArg Neg.neg (hsym s x y)
-      _ = ⟪x, (B s) y⟫_ℝ := by simp [B]
-  have hBminus : ∀ w, α * ‖w‖ ≤ ‖(-Aminus) w‖ := by simpa using hminus
-  have hBplus : ∀ w, α * ‖w‖ ≤ ‖(-Aplus) w‖ := by simpa using hplus
-  have hBbot : Tendsto B atBot (nhds (-Aminus)) := hbot.neg
-  have hBtop : Tendsto B atTop (nhds (-Aplus)) := htop.neg
-  have hdB : deriv B = fun s ↦ -deriv A s := by
-    funext s
-    exact (hA.differentiable one_ne_zero s).hasDerivAt.neg.deriv
-  have hdBbot : Tendsto (deriv B) atBot (nhds 0) := by
-    rw [hdB]
-    simpa using hdbot.neg
-  have hdBtop : Tendsto (deriv B) atTop (nhds 0) := by
-    rw [hdB]
-    simpa using hdtop.neg
+  obtain ⟨hB, hBsym, hBminus, hBplus, hdBbot, hdBtop⟩ :=
+    neg_trajectory_hypotheses hA hsym hminus hplus hdbot hdtop
   obtain ⟨R, hR, C, hC, hest⟩ :=
     exists_pos_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
-      hB hBsym hα hBminus hBplus hBbot hBtop hdBbot hdBtop
-  refine ⟨R, hR, C, hC, fun w hw hcw ↦ ?_⟩
-  have hop (s : ℝ) : ‖deriv w s + B s (w s)‖ = ‖-deriv w s + A s (w s)‖ := by
-    dsimp [B]
-    rw [← norm_neg]
-    simp [add_comm]
-  simpa only [hop] using hest w hw hcw
+      hB hBsym hα hBminus hBplus hbot.neg htop.neg hdBbot hdBtop
+  exact ⟨R, hR, C, hC, fun w hw hcw ↦ by
+    simpa only [norm_deriv_add_neg_apply] using hest w hw hcw⟩
 
 /-- **Coercivity at infinity for the formal adjoint.** Under the asymptotic hypotheses for a
 symmetric coefficient family, `-d/ds + A(s)` controls the `L²` value and derivative of every
@@ -131,36 +121,13 @@ theorem exists_pos_forall_integral_norm_neg_deriv_add_sq_add_mul_integral_norm_s
       Function.support w ⊆ {s | R ≤ |s|} →
       (∫ s, ‖deriv w s‖ ^ 2) + (α ^ 2 / 8) * (∫ s, ‖w s‖ ^ 2) ≤
         ∫ s, ‖-deriv w s + A s (w s)‖ ^ 2 := by
-  let B : ℝ → E →L[ℝ] E := fun s ↦ -A s
-  have hB : ContDiff ℝ 1 B := hA.neg
-  have hBsym : ∀ s, (B s).toLinearMap.IsSymmetric := by
-    intro s x y
-    calc
-      ⟪(B s) x, y⟫_ℝ = -⟪A s x, y⟫_ℝ := by simp [B]
-      _ = -⟪x, A s y⟫_ℝ := congrArg Neg.neg (hsym s x y)
-      _ = ⟪x, (B s) y⟫_ℝ := by simp [B]
-  have hBminus : ∀ w, α * ‖w‖ ≤ ‖(-Aminus) w‖ := by simpa using hminus
-  have hBplus : ∀ w, α * ‖w‖ ≤ ‖(-Aplus) w‖ := by simpa using hplus
-  have hBbot : Tendsto B atBot (nhds (-Aminus)) := hbot.neg
-  have hBtop : Tendsto B atTop (nhds (-Aplus)) := htop.neg
-  have hdB : deriv B = fun s ↦ -deriv A s := by
-    funext s
-    exact (hA.differentiable one_ne_zero s).hasDerivAt.neg.deriv
-  have hdBbot : Tendsto (deriv B) atBot (nhds 0) := by
-    rw [hdB]
-    simpa using hdbot.neg
-  have hdBtop : Tendsto (deriv B) atTop (nhds 0) := by
-    rw [hdB]
-    simpa using hdtop.neg
+  obtain ⟨hB, hBsym, hBminus, hBplus, hdBbot, hdBtop⟩ :=
+    neg_trajectory_hypotheses hA hsym hminus hplus hdbot hdtop
   obtain ⟨R, hR, hest⟩ :=
     exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
-      hB hBsym hα hBminus hBplus hBbot hBtop hdBbot hdBtop
-  refine ⟨R, hR, fun w hw hcw hsupport ↦ ?_⟩
-  have hop (s : ℝ) : ‖deriv w s + B s (w s)‖ = ‖-deriv w s + A s (w s)‖ := by
-    dsimp [B]
-    rw [← norm_neg]
-    simp [add_comm]
-  simpa only [hop] using hest w hw hcw hsupport
+      hB hBsym hα hBminus hBplus hbot.neg htop.neg hdBbot hdBtop
+  exact ⟨R, hR, fun w hw hcw hsupport ↦ by
+    simpa only [norm_deriv_add_neg_apply] using hest w hw hcw hsupport⟩
 
 end TauCeti
 
