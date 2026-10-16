@@ -198,19 +198,19 @@ theorem pointsMulEquiv_determinantPoints_symm_apply
 
 /-- The determinant comparison through Tau Ceti's Laurent-polynomial multiplicative-group
 points equivalence. -/
-theorem multiplicativeGroup_pointEquiv_determinantPoints
+theorem laurentEvalEquiv_symm_determinantPoints
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
-    MultiplicativeGroup.pointEquiv
+    laurentEvalEquiv.symm
         ((determinantPoints R n f).ofConv.comp
           (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) =
       Matrix.GeneralLinearGroup.det (pointsMulEquiv n f) := by
   calc
-    MultiplicativeGroup.pointEquiv
+    laurentEvalEquiv.symm
         ((determinantPoints R n f).ofConv.comp
           (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) =
         DiagonalizableGroup.charOfPoint (determinantPoints R n f).ofConv
           (Multiplicative.ofAdd (1 : ℤ)) :=
-      (DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply
+      (DiagonalizableGroup.charOfPoint_ofAdd_one
         (determinantPoints R n f).ofConv).symm
     _ = Matrix.GeneralLinearGroup.det (pointsMulEquiv n f) := by
       simpa only [DiagonalizableGroup.pointsMulEquiv_apply] using

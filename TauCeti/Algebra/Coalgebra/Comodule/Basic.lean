@@ -15,11 +15,9 @@ This file defines right comodules over an `R`-coalgebra `C` and their morphisms.
 comodule is an `R`-module `M` equipped with a coaction `ρ : M →ₗ[R] M ⊗[R] C` satisfying
 the usual coassociativity and counit identities.
 
-This is a first Layer 1 prerequisite for the reductive-groups roadmap: representations of an
-affine group scheme represented by a Hopf algebra are comodules over its coordinate Hopf
-algebra, and the roadmap explicitly calls for comodules, comodule morphisms, tensor products,
-duals, and the regular representation. The file starts with the core definition, the regular
-right comodule of a coalgebra over itself, and the basic morphism API.
+Representations of an affine group scheme represented by a Hopf algebra are comodules over its
+coordinate Hopf algebra. The file provides the core definition, the regular right comodule of a
+coalgebra over itself, and the basic morphism API.
 
 ## Main definitions
 
@@ -31,9 +29,8 @@ right comodule of a coalgebra over itself, and the basic morphism API.
 
 ## References
 
-This follows the standard definition of a right comodule over a coalgebra; see for example
-Sweedler, *Hopf Algebras*, Chapter 2. It is added for the "Comodules over a coalgebra/Hopf
-algebra" target in Layer 1 of the Tau Ceti reductive-groups roadmap.
+This follows the standard definition of a right comodule over a coalgebra; see for example Sweedler,
+*Hopf Algebras*, Chapter 2.
 -/
 
 public section
@@ -226,6 +223,11 @@ instance funLike : FunLike (Hom R C M N) M N where
     cases hlin
     rfl
 
+/-- Comodule morphisms are linear maps, so Mathlib's generic linearity lemmas apply. -/
+instance instLinearMapClass : LinearMapClass (Hom R C M N) R M N where
+  map_add f := f.toLinearMap.map_add
+  map_smulₛₗ f := f.toLinearMap.map_smul
+
 /-- See Note [custom simps projection]. -/
 def Simps.apply (f : Hom R C M N) : M → N :=
   f
@@ -240,6 +242,11 @@ theorem coe_mk {f : M →ₗ[R] N} (h) : ((⟨f, h⟩ : Hom R C M N) : M → N) 
 theorem coe_toLinearMap (f : Hom R C M N) : ⇑f.toLinearMap = f :=
   rfl
 
+/-- Coercing a comodule morphism to a linear map gives its underlying linear map. -/
+@[simp]
+theorem ofClass_eq_toLinearMap (f : Hom R C M N) : (f : M →ₗ[R] N) = f.toLinearMap :=
+  rfl
+
 /-- A comodule morphism is determined by its underlying linear map. -/
 theorem toLinearMap_injective :
     Function.Injective (Hom.toLinearMap : Hom R C M N → M →ₗ[R] N) := by
@@ -249,12 +256,8 @@ theorem toLinearMap_injective :
 
 /-- Two comodule morphisms are equal when their underlying functions are equal. -/
 @[ext]
-theorem ext {f g : Hom R C M N} (h : ∀ m, f m = g m) : f = g := by
-  have hlin : f.toLinearMap = g.toLinearMap := LinearMap.ext fun m => h m
-  cases f
-  cases g
-  cases hlin
-  rfl
+theorem ext {f g : Hom R C M N} (h : ∀ m, f m = g m) : f = g :=
+  DFunLike.ext f g h
 
 /-- A comodule morphism commutes with coactions, as an equality of linear maps. -/
 @[simp]

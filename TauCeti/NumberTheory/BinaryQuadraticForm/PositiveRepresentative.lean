@@ -6,7 +6,6 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Content
-public import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
@@ -58,19 +57,12 @@ theorem exists_isCoprime_eval_pos (f : BinaryQuadraticForm ℤ) (hD : 0 < f.disc
       ring
     rw [hmul]
     exact mul_pos (neg_pos.mpr ha') hD
-  have hgcd : 0 < Int.gcd (-f.b) (2 * f.a) := by
-    apply Nat.pos_of_ne_zero
-    intro h
-    have : 2 * f.a = 0 := (Int.gcd_eq_zero_iff.mp h).2
-    omega
-  obtain ⟨g, x, y, _, hxy, hx, hy⟩ := Int.exists_gcd_one' hgcd
-  refine ⟨x, y, Int.isCoprime_iff_gcd_eq_one.mpr hxy, ?_⟩
-  have hscale : f.eval (-f.b) (2 * f.a) = (g : ℤ) ^ 2 * f.eval x y := by
-    rw [hx, hy]
-    simp only [eval_def]
-    ring
+  obtain ⟨x, y, hxy, _, _, hscale⟩ :=
+    exists_isCoprime_eval_eq_gcd_sq_mul f (-f.b) (2 * f.a)
+      (Or.inr (mul_ne_zero (by decide) ha₀))
+  refine ⟨x, y, hxy, ?_⟩
   rw [hscale] at hval
-  exact pos_of_mul_pos_right hval (sq_nonneg (g : ℤ))
+  exact pos_of_mul_pos_right hval (sq_nonneg _)
 
 /-- Every indefinite integral binary form has a proper representative with positive leading term. -/
 theorem exists_smul_a_pos (f : BinaryQuadraticForm ℤ) (hD : 0 < f.discrim) :

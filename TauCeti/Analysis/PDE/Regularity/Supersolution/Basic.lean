@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness
+public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.Truncation
 
 /-!

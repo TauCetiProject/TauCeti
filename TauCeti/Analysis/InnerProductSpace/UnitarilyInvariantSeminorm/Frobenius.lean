@@ -178,9 +178,7 @@ theorem trace_adjoint_comp_self_eq_sum_sq_singularValues (A : E →ₗ[𝕜] F) 
     trace 𝕜 E (adjoint A ∘ₗ A) = ((A.singularValues.sum fun _ s ↦ s ^ 2 : ℝ) : 𝕜) := by
   rw [A.trace_adjoint_comp_self_eq_sum_norm_apply_sq A.rightSingularBasis]
   simp_rw [norm_apply_rightSingularBasis]
-  rw [Fin.sum_univ_eq_sum_range (fun i ↦ A.singularValues i ^ 2),
-    Finsupp.sum_of_support_subset _ (support_singularValues A ▸
-      Finset.range_subset_range.mpr A.finrank_range_le) _ fun _ _ ↦ by simp]
+  rw [A.sum_fin_singularValues (· ^ 2) (by simp)]
 
 end LinearMap
 

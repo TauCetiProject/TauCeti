@@ -25,8 +25,12 @@ exterior powers of `𝒪ₓ`-modules from which determinants of vector bundles a
   sheaves of `R`-modules;
 * `SheafOfModules.exteriorPowerIso` and `SheafOfModules.exteriorPower_map` are its
   defining identification with the sheafification of the sectionwise exterior power;
+* `SheafOfModules.exteriorPower_map_val_app_mk` computes the exterior power of a morphism on
+  sheafified wedges of sections;
 * `SheafOfModules.exteriorPowerZeroIso` identifies `⋀⁰ M` with the structure sheaf;
-* `SheafOfModules.exteriorPowerOneIso` identifies `⋀¹ M` with `M`;
+* `SheafOfModules.exteriorPowerOneIso` identifies `⋀¹ M` with `M`, and
+  `SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app` computes it on the sheafification
+  map of the sectionwise first exterior power;
 * `SheafOfModules.presheafPushforwardExteriorPowerIso` identifies the exterior power of the
   pushforward of a presheaf of modules with the pushforward of its exterior power;
 * `SheafOfModules.pushforwardExteriorPowerIso` identifies the pushforward of `⋀ⁿ M` along a
@@ -80,6 +84,30 @@ theorem exteriorPower_map (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)} 
       (exteriorPowerIso n M).hom ≫ (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
         ((PresheafOfModulesOfCommRing.exteriorPower n).map φ.val) ≫ (exteriorPowerIso n N).inv :=
   (rfl)
+
+/-- On sections over `X`, the exterior power of a morphism `φ` sends the sheafified wedge
+`m₁ ∧ ⋯ ∧ mₙ` to the sheafified wedge `φ m₁ ∧ ⋯ ∧ φ mₙ`. -/
+@[simp]
+theorem exteriorPower_map_val_app_mk (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
+    (φ : M ⟶ N) (X : Cᵒᵖ) (m : Fin n → PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) :
+    ((exteriorPower R n).map φ).val.app X ((exteriorPowerIso n M).inv.val.app X
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app X
+          (ModuleCat.exteriorPower.mk
+            (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) m))) =
+    (exteriorPowerIso n N).inv.val.app X
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower n).obj N.val)).app X
+          (ModuleCat.exteriorPower.mk
+            (M := PresheafOfModulesOfCommRing.obj (R := R.obj) N.val X)
+            (fun i ↦ φ.val.app X (m i)))) := by
+  have hu := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.app X)
+    ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.naturality
+      ((PresheafOfModulesOfCommRing.exteriorPower n).map φ.val)))
+    (ModuleCat.exteriorPower.mk (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) m)
+  -- `exteriorPowerIso` is the identity, so this is naturality of the sheafification unit,
+  -- followed by the sectionwise wedge formula.
+  exact hu.symm.trans (congrArg _ (ModuleCat.exteriorPower.map_mk _ m))
 
 variable (R) in
 /-- The zeroth exterior power of a sheaf of modules is the structure sheaf, naturally. -/
@@ -144,6 +172,27 @@ theorem exteriorPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
           ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val) ≫
         (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R) M).hom :=
   (rfl)
+
+/-- On the sheafification map of the sectionwise first exterior power of `M`, the identification
+`⋀¹ M ≅ M` is the sectionwise identification `PresheafOfModulesOfCommRing.exteriorPowerOneIso`. -/
+theorem unit_comp_val_exteriorPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) 1).obj M.val) ≫
+      ((exteriorPowerIso 1 M).inv ≫ (exteriorPowerOneIso R).hom.app M).val =
+    (PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val := by
+  have e : (exteriorPowerIso 1 M).inv ≫ (exteriorPowerOneIso R).hom.app M =
+      (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+          ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val) ≫
+        (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).counit.app M := by
+    rw [exteriorPowerOneIso_hom_app, Iso.inv_hom_id_assoc,
+      TauCeti.SheafOfModules.sheafificationIso_hom]
+  rw [e]
+  -- Move the sectionwise map past the sheafification map, then use a triangle identity.
+  exact ((PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf R).obj)).unit.naturality_assoc _ _).symm.trans
+      ((congrArg ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val ≫ ·)
+        ((PresheafOfModules.sheafificationAdjunction
+          (𝟙 (ringCatSheaf R).obj)).right_triangle_components M)).trans (Category.comp_id _))
 
 section Pushforward
 

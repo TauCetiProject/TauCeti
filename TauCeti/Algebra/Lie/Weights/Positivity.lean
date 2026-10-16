@@ -58,9 +58,6 @@ and nonzero.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §8.5, where
   the form is shown to be positive definite on the rational span of the roots.
-
-This is the positivity behind the Casimir argument of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 -/
 
 public section

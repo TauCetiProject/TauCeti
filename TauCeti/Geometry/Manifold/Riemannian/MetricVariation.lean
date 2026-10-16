@@ -46,7 +46,6 @@ noncomputable section
 namespace TauCeti.Manifold
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  [CompleteSpace F]
   {U : Opens F} {γ : ℝ → U} {a b : ℝ}
 
 /-- **Metric variation equals Riemannian path length on an open submanifold.** If `U` is an open

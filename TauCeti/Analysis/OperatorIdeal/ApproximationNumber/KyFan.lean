@@ -22,7 +22,9 @@ a pair the first `k` approximation numbers of `S + T` are, up to any `ε > 0`, t
 of `S + T` to finite-dimensional subspaces `V ≤ E` and `W ≤ F`
 (`TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`). Compressing `S` and `T` in the
 same way does not increase their approximation numbers, and the finite-dimensional Ky Fan
-inequality applies to the compressions.
+inequality applies to the compressions. Every pair whose source space is complete has the
+localization property (`TauCeti.HasMinMaxLowerBound.of_completeSpace`), so the triangle
+inequality holds for bounded linear maps from a Hilbert space to an inner product space.
 
 ## Main declarations
 
@@ -30,6 +32,8 @@ inequality applies to the compressions.
   `Kₖ(T)` is the Ky Fan `k`-sum of the singular values of `T`.
 * `TauCeti.HasMinMaxLowerBound.kyFanGauge_add_le`: on a pair with the converse min–max
   localization property, `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)`.
+* `ContinuousLinearMap.kyFanGauge_add_le`: **Ky Fan triangle inequality**,
+  `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` for bounded linear maps on a complete inner product space.
 
 ## References
 
@@ -105,3 +109,13 @@ theorem HasMinMaxLowerBound.kyFanGauge_add_le (h : HasMinMaxLowerBound 𝕜 E F)
           nlinarith
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+/-- **Ky Fan triangle inequality.** For bounded linear maps from a complete inner product space to
+an inner product space, the Ky Fan gauges are subadditive: `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)`. -/
+theorem kyFanGauge_add_le [CompleteSpace E] (S T : E →L[𝕜] F) (k : ℕ) :
+    (S + T).kyFanGauge k ≤ S.kyFanGauge k + T.kyFanGauge k :=
+  TauCeti.HasMinMaxLowerBound.of_completeSpace.kyFanGauge_add_le S T k
+
+end ContinuousLinearMap

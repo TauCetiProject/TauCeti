@@ -15,7 +15,9 @@ subtraction in which one operand is a *real* number: both `a - (r : EReal)` and 
 are defined for every extended real `a`, are never of the form `∞ - ∞`, and behave like real
 subtraction in the ways recorded here. The first two results below have a real subtrahend and
 the last two a real minuend. The file also records that adding a finite extended nonnegative real
-to a real number is real addition.
+to a real number is real addition, how the positive part `ENNReal.ofReal` of a real number
+compares with the number itself in `EReal`, and that the coercion from `ℝ≥0∞` commutes with
+infima.
 
 ## Main results
 
@@ -38,6 +40,9 @@ to a real number is real addition.
   finite extended nonnegative real is the corresponding inequality between reals.
 * `EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff` — likewise for an inequality
   `x + I ≤ y + J` with `I`, `J` finite extended nonnegative reals.
+* `EReal.coe_le_coe_ennreal_of_ofReal_le` — a real number whose positive part is at most
+  `a : ℝ≥0∞` is at most `a` in `EReal`.
+* `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima.
 -/
 
 public section
@@ -130,6 +135,29 @@ theorem _root_.EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff {x y : ℝ} 
     (x : EReal) + I ≤ y + J ↔ x + I.toReal ≤ y + J.toReal := by
   rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_ennreal_toReal hJ, ← EReal.coe_add,
     ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- A real number whose positive part is at most `a : ℝ≥0∞` is at most `a` in `EReal`. -/
+theorem _root_.EReal.coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
+    (h : ENNReal.ofReal x ≤ a) : (x : EReal) ≤ (a : EReal) := by
+  calc
+    (x : EReal) ≤ (ENNReal.ofReal x : EReal) := by
+      rw [EReal.coe_ennreal_ofReal]
+      exact le_max_left (x : EReal) 0
+    _ ≤ (a : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 h
+
+/-- The coercion from `ℝ≥0∞` to `EReal` commutes with infima; both sides are `⊤` when the index
+type is empty. -/
+@[norm_cast]
+theorem _root_.EReal.coe_ennreal_iInf {ι : Sort*} (f : ι → ℝ≥0∞) :
+    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
+  apply le_antisymm
+  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
+  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
+      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
+    rw [← EReal.coe_toENNReal hnonneg]
+    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
+      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
+        EReal.toENNReal_coe
 
 end TauCeti
 

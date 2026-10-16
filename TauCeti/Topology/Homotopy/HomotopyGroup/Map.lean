@@ -10,16 +10,14 @@ public import Mathlib.Topology.Homotopy.HomotopyGroup
 /-!
 # Functoriality of homotopy groups
 
-Mathlib defines the generalized loop space `Ω^ N X x` and the quotient
-`HomotopyGroup N X x`, but it does not yet provide the map induced by a based continuous
-map. This file supplies that small API: postcomposition sends generalized loops based at
-`x` to generalized loops based at `y`, descends to homotopy classes, respects identity and
-composition, handles constant maps and subsingleton targets, and is a monoid homomorphism in
-positive dimensions.
+Mathlib defines the generalized loop space `Ω^ N X x` and the quotient `HomotopyGroup N X x`, and
+this file supplies the map induced by a based continuous map: postcomposition sends generalized
+loops based at `x` to generalized loops based at `y`, descends to homotopy classes, respects
+identity and composition, handles constant maps and subsingleton targets, and is a monoid
+homomorphism in positive dimensions.
 
-This is a prerequisite for the higher-homotopy API requested in the Tau Ceti universal-covers
-roadmap, Stage 3 item 9, before proving that a covering map induces isomorphisms on
-`π_n` for `n ≥ 2`.
+The covering-map isomorphisms on `π_n` for `n ≥ 2`
+(`TauCeti.Topology.Homotopy.HomotopyGroup.Covering`) are stated with it.
 -/
 
 public section

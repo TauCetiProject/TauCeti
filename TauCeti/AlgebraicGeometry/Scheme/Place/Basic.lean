@@ -172,7 +172,8 @@ theorem _root_.AlgebraicGeometry.Scheme.toPlace_degree_eq_residueDegree (X : Sch
     [IsIntegral X] [X.Over (Spec (.of k))] (x : X)
     [IsDiscreteValuationRing (X.presheaf.stalk x)] :
     (X.toPlace (k := k) x).degree = (X ↘ Spec (.of k)).residueDegree x := by
-  rw [Scheme.toPlace_degree, Scheme.finrank_residueField_eq_residueDegree]
+  rw [Scheme.toPlace_degree, Scheme.residueFieldBaseAlgebra_eq_compHom]
+  exact ((X ↘ Spec (.of k)).residueDegree_eq_finrank x).symm
 
 end
 

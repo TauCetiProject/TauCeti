@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
-public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower
+public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Monoidal
+public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.Mul
 
 /-!
 # Symmetric powers of presheaves of modules
@@ -31,7 +31,12 @@ rings.
 * `PresheafOfModulesOfCommRing.symmetricPowerZeroIso` identifies the zeroth symmetric power
   with the constant functor at the unit presheaf of modules `R`;
 * `PresheafOfModulesOfCommRing.symmetricPowerOneIso` identifies the first symmetric power
-  with the identity functor.
+  with the identity functor;
+* `PresheafOfModulesOfCommRing.symmetricPowerMul` is the multiplication
+  `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M`, computed sectionwise by `ModuleCat.symmetricPower.mul`; with
+  the unit `R ⟶ Sym⁰ M` given by `symmetricPowerZeroIso` it satisfies the graded associativity,
+  commutativity and unit laws `symmetricPowerMul_assoc`, `symmetricPowerMul_comm`,
+  `symmetricPowerMul_one_mul` and `symmetricPowerMul_mul_one`.
 -/
 
 public section
@@ -220,6 +225,106 @@ lemma symmetricPowerOneIso_hom_app_app (M : PresheafOfModulesOfCommRing.{u} R) (
 lemma symmetricPowerOneIso_inv_app_app (M : PresheafOfModulesOfCommRing.{u} R) (X : Cᵒᵖ) :
     ((symmetricPowerOneIso R).inv.app M).app X = (ModuleCat.symmetricPower.iso₁ (M.obj X)).inv :=
   (rfl)
+
+section Mul
+
+open MonoidalCategory
+
+/-- The multiplication `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M` of symmetric powers of a presheaf of
+modules, given on sections over `X` by the product in the symmetric algebra of `M.obj X`. -/
+def symmetricPowerMul (M : PresheafOfModulesOfCommRing.{u} R) (i j : ℕ) :
+    (symmetricPower i).obj M ⊗ (symmetricPower j).obj M ⟶ (symmetricPower (i + j)).obj M :=
+  PresheafOfModulesOfCommRing.homMk (fun X ↦ ModuleCat.symmetricPower.mul (M.obj X) i j)
+    (fun {X Y} f ↦ by
+      refine ModuleCat.MonoidalCategory.tensor_ext fun x y ↦ Subtype.ext ?_
+      -- The sections of the tensor product agree with the tensor product of the sections only up
+      -- to the `rfl` identification `tensorObj_obj`, and restriction of scalars appears as
+      -- `ConcreteCategory.hom`, so the rewrites below need `erw` to see through these wrappers.
+      erw [ModuleCat.comp_apply, Monoidal.tensorObj_map_tmul, ModuleCat.restrictScalars.map_apply,
+        ModuleCat.comp_apply, ModuleCat.symmetricPower.coe_mul_tmul,
+        coe_symmetricPower_obj_map_apply, coe_symmetricPower_obj_map_apply,
+        coe_symmetricPower_obj_map_apply, ModuleCat.symmetricPower.coe_mul_tmul, map_mul])
+
+/-- The multiplication of symmetric powers is computed sectionwise. -/
+@[simp]
+lemma symmetricPowerMul_app (M : PresheafOfModulesOfCommRing.{u} R) (i j : ℕ) (X : Cᵒᵖ) :
+    (symmetricPowerMul M i j).app X = ModuleCat.symmetricPower.mul (M.obj X) i j :=
+  (rfl)
+
+/-- Transport along an equality of degrees is computed sectionwise. -/
+private lemma eqToHom_symmetricPower_app (M : PresheafOfModulesOfCommRing.{u} R) {i j : ℕ}
+    (h : i = j) (X : Cᵒᵖ) :
+    (eqToHom (congrArg (fun n ↦ (symmetricPower n).obj M) h)).app X =
+      eqToHom (congrArg (M.obj X).symmetricPower h) := by
+  subst h
+  rfl
+
+/-- The multiplication of symmetric powers is natural in the presheaf of modules. -/
+@[reassoc]
+lemma symmetricPowerMul_naturality {M N : PresheafOfModulesOfCommRing.{u} R} (φ : M ⟶ N)
+    (i j : ℕ) :
+    ((symmetricPower i).map φ ⊗ₘ (symmetricPower j).map φ) ≫ symmetricPowerMul N i j =
+      symmetricPowerMul M i j ≫ (symmetricPower (i + j)).map φ := by
+  ext1 X
+  simp only [PresheafOfModules.comp_app, tensorHom_app, symmetricPower_map_app,
+    symmetricPowerMul_app]
+  exact ModuleCat.symmetricPower.mul_naturality (φ.app' X) i j
+
+/-- The multiplication of symmetric powers of a presheaf of modules is associative, up to the
+identification of the degrees `i + (j + k)` and `i + j + k`. -/
+@[reassoc]
+lemma symmetricPowerMul_assoc (M : PresheafOfModulesOfCommRing.{u} R) (i j k : ℕ) :
+    (symmetricPowerMul M i j ▷ (symmetricPower k).obj M) ≫ symmetricPowerMul M (i + j) k =
+      (α_ _ _ _).hom ≫ ((symmetricPower i).obj M ◁ symmetricPowerMul M j k) ≫
+        symmetricPowerMul M i (j + k) ≫
+          eqToHom (congrArg (fun n ↦ (symmetricPower n).obj M) (add_assoc i j k).symm) := by
+  ext1 X
+  simp only [PresheafOfModules.comp_app, whiskerRight_app, whiskerLeft_app, associator_hom_app,
+    symmetricPowerMul_app]
+  rw [eqToHom_symmetricPower_app M (add_assoc i j k).symm]
+  exact ModuleCat.symmetricPower.mul_assoc (M.obj X) i j k
+
+/-- The multiplication of symmetric powers of a presheaf of modules is commutative, up to the
+identification of the degrees `i + j` and `j + i`. -/
+@[reassoc]
+lemma symmetricPowerMul_comm (M : PresheafOfModulesOfCommRing.{u} R) (i j : ℕ) :
+    (β_ ((symmetricPower i).obj M) ((symmetricPower j).obj M)).hom ≫ symmetricPowerMul M j i =
+      symmetricPowerMul M i j ≫
+        eqToHom (congrArg (fun n ↦ (symmetricPower n).obj M) (add_comm i j)) := by
+  ext1 X
+  simp only [PresheafOfModules.comp_app, braiding_hom_app, symmetricPowerMul_app]
+  rw [eqToHom_symmetricPower_app M (add_comm i j)]
+  exact ModuleCat.symmetricPower.mul_comm (M.obj X) i j
+
+/-- The unit `R ⟶ Sym⁰ M` is a left identity for the multiplication of symmetric powers, up to
+the identification of the degrees `0 + n` and `n`. -/
+@[reassoc]
+lemma symmetricPowerMul_one_mul (M : PresheafOfModulesOfCommRing.{u} R) (n : ℕ) :
+    ((symmetricPowerZeroIso R).inv.app M ▷ (symmetricPower n).obj M) ≫
+        symmetricPowerMul M 0 n =
+      (λ_ ((symmetricPower n).obj M)).hom ≫
+        eqToHom (congrArg (fun n ↦ (symmetricPower n).obj M) (zero_add n).symm) := by
+  ext1 X
+  simp only [PresheafOfModules.comp_app, whiskerRight_app, leftUnitor_hom_app,
+    symmetricPowerMul_app, symmetricPowerZeroIso_inv_app_app]
+  rw [eqToHom_symmetricPower_app M (zero_add n).symm]
+  exact ModuleCat.symmetricPower.one_mul (M.obj X) n
+
+/-- The unit `R ⟶ Sym⁰ M` is a right identity for the multiplication of symmetric powers, up to
+the identification of the degrees `n + 0` and `n`. -/
+@[reassoc]
+lemma symmetricPowerMul_mul_one (M : PresheafOfModulesOfCommRing.{u} R) (n : ℕ) :
+    ((symmetricPower n).obj M ◁ (symmetricPowerZeroIso R).inv.app M) ≫
+        symmetricPowerMul M n 0 =
+      (ρ_ ((symmetricPower n).obj M)).hom ≫
+        eqToHom (congrArg (fun n ↦ (symmetricPower n).obj M) (add_zero n).symm) := by
+  ext1 X
+  simp only [PresheafOfModules.comp_app, whiskerLeft_app, rightUnitor_hom_app,
+    symmetricPowerMul_app, symmetricPowerZeroIso_inv_app_app]
+  rw [eqToHom_symmetricPower_app M (add_zero n).symm]
+  exact ModuleCat.symmetricPower.mul_one (M.obj X) n
+
+end Mul
 
 end PresheafOfModulesOfCommRing
 

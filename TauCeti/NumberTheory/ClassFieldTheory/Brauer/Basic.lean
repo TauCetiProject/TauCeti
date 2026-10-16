@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.FieldTheory.GaloisCohomology.Inflation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 
 /-!
 # The Brauer group as continuous cohomology, and its finite layers
@@ -343,7 +343,8 @@ def relBrCocycle
     (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup
       (UnitsCoeff K)).subtype
     (continuous_fixedPoints_addSubgroup_subtype _ _ _)
-    (subtype_quotientMk_smul _ _ _) (relBrLevelCocycle K L σ c)
+    (galoisOpenNormalSubgroup K L σ).toSubgroup.fixedPoints_subtype_quotientMk_smul
+    (relBrLevelCocycle K L σ c)
 
 /-- The value of the relative Brauer cocycle is the embedded value of the original cocycle at
 the restrictions of the two absolute Galois elements. -/

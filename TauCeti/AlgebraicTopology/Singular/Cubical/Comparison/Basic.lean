@@ -178,6 +178,14 @@ theorem cubicalToSingular_app_f_zero_ofCube {X : TopCat.{u}} (x : X) :
     (cubeToHom (SingularCube.point x)) (cubeModelPoint.{u})).trans ?_)
   exact congrArg _ ((cubeToHom_apply _ _).trans (SingularCube.point_apply _ _))
 
+/-- The comparison map to simplicial chains sends any `0`-cube to the chain of its point. -/
+theorem cubicalToSingular_app_f_zero_ofZeroCube {X : TopCat.{u}} (c : SingularCube X 0) :
+    ((cubicalToSingular k).app X).f 0 (NormalizedCubicalChain.ofCube X k c) =
+      simplexChain (TopCat.toSSetObj₀Equiv.symm (c fun i ↦ i.elim0)) (1 : k) := by
+  have h := cubicalToSingular_app_f_zero_ofCube (k := k) (c fun i ↦ i.elim0)
+  rw [← SingularCube.eq_point c] at h
+  exact h
+
 /-! ### Quasi-isomorphisms and the homology comparison -/
 
 /-- The comparison map to cubical chains is a quasi-isomorphism. -/

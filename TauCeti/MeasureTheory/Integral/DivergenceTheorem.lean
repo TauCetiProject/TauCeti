@@ -35,16 +35,18 @@ vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is
 expresses the symplectic area of a map from a rectangle into an exact symplectic vector space by
 integrals of a primitive along its four sides.
 
-The annular form applies the rectangle formula to the polar pullback. Its angular seam terms
-cancel, and the radial Jacobian converts the interior integral to the annulus. Neither the map
-nor its derivatives need be defined regularly on the inner disc.
+The annular form, including zero inner radius, applies the rectangle formula to the polar
+pullback. Its angular seam terms cancel, and the radial Jacobian converts the interior integral
+to the annulus. For positive inner radius, neither the map nor its derivatives need be regular
+on the inner disc. At zero inner radius the inner boundary integral vanishes, giving Green's
+formula on a disc.
 
 ## Main results
 
 * `ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc`: Green's formula above, over
   `Set.Icc a b` for points `a ≤ b` of `ℝ × ℝ`.
 * `ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus`: the corresponding formula on a
-  translated annulus of positive inner radius, with outer minus inner circle boundary terms.
+  translated annulus of nonnegative inner radius, with outer minus inner circle boundary terms.
 -/
 
 public section
@@ -110,13 +112,13 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc
   rw [hgreen, intervalIntegral.integral_neg, intervalIntegral.integral_neg]
   abel
 
-/-- **Green's formula on a closed annulus.** For a `C²` map near the annulus of positive radii
-`a ≤ b`, the integral of the alternating part of a bilinear pairing of its derivatives equals
+/-- **Green's formula on a closed annulus.** For a `C²` map near the annulus of radii
+`0 ≤ a ≤ b`, the integral of the alternating part of a bilinear pairing of its derivatives equals
 the outer circle integral of `B u du` minus the inner circle integral. Both circles are
 parametrized counterclockwise; their difference gives the boundary orientation. -/
 theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
     (B : V →L[ℝ] V →L[ℝ] W) {u : ℂ → V} (z₀ : ℂ) {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
+    (ha : 0 ≤ a) (hab : a ≤ b)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
       (B (fderiv ℝ u z 1) (fderiv ℝ u z I) -
@@ -136,7 +138,7 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
     intro p hp
     simp only [mem_Icc, Prod.le_def] at hp
     simpa only [mem_ofPred_eq, P, add_sub_cancel_left, Complex.norm_polarCoord_symm,
-      abs_of_nonneg (le_trans ha.le hp.1.1)] using And.intro hp.1.1 hp.2.1
+      abs_of_nonneg (le_trans ha hp.1.1)] using And.intro hp.1.1 hp.2.1
   have hv : ∀ p ∈ Icc (a, -π) (b, π), ContDiffAt ℝ 2 v p :=
     fun p hp ↦ (hu _ (hmem p hp)).comp p hP.contDiffAt
   -- Apply rectangular Green to the polar pullback.

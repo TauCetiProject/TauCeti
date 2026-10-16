@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Contractible
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Cone
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
 public import TauCeti.Algebra.Homology.AcyclicModels
 
 /-!

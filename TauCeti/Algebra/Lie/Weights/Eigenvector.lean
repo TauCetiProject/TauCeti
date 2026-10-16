@@ -51,13 +51,6 @@ of the weight. This is how a weight is read off a coordinate of a vector in an e
 * `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace`: the specialization of the shift to a vector of
   the root space of `psi`, which is an adjoint eigenvector of weight `psi` by
   `LieAlgebra.IsKilling.lie_eq_smul_of_mem_rootSpace`.
-
-## References
-
-This is elementary weight-space infrastructure for the highest weight modules of Layer 3 and the
-"integrability relation" milestone of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: the weight shift is what makes
-a lowered highest weight vector an eigenvector again.
 -/
 
 public section

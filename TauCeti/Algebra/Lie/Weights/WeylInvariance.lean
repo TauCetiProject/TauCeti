@@ -66,9 +66,6 @@ it fails, neither form is a weight and both multiplicities are zero, by
 
 ## References
 
-This is the "Weyl-invariance of multiplicities, directly from `sl₂`" item of Layer 2 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2.
 -/
 
