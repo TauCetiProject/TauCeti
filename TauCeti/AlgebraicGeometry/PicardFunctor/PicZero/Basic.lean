@@ -440,7 +440,19 @@ commutative-group structure have the same sections and pullback maps. -/
 def relativePicardDegreeZeroSubfunctorIsoFunctor :
     (relativePicardDegreeZeroSubfunctor f).toFunctor ≅
       relativePicardDegreeZeroFunctor f ⋙ forget CommGrpCat :=
-  eqToIso (by rfl)
+  NatIso.ofComponents (fun T ↦
+    ({
+      toFun c := relativePicardDegreeZeroFunctor.mk f c.1 c.2
+      invFun c := ⟨(relativePicardDegreeZeroFunctorι f).app T c,
+        relativePicardDegreeZeroFunctorι_app_mem f c⟩
+      left_inv c := Subtype.ext (relativePicardDegreeZeroFunctorι_app_mk f c.1 c.2)
+      right_inv c := relativePicardDegreeZeroFunctorι_app_injective f T <| by
+        rw [relativePicardDegreeZeroFunctorι_app_mk]
+    } : (relativePicardDegreeZeroSubfunctor f).obj T ≃
+      (relativePicardDegreeZeroFunctor f).obj T).toIso) (by
+        intro T T' φ
+        ext c
+        exact (relativePicardDegreeZeroFunctor_map_mk f φ c.1 c.2).symm)
 
 /-- The comparison from the set-valued degree-zero subfunctor to the underlying group-valued
 functor sends a section to the same class with its degree-zero proof. -/
@@ -452,7 +464,6 @@ lemma relativePicardDegreeZeroSubfunctorIsoFunctor_hom_app {T : (Over S)ᵒᵖ}
         (Y := ToType ((relativePicardDegreeZeroFunctor f).obj T))
         ((relativePicardDegreeZeroSubfunctorIsoFunctor f).hom.app T) c =
       relativePicardDegreeZeroFunctor.mk f c.1 c.2 := by
-  rw [relativePicardDegreeZeroSubfunctorIsoFunctor]
   rfl
 
 end Smooth

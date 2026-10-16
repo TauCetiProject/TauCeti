@@ -94,6 +94,35 @@ def abelJacobiMapToPicZeroFppf :
   Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1} ≫
     abelJacobiMapOfDegreeToPicZeroFppf f hx₀ 1
 
+/-- The Abel–Jacobi map into the degree-zero Picard fppf sheaf is the existing degree-zero
+Abel–Jacobi class followed by the comparison with the group-valued functor and sheafification. -/
+theorem abelJacobiMapToPicZeroFppf_eq :
+    abelJacobiMapToPicZeroFppf f hx₀ =
+      abelJacobiMapToPicZero f hx₀ ≫
+        (relativePicardDegreeZeroSubfunctorIsoFunctor f).hom ≫
+        relativePicardDegreeZeroToFppfSheafOfMul f := by
+  rw [abelJacobiMapToPicZeroFppf, abelJacobiMapOfDegreeToPicZeroFppf,
+    abelJacobiMapToPicZero_eq, Category.assoc]
+
+/-- The value of the Abel–Jacobi map in the degree-zero Picard fppf sheaf is the sheafification
+image of its existing degree-zero Picard class. -/
+@[simp]
+lemma abelJacobiMapToPicZeroFppf_app_apply {T : (Over S)ᵒᵖ}
+    (x : (yoneda.obj (Over.mk f) ⋙ uliftFunctor.{u + 1}).obj T) :
+    ConcreteCategory.hom (C := Type (u + 1))
+        (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
+        (Y := ToType ((relativePicardDegreeZeroFppfSheaf f).obj.obj T))
+        ((abelJacobiMapToPicZeroFppf f hx₀).app T) x =
+      (relativePicardDegreeZeroToFppfSheaf f).app T
+        (relativePicardDegreeZeroAddPresheafAddEquiv f T
+          (Additive.ofMul (relativePicardDegreeZeroFunctor.mk f
+            ((abelJacobiMapToPicZero f hx₀).app T x).1
+            ((abelJacobiMapToPicZero f hx₀).app T x).2))) := by
+  rw [abelJacobiMapToPicZeroFppf_eq]
+  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply]
+  rw [relativePicardDegreeZeroSubfunctorIsoFunctor_hom_app,
+    relativePicardDegreeZeroToFppfSheafOfMul_app_apply]
+
 /-- **The Abel–Jacobi map into the degree-zero Picard fppf sheaf sends the base point to zero.** -/
 @[simp]
 theorem abelJacobiMapToPicZeroFppf_app_basePoint (T : (Over S)ᵒᵖ) :
