@@ -34,6 +34,15 @@ def sha(value):
 
 
 def verify(record, head, base, mode):
+    """Check a recorded identity's structure and binding to expected H/B/mode.
+
+    Return the same mapping, or raise ValueError for malformed/mismatched fields
+    (including T != H for a frozen candidate). This does not read Git objects,
+    prove record provenance, validate pins, or attest that a build ran. Callers
+    must keep the preparation record outside candidate-writable mounts and use
+    trusted dispatch identities; the CLI additionally checks recorded T/tree
+    against preparation-step outputs before status reporting. No files change.
+    """
     sha(head)
     sha(base)
     if mode not in MODES or not isinstance(record, dict):
@@ -51,6 +60,31 @@ def verify(record, head, base, mode):
 
 
 def prepare(candidate, base_checkout, head, base, mode, pins_changed=False, bump_validated=False):
+    """Assemble H+B, or record an already-authorized frozen candidate unchanged.
+
+    candidate and base_checkout must be dedicated detached checkouts at the
+    supplied immutable H/B, with .git directories and enough objects for the
+    complete merge graph. The trusted caller must first enforce raw-H scope,
+    attest its Lake configuration, and determine pins_changed against its merge
+    base. bump_validated is caller-supplied authority: this function requires it
+    for changed pins but does not repeat the upstream forward-bump validator.
+    Frozen candidates require the caller's existing batch/ancestry validation.
+
+    Ordinary integration uses isolated Git, checks the resulting Lake files
+    against B (or the validated complete H pin pair), then replaces candidate
+    with the materialized deterministic T checkout. The original is retained at
+    candidate-name-raw-head and supplies read-only objects alongside B. Callers
+    must normalize the new .lake before trusted writes, expose those borrowed
+    objects read-only to the sandbox, and run source-shape/build/audit gates;
+    preparation alone authorizes none of those results. Frozen mode leaves the
+    checkout untouched and sets T=H.
+
+    Return the schema/mode/H/B/T/tree/pin-resolution mapping consumed by verify.
+    Unresolved merge conflicts raise IntegrationConflict before replacement;
+    only pin conflicts may be resolved using the already-validated H pair.
+    Invalid identities/configuration raise ValueError; Git/I/O failures
+    propagate. A failed materialization restores the original checkout.
+    """
     sha(head)
     sha(base)
     if mode not in MODES:
