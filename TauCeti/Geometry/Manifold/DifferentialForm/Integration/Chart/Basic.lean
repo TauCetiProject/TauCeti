@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Function.L1Space.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
-public import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 public import Mathlib.MeasureTheory.Function.Jacobian
