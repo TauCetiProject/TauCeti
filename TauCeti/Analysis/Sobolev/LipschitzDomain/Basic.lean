@@ -33,6 +33,8 @@ half-space through boundary charts and to patch them with a partition of unity.
 * `Set.IsLipschitzDomainAtWith`: the existence of a Lipschitz boundary chart centred at one point.
 * `Set.IsLipschitzDomainWith`: an open set with the local graph condition at every frontier point.
 * `Set.IsLipschitzChartWith.mono_radii`: restriction of a chart to a smaller cylinder.
+* `Set.IsLipschitzChartWith.smul`: positive dilation of a chart, with explicit coordinates
+  `TauCeti.dilateConj`, graph and radii.
 * `Set.IsLipschitzDomainWith.smul`: positive dilations preserve Lipschitz domains and constants.
 * `Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_cover`: the frontier of a bounded
   Lipschitz domain is covered by finitely many chart cylinders with a common Lipschitz constant.
@@ -93,6 +95,32 @@ theorem smul_normalCylinder {c : ℝ} (hc : 0 < c) (a b : ℝ) :
   rw [mem_smul_set_iff_inv_smul_mem₀ hc.ne']
   simp only [mem_normalCylinder, WithLp.smul_fst, WithLp.smul_snd, smul_eq_mul, norm_smul,
     norm_inv, Real.norm_eq_abs, abs_of_pos hc, inv_mul_lt_iff₀ hc, lt_inv_mul_iff₀ hc, mul_neg]
+
+section DilateConj
+
+variable {𝕜 V V₂ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup V₂] [NormedSpace 𝕜 V₂]
+
+/-- The conjugate `y ↦ c • e (c⁻¹ • y)` of an affine isometry `e` by the dilation by `c`. It has
+the linear part of `e` and translation part `c • e 0`, so it is again an affine isometry. -/
+def dilateConj (c : 𝕜) (e : V ≃ᵃⁱ[𝕜] V₂) : V ≃ᵃⁱ[𝕜] V₂ :=
+  e.linearIsometryEquiv.toAffineIsometryEquiv.trans (AffineIsometryEquiv.constVAdd 𝕜 V₂ (c • e 0))
+
+/-- The dilation conjugate of `e` sends `c • y` to `c • e y`. -/
+@[simp]
+theorem dilateConj_smul (c : 𝕜) (e : V ≃ᵃⁱ[𝕜] V₂) (y : V) :
+    dilateConj c e (c • y) = c • e y := by
+  have he : e y = e.linearIsometryEquiv y + e 0 := by simpa using e.map_vadd 0 y
+  simp [dilateConj, he, smul_add, add_comm]
+
+/-- The inverse of the dilation conjugate of `e` by `c ≠ 0` is the dilation conjugate of
+`e.symm`, written out pointwise. -/
+theorem dilateConj_symm_apply {c : 𝕜} (hc : c ≠ 0) (e : V ≃ᵃⁱ[𝕜] V₂) (z : V₂) :
+    (dilateConj c e).symm z = c • e.symm (c⁻¹ • z) := by
+  rw [AffineIsometryEquiv.symm_apply_eq, dilateConj_smul, AffineIsometryEquiv.apply_symm_apply,
+    smul_inv_smul₀ hc]
+
+end DilateConj
 
 end TauCeti
 
@@ -246,26 +274,17 @@ theorem isLipschitzDomainWith_image_affineIsometryEquiv_iff
 
 section Dilation
 
-/-- **Positive dilation of a chart.** If `Omega` is a Lipschitz domain at `x`, then `c • Omega`
-is a Lipschitz domain at `c • x` for every `c > 0`, with the same Lipschitz constant: the graph
-`φ` becomes `y ↦ c * φ (c⁻¹ • y)` and both cylinder radii are multiplied by `c`. -/
-theorem IsLipschitzDomainAtWith.smul {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
-    {x : WithLp 2 (ℝ × E)} (h : Omega.IsLipschitzDomainAtWith L x) {c : ℝ} (hc : 0 < c) :
-    (c • Omega).IsLipschitzDomainAtWith L (c • x) := by
-  obtain ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ, hOmega⟩ := h
-  -- The conjugate `y ↦ c • e (c⁻¹ • y)` of `e` is again an affine isometry: it has the linear
-  -- part of `e` and translation part `c • e 0`.
-  let e' : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E) :=
-    e.linearIsometryEquiv.toAffineIsometryEquiv.trans
-      (AffineIsometryEquiv.constVAdd ℝ _ (c • e 0))
-  have he' (y : WithLp 2 (ℝ × E)) : e' (c • y) = c • e y := by
-    have he : e y = e.linearIsometryEquiv y + e 0 := by simpa using e.map_vadd 0 y
-    simp [e', he, smul_add, add_comm]
-  have hsymm (z : WithLp 2 (ℝ × E)) : e'.symm z = c • e.symm (c⁻¹ • z) := by
-    rw [AffineIsometryEquiv.symm_apply_eq, he', AffineIsometryEquiv.apply_symm_apply,
-      smul_inv_smul₀ hc.ne']
-  refine ⟨e', fun y ↦ c * φ (c⁻¹ • y), c * a, c * b, by rw [he', hex, smul_zero],
-    mul_pos hc ha, mul_pos hc hb, by simp [hφ0], ?_, fun z hz ↦ ?_⟩
+/-- **Positive dilation of a chart.** For `c > 0`, a Lipschitz boundary chart for `Omega` with
+coordinates `e`, graph `φ` and radii `a`, `b` gives a chart for `c • Omega` with the same Lipschitz
+constant, the conjugated coordinates `dilateConj c e`, the graph `y ↦ c * φ (c⁻¹ • y)` and the
+radii `c * a`, `c * b`. -/
+theorem IsLipschitzChartWith.smul {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
+    {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
+    (h : Omega.IsLipschitzChartWith L e φ a b) {c : ℝ} (hc : 0 < c) :
+    (c • Omega).IsLipschitzChartWith L (dilateConj c e) (fun y ↦ c * φ (c⁻¹ • y))
+      (c * a) (c * b) := by
+  obtain ⟨ha, hb, hφ0, hφ, hOmega⟩ := h
+  refine ⟨mul_pos hc ha, mul_pos hc hb, by simp [hφ0], ?_, fun z hz ↦ ?_⟩
   · refine LipschitzWith.of_dist_le_mul fun y z ↦ ?_
     have hyz := hφ.dist_le_mul (c⁻¹ • y) (c⁻¹ • z)
     rw [dist_smul₀, Real.norm_eq_abs, abs_inv, abs_of_pos hc] at hyz
@@ -274,9 +293,18 @@ theorem IsLipschitzDomainAtWith.smul {Omega : Set (WithLp 2 (ℝ × E))} {L : �
           mul_le_mul_of_nonneg_left hyz hc.le
       _ = L * dist y z := by field_simp
   · rw [← smul_normalCylinder hc, mem_smul_set_iff_inv_smul_mem₀ hc.ne'] at hz
-    rw [hsymm, smul_mem_smul_set_iff₀ hc.ne', hOmega _ hz]
+    rw [dilateConj_symm_apply hc.ne', smul_mem_smul_set_iff₀ hc.ne', hOmega _ hz]
     simp only [WithLp.smul_fst, WithLp.smul_snd, smul_eq_mul]
     rw [← mul_lt_mul_iff_of_pos_left hc, mul_inv_cancel_left₀ hc.ne']
+
+/-- **Positive dilation of a local chart.** If `Omega` is a Lipschitz domain at `x`, then
+`c • Omega` is a Lipschitz domain at `c • x` for every `c > 0`, with the same Lipschitz constant.
+See `Set.IsLipschitzChartWith.smul` for the explicit dilated chart. -/
+theorem IsLipschitzDomainAtWith.smul {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
+    {x : WithLp 2 (ℝ × E)} (h : Omega.IsLipschitzDomainAtWith L x) {c : ℝ} (hc : 0 < c) :
+    (c • Omega).IsLipschitzDomainAtWith L (c • x) := by
+  obtain ⟨e, φ, a, b, hex, hchart⟩ := h
+  exact ⟨dilateConj c e, _, _, _, by rw [dilateConj_smul, hex, smul_zero], hchart.smul hc⟩
 
 /-- **Positive dilation of a Lipschitz domain.** For `c > 0`, the dilation `c • Omega` of a
 Lipschitz domain with constant `L` is a Lipschitz domain with the same constant. -/
