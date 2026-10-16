@@ -45,7 +45,7 @@ homological degree. A non-backtracking choice of neighbours supplies this exactn
 holds for every connected graph which is not a tree, and these graphs are never finite ADE Dynkin
 diagrams. The augmentation of `K_0` onto the simple module and the internal grading of the terms,
 which make `K` a linear resolution, are in
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.KoszulResolution`.
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Koszul.Resolution`.
 
 ## Main definitions
 
