@@ -393,6 +393,16 @@ def relativePicardDegreeZeroFunctor.mk {T : (Over S)ᵒᵖ} (c : (relativePicard
     (relativePicardDegreeZeroFunctor f).obj T :=
   ⟨c, hc⟩
 
+/-- Restrict a group homomorphism to the degree-zero relative Picard functor when all of its
+values have fibrewise degree zero. -/
+def relativePicardDegreeZeroFunctor.mkHom {T : (Over S)ᵒᵖ} {G : Type*} [Monoid G]
+    (φ : G →* (relativePicardPresheaf f).obj T)
+    (hφ : ∀ a, φ a ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    G →* (relativePicardDegreeZeroFunctor f).obj T where
+  toFun a := relativePicardDegreeZeroFunctor.mk f (φ a) (hφ a)
+  map_one' := Subtype.ext φ.map_one
+  map_mul' a b := Subtype.ext (φ.map_mul a b)
+
 /-- The degree-zero Picard functor `Pic⁰_{X/S}` acts on the section
 `relativePicardDegreeZeroFunctor.mk f c hc` by the pullback map of the relative Picard presheaf
 `T ↦ Pic(X_T) / Pic(T)`. -/
@@ -419,6 +429,17 @@ lemma relativePicardDegreeZeroFunctorι_app_mk {T : (Over S)ᵒᵖ}
     (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
     (relativePicardDegreeZeroFunctorι f).app T (relativePicardDegreeZeroFunctor.mk f c hc) = c := by
   unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor.mk; rfl
+
+/-- Restricting a group homomorphism to the degree-zero relative Picard functor and then
+forgetting the degree-zero proof recovers the original homomorphism. -/
+@[simp]
+lemma relativePicardDegreeZeroFunctorι_app_mkHom {T : (Over S)ᵒᵖ} {G : Type*} [Monoid G]
+    (φ : G →* (relativePicardPresheaf f).obj T)
+    (hφ : ∀ a, φ a ∈ (relativePicardDegreeZeroSubfunctor f).obj T) (a : G) :
+    (relativePicardDegreeZeroFunctorι f).app T
+        (relativePicardDegreeZeroFunctor.mkHom f φ hφ a) = φ a := by
+  unfold relativePicardDegreeZeroFunctor.mkHom
+  exact relativePicardDegreeZeroFunctorι_app_mk f _ _
 
 /-- The inclusion `relativePicardDegreeZeroFunctorι` sends a section of `Pic⁰_{X/S}` to a section
 of `T ↦ Pic(X_T) / Pic(T)` of degree zero on every geometric fibre. -/
