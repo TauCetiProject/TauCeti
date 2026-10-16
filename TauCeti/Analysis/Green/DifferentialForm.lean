@@ -42,7 +42,9 @@ theorem manifoldOneForm_apply (P Q : ℂ → ℝ) (z : ℂ)
 
 /-- In the plane's canonical chart, the manifold form is the alternating-map encoding of
 the circulation form. -/
-@[simp]
+-- This rule must precede inChartAt_modelSpace, which erases the chart expression
+-- before simp can expose the circulation form's alternating-map encoding.
+@[simp high]
 theorem manifoldOneForm_inChartAt (P Q : ℂ → ℝ) (c : ℂ) :
     (manifoldOneForm P Q).inChartAt c = fun z ↦
       ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) (oneForm P Q z) := by
