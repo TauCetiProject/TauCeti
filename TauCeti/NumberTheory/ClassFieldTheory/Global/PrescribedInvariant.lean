@@ -454,6 +454,10 @@ theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
   let χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ) :=
     χ'.comp (Abelianization.of.comp ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp
       (QuotientGroup.mk' V.toSubgroup))).toAdditive
+  have hχχ' (x : AbsoluteGaloisGroup K) : χ (.ofMul x) =
+      χ' (.ofMul (Abelianization.of
+        ((galOfOpenNormalEquiv V).symm (x : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))) := by
+    simp [χ]
   have hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))) :=
     AddSubgroup.isOpen_mono (H₁ := V.toSubgroup.toAddSubgroup)
       (fun g hg ↦ by
@@ -466,11 +470,9 @@ theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
       rw [← ideleCoeffEquivIdeleFormation_smul]
       exact congrArg _ ((FixedPoints.mem_addSubgroup _ _ _).1 a.2 u)⟩
   refine ⟨(ofOpenNormal V).artinCharacterCup (ideleFormation K) a' χ', ?_⟩
-  -- `χ` is `χ'` read on `G_K` by definition, which gives the compatibility `hχ'` and the final
-  -- equation by `rfl`.
-  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' (fun _ ↦ rfl) a' hχ a
-    rfl, ha]
-  rfl
+  -- `a'` is `a` by its definition, so `ideleLayerCorInfl_artinCharacterCup` applies with `rfl`.
+  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχχ' a' hχ a rfl, ha,
+    hχχ']
 
 open NormalLayer in
 /-- **A cyclic layer over `K` with a place of full local degree carries a class of invariant
