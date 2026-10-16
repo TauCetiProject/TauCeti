@@ -244,13 +244,12 @@ theorem macbeathHom_surjective_of_locallyFinite [ConnectedSpace X]
   let A := ⋃ h : H, (h : G) • P
   let B := ⋃ g : {g : G // g ∉ H}, (g : G) • P
   have hmem {h g : G} (hh : h ∈ H) (hinter : (h • P ∩ g • P).Nonempty) : g ∈ H := by
-    obtain ⟨x, hxh, hxg⟩ := hinter
-    have hgen : h⁻¹ * g ∈ macbeathGenerators G P := by
-      rw [mem_macbeathGenerators]
-      exact ⟨h⁻¹ • x, mem_smul_set_iff_inv_smul_mem.1 hxh, by
-        rw [mul_smul]
-        exact smul_mem_smul_set hxg⟩
-    simpa using H.mul_mem hh (Subgroup.subset_closure hgen)
+    have hh' : h ∈ (macbeathHom G P).range := by
+      rw [range_macbeathHom]
+      exact hh
+    have hg := mem_range_macbeathHom_of_nonempty hh' hinter
+    rw [range_macbeathHom] at hg
+    exact hg
   have hAlf : LocallyFinite fun h : H ↦ (h : G) • P := by
     simpa [Function.comp_def] using hlf.comp_injective (g := fun h : H ↦ (h : G))
       Subtype.val_injective
@@ -282,7 +281,6 @@ theorem macbeathHom_surjective_of_locallyFinite [ConnectedSpace X]
     exact ⟨x, mem_iUnion.2 ⟨⟨1, H.one_mem⟩, by simpa⟩⟩
   have hA : A = univ := IsClopen.eq_univ ⟨hAc, hAo⟩ hAne
   rw [← MonoidHom.range_eq_top, range_macbeathHom]
-  change H = ⊤
   apply top_unique
   intro g _
   obtain ⟨x, hxg⟩ := hP.smul_set (a := g)
