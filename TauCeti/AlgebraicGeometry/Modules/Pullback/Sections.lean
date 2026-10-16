@@ -76,7 +76,7 @@ lemma pullbackSectionsLE_apply (s : Γ(M, U)) :
       ((pullback g).obj M).presheaf.map (homOfLE hV).op (g.pullbackSections M U s) :=
   (rfl)
 /-- Pullback to the full inverse image agrees with the canonical section pullback. -/
-lemma pullbackSectionsLE_self (s : Γ(M, U)) :
+@[simp] lemma pullbackSectionsLE_self (s : Γ(M, U)) :
     pullbackSectionsLE g M U (g ⁻¹ᵁ U) le_rfl s = Scheme.Hom.pullbackSections g M U s := by
   simp [pullbackSectionsLE]
 /-- Pullback to a smaller open is natural in the coefficient sheaf. -/
