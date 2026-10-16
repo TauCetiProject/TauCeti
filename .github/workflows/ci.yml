@@ -135,6 +135,7 @@ jobs:
           python3 scripts/test_workflow_pins.py
           python3 scripts/test_queue_release.py
           python3 scripts/test_pick_runner.py
+          python3 scripts/test_fleet_runner.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
           python3 scripts/test_bump_latest.py

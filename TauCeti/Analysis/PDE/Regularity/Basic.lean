@@ -67,10 +67,10 @@ boundary `H²` regularity; the whole-space statements are the case `Ω = ℝⁿ`
 In the whole-space case `Ω = ℝⁿ` the argument needs neither cut-offs nor the extension by zero:
 no boundary regularity is involved, `H¹₀(ℝⁿ) = H¹(ℝⁿ)` (`TauCeti.w1p0Submodule_top_eq_top`), so
 the solution concept `TauCeti.PDE.IsWeakSolutionDirichlet` imposes no boundary condition there,
-and every difference quotient is a legitimate test function. For a constant principal
+and every difference quotient is a legitimate test function. For a locally Lipschitz principal
 coefficient and bounded measurable lower-order coefficients, interior `H²` regularity on a general
 domain follows by absorbing the lower-order terms into the forcing and localizing with a cutoff
-(`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`).
+(`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`).
 
 ## Main declarations
 
