@@ -105,10 +105,9 @@ abbrev cyclesFunctor (n : ℤ) : TotallyAcyclicComplex.{v} A ⥤ GorensteinProje
       HomologicalComplex.cyclesFunctor (ModuleCat.{v} A) (ComplexShape.up ℤ) n)
     (fun P ↦ P.property.isGorensteinProjective_cycles n)
 
-instance (n : ℤ) : (cyclesFunctor.{v} A n).Additive where
-  map_add := by
-    intro P Q f g
-    exact ObjectProperty.hom_ext _ (cyclesMap_add f.hom g.hom n)
+-- Instance search does not match the generic lift instance without this explicit application.
+instance (n : ℤ) : (cyclesFunctor.{v} A n).Additive :=
+  Functor.instAdditiveFullSubcategoryLift _ _ _
 
 /-- The underlying module of the cycle functor is the usual module of cycles. -/
 @[simp]
