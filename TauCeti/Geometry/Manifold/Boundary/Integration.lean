@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 public import TauCeti.Geometry.Manifold.Measure
 
 /-!
@@ -46,5 +46,75 @@ theorem boundaryRestriction_apply (φ : RoughForm (𝓡∂ (n + 1)) M F j)
     boundaryRestriction φ x v = φ x (fun i ↦ mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
       (𝓡∂ (n + 1)) Subtype.val x (v i)) := by
   simp [boundaryRestriction]
+
+/-- Boundary restriction preserves the zero form. -/
+@[simp]
+theorem boundaryRestriction_zero :
+    boundaryRestriction (0 : RoughForm (𝓡∂ (n + 1)) M F j) = 0 :=
+  mpullback_zero _
+
+/-- Boundary restriction preserves addition. -/
+@[simp]
+theorem boundaryRestriction_add [ContinuousAdd F]
+    (φ ψ : RoughForm (𝓡∂ (n + 1)) M F j) :
+    boundaryRestriction (φ + ψ) = boundaryRestriction φ + boundaryRestriction ψ :=
+  mpullback_add _ φ ψ
+
+/-- Boundary restriction commutes with finite sums. -/
+theorem boundaryRestriction_sum [ContinuousAdd F] {ι : Type*}
+    (φ : ι → RoughForm (𝓡∂ (n + 1)) M F j) (s : Finset ι) :
+    boundaryRestriction (∑ i ∈ s, φ i) = ∑ i ∈ s, boundaryRestriction (φ i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      boundaryRestriction_add, ih]
+
+section Support
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Restriction to the boundary cannot add support outside the ambient support. -/
+theorem tsupport_boundaryRestriction_subset (φ : RoughForm (𝓡∂ (n + 1)) M F j) :
+    _root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin j]→L[ℝ] F)
+        (boundaryRestriction φ) ⊆
+      Subtype.val ⁻¹' _root_.tsupport
+        (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin j]→L[ℝ] F) φ :=
+  RoughForm.tsupport_mpullback_subset_preimage continuous_subtype_val φ
+
+/-- Restriction of a compactly supported form to the closed boundary remains compactly supported. -/
+theorem isCompact_tsupport_boundaryRestriction {φ : RoughForm (𝓡∂ (n + 1)) M F j}
+    (hc : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin _]→L[ℝ] F) φ))
+    : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin j]→L[ℝ] F)
+        (boundaryRestriction φ)) :=
+  (((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal
+    |>.isCompact_preimage hc).of_isClosed_subset
+    (_root_.isClosed_tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin _]→L[ℝ] F) _)
+      (tsupport_boundaryRestriction_subset φ)
+
+/-- Support in an ambient chart restricts to support in its induced boundary chart. -/
+theorem tsupport_boundaryRestriction_subset_source {φ : RoughForm (𝓡∂ (n + 1)) M F j}
+    (α : (𝓡∂ (n + 1)).boundary M)
+    (hs : (_root_.tsupport (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin _]→L[ℝ] F) φ)
+      ⊆ (extChartAt (𝓡∂ (n + 1)) (α : M)).source) :
+    (_root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin _]→L[ℝ] F) (boundaryRestriction φ)) ⊆
+      (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) α).source := by
+  intro x hx
+  have hm := hs (tsupport_boundaryRestriction_subset φ hx)
+  simpa only [extChartAt_source, boundaryChartedSpace_chartAt_source, mem_preimage] using hm
+
+/-- A form supported away from the boundary has zero boundary restriction. -/
+theorem boundaryRestriction_eq_zero_of_disjoint {φ : RoughForm (𝓡∂ (n + 1)) M F j}
+    (hd : Disjoint (_root_.tsupport (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin _]→L[ℝ] F) φ)
+      ((𝓡∂ (n + 1)).boundary M)) : boundaryRestriction φ = 0 := by
+  funext x
+  ext v
+  rw [boundaryRestriction_apply,
+    _root_.image_eq_zero_of_notMem_tsupport
+      (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin j]→L[ℝ] F)
+      (fun hm ↦ Set.disjoint_left.mp hd hm x.property)]
+  rfl
+
+end Support
 
 end TauCeti

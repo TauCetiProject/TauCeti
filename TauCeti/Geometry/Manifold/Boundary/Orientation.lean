@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import TauCeti.Geometry.Manifold.Boundary.TransitionNormal
 
 /-!
 # Outward-pointing vectors at the boundary
@@ -16,8 +17,9 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 For a manifold modeled on Mathlib's Euclidean half-space, this file records the sign convention
 for an outward tangent vector.  Mathlib puts the boundary coordinate in slot `0`; outward vectors
 therefore have a negative slot-`0` derivative.  The definition uses the preferred chart through
-`mfderiv`; coordinate independence requires suitable differentiable chart compatibility and an
-invariance theorem.  This is the interface used by the boundary orientation and Stokes
+`mfderiv`; the positive normal derivative of actual chart transitions proves coordinate
+independence in `isOutwardPointing_iff_tangentCoordChange`. This is the interface used by boundary
+orientation and Stokes
 constructions.
 
 The sign convention follows J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition
@@ -56,6 +58,18 @@ theorem isOutwardPointing_iff {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x} :
         (NormedSpace.fromTangentSpace (𝕜 := ℝ) (extChartAt (𝓡∂ (n + 1)) x x)
           (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
             (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 < 0 := Iff.rfl
+
+/-- Outwardness can be tested in any preferred chart containing the boundary point. -/
+theorem isOutwardPointing_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1 M]
+    {x α : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
+    (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source)
+    (v : TangentSpace (𝓡∂ (n + 1)) x) :
+    IsOutwardPointing x v ↔ (tangentCoordChange (𝓡∂ (n + 1)) x α x v) 0 < 0 := by
+  obtain ⟨a, ha, hnormal⟩ := tangentCoordChange_normal_pos hx (mem_extChartAt_source x) hα
+  rw [isOutwardPointing_iff, and_iff_right hx, mfderiv_extChartAt_self]
+  change (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) v < 0 ↔ _
+  exact (smul_neg_iff_of_pos_left ha).symm.trans (iff_of_eq
+    (congrArg (fun r : ℝ ↦ r < 0) (hnormal v).symm))
 
 namespace IsOutwardPointing
 
