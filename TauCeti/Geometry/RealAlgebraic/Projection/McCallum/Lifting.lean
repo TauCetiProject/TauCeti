@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Polynomial.Puiseux.GlobalOrder
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Basic
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.FamilyOrder
 public import TauCeti.Geometry.RealAlgebraic.Stack.Chart
-public import TauCeti.Geometry.RealAlgebraic.Stack.Discriminant
+public import TauCeti.Geometry.RealAlgebraic.Stack.Discriminant.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Product
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
 

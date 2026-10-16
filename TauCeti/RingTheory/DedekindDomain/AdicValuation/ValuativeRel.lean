@@ -375,4 +375,25 @@ theorem not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even
 
 end IsDedekindDomain.HeightOneSpectrum
 
+namespace TauCeti
+
+/-- An integral lift of a global field element to an adic completion is a unit exactly when
+the global element has valuation one. -/
+theorem isUnit_integer_adicCompletion_iff_valuation_eq_one
+    (R : Type*) [CommRing R] [IsDedekindDomain R]
+    {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+    (v : IsDedekindDomain.HeightOneSpectrum R)
+    {x : K} {y : 𝒪[v.adicCompletion K]}
+    (hy : algebraMap 𝒪[v.adicCompletion K] (v.adicCompletion K) y =
+      algebraMap K (v.adicCompletion K) x) :
+    IsUnit y ↔ v.valuation K x = 1 := by
+  rw [(Valuation.integer.integers _).isUnit_iff_valuation_eq_one,
+    (ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
+      (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)).eq_one_iff_eq_one, hy]
+  simp only [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion,
+    Function.comp_apply, Algebra.algebraMap_self_apply,
+    IsDedekindDomain.HeightOneSpectrum.valuedAdicCompletion_eq_valuation']
+
+end TauCeti
+
 end

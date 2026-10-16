@@ -40,6 +40,8 @@ action transports across `R ⊗[R] V ≃ₗ[R] V` to a representation on `V` its
   `TauCeti.Comodule.pointsAction_corestrict_obj`.
 * `TauCeti.Comodule.basePointsRepresentation`: the action of base-valued points on the original
   comodule.
+* `TauCeti.Comodule.basePointsRepresentation_apply_of_mem_weightSpace`: base-valued points act on
+  a weight vector through the value of the point on its weight.
 * `TauCeti.Comodule.coact_eq_tmul_one_iff_forall_pointsAction_tmul_eq`: geometric fixed-vector
   detection in terms of the convolution-group action.
 * `TauCeti.Comodule.coact_eq_tmul_one_iff_forall_basePointsRepresentation_eq`: base-valued points
@@ -121,6 +123,13 @@ theorem basePointsRepresentation_mem (N : Subcomodule R H M)
   rw [basePointsRepresentation_apply, endOfPoint_tmul, one_smul,
     TensorProduct.lid_comm]
   exact N.rid_lTensor_coact_mem g.ofConv.toLinearMap hm
+
+/-- A base-valued point acts on a vector of group-like weight `c` by the scalar `g c`. -/
+theorem basePointsRepresentation_apply_of_mem_weightSpace (g : WithConv (H →ₐ[R] R))
+    {c : _root_.GroupLike R H} {m : M} (hm : m ∈ _root_.GroupLike.weightSpace (M := M) c) :
+    basePointsRepresentation (H := H) M g m = g.ofConv c • m := by
+  rw [basePointsRepresentation_apply, endOfPoint_tmul, _root_.GroupLike.mem_weightSpace.mp hm]
+  simp
 
 /-- The scalar-extension action of a base-valued point is the pure tensor of its action on the
 original comodule. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm
+public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Seminorm
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
 /-!
@@ -251,6 +251,13 @@ def map (f : ∀ i, E i →ₗ[𝕜] G i) :
     ProjectiveTensorProduct p →ₗ[𝕜] ProjectiveTensorProduct q :=
   (toPiTensorProductLinearEquiv q).symm.toLinearMap.comp
     ((PiTensorProduct.map f).comp (toPiTensorProductLinearEquiv p).toLinearMap)
+
+omit [Fintype ι] in
+/-- The tensor map agrees with the algebraic tensor map after forgetting topology. -/
+@[simp]
+theorem toPiTensorProduct_map (f : ∀ i, E i →ₗ[𝕜] G i) (x : ProjectiveTensorProduct p) :
+    (map p q f x).toPiTensorProduct = PiTensorProduct.map f x.toPiTensorProduct := by
+  simp [map]
 
 omit [Fintype ι] in
 @[simp]

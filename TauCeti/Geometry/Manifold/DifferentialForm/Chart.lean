@@ -43,6 +43,19 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 
 namespace RoughForm
 
+/-- Evaluating a chart expression at a chart image transports each argument through the
+actual tangent coordinate change. -/
+theorem inChartAt_chart_apply [IsManifold I 1 M]
+    (φ : RoughForm I M F k) (α : M) {x : M}
+    (hx : x ∈ (extChartAt I α).source) (v : Fin k → E) :
+    φ.inChartAt α (extChartAt I α x) v =
+      φ x (fun i ↦ tangentCoordChange I α x x (v i)) := by
+  rw [RoughForm.inChartAt_apply]
+  have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
+  rw [← TangentBundle.symmL_trivializationAt hx', TangentBundle.symmL_trivializationAt_eq_core hx']
+  rw [(extChartAt I α).left_inv hx]
+  rfl
+
 /-- On an overlap of two preferred charts, a rough form read in the first chart is the pullback of
 its expression in the second chart by the coordinate change. -/
 theorem inChartAt_eq_compContinuousLinearMap [IsManifold I 1 M]
