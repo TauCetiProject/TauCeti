@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Wronskian
-import Mathlib.Algebra.MvPolynomial.CommRing
+import TauCeti.LinearAlgebra.Matrix.MvPolynomial
 
 /-!
 # Partial-degree bounds for generalized Wronskians
@@ -40,21 +40,6 @@ open Matrix Finset
 
 variable {R σ : Type*} [CommRing R] {m : ℕ}
 
-private theorem degreeOf_det_le_sum {n : Type*} [Fintype n] [DecidableEq n]
-    (A : Matrix n n (MvPolynomial σ R)) (i : σ) (e : n → ℕ)
-    (hA : ∀ k l, (A k l).degreeOf i ≤ e l) :
-    A.det.degreeOf i ≤ ∑ l, e l := by
-  rw [Matrix.det_apply]
-  refine (degreeOf_sum_le i univ _).trans (Finset.sup_le fun p _ ↦ ?_)
-  calc
-    (Equiv.Perm.sign p • ∏ l, A (p l) l).degreeOf i =
-        (∏ l, A (p l) l).degreeOf i := by
-      rcases Int.units_eq_one_or (Equiv.Perm.sign p) with hp | hp
-      · rw [hp, one_smul]
-      · rw [hp, Units.neg_smul, one_smul, degreeOf_neg]
-    _ ≤ ∑ l, (A (p l) l).degreeOf i := degreeOf_prod_le i univ _
-    _ ≤ ∑ l, e l := Finset.sum_le_sum fun l _ ↦ hA (p l) l
-
 /-- If the `l`-th polynomial has partial degree at most `e l` in `Xᵢ`, then the partial degree
 of any generalized Wronskian of the family in `Xᵢ` is at most `∑ l, e l`.
 
@@ -64,7 +49,7 @@ theorem degreeOf_genWronskian_le_sum (D : Fin m → σ →₀ ℕ) (f : Fin m �
     (i : σ) (e : Fin m → ℕ) (hf : ∀ l, (f l).degreeOf i ≤ e l) :
     (genWronskian D f).degreeOf i ≤ ∑ l, e l := by
   rw [genWronskian_def]
-  refine degreeOf_det_le_sum _ i e fun k l ↦ ?_
+  refine TauCeti.MvPolynomial.degreeOf_det_le_sum _ i e fun k l ↦ ?_
   exact (degreeOf_hasseDeriv_le (D k) (f l) i).trans
     ((Nat.sub_le _ _).trans (hf l))
 
