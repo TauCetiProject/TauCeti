@@ -78,7 +78,7 @@ coefficients, which is why they descend to `ℕ` and from there to an arbitrary 
 ## References
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
-  Section 5, Example 3 (Pieri's formula and its dual).
+  Section 5, (5.16) and (5.17) (Pieri's formula and its dual).
 * R. P. Stanley, *Enumerative Combinatorics, Vol. 2*, Theorem 7.15.7 (the two Pieri rules).
 -/
 
@@ -298,18 +298,13 @@ theorem esymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
       simp only [YoungDiagram.mem_lengthenedRows]
       exact hstrip.rowLen_eq_add_ite _
     have hcard : T.card = r := by
-      have h2 := hstrip.card_lengthenedRows (N := N) hμN
+      have h2 := hstrip.card_eq_add_card_lengthenedRows (N := N) hμN
       rw [card_ofPartition, ← hT] at h2
       omega
     have hinj : Function.Injective
         fun j : Fin N => ν.betaNumber N j + if j ∈ T then 1 else 0 := by
-      intro a b hab
-      have hab' : ν.betaNumber N a + (if a ∈ T then 1 else 0) =
-          ν.betaNumber N b + (if b ∈ T then 1 else 0) := hab
-      refine Fin.ext (YoungDiagram.injOn_betaNumber (ofPartition μ) N a.isLt b.isLt ?_)
-      rw [YoungDiagram.betaNumber_def, YoungDiagram.betaNumber_def, hrow a, hrow b]
-      rw [YoungDiagram.betaNumber_def, YoungDiagram.betaNumber_def] at hab'
-      split_ifs at hab' ⊢ <;> omega
+      rw [hT]
+      exact hstrip.injective_betaNumber_add_ite
     refine ⟨T, mem_filter.mpr ⟨mem_powersetCard_univ.mpr hcard, hinj⟩, ?_⟩
     refine YoungDiagram.ofPartition_injective
       (YoungDiagram.eq_of_betaNumber_eq (hfS T hcard hinj).2 hμN fun i hi => ?_)
@@ -329,6 +324,53 @@ section SchurPolynomials
 variable {R : Type*} [CommSemiring R]
 
 open scoped Classical in
+/-- **From an alternant identity on beta-numbers to a Schur-polynomial identity.**  Let `p` be a
+polynomial with natural-number coefficients and `P` a property of the partitions of `n` under which
+the shape contains `ν`.  If, for every `ν` with at most `N` rows, multiplying the alternant of the
+beta-numbers of `ν` by `p` gives the sum of the alternants of the beta-numbers of the shapes with
+at most `N` rows satisfying `P`, then multiplying the Schur polynomial of `ν` by `p` gives the sum
+of their Schur polynomials, over any commutative semiring and with no bound on the rows of `ν`.
+
+This is the passage shared by the two Pieri rules below: the staircase alternant is cancelled over
+`ℤ`, the shapes too tall for the alphabet drop out of both sides, and the resulting identity is
+transported through `ℕ` to the target semiring. -/
+private theorem mul_diagramSchurPoly_of_mul_alternant_betaNumber {N n : ℕ}
+    (p : MvPolynomial (Fin N) ℕ) (ν : YoungDiagram) (P : n.Partition → Prop)
+    (hP : ∀ μ, P μ → ν ≤ ofPartition μ)
+    (halt : ν.colLen 0 ≤ N →
+      MvPolynomial.map (Nat.castRingHom ℤ) p * alternant (Fin N) ℤ (fun j => ν.betaNumber N j) =
+        ∑ μ : n.Partition with (P μ ∧ (ofPartition μ).colLen 0 ≤ N),
+          alternant (Fin N) ℤ fun j => (ofPartition μ).betaNumber N j) :
+    MvPolynomial.map (Nat.castRingHom R) p * diagramSchurPoly N R ν =
+      ∑ μ : n.Partition with P μ, diagramSchurPoly N R (ofPartition μ) := by
+  -- Prove the identity over `ℤ`, where the nonzero Vandermonde alternant `a_δ` can be cancelled
+  -- in `ℤ[x]`.  Both sides have natural-number coefficients, so the identity descends along the
+  -- injection `ℕ → ℤ`, and the resulting identity over `ℕ` maps to any commutative semiring.
+  have hℤ : MvPolynomial.map (Nat.castRingHom ℤ) p * diagramSchurPoly N ℤ ν =
+      ∑ μ : n.Partition with P μ, diagramSchurPoly N ℤ (ofPartition μ) := by
+    by_cases hν : ν.colLen 0 ≤ N
+    · -- Cancel the staircase alternant, whose exponents are pairwise distinct.
+      refine mul_right_cancel₀ (alternant_ne_zero_of_injective (injective_staircase N)) ?_
+      rw [mul_assoc, diagramSchurPoly_mul_alternant N ν hν, halt hν, sum_mul, ← filter_filter,
+        sum_filter]
+      refine sum_congr rfl fun μ _ => ?_
+      split_ifs with hμ
+      · rw [diagramSchurPoly_mul_alternant N _ hμ]
+      · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hμ), zero_mul]
+    · -- Both sides vanish: `ν` and every diagram containing it have more than `N` rows.
+      have hν' : N < ν.colLen 0 := Nat.lt_of_not_le hν
+      rw [diagramSchurPoly_eq_zero_of_lt_colLen hν', mul_zero]
+      refine (sum_eq_zero fun μ hμ => ?_).symm
+      exact diagramSchurPoly_eq_zero_of_lt_colLen (hν'.trans_le
+        (YoungDiagram.colLen_le_of_le (hP μ (mem_filter.mp hμ).2) 0))
+  have hℕ : p * diagramSchurPoly N ℕ ν =
+      ∑ μ : n.Partition with P μ, diagramSchurPoly N ℕ (ofPartition μ) :=
+    MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective <| by
+      simpa [map_diagramSchurPoly, map_sum] using hℤ
+  simpa [map_diagramSchurPoly, map_sum] using
+    congrArg (MvPolynomial.map (Nat.castRingHom R)) hℕ
+
+open scoped Classical in
 /-- **The Pieri rule for Schur polynomials.**  Multiplying the Schur polynomial of a Young diagram
 `ν` in the alphabet `Fin N` by the complete homogeneous symmetric polynomial `h_r` gives the sum of
 the Schur polynomials of the diagrams `μ` obtained from `ν` by adding a horizontal strip of `r`
@@ -339,48 +381,10 @@ theorem hsymm_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) (r : ℕ) :
     hsymm (Fin N) R r * diagramSchurPoly N R ν =
       ∑ μ : (ν.card + r).Partition with (ofPartition μ).InterlacedBy ν,
         diagramSchurPoly N R (ofPartition μ) := by
-  -- Prove the identity over `ℤ`, where the nonzero Vandermonde alternant `a_δ` can be
-  -- cancelled in `ℤ[x]`.  Both sides have natural-number coefficients, so the identity descends
-  -- along the injection `ℕ → ℤ`, and the resulting identity over `ℕ` maps to any commutative
-  -- semiring.
-  suffices hℤ : hsymm (Fin N) ℤ r * diagramSchurPoly N ℤ ν =
-      ∑ μ : (ν.card + r).Partition with (ofPartition μ).InterlacedBy ν,
-        diagramSchurPoly N ℤ (ofPartition μ) by
-    have hℕ : hsymm (Fin N) ℕ r * diagramSchurPoly N ℕ ν =
-        ∑ μ : (ν.card + r).Partition with (ofPartition μ).InterlacedBy ν,
-          diagramSchurPoly N ℕ (ofPartition μ) :=
-      MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective <| by
-        simpa [map_diagramSchurPoly, map_hsymm, map_sum] using hℤ
-    have h := congrArg (MvPolynomial.map (Nat.castRingHom R)) hℕ
-    simpa [map_diagramSchurPoly, map_hsymm, map_sum] using h
-  by_cases hν : ν.colLen 0 ≤ N
-  · -- Cancel the staircase alternant, whose exponents are pairwise distinct.
-    have hδ : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) := fun i j h => by
-      have := i.isLt
-      have := j.isLt
-      exact Fin.ext (by simp only at h; omega)
-    refine mul_right_cancel₀ (alternant_ne_zero_of_injective hδ) ?_
-    rw [mul_assoc, diagramSchurPoly_mul_alternant N ν hν,
-      hsymm_mul_alternant_betaNumber ν hν r, sum_mul, ← filter_filter, sum_filter]
-    refine sum_congr rfl fun μ _ => ?_
-    split_ifs with hμ
-    · rw [diagramSchurPoly_mul_alternant N _ hμ]
-    · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hμ), zero_mul]
-  · -- Both sides vanish: `ν` and every diagram containing it have more than `N` rows.
-    have hν' : N < ν.colLen 0 := Nat.lt_of_not_le hν
-    rw [diagramSchurPoly_eq_zero_of_lt_colLen hν', mul_zero]
-    refine (sum_eq_zero fun μ hμ => ?_).symm
-    have hle := ((mem_filter.mp hμ).2).le
-    have hN : ν.rowLen N ≠ 0 := by
-      intro h0
-      have : (N, 0) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr hν'
-      rw [YoungDiagram.mem_iff_lt_rowLen, h0] at this
-      omega
-    have hμN : N < (ofPartition μ).colLen 0 := by
-      by_contra h
-      exact hN (Nat.eq_zero_of_le_zero ((YoungDiagram.rowLen_le_of_le hle N).trans
-        (YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp h)).le))
-    exact diagramSchurPoly_eq_zero_of_lt_colLen hμN
+  have h := mul_diagramSchurPoly_of_mul_alternant_betaNumber (R := R) (hsymm (Fin N) ℕ r) ν
+    (fun μ => (ofPartition μ).InterlacedBy ν) (fun _ hμ => hμ.le)
+    fun hν => by rw [map_hsymm]; exact hsymm_mul_alternant_betaNumber ν hν r
+  rwa [map_hsymm] at h
 
 open scoped Classical in
 /-- **The Pieri rule for Schur polynomials of partitions.**  In a finite alphabet `σ`, for a
@@ -407,48 +411,10 @@ theorem esymm_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) (r : ℕ) :
     esymm (Fin N) R r * diagramSchurPoly N R ν =
       ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsVerticalStrip ν,
         diagramSchurPoly N R (ofPartition μ) := by
-  -- Every coefficient on either side is a natural number, so it is enough to prove the identity
-  -- over `ℕ` and map those coefficients to the target commutative semiring.  Over `ℕ` the identity
-  -- follows in turn from the one over `ℤ` — where the nonzero Vandermonde alternant `a_δ` can be
-  -- cancelled in `ℤ[x]` — because `ℕ → ℤ` is injective.
-  have hℤ : esymm (Fin N) ℤ r * diagramSchurPoly N ℤ ν =
-      ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsVerticalStrip ν,
-        diagramSchurPoly N ℤ (ofPartition μ) := by
-    by_cases hν : ν.colLen 0 ≤ N
-    · -- Cancel the staircase alternant, whose exponents are pairwise distinct.
-      have hδ : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) := fun i j h => by
-        have := i.isLt
-        have := j.isLt
-        exact Fin.ext (by simp only at h; omega)
-      refine mul_right_cancel₀ (alternant_ne_zero_of_injective hδ) ?_
-      rw [mul_assoc, diagramSchurPoly_mul_alternant N ν hν,
-        esymm_mul_alternant_betaNumber ν hν r, sum_mul, ← filter_filter, sum_filter]
-      refine sum_congr rfl fun μ _ => ?_
-      split_ifs with hμ
-      · rw [diagramSchurPoly_mul_alternant N _ hμ]
-      · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hμ), zero_mul]
-    · -- Both sides vanish: `ν` and every diagram containing it have more than `N` rows.
-      have hν' : N < ν.colLen 0 := Nat.lt_of_not_le hν
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen hν', mul_zero]
-      refine (sum_eq_zero fun μ hμ => ?_).symm
-      have hle := ((mem_filter.mp hμ).2).le
-      have hN : ν.rowLen N ≠ 0 := by
-        intro h0
-        have : (N, 0) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr hν'
-        rw [YoungDiagram.mem_iff_lt_rowLen, h0] at this
-        omega
-      have hμN : N < (ofPartition μ).colLen 0 := by
-        by_contra h
-        exact hN (Nat.eq_zero_of_le_zero ((YoungDiagram.rowLen_le_of_le hle N).trans
-          (YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp h)).le))
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen hμN]
-  have hℕ : esymm (Fin N) ℕ r * diagramSchurPoly N ℕ ν =
-      ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsVerticalStrip ν,
-        diagramSchurPoly N ℕ (ofPartition μ) :=
-    MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective
-      (by simpa [map_esymm, map_diagramSchurPoly, map_sum] using hℤ)
-  simpa [map_esymm, map_diagramSchurPoly, map_sum] using
-    congrArg (MvPolynomial.map (Nat.castRingHom R)) hℕ
+  have h := mul_diagramSchurPoly_of_mul_alternant_betaNumber (R := R) (esymm (Fin N) ℕ r) ν
+    (fun μ => (ofPartition μ).IsVerticalStrip ν) (fun _ hμ => hμ.le)
+    fun hν => by rw [map_esymm]; exact esymm_mul_alternant_betaNumber ν hν r
+  rwa [map_esymm] at h
 
 open scoped Classical in
 /-- **The dual Pieri rule for Schur polynomials of partitions.**  In a finite alphabet `σ`, for a

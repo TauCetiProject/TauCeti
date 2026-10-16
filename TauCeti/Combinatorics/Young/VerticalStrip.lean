@@ -43,7 +43,9 @@ directions of that correspondence are `YoungDiagram.isVerticalStrip_ofRowLensFin
   as it keeps the beta-numbers pairwise distinct.
 * `YoungDiagram.IsVerticalStrip.ofRowLensFin_lengthenedRows`: conversely, a vertical strip over `ν`
   with at most `N` rows is obtained in this way from `YoungDiagram.lengthenedRows`, whose size is
-  computed by `YoungDiagram.IsVerticalStrip.card_lengthenedRows`.
+  computed by `YoungDiagram.IsVerticalStrip.card_eq_add_card_lengthenedRows`.
+* `YoungDiagram.IsVerticalStrip.injective_betaNumber_add_ite`: the rows a vertical strip lengthens
+  do keep the beta-numbers pairwise distinct, so they are one of the sets above.
 
 ## References
 
@@ -221,6 +223,22 @@ theorem IsVerticalStrip.antitone_rowLen_add_ite :
     simp only [mem_lengthenedRows, ← h.rowLen_eq_add_ite]
     exact μ.rowLen_anti _ _ hab
 
+/-- **A vertical strip shifts the beta-numbers injectively.**  Raising by one the beta-numbers
+(`YoungDiagram.betaNumber`) of `ν` in the rows that `μ` lengthens gives those of `μ`, which are
+pairwise distinct.  This is the converse of
+`YoungDiagram.antitone_rowLen_add_ite_of_injective` for the set of rows a strip lengthens. -/
+theorem IsVerticalStrip.injective_betaNumber_add_ite : Function.Injective
+    fun j : Fin N => ν.betaNumber N j + if j ∈ lengthenedRows N μ ν then 1 else 0 := by
+  have hfun : (fun j : Fin N => ν.betaNumber N j + if j ∈ lengthenedRows N μ ν then 1 else 0)
+      = fun j : Fin N => μ.betaNumber N j := by
+    funext j
+    have hrow := h.rowLen_eq_add_ite (j : ℕ)
+    rw [betaNumber_def, betaNumber_def]
+    simp only [mem_lengthenedRows]
+    split_ifs at hrow ⊢ <;> omega
+  rw [hfun]
+  exact (μ.strictAnti_betaNumber N).injective
+
 include hμ
 
 /-- **A vertical strip is recovered from the rows it lengthens**: within `N` rows, `μ` is `ν` with
@@ -238,14 +256,10 @@ theorem IsVerticalStrip.ofRowLensFin_lengthenedRows :
       rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.not_lt.mp hi))]
 
 /-- A vertical strip lengthens exactly as many rows as it has cells over the shape below it. -/
-theorem IsVerticalStrip.card_lengthenedRows :
+theorem IsVerticalStrip.card_eq_add_card_lengthenedRows :
     μ.card = ν.card + (lengthenedRows N μ ν).card := by
   -- The shape below the strip has no more rows than the strip itself.
-  have hν : ν.colLen 0 ≤ N := by
-    by_contra hcon
-    have hmem : ((N, 0) : ℕ × ℕ) ∈ μ :=
-      h.le (_root_.YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le hcon))
-    exact absurd (_root_.YoungDiagram.mem_iff_lt_colLen.mp hmem) (Nat.not_lt.mpr hμ)
+  have hν : ν.colLen 0 ≤ N := (colLen_le_of_le h.le 0).trans hμ
   conv_lhs => rw [← h.ofRowLensFin_lengthenedRows hμ]
   exact card_ofRowLensFin_add_ite _ hν
 
