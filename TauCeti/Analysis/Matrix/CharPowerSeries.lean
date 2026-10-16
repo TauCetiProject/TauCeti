@@ -9,13 +9,15 @@ public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.Analysis.Matrix.Ultra
+public import TauCeti.LinearAlgebra.Matrix.Minor
 
 /-!
 # Principal-minor series of infinite matrices
 
 For a square matrix `A : Matrix ι ι R` over a commutative topological ring, indexed by an
-arbitrary (possibly infinite) type `ι`, this file defines the principal minors
-`A.principalMinor s = det (A i j)_{i, j ∈ s}` on finite sets `s` of indices, the coefficients
+arbitrary (possibly infinite) type `ι`, this file uses the principal minors
+`A.principalMinor s = det (A i j)_{i, j ∈ s}` on finite sets `s` of indices
+(`Matrix.principalMinor`) to define the coefficients
 
 `A.charCoeff n = (-1) ^ n * ∑' s : {s : Finset ι // s.card = n}, A.principalMinor s`,
 
@@ -43,7 +45,6 @@ sharing one row majorant. The coefficients do not depend on an enumeration of th
 
 ## Main definitions
 
-* `Matrix.principalMinor`: the principal minor on a finite set of indices.
 * `Matrix.charCoeff`: the signed sum of the principal minors of a given size.
 * `Matrix.charPowerSeries`: the power series with coefficients `Matrix.charCoeff`.
 
@@ -71,31 +72,7 @@ variable {ι κ R : Type*} [DecidableEq ι] [DecidableEq κ]
 
 section Defs
 
-variable [CommRing R]
-
-/-- The principal minor of `A` on a finite set `s` of indices: the determinant of the
-restriction of `A` to the rows and columns indexed by `s`. -/
-def principalMinor (A : Matrix ι ι R) (s : Finset ι) : R :=
-  (A.submatrix (Subtype.val : s → ι) Subtype.val).det
-
-theorem principalMinor_def (A : Matrix ι ι R) (s : Finset ι) :
-    A.principalMinor s = (A.submatrix (Subtype.val : s → ι) Subtype.val).det := (rfl)
-
-@[simp]
-theorem principalMinor_empty (A : Matrix ι ι R) : A.principalMinor ∅ = 1 := by
-  rw [principalMinor_def, det_isEmpty]
-
-/-- Principal minors are invariant under reindexing the rows and columns by the same
-equivalence. -/
-theorem principalMinor_submatrix_equiv (A : Matrix κ κ R) (e : ι ≃ κ) (s : Finset ι) :
-    (A.submatrix e e).principalMinor s = A.principalMinor (s.map e.toEmbedding) := by
-  let g : s ≃ s.map e.toEmbedding := e.subtypeEquiv fun _ ↦ by simp
-  rw [principalMinor_def, principalMinor_def,
-    ← det_submatrix_equiv_self g (A.submatrix Subtype.val Subtype.val), submatrix_submatrix,
-    submatrix_submatrix]
-  exact congrArg det (ext fun i j ↦ by simp [g])
-
-variable [TopologicalSpace R]
+variable [CommRing R] [TopologicalSpace R]
 
 /-- The `n`-th coefficient of the principal-minor series `det (1 - T A)`: `(-1) ^ n` times the
 sum of the principal minors of size `n`. The sum is an unconditional `tsum`, so it is only
@@ -153,6 +130,7 @@ variable [Fintype ι]
 theorem charCoeff_eq_coeff_charpolyRev (A : Matrix ι ι R) (n : ℕ) :
     A.charCoeff n = A.charpolyRev.coeff n := by
   rw [charCoeff_def, coeff_charpolyRev, tsum_fintype]
+  simp only [← principalMinor_def]
   congr 1
   exact (sum_subtype _ (fun s ↦ by simp) fun s ↦ A.principalMinor s).symm
 
