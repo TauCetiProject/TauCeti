@@ -74,6 +74,7 @@ def pushCube {m : ℕ} (d : SingularCube Z m) :
 variable {L f z₀}
 
 /-- The value of `pushCube`. -/
+@[simp]
 theorem pushCube_apply {m : ℕ} (d : SingularCube Z m) (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
     pushCube L f z₀ d a = ofCube L (f.comp d) (L.map (f.pathClass z₀ (d 0)) a) := by
   rw [pushCube, LinearMap.comp_apply]

@@ -85,16 +85,6 @@ theorem twistedPushforward_simplexChain {n : ℕ} (σ : (TopCat.toSSet.obj Z) _�
   rw [twistedPushforward, chainsDesc_simplexChain]
   rfl
 
-/-- Transport between the initial vertices of a simplex and of a reindexing of it is the path
-class inside the simplex. -/
-theorem vertexTransport_eq_pathClass {Y : TopCat.{v}} {m n : SimplexCategoryᵒᵖ} (α : m ⟶ n)
-    (σ : (TopCat.toSSet.obj Y).obj m) :
-    vertexTransport α σ = (TopCat.simplexMap σ).pathClass (toTopInitialVertex m.unop)
-      (toTop.map α.unop (toTopInitialVertex n.unop)) := by
-  obtain ⟨q⟩ := PathConnectedSpace.joined (toTopInitialVertex m.unop)
-    (toTop.map α.unop (toTopInitialVertex n.unop))
-  rw [vertexTransport_eq_mk α σ q, ContinuousMap.pathClass_eq_mk]
-
 /-- An additive map, as a linear map over the lifted integers. -/
 private def intLinear {M N : Type*} [AddCommGroup M] [AddCommGroup N] (g : M →+ N) :
     M →ₗ[ULift.{v} ℤ] N where
