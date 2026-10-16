@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Homotopy
+public import TauCeti.Algebra.Homology.ModuleCat.Subobject
 public import Mathlib.Algebra.Homology.Homotopy
 
 /-!
@@ -137,6 +138,19 @@ theorem continuationHom_comp (ν₁ : ContinuationCocycle mP mQ) (ν₂ : Contin
   rw [continuationHom_f_apply, continuationMap_comp]
   simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
     continuationHom_f_apply]
+
+/-- A continuation cocycle with no entries strictly increasing the index sends each piece of the
+index filtration into the corresponding piece. -/
+theorem factors_twistedIndexSubobject (ν : ContinuationCocycle mP mQ)
+    (hM : IsDGRightModule h ℳ dM) (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) (p : ℤ) :
+    (mQ.twistedIndexSubobject hM p).Factors
+      ((mP.twistedIndexSubobject hM p).arrow ≫ ν.continuationHom hM) := by
+  refine Subobject.factors_of_forall_mem_range _ _ fun n x ↦ ?_
+  rw [mQ.mem_range_twistedIndexSubobject_arrow_f_iff, HomologicalComplex.comp_f,
+    ModuleCat.hom_comp, LinearMap.comp_apply, continuationHom_f_apply]
+  refine (mem_twistedIndexFiltration_iff _).1
+    (continuationMap_mem_twistedIndexFiltration ν.ν hν ((mem_twistedIndexFiltration_iff _).2 ?_))
+  exact (mP.mem_range_twistedIndexSubobject_arrow_f_iff hM p n _).1 ⟨x, rfl⟩
 
 end ContinuationCocycle
 

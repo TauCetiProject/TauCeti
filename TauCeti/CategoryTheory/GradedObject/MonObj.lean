@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.GradedObject.Braiding
 public import Mathlib.CategoryTheory.Monoidal.CommMon_
+public import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Monoid objects in graded objects from homogeneous data
@@ -22,6 +23,14 @@ morphisms of monoid objects by their homogeneous components. This is how graded 
 symmetric algebras, which are naturally described degree by degree, are given the structure of
 monoid objects in graded objects.
 
+Homogeneous data can be transported along a lax monoidal functor `F : C ⥤ D`: given
+identifications `e n : Y n ≅ F.obj (X n)`, the multiplications
+`Y i ⊗ Y j ⟶ F.obj (X i) ⊗ F.obj (X j) ⟶ F.obj (X i ⊗ X j) ⟶ F.obj (X (i + j)) ⟶ Y (i + j)`
+and the unit `𝟙_ D ⟶ F.obj (𝟙_ C) ⟶ F.obj (X 0) ⟶ Y 0` satisfy the graded laws whenever the
+original data do, and the graded commutativity law too when `F` is lax braided. This is how a
+graded algebra described degree by degree on presheaves, such as a sectionwise symmetric algebra,
+passes to sheaves along sheafification.
+
 ## Main declarations
 
 * `CategoryTheory.GradedObject.Monoidal.mulOfHomogeneous`: the morphism `X ⊗ X ⟶ X` assembled
@@ -35,7 +44,14 @@ monoid objects in graded objects.
   object from graded commutativity of the homogeneous multiplications;
 * `CategoryTheory.GradedObject.isMonHom_of_homogeneous`: a morphism of graded objects between
   monoid objects is a monoid morphism once it preserves the unit in degree zero and the
-  multiplication of homogeneous components.
+  multiplication of homogeneous components;
+* `CategoryTheory.GradedObject.mul_assoc_of_laxMonoidal`,
+  `CategoryTheory.GradedObject.one_mul_of_laxMonoidal`,
+  `CategoryTheory.GradedObject.mul_one_of_laxMonoidal` and
+  `CategoryTheory.GradedObject.mul_comm_of_laxBraided`: the graded laws of homogeneous data
+  transported along a lax monoidal (resp. lax braided) functor;
+* `CategoryTheory.GradedObject.map_mul_of_laxMonoidal`: transported morphisms commute with the
+  transported homogeneous multiplications.
 -/
 
 public section
@@ -245,5 +261,144 @@ lemma isCommMonObj_monObjOfHomogeneous
       simp [reassoc_of% mul_comm i j] }
 
 end AddCommMonoid
+
+section LaxMonoidal
+
+variable {I : Type*} [AddMonoid I] {C D : Type*} [Category* C] [Category* D]
+  [MonoidalCategory C] [MonoidalCategory D] {F : C ⥤ D} [F.LaxMonoidal]
+  {X : GradedObject I C} {Y : GradedObject I D} {e : ∀ n, Y n ≅ F.obj (X n)}
+  (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
+  (hmul : ∀ i j, mul' i j =
+    ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
+      (e (i + j)).inv)
+include hmul
+
+/-- Homogeneous multiplications transported along a lax monoidal functor `F` and identifications
+`e n : Y n ≅ F.obj (X n)` are associative, up to the identification of the degrees
+`i + (j + k)` and `i + j + k`, when the original ones are. -/
+lemma mul_assoc_of_laxMonoidal
+    (mul_assoc : ∀ i j k, (mul i j ▷ X k) ≫ mul (i + j) k =
+      (α_ _ _ _).hom ≫ (X i ◁ mul j k) ≫ mul i (j + k) ≫
+        eqToHom (congrArg X (add_assoc i j k).symm)) (i j k : I) :
+    (mul' i j ▷ Y k) ≫ mul' (i + j) k =
+      (α_ _ _ _).hom ≫ (Y i ◁ mul' j k) ≫ mul' i (j + k) ≫
+        eqToHom (congrArg Y (add_assoc i j k).symm) := by
+  have core : ((Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j)) ⊗ₘ 𝟙 (F.obj (X k))) ≫
+      Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul (i + j) k) =
+        (α_ _ _ _).hom ≫ (𝟙 (F.obj (X i)) ⊗ₘ (Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul j k))) ≫
+          Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul i (j + k)) ≫
+            F.map (eqToHom (congrArg X (add_assoc i j k).symm)) := by
+    rw [tensorHom_id, id_tensorHom, comp_whiskerRight, Category.assoc,
+      Functor.LaxMonoidal.μ_natural_left_assoc, ← F.map_comp, mul_assoc]
+    simp
+  calc (mul' i j ▷ Y k) ≫ mul' (i + j) k
+      = (((e i).hom ⊗ₘ (e j).hom) ⊗ₘ (e k).hom) ≫
+          ((Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j)) ⊗ₘ 𝟙 (F.obj (X k))) ≫
+            Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul (i + j) k) ≫ (e _).inv := by
+        rw [hmul, hmul, ← tensorHom_id, tensorHom_comp_tensorHom_assoc,
+          tensorHom_comp_tensorHom_assoc]
+        simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
+    _ = _ := by
+        rw [reassoc_of% core, associator_naturality_assoc, tensorHom_comp_tensorHom_assoc,
+          TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_assoc i j k).symm, hmul, hmul,
+          ← id_tensorHom]
+        simp only [Category.assoc, tensorHom_comp_tensorHom_assoc, Iso.inv_hom_id,
+          Iso.inv_hom_id_assoc, Category.comp_id, Category.id_comp]
+
+/-- Morphisms transported along a lax monoidal functor `F` and identifications
+`e n : Y n ≅ F.obj (X n)`, `e' n : Y' n ≅ F.obj (X' n)` commute with the transported homogeneous
+multiplications when the original morphisms commute with the original ones. -/
+lemma map_mul_of_laxMonoidal {X' : GradedObject I C} {Y' : GradedObject I D}
+    {e' : ∀ n, Y' n ≅ F.obj (X' n)} (mulX' : ∀ i j, X' i ⊗ X' j ⟶ X' (i + j))
+    (mulY' : ∀ i j, Y' i ⊗ Y' j ⟶ Y' (i + j))
+    (hmulY' : ∀ i j, mulY' i j =
+      ((e' i).hom ⊗ₘ (e' j).hom) ≫ Functor.LaxMonoidal.μ F (X' i) (X' j) ≫ F.map (mulX' i j) ≫
+        (e' (i + j)).inv)
+    (f : ∀ n, X n ⟶ X' n) (g : ∀ n, Y n ⟶ Y' n)
+    (hg : ∀ n, g n = (e n).hom ≫ F.map (f n) ≫ (e' n).inv)
+    (map_mul : ∀ i j, (f i ⊗ₘ f j) ≫ mulX' i j = mul i j ≫ f (i + j)) (i j : I) :
+    (g i ⊗ₘ g j) ≫ mulY' i j = mul' i j ≫ g (i + j) := by
+  rw [hg, hg, hg, hmul, hmulY']
+  simp only [Category.assoc, tensorHom_comp_tensorHom_assoc, Iso.inv_hom_id, Iso.inv_hom_id_assoc,
+    Category.comp_id]
+  rw [← tensorHom_comp_tensorHom_assoc, Functor.LaxMonoidal.μ_natural_assoc, ← F.map_comp_assoc,
+    map_mul, F.map_comp_assoc]
+
+variable (one : 𝟙_ C ⟶ X 0) (one' : 𝟙_ D ⟶ Y 0)
+  (hone : one' = Functor.LaxMonoidal.ε F ≫ F.map one ≫ (e 0).inv)
+include hone
+
+/-- A unit and homogeneous multiplications transported along a lax monoidal functor `F` and
+identifications `e n : Y n ≅ F.obj (X n)` satisfy the left unit law, up to the identification of
+the degrees `0 + n` and `n`, when the original ones do. -/
+lemma one_mul_of_laxMonoidal
+    (one_mul : ∀ n, (one ▷ X n) ≫ mul 0 n =
+      (λ_ (X n)).hom ≫ eqToHom (congrArg X (zero_add n).symm)) (n : I) :
+    (one' ▷ Y n) ≫ mul' 0 n = (λ_ (Y n)).hom ≫ eqToHom (congrArg Y (zero_add n).symm) := by
+  have core : ((Functor.LaxMonoidal.ε F ≫ F.map one) ⊗ₘ 𝟙 (F.obj (X n))) ≫
+      Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul 0 n) =
+        (λ_ _).hom ≫ F.map (eqToHom (congrArg X (zero_add n).symm)) := by
+    rw [tensorHom_id, comp_whiskerRight, Category.assoc, Functor.LaxMonoidal.μ_natural_left_assoc,
+      ← F.map_comp, one_mul, F.map_comp, Functor.LaxMonoidal.left_unitality]
+    simp only [Category.assoc]
+  calc (one' ▷ Y n) ≫ mul' 0 n
+      = (𝟙_ D ◁ (e n).hom) ≫ ((Functor.LaxMonoidal.ε F ≫ F.map one) ⊗ₘ 𝟙 (F.obj (X n))) ≫
+          Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul 0 n) ≫ (e _).inv := by
+        rw [hone, hmul, ← tensorHom_id, tensorHom_comp_tensorHom_assoc, ← id_tensorHom,
+          tensorHom_comp_tensorHom_assoc]
+        simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
+    _ = _ := by
+        rw [reassoc_of% core, leftUnitor_naturality_assoc,
+          TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (zero_add n).symm]
+
+/-- A unit and homogeneous multiplications transported along a lax monoidal functor `F` and
+identifications `e n : Y n ≅ F.obj (X n)` satisfy the right unit law, up to the identification of
+the degrees `n + 0` and `n`, when the original ones do. -/
+lemma mul_one_of_laxMonoidal
+    (mul_one : ∀ n, (X n ◁ one) ≫ mul n 0 =
+      (ρ_ (X n)).hom ≫ eqToHom (congrArg X (add_zero n).symm)) (n : I) :
+    (Y n ◁ one') ≫ mul' n 0 = (ρ_ (Y n)).hom ≫ eqToHom (congrArg Y (add_zero n).symm) := by
+  have core : (𝟙 (F.obj (X n)) ⊗ₘ (Functor.LaxMonoidal.ε F ≫ F.map one)) ≫
+      Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul n 0) =
+        (ρ_ _).hom ≫ F.map (eqToHom (congrArg X (add_zero n).symm)) := by
+    rw [id_tensorHom, whiskerLeft_comp, Category.assoc, Functor.LaxMonoidal.μ_natural_right_assoc,
+      ← F.map_comp, mul_one, F.map_comp, Functor.LaxMonoidal.right_unitality]
+    simp only [Category.assoc]
+  calc (Y n ◁ one') ≫ mul' n 0
+      = ((e n).hom ▷ 𝟙_ D) ≫ (𝟙 (F.obj (X n)) ⊗ₘ (Functor.LaxMonoidal.ε F ≫ F.map one)) ≫
+          Functor.LaxMonoidal.μ F _ _ ≫ F.map (mul n 0) ≫ (e _).inv := by
+        rw [hone, hmul, ← id_tensorHom, tensorHom_comp_tensorHom_assoc, ← tensorHom_id,
+          tensorHom_comp_tensorHom_assoc]
+        simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
+    _ = _ := by
+        rw [reassoc_of% core, rightUnitor_naturality_assoc,
+          TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_zero n).symm]
+
+end LaxMonoidal
+
+section LaxBraided
+
+variable {I : Type*} [AddCommMonoid I] {C D : Type*} [Category* C] [Category* D]
+  [MonoidalCategory C] [MonoidalCategory D] [BraidedCategory C] [BraidedCategory D]
+  {F : C ⥤ D} [F.LaxBraided] {X : GradedObject I C} {Y : GradedObject I D}
+  {e : ∀ n, Y n ≅ F.obj (X n)}
+  (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
+  (hmul : ∀ i j, mul' i j =
+    ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
+      (e (i + j)).inv)
+include hmul
+
+/-- Homogeneous multiplications transported along a lax braided functor `F` and identifications
+`e n : Y n ≅ F.obj (X n)` are commutative, up to the identification of the degrees `i + j` and
+`j + i`, when the original ones are. -/
+lemma mul_comm_of_laxBraided
+    (mul_comm : ∀ i j, (β_ (X i) (X j)).hom ≫ mul j i =
+      mul i j ≫ eqToHom (congrArg X (add_comm i j))) (i j : I) :
+    (β_ (Y i) (Y j)).hom ≫ mul' j i = mul' i j ≫ eqToHom (congrArg Y (add_comm i j)) := by
+  rw [hmul, hmul, ← BraidedCategory.braiding_naturality_assoc, ← Functor.LaxBraided.braided_assoc,
+    ← F.map_comp_assoc, mul_comm, TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_comm i j)]
+  simp
+
+end LaxBraided
 
 end CategoryTheory.GradedObject
