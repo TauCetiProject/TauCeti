@@ -49,8 +49,9 @@ there is exactly one orbit over each cell of `C` (`TauCeti.exists_cellPreimageEq
 `TauCeti.exists_smul_eq_iff_cellPreimageEquiv_fst_eq`).
 
 For a finite CW complex and a cover with finite fibres the lift is finite
-(`TauCeti.finite_cwComplexPreimage`). Counting cells, `p ⁻¹' C` has, in each dimension, the sum
-over the cells of `C` of the number of points over their centres
+(`TauCeti.finite_cwComplexPreimage`). Counting cells, if `C` has finitely many cells in each
+dimension, `p ⁻¹' C` has, in each dimension, the sum over the cells of `C` of the number of points
+over their centres
 (`TauCeti.nat_card_cell_preimage`), so `d` times as many cells as `C` when every fibre over `C`
 has `d` points (`TauCeti.nat_card_cell_preimage_of_card_fiber`). This is the input for the
 multiplicativity of the Euler characteristic in finite covers. In particular the total space of
@@ -436,16 +437,16 @@ omit c
 
 section Finite
 
-variable (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) [RelCWComplex.Finite C]
+variable (hfin : ∀ b, Finite ↥(p ⁻¹' {b}))
 
-omit [TopologicalSpace E] [T2Space B] [RelCWComplex.Finite C] in
+omit [TopologicalSpace E] [T2Space B] in
 include hfin in
 private theorem finite_coverCell [RelCWComplex.FiniteType C] (n : ℕ) :
     _root_.Finite (CoverCell p C n) :=
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   inferInstance
 
-omit [TopologicalSpace E] [T2Space B] [RelCWComplex.Finite C] in
+omit [TopologicalSpace E] [T2Space B] in
 private theorem eventually_isEmpty_coverCell [RelCWComplex.FiniteDimensional C] :
     ∀ᶠ n in Filter.atTop, IsEmpty (CoverCell p C n) :=
   (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅)).mono
@@ -454,7 +455,7 @@ private theorem eventually_isEmpty_coverCell [RelCWComplex.FiniteDimensional C] 
 include hfin
 
 /-- The lift of a finite CW complex along a covering map with finite fibres is finite. -/
-theorem finite_cwComplexPreimage :
+theorem finite_cwComplexPreimage [RelCWComplex.Finite C] :
     letI := cwComplexPreimage C hp
     RelCWComplex.Finite (p ⁻¹' C) :=
   letI := cwComplexPreimage C hp
@@ -463,7 +464,7 @@ theorem finite_cwComplexPreimage :
 
 /-- The number of `n`-cells of the lift of `C` along `p` is the sum, over the `n`-cells of `C`, of
 the number of points over their centres. -/
-theorem nat_card_cell_preimage :
+theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] :
     letI := cwComplexPreimage C hp
     Nat.card (cell (p ⁻¹' C) n) = ∑ᶠ i : cell C n, Nat.card ↥(p ⁻¹' {map n i 0}) := by
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
@@ -472,7 +473,8 @@ theorem nat_card_cell_preimage :
 
 /-- **Cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the lift of `C`
 along `p` has `d` times as many `n`-cells as `C`. -/
-theorem nat_card_cell_preimage_of_card_fiber {d : ℕ} (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
+theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C] {d : ℕ}
+    (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
     letI := cwComplexPreimage C hp
     Nat.card (cell (p ⁻¹' C) n) = d * Nat.card (cell C n) := by
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
@@ -548,17 +550,14 @@ private theorem coverLift_smul (hgc : p (g • (c.2 : E)) = map n c.1 0)
     coverLift hG.isCoveringMap ⟨c.1, ⟨g • (c.2 : E), hgc⟩⟩ x =
       g • coverLift hG.isCoveringMap c x := by
   have := hG.toContinuousConstSMul
-  obtain ⟨F, -, hF⟩ := hG.isCoveringMap.existsUnique_continuousMap_lifts_of_convex
-    (convex_closedBall 0 1) (cellBallMap c.1) (ballCentre n) (g • (c.2 : E)) hgc
-  have hgF : (⟨fun z ↦ g • coverLift hG.isCoveringMap c z,
-      (continuous_const_smul g).comp (coverLift hG.isCoveringMap c).continuous⟩ :
-        C(closedBall (0 : Fin n → ℝ) 1, E)) = F := by
-    refine hF _ ⟨by simp only [ContinuousMap.coe_mk, coverLift_ballCentre], ?_⟩
-    funext z
-    simp only [Function.comp_apply, ContinuousMap.coe_mk, hG.map_smul, coverLift_apply]
-    rfl
-  exact DFunLike.congr_fun ((hF (coverLift hG.isCoveringMap ⟨c.1, ⟨g • (c.2 : E), hgc⟩⟩)
-    ⟨coverLift_ballCentre _ _, comp_coverLift _ _⟩).trans hgF.symm) x
+  have : PreconnectedSpace (closedBall (0 : Fin n → ℝ) 1) :=
+    isPreconnected_iff_preconnectedSpace.1 (convex_closedBall 0 1).isPreconnected
+  refine congr_fun (hG.isCoveringMap.eq_of_comp_eq (coverLift _ _).continuous
+    ((continuous_const_smul g).comp (coverLift hG.isCoveringMap c).continuous) ?_ (ballCentre n)
+    ?_) x
+  · funext z
+    simp only [Function.comp_apply, hG.map_smul, coverLift_apply]
+  · simp only [Function.comp_apply, coverLift_ballCentre]
 
 /-- The first component of `cellPreimageEquiv` of a translated cell: translation does not move
 the underlying cell of `C`. -/
