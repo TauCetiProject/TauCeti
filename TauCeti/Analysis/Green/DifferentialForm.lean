@@ -35,12 +35,14 @@ def manifoldOneForm (P Q : ℂ → ℝ) : RoughForm 𝓘(ℝ, ℂ) ℂ ℝ 1 :=
     (0 : Fin 1) ((oneForm P Q z).comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap)
 
 /-- Evaluation of the manifold form is evaluation of the real linear circulation form. -/
+@[simp]
 theorem manifoldOneForm_apply (P Q : ℂ → ℝ) (z : ℂ)
     (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
     manifoldOneForm P Q z v = oneForm P Q z (NormedSpace.fromTangentSpace z (v 0)) := (rfl)
 
 /-- In the plane's canonical chart, the manifold form is the alternating-map encoding of
 the circulation form. -/
+@[simp]
 theorem manifoldOneForm_inChartAt (P Q : ℂ → ℝ) (c : ℂ) :
     (manifoldOneForm P Q).inChartAt c = fun z ↦
       ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) (oneForm P Q z) := by

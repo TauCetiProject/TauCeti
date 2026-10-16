@@ -5,12 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Green.AbsolutelyContinuous
-public import TauCeti.Analysis.Green.WindingWeight.Basic
-import TauCeti.Analysis.Green.Polygonal.Green
-import TauCeti.Analysis.Green.Approximation
-import TauCeti.Analysis.Green.Localization
-import TauCeti.Analysis.Green.Limit
+public import TauCeti.Analysis.Green.FiniteSum
 
 /-!
 # Green's theorem for absolutely continuous curves
@@ -41,27 +36,12 @@ theorem green_ac_winding {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {P Q : ℂ
       IntegrableOn (fun z ↦ windingWeight γ a b z * curl P Q z) U ∧
       (∫ t in a..b, circulationFun P Q γ t) =
         ∫ z in U, windingWeight γ a b z * curl P Q z := by
-  obtain ⟨P', Q', hP', hQ', hcP, hcQ, _, _, _, _, hw, hbnd, harea⟩ :=
-    AbsolutelyContinuousOnInterval.exists_contDiff_localization hγ hclosed hU htrace hP hQ hindex
-  obtain ⟨γn, hn, hu, hd, hwconv, hdomain⟩ :=
-    exists_polygonal_approximation_winding hab hγ hclosed hU htrace hindex
-  have hAC (n) := (hn n).2.1
-  have hcl (n) := (hn n).2.2.2.2
-  have hgreen : ∀ᶠ n in atTop, (∫ t in a..b, circulationFun P' Q' (γn n) t) =
-      ∫ z in U, windingWeight (γn n) a b z * curl P' Q' z := by
-    filter_upwards [hdomain] with n hdom
-    exact (green_polygonal (hn n).1 (hcl n) hP' hQ').2.2.trans
-      (integral_windingWeight_mul_eq_setIntegral hdom.2 (curl P' Q'))
-  have heq := AbsolutelyContinuousOnInterval.integral_circulationFun_eq_setIntegral
-    hγ hAC hab.le hclosed hcl hP' hQ' hcP hcQ hu hd hwconv hindex
-    (hdomain.mono fun _ h ↦ h.2) hgreen
-  have hi : IntegrableOn (fun z ↦ windingWeight γ a b z * curl P' Q' z) U :=
-    (hγ.integrable_windingWeight_mul_curl hclosed hP' hQ').integrableOn
-  refine ⟨hγ.intervalIntegrable_circulationFun (hP.continuousOn.mono htrace)
-    (hQ.continuousOn.mono htrace), ?_, ?_⟩
-  · exact hi.congr (Filter.Eventually.of_forall hw)
-  · rw [hbnd, harea] at heq
-    exact heq
+  have h := green_ac_winding_sum (s := {()}) (γ := fun _ : Unit ↦ γ)
+    (a := fun _ ↦ a) (b := fun _ ↦ b) (w := fun _ ↦ (1 : ℤ))
+    (fun _ _ ↦ hab) (fun _ _ ↦ hγ) (fun _ _ ↦ hclosed) hU
+    (fun _ _ ↦ htrace) hP hQ (fun z hz ↦ by simpa using hindex z hz)
+  simpa only [Finset.sum_singleton, Int.cast_one, one_mul, Finset.mem_singleton,
+    forall_eq, forall_const, true_implies] using h
 
 /-- Global real `C¹` fields satisfy Green's theorem for every closed AC curve, with both
 integrability conclusions. Compact support of the field is not required. -/
