@@ -131,11 +131,7 @@ theorem exists_upperTriangular_surjective_of_isSolvable_lie :
         Comodule.coordinateBialgHom_X] using htri hji)
   let f := CommHopfAlgCat.liftQuotient
     (GeneralLinear.UpperTriangular.definingHopfIdeal k n) π hker
-  refine ⟨n, f, fun y ↦ ?_⟩
-  obtain ⟨x, hx⟩ := hπ y
-  refine ⟨(GeneralLinear.UpperTriangular.coordinateMap k n).hom x, ?_⟩
-  rw [GeneralLinear.UpperTriangular.coordinateMap_apply]
-  exact (CommHopfAlgCat.liftQuotient_mk _ π hker x).trans hx
+  exact ⟨n, f, CommHopfAlgCat.liftQuotient_surjective_of_surjective _ π hker hπ⟩
 
 /-- Every commutative-algebra-valued point group of a connected affine group with solvable
 Lie algebra is solvable, in characteristic zero over an algebraically closed field. -/
