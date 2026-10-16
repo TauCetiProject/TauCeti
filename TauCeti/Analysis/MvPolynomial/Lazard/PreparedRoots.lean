@@ -18,8 +18,8 @@ Real analytic centers with locally constant finite Lazard valuations of the form
 coefficient, constant coefficient, and discriminant construct a complete Laurent splitting.
 The finite branch limits of this same splitting enumerate the roots, with multiplicity, of
 nearby Lazard evaluations. Ordinary fibers may be nullified. A common complexification,
-evaluator, analytic leading unit, and pole-removed root functions are retained for subsequent
-analysis of the real roots.
+evaluator, analytic leading and formal-discriminant units, and pole-removed root functions
+are retained for subsequent analysis of the real roots.
 
 ## References
 
@@ -37,9 +37,10 @@ variable {ι : Type*} [Fintype ι] {n : ℕ}
 
 /-- Finite locally constant valuations along real analytic centers construct Laurent branches
 whose finite limits give the complete complex root multiset of the Lazard evaluation near the
-center. The leading unit and all branch data belong to the same monomial deformation. The
-local unit family is fixed at the central parameter and works for every nearby real parameter;
-poles contribute no finite root and positive branch exponents contribute zero. -/
+center. The leading and formal-discriminant units and all branch data belong to the same
+monomial deformation. The local branch-unit family is fixed at the central parameter and
+works for every nearby real parameter. Poles contribute no finite root and positive branch
+exponents contribute zero. -/
 theorem exists_complexification_isLazardEvaluator_lazardEval_roots
     (p : Polynomial (MvPolynomial (Fin n) ℝ)) {φ : (ι → ℝ) → Fin n → ℝ} {a : ι → ℝ}
     (hφ : AnalyticAt ℝ φ a) (vLead vConst vDiscr : Fin n →₀ ℕ)
@@ -53,12 +54,17 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
       AnalyticOnNhd ℂ Φ (ball (fun j ↦ (a j : ℂ)) ρ) ∧
       (∀ x ∈ ball a ρ, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ)) ∧
       (∀ z, Φ (star z) = star (Φ z)) ∧
-      ∃ u : (ι → ℂ) × ℂ → ℂ,
+      ∃ u v : (ι → ℂ) × ℂ → ℂ,
         AnalyticOnNhd ℂ u (ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) ∧
         (∀ b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ, u b ≠ 0 ∧
           MvPolynomial.eval₂ Complex.ofRealHom
             (fun j ↦ Φ b.1 j + b.2 ^ c j) p.leadingCoeff =
               b.2 ^ Finsupp.weight c vLead * u b) ∧
+        AnalyticOnNhd ℂ v (ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) ∧
+        (∀ b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ, v b ≠ 0 ∧
+          MvPolynomial.eval₂ Complex.ofRealHom
+            (fun j ↦ Φ b.1 j + b.2 ^ c j) p.discr =
+              b.2 ^ Finsupp.weight c vDiscr * v b) ∧
       ∃ R > (0 : ℝ), R ^ p.natDegree.factorial ≤ ρ ∧
         ∃ r g : Fin p.natDegree → (ι → ℂ) × ℂ → ℂ,
           (∀ i, AnalyticOnNhd ℂ (r i)
@@ -88,12 +94,12 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
   classical
   let q := MvPolynomial.optionEquivRight ℝ (Fin n)
     ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm p)
-  obtain ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, hu, hunit,
+  obtain ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, v, hu, hunit, hv, hvunit,
       R, hR, hfit, r, g, hr, hg, hfac, e, hLaurent⟩ :=
     p.exists_complexification_isLazardEvaluator_nonmonic_laurent hφ
       vLead vConst vDiscr hlead hconst hdiscr (MvPolynomial.finite_range_lazardExponent q)
   obtain ⟨w, he, hw, hw0, hlocal⟩ := hLaurent _ (mem_ball_self hρ)
-  refine ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, hu, hunit,
+  refine ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, v, hu, hunit, hv, hvunit,
     R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hw, hw0, hlocal, ?_⟩
   have hp : p ≠ 0 := by
     intro hp
