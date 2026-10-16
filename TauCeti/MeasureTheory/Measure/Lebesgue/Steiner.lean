@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
@@ -163,24 +164,6 @@ theorem volume_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
     (nullMeasurableSet_steinerSymmetrization e he hs),
     volume_eq_lintegral_volume_lineSection e he hs]
   simp only [volume_lineSection_steinerSymmetrization]
-
-/-- Centering intervals can only decrease the length of a one-sided difference. -/
-private theorem volume_eball_sdiff_le (s u : Set ℝ) :
-    volume (Metric.eball (0 : ℝ) (volume s / 2) \ Metric.eball 0 (volume u / 2)) ≤
-      volume (s \ u) := by
-  have hlength (a : ℝ≥0∞) : volume (Metric.eball (0 : ℝ) (a / 2)) = a := by
-    rw [Real.volume_eball]
-    exact ENNReal.mul_div_cancel (by norm_num) (by norm_num)
-  rcases le_total (volume s) (volume u) with h | h
-  · rw [sdiff_eq_empty.mpr (Metric.eball_subset_eball (ENNReal.div_le_div_right h 2)),
-      measure_empty]
-    exact bot_le
-  · by_cases hu : volume u = ∞
-    · have hs : volume s = ∞ := top_le_iff.mp (hu ▸ h)
-      simp [hu, hs]
-    · rw [measure_sdiff (Metric.eball_subset_eball (ENNReal.div_le_div_right h 2))
-        Metric.isOpen_eball.measurableSet.nullMeasurableSet (by rwa [hlength]), hlength, hlength]
-      exact le_measure_sdiff
 
 /-- Steiner symmetrization contracts the volume of one-sided differences. -/
 theorem volume_steinerSymmetrization_sdiff_le (e : E) (he : ‖e‖ = 1) {s u : Set E}
