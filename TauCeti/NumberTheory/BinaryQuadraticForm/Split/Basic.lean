@@ -6,7 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Content
-public import TauCeti.NumberTheory.QuadraticOrder.Split
+public import TauCeti.NumberTheory.QuadraticOrder.Split.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 import TauCeti.RingTheory.NormTrace.Prod
 import Mathlib.RingTheory.Norm.Basic

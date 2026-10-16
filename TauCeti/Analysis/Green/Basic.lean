@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
+public import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 public import TauCeti.Analysis.Calculus.Deriv.Complex
 
 /-!
@@ -22,6 +22,8 @@ These conventions fix the signs for planar Green identities.
 public section
 
 noncomputable section
+
+open MeasureTheory Set
 
 namespace TauCeti.Green
 
@@ -67,5 +69,21 @@ theorem curveIntegral_oneForm_eq {p q : ℂ} (γ : Path p q) (P Q : ℂ → ℝ)
       ∫ t in (0 : ℝ)..1, circulationFun P Q γ.extend t := by
   rw [curveIntegral_eq_intervalIntegral_deriv]
   simp only [← circulationFun_eq_oneForm]
+
+/-- Continuous coefficients are genuinely Bochner integrable along a straight segment. -/
+theorem intervalIntegrable_circulationFun_segment {p q : ℂ} {P Q : ℂ → ℝ}
+    (hP : ContinuousOn P (segment ℝ p q)) (hQ : ContinuousOn Q (segment ℝ p q)) :
+    IntervalIntegrable (circulationFun P Q (Path.segment p q).extend) volume 0 1 := by
+  have hc : CurveIntegrable (oneForm P Q) (Path.segment p q) := by
+    rw [curveIntegrable_segment]
+    apply ContinuousOn.intervalIntegrable_of_Icc zero_le_one
+    have hm : Set.MapsTo (AffineMap.lineMap p q) (Set.Icc (0 : ℝ) 1) (segment ℝ p q) :=
+      fun _ ht ↦ (convex_segment p q).lineMap_mem (left_mem_segment ℝ p q)
+        (right_mem_segment ℝ p q) ht
+    simpa only [oneForm_apply, Pi.add_def, Pi.mul_def, Function.comp_apply] using
+      ((hP.comp (by fun_prop) hm).mul continuousOn_const).add
+        ((hQ.comp (by fun_prop) hm).mul continuousOn_const)
+  simpa only [← circulationFun_eq_oneForm] using
+    (curveIntegrable_iff_intervalIntegrable_deriv _ _).mp hc
 
 end TauCeti.Green

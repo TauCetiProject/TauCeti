@@ -144,4 +144,23 @@ theorem exists_isClosed_range_projectiveOrbitMap_subset_closure
   exact ⟨n, hn, hnclosed, hnsub.trans
     ((closure_range_projectiveOrbitMap_subset_boundary m hm m' hm' hy).trans Set.sdiff_subset)⟩
 
+/-- Every nonempty closed subset of projective space invariant under rational group
+translations contains a closed orbit, provided the group is irreducible. -/
+theorem exists_isClosed_range_projectiveOrbitMap_subset_of_isClosed
+    [IrreducibleSpace (PrimeSpectrum H)]
+    {Z : Set (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)))}
+    (hZ : IsClosed Z) (hne : Z.Nonempty)
+    (hinvariant : ∀ g : WithConv (H →ₐ[k] k),
+      Set.MapsTo (projectivePointTranslation (M := M) g).hom Z Z) :
+    ∃ (m : M) (hm : Module.IsUnimodular k m),
+      IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) ∧
+        Set.range (projectiveOrbitMap (H := H) m hm) ⊆ Z := by
+  obtain ⟨x, hx, hxc⟩ := hZ.exists_closed_singleton hne
+  obtain ⟨m, hm, rfl⟩ :=
+    (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := H) x).mp hxc
+  have horbit := (range_projectiveOrbitMap_subset_iff_of_isClosed m hm hZ hinvariant).mpr hx
+  obtain ⟨n, hn, hclosed, hsub⟩ :=
+    exists_isClosed_range_projectiveOrbitMap_subset_closure (H := H) m hm
+  exact ⟨n, hn, hclosed, hsub.trans (closure_minimal horbit hZ)⟩
+
 end TauCeti.Comodule

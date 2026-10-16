@@ -62,7 +62,8 @@ instance instSMulUniversalGSpace : SMul G (universalGSpace G) where
     -- over `ℕ` is not the instance found by default, so both factors are made classical here.
     letI : DecidableEq ℕ := Classical.decEq ℕ
     letI : DecidableEq G := Classical.decEq G
-    (indexedJoinMap fun _ : ℕ => (g * ·)).realizationMap
+    (indexedJoinMap (A := fun _ : ℕ => G) (B := fun _ : ℕ => G)
+      id Function.injective_id (fun _ h => g * h)).realizationMap
 
 /-- Translation pushes barycentric coordinates forward along left multiplication of labels. -/
 theorem universalGSpace_smul_val (g : G) (x : universalGSpace G) :
@@ -72,8 +73,11 @@ theorem universalGSpace_smul_val (g : G) (x : universalGSpace G) :
   let : DecidableEq ℕ := Classical.decEq ℕ
   let : DecidableEq G := Classical.decEq G
   exact (PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val
-    (indexedJoinMap fun _ : ℕ => (g * ·)) x).trans
-    (congrArg (Finsupp.mapDomain · x.1) (funext (indexedJoinMap_apply _)))
+    (indexedJoinMap (A := fun _ : ℕ => G) (B := fun _ : ℕ => G)
+      id Function.injective_id (fun _ h => g * h)) x).trans
+    (congrArg (Finsupp.mapDomain · x.1)
+      (funext (indexedJoinMap_apply (A := fun _ : ℕ => G) (B := fun _ : ℕ => G)
+        id Function.injective_id (fun _ h => g * h))))
 
 /-- The barycentric coordinate of a translate at a vertex is the coordinate of the original point
 at the vertex obtained by translating the label back. -/
@@ -114,7 +118,8 @@ instance instContinuousConstSMulUniversalGSpace :
   continuous_const_smul g :=
     letI : DecidableEq ℕ := Classical.decEq ℕ
     letI : DecidableEq G := Classical.decEq G
-    (indexedJoinMap fun _ : ℕ => (g * ·)).realizationMap.continuous
+    (indexedJoinMap (A := fun _ : ℕ => G) (B := fun _ : ℕ => G)
+      id Function.injective_id (fun _ h => g * h)).realizationMap.continuous
 
 /-- A translate lies in the open star of a vertex exactly when the original point lies in the open
 star of the vertex with translated-back label. -/
