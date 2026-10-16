@@ -23,6 +23,11 @@ only the derivative of an informal matrix formula.
 
 The calculation supplies the root vector attached to the standard pinning of `GLₙ`.
 
+More generally, `tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix` shows that a
+coordinate morphism `O(GLₙ) → O(𝔾ₐ)` sending the generic matrix to `1 + tX`, for the coordinate
+`t` of `𝔾ₐ` and an integral matrix `X`, has differential `c ↦ cX`. This is the shared entrywise
+calculation for one-parameter subgroups of explicit matrix carriers.
+
 ## Reference
 
 J. S. Milne, *Algebraic Groups* (2017), §21.
@@ -72,6 +77,35 @@ theorem tangentMatrix_derivationComp_rootSubgroup (hij : i ≠ j)
     rfl
   · simp [Matrix.single, h]
     rfl
+
+/-- **The differential of a one-parameter subgroup with matrix `1 + tX`.** If a coordinate
+morphism `O(GLₙ) → O(𝔾ₐ)` sends the generic matrix to `1 + tX` for the coordinate `t` of `𝔾ₐ`
+and an integral matrix `X`, its differential sends an additive tangent vector `c` to `cX`. This
+holds over every commutative base ring and coefficient algebra. -/
+theorem tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix
+    (φ : coordinateHopfAlgebra R n →ₐc[R] AdditiveGroup.coordinateHopfAlgebra R)
+    (X : Matrix (Fin n) (Fin n) ℤ)
+    (hφ : (genericMatrix R n).map φ.toAlgHom =
+      1 + SymmetricAlgebra.ι R R 1 •
+        X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R))
+    (d : Derivation R (AdditiveGroup.coordinateHopfAlgebra R)
+      (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) B)) :
+    tangentMatrix n (derivationComp (B := B) φ d) =
+      AdditiveGroup.gaTangentLinearEquiv d • X.map (Int.cast : ℤ → B) := by
+  ext a b
+  rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply, ← genericMatrix_apply]
+  have hentry := congrFun (congrFun hφ a) b
+  rw [Matrix.map_apply] at hentry
+  rw [hentry]
+  have hone : d ((1 : Matrix (Fin n) (Fin n)
+      (AdditiveGroup.coordinateHopfAlgebra R)) a b) = 0 := by
+    classical
+    by_cases hab : a = b <;> simp [Matrix.one_apply, hab]
+  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, smul_eq_mul,
+    map_add, Derivation.leibniz, Derivation.map_intCast, smul_zero, zero_add, hone,
+    AdditiveGroup.gaTangentLinearEquiv_apply, Int.cast_smul_eq_zsmul, zsmul_eq_mul,
+    map_mul, map_intCast]
+  ring
 
 section Field
 

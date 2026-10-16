@@ -44,19 +44,17 @@ families of nodal curves.
 * `AlgebraicGeometry.Scheme.singularLocus_eq_top`: a smooth relative curve, smooth of relative
   dimension one over `Spec R`, has empty singular locus: there `Ω_{X/R}` is locally free of rank
   one, so its first Fitting ideal sheaf is the unit ideal sheaf.
-* `AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isOpenImmersion`: the singular ideal
-  sheaf restricts along open immersions over the base.
-* `AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι_of_isOpenImmersion`:
-  the corresponding pullback square of singular subschemes.
 * `AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isPullback`: the formation of the singular
   locus commutes with base change along `Spec R' → Spec R`: if `X'` is the base change of `X`,
   then `Sing(X'/R')` is the inverse image of `Sing(X/R)`.
 * `AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`: the same for the closed
   subschemes, `Sing(X'/R') = Sing(X/R) ×_X X'`.
 
-This compatibility lets the affine-base singular loci agree on affine overlaps and identifies the
-singular subscheme after extending the ground ring. It is therefore the local input for gluing the
-relative singular locus over a general base and for transporting that locus under base change.
+Restriction to open subschemes, and more generally to étale neighbourhoods, is
+`AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_etale`. Together with base change, it lets
+the affine-base singular loci agree on affine overlaps and identifies the singular subscheme after
+extending the ground ring. It is therefore the local input for gluing the relative singular locus
+over a general base and for transporting that locus under base change.
 
 ## References
 
@@ -200,46 +198,6 @@ theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_top
   exact notMem_support_singularLocus_of_isStandardSmooth hxW hW hx
 
 end Smooth
-
-section Restriction
-
-variable {R : Type u} [CommRing R] {X Y : Scheme.{u}}
-  [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
-  (i : X ⟶ Y) [IsOpenImmersion i] [i.IsOver (Spec (.of R))]
-  [Flat (X ↘ Spec (.of R))] [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
-  [PureRelativeDimension 1 (X ↘ Spec (.of R))]
-  [Flat (Y ↘ Spec (.of R))] [LocallyOfFinitePresentation (Y ↘ Spec (.of R))]
-  [PureRelativeDimension 1 (Y ↘ Spec (.of R))]
-
-/-- The singular ideal sheaf of a relative curve restricts along an open immersion. -/
-theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isOpenImmersion :
-    X.singularLocus R = (Y.singularLocus R).comap i := by
-  let e : (Scheme.Modules.pullback i).obj (Y.relativeDifferentials R) ≅
-      X.relativeDifferentials R :=
-    ((Scheme.Modules.restrictFunctorIsoPullback i).app _).symm ≪≫
-      relativeDifferentialsRestrictIso R i
-  have : (Y.relativeDifferentials R).IsFinitePresentation :=
-    isFinitePresentation_relativeDifferentials R Y
-  -- Fix the module and site universes of the finite-presentation-to-finite-type instance.
-  have : (Y.relativeDifferentials R).IsFiniteType :=
-    SheafOfModules.instIsFiniteTypeOfIsFinitePresentation.{u, u, u} _
-  rw [Scheme.singularLocus_def, Scheme.singularLocus_def,
-    ← Scheme.Modules.fittingIdeal_pullback]
-  exact (Scheme.Modules.fittingIdeal_congr _ e 1).symm
-
-/-- Restricting a relative curve to an open subscheme gives a pullback square of singular
-subschemes. -/
-theorem _root_.AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι_of_isOpenImmersion :
-    IsPullback (X.singularLocus R).subschemeι
-      ((X.singularLocus R).subschemeMap (Y.singularLocus R) i
-        (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
-          (Scheme.singularLocus_eq_comap_of_isOpenImmersion i).ge))
-      i (Y.singularLocus R).subschemeι :=
-  isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by
-    rw [Scheme.IdealSheafData.ker_subschemeι, Scheme.IdealSheafData.ker_subschemeι,
-      Scheme.singularLocus_eq_comap_of_isOpenImmersion i])
-
-end Restriction
 
 section BaseChange
 

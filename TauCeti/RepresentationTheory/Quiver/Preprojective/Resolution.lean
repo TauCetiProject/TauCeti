@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ModuleCat.LengthTwo
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Sinkless
 import Mathlib.Algebra.DirectSum.Module
 
@@ -27,7 +27,7 @@ the positive path-degree part of `e_v Π`.
 The middle exactness is valid over every commutative ring and for every finite quiver.
 When every vertex of `Q` has an outgoing arrow, the first map is injective and the augmented
 complex is a length-two projective resolution. The construction uses the exactness theorems in
-`TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex` and the injectivity theorem in
+`TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex` and the injectivity theorem in
 `TauCeti.RepresentationTheory.Quiver.Preprojective.Sinkless`. This is an ungraded resolution;
 internal shifts and linearity are not asserted here.
 

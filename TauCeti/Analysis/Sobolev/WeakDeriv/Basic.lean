@@ -13,6 +13,9 @@ public import Mathlib.Analysis.Distribution.TestFunction
 -- uniqueness, so downstream importers pay for neither.
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+-- This import is public: directional derivatives of test functions vanish off their support
+-- (`TauCeti.lineDeriv_of_notMem_tsupport`), which the files building on this one also use.
+public import TauCeti.Analysis.Calculus.LineDeriv.Basic
 -- This import is public: `Gradient` supplies the `∇` of the weak derivative of a test function
 -- below, together with the Riesz correspondence `innerSL` in which that statement is phrased.
 public import Mathlib.Analysis.Calculus.Gradient.Basic
@@ -175,16 +178,6 @@ open scoped ContDiff Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {v : E}
-
-/-! ### Derivatives of test functions -/
-
-/-- Outside its support, the directional derivative of a test function vanishes. -/
-theorem lineDeriv_eq_zero_of_notMem_tsupport (φ : 𝓓(Ω, ℝ)) {x : E}
-    (hx : x ∉ tsupport (φ : E → ℝ)) (v : E) : lineDeriv ℝ (φ : E → ℝ) x v = 0 := by
-  have hd : DifferentiableAt ℝ (φ : E → ℝ) x :=
-    (φ.contDiff.differentiable (by simp)) x
-  rw [hd.lineDeriv_eq_fderiv, fderiv_of_notMem_tsupport ℝ hx]
-  simp
 
 /-! ### The definitions -/
 
@@ -417,7 +410,7 @@ theorem setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul {w : E → F} (φ 
     ∫ x in (Ω : Set E), lineDeriv ℝ (φ : E → ℝ) x v • w x ∂μ =
       ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • w x ∂μ := by
   refine setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_
-  rw [lineDeriv_eq_zero_of_notMem_tsupport φ (fun hmem => hx (φ.tsupport_subset hmem)) v]
+  rw [lineDeriv_of_notMem_tsupport (fun hmem => hx (φ.tsupport_subset hmem)) v]
   simp
 
 /-- Replacing `u` by a function agreeing with it almost everywhere on `Ω` preserves the weak
@@ -431,7 +424,7 @@ theorem HasWeakLineDerivOn.congr_ae {w : E → F} (h : HasWeakLineDerivOn μ Ω 
   filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hw] with x hx
   by_cases hxΩ : x ∈ (Ω : Set E)
   · rw [hx hxΩ]
-  · rw [lineDeriv_eq_zero_of_notMem_tsupport φ (fun h' => hxΩ (φ.tsupport_subset h')) v]
+  · rw [lineDeriv_of_notMem_tsupport (fun h' => hxΩ (φ.tsupport_subset h')) v]
     simp
 
 /-- Replacing `u'` by a function agreeing with it almost everywhere on `Ω` preserves the weak
