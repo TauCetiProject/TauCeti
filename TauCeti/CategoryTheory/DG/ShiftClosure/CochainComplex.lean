@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplexShift
+public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Shift
 public import TauCeti.CategoryTheory.DG.CochainComplex
 public import TauCeti.CategoryTheory.DG.ShiftClosure.Basic
 

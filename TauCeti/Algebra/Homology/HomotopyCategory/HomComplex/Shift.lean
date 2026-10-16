@@ -47,7 +47,7 @@ namespace TauCeti
 
 universe v u
 
-variable (R : Type v) [CommRing R] {V : Type u} [Category.{v} V] [Preadditive V] [Linear R V]
+variable (R : Type v) [Ring R] {V : Type u} [Category.{v} V] [Preadditive V] [Linear R V]
 
 /-- The **normalized identification** of the cochains of degree `n + (s - r)` from `K` to `L`
 with the cochains of degree `n` from `K⟦r⟧` to `L⟦s⟧`, assembled from Mathlib's right and left
