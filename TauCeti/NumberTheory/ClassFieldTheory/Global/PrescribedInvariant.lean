@@ -371,8 +371,9 @@ private theorem exists_mk_eq_artinMap_and_apply_eq {v : HeightOneSpectrum (𝓞 
     rw [hT]
     exact hχ.preimage (continuous_ofMul.comp (continuous_const.mul
       ((absoluteGaloisGroupMap τ).continuous.comp e.continuous)))
+  have hψ : ψ (e.symm g) = x₀ := congrArg _ (e.apply_symm_apply g)
   have hg : e.symm g ∈ ψ ⁻¹' T := by
-    rw [Set.mem_preimage, show ψ (e.symm g) = x₀ from congrArg _ (e.apply_symm_apply g)]
+    rw [Set.mem_preimage, hψ]
     exact rfl
   obtain ⟨b, σ, hσS, hσ⟩ := (denseRange_artinMap (v.adicCompletion K)).exists_mem_open
     (QuotientGroup.isOpenMap_coe _ hS) ⟨_, Set.mem_image_of_mem _ hg⟩
@@ -418,7 +419,7 @@ private theorem exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq_au
     add_zero, ideleLocalization_fst_apply,
     invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap τ₁ χ hχ a b hτ₁ σ hσ,
     ← hχσ]
-  exact map_ofMul_absoluteGaloisGroupMap_eq τ χ τ₁ _
+  exact τ.map_ofMul_absoluteGaloisGroupMap_eq χ τ₁ _
 
 /-- **Every value of a character on a decomposition group is the sum of the local invariants of
 one of its carry classes.** Let `χ` be a character of `G_K` with open kernel, `v` a finite place
