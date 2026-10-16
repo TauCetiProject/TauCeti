@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.Data.Set.Restrict
 import TauCeti.Geometry.Manifold.Connected
+import TauCeti.GroupTheory.GroupAction.Free
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -557,19 +558,6 @@ theorem mul_apply (e e' : P.Iso P) (x : P.X) : (e * e') x = e (e' x) :=
 theorem inv_apply (e : P.Iso P) (x : P.X) : e⁻¹ x = e.symm x :=
   (rfl)
 
-private theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G X]
-    [IsCancelSMul G X] [Finite G] [Finite X] : Nat.card G ∣ Nat.card X := by
-  classical
-  let Ω := MulAction.orbitRel.Quotient G X
-  let _ : Finite Ω := Quotient.finite _
-  let _ : Fintype Ω := Fintype.ofFinite Ω
-  let _ (ω : Ω) : Finite (G ⧸ MulAction.stabilizer G ω.out) := Quotient.finite _
-  rw [Nat.card_congr (MulAction.selfEquivSigmaOrbitsQuotientStabilizer G X), Nat.card_sigma]
-  simp_rw [IsCancelSMul.stabilizer_eq_bot]
-  rw [Nat.card_congr QuotientGroup.quotientBot.toEquiv]
-  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-  exact dvd_mul_left (Nat.card G) (Fintype.card Ω)
-
 /-- **The order of the automorphism group of an analytic Belyi pair divides its degree.** -/
 theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
   let action : MulAction (P.Iso P) (P.restrict ⁻¹' {basePt}) := {
@@ -588,7 +576,7 @@ theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
       rw [one_apply, ← coe_smul, h]
   have := (P.finite_restrict_preimage_singleton basePt).to_subtype
   rw [← P.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq]
-  exact natCard_dvd_natCard_of_isCancelSMul
+  exact MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 end AnalyticBelyiPair.Iso
 
