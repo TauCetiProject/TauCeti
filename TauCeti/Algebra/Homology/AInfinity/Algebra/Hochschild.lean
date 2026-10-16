@@ -122,6 +122,7 @@ theorem gradedCoderiv_hochschildDifferential {q : ℤ} {F : ReducedTensorWords R
 
 /-- **The Hochschild differential squares to zero**: `[m, [m, F]] = 0` for every cochain `F` of
 degree `q`. -/
+@[simp]
 theorem hochschildDifferential_hochschildDifferential {q : ℤ}
     {F : ReducedTensorWords R A →ₗ[R] A}
     (hF : LinearMap.IsHomogeneous F (gradedPiece (𝒜.grading.shift 1))

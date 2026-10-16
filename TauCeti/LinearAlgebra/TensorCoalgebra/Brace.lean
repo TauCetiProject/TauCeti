@@ -45,8 +45,6 @@ brace equation `m{m} = 0`.
 
 ## Main results
 
-* `TauCeti.ReducedTensorWords.IsGradedCoderivation.comp_sub_smul_comp`: the graded commutator of
-  homogeneous graded coderivations is a graded coderivation.
 * `TauCeti.ReducedTensorWords.gradedCoderiv_gerstenhaberBracket`: the coderivation of a
   Gerstenhaber bracket is the graded commutator of the coderivations.
 * `TauCeti.ReducedTensorWords.gradedCoderiv_comp_self_eq_zero_iff`: for odd degree, the
@@ -77,67 +75,6 @@ namespace ReducedTensorWords
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
   {G : InternalGrading R M}
-
-/-- The co-Leibniz identity of a graded coderivation, with both terms written through
-`TensorProduct.map`. -/
-private theorem IsGradedCoderivation.deconcatenation_comp_eq {q : ℤ}
-    {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
-    (hb : IsGradedCoderivation G q b) :
-    deconcatenation R M ∘ₗ b =
-      (TensorProduct.map b LinearMap.id +
-        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist q)) b) ∘ₗ
-          deconcatenation R M := by
-  rw [isGradedCoderivation_iff.mp hb, LinearMap.add_comp, LinearMap.rTensor_def,
-    LinearMap.lTensor_comp_rTensor]
-
-/-- Deconcatenation after a composite of two graded coderivations: the four terms of the
-expansion of the product of the two co-Leibniz rules. -/
-private theorem IsGradedCoderivation.deconcatenation_comp_comp_eq {p q : ℤ}
-    {b₁ b₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
-    (hb₁ : IsGradedCoderivation G p b₁) (hb₂ : IsGradedCoderivation G q b₂) :
-    deconcatenation R M ∘ₗ b₁ ∘ₗ b₂ =
-      (TensorProduct.map (b₁ ∘ₗ b₂) LinearMap.id +
-        TensorProduct.map (b₁ ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q)) b₂ +
-        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist p) ∘ₗ b₂) b₁ +
-        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist (p + q)))
-          (b₁ ∘ₗ b₂)) ∘ₗ deconcatenation R M := by
-  rw [← LinearMap.comp_assoc, hb₁.deconcatenation_comp_eq, LinearMap.comp_assoc,
-    hb₂.deconcatenation_comp_eq, ← LinearMap.comp_assoc, ← G.koszulTwist_comp,
-    ReducedTensorWords.map_comp]
-  congr 1
-  simp only [LinearMap.add_comp, LinearMap.comp_add, ← TensorProduct.map_comp, LinearMap.id_comp,
-    LinearMap.comp_id]
-  abel
-
-/-- **The graded commutator of graded coderivations is a graded coderivation.**  If `b₁` and `b₂`
-are graded coderivations of twist parameters `p` and `q`, homogeneous of the degrees `p` and `q`,
-then `b₁ ∘ b₂ - (-1)^(p * q) • b₂ ∘ b₁` is a graded coderivation of twist parameter `p + q`. -/
-theorem IsGradedCoderivation.comp_sub_smul_comp {p q : ℤ}
-    {b₁ b₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
-    (hb₁ : IsGradedCoderivation G p b₁)
-    (hh₁ : LinearMap.IsHomogeneous b₁ (gradedPiece G) (gradedPiece G) p)
-    (hb₂ : IsGradedCoderivation G q b₂)
-    (hh₂ : LinearMap.IsHomogeneous b₂ (gradedPiece G) (gradedPiece G) q) :
-    IsGradedCoderivation G (p + q) (b₁ ∘ₗ b₂ - negOnePowCast R (p * q) • (b₂ ∘ₗ b₁)) := by
-  -- Cache the additive group instances of `T` and `T ⊗ T`: without them, instance synthesis fails
-  -- to find the additive group structure on linear maps into `T ⊗ T`.
-  let : AddCommGroup (ReducedTensorWords R M) := inferInstance
-  let : AddCommGroup (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) := inferInstance
-  rw [isGradedCoderivation_iff, LinearMap.comp_sub, LinearMap.comp_smul,
-    hb₁.deconcatenation_comp_comp_eq hb₂, hb₂.deconcatenation_comp_comp_eq hb₁, add_comm q p,
-    hh₂.map_koszulTwist_comp p, hh₁.map_koszulTwist_comp q, ← negOnePowCast_eq_intCast,
-    ← negOnePowCast_eq_intCast, mul_comm q p, LinearMap.rTensor_def,
-    LinearMap.lTensor_comp_rTensor]
-  have hl (f g h : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
-      TensorProduct.map (f - g) h = TensorProduct.map f h - TensorProduct.map g h := by
-    rw [eq_sub_iff_add_eq, ← TensorProduct.map_add_left, sub_add_cancel]
-  have hr (f g h : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
-      TensorProduct.map h (f - g) = TensorProduct.map h f - TensorProduct.map h g := by
-    rw [eq_sub_iff_add_eq, ← TensorProduct.map_add_right, sub_add_cancel]
-  simp only [hl, hr, TensorProduct.map_smul_left, TensorProduct.map_smul_right,
-    LinearMap.sub_comp, LinearMap.add_comp, LinearMap.smul_comp, smul_add, smul_smul,
-    ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul, one_smul]
-  abel
 
 /-! ### The brace and the Gerstenhaber bracket -/
 
