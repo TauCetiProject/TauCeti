@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
+public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 
 /-!
 # Extended ideals and annihilators under scalar extension
@@ -62,11 +63,9 @@ theorem annihilator_map_le_baseChange :
     (Module.annihilator R M).map (algebraMap R S) ≤
       Module.annihilator S (S ⊗[R] M) := by
   refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ Module.mem_annihilator.mpr fun x ↦ ?_
-  induction x using TensorProduct.inductionOn with
-  | tmul s m =>
-    simp [← TensorProduct.tmul_smul,
-      Module.mem_annihilator.mp hr m]
-  | add x y hx hy => simp [smul_add, hx, hy]
+  have h := isTorsionBy_tensorProduct_right (R := R) (M := S) (S := R)
+    ((Module.isTorsionBy_iff_mem_annihilator R M).mpr hr)
+  simpa only [algebraMap_smul] using h (x := x)
 
 end Semiring
 
