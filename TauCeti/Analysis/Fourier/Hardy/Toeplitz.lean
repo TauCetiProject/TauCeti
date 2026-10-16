@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.Fourier.Hardy.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
@@ -37,24 +38,6 @@ open MeasureTheory
 open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
-
-/-- Multiplying an `L²` Fourier mode `e_m` by an essentially bounded symbol `a` shifts the
-Fourier coefficients of `a` by `m`. -/
-theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
-    (m n : ℤ) :
-    fourierCoeff (a • fourierBasis (T := 1) m : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) n =
-      fourierCoeff a (n - m) := by
-  have hae : (a • fourierBasis (T := 1) m : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) =ᵐ[
-      AddCircle.haarAddCircle (T := 1)] fun x ↦ fourier m x * a x := by
-    filter_upwards [Lp.coeFn_lpSMul (r := 2) a (fourierBasis (T := 1) m),
-      coeFn_fourierLp (T := 1) 2 m] with x hx hm
-    rw [hx, Pi.smul_apply', coe_fourierBasis, hm, smul_eq_mul, mul_comm]
-  rw [fourierCoeff_congr_ae hae, fourierCoeff, fourierCoeff]
-  congr 1
-  funext x
-  rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, ← fourier_add]
-  congr 3
-  ring
 
 /-- Compressing multiplication by `a` to Hardy space does not increase the operator norm. -/
 private theorem norm_compress_multiplicationOperator_le
@@ -111,6 +94,7 @@ theorem inner_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     Lp.multiplicationOperator_apply]
 
 /-- The Hardy coordinates of `T_a f` are the nonnegative Fourier coefficients of `a f`. -/
+@[simp]
 theorem hardyBasis_repr_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     (f : HardySpace) (i : ℕ) :
     hardyBasis.repr (toeplitz a f) i =
