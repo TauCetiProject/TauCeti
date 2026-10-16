@@ -196,6 +196,16 @@ lemma norm_diskHomeomorphClosedBall_eq_one_iff {n : ℕ} (z : TopCat.disk.{u} n)
   -- The boundary inclusion keeps the underlying point of the sphere.
   exact (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
 
+/-- The radial comparison sends exactly the points outside the boundary sphere to the open
+max-norm unit ball. -/
+lemma diskHomeomorphClosedBall_mem_ball_iff {n : ℕ} (z : TopCat.disk.{u} n) :
+    (diskHomeomorphClosedBall n z : Fin n → ℝ) ∈ Metric.ball 0 1 ↔
+      z ∈ (Set.range (TopCat.diskBoundaryInclusion n))ᶜ := by
+  rw [mem_ball_zero_iff, Set.mem_compl_iff,
+    ← norm_diskHomeomorphClosedBall_eq_one_iff]
+  exact (lt_iff_le_and_ne).trans
+    (and_iff_right (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).property))
+
 /-- The dimension of the Euclidean space `EuclideanSpace ℝ (ULift (Fin n))`. -/
 lemma finrank_euclideanSpace_ulift_fin (n : ℕ) :
     Module.finrank ℝ (EuclideanSpace ℝ (ULift.{u} (Fin n))) = n := by

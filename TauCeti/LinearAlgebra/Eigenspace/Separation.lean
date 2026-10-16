@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 
 /-!
 # Separating eigenspace summands
@@ -17,8 +18,17 @@ summand is attained by no other. Then that summand is *exactly* the `g k`-eigens
 distinct eigenvalues are independent. This is how a weight space is recovered from an eigenspace of
 a single operator once a decomposition separating the weights is available.
 
+When the other summands are *generalized* eigenspaces rather than eigenspaces, separating an
+eigenvector of eigenvalue `ν` from a generalized eigenvector of eigenvalue `μ ≠ ν` inside an
+`f`-invariant submodule instead applies a power of the shifted operator `f - μ • 1`, which preserves
+every `f`-invariant submodule while scaling the `ν`-eigenvector by `(ν - μ) ^ k`.
+
 ## Main results
 
+* `Module.End.pow_sub_smul_one_mem`: a submodule stable under `f` is stable under every power of
+  `f - μ • 1`.
+* `Module.End.pow_sub_smul_one_apply_of_apply_eq_smul`: an eigenvector of `f` of eigenvalue `ν` is
+  scaled by `(ν - μ) ^ k` under `(f - μ • 1) ^ k`.
 * `TauCeti.biSup_inf_eigenspace_eq_self`: a summand whose scalar is attained only by itself is cut
   out by the corresponding eigenspace.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
@@ -27,19 +37,36 @@ a single operator once a decomposition separating the weights is available.
 
 public section
 
+universe u v w
+
+variable {K : Type u} {V : Type v} [CommRing K] [AddCommGroup V] [Module K V]
+
+/-- A submodule stable under an endomorphism `f` is stable under every power of `f - μ • 1`. -/
+theorem Module.End.pow_sub_smul_one_mem {f : Module.End K V} {P : Submodule K V}
+    (hP : ∀ m ∈ P, f m ∈ P) (μ : K) (k : ℕ) :
+    ∀ m ∈ P, ((f - μ • (1 : Module.End K V)) ^ k) m ∈ P := by
+  intro m hm
+  rw [Module.End.coe_pow]
+  have hmaps : Set.MapsTo (f - μ • (1 : Module.End K V)) P P :=
+    fun x hx => P.sub_mem (hP x hx) (P.smul_mem μ hx)
+  exact hmaps.iterate k hm
+
+/-- An eigenvector of `f` with eigenvalue `ν` is an eigenvector of every power of `f - μ • 1`, with
+eigenvalue `(ν - μ) ^ k`. -/
+theorem Module.End.pow_sub_smul_one_apply_of_apply_eq_smul {f : Module.End K V} {μ ν : K} {v : V}
+    (hv : f v = ν • v) (k : ℕ) :
+    ((f - μ • (1 : Module.End K V)) ^ k) v = (ν - μ) ^ k • v := by
+  simpa using Module.End.aeval_apply_of_mem_apply_eq_smul (p := Polynomial.X ^ k)
+    (by simp [hv, sub_smul] : (f - μ • (1 : Module.End K V)) v = (ν - μ) • v)
+
 namespace TauCeti
 
 open Module
 
-universe u v w
-
-variable {K : Type u} {V : Type v} [CommRing K] [IsDomain K] [AddCommGroup V] [Module K V]
-  [Module.IsTorsionFree K V]
-
 /-- The `±1` eigenspaces of an involutive endomorphism of a module over a commutative ring in
 which `2` is a unit are complementary. -/
-theorem isCompl_eigenspace_one_neg_one {K V : Type*} [CommRing K] [AddCommGroup V]
-    [Module K V] (h2 : IsUnit (2 : K)) {T : Module.End K V} (hT : Function.Involutive T) :
+theorem isCompl_eigenspace_one_neg_one (h2 : IsUnit (2 : K)) {T : Module.End K V}
+    (hT : Function.Involutive T) :
     IsCompl (T.eigenspace 1) (T.eigenspace (-1)) := by
   constructor
   · rw [Submodule.disjoint_def]
@@ -64,6 +91,8 @@ theorem isCompl_eigenspace_one_neg_one {K V : Type*} [CommRing K] [AddCommGroup 
         abel
       rw [← smul_add, hadd, smul_smul]
       rw [Units.inv_mul_eq_one.mpr h2.unit_spec, one_smul]
+
+variable [IsDomain K] [Module.IsTorsionFree K V]
 
 /-- **Separated summands are cut out by their eigenspaces.** If every `W j`, for `j` in a set `s`,
 consists of eigenvectors of `A` of eigenvalue `g j`, and if the scalar `g k` of a distinguished

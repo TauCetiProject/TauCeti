@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.Submanifold.Polynomial
 public import TauCeti.Analysis.Polynomial.Puiseux.GlobalOrder
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Basic
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.FamilyOrder
@@ -159,6 +160,51 @@ theorem exists_delineation_orderAt_prod_eq (he : IsAnalyticChart d S e) (hxe : x
 
 end TauCeti.IsAnalyticChart
 
+namespace TauCeti
+
+variable {n d : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
+  {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))} {S : Set (Fin n → ℝ)}
+
+/-- Any nonnullified subfamily of an irreducible basis has a common delineation over a
+preconnected analytic submanifold on which the original McCallum projection is
+order-invariant. The product of the subfamily has constant ambient order along each section.
+Nullified members outside the subfamily cause no obstruction. -/
+theorem exists_delineation_orderAt_prod_eq_of_mcCallumProjection
+    (hB : F.IsIrreducibleBasis B) {A : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
+    (hAB : A ⊆ B) (hS : IsAnalyticSubmanifold d S) (hconn : IsPreconnected S)
+    (hfiber : ∀ b ∈ A, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
+    (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
+      q.orderAt x = q.orderAt y) :
+    ∃ D : Delineation fun (b : A) (x : S) ↦ b.1.map (MvPolynomial.eval x.1),
+      ∀ i, ∀ x y : S,
+        ((finSuccEquiv ℝ n).symm (∏ b : A, b.1)).orderAt (Fin.cons (D.root i x) x.1) =
+          ((finSuccEquiv ℝ n).symm (∏ b : A, b.1)).orderAt (Fin.cons (D.root i y) y.1) := by
+  classical
+  have hdegree (b : A) (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S) :
+      (b.1.map (MvPolynomial.eval x)).natDegree =
+        (b.1.map (MvPolynomial.eval y)).natDegree :=
+    Finset.natDegree_map_eq_of_mcCallumProjection
+      (fun q hq ↦ eval_eq_zero_iff_of_orderAt_eq (hproj q hq x hx y hy)) (hAB b.2)
+  let p : Polynomial (MvPolynomial (Fin n) ℝ) := ∏ b : A, b.1
+  have hp_eq : p = ∏ b ∈ A, b := Finset.prod_coe_sort A fun b ↦ b
+  have hp_discr_ne : p.discr ≠ 0 := by
+    rw [hp_eq]
+    exact hB.discr_prod_ne_zero hAB
+  have hp_discr (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S) :
+      p.discr.orderAt x = p.discr.orderAt y := by
+    rw [hp_eq]
+    exact hB.orderAt_discr_prod_eq_of_mcCallumProjection hAB x y
+      (fun q hq ↦ hproj q hq x hx y hy)
+  apply exists_delineation_of_locally_chart
+    (d := d) (P := fun (b : A) x ↦ b.1.map (MvPolynomial.eval x))
+    (q := fun x t ↦ ((finSuccEquiv ℝ n).symm p).orderAt (Fin.cons t x)) hconn
+  intro x hx
+  obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
+  exact ⟨e, he, hxe, he.exists_delineation_orderAt_prod_eq (P := fun b : A ↦ b.1) hxe hx
+    (fun b ↦ hfiber b b.2) hdegree hp_discr_ne hp_discr⟩
+
+end TauCeti
+
 namespace Finset.IsIrreducibleBasis
 
 variable {n d : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
@@ -185,47 +231,16 @@ theorem exists_delineation_orderAt_eq_of_mcCallumProjection
           TauCeti.SignInvariant
             (fun y ↦ MvPolynomial.eval y ((finSuccEquiv ℝ n).symm f)) E := by
   classical
+  obtain ⟨D, hprod⟩ := TauCeti.exists_delineation_orderAt_prod_eq_of_mcCallumProjection
+    hB Subset.rfl hS hconn hfiber hproj
   let p : Polynomial (MvPolynomial (Fin n) ℝ) := ∏ b : B, b.1
-  -- Projection order controls the zero pattern of coefficients, hence all fiber degrees.
   have hp_eq : p = ∏ b ∈ B, b := Finset.prod_coe_sort B fun b ↦ b
-  have hp_discr_ne : p.discr ≠ 0 := by
-    rw [hp_eq]
-    exact hB.discr_prod_ne_zero Subset.rfl
-  have hzero (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S)
-      (q : MvPolynomial (Fin n) ℝ) (hq : q ∈ F.mcCallumProjection B) :
-      MvPolynomial.eval x q = 0 ↔ MvPolynomial.eval y q = 0 := by
-    rw [← MvPolynomial.orderAt_pos_iff, hproj q hq x hx y hy,
-      MvPolynomial.orderAt_pos_iff]
-  have hdegree (b : B) (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S) :
-      (b.1.map (MvPolynomial.eval x)).natDegree =
-        (b.1.map (MvPolynomial.eval y)).natDegree :=
-    Finset.natDegree_map_eq_of_mcCallumProjection
-      (fun q hq ↦ hzero x hx y hy q hq) b.2
-  have hp_discr (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S) :
-      p.discr.orderAt x = p.discr.orderAt y := by
-    rw [hp_eq]
-    exact hB.orderAt_discr_prod_eq_of_mcCallumProjection (A := B) Subset.rfl x y
-      (fun q hq ↦ hproj q hq x hx y hy)
   have hcontent (f : Polynomial (MvPolynomial (Fin n) ℝ)) (hf : f ∈ F)
       (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S) :
       f.content.orderAt x = f.content.orderAt y :=
     hproj f.content (content_mem_mcCallumProjection hf) x hx y hy
-  -- Glue the chart-local stacks, then transfer product order through the irreducible basis.
-  obtain ⟨D, hprod⟩ := TauCeti.exists_delineation_of_locally_chart
-    (d := d) (P := fun (b : B) x ↦ b.1.map (MvPolynomial.eval x))
-    (q := fun x t ↦ ((finSuccEquiv ℝ n).symm p).orderAt (Fin.cons t x)) hconn
-    fun x hx ↦ by
-      obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
-      exact ⟨e, he, hxe, he.exists_delineation_orderAt_prod_eq (P := fun b : B ↦ b.1) hxe hx
-        (fun b ↦ hfiber b b.2) (fun b ↦ hdegree b) hp_discr_ne hp_discr⟩
-  have hcoeff : ∀ (b : B) (j : ℕ), TauCeti.AnalyticOnSubmanifold d
-      (fun x ↦ (b.1.map (MvPolynomial.eval x)).coeff j) S := by
-    intro b j
-    simp only [Polynomial.coeff_map]
-    exact ((AnalyticOnNhd.eval_continuousLinearMap
-      (ContinuousLinearMap.id ℝ (Fin n → ℝ)) (b.1.coeff j)).mono
-        (Set.subset_univ S)).analyticOnSubmanifold hS
-  refine ⟨D, fun E hE ↦ ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS hcoeff hE, ?_⟩⟩
+  refine ⟨D, fun E hE ↦ ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS
+    (fun (b : B) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.1 j) hE, ?_⟩⟩
   have hp_mv_eq : (finSuccEquiv ℝ n).symm p =
       ∏ b ∈ B, (finSuccEquiv ℝ n).symm b := by
     rw [hp_eq, map_prod]

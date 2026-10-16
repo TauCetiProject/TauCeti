@@ -175,6 +175,16 @@ noncomputable def limit : parabolic A l →* WithConv (H →ₐ[R] A) :=
 theorem limit_apply (g : parabolic A l) : limit A l g = evalZeroPoint A (extend A l g) := by
   rw [limit, MonoidHom.comp_apply]
 
+/-- The dynamic limit evaluates the constant coefficient of the conjugation family. -/
+theorem limit_apply_eq_coeff_conjugate (g : parabolic A l) (h : H) :
+    (limit A l g).ofConv h = ((conjugate A l g.1).ofConv h).coeff 0 := by
+  rw [← ofPolyPoint_extend g, ofPolyPoint_apply, limit_apply, evalZeroPoint_apply]
+  simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+    Polynomial.coe_toLaurentAlg, Polynomial.coe_aeval_eq_eval,
+    ← Polynomial.coeff_zero_eq_eval_zero, LaurentPolynomial.coeff_toLaurent]
+  exact (Finsupp.mapDomain_apply_of_injective
+    (Nat.castEmbedding (R := ℤ)).injective _ 0).symm
+
 /-! ### The Levi and unipotent parts -/
 
 variable (A) in
