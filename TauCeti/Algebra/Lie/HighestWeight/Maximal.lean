@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Module
-import TauCeti.Algebra.Lie.Submodule.Atom
+public import TauCeti.Algebra.Lie.Submodule.Atom
 
 /-!
 # The maximal submodule of a highest weight module, and its irreducible quotient
@@ -45,14 +45,13 @@ goes through.
 
 * `TauCeti.genWeightSpace_sup_genWeightSpaceSpan_eq_top_of_isHighestWeightVector_of_lieSpan_eq_top`:
   a highest weight module is the sum of its `lam`-weight space and the span of its other weight
-  spaces, and `TauCeti.disjoint_genWeightSpace_genWeightSpaceSpan_ne` says the two meet trivially.
+  spaces, which meet trivially by `TauCeti.disjoint_genWeightSpace_genWeightSpaceSpan_ne`.
 * `TauCeti.le_genWeightSpaceSpan_ne_of_notMem_of_isHighestWeightVector_of_lieSpan_eq_top`: **a Lie
   submodule of a highest weight module which misses the generator misses the whole top weight
   space**, being contained in the span of the other weight spaces.
-* `TauCeti.notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top` and
-  `TauCeti.disjoint_genWeightSpace_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_top`: for a
-  Lie submodule of a highest weight module, being proper, missing the generator and meeting the
-  top weight space trivially are the same condition.
+* `TauCeti.disjoint_genWeightSpace_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_top`: for a
+  Lie submodule of a highest weight module, missing the generator and meeting the top weight space
+  trivially are the same condition.
 * `TauCeti.notMem_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top` and
   `TauCeti.isGreatest_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top`: **the maximal
   submodule of a highest weight module is its greatest proper submodule**, so by
@@ -95,40 +94,6 @@ open LieAlgebra LieModule Module
 
 universe u v w x
 
-/-! ### Cyclic Lie modules -/
-
-section Cyclic
-
-variable {K : Type u} {L : Type v} [Field K] [LieRing L]
-  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] {v : M}
-
-/-- In a highest weight module, a Lie submodule is proper exactly when it misses the generator. -/
-theorem notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top
-    (hgen : LieSubmodule.lieSpan K L {v} = ⊤) {N : LieSubmodule K L M} : v ∉ N ↔ N ≠ ⊤ := by
-  constructor
-  · rintro hvN rfl
-    exact hvN trivial
-  · intro hN hvN
-    exact hN (top_le_iff.mp (hgen ▸ LieSubmodule.lieSpan_le.mpr (by simpa using hvN)))
-
-variable [LieAlgebra K L] [LieModule K L M]
-
-/-- The image of the generator generates the quotient. -/
-theorem lieSpan_mk_eq_top_of_lieSpan_eq_top (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
-    (N : LieSubmodule K L M) :
-    LieSubmodule.lieSpan K L {LieSubmodule.Quotient.mk' N v} = ⊤ := by
-  have hcomap : LieSubmodule.lieSpan K L {v}
-      ≤ (LieSubmodule.lieSpan K L {LieSubmodule.Quotient.mk' N v}).comap
-        (LieSubmodule.Quotient.mk' N) :=
-    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr
-      (LieSubmodule.mem_comap.mpr (LieSubmodule.subset_lieSpan rfl)))
-  refine eq_top_iff.mpr fun q _ => ?_
-  obtain ⟨m, rfl⟩ := LieSubmodule.Quotient.surjective_mk' N q
-  have hm : m ∈ LieSubmodule.lieSpan K L {v} := by rw [hgen]; trivial
-  exact hcomap hm
-
-end Cyclic
-
 variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   {H : LieSubalgebra K L}
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
@@ -170,15 +135,6 @@ private theorem pow_toEnd_sub_smul_apply {x : H} {mu nu : K} {v : M}
 section Nilpotent
 
 variable [LieRing.IsNilpotent H]
-
-variable (H M) in
-/-- **The top weight space is disjoint from the span of the other weight spaces**, the weight
-spaces of a module being independent. -/
-theorem disjoint_genWeightSpace_genWeightSpaceSpan_ne (lam : Dual K H) :
-    Disjoint (genWeightSpace M ((lam : Dual K H) : H → K))
-      (genWeightSpaceSpan H M {chi | chi ≠ ((lam : Dual K H) : H → K)}) :=
-  (iSupIndep_genWeightSpace K H M ((lam : Dual K H) : H → K)).mono_right
-    (genWeightSpaceSpan_le_iff.mpr fun _ hchi => le_iSup₂_of_le _ hchi le_rfl)
 
 variable (H M) in
 /-- **The sum of all the Lie submodules meeting the `lam`-weight space trivially.** For a highest
