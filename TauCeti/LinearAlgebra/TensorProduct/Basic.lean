@@ -12,7 +12,8 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 # Tensor-product contractions and trace identities
 
 This file defines contraction of a tensor product against a linear functional on its right factor,
-and records its behavior on pure tensors and under tensor-product maps.
+bundled as a linear map in the functional, and records its behavior on pure tensors and under
+tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
 arguments about coactions and weight spaces. It also proves the tensor identity that makes
 the Casimir element of a trace commute with multiplication.
@@ -46,9 +47,9 @@ variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 
-/-- Apply a linear functional to the right factor of a tensor. -/
-noncomputable def tensorComponent (phi : N →ₗ[R] R) : M ⊗[R] N →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ phi.lTensor M
+/-- Apply a linear functional to the right factor of a tensor, linearly in the functional. -/
+noncomputable def tensorComponent : (N →ₗ[R] R) →ₗ[R] M ⊗[R] N →ₗ[R] M :=
+  (LinearMap.compRight R (TensorProduct.rid R M).toLinearMap).comp (LinearMap.lTensorHom M)
 
 /-- Contraction is the tensor product of the functional with the identity, followed by the
 right tensor unitor. -/
@@ -71,13 +72,6 @@ theorem tensorComponent_map {M' : Type x} {N' : Type y}
   induction t using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul m n => simp
-
-/-- Contraction by the zero functional is the zero linear map. -/
-@[simp]
-theorem tensorComponent_zero :
-    tensorComponent (R := R) (M := M) (0 : N →ₗ[R] R) = 0 := by
-  refine TensorProduct.ext' fun m n => ?_
-  simp
 
 section
 
