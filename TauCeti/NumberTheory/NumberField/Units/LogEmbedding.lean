@@ -13,7 +13,6 @@ public import TauCeti.NumberTheory.Height.NumberField
 public import TauCeti.RepresentationTheory.RestrictScalars
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.Global.Places.Height
-public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 /-!
 # The logarithmic embedding of the units
@@ -177,19 +176,12 @@ theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
     2 * Height.logHeight₁ (u : L) =
       ∑ w, |logEmbedding L (Additive.ofMul u) w| +
         |∑ w, logEmbedding L (Additive.ofMul u) w| := by
-  let x : Lˣ := Units.map (algebraMap (𝓞 L) L).toMonoidHom u
-  have hx : x ∈ (∅ : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 L))).unit L :=
-    (Set.mem_unit_empty_iff L).mpr ⟨u, by simp [x]⟩
   have hfinite : ∀ v ∉ (∅ : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 L))),
       NumberField.HeightOneSpectrum.adicAbv L v (u : L) = 1 := by
     intro v _
-    rw [NumberField.HeightOneSpectrum.adicAbv_def]
-    norm_cast
-    rw [WithZeroMulInt.toNNReal_eq_one_iff _
-      (NumberField.HeightOneSpectrum.absNorm_ne_zero v)
-      (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v).ne']
-    simpa [x] using ((Set.mem_unit_iff (∅ : Set
-      (IsDedekindDomain.HeightOneSpectrum (𝓞 L))) L).mp hx v (by simp))
+    exact (v.adicAbv_coe_eq_one_iff
+      (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v) (u : 𝓞 L)).mpr
+        (Ideal.notMem_of_isUnit v.asIdeal u.isUnit)
   rw [TauCeti.GlobalNumberFields.two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log
     (∅ : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 L))) hfinite]
   simp only [Finset.sum_empty, zero_add]
@@ -250,11 +242,7 @@ theorem logHeight₁_le_rank_mul_norm_logEmbedding (u : (𝓞 L)ˣ) :
   have hcard : Fintype.card {w : InfinitePlace L // w ≠ w₀} = NumberField.Units.rank L := by
     simp [NumberField.Units.rank]
   have hsum : ∑ w, |y w| ≤ NumberField.Units.rank L * ‖y‖ := by
-    calc
-      ∑ w, |y w| ≤ Fintype.card {w : InfinitePlace L // w ≠ w₀} • ‖y‖ :=
-        Finset.sum_le_card_nsmul Finset.univ _ _ fun w _ ↦ by
-          simpa only [Real.norm_eq_abs] using norm_le_pi_norm y w
-      _ = NumberField.Units.rank L * ‖y‖ := by simp [hcard, nsmul_eq_mul]
+    simpa only [Real.norm_eq_abs, hcard, nsmul_eq_mul] using Pi.sum_norm_apply_le_norm y
   have habs : |∑ w, y w| ≤ NumberField.Units.rank L * ‖y‖ :=
     (Finset.abs_sum_le_sum_abs (fun w ↦ y w) Finset.univ).trans hsum
   have hheight := two_mul_logHeight₁_eq_sum_abs_logEmbedding u
@@ -289,11 +277,9 @@ theorem logHeight₁_eq_sum_posPart_logEmbedding_iff (u : (𝓞 L)ˣ) :
       _ = ∑ w, y w + ∑ w, |y w| := Finset.sum_add_distrib
       _ = ∑ w, |y w| + ∑ w, y w := add_comm _ _
   have hsum : ∑ w, y w =
-      -(((w₀ (K := L)).mult : ℝ) * Real.log ((w₀ (K := L)) u)) := by
-    have h := congrFun (logSpaceExtend_logEmbedding u) w₀
-    simp only [logSpaceExtend_apply_w₀] at h
-    dsimp only [y]
-    linarith
+      -(((w₀ (K := L)).mult : ℝ) * Real.log ((w₀ (K := L)) u)) :=
+    by simpa only [y, neg_mul] using
+      (NumberField.Units.dirichletUnitTheorem.sum_logEmbedding_component u)
   have heq :
       (Height.logHeight₁ (u : L) = ∑ w, (y w)⁺) ↔ 0 ≤ ∑ w, y w := by
     constructor
@@ -326,11 +312,9 @@ theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding_iff (u : (𝓞 L)ˣ) :
   let y := logEmbedding L (Additive.ofMul u)
   have hheight := two_mul_logHeight₁_eq_sum_abs_logEmbedding u
   have hsum : ∑ w, y w =
-      -(((w₀ (K := L)).mult : ℝ) * Real.log ((w₀ (K := L)) u)) := by
-    have h := congrFun (logSpaceExtend_logEmbedding u) w₀
-    simp only [logSpaceExtend_apply_w₀] at h
-    dsimp only [y]
-    linarith
+      -(((w₀ (K := L)).mult : ℝ) * Real.log ((w₀ (K := L)) u)) :=
+    by simpa only [y, neg_mul] using
+      (NumberField.Units.dirichletUnitTheorem.sum_logEmbedding_component u)
   constructor
   · intro h
     have habs : |∑ w, y w| = 0 := by
