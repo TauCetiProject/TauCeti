@@ -18,9 +18,10 @@ At a nonarchimedean absolute value `v`, the Gauss norm `Polynomial.gaussNorm v c
 multiplicative (`Polynomial.gaussNorm_mul`). This file evaluates it on the polynomials that occur
 when a primitive integer polynomial is factored into linear factors.
 
-A polynomial whose coefficients generate the unit ideal has Gauss norm `1` after mapping to a ring
-on which `v` is at most `1` on the image of the coefficients: Bézout writes `1` as a combination
-of the coefficients, and the ultrametric inequality bounds `v 1 = 1` by the largest coefficient.
+Let `φ : A →+* R` satisfy `v (φ a) ≤ 1` for every `a : A`. A polynomial over `A` whose
+coefficients generate the unit ideal has Gauss norm of radius one equal to `1` after mapping along
+`φ`: Bézout writes `1` as a combination of the coefficients, and the ultrametric inequality bounds
+`v 1 = 1` by the largest coefficient.
 Every nonarchimedean absolute value is at most `1` on the integers, so this applies to every
 primitive `P ∈ ℤ[X]` and every nonarchimedean absolute value, in any characteristic. The finite
 places of a number field are the main instance; over `ℤ` itself the Dedekind-domain form is
@@ -36,8 +37,8 @@ monic rational minimal polynomial does not satisfy the identity.
 ## Main results
 
 * `Polynomial.gaussNorm_map_eq_one_of_contentIdeal_eq_top`: a polynomial whose content ideal is
-  the unit ideal has Gauss norm `1` after mapping to a ring with a nonarchimedean absolute value
-  bounded by `1` on the image.
+  the unit ideal has Gauss norm of radius one equal to `1` after mapping along `φ : A →+* R`, at a
+  nonarchimedean absolute value `v` with `v (φ a) ≤ 1` for every `a : A`.
 * `Polynomial.IsPrimitive.gaussNorm_map_eq_one`: a primitive integer polynomial has Gauss norm `1`
   at every nonarchimedean absolute value.
 * `Polynomial.gaussNorm_X_sub_C`: the Gauss norm of `X - C b` is `max c (v b)`.
@@ -107,6 +108,7 @@ variable {R : Type*} [Ring R] [Nontrivial R] {v : AbsoluteValue R ℝ} {c : ℝ}
 
 /-- At a nonarchimedean absolute value, the Gauss norm of radius `c ≥ 0` of the linear polynomial
 `X - C b` is `max c (v b)`. -/
+@[simp]
 theorem gaussNorm_X_sub_C (hna : IsNonarchimedean v) (hc : 0 ≤ c) (b : R) :
     (X - C b).gaussNorm v c = max c (v b) := by
   refine le_antisymm ?_ (max_le ?_ ?_)
