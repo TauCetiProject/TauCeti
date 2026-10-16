@@ -108,8 +108,8 @@ private def moduleTensorLeftCofanIsColimit : IsColimit (moduleTensorLeftCofan Γ
     (fun j ↦ bimoduleModuleTensorMk Γ Δ (M j) N)
     (bimoduleModuleTensorMk Γ Δ (coproductCofan M).pt N)
     (fun j m n ↦ by
-      rw [moduleTensorLeftCofan, cofan_mk_inj, bimoduleModuleTensorMk_apply,
-        bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul, hom_id, LinearMap.id_apply])
+      simp only [moduleTensorLeftCofan, cofan_mk_inj, bimoduleModuleTensorMk_apply,
+        bimoduleModuleTensorMap_tmul, hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
       (fun m n ↦ by simpa only [bimoduleModuleTensorMk_apply] using h m n))
     (fun {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
@@ -209,9 +209,8 @@ private def moduleTensorRightCofanIsColimit : IsColimit (moduleTensorRightCofan 
     (fun j ↦ (bimoduleModuleTensorMk Γ Δ M (N j)).flip)
     (bimoduleModuleTensorMk Γ Δ M (coproductCofan N).pt).flip
     (fun j n m ↦ by
-      rw [moduleTensorRightCofan, cofan_mk_inj, LinearMap.flip_apply, LinearMap.flip_apply,
-        bimoduleModuleTensorMk_apply, bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul,
-        hom_id, LinearMap.id_apply])
+      simp only [moduleTensorRightCofan, cofan_mk_inj, LinearMap.flip_apply,
+        bimoduleModuleTensorMk_apply, bimoduleModuleTensorMap_tmul, hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
       (fun m n ↦ by simpa only [LinearMap.flip_apply, bimoduleModuleTensorMk_apply] using h n m))
     (fun {P} {f g} h ↦ bimoduleModuleTensor_hom_ext Γ Δ
