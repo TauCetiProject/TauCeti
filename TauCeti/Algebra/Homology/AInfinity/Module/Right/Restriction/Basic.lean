@@ -137,8 +137,9 @@ private theorem coact_comp_lTensor_coaugmentedBarMap :
         Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A) := by
   simpa using Comodule.coact_comp_lTensor_coalgHom (M := M) f.coaugmentedBarCoalgHom
 
-/-- `id ⊗ F` preserves the counit components. -/
-private theorem rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap
+/-- `id ⊗ F` preserves the counit components: applying the counit of `Tᶜ(sB)` after `id ⊗ F` is
+applying the counit of `Tᶜ(sA)`. -/
+theorem rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap
     (X : P →ₗ[R] M ⊗[R] TensorWords R A) :
     (TensorProduct.rid R M).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor M ∘ₗ

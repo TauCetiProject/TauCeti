@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Spectral.SpectralMap
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Locally spectral spaces and maps
@@ -18,7 +19,9 @@ opens to be compact globally.
 
 The main comparison identifies locally spectral spaces that are compact and quasiseparated with
 spectral spaces. Likewise, between spectral spaces the relative notion of locally spectral map
-agrees with Mathlib's absolute one.
+agrees with Mathlib's absolute one. Local spectrality of spaces passes to open subspaces, local
+spectrality of maps can be tested on a single cover of the source, and locally spectral maps
+compose through a locally spectral middle space.
 
 ## Main definitions
 
@@ -31,6 +34,12 @@ agrees with Mathlib's absolute one.
 * `TauCeti.spectralSpace_iff_isLocallySpectralSpace`: the global-to-local comparison for spaces.
 * `TauCeti.isLocallySpectralMap_iff_isSpectralMap`: the global-to-local comparison for maps
   between spectral spaces.
+* `TauCeti.IsLocallySpectralSpace.isTopologicalBasis`: the spectral open subsets of a locally
+  spectral space form a basis.
+* `Topology.IsOpenEmbedding.isLocallySpectralSpace`: open subspaces of locally spectral spaces are
+  locally spectral.
+* `TauCeti.IsLocallySpectralMap.of_forall_exists`: local spectrality of a map tested on one cover.
+* `TauCeti.IsLocallySpectralMap.comp`: composition through a locally spectral middle space.
 
 ## References
 
@@ -118,6 +127,28 @@ theorem spectralSpace_iff_isLocallySpectralSpace :
       toQuasiSober := hX.quasiSober
       toQuasiSeparatedSpace := hXqs
       toPrespectralSpace := hX.prespectralSpace }
+
+/-- The spectral open subsets of a locally spectral space form a basis of its topology. -/
+theorem IsLocallySpectralSpace.isTopologicalBasis (hX : IsLocallySpectralSpace X) :
+    IsTopologicalBasis {U : Set X | IsOpen U ∧ SpectralSpace U} := by
+  refine isTopologicalBasis_of_isOpen_of_nhds (fun U hU ↦ hU.1) fun x O hxO hOo ↦ ?_
+  obtain ⟨V, hVo, hxV, hVs⟩ := hX x
+  obtain ⟨W, hWVO, hWo, hxW, -, hWs⟩ := hVo.exists_spectralSpace_subset_inter hVs hOo hxV hxO
+  exact ⟨W, ⟨hWo, hWs⟩, hxW, hWVO.trans inter_subset_right⟩
+
+/-- A space admitting an open embedding into a locally spectral space is locally spectral. In
+particular, every open subspace of a locally spectral space is locally spectral. -/
+theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralSpace {Z : Type*} [TopologicalSpace Z]
+    {e : Z → X} (he : IsOpenEmbedding e) (hX : IsLocallySpectralSpace X) :
+    IsLocallySpectralSpace Z := by
+  intro z
+  obtain ⟨W, ⟨hWo, hWs⟩, hzW, hWe⟩ :=
+    hX.isTopologicalBasis.exists_subset_of_mem_open (mem_range_self z) he.isOpen_range
+  refine ⟨e ⁻¹' W, hWo.preimage he.continuous, hzW, ?_⟩
+  -- `e` restricts to a homeomorphism from `e ⁻¹' W` onto the spectral space `W`.
+  let h := he.isEmbedding.homeomorphOfSubsetRange hWe
+  have : CompactSpace (e ⁻¹' W) := h.symm.compactSpace
+  exact h.isOpenEmbedding.spectralSpace
 
 /-- A map is **locally spectral** if it is continuous and every restriction between spectral open
 subspaces is a spectral map. This is a relative condition: no global compactness is imposed on
@@ -210,6 +241,80 @@ theorem _root_.IsSpectralMap.isLocallySpectralMap [QuasiSeparatedSpace X] {f : X
 theorem isLocallySpectralMap_iff_isSpectralMap [SpectralSpace X] [SpectralSpace Y] {f : X → Y} :
     IsLocallySpectralMap f ↔ IsSpectralMap f :=
   ⟨IsLocallySpectralMap.isSpectralMap, IsSpectralMap.isLocallySpectralMap⟩
+
+/-- **Local spectrality can be tested on a single cover.** A map is locally spectral as soon as
+every point of the source lies in a quasiseparated open subset that maps spectrally into an open
+subset of the target. Continuity of the map is a consequence. -/
+theorem IsLocallySpectralMap.of_forall_exists {f : X → Y}
+    (h : ∀ x, ∃ (U : Set X) (V : Set Y) (hUV : MapsTo f U V), IsOpen U ∧ IsOpen V ∧ x ∈ U ∧
+      QuasiSeparatedSpace U ∧ IsSpectralMap (hUV.restrict f U V)) :
+    IsLocallySpectralMap f := by
+  choose U V hUV hUo hVo hxU hUqs hUVs using h
+  have hcont (x : X) : ContinuousOn f (U x) := by
+    rw [continuousOn_iff_continuous_domRestrict, domRestrict_eq, ← (hUV x).restrict_commutes]
+    exact continuous_subtype_val.comp (hUVs x).continuous
+  have hf : Continuous f := continuous_iff_continuousAt.mpr fun x ↦
+    (hcont x).continuousAt ((hUo x).mem_nhds (hxU x))
+  refine .of_isSpectralMap_restrict hf fun U₀ V₀ hU₀V₀ hU₀o hV₀o hU₀s hV₀s ↦ ?_
+  rw [hU₀V₀.isSpectralMap_restrict_iff hf.continuousOn hV₀o]
+  intro K hKV hKo hKc
+  refine (isCompact_iff_compactSpace.mpr hU₀s.toCompactSpace).inter_of_forall_exists
+    fun x hx ↦ ?_
+  -- Shrink to a compact open `W ∋ f x` inside `V₀ ∩ V x`, then to a compact open `U' ∋ x` inside
+  -- `U₀ ∩ U x` that maps into `W`.
+  obtain ⟨W, hWV, hWo, hxW, hWc, -⟩ :=
+    hV₀o.exists_spectralSpace_subset_inter hV₀s (hVo x) (hU₀V₀ hx) (hUV x (hxU x))
+  obtain ⟨U', hU'sub, hU'o, hxU', hU'c, -⟩ := hU₀o.exists_spectralSpace_subset_inter hU₀s
+    ((hUo x).inter (hWo.preimage hf)) hx ⟨hxU x, hxW⟩
+  refine ⟨U', hU'sub.trans inter_subset_left, hU'o, hxU', ?_⟩
+  -- Since `f` maps `U'` into `W`, only the compact open `K ∩ W ⊆ V x` matters.
+  have hKW : IsCompact (K ∩ W) :=
+    (isQuasiSeparated_iff_quasiSeparatedSpace V₀ hV₀o).mpr hV₀s.toQuasiSeparatedSpace K W hKV hKo
+      hKc (hWV.trans inter_subset_left) hWo hWc
+  have hpre : IsCompact (U x ∩ f ⁻¹' (K ∩ W)) :=
+    ((hUV x).isSpectralMap_restrict_iff (hcont x) (hVo x)).mp (hUVs x) (K ∩ W)
+      (inter_subset_right.trans (hWV.trans inter_subset_right)) (hKo.inter hWo) hKW
+  have heq : U' ∩ f ⁻¹' K = U' ∩ (U x ∩ f ⁻¹' (K ∩ W)) := Set.ext fun y ↦
+    ⟨fun ⟨hy, hyK⟩ ↦ ⟨hy, (hU'sub hy).2.1, hyK, (hU'sub hy).2.2⟩, fun ⟨hy, _, hyK, _⟩ ↦ ⟨hy, hyK⟩⟩
+  rw [heq]
+  exact (isQuasiSeparated_iff_quasiSeparatedSpace (U x) (hUo x)).mpr (hUqs x)
+    U' _ (hU'sub.trans (inter_subset_right.trans inter_subset_left)) hU'o hU'c inter_subset_left
+    ((hUo x).inter ((hKo.inter hWo).preimage hf)) hpre
+
+/-- **Composition of locally spectral maps.** The composite of two locally spectral maps is locally
+spectral provided the middle space is locally spectral. Without that hypothesis the middle space
+may have too few spectral open subsets for the relative condition to say anything. -/
+theorem IsLocallySpectralMap.comp {Z : Type*} [TopologicalSpace Z] {g : Y → Z} {f : X → Y}
+    (hY : IsLocallySpectralSpace Y) (hg : IsLocallySpectralMap g) (hf : IsLocallySpectralMap f) :
+    IsLocallySpectralMap (g ∘ f) := by
+  refine .of_isSpectralMap_restrict (hg.continuous.comp hf.continuous)
+    fun U W hUW hUo hWo hUs hWs ↦ ?_
+  rw [hUW.isSpectralMap_restrict_iff (hg.continuous.comp hf.continuous).continuousOn hWo]
+  intro K hKW hKo hKc
+  refine (isCompact_iff_compactSpace.mpr hUs.toCompactSpace).inter_of_forall_exists
+    fun x hx ↦ ?_
+  -- Factor through a spectral open `V ∋ f x` with `g(V) ⊆ W` and a spectral open `U' ∋ x` with
+  -- `f(U') ⊆ V`.
+  obtain ⟨V₀, hV₀o, hxV₀, hV₀s⟩ := hY (f x)
+  obtain ⟨V, hVsub, hVo, hxV, -, hVs⟩ :=
+    hV₀o.exists_spectralSpace_subset_inter hV₀s (hWo.preimage hg.continuous) hxV₀ (hUW hx)
+  obtain ⟨U', hU'sub, hU'o, hxU', -, hU's⟩ :=
+    hUo.exists_spectralSpace_subset_inter hUs (hVo.preimage hf.continuous) hx hxV
+  refine ⟨U', hU'sub.trans inter_subset_left, hU'o, hxU', ?_⟩
+  have hU'V : MapsTo f U' V := fun y hy ↦ (hU'sub hy).2
+  have hVW : MapsTo g V W := fun y hy ↦ (hVsub hy).2
+  have := hU's
+  have := hVs
+  have hgK : IsCompact (V ∩ g ⁻¹' K) :=
+    (hVW.isSpectralMap_restrict_iff hg.continuous.continuousOn hWo).mp
+      (hg.isSpectralMap_restrict hVW hVo hWo) K hKW hKo hKc
+  have hfK : IsCompact (U' ∩ f ⁻¹' (V ∩ g ⁻¹' K)) :=
+    (hU'V.isSpectralMap_restrict_iff hf.continuous.continuousOn hVo).mp
+      (hf.isSpectralMap_restrict hU'V hU'o hVo) _ inter_subset_left
+      (hVo.inter (hKo.preimage hg.continuous)) hgK
+  have heq : U' ∩ (g ∘ f) ⁻¹' K = U' ∩ f ⁻¹' (V ∩ g ⁻¹' K) := Set.ext fun y ↦
+    ⟨fun ⟨hy, hyK⟩ ↦ ⟨hy, hU'V hy, hyK⟩, fun ⟨hy, _, hyK⟩ ↦ ⟨hy, hyK⟩⟩
+  rwa [heq]
 
 end TauCeti
 

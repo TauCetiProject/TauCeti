@@ -70,9 +70,9 @@ open Pointwise Topology
 
 namespace TauCeti.Huber
 
-section Terms
+section Semiring
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B]
+variable {k : ℕ} {A B : Type*} [CommSemiring A] [CommSemiring B]
 
 /-- The `ν`-th term of the evaluation of `f` at `b` along `φ`, namely `φ(coeff ν f) · bν`. -/
 def weightedEvalTerm (φ : A →+* B) (b : Fin k → B) (f : MvPowerSeries (Fin k) A)
@@ -110,8 +110,6 @@ private theorem image_weightPow_mul_monomial (φ : A →+* B) (T : Fin k → Set
     exact Finset.prod_congr rfl fun i _ ↦ (Set.singleton_pow ..).symm
   rw [h1, h2, h3, ← Finset.prod_mul_distrib]
   exact Finset.prod_congr rfl fun i _ ↦ by rw [weightedVar_def, mul_pow]
-
-section WeightBounded
 
 variable [TopologicalSpace B]
 
@@ -213,7 +211,11 @@ theorem isWeightBounded_iff_isWeightedVarPowerBounded {φ : A →+* B} {T : Fin 
     {b : Fin k → B} : IsWeightBounded φ T b ↔ IsWeightedVarPowerBounded φ T b :=
   ⟨IsWeightBounded.isWeightedVarPowerBounded, isWeightBounded_of_isWeightedVarPowerBounded⟩
 
-end WeightBounded
+end Semiring
+
+section Terms
+
+variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B]
 
 /-- **A coefficient bound gives a term bound**, at a single multi-index: if the `ν`-th coefficient
 of `f` lies in `Tν · U`, and `φ(U)` times the weighted monomials at `ν` lands in the subgroup `G`,

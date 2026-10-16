@@ -135,64 +135,26 @@ noncomputable def ginzburg2Relator (i : Q) : 𝒢 :=
       ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) *
         ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a))
 
-private theorem ginzburg2Relator_cohomological_mem (i : Q) :
-    ginzburg2Relator k i ∈ gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0 := by
+/-- Homogeneous doubled arrows of degree `d` place the local relator in degree `d + d`. -/
+private theorem ginzburg2Relator_mem_gradeBy
+    (wt : ∀ {i j : Ginzburg2Quiver Q}, (i ⟶ j) → ℤ) (d : ℤ)
+    (hwt : ∀ {i j : Q} (a : Ginzburg2DoubledHom i j), wt (Ginzburg2Arrow.doubledMap a) = d)
+    (i : Q) :
+    ginzburg2Relator k i ∈ gradeBy k wt (d + d) := by
   classical
-  unfold ginzburg2Relator
-  have hedge {i j : Q} (a : Ginzburg2DoubledHom i j) :
-      (ofArrow (Ginzburg2Arrow.doubledMap a) : 𝒢) ∈
-        gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0 := by
-    exact ofArrow_mem_gradeBy (ginzburg2CohomologicalWeight (Q := Q))
-      (Ginzburg2Arrow.doubledMap a)
-  have hhead {i j : Q} (a : (i ⟶ j)) :
-      (ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) *
-        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) : 𝒢) ∈
-          gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0 := by
-    exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2CohomologicalWeight (Q := Q))
-      0 0) (Submodule.mul_mem_mul (hedge (Sum.inl a))
-        (hedge (Quiver.reverse (Sum.inl a))))
-  have htail {i j : Q} (a : (i ⟶ j)) :
-      (ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) *
-        ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) : 𝒢) ∈
-          gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0 := by
-    exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2CohomologicalWeight (Q := Q))
-      0 0) (Submodule.mul_mem_mul (hedge (Quiver.reverse (Sum.inl a))) (hedge (Sum.inl a)))
-  apply Submodule.sub_mem
-  · exact (gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0).sum_mem
-      (fun j _ => (gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0).sum_mem
-        (fun a _ => hhead a))
-  · exact (gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0).sum_mem
-      (fun j _ => (gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0).sum_mem
-        (fun a _ => htail a))
-
-private theorem ginzburg2Relator_adams_mem (i : Q) :
-    ginzburg2Relator k i ∈ gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2 := by
-  classical
-  unfold ginzburg2Relator
-  have hedge {i j : Q} (a : Ginzburg2DoubledHom i j) :
-      (ofArrow (Ginzburg2Arrow.doubledMap a) : 𝒢) ∈
-        gradeBy k (ginzburg2AdamsWeight (Q := Q)) 1 := by
-    exact ofArrow_mem_gradeBy (ginzburg2AdamsWeight (Q := Q))
-      (Ginzburg2Arrow.doubledMap a)
-  have hhead {i j : Q} (a : (i ⟶ j)) :
-      (ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) *
-        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) : 𝒢) ∈
-          gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2 := by
-    exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2AdamsWeight (Q := Q)) 1 1)
-      (Submodule.mul_mem_mul (hedge (Sum.inl a)) (hedge (Quiver.reverse (Sum.inl a))))
-  have htail {i j : Q} (a : (i ⟶ j)) :
-      (ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) *
-        ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) : 𝒢) ∈
-          gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2 := by
-    exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2AdamsWeight (Q := Q)) 1 1)
-      (Submodule.mul_mem_mul (hedge (Quiver.reverse (Sum.inl a))) (hedge (Sum.inl a)))
-  apply Submodule.sub_mem
-  · exact (gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2).sum_mem
-      (fun j _ => (gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2).sum_mem
-        (fun a _ => hhead a))
-  · exact (gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2).sum_mem
-      (fun j _ => (gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2).sum_mem
-        (fun a _ => htail a))
+  have hedge {u v : Q} (a : Ginzburg2DoubledHom u v) :
+      (ofArrow (Ginzburg2Arrow.doubledMap a) : 𝒢) ∈ gradeBy k wt d := by
+    rw [← hwt a]
+    exact ofArrow_mem_gradeBy wt (Ginzburg2Arrow.doubledMap a)
+  have hprod {u v : Q} (a : Ginzburg2DoubledHom u v) (b : Ginzburg2DoubledHom v u) :
+      (ofArrow (Ginzburg2Arrow.doubledMap a) *
+        ofArrow (Ginzburg2Arrow.doubledMap b) : 𝒢) ∈ gradeBy k wt (d + d) :=
+    gradeBy_mul_gradeBy_le d d (Submodule.mul_mem_mul (hedge a) (hedge b))
+  refine Submodule.sub_mem _
+    (Submodule.sum_mem _ fun j _ => Submodule.sum_mem _ fun a _ =>
+      hprod (Sum.inl a) (Quiver.reverse (Sum.inl a)))
+    (Submodule.sum_mem _ fun j _ => Submodule.sum_mem _ fun a _ =>
+      hprod (Quiver.reverse (Sum.inl a)) (Sum.inl a))
 
 /-- The generator assignment for the differential: doubled arrows map to zero and each added
 loop maps to its local preprojective relator. -/
@@ -220,34 +182,22 @@ theorem ginzburg2DifferentialGenerator_cohomological_mem
     ginzburg2DifferentialGenerator k a ∈
       gradeBy k (ginzburg2CohomologicalWeight (Q := Q))
         (ginzburg2CohomologicalWeight a + 1) := by
-  cases i with
-  | vertex i =>
-    cases j with
-    | vertex j =>
-      cases a with
-      | inl e => simp [ginzburg2DifferentialGenerator, ginzburg2CohomologicalWeight]
-      | inr h =>
-        cases h.down
-        simpa [ginzburg2DifferentialGenerator, ginzburg2CohomologicalWeight,
-          Ginzburg2Quiver.vertexEquiv_symm_vertex] using
-          ginzburg2Relator_cohomological_mem k i
+  rcases i, j, a with ⟨⟨i⟩, ⟨j⟩, e | ⟨⟨⟩⟩⟩
+  · simp [ginzburg2DifferentialGenerator]
+  · simpa [ginzburg2DifferentialGenerator, ginzburg2CohomologicalWeight] using
+      ginzburg2Relator_mem_gradeBy k ginzburg2CohomologicalWeight 0
+        ginzburg2CohomologicalWeight_doubledMap i
 
 /-- The generator assignment preserves the Adams degree. -/
 theorem ginzburg2DifferentialGenerator_adams_mem
     {i j : Ginzburg2Quiver Q} (a : i ⟶ j) :
     ginzburg2DifferentialGenerator k a ∈
       gradeBy k (ginzburg2AdamsWeight (Q := Q)) (ginzburg2AdamsWeight a) := by
-  cases i with
-  | vertex i =>
-    cases j with
-    | vertex j =>
-      cases a with
-      | inl e => simp [ginzburg2DifferentialGenerator]
-      | inr h =>
-        cases h.down
-        simpa [ginzburg2DifferentialGenerator, ginzburg2AdamsWeight,
-          Ginzburg2Quiver.vertexEquiv_symm_vertex] using
-          ginzburg2Relator_adams_mem k i
+  rcases i, j, a with ⟨⟨i⟩, ⟨j⟩, e | ⟨⟨⟩⟩⟩
+  · simp [ginzburg2DifferentialGenerator]
+  · simpa [ginzburg2DifferentialGenerator, ginzburg2AdamsWeight] using
+      ginzburg2Relator_mem_gradeBy k ginzburg2AdamsWeight 1
+        ginzburg2AdamsWeight_doubledMap i
 
 /-! The remaining construction extends this assignment by the graded derivation, proves its
 square-zero and Leibniz identities, and then compares degree-zero cohomology with the

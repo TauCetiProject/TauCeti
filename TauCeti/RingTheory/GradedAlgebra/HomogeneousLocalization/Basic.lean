@@ -28,9 +28,14 @@ localization is.
 ## Main definitions
 
 * `HomogeneousLocalization.Away.mkLinearMap`: the linear numerator map for a fixed denominator.
+* `HomogeneousLocalization.Away.promoteNumerator`: raising a numerator to a larger power of the
+  denominator.
 * `HomogeneousLocalization.Away.lift`: the ring homomorphism `A_{(f)} →+* R` induced by `φ`.
 
 ## Main results
+
+* `HomogeneousLocalization.Away.mkLinearMap_promoteNumerator`: raising numerator and denominator
+  by the same power does not change a homogeneous fraction.
 
 * `HomogeneousLocalization.Away.lift_mk`: `lift` sends `a / fⁿ` to `φ a * ((φ f)ⁿ)⁻¹`.
 * `HomogeneousLocalization.Away.lift_algebraMap`: `lift` restricts to `φ` on the degree-zero
@@ -261,5 +266,44 @@ noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ
 @[simp]
 theorem Away.mkLinearMap_apply {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ)
     (a : 𝒜 (n • d)) : Away.mkLinearMap (𝒜 := 𝒜) hf n a = Away.mk 𝒜 hf n a a.2 := (rfl)
+
+/-- Raise the denominator of a homogeneous fraction without changing the fraction. -/
+def Away.promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    (n N : ℕ) (hnN : n ≤ N) : 𝒜 (n • d) →ₗ[R] 𝒜 (N • d) where
+  toFun a := ⟨(a : A) * f ^ (N - n), by
+    have h := SetLike.mul_mem_graded a.2 (SetLike.pow_mem_graded (N - n) hf)
+    convert h using 1
+    rw [← add_nsmul, Nat.add_sub_of_le hnN]⟩
+  map_add' a b := by
+    apply Subtype.ext
+    exact add_mul (a : A) b (f ^ (N - n))
+  map_smul' r a := by
+    apply Subtype.ext
+    simp only [Submodule.coe_smul, RingHom.id_apply, Algebra.smul_mul_assoc]
+
+/-- Raising a numerator multiplies it by the added power of the denominator. -/
+@[simp]
+theorem Away.coe_promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    (n N : ℕ) (hnN : n ≤ N) (a : 𝒜 (n • d)) :
+    (Away.promoteNumerator hf n N hnN a : A) = a * f ^ (N - n) := (rfl)
+
+/-- Raising a numerator and its denominator by the same power does not change a homogeneous
+fraction. -/
+theorem Away.mkLinearMap_promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    (n N : ℕ) (hnN : n ≤ N) (a : 𝒜 (n • d)) :
+    Away.mkLinearMap hf N (Away.promoteNumerator hf n N hnN a) =
+      Away.mkLinearMap hf n a := by
+  apply val_injective
+  simp only [Away.mkLinearMap_apply, Away.val_mk, Away.coe_promoteNumerator]
+  let b : Submonoid.powers f := ⟨f ^ n, ⟨n, rfl⟩⟩
+  let c : Submonoid.powers f := ⟨f ^ (N - n), ⟨N - n, rfl⟩⟩
+  have hbc : b * c = ⟨f ^ N, ⟨N, rfl⟩⟩ := by
+    apply Subtype.ext
+    simp only [b, c, Submonoid.coe_mul, ← pow_add, Nat.add_sub_of_le hnN]
+  rw [← hbc]
+  have hcancel := IsLocalization.mk'_cancel
+    (S := Localization (Submonoid.powers f)) (a : A) b c
+  rw [← Localization.mk_eq_mk'_apply, ← Localization.mk_eq_mk'_apply] at hcancel
+  convert hcancel using 1
 
 end HomogeneousLocalization
