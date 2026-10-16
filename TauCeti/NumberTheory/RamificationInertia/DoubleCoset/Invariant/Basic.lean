@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.GroupTheory.DoubleCoset.Map
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
 public import TauCeti.RingTheory.Ideal.Pointwise
+public import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # The double-coset splitting law over invariant rings
@@ -36,14 +37,8 @@ including `FixedPoints.subalgebra A B H`.
 
 ## Main results
 
-* `Ideal.under_eq_iff_mem_orbit`: two primes have the same contraction to the `H`-invariant
-  ring exactly when they lie in one `H`-orbit.
 * `Ideal.under_smul_eq_iff_doubleCosetMk_eq`: the fibres of translated contraction are exactly
   the double cosets.
-* `Ideal.primesOver_under_eq_singleton_of_le_stabilizer`: for `H` inside the stabilizer of `Q`,
-  `Q` is the only prime above its contraction.
-* `Ideal.exists_smul_under_eq`: every prime of the intermediate ring above `p` is the
-  contraction of a translate of `Q`.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk`: the value at a double-coset
   representative.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff`:
@@ -85,18 +80,6 @@ section Fibres
 variable (Q : Ideal B) [Q.IsPrime] (H : Subgroup G) (C : Type*) [CommRing C] [Algebra C B]
   [Finite H] [Algebra.IsInvariant C B H] [SMulCommClass H C B]
 
-/-- **Same contraction means same `H`-orbit.** Two primes of `B` contract to the same prime of
-the `H`-invariant ring `C` exactly when one is an `H`-translate of the other. -/
-theorem under_eq_iff_mem_orbit (R R' : Ideal B) [R.IsPrime] [R'.IsPrime] :
-    R.under C = R'.under C ↔ R ∈ orbit H R' := by
-  rw [mem_orbit_iff]
-  constructor
-  · intro h
-    obtain ⟨h, hh⟩ := Algebra.IsInvariant.exists_smul_of_under_eq C B H R' R h.symm
-    exact ⟨h, hh.symm⟩
-  · rintro ⟨h, rfl⟩
-    exact under_smul (G := H) C R' h
-
 /-- Two translates of a prime contract to the same prime of the `H`-invariant ring exactly
 when their translating elements belong to the same `H`-decomposition double coset. -/
 theorem under_smul_eq_iff_doubleCosetMk_eq (σ τ : G) :
@@ -105,17 +88,6 @@ theorem under_smul_eq_iff_doubleCosetMk_eq (σ τ : G) :
   rw [TauCeti.doubleCosetMk_eq_mk_iff_mem,
     ← TauCeti.orbitRel_smul_iff_mem_doubleCoset_stabilizer, orbitRel_apply,
     under_eq_iff_mem_orbit H C]
-
-variable {H} in
-/-- **A prime is alone above its contraction to the invariant ring of a subgroup fixing it.**
-If `H` lies in the stabilizer of `Q`, then `Q` is the only prime of `B` above `Q ∩ C`: the other
-primes above it are the `H`-translates of `Q`, which all equal `Q`. -/
-theorem primesOver_under_eq_singleton_of_le_stabilizer (hH : H ≤ stabilizer G Q) :
-    (Q.under C).primesOver B = {Q} := by
-  refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨inferInstance, inferInstance⟩, ?_⟩
-  rintro R ⟨_, hR⟩
-  obtain ⟨h, rfl⟩ := mem_orbit_iff.1 ((under_eq_iff_mem_orbit H C R Q).1 hR.over.symm)
-  exact mem_stabilizer_iff.1 (hH h.2)
 
 end Fibres
 
@@ -131,20 +103,6 @@ variable [Finite G] [hAB : Algebra.IsInvariant A B G] [SMulCommClass G A B]
 private def translatedPrime (σ : G) : p.primesOver C :=
   ⟨(σ • Q).under C, inferInstance,
     ⟨by rw [under_under]; exact (inferInstance : (σ • Q).LiesOver p).over⟩⟩
-
-variable (G) in
-/-- **Every prime of `C` above `p` is the contraction of a translate of `Q`**, for any ring `C`
-between `A` and `B` over which `B` is integral. -/
-theorem exists_smul_under_eq [Algebra.IsIntegral C B] (q : Ideal C) [q.IsPrime] [q.LiesOver p] :
-    ∃ σ : G, (σ • Q).under C = q := by
-  -- Lift `q` to a prime `R` of `B`; transitivity of `G` on the primes above `p` makes `R` a
-  -- translate of `Q`.
-  obtain ⟨⟨R, hR, hRq⟩⟩ := q.nonempty_primesOver (S := B)
-  have : R.LiesOver p := LiesOver.trans R q p
-  have hRp : R ∈ p.primesOver B := ⟨hR, inferInstance⟩
-  rw [← Algebra.IsInvariant.orbit_eq_primesOver A B G p Q, mem_orbit_iff] at hRp
-  obtain ⟨σ, hσ⟩ := hRp
-  exact ⟨σ, by rw [hσ]; exact hRq.over.symm⟩
 
 /-- **The double-coset splitting law over invariant rings.** The primes of the intermediate
 `H`-invariant ring `C` above `p` are indexed by `H \ G / stabilizer G Q`. The class of `σ`
