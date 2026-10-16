@@ -3,13 +3,16 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
-import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Construction
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Construction
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.FiniteType
+
 import TauCeti.Algebra.AlgebraicGroup.Connected.Extension
 import TauCeti.Algebra.AlgebraicGroup.Solvable.Extension
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Composite
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Smooth
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.FiniteType
 
 /-!
 # The solvable radical of the affine quotient by the radical
@@ -33,6 +36,8 @@ follow from the kernel criteria; solvability follows from extension closure.
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 5 and 19.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
 -/
+
+public section
 
 open CategoryTheory
 open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
@@ -136,6 +141,7 @@ theorem solvableRadicalDefiningIdeal_eq_augmentation_of_kernel_eq_solvableRadica
   intro x hx
   have hmap : p.hom x ∈ (J.map p.hom).toIdeal :=
     hle (HopfIdeal.mem_map_of_mem p.hom hx)
+  rw [HopfIdeal.map_toIdeal] at hmap
   have hx' : x ∈ Ideal.comap (algebraMap Q G) (J.toIdeal.map (algebraMap Q G)) := by
     exact hmap
   rwa [Ideal.comap_map_eq_self_of_faithfullyFlat J.toIdeal] at hx'
