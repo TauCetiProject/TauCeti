@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Module
 public import TauCeti.Algebra.Lie.Submodule.Atom
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # The maximal submodule of a highest weight module, and its irreducible quotient
@@ -98,37 +99,6 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   {H : LieSubalgebra K L}
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {lam : Dual K H} {v : M}
-
-/-! ### Powers of a shifted Cartan operator -/
-
-/-- A submodule stable under the action of `x : H` is stable under every power of `x - mu`. This is
-applied both to a Lie submodule and to a span of weight spaces. -/
-private theorem pow_toEnd_sub_smul_mem {P : Submodule K M} {x : H}
-    (hP : ∀ m ∈ P, toEnd K H M x m ∈ P) (mu : K) (k : ℕ) :
-    ∀ m ∈ P, ((toEnd K H M x - mu • (1 : Module.End K M)) ^ k) m ∈ P := by
-  induction k with
-  | zero => intro m hm; simpa using hm
-  | succ k ih =>
-    intro m hm
-    rw [pow_succ, Module.End.mul_apply]
-    refine ih _ ?_
-    have hsub : (toEnd K H M x - mu • (1 : Module.End K M)) m = toEnd K H M x m - mu • m := by
-      simp
-    rw [hsub]
-    exact sub_mem (hP m hm) (Submodule.smul_mem _ _ hm)
-
-/-- An honest eigenvector of `x : H` with eigenvalue `nu` is an eigenvector of every power of
-`⁅x, -⁆ - mu`, with eigenvalue `(nu - mu) ^ k`. -/
-private theorem pow_toEnd_sub_smul_apply {x : H} {mu nu : K} {v : M}
-    (hv : ⁅(x : L), v⁆ = nu • v) (k : ℕ) :
-    ((toEnd K H M x - mu • (1 : Module.End K M)) ^ k) v = (nu - mu) ^ k • v := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ, Module.End.mul_apply]
-    have hsub : (toEnd K H M x - mu • (1 : Module.End K M)) v = (nu - mu) • v := by
-      simp [LieSubalgebra.coe_bracket_of_module, hv, sub_smul]
-    rw [hsub, map_smul, ih, smul_smul, pow_succ, mul_comm]
 
 /-! ### The weight spaces other than the top one, and the maximal submodule -/
 
@@ -237,14 +207,16 @@ private theorem smul_mem_of_add_mem_iSup (hv : IsHighestWeightVector b lam v)
     have hstab : ∀ n ∈ (⨆ chi ∈ s, (genWeightSpace M (chi : H → K) : Submodule K M)),
         toEnd K H M x n ∈ (⨆ chi ∈ s, (genWeightSpace M (chi : H → K) : Submodule K M)) :=
       fun n hn => hcomap hn
-    have hm'mem := pow_toEnd_sub_smul_mem hstab ((chi0 : H → K) x) k m' hm'
+    have hm'mem := Module.End.pow_sub_smul_one_mem hstab ((chi0 : H → K) x) k m' hm'
     -- the whole element stays inside `N`
     have hNstab : ∀ n ∈ (N : Submodule K M), toEnd K H M x n ∈ (N : Submodule K M) :=
       fun n hn => N.lie_mem hn
-    have hcmN := pow_toEnd_sub_smul_mem hNstab ((chi0 : H → K) x) k _ hcm
+    have hcmN := Module.End.pow_sub_smul_one_mem hNstab ((chi0 : H → K) x) k _ hcm
     -- compute the image
     have hvimage : (f ^ k) (c • v) = (c * d) • v := by
-      rw [map_smul, hf, hdef, pow_toEnd_sub_smul_apply (hv.lie_eq_smul x), smul_smul]
+      rw [map_smul, hf, hdef,
+        Module.End.pow_sub_smul_one_apply_of_apply_eq_smul (by simpa using hv.lie_eq_smul x),
+        smul_smul]
     rw [map_add, map_add, hvimage, hk, zero_add] at hcmN
     have hd : d ≠ 0 := pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm hx))
     have hcd := ih _ _ hm'mem hcmN
@@ -330,10 +302,10 @@ theorem isGreatest_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤) :
     IsGreatest {N : LieSubmodule K L M | N ≠ ⊤} (maximalSubmodule H M lam) := by
   refine ⟨?_, fun N hN => le_maximalSubmodule ?_⟩
-  · exact (notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hgen).mp
+  · exact (notMem_iff_ne_top_of_lieSpan_eq_top hgen).mp
       (notMem_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen)
   · exact (disjoint_genWeightSpace_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_top hv
-      hgen).mpr ((notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hgen).mpr hN)
+      hgen).mpr ((notMem_iff_ne_top_of_lieSpan_eq_top hgen).mpr hN)
 
 /-- A Lie submodule of a highest weight module lies in the maximal submodule exactly when it is
 proper. -/
@@ -354,7 +326,7 @@ theorem le_maximalSubmodule_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_to
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
     {N : LieSubmodule K L M} : N ≤ maximalSubmodule H M lam ↔ v ∉ N := by
   rw [le_maximalSubmodule_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen,
-    notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hgen]
+    notMem_iff_ne_top_of_lieSpan_eq_top hgen]
 
 /-- A Lie submodule of a highest weight module lies in the maximal submodule exactly when it meets
 the highest weight space trivially. -/

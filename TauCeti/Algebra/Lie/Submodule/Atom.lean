@@ -34,7 +34,7 @@ coatom statement runs the same way along the projection `LieSubmodule.Quotient.m
 * `TauCeti.lieSpan_singleton_eq_top_of_lieSpan_eq`: the generator of a cyclic Lie submodule
   generates that submodule, read as a Lie module in its own right.
 * `TauCeti.eq_top_of_mem_of_lieSpan_singleton_eq_top` and
-  `TauCeti.notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top`: a Lie submodule of a
+  `TauCeti.notMem_iff_ne_top_of_lieSpan_eq_top`: a Lie submodule of a
   cyclic Lie module is proper if and only if it misses the generator.
 * `TauCeti.lieSpan_mk_eq_top_of_lieSpan_eq_top`: the image of a generator of a cyclic Lie module
   generates the quotient.
@@ -83,7 +83,7 @@ theorem eq_top_of_mem_of_lieSpan_singleton_eq_top {N : LieSubmodule R L M} {m : 
   exact LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr hm)
 
 /-- In a cyclic Lie module, a Lie submodule is proper exactly when it misses the generator. -/
-theorem notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top
+theorem notMem_iff_ne_top_of_lieSpan_eq_top
     {v : M} (hgen : LieSubmodule.lieSpan R L {v} = ⊤) {N : LieSubmodule R L M} : v ∉ N ↔ N ≠ ⊤ := by
   constructor
   · rintro hvN rfl
