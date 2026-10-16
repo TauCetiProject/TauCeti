@@ -73,6 +73,7 @@ def loopSpace2ToMapCircle : C((X.iteratedLoopSpace 2).carrier, C(Sphere1, X.loop
 theorem loopSpace2ToMapCircle_apply (γ : (X.iteratedLoopSpace 2).carrier) :
     loopSpace2ToMapCircle X γ = (loopSpace2Homeomorph X γ).1 := by
   rw [loopSpace2ToMapCircle]
+  -- unfolding the bundled map leaves the underlying map of the based map
   rfl
 
 /-- The embedding of the double loop space in the space of maps from the circle to the loop space
@@ -92,6 +93,7 @@ def evalCircle :
 theorem evalCircle_apply (z : Sphere1) (γ : (X.iteratedLoopSpace 2).carrier) :
     evalCircle X (z, γ) = loopSpace2ToMapCircle X γ z := by
   rw [evalCircle]
+  -- unfolding the bundled map leaves evaluation of the map from the circle
   rfl
 
 variable {X} {Y : BasedTopologicalSpace.{u}}
@@ -104,6 +106,7 @@ theorem loopSpace2Homeomorph_map (f : Hom X Y) (γ : (X.iteratedLoopSpace 2).car
   apply (basedMapCircleHomeomorph Y.loopSpace).injective
   have e : f.iteratedLoopSpace 2 γ = f.loopSpace.iteratedLoopSpace 1 γ := by
     rw [Hom.iteratedLoopSpace_succ]
+    -- `Ω^[2] X` is `Ω^[1] (Ω X)` by definition of the iterate, so both maps agree
     rfl
   rw [basedMapCircleHomeomorph_map f.loopSpace, basedMapCircleHomeomorph_loopSpace2Homeomorph,
     basedMapCircleHomeomorph_loopSpace2Homeomorph, e]

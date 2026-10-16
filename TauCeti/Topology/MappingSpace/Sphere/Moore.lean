@@ -43,10 +43,10 @@ namespace TauCeti
 
 variable (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
 
-/-- **`Map(S², G)` is homotopy equivalent to `G × Ω^M(ΩG)`**, with `Ω^M(ΩG)` the Moore loops in
-the fixed-interval loop space of `G`, based at the constant loop. -/
 -- `Ω² G = (iteratedLoopSpace ⟨G, 1⟩ 2).carrier` is `Path (refl 1) (refl 1)` by the definition of
 -- the iterated loop space, so the Moore comparison for the loops at `refl 1` in `ΩG` lands in it.
+/-- **`Map(S², G)` is homotopy equivalent to `G × Ω^M(ΩG)`**, with `Ω^M(ΩG)` the Moore loops in
+the fixed-interval loop space of `G`, based at the constant loop. -/
 def sphere2GroupHomotopyEquivMoore :
     ContinuousMap.HomotopyEquiv (G × MooreLoopSpace (Path (1 : G) 1) (Path.refl 1)) C(Sphere2, G) :=
   (ContinuousMap.HomotopyEquiv.prodCongr (ContinuousMap.HomotopyEquiv.refl G)
@@ -63,6 +63,7 @@ theorem sphere2GroupHomotopyEquivMoore_apply (g : G)
       sphereGroupHomeomorphIteratedLoopSpace 2 G Sphere2.north
         (g, MooreLoopSpace.homotopyEquivPath (Path.refl (1 : G)) γ) := by
   rw [sphere2GroupHomotopyEquivMoore]
+  -- unfolding the composite of homotopy equivalences gives the displayed composite of maps
   rfl
 
 /-- The value at the north pole of the image of `(g, γ)` is `g`. -/

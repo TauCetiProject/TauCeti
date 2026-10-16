@@ -52,6 +52,8 @@ def sphereGroupHomeomorphIteratedLoopSpace :
 
 variable {k G s₀}
 
+/-- The decomposition sends `(g, γ)` to the product of the constant sphere map `g` and the based
+sphere map of the loop `γ`. -/
 @[simp]
 theorem sphereGroupHomeomorphIteratedLoopSpace_apply (g : G)
     (γ : (BasedTopologicalSpace.iteratedLoopSpace ⟨G, 1⟩ k).carrier) :
@@ -61,6 +63,7 @@ theorem sphereGroupHomeomorphIteratedLoopSpace_apply (g : G)
           s₀).symm γ).1 := by
   rw [sphereGroupHomeomorphIteratedLoopSpace, Homeomorph.trans_apply,
     mappingSpaceGroupHomeomorph_apply]
+  -- both sides are the constant map times the based sphere map of `γ`
   rfl
 
 /-- The group coordinate of the decomposition of a sphere map is its value at the basepoint. -/
@@ -80,6 +83,7 @@ theorem sphereGroupHomeomorphIteratedLoopSpace_symm_snd
       BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace k ⟨G, 1⟩ s₀
         ((mappingSpaceGroupHomeomorph s₀).symm f).2 := by
   rw [sphereGroupHomeomorphIteratedLoopSpace, Homeomorph.symm_trans_apply]
+  -- the loop coordinate is the second component of the inverse of the product decomposition
   rfl
 
 end TauCeti

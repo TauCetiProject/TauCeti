@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Trigonometric
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Geometry.Sphere.Circle
+public import TauCeti.Topology.Homotopy.Cube.Basic
 
 /-!
 # The standard parametrization of the circle
@@ -87,17 +85,11 @@ theorem exists_int_eq_add_of_cos_sin_eq {a b : ℝ} (hc : cos (2 * π * a) = cos
   have hpi : (2 * π) ≠ 0 := by positivity
   exact mul_left_cancel₀ hpi (by linarith)
 
-/-- A point of the interval `I¹` is on its boundary exactly when its coordinate is `0` or `1`. -/
-theorem mem_boundary_fin_one_iff (t : Fin 1 → I) :
-    t ∈ Cube.boundary (Fin 1) ↔ (t 0 : ℝ) = 0 ∨ (t 0 : ℝ) = 1 := by
-  simp only [Cube.boundary, Set.mem_ofPred_eq, Fin.exists_fin_one, Subtype.ext_iff,
-    Set.Icc.coe_zero, Set.Icc.coe_one]
-
 /-- The standard loop sends a point of the interval to `(1, 0)` exactly when it is an end point. -/
 @[simp]
 theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
     circleLoop t = Sphere1.east ↔ t ∈ Cube.boundary (Fin 1) := by
-  rw [mem_boundary_fin_one_iff]
+  rw [Cube.boundary_fin_one_iff]
   constructor
   · intro h
     have h0 := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
@@ -113,8 +105,8 @@ theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
       have h2' : n ≤ 1 := by exact_mod_cast h2
       omega
     rcases this with rfl | rfl
-    · exact Or.inl (by simpa using hnt.symm)
-    · exact Or.inr (by simpa using hnt.symm)
+    · exact Or.inl (Subtype.ext (by simpa using hnt.symm))
+    · exact Or.inr (Subtype.ext (by simpa using hnt.symm))
   · rintro (h | h)
     · refine Subtype.ext ?_
       ext i
@@ -137,12 +129,13 @@ theorem eq_or_of_circleLoop_eq {t t' : Fin 1 → I} (h : circleLoop t = circleLo
   have h2 : (n : ℝ) ≤ 1 := by linarith [ha.1, ha.2, hb.1, hb.2]
   have h1' : -1 ≤ n := by exact_mod_cast h1
   have h2' : n ≤ 1 := by exact_mod_cast h2
-  rw [mem_boundary_fin_one_iff, mem_boundary_fin_one_iff]
+  rw [Cube.boundary_fin_one_iff, Cube.boundary_fin_one_iff]
   have hcases : n = -1 ∨ n = 0 ∨ n = 1 := by omega
   rcases hcases with rfl | rfl | rfl
   · right
     push_cast at hn
-    refine ⟨Or.inl ?_, Or.inr ?_⟩ <;> linarith [ha.1, ha.2, hb.1, hb.2]
+    refine ⟨Or.inl (Subtype.ext ?_), Or.inr (Subtype.ext ?_)⟩ <;>
+      simp only [Set.Icc.coe_zero, Set.Icc.coe_one] <;> linarith [ha.1, ha.2, hb.1, hb.2]
   · left
     push_cast at hn
     funext i
@@ -150,7 +143,8 @@ theorem eq_or_of_circleLoop_eq {t t' : Fin 1 → I} (h : circleLoop t = circleLo
     exact Subtype.ext (by linarith)
   · right
     push_cast at hn
-    refine ⟨Or.inr ?_, Or.inl ?_⟩ <;> linarith [ha.1, ha.2, hb.1, hb.2]
+    refine ⟨Or.inr (Subtype.ext ?_), Or.inl (Subtype.ext ?_)⟩ <;>
+      simp only [Set.Icc.coe_zero, Set.Icc.coe_one] <;> linarith [ha.1, ha.2, hb.1, hb.2]
 
 /-- The standard loop is surjective. -/
 theorem circleLoop_surjective : Function.Surjective circleLoop := by

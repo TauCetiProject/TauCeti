@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 public import TauCeti.Topology.MappingSpace.Sphere.DoubleLoop
@@ -62,6 +61,13 @@ def circleLoopPairHom : cubeBoundaryPair.{0} 1 ⟶ circlePair :=
     (TopCat.ofHom (circleLoop.comp ⟨ULift.down, continuous_uliftDown⟩))
     fun t ht => Set.mem_singleton_iff.2 ((circleLoop_eq_east_iff t.down).2 ht)
 
+/-- The standard loop pair map takes a point of the cube to its image under the standard loop. -/
+@[simp]
+theorem circleLoopPairHom_fst_apply (t : (cubeBoundaryPair.{0} 1).fst) :
+    TopPair.Hom.fst circleLoopPairHom t = circleLoop t.down := by
+  rw [circleLoopPairHom]
+  exact TopPair.ofSubsetMap_fst_apply _ _ t
+
 /-- **The fundamental class of the circle**: the class of the standard loop
 `t ↦ (cos 2πt, sin 2πt)`. It is the image of the relative class of the standard `1`-simplex of the
 interval `I¹` under the loop, followed by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`
@@ -106,21 +112,9 @@ def degreeRaising :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
       (evalCircleTop X)
 
-/-- The degree-raising map is the left unitor inverse, the fundamental class of the circle, the
-homology cross product, the coefficient unitor, and the map induced by the evaluation. -/
-theorem degreeRaising_def :
-    degreeRaising R X p n h =
-      (λ_ _).inv ≫ (circleFundamentalClass R ▷ _) ≫
-        TopCat.singularHomologyCross (C := ModuleCat.{0} R) (TopCat.of Sphere1)
-          (TopCat.of (X.iteratedLoopSpace 2).carrier) (𝟙_ _) (𝟙_ _) 1 p n h ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
-          (λ_ (𝟙_ _)).hom).app _ ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
-          (evalCircleTop X) := by
-  rw [degreeRaising]
-
 variable {X} {Y : BasedTopologicalSpace.{0}}
 
+/-- Naturality of the evaluation `S¹ × Ω²X → ΩX` as a square of morphisms of topological spaces. -/
 -- Both sides are continuous maps out of the type product, which is the `TopCat` product; the
 -- equality is checked on points.
 theorem evalCircleTop_naturality (f : Hom X Y) :
