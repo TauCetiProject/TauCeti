@@ -59,6 +59,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
   at most one common point.
 * `Polygon.range_boundaryParam` and `Polygon.boundaryParam_mem_boundary`: the parametrization runs
   over the whole boundary, and stays on it.
+* `Polygon.edgeIndexAt_natCast_add` and `Polygon.periodic_edgeIndexAt`: the edge index is `i` on
+  `[i, i + 1)`, and has period `n`.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
   give the same point exactly when they agree modulo `n`.
 * `Polygon.exists_mem_Ico_boundaryParam_eq` and `Polygon.IsSimple.injOn_boundaryParam`: every
@@ -231,6 +233,20 @@ noncomputable def edgeIndexAt (t : ℝ) : Fin n :=
 theorem boundaryParam_eq_edgePath_edgeIndexAt (t : ℝ) :
     poly.boundaryParam t = poly.edgePath ℝ (edgeIndexAt n t) (Int.fract t) :=
   (rfl)
+
+/-- On `[i, i + 1)` the boundary parametrization runs along edge `i`. -/
+theorem edgeIndexAt_natCast_add (i : Fin n) {s : ℝ} (hs : s ∈ Ico (0 : ℝ) 1) :
+    edgeIndexAt n ((i : ℕ) + s) = i := by
+  rw [edgeIndexAt, Int.floor_natCast_add, Int.floor_eq_zero_iff.2 hs, add_zero, vertexIndex_natCast]
+
+/-- At time `i` the boundary parametrization starts along edge `i`. -/
+@[simp]
+theorem edgeIndexAt_natCast (i : Fin n) : edgeIndexAt n (i : ℕ) = i := by
+  simpa using edgeIndexAt_natCast_add i (s := 0) ⟨le_rfl, zero_lt_one⟩
+
+/-- The edge index has period `n`. -/
+theorem periodic_edgeIndexAt : Periodic (edgeIndexAt n) n := fun t => by
+  rw [edgeIndexAt, edgeIndexAt, Int.floor_add_natCast, vertexIndex_add_natCast_self]
 
 /-- On `[k, k + 1]` the boundary parametrization runs along the edge starting at vertex `k mod n`,
 including at the right end point, where the next edge starts at the same vertex. -/
