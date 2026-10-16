@@ -16,10 +16,10 @@ by a finitely generated ideal and which is separated and complete for that ideal
 topology is part of the data. Completeness holds for every ideal of definition, and the ring
 is Huber with the whole ring as a ring of definition.
 
-The continuity criterion uses arbitrary ideals of definition, even when those ideals are
-not finitely generated: a ring homomorphism is continuous precisely when it sends one ideal
-of definition into the radical of another. The chosen finitely generated ideal supplies
-the finite generation needed for the converse.
+The general continuity criteria in
+`TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology` apply using the chosen finitely
+generated ideal from `TauCeti.IsAdicRing.ideal_spec`. They test arbitrary ideals of definition
+and do not require completeness.
 
 ## References
 
@@ -102,27 +102,6 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 /-- Completeness of an adic ring holds for every ideal of definition. -/
 theorem isAdicComplete [IsAdicRing A] {I : Ideal A} (hI : IsAdic I) : IsAdicComplete I A :=
   ((ideal_spec A).2.1.isAdicComplete_iff_of_isAdic hI).mp (ideal_spec A).2.2
-
-/-- Continuity can be tested on arbitrary ideals of definition; they need not themselves
-be finitely generated. -/
-theorem continuous_iff_map_le_radical [IsAdicRing A] {B : Type*} [CommRing B]
-    [TopologicalSpace B] {I : Ideal A} {J : Ideal B} (hI : IsAdic I) (hJ : IsAdic J)
-    {f : A →+* B} : Continuous f ↔ I.map f ≤ J.radical := by
-  refine ⟨hI.map_le_radical_of_continuous hJ, fun hf ↦ ?_⟩
-  apply (ideal_spec A).2.1.continuous_of_map_le_radical hJ (ideal_spec A).1
-  calc
-    (ideal A).map f ≤ (ideal A).radical.map f := Ideal.map_mono Ideal.le_radical
-    _ = I.radical.map f := congrArg (Ideal.map f) ((ideal_spec A).2.1.radical_eq hI)
-    _ ≤ (I.map f).radical := Ideal.map_radical_le f
-    _ ≤ J.radical := Ideal.radical_le_radical_iff.mpr hf
-
-/-- A ring homomorphism from an adic ring is continuous exactly when it sends every
-element of an ideal of definition to a topologically nilpotent element. -/
-theorem continuous_iff_forall_isTopologicallyNilpotent [IsAdicRing A] {B : Type*} [CommRing B]
-    [TopologicalSpace B] {I : Ideal A} {J : Ideal B} (hI : IsAdic I) (hJ : IsAdic J)
-    {f : A →+* B} : Continuous f ↔ ∀ a ∈ I, IsTopologicallyNilpotent (f a) := by
-  rw [continuous_iff_map_le_radical hI hJ, Ideal.map_le_iff_le_comap]
-  simp only [IsConcreteLE.le_iff, Ideal.mem_comap, hJ.isTopologicallyNilpotent_iff_mem_radical]
 
 end IsAdic
 

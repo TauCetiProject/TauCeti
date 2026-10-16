@@ -40,6 +40,10 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
+* `IsAdic.continuous_iff_map_le_radical` and
+  `IsAdic.continuous_iff_forall_isTopologicallyNilpotent` : when the source topology has some
+  finitely generated ideal of definition, continuity can be tested on any ideals of definition,
+  without requiring completeness or finite generation of the tested ideals.
 * `IsAdic.of_radical_eq` and `Ideal.adicTopology_eq_of_radical_eq` : finitely generated ideals
   with the same radical define the same adic topology.
 * `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` : an ideal of definition is characterized by
@@ -189,6 +193,30 @@ theorem map_le_radical_of_continuous {S : Type*} [CommRing S] [TopologicalSpace 
   intro x hx
   exact hJ.isTopologicallyNilpotent_iff_mem_radical.mp
     ((hI.isTopologicallyNilpotent_of_mem hx).map hf)
+
+/-- Continuity can be tested on arbitrary ideals of definition, provided some finitely
+generated ideal defines the source topology. The tested ideals need not be finitely generated,
+and neither ring needs to be complete. -/
+theorem continuous_iff_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace S]
+    {J : Ideal S} {K : Ideal R} (hI : IsAdic I) (hJ : IsAdic J) (hK : IsAdic K)
+    (hKfg : K.FG) {f : R →+* S} : Continuous f ↔ I.map f ≤ J.radical := by
+  refine ⟨hI.map_le_radical_of_continuous hJ, fun hf ↦ ?_⟩
+  apply hK.continuous_of_map_le_radical hJ hKfg
+  calc
+    K.map f ≤ K.radical.map f := Ideal.map_mono Ideal.le_radical
+    _ = I.radical.map f := congrArg (Ideal.map f) (hK.radical_eq hI)
+    _ ≤ (I.map f).radical := Ideal.map_radical_le f
+    _ ≤ J.radical := Ideal.radical_le_radical_iff.mpr hf
+
+/-- When the source topology has a finitely generated ideal of definition, a ring homomorphism
+is continuous exactly when it sends every element of any ideal of definition to a
+topologically nilpotent element. Neither ring needs to be complete. -/
+theorem continuous_iff_forall_isTopologicallyNilpotent {S : Type*} [CommRing S]
+    [TopologicalSpace S] {J : Ideal S} {K : Ideal R} (hI : IsAdic I) (hJ : IsAdic J)
+    (hK : IsAdic K) (hKfg : K.FG) {f : R →+* S} :
+    Continuous f ↔ ∀ a ∈ I, IsTopologicallyNilpotent (f a) := by
+  rw [hI.continuous_iff_map_le_radical hJ hK hKfg, Ideal.map_le_iff_le_comap]
+  simp only [IsConcreteLE.le_iff, Ideal.mem_comap, hJ.isTopologicallyNilpotent_iff_mem_radical]
 
 /-- A ring whose topology is the `I`-adic one is also `J`-adic for every finitely generated ideal
 `J` with the same radical as the finitely generated ideal `I`: each power of either ideal contains
