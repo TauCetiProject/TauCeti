@@ -469,9 +469,10 @@ theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
     ⟨ideleCoeffEquivIdeleFormation K a, (Formation.mem_level _).2 fun u _ ↦ by
       rw [← ideleCoeffEquivIdeleFormation_smul]
       exact congrArg _ ((FixedPoints.mem_addSubgroup _ _ _).1 a.2 u)⟩
+  have ha' : ideleCoeffEquivIdeleFormation K (a : IdeleCoeff K) = a' := by
+    dsimp only [a']
   refine ⟨(ofOpenNormal V).artinCharacterCup (ideleFormation K) a' χ', ?_⟩
-  -- `a'` is `a` by its definition, so `ideleLayerCorInfl_artinCharacterCup` applies with `rfl`.
-  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχχ' a' hχ a rfl, ha,
+  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχχ' a' hχ a ha', ha,
     hχχ']
 
 open NormalLayer in
