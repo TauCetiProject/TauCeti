@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
+public import Mathlib.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -36,6 +37,8 @@ Christoffel map, which is the input of the coordinate curvature formula of
   first kind for the Levi-Civita connection of a differentiable metric on `F`.
 * `TauCeti.Manifold.leviCivitaConnection_model_space_eq_fderiv_add`: the Levi-Civita connection
   is the flat derivative plus any vector solving the Christoffel formula of the first kind.
+* `TauCeti.Manifold.leviCivitaConnection_eq_fderiv_model_space`: for the standard metric, the
+  Levi-Civita connection is the ordinary Fréchet derivative.
 
 ## References
 
@@ -159,6 +162,23 @@ theorem leviCivitaConnection_model_space_eq_fderiv_add
   have h₂ := hγ w
   simp only [map_sub, map_add, sub_apply, add_apply]
   linarith
+
+/-- For the standard Riemannian metric on a finite-dimensional real inner-product space, the
+Levi-Civita derivative is the ordinary Fréchet derivative. -/
+theorem leviCivitaConnection_eq_fderiv_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : ∀ y : F, TangentSpace (modelWithCornersSelf ℝ F) y}
+    {x : F} (hV : DifferentiableAt ℝ V x) (u : F) :
+    tangentSpaceCastModel (modelWithCornersSelf ℝ F) x
+        (leviCivitaConnection (modelWithCornersSelf ℝ F) F V x
+          ((tangentSpaceCastModel (modelWithCornersSelf ℝ F) x).symm u)) =
+      fderiv ℝ V x u := by
+  have h := leviCivitaConnection_model_space_eq_fderiv_add
+    (g := fun _ : F ↦ innerSL ℝ)
+    (fun _ _ _ ↦ rfl)
+    (differentiableAt_const (c := (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ)))
+    hV u 0 (fun w ↦ by simp)
+  simpa only [add_zero] using h
 
 end Christoffel
 

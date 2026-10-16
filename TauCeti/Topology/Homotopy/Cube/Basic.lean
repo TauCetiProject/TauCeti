@@ -96,6 +96,14 @@ theorem Cube.boundary_fin_succ_iff {n : ℕ} {y : I^(Fin (n + 1))} :
   · rintro (h | ⟨k, hk⟩)
     exacts [⟨0, h⟩, ⟨k.succ, hk⟩]
 
+open scoped Topology unitInterval in
+/-- A point of the cube `I^(Fin 1)` lies on its boundary exactly when its coordinate is `0` or
+`1`. -/
+theorem Cube.boundary_fin_one_iff {y : I^(Fin 1)} :
+    y ∈ Cube.boundary (Fin 1) ↔ y 0 = 0 ∨ y 0 = 1 := by
+  rw [Cube.boundary_fin_succ_iff]
+  simp
+
 namespace TauCeti
 
 open scoped Topology

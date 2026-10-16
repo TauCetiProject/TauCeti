@@ -13,7 +13,7 @@ import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 import Mathlib.CategoryTheory.Sites.Abelian
 import Mathlib.CategoryTheory.Sites.EpiMono
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 
 /-!
 # Transporting generating sections
