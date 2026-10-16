@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.IrreducibleBasis.Basic
-public import TauCeti.RingTheory.MvPolynomial.Discriminant
+public import TauCeti.RingTheory.MvPolynomial.Discriminant.Basic
 import TauCeti.Algebra.Polynomial.Degree.Map
 
 /-!
