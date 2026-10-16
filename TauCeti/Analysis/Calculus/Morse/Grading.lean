@@ -49,14 +49,8 @@ abbrev MorseChainPiece (f : E → ℝ) (n : ℕ) :=
 
 /-- Include chains of Morse index `n` into all Morse chains by extending their coefficients by
 zero away from index `n`. -/
-noncomputable def morseChainInclusion (n : ℕ) : MorseChainPiece f n →ₗ[ZMod 2] MorseChain f where
-  toFun := Finsupp.extendDomain
-  map_add' c d := by
-    ext p
-    by_cases hp : morseIndex f p = n <;> simp [Finsupp.extendDomain_apply, hp]
-  map_smul' a c := by
-    ext p
-    by_cases hp : morseIndex f p = n <;> simp [Finsupp.extendDomain_apply, hp]
+noncomputable def morseChainInclusion (n : ℕ) : MorseChainPiece f n →ₗ[ZMod 2] MorseChain f :=
+  Finsupp.lmapDomain (ZMod 2) (ZMod 2) Subtype.val
 
 /-- The coefficient of an included homogeneous chain is unchanged in its degree and zero in all
 other degrees. -/
@@ -64,7 +58,10 @@ other degrees. -/
 theorem morseChainInclusion_apply (n : ℕ) (c : MorseChainPiece f n) (p : MorseCriticalPoint f) :
     morseChainInclusion n c p =
       if hp : morseIndex f p = n then c ⟨p, hp⟩ else 0 := by
-  simp only [morseChainInclusion, LinearMap.coe_mk, AddHom.coe_mk, Finsupp.extendDomain_apply]
+  -- On a subtype, `mapDomain Subtype.val` is Mathlib's extension by zero.
+  have h : Finsupp.mapDomain Subtype.val c = c.extendDomain :=
+    ((Finsupp.extendDomain_eq_embDomain_subtype c).trans (Finsupp.embDomain_eq_mapDomain _ c)).symm
+  rw [morseChainInclusion, Finsupp.lmapDomain_apply, h, Finsupp.extendDomain_apply]
 
 /-- Restrict a total Morse chain to the critical points of index `n`. -/
 noncomputable def morseChainProjection (n : ℕ) : MorseChain f →ₗ[ZMod 2] MorseChainPiece f n :=
@@ -98,8 +95,8 @@ module. -/
 @[simp]
 theorem morseChainInclusion_single (n : ℕ)
     (p : {p : MorseCriticalPoint f // morseIndex f p = n}) (a : ZMod 2) :
-    morseChainInclusion n (Finsupp.single p a) = Finsupp.single p.1 a := by
-  exact Finsupp.extendDomain_single p a
+    morseChainInclusion n (Finsupp.single p a) = Finsupp.single p.1 a :=
+  Finsupp.mapDomain_single
 
 section Boundary
 
@@ -127,12 +124,8 @@ theorem morseBoundary_morseChainInclusion_apply_eq_zero_of_morseIndex_ne (n : �
   apply Finset.sum_eq_zero
   intro p _
   by_cases hp : morseIndex f p = n + 1
-  · have hcoeff : morseBoundaryCoeff hfs hf hM hcompact htr p q = 0 := by
-      by_contra hpq
-      have hind := morseIndex_eq_add_one_of_morseBoundaryCoeff_ne_zero
-        hfs hf hM hcompact htr hpq
-      omega
-    rw [hcoeff, mul_zero]
+  · rw [morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hfs hf hM hcompact htr p q
+      (by omega), mul_zero]
   · rw [morseChainInclusion_apply, dite_eq_right hp, zero_mul]
 
 /-- The Morse boundary restricted from critical points of index `n + 1` to critical points of
