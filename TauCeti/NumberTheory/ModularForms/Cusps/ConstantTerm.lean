@@ -51,6 +51,10 @@ Eisenstein series through their constant terms.
 * `ModularForm.tendsto_translate_constantTermAt`: `f ∣ γ` tends to the constant term at `i∞`.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
   `ModularForm.constantTermAt_neg`: the dependence of the constant term on the representative.
+* `ModularForm.constantTermAt_diamondOp`: diamond operators act on constant terms by left
+  multiplication of cusp representatives.
+* `ModularForm.nebentypusConstantTermSubspace`: functions on cusp representatives that
+  transform with a fixed nebentypus under `Γ₀(N)`.
 * `ModularForm.constantTermAt_eq_of_vecMul_inv_eq`: on a group containing `Γ(N)`, the constant
   term at `γ` depends only on the bottom row of `γ⁻¹` modulo `N`.
 * `ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero`: a modular form is cuspidal if
@@ -249,6 +253,69 @@ def constantTerms : ModularForm Γ k →ₗ[ℂ] SL(2, ℤ) → ℂ :=
 lemma constantTerms_apply (f : ModularForm Γ k) (γ : SL(2, ℤ)) :
     constantTerms f γ = constantTermAt γ f := by
   rw [constantTerms, LinearMap.pi_apply]
+
+/-- Applying a diamond operator to a modular form acts on its cusp constant terms by left
+multiplication of the cusp representative. The representative `g ∈ Γ₀(N)` may be any lift
+of the unit indexing the diamond operator. -/
+theorem constantTermAt_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
+    (g : ↥(CongruenceSubgroup.Gamma0 N))
+    (hg : (CongruenceSubgroup.Gamma0Map N).toHomUnits g = d) (γ : SL(2, ℤ))
+    (f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k) :
+    constantTermAt γ (diamondOp k d f) =
+      constantTermAt ((g : SL(2, ℤ)) * γ) f := by
+  rw [constantTermAt_eq_valueAtInfty, constantTermAt_eq_valueAtInfty, coe_translate,
+    coe_translate, coe_diamondOp k d g hg, map_mul, SlashAction.slash_mul]
+
+/-- The subspace of functions on cusp representatives that transform with nebentypus `chi`
+under left multiplication by `Γ₀(N)`. This is the natural codomain for the constant terms of
+forms in `M_k(N, chi)`; no right-translation or cusp-orbit relation is imposed on arbitrary
+elements of this ambient function space. -/
+def nebentypusConstantTermSubspace {N : ℕ} (chi : (ZMod N)ˣ →* ℂˣ) :
+    Submodule ℂ (SL(2, ℤ) → ℂ) where
+  carrier := {F | ∀ (g : ↥(CongruenceSubgroup.Gamma0 N)) (γ : SL(2, ℤ)),
+    F ((g : SL(2, ℤ)) * γ) = (chi ((CongruenceSubgroup.Gamma0Map N).toHomUnits g) : ℂ) * F γ}
+  zero_mem' := by simp
+  add_mem' hF hG := by
+    intro g γ
+    simp only [Pi.add_apply, hF g γ, hG g γ]
+    ring
+  smul_mem' c F hF := by
+    intro g γ
+    simp only [Pi.smul_apply, smul_eq_mul, hF g γ]
+    ring
+
+/-- Membership in the nebentypus subspace of functions on cusp representatives. -/
+@[simp]
+theorem mem_nebentypusConstantTermSubspace {N : ℕ} (chi : (ZMod N)ˣ →* ℂˣ)
+    (F : SL(2, ℤ) → ℂ) :
+    F ∈ nebentypusConstantTermSubspace chi ↔
+      ∀ (g : ↥(CongruenceSubgroup.Gamma0 N)) (γ : SL(2, ℤ)),
+        F ((g : SL(2, ℤ)) * γ) =
+          (chi ((CongruenceSubgroup.Gamma0Map N).toHomUnits g) : ℂ) * F γ :=
+  Iff.rfl
+
+/-- The cusp constant terms of a form with nebentypus `chi` transform by `chi` under left
+multiplication by `Γ₀(N)`. -/
+theorem constantTermAt_mul_left_of_mem_modFormCharSpace {N : ℕ} [NeZero N]
+    {k : ℤ} (chi : (ZMod N)ˣ →* ℂˣ)
+    {f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ modFormCharSpace k chi) (g : ↥(CongruenceSubgroup.Gamma0 N)) (γ : SL(2, ℤ)) :
+    constantTermAt ((g : SL(2, ℤ)) * γ) f =
+      (chi ((CongruenceSubgroup.Gamma0Map N).toHomUnits g) : ℂ) * constantTermAt γ f := by
+  rw [← constantTermAt_diamondOp k ((CongruenceSubgroup.Gamma0Map N).toHomUnits g) g rfl,
+    diamondOp_apply_of_mem_modFormCharSpace k chi _ hf, _root_.map_smul, smul_eq_mul]
+
+/-- All cusp constant terms of a modular form with nebentypus `chi` belong to the corresponding
+nebentypus subspace of boundary functions. -/
+theorem constantTerms_mem_nebentypusConstantTermSubspace {N : ℕ} [NeZero N]
+    {k : ℤ} (chi : (ZMod N)ˣ →* ℂˣ)
+    {f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ modFormCharSpace k chi) :
+    constantTerms f ∈ nebentypusConstantTermSubspace chi := by
+  rw [mem_nebentypusConstantTermSubspace]
+  intro g γ
+  simp only [constantTerms_apply]
+  exact constantTermAt_mul_left_of_mem_modFormCharSpace chi hf g γ
 
 /-- The common kernel of the constant-term functionals is the cusp-form submodule. -/
 theorem ker_constantTerms : LinearMap.ker (constantTerms (Γ := Γ) (k := k)) =

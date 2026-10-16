@@ -513,7 +513,7 @@ theorem dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul (hxy : x * y 
   classical
   have hseries := dividedPower_mul_of_ad_dividedPower_series (x := x)
     (d := g2Series y z w v s n)
-    (fun k => mul_g2Series hxy hxz hxw hwz hxv hxs hyz hwv hzs hws hvs n k) m
+    m (fun k _ ↦ mul_g2Series hxy hxz hxw hwz hxv hxs hyz hwv hzs hws hvs n k)
   rw [g2Series_zero] at hseries
   rw [hseries]
   simp only [mul_assoc]

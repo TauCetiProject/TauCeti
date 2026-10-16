@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.GaloisModule
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.RelativeBrauerLocalization
 
 /-!
@@ -32,9 +33,14 @@ trivial localizations are exactly the images of `H¹(G, C_L)`
 ```
 
 is exact. In particular `H¹(G, C_L)` vanishes exactly when localization is injective on the
-Brauer classes split by `L` (`subsingleton_groupCohomology_one_ideleClassRep_iff`). This reduces
-the injectivity of `Br K → ⨁_v Br K_v` (Albert–Brauer–Hasse–Noether), for the classes split by
-`L`, to the vanishing of `H¹(G, C_L)`, which comes from the fundamental inequalities.
+Brauer classes split by `L` (`subsingleton_groupCohomology_one_ideleClassRep_iff`). Since every
+Brauer class is split by some finite Galois extension, the injectivity of `Br K → ⨁_v Br K_v`
+(Albert–Brauer–Hasse–Noether) follows from the vanishing of `H¹(Gal(L/K), C_L)` for all finite
+Galois `L/K` (`brLocalization_injective_of_subsingleton_groupCohomology_one`), which comes from
+the fundamental inequalities. Equivalently, it follows from the vanishing of `H¹` on the layers
+`V ◁ G_K` of the idele-class formation `globalFormation K`
+(`brLocalization_injective_of_subsingleton_h1_globalFormation`), the form in which the fundamental
+inequalities give it.
 
 ## Main definitions
 
@@ -50,6 +56,11 @@ the injectivity of `Br K → ⨁_v Br K_v` (Albert–Brauer–Hasse–Noether), 
   a split Brauer class has trivial localizations exactly when it comes from `H¹(G, C_L)`.
 * `TauCeti.ClassFieldTheory.subsingleton_groupCohomology_one_ideleClassRep_iff`: `H¹(G, C_L) = 0`
   exactly when every Brauer class split by `L` with trivial localizations is zero.
+* `TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_groupCohomology_one`: the
+  Hasse principle `Br K ↪ ⨁_v Br K_v`, if idele-class `H¹` vanishes for every finite Galois
+  extension of `K`.
+* `TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_h1_globalFormation`: the
+  Hasse principle, if `H¹` vanishes on every layer `V ◁ G_K` of the idele-class formation.
 
 ## References
 
@@ -121,5 +132,30 @@ theorem subsingleton_groupCohomology_one_ideleClassRep_iff (σ : L →ₐ[K] Sep
   refine ⟨fun _ x ⟨c, hc⟩ ↦ ?_, fun h ↦ ⟨fun c d ↦ ideleClassToUnitsH2_injective ?_⟩⟩
   · rw [← hc, Subsingleton.elim c 0, map_zero]
   · rw [h _ ⟨c, rfl⟩, h _ ⟨d, rfl⟩]
+
+variable (K) in
+/-- **The Hasse principle for Brauer classes, from idele-class `H¹`.** If `H¹(Gal(L/K), C_L)`
+vanishes for every finite Galois extension `L/K`, then a Brauer class of `K` whose localizations
+at all places vanish is zero: `Br K → ⨁_v Br K_v` is injective. -/
+theorem brLocalization_injective_of_subsingleton_groupCohomology_one
+    (h : ∀ (L : Type) [Field L] [NumberField L] [Algebra K L] [IsGalois K L],
+      Subsingleton (groupCohomology (ideleClassRep K L) 1)) :
+    Function.Injective (brLocalization K) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  obtain ⟨E, _, _, y, rfl⟩ := exists_relBrInfl_eq x
+  have : NumberField E := NumberField.of_module_finite K E
+  have : IsGalois K E := {}
+  rw [(subsingleton_groupCohomology_one_ideleClassRep_iff E.val).1 (h E) y hx, map_zero]
+
+variable (K) in
+/-- **The Hasse principle from the vanishing of `H¹` on the idele-class formation**: if `H¹`
+vanishes on every layer `V ◁ G_K` of `globalFormation K`, then a Brauer class of `K` whose
+localizations all vanish is zero: `Br K → ⨁_v Br K_v` is injective. -/
+theorem brLocalization_injective_of_subsingleton_h1_globalFormation
+    (h : ∀ V : OpenNormalSubgroup (AbsoluteGaloisGroup K),
+      Subsingleton ((NormalLayer.ofOpenNormal V).H (globalFormation K) 1)) :
+    Function.Injective (brLocalization K) :=
+  brLocalization_injective_of_subsingleton_groupCohomology_one K fun _ _ _ _ _ ↦
+    (subsingleton_groupCohomology_ideleClassRep_iff_subsingleton_H 1).2 (h _)
 
 end TauCeti.ClassFieldTheory

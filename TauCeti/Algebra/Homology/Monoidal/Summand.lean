@@ -38,7 +38,7 @@ complexes of any shape in any monoidal preadditive category, and is stated in th
   degrees.
 
 The analogous formula for the differential of a tensor product is
-`HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/TensorDifferential.lean`.
+`HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.
 -/
 
 public section

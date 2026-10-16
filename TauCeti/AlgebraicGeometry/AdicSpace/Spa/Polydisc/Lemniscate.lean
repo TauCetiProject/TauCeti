@@ -49,6 +49,8 @@ points of the adic disc, including those of rank two.
   `X(c/p)` is the intersection of the sets `{x : x(d b) ≤ x(T - b)}`.
 * `TauCeti.ValuationSpectrum.exists_setOf_vle_eq_iUnion_closedSubdisc_and_setOf_vle_eq_iInter`:
   over an algebraically closed field, radii `d b ≠ 0` with both descriptions exist.
+* `TauCeti.ValuationSpectrum.valuation_eval₂RingHom_eq_of_forall_le`: if `x(T - b) ≤ x(T - α)`
+  for every root `α`, then `x(p) = x(u) ∏_α max (x(T - b)) (x(b - α))`.
 
 ## Implementation notes
 
@@ -116,7 +118,7 @@ private theorem valuation_eval₂RingHom_le (x : closedPolydisc 1 K) {p : Polyno
 /-- **The bound is attained at a minimising root**: if `x(T - b) ≤ x(T - α)` for every root `α`,
 then `x(T - α) = max (x(T - b)) (x(b - α))` for every root, and the bound at `b` is the value of
 the polynomial. -/
-private theorem valuation_eval₂RingHom_eq_of_forall_le (x : closedPolydisc 1 K) {p : Polynomial K}
+theorem valuation_eval₂RingHom_eq_of_forall_le (x : closedPolydisc 1 K) {p : Polynomial K}
     (hroots : Multiset.card p.roots = p.natDegree) {b : K}
     (hb : ∀ α ∈ p.roots, x.1.valuation (T - C b) ≤ x.1.valuation (T - C α)) :
     x.1.valuation (Polynomial.eval₂RingHom C T p) = x.1.valuation (C p.leadingCoeff) *

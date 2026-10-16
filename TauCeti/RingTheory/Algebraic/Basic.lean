@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Algebraic.Basic
+public import Mathlib.RingTheory.Algebraic.Integral
 
 /-!
-# Translation of transcendental elements
+# Transcendental elements under translations and algebra maps
 
 Adding a base-ring constant to a transcendental element preserves transcendence, over an
-arbitrary commutative ring and in an arbitrary ring algebra.
+arbitrary commutative ring and in an arbitrary ring algebra. So does applying an injective algebra
+homomorphism, the transcendental counterpart of Mathlib's `isAlgebraic_algHom_iff`.
+An algebraic extension of scalars also preserves transcendence in a common overfield.
 -/
 
 public section
@@ -30,5 +33,21 @@ theorem add_algebraMap (hx : Transcendental R x) (c : R) :
   apply (comp_X_add_C_eq_zero_iff (t := c)).mp
   apply hx
   simpa only [aeval_comp, map_add, aeval_X, aeval_C] using hp
+
+/-- An injective algebra homomorphism carries a transcendental element to a transcendental
+element. -/
+protected theorem algHom {B G : Type*} [Ring B] [Algebra R B] [FunLike G A B] [AlgHomClass G R A B]
+    (f : G) (hf : Function.Injective f) (hx : Transcendental R x) : Transcendental R (f x) :=
+  (isAlgebraic_algHom_iff (AlgHom.ofClass f) hf).not.mpr hx
+
+/-- An algebraic extension of scalars preserves transcendence after an embedding into a
+common overfield. -/
+theorem algebraMap_of_isAlgebraic {k k' F F' : Type*}
+    [Field k] [Field k'] [Field F] [Field F']
+    [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsAlgebraic k k'] {x : F}
+    (hx : Transcendental k x) : Transcendental k' (algebraMap F F' x) :=
+  (Algebra.IsAlgebraic.transcendental_iff k k').1
+    ((transcendental_algebraMap_iff (algebraMap F F').injective).2 hx)
 
 end Transcendental

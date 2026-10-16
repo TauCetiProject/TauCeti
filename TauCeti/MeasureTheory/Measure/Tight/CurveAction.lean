@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Tight.ContinuousMap
 import TauCeti.Analysis.Normed.Lp.AscoliCounterexample
+import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
-# Tightness of laws of curves with bounded expected action
+# Tightness and closedness of laws of curves with bounded expected action
 
 Let `1 < p`. By the Hölder estimate
 `d(γ s, γ t) ^ p ≤ |t - s| ^ (p - 1) * A_p(γ)`
@@ -28,7 +30,10 @@ tightness criterion `TauCeti.isTightMeasureSet_of_map_eval_of_continuity_modulus
 time marginals of `S` at a dense set of times are tight and the pseudometric space `X` is
 complete, then `S` is tight.
 This is the compactness step for laws of random curves of finite action, for instance in the
-superposition principle for absolutely continuous curves of probability measures.
+superposition principle for absolutely continuous curves of probability measures. The bound on the
+expected action also passes to weak limits: the probability measures concentrated on absolutely
+continuous paths with `∫ A_p dP ≤ C < ∞` form a weakly closed set, because the action extended by
+`∞` off the absolutely continuous paths is lower semicontinuous on `C([a, b], X)`.
 
 The action bound supplies only the modulus of continuity. It does not control where the curves
 are, so on a carrier that is not proper the tightness of the time marginals remains a separate
@@ -55,6 +60,9 @@ and still move, like the Cantor function.
 * `isTightMeasureSet_of_map_eval_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le`:
   tight time marginals, almost surely absolutely continuous paths and a uniformly bounded expected
   action give tightness.
+* `TauCeti.isClosed_setOfPred_ae_absolutelyContinuousOnInterval_and_lintegral_le`: the laws
+  concentrated on absolutely continuous paths with expected action at most `C < ∞` form a weakly
+  closed set, for `1 < p`.
 * `TauCeti.exists_lintegral_curveAction_le_one_not_isTightMeasureSet`: the bound on the expected
   action alone does not give tightness.
 
@@ -226,6 +234,37 @@ theorem isTightMeasureSet_of_map_eval_of_absolutelyContinuousOnInterval_of_linte
   isTightMeasureSet_of_map_eval_of_continuity_modulus hD h_eval
     (exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le
       hab hp hC hAC hA)
+
+/-- **Closedness of the laws of bounded expected action.** For `1 < p` and `C ≠ ∞`, the
+probability measures on `C([a, b], X)` that are concentrated on paths absolutely continuous on
+`[a, b]` and have expected `p`-action at most `C` form a closed set for the weak topology. -/
+theorem isClosed_setOfPred_ae_absolutelyContinuousOnInterval_and_lintegral_le (hab : a ≤ b)
+    (hp : 1 < p) {C : ℝ≥0∞} (hC : C ≠ ∞) :
+    IsClosed {P : ProbabilityMeasure C(Icc a b, X) |
+      (∀ᵐ γ : C(Icc a b, X) ∂(P : Measure C(Icc a b, X)),
+        AbsolutelyContinuousOnInterval (IccExtend hab γ) a b) ∧
+        ∫⁻ γ, curveAction p (IccExtend hab γ) a b ∂(P : Measure C(Icc a b, X)) ≤ C} := by
+  classical
+  -- The action extended by `∞` off the absolutely continuous paths is lower semicontinuous.
+  set F : C(Icc a b, X) → ℝ≥0∞ := fun γ ↦
+    if AbsolutelyContinuousOnInterval (IccExtend hab γ) a b then curveAction p (IccExtend hab γ) a b
+    else ∞
+  have hF : LowerSemicontinuous F := by
+    refine lowerSemicontinuous_iff_isClosed_preimage.2 fun y ↦ ?_
+    rcases eq_or_ne y ∞ with rfl | hy
+    · simp
+    · convert isClosed_setOfPred_absolutelyContinuousOnInterval_and_curveAction_le hab hp hy using 1
+      ext γ
+      by_cases h : AbsolutelyContinuousOnInterval (IccExtend hab γ) a b <;> simp [F, h, hy]
+  have hAF (γ : C(Icc a b, X)) : curveAction p (IccExtend hab γ) a b ≤ F γ := by
+    by_cases h : AbsolutelyContinuousOnInterval (IccExtend hab γ) a b <;> simp [F, h]
+  convert isClosed_setOfPred_lintegral_le_probabilityMeasure hF C using 1
+  ext P
+  refine ⟨fun ⟨hAC, hle⟩ ↦ ?_, fun hle ↦ ⟨?_, (lintegral_mono hAF).trans hle⟩⟩
+  · exact (lintegral_congr_ae (hAC.mono fun γ h ↦ by simp [F, h])).trans_le hle
+  · filter_upwards [ae_lt_top hF.measurable (ne_top_of_le_ne_top hC hle)] with γ hγ
+    by_contra h
+    simp [F, h] at hγ
 
 /-- **A bounded expected action does not give tightness.** The Dirac masses at the curves
 `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors `eₙ` of `ℓ²` are concentrated on

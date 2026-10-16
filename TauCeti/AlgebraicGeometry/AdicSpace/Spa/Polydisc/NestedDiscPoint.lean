@@ -8,8 +8,6 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Classification
-
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Group.Ultra
 
@@ -66,6 +64,9 @@ exactly the points at which `b ↦ x(T - b)` attains no minimum.
 The support of `η` is not computed here, and the points at which `b ↦ x(T - b)` attains a minimum
 are not sorted into Wedhorn's types here.
 
+The complete five-type classification is proved in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Classification`.
+
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.nestedDiscValuation`: the infimum of the Gauss norms on a decreasing
@@ -79,6 +80,8 @@ are not sorted into Wedhorn's types here.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc_iff`: `η` lies in `D(b, |d|)`
   exactly when `d ≠ 0` and `inf_n max(‖cₙ‖, ‖aₙ - b‖) ≤ ‖d‖`; in particular
   `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc`, `η` lies in every `D(aₙ, |cₙ|)`.
+* `TauCeti.ValuationSpectrum.mem_closedSubdisc_of_nestedDiscPoint_specializes`: when the discs
+  have no common point in `K`, every specialization of `η` lies in every defining disc.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_eq_discPoint_iff`: `η = η_{b,s}` exactly when `b`
   lies in every disc and `s` is the infimum of the radii.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_ne_classicalPoint`,
@@ -88,6 +91,8 @@ are not sorted into Wedhorn's types here.
   point in `K`, `η` is none of the points of types (1), (2), (3), or (5).
 * `TauCeti.ValuationSpectrum.not_exists_forall_nestedDiscPoint_vle`: when the discs have no common
   point in `K`, `b ↦ η(T - b)` attains no minimum.
+The recognition theorems below live in `Polydisc.Classification`:
+
 * `TauCeti.ValuationSpectrum.eq_nestedDiscPoint_iff`: over an algebraically closed `K`, when the
   discs have no common point, `η` is the only point lying in every `D(aₙ, |cₙ|)`.
 * `TauCeti.ValuationSpectrum.exists_eq_nestedDiscPoint_iff`: over an algebraically closed `K`, the
@@ -293,6 +298,19 @@ theorem nestedDiscPoint_mem_closedSubdisc (n : ℕ) :
     ⟨(ciInf_le ⟨0, Set.forall_mem_range.mpr fun _ ↦ (norm_nonneg _).trans (le_max_left _ _)⟩
       n).trans (by simp), hc₀ n⟩
 
+/-- Every specialization of a nested-disc point with no common field-valued centre remains
+in every defining disc. -/
+theorem mem_closedSubdisc_of_nestedDiscPoint_specializes (a c : ℕ → K)
+    (ha : ∀ n, ‖a n‖ ≤ 1) (hc₀ : ∀ n, c n ≠ 0) (hc₁ : ∀ n, ‖c n‖ ≤ 1)
+    (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
+    (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖)
+    (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) {x : closedPolydisc 1 K}
+    (hx : nestedDiscPoint a ha c hc₀ hc₁ hac hcc ⤳ x) (n : ℕ) :
+    x ∈ closedSubdisc (a n) (c n) := by
+  have hclosed := isClosed_iInter_closedSubdisc_of_no_common_point a c hac hcc hempty
+  exact Set.mem_iInter.mp (hx.mem_closed hclosed (Set.mem_iInter.mpr
+    (nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc))) n
+
 /-! ### Comparison with the other points of the disc -/
 
 /-- If `b` lies in every disc and the radii have a positive infimum `ρ`, the valuation of the discs
@@ -450,39 +468,5 @@ theorem not_exists_forall_nestedDiscPoint_vle (hempty : ∀ b : K, ∃ n, ‖c n
   rw [norm_sub_rev] at h'
   exact hn.not_ge h'
 
-/-- **With no common point of the discs in `K`, the point is the only point lying in all of them**,
-over an algebraically closed field: a point `x` of the closed unit disc is `η` if and only if
-`x ∈ D(aₙ, |cₙ|)` for every `n`. These are the points of type (4) in Wedhorn's Example 7.57. -/
-theorem eq_nestedDiscPoint_iff [IsAlgClosed K] (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖)
-    (x : closedPolydisc 1 K) :
-    x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc ↔ ∀ n, x ∈ closedSubdisc (a n) (c n) := by
-  refine ⟨fun h n ↦ h ▸ nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n,
-    fun hx ↦ eq_of_forall_valuation_weightedX_sub_weightedC_eq fun b ↦ ?_⟩
-  -- a disc `D(aₙ, |cₙ|)` avoiding `b` makes both points take the value of `aₙ - b` on `T - b`
-  obtain ⟨n, hn⟩ := hempty b
-  refine ⟨a n - b, sub_ne_zero.mpr fun h ↦ ?_,
-    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc (hx n) hn,
-    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc
-      (nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n) hn⟩
-  rw [h, sub_self, norm_zero] at hn
-  exact (norm_nonneg _).not_gt hn
-
-/-! ### Points without a minimum on linear polynomials -/
-
-/-- **The points of type (4) of the closed unit disc**, over an algebraically closed complete
-nonarchimedean field: a point `x` is the point attached to a decreasing sequence of discs with no
-common point in `K` if and only if `b ↦ x(T - b)` attains no minimum. -/
-theorem exists_eq_nestedDiscPoint_iff [IsAlgClosed K] (x : closedPolydisc 1 K) :
-    (∃ (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1) (c : ℕ → K) (hc₀ : ∀ n, c n ≠ 0)
-      (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
-      (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
-      (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc) ↔
-    ¬ ∃ a₀ : K, ∀ b : K, x.1.toValuativeRel.vle (T - C a₀) (T - C b) := by
-  refine ⟨fun ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty, hx⟩ ↦ ?_, fun hmin ↦ ?_⟩
-  · subst hx
-    exact not_exists_forall_nestedDiscPoint_vle ha hc₀ hc₁ hac hcc hempty
-  obtain ⟨a, c, ha, hc₀, hc₁, hac, hcc, hempty, hx⟩ := exists_forall_mem_closedSubdisc hmin
-  exact ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty,
-    (eq_nestedDiscPoint_iff ha hc₀ hc₁ hac hcc hempty x).mpr hx⟩
 
 end TauCeti.ValuationSpectrum

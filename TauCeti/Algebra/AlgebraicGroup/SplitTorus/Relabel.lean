@@ -232,17 +232,17 @@ noncomputable instance isIso_relabel (τ : Equiv.Perm sigma) :
 
 /-- The relabelling automorphism of the split torus, bundled as an isomorphism. -/
 noncomputable def relabelIso (τ : Equiv.Perm sigma) : Aut (groupScheme R sigma) :=
-  asIso (relabel R τ)
+  .of (asIso (relabel R τ))
 
 @[simp]
 theorem relabelIso_hom (τ : Equiv.Perm sigma) :
-    (relabelIso (sigma := sigma) R τ).hom = relabel R τ :=
+    (relabelIso (sigma := sigma) R τ).asIso.hom = relabel R τ :=
   by simp [relabelIso]
 
 /-- The inverse of the bundled relabelling is relabelling by the inverse permutation. -/
 @[simp]
 theorem relabelIso_inv (τ : Equiv.Perm sigma) :
-    (relabelIso (sigma := sigma) R τ).inv = relabel R τ⁻¹ := by
+    (relabelIso (sigma := sigma) R τ).asIso.inv = relabel R τ⁻¹ := by
   rw [relabelIso, asIso_inv]
   symm
   apply IsIso.eq_inv_of_hom_inv_id
@@ -252,15 +252,17 @@ theorem relabelIso_inv (τ : Equiv.Perm sigma) :
 @[simp]
 theorem relabelIso_mul (τ ν : Equiv.Perm sigma) :
     relabelIso (sigma := sigma) R (τ * ν) = relabelIso R ν * relabelIso R τ := by
+  apply Aut.ext
   apply Iso.ext
-  rw [relabelIso_hom, CategoryTheory.Aut.Aut_mul_def]
+  rw [relabelIso_hom, Aut.mul_asIso]
   -- The `hom` of `Iso.trans` is its categorical composite by definition.
-  change relabel R (τ * ν) = (relabelIso R τ).hom ≫ (relabelIso R ν).hom
+  change relabel R (τ * ν) = (relabelIso R τ).asIso.hom ≫ (relabelIso R ν).asIso.hom
   rw [relabelIso_hom, relabelIso_hom, relabel_comp]
 
 /-- Bundled relabelling by the identity permutation is the identity automorphism. -/
 @[simp]
 theorem relabelIso_one : relabelIso (sigma := sigma) R 1 = 1 := by
+  apply Aut.ext
   apply Iso.ext
   rw [relabelIso_hom, relabel_one]
   rfl
@@ -269,7 +271,7 @@ theorem relabelIso_one : relabelIso (sigma := sigma) R 1 = 1 := by
 permutation power. -/
 @[simp]
 theorem relabelIso_pow_hom (τ : Equiv.Perm sigma) (m : ℕ) :
-    ((relabelIso (sigma := sigma) R τ) ^ m).hom = relabel R (τ ^ m) := by
+    ((relabelIso (sigma := sigma) R τ) ^ m).asIso.hom = relabel R (τ ^ m) := by
   induction m with
   | zero =>
       rw [pow_zero, pow_zero, relabel_one]
@@ -277,7 +279,7 @@ theorem relabelIso_pow_hom (τ : Equiv.Perm sigma) (m : ℕ) :
   | succ m ih =>
       rw [pow_succ]
       -- Powers in `Aut` reduce definitionally to reverse categorical composition on homs.
-      change relabel R τ ≫ ((relabelIso R τ) ^ m).hom = _
+      change relabel R τ ≫ ((relabelIso R τ) ^ m).asIso.hom = _
       rw [ih, relabel_comp, ← pow_succ']
 
 /-- On scheme-valued points, relabelling sends a coordinate tuple `d` to `d ∘ τ`. -/

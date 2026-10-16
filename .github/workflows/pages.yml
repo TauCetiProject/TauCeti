@@ -334,9 +334,9 @@ jobs:
           }
 
       # TauCetiCI records every Actions run in the organisation and publishes a SQLite database
-      # daily; the CI page's fleet timelines are drawn from it. The release is public, so the
+      # after collection; the CI charts use independent source coverage. The release is public, so the
       # download needs no credentials beyond the token gh wants to have.
-      - name: Regenerate the CI fleet charts into static_files
+      - name: Regenerate the CI charts into static_files
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -344,8 +344,8 @@ jobs:
           python3 scripts/ci_stats_graphs.py --download --db "$RUNNER_TEMP/ci.sqlite" \
             --out-dir web/static_files \
           || {
-            echo "::warning::CI chart generation failed; keeping the last published SVGs"
-            echo "CI fleet charts" >> "$RUNNER_TEMP/data-failures"
+            echo "::warning::Some CI chart groups are stale or failed; dated daily charts refresh through their coverage, other stale groups retain their previous SVGs; see static/ci-freshness.json for errors"
+            echo "CI chart groups (see static/ci-freshness.json)" >> "$RUNNER_TEMP/data-failures"
           }
 
       # Every background generator is marked done once it has exited, killed by its timeout at

@@ -35,6 +35,8 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 * `TauCeti.isSolvable_prod_iff`: `G × H` is solvable if and only if both `G` and `H` are.
 * `Group.IsSolvable.exists_normal_index_prime`: a nontrivial finite solvable group has a normal
   subgroup of prime index.
+* `Subgroup.exists_normal_le_index_prime`: a proper normal subgroup with finite solvable
+  quotient lies in a normal subgroup of prime index.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -85,6 +87,17 @@ theorem _root_.Group.IsSolvable.exists_normal_index_prime (G : Type*) [Group G] 
   have := Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr hle
   exact ⟨M, inferInstance,
     M.index_eq_card ▸ Group.is_simple_iff_prime_card.mp (Group.isSimpleGroup_of_isCoatom hM)⟩
+
+/-- A proper normal subgroup with finite solvable quotient lies in a normal subgroup of prime
+index: the preimage of a normal subgroup of prime index of the quotient. -/
+theorem _root_.Subgroup.exists_normal_le_index_prime {G : Type*} [Group G] (H : Subgroup G)
+    [H.Normal] [Finite (G ⧸ H)] [Group.IsSolvable (G ⧸ H)] (hH : H ≠ ⊤) :
+    ∃ N : Subgroup G, N.Normal ∧ H ≤ N ∧ N.index.Prime := by
+  have : Nontrivial (G ⧸ H) := QuotientGroup.nontrivial_iff.mpr hH
+  obtain ⟨N, hN, hp⟩ := Group.IsSolvable.exists_normal_index_prime (G ⧸ H)
+  refine ⟨N.comap (QuotientGroup.mk' H), hN.comap _,
+    (QuotientGroup.ker_mk' H).ge.trans (MonoidHom.ker_le_comap _ _), ?_⟩
+  rwa [Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective H)]
 
 universe u v
 
