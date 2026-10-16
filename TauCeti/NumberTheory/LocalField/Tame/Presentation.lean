@@ -65,7 +65,7 @@ surjection is an isomorphism.
   isomorphism (`TauCeti.eq_tameQuotientEquiv`).
 * `TauCeti.iwasawaCoordinate_tameQuotientEquiv`: the coordinate of the presented group is the
   unramified coordinate `G_K^t → ℤ̂`.
-* `TauCeti.map_tameQuotientEquiv_inertiaSubgroup`,
+* `TauCeti.map_tameQuotientEquiv_tameInertia`,
   `TauCeti.IsArithFrobeniusLift.inv_iwasawaSigma_mul_tameQuotientEquiv_mem`: whatever the
   marking, tame inertia goes to `⟨⟨τ⟩⟩` and every Frobenius lift to the coset `σ ⟨⟨τ⟩⟩`.
 * `TauCeti.nonempty_continuousMulEquiv_iwasawaGroup`: `G_K^t ≅ ⟨σ, τ | σ τ σ⁻¹ = τ ^ q⟩`.
@@ -460,8 +460,8 @@ theorem iwasawaCoordinate_tameQuotientEquiv (x : tameQuotient K) :
 
 /-- **The image of tame inertia** under the marked isomorphism is the closed normal closure
 `⟨⟨τ⟩⟩` of the marked generator `τ`, whatever the choice of `σ` and `τ`. -/
-theorem map_tameQuotientEquiv_inertiaSubgroup :
-    ((inertiaSubgroup K).map (toTameQuotient K).toMonoidHom).map
+theorem map_tameQuotientEquiv_tameInertia :
+    (tameInertia K).map
         ((tameQuotientEquiv hσ τ hτ : tameQuotient K ≃* IwasawaGroup K) :
           tameQuotient K →* IwasawaGroup K) =
       (Subgroup.normalClosure {iwasawaTau K}).topologicalClosure := by
