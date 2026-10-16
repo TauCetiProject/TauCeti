@@ -62,6 +62,8 @@ monodromy action `IsCoveringMap.fundamentalGroupMulAction` a left action.
   `TauCeti.GenLoop.exists_homotopyAlong_iff_exists_homotopic_transport`, which reads free
   homotopy as transport up to based homotopy.
 * `TauCeti.fundamentalGroup_smul_eq_self`: on a simply connected space the action is trivial.
+* `TauCeti.one_mem_orbit_of_forall_mem_of_nullhomotopic`: a generalized loop staying in a set
+  whose inclusion is null-homotopic is freely homotopic to the constant loop.
 
 ## References
 
@@ -354,5 +356,35 @@ interpretation with the distinguished point restricted to the path component of 
 theorem fundamentalGroup_smul_eq_self [Subsingleton (FundamentalGroup X x)]
     (γ : FundamentalGroup X x) (a : HomotopyGroup N X x) : γ • a = a := by
   rw [Subsingleton.elim γ 1, one_smul]
+
+/-- A generalized loop staying in a set whose inclusion is null-homotopic is freely homotopic to
+the constant loop: the identity class lies in the orbit of its class. Composing the loop with a
+null-homotopy of the inclusion moves the whole cube boundary along the single path traced by
+the base point. -/
+theorem one_mem_orbit_of_forall_mem_of_nullhomotopic [Nonempty N] [DecidableEq N] {s : Set X}
+    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtype_val).Nullhomotopic)
+    (p : Ω^ N X x) (hp : ∀ z, p z ∈ s) :
+    (1 : HomotopyGroup N X x) ∈
+      MulAction.orbit (α := HomotopyGroup N X x) (FundamentalGroup X x) ⟦p⟧ := by
+  obtain ⟨c, ⟨G⟩⟩ := hs
+  have hx : x ∈ s := _root_.GenLoop.boundary p 0 zero_mem_cubeBoundary ▸ hp 0
+  let γ : Path x c := (G.evalAt ⟨x, hx⟩).cast rfl rfl
+  let Hforward : GenLoop.HomotopyAlong γ p (_root_.GenLoop.const : Ω^ N X c) := {
+    toFun := fun tz => G (tz.1, ⟨p tz.2, hp tz.2⟩)
+    continuous_toFun := by fun_prop
+    map_zero_left := fun z => G.apply_zero ⟨p z, hp z⟩
+    map_one_left := fun z => G.apply_one ⟨p z, hp z⟩
+    map_boundary := fun t z hz =>
+      congrArg (fun w => G (t, w)) (Subtype.ext (_root_.GenLoop.boundary p z hz)) }
+  let Hback : GenLoop.HomotopyAlong γ.symm (_root_.GenLoop.const : Ω^ N X c)
+      (_root_.GenLoop.const : Ω^ N X x) := {
+    toFun := fun tz => γ.symm tz.1
+    continuous_toFun := by fun_prop
+    map_zero_left := fun _ => γ.symm.source
+    map_one_left := fun _ => γ.symm.target
+    map_boundary := fun _ _ _ => rfl }
+  rw [_root_.HomotopyGroup.one_def]
+  exact (homotopyGroup_mem_orbit_iff_exists_homotopyAlong rfl rfl).2
+    ⟨γ.trans γ.symm, ⟨Hforward.trans Hback⟩⟩
 
 end TauCeti
