@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Polynomial.Norm
+public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Data.Nat.Choose.Bounds
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Data.Nat.Choose.Vandermonde
@@ -13,7 +14,10 @@ import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
 /-!
-# Coefficient sup norms of polynomial products
+# Basic coefficient sup-norm estimates
+
+Reversal preserves the coefficient sup norm. Multiplication by a constant scales
+it when the coefficient norm is multiplicative.
 
 A coefficient of a finite product is bounded by its binomial weight in the sum of
 the degrees times the product of the coefficient sup norms. Consequently the sup
@@ -33,6 +37,18 @@ public section
 open Polynomial
 
 namespace TauCeti
+
+/-- Reversing a polynomial preserves its coefficient sup norm. -/
+@[simp]
+theorem _root_.Polynomial.supNorm_reverse {R : Type*} [SeminormedRing R] (p : R[X]) :
+    p.reverse.supNorm = p.supNorm := by
+  apply le_antisymm
+  · obtain ⟨i, hi⟩ := p.reverse.exists_eq_supNorm
+    rw [hi, coeff_reverse]
+    exact p.le_supNorm _
+  · obtain ⟨i, hi⟩ := p.exists_eq_supNorm
+    rw [hi]
+    simpa only [coeff_reverse, revAt_invol] using p.reverse.le_supNorm (revAt p.natDegree i)
 
 /-- A coefficient is bounded by its binomial weight times the coefficient sup norm. -/
 theorem _root_.Polynomial.norm_coeff_le_choose_mul_supNorm {A : Type*} [SeminormedRing A]
@@ -103,5 +119,17 @@ theorem _root_.Polynomial.supNorm_prod_le_two_pow_mul_prod_supNorm
     refine mul_le_mul_of_nonneg_right ?_
       (Finset.prod_nonneg fun i _ ↦ (f i).supNorm_nonneg)
     exact_mod_cast Nat.choose_le_two_pow _ _
+
+/-- Multiplication by a constant scales the coefficient sup norm when the
+coefficient norm is multiplicative. -/
+@[simp]
+theorem _root_.Polynomial.supNorm_mul_C {A : Type*} [SeminormedRing A] [NormMulClass A]
+    (p : A[X]) (a : A) : (p * C a).supNorm = p.supNorm * ‖a‖ := by
+  apply le_antisymm
+  · obtain ⟨i, hi⟩ := (p * C a).exists_eq_supNorm
+    rw [hi, coeff_mul_C, norm_mul]
+    exact mul_le_mul_of_nonneg_right (p.le_supNorm i) (norm_nonneg a)
+  · obtain ⟨i, hi⟩ := p.exists_eq_supNorm
+    simpa only [coeff_mul_C, norm_mul, ← hi] using (p * C a).le_supNorm i
 
 end TauCeti

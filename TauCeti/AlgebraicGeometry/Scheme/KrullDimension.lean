@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Morphisms.Preimmersion
 public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.RingTheory.KrullDimension.Equidimensional
-public import TauCeti.Topology.KrullDimension
+public import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Krull dimension of schemes and extension of the base field

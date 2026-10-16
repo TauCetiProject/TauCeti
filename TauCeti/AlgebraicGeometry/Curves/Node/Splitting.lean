@@ -47,7 +47,7 @@ theorem exists_split_singularLocus {K : Type u} [Field K]
         (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
           (Spec.algebraMap K L)),
         letI : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of L)) :=
-          (hnodal.of_isPullback H).syntomic
+          (MorphismProperty.of_isPullback H hnodal).syntomic
         Nonempty (Over.mk ((X'.singularLocus L).subschemeι ≫ (X' ↘ Spec (.of L))) ≅
           Over.mk (Spec.algebraMap L (Fin n → L))) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
@@ -60,7 +60,7 @@ theorem exists_split_singularLocus {K : Type u} [Field K]
   refine ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, n, ?_⟩
   intro X' _ g H
   have : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of L)) :=
-    (hnodal.of_isPullback H).syntomic
+    (MorphismProperty.of_isPullback H hnodal).syntomic
   have Hsing := Scheme.isPullback_singularLocus_subschemeι H
   have Hbase := Hsing.flip.paste_vert H
   let e' : Over.mk ((X'.singularLocus L).subschemeι ≫ (X' ↘ Spec (.of L))) ≅

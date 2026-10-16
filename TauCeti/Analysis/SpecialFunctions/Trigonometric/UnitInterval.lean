@@ -16,7 +16,7 @@ positive on its interior.
 
 ## Main declarations
 
-* `TauCeti.cos_pi_mul_injOn`: `t ↦ cos (π t)` is injective on `I`.
+* `TauCeti.cos_pi_mul_injective`: `t ↦ cos (π t)` is injective on `I`.
 * `TauCeti.sin_pi_mul_pos`: `sin (π t) > 0` for `t ∈ I` different from `0` and `1`.
 -/
 
@@ -28,8 +28,8 @@ open scoped unitInterval
 namespace TauCeti
 
 /-- `t ↦ cos (π t)` is injective on the unit interval. -/
-theorem cos_pi_mul_injOn : Set.InjOn (fun t : I => cos (π * t)) Set.univ := by
-  intro a _ b _ h
+theorem cos_pi_mul_injective : Function.Injective (fun t : I => cos (π * t)) := by
+  intro a b h
   refine Subtype.ext (mul_left_cancel₀ pi_ne_zero (Real.injOn_cos ?_ ?_ h))
   · exact ⟨by positivity [a.2.1], mul_le_of_le_one_right pi_pos.le a.2.2⟩
   · exact ⟨by positivity [b.2.1], mul_le_of_le_one_right pi_pos.le b.2.2⟩

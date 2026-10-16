@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Diagonal
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Basic
 
 /-!

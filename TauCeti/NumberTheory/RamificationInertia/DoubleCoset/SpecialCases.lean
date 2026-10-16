@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.FixedField
 import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 
 /-!
@@ -13,7 +15,8 @@ import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 
 Let `M / K` be a finite Galois extension of number fields with group `G`, let `Q` be a prime of
 `𝓞 M` above a prime `p` of `𝓞 K`, with decomposition group `D`, and let `H` be a subgroup of `G`
-with fixed field `E = M ^ H`. The double coset law (`Ideal.doubleCosetQuotientEquivPrimesOver`)
+with fixed field `E = M ^ H`. The canonical invariant-ring double coset law
+(`Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant`)
 indexes the primes of `𝓞 E` above `p` by `H \ G / D`, the class of `σ` naming `σ Q ∩ 𝓞 E`.
 This file reads the law off at the subgroups where the double cosets are explicit.
 
@@ -33,7 +36,7 @@ This file reads the law off at the subgroups where the double cosets are explici
   is `1` as soon as `D ≤ H` (`Ideal.inertiaDeg_under_fixedField_eq_one_of_stabilizer_le`), and
   the primes of `𝓞 M` with the
   same contraction to `𝓞 E` as `Q` form the `H`-orbit of `Q`, which is `{Q}` as soon as `H ≤ D`
-  (`Ideal.primesOver_under_fixedField_eq_singleton_of_le_stabilizer`). These are the
+  (`Ideal.primesOver_under_eq_singleton_of_le_stabilizer`). These are the
   double-coset counterparts of the Hilbert-theory statements for an abstract decomposition field,
   Tau Ceti's `TauCeti.IsDecompositionField.ramificationIdx_under_eq_one` and
   `TauCeti.IsDecompositionField.inertiaDeg_under_eq_one`, and Mathlib's
@@ -80,9 +83,10 @@ variable {K M : Type*} [Field K] [NumberField K] [Field M] [NumberField M] [Alge
 /-- The double coset law sends the identity double coset of `H \ G / D` to the contraction
 `Q ∩ 𝓞 (M ^ H)`. -/
 theorem doubleCosetQuotientEquivPrimesOver_mk_one (H : Subgroup (M ≃ₐ[K] M)) :
-    (doubleCosetQuotientEquivPrimesOver p Q H (DoubleCoset.mk H _ 1) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
+      (DoubleCoset.mk H _ 1) :
         Ideal (𝓞 ↥(fixedField H))) = Q.under (𝓞 ↥(fixedField H)) := by
-  rw [doubleCosetQuotientEquivPrimesOver_mk, one_smul]
+  rw [doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk, one_smul]
 
 /-- **A single prime above `p` in a subfield.** For a subgroup `H` of `G = Gal(M/K)` and the
 decomposition group `D` of a prime `Q` of `𝓞 M` above `p`, if `H D = G` then `Q ∩ 𝓞 (M ^ H)` is
@@ -91,7 +95,8 @@ theorem primesOver_fixedField_eq_singleton_of_mul_eq_univ {H : Subgroup (M ≃�
     (h : (H : Set (M ≃ₐ[K] M)) * (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)) = Set.univ) :
     p.primesOver (𝓞 ↥(fixedField H)) = {Q.under (𝓞 ↥(fixedField H))} := by
   have := (TauCeti.subsingleton_doubleCosetQuotient_iff _ _).2 h
-  have := (doubleCosetQuotientEquivPrimesOver p Q H).symm.subsingleton
+  have :=
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))).symm.subsingleton
   rw [← doubleCosetQuotientEquivPrimesOver_mk_one p Q H]
   exact Set.eq_singleton_iff_unique_mem.2 ⟨Subtype.prop _, fun 𝔮 h𝔮 ↦
     Subtype.ext_iff.1 (Subsingleton.elim (⟨𝔮, h𝔮⟩ : p.primesOver _) _)⟩
@@ -102,7 +107,8 @@ and the decomposition group `D` of a prime `Q` of `𝓞 M` above `p`, there is e
 theorem card_primesOver_fixedField_eq_one_iff (H : Subgroup (M ≃ₐ[K] M)) :
     Nat.card (p.primesOver (𝓞 ↥(fixedField H))) = 1 ↔
       (H : Set (M ≃ₐ[K] M)) * (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)) = Set.univ := by
-  rw [← card_doubleCosetQuotient_eq_card_primesOver p Q H, Nat.card_eq_one_iff_unique,
+  rw [← Nat.card_congr (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))),
+    Nat.card_eq_one_iff_unique,
     TauCeti.subsingleton_doubleCosetQuotient_iff]
   exact and_iff_left ⟨DoubleCoset.mk H _ 1⟩
 
@@ -136,7 +142,8 @@ theorem card_primesOver_fixedField_top_eq_one [p.IsPrime] :
 decomposition group of `Q`, the prime of the decomposition field `M ^ D` named by the identity
 double coset, namely `Q ∩ 𝓞 (M ^ D)`, has ramification index `1` over `p`. -/
 theorem ramificationIdx_doubleCosetQuotientEquivPrimesOver_stabilizer_mk_one_eq_one :
-    (doubleCosetQuotientEquivPrimesOver p Q (stabilizer (M ≃ₐ[K] M) Q) (DoubleCoset.mk _ _ 1) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p (stabilizer (M ≃ₐ[K] M) Q)
+      (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q))) (DoubleCoset.mk _ _ 1) :
         Ideal (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q)))).ramificationIdx (𝓞 K) = 1 := by
   rw [doubleCosetQuotientEquivPrimesOver_mk_one, ramificationIdx_under_fixedField_eq_one_iff]
   exact Q.inertia_le_stabilizer
@@ -145,7 +152,8 @@ theorem ramificationIdx_doubleCosetQuotientEquivPrimesOver_stabilizer_mk_one_eq_
 the decomposition group of `Q`, the prime of the decomposition field `M ^ D` named by the
 identity double coset, namely `Q ∩ 𝓞 (M ^ D)`, has residue degree `1` over `p`. -/
 theorem inertiaDeg_doubleCosetQuotientEquivPrimesOver_stabilizer_mk_one_eq_one :
-    (doubleCosetQuotientEquivPrimesOver p Q (stabilizer (M ≃ₐ[K] M) Q) (DoubleCoset.mk _ _ 1) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p (stabilizer (M ≃ₐ[K] M) Q)
+      (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q))) (DoubleCoset.mk _ _ 1) :
         Ideal (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q)))).inertiaDeg (𝓞 K) = 1 := by
   rw [doubleCosetQuotientEquivPrimesOver_mk_one]
   exact inertiaDeg_under_fixedField_eq_one_of_stabilizer_le Q le_rfl
@@ -154,9 +162,10 @@ theorem inertiaDeg_doubleCosetQuotientEquivPrimesOver_stabilizer_mk_one_eq_one :
 `D \ G / D`.** For `D` the decomposition group of `Q`, the only prime of `𝓞 M` above
 `Q ∩ 𝓞 (M ^ D)` is `Q` itself. -/
 theorem primesOver_doubleCosetQuotientEquivPrimesOver_stabilizer_mk_one_eq_singleton :
-    (doubleCosetQuotientEquivPrimesOver p Q (stabilizer (M ≃ₐ[K] M) Q) (DoubleCoset.mk _ _ 1) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p (stabilizer (M ≃ₐ[K] M) Q)
+      (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q))) (DoubleCoset.mk _ _ 1) :
         Ideal (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q)))).primesOver (𝓞 M) = {Q} := by
   rw [doubleCosetQuotientEquivPrimesOver_mk_one]
-  exact primesOver_under_fixedField_eq_singleton_of_le_stabilizer Q le_rfl
+  exact primesOver_under_eq_singleton_of_le_stabilizer Q (H := stabilizer (M ≃ₐ[K] M) Q) _ le_rfl
 
 end Ideal

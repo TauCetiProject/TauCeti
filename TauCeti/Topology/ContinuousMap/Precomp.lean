@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
-public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Precomposition with a surjection from a compact space
@@ -77,11 +76,13 @@ noncomputable def homeomorphFactorsThrough [CompactSpace A] [T2Space B] (q : C(A
   (hqm.liftEquiv (Z := X)).symm.toHomeomorphOfIsInducing
     (IsInducing.of_comp hcont continuous_subtype_val (isInducing_precomp_of_surjective q hq))
 
+/-- The map out of `A` attached to `f : C(B, X)` by `homeomorphFactorsThrough` is `f ∘ q`. -/
 @[simp]
 theorem homeomorphFactorsThrough_apply [CompactSpace A] [T2Space B] (q : C(A, B))
     (hq : Function.Surjective q) (f : C(B, X)) :
     (homeomorphFactorsThrough q hq f : C(A, X)) = f.comp q := by
   rw [homeomorphFactorsThrough]
+  -- the underlying function of the equivalence is `lift`'s inverse, i.e. precomposition with `q`
   rfl
 
 /-- The inverse of `homeomorphFactorsThrough` evaluates, at the image under `q` of a point, to the

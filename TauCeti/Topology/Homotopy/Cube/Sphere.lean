@@ -46,6 +46,7 @@ theorem sphereCollapse_apply (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1)
     (z : Fin k → I) :
     sphereCollapse k s₀ z = onePointHomeomorphSphere k s₀ (cubeToOnePoint (Fin k) z) := by
   rw [sphereCollapse]
+  -- unfolding the composite of bundled maps leaves exactly the displayed composite
   rfl
 
 /-- The collapse sends a point of the cube to the basepoint exactly when it is on the boundary. -/

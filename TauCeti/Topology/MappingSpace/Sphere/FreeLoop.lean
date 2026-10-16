@@ -91,6 +91,8 @@ def sphere2HomeomorphConstLoopPath : C(Sphere2, Q) ≃ₜ ConstLoopPath Q :=
   (ContinuousMap.homeomorphFactorsThrough suspensionToSphere suspensionToSphere_surjective).trans
     (Homeomorph.subtype Homeomorph.curry factorsThrough_suspensionToSphere_iff)
 
+/-- The path of loops attached to `f : C(S², Q)` evaluates at `(t, z)` to the value of `f` at
+the image of `(t, z)` under the collapse of the suspension. -/
 @[simp]
 theorem sphere2HomeomorphConstLoopPath_apply (f : C(Sphere2, Q)) (t : I) (z : Circle) :
     (sphere2HomeomorphConstLoopPath f).1 t z = f (suspensionToSphere (t, z)) := by
@@ -123,6 +125,8 @@ def basedMapSphere2HomeomorphBasedConstLoopPath (x : Q) :
       rwa [sphere2HomeomorphConstLoopPath_apply, ContinuousMap.const_apply,
         (suspensionToSphere_eq_north_iff (0, 1)).2 rfl] at this
 
+/-- The path of loops attached to a based map out of `S²` evaluates at `(t, z)` to the value of
+the map at the image of `(t, z)` under the collapse of the suspension. -/
 @[simp]
 theorem basedMapSphere2HomeomorphBasedConstLoopPath_apply (x : Q)
     (f : BasedMap Sphere2 Q Sphere2.north x) (t : I) (z : Circle) :

@@ -11,18 +11,19 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 /-!
 # Transport of distributions through diffeomorphisms
 
-A partial diffeomorphism transports local frames on its source, while a global diffeomorphism
-transports smooth constant-rank distributions and involutivity. This allows regularity and
-involutivity to be checked in local or global coordinate models when constructing integral
-manifolds. In particular, the pullback of a smooth distribution is smooth, and a distribution is
-involutive if and only if its pullback by a diffeomorphism is involutive.
+A partial diffeomorphism transports local frames and involutivity between its source and target,
+while a global diffeomorphism transports smooth constant-rank distributions. This allows
+regularity and involutivity to be checked in local or global coordinate models when constructing
+integral manifolds. In particular, the pullback of a smooth distribution is smooth, and a
+distribution is involutive if and only if its pullback by a diffeomorphism is involutive.
 
 The vector-field pullback and Lie-bracket naturality APIs are provided by Mathlib.
 
 `TauCeti.IsDistributionFrameOn.comap_mfderivWithin` pulls a local frame back through partial
 coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization, and
 `TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth distribution.
-`TauCeti.IsInvolutiveDistribution.diffeomorph` gives the forward transport theorem, and
+`PartialDiffeomorph.isInvolutiveDistributionOn` transports local involutivity,
+`TauCeti.IsInvolutiveDistribution.diffeomorph` is its global specialization, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
 `Diffeomorph.isInvolutiveDistribution_comap_mfderiv_iff` gives the pullback characterization.
 
@@ -132,6 +133,79 @@ theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
 
 end Regularity
 
+end TauCeti
+
+namespace PartialDiffeomorph
+
+open TauCeti
+
+section Involutive
+
+variable [IsManifold I (minSmoothness 𝕜 2) M]
+  [IsManifold J (minSmoothness 𝕜 2) N]
+
+/-- A partial diffeomorphism whose differential identifies two distributions transports
+involutivity from its source to its target. The tangent-space identification is stated as
+membership equivalence, so it applies directly to both images and preimages of subspaces under
+the differential. -/
+theorem isInvolutiveDistributionOn (Φ : PartialDiffeomorph I J M N n)
+    (hD : IsInvolutiveDistributionOn I D Φ.source)
+    (hn : minSmoothness 𝕜 2 ≤ n)
+    (hDD' : ∀ x ∈ Φ.source, ∀ v, v ∈ D x ↔ mfderiv I J Φ x v ∈ D' (Φ x)) :
+    IsInvolutiveDistributionOn J D' Φ.target := by
+  have hn0 : n ≠ 0 := ne_of_gt
+    (lt_of_lt_of_le (by norm_num : (0 : ℕ∞ω) < 2) (le_minSmoothness.trans hn))
+  rw [isInvolutiveDistributionOn_iff]
+  intro U hU hUtarget V W hV hW hVD hWD y hy
+  let U₀ := Φ.source ∩ Φ ⁻¹' U
+  let V₀ := mpullback I J Φ V
+  let W₀ := mpullback I J Φ W
+  have hU₀ : IsOpen U₀ := Φ.toOpenPartialHomeomorph.isOpen_inter_preimage hU
+  have hU₀source : U₀ ⊆ Φ.source := inter_subset_left
+  have hΦinv (x : M) (hx : x ∈ Φ.source) : (mfderiv I J Φ x).IsInvertible :=
+    (_root_.PartialDiffeomorph.isLocalDiffeomorphAt I J n Φ hx).isInvertible_mfderiv hn0
+  have hΦsmooth (x : M) (hx : x ∈ Φ.source) : CMDiffAt n Φ x :=
+    (Φ.contMDiffOn x hx).contMDiffAt (Φ.open_source.mem_nhds hx)
+  have hV₀ : MDiff[U₀] (T% V₀) := by
+    intro x hx
+    exact ((hV (Φ x) hx.2).mpullback_vectorField_preimage (hΦsmooth x hx.1)
+      (hΦinv x hx.1) (le_minSmoothness.trans hn)).mono inter_subset_right
+  have hW₀ : MDiff[U₀] (T% W₀) := by
+    intro x hx
+    exact ((hW (Φ x) hx.2).mpullback_vectorField_preimage (hΦsmooth x hx.1)
+      (hΦinv x hx.1) (le_minSmoothness.trans hn)).mono inter_subset_right
+  have hV₀D : ∀ x ∈ U₀, V₀ x ∈ D x := by
+    intro x hx
+    apply (hDD' x hx.1 _).mpr
+    simpa only [V₀, mpullback_apply, (hΦinv x hx.1).self_apply_inverse] using
+      hVD (Φ x) hx.2
+  have hW₀D : ∀ x ∈ U₀, W₀ x ∈ D x := by
+    intro x hx
+    apply (hDD' x hx.1 _).mpr
+    simpa only [W₀, mpullback_apply, (hΦinv x hx.1).self_apply_inverse] using
+      hWD (Φ x) hx.2
+  have hyTarget : y ∈ Φ.target := hUtarget hy
+  have hxSource : Φ.symm y ∈ Φ.source := Φ.map_target hyTarget
+  have hΦx : Φ (Φ.symm y) = y := Φ.right_inv hyTarget
+  have hx : Φ.symm y ∈ U₀ := by
+    refine ⟨hxSource, ?_⟩
+    simpa only [mem_preimage, hΦx] using hy
+  have hbr := hD.mlieBracket_mem hU₀ hU₀source hV₀ hW₀ hV₀D hW₀D hx
+  have hVy : MDiffAt (T% V) (Φ (Φ.symm y)) :=
+    (hV _ hx.2).mdifferentiableAt (hU.mem_nhds hx.2)
+  have hWy : MDiffAt (T% W) (Φ (Φ.symm y)) :=
+    (hW _ hx.2).mdifferentiableAt (hU.mem_nhds hx.2)
+  rw [← mpullback_mlieBracket hVy hWy (hΦsmooth _ hxSource) hn] at hbr
+  have hmem := (hDD' (Φ.symm y) hxSource _).mp hbr
+  rw [mpullback_apply, (hΦinv _ hxSource).self_apply_inverse, hΦx] at hmem
+  exact hmem
+
+end Involutive
+
+end PartialDiffeomorph
+
+namespace TauCeti
+
 section Involutive
 
 variable [IsManifold I (minSmoothness 𝕜 2) M]
@@ -144,37 +218,26 @@ theorem IsInvolutiveDistribution.diffeomorph (hD : IsInvolutiveDistribution I D)
     (h : M ≃ₘ^n⟮I, J⟯ N) (hn : minSmoothness 𝕜 2 ≤ n)
     (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x)) :
     IsInvolutiveDistribution J D' := by
-  have hn0 : n ≠ 0 := ne_of_gt
-    (lt_of_lt_of_le (by norm_num : (0 : ℕ∞ω) < 2) (le_minSmoothness.trans hn))
-  rw [isInvolutiveDistribution_iff]
-  intro U hU V W hV hW hVD hWD y hy
-  let V₀ := mpullback I J h V
-  let W₀ := mpullback I J h W
-  have hU₀ : IsOpen (h ⁻¹' U) := hU.preimage h.continuous
-  have hV₀ : MDiff[h ⁻¹' U] (T% V₀) :=
-    hV.mpullback_vectorField_preimage h.contMDiff
-      (fun _ _ ↦ h.isInvertible_mfderiv hn0) (le_minSmoothness.trans hn)
-  have hW₀ : MDiff[h ⁻¹' U] (T% W₀) :=
-    hW.mpullback_vectorField_preimage h.contMDiff
-      (fun _ _ ↦ h.isInvertible_mfderiv hn0) (le_minSmoothness.trans hn)
-  have hV₀D : ∀ x ∈ h ⁻¹' U, V₀ x ∈ D x := by
-    intro x hx
-    apply (hDD' x _).mpr
-    simpa only [V₀, h.mfderiv_apply_mpullback hn0] using hVD (h x) hx
-  have hW₀D : ∀ x ∈ h ⁻¹' U, W₀ x ∈ D x := by
-    intro x hx
-    apply (hDD' x _).mpr
-    simpa only [W₀, h.mfderiv_apply_mpullback hn0] using hWD (h x) hx
-  have hx : h.symm y ∈ h ⁻¹' U := by simpa using hy
-  have hbr := hD.mlieBracket_mem hU₀ hV₀ hW₀ hV₀D hW₀D hx
-  have hVy : MDiffAt (T% V) (h (h.symm y)) :=
-    (hV _ hx).mdifferentiableAt (hU.mem_nhds hx)
-  have hWy : MDiffAt (T% W) (h (h.symm y)) :=
-    (hW _ hx).mdifferentiableAt (hU.mem_nhds hx)
-  rw [← mpullback_mlieBracket hVy hWy (h.contMDiff.contMDiffAt) hn] at hbr
-  have hmem := (hDD' (h.symm y) _).mp hbr
-  rw [h.mfderiv_apply_mpullback hn0, h.apply_symm_apply] at hmem
-  exact hmem
+  have hDlocal := hD.isInvolutiveDistributionOn h.toPartialDiffeomorph.source
+  -- Use the public characterization because Mathlib keeps the constructor opaque.
+  have hcoe : (h.toPartialDiffeomorph.toPartialEquiv : M → N) = h := by
+    funext x
+    have happ := congrArg (fun e : PartialEquiv M N ↦ e x)
+      h.toPartialDiffeomorph_toPartialEquiv
+    simpa only [Equiv.toPartialEquiv_apply, Diffeomorph.coe_toEquiv] using happ
+  have htarget : h.toPartialDiffeomorph.target = univ := by
+    calc
+      _ = h.toEquiv.toPartialEquiv.target := congrArg (fun e : PartialEquiv M N ↦ e.target)
+        h.toPartialDiffeomorph_toPartialEquiv
+      _ = univ := Equiv.toPartialEquiv_target h.toEquiv
+  have hlocal := h.toPartialDiffeomorph.isInvolutiveDistributionOn
+    (D := D) (D' := D') hDlocal hn (by
+      intro x _ v
+      rw [hcoe]
+      exact hDD' x v)
+  rw [← isInvolutiveDistributionOn_univ]
+  rw [← htarget]
+  exact hlocal
 
 end Involutive
 
