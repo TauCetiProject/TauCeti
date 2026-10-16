@@ -27,12 +27,12 @@ same base-change argument.
 
 ## Main declarations
 
-* `TauCeti.AlgHom.mapValue_baseChangePointsMulEquiv`: base change of points commutes with
+* `AlgHom.mapValue_baseChangePointsMulEquiv`: base change of points commutes with
   post-composition in the value algebra.
-* `TauCeti.AlgHom.baseChangePointsMulEquiv_mapDomain`: base change of points commutes with
+* `BialgHom.baseChangePointsMulEquiv_mapDomain`: base change of points commutes with
   pre-composition in the coordinate bialgebra.
-* `TauCeti.AlgHom.mapDomain_pointsBaseChange`: the same for base change of base-valued points.
-* `TauCeti.AlgHom.mapDomain_comp_pointsBaseChange_comp`: base change of base-valued points
+* `BialgHom.mapDomain_pointsBaseChange`: the same for base change of base-valued points.
+* `BialgHom.mapDomain_comp_pointsBaseChange_comp`: base change of base-valued points
   preserves a commuting square of monoid homomorphisms into points.
 
 ## See also
@@ -46,7 +46,7 @@ This builds on Mathlib's tensor-product bialgebra map
 
 public section
 
-open TensorProduct WithConv
+open TensorProduct WithConv BialgHom
 
 namespace TauCeti
 
@@ -63,7 +63,7 @@ variable [Algebra K S] [Algebra k S] [IsScalarTower k K S]
 
 Post-composing an `R`-valued point by a `K`-algebra homomorphism `φ : R →ₐ[K] S` and then
 base-changing agrees with first base-changing the point and then post-composing by `φ`. -/
-lemma mapValue_baseChangePointsMulEquiv (φ : R →ₐ[K] S)
+lemma _root_.AlgHom.mapValue_baseChangePointsMulEquiv (φ : R →ₐ[K] S)
     (f : WithConv (A →ₐ[k] R)) :
     AlgHom.mapValue (H := K ⊗[k] A) φ
         (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f) =
@@ -76,7 +76,7 @@ lemma mapValue_baseChangePointsMulEquiv (φ : R →ₐ[K] S)
 
 Restricting a post-composed base-changed point along `a ↦ 1 ⊗ a` agrees with
 post-composing the restricted point. -/
-lemma baseChangePointsMulEquiv_symm_mapValue (φ : R →ₐ[K] S)
+lemma _root_.AlgHom.baseChangePointsMulEquiv_symm_mapValue (φ : R →ₐ[K] S)
     (f : WithConv (K ⊗[k] A →ₐ[K] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := S)).symm
         (AlgHom.mapValue (H := K ⊗[k] A) φ f) =
@@ -100,59 +100,57 @@ variable [CommSemiring R] [Algebra K R] [Algebra k R] [IsScalarTower k K R]
 Pre-composing a `B`-point by a bialgebra morphism `φ : A →ₐc[k] B` and then base-changing
 agrees with first base-changing the point and then pre-composing by the scalar extension
 `K ⊗[k] A →ₐc[K] K ⊗[k] B`. -/
-lemma baseChangePointsMulEquiv_mapDomain (φ : A →ₐc[k] B)
+lemma _root_.BialgHom.baseChangePointsMulEquiv_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
-        (mapDomain (A := R) φ f) =
-      mapDomain (A := R)
+        (BialgHom.mapDomain (A := R) φ f) =
+      BialgHom.mapDomain (A := R)
         (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
         (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (R := R) f) := by
   ext a
-  simp [mapDomain_apply]
+  simp [BialgHom.mapDomain_apply]
 
-/-- Pointwise form of `AlgHom.baseChangePointsMulEquiv_mapDomain` on pure tensors. -/
-@[simp]
-lemma baseChangePointsMulEquiv_mapDomain_apply_tmul (φ : A →ₐc[k] B)
+/-- Pointwise form of `BialgHom.baseChangePointsMulEquiv_mapDomain` on pure tensors. -/
+lemma _root_.BialgHom.baseChangePointsMulEquiv_mapDomain_apply_tmul (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) (s : K) (a : A) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
-        (mapDomain (A := R) φ f) (s ⊗ₜ[k] a) =
+        (BialgHom.mapDomain (A := R) φ f) (s ⊗ₜ[k] a) =
       s • f.ofConv (φ a) := by
-  rw [baseChangePointsMulEquiv_apply_tmul, mapDomain_apply_apply]
+  rw [baseChangePointsMulEquiv_apply_tmul, BialgHom.mapDomain_apply_apply]
 
 /-- The inverse direction of base change is natural in the coordinate bialgebra.
 
 Restricting along `a ↦ 1 ⊗ a` after pre-composing with the scalar extension of `φ` agrees
 with first restricting and then pre-composing by `φ`. -/
-lemma baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
+lemma _root_.BialgHom.baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
-        (mapDomain (A := R)
+        (BialgHom.mapDomain (A := R)
           (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ) f) =
-      mapDomain (A := R) φ
+      BialgHom.mapDomain (A := R) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := B) (R := R)).symm f) := by
   ext a
-  simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
+  simp only [baseChangePointsMulEquiv_symm_apply, BialgHom.mapDomain_apply_apply,
     _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
 
-/-- Pointwise form of `AlgHom.baseChangePointsMulEquiv_symm_mapDomain`. -/
-@[simp]
-lemma baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
+/-- Pointwise form of `BialgHom.baseChangePointsMulEquiv_symm_mapDomain`. -/
+lemma _root_.BialgHom.baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) (a : A) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
-        (mapDomain (A := R)
+        (BialgHom.mapDomain (A := R)
           (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ) f)).ofConv a =
       f.ofConv (1 ⊗ₜ[k] φ a) := by
-  simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
+  simp only [baseChangePointsMulEquiv_symm_apply, BialgHom.mapDomain_apply_apply,
     _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
 
 variable (K) in
 /-- Base change of base-valued points is natural in the coordinate bialgebra: pre-composing the
 base change of a point `f` of `B` by the scalar extension of `φ : A →ₐc[k] B` gives the base change
 of `f ∘ φ`. -/
-lemma mapDomain_pointsBaseChange (φ : A →ₐc[k] B) (f : WithConv (B →ₐ[k] k)) :
-    mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
+lemma _root_.BialgHom.mapDomain_pointsBaseChange (φ : A →ₐc[k] B) (f : WithConv (B →ₐ[k] k)) :
+    BialgHom.mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
         (pointsBaseChange K f) =
-      pointsBaseChange K (mapDomain φ f) := by
+      pointsBaseChange K (BialgHom.mapDomain φ f) := by
   ext a
   simp
 
@@ -160,14 +158,15 @@ variable (K) in
 /-- Base change of base-valued points preserves a commuting square: if families of points
 `ψ : M →* B(k)` and `ψ' : N →* A(k)` satisfy `φ ∘ ψ = ψ' ∘ g` on points, then so do their base
 changes along `k → K`, with `φ` replaced by its scalar extension. -/
-lemma mapDomain_comp_pointsBaseChange_comp {M N : Type*} [Monoid M] [Monoid N]
+lemma _root_.BialgHom.mapDomain_comp_pointsBaseChange_comp {M N : Type*} [Monoid M] [Monoid N]
     (φ : A →ₐc[k] B) {ψ : M →* WithConv (B →ₐ[k] k)} {ψ' : N →* WithConv (A →ₐ[k] k)}
-    {g : M →* N} (h : (mapDomain φ).comp ψ = ψ'.comp g) :
-    (mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)).comp
+    {g : M →* N} (h : (BialgHom.mapDomain φ).comp ψ = ψ'.comp g) :
+    (BialgHom.mapDomain (A := K)
+        (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)).comp
         ((pointsBaseChange K).comp ψ) = ((pointsBaseChange K).comp ψ').comp g := by
   ext1 m
   simp only [MonoidHom.comp_apply, mapDomain_pointsBaseChange]
-  rw [← MonoidHom.comp_apply (mapDomain φ), h, MonoidHom.comp_apply]
+  rw [← MonoidHom.comp_apply (BialgHom.mapDomain φ), h, MonoidHom.comp_apply]
 
 end MapDomain
 

@@ -18,7 +18,7 @@ its inverse sends `(g, h)` to `(g, g⁻¹ h)`. This file constructs the correspo
 No flatness or surjectivity hypothesis is needed. The isomorphism supplies the kernel-pair
 calculation used to descend properties of affine-group morphisms from their kernels.
 The construction uses `kernelHopfIdeal_toIdeal_le_ker_iff` and the convolution functoriality
-of `TauCeti.AlgHom.mapDomain` and `AlgHom.mapValue`.
+of `BialgHom.mapDomain` and `AlgHom.mapValue`.
 
 ## References
 
@@ -49,8 +49,9 @@ private def kernelPairRight (f : H ⟶ K) :
   let l : K →ₐ[R] K ⊗[R] Q := Algebra.TensorProduct.includeLeft
   let r : K →ₐ[R] K ⊗[R] Q :=
     Algebra.TensorProduct.includeRight.comp (Ideal.Quotient.mkₐ R _)
-  have hr : AlgHom.mapDomain f.hom (toConv r) = 1 := by
+  have hr : BialgHom.mapDomain f.hom (toConv r) = 1 := by
     apply ofConv_injective
+    rw [BialgHom.mapDomain_apply, ofConv_toConv]
     exact (kernelHopfIdeal_toIdeal_le_ker_iff f r).mp (by
       intro x hx
       have hz : (Ideal.Quotient.mkₐ R (kernelHopfIdeal f).toIdeal) x = 0 :=
@@ -58,11 +59,11 @@ private def kernelPairRight (f : H ⟶ K) :
       simp [RingHom.mem_ker, r, hz])
   have he : (ofConv (toConv l * toConv r)).comp f.hom.toAlgHom =
       l.comp f.hom.toAlgHom := by
-    have he : AlgHom.mapDomain f.hom (toConv l * toConv r) =
-        AlgHom.mapDomain f.hom (toConv l) := by
+    have he : BialgHom.mapDomain f.hom (toConv l * toConv r) =
+        BialgHom.mapDomain f.hom (toConv l) := by
       rw [map_mul, hr]
-      exact mul_one (AlgHom.mapDomain f.hom (toConv l))
-    exact congrArg ofConv he
+      exact mul_one (BialgHom.mapDomain f.hom (toConv l))
+    simpa only [BialgHom.mapDomain_apply, ofConv_toConv] using congrArg ofConv he
   exact
     { (ofConv (toConv l * toConv r)).toRingHom with
       commutes' h := AlgHom.congr_fun he h }
@@ -84,18 +85,21 @@ private def kernelPairRatio (f : H ⟶ K) :
     (Algebra.TensorProduct.includeLeft : K →ₐ[K] K ⊗[H] K).restrictScalars R
   let r : K →ₐ[R] K ⊗[H] K :=
     (Algebra.TensorProduct.includeRight : K →ₐ[H] K ⊗[H] K).restrictScalars R
-  have he : AlgHom.mapDomain f.hom (toConv l) =
-      AlgHom.mapDomain f.hom (toConv r) := by
+  have he : BialgHom.mapDomain f.hom (toConv l) =
+      BialgHom.mapDomain f.hom (toConv r) := by
     apply ofConv_injective
     ext h
+    simp only [BialgHom.mapDomain_apply_apply]
     exact RingHom.congr_fun
       (Algebra.TensorProduct.includeLeftRingHom_comp_algebraMap (R := H)
         (A := K) (B := K)) h
-  have hratio : AlgHom.mapDomain f.hom ((toConv l)⁻¹ * toConv r) = 1 := by
+  have hratio : BialgHom.mapDomain f.hom ((toConv l)⁻¹ * toConv r) = 1 := by
     rw [map_mul, map_inv, he, inv_mul_cancel]
   apply Ideal.Quotient.liftₐ _ (ofConv ((toConv l)⁻¹ * toConv r))
   intro x hx
-  apply (kernelHopfIdeal_toIdeal_le_ker_iff f _).mpr (congrArg ofConv hratio) hx
+  apply (kernelHopfIdeal_toIdeal_le_ker_iff f _).mpr ?_ hx
+  simpa only [BialgHom.mapDomain_apply, AlgHom.convOne_def, ofConv_toConv] using
+    congrArg ofConv hratio
 
 /-- The coordinate map of `(g,h) ↦ (g,g⁻¹h)`. -/
 private def kernelPairBackward (f : H ⟶ K) :

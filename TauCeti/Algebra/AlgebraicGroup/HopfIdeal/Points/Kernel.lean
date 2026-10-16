@@ -83,6 +83,9 @@ theorem quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor (f : H �
   ext g
   -- Kernel membership is stated on the functor-object type of points, which is only
   -- definitionally equal to `HopfAlgebra.points`; `MonoidHom.mem_ker` cannot be rewritten here.
+  change g ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A ↔
+    BialgHom.mapDomain (A := A) f.hom g = 1
+  rw [BialgHom.mapDomain_apply]
   exact (mapPointsFunctor_app_eq_one_iff f A g).symm
 
 end CommHopfAlgCat

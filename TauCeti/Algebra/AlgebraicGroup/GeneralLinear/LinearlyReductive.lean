@@ -63,7 +63,7 @@ private theorem fixed_of_center_and_specialLinear (hn : 0 < n) (m : M)
       (CommAlgCat.of k k), Comodule.basePointsRepresentation M z m = m)
     (hs : ∀ s : WithConv (SpecialLinear.coordinateHopfAlgebra k n →ₐ[k] k),
       Comodule.basePointsRepresentation M
-        (AlgHom.mapDomain (SpecialLinear.coordinateMap k n).hom s) m = m) :
+        (BialgHom.mapDomain (SpecialLinear.coordinateMap k n).hom s) m = m) :
     m ∈ Comodule.fixedSubcomodule k (coordinateHopfAlgebra k n) M := by
   rw [Comodule.mem_fixedSubcomodule,
     Comodule.coact_eq_tmul_one_iff_forall_basePointsRepresentation_eq]
@@ -82,12 +82,12 @@ private theorem fixed_of_center_and_specialLinear (hn : 0 < n) (m : M)
     rcases hs' with ⟨z, hz, hsz⟩
     rw [← map_centerPointsSubgroup_pointsMulEquiv_eq_center n (CommAlgCat.of k k)] at hz
     obtain ⟨c, hc', hcz⟩ := hz
-    let p := AlgHom.mapDomain (SpecialLinear.coordinateMap k n).hom
+    let p := BialgHom.mapDomain (SpecialLinear.coordinateMap k n).hom
       ((SpecialLinear.pointsMulEquiv (A := k) k n).symm s)
     have hp : pointsMulEquiv n p = Matrix.SpecialLinearGroup.toGL s := by
       have hp' := SpecialLinear.quotientPointsHom_pointsMulEquiv_symm k n s
       rw [CommHopfAlgCat.quotientPointsHom_apply] at hp'
-      simp only [p, AlgHom.mapDomain_apply, hp', MulEquiv.apply_symm_apply]
+      simp only [p, BialgHom.mapDomain_apply, hp', MulEquiv.apply_symm_apply]
     have hg : p * c = g := by
       apply (pointsMulEquiv n).injective
       have hcval : pointsMulEquiv n c = z := hcz

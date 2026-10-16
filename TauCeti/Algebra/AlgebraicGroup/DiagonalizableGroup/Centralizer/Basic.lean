@@ -153,20 +153,20 @@ theorem apply_map_centralizerDefect {A : Type x} {B : Type y} [CommRing A] [Alge
     ψ (Algebra.TensorProduct.map g.ofConv (AlgHom.id R (MonoidAlgebra R X))
         (centralizerDefect π x)) =
       (AlgHom.mapValue (ψ.comp Algebra.TensorProduct.includeLeft) g *
-          AlgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight)) *
+          BialgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight)) *
           (AlgHom.mapValue (ψ.comp Algebra.TensorProduct.includeLeft) g)⁻¹).ofConv x -
-        (AlgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))).ofConv x := by
+        (BialgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))).ofConv x := by
   have hcomp : (ψ.comp (Algebra.TensorProduct.map g.ofConv (AlgHom.id R (MonoidAlgebra R X)))).comp
       (Algebra.TensorProduct.map (AlgHom.id R H) π.toAlgHom) =
       Algebra.TensorProduct.productMap
         (AlgHom.mapValue (ψ.comp Algebra.TensorProduct.includeLeft) g).ofConv
-        (AlgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))).ofConv := by
+        (BialgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))).ofConv := by
     refine Algebra.TensorProduct.ext ?_ ?_ <;> ext h <;>
-      simp [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ← Algebra.TensorProduct.one_def]
+      simp [AlgHom.mapValue_apply, BialgHom.mapDomain_apply, ← Algebra.TensorProduct.one_def]
   rw [centralizerDefect, map_sub, map_sub, ← AlgHom.comp_apply, ← AlgHom.comp_apply, hcomp,
     ← AlgHom.comp_apply, HopfAlgebra.productMap_comp_conjugationAlgHom]
   congr 1
-  simp [AlgHom.mapDomain_apply]
+  simp [BialgHom.mapDomain_apply]
 
 /-! ## The centralizer as a closed subgroup scheme -/
 
@@ -177,7 +177,7 @@ private theorem centralizerIdeal_le_ker_iff_commute_of_injective {A : Type x} {B
     (ψ : A ⊗[R] MonoidAlgebra R X →ₐ[R] B) (hψ : Function.Injective ψ) :
     centralizerIdeal π ≤ RingHom.ker g.ofConv ↔
       Commute (AlgHom.mapValue (ψ.comp Algebra.TensorProduct.includeLeft) g)
-        (AlgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))) := by
+        (BialgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))) := by
   rw [centralizerIdeal_le_ker_iff, commute_iff_eq, ← mul_inv_eq_iff_eq_mul]
   simp_rw [← map_eq_zero_iff ψ hψ, apply_map_centralizerDefect, sub_eq_zero]
   exact ⟨fun h ↦ ofConv_injective (AlgHom.ext h), fun h x ↦ by rw [h]⟩
@@ -189,7 +189,7 @@ over every value algebra. -/
 noncomputable def centralizerHopfIdeal : HopfIdeal R H :=
   HopfIdeal.ofIdealOfPointsSubgroup (centralizerIdeal π)
     (fun A ↦ (Subgroup.centralizer
-        {AlgHom.mapDomain π (toConv (Algebra.TensorProduct.includeRight :
+        {BialgHom.mapDomain π (toConv (Algebra.TensorProduct.includeRight :
           MonoidAlgebra R X →ₐ[R] A ⊗[R] MonoidAlgebra R X))}).comap
       (AlgHom.mapValue (H := H) (Algebra.TensorProduct.includeLeft (R := R) (S := R))))
     fun A g ↦ by
@@ -213,7 +213,7 @@ theorem centralizerHopfIdeal_le_ker_iff_commute_of_injective {A : Type x} {B : T
     (ψ : A ⊗[R] MonoidAlgebra R X →ₐ[R] B) (hψ : Function.Injective ψ) :
     (centralizerHopfIdeal π).toIdeal ≤ RingHom.ker g.ofConv ↔
       Commute (AlgHom.mapValue (ψ.comp Algebra.TensorProduct.includeLeft) g)
-        (AlgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))) := by
+        (BialgHom.mapDomain π (toConv (ψ.comp Algebra.TensorProduct.includeRight))) := by
   rw [centralizerHopfIdeal_toIdeal]
   exact centralizerIdeal_le_ker_iff_commute_of_injective π g ψ hψ
 
@@ -223,7 +223,7 @@ theorem commute_mapValue_mapDomain_of_centralizerHopfIdeal_le_ker {A : Type x} {
     [CommRing A] [Algebra R A] [CommRing B] [Algebra R B] {g : WithConv (H →ₐ[R] A)}
     (hg : (centralizerHopfIdeal π).toIdeal ≤ RingHom.ker g.ofConv) (φ : A →ₐ[R] B)
     (t : WithConv (MonoidAlgebra R X →ₐ[R] B)) :
-    Commute (AlgHom.mapValue φ g) (AlgHom.mapDomain π t) := by
+    Commute (AlgHom.mapValue φ g) (BialgHom.mapDomain π t) := by
   have h := ((centralizerHopfIdeal_le_ker_iff_commute_of_injective π g (AlgHom.id _ _)
     Function.injective_id).mp hg).map
     (AlgHom.mapValue (H := H) (Algebra.TensorProduct.productMap φ t.ofConv))
@@ -234,11 +234,11 @@ theorem commute_mapValue_mapDomain_of_centralizerHopfIdeal_le_ker {A : Type x} {
     ext x
     simp [AlgHom.mapValue_apply]
   have hright : AlgHom.mapValue (H := H) (Algebra.TensorProduct.productMap φ t.ofConv)
-      (AlgHom.mapDomain π (toConv ((AlgHom.id R _).comp Algebra.TensorProduct.includeRight))) =
-      AlgHom.mapDomain π t := by
+      (BialgHom.mapDomain π (toConv ((AlgHom.id R _).comp Algebra.TensorProduct.includeRight))) =
+      BialgHom.mapDomain π t := by
     apply ofConv_injective
     ext x
-    simp [AlgHom.mapValue_apply, AlgHom.mapDomain_apply]
+    simp [AlgHom.mapValue_apply, BialgHom.mapDomain_apply]
   rwa [hleft, hright] at h
 
 /-- **A point of `G` kills the centralizer ideal exactly when it commutes with every point of
@@ -250,7 +250,7 @@ theorem centralizerHopfIdeal_le_ker_iff {A : Type x} [CommRing A] [Algebra R A]
     (centralizerHopfIdeal π).toIdeal ≤ RingHom.ker g.ofConv ↔
       ∀ ⦃B : Type (max u w x)⦄ [CommRing B] [Algebra R B] (φ : A →ₐ[R] B)
         (t : WithConv (MonoidAlgebra R X →ₐ[R] B)),
-        Commute (AlgHom.mapValue φ g) (AlgHom.mapDomain π t) := by
+        Commute (AlgHom.mapValue φ g) (BialgHom.mapDomain π t) := by
   constructor
   · intro hg B _ _ φ t
     exact commute_mapValue_mapDomain_of_centralizerHopfIdeal_le_ker π hg φ t
@@ -273,7 +273,7 @@ theorem mem_centralizerPointsSubgroup_iff (A : CommAlgCat.{x} R) (g : WithConv (
     g ∈ centralizerPointsSubgroup π A ↔
       ∀ ⦃B : Type (max u w x)⦄ [CommRing B] [Algebra R B] (φ : A →ₐ[R] B)
         (t : WithConv (MonoidAlgebra R X →ₐ[R] B)),
-        Commute (AlgHom.mapValue φ g) (AlgHom.mapDomain π t) := by
+        Commute (AlgHom.mapValue φ g) (BialgHom.mapDomain π t) := by
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, ← centralizerHopfIdeal_le_ker_iff]
   exact ⟨fun h x hx ↦ RingHom.mem_ker.mpr (h x (HopfIdeal.mem_toIdeal.mp hx)),
     fun h x hx ↦ RingHom.mem_ker.mp (h (HopfIdeal.mem_toIdeal.mpr hx))⟩
@@ -298,12 +298,12 @@ theorem centralizerHopfIdeal_le_ker_iff_comp_pointConjugationAlgHom_eq
     simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
       Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.lid_tmul,
       Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
-  have hright : AlgHom.mapDomain π (toConv
+  have hright : BialgHom.mapDomain π (toConv
       ((Algebra.TensorProduct.lid R (MonoidAlgebra R X)).toAlgHom.comp
         Algebra.TensorProduct.includeRight)) = toConv π.toAlgHom := by
     apply ofConv_injective
     ext x
-    simp [AlgHom.mapDomain_apply]
+    simp [BialgHom.mapDomain_apply]
   have hconj := HopfAlgebra.comp_pointConjugationAlgHom g (toConv π.toAlgHom)
   rw [ofConv_toConv] at hconj
   rw [hleft, hright, ← toConv_injective.eq_iff, hconj, commute_iff_eq, ← mul_inv_eq_iff_eq_mul]
@@ -357,10 +357,10 @@ theorem centralizerHopfIdeal_le_kerOfSurjective (hπ : Function.Surjective π) :
   have hle : (centralizerHopfIdeal π).toIdeal ≤ RingHom.ker (toConv π.toAlgHom).ofConv := by
     rw [centralizerHopfIdeal_le_ker_iff]
     intro B _ _ φ t
-    have hφ : AlgHom.mapValue φ (toConv π.toAlgHom) = AlgHom.mapDomain π (toConv φ) := by
-      rw [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv, ofConv_toConv]
+    have hφ : AlgHom.mapValue φ (toConv π.toAlgHom) = BialgHom.mapDomain π (toConv φ) := by
+      rw [AlgHom.mapValue_apply, BialgHom.mapDomain_apply, ofConv_toConv, ofConv_toConv]
     rw [hφ]
-    exact (Commute.all (toConv φ) t).map (AlgHom.mapDomain π)
+    exact (Commute.all (toConv φ) t).map (BialgHom.mapDomain π)
   rw [HopfIdeal.mem_kerOfSurjective]
   exact RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hx))
 
@@ -369,7 +369,7 @@ private theorem exists_mapDomain_eq_of_forall_mem_kerOfSurjective
     (hπ : Function.Surjective π) {A : Type x} [CommRing A] [Algebra R A]
     (g : WithConv (H →ₐ[R] A))
     (hg : ∀ x : H, x ∈ HopfIdeal.kerOfSurjective π hπ → g.ofConv x = 0) :
-    ∃ t : WithConv (MonoidAlgebra R X →ₐ[R] A), AlgHom.mapDomain π t = g := by
+    ∃ t : WithConv (MonoidAlgebra R X →ₐ[R] A), BialgHom.mapDomain π t = g := by
   let I := HopfIdeal.kerOfSurjective π hπ
   let g' : H ⧸ I.toIdeal →ₐ[R] A :=
     Ideal.Quotient.liftₐ I.toIdeal g.ofConv fun x hx ↦ hg x (HopfIdeal.mem_toIdeal.mp hx)
@@ -383,7 +383,7 @@ private theorem exists_mapDomain_eq_of_forall_mem_kerOfSurjective
   have hlift := AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp I.toIdeal g.ofConv
     fun y hy ↦ hg y (HopfIdeal.mem_toIdeal.mp hy)) x
   rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk] at hlift
-  simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom, he]
   exact hlift
 
@@ -405,18 +405,18 @@ theorem centralizerHopfIdeal_eq_bot_iff_isCentral (hπ : Function.Surjective π)
     have hcomm := commute_mapValue_mapDomain_of_centralizerHopfIdeal_le_ker π hu (AlgHom.id R B)
       (AlgHom.mapValue φ t)
     rw [AlgHom.mapValue_id, MonoidHom.id_apply, ← MonoidHom.comp_apply,
-      AlgHom.mapValue_mapDomain, MonoidHom.comp_apply] at hcomm
+      BialgHom.mapValue_mapDomain, MonoidHom.comp_apply] at hcomm
     exact hcomm.symm
   · intro hI
     let A := CommAlgCat.of R (H ⊗[R] MonoidAlgebra R X)
-    have hmem : AlgHom.mapDomain π (toConv ((AlgHom.id R _).comp
+    have hmem : BialgHom.mapDomain π (toConv ((AlgHom.id R _).comp
         (Algebra.TensorProduct.includeRight : MonoidAlgebra R X →ₐ[R] A))) ∈
         CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.of R H)
           (HopfIdeal.kerOfSurjective π hπ) A := by
       rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
       intro x hx
       rw [HopfIdeal.mem_kerOfSurjective] at hx
-      simp [AlgHom.mapDomain_apply, hx]
+      simp [BialgHom.mapDomain_apply, hx]
     have hid : (centralizerHopfIdeal π).toIdeal ≤ RingHom.ker (toConv (AlgHom.id R H)).ofConv :=
       (centralizerHopfIdeal_le_ker_iff_commute_of_injective π (toConv (AlgHom.id R H))
         (AlgHom.id R _) Function.injective_id).mpr

@@ -236,7 +236,7 @@ theorem mapPointsFunctor_diagonalTorusCoordinateMap_app
           (diagonalTorusCoordinateMap (R := R) (m := m))).app A
             (AlgHom.mapValue (H := K) t.ofConv p) := by
     have h := DFunLike.congr_fun
-      (AlgHom.mapValue_mapDomain
+      (BialgHom.mapValue_mapDomain
         (diagonalTorusCoordinateMap (R := R) (m := m)).hom t.ofConv).symm p
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
     exact h

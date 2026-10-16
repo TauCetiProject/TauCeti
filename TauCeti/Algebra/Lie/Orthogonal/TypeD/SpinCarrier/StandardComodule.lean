@@ -97,7 +97,7 @@ theorem points_mulVec_mem
         Matrix (Fin (dimension n)) (Fin (dimension n)) R) *ᵥ w ∈ N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R (dimension n)
     (coordinateMap n hn R).hom N ((baseChangePointsMulEquiv n hn R (CommAlgCat.of R R)).symm g) hw
-  have hpoint : AlgHom.mapDomain (coordinateMap n hn R).hom
+  have hpoint : BialgHom.mapDomain (coordinateMap n hn R).hom
       ((baseChangePointsMulEquiv n hn R (CommAlgCat.of R R)).symm g) = _ :=
     mapPointsFunctor_coordinateMap_app n hn R _
   rw [hpoint, quotientPointsHom_baseChangePointsMulEquiv_symm,

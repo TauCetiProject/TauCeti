@@ -111,13 +111,13 @@ theorem grpObjMap_coordinateInr
 
 private theorem grpObjPointsMulEquiv_symm_mapDomain {B C : _root_.CommHopfAlgCat.{u} k}
     (f : B ⟶ C) (L : CommAlgCat.{u} k) (g : HopfAlgebra.points (R := k) (H := C) L) :
-    (CommHopfAlgCat.grpObjPointsMulEquiv B (op L)).symm (AlgHom.mapDomain f.hom g) =
+    (CommHopfAlgCat.grpObjPointsMulEquiv B (op L)).symm (BialgHom.mapDomain f.hom g) =
       (CommHopfAlgCat.grpObjPointsMulEquiv C (op L)).symm g ≫
         CommHopfAlgCat.Hom.grpObjMap f := by
   have hnat := CommHopfAlgCat.grpObjPointsMulEquiv_comp_grpObjMap f
     (op L) ((CommHopfAlgCat.grpObjPointsMulEquiv C (op L)).symm g)
   apply (CommHopfAlgCat.grpObjPointsMulEquiv B (op L)).injective
-  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply,
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply,
     MulEquiv.apply_symm_apply] using hnat.symm
 
 /-- Under the point equivalence for a semidirect product, precomposition with `coordinateInl`
@@ -127,7 +127,7 @@ theorem pointMulEquiv_mapDomain_coordinateInl
     (L : CommAlgCat.{u} k) (g : HopfAlgebra.points (R := k) (H := H) L) :
     letI := A.semidirectProductGrpObj
     ((CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm.trans
-        (A.pointMulEquiv (op L))) (AlgHom.mapDomain A.coordinateInl.hom g) =
+        (A.pointMulEquiv (op L))) (BialgHom.mapDomain A.coordinateInl.hom g) =
       SemidirectProduct.inl
         ((CommHopfAlgCat.grpObjPointsMulEquiv H (op L)).symm g) := by
   let _ := A.semidirectProductGrpObj
@@ -136,10 +136,10 @@ theorem pointMulEquiv_mapDomain_coordinateInl
   -- hidden by the categorical semidirect-product API.
   change (A.pointMulEquiv (op L))
     ((CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-      (AlgHom.mapDomain A.coordinateInl.hom g)) = _
+      (BialgHom.mapDomain A.coordinateInl.hom g)) = _
   have hcat :
       (CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-          (AlgHom.mapDomain A.coordinateInl.hom g) =
+          (BialgHom.mapDomain A.coordinateInl.hom g) =
         (CommHopfAlgCat.grpObjPointsMulEquiv H (op L)).symm g ≫ A.inl.hom.hom := by
     rw [grpObjPointsMulEquiv_symm_mapDomain]
     rw [A.grpObjMap_coordinateInl]
@@ -153,17 +153,17 @@ theorem pointMulEquiv_mapDomain_coordinateInr
     (L : CommAlgCat.{u} k) (g : HopfAlgebra.points (R := k) (H := K) L) :
     letI := A.semidirectProductGrpObj
     ((CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm.trans
-        (A.pointMulEquiv (op L))) (AlgHom.mapDomain A.coordinateInr.hom g) =
+        (A.pointMulEquiv (op L))) (BialgHom.mapDomain A.coordinateInr.hom g) =
       SemidirectProduct.inr
         ((CommHopfAlgCat.grpObjPointsMulEquiv K (op L)).symm g) := by
   let _ := A.semidirectProductGrpObj
   -- As above, expose application of the composite across the hidden group-object carrier.
   change (A.pointMulEquiv (op L))
     ((CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-      (AlgHom.mapDomain A.coordinateInr.hom g)) = _
+      (BialgHom.mapDomain A.coordinateInr.hom g)) = _
   have hcat :
       (CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-          (AlgHom.mapDomain A.coordinateInr.hom g) =
+          (BialgHom.mapDomain A.coordinateInr.hom g) =
         (CommHopfAlgCat.grpObjPointsMulEquiv K (op L)).symm g ≫ A.inr.hom.hom := by
     rw [grpObjPointsMulEquiv_symm_mapDomain]
     rw [A.grpObjMap_coordinateInr]

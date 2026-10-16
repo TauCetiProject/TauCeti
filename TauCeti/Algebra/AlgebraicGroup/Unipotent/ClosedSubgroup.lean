@@ -70,7 +70,7 @@ theorem isUnipotentPoint_mapDomain_iff_of_surjective
     (f : H →ₐc[k] K) (hf : Function.Surjective f)
     (g : WithConv (K →ₐ[k] L)) :
     IsUnipotentPoint (toConv (g.ofConv.comp (f : H →ₐ[k] K))) ↔ IsUnipotentPoint g := by
-  rw [← AlgHom.mapDomain_apply]
+  rw [← BialgHom.mapDomain_apply]
   constructor
   · intro hg
     rw [Point.isUnipotentPoint_iff_semisimplePart_eq_one] at hg ⊢
@@ -83,7 +83,7 @@ theorem isUnipotentPoint_mapDomain_iff_of_surjective
       rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       simp only [HopfAlgebra.pointsFunctor_obj]
       dsimp [f']
-      rw [← AlgHom.mapDomain_apply, ← Point.semisimplePart_mapDomain]
+      rw [← BialgHom.mapDomain_apply, ← Point.semisimplePart_mapDomain]
       exact hg
     exact hmap'.trans (map_one _).symm
   · intro hg

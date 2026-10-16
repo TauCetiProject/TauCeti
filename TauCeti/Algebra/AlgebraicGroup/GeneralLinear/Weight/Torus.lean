@@ -726,7 +726,7 @@ private theorem mapPointsFunctor_weightCocharacterCoordinateMap_app (w : Fin N �
 weight-cocharacter point. -/
 theorem mapDomain_weightCocharacter (w : Fin N → ℤ)
     (f : WithConv (LaurentPolynomial R →ₐ[R] A)) :
-    AlgHom.mapDomain (weightCocharacter (R := R) w) f =
+    BialgHom.mapDomain (weightCocharacter (R := R) w) f =
       weightCocharacterPoints w f := by
   -- `mapDomain` and the points functor are definitionally the same precomposition here; there is
   -- no bridge lemma for the bundled coordinate morphism.

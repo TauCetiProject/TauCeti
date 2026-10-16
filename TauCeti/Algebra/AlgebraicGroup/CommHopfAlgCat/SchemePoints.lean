@@ -96,13 +96,13 @@ theorem mapMulEquiv_mapDomain
     {H K : Type u} [CommRing H] [CommRing K] [Bialgebra R H] [Bialgebra R K]
     (A : CommAlgCat.{u} R) (f : H →ₐc[R] K)
     (p : WithConv (K →ₐ[R] A)) :
-    AlgebraicGeometry.Spec.mapMulEquiv (AlgHom.mapDomain f p) =
+    AlgebraicGeometry.Spec.mapMulEquiv (BialgHom.mapDomain f p) =
       AlgebraicGeometry.Spec.mapMulEquiv p ≫
         (Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom)).asOver
           (Spec (CommRingCat.of R)) := by
   apply Over.OverMorphism.ext
   erw [Over.comp_left]
-  simp only [mapMulEquiv_left, OverClass.asOverHom_left, AlgHom.mapDomain_apply]
+  simp only [mapMulEquiv_left, OverClass.asOverHom_left, BialgHom.mapDomain_apply]
   erw [← Spec.map_comp]
   rfl
 
@@ -282,7 +282,7 @@ theorem schemePointsAlgΓMulEquiv_mapDomain
     schemePointsAlgΓMulEquiv H T
         (g ≫ (Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom)).asOver
           (Spec (CommRingCat.of R))) =
-      AlgHom.mapDomain f (schemePointsAlgΓMulEquiv K T g) := by
+      BialgHom.mapDomain f (schemePointsAlgΓMulEquiv K T g) := by
   let eH := schemePointsAlgΓMulEquiv H T
   let eK := schemePointsAlgΓMulEquiv K T
   apply eH.symm.injective
@@ -291,7 +291,7 @@ theorem schemePointsAlgΓMulEquiv_mapDomain
         (Spec (CommRingCat.of R)))) =
         g ≫ (Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom)).asOver
           (Spec (CommRingCat.of R)) := eH.symm_apply_apply _
-    _ = eH.symm (AlgHom.mapDomain f (eK g)) := by
+    _ = eH.symm (BialgHom.mapDomain f (eK g)) := by
       conv_lhs => rw [← eK.symm_apply_apply g]
       dsimp only [eH, eK]
       rw [schemePointsAlgΓMulEquiv_symm_apply_spec,

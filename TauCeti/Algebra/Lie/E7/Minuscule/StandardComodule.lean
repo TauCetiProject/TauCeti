@@ -98,7 +98,9 @@ theorem piScalarRight_comp_endOfPoint
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 56) (baseChangeDefiningIdeal R)
           (CommAlgCat.of R A) g).ofConv := by
-    exact congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    have he := congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at he
+    exact he
   rw [hpoint]
   exact GeneralLinear.piScalarRight_comp_endOfPoint R 56 _
 
@@ -115,7 +117,7 @@ theorem mulVec_mem
           (CommAlgCat.of R R) g) : Matrix (Fin 56) (Fin 56) R) *ᵥ w ∈ N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 56
     (coordinateMap R).hom N g hw
-  have hpoint : AlgHom.mapDomain (coordinateMap R).hom g = _ :=
+  have hpoint : BialgHom.mapDomain (coordinateMap R).hom g = _ :=
     mapPointsFunctor_coordinateMap_app R g
   rwa [hpoint] at h
 

@@ -244,16 +244,18 @@ theorem mem_quotientPointsSubgroup_map_iff
 
 /-- Precomposition by a surjective bialgebra morphism identifies the points cut out by a Hopf
 ideal with the points cut out by its pullback. -/
--- Not `@[simp]`: `AlgHom.mapDomain_apply` rewrites the left-hand side first, so simpNF rejects it.
+-- Not `@[simp]`: `BialgHom.mapDomain_apply` rewrites the left-hand side first,
+-- so simpNF rejects it.
 theorem _root_.BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff
     {H : Type v} {K : Type v'} [CommRing H] [CommRing K] [HopfAlgebra R H] [HopfAlgebra R K]
     (f : H →ₐc[R] K) (hsurj : Function.Surjective f)
     (I : HopfIdeal R K) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
-    AlgHom.mapDomain (A := A) f g ∈
+    BialgHom.mapDomain (A := A) f g ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.comapOfSurjective f hsurj) A ↔
       g ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
+  simp only [BialgHom.mapDomain_apply_apply]
   constructor
   · intro hg y hy
     obtain ⟨x, rfl⟩ := hsurj y

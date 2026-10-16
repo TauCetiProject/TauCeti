@@ -274,14 +274,14 @@ theorem IsNormal.comapOfSurjective_of_bijective {I : HopfIdeal R K} (hI : I.IsNo
     (_root_.CommHopfAlgCat.of R H) (I.comapOfSurjective f hsurj)).mpr
   intro A
   let e := BialgEquiv.ofBijective f ⟨hinj, hsurj⟩
-  let E := AlgHom.mapDomainMulEquiv (A := A) e
+  let E := BialgEquiv.mapDomainMulEquiv (A := A) e
   have he : (e : H →ₐc[R] K) = f := by
     ext x
     exact congrFun (BialgEquiv.coe_ofBijective f ⟨hinj, hsurj⟩) x
   have hmem (x) : E x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H)
       (I.comapOfSurjective f hsurj) A ↔
       x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
-    rw [AlgHom.mapDomainMulEquiv_apply, he]
+    rw [BialgEquiv.mapDomainMulEquiv_apply, he]
     exact f.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff hsurj I A x
   constructor
   intro n hn g

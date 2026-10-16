@@ -326,8 +326,8 @@ lemma baseChangePointsMulEquiv_mapValue
 lemma baseChangePointsMulEquiv_mapDomain {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
     (φ : H ⟶ L) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) L) A) :
     baseChangePointsMulEquiv (K := K) A H
-        (AlgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
-      AlgHom.mapDomain
+        (BialgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
+      BialgHom.mapDomain
         (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         (toBialgHom φ)
         (baseChangePointsMulEquiv (K := K) A L f) :=

@@ -123,7 +123,7 @@ theorem rootSubgroupPoints_mulVec_mem
   have hu : u = AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q := by
     rw [hq, MulEquiv.apply_symm_apply]
   have hmat : (GeneralLinear.pointToGeneralLinear 7
-      (AlgHom.mapDomain (generatedCoordinateMap k).hom
+      (BialgHom.mapDomain (generatedCoordinateMap k).hom
         (toConv (P.comp (baseChangeGeneratorLift k (.inl j)).hom.toAlgHom))) :
         Matrix (Fin 7) (Fin 7) k) =
       ((rootSubgroupPoints j k u : Matrix.GeneralLinearGroup (Fin 7) k) :
@@ -131,7 +131,7 @@ theorem rootSubgroupPoints_mulVec_mem
     have hid := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (generator (.inl j))
       (CommAlgCat.of (ZMod 3) k) q
     rw [hu, coe_rootSubgroupPoints_gaPointsMulEquiv, hid, GeneralLinear.pointsMulEquiv_apply,
-      ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, AlgHom.mapDomain_apply,
+      ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, BialgHom.mapDomain_apply,
       ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
     ext a b
     have hgen := congrArg (fun φ ↦ φ.hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv k 7

@@ -278,17 +278,17 @@ theorem pointsMulEquiv_mapDomain_splitMaximalTorusCoordinateMap
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
         (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj) (CommAlgCat.of (ZMod 3) A)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
-        (AlgHom.mapDomain splitMaximalTorusCoordinateMap.hom q) =
+        (BialgHom.mapDomain splitMaximalTorusCoordinateMap.hom q) =
       weightTorusPoints A (fun i ↦ SplitTorus.pointsMulEquiv q (ULift.up i)) := by
-  rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, AlgHom.mapDomain_comp,
-    MonoidHom.comp_apply, AlgHom.mapDomain_apply,
+  rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, BialgHom.mapDomain_comp,
+    MonoidHom.comp_apply, BialgHom.mapDomain_apply,
     ← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     pointsMulEquiv_commonKernelLift_weightTorus]
   congr 1
   funext i
   ext
   rw [SplitTorus.pointsMulEquiv_apply_coe, SplitTorus.pointsMulEquiv_apply_coe,
-    AlgHom.mapDomain_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    BialgHom.mapDomain_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     weightTorusCoordinateIso_hom_single, weightTorusCharacterEquiv_ofAdd_single]
 
 private theorem ker_splitMaximalTorusCoordinateMap :

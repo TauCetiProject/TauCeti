@@ -98,7 +98,8 @@ theorem pointsMulEquiv_fst
       (((pointsFunctor (R := R)).map (includeLeft H K).op).app A f) := by
   apply WithConv.ofConv_injective
   ext h
-  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply]
+  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply,
+    BialgHom.mapDomain_apply_apply]
   exact (pointsFunctor_map_app_apply_apply (R := R) (φ := (includeLeft H K).op) A f h).symm
 
 /-- The second component of `pointsMulEquiv` is induced by the right coordinate inclusion. -/
@@ -110,7 +111,8 @@ theorem pointsMulEquiv_snd
       (((pointsFunctor (R := R)).map (includeRight H K).op).app A f) := by
   apply WithConv.ofConv_injective
   ext k
-  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply]
+  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply,
+    BialgHom.mapDomain_apply_apply]
   exact (pointsFunctor_map_app_apply_apply (R := R) (φ := (includeRight H K).op) A f k).symm
 
 /-- The inverse of `pointsMulEquiv` is Mathlib's tensor-product product map. -/

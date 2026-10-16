@@ -87,15 +87,15 @@ a homomorphism from the base-valued points of `Spec H` to that finite group. -/
 noncomputable def pointHom {G : Type v} [Group G] [Finite G]
     (f : coordinateRing k G →ₐc[k] H) :
     WithConv (H →ₐ[k] k) →* G :=
-  (pointsMulEquiv k G).symm.toMonoidHom.comp (AlgHom.mapDomain f)
+  (pointsMulEquiv k G).symm.toMonoidHom.comp (BialgHom.mapDomain f)
 
 /-- The point homomorphism induced by `f` is characterized by evaluation after precomposition
 with `f`. -/
 theorem pointsMulEquiv_pointHom {G : Type v} [Group G] [Finite G]
     (f : coordinateRing k G →ₐc[k] H)
     (p : WithConv (H →ₐ[k] k)) :
-    pointsMulEquiv k G (pointHom f p) = AlgHom.mapDomain f p := by
-  exact (pointsMulEquiv k G).apply_symm_apply (AlgHom.mapDomain f p)
+    pointsMulEquiv k G (pointHom f p) = BialgHom.mapDomain f p := by
+  exact (pointsMulEquiv k G).apply_symm_apply (BialgHom.mapDomain f p)
 
 /-- Pointwise, the coordinate map induced by `pointHom f p` is precomposition with `f`. -/
 @[simp]
@@ -104,7 +104,7 @@ theorem eval_pointHom {G : Type v} [Group G] [Finite G]
     (p : WithConv (H →ₐ[k] k)) :
     eval k G (pointHom f p) = p.ofConv.comp f.toAlgHom := by
   have h := congrArg ofConv (pointsMulEquiv_pointHom f p)
-  simpa only [pointsMulEquiv_apply, ofConv_toConv, AlgHom.mapDomain_apply] using h
+  simpa only [pointsMulEquiv_apply, ofConv_toConv, BialgHom.mapDomain_apply] using h
 
 /-- A coordinate morphism induced contravariantly by a homomorphism of finite groups recovers
 that homomorphism on base-valued points. -/
@@ -118,7 +118,7 @@ theorem pointHom_coordinateBialgHom
   rw [MonoidHom.comp_apply]
   apply (pointsMulEquiv k G).injective
   rw [pointsMulEquiv_pointHom, pointsMulEquiv_apply]
-  rw [AlgHom.mapDomain_apply]
+  rw [BialgHom.mapDomain_apply]
   apply congrArg toConv
   have hx : (pointsMulEquiv k F x).ofConv = eval k F x :=
     congrArg ofConv (pointsMulEquiv_apply (k := k) F x)
@@ -148,7 +148,7 @@ theorem pointHom_eq_one_of_connected {G : Type v} [Group G] [Finite G]
   apply MonoidHom.ext
   intro p
   apply (pointsMulEquiv k G).injective
-  rw [pointsMulEquiv_pointHom, MonoidHom.one_apply, map_one]
+  rw [pointsMulEquiv_pointHom, MonoidHom.one_apply, map_one, BialgHom.mapDomain_apply]
   exact point_comp_eq_one_of_connected G hconnected f p.ofConv
 
 end
