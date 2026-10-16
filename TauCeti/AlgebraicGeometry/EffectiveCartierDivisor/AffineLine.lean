@@ -32,8 +32,9 @@ equation gives the empty divisor.
 * `Polynomial.zeroIdealSheaf`: the ideal sheaf of the zero scheme of a polynomial, with
   `Polynomial.Monic.isRelativeEffectiveCartier_zeroIdealSheaf` and
   `Polynomial.Monic.finrank_zeroIdealSheaf` for monic polynomials;
-* `AlgebraicGeometry.Scheme.IdealSheafData.existsUnique_monic_zeroIdealSheaf_eq`: a finite flat
-  closed subscheme of constant rank `n` has a unique monic equation of degree `n`;
+* `AlgebraicGeometry.Scheme.IdealSheafData.existsUnique_monic_zeroIdealSheaf_eq`: over a
+  nontrivial coefficient ring, a finite flat closed subscheme of constant rank `n` has a unique
+  monic equation of degree `n`;
 * `TauCeti.Polynomial.coeffEquivAffineLineDivisor`: the coefficient chart for the finite relative
   effective Cartier divisors of degree `n` on the affine line over `Spec R`, and
   `TauCeti.Polynomial.comap_coeffEquivAffineLineDivisor`, its compatibility with change of the
@@ -205,9 +206,10 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {R : Type u} [CommRing R]
 
-/-- **Finite flat closed subschemes of the affine line.** A closed subscheme of `Spec R[X]` that
-is finite and flat over `Spec R` of constant rank `n` is the zero scheme of a unique monic
-polynomial of degree `n`. In particular it is a relative effective Cartier divisor
+/-- **Finite flat closed subschemes of the affine line.** When `R` is nontrivial, a closed
+subscheme of `Spec R[X]` that is finite and flat over `Spec R` of constant rank `n` is the zero
+scheme of a unique monic polynomial of degree `n`. In particular it is a relative effective
+Cartier divisor
 (`Polynomial.Monic.isRelativeEffectiveCartier_zeroIdealSheaf`). The closed subscheme need not be
 free over `Spec R`, and `R` need not be reduced. -/
 theorem existsUnique_monic_zeroIdealSheaf_eq [Nontrivial R] {n : ℕ}
