@@ -33,6 +33,8 @@ invariant under conjugation.
   comodule.
 * `TauCeti.HopfAlgebra.isSemisimplePoint_iff_forall_isSemisimple_endOfPoint`: the equivalent
   formulation using the underlying comodule action endomorphisms.
+* `TauCeti.HopfAlgebra.IsSemisimplePoint.isSemisimple_basePointsRepresentation`: a semisimple
+  base-valued point acts semisimply on every finite-dimensional comodule.
 * `TauCeti.HopfAlgebra.IsSemisimplePoint.inv`, `.mul_of_commute`, and `.zpow`: closure under
   inversion, commuting products, and integer powers.
 * `TauCeti.HopfAlgebra.IsSemisimplePoint.mapDomain`: precomposition by a bialgebra morphism
@@ -304,5 +306,29 @@ theorem isSemisimplePoint_pointsMulEquiv_iff
 end Product
 
 end HopfAlgebra
+
+namespace HopfAlgebra.IsSemisimplePoint
+
+universe u v
+
+variable {k : Type u} {H : Type v} {M : Type u}
+variable [Field k] [Semiring H] [_root_.HopfAlgebra k H]
+variable [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+
+/-- A semisimple base-valued point acts by a semisimple operator on every finite-dimensional
+comodule. -/
+theorem isSemisimple_basePointsRepresentation {g : WithConv (H →ₐ[k] k)}
+    (hg : IsSemisimplePoint g) :
+    (Comodule.basePointsRepresentation (R := k) (H := H) M g).IsSemisimple := by
+  refine (LinearEquiv.isSemisimple_iff (f := Comodule.endOfPoint M g.ofConv) _
+    (TensorProduct.lid k M) ?_).mp
+    ((isSemisimplePoint_iff_forall_isSemisimple_endOfPoint g).mp hg
+      (FGComoduleCat.of (R := k) (C := H) M))
+  refine TensorProduct.ext' fun a m ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, Comodule.endOfPoint_tmul,
+    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
+  simp
+
+end HopfAlgebra.IsSemisimplePoint
 
 end TauCeti

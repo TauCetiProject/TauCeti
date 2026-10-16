@@ -320,6 +320,16 @@ theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom :
 underlying modules. -/
 instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
 
+/-- The forgetful functor preserves finite limits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteLimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteLimits_of_preservesHomology _
+
+/-- The forgetful functor preserves finite colimits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteColimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteColimits_of_preservesHomology _
+
 /-- A short complex of graded modules is exact exactly when its underlying linear maps are
 exact. No additional condition on the internal degrees is needed. -/
 theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :

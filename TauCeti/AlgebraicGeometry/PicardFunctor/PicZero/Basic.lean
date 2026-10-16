@@ -393,6 +393,16 @@ def relativePicardDegreeZeroFunctor.mk {T : (Over S)ᵒᵖ} (c : (relativePicard
     (relativePicardDegreeZeroFunctor f).obj T :=
   ⟨c, hc⟩
 
+/-- Restrict a group homomorphism to the degree-zero relative Picard functor when all of its
+values have fibrewise degree zero. -/
+def relativePicardDegreeZeroFunctor.mkHom {T : (Over S)ᵒᵖ} {G : Type*} [Monoid G]
+    (φ : G →* (relativePicardPresheaf f).obj T)
+    (hφ : ∀ a, φ a ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    G →* (relativePicardDegreeZeroFunctor f).obj T where
+  toFun a := relativePicardDegreeZeroFunctor.mk f (φ a) (hφ a)
+  map_one' := Subtype.ext φ.map_one
+  map_mul' a b := Subtype.ext (φ.map_mul a b)
+
 /-- The degree-zero Picard functor `Pic⁰_{X/S}` acts on the section
 `relativePicardDegreeZeroFunctor.mk f c hc` by the pullback map of the relative Picard presheaf
 `T ↦ Pic(X_T) / Pic(T)`. -/
@@ -420,6 +430,17 @@ lemma relativePicardDegreeZeroFunctorι_app_mk {T : (Over S)ᵒᵖ}
     (relativePicardDegreeZeroFunctorι f).app T (relativePicardDegreeZeroFunctor.mk f c hc) = c := by
   unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor.mk; rfl
 
+/-- Restricting a group homomorphism to the degree-zero relative Picard functor and then
+forgetting the degree-zero proof recovers the original homomorphism. -/
+@[simp]
+lemma relativePicardDegreeZeroFunctorι_app_mkHom {T : (Over S)ᵒᵖ} {G : Type*} [Monoid G]
+    (φ : G →* (relativePicardPresheaf f).obj T)
+    (hφ : ∀ a, φ a ∈ (relativePicardDegreeZeroSubfunctor f).obj T) (a : G) :
+    (relativePicardDegreeZeroFunctorι f).app T
+        (relativePicardDegreeZeroFunctor.mkHom f φ hφ a) = φ a := by
+  unfold relativePicardDegreeZeroFunctor.mkHom
+  exact relativePicardDegreeZeroFunctorι_app_mk f _ _
+
 /-- The inclusion `relativePicardDegreeZeroFunctorι` sends a section of `Pic⁰_{X/S}` to a section
 of `T ↦ Pic(X_T) / Pic(T)` of degree zero on every geometric fibre. -/
 lemma relativePicardDegreeZeroFunctorι_app_mem {T : (Over S)ᵒᵖ}
@@ -434,6 +455,37 @@ lemma relativePicardDegreeZeroFunctorι_app_injective (T : (Over S)ᵒᵖ) :
     Function.Injective ((relativePicardDegreeZeroFunctorι f).app T) := by
   unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor
   exact Subtype.val_injective
+
+/-- The set-valued degree-zero subfunctor and the underlying set-valued functor of its
+commutative-group structure have the same sections and pullback maps. -/
+def relativePicardDegreeZeroSubfunctorIsoFunctor :
+    (relativePicardDegreeZeroSubfunctor f).toFunctor ≅
+      relativePicardDegreeZeroFunctor f ⋙ forget CommGrpCat :=
+  NatIso.ofComponents (fun T ↦
+    ({
+      toFun c := relativePicardDegreeZeroFunctor.mk f c.1 c.2
+      invFun c := ⟨(relativePicardDegreeZeroFunctorι f).app T c,
+        relativePicardDegreeZeroFunctorι_app_mem f c⟩
+      left_inv c := Subtype.ext (relativePicardDegreeZeroFunctorι_app_mk f c.1 c.2)
+      right_inv c := relativePicardDegreeZeroFunctorι_app_injective f T <| by
+        rw [relativePicardDegreeZeroFunctorι_app_mk]
+    } : (relativePicardDegreeZeroSubfunctor f).obj T ≃
+      (relativePicardDegreeZeroFunctor f).obj T).toIso) (by
+        intro T T' φ
+        ext c
+        exact (relativePicardDegreeZeroFunctor_map_mk f φ c.1 c.2).symm)
+
+/-- The comparison from the set-valued degree-zero subfunctor to the underlying group-valued
+functor sends a section to the same class with its degree-zero proof. -/
+@[simp]
+lemma relativePicardDegreeZeroSubfunctorIsoFunctor_hom_app {T : (Over S)ᵒᵖ}
+    (c : (relativePicardDegreeZeroSubfunctor f).toFunctor.obj T) :
+    ConcreteCategory.hom (C := Type (u + 1))
+        (X := (relativePicardDegreeZeroSubfunctor f).obj T)
+        (Y := ToType ((relativePicardDegreeZeroFunctor f).obj T))
+        ((relativePicardDegreeZeroSubfunctorIsoFunctor f).hom.app T) c =
+      relativePicardDegreeZeroFunctor.mk f c.1 c.2 := by
+  rfl
 
 end Smooth
 

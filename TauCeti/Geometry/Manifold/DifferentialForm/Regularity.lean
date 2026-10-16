@@ -17,9 +17,10 @@ The fibre coordinate of a fixed-coefficient form in the alternating-map bundle i
 along the inverse extended chart. This transfers smooth-section regularity to the flat
 regularity needed for exterior differentiation, including within subsets at boundary points.
 
-Conversely, flat regularity of a coordinate expression gives regularity of the section. Since the
-flat exterior derivative of a `C^(n+1)` form is `C^n`, the manifold exterior derivative takes
-`C^(n+1)` sections to `C^n` sections, on any manifold of class `C²` over any model with corners.
+Conversely, flat regularity of a coordinate expression gives regularity of the section. The
+manifold exterior derivative takes
+`C^p` sections to `C^n` sections whenever `n + 1 ≤ p`, on any manifold of class `C²` over any
+model with corners.
 In particular it maps smooth `k`-forms to smooth `(k+1)`-forms.
 
 ## Main declarations
@@ -179,19 +180,22 @@ theorem contMDiffOn_mextDerivWithin [IsManifold I 2 M] (φ : RoughForm I M F k) 
   rw [RoughForm.inCoordinates_eq_inChartAt _ ((extChartAt I x).map_target hzT),
     (extChartAt I x).right_inv hzT, hz]
 
-/-- The exterior derivative takes `C^(n+1)` fixed-coefficient forms to `C^n` forms, over any model
-with corners. -/
-theorem isSmoothBundleForm_mextDeriv [IsManifold I 2 M] {n : WithTop ℕ∞} (φ : RoughForm I M F k)
-    (hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) (n + 1) φ) :
+/-- The exterior derivative takes `C^p` fixed-coefficient forms to `C^n` forms when `n + 1 ≤ p`,
+including infinite regularity, over any model with corners. -/
+theorem isSmoothBundleForm_mextDeriv [IsManifold I 2 M] {p n : WithTop ℕ∞}
+    (φ : RoughForm I M F k)
+    (hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) p φ)
+    (hnp : n + 1 ≤ p) :
     IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) n (mextDeriv φ) := by
   rw [isSmoothBundleForm_def] at hφ ⊢
   simp only [← mextDerivWithin_univ, ← contMDiffOn_univ]
-  exact contMDiffOn_mextDerivWithin φ hφ.contMDiffOn (uniqueMDiffOn_univ (I := I)) (by simp)
+  exact contMDiffOn_mextDerivWithin φ (hφ.of_le hnp).contMDiffOn
+    (uniqueMDiffOn_univ (I := I)) (by simp)
 
 /-- The exterior derivative of a smooth fixed-coefficient form is smooth. -/
 theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
     (hφ : φ ∈ smoothForms I M F k) : mextDeriv φ ∈ smoothForms I M F (k + 1) :=
-  mem_smoothForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ <| by
-    simpa only [show (∞ : WithTop ℕ∞) + 1 = ∞ by simp] using mem_smoothForms.mp hφ
+  mem_smoothForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
+    (mem_smoothForms.mp hφ) (by simp)
 
 end TauCeti

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.FixedField
 
 /-!
 # Ramification indices and the fundamental identity in the double coset law

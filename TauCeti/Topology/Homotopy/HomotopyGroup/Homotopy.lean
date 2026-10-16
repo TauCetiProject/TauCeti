@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
@@ -46,48 +47,6 @@ namespace GenLoop
 variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   {x : X} {y : Y}
 
-/-! ### Homotopy relative to the boundary is path connectedness -/
-
-/-- The path in the space of generalized loops traced by a homotopy relative to the cube
-boundary. Each stage of the homotopy is a generalized loop because the homotopy is stationary
-on the cube boundary, where its initial stage takes the value `x`. -/
-def pathOfHomotopyRel {p q : Ω^ N X x}
-    (H : (p : C(I^N, X)).HomotopyRel q (Cube.boundary N)) : Path p q where
-  toFun t := ⟨H.toContinuousMap.curry t, fun z hz =>
-    (H.eq_fst t hz).trans (_root_.GenLoop.boundary p z hz)⟩
-  continuous_toFun := (map_continuous H.toContinuousMap.curry).subtype_mk _
-  source' := _root_.GenLoop.ext _ _ fun z => H.apply_zero z
-  target' := _root_.GenLoop.ext _ _ fun z => H.apply_one z
-
-@[simp]
-theorem pathOfHomotopyRel_apply {p q : Ω^ N X x}
-    (H : (p : C(I^N, X)).HomotopyRel q (Cube.boundary N)) (t : I) (z : I^N) :
-    pathOfHomotopyRel H t z = H (t, z) :=
-  by rw [pathOfHomotopyRel.eq_1]; rfl
-
-/-- The homotopy relative to the cube boundary underlying a path in the space of generalized
-loops. The relative condition is automatic: every stage of the path is a generalized loop, so
-it takes the value `x` at every point of the cube boundary. -/
-def homotopyRelOfPath {p q : Ω^ N X x} (γ : Path p q) :
-    (p : C(I^N, X)).HomotopyRel q (Cube.boundary N) where
-  toFun := (ContinuousMap.uncurry
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(Ω^ N X x, C(I^N, X))).comp γ.toContinuousMap))
-  map_zero_left z := congrArg (fun r : Ω^ N X x => r z) γ.source
-  map_one_left z := congrArg (fun r : Ω^ N X x => r z) γ.target
-  prop' t z hz := ((γ t).property z hz).trans (_root_.GenLoop.boundary p z hz).symm
-
-@[simp]
-theorem homotopyRelOfPath_apply {p q : Ω^ N X x} (γ : Path p q) (t : I) (z : I^N) :
-    homotopyRelOfPath γ (t, z) = γ t z :=
-  by rw [homotopyRelOfPath.eq_1]; rfl
-
-/-- **Two generalized loops are homotopic relative to the cube boundary exactly when they are
-joined by a path in the space of generalized loops.** The compact-open topology on `Ω^ N X x`
-therefore records the homotopy relation of `HomotopyGroup N X x` as its path components. -/
-theorem homotopic_iff_joined {p q : Ω^ N X x} :
-    _root_.GenLoop.Homotopic p q ↔ Joined p q :=
-  ⟨fun h => ⟨pathOfHomotopyRel h.some⟩, fun h => ⟨homotopyRelOfPath h.some⟩⟩
-
 /-- Homotopy of one-dimensional generalized loops relative to the cube boundary is homotopy of
 the paths they correspond to under Mathlib's bijection `genLoopEquivOfUnique`. Both sides say
 that the two classes agree in a quotient, and `homotopyGroupEquivFundamentalGroupOfUnique`
@@ -114,11 +73,13 @@ theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) {S : Set X}
   refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.1 tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
   · fun_prop
   · intro t
-    simpa only [map, ContinuousMap.comp_apply, _root_.GenLoop.mk_apply] using H.apply_zero (p.1 t)
+    exact (H.apply_zero (p.1 t)).trans (map_apply f hf p t).symm
   · intro t
-    simpa only [map, ContinuousMap.comp_apply, _root_.GenLoop.mk_apply] using H.apply_one (p.1 t)
+    exact (H.apply_one (p.1 t)).trans (map_apply g _ p t).symm
   · intro t u hu
-    exact H.eq_fst t (by rw [p.2 u hu]; exact hx)
+    have hpu : p.1 u ∈ S := by rw [p.2 u hu]; exact hx
+    refine (H.eq_fst t hpu).trans ?_
+    exact (map_apply f hf p u).symm
 
 end GenLoop
 
