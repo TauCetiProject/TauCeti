@@ -9,7 +9,6 @@ public import Mathlib.Combinatorics.Hypergraph.Basic
 public import Mathlib.Data.Fintype.Powerset
 public import Mathlib.Data.Finset.Slice
 public import Mathlib.Algebra.Order.Field.Rat
-import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -159,11 +158,8 @@ theorem edgeDensity_nonneg [Fintype V] (H : UniformHypergraph r V) : 0 ≤ H.edg
 
 /-- The edge density is at most `1`. -/
 theorem edgeDensity_le_one [Fintype V] (H : UniformHypergraph r V) : H.edgeDensity ≤ 1 := by
-  unfold edgeDensity
-  rcases Nat.eq_zero_or_pos ((Fintype.card V).choose r) with h0 | hpos
-  · simp [h0]
-  · rw [div_le_one (by exact_mod_cast hpos)]
-    exact_mod_cast H.card_edges_le
+  rw [edgeDensity_def]
+  exact div_le_one_of_le₀ (by exact_mod_cast H.card_edges_le) (by positivity)
 
 /-- The empty hypergraph has density `0`. -/
 @[simp]
