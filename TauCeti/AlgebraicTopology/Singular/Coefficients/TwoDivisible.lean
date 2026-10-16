@@ -8,11 +8,11 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
+public import TauCeti.Algebra.Category.ModuleCat.ModTwo
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.Algebra.Homology.HomologySequence
-import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Mod-two vanishing and integral homology
@@ -25,7 +25,8 @@ The proof uses the coefficient sequence ℤ → ℤ → ℤ/2 and Mathlib's homo
 sequence, specifically `CategoryTheory.ShortComplex.ShortExact.homology_exact₁` and
 `CategoryTheory.ShortComplex.ShortExact.homology_exact₂`. It requires no connectivity or
 finite-generation assumptions. The coefficients are universe-lifted so that the space can live
-in any universe.
+in any universe. The reusable coefficient sequence and its exactness are
+`TauCeti.modTwoCoefficientSequence` and `TauCeti.modTwoCoefficientSequence_shortExact`.
 
 ## References
 
@@ -57,31 +58,8 @@ theorem isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two (X : TopCat.{u
     HasExactColimitsOfShape.domain_of_functor (Discrete I)
       (forget₂ (ModuleCat.{u} ℤ) AddCommGrpCat.{u})⟩
   -- The coefficient sequence is exact before taking singular chains.
-  let Z := ModuleCat.of ℤ (ULift.{u} ℤ)
-  let q : Z ⟶ ModuleCat.of ℤ (ULift.{u} (ZMod 2)) := ModuleCat.ofHom
-    ((AddEquiv.ulift.symm.toAddMonoidHom.comp (Int.castAddHom (ZMod 2))).comp
-      AddEquiv.ulift.toAddMonoidHom).toIntLinearMap
-  let S : ShortComplex (ModuleCat.{u} ℤ) := ShortComplex.mk ((2 : ℤ) • 𝟙 Z) q (by
-    ext a
-    simp [q, Z, AddEquiv.ulift, Equiv.ulift, show (2 : ZMod 2) = 0 by decide])
-  have hS : S.ShortExact := by
-    apply ModuleCat.shortComplex_shortExact
-    · intro a
-      constructor
-      · intro ha
-        have ha' : (a.down : ZMod 2) = 0 := congrArg ULift.down ha
-        obtain ⟨b, hb⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd a.down 2).mp ha'
-        exact ⟨ULift.up b, ULift.down_injective (by simpa [S, Z, mul_comm] using hb.symm)⟩
-      · rintro ⟨b, rfl⟩
-        apply ULift.down_injective
-        simp [S, q, Z, AddEquiv.ulift, Equiv.ulift, show (2 : ZMod 2) = 0 by decide]
-    · intro a b hab
-      apply ULift.down_injective
-      have hab' := congrArg ULift.down hab
-      simpa [S, Z] using hab'
-    · intro a
-      obtain ⟨b, hb⟩ := ZMod.intCast_surjective a.down
-      exact ⟨ULift.up b, ULift.down_injective hb⟩
+  let S := TauCeti.modTwoCoefficientSequence.{u}
+  have hS : S.ShortExact := TauCeti.modTwoCoefficientSequence_shortExact
   let T := S.map (AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{u} ℤ) ⋙
     (evaluation _ _).obj X)
   have hT : T.ShortExact := by
@@ -94,7 +72,8 @@ theorem isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two (X : TopCat.{u
     (hT.homology_exact₂ n).epi_f (hn.eq_of_tgt _ _)
   -- Additivity identifies the induced coefficient map with multiplication by two.
   have hmap : homologyMap T.f n = (2 : ℤ) • 𝟙 (T.X₁.homology n) := by
-    have hf : T.f = 𝟙 T.X₁ + 𝟙 T.X₁ := by simp [T, S, two_smul]
+    have hf : T.f = 𝟙 T.X₁ + 𝟙 T.X₁ := by
+      simp [T, S, TauCeti.modTwoCoefficientSequence, two_smul]
     rw [hf, homologyMap_add, homologyMap_id]
     exact (two_smul ℤ _).symm
   -- Transport the bundled module, including its group instance, to the chain-homology carrier.
