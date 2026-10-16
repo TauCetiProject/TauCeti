@@ -78,6 +78,8 @@ theorem exists_finset_smooth_partition_in_charts (φ : RoughForm I M F k)
   refine ⟨s, ρ, ?_, ?_⟩
   · exact heq.trans (by ext x; simp)
   · intro i _
+    -- Fix the model-fibre view of φ for the ordinary function support lemmas; the form's
+    -- tangent-fibre type otherwise leaves an expensive dependent-type identification implicit.
     have hs : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F)
         (fun x ↦ ρ i x • φ x : RoughForm I M F k) ⊆ U i :=
       (_root_.tsupport_smul_subset_left (ρ i) (show M → E [⋀^Fin _]→L[ℝ] F from φ)).trans (hρ i)

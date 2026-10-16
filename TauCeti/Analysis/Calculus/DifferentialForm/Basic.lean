@@ -78,6 +78,7 @@ theorem extDerivWithin_pullback {E' : Type*} [NormedAddCommGroup E'] [NormedSpac
   let C := ContinuousAlternatingMap.compContinuousLinearMapCLM (F := F) (ι := Fin n) L
   have hd := (C.hasFDerivAt.comp_hasFDerivWithinAt x
     (hω.hasFDerivWithinAt.comp x L.hasFDerivAt.hasFDerivWithinAt hL)).fderivWithin hs
+  -- Express the flat pullback as a composite with the continuous-linear pullback operator.
   change fderivWithin 𝕜 (fun y ↦ (ω (L y)).compContinuousLinearMap L) s x =
     C.comp ((fderivWithin 𝕜 ω t (L x)).comp L) at hd
   ext v

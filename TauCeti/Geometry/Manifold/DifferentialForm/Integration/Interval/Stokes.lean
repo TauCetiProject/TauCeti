@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ZeroDim
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -31,39 +31,39 @@ namespace TauCeti
 
 variable {a b : ℝ} [hab : Fact (a < b)]
 
-private theorem interval_function_derivative (f : ℝ → ℝ) (hf : ContDiff ℝ 1 f) :
-    mextDeriv (RoughForm.ofFunction (𝓡∂ 1) (fun t : Icc a b ↦ f t)) =
-      mpullback (𝓡∂ 1) 𝓘(ℝ) Subtype.val (mextDeriv (RoughForm.ofFunction 𝓘(ℝ) f)) := by
-  ext t v
-  rw [mextDeriv_ofFunction, mpullback_apply, mextDeriv_ofFunction]
-  change mvfderiv (𝓡∂ 1) (fun t : Icc a b ↦ f t) t (v 0) =
-    mvfderiv 𝓘(ℝ) f (t : ℝ) (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val t (v 0))
-  exact mvfderiv_comp_apply t (hf.contMDiff.mdifferentiable one_ne_zero _)
-    ((contMDiff_subtypeVal_Icc (x := a) (y := b) (n := 1)).mdifferentiable one_ne_zero _) (v 0)
-
-/-- The integral of the actual exterior derivative of a C1 real function on an increasing
-closed interval is its endpoint difference. -/
-theorem integralTopForm_mextDeriv_ofFunction_Icc (f : ℝ → ℝ) (hf : ContDiff ℝ 1 f) :
+/-- The integral of the actual exterior derivative of a function that is `C¹` on an increasing
+closed interval is its endpoint difference. No regularity outside the interval is required. -/
+theorem integralTopForm_mextDeriv_ofFunction_Icc (f : ℝ → ℝ)
+    (hf : ContDiffOn ℝ 1 f (Icc a b)) :
     IntegrableTopForm
       (mextDeriv (RoughForm.ofFunction (𝓡∂ 1) (fun t : Icc a b ↦ f t))) ∧
       integralTopForm (Manifold.Orientation.interval a b)
         (mextDeriv (RoughForm.ofFunction (𝓡∂ 1) (fun t : Icc a b ↦ f t))) = f b - f a := by
-  let η := mextDeriv (RoughForm.ofFunction 𝓘(ℝ) f)
-  have he (t : ℝ) : η t (fun _ ↦ (1 : TangentSpace 𝓘(ℝ) t)) = deriv f t := by
-    change mextDeriv (RoughForm.ofFunction 𝓘(ℝ) f) t _ = _
+  let η := mextDeriv (RoughForm.ofFunction 𝓘(ℝ) (id : ℝ → ℝ))
+  have hη (t : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) t) :
+      η t v = NormedSpace.fromTangentSpace (𝕜 := ℝ) t (v 0) := by
+    dsimp only [η]
     rw [mextDeriv_ofFunction]
-    change mvfderiv 𝓘(ℝ) f t (1 : TangentSpace 𝓘(ℝ) t) = deriv f t
-    rw [mvfderiv_eq_fderiv]
-    change fderiv ℝ f t (1 : ℝ) = deriv f t
-    exact fderiv_apply_one_eq_deriv
-  have hi : IntervalIntegrable (fun t ↦ η t (fun _ ↦ 1)) volume a b := by
-    simpa only [he] using hf.continuous_deriv (by simp) |>.intervalIntegrable a b
-  have h := integralTopForm_mpullback_subtypeVal_Icc η hi
-  rw [← interval_function_derivative f hf] at h
+    simp [mvfderiv_eq_fderiv]
+  have hi : IntervalIntegrable (deriv f) volume a b := by
+    have hwithin := (hf.derivWithin (m := 0) (uniqueDiffOn_Icc hab.out) (by simp)).continuousOn
+    apply (hwithin.intervalIntegrable_of_Icc (μ := volume) hab.out.le).congr_uIoo
+    intro t ht
+    rw [uIoo_of_le hab.out.le] at ht
+    exact derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)
+  have hp : IntervalIntegrable (fun t ↦ η (f t)
+      (fun _ ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) (f t)).symm (deriv f t))) volume a b := by
+    simpa only [hη, ContinuousLinearEquiv.apply_symm_apply] using hi
+  have h := integralTopForm_mpullback_curve_Icc η f hf hp
+  have he : mpullback (𝓡∂ 1) 𝓘(ℝ) (fun t : Icc a b ↦ f t) η =
+      mextDeriv (RoughForm.ofFunction (𝓡∂ 1) (fun t : Icc a b ↦ f t)) := by
+    ext t v
+    rw [mpullback_apply, hη, mextDeriv_ofFunction]
+    rfl
+  rw [he] at h
   refine ⟨h.1, h.2.trans ?_⟩
-  simp only [he]
-  exact intervalIntegral.integral_deriv_eq_sub (fun _ _ ↦ hf.differentiable one_ne_zero _)
-    ((hf.continuous_deriv (by simp)).intervalIntegrable a b)
+  simp only [hη, ContinuousLinearEquiv.apply_symm_apply]
+  exact intervalIntegral.integral_deriv_of_contDiffOn_Icc hf hab.out.le
 
 attribute [local instance] intervalSuccessorChartedSpace intervalBoundaryChartedSpace
 
@@ -85,6 +85,7 @@ theorem integralTopForm_ofFunction_boundary_Icc
   let R : (𝓡∂ (0 + 1)).boundary (Icc a b) := ⟨⊤, Icc_isBoundaryPoint_top⟩
   have hpoints (x : (𝓡∂ (0 + 1)).boundary (Icc a b)) : x = L ∨ x = R := by
     have hx := x.property
+    -- Normalize 0 + 1 to 1 in the boundary model before using the interval endpoint set.
     change x.val ∈ (𝓡∂ 1).boundary (Icc a b) at hx
     have he : (𝓡∂ 1).boundary (Icc a b) = {⊥, ⊤} := boundary_Icc
     have hx' : x.val ∈ ({⊥, ⊤} : Set (Icc a b)) := he ▸ hx
@@ -110,6 +111,7 @@ theorem integralTopForm_ofFunction_boundary_Icc
     norm_num
   simp only [L, R, orientationAt_boundaryOrientation_interval_left,
     orientationAt_boundaryOrientation_interval_right]
+  -- Expose the chosen empty basis B and the endpoint abbreviations L and R.
   change (Orientation.signBasis (-B.orientation) B : ℝ) * g L +
     (Orientation.signBasis B.orientation B : ℝ) * g R = g R - g L
   rw [hp, hn]

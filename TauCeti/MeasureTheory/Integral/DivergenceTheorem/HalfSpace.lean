@@ -14,7 +14,9 @@ public import Mathlib.Analysis.Normed.Group.Bounded
 # Divergence on a coordinate half-space
 
 Compact support eliminates every face of a sufficiently large bounding box except the face at
-coordinate zero. Only regularity on the closed half-space is required.
+coordinate zero. This specializes Mathlib's
+`MeasureTheory.integral_divergence_of_hasFDerivAt_off_countable` to a bounding box containing
+the support. Only regularity on the closed half-space is required.
 -/
 
 public section
@@ -87,8 +89,9 @@ theorem _root_.ContDiffOn.integral_divergence_coordinate_halfSpace {n : ℕ}
       apply hy
       exact ⟨fun i ↦ hk.1 i.succ, fun i ↦ hk.2 i.succ⟩
     exact congrFun (hzero (hout (by simp [H]) hk)) 0
+  have hB : IsCompact B := isCompact_Icc
   have hbi : Integrable (fun y : Fin n → ℝ ↦ f (Fin.cons 0 y) 0) :=
-    (hbc.continuousOn.integrableOn_compact (show IsCompact B from isCompact_Icc))
+    (hbc.continuousOn.integrableOn_compact hB)
       |>.integrable_of_forall_notMem_eq_zero fun _ hy ↦ hbzero hy
   have hbEq : (∫ y in B, f (Fin.cons 0 y) 0) = ∫ y : Fin n → ℝ, f (Fin.cons 0 y) 0 :=
     setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy ↦ hbzero hy
@@ -110,6 +113,7 @@ theorem _root_.ContDiffOn.integral_divergence_coordinate_halfSpace {n : ℕ}
     hDi
   refine ⟨hDI, hbi, ?_⟩
   rw [hDiEq]
+  -- Fold the coordinate trace into D so the bounding-box identity matches the integral.
   change (∫ x in Icc a b, D x) = _ at hdiv
   rw [hdiv]
   simp only [Fin.sum_univ_succ, hupper, hlower, integral_zero, zero_sub, neg_zero,

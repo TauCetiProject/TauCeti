@@ -74,9 +74,10 @@ theorem HasDerivAt.mem_tangentConeAt {γ : 𝕜 → E} {v : E} {t : 𝕜} {S : S
 /-- A closed coordinate half-space has unique derivatives, including at its boundary. -/
 theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
     UniqueDiffOn ℝ {x : ι → ℝ | a ≤ x i} := by
-  apply uniqueDiffOn_convex (convex_halfSpace_ge
-    (show IsLinearMap ℝ (fun x : ι → ℝ ↦ x i) from
-      ⟨fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩) a)
+  have hlinear : IsLinearMap ℝ (fun x : ι → ℝ ↦ x i) :=
+    ⟨fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
+  apply uniqueDiffOn_convex (convex_halfSpace_ge hlinear a)
   refine ⟨fun _ ↦ a + 1, mem_interior_iff_mem_nhds.mpr ?_⟩
-  exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds
-    (show a < a + 1 by linarith)) fun x hx ↦ hx.le
+  have ha : a < a + 1 := lt_add_one a
+  exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds ha)
+    fun x hx ↦ hx.le

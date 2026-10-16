@@ -171,6 +171,7 @@ private theorem integral_mextDeriv_inChartAt [IsManifold (𝓡∂ (n + 1)) 2 M]
   let a := (TauCeti.mextDeriv φ).signedInChartAt e α (fun _ ↦ 1)
   let b := fun y ↦ ω (euclideanHalfSpaceBoundaryParam n y)
     (fun i ↦ euclideanHalfSpaceBoundaryParam n (f i))
+  -- Use the local scalar names a and b for the two chart integrands.
   change MeasureTheory.Integrable a ∧ MeasureTheory.Integrable b ∧ _
   have hω := φ.contDiffOn_indicator_inChartAt α
     (fun z hz ↦ hφ.contDiffWithinAt_inChartAt α hz) hc hs
@@ -185,6 +186,7 @@ private theorem integral_mextDeriv_inChartAt [IsManifold (𝓡∂ (n + 1)) 2 M]
     ((TauCeti.mextDeriv φ).support_signedInChartAt_subset_target e α (fun _ ↦ 1)).trans
       (extChartAt_target_subset_range α)
   have hHm : MeasurableSet (range I) := by
+    -- Expand the local model I to use the canonical half-space range equation.
     change MeasurableSet (range (𝓡∂ (n + 1)))
     rw [range_modelWithCornersEuclideanHalfSpace]
     exact isClosed_le continuous_const (EuclideanSpace.proj 0).continuous |>.measurableSet
@@ -258,9 +260,7 @@ theorem integralTopForm_mextDeriv_of_tsupport_subset_chart
   have hsA := φ.tsupport_mextDeriv_subset.trans hs
   have hcB := isCompact_tsupport_boundaryRestriction hc
   have hsB := tsupport_boundaryRestriction_subset_source α hs
-  have hiA := ((isSmoothForm_def 0 _).mpr ((isSmoothBundleForm_def 0 _).mp
-      (isSmoothBundleForm_mextDeriv _ ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)
-        (n := 0) (by simp)))).integrableTopForm hcA e
+  have hiA := hφ.continuous_mextDeriv.integrableTopForm hcA e
   have hiB := hφ.boundaryRestriction.integrableTopForm hcB f
   rw [boundaryOrientation_mk, integralTopForm_eq_chartIntegral l _ hiA (α : M) hsA,
     integralTopForm_eq_chartIntegral l.boundary _ hiB α hsB]

@@ -51,9 +51,7 @@ theorem integralTopForm_mextDeriv
     (hp i hi).2.1
   have hm : ∀ i ∈ s, IntegrableTopForm (TauCeti.mextDeriv (ψ i)) := by
     intro i hi
-    exact ((isSmoothForm_def 0 _).mpr ((isSmoothBundleForm_def 0 _).mp
-      (isSmoothBundleForm_mextDeriv _ ((isSmoothBundleForm_def 1 _).mpr (hψ i hi).contMDiff)
-        (n := 0) (by simp)))).integrableTopForm
+    exact (hψ i hi).continuous_mextDeriv.integrableTopForm
       ((ψ i).isCompact_tsupport_mextDeriv (hcψ i hi))
       (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis
   have hb : ∀ i ∈ s, IntegrableTopForm (boundaryRestriction (ψ i)) := by

@@ -69,6 +69,7 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_euclideanHalfSpace {n : ℕ}
   have hb (y : Fin n → ℝ) : η (Fin.cons 0 y) (fun i ↦ Pi.single i.succ 1) =
       ω (euclideanHalfSpaceBoundaryParam n (B y))
         (fun i ↦ euclideanHalfSpaceBoundaryParam n (EuclideanSpace.basisFun (Fin n) ℝ i)) := by
+    -- Expose the boundary tuple after converting from alternating-map pullback to evaluation.
     change ω (L (Fin.cons 0 y)) (fun i ↦ L (Pi.single i.succ 1)) = _
     rw [hparam]
     congr 1
@@ -97,6 +98,7 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_euclideanHalfSpace {n : ℕ}
   have hintb := (hpb.integrable_comp_emb heb (g := b)).mp (hr.2.1.congr (by
     filter_upwards [] with y using hb y))
   refine ⟨hint, hintb, ?_⟩
+  -- Expand the local scalar coefficients while keeping the half-space set T fixed.
   change (∫ x in T, d x) = -(∫ y, b y)
   rw [← hp.integral_comp he d, ← hpb.integral_comp heb b]
   calc

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.InteriorCha
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.Orientation.Interval
-public import TauCeti.MeasureTheory.Measure.EuclideanLine
+public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
@@ -59,14 +59,12 @@ theorem inChartAt_mpullback_subtypeVal_Icc
     simp only [smul_apply, smul_eq_mul,
       OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply,
       EuclideanSpace.coe_proj, PiLp.single_apply, ite_eq_left, mul_one]
-    have hone :
-        (NormedSpace.fromTangentSpace (𝕜 := ℝ)
-          ((extChartAt (𝓡∂ 1) α).symm z : ℝ)).symm (1 : ℝ) =
-          (1 : TangentSpace 𝓘(ℝ) ((extChartAt (𝓡∂ 1) α).symm z : ℝ)) := by rfl
     have hmap := (NormedSpace.fromTangentSpace (𝕜 := ℝ)
       ((extChartAt (𝓡∂ 1) α).symm z : ℝ)).symm.map_smul c (1 : ℝ)
     simp only [smul_eq_mul, mul_one] at hmap
-    exact hmap.trans (congrArg (fun v ↦ c • v) hone)
+    exact hmap.trans (congrArg (fun v ↦ c • v)
+      (NormedSpace.fromTangentSpace_symm_one _))
+  -- Expose the signed projection and the coefficient c so the transported tuple he rewrites it.
   change ω _ (fun i ↦
     (NormedSpace.fromTangentSpace (𝕜 := ℝ) ((extChartAt (𝓡∂ 1) α).symm z : ℝ)).symm
       ((c • EuclideanSpace.proj 0) ((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis i))) =
@@ -106,6 +104,7 @@ private theorem integrable_interval_pullback_coefficient
   rw [RoughForm.signedInChartAt_apply, dite_eq_left hz]
   simp only [Units.val_one, Int.cast_one, one_mul]
   rw [inChartAt_mpullback_subtypeVal_Icc ω α hz]
+  -- Expand only the local coefficient abbreviations; keep the chart inverse for its equation.
   change (if (α : ℝ) < b then (1 : ℝ) else -1) * g (π z) =
     (if (α : ℝ) < b then (1 : ℝ) else -1) * f ((extChartAt (𝓡∂ 1) α).symm z : ℝ)
   rw [subtypeVal_extChartAt_Icc_symm α hz]
@@ -161,12 +160,14 @@ theorem integralTopForm_mpullback_subtypeVal_Icc
     rw [RoughForm.signedInChartAt_apply, dite_eq_left hz]
     simp only [Units.val_one, Int.cast_one, one_mul]
     rw [inChartAt_mpullback_subtypeVal_Icc ω α hz]
+    -- Identify the bottom-chart coefficient with the local real coefficient f before rewriting.
     change (if (α : ℝ) < b then (1 : ℝ) else -1) *
       f ((extChartAt (𝓡∂ 1) α).symm z : ℝ) = f (z 0 + a)
     rw [subtypeVal_extChartAt_Icc_symm α hz]
     simp only [α, Icc.coe_bot, hab.out, ↓reduceIte, one_mul]
   rw [setIntegral_congr_fun (measurableSet_extChartAt_target α) he,
     (EuclideanSpace.basisFun (Fin 1) ℝ).addHaar_eq_volume, extChartAt_Icc_target]
+  -- Present the chart target and coordinate function through the same projection for transport.
   change (∫ z in (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0) ⁻¹' Ico 0 (b - a),
     f ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0) z + a)) = _
   rw [(TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
@@ -198,28 +199,29 @@ theorem integralTopForm_mpullback_curve_Icc {X : Type*} [NormedAddCommGroup X]
     rw [uIoo_of_le hab.out.le] at ht
     have hd := (hγ.contDiffAt (Icc_mem_nhds ht.1 ht.2)).contMDiffAt.mdifferentiableAt
       one_ne_zero
+    -- Unfold the local pulled-back form η so the within-pullback equation applies.
     change mpullbackWithin 𝓘(ℝ) 𝓘(ℝ, X) γ (Icc a b) ω t _ = _
     rw [mpullbackWithin_eq_mpullback
       ((uniqueDiffOn_Icc hab.out t ⟨ht.1.le, ht.2.le⟩).uniqueMDiffWithinAt) hd ω,
       mpullback_apply, mfderiv_eq_fderiv]
     apply congrArg (ω (γ t))
     funext i
-    have hone : NormedSpace.fromTangentSpace (𝕜 := ℝ) t (1 : TangentSpace 𝓘(ℝ) t) =
-        (1 : ℝ) := by rfl
+    -- Expose the model-space derivative conjugation produced by mfderiv_eq_fderiv.
     change (NormedSpace.fromTangentSpace (𝕜 := ℝ) (γ t)).symm
         (fderiv ℝ γ t (NormedSpace.fromTangentSpace (𝕜 := ℝ) t 1)) = _
-    rw [hone, fderiv_apply_one_eq_deriv]
+    rw [NormedSpace.fromTangentSpace_one, fderiv_apply_one_eq_deriv]
   have hi : IntervalIntegrable (fun t ↦ η t (fun _ ↦ 1)) volume a b :=
     hf.congr_uIoo (fun t ht ↦ (he ht).symm)
   have h := integralTopForm_mpullback_subtypeVal_Icc η hi
   have hc : mpullback (𝓡∂ 1) 𝓘(ℝ, X) (fun t : Icc a b ↦ γ t) ω =
       mpullback (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : Icc a b → ℝ) η := by
     funext x
+    have hmaps : MapsTo (Subtype.val : Icc a b → ℝ) univ (Icc a b) := fun t _ ↦ t.property
     have hx := mpullbackWithin_comp_at
       (((contMDiff_subtypeVal_Icc (x := a) (y := b) (n := 1)).mdifferentiable
         one_ne_zero x).mdifferentiableWithinAt (s := univ))
       ((hγ.contMDiffOn.mdifferentiableOn one_ne_zero) x x.property)
-      (show MapsTo (Subtype.val : Icc a b → ℝ) univ (Icc a b) from fun t _ ↦ t.property)
+      hmaps
       (uniqueMDiffWithinAt_univ (𝓡∂ 1)) ω
     simpa only [mpullbackWithin_univ, Function.comp_def, η] using hx
   rw [← hc] at h

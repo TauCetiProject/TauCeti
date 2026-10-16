@@ -109,9 +109,7 @@ theorem integralTopForm_mextDeriv_eq_zero_of_tsupport_subset_chart [IsManifold I
       simp only [ContinuousAlternatingMap.alternatizeUncurryFin_apply,
         zero_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply,
         smul_zero, Finset.sum_const_zero]
-  have hi := ((isSmoothForm_def 0 _).mpr ((isSmoothBundleForm_def 0 _).mp
-      (isSmoothBundleForm_mextDeriv _ ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)
-        (n := 0) (by simp)))).integrableTopForm
+  have hi := hφ.continuous_mextDeriv.integrableTopForm
     (φ.isCompact_tsupport_mextDeriv hc) b
   rw [integralTopForm_eq_chartIntegral l _ hi α (φ.tsupport_mextDeriv_subset.trans hs),
     l.chartIntegral_eq_const_mul_unsigned _ b α (l.signAt α α)
@@ -139,9 +137,7 @@ theorem integralTopForm_mextDeriv_eq_zero_of_disjoint_boundary [IsManifold I ∞
     (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) (ψ i)) := fun i hi ↦ (hp i hi).2.1
   have hm : ∀ i ∈ s, IntegrableTopForm (TauCeti.mextDeriv (ψ i)) := by
     intro i hi
-    exact ((isSmoothForm_def 0 _).mpr ((isSmoothBundleForm_def 0 _).mp
-      (isSmoothBundleForm_mextDeriv _ ((isSmoothBundleForm_def 1 _).mpr (hψ i hi).contMDiff)
-        (n := 0) (by simp)))).integrableTopForm
+    exact (hψ i hi).continuous_mextDeriv.integrableTopForm
       ((ψ i).isCompact_tsupport_mextDeriv (hcψ i hi)) b
   have hmd : TauCeti.mextDeriv φ = ∑ i ∈ s, TauCeti.mextDeriv (ψ i) := by
     rw [heq]
@@ -152,6 +148,8 @@ theorem integralTopForm_mextDeriv_eq_zero_of_disjoint_boundary [IsManifold I ∞
   apply integralTopForm_mextDeriv_eq_zero_of_tsupport_subset_chart l (hψ i hi) i (hcψ i hi)
   · simpa only [extChartAt_source] using (hp i hi).2.2.1
   · exact (hp i hi).2.2.2.1
+  -- Give the support lemma the fixed model fibre explicitly; inferring this tangent-fibre
+  -- identification here exceeds the elaborator's standard heartbeat budget.
   · exact hd.mono_left (_root_.tsupport_smul_subset_right (ρ i)
     (show M → E [⋀^Fin _]→L[ℝ] ℝ from φ))
 

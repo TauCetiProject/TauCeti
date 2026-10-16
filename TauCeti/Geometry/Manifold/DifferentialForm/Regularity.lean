@@ -196,6 +196,15 @@ theorem isSmoothBundleForm_mextDeriv [IsManifold I 2 M] {p n : WithTop ℕ∞}
   exact contMDiffOn_mextDerivWithin φ (hφ.of_le hnp).contMDiffOn
     (uniqueMDiffOn_univ (I := I)) (by simp)
 
+/-- The exterior derivative of a `C¹` form is a continuous section. -/
+theorem IsSmoothForm.continuous_mextDeriv [IsManifold I 2 M]
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) :
+    IsSmoothForm I 0 (mextDeriv φ) := by
+  rw [isSmoothForm_def]
+  exact (isSmoothBundleForm_def 0 _).mp
+    (isSmoothBundleForm_mextDeriv φ ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)
+      (n := 0) (by simp))
+
 /-- The exterior derivative of a smooth fixed-coefficient form is smooth. -/
 theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
     (hφ : φ ∈ smoothForms I M F k) : mextDeriv φ ∈ smoothForms I M F (k + 1) :=
