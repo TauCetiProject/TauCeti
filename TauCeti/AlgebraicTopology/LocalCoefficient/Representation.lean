@@ -94,15 +94,17 @@ theorem ofRepresentation_obj (ρ : Representation R (FundamentalGroup X x) V)
 closed up by the chosen paths. -/
 theorem ofRepresentation_map_apply (ρ : Representation R (FundamentalGroup X x) V)
     {y z : FundamentalGroupoid X} (p : y ⟶ z) (v : V) :
-    (ofRepresentation x ρ).map p v = ρ (pathFromBase x y ≫ p ≫ inv (pathFromBase x z)) v := by
+    (ofRepresentation x ρ).map p v =
+      ρ (FundamentalGroup.fromArrow (pathFromBase x y ≫ p ≫ inv (pathFromBase x z))) v := by
   -- Unfold `ofRepresentation`: its second factor `Groupoid.singleObjFunctor` is the identity on
   -- morphisms (`Groupoid.singleObjFunctor_map`), which `rw` cannot apply since the objects of the
   -- first factor are the unique object of `SingleObj` only by unfolding `functorOfEndHom_obj`.
   change ((Groupoid.functorOfEndHom (FundamentalGroupoid.mk x) (pathFromBase x)
     (((ModuleCat.endRingEquiv (ModuleCat.of R V)).symm :
-        Module.End R V →* End (ModuleCat.of R V)).comp ρ)).map p).hom v = _
-  rw [Groupoid.functorOfEndHom_map, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
-    ModuleCat.endRingEquiv_symm_apply_hom]
+        Module.End R V →* End (ModuleCat.of R V)).comp ρ)).map p).asHom.hom v = _
+  rw [Groupoid.functorOfEndHom_map, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
+  -- `endRingEquiv.symm f` is `End.of (ModuleCat.ofHom f)` by definition, whose linear map is `f`.
+  rfl
 
 /-- **The monodromy of the local system of a representation is that representation.** -/
 @[simp]
@@ -110,7 +112,7 @@ theorem monodromyRepresentation_ofRepresentation
     (ρ : Representation R (FundamentalGroup X x) V) :
     monodromyRepresentation (ofRepresentation x ρ) x = ρ := by
   ext g v
-  refine (ofRepresentation_map_apply x ρ g v).trans ?_
+  refine (ofRepresentation_map_apply x ρ g.asHom v).trans ?_
   rw [pathFromBase_mk, IsIso.inv_id, Category.id_comp, Category.comp_id]
   rfl
 
@@ -126,7 +128,7 @@ def ofRepresentationMonodromyIso (L : LocalCoefficientSystem.{u, v, w} R X) :
     change (ofRepresentation x (monodromyRepresentation L x)).map g v = L.map g v
     refine (ofRepresentation_map_apply x _ g v).trans ?_
     rw [pathFromBase_mk, IsIso.inv_id, Category.id_comp, Category.comp_id]
-    exact monodromyRepresentation_apply L x g v
+    exact monodromyRepresentation_apply L x (FundamentalGroup.fromArrow g) v
 
 /-- The isomorphism `ofRepresentationMonodromyIso` is the identity at the basepoint. -/
 @[simp]
