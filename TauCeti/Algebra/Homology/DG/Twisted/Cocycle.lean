@@ -119,6 +119,51 @@ theorem m_eq_zero_of_le (m : TwistingCocycle 𝒜 d P ind) {x y : P} (hxy : ind 
     m.m x y = 0 :=
   m.one_sided x y hxy
 
+/-- The entries between generators whose indices differ by one have degree zero. -/
+theorem m_mem_zero_of_eq_add_one (m : TwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 1) : m.m x y ∈ 𝒜 0 := by
+  have h := m.mem_graded x y
+  rwa [show ind y - ind x + 1 = 0 by omega] at h
+
+/-- The entries between generators whose indices differ by one are cycles: no generator has an
+index strictly between theirs. -/
+theorem d_m_eq_zero_of_eq_add_one (m : TwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 1) : d (m.m x y) = 0 := by
+  rw [m.twisting x y]
+  refine Finset.sum_eq_zero fun z _ ↦ ?_
+  rcases le_or_gt (ind x) (ind z) with h | h
+  · rw [m.one_sided x z h, zero_mul, smul_zero]
+  · rw [m.one_sided z y (by omega), mul_zero, smul_zero]
+
+/-- **The twisting equation at index difference two**: between generators whose indices differ
+by two, the sum of the products of the entries through the generators of the intermediate index
+is minus the differential of the entry. -/
+theorem sum_m_mul_m_of_eq_add_two (m : TwistingCocycle 𝒜 d P ind) {x z : P}
+    (hxz : ind x = ind z + 2) : ∑ y, m.m x y * m.m y z = -d (m.m x z) := by
+  rw [m.twisting x z, ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  by_cases hy : ind y = ind z + 1
+  · rw [show ind x - ind y = 1 by omega, Int.negOnePow_one, Units.neg_smul, one_smul, neg_neg]
+  · rcases le_or_gt (ind x) (ind y) with h | h
+    · rw [m.one_sided x y h, zero_mul, smul_zero, neg_zero]
+    · rw [m.one_sided y z (by omega), mul_zero, smul_zero, neg_zero]
+
+/-- The twisting equation at index difference two, as a sum over the generators of the
+intermediate index only. -/
+theorem sum_subtype_m_mul_m_of_eq_add_two (m : TwistingCocycle 𝒜 d P ind) {x z : P} (q : ℤ)
+    (hx : ind x = q + 1 + 1) (hz : ind z = q) :
+    ∑ y : {y : P // ind y = q + 1}, m.m x y * m.m y z = -d (m.m x z) := by
+  rw [← m.sum_m_mul_m_of_eq_add_two (by omega),
+    ← Finset.sum_subtype (Finset.univ.filter fun y ↦ ind y = q + 1) (by simp)
+      fun y ↦ m.m x y * m.m y z]
+  refine Finset.sum_filter_of_ne fun y _ hy ↦ ?_
+  by_contra hne
+  rcases le_or_gt (ind x) (ind y) with h | h
+  · rw [m.one_sided x y h, zero_mul] at hy
+    exact hy rfl
+  · rw [m.one_sided y z (by omega), mul_zero] at hy
+    exact hy rfl
+
 /-- The zero matrix is a twisting cocycle: both sides of the twisting equation vanish. -/
 instance : Zero (TwistingCocycle 𝒜 d P ind) where
   zero :=

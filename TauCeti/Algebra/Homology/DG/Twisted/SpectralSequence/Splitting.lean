@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The cohomology of a graded piece of the index filtration
@@ -87,6 +86,45 @@ theorem shiftedModuleComplexXEquiv_d (p n : ℤ)
     (eqToIso (gradedCochainComplexLift_X.{uR, uM, uP} (hdeg := hM.isHomogeneous.reindex p)
       (hsq := fun _ x ↦ hM.sq_zero x) n)).hom_inv_id_apply x] at key
   exact key
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- A cycle of `shiftedModuleComplex hM p` is a cycle of `ℳ`. -/
+theorem shiftedModuleComplexXEquiv_d_eq_zero_iff (p n : ℤ)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :
+    ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0 ↔
+      dM (shiftedModuleComplexXEquiv hM p n α) = 0 := by
+  rw [← shiftedModuleComplexXEquiv_d, ← ZeroMemClass.coe_zero (ℳ (n + 1 + p)),
+    ← map_zero (shiftedModuleComplexXEquiv hM p (n + 1)), Subtype.coe_inj,
+    (shiftedModuleComplexXEquiv hM p (n + 1)).injective.eq_iff]
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- The class of an element of `shiftedModuleComplex hM p` whose value is `dM` of a value of the
+previous degree vanishes. -/
+theorem shiftedModuleComplex_homologyπ_eq_zero (p n : ℤ)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n)
+    (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0)
+    (b : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X (n - 1))
+    (hb : (shiftedModuleComplexXEquiv hM p n α : M) = dM (shiftedModuleComplexXEquiv hM p _ b)) :
+    ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1) (by simp) hα) =
+      0 := by
+  have h0 : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom 0 = 0 := map_zero _
+  have := HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d
+    (z := (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1) (by simp) hα)
+    (w := (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk 0 (n + 1) (by simp) h0)
+    _ b (by
+      rw [HomologicalComplex.iCycles_moduleCatCyclesMk,
+        HomologicalComplex.iCycles_moduleCatCyclesMk, sub_zero]
+      refine (shiftedModuleComplexXEquiv hM p n).injective (Subtype.ext ?_)
+      have hd := shiftedModuleComplexXEquiv_d hM p (n - 1) b
+      rw [sub_add_cancel] at hd
+      rw [hb]
+      exact hd.symm)
+  refine this.trans ?_
+  have hz : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk 0 (n + 1) (by simp)
+      h0 = 0 := (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_iCycles_injective n (by
+    rw [HomologicalComplex.iCycles_moduleCatCyclesMk, map_zero])
+  rw [hz, map_zero]
 
 variable (ind : P → ℤ) (p : ℤ)
 
