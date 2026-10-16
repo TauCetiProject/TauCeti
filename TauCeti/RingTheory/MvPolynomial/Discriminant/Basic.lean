@@ -18,7 +18,7 @@ data implies constancy of the product discriminant's order, even when they vanis
 base set. No condition is placed on the specialized degrees or leading coefficients.
 
 This is the algebraic reduction from a family of polynomial root sections to the roots
-of its product. It uses `Polynomial.discr_mul_of_natDegree_pos` and the multiplicativity
+of its product. It specializes `Finset.map_discr_prod_eq` using the multiplicativity
 of `MvPolynomial.orderAt`.
 
 ## References
@@ -44,34 +44,12 @@ theorem orderAt_discr_prod_eq (s : Finset ι) (f : ι → Polynomial (MvPolynomi
     (hres : ∀ i ∈ s, ∀ j ∈ s, i ≠ j →
       ((f i).resultant (f j)).orderAt a = ((f i).resultant (f j)).orderAt b) :
     (∏ i ∈ s, f i).discr.orderAt a = (∏ i ∈ s, f i).discr.orderAt b := by
-  classical
-  induction s using Finset.induction with
-  | empty =>
-    have h1 : (1 : Polynomial (MvPolynomial σ R)).discr = 1 := by
-      simpa only [Polynomial.C_1] using Polynomial.discr_C (1 : MvPolynomial σ R)
-    simp only [Finset.prod_empty, h1, orderAt_one]
-  | insert i s hi ih =>
-    have hdeg' := fun j hj ↦ hdeg j (Finset.mem_insert_of_mem hj)
-    have hdiscr' := fun j hj ↦ hdiscr j (Finset.mem_insert_of_mem hj)
-    have hres' := fun j hj k hk ↦ hres j (Finset.mem_insert_of_mem hj) k
-      (Finset.mem_insert_of_mem hk)
-    rcases s.eq_empty_or_nonempty with rfl | hs
-    · simp only [Finset.prod_insert hi, Finset.prod_empty, mul_one]
-      exact hdiscr i (Finset.mem_insert_self i ∅)
-    have hne : ∀ j ∈ s, f j ≠ 0 := fun j hj ↦ ne_zero_of_natDegree_gt (hdeg' j hj)
-    have hproddeg : 0 < (∏ j ∈ s, f j).natDegree := by
-      rw [natDegree_prod _ _ hne]
-      exact Finset.sum_pos (fun j hj ↦ hdeg' j hj) hs
-    have hresp : ((f i).resultant (∏ j ∈ s, f j)).orderAt a =
-        ((f i).resultant (∏ j ∈ s, f j)).orderAt b := by
-      rw [resultant_prod_right s (f i) f _ le_rfl
-        (Finset.prod_ne_zero_iff.mpr fun j hj ↦ leadingCoeff_ne_zero.mpr (hne j hj)),
-        orderAt_prod, orderAt_prod]
-      exact Finset.sum_congr rfl fun j hj ↦ hres i (Finset.mem_insert_self i s) j
-        (Finset.mem_insert_of_mem hj) (by rintro rfl; exact hi hj)
-    rw [Finset.prod_insert hi, discr_mul_of_natDegree_pos _ _
-      (hdeg i (Finset.mem_insert_self i s)) hproddeg]
-    simp only [orderAt_mul, orderAt_pow]
-    rw [hdiscr i (Finset.mem_insert_self i s), ih hdeg' hdiscr' hres', hresp]
+  let v (c : σ → R) : MvPolynomial σ R →* Multiplicative (ℕ∞) :=
+    { toFun := fun p ↦ Multiplicative.ofAdd (p.orderAt c)
+      map_one' := orderAt_one c
+      map_mul' := fun p q ↦ orderAt_mul p q c }
+  exact congrArg Multiplicative.toAdd <| s.map_discr_prod_eq f hdeg (v a) (v b)
+    (fun i hi ↦ congrArg Multiplicative.ofAdd (hdiscr i hi))
+    (fun i hi j hj hij ↦ congrArg Multiplicative.ofAdd (hres i hi j hj hij))
 
 end Finset

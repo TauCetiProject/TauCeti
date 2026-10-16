@@ -49,7 +49,8 @@ morphism of total algebras (`TauCeti.AInfinityCategory.inducedInclusion`).
 
 * `TauCeti.AInfinityCategory.totalHomMap_induced_m_of_chain`: on a composable string, the map of
   total modules intertwines the operations of the induced category with those of `𝒞`.
-* `TauCeti.AInfinityCategory.coe_pathOperation_induced_apply`: the operation of the induced
+* `TauCeti.AInfinityCategory.induced_m_homInclusion` and
+  `TauCeti.AInfinityCategory.coe_pathOperation_induced_apply`: the operation of the induced
   category on a composable string is the operation of `𝒞` on its image.
 * `TauCeti.AInfinityCategory.eq_induced`: the induced category is the unique `A∞` category on the
   induced quiver with these operations.
@@ -375,7 +376,7 @@ private theorem stasheffSum_inducedOperation (n : ℕ) (hn : 0 < n) (d : ℕ →
 
 /-- The operations of the induced category are path-compatible. -/
 private theorem isPathCompatible_inducedOperation (n : ℕ) (hn : 0 < n) :
-    IsPathCompatible (𝒞.inducedOperation F n) := by
+    IsPathCompatible id (𝒞.inducedOperation F n) := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
   refine ⟨fun X x ↦ ?_, fun s t x i j hij hne ↦ ?_⟩
   · have h : IsChainFin F fun i : Fin (n + 1) ↦ (X i.rev.castSucc, X i.rev.succ) := fun i hi ↦
@@ -428,6 +429,26 @@ theorem totalHomMap_induced_m_of_chain {n : ℕ} (s t : Fin n → InducedQuiver 
   rw [evalNat_def, evalNat_def, ← induced_m] at e
   simpa only [hz] using e
 
+/-- On a composable string `X₀, …, Xₙ`, the operation of the induced category is the component
+between `F X₀` and `F Xₙ` of the operation of `𝒞` on the same morphisms. -/
+theorem induced_m_homInclusion {n : ℕ} (X : Fin (n + 1) → InducedQuiver C F)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    (𝒞.induced F).m n (fun i ↦ homInclusion _ _ (x i)) =
+      homInclusion (X 0) (X (Fin.last n))
+        (homProjection (R := R) (F (X 0).obj) (F (X (Fin.last n)).obj)
+          (𝒞.m n fun i ↦
+            homInclusion (R := R) (F (X i.rev.castSucc).obj) (F (X i.rev.succ).obj) (x i))) := by
+  rcases n with _ | n
+  · simp [AInfinityAlgebra.m_zero]
+  have h : IsChainFin F fun i : Fin (n + 1) ↦ (X i.rev.castSucc, X i.rev.succ) := fun i hi ↦
+    congrArg X <| Fin.ext <| by
+      simp only [Fin.val_succ, Fin.val_castSucc, Fin.val_rev]
+      omega
+  rw [induced_m, 𝒞.inducedOperation_succ_of_isChainFin F _ _ x h]
+  -- The source of the last morphism and the target of the first are the endpoints of the string.
+  rw [show X (Fin.last n).rev.castSucc = X 0 by simp,
+    show X (Fin.rev 0).succ = X (Fin.last (n + 1)) by simp]
+
 /-- The operation of the induced category on a composable string `X₀, …, Xₙ` is the operation of
 `𝒞` on the string `F X₀, …, F Xₙ`. -/
 @[simp]
@@ -455,10 +476,12 @@ theorem eq_induced {𝒟 : AInfinityCategory R (InducedQuiver C F)}
           𝒞.m n fun i ↦
             homInclusion (R := R) (F (X i.rev.castSucc).obj) (F (X i.rev.succ).obj) (x i)) :
     𝒟 = 𝒞.induced F := by
-  refine ext <| funext fun n ↦
-    (𝒟.isPathCompatible_m n).ext ((𝒞.induced F).isPathCompatible_m n) fun X x ↦ ?_
-  obtain ⟨f, hf⟩ := (𝒟.isPathCompatible_m n).mem_range_homInclusion X x
-  obtain ⟨g, hg⟩ := ((𝒞.induced F).isPathCompatible_m n).mem_range_homInclusion X x
+  refine ext <| funext fun n ↦ ?_
+  rcases n with _ | n
+  · rw [𝒟.m_zero, (𝒞.induced F).m_zero]
+  refine (𝒟.isPathCompatible_m _).ext ((𝒞.induced F).isPathCompatible_m _) fun X x ↦ ?_
+  obtain ⟨f, hf⟩ := (𝒟.isPathCompatible_m (n + 1)).mem_range_homInclusion X x
+  obtain ⟨g, hg⟩ := ((𝒞.induced F).isPathCompatible_m (n + 1)).mem_range_homInclusion X x
   have e := totalHomMap_induced_m_of_chain 𝒞 F (fun i ↦ X i.rev.castSucc) (fun i ↦ X i.rev.succ)
     (fun i ↦ LinearMap.mem_range_self _ (x i)) fun i j hij ↦ by
       congr 1
@@ -466,7 +489,7 @@ theorem eq_induced {𝒟 : AInfinityCategory R (InducedQuiver C F)}
       simp [Fin.val_rev]
       omega
   simp only [totalHomMap_homInclusion] at e
-  rw [← h n X x, ← hf, ← hg, totalHomMap_homInclusion, totalHomMap_homInclusion] at e
+  rw [← h (n + 1) X x, ← hf, ← hg, totalHomMap_homInclusion, totalHomMap_homInclusion] at e
   rw [← hf, ← hg, homInclusion_injective _ _ e]
 
 /-- The differential of the induced category is the differential of `𝒞`. -/
