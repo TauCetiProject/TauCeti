@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.KummerLayer
-public import TauCeti.NumberTheory.NumberField.Units.SUnit
+public import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 
 /-!

@@ -41,6 +41,9 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 
 ## Main results
 
+* `TauCeti.ContinuousCohomology.resolutionMap_d_apply` and
+  `TauCeti.ContinuousCohomology.resolutionMap_ρ_apply`: coefficient maps on the coinduced
+  resolution commute with the differential and group action, on elements.
 * `TauCeti.ContinuousCohomology.resolutionMap_injective` and
   `TauCeti.ContinuousCohomology.cochainsMap_f_injective`: a surjective group map paired with an
   injective coefficient map induces injective maps on resolutions and homogeneous cochains.
@@ -76,6 +79,41 @@ namespace ContinuousCohomology
 open _root_.ContinuousCohomology
 
 universe u v w
+
+section ResolutionMaps
+
+open TopRep
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {X Y : TopRep.{max v w} R G}
+
+/-- A coefficient morphism commutes with the coinduced resolution differential, on elements. -/
+theorem resolutionMap_d_apply (f : X ⟶ Y) (n : ℕ)
+    (x : (resolutionX X n).V) :
+    (d Y n).hom
+        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
+      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
+        ((d X n).hom x) := by
+  have h := congrArg (fun g ↦ g.hom.toContinuousLinearMap x)
+    (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f n)
+  simpa only [TopRep.hom_comp, hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
+    ContinuousLinearMap.comp_apply, resFunctor_map_hom,
+    ContIntertwiningMap.toContinuousLinearMap_apply, ContIntertwiningMap.restrict_apply] using h
+
+/-- A coefficient morphism on the coinduced resolution commutes with the group action. -/
+theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
+    (x : (resolutionX X n).V) :
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom
+        ((resolutionX X n).ρ g x) =
+      (resolutionX Y n).ρ g
+        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) := by
+  have h := hom_comm_apply
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n) g x
+  simpa only [res, ContRepresentation.restrict_apply_apply,
+    MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq] using h
+
+end ResolutionMaps
 
 section InjectiveResolutionMap
 
