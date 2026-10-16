@@ -19,7 +19,7 @@ weak gradient. This allows classical interior estimates to be applied to weak so
 frozen coefficient equation.
 
 The operator is the existing `TauCeti.PDE.divMatrixGradient`, with the sign convention
-`-divMatrixGradient A u = f`. The coordinate formula
+`-divMatrixGradient (fun _ => A) u = f`. The coordinate formula
 `divMatrixGradient_eq_sum_fderiv_fderiv_apply` identifies it with the contraction of `A` against the
 Hessian, including nonsymmetric matrices.
 
@@ -47,13 +47,13 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient
     (hg : ContDiffOn ℝ 2 g Omega) {u : W1p mu Omega 2}
     (hug : W1p.value u =ᵐ[mu.restrict Omega] g) (φ : 𝓓(Omega, ℝ)) :
     energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-      -∫ x in Omega, φ x * divMatrixGradient A g x ∂mu := by
+      -∫ x in Omega, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
   have hweak := (W1p.hasWeakFDerivOn u).congr_ae hug
   have hderiv := hweak.ae_eq (hasWeakFDerivOn_gradient_of_contDiffOn
     (μ := mu) (hg.of_le one_le_two))
   have hgrad : W1p.gradient u =ᵐ[mu.restrict Omega] ∇ g := hderiv.mono fun x hx =>
     innerSL_inj.mp hx
-  rw [energyFormH1_const_eq_setIntegral]
+  rw [energyFormH1_zero_zero_eq_setIntegral]
   calc
     ∫ x in Omega, matrixBilinearForm A
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x) (W1p.gradient u x) ∂mu =
@@ -64,9 +64,9 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient
     _ = ∫ x, matrixBilinearForm A (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu :=
       setIntegral_eq_integral_of_forall_compl_eq_zero (fun x hx => by
         rw [gradient_of_notMem_tsupport (fun h => hx (φ.tsupport_subset h)), map_zero, zero_apply])
-    _ = -∫ x, φ x * divMatrixGradient A g x ∂mu :=
+    _ = -∫ x, φ x * divMatrixGradient (fun _ => A) g x ∂mu :=
       hg.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient φ
-    _ = -∫ x in Omega, φ x * divMatrixGradient A g x ∂mu := by
+    _ = -∫ x in Omega, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
       rw [setIntegral_eq_integral_of_forall_compl_eq_zero
         (fun x hx => by simp [φ.zero_on_compl hx])]
 
@@ -79,12 +79,12 @@ theorem divMatrixGradient_eq_neg_of_forall_energyFormH1_eq
     (hu : ∀ φ : 𝓓(Omega, ℝ),
       energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
         ∫ x in Omega, f x * φ x ∂mu) :
-    ∀ x ∈ Omega, divMatrixGradient A g x = -f x := by
+    ∀ x ∈ Omega, divMatrixGradient (fun _ => A) g x = -f x := by
   have hD := continuousOn_divMatrixGradient (A := A) hg
-  have hDl : LocallyIntegrableOn (divMatrixGradient A g) Omega mu :=
+  have hDl : LocallyIntegrableOn (divMatrixGradient (fun _ => A) g) Omega mu :=
     hD.locallyIntegrableOn Omega.isOpen.measurableSet
   have hfl : LocallyIntegrableOn f Omega mu := hf.locallyIntegrableOn Omega.isOpen.measurableSet
-  have hzero : ∀ᵐ x ∂mu, x ∈ Omega → divMatrixGradient A g x + f x = 0 := by
+  have hzero : ∀ᵐ x ∂mu, x ∈ Omega → divMatrixGradient (fun _ => A) g x + f x = 0 := by
     refine Omega.isOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero
       (hDl.add hfl) fun φ hφ hφc hφs => ?_
     let ψ : 𝓓(Omega, ℝ) := ⟨φ, hφ, hφc, hφs⟩
@@ -103,7 +103,7 @@ theorem divMatrixGradient_eq_neg_of_forall_energyFormH1_eq
     simp only [smul_eq_mul, mul_add]
     rw [integral_add hDi hfi]
     linarith
-  have hae : (fun x => divMatrixGradient A g x + f x) =ᵐ[mu.restrict Omega] 0 :=
+  have hae : (fun x => divMatrixGradient (fun _ => A) g x + f x) =ᵐ[mu.restrict Omega] 0 :=
     (ae_restrict_iff' Omega.isOpen.measurableSet).2 hzero
   have hpoint := Measure.eqOn_open_of_ae_eq hae Omega.isOpen (hD.add hf) continuousOn_const
   intro x hx
@@ -121,7 +121,7 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_and_divMatrixGradient_eq_zer
     ∃ g : EuclideanSpace ℝ ι → ℝ, ContDiffOn ℝ ∞ g Omega ∧
       W1p.value u =ᵐ[volume.restrict Omega] g ∧
       W1p.gradient u =ᵐ[volume.restrict Omega] ∇ g ∧
-      ∀ x ∈ Omega, divMatrixGradient A g x = 0 := by
+      ∀ x ∈ Omega, divMatrixGradient (fun _ => A) g x = 0 := by
   have hf : ∀ x ∈ Omega, ∃ V : Opens (EuclideanSpace ℝ ι), x ∈ V ∧
       ∀ k, ∃ F : Wkp volume V 2 k,
         (Wkp.value k F : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict V]

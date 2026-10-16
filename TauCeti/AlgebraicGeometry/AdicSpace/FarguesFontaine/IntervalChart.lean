@@ -276,6 +276,42 @@ theorem windowPreAdicSpaceIso_hom_base_apply (h₁ : ρ₁ ^ q.num = v (algebraM
   erw [presentationLimitPreAdicSpaceComapIso_hom_base, _root_.CategoryTheory.Category.id_comp]
   exact spaComap_val ..
 
+/-- On points, the inverse window chart is pullback along `𝕎 O⟨T/s⟩ ≃+* B^I`.
+This is the inverse formula to `windowPreAdicSpaceIso_hom_base_apply`. -/
+@[simp]
+theorem windowPreAdicSpaceIso_inv_base_apply
+    (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂)
+    (P' : PairOfDefinition (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) :
+    letI := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
+    letI := P.isUniformAddGroup_locUniformSpace _ _ L hden
+    letI := P.isTopologicalRing_locUniformSpace _ _ L hden
+    ∀ y : spa (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)),
+    ((windowPreAdicSpaceIso hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ P').inv.base y).val =
+      comap (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ :
+        _ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) y.val := by
+  let _ := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
+  have _ := P.isUniformAddGroup_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') L hden
+  have _ := P.isTopologicalRing_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') L hden
+  intro y
+  -- Evaluate the forward formula at `inv y`, then cancel the inverse ring pullbacks.
+  set f := windowPreAdicSpaceIso hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ P'
+  have hy : f.hom.base (f.inv.base y) = y :=
+    congrArg (fun φ => φ.base y) f.inv_hom_id
+  have hforward := windowPreAdicSpaceIso_hom_base_apply hv hϖ hϖ' hρ₁ hρ₂ hI P hden
+    h₁ h₂ h₁₂ P' (f.inv.base y)
+  -- The forward formula uses the full chart term; `f` abbreviates exactly that term.
+  -- This changes only its spelling, so the pointwise inverse identity `hy` can rewrite it.
+  change (f.hom.base (f.inv.base y)).val = _ at hforward
+  rw [hy] at hforward
+  have h := congrArg (comap
+    (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂).toRingHom)
+    hforward
+  simpa only [RingEquiv.toRingHom_eq_coe, ← Function.comp_apply (f := comap _),
+    ← comap_comp, RingEquiv.symm_comp, comap_id, id_eq] using h.symm
+
 /-- **A window of `𝒴` is an adic space**: the window `{q ≤ κ ≤ q'}` of `Spa(𝕎 O, 𝕎 O)`, the
 restriction along the open embedding `j : Spa(𝕎 O⟨T/s⟩, A_U⁺) → Spa(𝕎 O, 𝕎 O)`, is isomorphic to
 `Spa(B^I, B^{I,+})` (`windowPreAdicSpaceIso`), for the interval ring `B^I` with its plus ring

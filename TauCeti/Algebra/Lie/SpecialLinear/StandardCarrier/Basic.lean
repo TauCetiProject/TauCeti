@@ -490,6 +490,10 @@ theorem definingIdeal_def :
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) := by
   rw [definingIdeal]
 
+/-- The coordinate Hopf algebra of the existing integral full-weight type `A_r` carrier. -/
+noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat ℤ :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (definingIdeal r)
+
 /-- **The full-weight Chevalley carrier of type `A_r`**: the smallest closed subgroup scheme of
 `GL_{r+1}` over `ℤ` containing the divided-power exponential root subgroups of the numbered
 Chevalley generators of `sl_{r+1}` and the weight torus of the standard lattice. -/

@@ -91,18 +91,18 @@ so the left tensor ideal is the ideal of `V(I) × G`: the condition says that co
 arbitrary point of `G` by a point of the closed subgroup `V(I)` leaves it unchanged. -/
 def IsCentral (I : HopfIdeal R H) : Prop :=
   ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
-      Algebra.TensorProduct.includeRight x ∈ leftTensorIdeal (R := R) (H := H) I.toIdeal
+      Algebra.TensorProduct.includeRight x ∈ Ideal.leftTensorIdeal (R := R) (B := H) I.toIdeal
 
 /-- Centrality means that conjugation agrees with the second projection modulo the ideal
 of the subgroup in the first tensor factor. -/
 theorem isCentral_iff_conjugation_sub_mem (I : HopfIdeal R H) :
     I.IsCentral ↔ ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
-      Algebra.TensorProduct.includeRight x ∈ leftTensorIdeal (R := R) (H := H) I.toIdeal :=
+      Algebra.TensorProduct.includeRight x ∈ Ideal.leftTensorIdeal (R := R) (B := H) I.toIdeal :=
   Iff.rfl
 
 /-- Centrality passes to larger Hopf ideals, which cut out smaller closed subgroups. -/
 theorem IsCentral.mono {I J : HopfIdeal R H} (hI : I.IsCentral) (hIJ : I ≤ J) : J.IsCentral :=
-  fun x ↦ leftTensorIdeal_mono R H (toIdeal_le_toIdeal.mpr hIJ) (hI x)
+  fun x ↦ Ideal.leftTensorIdeal_mono R H (toIdeal_le_toIdeal.mpr hIJ) (hI x)
 
 /-- A supremum of Hopf ideals is central as soon as one of them is; the closed subgroup it cuts
 out is contained in the central one. -/
@@ -117,11 +117,11 @@ theorem isCentral_bot_iff_isCocomm :
     (⊥ : HopfIdeal R H).IsCentral ↔ _root_.Coalgebra.IsCocomm R H := by
   rw [IsCentral, ← HopfAlgebra.commute_includeLeft_includeRight_iff_isCocomm R H,
     commute_iff_eq]
-  have hzero : leftTensorIdeal (R := R) (H := H) (⊥ : HopfIdeal R H).toIdeal = ⊥ := by
-    rw [bot_toIdeal, leftTensorIdeal_def, Ideal.map_bot]
+  have hzero : Ideal.leftTensorIdeal (R := R) (B := H) (⊥ : HopfIdeal R H).toIdeal = ⊥ := by
+    rw [bot_toIdeal, Ideal.leftTensorIdeal_def, Ideal.map_bot]
   have hiff : (∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
         Algebra.TensorProduct.includeRight x ∈
-          leftTensorIdeal (R := R) (H := H) (⊥ : HopfIdeal R H).toIdeal) ↔
+          Ideal.leftTensorIdeal (R := R) (B := H) (⊥ : HopfIdeal R H).toIdeal) ↔
       HopfAlgebra.conjugationAlgHom (R := R) (H := H) =
         Algebra.TensorProduct.includeRight := by
     rw [hzero]
@@ -162,9 +162,9 @@ theorem isCentralPoint_of_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.
   rw [HopfAlgebra.isCentralPoint_def]
   intro B _ _ φ h
   set g' : WithConv (↥H →ₐ[R] B) := AlgHom.mapValue φ g with hg'
-  have hker : HopfIdeal.leftTensorIdeal (R := R) (H := ↥H) I.toIdeal ≤
+  have hker : Ideal.leftTensorIdeal (R := R) (B := ↥H) I.toIdeal ≤
       RingHom.ker (Algebra.TensorProduct.productMap g'.ofConv h.ofConv).toRingHom := by
-    rw [HopfIdeal.leftTensorIdeal_le_iff]
+    rw [Ideal.leftTensorIdeal_le_iff]
     intro y hy
     rw [Ideal.mem_comap, RingHom.mem_ker]
     have hzero : g.ofConv y = 0 :=
@@ -231,7 +231,7 @@ private theorem isCentral_of_isCentralPoint (H : _root_.CommHopfAlgCat.{v} R)
     rw [← hproduct, RingHom.mem_ker, map_sub, sub_eq_zero,
       Algebra.TensorProduct.includeRight_apply,
       Algebra.TensorProduct.productMap_right_apply, ← AlgHom.comp_apply, heval, hcomm]
-  rwa [HopfIdeal.ker_tensorProduct_map_quotient_id I.toIdeal] at hmem
+  rwa [Ideal.ker_tensorProduct_map_quotient_id I.toIdeal] at hmem
 
 /-- **A Hopf ideal is central exactly when it cuts out central points over every value
 algebra.** -/
@@ -275,14 +275,14 @@ theorem IsCentral.comapOfSurjective_of_bijective {H K : Type v} [CommRing H] [Co
     (_root_.CommHopfAlgCat.of R H) (I.comapOfSurjective f hsurj)).mpr
   intro A g hg
   let e := BialgEquiv.ofBijective f ⟨hinj, hsurj⟩
-  let E := AlgHom.mapDomainMulEquiv (A := A) e
+  let E := BialgEquiv.mapDomainMulEquiv (A := A) e
   have he : (e : H →ₐc[R] K) = f := by
     ext x
     exact congrFun (BialgEquiv.coe_ofBijective f ⟨hinj, hsurj⟩) x
   have hmem (x) : E x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H)
       (I.comapOfSurjective f hsurj) A ↔
       x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
-    rw [AlgHom.mapDomainMulEquiv_apply, he]
+    rw [BialgEquiv.mapDomainMulEquiv_apply, he]
     exact f.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff hsurj I A x
   have hg' : E.symm g ∈ CommHopfAlgCat.quotientPointsSubgroup
       (_root_.CommHopfAlgCat.of R K) I A := by
@@ -293,7 +293,7 @@ theorem IsCentral.comapOfSurjective_of_bijective {H K : Type v} [CommRing H] [Co
     (_root_.CommHopfAlgCat.of R K) I hI A hg'
   have htransport := hcentral.mapDomain_bialgEquiv e
   simp only [BialgEquiv.toBialgHom_eq_coe] at htransport
-  rw [← AlgHom.mapDomainMulEquiv_apply e, E.apply_symm_apply] at htransport
+  rw [← BialgEquiv.mapDomainMulEquiv_apply e, E.apply_symm_apply] at htransport
   exact htransport
 
 /-- **A central Hopf ideal is normal.** Its points commute with every point of the ambient group
@@ -356,10 +356,10 @@ theorem IsCentral.comap_of_injective {I : HopfIdeal k K} (hI : I.IsCentral)
     rw [(RingHom.injective_iff_ker_eq_bot f.toAlgHom).mp hf]
     exact Module.Flat.of_linearEquiv (AlgEquiv.quotientBot k H).toLinearEquiv
   have hker : RingHom.ker (Algebra.TensorProduct.map g f.toAlgHom) =
-      leftTensorIdeal (R := k) (H := H) (I.comap f).toIdeal := by
+      Ideal.leftTensorIdeal (R := k) (B := H) (I.comap f).toIdeal := by
     rw [Algebra.TensorProduct.map_ker_of_flat_flat,
       (RingHom.injective_iff_ker_eq_bot f.toAlgHom).mp hf,
-      Ideal.map_bot, sup_bot_eq, hgker, leftTensorIdeal_def,
+      Ideal.map_bot, sup_bot_eq, hgker, Ideal.leftTensorIdeal_def,
       AlgHom.toRingHom_eq_coe, Ideal.map_coe]
   rw [isCentral_iff_conjugation_sub_mem]
   intro x
@@ -367,7 +367,7 @@ theorem IsCentral.comap_of_injective {I : HopfIdeal k K} (hI : I.IsCentral)
   have hzero : Algebra.TensorProduct.map q (AlgHom.id k K)
       (HopfAlgebra.conjugationAlgHom (R := k) (H := K) (f x) -
         Algebra.TensorProduct.includeRight (f x)) = 0 := by
-    rw [← RingHom.mem_ker, ker_tensorProduct_map_quotient_id]
+    rw [← RingHom.mem_ker, Ideal.ker_tensorProduct_map_quotient_id]
     exact hI (f x)
   -- Naturality transports the conjugation defect to the source subgroup's quotient.
   have hnatural := AlgHom.congr_fun (HopfAlgebra.tensorProduct_map_comp_conjugationAlgHom f) x

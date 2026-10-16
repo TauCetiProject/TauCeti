@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.LocalCoefficient
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 
@@ -27,6 +28,8 @@ source's Definition 1.8 in degree zero).
   system.
 * `TauCeti.classicalDGLocalSystem`: the DG local system of a classical local system.
 * `TauCeti.classicalDGLocalSystemFunctor`: the functor from classical local systems.
+* `TauCeti.classicalGroupAlgebraAction`: the right action of the group ring `R[π₁(X, x)]` on the
+  fiber, through which `classicalAction` factors (`TauCeti.op_loopChainToGroupAlgebra_smul`).
 
 ## Main results
 
@@ -156,6 +159,12 @@ theorem classicalDGLocalSystem_differential (L : LocalCoefficientSystem.{u, u, w
     (classicalDGLocalSystem x L).differential = 0 :=
   (rfl)
 
+/-- The DG local system of a classical local system is concentrated in degree zero. -/
+theorem isConcentratedInDegreeZero_classicalDGLocalSystem
+    (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (classicalDGLocalSystem x L).IsConcentratedInDegreeZero :=
+  DGRightModuleCat.isConcentratedInDegreeZero_iff.2 fun _ hq ↦ trivialGrading_eq_bot R _ hq
+
 /-- A Moore loop acts on the fiber by the monodromy of its class: the point chain of a loop `γ`
 acts by the monodromy of the inverse of `fundamentalGroupHom γ`, that is of the class of `γ`. -/
 @[simp]
@@ -247,7 +256,7 @@ theorem classicalDGLocalSystemMap_injective [PathConnectedSpace X]
   have hx : φ.app (FundamentalGroupoid.mk x) = ψ.app (FundamentalGroupoid.mk x) :=
     ModuleCat.hom_ext (LinearMap.ext fun m ↦ congrArg (fun f ↦ f.toLinearMap m) h)
   exact Groupoid.natTrans_ext (x₀ := FundamentalGroupoid.mk x)
-    (fun y ↦ ⟨(⟦PathConnectedSpace.somePath x y.as⟧ : Path.Homotopic.Quotient x y.as)⟩) hx
+    (FundamentalGroupoid.nonempty_hom _) hx
 
 /-- On a path-connected space, the functor from classical to DG local systems is faithful. -/
 instance [PathConnectedSpace X] : (classicalDGLocalSystemFunctor R x).Faithful where
@@ -256,5 +265,72 @@ instance [PathConnectedSpace X] : (classicalDGLocalSystemFunctor R x).Faithful w
     exact classicalDGLocalSystemMap_injective h
 
 end Action
+
+section GroupAlgebraAction
+
+open CategoryTheory
+
+variable {R : Type u} [CommRing R] {X : TopCat.{u}} {x : X}
+
+/-- **The action of the group ring on the fiber of a local system**: the algebra map from the
+opposite of `R[π₁(X, x)]` to the endomorphisms of the fiber at `x`, a class acting by the
+monodromy of its inverse.  The action of the chain algebra, `classicalAction`, factors through
+it. -/
+def classicalGroupAlgebraAction (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (MonoidAlgebra R (FundamentalGroup X x))ᵐᵒᵖ →ₐ[R]
+      Module.End R (L.obj (FundamentalGroupoid.mk x)) :=
+  ((AlgEquiv.opOp R (Module.End R (L.obj (FundamentalGroupoid.mk x)))).symm :
+      _ ≃ₐ[R] _).toAlgHom.comp
+    (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+      (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L)).op
+
+/-- A group ring element acts on the fiber through the lifted right action of `π₁(X, x)`. -/
+theorem classicalGroupAlgebraAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
+    (y : MonoidAlgebra R (FundamentalGroup X x)) :
+    classicalGroupAlgebraAction L (op y) =
+      (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+        (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L) y).unop := by
+  simp [classicalGroupAlgebraAction]
+
+/-- The action of a chain on the fiber is the action of its degree-zero truncation. -/
+theorem classicalAction_op_eq (L : LocalCoefficientSystem.{u, u, w} R X)
+    (a : loopChainAlgebra X x R) :
+    classicalAction L (op a) =
+      classicalGroupAlgebraAction L (op (loopChainToGroupAlgebra X x R a)) := by
+  rw [classicalAction_op_apply, classicalGroupAlgebraAction_op_apply]
+
+/-- The right action of the group ring on the fiber of a classical local system. -/
+instance instModuleGroupAlgebraOpFiber (L : LocalCoefficientSystem.{u, u, w} R X) :
+    Module (MonoidAlgebra R (FundamentalGroup X x))ᵐᵒᵖ (L.obj (FundamentalGroupoid.mk x)) :=
+  Module.compHom _ (classicalGroupAlgebraAction L).toRingHom
+
+/-- The right action of the group ring on the fiber is `classicalGroupAlgebraAction`. -/
+@[simp]
+theorem op_smul_eq_classicalGroupAlgebraAction (L : LocalCoefficientSystem.{u, u, w} R X)
+    (y : MonoidAlgebra R (FundamentalGroup X x)) (v : L.obj (FundamentalGroupoid.mk x)) :
+    op y • v = classicalGroupAlgebraAction L (op y) v :=
+  (rfl)
+
+/-- The action of the group ring on the fiber is compatible with the `R`-module structure. -/
+instance (L : LocalCoefficientSystem.{u, u, w} R X) :
+    IsScalarTower R (MonoidAlgebra R (FundamentalGroup X x))ᵐᵒᵖ
+      (L.obj (FundamentalGroupoid.mk x)) where
+  smul_assoc r y v := congrArg (fun f ↦ f v) (map_smul (classicalGroupAlgebraAction L) r y)
+
+/-- **A chain acts on the fiber as its degree-zero truncation.** -/
+theorem op_loopChainToGroupAlgebra_smul (L : LocalCoefficientSystem.{u, u, w} R X)
+    (a : loopChainAlgebra X x R) (v : L.obj (FundamentalGroupoid.mk x)) :
+    op (loopChainToGroupAlgebra X x R a) • v = op a • v := by
+  rw [op_smul_eq_classicalAction, classicalAction_op_eq, op_smul_eq_classicalGroupAlgebraAction]
+
+/-- The fiber of a classical local system is a DG right module over the group ring, trivially
+graded with the zero differential. -/
+theorem isDGRightModule_fiber_groupAlgebra (L : LocalCoefficientSystem.{u, u, w} R X) :
+    IsDGRightModule (isDGAlgebra_zero (trivialGrading R (MonoidAlgebra R (FundamentalGroup X x))))
+      (trivialGrading R (L.obj (FundamentalGroupoid.mk x)))
+      (0 : L.obj (FundamentalGroupoid.mk x) →ₗ[R] L.obj (FundamentalGroupoid.mk x)) :=
+  isDGRightModule_zero _
+
+end GroupAlgebraAction
 
 end TauCeti

@@ -42,7 +42,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
   `N`, the commutator `⁅a, y ^ n⁆` lies in `N` exactly when `⁅a, y⁆ ^ n` does.
 * `TauCeti.commutatorElement_mul_mul_eq_mul_of_commute`: the commutator of two paired products
-  splits into the product of their same-position commutators when the required cross terms commute.
+  splits into the product of their same-position commutators when the cross terms commute and
+  `c * a` commutes with `⁅b, d⁆`.
 * `Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two`: the binomial formula
   `(a * b) ^ n = a ^ n * b ^ n * ⁅b, a⁆ ^ (n choose 2)` when `⁅b, a⁆` commutes with `a` and `b`.
 * `Commute.inv_pow_mul_pow_mul_pow_eq_commutatorElement_pow_mul_pow`: conjugating `b ^ n` by
@@ -77,16 +78,15 @@ open scoped commutatorElement
 variable {G : Type*} [Group G] {X Y : Set G} {N : Subgroup G}
 
 /-- The commutator of two paired products splits into the product of the same-position
-commutators when the cross terms commute and `⁅b, d⁆` commutes with `a` and `c`. -/
+commutators when the cross terms commute and `c * a` commutes with `⁅b, d⁆`. -/
 theorem commutatorElement_mul_mul_eq_mul_of_commute {a b c d : G}
-    (hbc : Commute b c) (had : Commute a d)
-    (hcbd : Commute c ⁅b, d⁆) (habd : Commute a ⁅b, d⁆) :
+    (hbc : Commute b c) (had : Commute a d) (hcabd : Commute (c * a) ⁅b, d⁆) :
     ⁅a * b, c * d⁆ = ⁅a, c⁆ * ⁅b, d⁆ := by
   rw [commutatorElement_mul_right_eq_mul_conj,
     commutatorElement_mul_left_eq_conj_mul, hbc.commutator_eq,
     commutatorElement_mul_left_eq_conj_mul, had.commutator_eq]
-  simp only [mul_one, one_mul, mul_inv_cancel, habd.mul_inv_cancel,
-    mul_assoc, hcbd.mul_inv_cancel_assoc]
+  simpa only [mul_one, one_mul, mul_inv_cancel, mul_inv_rev, mul_assoc] using
+    congrArg (⁅a, c⁆ * ·) hcabd.mul_inv_cancel
 
 /-- **The binomial formula of nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
 `a` and with `b`, for instance when it is central,

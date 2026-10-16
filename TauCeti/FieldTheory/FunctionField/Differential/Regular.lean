@@ -15,9 +15,9 @@ the image of `Ω[𝒪_P⁄k] → Ω[F⁄k]` with `𝒪_P dt`, because differenti
 preserves `𝒪_P`. In particular, regularity can be checked on the coefficient in the basis `dt`,
 without assuming that the map from local differentials is injective.
 
-The trace residue pairing against `𝒪_P` detects integrality of that coefficient. When the
-Kähler–Weil comparison is independent of the separating element, as it is over a perfect constant
-field, local components of Weil differentials are trace residues, so this lattice is exactly the
+The trace residue pairing against `𝒪_P` detects integrality of that coefficient. Since the
+Kähler–Weil comparison is independent of the separating element over any exact constant field,
+local components of Weil differentials are trace residues, so this lattice is exactly the
 annihilator of `𝒪_P` under the local component. For nonzero differentials it is therefore exactly
 the nonnegative-order lattice of Weil differentials. Over a perfect constant field every residue
 field is separable and every prime element is separating, so this holds at places of every
@@ -48,8 +48,8 @@ the residue of Kähler differentials.
 
 The Kähler–Weil comparison and its residue formula are those of
 `kaehlerDifferentialEquivWeilDifferentialOfSeparating`,
-`repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating` and, over a
-perfect constant field, `Place.traceResidue_coord_smul_eq_repartitionDualComponent_of_perfectField`.
+`repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating` and
+`Place.traceResidue_coord_smul_eq_repartitionDualComponent`.
 -/
 
 public section
@@ -154,10 +154,9 @@ theorem coord_mem_integers_iff_forall_kaehlerResidue_smul_eq_zero (ω : Ω[F⁄k
   simp_rw [← P.kaehlerResidue_eq_traceResidue_coord hP ht htr]
 
 variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-  (hinf : {Q : Place k F | Q.degree = 1}.Infinite)
   {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
 
-include hP ht htr hinf in
+include hP ht htr in
 /-- Under the Kähler–Weil comparison, the image of local Kähler differentials at a rational
 place is precisely the annihilator of its valuation ring for the local component. -/
 theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero_of_uniformizer (ω : Ω[F⁄k]) :
@@ -170,9 +169,9 @@ theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero_of_uniformizer
   rw [P.mem_range_map_iff_coord_mem_integers ht htr,
     P.coord_mem_integers_iff_forall_kaehlerResidue_smul_eq_zero hP ht htr]
   simp_rw [repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating
-    hF hex hinf hx hP ht htr]
+    hF hex hx hP ht htr]
 
-include hP ht htr hinf in
+include hP ht htr in
 /-- Given a separating uniformizer at a rational place, a nonzero Weil differential has
 nonnegative order exactly when its corresponding Kähler differential comes from the valuation
 ring. The constant field need not be perfect. -/
@@ -183,7 +182,7 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg_of_uniformizer
         (KaehlerDifferential.map k k P.integers F).range ↔
       0 ≤ weilDifferentialOrder hF hex ω.2 hω P := by
   rw [P.mem_range_map_iff_forall_repartitionDualComponent_eq_zero_of_uniformizer
-      hP ht htr hF hex hinf hx,
+      hP ht htr hF hex hx,
     LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.2 hω P 0]
   simp only [WithZero.exp_zero, ← P.mem_integers_iff]
 
@@ -224,7 +223,7 @@ theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero (ω : Ω[F⁄k
   have := P.isSeparable_residueField_of_perfectField hF
   rw [P.mem_range_map_iff_coord_mem_integers ht htr,
     P.coord_mem_integers_iff_forall_traceResidue_coord_smul_eq_zero ht htr]
-  simp_rw [P.traceResidue_coord_smul_eq_repartitionDualComponent_of_perfectField hF hex hx ht htr]
+  simp_rw [P.traceResidue_coord_smul_eq_repartitionDualComponent hF hex hx ht htr]
 
 /-- Over a perfect exact constant field, a nonzero Weil differential has nonnegative order at a
 place of any degree exactly when its corresponding Kähler differential comes from that place's

@@ -9,11 +9,13 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.Algebra.GroupAction.TypeTags
+public import TauCeti.NumberTheory.Height.NumberField
 public import TauCeti.RepresentationTheory.RestrictScalars
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.Global.Places.Height
 
 /-!
-# The Galois action on the logarithmic embedding of the units
+# The logarithmic embedding of the units
 
 Let `L` be a number field. Mathlib's logarithmic embedding sends a unit `x` of `𝓞 L` to the vector
 `(mult w * log w(x))_w` indexed by the infinite places `w ≠ w₀` of `L`, for a distinguished
@@ -21,6 +23,12 @@ infinite place `w₀`; its image is the unit lattice, a full `ℤ`-lattice in th
 `logSpace L`. The omitted coordinate is recovered from the product formula: the full vector,
 indexed by all infinite places, has coordinate sum zero. So `logSpace L` is a coordinate chart
 on the sum-zero hyperplane of `ℝ^{InfinitePlace L}` (`TauCeti.NumberField.Units.logSpaceExtend`).
+
+The relative logarithmic height of a unit is half the `ℓ¹` norm of this full vector. Therefore
+it is the sum of the absolute values of the kept coordinates together with the absolute value of
+their sum, divided by two. This gives two-sided `ℓ¹` comparisons, a sharp supremum-norm bound,
+and the corresponding absolute-height estimate. It also records exactly when the omitted
+coordinate contributes to the positive-part and absolute-value formulas.
 
 An automorphism `σ` of `L` over a subfield `K` permutes the infinite places of `L`, and so acts
 on that hyperplane by permuting coordinates. Read in the chart this is a real representation
@@ -45,10 +53,20 @@ which the unit group enters the computation of Herbrand quotients of units in cl
   `logSpaceRep` with the permutation of the infinite places.
 * `TauCeti.NumberField.Units.logEmbedding_smul`: the logarithmic embedding is
   `Aut(L/K)`-equivariant.
+* `TauCeti.NumberField.Units.two_mul_logHeight₁_eq_sum_abs_logEmbedding`: the exact relation
+  between logarithmic height and the omitted-coordinate embedding.
+* `TauCeti.NumberField.Units.norm_logEmbedding_le_logHeight₁` and
+  `TauCeti.NumberField.Units.logHeight₁_le_rank_mul_norm_logEmbedding`: the supremum-norm
+  comparisons.
+* `TauCeti.NumberField.Units.sum_abs_logEmbedding_le_sum_mult_mul_abs_log`: the `ℓ¹` norm of
+  the logarithmic embedding of a unit is at most the sum of its weighted absolute logarithms
+  over all infinite places.
 
 ## References
 
 * J. S. Milne, *Class Field Theory*, Chapter VII, §3 (the Herbrand quotient of the unit group).
+* Y. Bugeaud and K. Győry, *Bounds for the solutions of unit equations*, Acta Arith. **74**
+  (1996), 67–80, §3, formula (12).
 -/
 
 public noncomputable section
@@ -125,6 +143,193 @@ theorem logSpaceExtend_logEmbedding (x : (𝓞 L)ˣ) :
   logSpaceExtend_eq_self (sum_mult_mul_log x)
 
 end Extend
+
+/-! ### The `ℓ¹` norm -/
+
+section Norm
+
+variable {L : Type*} [Field L] [NumberField L]
+
+open Classical in
+/-- The `ℓ¹` norm of the logarithmic embedding of a unit, which omits the distinguished infinite
+place, is at most the sum of the weighted absolute logarithms over all infinite places. -/
+theorem sum_abs_logEmbedding_le_sum_mult_mul_abs_log (u : (𝓞 L)ˣ) :
+    ∑ w, |logEmbedding L (Additive.ofMul u) w| ≤
+      ∑ w : InfinitePlace L, w.mult * |Real.log (w u)| := by
+  simp_rw [logEmbedding_component, abs_mul, Nat.abs_cast]
+  rw [← sum_subtype {w | w ≠ w₀} (by simp)
+    fun w : InfinitePlace L => (w.mult : ℝ) * |Real.log (w u)|]
+  exact sum_le_univ_sum_of_nonneg fun _ => by positivity
+
+end Norm
+
+/-! ### Comparison with the logarithmic height -/
+
+section Height
+
+variable {L : Type*} [Field L] [NumberField L]
+
+open Classical in
+/-- Twice the relative logarithmic height of a unit is the `ℓ¹` norm of its logarithmic
+embedding, together with the absolute value of the omitted coordinate. -/
+theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
+    2 * Height.logHeight₁ (u : L) =
+      ∑ w, |logEmbedding L (Additive.ofMul u) w| +
+        |∑ w, logEmbedding L (Additive.ofMul u) w| := by
+  have hfinite : ∀ v ∉ (∅ : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 L))),
+      NumberField.HeightOneSpectrum.adicAbv L v (u : L) = 1 := by
+    intro v _
+    exact (v.adicAbv_coe_eq_one_iff
+      (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v) (u : 𝓞 L)).mpr
+        (Ideal.notMem_of_isUnit v.asIdeal u.isUnit)
+  rw [TauCeti.GlobalNumberFields.two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log
+    (∅ : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 L))) hfinite]
+  simp only [Finset.sum_empty, zero_add]
+  calc
+    ∑ w : InfinitePlace L, w.mult * |Real.log (w u)| =
+        ∑ w : InfinitePlace L, |logSpaceExtend L (logEmbedding L (Additive.ofMul u)) w| := by
+      congr 1
+      funext w
+      rw [logSpaceExtend_logEmbedding]
+      simp [abs_mul]
+    _ = |logSpaceExtend L (logEmbedding L (Additive.ofMul u)) w₀| +
+        ∑ w : {w : InfinitePlace L // w ≠ w₀},
+          |logSpaceExtend L (logEmbedding L (Additive.ofMul u)) w| :=
+      Fintype.sum_eq_add_sum_subtype_ne _ w₀
+    _ = |∑ w, logEmbedding L (Additive.ofMul u) w| +
+        ∑ w, |logEmbedding L (Additive.ofMul u) w| := by simp
+    _ = ∑ w, |logEmbedding L (Additive.ofMul u) w| +
+        |∑ w, logEmbedding L (Additive.ofMul u) w| := add_comm _ _
+
+open Classical in
+/-- The `ℓ¹` norm of the logarithmic embedding of a unit is at most twice its relative
+logarithmic height. -/
+theorem sum_abs_logEmbedding_le_two_mul_logHeight₁ (u : (𝓞 L)ˣ) :
+    ∑ w, |logEmbedding L (Additive.ofMul u) w| ≤ 2 * Height.logHeight₁ (u : L) := by
+  rw [two_mul_logHeight₁_eq_sum_abs_logEmbedding]
+  exact le_add_of_nonneg_right (abs_nonneg _)
+
+open Classical in
+/-- Twice the relative logarithmic height of a unit is at most twice the `ℓ¹` norm of its
+logarithmic embedding. -/
+theorem two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
+    2 * Height.logHeight₁ (u : L) ≤
+      2 * ∑ w, |logEmbedding L (Additive.ofMul u) w| := by
+  rw [two_mul_logHeight₁_eq_sum_abs_logEmbedding]
+  nlinarith [Finset.abs_sum_le_sum_abs (fun w ↦ logEmbedding L (Additive.ofMul u) w)
+    Finset.univ]
+
+open Classical in
+/-- The supremum norm of the logarithmic embedding of a unit is at most its relative
+logarithmic height. This improves by a factor of two on the bound obtained from its `ℓ¹` norm. -/
+theorem norm_logEmbedding_le_logHeight₁ (u : (𝓞 L)ˣ) :
+    ‖logEmbedding L (Additive.ofMul u)‖ ≤ Height.logHeight₁ (u : L) := by
+  rw [pi_norm_le_iff_of_nonneg (by positivity)]
+  intro w
+  rw [Real.norm_eq_abs, logEmbedding_component]
+  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
+    (Sum.inr w.1) (u : L)
+  simpa [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
+    Nat.abs_cast] using h
+
+open Classical in
+/-- The relative logarithmic height of a unit is bounded by the unit rank times the supremum
+norm of its logarithmic embedding. -/
+theorem logHeight₁_le_rank_mul_norm_logEmbedding (u : (𝓞 L)ˣ) :
+    Height.logHeight₁ (u : L) ≤
+      NumberField.Units.rank L * ‖logEmbedding L (Additive.ofMul u)‖ := by
+  let y := logEmbedding L (Additive.ofMul u)
+  have hcard : Fintype.card {w : InfinitePlace L // w ≠ w₀} = NumberField.Units.rank L := by
+    simp [NumberField.Units.rank]
+  have hsum : ∑ w, |y w| ≤ NumberField.Units.rank L * ‖y‖ := by
+    simpa only [Real.norm_eq_abs, hcard, nsmul_eq_mul] using Pi.sum_norm_apply_le_norm y
+  have habs : |∑ w, y w| ≤ NumberField.Units.rank L * ‖y‖ :=
+    (Finset.abs_sum_le_sum_abs (fun w ↦ y w) Finset.univ).trans hsum
+  have hheight := two_mul_logHeight₁_eq_sum_abs_logEmbedding u
+  dsimp only [y] at hsum habs
+  nlinarith
+
+open Classical in
+/-- The absolute logarithmic height of a unit is at most the `ℓ¹` norm of its logarithmic
+embedding divided by the degree of the number field. -/
+theorem absLogHeight₁_le_sum_abs_logEmbedding_div_finrank (u : (𝓞 L)ˣ) :
+    NumberField.absLogHeight₁ (u : L) ≤
+      (∑ w, |logEmbedding L (Additive.ofMul u) w|) / Module.finrank ℚ L := by
+  rw [NumberField.absLogHeight₁_eq_div]
+  refine div_le_div_of_nonneg_right ?_ (by positivity)
+  nlinarith [two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding u]
+
+open Classical in
+/-- The relative logarithmic height of a unit equals the sum of the positive parts of the kept
+logarithmic coordinates exactly when its absolute value at the omitted place is at most one. -/
+theorem logHeight₁_eq_sum_posPart_logEmbedding_iff (u : (𝓞 L)ˣ) :
+    Height.logHeight₁ (u : L) =
+        ∑ w, (logEmbedding L (Additive.ofMul u) w)⁺ ↔ (w₀ (K := L)) u ≤ 1 := by
+  let y := logEmbedding L (Additive.ofMul u)
+  have hheight := two_mul_logHeight₁_eq_sum_abs_logEmbedding u
+  have hpos : 2 * ∑ w, (y w)⁺ = ∑ w, |y w| + ∑ w, y w := by
+    calc
+      2 * ∑ w, (y w)⁺ = ∑ w, 2 * (y w)⁺ := by rw [Finset.mul_sum]
+      _ = ∑ w, (y w + |y w|) := by
+        apply Finset.sum_congr rfl
+        intro w _
+        simpa [two_nsmul] using (add_abs_eq_two_nsmul_posPart (y w)).symm
+      _ = ∑ w, y w + ∑ w, |y w| := Finset.sum_add_distrib
+      _ = ∑ w, |y w| + ∑ w, y w := add_comm _ _
+  have hsum : ∑ w, y w =
+      -(((w₀ (K := L)).mult : ℝ) * Real.log ((w₀ (K := L)) u)) :=
+    by simpa only [y, neg_mul] using
+      (NumberField.Units.dirichletUnitTheorem.sum_logEmbedding_component u)
+  have heq :
+      (Height.logHeight₁ (u : L) = ∑ w, (y w)⁺) ↔ 0 ≤ ∑ w, y w := by
+    constructor
+    · intro h
+      have habs : |∑ w, y w| = ∑ w, y w := by
+        nlinarith
+      exact abs_eq_self.mp habs
+    · intro h
+      have habs : |∑ w, y w| = ∑ w, y w := abs_eq_self.mpr h
+      nlinarith
+  rw [heq, hsum]
+  constructor
+  · intro h
+    apply (Real.log_nonpos_iff (by positivity)).mp
+    have hmult : (0 : ℝ) < (w₀ (K := L)).mult := by
+      exact_mod_cast InfinitePlace.mult_pos
+    nlinarith
+  · intro h
+    have hlog := (Real.log_nonpos_iff (by positivity)).mpr h
+    have hmult : (0 : ℝ) < (w₀ (K := L)).mult := by
+      exact_mod_cast InfinitePlace.mult_pos
+    nlinarith
+
+open Classical in
+/-- Twice the relative logarithmic height of a unit equals the `ℓ¹` norm of the kept
+logarithmic coordinates exactly when its absolute value at the omitted place is one. -/
+theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding_iff (u : (𝓞 L)ˣ) :
+    2 * Height.logHeight₁ (u : L) =
+        ∑ w, |logEmbedding L (Additive.ofMul u) w| ↔ (w₀ (K := L)) u = 1 := by
+  let y := logEmbedding L (Additive.ofMul u)
+  have hheight := two_mul_logHeight₁_eq_sum_abs_logEmbedding u
+  have hsum : ∑ w, y w =
+      -(((w₀ (K := L)).mult : ℝ) * Real.log ((w₀ (K := L)) u)) :=
+    by simpa only [y, neg_mul] using
+      (NumberField.Units.dirichletUnitTheorem.sum_logEmbedding_component u)
+  constructor
+  · intro h
+    have habs : |∑ w, y w| = 0 := by
+      nlinarith
+    simpa only [abs_eq_zero, hsum, neg_eq_zero,
+      NumberField.Units.dirichletUnitTheorem.mult_log_place_eq_zero] using habs
+  · intro h
+    have hsum_zero : ∑ w, y w = 0 := by
+      rw [hsum, h, Real.log_one, mul_zero, neg_zero]
+    calc
+      2 * Height.logHeight₁ (u : L) = ∑ w, |y w| + |∑ w, y w| := by
+        simpa only [y] using hheight
+      _ = ∑ w, |y w| := by rw [hsum_zero, abs_zero, add_zero]
+
+end Height
 
 /-! ### The Galois representation -/
 

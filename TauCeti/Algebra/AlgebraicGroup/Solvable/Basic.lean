@@ -89,8 +89,8 @@ instance (k : Type u) [Field k] :
     let e' : H ≃ₐc[k] K := CommHopfAlgCat.ofIso e
     let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) := hH
     exact Group.isSolvable_of_isSolvable_injective
-      (f := (AlgHom.mapDomainMulEquiv (A := AlgebraicClosure k) e').toMonoidHom)
-      (AlgHom.mapDomainMulEquiv (A := AlgebraicClosure k) e').injective
+      (f := (BialgEquiv.mapDomainMulEquiv (A := AlgebraicClosure k) e').toMonoidHom)
+      (BialgEquiv.mapDomainMulEquiv (A := AlgebraicClosure k) e').injective
 
 /-- Geometric-points solvability descends along a surjective coordinate Hopf-algebra morphism.
 
@@ -104,7 +104,7 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_of_surjective
   rw [geometricallySolvablePointsCommHopfAlgProperty_iff] at hH ⊢
   let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) := hH
   exact Group.isSolvable_of_isSolvable_injective
-    (f := AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom)
+    (f := BialgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom)
     (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f hf
       (CommAlgCat.of k (AlgebraicClosure k)))
 

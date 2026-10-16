@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
-# Measurability and precompact neighborhoods in extended manifold charts
+# Coordinate overlaps, measurability and precompact chart neighborhoods
 
 Mathlib's extended chart at a point is a `PartialEquiv` between a manifold and its model vector
 space. Its restrictions to the chart source and target are mutually continuous, hence the chart
@@ -20,6 +20,9 @@ Before choosing a measurable structure on the manifold, chart measurability expr
 measurability in each preferred chart. When the chart space `H` is locally compact, compact sets
 admit finite open chart covers whose coordinate images lie in compact subsets of the chart targets,
 even without Hausdorffness.
+
+Coordinate changes transport images of subsets of chart overlaps and are injective there,
+without differentiability assumptions.
 
 ## Main results
 
@@ -43,6 +46,28 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- Changing extended coordinates transports the coordinate image of a subset of the overlap
+onto its image in the second chart. No differentiability assumption is needed. -/
+theorem extChartAt_coordChange_image (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    ((extChartAt I α).symm ≫ extChartAt I β) '' ((extChartAt I α) '' s) =
+      (extChartAt I β) '' s := by
+  simp only [Set.image_image]
+  apply Set.image_congr
+  intro x hx
+  exact congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
+
+/-- Extended coordinate changes are injective on the coordinate image of any subset of the
+chart overlap. No differentiability assumption is needed. -/
+theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    Set.InjOn ((extChartAt I α).symm ≫ extChartAt I β) ((extChartAt I α) '' s) := by
+  apply ((extChartAt I α).symm ≫ extChartAt I β).injOn.mono
+  rintro _ ⟨x, hx, rfl⟩
+  rw [PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff,
+    Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
+  exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
 
 /-- An extended chart target is measurable in the model space. -/
 theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpace E]
@@ -223,5 +248,17 @@ theorem _root_.MeasurableSet.isChartMeasurable [MeasurableSpace E] [OpensMeasura
   exact OpensMeasurableSpace.borel_le _ <|
     ((isOpen_extChartAt_source (I := I) x).measurableSet.inter hs).image_extChartAt
       (I := I) x Set.inter_subset_left
+
+/-- In a zero-dimensional charted manifold every preferred chart source is a singleton. -/
+theorem extChartAt_source_zeroDim {E M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M] (x : M) :
+    (extChartAt 𝓘(ℝ, E) x).source = {x} := by
+  ext y
+  constructor
+  · intro hy
+    exact (extChartAt 𝓘(ℝ, E) x).injOn hy (mem_extChartAt_source x)
+      (Subsingleton.elim _ _)
+  · rintro rfl
+    exact mem_extChartAt_source y
 
 end TauCeti

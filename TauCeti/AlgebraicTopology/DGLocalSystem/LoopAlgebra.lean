@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Hom
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.HomologyZero
 public import TauCeti.Topology.PathSpace.Moore
+public import TauCeti.RingTheory.GradedAlgebra.Trivial
 
 /-!
 # The augmented DG algebra of chains on the Moore loop space
@@ -30,6 +31,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainToGroupAlgebra B b R`: the algebra map to the group algebra `R[π₁(B, b)]`,
   the zeroth-homology projection `loopZeroChainToGroupAlgebra` in dimension zero and zero in
   positive dimension.
+* `TauCeti.loopChainToGroupAlgebraDGAlgHom B b R`: the same map as a morphism of DG algebras to
+  the trivially graded group algebra with the zero differential.
 
 ## Main results
 
@@ -42,6 +45,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   `TauCeti.loopChainToGroupAlgebra_eq_zero_of_mem`: it kills boundaries and elements of nonzero
   cohomological degree.
 * `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
+* `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
+  sees the component of dimension zero, and it is surjective.
 
 ## References
 
@@ -204,6 +209,26 @@ theorem loopChainToGroupAlgebra_lof_succ (k : ℕ)
   (loopChainToGroupAlgebra_lof_component (k + 1) y).trans
     (loopChainToGroupAlgebraComponent_eq_zero k.succ_ne_zero y)
 
+/-- The degree-zero ring map only sees the component of dimension zero. -/
+theorem loopChainToGroupAlgebra_apply (a : loopChainAlgebra B b R) :
+    loopChainToGroupAlgebra B b R a = loopZeroChainToGroupAlgebra B b R (a 0) := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    cases n with
+    | zero => rw [← DirectSum.lof_eq_of R, loopChainToGroupAlgebra_lof_zero, DirectSum.lof_eq_of,
+        DirectSum.of_eq_same]
+    | succ k => rw [← DirectSum.lof_eq_of R, loopChainToGroupAlgebra_lof_succ, DirectSum.lof_eq_of,
+        DirectSum.of_eq_of_ne _ _ _ (k.succ_ne_zero).symm, map_zero]
+  | add x y hx hy => rw [map_add, hx, hy, DirectSum.add_apply, map_add]
+
+/-- The degree-zero ring map is surjective: every element of the group ring is the class of a
+`0`-chain. -/
+theorem loopChainToGroupAlgebra_surjective :
+    Function.Surjective (loopChainToGroupAlgebra B b R) := fun y ↦ by
+  obtain ⟨c, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (X := B) (x := b) (R := R) y
+  exact ⟨_, loopChainToGroupAlgebra_lof_zero c⟩
+
 /-- The degree-zero ring map kills boundaries. -/
 @[simp]
 theorem loopChainToGroupAlgebra_differential (a : loopChainAlgebra B b R) :
@@ -263,6 +288,28 @@ theorem loopChainToGroupAlgebra_loopChainMap {B' : Type u} [TopologicalSpace B']
       loopChainToGroupAlgebra_lof_component]
     exact loopChainToGroupAlgebraComponent_map f hf n y
   | add x y hx hy => simp only [map_add, hx, hy]
+
+variable (B b R) in
+/-- **The degree-zero truncation as a morphism of DG algebras**: `loopChainToGroupAlgebra` from
+`C_*(Ω_b B; R)` to the group ring `R[π₁(B, b)]`, trivially graded with the zero differential.  It
+kills the chains of positive dimension and the boundaries. -/
+def loopChainToGroupAlgebraDGAlgHom :
+    DGAlgHom (loopChain_isDGAlgebra B b R)
+      (isDGAlgebra_zero (trivialGrading R (MonoidAlgebra R (FundamentalGroup B b)))) where
+  toAlgHom := loopChainToGroupAlgebra B b R
+  map_mem {i a} ha := by
+    by_cases hi : i = 0
+    · rw [hi, trivialGrading_zero]
+      exact Submodule.mem_top
+    · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, loopChainToGroupAlgebra_eq_zero_of_mem hi ha]
+      exact zero_mem _
+  map_d' a := (LinearMap.zero_apply _).trans (loopChainToGroupAlgebra_differential a).symm
+
+/-- The DG algebra morphism `loopChainToGroupAlgebraDGAlgHom` is `loopChainToGroupAlgebra`. -/
+@[simp]
+theorem loopChainToGroupAlgebraDGAlgHom_apply (a : loopChainAlgebra B b R) :
+    loopChainToGroupAlgebraDGAlgHom B b R a = loopChainToGroupAlgebra B b R a :=
+  (rfl)
 
 end DegreeZero
 

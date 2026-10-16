@@ -7,6 +7,7 @@ module
 
 import TauCeti.RepresentationTheory.ProjectiveRepresentation.Finite
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.RootsOfUnity
+import TauCeti.RepresentationTheory.ProjectiveRepresentation.Torsion
 public import TauCeti.GroupTheory.GroupExtension.Character.Basic
 import Mathlib.GroupTheory.FiniteAbelian.Duality
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
@@ -14,7 +15,7 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 /-!
 # Finite stem extensions with bijective character transgression
 
-For a finite group over an algebraically closed field of characteristic zero, construct a
+For a finite group over an algebraically closed field of arbitrary characteristic, construct a
 finite central extension whose kernel lies in the commutator subgroup and whose character
 transgression is bijective onto `H²(G, kˣ)`. Thus the character dual of the kernel is exactly
 second cohomology, with no surplus kernel characters invisible to projective representations.
@@ -25,6 +26,10 @@ Coordinate characters make transgression surjective; the kernel and second cohom
 matching cardinalities, so transgression is also injective. The stem criterion then places
 the kernel in the commutator subgroup. This supplies the finite extension underlying a
 representation group; the universal lifting criterion applies to its surjective transgression.
+
+The cyclic summands have orders nonzero in the field because second cohomology has no
+torsion at the characteristic. Thus the kernel also has order prime to the characteristic,
+even when the characteristic divides the order of the original group.
 
 ## References
 
@@ -45,9 +50,9 @@ attribute [local instance] trivialMulDistribMulAction
 
 open scoped BigOperators
 
-variable (k G : Type) [Field k] [IsAlgClosed k] [CharZero k] [Group G] [Finite G]
+variable (k G : Type) [Field k] [IsAlgClosed k] [Group G] [Finite G]
 
-/-- Every finite group over an algebraically closed characteristic-zero field has a finite
+/-- Every finite group over an algebraically closed field has a finite
 central stem extension with bijective character transgression. In particular, the character
 dual of its kernel is `H²(G, kˣ)`. -/
 theorem exists_finite_stem_factorSet_bijective_characterTransgression :
@@ -68,6 +73,17 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
   have hx (i : ι) : n i • x i = 0 := by
     apply e.injective
     simp [x, ← Pi.single_smul, nsmul_eq_mul]
+  have horder (i : ι) : addOrderOf (x i) = n i := by
+    dsimp only [x]
+    rw [e.symm.addOrderOf_eq]
+    simpa only [AddMonoidHom.single_apply, ZMod.addOrderOf_one] using
+      addOrderOf_injective (AddMonoidHom.single (fun j ↦ ZMod (n j)) i)
+        (by simpa only [AddMonoidHom.coe_single] using
+          Pi.single_injective (M := fun j ↦ ZMod (n j)) i) (1 : ZMod (n i))
+  have hncast (i : ι) : (n i : k) ≠ 0 := by
+    rw [← horder i]
+    exact schurMultiplier_natCast_addOrderOf_ne_zero (x i) (horder i ▸ (hne i).out)
+  let hnroot (i : ι) : NeZero (n i : k) := ⟨hncast i⟩
   choose β hβ hpow using fun i ↦
     (FactorSet.nsmul_eq_zero_iff_exists_factorSet_pow_eq_one (x i)).mp (hx i)
   let γ (i : ι) : FactorSet G (rootsOfUnity (n i) k) :=
@@ -75,6 +91,23 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
       (fun g h ↦ hpow i (g, h))
   -- Assemble their root-valued representatives into one central extension.
   let M := ∀ i, rootsOfUnity (n i) k
+  -- A common prime-to-characteristic annihilator supplies enough roots for the kernel.
+  have hprodcast : ((∏ i, n i : ℕ) : k) ≠ 0 := by
+    simpa using Finset.prod_ne_zero_iff.mpr (fun i _ ↦ hncast i)
+  have hexp : Monoid.exponent M ∣ ∏ i, n i := by
+    apply Monoid.exponent_dvd_of_forall_pow_eq_one
+    intro a
+    funext i
+    apply Subtype.ext
+    exact (mem_rootsOfUnity (∏ i, n i) (a i : kˣ)).mp
+      (rootsOfUnity_le_of_dvd (M := k)
+        (Finset.dvd_prod_of_mem _ (Finset.mem_univ i)) (a i).property)
+  have hexpcast : (Monoid.exponent M : k) ≠ 0 := by
+    obtain ⟨d, hd⟩ := hexp
+    intro h
+    apply hprodcast
+    simp [hd, h]
+  let : NeZero (Monoid.exponent M : k) := ⟨hexpcast⟩
   let : MulDistribMulAction G M := trivialMulDistribMulAction G M
   let α : FactorSet G M :=
     { toFun p i := γ i p

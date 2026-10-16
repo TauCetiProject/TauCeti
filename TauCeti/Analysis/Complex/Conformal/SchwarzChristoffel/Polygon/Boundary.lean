@@ -110,7 +110,7 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
               subst n
               simp only [Fin.last_zero] at hxright
               exact hxright (le_of_lt (lt_of_not_ge hxleft))
-            obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a ha hn
+            obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a hn
               ⟨(lt_of_not_ge hxleft).le, (lt_of_not_ge hxright).le⟩
             have himage : B x ∈ B '' Icc (a i.castSucc) (a i.succ) := ⟨x, hi, rfl⟩
             rw [hbounded i] at himage
