@@ -142,7 +142,7 @@ product-order modules multiply their congruence coefficients. -/
           (v * Int.gcdB c d) • (((s, 0) : ℤ × ℤ) * (d, 1)) = (s, 0) := by
         simp only [Prod.mk_mul_mk, Prod.smul_mk, Prod.mk_add_mk]
         ext
-        · simp only [zsmul_eq_mul]
+        · simp only [Int.zsmul_eq_mul]
           linear_combination s * huv
         · simp
       rw [heq] at h
