@@ -41,14 +41,8 @@ theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s →
 when its interior is empty. -/
 theorem Convex.addHaar_eq_zero_iff_interior_eq_empty (hs : Convex ℝ s) :
     μ s = 0 ↔ interior s = ∅ := by
-  constructor
-  · exact μ.interior_eq_empty_of_null
-  · intro hinterior
-    have hspan : affineSpan ℝ s ≠ ⊤ := by
-      intro hspan
-      have := hs.interior_nonempty_iff_affineSpan_eq_top.2 hspan
-      simp [hinterior] at this
-    exact measure_mono_null (subset_affineSpan ℝ s) (addHaar_affineSubspace μ _ hspan)
+  rw [← measure_interior_of_null_frontier (hs.addHaar_frontier μ)]
+  exact isOpen_interior.measure_eq_zero_iff μ
 
 /-- A convex set in a finite-dimensional real normed space has positive additive Haar measure
 exactly when its interior is nonempty. -/
