@@ -46,10 +46,10 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
 
 ## References
 
-* Adapted from `Mathlib/ModelTheory/Infinitary/Syntax.lean` in
-  `leanprover-community/mathlib4#42758` (Apache 2.0) at commit
-  `2264c2c872bb642ab519aa2288d53110f07af37d`, as used by `cameronfreer/infinitary-logic` at commit
-  `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`.
+* Ported from `cameronfreer/infinitary-logic` at commit
+  `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`, whose infinitary syntax is
+  `Mathlib/ModelTheory/Infinitary/Syntax.lean` in `leanprover-community/mathlib4#42758`
+  (Apache 2.0) at commit `2264c2c872bb642ab519aa2288d53110f07af37d`.
 * Divergences from these sources: the binary connectives `⊓`, `⊔` and `iff` are added; the
   definition bodies are not exposed, except those of the match patterns `not` and `ex`, and are
   used through the defining equations `bot_def`, `top_def`, `inf_def`, `sup_def`, `iff_def`,

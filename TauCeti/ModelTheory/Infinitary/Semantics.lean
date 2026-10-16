@@ -36,10 +36,10 @@ finitary formulas.
 
 ## References
 
-* Adapted from `Mathlib/ModelTheory/Infinitary/Semantics.lean` in
-  `leanprover-community/mathlib4#42758` (Apache 2.0) at commit
-  `2264c2c872bb642ab519aa2288d53110f07af37d`, as used by `cameronfreer/infinitary-logic` at commit
-  `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`.
+* Ported from `cameronfreer/infinitary-logic` at commit
+  `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`, whose infinitary semantics is
+  `Mathlib/ModelTheory/Infinitary/Semantics.lean` in `leanprover-community/mathlib4#42758`
+  (Apache 2.0) at commit `2264c2c872bb642ab519aa2288d53110f07af37d`.
 * Divergences from these sources: realization laws for the added binary connectives
   (`realize_inf`, `realize_sup`, `realize_iff`); `Realize`, `FormulaInf.Realize` and
   `SentenceInf.Realize` are not exposed, with the simp bridges `FormulaInf.realize_def` and
