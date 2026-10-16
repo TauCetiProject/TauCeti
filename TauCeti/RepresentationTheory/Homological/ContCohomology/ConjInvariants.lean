@@ -123,8 +123,8 @@ represents. -/
 noncomputable def H1ConjInvariantsEquivOfSmulEqSelf :
     H1ConjInvariants G M N ≃+
       Additive ((N ⧸ (pLowerCentralStep p N).subgroupOf N) →ₜ* Multiplicative M) where
-  toFun x := Additive.ofMul (ContinuousMonoidHom.quotientLift _
-    (Additive.toMul (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m) x.1))
+  toFun x := Additive.ofMul (ContinuousMonoidHom.quotientLift
+    (Additive.toMul (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m) x.1)) _
     (pLowerCentralStep_subgroupOf_le_ker_of_mem_H1ConjInvariants htriv p hN hpM x.2))
   invFun ψ := ⟨(H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m)).symm
       (Additive.ofMul ((Additive.toMul ψ).comp (Subgroup.quotientMkContinuousMonoidHom _))),
@@ -136,7 +136,7 @@ noncomputable def H1ConjInvariantsEquivOfSmulEqSelf :
       AddEquiv.symm_apply_apply]
   right_inv ψ := Additive.toMul.injective <| by
     simp only [toMul_ofMul, AddEquiv.apply_symm_apply]
-    exact (ContinuousMonoidHom.quotientLift_unique _ _ _ _ fun n ↦ rfl).symm
+    exact (ContinuousMonoidHom.quotientLift_unique _ _ _ _ (fun n ↦ by simp)).symm
   map_add' x y := Additive.toMul.injective <| by
     ext q
     obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q

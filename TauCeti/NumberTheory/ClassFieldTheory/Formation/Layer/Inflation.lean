@@ -174,7 +174,8 @@ two arguments, read in `M`. -/
 theorem inflCocycle2_apply (c : cocycles₂ (L.rep F)) (u v : L.ground.toSubgroup) :
     (inflCocycle2 L e he c : L.ground.toSubgroup × L.ground.toSubgroup → M) (u, v) =
       e.symm (c ((u : L.Gal), (v : L.Gal)) : F.level L.top) := by
-  rw [inflCocycle2, cocyclesMap2_apply]
+  rw [inflCocycle2, cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype]
   exact L.coeffFixedPointsEquiv_apply_coe e he _
 
 /-- **Inflation on cocycle classes**: `explicitInfl2 L e he` sends the class of a layer cocycle `c`

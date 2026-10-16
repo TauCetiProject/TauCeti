@@ -142,7 +142,7 @@ theorem exists_presentationProfiniteExtension_comparison (Y : ProfiniteGroupExte
   have hpro : IsProP p S.inl.range :=
     hN.of_surjective S.inl.rangeRestrict (Y.continuous_inl.subtype_mk _)
       S.inl.rangeRestrict_surjective
-  refine ⟨_root_.ContinuousMonoidHom.quotientLift _ (lift y)
+  refine ⟨_root_.ContinuousMonoidHom.quotientLift (lift y) _
     (abelianizationProPExtensionKernel_le_ker p _ (lift y) S.inl.range hclosed hpro hR), ?_⟩
   ext f
   refine Eq.trans ?_ (presentationProfiniteExtension_rightHom_mk p hg f).symm

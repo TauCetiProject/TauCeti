@@ -184,9 +184,11 @@ theorem ker_iwasawaCoordinate :
   -- with the coordinate followed by `ℤ̂ → IwasawaGroup K ⧸ ⟨⟨τ⟩⟩`, `gen ↦ π σ`.
   have : IsClosed (M : Set (IwasawaGroup K)) := Subgroup.isClosed_topologicalClosure _
   let π := Subgroup.quotientMkContinuousMonoidHom M
-  have hτ : π (iwasawaTau K) = 1 :=
-    (QuotientGroup.eq_one_iff _).2
-      (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure rfl))
+  have hτ : π (iwasawaTau K) = 1 := by
+    change Subgroup.quotientMkContinuousMonoidHom M (iwasawaTau K) = 1
+    rw [Subgroup.quotientMkContinuousMonoidHom_apply]
+    exact (QuotientGroup.eq_one_iff _).mpr
+      (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure (by simp)))
   have key : (zHat.lift (π (iwasawaSigma K))).comp (iwasawaCoordinate K) = π :=
     IwasawaGroup.hom_ext (by simp) (by simp [hτ])
   rw [← QuotientGroup.eq_one_iff, ← Subgroup.quotientMkContinuousMonoidHom_apply]

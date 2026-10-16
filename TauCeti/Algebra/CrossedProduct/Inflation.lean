@@ -496,7 +496,8 @@ theorem exists_galoisCocycle_inflateZ2
   have hinfl := TwoCocycle.cocyclesMap2_finiteLevelZ2_apply L c.cocycle g h
   rw [TwoCocycle.finiteLevelZ2_ofFiniteLevelZ2] at hinfl
   rw [← hinfl, cocyclesMap2_apply]
-  exact hy g h
+  simpa only [Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype]
+    using hy g h
 
 /-- **Every continuous degree-two class of the absolute Galois group is inflated from a finite
 Galois cocycle.** -/

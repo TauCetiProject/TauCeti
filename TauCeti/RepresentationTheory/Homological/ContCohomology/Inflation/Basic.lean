@@ -503,11 +503,8 @@ theorem explicitInfl2_descendZ2 (z : Z2 G M)
       (z : H2 G M) := by
   rw [explicitInfl2_mk]
   refine congrArg (fun w : Z2 G M => (w : H2 G M)) (Subtype.ext (funext fun p => ?_))
-  rw [cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype]
-  -- The preceding rewrite leaves quotient representatives under the fixed-point subtype
-  -- coercion; expose that evaluation so the representative computation lemma applies.
-  change ((descendZ2 z hright hfixed :
-    (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (p.1, p.2) : M) = _
+  rw [cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
+    AddSubgroup.coe_subtype, Subgroup.quotientMkContinuousMonoidHom_apply]
   exact coe_descendZ2_apply_mk z hright hfixed p.1 p.2
 
 end DegreeTwo

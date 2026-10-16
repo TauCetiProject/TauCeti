@@ -145,7 +145,7 @@ theorem frattiniQuotientHomEquiv_symm_apply {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p)
     (f : G →ₜ* H) :
     (frattiniQuotientHomEquiv hH).symm f =
-      ContinuousMonoidHom.quotientLift (proPFrattini p G) f
+      ContinuousMonoidHom.quotientLift f (proPFrattini p G)
         (proPFrattini_le_ker hH f) := by
   dsimp [frattiniQuotientHomEquiv]
   exact _root_.Subgroup.quotientContinuousMonoidHomEquiv_symm_apply _ _
@@ -200,7 +200,7 @@ theorem continuousZModDualMap_quotientMk_bijective {N : Subgroup G} [N.Normal]
     have := congrArg (fun x : continuousZModDual p G ↦ Additive.toMul x g) h
     simpa only [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
       Subgroup.quotientMkContinuousMonoidHom_apply] using this
-  · refine ⟨Additive.ofMul (ContinuousMonoidHom.quotientLift N (Additive.toMul χ)
+  · refine ⟨Additive.ofMul (ContinuousMonoidHom.quotientLift (Additive.toMul χ) N
       (hN.trans (proPFrattini_le_ker (by simp) (Additive.toMul χ)))), ?_⟩
     apply Additive.toMul.injective
     rw [ContinuousMonoidHom.toMul_continuousZModDualMap, toMul_ofMul,

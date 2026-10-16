@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Continuous.Invariants
+public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -364,7 +365,8 @@ homomorphism together with the inclusion `Xᴺ ↪ X`. -/
 noncomputable def infl (X : TopRep R G) (n : ℕ) :
     continuousCohomology n (TopRep.quotientToInvariants X N) ⟶ continuousCohomology n X :=
   _root_.ContinuousCohomology.map (Subgroup.quotientMkContinuousMonoidHom N)
-    (TopRep.quotientToInvariantsι X N) n
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) n
 
 -- Not `@[simp]`: `infl` is the intended normal form, and this lemma unfolds it.
 /-- The defining equation of `infl`: it is `ContinuousCohomology.map` for the compatible pair
@@ -373,8 +375,10 @@ theorem infl_def (X : TopRep R G) (n : ℕ) :
     infl N X n =
       -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
       -- (This follows the ascription idiom of #8346.)
-      (_root_.ContinuousCohomology.map (Subgroup.quotientMkContinuousMonoidHom N)
-        (TopRep.quotientToInvariantsι X N) n :) :=
+      (_root_.ContinuousCohomology.map (X := TopRep.quotientToInvariants X N) (Y := X)
+        (Subgroup.quotientMkContinuousMonoidHom N) (eqToHom (congrArg (fun ψ => TopRep.res ψ
+          (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) n :) :=
   (rfl)
 
 /-- Inflation is natural in the coefficients. -/
@@ -389,13 +393,28 @@ theorem coeffMap_comp_infl {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
   refine ((_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N)
       (Y := TopRep.quotientToInvariants Y N) (Z := Y) (ContinuousMonoidHom.id (G ⧸ N))
       (Subgroup.quotientMkContinuousMonoidHom N) (TopRep.quotientToInvariantsMap f N)
-      (TopRep.quotientToInvariantsι Y N) n).symm.trans (Eq.trans ?_
+      (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Y N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι Y N)
+        n).symm.trans (Eq.trans ?_
     (_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N) (Y := X) (Z := Y)
       (Subgroup.quotientMkContinuousMonoidHom N) (ContinuousMonoidHom.id G)
-      (TopRep.quotientToInvariantsι X N) f n)) :)
+      (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) f n)) :)
   -- Ascribed for the same reason (0.03 s).
-  exact map_congr rfl
-    (heq_of_eq (TopRep.quotientToInvariantsMap_comp_quotientToInvariantsι N f :)) n
+  apply map_congr rfl ?_ n
+  apply heq_of_eq
+  change (TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
+      (X := TopRep.quotientToInvariants X N) (Y := TopRep.quotientToInvariants Y N)
+      (TopRep.quotientToInvariantsMap f N) ≫
+        eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Y N))
+          (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι Y N =
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) ≫ f
+  rw [eqToHom_naturality_assoc (fun ψ =>
+    (TopRep.resFunctor ψ).map (TopRep.quotientToInvariantsMap f N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)]
+  rw [TopRep.quotientToInvariantsMap_comp_quotientToInvariantsι]
+  exact (Category.assoc _ _ _).symm
 
 variable (R) in
 /-- Inflation, as a natural transformation of functors on `TopRep R G`; the continuous counterpart
@@ -424,12 +443,20 @@ theorem infl_comp_infl (P : Subgroup (G ⧸ N)) [P.Normal] (X : TopRep R G) (n :
       _root_.ContinuousCohomology.map
         ((Subgroup.quotientMkContinuousMonoidHom P).comp (Subgroup.quotientMkContinuousMonoidHom N))
         ((TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
-            (TopRep.quotientToInvariantsι (TopRep.quotientToInvariants X N) P) ≫
-          TopRep.quotientToInvariantsι X N) n :=
+            (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants
+              (TopRep.quotientToInvariants X N) P))
+      (Subgroup.coe_quotientMkContinuousMonoidHom P)) ≫ TopRep.quotientToInvariantsι
+        (TopRep.quotientToInvariants X N) P) ≫
+          (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N)) n :=
   (_root_.ContinuousCohomology.map_comp (Subgroup.quotientMkContinuousMonoidHom P)
     (Subgroup.quotientMkContinuousMonoidHom N)
-    (TopRep.quotientToInvariantsι (TopRep.quotientToInvariants X N) P)
-    (TopRep.quotientToInvariantsι X N) n).symm
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants
+      (TopRep.quotientToInvariants X N) P))
+      (Subgroup.coe_quotientMkContinuousMonoidHom P)) ≫ TopRep.quotientToInvariantsι
+        (TopRep.quotientToInvariants X N) P)
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) n).symm
 
 end Infl
 

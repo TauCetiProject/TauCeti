@@ -142,7 +142,8 @@ theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
     (IdeleGroup.ofFiniteIdele (𝓞 K) K).comp (IdeleGroup.toFiniteIdele (𝓞 K) K)
   have hker : (ideleCongruenceSubgroup 𝔪).map φ ≤ f.ker :=
     hNker _ (by rintro _ ⟨x, hx, rfl⟩; exact h𝔪 x hx)
-  exact ⟨𝔪, fun x hx ↦ MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)⟩
+  refine ⟨𝔪, fun x hx ↦ ?_⟩
+  simpa [f, φ] using MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)
 
 /-- **A Hecke character is trivial on a congruence subgroup at every finite place.** There is a
 modulus `𝔪` such that at every finite place `v` the component of `χ` is trivial on the step

@@ -100,10 +100,10 @@ equation is `ContinuousMonoidHom.pLowerCentralSeriesDesc_mk`. -/
 noncomputable def _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc
     (ψ : G ⧸ pLowerCentralSeries p G (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H (k + 1)) :
     G ⧸ pLowerCentralSeries p G k →ₜ* H ⧸ pLowerCentralSeries p H k :=
-  ContinuousMonoidHom.quotientLift _
+  ContinuousMonoidHom.quotientLift
     ((⟨QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k), QuotientGroup.continuous_mapOfLE _⟩ :
         H ⧸ pLowerCentralSeries p H (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H k).comp
-      (ψ.comp (Subgroup.quotientMkContinuousMonoidHom _))) (by
+      (ψ.comp (Subgroup.quotientMkContinuousMonoidHom _))) _ (by
     intro g hg
     -- The class of `g ∈ λ_k(G)` lies in `λ_k(G ⧸ λ_{k+1})`, which `ψ` carries into
     -- `λ_k(H ⧸ λ_{k+1})`, the image of `λ_k(H)`.

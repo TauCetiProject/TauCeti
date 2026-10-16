@@ -318,9 +318,21 @@ theorem trivialFpQuotientToInvariantsIso_hom_comp_quotientToInvariantsι :
     (TopRep.resFunctor
           (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
         (trivialFpQuotientToInvariantsIso p G N).hom ≫
-      TopRep.quotientToInvariantsι (trivialFp p G) N =
+      (eqToHom (congrArg (fun ψ =>
+        TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι (trivialFp p G) N) =
         eqToHom (res_trivialFp_hom p (Subgroup.quotientMkContinuousMonoidHom N)) := by
   ext x
+  change (TopRep.quotientToInvariantsι (trivialFp p G) N).hom
+      ((eqToHom (congrArg (fun ψ =>
+        TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom
+        (((trivialFpQuotientToInvariantsIso p G N).hom).hom x)) =
+    (eqToHom (res_trivialFp_hom p (Subgroup.quotientMkContinuousMonoidHom N))).hom x
+  rw [TopRep.eqToHom_hom_apply (congrArg (fun ψ =>
+    TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+    (Subgroup.coe_quotientMkContinuousMonoidHom N))]
   apply (trivialFpEquiv p G).injective
   -- The restricted composite has the same carrier as the quotient coefficient object.
   change trivialFpEquiv p G
@@ -346,7 +358,10 @@ theorem coeffMap_trivialFpQuotientToInvariantsIso_hom_comp_infl (n : ℕ) :
     (Y := TopRep.quotientToInvariants (trivialFp p G) N) (Z := trivialFp p G)
     (ContinuousMonoidHom.id (G ⧸ N)) (Subgroup.quotientMkContinuousMonoidHom N)
     (trivialFpQuotientToInvariantsIso p G N).hom
-    (TopRep.quotientToInvariantsι (trivialFp p G) N) n).symm.trans ?_
+    (eqToHom (congrArg (fun ψ =>
+        TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι (trivialFp p G) N) n).symm.trans ?_
   exact TauCeti.ContinuousCohomology.map_congr rfl
     (heq_of_eq (trivialFpQuotientToInvariantsIso_hom_comp_quotientToInvariantsι p N)) n
 

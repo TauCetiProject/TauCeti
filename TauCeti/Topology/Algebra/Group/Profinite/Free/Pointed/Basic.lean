@@ -284,7 +284,7 @@ private theorem kernel_le_ker_lift (hP : IsProC C P) {f : X → P} (hf : Continu
 pro-`C` group extending a continuous map that kills the base point. -/
 noncomputable def lift (hP : IsProC C P) (f : X → P) (hf : Continuous f) (hf₀ : f x₀ = 1) :
     freeProCPointed C x₀ →ₜ* P :=
-  ContinuousMonoidHom.quotientLift (kernel C x₀) (freeProC.lift hP f) (kernel_le_ker_lift hP hf hf₀)
+  ContinuousMonoidHom.quotientLift (freeProC.lift hP f) (kernel C x₀) (kernel_le_ker_lift hP hf hf₀)
 
 /-- The lift recovers the free pro-`C` lift along the quotient map. -/
 @[simp]

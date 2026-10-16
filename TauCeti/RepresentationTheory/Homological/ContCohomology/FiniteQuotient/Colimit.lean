@@ -457,13 +457,16 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
   apply cochainsMap2_injective
     (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
     (FixedPoints.addSubgroup V.toSubgroup M).subtype
-    (fun q ↦ QuotientGroup.induction_on q fun g ↦ ⟨g, rfl⟩) Subtype.coe_injective
+    (fun q ↦ QuotientGroup.induction_on q fun g ↦
+      ⟨g, Subgroup.quotientMkContinuousMonoidHom_apply V.toSubgroup g⟩) Subtype.coe_injective
   have hbV_eq :
       cochainsMap1 (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
         (FixedPoints.addSubgroup V.toSubgroup M).subtype bV = b := by
     funext g
     rw [cochainsMap1_apply]
-    exact hbV_apply g
+    exact (congrArg (fun q => (bV q : M))
+      (DFunLike.congr_fun (Subgroup.coe_quotientMkContinuousMonoidHom V.toSubgroup) g)).trans
+        (hbV_apply g)
   -- The transition followed by pullback to `G` is the inflation from `G ⧸ U`.
   have htransition :
       cochainsMap2 (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)

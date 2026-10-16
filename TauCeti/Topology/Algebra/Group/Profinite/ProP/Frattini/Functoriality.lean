@@ -56,8 +56,8 @@ homomorphism of groups equipped with topologies. Its value on a class is given b
 `TauCeti.frattiniQuotientMap_mk`. -/
 def frattiniQuotientMap (hp : p.Prime) (f : G →ₜ* H) :
     (G ⧸ proPFrattini p G) →ₜ* (H ⧸ proPFrattini p H) :=
-  ContinuousMonoidHom.quotientLift (proPFrattini p G)
-    ((Subgroup.quotientMkContinuousMonoidHom (proPFrattini p H)).comp f)
+  ContinuousMonoidHom.quotientLift
+    ((Subgroup.quotientMkContinuousMonoidHom (proPFrattini p H)).comp f) (proPFrattini p G)
     (by
       intro g hg
       rw [MonoidHom.mem_ker]
