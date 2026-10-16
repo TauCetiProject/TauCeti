@@ -250,14 +250,6 @@ instance AtWorstNodalOfRelativeDimensionOne.isStableUnderBaseChange :
     (Q := affineAtWorstNodalOfRelativeDimensionOne)
     affineAtWorstNodalOfRelativeDimensionOne_isStableUnderBaseChange
 
-/-- Pulling back a nodal relative curve along an arbitrary base morphism preserves nodality. -/
-theorem AtWorstNodalOfRelativeDimensionOne.of_isPullback
-    {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
-    {f : X ⟶ S} {g : Y ⟶ S}
-    (h : AtWorstNodalOfRelativeDimensionOne f)
-    (H : IsPullback fst snd f g) : AtWorstNodalOfRelativeDimensionOne snd :=
-  MorphismProperty.IsStableUnderBaseChange.of_isPullback H h
-
 /-- Being at worst nodal of relative dimension one is local on the source. -/
 instance AtWorstNodalOfRelativeDimensionOne.isZariskiLocalAtSource :
     IsZariskiLocalAtSource (@AtWorstNodalOfRelativeDimensionOne.{u}) := by
