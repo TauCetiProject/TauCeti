@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
-public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
 # The reversed characteristic polynomial `det (1 - X A)` of a square matrix
 
 For a square matrix `A` over a commutative ring, Mathlib's `Matrix.charpolyRev A` is the
-determinant `det (1 - X A)`. It is the finite-dimensional case of the Fredholm determinant of an
-operator, and unlike the characteristic polynomial it makes sense for operators on
-infinite-dimensional spaces, where it is a power series with constant coefficient `1`. This file
-develops the finite-dimensional algebra of `det (1 - X A)` that such a theory reduces to.
+determinant `det (1 - X A)`. It is the finite-dimensional case of the Fredholm determinant. In the
+intended nonarchimedean setting, under suitable analytic hypotheses this extends to compact
+operators on infinite-dimensional Banach spaces as a power series with constant coefficient `1`.
+This file develops the finite-dimensional algebra of `det (1 - X A)` that such a theory reduces to.
 
 In dimension `n = Fintype.card ι`, `det (1 - X A)` is the reflection `X ^ n · χ_A(1 / X)` of the
 characteristic polynomial at degree `n` (`Matrix.charpolyRev_eq_reflect`). The reflection is
@@ -88,7 +87,8 @@ the determinant of `A`. -/
 theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
     A.charpolyRev.coeff (Fintype.card ι) = (-1) ^ Fintype.card ι * A.det := by
   rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le le_rfl, Nat.sub_self,
-    det_eq_sign_charpoly_coeff, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+    det_eq_sign_charpoly_coeff]
+  simp [← mul_assoc, ← mul_pow]
 
 /-- The coefficients of `det (1 - X A)` above the dimension vanish. -/
 theorem coeff_charpolyRev_eq_zero (A : Matrix ι ι R) {k : ℕ} (hk : Fintype.card ι < k) :
