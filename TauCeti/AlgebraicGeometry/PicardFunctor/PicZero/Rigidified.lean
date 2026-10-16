@@ -36,7 +36,7 @@ scheme require further geometric input and are not asserted here.
 * `TauCeti.AlgebraicGeometry.rigidifiedPicardDegreeZeroFunctorIso`: the natural comparison with
   `relativePicardDegreeZeroFunctor`, with components `rigidifiedPicardDegreeZeroToRelative` and
   `relativePicardDegreeZeroToRigidified`;
-* `TauCeti.AlgebraicGeometry.rigidifiedPicardDegreeZeroFunctorIso_hom_comp_
+* `TauCeti.AlgebraicGeometry.rigidifiedPicardDegreeZeroToRelative_comp_
     relativePicardDegreeZeroFunctorι` and its inverse counterpart: compatibility of the comparison
   with the inclusions into the full rigidified and relative Picard presheaves.
 
@@ -345,27 +345,6 @@ lemma rigidifiedPicardDegreeZeroFunctorIso_inv :
       relativePicardDegreeZeroToRigidified f x₀ hx₀ := by
   unfold rigidifiedPicardDegreeZeroFunctorIso
   rfl
-
-/-- The comparison between the degree-zero functors is the restriction of the comparison between
-the full rigidified and relative Picard presheaves. -/
-@[reassoc]
-theorem rigidifiedPicardDegreeZeroFunctorIso_hom_comp_relativePicardDegreeZeroFunctorι :
-    (rigidifiedPicardDegreeZeroFunctorIso f x₀ hx₀).hom ≫
-        relativePicardDegreeZeroFunctorι f =
-      rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ ≫
-        (rigidifiedPicardFunctorIso f x₀ hx₀).hom := by
-  rw [rigidifiedPicardDegreeZeroFunctorIso_hom,
-    rigidifiedPicardDegreeZeroToRelative_comp_relativePicardDegreeZeroFunctorι]
-
-/-- The inverse comparison between the degree-zero functors is the restriction of the inverse
-comparison between the full relative and rigidified Picard presheaves. -/
-@[reassoc]
-theorem rigidifiedPicardDegreeZeroFunctorIso_inv_comp_rigidifiedPicardDegreeZeroFunctorι :
-    (rigidifiedPicardDegreeZeroFunctorIso f x₀ hx₀).inv ≫
-        rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ =
-      relativePicardDegreeZeroFunctorι f ≫ (rigidifiedPicardFunctorIso f x₀ hx₀).inv := by
-  rw [rigidifiedPicardDegreeZeroFunctorIso_inv,
-    relativePicardDegreeZeroToRigidified_comp_rigidifiedPicardDegreeZeroFunctorι]
 
 end
 
