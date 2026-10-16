@@ -140,7 +140,7 @@ theorem baseChange_injective :
   have hTensor : f.lTensor A = g.lTensor A := by
     apply LinearMap.ext
     intro z
-    simpa only [← baseChange_eq_ltensor] using DFunLike.congr_fun h z
+    simpa only [← baseChange_eq_lTensor] using DFunLike.congr_fun h z
   rw [lTensor_sub, hTensor]
   exact _root_.sub_self (g.lTensor A)
 

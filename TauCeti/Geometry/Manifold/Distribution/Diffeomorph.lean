@@ -9,24 +9,29 @@ public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
-# Transport of involutive distributions
+# Transport of distributions through diffeomorphisms
 
-A diffeomorphism whose differential identifies two distributions preserves involutivity.
-This allows involutivity to be checked in diffeomorphic coordinate models when constructing
-integral manifolds. In particular, a distribution is involutive if and only if its pullback
-by a diffeomorphism is involutive.
+A partial diffeomorphism transports local frames on its source, while a global diffeomorphism
+transports smooth constant-rank distributions and involutivity. This allows regularity and
+involutivity to be checked in local or global coordinate models when constructing integral
+manifolds. In particular, the pullback of a smooth distribution is smooth, and a distribution is
+involutive if and only if its pullback by a diffeomorphism is involutive.
 
 The vector-field pullback and Lie-bracket naturality APIs are provided by Mathlib.
 
+`TauCeti.IsDistributionFrameOn.comap_mfderivWithin` pulls a local frame back through partial
+coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization, and
+`TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth distribution.
 `TauCeti.IsInvolutiveDistribution.diffeomorph` gives the forward transport theorem, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
 `Diffeomorph.isInvolutiveDistribution_comap_mfderiv_iff` gives the pullback characterization.
 
-The distributions remain families of tangent subspaces, and their pullback is expressed using
-`Submodule.comap`. No regularity or constant-rank assumption on the distribution is needed.
-The diffeomorphism must be at least `C²` over the reals (`minSmoothness 𝕜 2` over a general
-scalar field), so that pullbacks of differentiable vector fields are differentiable and their
-Lie brackets transform naturally.
+The distributions remain families of tangent subspaces, and their pullback is expressed by
+`Submodule.comap` along the differential. Pulling back a `C^m` frame through a `C^n`
+diffeomorphism requires `m + 1 ≤ n`, because the vector-field pullback contains the inverse
+differential. Involutivity requires the diffeomorphism to be at least `C²` over the reals
+(`minSmoothness 𝕜 2` over a general scalar field), so that pullbacks of differentiable vector
+fields are differentiable and their Lie brackets transform naturally.
 -/
 
 public section
@@ -42,14 +47,95 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I (minSmoothness 𝕜 2) M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  [IsManifold J (minSmoothness 𝕜 2) N]
   {n : ℕ∞ω}
   {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
   {D' : Π y : N, Submodule 𝕜 (TangentSpace J y)}
 
 namespace TauCeti
+
+section Regularity
+
+variable [IsManifold I 1 M] [IsManifold J 1 N]
+
+private theorem isDistributionFrameOn_comap_mfderivWithin_of_isInvertible {m : ℕ∞ω}
+    {ι : Type*} {X : ι → Π y : N, TangentSpace J y} {U : Set N}
+    (hX : IsDistributionFrameOn J m D' X U) (f : M → N) (s : Set M)
+    (hf : CMDiff[s] n f) (hfinv : ∀ x ∈ s, (mfderivWithin I J f s x).IsInvertible)
+    (hs : UniqueMDiff[s]) (hmn : m + 1 ≤ n) :
+    IsDistributionFrameOn I m
+      (fun x ↦ (D' (f x)).comap (mfderivWithin I J f s x).toLinearMap)
+      (fun i ↦ mpullbackWithin I J f (X i) s) (s ∩ f ⁻¹' U) := by
+  refine ⟨fun i ↦ (hX.contMDiffOn i).mpullbackWithin_vectorField_inter hf
+      (fun x hx ↦ hfinv x hx.1) hs hmn, fun {x} hx ↦ ?_, fun {x} hx ↦ ?_⟩
+  · apply LinearIndependent.of_comp (mfderivWithin I J f s x).toLinearMap
+    convert hX.linearIndependent hx.2 using 1
+    funext i
+    exact (hfinv x hx.1).self_apply_inverse _
+  · apply Submodule.map_injective_of_injective (hfinv x hx.1).injective
+    rw [Submodule.map_comap_eq_of_surjective (hfinv x hx.1).surjective]
+    rw [Submodule.map_span, ← hX.span_eq hx.2, ← Set.range_comp]
+    congr 2
+    funext i
+    exact (hfinv x hx.1).self_apply_inverse _
+
+/-- Pulling a local frame back through partial coordinates gives a frame on the part of the
+coordinate source mapping into the original frame domain. The loss of one derivative comes from
+the inverse differential in the vector-field pullback. -/
+theorem IsDistributionFrameOn.comap_mfderivWithin {m : ℕ∞ω} {ι : Type*}
+    {X : ι → Π y : N, TangentSpace J y} {U : Set N}
+    (hX : IsDistributionFrameOn J m D' X U) (Φ : PartialDiffeomorph I J M N n)
+    (hmn : m + 1 ≤ n) :
+    IsDistributionFrameOn I m
+      (fun x ↦ (D' (Φ x)).comap (mfderivWithin I J Φ Φ.source x).toLinearMap)
+      (fun i ↦ mpullbackWithin I J Φ (X i) Φ.source) (Φ.source ∩ Φ ⁻¹' U) := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hmn
+  have hΦinv (x : M) (hx : x ∈ Φ.source) :
+      (mfderivWithin I J Φ Φ.source x).IsInvertible := by
+    rw [mfderivWithin_eq_mfderiv (Φ.open_source.uniqueMDiffOn x hx)
+      (Φ.mdifferentiableAt hn0 hx)]
+    exact (_root_.PartialDiffeomorph.isLocalDiffeomorphAt I J n Φ hx).isInvertible_mfderiv hn0
+  exact isDistributionFrameOn_comap_mfderivWithin_of_isInvertible hX Φ Φ.source
+    Φ.contMDiffOn hΦinv Φ.open_source.uniqueMDiffOn hmn
+
+/-- Pulling a local frame back through a diffeomorphism gives a local frame for the pullback
+distribution. The loss of one derivative comes from the inverse differential in the vector-field
+pullback. -/
+theorem IsDistributionFrameOn.comap_mfderiv {m : ℕ∞ω} {ι : Type*}
+    {X : ι → Π y : N, TangentSpace J y} {U : Set N}
+    (hX : IsDistributionFrameOn J m D' X U) (h : M ≃ₘ^n⟮I, J⟯ N) (hmn : m + 1 ≤ n) :
+    IsDistributionFrameOn I m
+      (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap)
+      (fun i ↦ mpullback I J h (X i)) (h ⁻¹' U) := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hmn
+  simpa only [univ_inter, mfderivWithin_univ, mpullbackWithin_univ] using
+    isDistributionFrameOn_comap_mfderivWithin_of_isInvertible hX h Set.univ
+      h.contMDiff.contMDiffOn
+      (fun x _ ↦ by simpa only [mfderivWithin_univ] using h.isInvertible_mfderiv hn0)
+      uniqueMDiffOn_univ hmn
+
+/-- The pullback of a `C^m` distribution through a `C^n` diffeomorphism is a `C^m`
+distribution of the same rank when `m + 1 ≤ n`. -/
+theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
+    (hD' : IsContMDiffDistribution J m k D') (h : M ≃ₘ^n⟮I, J⟯ N) (hmn : m + 1 ≤ n) :
+    IsContMDiffDistribution I m k
+      (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) := by
+  rw [isContMDiffDistribution_iff] at hD' ⊢
+  intro x
+  obtain ⟨U, hU, hx, X, hX⟩ := hD' (h x)
+  exact ⟨h ⁻¹' U, hU.preimage h.continuous, hx, fun i ↦ mpullback I J h (X i),
+    hX.comap_mfderiv h hmn⟩
+
+end Regularity
+
+section Involutive
+
+variable [IsManifold I (minSmoothness 𝕜 2) M]
+  [IsManifold J (minSmoothness 𝕜 2) N]
 
 /-- A diffeomorphism whose differential identifies two distributions transports involutivity.
 The tangent-space identification is stated as membership equivalence, so it applies directly
@@ -90,13 +176,16 @@ theorem IsInvolutiveDistribution.diffeomorph (hD : IsInvolutiveDistribution I D)
   rw [h.mfderiv_apply_mpullback hn0, h.apply_symm_apply] at hmem
   exact hmem
 
+end Involutive
+
 end TauCeti
 
 namespace Diffeomorph
 
 open TauCeti
 
-variable [CompleteSpace F]
+variable [CompleteSpace F] [IsManifold I (minSmoothness 𝕜 2) M]
+  [IsManifold J (minSmoothness 𝕜 2) N]
 
 /-- Involutivity is invariant under a diffeomorphism identifying tangent distributions. -/
 theorem isInvolutiveDistribution_iff (h : M ≃ₘ^n⟮I, J⟯ N)

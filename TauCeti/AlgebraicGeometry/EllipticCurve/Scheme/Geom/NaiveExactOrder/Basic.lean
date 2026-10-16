@@ -47,7 +47,11 @@ of the universal point, for a divisor `d ≠ N` of `N`, meets the zero section
 set is open and closed in `E[N]` (`EllipticCurveGeom.isClopen_naiveExactOrderLocus`), since two
 points killed by `N` agree on an open and closed subscheme. The corresponding open subscheme of
 `E[N]` therefore represents the functor of points of naive exact order `N`
-(`EllipticCurveGeom.naiveExactOrderRepresentableBy`).
+(`EllipticCurveGeom.naiveExactOrderRepresentableBy`). Pulling it back along an `S`-point `P` gives
+the locus of `S` over which `P` has naive exact order `N`
+(`EllipticCurveGeom.naiveExactOrderPreimage`): a morphism `T ⟶ S` factors through it exactly when
+the base change of `P` to `T` has naive exact order `N`
+(`EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff`).
 
 Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written multiplicatively:
 `x ^ d` is the point `dx`, and `1` is the zero section.
@@ -63,6 +67,9 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderOpens E hN`: that set as an open
   subscheme of `E[N]`, when `N` is invertible on `S`, with inclusion
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderι E hN`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderPreimage hN P`: the locus of `S`
+  over which an `S`-point `P` has naive exact order `N`, when `N` is invertible on `S`, with
+  inclusion `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderPreimageι hN P`.
 
 ## Main results
 
@@ -85,6 +92,9 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderRepresentableBy`: if `N` is
   invertible on `S`, the open subscheme `naiveExactOrderOpens E hN` of `E[N]` represents the
   points of `E` of naive exact order `N`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff`: a
+  morphism `T ⟶ S` factors through the locus where `P` has naive exact order `N` exactly when the
+  base change of `P` to `T` has naive exact order `N`.
 
 ## References
 
@@ -459,6 +469,67 @@ theorem coe_naiveExactOrderRepresentableBy_homEquiv
     ((E.naiveExactOrderRepresentableBy hN).homEquiv u : Z ⟶ Over.mk E.structureMap) =
       u ≫ E.naiveExactOrderι hN ≫ E.torsionι N :=
   (rfl)
+
+/-! ### The locus where an `S`-point has naive exact order `N` -/
+
+variable (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
+
+/-- **The locus where an `S`-point has naive exact order `N`**: when `N` is invertible on `S`, the
+preimage under the `S`-point `P` of the subscheme `naiveExactOrderOpens E hN` of `E`. A morphism
+`t : T ⟶ S` factors through it exactly when the base change of `P` along `t` has naive exact
+order `N` (`exists_lift_naiveExactOrderPreimageι_iff`). -/
+noncomputable def naiveExactOrderPreimage : Scheme.{u} :=
+  pullback P.left ((E.naiveExactOrderOpens hN).ι ≫ (E.torsionι N).left)
+
+/-- The inclusion of the locus where `P` has naive exact order `N` into `S`. -/
+noncomputable def naiveExactOrderPreimageι : naiveExactOrderPreimage hN P ⟶ S :=
+  pullback.fst _ _
+
+/-- The inclusion of the locus where `P` has naive exact order `N` into `S` is a monomorphism. -/
+instance mono_naiveExactOrderPreimageι : Mono (naiveExactOrderPreimageι hN P) :=
+  inferInstanceAs (Mono (pullback.fst _ _))
+
+/-- The restriction of `P` to the locus where `P` has naive exact order `N`, as a point of the
+scheme `naiveExactOrderOpens E hN` of points of naive exact order `N`. -/
+noncomputable def naiveExactOrderPreimagePoint :
+    naiveExactOrderPreimage hN P ⟶ E.naiveExactOrderOpens hN :=
+  pullback.snd _ _
+
+/-- The locus where `P` has naive exact order `N` is the preimage of `naiveExactOrderOpens E hN`
+under `P`. -/
+theorem isPullback_naiveExactOrderPreimage :
+    IsPullback (naiveExactOrderPreimageι hN P) (naiveExactOrderPreimagePoint hN P) P.left
+      ((E.naiveExactOrderOpens hN).ι ≫ (E.torsionι N).left) :=
+  .of_hasPullback _ _
+
+/-- **The universal property of the locus where `P` has naive exact order `N`.** Let `x` be the
+point of `E` with values in a scheme `Z` over `S` given by the base change of `P`, that is
+`x = P ∘ (Z ⟶ S)`. Then `Z ⟶ S` factors through the locus where `P` has naive exact order `N`
+exactly when `x` has naive exact order `N`. -/
+theorem exists_lift_naiveExactOrderPreimageι_iff {x : Z ⟶ Over.mk E.structureMap}
+    (hx : x.left = Z.hom ≫ P.left) :
+    (∃ l : Z.left ⟶ naiveExactOrderPreimage hN P, l ≫ naiveExactOrderPreimageι hN P = Z.hom) ↔
+      E.IsOfNaiveExactOrder x N := by
+  have hP := isPullback_naiveExactOrderPreimage hN P
+  refine ⟨fun ⟨l, hl⟩ ↦ ?_, fun h ↦ ?_⟩
+  · -- `x` factors through the scheme `naiveExactOrderOpens E hN` of points of naive exact order
+    let u : Z ⟶ Over.mk ((E.naiveExactOrderOpens hN).ι ≫ (E.torsion N).X.hom) :=
+      Over.homMk (l ≫ naiveExactOrderPreimagePoint hN P) (by
+        have h := hP.w =≫ E.structureMap
+        simp only [Category.assoc, left_comp_structureMap, Category.comp_id] at h
+        simpa [← torsionι_left_structureMap, ← h] using hl)
+    have hux : u ≫ E.naiveExactOrderι hN ≫ E.torsionι N = x := by
+      ext1
+      simp [u, hx, ← hl, hP.w]
+    rw [← hux, ← coe_naiveExactOrderRepresentableBy_homEquiv hN u]
+    exact ((E.naiveExactOrderRepresentableBy hN).homEquiv u).2
+  · -- conversely, the point of `naiveExactOrderOpens E hN` given by `x` lifts `Z ⟶ S`
+    let u := (E.naiveExactOrderRepresentableBy hN).homEquiv.symm ⟨x, h⟩
+    have hux : u ≫ E.naiveExactOrderι hN ≫ E.torsionι N = x := by
+      rw [← coe_naiveExactOrderRepresentableBy_homEquiv hN u, Equiv.apply_symm_apply]
+    refine ⟨hP.lift Z.hom u.left ?_, hP.lift_fst _ _ _⟩
+    rw [← hx, ← hux]
+    simp
 
 end Representable
 

@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.Polynomial.Distinguished
 
 import Mathlib.Algebra.Polynomial.RingDivision
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 
 /-!
 # The group algebra of a finite cyclic group: the powers of `σ - 1`

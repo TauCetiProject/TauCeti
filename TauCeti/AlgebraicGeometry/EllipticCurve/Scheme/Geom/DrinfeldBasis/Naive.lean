@@ -47,20 +47,6 @@ theorem IsFiberwiseInjective.isDrinfeldBasis
   have (a : Multiplicative (ZMod N × ZMod N)) : IsClosedImmersion (φ a).left :=
     (φ a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
   let i := (E.torsionι N).left
-  have hi : i.toImage ≫ i.ker.subschemeι ≫ E.structureMap = (E.torsion N).X.hom := by
-    rw [← Category.assoc, Scheme.Hom.toImage_imageι]
-    exact E.torsionι_left_structureMap N
-  have hg : i.ker.subschemeι ≫ E.structureMap = inv i.toImage ≫ (E.torsion N).X.hom := by
-    rw [← hi]
-    simp
-  have : Flat (i.ker.subschemeι ≫ E.structureMap) := by
-    rw [hg]
-    have := E.flat_torsion_hom hn
-    infer_instance
-  have : IsFinite (i.ker.subschemeι ≫ E.structureMap) := by
-    rw [hg]
-    have := E.isFinite_torsion_hom hn
-    infer_instance
   have hrel := E.isRelativeEffectiveCartier_pointsDivisor φ
   have := hrel.flat
   have hprod : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by
@@ -86,7 +72,8 @@ theorem IsFiberwiseInjective.isDrinfeldBasis
       Scheme.Hom.le_ker_comp (E.torsionLift (φ a) hx).left i
   rw [isDrinfeldBasis_iff, ← ker_torsionι_left]
   exact (Scheme.IdealSheafData.eq_of_le_of_finrank_eq hle E.structureMap (by
-    rw [← Scheme.Hom.finrank_comp_left_of_isIso i.toImage, hi]
+    rw [← Scheme.Hom.finrank_comp_left_of_isIso i.toImage,
+      subschemeι_ker_torsionι_left_structureMap, IsIso.hom_inv_id_assoc]
     funext s
     simp [E.finrank_torsion_hom hn, sq])).symm
 

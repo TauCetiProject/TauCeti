@@ -545,7 +545,7 @@ theorem isOpen_map_algebraMap_weightedRestrictedSubring [IsTopologicalRing A] [I
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   refine P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition (P.weighted hT) _ ?_ hJ
   rw [← P.weighted_extendedIdealOfDefinition hT]
-  exact ((P.weighted hT).isOpen_iff_exists_pow_le _).mpr ⟨1, (pow_one _).le⟩
+  exact (P.weighted hT).isOpen_extendedIdealOfDefinition
 
 -- The completed algebra `A⟨X₁,…,Xₖ⟩` — the separated completion of the
 -- trivial-weight `A⟨X⟩_T` — needs no result of its own: the instances above and

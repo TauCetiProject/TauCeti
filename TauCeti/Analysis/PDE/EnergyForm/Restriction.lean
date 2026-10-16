@@ -24,11 +24,14 @@ integrability hypotheses on `Ω`.
 
 * `TauCeti.PDE.energyFormH1_restrictL`: `a(u|_U, v) = a(u, v₀)` for `v ∈ H¹₀(U)` with zero
   extension `v₀ ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.energyFormH1_extendByZeroL`: `a(u₀, v₀) = a(u, v)` for `u, v ∈ H¹₀(U)` with zero
+  extensions `u₀, v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
-* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak supersolution,
-  shifted by a constant, is a weak supersolution.
+* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
+  `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
+  or supersolution with no mass term, shifted by a constant, is again one.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`: if `u` solves `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
@@ -93,6 +96,18 @@ theorem energyFormH1_restrictL (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         · rw [hx, indicator_of_mem hxU, indicator_of_mem hxU]
         · rw [hx, indicator_of_notMem hxU, indicator_of_notMem hxU, map_zero]
 
+/-- **The energy form of zero extensions.** For open sets `U ⊆ Ω` and `u, v ∈ H¹₀(U)`, the energy
+form on `Ω` of the zero-extensions of `u` and `v` equals the energy form of `u` and `v` on `U`. -/
+theorem energyFormH1_extendByZeroL (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) (hU : U ≤ Omega)
+    (u v : W1p0 mu U 2) :
+    energyFormH1 a b c (W1p0.extendByZeroL hU u : W1p mu Omega 2)
+        (W1p0.extendByZeroL hU v : W1p mu Omega 2) =
+      energyFormH1 a b c (u : W1p mu U 2) (v : W1p mu U 2) := by
+  have h := energyFormH1_restrictL a b c hU (W1p0.extendByZeroL hU u : W1p mu Omega 2) v
+  rw [W1p0.restrictL_extendByZeroL] at h
+  exact h.symm
+
 /-- **Weak subsolutions restrict to weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0`
 for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
 `a(u|_U, v) ≤ 0` for every nonnegative `v ∈ H¹₀(U)`. -/
@@ -133,22 +148,34 @@ theorem energyFormH1_restrictL_nonneg {a : EuclideanSpace ℝ ι → Matrix ι �
   rw [map_smul, energyFormH1_smul_left] at hneg
   linarith
 
-/-- **Shifted weak supersolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≥ 0` for every nonnegative
-`v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` of finite measure and every constant `δ`, the shifted
-restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≥ 0` for every nonnegative
-`v ∈ H¹₀(U)`: adding a constant does not change the gradient, and the form has no lower-order
-terms. -/
-theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (hU : U ≤ Omega) [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
+/-- **Shifted weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0` for every nonnegative
+`v ∈ H¹₀(Ω)`, for an energy form with no mass term, then for every open `U ⊆ Ω` of finite measure
+and every constant `δ`, the shifted restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≤ 0`
+for every nonnegative `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_add_const_nonpos {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2))
+        energyFormH1 a b 0 u (v : W1p mu Omega 2) ≤ 0)
     (δ : ℝ) (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
-    0 ≤ energyFormH1 a 0 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
-  have heq : energyFormH1 a 0 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) =
-      energyFormH1 a 0 0 (W1p.restrictL hU u) (v : W1p mu U 2) := by
-    simp [energyFormH1_def, driftForm_apply, massForm_apply]
-  rw [heq]
+    energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) ≤ 0 := by
+  rw [energyFormH1_add_const_left]
+  exact energyFormH1_restrictL_nonpos hU hu v hv
+
+/-- **Shifted weak supersolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≥ 0` for every nonnegative
+`v ∈ H¹₀(Ω)`, for an energy form with no mass term, then for every open `U ⊆ Ω` of finite measure
+and every constant `δ`, the shifted restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≥ 0`
+for every nonnegative `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b 0 u (v : W1p mu Omega 2))
+    (δ : ℝ) (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    0 ≤ energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
+  rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies

@@ -537,7 +537,7 @@ theorem isPElementary_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s
     IsPElementary p ↥(pElementaryOfSylow s P) := by
   have hQ : IsPGroup p
       ((P : Subgroup (centralizer ({s} : Set G))).map (centralizer ({s} : Set G)).subtype) :=
-    P.2.map _
+    P.isPGroup.map _
   have hCp : ¬ p ∣ Nat.card (zpowers s) := by rwa [Nat.card_zpowers]
   exact isPElementary_sup_of_commute inferInstance hCp hQ
     (disjoint_of_not_dvd_natCard_of_isPGroup hCp hQ)
@@ -581,7 +581,7 @@ theorem pPart_mem_map_sylow_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p 
     pPart p x ∈ (P : Subgroup (centralizer ({s} : Set G))).map
       (centralizer ({s} : Set G)).subtype := by
   obtain ⟨c, hc, y, hy, hcomm, rfl⟩ := exists_mul_eq_of_mem_pElementaryOfSylow s P hx
-  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨y, hy⟩
+  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.isPGroup.map _) ⟨y, hy⟩
   rw [← eq_pPart Fact.out hcomm rfl
     (fun hd => hs (hd.trans (orderOf_dvd_of_mem_zpowers hc))) (k := n) (by simpa using hn)]
   exact hy
@@ -592,7 +592,7 @@ factor `⟨s⟩`.** This is the other half of the factorisation
 theorem pFreePart_mem_zpowers_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
     {x : G} (hx : x ∈ pElementaryOfSylow s P) : pFreePart p x ∈ zpowers s := by
   obtain ⟨c, hc, y, hy, hcomm, rfl⟩ := exists_mul_eq_of_mem_pElementaryOfSylow s P hx
-  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨y, hy⟩
+  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.isPGroup.map _) ⟨y, hy⟩
   rw [← eq_pFreePart Fact.out hcomm rfl
     (fun hd => hs (hd.trans (orderOf_dvd_of_mem_zpowers hc))) (k := n) (by simpa using hn)]
   exact hc
@@ -608,7 +608,7 @@ theorem pFreePart_mul_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ or
   have hfy := pFreePart_mem_zpowers_of_mem_pElementaryOfSylow s P hs hy
   have hpx := pPart_mem_map_sylow_of_mem_pElementaryOfSylow s P hs hx
   have hpy := pPart_mem_map_sylow_of_mem_pElementaryOfSylow s P hs hy
-  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨_, mul_mem hpx hpy⟩
+  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.isPGroup.map _) ⟨_, mul_mem hpx hpy⟩
   refine (eq_pFreePart Fact.out
     (commute_of_mem_zpowers_of_mem_centralizer s (mul_mem hfx hfy)
       (map_subtype_le _ (mul_mem hpx hpy))) ?_

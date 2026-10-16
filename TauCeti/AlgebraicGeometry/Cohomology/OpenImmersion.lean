@@ -23,7 +23,8 @@ identifies the cohomology `Hⁿ(f(Y), M)` of the open subset `f(Y)` of `X` with 
 Applied to the canonical open immersion `Spec Γ(X, U) ⟶ X` of an affine open `U`, it transports
 the acyclicity of quasi-coherent sheaves on the spectrum of a Noetherian ring (Hartshorne,
 Theorem III.3.5) to the affine opens of an arbitrary scheme: a quasi-coherent sheaf has no
-cohomology in positive degrees on an affine open `U` with `Γ(X, U)` Noetherian.
+cohomology in positive degrees on an affine open `U` with `Γ(X, U)` Noetherian, and hence none
+in positive degrees on an affine locally Noetherian scheme.
 
 ## Main declarations
 
@@ -32,6 +33,8 @@ cohomology in positive degrees on an affine open `U` with `Γ(X, U)` Noetherian.
   a single sheaf of modules.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`:
   acyclicity of quasi-coherent sheaves on Noetherian affine opens.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`:
+  acyclicity of quasi-coherent sheaves on affine locally Noetherian schemes.
 
 ## References
 
@@ -117,6 +120,15 @@ theorem subsingleton_cohomologyOn_succ_of_isAffineOpen [M.IsQuasicoherent] {U : 
   rw [← hU.opensRange_fromSpec]
   exact (cohomologyOnOpensRangeIso hU.fromSpec M (n + 1)).addCommGroupIsoToAddEquiv.toEquiv
     |>.subsingleton
+
+/-- **Acyclicity of quasi-coherent sheaves on affine schemes**: a quasi-coherent sheaf of modules
+on an affine locally Noetherian scheme has no cohomology in positive degrees. -/
+theorem subsingleton_cohomology_succ_of_isAffine [IsAffine X] [IsLocallyNoetherian X]
+    [M.IsQuasicoherent] (n : ℕ) : Subsingleton (Cohomology M (n + 1)) := by
+  have : IsNoetherianRing Γ(X, ⊤) :=
+    IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top _⟩
+  have := subsingleton_cohomologyOn_succ_of_isAffineOpen M (isAffineOpen_top X) n
+  exact (cohomologyOnTopIso M (n + 1)).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
 end AlgebraicGeometry.Scheme.Modules
 

@@ -44,14 +44,14 @@ variable {R : Type u} [CommRing R]
 /-- The categorical closed-subgroup inclusion represented contravariantly by the quotient map
 `H ⟶ H/I`. -/
 noncomputable def quotientGrpObjInclusion (H : _root_.CommHopfAlgCat.{u} R)
-    (I : HopfIdeal R H) : grpObj (quotient H I) ⟶ grpObj H :=
-  grpObjMap (mkQuotient H I)
+    (I : HopfIdeal R H) : CommHopfAlgCat.grpObj (quotient H I) ⟶ CommHopfAlgCat.grpObj H :=
+  CommHopfAlgCat.Hom.grpObjMap (mkQuotient H I)
 
 /-- The categorical quotient inclusion is represented by the group-object map induced by the
 coordinate quotient morphism. -/
 theorem quotientGrpObjInclusion_def (H : _root_.CommHopfAlgCat.{u} R)
     (I : HopfIdeal R H) :
-    quotientGrpObjInclusion H I = grpObjMap (mkQuotient H I) := (rfl)
+    quotientGrpObjInclusion H I = CommHopfAlgCat.Hom.grpObjMap (mkQuotient H I) := (rfl)
 
 /-- The categorical quotient inclusion is the opposite of the coordinate quotient map. -/
 @[simp]
@@ -59,14 +59,14 @@ theorem quotientGrpObjInclusion_unop (H : _root_.CommHopfAlgCat.{u} R)
     (I : HopfIdeal R H) :
     (quotientGrpObjInclusion H I).unop = CommAlgCat.ofHom (mkQuotient H I).hom := by
   rw [quotientGrpObjInclusion_def]
-  exact grpObjMap_unop (mkQuotient H I)
+  exact CommHopfAlgCat.Hom.grpObjMap_unop (mkQuotient H I)
 
 /-- A quotient group-object inclusion preserves multiplication. -/
 noncomputable instance quotientGrpObjInclusion_isMonHom
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     IsMonHom (quotientGrpObjInclusion H I) := by
   rw [quotientGrpObjInclusion_def]
-  exact grpObjMap_isMonHom (mkQuotient H I)
+  exact CommHopfAlgCat.Hom.grpObjMap_isMonHom (mkQuotient H I)
 
 /-- A quotient group-object inclusion is a monomorphism. -/
 noncomputable instance quotientGrpObjInclusion_mono

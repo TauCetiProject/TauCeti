@@ -180,11 +180,12 @@ theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
   exact hD.preimage hU.isOpenMap_subtype_val
 
 /-- **An open subgroup has the same index in a dense subgroup.** If `f : G' →* G` has dense range
-and `U` is an open subgroup of `G`, then the preimage of `U` has the same index in `G'` as `U` has
-in `G`: the range of `f` meets every coset of `U`, since the cosets are open.
+and `U` is an open subgroup of a group `G` with continuous left translations, then the preimage of
+`U` has the same index in `G'` as `U` has in `G`: the range of `f` meets every coset of `U`, since
+the cosets are open.
 
 The proof is adapted from Mathlib's `Subgroup.index_comap_of_surjective`. -/
-theorem index_comap_of_denseRange [SeparatelyContinuousMul G] {G' : Type*} [Group G'] {f : G' →* G}
+theorem index_comap_of_denseRange [ContinuousConstSMul G G] {G' : Type*} [Group G'] {f : G' →* G}
     (hf : DenseRange f) {U : Subgroup G} (hU : IsOpen (U : Set G)) :
     (U.comap f).index = U.index := by
   have key (x y : G') :
@@ -195,7 +196,7 @@ theorem index_comap_of_denseRange [SeparatelyContinuousMul G] {G' : Type*} [Grou
     exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
   · -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
     refine Quotient.ind' fun g ↦ ?_
-    obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.leftCoset g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
+    obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.smul g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
     refine ⟨Quotient.mk'' x, Quotient.sound' ?_⟩
     rw [QuotientGroup.leftRel_apply]
     simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)

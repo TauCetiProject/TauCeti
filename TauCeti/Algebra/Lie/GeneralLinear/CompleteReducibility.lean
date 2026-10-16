@@ -113,10 +113,9 @@ end GeneralLinear
 
 section CAR
 
-attribute [local instance] Classical.decEq
 open scoped TauCeti
 
-variable {K n : Type*} [Field K] [Fintype n] [CharZero K]
+variable {K n : Type*} [Field K] [Fintype n] [DecidableEq n] [CharZero K]
 
 variable (K n) in
 /-- **The CAR module is completely reducible.** Its Lie-submodule lattice is complemented because

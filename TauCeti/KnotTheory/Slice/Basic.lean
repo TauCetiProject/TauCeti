@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import TauCeti.Geometry.Manifold.Instances.ClosedBall
+public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Neat
 public import TauCeti.KnotTheory.SmoothCircle
 import Mathlib.Analysis.Complex.Isometry
@@ -112,10 +112,10 @@ noncomputable section
 
 open scoped EuclideanSpace
 
-namespace TauCeti
-
 open Manifold Metric Module Set
 open scoped Manifold ContDiff
+
+namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
 

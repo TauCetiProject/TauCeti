@@ -167,12 +167,7 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le (hn : 3 ≤ n)
   have hT : adjoint T = T := by
     have hT : adjoint (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)) =
         Lp.fourierMultiplierCLM F (hessianSymbolLp v w) := by
-      rw [Lp.adjoint_fourierMultiplierCLM]
-      congr 1
-      refine Lp.ext ?_
-      filter_upwards [Lp.coeFn_star (hessianSymbolLp v w), coeFn_hessianSymbolLp v w]
-        with ξ h₁ h₂
-      rw [h₁, Pi.star_apply, h₂, hessianSymbol_apply, Complex.star_def, Complex.conj_ofReal]
+      rw [Lp.adjoint_fourierMultiplierCLM, star_hessianSymbolLp]
     have hre : ∀ f g : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n))),
         inner ℝ f g = Complex.re (inner ℂ f g) := fun f g => by
       rw [L2.inner_def, L2.inner_def]

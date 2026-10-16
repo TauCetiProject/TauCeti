@@ -18,7 +18,11 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 `Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this
 action to the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
-presheaf. Pullback of local functions by a morphism over the base preserves these images
+presheaf, which on the whole scheme is the base-ring map to global functions
+(`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). The sections of the structure
+sheaf over the whole scheme are identified base-linearly with global functions by
+`Scheme.Modules.structureSheafSectionsBaseLinearEquiv`. Pullback of local functions by a morphism
+over the base preserves these images
 (`AlgebraicGeometry.Scheme.Modules.app_baseRingToStructurePresheaf`).
 
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
@@ -72,7 +76,7 @@ def globalSectionsSmul
 @[simp]
 lemma globalSectionsSmul_app
     (M : X.Modules) (r : Γ(X, ⊤)) (U : X.Opens) :
-    (globalSectionsSmul M r).app U = M.smul (X.presheaf.map U.leTop.op r) := by
+    (globalSectionsSmul M r).app U = (M.smul (X.presheaf.map U.leTop.op r)).asHom := by
   rfl
 
 -- In the next four proofs, sheaf-morphism extensionality leaves pointwise bundled-module goals.
@@ -124,18 +128,18 @@ instance isIso_globalSectionsSmul_units
 the endomorphism ring of the sheaf. -/
 def globalSectionsAction
     (M : X.Modules) : Γ(X, ⊤) →+* End M where
-  toFun := globalSectionsSmul M
-  map_one' := globalSectionsSmul_one M
+  toFun r := .of (globalSectionsSmul M r)
+  map_one' := End.ext (globalSectionsSmul_one M)
   map_mul' := fun r s ↦ by
-    rw [globalSectionsSmul_mul]
-    exact (End.mul_def _ _).symm
-  map_zero' := globalSectionsSmul_zero M
-  map_add' := globalSectionsSmul_add M
+    apply End.ext
+    exact globalSectionsSmul_mul M r s
+  map_zero' := End.ext (globalSectionsSmul_zero M)
+  map_add' := fun r s ↦ End.ext (globalSectionsSmul_add M r s)
 
 @[simp]
 lemma globalSectionsAction_apply
     (M : X.Modules) (r : Γ(X, ⊤)) :
-    globalSectionsAction M r = globalSectionsSmul M r :=
+    globalSectionsAction M r = End.of (globalSectionsSmul M r) :=
   by rfl
 
 /-- Multiplication by a global function is natural in the sheaf of modules. -/
@@ -164,8 +168,9 @@ lemma pushforward_map_globalSectionsSmul
   rw [pushforward_map_app, globalSectionsSmul_app, globalSectionsSmul_app]
   -- The sections of the pushforward over `U` are the sections of `N` over `f ⁻¹ᵁ U`, with scalars
   -- restricted along `f.app U`; no lemma exposes this, so record it explicitly.
-  change N.smul (X.presheaf.map (f ⁻¹ᵁ U).leTop.op (f.appTop r)) =
-    N.smul (f.app U (Y.presheaf.map U.leTop.op r))
+  ext x
+  change X.presheaf.map (f ⁻¹ᵁ U).leTop.op (f.appTop r) • x =
+    f.app U (Y.presheaf.map U.leTop.op r) • x
   congr 1
   exact (ConcreteCategory.comp_apply _ _ r).symm.trans
     (congrArg (· r) (f.naturality U.leTop.op)).symm
@@ -244,6 +249,14 @@ lemma baseRingToStructurePresheaf_app_eq_appLE (U : X.Opens) :
   -- `app ⊤` followed by that restriction.
   rfl
 
+/-- On the whole scheme, the base-ring map to sections is `baseRingToGlobalSections`. -/
+lemma baseRingToStructurePresheaf_app_top :
+    (X.baseRingToStructurePresheaf R).app (op ⊤) =
+      CommRingCat.ofHom (Modules.baseRingToGlobalSections R X) := by
+  rw [baseRingToStructurePresheaf_app, Subsingleton.elim (unop (op (⊤ : X.Opens))).leTop.op (𝟙 _),
+    X.presheaf.map_id]
+  exact Category.comp_id _
+
 variable {R} in
 /-- Compatible structure morphisms make the actions of the two base rings on sections
 into a scalar tower. -/
@@ -296,6 +309,51 @@ the base ring. The priority is below the default so that the canonical action of
 instance (priority := 900) globalSectionsBaseModule
     (M : X.Modules) : Module R Γ(M, ⊤) :=
   Module.compHom Γ(M, ⊤) (baseRingToGlobalSections R X)
+
+/-- The global sections of the structure sheaf as a module are its ring of global functions, as
+modules over the base ring. -/
+def structureSheafSectionsBaseLinearEquiv :
+    let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+    letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+    letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    Γ(M, ⊤) ≃ₗ[R] Γ(X, ⊤) := by
+  let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+  letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+  letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+  exact
+    { toFun s := s
+      invFun s := s
+      map_add' _ _ := rfl
+      map_smul' r s := by
+        rw [RingHom.id_apply]
+        -- Both actions are multiplication in `Γ(X, ⊤)`: on `Γ(M, ⊤)` by the image of `r` under
+        -- `baseRingToGlobalSections` (from `Module.compHom`), on `Γ(X, ⊤)` by its image under
+        -- `baseRingToStructurePresheaf` (from `RingHom.toAlgebra`). Unfolding both actions
+        -- reduces the goal to `baseRingToStructurePresheaf_app_top`.
+        change baseRingToGlobalSections R X r * (show Γ(X, ⊤) from s) =
+          (X.baseRingToStructurePresheaf R).app (op ⊤) r * (show Γ(X, ⊤) from s)
+        exact (congrArg (· * (show Γ(X, ⊤) from s))
+          (ConcreteCategory.congr_hom (Scheme.baseRingToStructurePresheaf_app_top R X) r)).symm
+      left_inv _ := rfl
+      right_inv _ := rfl }
+
+@[simp]
+lemma structureSheafSectionsBaseLinearEquiv_apply :
+    let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+    letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+    letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    ∀ s : Γ(M, ⊤), structureSheafSectionsBaseLinearEquiv R X s = s := by
+  intros
+  rfl
+
+@[simp]
+lemma structureSheafSectionsBaseLinearEquiv_symm_apply :
+    let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+    letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+    letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    ∀ s : Γ(X, ⊤), (structureSheafSectionsBaseLinearEquiv R X).symm s = s := by
+  intros
+  rfl
 
 @[simp]
 lemma base_smul_globalSections

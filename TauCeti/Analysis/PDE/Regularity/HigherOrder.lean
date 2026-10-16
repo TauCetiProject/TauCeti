@@ -80,44 +80,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
 
-/-! ### The energy form against a test function -/
-
-/-- The constant-coefficient energy form of `w ∈ H¹(Ω)` against a test function `ψ` is
-`∑ⱼ ∫ (∂_{cⱼ} ψ) ∂ⱼw`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
-private theorem energyFormH1_ofTestFunctionₗ_eq_sum (w : W1p mu Omega 2) (ψ : 𝓓(Omega, ℝ)) :
-    energyFormH1 (fun _ => A) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 ψ) =
-      ∑ j, ∫ x, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-        innerSL ℝ (W1p.gradient w x) (EuclideanSpace.basisFun ι ℝ j) ∂mu := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  have hloc : ∀ j, LocallyIntegrableOn (fun x => innerSL ℝ (W1p.gradient w x) (b j)) Omega mu :=
-    fun j => ((W1p.hasWeakFDerivOn w).hasWeakLineDerivOn (b j)).locallyIntegrableOn_deriv
-  -- Pointwise, `⟨η, A ξ⟩ = ∑ⱼ ⟨η, cⱼ⟩ ξⱼ`.
-  have hB : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ =
-      ∑ j, ⟪η, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * innerSL ℝ ξ (b j) := fun η ξ => by
-    simp only [b, innerSL_apply_apply, EuclideanSpace.inner_basisFun_real]
-    simp only [matrixBilinearForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
-      Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  rw [energyFormH1_const_eq_setIntegral]
-  calc ∫ x in Omega, matrixBilinearForm A
-        (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
-      = ∫ x in Omega, ∑ j, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-          innerSL ℝ (W1p.gradient w x) (b j) ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 ψ] with x hx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, hB]
-        refine Finset.sum_congr rfl fun j _ => ?_
-        rw [smul_eq_mul, (ψ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
-          inner_gradient_left]
-    _ = ∑ j, ∫ x in Omega, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-          innerSL ℝ (W1p.gradient w x) (b j) ∂mu :=
-        integral_finsetSum _ fun j _ =>
-          (integrable_lineDeriv_smul_of_locallyIntegrableOn (hloc j) ψ
-            (WithLp.toLp 2 (Aᵀ j))).restrict
-    _ = _ := Finset.sum_congr rfl fun j _ =>
-        setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul ψ (WithLp.toLp 2 (Aᵀ j))
-
 /-! ### Differentiating the equation -/
 
 /-- **A derivative moves across the constant-coefficient energy form.** Let `A` be a constant

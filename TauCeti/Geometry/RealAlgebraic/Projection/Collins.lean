@@ -233,7 +233,7 @@ coefficients of `p.map φ` and its derivative at their actual degrees are images
 Collins projection. Torsion-freeness ensures that the specialized derivative has the expected
 degree; in positive characteristic the derivative of a reductum can drop further in degree under
 specialization. -/
-theorem psc_map_derivative_mem_image_collinsProjection [IsAddTorsionFree S] [DecidableEq S]
+theorem psc_map_derivative_mem_image_collinsProjection [HasUniqueDiv S] [DecidableEq S]
     (φ : R →+* S) {F : Finset R[X]} {p : R[X]} (hp : p ∈ F) {j : ℕ}
     (hj : j ≤ min (p.map φ).natDegree (p.map φ).derivative.natDegree) :
     psc (p.map φ) (p.map φ).derivative (p.map φ).natDegree (p.map φ).derivative.natDegree j ∈
@@ -323,8 +323,8 @@ theorem psc_map_eq_zero_iff_of_collinsProjection
 the family the principal subresultant coefficients of its specialization and their derivative,
 at the specialized degrees, vanish at the same indices. The targets are additively torsion-free,
 so that the derivative of a specialization has the expected degree. -/
-theorem psc_map_derivative_eq_zero_iff_of_collinsProjection [IsAddTorsionFree A]
-    [IsAddTorsionFree B] (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F)
+theorem psc_map_derivative_eq_zero_iff_of_collinsProjection [HasUniqueDiv A]
+    [HasUniqueDiv B] (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F)
     {j : ℕ} (hj : j ≤ min (p.map φ).natDegree (p.map φ).derivative.natDegree) :
     psc (p.map φ) (p.map φ).derivative (p.map φ).natDegree (p.map φ).derivative.natDegree j = 0 ↔
       psc (p.map ψ) (p.map ψ).derivative (p.map ψ).natDegree
@@ -374,8 +374,8 @@ theorem natDegree_gcd_map_eq_of_collinsProjection
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for every member
 of the family the gcd of its specialization with its derivative has the same degree under both
 specializations. The targets are additively torsion-free. -/
-theorem natDegree_gcd_map_derivative_eq_of_collinsProjection [IsAddTorsionFree K]
-    [IsAddTorsionFree L]
+theorem natDegree_gcd_map_derivative_eq_of_collinsProjection [HasUniqueDiv K]
+    [HasUniqueDiv L]
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
     (EuclideanDomain.gcd (p.map φ) (p.map φ).derivative).natDegree =
       (EuclideanDomain.gcd (p.map ψ) (p.map ψ).derivative).natDegree := by

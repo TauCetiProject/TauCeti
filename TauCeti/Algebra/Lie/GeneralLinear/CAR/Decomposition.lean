@@ -42,7 +42,6 @@ open scoped BigOperators DirectSum TauCeti
 namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] Classical.decEq
 
 noncomputable section
 
