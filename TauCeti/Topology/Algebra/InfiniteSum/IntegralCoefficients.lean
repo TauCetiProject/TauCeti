@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Ring.Basic
+public import TauCeti.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
@@ -23,11 +23,11 @@ with arbitrary integer coefficients converges at any parameter of norm below one
 is complete. This includes complete valued fields with nondiscrete valuations or positive
 characteristic.
 
-More generally, `evalBoundedSeries` evaluates a power series after applying a coefficient ring
-homomorphism whose image has norm at most one. In a commutative target ring, both constructions
-are ring homomorphisms. Evaluation has norm at most one, at most the norm of the parameter for an
-integral series without constant term, and multiplication by an evaluated formal unit preserves
-norms, even when the ring norm is only submultiplicative.
+More generally, `RingHom.evalBoundedSeries` evaluates a power series after applying a coefficient
+ring homomorphism whose image has norm at most one. In a commutative target ring, both
+constructions are ring homomorphisms. Evaluation has norm at most one, at most the norm of the
+parameter for an integral series without constant term, and multiplication by an evaluated formal
+unit preserves norms, even when the ring norm is only submultiplicative.
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
 variables at a pair of parameters in the open unit ball.
@@ -38,6 +38,8 @@ public section
 open PowerSeries
 
 namespace TauCeti
+
+namespace RingHom
 
 /-- The terms of a power series are absolutely summable after applying a coefficient map with
 image in the closed unit ball, provided the parameter belongs to the open unit ball. -/
@@ -139,6 +141,8 @@ theorem norm_evalBoundedSeries_le_one {R K : Type*} [Semiring R]
       simpa only [one_mul] using norm_pow_le' q (Nat.pos_of_ne_zero hn)
     _ ≤ 1 := by simpa only [one_mul] using pow_le_one₀ (norm_nonneg q) hq.le
 
+end RingHom
+
 /-- The terms of an integer-coefficient power series are absolutely summable at a parameter of
 norm below one in a non-archimedean normed ring. -/
 theorem summable_norm_intCast_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
@@ -167,7 +171,7 @@ sum converges without requiring a linear topology on the target. -/
 noncomputable def evalIntSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) : ℤ⟦X⟧ →+* K :=
-  evalBoundedSeries (Int.castRingHom K) (IsUltrametricDist.norm_intCast_le_one K) q hq
+  RingHom.evalBoundedSeries (Int.castRingHom K) (IsUltrametricDist.norm_intCast_le_one K) q hq
 
 /-- The evaluation map is the convergent sum of the coefficients times powers of the
 parameter. -/
@@ -183,14 +187,14 @@ theorem evalIntSeries_X {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) :
     evalIntSeries q hq (PowerSeries.X : ℤ⟦X⟧) = q := by
-  exact evalBoundedSeries_X _ _ q hq
+  exact RingHom.evalBoundedSeries_X _ _ q hq
 
 /-- Evaluation of an integral series inside the open unit ball has norm at most one. -/
 theorem norm_evalIntSeries_le_one {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
     ‖evalIntSeries q hq f‖ ≤ 1 := by
-  exact norm_evalBoundedSeries_le_one _ _ q hq f
+  exact RingHom.norm_evalBoundedSeries_le_one _ _ q hq f
 
 /-- An integral series without constant term evaluates inside the open unit ball to an element of
 norm at most that of the parameter. -/
@@ -225,21 +229,12 @@ in a complete non-archimedean normed commutative ring with `‖1‖ = 1`. -/
     ‖evalIntSeries q hq f‖ = 1 := by
   simpa only [one_mul, norm_one] using norm_mul_evalIntSeries_of_isUnit 1 q hq hf
 
-/-- A product of two elements in the open unit ball again belongs to the open unit ball. -/
-theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : ‖u‖ < 1)
-    (hv : ‖v‖ < 1) : ‖u * v‖ < 1 := by
-  calc
-    ‖u * v‖ ≤ ‖u‖ * ‖v‖ := norm_mul_le _ _
-    _ ≤ ‖u‖ := by
-      simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
-    _ < 1 := hu
-
 /-- Iterated evaluation of an integral bivariate power series at two parameters in the open unit
 ball. The inner variable is evaluated at `u`, and the outer variable at `v`. -/
 noncomputable def evalIntBivariateSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) : ℤ⟦X⟧⟦X⟧ →+* K :=
-  evalBoundedSeries (evalIntSeries u hu) (norm_evalIntSeries_le_one u hu) v hv
+  RingHom.evalBoundedSeries (evalIntSeries u hu) (norm_evalIntSeries_le_one u hu) v hv
 
 /-- Bivariate integral evaluation is the iterated convergent sum of the coefficients. -/
 theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K] [NormOneClass K]
@@ -247,7 +242,7 @@ theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K] [NormOneClas
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧⟦X⟧) :
     evalIntBivariateSeries u hu v hv f =
       ∑' b : ℕ, (∑' a : ℕ, ((coeff a (coeff b f) : ℤ) : K) * u ^ a) * v ^ b := by
-  rw [evalIntBivariateSeries, evalBoundedSeries_apply]
+  rw [evalIntBivariateSeries, RingHom.evalBoundedSeries_apply]
   apply tsum_congr
   intro b
   rw [evalIntSeries_apply]
@@ -259,7 +254,7 @@ theorem evalIntBivariateSeries_C {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧) :
     evalIntBivariateSeries u hu v hv (C f) = evalIntSeries u hu f := by
-  exact evalBoundedSeries_C _ _ v hv f
+  exact RingHom.evalBoundedSeries_C _ _ v hv f
 
 /-- Bivariate evaluation sends the outer formal parameter to the outer chosen element. -/
 @[simp]
@@ -267,7 +262,7 @@ theorem evalIntBivariateSeries_X {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) :
     evalIntBivariateSeries u hu v hv (X : ℤ⟦X⟧⟦X⟧) = v := by
-  exact evalBoundedSeries_X _ _ v hv
+  exact RingHom.evalBoundedSeries_X _ _ v hv
 
 end TauCeti
 
