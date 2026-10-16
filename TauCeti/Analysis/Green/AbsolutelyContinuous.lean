@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Green.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
+import TauCeti.MeasureTheory.Integral.CurveIntegral.Reparam
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 
 /-!
 # Circulation along absolutely continuous curves
@@ -53,5 +55,32 @@ theorem _root_.AbsolutelyContinuousOnInterval.curveIntegrable_oneForm
   rw [curveIntegrable_iff_intervalIntegrable_deriv]
   simpa only [← circulationFun_eq_oneForm] using
     hγ.intervalIntegrable_circulationFun (by simpa using hP) (by simpa using hQ)
+
+/-- Affine normalization to the unit interval preserves circulation for fields continuous on
+the curve trace, with reversed and constant intervals allowed. -/
+theorem _root_.AbsolutelyContinuousOnInterval.integral_circulationFun_comp_lineMap
+    {γ : ℝ → ℂ} {a b : ℝ} {P Q : ℂ → ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hP : ContinuousOn P (γ '' uIcc a b)) (hQ : ContinuousOn Q (γ '' uIcc a b)) :
+    (∫ t in (0 : ℝ)..1, circulationFun P Q (γ ∘ AffineMap.lineMap a b) t) =
+      ∫ t in a..b, circulationFun P Q γ t := by
+  have ho : MonotoneOn (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) ∨
+      AntitoneOn (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) :=
+    (le_total a b).imp
+      (fun h ↦ (AffineMap.lineMap_mono h).monotoneOn _)
+      (fun h ↦ (AffineMap.lineMap_anti h).antitoneOn _)
+  have hγ' : AbsolutelyContinuousOnInterval γ
+      (AffineMap.lineMap a b (0 : ℝ)) (AffineMap.lineMap a b (1 : ℝ)) := by
+    simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one] using hγ
+  have hint : IntervalIntegrable (fun t ↦ oneForm P Q (γ t) (deriv γ t)) volume
+      (AffineMap.lineMap a b (0 : ℝ)) (AffineMap.lineMap a b (1 : ℝ)) := by
+    simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one,
+      ← circulationFun_eq_oneForm]
+      using hγ.intervalIntegrable_circulationFun hP hQ
+  simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one,
+    ← circulationFun_eq_oneForm]
+    using hγ'.integral_oneForm_comp
+      ((lipschitzWith_lineMap a b).lipschitzOnWith.absolutelyContinuousOnInterval)
+      zero_le_one ho hint
 
 end TauCeti.Green

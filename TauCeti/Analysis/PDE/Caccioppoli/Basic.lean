@@ -67,11 +67,10 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
-omit [DecidableEq ι] in
 /-- Integrate a pointwise Caccioppoli estimate and absorb half of its energy term. This is
 the common measure-theoretic step for the solution and subsolution forms of the inequality;
 the caller supplies the energy density and its comparison with the forcing term. -/
@@ -132,7 +131,6 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
       field_simp
       ring
 
-omit [DecidableEq ι] in
 /-- Bound the cutoff-gradient term by the squared gradient bound and an integral over a set
 containing the support of the cutoff. The comparison function may dominate the Sobolev value only
 almost everywhere. -/
@@ -167,7 +165,6 @@ theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
     _ = G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
       rw [integral_const_mul, setIntegral_indicator hS]
 
-omit [DecidableEq ι] in
 /-- Bound the zeroth-order term of a Caccioppoli inequality by an integral over a set containing
 the support of a cutoff with `ψ² ≤ 1`. The comparison function may dominate the Sobolev value only
 almost everywhere. -/
@@ -190,7 +187,6 @@ theorem W1p.setIntegral_sq_mul_value_sq_le (w : W1p mu Omega 2) {ψ : EuclideanS
   · rw [indicator_of_notMem hxS, image_eq_zero_of_notMem_tsupport fun hx' => hxS (hts hx')]
     simp
 
-omit [DecidableEq ι] in
 open Filter Metric in
 /-- **Localizing a cutoff Caccioppoli inequality to concentric balls.** There is a constant
 `C > 0`, depending only on the dimension, such that the following holds for every additive Haar
@@ -255,6 +251,8 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
           + B * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
         (hleft.trans (hcacc ψ hψ hcpt (htsR.trans hball))).trans (by gcongr)
     _ = _ := by ring
+
+variable [DecidableEq ι]
 
 /-- **The Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on `Ω` with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, in
