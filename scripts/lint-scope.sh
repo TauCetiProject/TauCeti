@@ -82,21 +82,18 @@ case "$EVENT" in
   *) full "event $EVENT" ;;
 esac
 
-for pr in $prs; do
-  if ! info=$(gh api "repos/$REPO/pulls/$pr" --jq '[.head.ref, ([.labels[].name] | join(","))] | @tsv'); then
-    full "PR #$pr lint policy metadata is unavailable"
-  fi
-  IFS=$'\t' read -r head_ref labels <<<"$info"
-  case "$head_ref" in lint-repair/*) full "#$pr is a lint repair PR ($head_ref)" ;; esac
-  case ",$labels," in *,full-lint,*) full "#$pr is labelled full-lint" ;; esac
-done
+tool_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# Only an entirely validated policy response may select the local module scope.
+# Pass the attributed numbers on stdin, not through shell evaluation or Git config.
+if ! reason=$(python3 "$tool_dir/lint_scope_policy.py" "$REPO" <<<"$prs"); then
+  full "${reason:-PR lint policy metadata is unavailable}"
+fi
 
 # GitHub's file list stops at 300 entries; use only its immutable merge-base
 # metadata. The full local tree diff has no such cap. Do not consult live PR files.
 merge_base=$(jq -r '.merge_base_commit.sha // empty' <<<"$compare")
 [[ "$merge_base" =~ ^[0-9a-f]{40}$ ]] || full "no exact merge base"
 [ -n "${SCOPE_REPO:-}" ] || full "no local candidate checkout"
-tool_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # Label/review identity above stays raw H. The local module list follows T vs B
 # when the build prepared an integration; deleted/renamed modules then match the
 # actual checked-out sources. Other callers keep their existing exact-head contract.
