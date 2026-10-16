@@ -19,8 +19,9 @@ summable, and their sum is the scalar product of the two sums.  Grouping this do
 antidiagonals of an additive index monoid gives the corresponding Cauchy-product formula.
 
 The joint-decay statement is stronger than continuity of scalar multiplication at zero: cofinite
-decay on a product index requires all but finitely many pairs to be small.  Its proof uses the
-global boundedness of each null family together with decay in either coordinate.
+decay on a product index requires all but finitely many pairs to be small.  Its proof bounds the
+norms of the scalar products by products of norms and applies Mathlib's real-valued
+`tendsto_mul_cofinite_nhds_zero`.
 
 The summation API parallels Mathlib's nonarchimedean ring results
 `HasSum.mul_of_nonarchimedean` and `Summable.tsum_mul_tsum_eq_tsum_sum_antidiagonal`, reusing the
@@ -41,38 +42,9 @@ variable {R M : Type*} [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M
 by pairs, also tend to zero cofinitely. -/
 theorem tendsto_smul_cofinite_nhds_zero {α β : Type*} {f : α → R} {g : β → M}
     (hf : Tendsto f cofinite (𝓝 0)) (hg : Tendsto g cofinite (𝓝 0)) :
-    Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) := by
-  obtain ⟨A, hA⟩ := hf.norm.bddAbove_range_of_cofinite
-  obtain ⟨B, hB⟩ := hg.norm.bddAbove_range_of_cofinite
-  let A' := max A 1
-  let B' := max B 1
-  have hA' (i : α) : ‖f i‖ ≤ A' := (hA ⟨i, rfl⟩).trans (le_max_left _ _)
-  have hB' (j : β) : ‖g j‖ ≤ B' := (hB ⟨j, rfl⟩).trans (le_max_left _ _)
-  have hA'pos : 0 < A' := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-  have hB'pos : 0 < B' := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-  have hfε := Metric.tendsto_nhds.mp hf (ε / B') (div_pos hε hB'pos)
-  have hgε := Metric.tendsto_nhds.mp hg (ε / A') (div_pos hε hA'pos)
-  rw [Filter.eventually_cofinite] at hfε hgε ⊢
-  refine (hfε.prod hgε).subset ?_
-  rintro ⟨i, j⟩ hsmall
-  simp only [Set.mem_prod, Set.mem_ofPred_eq, not_lt, dist_zero_right]
-    at hsmall ⊢
-  constructor
-  · by_contra hi
-    have hi' : ‖f i‖ < ε / B' := lt_of_not_ge hi
-    exact (not_lt_of_ge hsmall) <| calc
-      ‖f i • g j‖ ≤ ‖f i‖ * ‖g j‖ := norm_smul_le _ _
-      _ ≤ ‖f i‖ * B' := mul_le_mul_of_nonneg_left (hB' j) (norm_nonneg _)
-      _ < (ε / B') * B' := mul_lt_mul_of_pos_right hi' hB'pos
-      _ = ε := div_mul_cancel₀ _ hB'pos.ne'
-  · by_contra hj
-    have hj' : ‖g j‖ < ε / A' := lt_of_not_ge hj
-    exact (not_lt_of_ge hsmall) <| calc
-      ‖f i • g j‖ ≤ ‖f i‖ * ‖g j‖ := norm_smul_le _ _
-      _ ≤ A' * ‖g j‖ := mul_le_mul_of_nonneg_right (hA' i) (norm_nonneg _)
-      _ < A' * (ε / A') := mul_lt_mul_of_pos_left hj' hA'pos
-      _ = ε := by field_simp
+    Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) :=
+  squeeze_zero_norm (fun ij ↦ norm_smul_le (f ij.1) (g ij.2))
+    (tendsto_mul_cofinite_nhds_zero (by simpa using hf.norm) (by simpa using hg.norm))
 
 section Complete
 
