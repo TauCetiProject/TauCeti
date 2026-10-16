@@ -193,6 +193,14 @@ def abelJacobiMapToPicZero :
   Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1} ≫
     abelJacobiMapOfDegreeToPicZero f hx₀ 1
 
+/-- The Abel–Jacobi map into `Pic⁰` is the degree-one normalized Abel map applied to the graph
+divisor of a point. -/
+theorem abelJacobiMapToPicZero_eq :
+    abelJacobiMapToPicZero f hx₀ =
+      Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1} ≫
+        abelJacobiMapOfDegreeToPicZero f hx₀ 1 := by
+  rw [abelJacobiMapToPicZero]
+
 /-- The Abel–Jacobi map into `Pic⁰_{X/S}`, followed by the inclusion of `Pic⁰_{X/S}` into the
 relative Picard presheaf, is the Abel–Jacobi map `x ↦ 𝒪(Γₓ - x₀_T)`. -/
 @[reassoc (attr := simp)]
@@ -218,6 +226,24 @@ lemma abelJacobiMapToPicZero_app_apply_val {T : (Over S)ᵒᵖ}
   -- `Subfunctor.ι` sends a section to its underlying value, so its application in `h` is
   -- definitionally the subtype projection `.1` of the claim.
   exact h
+
+/-- **The class underlying the Abel–Jacobi map into `Pic⁰_{X/S}` sends the base point to the
+identity.** -/
+@[simp]
+theorem abelJacobiMapToPicZero_app_basePoint_val (T : (Over S)ᵒᵖ) :
+    (ConcreteCategory.hom (C := Type (u + 1))
+      (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
+      (Y := (relativePicardDegreeZeroSubfunctor f).obj T)
+      ((abelJacobiMapToPicZero f hx₀).app T)
+      (ULift.up (basePoint hx₀ T.unop))).1 = 1 := by
+  calc
+    ((abelJacobiMapToPicZero f hx₀).app T
+        (ULift.up (basePoint hx₀ T.unop))).1 =
+        (abelJacobiMap f hx₀).app T (ULift.up (basePoint hx₀ T.unop)) :=
+      abelJacobiMapToPicZero_app_apply_val f hx₀
+        (ULift.up (basePoint hx₀ T.unop) :
+          (yoneda.obj (Over.mk f) ⋙ uliftFunctor.{u + 1}).obj T)
+    _ = 1 := abelJacobiMap_app_basePoint f hx₀ T
 
 end
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
+public import TauCeti.Dynamics.Flow.Stable
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Dynamics.Flow.Variational
@@ -37,7 +38,8 @@ for parameters in the closed unit ball.
 * `TauCeti.perturbedFlow f h hf hh hc`: the flow of the field
   `(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)` on `E × EuclideanSpace ℝ ι`, where `a` is the cutoff of
   the parameter. `TauCeti.contDiff_perturbedFlow` says it is `C¹` jointly in time, space and
-  parameter, and `TauCeti.perturbedFlow_apply_of_norm_le` that, for `‖s‖ ≤ 1`, it is the
+  parameter (`TauCeti.contDiff_perturbedFlow_of_contDiff`: `C^{n+1}` for `C^{n+2}` data), and
+  `TauCeti.perturbedFlow_apply_of_norm_le` that, for `‖s‖ ≤ 1`, it is the
   negative-gradient flow of `perturb f h s`, with the parameter carried along
   (`TauCeti.snd_perturbedFlow_apply`); `TauCeti.perturbedFlow_congr`: it does not depend on the
   Lipschitz witness for `∇ f`. `TauCeti.exists_lipschitzWith_gradient_perturb` supplies
@@ -46,6 +48,11 @@ for parameters in the closed unit ball.
   perturbed flow along a tangent vector `(v, e)` solves the inhomogeneous variational equation
   `u' = -D(∇f)(φₜ x) u - ∑ᵢ eᵢ ∇hᵢ(φₜ x)` along the negative-gradient orbit of `x`, with
   `TauCeti.perturbedFlow_apply_zero` and `TauCeti.snd_fderiv_perturbedFlow_apply`.
+* `TauCeti.fst_fderiv_perturbedFlow_apply_eq_neg_integral`: Duhamel's formula for the derivative
+  of the perturbed flow in a parameter direction at the parameter `0`.
+* `TauCeti.negativeGradientFlow_perturb_apply_eq`, `TauCeti.mem_stableSet_perturb_iff`,
+  `TauCeti.mem_unstableSet_perturb_iff`: away from the supports of the family, the perturbed flow,
+  and membership in stable and unstable sets, are those of `f`.
 
 ## References
 
@@ -225,6 +232,62 @@ theorem gradient_perturb {x : E} (hf : DifferentiableAt ℝ f x)
 
 end Gradient
 
+section AwayFromSupport
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [Fintype ι]
+  {f : E → ℝ} {h : ι → E → ℝ} {K : ℝ≥0}
+
+/-- Outside the supports of the family, the gradient of a perturbation is the gradient of `f`. -/
+theorem gradient_perturb_of_forall_notMem_tsupport (s : EuclideanSpace ℝ ι) {x : E}
+    (hx : ∀ i, x ∉ tsupport (h i)) : ∇ (perturb f h s) x = ∇ f x := by
+  rw [gradient, (perturb_eventuallyEq_of_forall_notMem_tsupport s hx).fderiv_eq, gradient]
+
+/-- **Away from the perturbation, the perturbed flow is the flow of `f`.** If the orbit segment
+`{φ_τ y | τ ∈ [[0, t]]}` of the negative-gradient flow of `f` avoids the supports of the family,
+then the negative-gradient flow of `perturb f h s` sends `y` at time `t` to `φ_t y`. -/
+theorem negativeGradientFlow_perturb_apply_eq (hf : LipschitzWith K (∇ f))
+    {s : EuclideanSpace ℝ ι} {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {y : E}
+    {t : ℝ} (hy : ∀ τ ∈ uIcc 0 t, ∀ i, negativeGradientFlow f hf τ y ∉ tsupport (h i)) :
+    negativeGradientFlow (perturb f h s) hf' t y = negativeGradientFlow f hf t y :=
+  negativeGradientFlow_apply_eq_of_gradient_eq hf' hf fun τ hτ ↦
+    gradient_perturb_of_forall_notMem_tsupport s (hy τ hτ)
+
+/-- **Stable sets away from the perturbation.** If the forward orbit of `y` under the
+negative-gradient flow of `f` avoids the supports of the family, then `y` lies in the stable set
+of a point `q` for the perturbed flow if and only if it does for the flow of `f`. -/
+theorem mem_stableSet_perturb_iff (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι}
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {y q : E}
+    (hy : ∀ τ, 0 ≤ τ → ∀ i, negativeGradientFlow f hf τ y ∉ tsupport (h i)) :
+    y ∈ Flow.stableSet (negativeGradientFlow (perturb f h s) hf') q ↔
+      y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
+  have heq : (fun t ↦ negativeGradientFlow (perturb f h s) hf' t y) =ᶠ[atTop]
+      fun t ↦ negativeGradientFlow f hf t y := by
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    refine negativeGradientFlow_perturb_apply_eq hf hf' fun τ hτ ↦ hy τ ?_
+    rw [uIcc_of_le ht] at hτ
+    exact hτ.1
+  simp only [Flow.mem_stableSet]
+  exact tendsto_congr' heq
+
+/-- **Unstable sets away from the perturbation.** If the backward orbit of `y` under the
+negative-gradient flow of `f` avoids the supports of the family, then `y` lies in the unstable set
+of a point `p` for the perturbed flow if and only if it does for the flow of `f`. -/
+theorem mem_unstableSet_perturb_iff (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι}
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {y p : E}
+    (hy : ∀ τ, τ ≤ 0 → ∀ i, negativeGradientFlow f hf τ y ∉ tsupport (h i)) :
+    y ∈ Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p ↔
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
+  have heq : (fun t ↦ negativeGradientFlow (perturb f h s) hf' t y) =ᶠ[atBot]
+      fun t ↦ negativeGradientFlow f hf t y := by
+    filter_upwards [eventually_le_atBot 0] with t ht
+    refine negativeGradientFlow_perturb_apply_eq hf hf' fun τ hτ ↦ hy τ ?_
+    rw [uIcc_of_ge ht] at hτ
+    exact hτ.2
+  simp only [Flow.mem_unstableSet]
+  exact tendsto_congr' heq
+
+end AwayFromSupport
+
 section Flow
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Fintype ι]
@@ -240,7 +303,8 @@ ball: it is the identity on the closed unit ball and has compact support. -/
 private noncomputable def perturbationCutoff (s : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
   perturbationBump.toFun s • s
 
-private theorem contDiff_perturbationCutoff : ContDiff ℝ 1 (perturbationCutoff (ι := ι)) :=
+private theorem contDiff_perturbationCutoff {m : ℕ∞} :
+    ContDiff ℝ m (perturbationCutoff (ι := ι)) :=
   perturbationBump.contDiff.smul contDiff_id
 
 private theorem hasCompactSupport_perturbationCutoff :
@@ -259,15 +323,19 @@ private theorem perturbationCutoff_eq_self_of_norm_le {s : EuclideanSpace ℝ ι
 private noncomputable def coupling (h : ι → E → ℝ) (p : E × EuclideanSpace ℝ ι) : E :=
   ∑ i, perturbationCutoff p.2 i • ∇ (h i) p.1
 
-private theorem contDiff_coupling (hh : ∀ i, ContDiff ℝ 2 (h i)) :
-    ContDiff ℝ 1 (coupling h) := by
+private theorem contDiff_coupling_of {m : ℕ∞} (hh : ∀ i, ContDiff ℝ ((m : WithTop ℕ∞) + 1) (h i)) :
+    ContDiff ℝ m (coupling h) := by
   refine ContDiff.sum fun i _ ↦ ?_
-  have h1 : ContDiff ℝ 1 fun p : E × EuclideanSpace ℝ ι ↦ perturbationCutoff p.2 i :=
+  have h1 : ContDiff ℝ m fun p : E × EuclideanSpace ℝ ι ↦ perturbationCutoff p.2 i :=
     ((EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).contDiff.comp
       contDiff_perturbationCutoff).comp contDiff_snd
-  have h2 : ContDiff ℝ 1 fun p : E × EuclideanSpace ℝ ι ↦ ∇ (h i) p.1 :=
-    ((hh i).gradient_right (m := 1) (by norm_num)).comp contDiff_fst
+  have h2 : ContDiff ℝ m fun p : E × EuclideanSpace ℝ ι ↦ ∇ (h i) p.1 :=
+    ((hh i).gradient_right le_rfl).comp contDiff_fst
   exact h1.smul h2
+
+private theorem contDiff_coupling (hh : ∀ i, ContDiff ℝ 2 (h i)) :
+    ContDiff ℝ 1 (coupling h) :=
+  contDiff_coupling_of fun i ↦ by simpa [one_add_one_eq_two] using hh i
 
 private theorem hasCompactSupport_coupling (hc : ∀ i, HasCompactSupport (h i)) :
     HasCompactSupport (coupling h) := by
@@ -330,11 +398,16 @@ private theorem exists_lipschitzWith_perturbedField (hf : LipschitzWith K (∇ f
   unfold perturbedField
   exact ⟨_, ((hf.comp LipschitzWith.prod_fst).neg.sub hC).prodMk (LipschitzWith.const 0)⟩
 
-private theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f) (hh : ∀ i, ContDiff ℝ 2 (h i)) :
-    ContDiff ℝ 1 (perturbedField f h) := by
+private theorem contDiff_perturbedField_of {m : ℕ∞} (hfs : ContDiff ℝ ((m : WithTop ℕ∞) + 1) f)
+    (hh : ∀ i, ContDiff ℝ ((m : WithTop ℕ∞) + 1) (h i)) : ContDiff ℝ m (perturbedField f h) := by
   unfold perturbedField
-  exact (((hfs.gradient_right (m := 1) (by norm_num)).comp contDiff_fst).neg.sub
-    (contDiff_coupling hh)).prodMk contDiff_const
+  exact (((hfs.gradient_right le_rfl).comp contDiff_fst).neg.sub
+    (contDiff_coupling_of hh)).prodMk contDiff_const
+
+private theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f) (hh : ∀ i, ContDiff ℝ 2 (h i)) :
+    ContDiff ℝ 1 (perturbedField f h) :=
+  contDiff_perturbedField_of (by simpa [one_add_one_eq_two] using hfs)
+    fun i ↦ by simpa [one_add_one_eq_two] using hh i
 
 /-- **The flow of the cut-off augmented field** on `E × EuclideanSpace ℝ ι`: the field is
 `(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)`, with `a` a smooth cutoff of the parameter equal to the
@@ -365,15 +438,27 @@ theorem perturbedFlow_congr {K' : ℝ≥0} (hf : LipschitzWith K (∇ f)) (hf' :
   (perturbedFlow_eq_flowOfLipschitz hf hh hc).trans
     ((flowOfLipschitz_congr _ _).trans (perturbedFlow_eq_flowOfLipschitz hf' hh hc).symm)
 
+/-- **Higher regularity of the perturbed flow**: if `f` and the perturbing functions are
+`C^{n+2}`, the perturbed flow is `C^{n+1}` jointly in time, the initial condition and the
+parameter. -/
+theorem contDiff_perturbedFlow_of_contDiff (n : ℕ) (hfs : ContDiff ℝ (n + 2) f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (hhs : ∀ i, ContDiff ℝ (n + 2) (h i)) :
+    ContDiff ℝ (n + 1) (Function.uncurry (perturbedFlow f h hf hh hc)) := by
+  have e : (((n + 1 : ℕ) : ℕ∞) : WithTop ℕ∞) + 1 = n + 2 := by
+    push_cast
+    rw [add_assoc, one_add_one_eq_two]
+  have hF : ContDiff ℝ (((n + 1 : ℕ) : ℕ∞) : WithTop ℕ∞) (perturbedField f h) :=
+    contDiff_perturbedField_of (by rw [e]; exact hfs) fun i ↦ by rw [e]; exact hhs i
+  rw [perturbedFlow_eq_flowOfLipschitz]
+  exact contDiff_flowOfLipschitz n _ _ (by exact_mod_cast hF)
+
 /-- **The perturbed flow is `C¹`**, jointly in time, the initial condition and the parameter. -/
 theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
     ContDiff ℝ 1 (Function.uncurry (perturbedFlow f h hf hh hc)) := by
-  have hF : ContDiff ℝ ((0 : ℕ) + 1) (perturbedField f h) := by
-    simpa using contDiff_perturbedField hfs hh
-  rw [perturbedFlow_eq_flowOfLipschitz]
-  simpa using contDiff_flowOfLipschitz 0 (perturbedField f h)
-    (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hF
+  simpa using contDiff_perturbedFlow_of_contDiff 0 (by simpa using hfs) hf hh hc
+    fun i ↦ by simpa using hh i
 
 /-- **The parameter is constant along the perturbed flow.** -/
 @[simp]
@@ -504,6 +589,61 @@ theorem hasDerivAt_fst_fderiv_perturbedFlow_apply (hfs : ContDiff ℝ 2 f)
   have hw2 : w = (w.1, q.2) := Prod.ext rfl (snd_fderiv_perturbedFlow_apply hfs hf hh hc t _ _)
   rw [hw2, fderiv_perturbedField_apply_zero hfs hh] at h0
   exact hasFDerivAt_fst.comp_hasDerivAt t h0
+
+/-- **Duhamel's formula for the parameter variation.** At the parameter `0`, the derivative of the
+perturbed flow in a parameter direction `e` is
+`-Dφ_T(x) ∫₀ᵀ Dφ_{-σ}(φ_σ x) (∑ᵢ eᵢ ∇hᵢ(φ_σ x)) dσ`, where `φ` is the negative-gradient flow of
+`f`: the perturbation `∑ᵢ eᵢ ∇hᵢ` met along the orbit is transported back to time `0`,
+integrated, and carried forward to time `T`. -/
+theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (x : E)
+    (e : EuclideanSpace ℝ ι) (T : ℝ) :
+    (fderiv ℝ (perturbedFlow f h hf hh hc T) (x, 0) (0, e)).1 =
+      -fderiv ℝ (negativeGradientFlow f hf T) x
+        (∫ σ in (0 : ℝ)..T, fderiv ℝ (negativeGradientFlow f hf (-σ))
+          (negativeGradientFlow f hf σ x)
+          (∑ i, e i • ∇ (h i) (negativeGradientFlow f hf σ x))) := by
+  set φ := negativeGradientFlow f hf
+  have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
+  set M : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ t) x
+  set N : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ (-t)) (φ t x)
+  set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) (0, e)).1
+  set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
+  have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv (hs t) (hφd t x)
+  have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
+    congrArg (· v) (Flow.fderiv_comp_neg (hs t) (hφd t x))
+  have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
+    hasDerivAt_fderiv_negativeGradientFlow f hf hfs x
+  have hu : ∀ t, HasDerivAt u (-(fderiv ℝ (∇ f) (φ t x)) (u t) - b t) t := fun t ↦ by
+    simpa using hasDerivAt_fst_fderiv_perturbedFlow_apply hfs hf hh hc x (0, e) t
+  -- The inverse of `Dφₜ(x)` moves with derivative `Dφ_{-t}(φₜ x) ∘ D(∇f)(φₜ x)`.
+  have hN : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ))
+      (N t * (fderiv ℝ (∇ f) (φ t x)).comp (M t) * N t) t := fun t ↦ by
+    have hU := hasFDerivAt_ringInverse (𝕜 := ℝ) (Flow.fderivUnit (hs t) (hφd t x))
+    rw [Flow.coe_fderivUnit] at hU
+    refine (hU.comp_hasDerivAt t (hM t)).congr_deriv ?_
+    simp [N]
+  have hW : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ) (u τ)) (-(N t (b t))) t := fun t ↦ by
+    refine ((hN t).clm_apply (hu t)).congr_deriv ?_
+    rw [hinv, mul_apply_eq_comp, mul_apply_eq_comp,
+      ContinuousLinearMap.comp_apply, hMN, map_sub, map_neg]
+    abel
+  have hcont : Continuous fun σ ↦ -(N σ (b σ)) := by
+    have hN' : Continuous fun σ ↦ N σ := continuous_fderiv_negativeGradientFlow_neg f hf hfs x
+    have horb : Continuous fun σ ↦ φ σ x :=
+      (contDiff_negativeGradientFlow f hf hfs).continuous.comp
+        (continuous_id.prodMk continuous_const)
+    have hb : Continuous b := continuous_finsetSum _ fun i _ ↦ continuous_const.smul
+      ((((hh i).gradient_right (m := 1) (by norm_num)).continuous).comp horb)
+    exact (hN'.clm_apply hb).neg
+  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hW t)
+    (hcont.intervalIntegrable 0 T)
+  have hu0 : u 0 = 0 := by simp [u, Flow.map_zero]
+  rw [hu0, map_zero, sub_zero, intervalIntegral.integral_neg, hinv] at hFTC
+  calc u T = M T (N T (u T)) := (hMN T _).symm
+    _ = -M T (∫ σ in (0 : ℝ)..T, N σ (b σ)) := by rw [← hFTC, map_neg]
 
 end ParameterDerivative
 

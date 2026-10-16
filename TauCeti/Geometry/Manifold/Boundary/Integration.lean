@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Measure
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar

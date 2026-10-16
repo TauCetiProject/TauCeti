@@ -93,6 +93,17 @@ theorem powerSubgroup_le_comap (f : G →* H) :
   rintro _ ⟨g, rfl⟩
   exact ⟨f g, (map_pow f g n).symm⟩
 
+/-- A subgroup `Δ` of `G` meeting `Gⁿ` in a subgroup of finite index also meets the preimage of
+`Hⁿ` under a homomorphism `f : G →* H` in a subgroup of finite index. -/
+instance _root_.MonoidHom.isFiniteRelIndex_comap_range_powMonoidHom {G H : Type*} [CommGroup G]
+    [CommGroup H] (f : G →* H) (n : ℕ) (Δ : Subgroup G)
+    [(powMonoidHom n : G →* G).range.IsFiniteRelIndex Δ] :
+    ((powMonoidHom n : H →* H).range.comap f).IsFiniteRelIndex Δ := by
+  let : (powerSubgroup G n).IsFiniteRelIndex Δ := by
+    simpa only [powerSubgroup] using
+      (inferInstance : (powMonoidHom n : G →* G).range.IsFiniteRelIndex Δ)
+  exact Subgroup.isFiniteRelIndex_of_le_left Δ (powerSubgroup_le_comap n f)
+
 /-- **The map of power classes** `G ⧸ Gⁿ → H ⧸ Hⁿ` induced by a homomorphism `f : G →* H`, the
 class of `g` going to the class of `f g`. -/
 def powerClassMap (f : G →* H) : powerClassQuotient G n →* powerClassQuotient H n :=
