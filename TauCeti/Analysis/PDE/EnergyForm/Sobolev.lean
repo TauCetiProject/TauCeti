@@ -448,14 +448,6 @@ theorem energyFormH1_zero_zero_eq_setIntegral (a : EuclideanSpace ℝ ι → Mat
   rw [energyFormH1_def]
   simp
 
-/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
-matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
-over `Ω`. -/
-theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ => A) 0 0 u v
-      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu :=
-  energyFormH1_zero_zero_eq_setIntegral _ u v
-
 /-- The constant-coefficient energy form of `w ∈ H¹(Ω)` against a test function `ψ` is
 `∑ⱼ ∫ (∂_{cⱼ} ψ) ∂ⱼw`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
 theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu Omega 2)
@@ -474,7 +466,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu
       Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  rw [energyFormH1_const_eq_setIntegral]
+  rw [energyFormH1_zero_zero_eq_setIntegral]
   calc ∫ x in Omega, matrixBilinearForm A
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
       = ∫ x in Omega, ∑ j, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
