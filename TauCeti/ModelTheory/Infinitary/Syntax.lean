@@ -157,22 +157,35 @@ def exs : ∀ {n}, L.BoundedFormulaInf ι α n → L.FormulaInf ι α
 
 /-! ### Defining equations -/
 
+/-- `⊥` is the false formula. -/
 theorem bot_def : (⊥ : L.BoundedFormulaInf ι α n) = falsum := (rfl)
 
+/-- `⊤` is the negation of the false formula. -/
 theorem top_def : (⊤ : L.BoundedFormulaInf ι α n) = BoundedFormulaInf.not falsum := (rfl)
 
+/-- The conjunction `φ ⊓ ψ` is `(φ.imp ψ.not).not`. -/
 theorem inf_def (φ ψ : L.BoundedFormulaInf ι α n) : φ ⊓ ψ = (φ.imp ψ.not).not := (rfl)
 
+/-- The disjunction `φ ⊔ ψ` is `φ.not.imp ψ`. -/
 theorem sup_def (φ ψ : L.BoundedFormulaInf ι α n) : φ ⊔ ψ = φ.not.imp ψ := (rfl)
 
+/-- The biconditional `φ.iff ψ` is `φ.imp ψ ⊓ ψ.imp φ`. -/
 theorem iff_def (φ ψ : L.BoundedFormulaInf ι α n) : φ.iff ψ = φ.imp ψ ⊓ ψ.imp φ := (rfl)
 
+/-- With no bound-variable slots, `alls` leaves a formula unchanged. -/
+@[simp]
 theorem alls_zero (φ : L.BoundedFormulaInf ι α 0) : φ.alls = φ := (rfl)
 
+/-- `alls` quantifies the last slot universally, then closes the remaining slots. -/
+@[simp]
 theorem alls_succ (φ : L.BoundedFormulaInf ι α (n + 1)) : φ.alls = φ.all.alls := (rfl)
 
+/-- With no bound-variable slots, `exs` leaves a formula unchanged. -/
+@[simp]
 theorem exs_zero (φ : L.BoundedFormulaInf ι α 0) : φ.exs = φ := (rfl)
 
+/-- `exs` quantifies the last slot existentially, then closes the remaining slots. -/
+@[simp]
 theorem exs_succ (φ : L.BoundedFormulaInf ι α (n + 1)) : φ.exs = φ.ex.exs := (rfl)
 
 end BoundedFormulaInf
@@ -189,26 +202,31 @@ def toInf : ∀ {n}, L.BoundedFormula α n → L.BoundedFormulaInf ι α n
   | _, .imp φ ψ => (toInf φ).imp (toInf ψ)
   | _, .all φ => (toInf φ).all
 
+/-- The embedding sends the finitary false formula to the false formula. -/
 @[simp]
 theorem toInf_falsum :
     (falsum : L.BoundedFormula α n).toInf = (.falsum : L.BoundedFormulaInf ι α n) :=
   (rfl)
 
+/-- The embedding sends an equation to the same equation. -/
 @[simp]
 theorem toInf_equal (t₁ t₂ : L.Term (α ⊕ Fin n)) :
     (equal t₁ t₂ : L.BoundedFormula α n).toInf = (.equal t₁ t₂ : L.BoundedFormulaInf ι α n) :=
   (rfl)
 
+/-- The embedding sends a relational atom to the same atom. -/
 @[simp]
 theorem toInf_rel {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (α ⊕ Fin n)) :
     (rel R ts : L.BoundedFormula α n).toInf = (.rel R ts : L.BoundedFormulaInf ι α n) :=
   (rfl)
 
+/-- The embedding commutes with implication. -/
 @[simp]
 theorem toInf_imp (φ ψ : L.BoundedFormula α n) :
     (φ.imp ψ).toInf = (φ.toInf.imp ψ.toInf : L.BoundedFormulaInf ι α n) :=
   (rfl)
 
+/-- The embedding commutes with universal quantification. -/
 @[simp]
 theorem toInf_all (φ : L.BoundedFormula α (n + 1)) :
     φ.all.toInf = (φ.toInf.all : L.BoundedFormulaInf ι α n) :=

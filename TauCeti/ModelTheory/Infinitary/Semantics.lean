@@ -183,6 +183,8 @@ section AllsExs
 
 variable {M : Type w} [L.Structure M]
 
+/-- Closing all bound-variable slots universally realizes as universal quantification over the
+valuations of those slots. -/
 @[simp]
 theorem BoundedFormulaInf.realize_alls {φ : L.BoundedFormulaInf ι α n} {v : α → M} :
     BoundedFormulaInf.Realize φ.alls v default ↔ ∀ xs : Fin n → M, φ.Realize v xs := by
@@ -192,6 +194,8 @@ theorem BoundedFormulaInf.realize_alls {φ : L.BoundedFormulaInf ι α n} {v : �
     simp only [BoundedFormulaInf.alls_succ, ih, BoundedFormulaInf.realize_all]
     exact ⟨fun h xs => Fin.snoc_init_self xs ▸ h _ _, fun h xs x => h (Fin.snoc xs x)⟩
 
+/-- Closing all bound-variable slots existentially realizes as existential quantification over
+the valuations of those slots. -/
 @[simp]
 theorem BoundedFormulaInf.realize_exs {φ : L.BoundedFormulaInf ι α n} {v : α → M} :
     BoundedFormulaInf.Realize φ.exs v default ↔ ∃ xs : Fin n → M, φ.Realize v xs := by
