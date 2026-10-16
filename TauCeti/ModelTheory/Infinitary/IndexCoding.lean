@@ -21,8 +21,6 @@ The API provides identity and composition, codings from equivalences and explici
 
 Adapted from Cameron Freer's `Mathlib/ModelTheory/Infinitary/IndexCoding.lean` in
 [cameronfreer/mathlib4](https://github.com/cameronfreer/mathlib4/blob/346a4bd3f95e8591976c91259badc6d2c300f638/Mathlib/ModelTheory/Infinitary/IndexCoding.lean).
-The port places the new type in `TauCeti`, adds public computation equations, and proves the
-neutral-padding quantifier laws.
 -/
 
 public section
