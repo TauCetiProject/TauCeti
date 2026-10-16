@@ -22,7 +22,7 @@ The vector-field pullback and Lie-bracket naturality APIs are provided by Mathli
 `TauCeti.IsDistributionFrameOn.comap_mfderivWithin` pulls a local frame back through partial
 coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization, and
 `TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth distribution.
-`TauCeti.IsInvolutiveDistributionOn.partialDiffeomorph` transports local involutivity,
+`PartialDiffeomorph.isInvolutiveDistributionOn` transports local involutivity,
 `TauCeti.IsInvolutiveDistribution.diffeomorph` is its global specialization, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
 `Diffeomorph.isInvolutiveDistribution_comap_mfderiv_iff` gives the pullback characterization.
@@ -133,6 +133,12 @@ theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
 
 end Regularity
 
+end TauCeti
+
+namespace PartialDiffeomorph
+
+open TauCeti
+
 section Involutive
 
 variable [IsManifold I (minSmoothness 𝕜 2) M]
@@ -142,8 +148,7 @@ variable [IsManifold I (minSmoothness 𝕜 2) M]
 involutivity from its source to its target. The tangent-space identification is stated as
 membership equivalence, so it applies directly to both images and preimages of subspaces under
 the differential. -/
-theorem IsInvolutiveDistributionOn.partialDiffeomorph
-    (Φ : PartialDiffeomorph I J M N n)
+theorem isInvolutiveDistributionOn (Φ : PartialDiffeomorph I J M N n)
     (hD : IsInvolutiveDistributionOn I D Φ.source)
     (hn : minSmoothness 𝕜 2 ≤ n)
     (hDD' : ∀ x ∈ Φ.source, ∀ v, v ∈ D x ↔ mfderiv I J Φ x v ∈ D' (Φ x)) :
@@ -195,6 +200,17 @@ theorem IsInvolutiveDistributionOn.partialDiffeomorph
   rw [mpullback_apply, (hΦinv _ hxSource).self_apply_inverse, hΦx] at hmem
   exact hmem
 
+end Involutive
+
+end PartialDiffeomorph
+
+namespace TauCeti
+
+section Involutive
+
+variable [IsManifold I (minSmoothness 𝕜 2) M]
+  [IsManifold J (minSmoothness 𝕜 2) N]
+
 /-- A diffeomorphism whose differential identifies two distributions transports involutivity.
 The tangent-space identification is stated as membership equivalence, so it applies directly
 to both images and preimages of subspaces under the differential. -/
@@ -214,8 +230,8 @@ theorem IsInvolutiveDistribution.diffeomorph (hD : IsInvolutiveDistribution I D)
       _ = h.toEquiv.toPartialEquiv.target := congrArg (fun e : PartialEquiv M N ↦ e.target)
         h.toPartialDiffeomorph_toPartialEquiv
       _ = univ := Equiv.toPartialEquiv_target h.toEquiv
-  have hlocal := IsInvolutiveDistributionOn.partialDiffeomorph
-    (D := D) (D' := D') h.toPartialDiffeomorph hDlocal hn (by
+  have hlocal := h.toPartialDiffeomorph.isInvolutiveDistributionOn
+    (D := D) (D' := D') hDlocal hn (by
       intro x _ v
       rw [hcoe]
       exact hDD' x v)
