@@ -145,30 +145,6 @@ theorem symmetricPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
         (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R) M).hom :=
   (rfl)
 
-/-- On the sheafification map of the sectionwise first symmetric power of `M`, the
-identification `Sym¹ M ≅ M` is the sectionwise identification
-`PresheafOfModulesOfCommRing.symmetricPowerOneIso`. -/
-theorem unit_comp_val_symmetricPowerOneIso_hom_app
-    (M : SheafOfModules.{u} (ringCatSheaf R)) :
-    (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.symmetricPower (R := R.obj) 1).obj M.val) ≫
-      ((symmetricPowerIso 1 M).inv ≫ (symmetricPowerOneIso R).hom.app M).val =
-    (PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).hom.app M.val := by
-  have e : (symmetricPowerIso 1 M).inv ≫ (symmetricPowerOneIso R).hom.app M =
-      (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
-          ((PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).hom.app M.val) ≫
-        (PresheafOfModules.sheafificationAdjunction
-          (𝟙 (ringCatSheaf R).obj)).counit.app M := by
-    rw [symmetricPowerOneIso_hom_app, Iso.inv_hom_id_assoc,
-      TauCeti.SheafOfModules.sheafificationIso_hom]
-  rw [e]
-  -- Move the sectionwise map past the sheafification map, then use a triangle identity.
-  exact ((PresheafOfModules.sheafificationAdjunction
-    (𝟙 (ringCatSheaf R).obj)).unit.naturality_assoc _ _).symm.trans
-      ((congrArg ((PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).hom.app M.val ≫ ·)
-        ((PresheafOfModules.sheafificationAdjunction
-          (𝟙 (ringCatSheaf R).obj)).right_triangle_components M)).trans (Category.comp_id _))
-
 section Pushforward
 
 open TauCeti.SheafOfModules (pushforwardCommRing pushforwardModule pushforwardRingIso
