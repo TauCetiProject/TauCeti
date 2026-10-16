@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
 public import TauCeti.LinearAlgebra.PiTensorProduct.Assoc
 import TauCeti.GroupTheory.Perm.WreathProduct.Transitivity
@@ -64,7 +65,7 @@ noncomputable def tensorInducedTransitivityLinearEquiv :
   simp [tensorInducedTransitivityLinearEquiv]
 
 /-- The inverse linear regrouping expands a pure tensor according to the two coset indices. -/
-theorem tensorInducedTransitivityLinearEquiv_symm_tprod (m : G ⧸ V → M) :
+@[simp] theorem tensorInducedTransitivityLinearEquiv_symm_tprod (m : G ⧸ V → M) :
     (tensorInducedTransitivityLinearEquiv (R := R) hVU s).symm
         (PiTensorProduct.tprod R m) =
       PiTensorProduct.tprod R (fun a ↦ PiTensorProduct.tprod R (fun b ↦
