@@ -31,6 +31,7 @@ variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A copy of a manifold on which the charts of a boundaryless model `I` take values in its
 vector space. The topology is unchanged; the original manifold retains its original atlas. -/
+-- The exported carrier and chart equalities require this body under Lean's module system.
 @[expose] def BoundarylessModel (_I : ModelWithCorners 𝕜 E H) (M : Type*) := M
 
 namespace BoundarylessModel
@@ -55,6 +56,17 @@ theorem coe_homeomorph : ⇑(homeomorph I M) = id :=
 
 /-- The inverse carrier map is also the identity. -/
 theorem coe_homeomorph_symm : ⇑(homeomorph I M).symm = id :=
+  (rfl)
+
+/-- The homeomorphism sends each point to the same point of the model copy. -/
+@[simp]
+theorem homeomorph_apply (x : M) : homeomorph I M x = x :=
+  (rfl)
+
+/-- The inverse homeomorphism sends each point back to the same original point. -/
+@[simp]
+theorem homeomorph_symm_apply (x : BoundarylessModel I M) :
+    (homeomorph I M).symm x = x :=
   (rfl)
 
 variable {M} [I.Boundaryless]
