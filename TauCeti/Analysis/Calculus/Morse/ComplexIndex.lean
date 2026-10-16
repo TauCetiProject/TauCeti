@@ -58,6 +58,7 @@ theorem two_mul_morseIndex_le_finrank_of_add_comp_posDef
       (TauCeti.hessianQuadraticForm f x).comp J.toLinearMap).PosDef) :
     2 * TauCeti.morseIndex f x ≤ finrank ℝ E := by
   rw [TauCeti.morseIndex_def]
-  exact (TauCeti.hessianQuadraticForm f x).two_mul_sigNeg_le_finrank_of_add_comp_posDef J h
+  exact (TauCeti.hessianQuadraticForm f x).two_mul_sigNeg_le_finrank_of_add_comp_posDef
+    J.toLinearMap h
 
 end TauCeti.AlmostComplexStructure

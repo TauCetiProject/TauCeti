@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.LinearAlgebra.TotallyReal.QuadraticForm
 
@@ -19,8 +18,7 @@ definite is totally real. It therefore has dimension at most the complex dimensi
 
 This is the linear-algebraic index estimate behind the Morse-theoretic consequence of strict Levi
 positivity. No compatibility between `J` and an inner product is required. The totally-real
-criterion for an arbitrary linear endomorphism is
-`QuadraticForm.isTotallyReal_of_add_comp_posDef` in
+criterion and the half-dimension bounds for an arbitrary linear endomorphism are in
 `TauCeti.LinearAlgebra.TotallyReal.QuadraticForm`.
 
 ## Main declarations
@@ -50,22 +48,13 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] (J : TauCeti.AlmostComplexStructure E)
 
-/-- Every negative-definite subspace of `Q` has at most half the real dimension of `E` when
-`Q(v) + Q(Jv)` is positive away from zero. -/
-theorem two_mul_finrank_le_of_add_comp_posDef
-    (hQJ : (Q + Q.comp J.toLinearMap).PosDef)
-    (hW : ((-Q).restrict W).PosDef) :
-    2 * finrank ℝ W ≤ finrank ℝ E :=
-  (Q.isTotallyReal_of_add_comp_posDef J.toLinearMap hQJ hW).two_mul_finrank_le
-    (J.injective.comp W.subtype_injective)
-
 /-- Every negative-definite subspace of `Q` has dimension at most the complex dimension defined
 by `J` when `Q(v) + Q(Jv)` is positive away from zero. -/
 theorem finrank_le_complexFinrank_of_add_comp_posDef
     (hQJ : (Q + Q.comp J.toLinearMap).PosDef)
     (hW : ((-Q).restrict W).PosDef) :
     finrank ℝ W ≤ J.complexFinrank := by
-  have hdim := Q.two_mul_finrank_le_of_add_comp_posDef J hQJ hW
+  have hdim := Q.two_mul_finrank_le_of_add_comp_posDef J.toLinearMap hQJ hW
   rw [J.finrank_real_eq_two_mul_complexFinrank] at hdim
   omega
 
@@ -77,14 +66,6 @@ theorem sigNeg_le_complexFinrank_of_add_comp_posDef
   obtain ⟨W, hWdim, hWneg⟩ := exists_finrank_eq_sigNeg_and_negDef Q
   rw [← hWdim]
   exact Q.finrank_le_complexFinrank_of_add_comp_posDef J hQJ hWneg
-
-/-- If `Q(v) + Q(Jv)` is positive for every nonzero `v`, then twice the negative index of inertia
-of `Q` is at most the real dimension of the ambient space. -/
-theorem two_mul_sigNeg_le_finrank_of_add_comp_posDef
-    (hQJ : (Q + Q.comp J.toLinearMap).PosDef) :
-    2 * sigNeg Q ≤ finrank ℝ E := by
-  rw [J.finrank_real_eq_two_mul_complexFinrank]
-  exact Nat.mul_le_mul_left 2 (Q.sigNeg_le_complexFinrank_of_add_comp_posDef J hQJ)
 
 end FiniteDimensional
 
