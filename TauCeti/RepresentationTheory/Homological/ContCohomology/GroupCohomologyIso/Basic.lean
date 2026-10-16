@@ -554,6 +554,14 @@ noncomputable def explicitH2IsoGroupCohomology :
     H2 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 2 :=
   explicitH2AddEquivGroupCohomology (.refl G) (.refl M) fun _ _ ↦ rfl
 
+/-- The canonical degree-two comparison is the compatible-pair comparison in identity group
+and coefficient coordinates. -/
+theorem explicitH2IsoGroupCohomology_def :
+    explicitH2IsoGroupCohomology G M =
+      explicitH2AddEquivGroupCohomology (MulEquiv.refl G) (AddEquiv.refl M)
+        (fun _ _ ↦ rfl) :=
+  (rfl)
+
 /-- `explicitH2IsoGroupCohomology` sends the class of a continuous `2`-cocycle `z` to the class of
 `z` in Mathlib's `H²`. -/
 @[simp]
