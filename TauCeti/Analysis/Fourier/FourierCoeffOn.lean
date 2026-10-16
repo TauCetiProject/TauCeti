@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 Mathlib's `fourierCoeffOn hab f n` is the `n`-th Fourier coefficient of `f` on `[a, b]`, that is,
 of the `(b - a)`-periodic function agreeing with `f` on `(a, b]`. This file records that the
 integrand of such a coefficient stays interval-integrable
-(`TauCeti.IntervalIntegrable.fourier_smul`), the additivity of `fourierCoeffOn`
+(`IntervalIntegrable.fourier_smul`), the additivity of `fourierCoeffOn`
 on interval-integrable functions (`TauCeti.fourierCoeffOn_add`, `TauCeti.fourierCoeffOn_sub`),
 the interval counterparts of Mathlib's `fourierCoeff.add`, and computes the coefficients of the
 Fourier monomials themselves (`TauCeti.fourierCoeffOn_fourier`), the interval counterpart of
@@ -30,8 +30,6 @@ public section
 open MeasureTheory Set
 open scoped Interval
 
-namespace TauCeti
-
 variable {a b : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- Multiplying an interval-integrable function by a Fourier monomial `t ↦ fourier n t` of any
@@ -42,21 +40,23 @@ theorem IntervalIntegrable.fourier_smul {f : ℝ → E}
     IntervalIntegrable (fun t : ℝ ↦ fourier n (t : AddCircle T) • f t) volume a b :=
   hf.continuousOn_smul ((fourier n).continuous.comp (AddCircle.continuous_mk' T)).continuousOn
 
+namespace TauCeti
+
 /-- Fourier coefficients on an interval are additive on interval-integrable functions. -/
 theorem fourierCoeffOn_add (hab : a < b) {f g : ℝ → E} (hf : IntervalIntegrable f volume a b)
     (hg : IntervalIntegrable g volume a b) (n : ℤ) :
     fourierCoeffOn hab (fun t ↦ f t + g t) n = fourierCoeffOn hab f n + fourierCoeffOn hab g n := by
   simp only [fourierCoeffOn_eq_integral, smul_add]
-  rw [intervalIntegral.integral_add (IntervalIntegrable.fourier_smul hf (b - a) (-n))
-    (IntervalIntegrable.fourier_smul hg (b - a) (-n)), smul_add]
+  rw [intervalIntegral.integral_add (hf.fourier_smul (b - a) (-n))
+    (hg.fourier_smul (b - a) (-n)), smul_add]
 
 /-- Fourier coefficients on an interval are subtractive on interval-integrable functions. -/
 theorem fourierCoeffOn_sub (hab : a < b) {f g : ℝ → E} (hf : IntervalIntegrable f volume a b)
     (hg : IntervalIntegrable g volume a b) (n : ℤ) :
     fourierCoeffOn hab (fun t ↦ f t - g t) n = fourierCoeffOn hab f n - fourierCoeffOn hab g n := by
   simp only [fourierCoeffOn_eq_integral, smul_sub]
-  rw [intervalIntegral.integral_sub (IntervalIntegrable.fourier_smul hf (b - a) (-n))
-    (IntervalIntegrable.fourier_smul hg (b - a) (-n)), smul_sub]
+  rw [intervalIntegral.integral_sub (hf.fourier_smul (b - a) (-n))
+    (hg.fourier_smul (b - a) (-n)), smul_sub]
 
 /-- On `[a, b]`, the `m`-th Fourier monomial of period `b - a` has Fourier coefficient one at
 frequency `m` and zero at every other frequency. -/
