@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
@@ -56,6 +56,24 @@ theorem tsupport_smul_subset (c : ℝ) (φ : RoughForm I X F k) :
   ext v
   simp [hφ]
   rfl
+
+/-- Multiplication by a nonzero constant preserves the support of a rough form. -/
+theorem tsupport_smul (c : ℝ) (φ : RoughForm I X F k) (hc : c ≠ 0) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (c • φ) =
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ := by
+  simp only [_root_.tsupport]
+  congr 1
+  ext x
+  change c • φ x ≠ 0 ↔ φ x ≠ 0
+  apply not_congr
+  constructor
+  · intro h
+    ext v
+    exact (isUnit_iff_ne_zero.mpr hc).smul_eq_zero.mp
+      (congrArg (fun L : TangentSpace I x [⋀^Fin k]→L[ℝ] F ↦ L v) h)
+  · intro h
+    ext v
+    simp [h]
 
 end SMul
 

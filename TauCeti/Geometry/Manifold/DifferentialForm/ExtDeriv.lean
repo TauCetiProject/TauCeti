@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Const
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
