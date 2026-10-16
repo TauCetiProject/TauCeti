@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
+public import TauCeti.Combinatorics.PermutationTriple.IsoClass
+public import TauCeti.Geometry.Manifold.Puncture
 
 import TauCeti.Data.Set.Restrict
 
@@ -45,6 +47,9 @@ sphere.
   `TauCeti.AnalyticBelyiPair.ncard_restrict_preimage_singleton` points in each fibre.
 * `TauCeti.AnalyticBelyiPair.isoClass`, `TauCeti.AnalyticBelyiPair.isoClass_eq`: the isomorphism
   class of the monodromy triple, computed by any numbering of the fibre over `1/2`.
+* `TauCeti.AnalyticBelyiPair.connectedIsoClass`,
+  `TauCeti.AnalyticBelyiPair.connectedIsoClass_eq`: the connected isomorphism class of the
+  monodromy triple, computed by any numbering of the fibre over `1/2`.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
 
@@ -181,6 +186,17 @@ theorem finite_restrict_preimage_singleton (z : ThricePuncturedSphere) :
   (finite_image_iff Subtype.val_injective.injOn).1 <|
     P.image_val_restrict_preimage_singleton z ▸ P.β.finite_fiber _
 
+/-- The source of the restricted Belyi cover is a path-connected space. -/
+theorem pathConnectedSpace_restrict_source :
+    PathConnectedSpace (P.β ⁻¹' range toOnePoint) := by
+  rw [← isPathConnected_iff_pathConnectedSpace, range_toOnePoint, preimage_compl]
+  apply TauCeti.Set.Finite.isPathConnected_compl_of_chartedSpace_complex
+  refine (((P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).union
+    (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ))).union
+    (P.β.finite_fiber ∞)).subset ?_
+  intro x hx
+  simpa only [mem_preimage, mem_insert_iff, mem_singleton_iff, mem_union, or_assoc] using hx
+
 /-- The cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair has as many sheets as the degree
 of the Belyi map. -/
 theorem ncard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
@@ -213,6 +229,28 @@ numbering of the fibre over `1/2`. -/
 theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
     P.isoClass = .mk (P.isCoveringMap_restrict.monodromyTriple ν) :=
   P.isCoveringMap_restrict.isoClass_monodromyTriple_eq _ _
+
+/-- **The connected permutation triple of an analytic Belyi pair**, up to isomorphism. -/
+def connectedIsoClass : ConnectedIsoClass (degree P.β) :=
+  ConnectedIsoClass.mk ⟨P.isCoveringMap_restrict.monodromyTriple
+      (P.nonempty_restrict_preimage_singleton_equiv basePt).some,
+    (P.isCoveringMap_restrict.isConnected_monodromyTriple_iff _).2
+      P.pathConnectedSpace_restrict_source⟩
+
+/-- Forgetting connectedness recovers the ordinary monodromy-triple class. -/
+@[simp]
+theorem connectedIsoClass_forget : P.connectedIsoClass.forget = P.isoClass := by
+  simp [connectedIsoClass, isoClass]
+
+/-- The connected permutation triple of an analytic Belyi pair is computed by any numbering of
+the fibre over `1/2`. -/
+theorem connectedIsoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
+    P.connectedIsoClass = ConnectedIsoClass.mk
+      ⟨P.isCoveringMap_restrict.monodromyTriple ν,
+        (P.isCoveringMap_restrict.isConnected_monodromyTriple_iff ν).2
+          P.pathConnectedSpace_restrict_source⟩ := by
+  apply ConnectedIsoClass.forget_injective
+  rw [P.connectedIsoClass_forget, ConnectedIsoClass.forget_mk, P.isoClass_eq ν]
 
 /-! ### The power maps -/
 
