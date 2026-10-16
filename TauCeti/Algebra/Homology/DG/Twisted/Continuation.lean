@@ -480,13 +480,11 @@ section AddCommMonoid
 variable [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
 /-- The Kronecker continuation cocycle induces the identity. -/
-@[simp]
 theorem continuationMap_refl [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycle 𝒜 d P ind) :
     continuationMap R M (refl hd m).ν = LinearMap.id :=
   continuationMap_kronecker
 
 /-- The composite continuation cocycle induces the composite of the continuation maps. -/
-@[simp]
 theorem continuationMap_comp (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
     (ν₂ : ContinuationCocycle mQ mS) :
     continuationMap R M (ν₁.comp h ν₂).ν =
