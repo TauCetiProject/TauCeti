@@ -208,8 +208,10 @@ private theorem diagonalComapInr_eq_bot [LieModule.IsIrreducible K L M]
     [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v)
     (hw : IsHighestWeightVector b lam w) : diagonalComapInr K L v w = ⊥ := by
   refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_right fun hr => ?_
-  exact lieSpan_diagonal_ne_top hv hw (lieSpan_diagonal_eq_top_of_eq_top
-    (comap_lieSpan_diagonal_inl_eq_top_of_comap_inr_eq_top hv.ne_zero hr) hr)
+  have hw_mem : ((0, w) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
+    mem_diagonalComapInr.mp (hr ▸ LieSubmodule.mem_top w)
+  exact lieSpan_diagonal_ne_top hv hw (eq_top_of_comap_inl_eq_top_of_comap_inr_eq_top
+    (comap_lieSpan_diagonal_inl_eq_top_of_mem hv.ne_zero hw_mem) hr)
 
 private theorem bijective_diagonalFst [LieModule.IsIrreducible K L M]
     [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v)

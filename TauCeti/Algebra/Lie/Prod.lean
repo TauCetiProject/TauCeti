@@ -167,42 +167,34 @@ theorem prodComm_mem_lieSpan_diagonal {v : M} {w : N}
   rw [map_lieSpan_diagonal_prodComm] at hmap
   simpa using hmap
 
-/-- If the Lie submodule spanned by `(v, w)` contains both factors whole, it is the whole
-product. -/
-theorem lieSpan_diagonal_eq_top_of_eq_top {v : M} {w : N}
-    (hl : (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inl R L M N) = ⊤)
-    (hr : (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inr R L M N) = ⊤) :
-    LieSubmodule.lieSpan R L {((v, w) : M × N)} = ⊤ := by
+/-- A Lie submodule of a product that contains both factors whole is the whole product. -/
+theorem eq_top_of_comap_inl_eq_top_of_comap_inr_eq_top {S : LieSubmodule R L (M × N)}
+    (hl : S.comap (LieModuleHom.inl R L M N) = ⊤)
+    (hr : S.comap (LieModuleHom.inr R L M N) = ⊤) :
+    S = ⊤ := by
   refine eq_top_iff.mpr fun p _ ↦ ?_
-  have hp1 : p.1 ∈
-      (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inl R L M N) := by
+  have hp1 : p.1 ∈ S.comap (LieModuleHom.inl R L M N) := by
     rw [hl]; exact LieSubmodule.mem_top _
-  have hp2 : p.2 ∈
-      (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inr R L M N) := by
+  have hp2 : p.2 ∈ S.comap (LieModuleHom.inr R L M N) := by
     rw [hr]; exact LieSubmodule.mem_top _
-  have h1 : ((p.1, 0) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)} := by
+  have h1 : ((p.1, 0) : M × N) ∈ S := by
     simpa only [LieSubmodule.mem_comap, LieModuleHom.inl_apply] using hp1
-  have h2 : ((0, p.2) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)} := by
+  have h2 : ((0, p.2) : M × N) ∈ S := by
     simpa only [LieSubmodule.mem_comap, LieModuleHom.inr_apply] using hp2
   have hsum : ((p.1, 0) : M × N) + (0, p.2) = p := by
     rw [Prod.mk_add_mk, add_zero, zero_add]
   exact hsum ▸ add_mem h1 h2
 
-/-- If the Lie submodule spanned by `(v, w)` contains `(0, w)`, then it contains `(v, 0)`, hence —
-by irreducibility of `M` — the whole first factor. -/
-theorem comap_lieSpan_diagonal_inl_eq_top_of_comap_inr_eq_top [LieModule.IsIrreducible R L M]
+/-- If `v ≠ 0` and the Lie submodule spanned by `(v, w)` contains `(0, w)`, then it contains
+`(v, 0)`, hence — by irreducibility of `M` — the whole first factor. -/
+theorem comap_lieSpan_diagonal_inl_eq_top_of_mem [LieModule.IsIrreducible R L M]
     {v : M} {w : N} (hv : v ≠ 0)
-    (hr : (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inr R L M N) = ⊤) :
+    (hw : ((0, w) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)}) :
     (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inl R L M N) = ⊤ := by
   have hvw : ((v, w) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)} :=
     LieSubmodule.subset_lieSpan rfl
-  have hwr : w ∈
-      (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inr R L M N) := by
-    rw [hr]; exact LieSubmodule.mem_top _
-  have hw' : ((0, w) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)} := by
-    simpa only [LieSubmodule.mem_comap, LieModuleHom.inr_apply] using hwr
   have hv' : ((v, 0) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)} := by
-    have hsub := sub_mem hvw hw'
+    have hsub := sub_mem hvw hw
     rwa [Prod.mk_sub_mk, sub_zero, sub_self] at hsub
   refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hv ?_
   have hmem : v ∈
