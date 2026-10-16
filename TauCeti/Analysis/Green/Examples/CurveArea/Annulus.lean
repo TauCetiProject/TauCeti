@@ -176,13 +176,11 @@ theorem traces_subset_annulusDomain {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
   · intro z hz
     have hn : ‖z‖ = R := by
       simpa only [mem_sphere, dist_zero_right, abs_of_pos (hr.trans hrR)] using hz
-    change r / 2 < ‖z‖ ∧ ‖z‖ < R + 1
-    rw [hn]
+    rw [mem_annulusDomain, hn]
     constructor <;> linarith
   · intro z hz
     have hn : ‖z‖ = r := by simpa only [mem_sphere, dist_zero_right, abs_of_pos hr] using hz
-    change r / 2 < ‖z‖ ∧ ‖z‖ < R + 1
-    rw [hn]
+    rw [mem_annulusDomain, hn]
     constructor <;> linarith
 
 /-- Only the total index vanishes outside the annular field domain. This includes cancellation
@@ -196,7 +194,7 @@ theorem windingNumber_annulus_zero_on_compl {r R : ℝ} (hr : 0 < r) (hrR : r < 
   · have hl : R < ‖z‖ := by
       by_contra h
       apply hz
-      change r / 2 < ‖z‖ ∧ ‖z‖ < R + 1
+      rw [mem_annulusDomain]
       constructor <;> linarith [le_of_not_gt hs, le_of_not_gt h]
     rw [windingNumber_clockwiseCircle r (by
       simpa only [mem_sphere, dist_zero_right, abs_of_pos hr] using (hrR.trans hl).ne'),

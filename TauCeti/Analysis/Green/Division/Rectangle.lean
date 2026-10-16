@@ -26,27 +26,28 @@ namespace TauCeti.Green.Division
 
 /-- The one-cell type-I division of a rectangle. -/
 def rectangleRe (a b c e : ℝ) (hab : a < b) (hce : c < e) :
-    Division .re (verticalRegion a b (fun _ ↦ c) (fun _ ↦ e)) where
-  cells := {GraphCell.rectangle a b c e hab hce.le}
-  covers := by simp
-  aedisjoint := by simp
+    Division .re (verticalRegion a b (fun _ ↦ c) (fun _ ↦ e)) :=
+  { single .re (GraphCell.rectangle a b c e hab hce.le) with
+    covers := by simp }
 
 /-- The independently constructed one-cell type-II division of the same rectangle. -/
 def rectangleIm (a b c e : ℝ) (hab : a < b) (hce : c < e) :
-    Division .im (verticalRegion a b (fun _ ↦ c) (fun _ ↦ e)) where
-  cells := {GraphCell.rectangle c e a b hce hab.le}
-  covers := by
-    ext z
-    simp [mem_verticalRegion, mem_horizontalRegion, and_comm]
-  aedisjoint := by simp
+    Division .im (verticalRegion a b (fun _ ↦ c) (fun _ ↦ e)) :=
+  { single .im (GraphCell.rectangle c e a b hce hab.le) with
+    covers := by
+      rw [(single .im (GraphCell.rectangle c e a b hce hab.le)).covers]
+      ext z
+      simp [GraphCell.region_im, mem_verticalRegion, mem_horizontalRegion, and_comm] }
 
 @[simp]
 theorem rectangleRe_cells (a b c e : ℝ) (hab : a < b) (hce : c < e) :
-    (rectangleRe a b c e hab hce).cells = {GraphCell.rectangle a b c e hab hce.le} := (rfl)
+    (rectangleRe a b c e hab hce).cells = {GraphCell.rectangle a b c e hab hce.le} :=
+  single_cells .re _
 
 @[simp]
 theorem rectangleIm_cells (a b c e : ℝ) (hab : a < b) (hce : c < e) :
-    (rectangleIm a b c e hab hce).cells = {GraphCell.rectangle c e a b hce hab.le} := (rfl)
+    (rectangleIm a b c e hab hce).cells = {GraphCell.rectangle c e a b hce hab.le} :=
+  single_cells .im _
 
 /-- The type-I rectangle division has the canonical four-edge rectangle boundary. -/
 @[simp]
@@ -54,7 +55,8 @@ theorem boundary_rectangleRe (a b c e : ℝ) (hab : a < b) (hce : c < e) :
     (rectangleRe a b c e hab hce).boundary =
       BoundaryChain.cellBoundary .re a b (fun _ ↦ c) (fun _ ↦ e)
         continuousOn_const continuousOn_const := by
-  simp [boundary_def, GraphCell.boundary_def]
+  rw [boundary_def, rectangleRe_cells, ← single_cells .re _, ← boundary_def, boundary_single]
+  simp [GraphCell.boundary_def]
 
 /-- The type-II rectangle division has the canonical four-edge rectangle boundary. -/
 @[simp]
@@ -62,7 +64,8 @@ theorem boundary_rectangleIm (a b c e : ℝ) (hab : a < b) (hce : c < e) :
     (rectangleIm a b c e hab hce).boundary =
       BoundaryChain.cellBoundary .im c e (fun _ ↦ a) (fun _ ↦ b)
         continuousOn_const continuousOn_const := by
-  simp [boundary_def, GraphCell.boundary_def]
+  rw [boundary_def, rectangleIm_cells, ← single_cells .im _, ← boundary_def, boundary_single]
+  simp [GraphCell.boundary_def]
 
 /-- The two independent rectangle divisions have the same actual boundary chain. -/
 theorem boundary_rectangleRe_eq_rectangleIm (a b c e : ℝ) (hab : a < b) (hce : c < e) :

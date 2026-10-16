@@ -117,4 +117,29 @@ theorem integrableOn_and_linearCombination_curveIntegral_eq_integral_sub
   have h := integrable_and_integral_add_integral_eq_integral_sub V H hV hH hDU hP hQ hdP hdQ hRP hRQ
   exact ⟨h.2.2.1, (BoundaryChain.integral_add_eq_curveIntegral h.1 h.2.1 hc).symm.trans h.2.2.2⟩
 
+/-- A geometric replacement of the common boundary preserves Green, including genuine
+integrability of the replacement. Its certificates can be built from graph subdivision,
+reparametrization, reversal, and cancellation, with the field defined only on the region. -/
+theorem green_equivalent_boundary {D : Set ℂ} (V : Division .re D) (H : Division .im D)
+    {c e : BoundaryChain}
+    (hV : BoundaryChain.NullChain .re D (V.boundary - c))
+    (hH : BoundaryChain.NullChain .im D (H.boundary - c))
+    (hce : BoundaryChain.NullChain .re D (c - e))
+    (hce' : BoundaryChain.NullChain .im D (c - e))
+    {P Q RP RQ : ℂ → ℝ} (hP : ContinuousOn P D) (hQ : ContinuousOn Q D)
+    (hdP : ∀ K ∈ V.cells, ∀ x ∈ Icc K.a K.b,
+      ∀ y ∈ Ioo (K.lowerFun x) (K.upperFun x),
+        HasDerivAt (fun y ↦ P ⟨x, y⟩) (RP ⟨x, y⟩) y)
+    (hdQ : ∀ K ∈ H.cells, ∀ y ∈ Icc K.a K.b,
+      ∀ x ∈ Ioo (K.lowerFun y) (K.upperFun y),
+        HasDerivAt (fun x ↦ Q ⟨x, y⟩) (RQ ⟨x, y⟩) x)
+    (hRP : ∀ K ∈ V.cells, IntegrableOn RP (K.region .re))
+    (hRQ : ∀ K ∈ H.cells, IntegrableOn RQ (K.region .im)) :
+    BoundaryChain.Integrable Complex.reCLM P e ∧ BoundaryChain.Integrable Complex.imCLM Q e ∧
+      IntegrableOn (fun z ↦ RQ z - RP z) D ∧
+      BoundaryChain.integral Complex.reCLM P e + BoundaryChain.integral Complex.imCLM Q e =
+        ∫ z in D, RQ z - RP z :=
+  integrable_and_integral_add_integral_eq_integral_sub
+    V H (hV.trans hce) (hH.trans hce') Subset.rfl hP hQ hdP hdQ hRP hRQ
+
 end TauCeti.Green.Division

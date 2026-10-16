@@ -55,15 +55,6 @@ theorem integral_rectangle_boundary {a b c e : ℝ} (hab : a < b) (hce : c < e)
     Coordinate.graph_im_apply, neg_sub] at hdy
   exact ⟨hdx.1, hdy.1, by rw [hdx.2, hdy.2]⟩
 
-private theorem continuousOn_rectangle_of_prod {a b : ℝ × ℝ} {f : ℝ × ℝ → ℝ}
-    (hf : ContinuousOn f (Icc a b)) :
-    ContinuousOn (fun z : ℂ ↦ f (z.re, z.im))
-      (verticalRegion a.1 b.1 (fun _ ↦ a.2) (fun _ ↦ b.2)) := by
-  apply hf.comp (show ContinuousOn (fun z : ℂ ↦ (z.re, z.im)) _ from by fun_prop)
-  intro z hz
-  rw [mem_verticalRegion] at hz
-  exact ⟨⟨hz.1.1, hz.2.1⟩, ⟨hz.1.2, hz.2.2⟩⟩
-
 /-- Mathlib's rectangle divergence theorem agrees with the actual gauge circulation of
 `-g dx + f dy` on the finite-chain rectangle boundary, including countable derivative exceptions. -/
 theorem integral_rectangle_boundary_eq_divergence (f g : ℝ × ℝ → ℝ)

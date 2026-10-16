@@ -88,7 +88,8 @@ theorem not_isPreconnected_latticeRegion_separatedSquares :
   have hLR : Disjoint L R := by
     apply Set.disjoint_left.mpr
     intro z hl hr
-    exact (show z.re < 2 from hl).not_gt hr
+    have hl' : z.re < 2 := hl
+    exact hl'.not_gt hr
   have hcover : latticeRegion separatedSquares ⊆ L ∪ R := by
     rw [latticeRegion_separatedSquares]
     intro z hz

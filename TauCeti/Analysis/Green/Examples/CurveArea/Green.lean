@@ -205,9 +205,8 @@ theorem green_annulus_region_area {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
     rw [integral_congr_ae (ae_restrict_of_ae he), setIntegral_indicator hD,
       inter_eq_right.mpr hs] at hh
     exact hh
-  have hfinite : volume D ≠ ⊤ :=
-    (measure_mono (show D ⊆ Metric.ball (0 : ℂ) R from sdiff_subset)).trans_lt
-      measure_ball_lt_top |>.ne
+  have hsub : D ⊆ Metric.ball (0 : ℂ) R := sdiff_subset
+  have hfinite : volume D ≠ ⊤ := (measure_mono hsub).trans_lt measure_ball_lt_top |>.ne
   refine ⟨h.1, h.2.1, hi, harea, ?_, h.2.2.2.2⟩
   calc
     volume D = ENNReal.ofReal (volume D).toReal := (ENNReal.ofReal_toReal hfinite).symm

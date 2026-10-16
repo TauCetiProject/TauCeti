@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Green.Examples.CurveArea.Basic
 public import TauCeti.Analysis.Green.Affine.Basic
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
+import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Analysis.Contour.Winding.StarConvex
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
@@ -140,15 +141,11 @@ theorem ellipse_eq_affine_circle (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
     ellipse a b = affineMap (ellipseCoordinates a b ha hb) 0 ∘ circleMap 0 1 := by
   ext t
   let A := ellipseCoordinates a b ha hb
-  have he (z : ℂ) : A z = z.re • A 1 + z.im • A Complex.I := by
-    have hz : z = z.re • (1 : ℂ) + z.im • Complex.I := by simp [Complex.real_smul]
-    calc
-      A z = A (z.re • (1 : ℂ) + z.im • Complex.I) := congrArg A hz
-      _ = _ := by simp only [map_add, map_smul]
-  have h1 : A 1 = (a : ℂ) := by simp [A, ellipseCoordinates]
-  have hI : A Complex.I = (b : ℂ) * Complex.I := by simp [A, ellipseCoordinates]
+  have he (z : ℂ) : A z = z.re • A 1 + z.im • A Complex.I :=
+    LinearMap.apply_eq_re_smul_one_add_im_smul_I A.toLinearEquiv.toLinearMap z
   simp only [Function.comp_apply, affineMap_apply, add_zero, ContinuousLinearEquiv.coe_coe]
-  rw [he, h1, hI, circleMap_zero_re, circleMap_zero_im, ellipse_apply]
+  rw [he, ellipseCoordinates_one, ellipseCoordinates_I, circleMap_zero_re, circleMap_zero_im,
+    ellipse_apply]
   simp only [Complex.real_smul]
   push_cast
   ring
@@ -219,21 +216,20 @@ theorem windingNumber_ellipse_inside {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
   exact he'.trans (windingNumber_ellipse_zero ha hb)
 
 /-- Outside the closed ellipse the winding number vanishes. -/
-theorem windingNumber_ellipse_outside {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+theorem windingNumber_ellipse_outside {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
     {u : ℂ} (hu : u ∉ closedBall (0 : ℂ) 1) :
     Contour.windingNumber (ellipse a b) 0 (2 * Real.pi)
-      (ellipseCoordinates a b ha.ne' hb.ne' u) = 0 := by
-  let A := ellipseCoordinates a b ha.ne' hb.ne'
+      (ellipseCoordinates a b ha hb u) = 0 := by
+  let A := ellipseCoordinates a b ha hb
   have hconv : Convex ℝ (A '' closedBall (0 : ℂ) 1) :=
     (convex_closedBall (0 : ℂ) 1).linear_image A.toLinearEquiv.toLinearMap
-  apply Contour.windingNumber_eq_zero_of_starConvex
-    (hconv.starConvex (show (0 : ℂ) ∈ A '' closedBall (0 : ℂ) 1 from
-      ⟨0, by simp, map_zero A⟩))
+  have hzero : (0 : ℂ) ∈ A '' closedBall (0 : ℂ) 1 := ⟨0, by simp, map_zero A⟩
+  apply Contour.windingNumber_eq_zero_of_starConvex (hconv.starConvex hzero)
     (Contour.IsPiecewiseC1On.of_contDiffOn (contDiff_ellipse a b (n := 1)).contDiffOn)
     (ellipse_closed a b)
   · intro t ht
     have hm : ellipse a b t ∈ ellipse a b '' uIcc 0 (2 * Real.pi) := mem_image_of_mem _ ht
-    rw [image_ellipse_uIcc a b ha.ne' hb.ne'] at hm
+    rw [image_ellipse_uIcc a b ha hb] at hm
     exact image_mono sphere_subset_closedBall hm
   · rintro ⟨v, hv, heq⟩
     exact hu (A.injective heq ▸ hv)
@@ -263,7 +259,7 @@ theorem windingWeight_ellipse {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (z : ℂ) :
           exact le_antisymm (mem_closedBall.mp hc)
             (le_of_not_gt (by simpa only [mem_ball] using hu))
         exact htrace ((image_ellipse_uIcc a b ha.ne' hb.ne').symm ▸ mem_image_of_mem A hs)
-      rw [windingNumber_ellipse_outside ha hb hclosed, indicator_of_notMem]
+      rw [windingNumber_ellipse_outside ha.ne' hb.ne' hclosed, indicator_of_notMem]
       · simp
       · rintro ⟨v, hv, heq⟩
         exact hu (A.injective heq ▸ hv)

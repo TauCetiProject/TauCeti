@@ -155,8 +155,8 @@ theorem sqrtCircle_speed_unbounded (M : ℝ) :
   have ht : 0 < t := sq_pos_of_pos hrat
   have ht1 : t < 1 := by dsimp [t]; nlinarith
   refine ⟨t, ⟨ht, ht1⟩, ?_⟩
-  rw [norm_deriv_sqrtCircle ht, show Real.sqrt t = Real.pi / d by
-    exact Real.sqrt_sq hrat.le]
+  have hsqrt : Real.sqrt t = Real.pi / d := Real.sqrt_sq hrat.le
+  rw [norm_deriv_sqrtCircle ht, hsqrt]
   have hval : Real.pi / (Real.pi / d) = d := by field_simp
   rw [hval]
   dsimp [d]

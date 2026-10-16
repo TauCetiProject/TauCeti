@@ -67,7 +67,8 @@ private theorem right_graph : BoundaryChain.GraphArc .im (fun y ↦ 1 - y) 0 1
   differentiable_coordinate := by
     refine ⟨∅, countable_empty, ?_⟩
     intro t ht
-    apply (show DifferentiableAt ℝ (fun t : ℝ ↦ 1 - t) t by fun_prop).congr_of_eventuallyEq
+    have hd : DifferentiableAt ℝ (fun t : ℝ ↦ 1 - t) t := by fun_prop
+    apply hd.congr_of_eventuallyEq
     filter_upwards [Icc_mem_nhds ht.1.1 ht.1.2] with x hx
     simp [Path.extend_apply _ hx, Path.segment_apply, AffineMap.lineMap_apply_module,
       Coordinate.proj_im]
@@ -95,13 +96,14 @@ private theorem folded_graph : BoundaryChain.GraphArc .re (fun x ↦ 1 - |x|) (-
     simp [foldedGraphPath_apply, Coordinate.graph_re_apply, Coordinate.proj_re]
   coordinate_mem t := by
     rw [foldedGraphPath_apply, Coordinate.proj_re]
+    -- Expose interval membership after evaluating the real coordinate of the complex path.
     change -1 ≤ 2 * (t : ℝ) - 1 ∧ 2 * (t : ℝ) - 1 ≤ 1
     constructor <;> linarith [t.property.1, t.property.2]
   differentiable_coordinate := by
     refine ⟨∅, countable_empty, ?_⟩
     intro t ht
-    apply (show DifferentiableAt ℝ (fun t : ℝ ↦ 2 * t - 1) t by fun_prop)
-      |>.congr_of_eventuallyEq
+    have hd : DifferentiableAt ℝ (fun t : ℝ ↦ 2 * t - 1) t := by fun_prop
+    apply hd.congr_of_eventuallyEq
     filter_upwards [Icc_mem_nhds ht.1.1 ht.1.2] with x hx
     simp [Path.extend_apply _ hx, foldedGraphPath_apply, Coordinate.proj_re]
 
@@ -122,6 +124,7 @@ theorem not_graphArc_foldedGraphPath (g : ℝ → ℝ) (a b : ℝ) :
   intro h
   have hL := h.on_graph ⟨1 / 4, by norm_num⟩
   have hR := h.on_graph ⟨3 / 4, by norm_num⟩
+  -- Unpack the Arc projections in the two graph equations before evaluating the path.
   change foldedGraphPath _ = Coordinate.im.graph g (Coordinate.im.proj (foldedGraphPath _)) at hL hR
   rw [foldedGraphPath_apply, Coordinate.proj_im,
     Coordinate.graph_im_apply] at hL hR
@@ -230,7 +233,8 @@ certificate: the path visits x=1 before returning to x=-1. -/
 theorem not_monotone_re_backtrackingFoldedGraphPath :
     ¬Monotone (fun t : unitInterval ↦ (backtrackingFoldedGraphPath t).re) := by
   intro h
-  have hh := h (show (⟨1 / 2, by norm_num⟩ : unitInterval) ≤ ⟨3 / 4, by norm_num⟩ by norm_num)
+  have hle : (⟨1 / 2, by norm_num⟩ : unitInterval) ≤ ⟨3 / 4, by norm_num⟩ := by norm_num
+  have hh := h hle
   norm_num [backtrackingFoldedGraphPath, Path.trans_apply, Path.symm_apply,
     foldedGraphPath_apply] at hh
 
