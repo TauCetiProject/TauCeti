@@ -14,10 +14,10 @@ import Mathlib.Algebra.Star.SelfAdjoint
 /-!
 # The determinant of a matrix exponential
 
-Mathlib records `det (exp A) = exp (trace A)` as an open task. The identity is elementary once `A`
-is *diagonalizable*: conjugation leaves both the determinant of the exponential and the trace
-alone, and for a diagonal matrix the exponential is diagonal
-(`Matrix.exp_diagonal`), so both sides are `∏ i, exp (d i) = exp (∑ i, d i)`.
+The identity `det (exp A) = exp (trace A)` is elementary once `A` is *diagonalizable*: conjugation
+leaves both the determinant of the exponential and the trace alone, and for a diagonal matrix the
+exponential is diagonal (`Matrix.exp_diagonal`), so both sides are
+`∏ i, exp (d i) = exp (∑ i, d i)`.
 
 That special case already covers the matrices the real classical groups are built from. Over an
 `RCLike` field a Hermitian matrix is unitarily diagonalizable (Mathlib's
@@ -27,9 +27,10 @@ skew-Hermitian matrices, the second of which is what cuts the *special* unitary 
 unitary group; see
 `TauCeti/Geometry/Lie/Exponential/Matrix/SpecialUnitary.lean`.
 
-Nothing here proves the identity for a general matrix: over `ℝ` a matrix need not be
-diagonalizable even after passing to the algebraic closure, and the general statement goes through
-either a triangularization or a derivative of the determinant, neither of which is available.
+The diagonalizable case is the whole of what is proved here, not the identity for a general
+matrix: over `ℝ` a matrix need not be diagonalizable even after passing to the algebraic closure,
+so the general statement needs a different argument, through either a triangularization or a
+derivative of the determinant.
 
 ## Main results
 
