@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Proper
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 public import Mathlib.RingTheory.ClassGroup.Basic
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -17,8 +18,10 @@ import Mathlib.Tactic.Ring
 For the left action `γ • f = f ∘ γ⁻¹`, write `γ = !![p,q;r,s]` and
 `β = (-b + √D)/2`. The transformed ideal is the original ideal multiplied by
 `star (a s + r β) / a`. This factor has norm `a'/a`, where `a'` is the transformed
-leading coefficient. In particular its norm is positive precisely when the two leading
-coefficients have the same sign; this is the comparison needed for the oriented narrow class.
+leading coefficient. The algebraic formulas require only a nonzero original leading coefficient,
+so they also cover square discriminants and a transformed leading coefficient of zero.
+Positivity of the norm is equivalent to positivity of `a * a'`, the comparison needed for
+the oriented narrow class. The native fractional-ideal statements use the nonsquare hypothesis.
 
 ## References
 
@@ -32,52 +35,49 @@ open scoped MatrixGroups nonZeroDivisors
 
 namespace TauCeti.BinaryQuadraticForm
 
-/-- The ideal-scaling factor for the left proper-equivalence action. -/
-def idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ) [Fact (¬ IsSquare D)]
+/-- The ideal-scaling factor for the left proper-equivalence action, defined using the
+rational inverse of the leading coefficient at any discriminant. -/
+def idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (γ : SL(2, ℤ)) : QuadraticAlgebra ℚ (D : ℚ) 0 :=
-  star (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 1 0 • f.idealGenerator D) / f.a
+  ((f.a : ℚ)⁻¹) •
+    star (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 1 0 • f.idealGenerator D)
 
 /-- Scaling the first changed basis vector gives the new leading coefficient. -/
 theorem idealChangeFactor_mul_first (f : BinaryQuadraticForm ℤ) (D : ℤ)
-    (hf : f.discrim = D) [Fact (¬ IsSquare D)] (γ : SL(2, ℤ)) :
+    (hf : f.discrim = D) (ha : f.a ≠ 0) (γ : SL(2, ℤ)) :
     f.idealChangeFactor D γ *
       (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 1 0 • f.idealGenerator D) =
         (γ • f).a := by
-  have ha : (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) ≠ 0 := by
-    exact_mod_cast (a_ne_zero_of_not_isSquare_discrim (f := f) (by rw [hf]; exact Fact.out))
+  have haQ : (f.a : ℚ) ≠ 0 := by exact_mod_cast ha
   have hd : (f.b : ℚ) ^ 2 - 4 * (f.a : ℚ) * (f.c : ℚ) = (D : ℚ) := by
     exact_mod_cast hf
-  rw [idealChangeFactor, div_mul_eq_mul_div, div_eq_iff ha]
-  ext <;> simp [smul_a, pow_two]
-  · linear_combination (γ 1 0 : ℚ) ^ 2 / 4 * hd
+  ext <;> simp [idealChangeFactor, smul_a, pow_two]
+  · field_simp [haQ]
+    nlinarith [congrArg (fun z : ℚ ↦ (γ 1 0 : ℚ) ^ 2 * z) hd]
   · ring
 
 /-- Scaling the second changed basis vector gives the new second ideal generator. -/
 theorem idealChangeFactor_mul_second (f : BinaryQuadraticForm ℤ) (D : ℤ)
-    (hf : f.discrim = D) [Fact (¬ IsSquare D)] (γ : SL(2, ℤ)) :
+    (hf : f.discrim = D) (ha : f.a ≠ 0) (γ : SL(2, ℤ)) :
     f.idealChangeFactor D γ *
       (γ 0 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 0 0 • f.idealGenerator D) =
         (γ • f).idealGenerator D := by
-  have ha : (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) ≠ 0 := by
-    exact_mod_cast (a_ne_zero_of_not_isSquare_discrim (f := f) (by rw [hf]; exact Fact.out))
+  have haQ : (f.a : ℚ) ≠ 0 := by exact_mod_cast ha
   have hd : (f.b : ℚ) ^ 2 - 4 * (f.a : ℚ) * (f.c : ℚ) = (D : ℚ) := by
     exact_mod_cast hf
   have hdet : (γ 0 0 : ℚ) * (γ 1 1 : ℚ) - (γ 0 1 : ℚ) * (γ 1 0 : ℚ) = 1 := by
-    exact_mod_cast (show γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 by
-      simpa only [Matrix.det_fin_two] using γ.det_coe)
-  rw [idealChangeFactor, div_mul_eq_mul_div, div_eq_iff ha]
-  ext <;> simp [smul_b]
-  · linear_combination (γ 0 0 : ℚ) * (γ 1 0 : ℚ) / 4 * hd
-  · linear_combination (f.a : ℚ) / 2 * hdet
+    exact_mod_cast γ.fin_two_mul_sub_mul_eq_one
+  ext <;> simp [idealChangeFactor, smul_b]
+  · field_simp [haQ]
+    nlinarith [congrArg (fun z : ℚ ↦ (γ 0 0 : ℚ) * (γ 1 0 : ℚ) * z) hd]
+  · field_simp [haQ]
+    nlinarith [congrArg (fun z : ℚ ↦ (f.a : ℚ) * z) hdet]
 
 /-- The scaling factor has norm equal to the ratio of leading coefficients. -/
 theorem norm_idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ)
-    (hf : f.discrim = D) [Fact (¬ IsSquare D)] (γ : SL(2, ℤ)) :
+    (hf : f.discrim = D) (ha : f.a ≠ 0) (γ : SL(2, ℤ)) :
     Algebra.norm ℚ (f.idealChangeFactor D γ) = ((γ • f).a : ℚ) / (f.a : ℚ) := by
-  rw [QuadraticAlgebra.algebraNorm_eq_norm]
-  have hfa : f.a ≠ 0 := a_ne_zero_of_not_isSquare_discrim (hf ▸ Fact.out)
-  have hga : (γ • f).a ≠ 0 := a_ne_zero_of_not_isSquare_discrim
-    ((discrim_smul γ f).trans hf ▸ Fact.out)
+  have haQ : (f.a : ℚ) ≠ 0 := by exact_mod_cast ha
   have hnorm : QuadraticAlgebra.norm
       (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 1 0 • f.idealGenerator D) =
         (f.a : ℚ) * ((γ • f).a : ℚ) := by
@@ -85,11 +85,25 @@ theorem norm_idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ)
     simp only [eval_def, smul_a, Int.cast_sub, Int.cast_add, Int.cast_mul, Int.cast_pow,
       Int.cast_neg]
     ring
-  have h := congrArg QuadraticAlgebra.norm (idealChangeFactor_mul_first f D hf γ)
-  rw [map_mul, hnorm, norm_intCast] at h
-  apply (eq_div_iff (show (f.a : ℚ) ≠ 0 by exact_mod_cast hfa)).mpr
-  apply mul_right_cancel₀ (show ((γ • f).a : ℚ) ≠ 0 by exact_mod_cast hga)
-  simpa [mul_assoc, pow_two] using h
+  rw [QuadraticAlgebra.algebraNorm_eq_norm, idealChangeFactor]
+  calc
+    _ = ((f.a : ℚ)⁻¹) ^ 2 * QuadraticAlgebra.norm
+        (star (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) +
+          γ 1 0 • f.idealGenerator D)) := by
+      simp only [QuadraticAlgebra.norm_def, re_smul, im_smul, smul_eq_mul]
+      ring
+    _ = _ := by
+      rw [QuadraticAlgebra.norm_star, hnorm]
+      field_simp [haQ] <;> ring
+
+/-- The change factor has positive norm exactly when the old and new leading coefficients
+have positive product. -/
+theorem norm_idealChangeFactor_pos_iff (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D) (ha : f.a ≠ 0) (γ : SL(2, ℤ)) :
+    0 < Algebra.norm ℚ (f.idealChangeFactor D γ) ↔ 0 < f.a * (γ • f).a := by
+  rw [norm_idealChangeFactor f D hf ha γ, ← Int.cast_pos (R := ℚ), Int.cast_mul,
+    div_pos_iff, mul_pos_iff]
+  exact or_congr and_comm and_comm
 
 /-- The factor for a proper change of variables is nonzero. -/
 theorem idealChangeFactor_ne_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
@@ -98,7 +112,8 @@ theorem idealChangeFactor_ne_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
   intro hz
   have ha : (γ • f).a ≠ 0 := a_ne_zero_of_not_isSquare_discrim
     ((discrim_smul γ f).trans hf ▸ Fact.out)
-  have h := idealChangeFactor_mul_first f D hf γ
+  have hfa : f.a ≠ 0 := a_ne_zero_of_not_isSquare_discrim (hf ▸ Fact.out)
+  have h := idealChangeFactor_mul_first f D hf hfa γ
   rw [hz, zero_mul] at h
   exact ha (by exact_mod_cast h.symm)
 
@@ -107,8 +122,9 @@ theorem fractionalIdeal_smul (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] (γ : SL(2, ℤ)) :
     (γ • f).fractionalIdeal D ((discrim_smul γ f).trans hf) =
       FractionalIdeal.spanSingleton _ (f.idealChangeFactor D γ) * f.fractionalIdeal D hf := by
-  have h₀ := idealChangeFactor_mul_first f D hf γ
-  have h₁ := idealChangeFactor_mul_second f D hf γ
+  have hfa : f.a ≠ 0 := a_ne_zero_of_not_isSquare_discrim (hf ▸ Fact.out)
+  have h₀ := idealChangeFactor_mul_first f D hf hfa γ
+  have h₁ := idealChangeFactor_mul_second f D hf hfa γ
   simp only [zsmul_eq_mul] at h₀ h₁
   apply le_antisymm
   · intro z hz
@@ -124,8 +140,7 @@ theorem fractionalIdeal_smul (f : BinaryQuadraticForm ℤ) (D : ℤ)
     obtain ⟨y, hy, rfl⟩ := FractionalIdeal.mem_singleton_mul.mp hz
     obtain ⟨m, n, rfl⟩ := (mem_fractionalIdeal_iff f D hf y).mp hy
     have hdet : (γ 0 0 : QuadraticAlgebra ℚ (D : ℚ) 0) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
-      exact_mod_cast (show γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 by
-        simpa only [Matrix.det_fin_two] using γ.det_coe)
+      exact_mod_cast γ.fin_two_mul_sub_mul_eq_one
     apply (mem_fractionalIdeal_iff _ _ _ _).mpr
     refine ⟨γ 0 0 * m - γ 0 1 * n, -(γ 1 0 * m) + γ 1 1 * n, ?_⟩
     simp only [zsmul_eq_mul, Int.cast_add, Int.cast_sub, Int.cast_mul, Int.cast_neg]
