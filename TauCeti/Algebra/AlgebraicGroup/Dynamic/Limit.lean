@@ -19,9 +19,10 @@ Laurent coefficient of universal conjugation, restricted to the parabolic. Its
 scheme-theoretic kernel is the dynamic unipotent subgroup, including on nonreduced value
 algebras.
 
-The construction uses the full faithfulness interface `CommHopfAlgCat.homOfPointsMap`,
-the parabolic representing isomorphism, and the natural Levi-valued limit. The coordinate
-formula makes its action available over value algebras in arbitrary universes.
+The coordinate formula computes the limit of any parabolic point over a commutative value
+algebra in an arbitrary universe. The kernel identity identifies the quotient of the
+parabolic coordinate algebra defining the fibre over the identity with the coordinate
+algebra of the dynamic unipotent subgroup.
 
 ## References
 
