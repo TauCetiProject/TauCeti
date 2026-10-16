@@ -14,10 +14,11 @@ public import TauCeti.Topology.FiberBundle.Separation
 # Maximal intervals of geodesics
 
 For initial data `(p, v)`, this file defines the set of times covered by open intervals carrying
-geodesic witnesses with those initial data.  It proves local existence, uniqueness on overlapping
-intervals, and that this set is an open interval containing zero.  The key homogeneity theorem
-identifies the interval for `a • v` with the inverse scalar image of the interval for `v`; this is
-the domain statement used later by the exponential map.
+geodesic witnesses with those initial data and proves that it is an open interval in `ℝ`.  On a
+boundaryless manifold, it proves local existence, uniqueness on overlapping intervals, and that
+this interval contains zero.  The key homogeneity theorem identifies the interval for `a • v` with
+the inverse scalar image of the interval for `v`; this is the domain statement used later by the
+exponential map.
 
 The interval is defined as a union of geodesic witnesses, so the definition itself does not choose
 one geodesic on the union.  Its membership characterization is suitable for downstream arguments
@@ -27,11 +28,13 @@ results.
 ## Main definitions and results
 
 * `TauCeti.Manifold.geodesicInterval` is the maximal interval of geodesic existence.
-* `TauCeti.Manifold.exists_geodesicCurveOnFrom_Ioo` gives local geodesic existence.
+* `TauCeti.Manifold.exists_geodesicCurveOnFrom_Ioo` gives local geodesic existence on a
+  boundaryless manifold.
 * `TauCeti.Manifold.isOpen_geodesicInterval` and
   `TauCeti.Manifold.ordConnected_geodesicInterval` give its interval structure.
 * `TauCeti.Manifold.mem_geodesicInterval_iff` extracts a geodesic witness from membership.
-* `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_of_inter` gives uniqueness on overlapping intervals.
+* `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_of_inter` gives uniqueness on overlapping intervals
+  for a boundaryless Hausdorff manifold.
 * `TauCeti.Manifold.mem_geodesicInterval_smul_iff` is the precise nonzero scalar domain relation.
 
 ## References
@@ -60,8 +63,8 @@ variable [FiniteDimensional ℝ E]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- A smooth Riemannian manifold has a geodesic with any prescribed initial data on a neighbourhood
-of the initial parameter. -/
+/-- A smooth boundaryless Riemannian manifold has a geodesic with any prescribed initial data on a
+neighbourhood of the initial parameter. -/
 theorem exists_geodesicCurveOnFrom [I.Boundaryless]
     (p : M) (v : TangentSpace I p) :
     ∃ s ∈ 𝓝 (0 : ℝ), ∃ γ : ℝ → M, IsGeodesicCurveOnFrom I γ s p v := by
@@ -81,7 +84,8 @@ theorem exists_geodesicCurveOnFrom [I.Boundaryless]
   refine ⟨u, huopen.mem_nhds hu0, base, ?_⟩
   exact hγu.isGeodesicCurveOnFrom_proj huopen.uniqueDiffOn hu0 hγ₀
 
-/-- A neighbourhood of zero contains an interval of geodesic existence. -/
+/-- On a boundaryless manifold, a neighbourhood of zero contains an interval of geodesic
+existence. -/
 theorem exists_geodesicCurveOnFrom_Ioo [I.Boundaryless]
     (p : M) (v : TangentSpace I p) :
     ∃ a b : ℝ, a < b ∧ 0 ∈ Ioo a b ∧
@@ -190,7 +194,7 @@ theorem zero_mem_geodesicInterval_of_mem {p : M} {v : TangentSpace I p} {t : ℝ
   obtain ⟨γ, a, b, hγ, -⟩ := mem_geodesicInterval_iff.1 h
   exact hγ.subset_geodesicInterval hγ.zero_mem
 
-/-- The initial parameter belongs to the maximal geodesic interval. -/
+/-- On a boundaryless manifold, the initial parameter belongs to the maximal geodesic interval. -/
 @[simp] theorem zero_mem_geodesicInterval [I.Boundaryless] {p : M} {v : TangentSpace I p} :
     (0 : ℝ) ∈ geodesicInterval I M p v := by
   obtain ⟨a, b, _, h0, γ, hγ⟩ :=
