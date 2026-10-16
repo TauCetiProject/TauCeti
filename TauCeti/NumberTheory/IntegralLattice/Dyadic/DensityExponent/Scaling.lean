@@ -107,18 +107,8 @@ theorem shift_support (P : DyadicJordanProfile) :
 private theorem shift_support_filter_lt (P : DyadicJordanProfile) (i : ℕ) :
     (P.ranks.support.map succEmbedding).filter (fun j ↦ succEmbedding i < j) =
       (P.ranks.support.filter fun j ↦ i < j).map succEmbedding := by
-  ext j
-  constructor
-  · intro hj
-    obtain ⟨hjm, hij⟩ := Finset.mem_filter.mp hj
-    obtain ⟨k, hk, rfl⟩ := Finset.mem_map.mp hjm
-    exact Finset.mem_map.mpr ⟨k, Finset.mem_filter.mpr ⟨hk, by simpa [succEmbedding] using hij⟩,
-      rfl⟩
-  · intro hj
-    obtain ⟨k, hk, rfl⟩ := Finset.mem_map.mp hj
-    obtain ⟨hk, hik⟩ := Finset.mem_filter.mp hk
-    exact Finset.mem_filter.mpr
-      ⟨Finset.mem_map.mpr ⟨k, hk, rfl⟩, by simpa [succEmbedding] using hik⟩
+  rw [Finset.filter_map]
+  simp [Function.comp_def, succEmbedding]
 
 /-- The type-I constituent count is unchanged by shifting every scale. -/
 @[simp]
@@ -134,22 +124,8 @@ theorem adjacentTypeICount_shift (P : DyadicJordanProfile) :
   have hfilter :
       (P.shift.typeI.filter fun i ↦ i + 1 ∈ P.shift.typeI) =
         (P.typeI.filter fun i ↦ i + 1 ∈ P.typeI).map succEmbedding := by
-    rw [shift_typeI_eq]
-    ext i
-    constructor
-    · intro hi
-      obtain ⟨hi, his⟩ := Finset.mem_filter.mp hi
-      obtain ⟨j, hj, rfl⟩ := Finset.mem_map.mp hi
-      rw [Finset.mem_map] at his
-      obtain ⟨k, hk, hkj⟩ := his
-      have : k = j + 1 := by simpa [succEmbedding] using hkj
-      subst k
-      exact Finset.mem_map.mpr ⟨j, Finset.mem_filter.mpr ⟨hj, hk⟩, rfl⟩
-    · intro hi
-      obtain ⟨j, hj, rfl⟩ := Finset.mem_map.mp hi
-      obtain ⟨hj, hjs⟩ := Finset.mem_filter.mp hj
-      exact Finset.mem_filter.mpr ⟨Finset.mem_map.mpr ⟨j, hj, rfl⟩,
-        Finset.mem_map.mpr ⟨j + 1, hjs, by simp [succEmbedding]⟩⟩
+    rw [shift_typeI_eq, Finset.filter_map]
+    simp [succEmbedding]
   rw [hfilter, Finset.card_map]
 
 /-- The total rank of the type-II constituents is unchanged by shifting every scale. -/
@@ -159,19 +135,8 @@ theorem typeIIRank_shift (P : DyadicJordanProfile) : P.shift.typeIIRank = P.type
   have hfilter :
       (P.ranks.support.map succEmbedding).filter (fun i ↦ i ∉ P.shift.typeI) =
         (P.ranks.support.filter fun i ↦ i ∉ P.typeI).map succEmbedding := by
-    ext i
-    constructor
-    · intro hi
-      obtain ⟨him, hiI⟩ := Finset.mem_filter.mp hi
-      obtain ⟨j, hj, rfl⟩ := Finset.mem_map.mp him
-      exact Finset.mem_map.mpr
-        ⟨j, Finset.mem_filter.mpr ⟨hj, fun hjI ↦ hiI (P.mem_shift_typeI_succ_iff j |>.mpr hjI)⟩,
-          rfl⟩
-    · intro hi
-      obtain ⟨j, hj, rfl⟩ := Finset.mem_map.mp hi
-      obtain ⟨hj, hjI⟩ := Finset.mem_filter.mp hj
-      exact Finset.mem_filter.mpr
-        ⟨Finset.mem_map.mpr ⟨j, hj, rfl⟩, P.mem_shift_typeI_succ_iff j |>.not.mpr hjI⟩
+    rw [Finset.filter_map]
+    simp [Function.comp_def, succEmbedding]
   rw [hfilter, Finset.sum_map]
   simp
 
@@ -203,7 +168,8 @@ theorem shiftCorrection_unaryTypeI (i : ℕ) : (unaryTypeI i).shiftCorrection = 
   simp
 
 /-- The distance-weighted cross term is unchanged by shifting every scale. -/
-private theorem distanceCrossExponent_shift (P : DyadicJordanProfile) :
+@[simp]
+theorem distanceCrossExponent_shift (P : DyadicJordanProfile) :
     P.shift.distanceCrossExponent = P.distanceCrossExponent := by
   rw [distanceCrossExponent_def, distanceCrossExponent_def, shift_support_map]
   rw [Finset.sum_map]
@@ -213,7 +179,7 @@ private theorem distanceCrossExponent_shift (P : DyadicJordanProfile) :
   simp [succEmbedding]
 
 /-- Shifting every scale adds the unweighted pairwise rank products to the upper cross term. -/
-private theorem upperCrossExponent_shift (P : DyadicJordanProfile) :
+theorem upperCrossExponent_shift (P : DyadicJordanProfile) :
     P.shift.upperCrossExponent = P.upperCrossExponent +
       ∑ i ∈ P.ranks.support,
         ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, P.ranks i * P.ranks j := by
@@ -232,7 +198,7 @@ private theorem upperCrossExponent_shift (P : DyadicJordanProfile) :
     rw [succEmbedding_apply, Nat.succ_mul, Nat.add_mul]
 
 /-- Shifting every scale adds the triangular rank sum to the diagonal term. -/
-private theorem diagonalExponent_shift (P : DyadicJordanProfile) :
+theorem diagonalExponent_shift (P : DyadicJordanProfile) :
     P.shift.diagonalExponent = P.diagonalExponent +
       ∑ i ∈ P.ranks.support, P.ranks i * (P.ranks i + 1) / 2 := by
   rw [diagonalExponent_def, diagonalExponent_def, shift_support_map]
