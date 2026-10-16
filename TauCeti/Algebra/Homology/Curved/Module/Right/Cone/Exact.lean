@@ -37,51 +37,112 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
 
 /-- The short complex `N → Cone(f) → M[1]` of closed cone maps. -/
-@[expose]
 noncomputable def coneShortComplex : ShortComplex
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
   ShortComplex.mk (coneInclusion f) (coneProjection f) (coneInclusion_comp_coneProjection f)
 
 attribute [local implicit_reducible] coneShortComplex
 
+/-- The first object of the cone sequence is its target module. -/
+@[simp]
+theorem coneShortComplex_X₁ : (coneShortComplex f).X₁ =
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N :=
+  (rfl)
+
+/-- The middle object of the cone sequence is the cone. -/
+@[simp]
+theorem coneShortComplex_X₂ : (coneShortComplex f).X₂ =
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f) :=
+  (rfl)
+
+/-- The last object of the cone sequence is the shifted source. -/
+@[simp]
+theorem coneShortComplex_X₃ : (coneShortComplex f).X₃ =
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M.shift 1) :=
+  (rfl)
+
+/-- After identifying its endpoints, the first map is the cone inclusion. -/
+@[simp]
+theorem coneShortComplex_f :
+    eqToHom (coneShortComplex_X₁ f).symm ≫ (coneShortComplex f).f ≫
+      eqToHom (coneShortComplex_X₂ f) = coneInclusion f := by
+  simp [coneShortComplex]
+
+/-- After identifying its endpoints, the second map is the cone projection. -/
+@[simp]
+theorem coneShortComplex_g :
+    eqToHom (coneShortComplex_X₂ f).symm ≫ (coneShortComplex f).g ≫
+      eqToHom (coneShortComplex_X₃ f) = coneProjection f := by
+  simp [coneShortComplex]
+
 /-- The cone sequence splits after forgetting the differential. -/
 noncomputable def coneGradedSplitting :
     ((coneShortComplex f).map (forgetDifferential (h := h))).Splitting where
   r := GradedModuleCat.ofHom (LinearMap.snd Aᵐᵒᵖ M N)
     (LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
+      -- The mapped short complex stores its cone through the closed-object wrapper.
+      -- Identify that object before applying the public grading equation.
       change x ∈ (toGradedModuleCat (cone f)).grading.piece p at hx
+      -- Degree-zero homogeneity presents the target degree as `p + 0`.
       change x.2 ∈ (toGradedModuleCat N).grading.piece (p + 0)
       simp only [toGradedModuleCat_piece, cone_grading, add_zero] at hx ⊢
       exact hx.2)
   s := GradedModuleCat.ofHom (LinearMap.inl Aᵐᵒᵖ M N)
     (LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
+      -- The source is the mapped sequence's last closed object, namely the shifted module.
       change x ∈ (toGradedModuleCat (M.shift 1)).grading.piece p at hx
+      -- Evaluate the inherited product inclusion and retain the degree-zero target index.
       change (x, (0 : N)) ∈ (toGradedModuleCat (cone f)).grading.piece (p + 0)
       simp only [toGradedModuleCat_piece, cone_grading, shift_grading, add_zero] at hx ⊢
       exact ⟨hx, (N.grading p).zero_mem⟩)
   f_r := by
     apply GradedModuleCat.hom_ext
     ext x
+    -- The sequence map and splitting component are wrapped graded morphisms; identify
+    -- their underlying composite before using the public closed cone-inclusion equation.
     change (closedHom (coneInclusion f) x).2 = x
     rw [closedHom_coneInclusion]
-    rfl
+    simp only [LinearMap.inr_apply]
   s_g := by
     apply GradedModuleCat.hom_ext
     ext x
+    -- Evaluate the first inclusion in the underlying composite of graded morphisms.
     change closedHom (coneProjection f) (x, 0) = x
     rw [closedHom_coneProjection]
-    rfl
+    simp only [LinearMap.fst_apply]
   id := by
     apply GradedModuleCat.hom_ext
     let i : N →ₗ[Aᵐᵒᵖ] M × N := closedHom (coneInclusion f)
     let p : M × N →ₗ[Aᵐᵒᵖ] M := closedHom (coneProjection f)
+    -- The splitting identity is stored in the mapped short complex's middle object.
+    -- Its original product carrier expresses both compositions as linear-map compositions.
     change i.comp (LinearMap.snd Aᵐᵒᵖ M N) + (LinearMap.inl Aᵐᵒᵖ M N).comp p = LinearMap.id
     dsimp only [i, p]
     rw [closedHom_coneInclusion, closedHom_coneProjection]
     apply LinearMap.ext
     intro x
-    change ((0 : M), x.2) + (x.1, (0 : N)) = x
-    exact Prod.ext (zero_add _) (add_zero _)
+    simpa only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.inr_apply,
+      LinearMap.snd_apply, LinearMap.inl_apply, LinearMap.fst_apply, LinearMap.id_apply] using
+      (show ((0 : M), x.2) + (x.1, (0 : N)) = x from
+        Prod.ext (zero_add _) (add_zero _))
+
+/-- The graded retraction is the second product projection on the identified objects. -/
+@[simp]
+theorem coneGradedSplitting_r :
+    (eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₂ f)).symm ≫
+        (coneGradedSplitting f).r ≫
+          eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₁ f))).hom =
+      LinearMap.snd Aᵐᵒᵖ M N := by
+  simp [coneGradedSplitting, coneShortComplex]
+
+/-- The graded section is the first product inclusion on the identified objects. -/
+@[simp]
+theorem coneGradedSplitting_s :
+    (eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₃ f)).symm ≫
+        (coneGradedSplitting f).s ≫
+          eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₂ f))).hom =
+      LinearMap.inl Aᵐᵒᵖ M N := by
+  simp [coneGradedSplitting, coneShortComplex]
 
 /-- The cone sequence is a graded-split conflation. -/
 theorem coneShortComplex_conflation :

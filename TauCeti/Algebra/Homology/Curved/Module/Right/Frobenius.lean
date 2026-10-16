@@ -6,7 +6,6 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Exact
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Homotopy
 public import TauCeti.CategoryTheory.Exact.Frobenius
 
 /-!
@@ -43,35 +42,6 @@ attribute [local implicit_reducible] ForgetEnrichment dgClosedToHomotopy
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
-
-/-- A curved module is zero in the homotopy category exactly when it admits a contraction. -/
-theorem isZero_homotopy_iff_exists_contraction (P : CurvedDGRightModuleCat.{u, u, u} h) :
-    IsZero (DGHomotopyCategory.of R P) ↔
-      ∃ k : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := P.grading) (-1),
-        ∀ x : P, P.differential (k.1 x) + k.1 (P.differential x) = x := by
-  constructor
-  · intro hP
-    have hz : (dgClosedToHomotopy R).map
-        (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)) = 0 := by
-      rw [CategoryTheory.Functor.map_id]
-      exact hP.eq_of_src _ _
-    rw [dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff] at hz
-    obtain ⟨k, hk⟩ := hz
-    refine ⟨k, fun x ↦ ?_⟩
-    have hx := hk x
-    erw [← closedHom_eq, closedHom_id] at hx
-    exact hx.symm
-  · rintro ⟨k, hk⟩
-    have hid : closedHomotopyBoundary k =
-        𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P) := by
-      apply closedHom_ext
-      intro x
-      rw [closedHom_closedHomotopyBoundary_apply, closedHom_id]
-      exact hk x
-    apply (IsZero.iff_id_eq_zero _).mpr
-    have hz : (dgClosedToHomotopy R).map (closedHomotopyBoundary k) = 0 := by simp
-    rw [hid, CategoryTheory.Functor.map_id] at hz
-    exact hz
 
 /-- A contractible module is injective relative to the graded-split exact structure. -/
 theorem gradedSplitExact_isInjective_of_isZero_homotopy
@@ -154,7 +124,6 @@ theorem gradedSplitExact_isProjective_of_isZero_homotopy
     ← map_add, hk]
 
 /-- The injective presentation `M → Cone(id M) → M[1]`. -/
-@[expose]
 noncomputable def coneIdentityInjectivePresentation
     (M : CurvedDGRightModuleCat.{u, u, u} h) :
     (gradedSplitExact (h := h)).InjectivePresentation
@@ -164,8 +133,53 @@ noncomputable def coneIdentityInjectivePresentation
   i := coneInclusion (𝟙 (ForgetEnrichment.of _ M))
   p := coneProjection (𝟙 (ForgetEnrichment.of _ M))
   zero := coneInclusion_comp_coneProjection _
-  conflation := coneShortComplex_conflation _
+  conflation := (gradedSplitExact (h := h)).conflation_of_iso
+    (ShortComplex.isoMk
+      (eqToIso (coneShortComplex_X₁ (𝟙 (ForgetEnrichment.of _ M))))
+      (eqToIso (coneShortComplex_X₂ (𝟙 (ForgetEnrichment.of _ M))))
+      (eqToIso (coneShortComplex_X₃ (𝟙 (ForgetEnrichment.of _ M))))
+      (by
+        apply (cancel_epi
+          (eqToHom (coneShortComplex_X₁ (𝟙 (ForgetEnrichment.of _ M))).symm)).mp
+        simpa only [eqToIso.hom, ← Category.assoc, eqToHom_trans, eqToHom_refl,
+          Category.id_comp] using coneShortComplex_f (𝟙 (ForgetEnrichment.of _ M)))
+      (by
+        apply (cancel_epi
+          (eqToHom (coneShortComplex_X₂ (𝟙 (ForgetEnrichment.of _ M))).symm)).mp
+        simpa only [eqToIso.hom, ← Category.assoc, eqToHom_trans, eqToHom_refl,
+          Category.id_comp] using coneShortComplex_g (𝟙 (ForgetEnrichment.of _ M))))
+    (coneShortComplex_conflation (𝟙 (ForgetEnrichment.of _ M)))
   isInjective := gradedSplitExact_isInjective_of_isZero_homotopy (isZero_homotopy_cone_isIso _)
+
+/-- The injective object in the presentation is the cone of the identity. -/
+@[simp]
+theorem coneIdentityInjectivePresentation_I (M : CurvedDGRightModuleCat.{u, u, u} h) :
+    (coneIdentityInjectivePresentation M).I = ForgetEnrichment.of
+      (CochainComplex (ModuleCat R) ℤ) (cone (𝟙 (ForgetEnrichment.of _ M))) :=
+  (rfl)
+
+/-- The cokernel object in the presentation is the shifted module. -/
+@[simp]
+theorem coneIdentityInjectivePresentation_K (M : CurvedDGRightModuleCat.{u, u, u} h) :
+    (coneIdentityInjectivePresentation M).K =
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M.shift 1) :=
+  (rfl)
+
+/-- After identifying its target, the presentation map is the identity-cone inclusion. -/
+@[simp]
+theorem coneIdentityInjectivePresentation_i (M : CurvedDGRightModuleCat.{u, u, u} h) :
+    (coneIdentityInjectivePresentation M).i ≫ eqToHom (coneIdentityInjectivePresentation_I M) =
+      coneInclusion (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) := by
+  simp [coneIdentityInjectivePresentation]
+
+/-- After identifying its endpoints, the presentation map is the identity-cone projection. -/
+@[simp]
+theorem coneIdentityInjectivePresentation_p (M : CurvedDGRightModuleCat.{u, u, u} h) :
+    eqToHom (coneIdentityInjectivePresentation_I M).symm ≫
+        (coneIdentityInjectivePresentation M).p ≫
+          eqToHom (coneIdentityInjectivePresentation_K M) =
+      coneProjection (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) := by
+  simp [coneIdentityInjectivePresentation]
 
 /-- Every curved module is a graded-split quotient of a contractible cone of an identity. -/
 theorem exists_gradedSplitExact_isDeflation_contractible

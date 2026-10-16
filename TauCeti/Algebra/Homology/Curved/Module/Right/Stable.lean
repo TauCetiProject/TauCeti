@@ -40,56 +40,6 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w} {M N : CurvedDGRightModuleCat.{u, u, u} h}
 
-/-- A closed map is null-homotopic exactly when it factors through the identity cone of its
-source via the canonical inclusion. -/
-theorem quotient_map_eq_zero_iff_factors_coneIdentity
-    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
-    (dgClosedToHomotopy R).map f = 0 ↔
-      ∃ g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ)
-          (cone (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M))) ⟶
-            ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N,
-        coneInclusion (𝟙 (ForgetEnrichment.of _ M)) ≫ g = f := by
-  constructor
-  · intro hf
-    rw [dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff] at hf
-    obtain ⟨k, hk⟩ := hf
-    let f₀ : M →ₗ[Aᵐᵒᵖ] N := closedHom f
-    let k₀ : M →ₗ[Aᵐᵒᵖ] N := k.1
-    have hk' (x : M) : f₀ x =
-        N.differential (k₀ x) + k₀ (M.differential x) := by
-      have hx := hk x
-      erw [← closedHom_eq] at hx
-      exact hx
-    let g := closedHomOf (k₀.coprod f₀)
-      (M := cone (𝟙 (ForgetEnrichment.of _ M))) (N := N)
-      (fun p x hx ↦ by
-        rw [cone_grading] at hx
-        change k₀ x.1 + f₀ x.2 ∈ N.grading p
-        exact (N.grading p).add_mem (by simpa using dgRightModuleCochains.map_mem k hx.1)
-          (closedHom_mem f hx.2))
-      (fun x ↦ by
-        change N.differential (k₀ x.1 + f₀ x.2) =
-          k₀ ((cone (𝟙 (ForgetEnrichment.of _ M))).differential x).1 +
-            f₀ ((cone (𝟙 (ForgetEnrichment.of _ M))).differential x).2
-        rw [cone_differential_apply, closedHom_id]
-        simp only [LinearMap.id_apply, map_add, map_neg]
-        erw [differential_closedHom f]
-        rw [hk' x.1]
-        abel_nf
-        rfl)
-    refine ⟨g, ?_⟩
-    apply closedHom_ext
-    intro x
-    dsimp only [g]
-    erw [closedHom_comp, closedHom_closedHomOf, closedHom_coneInclusion]
-    change k₀ 0 + f₀ x = f₀ x
-    rw [map_zero, zero_add]
-  · rintro ⟨g, rfl⟩
-    rw [Functor.map_comp]
-    rw [(isZero_homotopy_cone_isIso (𝟙 (ForgetEnrichment.of _ M))).eq_of_src
-      ((dgClosedToHomotopy R).map g) 0, comp_zero]
-
 /-- The projective stable ideal of the graded-split exact structure is the kernel of the
 canonical functor to the curved homotopy category. -/
 theorem gradedSplitExact_projectiveStableIdeal_eq_kerIdeal :
@@ -109,7 +59,6 @@ theorem gradedSplitExact_projectiveStableIdeal_eq_kerIdeal :
 
 /-- The canonical additive comparison from the graded-split stable category to the existing
 curved homotopy category. -/
-@[expose]
 noncomputable def gradedSplitStableToHomotopy :
     (gradedSplitExact (h := h)).ProjectiveStableCategory ⥤
       DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h) :=

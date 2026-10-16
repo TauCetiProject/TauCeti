@@ -20,6 +20,7 @@ curvature of `M` and `N`, without a centrality assumption.
 
 The right action is unchanged. The canonical inclusion of `N` and projection to `M[1]` are
 closed maps, and the adjacent composites vanish in the existing homotopy category.
+A null-homotopic closed map factors through its source's identity cone via the inclusion.
 
 ## References
 
@@ -27,6 +28,8 @@ closed maps, and the adjacent composites vanish in the existing homotopy categor
   and 7.6. His curvature is the negative of the right-module curvature stored here.
 * The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Cone.Basic`: the curved-duplex
   cone formalization is the precedent for the cone, its maps and its contraction interface.
+* The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Frobenius`: the identity-cone
+  factorization adapts the corresponding componentwise split construction.
 -/
 
 public section
@@ -591,5 +594,60 @@ theorem coneMap_id :
   simp only [closedHom_coneMap_apply, closedHom_id, LinearMap.id_apply,
     Submodule.coe_zero, LinearMap.zero_apply, add_zero]
   exact Prod.mk.eta
+
+section IdentityConeFactorization
+
+-- The quotient object wrappers retain the original modules in the factorization formulas.
+attribute [local implicit_reducible] dgClosedToHomotopy
+  DGHomotopyCategory.of DGHomotopyCategory.underlying
+
+/-- A closed map is null-homotopic exactly when it factors through the identity cone of its
+source via the canonical inclusion. -/
+theorem quotient_map_eq_zero_iff_factors_coneIdentity
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    (dgClosedToHomotopy R).map f = 0 ↔
+      ∃ g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ)
+          (cone (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M))) ⟶
+            ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N,
+        coneInclusion (𝟙 (ForgetEnrichment.of _ M)) ≫ g = f := by
+  constructor
+  · intro hf
+    rw [dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff] at hf
+    obtain ⟨k, hk⟩ := hf
+    let f₀ : M →ₗ[Aᵐᵒᵖ] N := closedHom f
+    let k₀ : M →ₗ[Aᵐᵒᵖ] N := k.1
+    have hk' (x : M) : f₀ x =
+        N.differential (k₀ x) + k₀ (M.differential x) := by
+      have hx := hk x
+      erw [← closedHom_eq] at hx
+      exact hx
+    let g := closedHomOf (k₀.coprod f₀)
+      (M := cone (𝟙 (ForgetEnrichment.of _ M))) (N := N)
+      (fun p x hx ↦ by
+        rw [cone_grading] at hx
+        rw [LinearMap.coprod_apply]
+        exact (N.grading p).add_mem (by simpa using dgRightModuleCochains.map_mem k hx.1)
+          (closedHom_mem f hx.2))
+      (fun x ↦ by
+        simp only [LinearMap.coprod_apply]
+        rw [cone_differential_apply, closedHom_id]
+        simp only [LinearMap.id_apply, map_add, map_neg]
+        erw [differential_closedHom f]
+        rw [hk' x.1]
+        abel_nf
+        rfl)
+    refine ⟨g, ?_⟩
+    apply closedHom_ext
+    intro x
+    dsimp only [g]
+    erw [closedHom_comp, closedHom_closedHomOf, closedHom_coneInclusion]
+    simp only [LinearMap.coprod_apply, LinearMap.inr_apply, map_zero, zero_add]
+  · rintro ⟨g, rfl⟩
+    rw [Functor.map_comp]
+    rw [(isZero_homotopy_cone_isIso (𝟙 (ForgetEnrichment.of _ M))).eq_of_src
+      ((dgClosedToHomotopy R).map g) 0, comp_zero]
+
+end IdentityConeFactorization
 
 end TauCeti.CurvedDGRightModuleCat
