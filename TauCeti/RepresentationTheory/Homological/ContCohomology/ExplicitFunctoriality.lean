@@ -646,19 +646,15 @@ theorem explicitRes1_explicitMap1_eq_zero_of_map_le {H : Type uH} [Group H] [Top
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) {S : Subgroup G} {T : Subgroup H}
     (hTS : T.map (φ : H →* G) ≤ S) {c : H1 G M} (hc : explicitRes1 G M S c = 0) :
     explicitRes1 H N T (explicitMap1 G M H N φ f hf hequiv c) = 0 := by
-  induction c using QuotientAddGroup.induction_on with
-  | _ z =>
-  rw [explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff] at hc
-  obtain ⟨m, hm⟩ := hc
-  -- On `T`, the pulled-back cocycle is the coboundary of `f m`.
-  rw [explicitMap1_mk, explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff]
-  refine ⟨f m, fun t ↦ ?_⟩
-  have h := congrArg f (hm ⟨φ t, hTS ⟨t, t.2, rfl⟩⟩)
-  rw [cocyclesMap1_apply, AddMonoidHom.id_apply, ContinuousMonoidHom.subgroupSubtype_apply,
-    map_sub, Subgroup.mk_smul, hequiv] at h
-  rw [cocyclesMap1_apply, cocyclesMap1_apply, AddMonoidHom.id_apply,
-    ContinuousMonoidHom.subgroupSubtype_apply]
-  exact h
+  -- The restriction `φ|_T : T → S`, completing the commuting square with the inclusions.
+  let φT : T →ₜ* S :=
+    { toMonoidHom := ((φ : H →* G).comp T.subtype).codRestrict S fun t ↦ hTS ⟨t, t.2, rfl⟩
+      continuous_toFun := (φ.continuous.comp continuous_subtype_val).subtype_mk _ }
+  rw [explicitRes1_eq_explicitMap1, explicitMap1_explicitMap1_of_comp_eq G M H N φ f hf hequiv
+    T N (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id N) continuous_id
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N T) (ContinuousMonoidHom.subgroupSubtype S)
+    (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) φT f hf
+    (fun t ↦ hequiv t) rfl rfl, ← explicitRes1_eq_explicitMap1, hc, map_zero]
 
 /-- Restriction on explicit `H²`, induced by the subgroup inclusion and the identity coefficient
 map. -/

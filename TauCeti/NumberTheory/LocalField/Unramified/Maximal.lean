@@ -244,15 +244,12 @@ theorem map_maximalUnramifiedExtension_le {L : Type*} [Field L] [ValuativeRel L]
     (τ : Ω →ₐ[K] Ω') :
     (maximalUnramifiedExtension K Ω).map τ ≤
       (maximalUnramifiedExtension L Ω').restrictScalars K := by
-  rw [maximalUnramifiedExtension_eq_adjoin, adjoin_map, adjoin_le_iff]
-  rintro _ ⟨x, ⟨f, hf, hx⟩, rfl⟩
-  rw [SetLike.mem_coe, mem_restrictScalars, maximalUnramifiedExtension_eq_adjoin]
-  refine subset_adjoin _ _ ⟨f, hf, ?_⟩
-  -- With `q = #𝓀[K]`: `τ x` is a root of `X^{q^f} − X`, hence of `X^{(q^{f(L/K)})^f} − X`,
-  -- and `#𝓀[L] = q^{f(L/K)}`.
-  have h := Function.IsFixedPt.iterate (f := (· ^ Nat.card 𝓀[K] ^ f))
-    (show τ x ^ Nat.card 𝓀[K] ^ f = τ x by rw [← map_pow, hx]) (inertiaDegree K L)
-  rwa [pow_iterate, ← pow_mul, mul_comm, pow_mul, ← natCard_residueField K L] at h
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨f, -, hx⟩ := mem_maximalUnramifiedExtension_iff.1 hx
+  -- `τ` carries `K_f` into `K_f ⊆ L_f ⊆ L^{ur}` inside `Ω'`.
+  exact unramifiedExtension_le_maximalUnramifiedExtension L Ω' f
+    (unramifiedExtension_le_restrictScalars_unramifiedExtension (K := K) L f
+      (map_unramifiedExtension_le f τ ⟨x, hx, rfl⟩))
 
 /-- Two `K`-embeddings of `K_f` agreeing on the roots of `X^{q^f} − X` are equal. -/
 private theorem algHom_ext_unramifiedExtension {f : ℕ} {A : Type*} [Field A] [Algebra K A]
