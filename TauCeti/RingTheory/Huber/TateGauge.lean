@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 /-!
 # The gauge of a Tate ring
 
-Let `A` be a commutative ring, `A₀` a subring and `ϖ` a unit of `A`. For a real base `a` the
+Let `A` be a commutative ring, `A₀` a subring and `ϖ` a unit of `A`. For a real base `a > 1` the
 *Tate gauge* is
 `tateGauge A₀ ϖ a x = inf { a ^ (-n) | n ∈ ℤ, ϖ ^ (-n) * x ∈ A₀ }`,
 so `x` has gauge at most `a ^ (-n)` when it lies in `ϖ ^ n A₀`. Multiplication by `ϖ ^ k` scales
@@ -120,9 +120,13 @@ theorem tateGauge_lt_iff (ha : 0 ≤ a) {x : A} (hx : ∃ n : ℤ, ((ϖ ^ n : A�
 theorem tateGauge_neg (x : A) : tateGauge A₀ ϖ a (-x) = tateGauge A₀ ϖ a x := by
   simp [tateGauge_def, mul_neg, neg_mem_iff]
 
+private theorem coe_zpow_mul_coe_zpow (m n : ℤ) :
+    ((ϖ ^ m : Aˣ) : A) * ((ϖ ^ n : Aˣ) : A) = ((ϖ ^ (m + n) : Aˣ) : A) := by
+  rw [← Units.val_mul, ← zpow_add]
+
 private theorem zpow_neg_mul_zpow_mul (n k : ℤ) (x : A) :
     ((ϖ ^ (-n) : Aˣ) : A) * (((ϖ ^ k : Aˣ) : A) * x) = ((ϖ ^ (-(n - k)) : Aˣ) : A) * x := by
-  rw [← mul_assoc, ← Units.val_mul, ← zpow_add, neg_sub, neg_add_eq_sub]
+  rw [← mul_assoc, coe_zpow_mul_coe_zpow, neg_sub, neg_add_eq_sub]
 
 /-- Multiplication by `ϖ ^ k` scales the Tate gauge exactly by `a ^ (-k)`. -/
 theorem tateGauge_zpow_mul (ha : 0 < a) (k : ℤ) (x : A) :
@@ -166,13 +170,14 @@ private theorem tateGauge_eq_zero_of_forall (ha : 1 < a) {x : A}
 theorem tateGauge_zero (ha : 1 < a) : tateGauge A₀ ϖ a 0 = 0 :=
   tateGauge_eq_zero_of_forall ha fun _ ↦ by simp
 
-/-- If `ϖ ^ k B₀ ⊆ A₀`, then the Tate gauge of `A₀` is at most `a ^ k` times that of `B₀`. -/
-theorem tateGauge_le_zpow_mul_tateGauge (ha : 0 < a) {B₀ : Subring A}
-    (hB : ∀ x : A, ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * x ∈ B₀) {k : ℤ}
-    (hk : ∀ y ∈ B₀, ((ϖ ^ k : Aˣ) : A) * y ∈ A₀) (x : A) :
+/-- If `ϖ ^ k B₀ ⊆ A₀` and a power of `ϖ` moves `x` into `B₀`, then the Tate gauge of `A₀` at
+`x` is at most `a ^ k` times that of `B₀`. -/
+theorem tateGauge_le_zpow_mul_tateGauge (ha : 0 < a) {B₀ : Subring A} (x : A)
+    (hB : ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * x ∈ B₀) {k : ℤ}
+    (hk : ∀ y ∈ B₀, ((ϖ ^ k : Aˣ) : A) * y ∈ A₀) :
     tateGauge A₀ ϖ a x ≤ a ^ k * tateGauge B₀ ϖ a x := by
   have h : tateGauge A₀ ϖ a (((ϖ ^ k : Aˣ) : A) * x) ≤ tateGauge B₀ ϖ a x :=
-    tateGauge_le_tateGauge ha.le (hB x) fun n hn ↦ by
+    tateGauge_le_tateGauge ha.le hB fun n hn ↦ by
       rw [mul_left_comm]
       exact hk _ hn
   rw [tateGauge_zpow_mul ha] at h
@@ -216,24 +221,26 @@ private theorem zpow_neg_mul_mem_of_le {x : A} {m n : ℤ} (hmn : m ≤ n)
     (hn : ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀) : ((ϖ ^ (-m) : Aˣ) : A) * x ∈ A₀ := by
   obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 hmn)
   have h : ((ϖ ^ (-m) : Aˣ) : A) * x = (ϖ : A) ^ k * (((ϖ ^ (-n) : Aˣ) : A) * x) := by
-    rw [← Units.val_pow_eq_pow_val, ← zpow_natCast, ← hk, ← mul_assoc, ← Units.val_mul,
-      ← zpow_add, show n - m + -n = -m by omega]
+    rw [← Units.val_pow_eq_pow_val, ← zpow_natCast, ← hk, ← mul_assoc,
+      coe_zpow_mul_coe_zpow, show n - m + -n = -m by omega]
   rw [h]
   exact A₀.mul_mem (A₀.pow_mem hϖ k) hn
 
-include hA
-
-/-- The closed ball of radius `a ^ (-n)` of the Tate gauge is `ϖ ^ n A₀`. -/
-theorem tateGauge_le_zpow_iff (ha : 1 < a) {x : A} {n : ℤ} :
+/-- If some power of `ϖ` moves `x` into `A₀`, then membership of `x` in the closed ball of radius
+`a ^ (-n)` of the Tate gauge is equivalent to membership in `ϖ ^ n A₀`. -/
+theorem tateGauge_le_zpow_iff {x : A}
+    (hx : ∃ m : ℤ, ((ϖ ^ m : Aˣ) : A) * x ∈ A₀) (ha : 1 < a) {n : ℤ} :
     tateGauge A₀ ϖ a x ≤ a ^ (-n) ↔ ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀ := by
   refine ⟨fun h ↦ ?_, tateGauge_le_zpow (zero_le_one.trans ha.le)⟩
-  obtain ⟨m, hm, hmn⟩ := (tateGauge_lt_iff (zero_le_one.trans ha.le) (hA x)).1 <|
+  obtain ⟨m, hm, hmn⟩ := (tateGauge_lt_iff (zero_le_one.trans ha.le) hx).1 <|
     h.trans_lt ((zpow_lt_zpow_iff_right₀ ha).2 (by omega : -n < -(n - 1)))
   rw [zpow_lt_zpow_iff_right₀ ha] at hmn
   exact zpow_neg_mul_mem_of_le hϖ (by omega) hm
 
+include hA in
 /-- The Tate gauge is ultrametric. -/
-theorem isNonarchimedean_tateGauge (ha : 0 ≤ a) : IsNonarchimedean (tateGauge A₀ ϖ a) := by
+theorem isNonarchimedean_tateGauge (ha : 0 ≤ a) :
+    IsNonarchimedean (tateGauge A₀ ϖ a) := by
   intro x y
   refine le_of_forall_gt fun r hr ↦ ?_
   rw [sup_lt_iff] at hr
@@ -248,31 +255,34 @@ theorem isNonarchimedean_tateGauge (ha : 0 ≤ a) : IsNonarchimedean (tateGauge 
     exact A₀.add_mem (zpow_neg_mul_mem_of_le hϖ h hn) hm
 
 omit hϖ in
-/-- Multiplying by an element of `A₀` does not increase the Tate gauge. -/
-theorem tateGauge_mul_le_of_mem (ha : 0 ≤ a) {x y : A} (hx : x ∈ A₀) :
+/-- Multiplying an eligible element by an element of `A₀` does not increase the Tate gauge. -/
+theorem tateGauge_mul_le_of_mem {x y : A}
+    (hy : ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * y ∈ A₀) (ha : 0 ≤ a) (hx : x ∈ A₀) :
     tateGauge A₀ ϖ a (x * y) ≤ tateGauge A₀ ϖ a y := by
-  refine tateGauge_le_tateGauge ha (hA y) fun m hm ↦ ?_
+  refine tateGauge_le_tateGauge ha hy fun m hm ↦ ?_
   rw [mul_left_comm]
   exact A₀.mul_mem hx hm
 
 omit hϖ in
-/-- The Tate gauge is submultiplicative. -/
-theorem tateGauge_mul_le (ha : 0 < a) (x y : A) :
+/-- The Tate gauge is submultiplicative on elements that some powers of `ϖ` move into `A₀`. -/
+theorem tateGauge_mul_le (x y : A) (hx : ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * x ∈ A₀)
+    (hy : ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * y ∈ A₀) (ha : 0 < a) :
     tateGauge A₀ ϖ a (x * y) ≤ tateGauge A₀ ϖ a x * tateGauge A₀ ϖ a y := by
-  obtain ⟨n, hn⟩ := hA x
+  obtain ⟨n, hn⟩ := hx
   rw [mul_comm (tateGauge A₀ ϖ a x), tateGauge_def A₀ ϖ a x, ← smul_eq_mul (tateGauge A₀ ϖ a y),
     ← Real.sInf_smul_of_nonneg (tateGauge_nonneg ha.le y)]
   refine le_csInf ⟨_, Set.smul_mem_smul_set ⟨-n, by simpa using hn, rfl⟩⟩ ?_
   rintro _ ⟨_, ⟨m, hm, rfl⟩, rfl⟩
   have h : x * y = ((ϖ ^ m : Aˣ) : A) * ((((ϖ ^ (-m) : Aˣ) : A) * x) * y) := by
-    rw [← mul_assoc, ← mul_assoc, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero,
-      Units.val_one, one_mul]
+    rw [← mul_assoc, ← mul_assoc, coe_zpow_mul_coe_zpow]
+    simp
   rw [h, tateGauge_zpow_mul ha]
   simp only [smul_eq_mul]
   rw [mul_comm]
   gcongr
-  exact tateGauge_mul_le_of_mem hA ha.le hm
+  exact tateGauge_mul_le_of_mem hy ha.le hm
 
+include hA in
 /-- The Tate gauge of `A₀`, `ϖ` and `a > 1` as a ring seminorm, when every element of `A` is
 moved into `A₀` by some power of `ϖ`. -/
 noncomputable def tateSeminorm (ha : 1 < a) : RingSeminorm A where
@@ -282,16 +292,18 @@ noncomputable def tateSeminorm (ha : 1 < a) : RingSeminorm A where
     max_le_add_of_nonneg (tateGauge_nonneg (zero_le_one.trans ha.le) x)
       (tateGauge_nonneg (zero_le_one.trans ha.le) y)
   neg' := tateGauge_neg
-  mul_le' := tateGauge_mul_le hA (zero_lt_one.trans ha)
+  mul_le' x y := tateGauge_mul_le x y (hA x) (hA y) (zero_lt_one.trans ha)
 
 @[simp]
 theorem coe_tateSeminorm (ha : 1 < a) : ⇑(tateSeminorm hϖ hA ha) = tateGauge A₀ ϖ a :=
   (rfl)
 
-/-- An element has Tate gauge zero exactly when it lies in every `ϖ ^ n A₀`, `n ≥ 0`. -/
-theorem tateGauge_eq_zero_iff_forall (ha : 1 < a) {x : A} :
+/-- An element that some power of `ϖ` moves into `A₀` has Tate gauge zero exactly when it lies in
+every `ϖ ^ n A₀`, `n ≥ 0`. -/
+theorem tateGauge_eq_zero_iff_forall {x : A}
+    (hx : ∃ m : ℤ, ((ϖ ^ m : Aˣ) : A) * x ∈ A₀) (ha : 1 < a) :
     tateGauge A₀ ϖ a x = 0 ↔ ∀ n : ℕ, ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ A₀ :=
-  ⟨fun h _ ↦ (tateGauge_le_zpow_iff hϖ hA ha).1 (h ▸ zpow_nonneg (zero_le_one.trans ha.le) _),
+  ⟨fun h _ ↦ (tateGauge_le_zpow_iff hϖ hx ha).1 (h ▸ zpow_nonneg (zero_le_one.trans ha.le) _),
     tateGauge_eq_zero_of_forall ha⟩
 
 end Seminorm
@@ -325,7 +337,7 @@ balls about zero of the Tate gauge. -/
 theorem hasBasis_tateGauge [ContinuousMul A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) :
     (𝓝 (0 : A)).HasBasis (fun ε : ℝ ↦ 0 < ε) (fun ε ↦ {x | tateGauge A₀ ϖ a x < ε}) := by
   refine hb.to_hasBasis (fun n _ ↦ ⟨a ^ (-(n : ℤ)), zpow_pos (zero_lt_one.trans ha) _,
-    fun x hx ↦ (tateGauge_le_zpow_iff hϖ (exists_zpow_mul_mem_of_hasBasis hb) ha).1
+    fun x hx ↦ (tateGauge_le_zpow_iff hϖ (exists_zpow_mul_mem_of_hasBasis hb x) ha).1
       (le_of_lt hx)⟩) fun ε hε ↦ ?_
   obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε (inv_lt_one_of_one_lt₀ ha)
   exact ⟨n, trivial, fun x hx ↦ (tateGauge_le_zpow (zero_le_one.trans ha.le) hx).trans_lt <|
@@ -347,8 +359,8 @@ private theorem exists_tateGauge_le_zpow_mul [ContinuousMul A] (ha : 0 < a) {B�
       (fun n ↦ {x | ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ B₀})) :
     ∃ k : ℕ, ∀ x, tateGauge A₀ ϖ a x ≤ a ^ (k : ℤ) * tateGauge B₀ ϖ a x := by
   obtain ⟨k, -, hk⟩ := hbB.mem_iff.1 (mem_nhds_zero_of_hasBasis hb)
-  refine ⟨k, tateGauge_le_zpow_mul_tateGauge ha (exists_zpow_mul_mem_of_hasBasis hbB)
-    fun y hy ↦ hk ?_⟩
+  refine ⟨k, fun x ↦ tateGauge_le_zpow_mul_tateGauge ha x
+    (exists_zpow_mul_mem_of_hasBasis hbB x) fun y hy ↦ hk ?_⟩
   simpa [← mul_assoc, ← mul_pow] using hy
 
 /-- For two subrings `A₀` and `B₀` such that the sets `ϖ ^ n A₀` and the sets `ϖ ^ n B₀` both form
@@ -368,7 +380,7 @@ theorem tateGauge_equiv [ContinuousMul A] (ha : 1 < a) {B₀ : Subring A}
 /-- The zero set of the Tate gauge is the closure of zero. -/
 theorem tateGauge_eq_zero_iff [IsTopologicalRing A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) {x : A} :
     tateGauge A₀ ϖ a x = 0 ↔ x ∈ closure ({0} : Set A) := by
-  rw [tateGauge_eq_zero_iff_forall hϖ (exists_zpow_mul_mem_of_hasBasis hb) ha,
+  rw [tateGauge_eq_zero_iff_forall hϖ (exists_zpow_mul_mem_of_hasBasis hb x) ha,
     R0Space.closure_singleton, hb.ker]
   simp
 
@@ -384,15 +396,15 @@ theorem tateGauge_one [IsTopologicalRing A] [T2Space A] [Nontrivial A] (ha : 1 <
     (hϖ : (ϖ : A) ∈ A₀) : tateGauge A₀ ϖ a 1 = 1 := by
   have hA := exists_zpow_mul_mem_of_hasBasis hb
   have ha₀ : 0 ≤ a := zero_le_one.trans ha.le
-  refine le_antisymm (tateGauge_le_one ha₀ A₀.one_mem) (not_lt.1 fun h ↦ one_ne_zero (α := A) ?_)
-  rw [← zpow_zero a] at h
-  obtain ⟨m, hm, hma⟩ := (tateGauge_lt_iff ha₀ (hA 1)).1 h
-  rw [zpow_lt_zpow_iff_right₀ ha] at hma
-  have h₁ : (((ϖ ^ (-1 : ℤ)) : Aˣ) : A) ∈ A₀ := by
-    simpa using zpow_neg_mul_mem_of_le hϖ (by omega : (1 : ℤ) ≤ m) hm
-  refine ((t2Space_iff_forall_tateGauge_eq_zero_iff hb ha hϖ).1 ‹_› 1).1 <|
-    (tateGauge_eq_zero_iff_forall hϖ hA ha).2 fun n ↦ ?_
-  simpa [zpow_neg, ← inv_pow] using A₀.pow_mem h₁ n
+  change (tateSeminorm hϖ hA ha) 1 = 1
+  apply (RingSeminorm.seminorm_one_eq_one_iff_ne_zero _
+    (tateGauge_le_one ha₀ A₀.one_mem)).2
+  intro h
+  have h1 : tateGauge A₀ ϖ a 1 = 0 := by
+    rw [← coe_tateSeminorm hϖ hA ha, h]
+    rfl
+  exact one_ne_zero <|
+    ((t2Space_iff_forall_tateGauge_eq_zero_iff hb ha hϖ).1 inferInstance 1).1 h1
 
 end Topology
 
