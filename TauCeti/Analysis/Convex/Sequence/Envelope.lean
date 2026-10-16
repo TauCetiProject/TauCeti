@@ -397,7 +397,7 @@ theorem lowerConvexEnvelope_add_affine (a : ℕ → WithTop ℝ) (c m : ℝ) :
   · exact ((isLowerConvexEnvelope_lowerConvexEnvelope ha).add_affine c m
       |>.eq_lowerConvexEnvelope).symm
   · rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible
-      (by rwa [isAdmissible_add_affine_iff])]
+      (by simpa using ha)]
     funext n
     simp
 

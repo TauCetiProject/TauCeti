@@ -331,11 +331,14 @@ theorem IsConvexSeq.add_affine {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) (c
   push_cast
   linarith
 
-/-- Adding a real affine function does not change convexity. -/
+/-- Adding a real affine function does not change convexity. The affine function is written
+with its coercions pushed outward, which is the `simp` normal form. -/
+@[simp]
 theorem isConvexSeq_add_affine_iff {h : ℕ → WithTop ℝ} (c m : ℝ) :
-    (IsConvexSeq fun n => h n + ((c + m * n : ℝ) : WithTop ℝ)) ↔ IsConvexSeq h :=
-  ⟨fun hh => funext (fun n => (h n).add_affine_add_neg_affine c m n) ▸ hh.add_affine (-c) (-m),
-    fun hh => hh.add_affine c m⟩
+    (IsConvexSeq fun n => h n + ((c : WithTop ℝ) + m * n)) ↔ IsConvexSeq h := by
+  simp only [← WithTop.coe_natCast, ← WithTop.coe_mul, ← WithTop.coe_add]
+  exact ⟨fun hh => funext (fun n => (h n).add_affine_add_neg_affine c m n) ▸
+    hh.add_affine (-c) (-m), fun hh => hh.add_affine c m⟩
 
 /-- Adding a real affine function preserves admissibility. -/
 theorem IsAdmissible.add_affine {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) (c m : ℝ) :
@@ -348,10 +351,13 @@ theorem IsAdmissible.add_affine {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) 
         ring_nf
     _ ≤ a n + ((c + m * n : ℝ) : WithTop ℝ) := add_le_add_left (hcm n) _
 
-/-- Adding a real affine function does not change admissibility. -/
+/-- Adding a real affine function does not change admissibility. The affine function is
+written with its coercions pushed outward, which is the `simp` normal form. -/
+@[simp]
 theorem isAdmissible_add_affine_iff {a : ℕ → WithTop ℝ} (c m : ℝ) :
-    (IsAdmissible fun n => a n + ((c + m * n : ℝ) : WithTop ℝ)) ↔ IsAdmissible a :=
-  ⟨fun ha => funext (fun n => (a n).add_affine_add_neg_affine c m n) ▸ ha.add_affine (-c) (-m),
-    fun ha => ha.add_affine c m⟩
+    (IsAdmissible fun n => a n + ((c : WithTop ℝ) + m * n)) ↔ IsAdmissible a := by
+  simp only [← WithTop.coe_natCast, ← WithTop.coe_mul, ← WithTop.coe_add]
+  exact ⟨fun ha => funext (fun n => (a n).add_affine_add_neg_affine c m n) ▸
+    ha.add_affine (-c) (-m), fun ha => ha.add_affine c m⟩
 
 end TauCeti
