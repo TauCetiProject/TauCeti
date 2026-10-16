@@ -98,7 +98,7 @@ variable (ι : D →ₗc[R] C) (hM : Function.Injective (ι.toLinearMap.lTensor 
 @[simp]
 theorem lTensor_coact_ofCorestrict (m : M) :
     letI := ofCorestrict ι hM hMM h
-    ι.toLinearMap.lTensor M (coact (R := R) (C := D) m) = coact (R := R) (C := C) m :=
+    (ι : D →ₗ[R] C).lTensor M (coact (R := R) (C := D) m) = coact (R := R) (C := C) m :=
   LinearMap.codRestrictOfInjective_comp_apply _ _ hM h m
 
 /-- The lifted coaction is the unique `D`-valued coaction mapping back to the original one. -/
@@ -146,8 +146,9 @@ noncomputable def Hom.ofCorestrict (g : Hom R C M N) :
         ext a b
         simp
       simp only [LinearMap.comp_apply]
-      rw [← LinearMap.comp_apply, hcomm, LinearMap.comp_apply, lTensor_coact_ofCorestrict,
-        lTensor_coact_ofCorestrict, Hom.map_coact_apply]
+      rw [← LinearMap.comp_apply, hcomm, LinearMap.comp_apply]
+      simp only [CoalgHom.toLinearMap_eq_ofClass]
+      rw [lTensor_coact_ofCorestrict, lTensor_coact_ofCorestrict, Hom.map_coact_apply]
       rfl }
 
 /-- The lifted morphism has the same underlying function. -/
