@@ -20,9 +20,10 @@ height zero. Its inverse adds `γ(y)` to the normal coordinate.
 
 At points where `γ` is differentiable, the derivative is the linear shear
 `(s, z) ↦ (s - Dγ(y) z, z)`. Its determinant is one and its operator norm is at
-most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. These are the chart
-estimates used to transfer Sobolev trace and extension operators from a half-space to a
-domain with a graph boundary.
+most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. For a `K`-Lipschitz `γ`,
+both the shear and its inverse are `(1 + K)`-Lipschitz. These are the chart estimates used to
+transfer Sobolev trace and extension operators from a half-space to a domain with a graph
+boundary.
 The shear also preserves Lebesgue measure, requiring only continuity of `γ`.
 The homeomorphism uses Mathlib's `Equiv.prodShear` to translate each real fiber;
 the differential reuses `ContinuousLinearEquiv.skewProd`.
@@ -47,6 +48,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory
+open scoped NNReal
 
 section Topology
 
@@ -103,6 +105,41 @@ private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous �
   simp
 
 end Topology
+
+section Lipschitz
+
+variable {E : Type*} [SeminormedAddCommGroup E]
+
+/-- Graph flattening by a `K`-Lipschitz height is `(1 + K)`-Lipschitz. -/
+theorem lipschitzWith_graphFlattening {γ : E → ℝ} {K : ℝ≥0} (hγ : LipschitzWith K γ) :
+    LipschitzWith (1 + K) (graphFlattening γ hγ.continuous) := by
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
+  have hxy : graphFlattening γ hγ.continuous x - graphFlattening γ hγ.continuous y =
+      (x - y) - WithLp.toLp 2 (γ x.snd - γ y.snd, (0 : E)) := by
+    apply (WithLp.ext_iff 2).2
+    apply Prod.ext
+    · simp only [graphFlattening_apply, WithLp.ofLp_sub, Prod.fst_sub, WithLp.ofLp_fst]
+      ring
+    · simp
+  rw [dist_eq_norm, dist_eq_norm, hxy, NNReal.coe_add, NNReal.coe_one]
+  calc ‖(x - y) - WithLp.toLp 2 (γ x.snd - γ y.snd, (0 : E))‖
+      ≤ ‖x - y‖ + ‖γ x.snd - γ y.snd‖ :=
+        (norm_sub_le _ _).trans_eq (by rw [WithLp.norm_toLp_fst])
+    _ ≤ ‖x - y‖ + K * ‖x - y‖ := by
+        gcongr
+        rw [← dist_eq_norm, ← dist_eq_norm]
+        refine (hγ.dist_le_mul _ _).trans (mul_le_mul_of_nonneg_left ?_ K.coe_nonneg)
+        rw [dist_eq_norm, dist_eq_norm]
+        exact WithLp.norm_snd_le (x := x - y)
+    _ = (1 + K) * ‖x - y‖ := by ring
+
+/-- Inverse graph flattening by a `K`-Lipschitz height is `(1 + K)`-Lipschitz. -/
+theorem lipschitzWith_graphFlattening_symm {γ : E → ℝ} {K : ℝ≥0} (hγ : LipschitzWith K γ) :
+    LipschitzWith (1 + K) (graphFlattening γ hγ.continuous).symm := by
+  rw [graphFlattening_symm]
+  exact lipschitzWith_graphFlattening hγ.neg
+
+end Lipschitz
 
 section Linear
 

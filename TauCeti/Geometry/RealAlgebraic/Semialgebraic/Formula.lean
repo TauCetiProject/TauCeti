@@ -68,7 +68,8 @@ theorem isSemialgebraic_setOf_realize {φ : (Language.ring.sum Language.order).B
   induction hφ with
   | falsum =>
     convert isSemialgebraic_empty (σ := α ⊕ Fin n) (R := R)
-    exact Set.eq_empty_of_forall_notMem fun _ h => realize_bot.1 h
+    simp only [Set.mem_eq_mem, Set.notMem_empty, iff_false]
+    exact fun h ↦ realize_bot.1 h
   | of_isAtomic h =>
     cases h with
     | equal t₁ t₂ =>

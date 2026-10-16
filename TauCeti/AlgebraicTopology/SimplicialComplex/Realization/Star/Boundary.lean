@@ -63,7 +63,8 @@ theorem IsCombinatorialBall.exists_homeomorph_openStar_halfBall
       closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
     b.toHomeomorph.subtype fun x => by simp
   obtain ⟨a⟩ := h.nonempty_homeomorph_closedBall link_le
-  let r := Homeomorph.setCongr (Set.ext (mem_geometricLink_iff K v))
+  let r := Homeomorph.setCongr (s := K.geometricLink v)
+    (t := {x : Realization K | x.1.support ∈ K.link {v}}) (Set.ext (mem_geometricLink_iff K v))
   let l := r.trans (a.trans (d.trans (TauCeti.hemisphereHomeomorph p).symm))
   have hc := K.isCompact_closedStarRealization
     (finite_faces_closedStar_iff.mpr h.finite_faces)

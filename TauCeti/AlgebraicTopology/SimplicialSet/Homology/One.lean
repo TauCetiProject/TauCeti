@@ -26,7 +26,8 @@ universe w v u
 
 namespace TauCeti.SSet
 
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
+  [CategoryWithHomology C] (R : C)
 
 /-- The homology class of a `1`-simplex whose two faces agree, a `1`-cycle. -/
 def ιHomology₁ (X : _root_.SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) :

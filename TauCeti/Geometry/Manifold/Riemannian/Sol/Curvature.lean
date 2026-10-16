@@ -71,14 +71,14 @@ private theorem second_connection_const (p : Sol) (u v w : P) :
   have hpos := mdifferentiableAt_exp_height 2 p
   have hneg := mdifferentiableAt_exp_height (-2) p
   rw [connection_const,
-    ∇.isCovariantDerivativeOn.add
+    ∇.isCovariantDerivativeOnUniv.add
       (mdifferentiableAt_add_section (mdifferentiableAt_constantField _ p)
         (hpos.smul_section (mdifferentiableAt_constantField _ p)))
       (hneg.smul_section (mdifferentiableAt_constantField _ p)),
-    ∇.isCovariantDerivativeOn.add (mdifferentiableAt_constantField _ p)
+    ∇.isCovariantDerivativeOnUniv.add (mdifferentiableAt_constantField _ p)
       (hpos.smul_section (mdifferentiableAt_constantField _ p)),
-    ∇.isCovariantDerivativeOn.leibniz (mdifferentiableAt_constantField _ p) hpos,
-    ∇.isCovariantDerivativeOn.leibniz (mdifferentiableAt_constantField _ p) hneg]
+    ∇.isCovariantDerivativeOnUniv.leibniz (mdifferentiableAt_constantField _ p) hpos,
+    ∇.isCovariantDerivativeOnUniv.leibniz (mdifferentiableAt_constantField _ p) hneg]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     map_add, map_smul]
   rw [mvfderiv_exp_height, mvfderiv_exp_height]

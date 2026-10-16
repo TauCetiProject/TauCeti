@@ -192,7 +192,7 @@ theorem ord_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
   have hΔ : W'.Δ ≠ 0 := by
     rw [← hD, variableChange_Δ]
     exact mul_ne_zero (pow_ne_zero _ D.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero
-  apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ hΔ).2
+  apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ ((v.valuation K).ne_zero_iff.mpr hΔ)).2
   rw [← v.valuation_maximalIdeal_localizationAtPrime W'.Δ]
   exact W.valuation_Δ_eq_exp_neg_of_isMinimal_smul _ D hD
 
@@ -211,7 +211,8 @@ theorem localMinimalDiscriminantValuation_le_ord_Δ (v : HeightOneSpectrum O)
   have hmin := W.valuation_Δ_eq_exp_neg_of_isMinimal_smul
     (Localization.AtPrime v.asIdeal) C hC
   simp only [v.valuation_maximalIdeal_localizationAtPrime] at hle hmin
-  rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin,
+  rw [Valuation.valuation_eq_exp_neg_ord _
+      ((v.valuation K).ne_zero_iff.mpr W.isUnit_Δ.ne_zero), hmin,
     WithZero.exp_le_exp] at hle
   omega
 
@@ -234,7 +235,8 @@ theorem ord_Δ_eq_localMinimalDiscriminantValuation_iff_isMinimal (v : HeightOne
       (Localization.AtPrime v.asIdeal) C hC
     simp only [v.valuation_maximalIdeal_localizationAtPrime] at hmin
     simp only [v.valuation_maximalIdeal_localizationAtPrime]
-    rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin, WithZero.exp_inj]
+    rw [Valuation.valuation_eq_exp_neg_ord _
+      ((v.valuation K).ne_zero_iff.mpr W.isUnit_Δ.ne_zero), hmin, WithZero.exp_inj]
     exact congrArg Neg.neg h
   · intro hmin
     have := hmin -- expose minimality to instance synthesis for the ord-level comparison

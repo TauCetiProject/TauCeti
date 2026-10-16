@@ -99,8 +99,11 @@ private theorem exists_disc_factorization {U : Set ℂ} (hUb : IsBounded U)
   obtain ⟨hF'd, hF'i, hF'im⟩ := htrans hg hgU
   have hUo : IsOpen U := hFim ▸ isOpen_image_of_differentiableOn_of_injOn isOpen_ball hFd hFi
   -- Carathéodory's extension of `g ∘ K` to the closed disc
-  obtain ⟨G, hGc, hGF⟩ := exists_continuousOn_closedBall_eqOn_of_isJordanCurve_frontier one_pos
-    hF'd hF'i (by rwa [hF'im]) (by rwa [hF'im])
+  have : LocallyConnectedSpace (frontier ((g ∘ K) '' ball 0 1)) := by
+    rw [hF'im]; exact hUJ.locallyConnectedSpace
+  obtain ⟨G, hGc, hGF⟩ :=
+    exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier one_pos hF'd hF'i
+      (by rwa [hF'im])
   have hGi : InjOn G (closedBall 0 1) := injOn_closedBall_of_isJordanCurve_frontier one_pos hF'd
     hF'i (by rwa [hF'im]) (by rwa [hF'im]) hGc hGF
   -- the inverses of `f ∘ K` and `g ∘ K` differ by a disc automorphism

@@ -55,11 +55,12 @@ lemma quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H J) A) :
-    quotientPointsHom H I A ((mapPointsFunctor (quotientMapOfLe H hIJ)).app A f) =
+    quotientPointsHom H I A ((CommHopfAlgCat.Hom.mapPointsFunctor (quotientMapOfLe H hIJ)).app A
+      f) =
       quotientPointsHom H J A f := by
   apply WithConv.ofConv_injective
   ext h
-  erw [quotientPointsHom_apply_apply, mapPointsFunctor_app_apply_apply,
+  erw [quotientPointsHom_apply_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
     quotientMapOfLe_mk, quotientPointsHom_apply_apply]
 
 /-- The pointwise form of
@@ -69,7 +70,8 @@ lemma quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app_apply
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H J) A) (h : H) :
-    (quotientPointsHom H I A ((mapPointsFunctor (quotientMapOfLe H hIJ)).app A f)).ofConv h =
+    (quotientPointsHom H I A ((CommHopfAlgCat.Hom.mapPointsFunctor (quotientMapOfLe H hIJ)).app A
+      f)).ofConv h =
       f.ofConv (Ideal.Quotient.mkₐ R J.toIdeal h) := by
   rw [quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app, quotientPointsHom_apply_apply]
 
@@ -81,7 +83,7 @@ lemma quotientPointsSubgroupIso_hom_mapPointsFunctor_quotientMapOfLe_app
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H J) A) :
     (quotientPointsSubgroupIso H I A).hom
-        ((mapPointsFunctor (quotientMapOfLe H hIJ)).app A f) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (quotientMapOfLe H hIJ)).app A f) =
       Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A)
         ((quotientPointsSubgroupIso H J A).hom f) := by
   apply Subtype.ext

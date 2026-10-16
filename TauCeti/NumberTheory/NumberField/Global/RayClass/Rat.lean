@@ -144,7 +144,7 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
     conv_rhs => rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self (I : Ideal (𝓞 ℚ))]
     rw [FractionalIdeal.coeIdeal_span_singleton, map_natCast, Units.val_mk0]
   have hx : x ∈ primeToSubgroup (ratModulus n hn) :=
-    toPrincipalIdeal_mem_idealsPrimeTo_iff.mp
+    NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mp
       (hI ▸ (NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I).2)
   set r := residueHom (ratModulus n hn) ⟨x, hx⟩
   refine ⟨Units.mapEquiv (ratModulusResidueEquiv n hn).toMulEquiv r, ?_, ?_⟩
@@ -157,8 +157,8 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
         rw [Units.val_mk0, map_natCast]
         exact Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by exact_mod_cast ha))
     have hJ : NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I =
-        principalIdealPrimeTo (ratModulus n hn) ⟨x, hx⟩ :=
-      Subtype.ext (by rw [coe_principalIdealPrimeTo]; exact hI.symm)
+        NumberFieldArithmetic.principalIdealAway ℚ (ratModulus n hn).support ⟨x, hx⟩ :=
+      Subtype.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway]; exact hI.symm)
     rw [idealClass_apply, hJ, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom,
       zmodUnitsToRayClass_apply]
     refine congrArg _ (Prod.ext (Units.ext ?_) ((residueSignHom_snd _ _).trans hsign).symm)

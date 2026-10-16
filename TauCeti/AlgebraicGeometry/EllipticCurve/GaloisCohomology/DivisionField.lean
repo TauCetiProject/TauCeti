@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Coefficients
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 import Mathlib.FieldTheory.Galois.Infinite
 
@@ -42,6 +43,11 @@ places.
 
 * `WeierstrassCurve.divisionField_le_iff`: `K(E[m])` is the smallest intermediate field containing
   the coordinates of every point of `E(Kˢ)[m]`.
+* `WeierstrassCurve.divisionField_le_iff_forall_exists_map_eq`: equivalently, the smallest
+  intermediate field over which every point of `E(Kˢ)[m]` is defined.
+* `WeierstrassCurve.natCard_torsionBy_of_divisionField_le`: for `W` elliptic and `m` invertible in
+  `K`, the curve has `m²` points of order dividing `m` over every intermediate field containing
+  `K(E[m])`.
 * `WeierstrassCurve.mem_fixingSubgroup_divisionField_iff`: an element of `G_K` fixes `K(E[m])`
   exactly when it fixes every point of `E(Kˢ)[m]`.
 * `WeierstrassCurve.isGalois_divisionField`: `K(E[m])` is Galois over `K`.
@@ -111,6 +117,43 @@ theorem yCoord_mem_divisionField {P : (W⁄(SeparableClosure K)).toAffine.Point}
     (hP : P ∈ AddSubgroup.torsionBy (W⁄(SeparableClosure K)).toAffine.Point m) :
     Affine.Point.yCoord P ∈ W.divisionField m :=
   (divisionField_le_iff.1 le_rfl P hP).2
+
+open scoped Classical in
+/-- **`E[m]` is defined over `L` exactly when `L` contains `K(E[m])`**: an intermediate field `L`
+of `Kˢ/K` contains `K(E[m])` exactly when every point of `E(Kˢ)[m]` comes from a point of `W`
+over `L`. -/
+theorem divisionField_le_iff_forall_exists_map_eq {L : IntermediateField K (SeparableClosure K)} :
+    W.divisionField m ≤ L ↔
+      ∀ P ∈ AddSubgroup.torsionBy (W⁄(SeparableClosure K)).toAffine.Point m,
+        ∃ Q : (W⁄L).toAffine.Point, Affine.Point.map L.val Q = P := by
+  simp [divisionField_le_iff]
+
+open scoped Classical in
+/-- **An elliptic curve has full `m`-torsion over every field containing `K(E[m])`.** For `m`
+invertible in `K` and an intermediate field `L` of `Kˢ/K` containing `K(E[m])`, the group
+`E(L)[m]` has `m²` elements: it maps bijectively onto `E(Kˢ)[m]`. -/
+theorem natCard_torsionBy_of_divisionField_le [W.IsElliptic] (hm : (m : K) ≠ 0)
+    {L : IntermediateField K (SeparableClosure K)} (hL : W.divisionField m ≤ L) :
+    Nat.card (AddSubgroup.torsionBy (W⁄L).toAffine.Point m) = m ^ 2 := by
+  have hinj := Affine.Point.map_injective (W' := W) L.val
+  -- The point map carries `E(L)[m]` onto `E(Kˢ)[m]`.
+  have hmap : (AddSubgroup.torsionBy (W⁄L).toAffine.Point m).map (Affine.Point.map L.val) =
+      AddSubgroup.torsionBy (W⁄(SeparableClosure K)).toAffine.Point m := by
+    ext P
+    simp only [AddSubgroup.mem_map, AddSubgroup.torsionBy.nsmul_iff]
+    refine ⟨fun ⟨Q, hQ, hQP⟩ ↦ by rw [← hQP, ← map_nsmul, hQ, map_zero], fun hP ↦ ?_⟩
+    obtain ⟨Q, rfl⟩ := divisionField_le_iff_forall_exists_map_eq.1 hL P
+      (AddSubgroup.torsionBy.nsmul_iff.2 hP)
+    exact ⟨Q, hinj (by rwa [map_nsmul, map_zero]), rfl⟩
+  have hmK : ((m : ℤ) : SeparableClosure K) ≠ 0 := by
+    simpa using (map_ne_zero (algebraMap K (SeparableClosure K))).2 hm
+  have h := (W⁄(SeparableClosure K)).natCard_torsionBy hmK
+  rw [Int.natAbs_natCast] at h
+  rw [← AddSubgroup.card_map_of_injective hinj, hmap]
+  -- `h` is stated with the classical decidable equality on `Kˢ`; the two group laws agree.
+  convert h with P
+  simp only [AddSubgroup.torsionBy.nsmul_iff]
+  convert Iff.rfl
 
 /-! ### The Galois group of `K(E[m])` -/
 
