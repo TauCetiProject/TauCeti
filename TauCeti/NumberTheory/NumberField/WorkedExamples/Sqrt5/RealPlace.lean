@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Basic
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
+import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Invariants
 
 /-!
 # The real places of `ℚ(√5)`
@@ -26,6 +27,8 @@ at one real place and negative at the other.
   golden ratio.
 * `TauCeti.NumberField.Sqrt5.embedding_of_isReal_mul_embedding_of_isReal_eq_neg_one`: the real
   values of `θ` at two distinct real places multiply to `-1`.
+* `TauCeti.NumberField.Sqrt5.exists_realPlaces_pos_neg`: the two real places, ordered so that
+  `θ` is positive at the first and negative at the second.
 * `TauCeti.NumberField.Sqrt5.units_rank_eq_one`: unit rank one.
 -/
 
@@ -98,6 +101,21 @@ theorem embedding_of_isReal_mul_embedding_of_isReal_eq_neg_one
     mul_left_cancel₀ (sub_ne_zero.mpr hne') (by
       linear_combination hroot (embedding_of_isReal hw₁) - hroot (embedding_of_isReal hw₂))
   linear_combination embedding_of_isReal hw₁ (θ : K) * hsum - hroot (embedding_of_isReal hw₁)
+
+open scoped Classical in
+/-- The two real places of `ℚ(√5)`, ordered so that `θ` is positive at the first and negative at
+the second. -/
+theorem exists_realPlaces_pos_neg (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    ∃ w₁ w₂ : {w : InfinitePlace K // w.IsReal}, w₁ ≠ w₂ ∧ Finset.univ = {w₁, w₂} ∧
+      0 < embedding_of_isReal w₁.2 (θ : K) ∧ embedding_of_isReal w₂.2 (θ : K) < 0 := by
+  obtain ⟨a, b, hab, hw⟩ := Finset.card_eq_two.mp (nrRealPlaces_eq_two hmin hgen)
+  have hsign := embedding_of_isReal_mul_embedding_of_isReal_eq_neg_one hmin hgen a.2 b.2
+    (Subtype.coe_injective.ne hab)
+  have ha : embedding_of_isReal a.2 (θ : K) ≠ 0 := fun h => by simp [h] at hsign
+  rcases lt_or_gt_of_ne ha with ha | ha
+  · exact ⟨b, a, hab.symm, by rw [hw, Finset.pair_comm], by nlinarith, ha⟩
+  · exact ⟨a, b, hab, hw, ha, by nlinarith⟩
 
 /-- `ℚ(√5)` has unit rank one. -/
 theorem units_rank_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)

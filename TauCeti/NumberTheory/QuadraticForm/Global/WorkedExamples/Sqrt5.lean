@@ -71,22 +71,6 @@ private theorem coe_thetaUnit (hmin : minpoly ℤ θ = X ^ 2 - X - 1) :
     (thetaUnit hmin : K) = θ :=
   rfl
 
-open scoped Classical in
-/-- The two real places of `ℚ(√5)`, ordered so that `θ` is positive at the first and negative at
-the second. -/
-private theorem exists_realPlaces_pos_neg (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    ∃ w₁ w₂ : {w : InfinitePlace K // w.IsReal}, w₁ ≠ w₂ ∧ Finset.univ = {w₁, w₂} ∧
-      0 < embedding_of_isReal w₁.2 (θ : K) ∧ embedding_of_isReal w₂.2 (θ : K) < 0 := by
-  obtain ⟨a, b, hab, hw⟩ := Finset.card_eq_two.mp
-    (TauCeti.NumberField.Sqrt5.nrRealPlaces_eq_two hmin hgen)
-  have hsign := TauCeti.NumberField.Sqrt5.embedding_of_isReal_mul_embedding_of_isReal_eq_neg_one
-    hmin hgen a.2 b.2 (Subtype.coe_injective.ne hab)
-  have ha : embedding_of_isReal a.2 (θ : K) ≠ 0 := fun h => by simp [h] at hsign
-  rcases lt_or_gt_of_ne ha with ha | ha
-  · exact ⟨b, a, hab.symm, by rw [hw, Finset.pair_comm], by nlinarith, ha⟩
-  · exact ⟨a, b, hab, hw, ha, by nlinarith⟩
-
 /-- Away from the prime `(2)`, the symbol `(θ, -1)_v` is trivial: `2`, `θ` and `-1` are all
 `v`-adic units. -/
 private theorem hilbertSymbol_thetaUnit_neg_one_of_ne (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
@@ -124,7 +108,8 @@ private theorem hilbertSymbol_thetaUnit_neg_one_of_eq (hmin : minpoly ℤ θ = X
     hilbertSymbol_thetaUnit_neg_one_of_ne hmin hgen (hv₂ ▸ fun h => hv (HeightOneSpectrum.ext h))]
     at hpf
   -- The two real symbols multiply to `-1`.
-  obtain ⟨w₁, w₂, hne, hw, hθ₁, hθ₂⟩ := exists_realPlaces_pos_neg hmin hgen
+  obtain ⟨w₁, w₂, hne, hw, hθ₁, hθ₂⟩ :=
+    TauCeti.NumberField.Sqrt5.exists_realPlaces_pos_neg hmin hgen
   have hreal : ∏ w : {w : InfinitePlace K // w.IsReal},
       hilbertSymbol (unitAtRealPlace w (thetaUnit hmin)) (unitAtRealPlace w (-1)) = -1 := by
     rw [hw, Finset.prod_pair hne,
@@ -218,7 +203,8 @@ theorem exists_admissible_rank_three
     ⟨Ideal.span {(2 : 𝓞 K)}, hprime, by simp⟩
   -- Enumerate both real places, so the real Hasse product has exactly two factors.
   -- Order them so that `θ` is positive at the first and negative at the second.
-  obtain ⟨w₁, w₂, hne, hw, hθ₁, hθ₂⟩ := exists_realPlaces_pos_neg hmin hgen
+  obtain ⟨w₁, w₂, hne, hw, hθ₁, hθ₂⟩ :=
+    TauCeti.NumberField.Sqrt5.exists_realPlaces_pos_neg hmin hgen
   let I : GlobalFormInvariants K :=
     { rank := 3
       discr := 0
