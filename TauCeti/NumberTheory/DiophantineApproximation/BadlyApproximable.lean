@@ -234,6 +234,12 @@ def LittlewoodConjecture : Prop :=
   ∀ α β : ℝ, ∀ ε > (0 : ℝ), ∃ y : ℕ, 0 < y ∧
     y * |y * α - round (y * α)| * |y * β - round (y * β)| < ε
 
+/-- The quantified formulation of Littlewood's conjecture. -/
+theorem littlewoodConjecture_def :
+    LittlewoodConjecture ↔ ∀ α β : ℝ, ∀ ε > (0 : ℝ), ∃ y : ℕ, 0 < y ∧
+      y * |y * α - round (y * α)| * |y * β - round (y * β)| < ε :=
+  Iff.rfl
+
 /-- Littlewood's conjecture holds for a pair `(α, β)` as soon as `α` is not badly
 approximable. -/
 theorem littlewood_of_not_badlyApproximable {α : ℝ} (hα : ¬BadlyApproximable α) (β : ℝ)
