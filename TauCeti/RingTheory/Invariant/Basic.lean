@@ -32,6 +32,8 @@ intermediate ring with a product of displacements of a generator of the top ring
   to the invariant ring of a subgroup fixing it.
 * `Ideal.exists_smul_under_eq`: every prime of an intermediate ring above a base prime is the
   contraction of a translate of a chosen prime above it.
+* `Ideal.card_primesOver_eq_index_stabilizer`: the primes above a base prime are counted by
+  the index of the decomposition group of any one of them.
 * `TauCeti.smul_sum_smul`: the trace `∑ g, g • m` under a finite group is invariant.
 * `TauCeti.MulSemiringAction.charpoly_dvd`: if `g ↦ g • b` is injective and `f` vanishes at every
   `g • b`, then `charpoly G b ∣ f`.
@@ -120,6 +122,13 @@ theorem exists_smul_under_eq (q : Ideal C) [q.IsPrime] [q.LiesOver p] :
   rw [← Algebra.IsInvariant.orbit_eq_primesOver A B G p Q, mem_orbit_iff] at hRp
   obtain ⟨σ, hσ⟩ := hRp
   exact ⟨σ, by rw [hσ]; exact hRq.over.symm⟩
+
+/-- **The Galois count.** The primes of `B` above `p` are counted by the index `[G : D]` of the
+decomposition group `D` of `Q`. -/
+theorem card_primesOver_eq_index_stabilizer :
+    Nat.card (p.primesOver B) = (stabilizer G Q).index := by
+  rw [index_stabilizer, ← Algebra.IsInvariant.orbit_eq_primesOver A B G p Q,
+    Nat.card_coe_set_eq]
 
 end Lifting
 

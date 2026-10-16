@@ -277,6 +277,16 @@ lemma cotangentLinearEquiv_apply_apply
     (R := R) (A := A) (B := B)
     (f (Bialgebra.cotangentMap R A a) : Bialgebra.CounitAlgebra R A B)).symm
 
+/-- Cotangent duality evaluates a functional on the first-order displacement, after the
+canonical identification of counit-valued coefficients with the coefficient ring. -/
+-- Apply before the inner cotangent evaluation introduces a coefficient-synonym coercion.
+@[simp↓]
+lemma algEquivSelf_cotangentLinearEquiv_apply
+    (f : Bialgebra.CotangentSpace R A →ₗ[R] B) (a : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A B (cotangentLinearEquiv f a) =
+      f (Bialgebra.cotangentMap R A a) := by
+  rw [cotangentLinearEquiv_apply, algEquivSelf_ofCotangentLinearMap_apply]
+
 /-- The inverse cotangent-duality equivalence evaluates a derivation on a
 representative in the augmentation ideal. -/
 @[simp]
@@ -441,6 +451,15 @@ lemma tangentScalarExtensionEquiv_tmul_apply
       (R := R) (A := A) (B := B)
       (b * algebraMap R B (f (Bialgebra.cotangentMap R A a)) :
         Bialgebra.CounitAlgebra R A B)).symm
+
+/-- Scalar extension evaluates a pure tangent tensor by multiplying its coefficient by the
+cotangent functional's value, in the original coefficient ring. -/
+lemma algEquivSelf_tangentScalarExtensionEquiv_tmul_apply
+    (b : B) (f : Module.Dual R (Bialgebra.CotangentSpace R A)) (a : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A B
+        (tangentScalarExtensionEquiv (R := R) (A := A) (B := B) (b ⊗ₜ[R] f) a) =
+      b * algebraMap R B (f (Bialgebra.cotangentMap R A a)) :=
+  algEquivSelf_tangentScalarExtensionEquivBase_tmul_apply b f a
 
 /-- On pure tensors, scalar extension is coefficient change of the cotangent-dual tangent
 vector, followed by multiplication by the tensor coefficient. -/
