@@ -120,7 +120,7 @@ convolution points to points of the group-algebra presentation of `𝔾ₘ`. -/
 noncomputable def determinantPoints :
     WithConv (coordinateHopfAlgebra R n →ₐ[R] A) →*
       WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :=
-  AlgHom.mapDomain
+  BialgHom.mapDomain
     (determinantCoordinateMap R n).hom
 
 /-- The point induced by the determinant coordinate morphism acts by precomposition. -/
@@ -130,7 +130,7 @@ theorem determinantPoints_apply_apply
     (determinantPoints R n f).ofConv x =
       f.ofConv
         ((determinantCoordinateMap R n).hom x) :=
-  by rw [determinantPoints, AlgHom.mapDomain_apply_apply]
+  by rw [determinantPoints, BialgHom.mapDomain_apply_apply]
 
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
@@ -140,7 +140,7 @@ theorem mapValue_determinantPoints (phi : A →ₐ[R] B) :
         (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi) =
       (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative ℤ)) phi).comp
         (determinantPoints (A := A) R n) := by
-  exact AlgHom.mapValue_mapDomain
+  exact BialgHom.mapValue_mapDomain
     (determinantCoordinateMap R n).hom phi
 
 end Points

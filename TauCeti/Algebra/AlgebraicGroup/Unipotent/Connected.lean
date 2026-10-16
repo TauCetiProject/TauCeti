@@ -55,7 +55,7 @@ theorem connectedSpace_of_forall_isUnipotentPoint (H : FiniteTypeCommHopfAlgCat.
   let e := ConstantGroup.pointsMulEquiv k C
   have hcomponent (g : WithConv (H →ₐ[k] k)) : rationalComponentMap H g = 1 := by
     let f := componentCoordinateBialgHom H
-    let q := AlgHom.mapDomain f g
+    let q := BialgHom.mapDomain f g
     have hq : HopfAlgebra.IsUnipotentPoint q := (hH g).mapDomain f
     have : Finite (WithConv (ConstantGroup.coordinateRing k C →ₐ[k] k)) :=
       Finite.of_injective e.symm e.symm.injective
@@ -67,7 +67,7 @@ theorem connectedSpace_of_forall_isUnipotentPoint (H : FiniteTypeCommHopfAlgCat.
         apply ofConv_injective
         rw [ConstantGroup.pointsMulEquiv_apply, ofConv_toConv]
         dsimp only [q]
-        rw [AlgHom.mapDomain_apply, componentCoordinateBialgHom_toAlgHom]
+        rw [BialgHom.mapDomain_apply, componentCoordinateBialgHom_toAlgHom]
         exact (eval_componentCoordinateMap H g).symm
       _ = 1 := hqone
   have hC (c : C) : c = 1 := by

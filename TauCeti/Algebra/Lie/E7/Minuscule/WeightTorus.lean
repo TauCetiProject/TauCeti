@@ -84,7 +84,7 @@ def weightTorusCoordinateIso :
         (weightTorusDefiningIdeal R) ≅
       DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 7)) :=
   ObjectProperty.isoMk _ <|
-    CommHopfAlgCat.quotientKerOfSurjectiveIso (weightTorusToBaseChangeCoordinateMap R)
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (weightTorusToBaseChangeCoordinateMap R)
       (weightTorusToBaseChangeCoordinateMap_surjective R)
 
 /-- The quotient identification recovers the original restriction of coordinates to the torus. -/
@@ -93,7 +93,7 @@ theorem mkQuotient_comp_weightTorusCoordinateIso_hom :
     FiniteTypeCommHopfAlgCat.mkQuotient (finiteTypeCoordinateHopfAlgebra R)
           (weightTorusDefiningIdeal R) ≫ (weightTorusCoordinateIso R).hom =
       ObjectProperty.homMk (weightTorusToBaseChangeCoordinateMap R) :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The closed subgroup cut out by the weight-torus ideal is a split torus over any base ring. -/
 theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :

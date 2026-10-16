@@ -159,20 +159,22 @@ convolution-points monoid, presented contravariantly as a bialgebra homomorphism
 morphism `𝔾ₘ → Spec H`. -/
 noncomputable def pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
     Aˣ →* WithConv (H →ₐ[R] A) :=
-  (AlgHom.mapDomain l).comp
+  (BialgHom.mapDomain l).comp
     (MultiplicativeGroup.pointsMulEquiv (R := R) (A := A)).symm.toMonoidHom
 
 /-- A multiplicative-group morphism sends a unit to the `𝔾ₘ`-point precomposed with `l`. -/
 theorem pointsHom_apply (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
-    pointsHom A l u = AlgHom.mapDomain l (toConv (laurentEval (R := R) u)) := by
-  simp [pointsHom, MultiplicativeGroup.pointsMulEquiv_symm_apply]
+    pointsHom A l u = BialgHom.mapDomain l (toConv (laurentEval (R := R) u)) := by
+  rw [pointsHom, MonoidHom.comp_apply]
+  exact congrArg (BialgHom.mapDomain l)
+    (MultiplicativeGroup.pointsMulEquiv_symm_apply (R := R) u)
 
 /-- The opposite cocharacter evaluates at the inverse unit. -/
 @[simp]
 theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
     pointsHom A l.oppositeCocharacter u = pointsHom A l u⁻¹ := by
   ext h
-  simp [pointsHom_apply, AlgHom.mapDomain_apply, laurentEval_invert]
+  simp [pointsHom_apply, BialgHom.mapDomain_apply, laurentEval_invert]
 
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/
@@ -204,7 +206,7 @@ variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
 theorem mapValue_pointsHom (u : Aˣ) :
     AlgHom.mapValue φ (pointsHom A l u) = pointsHom B l (Units.map φ.toMonoidHom u) := by
   rw [pointsHom_apply, pointsHom_apply, ← MonoidHom.comp_apply,
-    ← AlgHom.mapValue_mapDomain, MonoidHom.comp_apply]
+    ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply]
   congr 1
   simp [AlgHom.mapValue_apply, comp_laurentEval]
 

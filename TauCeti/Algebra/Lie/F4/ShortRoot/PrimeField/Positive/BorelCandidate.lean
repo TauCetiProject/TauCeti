@@ -160,7 +160,7 @@ theorem isBorelCandidate_positiveDefiningIdeal :
   -- The quotient is the positive subgroup's coordinate algebra.
   let e : (FiniteTypeCommHopfAlgCat.quotient finiteTypeCoordinateHopfAlgebra
         positiveDefiningIdeal).obj ≅ Positive.coordinateHopfAlgebra :=
-    CommHopfAlgCat.quotientKerOfSurjectiveIso positiveRestriction
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso positiveRestriction
       (CommHopfAlgCat.quotientMapOfLe_surjective _ _)
   refine HopfIdeal.IsBorelCandidate.mk ?_ ?_ ?_
   · exact (smoothCommHopfAlgProperty (ZMod 2)).prop_of_iso e.symm
