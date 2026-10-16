@@ -91,6 +91,13 @@ def heights (n : ℕ) : WithTop Γ :=
     ((d.initialHeight + prefixSum (n - d.start) d.slope : Γ) : WithTop Γ)
   else ⊤
 
+/-- The defining formula of `FiniteSlopeData.heights` at an arbitrary index. -/
+theorem heights_def (n : ℕ) :
+    d.heights n = if d.start ≤ n ∧ n ≤ d.start + d.length then
+      ((d.initialHeight + prefixSum (n - d.start) d.slope : Γ) : WithTop Γ)
+    else ⊤ := by
+  rw [heights]
+
 /-- The represented heights are finite exactly on `[start, start + length]`. -/
 theorem heights_ne_top_iff {n : ℕ} :
     d.heights n ≠ ⊤ ↔ d.start ≤ n ∧ n ≤ d.start + d.length := by
@@ -221,6 +228,13 @@ def heights (n : ℕ) : WithTop Γ :=
   if d.start ≤ n then
     ((d.initialHeight + ∑ i ∈ range (n - d.start), d.slope i : Γ) : WithTop Γ)
   else ⊤
+
+/-- The defining formula of `InfiniteSlopeData.heights` at an arbitrary index. -/
+theorem heights_def (n : ℕ) :
+    d.heights n = if d.start ≤ n then
+      ((d.initialHeight + ∑ i ∈ range (n - d.start), d.slope i : Γ) : WithTop Γ)
+    else ⊤ := by
+  rw [heights]
 
 /-- The represented heights are finite exactly on `[start, ∞)`. -/
 theorem heights_ne_top_iff {n : ℕ} : d.heights n ≠ ⊤ ↔ d.start ≤ n := by
