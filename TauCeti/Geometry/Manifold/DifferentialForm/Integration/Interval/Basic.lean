@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.Orientation.Interval
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -63,7 +64,7 @@ theorem inChartAt_mpullback_subtypeVal_Icc
       ((extChartAt (𝓡∂ 1) α).symm z : ℝ)).symm.map_smul c (1 : ℝ)
     simp only [smul_eq_mul, mul_one] at hmap
     exact hmap.trans (congrArg (fun v ↦ c • v)
-      (NormedSpace.fromTangentSpace_symm_one _))
+      (NormedSpace.fromTangentSpace_symm_apply _ (1 : ℝ)))
   -- Expose the signed projection and the coefficient c so the transported tuple he rewrites it.
   change ω _ (fun i ↦
     (NormedSpace.fromTangentSpace (𝕜 := ℝ) ((extChartAt (𝓡∂ 1) α).symm z : ℝ)).symm
@@ -206,10 +207,12 @@ theorem integralTopForm_mpullback_curve_Icc {X : Type*} [NormedAddCommGroup X]
       mpullback_apply, mfderiv_eq_fderiv]
     apply congrArg (ω (γ t))
     funext i
-    -- Expose the model-space derivative conjugation produced by mfderiv_eq_fderiv.
+    -- Expose the model derivative conjugation and write the input unit in ℝ explicitly:
+    -- the interval module's tangent-unit instance otherwise survives inside fderiv.
     change (NormedSpace.fromTangentSpace (𝕜 := ℝ) (γ t)).symm
-        (fderiv ℝ γ t (NormedSpace.fromTangentSpace (𝕜 := ℝ) t 1)) = _
-    rw [NormedSpace.fromTangentSpace_one, fderiv_apply_one_eq_deriv]
+        (fderiv ℝ γ t (NormedSpace.fromTangentSpace (𝕜 := ℝ) t (1 : ℝ))) = _
+    rw [NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) t (1 : ℝ),
+      fderiv_apply_one_eq_deriv]
   have hi : IntervalIntegrable (fun t ↦ η t (fun _ ↦ 1)) volume a b :=
     hf.congr_uIoo (fun t ht ↦ (he ht).symm)
   have h := integralTopForm_mpullback_subtypeVal_Icc η hi

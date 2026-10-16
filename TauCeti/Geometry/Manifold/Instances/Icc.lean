@@ -25,20 +25,6 @@ within-range derivatives of the inclusion composed with their inverses.
 
 public section
 
-open scoped Manifold in
-/-- The canonical real tangent-space identification sends the real line's unit tangent to one. -/
-@[simp]
-theorem NormedSpace.fromTangentSpace_one (t : ℝ) :
-    NormedSpace.fromTangentSpace (𝕜 := ℝ) t (1 : TangentSpace 𝓘(ℝ) t) = 1 := rfl
-
-open scoped Manifold in
-/-- The inverse real tangent-space identification sends one to the real line's unit tangent. -/
-@[simp]
-theorem NormedSpace.fromTangentSpace_symm_one (t : ℝ) :
-    (NormedSpace.fromTangentSpace (𝕜 := ℝ) t).symm 1 =
-      (1 : TangentSpace 𝓘(ℝ) t) := rfl
-
-
 open scoped Manifold ContDiff
 
 namespace unitInterval
