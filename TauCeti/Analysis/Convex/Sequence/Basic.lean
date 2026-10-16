@@ -267,31 +267,6 @@ theorem le_max {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) : h j ≤ max (h i)
   refine le_of_mul_le_mul_left ?_ hik'
   nlinarith
 
-/-- Every convex height sequence has a real affine lower bound, including the
-empty and singleton cases. -/
-theorem isAdmissible : IsAdmissible h := by
-  by_cases hedge : ∃ n, h n ≠ ⊤ ∧ h (n + 1) ≠ ⊤
-  · obtain ⟨n, hn, hn'⟩ := hedge
-    refine ⟨(h n).untop₀ - (n : ℝ) * unitSlope h n, unitSlope h n, ?_⟩
-    intro k
-    convert hh.supportingLine_le hn hn' k using 2; ring
-  · by_cases hfinite : ∃ n, h n ≠ ⊤
-    · obtain ⟨n, hn⟩ := hfinite
-      refine ⟨(h n).untop₀, 0, ?_⟩
-      intro k
-      by_cases hk : h k = ⊤
-      · simp [hk]
-      · have hkn : k = n := by
-          by_contra hne
-          rcases lt_or_gt_of_ne hne with hlt | hgt
-          · exact hedge ⟨k, hk, hh.ne_top_of_le_of_le hk hn (by omega) hlt⟩
-          · exact hedge ⟨n, hn, hh.ne_top_of_le_of_le hn hk (by omega) hgt⟩
-        simp [hkn, WithTop.coe_untop₀_of_ne_top hn]
-    · refine ⟨0, 0, ?_⟩
-      intro k
-      have hk : h k = ⊤ := not_not.mp (fun hk => hfinite ⟨k, hk⟩)
-      simp [hk]
-
 /-- At a finite height of a convex sequence, some real affine minorant passes
 through that height. This includes isolated finite heights. -/
 theorem exists_affine_minorant_eq {n : ℕ}
@@ -324,6 +299,18 @@ theorem exists_affine_minorant_eq {n : ℕ}
     · exact hkn
     · exact False.elim (hn' (hh.ne_top_of_le_of_le hn hk (by omega) hnk))
   simp [hkn, WithTop.coe_untop₀_of_ne_top hn]
+
+/-- Every convex height sequence has a real affine lower bound, including the
+empty and singleton cases. -/
+theorem isAdmissible : IsAdmissible h := by
+  by_cases hfinite : ∃ n, h n ≠ ⊤
+  · obtain ⟨n, hn⟩ := hfinite
+    obtain ⟨c, σ, hline, _⟩ := hh.exists_affine_minorant_eq hn
+    exact ⟨c, σ, hline⟩
+  · refine ⟨0, 0, ?_⟩
+    intro k
+    have hk : h k = ⊤ := not_not.mp (fun hk => hfinite ⟨k, hk⟩)
+    simp [hk]
 
 /-- Every real number below a convex height is bounded above by the value of
 some affine minorant there. Infinite heights are recovered by arbitrarily high

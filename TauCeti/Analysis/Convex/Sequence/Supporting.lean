@@ -23,32 +23,40 @@ of the heights give the corresponding translation and parameter shift of the
 supporting values. Convex heights, including infinite heights outside their finite
 domain, are reconstructed as the supremum of their supporting lines.
 
-The inclusion from `WithTop ℝ` into `EReal` is written with an explicit
-`show EReal from WithBot.some ...`: this fixes the arithmetic carrier without
-installing a new coercion.
+The inclusion `WithTop.toEReal` regards heights in `WithTop ℝ` as extended reals
+without installing a new coercion.
+
+## References
+
+* N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
+  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
+* K. S. Kedlaya, [*Newton polygons*](https://kskedlaya.org/18.787/newton-poly.pdf),
+  MIT 18.787, fall 2007, §§1–3. Kedlaya plots coefficient points at negative
+  indices; our convention uses positive indices, so the geometric slope has the
+  opposite sign.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- The infimum of the tilted heights at slope `σ`. The inclusion `WithBot.some`
+/-- The infimum of the tilted heights at slope `σ`. The inclusion `WithTop.toEReal`
 regards a height in `WithTop ℝ` as an extended real, so missing heights contribute
 `⊤` and no individual height contributes `⊥`. -/
 noncomputable def supportingValue (a : ℕ → WithTop ℝ) (σ : ℝ) : EReal :=
-  ⨅ n : ℕ, (show EReal from WithBot.some (a n)) - ((σ * n : ℝ) : EReal)
+  ⨅ n : ℕ, (a n).toEReal - ((σ * n : ℝ) : EReal)
 
 /-- The supporting value is the extended-real infimum of the tilted heights. -/
 theorem supportingValue_def (a : ℕ → WithTop ℝ) (σ : ℝ) :
     supportingValue a σ =
-      ⨅ n : ℕ, (show EReal from WithBot.some (a n)) - ((σ * n : ℝ) : EReal) := (rfl)
+      ⨅ n : ℕ, (a n).toEReal - ((σ * n : ℝ) : EReal) := (rfl)
 
 variable {a b h : ℕ → WithTop ℝ} {c σ τ : ℝ}
 
 /-- A lower bound on the supporting value is a lower bound on every tilted height. -/
 theorem le_supportingValue_iff {r : EReal} :
     r ≤ supportingValue a σ ↔
-      ∀ n, r ≤ (show EReal from WithBot.some (a n)) - ((σ * n : ℝ) : EReal) :=
+      ∀ n, r ≤ (a n).toEReal - ((σ * n : ℝ) : EReal) :=
   le_iInf_iff
 
 /-- A real intercept lies below the supporting value exactly when its affine
@@ -61,18 +69,18 @@ theorem coe_le_supportingValue_iff :
   intro n
   rw [EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _))
     (.inl (EReal.coe_ne_top _)), ← EReal.coe_add]
-  exact WithBot.coe_le_coe
+  rw [← WithTop.toEReal_coe, WithTop.toEReal_le_toEReal_iff]
 
 /-- The supporting value lies below each tilted height. -/
 theorem supportingValue_le (a : ℕ → WithTop ℝ) (σ : ℝ) (n : ℕ) :
     supportingValue a σ ≤
-      (show EReal from WithBot.some (a n)) - ((σ * n : ℝ) : EReal) :=
+      (a n).toEReal - ((σ * n : ℝ) : EReal) :=
   iInf_le _ n
 
 /-- Increasing the heights increases every supporting value. -/
 theorem supportingValue_mono (hab : a ≤ b) (σ : ℝ) :
     supportingValue a σ ≤ supportingValue b σ :=
-  iInf_mono fun n => EReal.sub_le_sub (WithBot.coe_le_coe.mpr (hab n)) le_rfl
+  iInf_mono fun n => EReal.sub_le_sub (WithTop.toEReal_le_toEReal_iff.mpr (hab n)) le_rfl
 
 /-- On natural-number indices the supporting value is antitone in the slope. -/
 theorem supportingValue_antitone (a : ℕ → WithTop ℝ) : Antitone (supportingValue a) := by
@@ -80,12 +88,13 @@ theorem supportingValue_antitone (a : ℕ → WithTop ℝ) : Antitone (supportin
   exact iInf_mono fun n => EReal.sub_le_sub le_rfl
     (EReal.coe_le_coe (mul_le_mul_of_nonneg_right hστ (Nat.cast_nonneg n)))
 
-/-- The empty point sequence has infinite supporting value at every slope. -/
+/-- The empty point sequence has supporting value `⊤` at every slope. -/
 @[simp]
 theorem supportingValue_top (σ : ℝ) : supportingValue (⊤ : ℕ → WithTop ℝ) σ = ⊤ := by
-  exact iInf_eq_top.mpr fun n => EReal.top_sub_coe (σ * n)
+  exact iInf_eq_top.mpr fun n => by
+    rw [Pi.top_apply, WithTop.toEReal_top, EReal.top_sub_coe]
 
-/-- A supporting value is infinite exactly when the point sequence is empty. -/
+/-- A supporting value equals `⊤` exactly when the point sequence is empty. -/
 @[simp]
 theorem supportingValue_eq_top_iff : supportingValue a σ = ⊤ ↔ a = ⊤ := by
   constructor
@@ -93,13 +102,10 @@ theorem supportingValue_eq_top_iff : supportingValue a σ = ⊤ ↔ a = ⊤ := b
     funext n
     have hn := supportingValue_le a σ n
     rw [hs] at hn
-    by_contra hfinite
-    obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp hfinite
-    rw [← hr] at hn
-    -- Identify the two-stage finite inclusion with the real inclusion into EReal.
-    change (⊤ : EReal) ≤ (r : EReal) - ((σ * n : ℝ) : EReal) at hn
-    exact (not_le_of_gt (EReal.coe_lt_top (r - σ * n)))
-      (by simpa only [← EReal.coe_sub] using hn)
+    rw [EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _))
+      (.inl (EReal.coe_ne_top _)), EReal.top_add_coe, top_le_iff,
+      WithTop.toEReal_eq_top_iff] at hn
+    exact hn
   · rintro rfl
     exact supportingValue_top σ
 
@@ -174,11 +180,12 @@ The equality holds also at infinite heights, for empty and singleton domains,
 and at indices outside the finite domain. -/
 theorem IsConvexSeq.iSup_supportingValue_add (hh : IsConvexSeq h) (n : ℕ) :
     (⨆ σ : ℝ, supportingValue h σ + ((σ * n : ℝ) : EReal)) =
-      (show EReal from WithBot.some (h n)) := by
+      (h n).toEReal := by
   refine le_antisymm (iSup_le fun σ => EReal.add_le_of_le_sub (supportingValue_le h σ n)) ?_
   by_contra hle
   obtain ⟨r, hr, hr'⟩ := EReal.exists_between_coe_real (lt_of_not_ge hle)
-  have hrh : (r : WithTop ℝ) ≤ h n := WithBot.coe_le_coe.mp hr'.le
+  have hrh : (r : WithTop ℝ) ≤ h n :=
+    WithTop.toEReal_le_toEReal_iff.mp ((WithTop.toEReal_coe r).trans_le hr'.le)
   obtain ⟨c, σ, hline, hrc⟩ := (hh.coe_le_iff_exists_affine_minorant n r).mp hrh
   have hs : ((c + σ * n : ℝ) : EReal) ≤
       supportingValue h σ + ((σ * n : ℝ) : EReal) := by
@@ -191,7 +198,7 @@ theorem IsConvexSeq.iSup_supportingValue_add (hh : IsConvexSeq h) (n : ℕ) :
 the supporting values of the sequence itself. -/
 theorem iSup_supportingValue_add_eq_lowerConvexEnvelope (ha : IsAdmissible a) (n : ℕ) :
     (⨆ σ : ℝ, supportingValue a σ + ((σ * n : ℝ) : EReal)) =
-      (show EReal from WithBot.some (lowerConvexEnvelope a n)) := by
+      (lowerConvexEnvelope a n).toEReal := by
   rw [← supportingValue_lowerConvexEnvelope ha]
   exact (isConvexSeq_lowerConvexEnvelope a).iSup_supportingValue_add n
 
@@ -201,24 +208,19 @@ theorem supportingValue_add_affine (a : ℕ → WithTop ℝ) (c m σ : ℝ) :
     supportingValue (fun n => a n + ((c + m * n : ℝ) : WithTop ℝ)) σ =
       supportingValue a (σ - m) + (c : EReal) := by
   have hterm (n : ℕ) :
-      (show EReal from WithBot.some (a n + ((c + m * n : ℝ) : WithTop ℝ))) -
+      (a n + ((c + m * n : ℝ) : WithTop ℝ)).toEReal -
           ((σ * n : ℝ) : EReal) =
-        ((show EReal from WithBot.some (a n)) - (((σ - m) * n : ℝ) : EReal)) -
+        ((a n).toEReal - (((σ - m) * n : ℝ) : EReal)) -
           ((-c : ℝ) : EReal) := by
     induction a n using WithTop.recTopCoe with
-    | top =>
-      -- The missing height is top also in the extended-real carrier.
-      change (⊤ : EReal) - ((σ * n : ℝ) : EReal) =
-        ⊤ - (((σ - m) * n : ℝ) : EReal) - ((-c : ℝ) : EReal)
-      rw [EReal.top_sub_coe, EReal.top_sub_coe, EReal.top_sub_coe]
+    | top => simp only [top_add, WithTop.toEReal_top, EReal.top_sub_coe]
     | coe r =>
-      -- The finite WithBot/WithTop presentation is definitionally the real inclusion.
-      change (((r + (c + m * n) : ℝ) : EReal) - ((σ * n : ℝ) : EReal)) = _
+      rw [← WithTop.coe_add, WithTop.toEReal_coe, WithTop.toEReal_coe]
       simp only [← EReal.coe_sub]
       congr 1
       ring
   calc
-    _ = ⨅ n : ℕ, ((show EReal from WithBot.some (a n)) -
+    _ = ⨅ n : ℕ, ((a n).toEReal -
           (((σ - m) * n : ℝ) : EReal)) - ((-c : ℝ) : EReal) := iInf_congr hterm
     _ = supportingValue a (σ - m) - ((-c : ℝ) : EReal) :=
       EReal.iInf_sub_coe _ (-c)
