@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
+public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 public import TauCeti.Topology.MetricSpace.Nonbranching
 
 /-!
