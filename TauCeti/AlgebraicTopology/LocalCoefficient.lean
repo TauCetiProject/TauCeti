@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
 
 /-!
 # Local coefficient systems on topological spaces
@@ -18,9 +20,10 @@ groupoid laws give all compatibility with concatenation and reversal of paths.
 
 This file provides the categorical operations needed before constructing singular chains with
 local coefficients: constant systems, pullback along continuous maps, evaluation at a point,
-path transport, and the monodromy representation of the fundamental group.  It also proves that
-these constructions interact in the expected way.  In particular, a morphism of local systems
-induces an intertwining map on monodromy representations, and transport along a path identifies
+path transport, compatibility of pullback with tensor products, and the monodromy representation
+of the fundamental group. It also proves that these constructions interact in the expected way.
+In particular, a morphism of local systems induces an intertwining map on monodromy representations,
+and transport along a path identifies
 the monodromy at its endpoints.  Homotopic maps have canonically isomorphic pullback functors,
 with components given by transport along the pointwise paths of the homotopy.
 
@@ -185,6 +188,39 @@ theorem pullbackConstantIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f :
     (pullbackConstantIso (R := R) f M).inv.app x = 𝟙 M :=
   (rfl)
 
+section Tensor
+
+open MonoidalCategory
+
+variable {S : Type w} [CommRing S]
+
+/-- Pullback commutes with the pointwise tensor product of local coefficient systems.
+This is the inverse tensorator of Mathlib's monoidal precomposition functor; on each fibre
+both directions are the identity. The ring and module fibres share a universe, as required
+by the monoidal structure on `ModuleCat`. -/
+def pullbackTensorIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L K : LocalCoefficientSystem.{w, v₂, w} S Y) :
+    (pullback f).obj (L ⊗ K) ≅ (pullback f).obj L ⊗ (pullback f).obj K :=
+  (Functor.Monoidal.μIso
+    ((Functor.whiskeringLeft _ _ (ModuleCat.{w} S)).obj (FundamentalGroupoid.map f))
+      L K).symm
+
+/-- The pullback tensor comparison is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackTensorIso_hom_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L K : LocalCoefficientSystem.{w, v₂, w} S Y) (x : FundamentalGroupoid X) :
+    (pullbackTensorIso f L K).hom.app x = 𝟙 _ := by
+  rfl
+
+/-- The inverse pullback tensor comparison is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L K : LocalCoefficientSystem.{w, v₂, w} S Y) (x : FundamentalGroupoid X) :
+    (pullbackTensorIso f L K).inv.app x = 𝟙 _ := by
+  rfl
+
+end Tensor
+
 section Homotopy
 
 variable {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {f g : C(X, Y)}
@@ -315,19 +351,19 @@ theorem pullback_transport {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
 /-- The monodromy representation of a local coefficient system at a basepoint. -/
 @[expose] def monodromyRepresentation (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
     Representation R (FundamentalGroup X x) (L.obj (FundamentalGroupoid.mk x)) where
-  toFun g := (L.map g).hom
+  toFun g := (L.map g.asHom).hom
   map_one' := by
     ext a
     simp
   map_mul' g h := by
     ext a
-    exact L.map_comp_apply h g a
+    exact L.map_comp_apply h.asHom g.asHom a
 
 @[simp]
 theorem monodromyRepresentation_apply
     (L : LocalCoefficientSystem.{u, v, w} R X) (x : X)
     (g : FundamentalGroup X x) (a : L.obj (FundamentalGroupoid.mk x)) :
-    monodromyRepresentation L x g a = L.map g a :=
+    monodromyRepresentation L x g a = L.map g.asHom a :=
   rfl
 
 /-- The monodromy representation of a constant local coefficient system is trivial. -/
@@ -355,7 +391,7 @@ representations on each fibre. -/
   toLinearMap := (η.app (FundamentalGroupoid.mk x)).hom
   isIntertwining' g := by
     ext a
-    exact η.naturality_apply g a
+    exact η.naturality_apply g.asHom a
 
 @[simp]
 theorem monodromyMap_apply {L K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K)
@@ -410,9 +446,10 @@ theorem monodromyFunctor_map_hom (x : X) {L K : LocalCoefficientSystem.{u, v, w}
     -- expression is not type-correct under the `implicit` transparency level".  This single
     -- `change` states the same goal purely in terms of `L.map`, after which `Functor.map_conj`
     -- and ordinary rewriting finish it.
-    change L.map α.hom (L.map g a) = L.map (α.conj g) (L.map α.hom a)
+    change L.map α.hom (L.map g.asHom a) = L.map (α.conj g).asHom (L.map α.hom a)
     rw [L.map_conj]
-    simp only [Iso.conj_apply, ModuleCat.comp_apply, Functor.mapIso_hom, Functor.mapIso_inv]
+    simp only [Iso.conj_apply_asHom, ModuleCat.comp_apply, Functor.mapIso_hom, Functor.mapIso_inv,
+      Functor.mapEnd_apply_asHom]
     have h : L.map α.inv (L.map α.hom a) = a := by
       rw [← L.map_comp_apply, α.hom_inv_id]
       exact L.map_id_apply _ a
@@ -423,6 +460,57 @@ theorem basepointChangeEquiv_apply (L : LocalCoefficientSystem.{u, v, w} R X) {x
     (p : Path x y) (a : L.obj (FundamentalGroupoid.mk x)) :
     basepointChangeEquiv L p a = transport L ⟦p⟧ a :=
   rfl
+
+section FiberRightAction
+
+open MulOpposite
+
+variable {X : TopCat.{v}} {x : X}
+
+/-- The right action of the fundamental group on the fiber of a local system: a class acts by the
+monodromy of its inverse, so that this is a homomorphism into the opposite endomorphism monoid. -/
+def fiberRightAction (L : LocalCoefficientSystem.{u, v, w} R X) :
+    FundamentalGroup X x →* (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ where
+  toFun g := op (monodromyRepresentation L x g⁻¹)
+  map_one' := by rw [inv_one, map_one, op_one]
+  map_mul' g h := by rw [mul_inv_rev, map_mul, op_mul]
+
+@[simp]
+theorem fiberRightAction_apply (L : LocalCoefficientSystem.{u, v, w} R X)
+    (g : FundamentalGroup X x) :
+    fiberRightAction L g = op (monodromyRepresentation L x g⁻¹) :=
+  (rfl)
+
+/-- **The right action on the fiber of a pullback**: the right action of `π₁(X, x)` on the fiber
+`(f^* L)_x = L_{f x}` is that of `π₁(Y, f x)` on the fiber of `L`, along `π₁(f)`. -/
+theorem fiberRightAction_pullback {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) :
+    fiberRightAction (x := x) ((pullback (R := R) f).obj L) =
+      (fiberRightAction (x := f x) L).comp (FundamentalGroup.map f x) :=
+  -- The fibers `(f^* L)_x` and `L_{f x}` agree by definition, which `rw` cannot see through, so
+  -- this is the one place where the two right actions are compared up to unfolding.
+  MonoidHom.ext fun g ↦ congrArg (fun h ↦ op (monodromyRepresentation L (f x) h))
+    (map_inv (FundamentalGroup.map f x) g)
+
+variable {R : Type u} [CommRing R]
+
+/-- The right action of group algebra elements on fibers is natural in the local system. -/
+theorem fiberRightAction_lift_naturality {L L' : LocalCoefficientSystem.{u, v, w} R X}
+    (φ : L ⟶ L')
+    (y : MonoidAlgebra R (FundamentalGroup X x)) (m : L.obj (FundamentalGroupoid.mk x)) :
+    (φ.app (FundamentalGroupoid.mk x)).hom
+        ((MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+          (FundamentalGroup X x) (fiberRightAction L) y).unop m) =
+      (MonoidAlgebra.lift R (Module.End R (L'.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+        (FundamentalGroup X x) (fiberRightAction L') y).unop
+        ((φ.app (FundamentalGroupoid.mk x)).hom m) := by
+  induction y using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add y z hy hz => simp [hy, hz]
+  | single g r =>
+    simp [MonoidAlgebra.lift_single]
+
+end FiberRightAction
 
 end LocalCoefficientSystem
 

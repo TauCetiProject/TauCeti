@@ -66,8 +66,8 @@ lemma fundamentalGroupMulEquivOfPath_symm_apply
     {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
     (γ : Path x₀ x₁) (g : FundamentalGroup X x₁) :
     (fundamentalGroupMulEquivOfPath γ).symm g =
-      Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ)
-        (Path.Homotopic.Quotient.trans g (Path.Homotopic.Quotient.mk γ).symm) := by
+      .of (Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ)
+        (Path.Homotopic.Quotient.trans g.asHom (Path.Homotopic.Quotient.mk γ).symm)) := by
   let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
   let α : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
     (Groupoid.isoEquivHom _ _).symm γq
@@ -83,9 +83,11 @@ lemma fundamentalGroupMulEquivOfPath_symm_apply
         rw [FundamentalGroupoid.id_eq_path_refl]
         exact (Path.Homotopic.Quotient.symm_trans γq).symm
   rw [MulEquiv.symm_apply_eq]
-  have hconj : Path.Homotopic.Quotient.trans γq
-      (Path.Homotopic.Quotient.trans g γq.symm) = α.symm.conj g := by
-    rw [CategoryTheory.Iso.conj_apply, CategoryTheory.Iso.symm_inv,
+  have hconj : (End.of (Path.Homotopic.Quotient.trans γq
+      (Path.Homotopic.Quotient.trans g.asHom γq.symm)) : FundamentalGroup X x₀) =
+        α.symm.conj g := by
+    ext
+    rw [CategoryTheory.Iso.conj_apply_asHom, CategoryTheory.Iso.symm_inv,
       CategoryTheory.Iso.symm_hom, hα_hom, hα_inv]
     simp only [FundamentalGroupoid.comp_eq]
   rw [hconj]
@@ -98,16 +100,13 @@ lemma fundamentalGroupMulEquivOfPath_eq_conj {X : Type*}
     [TopologicalSpace X] {x : X} (γ : Path x x) :
     fundamentalGroupMulEquivOfPath γ =
       MulAut.conj (fromPath (Path.Homotopic.Quotient.mk γ)) := by
-  ext g
+  ext g : 1
   rw [MulAut.conj_apply, ← MulEquiv.eq_symm_apply,
     fundamentalGroupMulEquivOfPath_symm_apply]
   -- In `π₁(X, x)` concatenation is multiplication in the reverse order and reversal is inversion
   -- (`FundamentalGroup.mul_def`, `FundamentalGroup.inv_def`); restate the path formula as a word.
-  have htrans (a b : FundamentalGroup X x) : a.trans b = b * a :=
-    mul_def.symm
-  have hsymm (a : FundamentalGroup X x) : Path.Homotopic.Quotient.symm a = a⁻¹ :=
-    inv_def.symm
-  rw [hsymm, htrans, htrans]
+  let c : FundamentalGroup X x := fromPath (Path.Homotopic.Quotient.mk γ)
+  change g = c⁻¹ * (c * g * c⁻¹) * c
   group
 
 open CategoryTheory in
@@ -119,15 +118,16 @@ lemma fundamentalGroupMulEquivOfPath_apply
     {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
     (γ : Path x₀ x₁) (g : FundamentalGroup X x₀) :
     fundamentalGroupMulEquivOfPath γ g =
-      Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ).symm
-        (Path.Homotopic.Quotient.trans g (Path.Homotopic.Quotient.mk γ)) := by
+      .of (Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ).symm
+        (Path.Homotopic.Quotient.trans g.asHom (Path.Homotopic.Quotient.mk γ))) := by
   let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
   let α : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
     (Groupoid.isoEquivHom _ _).symm γq
   -- Mathlib defines the transport as `α.conj`; the groupoid arrow and path quotient are
   -- definitionally the same type (`FundamentalGroupoid.Hom` is a path quotient).
-  change α.conj g = γq.symm.trans (g.trans γq)
-  rw [CategoryTheory.Iso.conj_apply]
+  change α.conj g = .of (γq.symm.trans (g.asHom.trans γq))
+  ext
+  rw [CategoryTheory.Iso.conj_apply_asHom]
   rfl
 
 open CategoryTheory in
@@ -151,7 +151,7 @@ lemma fundamentalGroupMulEquivOfPath_trans
       Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ)
         (Path.Homotopic.Quotient.mk δ)
     exact Path.Homotopic.Quotient.mk_trans γ δ
-  ext g
+  ext g : 1
   -- Unfold Mathlib's path transport to `Iso.conj` on the associated groupoid arrows.
   change ((Groupoid.isoEquivHom _ _).symm
       (Path.Homotopic.Quotient.mk (γ.trans δ))).conj g = β.conj (α.conj g)

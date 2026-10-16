@@ -96,7 +96,8 @@ theorem mapValue_extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
 
 /-- The group homomorphism on points induced by a morphism of value algebras.
 
-It sends an `A`-point `f : H →ₐ[R] A` to the `B`-point `φ ∘ f`. -/
+It sends an `A`-point `f : H →ₐ[R] A` to the `B`-point `φ ∘ f`. The generic lemmas
+`map_one`, `map_mul`, and `map_inv` express preservation of the group operations. -/
 @[expose] noncomputable def mapPoints {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     points (H := H) A ⟶ points (H := H) B :=
   GrpCat.ofHom (AlgHom.mapValue (H := H) φ.hom)
@@ -107,21 +108,6 @@ lemma mapPoints_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : points (H := H) A) :
     mapPoints (H := H) φ f = toConv (φ.hom.comp f.ofConv) :=
   AlgHom.mapValue_apply φ.hom f
-
-/-- The map on points sends the identity point to the identity point. -/
-lemma mapPoints_one {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
-    mapPoints (H := H) φ (1 : points (H := H) A) = 1 := by
-  exact (mapPoints (H := H) φ).hom.map_one
-
-/-- The map on points preserves multiplication of points. -/
-lemma mapPoints_mul {A B : CommAlgCat.{w} R} (φ : A ⟶ B) (f g : points (H := H) A) :
-    mapPoints (H := H) φ (f * g) = mapPoints (H := H) φ f * mapPoints (H := H) φ g := by
-  exact (mapPoints (H := H) φ).hom.map_mul f g
-
-/-- The map on points preserves inverses of points. -/
-lemma mapPoints_inv {A B : CommAlgCat.{w} R} (φ : A ⟶ B) (f : points (H := H) A) :
-    mapPoints (H := H) φ f⁻¹ = (mapPoints (H := H) φ f)⁻¹ := by
-  exact (mapPoints (H := H) φ).hom.map_inv f
 
 /-- `mapPoints` preserves identity morphisms of value algebras. -/
 @[simp]

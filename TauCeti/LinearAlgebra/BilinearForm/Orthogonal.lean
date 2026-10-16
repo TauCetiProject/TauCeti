@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
@@ -15,12 +17,10 @@ import Mathlib.Tactic.LinearCombination
 # Orthogonal complements of bilinear forms
 
 This file records facts about the orthogonal complement `LinearMap.BilinForm.orthogonal`
-that Mathlib lacks. A vector lies in the orthogonal complement of the span of one or two vectors
-exactly when it is orthogonal to each of them. Adjoining a vector `x` whose self-pairing is a
-non-zero-divisor dividing all its pairings (over a field: a non-isotropic vector) to an orthogonal
-basis of the orthogonal complement of `x` gives an orthogonal basis of the whole module, for a
-reflexive form; this is the inductive step of every diagonalization argument, over a field as over
-a valuation ring.
+that Mathlib lacks. Adjoining a vector `x` whose self-pairing is a non-zero-divisor dividing all
+its pairings (over a field: a non-isotropic vector) to an orthogonal basis of the orthogonal
+complement of `x` gives an orthogonal basis of the whole module, for a reflexive form; this is the
+inductive step of every diagonalization argument, over a field as over a valuation ring.
 Over a field in which `2` is invertible, a prescribed anisotropic vector or orthogonal pair
 extends to an orthogonal basis; no regularity of the ambient form is needed. Three mutually
 orthogonal anisotropic vectors also supply anisotropic vectors in the intersections of
@@ -31,11 +31,12 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 
 ## Main results
 
-* `LinearMap.BilinForm.mem_orthogonal_span_singleton_iff`,
-  `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: membership in the orthogonal complement of
-  the span of one or two vectors.
 * `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
   which the form is right-separating are independent.
+* `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
+  disjoint sets of indices are orthogonal.
+* `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
+  forms are isometric.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -69,21 +70,6 @@ namespace LinearMap.BilinForm
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
-/-- A vector is orthogonal to the span of a vector `x` exactly when it is orthogonal to `x`. -/
-theorem mem_orthogonal_span_singleton_iff (B : LinearMap.BilinForm K V) {x y : V} :
-    y ∈ B.orthogonal (K ∙ x) ↔ B x y = 0 := by
-  rw [orthogonal, Submodule.orthogonalBilin_span_singleton, LinearMap.mem_ker]
-
-/-- A vector is orthogonal to the span of two vectors exactly when it is orthogonal to both. -/
-theorem mem_orthogonal_span_pair_iff (B : LinearMap.BilinForm K V) {x y z : V} :
-    z ∈ B.orthogonal (Submodule.span K {x, y}) ↔ B x z = 0 ∧ B y z = 0 := by
-  constructor
-  · intro hz
-    exact ⟨hz x (Submodule.subset_span (by simp)), hz y (Submodule.subset_span (by simp))⟩
-  · rintro ⟨hx, hy⟩ n hn
-    obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hn
-    simp [hx, hy]
-
 /-- A family of pairwise orthogonal submodules, on each of which the form is right-separating, is
 independent. -/
 theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι : Type*}
@@ -93,6 +79,54 @@ theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι 
   have hle : ⨆ (j) (_ : j ≠ i), N j ≤ B.orthogonal (N i) :=
     iSup₂_le fun j hj y hy z hz ↦ hO i j (Ne.symm hj) z hz y hy
   exact congrArg Subtype.val (hN i ⟨x, hxi⟩ fun z ↦ hle hx z z.2)
+
+/-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
+sets are orthogonal. -/
+theorem apply_eq_zero_of_mem_biSup (B : LinearMap.BilinForm K V) {ι : Type*}
+    {N : ι → Submodule K V} (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    {s t : Set ι} (hst : Disjoint s t) {x y : V} (hx : x ∈ ⨆ i ∈ s, N i)
+    (hy : y ∈ ⨆ j ∈ t, N j) : B x y = 0 := by
+  have hle : ⨆ i ∈ s, N i ≤ ⨅ y ∈ ⨆ j ∈ t, N j, LinearMap.ker (B.flip y) :=
+    iSup₂_le fun i hi x hx ↦ by
+      have hker : ⨆ j ∈ t, N j ≤ LinearMap.ker (B x) :=
+        iSup₂_le fun j hj y hy ↦ hO i j (hst.ne_of_mem hi hj) x hx y hy
+      simpa only [Submodule.mem_iInf, LinearMap.mem_ker, flip_apply] using fun y hy ↦ hker hy
+  simpa using (Submodule.mem_iInf _).mp ((Submodule.mem_iInf _).mp (hle hx) y) hy
+
+/-- **Orthogonal sums of isometric forms are isometric.** If two modules are internal direct sums
+of pairwise orthogonal families of submodules indexed by the same type, and the restrictions of the
+forms to corresponding members are isometric, then the forms are isometric. -/
+theorem equivalent_of_isInternal {M : Type*} [AddCommMonoid M] [Module K M] {ι : Type*}
+    [DecidableEq ι] {B : LinearMap.BilinForm K V} {B' : LinearMap.BilinForm K M}
+    {N : ι → Submodule K V} {N' : ι → Submodule K M} (hN : DirectSum.IsInternal N)
+    (hN' : DirectSum.IsInternal N')
+    (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    (hO' : ∀ i j, i ≠ j → ∀ x ∈ N' i, ∀ y ∈ N' j, B' x y = 0)
+    (h : ∀ i, (B.restrict (N i)).Equivalent (B'.restrict (N' i))) : B.Equivalent B' := by
+  let u i : N i ≃ₗ[K] N' i := (h i).some.toLinearEquiv
+  let e := DirectSum.congrLinearEquiv u
+  -- Both forms, pulled back to `⨁ i, N i`, agree on pairs of generators.
+  have key : B.compl₁₂ (DirectSum.coeLinearMap N) (DirectSum.coeLinearMap N) =
+      B'.compl₁₂ (DirectSum.coeLinearMap N' ∘ₗ e.toLinearMap)
+        (DirectSum.coeLinearMap N' ∘ₗ e.toLinearMap) := by
+    refine DirectSum.linearMap_ext K fun i ↦ LinearMap.ext fun x ↦
+      DirectSum.linearMap_ext K fun j ↦ LinearMap.ext fun y ↦ ?_
+    simp only [LinearMap.comp_apply, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, e,
+      DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof, DirectSum.coeLinearMap_lof]
+    by_cases hij : i = j
+    · subst hij
+      exact ((h i).some.map_app y x).symm
+    · rw [hO i j hij _ x.2 _ y.2, hO' i j hij _ (u i x).2 _ (u j y).2]
+  let c := LinearEquiv.ofBijective (DirectSum.coeLinearMap N) hN
+  have hc (x : V) : DirectSum.coeLinearMap N (c.symm x) = x := c.apply_symm_apply x
+  refine ⟨⟨c.symm ≪≫ₗ e ≪≫ₗ LinearEquiv.ofBijective (DirectSum.coeLinearMap N') hN',
+    fun x y ↦ ?_⟩⟩
+  -- The isometry decomposes `x`, applies the isometries `u i` and recombines; the first step of
+  -- the calculation spells this composite out.
+  calc B' (DirectSum.coeLinearMap N' (e (c.symm x))) (DirectSum.coeLinearMap N' (e (c.symm y)))
+      = B (DirectSum.coeLinearMap N (c.symm x)) (DirectSum.coeLinearMap N (c.symm y)) :=
+        (LinearMap.congr_fun₂ key _ _).symm
+    _ = B x y := by rw [hc, hc]
 
 end LinearMap.BilinForm
 
@@ -303,8 +337,8 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
   refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
     simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
   · exact (hij rfl).elim
-  · exact (mem_orthogonal_span_singleton_iff B).1 (v j).2
-  · exact hB.eq_zero ((mem_orthogonal_span_singleton_iff B).1 (v i).2)
+  · simpa [orthogonal] using (v j).2
+  · exact hB.eq_zero (by simpa [orthogonal] using (v i).2)
   · simpa using iIsOrtho_def.1 hv i j fun h => hij (congrArg Fin.succ h)
 
 /-- A vector with unit self-pairing spans an orthogonal direct summand. -/
@@ -356,7 +390,7 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : 
     (hdim : finrank K V = n + 2) :
     ∃ b : Basis (Fin (n + 2)) K V, B.IsOrthoᵢ b ∧ b 0 = x ∧ b 1 = y := by
   let N := B.orthogonal (K ∙ x)
-  let y' : N := ⟨y, (mem_orthogonal_span_singleton_iff B).mpr hxy⟩
+  let y' : N := ⟨y, by simpa [N, orthogonal] using hxy⟩
   have hN : finrank K N = n + 1 := by
     have h := B.finrank_orthogonal_span_singleton_add_one hx
     dsimp only [N]

@@ -109,7 +109,7 @@ theorem finrank_torsion_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1
     [Fact ℓ.Prime] : Module.finrank (ZMod ℓ) (T.torsion ℓ) = 0 := by
   have hℓ : ℓ ≠ 0 := (Fact.out : ℓ.Prime).ne_zero
   have := T.isTorsionFree_pic_of_card_eq_one h
-  have := IsAddTorsionFree.of_isTorsionFree ℤ T.Pic
+  have := HasUniqueDiv.of_isTorsionFree ℤ T.Pic
   have : Subsingleton (T.torsion ℓ) := ⟨fun x y ↦ Subtype.ext <| by
     rw [(nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp x.2),
       (nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp y.2)]⟩

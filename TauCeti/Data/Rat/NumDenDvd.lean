@@ -23,6 +23,8 @@ the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass e
 
 * `Rat.den_dvd_of_intCast_eq_mul_intCast`: `a' = r * a` implies `r.den ∣ a`.
 * `Rat.num_dvd_of_intCast_eq_mul_intCast`: `a' = r * a` implies `r.num ∣ a'`.
+* `Rat.den_dvd_iff_exists_eq_intCast_div`: for `n ≠ 0`, `r.den ∣ n` exactly when `r = k / n` for
+  an integer `k`.
 -/
 
 public section
@@ -53,6 +55,20 @@ theorem num_dvd_of_intCast_eq_mul_intCast (r : ℚ) (h : (a' : ℚ) = r * a) : r
     simp [this]
   · rw [eq_divInt_of_intCast_eq_mul_intCast h ha]
     exact num_dvd a' ha
+
+/-- For `n ≠ 0`, the denominator of `r` divides `n` exactly when `r` is an integer multiple of
+`1 / n`. -/
+theorem den_dvd_iff_exists_eq_intCast_div {r : ℚ} {n : ℕ} (hn : n ≠ 0) :
+    r.den ∣ n ↔ ∃ k : ℤ, r = k / n := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨r.num * c, ?_⟩, fun ⟨k, hk⟩ ↦ ?_⟩
+  · have hc0 : (c : ℚ) ≠ 0 := by
+      rintro h
+      exact hn (by simpa [hc] using h)
+    rw [hc, Int.cast_mul, Nat.cast_mul, Int.cast_natCast, mul_div_mul_right _ _ hc0,
+      num_div_den]
+  · have h : ((k : ℤ) : ℚ) = r * (n : ℤ) := by
+      rw [hk, Int.cast_natCast, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn)]
+    exact Int.natCast_dvd_natCast.mp (den_dvd_of_intCast_eq_mul_intCast r h)
 
 end Rat
 

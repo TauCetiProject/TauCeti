@@ -37,6 +37,9 @@ so it is stated basis-free, on `T_ℓ E` itself.
 
 * `WeierstrassCurve.coe_proj_tateModuleGaloisRepresentation`: on the level `E[ℓ ^ n]` the
   representation is the coordinatewise action on points.
+* `WeierstrassCurve.tateModuleGaloisRepresentation_eq_one_iff`: over a separably closed field in
+  which `ℓ` is invertible, an automorphism acts trivially on `T_ℓ E` exactly when it fixes every
+  point of every level `E[ℓ ^ k]`.
 * `WeierstrassCurve.tateModuleGaloisRepresentation_eq_one_of_isOfFinOrder`: an automorphism
   fixing `E[ℓ ^ k]` pointwise, with `ℓ ^ k ≥ 3`, and acting on `T_ℓ E` with finite order acts
   trivially on `T_ℓ E` (Serre's lemma).
@@ -129,6 +132,28 @@ theorem tateModuleGaloisRepresentation_eq_one_of_finite_image {H : Subgroup (K �
   refine (hH.preimage Units.val_injective.injOn).subset ?_
   rintro _ ⟨n, rfl⟩
   exact ⟨σ ^ n, H.pow_mem hσ n, by simp [Representation.asGroupHom_apply]⟩
+
+/-- **The automorphisms acting trivially on `T_ℓ E` are those fixing the `ℓ`-power torsion.** Over
+a separably closed field `K` in which `ℓ` is invertible, an automorphism `σ` acts trivially on the
+Tate module of an elliptic curve exactly when it fixes every point of every level `E[ℓ ^ k]`. -/
+theorem tateModuleGaloisRepresentation_eq_one_iff [IsSepClosed K] [W.IsElliptic]
+    (hℓ : (ℓ : K) ≠ 0) {σ : K ≃ₐ[F] K} :
+    W.tateModuleGaloisRepresentation ℓ σ = 1 ↔
+      ∀ k, ∀ P : (W⁄K).toAffine.Point, ℓ ^ k • P = 0 → Affine.Point.map σ.toAlgHom P = P := by
+  refine ⟨fun hσ k P hP ↦ ?_, fun h ↦ LinearMap.ext fun x ↦ TateModule.ext fun k ↦ Subtype.ext ?_⟩
+  · -- The count of `E[ℓ ^ n]` is stated with the classical decidable equality on `K`.
+    have hcard (n : ℕ) :
+        Nat.card (TateModuleLevel ℓ (W⁄K).toAffine.Point n) = (ℓ ^ n) ^ 2 := by
+      convert (W⁄K).natCard_tateModuleLevel hℓ n
+    -- Every point of `E[ℓ ^ k]` is the `k`-th component of a point of `T_ℓ E`.
+    obtain ⟨x, hx⟩ := TateModule.proj_surjective
+      (TateModule.tateModuleTransition_surjective_of_natCard (Fact.out : ℓ.Prime).ne_zero hcard) k
+      ⟨P, AddSubgroup.torsionBy.nsmul_iff.2 hP⟩
+    have h := W.coe_proj_tateModuleGaloisRepresentation σ x k
+    rw [hσ, Module.End.one_apply, hx] at h
+    exact h.symm
+  · rw [coe_proj_tateModuleGaloisRepresentation, Module.End.one_apply,
+      h k _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k x).2)]
 
 end Representation
 

@@ -160,6 +160,9 @@ theorem apply_characterCarryCocycle_of_mk_eq_fieldArtinMap
       χ (.ofMul (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K)) := by
   -- An open normal subgroup `V` of `G_K` on which `χ` vanishes, and the character `χbar` of the
   -- abelianized Galois group of the layer `V ◁ G_K` that `χ` induces.
+  have : T2Space (AbsoluteGaloisGroup K) := krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
   obtain ⟨V, hV⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (hχ.preimage continuous_ofMul) (by simp)
   let χm : AbsoluteGaloisGroup K →* Multiplicative (AddCircle (1 : ℚ)) :=

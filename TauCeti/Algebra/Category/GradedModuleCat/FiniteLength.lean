@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
-public import TauCeti.CategoryTheory.Simple
+public import TauCeti.CategoryTheory.Simple.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 

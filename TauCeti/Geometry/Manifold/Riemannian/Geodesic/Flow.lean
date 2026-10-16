@@ -87,8 +87,9 @@ theorem maximalIntegralCurveFlowDomain_geodesicSpray :
     maximalIntegralCurveFlowDomain (geodesicSpray I M) =
       {q : TangentBundle I M × ℝ | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} := by
   ext ⟨z, t⟩
-  rw [mem_maximalIntegralCurveFlowDomain, mem_ofPred_eq,
-    ← maximalIntegralCurveInterval_geodesicSpray]
+  rw [mem_maximalIntegralCurveFlowDomain]
+  simp only [Set.mem_ofPred_eq]
+  rw [← maximalIntegralCurveInterval_geodesicSpray]
 
 variable [T2Space M]
 

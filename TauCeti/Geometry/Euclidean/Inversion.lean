@@ -77,6 +77,23 @@ theorem LinearIsometry.map_inversion (f : V →ₗᵢ[ℝ] V₂) (c : V) (R : �
 
 namespace EuclideanGeometry
 
+/-- The derivative of inversion away from its centre is a continuous linear equivalence. -/
+noncomputable def inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (c z : V) (R : ℝ) (hR : R ≠ 0) (hz : z ≠ c) : V ≃L[ℝ] V :=
+  ((ℝ ∙ (z - c))ᗮ.reflection).toContinuousLinearEquiv.trans
+    (ContinuousLinearEquiv.smulLeft (Units.mk0 ((R / dist z c) ^ 2)
+      (pow_ne_zero _ (div_ne_zero hR (dist_ne_zero.mpr hz)))))
+
+/-- The inversion derivative equivalence represents the actual Fréchet derivative. -/
+theorem hasFDerivAt_inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (c z : V) (R : ℝ)
+    (hR : R ≠ 0) (hz : z ≠ c) :
+    HasFDerivAt (inversion c R) (inversionFDerivEquiv c z R hR hz).toContinuousLinearMap z := by
+  convert hasFDerivAt_inversion hz using 1
+  ext v
+  -- Reflection followed by scalar multiplication evaluates to Mathlib’s derivative formula.
+  rfl
+
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
 /-- **Inversion reverses orientation**: away from its centre, the derivative of the inversion in a

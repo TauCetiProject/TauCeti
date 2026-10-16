@@ -361,12 +361,12 @@ theorem finrank_end_eq_one_of_forall_subsingleton
     (hM : Indecomposable M) (h : ∀ a : Q, a ≠ i → Subsingleton (M.obj a)) :
     Module.finrank k (End M) = 1 := by
   obtain ⟨y, -, hspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM h
-  have hid : (𝟙 M : End M) ≠ 0 := fun hzero ↦
-    hM.1 ((Limits.IsZero.iff_id_eq_zero M).mpr hzero)
-  refine (finrank_eq_one_iff_of_nonzero' (𝟙 M) hid).mpr fun f ↦ ?_
-  have hfy : (f.app i) y ∈ Submodule.span k {y} := by rw [hspan]; trivial
+  have hid : (1 : End M) ≠ 0 := fun hzero ↦
+    hM.1 ((Limits.IsZero.iff_id_eq_zero M).mpr (congrArg End.asHom hzero))
+  refine (finrank_eq_one_iff_of_nonzero' 1 hid).mpr fun f ↦ ?_
+  have hfy : (f.asHom.app i) y ∈ Submodule.span k {y} := by rw [hspan]; trivial
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hfy
-  refine ⟨c, NatTrans.ext (funext fun a ↦ ?_)⟩
+  refine ⟨c, End.ext (NatTrans.ext (funext fun a ↦ ?_))⟩
   rcases eq_or_ne a i with rfl | ha
   · refine ModuleCat.hom_ext (LinearMap.ext fun z ↦ ?_)
     have hz : z ∈ Submodule.span k {y} := by rw [hspan]; trivial

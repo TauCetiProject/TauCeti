@@ -89,7 +89,7 @@ theorem e_mul_f_mul_e_of_mul_self_eq_zero (hEE : E * E = 0) (hef : E * F - F * E
     simp only [mul_sub, ← mul_assoc, hEE, zero_mul, zero_sub] at h
     exact h.symm
   -- Cancel doubling in the additive group.
-  apply (nsmul_right_inj (by decide : (2 : ℕ) ≠ 0)).1
+  apply ((AddCommute.all _ _).nsmul_right_inj (by decide : (2 : ℕ) ≠ 0)).1
   rw [← hhe, ← h1, h2, two_nsmul, sub_neg_eq_add]
 
 /-- **A square-zero lowering element satisfies `F E F = F`**, the mirror image of

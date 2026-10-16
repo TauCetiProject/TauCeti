@@ -41,6 +41,12 @@ milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
 `j(E) ∉ {0, 1728}`.
 
+A change of variables that fixes three affine points `(x₁, y₁)`, `(x₁, y₁')` and `(x₂, y₂)`, with
+`x₁ - x₂` and `y₁ - y₁'` units, is the identity (`VariableChange.eq_one_of_isUnit_sub`): the two
+`x`-coordinates force `u² = 1` and `r = 0`, the two `y`-coordinates over `x₁` force `u = 1`, and
+then `s = t = 0`. Read on the points of `E[N]` for `N ≥ 3`, this is the rigidity of full level
+structures.
+
 Everything here is stated over a commutative ring: `⟨-1, 0, -a₁, -a₃⟩` is an admissible change
 of variables for a Weierstrass curve over any commutative ring, and the two identities it
 satisfies are polynomial. Only the nontriviality `negVariableChange_ne_one` needs the curve to
@@ -319,6 +325,33 @@ lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing 
       rintro rfl
       exact C.u.ne_zero (hu.symm.trans (map_zero _))
     exact ⟨⟨Units.mk0 u hu₀, r, s, t⟩, VariableChange.ext (Units.ext hu) hr hs ht⟩
+
+/-- **A change of variables fixing three suitable points is the identity.** Let
+`C = (u, r, s, t)` fix the affine points `(x₁, y₁)`, `(x₁, y₁')` and `(x₂, y₂)` under
+`(x, y) ↦ (u²x + r, u³y + u²sx + t)`. If `x₁ - x₂` and `y₁ - y₁'` are units, then `C = 1`. For
+points of a Weierstrass curve, `(x₁, y₁')` is typically the negative of `(x₁, y₁)`, and the
+hypotheses then say that the three points have distinct images in every residue field. -/
+lemma VariableChange.eq_one_of_isUnit_sub (C : VariableChange R) {x₁ x₂ y₁ y₁' y₂ : R}
+    (hx : IsUnit (x₁ - x₂)) (hy : IsUnit (y₁ - y₁'))
+    (hx₁ : (C.u : R) ^ 2 * x₁ + C.r = x₁) (hx₂ : (C.u : R) ^ 2 * x₂ + C.r = x₂)
+    (hy₁ : (C.u : R) ^ 3 * y₁ + (C.u : R) ^ 2 * C.s * x₁ + C.t = y₁)
+    (hy₁' : (C.u : R) ^ 3 * y₁' + (C.u : R) ^ 2 * C.s * x₁ + C.t = y₁')
+    (hy₂ : (C.u : R) ^ 3 * y₂ + (C.u : R) ^ 2 * C.s * x₂ + C.t = y₂) : C = 1 := by
+  have hu2 : (C.u : R) ^ 2 = 1 := by
+    have : ((C.u : R) ^ 2 - 1) * (x₁ - x₂) = 0 := by linear_combination hx₁ - hx₂
+    exact sub_eq_zero.mp (hx.mul_left_eq_zero.mp this)
+  have hu3 : (C.u : R) ^ 3 = 1 := by
+    have : ((C.u : R) ^ 3 - 1) * (y₁ - y₁') = 0 := by linear_combination hy₁ - hy₁'
+    exact sub_eq_zero.mp (hy.mul_left_eq_zero.mp this)
+  have hu : (C.u : R) = 1 := by linear_combination hu3 - (C.u : R) * hu2
+  have hs : C.s = 0 := by
+    have : C.s * (x₁ - x₂) = 0 := by
+      linear_combination hy₁ - hy₂ - (y₁ - y₂) * hu3 - C.s * (x₁ - x₂) * hu2
+    exact hx.mul_left_eq_zero.mp this
+  rw [VariableChange.one_def]
+  refine VariableChange.ext (Units.ext hu) ?_ hs ?_
+  · linear_combination hx₁ - x₁ * hu2
+  · linear_combination hy₁ - y₁ * hu3 - x₁ * (C.u : R) ^ 2 * hs
 
 end WeierstrassCurve
 

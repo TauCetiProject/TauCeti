@@ -113,7 +113,7 @@ theorem isEmbedding_precompGenLoop : IsEmbedding (precompGenLoop (X := X) (x := 
   refine ⟨?_, fun f g h => Subtype.ext ((ContinuousMap.cancel_right hq).1
     (congrArg Subtype.val h))⟩
   exact IsInducing.of_comp hcont continuous_subtype_val
-    ((ContinuousMap.isInducing_precomp_of_surjective q hq).comp IsInducing.subtypeVal)
+    ((ContinuousMap.isInducing_precomp_of_surjective q hq).comp ⟨rfl⟩)
 
 variable (hb' : ∀ z, q z = b₀ → z ∈ Cube.boundary N)
 

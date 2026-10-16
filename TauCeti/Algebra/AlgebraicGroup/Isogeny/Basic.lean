@@ -282,7 +282,7 @@ theorem isCentralIsogeny_id (H : _root_.CommHopfAlgCat.{v} R) :
 /-- An isogeny is surjective on points valued in an algebraically closed field. -/
 theorem IsIsogeny.mapPointsFunctor_app_surjective (hf : IsIsogeny f)
     (F : Type w) [Field F] [Algebra R F] [IsAlgClosed F] :
-    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of R F)) :=
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R F)) :=
   mapPointsFunctor_app_surjective_of_faithfullyFlat F f hf.finiteType hf.faithfullyFlat
 
 end TauCeti.CommHopfAlgCat
