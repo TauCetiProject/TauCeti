@@ -12,11 +12,12 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 /-!
 # Localization of planar Green fields
 
-If the index of a closed absolutely continuous curve vanishes outside an open field domain,
-its trace and the topological support of its winding weight lie in a compact subset of that
-domain. The same holds for finite weighted families when their total index vanishes outside
-the domain. Smooth cutoffs then give globally `C¹` fields preserving both the circulation integral
-and the winding-weighted curl integral.
+The union of a closed absolutely continuous curve's trace and winding support is compact.
+The same holds for finitely many closed AC traces and their total weighted winding support,
+without any index-vanishing assumption. If every trace lies in an open field domain and the
+single or total index vanishes outside that domain, the compact union is contained in the
+domain. Smooth cutoffs then give globally `C¹` fields preserving circulation along each curve
+and the single or total winding-weighted curl integral.
 -/
 
 public section
