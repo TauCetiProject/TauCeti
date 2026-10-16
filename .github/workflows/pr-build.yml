@@ -1,15 +1,13 @@
 name: pr-build
 run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
-# Builds the exact immutable PR head in a TRUSTED, base-branch-defined workflow. A PR cannot
-# change what runs here (pull_request_target uses the base definition). Before Lake sees the
-# candidate, the workflow proves that its lakefile is an ordinary file byte-identical to the
-# PR's merge base and that its pins are either inherited unchanged or a validated forward bump.
-# Workflow-pinned audit tooling is mounted separately; candidate scripts are never invoked by
-# the required build. Candidate Lean code runs only under bwrap (offline; writes confined to
-# the checkout's .lake; no secrets or token in reach). Scope is a separate policy status, so an
-# old PR keeps its own historical pins and sources rather than being synthetically merged or
-# overlaid onto today's main. The `build` status on the exact head SHA is the required check.
+# Builds a deterministic integration of immutable PR head H with main B captured once
+# by the existing dispatch. Scope, review and approval remain bound to raw H and its
+# merge base. Record tested commit/tree T explicitly; the status on H describes that
+# integration, never claims T is raw H. Bors and native merge groups build their supplied
+# frozen candidate unchanged. No main-push trigger or current-base barrier is added.
+# Workflow-pinned tooling and attested Lake config remain mandatory; candidate Lean
+# runs only offline under bwrap, and ordinary PR outputs never publish shared caches.
 #
 # The job below is deliberately NOT named `build`: GitHub Actions auto-creates a check-run named
 # after the job, and a check-run named `build` would collide with the required `build` STATUS this
@@ -264,8 +262,8 @@ jobs:
       # Full history is intentional. lake cache get walks ancestors until it reaches a published
       # main commit, then Lake's input hashes invalidate only changed modules and their downstream
       # dependents. The cache step below limits how many ancestors it reads. The checkout is the
-      # immutable event head itself: no refs/pull/N/merge, no local merge, and no source/config
-      # overlay.
+      # immutable raw event head. Scope/config/bump authorization runs on it before
+      # preparing the prospective integration below.
       - name: Checkout the exact candidate head (untrusted contents, no credentials)
         if: ${{ env.INFRA != '1' }}
         uses: actions/checkout@v4
@@ -351,7 +349,7 @@ jobs:
                 echo "HUMAN_LAKEFILE=1" >> "$GITHUB_ENV"
               fi
               echo "OUT_OF_SCOPE=1" >> "$GITHUB_ENV"
-              echo "::warning::PR changes paths outside TauCeti/ + Lake pins — its exact head is still sandbox-built when its Lake config is attested, but merging needs human review"
+              echo "::warning::PR changes paths outside TauCeti/ + Lake pins — its integration is still sandbox-built when its Lake config is attested, but merging needs human review"
             fi
           fi
           # Whether THIS pull request changes the Lake pins, asked of the immutable commit this
@@ -473,8 +471,8 @@ jobs:
             echo "$long"
           fi
 
-      # The current target tip is trusted policy input for forward-bump validation only. It is
-      # never used as the source or configuration tree of an ordinary PR build.
+      # Capture B once: both forward-bump policy and ordinary PR integration use this
+      # immutable checkout. Main advancing later does not restart or invalidate this run.
       - name: Checkout current base policy input (trusted)
         if: ${{ env.INFRA != '1' }}
         uses: actions/checkout@v4
@@ -482,7 +480,9 @@ jobs:
           ref: "${{ steps.pr.outputs.base_sha }}"
           path: base
           persist-credentials: false
-          fetch-depth: 1
+          # Ordinary integration needs B's ancestry even for an old fork whose
+          # object database does not contain any recent main commits.
+          fetch-depth: ${{ env.IS_BATCH == 'true' && 1 || 0 }}
 
       - name: Checkout the PR merge base (trusted historical configuration)
         if: ${{ env.INFRA != '1' }}
@@ -536,8 +536,8 @@ jobs:
           fi
 
       # For a pin-changing candidate, the workflow-pinned validator proves a forward Mathlib and
-      # toolchain move before dependency setup. Unchanged historical pins inherit trust from the
-      # attested merge base and need no comparison with today's main.
+      # toolchain move before dependency setup. This raw-H authorization stays separate
+      # from the prospective integration's inherited B configuration.
       - name: Validate the Lake-pin bump before building
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         env: { GH_TOKEN: "${{ github.token }}" }
@@ -549,6 +549,49 @@ jobs:
             echo "BUMP_BAD=1" >> "$GITHUB_ENV"
             echo "INFRA=1" >> "$GITHUB_ENV"
             echo "::warning::Lake-pin change is not a validated forward bump — refusing to execute it"
+          fi
+
+      - name: Prepare and record the tested integration (frozen batches unchanged)
+        id: integration
+        if: ${{ env.INFRA != '1' }}
+        env:
+          RAW_HEAD: ${{ steps.pr.outputs.sha }}
+          CAPTURED_BASE: ${{ steps.pr.outputs.base_sha }}
+          CANDIDATE_MODE: ${{ env.IS_BATCH == 'true' && 'frozen-candidate' || 'pr-integration' }}
+        run: |
+          set -euo pipefail
+          rc=0
+          python3 gate/scripts/prepare_pr_integration.py prepare \
+            --head "$RAW_HEAD" --base "$CAPTURED_BASE" --mode "$CANDIDATE_MODE" \
+            --identity "$RUNNER_TEMP/tested-integration.json" \
+            --pins-changed "${BUMP:-0}" --bump-validated "${BUMP_VALIDATED:-0}" || rc=$?
+          if [ "$rc" != 0 ]; then
+            echo "INTEGRATION_BAD=1" >> "$GITHUB_ENV"
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            if [ "$rc" = 2 ]; then echo "INTEGRATION_CONFLICT=1" >> "$GITHUB_ENV"; fi
+            exit "$rc"
+          fi
+          cat "$RUNNER_TEMP/tested-integration.json" >> "$GITHUB_STEP_SUMMARY"
+          # Assembly can introduce B's .lake entry, so normalize again before any
+          # trusted setup writes into it. Raw H remains at pr-raw-head for object reads.
+          rm -rf pr/.lake
+          mkdir -p pr/.lake
+
+      - name: Attest integrated Lake configuration before executing Lake
+        if: ${{ env.INFRA != '1' && env.IS_BATCH != 'true' }}
+        env:
+          TESTED_SHA: ${{ steps.integration.outputs.tested_sha }}
+        run: |
+          set -euo pipefail
+          delta=0
+          for pin in lake-manifest.json lean-toolchain; do
+            cmp -s "base/$pin" "pr/$pin" || delta=1
+          done
+          if ! bash gate/scripts/attest-pr-config.sh base pr "$TESTED_SHA" \
+               '${{ github.event_name }}' 1 "$delta"; then
+            echo "CONFIG_BAD=1" >> "$GITHUB_ENV"
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            exit 1
           fi
 
       - name: Candidate source shape guard (reject symlinks)
@@ -564,13 +607,12 @@ jobs:
       - name: Prepare inherited Mathlib shim obligations
         if: ${{ env.INFRA != '1' }}
         run: |
-          # Compare with the inherited registry (not today's base tip), so unrelated source
-          # PRs from inheriting registry edits that landed after they branched.
+          # Preserve obligations inherited from the captured integration base.
           base_shims="$RUNNER_TEMP/base-mathlib-shims.json"
-          if [ -f mergebase/TauCeti/mathlib-shims.json ]; then
-            cp mergebase/TauCeti/mathlib-shims.json "$base_shims"
+          if [ -f base/TauCeti/mathlib-shims.json ]; then
+            cp base/TauCeti/mathlib-shims.json "$base_shims"
             echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
-            echo "BASE_SHIM_ROOT=$(realpath mergebase)" >> "$GITHUB_ENV"
+            echo "BASE_SHIM_ROOT=$(realpath base)" >> "$GITHUB_ENV"
             echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
           elif [ -f pr/TauCeti/mathlib-shims.json ]; then
             # A PR that introduces the registry has no inherited obligations, but its entries are
@@ -578,7 +620,7 @@ jobs:
             # mechanism and is left alone until it rebases onto a registry-bearing main.
             printf '[]\n' > "$base_shims"
             echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
-            echo "BASE_SHIM_ROOT=$(realpath mergebase)" >> "$GITHUB_ENV"
+            echo "BASE_SHIM_ROOT=$(realpath base)" >> "$GITHUB_ENV"
             echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
           else
             echo "SHIM_CHECK=0" >> "$GITHUB_ENV"
@@ -891,12 +933,14 @@ jobs:
           EVENT: ${{ github.event_name }}
           IS_BATCH: ${{ env.IS_BATCH }}
           NUM: ${{ steps.pr.outputs.num }}
-          # The immutable commits being built: the batch's base, or the PR's base commit
-          # (a three-dot compare diffs from the merge base), and the exact head.
+          # Raw H remains the GitHub metadata/label identity. TESTED_* below select
+          # the local T-vs-B module diff without asking GitHub about synthetic T.
           BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
           HEAD: ${{ steps.pr.outputs.sha }}
           HEAD_REPO: ${{ steps.pr.outputs.repo }}
           SCOPE_REPO: pr
+          TESTED_BASE: ${{ steps.pr.outputs.base_sha }}
+          TESTED_HEAD: ${{ steps.integration.outputs.tested_sha }}
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/lint-scope"
@@ -932,7 +976,7 @@ jobs:
             --baseline gate/scripts/lint-dot-notation-baseline.txt \
             --mathlib-root pr/.lake/packages/mathlib/Mathlib \
             --source-root pr/TauCeti \
-            ${DOT_ONLY_MODULES:+--only-modules "$DOT_ONLY_MODULES" --base-source-root mergebase/TauCeti}
+            ${DOT_ONLY_MODULES:+--only-modules "$DOT_ONLY_MODULES" --base-source-root base/TauCeti}
 
       # Enable Lake's built-in artifact cache for the build below ONLY when the public read
       # endpoints are configured (repo variables). Until then this is a no-op: LAKE_*
@@ -1056,6 +1100,8 @@ jobs:
           CI_RESOURCE_WORKFLOW_SHA: ${{ github.workflow_sha }}
           CI_RESOURCE_TESTED_HEAD: ${{ steps.pr.outputs.status_sha }}
           CI_RESOURCE_TESTED_BASE: ${{ steps.pr.outputs.base_sha }}
+          CI_RESOURCE_TESTED_COMMIT: ${{ steps.integration.outputs.tested_sha }}
+          CI_RESOURCE_TESTED_TREE: ${{ steps.integration.outputs.tested_tree }}
           CI_RESOURCE_DEPENDENCY_BUMP: ${{ env.PINS_KNOWN == '1' && (env.BUMP == '1' && '1' || '0') || 'unknown' }}
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
@@ -1066,6 +1112,14 @@ jobs:
           # early and reddened every PR build (#694). All prose now lives in the script.
           export TAUCETI_PROJECT_ROOT="$PWD/pr"
           export TAUCETI_TRUSTED_SCRIPTS="$PWD/gate/scripts"
+          # T borrows immutable Git objects from H and B. Expose only their object
+          # databases read-only so Lake's Git queries see the same commit inside
+          # the sandbox. Neither checkout's config/hooks nor its scripts are mounted.
+          object_mounts=()
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
+            object_mounts=(--ro-bind "$PWD/pr-raw-head/.git/objects" "$PWD/pr-raw-head/.git/objects"
+                           --ro-bind "$PWD/base/.git/objects" "$PWD/base/.git/objects")
+          fi
           # `env -i` and `--remount-ro /` are both load-bearing. `--clearenv` clears the child's
           # environment but bwrap keeps its own and is PID 1 here, so the launcher's environment
           # would otherwise be readable at /proc/1/environ (containers/bubblewrap#725). And
@@ -1085,6 +1139,7 @@ jobs:
             --ro-bind "$LINT_DRIVER_DIR" "$LINT_DRIVER_DIR" \
             --ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR" \
             --ro-bind "$PWD/gate" "$PWD/gate" \
+            "${object_mounts[@]}" \
             --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
             --remount-ro / \
             --setenv PATH "$HOME/.elan/bin:/usr/bin:/bin" \
@@ -1162,6 +1217,11 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          RAW_HEAD: ${{ steps.pr.outputs.sha }}
+          CAPTURED_BASE: ${{ steps.pr.outputs.base_sha }}
+          CANDIDATE_MODE: ${{ env.IS_BATCH == 'true' && 'frozen-candidate' || 'pr-integration' }}
+          TESTED_SHA: ${{ steps.integration.outputs.tested_sha }}
+          TESTED_TREE: ${{ steps.integration.outputs.tested_tree }}
           TESTED_SCOPE_HEAD: ${{ steps.pr.outputs.sha }}
           TESTED_SCOPE_BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.mergebase }}
           SCOPE_PR: ${{ steps.pr.outputs.num }}
@@ -1193,6 +1253,14 @@ jobs:
               head_moved=1
               echo "::warning::PR is now '${now:-unreadable}', not '${{ steps.pr.outputs.sha }} ${{ steps.pr.outputs.base_ref }}'"
             fi
+          fi
+
+          identity_ok=0
+          if python3 gate/scripts/prepare_pr_integration.py verify \
+               --head "$RAW_HEAD" --base "$CAPTURED_BASE" --mode "$CANDIDATE_MODE" \
+               --identity "$RUNNER_TEMP/tested-integration.json" \
+               --tested-sha "$TESTED_SHA" --tested-tree "$TESTED_TREE"; then
+            identity_ok=1
           fi
 
           post_fail=0
@@ -1251,6 +1319,10 @@ jobs:
           # that a different configuration built.
           if [ "$head_moved" = 1 ]; then
             state=failure; desc="the pull request changed during this build — the run for its current state statuses it"
+          elif [ "${{ env.INTEGRATION_CONFLICT }}" = "1" ]; then
+            state=failure; desc="integration with captured main conflicts — human resolution required; see H/B in run"
+          elif [ "$identity_ok" != 1 ]; then
+            state=failure; desc="build not run — tested H/B/T identity missing or invalid"
           elif [ "${{ env.CONFIG_BAD }}" = "1" ]; then
             state=failure; desc="build not run — candidate Lake configuration failed trusted attestation"
           elif [ "${{ env.BUMP_BAD }}" = "1" ] || [ "${{ env.INFRA }}" = "1" ] \
@@ -1271,7 +1343,12 @@ jobs:
                || [ "${{ steps.shim_expiry.outcome }}" = "failure" ]; then
             state=failure; desc="shim expiry probe failed — see failed checker step"
           elif [ "${{ steps.build.outcome }}" = "success" ]; then
-            state=success; desc="exact-head sandboxed build and workflow-pinned audits passed"
+            state=success
+            if [ "${{ env.IS_BATCH }}" = "true" ]; then
+              desc="frozen candidate sandboxed build and workflow-pinned audits passed"
+            else
+              desc="integration B=${CAPTURED_BASE:0:12} T=${TESTED_SHA:0:12} passed sandboxed build and audits"
+            fi
           else
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           fi
@@ -1300,7 +1377,7 @@ jobs:
             sc_state=failure; sc_desc="trusted scope guard did not complete — re-run pr-build"
           elif [ "${{ env.BUMP_BAD }}" = "1" ]; then
             sc_state=failure; sc_desc="Lake pin change failed the trusted bump validator"
-          elif [ "${{ env.INFRA }}" = "1" ]; then
+          elif [ "${{ env.INFRA }}" = "1" ] && [ "${{ env.INTEGRATION_BAD }}" != "1" ]; then
             sc_state=failure; sc_desc="trusted scope/config checks did not complete — see the run; human review may be required"
           elif [ "${{ env.TOO_LARGE }}" = "1" ]; then
             sc_state=failure; sc_desc="diff exceeds 2000 added/removed lines or 2000 files — split into smaller PRs to keep review manageable"
@@ -1337,6 +1414,15 @@ jobs:
           fi
           [ "$state" = "success" ]
 
+      - name: Upload trusted tested H B T identity
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tested-integration-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tested-integration.json
+          if-no-files-found: warn
+          retention-days: 30
+
       # Host resource observations are outside all candidate-writable mounts.
       - name: Upload trusted host resource observations (statistics only)
         if: always()
@@ -1362,6 +1448,8 @@ jobs:
           MERGE_ENGINE: ${{ github.event_name == 'merge_group' && 'queue' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (github.event.client_payload.base_ref == 'main' && 'bors' || 'bors_pilot') || 'pr') }}
           TESTED_HEAD: ${{ steps.pr.outputs.status_sha }}
           TESTED_BASE: ${{ steps.pr.outputs.base_sha }}
+          TESTED_COMMIT: ${{ steps.integration.outputs.tested_sha }}
+          TESTED_TREE: ${{ steps.integration.outputs.tested_tree }}
           BORS_BATCH: ${{ github.event.client_payload.batch_id }}
           BORS_MEMBERS: ${{ toJSON(github.event.client_payload.members) }}
           PICKED: ${{ needs.pick-runner.outputs.github == 'true' && 'github' || 'namespace' }}
@@ -1372,6 +1460,7 @@ jobs:
             --meta "event=${{ github.event_name }}" --meta "runner=$PICKED" \
             --meta "picker_busy=$PICKER_BUSY" --meta "picker_budget=$PICKER_BUDGET" \
             --meta "head_sha=$TESTED_HEAD" --meta "base_sha=$TESTED_BASE" \
+            --meta "tested_sha=$TESTED_COMMIT" --meta "tested_tree=$TESTED_TREE" \
             --meta "merge_engine=$MERGE_ENGINE" --meta "batch_id=$BORS_BATCH" \
             --meta "batch_members=$BORS_MEMBERS"
 
