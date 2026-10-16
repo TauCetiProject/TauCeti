@@ -38,6 +38,7 @@ treated here; the other stabilization types and commutation moves are not.
 
 * `TauCeti.GridDiagram.stabilizeXChainMap`: the stabilization chain map `GC⁻(G') → GC⁻(G)` as a
   `σ`-semilinear map.
+* `TauCeti.GridDiagram.stabilizeXHomologyEquiv`: the comparison as an equivalence over `R`.
 * `TauCeti.GridDiagram.stabilizeXHomologyMap`: the induced `σ`-semilinear map
   `GH⁻(G') → GH⁻(G)`.
 
@@ -237,6 +238,26 @@ theorem stabilizeXHomologyMap_bijective : Function.Bijective (G.stabilizeXHomolo
     rw [← sub_eq_zero, ← map_sub, unblockedHomologyClass_eq_zero_iff, Submodule.coe_sub,
       ← neg_sub]
     exact neg_mem hcm
+
+/-- The specified `X`-stabilization comparison on `GH⁻`, as an equivalence over the ground ring.
+Its forward map is the existing semilinear stabilization homology map. -/
+noncomputable def stabilizeXHomologyEquiv :
+    (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomology R ≃ₗ[R]
+      G.unblockedHomology R :=
+  LinearEquiv.ofBijective
+    { toFun := G.stabilizeXHomologyMap s R
+      map_add' := map_add _
+      map_smul' := fun r y => by
+        simpa only [AlgHom.coe_toRingHom, AlgHom.commutes, algebraMap_smul,
+          RingHom.id_apply] using
+          (G.stabilizeXHomologyMap s R).map_smulₛₗ (algebraMap R S r) y }
+    (G.stabilizeXHomologyMap_bijective s R)
+
+/-- The forward equivalence is the semilinear homology comparison. -/
+@[simp]
+theorem stabilizeXHomologyEquiv_apply
+    (y : (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomology R) :
+    G.stabilizeXHomologyEquiv s R y = G.stabilizeXHomologyMap s R y := (rfl)
 
 end GridDiagram
 
