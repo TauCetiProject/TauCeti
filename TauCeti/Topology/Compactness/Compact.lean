@@ -23,7 +23,7 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-- Compactness of `U ∩ S` for a compact set `U` may be checked on open pieces of `U` around
 each of its points. -/
-theorem isCompact_inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
+theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
     (h : ∀ x ∈ U, ∃ U' ⊆ U, IsOpen U' ∧ x ∈ U' ∧ IsCompact (U' ∩ S)) : IsCompact (U ∩ S) := by
   choose! W hWU hWo hxW hWc using h
   obtain ⟨t, htU, htf, ht⟩ :=

@@ -133,7 +133,7 @@ theorem IsLocallySpectralSpace.isTopologicalBasis (hX : IsLocallySpectralSpace X
     IsTopologicalBasis {U : Set X | IsOpen U ∧ SpectralSpace U} := by
   refine isTopologicalBasis_of_isOpen_of_nhds (fun U hU ↦ hU.1) fun x O hxO hOo ↦ ?_
   obtain ⟨V, hVo, hxV, hVs⟩ := hX x
-  obtain ⟨W, hWVO, hWo, hxW, -, hWs⟩ := exists_spectralSpace_subset_inter hVo hVs hOo hxV hxO
+  obtain ⟨W, hWVO, hWo, hxW, -, hWs⟩ := hVo.exists_spectralSpace_subset_inter hVs hOo hxV hxO
   exact ⟨W, ⟨hWo, hWs⟩, hxW, hWVO.trans inter_subset_right⟩
 
 /-- A space admitting an open embedding into a locally spectral space is locally spectral. In
@@ -258,13 +258,13 @@ theorem IsLocallySpectralMap.of_forall_exists {f : X → Y}
   refine .of_isSpectralMap_restrict hf fun U₀ V₀ hU₀V₀ hU₀o hV₀o hU₀s hV₀s ↦ ?_
   rw [hU₀V₀.isSpectralMap_restrict_iff hf.continuousOn hV₀o]
   intro K hKV hKo hKc
-  refine isCompact_inter_of_forall_exists (isCompact_iff_compactSpace.mpr hU₀s.toCompactSpace)
+  refine (isCompact_iff_compactSpace.mpr hU₀s.toCompactSpace).inter_of_forall_exists
     fun x hx ↦ ?_
   -- Shrink to a compact open `W ∋ f x` inside `V₀ ∩ V x`, then to a compact open `U' ∋ x` inside
   -- `U₀ ∩ U x` that maps into `W`.
   obtain ⟨W, hWV, hWo, hxW, hWc, -⟩ :=
-    exists_spectralSpace_subset_inter hV₀o hV₀s (hVo x) (hU₀V₀ hx) (hUV x (hxU x))
-  obtain ⟨U', hU'sub, hU'o, hxU', hU'c, -⟩ := exists_spectralSpace_subset_inter hU₀o hU₀s
+    hV₀o.exists_spectralSpace_subset_inter hV₀s (hVo x) (hU₀V₀ hx) (hUV x (hxU x))
+  obtain ⟨U', hU'sub, hU'o, hxU', hU'c, -⟩ := hU₀o.exists_spectralSpace_subset_inter hU₀s
     ((hUo x).inter (hWo.preimage hf)) hx ⟨hxU x, hxW⟩
   refine ⟨U', hU'sub.trans inter_subset_left, hU'o, hxU', ?_⟩
   -- Since `f` maps `U'` into `W`, only the compact open `K ∩ W ⊆ V x` matters.
@@ -291,15 +291,15 @@ theorem IsLocallySpectralMap.comp {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
     fun U W hUW hUo hWo hUs hWs ↦ ?_
   rw [hUW.isSpectralMap_restrict_iff (hg.continuous.comp hf.continuous).continuousOn hWo]
   intro K hKW hKo hKc
-  refine isCompact_inter_of_forall_exists (isCompact_iff_compactSpace.mpr hUs.toCompactSpace)
+  refine (isCompact_iff_compactSpace.mpr hUs.toCompactSpace).inter_of_forall_exists
     fun x hx ↦ ?_
   -- Factor through a spectral open `V ∋ f x` with `g(V) ⊆ W` and a spectral open `U' ∋ x` with
   -- `f(U') ⊆ V`.
   obtain ⟨V₀, hV₀o, hxV₀, hV₀s⟩ := hY (f x)
   obtain ⟨V, hVsub, hVo, hxV, -, hVs⟩ :=
-    exists_spectralSpace_subset_inter hV₀o hV₀s (hWo.preimage hg.continuous) hxV₀ (hUW hx)
+    hV₀o.exists_spectralSpace_subset_inter hV₀s (hWo.preimage hg.continuous) hxV₀ (hUW hx)
   obtain ⟨U', hU'sub, hU'o, hxU', -, hU's⟩ :=
-    exists_spectralSpace_subset_inter hUo hUs (hVo.preimage hf.continuous) hx hxV
+    hUo.exists_spectralSpace_subset_inter hUs (hVo.preimage hf.continuous) hx hxV
   refine ⟨U', hU'sub.trans inter_subset_left, hU'o, hxU', ?_⟩
   have hU'V : MapsTo f U' V := fun y hy ↦ (hU'sub hy).2
   have hVW : MapsTo g V W := fun y hy ↦ (hVsub hy).2

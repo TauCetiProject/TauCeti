@@ -40,7 +40,7 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
   is quasi-compact.
 * `TauCeti.spectralSpace_of_isEmbedding` : a subset of the range of an embedding is spectral as
   soon as its preimage is — the transport step of any "prove it on a subspace" argument.
-* `TauCeti.exists_spectralSpace_subset_inter`: compact spectral open neighbourhoods inside a
+* `IsOpen.exists_spectralSpace_subset_inter`: compact spectral open neighbourhoods inside a
   spectral open subset.
 * `TauCeti.spectralSpace_prop`: the Sierpiński space `Prop` is spectral.
 * `Topology.IsOpenEmbedding.isSpectralMap` : an open embedding from a compact space into a
@@ -137,7 +137,7 @@ theorem spectralSpace_of_isEmbedding {f : X → Y} (hf : Topology.IsEmbedding f)
 
 /-- Inside a spectral open subset `V`, every point of an open set `O` has a compact spectral open
 neighbourhood contained in `V ∩ O`. -/
-theorem exists_spectralSpace_subset_inter {V O : Set X} (hVo : IsOpen V)
+theorem _root_.IsOpen.exists_spectralSpace_subset_inter {V O : Set X} (hVo : IsOpen V)
     (hVs : SpectralSpace V) (hOo : IsOpen O) {x : X} (hxV : x ∈ V) (hxO : x ∈ O) :
     ∃ W ⊆ V ∩ O, IsOpen W ∧ x ∈ W ∧ IsCompact W ∧ SpectralSpace W := by
   obtain ⟨W', ⟨hW'o, hW'c⟩, hxW', hW'O⟩ :=
