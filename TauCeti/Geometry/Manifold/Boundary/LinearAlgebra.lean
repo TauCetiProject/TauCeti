@@ -70,7 +70,8 @@ namespace EuclideanSpace
 
 open TauCeti
 
-/-- Expansion in the normal row computes the determinant of an outward-first family. -/
+/-- The standard-basis determinant of the prepended family equals `v 0` times the
+boundary family's standard-basis determinant. -/
 theorem det_cons_boundary {n : ℕ} (v : EuclideanSpace ℝ (Fin (n + 1)))
     (w : Fin n → EuclideanSpace ℝ (Fin n)) :
     (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.det
