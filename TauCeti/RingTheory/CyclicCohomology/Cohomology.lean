@@ -41,8 +41,8 @@ its forced unitization, and in general differs from the cohomology of this compl
 * `TauCeti.cyclicCocycles`, `TauCeti.cyclicCoboundaries`: cyclic cocycles and coboundaries.
 * `TauCeti.cyclicCohomology`: the cyclic cohomology `HCⁿ(A; M)`.
 * `TauCeti.cyclicCohomology.mk`: the class of a cyclic cocycle.
-* `TauCeti.cyclicCochainsMap`, `TauCeti.cyclicCochainComplexMap`, `TauCeti.cyclicCohomology.map`:
-  pullback along a homomorphism of nonunital algebras.
+* `TauCeti.cyclicCochainComplexMap`, `TauCeti.cyclicCohomology.map`: pullback along a
+  homomorphism of nonunital algebras, induced by `TauCeti.cyclicCochainsMap`.
 
 ## Main results
 
@@ -56,6 +56,9 @@ its forced unitization, and in general differs from the cohomology of this compl
 
 * A. Connes, *Noncommutative Geometry*, Chapter III, §1.
 * J.-L. Loday, *Cyclic Homology*, §2.1.
+
+The concrete description of cohomology classes through `mk` follows the pattern of the de Rham
+cohomology file `TauCeti.Geometry.Manifold.DeRham.Basic`.
 -/
 
 public section
@@ -151,51 +154,10 @@ variable {R A M} {B C : Type u} [NonUnitalSemiring B] [Module R B] [IsScalarTowe
   [SMulCommClass R B B] [NonUnitalSemiring C] [Module R C] [IsScalarTower R C C]
   [SMulCommClass R C C]
 
-variable (M) in
-/-- The pullback `φ ↦ φ ∘ (f × ⋯ × f)` of cyclic cochains along a homomorphism of nonunital
-algebras. -/
-def cyclicCochainsMap (f : A →ₙₐ[R] B) (n : ℕ) :
-    cyclicCochains R B M n →ₗ[R] cyclicCochains R A M n :=
-  (MultilinearMap.compLinearMapₗ fun _ ↦ (f : A →ₗ[R] B)).restrict
-    fun _ hφ ↦ compLinearMap_mem_cyclicCochains _ hφ
-
-omit [IsScalarTower R A A] [SMulCommClass R A A] [IsScalarTower R B B] [SMulCommClass R B B] in
-/-- The pullback of a cyclic cochain evaluates the cochain on the images of the arguments. -/
-@[simp]
-theorem coe_cyclicCochainsMap_apply (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCochains R B M n) :
-    (cyclicCochainsMap M f n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
-      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compLinearMap
-        fun _ ↦ (f : A →ₗ[R] B) :=
-  (rfl)
-
-omit [IsScalarTower R A A] [SMulCommClass R A A] [IsScalarTower R B B] [SMulCommClass R B B] in
-/-- Pulling back along the identity is the identity. -/
-@[simp]
-theorem cyclicCochainsMap_id (n : ℕ) :
-    cyclicCochainsMap M (NonUnitalAlgHom.id R A) n = LinearMap.id := by
-  ext φ a
-  simp
-
-omit [IsScalarTower R A A] [SMulCommClass R A A] [IsScalarTower R B B] [SMulCommClass R B B]
-  [IsScalarTower R C C] [SMulCommClass R C C] in
-/-- Pulling back along a composite is the composite of the pullbacks, in the opposite order. -/
-theorem cyclicCochainsMap_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
-    cyclicCochainsMap M (g.comp f) n = cyclicCochainsMap M f n ∘ₗ cyclicCochainsMap M g n := by
-  ext φ a
-  simp
-
-/-- Pulling back commutes with the Hochschild coboundary. -/
-theorem cyclicHochschildCoboundary_cyclicCochainsMap (f : A →ₙₐ[R] B) {n : ℕ}
-    (φ : cyclicCochains R B M n) :
-    cyclicHochschildCoboundary R A M n (cyclicCochainsMap M f n φ) =
-      cyclicCochainsMap M f (n + 1) (cyclicHochschildCoboundary R B M n φ) := by
-  ext : 1
-  simp [hochschildCoboundary_compLinearMap]
-
 /-- The pullback of a cyclic cocycle is a cyclic cocycle. -/
 theorem cyclicCochainsMap_mem_cyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
     {φ : cyclicCochains R B M n} (hφ : φ ∈ cyclicCocycles R B M n) :
-    cyclicCochainsMap M f n φ ∈ cyclicCocycles R A M n := by
+    cyclicCochainsMap M (f : A →ₗ[R] B) n φ ∈ cyclicCocycles R A M n := by
   rw [cyclicCocycles, LinearMap.mem_ker, cyclicHochschildCoboundary_cyclicCochainsMap,
     LinearMap.mem_ker.1 hφ, map_zero]
 
@@ -204,7 +166,7 @@ variable (M) in
 algebras. -/
 def cyclicCochainComplexMap (f : A →ₙₐ[R] B) :
     cyclicCochainComplex R B M ⟶ cyclicCochainComplex R A M where
-  f n := ModuleCat.ofHom (cyclicCochainsMap M f n)
+  f n := ModuleCat.ofHom (cyclicCochainsMap M (f : A →ₗ[R] B) n)
   comm' := by
     rintro n _ rfl
     ext φ : 2
@@ -216,20 +178,28 @@ of cyclic cochains. This holds by definition, the identifications being identiti
 @[reassoc, elementwise]
 theorem cyclicCochainComplexMap_f (f : A →ₙₐ[R] B) (n : ℕ) :
     (cyclicCochainComplexMap M f).f n ≫ (cyclicCochainComplexXIso R A M n).hom =
-      (cyclicCochainComplexXIso R B M n).hom ≫ ModuleCat.ofHom (cyclicCochainsMap M f n) :=
+      (cyclicCochainComplexXIso R B M n).hom ≫
+        ModuleCat.ofHom (cyclicCochainsMap M (f : A →ₗ[R] B) n) :=
   (rfl)
 
 /-- The identity homomorphism induces the identity cochain map. -/
 @[simp]
 theorem cyclicCochainComplexMap_id :
     cyclicCochainComplexMap M (NonUnitalAlgHom.id R A) = 𝟙 (cyclicCochainComplex R A M) := by
-  rfl
+  ext n : 1
+  dsimp only [cyclicCochainComplexMap, HomologicalComplex.id_f]
+  -- The identity homomorphism coerces to the identity linear map by definition.
+  exact (congrArg ModuleCat.ofHom (cyclicCochainsMap_id M n)).trans ModuleCat.ofHom_id
 
 /-- The induced cochain map is contravariantly functorial. -/
 theorem cyclicCochainComplexMap_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) :
     cyclicCochainComplexMap M (g.comp f) =
       cyclicCochainComplexMap M g ≫ cyclicCochainComplexMap M f := by
-  rfl
+  ext n : 1
+  dsimp only [cyclicCochainComplexMap, HomologicalComplex.comp_f]
+  -- The composite homomorphism coerces to the composite linear map by definition.
+  exact (congrArg ModuleCat.ofHom
+    (cyclicCochainsMap_comp M (f : A →ₗ[R] B) (g : B →ₗ[R] C) n)).trans (ModuleCat.ofHom_comp _ _)
 
 end Map
 
@@ -364,7 +334,8 @@ def map (f : A →ₙₐ[R] B) (n : ℕ) : cyclicCohomology R B M n ⟶ cyclicCo
 @[simp]
 theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
     map M f n (mk R B M n φ) =
-      mk R A M n ⟨cyclicCochainsMap M f n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ := by
+      mk R A M n
+        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ := by
   rw [map, mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1

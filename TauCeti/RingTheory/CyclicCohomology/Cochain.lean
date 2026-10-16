@@ -23,8 +23,8 @@ cochains, those with
 `φ(aₙ, a₀, …, aₙ₋₁) = (-1)ⁿ φ(a₀, …, aₙ)`. For unital `A` and `M = R` these are the data from
 which the Hochschild cochain complex of `A` with coefficients in its dual `A*` and Connes' cyclic
 subcomplex can be assembled; the cyclic complex and its cohomology are constructed in
-`TauCeti.RingTheory.CyclicCohomology.Cohomology`. Pulling cochains back along a homomorphism of
-nonunital algebras commutes with `b` and preserves cyclicity.
+`TauCeti.RingTheory.CyclicCohomology.Cohomology`. Pulling cochains back along a linear map
+preserves cyclicity, and pulling back along a homomorphism of nonunital algebras commutes with `b`.
 
 The coboundary is the alternating sum of the cofaces `φ ↦ φ ∘ dᵢ`, where `dᵢ` are face maps
 on tuples. For unital `A`, these faces and the rotation are part of the Hochschild cyclic module;
@@ -40,6 +40,7 @@ identities between faces and the cyclic rotation
 * `TauCeti.hochschildCoboundary`: the Hochschild coboundary `b`.
 * `TauCeti.cyclicCochains`: the submodule of cyclic cochains.
 * `TauCeti.cyclicHochschildCoboundary`: the restriction of `b` to cyclic cochains.
+* `TauCeti.cyclicCochainsMap`: the pullback of cyclic cochains along a linear map.
 
 ## Main results
 
@@ -580,21 +581,62 @@ end Coboundary
 
 section Pullback
 
-variable {R A B M : Type*} [Semiring R] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+variable {R A B C M : Type*} [Semiring R] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
   {n : ℕ}
 
+section Linear
+
+variable [AddCommMonoid A] [Module R A] [AddCommMonoid B] [Module R B] [AddCommMonoid C]
+  [Module R C]
+
 /-- Pulling a cyclic cochain back along a linear map gives a cyclic cochain. -/
-theorem compLinearMap_mem_cyclicCochains [AddCommMonoid A] [Module R A] [AddCommMonoid B]
-    [Module R B] (f : A →ₗ[R] B) {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M}
-    (hφ : φ ∈ cyclicCochains R B M n) :
+theorem compLinearMap_mem_cyclicCochains (f : A →ₗ[R] B)
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M} (hφ : φ ∈ cyclicCochains R B M n) :
     (φ.compLinearMap fun _ ↦ f) ∈ cyclicCochains R A M n :=
   fun a ↦ hφ (f ∘ a)
 
+variable (M) in
+/-- The pullback `φ ↦ φ ∘ (f × ⋯ × f)` of cyclic cochains along a linear map. This is built
+directly rather than from `MultilinearMap.compLinearMapₗ`, which needs `R` to be commutative. -/
+def cyclicCochainsMap (f : A →ₗ[R] B) (n : ℕ) :
+    cyclicCochains R B M n →ₗ[R] cyclicCochains R A M n where
+  toFun φ := ⟨(φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compLinearMap fun _ ↦ f,
+    compLinearMap_mem_cyclicCochains f φ.2⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- The pullback of a cyclic cochain evaluates the cochain on the images of the arguments. -/
+@[simp]
+theorem coe_cyclicCochainsMap_apply (f : A →ₗ[R] B) (φ : cyclicCochains R B M n) :
+    (cyclicCochainsMap M f n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
+      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compLinearMap fun _ ↦ f :=
+  (rfl)
+
+variable (M) in
+/-- Pulling back along the identity is the identity. -/
+@[simp]
+theorem cyclicCochainsMap_id (n : ℕ) :
+    cyclicCochainsMap M (LinearMap.id : A →ₗ[R] A) n = LinearMap.id := by
+  ext φ a
+  simp
+
+variable (M) in
+/-- Pulling back along a composite is the composite of the pullbacks, in the opposite order. -/
+theorem cyclicCochainsMap_comp (f : A →ₗ[R] B) (g : B →ₗ[R] C) (n : ℕ) :
+    cyclicCochainsMap M (g ∘ₗ f) n = cyclicCochainsMap M f n ∘ₗ cyclicCochainsMap M g n := by
+  ext φ a
+  simp
+
+end Linear
+
+section Algebra
+
+variable [NonUnitalNonAssocSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
+
 /-- The Hochschild coboundary commutes with pulling cochains back along a homomorphism of
 nonunital algebras. -/
-theorem hochschildCoboundary_compLinearMap [NonUnitalNonAssocSemiring A] [Module R A]
-    [IsScalarTower R A A] [SMulCommClass R A A] [NonUnitalNonAssocSemiring B] [Module R B]
-    [IsScalarTower R B B] [SMulCommClass R B B] (f : A →ₙₐ[R] B)
+theorem hochschildCoboundary_compLinearMap (f : A →ₙₐ[R] B)
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ B) M) :
     hochschildCoboundary R A M n (φ.compLinearMap fun _ ↦ (f : A →ₗ[R] B)) =
       (hochschildCoboundary R B M n φ).compLinearMap fun _ ↦ (f : A →ₗ[R] B) := by
@@ -603,6 +645,17 @@ theorem hochschildCoboundary_compLinearMap [NonUnitalNonAssocSemiring A] [Module
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   congr 2
   exact comp_hochschildFace f i a
+
+/-- Pulling cyclic cochains back along a homomorphism of nonunital algebras commutes with the
+Hochschild coboundary. -/
+theorem cyclicHochschildCoboundary_cyclicCochainsMap (f : A →ₙₐ[R] B)
+    (φ : cyclicCochains R B M n) :
+    cyclicHochschildCoboundary R A M n (cyclicCochainsMap M (f : A →ₗ[R] B) n φ) =
+      cyclicCochainsMap M (f : A →ₗ[R] B) (n + 1) (cyclicHochschildCoboundary R B M n φ) := by
+  ext : 1
+  simp [hochschildCoboundary_compLinearMap]
+
+end Algebra
 
 end Pullback
 
