@@ -65,16 +65,16 @@ theorem hasFDerivWithinAt_subtypeVal_extChartAt_rectangle_symm
   rw [extChartAt_prod, PartialEquiv.prod_target] at hz
   have h₁ := hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm α.1 hz.1
   have h₂ := hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm α.2 hz.2
-  have h := (h₁.comp z hasFDerivWithinAt_fst
-    (show MapsTo Prod.fst (range (𝓡∂ 1) ×ˢ range (𝓡∂ 1)) (range (𝓡∂ 1))
-      from fun _ h ↦ h.1)).prodMk
-    (h₂.comp z hasFDerivWithinAt_snd
-      (show MapsTo Prod.snd (range (𝓡∂ 1) ×ˢ range (𝓡∂ 1)) (range (𝓡∂ 1))
-      from fun _ h ↦ h.2))
-  simp only [ModelWithCorners.range_prod, extChartAt_prod, PartialEquiv.prod_coe_symm]
-  convert h using 1
-  · rfl
-  · ext v <;> rfl
+  have hfst : Prod.fst '' (range (𝓡∂ 1) ×ˢ range (𝓡∂ 1)) ⊆ range (𝓡∂ 1) := by
+    rintro _ ⟨w, hw, rfl⟩
+    exact hw.1
+  have hsnd : Prod.snd '' (range (𝓡∂ 1) ×ˢ range (𝓡∂ 1)) ⊆ range (𝓡∂ 1) := by
+    rintro _ ⟨w, hw, rfl⟩
+    exact hw.2
+  have h := HasFDerivWithinAt.prodMap z (s := range (𝓡∂ 1) ×ˢ range (𝓡∂ 1))
+    (h₁.mono hfst) (h₂.mono hsnd)
+  simpa only [ModelWithCorners.range_prod, extChartAt_prod, PartialEquiv.prod_coe_symm,
+    Prod.map_def] using h
 
 /-- The actual derivative of rectangle inclusion is the product of the two signed coordinate
 projections, including at edges and corners. -/
@@ -85,13 +85,16 @@ theorem mfderiv_subtypeVal_rectangle (x : Icc a b × Icc c d) :
           EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).prodMap
         ((if (x.2 : ℝ) < d then (1 : ℝ) else -1) •
           EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0)) := by
-  apply HasMFDerivAt.mfderiv
-  refine ⟨(continuous_subtype_val.comp continuous_fst).continuousAt.prodMk
-    (continuous_subtype_val.comp continuous_snd).continuousAt, ?_⟩
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-    Function.id_comp]
-  convert! hasFDerivWithinAt_subtypeVal_extChartAt_rectangle_symm x
-    (mem_extChartAt_target x) using 1
+  have hmap : (fun y : Icc a b × Icc c d ↦ (y.1.val, y.2.val)) =
+      Prod.map (Subtype.val : Icc a b → ℝ) (Subtype.val : Icc c d → ℝ) := Prod.map_def.symm
+  rw [hmap]
+  have h := mfderiv_prodMap
+    ((contMDiff_subtypeVal_Icc (x := a) (y := b) (n := 1)).mdifferentiable one_ne_zero x.1)
+    ((contMDiff_subtypeVal_Icc (x := c) (y := d) (n := 1)).mdifferentiable one_ne_zero x.2)
+  -- Normalize the product target model and its self-chart instance to the product normed space.
+  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
+  rw [mfderiv_subtypeVal_Icc, mfderiv_subtypeVal_Icc] at h
+  exact h
 
 /-- The actual rectangle inclusion derivative as an invertible map of tangent spaces to the
 coordinate plane. Both interval endpoint signs are retained. -/
@@ -105,6 +108,7 @@ theorem subtypeValRectangleTangentEquiv_toContinuousLinearMap (x : Icc a b × Ic
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x.1.val, x.2.val)).toContinuousLinearMap.comp
         (mfderiv ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℝ × ℝ)
           (fun y : Icc a b × Icc c d ↦ (y.1.val, y.2.val)) x) := by
+  -- Expose prodCongr as the product of its two underlying continuous linear maps.
   change ((subtypeValIccTangentEquiv x.1).toContinuousLinearMap.prodMap
     (subtypeValIccTangentEquiv x.2).toContinuousLinearMap) = _
   rw [subtypeValIccTangentEquiv_toContinuousLinearMap,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 
 /-!
@@ -14,6 +15,12 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 Actual inverse-chart derivatives identify the signed top-form coefficient with the absolute
 Jacobian of an orientation-preserving embedding. Finite disjoint chart partitions then compare
 manifold integration with Haar integration over the image, including boundary and corner points.
+
+## Formal sources
+
+The integral and integrability comparisons use Mathlib.MeasureTheory.Function.Jacobian,
+specifically `MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul` and
+`MeasureTheory.integrableOn_image_iff_integrableOn_abs_det_fderiv_smul`.
 -/
 
 public section
@@ -29,27 +36,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {k : ℕ}
 
-omit [FiniteDimensional ℝ E] in
-/-- The derivative of a model-valued map in an arbitrary preferred chart is its actual
-manifold derivative composed with the inverse tangent chart. -/
-theorem _root_.MDifferentiableAt.fderivWithin_comp_extChartAt_symm {f : M → E} {x : M}
-    (hf : MDifferentiableAt I 𝓘(ℝ, E) f x) (α : M) (hx : x ∈ (extChartAt I α).source) :
-    fderivWithin ℝ (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x) =
-      (show E →L[ℝ] E from mfderiv I 𝓘(ℝ, E) f x).comp
-        (tangentCoordChange I α x x) := by
-  have ht := (extChartAt I α).map_source hx
-  have h := mfderiv_comp_mfderivWithin (I := 𝓘(ℝ, E)) (I' := I) (I'' := 𝓘(ℝ, E))
-    (extChartAt I α x) (by simpa only [(extChartAt I α).left_inv hx] using hf)
-    (mdifferentiableWithinAt_extChartAt_symm ht)
-    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range α ht)
-      |>.uniqueMDiffWithinAt)
-  rw [(extChartAt I α).left_inv hx] at h
-  have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
-  rw [← TangentBundle.symmL_trivializationAt hx',
-    TangentBundle.symmL_trivializationAt_eq_core hx'] at h
-  rw [mfderivWithin_eq_fderivWithin] at h
-  convert! h using 1
-
 /-- Orientation preservation by the actual derivative implies the signed Jacobian identity
 in every preferred chart, including at intrinsic boundary points. -/
 theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.OrientationLift I M (Fin k))
@@ -57,13 +43,14 @@ theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.Orientatio
     (F : M → E ≃L[ℝ] E)
     (hF : ∀ x, (F x).toContinuousLinearMap = mfderiv I 𝓘(ℝ, E) f x)
     (ho : ∀ x, _root_.Orientation.map (Fin k) (F x).toLinearEquiv
-      (show _root_.Orientation ℝ E (Fin k) from
-        (Manifold.Orientation.mk l).orientationAt x) = b.orientation)
+      ((Manifold.Orientation.mk l).orientationAt x : _root_.Orientation ℝ E (Fin k)) =
+        b.orientation)
     (α : M) {x : M} (hx : x ∈ (extChartAt I α).source) :
     (_root_.Orientation.signBasis l.modelOrientation b : ℝ) * (l.signAt α x : ℝ) *
       (fderivWithin ℝ (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x)).det =
         |(fderivWithin ℝ (f ∘ (extChartAt I α).symm)
           (range I) (extChartAt I α x)).det| := by
+  have hneg : (-1 : ℤˣ) ≠ 1 := by decide
   have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
   have hc := l.compatible α x x hx' (mem_chart_source H x)
   rw [← tangentCoordChange_def] at hc
@@ -71,7 +58,8 @@ theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.Orientatio
   rw [Manifold.Orientation.orientationAt_mk,
     Manifold.OrientationLift.orientationAt_eq,
     Manifold.OrientationLift.chartOrientation_eq_ite] at hp
-  change _root_.Orientation.map (Fin k) (show E ≃ₗ[ℝ] E from (F x).toLinearEquiv)
+  -- Orientation transport for the fixed model basis unfolds to the pointwise orientationAt.
+  change _root_.Orientation.map (Fin k) ((F x).toLinearEquiv : E ≃ₗ[ℝ] E)
     (if l.sign x ⟨x, mem_chart_source H x⟩ = 1 then l.modelOrientation
       else -l.modelOrientation) = b.orientation at hp
   have hd : 0 < (_root_.Orientation.signBasis l.modelOrientation b : ℝ) *
@@ -83,7 +71,7 @@ theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.Orientatio
       · simp only [hs, ite_true] at hp
         simpa [hs] using (_root_.Orientation.map_eq_iff_det_pos b.orientation
           (F x).toLinearEquiv l.card_eq).mp hp
-      · simp only [hs, show (-1 : ℤˣ) ≠ 1 by decide, ite_false,
+      · simp only [hs, hneg, ite_false,
           _root_.Orientation.map_neg] at hp
         have hn : _root_.Orientation.map (Fin k) (F x).toLinearEquiv b.orientation =
             -b.orientation := by
@@ -106,11 +94,12 @@ theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.Orientatio
         have hh := (_root_.Orientation.map_eq_neg_iff_det_neg b.orientation
           (F x).toLinearEquiv l.card_eq).mp hn
         simpa [hs] using neg_pos.mpr hh
-      · simp only [hs, show (-1 : ℤˣ) ≠ 1 by decide, ite_false] at hp
+      · simp only [hs, hneg, ite_false] at hp
         rw [_root_.neg_neg b.orientation] at hp
         simpa [hs] using (_root_.Orientation.map_eq_iff_det_pos b.orientation
           (F x).toLinearEquiv l.card_eq).mp hp
   rw [(hf x).fderivWithin_comp_extChartAt_symm α hx, ← hF x]
+  -- The continuous-linear composition and its underlying linear composition share a determinant.
   change _ * _ * ((F x).toLinearEquiv.toLinearMap.comp
     (tangentCoordChange I α x x).toLinearMap).det =
       |((F x).toLinearEquiv.toLinearMap.comp
@@ -140,8 +129,8 @@ theorem signedInChartAt_mpullback_eq_abs_det (l : Manifold.OrientationLift I M (
     (F : M → E ≃L[ℝ] E)
     (hF : ∀ x, (F x).toContinuousLinearMap = mfderiv I 𝓘(ℝ, E) f x)
     (ho : ∀ x, _root_.Orientation.map (Fin k) (F x).toLinearEquiv
-      (show _root_.Orientation ℝ E (Fin k) from
-        (Manifold.Orientation.mk l).orientationAt x) = b.orientation)
+      ((Manifold.Orientation.mk l).orientationAt x : _root_.Orientation ℝ E (Fin k)) =
+        b.orientation)
     (ω : RoughForm 𝓘(ℝ, E) E ℝ k) (α : M) {x : M}
     (hx : x ∈ (extChartAt I α).source) :
     (_root_.Orientation.signBasis l.modelOrientation b : ℝ) *
@@ -173,8 +162,8 @@ theorem integral_mpullback_chart_piece (l : Manifold.OrientationLift I M (Fin k)
     (hinj : Function.Injective f) (F : M → E ≃L[ℝ] E)
     (hF : ∀ x, (F x).toContinuousLinearMap = mfderiv I 𝓘(ℝ, E) f x)
     (ho : ∀ x, _root_.Orientation.map (Fin k) (F x).toLinearEquiv
-      (show _root_.Orientation ℝ E (Fin k) from
-        (Manifold.Orientation.mk l).orientationAt x) = b.orientation)
+      ((Manifold.Orientation.mk l).orientationAt x : _root_.Orientation ℝ E (Fin k)) =
+        b.orientation)
     (ω : RoughForm 𝓘(ℝ, E) E ℝ k) (hi : IntegrableTopForm (mpullback I 𝓘(ℝ, E) f ω))
     (α : M) {s : Set M} (hs : IsChartMeasurable I s)
     (hsub : s ⊆ (extChartAt I α).source) :
@@ -238,8 +227,8 @@ theorem integralTopForm_mpullback_eq_integral_image [CompactSpace M]
     (hinj : Function.Injective f) (F : M → E ≃L[ℝ] E)
     (hF : ∀ x, (F x).toContinuousLinearMap = mfderiv I 𝓘(ℝ, E) f x)
     (ho : ∀ x, _root_.Orientation.map (Fin k) (F x).toLinearEquiv
-      (show _root_.Orientation ℝ E (Fin k) from
-        (Manifold.Orientation.mk l).orientationAt x) = b.orientation)
+      ((Manifold.Orientation.mk l).orientationAt x : _root_.Orientation ℝ E (Fin k)) =
+        b.orientation)
     (ω : RoughForm 𝓘(ℝ, E) E ℝ k) (hi : IntegrableTopForm (mpullback I 𝓘(ℝ, E) f ω)) :
     IntegrableOn (fun y ↦ ω y (fun i ↦ (NormedSpace.fromTangentSpace y).symm (b i)))
       (range f) b.addHaar ∧

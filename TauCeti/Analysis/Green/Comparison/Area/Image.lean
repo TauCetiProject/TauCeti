@@ -64,9 +64,11 @@ theorem integralTopForm_mpullback_area_eq_integral_image
     (hF : ∀ x, (F x).toContinuousLinearMap =
       (NormedSpace.fromTangentSpace (f x)).toContinuousLinearMap.comp
         (mfderiv I 𝓘(ℝ, ℂ) f x))
+    -- Read tangent orientations on the fixed model E so composition rewrites use its instances.
     (ho : ∀ x, _root_.Orientation.map (Fin 2) (F x).toLinearEquiv
       (show _root_.Orientation ℝ E (Fin 2) from
-        (Manifold.Orientation.mk l).orientationAt x) = Complex.orientation)
+        (Manifold.Orientation.mk l).orientationAt x) =
+        Complex.orientation)
     (g : ℂ → ℝ)
     (hi : IntegrableTopForm (mpullback I 𝓘(ℝ, ℂ) f (fun z ↦ g z • manifoldAreaForm z))) :
     IntegrableOn g (range f) ∧
@@ -89,14 +91,18 @@ theorem integralTopForm_mpullback_area_eq_integral_image
   have hF' : ∀ x, (F' x).toContinuousLinearMap = mfderiv I 𝓘(ℝ, E) f' x := by
     intro x
     rw [mfderiv_comp x (he' (f x)) (hf x), mfderiv_eq_fderiv, e.symm.fderiv]
+    -- Expose the underlying continuous linear map of the composed coordinate equivalence F'.
     change e.symm.toContinuousLinearMap.comp (F x).toContinuousLinearMap = _
     rw [hF x]
     convert! rfl using 1
+  -- The model-fibre annotation keeps the orientation transport independent of tangent instances.
   have ho' : ∀ x, _root_.Orientation.map (Fin 2) (F' x).toLinearEquiv
       (show _root_.Orientation ℝ E (Fin 2) from
-        (Manifold.Orientation.mk l).orientationAt x) = b.orientation := by
+        (Manifold.Orientation.mk l).orientationAt x) =
+        b.orientation := by
     intro x
     rw [Module.Basis.orientation_map]
+    -- The composed coordinate equivalence acts on the fixed real model orientation.
     change _root_.Orientation.map (Fin 2) ((F x).toLinearEquiv.trans e.symm.toLinearEquiv)
       _ = _
     rw [_root_.Orientation.map_trans, ho x]

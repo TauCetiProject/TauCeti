@@ -53,15 +53,17 @@ private theorem integralTopForm_rectangle_chart
       l.signAt ⊥ x = 1 := by
     have hx : x.val ∈ (chartAt (EuclideanHalfSpace 1) (⊥ : Icc a b)).source ×ˢ
         (chartAt (EuclideanHalfSpace 1) (⊥ : Icc c d)).source := by
+      have hbot : (⊥ : Icc a b × Icc c d) = (⊥, ⊥) := rfl
       simpa only [extChartAt_source, prodChartedSpace_chartAt,
         OpenPartialHomeomorph.prod_source,
-        show (⊥ : Icc a b × Icc c d) = (⊥, ⊥) from rfl] using x.property
+        hbot] using x.property
     rw [Manifold.OrientationLift.signAt_of_mem l
       (by simpa only [extChartAt_source] using x.property)]
     have h := Manifold.OrientationLift.prod_sign (Manifold.OrientationLift.interval a b)
       (Manifold.OrientationLift.interval c d) ⊥ ⟨x.val.1, hx.1⟩ ⟨x.val.2, hx.2⟩
     apply h.trans
     simp only [Manifold.OrientationLift.interval_sign]
+    -- Expand the two interval orientation signs on their fixed real model lines.
     change (if a < b then (1 : ℤˣ) else -1) * (if c < d then 1 else -1) = 1
     simp only [hab.out, hcd.out, ↓reduceIte, mul_one]
   rw [Manifold.Orientation.interval_eq_mk, Manifold.Orientation.interval_eq_mk,
@@ -105,8 +107,9 @@ theorem inChartAt_mpullback_rectangle_bot
   have hd := (hasFDerivWithinAt_subtypeVal_extChartAt_rectangle_symm ⊥ hz).fderivWithin
     (((𝓡∂ 1).prod (𝓡∂ 1)).uniqueDiffOn _ (extChartAt_target_subset_range _ hz))
   have he := subtypeVal_extChartAt_rectangle_symm ⊥ hz
-  simp only [show ((⊥ : Icc a b × Icc c d).1 : ℝ) = a from rfl,
-    show ((⊥ : Icc a b × Icc c d).2 : ℝ) = c from rfl,
+  have hfirst : ((⊥ : Icc a b × Icc c d).1 : ℝ) = a := rfl
+  have hsecond : ((⊥ : Icc a b × Icc c d).2 : ℝ) = c := rfl
+  simp only [hfirst, hsecond,
     hab.out, hcd.out, ↓reduceIte, one_smul] at hd he
   simp only [Function.comp_def]
   rw [hd]

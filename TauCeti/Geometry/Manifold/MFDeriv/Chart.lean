@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
 # A manifold derivative read in arbitrary charts
@@ -44,6 +45,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   differentiable) at the chart image of the point.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `MDifferentiableAt.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
+  derivative after an inverse chart, including derivatives within the model range.
+* `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
+  a normed source by composing its manifold derivative with the tangent chart.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -252,5 +257,71 @@ theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
     exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
 
 end ChartOverlap
+
+end TauCeti
+
+namespace TauCeti
+
+section RealCharts
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The derivative of a model-valued map in an arbitrary preferred chart is its actual
+manifold derivative composed with the inverse tangent chart. -/
+theorem _root_.MDifferentiableAt.fderivWithin_comp_extChartAt_symm {f : M → F} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, F) f x) (α : M) (hx : x ∈ (extChartAt I α).source) :
+    fderivWithin ℝ (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x) =
+      (show E →L[ℝ] F from mfderiv I 𝓘(ℝ, F) f x).comp
+        (tangentCoordChange I α x x) := by
+  have ht := (extChartAt I α).map_source hx
+  have h := mfderiv_comp_mfderivWithin (I := 𝓘(ℝ, E)) (I' := I) (I'' := 𝓘(ℝ, F))
+    (extChartAt I α x) (by simpa only [(extChartAt I α).left_inv hx] using hf)
+    (mdifferentiableWithinAt_extChartAt_symm ht)
+    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range α ht)
+      |>.uniqueMDiffWithinAt)
+  rw [(extChartAt I α).left_inv hx] at h
+  have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
+  rw [← TangentBundle.symmL_trivializationAt hx',
+    TangentBundle.symmL_trivializationAt_eq_core hx'] at h
+  rw [mfderivWithin_eq_fderivWithin] at h
+  convert! h using 1
+
+/-- In a preferred chart, a manifold derivative from a normed source gives the ordinary
+coordinate derivative by composing with the tangent chart. -/
+theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {α : M}
+    {e : F →L[ℝ] TangentSpace I (Q z)}
+    (hQ : HasMFDerivAt 𝓘(ℝ, F) I Q z
+      (e.comp
+        (NormedSpace.fromTangentSpace z).toContinuousLinearMap))
+    (hx : Q z ∈ (chartAt H α).source) :
+    HasFDerivAt (extChartAt I α ∘ Q)
+      (((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ (Q z)).comp
+        e) z := by
+  let η := (trivializationAt E (TangentSpace I) α).continuousLinearEquivAt ℝ (Q z)
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)
+  let L := η.toContinuousLinearMap.comp e
+  have hη : η.toContinuousLinearMap = tangentCoordChange I (Q z) α (Q z) := by
+    rw [Bundle.Trivialization.coe_continuousLinearEquivAt_eq',
+      TangentBundle.continuousLinearMapAt_trivializationAt_eq_core hx]
+  have hη' : η.toContinuousLinearMap = mfderiv I I (chartAt H α) (Q z) := by
+    rw [mfderiv_chartAt_eq_tangentCoordChange hx]
+    exact hη
+  have hd : HasFDerivAt (extChartAt I α ∘ Q) L z := by
+    have h := (hasMFDerivAt_extChartAt (I := I) hx).comp z hQ
+    convert! h.hasFDerivAt using 2
+    ext v
+    rw [← hη']
+    rfl
+  have he : L =
+      ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ (Q z)).comp
+        e := by
+    rw [← Bundle.Trivialization.coe_continuousLinearEquivAt_eq' _
+      (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)]
+  exact he ▸ hd
+
+end RealCharts
 
 end TauCeti
