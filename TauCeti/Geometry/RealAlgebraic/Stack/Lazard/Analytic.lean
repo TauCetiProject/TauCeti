@@ -7,22 +7,21 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
-import Mathlib.Logic.Equiv.Fin.Rotate
 
 /-!
-# Analytic cells and ambient invariance of Lazard stacks
+# Analytic cells of Lazard stacks
 
 Every ambient cell of a Lazard delineation over a real analytic submanifold is again an
 analytic submanifold: sections retain the dimension of the base, and sectors have one more
 dimension. Thus the analytic base condition is preserved by successive Lazard liftings,
 including liftings where ordinary polynomial fibers are nullified.
 
-The ambient stack convention places the distinguished coordinate first, while Lazard
-evaluation places it last. The valuation theorem retains the original Lazard coordinate
-order by evaluating at `Fin.snoc (Fin.tail x) (x 0)`. For signs, this is evaluation of the
-polynomial renamed by `finRotate`; no invariance of Lazard valuation under permutation is
-asserted. These statements apply to the actual ambient `stackCells` used in cylindrical
-decompositions.
+## Main declarations
+
+* `TauCeti.LazardDelineation.isAnalyticSubmanifold_sectionSet`: every ambient section over an
+  analytic submanifold is analytic of the same dimension.
+* `TauCeti.LazardDelineation.exists_isAnalyticSubmanifold_of_mem_stackCells`: every ambient
+  stack cell over an analytic submanifold is analytic, with the section or sector dimension.
 
 ## References
 
@@ -57,35 +56,5 @@ theorem exists_isAnalyticSubmanifold_of_mem_stackCells (hS : IsAnalyticSubmanifo
   · exact ⟨d, Or.inl rfl, D.isAnalyticSubmanifold_sectionSet hS i⟩
   · exact ⟨d + 1, Or.inr rfl, isAnalyticSubmanifold_image_cylinder_sectorSet hS
       D.continuous_root D.strictMono_root j⟩
-
-/-- On every ambient stack cell the Lazard valuation is constant when its coordinates are read
-in the original order, with the distinguished coordinate last. This includes zero members. -/
-theorem lazardValuation_snoc_eq_of_mem_stackCells (k : ι)
-    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root)
-    {x y : Fin (n + 1) → ℝ} (hx : x ∈ E) (hy : y ∈ E) :
-    (F k).lazardValuation (Fin.snoc (Fin.tail x) (x 0)) =
-      (F k).lazardValuation (Fin.snoc (Fin.tail y) (y 0)) := by
-  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-  · obtain ⟨z, hz, rfl⟩ := hx
-    obtain ⟨z', hz', rfl⟩ := hy
-    simpa only [tail_cylinder, cylinder_apply_zero] using
-      D.lazardValuation_snoc_eq_of_mem_sectionSet k hz hz'
-  · obtain ⟨z, hz, rfl⟩ := hx
-    obtain ⟨z', hz', rfl⟩ := hy
-    simpa only [tail_cylinder, cylinder_apply_zero] using
-      D.lazardValuation_snoc_eq_of_mem_sectorSet k hz hz'
-
-/-- Over a preconnected base, every member of a Lazard delineation is sign-invariant on each
-ambient stack cell after moving the distinguished coordinate to the front. -/
-theorem signInvariant_rename_finRotate_of_mem_stackCells (hS : IsPreconnected S) (k : ι)
-    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
-    SignInvariant (fun x ↦ eval x (rename (finRotate (n + 1)) (F k))) E := by
-  have key : (fun x ↦ eval x (rename (finRotate (n + 1)) (F k))) ∘ cylinder S =
-      fun z ↦ eval (Fin.snoc z.1.1 z.2) (F k) := by
-    funext z
-    rw [Function.comp_apply, eval_rename, cylinder_def, Fin.snoc_eq_cons_rotate]
-    rfl
-  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]
-  exacts [D.signInvariant_sectionSet hS k i, D.signInvariant_sectorSet hS k j]
 
 end TauCeti.LazardDelineation
