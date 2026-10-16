@@ -87,13 +87,16 @@ theorem eq_iff (h : SameAtomicType (L := L) a b) (i j : Fin n) :
 theorem rel_iff (h : SameAtomicType (L := L) a b) {k : ℕ} (r : L.Relations k)
     (f : Fin k → Fin n) : RelMap r (a ∘ f) ↔ RelMap r (b ∘ f) := h (.rel r f)
 
+/-- Every tuple agrees with itself on all atomic tests. -/
 @[refl, simp]
 theorem refl (a : Fin n → M) : SameAtomicType (L := L) a a := fun _ => Iff.rfl
 
+/-- Atomic-type agreement is symmetric. -/
 @[symm]
 theorem symm (h : SameAtomicType (L := L) a b) : SameAtomicType (L := L) b a :=
   fun i => (h i).symm
 
+/-- Atomic-type agreement is transitive across three structures. -/
 @[trans]
 theorem trans (hab : SameAtomicType (L := L) a b) (hbc : SameAtomicType (L := L) b c) :
     SameAtomicType (L := L) a c := fun i => (hab i).trans (hbc i)
