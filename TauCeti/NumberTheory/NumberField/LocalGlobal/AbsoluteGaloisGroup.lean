@@ -18,7 +18,7 @@ embedding of separable closures `τ : Kˢ →ₐ[K] K_vˢ` gives the map
 `TauCeti.absoluteGaloisGroupMap τ : G_{K_v} → G_K`, and restricting along `ι` reads its image in
 `Gal(L/K)`. This file shows that for a suitable `τ` that image contains the decomposition group
 of `w`, the stabilizer of `w` in `Gal(L/K)`
-(`TauCeti.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`).
+(`AlgHom.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`).
 
 The embedding `τ` is chosen so that its restriction to `L` factors through the completion `L_w`:
 it extends `L → L_w → K_vˢ`, for some `K_v`-embedding of `L_w` into `K_vˢ`. An element `σ` of the
@@ -34,7 +34,7 @@ a statement about prime ideals, becomes a statement about the decomposition maps
 
 ## Main results
 
-* `TauCeti.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`: for some
+* `AlgHom.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`: for some
   embedding `τ : Kˢ →ₐ[K] K_vˢ`, every element of the decomposition group of `w` is the
   restriction to `L` of the image of an element of `G_{K_v}`.
 
@@ -50,7 +50,9 @@ noncomputable section
 open IsDedekindDomain NumberField
 open scoped AdicCompletionExtension Pointwise
 
-namespace TauCeti
+namespace AlgHom
+
+open TauCeti
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
@@ -90,4 +92,4 @@ theorem exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap
     rw [← κ.restrictNormalHom_commutes, hg, HeightOneSpectrum.decompositionHom_algebraMap]
   exact τ.injective h
 
-end TauCeti
+end AlgHom

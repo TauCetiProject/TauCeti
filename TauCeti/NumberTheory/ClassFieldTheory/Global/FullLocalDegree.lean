@@ -24,18 +24,18 @@ places above it have decomposition group the whole of `Gal(L/K)`
 In the language of the absolute Galois group `G_K = Gal(Kˢ/K)`: an open normal subgroup `V` of
 `G_K` of prime index is the subgroup fixing a Galois extension `E` of `K` of prime degree inside
 `Kˢ`, with `G_K ⧸ V ≃ Gal(E/K)`. For a place `v` as above and the embedding `τ : Kˢ →ₐ[K] K_vˢ`
-of `TauCeti.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`, the
+of `AlgHom.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`, the
 decomposition map `G_{K_v} → G_K` composed with `G_K → G_K ⧸ V` is surjective
-(`exists_notMem_surjective_absoluteGaloisGroupMap_of_index_prime`). This is the form in which a
-place of full local degree enters cohomological arguments over `G_K`, for instance to evaluate a
-character of `G_K ⧸ V` on a local Artin symbol at `v`.
+(`OpenNormalSubgroup.exists_notMem_surjective_absoluteGaloisGroupMap_of_index_prime`). This is the
+form in which a place of full local degree enters cohomological arguments over `G_K`, for instance
+to evaluate a character of `G_K ⧸ V` on a local Artin symbol at `v`.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.exists_notMem_forall_stabilizer_eq_top_of_finrank_prime`: a Galois
   extension of number fields of prime degree has, outside every finite set of finite places of
   the ground field, a place at which every decomposition group is the whole Galois group.
-* `TauCeti.ClassFieldTheory.exists_notMem_surjective_absoluteGaloisGroupMap_of_index_prime`: for
+* `OpenNormalSubgroup.exists_notMem_surjective_absoluteGaloisGroupMap_of_index_prime`: for
   an open normal subgroup `V` of `G_K` of prime index, outside every finite set of finite places
   of `K` there are a place `v` and an embedding `τ : Kˢ →ₐ[K] K_vˢ` along which `G_{K_v}` maps
   onto `G_K ⧸ V`.
@@ -72,6 +72,14 @@ theorem exists_notMem_forall_stabilizer_eq_top_of_finrank_prime {L : Type} [Fiel
   exact hL.ne_one (finrank_eq_one_of_stabilizer_eq_bot S fun v hv ↦
     (h v hv).imp fun w hw ↦ (Subgroup.eq_bot_or_eq_top_of_prime_card _).resolve_right hw)
 
+end TauCeti.ClassFieldTheory
+
+namespace OpenNormalSubgroup
+
+open TauCeti TauCeti.ClassFieldTheory
+
+variable {K : Type} [Field K] [NumberField K]
+
 /-- **Decomposition maps onto a quotient of `G_K` of prime order.** Let `V` be an open normal
 subgroup of `G_K = Gal(Kˢ/K)` of prime index and `S` a finite set of finite places of `K`. Then
 there are a finite place `v ∉ S` and an embedding of separable closures `τ : Kˢ →ₐ[K] K_vˢ` such
@@ -94,7 +102,7 @@ theorem exists_notMem_surjective_absoluteGaloisGroupMap_of_index_prime
   obtain ⟨v, hvS, hv⟩ := exists_notMem_forall_stabilizer_eq_top_of_finrank_prime hE S
   obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v
   obtain ⟨τ, hτ⟩ :=
-    exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap E.val
+    E.val.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap
       (v := w.under (𝓞 K)) w
   refine ⟨_, hvS, τ, fun q ↦ ?_⟩
   -- The class `q` restricts to an element of the decomposition group of `w`, which is everything.
@@ -104,4 +112,4 @@ theorem exists_notMem_surjective_absoluteGaloisGroupMap_of_index_prime
     quotientFixingSubgroupFieldRangeEquiv_mk]
   exact hg
 
-end TauCeti.ClassFieldTheory
+end OpenNormalSubgroup
