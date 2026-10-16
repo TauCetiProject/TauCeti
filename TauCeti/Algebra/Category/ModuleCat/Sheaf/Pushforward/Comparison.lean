@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Basic
 
 /-!
 # Sheafifying a sectionwise pushforward comparison
@@ -31,9 +31,7 @@ formula for `T.map`, which is how `SheafOfModules.exteriorPower` and
   `unit_comp_forget_map_sheafifyPushforwardComparison_app`;
 * `TauCeti.SheafOfModules.sheafifyPushforwardComparison_app_comp_pushforward_map`: the comparison
   is compatible with sheafified maps out of `T_S` and `T_R` whose sectionwise maps are compatible
-  with `c`, as for the identifications of first exterior and symmetric powers with the module;
-* `TauCeti.SheafOfModules.unit_comp_val_sheafification_map_comp_sheafificationIso_hom`: the
-  sheafification of a morphism to a sheaf restricts to that morphism along the sheafification map.
+  with `c`, as for the identifications of first exterior and symmetric powers with the module.
 -/
 
 public section
@@ -45,26 +43,6 @@ namespace TauCeti.SheafOfModules
 universe u v₁ v₂ u₁ u₂
 
 noncomputable section
-
-section Unit
-
-variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
-  [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-
-/-- On the sheafification map of a presheaf of modules `P`, the sheafification of a morphism
-`g : P ⟶ M` to a sheaf, followed by `sheafificationIso`, is `g`. -/
-theorem unit_comp_val_sheafification_map_comp_sheafificationIso_hom {R : Sheaf J RingCat.{u}}
-    {P : PresheafOfModules.{u} R.obj} {M : _root_.SheafOfModules.{u} R} (g : P ⟶ M.val) :
-    (PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.app P ≫
-      ((PresheafOfModules.sheafification (𝟙 R.obj)).map g ≫ (sheafificationIso R M).hom).val =
-    g := by
-  rw [sheafificationIso_hom]
-  -- Move `g` past the sheafification map, then use a triangle identity.
-  let adj := PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)
-  exact (adj.unit.naturality_assoc _ _).symm.trans
-    ((congrArg (g ≫ ·) (adj.right_triangle_components M)).trans (Category.comp_id _))
-
-end Unit
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]

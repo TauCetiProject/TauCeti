@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Pullback
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.PushforwardComparison
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Comparison
 
 /-!
 # The symmetric-power pullback comparison for sheaves of modules
