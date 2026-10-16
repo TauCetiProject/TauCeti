@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Mirror
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Data.Nat.Choose.Bounds
 import Mathlib.Algebra.Polynomial.BigOperators
@@ -14,6 +15,9 @@ import Mathlib.Tactic.Ring
 
 /-!
 # Coefficient sup norms of polynomial products
+
+The coefficient sup norm is unchanged by `Polynomial.mirror`, which only permutes the
+coefficients, and scales by `‖a‖` under multiplication by a constant `a`.
 
 A coefficient of a finite product is bounded by its binomial weight in the sum of
 the degrees times the product of the coefficient sup norms. Consequently the sup
@@ -33,6 +37,21 @@ public section
 open Polynomial
 
 namespace TauCeti
+
+/-- Mirroring a polynomial permutes its coefficients, so it preserves the coefficient sup
+norm. -/
+@[simp]
+theorem _root_.Polynomial.supNorm_mirror {A : Type*} [SeminormedRing A] (p : A[X]) :
+    p.mirror.supNorm = p.supNorm := by
+  simp only [supNorm_eq_iSup, coeff_mirror]
+  exact (Function.Involutive.surjective fun _ ↦ revAt_invol).iSup_comp (‖p.coeff ·‖)
+
+/-- Multiplying by a constant `a` scales the coefficient sup norm by `‖a‖`. -/
+@[simp]
+theorem _root_.Polynomial.supNorm_mul_C {A : Type*} [SeminormedRing A] [NormMulClass A]
+    (p : A[X]) (a : A) : (p * C a).supNorm = p.supNorm * ‖a‖ := by
+  simp only [supNorm_eq_iSup, coeff_mul_C, norm_mul]
+  exact (Real.iSup_mul_of_nonneg (norm_nonneg a) _).symm
 
 /-- A coefficient is bounded by its binomial weight times the coefficient sup norm. -/
 theorem _root_.Polynomial.norm_coeff_le_choose_mul_supNorm {A : Type*} [SeminormedRing A]

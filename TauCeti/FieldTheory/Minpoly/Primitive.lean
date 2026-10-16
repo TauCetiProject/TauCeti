@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.RingTheory.Algebraic.Denominator
 public import Mathlib.RingTheory.Polynomial.GaussLemma
+public import TauCeti.Algebra.Polynomial.Mirror
 
 import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.Algebra.Ring.Divisibility.Lemmas
@@ -44,6 +45,7 @@ clears the denominator of `x`.
 * `TauCeti.primitiveMinpoly_eq_of_irreducible`: the uniqueness characterisation of `F_x`.
 * `TauCeti.primitiveMinpoly_eq_minpoly_int`: `F_x = minpoly ℤ x` for `x` integral over `ℤ`.
 * `TauCeti.primitiveMinpoly_ratCast`: `F_q = (den q) X - num q` for `q ∈ ℚ`.
+* `TauCeti.primitiveMinpoly_inv`: `F_{x⁻¹}` is the normalized mirror of `F_x`.
 * `TauCeti.primitiveMinpoly_map`, `TauCeti.primitiveMinpoly_eq_of_minpoly_eq`: `F_x` depends only
   on `minpoly ℚ x`, so it is preserved by field embeddings and shared by conjugates.
 * `TauCeti.isIntegral_leadingCoeff_primitiveMinpoly_smul`,
@@ -217,6 +219,34 @@ theorem primitiveMinpoly_ratCast (q : ℚ) :
     (by rw [leadingCoeff_linear hden]; exact_mod_cast q.den_pos) ?_
   rw [aeval_add, aeval_mul, aeval_C, aeval_C, aeval_X, algebraMap_int_eq, eq_intCast, eq_intCast]
   exact_mod_cast add_neg_eq_zero.mpr (Rat.den_mul_eq_num q)
+
+/-- The primitive minimal polynomial of `x⁻¹` is the mirror of `F_x`, normalized to have positive
+leading coefficient. For nonzero algebraic `x` of degree `d` the mirror is the reciprocal
+polynomial `X ^ d F_x(1 / X)`. The identity also holds at `x = 0`, where `F_0 = X` is its own
+mirror, and for transcendental `x`, where both sides are `1`. -/
+theorem primitiveMinpoly_inv (x : F) :
+    primitiveMinpoly x⁻¹ = normalize (primitiveMinpoly x).mirror := by
+  by_cases hx : IsAlgebraic ℚ x
+  swap
+  · rw [primitiveMinpoly_of_not_isAlgebraic hx,
+      primitiveMinpoly_of_not_isAlgebraic (IsAlgebraic.inv_iff.not.mpr hx), ← C_1, mirror_C, C_1,
+      normalize_one]
+  rcases eq_or_ne x 0 with rfl | hx0
+  · have h0 : primitiveMinpoly (0 : F) = X := by
+      simpa using primitiveMinpoly_ratCast (F := F) 0
+    rw [inv_zero, h0, mirror_X, ← X_eq_normalize]
+  refine primitiveMinpoly_eq_of_irreducible
+    ((associated_normalize _).irreducible
+      (irreducible_mirror_iff.mpr (irreducible_primitiveMinpoly hx))) ?_ ?_
+  · rw [leadingCoeff_normalize, ← Int.abs_eq_normalize, abs_pos, leadingCoeff_ne_zero, Ne,
+      mirror_eq_zero]
+    exact primitiveMinpoly_ne_zero x
+  · -- `x⁻¹` is a root of the reversal of `F_x`, which divides the mirror.
+    let := invertibleOfNonzero hx0
+    have hrev : aeval x⁻¹ (primitiveMinpoly x).reverse = 0 := by
+      rw [aeval_def, ← invOf_eq_inv, eval₂_reverse_eq_zero_iff, ← aeval_def,
+        aeval_primitiveMinpoly hx]
+    rw [normalize_apply, mirror, aeval_mul, aeval_mul, hrev, zero_mul, zero_mul]
 
 /-- For algebraic `x`, the element `a₀ x` is integral over `ℤ`, where `a₀` is the leading
 coefficient of `F_x` (Evertse, Lemma 3.7). -/
