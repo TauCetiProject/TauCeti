@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
@@ -48,6 +49,8 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   `ContinuousLinearMap.topologicalClosure_range_modulus`: the closure of the range of `|T|` is
   `(ker T)ᗮ`, and
   `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
+* `ContinuousLinearMap.commute_modulus_of_commute`: an endomorphism commuting with `T† T`
+  commutes with `|T|`.
 * `ContinuousLinearMap.norm_modulus_comp`, `ContinuousLinearMap.norm_comp_modulus`: the
   composition laws `‖|T| D‖ = ‖T D‖` and `‖D |T|‖ = ‖D T†‖`.
 
@@ -104,6 +107,11 @@ theorem eq_modulus_iff {T : E →L[𝕜] F} {S : E →L[𝕜] E} :
   rintro rfl
   exact ⟨nonneg_iff_isPositive.1 T.modulus_nonneg, T.modulus_comp_modulus⟩
 
+/-- An endomorphism commuting with the source Gram operator `T† T` commutes with the modulus. -/
+theorem commute_modulus_of_commute {T : E →L[𝕜] F} {S : E →L[𝕜] E}
+    (h : Commute S (T† ∘L T)) : Commute S T.modulus :=
+  (h.symm.cfcₙ_nnreal NNReal.sqrt).symm
+
 end RealAlgebra
 
 /-- The modulus is positive. -/
@@ -132,6 +140,11 @@ theorem modulus_modulus (T : E →L[𝕜] F) : T.modulus.modulus = T.modulus :=
 @[simp]
 theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
   (eq_modulus_iff.2 ⟨isPositive_zero, by simp⟩).symm
+
+/-- An operator and its negative have the same modulus. -/
+@[simp]
+theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
+  (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
 
 /-- The modulus is the square root `CFC.sqrt (T† T)` of the continuous functional calculus, for
 every real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action. -/
