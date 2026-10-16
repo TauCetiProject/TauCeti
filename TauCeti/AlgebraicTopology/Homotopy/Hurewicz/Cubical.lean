@@ -331,7 +331,9 @@ theorem cubicalHurewicz_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin (n + 1)) 
   rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply,
     iCycles_cubicalCycle, normalizedCubicalChainComplex_map_f_apply,
     NormalizedCubicalChain.map_ofCube]
-  -- The cube `GenLoop.map f hf p` is `f.comp p` by definition, and `(TopCat.ofHom f).hom` is `f`.
+  -- The cube `GenLoop.map f hf p` is `f.comp p` (`GenLoop.coe_map`), and `(TopCat.ofHom f).hom`
+  -- is `f`.
+  rw [GenLoop.coe_map]
   rfl
 
 end Class
