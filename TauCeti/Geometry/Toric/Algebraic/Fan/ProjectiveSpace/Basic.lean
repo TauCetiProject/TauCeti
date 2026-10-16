@@ -313,6 +313,12 @@ theorem mem_projectiveSpace_cones (hi : IsIntegralLattice i) {σ : PointedCone �
     σ ∈ (projectiveSpace b hi).cones ↔ ∃ S ≠ univ, projectiveSpaceCone b i S = σ :=
   Iff.rfl
 
+/-- The maximal cone omitting the ray `k`, whose projective chart has `X_k ≠ 0`. -/
+noncomputable abbrev projectiveSpaceMaximalCone (hi : IsIntegralLattice i) (k : Option ι) :
+    (projectiveSpace b hi).cones :=
+  ⟨projectiveSpaceCone b i {k}ᶜ,
+    (mem_projectiveSpace_cones b hi).2 ⟨_, by simp, rfl⟩⟩
+
 /-- The fan of projective space is regular. -/
 theorem isRegular_projectiveSpace (hi : IsIntegralLattice i) :
     (projectiveSpace b hi).IsRegular := by

@@ -35,6 +35,11 @@ The principal cosines are symmetric in `U` and `V`. The principal sines are symm
 this file. Without the dimension hypothesis the statement fails: for a line `U` inside a plane
 `V`, all principal sines of `U` and `V` vanish but one principal sine of `V` and `U` is `1`.
 
+When `U` is the range of an isometry `X : F →L[𝕜] E`, for instance the trial map of the
+Rayleigh–Ritz procedure, the angles are read off `X` directly: the *sine embedding* `P_{Vᗮ} X` and
+the *cosine embedding* `P_V X` have as singular values the principal sines and cosines of `U` and
+`V`, and the operator norm of the sine embedding is the directed gap from `U` to `V`.
+
 ## Main definitions
 
 * `Submodule.cosThetaMap U V`: the cosine map `P_V P_U`.
@@ -46,6 +51,11 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
 
 ## Main results
 
+* `Submodule.principalSines_range_eq_singularValues`,
+  `Submodule.principalCosines_range_eq_singularValues`: for an isometry `X`, the principal sines
+  and cosines of `range X` and `V` are the singular values of the sine and cosine embeddings.
+* `Submodule.norm_starProjection_orthogonal_comp`: the operator norm of the sine embedding of an
+  isometry is the directed gap.
 * `Submodule.principalCosines_comm`: the principal cosines are symmetric in `U` and `V`.
 * `Submodule.principalSines_comm`, `Submodule.principalAngles_comm`: for subspaces of the same
   dimension, the principal sines and the principal angles are symmetric in `U` and `V`.
@@ -543,3 +553,59 @@ theorem forall_principalAngles_lt_pi_div_four_iff :
 end FiniteDimensional
 
 end Submodule
+
+/-! ### Angles of the range of an isometry -/
+
+section Isometry
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] {X : F →L[𝕜] E}
+
+namespace Submodule
+
+open ContinuousLinearMap
+
+variable (V : Submodule 𝕜 E) [V.HasOrthogonalProjection]
+
+/-- The operator norm of the sine embedding `P_{Vᗮ} X` of an isometry `X` is the directed gap
+from `range X` to `V`. -/
+theorem norm_starProjection_orthogonal_comp (hX : Isometry X) [X.range.HasOrthogonalProjection] :
+    ‖Vᗮ.starProjection ∘L X‖ = X.range.directedProjectionGap V := by
+  have hXn : ‖X‖ ≤ 1 := X.opNorm_le_bound zero_le_one fun x ↦ by
+    rw [AddMonoidHomClass.isometry_iff_norm _ |>.1 hX, one_mul]
+  rw [← norm_sinThetaMap]
+  refine le_antisymm ?_ ?_
+  · -- `P_{Vᗮ} X = (P_{Vᗮ} P_Z) X` and `X` is a contraction.
+    calc ‖Vᗮ.starProjection ∘L X‖ = ‖X.range.sinThetaMap V ∘L X‖ := by
+          rw [sinThetaMap_def, comp_assoc, starProjection_range_comp]
+      _ ≤ ‖X.range.sinThetaMap V‖ :=
+          (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hXn)
+  · -- `P_{Vᗮ} P_Z = (P_{Vᗮ} X) X†` and `X†` is a contraction.
+    calc ‖X.range.sinThetaMap V‖ = ‖(Vᗮ.starProjection ∘L X) ∘L adjoint X‖ := by
+          rw [sinThetaMap_def, ← comp_adjoint_eq_starProjection_range hX, comp_assoc]
+      _ ≤ ‖Vᗮ.starProjection ∘L X‖ :=
+          (opNorm_comp_le _ _).trans <| mul_le_of_le_one_right (norm_nonneg _) <| by
+            rwa [LinearIsometryEquiv.norm_map]
+
+variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- The principal cosines of the range of an isometry `X` and of `V` are the singular values of
+the cosine embedding `P_V X`. -/
+theorem principalCosines_range_eq_singularValues (hX : Isometry X) :
+    X.range.principalCosines V =
+      ((V.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
+  rw [principalCosines_def, cosThetaMap_def, singularValues_comp_starProjection_range hX]
+
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- The principal sines of the range of an isometry `X` and of `V` are the singular values of the
+sine embedding `P_{Vᗮ} X`. -/
+theorem principalSines_range_eq_singularValues (hX : Isometry X) :
+    X.range.principalSines V =
+      ((Vᗮ.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
+  rw [principalSines_def, sinThetaMap_def, singularValues_comp_starProjection_range hX]
+
+end Submodule
+
+end Isometry

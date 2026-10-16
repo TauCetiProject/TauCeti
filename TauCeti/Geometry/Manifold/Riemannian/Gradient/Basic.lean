@@ -96,6 +96,27 @@ theorem mvfderiv_apply_mgradient :
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
 
+/-- The gradient of a constant function is zero. -/
+@[simp]
+theorem mgradient_const (c : ℝ) : mgradient I (fun _ : M ↦ c) = 0 := by
+  funext x
+  simp only [mgradient, mvfderiv_const, LinearIsometryEquiv.map_zero, Pi.zero_apply]
+
+/-- The gradient is additive on differentiable functions. -/
+theorem mgradient_add {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
+    (hg : MDifferentiable I 𝓘(ℝ) g) :
+    mgradient I (f + g) = mgradient I f + mgradient I g := by
+  funext x
+  simp [mgradient, mvfderiv_add (hf x) (hg x)]
+
+/-- The gradient commutes with multiplication by a real constant. -/
+theorem mgradient_smul (c : ℝ) (hf : MDifferentiable I 𝓘(ℝ) f) :
+    mgradient I (c • f) = c • mgradient I f := by
+  funext x
+  simpa [mgradient, mvfderiv_const, Pi.smul_def, smul_eq_mul] using
+    congrArg (Riemannian.Tensor.rieszDual (I := I) x)
+      (mvfderiv_fun_smul (a := fun _ : M ↦ c) mdifferentiableAt_const (hf x))
+
 /-- The gradient of `-f` is the opposite of the gradient of `f`. -/
 @[simp]
 theorem mgradient_neg : mgradient I (-f) x = -mgradient I f x := by

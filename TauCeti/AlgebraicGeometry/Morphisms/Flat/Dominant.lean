@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.RegularLocalRing.Basic
-import TauCeti.Topology.KrullDimension
+import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Dominant morphisms to curves are flat
