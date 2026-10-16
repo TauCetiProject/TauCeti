@@ -48,7 +48,8 @@ variable {G : Type*} [AddCommGroup G]
 
 /-- Tensoring an abelian group on which multiplication by two is surjective with `ZMod 2` over `ℤ`
 gives the zero group. -/
-theorem subsingleton_zmod_two_tensorProduct (h : Function.Surjective fun x : G ↦ (2 : ℤ) • x) :
+theorem subsingleton_zmod_two_tensorProduct
+    (h : Function.Surjective fun x : G ↦ (2 : ℤ) • x) :
     Subsingleton (TensorProduct ℤ (ZMod 2) G) := by
   rw [subsingleton_iff_forall_eq 0]
   intro z
@@ -60,7 +61,8 @@ theorem subsingleton_zmod_two_tensorProduct (h : Function.Surjective fun x : G �
 
 /-- Tensoring an abelian group on which multiplication by two is surjective with `ZMod 2` over `ℤ`
 gives the zero group, with that group as the left tensor factor. -/
-theorem subsingleton_tensorProduct_zmod_two (h : Function.Surjective fun x : G ↦ (2 : ℤ) • x) :
+theorem subsingleton_tensorProduct_zmod_two
+    (h : Function.Surjective fun x : G ↦ (2 : ℤ) • x) :
     Subsingleton (TensorProduct ℤ G (ZMod 2)) := by
   let _ := h.subsingleton_zmod_two_tensorProduct
   exact (TensorProduct.comm ℤ G (ZMod 2)).toEquiv.injective.subsingleton
@@ -74,6 +76,12 @@ bijection. -/
 def IsUniquelyTwoDivisible (G : Type*) [AddCommGroup G] : Prop :=
   Function.Bijective fun x : G ↦ (2 : ℤ) • x
 
+/-- Unique two-divisibility is bijectivity of multiplication by two. This characterizes the
+predicate without requiring its defining body to be exposed to importing modules. -/
+theorem isUniquelyTwoDivisible_iff (G : Type*) [AddCommGroup G] :
+    IsUniquelyTwoDivisible G ↔ Function.Bijective (fun x : G ↦ (2 : ℤ) • x) :=
+  Iff.rfl
+
 namespace IsUniquelyTwoDivisible
 
 variable {G : Type*} [AddCommGroup G]
@@ -86,7 +94,8 @@ def localizationAwayTwoModule (h : IsUniquelyTwoDivisible G) :
     Module (Localization.Away (2 : ℤ)) G :=
   Function.Bijective.localizationAwayModule h
 
-/-- Tensoring a uniquely two-divisible abelian group with `ZMod 2` over `ℤ` gives the zero group. -/
+/-- Tensoring a uniquely two-divisible abelian group with `ZMod 2` over `ℤ` gives the zero
+group. -/
 theorem subsingleton_zmod_two_tensorProduct (h : IsUniquelyTwoDivisible G) :
     Subsingleton (TensorProduct ℤ (ZMod 2) G) :=
   Function.Surjective.subsingleton_zmod_two_tensorProduct h.2
