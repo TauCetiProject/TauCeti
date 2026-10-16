@@ -88,7 +88,7 @@ private theorem pointsMulEquiv_mapPointsFunctor_typeAGraphCoordinateIso_sameUniv
     (A : Type u) [CommRing A] [Algebra R A]
     (f : WithConv (coordinateHopfAlgebra R (r + 1) →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) (r + 1)
-        ((CommHopfAlgCat.mapPointsFunctor (typeAGraphCoordinateIso R r).hom).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (typeAGraphCoordinateIso R r).hom).app
           (CommAlgCat.of R A) f) =
       Matrix.SpecialLinearGroup.typeAGraphAutomorphism r A
         (pointsMulEquiv (R := R) (A := A) (r + 1) f) := by
@@ -120,7 +120,7 @@ theorem pointsMulEquiv_comp_typeAGraphCoordinateIso (A : Type w)
   let q : WithConv (H →ₐ[R] H) := toConv (AlgHom.id R H)
   have h := pointsMulEquiv_mapPointsFunctor_typeAGraphCoordinateIso_sameUniverse R r H q
   have hc := congrArg (pointsMulEquiv (R := R) (A := H) (r + 1))
-    (CommHopfAlgCat.mapPointsFunctor_app_apply (typeAGraphCoordinateIso R r).hom
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (typeAGraphCoordinateIso R r).hom
       (CommAlgCat.of R H) q)
   have hraw := hc.symm.trans h
   have hmap := congrArg (Matrix.SpecialLinearGroup.map f.ofConv.toRingHom) hraw
@@ -186,10 +186,10 @@ private theorem typeAGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap_of_tr
   let x := rootSubgroupCoordinateMap (R := R) hij
   let y := rootSubgroupCoordinateMap (R := R) hkl
   have hx : toConv (f.ofConv.comp x.hom.toAlgHom) = rootSubgroupPoints hij f :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply x (CommAlgCat.of R A) f).symm.trans
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_apply x (CommAlgCat.of R A) f).symm.trans
       (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
   have hy : toConv (f.ofConv.comp y.hom.toAlgHom) = rootSubgroupPoints hkl f :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply y (CommAlgCat.of R A) f).symm.trans
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_apply y (CommAlgCat.of R A) f).symm.trans
       (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
   -- The opposite composite acts by precomposition of its algebra-homomorphism components.
   change pointsMulEquiv (R := R) (A := A) (r + 1)

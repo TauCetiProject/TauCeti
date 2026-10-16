@@ -45,7 +45,7 @@ variable (R : CommRingCat.{u})
 
 private theorem isIso_tildeIhomComparison
     (M : (finiteProjectiveModules R).FullSubcategory) :
-    IsIso ((tilde.functor R).ihomComparison M.obj).natTrans := by
+    IsIso ((tilde.functor R).ihomComparison M.obj) := by
   obtain ⟨hfinite, hprojective⟩ := finiteProjectiveModules_iff.mp M.property
   let _ : Module.Finite R M.obj := hfinite
   let _ : Module.Projective R M.obj := hprojective
@@ -58,7 +58,7 @@ private def tildeIhomComparisonIso
     (M : (finiteProjectiveModules R).FullSubcategory) :
     ihom M.obj ⋙ tilde.functor R ≅
       tilde.functor R ⋙ ihom (tilde M.obj) :=
-  @asIso _ _ _ _ ((tilde.functor R).ihomComparison M.obj).natTrans
+  @asIso _ _ _ _ ((tilde.functor R).ihomComparison M.obj)
     (isIso_tildeIhomComparison R M)
 
 /-- The associated sheaf of the linear dual of a finite projective module is canonically
@@ -84,7 +84,7 @@ theorem finiteProjectiveEquivDualIso_hom_hom
           (ModuleCat.homLinearEquiv.toModuleIso :
             (ihom M.obj).obj (𝟙_ (ModuleCat.{u} R)) ≅
               ModuleCat.of R (Module.Dual R M.obj)).inv ≫
-        ((tilde.functor R).ihomComparison M.obj).natTrans.app
+        ((tilde.functor R).ihomComparison M.obj).app
           (𝟙_ (ModuleCat.{u} R)) ≫
         (ihom ((tilde.functor R).obj M.obj)).map (η (tilde.functor R)) :=
   by
@@ -114,16 +114,16 @@ theorem finiteProjectiveEquivDualIso_naturality
   erw [← (tilde.functor R).map_comp_assoc]
   rw [hdual]
   erw [(tilde.functor R).map_comp_assoc]
-  have hc := congrArg (fun S ↦ S.natTrans.app (𝟙_ (ModuleCat.{u} R)))
+  have hc := congrArg (fun S ↦ S.app (𝟙_ (ModuleCat.{u} R)))
     (Functor.ihomComparison_whiskerLeft (F := tilde.functor R) f.hom)
   -- The equality is packaged as an equality of `TwoSquare`s; expose its component so it can
   -- rewrite the composite without unfolding the internal-Hom comparison itself.
-  change ((tilde.functor R).ihomComparison N.obj).natTrans.app
+  change ((tilde.functor R).ihomComparison N.obj).app
         (𝟙_ (ModuleCat.{u} R)) ≫
       (pre ((tilde.functor R).map f.hom)).app
         ((tilde.functor R).obj (𝟙_ (ModuleCat.{u} R))) =
     (tilde.functor R).map ((pre f.hom).app (𝟙_ (ModuleCat.{u} R))) ≫
-      ((tilde.functor R).ihomComparison M.obj).natTrans.app
+      ((tilde.functor R).ihomComparison M.obj).app
         (𝟙_ (ModuleCat.{u} R)) at hc
   erw [← reassoc_of% hc]
   erw [← (pre ((tilde.functor R).map f.hom)).naturality]

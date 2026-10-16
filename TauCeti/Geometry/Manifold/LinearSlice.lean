@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Complement
 
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Topology.Algebra.Module.SubspaceExchange
 
 /-!
 # Manifold structures from linear slice charts
@@ -21,7 +22,10 @@ normed space is the case of the space modelled on itself.
 
 The construction requires neither finite dimension nor completeness. It reuses
 `IsSliceChart.subtypeChart`; the smooth-atlas argument follows the preferred-chart argument
-in `TauCeti.Geometry.Lie.Subgroup.Manifold`, without its group translations.
+in `TauCeti.Geometry.Lie.Subgroup.Manifold`, without its group translations. The variant
+`exists_isManifold_of_finrankSubspaceCharts`, in which the flattening subspace may change from
+point to point and only its dimension is fixed, assumes a finite-dimensional model over a complete
+field: there linear isomorphisms are continuous and every subspace has a closed complement.
 
 ## References
 
@@ -218,5 +222,32 @@ theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
   exact ⟨linearSliceChartedSpace e he hcover,
     isManifold_linearSliceChartedSpace e he hs hi hcover,
     contMDiff_subtypeVal_linearSliceChartedSpace e he hi hcover⟩
+
+omit e he hsmooth hinv in
+/-- A subset of a manifold modelled on a finite-dimensional space that is flattened near each of its
+points by a `C^n` chart onto some subspace of dimension `d` of the model is a `C^n` manifold
+modelled on any subspace `L` of dimension `d`, and its inclusion is `C^n`. -/
+theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+    {L : Submodule 𝕜 E}
+    (hcharts : ∀ y ∈ s, ∃ (q : OpenPartialHomeomorph M E) (V : Submodule 𝕜 E), y ∈ q.source ∧
+      (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
+      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) ∧
+      (∀ z ∈ q.source, z ∈ s ↔ q z ∈ V) ∧ Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
+    ∃ C : ChartedSpace L s, letI := C
+      IsManifold 𝓘(𝕜, L) n s ∧ ContMDiff 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
+  obtain ⟨N, hN⟩ := L.exists_isCompl
+  have hLN : Submodule.IsTopCompl L N :=
+    Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.closed_of_finiteDimensional
+  refine exists_isManifold_of_linearSubspaceCharts hLN fun y ↦ ?_
+  obtain ⟨q, V, hy, hq, hqs, hmem, hdim⟩ := hcharts y y.2
+  obtain ⟨Φ, hΦ⟩ := V.exists_continuousLinearEquiv_mem_iff L hdim
+  refine ⟨q.transHomeomorph Φ.toHomeomorph, by simpa using hy, fun z hz ↦ ?_, fun z hz ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    exact Φ.contDiff.contMDiff.contMDiffAt.comp z (hq z hz)
+  · have hz' : Φ.symm z ∈ q.target := by simpa using hz
+    exact (hqs _ hz').comp z Φ.symm.contDiff.contMDiff.contMDiffAt
+  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    simpa [hΦ] using hmem z hz
 
 end TauCeti

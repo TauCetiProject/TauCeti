@@ -63,6 +63,8 @@ with measurable singletons.
 * `TauCeti.eq_graphPlan_iff` — a plan is the graph plan of `T` exactly when it is concentrated
   on the graph of `T`, with `TauCeti.graphPlan_eq_graphPlan_iff` the uniqueness of the map that
   induces a given deterministic plan;
+* `TauCeti.eq_graphPlan_of_absolutelyContinuous` — a plan absolutely continuous with respect to
+  the graph plan of `T` is itself a graph plan of `T`;
 * `TauCeti.comp_ae_eq_id_of_map_swap_graphPlan_eq` — when the coordinate swap of the graph plan
   of `T` is the graph plan of `R`, the maps are two-sided inverses almost everywhere;
 * `TauCeti.eq_dirac_of_hasLaw_dirac` — a transport map out of a Dirac measure forces the target
@@ -374,6 +376,16 @@ plan exactly when they agree `μ`-almost everywhere. -/
 theorem graphPlan_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
     graphPlan T μ = graphPlan S μ ↔ T =ᵐ[μ] S :=
   ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT hS).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
+
+/-- **A plan dominated by a graph plan is a graph plan of the same map.** If `π` is absolutely
+continuous with respect to the graph plan of `T` over `μ`, then `π` is carried by the graph of `T`,
+so it is the graph plan of `T` over its own first marginal. -/
+theorem eq_graphPlan_of_absolutelyContinuous (hT : AEMeasurable T μ)
+    (h : π ≪ graphPlan T μ) : π = graphPlan T π.fst := by
+  -- `Measure.fst` is by definition the pushforward along `Prod.fst`.
+  have hfst : π.fst ≪ (graphPlan T μ).fst := h.map measurable_fst
+  rw [fst_graphPlan hT] at hfst
+  exact eq_graphPlan_of_ae_snd_eq (hT.mono_ac hfst) (h.ae_le (ae_snd_eq_graphPlan hT))
 
 /-- **Inverse graph plans come from inverse maps.** If exchanging the coordinates of the graph
 plan of `T : X → Y` over `μ` gives the graph plan of `R : Y → X` over `ν`, then `R ∘ T = id`

@@ -175,7 +175,7 @@ private noncomputable def quotientSubgroupPointsPresheafGrpInclusion
     pointsPresheafGrp (quotient H I) ⟶ pointsPresheafGrp H :=
   groupFunctorGrpMap <| Functor.whiskerRight
     (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R))
-      (mapPointsFunctor (mkQuotient H I)))
+      (CommHopfAlgCat.Hom.mapPointsFunctor (mkQuotient H I)))
     GrpCat.uliftFunctor.{u + 1, u}
 
 /-- The action map in the pointwise torsor square, `(g, n) ↦ gn`. -/

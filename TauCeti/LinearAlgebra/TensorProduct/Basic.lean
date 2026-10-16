@@ -23,7 +23,7 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
-* `TauCeti.tensorProduct_rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
 
@@ -110,6 +110,14 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
 
 end
 
+/-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
+@[simp]
+theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
+    TensorProduct.rid R N (rTensor R f t) = f (TensorProduct.rid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul m r => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 /-! ### The Casimir element of a trace
 
 Let `φ : A →ₗ[k] k` be a trace on a `k`-algebra `A`, so `φ (a * b) = φ (b * a)`, and let `x` and
@@ -165,18 +173,3 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 end Casimir
 
 end LinearMap
-
-namespace TauCeti
-
-variable {R M N : Type*} [CommSemiring R]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-/-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
-@[simp]
-theorem tensorProduct_rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
-    TensorProduct.rid R N (LinearMap.rTensor R f t) = f (TensorProduct.rid R M t) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul m r => simp
-  | add x y hx hy => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
-
-end TauCeti

@@ -168,7 +168,9 @@ theorem exists_ncard_inter_preimage_eq (h : IsLocalPowerAt f x e) {N : Set X} (h
       · rwa [mem_preimage, φ.right_inv hwt]
       · exact ψ.injOn hfw hy ((hpow w hwt).trans hw)
   obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (ψ y) (Nat.pos_of_ne_zero he)
-  rw [← (φ.injOn.mono fun _ hx' => hx'.1.1).ncard_image, himage, Set.ncard_coe_finset,
+  have hinj : InjOn φ (φ.source ∩ φ ⁻¹' Metric.ball 0 r ∩ f ⁻¹' {y}) :=
+    φ.injOn.mono fun _ hx' ↦ hx'.1.1
+  rw [← hinj.ncard_image, himage, Set.ncard_coe_finset,
     (Complex.isPrimitiveRoot_exp e he).card_nthRootsFinset_of_pow_eq hα hψy]
 
 /-- **The exponent of a local power map is unique**: two pairs of charts exhibiting `f` near `x` as

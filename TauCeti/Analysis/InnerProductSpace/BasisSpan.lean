@@ -17,6 +17,9 @@ subspace spanned by the corresponding basis vectors.
 ## Main results
 
 * `OrthonormalBasis.spanIndices_eq_span`: the explicit span characterization.
+* `OrthonormalBasis.span_range_comp_subtypeVal_eq_spanIndices`: the restriction
+  `b ∘ (↑) : s → E` of the basis to the coordinate block `s`, an orthonormal family by
+  `Orthonormal.comp`, spans the selected subspace.
 * `OrthonormalBasis.spanIndices_mono`: monotonicity under index-set inclusion.
 * `OrthonormalBasis.mem_spanIndices_of_mem`: selected basis vectors belong to the span.
 * `OrthonormalBasis.mem_spanIndices_iff`: membership means coordinates vanish
@@ -53,6 +56,12 @@ noncomputable def spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
 Use this identity to apply `Submodule.span`'s induction or universal property. -/
 theorem spanIndices_eq_span (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
     b.spanIndices s = Submodule.span 𝕜 (b '' s) := (rfl)
+
+/-- The basis vectors indexed by the coordinate block `s`, as a family indexed by `s`, span the
+selected subspace. -/
+theorem span_range_comp_subtypeVal_eq_spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
+    Submodule.span 𝕜 (Set.range (b ∘ ((↑) : s → ι))) = b.spanIndices s := by
+  rw [spanIndices_eq_span, Set.range_comp, Subtype.range_coe]
 
 /-- Selecting more indices spans more. -/
 theorem spanIndices_mono (b : OrthonormalBasis ι 𝕜 E) {s t : Set ι} (h : s ⊆ t) :
