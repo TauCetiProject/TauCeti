@@ -22,7 +22,7 @@ conjugate-linear in `v` and complex-linear in `w`. It is the `(1,1)`-part of `B`
 basis `e_j` of `V`, with `I • e_j` the imaginary coordinate directions, its matrix entries are
 the Wirtinger expressions `(B_{x_j x_k} + B_{y_j y_k} + I (B_{x_j y_k} - B_{y_j x_k})) / 4`, so
 for the real Hessian `B` of a function `f` the entry `B.leviForm (e_k) (e_j)` is
-`∂²f / ∂z_j ∂z̄_k`. Its diagonal is one quarter of `B v v + B (I • v) (I • v)`.
+`∂²f / ∂z_j ∂(conj z_k)`. Its diagonal is one quarter of `B v v + B (I • v) (I • v)`.
 
 The Levi form forgets the part of `B` which anticommutes with multiplication by `I`. This is why
 it transforms well under holomorphic maps: the second derivative of a holomorphic map is complex

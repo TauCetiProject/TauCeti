@@ -21,7 +21,7 @@ the sesquilinear form `leviForm f x` whose real and imaginary parts are
 `Im (leviForm f x v w) = (D²f(x)(I • v, w) - D²f(x)(v, I • w)) / 4`.
 
 In holomorphic coordinates `z_j = x_j + I y_j` its matrix entries are the Wirtinger second
-derivatives `∂²f / ∂z_j ∂z̄_k`, and its diagonal value `leviForm f x v v` is the real number
+derivatives `∂²f / ∂z_j ∂(conj z_k)`, and its diagonal value `leviForm f x v v` is the real number
 `(D²f(x)(v, v) + D²f(x)(I • v, I • v)) / 4`. Unlike the real Hessian, which is intrinsic only at
 critical points, the Levi form transforms as a Hermitian form under holomorphic changes of
 variables at every point. Positive definiteness of the Levi form is strict plurisubharmonicity.
@@ -72,7 +72,7 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 /-- The **Levi form** of a real function `f` at `x`: the sesquilinear form
 `(D²f(x)(v, w) + D²f(x)(I • v, I • w) + I * (D²f(x)(I • v, w) - D²f(x)(v, I • w))) / 4`,
 conjugate-linear in `v` and complex-linear in `w`. Its matrix entries in holomorphic coordinates
-are the Wirtinger derivatives `∂²f / ∂z_j ∂z̄_k`. -/
+are the Wirtinger derivatives `∂²f / ∂z_j ∂(conj z_k)`. -/
 noncomputable def leviForm (f : V → ℝ) (x : V) : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ :=
   (fderiv ℝ (fderiv ℝ f) x).toBilinForm.leviForm
 
