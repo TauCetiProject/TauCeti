@@ -14,6 +14,11 @@ public import TauCeti.RingTheory.Henselization.Neighbourhood
 The category of étale neighbourhoods of a ring and ideal is essentially small. This permits
 forming its filtered colimit in the category of algebras when constructing the henselization of
 the pair.
+
+The small model is not built here: it comes from Mathlib's category `FGAlgCat` of finite-type
+algebras and its essential-smallness instance in `Mathlib.Algebra.Category.CommAlgCat.FiniteType`.
+Étale algebras are finitely presented, hence of finite type, so the neighbourhoods embed fully
+faithfully into `FGAlgCat`, and essential smallness transfers along this embedding.
 -/
 
 public section
