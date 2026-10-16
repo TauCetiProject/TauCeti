@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.Algebra.Homology.Single
 public import TauCeti.Algebra.Homology.OrderedCech
 
-import Mathlib.Tactic.Ring
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The ordered Čech complex of a cover of a set
@@ -212,20 +212,6 @@ private lemma single_freeCechAugmentation {s : Finset ι} (hs : #s = 0 + 1) {a :
   -- definitional unfolding of `HomologicalComplex.single`.
   exact (freeCechι_freeCechAugmentation_f_zero_assoc R ⟨s, hs⟩ a ha _).trans (Category.comp_id _)
 
-/-- Deleting an element `k` of `s` and adding `c ∉ s` in either order gives opposite signs. -/
-private lemma sign_cone {s : Finset ι} {c k : ι} (hc : c ∉ s) (hk : k ∈ s) :
-    ((-1 : ℤ) ^ #{j ∈ s | j < c}) * (-1) ^ #{j ∈ insert c s | j < k} =
-      -((-1) ^ #{j ∈ s | j < k} * (-1) ^ #{j ∈ s.erase k | j < c}) := by
-  have hck : c ≠ k := fun h ↦ hc (h ▸ hk)
-  rcases hck.lt_or_gt with h | h
-  · simp only [filter_insert, h, ↓reduceIte, filter_erase]
-    rw [card_insert_of_notMem (by simp [hc]),
-      erase_eq_of_notMem (show k ∉ {j ∈ s | j < c} by simp [h.not_gt]), pow_succ]
-    ring
-  · simp only [filter_insert, h.not_gt, ↓reduceIte, filter_erase]
-    rw [← card_erase_add_one (mem_filter.2 ⟨hk, h⟩), pow_succ]
-    ring
-
 end
 
 variable (hP : ⋃ i, P i = Set.univ)
@@ -279,7 +265,8 @@ private lemma single_homotopy_d_of_notMem {p : ℕ} {s : Finset ι} (hs : #s = p
   congr 1
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   have hck : vertex hP a ≠ k := fun h ↦ hc (h ▸ hk)
-  rw [smul_smul, sign_cone hc hk, neg_smul, single_congr R _ (erase_insert_of_ne hck)]
+  rw [smul_smul, neg_one_pow_card_filter_lt_mul_insert hc hk, neg_smul,
+    single_congr R _ (erase_insert_of_ne hck)]
 
 private lemma single_homotopy_of_mem {p : ℕ} {s : Finset ι} (hs : #s = p + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) (hc : vertex hP a ∈ s) :
