@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
-public import TauCeti.RingTheory.DedekindDomain.SInteger.Quotient
+public import TauCeti.RingTheory.DedekindDomain.SInteger.Congruence
 
 import TauCeti.RingTheory.Ideal.Quotient.DedekindDomain
 
@@ -84,15 +84,6 @@ noncomputable def residue (𝔪 : Modulus K) : primeToSubgroup 𝔪 →* 𝓞 K 
     ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.2 v (by simpa using hv)).le⟩
     ⟨((y : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp y.2 v (by simpa using hv)).le⟩
 
-private theorem exists_residue_eq (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
-    ∃ a b : 𝓞 K, b - 1 ∈ 𝔪.finitePart ∧
-      algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b * ((x : Kˣ) : K) ∧
-      residue 𝔪 x = Ideal.Quotient.mk 𝔪.finitePart a := by
-  obtain ⟨a, b, hb, hab⟩ :=
-    𝔪.finitePart.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
-      (fun v hv ↦ (mem_primeToSubgroup.mp x.2 v hv).le)
-  exact ⟨a, b, hb, hab, 𝔪.finitePart.sIntegerToQuotient_eq _ hb hab⟩
-
 /-- **The reduction is computed by any presentation with denominator congruent to one.** -/
 theorem residue_eq {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) {a b : 𝓞 K}
     (hb : b - 1 ∈ 𝔪.finitePart)
@@ -117,50 +108,9 @@ conditions are independent of it and have to be supplied separately. -/
 theorem residue_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
     residue 𝔪 x = 1 ↔ ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
       v.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := by
-  obtain ⟨a, b, hb, hab, hr⟩ := exists_residue_eq 𝔪 x
-  -- The reduction is one exactly when the numerator is congruent to one.
-  have hnum : residue 𝔪 x = 1 ↔ a - 1 ∈ 𝔪.finitePart := by
-    rw [hr, ← map_one (Ideal.Quotient.mk 𝔪.finitePart)]
-    exact Ideal.Quotient.eq
-  -- At a prime dividing the finite part the denominator is a unit, so `x - 1` and `a - b` have
-  -- the same valuation there.
-  have hval : ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
-      v.valuation K (((x : Kˣ) : K) - 1) = v.intValuation (a - b) := by
-    intro v hv
-    -- `b` is a unit at `v`, since it is congruent to one modulo an ideal contained in `v`.
-    have hbv : b ∉ v.asIdeal := by
-      intro hbv
-      refine v.isPrime.ne_top (Ideal.eq_top_iff_one _ |>.mpr ?_)
-      have hone : (1 : 𝓞 K) = b - (b - 1) := by ring
-      rw [hone]
-      exact Ideal.sub_mem _ hbv (Ideal.le_of_dvd hv hb)
-    have hb0 : algebraMap (𝓞 K) K b ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr fun h ↦
-        hbv (h ▸ v.asIdeal.zero_mem)
-    have hbval : v.valuation K (algebraMap (𝓞 K) K b) = 1 := by
-      rw [valuation_of_algebraMap]
-      exact intValuation_eq_one_iff.mpr hbv
-    have hxsub : ((x : Kˣ) : K) - 1 = algebraMap (𝓞 K) K (a - b) / algebraMap (𝓞 K) K b := by
-      rw [map_sub, hab]
-      field_simp
-    rw [hxsub, map_div₀, valuation_of_algebraMap, hbval, div_one]
-  rw [hnum]
-  refine ⟨fun ha1 v hv ↦ ?_, fun h ↦ ?_⟩
-  · -- Both `a` and `b` are congruent to one, so `a - b` lies in the finite part.
-    have hab' : a - b ∈ 𝔪.finitePart := by
-      have hsub : a - b = (a - 1) - (b - 1) := by ring
-      rw [hsub]
-      exact Ideal.sub_mem _ ha1 hb
-    rw [hval v hv]
-    exact (v.intValuation_le_pow_iff_mem (a - b) (𝔪.exponent v)).mpr
-      (Ideal.le_of_dvd (𝔪.pow_exponent_dvd_finitePart v) hab')
-  · -- Conversely the local conditions on `a - b` assemble into membership in the finite part.
-    have hab' : a - b ∈ 𝔪.finitePart :=
-      𝔪.mem_finitePart_of_forall_mem_pow_exponent fun v hv ↦
-        (v.intValuation_le_pow_iff_mem (a - b) (𝔪.exponent v)).mp (hval v hv ▸ h v hv)
-    have hsum : a - 1 = (a - b) + (b - 1) := by ring
-    rw [hsum]
-    exact Ideal.add_mem _ hab' hb
+  simp only [Modulus.exponent_def]
+  exact 𝔪.finitePart.sIntegerToQuotient_eq_one_iff 𝔪.finitePart_ne_bot
+      ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.2 v (by simpa using hv)).le⟩
 
 /-- **An element reducing to one and positive at the real places of `𝔪` is congruent to one.** -/
 theorem isCongrOne_of_residue_eq_one {𝔪 : Modulus K} {x : Kˣ} (hx : x ∈ primeToSubgroup 𝔪)

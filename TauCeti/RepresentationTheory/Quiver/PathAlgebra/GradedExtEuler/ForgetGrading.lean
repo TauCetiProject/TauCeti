@@ -25,9 +25,10 @@ the idempotent graded dimensions `gdim(eᵢ • X)` as coordinates. At `q = 1` t
 vertex dimensions `dim_k(eᵢ X)` of the underlying module, and the factor `q⁻¹` on each arrow
 becomes `1`. The result is the ungraded formula `TauCeti.extEuler_eq_eulerForm_dimVector`.
 
-The graded/ungraded `Ext` comparison hypothesis `TauCeti.IsGradedExtComparison` would give the
-same numerical identity in general. Here the identity is proved directly, and that hypothesis is
-not verified.
+The graded/ungraded `Ext` comparison hypothesis `TauCeti.IsGradedExtComparison` gives the same
+numerical identity in general. Here the identity is proved directly; it is then used in
+`TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.ExtComparison` to construct the
+comparison over a path algebra.
 
 ## Main results
 

@@ -58,6 +58,30 @@ def restrictInclusion (K : AbstractSimplicialComplex ι) (s : Set ι) :
 theorem coe_restrictInclusion (K : AbstractSimplicialComplex ι) (s : Set ι) :
     ⇑(K.restrictInclusion s) = Subtype.val := (rfl)
 
+/-- The simplicial inclusion between vertex restrictions induced by an inclusion of vertex
+sets. -/
+def restrictInclusionOfSubset (K : AbstractSimplicialComplex ι) {s t : Set ι} (hst : s ⊆ t) :
+    PreAbstractSimplicialComplex.SimplicialMap
+      (K.restrict s).toPreAbstractSimplicialComplex
+      (K.restrict t).toPreAbstractSimplicialComplex where
+  toFun := Set.inclusion hst
+  map_face' σ hσ := by
+    rw [mem_toPreAbstractSimplicialComplex, mem_restrict_iff] at hσ ⊢
+    rwa [Finset.image_image, Set.val_comp_inclusion]
+
+/-- The inclusion between vertex restrictions acts on vertices by `Set.inclusion`. -/
+@[simp]
+theorem coe_restrictInclusionOfSubset (K : AbstractSimplicialComplex ι) {s t : Set ι}
+    (hst : s ⊆ t) : ⇑(K.restrictInclusionOfSubset hst) = Set.inclusion hst := (rfl)
+
+/-- Including a smaller vertex restriction into a larger one and then into the original complex
+is the inclusion of the smaller restriction. -/
+@[simp]
+theorem restrictInclusion_comp_restrictInclusionOfSubset (K : AbstractSimplicialComplex ι)
+    {s t : Set ι} (hst : s ⊆ t) :
+    (K.restrictInclusion t).comp (K.restrictInclusionOfSubset hst) = K.restrictInclusion s :=
+  DFunLike.ext _ _ fun x => PreAbstractSimplicialComplex.SimplicialMap.comp_apply _ _ x
+
 /-- Relabeling the restricted complex into the original vertex type gives exactly the faces
 of the original complex contained in the chosen set. -/
 @[simp]

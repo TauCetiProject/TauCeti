@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Solvable
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Triangular
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Commutator
@@ -424,6 +425,16 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
         ∀ i, IsGroupLikeElem k (coefficientMatrix (C := H) b i i) :=
   exists_basis_coefficientMatrix_isUpperTriangular_of_weight_vectors
     fun _ _ _ _ _ _ ↦ hasNonzeroWeightVector_of_isSolvable
+
+/-- A nonzero vector in a representation of a reduced connected solvable affine group
+has a group-like matrix coefficient, hence one invertible on the whole group scheme. -/
+theorem exists_isGroupLikeElem_matrixCoefficient_of_isSolvable
+    [FiniteDimensional k M] [ConnectedSpace (PrimeSpectrum H)]
+    [Group.IsSolvable (WithConv (H →ₐ[k] k))] {m : M} (hm : m ≠ 0) :
+    ∃ φ : Module.Dual k M, IsGroupLikeElem k (matrixCoefficient (C := H) φ m) := by
+  obtain ⟨n, b, hb, hdiag⟩ :=
+    exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable (k := k) (H := H) (M := M)
+  exact b.exists_isGroupLikeElem_matrixCoefficient_of_isUpperTriangular hb hdiag hm
 
 /-- **The Lie--Kolchin theorem for the geometric object properties.** Over an algebraically
 closed field, every finite-dimensional representation of a reduced, geometrically connected,

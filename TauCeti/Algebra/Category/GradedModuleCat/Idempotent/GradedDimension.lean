@@ -118,6 +118,16 @@ theorem smul_grading_piece_le (he₀ : e ∈ 𝒜 0) (M : GradedModuleCat.{v} �
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
   simpa using SetLike.GradedSMul.smul_mem (B := M.grading.piece) he₀ hy
 
+/-- For an idempotent `e` of degree zero, `e • Mₚ` consists of the elements of `Mₚ` fixed by
+`e`. -/
+theorem mem_smul_grading_piece_iff (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0)
+    {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M} :
+    x ∈ e • M.grading.piece p ↔ x ∈ M.grading.piece p ∧ e • x = x := by
+  refine ⟨fun hx => ⟨smul_grading_piece_le he₀ M p hx, ?_⟩,
+    fun ⟨hx, hex⟩ => hex ▸ Submodule.smul_mem_pointwise_smul _ _ _ hx⟩
+  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
+  rw [smul_smul, he.eq]
+
 /-- **Restriction to `e • Mₚ` preserves exactness** when `e` is an idempotent of degree zero. -/
 theorem exact_smulPieceMap (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0) {f : M ⟶ N} {g : N ⟶ P}
     (hfg : Function.Exact f.hom g.hom) (p : ℤ) :

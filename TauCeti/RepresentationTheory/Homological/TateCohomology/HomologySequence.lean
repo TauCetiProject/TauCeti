@@ -37,6 +37,8 @@ relating the compatibility of the cup product with connecting maps in its two va
   makes the map induced by `X₁ ⟶ X₂` surjective in that degree and injective in the next.
 * `TauCeti.TateCohomology.isZero_X₃_of_surjective_of_injective`: the converse, from two
   consecutive degrees.
+* `TauCeti.TateCohomology.isZero_X₁_of_surjective_of_injective`: surjectivity in degree `n - 1` and
+  injectivity in degree `n` of the map induced by `X₂ ⟶ X₃` force `H-hat^n(G, X₁)` to vanish.
 * `TauCeti.TateCohomology.isZero_X₂_of_isZero_X₁_of_isZero_X₃`,
   `TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁`,
   `TauCeti.TateCohomology.isZero_X₁_of_isZero_X₃_of_isZero_X₂`: two-out-of-three for the
@@ -92,6 +94,20 @@ theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   -- `hj : (ComplexShape.up ℤ).Rel m j`, which is `m + 1 = j`.
   obtain rfl : m + 1 = j := hj
   exact (ModuleCat.mono_iff_injective _).2 hinj
+
+/-- If the map induced by `X₂ ⟶ X₃` on Tate cohomology is surjective in degree `m` and injective
+in degree `n = m + 1`, then `H-hat^n(G, X₁) = 0`. -/
+theorem isZero_X₁_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
+    (hsurj : Function.Surjective ((tateCohomologyFunctor m).map S.g))
+    (hinj : Function.Injective ((tateCohomologyFunctor n).map S.g)) :
+    IsZero (tateCohomology S.X₁ n) := by
+  subst hmn
+  refine (HomologicalComplex.exactAt_iff_isZero_homology _ _).1
+    ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).exactAt_X₁ (m + 1)
+      ((ModuleCat.mono_iff_injective _).2 hinj) fun j hj ↦ ?_)
+  -- `hj : (ComplexShape.up ℤ).Rel j (m + 1)`, which is `j + 1 = m + 1`.
+  obtain rfl : j = m := add_right_cancel hj
+  exact (ModuleCat.epi_iff_surjective _).2 hsurj
 
 /-- If `Ĥⁿ(G, X₁) = 0` and `Ĥⁿ(G, X₃) = 0`, then `Ĥⁿ(G, X₂) = 0`. -/
 theorem isZero_X₂_of_isZero_X₁_of_isZero_X₃ (n : ℤ) (h₁ : IsZero (tateCohomology S.X₁ n))

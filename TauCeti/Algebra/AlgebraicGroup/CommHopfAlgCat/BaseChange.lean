@@ -28,6 +28,8 @@ evaluated on `K`-algebras.
 ## Main declarations
 
 * `CommHopfAlgCat.baseChange`: the bundled Hopf `K`-algebra `K ⊗[k] H`.
+* `CommHopfAlgCat.baseChangeAlgEquiv`: the underlying algebra of base change, available as
+  `H.baseChangeAlgEquiv`.
 * `CommHopfAlgCat.baseChangeMap`: scalar extension of a coordinate morphism.
 * `CommHopfAlgCat.baseChangeMap_surjective`: base change preserves surjectivity.
 * `CommHopfAlgCat.baseChangeMap_surjective_of_iso`: surjectivity in isomorphic presentations.
@@ -65,6 +67,15 @@ structure over `K`. -/
 noncomputable abbrev baseChange (H : _root_.CommHopfAlgCat.{v} k) :
     _root_.CommHopfAlgCat.{max w v} K :=
   _root_.CommHopfAlgCat.of K (K ⊗[k] H)
+
+/-- The underlying algebra of `TauCeti.CommHopfAlgCat.baseChange H` is `K ⊗[k] H`.
+
+The constructor bundles this tensor product directly, so this equivalence is the identity.
+Using this interface keeps the choice of bundled carrier local to the constructor. -/
+noncomputable def _root_.CommHopfAlgCat.baseChangeAlgEquiv
+    (H : _root_.CommHopfAlgCat.{v} k) :
+    (TauCeti.CommHopfAlgCat.baseChange (K := K) H : Type (max w v)) ≃ₐ[K] K ⊗[k] (H : Type v) :=
+  AlgEquiv.refl
 
 /-- Scalar extension of a morphism of commutative Hopf algebras. -/
 noncomputable abbrev baseChangeMap {H L : _root_.CommHopfAlgCat.{v} k}
