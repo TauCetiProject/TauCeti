@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Action.Pointwise.Set
 public import Mathlib.Analysis.Normed.Module.Convex
-public import TauCeti.Algebra.Module.Pointwise
 
 /-!
 # Interpolation of parallel convex sets
@@ -21,12 +21,11 @@ Minkowski interpolation. The specialization where `B` is the closed unit ball is
 used to transfer Brunn--Minkowski concavity to the volumes of outer parallel bodies.
 
 No nonemptiness or topological assumptions are needed: the result is an algebraic consequence of
-convexity. We first record the underlying distributivity of scalar multiplication over pointwise
-set addition, which also holds without convexity.
+convexity, combined with Mathlib's distributivity `smul_add` of scalar multiplication over
+pointwise set addition.
 
 ## Main results
 
-* `Set.smul_set_add`: a scalar distributes over the Minkowski sum of two sets.
 * `Convex.add_smul_interpolation`: interpolation of two parallel convex sets with
   arbitrary nonnegative weights summing to one.
 * `Convex.add_smul_interpolation_sub`: the same identity with weights `1 - u` and `u`.
@@ -56,7 +55,7 @@ theorem add_smul_interpolation {A B : Set E} (hA : Convex 𝕜 A) (hB : Convex �
     (hB.add_smul (mul_nonneg hp hs) (mul_nonneg hq ht)).symm
   calc p • (A + s • B) + q • (A + t • B)
       = (p • A + q • A) + ((p * s) • B + (q * t) • B) := by
-        simp only [Set.smul_set_add, smul_smul]
+        simp only [smul_add, smul_smul]
         exact add_add_add_comm _ _ _ _
     _ = A + (p * s + q * t) • B := by rw [hA', hB']
 
