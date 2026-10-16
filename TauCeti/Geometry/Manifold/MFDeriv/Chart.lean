@@ -235,4 +235,45 @@ theorem contMDiffAt_chartAt_comp {n : WithTop ℕ∞} (x : N) :
     contDiffWithinAt_id.congr_of_eventuallyEq (writtenInExtChartAt_chartAt_comp_eventuallyEq x)
       (writtenInExtChartAt_chartAt_comp x (mem_extChartAt_target x))⟩
 
+section ChartOverlap
+
+omit [IsManifold I 1 M] in
+/-- Changing extended coordinates transports the coordinate image of a subset of the overlap
+onto its image in the second chart. No differentiability assumption is needed. -/
+theorem extChartAt_coordChange_image (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    ((extChartAt I α).symm ≫ extChartAt I β) '' ((extChartAt I α) '' s) =
+      (extChartAt I β) '' s := by
+  simp only [Set.image_image]
+  apply Set.image_congr
+  intro x hx
+  exact congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
+
+omit [IsManifold I 1 M] in
+/-- Extended coordinate changes are injective on the coordinate image of any subset of the
+chart overlap. No differentiability assumption is needed. -/
+theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    Set.InjOn ((extChartAt I α).symm ≫ extChartAt I β) ((extChartAt I α) '' s) := by
+  apply ((extChartAt I α).symm ≫ extChartAt I β).injOn.mono
+  rintro _ ⟨x, hx, rfl⟩
+  rw [PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff,
+    Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
+  exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
+
+/-- On a subset of a chart overlap, the derivative of the extended coordinate change is its
+Fréchet derivative within the full model range, including at boundary and corner points. -/
+theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    ∀ y ∈ (extChartAt I α) '' s,
+      HasFDerivWithinAt ((extChartAt I α).symm ≫ extChartAt I β)
+        (fderivWithin 𝕜 (extChartAt I β ∘ (extChartAt I α).symm) (Set.range I) y)
+        ((extChartAt I α) '' s) y := by
+  rintro _ ⟨x, hx, rfl⟩
+  exact (hasFDerivWithinAt_tangentCoordChange (I := I) (hsub hx)).mono fun y hy ↦ by
+    obtain ⟨z, hz, rfl⟩ := hy
+    exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
+
+end ChartOverlap
+
 end TauCeti

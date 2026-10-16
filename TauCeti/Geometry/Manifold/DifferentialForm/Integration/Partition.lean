@@ -10,12 +10,12 @@ public import Mathlib.Topology.PartitionOfUnity
 import Mathlib.Topology.Compactness.LocallyFinite
 
 /-!
-# Finite chart localization of compactly supported forms
+# Finite localization of compactly supported forms
 
 A locally finite partition of unity has only finitely many terms meeting the compact support
-of a form. These terms give an actual finite decomposition into forms supported in individual
-charts. Only continuity of the partition is needed; no measurable structure on the manifold
-is installed.
+of a form. These terms give a finite decomposition by partition weights. Containment of each
+localized support in a chart requires a separate subordination hypothesis. Only continuity
+of the partition is needed; no measurable structure on the manifold is installed.
 -/
 
 public section

@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.L1Space.Integrable
-public import TauCeti.Geometry.Manifold.DifferentialForm.TopDegree
+public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
+public import TauCeti.MeasureTheory.Integral.Bochner.Alternating
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
+public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
@@ -68,38 +71,6 @@ theorem signedInChartAt_apply_of_mem_source (φ : RoughForm I M ℝ k)
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem chartChange_data [IsManifold I 1 M] (α β : M) {s : Set M}
-    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
-    let A := (extChartAt I α) '' s
-    let e := (extChartAt I α).symm ≫ extChartAt I β
-    let D := fun y ↦ fderivWithin ℝ
-      (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
-    e '' A = (extChartAt I β) '' s ∧ InjOn e A ∧
-      ∀ y ∈ A, HasFDerivWithinAt e (D y) A y := by
-  let A := (extChartAt I α) '' s
-  let e := (extChartAt I α).symm ≫ extChartAt I β
-  let D := fun y ↦ fderivWithin ℝ
-    (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
-  have hA_target : A ⊆ (extChartAt I α).target :=
-    (image_mono (hsub.trans inter_subset_left)).trans
-      (extChartAt I α).image_source_eq_target.subset
-  have hA_range : A ⊆ range I := hA_target.trans (extChartAt_target_subset_range α)
-  have hA_source : A ⊆ e.source := by
-    rintro _ ⟨x, hx, rfl⟩
-    rw [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
-      (extChartAt I α).left_inv (hsub hx).1]
-    exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
-  have himage : e '' A = (extChartAt I β) '' s := by
-    simp only [A, image_image]
-    apply image_congr
-    intro x hx
-    exact congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
-  have hderiv : ∀ y ∈ A, HasFDerivWithinAt e (D y) A y := by
-    rintro _ ⟨x, hx, rfl⟩
-    exact (hasFDerivWithinAt_tangentCoordChange (I := I) (hsub hx)).mono hA_range
-  exact ⟨himage, e.injOn.mono hA_source, hderiv⟩
-
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The
 compatibility condition is the signed transition Jacobian, not an assumed integral identity.
 The derivatives are taken within `range I`, so the result includes boundary and corner models. -/
@@ -124,7 +95,9 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
   let e := (extChartAt I α).symm ≫ extChartAt I β
   let D := fun y ↦ fderivWithin ℝ
     (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
-  obtain ⟨himage, hinj, hderiv⟩ := chartChange_data α β hsub
+  have himage := TauCeti.extChartAt_coordChange_image α β hsub
+  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
+  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
   have hcoef : ∀ y ∈ A,
       |(D y).toLinearMap.det| • φ.signedInChartAt b β σβ (e y) =
         φ.signedInChartAt b α σα y := by
@@ -133,10 +106,12 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
       exact congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
     rw [he, signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1,
       signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2]
+    have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
+      rw [(extChartAt I α).left_inv (hsub hx).1]
+      exact (hsub hx).2
     have hc := φ.inChartAt_apply_basis_eq_det_mul b
       ((extChartAt I α).map_source (hsub hx).1)
-      (show (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source by
-        rw [(extChartAt I α).left_inv (hsub hx).1]; exact (hsub hx).2)
+      hβ
     rw [(extChartAt I α).left_inv (hsub hx).1] at hc
     rw [hc, smul_eq_mul, ← mul_assoc, ← mul_assoc, hσ x hx]
   constructor
@@ -161,7 +136,9 @@ theorem integrableOn_signedInChartAt_one_changeChart [IsManifold I 1 M]
   let e := (extChartAt I α).symm ≫ extChartAt I β
   let D := fun y ↦ fderivWithin ℝ
     (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
-  obtain ⟨himage, hinj, hderiv⟩ := chartChange_data α β hsub
+  have himage := TauCeti.extChartAt_coordChange_image α β hsub
+  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
+  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
   rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hs hderiv hinj]
   have hd : AEStronglyMeasurable (fun y ↦ (D y).toLinearMap.det) (μ.restrict A) :=
     (ContinuousLinearMap.continuous_det.measurable.comp_aemeasurable
@@ -174,10 +151,12 @@ theorem integrableOn_signedInChartAt_one_changeChart [IsManifold I 1 M]
     rw [he, signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1,
       signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2]
     simp only [Units.val_one, Int.cast_one, one_mul]
+    have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
+      rw [(extChartAt I α).left_inv (hsub hx).1]
+      exact (hsub hx).2
     have ht := φ.inChartAt_apply_basis_eq_det_mul b
       ((extChartAt I α).map_source (hsub hx).1)
-      (show (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source by
-        rw [(extChartAt I α).left_inv (hsub hx).1]; exact (hsub hx).2)
+      hβ
     simpa only [(extChartAt I α).left_inv (hsub hx).1] using ht
   rw [integrableOn_congr_fun hc hs]
   simpa only [IntegrableOn, smul_eq_mul] using
@@ -200,6 +179,8 @@ theorem signedInChartAt_eq_const_mul_unsigned
     · rw [hσ ⟨(extChartAt I α).symm y, (extChartAt I α).map_target hy⟩ hx]
     · have hz := _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hx
       rw [inChartAt_apply, hz]
+      -- The zero form has dependent bundle instances; identify its evaluated model fibre
+      -- before scalar rewriting, which cannot match that dependent coercion directly.
       change _ * (0 : ℝ) = _ * 0
       simp only [mul_zero]
   · simp only [dite_eq_right hy, mul_zero]

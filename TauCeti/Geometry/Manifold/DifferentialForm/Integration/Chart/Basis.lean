@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Basis
+public import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basic
 
 /-!

@@ -64,6 +64,8 @@ theorem tsupport_smul (c : ℝ) (φ : RoughForm I X F k) (hc : c ≠ 0) :
   simp only [_root_.tsupport]
   congr 1
   ext x
+  -- Reduce set membership and the fibrewise scalar action; function-support lemmas expect
+  -- a fixed codomain, whereas the form is a dependent section.
   change c • φ x ≠ 0 ↔ φ x ≠ 0
   apply not_congr
   constructor

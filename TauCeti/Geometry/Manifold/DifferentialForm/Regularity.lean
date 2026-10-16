@@ -8,13 +8,15 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 import TauCeti.Geometry.Manifold.DifferentialForm.Chart
+public import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 
 /-!
 # Chart regularity and support of the manifold exterior derivative
 
-The actual manifold exterior derivative lowers differentiability by one. Its locality prevents
+On a `C²` manifold, the exterior derivative of a `C^p` form is `C^r` whenever `r + 1 ≤ p`,
+including infinite regularity. Its locality prevents
 its topological support from enlarging, so compactly supported forms retain compact support.
 Alternating-bundle fibre coordinates identify chart expressions and transfer section regularity
 to flat regularity, including within subsets at boundary points.
@@ -53,7 +55,8 @@ theorem inCoordinates_eq_inChartAt [IsManifold I 1 M] (φ : RoughForm I M F k)
     ContinuousLinearMap.compContinuousAlternatingMap_coe, inChartAt_apply]
   simp only [Function.comp_apply, ContinuousLinearMap.id_apply]
   rw [TangentBundle.symmL_trivializationAt (by simpa only [extChartAt_source] using hx)]
-  -- The model tangent fibre is canonically E; evaluate before identifying the base point.
+  -- The tangent fibre and model have different bundled instances. Evaluate the derivative
+  -- in the model fibre so rewriting its base point does not require dependent transport.
   change φ x (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm
       (range I) (extChartAt I x₀ x) (v i)) = _
   rw [(extChartAt I x₀).left_inv hx]
@@ -116,6 +119,7 @@ No regularity assumption is needed. -/
 theorem RoughForm.tsupport_mextDeriv_subset (φ : RoughForm I M F k) :
     _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) (TauCeti.mextDeriv φ) ⊆
       _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ := by
+  -- Expose support as a closure: its dependent form fibres do not match function-support lemmas.
   change closure {x | TauCeti.mextDeriv φ x ≠ 0} ⊆ _
   apply closure_minimal _ (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)
   intro x hx
@@ -153,58 +157,9 @@ flat exterior derivative of the original coordinate expression. -/
 theorem IsSmoothForm.inChartAt_mextDeriv_eq [IsManifold I 2 M]
     {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) (α : M) {z : E}
     (hz : z ∈ (extChartAt I α).target) :
-    (TauCeti.mextDeriv φ).inChartAt α z = extDerivWithin (φ.inChartAt α) (range I) z := by
-  let y : M := (extChartAt I α).symm z
-  have hy : y ∈ (extChartAt I α).source := (extChartAt I α).map_target hz
-  have hd := (hφ.contDiffWithinAt_inChartAt_self y).differentiableWithinAt one_ne_zero
-  have hcov := φ.extDerivWithin_inChartAt_eq (x := y) hz (mem_extChartAt_source y) hd
-  rw [hcov]
-  have hchain := mfderiv_comp_mfderivWithin (I := 𝓘(ℝ, E)) (I' := I) (I'' := 𝓘(ℝ, E)) z
-    (mdifferentiableAt_extChartAt (mem_chart_source H y))
-    (mdifferentiableWithinAt_extChartAt_symm hz)
-    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range α hz)
-      |>.uniqueMDiffWithinAt)
-  rw [mfderivWithin_eq_fderivWithin, mfderiv_extChartAt_self] at hchain
-  ext v
-  rw [RoughForm.inChartAt_apply, mextDeriv_def]
-  change extDerivWithin (φ.inChartAt y) (range I) (extChartAt I y y)
-      (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) z (v i)) =
-    extDerivWithin (φ.inChartAt y) (range I) (extChartAt I y y)
-      (fun i ↦ fderivWithin ℝ (extChartAt I y ∘ (extChartAt I α).symm) (range I) z (v i))
-  congr 1
-  funext i
-  have h := congrArg (fun L ↦ L (v i)) hchain
-  change fderivWithin ℝ (extChartAt I y ∘ (extChartAt I α).symm) (range I) z (v i) =
-    mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) z (v i) at h
-  exact h.symm
-
-/-- The actual exterior derivative of a `C¹` differential form is a `C⁰` section on a `C²`
-manifold. All degrees and normed coefficient spaces are allowed. -/
-theorem isSmoothForm_zero_mextDeriv [IsManifold I 2 M] {φ : RoughForm I M F k}
-    (hφ : IsSmoothForm I 1 φ) : IsSmoothForm I 0 (TauCeti.mextDeriv φ) := by
-  rw [isSmoothForm_def, contMDiff_zero_iff]
-  apply continuous_iff_continuousAt.mpr
-  intro x
-  have hx : extChartAt I x x ∈ range I :=
-    extChartAt_target_subset_range x (mem_extChartAt_target x)
-  have hd := (hφ.contDiffWithinAt_inChartAt_self x).continuousWithinAt_fderivWithin
-    I.uniqueDiffOn one_ne_zero hx
-  have hc := (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F).continuous.continuousAt
-    |>.comp_continuousWithinAt hd
-  change ContinuousWithinAt (extDerivWithin (φ.inChartAt x) (range I)) (range I)
-    (extChartAt I x x) at hc
-  have heq : (TauCeti.mextDeriv φ).inChartAt x =ᶠ[𝓝[range I] (extChartAt I x x)]
-      extDerivWithin (φ.inChartAt x) (range I) := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
-    exact hφ.inChartAt_mextDeriv_eq x hz
-  have hdc := hc.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hx)
-  rw [FiberBundle.continuousAt_section, ← continuousWithinAt_univ,
-    continuousWithinAt_iff_source (I := I)]
-  simp only [preimage_univ, univ_inter]
-  apply hdc.congr_of_eventuallyEq
-  · filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
-    exact ((TauCeti.mextDeriv φ).inChartAt_eq_trivializationAt x hz).symm
-  · exact ((TauCeti.mextDeriv φ).inChartAt_eq_trivializationAt x (mem_extChartAt_target x)).symm
+    (TauCeti.mextDeriv φ).inChartAt α z = extDerivWithin (φ.inChartAt α) (range I) z :=
+  φ.inChartAt_mextDeriv hz
+    ((hφ.contDiffWithinAt_inChartAt_self _).differentiableWithinAt one_ne_zero)
 
 /-- Regularity of the coordinate expression in each point's own preferred chart implies
 regularity of the differential-form section. -/
@@ -224,6 +179,26 @@ theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
     exact (φ.inChartAt_eq_trivializationAt x hz).symm
   exact (hφ x).congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
     (extChartAt_target_subset_range x (mem_extChartAt_target x)))
+
+/-- On a `C²` manifold, the exterior derivative of a `C^p` form is `C^r` when
+`r + 1 ≤ p`. This includes smooth and analytic regularity; all form degrees and normed
+coefficient spaces are allowed. -/
+theorem IsSmoothForm.mextDeriv [IsManifold I 2 M] {p r : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I p φ) (hrp : r + 1 ≤ p) :
+    IsSmoothForm I r (TauCeti.mextDeriv φ) := by
+  have hp : (1 : WithTop ℕ∞) ≤ p := (le_add_self : (1 : WithTop ℕ∞) ≤ r + 1).trans hrp
+  have hφ₁ : IsSmoothForm I 1 φ := (isSmoothForm_def _ _).mpr (hφ.contMDiff.of_le hp)
+  apply IsSmoothForm.of_contDiffWithinAt_inChartAt_self
+  intro x
+  have hx : extChartAt I x x ∈ range I :=
+    extChartAt_target_subset_range x (mem_extChartAt_target x)
+  have hc := contDiffWithinAt_extDerivWithin
+    (hφ.contDiffWithinAt_inChartAt_self x) I.uniqueDiffOn hrp hx
+  have heq : (TauCeti.mextDeriv φ).inChartAt x =ᶠ[𝓝[range I] (extChartAt I x x)]
+      extDerivWithin (φ.inChartAt x) (range I) := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
+    exact hφ₁.inChartAt_mextDeriv_eq x hz
+  exact hc.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hx)
 
 end Regularity
 

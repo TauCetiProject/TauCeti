@@ -27,13 +27,6 @@ namespace TauCeti.RoughForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
 
-/-- Scalar localization of a form multiplies its coordinate expression by the pulled-back scalar. -/
-theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ k) (α : M) (y : E) :
-    inChartAt (I := I) (fun x ↦ f x • φ x) α y =
-      f ((extChartAt I α).symm y) • φ.inChartAt α y := by
-  ext v
-  simp only [inChartAt_apply, ContinuousAlternatingMap.smul_apply]
-
 /-- Signed coefficients commute with addition of actual forms. -/
 theorem signedInChartAt_add (φ ψ : RoughForm I M ℝ k) (b : Module.Basis (Fin k) ℝ E)
     (α : M) (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ) (y : E) :

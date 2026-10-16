@@ -41,7 +41,8 @@ theorem signedInChartAt_smul (c : ℝ) (φ : RoughForm I M ℝ k)
     (b : Module.Basis (Fin k) ℝ E) (α : M)
     (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ) (y : E) :
     (c • φ).signedInChartAt b α σ y = c * φ.signedInChartAt b α σ y := by
-  rw [show c • φ = (fun x ↦ c • φ x) from rfl]
+  have heq : c • φ = (fun x ↦ c • φ x) := funext fun _ ↦ rfl
+  rw [heq]
   exact signedInChartAt_fun_smul (fun _ ↦ c) φ b α σ y
 
 /-- The signed coefficient of a finite sum of actual forms is the finite sum of coefficients. -/

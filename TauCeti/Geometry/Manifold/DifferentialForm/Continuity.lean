@@ -59,6 +59,7 @@ theorem IsSmoothForm.continuousOn_inChartAt {n : WithTop ℕ∞} {φ : RoughForm
       (extChartAt I α).source e.source := by
     intro x hx
     rw [e.mem_source]
+    -- The section projects to x; reduce that projection before using the base-set formula.
     change x ∈ e.baseSet
     dsimp only [e]
     rw [FiberBundle.trivializationAt_continuousAlternatingMap_baseSet,
