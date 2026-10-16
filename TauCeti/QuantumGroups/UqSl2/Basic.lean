@@ -20,7 +20,8 @@ This file defines the algebra `UqSl2 q` by generators `E`, `F`, `K`, and `K⁻¹
 
 The quotient is defined for every complex `q`.  The generic representation theory uses parameters
 for which `q ≠ 0` and no positive power of `q` is one; in particular its displayed denominator is
-nonzero.  Only the two derived identities which divide by `q` assume `q ≠ 0` here.
+nonzero.  The presentation-level identities below hold for every `q`; when `q = 0`, the
+relations force `E = F = 0`.
 
 The quotient construction supplies a universal property for tuples satisfying these relations.
 We also package `K` as a unit and derive the commutation rules with `K⁻¹`; these are the
@@ -113,6 +114,12 @@ abbrev k (q : ℂ) : UqSl2 q := generator q .k
 /-- The inverse weight generator `K⁻¹` of `UqSl2 q`. -/
 abbrev kInv (q : ℂ) : UqSl2 q := generator q .kInv
 
+/- The defining relations below come from `RingQuot.mkAlgHom_rel`, whose equation is between
+values of `RingQuot.mkAlgHom ℂ (Rel q)` in `RingQuot (Rel q)`.  Because `UqSl2 q` and `mkAlgHom q`
+are definitions, `simp` does not see through them; each `show` restates that equation, by
+definitional unfolding, between values of `mkAlgHom q` so that `mkAlgHom_ι` can rewrite the free
+generators to the generators of `UqSl2 q`. -/
+
 /-- `K` is a left inverse of `K⁻¹`. -/
 @[simp]
 theorem k_mul_kInv : k q * kInv q = 1 := by
@@ -163,37 +170,37 @@ theorem kUnit_inv : ↑(kUnit q)⁻¹ = kInv q := (rfl)
 
 /-- The relation `E K⁻¹ = q² K⁻¹ E`, obtained from the defining `K E` relation. -/
 theorem e_mul_kInv : e q * kInv q = q ^ 2 • (kInv q * e q) := by
-  calc
-    e q * kInv q = (kInv q * k q) * e q * kInv q := by rw [kInv_mul_k, one_mul]
-    _ = kInv q * (k q * e q) * kInv q := by
-      rw [mul_assoc (kInv q) (k q) (e q)]
-    _ = kInv q * (q ^ 2 • (e q * k q)) * kInv q := by rw [k_mul_e]
-    _ = q ^ 2 • ((kInv q * e q) * (k q * kInv q)) := by
-      rw [mul_smul_comm, smul_mul_assoc]
-      simp only [mul_assoc]
-    _ = q ^ 2 • (kInv q * e q) := by rw [k_mul_kInv, mul_one]
+  have h := (SemiconjBy.units_inv_symm_left (a := kUnit q) (x := e q) (y := q ^ 2 • e q)
+    (by rw [SemiconjBy, kUnit_val, k_mul_e, smul_mul_assoc])).eq
+  rw [kUnit_inv, mul_smul_comm] at h
+  exact h.symm
 
 /-- The inverse-generator commutation relation `K⁻¹ E = q⁻² E K⁻¹`. -/
-theorem kInv_mul_e (hq : q ≠ 0) : kInv q * e q = q⁻¹ ^ 2 • (e q * kInv q) := by
-  rw [e_mul_kInv, smul_smul]
-  simp [hq]
+theorem kInv_mul_e : kInv q * e q = q⁻¹ ^ 2 • (e q * kInv q) := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · have he : e (0 : ℂ) = 0 := by
+      rw [← one_mul (e 0), ← kInv_mul_k, mul_assoc, k_mul_e]
+      simp
+    simp [he]
+  · rw [e_mul_kInv, smul_smul]
+    simp [hq]
 
 /-- The relation `F K⁻¹ = q⁻² K⁻¹ F`, obtained from the defining `K F` relation. -/
 theorem f_mul_kInv : f q * kInv q = q⁻¹ ^ 2 • (kInv q * f q) := by
-  calc
-    f q * kInv q = (kInv q * k q) * f q * kInv q := by rw [kInv_mul_k, one_mul]
-    _ = kInv q * (k q * f q) * kInv q := by
-      rw [mul_assoc (kInv q) (k q) (f q)]
-    _ = kInv q * (q⁻¹ ^ 2 • (f q * k q)) * kInv q := by rw [k_mul_f]
-    _ = q⁻¹ ^ 2 • ((kInv q * f q) * (k q * kInv q)) := by
-      rw [mul_smul_comm, smul_mul_assoc]
-      simp only [mul_assoc]
-    _ = q⁻¹ ^ 2 • (kInv q * f q) := by rw [k_mul_kInv, mul_one]
+  have h := (SemiconjBy.units_inv_symm_left (a := kUnit q) (x := f q) (y := q⁻¹ ^ 2 • f q)
+    (by rw [SemiconjBy, kUnit_val, k_mul_f, smul_mul_assoc])).eq
+  rw [kUnit_inv, mul_smul_comm] at h
+  exact h.symm
 
 /-- The inverse-generator commutation relation `K⁻¹ F = q² F K⁻¹`. -/
-theorem kInv_mul_f (hq : q ≠ 0) : kInv q * f q = q ^ 2 • (f q * kInv q) := by
-  rw [f_mul_kInv, smul_smul]
-  simp [hq]
+theorem kInv_mul_f : kInv q * f q = q ^ 2 • (f q * kInv q) := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · have hf : f (0 : ℂ) = 0 := by
+      rw [← one_mul (f 0), ← kInv_mul_k, mul_assoc, k_mul_f]
+      simp
+    simp [hf]
+  · rw [f_mul_kInv, smul_smul]
+    simp [hq]
 
 /-- A tuple in a complex algebra satisfying the defining relations of `UqSl2 q`. -/
 @[ext]
