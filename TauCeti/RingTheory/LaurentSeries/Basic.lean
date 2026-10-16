@@ -32,7 +32,8 @@ series `φ` of order one over a field and every integer `n`: it is `1` for `n = 
 otherwise. This is the formal statement that the residue is unchanged by the substitution
 `X ↦ φ`. For `n ≠ -1` in characteristic zero, `φ ^ n * φ'` is the derivative of
 `φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when `p ∣ n + 1`, and the proof
-uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
+uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead. By linearity this
+extends to every Laurent series: a substitution `X ↦ φ` preserves the residue of `f(X) dX`.
 
 ## Main results
 
@@ -48,6 +49,8 @@ uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
   `m`, so does `f' - m X⁻¹ f`.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` of order one is `1` if `n = -1` and `0` otherwise.
+* `LaurentSeries.coeff_neg_one_map_mul_derivative`: the residue of `f(φ) φ'` is the residue of
+  `f`, for the substitution `X ↦ φ`.
 
 ## References
 
@@ -241,3 +244,60 @@ theorem coeff_neg_one_coe_zpow_mul_derivative {k : Type*} [Field k] {φ : k⟦X�
       simp [show Int.negSucc (m + 1) ≠ -1 by omega]
 
 end PowerSeries
+
+namespace LaurentSeries
+
+open HahnSeries
+
+/-- **Residues are invariant under substitution.** Let `ψ` be a ring endomorphism of `K⸨X⸩`
+fixing the constants, sending power series to power series, and sending `X` to a power series `φ`
+of order one, such as the substitution `X ↦ φ`. Then the coefficient of `X⁻¹` in `ψ f * φ'` is
+the coefficient of `X⁻¹` in `f`: the residue of `f(X) dX` equals that of `f(φ) dφ`. -/
+theorem coeff_neg_one_map_mul_derivative {K : Type*} [Field K] (ψ : K⸨X⸩ →+* K⸨X⸩)
+    (hC : ∀ c : K, ψ (C c) = C c)
+    (hψ : ∀ f : K⸨X⸩, Valued.v f ≤ 1 → Valued.v (ψ f) ≤ 1) {φ : K⟦X⟧} (hφ : φ.order = 1)
+    (hX : ψ (single 1 1) = φ) (f : K⸨X⸩) :
+    (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+  -- Both sides vanish on power series.
+  have base (f : K⸨X⸩) (hf : Valued.v f ≤ 1) :
+      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+    obtain ⟨F, rfl⟩ := (val_le_one_iff_eq_coe K f).mp hf
+    obtain ⟨G, hG⟩ := (val_le_one_iff_eq_coe K (ψ F)).mp (hψ F hf)
+    rw [← hG, ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul, PowerSeries.coeff_coe,
+      PowerSeries.coeff_coe]
+    simp
+  -- Both sides agree on monomials, by the residue of `φ ^ j * φ'`.
+  have mono (j : ℤ) (c : K) :
+      (ψ (single j c) * derivative K (φ : K⸨X⸩)).coeff (-1) = (single j c : K⸨X⸩).coeff (-1) := by
+    -- The substitution sends `c X ^ j` to `c φ ^ j`.
+    have h : ψ (single j c) = C c * (φ : K⸨X⸩) ^ j := by
+      rw [← hC, ← hX, ← map_zpow₀, ← map_mul]
+      simp [← RatFunc.single_zpow]
+    rw [h, mul_assoc, C_mul_eq_smul, coeff_smul,
+      PowerSeries.coeff_neg_one_coe_zpow_mul_derivative hφ]
+    simp [coeff_single, eq_comm]
+  -- Induction on the order of the pole.
+  have key (d : ℕ) (f : K⸨X⸩) (hf : Valued.v f ≤ WithZero.exp (d : ℤ)) :
+      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+    induction d generalizing f with
+    | zero => exact base f (by simpa using hf)
+    | succ d ih =>
+      set s : K⸨X⸩ := single (-((d + 1 : ℕ) : ℤ)) (f.coeff (-((d + 1 : ℕ) : ℤ)))
+      have hg : Valued.v (f - s) ≤ WithZero.exp (d : ℤ) := by
+        rw [← neg_neg (d : ℤ), valuation_le_iff_coeff_lt_eq_zero]
+        intro n hn
+        rw [← neg_neg ((d + 1 : ℕ) : ℤ), valuation_le_iff_coeff_lt_eq_zero] at hf
+        rw [coeff_sub]
+        rcases lt_or_eq_of_le (show n ≤ -((d + 1 : ℕ) : ℤ) by omega) with h | rfl
+        · rw [hf n h, coeff_single_of_ne h.ne, sub_zero]
+        · rw [coeff_single_same, sub_self]
+      calc (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1)
+          = (ψ (f - s) * derivative K (φ : K⸨X⸩)).coeff (-1) +
+              (ψ s * derivative K (φ : K⸨X⸩)).coeff (-1) := by
+            rw [map_sub, sub_mul, coeff_sub, sub_add_cancel]
+        _ = f.coeff (-1) := by rw [ih _ hg, mono, coeff_sub, sub_add_cancel]
+  refine key (-f.order).toNat f ?_
+  rw [← neg_neg ((-f.order).toNat : ℤ), valuation_le_iff_coeff_lt_eq_zero]
+  exact fun n hn ↦ coeff_eq_zero_of_lt_order (by omega)
+
+end LaurentSeries
