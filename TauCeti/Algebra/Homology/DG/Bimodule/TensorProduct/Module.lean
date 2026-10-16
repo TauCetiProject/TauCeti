@@ -21,8 +21,8 @@ a DG `(R, B)`-bimodule, with the ground ring acting by scalars
 (`TauCeti.DGRightModuleCat.toScalarBimodule`). Tensoring that bimodule with an `(B, C)`-bimodule
 and forgetting the left scalar action gives the required right module.
 
-The construction is underived and requires no flatness hypothesis. Its derived version is
-obtained by resolving the module input before applying this functor.
+The construction is underived and requires no flatness hypothesis. This functor is intended as
+input to a future derived construction using suitable resolutions and invariance results.
 
 ## Main definitions
 
