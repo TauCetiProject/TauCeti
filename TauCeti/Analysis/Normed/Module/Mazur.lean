@@ -12,9 +12,10 @@ public import Mathlib.Analysis.SpecificLimits.Basic
 /-!
 # Mazur's lemma
 
-A weak limit belongs to the norm closure of the convex hull of the sequence, and indeed of
-every tail. Consequently, finite convex combinations from successive tails converge in norm
-to the weak limit. The coefficients are real and nonnegative even for complex spaces.
+A weak limit in a locally convex space belongs to the closure of the convex hull of the
+range. In a seminormed space, finite convex combinations from successive tails of a weakly
+convergent sequence converge in norm to the weak limit. The coefficients are real and
+nonnegative even for complex spaces.
 
 `exists_sum_smul_norm_sub_lt_of_tendsto_weak` gives a finite combination from any specified
 tail with any positive error tolerance. `exists_tendsto_sum_smul_of_tendsto_weak` chooses
@@ -37,11 +38,16 @@ open scoped BigOperators
 
 namespace TauCeti
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+variable {𝕜 E : Type*} [RCLike 𝕜]
 
-/-- A weak limit along a nontrivial filter lies in the norm closure of the real convex hull
-of the range. -/
+section
+
+variable [AddCommGroup E] [Module 𝕜 E] [Module ℝ E] [IsScalarTower ℝ 𝕜 E]
+  [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+  [LocallyConvexSpace ℝ E]
+
+/-- A weak limit along a nontrivial filter in a locally convex space lies in the closure
+of the real convex hull of the range, taken in the original topology. -/
 theorem mem_closure_convexHull_range_of_tendsto_weak {ι : Type*} {l : Filter ι} [NeBot l]
     {u : ι → E} {x : E}
     (hu : Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) l (𝓝 (toWeakSpace 𝕜 E x))) :
@@ -52,6 +58,11 @@ theorem mem_closure_convexHull_range_of_tendsto_weak {ι : Type*} {l : Filter ι
       mem_image_of_mem _ (subset_convexHull ℝ _ (mem_range_self n)))
   rw [← (convex_convexHull ℝ (range u)).toWeakSpace_closure 𝕜] at hx
   exact (toWeakSpace 𝕜 E).injective.mem_set_image.mp hx
+
+end
+
+variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
 
 /-- **Mazur's lemma**, with explicit finite coefficients: every tail of a weakly convergent
 sequence admits a convex combination within any positive norm distance of its weak limit. -/
