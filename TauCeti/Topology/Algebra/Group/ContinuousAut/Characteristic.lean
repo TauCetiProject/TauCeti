@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.TopologicallyFinitelyGenerated
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Topologically characteristic subgroups

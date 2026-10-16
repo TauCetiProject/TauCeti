@@ -66,7 +66,8 @@ noncomputable def rootSetBlockMemOrderIsoOrbit (hp : Irreducible p)
     Subtype.ext (coe_rootSetEquivOrbit_apply hp x.2 x)
   (blockMemOrderIsoCongr p.Gal e (fun g y ↦ by
     simpa only [coe_rootSetToOrbit] using (rootSetToOrbit hp x.2).map_smul g y) x).trans
-    (Set.orderIsoOfEq _ _ (by rw [he]))
+    (Set.orderIsoOfEq {B | e x ∈ B ∧ IsBlock p.Gal B}
+      {B | ⟨(x : p.SplittingField), mem_orbit_self _⟩ ∈ B ∧ IsBlock p.Gal B} (by rw [he]))
 
 /-- The transported block is the image under the root-to-orbit identification. -/
 @[simp]

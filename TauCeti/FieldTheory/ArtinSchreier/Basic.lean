@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
+public import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
 # Artin–Schreier extensions
@@ -16,14 +17,17 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 A root of `X ^ p - X - u` in characteristic `p` generates a Galois extension whose
 automorphisms translate the root by elements of the prime field. If `u` is not of the
 form `w ^ p - w` in the base field, the extension has degree `p` and its Galois group
-is the additive group of `ZMod p`. This supplies the field-theoretic input for the
-ramification theory of Artin–Schreier covers.
+is the additive group of `ZMod p`. Moreover `X ^ p - X - u` is irreducible exactly when `u` is
+not of this form. This supplies the field-theoretic input for the ramification theory of
+Artin–Schreier covers.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Proposition 3.7.8.
 * Mathlib: `Subfield.splits_bot` and `IsGalois.card_aut_eq_finrank`.
+* Mathlib: `X_pow_sub_C_irreducible_of_prime` (`Mathlib/FieldTheory/KummerPolynomial.lean`), whose
+  proof is adapted for `irreducible_X_pow_sub_X_sub_C`.
 -/
 
 public section
@@ -43,6 +47,8 @@ private theorem monic_polynomial (u : K) : (X ^ p - X - C u : K[X]).Monic := by
     exact_mod_cast (Fact.out : p.Prime).one_lt
   convert monic_X_pow_sub h using 1
   ring
+
+section Root
 
 -- `y` is a root of `X ^ p - X - u` in `L`, a field extension of `K`.
 variable {y : L} (hy : y ^ p - y = algebraMap K L u)
@@ -197,5 +203,51 @@ theorem autEquivZmod_symm_apply (c : Multiplicative (ZMod p)) :
     (autEquivZmod hy hgen hu).symm c y = y + (ZMod.cast c.toAdd : L) := by
   rw [aut_apply_eq_add_translationHom hy, ← autEquivZmod_apply hy hgen hu,
     MulEquiv.apply_symm_apply]
+
+end Root
+
+omit [Fact p.Prime] in
+/-- A root of any factor `g` of `X ^ p - X - u` satisfies the Artin–Schreier equation in
+`AdjoinRoot g`. -/
+theorem root_pow_sub_root_of_dvd {R : Type*} [CommRing R] {u : R} {g : R[X]}
+    (hg : g ∣ X ^ p - X - C u) :
+    AdjoinRoot.root g ^ p - AdjoinRoot.root g = algebraMap R (AdjoinRoot g) u := by
+  have h := eval₂_eq_zero_of_dvd_of_eval₂_eq_zero _ _ hg (AdjoinRoot.eval₂_root g)
+  rw [eval₂_sub, eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, sub_eq_zero] at h
+  rw [h, AdjoinRoot.algebraMap_eq]
+
+section Irreducible
+
+variable (p) [CharP K p]
+
+/-- **Artin–Schreier polynomials are irreducible** as soon as they have no root: if `u` is not of
+the form `w ^ p - w`, then `X ^ p - X - u` is irreducible. -/
+theorem irreducible_X_pow_sub_X_sub_C (hu : ∀ w : K, w ^ p - w ≠ u) :
+    Irreducible (X ^ p - X - C u : K[X]) := by
+  have hne := (monic_polynomial (p := p) u).ne_zero
+  have hdeg : (X ^ p - X - C u : K[X]).natDegree = p := by
+    rw [natDegree_sub_C, natDegree_X_pow_sub_X (Fact.out : p.Prime).one_lt]
+  have hnu : ¬ IsUnit (X ^ p - X - C u : K[X]) := by
+    rw [isUnit_iff_degree_eq_zero, degree_eq_natDegree hne, hdeg, Nat.cast_eq_zero]
+    exact (Fact.out : p.Prime).ne_zero
+  obtain ⟨g, hg, hgf⟩ := WfDvdMonoid.exists_irreducible_factor hnu hne
+  suffices hg' : g.natDegree = p from
+    (associated_of_dvd_of_natDegree_le hgf hne (hdeg.trans hg'.symm).le).irreducible hg
+  have : Fact (Irreducible g) := ⟨hg⟩
+  rw [← AdjoinRoot.powerBasis_dim hg.ne_zero, ← (AdjoinRoot.powerBasis hg.ne_zero).finrank]
+  exact finrank_eq (root_pow_sub_root_of_dvd hgf) (IntermediateField.adjoin_root_eq_top g) hu
+
+/-- An Artin–Schreier polynomial `X ^ p - X - u` is irreducible exactly when `u` is not of the
+form `w ^ p - w`. -/
+theorem irreducible_X_pow_sub_X_sub_C_iff :
+    Irreducible (X ^ p - X - C u : K[X]) ↔ ∀ w : K, w ^ p - w ≠ u := by
+  refine ⟨fun h w hw ↦ ?_, irreducible_X_pow_sub_X_sub_C p⟩
+  have hdeg := degree_eq_one_of_irreducible_of_root h (x := w) (by simp [hw])
+  rw [degree_eq_natDegree h.ne_zero,
+    natDegree_sub_C, natDegree_X_pow_sub_X (Fact.out : p.Prime).one_lt,
+    Nat.cast_eq_one] at hdeg
+  exact (Fact.out : p.Prime).ne_one hdeg
+
+end Irreducible
 
 end TauCeti.ArtinSchreier

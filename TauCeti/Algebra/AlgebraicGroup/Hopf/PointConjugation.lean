@@ -130,8 +130,6 @@ private theorem map_comp_comul_pointConjugationAlgHom
   apply WithConv.toConv_injective
   rw [Bialgebra.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
     Bialgebra.comulPoint_eq_include_mul]
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight,
     comp_pointConjugationAlgHom
@@ -243,6 +241,6 @@ theorem apply_pointConjugationAlgHom (f : H →ₐ[R] A) (g : WithConv (H →ₐ
   induction TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x
       using TensorProduct.inductionOn with
   | add a b ha hb => simp_all
-  | tmul a b => simp [TauCeti.AlgHom.mapValue_apply, Algebra.smul_def]
+  | tmul a b => simp [AlgHom.mapValue_apply, Algebra.smul_def]
 
 end AlgHom

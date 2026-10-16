@@ -127,7 +127,7 @@ theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : 
     Indecomposable X := by
   refine indecomposable_of_idempotent_eq_zero_or_id hX fun e he ↦ ?_
   have hidem : IsIdempotentElem (φ e) := (hsq e).symm.trans (congrArg φ he)
-  rcases IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem hidem with h0 | h1
+  rcases IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hidem with h0 | h1
   · exact Or.inl (hφ (h0.trans hzero.symm))
   · exact Or.inr (hφ (h1.trans hid.symm))
 
@@ -254,13 +254,16 @@ other idempotents is local by Fitting's lemma
 theorem isLocalRing_end_of_indecomposable {k : Type*} [Field k] [Linear k C]
     [HasBinaryBiproducts C] [IsIdempotentComplete C] {X : C} [FiniteDimensional k (X ⟶ X)]
     (hX : Indecomposable X) : IsLocalRing (End X) := by
-  have : FiniteDimensional k (End X) := ‹FiniteDimensional k (X ⟶ X)›
+  have : FiniteDimensional k (End X) := End.linearEquiv.symm.finiteDimensional
   have hA : IsFiniteLength (End X) (End X) := isFiniteLength_iff_isNoetherian_isArtinian.2
     ⟨isNoetherian_of_tower k inferInstance, isArtinian_of_tower k inferInstance⟩
   refine isLocalRing_of_isIndecomposableModule_self hA ((isIndecomposableModule_self_iff _).2
-    ⟨nontrivial_of_ne (𝟙 X) 0 fun h ↦ hX.1 ((IsZero.iff_id_eq_zero X).2 h), fun e he ↦ ?_⟩)
-  simpa only [End.one_def] using
-    idempotent_eq_zero_or_id_of_indecomposable hX ((End.mul_def e e).symm.trans he.eq)
+    ⟨nontrivial_of_ne 1 0 fun h ↦ hX.1 ((IsZero.iff_id_eq_zero X).2 congr(($h).asHom)),
+      fun e he ↦ ?_⟩)
+  rcases idempotent_eq_zero_or_id_of_indecomposable hX (e := e.asHom) congr($(he.eq).asHom)
+    with h | h
+  · exact Or.inl (End.ext h)
+  · exact Or.inr (End.ext h)
 
 end TauCeti
 

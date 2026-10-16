@@ -19,6 +19,9 @@ pairing with the extremal function.
 For an exponent `p ∈ [0, 1]` the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`, with no
 finiteness or positivity hypothesis on `x`. This is the case `s = t` of geometric interpolations
 `t ^ p s ^ (1 - p)`, such as the distortion coefficient `τ_{K,N}^{(t)}(θ)` with `p = 1 / N`.
+For distinct `x` and `y` such a weighted geometric mean `x ^ (1 - p) * y ^ p` still dominates
+`min x y`, which compares the hypotheses of the Prékopa–Leindler inequality and of its version
+for the minimum.
 
 A nonpositive real power is antitone on `ℝ≥0∞`. Because `0 ^ z = ∞` for `z < 0`, no positivity
 hypothesis is needed, unlike its `ℝ≥0` counterpart `NNReal.rpow_le_rpow_of_nonpos`; this is what
@@ -37,6 +40,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
+* `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
@@ -68,6 +72,14 @@ theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ 
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
+
+/-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
+theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
+    min x y ≤ x ^ (1 - p) * y ^ p :=
+  calc min x y = min x y ^ (1 - p) * min x y ^ p := by
+        rw [mul_comm, rpow_mul_rpow_one_sub _ hp₀ hp₁]
+    _ ≤ x ^ (1 - p) * y ^ p := mul_le_mul' (rpow_le_rpow (min_le_left _ _) (sub_nonneg.2 hp₁))
+        (rpow_le_rpow (min_le_right _ _) hp₀)
 
 /-- A nonpositive real power is antitone on `ℝ≥0∞`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`. -/
 theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz : z ≤ 0) :

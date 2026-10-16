@@ -155,6 +155,46 @@ theorem isCoupling_map_timeMarginal (η : Measure C(I, X)) (s t : I) :
     ⟨ContinuousMap.measurable_eval s, (timeMarginal_def η s).symm⟩
     ⟨ContinuousMap.measurable_eval t, (timeMarginal_def η t).symm⟩
 
+/-- The law at time `t` is monotone in the dynamic plan. -/
+@[gcongr]
+theorem timeMarginal_mono {η η' : Measure C(I, X)} (h : η ≤ η') (t : I) :
+    timeMarginal η t ≤ timeMarginal η' t :=
+  Measure.map_mono h (ContinuousMap.measurable_eval t)
+
+/-- Scaling a dynamic plan by `c` scales its law at every time by `c`. -/
+@[simp]
+theorem timeMarginal_smul (c : ℝ≥0∞) (η : Measure C(I, X)) (t : I) :
+    timeMarginal (c • η) t = c • timeMarginal η t :=
+  Measure.map_smul c (ContinuousMap.measurable_eval t).aemeasurable
+
+/-- The law at time `t` of the image of a measure `μ` under a measurable family of paths `F` is the
+image of `μ` under `a ↦ F a t`. -/
+theorem timeMarginal_map {α : Type*} [MeasurableSpace α] (μ : Measure α) {F : α → C(I, X)}
+    (hF : Measurable F) (t : I) : timeMarginal (μ.map F) t = μ.map fun a ↦ F a t :=
+  Measure.map_map (ContinuousMap.measurable_eval t) hF
+
+/-- A measurable property holds almost everywhere for the law at time `t` exactly when almost
+every path has it at time `t`. -/
+theorem ae_timeMarginal_iff {η : Measure C(I, X)} {t : I} {p : X → Prop}
+    (hp : MeasurableSet {x | p x}) : (∀ᵐ x ∂timeMarginal η t, p x) ↔ ∀ᵐ γ ∂η, p (γ t) :=
+  ae_map_iff (ContinuousMap.measurable_eval t).aemeasurable hp
+
+/-- If the law at time `t` is the Dirac mass at `x`, almost every path passes through `x` at
+time `t`. -/
+theorem ae_eq_of_timeMarginal_eq_dirac [MeasurableSingletonClass X] {η : Measure C(I, X)} {t : I}
+    {x : X} (h : timeMarginal η t = dirac x) : ∀ᵐ γ ∂η, γ t = x :=
+  (ae_timeMarginal_iff (p := (· = x)) (measurableSet_singleton x)).1
+    (h ▸ (ae_dirac_iff (measurableSet_singleton x)).2 rfl)
+
+/-- If the density `w` equals `c` at almost every path lying in `s` at time `t`, then the law at
+time `t` of `η` weighted by `w` gives `s` the mass `c * η {γ | γ t ∈ s}`. -/
+theorem timeMarginal_withDensity_apply_of_ae_eq {η : Measure C(I, X)} {w : C(I, X) → ℝ≥0∞}
+    {c : ℝ≥0∞} {t : I} {s : Set X} (hs : MeasurableSet s) (hw : ∀ᵐ γ ∂η, γ t ∈ s → w γ = c) :
+    timeMarginal (η.withDensity w) t s = c * η {γ | γ t ∈ s} := by
+  have hS : MeasurableSet {γ : C(I, X) | γ t ∈ s} := ContinuousMap.measurable_eval t hs
+  rw [timeMarginal_apply _ t hs, withDensity_apply _ hS, setLIntegral_congr_fun_ae hS hw,
+    setLIntegral_const]
+
 section Polish
 
 open TauCeti (geodesicPaths isClosed_geodesicPaths isClosed_setOf_mem_geodesicPaths_endpoints)

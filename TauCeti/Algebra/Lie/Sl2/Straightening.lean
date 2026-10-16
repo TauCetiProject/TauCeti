@@ -208,7 +208,7 @@ private theorem straightening_step {H E F : A}
     dividedPower (m + 1) E * dividedPower n F =
       ∑ k ∈ range (min (m + 1) n + 1), straighteningSummand H E F (m + 1) n k := by
   -- Cancel the extra factor after moving one raising generator through the sum.
-  let := IsAddTorsionFree.of_module_rat A
+  let := HasUniqueDiv.of_module_rat A
   apply (nsmul_right_inj (n := m + 1) (by omega)).mp
   have hleft :
       (m + 1) • (dividedPower (m + 1) E * dividedPower n F) =

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Enriched.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
 /-!
 # Differential graded categories
@@ -174,6 +174,18 @@ theorem units_smul_dgComp {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X
 theorem dgComp_units_smul {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X Y)
     (g : DGHom R q Y Z) (h : p + q = n) : dgComp R f (u • g) h = u • dgComp R f g h := by
   simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, dgComp_smul]
+
+theorem sum_dgComp {ι : Type*} (s : Finset ι) {X Y Z : C} {p q n : ℤ} (f : ι → DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) :
+    dgComp R (∑ i ∈ s, f i) g h = ∑ i ∈ s, dgComp R (f i) g h := by
+  rw [dgComp, TensorProduct.sum_tmul, map_sum]
+  rfl
+
+theorem dgComp_sum {ι : Type*} (s : Finset ι) {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y)
+    (g : ι → DGHom R q Y Z) (h : p + q = n) :
+    dgComp R f (∑ i ∈ s, g i) h = ∑ i ∈ s, dgComp R f (g i) h := by
+  rw [dgComp, TensorProduct.tmul_sum, map_sum]
+  rfl
 
 /-! ### The Leibniz rule -/
 
