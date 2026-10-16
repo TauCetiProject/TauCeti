@@ -140,8 +140,9 @@ product-order modules multiply their congruence coefficients. -/
       have heq : u • (((s, 0) : ℤ × ℤ) * (s, 0)) +
           (v * Int.gcdA c d) • (((c, 1) : ℤ × ℤ) * (s, 0)) +
           (v * Int.gcdB c d) • (((s, 0) : ℤ × ℤ) * (d, 1)) = (s, 0) := by
+        simp only [Prod.mk_mul_mk, Prod.smul_mk, Prod.mk_add_mk]
         ext
-        · simp only [Prod.fst_add, Prod.fst_mul, zsmul_eq_mul]
+        · simp only [zsmul_eq_mul]
           linear_combination s * huv
         · simp
       rw [heq] at h
