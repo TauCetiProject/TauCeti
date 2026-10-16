@@ -1,0 +1,96 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.LinearAlgebra.Dimension.Basic
+import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Topology.ConnectedComponents
+
+/-!
+# Removing a discrete set from a connected manifold
+
+A connected topological manifold modelled on a real normed space `E` of dimension greater than
+one stays connected when a closed discrete set, in particular a finite set, is removed. For a
+compact Riemann surface this is the statement that the complement of finitely many points, such as
+the preimage of the branch values of a holomorphic map, is connected.
+
+The local input is that every point has arbitrarily small neighbourhoods whose punctured versions
+are connected: in a chart these are punctured balls of `E`
+(`TauCeti.isConnected_ball_sdiff_singleton`). The global argument is
+`TauCeti.isPreconnected_compl_of_isDiscrete`. Only the charted-space structure is used, with the
+model space `E` itself; no smoothness of the transition maps is needed.
+
+## Main declarations
+
+* `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton`: every point of the manifold has
+  arbitrarily small neighbourhoods whose punctured versions are connected.
+* `TauCeti.isPreconnected_compl_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from
+  a preconnected manifold leaves it preconnected.
+* `TauCeti.isConnected_compl_of_finite_of_one_lt_rank`: removing a finite set from a connected
+  manifold leaves it connected.
+-/
+
+public section
+
+open Metric Set Topology
+
+namespace TauCeti
+
+variable {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace X]
+  [ChartedSpace E X]
+
+/-- In a manifold modelled on a real normed space of dimension greater than one, every point `x`
+has arbitrarily small neighbourhoods `V` with `V \ {x}` connected. -/
+theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (h : 1 < Module.rank ℝ E) (x : X)
+    {U : Set X} (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) := by
+  set φ := chartAt E x
+  have hx : x ∈ φ.source := mem_chart_source E x
+  -- A ball around `φ x` inside the image of `U` is carried back by the inverse chart.
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
+    (φ.image_mem_nhds hx (Filter.inter_mem hU (φ.open_source.mem_nhds hx)))
+  have hbt : ball (φ x) r ⊆ φ.target :=
+    hball.trans <| by
+      rintro _ ⟨y, hy, rfl⟩
+      exact φ.map_source hy.2
+  have hsdiff : φ.symm '' ball (φ x) r \ {x} = φ.symm '' (ball (φ x) r \ {φ x}) := by
+    rw [(φ.symm.injOn.mono hbt).image_sdiff_subset (singleton_subset_iff.2 (mem_ball_self hr)),
+      image_singleton, φ.left_inv hx]
+  refine ⟨φ.symm '' ball (φ x) r, ?_, ?_, ?_⟩
+  · simpa [φ.left_inv hx] using φ.symm.image_mem_nhds (φ.map_source hx) (ball_mem_nhds _ hr)
+  · rintro _ ⟨z, hz, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := hball hz
+    rw [φ.left_inv hy.2]
+    exact hy.1
+  · rw [hsdiff]
+    exact (isConnected_ball_sdiff_singleton h (φ x) hr).image _
+      (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
+
+/-- **Removing a closed discrete set from a preconnected manifold leaves it preconnected**, when
+the model is a real normed space of dimension greater than one. -/
+theorem isPreconnected_compl_of_isDiscrete_of_one_lt_rank [PreconnectedSpace X]
+    (h : 1 < Module.rank ℝ E) {s : Set X} (hs : IsClosed s) (hd : IsDiscrete s) :
+    IsPreconnected sᶜ :=
+  isPreconnected_compl_of_isDiscrete hs hd fun x _ _ hU ↦
+    exists_mem_nhds_subset_isConnected_sdiff_singleton h x hU
+
+/-- **Removing a finite set from a connected manifold leaves it connected**, when the model is a
+real normed space of dimension greater than one. -/
+theorem isConnected_compl_of_finite_of_one_lt_rank [ConnectedSpace X] (h : 1 < Module.rank ℝ E)
+    {s : Set X} (hs : s.Finite) : IsConnected sᶜ := by
+  have := ChartedSpace.t1Space E X
+  refine ⟨?_, isPreconnected_compl_of_isDiscrete_of_one_lt_rank h hs.isClosed hs.isDiscrete⟩
+  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
+  by_cases hx : x ∈ s
+  · -- A punctured neighbourhood of `x` avoiding the rest of `s` supplies a point off `s`.
+    have hU : (s \ {x})ᶜ ∈ 𝓝 x := (hs.sdiff).isClosed.isOpen_compl.mem_nhds fun h ↦ h.2 rfl
+    obtain ⟨V, -, hVU, hc⟩ := exists_mem_nhds_subset_isConnected_sdiff_singleton h x hU
+    obtain ⟨z, hz⟩ := hc.nonempty
+    exact ⟨z, fun hzs ↦ hVU hz.1 ⟨hzs, hz.2⟩⟩
+  · exact ⟨x, hx⟩
+
+end TauCeti
