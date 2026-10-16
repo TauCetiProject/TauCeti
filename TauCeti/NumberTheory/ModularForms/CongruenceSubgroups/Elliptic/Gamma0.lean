@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Elliptic.Basic
 
 /-!
 # The elliptic points of `Γ₀(N)`
@@ -28,8 +28,9 @@ Substituting `x ↦ -x` turns `x² - x + 1` into the polynomial `x² + x + 1` of
 
 ## Main results
 
-* `TauCeti.conj_S_mem_Gamma0_iff`, `TauCeti.conj_T_inv_mul_S_mem_Gamma0_iff`: the congruence
-  conditions for the conjugated elliptic generators.
+* `Matrix.SpecialLinearGroup.conj_S_mem_Gamma0_iff`,
+  `Matrix.SpecialLinearGroup.conj_T_inv_mul_S_mem_Gamma0_iff`: the congruence conditions for the
+  conjugated elliptic generators.
 * `TauCeti.gamma0OrderTwoEllipticEquiv`: the orbits of `Γ₀(N)` with stabilizer of order two
   are in bijection with the roots of `x² + 1` in `ZMod N`.
 * `TauCeti.gamma0OrderThreeEllipticEquiv`: the orbits of `Γ₀(N)` with stabilizer of order three
@@ -55,7 +56,7 @@ variable {N : ℕ}
 
 /-- The conjugate `γ S γ⁻¹` lies in `Γ₀(N)` exactly when `N ∣ c² + d²`, for `(c, d)` the bottom
 row of `γ`. -/
-theorem conj_S_mem_Gamma0_iff (γ : SL(2, ℤ)) :
+theorem _root_.Matrix.SpecialLinearGroup.conj_S_mem_Gamma0_iff (γ : SL(2, ℤ)) :
     γ * S * γ⁻¹ ∈ Gamma0 N ↔ (N : ℤ) ∣ γ 1 0 ^ 2 + γ 1 1 ^ 2 := by
   rw [mem_Gamma0_iff_dvd]
   convert Iff.rfl using 2
@@ -64,7 +65,7 @@ theorem conj_S_mem_Gamma0_iff (γ : SL(2, ℤ)) :
 
 /-- The conjugate `γ (T⁻¹ S) γ⁻¹` lies in `Γ₀(N)` exactly when `N ∣ c² - c d + d²`, for `(c, d)`
 the bottom row of `γ`. -/
-theorem conj_T_inv_mul_S_mem_Gamma0_iff (γ : SL(2, ℤ)) :
+theorem _root_.Matrix.SpecialLinearGroup.conj_T_inv_mul_S_mem_Gamma0_iff (γ : SL(2, ℤ)) :
     γ * (T⁻¹ * S) * γ⁻¹ ∈ Gamma0 N ↔ (N : ℤ) ∣ γ 1 0 ^ 2 - γ 1 0 * γ 1 1 + γ 1 1 ^ 2 := by
   rw [mem_Gamma0_iff_dvd]
   convert Iff.rfl using 2
@@ -75,18 +76,10 @@ theorem conj_T_inv_mul_S_mem_Gamma0_iff (γ : SL(2, ℤ)) :
 private def IsRatio (x : ZMod N) (γ : SL(2, ℤ)) : Prop :=
   ((γ 1 0 : ℤ) : ZMod N) = x * (γ 1 1 : ℤ)
 
-/-- The determinant, read modulo `N`. -/
-private theorem det_zmod (γ : SL(2, ℤ)) :
-    ((γ 0 0 : ℤ) : ZMod N) * (γ 1 1 : ℤ) - (γ 0 1 : ℤ) * (γ 1 0 : ℤ) = 1 := by
-  have h := congrArg (Int.cast : ℤ → ZMod N) γ.det_coe
-  rw [det_fin_two] at h
-  push_cast at h
-  exact h
-
 /-- The residue `x` is determined by the matrix: `d` is a unit modulo `N` once `c ≡ x d`. -/
 private theorem IsRatio.eq {x y : ZMod N} {γ : SL(2, ℤ)} (hx : IsRatio x γ) (hy : IsRatio y γ) :
     x = y := by
-  have hdet := det_zmod (N := N) γ
+  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) γ
   unfold IsRatio at hx hy
   rw [hx] at hdet
   have e : x * ((γ 1 1 : ℤ) : ZMod N) = y * (γ 1 1 : ℤ) := hx.symm.trans hy
@@ -112,7 +105,7 @@ private theorem quotientMk_eq_of_isRatio (z₀ : ℍ) {x : ZMod N} {γ γ' : SL(
     (h : IsRatio x γ) (h' : IsRatio x γ') :
     (Quotient.mk'' (γ • z₀) : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ) =
       Quotient.mk'' (γ' • z₀) := by
-  refine Quotient.sound' ((orbitRel_map_sl2zToPSL2R_iff _).mpr
+  refine Quotient.sound' ((Subgroup.orbitRel_map_sl2zToPSL2R_iff _).mpr
     ⟨γ * γ'⁻¹, ?_, by rw [mul_smul, inv_smul_smul]⟩)
   unfold IsRatio at h h'
   rw [Gamma0_mem]
@@ -138,14 +131,17 @@ private noncomputable def ellipticEquivOfIsRatio (z₀ : ℍ) (e : ℕ) (P : ZMo
       rw [cardStabilizerOnOrbit_mk]
       exact (hcard _).mpr ⟨x.1, x.2, isRatio_lowerRep x.1⟩⟩)
     ⟨fun x y hxy ↦ by
-      obtain ⟨g, hg, hgz⟩ := (orbitRel_map_sl2zToPSL2R_iff _).mp
+      obtain ⟨g, hg, hgz⟩ := (Subgroup.orbitRel_map_sl2zToPSL2R_iff _).mp
         (Quotient.exact' (congrArg Subtype.val hxy))
       -- `s` fixes `z₀`, and transports the residue of `y` to the representative of `x`
       set s := (lowerRep x.1)⁻¹ * g * lowerRep y.1
       have hs : s⁻¹ • z₀ = z₀ := by
         rw [inv_smul_eq_iff, mul_smul, mul_smul, hgz, inv_smul_smul]
+      have hrep : g * lowerRep y.1 * s⁻¹ = lowerRep x.1 := by
+        simp only [s]
+        group
       have h := hinv y.1 _ s⁻¹ y.2 ((isRatio_lowerRep y.1).mul_left hg) hs
-      rw [show g * lowerRep y.1 * s⁻¹ = lowerRep x.1 by simp only [s]; group] at h
+      rw [hrep] at h
       exact Subtype.ext ((isRatio_lowerRep x.1).eq h),
     fun ⟨q, hq⟩ ↦ by
       induction q using Quotient.inductionOn' with
@@ -181,11 +177,11 @@ private theorem card_stabilizer_smul_I_eq_two_iff (γ : SL(2, ℤ)) :
       ∃ x : ZMod N, x ^ 2 + 1 = 0 ∧ IsRatio x γ := by
   have key : Nat.card (stabilizer ((Gamma0 N).map sl2zToPSL2R) (γ • I)) = 2 ↔
       γ * S * γ⁻¹ ∈ Gamma0 N := by
-    rw [card_stabilizer_map_smul_I]
+    rw [Subgroup.card_stabilizer_map_smul_I]
     split_ifs with h <;> simp [h]
   rw [key, conj_S_mem_Gamma0_iff, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
   push_cast
-  have hdet := det_zmod (N := N) γ
+  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) γ
   unfold IsRatio
   set a : ZMod N := ((γ 0 0 : ℤ) : ZMod N)
   set b : ZMod N := ((γ 0 1 : ℤ) : ZMod N)
@@ -208,11 +204,11 @@ private theorem card_stabilizer_smul_ρ_eq_three_iff (γ : SL(2, ℤ)) :
       ∃ x : ZMod N, x ^ 2 - x + 1 = 0 ∧ IsRatio x γ := by
   have key : Nat.card (stabilizer ((Gamma0 N).map sl2zToPSL2R) (γ • ρ)) = 3 ↔
       γ * (T⁻¹ * S) * γ⁻¹ ∈ Gamma0 N := by
-    rw [card_stabilizer_map_smul_ρ]
+    rw [Subgroup.card_stabilizer_map_smul_ρ]
     split_ifs with h <;> simp [h]
   rw [key, conj_T_inv_mul_S_mem_Gamma0_iff, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
   push_cast
-  have hdet := det_zmod (N := N) γ
+  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) γ
   unfold IsRatio
   set a : ZMod N := ((γ 0 0 : ℤ) : ZMod N)
   set b : ZMod N := ((γ 0 1 : ℤ) : ZMod N)
@@ -239,15 +235,15 @@ private theorem exists_smul_eq_of_card_stabilizer_ne_one {z : ℍ}
   classical
   by_cases hI : (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' I
   · obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp (Quotient.exact' hI)
-    rw [card_stabilizer_map_smul_I] at hz ⊢
+    rw [Subgroup.card_stabilizer_map_smul_I] at hz ⊢
     split_ifs at hz ⊢
     exacts [Or.inl ⟨γ, rfl, rfl⟩, absurd rfl hz]
   by_cases hρ : (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' ρ
   · obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp (Quotient.exact' hρ)
-    rw [card_stabilizer_map_smul_ρ] at hz ⊢
+    rw [Subgroup.card_stabilizer_map_smul_ρ] at hz ⊢
     split_ifs at hz ⊢
     exacts [Or.inr ⟨γ, rfl, rfl⟩, absurd rfl hz]
-  exact absurd (card_stabilizer_map_eq_one_of_orbit_ne _ hI hρ) hz
+  exact absurd (Subgroup.card_stabilizer_map_eq_one_of_orbit_ne _ hI hρ) hz
 
 variable (N) in
 /-- **The elliptic points of order two of `Γ₀(N)`.** The orbits of the effective image of `Γ₀(N)`
