@@ -95,6 +95,22 @@ noncomputable def ιCompression (i : ℤ) (r : ZMod n) (hi : (i : ZMod n) = r) :
     K.X i ⟶ (compression n K).X r :=
   GradedObject.ιMapObj K.X _ i r hi
 
+/-- A family of morphisms out of the terms in one residue class induces a morphism out of the
+corresponding term of the compression. -/
+noncomputable def compressionDesc {r : ZMod n} {A : C}
+    (f : ∀ (i : ℤ) (_ : (i : ZMod n) = r), K.X i ⟶ A) :
+    (compression n K).X r ⟶ A :=
+  GradedObject.descMapObj K.X _ f
+
+/-- The morphism induced by `compressionDesc` restricts to the prescribed morphism on each
+summand. -/
+@[reassoc (attr := simp)]
+lemma ιCompression_compressionDesc {r : ZMod n} {A : C}
+    (f : ∀ (i : ℤ) (_ : (i : ZMod n) = r), K.X i ⟶ A) (i : ℤ)
+    (hi : (i : ZMod n) = r) :
+    ιCompression n K i r hi ≫ compressionDesc n K f = f i hi :=
+  GradedObject.ι_descMapObj K.X _ f i hi
+
 variable {n K} in
 /-- Morphisms out of a term of the compression agree when they agree on every summand. -/
 @[ext]
@@ -256,6 +272,8 @@ lemma compressionFunctor_map {K L : CochainComplex.Bounded C} (f : K ⟶ L) :
     (compressionFunctor n).map f =
       eqToHom (compressionFunctor_obj n K) ≫ compressionMap n f.hom ≫
         eqToHom (compressionFunctor_obj n L).symm := by
+  -- Unfold the map field and identify the transports along its definitional object equations
+  -- with identities. Simplification alone cannot eliminate the opaque equality proofs.
   change compressionMap n f.hom = 𝟙 _ ≫ compressionMap n f.hom ≫ 𝟙 _
   simp
 
@@ -364,6 +382,8 @@ lemma homotopyCompressionFunctor_map {K L : HomotopyCategory.Bounded C} (f : K �
       eqToHom (homotopyCompressionFunctor_obj n K) ≫
         (HomotopyCategory.quotient C _).map (compressionMap n g) ≫
           eqToHom (homotopyCompressionFunctor_obj n L).symm := by
+  -- Unfold the map field and identify the transports along its definitional object equations
+  -- with identities. Simplification alone cannot eliminate the opaque equality proofs.
   change quotientCompressionMap n _ = 𝟙 _ ≫ _ ≫ 𝟙 _
   simpa using quotientCompressionMap_eq n g _ hg
 
