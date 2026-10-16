@@ -238,6 +238,24 @@ abbrev ι : HomotopyCategory.Bounded C ⥤ HomotopyCategory C (.up ℤ) :=
 abbrev fullyFaithfulι : (ι C).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
 
+variable {C} in
+/-- The bounded cochain complex underlying an object of the bounded homotopy category. -/
+def rep (K : HomotopyCategory.Bounded C) : CochainComplex C ℤ :=
+  K.obj.as
+
+variable {C} in
+/-- An object of the bounded homotopy category is the homotopy class of its underlying complex. -/
+@[simp]
+lemma quotient_obj_rep (K : HomotopyCategory.Bounded C) :
+    (HomotopyCategory.quotient C (.up ℤ)).obj (rep K) = K.obj :=
+  (rfl)
+
+variable {C} in
+/-- The underlying complex of an object of the bounded homotopy category is bounded. -/
+lemma bounded_rep (K : HomotopyCategory.Bounded C) : CochainComplex.bounded C (rep K) := by
+  rw [← HomotopyCategory.bounded_quotient_obj_iff, quotient_obj_rep]
+  exact K.property
+
 /-- The quotient functor from bounded cochain complexes to their bounded homotopy category. -/
 @[implicit_reducible]
 def quotient : CochainComplex.Bounded C ⥤ HomotopyCategory.Bounded C :=
