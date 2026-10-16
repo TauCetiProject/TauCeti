@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Stokes
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.SmoothPartition
+import TauCeti.Geometry.Manifold.DifferentialForm.SmoothPartition
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 
 /-!

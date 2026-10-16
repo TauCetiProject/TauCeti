@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.SmoothPartition
+import TauCeti.Geometry.Manifold.DifferentialForm.SmoothPartition
 
 /-!
 # Stokes' theorem on manifolds with boundary
