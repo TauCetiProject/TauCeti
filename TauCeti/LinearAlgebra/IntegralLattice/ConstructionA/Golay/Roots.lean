@@ -236,14 +236,21 @@ noncomputable def rootsEquiv :
     · rintro ⟨i, b⟩ ⟨j, c⟩ h
       have hi := congrArg (fun x : constructionALattice.vectorsOfNorm 2 ↦
         (x.1 : Fin 24 → ℚ) i) h
-      cases b <;> cases c <;> by_cases hij : i = j
-      all_goals first
-        | subst j
+      have hij : i = j := by
+        by_contra hij
+        cases b <;> cases c <;>
           norm_num only [Bool.false_eq_true, ite_false, ite_true,
-            Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi ⊢
-        | norm_num only [Bool.false_eq_true, ite_false, ite_true,
             Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same,
             Pi.single_eq_of_ne hij] at hi
+      apply Prod.ext hij
+      subst j
+      cases b <;> cases c
+      · rfl
+      · norm_num only [Bool.false_eq_true, ite_false, ite_true,
+          Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi
+      · norm_num only [Bool.false_eq_true, ite_false, ite_true,
+          Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi
+      · rfl
     · rintro ⟨x, hx⟩
       obtain ⟨i, h | h⟩ := (mem_vectorsOfNorm_two_iff x).mp hx
       · exact ⟨(i, false), Subtype.ext h.symm⟩
