@@ -71,6 +71,30 @@ theorem isNeighbourhood_self : IsNeighbourhood I (CommAlgCat.of R R) := by
   rw [he]
   exact e.bijective
 
+/-- An algebra isomorphic to the base ring is an étale neighbourhood of every ideal. -/
+theorem isNeighbourhood_of_algEquiv {B : Type v} [CommRing B] [Algebra R B]
+    (e : R ≃ₐ[R] B) : IsNeighbourhood I (CommAlgCat.of R B) := by
+  refine ⟨Algebra.Etale.of_equiv e, ?_⟩
+  have hmap : I.map (algebraMap R B) = I.map e.toRingHom := by
+    congr 1
+    exact RingHom.ext fun r ↦ by simp
+  let q := Ideal.quotientEquiv I (I.map (algebraMap R B)) e.toRingEquiv hmap
+  have hq : reducedMap I B = q.toRingHom := by
+    apply Ideal.Quotient.ringHom_ext
+    apply RingHom.ext
+    intro r
+    simp only [RingHom.comp_apply]
+    calc
+      reducedMap I B (Ideal.Quotient.mk I r) =
+          Ideal.Quotient.mk (I.map (algebraMap R B)) (algebraMap R B r) := reducedMap_mk I B r
+      _ = Ideal.Quotient.mk (I.map (algebraMap R B)) (e r) := by
+        congr 1
+        simp
+      _ = q (Ideal.Quotient.mk I r) :=
+        (Ideal.quotientEquiv_mk I (I.map (algebraMap R B)) e.toRingEquiv hmap r).symm
+  rw [hq]
+  exact q.bijective
+
 /-- Localization at elements which are units modulo `I` preserves the quotient by `I`. -/
 theorem reducedMap_bijective_of_isLocalization (M : Submonoid R)
     (B : Type v) [CommRing B] [Algebra R B] [IsLocalization M B]
