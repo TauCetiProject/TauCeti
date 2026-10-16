@@ -59,7 +59,7 @@ variable {R : Type u} [CommRing R] {X : TopCat.{u}} {x : X}
 theorem classicalDGLocalSystem_hom_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X}
     (f : classicalDGLocalSystem x L ⟶ classicalDGLocalSystem x L') (g : FundamentalGroup X x)
     (m : L.obj (FundamentalGroupoid.mk x)) :
-    f (L.map g m) = L'.map g (f m) := by
+    f (L.map g.asHom m) = L'.map g.asHom (f m) := by
   obtain ⟨γ, hγ⟩ := MooreLoopSpace.fundamentalGroupHom_surjective x g⁻¹
   let a := cubicalChainLof (MooreLoopSpace X x) R 0
     (NormalizedCubicalChain.ofCube (MooreLoopSpace X x) R (SingularCube.point γ))
@@ -92,7 +92,7 @@ def classicalDGLocalSystemPreimage {L L' : LocalCoefficientSystem.{u, u, w} R X}
   Groupoid.natTransOfEnd (FundamentalGroupoid.nonempty_hom _) (fiberHom f) fun g ↦ by
     ext m
     rw [ModuleCat.comp_apply, ModuleCat.comp_apply, fiberHom_apply, fiberHom_apply]
-    exact classicalDGLocalSystem_hom_naturality f g m
+    exact classicalDGLocalSystem_hom_naturality f (FundamentalGroup.fromArrow g) m
 
 /-- The component of the preimage at the basepoint is the given morphism. -/
 @[simp]
