@@ -10,7 +10,6 @@ public import Mathlib.Topology.UnitInterval
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Smooth time maps into the unit interval
