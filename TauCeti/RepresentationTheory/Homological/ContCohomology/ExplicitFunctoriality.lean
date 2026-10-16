@@ -26,7 +26,9 @@ degrees, and `explicitRes1_eq_explicitMap1`, `explicitRes2_eq_explicitMap2`,
 `explicitCoeff1_eq_explicitMap1` and `explicitCoeff2_eq_explicitMap2` exhibit each of them as the
 compatible pair it is, so that a theorem proved for a general pair specializes to all four. They
 are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
-`explicitCoeff0_eq_explicitMap0`. The constructions `explicitCoeff1Equiv` and
+`explicitCoeff0_eq_explicitMap0`. If `φ : H → G` maps a subgroup `T` into a subgroup `S`, pullback
+along `φ` sends classes restricting to zero on `S` to classes restricting to zero on `T`
+(`explicitRes1_explicitMap1_eq_zero_of_map_le`). The constructions `explicitCoeff1Equiv` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
@@ -631,6 +633,32 @@ theorem explicitRes1_comp (S : Subgroup G) (T : Subgroup S) :
     (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) T M
     (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id M) continuous_id
     (ContinuousMonoidHom.id_subgroupSubtype_smul M T) (fun _ _ => rfl)).symm
+
+variable {G M} in
+/-- **Pullback preserves vanishing on compatible subgroups.** If `φ : H → G` maps a subgroup `T`
+of `H` into a subgroup `S` of `G`, then pulling back along a compatible pair `(φ, f)` a class of
+`H¹(G, M)` whose restriction to `S` vanishes gives a class whose restriction to `T` vanishes. For
+Galois groups of local fields and their inertia subgroups, this says that unramified classes pull
+back to unramified classes. -/
+theorem explicitRes1_explicitMap1_eq_zero_of_map_le {H : Type uH} [Group H] [TopologicalSpace H]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction H N] [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) {S : Subgroup G} {T : Subgroup H}
+    (hTS : T.map (φ : H →* G) ≤ S) {c : H1 G M} (hc : explicitRes1 G M S c = 0) :
+    explicitRes1 H N T (explicitMap1 G M H N φ f hf hequiv c) = 0 := by
+  induction c using QuotientAddGroup.induction_on with
+  | _ z =>
+  rw [explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff] at hc
+  obtain ⟨m, hm⟩ := hc
+  -- On `T`, the pulled-back cocycle is the coboundary of `f m`.
+  rw [explicitMap1_mk, explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff]
+  refine ⟨f m, fun t ↦ ?_⟩
+  have h := congrArg f (hm ⟨φ t, hTS ⟨t, t.2, rfl⟩⟩)
+  rw [cocyclesMap1_apply, AddMonoidHom.id_apply, ContinuousMonoidHom.subgroupSubtype_apply,
+    map_sub, Subgroup.mk_smul, hequiv] at h
+  rw [cocyclesMap1_apply, cocyclesMap1_apply, AddMonoidHom.id_apply,
+    ContinuousMonoidHom.subgroupSubtype_apply]
+  exact h
 
 /-- Restriction on explicit `H²`, induced by the subgroup inclusion and the identity coefficient
 map. -/

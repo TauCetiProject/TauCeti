@@ -53,6 +53,8 @@ Frobenius corresponding to `1`.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq`: for `p ∤ m`, the `m`-th roots of a unit of
   `𝒪[K]` are unramified.
 * `TauCeti.isGalois_maximalUnramifiedExtension`: `K^{ur}` is Galois over `K`.
+* `TauCeti.map_maximalUnramifiedExtension_le`: for an extension `L/K` of local fields, a
+  `K`-algebra map from an extension of `K` to an extension of `L` sends `K^{ur}` into `L^{ur}`.
 * `IntermediateField.le_maximalUnramifiedExtension_iff`: for `Ω` separably closed, a finite
   intermediate field lies in `K^{ur}` exactly when it is unramified over `K`.
 * `TauCeti.maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self`,
@@ -231,6 +233,26 @@ theorem _root_.IntermediateField.le_maximalUnramifiedExtension (E : Intermediate
     [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E] [ValuativeExtension K E]
     [IsUnramified K E] : E ≤ maximalUnramifiedExtension K Ω :=
   E.eq_unramifiedExtension_finrank ▸ unramifiedExtension_le_maximalUnramifiedExtension K Ω _
+
+variable {K Ω} in
+/-- **Unramified elements stay unramified in an extension.** For an extension `L/K` of
+nonarchimedean local fields and a `K`-algebra map `τ : Ω → Ω'` into an extension `Ω'` of `L`, the
+image of `K^{ur}` lies in `L^{ur}`. -/
+theorem map_maximalUnramifiedExtension_le {L : Type*} [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    {Ω' : Type*} [Field Ω'] [Algebra K Ω'] [Algebra L Ω'] [IsScalarTower K L Ω']
+    (τ : Ω →ₐ[K] Ω') :
+    (maximalUnramifiedExtension K Ω).map τ ≤
+      (maximalUnramifiedExtension L Ω').restrictScalars K := by
+  rw [maximalUnramifiedExtension_eq_adjoin, adjoin_map, adjoin_le_iff]
+  rintro _ ⟨x, ⟨f, hf, hx⟩, rfl⟩
+  rw [SetLike.mem_coe, mem_restrictScalars, maximalUnramifiedExtension_eq_adjoin]
+  refine subset_adjoin _ _ ⟨f, hf, ?_⟩
+  -- With `q = #𝓀[K]`: `τ x` is a root of `X^{q^f} − X`, hence of `X^{(q^{f(L/K)})^f} − X`,
+  -- and `#𝓀[L] = q^{f(L/K)}`.
+  have h := Function.IsFixedPt.iterate (f := (· ^ Nat.card 𝓀[K] ^ f))
+    (show τ x ^ Nat.card 𝓀[K] ^ f = τ x by rw [← map_pow, hx]) (inertiaDegree K L)
+  rwa [pow_iterate, ← pow_mul, mul_comm, pow_mul, ← natCard_residueField K L] at h
 
 /-- Two `K`-embeddings of `K_f` agreeing on the roots of `X^{q^f} − X` are equal. -/
 private theorem algHom_ext_unramifiedExtension {f : ℕ} {A : Type*} [Field A] [Algebra K A]
