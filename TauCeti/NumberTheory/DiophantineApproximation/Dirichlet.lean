@@ -34,6 +34,8 @@ lower bounds behind exponents of approximation.
 * `TauCeti.dirichlet_linearForm_infinite`: the case of a single linear form.
 * `Real.infinite_setOf_mul_abs_mul_sub_round_le_one`: for every real `α`, infinitely many
   `q ≥ 1` satisfy `q ‖q α‖ ≤ 1`, where `‖x‖ = |x - round x|`.
+* `Real.infinite_setOf_mul_le_one`: for every pair of reals `α`, `β`, infinitely many `q ≥ 1`
+  satisfy `q ‖q α‖ ‖q β‖ ≤ 1`.
 
 ## Implementation notes
 
@@ -251,5 +253,13 @@ theorem _root_.Real.infinite_setOf_mul_abs_mul_sub_round_le_one (α : ℝ) :
     · rw [r.abs_den_mul_sub_round_eq_zero, mul_zero]
       exact zero_le_one
     · exact (Nat.lt_succ_self N).trans_le (Nat.le_mul_of_pos_right _ r.den_pos)
+
+/-- For all real `α`, `β`, infinitely many `y ≥ 1` satisfy `y ‖y α‖ ‖y β‖ ≤ 1`. -/
+theorem _root_.Real.infinite_setOf_mul_le_one (α β : ℝ) :
+    {y : ℕ | 0 < y ∧ y * |y * α - round (y * α)| * |y * β - round (y * β)| ≤ 1}.Infinite := by
+  refine Set.Infinite.mono ?_ α.infinite_setOf_mul_abs_mul_sub_round_le_one
+  rintro y ⟨hy, hyα⟩
+  refine ⟨hy, ?_⟩
+  exact (mul_le_of_le_one_right (by positivity) ((abs_sub_round _).trans (by norm_num))).trans hyα
 
 end TauCeti

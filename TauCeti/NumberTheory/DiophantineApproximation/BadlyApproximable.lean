@@ -264,14 +264,6 @@ theorem littlewoodConjecture_iff_badlyApproximable :
       exact ⟨y, hy, by rwa [mul_right_comm]⟩
   · exact littlewood_of_not_badlyApproximable hα β hε
 
-/-- For all real `α`, `β`, infinitely many `y ≥ 1` satisfy `y ‖y α‖ ‖y β‖ ≤ 1`. -/
-theorem _root_.Real.infinite_setOf_mul_le_one (α β : ℝ) :
-    {y : ℕ | 0 < y ∧ y * |y * α - round (y * α)| * |y * β - round (y * β)| ≤ 1}.Infinite := by
-  refine Set.Infinite.mono ?_ α.infinite_setOf_mul_abs_mul_sub_round_le_one
-  rintro y ⟨hy, hyα⟩
-  refine ⟨hy, ?_⟩
-  exact (mul_le_of_le_one_right (by positivity) ((abs_sub_round _).trans (by norm_num))).trans hyα
-
 /-! ### Examples -/
 
 example : BadlyApproximable √2 :=
