@@ -280,7 +280,7 @@ end Shift
 
 section FiniteSupport
 
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasFiniteCoproducts C]
+variable {C : Type*} [Category* C] [HasFiniteCoproducts C]
 
 /-- A family of objects which are zero outside a finite set of indices has a coproduct in a
 category with finite coproducts: the coproduct of its finitely many nonzero terms. -/
@@ -289,14 +289,15 @@ theorem hasCoproduct_of_finite_setOf_not_isZero {J : Type*} (f : J → C)
   let s := {j | ¬IsZero (f j)}
   have : Finite s := hf
   classical
-  -- The summands outside `s` are zero, so they are included by the zero morphism.
+  -- The summands outside `s` are zero objects, so each has a unique map to the coproduct.
   refine ⟨⟨Cofan.mk (∐ fun j : s ↦ f j)
-    (fun j ↦ if h : j ∈ s then Sigma.ι (fun j : s ↦ f j) ⟨j, h⟩ else 0),
+    (fun j ↦ if h : j ∈ s then Sigma.ι (fun j : s ↦ f j) ⟨j, h⟩
+      else ((not_not.1 h) : IsZero (f j)).to_ _),
     Cofan.IsColimit.mk _ (fun t ↦ Sigma.desc fun j : s ↦ t.inj j) (fun t j ↦ ?_)
       (fun t m hm ↦ ?_)⟩⟩
   · by_cases h : j ∈ s
     · simp [h]
-    · simpa [h] using ((not_not.1 h).eq_of_src _ _ : 0 = t.inj j)
+    · simpa only [dite_eq_right h] using (not_not.1 h).eq_of_src _ _
   · refine Sigma.hom_ext (f := fun j : s ↦ f j) _ _ fun j ↦ ?_
     simpa [j.2] using hm j
 
