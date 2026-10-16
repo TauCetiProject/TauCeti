@@ -20,7 +20,10 @@ subgroup `Gal(Kˢ/σ(L))` of `G_K` fixing `σ(L)` pointwise
 to `L`, defined along an embedding of separable closures `τ : Kˢ → Lˢ`
 (`WeierstrassCurve.pointRes`, `WeierstrassCurve.torsionRes`), is therefore the group-theoretic
 restriction to `Gal(Kˢ/σ(L))` followed by an isomorphism. In particular the two restrictions have
-the same kernel (`WeierstrassCurve.ker_pointRes`, `WeierstrassCurve.ker_torsionRes`).
+the same kernel (`WeierstrassCurve.ker_pointRes`, `WeierstrassCurve.ker_torsionRes`), by
+`TauCeti.ContCohomology.explicitMap1_eq_zero_iff_explicitRes1_eq_zero` applied to the bijective
+coordinate maps `WeierstrassCurve.pointCoeffBaseChange_bijective` and
+`WeierstrassCurve.torsionCoeffBaseChange_bijective`.
 
 For the `m`-division field `L = K(E[m])` of an elliptic curve and `m ≠ 0`, the kernel of
 group-theoretic restriction is finite by inflation-restriction
@@ -34,9 +37,6 @@ replaces `K` by `K(E[m])`, over which `E[m]` is rational.
 
 ## Main results
 
-* `WeierstrassCurve.pointCoeffBaseChange_bijective`,
-  `WeierstrassCurve.torsionCoeffBaseChange_bijective`: the coordinate maps along a bijective
-  embedding of separable closures are bijective.
 * `WeierstrassCurve.pointRes_eq_zero_iff`, `WeierstrassCurve.torsionRes_eq_zero_iff`: a class
   restricts to zero over `L` exactly when it restricts to zero on `Gal(Kˢ/σ(L))`.
 * `WeierstrassCurve.ker_pointRes`, `WeierstrassCurve.ker_torsionRes`: the same statement for the
@@ -62,49 +62,6 @@ open TauCeti TauCeti.ContCohomology
 variable {K : Type*} [Field K] {L : Type*} [Field L] [Algebra K L] (W : WeierstrassCurve K)
   (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
-/-! ### Bijectivity of the coordinate maps -/
-
-variable {τ} in
-open scoped Classical in
-/-- **Along a bijective embedding of separable closures, `E(Kˢ) → E(Lˢ)` is bijective.** -/
-theorem pointCoeffBaseChange_bijective (hτ : Function.Bijective τ) :
-    Function.Bijective (W.pointCoeffBaseChange τ) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun P hP ↦ ?_, fun Q ↦ ?_⟩
-  · -- The image of an affine point is affine, so only the point at infinity maps to zero.
-    obtain ⟨P, rfl⟩ := W.pointCoeffEquiv.surjective P
-    rcases P with _ | ⟨x, y, h⟩
-    · rw [← Affine.Point.zero_def, map_zero]
-    · rw [pointCoeffBaseChange_pointCoeffEquiv_some, AddEquivClass.map_eq_zero_iff] at hP
-      cases hP
-  · -- An affine point of `W⁄L` over `Lˢ` is the image of its coordinates pulled back along `τ`.
-    let e : SeparableClosure K ≃ₐ[K] SeparableClosure L := AlgEquiv.ofBijective τ hτ
-    obtain ⟨Q, rfl⟩ := (W⁄L).pointCoeffEquiv.surjective Q
-    rcases Q with _ | ⟨x, y, h⟩
-    · exact ⟨0, by rw [map_zero, ← Affine.Point.zero_def, map_zero]⟩
-    have h' : (W⁄(SeparableClosure L)).toAffine.Nonsingular (τ (e.symm x)) (τ (e.symm y)) := by
-      convert (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
-        W.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))) ▸ h <;>
-      exact e.apply_symm_apply _
-    refine ⟨W.pointCoeffEquiv (.some _ _
-      ((W.toAffine.baseChange_nonsingular (S := K) (f := τ) τ.injective _ _).1 h')), ?_⟩
-    rw [pointCoeffBaseChange_pointCoeffEquiv_some]
-    congr 2 <;> exact e.apply_symm_apply _
-
-variable {τ} in
-/-- **Along a bijective embedding of separable closures, `E(Kˢ)[m] → E(Lˢ)[m]` is bijective.** -/
-theorem torsionCoeffBaseChange_bijective (hτ : Function.Bijective τ) (m : ℕ) :
-    Function.Bijective (W.torsionCoeffBaseChange τ m) := by
-  have h := W.pointCoeffBaseChange_bijective hτ
-  refine ⟨fun P Q hPQ ↦ Subtype.ext <| h.1 <| by
-    rw [← coe_torsionCoeffBaseChange, hPQ, coe_torsionCoeffBaseChange], fun Q ↦ ?_⟩
-  obtain ⟨P, hP⟩ := h.2 Q
-  -- The preimage of an `m`-torsion point is `m`-torsion, by injectivity.
-  have hPm : P ∈ AddSubgroup.torsionBy W.PointCoeff m := by
-    rw [AddSubgroup.torsionBy.nsmul_iff]
-    refine h.1 ?_
-    rw [map_nsmul, hP, map_zero, AddSubgroup.torsionBy.nsmul_iff.1 Q.2]
-  exact ⟨⟨P, hPm⟩, Subtype.ext <| by rw [coe_torsionCoeffBaseChange, hP]⟩
-
 /-! ### Restriction to the fixing subgroup -/
 
 variable (σ : L →ₐ[K] SeparableClosure K)
@@ -114,24 +71,10 @@ the subgroup `Gal(Kˢ/σ(L))` of `G_K`.** -/
 theorem pointRes_eq_zero_iff {c : H1 (AbsoluteGaloisGroup K) W.PointCoeff} :
     W.pointRes τ c = 0 ↔
       explicitRes1 (AbsoluteGaloisGroup K) W.PointCoeff σ.fieldRange.fixingSubgroup c = 0 := by
-  let ψ : SeparableClosure K →ₐ[K] SeparableClosure L := separableClosureAlgEquiv K L σ
-  let f := AddEquiv.ofBijective (W.pointCoeffBaseChange ψ)
-    (W.pointCoeffBaseChange_bijective (separableClosureAlgEquiv K L σ).bijective)
-  have hf : ∀ (g : AbsoluteGaloisGroup L) (P : W.PointCoeff),
-      f (absoluteGaloisGroupEquivFixingSubgroup K L σ g • P) = g • f P := fun g P ↦ by
-    have h := W.pointCoeffBaseChange_smul ψ g P
-    rw [absoluteGaloisGroupMap_separableClosureAlgEquiv] at h
-    exact h
-  -- Restriction along `ψ` is restriction to the fixing subgroup followed by the isomorphism
-  -- induced by `(absoluteGaloisGroupEquivFixingSubgroup K L σ, f)`.
-  have h : W.pointRes ψ c = explicitMap1Equiv _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K L σ)
-      f continuous_of_discreteTopology continuous_of_discreteTopology hf
-      (explicitRes1 _ _ σ.fieldRange.fixingSubgroup c) := by
-    rw [explicitMap1Equiv_apply, explicitRes1_eq_explicitMap1, pointRes_eq_explicitMap1]
-    refine Eq.trans ?_ (DFunLike.congr_fun (explicitMap1_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _) c)
-    exact DFunLike.congr_fun (explicitMap1_congr_of_eq _ _ _ _ _ _ _ _
-      (absoluteGaloisGroupMap_separableClosureAlgEquiv K L σ) rfl) c
-  rw [W.pointRes_eq_pointRes τ ψ, h, AddEquivClass.map_eq_zero_iff]
+  rw [W.pointRes_eq_pointRes τ (separableClosureAlgEquiv K L σ), pointRes_eq_explicitMap1]
+  exact explicitMap1_eq_zero_iff_explicitRes1_eq_zero _
+    (absoluteGaloisGroupMap_separableClosureAlgEquiv K L σ)
+    (W.pointCoeffBaseChange_bijective (separableClosureAlgEquiv K L σ).bijective) _
 
 /-- **A class of `H¹(G_K, E(Kˢ)[m])` restricts to zero over `L` exactly when it restricts to zero
 on the subgroup `Gal(Kˢ/σ(L))` of `G_K`.** -/
@@ -139,25 +82,10 @@ theorem torsionRes_eq_zero_iff {m : ℕ} {c : H1 (AbsoluteGaloisGroup K) (W.Tors
     W.torsionRes τ m c = 0 ↔
       explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) σ.fieldRange.fixingSubgroup c =
         0 := by
-  let ψ : SeparableClosure K →ₐ[K] SeparableClosure L := separableClosureAlgEquiv K L σ
-  let f := AddEquiv.ofBijective (W.torsionCoeffBaseChange ψ m)
-    (W.torsionCoeffBaseChange_bijective (separableClosureAlgEquiv K L σ).bijective m)
-  have hf : ∀ (g : AbsoluteGaloisGroup L) (P : W.TorsionCoeff m),
-      f (absoluteGaloisGroupEquivFixingSubgroup K L σ g • P) = g • f P := fun g P ↦ by
-    have h := W.torsionCoeffBaseChange_smul ψ m g P
-    rw [absoluteGaloisGroupMap_separableClosureAlgEquiv] at h
-    exact h
-  -- Restriction along `ψ` is restriction to the fixing subgroup followed by the isomorphism
-  -- induced by `(absoluteGaloisGroupEquivFixingSubgroup K L σ, f)`.
-  have h : W.torsionRes ψ m c =
-      explicitMap1Equiv _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K L σ)
-        f continuous_of_discreteTopology continuous_of_discreteTopology hf
-        (explicitRes1 _ _ σ.fieldRange.fixingSubgroup c) := by
-    rw [explicitMap1Equiv_apply, explicitRes1_eq_explicitMap1, torsionRes_eq_explicitMap1]
-    refine Eq.trans ?_ (DFunLike.congr_fun (explicitMap1_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _) c)
-    exact DFunLike.congr_fun (explicitMap1_congr_of_eq _ _ _ _ _ _ _ _
-      (absoluteGaloisGroupMap_separableClosureAlgEquiv K L σ) rfl) c
-  rw [W.torsionRes_eq_torsionRes τ ψ, h, AddEquivClass.map_eq_zero_iff]
+  rw [W.torsionRes_eq_torsionRes τ (separableClosureAlgEquiv K L σ), torsionRes_eq_explicitMap1]
+  exact explicitMap1_eq_zero_iff_explicitRes1_eq_zero _
+    (absoluteGaloisGroupMap_separableClosureAlgEquiv K L σ)
+    (W.torsionCoeffBaseChange_bijective m (separableClosureAlgEquiv K L σ).bijective) _
 
 /-- **Restriction of `H¹(G_K, E(Kˢ))` to `L` has the kernel of restriction to `Gal(Kˢ/σ(L))`.** -/
 theorem ker_pointRes :
