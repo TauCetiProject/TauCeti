@@ -48,6 +48,8 @@ theorem orderAt_discr_prod_eq (s : Finset ι) (f : ι → Polynomial (MvPolynomi
     { toFun := fun p ↦ Multiplicative.ofAdd (p.orderAt c)
       map_one' := orderAt_one c
       map_mul' := fun p q ↦ orderAt_mul p q c }
-  exact s.map_discr_prod_eq f hdeg (v a) (v b) hdiscr hres
+  exact congrArg Multiplicative.toAdd <| s.map_discr_prod_eq f hdeg (v a) (v b)
+    (fun i hi ↦ congrArg Multiplicative.ofAdd (hdiscr i hi))
+    (fun i hi j hj hij ↦ congrArg Multiplicative.ofAdd (hres i hi j hj hij))
 
 end Finset
