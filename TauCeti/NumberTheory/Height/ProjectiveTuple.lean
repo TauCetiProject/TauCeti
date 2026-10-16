@@ -19,9 +19,10 @@ algebraic, `absoluteProjectiveTupleHeight x` is the relative height of `x` in th
 transcendental coordinate gets the junk value `1`. The zero tuple has value `1`, following the
 projective convention of `Height.mulHeight_zero`.
 
-The absolute height is the field-independent height of a point of projective space over `ℚ̄`: it
-may be computed in any number field containing the coordinates, it is invariant under
-homomorphisms of fields of characteristic zero, and it is unchanged by nonzero algebraic scalars.
+The absolute height is the field-independent height of a point of projective space over an
+algebraic closure of `ℚ`: it may be computed in any number field containing the coordinates, it
+is invariant under homomorphisms of fields of characteristic zero, and it is unchanged by nonzero
+algebraic scalars.
 The absolute height of an element `x` is that of the pair `(x, 1)`.
 
 ## Main definitions
