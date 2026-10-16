@@ -185,6 +185,8 @@ theorem ker_iwasawaCoordinate :
   have : IsClosed (M : Set (IwasawaGroup K)) := Subgroup.isClosed_topologicalClosure _
   let π := Subgroup.quotientMkContinuousMonoidHom M
   have hτ : π (iwasawaTau K) = 1 := by
+    -- Expand only the local abbreviation π so the public projection evaluation lemma matches.
+    -- The quotient projection itself stays opaque; its value is supplied by the next rewrite.
     change Subgroup.quotientMkContinuousMonoidHom M (iwasawaTau K) = 1
     rw [Subgroup.quotientMkContinuousMonoidHom_apply]
     exact (QuotientGroup.eq_one_iff _).mpr

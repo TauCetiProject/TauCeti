@@ -199,6 +199,8 @@ theorem coe_freeProC_of (x : X) :
 /-- The canonical map kills the base point. -/
 @[simp]
 theorem of_basePoint : of C x₀ x₀ = 1 := by
+  -- Expand the local generator map of to exhibit the canonical projection mk.
+  -- The next public mk_apply rewrite computes it without unfolding the quotient map.
   change mk C x₀ (freeProC.of x₀) = 1
   rw [mk_apply]
   exact (QuotientGroup.eq_one_iff _).mpr ((mem_kernel_iff C x₀).mpr fun _ hU ↦ hU.2)

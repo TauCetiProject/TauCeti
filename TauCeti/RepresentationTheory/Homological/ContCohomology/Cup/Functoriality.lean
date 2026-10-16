@@ -231,6 +231,10 @@ theorem cup_infl (N : Subgroup G) [N.Normal]
         (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
       TopRep.quotientToInvariantsι Z N) ?_ m n a b
   intro x y
+  -- The public coercion equation for the opaque quotient projection changes the restriction
+  -- objects, hence the eqToHom transports above. Normalize only application of the coerced
+  -- composite morphisms: eqToHom_hom_apply then matches their underlying linear maps and removes
+  -- those transports. It cannot rewrite the outer function-coercion syntax directly.
   change (TopRep.quotientToInvariantsι Z N).hom
       ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Z N))
         (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom (Pinv.bil x y)) =

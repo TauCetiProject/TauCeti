@@ -441,6 +441,9 @@ theorem coeffMap_comp_infl {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
   -- Ascribed for the same reason (0.03 s).
   apply map_congr rfl ?_ n
   apply heq_of_eq
+  -- Make the restriction functor and its equality transports explicit after map_congr.
+  -- This aligns the source and target objects with eqToHom_naturality_assoc; rewriting the
+  -- original coerced map expression does not expose that naturality pattern.
   change (TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
       (X := TopRep.quotientToInvariants X N) (Y := TopRep.quotientToInvariants Y N)
       (TopRep.quotientToInvariantsMap f N) ≫

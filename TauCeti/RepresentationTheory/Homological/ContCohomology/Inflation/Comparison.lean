@@ -72,6 +72,8 @@ theorem ofDiscreteModulePair_quotientMk_subtype :
         TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N := by
   apply ofDiscreteModulePair_eq_of_hom_apply
   intro m
+  -- Evaluate the bundled composite on the underlying linear maps so the public eqToHom
+  -- computation lemma can remove the transport between the two restriction objects.
   change (TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N).hom
       ((eqToHom (congrArg (fun ψ =>
         TopRep.res ψ (TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) N))
@@ -79,6 +81,8 @@ theorem ofDiscreteModulePair_quotientMk_subtype :
             ((ofDiscreteModuleQuotient G M N).hom m)) = _
   rw [TopRep.eqToHom_hom_apply]
   simp only [cast_eq]
+  -- The transport is now gone. Express the dictionary value in the module carrier so
+  -- ofDiscreteModuleQuotient_apply matches, without unfolding the quotient construction.
   change ((ofDiscreteModuleQuotient G M N m).1 : M) = (m : M)
   exact ofDiscreteModuleQuotient_apply G M N m
 

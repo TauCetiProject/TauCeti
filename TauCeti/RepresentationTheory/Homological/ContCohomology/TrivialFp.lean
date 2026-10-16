@@ -324,6 +324,9 @@ theorem trivialFpQuotientToInvariantsIso_hom_comp_quotientToInvariantsι :
       TopRep.quotientToInvariantsι (trivialFp p G) N) =
         eqToHom (res_trivialFp_hom p (Subgroup.quotientMkContinuousMonoidHom N)) := by
   ext x
+  -- Expose only application of the underlying linear maps in the coerced composite.
+  -- This lets eqToHom_hom_apply remove the restriction transport before the coefficient
+  -- isomorphism computation; the outer morphism coercions otherwise hide this pattern.
   change (TopRep.quotientToInvariantsι (trivialFp p G) N).hom
       ((eqToHom (congrArg (fun ψ =>
         TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
