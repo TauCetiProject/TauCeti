@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.HalfSpace
-public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Model
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
