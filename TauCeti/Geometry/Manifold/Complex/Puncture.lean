@@ -56,19 +56,11 @@ theorem exists_mem_nhds_isConnected_diff_singleton_of_chartedSpace_complex (p : 
     let _ := pathConnectedSpace_ball_diff_singleton (e p) hr
     exact isPathConnected_iff_pathConnectedSpace.mpr inferInstance
   have himage : e.symm '' (ball (e p) r \ {e p}) = U \ {p} := by
-    ext x
-    constructor
-    · rintro ⟨y, ⟨hyball, hyne⟩, rfl⟩
-      have hytarget : y ∈ e.target := hrsub hyball
-      refine ⟨⟨e.map_target hytarget, ?_⟩, ?_⟩
-      · rwa [mem_preimage, e.right_inv hytarget]
-      · intro h
-        apply hyne
-        rw [mem_singleton_iff]
-        exact (e.right_inv hytarget).symm.trans (congrArg e (mem_singleton_iff.mp h))
-    · rintro ⟨⟨hxsource, hxball⟩, hxne⟩
-      refine ⟨e x, ⟨hxball, ?_⟩, e.left_inv hxsource⟩
-      exact fun h ↦ hxne (e.injOn hxsource (mem_chart_source ℂ p) h)
+    have hsingle : {e p} ⊆ ball (e p) r := singleton_subset_iff.mpr (mem_ball_self hr)
+    rw [(e.symm.injOn.mono hrsub).image_sdiff_subset hsingle,
+      e.symm_image_eq_source_inter_preimage hrsub]
+    simp only [image_singleton, e.left_inv (mem_chart_source ℂ p)]
+    rfl
   rw [← himage]
   exact hball.isConnected.image _ (e.symm.continuousOn.mono fun _ hy ↦ hrsub hy.1)
 
