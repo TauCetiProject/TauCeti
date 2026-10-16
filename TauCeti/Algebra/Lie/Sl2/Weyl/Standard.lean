@@ -89,11 +89,14 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 section CharZeroDomain
 
-variable (K : Type*) [CommRing K] [IsDomain K] [Algebra ℚ K] [CharZero K] (n : ℕ)
+variable (K : Type*) [CommRing K] [Algebra ℚ K]
 
 /-! ## The Weyl element -/
 
-omit [IsDomain K] [CharZero K] in
+section WeylDef
+
+variable (n : ℕ)
+
 /-- **The Weyl element of `V(n)`**, the unit `exp e · exp (-f) · exp e` of
 `Module.End K (Sl2Std K n)`. It is Chevalley's `n_α = x_α(1) x_{-α}(-1) x_α(1)` in the rank-one
 representation of highest weight `n`. -/
@@ -101,7 +104,6 @@ noncomputable def weylUnit : (Module.End K (Sl2Std K n))ˣ :=
   _root_.TauCeti.weylUnit (isNilpotent_raise (K := K) (n := n))
     (isNilpotent_lower (K := K) (n := n))
 
-omit [IsDomain K] [CharZero K] in
 /-- The Weyl element of `V(n)` is the threefold product of exponentials. -/
 theorem coe_weylUnit :
     ((weylUnit K n : (Module.End K (Sl2Std K n))ˣ) : Module.End K (Sl2Std K n)) =
@@ -109,7 +111,6 @@ theorem coe_weylUnit :
         IsNilpotent.exp (raise K n) :=
   _root_.TauCeti.coe_weylUnit _ _
 
-omit [IsDomain K] [CharZero K] in
 /-- Convert a conjugation identity for the standard Weyl element into a multiplication identity. -/
 private theorem weylUnit_mul_of_conj_eq_neg {x y : Module.End K (Sl2Std K n)}
     (h : IsNilpotent.exp (raise K n) * IsNilpotent.exp (-(lower K n)) *
@@ -125,7 +126,12 @@ private theorem weylUnit_mul_of_conj_eq_neg {x y : Module.End K (Sl2Std K n)}
   rw [← neg_mul]
   exact (Units.mul_inv_eq_iff_eq_mul _).mp h
 
-omit [IsDomain K] in
+end WeylDef
+
+section WeylConj
+
+variable [CharZero K] (n : ℕ)
+
 /-- **Conjugating the raising operator by the Weyl element.** The relation `n e n⁻¹ = -f`, written
 without the inverse. -/
 theorem weylUnit_mul_raise :
@@ -138,7 +144,6 @@ theorem weylUnit_mul_raise :
     (isNilpotent_raise (K := K) (n := n)) (isNilpotent_lower (K := K) (n := n))
   exact weylUnit_mul_of_conj_eq_neg K n h
 
-omit [IsDomain K] in
 /-- **Conjugating the lowering operator by the Weyl element.** The relation `n f n⁻¹ = -e`, written
 without the inverse. -/
 theorem weylUnit_mul_lower :
@@ -151,9 +156,14 @@ theorem weylUnit_mul_lower :
     (isNilpotent_raise (K := K) (n := n)) (isNilpotent_lower (K := K) (n := n))
   exact weylUnit_mul_of_conj_eq_neg K n h
 
+end WeylConj
+
 /-! ## The base case of the string -/
 
-omit [IsDomain K] [CharZero K] in
+section BaseSeries
+
+variable (n : ℕ)
+
 /-- The exponential series of a nilpotent operator on `V(n)`, with its rational factorial
 coefficients mapped to `K`. -/
 private theorem exp_eq_sum_algebraMap_smul {x : Module.End K (Sl2Std K n)} {k : ℕ}
@@ -164,7 +174,6 @@ private theorem exp_eq_sum_algebraMap_smul {x : Module.End K (Sl2Std K n)} {k : 
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [algebraMap_smul]
 
-omit [IsDomain K] [CharZero K] in
 /-- The exponential of the raising operator differs from the identity by a multiple of the raising
 operator, on either side: the series has no constant term beyond `1`. -/
 private theorem exists_exp_raise_eq :
@@ -186,7 +195,6 @@ private theorem exists_exp_raise_eq :
     rw [Finset.sum_mul]
     exact Finset.sum_congr rfl fun i _ => by rw [pow_succ, smul_mul_assoc]
 
-omit [IsDomain K] [CharZero K] in
 /-- The raising operator does not reach the lowest coordinate, so neither does its exponential. -/
 private theorem exp_raise_apply_last (v : Sl2Std K n) :
     (IsNilpotent.exp (raise K n) v) (Fin.last n) = v (Fin.last n) := by
@@ -194,7 +202,6 @@ private theorem exp_raise_apply_last (v : Sl2Std K n) :
   rw [hg, LinearMap.add_apply, Module.End.one_apply, add_apply, Module.End.mul_apply, raise_apply,
     dite_eq_right (by simp : ¬ ((Fin.last n : Fin (n + 1)) : ℕ) < n), add_zero]
 
-omit [IsDomain K] [CharZero K] in
 /-- The exponential of the raising operator fixes the highest weight vector, which it kills. -/
 private theorem exp_raise_basis_zero :
     IsNilpotent.exp (raise K n) (basis K n 0) = basis K n 0 := by
@@ -202,7 +209,6 @@ private theorem exp_raise_basis_zero :
   rw [hg, LinearMap.add_apply, Module.End.one_apply, Module.End.mul_apply, raise_basis_zero,
     g.map_zero, add_zero]
 
-omit [IsDomain K] [CharZero K] in
 /-- The lowest coordinate of `exp (-f) · v₀` is the sign `(-1) ^ n`: only the last term of the
 exponential series reaches it, and its falling-factorial coefficient cancels the factorial. -/
 private theorem exp_neg_lower_basis_zero_apply_last :
@@ -249,6 +255,10 @@ private theorem exp_neg_lower_basis_zero_apply_last :
     simp [hne]
   · intro hc
     exact absurd (Finset.mem_range.mpr (Nat.lt_succ_self n)) hc
+
+end BaseSeries
+
+variable [IsDomain K] [CharZero K] (n : ℕ)
 
 /-- **The Weyl element on the highest weight vector.** It carries `v₀` to `(-1) ^ n · vₙ`. -/
 private theorem weylUnit_apply_basis_zero :
