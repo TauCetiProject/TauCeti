@@ -145,45 +145,12 @@ theorem Away.baseChangeHom_surjective {d : ι} (hf : f ∈ 𝒜 d) :
         Away.baseChangeHom_tmul_mk, Submodule.coe_toBaseChange_tmul]
   rw [h, hx, Away.mkLinearMap_apply]
 
-/-- Raise the denominator of a homogeneous fraction without changing the fraction. -/
-private def Away.promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
-    (n N : ℕ) (hnN : n ≤ N) : 𝒜 (n • d) →ₗ[R] 𝒜 (N • d) where
-  toFun a := ⟨(a : A) * f ^ (N - n), by
-    have h := SetLike.mul_mem_graded a.2 (SetLike.pow_mem_graded (N - n) hf)
-    convert h using 1
-    rw [← add_nsmul, Nat.add_sub_of_le hnN]⟩
-  map_add' a b := by
-    apply Subtype.ext
-    exact add_mul (a : A) b (f ^ (N - n))
-  map_smul' r a := by
-    apply Subtype.ext
-    simp only [Submodule.coe_smul, RingHom.id_apply, Algebra.smul_mul_assoc]
-
-/-- Raising a numerator and its denominator by the same power does not change a homogeneous
-fraction. -/
-private theorem Away.mkLinearMap_promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
-    (n N : ℕ) (hnN : n ≤ N) (a : 𝒜 (n • d)) :
-    Away.mkLinearMap hf N (Away.promoteNumerator 𝒜 hf n N hnN a) =
-      Away.mkLinearMap hf n a := by
-  apply val_injective
-  simp only [Away.mkLinearMap_apply, Away.val_mk, Away.promoteNumerator]
-  let b : Submonoid.powers f := ⟨f ^ n, ⟨n, rfl⟩⟩
-  let c : Submonoid.powers f := ⟨f ^ (N - n), ⟨N - n, rfl⟩⟩
-  have hbc : b * c = ⟨f ^ N, ⟨N, rfl⟩⟩ := by
-    apply Subtype.ext
-    simp only [b, c, Submonoid.coe_mul, ← pow_add, Nat.add_sub_of_le hnN]
-  rw [← hbc]
-  have hcancel := IsLocalization.mk'_cancel
-    (S := Localization (Submonoid.powers f)) (a : A) b c
-  rw [← Localization.mk_eq_mk'_apply, ← Localization.mk_eq_mk'_apply] at hcancel
-  convert hcancel using 1
-
 /-- Raising a numerator commutes with scalar extension and does not change the resulting
 homogeneous fraction. -/
 private theorem Away.mkLinearMap_baseChange_promoteNumerator {f : A} {d : ι}
     (hf : f ∈ 𝒜 d) (n N : ℕ) (hnN : n ≤ N) (a : S ⊗[R] 𝒜 (n • d)) :
     (Away.mkLinearMap hf N).baseChange S
-        ((Away.promoteNumerator 𝒜 hf n N hnN).baseChange S a) =
+        ((Away.promoteNumerator hf n N hnN).baseChange S a) =
       (Away.mkLinearMap hf n).baseChange S a := by
   induction a using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
@@ -201,8 +168,8 @@ private theorem Away.exists_eq_mkLinearMap_baseChange {f : A} {d : ι} (hf : f �
       obtain ⟨n, a, ha⟩ := hx
       obtain ⟨m, b, hb⟩ := hy
       let N := n + m
-      let a' := (Away.promoteNumerator 𝒜 hf n N (Nat.le_add_right n m)).baseChange S a
-      let b' := (Away.promoteNumerator 𝒜 hf m N (Nat.le_add_left m n)).baseChange S b
+      let a' := (Away.promoteNumerator hf n N (Nat.le_add_right n m)).baseChange S a
+      let b' := (Away.promoteNumerator hf m N (Nat.le_add_left m n)).baseChange S b
       refine ⟨N, a' + b', ?_⟩
       simp only [map_add, a', b', Away.mkLinearMap_baseChange_promoteNumerator]
       rw [ha, hb]
@@ -229,12 +196,12 @@ homogeneous component into the scalar-extended algebra. -/
 private theorem Away.coe_toBaseChange_promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
     (n N : ℕ) (hnN : n ≤ N) (a : S ⊗[R] 𝒜 (n • d)) :
     ((𝒜 (N • d)).toBaseChange S
-        ((Away.promoteNumerator 𝒜 hf n N hnN).baseChange S a) : S ⊗[R] A) =
+        ((Away.promoteNumerator hf n N hnN).baseChange S a) : S ⊗[R] A) =
       (1 ⊗ₜ[R] f) ^ (N - n) * ((𝒜 (n • d)).toBaseChange S a : S ⊗[R] A) := by
   induction a using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, Submodule.coe_add, mul_add, hx, hy]
   | tmul s a =>
-      simp only [LinearMap.baseChange_tmul, Away.promoteNumerator,
+      simp only [LinearMap.baseChange_tmul, Away.coe_promoteNumerator,
         Submodule.coe_toBaseChange_tmul]
       simp only [Algebra.TensorProduct.tmul_pow, one_pow,
         Algebra.TensorProduct.tmul_mul_tmul, mul_comm]
@@ -260,7 +227,7 @@ theorem Away.baseChangeHom_injective {d : ι} (hf : f ∈ 𝒜 d) :
   obtain ⟨k, hk⟩ := c.property
   rw [← hk] at hc
   let N := n + k
-  let a' := (Away.promoteNumerator 𝒜 hf n N (Nat.le_add_right n k)).baseChange S a
+  let a' := (Away.promoteNumerator hf n N (Nat.le_add_right n k)).baseChange S a
   have ha' : a' = 0 := by
     apply DirectSum.toBaseChange_injective 𝒜 (N • d)
     apply Subtype.ext
