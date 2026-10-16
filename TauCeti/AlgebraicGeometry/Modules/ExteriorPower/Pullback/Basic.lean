@@ -132,6 +132,13 @@ def pullbackExteriorPowerComparison (n : ℕ) :
   TauCeti.SheafOfModules.pullbackExteriorPowerComparison
     (pullbackPushforwardAdjunction f) n
 
+/-- The scheme comparison is the sheaf comparison for the scheme pullback adjunction. -/
+theorem pullbackExteriorPowerComparison_eq (n : ℕ) :
+    pullbackExteriorPowerComparison f n =
+      TauCeti.SheafOfModules.pullbackExteriorPowerComparison
+        (pullbackPushforwardAdjunction f) n :=
+  (rfl)
+
 /-- The adjunction equation characterizing the pullback comparison for modules on schemes: its
 transpose is the exterior power of the unit `M ⟶ f_* f^* M` followed by the exterior-power
 comparison of pushforward. -/
