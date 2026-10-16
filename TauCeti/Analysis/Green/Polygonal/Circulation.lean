@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.Polygonal.Basic
-public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
@@ -83,29 +82,29 @@ theorem integral_circulationFun_eq_polygon {γ : ℝ → ℂ} {a b : ℝ} {N : �
     rw [← ha, ← hb]
     exact ⟨hs.monotone (Fin.zero_le _), hs.monotone (Fin.le_last _)⟩
   have hint := hγ.intervalIntegrable_circulationFun hP hQ
-  let F : Fin (N + 1) → ℝ := fun i ↦ ∫ t in a..s i, circulationFun P Q γ t
-  have hstep (i : Fin N) :
-      curveIntegral (oneForm P Q) (Path.segment (γ (s i.castSucc)) (γ (s i.succ))) =
-        F i.succ - F i.castSucc := by
-    rw [← integral_circulationFun_eq_curveIntegral_segment (hs i.castSucc_lt_succ)
-      (hsegments i) P Q]
-    have hleftSubset : uIcc a (s i.castSucc) ⊆ uIcc a b := by
-      rw [uIcc_of_le hab]
-      exact uIcc_subset_Icc (left_mem_Icc.mpr hab) (hmem i.castSucc)
-    have hcellSubset : uIcc (s i.castSucc) (s i.succ) ⊆ uIcc a b := by
-      rw [uIcc_of_le hab]
-      exact uIcc_subset_Icc (hmem i.castSucc) (hmem i.succ)
-    have hleft := hint.mono_set hleftSubset
-    have hcell := hint.mono_set hcellSubset
-    exact eq_sub_iff_add_eq.mpr (by
-      simpa only [F, add_comm] using
-        intervalIntegral.integral_add_adjacent_intervals hleft hcell)
-  have htel : ∑ i : Fin N, (F i.succ - F i.castSucc) = F (Fin.last N) - F 0 := by
-    exact Fin.sum_univ_succ_sub_castSucc F
-  rw [BoundaryChain.polygon_def, map_sum]
+  let t : ℕ → ℝ := fun k ↦ s (Fin.ofNat (N + 1) k)
+  have ht (i : Fin (N + 1)) : t i = s i := by simp [t]
+  have hcast (i : Fin N) : t i = s i.castSucc := ht i.castSucc
+  have hsucc (i : Fin N) : t (i + 1) = s i.succ := ht i.succ
+  have ht0 : t 0 = a := (ht 0).trans ha
+  have htN : t N = b := (ht (Fin.last N)).trans hb
+  have hcell (i : Fin N) :
+      IntervalIntegrable (circulationFun P Q γ) volume (t i) (t (i + 1)) := by
+    rw [hcast i, hsucc i]
+    apply hint.mono_set
+    rw [uIcc_of_le hab]
+    exact uIcc_subset_Icc (hmem i.castSucc) (hmem i.succ)
+  have hsum := intervalIntegral.sum_integral_adjacent_intervals (n := N) (a := t) (by
+    intro k hk
+    simpa only [Fin.val_mk] using hcell ⟨k, hk⟩)
+  rw [← Fin.sum_univ_eq_sum_range, ht0, htN] at hsum
+  rw [← hsum, BoundaryChain.polygon_def, map_sum]
   simp only [BoundaryChain.ofPath_def, Finsupp.linearCombination_single, one_smul,
-    Function.comp_apply, hstep, htel]
-  simp [F, ha, hb]
+    Function.comp_apply]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [hcast i, hsucc i]
+  exact integral_circulationFun_eq_curveIntegral_segment (hs i.castSucc_lt_succ) (hsegments i) P Q
 
 
 end TauCeti.Green
