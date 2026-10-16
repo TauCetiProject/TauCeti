@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Representability
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Kernel
 
 /-!
 # The represented dynamic limit
@@ -23,6 +23,8 @@ The coordinate formula computes the limit of any parabolic point over a commutat
 algebra in an arbitrary universe. The kernel identity identifies the quotient of the
 parabolic coordinate algebra defining the fibre over the identity with the coordinate
 algebra of the dynamic unipotent subgroup.
+The isomorphism `BialgHom.parabolicLimitKernelIso` realizes this identification as an
+isomorphism of group schemes over the base, compatible with their inclusions into the parabolic.
 
 ## References
 
@@ -158,5 +160,36 @@ theorem kernelHopfIdeal_parabolicLimitCoordinateMap
         simpa only [map_sub, AlgHomClass.commutes] using hm
       rw [parabolicLimitCoordinateMap_apply] at hm'
       simpa only [map_sub, AlgHomClass.commutes] using hm'
+
+/-- The scheme-theoretic kernel of the dynamic limit is canonically the group scheme
+represented by the dynamic unipotent Hopf quotient. -/
+noncomputable def parabolicLimitKernelIso (l : H →ₐc[R] LaurentPolynomial R) :
+    CommHopfAlgCat.kernelSpec (parabolicLimitCoordinateMap l) ≅
+      CommHopfAlgCat.quotientSpec (_root_.CommHopfAlgCat.of R H)
+        (unipotentDefiningHopfIdeal l) :=
+  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+    (CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq
+      (CommHopfAlgCat.quotientMapOfLe (_root_.CommHopfAlgCat.of R H)
+        (parabolicDefiningHopfIdeal_le_unipotentDefiningHopfIdeal l))
+      (CommHopfAlgCat.quotientMapOfLe_surjective _ _)
+      (by rw [kernelHopfIdeal_parabolicLimitCoordinateMap]
+          exact CommHopfAlgCat.kerOfSurjective_quotientMapOfLe
+            (_root_.CommHopfAlgCat.of R H)
+            (parabolicDefiningHopfIdeal_le_unipotentDefiningHopfIdeal l))).symm.op
+
+/-- Under the kernel identification, the unipotent inclusion into the parabolic is the
+canonical kernel inclusion. -/
+@[simp]
+theorem parabolicLimitKernelIso_hom_comp_quotientSpecMapOfLe
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    (parabolicLimitKernelIso l).hom ≫
+        CommHopfAlgCat.quotientSpecMapOfLe (_root_.CommHopfAlgCat.of R H)
+          (parabolicDefiningHopfIdeal_le_unipotentDefiningHopfIdeal l) =
+      CommHopfAlgCat.kernelSpecι (parabolicLimitCoordinateMap l) := by
+  rw [parabolicLimitKernelIso, Functor.mapIso_hom, Iso.op_hom, Iso.symm_hom,
+    CommHopfAlgCat.quotientSpecMapOfLe_def, CommHopfAlgCat.kernelSpecι_def,
+    CommHopfAlgCat.quotientSpecι_def,
+    ← (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_comp, ← op_comp,
+    CommHopfAlgCat.Hom.comp_quotientIsoOfKerOfSurjectiveEq_inv]
 
 end BialgHom
