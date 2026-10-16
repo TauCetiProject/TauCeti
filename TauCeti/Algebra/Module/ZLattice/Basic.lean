@@ -12,13 +12,17 @@ public import Mathlib.Algebra.Module.ZLattice.Basic
 
 This file records geometric properties of the standard fundamental domain associated to a basis.
 Its convexity makes lattice cells preconnected, so cells crossing the boundary of a set can be
-detected by their intersection with the frontier in lattice-point counting arguments.
+detected by their intersection with the frontier in lattice-point counting arguments. It also
+records that the `ℤ`-submodule of a discrete additive subgroup is discrete, which lets such a
+subgroup be used with `IsZLattice`.
 
 ## Main results
 
 * `ZSpan.convex_fundamentalDomain`: the fundamental domain of a real basis is convex.
 * `ZSpan.eq_of_sub_mem_fundamentalDomain`: two integer-span translates placing a point in the
   fundamental domain are equal.
+* `AddSubgroup.discreteTopology_toIntSubmodule`: the `ℤ`-submodule of a discrete additive
+  subgroup is discrete, so that a discrete subgroup can be fed to the `ℤ`-lattice API.
 -/
 
 public section
@@ -54,5 +58,11 @@ theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain [Finite ι] (β : Basis ι 
       (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₁)
       (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₂)
   exact neg_injective (congrArg Subtype.val heq)
+
+/-- The `ℤ`-submodule of a discrete additive subgroup is discrete. -/
+instance _root_.AddSubgroup.discreteTopology_toIntSubmodule {M : Type*} [AddCommGroup M]
+    [TopologicalSpace M] (H : AddSubgroup M) [DiscreteTopology H] :
+    DiscreteTopology H.toIntSubmodule :=
+  inferInstanceAs (DiscreteTopology H)
 
 end TauCeti
