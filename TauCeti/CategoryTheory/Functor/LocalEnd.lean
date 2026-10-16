@@ -35,13 +35,16 @@ variable (F : C ⥤ D) [F.Additive] {X Y : C}
 functor sends it to the identity of a nonzero object. -/
 theorem isIso_of_map_eq_id_of_isLocalRing_end [IsLocalRing (End X)]
     (hX : ¬ IsZero (F.obj X)) (f : X ⟶ X) (hf : F.map f = 𝟙 (F.obj X)) : IsIso f := by
-  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End X) f with hu | hu
-  · exact (isUnit_iff_isIso f).mp hu
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (End.of f) with hu | hu
+  · exact (isUnit_iff_isIso (End.of f)).mp hu
   · have : Nontrivial (End (F.obj X)) :=
-      nontrivial_of_ne (𝟙 (F.obj X)) 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr h))
+      nontrivial_of_ne 1 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr
+        (congrArg End.asHom h)))
     have hunit := hu.map (F.mapEnd X)
     have hzero : F.mapEnd X (1 - End.of f) = 0 := by
-      simp only [mapEnd_apply, F.map_sub, End.one_def, F.map_id, hf, sub_self]
+      apply End.ext
+      simp only [mapEnd_apply_asHom, End.sub_asHom, End.one_asHom, F.map_sub,
+        F.map_id, hf, sub_self, End.zero_asHom]
     rw [hzero] at hunit
     exact (not_isUnit_zero hunit).elim
 
@@ -49,13 +52,17 @@ theorem isIso_of_map_eq_id_of_isLocalRing_end [IsLocalRing (End X)]
 endomorphism ring is local and the functor is surjective on its endomorphisms. -/
 theorem indecomposable_obj_of_map_surjective_of_isLocalRing_end [HasBinaryBiproducts D]
     [IsLocalRing (End X)] (hX : ¬ IsZero (F.obj X))
-    (hF : Function.Surjective (F.map : End X → End (F.obj X))) : Indecomposable (F.obj X) := by
+    (hF : Function.Surjective (F.mapEnd X)) : Indecomposable (F.obj X) := by
   have : Nontrivial (End (F.obj X)) :=
-    nontrivial_of_ne (𝟙 (F.obj X)) 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr h))
-  have := IsLocalRing.of_surjective'
-    ({ F.mapEnd X, F.mapAddHom with } : End X →+* End (F.obj X)) hF
-  exact TauCeti.indecomposable_of_injective_of_isLocalRing hX (id : End (F.obj X) → _)
-    Function.injective_id rfl rfl (fun _ ↦ rfl)
+    nontrivial_of_ne 1 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr
+      (congrArg End.asHom h)))
+  let φ : End X →+* End (F.obj X) :=
+    { F.mapEnd X with
+      map_zero' := by apply End.ext; exact F.map_zero X X
+      map_add' := fun _ _ ↦ by apply End.ext; exact F.map_add }
+  have := IsLocalRing.of_surjective' φ hF
+  exact TauCeti.indecomposable_of_injective_of_isLocalRing hX End.of
+    End.homEquiv.symm.injective rfl rfl (fun _ ↦ rfl)
 
 /-- An additive functor surjective on morphisms from `Y` to `X` reflects invertibility
 of a morphism from `X` to `Y` when their endomorphism rings are local and the source image
@@ -68,11 +75,10 @@ theorem isIso_of_map_isIso_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRing
   have : IsIso (f ≫ g) := F.isIso_of_map_eq_id_of_isLocalRing_end hX _ (by
     rw [F.map_comp, hg, IsIso.hom_inv_id])
   refine TauCeti.isIso_of_isIso_comp
-    (by simpa only [End.one_def] using one_ne_zero (α := End X))
+    (fun h ↦ one_ne_zero (α := End X) (End.ext h))
     (fun e he ↦ ?_) f g inferInstance
-  simpa only [End.one_def] using
-    IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing (R := End Y)
-      (a := e) (by simpa only [IsIdempotentElem, End.mul_def] using he)
+  exact (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing (R := End Y)
+    (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom)
 
 /-- An additive functor surjective on morphisms in both directions between two objects
 detects their isomorphism classes when their endomorphism rings are local and the source

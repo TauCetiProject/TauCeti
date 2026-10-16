@@ -71,24 +71,28 @@ theorem RestrictScalars.ext {f : DGAlgHom hA hB} {M : Type uM}
 
 namespace RestrictScalars
 
-variable (f : DGAlgHom hA hB) (M : Type uM)
-  [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
+variable (f : DGAlgHom hA hB) (M : Type uM) [AddCommGroup M]
 
 instance : AddCommGroup (RestrictScalars f M) :=
   Equiv.addCommGroup
     { toFun := RestrictScalars.val, invFun := RestrictScalars.mk
       left_inv _ := rfl, right_inv _ := rfl }
 
+@[simp]
+theorem val_zero : (0 : RestrictScalars f M).val = 0 := rfl
+
+@[simp]
+theorem val_add (x y : RestrictScalars f M) : (x + y).val = x.val + y.val := rfl
+
+@[simp]
+theorem val_zsmul (n : ℤ) (x : RestrictScalars f M) : (n • x).val = n • x.val := rfl
+
+section ModuleR
+
+variable [Module R M]
+
 instance : Module R (RestrictScalars f M) :=
   AddEquiv.module R
-    { toFun := RestrictScalars.val, invFun := RestrictScalars.mk
-      left_inv _ := rfl, right_inv _ := rfl, map_add' _ _ := rfl }
-
-/-- The restricted right action: `a : A` acts through `f a : B`. -/
-instance : Module Aᵐᵒᵖ (RestrictScalars f M) :=
-  letI : Module Aᵐᵒᵖ M :=
-    Module.compHom M (AlgHom.op f.toGradedAlgHom.toAlgHom).toRingHom
-  AddEquiv.module Aᵐᵒᵖ
     { toFun := RestrictScalars.val, invFun := RestrictScalars.mk
       left_inv _ := rfl, right_inv _ := rfl, map_add' _ _ := rfl }
 
@@ -101,44 +105,39 @@ def linearEquiv : RestrictScalars f M ≃ₗ[R] M where
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-omit [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
-@[simp]
-theorem val_zero : (0 : RestrictScalars f M).val = 0 := rfl
-
-omit [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
-@[simp]
-theorem val_add (x y : RestrictScalars f M) : (x + y).val = x.val + y.val := rfl
-
-omit [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
-@[simp]
-theorem val_zsmul (n : ℤ) (x : RestrictScalars f M) : (n • x).val = n • x.val := rfl
-
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
 @[simp]
 theorem val_smul (r : R) (x : RestrictScalars f M) : (r • x).val = r • x.val := rfl
 
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
 @[simp]
 theorem linearEquiv_apply (x : RestrictScalars f M) : linearEquiv f M x = x.val := by rfl
 
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
 @[simp]
 theorem linearEquiv_symm_apply (x : M) :
     (linearEquiv f M).symm x = RestrictScalars.mk x := by rfl
 
-omit [Module R M] [IsScalarTower R Bᵐᵒᵖ M] in
+end ModuleR
+
+variable [Module Bᵐᵒᵖ M]
+
+/-- The restricted right action: `a : A` acts through `f a : B`. -/
+instance : Module Aᵐᵒᵖ (RestrictScalars f M) :=
+  letI : Module Aᵐᵒᵖ M :=
+    Module.compHom M (AlgHom.op f.toGradedAlgHom.toAlgHom).toRingHom
+  AddEquiv.module Aᵐᵒᵖ
+    { toFun := RestrictScalars.val, invFun := RestrictScalars.mk
+      left_inv _ := rfl, right_inv _ := rfl, map_add' _ _ := rfl }
+
 /-- On underlying elements, restricted scalar multiplication is multiplication by the image
 under `f`. -/
 theorem val_op_smul (a : A) (x : RestrictScalars f M) :
     (op a • x).val = op (f a) • x.val := rfl
 
-omit [Module R M] [IsScalarTower R Bᵐᵒᵖ M] in
 /-- On underlying elements, an opposite scalar acts through its image under `f`. -/
 @[simp]
 theorem val_smul_eq (a : Aᵐᵒᵖ) (x : RestrictScalars f M) :
     (a • x).val = AlgHom.op f.toGradedAlgHom.toAlgHom a • x.val := rfl
 
-instance : IsScalarTower R Aᵐᵒᵖ (RestrictScalars f M) :=
+instance [Module R M] [IsScalarTower R Bᵐᵒᵖ M] : IsScalarTower R Aᵐᵒᵖ (RestrictScalars f M) :=
   IsScalarTower.of_algebraMap_smul fun r x ↦ by
     rw [MulOpposite.algebraMap_apply]
     apply RestrictScalars.ext
@@ -155,14 +154,11 @@ end DGRightModule
 
 namespace IsDGRightModule
 
-variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M]
-  [IsScalarTower R Bᵐᵒᵖ M]
-  {ℳ : ℤ → Submodule R M}
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
-  [DirectSum.Decomposition ℳ]
-  {dM : M →ₗ[R] M}
+variable {M : Type uM} [AddCommGroup M] [Module R M]
 
-variable (f : DGAlgHom hA hB)
+section Grading
+
+variable {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (f : DGAlgHom hA hB)
 
 /-- The grading of a module does not change under restriction of scalars. -/
 noncomputable def restrictScalarsGrading (q : ℤ) :
@@ -170,8 +166,6 @@ noncomputable def restrictScalarsGrading (q : ℤ) :
   ((InternalGrading.ofDecomposition ℳ).map
     (DGRightModule.RestrictScalars.linearEquiv f M).symm).piece q
 
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
 @[simp]
 theorem mem_restrictScalarsGrading_iff {q : ℤ} {x : DGRightModule.RestrictScalars f M} :
     x ∈ restrictScalarsGrading (ℳ := ℳ) f q ↔
@@ -189,8 +183,30 @@ noncomputable instance : DirectSum.Decomposition (restrictScalarsGrading (ℳ :=
     (((InternalGrading.ofDecomposition ℳ).map
       (DGRightModule.RestrictScalars.linearEquiv f M).symm).piece))
 
+end Grading
+
+section Differential
+
+variable {dM : M →ₗ[R] M} (f : DGAlgHom hA hB)
+
+/-- The differential of a restricted module is its original differential. -/
+def restrictScalarsDifferential :
+    DGRightModule.RestrictScalars f M →ₗ[R] DGRightModule.RestrictScalars f M :=
+  (DGRightModule.RestrictScalars.linearEquiv f M).symm.toLinearMap ∘ₗ dM ∘ₗ
+    (DGRightModule.RestrictScalars.linearEquiv f M).toLinearMap
+
+@[simp]
+theorem val_restrictScalarsDifferential (x : DGRightModule.RestrictScalars f M) :
+    (restrictScalarsDifferential (dM := dM) f x).val = dM x.val := by rfl
+
+end Differential
+
+variable [Module Bᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
+  [DirectSum.Decomposition ℳ]
+
 /-- The restricted scalar action respects degrees because the algebra morphism is graded. -/
-noncomputable instance : SetLike.GradedSMul
+noncomputable instance (f : DGAlgHom hA hB) : SetLike.GradedSMul
     (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (restrictScalarsGrading (ℳ := ℳ) f) where
   smul_mem {i j a x} ha hx := by
@@ -207,16 +223,7 @@ noncomputable instance : SetLike.GradedSMul
         Graded.map_mem f haA
     exact SetLike.GradedSMul.smul_mem ha' hx
 
-/-- The differential of a restricted module is its original differential. -/
-def restrictScalarsDifferential :
-    DGRightModule.RestrictScalars f M →ₗ[R] DGRightModule.RestrictScalars f M :=
-  (DGRightModule.RestrictScalars.linearEquiv f M).symm.toLinearMap ∘ₗ dM ∘ₗ
-    (DGRightModule.RestrictScalars.linearEquiv f M).toLinearMap
-
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
-@[simp]
-theorem val_restrictScalarsDifferential (x : DGRightModule.RestrictScalars f M) :
-    (restrictScalarsDifferential (dM := dM) f x).val = dM x.val := by rfl
+variable [IsScalarTower R Bᵐᵒᵖ M] {dM : M →ₗ[R] M} (f : DGAlgHom hA hB)
 
 /-- Restrict a right DG module along a morphism of DG algebras. -/
 theorem restrictScalars (hM : IsDGRightModule hB ℳ dM) :

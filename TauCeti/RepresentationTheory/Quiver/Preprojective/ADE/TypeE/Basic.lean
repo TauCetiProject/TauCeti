@@ -228,7 +228,8 @@ private theorem eDown_mul_eUp_add (a : Fin 3) (w : ℕ) :
       rcases eq_eArm_of_eAdj (by omega) hp hj with rfl | rfl <;> simp
     have hne : eArm n a w ≠ eArm n a (w + 2) := by
       obtain _ | _ | w := w
-      all_goals fin_cases a <;> simp [eArm] at hp ⊢ <;> omega
+      all_goals fin_cases a <;> simp [eArm] at hp ⊢
+      all_goals omega
     rw [Finset.sum_pair hne, add_comm] at h
     exact h
   · have h₁ : signlessArrow k G (eArm n a (w + 1 + 1)) (eArm n a (w + 1)) = 0 :=

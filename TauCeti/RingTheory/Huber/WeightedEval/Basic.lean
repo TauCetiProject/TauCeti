@@ -72,19 +72,48 @@ namespace TauCeti.Huber
 
 section Terms
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [TopologicalSpace A] [CommRing B] [TopologicalSpace B]
+variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B]
 
 /-- The `ν`-th term of the evaluation of `f` at `b` along `φ`, namely `φ(coeff ν f) · bν`. -/
 def weightedEvalTerm (φ : A →+* B) (b : Fin k → B) (f : MvPowerSeries (Fin k) A)
     (ν : Fin k →₀ ℕ) : B :=
   φ (MvPowerSeries.coeff ν f) * ∏ i, b i ^ ν i
 
-omit [TopologicalSpace A] [TopologicalSpace B] in
 /-- Unfolding lemma for `TauCeti.Huber.weightedEvalTerm`. -/
 @[simp]
 theorem weightedEvalTerm_def (φ : A →+* B) (b : Fin k → B) (f : MvPowerSeries (Fin k) A)
     (ν : Fin k →₀ ℕ) :
     weightedEvalTerm φ b f ν = φ (MvPowerSeries.coeff ν f) * ∏ i, b i ^ ν i := (rfl)
+
+/-- The **weighted variables** of Proposition 5.50: the sets `φ(Tᵢ) · bᵢ`. The hypothesis 5.50
+places on the tuple is about these, not about the `bᵢ` alone. -/
+def weightedVar (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) (i : Fin k) : Set B :=
+  φ '' T i * {b i}
+
+/-- Unfolding lemma for `TauCeti.Huber.weightedVar`. -/
+@[simp]
+theorem weightedVar_def (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) (i : Fin k) :
+    weightedVar φ T b i = φ '' T i * {b i} := (rfl)
+
+/-- The weighted monomials at `ν` are the pointwise product of the `νᵢ`-th powers of the weighted
+variables. Private: it is the bookkeeping behind the bridge below and says nothing on its own. -/
+private theorem image_weightPow_mul_monomial (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B)
+    (ν : Fin k →₀ ℕ) :
+    (fun t ↦ φ t * ∏ i, b i ^ ν i) '' weightPow T ν = ∏ i, weightedVar φ T b i ^ ν i := by
+  have h1 : (fun t ↦ φ t * ∏ i, b i ^ ν i) '' weightPow T ν
+      = (φ '' weightPow T ν) * {∏ i, b i ^ ν i} := by
+    rw [Set.mul_singleton, Set.image_image]
+  have h2 : φ '' weightPow T ν = ∏ i, (φ '' T i) ^ ν i := by
+    rw [image_weightPow, weightPow_def]
+  have h3 : ({∏ i, b i ^ ν i} : Set B) = ∏ i, ({b i} : Set B) ^ ν i := by
+    rw [← Set.finsetProd_singleton]
+    exact Finset.prod_congr rfl fun i _ ↦ (Set.singleton_pow ..).symm
+  rw [h1, h2, h3, ← Finset.prod_mul_distrib]
+  exact Finset.prod_congr rfl fun i _ ↦ by rw [weightedVar_def, mul_pow]
+
+section WeightBounded
+
+variable [TopologicalSpace B]
 
 /-- **The hypothesis on the tuple `b`**: the weighted monomials `φ(Tν) · bν`, over all
 multi-indices at once, form a bounded subset of `B`.
@@ -98,14 +127,12 @@ sets is bounded. -/
 def IsWeightBounded (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) : Prop :=
   IsBounded (⋃ ν : Fin k →₀ ℕ, (fun t ↦ φ t * ∏ i, b i ^ ν i) '' weightPow T ν)
 
-omit [TopologicalSpace A] in
 /-- Unfolding lemma for `TauCeti.Huber.IsWeightBounded`. The body is not exported, so this is how
 a consumer supplies one or takes one apart. -/
 theorem isWeightBounded_iff (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) :
     IsWeightBounded φ T b ↔
       IsBounded (⋃ ν : Fin k →₀ ℕ, (fun t ↦ φ t * ∏ i, b i ^ ν i) '' weightPow T ν) := (Iff.rfl)
 
-omit [TopologicalSpace A] in
 /-- **At the one-weight family the hypothesis is boundedness of the monomials.** With every weight
 equal to `{1}` the weighted monomials are just the `bν`, so `IsWeightBounded` says exactly that
 they form a bounded set — the condition a reader expects to see, and the bridge from the roadmap's
@@ -121,7 +148,6 @@ theorem isWeightBounded_one_weight_iff (φ : A →+* B) (b : Fin k → B) :
     simp [weightPow_one_weight]
   rw [isWeightBounded_iff, hset]
 
-omit [TopologicalSpace A] in
 /-- **At the one-weight family the hypothesis is exactly Wedhorn's**: the weighted monomials are
 bounded precisely when every variable is power-bounded.
 
@@ -140,18 +166,6 @@ theorem isWeightBounded_one_weight_iff_forall_isPowerBounded (φ : A →+* B)
     rintro _ ⟨ν, rfl⟩
     exact Set.finsetProd_mem_finsetProd Finset.univ _ _ fun i _ ↦ ⟨ν i, rfl⟩
 
-
-/-- The **weighted variables** of Proposition 5.50: the sets `φ(Tᵢ) · bᵢ`. The hypothesis 5.50
-places on the tuple is about these, not about the `bᵢ` alone. -/
-def weightedVar (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) (i : Fin k) : Set B :=
-  φ '' T i * {b i}
-
-omit [TopologicalSpace A] [TopologicalSpace B] in
-/-- Unfolding lemma for `TauCeti.Huber.weightedVar`. -/
-@[simp]
-theorem weightedVar_def (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) (i : Fin k) :
-    weightedVar φ T b i = φ '' T i * {b i} := (rfl)
-
 /-- **Wedhorn's coordinatewise hypothesis**: each weighted variable is power-bounded *as a set*,
 its powers all lying in one bounded subset of `B`.
 
@@ -162,31 +176,12 @@ reduces to each `bᵢ` being power-bounded. -/
 def IsWeightedVarPowerBounded (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) : Prop :=
   ∀ i, IsBounded (⋃ n : ℕ, weightedVar φ T b i ^ n)
 
-omit [TopologicalSpace A] in
 /-- Unfolding lemma for `TauCeti.Huber.IsWeightedVarPowerBounded`. The body is not exported, so
 this is how a consumer supplies one or takes one apart. -/
 theorem isWeightedVarPowerBounded_iff (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) :
     IsWeightedVarPowerBounded φ T b ↔
       ∀ i, IsBounded (⋃ n : ℕ, weightedVar φ T b i ^ n) := (Iff.rfl)
 
-omit [TopologicalSpace A] [TopologicalSpace B] in
-/-- The weighted monomials at `ν` are the pointwise product of the `νᵢ`-th powers of the weighted
-variables. Private: it is the bookkeeping behind the bridge below and says nothing on its own. -/
-private theorem image_weightPow_mul_monomial (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B)
-    (ν : Fin k →₀ ℕ) :
-    (fun t ↦ φ t * ∏ i, b i ^ ν i) '' weightPow T ν = ∏ i, weightedVar φ T b i ^ ν i := by
-  have h1 : (fun t ↦ φ t * ∏ i, b i ^ ν i) '' weightPow T ν
-      = (φ '' weightPow T ν) * {∏ i, b i ^ ν i} := by
-    rw [Set.mul_singleton, Set.image_image]
-  have h2 : φ '' weightPow T ν = ∏ i, (φ '' T i) ^ ν i := by
-    rw [image_weightPow, weightPow_def]
-  have h3 : ({∏ i, b i ^ ν i} : Set B) = ∏ i, ({b i} : Set B) ^ ν i := by
-    rw [← Set.finsetProd_singleton]
-    exact Finset.prod_congr rfl fun i _ ↦ (Set.singleton_pow ..).symm
-  rw [h1, h2, h3, ← Finset.prod_mul_distrib]
-  exact Finset.prod_congr rfl fun i _ ↦ by rw [weightedVar_def, mul_pow]
-
-omit [TopologicalSpace A] in
 /-- **Wedhorn's coordinatewise hypothesis gives the uniform bound.** Each weighted monomial set is
 a finite pointwise product of powers of the weighted variables, so it lies in the product of the
 bounded sets containing those powers — and a finite pointwise product of bounded sets is bounded.
@@ -201,7 +196,6 @@ theorem isWeightBounded_of_isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k
   rw [image_weightPow_mul_monomial]
   exact Set.finsetProd_subset_finsetProd _ _ _ fun i _ ↦ Set.subset_iUnion _ _
 
-omit [TopologicalSpace A] in
 /-- **The uniform bound gives Wedhorn's coordinatewise hypothesis.** The `n`-th power of the
 weighted variable `φ(Tᵢ) · bᵢ` is the set of weighted monomials at the multi-index `n • eᵢ`. -/
 theorem IsWeightBounded.isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k → Set A}
@@ -213,17 +207,14 @@ theorem IsWeightBounded.isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k �
   rw [hn, ← image_weightPow_mul_monomial]
   exact Set.subset_iUnion_of_subset (Finsupp.single i n) subset_rfl
 
-omit [TopologicalSpace A] in
 /-- **The two hypotheses on the tuple agree**: the weighted monomials form a bounded set exactly
 when every weighted variable is power-bounded as a set. -/
 theorem isWeightBounded_iff_isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k → Set A}
     {b : Fin k → B} : IsWeightBounded φ T b ↔ IsWeightedVarPowerBounded φ T b :=
   ⟨IsWeightBounded.isWeightedVarPowerBounded, isWeightBounded_of_isWeightedVarPowerBounded⟩
 
-variable [NonarchimedeanAddGroup A] [NonarchimedeanAddGroup B]
+end WeightBounded
 
-omit [TopologicalSpace A] [NonarchimedeanAddGroup A] [TopologicalSpace B]
-  [NonarchimedeanAddGroup B] in
 /-- **A coefficient bound gives a term bound**, at a single multi-index: if the `ν`-th coefficient
 of `f` lies in `Tν · U`, and `φ(U)` times the weighted monomials at `ν` lands in the subgroup `G`,
 then the `ν`-th term of the evaluation lies in `G`. Both the hypothesis and the conclusion concern
@@ -255,6 +246,9 @@ theorem weightedEvalTerm_mem_of_mem_weightMul {φ : A →+* B} {T : Fin k → Se
   -- relying on the wrappers and coercions agreeing definitionally.
   simpa [weightedEvalTerm_def, ψ] using hcomap
 
+variable [TopologicalSpace A] [TopologicalSpace B] [NonarchimedeanAddGroup A]
+  [NonarchimedeanAddGroup B]
+
 /-- **The terms of the evaluation tend to zero along the cofinite filter.** This is the whole
 analytic input to summability — the convergence a summable family must have. It needs no
 completeness; completeness is what makes it *sufficient*, in
@@ -278,7 +272,6 @@ theorem tendsto_weightedEvalTerm_cofinite_zero {φ : A →+* B} (hφ : Continuou
   filter_upwards [isWeightedRestricted_iff.mp hf U] with ν hν
   exact hGW (weightedEvalTerm_mem_of_mem_weightMul (fun _ ⟨u, hu, hval⟩ ↦ hval ▸ hUV hu)
     ((Set.mul_subset_mul_left (Set.subset_iUnion _ ν)).trans hVG) hν)
-
 
 end Terms
 

@@ -61,7 +61,7 @@ variable {k : Type u} [Field k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- The index type of the vector-space basis used to extract center equations. -/
-private abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
+private noncomputable abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
 
 private noncomputable instance :
     DecidableEq (centerBasisIndex (k := k) (H := H)) :=
@@ -229,7 +229,7 @@ private theorem centerCoefficientIdeal_antipode_mem {x : H}
     (centerCoefficientIdeal_le_ker_iff_isCentralPoint g⁻¹).2 hginv
   have hxzero := RingHom.mem_ker.mp (hle hx)
   have hxzero' : g⁻¹ x = 0 := hxzero
-  rw [AlgHom.convInv_apply] at hxzero'
+  rw [WithConv.algHom_inv_apply] at hxzero'
   exact Ideal.Quotient.eq_zero_iff_mem.mp hxzero'
 
 private theorem centerCoefficientIdeal_comul_mem {x : H}

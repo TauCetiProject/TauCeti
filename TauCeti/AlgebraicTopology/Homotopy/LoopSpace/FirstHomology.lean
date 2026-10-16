@@ -60,7 +60,8 @@ theorem pathLoopSpaceFirstHomologyAddEquiv_symm_loopClass (x : X)
     (pathLoopSpaceFirstHomologyAddEquiv x).symm
         (HurewiczOne.H₁AddEquivHomology (TopCat.of (Ω X x)) (HurewiczOne.loopClass γ)) =
       Additive.ofMul (pathLoopSpaceMulEquiv 0
-        (pi1MulEquivFundamentalGroup.symm (Path.Homotopic.Quotient.mk γ))) := by
+        (pi1MulEquivFundamentalGroup.symm
+          (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) := by
   rw [AddEquiv.symm_apply_eq]
   simp only [pathLoopSpaceFirstHomologyAddEquiv, AddEquiv.trans_apply,
     MulEquiv.toAdditive_apply_apply, toMul_ofMul, MulEquiv.trans_apply,

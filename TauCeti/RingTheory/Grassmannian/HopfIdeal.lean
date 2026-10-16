@@ -31,7 +31,7 @@ quotient by `N`. The image of `N` under the counit, under `π ∘ S` for the ant
 for each `h : H` is a submodule of a finite projective `A`-module (`A`, `Q`, `Q ⊗[A] Q`, `Q` and
 `Q`), and its content (`Submodule.minorsIdeal 1`) is the ideal along which it vanishes after base
 change (`Module.Grassmannian.ker_baseChangeMkQ_le_ker_iff_minorsIdeal_le`). The counit and the
-antipode commute with base change (`TensorProduct.counit_rTensor` and
+antipode commute with base change (`LinearMap.counit_rTensor` and
 `TensorProduct.antipode_rTensor`). For commutative `H` the last two summands coincide.
 
 ## Main definitions
@@ -131,7 +131,7 @@ private theorem hopfIdealLocus_le_ker_algebraMap_iff_ker_le (N : G(k, A ⊗[R] H
   have hgQ := TensorProduct.isBaseChange A Q B
   have hcounit := ker_baseChangeMkQ_le_ker_iff_minorsIdeal_le N.toSubmodule
     (Coalgebra.counit (R := B) (A := B ⊗[R] H)) (Coalgebra.counit (R := A) (A := A ⊗[R] H))
-    (IsBaseChange.linearMap A B) fun x ↦ counit_rTensor _ x
+    (IsBaseChange.linearMap A B) fun x ↦ LinearMap.counit_rTensor _ x
   have hantipode := ker_baseChangeMkQ_le_ker_iff_minorsIdeal_le N.toSubmodule
     (baseChangeMkQ B N.toSubmodule ∘ₗ HopfAlgebra.antipode B)
     (N.toSubmodule.mkQ ∘ₗ HopfAlgebra.antipode A) hgQ fun x ↦ by

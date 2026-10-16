@@ -364,6 +364,16 @@ theorem ord_algebraMap_restrict (f : F) :
   rw [← ord_comap F P' f, ramificationIdx, key,
     ← Valuation.ord_normalization_mul_ordIndex _ f, mul_comm]
 
+/-- Restriction scales the multiplicative valuation by the ramification index. -/
+theorem valuation_algebraMap_restrict (f : F) :
+    P'.valuation (algebraMap F F' f) =
+      (P'.restrict k F).valuation f ^ ramificationIdx F P' := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [(ramificationIdx_pos F P').ne']
+  rw [P'.valuation_eq_exp_neg_ord ((map_ne_zero (algebraMap F F')).mpr hf),
+    (P'.restrict k F).valuation_eq_exp_neg_ord hf, ord_algebraMap_restrict k F P' f,
+    ← WithZero.exp_nsmul, Int.nsmul_eq_mul, mul_neg]
+
 /-- An element of `F` is integral at the restriction exactly when it is integral at `P'`. -/
 theorem mem_integers_restrict_iff (f : F) :
     f ∈ (P'.restrict k F).integers ↔ algebraMap F F' f ∈ P'.integers := by

@@ -90,7 +90,7 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     have hleft := congrArg (fun q =>
         ((GeneralLinear.pointsMulEquiv n q : Matrix.GeneralLinearGroup (Fin n) H) :
           Matrix (Fin n) (Fin n) H) i j) hmap
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
       GeneralLinear.pointsMulEquiv_diagonalTorusPoints] at hleft
     rw [GeneralLinear.pointsMulEquiv_apply,
       GeneralLinear.pointToGeneralLinear_apply] at hleft

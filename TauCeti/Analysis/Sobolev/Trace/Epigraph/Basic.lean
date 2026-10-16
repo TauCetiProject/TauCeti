@@ -178,7 +178,7 @@ theorem W1p.norm_normalEpigraphEquivL_le (hφ : LipschitzWith K φ)
     (u : W1p volume (normalEpigraph φ) p) :
     ‖W1p.normalEpigraphEquivL hφ u‖ ≤ (1 + K) * ‖u‖ := by
   rw [normalEpigraphEquivL_apply_eq]
-  have h1 := (flattenL hφ).le_opNorm u
+  have h1 := (flattenL (p := p) hφ).le_opNorm u
   have h2 := norm_flattenL_le (p := p) hφ
   exact h1.trans (mul_le_mul_of_nonneg_right h2 (norm_nonneg _))
 
@@ -187,7 +187,7 @@ theorem W1p.norm_normalEpigraphEquivL_symm_le (hφ : LipschitzWith K φ)
     (v : W1p volume (normalHalfSpace (E := E) 0) p) :
     ‖(W1p.normalEpigraphEquivL hφ).symm v‖ ≤ (1 + K) * ‖v‖ := by
   rw [normalEpigraphEquivL_symm_apply_eq]
-  have h1 := (unflattenL hφ).le_opNorm v
+  have h1 := (unflattenL (p := p) hφ).le_opNorm v
   have h2 := norm_unflattenL_le (p := p) hφ
   exact h1.trans (mul_le_mul_of_nonneg_right h2 (norm_nonneg _))
 

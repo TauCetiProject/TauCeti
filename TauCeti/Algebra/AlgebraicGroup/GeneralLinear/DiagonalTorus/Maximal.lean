@@ -149,7 +149,7 @@ grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
         (diagonalTorusDefiningIdeal k n) A =
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
   HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 

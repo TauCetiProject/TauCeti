@@ -328,7 +328,7 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
   -- The interpolant is carried by `T '' S`, so its density vanishes almost everywhere off it.
   have hνS : μ.map T (T '' S)ᶜ = 0 := by
     rw [map_apply hT hTS.compl]
-    exact measure_mono_null (fun x hx hxS => hx (mem_image_of_mem T hxS)) hμS
+    exact measure_mono_null (t := Sᶜ) (fun x hx hxS => hx (mem_image_of_mem T hxS)) hμS
   have hg0 : ∀ᵐ y ∂ρ, y ∈ (T '' S)ᶜ → g y = 0 := by
     rw [← setLIntegral_eq_zero_iff hTS.compl (measurable_rnDeriv (μ.map T) ρ), ← withDensity_apply _
       hTS.compl, hν, hνS]
