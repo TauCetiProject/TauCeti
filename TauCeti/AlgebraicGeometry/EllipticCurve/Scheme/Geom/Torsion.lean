@@ -67,6 +67,10 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
   `E[n]` is the inverse image `[n]⁻¹[0]` of the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_torsion_hom`: `E[n]` is
   locally of finite presentation over `S`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.subschemeι_ker_torsionι_left_structureMap`: the
+  closed subscheme of the ideal sheaf of `E[n]` is `E[n]` over `S`, so it is locally of finite
+  presentation over `S` as well
+  (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_ker_torsionι_left`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap`: the `n`-torsion commutes
   with base change.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap_torsionι` and
@@ -106,7 +110,7 @@ noncomputable def torsion : Grp (Over S) :=
 /-- **The `n`-torsion is the kernel of the endomorphism `n`.** The `n`-torsion of `E` is the kernel
 of the image in `Grp (Over S)` of the integer `n` of the endomorphism ring `End E.toCommGrp`. -/
 theorem torsion_eq_kernel :
-    E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp)) := by
+    E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp).asHom) := by
   rw [torsion, GroupScheme.torsion_eq_kernel]
 
 /-- The inclusion `E[n] ⟶ E` of the `n`-torsion of `E`, a morphism of `Over S`. -/
@@ -234,12 +238,8 @@ theorem torsionι_left_structureMap :
 
 /-- **The `n`-torsion is a closed subscheme.** The inclusion `E[n] ⟶ E` is a closed immersion,
 being the base change of the zero section of the separated morphism `E ⟶ S`. -/
-instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).left := by
-  have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
-    rw [zero_comp_structureMap]
-    infer_instance
-  have : IsClosedImmersion E.zero := .of_comp E.zero E.structureMap
-  exact MorphismProperty.of_isPullback (E.isPullback_torsion n).flip this
+instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).left :=
+  MorphismProperty.of_isPullback (E.isPullback_torsion n).flip E.isClosedImmersion_zero
 
 /-- **`E[n]` is the inverse image of the zero section under `[n]`**: the ideal sheaf of the closed
 subscheme `E[n]` of `E` is the inverse image along `[n]` of the ideal sheaf of the zero section. -/
@@ -258,6 +258,19 @@ instance isProper_torsion_hom : IsProper (E.torsion n).X.hom := by
 instance locallyOfFinitePresentation_torsion_hom :
     LocallyOfFinitePresentation (E.torsion n).X.hom :=
   MorphismProperty.of_isPullback (E.isPullback_torsion n) inferInstance
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is `E[n]` over `S`. -/
+theorem subschemeι_ker_torsionι_left_structureMap :
+    (E.torsionι n).left.ker.subschemeι ≫ E.structureMap =
+      inv (E.torsionι n).left.toImage ≫ (E.torsion n).X.hom := by
+  rw [IsIso.eq_inv_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, torsionι_left_structureMap]
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is locally of finite presentation over
+`S`. -/
+instance locallyOfFinitePresentation_ker_torsionι_left :
+    LocallyOfFinitePresentation ((E.torsionι n).left.ker.subschemeι ≫ E.structureMap) := by
+  rw [subschemeι_ker_torsionι_left_structureMap]
+  infer_instance
 
 /-! ### Base change -/
 

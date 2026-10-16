@@ -89,7 +89,8 @@ These timelines show up to the last thirty days, including the current partial U
 The backlog counts distinct PRs in the recorded ready-to-merge snapshots, including PRs
 being tested. The label is a readiness hint; admission still checks the current head's CI,
 reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
-Snapshots can briefly undercount while the bot rebuilds its candidate scan after a restart.
+Initial candidate scans after a bot restart are omitted when their incompleteness is recorded.
+Older snapshots without that marker can briefly undercount.
 
 :::blob queueSizeGraph
 :::
@@ -98,7 +99,9 @@ Each staging dot is placed at the run's creation time, with the number of distin
 batch on the vertical axis. The colour records the overall workflow result, including cache
 publication, using the latest recorded attempt if the run was retried. Separate runs of the
 same batch have separate dots. Only production main-branch staging runs with known batch
-membership are shown; pilot and unidentified dispatches are excluded.
+membership and a terminal result are shown; pilot and unidentified dispatches are excluded.
+Shaded intervals mark incomplete run inventory: recorded dots are shown there, but missing dots
+do not establish that no runs occurred.
 
 :::blob stagingGraph
 :::
@@ -106,6 +109,8 @@ membership are shown; pilot and unidentified dispatches are excluded.
 # Day by day
 
 The charts below give one point per complete UTC day, for up to the last ninety days.
+Each uses its own continuous coverage interval and stops at the first gap; partially covered
+days are omitted.
 
 How long does a build take, and how long does it wait before starting? A pull-request build
 restores what it can from the artifact cache and compiles the rest, then runs the audits and lints.
@@ -162,8 +167,17 @@ line. Direct merges of human-reviewed infrastructure PRs are included.
 The data comes from [TauCetiCI](https://github.com/TauCetiProject/TauCetiCI), which records
 every GitHub Actions run in the organisation: the commits each build tested, the runner, the
 queue and run times of its jobs, and why failed builds failed. Its database is published as a
-release there for anyone who wants to ask their own questions. The charts end where that record
-is complete, which can be a few hours behind the present.
+release there for anyone who wants to ask their own questions. Each chart uses its own source
+coverage: fleet charts require organisation-wide job history, daily build charts require Tau Ceti
+build jobs, failure and phase charts require detailed enrichment, and the merge timelines use
+the latest observations and recorded runs. Explicitly unavailable records are reported as source
+gaps. A backlog in one stream does not stop the others. The
+[freshness report](static/ci-freshness.json) distinguishes source coverage from the coverage
+used for published charts. Dated daily charts can incorporate historical corrections even while
+their coverage is stale; the freshness check still reports that lag. Stale fleet and merge timelines
+retain their previous assets. When source data cannot be read or rendered, the previous charts
+are retained. A fallback's
+published cutoff may be unknown when no earlier report recorded it.
 
 Builds are recorded job by job. The label, notification and merge-bot workflows run thousands of
 times a day, so for them only one run in four is recorded job by job, and each of those stands

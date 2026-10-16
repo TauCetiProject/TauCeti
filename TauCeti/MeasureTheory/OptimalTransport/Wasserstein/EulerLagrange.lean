@@ -64,6 +64,9 @@ Fokker–Planck equation.
 
 * `TauCeti.wassersteinEDist_map_add_smul_sq_le`: the expansion of the squared Wasserstein distance
   along the perturbation of a law by a vector field of `L²`, against an arbitrary coupling.
+* `TauCeti.IsCoupling.integral_inner_eq_inner` and
+  `TauCeti.IsOptimalCoupling.abs_integral_inner_le`: the pairing `∫ ⟪ξ x, y - x⟫ dγ` is an
+  `L²(γ)` inner product, at most `‖ξ‖ W₂(μ, ν)` in absolute value for an optimal coupling.
 * `TauCeti.apply_le_apply_add_of_mem_moreauYosidaResolvent`: the variational inequality of the
   JKO step.
 * `TauCeti.integral_inner_eq_neg_mul_of_mem_moreauYosidaResolvent`: the Euler–Lagrange equation
@@ -168,6 +171,70 @@ theorem wassersteinEDist_map_add_smul_sq_le (hγ : IsCoupling γ ν μ)
     _ = _ := by rw [hγ.integral_norm_sub_add_smul_sq hγ₂ hξ h]
 
 end Perturbation
+
+section Pairing
+
+variable [InnerProductSpace ℝ E] {μ ν : Measure E} {γ : Measure (E × E)}
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The pairing `∫ ⟪ξ x, y - x⟫ dγ` of a field `ξ ∈ L²(μ; E)` with the displacement of a coupling
+`γ` out of `μ` is the `L²(γ)` inner product of `ξ ∘ Prod.fst` with the displacement. -/
+theorem IsCoupling.integral_inner_eq_inner (hγ : IsCoupling γ μ ν)
+    (hd : MemLp (fun z : E × E ↦ z.2 - z.1) 2 γ) (ξ : Lp E 2 μ) :
+    ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ =
+      ⟪Lp.compMeasurePreservingₗᵢ ℝ Prod.fst hγ.measurePreserving_fst ξ, hd.toLp _⟫ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [AEEqFun.coeFn_compMeasurePreserving (ξ : E →ₘ[μ] E) hγ.measurePreserving_fst,
+    hd.coeFn_toLp] with z h₁ h₂
+  rw [Lp.compMeasurePreservingₗᵢ_apply_coe, h₁, h₂, Function.comp_apply]
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The pairing with the square integrable displacement of a coupling is additive in the field. -/
+theorem IsCoupling.integral_inner_sub (hγ : IsCoupling γ μ ν)
+    (hd : MemLp (fun z : E × E ↦ z.2 - z.1) 2 γ) (ξ ζ : Lp E 2 μ) :
+    ∫ z, ⟪(ξ - ζ) z.1, z.2 - z.1⟫ ∂γ =
+      ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ - ∫ z, ⟪ζ z.1, z.2 - z.1⟫ ∂γ := by
+  simp only [hγ.integral_inner_eq_inner hd, map_sub, inner_sub_left]
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The pairing with the square integrable displacement of a coupling is linear in the field. -/
+theorem IsCoupling.integral_inner_smul_add_smul (hγ : IsCoupling γ μ ν)
+    (hd : MemLp (fun z : E × E ↦ z.2 - z.1) 2 γ) (ξ ζ : Lp E 2 μ) (a b : ℝ) :
+    ∫ z, ⟪(a • ξ + b • ζ) z.1, z.2 - z.1⟫ ∂γ =
+      a * ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ + b * ∫ z, ⟪ζ z.1, z.2 - z.1⟫ ∂γ := by
+  simp only [hγ.integral_inner_eq_inner hd, map_add, map_smul, inner_add_left,
+    real_inner_smul_left]
+
+/-- Along the coupling `(x, (1 - t) • x + t • y)₊ γ` of `μ` with an interpolated law, the pairing
+of a field `ξ ∈ L²(μ; E)` with the displacement is `t` times its pairing with the displacement
+of `γ`. -/
+theorem IsCoupling.integral_inner_map_smul_add_smul {t : ℝ}
+    (hγt : IsCoupling (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2)) μ ν) (ξ : Lp E 2 μ) :
+    ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂(γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2)) =
+      t * ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ := by
+  have hm := (Lp.aestronglyMeasurable ξ).comp_measurePreserving hγt.measurePreserving_fst
+  rw [integral_map (by fun_prop) (hm.inner (by fun_prop)), ← integral_const_mul]
+  refine integral_congr_ae (.of_forall fun z ↦ ?_)
+  have : (1 - t) • z.1 + t • z.2 - z.1 = t • (z.2 - z.1) := by module
+  simp only [this, real_inner_smul_right]
+
+variable [CompleteSpace E] in
+/-- **Cauchy–Schwarz for the pairing.** For an optimal coupling `γ` of two laws `μ` and `ν` of
+`P₂(E)` for the quadratic cost and `ξ ∈ L²(μ; E)`, `|∫ ⟪ξ x, y - x⟫ dγ| ≤ ‖ξ‖ W₂(μ, ν)`. -/
+theorem IsOptimalCoupling.abs_integral_inner_le {μ ν : WassersteinSpace 2 E}
+    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
+      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E))
+    (ξ : Lp E 2 ((μ : ProbabilityMeasure E) : Measure E)) :
+    |∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ| ≤ ‖ξ‖ * dist μ ν := by
+  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
+  have hd := memLp_sub_of_hasFiniteMoment (hγ.toIsCoupling.fst_eq ▸ μ.hasFiniteMoment)
+    (hγ.toIsCoupling.snd_eq ▸ ν.hasFiniteMoment)
+  rw [hγ.toIsCoupling.integral_inner_eq_inner hd, ← WassersteinSpace.norm_toLp_sub_eq_dist hγ hd]
+  refine (abs_real_inner_le_norm _ _).trans_eq ?_
+  rw [LinearIsometry.norm_map]
+
+end Pairing
 
 section Resolvent
 

@@ -91,7 +91,7 @@ theorem rTensor_bijective_of_injective_of_finrank_eq (f : M →ₗ[A] N)
   -- of the same finite dimension, hence bijective.
   set g := (f.restrictScalars R).baseChange Q
   have hg : Function.Injective g := by
-    rw [LinearMap.baseChange_eq_ltensor]
+    rw [LinearMap.baseChange_eq_lTensor]
     exact Module.Flat.lTensor_preserves_injective_linearMap _ hf
   have := FiniteDimensional.of_injective g hg
   have hg' := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by
@@ -101,7 +101,7 @@ theorem rTensor_bijective_of_injective_of_finrank_eq (f : M →ₗ[A] N)
   have : ⇑(TensorProduct.AlgebraTensorModule.rTensor R Q f) =
       TensorProduct.comm R Q N ∘ g ∘ TensorProduct.comm R M Q := by
     ext x
-    simp [g, LinearMap.baseChange_eq_ltensor, LinearMap.lTensor_comm]
+    simp [g, LinearMap.baseChange_eq_lTensor, LinearMap.lTensor_comm]
   rw [this]
   exact ((TensorProduct.comm R Q N).bijective.comp ⟨hg, hg'⟩).comp
     (TensorProduct.comm R M Q).bijective

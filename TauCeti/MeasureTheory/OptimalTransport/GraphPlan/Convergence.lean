@@ -110,7 +110,8 @@ theorem tendstoInMeasure_of_tendsto_map_prodMk_self (hT : ∀ n, AEMeasurable (T
     refine ContinuousOn.preimage_isClosed_of_isClosed (t := Ici ε) ?_ (hF.prod isClosed_univ)
       isClosed_Ici
     exact continuous_edist.comp_continuousOn
-      (continuous_snd.continuousOn.prodMk (hFcont.comp continuous_fst.continuousOn fun z hz ↦ hz.1))
+      (continuous_snd.continuousOn.prodMk (hFcont.comp continuous_fst.continuousOn
+        fun _ hz ↦ (Set.mem_prod.1 hz).1))
   have hCmeas : MeasurableSet C := hCclosed.measurableSet
   have hlim : ((μ.map fun x ↦ (x, T₀ x) : ProbabilityMeasure (X × Y)) : Measure (X × Y)) C = 0 := by
     have hempty : {x | (x, T₀ x) ∈ C} = ∅ := by ext x; simp [hC, hε.ne']

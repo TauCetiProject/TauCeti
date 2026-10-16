@@ -45,7 +45,7 @@ variable {E H M E' H' M' : Type*}
 /-- The paired wedge of rough bundle-valued forms, normalized so that one-forms multiply
 by the usual two-term alternating product. -/
 def bundleWedgeWith (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     RoughBundleForm I M V₃ (k + l) :=
   fun x ↦ ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x)
@@ -53,14 +53,14 @@ def bundleWedgeWith (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
 /-- At each point, the bundle wedge is the paired wedge of the two fibre values. -/
 @[simp]
 theorem bundleWedgeWith_apply' (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) (x : M) :
     bundleWedgeWith μ hμ φ ψ x =
       ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x) := (rfl)
 
 /-- The fibrewise paired wedge is the signed permutation sum. -/
 theorem bundleWedgeWith_apply (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l)
     (x : M) (v : Fin (k + l) → TangentSpace I x) :
     bundleWedgeWith μ hμ φ ψ x v =
@@ -74,7 +74,7 @@ theorem bundleWedgeWith_apply (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ
 /-- On two one-forms, the fibrewise wedge is the usual alternating product. -/
 theorem bundleWedgeWith_apply_one_one
     (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ 1) (ψ : RoughBundleForm I M V₂ 1)
     (x : M) (v w : TangentSpace I x) :
     bundleWedgeWith μ hμ φ ψ x ![v, w] =
@@ -87,7 +87,7 @@ sign. This applies to arbitrary value bundles, with no norm on the tangent fibre
 theorem bundleWedgeWith_flip
     [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
     (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l)
     (x : M) (v : Fin (k + l) → TangentSpace I x) :
     bundleWedgeWith μ hμ φ ψ x v =
@@ -109,7 +109,7 @@ omit [∀ x, ContinuousSMul ℝ (V₁ x)]
 /-- The fibrewise paired wedge is additive in its first form. -/
 @[simp]
 theorem bundleWedgeWith_add_left (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ φ' : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     bundleWedgeWith μ hμ (φ + φ') ψ =
       bundleWedgeWith μ hμ φ ψ + bundleWedgeWith μ hμ φ' ψ := by
@@ -121,7 +121,7 @@ omit [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)
 /-- The fibrewise paired wedge is additive in its second form. -/
 @[simp]
 theorem bundleWedgeWith_add_right (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ ψ' : RoughBundleForm I M V₂ l) :
     bundleWedgeWith μ hμ φ (ψ + ψ') =
       bundleWedgeWith μ hμ φ ψ + bundleWedgeWith μ hμ φ ψ' := by
@@ -133,7 +133,7 @@ omit [∀ x, IsTopologicalAddGroup (V₁ x)]
 /-- The fibrewise paired wedge respects scalar multiplication in its first form. -/
 @[simp]
 theorem bundleWedgeWith_smul_left (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (c : ℝ) (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     bundleWedgeWith μ hμ (c • φ) ψ = c • bundleWedgeWith μ hμ φ ψ := by
   funext x
@@ -144,7 +144,7 @@ omit [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)
 /-- The fibrewise paired wedge respects scalar multiplication in its second form. -/
 @[simp]
 theorem bundleWedgeWith_smul_right (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (c : ℝ) (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     bundleWedgeWith μ hμ φ (c • ψ) = c • bundleWedgeWith μ hμ φ ψ := by
   funext x
@@ -154,7 +154,7 @@ omit [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)
 /-- The fibrewise paired wedge vanishes when its first form is zero. -/
 @[simp]
 theorem bundleWedgeWith_zero_left (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (ψ : RoughBundleForm I M V₂ l) :
     bundleWedgeWith μ hμ (0 : RoughBundleForm I M V₁ k) ψ = 0 := by
   simpa only [zero_smul] using
@@ -164,7 +164,7 @@ omit [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)
 /-- The fibrewise paired wedge vanishes when its second form is zero. -/
 @[simp]
 theorem bundleWedgeWith_zero_right (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) :
     bundleWedgeWith μ hμ φ (0 : RoughBundleForm I M V₂ l) = 0 := by
   simpa only [zero_smul] using
@@ -175,7 +175,7 @@ end Bilinear
 /-- Pullback of a paired wedge pulls back its fibrewise pairing as well as both forms. -/
 theorem bundleMpullback_wedgeWith (f : M' → M)
     (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     bundleMpullback I' I f (bundleWedgeWith μ hμ φ ψ) =
       bundleWedgeWith (I := I') (fun y ↦ μ (f y)) (fun y ↦ hμ (f y))
@@ -187,7 +187,7 @@ theorem bundleMpullback_wedgeWith (f : M' → M)
 assumptions. -/
 theorem bundleMpullbackWithin_wedgeWith (f : M' → M) (s : Set M')
     (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     bundleMpullbackWithin I' I f s (bundleWedgeWith μ hμ φ ψ) =
       bundleWedgeWith (I := I') (fun y ↦ μ (f y)) (fun y ↦ hμ (f y))
@@ -298,10 +298,7 @@ theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     φ.wedgeWith μ ψ x v =
       (-1 : ℝ) ^ (k * l) •
         ψ.wedgeWith μ.flip φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
-  have hμ : Continuous (fun p : F₁ × F₂ ↦ μ p.1 p.2) := by
-    convert μ.continuous₂ using 1
-    ext p
-    rfl
+  have hμ : Continuous (Function.uncurry fun a b ↦ μ a b) := μ.continuous₂
   have hpair : ContinuousLinearMap.pairingFlip μ hμ = μ.flip := by
     ext a b
     rw [ContinuousLinearMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]

@@ -137,10 +137,12 @@ theorem exists_lipschitzWith_matrixBilinearForm_gradient
   obtain ⟨Lg, hLg⟩ := (hψ.gradient_right (m := ∞) (by simp)).lipschitzWith_of_hasCompactSupport
     hgc (by simp)
   obtain ⟨N, -, -, hN⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-  exact ⟨_, holderWith_one.1 ((ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ) η)
-    |>.holderWith_comp₂ (holderWith_one.2 hK) (holderWith_one.2 hLg) (Mf := M.toNNReal)
-      (Mg := N.toNNReal) (fun x => (hM x).trans (Real.le_coe_toNNReal _))
-      (fun x => (hN x).trans (Real.le_coe_toNNReal _)))⟩
+  have h := ContinuousLinearMap.holderWith_comp₂ (𝕜 := ℝ) (𝕜₂ := ℝ) (𝕜₃ := ℝ)
+    (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ) η)
+    (holderWith_one.2 hK) (holderWith_one.2 hLg) (Mf := M.toNNReal) (Mg := N.toNNReal)
+    (fun x => (hM x).trans (Real.le_coe_toNNReal _))
+    (fun x => (hN x).trans (Real.le_coe_toNNReal _))
+  exact ⟨_, by simpa only [ContinuousLinearMap.apply_apply] using holderWith_one.1 h⟩
 
 section ClassicalOperator
 

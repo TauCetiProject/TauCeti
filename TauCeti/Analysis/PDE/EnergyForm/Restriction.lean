@@ -24,6 +24,8 @@ integrability hypotheses on `Ω`.
 
 * `TauCeti.PDE.energyFormH1_restrictL`: `a(u|_U, v) = a(u, v₀)` for `v ∈ H¹₀(U)` with zero
   extension `v₀ ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.energyFormH1_extendByZeroL`: `a(u₀, v₀) = a(u, v)` for `u, v ∈ H¹₀(U)` with zero
+  extensions `u₀, v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
@@ -93,6 +95,18 @@ theorem energyFormH1_restrictL (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
         · rw [hx, indicator_of_mem hxU, indicator_of_mem hxU]
         · rw [hx, indicator_of_notMem hxU, indicator_of_notMem hxU, map_zero]
+
+/-- **The energy form of zero extensions.** For open sets `U ⊆ Ω` and `u, v ∈ H¹₀(U)`, the energy
+form on `Ω` of the zero-extensions of `u` and `v` equals the energy form of `u` and `v` on `U`. -/
+theorem energyFormH1_extendByZeroL (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) (hU : U ≤ Omega)
+    (u v : W1p0 mu U 2) :
+    energyFormH1 a b c (W1p0.extendByZeroL hU u : W1p mu Omega 2)
+        (W1p0.extendByZeroL hU v : W1p mu Omega 2) =
+      energyFormH1 a b c (u : W1p mu U 2) (v : W1p mu U 2) := by
+  have h := energyFormH1_restrictL a b c hU (W1p0.extendByZeroL hU u : W1p mu Omega 2) v
+  rw [W1p0.restrictL_extendByZeroL] at h
+  exact h.symm
 
 /-- **Weak subsolutions restrict to weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0`
 for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies

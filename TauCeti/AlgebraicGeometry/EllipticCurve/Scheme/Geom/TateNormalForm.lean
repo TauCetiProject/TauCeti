@@ -35,6 +35,9 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
 
 * `WeierstrassCurve.UniversalTate.point`: the point `(0, 0)` of the projective model of the
   universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]`.
+* `TauCeti.AlgebraicGeometry.UniversalTate.curveGeom`: the universal Tate normal form as an
+  elliptic curve over `Spec ℤ[A, B][Δ⁻¹]`.
+* `TauCeti.AlgebraicGeometry.UniversalTate.pointHom`: its point `(0, 0)`, with values in the base.
 
 ## Main results
 
@@ -43,6 +46,8 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
   unique cartesian pointed morphism to the universal Tate normal form.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_tateNormalForm_iff`: such a morphism exists
   exactly when `P`, `2P` and `3P` miss the zero section everywhere.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_tateNormalForm_curveGeom`: the same
+  universal property, with the universal Tate normal form read as the elliptic curve `curveGeom`.
 * `WeierstrassCurve.UniversalTate.point_ne_projModelZero`,
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero` and
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero`: the universal point
@@ -116,6 +121,33 @@ theorem point_projModelMulBy_three_ne_projModelZero (s) :
   point_conditions.2.2 s
 
 end WeierstrassCurve.UniversalTate
+
+namespace TauCeti.AlgebraicGeometry.UniversalTate
+
+open WeierstrassCurve MonoidalCategory
+
+/-! ### The universal Tate normal form as an elliptic curve -/
+
+/-- The universal Tate normal form `Y² + AXY + BY = X³ + BX²` as an elliptic curve over
+`Spec ℤ[A, B][Δ⁻¹]`, whose total space is the projective model of `curveULift`. -/
+noncomputable abbrev curveGeom : EllipticCurveGeom (Spec (.of (ULift.{u} UniversalTate.Ring))) :=
+  toEllipticCurveGeom UniversalTate.curveULift
+
+/-- The point `(0, 0)` of the universal Tate normal form, as a point with values in the base of
+the elliptic curve `curveGeom`. -/
+noncomputable def pointHom :
+    𝟙_ (Over (Spec (.of (ULift.{u} UniversalTate.Ring)))) ⟶ Over.mk curveGeom.{u}.structureMap :=
+  Over.homMk (UniversalTate.point ≫ (toEllipticCurveGeomIso UniversalTate.curveULift).inv) <| by
+    simp [← toEllipticCurveGeomIso_hom_projModelOver]
+
+/-- On the projective model, the point `(0, 0)` of `curveGeom` is `point`. -/
+@[simp]
+theorem pointHom_left :
+    pointHom.{u}.left =
+      UniversalTate.point ≫ (toEllipticCurveGeomIso UniversalTate.curveULift).inv :=
+  (rfl)
+
+end TauCeti.AlgebraicGeometry.UniversalTate
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -529,6 +561,49 @@ theorem exists_tateNormalForm_iff :
       simpa only [← Scheme.Hom.comp_apply, hgP, h₀] using congrArg g hs),
     fun s hs ↦ point_projModelMulBy_two_ne_projModelZero (f s) (hn 2 s hs),
     fun s hs ↦ point_projModelMulBy_three_ne_projModelZero (f s) (hn 3 s hs)⟩
+
+/-! ### The universal Tate normal form as an elliptic curve -/
+
+-- Reading the universal Tate normal form on its projective model through `toEllipticCurveGeomIso`
+-- identifies classifying pairs into `curveGeom` with the classifying pairs of
+-- `existsUnique_tateNormalForm`.
+private theorem isTate_curveGeom_iff {f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
+    {g : E.carrier ⟶ curveGeom.{u}.carrier} :
+    (IsPullback g E.structureMap curveGeom.structureMap f ∧ E.zero ≫ g = f ≫ curveGeom.zero ∧
+      P ≫ g = f ≫ pointHom.left) ↔
+    (IsPullback (g ≫ (toEllipticCurveGeomIso curveULift).hom) E.structureMap
+        curveULift.projModelOver f ∧
+      E.zero ≫ g ≫ (toEllipticCurveGeomIso curveULift).hom = f ≫ curveULift.projModelZero ∧
+      P ≫ g ≫ (toEllipticCurveGeomIso curveULift).hom = f ≫ point) := by
+  have hiso : IsPullback (toEllipticCurveGeomIso curveULift.{u}).hom curveGeom.structureMap
+      curveULift.projModelOver (𝟙 _) :=
+    IsPullback.of_horiz_isIso ⟨by rw [toEllipticCurveGeomIso_hom_projModelOver, Category.comp_id]⟩
+  refine and_congr ⟨fun hg ↦ by simpa using hg.paste_horiz hiso, fun hg ↦ ?_⟩ ?_
+  · exact IsPullback.of_right (by simpa using hg) (by simpa using hg.w) hiso
+  · refine and_congr ?_ ?_
+    · rw [← cancel_mono (toEllipticCurveGeomIso curveULift).hom]
+      simp
+    · rw [← cancel_mono (toEllipticCurveGeomIso curveULift).hom]
+      simp
+
+include hP h₁ h₂ h₃ in
+variable (E) in
+/-- **The universal Tate normal form as an elliptic curve.** The universal property
+`existsUnique_tateNormalForm`, with the universal Tate normal form read as the elliptic curve
+`curveGeom` and its point `(0, 0)` as `pointHom`: there is a unique pair of a morphism
+`f : S ⟶ Spec ℤ[A, B][Δ⁻¹]` and a morphism `g` from `E` to `curveGeom` exhibiting `E` as the
+pullback of `curveGeom` along `f`, carrying the zero section to the zero section and `P` to
+`(0, 0)`. -/
+theorem existsUnique_tateNormalForm_curveGeom :
+    ∃! fg : (S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) × (E.carrier ⟶ curveGeom.{u}.carrier),
+      IsPullback fg.2 E.structureMap curveGeom.structureMap fg.1 ∧
+        E.zero ≫ fg.2 = fg.1 ≫ curveGeom.zero ∧ P ≫ fg.2 = fg.1 ≫ pointHom.left := by
+  obtain ⟨⟨f, g⟩, hfg, huniq⟩ := E.existsUnique_tateNormalForm hP h₁ h₂ h₃
+  refine ⟨(f, g ≫ (toEllipticCurveGeomIso curveULift).inv),
+    isTate_curveGeom_iff.mpr (by simpa using hfg), fun ⟨f', g'⟩ hfg' ↦ ?_⟩
+  have := huniq (f', g' ≫ (toEllipticCurveGeomIso curveULift).hom) (isTate_curveGeom_iff.mp hfg')
+  simp only [Prod.mk.injEq] at this
+  exact Prod.ext this.1 (by simp [← this.2])
 
 end EllipticCurveGeom
 

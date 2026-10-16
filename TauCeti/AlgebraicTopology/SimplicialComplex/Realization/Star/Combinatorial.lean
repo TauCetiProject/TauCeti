@@ -41,7 +41,8 @@ theorem IsCombinatorialSphere.exists_homeomorph_openStar_ball
     ∃ e : openStarRealization K v ≃ₜ ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1,
       ∀ x, ‖(e x).1‖ = 1 - x.1.1 v := by
   obtain ⟨e⟩ := h.nonempty_homeomorph_sphere link_le
-  let r := Homeomorph.setCongr (Set.ext (mem_geometricLink_iff K v))
+  let r := Homeomorph.setCongr (s := K.geometricLink v)
+    (t := {x : Realization K | x.1.support ∈ K.link {v}}) (Set.ext (mem_geometricLink_iff K v))
   have hc := K.isCompact_closedStarRealization (finite_faces_closedStar_iff.mpr h.finite_faces)
   refine ⟨openStarHomeomorphBall hc (r.trans e), fun x => ?_⟩
   rw [openStarHomeomorphBall_apply, norm_closedStarHomeomorphClosedBall]

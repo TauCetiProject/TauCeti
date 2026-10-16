@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # Integrals of continuous functions on a compact space
@@ -16,6 +18,11 @@ On a compact space `X`, every continuous function is integrable against a finite
 (`ContinuousMap.integrable`), and integration against a finite measure is Lipschitz, hence
 continuous, in the integrand for the sup norm on `C(X, E)`. This is what lets an identity between
 integrals pass from a dense subset of `C(X, E)` to all of it.
+
+A `𝕜`-linear functional on `C(X, 𝕜)` that agrees with integration on real functions agrees with it
+everywhere (`LinearMap.apply_eq_integral_of_forall_realToRCLike`), since every `f : C(X, 𝕜)` is
+`re f + i im f`. This turns a Riesz–Markov–Kakutani measure of a real positive functional into a
+representation of its complexification.
 -/
 
 public section
@@ -27,6 +34,24 @@ theorem ContinuousMap.integrable {X E : Type*} [TopologicalSpace X] [CompactSpac
     [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup E] (f : C(X, E))
     (μ : Measure X) [IsFiniteMeasure μ] : Integrable f μ :=
   f.continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
+
+/-- On a compact space, a `𝕜`-linear functional `φ` on `C(X, 𝕜)` that agrees with integration
+against a finite measure `μ` on real functions is integration against `μ`. -/
+theorem LinearMap.apply_eq_integral_of_forall_realToRCLike {X 𝕜 : Type*} [TopologicalSpace X]
+    [CompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] [RCLike 𝕜]
+    (φ : C(X, 𝕜) →ₗ[𝕜] 𝕜) {μ : Measure X} [IsFiniteMeasure μ]
+    (h : ∀ g : C(X, ℝ), φ (g.realToRCLike 𝕜) = ((∫ x, g x ∂μ : ℝ) : 𝕜)) (f : C(X, 𝕜)) :
+    φ f = ∫ x, f x ∂μ := by
+  -- Split `f` into its real and imaginary parts, and apply the real case to each.
+  let u : C(X, ℝ) := ⟨fun x ↦ RCLike.re (f x), by fun_prop⟩
+  let v : C(X, ℝ) := ⟨fun x ↦ RCLike.im (f x), by fun_prop⟩
+  have hf : f = u.realToRCLike 𝕜 + (RCLike.I : 𝕜) • v.realToRCLike 𝕜 := by
+    ext x
+    simp [u, v, mul_comm RCLike.I]
+  rw [← integral_re_add_im (f.integrable μ)]
+  nth_rw 1 [hf]
+  rw [map_add, map_smul, h, h, smul_eq_mul, mul_comm]
+  rfl
 
 namespace TauCeti
 

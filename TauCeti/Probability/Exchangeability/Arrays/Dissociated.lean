@@ -504,7 +504,8 @@ theorem separatelyDissociated_of_iIndepFun (hX : iIndepFun X μ) (hX_meas : ∀ 
     @Measurable.of_eval _ _ _ (blockSigma X (Set.range a ×ˢ Set.range b)) _ _ fun p =>
       measurable_blockSigma_of_mem (Z := X) (S := Set.range a ×ˢ Set.range b)
         ⟨⟨p.1, rfl⟩, ⟨p.2, rfl⟩⟩
-  exact indepFun_of_measurable_blockSigma (hX.precomp Subtype.val_injective)
+  exact indepFun_of_measurable_blockSigma (S := Set.range e ×ˢ Set.range f)
+    (T := Set.range e' ×ˢ Set.range f') (hX.precomp Subtype.val_injective)
     (fun p _ => hX_meas p)
     (Set.disjoint_left.mpr fun p hp hp' => Set.disjoint_left.mp he hp.1 hp'.1)
     (key e f) (key e' f')

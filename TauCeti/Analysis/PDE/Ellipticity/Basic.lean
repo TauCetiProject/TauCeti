@@ -60,6 +60,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
   boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
+* `TauCeti.PDE.UniformlyEllipticOn.isBounded_image_matrixBilinearForm`: these bilinear forms
+  are bounded uniformly over the domain.
 * `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
   uniformly elliptic.
 * `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
@@ -642,6 +644,14 @@ attached matrix bilinear form by the upper ellipticity constant. -/
 lemma opNorm_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
     ‖matrixBilinearForm (a x)‖ ≤ Lam :=
   matrixBilinearForm_opNorm_le_of_upper_bound (a x) h.upper_nonneg (h.upper_bound hx)
+
+/-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
+bounded set, of operator norm at most the upper ellipticity constant. -/
+lemma isBounded_image_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) :
+    Bornology.IsBounded ((fun x => matrixBilinearForm (a x)) '' Ω) :=
+  isBounded_iff_forall_norm_le.2 ⟨Lam, by
+    rintro _ ⟨x, hx, rfl⟩
+    exact h.opNorm_matrixBilinearForm_le hx⟩
 
 /-- Uniform ellipticity gives a radius-restricted pointwise bound for the coefficient
 integrand. -/
