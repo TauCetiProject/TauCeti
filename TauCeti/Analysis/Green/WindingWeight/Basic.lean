@@ -215,4 +215,41 @@ theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight
   · rw [hγ.windingWeight_eq_zero_of_notMem_filledHull hclosed hzH, norm_zero]
     exact mul_nonneg (norm_nonneg _) (hFpos z)
 
+/-- Local constancy prevents the winding support from accumulating at an excluded point away
+from the trace. Thus an index-vanishing domain containing the trace contains the topological
+support of the winding weight. -/
+theorem _root_.AbsolutelyContinuousOnInterval.tsupport_windingWeight_subset
+    {U : Set ℂ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (htrace : γ '' uIcc a b ⊆ U)
+    (hindex : ∀ z ∉ U, Contour.windingNumber γ a b z = 0) :
+    tsupport (windingWeight γ a b) ⊆ U := by
+  intro z hz
+  by_contra hzU
+  have hzK : z ∉ γ '' uIcc a b := fun h ↦ hzU (htrace h)
+  have hzero : windingWeight γ a b =ᶠ[nhds z] 0 := by
+    simpa only [windingWeight_eq_of_notMem hzK, hindex z hzU, Complex.zero_re, Pi.zero_def]
+      using hγ.windingWeight_eventuallyEq_of_notMem hclosed hzK
+  exact (notMem_tsupport_iff_eventuallyEq.mpr hzero) hz
+
+/-- The trace and winding support of a closed AC curve have compact union. -/
+theorem _root_.AbsolutelyContinuousOnInterval.isCompact_trace_union_tsupport_windingWeight
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
+    IsCompact (γ '' uIcc a b ∪ tsupport (windingWeight γ a b)) :=
+  (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).union
+    (hγ.hasCompactSupport_windingWeight hclosed)
+
+/-- Index vanishing outside a domain identifies the whole-plane weighted area integral
+with its restriction to that domain. This equality needs no field regularity. -/
+theorem integral_windingWeight_mul_eq_setIntegral {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
+    (hindex : ∀ z ∉ U, Contour.windingNumber γ a b z = 0) (R : ℂ → ℝ) :
+    (∫ z : ℂ, windingWeight γ a b z * R z) =
+      ∫ z in U, windingWeight γ a b z * R z := by
+  symm
+  apply setIntegral_eq_integral_of_forall_compl_eq_zero
+  intro z hz
+  by_cases ht : z ∈ γ '' uIcc a b
+  · rw [windingWeight_eq_zero_of_mem ht, zero_mul]
+  · rw [windingWeight_eq_of_notMem ht, hindex z hz, Complex.zero_re, zero_mul]
+
 end TauCeti.Green

@@ -40,7 +40,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C]
@@ -81,6 +81,20 @@ theorem op (hE : E.IsFrobenius) : E.op.IsFrobenius where
     rw [← E.isInjective_iff_isProjective_op X.unop,
       ← E.isProjective_iff_isInjective_op X.unop]
     exact hE.injective_iff_projective X.unop
+
+/-- A Frobenius exact structure transfers along an additive equivalence that preserves
+conflations in both directions. -/
+theorem of_equivalence {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+    [HasBinaryBiproducts D] {E' : ExactStructure D} (hE : E.IsFrobenius) (e : C ≌ D)
+    [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) : E'.IsFrobenius where
+  enoughProjectives := hE.enoughProjectives.of_equivalence e hF hG
+  enoughInjectives := hE.enoughInjectives.of_equivalence e hF hG
+  projective_iff_injective Y := by
+    have : e.symm.functor.Additive := inferInstanceAs e.inverse.Additive
+    rw [← E'.isProjective_map_equivalence_iff E e.symm hG hF,
+      ← E'.isInjective_map_equivalence_iff E e.symm hG hF]
+    exact hE.projective_iff_injective _
 
 end IsFrobenius
 

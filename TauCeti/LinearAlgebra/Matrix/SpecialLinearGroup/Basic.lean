@@ -56,7 +56,7 @@ proof is independent of the source's.
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
-  coordinates.
+  coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any ring.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(N, p)` gives the
@@ -135,6 +135,11 @@ theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintyp
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
     g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
   simpa only [Matrix.det_fin_two] using g.det_coe
+
+/-- The determinant-one identity for an element of `SL₂(ℤ)`, cast to any ring. -/
+lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [Ring R] (g : SL(2, ℤ)) :
+    ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
+  exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
 
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]

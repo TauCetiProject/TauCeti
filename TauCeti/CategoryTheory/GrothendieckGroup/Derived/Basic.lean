@@ -182,11 +182,11 @@ private lemma sum_negOnePow_of_homology_eq_of_isZero (X : DerivedCategory A) {s 
     (ht : ∀ n ∉ t, IsZero ((homologyFunctor A n).obj X)) :
     ∑ n ∈ s, (n.negOnePow : ℤ) • of ((homologyFunctor A n).obj X) =
       ∑ n ∈ t, (n.negOnePow : ℤ) • of ((homologyFunctor A n).obj X) := by
-  have key : ∀ u : Finset ℤ, u ⊆ s ∪ t → (∀ n ∉ u, IsZero ((homologyFunctor A n).obj X)) →
-      ∑ n ∈ u, (n.negOnePow : ℤ) • of ((homologyFunctor A n).obj X) =
-        ∑ n ∈ s ∪ t, (n.negOnePow : ℤ) • of ((homologyFunctor A n).obj X) := fun u hu hu' ↦
-    Finset.sum_subset hu fun n _ hn ↦ by rw [of_eq_zero_of_isZero (hu' n hn), smul_zero]
-  rw [key s Finset.subset_union_left hs, key t Finset.subset_union_right ht]
+  simpa only [TauCeti.finiteEulerSum_def] using
+    TauCeti.finiteEulerSum_eq_of_eq_zero
+      (fun n ↦ (of ((homologyFunctor A n).obj X) : AbelianK0 A))
+      (fun n hn ↦ of_eq_zero_of_isZero (hs n hn))
+      (fun n hn ↦ of_eq_zero_of_isZero (ht n hn))
 
 /-- The degree-`n` relation behind additivity on a distinguished triangle: cutting the long exact
 cohomology sequence at the kernels of `Hⁿ(T.mor₁)` and `Hⁿ⁺¹(T.mor₁)`. -/
