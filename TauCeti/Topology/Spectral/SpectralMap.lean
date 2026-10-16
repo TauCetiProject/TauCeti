@@ -5,7 +5,6 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Topology.Compactness.Compact
 public import Mathlib.Topology.Spectral.Hom
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.Homeomorph.Lemmas

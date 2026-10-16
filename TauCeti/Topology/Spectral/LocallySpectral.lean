@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Spectral.SpectralMap
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Locally spectral spaces and maps
