@@ -62,6 +62,16 @@ theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGr
   Module.Finite.of_exact (g := g.rangeRestrict)
     (fun x ↦ by rw [← h x, ← Subtype.coe_inj]; simp) g.surjective_rangeRestrict
 
+/-- In a short exact sequence `0 ⟶ M ⟶ N ⟶ P ⟶ 0` of vector spaces with `N` finite-dimensional,
+`dim N = dim M + dim P`. -/
+theorem _root_.Function.Exact.finrank_eq_add {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
+    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P] [FiniteDimensional k N]
+    {f : M →ₗ[k] N} {g : N →ₗ[k] P} (h : Function.Exact f g) (hf : Function.Injective f)
+    (hg : Function.Surjective g) :
+    Module.finrank k N = Module.finrank k M + Module.finrank k P := by
+  rw [← g.finrank_range_add_finrank_ker, LinearMap.range_eq_top.2 hg, finrank_top,
+    h.linearMap_ker_eq, LinearMap.finrank_range_of_inj hf, add_comm]
+
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are trivial, then so is `N`. -/
 theorem subsingleton_of_exact {M N P : Type*} [Zero P] {f : M → N} {g : N → P}
     (h : Function.Exact f g) [Subsingleton M] [Subsingleton P] : Subsingleton N :=

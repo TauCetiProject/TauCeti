@@ -331,7 +331,7 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
   obtain ⟨s, hs⟩ : ∃ s, s = diskBoundaryFundamentalClass (ModuleCat.of R R)
       ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) := ⟨_, rfl⟩
   obtain ⟨t, ht⟩ : ∃ t, t = s ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _)
-      fun _ h ↦ h.1) (ModuleCat.of R R) i ≫ inv (TopPair.singularHomologyMap
+      inter_subset_left) (ModuleCat.of R R) i ≫ inv (TopPair.singularHomologyMap
         (TopPair.excisionMap (upperHemisphere i) {pole i}ᶜ) (ModuleCat.of R R) i) := ⟨_, rfl⟩
   have hmain := TopPair.comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ModuleCat.of R R) ha
     (diskBoundaryNeg_pole_ne i) hapU (cellAttachingMap c')
@@ -366,7 +366,7 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
     have : IsIso t := by
       rw [ht, ← Category.assoc, hs,
         diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap_id _
-          (B' := {pole (k + 1)}ᶜ) fun _ h ↦ h.1]
+          (B' := {pole (k + 1)}ᶜ) inter_subset_left]
       infer_instance
     -- An automorphism of `R` as a module over itself is right multiplication by a unit.
     have hbij := ConcreteCategory.bijective_of_isIso (t ≫ TopPair.singularHomologyMap

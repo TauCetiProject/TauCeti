@@ -194,6 +194,12 @@ theorem ringHom_ext {S : Type*} [Semiring S] {f₁ f₂ : W'.CoordinateRing →+
 
 section Eval
 
+/-- The projective equation after extending scalars holds exactly when algebra evaluation of
+the original homogeneous polynomial vanishes. -/
+theorem equation_map_iff_aeval {S : Type*} [CommRing S] [Algebra R S] (P : Fin 3 → S) :
+    (W'.map (algebraMap R S)).Equation P ↔ aeval P W'.polynomial = 0 := by
+  rw [Equation, map_polynomial, eval_map, aeval_def]
+
 variable {S : Type*} [CommRing S] (g : R →+* S) {P : Fin 3 → S} (hP : (W'.map g).Equation P)
 
 /-- Evaluation of the homogeneous coordinate ring at a solution `P` of the projective Weierstrass

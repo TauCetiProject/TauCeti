@@ -108,6 +108,12 @@ noncomputable def upperTriangularDefiningIdeal :
     HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) :=
   definingIdeal r ⊔ GeneralLinear.UpperTriangular.definingHopfIdeal ℤ (r + 1)
 
+/-- The upper-triangular carrier ideal imposes both carrier and upper-triangular equations. -/
+theorem upperTriangularDefiningIdeal_def :
+    upperTriangularDefiningIdeal r =
+      definingIdeal r ⊔ GeneralLinear.UpperTriangular.definingHopfIdeal ℤ (r + 1) := by
+  rfl
+
 /-- The carrier defining ideal is contained in the upper-triangular defining ideal. -/
 theorem definingIdeal_le_upperTriangularDefiningIdeal :
     definingIdeal r ≤ upperTriangularDefiningIdeal r := by
@@ -217,14 +223,14 @@ theorem coe_mulEquiv_mapPointsFunctor_quotientMapOfLe (A : CommAlgCat.{v} ℤ)
       (R := ℤ) (H := CommHopfAlgCat.quotient
         (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (upperTriangularDefiningIdeal r)) A) :
     ((pointsPresentation r A).mulEquiv
-          ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.quotientMapOfLe
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (CommHopfAlgCat.quotientMapOfLe
             (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
             (definingIdeal_le_upperTriangularDefiningIdeal r))).app A q) :
         Matrix.GeneralLinearGroup (Fin (r + 1)) A) =
       ((upperTriangularPointsPresentation r A).mulEquiv q :
         Matrix.GeneralLinearGroup (Fin (r + 1)) A) := by
   have hcarrier := (pointsPresentation r A).coe_mulEquiv_apply
-    ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.quotientMapOfLe
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (CommHopfAlgCat.quotientMapOfLe
       (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
       (definingIdeal_le_upperTriangularDefiningIdeal r))).app A q)
   rw [hcarrier, GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply,

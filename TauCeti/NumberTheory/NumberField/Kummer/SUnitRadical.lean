@@ -101,7 +101,7 @@ theorem le_kummerField_sUnits_of_isCyclic {S : Set (HeightOneSpectrum (𝓞 K))}
     F ≤ kummerField E n (S.unit K) := by
   -- `K` contains the roots of unity of order `[F : K]`, so `F = K(β)` with `β ^ [F : K] ∈ K`.
   have : HasEnoughRootsOfUnity K (Module.finrank K F) := HasEnoughRootsOfUnity.of_dvd K hFn
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K (Module.finrank K F)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K (Module.finrank K F)
   obtain ⟨β, ⟨b, hb⟩, hβ⟩ := exists_root_adjoin_eq_top_of_isCyclic K F
     ⟨ζ, (mem_primitiveRoots Module.finrank_pos).mpr hζ⟩
   obtain ⟨k, hk⟩ := hFn

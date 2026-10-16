@@ -203,7 +203,7 @@ theorem groupSchemePointMulEquiv_groupSchemeMap {H : Type u} [Group H] [Finite H
     (p : WithConv (coordinateRing R G →ₐ[R] A)) :
     groupSchemePointMulEquiv R G A p ≫ (groupSchemeMap R f).hom.hom =
       groupSchemePointMulEquiv R H A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.ofHom (coordinateBialgHom R G H f))).app
             (CommAlgCat.of R A) p) := by
   rw [groupSchemeMap_def]

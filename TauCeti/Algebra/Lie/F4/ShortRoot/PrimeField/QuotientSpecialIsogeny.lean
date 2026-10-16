@@ -308,7 +308,7 @@ by the represented quotient, with exponent one on long roots and two on short ro
 noncomputable def specialIsogeny (A : Type*) [CommRing A] [Algebra 𝔽₂ A] :
     points A →* points A :=
   (coordinatePointsEquiv A).toMonoidHom.comp
-    (((CommHopfAlgCat.mapPointsFunctor quotientIsogeny).app (CommAlgCat.of 𝔽₂ A)).hom.comp
+    (((CommHopfAlgCat.Hom.mapPointsFunctor quotientIsogeny).app (CommAlgCat.of 𝔽₂ A)).hom.comp
       (coordinatePointsEquiv A).symm.toMonoidHom)
 
 /-- The special endomorphism is precomposition by its coordinate morphism. -/
@@ -318,9 +318,9 @@ theorem specialIsogeny_coordinatePointsEquiv (A : Type*) [CommRing A] [Algebra �
       coordinatePointsEquiv A (WithConv.toConv (q.ofConv.comp quotientIsogeny.hom.toAlgHom)) := by
   -- Unfold the composed monoid homomorphism to expose its coordinate point.
   change coordinatePointsEquiv A
-    ((CommHopfAlgCat.mapPointsFunctor quotientIsogeny).app (CommAlgCat.of 𝔽₂ A)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor quotientIsogeny).app (CommAlgCat.of 𝔽₂ A)
       ((coordinatePointsEquiv A).symm (coordinatePointsEquiv A q))) = _
-  rw [MulEquiv.symm_apply_apply, CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [MulEquiv.symm_apply_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
 
 /-- On scheme-valued points, the carrier special isogeny is the named matrix-valued map. -/
 @[simp] theorem schemePointsMulEquiv_comp_specialIsogenyHom

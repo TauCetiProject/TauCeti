@@ -467,7 +467,7 @@ lemma twistedSingularChain_subdivision_iterate (σ : (TopCat.toSSet.obj X).obj n
     (c : (Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) →₀ ℤ) :
     twistedSingularChain L σ z k ((subdivision _ k)^[r] c) =
       twistedSingularChain L σ z k c ≫
-        ((CategoryTheory.End.of (twistedSubdivisionChainMap L)) ^ r).f k := by
+        ((CategoryTheory.End.of (twistedSubdivisionChainMap L)) ^ r).asHom.f k := by
   induction r with
   | zero => simp
   | succ r ih =>

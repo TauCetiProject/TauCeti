@@ -116,21 +116,21 @@ variable [Preadditive C] {K : HomologicalComplex C c} {s : K ⟶ K}
 `K` to a chain endomorphism `s`, then `h.idPow m` is a chain homotopy from the identity to the
 `m`-th power of `s`, whose operator in bidegree `(i, j)` is `∑_{k < m} (sᵏ)ᵢ ≫ hᵢⱼ`. -/
 @[no_expose]
-def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m) where
-  hom i j := ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ h.hom i j
+def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m).asHom where
+  hom i j := ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ h.hom i j
   zero i j hij := by simp [h.zero i j hij]
   comm i := by
-    have hdn : dNext i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
-        ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom := by
+    have hdn : dNext i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f a ≫ h.hom a b) =
+        ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ dNext i h.hom := by
       simpa only [Finset.sum_fn, dNext_comp_left] using
-        map_sum (dNext i) (fun k a b ↦ (End.of s ^ k).f a ≫ h.hom a b) (Finset.range m)
-    have hpv : prevD i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
-        ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ prevD i h.hom := by
+        map_sum (dNext i) (fun k a b ↦ (End.of s ^ k).asHom.f a ≫ h.hom a b) (Finset.range m)
+    have hpv : prevD i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f a ≫ h.hom a b) =
+        ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ prevD i h.hom := by
       simpa only [Finset.sum_fn, prevD_comp_left] using
-        map_sum (prevD i) (fun k a b ↦ (End.of s ^ k).f a ≫ h.hom a b) (Finset.range m)
-    have hstep : ∀ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom +
-        (End.of s ^ k).f i ≫ prevD i h.hom =
-        (End.of s ^ k).f i - (End.of s ^ (k + 1)).f i := fun k _ ↦ by
+        map_sum (prevD i) (fun k a b ↦ (End.of s ^ k).asHom.f a ≫ h.hom a b) (Finset.range m)
+    have hstep : ∀ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ dNext i h.hom +
+        (End.of s ^ k).asHom.f i ≫ prevD i h.hom =
+        (End.of s ^ k).asHom.f i - (End.of s ^ (k + 1)).asHom.f i := fun k _ ↦ by
       have hsum : dNext i h.hom + prevD i h.hom = 𝟙 (K.X i) - s.f i := by
         have hc := h.comm i
         rw [HomologicalComplex.id_f] at hc
@@ -139,13 +139,13 @@ def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m)
       rw [← Preadditive.comp_add, hsum, Preadditive.comp_sub, Category.comp_id,
         HomologicalComplex.pow_f_succ]
     rw [hdn, hpv, ← Finset.sum_add_distrib, Finset.sum_congr rfl hstep,
-      Finset.sum_range_sub' (fun k ↦ (End.of s ^ k).f i) m, pow_zero, End.one_def,
+      Finset.sum_range_sub' (fun k ↦ (End.of s ^ k).asHom.f i) m, pow_zero, End.one_asHom,
       HomologicalComplex.id_f]
     abel
 
 @[simp]
 lemma idPow_hom (h : Homotopy (𝟙 K) s) (m : ℕ) (i j : ι) :
-    (h.idPow m).hom i j = ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ h.hom i j := (rfl)
+    (h.idPow m).hom i j = ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ h.hom i j := (rfl)
 
 end Homotopy
 

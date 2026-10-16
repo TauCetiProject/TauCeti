@@ -287,7 +287,6 @@ theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
   -- The inclusion of `[0]` factors through the zero section, so it is the zero homomorphism.
   have hi₁ : i = 1 := by
     have hle : E.zero.ker ≤ i.left.ker := hi.ge
-    have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
     have key : (IsClosedImmersion.lift E.zero i.left hle ≫ E.zero) ≫ E.structureMap ≫ E.zero =
         IsClosedImmersion.lift E.zero i.left hle ≫ E.zero := by
       rw [Category.assoc, zero_comp_structureMap_assoc]
