@@ -25,7 +25,7 @@ rings and to finitely generated ideals with Noetherian quotient.
 
 ## Main results
 
-* `TauCeti.Ideal.isNoetherianRing_of_isAdicComplete`: an `I`-adically complete ring with `I`
+* `Ideal.isNoetherianRing_of_isAdicComplete`: an `I`-adically complete ring with `I`
   finitely generated and `R ⧸ I` Noetherian is Noetherian.
 * `AdicCompletion.isNoetherianRing_of_fg`: the completion along a finitely generated ideal `I` is
   Noetherian when `R ⧸ I` is.
@@ -163,6 +163,8 @@ private theorem exists_sub_mem_pow_succ {T : Finset (MvPolynomial σ R)}
   · rw [hpc, ← Finset.sum_sub_distrib]
     exact Ideal.sum_mem _ fun t _ ↦ by simpa [mul_sub] using hc t
 
+end TauCeti
+
 namespace Ideal
 
 /-- **Noetherianity of complete rings.** A ring that is `I`-adically complete for a finitely
@@ -173,7 +175,7 @@ theorem isNoetherianRing_of_isAdicComplete (I : Ideal R) (hI : I.FG) [IsAdicComp
   intro J
   obtain ⟨r, f, rfl⟩ := Submodule.fg_iff_exists_fin_generating_family.mp hI
   obtain ⟨T, hTS, hST⟩ :=
-    (Submodule.fg_span_iff_fg_span_finset_subset _).mp (fg_span_initialForms f J)
+    (Submodule.fg_span_iff_fg_span_finset_subset _).mp (TauCeti.fg_span_initialForms f J)
   -- Each generator `t` has a degree `d t` and a value congruent to some `g t ∈ J`.
   have hT (t : T) : ∃ d, (t : MvPolynomial (Fin r) R).IsHomogeneous d ∧
       ∃ g ∈ J, aeval f (t : MvPolynomial (Fin r) R) - g ∈ Ideal.span (Set.range f) ^ (d + 1) := by
@@ -182,14 +184,13 @@ theorem isNoetherianRing_of_isAdicComplete (I : Ideal R) (hI : I.FG) [IsAdicComp
     exact ⟨d, hd, g, hg, by rwa [← hge, add_sub_cancel_left]⟩
   choose d hd g hgJ hge using hT
   have hJ : J ≤ Ideal.span (Set.range g) :=
-    le_span_of_forall_exists_sub_mem_pow (I := Ideal.span (Set.range f)) g (Finset.univ.sup d)
-      (exists_sub_mem_pow_succ f J hST hd hgJ hge fun t ↦ Finset.le_sup (Finset.mem_univ t))
+    TauCeti.le_span_of_forall_exists_sub_mem_pow (I := Ideal.span (Set.range f)) g
+      (Finset.univ.sup d) (TauCeti.exists_sub_mem_pow_succ f J hST hd hgJ hge fun t ↦
+        Finset.le_sup (Finset.mem_univ t))
   rw [le_antisymm hJ (Ideal.span_le.mpr (Set.range_subset_iff.mpr hgJ))]
   exact Submodule.fg_span (Set.finite_range g)
 
 end Ideal
-
-end TauCeti
 
 namespace AdicCompletion
 
@@ -203,7 +204,7 @@ theorem isNoetherianRing_of_fg (hI : I.FG) [IsNoetherianRing (R ⧸ I)] :
   have : IsNoetherianRing (AdicCompletion I R ⧸ I.map (algebraMap R (AdicCompletion I R))) :=
     isNoetherianRing_of_ringEquiv _ ((Ideal.quotEquivOfEq (ker_evalOneₐ_eq_map I hI)).symm.trans
       (RingHom.quotientKerEquivOfSurjective (evalOneₐ_surjective I))).symm
-  exact TauCeti.Ideal.isNoetherianRing_of_isAdicComplete
+  exact Ideal.isNoetherianRing_of_isAdicComplete
     (I.map (algebraMap R (AdicCompletion I R))) (hI.map _)
 
 /-- The adic completion of a Noetherian ring along any ideal is Noetherian. -/

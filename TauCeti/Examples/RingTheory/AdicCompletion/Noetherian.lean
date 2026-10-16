@@ -13,7 +13,7 @@ import TauCeti.RingTheory.AdicCompletion.Noetherian
 The completions `ℤ_p = AdicCompletion (p) ℤ` and `k⟦t⟧ = AdicCompletion (t) k[t]` are Noetherian,
 by the completion instance. The polynomial ring `k[X₀, X₁, …]` is complete for the finitely
 generated zero ideal but is not Noetherian, so the hypothesis that `R ⧸ I` be Noetherian cannot be
-dropped from `TauCeti.Ideal.isNoetherianRing_of_isAdicComplete`.
+dropped from `Ideal.isNoetherianRing_of_isAdicComplete`.
 -/
 
 open MvPolynomial
