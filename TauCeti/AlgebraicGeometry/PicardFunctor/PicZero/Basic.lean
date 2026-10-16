@@ -435,6 +435,37 @@ lemma relativePicardDegreeZeroFunctorι_app_injective (T : (Over S)ᵒᵖ) :
   unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor
   exact Subtype.val_injective
 
+/-- The set-valued degree-zero subfunctor and the underlying set-valued functor of its
+commutative-group structure have the same sections and pullback maps. -/
+def relativePicardDegreeZeroSubfunctorIsoFunctor :
+    (relativePicardDegreeZeroSubfunctor f).toFunctor ≅
+      relativePicardDegreeZeroFunctor f ⋙ forget CommGrpCat :=
+  NatIso.ofComponents (fun T ↦
+    ({
+      toFun c := relativePicardDegreeZeroFunctor.mk f c.1 c.2
+      invFun c := ⟨(relativePicardDegreeZeroFunctorι f).app T c,
+        relativePicardDegreeZeroFunctorι_app_mem f c⟩
+      left_inv c := Subtype.ext (relativePicardDegreeZeroFunctorι_app_mk f c.1 c.2)
+      right_inv c := relativePicardDegreeZeroFunctorι_app_injective f T <| by
+        rw [relativePicardDegreeZeroFunctorι_app_mk]
+    } : (relativePicardDegreeZeroSubfunctor f).obj T ≃
+      (relativePicardDegreeZeroFunctor f).obj T).toIso) (by
+        intro T T' φ
+        ext c
+        exact (relativePicardDegreeZeroFunctor_map_mk f φ c.1 c.2).symm)
+
+/-- The comparison from the set-valued degree-zero subfunctor to the underlying group-valued
+functor sends a section to the same class with its degree-zero proof. -/
+@[simp]
+lemma relativePicardDegreeZeroSubfunctorIsoFunctor_hom_app {T : (Over S)ᵒᵖ}
+    (c : (relativePicardDegreeZeroSubfunctor f).toFunctor.obj T) :
+    ConcreteCategory.hom (C := Type (u + 1))
+        (X := (relativePicardDegreeZeroSubfunctor f).obj T)
+        (Y := ToType ((relativePicardDegreeZeroFunctor f).obj T))
+        ((relativePicardDegreeZeroSubfunctorIsoFunctor f).hom.app T) c =
+      relativePicardDegreeZeroFunctor.mk f c.1 c.2 := by
+  rfl
+
 end Smooth
 
 end
