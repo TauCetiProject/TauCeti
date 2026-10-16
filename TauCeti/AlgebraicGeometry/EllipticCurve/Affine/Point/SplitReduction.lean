@@ -411,9 +411,8 @@ end Valuation
 
 section Point
 
-variable {F : Type*} [Field F] [DecidableEq F] {W : Affine F} {α β : F}
+variable {F : Type*} [Field F] {W : Affine F} {α β : F}
 
-omit [DecidableEq F] in
 /-- With `a₃ = a₄ = 0` and `T² + a₁ T - a₂ = (T - α) (T - β)`, the Weierstrass equation reads
 `(y - α x) (y - β x) = x³ + a₆`. -/
 private theorem equation_iff_mul (h₁ : W.a₁ = -(α + β)) (h₂ : W.a₂ = -(α * β)) (h₃ : W.a₃ = 0)
@@ -421,6 +420,8 @@ private theorem equation_iff_mul (h₁ : W.a₁ = -(α + β)) (h₂ : W.a₂ = -
     W.Equation x y ↔ (y - α * x) * (y - β * x) = x ^ 3 + W.a₆ := by
   rw [equation_iff, h₁, h₂, h₃, h₄]
   constructor <;> intro h <;> linear_combination h
+
+variable [DecidableEq F]
 
 /-- **The line through two points.** For two points of `(y - α x) (y - β x) = x³ + a₆` that are not
 negatives of each other, the line `y = ℓ x + ν` through them (the tangent line if they coincide)
@@ -532,9 +533,58 @@ private theorem SplitNodal.sub_ne_zero_of_le (hW : SplitNodal v W α β) {x y : 
     y - α * x ≠ 0 :=
   (map_ne_zero v).1 (zero_le.trans_lt (hW.valuation_lt_of_le h hu hwu).1).ne'
 
-variable [DecidableEq F] [IsIntegral v.valuationSubring W]
+/-- On an integral point, if the second branch coordinate is a unit then so is the first: otherwise
+`x` would be a unit, and so would `x³ + a₆ = u w`. -/
+private theorem SplitNodal.valuation_eq_one_of_eq_one (hW : SplitNodal v W α β) {x y : F}
+    (h : W.Equation x y) (hu : v (y - α * x) ≤ 1) (hw : v (y - β * x) = 1) :
+    v (y - α * x) = 1 := by
+  refine le_antisymm hu (not_lt.1 fun hu' ↦ ?_)
+  have hx1 : v x = 1 := by
+    have := congrArg v (sub_mul_eq α β x y)
+    rwa [map_mul, hW.sub, one_mul, v.map_sub_eq_of_lt_right (hw ▸ hu'), hw] at this
+  have h' := congrArg v (hW.equation_iff.1 h)
+  rw [v.map_add_eq_of_lt_left (by rw [map_pow, hx1, one_pow]; exact hW.a₆_lt), map_pow, hx1,
+    one_pow, map_mul, hw, mul_one] at h'
+  exact absurd h' hu'.ne
 
-omit [DecidableEq F] in
+variable (v W α β) in
+/-- The component of the special fibre a point reduces to, recorded by a value of `v`: `1` on
+`E₀(F)`, `v (y - α x)` when `v (y - β x) ≤ v (y - α x) < 1`, and `v a₆ / v (y - β x)` when
+`v (y - α x) < v (y - β x) < 1`. Its values on the points outside `E₀(F)` lie in the interval
+`(v a₆, 1)` of the value group, and fill it when the valuation ring is Henselian. -/
+private noncomputable def componentValue : W.Point → Γ₀
+  | .zero => 1
+  | .some x y _ =>
+    if v (y - α * x) < 1 ∧ v (y - β * x) < 1 then
+      if v (y - β * x) ≤ v (y - α * x) then v (y - α * x) else v W.a₆ / v (y - β * x)
+    else 1
+
+private theorem componentValue_zero : componentValue v W α β 0 = 1 := rfl
+
+private theorem componentValue_some_of_le {x y : F} (h : W.Nonsingular x y) (hu : v (y - α * x) < 1)
+    (hwu : v (y - β * x) ≤ v (y - α * x)) :
+    componentValue v W α β (.some x y h) = v (y - α * x) := by
+  simp only [componentValue, hu, hwu.trans_lt hu, and_self, hwu, ↓reduceIte]
+
+private theorem componentValue_some_of_ge (hW : SplitNodal v W α β) {x y : F}
+    (h : W.Nonsingular x y)
+    (hw : v (y - β * x) < 1) (huw : v (y - α * x) ≤ v (y - β * x)) :
+    componentValue v W α β (.some x y h) = v W.a₆ / v (y - β * x) := by
+  simp only [componentValue, huw.trans_lt hw, hw, and_self, ↓reduceIte]
+  split_ifs with hwu
+  · -- the two branches have equal valuation, whose square is `v a₆`
+    have heq := le_antisymm huw hwu
+    have hsq := valuation_sq_eq_of_eq v hW.sub (sub_mul_eq α β x y) (hW.equation_iff.1 h.left)
+      hW.a₆_ne (huw.trans_lt hw) heq.symm
+    have h0 : v (y - β * x) ≠ 0 := heq ▸ fun h0 ↦ hW.valuation_a₆_ne_zero (by
+      rw [← hsq, h0, zero_pow two_ne_zero])
+    rw [← hsq, heq, sq, mul_div_cancel_right₀ _ h0]
+  · rfl
+
+section
+
+variable [IsIntegral v.valuationSubring W]
+
 private theorem SplitNodal.integralModel_mem (hW : SplitNodal v W α β) :
     (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring ∧
       (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring ∧
@@ -547,6 +597,8 @@ private theorem SplitNodal.integralModel_mem (hW : SplitNodal v W α β) :
     integralModel_a₆_eq v.valuationSubring W
   simp only [Valuation.mem_maximalIdeal_iff, h₃, h₄, h₆, hW.a₃, hW.a₄, map_zero, zero_lt_one,
     hW.a₆_lt, and_self]
+
+variable [DecidableEq F]
 
 /-- **The points with singular reduction are those on which both branch coordinates are small.** -/
 private theorem SplitNodal.some_notMem_iff (hW : SplitNodal v W α β) {x y : F}
@@ -565,21 +617,6 @@ private theorem SplitNodal.some_notMem_iff (hW : SplitNodal v W α β) {x y : F}
       rw [map_mul, hW.sub, one_mul] at this
       exact this ▸ v.map_sub_lt hu hw
     exact ⟨hx, by simpa using v.map_add_lt hu (hlt hW.α_le hx)⟩
-
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
-/-- On an integral point, if the second branch coordinate is a unit then so is the first: otherwise
-`x` would be a unit, and so would `x³ + a₆ = u w`. -/
-private theorem SplitNodal.valuation_eq_one_of_eq_one (hW : SplitNodal v W α β) {x y : F}
-    (h : W.Equation x y) (hu : v (y - α * x) ≤ 1) (hw : v (y - β * x) = 1) :
-    v (y - α * x) = 1 := by
-  refine le_antisymm hu (not_lt.1 fun hu' ↦ ?_)
-  have hx1 : v x = 1 := by
-    have := congrArg v (sub_mul_eq α β x y)
-    rwa [map_mul, hW.sub, one_mul, v.map_sub_eq_of_lt_right (hw ▸ hu'), hw] at this
-  have h' := congrArg v (hW.equation_iff.1 h)
-  rw [v.map_add_eq_of_lt_left (by rw [map_pow, hx1, one_pow]; exact hW.a₆_lt), map_pow, hx1,
-    one_pow, map_mul, hw, mul_one] at h'
-  exact absurd h' hu'.ne
 
 /-- **The branch coordinates of a point with nonsingular reduction**: both are units if the point
 is integral, and both have the valuation of `y`, with `(v y)² = (v x)³`, if it is not. -/
@@ -605,43 +642,6 @@ private theorem SplitNodal.valuation_of_mem (hW : SplitNodal v W α β) {x y : F
     refine .inr ⟨hx, by rw [hbr hW.α_le, hbr hW.β_le], ?_⟩
     rw [hbr hW.α_le]
     exact valuation_y_sq_eq_valuation_x_cube v h.left hx
-
-variable (v W α β) in
-/-- The component of the special fibre a point reduces to, recorded by a value of `v`: `1` on
-`E₀(F)`, `v (y - α x)` when `v (y - β x) ≤ v (y - α x) < 1`, and `v a₆ / v (y - β x)` when
-`v (y - α x) < v (y - β x) < 1`. Its values on the points outside `E₀(F)` lie in the interval
-`(v a₆, 1)` of the value group, and fill it when the valuation ring is Henselian. -/
-private noncomputable def componentValue : W.Point → Γ₀
-  | .zero => 1
-  | .some x y _ =>
-    if v (y - α * x) < 1 ∧ v (y - β * x) < 1 then
-      if v (y - β * x) ≤ v (y - α * x) then v (y - α * x) else v W.a₆ / v (y - β * x)
-    else 1
-
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
-private theorem componentValue_zero : componentValue v W α β 0 = 1 := rfl
-
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
-private theorem componentValue_some_of_le {x y : F} (h : W.Nonsingular x y) (hu : v (y - α * x) < 1)
-    (hwu : v (y - β * x) ≤ v (y - α * x)) :
-    componentValue v W α β (.some x y h) = v (y - α * x) := by
-  simp only [componentValue, hu, hwu.trans_lt hu, and_self, hwu, ↓reduceIte]
-
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
-private theorem componentValue_some_of_ge (hW : SplitNodal v W α β) {x y : F}
-    (h : W.Nonsingular x y)
-    (hw : v (y - β * x) < 1) (huw : v (y - α * x) ≤ v (y - β * x)) :
-    componentValue v W α β (.some x y h) = v W.a₆ / v (y - β * x) := by
-  simp only [componentValue, huw.trans_lt hw, hw, and_self, ↓reduceIte]
-  split_ifs with hwu
-  · -- the two branches have equal valuation, whose square is `v a₆`
-    have heq := le_antisymm huw hwu
-    have hsq := valuation_sq_eq_of_eq v hW.sub (sub_mul_eq α β x y) (hW.equation_iff.1 h.left)
-      hW.a₆_ne (huw.trans_lt hw) heq.symm
-    have h0 : v (y - β * x) ≠ 0 := heq ▸ fun h0 ↦ hW.valuation_a₆_ne_zero (by
-      rw [← hsq, h0, zero_pow two_ne_zero])
-    rw [← hsq, heq, sq, mul_div_cancel_right₀ _ h0]
-  · rfl
 
 private theorem componentValue_of_mem (hW : SplitNodal v W α β) {P : W.Point}
     (hP : P ∈ W.nonsingularReduction v) : componentValue v W α β P = 1 := by
@@ -810,7 +810,8 @@ private theorem SplitNodal.neg_add_mem_of_componentValue_eq (hW : SplitNodal v W
       (by rw [hn₁, hn₂, v.map_neg, v.map_neg]; exact hwu₂)
       (by rw [hn₂, v.map_neg, h])
 
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
+end
+
 /-- **Points on a prescribed branch.** Over a Henselian valuation ring, for every `z` with
 `v z < 1` and `v a₆ ≤ (v z)²` there is a point with `y - α x = z` and `v (y - β x) ≤ v z`: putting
 `y - β x = z t`, the equation becomes `t = z (1 - t)³ / (β - α)³ + a₆ / z²`, whose reduction has the
@@ -866,7 +867,6 @@ private theorem SplitNodal.exists_point [HenselianLocalRing v.valuationSubring]
   · rw [hw, map_mul]
     exact mul_le_of_le_one_right' t.2
 
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
 /-- **Every value of `v` in `(v a₆, 1)` is the component of a point.** -/
 private theorem SplitNodal.exists_componentValue_eq [HenselianLocalRing v.valuationSubring]
     (hW : SplitNodal v W α β) {γ : Γ₀} (hγ : γ ∈ Set.range v) (h₁ : v W.a₆ < γ) (h₂ : γ < 1) :
@@ -892,10 +892,9 @@ end Component
 
 section Index
 
-variable {F Γ₀ : Type*} [Field F] [DecidableEq F] [LinearOrderedCommGroupWithZero Γ₀]
+variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀]
   {v : Valuation F Γ₀} {W : Affine F} [IsIntegral v.valuationSubring W]
 
-omit [DecidableEq F] in
 /-- A root `α` of the monic quadratic `T² + a₁ T - a₂` is integral, as `a₁` and `a₂` are. -/
 private theorem valuation_le_one_of_isRoot {α : F} (hαr : α ^ 2 + W.a₁ * α - W.a₂ = 0) :
     v α ≤ 1 := not_lt.1 fun h ↦ by
@@ -904,7 +903,6 @@ private theorem valuation_le_one_of_isRoot {α : F} (hαr : α ^ 2 + W.a₁ * α
   rw [← sub_eq_add_neg, hαr, map_zero] at this
   exact pow_ne_zero 2 (zero_lt_one.trans h).ne' this.symm
 
-omit [DecidableEq F] in
 /-- The hypotheses of the main theorem put `W` in split nodal normal form, with `β = -a₁ - α`. -/
 private theorem splitNodal_of_isRoot [W.IsElliptic] (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0)
     (h₆ : v W.a₆ < 1) (hb₂ : v W.b₂ = 1) {α : F}
@@ -923,6 +921,8 @@ private theorem splitNodal_of_isRoot [W.IsElliptic] (h₃ : W.a₃ = 0) (h₄ : 
     exact sq_eq_one.1 h
   a₆_lt := h₆
   Δ_ne := W.isUnit_Δ.ne_zero
+
+variable [DecidableEq F]
 
 /-- **The index of `E₀(F)` at a split node is the number of values of `v` in `(v a₆, 1]`.** Let
 `v` be a valuation on `F` whose valuation ring is Henselian, and `W` an elliptic curve over `F`
