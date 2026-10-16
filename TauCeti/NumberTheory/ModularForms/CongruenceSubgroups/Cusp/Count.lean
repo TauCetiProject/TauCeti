@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import Mathlib.Data.ZMod.Units
 import Mathlib.Data.Nat.Totient
+import TauCeti.Data.ZMod.Units
 
 /-!
 # The cusps of `Γ₀(N)`
@@ -109,56 +110,7 @@ private theorem exists_dvd_of_dvd_sub {g m : ℕ} {c c₁ d c' c₁' d' : ℤ}
   rw [hN]
   linear_combination (g : ℤ) * hw + g * w * he - g ^ 2 * Nat.gcdA g m * w * huv
 
-/-! ### The divisor `gcd(c, N)` -/
-
-private theorem eq_gcd_mul_ediv (c : ℤ) : c = Int.gcd c N * (c / Int.gcd c N) :=
-  (Int.mul_ediv_cancel' (Int.gcd_dvd_left ..)).symm
-
-private theorem natCast_eq_gcd_mul (c : ℤ) : (N : ℤ) = Int.gcd c N * (N / Int.gcd c N : ℕ) := by
-  exact_mod_cast (Nat.mul_div_cancel' (Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right c N))).symm
-
-/-- The entry `d` of a bottom row `(c, d)` is a unit modulo
-`gcd(gcd(c, N), N / gcd(c, N))`. -/
-private theorem isCoprime_gcd_gcd {c d : ℤ} (hcd : IsCoprime c d) :
-    IsCoprime d (Nat.gcd (Int.gcd c N) (N / Int.gcd c N) : ℤ) :=
-  hcd.symm.of_isCoprime_of_dvd_right
-    ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left ..)).trans (Int.gcd_dvd_left ..))
-
-/-- Two residues `c₁ / d` and `c₁' / d'` modulo `gcd(g, N / g)` agree, with `g = g'`, exactly
-when `gcd(g, N / g) ∣ c₁ d' - c₁' d`. -/
-private theorem heq_unitOfIsCoprime_div_iff {g g' : ℕ} (hg : g = g') {c d c' d' : ℤ}
-    (hc : IsCoprime c (Nat.gcd g (N / g) : ℤ)) (hd : IsCoprime d (Nat.gcd g (N / g) : ℤ))
-    (hc' : IsCoprime c' (Nat.gcd g' (N / g') : ℤ))
-    (hd' : IsCoprime d' (Nat.gcd g' (N / g') : ℤ)) :
-    HEq (ZMod.unitOfIsCoprime c hc / ZMod.unitOfIsCoprime d hd)
-        (ZMod.unitOfIsCoprime c' hc' / ZMod.unitOfIsCoprime d' hd') ↔
-      (Nat.gcd g (N / g) : ℤ) ∣ c * d' - c' * d := by
-  subst hg
-  rw [heq_iff_eq, div_eq_div_iff_mul_eq_mul, Units.ext_iff]
-  simp only [Units.val_mul, ZMod.coe_unitOfIsCoprime, ← Int.cast_mul]
-  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, ← dvd_neg, neg_sub]
-
 variable [NeZero N]
-
-private theorem gcd_pos (c : ℤ) : 0 < Int.gcd c N :=
-  Int.gcd_pos_of_ne_zero_right c (by exact_mod_cast NeZero.ne N)
-
-private theorem gcd_mem_divisors (c : ℤ) : Int.gcd c N ∈ N.divisors :=
-  Nat.mem_divisors.mpr ⟨Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..), NeZero.ne N⟩
-
-/-- Mathlib's `isCoprime_div_gcd_div_gcd` for `c` and `N`, with `N / gcd(c, N)` a natural
-number. -/
-private theorem isCoprime_ediv_gcd (c : ℤ) :
-    IsCoprime (c / Int.gcd c N) ((N / Int.gcd c N : ℕ) : ℤ) := by
-  rw [Int.natCast_div, Int.coe_gcd]
-  exact isCoprime_div_gcd_div_gcd (by exact_mod_cast NeZero.ne N)
-
-/-- The quotient `c / gcd(c, N)` is a unit modulo `gcd(gcd(c, N), N / gcd(c, N))`. -/
-private theorem isCoprime_ediv_gcd_gcd (c : ℤ) :
-    IsCoprime (c / Int.gcd c N)
-      (Nat.gcd (Int.gcd c N) (N / Int.gcd c N) : ℤ) :=
-  (isCoprime_ediv_gcd c).of_isCoprime_of_dvd_right
-    (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right ..))
 
 /-! ### Equivalence of cusps -/
 
@@ -209,9 +161,15 @@ it is the divisor `g = gcd(c, N)` of `N` together with the unit `(c / g) / d` mo
 (`gamma0CuspLabel_eq_iff`), and `gamma0CuspOrbitEquiv` is the resulting bijection. -/
 noncomputable def gamma0CuspLabel (γ : SL(2, ℤ)) :
     Σ g : N.divisors, (ZMod (Nat.gcd g (N / g)))ˣ :=
-  ⟨⟨Int.gcd (γ 1 0) N, gcd_mem_divisors (γ 1 0)⟩,
-    ZMod.unitOfIsCoprime (γ 1 0 / Int.gcd (γ 1 0) N) (isCoprime_ediv_gcd_gcd (γ 1 0)) /
-      ZMod.unitOfIsCoprime (γ 1 1) (isCoprime_gcd_gcd (bottom_row_coprime γ))⟩
+  ⟨⟨Int.gcd (γ 1 0) N,
+      Nat.mem_divisors.mpr ⟨Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..), NeZero.ne N⟩⟩,
+    ZMod.unitOfIsCoprime (γ 1 0 / Int.gcd (γ 1 0) N) (by
+        refine (isCoprime_div_gcd_div_gcd (p := γ 1 0) (q := (N : ℤ))
+          (by exact_mod_cast NeZero.ne N)).of_isCoprime_of_dvd_right ?_
+        rw [← Int.coe_gcd, ← Int.natCast_div]
+        exact Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right ..)) /
+      ZMod.unitOfIsCoprime (γ 1 1) ((bottom_row_coprime γ).symm.of_isCoprime_of_dvd_right
+        ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left ..)).trans (Int.gcd_dvd_left ..)))⟩
 
 /-- The divisor in the label of `γ` is `gcd(c, N)`, for `c` the lower-left entry of `γ`. -/
 @[simp]
@@ -226,26 +184,43 @@ theorem coe_gamma0CuspLabel_snd_mul (γ : SL(2, ℤ)) :
       (N / (gamma0CuspLabel N γ).1))) * (γ 1 1 : ℤ) = (γ 1 0 / Int.gcd (γ 1 0) N : ℤ) := by
   rw [gamma0CuspLabel]
   dsimp only
-  rw [← ZMod.coe_unitOfIsCoprime (γ 1 1) (isCoprime_gcd_gcd (bottom_row_coprime γ)),
-    ← Units.val_mul, div_mul_cancel, ZMod.coe_unitOfIsCoprime]
+  generalize_proofs _ _ hd
+  rw [← ZMod.coe_unitOfIsCoprime (γ 1 1) hd, ← Units.val_mul, div_mul_cancel,
+    ZMod.coe_unitOfIsCoprime]
 
 /-- Two matrices have the same label exactly when their bottom rows `(c, d)` and `(c', d')`
 satisfy `N ∣ c d' - c' d + j c c'` for some integer `j`. -/
 theorem gamma0CuspLabel_eq_iff_exists_dvd (γ γ' : SL(2, ℤ)) :
     gamma0CuspLabel N γ = gamma0CuspLabel N γ' ↔
       ∃ j : ℤ, (N : ℤ) ∣ γ 1 0 * γ' 1 1 - γ' 1 0 * γ 1 1 + j * γ 1 0 * γ' 1 0 := by
+  have hc (c : ℤ) : c = Int.gcd c N * (c / Int.gcd c N) :=
+    (Int.mul_ediv_cancel' (Int.gcd_dvd_left ..)).symm
+  have hN : (N : ℤ) = Int.gcd (γ 1 0) N * (N / Int.gcd (γ 1 0) N : ℕ) := by
+    exact_mod_cast (Nat.mul_div_cancel' (Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..))).symm
+  have hcop (c : ℤ) : IsCoprime (c / Int.gcd c N) ((N / Int.gcd c N : ℕ) : ℤ) := by
+    rw [Int.natCast_div, Int.coe_gcd]
+    exact isCoprime_div_gcd_div_gcd (by exact_mod_cast NeZero.ne N)
+  -- The residues live in `ZMod` of moduli that agree only propositionally, so they are compared
+  -- as `HEq`; once the divisors are identified this is `ZMod.unitOfIsCoprime_div_eq_iff`.
+  have hx {g g' : ℕ} (hg : g = g') {a b a' b' : ℤ} (ha : IsCoprime a (Nat.gcd g (N / g) : ℤ))
+      (hb : IsCoprime b (Nat.gcd g (N / g) : ℤ)) (ha' : IsCoprime a' (Nat.gcd g' (N / g') : ℤ))
+      (hb' : IsCoprime b' (Nat.gcd g' (N / g') : ℤ)) :
+      HEq (ZMod.unitOfIsCoprime a ha / ZMod.unitOfIsCoprime b hb)
+          (ZMod.unitOfIsCoprime a' ha' / ZMod.unitOfIsCoprime b' hb') ↔
+        (Nat.gcd g (N / g) : ℤ) ∣ a * b' - a' * b := by
+    subst hg
+    exact heq_iff_eq.trans (ZMod.unitOfIsCoprime_div_eq_iff ..)
   rw [gamma0CuspLabel, gamma0CuspLabel, Sigma.mk.inj_iff, Subtype.mk.injEq]
   constructor
-  · rintro ⟨hg, hx⟩
-    rw [heq_unitOfIsCoprime_div_iff hg, ← hg] at hx
-    exact exists_dvd_of_dvd_sub (natCast_eq_gcd_mul (γ 1 0)) (eq_gcd_mul_ediv _)
-      (hg ▸ eq_gcd_mul_ediv _) (isCoprime_ediv_gcd _) (hg ▸ isCoprime_ediv_gcd _) hx
+  · rintro ⟨hg, hx'⟩
+    rw [hx hg, ← hg] at hx'
+    exact exists_dvd_of_dvd_sub hN (hc _) (hg ▸ hc _) (hcop _) (hg ▸ hcop _) hx'
   · rintro ⟨j, h⟩
     have hg := gcd_eq_of_dvd (bottom_row_coprime γ) (bottom_row_coprime γ') h
-    refine ⟨hg, (heq_unitOfIsCoprime_div_iff hg ..).mpr ?_⟩
+    refine ⟨hg, (hx hg ..).mpr ?_⟩
     rw [← hg]
-    exact dvd_sub_of_dvd (gcd_pos _).ne' (natCast_eq_gcd_mul (γ 1 0)) (eq_gcd_mul_ediv _)
-      (hg ▸ eq_gcd_mul_ediv _) h
+    exact dvd_sub_of_dvd (Int.gcd_pos_of_ne_zero_right _ (by exact_mod_cast NeZero.ne N)).ne' hN
+      (hc _) (hg ▸ hc _) h
 
 /-- Every divisor `g` of `N` and every unit modulo `gcd(g, N / g)` is a label: that of a matrix
 with bottom row `(g, d)`. -/
