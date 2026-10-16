@@ -161,7 +161,7 @@ namespace freeProCPointed
 /-- The canonical continuous quotient map from the free pro-`C` group on the type `X` to the free
 pro-`C` group on the pointed space `(X, x₀)`. -/
 noncomputable def mk : freeProC C X →ₜ* freeProCPointed C x₀ :=
-  ContinuousMonoidHom.quotientMk (kernel C x₀)
+  Subgroup.quotientMkContinuousMonoidHom (kernel C x₀)
 
 /-- The canonical quotient map sends an element to its class. -/
 theorem mk_apply (y : freeProC C X) : mk C x₀ y = (y : freeProCPointed C x₀) :=

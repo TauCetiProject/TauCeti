@@ -103,7 +103,7 @@ noncomputable def _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc
   ContinuousMonoidHom.quotientLift _
     ((⟨QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k), QuotientGroup.continuous_mapOfLE _⟩ :
         H ⧸ pLowerCentralSeries p H (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H k).comp
-      (ψ.comp (ContinuousMonoidHom.quotientMk _))) (by
+      (ψ.comp (Subgroup.quotientMkContinuousMonoidHom _))) (by
     intro g hg
     -- The class of `g ∈ λ_k(G)` lies in `λ_k(G ⧸ λ_{k+1})`, which `ψ` carries into
     -- `λ_k(H ⧸ λ_{k+1})`, the image of `λ_k(H)`.
@@ -120,7 +120,7 @@ noncomputable def _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc
         QuotientGroup.continuous_mk.isClosedMap (QuotientGroup.mk'_surjective _)] at h1
     obtain ⟨h, hh, hh'⟩ := h1
     simp only [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
-      ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.quotientMk_apply,
+      ContinuousMonoidHom.comp_toFun, Subgroup.quotientMkContinuousMonoidHom_apply,
       ContinuousMonoidHom.coe_mk]
     rw [← hh', QuotientGroup.mk'_apply, QuotientGroup.mapOfLE_mk, QuotientGroup.eq_one_iff]
     exact hh)

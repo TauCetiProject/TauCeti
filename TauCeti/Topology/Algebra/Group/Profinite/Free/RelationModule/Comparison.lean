@@ -46,10 +46,10 @@ theorem exists_abelianizationProPExtension_comparison :
         (abelianizationProPExtension p G W).rightHom (ψ (QuotientGroup.mk x)) = lift g x := by
   let a : ι → G := fun i ↦ (g i).out
   let f := lift a
-  let q := ContinuousMonoidHom.quotientMk W
+  let q := Subgroup.quotientMkContinuousMonoidHom W
   have hqa : (q : G → G ⧸ W) ∘ a = g := by
     funext i
-    exact (ContinuousMonoidHom.quotientMk_apply W (a i)).trans (QuotientGroup.out_eq' (g i))
+    exact (Subgroup.quotientMkContinuousMonoidHom_apply W (a i)).trans (QuotientGroup.out_eq' (g i))
   have hcomp : q.comp f = lift g := (comp_lift q a).trans (congrArg lift hqa)
   have hVW : (lift g : freeProfiniteGroup ι →* G ⧸ W).ker ≤ W.comap f.toMonoidHom := by
     intro x hx

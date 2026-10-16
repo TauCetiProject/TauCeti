@@ -126,7 +126,7 @@ from the quotient with continuous homomorphisms from `G` for a discrete target o
 def frattiniQuotientHomEquiv {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) :
     ((G ⧸ proPFrattini p G) →ₜ* H) ≃ (G →ₜ* H) :=
-  (ContinuousMonoidHom.quotientHomEquiv (proPFrattini p G)).trans
+  (_root_.Subgroup.quotientContinuousMonoidHomEquiv (proPFrattini p G)).trans
     (Equiv.subtypeUnivEquiv fun f => proPFrattini_le_ker hH f)
 
 /-- Evaluation of precomposition with the Frattini quotient projection. -/
@@ -135,9 +135,9 @@ theorem frattiniQuotientHomEquiv_apply {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p)
     (g : (G ⧸ proPFrattini p G) →ₜ* H) :
     frattiniQuotientHomEquiv hH g =
-      g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) := by
+      g.comp (Subgroup.quotientMkContinuousMonoidHom (proPFrattini p G)) := by
   dsimp [frattiniQuotientHomEquiv]
-  exact ContinuousMonoidHom.quotientHomEquiv_apply_coe _ _
+  exact _root_.Subgroup.quotientContinuousMonoidHomEquiv_apply_coe _ _
 
 /-- Evaluation of the inverse Frattini quotient homomorphism equivalence. -/
 @[simp]
@@ -148,14 +148,14 @@ theorem frattiniQuotientHomEquiv_symm_apply {H : Type*} [Group H]
       ContinuousMonoidHom.quotientLift (proPFrattini p G) f
         (proPFrattini_le_ker hH f) := by
   dsimp [frattiniQuotientHomEquiv]
-  exact ContinuousMonoidHom.quotientHomEquiv_symm_apply _ _
+  exact _root_.Subgroup.quotientContinuousMonoidHomEquiv_symm_apply _ _
 
 /-- Continuous homomorphisms to a discrete group of cardinality `p` factor uniquely through the
 pro-`p` Frattini quotient. -/
 theorem existsUnique_frattiniQuotient_lift {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
     ∃! g : (G ⧸ proPFrattini p G) →ₜ* H,
-      g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) = f := by
+      g.comp (Subgroup.quotientMkContinuousMonoidHom (proPFrattini p G)) = f := by
   simpa only [frattiniQuotientHomEquiv_apply] using
     (frattiniQuotientHomEquiv hH).bijective.existsUnique f
 
@@ -193,12 +193,13 @@ continuous `𝔽_p`-dual of `G ⧸ N` onto that of `G`: every continuous `𝔽_p
 kills the pro-`p` Frattini subgroup, hence `N`, and so descends to the quotient. -/
 theorem continuousZModDualMap_quotientMk_bijective {N : Subgroup G} [N.Normal]
     (hN : N ≤ proPFrattini p G) :
-    Function.Bijective ((ContinuousMonoidHom.quotientMk N).continuousZModDualMap (n := p)) := by
+    Function.Bijective
+      ((Subgroup.quotientMkContinuousMonoidHom N).continuousZModDualMap (n := p)) := by
   refine ⟨fun χ ψ h ↦ Additive.toMul.injective (ContinuousMonoidHom.ext fun q ↦ ?_), fun χ ↦ ?_⟩
   · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
     have := congrArg (fun x : continuousZModDual p G ↦ Additive.toMul x g) h
     simpa only [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
-      ContinuousMonoidHom.quotientMk_apply] using this
+      Subgroup.quotientMkContinuousMonoidHom_apply] using this
   · refine ⟨Additive.ofMul (ContinuousMonoidHom.quotientLift N (Additive.toMul χ)
       (hN.trans (proPFrattini_le_ker (by simp) (Additive.toMul χ)))), ?_⟩
     apply Additive.toMul.injective
