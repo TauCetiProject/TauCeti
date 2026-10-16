@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.GradedObject.Braiding
 public import Mathlib.CategoryTheory.Monoidal.CommMon_
+public import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Monoid objects in graded objects from homogeneous data
@@ -263,15 +264,6 @@ end AddCommMonoid
 
 section LaxMonoidal
 
-/-- Transport along an equality of degrees commutes with identifications
-`e n : Y n ≅ F.obj (X n)`. -/
-private lemma eqToHom_eq_iso_hom_map_eqToHom {I C D : Type*} [Category* C] [Category* D]
-    (F : C ⥤ D) {X : GradedObject I C} {Y : GradedObject I D} (e : ∀ n, Y n ≅ F.obj (X n))
-    {i j : I} (h : i = j) :
-    eqToHom (congrArg Y h) = (e i).hom ≫ F.map (eqToHom (congrArg X h)) ≫ (e j).inv := by
-  subst h
-  simp
-
 variable {I : Type*} [AddMonoid I] {C D : Type*} [Category* C] [Category* D]
   [MonoidalCategory C] [MonoidalCategory D] {F : C ⥤ D} [F.LaxMonoidal]
   {X : GradedObject I C} {Y : GradedObject I D} {e : ∀ n, Y n ≅ F.obj (X n)}
@@ -308,7 +300,8 @@ lemma mul_assoc_of_laxMonoidal
         simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
     _ = _ := by
         rw [reassoc_of% core, associator_naturality_assoc, tensorHom_comp_tensorHom_assoc,
-          eqToHom_eq_iso_hom_map_eqToHom F e (add_assoc i j k).symm, hmul, hmul, ← id_tensorHom]
+          TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_assoc i j k).symm, hmul, hmul,
+          ← id_tensorHom]
         simp only [Category.assoc, tensorHom_comp_tensorHom_assoc, Iso.inv_hom_id,
           Iso.inv_hom_id_assoc, Category.comp_id, Category.id_comp]
 
@@ -356,7 +349,7 @@ lemma one_mul_of_laxMonoidal
         simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
     _ = _ := by
         rw [reassoc_of% core, leftUnitor_naturality_assoc,
-          eqToHom_eq_iso_hom_map_eqToHom F e (zero_add n).symm]
+          TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (zero_add n).symm]
 
 /-- A unit and homogeneous multiplications transported along a lax monoidal functor `F` and
 identifications `e n : Y n ≅ F.obj (X n)` satisfy the right unit law, up to the identification of
@@ -379,7 +372,7 @@ lemma mul_one_of_laxMonoidal
         simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
     _ = _ := by
         rw [reassoc_of% core, rightUnitor_naturality_assoc,
-          eqToHom_eq_iso_hom_map_eqToHom F e (add_zero n).symm]
+          TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_zero n).symm]
 
 end LaxMonoidal
 
@@ -403,7 +396,7 @@ lemma mul_comm_of_laxBraided
       mul i j ≫ eqToHom (congrArg X (add_comm i j))) (i j : I) :
     (β_ (Y i) (Y j)).hom ≫ mul' j i = mul' i j ≫ eqToHom (congrArg Y (add_comm i j)) := by
   rw [hmul, hmul, ← BraidedCategory.braiding_naturality_assoc, ← Functor.LaxBraided.braided_assoc,
-    ← F.map_comp_assoc, mul_comm, eqToHom_eq_iso_hom_map_eqToHom F e (add_comm i j)]
+    ← F.map_comp_assoc, mul_comm, TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_comm i j)]
   simp
 
 end LaxBraided
