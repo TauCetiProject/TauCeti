@@ -531,7 +531,8 @@ theorem orthogonalComplement_iSup_eigenspaces_ne_zero_dirichletSolutionOperator_
       Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) nu)ᗮ = ⊥ := by
   unfold dirichletSolutionOperator
   exact hcoercive.orthogonalComplement_iSup_eigenspaces_ne_zero_formSolutionOperator_eq_bot
-    (W1p0.isCompactOperator_valueL (by simp) hOmega) W1p0.denseRange_valueL_two
+    (W1p0.isCompactOperator_valueL (by simp) hOmega)
+    (hcoercive.eigenspace_formSolutionOperator_zero_eq_bot W1p0.denseRange_valueL_two)
     (energyFormH1L0_comm hcoeff hsymm)
 
 /-- **The Dirichlet eigenfunctions form an orthonormal basis of `L²(Ω)`.**  On a bounded domain

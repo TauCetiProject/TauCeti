@@ -326,7 +326,7 @@ private theorem ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq
     FractionalIdeal.coeIdeal_ne_zero.2 (weierstrassDefectIdeal_ne_bot O W)
   have hu₀ : u ≠ 0 := by
     rintro rfl
-    exact hJ (by rw [hu, FractionalIdeal.spanSingleton_zero, zero_mul])
+    exact hJ (by rw [hu, map_zero (FractionalIdeal.spanSingleton _), zero_mul])
   -- Comparing multiplicities: `fᵥ(W) = ord_v u + [v = v₀]`.
   have hcount (v : HeightOneSpectrum O) : obstructionExponentAt O v W =
       (v.valuation K).ord u + if v₀ = v then 1 else 0 := by

@@ -73,7 +73,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 /-- **Wedhorn's `X_triv`**: the points of `Spa(A, A⁺)` represented by a trivial valuation, that is,
 by a valuation with values in `{0, 1}`. -/
-def spaTrivial (Aplus : Subring A) : Set (spa Aplus) :=
+noncomputable def spaTrivial (Aplus : Subring A) : Set (spa Aplus) :=
   Subtype.val ⁻¹' Set.range trivialSection
 
 /-- A point of `Spa(A, A⁺)` is trivial when its valuation is in the image of `trivialSection`. -/
@@ -258,7 +258,8 @@ theorem isSpectralMap_spaTrivialRetraction [IsTopologicalRing A] [Huber.IsHuberR
     simp
   rw [hr]
   refine e.isProperMap.isSpectralMap.comp (isSpectralMap_of_isTopologicalBasis
-    (IsInducing.subtypeVal.isTopologicalBasis PrimeSpectrum.isTopologicalBasis_basic_opens)
+    (IsEmbedding.subtypeVal.isInducing.isTopologicalBasis
+      PrimeSpectrum.isTopologicalBasis_basic_opens)
     (e.symm.continuous.comp continuous_spaTrivialRetraction) ?_)
   rintro _ ⟨_, ⟨s, rfl⟩, rfl⟩
   have hpre : (e.symm ∘ spaTrivialRetraction) ⁻¹'

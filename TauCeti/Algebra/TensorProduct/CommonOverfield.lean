@@ -31,8 +31,8 @@ embedding.
 * `TauCeti.Algebra.TensorProduct.CommonOverfield.map`: extends scalars along the embedding of the
   second field.
 
-This is base-change descent infrastructure for geometric connectedness and reducedness in the
-ReductiveGroups roadmap.
+These comparisons and maps also apply to noncommutative algebras. They supply base-change descent
+infrastructure for geometric connectedness and reducedness.
 -/
 
 public section
@@ -101,41 +101,41 @@ variable {k : Type u} {K : Type v} {L : Type w} [Field k] [Field K] [Field L]
 /-- Successive scalar extension through `K` agrees with direct scalar extension to a common
 overfield. -/
 noncomputable def comparison (d : CommonOverfield k K L) (A : Type x)
-    [CommSemiring A] [Algebra k A] :
+    [Semiring A] [Algebra k A] :
     ((K ⊗[k] A) ⊗[K] d.Ω) ≃+* (A ⊗[k] d.Ω) :=
   (baseChangeTowerRightAlgEquiv k K A d.Ω).toRingEquiv
 
 /-- The common-overfield comparison sends nested pure tensors to pure tensors. -/
 @[simp]
 theorem comparison_tmul_tmul (d : CommonOverfield k K L) (A : Type x)
-    [CommSemiring A] [Algebra k A] (x : K) (a : A) (ω : d.Ω) :
+    [Semiring A] [Algebra k A] (x : K) (a : A) (ω : d.Ω) :
     d.comparison A ((x ⊗ₜ[k] a) ⊗ₜ[K] ω) = a ⊗ₜ[k] (x • ω) :=
   baseChangeTowerRightAlgEquiv_tmul_tmul k K A d.Ω x a ω
 
 /-- The inverse common-overfield comparison sends pure tensors to nested pure tensors. -/
 @[simp]
 theorem comparison_symm_tmul (d : CommonOverfield k K L) (A : Type x)
-    [CommSemiring A] [Algebra k A] (a : A) (ω : d.Ω) :
+    [Semiring A] [Algebra k A] (a : A) (ω : d.Ω) :
     (d.comparison A).symm (a ⊗ₜ[k] ω) = (1 ⊗ₜ[k] a) ⊗ₜ[K] ω :=
   baseChangeTowerRightAlgEquiv_symm_tmul k K A d.Ω a ω
 
 /-- Scalar extension along the embedding of `L` into a common overfield. -/
 noncomputable def map (d : CommonOverfield k K L) (A : Type x)
-    [CommSemiring A] [Algebra k A] :
+    [Semiring A] [Algebra k A] :
     A ⊗[k] L →ₐ[k] A ⊗[k] d.Ω :=
   Algebra.TensorProduct.map (AlgHom.id k A) d.right
 
 /-- Scalar extension to a common overfield maps each pure tensor componentwise. -/
 @[simp]
 theorem map_tmul (d : CommonOverfield k K L) (A : Type x)
-    [CommSemiring A] [Algebra k A] (a : A) (l : L) :
+    [Semiring A] [Algebra k A] (a : A) (l : L) :
     d.map A (a ⊗ₜ[k] l) = a ⊗ₜ[k] d.right l := by
   simp [map]
 
 attribute [local instance 1100] Module.Free.of_divisionRing Module.Flat.of_free in
 /-- Scalar extension from `L` to a common overfield is injective. -/
 theorem map_injective (d : CommonOverfield k K L) (A : Type x)
-    [CommRing A] [Algebra k A] : Function.Injective (d.map A) :=
+    [Ring A] [Algebra k A] : Function.Injective (d.map A) :=
   Module.Flat.lTensor_preserves_injective_linearMap d.right.toLinearMap
     (RingHom.injective d.right.toRingHom)
 

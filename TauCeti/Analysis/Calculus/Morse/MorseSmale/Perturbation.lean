@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Dynamics.Flow.Variational
 
 /-!
 # Perturbations of a function by functions vanishing near its critical points
@@ -38,8 +39,13 @@ for parameters in the closed unit ball.
   the parameter. `TauCeti.contDiff_perturbedFlow` says it is `C¹` jointly in time, space and
   parameter, and `TauCeti.perturbedFlow_apply_of_norm_le` that, for `‖s‖ ≤ 1`, it is the
   negative-gradient flow of `perturb f h s`, with the parameter carried along
-  (`TauCeti.snd_perturbedFlow_apply`). `TauCeti.exists_lipschitzWith_gradient_perturb` supplies
+  (`TauCeti.snd_perturbedFlow_apply`); `TauCeti.perturbedFlow_congr`: it does not depend on the
+  Lipschitz witness for `∇ f`. `TauCeti.exists_lipschitzWith_gradient_perturb` supplies
   the Lipschitz hypothesis needed to speak of that flow.
+* `TauCeti.hasDerivAt_fst_fderiv_perturbedFlow_apply`: at the parameter `0`, the derivative of the
+  perturbed flow along a tangent vector `(v, e)` solves the inhomogeneous variational equation
+  `u' = -D(∇f)(φₜ x) u - ∑ᵢ eᵢ ∇hᵢ(φₜ x)` along the negative-gradient orbit of `x`, with
+  `TauCeti.perturbedFlow_apply_zero` and `TauCeti.snd_fderiv_perturbedFlow_apply`.
 
 ## References
 
@@ -341,13 +347,31 @@ noncomputable def perturbedFlow (f : E → ℝ) (h : ι → E → ℝ) (hf : Lip
     Flow ℝ (E × EuclideanSpace ℝ ι) :=
   flowOfLipschitz (perturbedField f h) (exists_lipschitzWith_perturbedField hf hh hc).choose_spec
 
+/-- The perturbed flow is, by its definition, the flow of the augmented field with the chosen
+Lipschitz witness. -/
+private theorem perturbedFlow_eq_flowOfLipschitz (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) :
+    perturbedFlow f h hf hh hc = flowOfLipschitz (perturbedField f h)
+      (exists_lipschitzWith_perturbedField hf hh hc).choose_spec :=
+  (rfl)
+
+/-- **Independence of the Lipschitz witness.** The perturbed flow does not depend on the Lipschitz
+bound for `∇ f` used to construct it: both are flows of the same augmented field, which do not
+depend on the Lipschitz constant (`flowOfLipschitz_congr`). -/
+theorem perturbedFlow_congr {K' : ℝ≥0} (hf : LipschitzWith K (∇ f)) (hf' : LipschitzWith K' (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
+    perturbedFlow f h hf hh hc = perturbedFlow f h hf' hh hc :=
+  (perturbedFlow_eq_flowOfLipschitz hf hh hc).trans
+    ((flowOfLipschitz_congr _ _).trans (perturbedFlow_eq_flowOfLipschitz hf' hh hc).symm)
+
 /-- **The perturbed flow is `C¹`**, jointly in time, the initial condition and the parameter. -/
 theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
     ContDiff ℝ 1 (Function.uncurry (perturbedFlow f h hf hh hc)) := by
   have hF : ContDiff ℝ ((0 : ℕ) + 1) (perturbedField f h) := by
     simpa using contDiff_perturbedField hfs hh
-  unfold perturbedFlow
+  rw [perturbedFlow_eq_flowOfLipschitz]
   simpa using contDiff_flowOfLipschitz 0 (perturbedField f h)
     (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hF
 
@@ -381,8 +405,106 @@ theorem perturbedFlow_apply_of_norm_le (hd : Differentiable ℝ f) (hf : Lipschi
       (fun i ↦ (hh i).differentiable (by norm_num)) hs]
     exact h1.prodMk (hasDerivAt_const t s)
   have := eq_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hγ t
-  simpa [perturbedFlow] using this.symm
+  rw [perturbedFlow_eq_flowOfLipschitz]
+  simpa using this.symm
 
 end Flow
+
+section ParameterDerivative
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Fintype ι]
+  {f : E → ℝ} {h : ι → E → ℝ} {K : ℝ≥0}
+
+/-- At the parameter `0` the perturbed flow is the negative-gradient flow of `f`. -/
+@[simp]
+theorem perturbedFlow_apply_zero (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (t : ℝ) (x : E) :
+    perturbedFlow f h hf hh hc t (x, 0) = (negativeGradientFlow f hf t x, 0) := by
+  set φ := negativeGradientFlow f hf
+  -- On the zero-parameter slice the augmented field is `(-∇ f, 0)`.
+  have hγ : ∀ t, HasDerivAt (fun t ↦ (φ t x, (0 : EuclideanSpace ℝ ι)))
+      (perturbedField f h (φ t x, 0)) t := fun t ↦ by
+    have hF : perturbedField f h (φ t x, 0) = (-∇ f (φ t x), 0) := by
+      simp [perturbationCutoff]
+    rw [hF]
+    exact ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x t).prodMk
+      (hasDerivAt_const t 0)
+  have := eq_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hγ t
+  rw [perturbedFlow_eq_flowOfLipschitz]
+  simpa using this.symm
+
+private theorem differentiableAt_perturbedFlow (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (t : ℝ)
+    (p : E × EuclideanSpace ℝ ι) : DifferentiableAt ℝ (perturbedFlow f h hf hh hc t) p := by
+  rw [perturbedFlow_eq_flowOfLipschitz]
+  exact differentiable_flowOfLipschitz_apply _ (contDiff_perturbedField hfs hh) t p
+
+/-- **The parameter component of a variation is constant**: the derivative of the time-`t` map
+of the perturbed flow does not change the parameter component of a tangent vector. -/
+@[simp]
+theorem snd_fderiv_perturbedFlow_apply (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (t : ℝ) (p q : E × EuclideanSpace ℝ ι) :
+    (fderiv ℝ (perturbedFlow f h hf hh hc t) p q).2 = q.2 := by
+  have h1 := hasFDerivAt_snd.comp p (differentiableAt_perturbedFlow hfs hf hh hc t p).hasFDerivAt
+  have hsnd : (fun p ↦ (perturbedFlow f h hf hh hc t p).2) = Prod.snd :=
+    funext fun p ↦ snd_perturbedFlow_apply hf hh hc t p
+  have h2 : HasFDerivAt (fun p ↦ (perturbedFlow f h hf hh hc t p).2)
+      (ContinuousLinearMap.snd ℝ E (EuclideanSpace ℝ ι)) p := by
+    rw [hsnd]
+    exact hasFDerivAt_snd
+  simpa using congrArg (· q) (h1.unique h2)
+
+/-- The cut-off parameter is the identity near `0`. -/
+private theorem hasFDerivAt_perturbationCutoff_zero :
+    HasFDerivAt (perturbationCutoff (ι := ι)) (ContinuousLinearMap.id ℝ _) 0 := by
+  have hev : perturbationCutoff (ι := ι) =ᶠ[𝓝 0] id := by
+    filter_upwards [perturbationBump.eventuallyEq_one] with s hs
+    simp [perturbationCutoff, hs]
+  exact (hasFDerivAt_id 0).congr_of_eventuallyEq hev
+
+/-- The derivative of the augmented field at a point of parameter `0`. -/
+private theorem fderiv_perturbedField_apply_zero (hfs : ContDiff ℝ 2 f)
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (y u : E) (e : EuclideanSpace ℝ ι) :
+    fderiv ℝ (perturbedField f h) (y, 0) (u, e) =
+      (-(fderiv ℝ (∇ f) y) u - ∑ i, e i • ∇ (h i) y, 0) := by
+  have hG := ((hfs.gradient_right (m := 1) (by norm_num)).differentiable one_ne_zero
+    y).hasFDerivAt.comp (y, (0 : EuclideanSpace ℝ ι)) (hasFDerivAt_fst (𝕜 := ℝ))
+  have hC := fun i ↦
+    ((((EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).hasFDerivAt.comp 0
+      hasFDerivAt_perturbationCutoff_zero).comp (y, (0 : EuclideanSpace ℝ ι))
+        (hasFDerivAt_snd (𝕜 := ℝ))).smul
+      ((((hh i).gradient_right (m := 1) (by norm_num)).differentiable
+        one_ne_zero y).hasFDerivAt.comp (y, (0 : EuclideanSpace ℝ ι)) (hasFDerivAt_fst (𝕜 := ℝ))))
+  have hV : HasFDerivAt (perturbedField f h) _ (y, (0 : EuclideanSpace ℝ ι)) :=
+    (hG.neg.sub (HasFDerivAt.fun_sum fun i _ ↦ hC i)).prodMk (hasFDerivAt_const _ _)
+  rw [hV.fderiv]
+  simp
+
+/-- **The variation of the perturbed flow.** At the parameter `0`, the derivative
+`u t = (Dφₜ(x, 0) q).1` of the perturbed flow along a tangent vector `q = (v, e)` solves the
+inhomogeneous variational equation along the negative-gradient orbit `φₜ x` of `f`:
+`u' = -D(∇f)(φₜ x) u - ∑ᵢ eᵢ ∇hᵢ(φₜ x)`. For `q = (0, e)` this is the derivative of
+`s ↦ φ^{f + ∑ sᵢ hᵢ}_t x` at `s = 0` in the direction `e`; for `q = (v, 0)` it is the variational
+equation of the negative-gradient flow of `f`. -/
+theorem hasDerivAt_fst_fderiv_perturbedFlow_apply (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (x : E)
+    (q : E × EuclideanSpace ℝ ι) (t : ℝ) :
+    HasDerivAt (fun τ ↦ (fderiv ℝ (perturbedFlow f h hf hh hc τ) (x, 0) q).1)
+      (-(fderiv ℝ (∇ f) (negativeGradientFlow f hf t x))
+          (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) q).1 -
+        ∑ i, q.2 i • ∇ (h i) (negativeGradientFlow f hf t x)) t := by
+  have h0 := hasDerivAt_fderiv_flowOfLipschitz_apply
+    (exists_lipschitzWith_perturbedField hf hh hc).choose_spec (contDiff_perturbedField hfs hh)
+    (x, 0) q t
+  rw [← perturbedFlow_eq_flowOfLipschitz hf hh hc, perturbedFlow_apply_zero hf hh hc] at h0
+  set w := fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) q with hw
+  have hw2 : w = (w.1, q.2) := Prod.ext rfl (snd_fderiv_perturbedFlow_apply hfs hf hh hc t _ _)
+  rw [hw2, fderiv_perturbedField_apply_zero hfs hh] at h0
+  exact hasFDerivAt_fst.comp_hasDerivAt t h0
+
+end ParameterDerivative
 
 end TauCeti

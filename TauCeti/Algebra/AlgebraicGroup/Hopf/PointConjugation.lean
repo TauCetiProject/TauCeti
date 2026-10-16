@@ -241,6 +241,6 @@ theorem apply_pointConjugationAlgHom (f : H →ₐ[R] A) (g : WithConv (H →ₐ
   induction TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x
       using TensorProduct.inductionOn with
   | add a b ha hb => simp_all
-  | tmul a b => simp [TauCeti.AlgHom.mapValue_apply, Algebra.smul_def]
+  | tmul a b => simp [AlgHom.mapValue_apply, Algebra.smul_def]
 
 end AlgHom

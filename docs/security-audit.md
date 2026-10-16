@@ -20,9 +20,10 @@ Ordinary mathematical APIs and standard Mathlib tactics/registration commands ar
 allowed. This is not an additional mathematical review or a dependency/artifact audit.
 
 Each session uses Luna or Haiku, with complete per-commit diffs and changed-file
-contents. Batches contain at most 20 commits with a 2 MiB workload target; a single
-larger commit may use up to 8 MiB, with a 4 MiB limit per source blob. These limits
-bound the workload, rather than the conversation's live context. For larger inputs,
+contents. Batches contain at most 20 commits with a 2 MiB workload target. A single
+larger commit is inspected alone, without an aggregate byte cap, in the same
+compacting session. Each source blob remains limited to 4 MiB and each model launch
+to 30 minutes. The batching target does not bound the conversation's live context. For larger inputs,
 one narrowly scoped reader exposes only numbered pages of the immutable prepared
 input. Continuation tokens serialize reads. The same conversation may use native
 compaction and re-read pages, then returns one verdict for the entire batch. There
@@ -36,7 +37,7 @@ Individual commits are inspected in order: a later revert cannot conceal an earl
 dangerous version. Candidate code is never executed. The model has no GitHub
 credential, general filesystem access, shell or editing authority; trusted Worker
 code verifies its structured verdict and updates the ref. A finding, incomplete
-review or input beyond the workload limits stops the cursor for human attention.
+review or unsupported source blob stops the cursor for human attention.
 Provider service errors without a final model answer may be retried without human
 source attestation. The Worker makes at most two automatic retries with backoff,
 resuming the same retained conversation with unchanged source, inspection policy,
@@ -48,14 +49,30 @@ the cursor blocked until a later service recovery; an admin may use the Worker's
 inspection. Only a complete pass and confirmed reference update clear that block. Local input bundles, actual launchers/environments/prompts,
 transcripts, read receipts, native Codex
 compaction/usage records, verdicts and advancement records are retained by the worker.
-A pre-inspection commit-budget block from the old 256 KiB planner can be archived and
-replanned when the exact next commit fits the new limits. That does not attest the
+A recognized pre-inspection commit-budget block from an older planner can be archived and
+replanned when the exact next commit fits the current limits. That does not attest the
 commit or retry a model verdict; source findings and incomplete verdicts still
 require human attention.
 After inspecting every intermediate commit themselves, an admin can use the Worker's
 explicit `attest --through SHA --reason ...` command for an oversized range or to
 resolve a finding. It records human evidence and repeats the same ancestry and
 authority checks. A model re-roll is not a substitute for that review.
+
+An admin's combined audit/bump/progress worker starts an audit only when at least
+20 commits are pending, unless configured otherwise. Each inspection still contains
+at most 20 commits, and the workload target can select fewer. Audit-only workers
+inspect any nonempty backlog. Audit blocks preserve the cursor and release gate,
+while the combined worker can continue bump/progress work.
+
+When private Zulip notifications are configured on the trusted worker, a new source
+finding, incomplete inspection or operational pause sends a direct message to the
+configured recipient with the affected commit range, recorded diagnostic and local
+evidence paths. Repeated alerts for the same blocked range and kind are suppressed
+using durable receipts. Failed delivery backs off and is retried on subsequent audit
+rounds. No GitHub issue is created. The bot credential and configuration path are
+excluded from the isolated reviewer's environment. Without notification configuration,
+reporting remains in the local evidence and worker logs. Failed notification delivery
+does not clear an audit block or prevent unrelated maintenance.
 
 An unexplained `incomplete` answer with an empty findings list, or a paged `pass`
 whose input digest omits only its final character, may receive bounded output repair

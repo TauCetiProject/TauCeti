@@ -187,11 +187,11 @@ theorem inertia_resFDRep (W : FDRep k G) (N : Subgroup G) [N.Normal] :
     inertia (N.resFDRep W) = ⊤ := by
   apply top_unique
   intro g _
-  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g) fun n ↦ ?_⟩
+  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g).asIso fun n ↦ ?_⟩
   -- Restriction preserves the underlying object. Rewriting `Action.res_obj_ρ` alone would
   -- leave incompatible object types in the compositions, so expose the ambient operators.
-  change Action.ρ W (MulAut.conjNormal g⁻¹ n : G) ≫ Action.ρ W g =
-    Action.ρ W g ≫ Action.ρ W (n : G)
+  change (Action.ρ W (MulAut.conjNormal g⁻¹ n : G)).asHom ≫ (Action.ρ W g).asHom =
+    (Action.ρ W g).asHom ≫ (Action.ρ W (n : G)).asHom
   ext v
   exact Representation.apply_conjNormal_inv ((forget₂ (FDRep k G) (Rep k G)).obj W).ρ g n v
 

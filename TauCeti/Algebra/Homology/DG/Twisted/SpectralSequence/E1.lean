@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
+public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -78,9 +78,9 @@ theorem mem_indexGradedPieceSubmodule_iff {p : ℤ} {f : P → M} :
 
 /-- A family supported on the generators of index `p` lies in the `p`-th piece of the index
 filtration. -/
-theorem indexGradedPieceSubmodule_le_indexFiltrationSubmodule (p : ℤ) :
-    indexGradedPieceSubmodule (R := R) (M := M) ind p ≤ indexFiltrationSubmodule ind p :=
-  fun _ hf ↦ mem_indexFiltrationSubmodule_iff.2 fun x hx ↦
+theorem indexGradedPieceSubmodule_le_twistedIndexFiltration (p : ℤ) :
+    indexGradedPieceSubmodule (R := R) (M := M) ind p ≤ twistedIndexFiltration ind p :=
+  fun _ hf ↦ (mem_twistedIndexFiltration_iff _).2 fun x hx ↦
     mem_indexGradedPieceSubmodule_iff.1 hf x hx.ne'
 
 variable (R M ind) in
@@ -123,9 +123,9 @@ theorem indexRestrict_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n p
 /-- On the `p`-th piece of the index filtration, the restriction to the generators of index `p`
 vanishes exactly on the `(p - 1)`-st piece. -/
 theorem indexRestrict_eq_zero_iff {p : ℤ} {f : P → M}
-    (hf : f ∈ indexFiltrationSubmodule (R := R) ind p) :
-    indexRestrict R M ind p f = 0 ↔ f ∈ indexFiltrationSubmodule (R := R) ind (p - 1) := by
-  rw [mem_indexFiltrationSubmodule_iff] at hf ⊢
+    (hf : f ∈ twistedIndexFiltration (R := R) ind p) :
+    indexRestrict R M ind p f = 0 ↔ f ∈ twistedIndexFiltration (R := R) ind (p - 1) := by
+  rw [mem_twistedIndexFiltration_iff] at hf ⊢
   refine ⟨fun h x hx ↦ ?_, fun h ↦ funext fun x ↦ ?_⟩
   · rcases eq_or_lt_of_le (Int.sub_one_lt_iff.1 hx) with hxp | hxp
     · simpa [hxp] using congrFun h x
@@ -161,10 +161,10 @@ restriction to the generators of index `p` intertwines the twisted differential 
 vanishing on pairs `ind x ≤ ind y` with the differential `dM` applied to every component, that is,
 with the twisted differential of the zero matrix. -/
 theorem indexRestrict_twistedDifferential (hm : ∀ x y, ind x ≤ ind y → m x y = 0)
-    {p : ℤ} {f : P → M} (hf : f ∈ indexFiltrationSubmodule (R := R) ind p) :
+    {p : ℤ} {f : P → M} (hf : f ∈ twistedIndexFiltration (R := R) ind p) :
     indexRestrict R M ind p (twistedDifferential m ℳ dM f) =
       twistedDifferential (fun _ _ ↦ (0 : A)) ℳ dM (indexRestrict R M ind p f) := by
-  rw [mem_indexFiltrationSubmodule_iff] at hf
+  rw [mem_twistedIndexFiltration_iff] at hf
   funext y
   rw [indexRestrict_apply, twistedDifferential_apply, twistedDifferential_apply,
     indexRestrict_apply]
@@ -263,32 +263,32 @@ of the families of the `p`-th piece to the generators of index `p`, a morphism o
 complexes since the twisting part of the differential only reaches generators of smaller index.
 -/
 noncomputable def indexGradedPieceProj (p : ℤ) :
-    (m.indexFiltration dM hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ) ⟶
+    (m.twistedIndexSubobject hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ) ⟶
       indexGradedPieceComplex ind hM p where
-  f n := ModuleCat.ofHom (m.indexRestrictX hM p n ∘ₗ ((m.indexFiltration dM hM p).arrow.f n).hom)
+  f n := ModuleCat.ofHom (m.indexRestrictX hM p n ∘ₗ ((m.twistedIndexSubobject hM p).arrow.f n).hom)
   comm' i j hij := by
     obtain rfl : i + 1 = j := hij
     refine ModuleCat.hom_ext (LinearMap.ext fun x ↦
       (indexGradedPieceComplexXEquiv ind hM p (i + 1)).injective (Subtype.ext ?_))
     have hc := congrArg (fun φ ↦ ModuleCat.Hom.hom φ x)
-      ((m.indexFiltration dM hM p).arrow.comm i (i + 1))
+      ((m.twistedIndexSubobject hM p).arrow.comm i (i + 1))
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hc
     simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
     rw [indexGradedPieceComplexXEquiv_d, indexGradedPieceComplexXEquiv_indexRestrictX,
       indexGradedPieceComplexXEquiv_indexRestrictX, ← hc, twistedCochainComplexXEquiv_d]
     exact (indexRestrict_twistedDifferential (ℳ := ℳ) m.m dM (fun x y hxy ↦ m.one_sided x y hxy)
-      (mem_indexFiltrationSubmodule_iff.2
-        ((m.mem_range_indexFiltration_arrow_f_iff dM hM p i _).1 ⟨x, rfl⟩))).symm
+      ((mem_twistedIndexFiltration_iff _).2
+        ((m.mem_range_twistedIndexSubobject_arrow_f_iff hM p i _).1 ⟨x, rfl⟩))).symm
 
 /-- The projection onto the `p`-th graded piece restricts a family to the generators of index
 `p`. -/
 @[simp]
 theorem indexGradedPieceComplexXEquiv_indexGradedPieceProj (p n : ℤ)
-    (x : (m.indexFiltration dM hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n) :
+    (x : (m.twistedIndexSubobject hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n) :
     (indexGradedPieceComplexXEquiv ind hM p n (((m.indexGradedPieceProj hM p).f n).hom x) :
         P → M) =
       indexRestrict R M ind p (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n
-        (((m.indexFiltration dM hM p).arrow.f n).hom x)) := by
+        (((m.twistedIndexSubobject hM p).arrow.f n).hom x)) := by
   simp [indexGradedPieceProj]
 
 section ShortExact
@@ -297,16 +297,17 @@ variable (q p : ℤ) (hqp : q + 1 = p)
 
 /-- The inclusion of the `q`-th piece of the index filtration into the `p`-th, for `q + 1 = p`. -/
 noncomputable abbrev indexFiltrationOfLE :
-    (m.indexFiltration dM hM q : CochainComplex (ModuleCat.{max uP uM} R) ℤ) ⟶
-      (m.indexFiltration dM hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
-  Subobject.ofLE _ _ (m.monotone_indexFiltration dM hM (by omega))
+    (m.twistedIndexSubobject hM q : CochainComplex (ModuleCat.{max uP uM} R) ℤ) ⟶
+      (m.twistedIndexSubobject hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
+  Subobject.ofLE _ _ (m.twistedIndexSubobject_mono hM (by omega))
 
 /-- The inclusion `F_q ⟶ F_p` is compatible with the inclusions into the twisted complex. -/
 @[simp]
 theorem arrow_f_indexFiltrationOfLE_apply (n : ℤ)
-    (x : (m.indexFiltration dM hM q : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n) :
-    ((m.indexFiltration dM hM p).arrow.f n).hom (((m.indexFiltrationOfLE hM q p hqp).f n).hom x) =
-      ((m.indexFiltration dM hM q).arrow.f n).hom x := by
+    (x : (m.twistedIndexSubobject hM q : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n) :
+    ((m.twistedIndexSubobject hM p).arrow.f n).hom
+        (((m.indexFiltrationOfLE hM q p hqp).f n).hom x) =
+      ((m.twistedIndexSubobject hM q).arrow.f n).hom x := by
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
     Subobject.ofLE_arrow]
 
@@ -321,26 +322,26 @@ noncomputable def indexGradedPieceShortComplex :
       indexGradedPieceComplexXEquiv_indexGradedPieceProj, arrow_f_indexFiltrationOfLE_apply,
       HomologicalComplex.zero_f, ModuleCat.hom_zero, LinearMap.zero_apply, map_zero,
       ZeroMemClass.coe_zero]
-    have hq := (m.mem_range_indexFiltration_arrow_f_iff dM hM q n _).1 ⟨x, rfl⟩
-    refine (indexRestrict_eq_zero_iff (R := R) (mem_indexFiltrationSubmodule_iff.2
+    have hq := (m.mem_range_twistedIndexSubobject_arrow_f_iff hM q n _).1 ⟨x, rfl⟩
+    refine (indexRestrict_eq_zero_iff (R := R) ((mem_twistedIndexFiltration_iff _).2
       fun y hy ↦ hq y (by omega))).2 ?_
-    rw [show p - 1 = q by omega, mem_indexFiltrationSubmodule_iff]
+    rw [show p - 1 = q by omega, mem_twistedIndexFiltration_iff]
     exact hq)
 
 /-- Every element of the `p`-th graded piece is the restriction of the element of the `p`-th piece
 of the index filtration with the same underlying family. -/
 theorem exists_indexFiltration_arrow_eq (p n : ℤ) (f : (indexGradedPieceComplex ind hM p).X n) :
-    ∃ s : (m.indexFiltration dM hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n,
+    ∃ s : (m.twistedIndexSubobject hM p : CochainComplex (ModuleCat.{max uP uM} R) ℤ).X n,
       (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n
-        (((m.indexFiltration dM hM p).arrow.f n).hom s) : P → M) =
+        (((m.twistedIndexSubobject hM p).arrow.f n).hom s) : P → M) =
           indexGradedPieceComplexXEquiv ind hM p n f := by
   have hg := mem_indexGradedPieceGrading_iff.1 (indexGradedPieceComplexXEquiv ind hM p n f).2
   obtain ⟨t, ht⟩ : ∃ t, twistedCochainComplexXEquiv m.mem_graded m.twisting hM n t =
       ⟨_, hg.1⟩ := ⟨_, LinearEquiv.apply_symm_apply _ _⟩
-  obtain ⟨s, hs⟩ := (m.mem_range_indexFiltration_arrow_f_iff dM hM p n t).2 (by
+  obtain ⟨s, hs⟩ := (m.mem_range_twistedIndexSubobject_arrow_f_iff hM p n t).2 (by
     rw [ht]
-    exact mem_indexFiltrationSubmodule_iff.1
-      (indexGradedPieceSubmodule_le_indexFiltrationSubmodule p hg.2))
+    exact (mem_twistedIndexFiltration_iff _).1
+      (indexGradedPieceSubmodule_le_twistedIndexFiltration p hg.2))
   exact ⟨s, by rw [hs, ht]⟩
 
 /-- The projection onto the `p`-th graded piece is surjective in every degree. -/
@@ -357,7 +358,7 @@ theorem indexGradedPieceProj_f_surjective (p n : ℤ) :
 theorem indexGradedPieceShortComplex_shortExact :
     (m.indexGradedPieceShortComplex hM q p hqp).ShortExact := by
   refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
-  have hinj (k : ℤ) : Function.Injective ((m.indexFiltration dM hM k).arrow.f n).hom :=
+  have hinj (k : ℤ) : Function.Injective ((m.twistedIndexSubobject hM k).arrow.f n).hom :=
     (ModuleCat.mono_iff_injective _).1 inferInstance
   refine ShortComplex.ShortExact.mk' ?_ ((ModuleCat.mono_iff_injective _).2 fun x y hxy ↦ ?_)
     ((ModuleCat.epi_iff_surjective _).2 fun y ↦ ?_)
@@ -365,13 +366,13 @@ theorem indexGradedPieceShortComplex_shortExact :
     have hx₀ : ((m.indexGradedPieceProj hM p).f n).hom x = 0 := LinearMap.mem_ker.1 hx
     have hx' := (m.indexGradedPieceComplexXEquiv_indexGradedPieceProj hM p n x).symm.trans
       (by rw [hx₀, map_zero, ZeroMemClass.coe_zero])
-    have hq := (indexRestrict_eq_zero_iff (R := R) (mem_indexFiltrationSubmodule_iff.2
-      ((m.mem_range_indexFiltration_arrow_f_iff dM hM p n _).1 ⟨x, rfl⟩))).1 hx'
-    rw [show p - 1 = q by omega, mem_indexFiltrationSubmodule_iff] at hq
-    obtain ⟨w, hw⟩ := (m.mem_range_indexFiltration_arrow_f_iff dM hM q n _).2 hq
+    have hq := (indexRestrict_eq_zero_iff (R := R) ((mem_twistedIndexFiltration_iff _).2
+      ((m.mem_range_twistedIndexSubobject_arrow_f_iff hM p n _).1 ⟨x, rfl⟩))).1 hx'
+    rw [show p - 1 = q by omega, mem_twistedIndexFiltration_iff] at hq
+    obtain ⟨w, hw⟩ := (m.mem_range_twistedIndexSubobject_arrow_f_iff hM q n _).2 hq
     exact ⟨w, hinj p ((arrow_f_indexFiltrationOfLE_apply m hM q p hqp n w).trans hw)⟩
   · exact hinj q ((arrow_f_indexFiltrationOfLE_apply m hM q p hqp n x).symm.trans
-      ((congrArg ((m.indexFiltration dM hM p).arrow.f n).hom hxy).trans
+      ((congrArg ((m.twistedIndexSubobject hM p).arrow.f n).hom hxy).trans
         (arrow_f_indexFiltrationOfLE_apply m hM q p hqp n y)))
   · exact m.indexGradedPieceProj_f_surjective hM p n y
 
@@ -381,20 +382,20 @@ section FirstPage
 
 /-- The object at `n : ℤ` of the functor of the index filtration is the `n`-th piece. -/
 noncomputable def indexFiltrationFunctorObjIso (n : ℤ) :
-    (CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
-        (m.monotone_indexFiltration dM hM)).obj n ≅
-      (m.indexFiltration dM hM n : CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
+    (CochainComplex.filtrationFunctor (m.twistedIndexSubobject hM)
+        (m.twistedIndexSubobject_mono hM)).obj n ≅
+      (m.twistedIndexSubobject hM n : CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   CochainComplex.filtrationFunctorObjIso _ _ n ≪≫
-    eqToIso congr(($(CochainComplex.filtrationEInt_coe (m.indexFiltration dM hM) n) :
+    eqToIso congr(($(CochainComplex.filtrationEInt_coe (m.twistedIndexSubobject hM) n) :
       CochainComplex (ModuleCat.{max uP uM} R) ℤ))
 
 /-- Under `indexFiltrationFunctorObjIso`, the inclusion of the `n`-th piece into the twisted
 complex is that of the functor of the index filtration. -/
 @[reassoc (attr := simp)]
 theorem indexFiltrationFunctorObjIso_hom_arrow (n : ℤ) :
-    (m.indexFiltrationFunctorObjIso hM n).hom ≫ (m.indexFiltration dM hM n).arrow =
+    (m.indexFiltrationFunctorObjIso hM n).hom ≫ (m.twistedIndexSubobject hM n).arrow =
       (CochainComplex.filtrationFunctorObjIso _ _ n).hom ≫
-        (CochainComplex.filtrationEInt (m.indexFiltration dM hM) n).arrow := by
+        (CochainComplex.filtrationEInt (m.twistedIndexSubobject hM) n).arrow := by
   rw [indexFiltrationFunctorObjIso, Iso.trans_hom, eqToIso.hom, Category.assoc,
     Subobject.arrow_congr _ _ (CochainComplex.filtrationEInt_coe _ n)]
 
@@ -404,12 +405,12 @@ variable (q p : ℤ) (hqp : q + 1 = p)
 index filtration is the inclusion of the pieces, for `q + 1 = p`. -/
 @[reassoc]
 theorem indexFiltrationFunctor_map_comp_objIso_hom :
-    (CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
-        (m.monotone_indexFiltration dM hM)).map
+    (CochainComplex.filtrationFunctor (m.twistedIndexSubobject hM)
+        (m.twistedIndexSubobject_mono hM)).map
           (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm)) ≫
         (m.indexFiltrationFunctorObjIso hM p).hom =
       (m.indexFiltrationFunctorObjIso hM q).hom ≫ m.indexFiltrationOfLE hM q p hqp := by
-  rw [← cancel_mono (m.indexFiltration dM hM p).arrow, Category.assoc,
+  rw [← cancel_mono (m.twistedIndexSubobject hM p).arrow, Category.assoc,
     indexFiltrationFunctorObjIso_hom_arrow, Category.assoc, Subobject.ofLE_arrow,
     indexFiltrationFunctorObjIso_hom_arrow, ← Category.assoc,
     CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc, Subobject.ofLE_arrow]
@@ -418,8 +419,8 @@ theorem indexFiltrationFunctor_map_comp_objIso_hom :
 map of the functor of the index filtration. -/
 private noncomputable def indexGradedPieceShortComplex' :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
-  ShortComplex.mk ((CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
-      (m.monotone_indexFiltration dM hM)).map
+  ShortComplex.mk ((CochainComplex.filtrationFunctor (m.twistedIndexSubobject hM)
+      (m.twistedIndexSubobject_mono hM)).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm)))
     ((m.indexFiltrationFunctorObjIso hM p).hom ≫ m.indexGradedPieceProj hM p) (by
       rw [← Category.assoc, indexFiltrationFunctor_map_comp_objIso_hom m hM q p hqp,
@@ -442,8 +443,8 @@ private theorem indexGradedPieceShortComplex'_shortExact :
 `F_q ⟶ F_p` of the functor of the index filtration is `indexGradedPieceComplex ind hM p`, the
 families supported on the generators of index `p` with the differential `dM`. -/
 noncomputable def indexFiltrationCokernelIso :
-    cokernel ((CochainComplex.filtrationFunctor (m.indexFiltration dM hM)
-      (m.monotone_indexFiltration dM hM)).map
+    cokernel ((CochainComplex.filtrationFunctor (m.twistedIndexSubobject hM)
+      (m.twistedIndexSubobject_mono hM)).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm))) ≅
       indexGradedPieceComplex ind hM p :=
   IsColimit.coconePointUniqueUpToIso (cokernelIsCokernel _)
