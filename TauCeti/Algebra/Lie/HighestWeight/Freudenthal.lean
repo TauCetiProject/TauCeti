@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.Algebra.Lie.Weights.WeylInvariance
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Freudenthal's multiplicity recursion
@@ -98,35 +99,6 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
 private theorem neg_natCast_zsmul (alpha : Dual K H) (j : ℕ) :
     (-(j : ℤ)) • alpha = j • (-alpha) := by
   rw [neg_zsmul, natCast_zsmul, smul_neg]
-
-/-- Splitting a symmetric interval into its two halves, which overlap in the rung `0`. -/
-private theorem sum_Icc_eq_add_sum_range (F : ℤ → K) (N : ℕ) :
-    (∑ i ∈ Finset.Icc (-(N : ℤ)) N, F i) + F 0 =
-      (∑ j ∈ Finset.range (N + 1), F j) + ∑ j ∈ Finset.range (N + 1), F (-(j : ℤ)) := by
-  classical
-  set s : Finset ℤ := (Finset.range (N + 1)).image (fun j : ℕ ↦ (j : ℤ)) with hs
-  set t : Finset ℤ := (Finset.range (N + 1)).image (fun j : ℕ ↦ -(j : ℤ)) with ht
-  have hunion : s ∪ t = Finset.Icc (-(N : ℤ)) N := by
-    ext i
-    simp only [hs, ht, Finset.mem_union, Finset.mem_image, Finset.mem_range, Finset.mem_Icc]
-    constructor
-    · rintro (⟨j, hj, rfl⟩ | ⟨j, hj, rfl⟩) <;> omega
-    · intro hi
-      rcases le_or_gt 0 i with h | h
-      · exact Or.inl ⟨i.toNat, by omega, by omega⟩
-      · exact Or.inr ⟨(-i).toNat, by omega, by omega⟩
-  have hinter : s ∩ t = {(0 : ℤ)} := by
-    ext i
-    simp only [hs, ht, Finset.mem_inter, Finset.mem_image, Finset.mem_range, Finset.mem_singleton]
-    constructor
-    · rintro ⟨⟨j, _, rfl⟩, k, _, hk'⟩
-      omega
-    · rintro rfl
-      exact ⟨⟨0, by omega, by simp⟩, 0, by omega, by simp⟩
-  have hkey := Finset.sum_union_inter (s₁ := s) (s₂ := t) (f := F)
-  rw [hunion, hinter, Finset.sum_singleton] at hkey
-  rw [hkey, hs, ht, Finset.sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
-    Finset.sum_image (fun _ _ _ _ h ↦ by omega)]
 
 section StringTerm
 
