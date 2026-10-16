@@ -513,8 +513,8 @@ theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc 
     split_ifs <;> simp
   have htr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
-    exact PowerSeries.isRestricted.add c hfr
-      (PowerSeries.isRestricted.neg c (isRestricted_polynomial _))
+    exact MvPowerSeries.IsRestricted.add hfr
+      (MvPowerSeries.IsRestricted.neg (isRestricted_polynomial _))
   rcases eq_or_ne (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)) 0 with h0 | h0
   · rw [h0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
     exact hf.gaussNorm_pos

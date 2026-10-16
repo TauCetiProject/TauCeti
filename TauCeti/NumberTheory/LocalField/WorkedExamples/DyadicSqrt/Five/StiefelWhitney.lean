@@ -114,9 +114,11 @@ private theorem cup_trace_norm (ε : Fin 2) (i : Fin 4) :
       ZMod.natCast_self]
     all_goals first
       | (apply (serreEps_eq_zero_iff _).2
-         norm_num [traceUnitPart, IsUnit.unit_spec, map_ofNat] <;> decide)
+         norm_num [traceUnitPart, IsUnit.unit_spec, map_ofNat]
+         all_goals decide)
       | (apply (serreEps_eq_one_iff _).2
-         norm_num [traceUnitPart, IsUnit.unit_spec, map_ofNat] <;> decide)
+         norm_num [traceUnitPart, IsUnit.unit_spec, map_ofNat]
+         all_goals decide)
   have hen : serreEps (cupUnitPart i) = (![1, 0, 1, 0] i : ZMod 2) := by
     fin_cases i <;> simp only [Matrix.cons_val_zero', Matrix.cons_val_succ']
     all_goals first

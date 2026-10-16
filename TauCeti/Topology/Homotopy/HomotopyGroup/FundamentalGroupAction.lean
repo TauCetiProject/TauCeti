@@ -165,12 +165,14 @@ instance homotopyGroupMulDistribMulAction [Nonempty N] [DecidableEq N] :
     MulDistribMulAction (FundamentalGroup X x) (HomotopyGroup N X x) where
   __ := (inferInstance : MulAction (FundamentalGroup X x) (HomotopyGroup N X x))
   smul_mul γ a b := by
-    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ.toPath
+    obtain ⟨γ⟩ := γ
+    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ
     rw [fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath,
       fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath,
       fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath, map_mul]
   smul_one γ := by
-    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ.toPath
+    obtain ⟨γ⟩ := γ
+    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ
     rw [fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath, map_one]
 
 variable (N) in
@@ -201,7 +203,8 @@ theorem pi1MulEquivFundamentalGroup_smul {γ : FundamentalGroup X x} {a : π_ 1 
     HomotopyGroup.pi1MulEquivFundamentalGroup (γ • a) =
       MulAut.conj γ (HomotopyGroup.pi1MulEquivFundamentalGroup a) := by
   rw [fundamentalGroup_smul_def]
-  obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ.toPath
+  obtain ⟨γ⟩ := γ
+  obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ
   induction a using Quotient.inductionOn with
   | h f =>
     rw [homotopyGroupTransportQuotient_mk, homotopyGroupTransport_mk]
@@ -241,13 +244,15 @@ theorem pi1MulEquivFundamentalGroup_smul {γ : FundamentalGroup X x} {a : π_ 1 
       simpa only [p₀, p₁, hp₀, hp₁] using hKcast
     -- Mathlib defines `pi1MulEquivFundamentalGroup` as a `Quotient.congr` along
     -- `genLoopEquivOfUnique` and supplies no lemma computing it on a class, so isolate that one
-    -- definitional step here; `FundamentalGroup.fromPath` is an `abbrev` for the identity on
+    -- definitional step here; `FundamentalGroup.fromPath` is an `abbrev` for `End.of` on
     -- `Path.Homotopic.Quotient`, so no other unfolding is involved.
     have hmk : ∀ g : Ω^ (Fin 1) X x, HomotopyGroup.pi1MulEquivFundamentalGroup ⟦g⟧ =
         FundamentalGroup.fromPath (.mk (_root_.genLoopEquivOfUnique (Fin 1) g)) := fun _ ↦ rfl
     rw [hmk, hmk, MulAut.conj_apply, FundamentalGroup.mul_def, FundamentalGroup.mul_def,
       FundamentalGroup.inv_def]
     simp only [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_symm]
+    refine CategoryTheory.End.ext ?_
+    dsimp only [FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
     rw [Path.Homotopic.Quotient.eq] at ⊢
     exact (Path.Homotopic.refl_trans r).symm |>.trans
       ((Path.Homotopic.symm_trans p).symm.hcomp (Path.Homotopic.refl r)) |>.trans
@@ -289,7 +294,7 @@ theorem map_fundamentalGroup_smul (F : C(X, Y)) (γ : FundamentalGroup X x)
       FundamentalGroup.map F x γ • _root_.HomotopyGroup.map F rfl a := by
   rw [fundamentalGroup_smul_def, fundamentalGroup_smul_def,
     map_homotopyGroupTransportQuotient]
-  rw [FundamentalGroup.map_apply]
+  rfl
 
 /-! ### The orbits of the action -/
 

@@ -65,7 +65,7 @@ variable {n : ℕ} [NeZero n] (P : ConvexPolygon n)
 
 /-- The closed sector bounded by the incoming and outgoing supporting geodesics at vertex `j`.
 At a finite vertex this is the local polygon piece. -/
-def vertexSector (j : Fin n) : Set ℍ :=
+noncomputable def vertexSector (j : Fin n) : Set ℍ :=
   closure (leftHalfPlane (P.sideGeodesic (j - 1))) ∩
     closure (leftHalfPlane (P.sideGeodesic j))
 

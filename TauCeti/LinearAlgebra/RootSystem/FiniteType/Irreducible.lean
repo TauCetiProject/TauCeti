@@ -61,7 +61,7 @@ private theorem pathGraph_le_of_adj_succ {n : ℕ} {G : SimpleGraph (Fin n)}
 /-- A graph containing the path graph on the same nonempty vertex set is connected. -/
 private theorem connected_of_pathGraph_le {n : ℕ} {G : SimpleGraph (Fin n)}
     [Nonempty (Fin n)] (h : _root_.SimpleGraph.pathGraph n ≤ G) : G.Connected :=
-  ⟨(_root_.SimpleGraph.pathGraph_preconnected n).mono h⟩
+  ⟨(_root_.SimpleGraph.preconnected_pathGraph n).mono h⟩
 
 end SimpleGraph
 

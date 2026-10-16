@@ -166,7 +166,9 @@ noncomputable def topRealizationHomeomorph
     simpa only [Function.Embedding.coe_refl] using (map_id (K := P))
   exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (le_top P)
     (by rw [hid]; exact hA)).trans
-    (Homeomorph.setCongr (by rw [hid]))
+    (Homeomorph.setCongr
+      (s := {x : Realization A | x.1.support ∈ P.map (Function.Embedding.refl ι)})
+      (t := {x : Realization A | x.1.support ∈ P}) (by rw [hid]))
 
 /-- A finite precomplex on `V` has the realization of its model on `Fin m` as a homeomorphic
 polyhedron. The witness is existential because the finite enumeration of `V` is noncanonical. -/
@@ -194,11 +196,13 @@ theorem nonempty_finsetRelabelingHomeomorph
   have hmap' : P.map f = R := hmap f himage
   let r := P.relabelingHomeomorph f hP.le (by rw [hmap']; exact hR)
   let s : {x : Realization K // x.1.support ∈ P} ≃ₜ Realization K :=
-    (Homeomorph.setCongr (Set.eq_univ_of_forall fun x => by
+    (Homeomorph.setCongr (s := {x : Realization K | x.1.support ∈ P})
+      (Set.eq_univ_of_forall fun x => by
       rw [hP]
       exact AbstractSimplicialComplex.support_mem _ x)).trans
       (Homeomorph.Set.univ _)
-  exact ⟨(Homeomorph.setCongr (by rw [hmap'])).trans (r.symm.trans s)⟩
+  exact ⟨(Homeomorph.setCongr (s := {x : Realization A | x.1.support ∈ R})
+    (t := {x : Realization A | x.1.support ∈ P.map f}) (by rw [hmap'])).trans (r.symm.trans s)⟩
 
 /-- Relabeling pushes forward the finitely supported barycentric coordinate vector. -/
 @[simp]
@@ -231,7 +235,9 @@ def ambientHomeomorph
     exact PreAbstractSimplicialComplex.map_id
   exact (P.relabelingHomeomorph (Function.Embedding.refl α) hK
     (by simpa only [hmap] using hL)).trans
-    (Homeomorph.setCongr (by rw [hmap]))
+    (Homeomorph.setCongr
+      (s := {x : Realization L' | x.1.support ∈ P.map (Function.Embedding.refl α)})
+      (t := {x : Realization L' | x.1.support ∈ P}) (by rw [hmap]))
 
 /-- Changing the ambient complex leaves the barycentric coordinate vector unchanged. -/
 @[simp]

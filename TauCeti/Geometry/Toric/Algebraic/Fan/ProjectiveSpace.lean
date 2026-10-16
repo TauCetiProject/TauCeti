@@ -120,7 +120,7 @@ theorem linearIndepOn_projectiveSpaceGenerator (hli : LinearIndependent ℝ fun 
 
 /-- The cone of the fan of projective space spanned by the ray generators indexed by `S`. It is a
 cone of the fan when `S` omits some generator. -/
-def projectiveSpaceCone (i : N →+ V) (S : Set (Option ι)) : PointedCone ℝ V :=
+noncomputable def projectiveSpaceCone (i : N →+ V) (S : Set (Option ι)) : PointedCone ℝ V :=
   PointedCone.hull ℝ (i '' (projectiveSpaceGenerator b '' S))
 
 theorem projectiveSpaceCone_def (S : Set (Option ι)) :
@@ -266,7 +266,7 @@ namespace Fan
 cones are spanned by the families of ray generators `projectiveSpaceGenerator b` omitting at least
 one of them. For a basis indexed by a type with `n` elements it is the fan of `n`-dimensional
 complex projective space. -/
-def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
+noncomputable def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
   lattice := hi
   cones := projectiveSpaceCone b i '' {S | S ≠ univ}
   finite_cones := toFinite _

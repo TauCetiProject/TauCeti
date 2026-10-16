@@ -116,7 +116,7 @@ of a field containing the `n`-th roots of unity contains them. -/
 theorem _root_.HasEnoughRootsOfUnity.of_injective {M : Type*} [CommMonoid M] [IsDomain R]
     {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity M n] {f : M →* R} (hf : Function.Injective f) :
     HasEnoughRootsOfUnity R n where
-  prim := have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot M n
+  prim := have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M n
     ⟨f ζ, hζ.map_of_injective hf⟩
   cyc := rootsOfUnity.isCyclic R n
 

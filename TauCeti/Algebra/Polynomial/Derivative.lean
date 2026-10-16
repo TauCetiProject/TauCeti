@@ -23,7 +23,7 @@ namespace TauCeti
 
 open Polynomial
 
-variable {R S : Type*} [Semiring R] [Semiring S] [IsAddTorsionFree S]
+variable {R S : Type*} [Semiring R] [Semiring S] [HasUniqueDiv S]
 
 /-- A coefficient map into an additively torsion-free semiring which preserves the degree of a
 polynomial also preserves the degree of its derivative. -/

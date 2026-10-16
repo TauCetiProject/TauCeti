@@ -30,7 +30,8 @@ Dualizing recovers the injective differential constructed in
 
 * `TauCeti.HopfIdeal.conormalSubspace`: the image of the defining Hopf ideal in the ambient
   augmentation cotangent space.
-* `TauCeti.HopfIdeal.quotientCotangentMap`: the map on cotangent spaces induced by the quotient.
+* `TauCeti.HopfIdeal.quotientCotangentMap`: the map on cotangent spaces induced by the quotient,
+  the general cotangent map `TauCeti.Bialgebra.cotangentSpaceMap` of the quotient morphism.
 * `TauCeti.HopfIdeal.quotientCotangentMap_toCotangent`: the quotient map on an augmentation-ideal
   representative.
 * `TauCeti.HopfIdeal.cotangentLinearEquiv_comp_quotientCotangentMap`: dualizing the cotangent map
@@ -115,18 +116,20 @@ private theorem augmentationIdeal_le_comap_quotient (I : HopfIdeal k H) :
   rw [Bialgebra.AugmentationIdeal, Ideal.mem_comap, RingHom.mem_ker]
   simpa [Bialgebra.AugmentationIdeal, RingHom.mem_ker] using hx
 
-/-- The map on augmentation cotangent spaces induced by the quotient `H ⟶ H/I`. -/
+/-- The map on augmentation cotangent spaces induced by the quotient `H ⟶ H/I`: the cotangent
+map of the quotient bialgebra morphism. -/
 noncomputable def quotientCotangentMap (I : HopfIdeal k H) :
     Bialgebra.CotangentSpace k H →ₗ[k]
       Bialgebra.CotangentSpace k (H ⧸ I.toIdeal) :=
-  (Ideal.mapCotangent
-      (Bialgebra.AugmentationIdeal k H)
-      (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal))
-      (Algebra.ofId H (H ⧸ I.toIdeal))
-      (by
-        intro x hx
-        rw [Ideal.mem_comap, Algebra.ofId_apply]
-        exact augmentationIdeal_le_comap_quotient I hx)).restrictScalars k
+  Bialgebra.cotangentSpaceMap (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal)
+
+/-- The quotient cotangent map sends the first-order displacement of `x` to the first-order
+displacement of its quotient class. -/
+theorem quotientCotangentMap_cotangentMap (I : HopfIdeal k H) (x : H) :
+    quotientCotangentMap I (Bialgebra.cotangentMap k H x) =
+      Bialgebra.cotangentMap k (H ⧸ I.toIdeal) (Ideal.Quotient.mkₐ k I.toIdeal x) := by
+  rw [quotientCotangentMap, Bialgebra.cotangentSpaceMap_cotangentMap,
+    Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
 
 /-- The quotient cotangent map sends the class of an augmentation-ideal element to the class of
 its image in the quotient. -/
@@ -142,22 +145,9 @@ theorem quotientCotangentMap_toCotangent (I : HopfIdeal k H)
           simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
             Ideal.Quotient.algebraMap_eq, Bialgebra.counitAlgHom_apply,
             Bialgebra.Quotient.counit_mk] using hx⟩ := by
-  rw [quotientCotangentMap, LinearMap.restrictScalars_apply,
-    Ideal.mapCotangent_toCotangent]
-  apply (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).toCotangent.congr_arg
-  ext
-  exact Algebra.ofId_apply (H ⧸ I.toIdeal) (x : H)
-
-/-- The quotient cotangent map sends the first-order displacement of `x` to the first-order
-displacement of its quotient class. -/
-theorem quotientCotangentMap_cotangentMap (I : HopfIdeal k H) (x : H) :
-    quotientCotangentMap I (Bialgebra.cotangentMap k H x) =
-      Bialgebra.cotangentMap k (H ⧸ I.toIdeal) (Ideal.Quotient.mkₐ k I.toIdeal x) := by
-  rw [Bialgebra.cotangentMap_apply, quotientCotangentMap_toCotangent,
-    Bialgebra.cotangentMap_apply]
-  apply (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).toCotangent.congr_arg
-  -- Both the quotient counit and its algebra map compute on representatives definitionally.
-  rfl
+  rw [← Bialgebra.cotangentMap_augmentation, quotientCotangentMap_cotangentMap,
+    ← Bialgebra.cotangentMap_augmentation, Ideal.Quotient.mkₐ_eq_mk]
+  simp only [Ideal.Quotient.algebraMap_eq]
 
 /-- Under cotangent duality, precomposition by the quotient cotangent map is the differential
 of the closed-subgroup inclusion. -/
@@ -169,20 +159,28 @@ theorem cotangentLinearEquiv_comp_quotientCotangentMap
         (Derivation.cotangentLinearEquiv (R := k) (A := H ⧸ I.toIdeal) (B := B) f) =
       Derivation.cotangentLinearEquiv (R := k) (A := H) (B := B)
         (f.comp (quotientCotangentMap I)) := by
-  apply Derivation.ext
-  intro x
-  apply (Bialgebra.CounitAlgebra.algEquivSelf k H B).injective
-  rw [quotientLieHom_apply_apply,
-    Derivation.cotangentLinearEquiv_apply_apply,
-    Derivation.cotangentLinearEquiv_apply_apply, LinearMap.comp_apply,
-    quotientCotangentMap_cotangentMap]
-  exact congrArg
-    (fun b : B => Bialgebra.CounitAlgebra.algEquivSelf k H B
-      (b : Bialgebra.CounitAlgebra k H B))
-    (Bialgebra.CounitAlgebra.algEquivSelf_apply k (H ⧸ I.toIdeal) B
-      (f (Bialgebra.cotangentMap k (H ⧸ I.toIdeal)
-        (Ideal.Quotient.mkₐ k I.toIdeal x)) :
-          Bialgebra.CounitAlgebra k (H ⧸ I.toIdeal) B))
+  rw [quotientLieHom_apply, quotientCotangentMap]
+  exact (Derivation.cotangentLinearEquiv_comp_cotangentSpaceMap _ f).symm
+
+/-- The quotient cotangent map in the form `Ideal.mapCotangent` along `Algebra.ofId`, in which
+Mathlib states the surjectivity and kernel of cotangent maps of quotients. -/
+private theorem quotientCotangentMap_eq_mapCotangent (I : HopfIdeal k H) :
+    quotientCotangentMap I =
+      (Ideal.mapCotangent
+        (Bialgebra.AugmentationIdeal k H)
+        (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal))
+        (Algebra.ofId H (H ⧸ I.toIdeal))
+        (by
+          intro x hx
+          rw [Ideal.mem_comap, Algebra.ofId_apply]
+          exact augmentationIdeal_le_comap_quotient I hx)).restrictScalars k := by
+  ext x
+  obtain ⟨x, rfl⟩ := (Bialgebra.AugmentationIdeal k H).toCotangent_surjective x
+  rw [quotientCotangentMap_toCotangent, LinearMap.restrictScalars_apply,
+    Ideal.mapCotangent_toCotangent]
+  apply (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).toCotangent.congr_arg
+  ext
+  exact (Algebra.ofId_apply (H ⧸ I.toIdeal) (x : H)).symm
 
 /-- The augmentation ideal of the quotient pulls back to the augmentation ideal of `H`. -/
 private theorem comap_augmentationIdeal_quotient (I : HopfIdeal k H) :
@@ -199,6 +197,7 @@ private theorem comap_augmentationIdeal_quotient (I : HopfIdeal k H) :
 surjective. -/
 theorem quotientCotangentMap_surjective (I : HopfIdeal k H) :
     Function.Surjective (quotientCotangentMap I) := by
+  rw [quotientCotangentMap_eq_mapCotangent]
   exact Ideal.mapCotangent_surjective_of_comap_eq
     (Ideal.Quotient.mkₐ_surjective H I.toIdeal)
     (by
@@ -209,7 +208,7 @@ theorem quotientCotangentMap_surjective (I : HopfIdeal k H) :
 exact conormal sequence of a closed affine subgroup at the identity. -/
 theorem ker_quotientCotangentMap (I : HopfIdeal k H) :
     LinearMap.ker (quotientCotangentMap I) = conormalSubspace I := by
-  rw [quotientCotangentMap, LinearMap.ker_restrictScalars]
+  rw [quotientCotangentMap_eq_mapCotangent, LinearMap.ker_restrictScalars]
   rw [Ideal.mapCotangent_ker_of_surjective
     (Ideal.Quotient.mkₐ_surjective H I.toIdeal)
     (by

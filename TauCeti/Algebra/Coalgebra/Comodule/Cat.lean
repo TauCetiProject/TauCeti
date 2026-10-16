@@ -97,12 +97,12 @@ instance homAdd (M N : ComoduleCat.{u, v, w} R C) : Add (M ⟶ N) :=
   inferInstanceAs (Add (Comodule.Hom R C M N))
 
 /-- Categorical morphisms reuse pointwise zero evaluation of comodule morphisms. -/
-instance homIsZeroApply (M N : ComoduleCat.{u, v, w} R C) : IsZeroApply (M ⟶ N) M N :=
-  inferInstanceAs (IsZeroApply (Comodule.Hom R C M N) M N)
+instance homIsZeroApply (M N : ComoduleCat.{u, v, w} R C) : IsZeroApply (M ⟶ N) :=
+  inferInstanceAs (IsZeroApply (Comodule.Hom R C M N))
 
 /-- Categorical morphisms reuse pointwise addition evaluation of comodule morphisms. -/
-instance homIsAddApply (M N : ComoduleCat.{u, v, w} R C) : IsAddApply (M ⟶ N) M N :=
-  inferInstanceAs (IsAddApply (Comodule.Hom R C M N) M N)
+instance homIsAddApply (M N : ComoduleCat.{u, v, w} R C) : IsAddApply (M ⟶ N) :=
+  inferInstanceAs (IsAddApply (Comodule.Hom R C M N))
 
 /-- Categorical morphisms form an additive commutative monoid under pointwise operations. -/
 instance homAddCommMonoid (M N : ComoduleCat.{u, v, w} R C) : AddCommMonoid (M ⟶ N) :=

@@ -238,7 +238,7 @@ omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 theorem contDiff_linearField : ContDiff ℝ ∞ φ.linearField := by
   have h1 : ContDiff ℝ ∞ (fun z : E ↦ fun i ↦ -(φ.weight i * φ.coordL z i)) :=
     contDiff_pi.2 fun i ↦
-      (contDiff_const.mul ((contDiff_apply ℝ ℝ i).comp φ.coordL.contDiff)).neg
+      (contDiff_const.mul ((contDiff_apply ℝ (fun _ ↦ ℝ) i).comp φ.coordL.contDiff)).neg
   have : φ.linearField = φ.coordL.symm ∘ fun z i ↦ -(φ.weight i * φ.coordL z i) := by
     ext z
     simp [linearField, coordL]
