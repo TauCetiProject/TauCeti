@@ -136,17 +136,28 @@ private theorem chart_trans_mem_contDiffGroupoid_iff (c d : OpenPartialHomeomorp
     (n : ℕ∞ω) :
     (chart I c).symm.trans (chart I d) ∈ contDiffGroupoid n 𝓘(𝕜, E) ↔
       c.symm.trans d ∈ contDiffGroupoid n I := by
-  -- Groupoid membership requires smoothness of the forward and inverse coordinate maps.
-  change (ContDiffOn 𝕜 n _ _ ∧ ContDiffOn 𝕜 n _ _) ↔
-    (ContDiffOn 𝕜 n _ _ ∧ ContDiffOn 𝕜 n _ _)
-  simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id,
-    preimage_id_eq, range_id, inter_univ]
-  change (ContDiffOn 𝕜 n ((chart I c).symm.trans (chart I d)).toPartialEquiv
-      ((chart I c).symm.trans (chart I d)).toPartialEquiv.source ∧
-    ContDiffOn 𝕜 n ((chart I d).symm.trans (chart I c)).toPartialEquiv
-      ((chart I d).symm.trans (chart I c)).toPartialEquiv.source) ↔ _
+  -- Mathlib defines membership by smoothness of the forward and inverse model-coordinate
+  -- maps. Isolate that representation in local lemmas for the two chart transitions.
+  have transported_mem_iff :
+      (chart I c).symm.trans (chart I d) ∈ contDiffGroupoid n 𝓘(𝕜, E) ↔
+        ContDiffOn 𝕜 n ((chart I c).symm.trans (chart I d)).toPartialEquiv
+            ((chart I c).symm.trans (chart I d)).source ∧
+          ContDiffOn 𝕜 n ((chart I d).symm.trans (chart I c)).toPartialEquiv
+            ((chart I d).symm.trans (chart I c)).source := by
+    -- In the self model the coordinate maps are identities and the range is univ.
+    change (ContDiffOn 𝕜 n _ _ ∧ ContDiffOn 𝕜 n _ _) ↔ _
+    simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id,
+      preimage_id_eq, range_id, inter_univ]
+    rfl
+  have original_mem_iff : c.symm.trans d ∈ contDiffGroupoid n I ↔
+      ContDiffOn 𝕜 n (I ∘ (c.symm.trans d) ∘ I.symm)
+          (I.symm ⁻¹' (c.symm.trans d).source ∩ range I) ∧
+        ContDiffOn 𝕜 n (I ∘ (d.symm.trans c) ∘ I.symm)
+          (I.symm ⁻¹' (d.symm.trans c).source ∩ range I) := Iff.rfl
+  rw [transported_mem_iff, original_mem_iff]
   rw [chart_trans_toPartialEquiv, chart_trans_toPartialEquiv]
   simp only [I.extendCoordChange_source, I.image_eq]
+  -- An extended transition is I ∘ (d ∘ c.symm) ∘ I.symm, in both directions.
   rfl
 
 variable [ChartedSpace H M]
@@ -204,6 +215,8 @@ instance {n : ℕ∞ω} [IsManifold I n M] : IsManifold 𝓘(𝕜, E) n (Boundar
 def diffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessModel I M) n where
   toEquiv := (homeomorph I M).toEquiv
   contMDiff_toFun := by
+    -- The equivalence field and the homeomorphism have the same carrier map; use the latter
+    -- so the explicit extended-chart comparison applies.
     change ContMDiff I 𝓘(𝕜, E) n (homeomorph I M)
     intro x
     have hcoord : writtenInExtChartAt I 𝓘(𝕜, E) x (homeomorph I M) =
@@ -213,10 +226,12 @@ def diffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessMode
     have h := (contMDiff_id : ContMDiff I I n (id : M → M)) x
     rw [contMDiffAt_iff] at h ⊢
     refine ⟨(homeomorph I M).continuous.continuousAt, ?_⟩
+    -- contMDiffAt_iff writes out this coordinate composition; fold its named expression.
     change ContDiffWithinAt 𝕜 n (writtenInExtChartAt I 𝓘(𝕜, E) x (homeomorph I M)) _ _
     rw [hcoord]
     exact h.2
   contMDiff_invFun := by
+    -- Likewise, the inverse equivalence field is the inverse homeomorphism on the carrier.
     change ContMDiff 𝓘(𝕜, E) I n (homeomorph I M).symm
     intro x
     have hcoord : writtenInExtChartAt 𝓘(𝕜, E) I x (homeomorph I M).symm =
@@ -227,6 +242,7 @@ def diffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessMode
     rw [contMDiffAt_iff, I.range_eq_univ] at h
     rw [contMDiffAt_iff]
     refine ⟨(homeomorph I M).symm.continuous.continuousAt, ?_⟩
+    -- Fold the coordinate composition from contMDiffAt_iff before applying hcoord.
     change ContDiffWithinAt 𝕜 n (writtenInExtChartAt 𝓘(𝕜, E) I x (homeomorph I M).symm) _ _
     rw [hcoord, ModelWithCorners.range_eq_univ, extChartAt_eq]
     exact h.2
@@ -259,6 +275,18 @@ theorem mdifferentiableAt_source_iff (f : M → N) (x : BoundarylessModel I M) :
     ModelWithCorners.range_eq_univ]
   exact and_congr ((homeomorph I M).symm.comp_continuousAt_iff' f x) Iff.rfl
 
+-- The coordinate derivative is unchanged: both the written map and evaluation point agree
+-- by extChartAt_eq, and both model ranges are univ. Keep this separate from tangent casts.
+private theorem fderivWithin_writtenInExtChartAt_source (f : M → N)
+    (x : BoundarylessModel I M) :
+    fderivWithin 𝕜 (writtenInExtChartAt 𝓘(𝕜, E) J x (f ∘ (homeomorph I M).symm))
+        (range 𝓘(𝕜, E)) (extChartAt 𝓘(𝕜, E) x x) =
+      fderivWithin 𝕜 (writtenInExtChartAt I J ((homeomorph I M).symm x) f)
+        (range I) (extChartAt I ((homeomorph I M).symm x) ((homeomorph I M).symm x)) := by
+  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
+    ModelWithCorners.range_eq_univ]
+  rfl
+
 /-- The source-side derivative comparison, with the tangent spaces identified explicitly
 through their common model vector space. No differentiability hypothesis is needed. -/
 theorem mfderiv_source (f : M → N) (x : BoundarylessModel I M) :
@@ -266,10 +294,17 @@ theorem mfderiv_source (f : M → N) (x : BoundarylessModel I M) :
       mfderiv I J f ((homeomorph I M).symm x) ∘L
         (tangentSpaceCastModel I ((homeomorph I M).symm x)).symm.toContinuousLinearMap ∘L
         (tangentSpaceCastModel 𝓘(𝕜, E) x).toContinuousLinearMap := by
-  rw [mfderiv, mdifferentiableAt_source_iff, mfderiv]
-  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
-    ModelWithCorners.range_eq_univ]
-  split_ifs <;> ext v <;> rfl
+  by_cases h : MDifferentiableAt I J f ((homeomorph I M).symm x)
+  · have h' := (mdifferentiableAt_source_iff I J f x).2 h
+    rw [h'.mfderiv, h.mfderiv, fderivWithin_writtenInExtChartAt_source]
+    -- Only the inverse tangent identifications cancel; no tangent-space definitions unfold.
+    ext v
+    simp only [comp_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+  · rw [mfderiv_zero_of_not_mdifferentiableAt
+        (fun h' ↦ h ((mdifferentiableAt_source_iff I J f x).1 h')),
+      mfderiv_zero_of_not_mdifferentiableAt h]
+    simp only [ContinuousLinearMap.zero_comp]
 
 /-- Changing the target model preserves differentiability. -/
 @[simp]
@@ -281,14 +316,30 @@ theorem mdifferentiableAt_target_iff (f : N → M) (x : N) :
     Homeomorph.symm_apply_apply]
   exact and_congr ((homeomorph I M).comp_continuousAt_iff f x) Iff.rfl
 
+-- Target transport leaves the coordinate derivative unchanged, before identifying tangent spaces.
+private theorem fderivWithin_writtenInExtChartAt_target (f : N → M) (x : N) :
+    fderivWithin 𝕜 (writtenInExtChartAt J 𝓘(𝕜, E) x ((homeomorph I M) ∘ f))
+        (range J) (extChartAt J x x) =
+      fderivWithin 𝕜 (writtenInExtChartAt J I x f) (range J) (extChartAt J x x) := by
+  simp only [writtenInExtChartAt, comp_apply, extChartAt_eq, Homeomorph.symm_apply_apply]
+  rfl
+
 /-- The target-side derivative comparison through the common model vector space. -/
 theorem mfderiv_target (f : N → M) (x : N) :
     mfderiv J 𝓘(𝕜, E) ((homeomorph I M) ∘ f) x =
       (tangentSpaceCastModel 𝓘(𝕜, E) (homeomorph I M (f x))).symm.toContinuousLinearMap ∘L
         (tangentSpaceCastModel I (f x)).toContinuousLinearMap ∘L mfderiv J I f x := by
-  rw [mfderiv, mdifferentiableAt_target_iff, mfderiv]
-  simp only [writtenInExtChartAt, comp_apply, extChartAt_eq, Homeomorph.symm_apply_apply]
-  split_ifs <;> ext v <;> rfl
+  by_cases h : MDifferentiableAt J I f x
+  · have h' := (mdifferentiableAt_target_iff I J f x).2 h
+    rw [h'.mfderiv, h.mfderiv, fderivWithin_writtenInExtChartAt_target]
+    -- Only the inverse tangent identifications cancel; no tangent-space definitions unfold.
+    ext v
+    simp only [comp_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+  · rw [mfderiv_zero_of_not_mdifferentiableAt
+        (fun h' ↦ h ((mdifferentiableAt_target_iff I J f x).1 h')),
+      mfderiv_zero_of_not_mdifferentiableAt h]
+    simp only [ContinuousLinearMap.comp_zero]
 
 end Derivatives
 
