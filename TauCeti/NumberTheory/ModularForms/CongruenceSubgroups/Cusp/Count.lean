@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import Mathlib.Data.ZMod.Units
 import Mathlib.Data.Nat.Totient
+import TauCeti.Data.Int.GCD
 import TauCeti.Data.ZMod.Units
 
 /-!
@@ -53,64 +54,7 @@ open scoped MatrixGroups
 
 namespace TauCeti
 
-variable {N : ℕ}
-
-/-! ### Arithmetic of the congruence `N ∣ c d' - c' d + j c c'` -/
-
-/-- If `N ∣ c d' - c' d + j c c'` and `c` is prime to `d`, then `gcd(c, N)` divides `c'`. -/
-private theorem gcd_dvd_of_dvd {c d c' d' j : ℤ} (hcd : IsCoprime c d)
-    (h : (N : ℤ) ∣ c * d' - c' * d + j * c * c') : (Int.gcd c N : ℤ) ∣ c' := by
-  have hc : (Int.gcd c N : ℤ) ∣ c := Int.gcd_dvd_left ..
-  have h' : (Int.gcd c N : ℤ) ∣ c' * d := by
-    have := dvd_sub (dvd_add (hc.mul_right d') ((hc.mul_left j).mul_right c'))
-      ((Int.gcd_dvd_right ..).trans h)
-    convert this using 1
-    ring
-  exact (hcd.of_isCoprime_of_dvd_left hc).dvd_of_dvd_mul_right h'
-
-/-- The congruence `N ∣ c d' - c' d + j c c'` between coprime pairs forces
-`gcd(c, N) = gcd(c', N)`. -/
-private theorem gcd_eq_of_dvd {c d c' d' j : ℤ} (hcd : IsCoprime c d) (hcd' : IsCoprime c' d')
-    (h : (N : ℤ) ∣ c * d' - c' * d + j * c * c') : Int.gcd c N = Int.gcd c' N := by
-  have h' : (N : ℤ) ∣ c' * d - c * d' + -j * c' * c := by
-    convert dvd_neg.mpr h using 1
-    ring
-  exact Nat.dvd_antisymm (Int.dvd_gcd (gcd_dvd_of_dvd hcd h) (Int.gcd_dvd_right ..))
-    (Int.dvd_gcd (gcd_dvd_of_dvd hcd' h') (Int.gcd_dvd_right ..))
-
-/-- Write `N = g m`, `c = g c₁` and `c' = g c₁'`. Then `N ∣ c d' - c' d + j c c'` implies
-`gcd(g, m) ∣ c₁ d' - c₁' d`. -/
-private theorem dvd_sub_of_dvd {g m : ℕ} {c c₁ d c' c₁' d' j : ℤ} (hg : g ≠ 0)
-    (hN : (N : ℤ) = g * m) (hc : c = g * c₁) (hc' : c' = g * c₁')
-    (h : (N : ℤ) ∣ c * d' - c' * d + j * c * c') :
-    (Nat.gcd g m : ℤ) ∣ c₁ * d' - c₁' * d := by
-  subst hc hc'
-  have he : (g : ℤ) * c₁ * d' - g * c₁' * d + j * (g * c₁) * (g * c₁') =
-      g * (c₁ * d' - c₁' * d + j * g * c₁ * c₁') := by ring
-  rw [hN, he] at h
-  have hm := (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right g m)).trans
-    (Int.dvd_of_mul_dvd_mul_left (by exact_mod_cast hg) h)
-  have hg' : (Nat.gcd g m : ℤ) ∣ j * g * c₁ * c₁' :=
-    ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left g m)).mul_left j).mul_right _ |>.mul_right _
-  simpa using dvd_sub hm hg'
-
-/-- Conversely, if `c₁` and `c₁'` are prime to `m` and `gcd(g, m) ∣ c₁ d' - c₁' d`, then some
-`j` satisfies `N ∣ c d' - c' d + j c c'`. -/
-private theorem exists_dvd_of_dvd_sub {g m : ℕ} {c c₁ d c' c₁' d' : ℤ}
-    (hN : (N : ℤ) = g * m) (hc : c = g * c₁) (hc' : c' = g * c₁')
-    (hc₁ : IsCoprime c₁ m) (hc₁' : IsCoprime c₁' m)
-    (h : (Nat.gcd g m : ℤ) ∣ c₁ * d' - c₁' * d) :
-    ∃ j : ℤ, (N : ℤ) ∣ c * d' - c' * d + j * c * c' := by
-  subst hc hc'
-  obtain ⟨w, hw⟩ := h
-  obtain ⟨u, v, huv⟩ := hc₁.mul_left hc₁'
-  have he := Nat.gcd_eq_gcd_ab g m
-  refine ⟨-(Nat.gcdA g m * u * w),
-    Nat.gcdB g m * w + g * Nat.gcdA g m * v * w, ?_⟩
-  rw [hN]
-  linear_combination (g : ℤ) * hw + g * w * he - g ^ 2 * Nat.gcdA g m * w * huv
-
-variable [NeZero N]
+variable {N : ℕ} [NeZero N]
 
 /-! ### Equivalence of cusps -/
 
@@ -214,13 +158,15 @@ theorem gamma0CuspLabel_eq_iff_exists_dvd (γ γ' : SL(2, ℤ)) :
   constructor
   · rintro ⟨hg, hx'⟩
     rw [hx hg, ← hg] at hx'
-    exact exists_dvd_of_dvd_sub hN (hc _) (hg ▸ hc _) (hcop _) (hg ▸ hcop _) hx'
+    exact Int.exists_dvd_mul_sub_mul_add_mul_of_gcd_dvd hN (hc _) (hg ▸ hc _) (hcop _)
+      (hg ▸ hcop _) hx'
   · rintro ⟨j, h⟩
-    have hg := gcd_eq_of_dvd (bottom_row_coprime γ) (bottom_row_coprime γ') h
+    have hg := Int.gcd_eq_gcd_of_dvd_mul_sub_mul_add_mul (bottom_row_coprime γ)
+      (bottom_row_coprime γ') h
     refine ⟨hg, (hx hg ..).mpr ?_⟩
     rw [← hg]
-    exact dvd_sub_of_dvd (Int.gcd_pos_of_ne_zero_right _ (by exact_mod_cast NeZero.ne N)).ne' hN
-      (hc _) (hg ▸ hc _) h
+    exact Int.gcd_dvd_mul_sub_mul_of_dvd_mul_sub_mul_add_mul
+      (Int.gcd_pos_of_ne_zero_right _ (by exact_mod_cast NeZero.ne N)).ne' hN (hc _) (hg ▸ hc _) h
 
 /-- Every divisor `g` of `N` and every unit modulo `gcd(g, N / g)` is a label: that of a matrix
 with bottom row `(g, d)`. -/
