@@ -14,7 +14,6 @@ public import TauCeti.Algebra.CentralSimple.Splitting
 -- `TauCeti.Bimodule` supplies the left-right action transported to the orientation used here.
 public import TauCeti.Algebra.CentralSimple.Bimodule
 public import TauCeti.Algebra.Algebra.Opposite
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.RingTheory.Semisimple.EndAlgebra
 public import Mathlib.RingTheory.TensorProduct.Maps
 -- Non-public: none of these appears in the type of an exported declaration. The tower law and the
@@ -422,6 +421,13 @@ noncomputable def mulRightAlgHom :
     ext x
     simp only [MulOpposite.algebraMap_apply, MulOpposite.unop_op, mulRight_of,
       Module.algebraMap_end_apply, lsmul_of, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom']
+
+
+/-- Evaluating the right-multiplication homomorphism gives multiplication on underlying elements. -/
+@[simp]
+theorem mulRightAlgHom_of (b : Bᵐᵒᵖ) (x : A) :
+    mulRightAlgHom L g b (of _ x) = of _ (x * g b.unop) :=
+  mulRight_of L g b.unop x
 
 end BaseChangeModule
 
