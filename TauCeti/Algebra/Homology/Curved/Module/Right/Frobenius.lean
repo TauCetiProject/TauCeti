@@ -142,12 +142,12 @@ noncomputable def coneIdentityInjectivePresentation
         apply (cancel_epi
           (eqToHom (coneShortComplex_X₁ (𝟙 (ForgetEnrichment.of _ M))).symm)).mp
         simpa only [eqToIso.hom, ← Category.assoc, eqToHom_trans, eqToHom_refl,
-          Category.id_comp] using coneShortComplex_f (𝟙 (ForgetEnrichment.of _ M)))
+          Category.id_comp] using (coneShortComplex_f (𝟙 (ForgetEnrichment.of _ M))).symm)
       (by
         apply (cancel_epi
           (eqToHom (coneShortComplex_X₂ (𝟙 (ForgetEnrichment.of _ M))).symm)).mp
         simpa only [eqToIso.hom, ← Category.assoc, eqToHom_trans, eqToHom_refl,
-          Category.id_comp] using coneShortComplex_g (𝟙 (ForgetEnrichment.of _ M))))
+          Category.id_comp] using (coneShortComplex_g (𝟙 (ForgetEnrichment.of _ M))).symm))
     (coneShortComplex_conflation (𝟙 (ForgetEnrichment.of _ M)))
   isInjective := gradedSplitExact_isInjective_of_isZero_homotopy (isZero_homotopy_cone_isIso _)
 
@@ -170,7 +170,12 @@ theorem coneIdentityInjectivePresentation_K (M : CurvedDGRightModuleCat.{u, u, u
 theorem coneIdentityInjectivePresentation_i (M : CurvedDGRightModuleCat.{u, u, u} h) :
     (coneIdentityInjectivePresentation M).i ≫ eqToHom (coneIdentityInjectivePresentation_I M) =
       coneInclusion (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) := by
-  simp [coneIdentityInjectivePresentation]
+  -- The characteristic object equality is the constructor's reflexive equation,
+  -- so its transport is the identity on the explicitly specified injective object.
+  change coneInclusion (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) ≫
+    (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ)
+      (cone (𝟙 (ForgetEnrichment.of _ M))))) = _
+  exact Category.comp_id _
 
 /-- After identifying its endpoints, the presentation map is the identity-cone projection. -/
 @[simp]
@@ -179,7 +184,13 @@ theorem coneIdentityInjectivePresentation_p (M : CurvedDGRightModuleCat.{u, u, u
         (coneIdentityInjectivePresentation M).p ≫
           eqToHom (coneIdentityInjectivePresentation_K M) =
       coneProjection (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) := by
-  simp [coneIdentityInjectivePresentation]
+  -- Both characteristic object equalities are reflexive constructor equations.
+  -- Identify the two transports with identities before applying the category laws.
+  change (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ)
+      (cone (𝟙 (ForgetEnrichment.of _ M))))) ≫
+    coneProjection (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) ≫
+      (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M.shift 1))) = _
+  simp only [Category.id_comp, Category.comp_id]
 
 /-- Every curved module is a graded-split quotient of a contractible cone of an identity. -/
 theorem exists_gradedSplitExact_isDeflation_contractible
