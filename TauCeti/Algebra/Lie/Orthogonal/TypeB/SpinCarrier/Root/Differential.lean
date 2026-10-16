@@ -147,11 +147,11 @@ theorem range_derivationCompLieHom_rootSubgroup_eq_span (k : Fin (n + 1) ⊕ Fin
       B ∙ rootVector n (B := B) k :=
   AdditiveGroup.range_derivationCompLieHom_eq_span B _
 
-/-- A normalized root vector is nonzero over every nontrivial coefficient ring.
-Use this directly: simplification changes the inherited integer module in the zero derivation
-before this statement can match. -/
+/-- A normalized root vector is nonzero over every nontrivial coefficient ring. -/
 theorem rootVector_ne_zero [Nontrivial B] (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootVector n (B := B) k ≠ 0 :=
+  -- Use the lemma directly: simplification changes the inherited integer module in the zero
+  -- derivation before the statement can match.
   AdditiveGroup.derivationComp_gaTangentLinearEquiv_symm_one_ne_zero _
     (derivationComp_rootSubgroup_injective n (B := B) k)
 
