@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 /-!
 # The localized Calderón–Zygmund estimate on a domain
 
-Let `n ≥ 3`, `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file localizes the whole-space
+Let `0 < n`, `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file localizes the whole-space
 `W^{2,p}` estimate for coefficients of small oscillation
 (`TauCeti.PDE.exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le`) to a
 strong solution on `Ω`, by a smooth cutoff
@@ -143,7 +143,7 @@ private theorem ae_extendByZeroₗᵢ_of_ae {Omega : Opens (EuclideanSpace ℝ (
     · rw [h2 hxΩ, h4 hxΩ, map_zero]
 
 /-- **The localized Calderón–Zygmund estimate for coefficients of small oscillation.**
-Let `n ≥ 3` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
+Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
 with the following property. Let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, let `Ω` be
 open, and let `ζ` be smooth with compact support in `Ω`, `‖∇ζ‖ ≤ M₁` and `‖D²ζ‖ ≤ M₂`. Let `a` be
 a measurable matrix-valued coefficient on `Ω` with `|aᵢⱼ(x) - Aᵢⱼ| ≤ ε` and `|aᵢⱼ(x)| ≤ Λ` for
@@ -155,7 +155,7 @@ almost every `x` in the support of `ζ`, where `ε ≤ δ λ` and `0 ≤ Λ`. Th
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u` and `∇u` is the weak gradient
 `TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`. No boundary condition on `u` and
 no regularity of `Ω` is assumed. -/
-theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le (hn : 3 ≤ n)
+theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le (hn : 0 < n)
     (hp : 1 < p) (hp_top : p ≠ ⊤) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →

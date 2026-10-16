@@ -38,6 +38,8 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
+* `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletion_dvd_iff`: the residue
+  characteristic of `K_v` divides `n` exactly when `n ∈ v`.
 * `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: when `R` is
   infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
@@ -50,6 +52,8 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   `U(K_v, n)` consists of the units `u` of `𝒪_v` with `Valued.v (u - 1) ≤ exp (-n)`; its
   depth-zero step is `Valued.v u = 1` (`mem_unitFiltration_zero_adicCompletion_iff`), which
   `unitsMap_algebraMap_mem_unitFiltration_zero_iff` reads on the units of `K`.
+* `IsDedekindDomain.HeightOneSpectrum.coe_normalizedValuation_unitsMap_algebraMap`: on the units
+  of `K`, the normalized valuation of `K_v` is the inverse of the `v`-adic valuation.
 
 ## Implementation notes
 
@@ -204,6 +208,15 @@ theorem residueFieldEquivAdicCompletion_apply_mk (a : R) :
     _ = _ := IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
       (v.adicCompletion K) a
 
+/-- **The residue characteristic of `K_v`.** The characteristic of the residue field of `K_v`
+divides `n` exactly when `n` lies in `v`. -/
+theorem ringChar_residueField_adicCompletion_dvd_iff {n : ℕ} :
+    ringChar 𝓀[v.adicCompletion K] ∣ n ↔ (n : R) ∈ v.asIdeal := by
+  rw [← ringChar.spec 𝓀[v.adicCompletion K],
+    ← map_natCast (v.residueFieldEquivAdicCompletion (K := K)),
+    map_eq_zero_iff _ (RingEquiv.injective _), ← map_natCast (Ideal.Quotient.mk v.asIdeal),
+    Ideal.Quotient.eq_zero_iff_mem]
+
 /-- If `R` is infinite, the residue field of `K_v` has cardinality the absolute norm of `v`. -/
 theorem natCard_residueField_adicCompletion_eq_absNorm [Infinite R] :
     Nat.card 𝓀[v.adicCompletion K] = Ideal.absNorm v.asIdeal := by
@@ -301,6 +314,16 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
   rw [mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
     algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
     Algebra.algebraMap_self_apply]
+
+/-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
+image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/
+theorem coe_normalizedValuation_unitsMap_algebraMap [Finite (R ⧸ v.asIdeal)] (a : Kˣ) :
+    (TauCeti.normalizedValuation (v.adicCompletion K)
+        (Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a) : ℤᵐ⁰) =
+      (v.valuation K a)⁻¹ := by
+  rw [← TauCeti.normalizedValuationWithZero_coe, normalizedValuationWithZero_adicCompletion,
+    Units.coe_map, MonoidHom.coe_ofClass, algebraMap_adicCompletion, Function.comp_apply,
+    valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
 
 /-- **An element of odd order of vanishing at `v` is a nonsquare in the completion `K_v`.**
 

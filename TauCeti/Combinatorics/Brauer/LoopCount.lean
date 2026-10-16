@@ -51,6 +51,8 @@ count are independent pieces of the same multiplication.
 
 * `TauCeti.middleLoopCount_eq_zero_iff`: the count vanishes exactly when no middle point lies on
   a loop.
+* `TauCeti.middleLoopCount_eq_ncard_image`: the count is the number of connected components of
+  the middle graph made of points on closed loops, read as classes of the quotient by that graph.
 * `TauCeti.middleLoopCount_pos_of_val_eq`: a cap of `D₁` and a cup of `D₂` on the same pair of
   middle points close up into a loop.
 * `TauCeti.middleLoopCount_permToBrauer_left`, `TauCeti.middleLoopCount_permToBrauer_right`:
@@ -160,6 +162,14 @@ theorem MiddleAdj.reflTransGen_symm {a b : Fin k}
   Relation.ReflTransGen.mono (fun _ _ huv => MiddleAdj.symm huv) b a
     (Relation.ReflTransGen.swap b a h)
 
+/-- Two middle points have the same class in the quotient by the middle graph exactly when they
+are joined by a chain of its arcs, the middle graph being symmetric. -/
+theorem mk_middleAdj_eq_mk_iff (D₁ D₂ : BrauerDiagram k) {a b : Fin k} :
+    Quot.mk (MiddleAdj D₁ D₂) a = Quot.mk (MiddleAdj D₁ D₂) b ↔
+      Relation.ReflTransGen (MiddleAdj D₁ D₂) a b := by
+  have : Std.Symm (MiddleAdj D₁ D₂) := ⟨fun _ _ h => MiddleAdj.symm h⟩
+  rw [Quot.eq, Relation.EqvGen.eqvGen_eq_reflTransGen]
+
 /-- A cap of `D₁` at the bottom middle point `a` lands at the middle point read off its far
 end, the point `BrauerDiagram.capMatching` pairs `a` with. -/
 theorem BrauerDiagram.val_inl_eq_inl_middlePoint {D : BrauerDiagram k} {a : Fin k}
@@ -221,6 +231,27 @@ theorem middleLoopCount_eq_zero_iff :
 theorem middleLoopCount_pos_of_onMiddleLoop {a : Fin k} (ha : OnMiddleLoop D₁ D₂ a) :
     0 < middleLoopCount D₁ D₂ :=
   Nat.pos_of_ne_zero fun h => (middleLoopCount_eq_zero_iff.mp h) a ha
+
+/-- **Loops are connected components.** The middle-loop count counts the closed middle loops as
+connected components of the middle graph, that is as classes of the quotient by it, rather than
+by their least points. -/
+theorem middleLoopCount_eq_ncard_image (D₁ D₂ : BrauerDiagram k) :
+    middleLoopCount D₁ D₂ =
+      (Quot.mk (MiddleAdj D₁ D₂) '' {a | OnMiddleLoop D₁ D₂ a}).ncard := by
+  have hinj : Set.InjOn (Quot.mk (MiddleAdj D₁ D₂)) {a | IsMiddleLoopMin D₁ D₂ a} := by
+    intro a ha b hb hab
+    have h := (mk_middleAdj_eq_mk_iff D₁ D₂).mp hab
+    exact le_antisymm (((isMiddleLoopMin_def D₁ D₂ a).mp ha).2 b h)
+      (((isMiddleLoopMin_def D₁ D₂ b).mp hb).2 a (MiddleAdj.reflTransGen_symm h))
+  rw [middleLoopCount_def, ← hinj.ncard_image]
+  congr 1
+  ext S
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    exact ⟨a, ((isMiddleLoopMin_def D₁ D₂ a).mp ha).1, rfl⟩
+  · rintro ⟨a, ha, rfl⟩
+    obtain ⟨m, hm, ham⟩ := (ha : OnMiddleLoop D₁ D₂ a).exists_isMiddleLoopMin
+    exact ⟨m, hm, ((mk_middleAdj_eq_mk_iff D₁ D₂).mpr ham).symm⟩
 
 /-- **A cap of `D₁` matching a cup of `D₂` closes up into a loop.** If the middle points `a` and
 `b` are joined both by a cap of `D₁` and by a cup of `D₂`, then `a` lies on a closed middle

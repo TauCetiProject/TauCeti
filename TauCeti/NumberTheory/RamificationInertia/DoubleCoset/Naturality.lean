@@ -113,11 +113,11 @@ private theorem doubleCosetQuotientEquivPrimesOver_natural_mk [IsGalois K M]
     (p : Ideal (𝓞 K))
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p]
     {H H' : Subgroup (M ≃ₐ[K] M)} (h : H ≤ H') (σ : M ≃ₐ[K] M) :
-    doubleCosetQuotientEquivPrimesOver p Q H'
+    Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H' (𝓞 ↥(fixedField H'))
         (DoubleCoset.quotientMapOfLELeft h (stabilizer (M ≃ₐ[K] M) Q)
           (DoubleCoset.mk H (stabilizer (M ≃ₐ[K] M) Q) σ)) =
       primesOverFixedFieldMap p h
-        (doubleCosetQuotientEquivPrimesOver p Q H
+        (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
           (DoubleCoset.mk H (stabilizer (M ≃ₐ[K] M) Q) σ)) := by
   let _ : Algebra ↥(fixedField H') ↥(fixedField H) :=
     (IntermediateField.inclusion (fixedField_le h)).toAlgebra
@@ -127,7 +127,7 @@ private theorem doubleCosetQuotientEquivPrimesOver_natural_mk [IsGalois K M]
     IsScalarTower.of_algebraMap_eq' rfl
   apply Subtype.ext
   simp only [DoubleCoset.quotientMapOfLELeft_apply_mk,
-    doubleCosetQuotientEquivPrimesOver_mk, primesOverFixedFieldMap_coe]
+    doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk, primesOverFixedFieldMap_coe]
   exact (under_under (A := 𝓞 ↥(fixedField H')) (B := 𝓞 ↥(fixedField H)) (σ • Q)).symm
 
 /-- **Naturality of the double-coset splitting law.**  Enlarging `H` to `H'` on the
@@ -135,9 +135,10 @@ double-coset side agrees with contracting the corresponding prime from `M ^ H` t
 theorem doubleCosetQuotientEquivPrimesOver_natural [IsGalois K M] (p : Ideal (𝓞 K))
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p]
     {H H' : Subgroup (M ≃ₐ[K] M)} (h : H ≤ H') :
-    doubleCosetQuotientEquivPrimesOver p Q H' ∘
+    Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H' (𝓞 ↥(fixedField H')) ∘
         DoubleCoset.quotientMapOfLELeft h (stabilizer (M ≃ₐ[K] M) Q) =
-      primesOverFixedFieldMap p h ∘ doubleCosetQuotientEquivPrimesOver p Q H := by
+      primesOverFixedFieldMap p h ∘
+        Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H)) := by
   funext q
   induction q using Quotient.inductionOn' with
   | h σ => exact doubleCosetQuotientEquivPrimesOver_natural_mk p Q h σ
