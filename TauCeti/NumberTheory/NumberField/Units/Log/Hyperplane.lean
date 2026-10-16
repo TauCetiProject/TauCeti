@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
+public import TauCeti.NumberTheory.NumberField.Units.Log.Embedding
 public import TauCeti.InformationTheory.Coding.Elementary.Basic
 public import TauCeti.RepresentationTheory.RestrictScalars
 
@@ -86,29 +85,12 @@ property. The distinguished place is not part of the full logarithmic embedding.
 open Classical in
 private def unitLogCoordinates : singleParityCheckCode ℝ (InfinitePlace K) ≃ₗ[ℝ] logSpace K where
   toFun x w := x.val w.val
-  invFun x := ⟨fun w => if h : w = w₀ then -∑ v, x v else x ⟨w, h⟩, by
-    rw [mem_singleParityCheckCode, Fintype.sum_eq_add_sum_subtype_ne _ w₀]
-    simp only [dite_true]
-    have heq : (∑ v : {w : InfinitePlace K // w ≠ w₀},
-        if h : v.val = w₀ then -∑ v, x v else x ⟨v.val, h⟩) = ∑ v, x v := by
-      apply Finset.sum_congr rfl
-      intro v _
-      simp [v.property]
-    rw [heq]
-    exact neg_add_cancel _⟩
-  left_inv x := by
-    apply Subtype.ext
-    funext w
-    by_cases h : w = w₀
-    · subst w
-      have hx := (mem_singleParityCheckCode ℝ (InfinitePlace K)).mp x.property
-      rw [Fintype.sum_eq_add_sum_subtype_ne _ w₀] at hx
-      simp only [dite_true]
-      linarith
-    · simp [h]
-  right_inv x := by
-    funext w
-    simp [w.property]
+  invFun x := ⟨NumberField.Units.logSpaceExtend K x,
+    (mem_singleParityCheckCode ℝ (InfinitePlace K)).mpr
+      (NumberField.Units.sum_logSpaceExtend x)⟩
+  left_inv x := Subtype.ext (NumberField.Units.logSpaceExtend_eq_self
+    ((mem_singleParityCheckCode ℝ (InfinitePlace K)).mp x.property))
+  right_inv x := funext (NumberField.Units.logSpaceExtend_apply_val x)
   map_add' x y := by rfl
   map_smul' a x := by rfl
 

@@ -130,9 +130,7 @@ theorem coe_stabilizerBallHomeomorph [Finite (stabilizer Γ z)] (τ : stabilizer
 /-- **The disc coordinate conjugates the stabilizer action to a rotation action**: it is
 equivariant along the identification `Subgroup.stabilizerRotationEquiv` of the stabilizer of `z`
 with the `m`-th roots of unity. -/
--- Apply this transport rule before `map_smul`, which asks for an action of the source
--- stabilizer on the target instead of transporting scalars along `stabilizerRotationEquiv`.
-@[simp 1100]
+@[simp]
 theorem stabilizerBallHomeomorph_smul [Finite (stabilizer Γ z)] (q : stabilizer Γ z)
     (τ : stabilizerBall Γ z ε) :
     stabilizerBallHomeomorph Γ z ε (q • τ) =

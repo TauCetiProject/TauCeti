@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
-public import TauCeti.NumberTheory.NumberField.Units.LogEmbedding
+public import TauCeti.NumberTheory.NumberField.Units.Log.Embedding
 
 /-!
 # Evaluating and bounding the regulator
