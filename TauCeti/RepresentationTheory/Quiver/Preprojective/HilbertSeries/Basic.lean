@@ -630,6 +630,36 @@ theorem mul_preprojectiveHilbertSeries_eq_one_iff :
         rw [doubledVertexIdempotent_def]
         exact preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hy)
 
+/-- **The Koszul defect is nonnegative.** Let `A` be the arrow-count matrix of the doubled quiver,
+`A_{v,w} = #(w ⟶ v)`, and `H` the matrix Hilbert series of `Π`. Every coefficient of every entry of
+`((1 + X²) I - X A) H` is at least the corresponding coefficient of the identity matrix. Indeed the
+two agree in degrees `0` and `1`, and in degree `m + 2` their difference is the dimension of the
+space `K_m(i, v)` of `y ∈ e_v Π_m e_i` killed by the reverse `b*` of every arrow `b` into `v`. -/
+theorem coeff_one_le_coeff_mul_preprojectiveHilbertSeries (n : ℕ) (v i : Q) :
+    coeff n ((1 : Matrix Q Q ℤ⟦X⟧) v i) ≤
+      coeff n (((((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix Q Q ℤ⟦X⟧) -
+        (X : ℤ⟦X⟧) • Matrix.of fun v w : Q =>
+          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧)) *
+        preprojectiveHilbertSeries k Q) v i) := by
+  obtain _ | _ | m := n
+  · rw [coeff_zero_mul_preprojectiveHilbertSeries, Matrix.one_apply]
+    split_ifs <;> simp
+  · rw [coeff_one_mul_preprojectiveHilbertSeries, Matrix.one_apply]
+    split_ifs <;> simp [coeff_one]
+  · have h0 : coeff (m + 2) ((1 : Matrix Q Q ℤ⟦X⟧) v i) = 0 := by
+      rw [Matrix.one_apply]
+      split_ifs <;> simp [coeff_one]
+    rw [h0, coeff_add_two_mul_preprojectiveHilbertSeries, sub_nonneg, Nat.cast_le,
+      finrank_preprojectiveCorner_add_two_add_finrank_preprojectiveCorner]
+    -- The vertices of the doubled quiver are those of `Q`.
+    rw [Fintype.sum_equiv (Equiv.ofBijective _ symmetrify_of_obj_bijective)
+      (fun w : Q => Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
+        Module.finrank k (preprojectiveCorner k Q (m + 1) (Symmetrify.of.obj i)
+          (Symmetrify.of.obj w)))
+      (fun w : Symmetrify Q => Fintype.card (w ⟶ Symmetrify.of.obj v) *
+        Module.finrank k (preprojectiveCorner k Q (m + 1) (Symmetrify.of.obj i) w)) fun _ => rfl]
+    exact Nat.le_add_right _ _
+
 end HilbertSeries
 
 end Field

@@ -95,6 +95,16 @@ theorem coe_conjHom_apply (hVU : V = U.map (MulAut.conj g).toMonoidHom) (v : V) 
     (conjHom U V g hVU v : G) = g⁻¹ * v * g :=
   MulAut.conj_symm_apply g v
 
+/-- The conjugation compatible-pair identity on coefficients: the action of `g` intertwines the
+actions of `V` and of `U` through `conjHom`, `g • (g⁻¹ v g) • m = v • g • m`. -/
+theorem conjHom_smul {M : Type*} [AddMonoid M] [DistribMulAction G M]
+    (hVU : V = U.map (MulAut.conj g).toMonoidHom) (v : V) (m : M) :
+    (DistribSMul.toAddMonoidHom M g) (conjHom U V g hVU v • m) =
+      v • (DistribSMul.toAddMonoidHom M g) m := by
+  simp only [DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def, coe_conjHom_apply, smul_smul]
+  congr 1
+  group
+
 end ConjHom
 
 /-! ### The conjugation map -/
@@ -106,13 +116,16 @@ variable (U V W : Subgroup G) (M : Type u) [AddCommGroup M] [TopologicalSpace M]
 noncomputable def conjPair (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom) :
     TopRep.res (conjHom U V g hVU : V →* U) (ofDiscreteModule ℤ U M) ⟶
       ofDiscreteModule ℤ V M :=
-  ofDiscreteModulePair _ (DistribSMul.toAddMonoidHom M g).toIntLinearMap fun v m => by
-    have hv : (((conjHom U V g hVU : V →* U) v : U) : G) = g⁻¹ * v * g :=
-      coe_conjHom_apply U V g hVU v
-    simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply,
-      Subgroup.smul_def, smul_smul, hv]
-    congr 1
-    group
+  ofDiscreteModulePair _ (DistribSMul.toAddMonoidHom M g).toIntLinearMap
+    (conjHom_smul U V g hVU)
+
+-- Not `@[simp]`: `conjPair` is the intended normal form, and this lemma unfolds it.
+/-- The defining equation of `conjPair`: the compatible pair on the action of `g`. -/
+theorem conjPair_def (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom) :
+    conjPair U V M g hVU =
+      ofDiscreteModulePair _ (DistribSMul.toAddMonoidHom M g).toIntLinearMap
+        (conjHom_smul U V g hVU) :=
+  (rfl)
 
 /-- The compatible pair `conjPair U V M g hVU` acts on `M` as `g`. -/
 @[simp]

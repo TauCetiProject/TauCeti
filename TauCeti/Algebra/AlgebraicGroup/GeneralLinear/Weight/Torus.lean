@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Relabel
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
@@ -708,7 +709,7 @@ private theorem mapPointsFunctor_weightCocharacterCoordinateMap_app (w : Fin N â
     ext
     rw [SplitTorus.pointsMulEquiv_apply_coe,
       MultiplicativeGroup.pointsMulEquiv_apply,
-      MultiplicativeGroup.unitOfPoint_val]
+      laurentEvalEquiv_symm_apply]
     simp only [q, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
       WithConv.ofConv_toConv, AlgHom.comp_apply]
     congr 1

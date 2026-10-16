@@ -22,11 +22,10 @@ composition; no separate construction is needed here.
 
 Over an algebraically closed field `k`, a domain algebra that is integral over `k` is `k` itself.
 The proof uses Mathlib's theorem that the algebra map from an algebraically closed field into such
-an algebra is bijective; a finite-dimensional division algebra is the special case that the roadmap
-names, integrality there coming from finite dimensionality. The same collapse for the endomorphism
-ring of a finite-dimensional simple module is
-Mathlib's `IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed`, packaged here as an algebra
-equivalence.
+an algebra is bijective; a finite-dimensional division algebra is a special case, with integrality
+coming from finite dimensionality. The same collapse for the endomorphism ring of a
+finite-dimensional simple module is Mathlib's
+`IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed`, packaged here as an algebra equivalence.
 
 Both forms are then read as statements about dimensions, for a `k`-algebra `A` acting on modules
 that are `k`-modules compatibly: the hom space between inequivalent simple modules has dimension
@@ -52,13 +51,11 @@ computation to an arbitrary equivalent target.
   form.
 * `TauCeti.finrank_linearMap_eq_zero_of_isEmpty_linearEquiv` and
   `LinearEquiv.finrank_linearMap_eq_one`: the two forms of Schur's lemma in
-  dimensions, with `TauCeti.finiteDimensional_linearMap_of_isSimpleModule` recording that the hom
-  space is finite-dimensional either way.
+  dimensions. More generally, `TauCeti.finiteDimensional_linearMap_of_isSimpleModule` shows that
+  maps from any finite-dimensional module into a simple module form a finite-dimensional space.
 
 ## References
 
-This implements Layer 1, "Schur, assembled", of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See N. Jacobson, *Basic Algebra II*, Chapter 3, or T. Y. Lam, *A First Course in Noncommutative
 Rings*, Chapter 1.
 -/
@@ -229,6 +226,28 @@ theorem finiteDimensional_linearMap_of_isEmpty_linearEquiv (h : IsEmpty (S ≃�
 
 end Vanishing
 
+section SimpleTarget
+
+variable {k A S N : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [FiniteDimensional k S]
+variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N] [IsSimpleModule A N]
+
+/-- The hom space from a finite-dimensional module into a simple module is finite-dimensional
+over any field. -/
+theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
+  -- A nonzero map is surjective and makes the target finite-dimensional;
+  -- otherwise the hom space is trivial.
+  by_cases h : ∃ f : S →ₗ[A] N, f ≠ 0
+  · obtain ⟨f, hf⟩ := h
+    have : FiniteDimensional k N :=
+      Module.Finite.of_surjective (f.restrictScalars k) (f.surjective_of_ne_zero hf)
+    infer_instance
+  · have : Subsingleton (S →ₗ[A] N) := ⟨fun f g ↦ by simp_all⟩
+    infer_instance
+
+end SimpleTarget
+
 section SimpleSymmetry
 
 variable {k A : Type*} [CommSemiring k] [Nontrivial k] [Ring A] [Algebra k A]
@@ -267,16 +286,6 @@ theorem _root_.LinearEquiv.finrank_linearMap_eq_one (e : S ≃ₗ[A] N) :
       Module.finrank_self]
   rw [← (LinearEquiv.homCongrRight k (S := S) e).finrank_eq]
   exact hend
-
-omit [IsAlgClosed k] in
-/-- The hom space out of a finite-dimensional simple module into a simple module is
-finite-dimensional over any field: it is isomorphic to the endomorphism space of the source
-or is trivial. -/
-theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
-  by_cases h : Nonempty (S ≃ₗ[A] N)
-  · have hend : FiniteDimensional k (S →ₗ[A] S) := inferInstance
-    exact Module.Finite.equiv (LinearEquiv.homCongrRight k (S := S) h.some)
-  · exact finiteDimensional_linearMap_of_isEmpty_linearEquiv (not_nonempty_iff.mp h)
 
 end SchurDimension
 
