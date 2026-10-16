@@ -68,14 +68,4 @@ theorem integrable_apply_basis_iff (b b' : Basis ι ℝ E)
   simp_rw [ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b')]
   exact integrable_const_mul_iff (b.isUnit_det b') _
 
-omit [FiniteDimensional ℝ E] in
-/-- Multiplication by the relative orientation sign preserves genuine integrability. -/
-theorem integrable_signed_apply_iff (o : Orientation ℝ E ι) (b : Basis ι ℝ E)
-    (ω : E → E [⋀^ι]→L[ℝ] ℝ) :
-    Integrable (fun x ↦ (Orientation.signBasis o b : ℝ) * ω x b) b.addHaar ↔
-      Integrable (fun x ↦ ω x b) b.addHaar := by
-  apply integrable_const_mul_iff
-  apply isUnit_iff_ne_zero.mpr
-  exact_mod_cast (Orientation.signBasis o b).ne_zero
-
 end Module.Basis

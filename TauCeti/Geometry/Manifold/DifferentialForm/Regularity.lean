@@ -13,11 +13,11 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 
 /-!
-# Chart regularity and support of the manifold exterior derivative
+# Chart regularity of the manifold exterior derivative
 
 On a `C²` manifold, the exterior derivative of a `C^p` form is `C^r` whenever `r + 1 ≤ p`,
-including infinite regularity. Its locality prevents
-its topological support from enlarging, so compactly supported forms retain compact support.
+including infinite regularity. Support locality and compact-support preservation are provided
+by the support module.
 Alternating-bundle fibre coordinates identify chart expressions and transfer section regularity
 to flat regularity, including within subsets at boundary points.
 
@@ -112,33 +112,6 @@ theorem contDiffWithinAt_inChartAt [IsManifold I 1 M] {n : WithTop ℕ∞}
       exact (φ.inCoordinates_eq_inChartAt (mem_extChartAt_source x)).symm)
 
 end RoughForm
-
-
-/-- Locality of the actual exterior derivative prevents enlargement of a form's support.
-No regularity assumption is needed. -/
-theorem RoughForm.tsupport_mextDeriv_subset (φ : RoughForm I M F k) :
-    _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) (TauCeti.mextDeriv φ) ⊆
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ := by
-  -- Expose support as a closure: its dependent form fibres do not match function-support lemmas.
-  change closure {x | TauCeti.mextDeriv φ x ≠ 0} ⊆ _
-  apply closure_minimal _ (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)
-  intro x hx
-  by_contra hnot
-  have hz : ∀ᶠ y in 𝓝 x, φ y = (0 : RoughForm I M F k) y := by
-    have hn := (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ).isOpen_compl
-    filter_upwards [hn.mem_nhds hnot] with y hy
-    exact _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] F) hy
-  have heq := mextDeriv_congr_of_eventuallyEq hz
-  rw [mextDeriv_zero] at heq
-  exact hx heq
-
-/-- Compact support is preserved by the actual exterior derivative, without a regularity
-assumption. -/
-theorem RoughForm.isCompact_tsupport_mextDeriv {φ : RoughForm I M F k}
-    (hφ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ)) :
-    IsCompact (_root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) (TauCeti.mextDeriv φ)) :=
-  hφ.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) _)
-    (φ.tsupport_mextDeriv_subset)
 
 section Regularity
 

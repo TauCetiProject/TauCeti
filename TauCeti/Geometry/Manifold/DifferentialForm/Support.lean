@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Topological support of rough differential forms
 
 This file establishes how the topological support of a rough differential form behaves under
-scalar multiplication and pullback.  A rough form is a dependent function whose fibre at `x` is
+scalar multiplication, pullback and exterior differentiation. Locality of the exterior derivative
+preserves support and compact support without any regularity assumption. A rough form is a dependent
+function whose fibre at `x` is
 `TangentSpace I x [⋀^Fin k]→L[ℝ] F`, so Mathlib's `tsupport` is used with the model-space codomain
 `E [⋀^Fin k]→L[ℝ] F` supplied explicitly.
 -/
@@ -21,7 +23,7 @@ public section
 
 noncomputable section
 
-open Set
+open Filter Set
 open scoped Manifold Topology
 
 namespace TauCeti
@@ -106,3 +108,37 @@ theorem isCompact_tsupport_mpullback {f : X → Y} (hf : IsProperMap f)
 end RoughForm
 
 end TauCeti
+
+namespace TauCeti.RoughForm
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+
+/-- Locality of the actual exterior derivative prevents enlargement of a form's support.
+No regularity assumption is needed. -/
+theorem tsupport_mextDeriv_subset (φ : RoughForm I M F k) :
+    _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) (TauCeti.mextDeriv φ) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ := by
+  -- Expose support as a closure: its dependent form fibres do not match function-support lemmas.
+  change closure {x | TauCeti.mextDeriv φ x ≠ 0} ⊆ _
+  apply closure_minimal _ (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)
+  intro x hx
+  by_contra hnot
+  have hz : ∀ᶠ y in 𝓝 x, φ y = (0 : RoughForm I M F k) y := by
+    have hn := (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ).isOpen_compl
+    filter_upwards [hn.mem_nhds hnot] with y hy
+    exact _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] F) hy
+  have heq := mextDeriv_congr_of_eventuallyEq hz
+  rw [mextDeriv_zero] at heq
+  exact hx heq
+
+/-- Compact support is preserved by the actual exterior derivative, without a regularity
+assumption. -/
+theorem isCompact_tsupport_mextDeriv {φ : RoughForm I M F k}
+    (hφ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) (TauCeti.mextDeriv φ)) :=
+  hφ.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) _)
+    (φ.tsupport_mextDeriv_subset)
+
+end TauCeti.RoughForm
