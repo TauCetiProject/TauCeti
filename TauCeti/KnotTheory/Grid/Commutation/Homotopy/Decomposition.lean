@@ -36,6 +36,11 @@ whose counted finite families have membership characterizations.
   rewrites the round-trip commutation coefficient as a sum over pairs of pentagons.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions`
   states the homotopy equation entirely in terms of the three finite domain families.
+* `TauCeti.GridDiagram.XSet_inter_coveredSquares_of_mem_commutationHexagons` and
+  `TauCeti.GridDiagram.X_cutColumn_mul_commutationHexagonWeight`: the rectangle under a counted
+  commutation hexagon carries exactly one `X`-marking, in the column the hexagon cuts away
+  (`TauCeti.GridCommutationHexagonBetween.cutColumn`), and its weight exceeds the hexagon weight by
+  the variable of that column.
 
 ## References
 
@@ -147,6 +152,22 @@ theorem ofToGridRectangleEq_coveredSquares {u v : GridState n}
       ((congrArg GridRectangleBetween.toGridRectangle
         (GridInitialHexagonBetween.ofToGridRectangleEq_toGridRectangleBetween r P h)).trans h)
 
+/-- The column of the underlying rectangle that a commutation hexagon cuts away: column `a` for a
+hexagon turning on its terminal side and the column after it for one turning on its initial side.
+For a validated column commutation it is the column whose markings lie in the cut-away bigon. -/
+def cutColumn (P : GridCommutationHexagonBetween a s s' x y) : Fin n :=
+  P.elim (fun _ => a) fun _ => finRotate n a
+
+/-- A hexagon turning on its terminal side cuts away column `a`. -/
+@[simp]
+theorem cutColumn_inl (P : GridHexagonBetween a s' s x y) :
+    cutColumn (Sum.inl P : GridCommutationHexagonBetween a s s' x y) = a := (rfl)
+
+/-- A hexagon turning on its initial side cuts away the column after `a`. -/
+@[simp]
+theorem cutColumn_inr (P : GridInitialHexagonBetween a s s' x y) :
+    cutColumn (Sum.inr P : GridCommutationHexagonBetween a s s' x y) = finRotate n a := (rfl)
+
 end GridCommutationHexagonBetween
 
 /-- A commutation pentagon is either a pentagon turning on its terminal side or one turning on its
@@ -253,6 +274,26 @@ theorem mem_commutationHexagons {x y : GridState n}
     GridCommutationHexagonBetween.toGridRectangleBetween,
     GridCommutationHexagonBetween.coveredSquares]
 
+/-- The rectangle under a counted commutation hexagon carries exactly one `X`-marking, that of the
+column the hexagon cuts away. -/
+theorem XSet_inter_coveredSquares_of_mem_commutationHexagons {x y : GridState n}
+    {P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y}
+    (hP : P ∈ G.commutationHexagons C x y) :
+    G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
+      {(P.cutColumn, G.X P.cutColumn)} := by
+  have hX := ((G.mem_commutationHexagons C P).mp hP).2
+  cases P with
+  | inl P =>
+    rw [GridCommutationHexagonBetween.coveredSquares_inl] at hX
+    rw [GridCommutationHexagonBetween.cutColumn_inl,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inl]
+    exact G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon (C := C) hX
+  | inr P =>
+    rw [GridCommutationHexagonBetween.coveredSquares_inr] at hX
+    rw [GridCommutationHexagonBetween.cutColumn_inr,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inr]
+    exact G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon (C := C) hX
+
 /-- The counted commutation pentagons of either turn-side kind. -/
 noncomputable def commutationPentagons (x y : GridState n) :
     Finset (GridCommutationPentagonBetween C.column C.turnRow x y) :=
@@ -301,6 +342,22 @@ theorem commutationHexagonWeight_eq_prod_coveredSquares {x y : GridState n}
   cases P with
   | inl P => exact G.hexagonWeight_eq_prod_coveredSquares R P
   | inr P => exact G.initialHexagonWeight_eq_prod_coveredSquares R P
+
+/-- The weight of a commutation hexagon times the variable of its cut column is the weight of its
+underlying rectangle. -/
+theorem X_cutColumn_mul_commutationHexagonWeight {x y : GridState n}
+    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    MvPolynomial.X P.cutColumn * G.commutationHexagonWeight C R P =
+      G.OMonomial R P.toGridRectangleBetween.toGridRectangle := by
+  cases P with
+  | inl P =>
+    rw [GridCommutationHexagonBetween.cutColumn_inl, commutationHexagonWeight_inl,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inl]
+    exact G.X_mul_hexagonWeight R P
+  | inr P =>
+    rw [GridCommutationHexagonBetween.cutColumn_inr, commutationHexagonWeight_inr,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inr]
+    exact G.X_mul_initialHexagonWeight R P
 
 /-- The weight of a commutation pentagon of either kind. -/
 noncomputable def commutationPentagonWeight {x y : GridState n}
