@@ -149,11 +149,11 @@ theorem component_one_apply (X Y : C) (f : homModule (R := R) X Y) :
   rw [AInfinityHom.component_one, MultilinearMap.ofSubsingleton_apply_apply] at h
   exact h.trans (ℱ.homInclusion_map X Y f).symm
 
-/-- Two `A∞` functors with the same object map are equal when all their components on
-composable strings agree. -/
+/-- Two `A∞` functors with the same object map are equal when their positive-arity components
+on composable strings agree. -/
 @[ext (iff := false)]
 theorem ext_component {ℱ 𝒢 : AInfinityFunctor 𝒷 𝒸} (hobj : ℱ.obj = 𝒢.obj)
-    (hcomponent : ∀ (n : ℕ) (X : Fin (n + 1) → C),
+    (hcomponent : ∀ (n : ℕ), 0 < n → ∀ (X : Fin (n + 1) → C),
       HEq (ℱ.component X) (𝒢.component X)) : ℱ = 𝒢 := by
   cases ℱ with
   | mk F f hF =>
@@ -172,7 +172,8 @@ theorem ext_component {ℱ 𝒢 : AInfinityFunctor 𝒷 𝒸} (hobj : ℱ.obj = 
         apply (AInfinityFunctor.mk F f hF).isPathCompatible_component (k + 1) |>.ext
           ((AInfinityFunctor.mk F g hG).isPathCompatible_component (k + 1))
         intro X x
-        have h := MultilinearMap.congr_fun (eq_of_heq (hcomponent (k + 1) X)) x
+        have h := MultilinearMap.congr_fun
+          (eq_of_heq (hcomponent (k + 1) (Nat.succ_pos k) X)) x
         rw [← (AInfinityFunctor.mk F f hF).homInclusion_component X x,
           ← (AInfinityFunctor.mk F g hG).homInclusion_component X x]
         exact congrArg
