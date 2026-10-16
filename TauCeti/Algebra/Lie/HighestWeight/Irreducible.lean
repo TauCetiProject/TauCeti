@@ -90,50 +90,9 @@ variable (K L v w) in
 private def diagonalComapInr : LieSubmodule K L N :=
   (LieSubmodule.lieSpan K L {((v, w) : M × N)}).comap (LieModuleHom.inr K L M N)
 
-variable (K L v w) in
-/-- The elements of `M` whose image `(·, 0)` lies in the diagonal submodule. -/
-private def diagonalComapInl : LieSubmodule K L M :=
-  (LieSubmodule.lieSpan K L {((v, w) : M × N)}).comap (LieModuleHom.inl K L M N)
-
 private theorem mem_diagonalComapInr {n : N} :
     n ∈ diagonalComapInr K L v w ↔ ((0, n) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
   by simp only [diagonalComapInr, LieSubmodule.mem_comap, LieModuleHom.inr_apply]
-
-private theorem mem_diagonalComapInl {m : M} :
-    m ∈ diagonalComapInl K L v w ↔ ((m, 0) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
-  by simp only [diagonalComapInl, LieSubmodule.mem_comap, LieModuleHom.inl_apply]
-
-/-- If the diagonal submodule contains both factors whole, it is everything. -/
-private theorem lieSpan_diagonal_eq_top_of_eq_top (hl : diagonalComapInl K L v w = ⊤)
-    (hr : diagonalComapInr K L v w = ⊤) : LieSubmodule.lieSpan K L {((v, w) : M × N)} = ⊤ := by
-  refine eq_top_iff.mpr fun p _ => ?_
-  have hp1 : p.1 ∈ diagonalComapInl K L v w := by rw [hl]; exact LieSubmodule.mem_top _
-  have hp2 : p.2 ∈ diagonalComapInr K L v w := by rw [hr]; exact LieSubmodule.mem_top _
-  have h1 : ((p.1, 0) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
-    mem_diagonalComapInl.mp hp1
-  have h2 : ((0, p.2) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
-    mem_diagonalComapInr.mp hp2
-  have hsum : ((p.1, 0) : M × N) + (0, p.2) = p := by
-    rw [Prod.mk_add_mk, add_zero, zero_add]
-  exact hsum ▸ add_mem h1 h2
-
-/-- If the diagonal submodule contains `(0, w)` then it contains `(v, 0)`, hence — by
-irreducibility of `M` — the whole first factor. -/
-private theorem diagonalComapInl_eq_top_of_diagonalComapInr_eq_top
-    [LieModule.IsIrreducible K L M] (hv : v ≠ 0)
-    (hr : diagonalComapInr K L v w = ⊤) : diagonalComapInl K L v w = ⊤ := by
-  have hvw : ((v, w) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
-    LieSubmodule.subset_lieSpan rfl
-  have hwr : w ∈ diagonalComapInr K L v w := by rw [hr]; exact LieSubmodule.mem_top _
-  have hw' : ((0, w) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
-    mem_diagonalComapInr.mp hwr
-  have hv' : ((v, 0) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} := by
-    have hsub := sub_mem hvw hw'
-    rwa [Prod.mk_sub_mk, sub_zero, sub_self] at hsub
-  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hv ?_
-  have hmem : v ∈ diagonalComapInl K L v w := mem_diagonalComapInl.mpr hv'
-  rw [hbot] at hmem
-  simpa using hmem
 
 variable (K L v w) in
 /-- The first projection of the product, restricted to the diagonal submodule. -/
@@ -250,7 +209,7 @@ private theorem diagonalComapInr_eq_bot [LieModule.IsIrreducible K L M]
     (hw : IsHighestWeightVector b lam w) : diagonalComapInr K L v w = ⊥ := by
   refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_right fun hr => ?_
   exact lieSpan_diagonal_ne_top hv hw (lieSpan_diagonal_eq_top_of_eq_top
-    (diagonalComapInl_eq_top_of_diagonalComapInr_eq_top hv.ne_zero hr) hr)
+    (comap_lieSpan_diagonal_inl_eq_top_of_comap_inr_eq_top hv.ne_zero hr) hr)
 
 private theorem bijective_diagonalFst [LieModule.IsIrreducible K L M]
     [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v)
