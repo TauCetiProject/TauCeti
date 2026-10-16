@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
-public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
+public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!

@@ -71,6 +71,8 @@ theorem mapPointsFunctor_app_surjective_of_dominant (f : H ⟶ K)
   let φ := (CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of k k)
   have he : t (PrimeSpectrum.comap f.hom.toAlgHom.toRingHom (AlgHom.kernelPoint q)) =
       AlgHom.kernelPoint (φ (toConv q) * p).ofConv := by
+    dsimp only [φ]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ofConv_toConv]
     exact (congrArg t (AlgHom.comap_kernelPoint q f.hom.toAlgHom)).trans
       (HopfAlgebra.rightTranslationHomeomorph_kernelPoint
         (toConv (q.comp f.hom.toAlgHom)) p)
@@ -106,9 +108,9 @@ theorem mapPointsFunctor_app_surjective_of_injective
   obtain ⟨q, hq⟩ := mapPointsFunctor_app_surjective_of_dominant
     (baseChangeMap (K := L) f) hd (eH p)
   refine ⟨eK.symm q, eH.injective ?_⟩
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply,
-    AlgHom.baseChangePointsMulEquiv_mapDomain]
-  exact (congrArg (AlgHom.mapDomain (baseChangeMap (K := L) f).hom)
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply,
+    BialgHom.baseChangePointsMulEquiv_mapDomain]
+  exact (congrArg (BialgHom.mapDomain (baseChangeMap (K := L) f).hom)
     (eK.apply_symm_apply q)).trans hq
 
 end TauCeti.CommHopfAlgCat

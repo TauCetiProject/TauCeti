@@ -19,9 +19,9 @@ including the three charts of the blowup of a node.
 
 ## Main results
 
-* `AtWorstNodalOfRelativeDimensionOne.comp_of_etale`: an étale neighbourhood of a nodal
+* `AffineAtWorstNodalOfRelativeDimensionOne.comp_of_etale`: an étale neighbourhood of a nodal
   relative curve is nodal.
-* `atWorstNodalOfRelativeDimensionOne_iff_of_openCover`: nodality is local on the source for
+* `affineAtWorstNodalOfRelativeDimensionOne_iff_of_openCover`: nodality is local on the source for
   open covers.
 
 ## References
@@ -46,10 +46,10 @@ variable {R : Type u} [CommRing R] {X Y : Scheme.{u}}
 /-- Pulling back along an étale morphism preserves the nodal-curve criterion: the singular
 subscheme of the étale source is the base change of the singular subscheme of the target. In
 particular this applies to restriction to an open subscheme. -/
-theorem AtWorstNodalOfRelativeDimensionOne.comp_of_etale
-    {f : Y ⟶ Spec (.of R)} (h : AtWorstNodalOfRelativeDimensionOne f)
+theorem AffineAtWorstNodalOfRelativeDimensionOne.comp_of_etale
+    {f : Y ⟶ Spec (.of R)} (h : AffineAtWorstNodalOfRelativeDimensionOne f)
     (g : X ⟶ Y) [Etale g] :
-    AtWorstNodalOfRelativeDimensionOne (g ≫ f) := by
+    AffineAtWorstNodalOfRelativeDimensionOne (g ≫ f) := by
   let : Y.Over (Spec (.of R)) := ⟨f⟩
   let : X.Over (Spec (.of R)) := ⟨g ≫ f⟩
   have : g.IsOver (Spec (.of R)) := ⟨rfl⟩
@@ -59,7 +59,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_etale
   have hs : SyntomicOfRelativeDimension 1 (g ≫ f) :=
     zero_add 1 ▸ inferInstanceAs (SyntomicOfRelativeDimension (0 + 1) (g ≫ f))
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hs
-  refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
+  refine AffineAtWorstNodalOfRelativeDimensionOne.mk hs ?_
   have H := Scheme.isPullback_singularLocus_subschemeι_of_etale (R := R) g
   have : Etale ((X.singularLocus R).subschemeMap (Y.singularLocus R) g
       (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
@@ -74,15 +74,15 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_etale
 
 /-- The nodal-curve criterion over an affine base can be checked on an open cover of the
 source. -/
-theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
+theorem AffineAtWorstNodalOfRelativeDimensionOne.of_openCover
     {f : Y ⟶ Spec (.of R)} (𝒰 : Y.OpenCover)
-    (h : ∀ j, AtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f)) :
-    AtWorstNodalOfRelativeDimensionOne f := by
+    (h : ∀ j, AffineAtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f)) :
+    AffineAtWorstNodalOfRelativeDimensionOne f := by
   let : Y.Over (Spec (.of R)) := ⟨f⟩
   have hs : SyntomicOfRelativeDimension 1 f :=
     IsZariskiLocalAtSource.of_openCover 𝒰 fun j ↦ (h j).syntomic
   have : SyntomicOfRelativeDimension 1 (Y ↘ Spec (.of R)) := hs
-  refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
+  refine AffineAtWorstNodalOfRelativeDimensionOne.mk hs ?_
   -- The local `Over` instance has structure map `f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) from
@@ -109,12 +109,12 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
 
 /-- A relative curve over an affine base is nodal if and only if its restrictions to every
 member of an open cover are nodal. -/
-theorem atWorstNodalOfRelativeDimensionOne_iff_of_openCover
+theorem affineAtWorstNodalOfRelativeDimensionOne_iff_of_openCover
     (f : Y ⟶ Spec (.of R)) (𝒰 : Y.OpenCover) :
-    AtWorstNodalOfRelativeDimensionOne f ↔
-      ∀ j, AtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f) :=
+    AffineAtWorstNodalOfRelativeDimensionOne f ↔
+      ∀ j, AffineAtWorstNodalOfRelativeDimensionOne (𝒰.f j ≫ f) :=
   ⟨fun h j ↦ h.comp_of_etale (𝒰.f j),
-    AtWorstNodalOfRelativeDimensionOne.of_openCover 𝒰⟩
+    AffineAtWorstNodalOfRelativeDimensionOne.of_openCover 𝒰⟩
 
 end Nodal
 

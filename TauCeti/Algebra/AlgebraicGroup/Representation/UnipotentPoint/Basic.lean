@@ -102,7 +102,7 @@ theorem isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one
 /-- Precomposing a unipotent point with a bialgebra morphism gives a unipotent point. -/
 theorem IsUnipotentPoint.mapDomain {H' : Type w} [Semiring H'] [_root_.HopfAlgebra k H']
     {g : WithConv (H' →ₐ[k] K)} (hg : IsUnipotentPoint g) (f : H →ₐc[k] H') :
-    IsUnipotentPoint (AlgHom.mapDomain f g) := by
+    IsUnipotentPoint (BialgHom.mapDomain f g) := by
   rw [isUnipotentPoint_def] at hg ⊢
   intro M
   rw [← Comodule.pointsAction_corestrict_obj f M g]
@@ -111,12 +111,12 @@ theorem IsUnipotentPoint.mapDomain {H' : Type w} [Semiring H'] [_root_.HopfAlgeb
 /-- Unipotence of a point is invariant under precomposition by a bialgebra isomorphism. -/
 theorem isUnipotentPoint_mapDomain_iff {H' : Type w} [Semiring H']
     [_root_.HopfAlgebra k H'] (e : H ≃ₐc[k] H') (g : WithConv (H' →ₐ[k] K)) :
-    IsUnipotentPoint (AlgHom.mapDomain (e : H →ₐc[k] H') g) ↔ IsUnipotentPoint g := by
+    IsUnipotentPoint (BialgHom.mapDomain (e : H →ₐc[k] H') g) ↔ IsUnipotentPoint g := by
   constructor
   · intro hg
     have h := hg.mapDomain (e.symm : H' →ₐc[k] H)
-    rw [← AlgHom.mapDomainMulEquiv_symm_apply e,
-      ← AlgHom.mapDomainMulEquiv_apply e] at h
+    rw [← BialgEquiv.mapDomainMulEquiv_symm_apply e,
+      ← BialgEquiv.mapDomainMulEquiv_apply e] at h
     simpa only [MulEquiv.symm_apply_apply] using h
   · intro hg
     exact hg.mapDomain (e : H →ₐc[k] H')

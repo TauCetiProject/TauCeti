@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.GroupTheory.DoubleCoset.Map
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
 public import TauCeti.RingTheory.Ideal.Pointwise
+public import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # The double-coset splitting law over invariant rings
@@ -20,7 +21,10 @@ intermediate ring of invariants for a subgroup `H` of `G`. For a prime `Q` of `B
 `H \ G / D`, where `D` is the stabilizer of `Q`. The class of `σ` corresponds to
 `(σ • Q).under C`.
 
-This formulation applies to integral closures over an arbitrary Dedekind base. The bijection
+This formulation applies to integral closures over an arbitrary Dedekind base, once
+`IsGaloisGroup.of_isIntegralClosure` and `IsGaloisGroup.of_isIntegralClosure_fixedField` supply
+the invariance, and directly, through instances, to the rings of integers `𝓞 K`, `𝓞 M` and
+`𝓞 (M ^ H)` of number fields. The bijection
 itself needs neither a Dedekind hypothesis nor residue-field separability: transitivity on prime
 fibres and lying over are supplied by Mathlib's invariant-ring theory. The intermediate ring is
 an explicit parameter, so the same construction works for any realization of the fixed ring,
@@ -39,10 +43,15 @@ including `FixedPoints.subalgebra A B H`.
   representative.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff`:
   characterization of the inverse.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_smul_mk`: compatibility with the
+  action of `G`, moving the base prime `Q` to `τ • Q`.
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural`: enlarging the subgroup
   agrees with contracting primes to the smaller invariant ring.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_eq_relIndex`: the local degree below `Q` is
   `[D(Q) : H ∩ D(Q)]`, including inseparable residue extensions.
+* `Ideal.ramificationIdx_under_eq_one_of_stabilizer_le` and
+  `Ideal.inertiaDeg_under_eq_one_of_stabilizer_le`: if `D(Q) ≤ H`, then `Q ∩ C` has
+  `e = f = 1` over `A`.
 * `Ideal.sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_index`: the local
   degrees indexed by double cosets sum to `[G : H]`.
 * `Ideal.sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_finrank`: the same
@@ -53,8 +62,7 @@ including `FixedPoints.subalgebra A B H`.
 * J. Neukirch, *Algebraic Number Theory*, Chapter I, §9, page 55.
 * G. J. Janusz, *Algebraic Number Fields*, Chapter I.
 
-The construction generalizes the number-field double-coset law in
-`TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic`. It uses Mathlib's
+The construction uses Mathlib's
 `Algebra.IsInvariant.exists_smul_of_under_eq` and `Algebra.IsInvariant.orbit_eq_primesOver`,
 and the rank identity is reindexed from Mathlib's
 `Ideal.sum_ramification_inertia_eq_finrank`.
@@ -81,14 +89,8 @@ theorem under_smul_eq_iff_doubleCosetMk_eq (σ τ : G) :
     (σ • Q).under C = (τ • Q).under C ↔
       DoubleCoset.mk H (stabilizer G Q) σ = DoubleCoset.mk H (stabilizer G Q) τ := by
   rw [TauCeti.doubleCosetMk_eq_mk_iff_mem,
-    ← TauCeti.orbitRel_smul_iff_mem_doubleCoset_stabilizer, orbitRel_apply, mem_orbit_iff]
-  constructor
-  · intro h
-    obtain ⟨h, hh⟩ := Algebra.IsInvariant.exists_smul_of_under_eq C B H (τ • Q) (σ • Q) h.symm
-    exact ⟨h, hh.symm⟩
-  · rintro ⟨h, hh⟩
-    rw [← hh]
-    exact under_smul (G := H) C (τ • Q) h
+    ← TauCeti.orbitRel_smul_iff_mem_doubleCoset_stabilizer, orbitRel_apply,
+    under_eq_iff_mem_orbit H C]
 
 end Fibres
 
@@ -118,18 +120,12 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsInvariant :
       induction q using Quotient.inductionOn' with | h σ =>
       induction r using Quotient.inductionOn' with | h τ =>
       exact (Q.under_smul_eq_iff_doubleCosetMk_eq H C σ τ).mp (Subtype.ext_iff.mp hqr), by
-      have : Algebra.IsIntegral C B := Algebra.IsInvariant.isIntegral C B H
       rintro ⟨q, hq, hqp⟩
-      obtain ⟨⟨R, hR, hRq⟩⟩ := q.nonempty_primesOver (S := B)
-      have : R.LiesOver p := LiesOver.trans R q p
-      have hRp : R ∈ p.primesOver B := ⟨hR, inferInstance⟩
-      rw [← Algebra.IsInvariant.orbit_eq_primesOver A B G p Q, mem_orbit_iff] at hRp
-      obtain ⟨σ, hσ⟩ := hRp
+      obtain ⟨σ, hσ⟩ := Q.exists_smul_under_eq G p C q
       refine ⟨DoubleCoset.mk H _ σ, Subtype.ext ?_⟩
       -- Reduce the quotient lift at its representative and the private subtype constructor.
       change (σ • Q).under C = q
-      rw [hσ]
-      exact hRq.over.symm⟩
+      exact hσ⟩
 
 include hAB hCB in
 /-- The class of `σ` is sent to the contraction of `σ • Q`. -/
@@ -147,6 +143,14 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C).symm q = DoubleCoset.mk H _ σ ↔
       q.1 = (σ • Q).under C := by
   rw [Equiv.symm_apply_eq, Subtype.ext_iff, doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
+
+/-- **The double-coset law is compatible with the action of `G`.** Indexing the primes of `C`
+above `p` through the translate `τ • Q` instead of `Q` sends the class of `σ` to the prime that
+the indexing through `Q` attaches to the class of `σ * τ`. -/
+theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_smul_mk (τ σ : G) :
+    (τ • Q).doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C (DoubleCoset.mk H _ σ) =
+      Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C (DoubleCoset.mk H _ (σ * τ)) :=
+  Subtype.ext <| by simp only [doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk, mul_smul]
 
 /-- Enlarging the subgroup and contracting to its invariant ring give the same prime under
 the double-coset splitting bijection. The scalar towers express the two inclusions of `C'`
@@ -208,6 +212,24 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex (sigma : G) :
   rw [ramificationIdx_mul_inertiaDeg_under_eq_relIndex (Q := sigma • Q) (H := H) (C := C),
     stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
     TauCeti.map_conj_eq_conj_smul]
+
+variable {H}
+
+/-- **Above the decomposition group the ramification index is one.** If `H` contains the
+decomposition group `D(Q)`, then the prime `Q ∩ C` of the `H`-invariant ring `C` has
+ramification index one over `A`. No hypothesis on the residue extension is needed. -/
+theorem ramificationIdx_under_eq_one_of_stabilizer_le (hH : stabilizer G Q ≤ H) :
+    (Q.under C).ramificationIdx A = 1 :=
+  (mul_eq_one.1 <| (Q.ramificationIdx_mul_inertiaDeg_under_eq_relIndex H C).trans
+    (Subgroup.relIndex_eq_one.2 hH)).1
+
+/-- **Above the decomposition group the residue degree is one.** If `H` contains the
+decomposition group `D(Q)`, then the prime `Q ∩ C` of the `H`-invariant ring `C` has residue
+degree one over `A`. No hypothesis on the residue extension is needed. -/
+theorem inertiaDeg_under_eq_one_of_stabilizer_le (hH : stabilizer G Q ≤ H) :
+    (Q.under C).inertiaDeg A = 1 :=
+  (mul_eq_one.1 <| (Q.ramificationIdx_mul_inertiaDeg_under_eq_relIndex H C).trans
+    (Subgroup.relIndex_eq_one.2 hH)).2
 
 end LocalDegree
 
