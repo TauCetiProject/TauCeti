@@ -147,15 +147,9 @@ namespace TauCeti
 norm below one in a non-archimedean normed ring. -/
 theorem summable_norm_intCast_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
     [IsUltrametricDist K] (a : ℕ → ℤ) {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ ‖(a n : K) * q ^ n‖) := by
-  apply Summable.of_nonneg_of_le (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
-    (summable_norm_geometric_of_norm_lt_one hq)
-  calc
-    ‖(a n : K) * q ^ n‖ ≤ ‖(a n : K)‖ * ‖q ^ n‖ := norm_mul_le _ _
-    _ ≤ 1 * ‖q ^ n‖ :=
-      mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_intCast_le_one K (a n))
-        (norm_nonneg (q ^ n))
-    _ = ‖q ^ n‖ := one_mul _
+    Summable (fun n : ℕ ↦ ‖(a n : K) * q ^ n‖) :=
+  RingHom.summable_norm_map_coeff_mul_pow (Int.castRingHom K)
+    (IsUltrametricDist.norm_intCast_le_one K) a hq
 
 /-- An arbitrary integer-coefficient power series converges at a parameter of norm below one in
 a complete non-archimedean normed ring. -/
