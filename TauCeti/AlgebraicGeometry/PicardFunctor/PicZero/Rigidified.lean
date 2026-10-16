@@ -213,11 +213,10 @@ def rigidifiedPicardDegreeZeroToRelative :
       (relativePicardDegreeZeroFunctorι f).app T'
         ((relativePicardDegreeZeroFunctor f).map g
           (rigidifiedPicardDegreeZeroToRelativeHom f x₀ hx₀ T a))
-    rw [relativePicardDegreeZeroFunctorι_app_toRelativeHom,
+    simp only [relativePicardDegreeZeroFunctorι_app_toRelativeHom,
       NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι f),
-      relativePicardDegreeZeroFunctorι_app_toRelativeHom,
-      NatTrans.naturality_apply (rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀),
-      NatTrans.naturality_apply (rigidifiedPicardFunctorIso f x₀ hx₀).hom]
+      NatTrans.naturality_apply (rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀)]
+    exact NatTrans.naturality_apply (rigidifiedPicardFunctorIso f x₀ hx₀).hom g _
 
 @[simp]
 private lemma rigidifiedPicardDegreeZeroToRelative_app_apply (T : (Over S)ᵒᵖ)
@@ -267,11 +266,10 @@ def relativePicardDegreeZeroToRigidified :
       (rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T'
         ((rigidifiedPicardDegreeZeroFunctor f x₀ hx₀).map g
           (relativePicardDegreeZeroToRigidifiedHom f x₀ hx₀ T c))
-    rw [rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom,
+    simp only [rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom,
       NatTrans.naturality_apply (rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀),
-      rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom,
-      NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι f),
-      NatTrans.naturality_apply (rigidifiedPicardFunctorIso f x₀ hx₀).inv]
+      NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι f)]
+    exact NatTrans.naturality_apply (rigidifiedPicardFunctorIso f x₀ hx₀).inv g _
 
 @[simp]
 private lemma relativePicardDegreeZeroToRigidified_app_apply (T : (Over S)ᵒᵖ)
@@ -290,7 +288,7 @@ def rigidifiedPicardDegreeZeroFunctorIso :
     hom_inv_id := by
       ext T a
       apply rigidifiedPicardDegreeZeroFunctorι_app_injective f x₀ hx₀ T
-      rw [NatTrans.comp_app, CommGrpCat.comp_apply,
+      simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
         rigidifiedPicardDegreeZeroToRelative_app_apply,
         relativePicardDegreeZeroToRigidified_app_apply,
         rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom,
@@ -300,7 +298,7 @@ def rigidifiedPicardDegreeZeroFunctorIso :
     inv_hom_id := by
       ext T c
       apply relativePicardDegreeZeroFunctorι_app_injective f T
-      rw [NatTrans.comp_app, CommGrpCat.comp_apply,
+      simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
         relativePicardDegreeZeroToRigidified_app_apply,
         rigidifiedPicardDegreeZeroToRelative_app_apply,
         relativePicardDegreeZeroFunctorι_app_toRelativeHom,
@@ -316,7 +314,7 @@ theorem rigidifiedPicardDegreeZeroToRelative_comp_relativePicardDegreeZeroFuncto
       rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ ≫
         (rigidifiedPicardFunctorIso f x₀ hx₀).hom := by
   ext T a
-  rw [NatTrans.comp_app, CommGrpCat.comp_apply, NatTrans.comp_app, CommGrpCat.comp_apply,
+  simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
     rigidifiedPicardDegreeZeroToRelative_app_apply,
     relativePicardDegreeZeroFunctorι_app_toRelativeHom]
 
@@ -327,7 +325,7 @@ theorem relativePicardDegreeZeroToRigidified_comp_rigidifiedPicardDegreeZeroFunc
     relativePicardDegreeZeroToRigidified f x₀ hx₀ ≫ rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ =
       relativePicardDegreeZeroFunctorι f ≫ (rigidifiedPicardFunctorIso f x₀ hx₀).inv := by
   ext T c
-  rw [NatTrans.comp_app, CommGrpCat.comp_apply, NatTrans.comp_app, CommGrpCat.comp_apply,
+  simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
     relativePicardDegreeZeroToRigidified_app_apply,
     rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom]
 
