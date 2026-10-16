@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -236,30 +237,6 @@ theorem contMDiffAt_chartAt_comp {n : WithTop ℕ∞} (x : N) :
       (writtenInExtChartAt_chartAt_comp x (mem_extChartAt_target x))⟩
 
 section ChartOverlap
-
-omit [IsManifold I 1 M] in
-/-- Changing extended coordinates transports the coordinate image of a subset of the overlap
-onto its image in the second chart. No differentiability assumption is needed. -/
-theorem extChartAt_coordChange_image (α β : M) {s : Set M}
-    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
-    ((extChartAt I α).symm ≫ extChartAt I β) '' ((extChartAt I α) '' s) =
-      (extChartAt I β) '' s := by
-  simp only [Set.image_image]
-  apply Set.image_congr
-  intro x hx
-  exact congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
-
-omit [IsManifold I 1 M] in
-/-- Extended coordinate changes are injective on the coordinate image of any subset of the
-chart overlap. No differentiability assumption is needed. -/
-theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
-    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
-    Set.InjOn ((extChartAt I α).symm ≫ extChartAt I β) ((extChartAt I α) '' s) := by
-  apply ((extChartAt I α).symm ≫ extChartAt I β).injOn.mono
-  rintro _ ⟨x, hx, rfl⟩
-  rw [PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff,
-    Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
-  exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
 
 /-- On a subset of a chart overlap, the derivative of the extended coordinate change is its
 Fréchet derivative within the full model range, including at boundary and corner points. -/
