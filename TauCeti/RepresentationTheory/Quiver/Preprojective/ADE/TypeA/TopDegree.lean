@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeA.Basis
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Corner
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Resolution
 
 /-!
@@ -62,56 +63,9 @@ local notation "σ" => signlessPreprojectiveMk k Q
 local notation "e" => fun a : Fin (DynkinType.A n).rank =>
   σ (vertexIdempotent k (vertex AG a))
 
-/-! ### Homogeneity of valley normal forms -/
-
 section CommRing
 
 variable [CommRing k]
-
-/-- Every numerical graph arrow is homogeneous of degree one, including the zero returned for
-nonadjacent or out-of-range endpoints. -/
-private theorem signlessArrow_mem_grade_one (i j : ℕ) :
-    signlessArrow k AG i j ∈ signlessPreprojectiveGrade k Q 1 := by
-  classical
-  by_cases hbounds : i < (DynkinType.A n).rank ∧ j < (DynkinType.A n).rank
-  · by_cases hadj :
-        (diagramGraph (DynkinType.A n).cartanMatrix).Adj ⟨i, hbounds.1⟩ ⟨j, hbounds.2⟩
-    · -- The public arrow equation takes `Fin` endpoints, while this helper starts with their
-      -- numerical labels; spelling out the bounded endpoints lets that equation match.
-      change signlessArrow k AG (↑(⟨i, hbounds.1⟩ : Fin (DynkinType.A n).rank))
-          (↑(⟨j, hbounds.2⟩ : Fin (DynkinType.A n).rank)) ∈ _
-      rw [signlessArrow_of_adj k hadj]
-      exact signlessPreprojectiveMk_mem_grade k Q (ofArrow_mem_grade_one _)
-    · rw [signlessArrow_eq_zero k (fun hi hj h => hadj h)]
-      exact Submodule.zero_mem _
-  · rw [signlessArrow_eq_zero k (fun hi hj _ => hbounds ⟨hi, hj⟩)]
-    exact Submodule.zero_mem _
-
-/-- A valley word with `s` descents and `r` climbs is homogeneous of degree `s + r`. -/
-private theorem ladderValley_mem_grade (m s r : ℕ) :
-    ladderValley (fun w => signlessArrow k AG w (w + 1))
-        (fun w => signlessArrow k AG (w + 1) w) m s r ∈
-      signlessPreprojectiveGrade k Q (s + r) := by
-  have hdesc : ∀ s,
-      ladderValley (fun w => signlessArrow k AG w (w + 1))
-          (fun w => signlessArrow k AG (w + 1) w) m s 0 ∈
-        signlessPreprojectiveGrade k Q s := by
-    intro t
-    induction t with
-    | zero =>
-        rw [ladderValley_zero_zero]
-        exact SetLike.one_mem_graded _
-    | succ t ih =>
-        rw [← ladderValley_mul_d]
-        simpa using mul_mem_signlessPreprojectiveGrade k Q ih
-          (signlessArrow_mem_grade_one k (m + t + 1) (m + t))
-  induction r with
-  | zero => simpa using hdesc s
-  | succ r ih =>
-      rw [← u_mul_ladderValley]
-      simpa [add_assoc, add_comm, add_left_comm] using
-        mul_mem_signlessPreprojectiveGrade k Q
-          (signlessArrow_mem_grade_one k (m + r) (m + r + 1)) ih
 
 /-- A type-`A` valley belongs to the graded corner whose degree is the number of descents plus
 climbs in its defining word. -/
@@ -128,7 +82,7 @@ theorem signlessPreprojectiveAValley_mem_signlessPreprojectiveCorner
       signlessPreprojectiveMk_mem_grade k Q (vertexIdempotent_mem_grade_zero _)
     simpa using mul_mem_signlessPreprojectiveGrade k Q
       (mul_mem_signlessPreprojectiveGrade k Q hleft
-        (ladderValley_mem_grade k m (a.val - m) (b.val - m))) hright
+        (ladderValley_mem_grade k AG m (a.val - m) (b.val - m))) hright
   · have hid (i : Fin (DynkinType.A n).rank) : IsIdempotentElem (e i) :=
       IsIdempotentElem.map (vertexIdempotent_mul_self (k := k) (vertex AG i)) σ
     exact (mem_cornerSubmodule_iff k (hid b) (hid a)).1
@@ -153,12 +107,6 @@ theorem signlessPreprojectiveGrade_A_eq_bot_of_le (d : ℕ) (hd : n ≤ d) :
   · intro c x _ hx
     rw [map_smul, hx, smul_zero]
 
-end CommRing
-
-section Field
-
-variable [Field k]
-
 /-- The bottom-zero valley from `a` to the opposite vertex has path length `n - 1`. -/
 theorem signlessPreprojectiveAValley_zero_mem_top_corner
     (a : Fin (DynkinType.A n).rank) :
@@ -171,6 +119,12 @@ theorem signlessPreprojectiveAValley_zero_mem_top_corner
     omega
   simpa only [Nat.sub_zero, hsum] using
     signlessPreprojectiveAValley_mem_signlessPreprojectiveCorner k a a.rev 0
+
+end CommRing
+
+section Field
+
+variable [Field k]
 
 /-- The bottom-zero valley from any vertex to its opposite vertex is nonzero. Hence the path
 degree `n - 1` of the signless preprojective algebra of `Aₙ` is nontrivial. -/
@@ -201,6 +155,12 @@ theorem signlessPreprojectiveGrade_A_top_ne_bot
     (signlessPreprojectiveAValley_zero_mem_top_corner k a)).1
   rw [h, Submodule.mem_bot] at hmem
   exact signlessPreprojectiveAValley_zero_ne_zero k a hmem
+
+end Field
+
+section CommRing
+
+variable [CommRing k]
 
 /-! ### The top-degree Koszul defect -/
 
@@ -249,14 +209,6 @@ theorem unop_signlessPreprojectiveATopValley
     unop (signlessPreprojectiveATopValley k a : Πᵐᵒᵖ) =
       signlessPreprojectiveAValley k a a.rev 0 := (rfl)
 
-/-- The top valley is nonzero in the right vertex projective. -/
-theorem signlessPreprojectiveATopValley_ne_zero
-    (a : Fin (DynkinType.A n).rank) :
-    signlessPreprojectiveATopValley k a ≠ 0 := fun h =>
-  signlessPreprojectiveAValley_zero_ne_zero k a
-    (congrArg (fun z : signlessPreprojectiveRightProjective k (vertex AG a.rev) =>
-      unop (z : Πᵐᵒᵖ)) h)
-
 /-- **The top valley lies in the left Koszul kernel**, in path degree `n - 1`. -/
 theorem signlessPreprojectiveATopValley_mem_ker
     (a : Fin (DynkinType.A n).rank) :
@@ -268,6 +220,20 @@ theorem signlessPreprojectiveATopValley_mem_ker
   simpa only [unop_signlessPreprojectiveKoszulLeft_apply,
     unop_signlessPreprojectiveATopValley, Pi.zero_apply, Submodule.coe_zero, unop_zero] using
       (signlessPreprojectiveAValley_zero_ker_conditions k a).2 i b
+
+end CommRing
+
+section Field
+
+variable [Field k]
+
+/-- The top valley is nonzero in the right vertex projective. -/
+theorem signlessPreprojectiveATopValley_ne_zero
+    (a : Fin (DynkinType.A n).rank) :
+    signlessPreprojectiveATopValley k a ≠ 0 := fun h =>
+  signlessPreprojectiveAValley_zero_ne_zero k a
+    (congrArg (fun z : signlessPreprojectiveRightProjective k (vertex AG a.rev) =>
+      unop (z : Πᵐᵒᵖ)) h)
 
 /-- **The left map in the type-`A` signless preprojective Koszul complex is not injective.** Its
 kernel contains the nonzero top valley from `a` to `a.rev`, in degree `n - 1`. -/
