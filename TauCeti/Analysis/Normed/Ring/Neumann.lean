@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
-public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 import Mathlib.RingTheory.Henselian
 
@@ -55,13 +54,6 @@ theorem mem_unitOpenBall {R : Type*} [SeminormedCommRing R] [NormOneClass R]
     [IsUltrametricDist R] {x : Subring.unitClosedBall R} :
     x ∈ unitOpenBall R ↔ ‖(x : R)‖ < 1 :=
   Iff.rfl
-
-/-- Every element of the open unit-ball ideal is topologically nilpotent in the closed
-unit-ball subring. -/
-theorem isTopologicallyNilpotent_of_mem_unitOpenBall {R : Type*} [SeminormedCommRing R]
-    [NormOneClass R] [IsUltrametricDist R] {x : Subring.unitClosedBall R}
-    (hx : x ∈ unitOpenBall R) : IsTopologicallyNilpotent x :=
-  tendsto_pow_atTop_nhds_zero_of_norm_lt_one hx
 
 end Ideal
 
