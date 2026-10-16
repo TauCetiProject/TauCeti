@@ -230,19 +230,14 @@ theorem house_eq_one_iff {x : F} (hx : IsIntegral ℤ x) :
 `|z|` is bounded by its factor `max(1, |z|)` of `M(x) = a₀ ∏ max(1, |z|)`, and the other factors
 are at least `1`; for transcendental `x` this reads `0 ≤ 1`. -/
 theorem house_le_mahlerMeasure (x : F) : house x ≤ mahlerMeasure x := by
-  classical
   refine (house_le_iff (zero_le_one.trans (one_le_mahlerMeasure x))).2 fun z hz ↦ ?_
   have hz' : z ∈ (minpoly ℚ x).aroots ℂ := mem_aroots'.2 (mem_rootSet'.1 hz)
   have ha₀ : (1 : ℝ) ≤ (primitiveMinpoly x).leadingCoeff := by
     exact_mod_cast (leadingCoeff_primitiveMinpoly_pos x)
-  have hprod : 1 ≤ (((minpoly ℚ x).aroots ℂ).erase z |>.map fun z ↦ max 1 ‖z‖).prod :=
-    Multiset.one_le_prod fun _ hw ↦ by
-      obtain ⟨w, -, rfl⟩ := Multiset.mem_map.1 hw
-      exact le_max_left _ _
-  rw [mahlerMeasure_eq_leadingCoeff_mul_prod, ← Multiset.prod_map_erase hz']
-  calc ‖z‖ ≤ max 1 ‖z‖ * 1 := by simp
-    _ ≤ max 1 ‖z‖ * _ := by gcongr
-    _ ≤ _ := le_mul_of_one_le_left (by positivity) ha₀
+  have h := Multiset.mem_le_prod_of_one_le (fun w : ℂ ↦ le_max_left 1 ‖w‖) hz'
+  rw [mahlerMeasure_eq_leadingCoeff_mul_prod]
+  exact ((le_max_right 1 ‖z‖).trans h).trans
+    (le_mul_of_one_le_left (zero_le_one.trans ((le_max_left 1 ‖z‖).trans h)) ha₀)
 
 /-- The Mahler measure is at most `a₀ max(1, ⌈x⌉)ᵈ`, where `a₀` is the leading coefficient of the
 primitive minimal polynomial and `d` the degree of `x`. -/
