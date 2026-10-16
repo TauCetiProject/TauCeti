@@ -5,25 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import Mathlib.Topology.EMetricSpace.BoundedVariation
+public import TauCeti.Analysis.ConstantSpeed
 public import TauCeti.Topology.Connected.HausdorffMeasure
 
 /-!
-# Hausdorff lower bounds for the length of injective curves
+# Hausdorff measure and the length of injective curves
 
 A continuous curve on a compact real interval `[a, b]` that is injective on the open interval
-`(a, b)` has variation at most the one-dimensional Hausdorff measure of its trace. This covers
+`(a, b)` has variation equal to the one-dimensional Hausdorff measure of its trace. This covers
 injective arcs and simple closed curves, where `γ a = γ b`; the endpoints may also coincide
-with other points of the trace. In particular, finite trace measure implies bounded variation,
-without any Lipschitz or bounded-variation hypothesis on the parametrization.
+with other points of the trace. In particular, finite trace measure is equivalent to bounded
+variation, without any Lipschitz or bounded-variation hypothesis on the parametrization.
 The results include empty and singleton parameter intervals.
 
 Both raw Hausdorff measure `μH[1]` and Euclidean-normalized measure `μHE[1]` are supported.
-The central formal input is `IsPreconnected.edist_le_hausdorffMeasure`: apply it to the
-subarcs of a partition and add their measures. Injectivity on the open interval ensures that
-distinct subarcs overlap only at their common endpoint or at `γ a` and `γ b`, and finitely many
-points have zero one-dimensional Hausdorff measure.
+For the lower bound, the central formal input is `IsPreconnected.edist_le_hausdorffMeasure`:
+apply it to the subarcs of a partition and add their measures. Injectivity on the open interval
+ensures that distinct subarcs overlap only at their common endpoint or at `γ a` and `γ b`, and
+finitely many points have zero one-dimensional Hausdorff measure. The reverse bound is the
+general trace estimate `eVariationOn.hausdorffMeasure_image_le`, which needs no continuity or
+injectivity.
 -/
 
 public section
@@ -104,30 +105,39 @@ injective arc or a simple closed curve, is at most the Euclidean-normalized one-
 Hausdorff measure of its trace. This also covers empty and singleton intervals. -/
 theorem eVariationOn_le_euclideanHausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
     (hinj : InjOn γ (Ioo a b)) : eVariationOn γ (Icc a b) ≤ μHE[1] (γ '' Icc a b) := by
-  have hreal : (μHE[1] : Measure ℝ) = volume := by
-    simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
-  have hscalar :
-      Measure.addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin 1)))
-        μH[(1 : ℕ)] = 1 := by
-    have h := congrArg (fun μ : Measure ℝ ↦ μ (Icc 0 1)) hreal
-    simpa [Measure.euclideanHausdorffMeasure_def, Measure.smul_apply,
-      hausdorffMeasure_real, Real.volume_Icc] using h
-  rw [Measure.euclideanHausdorffMeasure_def, hscalar, one_smul]
-  simpa only [Nat.cast_one] using hγ.eVariationOn_le_hausdorffMeasure_image hinj
+  rw [Measure.euclideanHausdorffMeasure_one]
+  exact hγ.eVariationOn_le_hausdorffMeasure_image hinj
 
 /-- A continuous curve on `[a, b]` that is injective on `(a, b)`, such as an injective arc or
-a simple closed curve, has bounded variation if its trace has finite raw Hausdorff length. -/
-theorem boundedVariationOn_of_hausdorffMeasure_image_lt_top (hγ : ContinuousOn γ (Icc a b))
-    (hinj : InjOn γ (Ioo a b)) (hfinite : μH[1] (γ '' Icc a b) < ∞) :
-    BoundedVariationOn γ (Icc a b) :=
-  ((hγ.eVariationOn_le_hausdorffMeasure_image hinj).trans_lt hfinite).ne
+a simple closed curve, has variation equal to the raw one-dimensional Hausdorff measure of its
+trace. The equality also holds for infinite length and for empty or singleton intervals. -/
+theorem eVariationOn_eq_hausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
+    (hinj : InjOn γ (Ioo a b)) : eVariationOn γ (Icc a b) = μH[1] (γ '' Icc a b) :=
+  le_antisymm (hγ.eVariationOn_le_hausdorffMeasure_image hinj)
+    (eVariationOn.hausdorffMeasure_image_le γ (Icc a b))
 
 /-- A continuous curve on `[a, b]` that is injective on `(a, b)`, such as an injective arc or
-a simple closed curve, has bounded variation if its trace has finite Euclidean Hausdorff length.
-No Lipschitz hypothesis on its input parametrization is needed. -/
-theorem boundedVariationOn_of_euclideanHausdorffMeasure_image_lt_top
-    (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b))
-    (hfinite : μHE[1] (γ '' Icc a b) < ∞) : BoundedVariationOn γ (Icc a b) :=
-  ((hγ.eVariationOn_le_euclideanHausdorffMeasure_image hinj).trans_lt hfinite).ne
+a simple closed curve, has variation equal to the Euclidean-normalized one-dimensional
+Hausdorff measure of its trace, including when the length is infinite. -/
+theorem eVariationOn_eq_euclideanHausdorffMeasure_image (hγ : ContinuousOn γ (Icc a b))
+    (hinj : InjOn γ (Ioo a b)) : eVariationOn γ (Icc a b) = μHE[1] (γ '' Icc a b) := by
+  rw [Measure.euclideanHausdorffMeasure_one]
+  exact hγ.eVariationOn_eq_hausdorffMeasure_image hinj
+
+/-- Finite raw Hausdorff length of the trace is equivalent to bounded variation for a continuous
+curve injective on the open interval. No Lipschitz hypothesis on its parametrization is needed. -/
+theorem boundedVariationOn_iff_hausdorffMeasure_image_lt_top
+    (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) :
+    BoundedVariationOn γ (Icc a b) ↔ μH[1] (γ '' Icc a b) < ∞ := by
+  rw [BoundedVariationOn, hγ.eVariationOn_eq_hausdorffMeasure_image hinj, lt_top_iff_ne_top]
+
+/-- Finite Euclidean Hausdorff length of the trace is equivalent to bounded variation for a
+continuous curve injective on the open interval, including injective arcs and simple closed
+curves. -/
+theorem boundedVariationOn_iff_euclideanHausdorffMeasure_image_lt_top
+    (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) :
+    BoundedVariationOn γ (Icc a b) ↔ μHE[1] (γ '' Icc a b) < ∞ := by
+  rw [BoundedVariationOn, hγ.eVariationOn_eq_euclideanHausdorffMeasure_image hinj,
+    lt_top_iff_ne_top]
 
 end ContinuousOn
