@@ -180,7 +180,8 @@ theorem exists_contDiffOn_picard_solution_of_contDiff
     filter_upwards [hR.eventually_apply_implicitFunction hn hinvertible] with p hp
     rw [hp, hRbase]
   obtain ⟨U, hU, hp₀U, hγU⟩ :=
-    hRglobal.exists_isOpen_contDiffOn_implicitFunction hn hinvertible
+    ContDiffOn.exists_isOpen_contDiffOn_implicitFunction hRglobal.contDiffOn isOpen_univ
+      (Set.mem_univ u) hn hinvertible
   obtain ⟨V, hVsub, hV, hp₀V⟩ := mem_nhds_iff.mp hγeq
   let W := U ∩ V
   refine ⟨γ, W, hU.inter hV, ⟨hp₀U, hp₀V⟩,
