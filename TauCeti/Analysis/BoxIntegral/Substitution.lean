@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoxIntegral.FundThmCalculus
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-public import Mathlib.Topology.Order.ProjIcc
+public import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -47,33 +46,10 @@ theorem hasIntegral_Henstock_deriv_smul_comp {E : Type*} [NormedAddCommGroup E] 
   have hf : ContinuousOn f (Icc c d) := by rwa [← himage]
   have ha : θ a ∈ Icc c d := hmap (left_mem_Icc.mpr hab.le)
   have hb : θ b ∈ Icc c d := hmap (right_mem_Icc.mpr hab.le)
-  have hcd : c ≤ d := ha.1.trans ha.2
-  -- Extend the integrand by holding its endpoint values constant outside the image interval.
-  let g : ℝ → E := fun x ↦ f (projIcc c d hcd x)
-  have hg : Continuous g := hf.domRestrict.comp continuous_projIcc
-  have hgf : EqOn g f (Icc c d) := by
-    intro x hx
-    simp [g, projIcc_of_mem hcd hx]
-  let F : ℝ → E := fun t ↦ ∫ x in c..t, g x
-  have hF : Continuous F :=
-    (intervalIntegral.differentiable_integral_of_continuous hg).continuous
-  have hdF : ∀ x, HasDerivAt F (g x) x := fun x ↦
-    intervalIntegral.integral_hasDerivAt_right (hg.intervalIntegrable c x)
-      hg.aestronglyMeasurable.stronglyMeasurableAtFilter hg.continuousAt
+  obtain ⟨F, hF, hdF, hvalue⟩ :=
+    TauCeti.intervalIntegral.exists_continuous_primitive_Icc (ha.1.trans ha.2) hf
   have h := hasIntegral_Henstock_of_hasDerivAt_off_countable hab hs (hF.comp_continuousOn hθ)
-    (fun t ht ↦ (hdF (θ t)).scomp t (hdθ t ht))
-  have hvalue : F (θ b) - F (θ a) = ∫ x in θ a..θ b, f x := by
-    calc
-      F (θ b) - F (θ a) = ∫ x in θ a..θ b, g x := by
-        apply sub_eq_iff_eq_add.mpr
-        simpa [F, add_comm] using (intervalIntegral.integral_add_adjacent_intervals
-          (hg.intervalIntegrable c (θ a)) (hg.intervalIntegrable (θ a) (θ b))).symm
-      _ = ∫ x in θ a..θ b, f x :=
-        intervalIntegral.integral_congr (hgf.mono (uIcc_subset_Icc ha hb))
-  simp only [Function.comp_apply] at h
-  rw [hvalue] at h
-  exact (hasIntegral_congr (intervalBox a b hab) IntegrationParams.Henstock
-    (fun x hx ↦ congrArg (θ' (x 0) • ·) (hgf (hmap (mem_Icc_intervalBox.mp hx))))
-    (fun _ _ ↦ rfl) (∫ x in θ a..θ b, f x)).mp h
+    (fun t ht ↦ (hdF (θ t) (hmap (Ioo_subset_Icc_self ht.1))).scomp t (hdθ t ht))
+  simpa only [Function.comp_apply, hvalue (θ a) ha (θ b) hb] using h
 
 end TauCeti.BoxIntegral
