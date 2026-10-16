@@ -128,6 +128,7 @@ variable [Field k]
 
 /-- The bottom-zero valley from any vertex to its opposite vertex is nonzero. Hence the path
 degree `n - 1` of the signless preprojective algebra of `Aₙ` is nontrivial. -/
+@[simp]
 theorem signlessPreprojectiveAValley_zero_ne_zero
     (a : Fin (DynkinType.A n).rank) :
     signlessPreprojectiveAValley k a a.rev 0 ≠ 0 := by
@@ -166,6 +167,7 @@ variable [CommRing k]
 
 /-- Every arrow leaving the terminal vertex kills the top valley. Its product with that valley
 would have degree `n`, which vanishes. -/
+@[simp]
 theorem signlessPreprojectiveMk_ofArrow_mul_AValley_zero
     (a : Fin (DynkinType.A n).rank) {i : Q} (c : vertex AG a.rev ⟶ i) :
     σ (ofArrow c) * signlessPreprojectiveAValley k a a.rev 0 = 0 := by
@@ -228,6 +230,7 @@ section Field
 variable [Field k]
 
 /-- The top valley is nonzero in the right vertex projective. -/
+@[simp]
 theorem signlessPreprojectiveATopValley_ne_zero
     (a : Fin (DynkinType.A n).rank) :
     signlessPreprojectiveATopValley k a ≠ 0 := fun h =>
