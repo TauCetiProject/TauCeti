@@ -437,12 +437,15 @@ variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A] [IsSim
 
 namespace BaseChangeModule
 
-variable (g : B →ₐ[K] A) [FiniteDimensional L B]
+variable (g : B →ₐ[K] A)
 
 /-- When `[L : K] · dim_K B = dim_K A`, that is when `g` maps `B` onto the centralizer of the image
 of `L`, right multiplication through `g` is an isomorphism `Bᵐᵒᵖ ≃ End_{L ⊗[K] A} A`. -/
 theorem mulRightAlgHom_bijective
     (hdim : finrank K L * finrank K B = finrank K A) : Function.Bijective (mulRightAlgHom L g) := by
+  have : FiniteDimensional K B :=
+    FiniteDimensional.of_injective g.toLinearMap g.toRingHom.injective
+  have : FiniteDimensional L B := Module.Finite.of_restrictScalars_finite K L B
   have hinj : Function.Injective (mulRightAlgHom L g) := (mulRightAlgHom L g).toRingHom.injective
   refine ⟨hinj, ?_⟩
   set f := g.comp (IsScalarTower.toAlgHom K L B)
