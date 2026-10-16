@@ -112,19 +112,15 @@ theorem openCoverSingularBicomplexMap_f {Y : TopCat.{u}} {κ : Type u} (V : κ �
     ((openCoverSingularBicomplexMap U R V f r hf).f p).f q =
       (((singularChainComplexFunctor.{u} C).obj R).map
         ((Arrow.mapCechNerve (openCoverArrowMap U V f r hf)).app
-          (Opposite.op ⦋p⦌))).f q := by
-  rfl
+          (Opposite.op ⦋p⦌))).f q :=
+  (rfl)
 
 /-- The identity map of a cover induces the identity bicomplex map. -/
 @[simp]
 theorem openCoverSingularBicomplexMap_id :
-    openCoverSingularBicomplexMap U R U (𝟙 X) id
-      (fun i => by
-        intro x hx
-        exact hx) = 𝟙 _ := by
-  simp [openCoverSingularBicomplexMap, openCoverSingularBicomplex,
-    openCoverArrowMap_id,
-    Arrow.mapCechNerve, SimplicialObject.cechNerve]
+    openCoverSingularBicomplexMap U R U (𝟙 X) id (fun _ _ hx => hx) = 𝟙 _ := by
+  dsimp only [openCoverSingularBicomplexMap]
+  simp only [openCoverArrowMap_id, CategoryTheory.Functor.map_id]
 
 /-- Induced maps of Čech--singular bicomplexes respect composition. -/
 theorem openCoverSingularBicomplexMap_comp {Y Z : TopCat.{u}} {κ τ : Type u}
@@ -135,17 +131,7 @@ theorem openCoverSingularBicomplexMap_comp {Y Z : TopCat.{u}} {κ τ : Type u}
         (fun i _ hx => hg (r i) (hf i hx)) =
       openCoverSingularBicomplexMap U R V f r hf ≫
         openCoverSingularBicomplexMap V R W g s hg := by
-  -- Expose the composite of the two functor maps so `openCoverArrowMap_comp` can
-  -- rewrite its inner arrow before applying functoriality.
-  change (alternatingFaceMapComplex (ChainComplex C ℕ)).map
-      (((SimplicialObject.whiskering TopCat.{u} (ChainComplex C ℕ)).obj
-        ((singularChainComplexFunctor.{u} C).obj R)).map
-        ((SimplicialObject.cechNerve (C := TopCat.{u})).map
-          (openCoverArrowMap U W (f ≫ g) (s ∘ r)
-            (fun i _ hx => hg (r i) (hf i hx))))) = _
-  rw [openCoverArrowMap_comp]
-  dsimp [openCoverSingularBicomplexMap]
-  simp only [Functor.map_comp, Functor.whiskerRight_comp]
+  simp only [openCoverSingularBicomplexMap, openCoverArrowMap_comp, Functor.map_comp]
 
 end Bicomplex
 
@@ -171,12 +157,8 @@ theorem openCoverSingularAugmentation_f_zero :
   rw [openCoverSingularAugmentation, AlternatingFaceMapComplex.ε_app_f_zero]
   dsimp [openCoverAugmentedSingularNerve, SimplicialObject.Augmented.whiskering,
     SimplicialObject.Augmented.whiskeringObj]
-  -- The generated whiskering map hides an identity comparison behind an opaque functor;
-  -- expose that composite to use the identity law.
-  change ((singularChainComplexFunctor.{u} C).obj R).map
-    ((openCoverArrow U).augmentedCechNerve.hom.app (Opposite.op ⦋0⦌)) ≫ 𝟙 _ = _
-  rw [Category.comp_id]
-  rfl
+  -- The whiskered augmentation ends with the component of `Functor.constComp`, an identity.
+  exact Category.comp_id _
 
 end Augmentation
 
@@ -191,18 +173,17 @@ variable [HasCoproducts.{0} C] (R : C)
 /-- The total-complex construction used by `openCoverSingularTotal`. -/
 theorem openCoverSingularTotal_def :
     openCoverSingularTotal U R =
-      (openCoverSingularBicomplex U R).total (ComplexShape.down ℕ) := by
-  rfl
+      (openCoverSingularBicomplex U R).total (ComplexShape.down ℕ) :=
+  (rfl)
 
 /-- The graded object in total degree `n` is the coproduct of the bidegrees summing to `n`.
 This is the summand inclusion into that coproduct. -/
-noncomputable def openCoverSingularTotalInclusion (p q n : ℕ)
+def openCoverSingularTotalInclusion (p q n : ℕ)
     (h : ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ)
       (ComplexShape.down ℕ) (p, q) = n) :
     ((openCoverSingularBicomplex U R).X p).X q ⟶
-      (openCoverSingularTotal U R).X n := by
-  exact HomologicalComplex₂.ιTotal (openCoverSingularBicomplex U R)
-    (ComplexShape.down ℕ) p q n h
+      (openCoverSingularTotal U R).X n :=
+  HomologicalComplex₂.ιTotal (openCoverSingularBicomplex U R) (ComplexShape.down ℕ) p q n h
 
 /-- The total differential after inclusion of a bidegree summand is the sum of its signed
 horizontal and vertical contributions. -/
@@ -213,14 +194,8 @@ theorem openCoverSingularTotalInclusion_d (p q n : ℕ)
         (openCoverSingularTotal U R).d (n + 1) n =
       (openCoverSingularBicomplex U R).d₁ (ComplexShape.down ℕ) p q n +
       (openCoverSingularBicomplex U R).d₂ (ComplexShape.down ℕ) p q n := by
-  -- The total differential is defined as `D₁ + D₂`; expose its two terms to
-  -- apply the separate inclusion formulas `ι_D₁` and `ι_D₂`.
-  change HomologicalComplex₂.ιTotal (openCoverSingularBicomplex U R)
-      (ComplexShape.down ℕ) p q (n + 1) h ≫
-      ((openCoverSingularBicomplex U R).D₁ (ComplexShape.down ℕ) (n + 1) n +
-        (openCoverSingularBicomplex U R).D₂ (ComplexShape.down ℕ) (n + 1) n) = _
-  rw [comp_add]
-  simp only [HomologicalComplex₂.ι_D₁, HomologicalComplex₂.ι_D₂]
+  dsimp only [openCoverSingularTotalInclusion, openCoverSingularTotal]
+  rw [HomologicalComplex₂.total_d, comp_add, HomologicalComplex₂.ι_D₁, HomologicalComplex₂.ι_D₂]
 
 /-- A map of covered spaces induces a chain map between the total Čech--singular complexes. -/
 def openCoverSingularTotalMap {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y)
@@ -239,20 +214,19 @@ theorem openCoverSingularTotalMap_inclusion {Y : TopCat.{u}} {κ : Type u}
     openCoverSingularTotalInclusion U R p q n h ≫
         (openCoverSingularTotalMap U R V f r hf).f n =
       ((openCoverSingularBicomplexMap U R V f r hf).f p).f q ≫
-        openCoverSingularTotalInclusion V R p q n h := by
-  exact HomologicalComplex₂.ιTotal_map
-      (K := openCoverSingularBicomplex U R)
-      (L := openCoverSingularBicomplex V R)
-      (φ := openCoverSingularBicomplexMap U R V f r hf)
-      (ComplexShape.down ℕ) p q n h
+        openCoverSingularTotalInclusion V R p q n h :=
+  HomologicalComplex₂.ιTotal_map
+    (K := openCoverSingularBicomplex U R)
+    (L := openCoverSingularBicomplex V R)
+    (φ := openCoverSingularBicomplexMap U R V f r hf)
+    (ComplexShape.down ℕ) p q n h
 
 /-- The identity map of a cover induces the identity total-complex map. -/
 @[simp]
 theorem openCoverSingularTotalMap_id :
     openCoverSingularTotalMap U R U (𝟙 X) id (fun _ _ h => h) = 𝟙 _ := by
-  -- Reveal the total functor map so `simp` can use the bicomplex identity law.
-  change HomologicalComplex₂.total.map _ _ = 𝟙 _
-  simp
+  dsimp only [openCoverSingularTotalMap, openCoverSingularTotal]
+  rw [openCoverSingularBicomplexMap_id, HomologicalComplex₂.total.map_id]
 
 /-- Induced maps of total Čech--singular complexes respect composition. -/
 theorem openCoverSingularTotalMap_comp {Y Z : TopCat.{u}} {κ τ : Type u}
@@ -263,15 +237,8 @@ theorem openCoverSingularTotalMap_comp {Y Z : TopCat.{u}} {κ τ : Type u}
         (fun i _ hx => hg (r i) (hf i hx)) =
       openCoverSingularTotalMap U R V f r hf ≫
         openCoverSingularTotalMap V R W g s hg := by
-  -- Reveal the total functor map so the bicomplex composition law can rewrite
-  -- its argument before applying `HomologicalComplex₂.total.map_comp`.
-  change HomologicalComplex₂.total.map
-      (openCoverSingularBicomplexMap U R W (f ≫ g) (s ∘ r)
-        (fun i _ hx => hg (r i) (hf i hx))) (ComplexShape.down ℕ) = _
-  rw [openCoverSingularBicomplexMap_comp]
-  exact HomologicalComplex₂.total.map_comp
-    (φ := openCoverSingularBicomplexMap U R V f r hf)
-    (ψ := openCoverSingularBicomplexMap V R W g s hg) (ComplexShape.down ℕ)
+  dsimp only [openCoverSingularTotalMap, openCoverSingularTotal]
+  rw [openCoverSingularBicomplexMap_comp, HomologicalComplex₂.total.map_comp]
 
 end Total
 

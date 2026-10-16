@@ -20,7 +20,6 @@ namespace ContinuousLinearMap
 
 variable {G₁ G₂ G₃ : Type*}
   [AddCommGroup G₁] [Module ℝ G₁] [TopologicalSpace G₁]
-  [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁]
   [AddCommGroup G₂] [Module ℝ G₂] [TopologicalSpace G₂]
   [IsTopologicalAddGroup G₂] [ContinuousSMul ℝ G₂]
   [AddCommGroup G₃] [Module ℝ G₃] [TopologicalSpace G₃]
@@ -48,13 +47,11 @@ noncomputable def pairingFlip (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
   ContinuousLinearMap.mk μ'
     (ContinuousLinearMap.continuous_of_continuous_uncurry μ' (hμ.comp continuous_swap))
 
-omit [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁] in
 @[simp]
 theorem pairingFlip_apply (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (x : G₂) (y : G₁) :
     pairingFlip μ hμ x y = μ y x := (rfl)
 
-omit [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁] in
 /-- The flipped pairing is jointly continuous after exchanging the two arguments. -/
 theorem pairingFlip_continuous (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
