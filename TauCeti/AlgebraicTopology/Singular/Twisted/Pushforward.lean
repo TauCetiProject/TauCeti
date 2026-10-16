@@ -85,18 +85,6 @@ theorem twistedPushforward_simplexChain {n : ℕ} (σ : (TopCat.toSSet.obj Z) _�
   rw [twistedPushforward, chainsDesc_simplexChain]
   rfl
 
-/-- An additive map, as a linear map over the lifted integers. -/
-private def intLinear {M N : Type*} [AddCommGroup M] [AddCommGroup N] (g : M →+ N) :
-    M →ₗ[ULift.{v} ℤ] N where
-  toFun := g
-  map_add' := g.map_add
-  map_smul' r x := by simp only [ULift.smul_def, map_zsmul, RingHom.id_apply]
-
-/-- Evaluation at an element, as a linear map over the lifted integers. -/
-private def evalAt {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    (a : M) : (M →ₗ[R] N) →ₗ[ULift.{v} ℤ] N :=
-  intLinear ⟨⟨fun φ ↦ φ a, rfl⟩, fun _ _ ↦ rfl⟩
-
 /-- The twisted pushforward of a simplex with coefficient `1`, as a morphism of modules. -/
 theorem twistedPushforward_simplexChain_one {n : ℕ} (σ : (TopCat.toSSet.obj Z) _⦋n⦌) :
     twistedPushforward L f z₀ n (simplexChain σ 1) =
@@ -147,9 +135,10 @@ theorem twistedPushforward_d {n : ℕ} (y : ((singularChains (ULift.{v} ℤ)).ob
     (twistedChainComplex L).d (n + 1) n (twistedPushforward L f z₀ (n + 1) y a) =
       twistedPushforward L f z₀ n (((singularChains (ULift.{v} ℤ)).obj Z).d (n + 1) n y) a := by
   have h := singularChains_linearMap_ext
-    (L := intLinear ((twistedChainComplex L).d (n + 1) n).hom.toAddMonoidHom ∘ₗ evalAt a ∘ₗ
+    (L := (((twistedChainComplex L).d (n + 1) n).hom.toAddMonoidHom.toIntLinearMap.restrictScalars
+      (ULift.{v} ℤ)) ∘ₗ ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ
       twistedPushforward L f z₀ (n + 1))
-    (L' := evalAt a ∘ₗ twistedPushforward L f z₀ n ∘ₗ
+    (L' := ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ twistedPushforward L f z₀ n ∘ₗ
       (((singularChains (ULift.{v} ℤ)).obj Z).d (n + 1) n).hom) fun σ ↦ ?_
   · exact congrArg (fun g ↦ g y) h
   have hσ := congrArg (fun g ↦ g.hom a) (twistedPushforward_simplexChain_one_d (L := L) (f := f)
@@ -172,9 +161,10 @@ theorem twistedPushforward_map {Z' : TopCat.{v}} [SimplyConnectedSpace Z'] (g : 
     twistedPushforward L f z₀ n (((singularChains (ULift.{v} ℤ)).map g).f n y) a =
       twistedPushforward L (g ≫ f) w₀ n y (L.map (f.hom.pathClass z₀ (g w₀)) a) := by
   have h := singularChains_linearMap_ext
-    (L := evalAt a ∘ₗ twistedPushforward L f z₀ n ∘ₗ
+    (L := ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ twistedPushforward L f z₀ n ∘ₗ
       (((singularChains (ULift.{v} ℤ)).map g).f n).hom)
-    (L' := evalAt (L.map (f.hom.pathClass z₀ (g w₀)) a) ∘ₗ twistedPushforward L (g ≫ f) w₀ n)
+    (L' := ((LinearMap.applyₗ' ℤ (L.map (f.hom.pathClass z₀ (g w₀)) a)).restrictScalars
+      (ULift.{v} ℤ)) ∘ₗ twistedPushforward L (g ≫ f) w₀ n)
     fun σ ↦ ?_
   · exact congrArg (fun φ ↦ φ y) h
   change twistedPushforward L f z₀ n (((singularChains (ULift.{v} ℤ)).map g).f n _) a =
@@ -202,10 +192,11 @@ theorem twistedChainComplexMap_twistedPushforward {Y : TopCat.{v}}
     (twistedChainComplexMap h L).f n (twistedPushforward ((pullback h.hom).obj L) f z₀ n y a) =
       twistedPushforward L (f ≫ h) z₀ n y a := by
   have hy := singularChains_linearMap_ext
-    (L := intLinear ((twistedChainComplexMap h L).f n).hom.toAddMonoidHom ∘ₗ evalAt a ∘ₗ
+    (L := (((twistedChainComplexMap h L).f n).hom.toAddMonoidHom.toIntLinearMap.restrictScalars
+      (ULift.{v} ℤ)) ∘ₗ ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ
       twistedPushforward ((pullback h.hom).obj L) f z₀ n)
-    (L' := evalAt (M := L.obj (FundamentalGroupoid.mk ((f ≫ h) z₀))) a ∘ₗ
-      twistedPushforward L (f ≫ h) z₀ n) fun σ ↦ ?_
+    (L' := ((LinearMap.applyₗ' ℤ (M := L.obj (FundamentalGroupoid.mk ((f ≫ h) z₀))) a
+      ).restrictScalars (ULift.{v} ℤ)) ∘ₗ twistedPushforward L (f ≫ h) z₀ n) fun σ ↦ ?_
   · exact congrArg (fun φ ↦ φ y) hy
   change (twistedChainComplexMap h L).f n
       (twistedPushforward ((pullback h.hom).obj L) f z₀ n _ a) =
@@ -225,9 +216,11 @@ theorem twistedChainComplexCoefficientMap_twistedPushforward
     (twistedChainComplexCoefficientMap η).f n (twistedPushforward L f z₀ n y a) =
       twistedPushforward K f z₀ n y (η.app _ a) := by
   have hy := singularChains_linearMap_ext
-    (L := intLinear ((twistedChainComplexCoefficientMap η).f n).hom.toAddMonoidHom ∘ₗ
-      evalAt a ∘ₗ twistedPushforward L f z₀ n)
-    (L' := evalAt (η.app _ a) ∘ₗ twistedPushforward K f z₀ n) fun σ ↦ ?_
+    (L := (((twistedChainComplexCoefficientMap η).f n).hom.toAddMonoidHom.toIntLinearMap
+      |>.restrictScalars (ULift.{v} ℤ)) ∘ₗ
+      ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ twistedPushforward L f z₀ n)
+    (L' := ((LinearMap.applyₗ' ℤ (η.app _ a)).restrictScalars (ULift.{v} ℤ)) ∘ₗ
+      twistedPushforward K f z₀ n) fun σ ↦ ?_
   · exact congrArg (fun φ ↦ φ y) hy
   change (twistedChainComplexCoefficientMap η).f n (twistedPushforward L f z₀ n _ a) =
     twistedPushforward K f z₀ n _ (η.app _ a)
