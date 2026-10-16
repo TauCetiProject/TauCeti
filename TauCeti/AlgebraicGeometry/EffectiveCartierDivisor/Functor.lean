@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.BaseChangeSection
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Functor
 public import Mathlib.CategoryTheory.Subfunctor.Basic
@@ -69,14 +70,7 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 Cartier divisors on `X_T = T ×_S X` over `T`. -/
 def relativeEffectiveCartierSubfunctor : Subfunctor (baseChangeIdealSheafFunctor f) where
   obj T := {I | I.IsRelativeEffectiveCartier (pullback.fst T.unop.hom f)}
-  map {T T'} φ I hI := by
-    -- The induced morphism `X_{T'} ⟶ X_T` and the two projections form a pullback square over
-    -- `T' ⟶ T`, by pasting with the pullback square defining `X_T`.
-    have h : IsPullback ((Over.pullback f).map φ.unop).left (pullback.fst T'.unop.hom f)
-        (pullback.fst T.unop.hom f) φ.unop.left := by
-      refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback T.unop.hom f).flip
-      simpa using (IsPullback.of_hasPullback T'.unop.hom f).flip
-    exact hI.comap_of_isPullback h
+  map φ _ hI := hI.comap_of_isPullback (isPullback_over_pullback_map_left f φ.unop)
 
 /-- An ideal sheaf on `T ×_S X` lies in `relativeEffectiveCartierSubfunctor f` exactly when it is
 a relative effective Cartier divisor over `T`. -/

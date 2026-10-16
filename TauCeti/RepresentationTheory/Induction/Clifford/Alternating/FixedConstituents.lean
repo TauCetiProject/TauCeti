@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.CharacterTwist
 public import TauCeti.RepresentationTheory.Induction.LiesOver
 import TauCeti.RepresentationTheory.Induction.Permutation
 import TauCeti.RepresentationTheory.Induction.Character
-import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
+import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction
 import TauCeti.RepresentationTheory.CharacterTable.Determined
 
 /-!
@@ -30,7 +30,7 @@ characteristic zero, where characters determine representations; algebraic closu
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 6.
 * J.-P. Serre, *Linear Representations of Finite Groups*, §7.2.
 * The coset character formula `TauCeti.character_indFDRep_sum_quotient` and Mathlib's
-  induction–restriction adjunction, through `TauCeti.finrank_hom_indFDRep`.
+  induction–restriction adjunction, through `FDRep.finrank_hom_indFDRep`.
 -/
 
 public section
@@ -135,7 +135,7 @@ theorem liesOver_res_alternatingGroup_iff (W B : FDRep k (Equiv.Perm α)) [Simpl
   constructor
   · intro h
     have hpos := (Module.finrank_pos_iff_exists_ne_zero (R := k)).mpr (liesOver_iff.mp h)
-    rw [← finrank_hom_indFDRep] at hpos
+    rw [← FDRep.finrank_hom_indFDRep] at hpos
     obtain ⟨f, hf⟩ := (Module.finrank_pos_iff_exists_ne_zero (R := k)).mp hpos
     let e := (nonempty_iso_ind_res_alternatingGroup B).some
     let t : B ⊞ T ⟶ W := e.inv ≫ f

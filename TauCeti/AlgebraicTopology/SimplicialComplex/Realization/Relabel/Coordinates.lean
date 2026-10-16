@@ -57,4 +57,16 @@ theorem relabelingHomeomorph_symm_coe_eq_restriction
   simp only [relabelingHomeomorph_symm_val, Finsupp.comapDomain_apply,
     Function.ExtendByZero.restriction_apply, Function.comp_apply]
 
+include hK hL in
+/-- The coordinate range of a relabeled polyhedron is the extension by zero of the
+original coordinate range. This includes precomplexes with unused ambient vertices. -/
+theorem range_coe_map_eq_image_extendByZero :
+    range (fun y : {y : Realization L // y.1.support ∈ P.map e} => (y.1.1 : β → ℝ)) =
+      (Function.ExtendByZero.continuousLinearMap ℝ e) ''
+        range (fun x : {x : Realization K // x.1.support ∈ P} => (x.1.1 : α → ℝ)) := by
+  rw [← (P.relabelingHomeomorph e hK hL).surjective.range_comp
+    (fun y => (y.1.1 : β → ℝ))]
+  simp only [Function.comp_def, relabelingHomeomorph_coe_eq_extendByZero]
+  exact Set.range_comp' _ _
+
 end PreAbstractSimplicialComplex

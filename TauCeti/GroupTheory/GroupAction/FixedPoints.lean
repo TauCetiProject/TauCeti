@@ -36,9 +36,14 @@ developed in `TauCeti/Topology/Algebra/GroupAction/FixedPoints.lean`.
   coercion lemmas `TauCeti.coe_smul_fixedPoints_addSubgroup` and
   `TauCeti.coe_quotient_smul_fixedPoints_addSubgroup`; a trivial `G`-action on `M` gives a trivial
   `G ⧸ H`-action on `M ^ H` (`TauCeti.quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq`).
+* `TauCeti.coe_quotient_smul_fixedPoints_subgroup`: the multiplicative counterpart of the last
+  coercion lemma, for the `G ⧸ H`-action on the fixed-point subgroup of a distributive action on
+  a group.
 * `TauCeti.fixedPointsInclusion`, `TauCeti.fixedPointsDistribMulActionInclusion`, and
   `Subgroup.fixedPointsDistribMulActionSubtype`: the additive and equivariant inclusions between
   fixed points and into the ambient additive monoid, with their functoriality laws.
+* `Subgroup.fixedPoints_subtype_mk'_smul`: the fixed-point additive subgroup's inclusion is
+  equivariant along the quotient homomorphism, in a form usable as a compatible-pair hypothesis.
 * `DistribMulActionHom.fixedPointsMap` and `DistribMulActionHom.fixedPointsQuotientMap`:
   functoriality of fixed points in the additive monoid, additively and as a quotient-equivariant
   map.
@@ -178,6 +183,21 @@ theorem quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq (h : ∀ (g : G) (m 
 
 end AddGroup
 
+section Group
+
+variable {G : Type*} [Group G] {α : Type*} [Group α] [MulDistribMulAction G α]
+variable {H : Subgroup G} [H.Normal]
+
+/-- The `G ⧸ H`-action on the fixed-point subgroup `α ^ H` is the `G`-action through the quotient
+map. Mathlib's `coe_quotient_smul_fixedPoints` is stated for the carrier `↥(fixedPoints H α)` and
+so does not fire on `FixedPoints.subgroup`. -/
+@[simp]
+theorem coe_quotient_smul_fixedPoints_subgroup (g : G) (a : FixedPoints.subgroup H α) :
+    (((g : G ⧸ H) • a : FixedPoints.subgroup H α) : α) = g • (a : α) :=
+  rfl
+
+end Group
+
 section Functoriality
 
 variable {G : Type*} [Group G] {M : Type*} [AddMonoid M] [DistribMulAction G M]
@@ -260,10 +280,9 @@ variable {N : Type*} [AddMonoid N] [DistribMulAction G N]
 
 /-- A `G`-equivariant additive map restricts to the fixed points of any subgroup. -/
 def fixedPointsMap (f : M →+[G] N) (H : Subgroup G) :
-    FixedPoints.addSubmonoid H M →+ FixedPoints.addSubmonoid H N where
-  toFun m := ⟨f (m : M), f.toMulActionHom.map_mem_fixedPoints (H := H.toSubmonoid) m.2⟩
-  map_zero' := Subtype.ext (map_zero f)
-  map_add' a b := Subtype.ext (map_add f (a : M) (b : M))
+    FixedPoints.addSubmonoid H M →+ FixedPoints.addSubmonoid H N :=
+  f.toAddMonoidHom.restrict fun _ hm ↦
+    f.toMulActionHom.map_mem_fixedPoints (H := H.toSubmonoid) hm
 
 /-- The restricted map is the original map on underlying elements. -/
 @[simp]
@@ -359,6 +378,19 @@ theorem fixedPointsQuotientMap_id (H : Subgroup G) [H.Normal] :
 
 end Maps
 
+section SubtypeAddGroup
+
+variable {G : Type*} [Group G] {M : Type*} [AddGroup M] [DistribMulAction G M]
+
+/-- The inclusion of the fixed-point additive subgroup is equivariant along the quotient map. -/
+theorem fixedPoints_subtype_mk'_smul (H : Subgroup G) [H.Normal] (g : G)
+    (m : FixedPoints.addSubgroup H M) :
+    (FixedPoints.addSubgroup H M).subtype (QuotientGroup.mk' H g • m) =
+      g • (FixedPoints.addSubgroup H M).subtype m := by
+  simp
+
+end SubtypeAddGroup
+
 section Pairing
 
 variable {G : Type*} [Group G]
@@ -376,14 +408,8 @@ def fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ N →+ P)
   toFun m :=
     { toFun := fun n =>
         ⟨μ (m : M) (n : N), (FixedPoints.mem_addSubmonoid H P _).2 fun h => by
-          have hm : (h : G) • (m : M) = m := by
-            simpa only [Subgroup.smul_def] using
-              (FixedPoints.mem_addSubmonoid H M _).1 m.2 h
-          have hn : (h : G) • (n : N) = n := by
-            simpa only [Subgroup.smul_def] using
-              (FixedPoints.mem_addSubmonoid H N _).1 n.2 h
-          simpa only [Subgroup.smul_def, hm, hn] using
-            (hequiv h (m : M) (n : N)).symm⟩
+          rw [Subgroup.smul_def, ← hequiv]
+          exact congrArg₂ (fun m n ↦ μ m n) (m.2 h) (n.2 h)⟩
       map_zero' := Subtype.ext (map_zero (μ (m : M)))
       map_add' := fun n n' => Subtype.ext (map_add (μ (m : M)) (n : N) (n' : N)) }
   map_zero' := AddMonoidHom.ext fun _ => Subtype.ext <| by simp

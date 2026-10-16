@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
@@ -32,6 +33,7 @@ of one orientation class give an oriented atlas.
 ## Main results
 
 * `EuclideanGeometry.contDiffAt_inversion`: inversion is analytic away from its centre.
+* `TauCeti.snd_inversion`: the last coordinate of inversion about a centre in `E × {0}`.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
@@ -75,6 +77,23 @@ theorem LinearIsometry.map_inversion (f : V →ₗᵢ[ℝ] V₂) (c : V) (R : �
 
 namespace EuclideanGeometry
 
+/-- The derivative of inversion away from its centre is a continuous linear equivalence. -/
+noncomputable def inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (c z : V) (R : ℝ) (hR : R ≠ 0) (hz : z ≠ c) : V ≃L[ℝ] V :=
+  ((ℝ ∙ (z - c))ᗮ.reflection).toContinuousLinearEquiv.trans
+    (ContinuousLinearEquiv.smulLeft (Units.mk0 ((R / dist z c) ^ 2)
+      (pow_ne_zero _ (div_ne_zero hR (dist_ne_zero.mpr hz)))))
+
+/-- The inversion derivative equivalence represents the actual Fréchet derivative. -/
+theorem hasFDerivAt_inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (c z : V) (R : ℝ)
+    (hR : R ≠ 0) (hz : z ≠ c) :
+    HasFDerivAt (inversion c R) (inversionFDerivEquiv c z R hR hz).toContinuousLinearMap z := by
+  convert hasFDerivAt_inversion hz using 1
+  ext v
+  -- Reflection followed by scalar multiplication evaluates to Mathlib’s derivative formula.
+  rfl
+
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
 /-- **Inversion reverses orientation**: away from its centre, the derivative of the inversion in a
@@ -96,3 +115,15 @@ theorem det_fderiv_inversion_neg {c x : F} {R : ℝ} (hR : R ≠ 0) (hx : x ≠ 
   exact pow_pos hpos _
 
 end EuclideanGeometry
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The last coordinate of the inversion in a sphere centred on the boundary hyperplane. -/
+theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
+    (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
+      (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
+  simp [EuclideanGeometry.inversion]
+
+end TauCeti

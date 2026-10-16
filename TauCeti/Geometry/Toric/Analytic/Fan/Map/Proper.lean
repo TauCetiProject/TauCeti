@@ -170,7 +170,7 @@ private theorem exists_isCompact_preimage_analyticMap_subset (hΦ0 : Nonempty Φ
     (IsRegularCone.mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top Ψ.lattice
       ((Fan.isRegular_iff.mp hΨ) τ.1 τ.2) g.spans).2 fun j ↦ by
       simpa only [LinearMap.comp_apply] using hw' j
-  obtain ⟨σ, hστ, hw'σ⟩ := mem_iUnion₂.1 (h τ hw'τ)
+  obtain ⟨σ, _, hw'σ⟩ := mem_iUnion₂.1 (h τ hw'τ)
   -- Hence the generators of the dual semigroup of `σ` are bounded at `t`.
   refine mem_iUnion.2 ⟨σ, t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)),
     fun k ↦ ?_, (Φ.analyticTorusι_eq_analyticAffineChartι hΦ hΦ0 σ t).symm⟩
@@ -230,5 +230,22 @@ theorem isProperMap_analyticMap_iff (hΦ0 : Nonempty Φ.cones) :
       ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) :=
   ⟨fun hf ↦ f.preimage_realMap_eq_iUnion_of_isProperMap hΦ hΨ hΦ0 hf, fun h ↦
     f.isProperMap_analyticMap_of_preimage_realMap_subset hΦ hΨ fun τ ↦ (h τ).subset⟩
+
+end TauCeti.Toric.FanHom
+
+namespace TauCeti.Toric.FanHom
+
+universe u
+
+variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
+  [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
+  {i : N →+ V} {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'}
+
+/-- A continuous analytic map from the realization of a complete regular fan is proper. -/
+theorem isProperMap_analyticMap_of_isComplete (f : FanHom Φ Ψ) (hΦ : Φ.IsRegular)
+    (hΨ : Ψ.IsRegular) (hc : Φ.IsComplete) :
+    IsProperMap (f.analyticMap hΦ hΨ) := by
+  have := Φ.compactSpace_analyticRealization_of_isComplete hΦ hc
+  exact (f.analyticMap hΦ hΨ).hom.continuous.isProperMap
 
 end TauCeti.Toric.FanHom

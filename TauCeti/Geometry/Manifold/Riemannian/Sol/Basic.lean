@@ -136,17 +136,38 @@ def toProdDiffeomorph : Sol ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ
 /-- The differential of the global coordinates reads a tangent vector in the model of Sol. -/
 @[simp] theorem mfderiv_toProd_apply (p : Sol) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
-      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v := by
-  exact congrArg (fun L => L v)
-    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
 
 /-- The differential of the inverse global coordinates retains the model vector. -/
 @[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (p : ℝ × ℝ × ℝ)
     (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm p)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm p v) = v := by
-  exact congrArg (fun L => L v)
-    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm p v) = v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
+
+/-- A map linear in Sol's global coordinates has that linear map as its differential,
+read in the canonical model-space tangent identifications. -/
+theorem tangentSpaceCastModel_mfderiv_of_eq_linear (Ψ : Sol → Sol)
+    (L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ)
+    (hΨ : ∀ p : Sol, Ψ p = toProd.symm (L (toProd p))) (p : Sol)
+    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (Ψ p)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) Ψ p u) =
+      L (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) := by
+  have heq : (Ψ : Sol → Sol) = toProd.symm ∘ L ∘ toProd := funext hΨ
+  have hf : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd := by
+    simpa only [coe_toProdDiffeomorph] using
+      toProdDiffeomorph.mdifferentiable (by simp)
+  have hg : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm := by
+    simpa only [coe_toProdDiffeomorph_symm] using
+      toProdDiffeomorph.symm.mdifferentiable (by simp)
+  rw [heq, mfderiv_comp_apply p (hg _) (L.differentiable.mdifferentiable.comp hf p)]
+  simp only [Function.comp_apply]
+  rw [tangentSpaceCastModel_mfderiv_toProd_symm,
+    mfderiv_comp_apply p L.differentiableAt.mdifferentiableAt (hf p),
+    L.mfderiv_eq, mfderiv_toProd_apply]
+  rfl
 
 /-! ### The group structure -/
 
@@ -285,6 +306,60 @@ theorem inner_def (p : Sol) (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) 
         (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v).2.2 *
           (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p w).2.2 :=
   riemannianMetric_inner p v w
+
+section Coordinates
+
+local notation "P" => ℝ × ℝ × ℝ
+local notation "J" => 𝓘(ℝ, P)
+
+/-- A Sol isometry is smooth when expressed in global coordinates. -/
+theorem contDiff_toProd_isometry (Φ : Isom J Sol) :
+    ContDiff ℝ ∞ ((toProd ∘ Φ) ∘ toProd.symm) := by
+  simpa only [Diffeomorph.coe_trans, coe_toProdDiffeomorph,
+    coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph] using
+    (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
+
+/-- The ordinary derivative of a Sol isometry in global coordinates is its manifold
+derivative, read through the canonical tangent-space identifications. -/
+@[simp]
+theorem fderiv_toProd_isometry_apply (Φ : Isom J Sol) (p : Sol)
+    (u : TangentSpace J p) :
+    fderiv ℝ ((toProd ∘ Φ) ∘ toProd.symm) (toProd p) (tangentSpaceCastModel J p u) =
+      tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p u) := by
+  let f : P → P := (toProd ∘ Φ) ∘ toProd.symm
+  have hfc : ContDiff ℝ ∞ f := contDiff_toProd_isometry Φ
+  have hf : MDifferentiable J J toProd := by
+    simpa only [coe_toProdDiffeomorph] using toProdDiffeomorph.mdifferentiable (by simp)
+  have hg : MDifferentiable J J toProd.symm := by
+    simpa only [coe_toProdDiffeomorph_symm] using toProdDiffeomorph.symm.mdifferentiable (by simp)
+  have hm := (hfc.differentiable (by simp) (toProd p)).hasFDerivAt.hasMFDerivAt.mfderiv
+  simp only [f] at hm
+  rw [← hm]
+  -- The derivative between coordinate spaces has canonical tangent identifications.
+  -- Insert them before rewriting, so no rewrite relies on their underlying types.
+  change tangentSpaceCastModel J (f (toProd p))
+    (mfderiv J J f (toProd p)
+      ((tangentSpaceCastModel J (toProd p)).symm (tangentSpaceCastModel J p u))) = _
+  dsimp only [f]
+  -- Apply the chain rule to tangent vectors before simplifying the intermediate
+  -- base points; this keeps the dependent tangent-space types aligned.
+  rw [mfderiv_comp_apply (toProd p) (hf.comp Φ.mdifferentiable _) (hg _),
+    mfderiv_comp_apply (toProd.symm (toProd p)) (hf _) (Φ.mdifferentiableAt _)]
+  rw [mfderiv_toProd_apply]
+  -- The outer coordinate-space cast is the identity on its model vector.
+  change tangentSpaceCastModel J (Φ p)
+    (mfderiv J J Φ p
+      (mfderiv J J toProd.symm (toProd p)
+        ((tangentSpaceCastModel J (toProd p)).symm (tangentSpaceCastModel J p u)))) = _
+  have hu : mfderiv J J toProd.symm (toProd p)
+      ((tangentSpaceCastModel J (toProd p)).symm (tangentSpaceCastModel J p u)) = u :=
+    by
+      have h := toProdDiffeomorph.mfderiv_symm_apply_mfderiv_apply (by simp) p u
+      rw [coe_toProdDiffeomorph_symm, coe_toProdDiffeomorph, mfderiv_toProd_apply] at h
+      exact h
+  exact congrArg (fun v => tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p v)) hu
+
+end Coordinates
 
 /-! ### Left multiplication is an isometry -/
 

@@ -78,7 +78,7 @@ private lemma squareSnd_def (p : I × I) :
 
 private lemma squareFst_mem (p : I × I) : squareFst p ∈ I := by
   have h2 : (p.1 : ℝ) ≤ 1 := p.1.2.2
-  have h3 : (0 : ℝ) ≤ (p.2 : ℝ) := p.2.2.1
+  have _ : (0 : ℝ) ≤ (p.2 : ℝ) := p.2.2.1
   have h4 : (p.2 : ℝ) ≤ 1 := p.2.2.2
   have hd : (0 : ℝ) < 2 - (p.2 : ℝ) := by linarith
   rw [squareFst_def]
@@ -92,7 +92,7 @@ private lemma squareSnd_mem (p : I × I) : squareSnd p ∈ I := by
   rw [squareSnd_def]
   split_ifs with h
   · exact ⟨le_rfl, zero_le_one⟩
-  · have hlt : 2 * (p.1 : ℝ) < (p.2 : ℝ) := not_le.1 h
+  · have _ : 2 * (p.1 : ℝ) < (p.2 : ℝ) := not_le.1 h
     rw [max_eq_left (by linarith : (1 : ℝ) / 2 ≤ 1 - (p.1 : ℝ))]
     exact ⟨div_nonneg (by linarith) (by linarith), (div_le_one (by linarith)).2 (by linarith)⟩
 

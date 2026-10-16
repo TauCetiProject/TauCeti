@@ -61,7 +61,7 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
   exact TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
-    (fun hm hn hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
+    (fun _ _ hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
     (fun p hp r ↦ by
       simpa only [← mul_assoc] using f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
     hsum
@@ -96,7 +96,7 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
   exact TauCeti.LSeries.LSeries_eulerProduct_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
-    (fun hm hn hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
+    (fun _ _ hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
     (fun p hp r ↦ by
       simpa only [← mul_assoc] using f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
     hsum

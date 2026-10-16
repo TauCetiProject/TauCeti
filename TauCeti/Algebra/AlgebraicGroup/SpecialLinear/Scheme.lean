@@ -26,19 +26,19 @@ This file presents the special linear group scheme `SLₙ` as the closed subgrou
 
 ## References
 
-* J. S. Milne, *Basic Theory of Affine Group Schemes*, Part I, §1.7, pp. 49–50.
+* J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter IV, §1.7, pp. 49–50.
 -/
 
 public section
 
-open AlgebraicGeometry CategoryTheory MonObj WithConv
+open AlgebraicGeometry CategoryTheory
 open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
 namespace SpecialLinear
 
-universe u w
+universe u
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
@@ -103,20 +103,9 @@ theorem groupSchemeι_comp_determinant :
 group scheme. -/
 instance isClosedImmersion_groupSchemeι :
     AlgebraicGeometry.IsClosedImmersion (groupSchemeι R n).hom.hom.left := by
-  let e1 := (eqToHom (groupScheme_def R n)).hom.hom.left
-  let c := (CommHopfAlgCat.kernelSpecι (GeneralLinear.determinantCoordinateMap R n)).hom.hom.left
-  let e2 := (eqToHom (GeneralLinear.groupScheme_def R n).symm).hom.hom.left
-  have hc : AlgebraicGeometry.IsClosedImmersion c := by
-    dsimp only [c]
-    rw [CommHopfAlgCat.kernelSpecι_def]
-    infer_instance
-  have hec : AlgebraicGeometry.IsClosedImmersion (e1 ≫ c) :=
-    (MorphismProperty.cancel_left_of_respectsIso _ e1 c).2 hc
-  have hece : AlgebraicGeometry.IsClosedImmersion ((e1 ≫ c) ≫ e2) :=
-    (MorphismProperty.cancel_right_of_respectsIso _ (e1 ≫ c) e2).2 hec
-  rw [groupSchemeι_def]
+  rw [groupSchemeι_def, CommHopfAlgCat.kernelSpecι_def]
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  exact hece
+  infer_instance
 
 /-- The structural morphism of the special-linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
@@ -140,7 +129,8 @@ noncomputable def groupSchemePointMulEquiv :
 
 /-- The underlying spectrum map of the scheme point associated to a special-linear algebra
 point. -/
-@[simp]
+-- Not `@[simp]`: `simp` normalizes the point before this equation can apply, so it never fires,
+-- even on its own statement; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     (groupSchemePointMulEquiv n A f).left =
@@ -160,8 +150,8 @@ noncomputable def schemePointsMulEquiv :
     (pointsMulEquiv (R := R) (A := A) n)
 
 /-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
-recovers the canonical algebra point. -/
-@[simp]
+gives the determinant-one matrix of the underlying algebra point. -/
+@[simp↓]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     schemePointsMulEquiv n A (groupSchemePointMulEquiv n A q) =

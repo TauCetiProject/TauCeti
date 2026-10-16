@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 
 /-!
 # Coprimality of the division polynomials `Φₙ` and `ΨSqₙ`
@@ -32,6 +33,8 @@ has `X = Z = 0`, so there was no common factor.
 * `WeierstrassCurve.eval_ΨSq_ne_zero_of_zsmul_ne_zero`: the pointwise companion — `ΨSqₙ` does not
   vanish at the `x`-coordinate of a point that `[n]` does not kill.
 * `WeierstrassCurve.evalEval_ψ_ne_zero_of_zsmul_ne_zero`: its bivariate form, for `ψₙ`.
+* `WeierstrassCurve.eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero`: `Ψ₂Sq` and `Ψ₃` have no common root, in
+  every characteristic.
 
 ## Implementation notes
 
@@ -157,5 +160,17 @@ subsumes the other. -/
 theorem ΨSq_ne_zero_of_Δ_ne_zero {n : ℤ} (hΔ : W.Δ ≠ 0) (hn : n ≠ 0) : W.ΨSq n ≠ 0 := fun h ↦
   (W.natDegree_Φ_pos hn).ne'
     (natDegree_eq_zero_of_isUnit (isCoprime_zero_right.mp (h ▸ W.isCoprime_Φ_ΨSq n hΔ)))
+
+/-- **`Ψ₂Sq` and `Ψ₃` have no common root on a nonsingular curve, in every characteristic**: if
+`Δ ≠ 0` and `Ψ₃(x) = 0`, then `Ψ₂Sq(x) ≠ 0`. Geometrically, a point of order `3` is not a point of
+order `2`. -/
+theorem eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero (hΔ : W.Δ ≠ 0) {x : F} (h : W.Ψ₃.eval x = 0) :
+    W.Ψ₂Sq.eval x ≠ 0 := by
+  -- a common root would be a root of the coprime `Φ₂ = X Ψ₂Sq - Ψ₃` and `ΨSq₂ = Ψ₂Sq`
+  intro h₂
+  obtain ⟨a, b, hab⟩ := W.isCoprime_Φ_ΨSq 2 hΔ
+  have := congrArg (eval x) hab
+  rw [ΨSq_two, Φ_two_eq_X_mul_Ψ₂Sq_sub_Ψ₃] at this
+  simp [h, h₂] at this
 
 end WeierstrassCurve

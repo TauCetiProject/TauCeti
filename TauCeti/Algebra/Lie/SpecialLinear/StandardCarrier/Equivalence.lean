@@ -95,8 +95,7 @@ theorem specialLinearMulEquiv_rootSubgroupPoints
       Matrix.SpecialLinearGroup.transvection
         (rootTarget_ne_rootSource r i) (Multiplicative.toAdd a) := by
   apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [toGL_specialLinearMulEquiv, coe_rootSubgroupPoints]
-  rw [kostantRootSubgroupMatrix_eq_transvection, MulEquiv.apply_symm_apply,
+  rw [toGL_specialLinearMulEquiv, coe_rootSubgroupPoints_eq_transvectionUnit,
     ← TauCeti.toGL_transvection_eq_transvectionUnit]
 
 variable (p k : ℕ) [ExpChar K p]

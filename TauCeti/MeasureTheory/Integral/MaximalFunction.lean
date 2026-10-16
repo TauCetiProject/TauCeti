@@ -421,8 +421,9 @@ theorem ae_maximalFunction_lt_top (μ : Measure E) [μ.IsAddHaarMeasure] (f : E 
     ENNReal.mul_ne_top (ENNReal.pow_ne_top (by norm_num)) hf
   have hsub : ∀ t : ℝ≥0∞, t ≠ ∞ →
       t * μ {x | maximalFunction μ f x = ∞} ≤ 4 ^ finrank ℝ E * ∫⁻ x, ‖f x‖ₑ ∂μ := by
-    refine fun t ht => le_trans (mul_le_mul_right (measure_mono
-      fun x (hx : maximalFunction μ f x = ∞) => lt_of_lt_of_le (lt_top_iff_ne_top.2 ht) hx.ge) t)
+    refine fun t ht => le_trans (mul_le_mul_right (measure_mono fun x hx => by
+      simp only [Set.mem_ofPred_eq] at hx ⊢
+      exact lt_of_lt_of_le (lt_top_iff_ne_top.2 ht) hx.ge) t)
       (mul_measure_lt_maximalFunction_le μ f t)
   have hm : μ {x | maximalFunction μ f x = ∞} = 0 := by
     by_contra hm'
@@ -449,7 +450,6 @@ theorem lintegral_rpow_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
     ∫⁻ x, maximalFunction μ f x ^ p ∂μ ≤
       ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * 4 ^ finrank ℝ E *
         ∫⁻ x, ‖f x‖ₑ ^ p ∂μ := by
-  have hp0 : (0 : ℝ) < p := by linarith
   have hconst : ENNReal.ofReal (p * (2 : ℝ)⁻¹ ^ (1 - p) / (p - 1)) * (2 * 4 ^ finrank ℝ E) =
       ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * 4 ^ finrank ℝ E := by
     have hinv : ((2 : ℝ))⁻¹ ^ (1 - p) = 2 ^ (p - 1) := by

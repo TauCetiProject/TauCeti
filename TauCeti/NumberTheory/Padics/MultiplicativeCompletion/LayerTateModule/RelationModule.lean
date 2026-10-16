@@ -80,8 +80,10 @@ theorem exists_relationModule_surjective_isIso_groupCohomology [Algebra ℚ_[p] 
           (Rep.unitIso (Rep.of (padicCompletionUnitsRepresentation p L K))).inv)) := by
   have : FiniteDimensional K L := .right ℚ_[p] K L
   -- `p`-power roots of unity of `L` are finite: give `L` its local-field structure.
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
+  have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
+  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
   have hpL : (p : L) ≠ 0 := by
     rw [← map_natCast (algebraMap ℚ_[p] L)]
@@ -89,8 +91,10 @@ theorem exists_relationModule_surjective_isIso_groupCohomology [Algebra ℚ_[p] 
   -- The resolution `0 → ker f → ℤ_p[G]^m → Y → 0`; its kernel is finitely generated because
   -- `ℤ_p[G]` is a finite `ℤ_p`-algebra.
   obtain ⟨m, f, hf, hker⟩ := Y.projdim
-  have : IsNoetherian Λ (Fin m → Λ) := isNoetherian_of_tower ℤ_[p] inferInstance
-  obtain ⟨β, hβ, ⟨eβ⟩⟩ := exists_relationModule_surjective_of_tameFrame
+  have : IsNoetherianRing Λ := IsNoetherianRing.of_finite ℤ_[p] Λ
+  have : Module.Finite Λ (LinearMap.ker f) := .of_fg (IsNoetherian.noetherian _)
+  have : Module.Projective Λ (LinearMap.ker f) := hker
+  obtain ⟨β, hβ, ⟨eβ⟩⟩ := exists_relationModule_surjective_of_tameFrame_of_exact
     f.exact_subtype_ker_map (LinearMap.ker f).injective_subtype hf Y.exact_ι_π Y.ι_injective
     Y.π_surjective (finite_pPowerRootsOfUnity hpL) σ τ hgen hτ hg
   have : Module.Projective Λ (LinearMap.ker β) := .of_equiv eβ.symm

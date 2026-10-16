@@ -236,7 +236,7 @@ the even prime discriminants both sides vanish. For odd `P`, whose residue modul
 says that the character is `1` at `2` exactly when `P ≡ 1 (mod 8)`. -/
 theorem primeDiscriminantCharFun_two {P : ℤ} (hP : IsPrimeDiscriminant P) :
     primeDiscriminantCharFun P 2 = ZMod.χ₈ (P : ZMod 8) := by
-  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, hp, hodd, rfl⟩
+  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, _, hodd, rfl⟩
   · rcases hev with rfl | rfl | rfl <;> decide
   · rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd, jacobiSym.at_two hodd,
       ZMod.χ₈_nat_eq_if_mod_eight, ZMod.χ₈_int_eq_if_mod_eight, oddPrimeDiscriminant_def]

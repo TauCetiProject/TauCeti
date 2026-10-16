@@ -152,7 +152,7 @@ theorem span_gradedPow_gradedMkZero_union_gradedBracket_eq_top
         (s ×ˢ s)) = ⊤ := by
   set W := span (ZMod p) ((fun g ↦ gradedPow p G 0 (gradedMkZero p G g)) '' s ∪
     (fun gh : G × G ↦ gradedBracket p G 0 0 (gradedMkZero p G gh.1) (gradedMkZero p G gh.2)) ''
-      (s ×ˢ s)) with hW
+      (s ×ˢ s))
   have h₁ : IsOpen (pLowerCentralSeries p G 1 : Set G) :=
     Subgroup.isOpen_mono (pLowerCentralSeries_antitone (by omega)) h₂
   have hmem (x : gradedPiece p G 0) : x ∈ span (ZMod p) (gradedMkZero p G '' s) := by
@@ -223,7 +223,7 @@ theorem span_range_gradedPow_union_range_gradedBracket_eq_top {k : ℕ}
         gradedBracket p G k 0 xy.1 xy.2) = ⊤ := by
   set W := span (ZMod p) (Set.range (gradedPow p G k) ∪
     Set.range fun xy : gradedPiece p G k × gradedPiece p G 0 ↦
-      gradedBracket p G k 0 xy.1 xy.2) with hW
+      gradedBracket p G k 0 xy.1 xy.2)
   -- The preimage of `W` in `G`: a union of cosets of the open subgroup `λ_{k+2}`, hence closed.
   let U : Subgroup G :=
     { carrier := {g | ∃ w ∈ W, gradedPieceInclusion p G (k + 1) w =
@@ -246,8 +246,7 @@ theorem span_range_gradedPow_union_range_gradedBracket_eq_top {k : ℕ}
         rw [gradedPow_gradedMk, gradedPieceInclusion_gradedMk]⟩
     · refine ⟨_, subset_span (Or.inr ⟨(gradedMk p G k ⟨g, hg⟩, gradedMkZero p G h), rfl⟩), ?_⟩
       dsimp only
-      rw [← gradedMk_zero ⟨h, mem_pLowerCentralSeries_zero p h⟩, gradedBracket_gradedMk,
-        gradedPieceInclusion_gradedMk]
+      rw [gradedBracket_gradedMk_gradedMkZero, gradedPieceInclusion_gradedMk]
   rw [eq_top_iff]
   rintro y -
   obtain ⟨y, rfl⟩ := gradedMk_surjective (k + 1) y
@@ -327,7 +326,7 @@ theorem gradedMap_degreeOneFamily (f : G →* H) (hf : Continuous f)
       gradedMap_gradedPow]
   · rw [degreeOneFamily_inr, degreeOneFamily_inr, Function.comp_apply, Function.comp_apply,
       ← gradedMap_gradedMkZero, ← gradedMap_gradedMkZero]
-    exact gradedMap_gradedBracket f hf (j := 0) (k := 0) _ _
+    exact gradedMap_gradedBracket_zero_zero f hf _ _
 
 end DegreeOneFamily
 

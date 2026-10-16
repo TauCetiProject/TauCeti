@@ -98,20 +98,20 @@ attribute [local instance] TauCeti.moduleNNRat
 /-! ## Generators and the integral form -/
 
 /-- The divided powers of a specified family of root vectors in the universal enveloping algebra. -/
-def kostantRootGenerators (e : ι → L) :
+noncomputable def kostantRootGenerators (e : ι → L) :
     Set (_root_.UniversalEnvelopingAlgebra ℚ L) :=
   range fun p : ι × ℕ =>
     Associative.dividedPower p.2 (_root_.UniversalEnvelopingAlgebra.ι ℚ (e p.1))
 
 /-- The binomial coefficients of a specified family of Cartan vectors in the universal enveloping
 algebra. Mathlib's `Ring.choose x n` is `x * (x - 1) * ... * (x - n + 1) / n!`. -/
-def kostantCartanGenerators (h : κ → L) :
+noncomputable def kostantCartanGenerators (h : κ → L) :
     Set (_root_.UniversalEnvelopingAlgebra ℚ L) :=
   range fun p : κ × ℕ => Ring.choose (_root_.UniversalEnvelopingAlgebra.ι ℚ (h p.1)) p.2
 
 /-- The generators of the Kostant integral form attached to root vectors `e` and Cartan vectors
 `h`: all divided powers of the former and all binomial coefficients of the latter. -/
-def kostantGenerators (e : ι → L) (h : κ → L) :
+noncomputable def kostantGenerators (e : ι → L) (h : κ → L) :
     Set (_root_.UniversalEnvelopingAlgebra ℚ L) :=
   kostantRootGenerators e ∪ kostantCartanGenerators h
 
@@ -121,7 +121,7 @@ When `e` ranges over the Chevalley root vectors for every root, both positive an
 `h` ranges over the Cartan generators, this is the usual `ℤ`-form inside the universal enveloping
 algebra. It is represented as the smallest subring containing the divided powers of the supplied
 root vectors and the binomial coefficients of the supplied Cartan vectors. -/
-def kostantForm (e : ι → L) (h : κ → L) :
+noncomputable def kostantForm (e : ι → L) (h : κ → L) :
     Subring (_root_.UniversalEnvelopingAlgebra ℚ L) :=
   Subring.closure (kostantGenerators e h)
 

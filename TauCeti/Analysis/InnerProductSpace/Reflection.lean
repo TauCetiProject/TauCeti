@@ -9,10 +9,15 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Reflection across the orthogonal complement of a line
+# Reflections in inner product spaces
 
-These lemmas describe reflection across the hyperplane perpendicular to a vector in a real
-inner product space. They supply the reflection identities used by the half-space Green kernel.
+For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
+reflection across `K`, as a bounded operator, as `2 P_K - 1`.
+
+The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
+inner product space. They supply the reflection identities used by the half-space Green kernel,
+and the splitting of the squared distance from a point of the hyperplane into the squared distance
+to the foot of a point and its squared height (`TauCeti.norm_sub_sq_eq_of_inner_eq_zero`).
 
 In dimension at least two, composing the reflections in the hyperplanes orthogonal to a nonzero
 vector `v` and to a nonzero vector orthogonal to `v` gives a linear isometry of determinant `1`
@@ -22,6 +27,18 @@ sending `v` to `-v` (`TauCeti.exists_det_eq_one_apply_eq_neg`).
 public section
 
 noncomputable section
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The reflection across `K`, as a bounded operator, is `2 P_K - 1`. -/
+theorem coe_reflection (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
+    (K.reflection : E →L[𝕜] E) = 2 • K.starProjection - 1 := by
+  ext x
+  simp [reflection_apply]
+
+end Submodule
 
 namespace TauCeti
 
@@ -89,6 +106,19 @@ theorem norm_sub_reflection_orthogonal_singleton_sq {v : F} (hv : ‖v‖ = 1) (
   simp only [mul_one, Real.norm_eq_abs, sq_abs]
   rw [real_inner_comm y v, real_inner_comm x v]
   ring
+
+/-- For a point `y` of the hyperplane perpendicular to a unit vector `v`, the squared distance
+from `y` to `x` splits into the squared distance from `y` to the foot `x - ⟪v, x⟫ v` of `x` and
+the squared height of `x`. -/
+theorem norm_sub_sq_eq_of_inner_eq_zero {v : F} (hv : ‖v‖ = 1) (x : F) {y : F}
+    (hy : ⟪v, y⟫_ℝ = 0) :
+    ‖y - x‖ ^ 2 = ‖y - (x - ⟪v, x⟫_ℝ • v)‖ ^ 2 + ⟪v, x⟫_ℝ ^ 2 := by
+  have h : y - x = (y - (x - ⟪v, x⟫_ℝ • v)) + (-⟪v, x⟫_ℝ) • v := by
+    module
+  rw [h, norm_add_sq_real, norm_smul, hv, mul_one, Real.norm_eq_abs, sq_abs, neg_sq,
+    inner_smul_right, inner_sub_left, inner_sub_left, inner_smul_left, real_inner_comm _ y,
+    hy, real_inner_self_eq_norm_sq, hv, real_inner_comm x]
+  simp
 
 /-- Both points in the positive half-space are closer to each other than to the image pole. -/
 theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F} (hv : ‖v‖ = 1)

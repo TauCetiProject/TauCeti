@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import Mathlib.Topology.PartialHomeomorph.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Retraction
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # The open cells lying between two consecutive skeleta
@@ -33,7 +36,14 @@ difference of the two skeleta.
   to the `(n-1)`-skeleton gives a closed set.
 * `TauCeti.skeletonLT_succ_diff_skeletonLT`: the difference of two consecutive skeleta is the
   union of the open cells of the top dimension.
-* `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union.
+* `TauCeti.notMem_skeletonLT_of_mem_openCell`: a point of an open `n`-cell lies outside the
+  `(n-1)`-skeleton.
+* `TauCeti.disjoint_closedCell_openCell_of_ne`: a closed cell of dimension at most `n` other than
+  a given `n`-cell misses its open cell.
+* `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union, and more
+  generally in every subset of the `n`-skeleton.
+* `TauCeti.openCellChart`: the inverse of the characteristic map of an `n`-cell, as a chart of the
+  `n`-skeleton with source the open cell and target the open unit ball.
 * `TauCeti.iUnionOpenCellHomeomorph`: that union is homeomorphic to the disjoint union of one
   open unit ball for each cell of the top dimension.
 
@@ -94,6 +104,20 @@ lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i))
     ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := (rfl)
 
 variable [T2Space X]
+
+/-- A point of an open `n`-cell does not lie in the `(n-1)`-skeleton. -/
+lemma notMem_skeletonLT_of_mem_openCell {i : cell C n} {x : X} (hx : x ∈ openCell n i) :
+    x ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
+  (disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).notMem_of_mem_right hx
+
+/-- A closed `m`-cell other than the `n`-cell `j` misses the open cell of `j` when `m ≤ n`: its
+frontier lies in the `(m-1)`-skeleton and its open cell is a different open cell. -/
+lemma disjoint_closedCell_openCell_of_ne {m : ℕ} (hm : m ≤ n) {i : cell C m} {j : cell C n}
+    (hij : (⟨m, i⟩ : Σ n, cell C n) ≠ ⟨n, j⟩) : Disjoint (closedCell m i) (openCell n j) := by
+  rw [← cellFrontier_union_openCell_eq_closedCell, disjoint_union_left]
+  exact ⟨(disjoint_skeletonLT_openCell le_rfl).mono_left
+      ((cellFrontier_subset_skeletonLT m i).trans (skeletonLT_mono (by exact_mod_cast hm))),
+    disjoint_openCell_of_ne hij⟩
 
 /-- Adjoining any family of closed `n`-cells to the `(n-1)`-skeleton gives a closed set.  Taking
 the family of all `n`-cells gives the `n`-skeleton; the point of the general statement is that
@@ -158,18 +182,17 @@ lemma mem_skeletonLT_of_forall_notMem_openCell {x : X}
   obtain ⟨j, hj⟩ := mem_iUnion.1 hmem
   exact h j hj
 
-/-- Each open `n`-cell is open in the union of all open `n`-cells: its complement there is cut out
-by the closed set obtained by adjoining the remaining closed `n`-cells to the
+/-- Each open `n`-cell is open in every subset of the `n`-skeleton `skeletonLT C (n + 1)`, for
+instance in the `n`-skeleton itself or in the union of all open `n`-cells: its trace there is the
+complement of the closed set obtained by adjoining the remaining closed `n`-cells to the
 `(n-1)`-skeleton. -/
-lemma isOpen_preimage_val_openCell (i : cell C n) :
-    IsOpen (Subtype.val ⁻¹' openCell (C := C) n i :
-      Set (⋃ k : cell C n, openCell (C := C) n k : Set X)) := by
-  have hcompl : (Subtype.val ⁻¹' openCell (C := C) n i :
-      Set (⋃ k : cell C n, openCell (C := C) n k : Set X)) =
+lemma isOpen_preimage_val_openCell {S : Set X}
+    (hS : S ⊆ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) (i : cell C n) :
+    IsOpen (Subtype.val ⁻¹' openCell (C := C) n i : Set S) := by
+  have hcompl : (Subtype.val ⁻¹' openCell (C := C) n i : Set S) =
       (Subtype.val ⁻¹' ((skeletonLT C (n : ℕ∞) : Set X) ∪
         ⋃ j ∈ ({i}ᶜ : Set (cell C n)), closedCell n j))ᶜ := by
     ext x
-    obtain ⟨k, hk⟩ := mem_iUnion.1 x.2
     simp only [mem_preimage, mem_compl_iff, mem_union, not_or, not_exists, mem_iUnion]
     constructor
     · intro hx
@@ -181,13 +204,85 @@ lemma isOpen_preimage_val_openCell (i : cell C n) :
           (cellFrontier_subset_skeletonLT n j hj)
       · exact (disjoint_openCell_of_ne fun hh ↦
           hji (eq_of_heq (Sigma.mk.inj_iff.1 hh).2)).notMem_of_mem_left hj hx
-    · rintro ⟨-, h⟩
+    · rintro ⟨hxn, h⟩
+      -- A point of the `n`-skeleton outside the `(n-1)`-skeleton lies in some open `n`-cell, and
+      -- the open cells other than `i` lie in the excluded closed cells.
+      by_contra hxi
+      refine hxn (mem_skeletonLT_of_forall_notMem_openCell n (hS x.2) fun k hk ↦ ?_)
       by_cases hki : k = i
-      · exact hki ▸ hk
-      · exact (h k (by simpa using hki) (openCell_subset_closedCell n k hk)).elim
+      · exact hxi (hki ▸ hk)
+      · exact h k (by simpa using hki) (openCell_subset_closedCell n k hk)
   rw [hcompl]
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
     continuous_subtype_val).isOpen_compl
+
+/-- The inverse of the characteristic map of an `n`-cell `i`, as a chart of the `n`-skeleton
+`skeletonLT C (n + 1)` whose source is the open cell and whose target is the open unit ball.
+Outside the closed unit ball the inverse chart is extended by the radial retraction. -/
+noncomputable def openCellChart (i : cell C n) :
+    OpenPartialHomeomorph (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) (Fin n → ℝ) where
+  toFun x := (map n i).symm x
+  invFun y := ⟨map n i (radialRetraction 1 y), map_mem_skeletonLT_succ i <| by
+    rw [norm_radialRetraction zero_le_one]
+    exact min_le_right _ _⟩
+  source := Subtype.val ⁻¹' openCell n i
+  target := ball 0 1
+  map_source' x hx := map_symm_mem_ball n hx
+  map_target' y hy := by
+    rw [mem_preimage, Subtype.coe_mk, radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le]
+    exact ⟨y, hy, rfl⟩
+  left_inv' x hx := Subtype.ext <| by
+    rw [Subtype.coe_mk,
+      radialRetraction_of_norm_le (mem_ball_zero_iff.1 (map_symm_mem_ball n hx)).le]
+    exact map_map_symm n hx
+  right_inv' y hy := by
+    rw [Subtype.coe_mk, radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le]
+    exact (map n i).left_inv (by rwa [source_eq])
+  open_source := isOpen_preimage_val_openCell n Subset.rfl i
+  open_target := isOpen_ball
+  continuousOn_toFun := (continuousOn_symm n i).comp continuous_subtype_val.continuousOn
+    fun x hx ↦ by rwa [target_map_eq_openCell]
+  continuousOn_invFun := Continuous.continuousOn <| Continuous.subtype_mk
+    ((continuousOn n i).comp_continuous (lipschitzWith_radialRetraction zero_le_one).continuous
+      fun y ↦ radialRetraction_mem_closedBall zero_le_one y) _
+
+/-- The chart of an open cell is the inverse of its characteristic map. -/
+@[simp]
+lemma openCellChart_apply (i : cell C n) (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
+    openCellChart n i x = (map n i).symm x :=
+  (rfl)
+
+/-- The inverse of the chart of an open cell is the characteristic map, precomposed with the
+radial retraction onto the closed unit ball. -/
+@[simp]
+lemma openCellChart_symm_apply_coe (i : cell C n) (y : Fin n → ℝ) :
+    ((openCellChart n i).symm y : X) = map n i (radialRetraction 1 y) :=
+  (rfl)
+
+/-- On the closed unit ball, the inverse of the chart of an open cell is the characteristic
+map. -/
+lemma openCellChart_symm_apply_coe_of_norm_le (i : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
+    ((openCellChart n i).symm y : X) = map n i y := by
+  rw [openCellChart_symm_apply_coe, radialRetraction_of_norm_le hy]
+
+/-- The source of the chart of an open cell is the open cell. -/
+@[simp]
+lemma openCellChart_source (i : cell C n) :
+    (openCellChart n i).source =
+      (Subtype.val ⁻¹' openCell n i : Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
+  (rfl)
+
+/-- The target of the chart of an open cell is the open unit ball. -/
+@[simp]
+lemma openCellChart_target (i : cell C n) : (openCellChart n i).target = ball 0 1 :=
+  (rfl)
+
+/-- The image of the open unit ball under the inverse of the chart of an open cell is the open
+cell. -/
+lemma openCellChart_symm_image_ball (i : cell C n) :
+    (openCellChart n i).symm '' ball 0 1 =
+      (Subtype.val ⁻¹' openCell n i : Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
+  (openCellChart n i).symm_image_target_eq_source
 
 /-- **The open `n`-cells form a topological disjoint union of open balls.**  This is a
 homeomorphism from the disjoint union of one open unit ball for each `n`-cell onto the union of
@@ -236,7 +331,8 @@ noncomputable def iUnionOpenCellHomeomorph :
           Subtype.val ⁻¹' openCell (C := C) n i := by
         ext x
         exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ ⟨y, y.2, rfl⟩, fun ⟨y, hy, hxy⟩ ↦ ⟨⟨y, hy⟩, Subtype.ext hxy⟩⟩
-      exact (IsOpenEmbedding.mk hemb (hrange ▸ isOpen_preimage_val_openCell n i)).isOpenMap)
+      exact (IsOpenEmbedding.mk hemb (hrange ▸ isOpen_preimage_val_openCell n
+        (iUnion_subset fun k ↦ openCell_subset_skeletonLT n k) i)).isOpenMap)
 
 /-- The homeomorphism onto the union of the open `n`-cells is the assembled characteristic map. -/
 @[simp]

@@ -115,9 +115,11 @@ bracket identities need no case split at the ends of the string and hold verbati
 commutative ring.
 
 The construction and the bracket identities are stated over an arbitrary commutative ring. The
-Cartan eigenspaces and the kernel of the raising operator need the coefficients `i` and `n - i`
-only to be distinct and nonzero, and so ask for a domain of characteristic zero; a field is used
-where those coefficients are actually inverted, which is the multiplicity count and irreducibility.
+Cartan eigenspaces and the kernels of the raising and lowering operators need the integer
+coefficients `i`, `n - i` and `2(i - j)` only to be torsion-free (`HasUniqueDiv K`), while
+`TauCeti.Sl2Std.eigenspace_diag_eq_bot` asks for a domain to cancel an arbitrary scalar
+`n - 2i - μ`; a field of characteristic zero is used where the ladder coefficients are actually
+inverted, which is the multiplicity count and irreducibility.
 
 `TauCeti.Sl2Std.rep` is not the special case of `TauCeti.Sl2Std.repOfIsSl2Triple` for the standard
 triple of `sl (Fin 2) K`: the general form needs a torsion-free Lie algebra over a domain of
@@ -371,6 +373,10 @@ instance : Module.Free K (Sl2Std K n) := inferInstanceAs (Module.Free K (Fin (n 
 instance : Module.Finite K (Sl2Std K n) := inferInstanceAs (Module.Finite K (Fin (n + 1) → K))
 instance [Nontrivial K] : Nontrivial (Sl2Std K n) :=
   inferInstanceAs (Nontrivial (Fin (n + 1) → K))
+instance [Subsingleton K] : Subsingleton (Sl2Std K n) :=
+  inferInstanceAs (Subsingleton (Fin (n + 1) → K))
+instance [HasUniqueDiv K] : HasUniqueDiv (Sl2Std K n) :=
+  inferInstanceAs (HasUniqueDiv (Fin (n + 1) → K))
 
 /-- The coordinate basis `v₀, …, vₙ` of `V(n)`, a weight basis for the Cartan operator. -/
 noncomputable def basis : Basis (Fin (n + 1)) K (Sl2Std K n) :=
@@ -453,8 +459,7 @@ theorem raise_basis (i : Fin (n + 1)) :
   funext j
   rw [smul_apply, basis_apply]
   by_cases hj : (j : ℕ) + 1 = (i : ℕ)
-  · have hbound := i.isLt
-    have hjn : (j : ℕ) < n := by omega
+  · have hjn : (j : ℕ) < n := by omega
     have h1 : (⟨(j : ℕ) + 1, by omega⟩ : Fin (n + 1)) = i := by ext; simp [hj]
     have h2 : j = (⟨(i : ℕ) - 1, by omega⟩ : Fin (n + 1)) := by ext; simp; omega
     rw [raise_apply, dite_eq_left hjn, basis_apply, h1, ite_eq_left rfl, ite_eq_left h2, ← hj]
@@ -796,16 +801,17 @@ theorem isSl2Triple_diag_raise_lower (hn : (n : K) ≠ 0) :
 
 end Triple
 
-section Domain
+section KernelsAndEigenspaces
 
-variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ}
+variable {K : Type*} [CommRing K] {n : ℕ}
 
 /-! ### The Cartan eigenspaces -/
 
 /-- **The Cartan eigenspaces of `V(n)` are the coordinate lines.** The eigenspace of `h` for the
 weight `n - 2i` is exactly the line spanned by `vᵢ`: a vector of that eigenvalue has its `j`th
-coordinate killed by `2(i - j)`, which in characteristic zero vanishes only at `j = i`. -/
-theorem eigenspace_diag [CharZero K] (i : Fin (n + 1)) :
+coordinate killed by `2(i - j)`, which in a ring without additive torsion vanishes only at
+`j = i`. -/
+theorem eigenspace_diag [HasUniqueDiv K] (i : Fin (n + 1)) :
     Module.End.eigenspace (diag K n) ((n : K) - 2 * (i : ℕ)) = K ∙ basis K n i := by
   refine le_antisymm (fun v hv => ?_) ?_
   · rw [Module.End.mem_eigenspace_iff] at hv
@@ -818,15 +824,14 @@ theorem eigenspace_diag [CharZero K] (i : Fin (n + 1)) :
       -- The `j`th coordinate satisfies both the eigenvalue at `j` and the eigenvalue at `i`.
       have hcoord : ((n : K) - 2 * (j : ℕ)) * v j = ((n : K) - 2 * (i : ℕ)) * v j := by
         rw [← diag_apply, hv, smul_apply]
-      have hne : ((n : K) - 2 * (j : ℕ)) - ((n : K) - 2 * (i : ℕ)) ≠ 0 := by
-        intro hc
-        have h2 : (2 : K) * (((i : ℕ) : K) - ((j : ℕ) : K)) = 0 := by linear_combination hc
-        have hij : ((i : ℕ) : K) = ((j : ℕ) : K) :=
-          sub_eq_zero.1 ((mul_eq_zero.1 h2).resolve_left (by norm_num))
-        exact hji (Fin.ext (Nat.cast_injective hij)).symm
-      have hzero : (((n : K) - 2 * (j : ℕ)) - ((n : K) - 2 * (i : ℕ))) * v j = 0 := by
-        rw [sub_mul, hcoord, sub_self]
-      exact ((mul_eq_zero.1 hzero).resolve_left hne).symm
+      have hzero : (2 * ((i : ℤ) - (j : ℤ))) • v j = 0 := by
+        rw [← Int.cast_smul_eq_zsmul K, smul_eq_mul]
+        push_cast
+        linear_combination hcoord
+      have hne : (2 * ((i : ℤ) - (j : ℤ)) : ℤ) ≠ 0 := by
+        have : (i : ℕ) ≠ (j : ℕ) := fun h => hji (Fin.ext h.symm)
+        omega
+      exact ((smul_eq_zero_iff_right hne).mp hzero).symm
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact Module.End.mem_eigenspace_iff.2 (diag_basis i)
 
@@ -834,7 +839,8 @@ theorem eigenspace_diag [CharZero K] (i : Fin (n + 1)) :
 the Cartan operator, every coordinate of a would-be eigenvector being killed. Characteristic zero
 is not needed here: it is what makes those `n + 1` weights distinct, not what makes them the only
 ones. -/
-theorem eigenspace_diag_eq_bot {μ : K} (hμ : ∀ i : Fin (n + 1), μ ≠ (n : K) - 2 * (i : ℕ)) :
+theorem eigenspace_diag_eq_bot [IsDomain K] {μ : K}
+    (hμ : ∀ i : Fin (n + 1), μ ≠ (n : K) - 2 * (i : ℕ)) :
     Module.End.eigenspace (diag K n) μ = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun v hv => ?_
   rw [Module.End.mem_eigenspace_iff] at hv
@@ -847,11 +853,11 @@ theorem eigenspace_diag_eq_bot {μ : K} (hμ : ∀ i : Fin (n + 1), μ ≠ (n : 
 
 /-! ### The kernel of the raising operator -/
 
-/-- **The kernel of the raising operator is the highest weight line.** In characteristic zero the
-coefficients `i + 1` are nonzero, so a vector killed by `e` has all coordinates but the zeroth
-equal to zero. -/
-theorem eq_smul_basis_zero_of_raise_eq_zero [CharZero K] {v : Sl2Std K n} (h : raise K n v = 0) :
-    v = v 0 • basis K n 0 := by
+/-- **The kernel of the raising operator is the highest weight line.** Without additive torsion the
+coefficients `i + 1` have trivial kernel, so a vector killed by `e` has all coordinates but the
+zeroth equal to zero. -/
+theorem eq_smul_basis_zero_of_raise_eq_zero [HasUniqueDiv K] {v : Sl2Std K n}
+    (h : raise K n v = 0) : v = v 0 • basis K n 0 := by
   funext i
   rw [smul_apply, basis_apply]
   by_cases hi : i = 0
@@ -866,17 +872,17 @@ theorem eq_smul_basis_zero_of_raise_eq_zero [CharZero K] {v : Sl2Std K n} (h : r
     have h' : raise K n v ⟨(i : ℕ) - 1, by omega⟩ = 0 := by rw [h, zero_apply]
     have hidx : (⟨(i : ℕ) - 1 + 1, by omega⟩ : Fin (n + 1)) = i := by ext; simp; omega
     rw [raise_apply, dite_eq_left hlt, hidx] at h'
-    have hne : (((i : ℕ) - 1 : ℕ) : K) + 1 ≠ 0 := by
-      have h1 : ((((i : ℕ) - 1 + 1 : ℕ)) : K) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-      rwa [Nat.cast_add, Nat.cast_one] at h1
-    exact (mul_eq_zero.1 h').resolve_left hne
+    have hnsmul : ((i : ℕ) - 1 + 1) • v i = 0 := by
+      rwa [← Nat.cast_smul_eq_nsmul K, Nat.cast_add, Nat.cast_one, smul_eq_mul]
+    have hne : (i : ℕ) - 1 + 1 ≠ 0 := by omega
+    exact (smul_eq_zero_iff_right hne).mp hnsmul
 
 /-! ### The kernel of the lowering operator -/
 
-/-- **The kernel of the lowering operator is the lowest weight line.** In characteristic zero the
-coefficients `n - i + 1` are nonzero until the end of the string, so a vector killed by `f` has all
-coordinates but the last equal to zero. -/
-theorem eq_smul_basis_last_of_lower_eq_zero [CharZero K] {v : Sl2Std K n}
+/-- **The kernel of the lowering operator is the lowest weight line.** Without additive torsion the
+coefficients `n - i + 1` have trivial kernel until the end of the string, so a vector killed by `f`
+has all coordinates but the last equal to zero. -/
+theorem eq_smul_basis_last_of_lower_eq_zero [HasUniqueDiv K] {v : Sl2Std K n}
     (h : lower K n v = 0) : v = v (Fin.last n) • basis K n (Fin.last n) := by
   funext j
   rw [smul_apply, basis_apply]
@@ -891,17 +897,14 @@ theorem eq_smul_basis_last_of_lower_eq_zero [CharZero K] {v : Sl2Std K n}
     have hback : (⟨((⟨(j : ℕ) + 1, by omega⟩ : Fin (n + 1)) : ℕ) - 1, by omega⟩ :
         Fin (n + 1)) = j := by ext; simp
     rw [hback] at hzero
-    have hcoeff : (n : K) - (((j : ℕ) + 1 : ℕ) : K) + 1 ≠ 0 := by
-      rw [Nat.cast_add, Nat.cast_one]
-      have hcast : ((n - (j : ℕ) : ℕ) : K) ≠ 0 :=
-        Nat.cast_ne_zero.mpr (Nat.sub_ne_zero_of_lt hjn)
-      convert hcast using 1
-      rw [Nat.cast_sub (le_of_lt hjn)]
-      ring
-    have hvj : v j = 0 := (mul_eq_zero.mp hzero).resolve_left hcoeff
+    have hnsmul : (n - (j : ℕ)) • v j = 0 := by
+      rw [← Nat.cast_smul_eq_nsmul K, smul_eq_mul, Nat.cast_sub (le_of_lt hjn)]
+      simp only [Nat.cast_add, Nat.cast_one] at hzero
+      linear_combination hzero
+    have hvj : v j = 0 := (smul_eq_zero_iff_right (Nat.sub_ne_zero_of_lt hjn)).mp hnsmul
     rw [hvj, ite_eq_right hj, mul_zero]
 
-end Domain
+end KernelsAndEigenspaces
 
 section Field
 

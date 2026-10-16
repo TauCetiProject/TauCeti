@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.RepresentationTheory.Coinvariants

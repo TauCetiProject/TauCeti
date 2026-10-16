@@ -86,21 +86,11 @@ private def isometryOfInvolution (L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ �
       (toProd.symm ∘ L ∘ toProd) p v)
       (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ)
         (toProd.symm ∘ L ∘ toProd) p w) = inner ℝ v w
-    have hf : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd := by
-      simpa only [coe_toProdDiffeomorph] using toProdDiffeomorph.mdifferentiable (by simp)
-    have hg : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm := by
-      simpa only [coe_toProdDiffeomorph_symm] using
-        toProdDiffeomorph.symm.mdifferentiable (by simp)
     have hd (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
         tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm (L (toProd p)))
           (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm ∘ L ∘ toProd) p v) =
         L (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v) := by
-      rw [mfderiv_comp p (hg _) (L.differentiable.mdifferentiable.comp hf p)]
-      simp only [ContinuousLinearMap.comp_apply, Function.comp_apply,
-        tangentSpaceCastModel_mfderiv_toProd_symm]
-      rw [mfderiv_comp p L.differentiableAt.mdifferentiableAt (hf p)]
-      rw [L.hasFDerivAt.hasMFDerivAt.mfderiv]
-      exact congrArg L (mfderiv_toProd_apply p v)
+      exact tangentSpaceCastModel_mfderiv_of_eq_linear _ L (fun _ => rfl) p v
     rw [inner_def, inner_def]
     simp only [Function.comp_apply]
     rw [hd v, hd w]
@@ -144,6 +134,14 @@ def axisSwap : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol :=
     _ = mk p.y p.x (-p.z) := by
       apply toProd.injective
       simp [axisSwapL_apply]
+
+/-- Reflection in the `xz`-plane preserves the solvable group product of Sol. -/
+theorem reflection_map_mul (p q : Sol) : reflection (p * q) = reflection p * reflection q := by
+  ext <;> simp [add_comm]
+
+/-- Swapping the horizontal axes and reversing height preserves the group product of Sol. -/
+theorem axisSwap_map_mul (p q : Sol) : axisSwap (p * q) = axisSwap p * axisSwap q := by
+  ext <;> simp [add_comm]
 
 /-- Reflection in the `xz`-plane is an involution. -/
 @[simp] theorem reflection_mul_self : reflection * reflection = 1 := by
@@ -217,5 +215,27 @@ theorem range_dihedralToIsom :
     rintro _ (rfl | rfl)
     exacts [hr, ht]
   exact MulAction.mem_stabilizer_iff.mp (hle ⟨g, rfl⟩)
+
+/-- Every dihedral isometry preserves the solvable group product of Sol. -/
+@[simp]
+theorem dihedralToIsom_map_mul (g : DihedralGroup 4) (p q : Sol) :
+    dihedralToIsom g (p * q) = dihedralToIsom g p * dihedralToIsom g q := by
+  have hg : dihedralToIsom g ∈ Subgroup.closure {reflection, axisSwap} := by
+    rw [← range_dihedralToIsom]
+    exact ⟨g, rfl⟩
+  have h : ∀ p q : Sol, dihedralToIsom g (p * q) =
+      dihedralToIsom g p * dihedralToIsom g q := by
+    refine Subgroup.closure_induction
+      (p := fun f _ => ∀ p q : Sol, f (p * q) = f p * f q) ?_ ?_ ?_ ?_ hg
+    · intro f hf
+      rcases hf with rfl | rfl
+      exacts [reflection_map_mul, axisSwap_map_mul]
+    · simp
+    · intro f k _ _ hf hk p q
+      simp only [RiemannianIsometry.mul_apply, hk, hf]
+    · intro f _ hf p q
+      apply (EquivLike.injective f)
+      simp [hf]
+  exact h p q
 
 end TauCeti.Sol

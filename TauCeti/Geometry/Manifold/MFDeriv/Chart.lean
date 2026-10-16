@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -25,6 +26,11 @@ manifold derivative `mvfderiv I f x`. This is how critical points defined throug
 chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 ## Main results
+
+* `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`: preferred-chart invariance of
+  manifold differentiability.
+* `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred charts preserves
+  manifold derivatives when the source atlas changes.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
@@ -56,6 +62,44 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+
+namespace TauCeti.Manifold
+
+omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Preferred charts determine manifold differentiability independently of the rest of the atlas. -/
+theorem mdifferentiableAt_iff_of_chartAt_eq {c c' : ChartedSpace H M}
+    (h : c.chartAt = c'.chartAt) (f : M → M') (x : M) :
+    (letI := c; MDifferentiableAt I I' f x) ↔ (letI := c'; MDifferentiableAt I I' f x) := by
+  simp only [mdifferentiableAt_iff, writtenInExtChartAt, extChartAt, chartAt, h]
+
+omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Changing the source atlas while retaining its preferred charts preserves manifold derivatives
+for maps to any charted target. -/
+theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
+    (f : M → M') (x : M) :
+    (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
+  have hd := mdifferentiableAt_iff_of_chartAt_eq (I := I) (I' := I') h f x
+  -- Select c as the local atlas for the source-side derivative formula.
+  let sourceAtlas : ChartedSpace H M := c
+  by_cases hf : (letI := c; MDifferentiableAt I I' f x)
+  · have hleft : (letI := c; mfderiv I I' f x) = _ := hf.mfderiv
+    -- Select c' for the target-side formula; both displayed statements fix their atlas.
+    let targetAtlas : ChartedSpace H M := c'
+    have hright : (letI := c'; mfderiv I I' f x) = _ := (hd.mp hf).mfderiv
+    apply hleft.trans
+    apply Eq.trans ?_ hright.symm
+    simp only [writtenInExtChartAt, extChartAt, chartAt, h]
+    -- The tangent-space implementation casts are independent of the chosen atlas.
+    rfl
+  · have hleft : (letI := c; mfderiv I I' f x) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt hf
+    -- Select c' to apply its non-differentiability law.
+    let targetAtlas : ChartedSpace H M := c'
+    have hright : (letI := c'; mfderiv I I' f x) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt (hd.not.mp hf)
+    exact hleft.trans hright.symm
+
+end TauCeti.Manifold
 
 /-- Read in the extended charts at `x` and `y`, a map with manifold derivative `f'` at `x'` has
 Fréchet derivative within `range I` equal to `f'` pre- and post-composed with the derivatives of
@@ -191,5 +235,22 @@ theorem contMDiffAt_chartAt_comp {n : WithTop ℕ∞} (x : N) :
   exact contMDiffAt_iff.2 ⟨(chartAt X x).continuousAt (mem_chart_source X x),
     contDiffWithinAt_id.congr_of_eventuallyEq (writtenInExtChartAt_chartAt_comp_eventuallyEq x)
       (writtenInExtChartAt_chartAt_comp x (mem_extChartAt_target x))⟩
+
+section ChartOverlap
+
+/-- On a subset of a chart overlap, the derivative of the extended coordinate change is its
+Fréchet derivative within the full model range, including at boundary and corner points. -/
+theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    ∀ y ∈ (extChartAt I α) '' s,
+      HasFDerivWithinAt ((extChartAt I α).symm ≫ extChartAt I β)
+        (fderivWithin 𝕜 (extChartAt I β ∘ (extChartAt I α).symm) (Set.range I) y)
+        ((extChartAt I α) '' s) y := by
+  rintro _ ⟨x, hx, rfl⟩
+  exact (hasFDerivWithinAt_tangentCoordChange (I := I) (hsub hx)).mono fun y hy ↦ by
+    obtain ⟨z, hz, rfl⟩ := hy
+    exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
+
+end ChartOverlap
 
 end TauCeti

@@ -113,7 +113,7 @@ theorem _root_.IsCoveringMap.permutationRepresentation_eq_of_fiberMap
   rw [Equiv.permCongr_apply, Equiv.permCongr_apply,
     Equiv.symm_apply_apply, ← hν e, Equiv.symm_apply_apply,
     IsCoveringMap.coe_monodromyPerm, IsCoveringMap.coe_monodromyPerm,
-    ← hp.fiberMap_monodromy hq f hf γ e, hν]
+    ← hp.fiberMap_monodromy hq f hf γ.asHom e, hν]
 
 /-- A continuous map of covering spaces over `X` induces a natural transformation between
 their monodromy functors. Its component over `x` is the restriction of `f` to the fibre over

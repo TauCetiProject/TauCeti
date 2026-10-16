@@ -453,14 +453,10 @@ theorem card_classFinset_alternatingGroupFiveClassData
   · exact htwo
   · have hle_three := hle ⟨3, by omega⟩ (Or.inl rfl)
     have hle_four := hle ⟨4, by omega⟩ (Or.inr rfl)
-    have hfthree_le : f 3 ≤ 12 := hfthree.trans_le hle_three
-    have hffour_le : f 4 ≤ 12 := hffour.trans_le hle_four
     have hfthree_eq : f 3 = 12 := by omega
     exact hfthree.symm.trans hfthree_eq
   · have hle_three := hle ⟨3, by omega⟩ (Or.inl rfl)
     have hle_four := hle ⟨4, by omega⟩ (Or.inr rfl)
-    have hfthree_le : f 3 ≤ 12 := hfthree.trans_le hle_three
-    have hffour_le : f 4 ≤ 12 := hffour.trans_le hle_four
     have hffour_eq : f 4 = 12 := by omega
     exact hffour.symm.trans hffour_eq
 

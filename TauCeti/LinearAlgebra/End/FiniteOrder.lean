@@ -228,7 +228,7 @@ theorem exists_eq_smul_of_norm_trace_eq_finrank {f : End ℂ V} {n : ℕ}
   rcases Nat.eq_zero_or_pos (finrank ℂ V) with hV | hV
   · have : Subsingleton V := Module.finrank_zero_iff.1 hV
     exact ⟨1, one_pow n, LinearMap.ext fun _ => Subsingleton.elim _ _⟩
-  set E := (End.finite_hasEigenvalue f).toFinset with hE
+  set E := (End.finite_hasEigenvalue f).toFinset
   have hdim : ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) = (finrank ℂ V : ℂ) := by
     simpa using (trace_pow_eq_sum_eigenvalue_pow hn' hf 0).symm
   have htrace : ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) * μ = LinearMap.trace ℂ V f := by

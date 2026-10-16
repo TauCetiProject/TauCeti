@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.PathAlgebra
 
 /-!
@@ -108,6 +109,14 @@ variable {G}
   by_cases hn : i < n ∧ j < n
   · simp [signlessArrow, hn, h hn.1 hn.2]
   · simp [signlessArrow, hn]
+
+/-- Every `signlessArrow` is homogeneous of path degree one. -/
+theorem signlessArrow_mem_signlessPreprojectiveGrade_one (i j : ℕ) :
+    signlessArrow k G i j ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 1 := by
+  unfold signlessArrow
+  split_ifs
+  · exact signlessPreprojectiveMk_mem_grade k _ (ofArrow_mem_grade_one _)
+  all_goals exact zero_mem _
 
 /-- The class of an arbitrary doubled arrow of `G` is the `signlessArrow` between its endpoints. -/
 theorem signlessPreprojectiveMk_ofArrow_eq_signlessArrow {i j : DoubledQuiver G} (e : i ⟶ j) :

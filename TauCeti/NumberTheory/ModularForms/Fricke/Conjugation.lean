@@ -117,8 +117,7 @@ no transpose, and lives on `Γ₀(N)` itself. The two *matrices* are already dis
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/Fricke.lean`](https://github.com/CBirkbeck/AINTLIB),
-commit `340875adfb2`, Apache-2.0, Chris Birkbeck), realizing part of Layer 6 of the ModularForms
-roadmap.
+commit `340875adfb2`, Apache-2.0, Chris Birkbeck).
 
 Ported from there: the divisibility witness and its spec (`botLeftDiv`, `botLeftDiv_spec`
 upstream, `natCast_mul_lowerLeft_ediv` here), `frickeConjSL` with its coercion lemma,
@@ -229,16 +228,11 @@ private theorem lowerLeft_ediv_mul (σ τ : ↥(Gamma0 N)) :
     ((σ * τ : ↥(Gamma0 N)) : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ) =
       (σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ) * (τ : Matrix (Fin 2) (Fin 2) ℤ) 0 0 +
         (σ : Matrix (Fin 2) (Fin 2) ℤ) 1 1 * ((τ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ)) := by
-  rcases eq_or_ne (N : ℤ) 0 with hN | hN
-  · simp [hN]
-  · refine mul_left_cancel₀ hN ?_
-    have hmul : ((σ * τ : ↥(Gamma0 N)) : Matrix (Fin 2) (Fin 2) ℤ) 1 0 =
-        (σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 * (τ : Matrix (Fin 2) (Fin 2) ℤ) 0 0 +
-          (σ : Matrix (Fin 2) (Fin 2) ℤ) 1 1 * (τ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 := by
-      simp [Matrix.mul_apply, Fin.sum_univ_two]
-    linear_combination (norm := ring_nf) natCast_mul_lowerLeft_ediv (σ * τ) + hmul -
-      (τ : Matrix (Fin 2) (Fin 2) ℤ) 0 0 * natCast_mul_lowerLeft_ediv σ -
-      (σ : Matrix (Fin 2) (Fin 2) ℤ) 1 1 * natCast_mul_lowerLeft_ediv τ
+  have hσ := mem_Gamma0_iff_dvd.mp σ.property
+  have hτ := mem_Gamma0_iff_dvd.mp τ.property
+  simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
+  rw [Int.add_ediv_of_dvd_left (dvd_mul_of_dvd_left hσ _),
+    Int.mul_ediv_assoc' _ hσ, Int.mul_ediv_assoc _ hτ]
 
 /-- **`frickeConjSL` sends `1` to `1`**. -/
 @[simp]
@@ -347,17 +341,9 @@ the module docstring. -/
 -- below is the entrywise form of that over `ℤ`, with no `W` in sight.
 public theorem frickeConjSL_frickeConjSL (σ : ↥(Gamma0 N)) :
     frickeConjSL ⟨frickeConjSL σ, frickeConjSL_mem_Gamma0 σ⟩ = (σ : SL(2, ℤ)) := by
-  have hN : (N : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne N)
-  have hdiv : ((frickeConjSL σ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ) =
-      -(σ : Matrix (Fin 2) (Fin 2) ℤ) 0 1 := by
-    have hentry : ((frickeConjSL σ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) 1 0 =
-        (N : ℤ) * -(σ : Matrix (Fin 2) (Fin 2) ℤ) 0 1 := by
-      rw [coe_frickeConjSL]
-      simp
-    rw [hentry, Int.mul_ediv_cancel_left _ hN]
   ext i j
-  rw [coe_frickeConjSL, hdiv, coe_frickeConjSL]
-  fin_cases i <;> fin_cases j <;> simp [natCast_mul_lowerLeft_ediv]
+  fin_cases i <;> fin_cases j <;>
+    simp [coe_frickeConjSL, ← mul_neg, Int.mul_ediv_cancel_left _ (NeZero.ne (N : ℤ))]
 
 /-- **The Fricke conjugation is an involution at nonzero level**: applying it twice is the
 identity on `Γ₀(N)`. This is `frickeConjSL_frickeConjSL` read through `Subtype.ext`. -/
@@ -440,14 +426,6 @@ section Field
 
 variable (K : Type*) [Field K]
 
-/-- The lower-left entry of `σ ∈ Γ₀(N)`, read in `K`, is `N` times the quotient `c / N`. The
-`K`-valued form of `natCast_mul_lowerLeft_ediv`, which is what the entrywise computations below
-consume. -/
-private theorem lowerLeft_ediv_spec_field (σ : ↥(Gamma0 N)) :
-    ((σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 : K) =
-      (N : K) * (((σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ) : ℤ) : K) := by
-  exact_mod_cast congrArg (Int.cast : ℤ → K) (natCast_mul_lowerLeft_ediv σ).symm
-
 variable [NeZero (N : K)]
 
 /-- **The normalization identity** `W · σ = (W σ W⁻¹) · W` in `GL (Fin 2) K`, for `σ ∈ Γ₀(N)`.
@@ -456,14 +434,13 @@ computation needs. -/
 public theorem frickeGL_mul_mapGL (σ : ↥(Gamma0 N)) :
     frickeGL K N * mapGL K (σ : SL(2, ℤ)) = mapGL K (frickeConjSL σ) * frickeGL K N := by
   apply Units.ext
-  have hc := lowerLeft_ediv_spec_field K σ
+  have hc := congrArg (Int.cast : ℤ → K) (natCast_mul_lowerLeft_ediv σ).symm
+  push_cast at hc
   rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul,
     coe_mapGL_fin_two, coe_mapGL_fin_two, coe_frickeGL]
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp only [Matrix.mul_apply, Fin.sum_univ_two, coe_frickeConjSL, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.of_apply, algebraMap_int_eq, Int.coe_castRingHom, Fin.isValue,
-      Fin.zero_eta, Fin.mk_one, Int.cast_mul, Int.cast_neg, Int.cast_natCast, hc] <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_two, hc] <;>
     ring
 
 /-- **`frickeConjSL σ` is the Fricke conjugate**, in the form the name asserts:
@@ -473,27 +450,13 @@ public theorem mapGL_frickeConjSL (σ : ↥(Gamma0 N)) :
     mapGL K (frickeConjSL σ) = frickeGL K N * mapGL K (σ : SL(2, ℤ)) * (frickeGL K N)⁻¹ :=
   eq_mul_inv_of_mul_eq (frickeGL_mul_mapGL K σ).symm
 
-/-- `W²` commutes with everything in `GL (Fin 2) K`: it is the scalar matrix `(-N) • 1`. -/
-private theorem frickeGL_sq_mul_comm (A : GL (Fin 2) K) :
-    frickeGL K N ^ 2 * A = A * frickeGL K N ^ 2 := by
-  apply Units.ext
-  rw [Units.val_mul, Units.val_mul, coe_frickeGL_sq]
-  simp
-
 /-- **The mirror normalization identity** `σ · W = W · (W σ W⁻¹)` in `GL (Fin 2) K`, for
 `σ ∈ Γ₀(N)`; equivalently `frickeConjSL σ = W⁻¹ · σ · W`. -/
--- `frickeGL_mul_mapGL` carried across `W²` rather than a second entrywise computation:
--- `(σ · W) · W = σ · W² = W² · σ = W · (W · σ) = W · (W σ W⁻¹) · W`, and `W` cancels on the right.
 public theorem mapGL_mul_frickeGL (σ : ↥(Gamma0 N)) :
     mapGL K (σ : SL(2, ℤ)) * frickeGL K N = frickeGL K N * mapGL K (frickeConjSL σ) := by
-  refine mul_right_cancel (b := frickeGL K N) ?_
-  calc mapGL K (σ : SL(2, ℤ)) * frickeGL K N * frickeGL K N
-      = frickeGL K N ^ 2 * mapGL K (σ : SL(2, ℤ)) := by
-        rw [mul_assoc, ← sq, ← frickeGL_sq_mul_comm]
-    _ = frickeGL K N * (frickeGL K N * mapGL K (σ : SL(2, ℤ))) := by rw [sq, mul_assoc]
-    _ = frickeGL K N * (mapGL K (frickeConjSL σ) * frickeGL K N) := by
-        rw [frickeGL_mul_mapGL]
-    _ = frickeGL K N * mapGL K (frickeConjSL σ) * frickeGL K N := (mul_assoc _ _ _).symm
+  have : NeZero N := NeZero.of_neZero_natCast K
+  simpa only [← coe_frickeConjGamma0, frickeConjGamma0_frickeConjGamma0] using
+    (frickeGL_mul_mapGL K (frickeConjGamma0 σ)).symm
 
 end Field
 

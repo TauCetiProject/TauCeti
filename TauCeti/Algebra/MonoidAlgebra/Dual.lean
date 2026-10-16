@@ -93,15 +93,7 @@ variable {R G M : Type*} [CommSemiring R] [Group G]
 private noncomputable def dualLinearMap :
     Module.Dual (MonoidAlgebra R G) M →ₗ[(MonoidAlgebra R G)ᵐᵒᵖ] Module.Dual R M where
   toFun φ :=
-    { toFun := fun m => (φ m).coeff 1
-      map_add' := fun x y => by simp
-      map_smul' := fun r m => by
-        calc
-          (φ (r • m)).coeff 1 =
-              (φ ((r • (1 : MonoidAlgebra R G)) • m)).coeff 1 := by
-                rw [smul_assoc, one_smul]
-          _ = ((r • (1 : MonoidAlgebra R G)) • φ m).coeff 1 := by rw [map_smul]
-          _ = r • (φ m).coeff 1 := by simp }
+    Finsupp.lapply 1 ∘ₗ (MonoidAlgebra.coeffLinearEquiv R).toLinearMap ∘ₗ φ.restrictScalars R
   map_add' φ ψ := by ext m; rfl
   map_smul' a φ := by
     ext m
@@ -215,20 +207,17 @@ section
 
 variable {R G M : Type*} [Semiring R] [Group G] [Finite G]
   [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
+  [SMulCommClass (MonoidAlgebra R G) R M]
 
-private noncomputable def dualLift (ψ : Module.Dual R M) (m : M) : MonoidAlgebra R G :=
-  MonoidAlgebra.ofCoeff <|
-    (Finsupp.linearEquivFunOnFinite R R G).symm fun g =>
-      ψ (MonoidAlgebra.single g⁻¹ (1 : R) • m)
+private noncomputable def dualLift (ψ : Module.Dual R M) : M →ₗ[R] MonoidAlgebra R G :=
+  (MonoidAlgebra.coeffLinearEquiv R).symm.toLinearMap ∘ₗ
+    (Finsupp.linearEquivFunOnFinite R R G).symm.toLinearMap ∘ₗ
+      LinearMap.pi fun g ↦ ψ.comp
+        (DistribSMul.toLinearMap R M (MonoidAlgebra.single g⁻¹ (1 : R)))
 
 @[simp]
 private theorem dualLift_coeff (ψ : Module.Dual R M) (m : M) (g : G) :
     (dualLift ψ m).coeff g = ψ (MonoidAlgebra.single g⁻¹ (1 : R) • m) := rfl
-
-private theorem dualLift_add (ψ : Module.Dual R M) (x y : M) :
-    dualLift (G := G) ψ (x + y) = dualLift ψ x + dualLift ψ y := by
-  ext g
-  simp
 
 end
 
@@ -236,16 +225,10 @@ variable {R G M : Type*} [CommSemiring R] [Group G] [Finite G]
   [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
   [IsScalarTower R (MonoidAlgebra R G) M]
 
-private theorem dualLift_smul_base (ψ : Module.Dual R M) (r : R) (m : M) :
-    dualLift (G := G) ψ (r • m) = r • dualLift ψ m := by
-  ext g
-  rw [dualLift_coeff (G := G), MonoidAlgebra.coeff_smul, Finsupp.smul_apply,
-    dualLift_coeff (G := G), ← smul_comm r (MonoidAlgebra.single g⁻¹ (1 : R)) m, map_smul]
-
 private noncomputable def dualLinearEquivInv (ψ : Module.Dual R M) :
     Module.Dual (MonoidAlgebra R G) M where
   toFun := dualLift (G := G) ψ
-  map_add' := dualLift_add (G := G) ψ
+  map_add' := map_add (dualLift (G := G) ψ)
   map_smul' a m := by
     rw [RingHom.id_apply]
     induction a using MonoidAlgebra.induction_on with
@@ -255,9 +238,9 @@ private noncomputable def dualLinearEquivInv (ψ : Module.Dual R M) :
         rw [← mul_smul]
         simp
     | add a b ha hb =>
-        rw [add_smul, dualLift_add (G := G), ha, hb, add_smul]
+        rw [add_smul, map_add, ha, hb, add_smul]
     | smul r a ha =>
-        rw [IsScalarTower.smul_assoc, dualLift_smul_base (G := G), ha,
+        rw [IsScalarTower.smul_assoc, map_smul, ha,
           IsScalarTower.smul_assoc]
 
 /-- For a finite group, taking the coefficient at the identity identifies the group-algebra

@@ -21,10 +21,8 @@ positive-definite atom
 and integration preserves its finite quadratic-form inequalities.  Continuity follows from
 dominated convergence, since every atom has norm at most one.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-("BCR semigroup--Bochner").  Together with the transform definition and uniqueness theorem, it
-supplies the complete measure-to-function direction and leaves the representation of an arbitrary
-bounded continuous positive-definite function as the remaining existence problem.
+Together with the transform definition and uniqueness theorem, it supplies the complete
+measure-to-function direction.
 
 ## Main declarations
 

@@ -221,7 +221,7 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
     intro x
     simpa only [g] using DFunLike.congr_fun h x
   have hg : g = ε := by
-    rw [← AffineGroup.Product.productMap_restrict g, hleftMap, hrightMap]
+    rw [← _root_.AlgHom.productMap_comp_includeLeft_includeRight g, hleftMap, hrightMap]
     apply Algebra.TensorProduct.ext'
     intro h l
     rw [Algebra.TensorProduct.productMap_apply_tmul]

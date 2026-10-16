@@ -29,7 +29,7 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
 
 * `TauCeti.Multiquadratic.fundamentalDiscriminant`: `d` if `d ≡ 1 (mod 4)`, else `4 * d`, with its
   defining equation `fundamentalDiscriminant_def`.
-* `TauCeti.Multiquadratic.isFundamentalDiscriminant_fundamentalDiscriminant`: for squarefree `d`,
+* `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant`: for squarefree `d`,
   its fundamental discriminant is a fundamental discriminant.
 * `TauCeti.Multiquadratic.exists_sq_mul_eq_fundamentalDiscriminant`: it equals `c² * d` for some
   `c ∈ {1, 2}`, so it lies in the square class of `d`.
@@ -92,17 +92,17 @@ theorem fundamentalDiscriminant_ne_zero {d : ℤ} (hd : d ≠ 0) :
 `d ≡ 1 (mod 4)` the value is `d` itself (`≡ 1 (mod 4)`, squarefree); otherwise `d ≡ 2` or
 `3 (mod 4)` (it cannot be `0 (mod 4)`, as `4 = 2²` would break squarefreeness) and the value is
 `4 * d`. -/
-theorem isFundamentalDiscriminant_fundamentalDiscriminant {d : ℤ} (hd : Squarefree d) :
-    IsFundamentalDiscriminant (fundamentalDiscriminant d) := by
+theorem isFundamentalDiscr_fundamentalDiscriminant {d : ℤ} (hd : Squarefree d) :
+    Int.IsFundamentalDiscr (fundamentalDiscriminant d) := by
   have h4 : d % 4 ≠ 0 := by
     intro h
     obtain ⟨q, hq⟩ : (4 : ℤ) ∣ d := by omega
     exact absurd (hd 2 ⟨q, by rw [hq]; ring⟩) (by norm_num [Int.isUnit_iff])
   by_cases hmod : d % 4 = 1
-  · rw [fundamentalDiscriminant_of_mod_four_eq_one hmod, isFundamentalDiscriminant_iff]
-    exact Or.inl ⟨hmod, hd⟩
-  · rw [fundamentalDiscriminant_of_mod_four_ne_one hmod, isFundamentalDiscriminant_iff]
-    exact Or.inr ⟨d, rfl, by omega, hd⟩
+  · rw [fundamentalDiscriminant_of_mod_four_eq_one hmod]
+    exact Int.isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨hmod, hd⟩)
+  · rw [fundamentalDiscriminant_of_mod_four_ne_one hmod]
+    exact Int.isFundamentalDiscr_four_mul.mpr ⟨hd, by omega⟩
 
 /-- For `p` coprime to `2`, divisibility by `fundamentalDiscriminant d` is the same as divisibility
 by `d`: the only extra factor in the `d ≢ 1 (mod 4)` case is `4`, which is coprime to `p`. -/

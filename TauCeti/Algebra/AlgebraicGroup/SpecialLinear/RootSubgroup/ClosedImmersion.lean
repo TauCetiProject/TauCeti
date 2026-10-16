@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.ClosedImmersion
 
 /-!

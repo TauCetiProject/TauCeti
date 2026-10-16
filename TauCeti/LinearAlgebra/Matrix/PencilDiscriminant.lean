@@ -26,9 +26,8 @@ Equivalently `discrim q (-t) 1 ≤ 0`, the binary quadratic form above having le
 Nothing about elliptic curves appears here, and none is proved: the matrix data is a **hypothesis**
 throughout. The intended instance is the `q`-power Frobenius `π` of a curve over a field of
 characteristic `p`, where the realising integer is the degree of the isogeny `r π - s` — manifestly
-non-negative, and known to be an isogeny only away from both coordinates — and `M` is the matrix of
-`π` on the `ℓ`-torsion; the conclusion is then the Hasse bound. Supplying that instance is the work
-of the Weil pairing and is not done here.
+non-negative — and `M` is the matrix of `π` on the `ℓ`-torsion; the conclusion is then the Hasse
+bound. Supplying that instance is the work of the Weil pairing and is not done here.
 
 Two forms of the hypothesis are given. The first asks for the three determinants directly. The
 second asks instead for the **symplectic multipliers** `Aᵀ J A = d • J` of the same three matrices,

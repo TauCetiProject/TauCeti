@@ -251,7 +251,7 @@ private theorem
     have hwt : (q - p) * w = (q - p) * (t : ℂ) := by linear_combination ht
     simp [mul_left_cancel₀ hd hwt]
   -- Transport back along the inverse chart.
-  refine (key.comp hψdiff.differentiableOn fun z hz => ?_).congr fun z hz => ?_
+  refine (key.comp hψdiff.differentiableOn fun z hz => ?_).congr fun z _ => ?_
   · simpa only [Set.mem_preimage, hφinv z] using hz
   · simp only [Function.comp_apply, hφinv z]
 
