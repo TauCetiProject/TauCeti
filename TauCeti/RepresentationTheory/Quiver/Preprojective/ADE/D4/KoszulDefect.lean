@@ -92,6 +92,7 @@ local notation "Q" => OrientedQuiver zigzagD4Graph zigzagD4Coloring.sourceSink
 local notation "Π" => preprojectiveAlgebra k Q
 local notation "π" => preprojectiveMk k Q
 
+/-- Decidable equality for the vertices of the source--sink orientation of `D₄`. -/
 noncomputable local instance : DecidableEq Q := Classical.decEq Q
 
 private theorem exists_ne_zero_mem_preprojectiveCorner_D4_four (v : Q) :
