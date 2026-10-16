@@ -205,7 +205,7 @@ theorem dgHomEquiv_negOnePow_smul_dgComp {X Y Z : DGShiftClosure C} {p q n : ℤ
 theorem dgHomEquiv_dgId (X : DGShiftClosure C) :
     dgHomEquiv R X X 0 (dgId R X) =
       ((dgHomComplex R X.obj X.obj).XIsoOfEq (by rw [sub_self, add_zero])).hom (dgId R X.obj) :=
-  (homComplexData R).dgId_toDGCategory X
+  ((homComplexData R).dgId_toDGCategory X).trans (LinearMap.congr_fun (castDeg_def R _) _)
 
 /-! ### The inclusion `X ↦ X[0]` -/
 
@@ -233,6 +233,7 @@ noncomputable def ι : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C 
       rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, dgHomEquiv_dgDifferential,
         dgHomEquiv_ιHomEquiv, dgHomEquiv_ιHomEquiv]
       simp only [sub_self, Int.negOnePow_zero, one_smul]
+      simp only [← castDeg_def]
       exact (d_castDeg R _ _ f).symm)
     (fun X ↦ (dgHomEquiv R _ _ 0).injective <| by
       rw [LinearEquiv.coe_coe, dgHomEquiv_ιHomEquiv, dgHomEquiv_dgId])
@@ -240,6 +241,7 @@ noncomputable def ι : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C 
       rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.coe_coe, dgHomEquiv_dgComp,
         dgHomEquiv_ιHomEquiv, dgHomEquiv_ιHomEquiv, dgHomEquiv_ιHomEquiv]
       simp only [sub_self, zero_mul, Int.negOnePow_zero, one_smul]
+      simp only [← castDeg_def]
       exact ((castDeg_dgComp R _ (by rw [sub_self, add_zero]) f _ _).trans
         (congrArg _ ((dgComp_castDeg R _ rfl f g _).trans (castDeg_self R _ _)))).symm)
 

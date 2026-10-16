@@ -100,14 +100,18 @@ theorem dgDifferential_dgDifferential {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
 /-! ### Degree transport -/
 
 /-- Transport a homogeneous morphism along an equality of degrees. -/
--- The body is exposed so dependent statements can reduce the transported degree and identify
--- the resulting map with `HomologicalComplex.XIsoOfEq`.
-@[expose]
 noncomputable def castDeg {X Y : C} {p p' : ℤ} (hp : p = p') :
     DGHom R p X Y →ₗ[R] DGHom R p' X Y :=
   ((dgHomComplex R X Y).XIsoOfEq hp).hom.hom
 
+/-- Degree transport is the isomorphism `HomologicalComplex.XIsoOfEq` between the two degree
+components of the Hom complex. -/
+theorem castDeg_def {X Y : C} {p p' : ℤ} (hp : p = p') :
+    castDeg R (X := X) (Y := Y) hp = ((dgHomComplex R X Y).XIsoOfEq hp).hom.hom :=
+  (rfl)
+
 /-- Transport along a self-equality of degrees leaves a homogeneous morphism unchanged. -/
+@[simp]
 theorem castDeg_self {X Y : C} {p : ℤ} (hp : p = p) (f : DGHom R p X Y) :
     castDeg R hp f = f := by
   simp [castDeg]
