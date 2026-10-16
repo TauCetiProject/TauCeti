@@ -180,6 +180,35 @@ private theorem ideleCoeffInfiniteComponent_placeIdele {E : Ω} {v : HeightOneSp
     _).trans ?_))
   simp only [h1, map_one, toMul_zero, Units.val_one]
 
+/-- **A carry class of an idele concentrated at a finite place is supported there**: for an idele
+of `E = K` concentrated at a place `w` above `v`, the local invariants of the carry class `a ∪ δχ`
+vanish away from `v`, so their sum is the invariant at `v`. -/
+private theorem sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele {E : Ω}
+    (hE : E.toIntermediateField = ⊥) {v : HeightOneSpectrum (𝓞 K)} (w : HeightOneSpectrum (𝓞 E))
+    [w.asIdeal.LiesOver v.asIdeal] (π : (v.adicCompletion K)ˣ)
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K)))) :
+    sumLocalInv K (ideleLocalization K (characterCarryCocycle χ hχ
+        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) =
+      invMap (v.adicCompletion K) ((ideleLocalization K (characterCarryCocycle χ hχ
+        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v) := by
+  have hS (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ∉ ({v} : Finset _)) :
+      (ideleLocalization K (characterCarryCocycle χ hχ (baseIdele hE (placeIdele w π)) :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v' = 0 := by
+    obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w π
+      (Finset.notMem_singleton.1 hv')
+    exact (ideleLocalization_fst_apply _ _).trans
+      (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ _ hτ')
+  have hinf (u : InfinitePlace K) :
+      infiniteInvMap u ((ideleLocalization K (characterCarryCocycle χ hχ
+        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).2 u) = 0 := by
+    rw [ideleLocalization_snd_apply,
+      ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
+        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ _
+        (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
+  rw [sumLocalInv_eq_sum K _ hS, Finset.sum_singleton, Finset.sum_eq_zero fun u _ ↦ hinf u,
+    add_zero]
+
 /-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`**, supported at `v`: the
 carry class of a cyclotomic character and of an idele of `K` concentrated at `v`, read in the
 ideles of a finite Galois subextension `E` equal to `K`. -/
@@ -273,27 +302,12 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
   let a := baseIdele hE (placeIdele w π)
   let x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) := characterCarryCocycle χ hχ a
   refine ⟨x, ?_⟩
-  -- Its localizations vanish away from `v`.
-  have hS (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ∉ ({v} : Finset _)) :
-      (ideleLocalization K x).1 v' = 0 := by
-    obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w π
-      (Finset.notMem_singleton.1 hv')
-    exact (ideleLocalization_fst_apply _ _).trans
-      (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ a hτ')
-  have hinf (u : InfinitePlace K) :
-      infiniteInvMap u ((ideleLocalization K x).2 u) = 0 := by
-    rw [ideleLocalization_snd_apply,
-      ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
-        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ a
-        (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
-  -- At `v` the invariant is `v(π) · χ_v(Frob) = 1 / n`.
-  have hv : invMap (v.adicCompletion K) ((ideleLocalization K x).1 v) =
-      ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
-    rw [ideleLocalization_fst_apply,
-      invMap_ideleBrLocalization_characterCarryCocycle τ Ev χ hχ χv a π hχv hτ, hfrob,
-      (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_smul]
-  rw [sumLocalInv_eq_sum K _ hS, Finset.sum_singleton, hv, Finset.sum_eq_zero fun u _ ↦ hinf u,
-    add_zero]
+  -- Its localizations vanish away from `v`, and at `v` the invariant is
+  -- `v(π) · χ_v(Frob) = 1 / n`.
+  refine (sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ).trans ?_
+  rw [ideleLocalization_fst_apply,
+    invMap_ideleBrLocalization_characterCarryCocycle τ Ev χ hχ χv a π hχv hτ, hfrob,
+    (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_smul]
 
 /-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`.** -/
 theorem exists_sumLocalInv_ideleLocalization_eq {n : ℕ} (hn : n ≠ 0) :
@@ -399,27 +413,13 @@ private theorem exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq_au
   | intro τ₁ hτ₁ =>
   let a := baseIdele hE (placeIdele w b)
   refine ⟨a, ?_⟩
-  -- The localizations of `a ∪ δχ` vanish away from `v`.
-  have hS (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ∉ ({v} : Finset _)) :
-      (ideleLocalization K (characterCarryCocycle χ hχ a :
-        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v' = 0 := by
-    obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w b
-      (Finset.notMem_singleton.1 hv')
-    exact (ideleLocalization_fst_apply _ _).trans
-      (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ a hτ')
-  have hinf (u : InfinitePlace K) :
-      infiniteInvMap u ((ideleLocalization K (characterCarryCocycle χ hχ a :
-        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).2 u) = 0 := by
-    rw [ideleLocalization_snd_apply,
-      ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
-        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ a
-        (ideleCoeffInfiniteComponent_placeIdele w b _), map_zero]
-  -- At `v` the invariant is `χ(τ₁_* σ)`, which does not depend on the embedding.
-  rw [sumLocalInv_eq_sum K _ hS, Finset.sum_singleton, Finset.sum_eq_zero fun u _ ↦ hinf u,
-    add_zero, ideleLocalization_fst_apply,
+  -- The localizations of `a ∪ δχ` vanish away from `v`, and at `v` the invariant is
+  -- `χ(τ₁_* σ)`, which does not depend on the embedding.
+  rw [sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele hE w b χ hχ,
+    ideleLocalization_fst_apply,
     invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap τ₁ χ hχ a b hτ₁ σ hσ,
     ← hχσ]
-  exact τ.map_ofMul_absoluteGaloisGroupMap_eq χ τ₁ _
+  exact χ.map_ofMul_absoluteGaloisGroupMap_eq τ τ₁ _
 
 /-- **Every value of a character on a decomposition group is the sum of the local invariants of
 one of its carry classes.** Let `χ` be a character of `G_K` with open kernel, `v` a finite place
