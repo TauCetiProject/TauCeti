@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.RamificationDictionary
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 public import TauCeti.RingTheory.Norm.Quadratic
 
