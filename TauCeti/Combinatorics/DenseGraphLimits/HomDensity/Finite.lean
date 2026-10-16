@@ -130,7 +130,9 @@ No hypothesis is needed. When the host is empty and the pattern is not, numerato
 both vanish and `x / 0 = 0` gives `0`. -/
 theorem homDensityFin_le_one : homDensityFin F G ≤ 1 := by
   refine div_le_one_of_le₀ ?_ (pow_nonneg (Nat.cast_nonneg _) _)
-  exact_mod_cast F.card_hom_le G
+  have h := F.card_hom_le G
+  simp only [Nat.card_eq_fintype_card] at h
+  exact_mod_cast h
 
 /-- The injective homomorphism density is nonnegative. -/
 theorem injHomDensity_nonneg : 0 ≤ injHomDensity F G :=
@@ -142,7 +144,9 @@ particular an embedding `V(F) ↪ V(G)`, and those are counted by the falling fa
 No hypothesis is needed; the degenerate cases behave as for `homDensityFin_le_one`. -/
 theorem injHomDensity_le_one : injHomDensity F G ≤ 1 := by
   refine div_le_one_of_le₀ ?_ (Nat.cast_nonneg _)
-  exact_mod_cast F.card_injective_hom_le G
+  have h := F.card_injective_hom_le G
+  simp only [Nat.card_eq_fintype_card] at h
+  exact_mod_cast h
 
 end DenseGraphLimits
 

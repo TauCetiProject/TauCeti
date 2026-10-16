@@ -28,7 +28,7 @@ theorem coeff_C_add_C_mul_X_pow {R : Type*} [CommSemiring R] (a b : R) (n k : �
   simp only [mul_pow, ← C_pow, coeff_mul_natCast, coeff_mul_C, coeff_C_mul, coeff_X_pow]
   rw [sum_eq_single k]
   · simp [mul_comm, mul_assoc]
-  · intro i hi hik
+  · intro i _ hik
     simp [Ne.symm hik]
   · intro hk
     have hnk : n < k := by simpa using hk

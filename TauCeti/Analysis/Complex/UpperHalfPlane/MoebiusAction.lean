@@ -35,6 +35,8 @@ unfolded by hand.
   alike on `ℍ`.
 * `Matrix.SpecialLinearGroup.toGL_smul`: the `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action
   of the underlying matrix, the `SL(2, ℝ)` counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
+  a fractional-linear bijection of the upper half-plane.
 * `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
   part up to a `normSq` factor, and is an involution of `ℍ`.
 
@@ -136,3 +138,30 @@ lemma S_smul_S_smul (p : ℍ) : S • (S • p) = p := by
   rw [← SL_neg_smul, ← S_inv, inv_smul_smul]
 
 end ModularGroup
+
+namespace TauCeti
+
+open Complex Function Set
+
+/-- For `p < q`, the real fractional-linear transformation sending `p` to infinity
+and `q` to zero preserves the upper half-plane bijectively. -/
+theorem bijOn_sub_div_sub_upperHalfPlaneSet {p q : ℝ} (hpq : p < q) :
+    BijOn (fun z : ℂ => (z - (q : ℂ)) / (z - (p : ℂ)))
+      upperHalfPlaneSet upperHalfPlaneSet := by
+  let g : GL (Fin 2) ℝ := Matrix.GeneralLinearGroup.mkOfDetNeZero
+    !![1, -q; 1, -p] (by simpa [Matrix.det_fin_two, sub_eq_add_neg, add_comm] using
+      (sub_pos.mpr hpq).ne')
+  have hg : 0 < g.det.val := by
+    simpa [g, Matrix.GeneralLinearGroup.mkOfDetNeZero,
+      Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_fin_two] using sub_pos.mpr hpq
+  have hsemi : Semiconj ((↑) : ℍ → ℂ) (fun z => g • z)
+      (fun z : ℂ => (z - (q : ℂ)) / (z - (p : ℂ))) := by
+    intro z
+    rw [UpperHalfPlane.coe_smul_of_det_pos hg]
+    simp [UpperHalfPlane.num, UpperHalfPlane.denom, g,
+      Matrix.GeneralLinearGroup.mkOfDetNeZero, sub_eq_add_neg]
+  simpa only [UpperHalfPlane.range_coe] using
+    hsemi.bijOn_range (MulAction.toPerm g).bijective UpperHalfPlane.coe_injective
+
+
+end TauCeti

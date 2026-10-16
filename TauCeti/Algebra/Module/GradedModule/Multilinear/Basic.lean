@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.Multilinear
-public import Mathlib.LinearAlgebra.Multilinear.DirectSum
+public import Mathlib.LinearAlgebra.Multilinear.DFinsupp
 
 /-!
 # Degreewise multilinear operations
@@ -19,7 +19,8 @@ for composable morphisms in a graded linear quiver.
 
 `InternalGrading.homogeneousMultilinearEquiv` gives this equivalence without degree casts in its
 interface. Its inverse extends a degreewise family uniquely to the total modules. The extension
-uses Mathlib's `MultilinearMap.fromDirectSumEquiv` and `DirectSum.decomposeLinearEquiv`.
+uses Mathlib's `MultilinearMap.dfinsuppFamily`, `DFinsupp.lsum`, and
+`DirectSum.decomposeLinearEquiv`, so it works over an arbitrary semiring.
 
 The degreewise presentation also allows changes of coordinates using Mathlib's
 `LinearEquiv.multilinearMapCongrLeft` and `LinearEquiv.multilinearMapCongrRight` on the relevant
@@ -38,66 +39,18 @@ namespace TauCeti.InternalGrading
 
 universe uR uι uM uN
 
-variable {R : Type uR} [CommSemiring R] {ι : Type uι}
+section Semiring
+
+variable {R : Type uR} [Semiring R] {ι : Type uι}
   {M : ι → Type uM} {N : Type uN}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
 
-variable (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+variable (G : ∀ i, InternalGrading R (M i))
 
 section Finite
 
 variable [Finite ι]
-
-/-- Extend multilinear maps on every tuple of homogeneous pieces to the total modules.
-No homogeneity condition on the outputs is required for this construction. -/
-noncomputable def multilinearFromPieces
-    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i)) N) :
-    MultilinearMap R M N := by
-  classical
-  exact (MultilinearMap.fromDirectSumEquiv f).compLinearMap
-    fun i ↦ (DirectSum.decomposeLinearEquiv (G i).piece).toLinearMap
-
-/-- On homogeneous inputs, extension evaluates the specified component. -/
-@[simp]
-theorem multilinearFromPieces_apply
-    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i)) N)
-    (d : ι → ℤ) (x : ∀ i, (G i).piece (d i)) :
-    multilinearFromPieces G f (fun i ↦ (x i : M i)) = f d x := by
-  classical
-  simp [multilinearFromPieces]
-
-/-- Multilinear maps on total modules are determined by their values on homogeneous tuples.
-The modules and gradings may depend on the input slot. -/
-theorem multilinearMap_ext {f g : MultilinearMap R M N}
-    (h : ∀ (d : ι → ℤ) (x : ∀ i, M i),
-      (∀ i, x i ∈ (G i).piece (d i)) → f x = g x) : f = g := by
-  classical
-  apply (LinearEquiv.multilinearMapCongrLeft
-    (fun i ↦ (DirectSum.decomposeLinearEquiv (G i).piece).symm)).injective
-  apply MultilinearMap.directSum_ext
-  intro d
-  ext x
-  simpa using h d (fun i ↦ (x i : M i)) (fun i ↦ (x i).property)
-
-/-- Multilinear maps in finitely many slots of one graded module are determined by their values
-on homogeneous tuples whose degrees are recorded by a family indexed by the naturals, as for
-operations whose inputs are indexed by `ℕ`. -/
-theorem multilinearMap_ext_nat {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
-    (G : InternalGrading R P) {f g : MultilinearMap R (fun _ : Fin n ↦ P) N}
-    (h : ∀ (d : ℕ → ℤ) (x : Fin n → P), (∀ i : Fin n, x i ∈ G.piece (d i)) → f x = g x) :
-    f = g := by
-  refine multilinearMap_ext (fun _ : Fin n ↦ G) fun d x hx ↦ ?_
-  exact h (fun i ↦ if hi : i < n then d ⟨i, hi⟩ else 0) x fun i ↦ by simpa using hx i
-
-/-- Extending the restrictions of a multilinear map recovers the map. -/
-@[simp]
-theorem multilinearFromPieces_comp_subtype (f : MultilinearMap R M N) :
-    multilinearFromPieces G (fun d ↦ f.compLinearMap fun i ↦ ((G i).piece (d i)).subtype)
-      = f := by
-  apply multilinearMap_ext G
-  intro d x hx
-  exact multilinearFromPieces_apply G _ d (fun i ↦ ⟨x i, hx i⟩)
 
 /-- A multilinear map on total modules takes its values in a submodule as soon as it does on
 homogeneous tuples.  The modules and gradings may depend on the input slot. -/
@@ -113,9 +66,61 @@ theorem multilinearMap_apply_mem {f : MultilinearMap R M N} {S : Submodule R N}
   exact Submodule.sum_mem _ fun r _ ↦
     h r _ fun i ↦ (DirectSum.decompose (G i).piece (x i) (r i)).property
 
+/-- Multilinear maps on total modules are determined by their values on homogeneous tuples.
+The modules and gradings may depend on the input slot. -/
+theorem multilinearMap_ext {f g : MultilinearMap R M N}
+    (h : ∀ (d : ι → ℤ) (x : ∀ i, M i),
+      (∀ i, x i ∈ (G i).piece (d i)) → f x = g x) : f = g := by
+  -- Equality is membership in the diagonal submodule of `N × N`.
+  ext x
+  simpa only [LinearMap.mem_eqLocus, LinearMap.fst_apply, LinearMap.snd_apply,
+    MultilinearMap.prod_apply] using
+    multilinearMap_apply_mem G (f := f.prod g)
+      (S := (LinearMap.fst R N N).eqLocus (LinearMap.snd R N N))
+      (fun d x hx ↦ by simpa using h d x hx) x
+
+/-- Multilinear maps in finitely many slots of one graded module are determined by their values
+on homogeneous tuples whose degrees are recorded by a family indexed by the naturals, as for
+operations whose inputs are indexed by `ℕ`. -/
+theorem multilinearMap_ext_nat {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
+    (G : InternalGrading R P) {f g : MultilinearMap R (fun _ : Fin n ↦ P) N}
+    (h : ∀ (d : ℕ → ℤ) (x : Fin n → P), (∀ i : Fin n, x i ∈ G.piece (d i)) → f x = g x) :
+    f = g := by
+  refine multilinearMap_ext (fun _ : Fin n ↦ G) fun d x hx ↦ ?_
+  exact h (fun i ↦ if hi : i < n then d ⟨i, hi⟩ else 0) x fun i ↦ by simpa using hx i
+
+/-- Extend multilinear maps on every tuple of homogeneous pieces to the total modules.
+No homogeneity condition on the outputs is required for this construction. -/
+noncomputable def multilinearFromPieces
+    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i)) N) :
+    MultilinearMap R M N := by
+  classical
+  letI := Fintype.ofFinite ι
+  exact (DFinsupp.lsum ℕ fun _ ↦ LinearMap.id).compMultilinearMap
+    ((MultilinearMap.dfinsuppFamily f).compLinearMap
+      fun i ↦ (DirectSum.decomposeLinearEquiv (G i).piece).toLinearMap)
+
+/-- On homogeneous inputs, extension evaluates the specified component. -/
+@[simp]
+theorem multilinearFromPieces_apply
+    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i)) N)
+    (d : ι → ℤ) (x : ∀ i, (G i).piece (d i)) :
+    multilinearFromPieces G f (fun i ↦ (x i : M i)) = f d x := by
+  classical
+  simp [multilinearFromPieces, ← DirectSum.single_eq_lof]
+
+/-- Extending the restrictions of a multilinear map recovers the map. -/
+@[simp]
+theorem multilinearFromPieces_comp_subtype (f : MultilinearMap R M N) :
+    multilinearFromPieces G (fun d ↦ f.compLinearMap fun i ↦ ((G i).piece (d i)).subtype)
+      = f := by
+  apply multilinearMap_ext G
+  intro d x hx
+  exact multilinearFromPieces_apply G _ d (fun i ↦ ⟨x i, hx i⟩)
+
 end Finite
 
-variable [Fintype ι]
+variable [Fintype ι] (ℬ : ℤ → Submodule R N)
 
 /-- An extension is homogeneous exactly when each component has the required output degree. -/
 theorem isHomogeneous_multilinearFromPieces_iff
@@ -131,6 +136,19 @@ theorem isHomogeneous_multilinearFromPieces_iff
     intro d x hx
     have h := hf d (fun i ↦ ⟨x i, hx i⟩)
     rwa [← multilinearFromPieces_apply G f d (fun i ↦ ⟨x i, hx i⟩)] at h
+
+end Semiring
+
+section CommSemiring
+
+variable {R : Type uR} [CommSemiring R] {ι : Type uι}
+  {M : ι → Type uM} {N : Type uN}
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+  [AddCommMonoid N] [Module R N]
+
+variable (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+
+variable [Fintype ι]
 
 /-- Degree-`q` homogeneous multilinear maps on the total modules are equivalent to arbitrary
 families of multilinear maps on the homogeneous pieces with output degree `∑ i, d i + q`.
@@ -187,5 +205,7 @@ theorem homogeneousMultilinearEquiv_symm_apply (q : ℤ)
     ((homogeneousMultilinearEquiv G ℬ q).symm f).val (fun i ↦ (x i : M i)) =
       (f d x : N) := by
   exact multilinearFromPieces_apply G _ d x
+
+end CommSemiring
 
 end TauCeti.InternalGrading

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.BlockAverage
+public import TauCeti.Probability.Process.BlockAverage.Basic
 import Mathlib.Tactic.Ring
 
 /-!
@@ -40,7 +40,7 @@ form those theorems take, and `disjointWindow_ne` for disjointness across factor
 
 That combination is what fixed starts cannot supply: windows from two distinct fixed starts overlap
 once the common length exceeds the gap between the starts, whereas these move outward as the length
-grows. The generic fixed-start selection is `fixedStart` in `Process/BlockAverage.lean`.
+grows. The generic fixed-start selection is `fixedStart` in `Process/BlockAverage/Basic.lean`.
 
 ## References
 
@@ -85,7 +85,6 @@ theorem lt_window {N i j j' : ℕ} (hj : j < N) : j < window N i j' := by
 window `i'`, provided the offset `j` stays inside the window. -/
 theorem window_lt_window {N : ℕ} {i i' j j' : ℕ} (hj : j < N) (hi : i < i') :
     window N i j < window N i' j' := by
-  have h1 : (i + 1) * N + j < (i + 1) * N + N := by omega
   have h2 : (i + 1) * N + N = (i + 2) * N := by ring
   have h3 : (i + 2) * N ≤ (i' + 1) * N := Nat.mul_le_mul_right _ (by omega)
   simp only [window_def]
@@ -106,7 +105,7 @@ theorem window_selection_injective {m N : ℕ} (js : Fin m → Fin N) :
   (window_selection_strictMono js).injective
 
 /-- **The disjoint-window instance.** This specialises `prod_blockAverage_eq_expect`, imported from
-`Process/BlockAverage.lean`, to the windows `window N i`, where every tuple is an injective
+`Process/BlockAverage/Basic.lean`, to the windows `window N i`, where every tuple is an injective
 selection by `window_selection_injective`. -/
 theorem prod_blockAverage_window_eq_expect {m N : ℕ} (Y : Fin m → ℕ → Ω → ℝ) (ω : Ω) :
     (∏ i : Fin m, blockAverage (Y i) (fun j : Fin N => window N (i : ℕ) (j : ℕ)) ω)
@@ -117,7 +116,7 @@ theorem prod_blockAverage_window_eq_expect {m N : ℕ} (Y : Fin m → ℕ → Ω
 
 The moving selection a block factorization needs: at each length, distinct factors read disjoint
 windows. The generic fixed-start selection lives with `blockAverage` in
-`Probability/Process/BlockAverage.lean`. -/
+`Probability/Process/BlockAverage/Basic.lean`. -/
 
 /-- The **disjoint-window selection**: at length `n + 1`, factor `c` reads the window
 `window (n + 1) c`, occupying `[(c + 1)(n + 1), (c + 2)(n + 1))`. -/

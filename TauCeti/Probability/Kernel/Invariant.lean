@@ -34,7 +34,7 @@ theorem map_condExpKernel_ae_eq_of_invariant
     (hm : m ≤ mΩ) {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
     (hinv : ∀ s, MeasurableSet[m] s → T ⁻¹' s =ᵐ[μ] s) :
     ∀ᵐ x ∂μ, (condExpKernel μ m x).map T = condExpKernel μ m x := by
-  rcases isEmpty_or_nonempty Ω with h | h
+  rcases isEmpty_or_nonempty Ω with h | _
   · simp [Measure.eq_zero_of_isEmpty μ]
   have hid : @Measurable Ω Ω mΩ m id := measurable_id'' hm
   have hdiag : @Measurable Ω (Ω × Ω) mΩ (m.prod mΩ) Function.diag :=

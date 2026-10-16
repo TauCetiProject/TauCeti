@@ -108,7 +108,7 @@ theorem _root_.Subgroup.card_generatingTriplesOfFullCycleType
   simp only [Finset.mem_filter, G.mem_generatingTriplesOfFullCycleType,
     mem_generatingProductOneTriples, mem_productOneTriples]
   constructor
-  · rintro ⟨⟨hprod, hgen, hp0, hp1, hpi⟩, hclasses⟩
+  · rintro ⟨⟨hprod, hgen, _, _, _⟩, hclasses⟩
     have hc0 : ConjClasses.mk p.1 = C0 := congrArg (fun x => x.1.1) hclasses
     have hc1 : ConjClasses.mk p.2.1 = C1 := congrArg (fun x => x.1.2) hclasses
     have hci : ConjClasses.mk p.2.2 = Cinf := congrArg (fun x => x.2) hclasses

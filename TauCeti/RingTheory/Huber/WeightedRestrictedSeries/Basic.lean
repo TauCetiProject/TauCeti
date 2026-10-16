@@ -22,159 +22,103 @@ variables, Wedhorn defines the *weighted* restricted power series ring
 A⟨X⟩_T := { ∑ aν Xν ∈ A[[X]] | aν ∈ Tν · U for every open subgroup U of A and almost all ν },
 ```
 
-with the subgroups `U⟨X⟩ := { ∑ aν Xν ∈ A⟨X⟩_T | aν ∈ Tν · U for all ν }` as a fundamental
-system of neighbourhoods of zero. Here `Tν := T₁^ν₁ ⋯ Tₖ^νₖ`. Taking every `Tᵢ = {1}` recovers
-the ordinary restricted series `A⟨X⟩`.
+with the subgroups `U⟨X⟩ := { ∑ aν Xν ∈ A⟨X⟩_T | aν ∈ Tν · U for all ν }` as a fundamental system of
+neighbourhoods of zero. Here `Tν := T₁^ν₁ ⋯ Tₖ^νₖ`. Taking every `Tᵢ = {1}` recovers the ordinary
+restricted series `A⟨X⟩`.
 
-**Both of those claims need Wedhorn's standing hypothesis** `TauCeti.Huber.IsWeightFamily T`,
-fixed at the start of his §5.6: without it `A⟨X⟩_T` is not multiplicatively closed and the
-`U⟨X⟩` are not neighbourhoods of zero. The subring and topology constructions
-(`weightedRestrictedSubring`, `weightedNhd`, `weightedTopology` and the maps into them) therefore
-take it as an argument; the underlying weight operations `weightPow` and `weightMul` and the
-predicate `IsWeightedRestricted` do not, since they are defined for any family. The
-counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not automatic.
+**Both claims require Wedhorn's standing hypothesis** `TauCeti.Huber.IsWeightFamily T`, fixed
+at the start of §5.6: otherwise multiplicative closure and the neighbourhood claim can fail.
+The subring, `weightedNhd`, topology and maps into them take this hypothesis; `weightPow`,
+`weightMul` and `IsWeightedRestricted` are defined for any family. The counterexample in
+`IsWeightFamily`'s docstring shows that the hypothesis is not automatic.
 
 ## Main definitions
 
-* `TauCeti.Huber.weightPow`: the subset `Tν = T₁^ν₁ ⋯ Tₖ^νₖ` of `A`.
-* `TauCeti.Huber.weightMul`: the additive subgroup `Tν · U`.
-* `TauCeti.Huber.IsWeightFamily`: Wedhorn's standing hypothesis on `T` — for every variable `i`,
-  every `m` and every neighbourhood `U` of zero, the subgroup `Tᵢ^m · U` is again one. The
-  subring and the topology below are defined only under it.
-* `TauCeti.Huber.IsWeightedRestricted`: Wedhorn's condition (5.6.1) on a power series.
-* `TauCeti.Huber.weightedRestrictedSubring`: `A⟨X⟩_T` as a subring of `A[[X]]`.
-* `TauCeti.Huber.weightedNhd`: the subgroup `U⟨X⟩` of `A⟨X⟩_T`.
-* `TauCeti.Huber.weightedTopology`: the ring topology they generate. `A⟨X⟩_T` also carries the
-  group uniformity of that topology, with its `IsUniformAddGroup` and
-  `UniformContinuousConstSMul` instances, so that its separated completion can be formed.
-* `TauCeti.Huber.weightedC` and `TauCeti.Huber.weightedX`: the constant series and the
-  variables. `TauCeti.Huber.weightedC_injective`, with its `simp` form
-  `TauCeti.Huber.weightedC_inj`, reads a constant series off its coefficient in degree `0`;
-  `TauCeti.Huber.algebraMap_weightedRestrictedSubring_injective` and its product counterpart
-  state the resulting injectivity for the canonical algebra maps.
-* `TauCeti.Huber.weightedMap`: the morphism `A⟨X⟩_T → B⟨X⟩_S` induced by a continuous ring map
-  carrying each weight into the corresponding one; `continuous_weightedMap` makes it a morphism of
-  topological rings, and `weightedMap_id` with `weightedMap_comp` are the functor laws.
+* `TauCeti.Huber.weightPow`: the subset `Tν = T₁^ν₁ ⋯ Tₖ^νₖ`; `weightMul`: the subgroup `Tν · U`.
+* `TauCeti.Huber.IsWeightFamily`: each `Tᵢ^m · U` is a neighbourhood whenever `U` is one.
+* `TauCeti.Huber.IsWeightedRestricted`: the coefficient condition in Wedhorn (5.6.1).
+* `TauCeti.Huber.weightedRestrictedSubring`: `A⟨X⟩_T`, under the standing weight-family hypothesis.
+* `TauCeti.Huber.weightedNhd` and `weightedTopology`: the subgroups `U⟨X⟩` and their ring topology.
+  Its group uniformity, `IsUniformAddGroup` and `UniformContinuousConstSMul` permit completion.
+* `TauCeti.Huber.weightedSubring`: series whose coefficients meet a subring `R` bound, giving
+  both the ring of definition `A₀⟨X⟩_T` and the plus-ring generators `A⁺⟨X⟩_T`.
+* `TauCeti.Huber.weightedC` and `weightedX`: constants and variables. `weightedC_injective`,
+  `weightedC_inj` and the algebra-map injectivity lemmas recover constants from degree zero.
+* `TauCeti.Huber.weightedMap`: the continuous coefficient map carrying each weight into its
+  target weight; `weightedMap_id` and `weightedMap_comp` give its functor laws.
 
 ## Main results
 
-* `TauCeti.Huber.IsWeightFamily.of_exists_isOpenMap_mul`, with
-  `TauCeti.Huber.IsWeightFamily.of_exists_isUnit` and
-  `TauCeti.Huber.IsWeightFamily.of_forall_openAddSubgroup`: the three ways to supply the standing
-  hypothesis. The first assumes multiplication by an element of `Tᵢ` is an open *map*.
-* `TauCeti.Huber.IsWeightedRestricted.mul`: `A⟨X⟩_T` is closed under multiplication, the point
-  Wedhorn flags as not entirely clear; with the additive closure lemmas this gives the subring.
-  `TauCeti.Huber.IsWeightedRestricted.finite_coeff_notMem` restates the predicate as finiteness of
-  the exceptional set of coefficients.
-* `TauCeti.Huber.weightedNhd_subgroups_basis`: the `U⟨X⟩` are a fundamental system of
-  neighbourhoods of zero for a ring topology, with its contract
-  (`hasBasis_nhds_zero_weightedTopology`, `isTopologicalRing_weightedTopology`,
-  `nonarchimedeanRing_weightedTopology`, `continuous_weightedC`).
-  `TauCeti.Huber.weightedC_mem_weightedNhd` records that a constant series meets the `U` bound
-  exactly when its value does, and `TauCeti.Huber.isOpen_weightedNhd` that `U⟨X⟩` is open whenever
-  `U` is.
-* `TauCeti.Huber.weightedRestrictedSubring_one_weight`: for the trivial weight this is the ordinary
-  ring of restricted power series (Wedhorn Example 5.54), with
-  `TauCeti.Huber.subringCongr_one_weight_weightedX` and
-  `TauCeti.Huber.subringCongr_one_weight_weightedC` saying where that identification sends the
-  generators — to `restrictedX` and to the algebra map.
-* `TauCeti.Huber.weightedPolynomials`, the polynomials as a subring of `A⟨X⟩_T`, with
-  `mem_weightedPolynomials_iff` identifying it with finite support and the generators
-  `weightedC`/`weightedX` in it; `TauCeti.Huber.dense_weightedPolynomials` is Wedhorn 5.49(1),
-  read off the predicate-level `exists_mvPolynomial_forall_coeff_sub_mem`.
-* `TauCeti.Huber.weightedPolynomialEquiv`, with `discreteTopology_weightedRestrictedSubring`
-  and `weightedPolynomials_eq_top`: over a discrete ring the weighted topology is discrete and
-  `A⟨X⟩_T` is exactly the polynomial ring.
-* `TauCeti.Huber.weightedRestrictedSubring_fin_zero` and
-  `TauCeti.Huber.weightedRestrictedSubringFinZeroEquiv`, with
-  `continuous_weightedRestrictedSubringFinZeroEquiv` and its `_symm`: in no variables every
-  series is restricted, so `A⟨X⟩_T` is `A` — and topologically so, since the index `Fin 0 →₀ ℕ`
-  is a singleton and the basic neighbourhood is cut out by that one coefficient. All of them are
-  stated for an arbitrary `T : Fin 0 → Set A` and take no weight-family hypothesis:
-  `TauCeti.Huber.isWeightFamily_fin_zero` supplies it, the condition being a statement about each
-  index and there being none.
-* `TauCeti.Huber.IsWeightedRestricted.map`, with `RingHom.weightMul_map_le` and `image_weightPow`:
-  restrictedness is preserved by a continuous ring map carrying each `T i` into `S i`. This is
-  what `weightedMap` is built from; `weightedMap_weightedX` says it fixes the variables, while
-  `weightedMap_weightedC` says it acts as `φ` on constants — the constants are moved, not fixed.
-  `weightedMap_id` and `weightedMap_comp` are the functor laws.
-* `TauCeti.Huber.IsWeightFamily.image`: a continuous open ring map carries a weight family to a
-  weight family.
+* `TauCeti.Huber.IsWeightFamily.of_exists_isOpenMap_mul`, `of_exists_isUnit` and
+  `of_forall_openAddSubgroup` supply weight families. The first requires an open multiplication
+  **map**. For Huber rings, `isWeightFamily_iff_isOpen_span` in `OpenIdeal.lean` characterizes them.
+* `TauCeti.Huber.IsWeightFamily.isOpen_span`: weights generate open ideals under separately
+  continuous addition.
+* `TauCeti.Huber.IsWeightedRestricted.mul` gives multiplicative closure; `finite_coeff_notMem`
+  identifies the exceptional finite set, and `exists_coeff_mem_weightMul` corrects it.
+* `TauCeti.Huber.weightedNhd_subgroups_basis` gives the ring topology through
+  `hasBasis_nhds_zero_weightedTopology`, `isTopologicalRing_weightedTopology`,
+  `nonarchimedeanRing_weightedTopology` and `continuous_weightedC`.
+* `TauCeti.Huber.weightedC_mem_weightedNhd` tests constants;
+  `weightedC_mul_weightedX_pow_mem_weightedNhd` bounds monomials; `isOpen_weightedNhd`
+  gives openness.
+* `TauCeti.Huber.weightedRestrictedSubring_one_weight` recovers ordinary restricted series
+  (Wedhorn Example 5.54); the `subringCongr_one_weight_weightedX` and `_weightedC` lemmas identify
+  the variables and constants.
+* `TauCeti.Huber.weightedPolynomials` consists of finite-support series, characterized by
+  `mem_weightedPolynomials_iff`.
+  `dense_weightedPolynomials` is Wedhorn 5.49(1), via `exists_mvPolynomial_forall_coeff_sub_mem`.
+* `TauCeti.Huber.weightedPolynomialEquiv`, `discreteTopology_weightedRestrictedSubring` and
+  `weightedPolynomials_eq_top` identify weighted series over a discrete ring with polynomials.
+* `TauCeti.Huber.weightedRestrictedSubring_fin_zero`, `weightedRestrictedSubringFinZeroEquiv`
+  and its continuity lemmas identify zero-variable series with `A`. Arbitrary empty families
+  are allowed, since `isWeightFamily_fin_zero` supplies the vacuous standing hypothesis.
+* `TauCeti.Huber.IsWeightedRestricted.map` preserves restrictedness using `RingHom.weightMul_map_le`
+  and `image_weightPow`; `RingHom.map_weightMul` and `RingHom.image_weightMul_of_image_eq` identify
+  images. `weightedMap_weightedX`, `_weightedC`, `_id` and `_comp` describe the resulting maps.
+* `TauCeti.Huber.IsWeightFamily.image`: a continuous open ring map carries weight families to
+  weight families.
 
 ## Scope
 
-Wedhorn states (5.6.1) for an arbitrary index set `I`. This file formalises the finite-variable
-case `I = Fin k`. The product defining the weight therefore runs over all variables.
+Wedhorn's (5.6.1) allows any `I`; here `I = Fin k`, with the weight product over all variables.
 
 ## Implementation notes
 
-`Tν · U` is read as the additive subgroup *generated by* the products `t * u`, not as the
-pointwise product set. Wedhorn's own statement forces this: he asserts that the `U⟨X⟩` are a
-fundamental system of neighbourhoods of zero for a *ring* topology, so each must be an additive
-subgroup, and the pointwise set `{t * u}` is not closed under addition.
+`Tν · U` is the additive subgroup *generated by* products `t * u`: their pointwise set need not be
+additive. Wedhorn's ring topology needs subgroups; multiplicative closure uses `IsWeightFamily`.
 
-The predicate carries no nonarchimedean hypothesis, matching (5.6.1), but it only *means*
-coefficient convergence when the open additive subgroups are a neighbourhood basis of zero — the
-setting Wedhorn works in throughout §5.6. Without that it can be vacuous: over `ℝ` with its usual
-topology the only open additive subgroup is `ℝ` itself, so every power series is `T`-restricted
-for the trivial weight. `TauCeti.Huber.isWeightedRestricted_one_weight_iff` therefore assumes
-`NonarchimedeanAddGroup` — the additive condition is what rules that vacuity out, and no
-multiplicative structure of the topology enters its proof.
+The predicate needs no nonarchimedean hypothesis, but expresses coefficient convergence only when
+open additive subgroups form a neighbourhood basis of zero, as in Wedhorn's §5.6. Over `ℝ` only the
+whole ring is an open additive subgroup, so trivial-weight restrictedness is vacuous. Thus
+`isWeightedRestricted_one_weight_iff` assumes `NonarchimedeanAddGroup`, not ring continuity. If `Tᵢ`
+is empty and `νᵢ > 0`, then `Tν · U = ⊥`: almost all such coefficients must vanish; the closure
+lemmas need no nonemptiness assumption.
 
-If some `Tᵢ` is empty and `νᵢ > 0` then `Tν` is empty and `Tν · U = ⊥`, so all but finitely many
-such coefficients must vanish; the closure lemmas below need no nonemptiness hypothesis.
+Mathlib's `MvPowerSeries.IsRestricted` instead requires `‖coeff ν f‖ * ∏ i, c i ^ ν i → 0` along the
+cofinite filter for a polyradius `c : σ → ℝ` over a normed ring. Huber rings need not carry a norm;
+here subsets act on neighbourhood subgroups rather than reals on coefficient norms. At trivial
+weight the conditions agree for ultrametric norms: balls are additive subgroups and form a
+neighbourhood basis. For general norms they differ, as the vacuous condition over `ℝ` shows; neither
+is a special case of the other. The unweighted predicate in
+`TauCeti/RingTheory/Huber/Restricted/PowerSeries.lean` is a topological limit; that file discusses
+this comparison without a proved declaration.
 
-This construction is not the same as retopologising the ordinary `A⟨X⟩` by transporting along a
-substitution `X ↦ f X`: there the weight multiplies the coefficient rather than the
-neighbourhood, and the carrier does not vary with `T`. Here the carrier itself depends on `T`.
-
-Nor is it Mathlib's `MvPowerSeries.IsRestricted`, despite that also being a weighted condition.
-Mathlib weights by a polyradius `c : σ → ℝ` over a *normed* ring, asking that
-`‖coeff t f‖ * ∏ i, c i ^ t i` tend to `0` along the cofinite filter. A Huber ring's topology is
-nonarchimedean but in general carries no norm, so no polyradius is available to state that
-condition, and the weight family here is a family of *subsets* `Tᵢ ⊆ A` acting on neighbourhood
-subgroups rather than a family of reals scaling coefficient norms. The two do agree at the
-trivial weight when the norm is *ultrametric*: the balls `{a | ‖a‖ < r}` are then additive
-subgroups, and every open subgroup contains one, so quantifying over all open subgroups is the
-same as quantifying over the balls and the condition becomes `‖coeff ν f‖ → 0` along the
-cofinite filter. Over a general normed ring they do not agree: over `ℝ`, as above, the condition
-here is vacuous while Mathlib's still asks for `‖coeff ν f‖ → 0`. The unweighted predicate of
-`TauCeti/RingTheory/Huber/Restricted/PowerSeries.lean` is a topological limit rather than a
-condition on subgroups, and that file remarks on the comparison for it — in prose, not as a
-proved declaration. Neither notion is a special case of the other in general.
-
-The finite-family absorption fact the multiplicative arguments run on — finitely many fixed
-elements are absorbed into their own targets by a single open subgroup — mentions no weight, so
-it lives in `TauCeti/Topology/Algebra/Nonarchimedean/Absorption.lean`, built on Mathlib's
-single-element `NonarchimedeanRing.left_mul_subset`.
-
-Closure of `A⟨X⟩_T` under multiplication is the one non-obvious point of the construction —
-Wedhorn writes "note that it is not entirely clear that `A⟨X⟩_T` is multiplicatively closed" — and
-is `TauCeti.Huber.IsWeightedRestricted.mul` here. It is exactly what the standing hypothesis is
-for.
+`NonarchimedeanRing.left_mul_subset` underlies the weight-independent finite-family absorption in
+`TauCeti/Topology/Algebra/Nonarchimedean/Absorption.lean`.
 
 ## Provenance
 
-The construction differs from AINTLIB's `TateAlgebraWedhorn`, which retopologises the ordinary
-`A⟨X⟩` by transporting along a substitution rather than letting the carrier depend on `T`.
-
-The *proofs*, however, follow `TauCeti/RingTheory/Huber/Restricted/PowerSeries.lean`
-(TauCetiProject/TauCeti#2348), which is itself AINTLIB-derived — and not only in API layout. In
-particular `TauCeti.Huber.IsWeightedRestricted.mul` follows the plan of `IsRestricted.mul` there:
-choose `W` with `W · W ⊆ U`; take the finite sets of coefficients of `f` and `g` that fail the `W`
-bound; find one open subgroup absorbing those finitely many bad coefficients into the target;
-rule out the exceptional index set `(F + G_Z) ∪ (F_Z + G)`; and split each antidiagonal term by
-whether neither, or exactly one, of its factors is bad.
-
-What is new there is the weighting, and it is not cosmetic: the target `Tν · U` varies with the
-index, so the absorbing subgroup has to work against a *family* of targets — which is what
-`TauCeti.Huber.IsWeightFamily` is for and what
-`NonarchimedeanRing.exists_openAddSubgroup_forall_mul_subset` was factored out to supply — and
-the trichotomy has to land in `Tα · U` and `Tβ · U` separately before `mul_mem_weightMul_add`
-recombines them at `α + β`. The unweighted proof needs none of that.
-
-The API layout — the `isWeightedRestricted_zero/one/add/neg/mul` series, the subring with its
-`mem_` lemma, and the algebra-map coercion — follows the same file.
+Unlike AINTLIB's `TateAlgebraWedhorn`, which retopologises ordinary `A⟨X⟩` along `X ↦ f X`,
+this construction varies the carrier with `T`: weights multiply neighbourhoods, not coefficients.
+Proofs follow the AINTLIB-derived `TauCeti/RingTheory/Huber/Restricted/PowerSeries.lean`
+(TauCetiProject/TauCeti#2348). In particular, `IsWeightedRestricted.mul` follows `IsRestricted.mul`:
+choose `W · W ⊆ U`, collect the finitely many bad coefficients, absorb them with one open subgroup,
+exclude `(F + G_Z) ∪ (F_Z + G)`, then split antidiagonal terms by which factors are bad.
+Here targets vary with the index: `IsWeightFamily` and
+`NonarchimedeanRing.exists_openAddSubgroup_forall_mul_subset` supply the required common absorbing
+subgroup, and `mul_mem_weightMul_add` recombines the separate `Tα · U` and `Tβ · U` bounds.
+The unweighted proof needs neither modification. The API layout follows the same file.
 
 ## References
 
@@ -218,6 +162,13 @@ theorem weightPow_add (T : Fin k → Set A) (α β : Fin k →₀ ℕ) :
     weightPow T (α + β) = weightPow T α * weightPow T β := by
   simp only [weightPow, Finsupp.add_apply, pow_add]
   exact Finset.prod_mul_distrib
+
+/-- Scaling the multi-index raises the weight to the same power: `T^(n • ν) = (Tν)ⁿ`. -/
+theorem weightPow_nsmul (T : Fin k → Set A) (n : ℕ) (ν : Fin k →₀ ℕ) :
+    weightPow T (n • ν) = weightPow T ν ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [succ_nsmul, weightPow_add, ih, pow_succ]
 
 /-- At a single-variable multi-index the weight is the corresponding power: `T^(single i m)` is
 `Tᵢ ^ m`. -/
@@ -407,9 +358,11 @@ theorem isWeightFamily_iff {T : Fin k → Set A} :
 /-- **The openness form of the standing hypothesis.** If some element of each `T i` multiplies
 open sets to open sets, the family is a weight family.
 
-Openness of the subgroup generated by `Tᵢ · A` alone does not supply the neighbourhood condition
-for arbitrarily small `U`. An open multiplication map supplies it directly, as does a unit acting
-continuously in `TauCeti.Huber.IsWeightFamily.of_exists_isUnit`. -/
+For general topological rings, openness of the subgroup generated by `Tᵢ · A` alone does not
+supply the neighbourhood condition for arbitrarily small `U`. An open multiplication map supplies
+it directly, as does a unit acting continuously in `TauCeti.Huber.IsWeightFamily.of_exists_isUnit`.
+For Huber rings the open-ideal condition is sufficient, as proved in
+`TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenIdeal`. -/
 theorem IsWeightFamily.of_exists_isOpenMap_mul {T : Fin k → Set A}
     (h : ∀ i, ∃ t ∈ T i, IsOpenMap (t * ·)) : IsWeightFamily T := by
   intro i m U hU
@@ -449,6 +402,11 @@ theorem isWeightFamily_one_weight : IsWeightFamily (fun _ : Fin k ↦ ({1} : Set
   intro _ m U hU
   refine Filter.mem_of_superset hU fun u hu ↦ ?_
   exact AddSubgroup.subset_closure ⟨1, by simp, u, hu, by simp⟩
+
+/-- Two weight families on disjoint blocks of variables append to a weight family. -/
+theorem IsWeightFamily.append {m : ℕ} {T : Fin k → Set A} {S : Fin m → Set A}
+    (hT : IsWeightFamily T) (hS : IsWeightFamily S) : IsWeightFamily (Fin.append T S) :=
+  Fin.addCases (fun i ↦ by simpa using hT i) (fun j ↦ by simpa using hS j)
 
 /-- Wedhorn (5.6.1): a power series is *`T`-restricted* if, for every open subgroup `U` of `A`,
 all but finitely many of its coefficients lie in `Tν · U`. -/
@@ -516,6 +474,17 @@ theorem IsWeightFamily.isOpen_weightMul_top [SeparatelyContinuousAdd A] {T : Fin
     (hT : IsWeightFamily T) (i : Fin k) (m : ℕ) :
     IsOpen ((weightMul T (Finsupp.single i m) ⊤ : AddSubgroup A) : Set A) :=
   IsWeightFamily.isOpen_weightMul hT _ (by simp)
+
+/-- Each weight set in an admissible family generates an open ideal. This implication only
+requires separately continuous addition; it does not require a Huber ring. -/
+theorem IsWeightFamily.isOpen_span [SeparatelyContinuousAdd A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) (i : Fin k) : IsOpen (Ideal.span (T i) : Set A) := by
+  have hle : weightMul T (Finsupp.single i 1) ⊤ ≤ (Ideal.span (T i)).toAddSubgroup := by
+    apply weightMul_le.mpr
+    intro t ht a _
+    rw [weightPow_single, pow_one] at ht
+    exact Ideal.mul_mem_right a _ (Ideal.subset_span ht)
+  exact AddSubgroup.isOpen_mono hle (hT.isOpen_weightMul_top i 1)
 
 /-- **Wedhorn Example 5.54**: for the trivial weight `Tᵢ = {1}` the condition is the ordinary
 restrictedness of `A⟨X⟩`, that the coefficients tend to zero along the cofinite filter. This is
@@ -587,6 +556,38 @@ theorem IsWeightedRestricted.finite_coeff_notMem {T : Fin k → Set A}
     {f : MvPowerSeries (Fin k) A} (hf : IsWeightedRestricted T f) (U : OpenAddSubgroup A) :
     {ν | MvPowerSeries.coeff ν f ∉ weightMul T ν U.toAddSubgroup}.Finite :=
   Filter.eventually_cofinite.mp (hf U)
+
+open scoped Classical in
+/-- Replace the coefficients of a restricted series that fail one open weighted bound by
+coefficients satisfying that bound. Only finitely many coefficients change, so the resulting
+series remains restricted. The coefficient equation retains every coefficient already in the
+bound. Openness of `U` ensures that the exceptional set is finite. -/
+theorem IsWeightedRestricted.exists_coeff_mem_weightMul {T : Fin k → Set A}
+    {f : MvPowerSeries (Fin k) A} (hf : IsWeightedRestricted T f) (U : OpenAddSubgroup A)
+    (u : (Fin k →₀ ℕ) → A) (hu : ∀ ν, u ν ∈ weightMul T ν U.toAddSubgroup) :
+    ∃ g : MvPowerSeries (Fin k) A, IsWeightedRestricted T g ∧
+      (∀ ν, MvPowerSeries.coeff ν g ∈ weightMul T ν U.toAddSubgroup) ∧
+      ∀ ν, MvPowerSeries.coeff ν g =
+        if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+        then MvPowerSeries.coeff ν f else u ν := by
+  classical
+  let g : MvPowerSeries (Fin k) A := fun ν ↦
+    if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+    then MvPowerSeries.coeff ν f else u ν
+  have hcoeff (ν) : MvPowerSeries.coeff ν g =
+      if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+      then MvPowerSeries.coeff ν f else u ν := MvPowerSeries.coeff_apply g ν
+  refine ⟨g, ?_, ?_, hcoeff⟩
+  · rw [isWeightedRestricted_iff]
+    intro W
+    filter_upwards [isWeightedRestricted_iff.mp hf U,
+      isWeightedRestricted_iff.mp hf W] with ν hU hW
+    rwa [hcoeff, ite_eq_left hU]
+  · intro ν
+    rw [hcoeff]
+    split_ifs with h
+    · exact h
+    · exact hu ν
 
 /-- One open additive subgroup absorbing exceptional coefficients of two series at once: `Z` sends
 `coeff α f * z` into `Tα · U` for every `α ∈ F`, and `coeff β g * z` into `Tβ · U` for every
@@ -839,6 +840,50 @@ theorem weightedC_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
       exact ha
     · exact (weightMul T ν U).zero_mem
 
+/-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` when `c` meets the bound `T(j eᵢ) · U` of its degree. -/
+theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ}
+    (hc : c ∈ weightMul T (Finsupp.single i j) U) :
+    weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U := fun ν ↦ by
+  classical
+  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, coe_weightedC, coe_weightedX,
+    MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow]
+  split_ifs with h <;> simp [h, hc]
+
+/-- `R⟨X⟩_T` for a subring `R` of `A`: the series all of whose coefficients meet the `R` bound,
+`aν ∈ Tν · R` for every `ν`. Its carrier is the subgroup `TauCeti.Huber.weightedNhd` of `R`; that
+it is a subring is coefficientwise multiplicativity of `R`.
+
+For a ring of definition `A₀` this is the ring of definition `A₀⟨X⟩_T`
+(`TauCeti.Huber.PairOfDefinition.weightedRingOfDefinition`); for a ring of integral elements `A⁺`
+it is the subring whose integral closure is the plus ring of `A⟨X⟩_T`
+(`TauCeti.Huber.Pair.weighted`). -/
+def weightedSubring [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T)
+    (R : Subring A) : Subring (weightedRestrictedSubring T hT) where
+  __ := weightedNhd T hT R.toAddSubgroup
+  one_mem' := by simpa using (weightedC_mem_weightedNhd hT (U := R.toAddSubgroup)).mpr R.one_mem
+  mul_mem' hf hg := mul_mem_weightedNhd
+    (Set.mul_subset_iff.mpr fun _ ha _ hb ↦ R.mul_mem ha hb) hf hg
+
+/-- Membership in `R⟨X⟩_T` is the `R` bound on every coefficient. -/
+@[simp]
+theorem mem_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
+    {R : Subring A} {f : weightedRestrictedSubring T hT} :
+    f ∈ weightedSubring T hT R ↔ f ∈ weightedNhd T hT R.toAddSubgroup := (Iff.rfl)
+
+/-- `R⟨X⟩_T` is monotone in `R`. -/
+theorem weightedSubring_mono [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
+    {R S : Subring A} (h : R ≤ S) : weightedSubring T hT R ≤ weightedSubring T hT S :=
+  fun _ hf ↦ weightedNhd_mono (U := R.toAddSubgroup) (V := S.toAddSubgroup) h hf
+
+/-- A constant series lies in `R⟨X⟩_T` exactly when its value lies in `R`. -/
+-- Apply before `mem_weightedSubring`, which expands the bound on every coefficient.
+@[simp 1100]
+theorem weightedC_mem_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) {R : Subring A} {a : A} :
+    weightedC T hT a ∈ weightedSubring T hT R ↔ a ∈ R :=
+  weightedC_mem_weightedNhd hT
+
 /-- **The left-multiplication half of the neighbourhood basis**: for a fixed `x ∈ A⟨X⟩_T` and an
 open subgroup `U`, some `V⟨X⟩` is carried into `U⟨X⟩` by multiplication by `x`. This is the
 condition `RingSubgroupsBasis` calls `leftMul`.
@@ -936,6 +981,12 @@ theorem isOpen_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A} (hT : Is
     IsOpen (weightedNhd T hT U : Set (weightedRestrictedSubring T hT)) :=
   ((weightedNhd_subgroups_basis hT).openAddSubgroup ⟨U, hU⟩).isOpen'
 
+/-- `R⟨X⟩_T` is open in `A⟨X⟩_T` when `R` is open in `A`. -/
+theorem isOpen_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsWeightFamily T)
+    {R : Subring A} (hR : IsOpen (R : Set A)) :
+    IsOpen (weightedSubring T hT R : Set (weightedRestrictedSubring T hT)) :=
+  isOpen_weightedNhd hT (U := R.toAddSubgroup) hR
+
 /-- The constant-series embedding `A → A⟨X⟩_T` is continuous.
 
 A constant series has its only nonzero coefficient at `ν = 0`, where `T⁰ · U` is `U` itself, so
@@ -1006,6 +1057,22 @@ theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (i : Fin k) :
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
   Subtype.ext (by simp [coe_weightedX])
+
+/-- A monomial `a Xν` lies in `R⟨X⟩_T` exactly when its coefficient meets the `R` bound,
+`a ∈ Tν · R`. -/
+-- Apply before `mem_weightedSubring`, which expands the bound on every coefficient.
+@[simp 1100]
+theorem weightedPolynomialHom_monomial_mem_weightedSubring [NonarchimedeanRing A]
+    {T : Fin k → Set A} {hT : IsWeightFamily T} {R : Subring A} {ν : Fin k →₀ ℕ} {a : A} :
+    weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedSubring T hT R ↔
+      a ∈ weightMul T ν R.toAddSubgroup := by
+  classical
+  simp only [mem_weightedSubring, mem_weightedNhd, coe_weightedPolynomialHom,
+    MvPolynomial.coe_monomial, MvPowerSeries.coeff_monomial]
+  refine ⟨fun h ↦ by simpa using h ν, fun h μ ↦ ?_⟩
+  split_ifs with hμ
+  · exact hμ ▸ h
+  · exact zero_mem _
 
 /-- **The inclusion of the polynomials is injective**: a polynomial is determined by its
 coefficients, and the inclusion changes none of them.
@@ -1255,9 +1322,8 @@ instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
   isUniformAddGroup_of_addCommGroup
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
-    ContinuousConstSMul A (weightedRestrictedSubring T hT) :=
-  ⟨fun a ↦ (continuous_const_mul (algebraMap A (weightedRestrictedSubring T hT) a)).congr
-    fun f ↦ (Algebra.smul_def a f).symm⟩
+    ContinuousSMul A (weightedRestrictedSubring T hT) :=
+  continuousSMul_of_algebraMap _ _ (continuous_weightedC hT)
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
     UniformContinuousConstSMul A (weightedRestrictedSubring T hT) :=
@@ -1283,6 +1349,25 @@ theorem _root_.RingHom.weightMul_map_le (φ : A →+* B) {T : Fin k → Set A} {
   simp only [AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass, map_mul]
   exact mul_mem_weightMul S ν V
     (weightPow_mono hTS ν (image_weightPow φ T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
+
+/-- A ring homomorphism carries a weighted coefficient subgroup onto the corresponding
+subgroup for the image weights and the image coefficient subgroup. -/
+theorem _root_.RingHom.map_weightMul (φ : A →+* B) (T : Fin k → Set A)
+    (ν : Fin k →₀ ℕ) (U : AddSubgroup A) :
+    (weightMul T ν U).map (φ : A →+ B) =
+      weightMul (fun i ↦ φ '' T i) ν (U.map (φ : A →+ B)) := by
+  simp only [weightMul_def, AddMonoidHom.map_closure, AddSubgroup.coe_map,
+    AddMonoidHom.coe_ofClass, Set.image_mul, image_weightPow]
+
+/-- If a ring homomorphism maps each source weight onto the target weight, it maps each
+weighted coefficient subgroup onto the target subgroup weighted by the image of `U`. -/
+theorem _root_.RingHom.image_weightMul_of_image_eq (φ : A →+* B)
+    {T : Fin k → Set A} {S : Fin k → Set B} (hTS : ∀ i, φ '' T i = S i)
+    (ν : Fin k →₀ ℕ) (U : AddSubgroup A) :
+    φ '' (weightMul T ν U : Set A) =
+      (weightMul S ν (U.map (φ : A →+ B)) : Set B) := by
+  simpa only [AddSubgroup.coe_map, AddMonoidHom.coe_ofClass, hTS] using
+    congrArg SetLike.coe (φ.map_weightMul T ν U)
 
 variable [TopologicalSpace A] [TopologicalSpace B]
 

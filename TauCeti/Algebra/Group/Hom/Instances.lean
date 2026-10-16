@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Algebra.Group.Equiv.Basic
 public import Mathlib.Algebra.Group.Hom.Instances
+public import TauCeti.Algebra.Group.Hom.Lift
 
 /-!
-# Pre- and postcomposition with homomorphisms, as bijections on homomorphisms
+# Transport and flipping of homomorphisms
 
 For a homomorphism `f : M →* N` and a commutative monoid `P`, Mathlib's `MonoidHom.compHom' f` is
 precomposition with `f`, as a homomorphism `(N →* P) →* M →* P`. This file records that it is
@@ -27,6 +28,7 @@ whose image is the `n`-torsion induces bijections on duals.
 
 The same transport principle applies to biadditive pairings: bijective changes of both variables
 and of the target preserve bijectivity of the curried homomorphism.
+Flipping a biadditive pairing also preserves equivariance under a common scalar action.
 
 ## Main results
 
@@ -40,6 +42,7 @@ and of the target preserve bijectivity of the curried homomorphism.
   homomorphism is bijective on homomorphisms out of any unital magma.
 * `AddMonoidHom.bijective_of_bijective_pairing`: bijectivity of a curried biadditive pairing is
   preserved by bijective changes of variables and target.
+* `AddMonoidHom.flip_map_smul`: flipping a biadditive pairing preserves equivariance.
 * `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv`: a pairing that reads, through
   additive equivalences, as a bijective curried homomorphism separates the points of its second
   argument, and every homomorphism out of its first argument is pairing with some point.
@@ -129,16 +132,22 @@ theorem _root_.MonoidHom.compHom_bijective_of_forall_pow_eq_one {M N P : Type*} 
     [CommMonoid N] [CommMonoid P] {f : N →* P} (hf : Function.Injective f) {n : ℕ}
     (hM : ∀ a : M, a ^ n = 1) (hf' : ∀ y : P, y ^ n = 1 → ∃ x, f x = y) :
     Function.Bijective (MonoidHom.compHom f : (M →* N) →* M →* P) := by
-  refine ⟨fun φ ψ h => MonoidHom.ext fun a => hf ?_, fun ψ => ?_⟩
-  · simpa only [MonoidHom.compHom_apply_apply, MonoidHom.comp_apply] using DFunLike.congr_fun h a
-  · have hψ : ∀ a : M, ∃ x, f x = ψ a := fun a => hf' (ψ a) (by rw [← map_pow, hM, map_one])
-    let φ : M → N := fun a => Classical.choose (hψ a)
-    have hφ : ∀ a, f (φ a) = ψ a := fun a => Classical.choose_spec (hψ a)
-    refine ⟨{ toFun := φ, map_one' := hf ?_, map_mul' := fun a b => hf ?_ },
-      MonoidHom.ext fun a => ?_⟩
-    · rw [hφ, map_one, map_one]
-    · rw [hφ, map_mul, map_mul, hφ, hφ]
-    · simpa only [MonoidHom.compHom_apply_apply, MonoidHom.comp_apply, MonoidHom.coe_mk,
-        OneHom.coe_mk] using hφ a
+  apply (Function.bijective_iff_existsUnique _).2
+  intro ψ
+  simpa only [MonoidHom.ext_iff, MonoidHom.compHom_apply_apply, MonoidHom.comp_apply] using
+    ψ.existsUnique_comp_eq_of_injective f hf
+      (fun a => hf' (ψ a) (by rw [← map_pow, hM, map_one]))
 
 end TauCeti
+
+namespace AddMonoidHom
+
+/-- Flipping a biadditive pairing preserves equivariance under a common scalar action. -/
+theorem flip_map_smul {S M N P : Type*} [AddZeroClass M] [AddZeroClass N] [AddCommMonoid P]
+    [SMul S M] [SMul S N] [SMul S P] (μ : M →+ N →+ P)
+    (hμ : ∀ (a : S) (m : M) (n : N), μ (a • m) (a • n) = a • μ m n) :
+    ∀ (a : S) (n : N) (m : M), μ.flip (a • n) (a • m) = a • μ.flip n m := by
+  intro a n m
+  simpa only [flip_apply] using hμ a m n
+
+end AddMonoidHom

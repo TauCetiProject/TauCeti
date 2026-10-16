@@ -30,6 +30,8 @@ discreteness of `Γ` is assumed.
 
 * `ConvexPolygon.SidePairing.orderOf_cycleMap_mul_cycleAngleSum`: the order of the cycle
   transformation at a finite vertex times its cycle angle sum is `2π`.
+* `ConvexPolygon.SidePairing.exists_partialCycleMap_eq_of_smul_vertex_eq`: every transformation
+  identifying two finite vertices occurs among the partial cycle products around the first.
 * `ConvexPolygon.SidePairing.smul_eq_self_iff_mem_zpowers_cycleMap`: an element of `Γ` fixes
   the vertex exactly when it is a power of the cycle transformation.
 * `ConvexPolygon.SidePairing.map_stabilizer_eq_zpowers_cycleMap`: the stabilizer of the vertex in
@@ -206,6 +208,52 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
     (eq_div_of_mul_eq ht (by rw [mul_comm]; exact hSt))]
   exact hSt
 
+/-- The tiles containing a finite vertex are exactly the inverse partial cycle tiles before
+one full turn. This classifies all tiles at the vertex, without assuming that its preimage
+under the tile transformation is a vertex. -/
+theorem mem_smul_carrier_iff_exists_inv_partialCycleMap_eq {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {g : PSL(2, ℝ)} (hg : g ∈ Γ) :
+    z ∈ g • P.carrier ↔
+      ∃ m < orderOf (σ.cycleMap j) * σ.cycleLength j,
+        (σ.partialCycleMap j m)⁻¹ = g := by
+  refine ⟨fun hzmem ↦ ?_, fun ⟨m, _, hm⟩ ↦ ?_⟩
+  · have hcov := σ.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngleSum hz
+      (σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj).ge
+    have hzcl : z ∈ closure (g • interior P.carrier) := by
+      rwa [closure_smul, P.closure_interior_carrier]
+    obtain ⟨v, hvU, hvg⟩ := mem_closure_iff.1 hzcl _ isOpen_interior hcov
+    obtain ⟨m, hm, hvm⟩ := mem_iUnion₂.1 (interior_subset hvU)
+    exact ⟨m, Finset.mem_range.1 hm,
+      (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hg
+        (Γ.inv_mem (σ.partialCycleMap_mem hmap j m)) ⟨v, hvg, hvm⟩).symm⟩
+  · rw [← hm, mem_smul_set_iff_inv_smul_mem, inv_inv]
+    have hvertex : P.vertex (σ.next^[m] j) = .inl (σ.partialCycleMap j m • z) := by
+      rw [← σ.partialCycleMap_smul_vertex, hz, Sum.smul_inl]
+    exact P.vertex_mem_carrier hvertex
+
+/-- Every element identifying two finite vertices of a polygon with disjoint translated interiors
+is a partial cycle product. The product occurs before the cycle has made one full turn, namely
+before `orderOf (cycleMap j) * cycleLength j` steps. -/
+theorem exists_partialCycleMap_eq_of_smul_vertex_eq {j k : Fin n} {z w : ℍ}
+    (hz : P.vertex j = .inl z) (hw : P.vertex k = .inl w)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {g : PSL(2, ℝ)} (hg : g ∈ Γ) (hgz : g • z = w) :
+    ∃ m < orderOf (σ.cycleMap j) * σ.cycleLength j,
+      σ.partialCycleMap j m = g ∧ σ.next^[m] j = k := by
+  have hzmem : z ∈ g⁻¹ • P.carrier := by
+    rw [mem_smul_set_iff_inv_smul_mem, inv_inv, hgz]
+    exact P.vertex_mem_carrier hw
+  obtain ⟨m, hm, heq⟩ :=
+    (σ.mem_smul_carrier_iff_exists_inv_partialCycleMap_eq hz hmap hdisj (Γ.inv_mem hg)).1 hzmem
+  have hmg : σ.partialCycleMap j m = g := inv_injective heq
+  refine ⟨m, hm, hmg, P.vertex_injective ?_⟩
+  rw [← σ.partialCycleMap_smul_vertex, hmg, hz, Sum.smul_inl, hgz, hw]
+
 /-- **The stabilizer of a finite vertex of a fundamental polygon.** Let `Γ` contain the
 side-pairing maps, with distinct translates of the interior of `P` disjoint. An element of `Γ`
 fixes the finite vertex `z = vertex j` exactly when it is a power of the cycle transformation. -/
@@ -222,25 +270,12 @@ theorem smul_eq_self_iff_mem_zpowers_cycleMap {j : Fin n} {z : ℍ} (hz : P.vert
   · obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 hg'
     exact MulAction.mem_stabilizer_iff.1
       (Subgroup.zpow_mem _ (MulAction.mem_stabilizer_iff.2 hfix) k)
-  -- the tiles met in `orderOf (cycleMap j)` circuits cover a neighbourhood of `z`
-  have hcov := σ.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngleSum hz
-    (σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj).ge
-  -- and `g • P` has `z` as a vertex, so its interior meets one of these tiles
-  have hzg : z ∈ closure (g • interior P.carrier) := by
-    rw [closure_smul, P.closure_interior_carrier, ← hgz]
-    exact smul_mem_smul_set (P.vertex_mem_carrier hz)
-  obtain ⟨w, hwU, hwg⟩ := mem_closure_iff.1 hzg _ isOpen_interior hcov
-  obtain ⟨m, -, hwm⟩ := mem_iUnion₂.1 (interior_subset hwU)
-  have hgm := P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hg
-    (Γ.inv_mem (σ.partialCycleMap_mem hmap j m)) ⟨w, hwg, hwm⟩
-  -- the matching tile fixes `z`, so it returns to vertex `j` after whole circuits
-  have hfixm : σ.partialCycleMap j m • z = z := by
-    rw [← inv_inv (σ.partialCycleMap j m), ← hgm, inv_smul_eq_iff, hgz]
-  have hjm : σ.next^[m] j = j := P.vertex_injective (by
-    rw [← σ.partialCycleMap_smul_vertex, hz, Sum.smul_inl, hfixm])
+  -- A transformation fixing the vertex returns to its index after whole circuits.
+  obtain ⟨m, -, hmg, hjm⟩ :=
+    σ.exists_partialCycleMap_eq_of_smul_vertex_eq hz hz hmap hdisj hg hgz
   obtain ⟨k, rfl⟩ := Function.IsPeriodicPt.minimalPeriod_dvd hjm
-  rw [hgm, ← cycleLength_def, mul_comm, partialCycleMap_mul_cycleLength]
-  exact Subgroup.inv_mem _ (Subgroup.npow_mem_zpowers _ k)
+  rw [← hmg, ← cycleLength_def, mul_comm, partialCycleMap_mul_cycleLength]
+  exact Subgroup.npow_mem_zpowers _ k
 
 /-- **The stabilizer of a finite vertex of a fundamental polygon is generated by its cycle
 transformation.** Under the hypotheses of `smul_eq_self_iff_mem_zpowers_cycleMap`, the
@@ -259,6 +294,26 @@ theorem map_stabilizer_eq_zpowers_cycleMap {j : Fin n} {z : ℍ} (hz : P.vertex 
   · have hgΓ : g ∈ Γ := (Subgroup.zpowers_le.2 (σ.cycleMap_mem hmap j)) hg
     exact ⟨⟨g, hgΓ⟩, (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj hgΓ).2 hg, rfl⟩
 
+/-- A finite vertex has trivial stabilizer exactly when its cycle transformation is the
+identity. Thus the nontrivial finite cycles are precisely the elliptic vertex cycles. -/
+theorem stabilizer_eq_bot_iff_cycleMap_eq_one {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    MulAction.stabilizer Γ z = ⊥ ↔ σ.cycleMap j = 1 := by
+  rw [← Subgroup.map_eq_bot_iff_of_injective (MulAction.stabilizer Γ z) Γ.subtype_injective,
+    σ.map_stabilizer_eq_zpowers_cycleMap hz hmap hdisj, Subgroup.zpowers_eq_bot]
+
+/-- The order of the stabilizer of a finite vertex equals the order of its cycle
+transformation, including the trivial cycle of order one. -/
+theorem natCard_stabilizer_eq_orderOf_cycleMap {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    Nat.card (MulAction.stabilizer Γ z) = orderOf (σ.cycleMap j) := by
+  rw [← Subgroup.card_map_of_injective Γ.subtype_injective,
+    σ.map_stabilizer_eq_zpowers_cycleMap hz hmap hdisj, Nat.card_zpowers]
+
 /-- **The angle sum at a finite vertex of a fundamental polygon is `2π / m`**, where `m` is the
 order of the stabilizer of the vertex. Under the hypotheses of
 `smul_eq_self_iff_mem_zpowers_cycleMap`, the stabilizer of the vertex in `Γ` has order `m` with
@@ -268,8 +323,7 @@ theorem natCard_stabilizer_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.verte
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     (Nat.card (MulAction.stabilizer Γ z) : ℝ) * σ.cycleAngleSum j = 2 * π := by
-  rw [← Subgroup.card_map_of_injective Γ.subtype_injective,
-    σ.map_stabilizer_eq_zpowers_cycleMap hz hmap hdisj, Nat.card_zpowers,
-    σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj]
+  rw [σ.natCard_stabilizer_eq_orderOf_cycleMap hz hmap hdisj]
+  exact σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

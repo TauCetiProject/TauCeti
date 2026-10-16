@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Logic.Equiv.Fin.Basic
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 public import TauCeti.Probability.Process.PathLaw.Basic
@@ -14,9 +15,10 @@ import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 /-!
 # Coordinate and block marginals of a probability measure on path space
 
-A probability measure `P` on path space `ℕ → α` has a path of one-coordinate marginals
-`P.coordinateMarginals : ℕ → ProbabilityMeasure α`, with `i ↦ P.map (x ↦ x i)`, and, for each
-positive width `m`, a path of consecutive block marginals `P.blockMarginals m`, whose `i`-th entry
+A probability measure `P` on a family `ι → α` has coordinate marginals
+`P.coordinateMarginals : ι → ProbabilityMeasure α`, with `i ↦ P.map (x ↦ x i)`. For sequences
+indexed by `ℕ`, each positive width `m` also gives consecutive block marginals
+`P.blockMarginals m`, whose `i`-th entry
 is the law of the coordinates `i * m, …, i * m + m - 1`. Both paths depend measurably on `P`, so a
 random path measure induces random measure-valued sequences.
 
@@ -94,15 +96,19 @@ theorem map_map_permReindex_eq_of_map_eq
 
 /-! ### Coordinate marginals -/
 
+section CoordinateMarginals
+
+variable {ι : Type*}
+
 /-- The path of one-coordinate marginals of a probability measure on path space. -/
 def _root_.MeasureTheory.ProbabilityMeasure.coordinateMarginals
-    (P : ProbabilityMeasure (ℕ → α)) : ℕ → ProbabilityMeasure α :=
+    (P : ProbabilityMeasure (ι → α)) : ι → ProbabilityMeasure α :=
   fun i => P.map (fun x => x i)
 
 /-- Evaluation of the path of coordinate marginals. -/
 @[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.coordinateMarginals_apply
-    (P : ProbabilityMeasure (ℕ → α)) (i : ℕ) :
+    (P : ProbabilityMeasure (ι → α)) (i : ι) :
     P.coordinateMarginals i = P.map (fun x => x i) :=
   (rfl)
 
@@ -110,43 +116,42 @@ open MeasureTheory.ProbabilityMeasure
 
 /-- The coordinate-marginal path depends measurably on the probability measure on path space. -/
 theorem measurable_coordinateMarginals :
-    Measurable (coordinateMarginals : ProbabilityMeasure (ℕ → α) →
-      ℕ → ProbabilityMeasure α) :=
+    Measurable (coordinateMarginals : ProbabilityMeasure (ι → α) →
+      ι → ProbabilityMeasure α) :=
   Measurable.of_eval fun i =>
     measurable_probabilityMeasure_map (measurable_pi_apply i)
 
 /-- Coordinate marginals are equivariant under a permutation of path coordinates. -/
 @[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.coordinateMarginals_map_permReindex
-    (P : ProbabilityMeasure (ℕ → α)) (τ : Equiv.Perm ℕ) :
-    (P.map (permReindex τ)).coordinateMarginals = permReindex τ P.coordinateMarginals := by
+    (P : ProbabilityMeasure (ι → α)) (τ : Equiv.Perm ι) :
+    (P.map (fun x i => x (τ i))).coordinateMarginals =
+      fun i => P.coordinateMarginals (τ i) := by
   funext i
   apply ProbabilityMeasure.toMeasure_injective
-  simp only [coordinateMarginals_apply, ProbabilityMeasure.toMeasure_map, permReindex_apply]
-  have hperm : permReindex (α := α) τ = fun x : ℕ → α => fun k => x (τ k) := by
-    funext x k
-    rw [permReindex_apply]
-  rw [hperm]
-  rw [Measure.map_map (measurable_pi_apply i) (measurable_reindex τ)]
+  simp only [coordinateMarginals_apply, ProbabilityMeasure.toMeasure_map]
+  have hτ : Measurable (fun x : ι → α => fun k => x (τ k)) :=
+    Measurable.of_eval fun k => measurable_pi_apply (τ k)
+  rw [Measure.map_map (measurable_pi_apply i) hτ]
   rfl
 
 /-- The coordinate marginals of a path measure, represented in the canonical measurable
 injective code for probability measures on a countably generated space. -/
 def _root_.MeasureTheory.ProbabilityMeasure.codedCoordinateMarginals
-    [MeasurableSpace.CountablyGenerated α] (P : ProbabilityMeasure (ℕ → α)) :
-    ℕ → (ProbabilityMeasureCodeIndex α → ℝ≥0∞) :=
+    [MeasurableSpace.CountablyGenerated α] (P : ProbabilityMeasure (ι → α)) :
+    ι → (ProbabilityMeasureCodeIndex α → ℝ≥0∞) :=
   fun i => probabilityMeasureCode (P.coordinateMarginals i)
 
 /-- Evaluation of a coded coordinate marginal. -/
 @[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.codedCoordinateMarginals_apply
-    [MeasurableSpace.CountablyGenerated α] (P : ProbabilityMeasure (ℕ → α)) (i : ℕ) :
+    [MeasurableSpace.CountablyGenerated α] (P : ProbabilityMeasure (ι → α)) (i : ι) :
     P.codedCoordinateMarginals i = probabilityMeasureCode (P.coordinateMarginals i) :=
   (rfl)
 
 /-- The path of coded coordinate marginals is measurable. -/
 theorem measurable_codedCoordinateMarginals [MeasurableSpace.CountablyGenerated α] :
-    Measurable (codedCoordinateMarginals (α := α)) :=
+    Measurable (codedCoordinateMarginals (α := α) (ι := ι)) :=
   Measurable.of_eval fun i =>
     measurable_probabilityMeasureCode.comp
       ((measurable_pi_apply i).comp measurable_coordinateMarginals)
@@ -154,13 +159,17 @@ theorem measurable_codedCoordinateMarginals [MeasurableSpace.CountablyGenerated 
 /-- Coding commutes with reindexing the coordinate marginals. -/
 @[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.codedCoordinateMarginals_map_permReindex
-    [MeasurableSpace.CountablyGenerated α] (P : ProbabilityMeasure (ℕ → α)) (τ : Equiv.Perm ℕ) :
-    (P.map (permReindex τ)).codedCoordinateMarginals =
-      permReindex τ P.codedCoordinateMarginals := by
+    [MeasurableSpace.CountablyGenerated α] (P : ProbabilityMeasure (ι → α)) (τ : Equiv.Perm ι) :
+    (P.map (fun x i => x (τ i))).codedCoordinateMarginals =
+      fun i => P.codedCoordinateMarginals (τ i) := by
   funext i
-  simp only [codedCoordinateMarginals_apply, permReindex_apply]
+  simp only [codedCoordinateMarginals_apply]
   exact congrArg probabilityMeasureCode
     (congrFun (coordinateMarginals_map_permReindex P τ) i)
+
+end CoordinateMarginals
+
+open MeasureTheory.ProbabilityMeasure
 
 /-! ### Block marginals -/
 
@@ -191,21 +200,6 @@ theorem measurable_blockMarginals (m : ℕ) [NeZero m] :
     measurable_probabilityMeasure_map
       (Measurable.of_eval fun j => measurable_pi_apply (blockIndex m i j))
 
-/-- The permutation of path coordinates that permutes the consecutive blocks of width `m` by `τ`
-and preserves the position inside each block. -/
-def _root_.Nat.blockPerm (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) : Equiv.Perm ℕ :=
-  (Nat.divModEquiv m).symm.permCongr (Equiv.prodCongr τ (Equiv.refl (Fin m)))
-
-/-- The block permutation moves position `j` of block `i` to position `j` of block `τ i`. -/
-@[simp]
-theorem _root_.Nat.blockPerm_mul_add (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) (i : ℕ) (j : Fin m) :
-    Nat.blockPerm m τ (i * m + j) = τ i * m + j := by
-  have h (k : ℕ) : k * m + (j : ℕ) = (Nat.divModEquiv m).symm (k, j) :=
-    (Nat.divModEquiv_symm_apply m (k, j)).symm
-  -- Keep the indices in `divModEquiv` form so that `simp` cancels the equivalence.
-  rw [h, h]
-  simp [Nat.blockPerm, -Nat.divModEquiv_symm_apply]
-
 /-- Block marginals are equivariant when a block permutation is extended to all path
 coordinates by `Nat.blockPerm`. -/
 @[simp]
@@ -226,14 +220,6 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_map_permReindex_b
 
 /-! ### Compatibility between block widths -/
 
-private theorem blockIndex_mul (m n : ℕ) [NeZero m] [NeZero n]
-    (i : ℕ) (r : Fin n) (j : Fin m) :
-    blockIndex (n * m) i (finProdFinEquiv (r, j)) =
-      blockIndex m (i * n + r) j := by
-  -- Unfold both indexing equivalences so the flattened natural-number indices are explicit.
-  change i * (n * m) + (j + m * r) = (i * n + r) * m + j
-  ring
-
 /-- **A large block is the joint law of its consecutive smaller blocks.** Splitting the `i`-th
 block of width `n * m` gives the `n` consecutive width-`m` blocks numbered
 `i * n, ..., i * n + n - 1`, with their dependence retained. -/
@@ -247,7 +233,7 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMargina
   · congr 1
     funext x r j
     simp only [Function.comp_apply, blockSplitEquiv_apply]
-    exact congrArg x (blockIndex_mul m n i r j)
+    exact congrArg x (Nat.divModEquiv_symm_finProdFinEquiv m n i r j)
   · exact (blockSplitEquiv α m n).measurable
   · exact Measurable.of_eval fun j => measurable_pi_apply (blockIndex (n * m) i j)
 

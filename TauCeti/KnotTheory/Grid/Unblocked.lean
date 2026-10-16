@@ -10,6 +10,7 @@ public import Mathlib.Algebra.MvPolynomial.Degrees
 public import TauCeti.Algebra.MvPolynomial.Rename
 public import TauCeti.KnotTheory.Grid.Chain.Relabeling
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
+public import TauCeti.RingTheory.MvPolynomial.ConstantCoeffReduction
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
 
@@ -705,6 +706,18 @@ weights of the contributing rectangles. -/
 theorem unblockedDifferential_single_apply (x y : GridState n) :
     G.unblockedDifferential R (Finsupp.single x 1) y = G.unblockedCoefficient R x y := by
   simp
+
+/-- Setting every variable to zero in the unblocked differential gives the fully blocked
+differential. -/
+@[simp]
+theorem constantCoeffReduction_unblockedDifferential_eq_fullyBlockedDifferential :
+    (G.unblockedDifferential (ZMod 2)).constantCoeffReduction =
+      G.fullyBlockedDifferential := by
+  refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun y => ?_)
+  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply,
+    LinearMap.constantCoeffReduction_single_apply, one_mul]
+  rw [G.unblockedDifferential_single_apply,
+    ← G.fullyBlockedRectangleCount_eq_constantCoeff, G.fullyBlockedDifferential_single_apply]
 
 /-- A grid state that no counted rectangle leaves is a cycle of `GC⁻`. -/
 theorem unblockedDifferential_single_eq_zero {z : GridState n}

@@ -171,7 +171,7 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   have ha₂₁ : T.intersection (c (t - 2)) (c (t - 1)) = w := by
     have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
     simpa only [hpenultimate_succ] using hedge (t - 2) (by omega) (by omega)
-  have hchainSum {i : ℕ} (hi : i < t) :
+  have hchainSum {i : ℕ} :
       (∑ j ∈ range t, T.intersection (c i) (d j) * y j) =
         ∑ j ∈ range t, T.intersection (c i) (c j) * y j :=
     Finset.sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
@@ -193,14 +193,14 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     exact le_of_eq (by ring)
   have hleftRow :
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d 0) (d j) * y j := by
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.left_sum_eq hchainCard (by omega) y,
       hy0, hyInterior (i := 1) (by omega) (by omega)]
     rw [hf.branch_intersection_eq_zero (by omega) (by omega), zero_mul, add_zero]
     exact hrow0.ge
   have hnextLeftRow :
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d 1) (d j) * y j := by
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y
         (i := 1) (by omega) (by omega),
       hy0, hyInterior (i := 1) (by omega) (by omega),
@@ -211,7 +211,7 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d (t - 2)) (d j) * y j := by
     have hthird_last : t - 2 - 1 = t - 3 := by omega
     have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y
         (i := t - 2) (by omega) (by omega),
       hthird_last, hpenultimate_succ,
@@ -222,7 +222,7 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     exact le_of_eq (by ring)
   have hlastRow :
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d (t - 1)) (d j) * y j := by
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.right_sum_eq hchainCard (by omega) y,
       hyInterior (i := t - 2) (by omega) (by omega), hyLast,
       T.intersection_comm, ha₂₁, hf.intersection_self (t - 1) (by omega), hw₁]
@@ -316,7 +316,7 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
       affine_sum_nonneg hf ht α d y hd_lt hd_t hy0 hyInterior hyLast hyt
         hinterior hedge hwb hw₁ ha₂b hrow0 hrow1
     exact (T.not_forall_sum_intersection_mul_nonneg_of_pos hinj hcard
-      (y := y) (fun i hi ↦ by simp only [y]; split_ifs <;> omega)
+      (y := y) (fun i _ ↦ by simp only [y]; split_ifs <;> omega)
       ⟨0, by omega, by rw [hy0]; exact hαpos⟩) hrow
 
 private theorem exists_weight_intersection_eq_of_four_lt

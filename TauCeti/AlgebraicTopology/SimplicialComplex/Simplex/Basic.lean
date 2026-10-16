@@ -63,6 +63,20 @@ spanning vertex set. -/
 theorem mem_simplex : σ ∈ simplex V ↔ σ.Nonempty ∧ σ ⊆ V :=
   Iff.rfl
 
+/-- The image of a simplex is the simplex on the image of its spanning vertices. -/
+@[simp]
+theorem map_simplex {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    (simplex V).map f = simplex (V.image f) := by
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · rintro ⟨σ, hσ, rfl⟩
+    obtain ⟨hne, hsub⟩ := mem_simplex.mp hσ
+    exact mem_simplex.mpr ⟨hne.image f, Finset.image_subset_image hsub⟩
+  · intro hτ
+    obtain ⟨hne, hsub⟩ := mem_simplex.mp hτ
+    obtain ⟨σ, hσ, rfl⟩ := Finset.subset_image_iff.mp hsub
+    exact mem_map_iff.mpr ⟨σ, mem_simplex.mpr ⟨Finset.image_nonempty.mp hne, hσ⟩, rfl⟩
+
 /-- A finite set is a face of a simplex boundary exactly when it is a nonempty proper subset of
 the spanning vertex set. -/
 @[simp]
@@ -82,7 +96,8 @@ theorem singleton_mem_simplex {v : ι} : {v} ∈ simplex V ↔ v ∈ V := by
   simp
 
 /-- A zero-simplex has exactly its singleton vertex as a face. -/
-@[simp]
+-- Compute faces before converting a singleton simplex to the point complex.
+@[simp↓]
 theorem faces_simplex_singleton (v : ι) : (simplex {v}).faces = {{v}} := by
   ext σ
   constructor

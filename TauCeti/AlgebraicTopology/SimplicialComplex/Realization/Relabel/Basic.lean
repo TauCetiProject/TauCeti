@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
+public import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Relabeling polyhedra with unused vertices
@@ -21,6 +22,8 @@ coordinates back. Continuity is tested on closed simplices using the weak subcom
 In particular, changing the ambient complex leaves the topology of the actual polyhedron intact.
 These identifications transport intrinsic combinatorial sphere and ball models to geometric
 link models without adjoining unwanted isolated points.
+An explicit enumeration of a face identifies the realization of the full simplex on the
+enumerating type with the closed simplex of that face.
 
 ## References
 
@@ -147,6 +150,69 @@ def relabelingHomeomorph
   continuous_toFun := continuous_relabelingForward P f hK hL
   continuous_invFun := continuous_relabelingBackward P f hK hL
 
+/-- Every precomplex is contained in the top abstract simplicial complex. -/
+theorem le_top (Q : PreAbstractSimplicialComplex ι) :
+    Q ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
+  fun _ hσ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
+    (Q.isRelLowerSet_faces.prop_of_mem hσ)
+
+/-- Changing the ambient abstract complex does not change the polyhedron of a precomplex. -/
+noncomputable def topRealizationHomeomorph
+    (P : PreAbstractSimplicialComplex ι)
+    {A : AbstractSimplicialComplex ι}
+    (hA : P ≤ A.toPreAbstractSimplicialComplex) :
+    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} ≃ₜ
+      {x : Realization A // x.1.support ∈ P} := by
+  classical
+  have hid : P.map (Function.Embedding.refl ι) = P := by
+    simpa only [Function.Embedding.coe_refl] using (map_id (K := P))
+  exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (le_top P)
+    (by rw [hid]; exact hA)).trans
+    (Homeomorph.setCongr
+      (s := {x : Realization A | x.1.support ∈ P.map (Function.Embedding.refl ι)})
+      (t := {x : Realization A | x.1.support ∈ P}) (by rw [hid]))
+
+/-- An injective relabeling carrying the underlying precomplex of `K` onto `R` identifies the
+realization of `K` with the polyhedron of `R`, inside any ambient weak realization containing
+`R`. -/
+def realizationRelabelingHomeomorph {R : PreAbstractSimplicialComplex β}
+    (hmap : P.map f = R) (hP : P = K.toPreAbstractSimplicialComplex)
+    (hR : R ≤ L.toPreAbstractSimplicialComplex) :
+    Realization K ≃ₜ {y : Realization L // y.1.support ∈ R} :=
+  ((Homeomorph.Set.univ _).symm.trans
+    (Homeomorph.setCongr (s := Set.univ) (t := {x : Realization K | x.1.support ∈ P})
+      (Set.eq_univ_of_forall fun x => by
+        rw [hP]
+        exact AbstractSimplicialComplex.support_mem _ x).symm)).trans
+    ((P.relabelingHomeomorph f hP.le (by rw [hmap]; exact hR)).trans
+      (Homeomorph.setCongr (s := {x : Realization L | x.1.support ∈ P.map f})
+        (t := {x : Realization L | x.1.support ∈ R}) (by rw [hmap])))
+
+/-- A finite precomplex on `V` has the realization of its model on `Fin m` as a homeomorphic
+polyhedron. The witness is existential because the finite enumeration of `V` is noncanonical. -/
+theorem nonempty_finsetRelabelingHomeomorph
+    {ι : Type*} {A : AbstractSimplicialComplex ι} {V : Finset ι} {m : ℕ}
+    {K : AbstractSimplicialComplex (Fin m)}
+    {P : PreAbstractSimplicialComplex (Fin m)} {R : PreAbstractSimplicialComplex ι}
+    [DecidableEq ι]
+    (hV : V.card = m)
+    (hmap : ∀ (f : Fin m ↪ ι), (Finset.univ : Finset (Fin m)).image f = V → P.map f = R)
+    (hP : P = K.toPreAbstractSimplicialComplex)
+    (hR : R ≤ A.toPreAbstractSimplicialComplex) :
+    Nonempty ({x : Realization A // x.1.support ∈ R} ≃ₜ Realization K) := by
+  classical
+  let e := (Finset.equivFinOfCardEq hV).symm
+  let f : Fin m ↪ ι := e.toEmbedding.trans (Function.Embedding.subtype (· ∈ V))
+  have himage : (Finset.univ : Finset (Fin m)).image f = V := by
+    ext v
+    simp only [Finset.mem_image, Finset.mem_univ, true_and]
+    constructor
+    · rintro ⟨i, rfl⟩
+      exact (e i).2
+    · intro hv
+      exact ⟨e.symm ⟨v, hv⟩, congrArg Subtype.val (e.apply_symm_apply _)⟩
+  exact ⟨(P.realizationRelabelingHomeomorph f (hmap f himage) hP hR).symm⟩
+
 /-- Relabeling pushes forward the finitely supported barycentric coordinate vector. -/
 @[simp]
 theorem relabelingHomeomorph_val
@@ -162,4 +228,108 @@ theorem relabelingHomeomorph_symm_val
       Finsupp.comapDomain f y.1.1 f.injective.injOn :=
   relabelingBackward_val P f hK y
 
+/-- The relabeling of a realization pushes forward the barycentric coordinate vector. -/
+@[simp]
+theorem realizationRelabelingHomeomorph_val {R : PreAbstractSimplicialComplex β}
+    (hmap : P.map f = R) (hP : P = K.toPreAbstractSimplicialComplex)
+    (hR : R ≤ L.toPreAbstractSimplicialComplex) (x : Realization K) :
+    (P.realizationRelabelingHomeomorph f hmap hP hR x).1.1 = Finsupp.mapDomain f x.1 := by
+  -- The set-congruence transports preserve the underlying point.
+  simp only [realizationRelabelingHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.setCongr_apply]
+  exact relabelingHomeomorph_val P f hP.le (by rw [hmap]; exact hR) _
+
+/-- The inverse relabeling of a realization pulls back the barycentric coordinate vector. -/
+@[simp]
+theorem realizationRelabelingHomeomorph_symm_val {R : PreAbstractSimplicialComplex β}
+    (hmap : P.map f = R) (hP : P = K.toPreAbstractSimplicialComplex)
+    (hR : R ≤ L.toPreAbstractSimplicialComplex) (y : {y : Realization L // y.1.support ∈ R}) :
+    ((P.realizationRelabelingHomeomorph f hmap hP hR).symm y).1 =
+      Finsupp.comapDomain f y.1.1 f.injective.injOn := by
+  -- The set-congruence transports preserve the underlying point.
+  simp only [realizationRelabelingHomeomorph, Homeomorph.symm_trans_apply,
+    TauCeti.Homeomorph.setCongr_symm_apply]
+  exact relabelingHomeomorph_symm_val P f hP.le (by rw [hmap]; exact hR) _
+
+section Ambient
+
+variable [DecidableEq α] {K' L' : AbstractSimplicialComplex α}
+
+/-- Changing the containing weak realization preserves the polyhedron of a precomplex
+and its barycentric coordinates. No finiteness assumption is needed. -/
+def ambientHomeomorph
+    (hK : P ≤ K'.toPreAbstractSimplicialComplex)
+    (hL : P ≤ L'.toPreAbstractSimplicialComplex) :
+    {x : Realization K' // x.1.support ∈ P} ≃ₜ
+      {x : Realization L' // x.1.support ∈ P} := by
+  have hmap : P.map (Function.Embedding.refl α) = P := by
+    rw [Function.Embedding.coe_refl]
+    exact PreAbstractSimplicialComplex.map_id
+  exact (P.relabelingHomeomorph (Function.Embedding.refl α) hK
+    (by simpa only [hmap] using hL)).trans
+    (Homeomorph.setCongr
+      (s := {x : Realization L' | x.1.support ∈ P.map (Function.Embedding.refl α)})
+      (t := {x : Realization L' | x.1.support ∈ P}) (by rw [hmap]))
+
+/-- Changing the ambient complex leaves the barycentric coordinate vector unchanged. -/
+@[simp]
+theorem ambientHomeomorph_val
+    (hK : P ≤ K'.toPreAbstractSimplicialComplex)
+    (hL : P ≤ L'.toPreAbstractSimplicialComplex)
+    (x : {x : Realization K' // x.1.support ∈ P}) :
+    (P.ambientHomeomorph hK hL x).1.1 = x.1.1 := by
+  -- `erw` reduces the `SetLike` coercions identifying the intermediate subtype.
+  erw [ambientHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
+  simp
+
+end Ambient
+
 end PreAbstractSimplicialComplex
+
+namespace AbstractSimplicialComplex
+
+open PreAbstractSimplicialComplex
+
+variable {α ι : Type*} [Fintype α] [DecidableEq ι] (K : AbstractSimplicialComplex ι)
+  (f : α ↪ ι) (hf : Finset.univ.image f ∈ K)
+
+/-- An enumeration of a face of `K` identifies the realization of the full simplex on the
+enumerating type with the closed simplex of that face in the weak realization of `K`. -/
+def realizationTopHomeomorphFace :
+    Realization (⊤ : AbstractSimplicialComplex α) ≃ₜ
+      {x : Realization K // x.1.support ⊆ Finset.univ.image f} :=
+  ((simplex (Finset.univ : Finset α)).realizationRelabelingHomeomorph f
+    (map_simplex _) (by rw [simplex_univ, top_toPreAbstractSimplicialComplex])
+    (simplex_le_iff.mpr fun _ => hf)).trans
+    (Homeomorph.setCongr
+      (s := {x : Realization K | x.1.support ∈ simplex (Finset.univ.image f)})
+      (t := {x : Realization K | x.1.support ⊆ Finset.univ.image f}) (by
+      ext x
+      -- The set-congruence goal is membership in two set comprehensions; expose their
+      -- predicates before applying the criterion for membership in a simplex.
+      change x.1.support ∈ simplex _ ↔ x.1.support ⊆ _
+      rw [mem_simplex]
+      exact and_iff_right (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))))
+
+/-- The face homeomorphism pushes forward the barycentric coordinate vector. -/
+@[simp]
+theorem realizationTopHomeomorphFace_val (x : Realization (⊤ : AbstractSimplicialComplex α)) :
+    (realizationTopHomeomorphFace K f hf x).1.1 = Finsupp.mapDomain f x.1 := by
+  -- The set-congruence transport preserves the underlying point.
+  rw [realizationTopHomeomorphFace, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
+  exact realizationRelabelingHomeomorph_val _ f (map_simplex _)
+    (by rw [simplex_univ, top_toPreAbstractSimplicialComplex]) (simplex_le_iff.mpr fun _ => hf) x
+
+/-- The inverse face homeomorphism pulls back the barycentric coordinate vector. -/
+@[simp]
+theorem realizationTopHomeomorphFace_symm_val
+    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
+    ((realizationTopHomeomorphFace K f hf).symm y).1 =
+      Finsupp.comapDomain f y.1.1 f.injective.injOn := by
+  -- The set-congruence transport preserves the underlying point.
+  rw [realizationTopHomeomorphFace, Homeomorph.symm_trans_apply,
+    TauCeti.Homeomorph.setCongr_symm_apply]
+  exact realizationRelabelingHomeomorph_symm_val _ f (map_simplex _)
+    (by rw [simplex_univ, top_toPreAbstractSimplicialComplex]) (simplex_le_iff.mpr fun _ => hf) _
+
+end AbstractSimplicialComplex

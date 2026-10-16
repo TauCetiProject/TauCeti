@@ -922,7 +922,7 @@ private theorem exists_toggle_last {n : ℕ} (q : Fin n) (hq : (q : ℕ) + 1 = n
         obtain ⟨l, hl⟩ := ih (⟨(c : ℕ) + 1, hclt⟩ : Fin n) (by dsimp only; omega)
           (by dsimp only; omega)
         have hqc : q ≠ c := fun h => by
-          have hv := congrArg Fin.val h
+          have _ := congrArg Fin.val h
           omega
         have hqc' : q ≠ (⟨(c : ℕ) + 1, hclt⟩ : Fin n) := fun h => by
           have hv := congrArg Fin.val h

@@ -9,10 +9,12 @@ public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Topology.Sheaves.Stalks
 
 /-!
-# Additive maps from stalks
+# Maps from stalks
 
 Compatible additive maps on sections of an additive-group-valued presheaf induce an additive
 map from each stalk. Its value on a germ is the prescribed value of the section map.
+The canonical map `(f_* F)_{f(x)} ⟶ F_x` is natural in the presheaf, permitting
+transport of complexes through the stalk comparison for an embedding.
 -/
 
 public section
@@ -54,3 +56,26 @@ theorem stalkLiftAddHom_germ
     (colimit.ι_desc (F := (OpenNhds.inclusion x).op ⋙ F) _ (op ⟨U, hx⟩)) m
 
 end TopCat.Presheaf
+
+namespace TauCeti.Topology
+
+universe v
+
+variable {C : Type v} [Category.{u} C] [HasColimits C]
+  {X Y : TopCat.{u}} (f : X ⟶ Y) {F G : X.Presheaf C}
+
+/-- The canonical pushforward map on stalks is natural in the presheaf. -/
+@[reassoc]
+theorem stalkPushforward_naturality (α : F ⟶ G) (x : X) :
+    (TopCat.Presheaf.stalkFunctor C (f x)).map
+        ((TopCat.Presheaf.pushforward C f).map α) ≫ G.stalkPushforward C f x =
+      F.stalkPushforward C f x ≫ (TopCat.Presheaf.stalkFunctor C x).map α := by
+  apply TopCat.Presheaf.stalk_hom_ext
+  intro U hxU
+  erw [TopCat.Presheaf.stalkFunctor_map_germ_assoc,
+    TopCat.Presheaf.stalkPushforward_germ,
+    TopCat.Presheaf.stalkPushforward_germ_assoc,
+    TopCat.Presheaf.stalkFunctor_map_germ]
+  rfl
+
+end TauCeti.Topology

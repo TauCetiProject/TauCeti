@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent.Basic
 
 /-!
 # Tangent equations of symplectic weight-parabolic intersections

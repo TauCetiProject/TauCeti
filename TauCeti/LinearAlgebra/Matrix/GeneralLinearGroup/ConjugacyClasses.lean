@@ -76,7 +76,9 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
   `GL₂(F)` are conjugate exactly when they have the same trace and the same determinant.
 * `TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`: the elements of the non-split torus
   conjugate to an elliptic element `u` are exactly `u` and its Frobenius conjugate `u^q`.
-* `TauCeti.card_conjClasses_GL2`: `GL₂(𝔽_q)` has `q² - 1` conjugacy classes.
+* `TauCeti.card_conjClasses_GL2`: `GL₂(𝔽_q)` has `q² - 1` conjugacy classes, and
+  `TauCeti.natCard_conjClasses_GL_fin_two_of_card_eq_two`: three of them over a field with two
+  elements.
 
 ## References
 
@@ -368,5 +370,13 @@ theorem card_conjClasses_GL2 (F : Type*) [Field F] [Finite F] :
   have e1 : (m + 1) ^ 2 = m * m + 2 * m + 1 := by ring
   rw [hm, Nat.add_sub_cancel, e1, Nat.add_sub_cancel]
   ring
+
+/-- **`GL₂` over a field with two elements has three conjugacy classes**, namely `q² - 1 = 3` at
+`q = 2`: the central class `{1}`, the unipotent class of the transvections, and the elliptic class
+of the elements of order `3`. -/
+theorem natCard_conjClasses_GL_fin_two_of_card_eq_two {F : Type*} [Field F] [Fintype F]
+    (hF : Fintype.card F = 2) : Nat.card (ConjClasses (GL (Fin 2) F)) = 3 := by
+  rw [card_conjClasses_GL2 F, Nat.card_eq_fintype_card, hF]
+  norm_num
 
 end TauCeti

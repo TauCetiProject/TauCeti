@@ -95,7 +95,7 @@ theorem eventually_fderiv_ne {g : E → F} {x : E} {c : E →L[𝕜] F} (hg : Co
   have hd : HasFDerivAt (fderiv 𝕜 g) (e : E →L[𝕜] E →L[𝕜] F) x := by
     rw [he]
     exact ContDiffAt.hasFDerivAt_fderiv hg le_rfl
-  exact hd.eventually_ne ⟨_, e.antilipschitz⟩
+  exact hd.eventually_ne ⟨_, e.antilipschitzWith⟩
 
 /-- **The second-order chain rule.** If `f` is `C²` at `φ b` and `φ` is `C²` at `b`, then the
 second derivative of `f ∘ φ` at `b` is `D²f(φ b)(Dφ v, Dφ w) + Df(φ b)(D²φ(v, w))`. -/

@@ -30,7 +30,7 @@ theorem exists_right_gap (S : Finset R) {r b : R} (hrb : r < b) :
     ∃ c, r < c ∧ c < b ∧ ∀ x ∈ S, r < x → c < x := by
   classical
   by_cases h : ∃ y ∈ S, r < y
-  · obtain ⟨y, hyS, hry, hy⟩ := S.exists_next_right h
+  · obtain ⟨y, _, hry, hy⟩ := S.exists_next_right h
     obtain ⟨c, hrc, hcyb⟩ := exists_between (lt_min hry hrb)
     exact ⟨c, hrc, hcyb.trans_le (min_le_right _ _),
       fun x hx hrx => (hcyb.trans_le (min_le_left _ _)).trans_le (hy x hx hrx)⟩

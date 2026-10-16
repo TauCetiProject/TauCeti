@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.Padics.SerreSigns
+public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.Padic
@@ -41,6 +42,8 @@ full `8 × 8` table of the symbol over `ℚ_2`, the check that pins the dyadic s
 ## Main results
 
 * `TauCeti.hilbertSymbol_padicTwo`: Serre's formula for the Hilbert symbol over `ℚ_2`.
+* `TauCeti.hilbertSymbol_natCast_natCast_padicTwo`: for odd natural numbers `m` and `n`,
+  `(m, n) = (-1) ^ ((m - 1)/2 · (n - 1)/2)` over `ℚ_2`.
 * `TauCeti.hilbertSymbol_neg_one_neg_one_padicTwo`: `(-1, -1) = −1` over `ℚ_2`, that is `-1` is
   not of the form `x² + y²` in `ℚ_2`.
 * `TauCeti.hilbertSymbol_two_five_padicTwo`: `(2, 5) = −1` over `ℚ_2`.
@@ -69,8 +72,6 @@ private noncomputable abbrev unitTwo : ℚ_[2]ˣ := Units.mk0 2 two_ne_zero
 private noncomputable abbrev unitFive : ℚ_[2]ˣ := Units.mk0 5 (by norm_num)
 
 private theorem two_ne_zero_padicTwo : (2 : ℚ_[2]) ≠ 0 := two_ne_zero
-
-private noncomputable instance : Invertible (2 : ℚ_[2]) := invertibleOfNonzero two_ne_zero_padicTwo
 
 /-- An element `a = 2 ^ β u` of `ℚ_2ˣ`, with `u` a unit of `ℤ_2`, is `2 ^ β (-1) ^ ε(u) 5 ^ ω(u)`
 times a square. -/
@@ -143,6 +144,15 @@ theorem hilbertSymbol_neg_one_neg_one_padicTwo : hilbertSymbol (-1 : ℚ_[2]ˣ) 
   exact (Int.units_eq_one_or _).resolve_left fun h ↦ not_hilbertSymbol_generators_eq_one hc
     hilbertSymbol_neg_one_unitTwo h hilbertSymbol_neg_one_unitFive
 
+/-- `-1` is not a square in `ℚ_2`, so the quadratic algebra `ℚ_2(i)` is a field. -/
+instance : Fact (¬ IsSquare (-1 : ℚ_[2])) := by
+  refine ⟨?_⟩
+  intro h
+  have hunit : IsSquare (-1 : ℚ_[2]ˣ) := isSquare_units_val_iff.mp (by simpa using h)
+  have := hilbertSymbol_eq_one_of_isSquare_left hunit (-1)
+  rw [hilbertSymbol_neg_one_neg_one_padicTwo] at this
+  norm_num at this
+
 /-- `(2, 5) = −1` over `ℚ_2`: `5` is not of the form `x² − 2 y²` with `x, y ∈ ℚ_2`. -/
 theorem hilbertSymbol_two_five_padicTwo :
     hilbertSymbol (Units.mk0 (2 : ℚ_[2]) two_ne_zero) (Units.mk0 5 (by norm_num)) = -1 := by
@@ -188,6 +198,19 @@ theorem hilbertSymbol_padicTwo {a b : ℚ_[2]ˣ} {α β : ℤ} {u v : ℤ_[2]ˣ}
   congr 1
   simp only [Int.cast_natCast, ZMod.natCast_zmod_val]
   ring
+
+/-- **The Hilbert symbol of two odd natural numbers over `ℚ_2`**: `(m, n) = (-1) ^ ((m - 1)/2 ·
+(n - 1)/2)`, which is `-1` exactly when `m ≡ n ≡ 3 (mod 4)`. This is the dyadic factor of the
+product formula behind quadratic reciprocity. -/
+theorem hilbertSymbol_natCast_natCast_padicTwo {m n : ℕ} (hm : Odd m) (hn : Odd n) :
+    hilbertSymbol (Units.mk0 (m : ℚ_[2]) (Nat.cast_ne_zero.2 hm.pos.ne'))
+      (Units.mk0 (n : ℚ_[2]) (Nat.cast_ne_zero.2 hn.pos.ne')) = (-1) ^ (m / 2 * (n / 2)) := by
+  have hum := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hm)
+  have hun := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hn)
+  rw [hilbertSymbol_padicTwo (α := 0) (β := 0) (u := hum.unit) (v := hun.unit) (by simp)
+    (by simp), serreEps_eq_natCast_div_two_of_coe_eq_natCast hum.unit_spec,
+    serreEps_eq_natCast_div_two_of_coe_eq_natCast hun.unit_spec]
+  simp only [Int.cast_zero, zero_mul, add_zero, ← Nat.cast_mul, uzpow_natCast]
 
 /-! ### The symbol on a basis of the square classes, and the `8 × 8` table -/
 

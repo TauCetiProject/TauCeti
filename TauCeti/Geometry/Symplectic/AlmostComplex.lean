@@ -14,8 +14,7 @@ public import TauCeti.LinearAlgebra.Complex.LinearPart
 /-!
 # Almost complex structures and compatible symplectic forms
 
-This file starts the pointwise linear-algebra API for the analytic Heegaard Floer roadmap.
-It records almost complex structures on real modules, symplectic bilinear forms, and the
+This file records almost complex structures on real modules, symplectic bilinear forms, and the
 standard tameness and compatibility predicates between them.
 
 These are the fiberwise definitions used before introducing smooth bundles, almost complex
@@ -34,6 +33,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
 * `TauCeti.AlmostComplexStructure.product`: the standard almost complex structure on
   `V × V`, sending `(x, y)` to `(-y, x)`.
+* `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform `-(1 + J₀ J)(1 - J₀ J)⁻¹` of `J`
+  relative to `J₀`.
 
 The definitions follow the standard conventions in McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Section 2.2, specialized here to the
@@ -51,8 +52,8 @@ variable {V W X : Type*}
 /-- A pointwise almost complex structure is a real-linear endomorphism whose square is `-1`.
 
 This is the fiberwise object underlying an almost complex structure on a real vector bundle or
-manifold. Smoothness is deliberately not bundled here; the analytic roadmap needs the linear
-algebra separately on each tangent space. -/
+manifold. Smoothness is deliberately not bundled here: the linear algebra applies separately on each
+tangent space. -/
 structure AlmostComplexStructure (V : Type*) [AddCommGroup V] [Module ℝ V] where
   /-- The real-linear endomorphism usually denoted `J`. -/
   toLinearMap : V →ₗ[ℝ] V
@@ -79,6 +80,13 @@ instance : CoeFun (AlmostComplexStructure V) fun _ => V → V :=
 lemma apply_apply (J : AlmostComplexStructure V) (v : V) : J (J v) = -v := by
   have h := LinearMap.congr_fun J.square_neg v
   simpa using h
+
+/-- In the endomorphism ring, an almost complex structure squares to `-1`. -/
+@[simp]
+lemma toLinearMap_mul_self (J : AlmostComplexStructure V) :
+    J.toLinearMap * J.toLinearMap = -1 := by
+  ext v
+  exact J.apply_apply v
 
 /-- The underlying linear map of an almost complex structure is injective. -/
 lemma injective (J : AlmostComplexStructure V) : Function.Injective J := by
@@ -158,6 +166,27 @@ lemma neg_apply (J : AlmostComplexStructure V) (v : V) :
 lemma product_apply (v : V × V) :
     product V v = (-v.2, v.1) := rfl
 
+/-- The **Cayley transform** of `J` relative to `J₀`. Writing `J = J₀ A`, that is `A = -J₀ J`,
+it is `(A - 1)(A + 1)⁻¹ = -(1 + J₀ J)(1 - J₀ J)⁻¹`.
+
+The inverse is `Ring.inverse`, so the value is `0` when `1 - J₀ J` is not invertible. For
+structures tamed by a form compatible with `J₀`, the endomorphism `1 - J₀ J` is invertible and
+the transform is a
+bijection onto the Cayley ball (`TauCeti.SymplecticForm.Compatible.cayleyEquiv`). -/
+noncomputable def cayley (J₀ J : AlmostComplexStructure V) : Module.End ℝ V :=
+  -((1 + J₀.toLinearMap * J.toLinearMap) * Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap))
+
+/-- The defining formula of the Cayley transform. -/
+lemma cayley_def (J₀ J : AlmostComplexStructure V) :
+    J₀.cayley J =
+      -((1 + J₀.toLinearMap * J.toLinearMap) *
+        Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap)) := (rfl)
+
+/-- A complex structure has Cayley transform `0` relative to itself. -/
+@[simp]
+lemma cayley_self (J₀ : AlmostComplexStructure V) : J₀.cayley J₀ = 0 := by
+  simp [cayley_def]
+
 end AlmostComplexStructure
 
 section ComplexLinearMap
@@ -186,8 +215,8 @@ lemma isComplexLinearMap_iff_apply (J : AlmostComplexStructure V)
     IsComplexLinearMap J J' F ↔ ∀ v, F (J v) = J' (F v) :=
   LinearMap.ext_iff
 
-/-- Complex-linearity for almost complex structures is membership in the existing submodule of
-raw-linear complex-linear maps. -/
+/-- Complex-linearity for almost complex structures is membership in the submodule of raw-linear
+complex-linear maps. -/
 lemma isComplexLinearMap_iff_mem_complexLinearMaps (J : AlmostComplexStructure V)
     (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
     IsComplexLinearMap J J' F ↔ F ∈ complexLinearMaps J.toLinearMap J'.toLinearMap := by

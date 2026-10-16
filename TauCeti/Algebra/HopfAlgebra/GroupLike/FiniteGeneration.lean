@@ -57,8 +57,8 @@ theorem fg_of_finiteType_of_linearIndependent_of_groupLikeSetSpan_eq_top
   have hlinearSpan :
       Submodule.span R
           (Set.range (_root_.GroupLike.val (R := R) (A := H))) = ⊤ :=
-    (evaluationBialgHom_surjective_iff_span_eq_top R H).1
-      ((evaluationBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).2 hspan)
+    (liftGroupLikeBialgHom_surjective_iff_span_eq_top R H).1
+      ((liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).2 hspan)
   apply (MonoidAlgebra.finiteType_iff_group_fg
     (R := R) (G := _root_.GroupLike R H)).1
   exact Algebra.FiniteType.equiv hfinite

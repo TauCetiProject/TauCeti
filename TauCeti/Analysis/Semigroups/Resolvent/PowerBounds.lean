@@ -150,7 +150,7 @@ private theorem hasDerivAt_resolventMoment (hb : S.HasGrowthBound omega M) (n : 
     exact S.norm_neg_pow_mul_resolvent_integrand_le hb (n + 1) x ht hdl
   have hdiff : ∀ᵐ t ∂volume.restrict (Set.Ioi 0), ∀ l ∈ U,
       HasDerivAt (F · t) (F' l t) l := by
-    filter_upwards [] with t l hl
+    filter_upwards [] with t l _
     dsimp only [F, F']
     exact S.hasDerivAt_pow_mul_resolvent_integrand n t l x
   have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le

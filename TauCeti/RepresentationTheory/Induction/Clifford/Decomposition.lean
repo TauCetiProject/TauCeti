@@ -165,7 +165,6 @@ private theorem exists_nonempty_iso_conjNormalFDRep_of_ne_zero
     (Representation.asModuleLinearEquivOfEquiv eRange).trans
       (_root_.Subrepresentation.asModuleEquivAsSubmodule tau)
   let _ : IsSimpleModule k[N] tau.asSubmodule := IsSimpleModule.congr eModule.symm
-  have htau : IsAtom tau := _root_.Subrepresentation.isSimpleModule_asSubmodule_iff.mp inferInstance
   obtain ⟨g, ⟨eg⟩⟩ :=
     Representation.exists_nonempty_linearEquiv_asSubmodule_conjSubrep
       (N := N) rho hsigma tau.asSubmodule

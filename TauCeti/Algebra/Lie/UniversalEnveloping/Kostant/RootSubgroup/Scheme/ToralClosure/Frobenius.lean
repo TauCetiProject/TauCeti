@@ -62,14 +62,6 @@ algebraic closedness or field hypothesis is used.
 
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This supplies the `q`-power Frobenius half of the target "points over an algebraically closed field
-as a group, functorially in the field, so that a field endomorphism induces a group endomorphism of
-the points" in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, for the toral carrier that
-Layer 9's Chevalley--Demazure construction assembles. Its consumer is milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose untwisted Steinberg map is `Frob_q` on the points of
-a pinned Chevalley--Demazure group and whose completion evidence is the simple-root-subgroup
-equations, together with milestone L3, which takes the fixed subgroup of that map.
 -/
 
 public section

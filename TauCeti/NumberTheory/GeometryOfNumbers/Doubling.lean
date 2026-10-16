@@ -195,7 +195,7 @@ theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : �
   set T : Finset (ι → ℤ × ℤ) :=
     Fintype.piFinset (fun _ : ι => Finset.Icc (0 : ℤ) K ×ˢ Finset.Icc (0 : ℤ) K) with hT
   -- The cell map, of cell side `ε·r i/√2` per coordinate.
-  set g : (ι → ℂ) → (ι → ℤ × ℤ) := cellIndexMap r c ε with hg_def
+  set g : (ι → ℂ) → (ι → ℤ × ℤ) := cellIndexMap r c ε
   have key : ∀ x ∈ S, ∀ i, |(x i).re| ≤ c * r i ∧ |(x i).im| ≤ c * r i := fun x hx i =>
     ⟨(Complex.abs_re_le_norm _).trans (hS hx i), (Complex.abs_im_le_norm _).trans (hS hx i)⟩
   have hg : ∀ x ∈ S, g x ∈ T := by

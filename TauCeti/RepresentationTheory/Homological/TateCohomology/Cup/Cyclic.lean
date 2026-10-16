@@ -160,7 +160,7 @@ theorem cup_characterConnectingClass_eq_groupCohomologyπEven
   -- comparison of Tate and ordinary cohomology and sends the periodicity class of `1` to that
   -- of `a`.
   set φ : Rep.trivial ℤ G ℤ ⟶ A :=
-    (Rep.trivial ℤ G ℤ).tensorInvariant a ≫ (β_ (Rep.trivial ℤ G ℤ) A).hom ≫ (ρ_ A).hom with hφ
+    (Rep.trivial ℤ G ℤ).tensorInvariant a ≫ (β_ (Rep.trivial ℤ G ℤ) A).hom ≫ (ρ_ A).hom with _
   have h := ConcreteCategory.congr_hom
     ((_root_.TateCohomology.isoGroupCohomology 2).inv.naturality φ)
     (groupCohomologyπEven (Rep.trivial ℤ G ℤ) g hg 2 even_two x₁)

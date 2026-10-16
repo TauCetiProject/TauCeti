@@ -78,7 +78,7 @@ of the
 two families: with a nondegenerate covariance and a sample of size at least the dimension, the
 Gram sum has the classical Wishart density. -/
 theorem hasLaw_wishartGram_gaussian_nonsingularWishartMeasure {ν : ℕ}
-    {S : Matrix (Fin p) (Fin p) ℝ} {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {S : Matrix (Fin p) (Fin p) ℝ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Fin ν → Ω → EuclideanSpace ℝ (Fin p)} (hS : S.PosDef) (hp : p ≤ ν)
     (hX : ∀ r, HasLaw (X r) (multivariateGaussian 0 S) P) (hindep : iIndepFun X P) :
     HasLaw (fun ω => wishartGram fun r => X r ω) (nonsingularWishartMeasure (ν : ℝ) S) P :=

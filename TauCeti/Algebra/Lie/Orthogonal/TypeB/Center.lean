@@ -52,7 +52,7 @@ theorem center_typeB_eq_bot (h2 : IsRegular (2 : K)) : center K (Orthogonal.type
     have he := congrArg (fun a : Orthogonal.typeB ι K ↦
       (a : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl i)) (.inl ())) h
     simpa [coe_typeBShortRootGenerator, typeBShortRootMatrix_def,
-      h2.right.mul_right_eq_zero_iff] using he
+      h2.left.mul_left_eq_zero_iff] using he
   rw [hx', hd0, map_zero]
   rfl
 

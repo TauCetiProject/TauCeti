@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
@@ -36,7 +37,11 @@ permutation with functions on its cycle quotient (`TauCeti.invariantColouringEqu
 right multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
 (`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second
 time, along a sign-preserving map of permutation groups, multiplies it by the number of
-permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`).
+permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed
+sum over the permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the
+slot that receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry
+moved to the front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
+`TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`).
 -/
 
 public section
@@ -437,5 +442,90 @@ theorem sum_sign_smul_sum_sign_smul_eq_card_nsmul {β M : Type*} [Fintype β] [D
   refine Finset.sum_congr rfl fun τ _ => ?_
   refine Fintype.sum_equiv (Equiv.mulRight (ext τ)) _ _ fun σ => ?_
   rw [Equiv.coe_mulRight, sign_mul, hext, mul_smul, smul_comm]
+
+/-- Expansion of a signed sum over the permutations of `Fin (n + 1)` along the slot that receives
+the first entry: rearranging `Fin.cons x w` by all permutations is the same as inserting `x` at
+each position `j`, with sign `(-1) ^ j`, into all rearrangements of `w`. Applied to the summand of
+an alternatization, this expands the alternatization along its first argument, in the manner of
+the Laplace expansion of a determinant along a column. -/
+theorem sum_sign_smul_cons_comp_eq_sum_insertNth {α M : Type*} [AddCommGroup M] {n : ℕ}
+    (g : (Fin (n + 1) → α) → M) (x : α) (w : Fin n → α) :
+    ∑ σ : Perm (Fin (n + 1)), sign σ • g (Fin.cons x w ∘ σ) =
+      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ τ : Perm (Fin n), sign τ • g (j.insertNth x (w ∘ τ)) := by
+  cases n with
+  | zero => simp [Fin.insertNth_zero']
+  | succ n =>
+  -- Reindex by Mathlib's `decomposeFin'`: `(decomposeFin'Symm j τ⁻¹)⁻¹` sends `j` to `0` and
+  -- `j.succAbove m` to `(τ m).succ`, so it rearranges `Fin.cons x w` into
+  -- `j.insertNth x (w ∘ τ)`, and its sign is `(-1) ^ j * sign τ`.
+  symm
+  simp_rw [Finset.smul_sum]
+  rw [← Fintype.sum_prod_type']
+  refine Fintype.sum_equiv ((Equiv.prodCongr (Equiv.refl _) (Equiv.inv _)).trans
+    (decomposeFin'.symm.trans (Equiv.inv _))) _ _ fun ⟨j, τ⟩ => ?_
+  have hcomp : Fin.cons x w ∘ ⇑((decomposeFin'Symm j τ⁻¹)⁻¹) = j.insertNth x (w ∘ τ) := by
+    rw [Fin.eq_insertNth_iff]
+    refine ⟨by simp, funext fun m => ?_⟩
+    have : (decomposeFin'Symm j τ⁻¹)⁻¹ (j.succAbove m) = (τ m).succ :=
+      Perm.inv_eq_iff_eq.mpr (by simp)
+    simp only [Fin.removeNth, Function.comp_apply, this, Fin.cons_succ]
+  simp only [Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map_apply, Equiv.coe_refl, id_eq,
+    Equiv.inv_apply, decomposeFin'_symm]
+  rw [hcomp, Perm.sign_inv, sign_decomposeFin'Symm, Perm.sign_inv, mul_smul]
+  simp [Units.smul_def]
+
+/-- Expansion of a signed sum over the permutations of `Fin (n + 1)` along the entry moved to the
+front: rearranging `w` by all permutations is the same as moving each entry `w j` to the front,
+with sign `(-1) ^ j`, followed by all rearrangements of the remaining entries `j.removeNth w`.
+This is the expansion of an alternatization along the entry placed in its first argument. -/
+theorem sum_sign_smul_comp_eq_sum_cons_removeNth {α M : Type*} [AddCommGroup M] {n : ℕ}
+    (g : (Fin (n + 1) → α) → M) (w : Fin (n + 1) → α) :
+    ∑ σ : Perm (Fin (n + 1)), sign σ • g (w ∘ σ) =
+      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ τ : Perm (Fin n), sign τ • g (Fin.cons (w j) (j.removeNth w ∘ τ)) := by
+  cases n with
+  | zero =>
+    -- Both permutation groups are trivial and `Fin.cons (w 0) (Fin.removeNth 0 w) = w`.
+    have h1 : ∀ σ : Perm (Fin (0 + 1)), σ = 1 := fun σ => Equiv.ext fun i => Fin.ext (by omega)
+    rw [Fintype.sum_eq_single 1 (fun σ hσ => (hσ (h1 σ)).elim), Fin.sum_univ_one,
+      Fintype.sum_eq_single 1 (fun σ hσ => (hσ (Subsingleton.elim _ _)).elim)]
+    simp only [Perm.sign_one, Perm.coe_one, Function.comp_id, one_smul, Fin.val_zero, pow_zero]
+    congr 1
+    funext i
+    rw [Fin.fin_one_eq_zero i]
+    rfl
+  | succ n =>
+  -- Reindex by Mathlib's `decomposeFin'`: `decomposeFin'Symm j τ` sends `0` to `j` and `m.succ`
+  -- to `j.succAbove (τ m)`, so it rearranges `w` into `Fin.cons (w j) (j.removeNth w ∘ τ)`,
+  -- and its sign is `(-1) ^ j * sign τ`.
+  simp_rw [Finset.smul_sum]
+  rw [← Fintype.sum_prod_type']
+  symm
+  refine Fintype.sum_equiv decomposeFin'.symm _ _ fun ⟨j, τ⟩ => ?_
+  have hcomp : w ∘ decomposeFin'Symm j τ = Fin.cons (w j) (j.removeNth w ∘ τ) := by
+    funext m
+    cases m using Fin.cases <;> simp [Fin.removeNth]
+  rw [decomposeFin'_symm, hcomp, sign_decomposeFin'Symm, mul_smul]
+  simp [Units.smul_def]
+
+/-- Expansion of a signed sum over the permutations of `Fin (n + 1)` along the entry moved to an
+arbitrary slot `p`: rearranging `w` by all permutations is, up to the sign `(-1) ^ p`, the same as
+inserting each entry `w j` at `p`, with sign `(-1) ^ j`, into all rearrangements of the remaining
+entries `j.removeNth w`. -/
+theorem sum_sign_smul_comp_eq_sum_insertNth_removeNth {α M : Type*} [AddCommGroup M] {n : ℕ}
+    (g : (Fin (n + 1) → α) → M) (w : Fin (n + 1) → α) (p : Fin (n + 1)) :
+    ∑ σ : Perm (Fin (n + 1)), sign σ • g (w ∘ σ) =
+      (-1 : ℤ) ^ (p : ℕ) • ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ τ : Perm (Fin n), sign τ • g (p.insertNth (w j) (j.removeNth w ∘ τ)) := by
+  -- Precomposing with `p.cycleRange` moves the front slot to `p` and costs the sign `(-1) ^ p`.
+  have h := sum_sign_smul_comp_eq_sum_cons_removeNth (fun u => g (u ∘ p.cycleRange)) w
+  simp only [Function.comp_assoc, Fin.cons_comp_cycleRange] at h
+  rw [← h, ← Fintype.sum_equiv (Equiv.mulRight p.cycleRange)
+    (fun σ => sign (σ * p.cycleRange) • g (w ∘ ⇑(σ * p.cycleRange))) _ fun σ => rfl]
+  simp only [sign_mul, Fin.sign_cycleRange, Perm.coe_mul, mul_smul, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  rw [smul_comm, Units.smul_def ((-1) ^ (p : ℕ))]
+  simp
 
 end TauCeti

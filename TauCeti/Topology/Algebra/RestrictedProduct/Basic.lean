@@ -145,7 +145,7 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   classical
   let S : Set ι := {i | U i = V i}
-  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
+  have _ : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
   have hopenU : IsOpen {x : Πʳ i, [G i, (U i : Set (G i))] |
       ∀ i, i ∈ S → x i ∈ U i} := by
     simp_rw +instances [RestrictedProduct.topologicalSpace_eq_iSup cofinite,
@@ -185,7 +185,7 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     have hx' := (mem_integralSubgroupOf U V x).mp hx
     constructor
     · exact fun i hi ↦ hi ▸ hx' i
-    · exact fun i hi ↦ hx' i
+    · exact fun i _ ↦ hx' i
   · rintro ⟨hxS, hxSc⟩
     apply (mem_integralSubgroupOf U V x).mpr
     intro i

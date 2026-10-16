@@ -7,15 +7,16 @@ module
 
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Degree
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 
 /-!
-# Divisor degrees at a rational point
+# Divisor and line-bundle degrees at a rational point
 
 `TauCeti.AlgebraicGeometry.RationalPoint.Basic` shows that a section `s` of a morphism of schemes
 `f : X ⟶ S` has residue degree one at every point of the base — for `S = Spec k` the statement
 `[κ(x₀) : k] = 1` at a `k`-rational point `x₀`. This file draws the consequences for the relative
 degree of a Weil divisor, whose weight at a codimension-one point `x` is exactly that residue
-degree.
+degree, and for the Euler-characteristic degree of the associated line-bundle class.
 
 ## Main results
 
@@ -24,21 +25,14 @@ degree.
 * `relativeDegree_zsmul_ofPoint_of_section`: hence `deg (d · x₀) = d`.
 * `relativeDegree_sub_zsmul_ofPoint_of_section`: hence `deg (D - (deg D) · x₀) = 0`, so
   subtracting a multiple of `x₀` normalizes an arbitrary Weil divisor to relative degree zero.
+* `eulerDegree_toLineBundleClass_ofPoint_of_section`: on a proper integral curve, the
+  line-bundle class `𝒪_X(x₀)` of a rational point has Euler-characteristic degree `1`.
 
-This is the geometric source of the weight-one base point hypothesis that the Layer A degree
-theory runs on: the weight of a point of a curve over `k` is its residue degree `[κ(x) : k]`
-(`SchemeWeilDivisor.relativeDegree`), and both the class-group splitting
-`OrderSystem.classGroupAddEquivPicZeroProdInt` and the Abel-Jacobi class
-`OrderSystem.weightedAbelJacobiClass` require a base point of weight one. So this file records
-precisely why a `k`-rational point supplies that hypothesis, instead of it having to be assumed.
-
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, "Standing hypotheses" ("A chosen
-`k`-rational point `x₀`. ... the `k`-point *rigidifies/normalizes* the Picard functor and supplies
-the Abel-Jacobi morphism") and Layer A ("Degree", `Σ_x [κ(x):k]·ord_x`).
-
-No external mathematics is vendored; the proofs reuse `SchemeWeilDivisor.relativeDegree_ofPoint`,
-the `AddMonoidHom` structure of `SchemeWeilDivisor.relativeDegree`, and
-`residueDegree_eq_one_of_section` from `RationalPoint.Basic`.
+On a curve over `k`, the divisor degree weights each point by its residue degree
+`[κ(x) : k]`. A `k`-rational point therefore has weight one, so subtracting the divisor degree
+times that point normalizes a divisor to degree zero. Its associated line bundle likewise has
+Euler-characteristic degree one, giving the degree-one input for the normalized Picard class
+`𝒪_X(x - x₀)` and the Abel–Jacobi map based at `x₀`.
 -/
 
 public section
@@ -55,9 +49,8 @@ variable {X S : Scheme.{u}} {f : X ⟶ S} {s : S ⟶ X}
 
 /-- A prime divisor whose generic point is a rational point has relative degree one.
 
-This is the geometric origin of the weight-one base point hypothesis of the Layer A degree
-theory: the weight of a codimension-one point `x` of a curve over `k` is its residue degree
-`[κ(x) : k]`, and at a `k`-rational point that weight is one. -/
+The relative degree weights a codimension-one point `x` of a curve over `k` by its residue
+degree `[κ(x) : k]`, so a `k`-rational point has weight one. -/
 theorem relativeDegree_ofPoint_of_section (hs : s ≫ f = 𝟙 S) {y : S}
     {x₀ : CodimensionOnePoint X} (hx₀ : (x₀ : X) = s y) :
     SchemeWeilDivisor.relativeDegree f (WeilDivisor.ofPoint x₀) = 1 := by
@@ -82,6 +75,29 @@ theorem relativeDegree_sub_zsmul_ofPoint_of_section (hs : s ≫ f = 𝟙 S) {y :
     SchemeWeilDivisor.relativeDegree f
         (D - SchemeWeilDivisor.relativeDegree f D • WeilDivisor.ofPoint x₀) = 0 := by
   rw [map_sub, relativeDegree_zsmul_ofPoint_of_section hs hx₀, sub_self]
+
+section EulerDegree
+
+variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+  [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+  [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+
+/-- **A rational point has Euler degree one in the Picard group.** On a proper Noetherian integral
+curve over `k` with discrete valuation rings at codimension-one points and finite-dimensional
+`H¹(X, 𝒪_X)`, the line-bundle class `𝒪_X(x)` of a point `x` in the image of a section has
+Euler-characteristic degree one. This is the Picard-group form of
+`relativeDegree_ofPoint_of_section`. -/
+theorem eulerDegree_toLineBundleClass_ofPoint_of_section
+    (hX : ∀ x : X, Order.coheight x ≤ 1) {s : Spec (.of k) ⟶ X}
+    (hs : s ≫ (X ↘ Spec (.of k)) = 𝟙 (Spec (.of k))) {y : Spec (.of k)}
+    {x₀ : CodimensionOnePoint X} (hx₀ : (x₀ : X) = s y) :
+    LineBundleClass.eulerDegree k (SchemeWeilDivisor.toLineBundleClass hX
+      (WeilDivisor.ofPoint x₀)) = 1 := by
+  rw [LineBundleClass.eulerDegree_toLineBundleClass k hX]
+  exact relativeDegree_ofPoint_of_section hs hx₀
+
+end EulerDegree
 
 end AlgebraicGeometry
 

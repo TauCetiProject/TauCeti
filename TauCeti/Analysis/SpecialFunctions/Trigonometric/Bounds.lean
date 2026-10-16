@@ -12,7 +12,8 @@ import Mathlib.Analysis.SpecialFunctions.Arcosh
 # Trigonometric bounds and nonvanishing criteria
 
 The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
-`x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns.
+`x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns. The sine is
+nonpositive on `[π, 2π]`.
 
 For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
@@ -26,6 +27,11 @@ public section
 open Real
 
 namespace TauCeti
+
+/-- The sine is nonpositive on `[π, 2π]`. -/
+theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤ 2 * π) : sin x ≤ 0 := by
+  rw [← sin_sub_two_pi]
+  exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
 
 /-- If `x` is nonzero and strictly between `-1` and `1`, then `sin (π * x)` is nonzero. -/
 theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}

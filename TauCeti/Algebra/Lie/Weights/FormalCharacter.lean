@@ -90,12 +90,6 @@ surjective Lie-module map is surjective on each generalized weight space by
 
 ## References
 
-This is the "formal characters" item of Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`formalCharacter` is pinned in the accompanying `Suggested.lean`. Its stated prerequisite is the
-Layer 2 diagonalizability theorem, which supplies the honest multiplicities, together with the
-Layer 2 Weyl invariance proved directly from `sl₂`; both are consumed here.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.5.
 * N. Bourbaki, *Groupes et algèbres de Lie*, Chapitre VIII, §7.
 -/

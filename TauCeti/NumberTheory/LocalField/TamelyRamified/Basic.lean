@@ -36,6 +36,7 @@ has even valuation and lies in a different square class from every uniformizer.
 
 ## Main results
 
+* `TauCeti.isTamelyRamified_of_finrank_eq_one`: a degree-one extension is tamely ramified.
 * `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_one`: for `L/K` Galois, the
   order of `G_1` is the residue-characteristic part of the ramification index.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified`: for
@@ -64,6 +65,13 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 variable [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [Algebra K L] [ValuativeExtension K L]
+
+/-- A degree-one extension of nonarchimedean local fields is tamely ramified. -/
+theorem isTamelyRamified_of_finrank_eq_one (h : Module.finrank K L = 1) :
+    IsTamelyRamified K L := by
+  have hef := (ramificationIndex_mul_inertiaDegree K L).trans h
+  rw [isTamelyRamified_iff, (mul_eq_one.mp hef).1]
+  exact (CharP.prime_ringChar 𝓀[K]).not_dvd_one
 
 namespace LocalFieldsRamification
 

@@ -113,7 +113,7 @@ theorem measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul {Ω : T
     have hd0 : 0 < d := hd ▸ abs_pos.mpr (sub_ne_zero.mpr hne)
     have hq0 : 0 ≤ μ.real s := ENNReal.toReal_nonneg
     -- an `ε` at most `1` and small enough that `ε (2 μ s + 3) < d`
-    set e : ℝ := min 1 (d / (2 * (2 * μ.real s + 3))) with he
+    set e : ℝ := min 1 (d / (2 * (2 * μ.real s + 3)))
     have he0 : 0 < e := lt_min one_pos (by positivity)
     obtain ⟨t, t', h1, h2, hinter⟩ := happrox e he0
     have hfinal := abs_toReal_sub_mul_self_le_of_symmDiff_le (min_le_left _ _)

@@ -201,7 +201,7 @@ private theorem linearPart_m_two_sub_eq (f : AInfinityHom AA BB) (a b : A) :
     suffices h : L = Q by
       intro y
       simpa [L, Q] using LinearMap.congr_fun h y
-    refine AA.grading.linearMap_ext fun q y hy ↦ ?_
+    refine AA.grading.linearMap_ext fun q y _ ↦ ?_
     have h := f.taylorTwo_component_eq (b := y) hx
     have h2 : negOnePowCast R p • BB.m 1 ![f.taylorTwo x y]
           + BB.m 2 ![f.linearPart x, f.linearPart y] =

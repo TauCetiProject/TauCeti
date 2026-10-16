@@ -194,7 +194,7 @@ their product, three nonsquares, the symbols with `a` multiply to `1`, so one of
 theorem exists_not_isSquare_hilbertSymbol_eq_one (h2 : (2 : K) ≠ 0) (a : Kˣ) :
     ∃ b : Kˣ, ¬IsSquare b ∧ hilbertSymbol b a = 1 := by
   obtain ⟨π, hπ⟩ := exists_isUniformizer K
-  obtain ⟨Δ, hΔ, hΔv, -⟩ := exists_unramified_class h2
+  obtain ⟨Δ, hΔ, hΔv, -, -⟩ := exists_unramified_class h2
   by_cases hπa : hilbertSymbol π a = 1
   · exact ⟨π, not_isSquare_of_isUniformizer hπ, hπa⟩
   by_cases hΔa : hilbertSymbol Δ a = 1

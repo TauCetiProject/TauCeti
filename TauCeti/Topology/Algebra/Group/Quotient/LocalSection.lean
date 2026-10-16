@@ -60,7 +60,7 @@ def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [Continuou
   refine
     { toFun := fun g ↦ ((g : G ⧸ H), if hg : (g : G ⧸ H) ∈ U then
         ⟨(s (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (hsec (g : G ⧸ H) hg)⟩ else 1)
-      invFun := fun qh ↦ if hq : qh.1 ∈ U then s qh.1 * qh.2 else 1
+      invFun := fun qh ↦ if _ : qh.1 ∈ U then s qh.1 * qh.2 else 1
       source := (QuotientGroup.mk : G → G ⧸ H) ⁻¹' U
       target := U ×ˢ Set.univ
       map_source' := by

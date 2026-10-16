@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.ZMod.Units
 public import TauCeti.Algebra.Ring.IdempotentUnits
 public import TauCeti.Data.Nat.ExactDivisor
-import Mathlib.Algebra.Group.Prod
+public import Mathlib.Algebra.Group.Prod
 
 /-!
 # The Chinese remainder splitting of `ZMod N` at an exact divisor
@@ -46,6 +46,8 @@ moves the nebentypus of a modular form of level `N`. At `Q = N` it is inversion,
 * `TauCeti.Nat.IsExactDivisor.unitsEquivProd_apply_fst`,
   `TauCeti.Nat.IsExactDivisor.unitsEquivProd_apply_snd`: the components of `unitsEquivProd` are
   the reductions modulo `Q` and modulo `N / Q`.
+* `TauCeti.Nat.IsExactDivisor.eq_mul_comp_unitsMap`: a character splits as the product of
+  its restrictions to the two Chinese remainder factors.
 * `TauCeti.Nat.IsExactDivisor.eq_of_castHom_eq`: an element of `ZMod N` is determined by its
   residues modulo `Q` and modulo `N / Q`.
 * `TauCeti.Nat.IsExactDivisor.eq_exactDivisorIdempotent_iff`: `e_Q` is the residue that is `1`
@@ -116,6 +118,27 @@ complementary divisor. -/
 theorem unitsEquivProd_apply_snd (h : Q ∥ N) (u : (ZMod N)ˣ) :
     (h.unitsEquivProd u).2 = ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) u :=
   Units.ext congr(($(h.ringEquivProd_apply u)).2)
+
+/-- A character modulo `N` splits as the product of its restrictions to the Chinese
+remainder factors modulo `Q` and `N / Q`. -/
+theorem eq_mul_comp_unitsMap {G : Type*} [CommMonoid G] (h : Q ∥ N)
+    (χ : (ZMod N)ˣ →* G) :
+    χ = ((χ.comp h.unitsEquivProd.symm.toMonoidHom).comp
+        (MonoidHom.inl (ZMod Q)ˣ (ZMod (N / Q))ˣ)).comp (ZMod.unitsMap h.dvd) *
+      ((χ.comp h.unitsEquivProd.symm.toMonoidHom).comp
+        (MonoidHom.inr (ZMod Q)ˣ (ZMod (N / Q))ˣ)).comp
+          (ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd)) := by
+  let χ' := χ.comp h.unitsEquivProd.symm.toMonoidHom
+  apply MonoidHom.ext
+  intro u
+  have hu := DFunLike.congr_fun (MonoidHom.coprod_unique χ') (h.unitsEquivProd u)
+  calc
+    χ u = χ' (h.unitsEquivProd u) := by simp [χ']
+    _ = (χ'.comp (MonoidHom.inl _ _)) (h.unitsEquivProd u).1 *
+        (χ'.comp (MonoidHom.inr _ _)) (h.unitsEquivProd u).2 := hu.symm
+    _ = _ := by
+      simp only [unitsEquivProd_apply_fst, unitsEquivProd_apply_snd,
+        MonoidHom.mul_apply, MonoidHom.comp_apply, χ']
 
 /-- **An element of `ZMod N` is determined by its residues modulo `Q` and modulo `N / Q`**, for an
 exact divisor `Q` of `N`: the injectivity half of the Chinese remainder theorem. -/

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Smooth
