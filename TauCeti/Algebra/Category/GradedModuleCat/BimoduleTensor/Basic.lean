@@ -160,6 +160,15 @@ theorem bimoduleModuleTensorUnderlyingEquiv_mem_iff {p : ℤ}
         (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
       z ∈ (bimoduleModuleTensorObj Γ Δ M N).grading.piece p := Iff.rfl
 
+/-- The left-module tensor carrier identification is homogeneous of degree zero. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_isHomogeneous :
+    LinearMap.IsHomogeneous (bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).toLinearMap
+      (bimoduleModuleTensorObj Γ Δ M N).grading.piece
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
+    rw [add_zero]
+    exact (bimoduleModuleTensorUnderlyingEquiv_mem_iff Γ Δ M N).2 hx
+
 /-- Balancing transfers the right action on the bimodule to the left module. -/
 theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
     bimoduleModuleTensorTmul Γ Δ M N (((1 : A) ⊗ₜ[k] op b) • m) n =
@@ -530,6 +539,15 @@ theorem bimoduleTensorUnderlyingEquiv_mem_iff {p : ℤ}
     bimoduleTensorUnderlyingEquiv Γ Δ Θ M N z ∈
         (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
       z ∈ (bimoduleTensorObj Γ Δ Θ M N).grading.piece p := Iff.rfl
+
+/-- The bimodule tensor carrier identification is homogeneous of degree zero. -/
+theorem bimoduleTensorUnderlyingEquiv_isHomogeneous :
+    LinearMap.IsHomogeneous (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap
+      (bimoduleTensorObj Γ Δ Θ M N).grading.piece
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
+    rw [add_zero]
+    exact (bimoduleTensorUnderlyingEquiv_mem_iff Γ Δ Θ M N).2 hx
 
 @[simp]
 theorem bimoduleTensorTmul_zero_left (n : N) :

@@ -184,51 +184,28 @@ private theorem leftUnderlying_homogeneous :
     LinearMap.IsHomogeneous (leftUnderlying Γ Δ Θ M N P).toLinearMap (L).grading.piece
       (BalancedTensorProduct.grading (𝒜 := Θ.piece)
         (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading) P.grading).piece 0 := by
-  have hf : LinearMap.IsHomogeneous (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap
-      (MN).grading.piece
-      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece 0 :=
-    LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
-      rw [add_zero]
-      exact (bimoduleTensorUnderlyingEquiv_mem_iff Γ Δ Θ M N).2 hx
-  have hg : LinearMap.IsHomogeneous (LinearEquiv.refl k P).toLinearMap
-      P.grading.piece P.grading.piece 0 :=
-    LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
-      simpa only [add_zero, LinearEquiv.coe_coe, LinearEquiv.refl_apply] using hx
   have h := BalancedTensorProduct.isHomogeneous_map (𝒜 := Θ.piece) (MN).grading P.grading
     (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading) P.grading
     (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap (LinearEquiv.refl k P).toLinearMap
     (fun c x ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) x)
-    (refl_smul (k := k)) hf hg
-  exact LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
-    have hx' := h.map_mem (bimoduleModuleTensorUnderlyingEquiv_mem_iff Γ Θ MN P |>.2 hx)
-    simp only [leftUnderlying, LinearEquiv.trans_apply, LinearEquiv.coe_coe]
-    rw [BalancedTensorProduct.congr_apply]
-    simpa only [add_zero, LinearEquiv.coe_coe] using hx'
+    (refl_smul (k := k)) (bimoduleTensorUnderlyingEquiv_isHomogeneous Γ Δ Θ M N)
+    (by simpa only [LinearEquiv.refl_toLinearMap] using LinearMap.isHomogeneous_id P.grading.piece)
+  simpa only [leftUnderlying, add_zero] using
+    h.comp (bimoduleModuleTensorUnderlyingEquiv_isHomogeneous Γ Θ MN P)
 
 private theorem rightUnderlying_homogeneous :
     LinearMap.IsHomogeneous (rightUnderlying Γ Δ Θ M N P).toLinearMap (R).grading.piece
       (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading
         (BalancedTensorProduct.grading (𝒜 := Θ.piece) N.grading P.grading)).piece 0 := by
-  have hf : LinearMap.IsHomogeneous (LinearEquiv.refl k M).toLinearMap
-      M.grading.piece M.grading.piece 0 :=
-    LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
-      simpa only [add_zero, LinearEquiv.coe_coe, LinearEquiv.refl_apply] using hx
-  have hg : LinearMap.IsHomogeneous
-      (bimoduleModuleTensorUnderlyingEquiv Δ Θ N P).toLinearMap (NP).grading.piece
-      (BalancedTensorProduct.grading (𝒜 := Θ.piece) N.grading P.grading).piece 0 :=
-    LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
-      rw [add_zero]
-      exact (bimoduleModuleTensorUnderlyingEquiv_mem_iff Δ Θ N P).2 hx
   have h := BalancedTensorProduct.isHomogeneous_map (𝒜 := Δ.piece) M.grading (NP).grading
     M.grading (BalancedTensorProduct.grading (𝒜 := Θ.piece) N.grading P.grading)
     (LinearEquiv.refl k M).toLinearMap (bimoduleModuleTensorUnderlyingEquiv Δ Θ N P).toLinearMap
     (fun b x ↦ refl_smul (k := k) (op b) x)
-    (fun b x ↦ bimoduleModuleTensorUnderlyingEquiv_smul Δ Θ N P b x) hf hg
-  exact LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
-    have hx' := h.map_mem (bimoduleModuleTensorUnderlyingEquiv_mem_iff Γ Δ M NP |>.2 hx)
-    simp only [rightUnderlying, LinearEquiv.trans_apply, LinearEquiv.coe_coe]
-    rw [BalancedTensorProduct.congr_apply]
-    simpa only [add_zero, LinearEquiv.coe_coe] using hx'
+    (fun b x ↦ bimoduleModuleTensorUnderlyingEquiv_smul Δ Θ N P b x)
+    (by simpa only [LinearEquiv.refl_toLinearMap] using LinearMap.isHomogeneous_id M.grading.piece)
+    (bimoduleModuleTensorUnderlyingEquiv_isHomogeneous Δ Θ N P)
+  simpa only [rightUnderlying, add_zero] using
+    h.comp (bimoduleModuleTensorUnderlyingEquiv_isHomogeneous Γ Δ M NP)
 
 private theorem assocCarrier_mem {r : ℤ} {x : L} (hx : x ∈ (L).grading.piece r) :
     assocCarrier Γ Δ Θ M N P x ∈ (R).grading.piece r := by
@@ -296,156 +273,6 @@ theorem bimoduleModuleTensorAssociator_naturality
     simpa only [← bimoduleModuleTensorMk_apply, map_add, LinearMap.add_apply]
       using congrArg₂ (· + ·) hx hy
 
-private theorem tensorMap_transport_right
-    {X X' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece}
-    {Y Y' Z Z' : GradedModuleCat.{vP} Δ.piece}
-    (f : X ⟶ X') (hY : Y = Z) (hY' : Y' = Z') (g : Z ⟶ Z') :
-    bimoduleModuleTensorMap Γ Δ f (eqToHom hY ≫ g ≫ eqToHom hY'.symm) =
-      eqToHom (congrArg (bimoduleModuleTensorObj Γ Δ X) hY) ≫
-        bimoduleModuleTensorMap Γ Δ f g ≫
-        eqToHom (congrArg (bimoduleModuleTensorObj Γ Δ X') hY').symm := by
-  subst Z Z'
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-
-private theorem tensorMap_conj_id_right
-    {X X' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece}
-    {Y Z : GradedModuleCat.{vP} Δ.piece} (f : X ⟶ X') (hY : Y = Z) :
-    eqToHom (congrArg (bimoduleModuleTensorObj Γ Δ X) hY).symm ≫
-        bimoduleModuleTensorMap Γ Δ f (𝟙 Y) ≫
-        eqToHom (congrArg (bimoduleModuleTensorObj Γ Δ X') hY) =
-      bimoduleModuleTensorMap Γ Δ f (𝟙 Z) := by
-  have hn := eqToHom_naturality
-    (fun T : GradedModuleCat.{vP} Δ.piece ↦ bimoduleModuleTensorMap Γ Δ f (𝟙 T)) hY
-  simpa only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp] using congrArg
-      (fun g ↦ eqToHom (congrArg (bimoduleModuleTensorObj Γ Δ X) hY).symm ≫ g) hn
-
-private abbrev leftFunctor :=
-  bifunctorComp₁₂ (bimoduleTensor.{vM, vN} Γ Δ Θ)
-    (bimoduleModuleTensor.{max vM vN, vP} Γ Θ)
-
-private abbrev rightFunctor :=
-  bifunctorComp₂₃ (bimoduleModuleTensor.{vM, max vN vP} Γ Δ)
-    (bimoduleModuleTensor.{vN, vP} Δ Θ)
-
-private theorem leftFunctor_obj : (((leftFunctor Γ Δ Θ).obj M).obj N).obj P = L := by
-  simp only [leftFunctor, bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj,
-    bimoduleTensor_obj_obj, bimoduleModuleTensor_obj_obj]
-
-private theorem rightFunctor_obj : (((rightFunctor Γ Δ Θ).obj M).obj N).obj P = R := by
-  simp only [rightFunctor, bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj,
-    bimoduleModuleTensor_obj_obj]
-
-private theorem leftFunctor_obj_obj_map
-    {P' : GradedModuleCat.{vP} Θ.piece} (h : P ⟶ P') :
-    eqToHom (leftFunctor_obj Γ Δ Θ M N P).symm ≫
-        (((leftFunctor Γ Δ Θ).obj M).obj N).map h ≫
-        eqToHom (leftFunctor_obj Γ Δ Θ M N P') =
-      bimoduleModuleTensorMap Γ Θ (bimoduleTensorMap Γ Δ Θ (𝟙 M) (𝟙 N)) h := by
-  simp only [leftFunctor, bifunctorComp₁₂_obj,
-    bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_obj_map,
-    bimoduleTensor_obj_obj, bimoduleModuleTensor_obj_map,
-    bimoduleTensorMap_id, Category.assoc, eqToHom_trans, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp, Category.comp_id]
-
-private theorem rightFunctor_obj_obj_map
-    {P' : GradedModuleCat.{vP} Θ.piece} (h : P ⟶ P') :
-    eqToHom (rightFunctor_obj Γ Δ Θ M N P).symm ≫
-        (((rightFunctor Γ Δ Θ).obj M).obj N).map h ≫
-        eqToHom (rightFunctor_obj Γ Δ Θ M N P') =
-      bimoduleModuleTensorMap Γ Δ (𝟙 M) (bimoduleModuleTensorMap Δ Θ (𝟙 N) h) := by
-  simp only [rightFunctor, bifunctorComp₂₃_obj,
-    bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_obj_map,
-    bimoduleModuleTensor_obj_map, Category.assoc]
-  rw [tensorMap_transport_right Γ Δ (𝟙 M)
-    (bimoduleModuleTensor_obj_obj Δ Θ (M := N) (N := P))
-    (bimoduleModuleTensor_obj_obj Δ Θ (M := N) (N := P'))
-    (bimoduleModuleTensorMap Δ Θ (𝟙 N) h)]
-  simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_trans,
-    eqToHom_refl, Category.id_comp, Category.comp_id]
-
-private theorem leftFunctor_obj_map_app
-    {N' : GradedModuleCat.{vN} (Δ.tensorProduct Θ.opposite).piece} (g : N ⟶ N') :
-    eqToHom (leftFunctor_obj Γ Δ Θ M N P).symm ≫
-        (((leftFunctor Γ Δ Θ).obj M).map g).app P ≫
-        eqToHom (leftFunctor_obj Γ Δ Θ M N' P) =
-      bimoduleModuleTensorMap Γ Θ (bimoduleTensorMap Γ Δ Θ (𝟙 M) g) (𝟙 P) := by
-  simp only [leftFunctor, bifunctorComp₁₂_obj,
-    bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_map_app,
-    bimoduleTensor_obj_map, bimoduleTensor_obj_obj, bimoduleModuleTensor_map_app,
-    Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, Category.comp_id]
-
-private theorem rightFunctor_obj_map_app
-    {N' : GradedModuleCat.{vN} (Δ.tensorProduct Θ.opposite).piece} (g : N ⟶ N') :
-    eqToHom (rightFunctor_obj Γ Δ Θ M N P).symm ≫
-        (((rightFunctor Γ Δ Θ).obj M).map g).app P ≫
-        eqToHom (rightFunctor_obj Γ Δ Θ M N' P) =
-      bimoduleModuleTensorMap Γ Δ (𝟙 M) (bimoduleModuleTensorMap Δ Θ g (𝟙 P)) := by
-  simp only [rightFunctor, bifunctorComp₂₃_obj,
-    bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_map_app,
-    bimoduleModuleTensor_map_app, bimoduleModuleTensor_obj_map, Category.assoc]
-  rw [tensorMap_transport_right Γ Δ (𝟙 M)
-    (bimoduleModuleTensor_obj_obj Δ Θ (M := N) (N := P))
-    (bimoduleModuleTensor_obj_obj Δ Θ (M := N') (N := P))
-    (bimoduleModuleTensorMap Δ Θ g (𝟙 P))]
-  simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_trans,
-    eqToHom_refl, Category.id_comp, Category.comp_id]
-
-private theorem leftFunctor_map_app_app
-    {M' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece} (f : M ⟶ M') :
-    eqToHom (leftFunctor_obj Γ Δ Θ M N P).symm ≫
-        (((leftFunctor Γ Δ Θ).map f).app N).app P ≫
-        eqToHom (leftFunctor_obj Γ Δ Θ M' N P) =
-      bimoduleModuleTensorMap Γ Θ (bimoduleTensorMap Γ Δ Θ f (𝟙 N)) (𝟙 P) := by
-  simp only [leftFunctor, bifunctorComp₁₂_map_app_app,
-    bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj,
-    bimoduleTensor_map_app, bimoduleTensor_obj_obj, bimoduleModuleTensor_map_app,
-    Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, Category.comp_id]
-
-private theorem rightFunctor_map_app_app
-    {M' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece} (f : M ⟶ M') :
-    eqToHom (rightFunctor_obj Γ Δ Θ M N P).symm ≫
-        (((rightFunctor Γ Δ Θ).map f).app N).app P ≫
-        eqToHom (rightFunctor_obj Γ Δ Θ M' N P) =
-      bimoduleModuleTensorMap Γ Δ f (bimoduleModuleTensorMap Δ Θ (𝟙 N) (𝟙 P)) := by
-  simp only [rightFunctor, bifunctorComp₂₃_map_app_app,
-    bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj,
-    bimoduleModuleTensor_map_app, bimoduleModuleTensorMap_id, Category.assoc,
-    eqToHom_trans, eqToHom_trans_assoc]
-  exact tensorMap_conj_id_right Γ Δ f
-    (bimoduleModuleTensor_obj_obj Δ Θ (M := N) (N := P))
-
-private def associatorComponent : (((leftFunctor Γ Δ Θ).obj M).obj N).obj P ≅
-    (((rightFunctor Γ Δ Θ).obj M).obj N).obj P :=
-  eqToIso (leftFunctor_obj Γ Δ Θ M N P) ≪≫ bimoduleModuleTensorAssociator Γ Δ Θ M N P ≪≫
-    (eqToIso (rightFunctor_obj Γ Δ Θ M N P)).symm
-
-private theorem associatorComponent_naturality_of_maps
-    {M' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece}
-    {N' : GradedModuleCat.{vN} (Δ.tensorProduct Θ.opposite).piece}
-    {P' : GradedModuleCat.{vP} Θ.piece} (f : M ⟶ M') (g : N ⟶ N') (h : P ⟶ P')
-    (l : (((leftFunctor Γ Δ Θ).obj M).obj N).obj P ⟶
-      (((leftFunctor Γ Δ Θ).obj M').obj N').obj P')
-    (r : (((rightFunctor Γ Δ Θ).obj M).obj N).obj P ⟶
-      (((rightFunctor Γ Δ Θ).obj M').obj N').obj P')
-    (hl : eqToHom (leftFunctor_obj Γ Δ Θ M N P).symm ≫ l ≫
-      eqToHom (leftFunctor_obj Γ Δ Θ M' N' P') =
-        bimoduleModuleTensorMap Γ Θ (bimoduleTensorMap Γ Δ Θ f g) h)
-    (hr : eqToHom (rightFunctor_obj Γ Δ Θ M N P).symm ≫ r ≫
-      eqToHom (rightFunctor_obj Γ Δ Θ M' N' P') =
-        bimoduleModuleTensorMap Γ Δ f (bimoduleModuleTensorMap Δ Θ g h)) :
-    l ≫ (associatorComponent Γ Δ Θ M' N' P').hom =
-      (associatorComponent Γ Δ Θ M N P).hom ≫ r := by
-  apply (cancel_epi (eqToHom (leftFunctor_obj Γ Δ Θ M N P).symm)).1
-  apply (cancel_mono (eqToHom (rightFunctor_obj Γ Δ Θ M' N' P'))).1
-  have hn := bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P f g h
-  rw [hl.symm, hr.symm] at hn
-  simpa only [associatorComponent, Iso.trans_hom, eqToIso.hom, Iso.symm_hom, eqToIso.inv,
-    Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, Category.comp_id] using hn
-
 /-- The action associator as an isomorphism between the two tensor trifunctors. -/
 def bimoduleModuleTensorAssociatorNatIso :
     (bifunctorComp₁₂ (bimoduleTensor.{vM, vN} Γ Δ Θ)
@@ -453,55 +280,53 @@ def bimoduleModuleTensorAssociatorNatIso :
     (bifunctorComp₂₃ (bimoduleModuleTensor.{vM, max vN vP} Γ Δ)
         (bimoduleModuleTensor.{vN, vP} Δ Θ)) :=
   NatIso.ofComponents (fun M ↦ NatIso.ofComponents (fun N ↦
-    NatIso.ofComponents (fun P ↦ associatorComponent Γ Δ Θ M N P)
+    NatIso.ofComponents (fun P ↦ bimoduleModuleTensorAssociator Γ Δ Θ M N P)
       (by
         intro P P' h
-        exact associatorComponent_naturality_of_maps Γ Δ Θ M N P (𝟙 M) (𝟙 N) h
-          _ _ (leftFunctor_obj_obj_map Γ Δ Θ M N P h)
-          (rightFunctor_obj_obj_map Γ Δ Θ M N P h)))
+        simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_obj_map,
+          bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_obj_map,
+          bimoduleModuleTensor_obj_map, bimoduleTensor_obj_obj, bimoduleModuleTensor_obj_obj,
+          eqToHom_refl, Category.id_comp, Category.comp_id]
+        simpa only [bimoduleTensorMap_id] using
+          bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P (𝟙 M) (𝟙 N) h))
     (by
       intro N N' g
       apply NatTrans.ext
       funext P
-      simpa only [NatTrans.comp_app, NatIso.ofComponents_hom_app] using
-        associatorComponent_naturality_of_maps Γ Δ Θ M N P (𝟙 M) g (𝟙 P)
-          _ _ (leftFunctor_obj_map_app Γ Δ Θ M N P g)
-          (rightFunctor_obj_map_app Γ Δ Θ M N P g)))
+      simp only [NatTrans.comp_app, NatIso.ofComponents_hom_app,
+        bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_map_app,
+        bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_map_app,
+        bimoduleTensor_obj_map, bimoduleModuleTensor_map_app, bimoduleModuleTensor_obj_map,
+        bimoduleTensor_obj_obj, bimoduleModuleTensor_obj_obj,
+        eqToHom_refl, Category.id_comp, Category.comp_id]
+      exact bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P (𝟙 M) g (𝟙 P)))
     (by
       intro M M' f
       apply NatTrans.ext
       funext N
       apply NatTrans.ext
       funext P
-      simpa only [NatTrans.comp_app, NatIso.ofComponents_hom_app] using
-        associatorComponent_naturality_of_maps Γ Δ Θ M N P f (𝟙 N) (𝟙 P)
-          _ _ (leftFunctor_map_app_app Γ Δ Θ M N P f)
-          (rightFunctor_map_app_app Γ Δ Θ M N P f))
+      simp only [NatTrans.comp_app, NatIso.ofComponents_hom_app,
+        bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂_map_app_app,
+        bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃_map_app_app,
+        bimoduleTensor_map_app, bimoduleModuleTensor_map_app,
+        bimoduleTensor_obj_obj, bimoduleModuleTensor_obj_obj,
+        eqToHom_refl, Category.id_comp, Category.comp_id]
+      simpa only [bimoduleModuleTensorMap_id] using
+        bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P f (𝟙 N) (𝟙 P))
 
-/-- Each forward component is the graded associator, transported through the public
-bifunctor object equations. -/
+/-- Each forward trifunctor component is the graded associator. -/
 @[simp, reassoc]
 theorem bimoduleModuleTensorAssociatorNatIso_hom_app :
     (((bimoduleModuleTensorAssociatorNatIso.{vM, vN, vP} Γ Δ Θ).hom.app M).app N).app P =
-      eqToHom (by simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj,
-        bimoduleTensor_obj_obj, bimoduleModuleTensor_obj_obj]) ≫
-        (bimoduleModuleTensorAssociator Γ Δ Θ M N P).hom ≫
-        eqToHom (by symm; simp only [bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj,
-          bimoduleModuleTensor_obj_obj]) := by
-  simp only [bimoduleModuleTensorAssociatorNatIso, NatIso.ofComponents_hom_app,
-    associatorComponent, Iso.trans_hom, eqToIso.hom, Iso.symm_hom, eqToIso.inv]
+      (bimoduleModuleTensorAssociator Γ Δ Θ M N P).hom := by
+  simp only [bimoduleModuleTensorAssociatorNatIso, NatIso.ofComponents_hom_app]
 
-/-- Each reverse component is the inverse graded associator, with the corresponding
-bifunctor object transports. -/
+/-- Each reverse trifunctor component is the inverse graded associator. -/
 @[simp, reassoc]
 theorem bimoduleModuleTensorAssociatorNatIso_inv_app :
     (((bimoduleModuleTensorAssociatorNatIso.{vM, vN, vP} Γ Δ Θ).inv.app M).app N).app P =
-      eqToHom (by simp only [bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj,
-        bimoduleModuleTensor_obj_obj]) ≫
-        (bimoduleModuleTensorAssociator Γ Δ Θ M N P).inv ≫
-        eqToHom (by symm; simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj,
-          bimoduleTensor_obj_obj, bimoduleModuleTensor_obj_obj]) := by
-  simp only [bimoduleModuleTensorAssociatorNatIso, NatIso.ofComponents_inv_app,
-    associatorComponent, Iso.trans_inv, Iso.symm_inv, eqToIso.hom, eqToIso.inv, Category.assoc]
+      (bimoduleModuleTensorAssociator Γ Δ Θ M N P).inv := by
+  simp only [bimoduleModuleTensorAssociatorNatIso, NatIso.ofComponents_inv_app]
 
 end TauCeti.GradedModuleCat
