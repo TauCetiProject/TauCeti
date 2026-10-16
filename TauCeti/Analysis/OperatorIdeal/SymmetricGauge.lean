@@ -393,13 +393,8 @@ theorem apply_le_apply_of_forall_sum_le {a b : ℕ →₀ ℝ≥0} (ha : Antiton
   -- Both sequences are read off from their first `N` terms.
   have hrestrict (c : ℕ →₀ ℝ≥0) (hc : c.support ⊆ range N) :
       Φ.finSeminorm N (fun i => c i) = Φ c := by
-    rw [finSeminorm_apply]
-    congr 2
-    ext k
-    rw [Finsupp.indicator_apply]
-    split_ifs with hk
-    · simp
-    · exact_mod_cast (Finsupp.notMem_support_iff.1 fun h => hk (hc h)).symm
+    simp only [finSeminorm_apply, NNReal.nnnorm_eq]
+    rw [← (Finsupp.eq_indicator_self_iff _).mpr hc]
   have hle := (Φ.isSymmetricGauge_finSeminorm N).apply_le_of_prefixSum_le
     (y := fun i => b i) (z := fun i => a i)
     (fun i j hij => NNReal.coe_le_coe.2 (ha (Fin.le_def.1 hij))) (fun i => (a i).2) fun k => by
