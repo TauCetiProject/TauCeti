@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration
+public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Logic.Equiv.Fintype
 import Mathlib.MeasureTheory.Constructions.Projective
@@ -38,12 +39,17 @@ windows (`measure_ext_of_map_restrict_val`).
 * `TauCeti.Probability.ExchangeableRelationalLaw` — a consistent family of finite relational laws;
 * `TauCeti.Probability.InfiniteExchangeableRelationalLaw` — a relabelling-invariant probability law
   on the configurations over `ℕ`;
+* `TauCeti.Probability.ExchangeableRelationalLaw.IsDissociated` — restrictions to disjoint vertex
+  windows are independent;
 * `TauCeti.Probability.exchangeableRelationalLawEquivInfinite` — the two presentations agree.
 
 ## Main results
 
 * `TauCeti.Probability.exchangeableRelationalLawEquivInfinite_law_map_restrict` — the windows of
-  the infinite law attached to consistent marginals are those marginals.
+  the infinite law attached to consistent marginals are those marginals;
+* `TauCeti.Probability.ExchangeableRelationalLaw.isDissociated_iff_forall_map_restrict_prod` — a
+  law is dissociated exactly when the restrictions of a marginal along any two injections with
+  disjoint ranges are independent.
 
 ## References
 
@@ -280,6 +286,60 @@ theorem map_restrict_val_map_restrict (μ : InfiniteExchangeableRelationalLaw L)
     ← Measure.map_map (measurable_restrict _) (measurable_restrict _), μ.exchangeable]
 
 end InfiniteExchangeableRelationalLaw
+
+namespace ExchangeableRelationalLaw
+
+variable {L} (μ : ExchangeableRelationalLaw L)
+
+/-! ### Dissociation -/
+
+/-- An exchangeable relational law is **dissociated** when restrictions to disjoint vertex windows
+are independent: the level-`(k + l)` marginal, pushed to the pair of configurations it induces on
+the first `k` and on the last `l` vertices, is the product of the level-`k` and level-`l`
+marginals. -/
+def IsDissociated : Prop :=
+  ∀ k l : ℕ,
+    (μ.law (k + l)).map (fun c => (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) =
+      (μ.law k).prod (μ.law l)
+
+/-- The defining identity of a dissociated law. -/
+theorem isDissociated_iff :
+    μ.IsDissociated ↔ ∀ k l : ℕ,
+      (μ.law (k + l)).map (fun c => (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) =
+        (μ.law k).prod (μ.law l) := (Iff.rfl)
+
+/-- **Dissociated laws are independent on any two disjoint windows**: the restrictions of the
+level-`n` marginal along two injections with disjoint ranges are independent, with the level-`k`
+and level-`l` marginals as laws. -/
+theorem IsDissociated.map_restrict_prod {μ : ExchangeableRelationalLaw L} (hμ : μ.IsDissociated)
+    {k l n : ℕ} {f : Fin k → Fin n} {g : Fin l → Fin n} (hf : Function.Injective f)
+    (hg : Function.Injective g) (hfg : ∀ i j, f i ≠ g j) :
+    (μ.law n).map (fun c => (c.restrict f, c.restrict g)) = (μ.law k).prod (μ.law l) := by
+  let e : Fin (k + l) ↪ Fin n := ⟨Fin.append f g, Fin.append_injective_iff.2 ⟨hf, hg, hfg⟩⟩
+  -- Merge the two injections into one; both windows are read off the merged window along `e`,
+  -- along which the level-`n` marginal restricts to the level-`(k + l)` marginal.
+  have hwin : (fun c : RelationalConfiguration L (Fin n) => (c.restrict f, c.restrict g)) =
+      (fun c => (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) ∘ restrict ⇑e := by
+    funext c
+    simp only [Function.comp_apply, ← restrict_comp]
+    congr 2 <;> funext i
+    · exact (Fin.append_left f g i).symm
+    · exact (Fin.append_right f g i).symm
+  rw [hwin, ← Measure.map_map ((measurable_restrict _).prodMk (measurable_restrict _))
+    (measurable_restrict _), μ.consistent, hμ k l]
+
+/-- **Dissociation on arbitrary disjoint windows.** A law is dissociated exactly when the
+restrictions of every marginal along any two injections with disjoint ranges are independent,
+with the smaller marginals as laws. -/
+theorem isDissociated_iff_forall_map_restrict_prod :
+    μ.IsDissociated ↔ ∀ (k l n : ℕ) (f : Fin k → Fin n) (g : Fin l → Fin n),
+      Function.Injective f → Function.Injective g → (∀ i j, f i ≠ g j) →
+        (μ.law n).map (fun c => (c.restrict f, c.restrict g)) = (μ.law k).prod (μ.law l) :=
+  ⟨fun hμ _ _ _ _ _ hf hg hfg => hμ.map_restrict_prod hf hg hfg, fun h k l =>
+    h k l (k + l) _ _ (Fin.castAdd_injective k l) (Fin.natAdd_injective l k) fun i j => by
+      simp [Fin.ext_iff]; omega⟩
+
+end ExchangeableRelationalLaw
 
 /-! ### The two presentations agree -/
 
