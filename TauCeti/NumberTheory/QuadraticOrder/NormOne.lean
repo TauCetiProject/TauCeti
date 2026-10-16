@@ -65,7 +65,7 @@ private noncomputable def unitaryToNormOneUnits :
       rw [mem_normOneUnits_iff, MonoidHom.comp_apply, Units.coe_map,
         Unitary.val_toUnits_apply, MulEquiv.coe_toMonoidHom]
       dsimp only [AlgEquiv.toMulEquiv]
-      rw [norm_equivToSubalgebra]
+      rw [MulEquiv.coe_mk, AlgEquiv.coe_toEquiv, norm_equivToSubalgebra]
       exact QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property)
 
 private theorem unitaryToNormOneUnits_bijective :
