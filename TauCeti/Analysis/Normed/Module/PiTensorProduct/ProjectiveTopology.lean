@@ -253,6 +253,13 @@ def map (f : ∀ i, E i →ₗ[𝕜] G i) :
     ((PiTensorProduct.map f).comp (toPiTensorProductLinearEquiv p).toLinearMap)
 
 omit [Fintype ι] in
+/-- The tensor map agrees with the algebraic tensor map after forgetting topology. -/
+@[simp]
+theorem toPiTensorProduct_map (f : ∀ i, E i →ₗ[𝕜] G i) (x : ProjectiveTensorProduct p) :
+    (map p q f x).toPiTensorProduct = PiTensorProduct.map f x.toPiTensorProduct := by
+  simp [map]
+
+omit [Fintype ι] in
 @[simp]
 theorem map_tprod (f : ∀ i, E i →ₗ[𝕜] G i) (x : ∀ i, E i) :
     map p q f ⟨⨂ₜ[𝕜] i, x i⟩ = tprod q (fun i => f i (x i)) := by

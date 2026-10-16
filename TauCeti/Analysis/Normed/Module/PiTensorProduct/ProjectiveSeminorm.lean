@@ -130,3 +130,47 @@ theorem projectiveSeminormOf_map_le (p : ∀ i, Seminorm 𝕜 (E i))
     Finset.prod_le_prod₀ (fun i _ => apply_nonneg (q i) _) (fun i _ => h i (m i))
 
 end PiTensorProduct
+
+namespace TauCeti
+
+variable {ι κ 𝕜 : Type*} [Fintype ι] [Fintype κ] [NormedField 𝕜]
+variable {E : ι → Type*} [∀ i, AddCommGroup (E i)] [∀ i, Module 𝕜 (E i)]
+
+/-- Reindexing the factors and their seminorms preserves the projective seminorm exactly. -/
+@[simp]
+theorem projectiveSeminormOf_reindex (p : ∀ i, Seminorm 𝕜 (E i)) (e : ι ≃ κ)
+    (x : ⨂[𝕜] i, E i) :
+    PiTensorProduct.projectiveSeminormOf (fun j => p (e.symm j))
+      (PiTensorProduct.reindex 𝕜 E e x) = PiTensorProduct.projectiveSeminormOf p x := by
+  let q := PiTensorProduct.projectiveSeminormOf p
+  let r := PiTensorProduct.projectiveSeminormOf (fun j => p (e.symm j))
+  let T := PiTensorProduct.reindex 𝕜 E e
+  have hforward : ∀ y, r (T y) ≤ q y := by
+    apply (PiTensorProduct.le_projectiveSeminormOf_iff p (r.comp T.toLinearMap)).mpr
+    intro m
+    simp only [Seminorm.comp_apply, LinearEquiv.coe_coe, T, PiTensorProduct.reindex_tprod]
+    exact (PiTensorProduct.projectiveSeminormOf_tprod_le _ _).trans_eq
+      (e.symm.prod_comp (fun i => p i (m i)))
+  have hbackward : ∀ y, q (T.symm y) ≤ r y := by
+    apply (PiTensorProduct.le_projectiveSeminormOf_iff (fun j => p (e.symm j))
+      (q.comp T.symm.toLinearMap)).mpr
+    intro m
+    obtain ⟨m, rfl⟩ := (Equiv.piCongrLeft' E e).surjective m
+    simp only [Seminorm.comp_apply, LinearEquiv.coe_coe, Equiv.piCongrLeft'_apply, T,
+      PiTensorProduct.reindex_symm_tprod]
+    exact (PiTensorProduct.projectiveSeminormOf_tprod_le p m).trans_eq
+      (e.symm.prod_comp (fun i => p i (m i))).symm
+  exact (hforward x).antisymm (by simpa only [LinearEquiv.symm_apply_apply] using hbackward (T x))
+
+/-- Projective seminorms formed from finite suprema of defining factor seminorms are unchanged
+by reindexing both the factors and the finite selections. -/
+@[simp]
+theorem projectiveSeminormOf_finsetSup_reindex {σ : ι → Type*}
+    (p : ∀ i, SeminormFamily 𝕜 (E i) (σ i)) (s : ∀ i, Finset (σ i)) (e : ι ≃ κ)
+    (x : ⨂[𝕜] i, E i) :
+    PiTensorProduct.projectiveSeminormOf (fun j => (s (e.symm j)).sup (p (e.symm j)))
+      (PiTensorProduct.reindex 𝕜 E e x) =
+        PiTensorProduct.projectiveSeminormOf (fun i => (s i).sup (p i)) x :=
+  projectiveSeminormOf_reindex (fun i => (s i).sup (p i)) e x
+
+end TauCeti
