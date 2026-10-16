@@ -15,9 +15,6 @@ import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 The character of a finite direct sum of finite-dimensional representations is the sum of
 its summands' characters. This allows character identities with natural multiplicities to
 be interpreted as decompositions into concrete direct sums.
-
-The trace computation uses `LinearMap.trace_piMap` after identifying the finite direct sum
-with the corresponding dependent product.
 -/
 
 public section
@@ -33,6 +30,7 @@ variable {k G ι : Type*} [Field k] [Monoid G] [Fintype ι]
 theorem char_directSum (ρ : ∀ i, Representation k G (V i)) (g : G) :
     (directSum ρ).character g = ∑ i, (ρ i).character g := by
   classical
+  -- Identify the finite direct sum with the dependent product to apply `LinearMap.trace_piMap`.
   let e := DirectSum.linearEquivFunOnFintype k ι V
   rw [character, ← LinearMap.trace_conj' _ e,
     conj_directSum_linearEquivFunOnFintype, LinearMap.trace_piMap]
