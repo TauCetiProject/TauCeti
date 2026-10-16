@@ -83,7 +83,7 @@ noncomputable def compressionShiftXIso (r : ZMod n) :
 
 /-- On a summand, the shift comparison is the inclusion whose degree has been translated by the
 shift. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ιCompression_compressionShiftXIso_hom (i : ℤ) (r : ZMod n)
     (hi : (i : ZMod n) = r) :
     ιCompression n (K⟦k⟧) i r hi ≫ (compressionShiftXIso n K k r).hom =
@@ -93,7 +93,7 @@ lemma ιCompression_compressionShiftXIso_hom (i : ℤ) (r : ZMod n)
 
 /-- On a summand, the inverse shift comparison is the inclusion whose degree has been translated
 back by the shift. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ιCompression_compressionShiftXIso_inv (j : ℤ) (r : ZMod n)
     (hj : (j : ZMod n) = r + k) :
     ιCompression n K j (r + k) hj ≫ (compressionShiftXIso n K k r).inv =
