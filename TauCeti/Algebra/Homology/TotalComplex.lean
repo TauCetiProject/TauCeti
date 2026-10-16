@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.HomEquiv
 public import Mathlib.Algebra.Homology.QuasiIso
-public import Mathlib.Algebra.Homology.TotalComplex
+public import Mathlib.Algebra.Homology.TotalComplexSymmetry
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
+public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.DownNatSucc
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
@@ -20,6 +21,9 @@ A bicomplex indexed by `ℕ × ℕ` with homological differentials has only fini
 `(K.X p).X q` with `p + q = n`, so its total complex exists in any preadditive category with finite
 coproducts. Its differential is `d₁ + (-1)ᵖ d₂` on the summand `(K.X p).X q`, by Mathlib's sign
 convention `TotalComplexShape (ComplexShape.down ℕ) (ComplexShape.down ℕ) (ComplexShape.down ℕ)`.
+The symmetry between the total complexes of a bicomplex and its flip is given by the instance
+`HomologicalComplex₂.totalComplexShapeSymmetryDownNat` from
+`TauCeti.Algebra.Homology.ComplexShape.Signs`.
 
 An augmentation `ε : K.X 0 ⟶ E` of the column `0` by a chain complex `E`, that is a chain map
 vanishing on the image of the horizontal differential `K.d 1 0`, induces a chain map

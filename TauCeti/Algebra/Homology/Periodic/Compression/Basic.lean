@@ -158,6 +158,25 @@ lemma compressionMap_comp (f : K ⟶ L) (g : L ⟶ M) :
   ext r i hi
   simp
 
+/-- An isomorphism of complexes induces an isomorphism of their compressions. -/
+noncomputable def compressionMapIso (e : K ≅ L) : compression n K ≅ compression n L where
+  hom := compressionMap n e.hom
+  inv := compressionMap n e.inv
+  hom_inv_id := by rw [← compressionMap_comp, e.hom_inv_id, compressionMap_id]
+  inv_hom_id := by rw [← compressionMap_comp, e.inv_hom_id, compressionMap_id]
+
+/-- The forward map of the compressed isomorphism is the compression of the forward map. -/
+@[simp]
+lemma compressionMapIso_hom (e : K ≅ L) :
+    (compressionMapIso n e).hom = compressionMap n e.hom :=
+  (rfl)
+
+/-- The inverse map of the compressed isomorphism is the compression of the inverse map. -/
+@[simp]
+lemma compressionMapIso_inv (e : K ≅ L) :
+    (compressionMapIso n e).inv = compressionMap n e.inv :=
+  (rfl)
+
 end HasZeroMorphisms
 
 section Preadditive
