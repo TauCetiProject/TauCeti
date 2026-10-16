@@ -53,15 +53,10 @@ theorem tendsto_smul_cofinite_nhds_zero {α β : Type*} {f : α → R} {g : β �
   refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
   have hfε := Metric.tendsto_nhds.mp hf (ε / B') (div_pos hε hB'pos)
   have hgε := Metric.tendsto_nhds.mp hg (ε / A') (div_pos hε hA'pos)
-  -- `mem_cofinite` only exposes the finite exceptional sets after the eventualities are written
-  -- explicitly as membership in the cofinite filter.
-  change {i | dist (f i) 0 < ε / B'} ∈ cofinite at hfε
-  change {j | dist (g j) 0 < ε / A'} ∈ cofinite at hgε
-  change {ij : α × β | dist (f ij.1 • g ij.2) 0 < ε} ∈ cofinite
-  rw [mem_cofinite] at hfε hgε ⊢
+  rw [Filter.eventually_cofinite] at hfε hgε ⊢
   refine (hfε.prod hgε).subset ?_
   rintro ⟨i, j⟩ hsmall
-  simp only [Set.mem_prod, Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt, dist_zero_right]
+  simp only [Set.mem_prod, Set.mem_ofPred_eq, not_lt, dist_zero_right]
     at hsmall ⊢
   constructor
   · by_contra hi
