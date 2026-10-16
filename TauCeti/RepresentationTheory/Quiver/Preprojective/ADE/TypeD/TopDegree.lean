@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.ForkTopPower
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Corner
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 
 /-!
 # The top surviving degree of the type-`D` preprojective algebra
@@ -51,48 +50,26 @@ local notation "c" => n - 3
 
 attribute [local instance] signlessPreprojectiveGradedAlgebra
 
-private theorem signlessArrow_mem_grade_one {i j : Fin (DynkinType.D n).rank}
-    (h : (DG).Adj i j) :
-    signlessArrow k DG i j ∈ signlessPreprojectiveGrade k Q 1 := by
-  rw [signlessArrow_of_adj k h]
-  exact signlessPreprojectiveMk_mem_grade k Q (ofArrow_mem_grade_one _)
-
-private theorem forkBacktrack_mem_grade_two (hn : 3 ≤ n) (l : Bool) :
+private theorem forkBacktrack_mem_grade_two (l : Bool) :
     signlessPreprojectiveDForkBacktrack (n := n) k l ∈
       signlessPreprojectiveGrade k Q 2 := by
-  let c' : Fin (DynkinType.D n).rank :=
-    ⟨n - 3, by rw [DynkinType.rank_D]; omega⟩
-  let l₁ : Fin (DynkinType.D n).rank :=
-    ⟨n - 3 + 1, by rw [DynkinType.rank_D]; omega⟩
-  let l₂ : Fin (DynkinType.D n).rank :=
-    ⟨n - 3 + 2, by rw [DynkinType.rank_D]; omega⟩
-  have h₁ : (DG).Adj l₁ c' := (diagramGraph_D_adj hn l₁ c').2 (by
-    dsimp only [l₁, c']
-    omega)
-  have h₂ : (DG).Adj l₂ c' := (diagramGraph_D_adj hn l₂ c').2 (by
-    dsimp only [l₂, c']
-    omega)
-  cases l with
-  | false =>
-      rw [signlessPreprojectiveDForkBacktrack_false]
-      change signlessArrow k DG l₂ c' * signlessArrow k DG c' l₂ ∈ _
-      simpa using mul_mem_signlessPreprojectiveGrade k Q
-        (signlessArrow_mem_grade_one k h₂)
-        (signlessArrow_mem_grade_one k h₂.symm)
-  | true =>
-      rw [signlessPreprojectiveDForkBacktrack_true]
-      change signlessArrow k DG l₁ c' * signlessArrow k DG c' l₁ ∈ _
-      simpa using mul_mem_signlessPreprojectiveGrade k Q
-        (signlessArrow_mem_grade_one k h₁)
-        (signlessArrow_mem_grade_one k h₁.symm)
+  cases l
+  · rw [signlessPreprojectiveDForkBacktrack_false]
+    exact mul_mem_signlessPreprojectiveGrade k Q
+      (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
+      (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
+  · rw [signlessPreprojectiveDForkBacktrack_true]
+    exact mul_mem_signlessPreprojectiveGrade k Q
+      (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
+      (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
 
 /-- The terminal alternating fork word of `Dₙ` is homogeneous of path degree `2n - 4`. -/
 theorem signlessPreprojectiveDForkTopWord_mem_grade (hn : 3 ≤ n) :
     signlessPreprojectiveDForkWords k hn (.inr ()) ∈
       signlessPreprojectiveGrade k Q (2 * n - 4) := by
   rw [signlessPreprojectiveDForkTopWord_eq k hn]
-  have hx := forkBacktrack_mem_grade_two (n := n) k hn true
-  have hy := forkBacktrack_mem_grade_two (n := n) k hn false
+  have hx := forkBacktrack_mem_grade_two (n := n) k true
+  have hy := forkBacktrack_mem_grade_two (n := n) k false
   have hs : signlessPreprojectiveDForkBacktrack (n := n) k true +
       signlessPreprojectiveDForkBacktrack (n := n) k false ∈
         signlessPreprojectiveGrade k Q 2 := add_mem hx hy
@@ -150,21 +127,9 @@ theorem signlessPreprojectiveCorner_D_fork_top_ne_bot (hn : 3 ≤ n) :
 /-- An actual path of length `2n - 4` survives in the signless preprojective algebra of `Dₙ`. -/
 theorem exists_signlessPreprojectiveMk_D_path_top_ne_zero (hn : 3 ≤ n) :
     ∃ p : Quiver.TotalPath Q, p.2.2.length = 2 * n - 4 ∧
-      signlessPreprojectiveMk k Q (ofPath p) ≠ 0 := by
-  classical
-  by_contra h
-  push Not at h
-  obtain ⟨y, hy, hytop⟩ :=
-    (mem_signlessPreprojectiveGrade_iff k Q).1
-      (signlessPreprojectiveDForkTopWord_mem_grade k hn)
-  rw [grade_eq_span_range] at hy
-  have hyzero : signlessPreprojectiveMk k Q y = 0 := by
-    refine Submodule.span_induction (p := fun z _ => signlessPreprojectiveMk k Q z = 0)
-      (fun z hz => ?_) (map_zero _) (fun x y _ _ hx hy => by rw [map_add, hx, hy, add_zero])
-      (fun a x _ hx => by rw [map_smul, hx, smul_zero]) hy
-    obtain ⟨⟨p, hp⟩, rfl⟩ := hz
-    exact h p hp
-  exact signlessPreprojectiveDForkTopWord_ne_zero k hn (hytop ▸ hyzero)
+      signlessPreprojectiveMk k Q (ofPath p) ≠ 0 :=
+  exists_signlessPreprojectiveMk_ofPath_ne_zero_of_ne_bot k Q
+    (signlessPreprojectiveGrade_D_top_ne_bot k hn)
 
 end Field
 
