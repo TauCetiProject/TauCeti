@@ -77,7 +77,7 @@ theorem mem_splitModule_iff_exists (s c : ℤ) (z : ℤ × ℤ) :
     exact ⟨x, by ring⟩
 
 /-- Two actual split-order modules are equal exactly when their coefficients are congruent. -/
-theorem splitModule_eq_iff_dvd_sub (s c d : ℤ) :
+@[simp] theorem splitModule_eq_iff_dvd_sub (s c d : ℤ) :
     splitModule s c = splitModule s d ↔ s ∣ c - d := by
   constructor
   · intro h

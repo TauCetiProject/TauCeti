@@ -106,6 +106,12 @@ square root. -/
 def splitProperClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃* (ZMod s)ˣ :=
   (splitClassEquivUnits s).mulEquiv
 
+/-- The inverse classifier takes a unit residue to the proper class of its triangular form. -/
+@[simp] theorem splitProperClassEquivUnits_symm_apply (s : ℕ) [NeZero s]
+    (u : (ZMod s)ˣ) :
+    (splitProperClassEquivUnits s).symm u = splitUnitToProperClass s u := by
+  rfl
+
 /-- The class of `sxy + cy²` corresponds to the residue of `c`. -/
 @[simp] theorem splitProperClassEquivUnits_mk (s : ℕ) [NeZero s] (c : ℤ)
     (hc : IsCoprime (s : ℤ) c) :
@@ -115,12 +121,8 @@ def splitProperClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃* (Z
       splitProperClassMk s c hc := by
     apply (splitProperClassMk_eq_iff s _ _ _ _).mpr
     simp only [Int.cast_natCast, ZMod.natCast_zmod_val, ZMod.coe_unitOfIsCoprime]
-  have h := (splitProperClassEquivUnits s).apply_symm_apply (ZMod.unitOfIsCoprime c hc.symm)
-  -- The multiplicative equivalence uses the inverse of the bijective unit-to-class map,
-  -- so its inverse evaluates definitionally to splitUnitToProperClass.
-  change splitProperClassEquivUnits s
-    (splitUnitToProperClass s (ZMod.unitOfIsCoprime c hc.symm)) = _ at h
-  rwa [hrep] at h
+  simpa only [splitProperClassEquivUnits_symm_apply, hrep] using
+    (splitProperClassEquivUnits s).apply_symm_apply (ZMod.unitOfIsCoprime c hc.symm)
 
 /-- Composition multiplies the two triangular coefficients. -/
 @[simp] theorem splitProperClassMk_mul (s : ℕ) [NeZero s] (c d : ℤ)

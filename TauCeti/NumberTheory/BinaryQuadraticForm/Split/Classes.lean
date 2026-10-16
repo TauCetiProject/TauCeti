@@ -147,7 +147,7 @@ theorem exists_smul_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
     linear_combination hn
 
 /-- Equality in the existing proper-class quotient is the same congruence criterion. -/
-theorem properClass_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
+@[simp] theorem properClass_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
     (Quotient.mk'' (splitTriangularForm s c) :
         MulAction.orbitRel.Quotient SL(2, ℤ) (BinaryQuadraticForm ℤ)) =
       Quotient.mk'' (splitTriangularForm s d) ↔ s ∣ c - d := by
