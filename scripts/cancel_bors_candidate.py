@@ -20,14 +20,22 @@ ACTIVE = {"queued", "in_progress", "waiting", "requested", "pending"}
 
 
 class Refused(ValueError):
+    """A failed trust or identity check that forbids further cancellation I/O."""
     pass
 
 
 def positive(value):
+    """Return whether a JSON value is a positive integer, excluding booleans."""
     return type(value) is int and value > 0
 
 
 def validate_event(event):
+    """Validate a GitHub dispatch and return its three integer binding fields.
+
+    Only the configured repository and authenticated Bors sender can supply an
+    intent_id, run_id and first run_attempt. Raise Refused for other envelopes;
+    this payload alone grants no cancellation authority.
+    """
     actor = event.get("sender", {})
     if (event.get("action") != "tauceti-bors-cancel"
             or event.get("repository", {}).get("id") != REPO_ID
@@ -45,6 +53,14 @@ def validate_event(event):
 
 
 def validate_authority(authority, payload, now):
+    """Validate fresh Bors authority JSON and return the unchanged mapping.
+
+    Bors binds the intent/run/attempt to repository, batch, immutable candidate
+    generation, head, base and branch. dispatch_at is Unix microseconds;
+    expires_at and the injected now value are Unix seconds. Refuse missing,
+    malformed, expired or payload-mismatched authority. Server-side eligibility
+    must be fetched again immediately before sending cancellation.
+    """
     if (authority.get("schema") != "tauceti-bors.cancellation/v1"
             or authority.get("repository") != REPO
             or authority.get("repository_id") != REPO_ID
@@ -62,6 +78,14 @@ def validate_authority(authority, payload, now):
 
 
 def validate_run(run, authority, payload):
+    """Bind REST run JSON to the authorized staging title and first attempt.
+
+    Return active or already_completed; raise Refused for any identity, actor,
+    workflow, creation-window or state mismatch. created_at is an ISO8601 UTC
+    time, compared with the authority timestamp units documented above.
+    repository_dispatch head_sha identifies workflow code, not candidate code.
+    This observation is not an atomic precondition on GitHub cancellation.
+    """
     title = (f"bors branch={authority['branch']} batch={authority['batch_id']} "
              f"head={authority['head_sha']} base={authority['base_sha']}")
     if (not positive(run.get("id")) or type(run.get("run_attempt")) is not int
@@ -93,6 +117,13 @@ def validate_run(run, authority, payload):
 
 
 def request(url, token=None, method="GET"):
+    """Return (HTTP status, decoded JSON or None) for one fixed-origin request.
+
+    Callers supply only the fixed Bors/GitHub origins and positive numeric IDs.
+    A supplied token goes only to GitHub. Redirects are refused; responses have
+    a 1MB cap and a ten-second socket timeout. HTTP/transport/JSON errors escape
+    for explicit outcome reporting, without hidden retries.
+    """
     headers = {"Accept": "application/vnd.github+json", "User-Agent": "bors-exact-cancellation"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -108,11 +139,23 @@ def request(url, token=None, method="GET"):
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Reject redirects rather than move trust or credentials to another URL."""
     def redirect_request(self, req, fp, code, msg, headers, newurl):
+        """Raise Refused for every redirect instead of creating a new request."""
         raise Refused("redirect refused")
 
 
 def cancel(event, token, http=request, now=lambda: datetime.now(timezone.utc).timestamp()):
+    """Request normal cancellation using fresh durable and current-run evidence.
+
+    event is a GitHub dispatch, token is the trusted job token, and injectable
+    http/now use the request tuple contract and Unix seconds. Return
+    already_completed or normal_cancellation_requested; trust/API failures
+    escape to main without force-cancel or status writes. Bors owns bounded
+    durable retry. Two run reads reject observed reruns, followed by a final
+    authority read. GitHub has no attempt-conditional cancellation: an external
+    human rerun between the final GET and POST remains an unavoidable API race.
+    """
     payload = validate_event(event)
     authority_url = AUTHORITY + str(payload["intent_id"])
     _, authority = http(authority_url)
@@ -138,6 +181,13 @@ def cancel(event, token, http=request, now=lambda: datetime.now(timezone.utc).ti
 
 
 def main():
+    """Read trusted Actions inputs and print one explicit JSON outcome.
+
+    Report permission, missing/revoked, terminal/conflict and API/trust errors
+    without granting new authority or reporting a Lean proof failure. Success
+    means the normal cancellation API acknowledged the request, not that CI or
+    its runner has reached a terminal state.
+    """
     try:
         with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as file:
             event = json.load(file)
