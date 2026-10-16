@@ -21,8 +21,9 @@ positivity. No compatibility between `J` and an inner product is required.
 
 ## Main declarations
 
-* `QuadraticForm.isTotallyReal_of_add_comp_posDef`: a negative subspace is totally real when the
-  sum of a quadratic form and its pullback by `J` is positive definite.
+* `QuadraticForm.isTotallyReal_of_add_comp_posDef`: a negative subspace is totally real for a
+  linear endomorphism `J` when the sum of a quadratic form and its pullback by `J` is positive
+  definite.
 * `QuadraticForm.finrank_le_complexFinrank_of_add_comp_posDef`: every such negative subspace has
   at most the complex dimension of the ambient space.
 * `QuadraticForm.sigNeg_le_complexFinrank_of_add_comp_posDef`: the negative index of inertia has
@@ -41,18 +42,18 @@ open Module
 namespace QuadraticForm
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E]
-variable (Q : QuadraticForm ℝ E) (J : TauCeti.AlmostComplexStructure E)
+variable (Q : QuadraticForm ℝ E)
 variable {W : Submodule ℝ E}
 
-/-- A negative-definite subspace of `Q` is totally real if `Q(v) + Q(Jv)` is positive for every
-nonzero `v`.
+/-- A negative-definite subspace of `Q` is totally real for a linear endomorphism `J` if
+`Q(v) + Q(Jv)` is positive for every nonzero `v`.
 
 Indeed, a nonzero vector `Jv` in both `W` and `J(W)` would make both `Q(v)` and `Q(Jv)` negative,
 contradicting the positivity assumption. -/
-theorem isTotallyReal_of_add_comp_posDef
-    (hQJ : (Q + Q.comp J.toLinearMap).PosDef)
+theorem isTotallyReal_of_add_comp_posDef (J : E →ₗ[ℝ] E)
+    (hQJ : (Q + Q.comp J).PosDef)
     (hW : ((-Q).restrict W).PosDef) :
-    TauCeti.IsTotallyReal J.toLinearMap W := by
+    TauCeti.IsTotallyReal J W := by
   rw [TauCeti.isTotallyReal_iff, disjoint_iff_inf_le]
   intro x hx
   rw [Submodule.mem_bot]
@@ -75,7 +76,7 @@ theorem isTotallyReal_of_add_comp_posDef
 
 section FiniteDimensional
 
-variable [FiniteDimensional ℝ E]
+variable [FiniteDimensional ℝ E] (J : TauCeti.AlmostComplexStructure E)
 
 /-- Every negative-definite subspace of `Q` has at most half the real dimension of `E` when
 `Q(v) + Q(Jv)` is positive away from zero. -/
@@ -83,7 +84,7 @@ theorem two_mul_finrank_le_of_add_comp_posDef
     (hQJ : (Q + Q.comp J.toLinearMap).PosDef)
     (hW : ((-Q).restrict W).PosDef) :
     2 * finrank ℝ W ≤ finrank ℝ E :=
-  (Q.isTotallyReal_of_add_comp_posDef J hQJ hW).two_mul_finrank_le
+  (Q.isTotallyReal_of_add_comp_posDef J.toLinearMap hQJ hW).two_mul_finrank_le
     (J.injective.comp W.subtype_injective)
 
 /-- Every negative-definite subspace of `Q` has dimension at most the complex dimension defined
