@@ -143,6 +143,8 @@ theorem klDiv_eq_ofReal_relEntropy_add_mass_correction_of_real_singleton
       simp only [smul_eq_mul, llr]
       rw [Measure.rnDeriv_eq_measure_singleton_div hRne (measure_ne_top R _),
         ENNReal.toReal_div]
+      -- Unfolding `llr` leaves the singleton quotient definitionally equal to the quotient of
+      -- `Measure.real` values; there is no separate rewrite lemma for this remaining conversion.
       change π.real {(i, j)} * Real.log (π.real {(i, j)} / R.real {(i, j)}) = _
       rw [hπ i j, hR i j]
       by_cases hP : P i j = 0

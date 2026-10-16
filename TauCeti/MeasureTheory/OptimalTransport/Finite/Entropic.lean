@@ -47,30 +47,6 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]
   [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-end TauCeti
-
-namespace PMF
-
-variable {ι κ : Type*}
-  [MeasurableSpace ι] [MeasurableSingletonClass ι]
-  [MeasurableSpace κ] [MeasurableSingletonClass κ]
-
-/-- The real mass of a singleton under the product of two PMF measures is the product of their
-point masses. -/
-private theorem real_prod_toMeasure_singleton (μ : PMF ι) (ν : PMF κ) (i : ι) (j : κ) :
-    (μ.toMeasure.prod ν.toMeasure).real {(i, j)} = (μ i).toReal * (ν j).toReal := by
-  rw [← Set.singleton_prod_singleton, measureReal_prod_prod, Measure.real,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _), Measure.real,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
-
-end PMF
-
-namespace TauCeti
-
-variable {ι κ : Type*} [Fintype ι] [Fintype κ]
-  [MeasurableSpace ι] [MeasurableSingletonClass ι]
-  [MeasurableSpace κ] [MeasurableSingletonClass κ]
-
 namespace TransportMatrix
 
 variable {μ : PMF ι} {ν : PMF κ}
@@ -190,8 +166,8 @@ theorem ofReal_entropicTransportValue_eq (C : Matrix ι κ ℝ) (ε : ℝ≥0)
 
 end Finite
 
-/-- A matrix is a diagonal scaling of the product-weighted Gibbs kernel exactly when its
-entries are the product reference masses multiplied by the generic Gibbs factor. -/
+/-- A matrix is a diagonal scaling of the product-weighted Gibbs kernel exactly when its entries
+are the product of the row and column weights multiplied by the generic Gibbs factor. -/
 theorem isDiagonalScaling_gibbs_iff (P C : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
     (ε : ℝ≥0) (φ : ι → ℝ) (ψ : κ → ℝ) (hC : ∀ i j, 0 ≤ C i j) :
     IsDiagonalScaling P
@@ -216,8 +192,9 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]
   [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-/-- On finite probability spaces, the generic entropic dual objective is the temperature times
-the matrix relative-entropy dual objective for the product-weighted Gibbs kernel. -/
+/-- On finite probability spaces, for a nonzero temperature and a pointwise nonnegative real cost,
+the generic entropic dual objective is the temperature times the matrix relative-entropy dual
+objective for the product-weighted Gibbs kernel. -/
 theorem entropicDualValue_eq_mul_relEntropyDual (C : Matrix ι κ ℝ) (ε : ℝ≥0)
     (μ : PMF ι) (ν : PMF κ) (φ : ι → ℝ) (ψ : κ → ℝ) (hε : ε ≠ 0)
     (hC : ∀ i j, 0 ≤ C i j) :

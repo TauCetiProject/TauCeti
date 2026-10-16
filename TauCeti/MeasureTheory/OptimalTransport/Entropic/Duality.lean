@@ -121,8 +121,8 @@ namespace Matrix
 
 variable {X Y : Type*}
 
-/-- On a real-valued matrix cost, the generic Gibbs factor splits into its row potential, Gibbs
-kernel, and column potential factors. -/
+/-- At a nonnegative entry of a real-valued matrix cost, the generic Gibbs factor splits into its
+row potential, Gibbs kernel, and column potential factors. -/
 theorem entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp (C : Matrix X Y ℝ) (ε : ℝ≥0)
     (φ : X → ℝ) (ψ : Y → ℝ) (i : X) (j : Y) (hC : 0 ≤ C i j) :
     TauCeti.entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) =
