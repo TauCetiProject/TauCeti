@@ -84,12 +84,6 @@ abbrev homotopyInclusion : HomotopyCategory.{v} A ⥤
     _root_.HomotopyCategory (ModuleCat.{v} A) (ComplexShape.up ℤ) :=
   (homotopyIdeal A).lift (toHomotopyCategory A) le_rfl
 
-instance : (homotopyInclusion.{v} A).Additive :=
-  inferInstanceAs (((homotopyIdeal A).lift (toHomotopyCategory A) le_rfl).Additive)
-
-instance : (homotopyInclusion.{v} A).Full :=
-  inferInstanceAs (((homotopyIdeal A).lift (toHomotopyCategory A) le_rfl).Full)
-
 instance : (homotopyInclusion.{v} A).Faithful :=
   ((homotopyIdeal A).faithful_lift_iff (toHomotopyCategory A) le_rfl).mpr le_rfl
 
@@ -179,10 +173,6 @@ abbrev stableCyclesFunctor (n : ℤ) : HomotopyCategory.{v} A ⥤
     (GorensteinProjectiveModuleCat.exactStructure A).projectiveStableFunctor)
     (homotopyIdeal_le_ker_stableCycles A n)
 
-instance (n : ℤ) : (stableCyclesFunctor.{v} A n).Additive :=
-  inferInstanceAs (((homotopyIdeal A).lift _
-    (homotopyIdeal_le_ker_stableCycles A n)).Additive)
-
 /-- Stable cycles restrict along the homotopy quotient to ordinary cycles followed by the
 stable quotient. -/
 theorem quotient_comp_stableCyclesFunctor (n : ℤ) :
@@ -206,11 +196,6 @@ theorem stableCyclesFunctor_map_quotient_map (n : ℤ)
       (GorensteinProjectiveModuleCat.exactStructure A).projectiveStableFunctor.map
         ((cyclesFunctor A n).map f) :=
   CategoryTheory.Quotient.lift_map_functor_map _ _ _ _
-
-/-- Every stable Gorenstein-projective module is represented by stable cycles in any degree. -/
-instance stableCyclesFunctor_essSurj (n : ℤ) : (stableCyclesFunctor.{v} A n).EssSurj :=
-  inferInstanceAs (((homotopyIdeal A).lift _
-    (homotopyIdeal_le_ker_stableCycles A n)).EssSurj)
 
 end TotallyAcyclicComplex
 
