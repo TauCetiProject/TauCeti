@@ -43,8 +43,9 @@ signless complex at its middle term, and the volume coordinates lift by exactnes
 Hence, if every signless vertex complex is exact at its left end, `K` is exact in every positive
 homological degree. A non-backtracking choice of neighbours supplies this exactness, so the result
 holds for every connected graph which is not a tree, and these graphs are never finite ADE Dynkin
-diagrams. The augmentation of `K_0` onto the simple module and the internal grading of the terms
-are not treated here.
+diagrams. The augmentation of `K_0` onto the simple module and the internal grading of the terms,
+which make `K` a linear resolution, are in
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.KoszulResolution`.
 
 ## Main definitions
 

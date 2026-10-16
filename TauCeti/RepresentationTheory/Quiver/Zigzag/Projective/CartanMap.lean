@@ -81,6 +81,7 @@ the dual numbers.
   `TauCeti.linearIndependent_zigzagGradedProjectiveClass`: the images of the vertex-projective
   classes in `G₀^gr(mod Z)`, and the classes themselves in `K₀^gr(proj Z)`, are linearly
   independent over `ℤ[q,q⁻¹]`.
+* `TauCeti.zigzagGradedSimpleMk_mem_piece`: the head projection `P_i → S_i` preserves degrees.
 * `TauCeti.simple_zigzagGradedSimple` and
   `TauCeti.isExhaustiveGradedSimpleFamily_zigzagGradedSimple`: the `S_i` are simple, and every
   simple finite graded module is a shift of one of them.
@@ -342,6 +343,16 @@ theorem zigzagGradedSimpleMk_eq_zero_iff (i : V)
     (GradedModuleCat.mono_iff_injective _).1 inferInstance
   rw [zigzagGradedSimpleMk_def, LinearMap.comp_apply,
     LinearMap.map_eq_zero_iff _ hi, gradedPositiveMulQuotientMk_eq_zero_iff]
+
+/-- The head projection preserves degrees: the class of a homogeneous representative of degree
+`p` lies in the degree-`p` piece of the graded vertex simple. -/
+theorem zigzagGradedSimpleMk_mem_piece (i : V) {p : ℤ}
+    (x : (Ideal.span {zigzagVertexIdempotent k G i} : Ideal (nonisolatedZigzagQuotient k G)))
+    (hx : (x : nonisolatedZigzagQuotient k G) ∈ zigzagIntegerGrade k G p) :
+    zigzagGradedSimpleMk k G i x ∈ (zigzagGradedSimple k G i).grading.piece p := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  rw [zigzagGradedSimpleMk_def, LinearMap.comp_apply]
+  exact GradedModuleCat.map_mem _ ((mem_gradedPositiveMulQuotient_piece_iff _).2 ⟨x, hx, rfl⟩)
 
 /-- A graded vertex simple is a finite graded module. -/
 theorem gradedFiniteModules_zigzagGradedSimple (i : V) :
