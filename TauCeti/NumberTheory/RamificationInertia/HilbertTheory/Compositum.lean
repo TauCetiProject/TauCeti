@@ -64,36 +64,6 @@ variable (H : Subgroup Gal(M/K)) [Algebra A (fixedField H)]
   [Algebra C B] [Algebra C M] [IsScalarTower A C B]
   [IsScalarTower C (fixedField H) M] [IsScalarTower C B M]
 
-include K M in
-/-- The finite-flat and Galois-group facts supplied by the top integral closure. -/
-private theorem topIntegralClosureSetup :
-    IsDomain B ∧ Module.Finite A B ∧ Module.Flat A B ∧
-      IsGaloisGroup Gal(M/K) A B := by
-  have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain _
-  have : FaithfulSMul A M := .trans A K M
-  exact ⟨inferInstance, IsIntegralClosure.finite A K M B,
-    TauCeti.IsIntegralClosure.flat A M B,
-    IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M⟩
-
-include K M B H in
-/-- The finite-flat facts supplied by the integral closure of the base in a fixed field. -/
-private theorem fixedFieldIntegralClosureSetup :
-    IsDomain C ∧ IsDedekindDomain C ∧ Module.Finite A C ∧ Module.Flat A C ∧
-      IsGaloisGroup H C B ∧ FaithfulSMul C B ∧ Module.Flat C B := by
-  obtain ⟨_, _, _, _⟩ := topIntegralClosureSetup (A := A) (K := K) (M := M) (B := B)
-  have : IsDomain C := (IsIntegralClosure.algebraMap_injective C A (fixedField H)).isDomain _
-  have : Algebra.IsSeparable K (fixedField H) :=
-    Algebra.isSeparable_tower_bot_of_isSeparable K (fixedField H) M
-  have : IsDedekindDomain C := IsIntegralClosure.isDedekindDomain A K (fixedField H) C
-  have : FaithfulSMul A (fixedField H) := .trans A K (fixedField H)
-  have : FaithfulSMul C (fixedField H) := IsIntegralClosure.faithfulSMul A C (fixedField H)
-  have : FaithfulSMul C M := .trans C (fixedField H) M
-  have : IsGaloisGroup H C B := IsGaloisGroup.of_isIntegralClosure_fixedField A H C B
-  have : FaithfulSMul C B := .tower_bot C B M
-  exact ⟨inferInstance, inferInstance, IsIntegralClosure.finite A K (fixedField H) C,
-    TauCeti.IsIntegralClosure.flat A (fixedField H) C, inferInstance, inferInstance,
-    inferInstance⟩
-
 /-- A maximal ideal of a Dedekind base splits completely in the integral closure inside `M ^ H`
 exactly when every decomposition group above it is contained in `H`. No separability hypothesis
 on residue fields is needed. -/
@@ -101,7 +71,7 @@ theorem ncard_primesOver_eq_finrank_iff_forall_stabilizer_le_of_isIntegralClosur
     (p : Ideal A) [p.IsMaximal] :
     (p.primesOver C).ncard = Module.finrank A C ↔
       ∀ Q ∈ p.primesOver B, stabilizer Gal(M/K) Q ≤ H := by
-  obtain ⟨_, _, _, _⟩ := topIntegralClosureSetup (A := A) (K := K) (M := M) (B := B)
+  obtain ⟨_, _, _, _⟩ := integralClosureGaloisSetup (A := A) (K := K) (M := M) (B := B)
   obtain ⟨_, _, _, _, _, _, _⟩ :=
     fixedFieldIntegralClosureSetup (A := A) (K := K) (M := M) (B := B) H C
   have : Module.Finite C B := Module.Finite.right A C B
@@ -132,7 +102,7 @@ theorem isUnramifiedIn_iff_forall_inertia_le_of_isIntegralClosure
     (p : Ideal A) [p.IsMaximal] :
     Algebra.IsUnramifiedIn C p ↔
       ∀ Q ∈ p.primesOver B, Q.inertia Gal(M/K) ≤ H := by
-  obtain ⟨_, _, _, _⟩ := topIntegralClosureSetup (A := A) (K := K) (M := M) (B := B)
+  obtain ⟨_, _, _, _⟩ := integralClosureGaloisSetup (A := A) (K := K) (M := M) (B := B)
   obtain ⟨_, _, _, _, _, _, _⟩ :=
     fixedFieldIntegralClosureSetup (A := A) (K := K) (M := M) (B := B) H C
   exact TauCeti.RamificationInertia.isUnramifiedIn_iff_forall_inertia_le A C H p
