@@ -55,17 +55,14 @@ out of `B₂(δ)`.  The presentation is then tied back to the diagrams in two st
 
 ## Two strands, not `k`
 
-Only the two-strand algebra is built here, because for general `k` the loop-weighted stacking is
-not yet known to be associative.  Associativity needs the stacking law
-`TauCeti.composeDiagram_assoc`, which is available, *together with* the matching loop-count
-identity `middleLoopCount (composeDiagram D₁ D₂) D₃ + middleLoopCount D₁ D₂ =
-middleLoopCount D₁ (composeDiagram D₂ D₃) + middleLoopCount D₂ D₃`, which is not: it is the
-"`compose_assoc` with matching loop-count bookkeeping" that Layer 9 of the Schur--Weyl roadmap
-lists as its own build item, and only its special cases are proved so far (in
-`TauCeti/Combinatorics/Brauer/Generator.lean` and
-`TauCeti/Combinatorics/Brauer/Relations.lean`).  On two strands no such identity is needed: the
-four relations above are a presentation, and `TauCeti.middleLoopCount_two` computes every loop
-count outright.
+Only the two-strand algebra is built here.  For general `k` the associativity of the
+loop-weighted stacking rests on two ingredients: the stacking law
+`TauCeti.composeDiagram_assoc`, and the matching loop-count identity
+`middleLoopCount (composeDiagram D₁ D₂) D₃ + middleLoopCount D₁ D₂ =
+middleLoopCount D₁ (composeDiagram D₂ D₃) + middleLoopCount D₂ D₃`, which says that a triple
+stack closes the same number of loops however it is bracketed.  On two strands neither ingredient
+is needed: the four relations above are a presentation, and `TauCeti.middleLoopCount_two`
+computes every loop count outright.
 
 ## Main definitions
 
@@ -95,9 +92,6 @@ count outright.
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, and its `O(3)` acceptance criterion on `(ℂ³)^{⊗2}`, whose algebra side is the
-  three-dimensional `B₂(δ)` built here.
 -/
 
 public section
@@ -261,21 +255,6 @@ noncomputable def diagram (D : BrauerDiagram 2) : BrauerAlgebraTwo R δ :=
   if D = capCup 0 1 then e δ else if D = permToBrauer (Equiv.swap 0 1) then s δ else 1
 
 variable {δ}
-
-/-- The identity diagram and the cap-cup diagram on two strands are different. -/
-theorem permToBrauer_one_ne_capCup :
-    permToBrauer (1 : Equiv.Perm (Fin 2)) ≠ capCup 0 1 :=
-  (capCup_ne_permToBrauer (by decide) 1).symm
-
-/-- The crossing and the cap-cup diagram on two strands are different. -/
-theorem permToBrauer_swap_ne_capCup :
-    permToBrauer (Equiv.swap (0 : Fin 2) 1) ≠ capCup 0 1 :=
-  (capCup_ne_permToBrauer (by decide) _).symm
-
-/-- The identity diagram and the crossing are different. -/
-theorem permToBrauer_one_ne_permToBrauer_swap :
-    permToBrauer (1 : Equiv.Perm (Fin 2)) ≠ permToBrauer (Equiv.swap 0 1) := fun h =>
-  absurd (permToBrauer_injective 2 h) (by decide)
 
 @[simp]
 theorem diagram_capCup : diagram δ (capCup 0 1) = e δ := by
@@ -492,7 +471,7 @@ end Basis
 
 section Finrank
 
-variable {R : Type*} [CommRing R] [StrongRankCondition R] {δ : R}
+variable {R : Type*} [CommSemiring R] [StrongRankCondition R] {δ : R}
 
 /-- **`B₂(δ)` has dimension `(2 * 2 - 1)‼ = 3`**, the number of Brauer diagrams on two
 strands. -/
