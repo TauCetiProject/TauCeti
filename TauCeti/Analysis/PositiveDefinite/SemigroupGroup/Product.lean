@@ -19,10 +19,8 @@ subtraction kernel `(v, w) ↦ g (v - w)`, then `(t, v) ↦ f t * g v` is semigr
 positive definite. We also provide the convenience form where the spatial kernel comes from
 a positive-definite function for the negation involution on `V`.
 
-This is a small prerequisite for the BCR semigroup--Bochner representation milestone in
-`TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-("BCR semigroup--Bochner"). The eventual Laplace--Fourier examples have exactly this separated
-shape before integration: a time kernel multiplied by a spatial Fourier kernel.
+The Laplace--Fourier examples have exactly this separated shape before integration: a time kernel
+multiplied by a spatial Fourier kernel.
 
 No Mathlib infrastructure is vendored. The proof reuses Tau Ceti's positive-definite
 function/kernel correspondence together with Mathlib's `Matrix.PosSemidef.submatrix` and

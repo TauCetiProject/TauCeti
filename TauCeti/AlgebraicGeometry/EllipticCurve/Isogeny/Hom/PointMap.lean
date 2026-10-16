@@ -244,6 +244,14 @@ theorem comp_pointMap [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W₁ W₂) 
     (ψ.fieldPullback : W₃.FunctionField →+* W₂.FunctionField)).trans
       (isEquiv_comap_pointMap_ofIsogeny ψ _)
 
+/-- A power of an endomorphism acts by iterating its action on points. -/
+theorem pow_pointMap (f : Hom W₁ W₁) (n : ℕ) (P : W₁.Point) :
+    (f ^ n).pointMap P = f.pointMap^[n] P := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', mul_def, comp_pointMap, ih, Function.iterate_succ_apply']
+
 /-- **A nonzero morphism has finite fibres on points.** -/
 theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Point) :
     {P | f.pointMap P = Q}.Finite := by

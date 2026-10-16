@@ -13,9 +13,11 @@ public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Formula
 Let `R` be a commutative ring with a compatible linear order, regarded as a structure in the
 first-order language of ordered rings `Language.ring.sum Language.order`. Suppose that semialgebraic
 sets are closed under projection: for every semialgebraic `s ⊆ R ^ (n + 1)`, the image
-`Fin.tail '' s ⊆ R ^ n` forgetting coordinate `0` is semialgebraic. For a real closed field this is
-the Tarski–Seidenberg theorem. This file shows that projection closure gives quantifier elimination
-in the language of ordered rings, with parameters from `R`.
+`Fin.tail '' s ⊆ R ^ n` forgetting coordinate `0` is semialgebraic
+(`TauCeti.HasSemialgebraicProjections R`). For `ℝ` this is the Tarski–Seidenberg theorem, an
+instance proved in `TauCeti.Geometry.RealAlgebraic.CAD.Existence`, so every result below holds
+over `ℝ` unconditionally. This file shows that projection closure gives quantifier elimination in
+the language of ordered rings, with parameters from `R`.
 
 The argument is by induction on formulas. Atomic formulas define semialgebraic sets, and so do
 implications of semialgebraic conditions. An existential quantifier over the last bound variable
@@ -28,7 +30,7 @@ reduce to the finite-dimensional case.
 
 ## Main results
 
-All results assume projection closure as the hypothesis `hproj`.
+All results but the last assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`.
 
 * `TauCeti.IsSemialgebraic.image_comp_some`: semialgebraic subsets of `Option σ → R` have
   semialgebraic projections to `σ → R`, for every index type `σ`.
@@ -43,9 +45,9 @@ All results assume projection closure as the hypothesis `hproj`.
 * `TauCeti.exists_isQF_realize_iff`: **quantifier elimination**. Every formula of ordered rings
   with parameters from `R` is equivalent, under every assignment of its free variables, to a
   quantifier-free formula with parameters.
-* `TauCeti.forall_isSemialgebraic_image_tail_iff`: conversely, if every definable subset of
-  `R ^ n` is semialgebraic then semialgebraic sets are closed under projection. So the projection
-  hypothesis is exactly what quantifier elimination needs.
+* `TauCeti.hasSemialgebraicProjections_iff_forall_definable_isSemialgebraic`: conversely, if every
+  definable subset of `R ^ n` is semialgebraic then semialgebraic sets are closed under projection.
+  So the projection hypothesis is exactly what quantifier elimination needs.
 
 ## References
 
@@ -62,7 +64,7 @@ open FirstOrder FirstOrder.Language MvPolynomial Set TauCeti
 
 section Projection
 
-variable {R : Type*} [CommRing R] [LinearOrder R]
+variable {R : Type*} [CommRing R] [LinearOrder R] [HasSemialgebraicProjections R]
 
 namespace TauCeti
 
@@ -70,8 +72,6 @@ namespace TauCeti
 semialgebraic projections to `R ^ n`, then for every index type `σ` the projection of a
 semialgebraic subset of `Option σ → R`, forgetting the coordinate `none`, is semialgebraic. -/
 theorem IsSemialgebraic.image_comp_some
-    (hproj : ∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-      IsSemialgebraic (Fin.tail '' s))
     {σ : Type*} {s : Set (Option σ → R)} (hs : IsSemialgebraic s) :
     IsSemialgebraic ((fun x : Option σ → R => x ∘ some) '' s) := by
   classical
@@ -92,7 +92,8 @@ theorem IsSemialgebraic.image_comp_some
     | some i =>
       have hi : i ∈ F := Finset.mem_eraseNone.2 ho
       simpa [g, hi] using hF ⟨i, hi⟩
-  convert (hproj _ t (hs.preimage_eval g)).preimage_comp fun j => (e.symm j : σ) using 1
+  convert (HasSemialgebraicProjections.isSemialgebraic_image_tail
+    (hs.preimage_eval g)).preimage_comp fun j => (e.symm j : σ) using 1
   ext x
   simp only [mem_image, mem_preimage]
   constructor
@@ -108,8 +109,6 @@ end TauCeti
 /-- The existential quantifier over the last of `n + 1` bound variables preserves
 semialgebraicity, given projection closure. -/
 private theorem TauCeti.IsSemialgebraic.setOf_exists_sumElim_snoc
-    (hproj : ∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-      IsSemialgebraic (Fin.tail '' s))
     {α : Type*} {n : ℕ} {S : Set (α ⊕ Fin (n + 1) → R)} (hS : IsSemialgebraic S) :
     IsSemialgebraic
       {x : α ⊕ Fin n → R | ∃ a, Sum.elim (x ∘ Sum.inl) (Fin.snoc (x ∘ Sum.inr) a) ∈ S} := by
@@ -119,7 +118,7 @@ private theorem TauCeti.IsSemialgebraic.setOf_exists_sumElim_snoc
   have hg (z : Option (α ⊕ Fin n) → R) :
       z ∘ g = Sum.elim (z ∘ some ∘ Sum.inl) (Fin.snoc (z ∘ some ∘ Sum.inr) (z none)) := by
     simp [g, Sum.comp_elim, Fin.comp_snoc]
-  convert (hS.preimage_comp g).image_comp_some hproj using 1
+  convert (hS.preimage_comp g).image_comp_some using 1
   ext x
   simp only [mem_ofPred_eq, mem_image, mem_preimage, hg]
   constructor
@@ -132,14 +131,13 @@ end Projection
 
 variable {R : Type*} [CommRing R] [Ring.CompatibleRing R] [Language.order.Structure R]
   [LinearOrder R] [IsOrderedAddMonoid R] [(Language.ring.sum Language.order).OrderedStructure R]
+  [HasSemialgebraicProjections R]
 
 namespace FirstOrder.Language.BoundedFormula
 
 /-- Given projection closure, a formula of ordered rings with free variables `α` and `n` bound
 variables defines a semialgebraic subset of `α ⊕ Fin n → R`. -/
 theorem isSemialgebraic_setOf_realize
-    (hproj : ∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-      IsSemialgebraic (Fin.tail '' s))
     {α : Type*} {n : ℕ} (φ : (Language.ring.sum Language.order).BoundedFormula α n) :
     IsSemialgebraic {x : α ⊕ Fin n → R | φ.Realize (x ∘ Sum.inl) (x ∘ Sum.inr)} := by
   induction φ with
@@ -150,7 +148,7 @@ theorem isSemialgebraic_setOf_realize
     simpa [Set.ofPred_or, imp_iff_not_or, Set.compl_ofPred] using ihφ.compl.union ihψ
   | all φ ih =>
     -- `∀ a, φ` is the complement of `∃ a, ¬ φ`.
-    convert (IsSemialgebraic.setOf_exists_sumElim_snoc hproj ih.compl).compl using 1
+    convert (IsSemialgebraic.setOf_exists_sumElim_snoc ih.compl).compl using 1
     ext x
     simp
 
@@ -159,11 +157,9 @@ end FirstOrder.Language.BoundedFormula
 /-- Given projection closure, a formula of ordered rings with free variables `α` defines a
 semialgebraic subset of `α → R`. -/
 theorem FirstOrder.Language.Formula.isSemialgebraic_setOf_realize
-    (hproj : ∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-      IsSemialgebraic (Fin.tail '' s))
     {α : Type*} (φ : (Language.ring.sum Language.order).Formula α) :
     IsSemialgebraic {v : α → R | φ.Realize v} := by
-  convert (BoundedFormula.isSemialgebraic_setOf_realize hproj φ).preimage_comp
+  convert (BoundedFormula.isSemialgebraic_setOf_realize (R := R) φ).preimage_comp
     (Sum.elim id finZeroElim : α ⊕ Fin 0 → α) using 1
   ext v
   simp only [Set.mem_preimage, Set.mem_ofPred_eq, Formula.Realize, Function.comp_assoc,
@@ -173,12 +169,10 @@ theorem FirstOrder.Language.Formula.isSemialgebraic_setOf_realize
 /-- Given projection closure, a formula of ordered rings with free variables `A ⊕ σ` defines a
 semialgebraic subset of `σ → R` once the variables `Sum.inl a` are assigned parameters `f a`. -/
 theorem FirstOrder.Language.Formula.isSemialgebraic_setOf_realize_sumElim
-    (hproj : ∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-      IsSemialgebraic (Fin.tail '' s))
     {A σ : Type*} (φ : (Language.ring.sum Language.order).Formula (A ⊕ σ)) (f : A → R) :
     IsSemialgebraic {v : σ → R | φ.Realize (Sum.elim f v)} := by
   -- Substituting the parameters is a polynomial map.
-  have h := (φ.isSemialgebraic_setOf_realize hproj).preimage_eval
+  have h := φ.isSemialgebraic_setOf_realize.preimage_eval
     (Sum.elim (fun a => C (f a)) X : A ⊕ σ → MvPolynomial σ R)
   have hf : (fun (v : σ → R) (i : A ⊕ σ) => eval v (Sum.elim (fun a => C (f a)) X i)) =
       fun v => Sum.elim f v := by
@@ -188,24 +182,18 @@ theorem FirstOrder.Language.Formula.isSemialgebraic_setOf_realize_sumElim
 /-- Given projection closure, a subset of `σ → R` definable with parameters from a set `A ⊆ R` in
 the language of ordered rings is semialgebraic. -/
 theorem Set.Definable.isSemialgebraic
-    (hproj : ∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-      IsSemialgebraic (Fin.tail '' s))
     {σ : Type*} {A : Set R} {s : Set (σ → R)}
     (hs : A.Definable (Language.ring.sum Language.order) s) : IsSemialgebraic s := by
   obtain ⟨φ, rfl⟩ := Set.definable_iff_exists_formula_sum.1 hs
-  exact φ.isSemialgebraic_setOf_realize_sumElim hproj _
+  exact φ.isSemialgebraic_setOf_realize_sumElim _
 
 namespace TauCeti
-
-variable (hproj : ∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-  IsSemialgebraic (Fin.tail '' s))
-include hproj
 
 /-- Given projection closure, a subset of `σ → R` is semialgebraic if and only if it is definable
 in the language of ordered rings with parameters from `R`. -/
 theorem isSemialgebraic_iff_definable {σ : Type*} {s : Set (σ → R)} :
     IsSemialgebraic s ↔ (Set.univ : Set R).Definable (Language.ring.sum Language.order) s :=
-  ⟨IsSemialgebraic.definable, Set.Definable.isSemialgebraic hproj⟩
+  ⟨IsSemialgebraic.definable, Set.Definable.isSemialgebraic⟩
 
 /-- **Quantifier elimination**, given projection closure. Every formula of ordered rings whose
 free variables `Sum.inl r` are assigned the parameters `r ∈ R` is equivalent, for every
@@ -215,21 +203,19 @@ theorem exists_isQF_realize_iff {σ : Type*}
     ∃ ψ : (Language.ring.sum Language.order).Formula (R ⊕ σ), ψ.IsQF ∧
       ∀ v : σ → R, φ.Realize (Sum.elim id v) ↔ ψ.Realize (Sum.elim id v) := by
   obtain ⟨ψ, hψ, hs⟩ :=
-    isSemialgebraic_iff_exists_isQF.1 (φ.isSemialgebraic_setOf_realize_sumElim hproj id)
+    isSemialgebraic_iff_exists_isQF.1 (φ.isSemialgebraic_setOf_realize_sumElim id)
   exact ⟨ψ, hψ, fun v => Set.ext_iff.1 hs v⟩
 
-omit hproj in
+omit [HasSemialgebraicProjections R] in
 /-- **Projection closure is equivalent to quantifier elimination.** Semialgebraic subsets of
 `R ^ (n + 1)` have semialgebraic projections to `R ^ n`, for every `n`, if and only if every
 subset of every `R ^ n` definable with parameters in the language of ordered rings is
 semialgebraic. -/
-theorem forall_isSemialgebraic_image_tail_iff :
-    (∀ (n : ℕ) (s : Set (Fin (n + 1) → R)), IsSemialgebraic s →
-      IsSemialgebraic (Fin.tail '' s)) ↔
-    ∀ (n : ℕ) (s : Set (Fin n → R)),
+theorem hasSemialgebraicProjections_iff_forall_definable_isSemialgebraic :
+    HasSemialgebraicProjections R ↔ ∀ (n : ℕ) (s : Set (Fin n → R)),
       (Set.univ : Set R).Definable (Language.ring.sum Language.order) s → IsSemialgebraic s := by
-  refine ⟨fun hproj _ _ => Set.Definable.isSemialgebraic hproj, fun h n s hs => ?_⟩
+  refine ⟨fun _ _ _ => Set.Definable.isSemialgebraic, fun h => ⟨fun hs => ?_⟩⟩
   -- Definable sets are closed under projection.
-  exact h n _ (hs.definable.image_comp Fin.succ)
+  exact h _ _ (hs.definable.image_comp Fin.succ)
 
 end TauCeti

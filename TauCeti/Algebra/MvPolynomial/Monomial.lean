@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Data.Finsupp.Multiset
 
 /-!
-# A monomial as a product of variables
+# Monomials in multivariate polynomial rings
 
 Multiplying together a multiset of variables, one factor per element, gives the monomial whose
 exponent vector is the multiplicity function of the multiset: `TauCeti.prod_map_X_eq_monomial`.
@@ -17,10 +17,15 @@ Mathlib's `MvPolynomial.prod_X_pow_eq_monomial` says the same thing for a produc
 support of an exponent vector; this is the multiset-indexed form, which is how the monomials of
 `MvPolynomial.hsymm` and `MvPolynomial.msymm` are written.
 
+The file also computes Mathlib's embedding `Polynomial.toMvPolynomial i`, which places a
+univariate polynomial in the variable `Xᵢ`, on monomials.
+
 ## Main results
 
 * `TauCeti.prod_map_X_eq_monomial`: the product of a multiset of variables is the monomial with
   coefficient `1` at the multiplicity function of the multiset.
+* `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
+  monomial with exponent `n eᵢ`.
 -/
 
 public section
@@ -38,3 +43,14 @@ theorem prod_map_X_eq_monomial {σ : Type*} [DecidableEq σ] {R : Type*} [CommSe
   exact Finset.prod_congr rfl fun a _ => by rw [Multiset.toFinsupp_apply]
 
 end TauCeti
+
+namespace Polynomial
+
+/-- A univariate monomial placed in the variable `Xᵢ` is the monomial with exponent `n eᵢ`. -/
+@[simp]
+theorem toMvPolynomial_monomial {R σ : Type*} [CommSemiring R] (i : σ) (n : ℕ) (a : R) :
+    (monomial n a).toMvPolynomial i = MvPolynomial.monomial (Finsupp.single i n) a := by
+  simp [toMvPolynomial, MvPolynomial.X_pow_eq_monomial, ← C_mul_X_pow_eq_monomial,
+    MvPolynomial.C_mul_monomial]
+
+end Polynomial

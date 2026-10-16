@@ -194,22 +194,7 @@ theorem extended_dual_one_eq_dual_one :
           (IsLocalization.injective Sₘ hMS))
         (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) =
       FractionalIdeal.dual Rₘ K (1 : FractionalIdeal Sₘ⁰ L) := by
-  dsimp only
-  let _ : Nontrivial Rₘ := (algebraMap Rₘ K).domain_nontrivial
-  let hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
-    (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
-  let _ : IsDomain Rₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
-  let hMS : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
-    map_le_nonZeroDivisors_of_injective _
-      (algebraMap_injective_of_field_isFractionRing R S K L) hM
-  let _ : IsFractionRing Rₘ K :=
-    IsFractionRing.isFractionRing_of_isDomain_of_isLocalization M Rₘ K
-  let _ : IsIntegrallyClosed Rₘ :=
-    isIntegrallyClosed_of_isLocalization Rₘ M hM
-  let _ : IsDomain Sₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hMS
-  let _ : IsFractionRing Sₘ L :=
-    IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
-      (Algebra.algebraMapSubmonoid S M) Sₘ L
+  intro _ hM _ hMS _ _ _ _
   let h : S⁰ ≤ Submonoid.comap (algebraMap S Sₘ) Sₘ⁰ :=
     nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
       (IsLocalization.injective Sₘ hMS)
@@ -266,27 +251,7 @@ theorem map_differentIdeal_eq_differentIdeal :
     let _ : IsTorsionFree R S := IsIntegralClosure.isTorsionFree R L
     let _ : IsTorsionFree Rₘ Sₘ := IsIntegralClosure.isTorsionFree Rₘ L
     (differentIdeal R S).map (algebraMap S Sₘ) = differentIdeal Rₘ Sₘ := by
-  dsimp only
-  let _ : Nontrivial Rₘ := (algebraMap Rₘ K).domain_nontrivial
-  let hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
-    (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
-  let _ : IsDomain Rₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
-  let _ : IsFractionRing Rₘ K :=
-    IsFractionRing.isFractionRing_of_isDomain_of_isLocalization M Rₘ K
-  let _ : IsIntegrallyClosed Rₘ :=
-    isIntegrallyClosed_of_isLocalization Rₘ M hM
-  have : IsTorsionFree R L := .trans_faithfulSMul R K L
-  have : IsTorsionFree Rₘ L := .trans_faithfulSMul Rₘ K L
-  have : IsTorsionFree R S := IsIntegralClosure.isTorsionFree R L
-  have : IsTorsionFree Rₘ Sₘ := IsIntegralClosure.isTorsionFree Rₘ L
-  have hMS : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
-    map_le_nonZeroDivisors_of_injective (algebraMap R S)
-      (FaithfulSMul.algebraMap_injective R S) hM
-  let _ : IsDomain Sₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hMS
-  let _ : IsFractionRing Sₘ L :=
-    IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
-      (Algebra.algebraMapSubmonoid S M) Sₘ L
-  let _ : IsDedekindDomain Sₘ := IsLocalization.isDedekindDomain S hMS Sₘ
+  intro _ hM _ hMS _ _ _ _ _ _ _ _ _
   have hSSₘ : Function.Injective (algebraMap S Sₘ) := IsLocalization.injective Sₘ hMS
   let h : S⁰ ≤ Submonoid.comap (algebraMap S Sₘ) Sₘ⁰ :=
     nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _ hSSₘ

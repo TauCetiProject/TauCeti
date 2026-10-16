@@ -90,7 +90,6 @@ theorem generatedGroupSchemeι_def :
           (CommHopfAlgCat.commonKernelHopfIdeal f) ≫
         eqToHom (groupScheme_def R n).symm := by
   rw [generatedGroupSchemeι, hopfIdealInclusion_def]
-  rfl
 
 /-- Closed immersion of the generated-subgroup inclusion reduces to closed immersion of the
 common-kernel quotient inclusion. This records the definitional transport through
@@ -193,7 +192,7 @@ theorem pointsMulEquiv_mapPointsFunctor_mem_generatedPointsSubgroup (i : ι)
     (A : Type w) [CommRing A] [Algebra R A]
     (p : HopfAlgebra.points (R := R) (H := K i) (CommAlgCat.of R A)) :
     pointsMulEquiv n
-        ((CommHopfAlgCat.mapPointsFunctor (f i)).app (CommAlgCat.of R A) p) ∈
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (f i)).app (CommAlgCat.of R A) p) ∈
       generatedPointsSubgroup n f A := by
   rw [generatedPointsSubgroup_def]
   exact pointsMulEquiv_mapPointsFunctor_mem_hopfIdealPointsSubgroup n

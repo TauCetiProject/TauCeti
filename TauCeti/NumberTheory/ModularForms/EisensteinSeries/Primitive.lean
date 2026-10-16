@@ -11,20 +11,34 @@ import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.Complex.UpperHalfPlane.ResToImagAxis
 
 /-!
-# Constant terms of primitive residue-class Eisenstein series
+# Primitive residue-class Eisenstein series and the cusps of `Γ(N)`
 
-Mathlib's `eisensteinSeries` sums over primitive integer pairs in a specified residue class.
-The main result is `disjoint_primitiveEisensteinSubspace_cuspFormSubmodule`; the span has the
-generator introduction rule `mem_primitiveEisensteinSubspace` and the finite-sum
-characterization `mem_primitiveEisensteinSubspace_iff`.
+Mathlib's `eisensteinSeries` sums over primitive integer pairs in a specified residue class
+modulo `N`. In weight `k ≥ 3` these series span a complement of the cusp forms in `M_k(Γ(N))`
+(Diamond–Shurman, Theorem 4.2.3): this is the cusp–Eisenstein decomposition at level `Γ(N)`,
+`isCompl_primitiveEisensteinSubspace_cuspFormSubmodule`. The span has the generator introduction
+rule `mem_primitiveEisensteinSubspace` and the finite-sum characterization
+`mem_primitiveEisensteinSubspace_iff`.
 
-Only the pairs `(0, 1)` and `(0, -1)` survive at infinity. Consequently its constant term at
-the cusp represented by `γ` detects the residue of the bottom row of `γ⁻¹`, with the sign
-`(-1)^k` for its negative. These constant terms show that every cuspidal element of the
-primitive Eisenstein span is zero.
+Only the pairs `(0, 1)` and `(0, -1)` survive at infinity. Consequently the constant term of the
+series with residue `a` at the cusp represented by `γ` detects whether `a` is `±` the bottom row
+of `γ⁻¹`, with the sign `(-1)^k` for its negative. Directness follows: every cuspidal element of
+the span is zero. For spanning, the constant term of a modular form `f` on `Γ(N)` at `γ` depends
+only on that bottom row modulo `N` (`ModularForm.constantTermAt_eq_of_vecMul_inv_eq`), so giving
+the series with residue `a` half the constant term of `f` at any `γ` with that bottom row removes
+every constant term of `f`, the factor `1/2` compensating for the two residues `±a` that see each
+cusp.
 
-This gives the directness input for cusp–Eisenstein decompositions without choosing cusp
-representatives or assuming that the Eisenstein series span the noncuspidal quotient.
+## Main results
+
+* `TauCeti.EisensteinSeries.constantTermAt_eisensteinSeriesMF`: the constant term of each series
+  at every cusp.
+* `TauCeti.EisensteinSeries.disjoint_primitiveEisensteinSubspace_cuspFormSubmodule`: the span
+  meets the cusp forms only in `0`.
+* `TauCeti.EisensteinSeries.sup_primitiveEisensteinSubspace_cuspFormSubmodule_eq_top`: the span
+  and the cusp forms together span `M_k(Γ(N))`.
+* `TauCeti.EisensteinSeries.isCompl_primitiveEisensteinSubspace_cuspFormSubmodule`: the
+  cusp–Eisenstein decomposition `M_k(Γ(N)) = E_k(Γ(N)) ⊕ S_k(Γ(N))`.
 
 ## References
 
@@ -192,25 +206,9 @@ private lemma coefficient_relation_of_cuspidal (hk : 3 ≤ k)
     have hsign : (![0, -1] : Fin 2 → ZMod N) = -![0, 1] := by
       ext i; fin_cases i <;> simp
     rw [hsign, neg_vecMul, hpos]
-  let τ := SpecialLinearGroup.map (Int.castRingHom (ZMod N)) σ
-  have hmul (v : Fin 2 → ZMod N) : (v ᵥ* (↑(τ⁻¹) : Matrix (Fin 2) (Fin 2) (ZMod N))) ᵥ*
-      (↑τ : Matrix (Fin 2) (Fin 2) (ZMod N)) = v := by
-    calc
-      (v ᵥ* (↑(τ⁻¹) : Matrix (Fin 2) (Fin 2) (ZMod N))) ᵥ*
-          (↑τ : Matrix (Fin 2) (Fin 2) (ZMod N)) =
-          v ᵥ* ((τ⁻¹ * τ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) :=
-        vecMul_vecMul _ _ _
-      _ = v := by simp
-  have hinj : Function.Injective (fun v : Fin 2 → ZMod N ↦
-      v ᵥ* (↑τ : Matrix (Fin 2) (Fin 2) (ZMod N))) :=
-    Matrix.vecMul_injective_of_isUnit ⟨toGL τ, rfl⟩
-  have hiffτ (b y : Fin 2 → ZMod N) :
-      b ᵥ* (↑(τ⁻¹) : Matrix (Fin 2) (Fin 2) (ZMod N)) = y ↔
-        b = y ᵥ* (↑τ : Matrix (Fin 2) (Fin 2) (ZMod N)) := by
-    exact ⟨fun h ↦ by rw [← hmul b, h], fun h ↦ hinj ((hmul b).trans h)⟩
   have hiff (b y : Fin 2 → ZMod N) :
       b ᵥ* (σ⁻¹ : SL(2, ℤ)) = y ↔ b = y ᵥ* σ := by
-    simpa only [map_inv] using hiffτ b y
+    simpa using vecMul_eq_iff_eq_vecMul_inv ((σ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) b y
   have H := (mem_cuspFormSubmodule_iff_constantTermAt_eq_zero _).mp hc σ⁻¹
   simp only [map_sum, map_smul, constantTermAt_eisensteinSeriesMF,
     hiff, hpos, hneg, smul_eq_mul, mul_add] at H
@@ -278,5 +276,54 @@ theorem disjoint_primitiveEisensteinSubspace_cuspFormSubmodule (hk : 3 ≤ k) :
   rw [Submodule.disjoint_def]
   intro f hf hc
   exact eq_zero_of_mem_primitiveEisensteinSubspace_of_cuspidal hk hf hc
+
+/-- Every modular form of weight `k ≥ 3` on `Γ(N)` differs from a linear combination of the
+primitive residue-class Eisenstein series by a cusp form. The coefficient of the residue `a` is
+half the constant term of `f` at any `γ` for which `a` is the bottom row of `γ⁻¹` modulo `N`. -/
+private theorem exists_sub_sum_smul_eisensteinSeriesMF_mem_cuspFormSubmodule (hk : 3 ≤ k)
+    (f : ModularForm Γ(N) k) :
+    ∃ c : (Fin 2 → ZMod N) → ℂ,
+      f - ∑ a, c a • eisensteinSeriesMF hk a ∈ cuspFormSubmodule Γ(N) k := by
+  classical
+  let c : (Fin 2 → ZMod N) → ℂ := fun a ↦
+    if h : ∃ γ : SL(2, ℤ),
+        ((![0, 1] : Fin 2 → ZMod N) ᵥ* (γ⁻¹ : SL(2, ℤ)) : Fin 2 → ZMod N) = a then
+      constantTermAt h.choose f / 2
+    else 0
+  have hc (γ : SL(2, ℤ)) :
+      c (![0, 1] ᵥ* (γ⁻¹ : SL(2, ℤ))) = constantTermAt γ f / 2 := by
+    have h : ∃ δ : SL(2, ℤ), ((![0, 1] : Fin 2 → ZMod N) ᵥ* (δ⁻¹ : SL(2, ℤ)) :
+        Fin 2 → ZMod N) = ![0, 1] ᵥ* (γ⁻¹ : SL(2, ℤ)) := ⟨γ, rfl⟩
+    simp only [c, h, ↓reduceDIte]
+    rw [constantTermAt_eq_of_vecMul_inv_eq le_rfl h.choose_spec]
+  have hneg (γ : SL(2, ℤ)) : ((![0, -1] : Fin 2 → ZMod N) ᵥ* (γ⁻¹ : SL(2, ℤ)) :
+      Fin 2 → ZMod N) = ![0, 1] ᵥ* ((-γ)⁻¹ : SL(2, ℤ)) := by
+    ext i
+    fin_cases i <;> simp [vecMul, dotProduct]
+  refine ⟨c, (mem_cuspFormSubmodule_iff_constantTermAt_eq_zero _).mpr fun γ ↦ ?_⟩
+  simp only [map_sub, map_sum, map_smul, constantTermAt_eisensteinSeriesMF,
+    vecMul_eq_iff_eq_vecMul_inv, ← map_inv, smul_eq_mul, mul_add, mul_ite, mul_one, mul_zero,
+    Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, hc, hneg,
+    constantTermAt_neg]
+  have hsq : (-1 : ℂ) ^ k * (-1) ^ k = 1 := by
+    rw [← mul_zpow, neg_one_mul, neg_neg, one_zpow]
+  linear_combination (-(constantTermAt γ f) / 2) * hsq
+
+/-- In weight `k ≥ 3`, the primitive residue-class Eisenstein series and the cusp forms
+together span `M_k(Γ(N))`. -/
+theorem sup_primitiveEisensteinSubspace_cuspFormSubmodule_eq_top (hk : 3 ≤ k) :
+    primitiveEisensteinSubspace N hk ⊔ cuspFormSubmodule Γ(N) k = ⊤ := by
+  refine eq_top_iff.mpr fun f _ ↦ ?_
+  obtain ⟨c, hc⟩ := exists_sub_sum_smul_eisensteinSeriesMF_mem_cuspFormSubmodule hk f
+  have hE : ∑ a, c a • eisensteinSeriesMF hk a ∈ primitiveEisensteinSubspace N hk :=
+    (mem_primitiveEisensteinSubspace_iff hk _).mpr ⟨c, rfl⟩
+  simpa using Submodule.add_mem_sup hE hc
+
+/-- The cusp–Eisenstein decomposition at level `Γ(N)` in weight `k ≥ 3`: the primitive
+residue-class Eisenstein series span a complement of the cusp forms in `M_k(Γ(N))`. -/
+theorem isCompl_primitiveEisensteinSubspace_cuspFormSubmodule (hk : 3 ≤ k) :
+    IsCompl (primitiveEisensteinSubspace N hk) (cuspFormSubmodule Γ(N) k) :=
+  ⟨disjoint_primitiveEisensteinSubspace_cuspFormSubmodule hk,
+    codisjoint_iff.mpr (sup_primitiveEisensteinSubspace_cuspFormSubmodule_eq_top hk)⟩
 
 end TauCeti.EisensteinSeries

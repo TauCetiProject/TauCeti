@@ -20,6 +20,8 @@ Its component at a place of `L` is the semilocal comparison at the place below i
 
 The construction assembles `infiniteSemilocalEquiv` through Mathlib's
 `TensorProduct.piLeft`. This includes the real-to-complex factors of local degree two.
+In a tower `K ⊆ L ⊆ M`, the comparison for `M/K` factors through the one for `L/K`
+(`infiniteAdeleBaseChangeEquiv_tower`).
 
 ## References
 
@@ -80,10 +82,11 @@ theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
   rfl
 
-variable [NumberField K] [NumberField L]
-
-private def groupedInfiniteAdeles :
-    InfiniteAdeleRing L ≃ₗ[K]
+/-- **Infinite adeles grouped by places of the base field.** The infinite adeles of `L` are the
+product over the infinite places `v` of `K` of the families of components at the places of `L`
+above `v`. -/
+def infiniteAdelePiLiesOverEquiv :
+    InfiniteAdeleRing L ≃+*
       ((v : InfinitePlace K) → (w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion) where
   toFun a _ w := a w.1
   invFun a w := a (w.comap (algebraMap K L)) ⟨w, inferInstance⟩
@@ -94,8 +97,28 @@ private def groupedInfiniteAdeles :
     have h := InfinitePlace.LiesOver.comap_eq w v
     subst v
     rfl
+  map_mul' _ _ := rfl
   map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+
+variable {K L} in
+/-- The family at `v` of a grouped infinite adele consists of its components above `v`. -/
+@[simp]
+theorem infiniteAdelePiLiesOverEquiv_apply (a : InfiniteAdeleRing L) (v : InfinitePlace K)
+    (w : {w : InfinitePlace L // w.LiesOver v}) :
+    infiniteAdelePiLiesOverEquiv K L a v w = a w.1 :=
+  (rfl)
+
+variable {K L} in
+/-- Ungrouping reads the component at a place `w` of `L` off the family at the place below `w`. -/
+@[simp]
+theorem infiniteAdelePiLiesOverEquiv_symm_apply
+    (a : (v : InfinitePlace K) → (w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion)
+    (w : InfinitePlace L) :
+    (infiniteAdelePiLiesOverEquiv K L).symm a w =
+      a (w.comap (algebraMap K L)) ⟨w, inferInstance⟩ :=
+  (rfl)
+
+variable [NumberField K] [NumberField L]
 
 open scoped Classical in
 private def baseChangeLinearEquiv :
@@ -103,7 +126,7 @@ private def baseChangeLinearEquiv :
   (TensorProduct.piLeft K L (fun v : InfinitePlace K ↦ v.Completion)).trans
     ((LinearEquiv.piCongrRight fun v ↦
       (infiniteSemilocalEquiv L v).toLinearEquiv.restrictScalars K).trans
-        (groupedInfiniteAdeles K L).symm)
+        ((infiniteAdelePiLiesOverEquiv K L).toAddEquiv.toLinearEquiv fun _ _ ↦ rfl).symm)
 
 private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
     baseChangeLinearEquiv K L t = infiniteAdeleBaseChangeHom K L t := by
@@ -220,5 +243,18 @@ theorem infiniteAdeleBaseChangeEquiv_symm_algebraMap (x : L) :
     (infiniteAdeleBaseChangeEquiv K L).symm
       (algebraMap L (InfiniteAdeleRing L) x) = 1 ⊗ₜ[K] x := by
   exact infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap K L x
+
+/-- **Base change of infinite adeles in a tower** `K ⊆ L ⊆ M`: the comparison for `M/K` factors
+through the comparison for `L/K`, followed by the comparison for `M/L`. -/
+theorem infiniteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [Algebra K M]
+    [Algebra L M] [IsScalarTower K L M] [TopologicalSpace (InfiniteAdeleRing K ⊗[K] M)]
+    [IsModuleTopology (InfiniteAdeleRing K) (InfiniteAdeleRing K ⊗[K] M)]
+    [TopologicalSpace (InfiniteAdeleRing L ⊗[L] M)]
+    [IsModuleTopology (InfiniteAdeleRing L) (InfiniteAdeleRing L ⊗[L] M)]
+    (a : InfiniteAdeleRing K) (z : M) :
+    infiniteAdeleBaseChangeEquiv K M (a ⊗ₜ z) =
+      infiniteAdeleBaseChangeEquiv L M (infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
+  simp only [infiniteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
+  rw [← infiniteAdeleExtension_comp K L M, RingHom.comp_apply]
 
 end TauCeti.GlobalNumberFields

@@ -37,7 +37,8 @@ adapted from
 ## Main declarations
 
 * `SheafOfModules.pushforwardSheafificationIso` is the sheafification-pushforward comparison for
-  a continuous and cocontinuous functor;
+  a continuous and cocontinuous functor, natural in the presheaf as
+  `SheafOfModules.pushforwardSheafificationNatIso`;
 * `SheafOfModules.pushforwardSheafificationIso_inv_comp_map_counit` and
   `SheafOfModules.sheafification_map_pushforward_map_comp_counit` describe the comparison through
   the counits of the sheafification adjunctions;
@@ -342,6 +343,33 @@ theorem pushforwardSheafificationIso_inv_naturality
   simp only [Functor.map_comp]
   rw [Category.assoc, sheafificationIso_hom_naturality]
   rw [Category.assoc]
+
+/-- `pushforwardSheafificationIso`, as a natural isomorphism of functors on presheaves of
+modules: pushforward after sheafification is sheafification after pushforward. -/
+def pushforwardSheafificationNatIso :
+    PresheafOfModules.sheafification (R := R) (𝟙 R.obj) ⋙
+        SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _) ≅
+      PresheafOfModules.pushforward (F := F) (pushforwardRingIso (J := J) (K := K) F R).inv ⋙
+        PresheafOfModules.sheafification
+          (R := (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
+          (𝟙 ((F.sheafPushforwardContinuous RingCat.{u} J K).obj R).obj) :=
+  (NatIso.ofComponents (fun P ↦ (pushforwardSheafificationIso F R P).symm)
+    (fun f ↦ pushforwardSheafificationIso_inv_naturality F R f)).symm
+
+/-- The components of `pushforwardSheafificationNatIso` are `pushforwardSheafificationIso`. -/
+@[simp]
+theorem pushforwardSheafificationNatIso_hom_app (P : PresheafOfModules.{v} R.obj) :
+    (pushforwardSheafificationNatIso (J := J) (K := K) F R).hom.app P =
+      (pushforwardSheafificationIso F R P).hom :=
+  (rfl)
+
+/-- The inverse components of `pushforwardSheafificationNatIso` are the inverses of
+`pushforwardSheafificationIso`. -/
+@[simp]
+theorem pushforwardSheafificationNatIso_inv_app (P : PresheafOfModules.{v} R.obj) :
+    (pushforwardSheafificationNatIso (J := J) (K := K) F R).inv.app P =
+      (pushforwardSheafificationIso F R P).inv :=
+  (rfl)
 
 /-- On the underlying presheaf of a sheaf of modules `M`, the inverse sheafification--pushforward
 comparison followed by the pushforward of the counit of the sheafification adjunction at `M` is

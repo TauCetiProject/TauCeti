@@ -126,9 +126,7 @@ noncomputable def padicReductionModule : Module kG (M ⧸ I • (⊤ : Submodule
   let _ : Module (A ⧸ RingHom.ker π) Q := htor.module
   exact Module.compHom Q (padicMonoidAlgebraQuotientEquiv p G).symm.toRingHom
 
-/-- The canonical reduction module structure, installed locally for the API below. -/
-noncomputable local instance reductionModule :
-    Module kG (M ⧸ I • (⊤ : Submodule A M)) := padicReductionModule p G M
+attribute [local instance] padicReductionModule
 
 /-- Scalar multiplication on the reduction is induced by coefficientwise reduction. -/
 @[simp]
@@ -276,9 +274,9 @@ noncomputable def padicReductionRestrictLinearEquiv
       (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X)).restrictScalars A := by
     -- Both sides consist of the multiples `p • x`; `p` is the image of `p : ℕ` in each ring.
     ext x
-    exact (@Submodule.mem_span_algebraMap_smul_top_iff ℕ (MonoidAlgebra ℤ_[p] G) X
-      _ _ _ _ _ _ _ p x).trans (@Submodule.mem_span_algebraMap_smul_top_iff ℕ
-        (MonoidAlgebra ℤ_[p] H) X _ _ _ _ _ _ _ p x).symm
+    exact (@Submodule.mem_span_algebraMap_smul_iff ℕ (MonoidAlgebra ℤ_[p] G) X
+      _ _ _ _ _ _ _ ⊤ p x).trans (@Submodule.mem_span_algebraMap_smul_iff ℕ
+        (MonoidAlgebra ℤ_[p] H) X _ _ _ _ _ _ _ ⊤ p x).symm
   have := padicReduction_compatibleSMul_zmod p G (padicReduction_smul p G X)
     (padicReduction_smul_of_mapDomain p G f X hscalar hk)
   ((Submodule.quotEquivOfEq _ _ hJ).trans
@@ -337,8 +335,8 @@ theorem compPadicReductionMk_eq_zero_iff (hf : Function.Injective f) (x : M) :
     compPadicReductionMk p G f x = 0 ↔ x ∈ (p : ℤ_[p]) • (⊤ : Submodule ℤ_[p] M) := by
   rw [compPadicReductionMk_apply, map_eq_zero_iff f hf, padicReductionMk_eq_zero_iff,
     Submodule.mem_smul_pointwise_iff_exists]
-  refine (@Submodule.mem_span_algebraMap_smul_top_iff ℕ (MonoidAlgebra ℤ_[p] G) M
-    _ _ _ _ _ _ _ p x).trans ?_
+  refine (@Submodule.mem_span_algebraMap_smul_iff ℕ (MonoidAlgebra ℤ_[p] G) M
+    _ _ _ _ _ _ _ ⊤ p x).trans ?_
   simp only [Submodule.mem_top, true_and, Nat.cast_smul_eq_nsmul]
 
 /-- The composite `compPadicReductionMk` is equivariant for the group actions. -/

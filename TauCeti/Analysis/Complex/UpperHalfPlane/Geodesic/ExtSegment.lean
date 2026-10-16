@@ -25,7 +25,9 @@ Closed half-planes are convex in this extended sense: if `p` and `q` are weakly 
 (`extGeodesicSegment_subset_closure_leftHalfPlane`), and in particular a geodesic ray or line
 whose endpoints are weakly to the left of `geodesicLine k` lies in its closed left half-plane
 (`geodesicLine_image_Ici_subset_closure_leftHalfPlane`,
-`range_geodesicLine_subset_closure_leftHalfPlane`).
+`range_geodesicLine_subset_closure_leftHalfPlane`). Away from finite endpoints, this containment
+is strict unless the supporting lines coincide
+(`mem_leftHalfPlane_of_mem_extGeodesicSegment`).
 
 ## Main declarations
 
@@ -33,6 +35,9 @@ whose endpoints are weakly to the left of `geodesicLine k` lies in its closed le
   points of `ℍ ∪ ∂ℍ`.
 * `TauCeti.UpperHalfPlane.extGeodesicSegment_comm`,
   `TauCeti.UpperHalfPlane.smul_extGeodesicSegment`: symmetry and equivariance.
+* `TauCeti.UpperHalfPlane.geodesicLine_image_Ici` and
+  `TauCeti.UpperHalfPlane.geodesicLine_image_Iic`: half-lines in a geodesic parametrization are
+  the canonical extended geodesic segments with one ideal endpoint.
 * `TauCeti.UpperHalfPlane.extGeodesicSegment_subset_closure_leftHalfPlane`: closed
   half-planes are convex.
 
@@ -148,6 +153,54 @@ theorem extGeodesicSegment_subset_range_geodesicLine {g : PSL(2, ℝ)} {p q : �
   · have hξη : ξ ≠ η := fun h ↦ hg.ne (congrArg _ h)
     rw [extGeodesicSegment_inr_inr hξη,
       (isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hξη)).range_geodesicLine_eq hg]
+
+/-- The forward half of a parametrized geodesic line is the extended geodesic segment from its
+finite endpoint to its forward ideal endpoint. -/
+theorem geodesicLine_image_Ici (g : PSL(2, ℝ)) (a : ℝ) :
+    geodesicLine g '' Set.Ici a =
+      extGeodesicSegment (.inl (geodesicLine g a)) (.inr (g • (∞ : OnePoint ℝ))) := by
+  have hray : rayToward (geodesicLine g a) (.inr (g • (∞ : OnePoint ℝ))) =
+      g * ↑(Matrix.SpecialLinearGroup.dilation a) := by
+    apply eq_of_geodesicLine_zero_eq_of_smul_infty_eq
+    · rw [geodesicLine_rayToward_zero, geodesicLine_mul_dilation, add_zero]
+    · rw [rayToward_inr_smul_infty, mul_smul, dilation_smul_infty]
+  rw [extGeodesicSegment_inl_inr, hray]
+  ext z
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    refine ⟨t - a, sub_nonneg.mpr ht, ?_⟩
+    rw [geodesicLine_mul_dilation, add_sub_cancel]
+  · rintro ⟨t, ht, rfl⟩
+    refine ⟨a + t, le_add_of_nonneg_right ht, ?_⟩
+    rw [geodesicLine_mul_dilation]
+
+/-- The backward half of a parametrized geodesic line is the extended geodesic segment from its
+backward ideal endpoint to its finite endpoint. -/
+theorem geodesicLine_image_Iic (g : PSL(2, ℝ)) (a : ℝ) :
+    geodesicLine g '' Set.Iic a =
+      extGeodesicSegment (.inr (g • ((0 : ℝ) : OnePoint ℝ))) (.inl (geodesicLine g a)) := by
+  rw [extGeodesicSegment_comm]
+  have h := geodesicLine_image_Ici (g * pslS) (-a)
+  rw [geodesicLine_mul_pslS, neg_neg, mul_smul, pslS_smul_infty] at h
+  rw [← h]
+  ext z
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨-t, by simpa using neg_le_neg ht, by simp⟩
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨-t, by simpa using neg_le_neg ht, by simp⟩
+
+/-- A complete parametrized geodesic line is the extended geodesic segment between its two
+distinct ideal endpoints. -/
+theorem range_geodesicLine_eq_extGeodesicSegment (g : PSL(2, ℝ)) :
+    Set.range (geodesicLine g) =
+      extGeodesicSegment (.inr (g • ((0 : ℝ) : OnePoint ℝ)))
+        (.inr (g • (∞ : OnePoint ℝ))) := by
+  have hne : g • ((0 : ℝ) : OnePoint ℝ) ≠ g • (∞ : OnePoint ℝ) :=
+    (MulAction.injective g).ne (OnePoint.coe_ne_infty (0 : ℝ))
+  rw [extGeodesicSegment_inr_inr hne]
+  exact ((isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hne)).range_geodesicLine_eq
+    (isGeodesicFromTo_inr_inr.mpr ⟨rfl, rfl⟩))
 
 /-- Translating a ray from a point of `ℍ` towards an ideal point gives the ray between the
 translated points. -/
@@ -288,5 +341,63 @@ theorem extGeodesicSegment_subset_closure_leftHalfPlane {k : PSL(2, ℝ)}
   rw [extGeodesicSegment_inr_inr hξη]
   exact range_geodesicLine_subset_closure_leftHalfPlane (by rwa [hg.smul_zero_eq])
     (by rwa [hg.smul_infty_eq])
+
+/-- Away from its finite endpoints, a geodesic piece in a closed half-plane lies in the open
+half-plane, provided its supporting line is distinct from the boundary line. This includes
+segments, rays and lines with ideal endpoints. -/
+theorem mem_leftHalfPlane_of_mem_extGeodesicSegment {g k : PSL(2, ℝ)}
+    {p q : ℍ ⊕ OnePoint ℝ} {z : ℍ} (hg : IsGeodesicFromTo g p q)
+    (hp : p ∈ extClosedLeftHalfPlane k) (hq : q ∈ extClosedLeftHalfPlane k)
+    (hne : Set.range (geodesicLine g) ≠ Set.range (geodesicLine k))
+    (hz : z ∈ extGeodesicSegment p q) (hzp : p ≠ .inl z) (hzq : q ≠ .inl z) :
+    z ∈ leftHalfPlane k := by
+  -- Treat the two orientations of a ray together, then reduce each endpoint configuration
+  -- to an interior parameter of an interval in the closed half-plane.
+  have ray_case {w : ℍ} {ξ : OnePoint ℝ}
+      (hw : w ∈ closure (leftHalfPlane k))
+      (hξ : Sum.inr ξ ∈ extClosedLeftHalfPlane k)
+      (hr : Set.range (geodesicLine (rayToward w (.inr ξ))) ≠
+        Set.range (geodesicLine k))
+      (hz : z ∈ geodesicLine (rayToward w (.inr ξ)) '' Set.Ici 0) (hwz : w ≠ z) :
+      z ∈ leftHalfPlane k := by
+    obtain ⟨t, ht, rfl⟩ := hz
+    have htpos : 0 < t := lt_of_le_of_ne ht (by
+      intro heq
+      apply hwz
+      rw [← heq, geodesicLine_rayToward_zero])
+    have hstart : geodesicLine (rayToward w (.inr ξ)) 0 ∈ closure (leftHalfPlane k) := by
+      rwa [geodesicLine_rayToward_zero]
+    have hclosed := geodesicLine_image_Ici_subset_closure_leftHalfPlane hstart
+      (by rwa [rayToward_inr_smul_infty])
+    exact geodesicLine_mem_leftHalfPlane_of_mem_closure htpos (lt_add_one t)
+      hstart (hclosed ⟨t + 1, Set.mem_Ici.2 (by linarith), rfl⟩) hr
+  rcases p with v | ξ <;> rcases q with w | η
+  · obtain ⟨s, t, hst, rfl, rfl⟩ := isGeodesicFromTo_inl_inl.1 hg
+    rw [extGeodesicSegment_inl_inl, geodesicSegment_geodesicLine, Set.uIcc_of_le hst.le] at hz
+    obtain ⟨u, hu, rfl⟩ := hz
+    have hsu : s < u := lt_of_le_of_ne hu.1 (fun heq ↦ hzp (by rw [heq]))
+    have hut : u < t := lt_of_le_of_ne hu.2 (fun heq ↦ hzq (by rw [heq]))
+    exact geodesicLine_mem_leftHalfPlane_of_mem_closure hsu hut
+      (inl_mem_extClosedLeftHalfPlane_iff.1 hp) (inl_mem_extClosedLeftHalfPlane_iff.1 hq) hne
+  · rw [extGeodesicSegment_inl_inr] at hz
+    apply ray_case (inl_mem_extClosedLeftHalfPlane_iff.1 hp) hq
+      (by rwa [← (isGeodesicFromTo_rayToward Sum.inl_ne_inr).range_geodesicLine_eq hg]) hz
+    exact fun heq ↦ hzp (congrArg Sum.inl heq)
+  · rw [extGeodesicSegment_inr_inl] at hz
+    apply ray_case (inl_mem_extClosedLeftHalfPlane_iff.1 hq) hp
+      (by rw [← (isGeodesicFromTo_rayToward Sum.inl_ne_inr).range_geodesicLine_eq
+          (isGeodesicFromTo_mul_pslS_iff.2 hg), range_geodesicLine_mul_pslS]; exact hne) hz
+    exact fun heq ↦ hzq (congrArg Sum.inl heq)
+  · -- With two ideal endpoints, the piece is the whole line, so bracket the point by `t ± 1`.
+    have hξη : ξ ≠ η := fun heq ↦ hg.ne (congrArg Sum.inr heq)
+    have hpiece : extGeodesicSegment (.inr ξ) (.inr η) = Set.range (geodesicLine g) := by
+      rw [extGeodesicSegment_inr_inr hξη]
+      exact hg.range_geodesicLine_eq (isGeodesicFromTo_geodesicFromTo hg.ne)
+    rw [hpiece] at hz
+    obtain ⟨t, rfl⟩ := hz
+    have hclosed := extGeodesicSegment_subset_closure_leftHalfPlane hp hq
+    rw [hpiece] at hclosed
+    exact geodesicLine_mem_leftHalfPlane_of_mem_closure (sub_one_lt t) (lt_add_one t)
+      (hclosed ⟨t - 1, rfl⟩) (hclosed ⟨t + 1, rfl⟩) hne
 
 end TauCeti.UpperHalfPlane

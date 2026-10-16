@@ -62,7 +62,11 @@ theorem _root_.GroupExtension.exists_splitting_continuous_freeProP_forall_apply_
     (hinl : Continuous S.inl) (hrh : Continuous S.rightHom) (hM : IsProP p M) (e : X → E)
     (he : ∀ x, S.rightHom (e x) = of x) :
     ∃ s : S.Splitting, Continuous ⇑s ∧ ∀ x, s (of x) = e x := by
-  have hE : IsProP p E := S.isProP hinl hrh hM (isProP_freeProP p X)
+  have hE : IsProP p E :=
+    S.isProP hinl
+      (MonoidHom.isOpenQuotientMap_of_isQuotientMap
+        (Topology.IsQuotientMap.of_surjective_continuous S.rightHom_surjective hrh)).isOpenMap
+      hM (isProP_freeProP p X)
   obtain ⟨s, hs, hsσ⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh (lift hE e)
     (hom_ext fun x ↦ (congrArg S.rightHom (lift_of hE e x)).trans (he x))
   exact ⟨s, hs, fun x ↦ (hsσ _).trans (lift_of hE e x)⟩

@@ -30,7 +30,7 @@ short-root carrier with a pinned simply connected type-`G₂` group scheme.
 * `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Connected`: the carrier/base-change
   connectedness comparison.
 
-The formal argument follows `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
+The formal argument follows `TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`.
 -/
 
 public section

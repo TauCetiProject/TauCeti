@@ -46,6 +46,8 @@ open Set
 
 namespace TauCeti
 
+open RootPairing
+
 universe u v w x
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}

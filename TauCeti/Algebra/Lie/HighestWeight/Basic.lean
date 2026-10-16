@@ -119,11 +119,11 @@ which is annihilated by the positive nilradical `n⁺`.
 
 For a single positive root this is `IsSl2Triple.HasPrimitiveVectorWith`, and that is how the
 dominance theorem `TauCeti.IsHighestWeightVector.isDominantIntegral` below consumes it. -/
-def IsHighestWeightVector [LieModule K L M] (lam : Dual K H) (v : M) : Prop :=
+def IsHighestWeightVector (lam : Dual K H) (v : M) : Prop :=
   v ≠ 0 ∧ (∀ x : H, ⁅(x : L), v⁆ = lam x • v) ∧
     ∀ x ∈ positiveNilradical H b, ⁅x, v⁆ = 0
 
-variable [LieModule K L M] {b}
+variable {b}
 
 /-- The three defining conditions on a highest weight vector. -/
 theorem isHighestWeightVector_iff {lam : Dual K H} {v : M} :
@@ -149,7 +149,7 @@ theorem lie_eq_zero_of_mem_positiveNilradical (hv : IsHighestWeightVector b lam 
     (hx : x ∈ positiveNilradical H b) : ⁅x, v⁆ = 0 :=
   (isHighestWeightVector_iff.mp hv).2.2 x hx
 
-variable {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
+variable {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N]
 
 /-- A morphism of Lie modules preserves a highest weight vector and its weight whenever its image
 is nonzero. -/
@@ -199,6 +199,8 @@ theorem isHighestWeightVector_coe_iff {lam : Dual K H} {P : LieSubmodule K L M} 
     exact h.map P.incl (by simpa using h.ne_zero)
 
 /-! ### Recognising a highest weight vector on the root spaces -/
+
+variable [LieModule K L M]
 
 /-- **Positive root spaces suffice.** A nonzero `H`-eigenvector annihilated by the root space of
 every positive root is a highest weight vector: the positive nilradical is spanned by those root

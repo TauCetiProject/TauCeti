@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunction
 -- tensor products and tensor powers; this module also supplies `Basis.piTensorProduct`, the basis
 -- the tensor-power results below are stated against.
 public import TauCeti.RepresentationTheory.MatrixCoefficients
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
@@ -45,18 +46,17 @@ product are products of entries, and a determinant power is one generator.  Thos
 are themselves subalgebra-generic, and live in `TauCeti.RepresentationTheory.MatrixCoefficients`.
 
 The two function algebras carry an arbitrary base ring, but the two *representation-level* notions
-are stated over `ℂ`, as the roadmap pins them, and that restriction is not cosmetic.  Over a finite
+are stated over `ℂ`. The restriction is not cosmetic: over a finite
 field `k` the group `GL n k` is a finite set and every function on it is the evaluation of a
 polynomial in the matrix entries, so `TauCeti.Matrix.GeneralLinearGroup.polynomialFunctions k n` is
 then the whole function algebra and every finite-dimensional representation would count as
 polynomial.  The coordinate-entry condition is faithful to the intended notion only over an infinite
-field, and `ℂ` is the case the roadmap and the layers above this one use.
+field; here the base field is `ℂ`.
 
 That the negative determinant powers are rational is
 `TauCeti.Matrix.GeneralLinearGroup.det_zpow_mem_rationalFunctions`.  Whether a *given*
 representation fails to be polynomial is a separate question, not addressed here; so is complete
-reducibility of rational representations, which the roadmap assigns to the reductive-groups
-development rather than to this layer.
+reducibility of rational representations, which requires the theory of reductive groups.
 
 ## Main definitions
 
@@ -83,12 +83,6 @@ development rather than to this layer.
   `TauCeti.isPolynomialRep_symPowerRep` and `TauCeti.isPolynomialRep_extPowerRep` for the standard
   representation.
 
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 0, "Rational and polynomial representations".
-* [Suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/Suggested.lean),
-  where `IsRationalRep` is pinned in this coordinate-entry form.
 -/
 
 public section
@@ -111,7 +105,7 @@ no basis indexed by `Fin (Module.finrank ℂ W)` exists otherwise
 (`TauCeti.IsPolynomialRep.finite`).  The condition does not depend on the basis: see
 `TauCeti.isPolynomialRep_iff_forall_mem_polynomialFunctions`.
 
-The base field is the roadmap's `ℂ` rather than a general field because the coordinate-entry
+The base field is `ℂ` rather than a general field because the coordinate-entry
 condition is faithful only over an infinite field: over a finite `k` the group `GL n k` is finite,
 so every function on it — hence every matrix entry of every representation — is polynomial in the
 entries of `g`. -/

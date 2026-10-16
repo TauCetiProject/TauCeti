@@ -10,10 +10,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 /-!
 # Coefficient naturality of degree-two corestriction
 
-For an open finite-index subgroup `U` of a topological group `G`, degree-two corestriction
-commutes with every continuous `G`-equivariant additive coefficient map. This lets coefficient
-identifications and changes of coefficients pass through the explicit transversal construction,
-including when the coefficients are topological rather than discrete.
+For an open finite-index subgroup `U` of a group `G` with continuous multiplication, degree-two
+corestriction commutes with every continuous `G`-equivariant additive coefficient map. This lets
+coefficient identifications and changes of coefficients pass through the explicit transversal
+construction, including when the coefficients are topological rather than discrete.
 
 `explicitCor2Transversal_explicitMap2_id` gives the identity for any transversal;
 `explicitCor2_explicitMap2_id` gives it for the canonical corestriction. Together with
@@ -32,7 +32,7 @@ namespace TauCeti.ContCohomology
 
 universe u v w
 
-variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable (G : Type u) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (M : Type v) [AddCommGroup M] [DistribMulAction G M]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
   (U : Subgroup G) [U.FiniteIndex]

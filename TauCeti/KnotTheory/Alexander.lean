@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -50,6 +51,8 @@ of the GeometricTopology roadmap.
 
 ## Main results
 
+* `Matrix.span_alexander_eq_span_det_alexanderMatrix`: normalising the Alexander determinant
+  by a Laurent monomial does not change its principal ideal.
 * `TauCeti.KnotTheory.invert_alexander`: `Δ(t⁻¹) = Δ(t)` for a matrix of even size.
 * `TauCeti.KnotTheory.alexander_congruence_of_det_sq_eq_one`: `Δ` is unchanged by
   `V ↦ P * V * Pᵀ` whenever `det P ^ 2 = 1`. Over `ℤ` that is exactly the congruence by a change
@@ -126,6 +129,13 @@ theorem map_eval₂_alexanderMatrix {S : Type*} [CommRing S] (f : R →+* S) (x 
   simp only [Matrix.map_apply, alexanderMatrix_apply, map_sub, map_mul,
     eval₂_C, eval₂_T, zpow_one, Matrix.sub_apply,
     Matrix.smul_apply, smul_eq_mul, Matrix.transpose_apply]
+
+/-- Reindexing both axes of a matrix reindexes its Alexander matrix. -/
+@[simp]
+theorem _root_.Matrix.alexanderMatrix_submatrix {κ : Type*} (V : Matrix ι ι R) (e : κ → ι) :
+    alexanderMatrix (V.submatrix e e) = (alexanderMatrix V).submatrix e e := by
+  ext i j
+  simp
 
 /-- The two extra columns of an enlargement: a chosen vector `ξ` in the first, zero in the
 second. -/
@@ -383,6 +393,15 @@ theorem alexander_def (V : Matrix ι ι R) :
     alexander V = T (-((Fintype.card ι / 2 : ℕ) : ℤ)) * (alexanderMatrix V).det := by
   rw [alexander]
 
+/-- The normalized Alexander polynomial is unchanged by a simultaneous bijective reindexing
+of its rows and columns, including between different finite index types. -/
+@[simp]
+theorem _root_.Matrix.alexander_submatrix_equiv_self {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (V : Matrix ι ι R) (e : κ ≃ ι) :
+    alexander (V.submatrix e e) = alexander V := by
+  simp only [alexander_def, alexanderMatrix_submatrix, Matrix.det_submatrix_equiv_self,
+    Fintype.card_congr e]
+
 /-- Transporting coefficients of the Alexander polynomial agrees with transporting
 the entries of the underlying matrix. -/
 @[simp]
@@ -606,3 +625,16 @@ theorem alexander_figureEightSeifertMatrix :
   ring
 
 end TauCeti.KnotTheory
+
+namespace Matrix
+
+open LaurentPolynomial TauCeti.KnotTheory
+
+/-- The Laurent monomial normalizing the Alexander determinant is a unit, so the normalized
+Alexander polynomial generates the same ideal as the determinant. -/
+theorem span_alexander_eq_span_det_alexanderMatrix {R ι : Type*} [CommRing R]
+    [Fintype ι] [DecidableEq ι] (V : Matrix ι ι R) :
+    Ideal.span {alexander V} = Ideal.span {(alexanderMatrix V).det} := by
+  rw [alexander_def, Ideal.span_singleton_mul_left_unit (isUnit_T _)]
+
+end Matrix

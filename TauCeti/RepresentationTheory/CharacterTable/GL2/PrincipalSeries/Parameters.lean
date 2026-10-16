@@ -51,7 +51,7 @@ omit [Fintype F] in
 open Classical in
 private theorem finrank_mackeyTerm_one (α β γ δ : Fˣ →* ℂˣ) :
     Module.finrank ℂ
-        (resFDRep ((mackeySubgroup 1 (GL2Borel F) (GL2Borel F)).subgroupOf (GL2Borel F))
+        (Subgroup.resFDRep ((mackeySubgroup 1 (GL2Borel F) (GL2Borel F)).subgroupOf (GL2Borel F))
             (GL2BorelRep F α β) ⟶
           (Action.res (FGModuleCat ℂ)
             (mackeyToH 1 (GL2Borel F) (GL2Borel F))).obj (GL2BorelRep F γ δ)) =
@@ -71,17 +71,17 @@ omit [Fintype F] in
 open Classical in
 private theorem finrank_mackeyTerm_weyl (α β γ δ : Fˣ →* ℂˣ) :
     Module.finrank ℂ
-        (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+        (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
               (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β) ⟶
           (Action.res (FGModuleCat ℂ)
             (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F))).obj
               (GL2BorelRep F γ δ)) =
       if α = δ ∧ β = γ then 1 else 0 := by
-  let _ : Simple (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+  let _ : Simple (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
       (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β)) := by
     rw [GL2BorelRep_def, GL2Borel.linearRep_def, ← FDRep.ofLinearCharacter_def]
-    -- `resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
-    -- abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
+    -- `Subgroup.resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold
+    -- the abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
     change Simple ((Action.res (FGModuleCat ℂ)
       ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
         (GL2Borel F)).subgroupOf (GL2Borel F)).subtype).obj
@@ -127,10 +127,12 @@ theorem finrank_hom_GL2PrincipalSeries (α β γ δ : Fˣ →* ℂˣ) :
       DoubleCoset.eq.mp (DoubleCoset.out_eq' oneCoset)
     rw [← finrank_hom_res_mackeyToH_mul_left_mul_right _ _ hh₁ hh₂, ← hout,
       finrank_mackeyTerm_one]
+    simp only [eq_comm]
   · obtain ⟨h₁, hh₁, h₂, hh₂, hout⟩ :=
       DoubleCoset.eq.mp (DoubleCoset.out_eq' weylCoset)
     rw [← finrank_hom_res_mackeyToH_mul_left_mul_right _ _ hh₁ hh₂, ← hout,
       finrank_mackeyTerm_weyl]
+    simp only [eq_comm, and_comm]
 
 /-- **Principal-series representations are parametrized by unordered pairs of characters.** Two
 such induced representations are isomorphic exactly when the ordered pairs agree directly or after

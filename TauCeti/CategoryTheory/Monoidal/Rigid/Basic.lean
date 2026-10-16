@@ -10,11 +10,13 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 /-!
 # Exact pairings in rigid monoidal categories
 
-This file records evaluation and coevaluation formulas for transported exact pairings and for the
-adjunction associated to an exact pairing.
+This file records evaluation and coevaluation formulas for the self-pairing of the unit, for
+transported exact pairings, and for the adjunction associated to an exact pairing.
 
 ## Main declarations
 
+* `TauCeti.ExactPairing.unit_evaluation` and `TauCeti.ExactPairing.unit_coevaluation`: the
+  evaluation and coevaluation of Mathlib's self-pairing of the unit;
 * `TauCeti.exactPairingCongrLeft_evaluation` and
   `TauCeti.exactPairingCongrLeft_coevaluation`: transport in the left argument;
 * `TauCeti.exactPairingCongrRight_evaluation` and
@@ -34,6 +36,20 @@ namespace TauCeti
 universe v u
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
+namespace ExactPairing
+
+/-- The evaluation of the canonical self-pairing of the unit is the right unitor. -/
+@[simp]
+theorem unit_evaluation : ε_ (𝟙_ C) (𝟙_ C) = (ρ_ (𝟙_ C)).hom :=
+  (rfl)
+
+/-- The coevaluation of the canonical self-pairing of the unit is the inverse right unitor. -/
+@[simp]
+theorem unit_coevaluation : η_ (𝟙_ C) (𝟙_ C) = (ρ_ (𝟙_ C)).inv :=
+  (rfl)
+
+end ExactPairing
 
 /-- The evaluation of an exact pairing transported across an isomorphism in its left argument.
 

@@ -8,7 +8,7 @@ module
 -- The determinant character `TauCeti.GL2Linear` that the twist multiplies by, and, through it,
 -- the principal series `TauCeti.GL2PrincipalSeries` the identity below is about.
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.Linear
--- Non-public: the projection formula `TauCeti.indClassFun_comp_subtype_mul` for induced class
+-- Non-public: the projection formula `Subgroup.indClassFun_comp_subtype_mul` for induced class
 -- functions is the whole proof, and this module re-exports `TauCeti.ClassFunction.mem_iff`, which
 -- supplies the class-function hypothesis that formula takes.
 import TauCeti.RepresentationTheory.Induction.ClassFunction
@@ -58,9 +58,9 @@ untwisted boundary character. -/
 theorem character_GL2PrincipalSeries_mul_eq_mul (γ α β : Fˣ →* ℂˣ) :
     (GL2PrincipalSeries F (γ * α) (γ * β)).character =
       (GL2Linear F γ).character * (GL2PrincipalSeries F α β).character := by
-  rw [GL2PrincipalSeries_def, ← indClassFun_ofFDRep_character,
-    GL2PrincipalSeries_def, ← indClassFun_ofFDRep_character]
-  rw [← indClassFun_comp_subtype_mul
+  rw [GL2PrincipalSeries_def, ← Subgroup.indClassFun_ofFDRep_character,
+    GL2PrincipalSeries_def, ← Subgroup.indClassFun_ofFDRep_character]
+  rw [← Subgroup.indClassFun_comp_subtype_mul _
     (ClassFunction.mem_iff.mpr fun g x => (GL2Linear F γ).char_conj g x)]
   congr 1
   funext b

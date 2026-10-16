@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
-import Mathlib.Tactic.LinearCombination
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 /-!
@@ -21,8 +20,8 @@ For scalar values, it defines the represented-unit value set, proves its element
 invariance, and gives the criterion that, for a form with trivial radical, representing a unit is
 equivalent to isotropy after adjoining the one-dimensional form with that unit as its negative
 coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. A
-nondegenerate form over a field pairs every nonzero isotropic vector with an isotropic partner
-of polar pairing one, so a nondegenerate isotropic form contains such an isotropic pair. If the
+form over a field with trivial radical pairs every nonzero isotropic vector with an isotropic
+partner of polar pairing one, so an isotropic form with trivial radical contains such a pair. If the
 orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero space is
 isotropic, the two summands therefore share a nonzero opposite value; for two nondegenerate
 summands, the first with some unit value and the second on a nonzero space, isotropy of the sum is
@@ -136,16 +135,9 @@ theorem Equivalent.isRepresentedBy_congr
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     {Q₃ : QuadraticMap R M₃ N} {Q₄ : QuadraticMap R M₄ N}
     (h₁₂ : Q₁.Equivalent Q₂) (h₃₄ : Q₃.Equivalent Q₄) :
-    Q₁.IsRepresentedBy Q₃ ↔ Q₂.IsRepresentedBy Q₄ := by
-  obtain ⟨e₁₂⟩ := h₁₂
-  obtain ⟨e₃₄⟩ := h₃₄
-  constructor
-  · rintro ⟨f, hf⟩
-    exact ⟨e₃₄.toIsometry.comp (f.comp e₁₂.symm.toIsometry),
-      e₃₄.injective.comp (hf.comp e₁₂.symm.injective)⟩
-  · rintro ⟨f, hf⟩
-    exact ⟨e₃₄.symm.toIsometry.comp (f.comp e₁₂.toIsometry),
-      e₃₄.symm.injective.comp (hf.comp e₁₂.injective)⟩
+    Q₁.IsRepresentedBy Q₃ ↔ Q₂.IsRepresentedBy Q₄ :=
+  ⟨fun h ↦ h₁₂.symm.isRepresentedBy.trans (h.trans h₃₄.isRepresentedBy),
+    fun h ↦ h₁₂.isRepresentedBy.trans (h.trans h₃₄.symm.isRepresentedBy)⟩
 
 /-- Every quadratic map represents zero. -/
 @[simp]
@@ -238,50 +230,74 @@ theorem Represents.smul_mul_self
       h.smul_mul_self (↑(b⁻¹ : Rˣ) : R)
   · exact fun h => h.smul_mul_self (b : R)
 
+/-- Multiplying a represented scalar by the square of a unit preserves representation. -/
+@[simp] theorem represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)
+    (b : Rˣ) :
+    Represents Q (a * (b : R) ^ 2) ↔ Represents Q a := by
+  simpa [smul_eq_mul, pow_two, mul_comm] using
+    (represents_smul_mul_self_iff Q a b)
+
+/-- Membership in `unitValueSet` is invariant under multiplication by a unit square. -/
+theorem mem_unitValueSet_mul_sq_iff (Q : QuadraticMap R M R) (a b : Rˣ) :
+    (a * b ^ 2) ∈ unitValueSet Q ↔ a ∈ unitValueSet Q := by
+  simpa only [mem_unitValueSet, Units.val_mul, Units.val_pow_eq_pow_val] using
+    (represents_mul_sq_iff Q (a : R) b)
+
+/-- Over a semifield, a quadratic form representing a nonzero scalar `a` represents every `b` for
+which `b / a` is a square. -/
+theorem Represents.of_isSquare_div {K V : Type*} [Semifield K] [AddCommMonoid V]
+    [Module K V] {Q : QuadraticForm K V} {a b : K}
+    (h : Represents Q a) (ha : a ≠ 0) (hab : IsSquare (b / a)) : Represents Q b := by
+  obtain ⟨r, hr⟩ := hab
+  simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
+
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- For a quadratic form with trivial radical, every nonzero isotropic vector `x` has an
+isotropic partner `y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/
+theorem exists_isotropic_polar_eq_one_of_radical_eq_bot
+    {Q : QuadraticForm K V} (hQ : Q.radical = ⊥) {x : V} (hx : x ≠ 0) (hxQ : Q x = 0) :
+    ∃ y : V, Q y = 0 ∧ polar Q x y = 1 := by
+  obtain ⟨w, hw⟩ : ∃ w, polar Q x w ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hx
+    have hxrad : x ∈ Q.radical := by
+      rw [mem_radical_iff']
+      refine ⟨hxQ, fun z ↦ ?_⟩
+      rw [QuadraticMap.map_add Q, hxQ, h z, zero_add, add_zero]
+    rw [hQ] at hxrad
+    exact hxrad
+  let z := (polar Q x w)⁻¹ • w
+  have hxz : polar Q x z = 1 := by simp [z, polar_smul_right, hw]
+  refine ⟨z - Q z • x, ?_, ?_⟩
+  · simp [sub_eq_add_neg, ← neg_smul, QuadraticMap.map_add, Q.map_smul, hxQ,
+      polar_smul_right, polar_comm Q z x, hxz, smul_eq_mul]
+  · simp [polar_sub_right, polar_smul_right, polar_self, hxQ, hxz]
+
+/-- An isotropic quadratic form with trivial radical contains two isotropic vectors whose polar
+pairing is one. -/
+theorem exists_isotropic_pair_of_radical_eq_bot
+    {Q : QuadraticForm K V} (hQ : Q.radical = ⊥) (hiso : ¬Q.Anisotropic) :
+    ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
+  obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
+  obtain ⟨y, hyQ, hxy⟩ := exists_isotropic_polar_eq_one_of_radical_eq_bot hQ hx hxQ
+  exact ⟨x, y, hx, hxQ, hyQ, hxy⟩
 
 /-- A quadratic form with trivial radical and a nonzero isotropic vector represents every scalar. -/
 theorem represents_of_radical_eq_bot_of_not_anisotropic
     (Q : QuadraticForm K V)
     (hQ : Q.radical = ⊥) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a := by
-  obtain ⟨v, hv, hvQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
-  obtain ⟨w, hw⟩ : ∃ w, Q.polarBilin v w ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hv
-    have hv_rad : v ∈ Q.radical := by
-      rw [mem_radical_iff']
-      refine ⟨hvQ, ?_⟩
-      intro w
-      have hw : polar Q v w = 0 := by
-        simpa only [polarBilin_apply_apply] using h w
-      rw [QuadraticMap.map_add Q, hvQ, hw, zero_add, add_zero]
-    rw [hQ] at hv_rad
-    simpa only [Submodule.mem_bot] using hv_rad
-  have hw' : polar Q v w ≠ 0 := by
-    simpa only [polarBilin_apply_apply] using hw
-  have hw'' : polar Q w v ≠ 0 := by
-    simpa only [polar_comm] using hw'
-  refine ⟨w + ((a - Q w) / polar Q v w) • v, ?_⟩
-  rw [QuadraticMap.map_add Q, Q.map_smul, smul_eq_mul, hvQ, mul_zero, add_zero,
-    polar_smul_right, polar_comm]
-  rw [smul_eq_mul]
-  field_simp [hw'']
-  ring
+  obtain ⟨x, y, -, hxQ, hyQ, hxy⟩ := exists_isotropic_pair_of_radical_eq_bot hQ hiso
+  exact ⟨a • x + y, by simp [QuadraticMap.map_add, Q.map_smul, polar_smul_left, hxQ, hyQ,
+    hxy, smul_eq_mul]⟩
 
 /-- A nondegenerate quadratic form with a nonzero isotropic vector represents every scalar. -/
 theorem represents_of_nondegenerate_of_not_anisotropic
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
-
-/-- Over a field, a quadratic form representing a nonzero scalar `a` represents every `b` for
-which `b / a` is a square. -/
-theorem Represents.of_isSquare_div {Q : QuadraticForm K V} {a b : K}
-    (h : Represents Q a) (ha : a ≠ 0) (hab : IsSquare (b / a)) : Represents Q b := by
-  obtain ⟨r, hr⟩ := hab
-  simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
 
 /-- If the orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero
 space is isotropic, then some nonzero value of the first form is the negative of a value of the
@@ -303,58 +319,6 @@ theorem Anisotropic.exists_ne_zero_eq_neg_of_not_anisotropic_prod
   · obtain ⟨y, hy⟩ := exists_ne (0 : V')
     obtain ⟨x, hx⟩ := represents_of_radical_eq_bot_of_not_anisotropic U hU hUiso (-W y)
     exact ⟨x, y, by simpa [hx] using fun h ↦ hy (hW y h), hx⟩
-
-/-- For a nondegenerate quadratic form, every nonzero isotropic vector `x` has an isotropic partner
-`y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/
-theorem Nondegenerate.exists_isotropic_polar_eq_one
-    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) {x : V} (hx : x ≠ 0) (hxQ : Q x = 0) :
-    ∃ y : V, Q y = 0 ∧ polar Q x y = 1 := by
-  obtain ⟨w, hw⟩ : ∃ w, polar Q x w ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hx
-    have hxrad : x ∈ Q.radical := by
-      rw [mem_radical_iff']
-      refine ⟨hxQ, fun z ↦ ?_⟩
-      rw [QuadraticMap.map_add Q, hxQ, h z, zero_add, add_zero]
-    rw [hQ.radical_eq_bot] at hxrad
-    exact hxrad
-  let z := w - (Q w / polar Q x w) • x
-  have hzQ : Q z = 0 := by
-    have hw' : polar Q w x ≠ 0 := by simpa only [polar_comm] using hw
-    dsimp [z]
-    simp only [sub_eq_add_neg, ← neg_smul, QuadraticMap.map_add, Q.map_smul, hxQ,
-      polar_smul_right, polar_comm, smul_eq_mul, mul_zero, add_zero]
-    field_simp [hw']
-    ring
-  have hxz : polar Q x z = polar Q x w := by
-    simp [z, polar_sub_right, polar_smul_right, polar_self, hxQ]
-  let y := (polar Q x w)⁻¹ • z
-  refine ⟨y, ?_, ?_⟩
-  · simp [y, Q.map_smul, hzQ]
-  · simp [y, polar_smul_right, hxz, hw]
-
-/-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
-is one. -/
-theorem Nondegenerate.exists_isotropic_pair
-    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
-    ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
-  obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
-  obtain ⟨y, hyQ, hxy⟩ := hQ.exists_isotropic_polar_eq_one hx hxQ
-  exact ⟨x, y, hx, hxQ, hyQ, hxy⟩
-
-/-- Multiplying a represented scalar by the square of a unit preserves representation. -/
-@[simp] theorem represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)
-    (b : Rˣ) :
-    Represents Q (a * (b : R) ^ 2) ↔ Represents Q a := by
-  simpa [smul_eq_mul, pow_two, mul_comm] using
-    (represents_smul_mul_self_iff Q a b)
-
-/-- Membership in `unitValueSet` is invariant under multiplication by a unit square. -/
-theorem mem_unitValueSet_mul_sq_iff (Q : QuadraticMap R M R) (a b : Rˣ) :
-    (a * b ^ 2) ∈ unitValueSet Q ↔ a ∈ unitValueSet Q := by
-  simpa only [mem_unitValueSet, Units.val_mul, Units.val_pow_eq_pow_val] using
-    (represents_mul_sq_iff Q (a : R) b)
 
 /-- A unit is represented exactly when adjoining its negative line makes the form isotropic, under
 triviality of the quadratic radical.
@@ -386,7 +350,7 @@ theorem mem_unitValueSet_iff_not_anisotropic_prod_of_radical_eq_bot
         hQ ((not_anisotropic_iff_exists Q).mpr ⟨v, hv, hvQ⟩) (a : K)
       exact ⟨w, hw⟩
     · have hvQ : Q v = (a : K) * (t * t) := by
-        linear_combination hzero
+        simpa [smul_eq_mul] using eq_neg_of_add_eq_zero_left hzero
       refine ⟨t⁻¹ • v, ?_⟩
       rw [Q.map_smul, smul_eq_mul, hvQ]
       field_simp

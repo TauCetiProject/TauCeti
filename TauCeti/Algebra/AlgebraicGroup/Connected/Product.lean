@@ -37,11 +37,6 @@ isomorphism then identifies the result with the spectrum of the tensor product.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Sections 1.c and 2.a.
-
-This supplies the connectedness step in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. The binary product of two radical candidates is formed as the image of
-multiplication from a semidirect product whose underlying scheme is the direct product; the
-result below proves that source is geometrically connected.
 -/
 
 public section

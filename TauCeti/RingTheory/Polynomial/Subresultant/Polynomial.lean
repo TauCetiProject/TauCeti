@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Subresultant.Basic
+import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 
 /-!
@@ -28,7 +29,7 @@ that controls the subresultant gcd criterion.
   of the principal matrix.
 * `Polynomial.subresultantCoeffMatrix_mulVec`: the coefficient matrix reads the coefficients of
   `A * q + B * p`, with degree `k` in the first row.
-* `Polynomial.subresultant_coeff`: at a strict index `j < min m n`, the coefficients are the
+* `Polynomial.coeff_subresultant`: at a strict index `j < min m n`, the coefficients are the
   prescribed minors through degree `j`, and vanish above `j`; outside that range they all
   vanish.
 * `Polynomial.degree_subresultant_le`: the subresultant polynomial has degree at most
@@ -107,7 +108,6 @@ theorem subresultantCoeffMatrix_eq_updateRow [Semiring R]
     subresultantCoeffMatrix p q m n j k =
       (subresultantMatrix p q m n j).updateRow i₀
         (subresultantCoeffMatrix p q m n j k i₀) := by
-  classical
   ext i l
   by_cases hi : i = i₀
   · subst i
@@ -129,7 +129,7 @@ theorem subresultantCoeffMatrix_mulVec [CommSemiring R] [DecidableEq R]
 
 /-- At `k = j`, the coefficient matrix is the principal subresultant matrix. -/
 @[simp]
-theorem subresultantCoeffMatrix_index [Semiring R]
+theorem subresultantCoeffMatrix_self [Semiring R]
     (p q : R[X]) (m n j : ℕ) :
     subresultantCoeffMatrix p q m n j j = subresultantMatrix p q m n j := by
   ext i l
@@ -159,7 +159,7 @@ theorem subresultantCoeffMatrix_comm [Semiring R]
 a strict index `j < min m n`.  It is defined for all indices; outside the strict range it is
 scalar data only (the subresultant polynomial is then zero), e.g. the empty determinant `1` at
 `m = n = j = 0`. -/
-noncomputable def subresultantCoeff [CommRing R]
+def subresultantCoeff [CommRing R]
     (p q : R[X]) (m n j k : ℕ) : R :=
   (subresultantCoeffMatrix p q m n j k).det
 
@@ -171,7 +171,6 @@ theorem subresultantCoeff_def [CommRing R]
 
 /-- At the smaller right terminal index, a coefficient minor reads a coefficient of the right
 input times a power of its coefficient at the bound. The empty determinant is excluded. -/
-@[simp]
 theorem subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
     (hnm : n < m) (hk : k ≤ n) :
     subresultantCoeff p q m n n k = q.coeff k * q.coeff n ^ (m - n - 1) := by
@@ -193,7 +192,7 @@ theorem subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
 
 /-- The coefficient minor at `k = j` is the principal subresultant coefficient. -/
 @[simp]
-theorem subresultantCoeff_index [CommRing R]
+theorem subresultantCoeff_self [CommRing R]
     (p q : R[X]) (m n j : ℕ) :
     subresultantCoeff p q m n j j = psc p q m n j := by
   simp [subresultantCoeff_def, psc_def]
@@ -217,7 +216,6 @@ theorem subresultantCoeff_comm [CommRing R]
 
 /-- At the smaller left terminal index, a coefficient minor reads a coefficient of the left
 input times a power of its coefficient at the bound. The empty determinant is excluded. -/
-@[simp]
 theorem subresultantCoeff_left_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
     (hmn : m < n) (hk : k ≤ m) :
     subresultantCoeff p q m n m k = p.coeff k * p.coeff m ^ (n - m - 1) := by
@@ -248,9 +246,9 @@ theorem subresultantCoeff_C_mul_right [CommRing R]
 /-- The fixed-bound subresultant polynomial at index `j`.
 
 Its coefficient of degree `k ≤ j` is `subresultantCoeff p q m n j k`; all coefficients above
-`j` vanish.  Subresultant polynomials occur only at strict indices `j < min m n`; outside that
-range this definition is zero.  In particular, it does not turn a terminal empty determinant
-into a polynomial, since terminal data is represented by `psc`. -/
+`j` vanish.  This definition is the subresultant polynomial only at strict indices
+`j < min m n` and returns zero outside that range; terminal data, including the empty
+determinant, is represented by `psc` instead. -/
 noncomputable def subresultant [CommRing R]
     (p q : R[X]) (m n j : ℕ) : R[X] := by
   classical
@@ -260,7 +258,7 @@ noncomputable def subresultant [CommRing R]
 
 /-- The coefficient formula for a fixed-bound subresultant polynomial. -/
 @[simp]
-theorem subresultant_coeff [CommRing R]
+theorem coeff_subresultant [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
     (subresultant p q m n j).coeff k =
       if j < min m n ∧ k ≤ j then subresultantCoeff p q m n j k else 0 := by
@@ -271,7 +269,7 @@ theorem subresultant_coeff [CommRing R]
       simp [subresultant, hj, hkj, hk]
   · simp [subresultant, hj]
 
-/-- There is no subresultant polynomial at or beyond the terminal index. -/
+/-- `subresultant` returns zero at and beyond the terminal index `min m n`. -/
 @[simp]
 theorem subresultant_eq_zero_of_min_le [CommRing R]
     (p q : R[X]) (m n j : ℕ) (hj : min m n ≤ j) :
@@ -299,8 +297,8 @@ theorem degree_subresultant_le [CommRing R]
   intro k hk
   simp [show ¬ k ≤ j by exact_mod_cast hk.not_ge]
 
-/-- The subresultant polynomial has degree exactly `j` precisely when its principal coefficient
-does not vanish. -/
+/-- At a strict index `j < min m n`, the subresultant polynomial has degree exactly `j`
+precisely when its principal coefficient does not vanish. -/
 theorem degree_subresultant_eq_iff [CommRing R]
     (p q : R[X]) (m n j : ℕ) (hj : j < min m n) :
     (subresultant p q m n j).degree = j ↔ psc p q m n j ≠ 0 := by
@@ -348,7 +346,7 @@ theorem subresultant_comm [CommRing R]
     subresultant p q m n j =
       C ((-1) ^ ((m - j) * (n - j))) * subresultant q p n m j := by
   ext k
-  rw [subresultant_coeff, coeff_C_mul, subresultant_coeff, min_comm n m, subresultantCoeff_comm,
+  rw [coeff_subresultant, coeff_C_mul, coeff_subresultant, min_comm n m, subresultantCoeff_comm,
     mul_ite, mul_zero]
 
 end Polynomial

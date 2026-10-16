@@ -185,13 +185,12 @@ private theorem f4ShortRootSignedSimpleAdjoint_basis_root_of_coeff_eq_zero (k : 
       exact f4Modular_lie_rootVector_eq_zero_of_short_add_short_eq_long
         (f4SignedSimpleRootIndex k) β γ hα hβ hγ (by
           simpa only [f4SimplyConnectedRootDatum_root] using hadd)
-    · obtain ⟨hne, hopp, hpair⟩ := hnone
-      have hne' : f4SignedSimpleRootIndex k ≠ β := Ne.symm hne
+    · obtain ⟨-, hopp, hpair⟩ := hnone
       have hopp' : f4SignedSimpleRootIndex k ≠ f4OppositeRootIndex β := by
         intro h
         apply hopp
         simpa using (congrArg f4OppositeRootIndex h).symm
-      apply f4Modular_lie_rootVector_eq_zero_of_chainTopCoeff_eq_zero _ _ hne' hopp'
+      apply f4Modular_lie_rootVector_eq_zero_of_chainTopCoeff_eq_zero _ _ hopp'
       rcases hpair with hpair | ⟨hα, hpair⟩
       · exact f4_chainTopCoeff_eq_zero_of_short_pairing_eq_one _ _ hβ hpair
       · exact f4_chainTopCoeff_eq_zero_of_short_long_pairing_eq_zero _ _ hα hβ hpair

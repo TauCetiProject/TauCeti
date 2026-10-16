@@ -28,6 +28,10 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   manifold Lie bracket.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
+* `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
+  this identity characterises the manifold bracket at that point.
+* `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
+  bracket of the coordinate expressions of two fields is their manifold bracket.
 
 ## References
 
@@ -314,3 +318,47 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     (Set.mem_range_self (f := I) _) hWcoord hVcoord]
   rw [hcoordW, hcoordV]
   exact congrArg₂ (· - ·) houterW houterV
+
+namespace TauCeti
+
+/-- A tangent vector `v` at `x` is the Lie bracket of the differentiable vector fields `V` and `W`
+at `x` as soon as the differential of the extended chart at `x` sends `v` to the commutator of the
+directional derivatives of the chart along `V` and `W`, since that differential is injective. -/
+theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y} {x : M}
+    (hV : MDiffAt (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDiffAt (fun y ↦ (W y : TangentBundle I M)) x) {v : TangentSpace I x}
+    (hv : mvfderiv I (extChartAt I x) x v =
+      mvfderiv I (fun y ↦ mvfderiv I (extChartAt I x) y (W y)) x (V x) -
+        mvfderiv I (fun y ↦ mvfderiv I (extChartAt I x) y (V y)) x (W x)) :
+    v = mlieBracket I V W x := by
+  rw [← mvfderiv_mlieBracket contMDiffAt_extChartAt le_rfl hV hW] at hv
+  have : IsManifold I 1 M :=
+    .of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
+  obtain ⟨e, he⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source x)
+  have hinj : Function.Injective (mvfderiv I (extChartAt I x) x) := by
+    rw [mvfderiv, ContinuousLinearMap.coe_comp, ← he]
+    exact (NormedSpace.fromTangentSpace _).injective.comp e.injective
+  exact hinj hv
+
+end TauCeti
+
+namespace VectorField
+
+omit [CompleteSpace E] [IsManifold I (minSmoothness 𝕜 2) M] in
+/-- At the centre of the preferred chart, the Lie bracket of the inverse-chart pullbacks of two
+vector fields is their manifold Lie bracket. -/
+theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
+    (V W : ∀ y : M, TangentSpace I y) (s : Set M) (x : M) :
+    lieBracketWithin 𝕜 (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I))
+      (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm W (Set.range I))
+      ((extChartAt I x).symm ⁻¹' s ∩ Set.range I) (extChartAt I x x) =
+        mlieBracketWithin I V W s x := by
+  -- The chart derivative at its centre is the identity of `E`; `TangentSpace I x` is not
+  -- syntactically `E`, so the identification is made on the inverse before evaluating it.
+  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E :=
+    (congrArg (fun f : E →L[𝕜] E ↦ f.inverse) (mfderiv_extChartAt_self (I := I) (x := x))).trans
+      ContinuousLinearMap.inverse_id
+  rw [mlieBracketWithin_apply]
+  exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
+
+end VectorField

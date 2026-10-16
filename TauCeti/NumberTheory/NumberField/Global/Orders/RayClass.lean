@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Orders.AwayConductor
+public import TauCeti.NumberTheory.NumberField.Global.Orders.AwayConductor.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.RingTheory.Ideal.Quotient.Coprime

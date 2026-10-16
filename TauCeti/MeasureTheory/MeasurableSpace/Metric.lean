@@ -7,18 +7,26 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
 
 /-!
-# Measurable discretization of totally bounded pseudometric spaces
+# Measurable discretization of pseudometric spaces
 
-This file provides a finite measurable approximation of a totally bounded pseudometric space whose
-open sets are measurable.
+This file provides measurable maps onto finitely many points of a pseudometric space whose open
+sets are measurable: a nearest-point projection onto any nonempty finite set, a finite
+measurable approximation of a totally bounded space, and a measurable partition of a measurable
+totally bounded set into finitely many small cells.
 
 ## Main statements
 
+* `TauCeti.exists_measurable_edist_eq_infEDist` — a nonempty finite set carries a measurable
+  nearest-point projection, sending every point to a point of the set at minimal distance.
 * `TauCeti.exists_measurable_dist_lt` — a totally bounded pseudometric space admits a measurable map
   to a finite type whose indexed approximation point is uniformly close to every point.
+* `TotallyBounded.exists_measurable_dist_lt` — a measurable totally bounded set is the union of
+  finitely many measurable cells of small diameter, labelled by a measurable map that gives its
+  complement a label of its own.
 -/
 
 public section
@@ -30,6 +38,30 @@ open Metric Set
 namespace TauCeti
 
 universe u
+
+/-- **A measurable nearest-point projection onto a finite set.** In a pseudo-extended-metric space
+whose open sets are measurable, every nonempty finite set `s` is the target of a measurable map
+`T` that sends each point `x` to a point of `s` nearest to it: `edist x (T x) = infEDist x s`. -/
+theorem exists_measurable_edist_eq_infEDist {X : Type u} [PseudoEMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {s : Finset X} (hs : s.Nonempty) :
+    ∃ T : X → X, Measurable T ∧ (∀ x, T x ∈ s) ∧ ∀ x, edist x (T x) = infEDist x s := by
+  obtain ⟨x₀, hx₀⟩ := hs
+  set e : ℕ → X := fun k ↦ s.toList.getD k x₀ with he
+  have he_mem (k : ℕ) : e k ∈ s := by
+    rcases lt_or_ge k s.toList.length with hk | hk
+    · simpa [he, List.getElem?_eq_getElem hk] using Finset.mem_toList.1 (List.getElem_mem hk)
+    · simpa [he, List.getElem?_eq_none hk] using hx₀
+  have he_surj {y : X} (hy : y ∈ s) : ∃ k ≤ s.card, e k = y := by
+    obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.1 (Finset.mem_toList.2 hy)
+    exact ⟨k, (Finset.length_toList s ▸ hk).le, by simp [he, List.getElem?_eq_getElem hk]⟩
+  set T := MeasureTheory.SimpleFunc.nearestPt e s.card with hT
+  have hTe (x : X) : T x = e (MeasureTheory.SimpleFunc.nearestPtInd e s.card x) := by
+    simp [hT, MeasureTheory.SimpleFunc.nearestPt]
+  refine ⟨T, T.measurable, fun x ↦ hTe x ▸ he_mem _, fun x ↦ le_antisymm ?_ ?_⟩
+  · refine le_infEDist.2 fun y hy ↦ ?_
+    obtain ⟨k, hk, rfl⟩ := he_surj hy
+    simpa only [edist_comm] using MeasureTheory.SimpleFunc.edist_nearestPt_le e x hk
+  · exact infEDist_le_edist_of_mem (hTe x ▸ he_mem _)
 
 /-- A totally bounded pseudometric space admits, up to any positive error, an indexed finite family
 of approximation points and a measurable map assigning every point to a nearby one. -/
@@ -82,5 +114,32 @@ theorem exists_measurable_dist_lt (X : Type u) [PseudoMetricSpace X] [Measurable
             (MeasureTheory.SimpleFunc.nearestPtInd_le e N x).trans_lt hN]
         rw [← edist_lt_ofReal, hqv, edist_comm]
         exact hnear.trans_lt (edist_lt_ofReal.2 (by simpa [he, dist_comm] using hi))
+
+/-- **A measurable partition of a totally bounded set into small cells.** In a pseudometric space
+whose open sets are measurable, a measurable totally bounded set `s` admits, for every `δ > 0`, a
+measurable map `q : X → Fin (n + 1)` that gives the complement of `s` the label `Fin.last n` and
+gives two points of `s` the same label only when they are at distance less than `δ`. -/
+theorem _root_.TotallyBounded.exists_measurable_dist_lt {X : Type u} [PseudoMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {s : Set X} (hs : TotallyBounded s)
+    (hsm : MeasurableSet s) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (n : ℕ) (q : X → Fin (n + 1)), Measurable q ∧ (∀ x, q x = Fin.last n ↔ x ∉ s) ∧
+      ∀ x ∈ s, ∀ y ∈ s, q x = q y → dist x y < δ := by
+  classical
+  have hs' : TotallyBounded (univ : Set s) := by
+    have :=
+      totallyBounded_preimage (isUniformEmbedding_subtype_val (p := (· ∈ s))).isUniformInducing hs
+    rwa [Subtype.coe_preimage_self] at this
+  obtain ⟨n, v, r, hr, hrv⟩ := TauCeti.exists_measurable_dist_lt s hs' (half_pos hδ)
+  refine ⟨n, fun x ↦ if hx : x ∈ s then (r ⟨x, hx⟩).castSucc else Fin.last n,
+    ((measurable_of_countable Fin.castSucc).comp hr).dite measurable_const hsm,
+    fun x ↦ ?_, fun x hx y hy hxy ↦ ?_⟩
+  · by_cases hx : x ∈ s <;> simp [hx, Fin.castSucc_ne_last]
+  · simp only [hx, hy, dite_true, Fin.castSucc_inj] at hxy
+    -- both points lie within `δ / 2` of the approximation point of their common label
+    have hx' := hrv ⟨x, hx⟩
+    have hy' := hrv ⟨y, hy⟩
+    rw [hxy] at hx'
+    rw [Subtype.dist_eq] at hx' hy'
+    linarith [dist_triangle_right x y (v (r ⟨y, hy⟩) : X)]
 
 end TauCeti

@@ -30,10 +30,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace SimpleGraph
 
 open scoped TensorProduct
-open PathAlgebra DoubledQuiver
+open TauCeti TauCeti.PathAlgebra TauCeti.DoubledQuiver
 
 universe u w z
 
@@ -75,7 +75,7 @@ theorem skewZigzagScalarExtension_tmul (a : l) (x : skewZigzagQuotient k G c) :
       a • skewZigzagBaseChange G (algebraMap k l) c x := by
   exact AlgHom.liftEquiv_tmul (coefficientAlgHom G c) a x
 
--- Use the path-algebra universal property, as in `PathAlgebra.baseChangeAlgHom`,
+-- Use the path-algebra universal property, as in `RingHom.pathAlgebraBaseChangeAlgHom`,
 -- with unit pure tensors as the assigned path values.
 private noncomputable def tensorPathAlgHom :
     pathAlgebra l (DoubledQuiver G) →ₐ[l] l ⊗[k] skewZigzagQuotient k G c := by
@@ -199,4 +199,4 @@ theorem skewZigzagScalarExtensionEquiv_symm_skewZigzagMk_ofPath
   rw [AlgEquiv.apply_symm_apply, skewZigzagScalarExtensionEquiv_tmul,
     skewZigzagBaseChange_skewZigzagMk_ofPath, one_smul]
 
-end TauCeti
+end SimpleGraph

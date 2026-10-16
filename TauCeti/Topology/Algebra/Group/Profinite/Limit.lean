@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.Topology.Algebra.ProperAction.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Profinite groups: the finite-quotient limit description
@@ -32,19 +34,20 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
 * The same identification for homomorphisms: a family of homomorphisms `H →* G ⧸ U` compatible
   along the quotient maps is induced by a unique homomorphism `H →* G`
   (`existsUnique_monoidHom_mk'_comp_eq`).
-* The same for subgroups: a family `H` of subgroups of the quotients `G ⧸ U` cuts out the closed
-  subgroup `limitSubgroup H` of `G` (`isClosed_limitSubgroup`), and when `H` is compatible along
-  the quotient maps and `G` is compact, its image in every `G ⧸ U` is exactly `H U`
-  (`map_mk'_limitSubgroup`). Conversely a closed subgroup is cut out by its own images
-  (`limitSubgroup_map_mk'`), so the two constructions are mutually inverse.
+* For subgroups, separate continuity of multiplication suffices: a family `H` of subgroups of
+  the quotients `G ⧸ U` cuts out the closed subgroup `limitSubgroup H` of `G`
+  (`isClosed_limitSubgroup`), and when `H` is compatible along the quotient maps and `G` is
+  compact, its image in every `G ⧸ U` is exactly `H U` (`map_mk'_limitSubgroup`). Conversely,
+  a closed subgroup of a profinite group is cut out by its own images
+  (`Subgroup.limitSubgroup_map_mk'`), so the two constructions are mutually inverse.
 * Sequential reconstruction along a sequence `N : ℕ → Subgroup G` of closed subgroups of a
   compact group with trivial intersection: a coset sequence `x k` has a unique common representative
   if every representative of `x (k + 1)` also represents `x k`
   (`existsUnique_forall_mk_eq_of_iInf_eq_bot`). For decreasing `N`, this is the inverse-limit
   description. When the `N k` are normal and decreasing,
   a compatible sequence of homomorphisms into the quotients `G ⧸ N k` comes from a unique
-  homomorphism into `G` (`existsUnique_monoidHom_mk'_comp_eq_of_iInf_eq_bot`); when they are
-  normal, a map into `G` is continuous as soon as its composites with the quotient maps are
+  homomorphism into `G` (`existsUnique_monoidHom_mk'_comp_eq_of_iInf_eq_bot`). A map into `G`
+  is continuous as soon as its composites with the coset quotient maps are
   (`continuous_iff_forall_continuous_mk_of_iInf_eq_bot`); and when they are open and decreasing
   they form a neighbourhood basis of `1` (`hasAntitoneBasis_nhds_one_of_iInf_eq_bot`). The lower
   `p`-series of a pro-`p` group is a decreasing sequence of closed normal subgroups with trivial
@@ -155,7 +158,7 @@ theorem existsUnique_monoidHom_mk'_comp_eq {H : Type*} [MulOneClass H]
     ∃! φ : H →* G, ∀ N : OpenNormalSubgroup G, (QuotientGroup.mk' N.toSubgroup).comp φ = x N := by
   -- For a fixed `a : H`, the classes `x N a` form a compatible family of cosets, so the limit
   -- description of `G` realizes them by a unique element `φ a`.
-  have hcompat : ∀ a : H, ∀ (U V : OpenNormalSubgroup G) (hle : (U : Subgroup G) ≤ V) (g : G),
+  have hcompat : ∀ a : H, ∀ (U V : OpenNormalSubgroup G) (_ : (U : Subgroup G) ≤ V) (g : G),
       QuotientGroup.mk' (U : Subgroup G) g = x U a →
         QuotientGroup.mk' (V : Subgroup G) g = x V a := by
     intro a U V hle g hg
@@ -208,9 +211,10 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
   {H : ∀ U : OpenNormalSubgroup G, Subgroup (G ⧸ U.toSubgroup)}
 
 /-- The subgroup of `G` cut out by a family `H` of subgroups of its quotients `G ⧸ U` by open
-normal subgroups: the elements whose class modulo every `U` lies in `H U`. It is closed
-(`isClosed_limitSubgroup`), and when `H` is compatible along the quotient maps and `G` is
-compact, its image in every `G ⧸ U` is `H U` (`map_mk'_limitSubgroup`). -/
+normal subgroups: the elements whose class modulo every `U` lies in `H U`. Under separate
+continuity of multiplication it is closed (`isClosed_limitSubgroup`), and when `H` is compatible
+along the quotient maps and `G` is compact, its image in every `G ⧸ U` is `H U`
+(`map_mk'_limitSubgroup`). -/
 def limitSubgroup (H : ∀ U : OpenNormalSubgroup G, Subgroup (G ⧸ U.toSubgroup)) : Subgroup G :=
   ⨅ U, (H U).comap (QuotientGroup.mk' U.toSubgroup)
 
@@ -221,7 +225,7 @@ theorem mem_limitSubgroup_iff {g : G} :
     g ∈ limitSubgroup H ↔ ∀ U : OpenNormalSubgroup G, (g : G ⧸ U.toSubgroup) ∈ H U :=
   Subgroup.mem_iInf
 
-variable [IsTopologicalGroup G]
+variable [SeparatelyContinuousMul G]
 
 /-- The subgroup cut out by a family of subgroups of the quotients by open normal subgroups is
 closed. -/
@@ -230,18 +234,23 @@ theorem isClosed_limitSubgroup (H : ∀ U : OpenNormalSubgroup G, Subgroup (G �
   rw [limitSubgroup, Subgroup.coe_iInf]
   exact isClosed_iInter fun U ↦ (isClosed_discrete _).preimage QuotientGroup.continuous_mk
 
+omit [SeparatelyContinuousMul G] in
 /-- A closed subgroup of a profinite group is cut out by the family of its images in the finite
 quotients. Together with `map_mk'_limitSubgroup` this identifies the closed subgroups of `G` with
 the compatible families of subgroups of the quotients `G ⧸ U`. -/
-theorem limitSubgroup_map_mk' [CompactSpace G] [TotallyDisconnectedSpace G] (P : Subgroup G)
+@[simp]
+theorem _root_.Subgroup.limitSubgroup_map_mk' [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G] (P : Subgroup G)
     (hP : IsClosed (P : Set G)) :
     limitSubgroup (fun U ↦ P.map (QuotientGroup.mk' U.toSubgroup)) = P := by
   rw [limitSubgroup]
   refine (iInf_congr fun U ↦ ?_).trans (P.eq_iInf_sup_openNormalSubgroup hP).symm
   rw [Subgroup.comap_map_eq, QuotientGroup.ker_mk']
 
-/-- A family of subgroups of the quotients of a compact group by its open normal subgroups that
-is compatible along the quotient maps is the family of images of the subgroup it cuts out. -/
+/-- In a compact group with separately continuous multiplication, a compatible family of
+subgroups of its quotients by open normal subgroups is the family of images of the subgroup it
+cuts out. -/
+@[simp]
 theorem map_mk'_limitSubgroup [CompactSpace G]
     (hH : ∀ ⦃U V : OpenNormalSubgroup G⦄ (hUV : U ≤ V),
       (H U).map (QuotientGroup.mapOfLE hUV) = H V)
@@ -301,9 +310,9 @@ sequence `N : ℕ → Subgroup G` of closed subgroups of a compact group `G` has
 a coset sequence `x k` has a unique common representative if every representative of `x (k + 1)`
 also represents `x k`: the coset fibers are nested. For decreasing `N`, this is the inverse-limit
 description. When the `N k` are normal and decreasing, a compatible sequence of
-homomorphisms into the quotients `G ⧸ N k` is induced by a unique homomorphism into `G`; and when
-they are normal, continuity of a map into `G` can be tested one quotient at a time. When the `N k`
-are open and decreasing, they are a neighbourhood basis of `1`. The lower `p`-series of a pro-`p`
+homomorphisms into the quotients `G ⧸ N k` is induced by a unique homomorphism into `G`; continuity
+of a map into `G` can be tested one coset quotient at a time. When the `N k` are open and
+decreasing, they are a neighbourhood basis of `1`. The lower `p`-series of a pro-`p`
 group is a decreasing sequence of closed normal subgroups with trivial intersection, and its terms
 are open when the group is topologically finitely generated. -/
 
@@ -384,14 +393,17 @@ theorem hasAntitoneBasis_nhds_one_of_iInf_eq_bot [CompactSpace G] (hanti : Antit
 
 omit [SeparatelyContinuousMul G] in
 /-- A map into a compact group `G` is continuous exactly when all of its composites with the
-quotient maps `G → G ⧸ N i` are, for any family of closed normal subgroups `N i` with trivial
-intersection: `G` embeds into the product of the Hausdorff quotients `G ⧸ N i`. -/
+coset quotient maps `G → G ⧸ N i` are, for any family of closed subgroups `N i` with trivial
+intersection: `G` embeds into the product of the Hausdorff coset spaces `G ⧸ N i`.
+Normality is not required. -/
 theorem continuous_iff_forall_continuous_mk_of_iInf_eq_bot [IsTopologicalGroup G] [CompactSpace G]
-    {ι : Type*} {N : ι → Subgroup G} [∀ i, (N i).Normal] (hclosed : ∀ i, IsClosed (N i : Set G))
+    {ι : Type*} {N : ι → Subgroup G} (hclosed : ∀ i, IsClosed (N i : Set G))
     (hN : ⨅ i, N i = ⊥) {X : Type*} [TopologicalSpace X] {f : X → G} :
     Continuous f ↔ ∀ i, Continuous fun x ↦ (f x : G ⧸ N i) := by
   refine ⟨fun hf i ↦ QuotientGroup.continuous_mk.comp hf, fun h ↦ ?_⟩
-  have := hclosed
+  have (i : ι) : T2Space (G ⧸ N i) := by
+    have : IsClosed (N i : Set G) := hclosed i
+    infer_instance
   have he : IsInducing fun g : G ↦ fun i ↦ (g : G ⧸ N i) :=
     ((continuous_pi fun i ↦ QuotientGroup.continuous_mk).isClosedEmbedding fun a b hab ↦
       eq_of_forall_mk_eq_of_iInf_eq_bot hN fun i ↦ congr_fun hab i).isInducing

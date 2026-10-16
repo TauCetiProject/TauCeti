@@ -15,10 +15,35 @@ def locGraphs : Html := {{
     </figure>
     <figure class="loc-figure">
       <img class="loc-graph" src="static/loc-roadmap.svg"
-           alt="Tau Ceti Roadmap: lines written by date"/>
-      <figcaption>"The human-owned roadmap repository, total lines by date."</figcaption>
+           alt="Roadmap specification lines over time, with the archived Completed roadmaps highlighted"/>
+      <figcaption>"All roadmap specifications, including " <code>"Completed/"</code> ". The highlighted portion is archived as complete; generated status and progress reports are excluded."</figcaption>
     </figure>
   </div>
+}}
+
+/-- Completion uses the existing coverage reports and human archival decisions. -/
+private def roadmapCompletionGraphs : Html := {{
+  <div class="loc-graphs">
+    <figure class="loc-figure">
+      <img class="loc-graph" src="static/roadmap-layers.svg"
+           alt="Total and completed roadmap layers and lanes over time, including unassessed layers"
+           loading="lazy"/>
+      <figcaption>"Each lane or layer counts once, including the constituent roadmaps of an umbrella. Partial and unassessed layers receive no completion credit; archived roadmaps count as complete."</figcaption>
+    </figure>
+  </div>
+}}
+
+/-- A responsive forecast and a separate disclosure for the calculation. -/
+private def roadmapExhaustion : Html := {{
+  <iframe class="roadmap-exhaustion" src="static/roadmap-exhaustion.html"
+          title="How long until we run out of roadmap work?" loading="lazy"></iframe>
+  <details class="pb-methods">
+    <summary>"How this is estimated"</summary>
+    <p>"We count layers not yet recorded complete. Partial and unassessed layers stay in that count; layers vary in difficulty, and reports can lag the work."</p>
+    <p>"We divide recorded layer completions by the added lines of Lean over the same history, then use the last seven complete days of library growth to estimate the current completion pace. The dates are observations from reports and archival decisions, which can recognize older work in a batch."</p>
+    <p>"The first scenario assumes no new roadmap work is added. The second subtracts the last seven days' net increase in layer count from the estimated completion pace. If new work keeps up with completion, the backlog would not shrink; without enough completion or code-growth history, we cannot estimate a duration."</p>
+    <p>"Neither scenario accounts for the difficulty of the remaining layers or future changes in throughput. Exact histories, inputs and estimates are available in " <a href="static/roadmap-completion.json">"roadmap-completion.json"</a> "."</p>
+  </details>
 }}
 
 /-- The per-roadmap chart: cumulative net lines of Lean, split by the roadmap each
@@ -111,17 +136,31 @@ private def roadmapContributorGraphs : Html := {{
 #doc (Page) "Statistics" =>
 
 How much mathematics has Tau Ceti formalized, and how fast is the roadmap that
-directs it growing? Each chart plots the total number of lines present at every
-commit, counted straight from the git history and rebuilt from scratch at each
-deploy, so the figures cannot drift.
+directs it growing? The volume charts count the lines present in git history through
+the last complete UTC day and are rebuilt at each deploy.
 
 :::blob locGraphs
 :::
 
-The vertical scales differ by an order of magnitude and on purpose: the library is
-measured in tens of thousands of lines of Lean, the roadmap in thousands of lines of
-prose and target statements. The library figure counts only the mathematics — the
-files under `TauCeti/` — not the website or tooling.
+The library figure counts the mathematics under `TauCeti/`, plus `TauCeti.lean`.
+Roadmap size counts Markdown and Lean files, including target statements and reference
+notes, in both active and archived roadmap directories. Moving a roadmap to `Completed/`
+keeps it in the total and moves its size into the completed portion. Machine-generated reports are excluded,
+so writing a progress report does not look like authoring more work.
+
+:::blob roadmapCompletionGraphs
+:::
+
+The second chart measures the fraction of named layers and lanes that are complete.
+It uses generated coverage reports. Older reports without recorded layer assessments
+appear as unassessed here, even if the Progress page has a manual reading. A roadmap archived by its maintainers
+counts as complete even if its last report predates that decision. The shaded unassessed
+portion remains in the total. Layer sizes differ, so this is a fraction of goals, rather
+than a fraction of effort. Reports may lag the code, and a changed specification may need
+a new assessment; the [Progress](progress) page shows those individual cases.
+
+:::blob roadmapExhaustion
+:::
 
 Which roadmap is all that Lean serving? Every pull request is labelled with the
 roadmap it advances, so we can split the library by roadmap. The chart below stacks

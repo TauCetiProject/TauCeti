@@ -72,6 +72,15 @@ theorem mapOfLE_mapQuotient {M : Subgroup G} [N.Normal] [M.Normal] (hM : IsTopCh
   induction q using QuotientGroup.induction_on with
   | H x => simp
 
+/-- The coordinate of a continuous automorphism on a characteristic quotient `G ⧸ N` determines its
+coordinate on every characteristic quotient `G ⧸ M` with `N ≤ M`. -/
+theorem mapQuotient_eq_mapQuotient_of_le {M : Subgroup G} [N.Normal] [M.Normal]
+    (hM : IsTopCharacteristic G M) (hle : N ≤ M) {φ ψ : ContinuousAut G}
+    (h : mapQuotient hN φ = mapQuotient hN ψ) : mapQuotient hM φ = mapQuotient hM ψ := by
+  rw [mapQuotient_eq_iff] at h ⊢
+  intro x
+  simpa using congrArg (QuotientGroup.mapOfLE hle) (h x)
+
 /-- The quotient coordinate carries conjugation by `g` to conjugation by its class. -/
 @[simp]
 theorem mapQuotient_conj [SeparatelyContinuousMul G] (g : G) :

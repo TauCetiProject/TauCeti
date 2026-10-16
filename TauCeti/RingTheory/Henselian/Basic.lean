@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Henselian rings
@@ -21,6 +22,12 @@ unavailable for a complete local ring such as the integers of a complete discret
 
 The step is short: the two differ only in their simplicity hypothesis, `IsUnit (f' a₀)` against
 `IsUnit (Ideal.Quotient.mk 𝔪 (f' a₀))`, and over a local ring a unit maps to a unit.
+
+`HenselianLocalRing` lifts simple roots of monic polynomials only, but the monicity is not needed.
+If `f(a₀) ∈ 𝔪` and `f'(a₀)` is a unit, write `f(a₀ + X) = c + u X + ⋯` with `c ∈ 𝔪` and `u` a unit,
+of degree `n`. The substitution `X = c / U` turns it into `U⁻ⁿ c m(U)` for the monic polynomial
+`m(U) = Uⁿ + ∑ fᵢ₊₁ cⁱ Uⁿ⁻¹⁻ⁱ`, whose reduction `Uⁿ⁻¹ (U + u)` has the simple root `-u`. A lift `U`
+of that root is a unit, and `a₀ + c / U` is the root of `f`.
 
 The second half of the file extracts roots. Let `R` be a ring that is Henselian at an ideal `J`,
 and let `n` be a natural number that is invertible in `R`. Then every element `w` congruent to `1`
@@ -41,6 +48,10 @@ square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ 
   of its maximal ideal is a Henselian local ring.
 * `TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq`: a simple power root in the
   residue field lifts to a root with the same residue.
+* `TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal`: Hensel's lemma for a polynomial
+  that need not be monic.
+* `TauCeti.HenselianLocalRing.exists_conic_eq`: a smooth conic perturbed by a cubic in the
+  maximal ideal has a solution over the ring whenever its residue equation is solvable.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
 
@@ -99,6 +110,128 @@ theorem exists_pow_eq_of_residue_pow_eq {R : Type*} [CommRing R] [HenselianLocal
     (monic_X_pow_sub_C u hn0) x₀ heval hder
   refine ⟨x, by simpa [sub_eq_zero] using hx, ?_⟩
   exact (Ideal.Quotient.eq).mpr hres
+
+/-- The substitution `X = c / U` behind Hensel's lemma without monicity: if `g` has degree `k + 1`
+and constant coefficient `c`, and `V * U = 1`, then
+`g(c V) U^(k+1) = c (U^(k+1) + ∑ᵢ gᵢ₊₁ cⁱ U^(k−i))`. -/
+private theorem eval_mul_mul_pow_eq {R : Type*} [CommRing R] (g : R[X]) {k : ℕ}
+    (hk : g.natDegree = k + 1) {U V : R} (hVU : V * U = 1) :
+    g.eval (g.coeff 0 * V) * U ^ (k + 1) = g.coeff 0 * (X ^ (k + 1) +
+      ∑ i ∈ Finset.range (k + 1), C (g.coeff (i + 1) * g.coeff 0 ^ i) * X ^ (k - i)).eval U := by
+  rw [eval_eq_sum_range, hk, Finset.sum_range_succ']
+  simp only [eval_add, eval_pow, eval_X, eval_finsetSum, eval_mul, eval_C, pow_zero, mul_one,
+    add_mul, Finset.sum_mul, mul_add, Finset.mul_sum]
+  rw [add_comm]
+  congr 1
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hik : U ^ (k + 1) = U ^ (k - i) * U ^ (i + 1) := by
+    rw [← pow_add]
+    congr 1
+    have := Finset.mem_range.1 hi
+    omega
+  rw [hik]
+  calc g.coeff (i + 1) * (g.coeff 0 * V) ^ (i + 1) * (U ^ (k - i) * U ^ (i + 1))
+      = g.coeff 0 * (g.coeff (i + 1) * g.coeff 0 ^ i * U ^ (k - i)) * (V * U) ^ (i + 1) := by ring
+    _ = g.coeff 0 * (g.coeff (i + 1) * g.coeff 0 ^ i * U ^ (k - i)) := by
+      rw [hVU, one_pow, mul_one]
+
+/-- Hensel's lemma without monicity at the approximate root `0`: if the constant coefficient of
+`g` lies in the maximal ideal and its linear coefficient is a unit, then `g` has a root in the
+maximal ideal. -/
+private theorem exists_mem_maximalIdeal_eval_eq_zero {R : Type*} [CommRing R]
+    [HenselianLocalRing R] (g : R[X]) (hc𝔪 : g.coeff 0 ∈ maximalIdeal R)
+    (hu₁ : IsUnit (g.coeff 1)) : ∃ b ∈ maximalIdeal R, g.eval b = 0 := by
+  set c := g.coeff 0 with hc
+  set u := g.coeff 1 with hu
+  -- `g` is not constant, so its degree is `k + 1` for some `k`.
+  obtain ⟨k, hk⟩ : ∃ k, g.natDegree = k + 1 := by
+    refine Nat.exists_eq_succ_of_ne_zero fun h0 ↦ not_isUnit_zero (M₀ := R) ?_
+    rwa [hu, coeff_eq_zero_of_natDegree_lt (by omega)] at hu₁
+  -- Substituting `X = c / U` gives `U ^ (k + 1) * g (c / U) = c * m U` for the monic `m` below.
+  set m : R[X] :=
+    X ^ (k + 1) + ∑ i ∈ Finset.range (k + 1), C (g.coeff (i + 1) * c ^ i) * X ^ (k - i) with hm
+  have hmonic : m.Monic := by
+    refine monic_X_pow_add ((degree_sum_le _ _).trans_lt ?_)
+    refine (Finset.sup_lt_iff (WithBot.bot_lt_coe _)).2 fun i _ ↦ ?_
+    exact (degree_C_mul_X_pow_le _ _).trans_lt (by exact_mod_cast (by omega : k - i < k + 1))
+  -- The reduction of `m` is `X ^ k * (X + u)`, with the simple root `-u`.
+  have hmap : m.map (residue R) = X ^ k * (X + C (residue R u)) := by
+    have hc0 : residue R c = 0 := (residue_eq_zero_iff c).2 hc𝔪
+    simp [hm, Polynomial.map_sum, Finset.sum_range_succ', pow_succ, hc0, ← hu]
+    ring
+  have hres (p : R[X]) (x : R) : residue R (p.eval x) = (p.map (residue R)).eval (residue R x) := by
+    rw [eval_map, eval₂_at_apply]
+  have hu0 : residue R u ≠ 0 := (residue_ne_zero_iff_isUnit u).2 hu₁
+  obtain ⟨U, hU, hUu⟩ := HenselianLocalRing.is_henselian m hmonic (-u)
+    (by
+      rw [← residue_eq_zero_iff, hres, hmap]
+      simp)
+    (by
+      rw [← residue_ne_zero_iff_isUnit, hres, ← derivative_map, hmap]
+      simpa [derivative_mul, derivative_X_pow] using pow_ne_zero k (neg_ne_zero.2 hu0))
+  have hUunit : IsUnit U := by
+    have hUres : residue R U = residue R (-u) := by
+      rw [← sub_eq_zero, ← map_sub]
+      exact (residue_eq_zero_iff _).2 hUu
+    rw [← residue_ne_zero_iff_isUnit, hUres, map_neg]
+    exact neg_ne_zero.2 hu0
+  set V := hUunit.unit⁻¹
+  have hVU : (V : R) * U = 1 := hUunit.val_inv_mul
+  have hkey : g.eval (c * V) * U ^ (k + 1) = c * m.eval U := eval_mul_mul_pow_eq g hk hVU
+  refine ⟨c * V, (maximalIdeal R).mul_mem_right _ hc𝔪, ?_⟩
+  rw [hU.eq_zero, mul_zero] at hkey
+  exact ((hUunit.pow (k + 1)).mul_left_eq_zero).1 hkey
+
+/-- **Hensel's lemma without monicity.** Over a Henselian local ring, a simple root of a polynomial
+modulo the maximal ideal lifts to a root, whether or not the polynomial is monic. -/
+theorem exists_isRoot_sub_mem_maximalIdeal {R : Type*} [CommRing R] [HenselianLocalRing R]
+    (f : R[X]) {a₀ : R} (h₁ : f.eval a₀ ∈ maximalIdeal R) (h₂ : IsUnit (f.derivative.eval a₀)) :
+    ∃ a : R, f.IsRoot a ∧ a - a₀ ∈ maximalIdeal R := by
+  -- translate the approximate root to `0`
+  set g := f.comp (X + C a₀) with hg
+  have hc : g.coeff 0 ∈ maximalIdeal R := by simpa [hg, coeff_zero_eq_eval_zero] using h₁
+  have hu : IsUnit (g.coeff 1) := by
+    have h : (derivative g).eval 0 = f.derivative.eval a₀ := by simp [hg, derivative_comp]
+    rw [← coeff_zero_eq_eval_zero, coeff_derivative, zero_add, Nat.cast_zero, zero_add,
+      mul_one] at h
+    rwa [h]
+  obtain ⟨b, hb, hgb⟩ := exists_mem_maximalIdeal_eval_eq_zero g hc hu
+  refine ⟨b + a₀, by simpa [IsRoot, hg, eval_comp] using hgb, by rwa [add_sub_cancel_right]⟩
+
+/-- Over a Henselian local ring, suppose `a₁² + 4 a₂` and `A` are units and `z ∈ 𝔪`.
+If `Y² + a₁ X Y − a₂ X² − z X³ = A` is solvable modulo `𝔪`, it has a solution in the ring. -/
+theorem exists_conic_eq {R : Type*} [CommRing R] [HenselianLocalRing R]
+    {a₁ a₂ z A X₀ Y₀ : R} (hb₂ : IsUnit (a₁ ^ 2 + 4 * a₂)) (hz : z ∈ maximalIdeal R)
+    (hA : IsUnit A) (h₀ : Y₀ ^ 2 + a₁ * X₀ * Y₀ - a₂ * X₀ ^ 2 - z * X₀ ^ 3 - A ∈ maximalIdeal R) :
+    ∃ X Y : R, Y ^ 2 + a₁ * X * Y - a₂ * X ^ 2 - z * X ^ 3 - A = 0 := by
+  by_cases hY : IsUnit (2 * Y₀ + a₁ * X₀)
+  · -- Hensel's lemma in `Y`
+    obtain ⟨Y, hY', -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+      (X ^ 2 + C (a₁ * X₀) * X - C (a₂ * X₀ ^ 2 + z * X₀ ^ 3 + A)) (a₀ := Y₀)
+      (by convert h₀ using 1; simp; ring) (by convert hY using 1; simp [derivative_pow])
+    exact ⟨X₀, Y, by linear_combination (by simpa using hY'.eq_zero :
+      Y ^ 2 + a₁ * X₀ * Y - (a₂ * X₀ ^ 2 + z * X₀ ^ 3 + A) = 0)⟩
+  · -- otherwise `∂/∂X` is a unit, since both partials in `𝔪` would force `X₀, Y₀, A ∈ 𝔪`
+    have hX : IsUnit (-3 * z * X₀ ^ 2 - 2 * a₂ * X₀ + a₁ * Y₀) := by
+      by_contra hX
+      rw [← residue_ne_zero_iff_isUnit] at hb₂ hA
+      rw [← residue_ne_zero_iff_isUnit, not_not] at hY hX
+      have hz0 := (residue_eq_zero_iff _).2 hz
+      have h00 := (residue_eq_zero_iff _).2 h₀
+      simp only [map_add, map_sub, map_mul, map_pow, map_neg, map_ofNat] at hb₂ hY hX h00
+      have hX₀ : residue R X₀ = 0 := by
+        refine (mul_eq_zero.1 ?_).resolve_left hb₂
+        linear_combination residue R a₁ * hY - 2 * hX - 6 * residue R X₀ ^ 2 * hz0
+      have hY₀ : residue R Y₀ = 0 := by
+        refine (mul_eq_zero.1 ?_).resolve_left hb₂
+        linear_combination 2 * residue R a₂ * hY + residue R a₁ * hX +
+          3 * residue R a₁ * residue R X₀ ^ 2 * hz0
+      exact hA (by rw [hX₀, hY₀, hz0] at h00; linear_combination -h00)
+    obtain ⟨X', hX', -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+      (-C z * X ^ 3 - C a₂ * X ^ 2 + C (a₁ * Y₀) * X + C (Y₀ ^ 2 - A)) (a₀ := X₀)
+      (by convert h₀ using 1; simp; ring) (by convert hX using 1; simp [derivative_pow]; ring)
+    exact ⟨X', Y₀, by linear_combination (by simpa using hX'.eq_zero :
+      -(z * X' ^ 3) - a₂ * X' ^ 2 + a₁ * Y₀ * X' + (Y₀ ^ 2 - A) = 0)⟩
 
 end HenselianLocalRing
 

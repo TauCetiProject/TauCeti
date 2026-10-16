@@ -89,14 +89,17 @@ private theorem groundOfOpenNormalHom_smul (V : OpenNormalSubgroup (AbsoluteGalo
 
 /-- On a layer `V ◁ G_K`, inflation to the ground subgroup `⊤` is the restriction to `⊤` of the
 class on `G_K` obtained by pulling the inflated cocycle back along `G_K ≃ ⊤`. -/
-private theorem layerInfl_ofOpenNormal_H2π (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+private theorem explicitInfl2_ofOpenNormal_H2π (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
     (c : cocycles₂ ((NormalLayer.ofOpenNormal V).rep (unitsFormation K))) :
-    layerInfl (NormalLayer.ofOpenNormal V) (H2π _ c) =
+    (NormalLayer.ofOpenNormal V).explicitInfl2 (unitsCoeffEquivUnitsFormation K)
+        (unitsCoeffEquivUnitsFormation_smul K) (H2π _ c) =
       explicitRes2 (AbsoluteGaloisGroup K) (UnitsCoeff K) _
         (cocyclesMap2 _ _ _ _ (groundOfOpenNormalHom V) (AddMonoidHom.id _) continuous_id
-          (groundOfOpenNormalHom_smul V) (layerCocycle (NormalLayer.ofOpenNormal V) c) :
+          (groundOfOpenNormalHom_smul V)
+          ((NormalLayer.ofOpenNormal V).inflCocycle2 (unitsCoeffEquivUnitsFormation K)
+            (unitsCoeffEquivUnitsFormation_smul K) c) :
         H2 _ _) := by
-  rw [layerInfl_H2π, explicitRes2_mk]
+  rw [NormalLayer.explicitInfl2_H2π, explicitRes2_mk]
   refine congrArg _ (Subtype.ext (funext fun p => Eq.symm ?_))
   rw [cocyclesMap2_apply, cocyclesMap2_apply]
   -- `groundOfOpenNormalHom V u = u` for `u ∈ ⊤`, by definition and subtype eta.
@@ -138,14 +141,11 @@ theorem localClassFormation_inv (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
   | h c =>
     have hindex : (NormalLayer.ofOpenNormal V).ground.toSubgroup.index = 1 := by
       rw [NormalLayer.ground_ofOpenNormal, OpenSubgroup.toSubgroup_top, Subgroup.index_top]
-    rw [localClassFormation_inv_apply, layerInv_apply, layerInfl_ofOpenNormal_H2π,
+    rw [localClassFormation_inv_apply, layerInv_apply, explicitInfl2_ofOpenNormal_H2π,
       subgroupInvMap_explicitRes2]
     refine (congrArg (· • _) hindex).trans ((one_smul _ _).trans
       (congrArg (invMap K) (brInfl_H2π V c _ fun g h => ?_).symm))
-    rw [cocyclesMap2_apply, AddMonoidHom.id_apply, layerCocycle_apply]
-    exact congrArg (fun q => (unitsCoeffEquivUnitsFormation K).symm
-      ((c q : (unitsFormation K).level (NormalLayer.ofOpenNormal V).top) :
-        (unitsFormation K).toRep.V))
-      (Prod.ext (coe_groundOfOpenNormalHom V g) (coe_groundOfOpenNormalHom V h))
+    rw [cocyclesMap2_apply, AddMonoidHom.id_apply, NormalLayer.inflCocycle2_apply]
+    simp only [coe_groundOfOpenNormalHom]
 
 end TauCeti.ClassFieldTheory

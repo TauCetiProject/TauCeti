@@ -186,7 +186,6 @@ noncomputable def arrowExtensionHom (c c' : HomArrow M N) (h : HomVertex M N)
     simp only [arrowExtension_map_toPath]
     apply Prod.ext
     · rw [map_add]
-      have hc := (sub_eq_sub_iff_add_eq_add).mp hx
       grind only
     · rfl)
 

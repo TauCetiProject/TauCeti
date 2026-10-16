@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import Mathlib.Analysis.Convex.Segment
-import TauCeti.Analysis.Contour.Winding.UnboundedComponent
-import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
+import TauCeti.Analysis.Contour.AbsolutelyContinuous
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Topology.Order.Compact
 
@@ -21,13 +21,11 @@ Two closed curves that stay closer to each other than the first one stays to `w`
 winding number about `w`. This is the "dog on a leash" principle: the leash from `γ₀ t` to `γ₁ t`
 is too short to reach `w`, so the two walks encircle `w` the same number of times.
 
-The proof compares the two curves through the quotient `σ t = (γ₁ t - w) / (γ₀ t - w)`. The
-hypothesis says exactly that `‖σ t - 1‖ < 1`, so `σ` runs inside the open right half-plane; its own
-winding number about `0` therefore vanishes, because the closed left half-plane is an unbounded
-connected subset of the complement of its image. Since the index integrands satisfy
-`σ' / σ = γ₁' / (γ₁ - w) - γ₀' / (γ₀ - w)` pointwise, that vanishing is the asserted equality.
+Continuous curves with integrable derivatives and countably many differentiability exceptions
+are absolutely continuous. Their proximity invariance follows from the absolutely continuous
+winding-number theorem.
 
-The Layer 0 item this serves is homotopy invariance of the winding number off the curve.
+The application is homotopy invariance of the winding number off the curve.
 `Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance
 along the straight-line homotopy `s ↦ (1 - s) • γ₀ + s • γ₁` from the purely geometric hypothesis
 that the segment `[γ₀ t, γ₁ t]` misses `w` for every parameter `t`: the intermediate curves are
@@ -49,8 +47,8 @@ estimate lets finitely many of them be chained together by the leash lemma.
 ## Provenance
 
 The comparison-quotient argument is the standard proof of the "dog on a leash" lemma (equivalently,
-the homotopy form of Rouché's theorem); see the references in the Contour Integration roadmap,
-e.g. L. Ahlfors, *Complex Analysis*, Ch. 4. No formal source is vendored.
+the homotopy form of Rouché's theorem); see L. Ahlfors, *Complex Analysis*, Ch. 4.
+No formal source is vendored.
 -/
 
 public section
@@ -62,160 +60,6 @@ open Bornology MeasureTheory Set
 namespace TauCeti.Contour
 
 variable {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
-
-/-- The comparison quotient `t ↦ (γ₁ t - w) / (γ₀ t - w)` of two curves relative to the point `w`.
-The whole proximity argument is the observation that the leash hypothesis confines this quotient to
-the disc of radius `1` about `1`. -/
-private def compRatio (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) : ℝ → ℂ := fun t => (γ₁ t - w) / (γ₀ t - w)
-
-private theorem compRatio_apply (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) (t : ℝ) :
-    compRatio γ₀ γ₁ w t = (γ₁ t - w) / (γ₀ t - w) := rfl
-
-/-- Under the leash hypothesis at `t`, the base curve misses `w` there. -/
-private theorem ne_of_dist_lt_dist {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    γ₀ t ≠ w := fun heq => absurd ((dist_eq_zero.mpr heq) ▸ h) (by simp [dist_nonneg])
-
-/-- The leash hypothesis says exactly that the comparison quotient stays within distance `1`
-of `1`. -/
-private theorem dist_compRatio_one {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    dist (compRatio γ₀ γ₁ w t) 1 < 1 := by
-  have hne : γ₀ t - w ≠ 0 := sub_ne_zero.mpr (ne_of_dist_lt_dist h)
-  have hsub : compRatio γ₀ γ₁ w t - 1 = (γ₁ t - γ₀ t) / (γ₀ t - w) := by
-    rw [compRatio_apply]
-    field_simp
-    ring
-  rw [dist_eq_norm, hsub, norm_div, div_lt_one (by positivity)]
-  simpa [dist_eq_norm] using h
-
-/-- The comparison quotient has positive real part: it lies in the disc of radius `1` about `1`,
-which is contained in the open right half-plane. -/
-private theorem re_compRatio_pos {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    0 < (compRatio γ₀ γ₁ w t).re := by
-  have hd := dist_compRatio_one h
-  rw [dist_eq_norm] at hd
-  have hre : (1 - compRatio γ₀ γ₁ w t).re ≤ ‖1 - compRatio γ₀ γ₁ w t‖ :=
-    Complex.re_le_norm _
-  rw [norm_sub_rev] at hre
-  simp only [Complex.sub_re, Complex.one_re] at hre
-  linarith
-
-/-- Under the leash hypothesis at `t`, the comparison curve also misses `w` there: otherwise the
-quotient would be `0`, contradicting the positivity of its real part. -/
-private theorem ne_of_dist_lt_dist' {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    γ₁ t ≠ w := by
-  intro heq
-  have hzero : compRatio γ₀ γ₁ w t = 0 := by rw [compRatio_apply, heq, sub_self, zero_div]
-  simpa [hzero] using re_compRatio_pos h
-
-/-- **A set contained in the open right half-plane has `0` in an unbounded component of its
-complement**: the closed left half-plane is convex, hence connected, contains `0`, is unbounded,
-and misses the set. -/
-private theorem not_isBounded_connectedComponentIn_compl {S : Set ℂ} (hS : ∀ z ∈ S, 0 < z.re) :
-    ¬IsBounded (connectedComponentIn Sᶜ 0) := by
-  have hconv : Convex ℝ {z : ℂ | z.re ≤ 0} := (convex_Iic (0 : ℝ)).linear_preimage Complex.reLm
-  have hLS : {z : ℂ | z.re ≤ 0} ⊆ Sᶜ := fun z hz hzS => absurd (hS z hzS) (not_lt.mpr hz)
-  have h0 : (0 : ℂ) ∈ {z : ℂ | z.re ≤ 0} := by simp
-  have hsub : {z : ℂ | z.re ≤ 0} ⊆ connectedComponentIn Sᶜ 0 :=
-    hconv.isPreconnected.subset_connectedComponentIn h0 hLS
-  intro hb
-  obtain ⟨r, hr⟩ := isBounded_iff_forall_norm_le.mp hb
-  have hr0 : 0 ≤ r := by simpa using hr 0 (hsub h0)
-  have hmem : ((-(r + 1) : ℝ) : ℂ) ∈ {z : ℂ | z.re ≤ 0} := by
-    simp only [Set.mem_ofPred_eq, Complex.ofReal_re]
-    linarith
-  have hle := hr _ (hsub hmem)
-  rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonpos (by linarith), neg_neg] at hle
-  linarith
-
-/-- Core comparison-quotient form of proximity invariance. The raw curves are regular enough to
-integrate, stay within leash distance, and have a closed comparison quotient. The public closed
-curve and common-endpoint forms below supply the last hypothesis.
-
-The comparison quotient `σ = (γ₁ - w) / (γ₀ - w)` is then a closed curve inside the open right
-half-plane, so `0` lies in an unbounded component of the complement of its image and
-`n_0(σ) = 0`; pointwise `σ' / σ = γ₁' / (γ₁ - w) - γ₀' / (γ₀ - w)`, so `n_0(σ)` is the difference
-of the two winding numbers. -/
-private theorem windingNumber_eq_of_dist_lt_dist_aux {P : Set ℝ} (hP : P.Countable)
-    (hσclosed : compRatio γ₀ γ₁ w a = compRatio γ₀ γ₁ w b)
-    (h₀cont : ContinuousOn γ₀ (uIcc a b)) (h₁cont : ContinuousOn γ₁ (uIcc a b))
-    (h₀diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ₀ t)
-    (h₁diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ₁ t)
-    (h₀int : IntervalIntegrable (fun t => deriv γ₀ t) volume a b)
-    (h₁int : IntervalIntegrable (fun t => deriv γ₁ t) volume a b)
-    (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
-  have hIoo : Ioo (min a b) (max a b) ⊆ uIcc a b := by
-    rw [← Icc_min_max]; exact Ioo_subset_Icc_self
-  -- Pointwise consequences of the leash hypothesis.
-  have h₀ne : ∀ t ∈ uIcc a b, γ₀ t - w ≠ 0 := fun t ht =>
-    sub_ne_zero.mpr (ne_of_dist_lt_dist (hlt t ht))
-  have h₁ne : ∀ t ∈ uIcc a b, γ₁ t - w ≠ 0 := fun t ht =>
-    sub_ne_zero.mpr (ne_of_dist_lt_dist' (hlt t ht))
-  have hσne : ∀ t ∈ uIcc a b, compRatio γ₀ γ₁ w t ≠ 0 := fun t ht hzero => by
-    simpa [hzero] using re_compRatio_pos (hlt t ht)
-  -- Regularity of the comparison quotient.
-  have hσcont : ContinuousOn (compRatio γ₀ γ₁ w) (uIcc a b) :=
-    (h₁cont.sub continuousOn_const).div (h₀cont.sub continuousOn_const) h₀ne
-  have hσhas : ∀ t ∈ Ioo (min a b) (max a b) \ P, HasDerivAt (compRatio γ₀ γ₁ w)
-      ((deriv γ₁ t * (γ₀ t - w) - (γ₁ t - w) * deriv γ₀ t) / (γ₀ t - w) ^ 2) t := by
-    intro t ht
-    have hd₀ : HasDerivAt (fun x => γ₀ x - w) (deriv γ₀ t) t :=
-      (h₀diff t ht).hasDerivAt.sub_const w
-    have hd₁ : HasDerivAt (fun x => γ₁ x - w) (deriv γ₁ t) t :=
-      (h₁diff t ht).hasDerivAt.sub_const w
-    exact HasDerivAt.div hd₁ hd₀ (h₀ne t (hIoo ht.1))
-  have hσdiff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ (compRatio γ₀ γ₁ w) t :=
-    fun t ht => (hσhas t ht).differentiableAt
-  -- Almost every parameter of `Set.uIoc a b` is an interior non-exceptional parameter.
-  have huIoc : Set.uIoc a b = Ioc (min a b) (max a b) := rfl
-  have hae : ∀ᵐ t ∂volume, t ∈ Set.uIoc a b → t ∈ Ioo (min a b) (max a b) \ P := by
-    filter_upwards [hP.ae_notMem volume,
-      (Set.finite_singleton (max a b)).countable.ae_notMem volume] with t htP htmax htI
-    rw [huIoc] at htI
-    exact ⟨⟨htI.1, lt_of_le_of_ne htI.2 (by simpa using htmax)⟩, htP⟩
-  have hae' : ∀ᵐ t ∂volume.restrict (Set.uIoc a b), t ∈ Ioo (min a b) (max a b) \ P :=
-    (ae_restrict_iff' measurableSet_uIoc).2 hae
-  -- Interval-integrability of `deriv σ`, from the two integrable derivatives and bounded factors.
-  have hfac₁ : ContinuousOn (fun t => (γ₀ t - w)⁻¹) (uIcc a b) :=
-    (h₀cont.sub continuousOn_const).inv₀ h₀ne
-  have hfac₂ : ContinuousOn (fun t => (γ₁ t - w) * ((γ₀ t - w) ^ 2)⁻¹) (uIcc a b) :=
-    (h₁cont.sub continuousOn_const).mul
-      (((h₀cont.sub continuousOn_const).pow 2).inv₀ fun t ht => pow_ne_zero 2 (h₀ne t ht))
-  have hσint : IntervalIntegrable (fun t => deriv (compRatio γ₀ γ₁ w) t) volume a b := by
-    refine ((h₁int.continuousOn_mul hfac₁).sub (h₀int.continuousOn_mul hfac₂)).congr_ae ?_
-    filter_upwards [hae'] with t ht
-    have hne := h₀ne t (hIoo ht.1)
-    rw [(hσhas t ht).deriv]
-    field_simp
-  -- The index integrand of `σ` about `0` is the difference of the two index integrands.
-  have hindex : ∀ᵐ t ∂volume, t ∈ Set.uIoc a b →
-      (compRatio γ₀ γ₁ w t - 0)⁻¹ * deriv (compRatio γ₀ γ₁ w) t =
-        (γ₁ t - w)⁻¹ * deriv γ₁ t - (γ₀ t - w)⁻¹ * deriv γ₀ t := by
-    filter_upwards [hae] with t hmem htI
-    have ht := hmem htI
-    have hne₀ := h₀ne t (hIoo ht.1)
-    have hne₁ := h₁ne t (hIoo ht.1)
-    rw [(hσhas t ht).deriv, compRatio_apply, sub_zero]
-    field_simp
-  -- The winding number of `σ` about `0` vanishes, its image lying in the right half-plane.
-  have hσzero : windingNumber (compRatio γ₀ γ₁ w) a b 0 = 0 := by
-    refine windingNumber_eq_zero_of_unbounded_component hσclosed hP hσcont hσdiff hσint
-      (not_isBounded_connectedComponentIn_compl ?_)
-    rintro z ⟨t, ht, rfl⟩
-    exact re_compRatio_pos (hlt t ht)
-  -- Read the vanishing as the difference of the two winding numbers.
-  have hint₀ := intervalIntegrable_inv_sub_mul_deriv h₀cont
-    (fun t ht => sub_ne_zero.mp (h₀ne t ht)) h₀int
-  have hint₁ := intervalIntegrable_inv_sub_mul_deriv h₁cont
-    (fun t ht => sub_ne_zero.mp (h₁ne t ht)) h₁int
-  have hintσ := intervalIntegrable_inv_sub_mul_deriv hσcont hσne hσint
-  rw [windingNumber_eq_integral_of_avoidance hσcont hσne hintσ,
-    intervalIntegral.integral_congr_ae hindex, intervalIntegral.integral_sub hint₁ hint₀,
-    mul_sub, ← windingNumber_eq_integral_of_avoidance h₁cont
-      (fun t ht => sub_ne_zero.mp (h₁ne t ht)) hint₁,
-    ← windingNumber_eq_integral_of_avoidance h₀cont
-      (fun t ht => sub_ne_zero.mp (h₀ne t ht)) hint₀] at hσzero
-  exact sub_eq_zero.mp hσzero
 
 /-- **Proximity invariance of the winding number** (the "dog on a leash" lemma). Let `γ₀` and `γ₁`
 be closed curves on the oriented interval with endpoints `a`, `b`, each continuous on
@@ -231,9 +75,10 @@ theorem windingNumber_eq_of_dist_lt_dist {P : Set ℝ} (hP : P.Countable)
     (h₁int : IntervalIntegrable (fun t => deriv γ₁ t) volume a b)
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
-  apply windingNumber_eq_of_dist_lt_dist_aux hP
-    (by rw [compRatio_apply, compRatio_apply, h₀closed, h₁closed])
-    h₀cont h₁cont h₀diff h₁diff h₀int h₁int hlt
+  exact (h₀cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (h₀diff t ht).hasDerivAt) h₀int).windingNumber_eq_of_dist_lt_dist
+    (h₁cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+      (fun t ht ↦ (h₁diff t ht).hasDerivAt) h₁int) h₀closed h₁closed hlt
 
 /-- **Proximity invariance for closed piecewise-`C¹` curves.** If two closed piecewise-`C¹` curves
 stay closer to each other than the first stays to `w`, they have the same winding number about `w`.
@@ -243,13 +88,8 @@ theorem IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist (h₀ : IsPiecewiseC1On
     (h₁ : IsPiecewiseC1On γ₁ a b) (h₀closed : γ₀ a = γ₀ b) (h₁closed : γ₁ a = γ₁ b)
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
-  obtain ⟨P₀, hP₀, hdiff₀⟩ := h₀.exists_countable_differentiableAt
-  obtain ⟨P₁, hP₁, hdiff₁⟩ := h₁.exists_countable_differentiableAt
-  exact TauCeti.Contour.windingNumber_eq_of_dist_lt_dist (hP₀.union hP₁) h₀closed h₁closed
-    h₀.continuousOn h₁.continuousOn
-    (fun t ht => hdiff₀ t ⟨ht.1, fun hmem => ht.2 (Or.inl hmem)⟩)
-    (fun t ht => hdiff₁ t ⟨ht.1, fun hmem => ht.2 (Or.inr hmem)⟩)
-    h₀.intervalIntegrable_deriv h₁.intervalIntegrable_deriv hlt
+  exact h₀.absolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
+    h₁.absolutelyContinuousOnInterval h₀closed h₁closed hlt
 
 /-- **Proximity invariance for paths with common endpoints.** If two piecewise-`C¹` paths agree at
 both endpoints and stay closer to each other than the first stays to `w`, then they have the same
@@ -260,15 +100,8 @@ theorem IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
     (ha : γ₀ a = γ₁ a) (hb : γ₀ b = γ₁ b)
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
-  obtain ⟨P₀, hP₀, hdiff₀⟩ := h₀.exists_countable_differentiableAt
-  obtain ⟨P₁, hP₁, hdiff₁⟩ := h₁.exists_countable_differentiableAt
-  apply windingNumber_eq_of_dist_lt_dist_aux (hP₀.union hP₁) ?_ h₀.continuousOn h₁.continuousOn
-    (fun t ht => hdiff₀ t ⟨ht.1, fun hmem => ht.2 (Or.inl hmem)⟩)
-    (fun t ht => hdiff₁ t ⟨ht.1, fun hmem => ht.2 (Or.inr hmem)⟩)
-    h₀.intervalIntegrable_deriv h₁.intervalIntegrable_deriv hlt
-  have h₀a : γ₀ a - w ≠ 0 := sub_ne_zero.mpr (ne_of_dist_lt_dist (hlt a left_mem_uIcc))
-  have h₀b : γ₀ b - w ≠ 0 := sub_ne_zero.mpr (ne_of_dist_lt_dist (hlt b right_mem_uIcc))
-  rw [compRatio_apply, compRatio_apply, ← ha, ← hb, div_self h₀a, div_self h₀b]
+  exact h₀.absolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
+    h₁.absolutelyContinuousOnInterval ha hb hlt
 
 /-- The stage at time `s` of the straight-line homotopy `(1 - s) • γ₀ + s • γ₁`. -/
 private def lineHomotopy (γ₀ γ₁ : ℝ → ℂ) (s : ℝ) : ℝ → ℂ := fun t => (1 - s) • γ₀ t + s • γ₁ t

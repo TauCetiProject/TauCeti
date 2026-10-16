@@ -52,6 +52,8 @@ proof is independent of the source's.
   laws for base change, which support whole-matrix reduction arguments such as the level
   antitonicity of the principal congruence subgroups.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
+  by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates.
@@ -118,6 +120,16 @@ theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
   intro i j
   simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply,
     RingHom.mapMatrix_apply, Matrix.map_apply]
+
+/-- Right multiplication of row vectors by `g ∈ SL(n, R)` is inverted by `g⁻¹`. -/
+theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n]
+    [DecidableEq n] (g : SpecialLinearGroup n R) (a y : n → R) :
+    a ᵥ* (g : Matrix n n R) = y ↔ a = y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R) := by
+  constructor
+  · rintro rfl
+    rw [vecMul_vecMul, ← coe_mul, mul_inv_cancel, coe_one, vecMul_one]
+  · rintro rfl
+    rw [vecMul_vecMul, ← coe_mul, inv_mul_cancel, coe_one, vecMul_one]
 
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :

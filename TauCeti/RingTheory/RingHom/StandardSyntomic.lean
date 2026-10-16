@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Syntomic.Localization
+public import TauCeti.RingTheory.Syntomic.Smooth
+public import Mathlib.RingTheory.RingHom.StandardSmooth
 public import Mathlib.RingTheory.RingHom.Locally
 public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
@@ -14,9 +16,11 @@ public import Mathlib.RingTheory.RingHom.FinitePresentation
 # Standard syntomic ring homomorphisms
 
 This file expresses standard syntomic algebras as a property of ring homomorphisms.
-Localization on either side and arbitrary base change preserve the relative dimension.
+Localization on either side and arbitrary base change preserve the relative dimension, and
+relative dimensions add under composition.
 Consequently the property of being locally standard syntomic is local on both source and
-base, giving the affine input for syntomic morphisms of schemes.
+base, giving the affine input for syntomic morphisms of schemes. Standard smooth ring maps
+are standard syntomic with the same relative dimension.
 
 Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
@@ -73,6 +77,15 @@ theorem isStandardSyntomicOfRelativeDimension_algebraMap [Algebra R S] :
       Algebra.IsStandardSyntomicOfRelativeDimension n R S := by
   rw [isStandardSyntomicOfRelativeDimension_iff n, toAlgebra_algebraMap]
 
+/-- A standard smooth ring map is standard syntomic of the same relative dimension. -/
+theorem _root_.RingHom.IsStandardSmoothOfRelativeDimension.isStandardSyntomicOfRelativeDimension
+    {f : R →+* S} (hf : f.IsStandardSmoothOfRelativeDimension n) :
+    IsStandardSyntomicOfRelativeDimension n f := by
+  let := f.toAlgebra
+  have : _root_.Algebra.IsStandardSmoothOfRelativeDimension n R S := hf.toAlgebra
+  rw [isStandardSyntomicOfRelativeDimension_iff n f]
+  infer_instance
+
 variable (R) in
 /-- The identity ring map is standard syntomic of relative dimension zero. -/
 theorem IsStandardSyntomicOfRelativeDimension.id :
@@ -96,6 +109,20 @@ theorem IsStandardSyntomicOfRelativeDimension.finitePresentation {f : R →+* S}
   exact Algebra.IsStandardSyntomicOfRelativeDimension.finitePresentation
     (h := (isStandardSyntomicOfRelativeDimension_iff n f).mp hf)
 
+/-- Standard syntomic ring maps compose, with addition of their relative dimensions. -/
+theorem IsStandardSyntomicOfRelativeDimension.comp {m : ℕ} {T : Type*} [CommRing T]
+    {g : S →+* T} {f : R →+* S} (hg : IsStandardSyntomicOfRelativeDimension n g)
+    (hf : IsStandardSyntomicOfRelativeDimension m f) :
+    IsStandardSyntomicOfRelativeDimension (n + m) (g.comp f) := by
+  let := f.toAlgebra
+  let := g.toAlgebra
+  let := (g.comp f).toAlgebra
+  have : IsScalarTower R S T := .of_algebraMap_eq' rfl
+  have : Algebra.IsStandardSyntomicOfRelativeDimension m R S := hf
+  have : Algebra.IsStandardSyntomicOfRelativeDimension n S T := hg
+  rw [isStandardSyntomicOfRelativeDimension_iff, add_comm]
+  exact Algebra.IsStandardSyntomicOfRelativeDimension.trans (R := R) (S := S) (T := T)
+
 /-- Localizing either side of a standard syntomic map preserves its relative dimension. -/
 theorem isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway
     (n : ℕ) : RingHom.StableUnderCompositionWithLocalizationAway
@@ -104,14 +131,16 @@ theorem isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocaliza
     let := f.toAlgebra
     let := (f.comp (algebraMap R S)).toAlgebra
     have : IsScalarTower R S T := IsScalarTower.of_algebraMap_eq' rfl
-    exact Algebra.IsStandardSyntomicOfRelativeDimension.localization_away_trans r
-      (h := (isStandardSyntomicOfRelativeDimension_iff n f).mp hf)
+    have : Algebra.IsStandardSyntomicOfRelativeDimension n S T :=
+      (isStandardSyntomicOfRelativeDimension_iff n f).mp hf
+    exact Algebra.IsStandardSyntomicOfRelativeDimension.localization_away_trans (S := S) r
   right R S T _ _ _ _ s _ f hf := by
     let := f.toAlgebra
     let := ((algebraMap S T).comp f).toAlgebra
     have : IsScalarTower R S T := IsScalarTower.of_algebraMap_eq' rfl
+    have : Algebra.IsStandardSyntomicOfRelativeDimension n R S :=
+      (isStandardSyntomicOfRelativeDimension_iff n f).mp hf
     exact Algebra.IsStandardSyntomicOfRelativeDimension.trans_localization_away s
-      (h := (isStandardSyntomicOfRelativeDimension_iff n f).mp hf)
 
 /-- Standard syntomic ring maps are invariant under isomorphisms on either side. -/
 theorem isStandardSyntomicOfRelativeDimension_respectsIso (n : ℕ) :

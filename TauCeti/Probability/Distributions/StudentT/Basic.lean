@@ -212,7 +212,6 @@ theorem integral_studentTPDFReal (hν : 0 < ν) : ∫ x, studentTPDFReal ν x = 
   have hs : (1 : ℝ) / 2 < (ν + 1) / 2 := by linarith
   have hG1 : Real.Gamma ((ν + 1) / 2) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
   have hG2 : Real.Gamma (ν / 2) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hsq : √(ν * π) ≠ 0 := (Real.sqrt_pos.mpr (by positivity)).ne'
   have hsub : (ν + 1) / 2 - 1 / 2 = ν / 2 := by ring
   have hsum : (1 : ℝ) / 2 + ν / 2 = (ν + 1) / 2 := by ring
   simp_rw [studentTPDFReal_of_pos hν]

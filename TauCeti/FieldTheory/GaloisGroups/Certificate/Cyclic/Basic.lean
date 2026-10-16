@@ -370,7 +370,8 @@ theorem hasSexticRoot_X5_add_X4_sub_4X3_sub_3X2_add_3X_add_1 :
         (Int.castRingHom ℂ)).Separable := by
       rw [hmap]
       exact separable_prod_X_sub_C_iff.mpr (cyclicSexticRoots_injective hθ)
-    rw [(monic_resolventSextic _).separable_map_iff_map_discr_ne_zero, h0, map_zero] at hsep
+    rw [(resolventSextic _).separable_map_iff_map_discr_ne_zero _
+      (by simp [(monic_resolventSextic _).leadingCoeff]), h0, map_zero] at hsep
     exact hsep rfl
 
 end TauCeti

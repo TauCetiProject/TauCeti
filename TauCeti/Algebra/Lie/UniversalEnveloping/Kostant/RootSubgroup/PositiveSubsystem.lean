@@ -24,9 +24,8 @@ root-subgroup matrices are then upper unitriangular by
 This file passes from those individual root subgroups to the subgroup they generate. In basis
 coordinates the whole subsystem group lies in the upper-unitriangular group, giving a faithful
 homomorphism into that group. In particular the subsystem group is nilpotent, with no separate
-root-string or commutator hypotheses. The basis is indexed by an arbitrary finite linearly
-ordered type, which specializes to the `Fin n` carrier of the represented `GLₙ` scheme
-downstream.
+root-string or commutator hypotheses. The basis is indexed by an arbitrary finite linearly ordered
+type, which specializes to the `Fin n` carrier of the represented `GLₙ` scheme.
 
 For a Chevalley system and `S` the positive roots, this is the group-level bridge from the positive
 root-subgroup maps to the unipotent radical candidate in the Borel datum of the pinned
@@ -45,11 +44,6 @@ Chevalley--Demazure group scheme.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§21, 26--27.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 8.2.
-
-This advances the pinning target of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. Its
-positive-root subgroup is consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` in
-the construction of the Borel and ambient pinned group underlying
-`TauCeti.ValidLieTypeIndex.AmbientGroup`.
 -/
 
 public section

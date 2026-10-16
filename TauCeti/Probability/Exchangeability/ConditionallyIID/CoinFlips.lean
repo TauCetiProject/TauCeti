@@ -38,7 +38,7 @@ a disguised constant.
 * `not_iIndepFun_coinFlips` — for a bias that is genuinely random the flips are *not* independent.
 
 The construction it instantiates is `iidMixtureLaw` in
-`TauCeti/Probability/Exchangeability/ConditionallyIID/Construct.lean`. Nothing here is adapted from
+`TauCeti/Probability/Process/IIDMixture/Basic.lean`. Nothing here is adapted from
 `cameronfreer/exchangeability`.
 -/
 

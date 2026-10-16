@@ -60,6 +60,10 @@ of the conjugation `f ↦ (x ↦ g • f (g⁻¹ x))` of `Coind_V^G M`.
   `Hⁿ(V, M)`, `(1)_* = 𝟙` and `(g)_* ≫ (h)_* = (h * g)_*`.
 * `TauCeti.ContinuousCohomology.conjNormalMap_naturality`: `(g)_*` is natural in the
   coefficients.
+* `TauCeti.ContinuousCohomology.conjNormalMap_eq_map_of_smul_eq_self`: with trivial coefficients,
+  `(g)_*` is the pullback along conjugation alone.
+* `TauCeti.eqToHom_conjNormalMap_eqToHom`: with trivial `𝔽₂` coefficients, `(g)_*` is
+  `TauCeti.trivialF2Map` along the conjugation `u ↦ g⁻¹ u g` of the normal subgroup.
 
 ## References
 
@@ -339,6 +343,21 @@ theorem conjNormalMap_naturality (N : Type u) [AddCommGroup N] [TopologicalSpace
   rw [conjNormalPair_hom_apply, conjNormalPair_hom_apply]
   exact (_root_.map_smul f g m).symm
 
+/-- **Conjugation with trivial coefficients** is the pullback along `v ↦ g⁻¹ v g` alone: when `G`
+acts trivially on `M`, `(g)_*` is the map of the compatible pair of this conjugation and the
+identity of `M`. -/
+theorem conjNormalMap_eq_map_of_smul_eq_self (htriv : ∀ (g : G) (m : M), g • m = m) (g : G)
+    (n : ℕ) :
+    conjNormalMap V M g n = _root_.ContinuousCohomology.map
+      (ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conjNormal g⁻¹ : ContinuousAut V))
+      (ofDiscreteModulePair _ (AddMonoidHom.id M).toIntLinearMap fun v m ↦ by
+        simp only [AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.id_apply, Subgroup.smul_def,
+          htriv]) n := by
+  rw [conjNormalMap_def]
+  congr 1
+  exact (ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun m ↦
+    (conjNormalPair_hom_apply V M g m).trans (htriv g m)).symm
+
 end ContinuousCohomology
 
 /-! ### Trivial `𝔽₂` coefficients -/
@@ -377,6 +396,23 @@ theorem trivialF2Map_comp_trivialF2CorMap_of_conj (hU : IsOpen (U : Set G)) [U.F
     (fun m => (ofDiscreteModulePair_hom_apply _ _ _ m).trans
       ((TopRep.distribMulAction_smul _ g m).trans (trivialF2_ρ_apply_apply G g m)).symm) hVU hU hV
     n _
+
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- With trivial coefficients, the conjugation `(g)_*` of `Hⁿ(U, 𝔽₂)`, read through the
+identification of `ofDiscreteModule ℤ U (trivialF2 G).V` with `trivialF2 U`, is pullback along
+`u ↦ g⁻¹ u g`. -/
+theorem eqToHom_conjNormalMap_eqToHom (U : Subgroup G) [U.Normal] (g : G) (n : ℕ) :
+    eqToHom (congrArg (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U).symm) ≫
+        ContinuousCohomology.conjNormalMap U (trivialF2 G).V g n ≫
+          eqToHom (congrArg (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U)) =
+      trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom
+        (ContinuousAut.conjNormal g⁻¹ : ContinuousAut U)) n := by
+  have hM := ofDiscreteModule_subgroup_trivialF2 G U
+  rw [ContinuousCohomology.conjNormalMap_eq_map_of_smul_eq_self _ _
+      (fun g m => (TopRep.distribMulAction_smul _ g m).trans (trivialF2_ρ_apply_apply G g m)),
+    ← cancel_epi (eqToHom (congrArg (continuousCohomology n) hM)), eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp]
+  exact (eqToHom_comp_trivialF2Map _ hM hM (AddMonoidHom.id _) _ (fun _ => rfl) n).symm
 
 end TrivialF2
 

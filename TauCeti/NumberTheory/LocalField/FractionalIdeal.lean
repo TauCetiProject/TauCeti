@@ -90,8 +90,7 @@ theorem spanSingleton_eq_maximalIdeal_zpow (x : Kˣ) :
   rw [le_antisymm (spanSingleton_le_spanSingleton_iff_valuation_le.mpr hv.le)
     (spanSingleton_le_spanSingleton_iff_valuation_le.mpr hv.ge), h𝓂]
   rcases Int.eq_nat_or_neg n with ⟨m, hm | hm⟩ <;> rw [hm]
-  · rw [zpow_natCast, zpow_natCast, FractionalIdeal.spanSingleton_pow]
-  · rw [zpow_neg, zpow_neg, zpow_natCast, zpow_natCast, FractionalIdeal.spanSingleton_pow,
-      FractionalIdeal.spanSingleton_inv]
+  · rw [zpow_natCast, zpow_natCast, map_pow]
+  · rw [zpow_neg, zpow_neg, zpow_natCast, zpow_natCast, map_inv₀, map_pow]
 
 end Units

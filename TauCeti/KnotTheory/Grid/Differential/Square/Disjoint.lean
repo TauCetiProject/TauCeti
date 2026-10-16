@@ -241,7 +241,7 @@ theorem commute_commute (D : GridRectangleDecomposition x z) (h : D.HasDisjointS
 
 private theorem sidePairs_ne (D : GridRectangleDecomposition x z) (h : D.HasDisjointSides) :
     s(D.first.left, D.first.right) ≠ s(D.second.left, D.second.right) := by
-  obtain ⟨hll, hlr, hrl, hrr⟩ := D.hasDisjointSides_iff.mp h
+  obtain ⟨hll, hlr, _, _⟩ := D.hasDisjointSides_iff.mp h
   intro hpairs
   rw [Sym2.eq, Sym2.rel_iff'] at hpairs
   rcases hpairs with hpairs | hpairs
@@ -265,7 +265,7 @@ theorem commute_middle_ne (D : GridRectangleDecomposition x z) (h : D.HasDisjoin
 changes. -/
 theorem commute_ne (D : GridRectangleDecomposition x z) (h : D.HasDisjointSides) :
     D.commute h ≠ D :=
-  fun heq => D.commute_middle_ne h (congrArg GridRectangleDecomposition.middle heq)
+  fun heq => D.commute_middle_ne h (congrArg GridTwoStepDecomposition.middle heq)
 
 /-- The reordered intermediate state belongs to the endpoint pair's two-step intermediate set. -/
 theorem commute_middle_mem_twoStepColumnSwapIntermediates

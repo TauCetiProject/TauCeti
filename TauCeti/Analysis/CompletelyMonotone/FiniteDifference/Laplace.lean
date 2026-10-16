@@ -12,7 +12,7 @@ public import TauCeti.Analysis.CompletelyMonotone.FiniteDifference.Mollify
 -- shifts outside the uniform tail estimate.
 import TauCeti.Analysis.CompletelyMonotone.Bernstein.Theorem
 import TauCeti.MeasureTheory.Measure.Prokhorov
-import TauCeti.MeasureTheory.Measure.Tight
+import TauCeti.MeasureTheory.Measure.Tight.Basic
 
 /-!
 # The Hausdorff--Bernstein--Widder theorem in finite-difference form

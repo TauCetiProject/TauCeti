@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
-import TauCeti.Algebra.QuadraticDiscriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Trace
 
 /-!
@@ -39,24 +38,17 @@ namespace WeierstrassCurve
 
 variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve F) [W.IsElliptic]
 
-private theorem card_mul_sq_sub_frobeniusTrace_mul_add_sq_nonneg (r : ℤ) {s : ℤ}
-    (hs : ¬(ringChar F : ℤ) ∣ s) : 0 ≤ Nat.card F * r ^ 2 - W.frobeniusTrace * (r * s) + s ^ 2 :=
-  -- `p ∤ s` makes `s` nonzero in an algebraic closure, where this form is the degree of `r π - s`
-  (Int.natCast_nonneg _).trans_eq <|
-    TauCeti.Isogeny.Hom.degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrace
-      W.toAffine r s <| mt (CharP.intCast_eq_zero_iff (AlgebraicClosure F) (ringChar F) s).mp hs
-
 /-- **The Hasse bound**, in trace form: over a finite field with `q` elements, the Frobenius trace
 `a_q` of an elliptic curve satisfies `a_q² ≤ 4q`. `hasse_bound` states the same inequality in terms
 of the number of points. -/
 theorem frobeniusTrace_sq_le_four_mul_card : W.frobeniusTrace ^ 2 ≤ 4 * Nat.card F := by
-  -- Over an algebraic closure, `deg (r π - s) = q r² - a_q r s + s²` whenever the characteristic
-  -- `p` does not divide `s`. Degrees are non-negative, so this binary form is non-negative off the
-  -- multiples of `p`, which bounds its discriminant `a_q² - 4q` by `0`.
-  simpa only [discrim, neg_sq, mul_one, sub_nonpos] using
-    Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd (a := Nat.card F) (b := -W.frobeniusTrace)
-      (c := 1) (Nat.prime_iff_prime_int.mp (CharP.prime_ringChar F)).not_isUnit
-      fun r s _ hs ↦ (W.card_mul_sq_sub_frobeniusTrace_mul_add_sq_nonneg r hs).trans_eq (by ring)
+  -- Over an algebraic closure, `deg (r π - s) = q r² - a_q r s + s²`. Degrees are non-negative,
+  -- and at `(r, s) = (a_q, 2q)` this form is `q (4q - a_q²)`.
+  have h := (Int.natCast_nonneg _).trans_eq <|
+    TauCeti.Isogeny.Hom.degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrace
+      (K := AlgebraicClosure F) W.toAffine W.frobeniusTrace (2 * Nat.card F)
+  have hq : (0 : ℤ) < Nat.card F := Nat.cast_pos.mpr Nat.card_pos
+  nlinarith
 
 /-- **The Hasse bound** (Silverman V.1.1): an elliptic curve `E` over a field with `q` elements
 satisfies `(#E(𝔽_q) - (q + 1))² ≤ 4q`, that is `|#E(𝔽_q) - (q + 1)| ≤ 2√q`, where the count

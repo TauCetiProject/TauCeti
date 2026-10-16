@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Contractability
-public import TauCeti.Probability.Exchangeability.PathSpace.ProcessShift
+public import TauCeti.Probability.Process.PathLaw.ProcessShift
 
 /-!
 # Exchangeable laws are stationary

@@ -250,7 +250,7 @@ theorem msymmBasis_repr_schurPoly (μ : n.Partition)
     (msymmBasis σ R n).repr ⟨schurPoly σ R μ, schurPoly_mem_symmetricHomogeneousSubmodule μ⟩ ν
       = (kostkaNumber μ ν.1 : R) := by
   rw [msymmBasis_repr_apply]
-  exact coeff_schurPoly_partWeight μ ν.1 (by rw [colLen_zero_diagramOf]; exact ν.2)
+  exact coeff_schurPoly_partWeight μ ν.1 (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.2)
 
 end CommSemiring
 
@@ -315,6 +315,20 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
   have h : schurPolyBasis σ R n μ = schurPolyElem σ R n μ := Module.Basis.mk_apply _ _ μ
   rw [h]
   rfl
+
+/-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
+`n` are linearly independent. Thus their coefficients in a finite expansion are unique. -/
+theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
+    LinearIndependent R (schurPoly σ R : n.Partition → MvPolynomial σ R) := by
+  let f (μ : n.Partition) : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
+    ⟨μ, by
+      have hc := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx ↦ μ.parts_pos hx)
+      have : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hc
+      exact this.trans h⟩
+  have hf : Function.Injective f := fun _ _ he ↦ congrArg Subtype.val he
+  simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
+    ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
+      (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
 
 end CommRing
 

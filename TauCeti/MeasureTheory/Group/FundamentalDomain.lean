@@ -18,6 +18,9 @@ congruence subgroup, say) is manufactured from a fundamental domain of the ambie
 countability of `G ⧸ H` — automatic at finite index — is what makes the tiling a countable
 union.
 
+In the other direction, a set whose translates tile the space with disjoint interiors, overlapping
+only along a null frontier, is itself a fundamental domain.
+
 ## Main results
 
 * `MeasureTheory.IsFundamentalDomain.iUnion_smul_of_transversal`: for any family `r : ι → G`
@@ -40,6 +43,10 @@ union.
 * `MeasureTheory.IsFundamentalDomain.aedisjoint_smul_of_inv_mul_mem`: translates `g₁ • D`,
   `g₂ • D` of an `H`-fundamental domain are a.e. disjoint whenever `g₁ ≠ g₂` and
   `g₁⁻¹ * g₂ ∈ H` (needing only quasi-measure-preservation of the one translation).
+* `MeasureTheory.IsFundamentalDomain.of_disjoint_smul_interior`: a null-measurable set with null
+  translated frontiers, whose translates cover almost everything and have pairwise disjoint
+  interiors, is a fundamental domain. This is how a closed tile of a tessellation, such
+  as a fundamental polygon, becomes a measurable fundamental domain.
 * `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
   `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
@@ -151,7 +158,7 @@ theorem IsFundamentalDomain.smul_of_eq_conjAct_pointwise_smul
     {G α : Type*} [Group G] [MeasurableSpace α] [MulAction G α]
     {μ : Measure α}
     {H₁ H₂ : Subgroup G} {s : Set α} (hs : IsFundamentalDomain H₁ s μ)
-    {g : G} (hg : Measure.QuasiMeasurePreserving (fun x : α ↦ g⁻¹ • x) μ μ)
+    {g : G} (hg : QuasiMeasurePreserving (fun x : α ↦ g⁻¹ • x) μ μ)
     (hgH : H₂ = ConjAct.toConjAct g • H₁) :
     IsFundamentalDomain H₂ (g • s) μ := by
   subst hgH
@@ -185,7 +192,7 @@ theorem IsFundamentalDomain.aedisjoint_smul_of_inv_mul_mem
     {G α : Type*} [Group G] [MeasurableSpace α] [MulAction G α]
     {μ : Measure α}
     {H : Subgroup G} {D : Set α} (hD : IsFundamentalDomain H D μ)
-    {g₁ g₂ : G} (hg₁ : Measure.QuasiMeasurePreserving (fun x : α ↦ g₁⁻¹ • x) μ μ)
+    {g₁ g₂ : G} (hg₁ : QuasiMeasurePreserving (fun x : α ↦ g₁⁻¹ • x) μ μ)
     (h_mem : g₁⁻¹ * g₂ ∈ H) (h_ne : g₁ ≠ g₂) :
     AEDisjoint μ (g₁ • D) (g₂ • D) := by
   have h_ne' : g₁⁻¹ * g₂ ≠ 1 := fun h ↦ h_ne (inv_mul_eq_one.mp h)
@@ -214,7 +221,7 @@ theorem IsFundamentalDomain.of_subgroupOf {G α : Type*} [Group G] [MeasurableSp
       exact Subtype.ext (Subtype.ext h)
     · rintro ⟨g, hgH, hgK⟩
       exact ⟨⟨⟨g, hgK⟩, Subgroup.mem_subgroupOf.mpr hgH⟩, rfl⟩
-  simpa using hs.preimage_of_equiv (f := id) (Measure.QuasiMeasurePreserving.id μ) hbij
+  simpa using hs.preimage_of_equiv (f := id) (QuasiMeasurePreserving.id μ) hbij
     fun _ _ ↦ rfl
 
 /-- **The double-coset tiling of a fundamental domain, at an arbitrary transversal.** Let `s` be
@@ -235,7 +242,7 @@ quasi-measure-preservation of the single translation by `δ⁻¹`. -/
 theorem IsFundamentalDomain.iUnion_mul_smul_of_transversal {G α ι : Type*} [Group G]
     [MeasurableSpace α] [MulAction G α] [Countable ι] {μ : Measure α} {Γ₁ Γ₂ : Subgroup G}
     (δ : G) {s : Set α} (hs : IsFundamentalDomain Γ₂ s μ)
-    (hδ : Measure.QuasiMeasurePreserving (fun x : α ↦ δ⁻¹ • x) μ μ)
+    (hδ : QuasiMeasurePreserving (fun x : α ↦ δ⁻¹ • x) μ μ)
     {r : ι → Γ₂} (hnull : ∀ i, NullMeasurableSet (((r i : Γ₂) : G) • s) μ)
     (hr : Function.Bijective fun i ↦
       (QuotientGroup.mk (r i)⁻¹ : Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂)) :
@@ -275,7 +282,7 @@ theorem IsFundamentalDomain.iUnion_mul_out_inv_smul {G α : Type*} [Group G] [Me
     [MulAction G α] {μ : Measure α} {Γ₁ Γ₂ : Subgroup G}
     [MeasurableConstSMul Γ₂ α] [SMulInvariantMeasure Γ₂ α μ]
     (δ : G) {s : Set α} (hs : IsFundamentalDomain Γ₂ s μ)
-    (hδ : Measure.QuasiMeasurePreserving (fun x : α ↦ δ⁻¹ • x) μ μ)
+    (hδ : QuasiMeasurePreserving (fun x : α ↦ δ⁻¹ • x) μ μ)
     [Countable (Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂)] :
     IsFundamentalDomain (Γ₁ ⊓ ConjAct.toConjAct δ • Γ₂ : Subgroup G)
       (⋃ v : Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂,
@@ -292,6 +299,41 @@ theorem IsFundamentalDomain.iUnion_mul_out_inv_smul {G α : Type*} [Group G] [Me
       rw [h_id]
       exact Function.bijective_id)
 
+
+/-- **A tile with disjoint interiors and null frontier is a fundamental domain.** Let `s` be a
+null-measurable set whose translates cover almost every point, all of whose translated frontiers
+are null, and whose interior is disjoint from its translates by nonidentity elements. Then `s` is
+a fundamental domain. Neither invariance of the measure nor continuity of the action is needed;
+for an invariant measure the frontier hypothesis follows from `μ (frontier s) = 0` by
+`measure_smul_null`. -/
+@[to_additive /-- **A tile with disjoint interiors and null frontier is an additive fundamental
+domain.** Let `s` be a null-measurable set whose translates cover almost every point, all of whose
+translated frontiers are null, and whose interior is disjoint from its translates by nonzero
+elements. Then `s` is an additive fundamental domain. -/]
+theorem IsFundamentalDomain.of_disjoint_smul_interior {G α : Type*} [Group G] [MulAction G α]
+    [TopologicalSpace α] [MeasurableSpace α] {μ : Measure α}
+    {s : Set α} (h_meas : NullMeasurableSet s μ) (h_ae_covers : ∀ᵐ x ∂μ, ∃ g : G, g • x ∈ s)
+    (h_frontier : ∀ g : G, μ (g • frontier s) = 0)
+    (h_disj : ∀ g : G, g ≠ 1 → Disjoint (g • interior s) (interior s)) :
+    IsFundamentalDomain G s μ where
+  nullMeasurableSet := h_meas
+  ae_covers := h_ae_covers
+  aedisjoint g h hgh := by
+    -- a point of `s` off its frontier lies in its interior
+    have hint {y : α} (hy : y ∈ s) (hy' : y ∉ frontier s) : y ∈ interior s :=
+      ((closure_eq_interior_union_frontier s).subset (subset_closure hy)).resolve_right hy'
+    -- a common point of two distinct translates lies on the frontier of one of them
+    have hsub : g • s ∩ h • s ⊆ g • frontier s ∪ h • frontier s := by
+      rintro x ⟨hxg, hxh⟩
+      rw [mem_smul_set_iff_inv_smul_mem] at hxg hxh
+      by_contra hx
+      rw [mem_union, mem_smul_set_iff_inv_smul_mem, mem_smul_set_iff_inv_smul_mem,
+        not_or] at hx
+      refine disjoint_left.1 (h_disj (h⁻¹ * g) fun h1 ↦ hgh (inv_mul_eq_one.1 h1).symm)
+        ?_ (hint hxh hx.2)
+      rw [mem_smul_set_iff_inv_smul_mem, mul_inv_rev, inv_inv, mul_smul, smul_inv_smul]
+      exact hint hxg hx.1
+    exact measure_mono_null hsub (measure_union_null (h_frontier g) (h_frontier h))
 
 /-- **Covolume is positive**: a countable group acting with a fundamental domain for a nonzero
 invariant measure has positive covolume. -/

@@ -28,10 +28,7 @@ the underlying unit of an `n`th root of unity
 `𝔾ₘ`-point read off as a unit `u` with `u ^ n = 1` is `u ∈ rootsOfUnity n A`, hence the image of
 the `μ_n`-point attached to it.
 
-This is a worked-example check for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 4: "`μ_n = D(ℤ/n)`", "`𝔾_m = D(ℤ)`", and
-the diagonalizable anti-equivalence `M ↦ D(M)`), assembling the `μ_n` inclusion
-`TauCeti.RootsOfUnityGroup.inclusion` and the power endomorphism
+This assembles the `μ_n` inclusion `TauCeti.RootsOfUnityGroup.inclusion` and the power endomorphism
 `TauCeti.DiagonalizableGroup.powEnd` of the character/cocharacter file into the classical
 description of `μ_n` as a kernel.
 

@@ -79,6 +79,8 @@ the class of `a` to `(a)`.
   at the squares in `Kˣ`.
 * `TauCeti.kummerSquareClassEquiv_squareClass`: a square class is sent to the Kummer class of
   any of its representatives.
+* `TauCeti.kummerClass_eq_kummerClass_iff_isSquare_mul`: two units have the same Kummer class
+  exactly when their product is a square.
 -/
 
 public section
@@ -681,5 +683,24 @@ theorem kummerSquareClassEquiv_squareClass (a : Kˣ) :
   -- coefficient map, and the canonical Kummer class of `a`, which
   -- `TauCeti.explicitIso_kummerMap` reads as the explicit one.
   simp [kummerSquareClassEquiv, kummerClass, explicitIso_kummerMap]
+
+/-- **Two units have the same Kummer class exactly when their product is a square**: the
+quotient-free reading of equality of Kummer classes, through `TauCeti.kummerSquareClassEquiv`. -/
+theorem kummerClass_eq_kummerClass_iff_isSquare_mul (a b : Kˣ) :
+    kummerClass a = kummerClass b ↔ IsSquare (a * b) := by
+  rw [← kummerSquareClassEquiv_squareClass, ← kummerSquareClassEquiv_squareClass,
+    EmbeddingLike.apply_eq_iff_eq, squareClass_eq_iff_isSquare_mul]
+
+/-- A family of mod-two Kummer classes is linearly independent exactly when no
+nonempty finite subset product of its units is a square. -/
+theorem linearIndependent_kummerClass_iff {ι : Type*} (a : ι → Kˣ) :
+    LinearIndependent (ZMod 2) (fun i ↦ kummerClass (a i)) ↔
+      ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, a i) := by
+  let e := (kummerSquareClassEquiv K).toAddMonoidHom.toZModLinearMap 2
+  have h := e.linearIndependent_iff_of_injOn
+    (v := fun i ↦ squareClass (a i)) (kummerSquareClassEquiv K).injective.injOn
+  simpa only [e, Function.comp_def, AddMonoidHom.coe_toZModLinearMap,
+    AddEquiv.coe_toAddMonoidHom, kummerSquareClassEquiv_squareClass] using
+    h.trans (linearIndependent_squareClass_iff a)
 
 end TauCeti
