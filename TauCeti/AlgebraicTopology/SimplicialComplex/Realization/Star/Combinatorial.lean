@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Ball.Basic
+public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Interior vertex charts from combinatorial links
@@ -14,7 +15,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Ball.
 A vertex whose link is a combinatorial `n`-sphere has an open star homeomorphic to an
 open Euclidean `(n + 1)`-ball. This gives a topological chart containing the vertex,
 without assuming a finite triangulation: the spherical link itself has finitely many faces,
-which makes the closed star compact.
+which makes the closed star compact. Composing with the inclusion of the ball, the same
+identification is an open partial homeomorphism from the realization to Euclidean space.
 
 The sphere identification comes from intrinsic stellar equivalence. The radial star
 homeomorphism of `Star.Ball.Basic` then extends it across the apex. Piecewise-linear compatibility
@@ -28,7 +30,7 @@ of these charts is a separate property.
 
 public section
 
-open AbstractSimplicialComplex Metric
+open AbstractSimplicialComplex Metric Set Topology
 
 namespace PreAbstractSimplicialComplex
 
@@ -46,5 +48,30 @@ theorem IsCombinatorialSphere.exists_homeomorph_openStar_ball
   have hc := K.isCompact_closedStarRealization (finite_faces_closedStar_iff.mpr h.finite_faces)
   refine ⟨openStarHomeomorphBall hc (r.trans e), fun x => ?_⟩
   rw [openStarHomeomorphBall_apply, norm_closedStarHomeomorphClosedBall]
+
+/-- A combinatorial-sphere link gives a chart on the weak realization, with values in Euclidean
+space, whose source is the open vertex star. -/
+theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_ball
+    {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {v : ι} {n : ℕ}
+    (h : IsCombinatorialSphere (link K.toPreAbstractSimplicialComplex {v}) n) :
+    ∃ c : OpenPartialHomeomorph (Realization K) (EuclideanSpace ℝ (Fin (n + 1))),
+      c.source = openStarRealization K v := by
+  obtain ⟨e, -⟩ := h.exists_homeomorph_openStar_ball
+  let U : Set (EuclideanSpace ℝ (Fin (n + 1))) := ball 0 1
+  have hU : IsOpen U := isOpen_ball
+  let : Nonempty U := ⟨⟨0, by simp [U]⟩⟩
+  let j : OpenPartialHomeomorph U (EuclideanSpace ℝ (Fin (n + 1))) :=
+    hU.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph
+  let f := e.toOpenPartialHomeomorph.trans j
+  let c := f.lift_openEmbedding (K.isOpen_openStarRealization v).isOpenEmbedding_subtypeVal
+  refine ⟨c, ?_⟩
+  simp only [OpenPartialHomeomorph.lift_openEmbedding_source,
+    OpenPartialHomeomorph.trans_toPartialEquiv, PartialEquiv.trans_source,
+    Homeomorph.toOpenPartialHomeomorph_source, PartialHomeomorph.toFun_eq_coe,
+    OpenPartialHomeomorph.coe_toPartialHomeomorph, Homeomorph.toOpenPartialHomeomorph_apply,
+    IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_self, image_univ,
+    Subtype.range_coe_subtype, mem_openStarRealization, c, f, j]
+  ext x
+  exact (K.mem_openStarRealization).symm
 
 end PreAbstractSimplicialComplex

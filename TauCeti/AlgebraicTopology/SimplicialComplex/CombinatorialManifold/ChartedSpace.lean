@@ -33,38 +33,12 @@ public section
 
 noncomputable section
 
-open AbstractSimplicialComplex Metric Set Topology
+open AbstractSimplicialComplex Set Topology
 open scoped Manifold
 
 namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {v : ι} {n : ℕ}
-
-/-! ### Interior vertex charts -/
-
-/-- A combinatorial-sphere link gives a chart on the weak realization whose source is the open
-vertex star and whose target is the open unit ball. -/
-theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_ball
-    (h : IsCombinatorialSphere (link K.toPreAbstractSimplicialComplex {v}) n) :
-    ∃ c : OpenPartialHomeomorph (Realization K) (EuclideanSpace ℝ (Fin (n + 1))),
-      c.source = openStarRealization K v := by
-  obtain ⟨e, -⟩ := h.exists_homeomorph_openStar_ball
-  let U : Set (EuclideanSpace ℝ (Fin (n + 1))) := ball 0 1
-  have hU : IsOpen U := isOpen_ball
-  let : Nonempty U := ⟨⟨0, by simp [U]⟩⟩
-  let j : OpenPartialHomeomorph U (EuclideanSpace ℝ (Fin (n + 1))) :=
-    hU.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph
-  let f := e.toOpenPartialHomeomorph.trans j
-  let c := f.lift_openEmbedding (K.isOpen_openStarRealization v).isOpenEmbedding_subtypeVal
-  refine ⟨c, ?_⟩
-  simp only [OpenPartialHomeomorph.lift_openEmbedding_source,
-    OpenPartialHomeomorph.trans_toPartialEquiv, PartialEquiv.trans_source,
-    Homeomorph.toOpenPartialHomeomorph_source, PartialHomeomorph.toFun_eq_coe,
-    OpenPartialHomeomorph.coe_toPartialHomeomorph, Homeomorph.toOpenPartialHomeomorph_apply,
-    IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_self, image_univ,
-    Subtype.range_coe_subtype, mem_openStarRealization, c, f, j]
-  ext x
-  exact (K.mem_openStarRealization).symm
 
 /-! ### A common half-space model -/
 
@@ -88,17 +62,18 @@ theorem IsCombinatorialManifold.exists_openPartialHomeomorph_openStar_halfSpace
     exact ⟨c, hc⟩
 
 /-- Every point of the realization of a positive-dimensional combinatorial manifold lies in the
-source of a half-space chart obtained from an open vertex star. -/
+source of a half-space chart whose source is the open star of a vertex. -/
 theorem IsCombinatorialManifold.exists_openPartialHomeomorph_mem_source
     (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex (n + 1))
     (x : Realization K) :
-    ∃ c : OpenPartialHomeomorph (Realization K) (EuclideanHalfSpace (n + 1)), x ∈ c.source := by
+    ∃ c : OpenPartialHomeomorph (Realization K) (EuclideanHalfSpace (n + 1)),
+      ∃ v, ({v} : Finset ι) ∈ K ∧ c.source = openStarRealization K v ∧ x ∈ c.source := by
   obtain ⟨v, hx⟩ := K.exists_mem_openStarRealization x
   have hv : ({v} : Finset ι) ∈ K :=
     singleton_mem_of_mem (support_mem K x)
       ((K.mem_openStarRealization_iff_mem_support).mp hx)
   obtain ⟨c, hc⟩ := h.exists_openPartialHomeomorph_openStar_halfSpace hv
-  exact ⟨c, hc.symm ▸ hx⟩
+  exact ⟨c, v, hv, hc, hc.symm ▸ hx⟩
 
 /-! ### The vertex-chart atlas -/
 
@@ -110,8 +85,32 @@ the link condition. -/
     ChartedSpace (EuclideanHalfSpace (n + 1)) (Realization K) where
   atlas := range fun x => Classical.choose (h.exists_openPartialHomeomorph_mem_source x)
   chartAt x := Classical.choose (h.exists_openPartialHomeomorph_mem_source x)
-  mem_chart_source x := Classical.choose_spec (h.exists_openPartialHomeomorph_mem_source x)
+  mem_chart_source x :=
+    (Classical.choose_spec (h.exists_openPartialHomeomorph_mem_source x)).choose_spec.2.2
   chart_mem_atlas _ := mem_range_self _
+
+/-- The preferred chart at `x` of `IsCombinatorialManifold.realizationChartedSpace` has the open
+star of a vertex as its source. -/
+theorem IsCombinatorialManifold.exists_chartAt_source_eq_openStar
+    (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex (n + 1))
+    (x : Realization K) :
+    letI := h.realizationChartedSpace
+    ∃ v, ({v} : Finset ι) ∈ K ∧
+      (chartAt (EuclideanHalfSpace (n + 1)) x).source = openStarRealization K v := by
+  obtain ⟨v, hv, hc, -⟩ :=
+    Classical.choose_spec (h.exists_openPartialHomeomorph_mem_source x)
+  exact ⟨v, hv, hc⟩
+
+/-- Every chart in the atlas of `IsCombinatorialManifold.realizationChartedSpace` has the open
+star of a vertex as its source. -/
+theorem IsCombinatorialManifold.exists_source_eq_openStar_of_mem_atlas
+    (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex (n + 1))
+    {c : OpenPartialHomeomorph (Realization K) (EuclideanHalfSpace (n + 1))} :
+    letI := h.realizationChartedSpace
+    c ∈ atlas (EuclideanHalfSpace (n + 1)) (Realization K) →
+      ∃ v, ({v} : Finset ι) ∈ K ∧ c.source = openStarRealization K v := by
+  rintro ⟨x, rfl⟩
+  exact h.exists_chartAt_source_eq_openStar x
 
 /-- The weak realization of a positive-dimensional combinatorial manifold is a topological
 manifold with boundary, for the charted-space structure assembled from its vertex links. -/
