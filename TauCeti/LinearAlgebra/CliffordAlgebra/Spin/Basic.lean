@@ -12,9 +12,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 
 This file records the carrier-level criterion that a product of two Clifford vectors with
 unit product of norms belongs to the Spin group, identifies membership in the range of
-`spinGroup.toUnits` with membership of the underlying Clifford value, and proves that the Spin
-group of the zero module is trivial. The action and its orthogonal comparison are defined in
-`Spin.Action` and `Pin.Action`.
+`spinGroup.toUnits` with membership of the underlying Clifford value, includes the Spin group in
+the even Clifford subalgebra, and proves that the Spin group of the zero module is trivial. The
+action and its orthogonal comparison are defined in `Spin.Action` and `Pin.Action`.
 -/
 
 public section
@@ -38,6 +38,17 @@ theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
     refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
     apply Units.ext
     rfl
+
+/-- **The inclusion of the Spin group into the even Clifford subalgebra**, the Spin group
+consisting of even elements by `spinGroup.mem_even`. -/
+def spinGroupToEven (Q : QuadraticForm R M) : spinGroup Q →* even Q :=
+  Submonoid.inclusion fun _ hx => spinGroup.mem_even hx
+
+/-- A Spin-group element sits in the even subalgebra as itself. -/
+@[simp]
+theorem coe_spinGroupToEven_apply (Q : QuadraticForm R M) (x : spinGroup Q) :
+    (spinGroupToEven Q x : CliffordAlgebra Q) = x :=
+  (rfl)
 
 /-- The product of two Clifford generators belongs to Spin when their norms multiply to one. -/
 theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)

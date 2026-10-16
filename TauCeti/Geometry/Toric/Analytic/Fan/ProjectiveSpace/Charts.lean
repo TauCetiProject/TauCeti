@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Coordinates
 public import TauCeti.Geometry.Toric.Analytic.Cone.Manifold
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness
 
 /-!
 # Homogeneous coordinates on affine charts of toric projective space
@@ -17,7 +18,8 @@ The coordinate indexed by `j ≠ k` is evaluation of the character of `X_j / X_k
 Conversely every character monomial is the product of these coordinates with exponents given
 by its pairings with the rays. This description holds on the whole affine chart, including
 its coordinate hyperplanes, and for any finite semigroup generating family. The identification
-is biholomorphic for the cone complex structure of any extending basis.
+is biholomorphic for the cone complex structure of any extending basis. Normalized homogeneous
+coordinates adjoin the constant normalizing coordinate one; they determine the affine point.
 
 These explicit affine coordinates are needed to compare the gluing of the projective-space fan
 with the usual homogeneous-coordinate construction of complex projective space.
@@ -99,6 +101,58 @@ theorem projectiveSpacePointHomeomorph_symm_apply_single (k : Option ι) {r : �
   rw [Homeomorph.coe_prodUnique] at hz
   rw [hz]
   simp [projectiveSpaceMixedSemigroupEquiv, Finsupp.prod_fintype]
+
+/-- Homogeneous coordinates of an affine point, normalized so that the coordinate of the
+omitted ray is one. The remaining coordinates can vanish. -/
+noncomputable def projectiveSpaceHomogeneousCoordinate (k : Option ι)
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)))
+    (j : Option ι) : ℂ :=
+  x (MonoidAlgebra.single (ofAdd ⟨projectiveSpaceRatioCharacter b j k,
+    projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j k (by simp)⟩) 1)
+
+/-- A normalized homogeneous coordinate evaluates the corresponding ratio character. -/
+theorem projectiveSpaceHomogeneousCoordinate_def (k : Option ι)
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)))
+    (j : Option ι) :
+    projectiveSpaceHomogeneousCoordinate b hi k x j =
+      x (MonoidAlgebra.single (ofAdd ⟨projectiveSpaceRatioCharacter b j k,
+        projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j k (by simp)⟩) 1) := (rfl)
+
+/-- The homogeneous coordinate used to normalize an affine chart is one. -/
+@[simp]
+theorem projectiveSpaceHomogeneousCoordinate_self (k : Option ι)
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ))) :
+    projectiveSpaceHomogeneousCoordinate b hi k x k = 1 := by
+  rw [projectiveSpaceHomogeneousCoordinate_def]
+  have hzero : (⟨projectiveSpaceRatioCharacter b k k,
+      projectiveSpaceRatioCharacter_mem_dualSemigroup b hi k k (by simp)⟩ :
+      dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)) = 0 :=
+    Subtype.ext (projectiveSpaceRatioCharacter_self b k)
+  rw [hzero, ofAdd_zero, ← MonoidAlgebra.one_def, map_one]
+
+/-- The affine coordinates are the homogeneous coordinates other than the normalizing one. -/
+theorem projectiveSpacePointHomeomorph_eq_homogeneousCoordinate (k : Option ι) {r : ℕ}
+    (g : AddGeneratingFamily (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)) r)
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)))
+    (j : {j : Option ι // j ≠ k}) :
+    projectiveSpacePointHomeomorph b hi k g x j =
+      projectiveSpaceHomogeneousCoordinate b hi k x j := by
+  rw [projectiveSpacePointHomeomorph_apply, projectiveSpaceHomogeneousCoordinate_def]
+  congr 3
+  exact Subtype.ext (coe_projectiveSpaceChartCharacter b hi k j)
+
+/-- The normalized homogeneous coordinates determine an affine point. -/
+theorem projectiveSpaceHomogeneousCoordinate_injective (k : Option ι) :
+    Function.Injective (projectiveSpaceHomogeneousCoordinate b hi k) := by
+  let : AddMonoid.FG (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)) :=
+    (isRegularCone_projectiveSpaceCone b hi (S := {k}ᶜ) (by simp)).toIsToricCone.fg_dualSemigroup hi
+  obtain ⟨r, ⟨g⟩⟩ := exists_addGeneratingFamily
+    (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ))
+  let _ := affinePointTopology g
+  intro x y h
+  apply (projectiveSpacePointHomeomorph b hi k g).injective
+  funext j
+  simpa only [projectiveSpacePointHomeomorph_eq_homogeneousCoordinate] using congrFun h j
 
 section Manifold
 

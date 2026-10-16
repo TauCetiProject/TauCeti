@@ -57,6 +57,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
 
 * `TauCeti.fourier_injective`: `n ↦ fourier n` is injective, so distinct indices give distinct
   characters.
+* `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
+  `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
 * `ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero`: a continuous function on the circle all
   of whose Fourier coefficients vanish is the zero function.
 * `AddChar.exists_fourierAddChar_eq`: **every continuous additive character of the circle is a
@@ -101,6 +103,28 @@ theorem fourier_injective (hT : T ≠ 0) : Function.Injective (fourier (T := T))
           rw [← Complex.exp_sub, he]
       _ = 1 := by rw [hx, div_self (Complex.exp_ne_zero _)]
   norm_num at hcontra
+
+/-- The Fourier monomial of frequency `1` in terms of the cosine and sine of `2π t / T`. -/
+theorem fourier_one_coe_apply (t : ℝ) :
+    fourier 1 (t : AddCircle T) =
+      Real.cos (2 * Real.pi * t / T) + Real.sin (2 * Real.pi * t / T) * Complex.I := by
+  have : 2 * Real.pi * Complex.I * ((1 : ℤ) : ℂ) * t / (T : ℂ) =
+      ((2 * Real.pi * t / T : ℝ) : ℂ) * Complex.I := by
+    push_cast
+    ring
+  rw [fourier_coe_apply, this, Complex.exp_mul_I]
+  simp
+
+/-- The Fourier monomial of frequency `-1` in terms of the cosine and sine of `2π t / T`. -/
+theorem fourier_neg_one_coe_apply (t : ℝ) :
+    fourier (-1) (t : AddCircle T) =
+      Real.cos (2 * Real.pi * t / T) - Real.sin (2 * Real.pi * t / T) * Complex.I := by
+  have : 2 * Real.pi * Complex.I * ((-1 : ℤ) : ℂ) * t / (T : ℂ) =
+      ((-(2 * Real.pi * t / T)) : ℝ) * Complex.I := by
+    push_cast
+    ring
+  rw [fourier_coe_apply, this, Complex.exp_mul_I]
+  simp [sub_eq_add_neg]
 
 /-- **The `n`-th Fourier monomial as a bundled additive character of the circle.** It is Mathlib's
 `AddCircle.toCircle_addChar` precomposed with multiplication by `n` and postcomposed with the

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Calculus.Bilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 /-!
-# Smoothness of pulled-back Riemannian metrics
+# Pullback Riemannian metrics
 
 Let `b` be a family of bilinear forms on the tangent spaces of a manifold `N`, for instance a
 Riemannian metric, that is a `C^n` section near `f x₀`, where `f : M → N` is a map that is
@@ -31,6 +31,8 @@ the metric that a manifold with a geometric structure receives through its chart
   `C^n` at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`.
 * `Bundle.ContMDiffRiemannianMetric.contMDiffAt_pullback`: the special case of a `C^n` Riemannian
   metric.
+* `Bundle.ContMDiffRiemannianMetric.pullback`: the `C^n` Riemannian metric obtained from an
+  immersion by pulling back the target metric.
 
 ## References
 
@@ -119,6 +121,56 @@ theorem contMDiffAt_pullback
         ((ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
           ((g.inner (f x)).comp (mfderiv I J f x)))) x₀ :=
   contMDiffAt_bilinearForm_pullback (g.contMDiff (f x₀)) hf
+
+variable [FiniteDimensional ℝ E]
+
+/-- Pull back a smooth Riemannian metric along a smooth immersion. At `x`, the inner product is
+the target metric at `f x` evaluated on the two images under the manifold derivative of `f`.
+Injectivity of the derivative makes this form positive definite. -/
+noncomputable def pullback
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) (f : M → N)
+    (hf : ContMDiff I J (n + 1) f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) :
+    ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x) where
+  inner x :=
+    (ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
+      ((g.inner (f x)).comp (mfderiv I J f x))
+  symm x v w := by
+    simpa only [ContinuousLinearMap.precomp_apply, ContinuousLinearMap.comp_apply] using
+      g.symm (f x) (mfderiv I J f x v) (mfderiv I J f x w)
+  pos x v hv := by
+    apply g.pos (f x)
+    exact (map_ne_zero_iff (mfderiv I J f x) (hinj x)).2 hv
+  isVonNBounded x := by
+    -- TangentSpace deliberately has only its bundle topology; use the model norms while proving
+    -- boundedness of the positive unit ball.
+    let _ : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
+    let _ : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
+    let _ : NormedAddCommGroup (TangentSpace J (f x)) := inferInstanceAs (NormedAddCommGroup F)
+    let _ : NormedSpace ℝ (TangentSpace J (f x)) := inferInstanceAs (NormedSpace ℝ F)
+    let A : TangentSpace I x →L[ℝ] TangentSpace J (f x) := mfderiv I J f x
+    obtain ⟨K, -, hK⟩ := A.toLinearMap.exists_antilipschitzWith
+      (LinearMap.ker_eq_bot.2 (hinj x))
+    refine NormedSpace.isVonNBounded_of_isBounded ℝ
+      ((hK.isBounded_preimage
+        ((NormedSpace.isVonNBounded_iff ℝ).mp (g.isVonNBounded (f x)))).subset ?_)
+    intro v hv
+    -- The defining inequality is exactly membership in the preimage above.
+    change g.inner (f x) (A v) (A v) < 1
+    exact hv
+  contMDiff x := g.contMDiffAt_pullback (hf x)
+
+/-- The pullback metric is obtained by applying the target metric to the two differentials. -/
+@[simp]
+theorem pullback_inner
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) (f : M → N)
+    (hf : ContMDiff I J (n + 1) f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (x : M)
+    (v w : TangentSpace I x) :
+    (g.pullback f hf hinj).inner x v w =
+      g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
+  (rfl)
+
 
 end ContMDiffRiemannianMetric
 

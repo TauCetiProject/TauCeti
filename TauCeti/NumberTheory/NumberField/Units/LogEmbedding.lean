@@ -45,6 +45,9 @@ which the unit group enters the computation of Herbrand quotients of units in cl
   `logSpaceRep` with the permutation of the infinite places.
 * `TauCeti.NumberField.Units.logEmbedding_smul`: the logarithmic embedding is
   `Aut(L/K)`-equivariant.
+* `TauCeti.NumberField.Units.sum_abs_logEmbedding_le_sum_mult_mul_abs_log`: the `ℓ¹` norm of
+  the logarithmic embedding of a unit is at most the sum of its weighted absolute logarithms
+  over all infinite places.
 
 ## References
 
@@ -125,6 +128,25 @@ theorem logSpaceExtend_logEmbedding (x : (𝓞 L)ˣ) :
   logSpaceExtend_eq_self (sum_mult_mul_log x)
 
 end Extend
+
+/-! ### The `ℓ¹` norm -/
+
+section Norm
+
+variable {L : Type*} [Field L] [NumberField L]
+
+open Classical in
+/-- The `ℓ¹` norm of the logarithmic embedding of a unit, which omits the distinguished infinite
+place, is at most the sum of the weighted absolute logarithms over all infinite places. -/
+theorem sum_abs_logEmbedding_le_sum_mult_mul_abs_log (u : (𝓞 L)ˣ) :
+    ∑ w, |logEmbedding L (Additive.ofMul u) w| ≤
+      ∑ w : InfinitePlace L, w.mult * |Real.log (w u)| := by
+  simp_rw [logEmbedding_component, abs_mul, Nat.abs_cast]
+  rw [← sum_subtype {w | w ≠ w₀} (by simp)
+    fun w : InfinitePlace L => (w.mult : ℝ) * |Real.log (w u)|]
+  exact sum_le_univ_sum_of_nonneg fun _ => by positivity
+
+end Norm
 
 /-! ### The Galois representation -/
 

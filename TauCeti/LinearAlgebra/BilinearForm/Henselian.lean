@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting
+public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic

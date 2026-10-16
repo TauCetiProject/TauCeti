@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 
 /-!
 # The reversed characteristic polynomial on a finite projective module
@@ -55,20 +55,6 @@ invariants is proved for finite locally free group actions and equivalence relat
 public section
 
 open Polynomial Module
-
-namespace Matrix
-
-variable {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
-
-/-- The reversed characteristic polynomial commutes with ring homomorphisms. -/
-theorem charpolyRev_map (M : Matrix n n R) (f : R →+* S) :
-    (M.map f).charpolyRev = M.charpolyRev.map f := by
-  rw [charpolyRev, charpolyRev, ← coe_mapRingHom, RingHom.map_det]
-  congr 1
-  ext i j
-  by_cases h : i = j <;> simp [h]
-
-end Matrix
 
 namespace LinearMap
 

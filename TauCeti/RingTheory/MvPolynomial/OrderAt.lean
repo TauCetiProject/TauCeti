@@ -47,6 +47,7 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 * `MvPolynomial.orderAt_eq_zero_iff`, `MvPolynomial.orderAt_pos_iff`: the order is positive
   exactly at the zeros of `p`.
 * `MvPolynomial.orderAt_mul`: over a domain, the order of a product is the sum of the orders.
+* `MvPolynomial.orderAt_eq_of_associated`: associated polynomials have the same order.
 * `MvPolynomial.succ_le_orderAt_iff`: `p` has order at least `n + 1` at `a` if and only if
   `p` vanishes at `a` and every partial derivative of `p` has order at least `n` there.
 * `MvPolynomial.le_orderAt_iff_eval_foldl_pderiv`: the order is at least `n` if and only if
@@ -359,6 +360,11 @@ theorem orderAt_eq_zero_iff : p.orderAt a = 0 ↔ eval a p ≠ 0 := by
 theorem orderAt_pos_iff : 0 < p.orderAt a ↔ eval a p = 0 := by
   rw [pos_iff_ne_zero, Ne, orderAt_eq_zero_iff, not_not]
 
+/-- Equal orders of vanishing give the same zero pattern at the two points. -/
+theorem _root_.TauCeti.eval_eq_zero_iff_of_orderAt_eq {x y : σ → R}
+    (h : p.orderAt x = p.orderAt y) : eval x p = 0 ↔ eval y p = 0 := by
+  rw [← orderAt_pos_iff, h, orderAt_pos_iff]
+
 theorem orderAt_C_of_ne_zero {r : R} (hr : r ≠ 0) (a : σ → R) : (C r).orderAt a = 0 :=
   orderAt_eq_zero_iff.mpr (by simpa using hr)
 
@@ -373,6 +379,15 @@ theorem min_orderAt_le_orderAt_add (p q : MvPolynomial σ R) (a : σ → R) :
 theorem le_orderAt_mul (p q : MvPolynomial σ R) (a : σ → R) :
     p.orderAt a + q.orderAt a ≤ (p * q).orderAt a := by
   simpa [orderAt_def] using MvPowerSeries.le_order_mul
+
+/-- Associated polynomials have the same order at every point. -/
+theorem orderAt_eq_of_associated (h : Associated p q) (a : σ → R) :
+    p.orderAt a = q.orderAt a := by
+  obtain ⟨u, rfl⟩ := h
+  refine le_antisymm (le_self_add.trans (le_orderAt_mul _ _ _)) ?_
+  calc (p * u).orderAt a ≤ (p * u).orderAt a + (↑u⁻¹ : MvPolynomial σ R).orderAt a := le_self_add
+    _ ≤ (p * u * ↑u⁻¹).orderAt a := le_orderAt_mul _ _ _
+    _ = p.orderAt a := by rw [Units.mul_inv_cancel_right]
 
 /-- The order of the Taylor shift of `p` at `a` is the order of `p` at the translated point. -/
 @[simp]
