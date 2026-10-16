@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 
@@ -34,7 +35,8 @@ Cut `m` into the Littlewood–Paley pieces `ψⱼ • m` of a bump function supp
 (`ContDiffBump.littlewoodPaleyPiece`), and let `σₙ = ∑_{-n < j ≤ n} ψⱼ • m` be the truncations.
 These are Schwartz functions, bounded by `‖m‖_∞`, and they converge to `m` away from the origin.
 
-* The pieces are band-limited at the scales `2 ^ j` with derivative bounds independent of `j`
+* The pieces are band-limited at the scales `2 ^ j` and satisfy the derivative bounds
+  `‖D^k (ψⱼ • m) ξ‖ ≤ C A / (2 ^ j) ^ k` with `C` independent of `j`
   (`ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`), so the kernels `𝓕⁻ σₙ`
   satisfy Hörmander's condition `∫_{‖x‖ > 2 ‖h‖} ‖𝓕⁻ σₙ (x - h) - 𝓕⁻ σₙ x‖ dx ≤ B A`
   uniformly in `n` (`SchwartzMap.exists_setIntegral_norm_fourierInv_sum_sub_sub_le`).
@@ -73,19 +75,6 @@ namespace TauCeti
 variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup F]
   [InnerProductSpace ℂ F]
 
-/-- The derivative bounds `‖D^k m ξ‖ ≤ 1 / ‖ξ‖ ^ k` survive complex conjugation of the symbol. -/
-private theorem norm_iteratedFDeriv_conj_le {m : V → ℂ} {N : ℕ}
-    (hmA : ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ 1 / ‖ξ‖ ^ k) :
-    ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k (fun ξ ↦ (starRingEnd ℂ) (m ξ)) ξ‖ ≤ 1 / ‖ξ‖ ^ k :=
-  fun k hk ξ hξ ↦ by
-    simpa [Function.comp_def, Complex.conjLIE_apply] using
-      (Complex.conjLIE.norm_iteratedFDeriv_comp_left m ξ k).trans_le (hmA k hk ξ hξ)
-
-/-- Complex conjugation preserves smoothness of the symbol away from the origin. -/
-private theorem contDiffOn_conj {m : V → ℂ} (hm : ContDiffOn ℝ ∞ m {0}ᶜ) :
-    ContDiffOn ℝ ∞ (fun ξ ↦ (starRingEnd ℂ) (m ξ)) {0}ᶜ :=
-  Complex.conjCLE.contDiff.comp_contDiffOn hm
-
 variable [FiniteDimensional ℝ V]
 
 /-- The bump function equal to `1` on the ball of radius `1/2` and supported in the unit ball,
@@ -120,11 +109,7 @@ private theorem norm_mihlinTrunc_le {m : V → ℂ} (hm : ContDiffOn ℝ ∞ m {
 /-- Away from the origin the truncations converge to the symbol. -/
 private theorem tendsto_mihlinTrunc {m : V → ℂ} (hm : ContDiffOn ℝ ∞ m {0}ᶜ) {ξ : V}
     (hξ : ξ ≠ 0) : Tendsto (fun n ↦ mihlinTrunc hm n ξ) atTop (𝓝 (m ξ)) := by
-  have hs : Tendsto (fun n : ℕ ↦ Finset.Ioc (-(n : ℤ)) n) atTop atTop :=
-    tendsto_atTop_finset_of_monotone (fun a b (hab : a ≤ b) ↦
-      Finset.Ioc_subset_Ioc (by omega) (by omega))
-      fun j ↦ ⟨j.natAbs + 1, Finset.mem_Ioc.2 ⟨by omega, by omega⟩⟩
-  have := (mihlinBump.hasSum_littlewoodPaleyPiece hm hξ).comp hs
+  have := (mihlinBump.hasSum_littlewoodPaleyPiece hm hξ).comp (Finset.tendsto_Ioc_neg (R := ℤ))
   simpa [mihlinTrunc, sum_apply, Function.comp_def] using this
 
 variable [MeasurableSpace V] [BorelSpace V]
@@ -212,13 +197,14 @@ private theorem norm_toLp_mihlinTrunc_le {m : V → ℂ} (hm : ContDiffOn ℝ �
     simpa using norm_mihlinTrunc_le hm hmA zero_le_one n ξ)
 
 /-- Complex conjugation of the truncated symbol truncates the conjugate symbol. -/
-private theorem star_toLp_mihlinTrunc {m : V → ℂ} (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (n : ℕ) :
+private theorem star_toLp_mihlinTrunc {m : V → ℂ} (hm : ContDiffOn ℝ ∞ m {0}ᶜ)
+    (hm' : ContDiffOn ℝ ∞ (fun ξ ↦ (starRingEnd ℂ) (m ξ)) {0}ᶜ) (n : ℕ) :
     star ((mihlinTrunc hm n).toLp ∞ (volume : Measure V)) =
-      (mihlinTrunc (contDiffOn_conj hm) n).toLp ∞ (volume : Measure V) := by
+      (mihlinTrunc hm' n).toLp ∞ (volume : Measure V) := by
   apply Lp.ext
   filter_upwards [Lp.coeFn_star ((mihlinTrunc hm n).toLp ∞ (volume : Measure V)),
     (mihlinTrunc hm n).coeFn_toLp ∞ (volume : Measure V),
-    (mihlinTrunc (contDiffOn_conj hm) n).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂ h₃
+    (mihlinTrunc hm' n).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂ h₃
   rw [h₁, Pi.star_apply, h₂, h₃, mihlinTrunc_apply, mihlinTrunc_apply]
   simp [Complex.real_smul]
 
@@ -240,7 +226,14 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_mihlinTrunc_le [Nontrivial V
   refine ⟨C, fun {m} hm hmA n f ↦ ?_⟩
   have hm0 : ∀ ξ ≠ 0, ‖m ξ‖ ≤ 1 := fun ξ hξ ↦ by simpa using hmA 0 (Nat.zero_le _) ξ hξ
   set σ := mihlinTrunc hm n
-  set σ' := mihlinTrunc (contDiffOn_conj hm) n
+  -- The conjugate symbol is smooth away from the origin and satisfies the same Mihlin bounds.
+  have hm' : ContDiffOn ℝ ∞ (fun ξ ↦ (starRingEnd ℂ) (m ξ)) {0}ᶜ :=
+    Complex.conjCLE.contDiff.comp_contDiffOn hm
+  have hmA' : ∀ k ≤ N, ∀ ξ ≠ 0,
+      ‖iteratedFDeriv ℝ k (fun ξ ↦ (starRingEnd ℂ) (m ξ)) ξ‖ ≤ 1 / ‖ξ‖ ^ k := fun k hk ξ hξ ↦ by
+    simpa [Function.comp_def, Complex.conjLIE_apply] using
+      (Complex.conjLIE.norm_iteratedFDeriv_comp_left m ξ k).trans_le (hmA k hk ξ hξ)
+  set σ' := mihlinTrunc hm' n
   set T := (Lp.fourierMultiplierCLM F (σ.toLp ∞ (volume : Measure V))).restrictScalars ℝ
   have hT : adjoint T =
       (Lp.fourierMultiplierCLM F (σ'.toLp ∞ (volume : Measure V))).restrictScalars ℝ := by
@@ -250,7 +243,7 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_mihlinTrunc_le [Nontrivial V
         rw [L2.inner_def, L2.inner_def]
         exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
     refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-    rw [hre, hre, coe_restrictScalars', coe_restrictScalars', ← star_toLp_mihlinTrunc,
+    rw [hre, hre, coe_restrictScalars', coe_restrictScalars', ← star_toLp_mihlinTrunc hm hm',
       ← Lp.adjoint_fourierMultiplierCLM, adjoint_inner_left]
   have hTn : ‖T‖ₑ ≤ 1 := by
     rw [← ofReal_norm, norm_restrictScalars, ← ENNReal.ofReal_one]
@@ -258,7 +251,7 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_mihlinTrunc_le [Nontrivial V
       ((Lp.norm_fourierMultiplierCLM_le _).trans (norm_toLp_mihlinTrunc_le hm hm0 n))
   refine hC T (mihlinKernel σ) (mihlinKernel σ') hTn (stronglyMeasurable_mihlinKernel σ)
     (stronglyMeasurable_mihlinKernel σ') (setLIntegral_enorm_mihlinKernel_sub_le σ (hB hm hmA n))
-    (setLIntegral_enorm_mihlinKernel_sub_le σ' (hB _ (norm_iteratedFDeriv_conj_le hmA) n))
+    (setLIntegral_enorm_mihlinKernel_sub_le σ' (hB hm' hmA' n))
     (fun g _ _ _ ↦ (ae_fourierMultiplierCLM_eq_integral_mihlinKernel σ g).mono fun _ hx _ ↦ hx)
     (fun g _ _ _ ↦ hT ▸ (ae_fourierMultiplierCLM_eq_integral_mihlinKernel σ' g).mono
       fun _ hx _ ↦ hx) f
