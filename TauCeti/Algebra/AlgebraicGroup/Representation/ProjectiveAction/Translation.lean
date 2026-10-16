@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
 /-!
 # Universal projective translation of a Hopf comodule
 
-A comodule over a flat commutative Hopf `R`-algebra `H` gives a universal projective
+A comodule over a commutative Hopf `R`-algebra `H` gives a universal projective
 translation on `Proj(Sym_R M) ×_{Spec R} Spec H`. It is an isomorphism fixing the
 `Spec H` coordinate; projecting its output to projective space gives the family morphism.
 The inverse comes from the inverse of the universal point `id : H →ₐ[R] H`, hence
@@ -20,8 +20,7 @@ from the antipode. This is a scheme construction, valid also for nonreduced grou
 The module `M` consists of homogeneous linear coordinates. For the projective space
 of lines in a finite projective representation `V`, use the dual comodule `M = V∨`.
 Inverse pullback then gives translation by the original representation on `V`.
-No finite-type, smoothness, or characteristic assumption is imposed. Flatness of `H`
-is automatic over a field and is used only in the projective base-change comparison.
+No flatness, finite-type, smoothness, or characteristic assumption is imposed.
 
 The construction uses `Comodule.pointsAction` and
 `Proj.symmetricAlgebraFamilyAut`. It supplies the universal family of translations;
@@ -49,7 +48,7 @@ variable (R H M : Type u) [CommRing R] [CommRing H] [HopfAlgebra R H]
 
 section Parameter
 
-variable (S : Type u) [CommRing S] [Algebra R S] [Module.Flat R S]
+variable (S : Type u) [CommRing S] [Algebra R S]
 
 /-- Algebra-valued group points act by projective automorphisms of the scheme fiber product,
 with the parameter algebra fixed. -/
@@ -62,7 +61,7 @@ noncomputable def projectivePointsAction :
 /-- The projective point action is transport of inverse pullback by the scalar-extended
 linear point action. -/
 theorem projectivePointsAction_apply (g : WithConv (H →ₐ[R] S)) :
-    projectivePointsAction R H M S g =
+    (projectivePointsAction R H M S g).asIso =
       (Proj.symmetricAlgebraBaseChangeIso R S M).symm ≪≫
         Proj.symmetricAlgebraMapIso S (pointsAction M g).symm ≪≫
           Proj.symmetricAlgebraBaseChangeIso R S M := by
@@ -71,12 +70,10 @@ theorem projectivePointsAction_apply (g : WithConv (H →ₐ[R] S)) :
 /-- Projective translation fixes the parameter projection, including on the structure sheaf. -/
 @[reassoc (attr := simp)]
 theorem projectivePointsAction_hom_snd (g : WithConv (H →ₐ[R] S)) :
-    (projectivePointsAction R H M S g).hom ≫ pullback.snd _ _ = pullback.snd _ _ := by
+    (projectivePointsAction R H M S g).asIso.hom ≫ pullback.snd _ _ = pullback.snd _ _ := by
   exact Proj.symmetricAlgebraFamilyAut_hom_snd R S M (pointsAction M g)
 
 end Parameter
-
-variable [Module.Flat R H]
 
 /-- The universal translation `(x, g) ↦ (g · x, g)` on the projective-space/group fiber
 product, obtained from the universal `H`-valued point. -/
@@ -85,20 +82,22 @@ noncomputable def projectiveUniversalTranslation :
         (Spec.map (CommRingCat.ofHom (algebraMap R H))) ≅
       pullback (Proj.toSpecCoeff (homogeneousSubmodule R M))
         (Spec.map (CommRingCat.ofHom (algebraMap R H))) :=
-  projectivePointsAction R H M H (toConv (AlgHom.id R H))
+  (projectivePointsAction R H M H (toConv (AlgHom.id R H))).asIso
 
 /-- Universal translation is the projective action of the identity algebra homomorphism. -/
 theorem projectiveUniversalTranslation_def :
     projectiveUniversalTranslation R H M =
-      projectivePointsAction R H M H (toConv (AlgHom.id R H)) := (rfl)
+      (projectivePointsAction R H M H (toConv (AlgHom.id R H))).asIso := (rfl)
 
 /-- The inverse universal translation is translation by the convolution inverse of the
 universal point, whose coordinate map is the antipode. -/
 @[simp]
 theorem projectiveUniversalTranslation_symm :
     (projectiveUniversalTranslation R H M).symm =
-      projectivePointsAction R H M H ((toConv (AlgHom.id R H))⁻¹) := by
-  exact (map_inv (projectivePointsAction R H M H) (toConv (AlgHom.id R H))).symm
+      (projectivePointsAction R H M H ((toConv (AlgHom.id R H))⁻¹)).asIso := by
+  rw [projectiveUniversalTranslation_def]
+  simpa only [Aut.inv_asIso] using
+    congrArg Aut.asIso (map_inv (projectivePointsAction R H M H) (toConv (AlgHom.id R H))).symm
 
 /-- Universal translation preserves the group coordinate as a scheme morphism. -/
 @[reassoc (attr := simp)]
