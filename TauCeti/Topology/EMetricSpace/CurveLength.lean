@@ -15,7 +15,9 @@ public import TauCeti.Topology.Connected.HausdorffMeasure
 A continuous injective curve on a compact real interval has variation at most the
 one-dimensional Hausdorff measure of its trace. In particular, finite trace measure implies
 bounded variation, without any Lipschitz or bounded-variation hypothesis on the parametrization.
-The results include empty and singleton parameter intervals.
+The same conclusions hold for a simple closed curve, represented by a map injective on the
+half-open parameter interval and taking equal values at its endpoints. All results include empty
+and singleton parameter intervals.
 
 Both raw Hausdorff measure `μH[1]` and Euclidean-normalized measure `μHE[1]` are supported.
 The central formal input is `IsPreconnected.edist_le_hausdorffMeasure`: apply it to the
@@ -116,5 +118,111 @@ theorem boundedVariationOn_of_euclideanHausdorffMeasure_image_lt_top
     (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Icc a b))
     (hfinite : μHE[1] (γ '' Icc a b) < ∞) : BoundedVariationOn γ (Icc a b) :=
   ((hγ.eVariationOn_le_euclideanHausdorffMeasure_image hinj).trans_lt hfinite).ne
+
+/-! ### Simple closed curves -/
+
+/-- The variation of a continuous simple closed curve is at most the raw one-dimensional
+Hausdorff measure of its trace. Simplicity is expressed by injectivity on the half-open parameter
+interval; the only repetition on the closed interval is therefore the common endpoint value. The
+singleton parameter interval is included. -/
+theorem eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico
+    (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
+    (hclosed : γ a = γ b) (hab : a ≤ b) :
+    eVariationOn γ (Icc a b) ≤ μH[1] (γ '' Icc a b) := by
+  rcases hab.eq_or_lt with rfl | hab
+  · exact hγ.eVariationOn_le_hausdorffMeasure_image (Icc_self a ▸ injOn_singleton γ a)
+  let c := (a + b) / 2
+  have hac : a < c := by dsimp [c]; linarith
+  have hcb : c < b := by dsimp [c]; linarith
+  -- Half-open injectivity and endpoint equality characterize every possible repeated value.
+  have hsimple {x y : ℝ} (hx : x ∈ Icc a b) (hy : y ∈ Icc a b) (hxy : γ x = γ y) :
+      x = y ∨ (x = a ∧ y = b) ∨ (x = b ∧ y = a) := by
+    by_cases hxb : x = b
+    · subst x
+      by_cases hyb : y = b
+      · exact Or.inl hyb.symm
+      · exact Or.inr <| Or.inr ⟨rfl, (hinj (left_mem_Ico.mpr hab)
+          ⟨hy.1, lt_of_le_of_ne hy.2 hyb⟩ (hclosed.trans hxy)).symm⟩
+    · by_cases hyb : y = b
+      · subst y
+        exact Or.inr <| Or.inl ⟨hinj ⟨hx.1, lt_of_le_of_ne hx.2 hxb⟩
+          (left_mem_Ico.mpr hab) (hxy.trans hclosed.symm), rfl⟩
+      · exact Or.inl <| hinj ⟨hx.1, lt_of_le_of_ne hx.2 hxb⟩
+          ⟨hy.1, lt_of_le_of_ne hy.2 hyb⟩ hxy
+  -- Splitting at the midpoint turns the closed curve into two injective compact arcs.
+  have hleft : InjOn γ (Icc a c) := by
+    intro x hx y hy hxy
+    rcases hsimple ⟨hx.1, hx.2.trans hcb.le⟩ ⟨hy.1, hy.2.trans hcb.le⟩ hxy with
+      h | h | h
+    · exact h
+    · exact absurd (h.2 ▸ hy.2) (not_le_of_gt hcb)
+    · exact absurd (h.1 ▸ hx.2) (not_le_of_gt hcb)
+  have hright : InjOn γ (Icc c b) := by
+    intro x hx y hy hxy
+    rcases hsimple ⟨hac.le.trans hx.1, hx.2⟩ ⟨hac.le.trans hy.1, hy.2⟩ hxy with
+      h | h | h
+    · exact h
+    · exact absurd (h.1 ▸ hx.1) (not_le_of_gt hac)
+    · exact absurd (h.2 ▸ hy.1) (not_le_of_gt hac)
+  have := Measure.nullSingletonClass_hausdorff X (by norm_num : (0 : ℝ) < 1)
+  -- The two arc traces meet only at the midpoint and the common endpoint, hence measurably add.
+  have hdisj : AEDisjoint μH[1] (γ '' Icc a c) (γ '' Icc c b) := by
+    apply measure_mono_null (t := {γ c, γ a})
+    · rintro z ⟨⟨x, hx, rfl⟩, ⟨y, hy, hxy⟩⟩
+      rcases hsimple ⟨hx.1, hx.2.trans hcb.le⟩ ⟨hac.le.trans hy.1, hy.2⟩ hxy.symm with
+        h | h | h
+      · have hcx : c ≤ x := h.symm ▸ hy.1
+        exact Or.inl (congrArg γ (le_antisymm hx.2 hcx))
+      · exact Or.inr (mem_singleton_iff.mpr (congrArg γ h.1))
+      · exact Or.inr (mem_singleton_iff.mpr ((congrArg γ h.1).trans hclosed.symm))
+    · exact ((finite_singleton (γ a)).insert (γ c)).measure_zero _
+  have hmeasure :
+      μH[1] (γ '' Icc a b) = μH[1] (γ '' Icc a c) + μH[1] (γ '' Icc c b) := by
+    rw [← Icc_union_Icc_eq_Icc hac.le hcb.le, image_union]
+    exact measure_union₀
+      (isCompact_Icc.image_of_continuousOn
+        (hγ.mono (Icc_subset_Icc hac.le le_rfl))).measurableSet.nullMeasurableSet hdisj
+  -- Add the two arc inequalities using additivity of both variation and trace measure.
+  have hvariation := eVariationOn.Icc_add_Icc γ (s := univ) hac.le hcb.le (mem_univ c)
+  simp only [univ_inter] at hvariation
+  have hle := add_le_add
+    ((hγ.mono (Icc_subset_Icc le_rfl hcb.le)).eVariationOn_le_hausdorffMeasure_image hleft)
+    ((hγ.mono (Icc_subset_Icc hac.le le_rfl)).eVariationOn_le_hausdorffMeasure_image hright)
+  exact hvariation.symm.trans_le (hle.trans hmeasure.symm.le)
+
+/-- The variation of a continuous simple closed curve is at most the Euclidean-normalized
+one-dimensional Hausdorff measure of its trace. -/
+theorem eVariationOn_le_euclideanHausdorffMeasure_image_of_injOn_Ico
+    (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
+    (hclosed : γ a = γ b) (hab : a ≤ b) :
+    eVariationOn γ (Icc a b) ≤ μHE[1] (γ '' Icc a b) := by
+  have hreal : (μHE[1] : Measure ℝ) = volume := by
+    simpa using (InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ))
+  have hscalar :
+      Measure.addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin 1)))
+        μH[(1 : ℕ)] = 1 := by
+    have h := congrArg (fun μ : Measure ℝ ↦ μ (Icc 0 1)) hreal
+    simpa [Measure.euclideanHausdorffMeasure_def, Measure.smul_apply,
+      hausdorffMeasure_real, Real.volume_Icc] using h
+  rw [Measure.euclideanHausdorffMeasure_def, hscalar, one_smul]
+  simpa only [Nat.cast_one] using
+    hγ.eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico hinj hclosed hab
+
+/-- A continuous simple closed curve with finite raw Hausdorff length has bounded variation. -/
+theorem boundedVariationOn_of_hausdorffMeasure_image_lt_top_of_injOn_Ico
+    (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
+    (hclosed : γ a = γ b) (hab : a ≤ b) (hfinite : μH[1] (γ '' Icc a b) < ∞) :
+    BoundedVariationOn γ (Icc a b) :=
+  ((hγ.eVariationOn_le_hausdorffMeasure_image_of_injOn_Ico hinj hclosed hab).trans_lt
+    hfinite).ne
+
+/-- A continuous simple closed curve with finite Euclidean Hausdorff length has bounded variation,
+without a Lipschitz hypothesis on its input parametrization. -/
+theorem boundedVariationOn_of_euclideanHausdorffMeasure_image_lt_top_of_injOn_Ico
+    (hγ : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ico a b))
+    (hclosed : γ a = γ b) (hab : a ≤ b) (hfinite : μHE[1] (γ '' Icc a b) < ∞) :
+    BoundedVariationOn γ (Icc a b) :=
+  ((hγ.eVariationOn_le_euclideanHausdorffMeasure_image_of_injOn_Ico hinj hclosed hab).trans_lt
+    hfinite).ne
 
 end ContinuousOn
