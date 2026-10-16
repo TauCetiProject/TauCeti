@@ -24,6 +24,7 @@ group along such an equivalence and using the split calculation identifies it no
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 20.
+* T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Chapter II, §3.
 -/
 
 public section
