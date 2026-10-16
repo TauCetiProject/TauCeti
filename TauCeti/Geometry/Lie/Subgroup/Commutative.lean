@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 import TauCeti.Geometry.Lie.Exponential.Classification
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup
+import TauCeti.Geometry.Lie.Subgroup.Differential
 
 /-!
 # The Lie algebra of a commutative subgroup
@@ -19,7 +21,8 @@ centralizer brackets to zero with `Lie(K)`. A commutative subgroup lies in its o
 the adjoint action of a commutative `K` fixes `Lie(K)` pointwise and `Lie(K)` is an abelian Lie
 subalgebra of `𝔤`; in particular the Lie algebra of a commutative Lie group is abelian. This
 applies to the Lie algebra `𝔱` of a torus `T ≤ G`, which is abelian and fixed pointwise by
-`Ad(T)`.
+`Ad(T)`. A closed connected commutative subgroup is moreover the exponential image of its Lie
+algebra.
 
 Conjugation by `g` carries the one-parameter subgroup of `X ∈ Lie(K)` to the one-parameter
 subgroup of `Ad g X`; when `g` commutes with the former, uniqueness of the generator of a
@@ -43,6 +46,8 @@ subalgebra they generate by `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`.
   is abelian.
 * `TauCeti.Lie.isLieAbelian_of_isMulCommutative`: the Lie algebra of a commutative Lie group is
   abelian.
+* `TauCeti.Lie.image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`: a closed connected
+  commutative subgroup is the exponential image of its Lie algebra.
 
 ## References
 
@@ -137,5 +142,33 @@ instance isLieAbelian_of_isMulCommutative [IsMulCommutative G] :
     lie_eq_zero_of_mem_lieSubalgebraOfSubgroup (K := ⊤)
       (mem_lieSubalgebraOfSubgroup_of_forall fun _ => Subgroup.mem_top _)
       (mem_lieSubalgebraOfSubgroup_of_forall fun _ => Subgroup.mem_top _)
+
+
+/-- **A closed connected commutative subgroup is the exponential image of its Lie algebra.** -/
+theorem image_lieExp_lieSubalgebraOfSubgroup_of_isConnected {K : Subgroup G} [IsMulCommutative K]
+    (hK : IsClosed (K : Set G)) (hconn : IsConnected (K : Set G)) :
+    lieExp (I := I) '' (lieSubalgebraOfSubgroup (I := I) K : Set (LeftInvariantDerivation I G)) =
+      K := by
+  refine Set.Subset.antisymm ?_ fun k hk => ?_
+  · rintro _ ⟨X, hX, rfl⟩
+    exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hX
+  -- `K` is a Lie group with model space its Lie algebra, commutative and connected, so its own
+  -- exponential is surjective; the inclusion intertwines the two exponentials.
+  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
+  let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K := d.lieGroup
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn.isPreconnected
+  obtain ⟨X, hX⟩ := lieExp_surjective_of_preconnectedSpace
+    (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)) (G := K) ⟨k, hk⟩
+  refine ⟨d.lieMapSubtypeVal X, d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup X, ?_⟩
+  have hnat := map_lieExp d.subtypeVal X
+  dsimp only at hnat
+  rw [hX, EmbeddedLieSubgroupData.subtypeVal_apply,
+    ← EmbeddedLieSubgroupData.lieMapSubtypeVal_apply] at hnat
+  exact hnat.symm
 
 end TauCeti.Lie

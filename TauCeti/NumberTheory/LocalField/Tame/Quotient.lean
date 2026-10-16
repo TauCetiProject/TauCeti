@@ -148,24 +148,27 @@ instance : TotallyDisconnectedSpace (tameQuotient K) :=
 
 /-- The quotient map `G_K →ₜ* G_K^t` onto the tame quotient. -/
 def toTameQuotient : Field.absoluteGaloisGroup K →ₜ* tameQuotient K :=
-  ContinuousMonoidHom.quotientMk _
+  Subgroup.quotientMkContinuousMonoidHom _
 
 variable {K} in
 /-- The quotient map onto the tame quotient sends `σ` to its class modulo wild inertia. -/
 theorem toTameQuotient_apply (σ : Field.absoluteGaloisGroup K) :
     toTameQuotient K σ = (σ : tameQuotient K) :=
-  (rfl)
+  Subgroup.quotientMkContinuousMonoidHom_apply _ σ
 
 variable {K} in
 /-- An element of `G_K` has trivial image in the tame quotient exactly when it is wild. -/
 @[simp]
 theorem toTameQuotient_eq_one_iff {σ : Field.absoluteGaloisGroup K} :
-    toTameQuotient K σ = 1 ↔ σ ∈ wildInertiaSubgroup K :=
-  QuotientGroup.eq_one_iff σ
+    toTameQuotient K σ = 1 ↔ σ ∈ wildInertiaSubgroup K := by
+  rw [toTameQuotient_apply]
+  exact QuotientGroup.eq_one_iff σ
 
 /-- The quotient map onto the tame quotient is surjective. -/
-theorem toTameQuotient_surjective : Function.Surjective (toTameQuotient K) :=
-  QuotientGroup.mk'_surjective _
+theorem toTameQuotient_surjective : Function.Surjective (toTameQuotient K) := by
+  intro q
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk'_surjective (wildInertiaSubgroup K) q
+  exact ⟨σ, toTameQuotient_apply σ⟩
 
 /-! ### A topological generator of tame inertia -/
 
@@ -306,7 +309,8 @@ theorem tameInertiaHom_inertiaTameCharacter (τ : inertiaSubgroup K) :
   rw [tameInertiaHom, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_coe,
     quotientWildInertiaSubgroupEquiv_symm_inertiaTameCharacter, ContinuousMonoidHom.coe_mk]
   -- Both sides are the class of `τ` in `G_K / P_K`.
-  rfl
+  rw [toTameQuotient_apply]
+  exact QuotientGroup.map_mk _ _ _ _ τ
 
 /-- **The inclusion of tame inertia is injective**: an element of `I_K` whose image in `G_K / P_K`
 is trivial lies in `P_K`, so its tame character is trivial. -/
@@ -338,7 +342,7 @@ def tameQuotientToZHat : tameQuotient K →ₜ* zHat.{u} :=
   let f : Field.absoluteGaloisGroup K →ₜ* zHat.{u} :=
     (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K) : _ →ₜ* _).comp
       ⟨restrictMaximalUnramifiedHom K, continuous_restrictMaximalUnramifiedHom K⟩
-  ContinuousMonoidHom.quotientLift _ f fun σ hσ ↦ by
+  ContinuousMonoidHom.quotientLift f _ fun σ hσ ↦ by
     have h := wildInertiaSubgroup_le_inertiaSubgroup K hσ
     rw [← ker_restrictMaximalUnramifiedHom, MonoidHom.mem_ker] at h
     simp [f, MonoidHom.mem_ker, h]
@@ -349,8 +353,9 @@ variable {K} in
 theorem tameQuotientToZHat_toTameQuotient (σ : Field.absoluteGaloisGroup K) :
     tameQuotientToZHat K (toTameQuotient K σ) =
       maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)
-        (restrictMaximalUnramifiedHom K σ) :=
-  ContinuousMonoidHom.quotientLift_mk _ _ _ σ
+        (restrictMaximalUnramifiedHom K σ) := by
+  rw [toTameQuotient_apply]
+  exact ContinuousMonoidHom.quotientLift_mk _ _ _ σ
 
 /-- **Exactness in the middle**: the kernel of `G_K^t → ℤ̂` is the image of `ℤ̂^{(p')}(1)`, since
 both are the image of the inertia subgroup. -/
@@ -387,10 +392,11 @@ theorem tameInertiaHom_smul (g : Gal(AlgebraicClosure K/K))
   obtain ⟨⟨τ, hτ⟩, rfl⟩ := inertiaTameCharacter_surjective K x
   rw [← inertiaTameCharacter_conj g hτ, tameInertiaHom_inertiaTameCharacter,
     tameInertiaHom_inertiaTameCharacter]
-  -- `g * τ * g⁻¹` is formed in `Gal(K^{alg}/K)`, whose group structure is not reducibly that of
-  -- `Field.absoluteGaloisGroup K`, so `map_mul` does not rewrite; both sides are the class of
-  -- `g * τ * g⁻¹` in `G_K / P_K`.
-  rfl
+  -- Use one group instance for the two names of the absolute Galois group.
+  let g' : Field.absoluteGaloisGroup K := g
+  change toTameQuotient K (g' * τ * g'⁻¹) =
+    toTameQuotient K g' * toTameQuotient K τ * (toTameQuotient K g')⁻¹
+  simp only [map_mul, map_inv]
 
 namespace IsArithFrobeniusLift
 

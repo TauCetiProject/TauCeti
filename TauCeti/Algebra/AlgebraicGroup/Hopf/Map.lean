@@ -23,18 +23,16 @@ For a commutative Hopf algebra `H`, this is the contravariant functoriality of
 
 ## Main declarations
 
-* `AlgHom.mapDomain`: pre-composition by a bialgebra morphism as a monoid homomorphism of
+* `BialgHom.mapDomain`: pre-composition by a bialgebra morphism as a monoid homomorphism of
   convolution monoids.
-* `AlgHom.mapDomain_injective_of_surjective`: a surjective bialgebra morphism induces an
+* `BialgHom.mapDomain_injective_of_surjective`: a surjective bialgebra morphism induces an
   injective map on points.
-* `AlgHom.mapDomain_id` and `AlgHom.mapDomain_comp`: identity and composition laws.
-* `AlgHom.mapDomainMulEquiv`: the equiv-version of `AlgHom.mapDomain`, turning a bialgebra
+* `BialgHom.mapDomain_id` and `BialgHom.mapDomain_comp`: identity and composition laws.
+* `BialgEquiv.mapDomainMulEquiv`: the equiv-version of `BialgHom.mapDomain`, turning a bialgebra
   isomorphism into a multiplicative equivalence of convolution monoids.
-* `AlgHom.mapValue_mapDomain`: pre-composition in the coordinate algebra commutes with
+* `BialgHom.mapValue_mapDomain`: pre-composition in the coordinate algebra commutes with
   post-composition in the value algebra.
-* `AlgHom.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
-  gives the corresponding constant point.
-* `AlgHom.mapDomain_inv_apply`: pointwise inverse formula after pre-composition.
+* `BialgHom.mapDomain_inv_apply`: pointwise inverse formula after pre-composition.
 
 The convolution-preservation proof is the bialgebra-morphism version of Mathlib's
 `AlgHom.convMul_comp_bialgHom_distrib`, from `Mathlib.RingTheory.Bialgebra.Convolution`.
@@ -42,11 +40,10 @@ The convolution-preservation proof is the bialgebra-morphism version of Mathlib'
 
 public section
 
-open WithConv
-
 namespace TauCeti
-
 namespace AlgHom
+
+open WithConv _root_.AlgHom BialgHom BialgEquiv
 
 variable {R H₁ H₂ H₃ A B : Type*} [CommSemiring R]
 
@@ -56,38 +53,33 @@ variable [Semiring H₁] [Semiring H₂]
 variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 
-private lemma convMul_comp_bialgHom_distrib_of_semiring_source
-    (f g : WithConv (H₂ →ₐ[R] A)) (φ : H₁ →ₐc[R] H₂) :
-    AlgHom.comp (f * g).ofConv (φ : H₁ →ₐ[R] H₂) =
-      ofConv (toConv (f.ofConv.comp φ) * toConv (g.ofConv.comp φ)) := by
-  simp [AlgHom.convMul_def, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp]
-
 /-- Contravariant functoriality of convolution algebra homomorphisms in the source
 bialgebra. A bialgebra morphism `φ : H₁ →ₐc[R] H₂` sends an `A`-valued point of `H₂` to an
 `A`-valued point of `H₁` by pre-composition. -/
-@[expose] noncomputable def mapDomain (φ : H₁ →ₐc[R] H₂) :
+noncomputable def _root_.BialgHom.mapDomain (φ : H₁ →ₐc[R] H₂) :
     WithConv (H₂ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A) where
   toFun f := toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂))
   map_one' := by
     ext x
     simp
   map_mul' f g := by
-    ext x
-    have h :=
-      congrFun (congrArg DFunLike.coe (convMul_comp_bialgHom_distrib_of_semiring_source f g φ)) x
-    simpa using h
+    apply WithConv.ofConv_injective
+    simp [AlgHom.convMul_def, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp]
 
 /-- `mapDomain φ` acts pointwise by pre-composition with `φ`. -/
 @[simp]
-lemma mapDomain_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) :
-    mapDomain φ f = toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂)) := rfl
+lemma _root_.BialgHom.mapDomain_apply (φ : H₁ →ₐc[R] H₂)
+    (f : WithConv (H₂ →ₐ[R] A)) :
+    mapDomain φ f = toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂)) := (rfl)
 
 /-- Pointwise form of `mapDomain_apply`. -/
-lemma mapDomain_apply_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
-    mapDomain φ f h = f.ofConv (φ h) := rfl
+lemma _root_.BialgHom.mapDomain_apply_apply (φ : H₁ →ₐc[R] H₂)
+    (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
+    mapDomain φ f h = f.ofConv (φ h) := (rfl)
 
 /-- Pre-composition by a surjective bialgebra morphism is injective on points. -/
-lemma mapDomain_injective_of_surjective (φ : H₁ →ₐc[R] H₂) (hφ : Function.Surjective φ) :
+lemma _root_.BialgHom.mapDomain_injective_of_surjective (φ : H₁ →ₐc[R] H₂)
+    (hφ : Function.Surjective φ) :
     Function.Injective (mapDomain (A := A) φ) := by
   intro f g hfg
   apply WithConv.ofConv_injective
@@ -106,7 +98,7 @@ variable [CommSemiring A] [Algebra R A]
 /-- Pre-composition by the identity bialgebra morphism is the identity map on the
 convolution monoid. -/
 @[simp]
-lemma mapDomain_id :
+lemma _root_.BialgHom.mapDomain_id :
     (mapDomain (BialgHom.id R H₁) : WithConv (H₁ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A)) =
       MonoidHom.id (WithConv (H₁ →ₐ[R] A)) := by
   refine MonoidHom.ext fun f => ?_
@@ -123,7 +115,7 @@ variable [CommSemiring A] [Algebra R A]
 
 /-- Pre-composition by a composite bialgebra morphism is the composite of the corresponding
 pre-composition maps. -/
-lemma mapDomain_comp (ψ : H₂ →ₐc[R] H₃) (φ : H₁ →ₐc[R] H₂) :
+lemma _root_.BialgHom.mapDomain_comp (ψ : H₂ →ₐc[R] H₃) (φ : H₁ →ₐc[R] H₂) :
     (mapDomain (H₁ := H₁) (H₂ := H₃) (ψ.comp φ) :
         WithConv (H₃ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A)) =
       (mapDomain (H₁ := H₁) (H₂ := H₂) φ :
@@ -145,7 +137,7 @@ variable [CommSemiring A] [Algebra R A]
 /-- A bialgebra isomorphism `e : H₁ ≃ₐc[R] H₂` induces a multiplicative equivalence of the
 convolution monoids of points, by pre-composition: the equiv-version of the contravariant
 functoriality `mapDomain`. -/
-@[expose] noncomputable def mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
+noncomputable def _root_.BialgEquiv.mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
     WithConv (H₂ →ₐ[R] A) ≃* WithConv (H₁ →ₐ[R] A) where
   toFun := mapDomain (A := A) (e : H₁ →ₐc[R] H₂)
   invFun := mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)
@@ -163,14 +155,16 @@ functoriality `mapDomain`. -/
 
 /-- `mapDomainMulEquiv` acts by the underlying `mapDomain` in the forward direction. -/
 @[simp]
-lemma mapDomainMulEquiv_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) :
-    mapDomainMulEquiv e f = mapDomain (e : H₁ →ₐc[R] H₂) f := rfl
+lemma _root_.BialgEquiv.mapDomainMulEquiv_apply (e : H₁ ≃ₐc[R] H₂)
+    (f : WithConv (H₂ →ₐ[R] A)) :
+    mapDomainMulEquiv e f = mapDomain (e : H₁ →ₐc[R] H₂) f := (rfl)
 
 /-- `mapDomainMulEquiv` acts by pre-composition with the inverse bialgebra equivalence in the
 reverse direction. -/
 @[simp]
-lemma mapDomainMulEquiv_symm_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₁ →ₐ[R] A)) :
-    (mapDomainMulEquiv (A := A) e).symm f = mapDomain (e.symm : H₂ →ₐc[R] H₁) f := rfl
+lemma _root_.BialgEquiv.mapDomainMulEquiv_symm_apply (e : H₁ ≃ₐc[R] H₂)
+    (f : WithConv (H₁ →ₐ[R] A)) :
+    (mapDomainMulEquiv (A := A) e).symm f = mapDomain (e.symm : H₂ →ₐc[R] H₁) f := (rfl)
 
 end BialgebraEquiv
 
@@ -182,7 +176,7 @@ variable [CommSemiring B] [Algebra R B]
 
 /-- Pre-composition in the coordinate bialgebra commutes with post-composition in the value
 algebra. -/
-lemma mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
+lemma _root_.BialgHom.mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
     (mapDomain (H₁ := H₁) (H₂ := H₂) φ :
         WithConv (H₂ →ₐ[R] B) →* WithConv (H₁ →ₐ[R] B)).comp
         (AlgHom.mapValue (H := H₂) χ) =
@@ -195,34 +189,16 @@ lemma mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
 
 end BialgebraMapValue
 
-section BialgebraConstantPoint
-
-variable [CommSemiring H₁] [_root_.Bialgebra R H₁]
-variable [CommSemiring A] [Algebra R A]
-
-/-- Mapping a base-valued point first to the coordinate algebra and then through an
-algebra-valued point gives the corresponding constant point in the value algebra. -/
-lemma mapValue_algebraOfId (x : WithConv (H₁ →ₐ[R] A))
-    (g : WithConv (H₁ →ₐ[R] R)) :
-    AlgHom.mapValue (H := H₁) x.ofConv
-        (AlgHom.mapValue (H := H₁) (Algebra.ofId R H₁) g) =
-      AlgHom.mapValue (H := H₁) (Algebra.ofId R A) g := by
-  have h := DFunLike.congr_fun
-    (AlgHom.mapValue_comp (H := H₁) x.ofConv (Algebra.ofId R H₁)) g
-  simpa [Algebra.comp_ofId] using h.symm
-
-end BialgebraConstantPoint
-
 section Hopf
 
 variable [Semiring H₁] [Semiring H₂]
 variable [_root_.Bialgebra R H₁] [_root_.HopfAlgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 
-/-- The inverse in the target convolution group is transported by `mapDomain` pointwise as
-pre-composition with the bialgebra morphism. The group homomorphism statement follows from
-`mapDomain` being a `MonoidHom`; this lemma records the concrete formula used at points. -/
-lemma mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
+/-- Pre-composition of the convolution inverse evaluates the original point at the antipode
+of the bialgebra morphism's value. When `H₁` is also a Hopf algebra, preservation of inverses
+follows from `mapDomain` being a `MonoidHom`. -/
+lemma _root_.BialgHom.mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
     mapDomain (H₁ := H₁) (H₂ := H₂) φ (f⁻¹ : WithConv (H₂ →ₐ[R] A)) h =
       f.ofConv (HopfAlgebra.antipode R (φ h)) := by
   rw [mapDomain_apply_apply]
@@ -231,5 +207,4 @@ lemma mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ
 end Hopf
 
 end AlgHom
-
 end TauCeti

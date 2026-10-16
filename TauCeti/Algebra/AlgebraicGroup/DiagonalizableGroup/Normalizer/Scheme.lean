@@ -53,14 +53,14 @@ variable (π : H →ₐc[R] MonoidAlgebra R X) (hπ : Function.Surjective π)
 The subgroup at each extension is the image of the points of `D(X)`. -/
 def universalNormalizerPoints (A : CommAlgCat.{u} R) : Subgroup (WithConv (H →ₐ[R] A)) :=
   ⨅ (B : CommAlgCat.{u} R) (φ : A →ₐ[R] B),
-    (Subgroup.normalizer (AlgHom.mapDomain (A := B) π).range).comap (AlgHom.mapValue φ)
+    (Subgroup.normalizer (BialgHom.mapDomain (A := B) π).range).comap (AlgHom.mapValue φ)
 
 /-- Universal normalization means normalization of the point subgroup over every extension. -/
 @[simp]
 theorem mem_universalNormalizerPoints (A : CommAlgCat.{u} R) (g : WithConv (H →ₐ[R] A)) :
     g ∈ universalNormalizerPoints π A ↔
       ∀ (B : CommAlgCat.{u} R) (φ : A →ₐ[R] B),
-        AlgHom.mapValue φ g ∈ Subgroup.normalizer (AlgHom.mapDomain (A := B) π).range := by
+        AlgHom.mapValue φ g ∈ Subgroup.normalizer (BialgHom.mapDomain (A := B) π).range := by
   simp [universalNormalizerPoints]
 
 /-- Changing the value algebra preserves universal normalization. -/
@@ -75,10 +75,10 @@ theorem mapValue_mem_universalNormalizerPoints {A B : CommAlgCat.{u} R}
 /-- The diagonalizable subgroup lies in its universal normalizer. -/
 theorem mapDomain_mem_universalNormalizerPoints (A : CommAlgCat.{u} R)
     (t : WithConv (MonoidAlgebra R X →ₐ[R] A)) :
-    AlgHom.mapDomain π t ∈ universalNormalizerPoints π A := by
+    BialgHom.mapDomain π t ∈ universalNormalizerPoints π A := by
   rw [mem_universalNormalizerPoints]
   intro B φ
-  rw [← MonoidHom.comp_apply, ← AlgHom.mapValue_mapDomain, MonoidHom.comp_apply]
+  rw [← MonoidHom.comp_apply, ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply]
   exact Subgroup.le_normalizer ⟨AlgHom.mapValue φ t, rfl⟩
 
 /-- On base-valued points, universal normalization agrees with stabilization of the defining
@@ -93,14 +93,14 @@ theorem universalNormalizerPoints_base_eq_normalizerPoints :
     have hle (f : WithConv (H →ₐ[R] R))
         (hf : f ∈ universalNormalizerPoints π (CommAlgCat.of R R)) : I.conjugate f⁻¹ ≤ I := by
       let B := CommAlgCat.of R (MonoidAlgebra R X)
-      let t := AlgHom.mapDomain π (toConv (AlgHom.id R (MonoidAlgebra R X)))
-      have ht : t ∈ (AlgHom.mapDomain (A := B) π).range := ⟨_, rfl⟩
+      let t := BialgHom.mapDomain π (toConv (AlgHom.id R (MonoidAlgebra R X)))
+      have ht : t ∈ (BialgHom.mapDomain (A := B) π).range := ⟨_, rfl⟩
       have hm := (Subgroup.mem_normalizer_iff.mp
         ((mem_universalNormalizerPoints π (CommAlgCat.of R R) f).mp hf B
           (Algebra.ofId R B)) t).mp ht
       rw [← HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range π hπ B,
         ← HopfAlgebra.comp_pointConjugationAlgHom] at hm
-      simp only [t, AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.id_comp] at hm
+      simp only [t, BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.id_comp] at hm
       exact HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup I I f π.toAlgHom
         (fun x hx ↦ (HopfIdeal.mem_kerOfSurjective π hπ).mpr hx) hm
     rw [mem_normalizerPoints]
@@ -182,13 +182,13 @@ private theorem map_conjugation_eq_universal_conjugate
     toConv ((Algebra.TensorProduct.map g.ofConv π.toAlgHom).comp
         (HopfAlgebra.conjugationAlgHom (R := R) (H := H))) =
       AlgHom.mapValue (Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] MonoidAlgebra R X) g *
-        AlgHom.mapDomain π
+        BialgHom.mapDomain π
           (toConv (Algebra.TensorProduct.includeRight :
             MonoidAlgebra R X →ₐ[R] A ⊗[R] MonoidAlgebra R X)) *
         (AlgHom.mapValue Algebra.TensorProduct.includeLeft g)⁻¹ := by
   rw [HopfAlgebra.comp_conjugationAlgHom, toConv_ofConv]
   simp only [Algebra.TensorProduct.map_comp_includeLeft,
-    Algebra.TensorProduct.map_comp_includeRight, AlgHom.mapValue_apply, AlgHom.mapDomain_apply]
+    Algebra.TensorProduct.map_comp_includeRight, AlgHom.mapValue_apply, BialgHom.mapDomain_apply]
 
 include hπ in
 private theorem conjugation_vanishes_iff
@@ -198,8 +198,8 @@ private theorem conjugation_vanishes_iff
         (HopfAlgebra.conjugationAlgHom (R := R) x) = 0) ↔
       ∀ (B : CommAlgCat.{u} R) (φ : A →ₐ[R] B)
         (t : WithConv (MonoidAlgebra R X →ₐ[R] B)),
-        AlgHom.mapValue φ g * AlgHom.mapDomain π t * (AlgHom.mapValue φ g)⁻¹ ∈
-          (AlgHom.mapDomain (A := B) π).range := by
+        AlgHom.mapValue φ g * BialgHom.mapDomain π t * (AlgHom.mapValue φ g)⁻¹ ∈
+          (BialgHom.mapDomain (A := B) π).range := by
   constructor
   · intro h B φ t
     rw [← HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range π hπ B,
@@ -216,12 +216,12 @@ private theorem conjugation_vanishes_iff
       (h x ((HopfIdeal.mem_kerOfSurjective π hπ).mp hx))
     have hc := AlgHom.congr_fun
       (HopfAlgebra.productMap_comp_conjugationAlgHom
-        (AlgHom.mapValue φ g) (AlgHom.mapDomain π t)) x
+        (AlgHom.mapValue φ g) (BialgHom.mapDomain π t)) x
     rw [← AlgHom.comp_apply, heval, map_zero] at hz
     have hz' : ((Algebra.TensorProduct.productMap (AlgHom.mapValue φ g).ofConv
-        (AlgHom.mapDomain π t).ofConv).comp
+        (BialgHom.mapDomain π t).ofConv).comp
           (HopfAlgebra.conjugationAlgHom (R := R) (H := H))) x = 0 := by
-      simpa only [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv,
+      simpa only [AlgHom.mapValue_apply, BialgHom.mapDomain_apply, ofConv_toConv,
         AlgHom.comp_apply] using hz
     exact hc.symm.trans hz'
   · intro h x hx
@@ -324,7 +324,7 @@ theorem normalizerHopfIdeal_le_kerOfSurjective :
   have hker := (normalizerHopfIdeal_le_ker_iff π hπ _ _).mpr hg
   intro x hx
   apply (HopfIdeal.mem_kerOfSurjective π hπ).mpr
-  simpa only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
+  simpa only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
     AlgHom.id_apply, BialgHom.coe_toAlgHom]
     using RingHom.mem_ker.mp (hker (HopfIdeal.mem_toIdeal.mpr hx))
 
