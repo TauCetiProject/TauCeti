@@ -69,10 +69,8 @@ without first passing through root-system combinatorics.
 
 ## References
 
-This implements the Coxeter-element half of the "Coxeter functor" target of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which the reflection
-induction of Layer 5 consumes. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's
-theorem*, and Derksen--Weyman, *An Introduction to Quiver Representations*.
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
+*An Introduction to Quiver Representations*.
 -/
 
 public section
@@ -248,7 +246,7 @@ private theorem map_vertexReflection_toLinearMap {l : List Q}
       = l.map (vertexPreReflection Q) := by
   rw [List.map_map, ← List.attach_map_val (f := vertexPreReflection Q)]
   apply List.map_congr_left
-  intro i hi
+  intro i _
   apply LinearMap.coe_injective
   exact coe_vertexReflection Q (hl i.1 i.2)
 
@@ -264,7 +262,7 @@ private theorem toLinearMap_list_prod
     _ = _ := by
       apply congrArg List.prod
       apply List.map_congr_left
-      intro e he
+      intro e _
       exact LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply e
 
 /-- Coercing the reflection automorphism along a word to a function gives the corresponding
@@ -298,7 +296,7 @@ theorem coe_vertexReflectionList_symm {l : List Q} (hl : ∀ i ∈ l, IsEmpty (i
     simp only [inv_inv, List.map_map]
     congr 1
     apply List.map_congr_left
-    intro i hi
+    intro i _
     exact vertexReflection_symm Q (hl i.1 i.2)
   have h : (vertexReflectionList Q hl).symm.toLinearMap =
       vertexPreReflectionList Q l.reverse := by

@@ -56,6 +56,8 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
 * `TauCeti.one_sub_two_div_toReal_nonneg` and
   `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
   Sobolev inequality.
+* `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/2* + 1/n = 1/2` of `W^{1,2}`
+  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`).
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
@@ -230,6 +232,21 @@ theorem one_le_of_inv_add_eq_inv {r : ENNReal} (hexp : pstar⁻¹ + r = p⁻¹) 
   calc pstar⁻¹ ≤ pstar⁻¹ + r := le_self_add
     _ = p⁻¹ := hexp
     _ ≤ 1 := ENNReal.inv_le_one.2 hp1
+
+/-- The exponent relation `1/2* + 1/n = 1/2` of the Sobolev embedding of `W^{1,2}` in dimension
+`n`, read in `ℝ`. No finiteness hypothesis on `2*` is needed: at `2* = ∞` the relation forces
+`n = 2`, and both sides use `ENNReal.toReal ∞ = 0`. -/
+theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) :
+    pstar.toReal⁻¹ + (n : ℝ)⁻¹ = 2⁻¹ := by
+  have hpinv : pstar⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_self_add)
+  have hninv : (n : ℝ≥0∞)⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
+  have := congrArg ENNReal.toReal hexp
+  rwa [ENNReal.toReal_add hpinv hninv, ENNReal.toReal_inv, ENNReal.toReal_inv,
+    ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
+
+/-- A Sobolev exponent `2*` with `1/2* + 1/n = 1/2` exists only in positive dimension `n`. -/
+theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) : n ≠ 0 :=
+  Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <| ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `W^{1,p}_0(Ω)`.** If `1 ≤ p` and the Sobolev
 conjugate `p⋆` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every `u ∈ W^{1,p}_0(Ω)`

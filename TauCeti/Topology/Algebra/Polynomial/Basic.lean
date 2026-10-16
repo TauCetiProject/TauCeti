@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Eval.Degree
+public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
@@ -24,15 +26,36 @@ coefficients with powers of `t`.
 
 ## Main results
 
+* `Polynomial.continuousAt_eval`: evaluation along a continuous point for a family of locally
+  bounded degree.
 * `Polynomial.continuousAt_coeff_mul`: coefficients of a product of two families.
 * `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
 * `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
   of bounded degree.
+* `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
 -/
 
 public section
 
 open Filter Topology
+open scoped Polynomial.Bivariate
+
+namespace Polynomial
+
+/-- Evaluation of a bivariate polynomial is jointly continuous in its two arguments. -/
+theorem continuous_evalEval {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] (P : R[X][Y]) :
+    Continuous fun z : R × R ↦ P.evalEval z.1 z.2 := by
+  have key (x y : R) : P.evalEval x y =
+      ∑ j ∈ P.support, (P.coeff j).eval x * y ^ j := by
+    rw [Polynomial.evalEval, Polynomial.eval_eq_sum (p := P)]
+    simp only [Polynomial.sum_def, Polynomial.eval_finsetSum, Polynomial.eval_mul,
+      Polynomial.eval_pow, Polynomial.eval_C]
+  simp only [key]
+  exact continuous_finsetSum _ fun j _ ↦
+    ((P.coeff j).continuous.comp continuous_fst).mul (continuous_snd.pow j)
+
+end Polynomial
 
 namespace Polynomial
 
@@ -52,23 +75,25 @@ theorem continuousAt_eval {X R : Type*} [TopologicalSpace X] [TopologicalSpace R
     tendsto_finsetSum _ fun i hi ↦ (hf i (Finset.mem_range_succ_iff.1 hi)).mul (hr.pow i)
   exact hc.congr_of_eventuallyEq heq
 
-variable {X R ι : Type*} [TopologicalSpace X] [CommSemiring R] [TopologicalSpace R]
-  [IsTopologicalSemiring R] {x₀ : X}
+variable {X R ι : Type*} [TopologicalSpace X] [TopologicalSpace R] {x₀ : X}
 
-/-- If every coefficient of two polynomial families is continuous at `x₀`, then so is every
-coefficient of their product. -/
-theorem continuousAt_coeff_mul {f g : X → R[X]}
-    (hf : ∀ i, ContinuousAt (fun x => (f x).coeff i) x₀)
-    (hg : ∀ i, ContinuousAt (fun x => (g x).coeff i) x₀) (i : ℕ) :
-    ContinuousAt (fun x => (f x * g x).coeff i) x₀ := by
+/-- The coefficient of index `i` in a product of two polynomial families is continuous at `x₀`
+if the coefficients of indices at most `i` in both factors are continuous there. -/
+theorem continuousAt_coeff_mul [Semiring R] [IsTopologicalSemiring R] {f g : X → R[X]} {i : ℕ}
+    (hf : ∀ j ≤ i, ContinuousAt (fun x ↦ (f x).coeff j) x₀)
+    (hg : ∀ j ≤ i, ContinuousAt (fun x ↦ (g x).coeff j) x₀) :
+    ContinuousAt (fun x ↦ (f x * g x).coeff i) x₀ := by
   simp only [coeff_mul]
-  exact tendsto_finsetSum _ fun p _ => (hf p.1).mul (hg p.2)
+  refine tendsto_finsetSum _ fun p hp ↦ ?_
+  have hp := Finset.mem_antidiagonal.mp hp
+  exact (hf p.1 (by omega)).mul (hg p.2 (by omega))
 
-/-- If every coefficient of each member of a finite family of polynomial families is continuous at
-`x₀`, then so is every coefficient of their product. -/
-theorem continuousAt_coeff_prod {f : ι → X → R[X]} (s : Finset ι)
-    (hf : ∀ k ∈ s, ∀ i, ContinuousAt (fun x => (f k x).coeff i) x₀) (i : ℕ) :
-    ContinuousAt (fun x => (∏ k ∈ s, f k x).coeff i) x₀ := by
+/-- The coefficient of index `i` in a finite product of polynomial families is continuous at `x₀`
+if the coefficients of indices at most `i` in every factor are continuous there. -/
+theorem continuousAt_coeff_prod [CommSemiring R] [IsTopologicalSemiring R]
+    {f : ι → X → R[X]} (s : Finset ι) {i : ℕ}
+    (hf : ∀ k ∈ s, ∀ j ≤ i, ContinuousAt (fun x ↦ (f k x).coeff j) x₀) :
+    ContinuousAt (fun x ↦ (∏ k ∈ s, f k x).coeff i) x₀ := by
   classical
   induction s using Finset.induction_on generalizing i with
   | empty =>
@@ -77,11 +102,12 @@ theorem continuousAt_coeff_prod {f : ι → X → R[X]} (s : Finset ι)
   | insert k s hk ih =>
     simp only [Finset.prod_insert hk]
     exact continuousAt_coeff_mul (hf k (Finset.mem_insert_self k s))
-      (ih fun l hl => hf l (Finset.mem_insert_of_mem hl)) i
+      (fun j hj ↦ ih fun l hl m hm ↦ hf l (Finset.mem_insert_of_mem hl) m (hm.trans hj))
 
 /-- If a family of polynomials has degree at most `d` and its coefficients of index at most `d` are
 continuous, then its evaluation is jointly continuous in the parameter and the point. -/
-theorem continuous_eval_of_continuous_coeff {f : X → R[X]} {d : ℕ}
+theorem continuous_eval_of_continuous_coeff [Semiring R] [IsTopologicalSemiring R]
+    {f : X → R[X]} {d : ℕ}
     (hf : ∀ i ≤ d, Continuous fun x => (f x).coeff i) (hd : ∀ x, (f x).natDegree ≤ d) :
     Continuous fun z : X × R => (f z.1).eval z.2 := by
   refine continuous_iff_continuousAt.2 fun z ↦ ?_

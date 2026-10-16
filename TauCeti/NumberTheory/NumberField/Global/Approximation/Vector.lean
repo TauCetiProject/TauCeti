@@ -72,7 +72,7 @@ theorem denseRange_one_tmul [FiniteDimensional K V]
           ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.1)) := by
   classical
   let b := Module.finBasis K V
-  let P := (∀ v : S, v.1.adicCompletion K) × ∀ w : T, ℝ
+  let P := (∀ v : S, v.1.adicCompletion K) × ∀ _ : T, ℝ
   -- Assemble local vectors from their coordinates with respect to `b`.
   let Φ : (Fin (Module.finrank K V) → P) →
       (∀ v : S, v.1.FiniteScalarExtension (V := V)) × ∀ w : T, RealScalarExtension (V := V) w.1 :=

@@ -225,7 +225,7 @@ theorem ncard_setOf_isInvolutionTransversal (hmaps : ∀ a ∈ S, f a ∈ S)
     have hdisj : Disjoint (insert a '' {T : Finset α | IsInvolutionTransversal f S' T})
         (insert (f a) '' {T : Finset α | IsInvolutionTransversal f S' T}) := by
       rw [Set.disjoint_left]
-      rintro U ⟨T₁, h₁, rfl⟩ ⟨T₂, h₂, h⟩
+      rintro U ⟨T₁, _, rfl⟩ ⟨T₂, h₂, h⟩
       have hmem : a ∈ insert (f a) T₂ := h ▸ Finset.mem_insert_self a T₁
       rcases Finset.mem_insert.1 hmem with h' | h'
       · exact hab h'.symm

@@ -39,17 +39,12 @@ universe u
 
 variable (k : Type u) [Field k]
 
-private theorem geometricallyConnected_generatorCoordinateAlgebra :
+theorem geometricallyConnected_generatorCoordinateAlgebra :
     ∀ j, geometricallyConnectedCommHopfAlgProperty k (generatorCoordinateAlgebra k j) := by
   intro j
   cases j with
   | inl _ =>
-    rw [geometricallyConnectedCommHopfAlgProperty_iff]
-    intro L _ _
-    have := AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k L
-    exact connectedSpace_primeSpectrum_of_injective
-      (Algebra.TensorProduct.comm k (AdditiveGroup.coordinateHopfAlgebra k) L).toRingHom
-      (Algebra.TensorProduct.comm k (AdditiveGroup.coordinateHopfAlgebra k) L).injective
+    exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k
   | inr _ =>
     exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
       (SplitTorus.characterGroup (Fin 7))

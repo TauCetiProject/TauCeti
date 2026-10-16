@@ -52,7 +52,7 @@ theorem isDoublyEven_span_iff_of_isSelfOrthogonal {s : Set (ι → ZMod 2)}
     | add x y hx hy ihx ihy =>
       exact (four_dvd_hammingNorm_add_iff ihx ihy).mpr
         (Submodule.isSelfOrthogonal_iff.mp hs x hx y hy)
-    | smul a x hx ih =>
+    | smul a x _ ih =>
       by_cases ha : a = 0
       · simp [ha]
       · rwa [hammingNorm_smul (fun _ => smul_right_injective (ZMod 2) ha)]

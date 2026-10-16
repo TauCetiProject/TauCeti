@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Matrix.Triangular
-import Mathlib.Data.Prod.Lex
+import Mathlib.Order.Prod.Lex.Basic
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.Order.Interval.Finset.Fin
@@ -219,7 +219,7 @@ private theorem blockTriangular_toMatrix_fderiv (x : lowerTriangle p → ℝ) :
   simp only [Function.comp_apply, OrderDual.toDual_lt_toDual] at h
   rw [toMatrix_fderivCholeskyReconstructionCoordinates]
   rw [lowerTriangleKey, lowerTriangleKey, Prod.Lex.toLex_lt_toLex] at h
-  rcases h with hcol | ⟨hcol, hrow⟩
+  rcases h with hcol | ⟨_, hrow⟩
   · -- The column of `kl` is strictly to the right, so the first indicator cannot fire, and the
     -- surviving entry of the second one lies strictly above the diagonal.
     have h1 : kl.1.1 ≠ ij.1.2 := fun hk ↦ absurd hcol (not_lt.2 (by rw [← hk]; exact kl.2))

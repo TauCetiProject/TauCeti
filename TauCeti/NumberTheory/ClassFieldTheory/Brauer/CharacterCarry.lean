@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.KrullTopology
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Cyclic
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CarryCocycle
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 
 /-!
@@ -86,33 +86,11 @@ private theorem invMap_characterCarryCocycle_of_apply_frobenius
       (χ₀.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive)
       (E.isOpen_ker_comp_restrictNormalHom χ₀) (baseUnitsEquivInvariants F (.ofMul a)))) =
       (((normalizedValuation F a).toAdd / Module.finrank F E : ℚ) : AddCircle (1 : ℚ)) := by
-  set n := Module.finrank F E
-  set φ := frobeniusAlgEquiv (K := F) (L := E)
-  have hpow (i : ℕ) : χ₀ (.ofMul (φ ^ i)) = ((i / n : ℚ) : AddCircle (1 : ℚ)) := by
-    rw [ofMul_pow, map_nsmul, hχ₀, ← AddCircle.coe_nsmul, nsmul_eq_mul, mul_one_div]
-  set b : Eˣ := Units.map (algebraMap F E : F →* E) a
-  -- The carry cocycle is read off `Gal(E/F)`, with the value `b ^ carry` at `(s, t)`.
-  obtain ⟨c, hcu, hc⟩ := exists_relBrCocycle_eq F E E.val
-    (characterCarryCocycle _ (E.isOpen_ker_comp_restrictNormalHom χ₀)
-      (baseUnitsEquivInvariants F (.ofMul a)))
-    (fun p ↦ b ^ characterCarry χ₀ p.1 p.2) fun g h ↦ by
-      apply Additive.toMul.injective
-      apply Units.ext
-      simp [characterCarryCocycle_apply, b]
-  rw [← hc, ← relBrInfl_H2π, invMap_relBrInfl]
-  -- The cocycle `c` is the carry cocycle of `a` at Frobenius.
-  have hφ (σ : Gal(E/F)) : σ ∈ Subgroup.zpowers φ := by
+  have hφ (σ : Gal(E/F)) : σ ∈ Subgroup.zpowers (frobeniusAlgEquiv (K := F) (L := E)) := by
     rw [zpowers_frobeniusAlgEquiv]
     exact Subgroup.mem_top σ
-  have horder : orderOf φ = n := by
-    rw [orderOf_frobeniusAlgEquiv, IsUnramified.inertiaDegree_eq_finrank]
-  rw [H2π_eq_cyclicClass hφ c a fun i j hi hj ↦ ?_, ← unramifiedClass_eq_cyclicClass]
-  · exact unramifiedInv_unramifiedClass a
-  rw [horder] at hi hj ⊢
-  -- The values of `c` are read in `Eˣ` through `Rep.toAdditive`, which is the identity.
-  refine (hcu (φ ^ i, φ ^ j)).trans ?_
-  rw [characterCarry_eq_ite _ hi hj (hpow i) (hpow j)]
-  split_ifs <;> simp [b]
+  rw [← relBrInfl_cyclicClass E hφ hχ₀, invMap_relBrInfl, ← unramifiedClass_eq_cyclicClass]
+  exact unramifiedInv_unramifiedClass a
 
 /-- **The local invariant of the carry class of an unramified character.** For a character `χ` of
 the Galois group of a finite unramified Galois extension `E/F` inside `Fˢ`, read on `G_F`, and

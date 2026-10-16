@@ -37,6 +37,10 @@ is open and dense in the chart. This is the dense torus of the affine toric vari
   invertible characters of the dual semigroup.
 * `TauCeti.Toric.isOpen_orbit_complexTorus_default` and
   `TauCeti.Toric.dense_orbit_complexTorus_default`: the dense torus of the chart is open and dense.
+* `TauCeti.Toric.zeroConeChartHomeomorphOfBasis`: any extending basis and finite generating
+  family identify the affine chart of the zero cone with the coordinate-free complex torus.
+* `TauCeti.Toric.zeroConeChartHomeomorphOfBasis_apply`: this identification sends a torus point
+  to its translate of the distinguished point.
 
 ## References
 
@@ -147,5 +151,50 @@ theorem dense_orbit_complexTorus_default (g : AddGeneratingFamily (dualSemigroup
       (default : AffineSemigroupComplexPoint (dualSemigroup hi σ))) := by
   rw [orbit_complexTorus_default_eq_orbit hi hσ hb]
   exact dense_orbit_default g (regularDualSemigroupEquiv hi hσ hb)
+
+omit hσ hb
+
+/-! ### The affine chart of the zero cone -/
+
+/-- An extending basis identifies the coordinate-free complex torus with the affine chart of the
+zero cone, for the monomial-embedding topology of any finite generating family. The identification
+sends a torus point to its translate of the distinguished point, independently of these choices. -/
+noncomputable def zeroConeChartHomeomorphOfBasis {l s : ℕ}
+    {B : Module.Basis (ToricRay (⊥ : PointedCone ℝ V) ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
+    (g : AddGeneratingFamily (dualSemigroup hi (⊥ : PointedCone ℝ V)) s) :
+    @Homeomorph (ComplexTorus N) (AffineSemigroupComplexPoint (dualSemigroup hi ⊥))
+      inferInstance (affinePointTopology g) :=
+  let _ := affinePointTopology g
+  (((complexTorusCoordinatesContinuousMulEquiv B.integralCharacterRepr).toHomeomorph.trans
+    Homeomorph.sumArrowHomeomorphProdArrow).trans
+      (Homeomorph.uniqueProd (ToricRay (⊥ : PointedCone ℝ V) → ℂˣ) (Fin l → ℂˣ))).trans
+        ((coneChartHomeomorph hi (isToricCone_bot i) hB g).trans
+          (Homeomorph.uniqueProd (ToricRay (⊥ : PointedCone ℝ V) → ℂ) (Fin l → ℂˣ))).symm
+
+/-- The zero-cone chart identification is the orbit map of the distinguished point. -/
+@[simp]
+theorem zeroConeChartHomeomorphOfBasis_apply {l s : ℕ}
+    {B : Module.Basis (ToricRay (⊥ : PointedCone ℝ V) ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
+    (g : AddGeneratingFamily (dualSemigroup hi (⊥ : PointedCone ℝ V)) s)
+    (t : ComplexTorus N) :
+    zeroConeChartHomeomorphOfBasis hi hB g t =
+      t • (default : AffineSemigroupComplexPoint (dualSemigroup hi (⊥ : PointedCone ℝ V))) := by
+  classical
+  let _ := affinePointTopology g
+  apply ((coneChartHomeomorph hi (isToricCone_bot i) hB g).trans
+    (Homeomorph.uniqueProd (ToricRay (⊥ : PointedCone ℝ V) → ℂ) (Fin l → ℂˣ))).injective
+  simp only [zeroConeChartHomeomorphOfBasis, Homeomorph.trans_apply,
+    Homeomorph.apply_symm_apply, Homeomorph.coe_uniqueProd, coe_coneChartHomeomorph,
+    Homeomorph.sumArrowHomeomorphProdArrow_apply, ContinuousMulEquiv.toHomeomorph_eq_coe,
+    HomeomorphClass.coe_coe, coe_complexTorusCoordinatesContinuousMulEquiv]
+  ext j
+  simp only [Function.comp_apply, complexTorusCoordinates_apply, coneChartEquiv_smul_snd,
+    coneChartEquiv_default, Prod.snd_one, Pi.one_apply, mul_one]
+  apply congrArg (fun m : IntegralCharacter N ↦ (t m : ℂ))
+  apply B.integralCharacterRepr.injective
+  ext a
+  simp [Finsupp.single_apply, eq_comm]
 
 end TauCeti.Toric

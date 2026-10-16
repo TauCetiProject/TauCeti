@@ -267,7 +267,7 @@ end IsStieltjesFunction
 theorem isStieltjesFunction_const {b : ℝ} (hb : 0 ≤ b) :
     IsStieltjesFunction (fun _ : ℝ => b) := by
   refine ⟨0, b.toNNReal, 0, ?_⟩
-  refine ⟨by simp, integrable_zero_measure, fun t ht => ?_⟩
+  refine ⟨by simp, integrable_zero_measure, fun t _ => ?_⟩
   simp [Real.coe_toNNReal b hb]
 
 /-- The zero function is Stieltjes. -/
@@ -277,7 +277,7 @@ theorem isStieltjesFunction_zero : IsStieltjesFunction (fun _ : ℝ => 0) := by
 /-- The reciprocal `t ↦ t⁻¹` is Stieltjes; it is the singular coefficient with zero measure. -/
 theorem isStieltjesFunction_inv : IsStieltjesFunction (fun t : ℝ => t⁻¹) := by
   refine ⟨1, 0, 0, ?_⟩
-  refine ⟨by simp, integrable_zero_measure, fun t ht => ?_⟩
+  refine ⟨by simp, integrable_zero_measure, fun t _ => ?_⟩
   simp [div_eq_mul_inv]
 
 /-- For `x ≥ 0`, the shifted reciprocal `t ↦ (t + x)⁻¹` is Stieltjes.  At `x = 0` it is the

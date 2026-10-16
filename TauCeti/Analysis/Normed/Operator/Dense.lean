@@ -12,49 +12,41 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 # Extending bounded-operator convergence from dense subsets
 
 This file records two standard density arguments for uniformly bounded families of continuous
-linear maps. Pointwise convergence on a dense subset extends to pointwise convergence everywhere,
-and uniform Cauchy convergence on a parameter set does likewise. Both rest on the same estimate
+linear maps between seminormed spaces. Pointwise convergence on a dense subset extends to
+pointwise convergence everywhere, and uniform Cauchy convergence on a parameter set does likewise.
+Both rest on the same estimate
 `ContinuousLinearMap.norm_sub_apply_le_of_norm_le`, which moves the point at which a
 difference of two uniformly bounded operators is evaluated to a nearby point of the dense subset.
 -/
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 open Filter
 
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-variable [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-variable [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
 
 
 /-- Comparing two continuous linear maps of norm at most `K` at `x` costs at most `2 K ‖x - y‖`
 more than comparing them at `y`. This is the shared estimate of the two density arguments below:
 `y` is chosen in the dense subset, close to the arbitrary vector `x`. -/
-theorem _root_.ContinuousLinearMap.norm_sub_apply_le_of_norm_le {T S : X →L[𝕜] Y} {K : ℝ}
+theorem norm_sub_apply_le_of_norm_le {T S : X →L[𝕜] Y} {K : ℝ}
     (hT : ‖T‖ ≤ K) (hS : ‖S‖ ≤ K)
     (x y : X) : ‖T x - S x‖ ≤ ‖T y - S y‖ + 2 * K * ‖x - y‖ := by
-  have hleft : ‖T (x - y)‖ ≤ K * ‖x - y‖ :=
-    (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right hT (norm_nonneg _))
-  have hright : ‖S (y - x)‖ ≤ K * ‖x - y‖ := by
-    rw [norm_sub_rev x y]
-    exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_right hS (norm_nonneg _))
-  have hdecomp : T x - S x = T (x - y) + (T y - S y) + S (y - x) := by
-    rw [map_sub, map_sub]
-    abel
-  rw [hdecomp]
+  have hbound : ‖T - S‖ ≤ 2 * K := (norm_sub_le T S).trans (by linarith)
   calc
-    ‖T (x - y) + (T y - S y) + S (y - x)‖
-        ≤ ‖T (x - y)‖ + ‖T y - S y‖ + ‖S (y - x)‖ := norm_add₃_le
-    _ ≤ K * ‖x - y‖ + ‖T y - S y‖ + K * ‖x - y‖ :=
-      add_le_add (add_le_add hleft le_rfl) hright
-    _ = ‖T y - S y‖ + 2 * K * ‖x - y‖ := by ring
+    ‖T x - S x‖ ≤ ‖T y - S y‖ + ‖(T - S) (x - y)‖ := by
+      simpa only [map_sub, sub_apply] using
+        norm_le_norm_add_norm_sub' ((T - S) x) ((T - S) y)
+    _ ≤ ‖T y - S y‖ + 2 * K * ‖x - y‖ :=
+      add_le_add le_rfl ((T - S).le_of_opNorm_le_of_le hbound le_rfl)
 
 /-- A uniformly bounded family of continuous linear maps that converges pointwise on a dense
 subset converges pointwise everywhere. -/
-theorem _root_.ContinuousLinearMap.tendsto_apply_of_dense {ι : Type*} {l : Filter ι} {D : Set X}
+theorem tendsto_apply_of_dense {ι : Type*} {l : Filter ι} {D : Set X}
     (hD : Dense D) {f : ι → X →L[𝕜] Y} {g : X →L[𝕜] Y} {C : ℝ}
     (hbound : ∀ᶠ i in l, ‖f i‖ ≤ C)
     (htendsto : ∀ x ∈ D, Tendsto (fun i => f i x) l (nhds (g x))) (x : X) :
@@ -81,12 +73,12 @@ theorem _root_.ContinuousLinearMap.tendsto_apply_of_dense {ι : Type*} {l : Filt
   have hy := (Metric.tendsto_nhds.mp (htendsto y hyD)) (epsilon / 3) (by positivity)
   filter_upwards [hbound, hy] with i hi hiy
   rw [dist_eq_norm] at hiy ⊢
-  have hmain := ContinuousLinearMap.norm_sub_apply_le_of_norm_le (hi.trans hC_le) hg_le x y
+  have hmain := norm_sub_apply_le_of_norm_le (hi.trans hC_le) hg_le x y
   linarith
 
 /-- A uniformly bounded family of continuous linear maps that is uniformly Cauchy on a parameter
 set at every vector in a dense subset is uniformly Cauchy there at every vector. -/
-theorem _root_.ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense {ι Z : Type*} {p : Filter ι}
+theorem uniformCauchySeqOn_apply_of_dense {ι Z : Type*} {p : Filter ι}
     {D : Set X}
     (hD : Dense D) {f : ι → Z → X →L[𝕜] Y} {s : Set Z} {C : ℝ}
     (hbound : ∀ᶠ i in p, ∀ z ∈ s, ‖f i z‖ ≤ C)
@@ -113,11 +105,11 @@ theorem _root_.ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense {ι Z : Typ
   filter_upwards [hbound.prod_inl p, hbound.prod_inr p, hmiddle] with m hi hj hm z hz
   refine hball ?_
   rw [dist_eq_norm]
-  have hmain := ContinuousLinearMap.norm_sub_apply_le_of_norm_le ((hi z hz).trans hC_le)
+  have hmain := norm_sub_apply_le_of_norm_le ((hi z hz).trans hC_le)
     ((hj z hz).trans hC_le) x y
   have hmid : ‖f m.1 z y - f m.2 z y‖ < epsilon / 3 := by
     simpa only [dist_eq_norm] using hm z hz
   linarith
 
 
-end TauCeti
+end ContinuousLinearMap

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 
 /-!
 # The ramified primes of a cyclotomic extension of a number field
@@ -45,7 +46,7 @@ public section
 
 namespace IsCyclotomicExtension
 
-open NumberField Polynomial in
+open NumberField TauCeti in
 /-- **The level lies in the different ideal.** For `M / K` an `m`-th cyclotomic extension of
 number fields, `m` belongs to the different ideal of `𝓞 M` over `𝓞 K`; equivalently that different
 divides `(m)`, so only primes dividing `m` can ramify in `M / K`. -/
@@ -58,26 +59,11 @@ theorem natCast_mem_differentIdeal (K M : Type*) [Field K] [NumberField K] [Fiel
   have : NeZero m := ⟨hm.ne'⟩
   obtain ⟨ζ, hζ⟩ := IsCyclotomicExtension.exists_isPrimitiveRoot (S := {m}) K M
     (Set.mem_singleton m) (NeZero.ne m)
-  set z : 𝓞 M := hζ.toInteger
-  -- `M = K(ζ)` is generated over `K` by a primitive `m`-th root of unity, so the different
-  -- contains the element `aeval ζ (derivative (minpoly (𝓞 K) ζ))`.
-  have hmem := aeval_derivative_mem_differentIdeal (𝓞 K) K M z
-    (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ)
-  have hzpow : z ^ m = 1 := hζ.toInteger_isPrimitiveRoot.pow_eq_one
-  -- `ζ` is a root of `X ^ m - 1`, so its minimal polynomial divides that.
-  obtain ⟨q, hq⟩ : minpoly (𝓞 K) z ∣ (X ^ m - 1 : (𝓞 K)[X]) :=
-    minpoly.isIntegrallyClosed_dvd (Algebra.IsIntegral.isIntegral z) (by simp [hzpow])
-  -- Differentiating that factorisation at `ζ` makes `m * ζ ^ (m - 1)` a multiple of `hmem`.
-  have hder : (m : 𝓞 M) * z ^ (m - 1) =
-      aeval z (derivative (minpoly (𝓞 K) z)) * aeval z q := by
-    have h : aeval z (derivative (X ^ m - 1 : (𝓞 K)[X])) =
-        aeval z (derivative (minpoly (𝓞 K) z * q)) := by rw [hq]
-    simpa [derivative_mul, derivative_X_pow, minpoly.aeval] using h
-  -- Multiplying by `ζ` and using `ζ ^ m = 1` turns `m * ζ ^ (m - 1)` into `m` itself.
-  have hm : (m : 𝓞 M) = aeval z (derivative (minpoly (𝓞 K) z)) * aeval z q * z := by
-    rw [← hder, mul_assoc, pow_sub_one_mul (NeZero.ne m) z, hzpow, mul_one]
-  rw [hm]
-  exact Ideal.mul_mem_right _ _ (Ideal.mul_mem_right _ _ hmem)
+  -- `M = K(ζ)` is generated over `K` by a root `ζ` of `X ^ m - 1`, so `m · 1` lies in the
+  -- different.
+  simpa using natCast_mul_mem_differentIdeal_of_pow_eq (K := K) (L := M) (x := hζ.toInteger)
+    (a := (1 : 𝓞 K)) (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ)
+    (by rw [map_one]; exact hζ.toInteger_isPrimitiveRoot.pow_eq_one)
 
 open NumberField in
 /-- In a cyclotomic extension of level `m`, every prime above an ideal not containing `m`

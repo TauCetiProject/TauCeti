@@ -33,6 +33,9 @@ The construction follows the family modules it imports.
 
 ## Main results
 
+* `TauCeti.ValidLieTypeIndex.steinberg_suzuki`, `TauCeti.ValidLieTypeIndex.steinberg_reeG2`,
+  `TauCeti.ValidLieTypeIndex.steinberg_reeF4` and `TauCeti.ValidLieTypeIndex.steinberg_tits`: on
+  the four half-Frobenius constructors the Steinberg endomorphism is that of the family.
 * `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius`: on ordinary
   and graph-twisted indices, the action on simple root subgroups permutes by the diagram
   automorphism and raises the parameter to the `q`-th power.
@@ -70,6 +73,32 @@ def steinberg : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩ | ⟨.twistedE6 _, hv⟩
   | ⟨.trialityD4 _, hv⟩ =>
       GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩
+
+section Branches
+
+variable {m : ℕ}
+
+/-- On `²B₂(2^(2m+1))` the Steinberg endomorphism is that of the Suzuki family. -/
+theorem steinberg_suzuki (hv : (LieTypeIndex.suzuki m).Valid) :
+    steinberg ⟨_, hv⟩ = SuzukiLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²G₂(3^(2m+1))` the Steinberg endomorphism is that of the Ree `G₂` family. -/
+theorem steinberg_reeG2 (hv : (LieTypeIndex.reeG2 m).Valid) :
+    steinberg ⟨_, hv⟩ = ReeG2LieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²F₄(2^(2m+1))` the Steinberg endomorphism is that of the Ree `F₄` family. -/
+theorem steinberg_reeF4 (hv : (LieTypeIndex.reeF4 m).Valid) :
+    steinberg ⟨_, hv⟩ = ReeF4LieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On the Tits index the Steinberg endomorphism is that of the Tits construction. -/
+theorem steinberg_tits (hv : LieTypeIndex.tits.Valid) :
+    steinberg ⟨_, hv⟩ = TitsLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+end Branches
 
 /-- On ordinary and graph-twisted indices the assembled map has the recorded diagram action
 and field-order exponent. -/

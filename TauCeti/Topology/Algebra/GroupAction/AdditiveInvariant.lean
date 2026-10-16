@@ -10,12 +10,14 @@ public import Mathlib.Algebra.Module.PUnit
 public import Mathlib.Topology.Algebra.MulAction
 
 /-!
-# Additive invariants of finite discrete group actions
+# Additive invariants of finite discrete monoid actions
 
-Fix a natural number `p` and a group `G` with a topology. Consider finite discrete additive
+Fix a natural number `p` and a monoid `G` with a topology. Consider finite discrete additive
 commutative groups with a continuous distributive `G`-action whose elements are killed by a power
-of `p`. An integer-valued invariant additive on every equivariant short exact sequence vanishes
-on subsingleton objects and is preserved by equivariant additive equivalences.
+of `p`. An additive-monoid-valued invariant that is additive on every equivariant short exact
+sequence is preserved by equivariant additive equivalences. If the target has left cancellation,
+the invariant also vanishes on subsingleton objects. This applies, in particular, to
+natural-number-valued lengths and integer-valued Euler characteristics.
 
 ## Main results
 
@@ -27,16 +29,17 @@ on subsingleton objects and is preserved by equivariant additive equivalences.
 
 public section
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
-variable {p : ℕ} {G : Type v} [Group G] [TopologicalSpace G]
+variable {p : ℕ} {G : Type v} [Monoid G] [TopologicalSpace G]
+  {R : Type w} [AddMonoid R]
 
 variable
   (I : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A]
     [DiscreteTopology A] [DistribMulAction G A] [ContinuousSMul G A] [Finite A],
-    (∀ a : A, ∃ k : ℕ, p ^ k • a = 0) → ℤ)
+    (∀ a : A, ∃ k : ℕ, p ^ k • a = 0) → R)
   (hExact : ∀ {A B C : Type u}
     [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A] [ContinuousSMul G A] [Finite A]
@@ -54,28 +57,22 @@ variable
     f.range = q.ker → I B hB = I A hA + I C hC)
 
 include hExact in
-/-- An invariant additive on equivariant short exact sequences vanishes on a subsingleton
-module. -/
-theorem invariant_eq_zero_of_subsingleton {A : Type u}
+/-- An invariant with values in a left-cancellative additive monoid that is additive on
+equivariant short exact sequences vanishes on a subsingleton module. -/
+theorem invariant_eq_zero_of_subsingleton [IsLeftCancelAdd R] {A : Type u}
     [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
-    [DistribMulAction G A] [ContinuousSMul G A] [Finite A] [Subsingleton A]
+    [DistribMulAction G A] [ContinuousSMul G A] [Subsingleton A]
     (hA : ∀ a : A, ∃ k : ℕ, p ^ k • a = 0) : I A hA = 0 := by
   have h := hExact hA hA hA 0 0
     (by intro g a; simp) (by intro g a; simp)
-    (fun _ _ _ ↦ Subsingleton.elim _ _)
-    (fun a ↦ ⟨0, Subsingleton.elim _ _⟩)
-    (by
-      ext a
-      constructor
-      · intro _
-        rfl
-      · intro _
-        exact ⟨0, Subsingleton.elim _ _⟩)
-  omega
+    (Function.injective_of_subsingleton _)
+    (Function.surjective_to_subsingleton _)
+    (Subsingleton.elim _ _)
+  exact left_eq_add.mp h
 
 include hExact in
-/-- An invariant additive on equivariant short exact sequences takes the same value on
-equivariantly isomorphic modules. -/
+/-- An additive-monoid-valued invariant additive on equivariant short exact sequences takes
+the same value on equivariantly isomorphic modules. -/
 theorem invariant_eq_of_equiv {A B : Type u}
     [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A] [ContinuousSMul G A] [Finite A]
@@ -87,17 +84,14 @@ theorem invariant_eq_of_equiv {A B : Type u}
     I A hA = I B hB := by
   have _ : ContinuousSMul G PUnit.{u + 1} := ⟨continuous_of_const fun _ _ ↦ rfl⟩
   have hZ : ∀ z : PUnit.{u + 1}, ∃ k : ℕ, p ^ k • z = 0 := fun _ ↦ ⟨0, rfl⟩
+  have hid := hExact hA hA hZ (AddMonoidHom.id A) 0
+    (by intro g a; rfl) (by intro _ _; simp) Function.injective_id
+    (Function.surjective_to_subsingleton _)
+    (by rw [AddMonoidHom.range_eq_top.mpr Function.surjective_id, AddMonoidHom.ker_zero])
   have h := hExact hA hB hZ e.toAddMonoidHom 0 he
-    (by intro g b; simp) e.injective
-    (fun z ↦ ⟨0, Subsingleton.elim _ _⟩)
-    (by
-      ext b
-      constructor
-      · intro _
-        rfl
-      · intro _
-        exact e.surjective b)
-  rw [invariant_eq_zero_of_subsingleton I hExact hZ, add_zero] at h
-  exact h.symm
+    (by intro _ _; simp) e.injective
+    (Function.surjective_to_subsingleton _)
+    (by rw [AddMonoidHom.range_eq_top.mpr e.surjective, AddMonoidHom.ker_zero])
+  exact hid.trans h.symm
 
 end TauCeti

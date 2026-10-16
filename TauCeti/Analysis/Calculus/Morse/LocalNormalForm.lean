@@ -9,18 +9,19 @@ public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
-# The Morse lemma for a locally smooth function
+# The local Morse lemma
 
-`TauCeti.IsNondegenerateCriticalPoint.exists_morse_chart` puts a globally smooth function in
-quadratic normal form near a nondegenerate critical point. The normal form only depends on the
-function near the point, and this file states it for a function that is smooth on a
-neighbourhood of the critical point only. This is the form in which the Morse lemma applies to the
-coordinate expressions of a function on a manifold, which are only defined on chart targets.
+`TauCeti.IsNondegenerateCriticalPoint.exists_morse_chart` puts a globally `C^{n+2}` function in
+quadratic normal form in `C^n` coordinates, for `1 ≤ n ≤ ∞`, near a nondegenerate critical
+point. The normal form only depends on the function near the point, and this file states it
+for a function that is `C^{n+2}` on a neighbourhood of the critical point only. This is the form
+in which the Morse lemma applies to the coordinate expressions of a function on a manifold,
+which are only defined on chart targets.
 
 ## Main declarations
 
 * `TauCeti.IsNondegenerateCriticalPoint.exists_morse_chart_of_contDiffOn`: the Morse lemma for a
-  function smooth on a neighbourhood of a nondegenerate critical point, with a chart whose
+  function `C^{n+2}` on a neighbourhood of a nondegenerate critical point, with a `C^n` chart whose
   source lies in that neighbourhood.
 
 ## References
@@ -37,20 +38,21 @@ open scoped ContDiff
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {g : E → ℝ} {a : E} {U : Set E}
+  {g : E → ℝ} {a : E} {U : Set E} {n : ℕ∞}
 
-/-- **The Morse lemma for a locally smooth function.** If `g` is smooth on a neighbourhood `U` of
-a nondegenerate critical point `a`, there is a chart `ψ` with source in `U`, sending `a` to `0`,
-smooth in both directions, on whose source `g` is its Hessian quadratic form read in the chart. -/
+/-- **The local Morse lemma.** If `g` is `C^{n+2}` on a
+neighbourhood `U` of a nondegenerate critical point `a`, with `1 ≤ n ≤ ∞`, there is a chart `ψ`
+with source in `U`, sending `a` to `0`, `C^n` in both directions, on whose source `g` is its
+Hessian quadratic form read in the chart. -/
 theorem IsNondegenerateCriticalPoint.exists_morse_chart_of_contDiffOn (hU : U ∈ 𝓝 a)
-    (hg : ContDiffOn ℝ ∞ g U) (h : IsNondegenerateCriticalPoint g a) :
+    (hg : ContDiffOn ℝ (n + 2) g U) (h : IsNondegenerateCriticalPoint g a) (hn : n ≠ 0) :
     ∃ ψ : OpenPartialHomeomorph E E, ψ.source ⊆ U ∧ a ∈ ψ.source ∧ ψ a = 0 ∧
-      ContDiffOn ℝ ∞ ψ ψ.source ∧ ContDiffOn ℝ ∞ ψ.symm ψ.target ∧
+      ContDiffOn ℝ n ψ ψ.source ∧ ContDiffOn ℝ n ψ.symm ψ.target ∧
       ∀ y ∈ ψ.source, g y = g a + (2 : ℝ)⁻¹ * fderiv ℝ (fderiv ℝ g) a (ψ y) (ψ y) := by
-  obtain ⟨G, hG, -, hGg⟩ := hg.exists_contDiff_eventuallyEq_of_finiteDimensional (n := ⊤) hU
+  obtain ⟨G, hG, -, hGg⟩ := hg.exists_contDiff_eventuallyEq_of_finiteDimensional hU
   obtain ⟨V, hGV, hVopen, haV⟩ := _root_.eventually_nhds_iff.1 hGg
   obtain ⟨φ, haφ, hφa, hφ, hφsymm, hφG⟩ :=
-    (h.congr_of_eventuallyEq hGg.symm).exists_morse_chart hG
+    (h.congr_of_eventuallyEq hGg.symm).exists_morse_chart hG hn
   have hD : fderiv ℝ (fderiv ℝ G) a = fderiv ℝ (fderiv ℝ g) a := hGg.fderiv.fderiv_eq
   refine ⟨φ.restrOpen (V ∩ interior U) (hVopen.inter isOpen_interior), ?_, ?_, hφa, ?_, ?_, ?_⟩
   · intro y hy

@@ -8,6 +8,9 @@ module
 public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Covering.Basic
 
+import TauCeti.Topology.Covering.Comp
+import TauCeti.Topology.Covering.Homeomorph
+
 /-!
 # Covering maps and clopen sets
 
@@ -20,7 +23,9 @@ fibre.
 Openness alone is not enough: for `s` open but not closed, a point of `frontier s` has every
 neighbourhood meeting `s`, so no neighbourhood of it is evenly covered by a surjection onto `s`.
 Mathlib's `IsCoveringMap` allows empty fibres, which is exactly what makes the clopen statement
-work without assuming `p` surjective or `s = X`.
+work without assuming `p` surjective or `s = X`. In particular the inclusion of a clopen subset is
+a covering map, so a covering map with finite fibres restricts to a covering map on every clopen
+subset of its domain, such as a connected component of a locally connected total space.
 
 The number of points in a fibre of a covering map is locally constant: an evenly covered
 neighbourhood identifies the fibres over all of its points. So for any type `α`, the set of points
@@ -30,6 +35,8 @@ whose fibre is in bijection with `α` is clopen.
 
 * `IsCoveringMap.subtypeVal_comp`: the composite of a covering map onto a clopen
   subspace with the subspace inclusion is a covering map.
+* `IsCoveringMap.domRestrict_of_isClopen`: the restriction of a covering map with finite fibres to a
+  clopen subset of its domain is a covering map.
 * `IsCoveringMap.isClopen_setOf_nonempty_fiber_equiv`: the points whose fibre is in bijection
   with a given type form a clopen set.
 * `IsCoveringMap.nonempty_fiber_equiv`: over a preconnected base all fibres are in bijection, and
@@ -54,6 +61,14 @@ theorem _root_.IsCoveringMap.subtypeVal_comp {p : E → s} (hp : IsCoveringMap p
   · refine IsEvenlyCovered.to_isEvenlyCovered_preimage
       (IsEvenlyCovered.of_preimage_eq_empty Empty (hs.isClosed.isOpen_compl.mem_nhds hx) ?_)
     exact Set.eq_empty_of_forall_notMem fun e he => he (p e).2
+
+/-- **A covering map with finite fibres restricts to a covering map on a clopen set.** For a
+clopen subset `t ⊆ E`, the inclusion `t ↪ E` followed by `p : E → X` is a covering map
+`t → X`. -/
+theorem _root_.IsCoveringMap.domRestrict_of_isClopen {p : E → X} (hp : IsCoveringMap p)
+    (hfin : ∀ x, (p ⁻¹' {x}).Finite) {t : Set E} (ht : IsClopen t) :
+    IsCoveringMap (t.domRestrict p) :=
+  hp.comp (IsCoveringMap.id.subtypeVal_comp ht) hfin
 
 /-- **The number of points in a fibre of a covering map is locally constant.** Over an evenly
 covered neighbourhood all fibres are in bijection, so both the points whose fibre is in bijection

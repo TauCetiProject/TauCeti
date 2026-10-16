@@ -53,6 +53,7 @@ its conclusion, so instance search could not find it.
 * `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
+* `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
 -/
 
 public section
@@ -65,6 +66,12 @@ theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed 
   rw [Algebra.mem_bot]
   exact minpoly.mem_range_of_degree_eq_one K x <|
     IsSepClosed.degree_eq_one_of_irreducible K (minpoly.irreducible hx.isIntegral) hx
+
+/-- `2` stays nonzero in the separable closure of a field in which it is nonzero, since the
+algebra map is injective. -/
+instance SeparableClosure.neZero_two {K : Type*} [Field K] [NeZero (2 : K)] :
+    NeZero (2 : SeparableClosure K) := by
+  simpa using NeZero.of_faithfulSMul K (SeparableClosure K) 2
 
 namespace TauCeti
 

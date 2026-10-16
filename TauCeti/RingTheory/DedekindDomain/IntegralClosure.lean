@@ -8,6 +8,7 @@ module
 -- Proof-only: Krull–Akizuki supplies the Noetherian half, and is not named in any statement.
 import TauCeti.RingTheory.IntegralClosure.NormalizationFinite
 public import Mathlib.RingTheory.DedekindDomain.Basic
+public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.Localization.Integral
 
 /-!
@@ -25,6 +26,8 @@ normalization of a singular affine curve and to inseparable function-field exten
 * `TauCeti.integralClosure.isDedekindDomain`: the result for Mathlib's `integralClosure A L`, with
   a fraction field chosen by the caller.
 * `TauCeti.integralClosure.isDedekindDomain_fractionRing`: the instance with `K := FractionRing A`.
+* `TauCeti.IsIntegralClosure.flat`: over a Dedekind base `A`, an integral closure of `A` in a
+  torsion-free `A`-algebra is a flat `A`-module.
 
 The abstract form applies, for example, to a subring of a function field known to be an integral
 closure. The ring `C` need not be assumed to be a domain: its map into the field `L` is injective.
@@ -88,5 +91,13 @@ instance integralClosure.isDedekindDomain_fractionRing {A : Type*} [CommRing A] 
     [Module.Finite (FractionRing A) L] :
     IsDedekindDomain (integralClosure A L) :=
   integralClosure.isDedekindDomain A (FractionRing A) L
+
+/-- Over a Dedekind domain `A`, an integral closure of `A` in a torsion-free `A`-algebra `L` is a
+flat `A`-module. This cannot be an instance since `L` cannot be inferred. -/
+theorem IsIntegralClosure.flat (A : Type*) [CommRing A] [IsDedekindDomain A] (L : Type*)
+    [CommRing L] [Algebra A L] [Module.IsTorsionFree A L] (C : Type*) [CommRing C] [Algebra A C]
+    [Algebra C L] [IsScalarTower A C L] [IsIntegralClosure C A L] : Module.Flat A C :=
+  have : Module.IsTorsionFree A C := _root_.IsIntegralClosure.isTorsionFree A L
+  inferInstance
 
 end TauCeti

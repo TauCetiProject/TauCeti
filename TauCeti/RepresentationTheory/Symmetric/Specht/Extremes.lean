@@ -41,9 +41,9 @@ group of that `t`, as in `TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Ex
 proves the same two identifications for the left-ideal presentation `ℚ[Sₙ] c_t`.  A statement
 about `spechtSubrepresentation μ` alone is stated on the diagram, as `μ.colLen 0 ≤ 1` resp.
 `μ.rowLen 0 ≤ 1`, so that no tableau has to be produced to use it; the partition-level results
-below feed those hypotheses with `TauCeti.colLen_diagramOf_indiscrete_le_one` and
-`TauCeti.rowLen_diagramOf_ones_le_one`.  The two hypotheses are compatible rather than exclusive:
-on the empty diagram both hold, and there `Sₙ` is trivial and so are both characters.
+below feed those hypotheses with `YoungDiagram.colLen_ofPartition_indiscrete_le_one` and
+`YoungDiagram.rowLen_ofPartition_ones_le_one`.  The two hypotheses are compatible rather than
+exclusive: on the empty diagram both hold, and there `Sₙ` is trivial and so are both characters.
 
 "Is the trivial representation" and "is the sign representation" are stated the way the ideal file
 states them, as the action formula together with the dimension: a line on which `σ` acts by `1`
@@ -241,7 +241,8 @@ theorem spechtSubrepresentation_toRepresentation_apply_of_rowLen_le_one (h : μ.
 @[simp↓]
 theorem finrank_spechtModule_indiscrete (n : ℕ) :
     finrank ℚ (spechtModule (Nat.Partition.indiscrete n)) = 1 :=
-  finrank_spechtSubrepresentation_of_colLen_le_one (colLen_diagramOf_indiscrete_le_one n)
+  finrank_spechtSubrepresentation_of_colLen_le_one
+    (YoungDiagram.colLen_ofPartition_indiscrete_le_one n)
 
 /-- **`S^{(n)}` is the trivial representation**: the symmetric group fixes it pointwise.
 
@@ -252,7 +253,7 @@ theorem spechtModule_indiscrete_ρ_apply (n : ℕ) (σ : Equiv.Perm (Fin n))
     (x : spechtModule (Nat.Partition.indiscrete n)) :
     (spechtModule (Nat.Partition.indiscrete n)).ρ σ x = x :=
   spechtSubrepresentation_toRepresentation_apply_of_colLen_le_one
-    (colLen_diagramOf_indiscrete_le_one n) _ x
+    (YoungDiagram.colLen_ofPartition_indiscrete_le_one n) _ x
 
 /-- **`S^{(n)}` is the trivial representation**, in the extensional form its character is read
 off. -/
@@ -268,11 +269,12 @@ theorem spechtModule_indiscrete_ρ_eq_trivial (n : ℕ) :
 @[simp↓]
 theorem finrank_spechtModule_ones (n : ℕ) :
     finrank ℚ (spechtModule (Nat.Partition.ones n)) = 1 :=
-  finrank_spechtSubrepresentation_of_rowLen_le_one (rowLen_diagramOf_ones_le_one n 0)
+  finrank_spechtSubrepresentation_of_rowLen_le_one
+    (YoungDiagram.rowLen_ofPartition_ones_le_one n 0)
 
 /-- **`S^{(1ⁿ)}` is the sign representation**: the symmetric group acts on it through the sign
-character.  The sign is unchanged by the relabelling `Fin n ≃ Fin (diagramOf (1ⁿ)).card` that
-`TauCeti.spechtModule` transports along.
+character.  The sign is unchanged by the relabelling
+`Fin n ≃ Fin (YoungDiagram.ofPartition (1ⁿ)).card` that `TauCeti.spechtModule` transports along.
 
 This is not a `simp` lemma, for the reason given at
 `TauCeti.spechtModule_indiscrete_ρ_apply`. -/
@@ -280,8 +282,8 @@ theorem spechtModule_ones_ρ_apply (n : ℕ) (σ : Equiv.Perm (Fin n))
     (x : spechtModule (Nat.Partition.ones n)) :
     (spechtModule (Nat.Partition.ones n)).ρ σ x = ((Equiv.Perm.sign σ : ℤ) : ℚ) • x := by
   have h := spechtSubrepresentation_toRepresentation_apply_of_rowLen_le_one
-    (rowLen_diagramOf_ones_le_one n 0)
-    ((finCongr (card_diagramOf (Nat.Partition.ones n)).symm).permCongrHom σ) x
+    (YoungDiagram.rowLen_ofPartition_ones_le_one n 0)
+    ((finCongr (YoungDiagram.card_ofPartition (Nat.Partition.ones n)).symm).permCongrHom σ) x
   rwa [Equiv.permCongrHom_coe, Equiv.Perm.sign_permCongr] at h
 
 /-! ## The two extreme rows of the character table of `Sₙ` -/

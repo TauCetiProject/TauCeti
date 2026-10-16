@@ -114,14 +114,12 @@ variable {F : (X Y : C) → CategoryTheory.GradedObject ℤ (ModuleCat.{v} R)}
 
 /-- The hom module between two objects of the graded linear quiver `ofGradedHom F`: the external
 direct sum of the components of `F X Y`. -/
-@[simp]
 theorem homModule_ofGradedHom (X Y : C) :
     (ofGradedHom (R := R) (C := C) F).homModule X Y = ModuleCat.of R (⨁ p, F X Y p) :=
   rfl
 
 /-- The internal grading between two objects of the graded linear quiver `ofGradedHom F` is the
 canonical grading of the external direct sum of the components of `F X Y`. -/
-@[simp]
 theorem grading_ofGradedHom (X Y : C) :
     (ofGradedHom (R := R) (C := C) F).grading X Y = InternalGrading.ofGradedObject R (F X Y) :=
   rfl

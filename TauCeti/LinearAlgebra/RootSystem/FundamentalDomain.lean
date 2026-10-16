@@ -62,10 +62,8 @@ fundamental-domain statement is a corollary of the finite-Weyl-group one.
 
 ## References
 
-This file completes the fundamental-domain item of Layer 4 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, whose uniqueness half was previously
-proved only for weights interior to the chamber. The argument is the one in J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. III, §10.3, Theorem (b).
+The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, GTM 9, Ch. III, §10.3, Theorem (b).
 -/
 
 public section

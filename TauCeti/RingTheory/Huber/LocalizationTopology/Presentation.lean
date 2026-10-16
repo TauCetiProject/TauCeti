@@ -405,7 +405,7 @@ theorem continuous_presentationRingEquiv [IsTopologicalRing A]
       (hgc : g.comp (toCompletionLoc P T s S hden) = toCompletionLoc P T' s' S' hden')
       (hhc : h.comp (toCompletionLoc P T' s' S' hden') = toCompletionLoc P T s S hden),
       Continuous (presentationRingEquiv P T s S hden T' s' S' hden' g h hg hh hgc hhc) := by
-  intro g h hg hh hgc hhc
+  intro g h hg _ _ _
   exact hg
 
 /-- The comparison isomorphism has a continuous inverse, being `h`. With
@@ -429,7 +429,7 @@ theorem continuous_presentationRingEquiv_symm [IsTopologicalRing A]
       (hgc : g.comp (toCompletionLoc P T s S hden) = toCompletionLoc P T' s' S' hden')
       (hhc : h.comp (toCompletionLoc P T' s' S' hden') = toCompletionLoc P T s S hden),
       Continuous (presentationRingEquiv P T s S hden T' s' S' hden' g h hg hh hgc hhc).symm := by
-  intro g h hg hh hgc hhc
+  intro g h _ hh _ _
   exact hh
 
 /-- The comparison isomorphism is compatible with the structure maps from `A`, which is the
@@ -456,7 +456,7 @@ theorem presentationRingEquiv_coe_comp_toCompletionLoc [IsTopologicalRing A]
         UniformSpace.Completion S ≃+* UniformSpace.Completion S') :
           UniformSpace.Completion S →+* UniformSpace.Completion S')).comp
         (toCompletionLoc P T s S hden) = toCompletionLoc P T' s' S' hden' := by
-  intro g h hg hh hgc hhc
+  intro g h _ _ hgc _
   exact hgc
 
 end PairOfDefinition

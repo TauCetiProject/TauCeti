@@ -50,6 +50,8 @@ relations, for instance the rationalisation of a module over an integral group r
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
   is surjective.
+* `Submodule.baseChange_eq_top_iff_subsingleton`: the extension of scalars of `p ≤ M` to `A` is
+  all of `A ⊗[R] M` exactly when `A ⊗[R] (M ⧸ p) = 0`.
 * `QuotSMulTop.baseChange_mkQ_bijective`: if `r` maps to `0` in `A`, the base change of
   `M → M ⧸ rM` to `A` is bijective.
 * `QuotSMulTop.finite_baseChange`: if `r` maps to `0` in `A` and `M ⧸ rM` is finitely generated,
@@ -137,6 +139,27 @@ theorem quotientRangeTensorEquiv_symm_mk_tmul (f : M' →ₗ[A] M) (x : M) (n : 
 
 end TensorProduct.AlgebraTensorModule
 
+namespace Submodule
+
+variable {R M : Type*} (A : Type*) [CommRing R] [AddCommGroup M] [Module R M] [Ring A]
+  [Algebra R A]
+
+/-- The extension of scalars `p.baseChange A` of a submodule `p ≤ M` is all of `A ⊗[R] M` exactly
+when the base change `A ⊗[R] (M ⧸ p)` of the quotient vanishes. -/
+theorem baseChange_eq_top_iff_subsingleton (p : Submodule R M) :
+    p.baseChange A = ⊤ ↔ Subsingleton (A ⊗[R] (M ⧸ p)) := by
+  -- `A ⊗ p → A ⊗ M → A ⊗ (M ⧸ p) → 0` is exact, and the first map has range `p.baseChange A`
+  have hexact := lTensor_exact A (LinearMap.exact_subtype_mkQ p) p.mkQ_surjective
+  have hrange (x : A ⊗[R] M) : x ∈ p.baseChange A ↔ x ∈ LinearMap.range (p.subtype.lTensor A) := by
+    simp [baseChange, LinearMap.baseChange_eq_lTensor]
+  refine ⟨fun h ↦ ⟨fun y z ↦ ?_⟩, fun _ ↦ eq_top_iff.mpr fun x _ ↦
+    (hrange x).mpr ((hexact x).mp (Subsingleton.elim _ _))⟩
+  obtain ⟨y, rfl⟩ := LinearMap.lTensor_surjective A p.mkQ_surjective y
+  obtain ⟨z, rfl⟩ := LinearMap.lTensor_surjective A p.mkQ_surjective z
+  rw [(hexact y).mpr ((hrange y).mp (h ▸ mem_top)), (hexact z).mpr ((hrange z).mp (h ▸ mem_top))]
+
+end Submodule
+
 namespace QuotSMulTop
 
 open LinearMap TensorProduct
@@ -165,7 +188,7 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
   have he : e.toLinearMap = lTensor A p.mkQ := LinearMap.ext fun y ↦ by
     simp only [e, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
       Submodule.quotEquivOfEqBot_symm_apply, he₀]
-  rw [baseChange_eq_ltensor, ← he]
+  rw [baseChange_eq_lTensor, ← he]
   exact e.bijective
 
 /-- **Finiteness of a base change killing a scalar.** If `r : R` maps to `0` in the `R`-algebra

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
-public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 
 /-!
@@ -25,8 +25,12 @@ exterior powers of `𝒪ₓ`-modules from which determinants of vector bundles a
   sheaves of `R`-modules;
 * `SheafOfModules.exteriorPowerIso` and `SheafOfModules.exteriorPower_map` are its
   defining identification with the sheafification of the sectionwise exterior power;
+* `SheafOfModules.exteriorPower_map_val_app_mk` computes the exterior power of a morphism on
+  sheafified wedges of sections;
 * `SheafOfModules.exteriorPowerZeroIso` identifies `⋀⁰ M` with the structure sheaf;
-* `SheafOfModules.exteriorPowerOneIso` identifies `⋀¹ M` with `M`;
+* `SheafOfModules.exteriorPowerOneIso` identifies `⋀¹ M` with `M`, and
+  `SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app` computes it on the sheafification
+  map of the sectionwise first exterior power;
 * `SheafOfModules.presheafPushforwardExteriorPowerIso` identifies the exterior power of the
   pushforward of a presheaf of modules with the pushforward of its exterior power;
 * `SheafOfModules.pushforwardExteriorPowerIso` identifies the pushforward of `⋀ⁿ M` along a
@@ -80,6 +84,30 @@ theorem exteriorPower_map (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)} 
       (exteriorPowerIso n M).hom ≫ (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
         ((PresheafOfModulesOfCommRing.exteriorPower n).map φ.val) ≫ (exteriorPowerIso n N).inv :=
   (rfl)
+
+/-- On sections over `X`, the exterior power of a morphism `φ` sends the sheafified wedge
+`m₁ ∧ ⋯ ∧ mₙ` to the sheafified wedge `φ m₁ ∧ ⋯ ∧ φ mₙ`. -/
+@[simp]
+theorem exteriorPower_map_val_app_mk (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
+    (φ : M ⟶ N) (X : Cᵒᵖ) (m : Fin n → PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) :
+    ((exteriorPower R n).map φ).val.app X ((exteriorPowerIso n M).inv.val.app X
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app X
+          (ModuleCat.exteriorPower.mk
+            (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) m))) =
+    (exteriorPowerIso n N).inv.val.app X
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower n).obj N.val)).app X
+          (ModuleCat.exteriorPower.mk
+            (M := PresheafOfModulesOfCommRing.obj (R := R.obj) N.val X)
+            (fun i ↦ φ.val.app X (m i)))) := by
+  have hu := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.app X)
+    ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.naturality
+      ((PresheafOfModulesOfCommRing.exteriorPower n).map φ.val)))
+    (ModuleCat.exteriorPower.mk (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) m)
+  -- `exteriorPowerIso` is the identity, so this is naturality of the sheafification unit,
+  -- followed by the sectionwise wedge formula.
+  exact hu.symm.trans (congrArg _ (ModuleCat.exteriorPower.map_mk _ m))
 
 variable (R) in
 /-- The zeroth exterior power of a sheaf of modules is the structure sheaf, naturally. -/
@@ -145,10 +173,32 @@ theorem exteriorPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
         (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R) M).hom :=
   (rfl)
 
+/-- On the sheafification map of the sectionwise first exterior power of `M`, the identification
+`⋀¹ M ≅ M` is the sectionwise identification `PresheafOfModulesOfCommRing.exteriorPowerOneIso`. -/
+theorem unit_comp_val_exteriorPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) 1).obj M.val) ≫
+      ((exteriorPowerIso 1 M).inv ≫ (exteriorPowerOneIso R).hom.app M).val =
+    (PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val := by
+  have e : (exteriorPowerIso 1 M).inv ≫ (exteriorPowerOneIso R).hom.app M =
+      (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+          ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val) ≫
+        (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).counit.app M := by
+    rw [exteriorPowerOneIso_hom_app, Iso.inv_hom_id_assoc,
+      TauCeti.SheafOfModules.sheafificationIso_hom]
+  rw [e]
+  -- Move the sectionwise map past the sheafification map, then use a triangle identity.
+  exact ((PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf R).obj)).unit.naturality_assoc _ _).symm.trans
+      ((congrArg ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val ≫ ·)
+        ((PresheafOfModules.sheafificationAdjunction
+          (𝟙 (ringCatSheaf R).obj)).right_triangle_components M)).trans (Category.comp_id _))
+
 section Pushforward
 
 open TauCeti.SheafOfModules (pushforwardCommRing pushforwardModule pushforwardRingIso
-  pushforwardSheafificationIso pushforwardSheafificationIso_inv_naturality)
+  pushforwardSheafificationIso pushforwardSheafificationNatIso
+  pushforwardSheafificationNatIso_hom_app)
 
 variable {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D}
   [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
@@ -239,17 +289,6 @@ theorem pushforwardExteriorPowerIso_hom (n : ℕ) (M : SheafOfModules.{u} (ringC
   -- sheaves of the middle isomorphisms agree with the outer ones only up to unfolding
   (rfl)
 
-/-- `pushforwardSheafificationIso`, as a natural isomorphism of functors on presheaves of
-modules. -/
-private def pushforwardSheafificationNatIso :
-    PresheafOfModules.sheafification (R₀ := (ringCatSheaf R).obj) (R := ringCatSheaf R) (𝟙 _) ⋙
-        pushforwardModule (J := K) F R ≅
-      PresheafOfModules.pushforward (F := F) (pushforwardRingIso (J := K) F (ringCatSheaf R)).inv ⋙
-        PresheafOfModules.sheafification
-          (R := (F.sheafPushforwardContinuous RingCat K J).obj (ringCatSheaf R)) (𝟙 _) :=
-  (NatIso.ofComponents (fun P ↦ (pushforwardSheafificationIso F (ringCatSheaf R) P).symm)
-    (fun f ↦ pushforwardSheafificationIso_inv_naturality F (ringCatSheaf R) f)).symm
-
 /-- `pushforwardExteriorPowerIso`, assembled as a natural isomorphism from the natural
 sheafification--pushforward comparison and the sheafified `presheafPushforwardExteriorPowerIso`.
 Its components are `pushforwardExteriorPowerIso` (`pushforwardExteriorPowerIso_hom_eq`). -/
@@ -258,7 +297,7 @@ private def pushforwardExteriorPowerNatIso (n : ℕ) :
       pushforwardModule (J := K) F R ⋙ exteriorPower (pushforwardCommRing (J := K) F R) n :=
   Functor.isoWhiskerLeft (SheafOfModules.forget (ringCatSheaf R) ⋙
       PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n)
-      (pushforwardSheafificationNatIso F) ≪≫
+      (pushforwardSheafificationNatIso F (ringCatSheaf R)) ≪≫
     Functor.isoWhiskerRight (Functor.isoWhiskerLeft (SheafOfModules.forget (ringCatSheaf R))
       (presheafPushforwardExteriorPowerIso (K := K) F n))
       (PresheafOfModules.sheafification
@@ -269,7 +308,13 @@ private theorem pushforwardExteriorPowerIso_hom_eq (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) :
     (pushforwardExteriorPowerIso F n M).hom =
       (pushforwardExteriorPowerNatIso (K := K) F n).hom.app M :=
-  (rfl)
+  -- the remaining factors agree definitionally (`exteriorPowerIso` is `Iso.refl`), so only the
+  -- component of the sheafification--pushforward comparison needs its component lemma
+  (congrArg (· ≫ (PresheafOfModules.sheafification
+      (𝟙 (ringCatSheaf (pushforwardCommRing (J := K) F R)).obj)).map
+        ((presheafPushforwardExteriorPowerIso (K := K) F n).hom.app M.val))
+    (pushforwardSheafificationNatIso_hom_app F (ringCatSheaf R)
+      ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val))).symm
 
 /-- `pushforwardExteriorPowerIso` is natural in the sheaf of modules. -/
 @[reassoc]

@@ -341,12 +341,12 @@ private theorem isOpenMap_glue (hcA : IsCollar (sideRestrict f A) cA)
   obtain ⟨O', hO', hOS'⟩ := isOpen_induced_iff.1 (hcB.isOpenEmbedding.isOpenMap _
     (hS.preimage (continuous_fst.prodMk (continuous_negBall.comp continuous_snd))))
   -- A point of `A ∪ f(N)` in `O`, or of `B ∪ f(N)` in `O'`, is in the image of `S`.
-  have hmemA : ∀ p (hp : p ∈ A ∪ range f), p ∈ O → p ∈ glue cA cB '' S := fun p hp hpO => by
+  have hmemA : ∀ p, p ∈ A ∪ range f → p ∈ O → p ∈ glue cA cB '' S := fun p hp hpO => by
     have hp' : (⟨p, hp⟩ : ↥(A ∪ range f)) ∈ ((↑) : ↥(A ∪ range f) → M) ⁻¹' O := hpO
     rw [hOS] at hp'
     obtain ⟨q, hq, hqp⟩ := hp'
     exact ⟨(q.1, posBall q.2), hq, by rw [glue_posBall, hqp]⟩
-  have hmemB : ∀ p (hp : p ∈ B ∪ range f), p ∈ O' → p ∈ glue cA cB '' S := fun p hp hpO => by
+  have hmemB : ∀ p, p ∈ B ∪ range f → p ∈ O' → p ∈ glue cA cB '' S := fun p hp hpO => by
     have hp' : (⟨p, hp⟩ : ↥(B ∪ range f)) ∈ ((↑) : ↥(B ∪ range f) → M) ⁻¹' O' := hpO
     rw [hOS'] at hp'
     obtain ⟨q, hq, hqp⟩ := hp'

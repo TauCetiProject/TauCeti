@@ -41,7 +41,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The tangent subspace of the ambient manifold determined by a positive-regularity embedding
 at `x`. It is the range of the differential, regarded as a linear map of tangent spaces. -/
-noncomputable def tangentRange (f : SmoothEmbedding I J n M N) (x : M) (_hn : n ≠ 0) :
+@[expose] noncomputable def tangentRange (f : SmoothEmbedding I J n M N) (x : M) (_hn : n ≠ 0) :
     Submodule 𝕜 (TangentSpace J (f x)) :=
   (mfderiv I J (f : M → N) x).toLinearMap.range
 
@@ -55,6 +55,7 @@ theorem mem_tangentRange_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠
 
 /-- The normal space of a smooth embedding at `x`: ambient tangent vectors modulo vectors
 tangent to the embedded submanifold. -/
+@[expose]
 noncomputable def NormalSpace
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) : Type _ :=
   TangentSpace J (f x) ⧸ f.tangentRange x hn
@@ -99,6 +100,10 @@ instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
 noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
   (f.tangentRange x hn).mkQ
+
+/-- The normal-class map is the linear quotient map by the tangent range. -/
+theorem normalClass_def (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    f.normalClass x hn = (f.tangentRange x hn).mkQ := (rfl)
 
 /-- The kernel of the normal-class map is exactly the tangent range. -/
 @[simp]

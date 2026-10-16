@@ -12,10 +12,12 @@ public import Mathlib.RingTheory.Noetherian.Defs
 /-!
 # Linear combinations from independence and from Noetherianity
 
-This file collects two complements to Mathlib's description of the span of a family by linear
+This file collects three complements to Mathlib's description of the span of a family by linear
 combinations: membership in the span of a *linearly independent* family is witnessed by a unique
 finitely supported combination, and in a *Noetherian* module every sequence has a term that is a
-linear combination of its predecessors.
+linear combination of its predecessors. A linear map sending each vector of a finite family
+to the corresponding standard basis vector of `ι → R` is a left inverse of the linear combination
+map of that family, hence surjective.
 
 ## Main statements
 
@@ -23,6 +25,8 @@ linear combination of its predecessors.
   linearly independent family is equivalent to having unique finitely supported coordinates.
 * `TauCeti.exists_sum_smul_eq_of_isNoetherian`: in a Noetherian module some term of a sequence is
   a linear combination of its predecessors.
+* `TauCeti.leftInverse_fintypeLinearCombination`: a linear map `M → (ι → R)` sending each `x i` to
+  the `i`-th standard basis vector is a left inverse of `Fintype.linearCombination R x`.
 -/
 
 public section
@@ -69,5 +73,14 @@ theorem exists_sum_smul_eq_of_isNoetherian [IsNoetherian R M] (v : ℕ → M) :
     rw [hrange, hstep]
     exact Submodule.subset_span ⟨n, Nat.lt_succ_self n, rfl⟩
   exact ⟨n, (Submodule.mem_span_range_iff_exists_fun _).mp hmem⟩
+
+/-- A linear map `φ : M → (ι → R)` with `φ (x i) = eᵢ` for every `i` is a left inverse of the linear
+combination map `v ↦ ∑ i, v i • x i`; in particular it is surjective. -/
+theorem leftInverse_fintypeLinearCombination {ι R M : Type*} [Fintype ι] [DecidableEq ι]
+    [Semiring R] [AddCommMonoid M] [Module R M] {x : ι → M} {φ : M →ₗ[R] ι → R}
+    (hφ : ∀ i, φ (x i) = Pi.single i 1) :
+    Function.LeftInverse φ (Fintype.linearCombination R x) := fun v ↦ by
+  ext j
+  simp [Fintype.linearCombination_apply, hφ, Pi.single_apply]
 
 end TauCeti

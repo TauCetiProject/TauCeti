@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Analytic.ConstantOrder
+public import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 public import TauCeti.Analysis.Analytic.Order
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Data.ENat.BigOperators

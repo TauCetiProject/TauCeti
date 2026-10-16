@@ -11,6 +11,7 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Data.Int.Order.Units
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.InformationTheory.Hamming
+public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
 
 /-!
 # Monomial and permutation equivalences of linear codes
@@ -20,7 +21,8 @@ of `R` and then relabels the coordinates along an equivalence of index types; a 
 transformation only relabels. Two linear codes — unbundled submodules of coordinate spaces — are
 monomially, respectively permutation, equivalent when such a transformation carries one onto the
 other. These are the transformations preserving all Hamming data of a code, so weights, weight
-distributions and pairwise Hamming distances are invariants of the resulting equivalence classes.
+distributions, pairwise Hamming distances and minimum distance are invariants of the resulting
+equivalence classes.
 
 ## Main definitions
 
@@ -43,6 +45,9 @@ distributions and pairwise Hamming distances are invariants of the resulting equ
   monomially equivalent codes have the same dimension and the same number of codewords.
 * `TauCeti.IsPermutationEquivalent.finrank_eq`, `TauCeti.IsPermutationEquivalent.card_eq`: the
   corresponding invariants for permutation-equivalent codes.
+* `TauCeti.IsMonomialEquivalent.hammingMinDist_eq`,
+  `TauCeti.IsPermutationEquivalent.hammingMinDist_eq`: equivalent codes have the same minimum
+  distance, including under the zero-code convention.
 * `TauCeti.monomialGroup_eq_permutationGroup`,
   `TauCeti.isMonomialEquivalent_iff_isPermutationEquivalent`,
   `TauCeti.monomialAut_eq_permutationAut`: over a ring whose only unit is one — the binary field
@@ -358,6 +363,14 @@ theorem IsPermutationEquivalent.card_eq (h : IsPermutationEquivalent C D) :
   exact Nat.card_congr
     ((LinearEquiv.funCongrLeft R R e.symm).submoduleMap C).toEquiv
 
+/-- Permutation-equivalent codes have the same minimum distance. -/
+theorem IsPermutationEquivalent.hammingMinDist_eq [Fintype ι] [Fintype κ] [DecidableEq R]
+    (h : IsPermutationEquivalent C D) :
+    (C : Set (ι → R)).hammingMinDist = (D : Set (κ → R)).hammingMinDist := by
+  obtain ⟨e, rfl⟩ := h
+  rw [Submodule.map_coe]
+  exact (Set.hammingMinDist_image _ fun x _ y _ _ ↦ Equiv.hammingDist_funLeft e.symm x y).symm
+
 end PermutationEquivalence
 
 /-! ### Monomial equivalence of linear codes -/
@@ -458,6 +471,14 @@ theorem IsMonomialEquivalent.card_eq (h : IsMonomialEquivalent C D) :
     Nat.card C = Nat.card D := by
   obtain ⟨u, e, rfl⟩ := h
   exact Nat.card_congr ((monomialEquiv u e).submoduleMap C).toEquiv
+
+/-- Monomially equivalent codes have the same minimum distance. -/
+theorem IsMonomialEquivalent.hammingMinDist_eq [Fintype ι] [Fintype κ] [DecidableEq R]
+    (h : IsMonomialEquivalent C D) :
+    (C : Set (ι → R)).hammingMinDist = (D : Set (κ → R)).hammingMinDist := by
+  obtain ⟨u, e, rfl⟩ := h
+  rw [Submodule.map_coe]
+  exact (Set.hammingMinDist_image _ fun x _ y _ _ ↦ hammingDist_monomialEquiv u e x y).symm
 
 end MonomialEquivalence
 

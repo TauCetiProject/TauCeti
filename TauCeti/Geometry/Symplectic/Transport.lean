@@ -17,12 +17,11 @@ one on `W` by conjugation, `w ↦ e (J (e.symm w))`. This file records that tran
 functoriality, and packages the statement that `e` itself is then a complex-linear isomorphism
 between `(V, J)` and `(W, J.transport e)`.
 
-This is the pointwise linear algebra that the smooth layer of the analytic Heegaard Floer
-roadmap needs before stating the corresponding bundle-level and `J`-holomorphic naturality:
-an almost complex structure on a vector bundle is given fiberwise, and a change of
+This is the pointwise linear algebra behind the corresponding bundle-level and `J`-holomorphic
+naturality: an almost complex structure on a vector bundle is given fiberwise, and a change of
 trivialization acts on each fiber by exactly this conjugation. The capstone
-`isComplexLinearMap_arrowCongr_iff` says that complex-linearity of a linear map is preserved
-and reflected when both source and target are transported.
+`isComplexLinearMap_arrowCongr_iff` says that complex-linearity of a linear map is preserved and
+reflected when both source and target are transported.
 
 ## Main declarations
 

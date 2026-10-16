@@ -260,7 +260,6 @@ theorem norm_lyapunovPerronIntegral_le_mul_exp
     {β : ℝ} (hβ : 0 ≤ β) (hβα : β < α) (hgM : ∀ s, 0 ≤ s → ‖g s‖ ≤ M * Real.exp (-β * s))
     (ht : 0 ≤ t) :
     ‖lyapunovPerronIntegral A P g t‖ ≤ 2 * K * M / (α - β) * Real.exp (-β * t) := by
-  have hαβ : (0 : ℝ) < α - β := sub_pos.2 hβα
   have hM : 0 ≤ M := by simpa using (norm_nonneg _).trans (hgM 0 le_rfl)
   rw [lyapunovPerronIntegral]
   refine (norm_sub_le _ _).trans ?_

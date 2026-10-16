@@ -23,6 +23,8 @@ compare them:
   arbitrary index type;
 * `prefixLaw μ X n` — the law of the first `n` coordinates;
 * `pathLaw μ X` — the law of the whole path `ω ↦ (i ↦ X i ω)`;
+* `blockLaw_congr`, `prefixLaw_congr`, `pathLaw_congr` — invariance of these laws under
+  coordinatewise almost-everywhere equality;
 * `prefixProj α n`, `shift α`, `permReindex π` — the prefix projection, the one-sided left shift,
   and reindexing by a permutation of time;
 * `prefixSplitEquiv r` — the measurable equivalence splitting a path into its length-`r` prefix
@@ -143,6 +145,28 @@ theorem prefixLaw_singleton_eq_measure [MeasurableSingletonClass α] {μ : Measu
 theorem pathLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) :
     pathLaw μ X = μ.map (fun ω i => X i ω) :=
   rfl
+
+/-! ## Congruence -/
+
+/-- Coordinatewise a.e. equal families have the same finite-dimensional block laws. -/
+theorem blockLaw_congr {μ : Measure Ω} {X Y : ι → Ω → α} (h : ∀ i, X i =ᵐ[μ] Y i) {m : ℕ}
+    (k : Fin m → ι) : blockLaw μ X k = blockLaw μ Y k := by
+  rw [blockLaw_def, blockLaw_def]
+  refine Measure.map_congr ?_
+  filter_upwards [ae_all_iff.2 fun i : Fin m => h (k i)] with ω hω using funext hω
+
+/-- Coordinatewise a.e. equal processes have the same prefix laws. -/
+theorem prefixLaw_congr {μ : Measure Ω} {X Y : ℕ → Ω → α} (h : ∀ i, X i =ᵐ[μ] Y i) (n : ℕ) :
+    prefixLaw μ X n = prefixLaw μ Y n := by
+  rw [prefixLaw_def, prefixLaw_def]
+  exact blockLaw_congr h _
+
+/-- Coordinatewise a.e. equal processes have the same path law. -/
+theorem pathLaw_congr {μ : Measure Ω} {X Y : ℕ → Ω → α} (h : ∀ i, X i =ᵐ[μ] Y i) :
+    pathLaw μ X = pathLaw μ Y := by
+  rw [pathLaw_def, pathLaw_def]
+  refine Measure.map_congr ?_
+  filter_upwards [ae_all_iff.2 h] with ω hω using funext hω
 
 /-- The path law of the coordinate process on path space is the law itself. -/
 theorem pathLaw_coord (ρ : Measure (ℕ → α)) : pathLaw ρ (fun i (x : ℕ → α) => x i) = ρ := by

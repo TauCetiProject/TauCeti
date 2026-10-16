@@ -441,9 +441,9 @@ private theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_doma
     EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
       schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  refine eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary a e ha he z₀ hf
+  refine eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary a e ha z₀ hf
     (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
-    (fun x hx => ?_) (fun i => ?_) hinfty
+    (fun x hx => ?_) (fun i => Or.inl ⟨he i, ?_⟩) hinfty
   · -- a real point that is not a prevertex is carried to a side
     have hxv : ∀ i, f x ≠ v i := fun i h =>
       hx i (by exact_mod_cast hfi (by simp) (by simp) ((hfv i).trans h.symm))

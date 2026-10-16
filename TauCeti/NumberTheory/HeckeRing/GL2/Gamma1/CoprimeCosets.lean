@@ -339,7 +339,6 @@ private lemma op_primeRep_smul_some_ne_none {G : Subgroup SL(2, ℤ)} (hp : 1 < 
   have hdvd : (p : ℤ) ∣ 1 :=
     ⟨σ 0 0 - (σ 0 0 * (b : ℕ) + τ 0 1) * σ 1 0, by linear_combination -hσdet - σ 1 0 * hn⟩
   have hle := Int.le_of_dvd one_pos hdvd
-  have htwo : 2 ≤ (p : ℤ) := by exact_mod_cast hp
   omega
 
 /-- **The `p + 1` right cosets are pairwise distinct**, modulo any subgroup `G ≤ SL(2, ℤ)`,

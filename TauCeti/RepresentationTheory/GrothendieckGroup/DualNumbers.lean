@@ -206,7 +206,6 @@ theorem not_admitsFiniteResolution_dualNumberResidue :
     ¬ (ExactStructure.abelian (ModuleCat.{u} (DualNumber k))).admitsFiniteResolution
       (finiteProjectiveModules (DualNumber k)) (dualNumberResidue k) := fun h ↦ by
   refine cartanMap_dualNumber_ne_dualNumberResidueFG k (moduleEulerClassOf _ h) ?_
-  rw [cartanMap_apply, ← moduleResolutionEquiv_symm_of, AddEquiv.apply_symm_apply,
-    fromFiniteProjectiveResolution_of]
+  rw [cartanMap_moduleEulerClassOf]
 
 end TauCeti

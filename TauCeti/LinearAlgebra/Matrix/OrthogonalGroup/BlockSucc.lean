@@ -125,7 +125,7 @@ theorem exists_orthogonalBlockSucc_eq_iff_mulVec_single
   · intro hfix
     have hgmem : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) k) ∈ orthogonalGroup (Fin (n + 1)) k :=
       g.property
-    set M := (g : Matrix (Fin (n + 1)) (Fin (n + 1)) k) with hM
+    set M := (g : Matrix (Fin (n + 1)) (Fin (n + 1)) k)
     -- Fixing the last basis vector says the last column of `M` is that basis vector.
     have hcol : ∀ i, M i (Fin.last n) = (Pi.single (Fin.last n) 1 : Fin (n + 1) → k) i := by
       intro i

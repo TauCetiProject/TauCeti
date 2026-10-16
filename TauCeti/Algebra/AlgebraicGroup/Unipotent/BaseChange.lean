@@ -33,8 +33,7 @@ detects unipotence of every geometric point of the base-changed group.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 14.5.
 * A. Borel, *Linear Algebraic Groups*, Section 15.4.
 
-This supplies scalar-extension preservation for the unipotent radical in Layer 5 of the
-ReductiveGroups roadmap.
+This supplies scalar-extension preservation for the unipotent radical.
 -/
 
 public section

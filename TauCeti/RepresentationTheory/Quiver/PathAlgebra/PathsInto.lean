@@ -124,8 +124,8 @@ noncomputable def pathsInto (n : ℕ) (j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
     (Set.range fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R))
 
-/-- The span of paths of length `n` from `i` to `j`. For a finite vertex type this is the
-degree-`n` part of the corner `e_j kR e_i`. -/
+/-- The span of paths of length `n` from `i` to `j`: the degree-`n` part of the corner
+`e_j kR e_i`. -/
 noncomputable def pathsBetween (n : ℕ) (i j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
     (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R))
@@ -232,12 +232,12 @@ theorem mem_pathsBetween_iff {n : ℕ} {i j : R} {x : pathAlgebra k R} :
         simpa only [mul_smul_comm, smul_mul_assoc] using Submodule.smul_mem _ r hx
 
 /-- **The paths of fixed length between two vertices form the corresponding graded corner.** -/
-theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R] (n : ℕ) (i j : R) :
+theorem pathsBetween_eq_cornerSubmodule_inf_grade (n : ℕ) (i j : R) :
     pathsBetween k n i j =
       cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i) ⊓ grade k R n := by
   ext x
   rw [mem_pathsBetween_iff, Submodule.mem_inf, mem_cornerSubmodule_iff k
-    (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i), and_comm]
+    (vertexIdempotent_mul_self (k := k) j) (vertexIdempotent_mul_self (k := k) i), and_comm]
 
 /-- The product of an element of `pathsInto k a i` and one of `pathsInto k c j` lies in
 `pathsInto k (c + a) i`: the paths of the right factor are followed by those of the left one. -/
@@ -269,7 +269,8 @@ private theorem ofArrow_mul_mem_pathsInto {n : ℕ} {i j : R} (b : i ⟶ j) {x :
 /-- **Last-arrow decomposition.** An element of the span of the paths of length `n + 1` into `j`
 is a sum, over the arrows `b : i ⟶ j`, of `b` times an element of the span of the paths of length
 `n` into `i`. -/
-theorem exists_eq_sum_ofArrow_mul [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {n : ℕ} {j : R}
+theorem exists_eq_sum_ofArrow_mul [Fintype R] {n : ℕ} {j : R}
+    [∀ i : R, Fintype (i ⟶ j)]
     {x : pathAlgebra k R} (hx : x ∈ pathsInto k (n + 1) j) :
     ∃ z : (i : R) → (i ⟶ j) → pathAlgebra k R, (∀ i b, z i b ∈ pathsInto k n i) ∧
       x = ∑ i, ∑ b : i ⟶ j, ofArrow b * z i b := by
@@ -285,7 +286,7 @@ theorem exists_eq_sum_ofArrow_mul [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {
         fun i b' => ?_, ?_⟩
       · dsimp only
         split_ifs with h
-        · obtain ⟨rfl, h⟩ := Sigma.mk.inj h
+        · obtain ⟨rfl, _⟩ := Sigma.mk.inj h
           exact ofPath_mem_pathsInto_of_length q hp
         · exact zero_mem _
       · dsimp only
@@ -308,6 +309,43 @@ theorem exists_eq_sum_ofArrow_mul [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {
     obtain ⟨z, hz, rfl⟩ := hx
     refine ⟨c • z, fun i b => Submodule.smul_mem _ c (hz i b), ?_⟩
     simp only [Pi.smul_apply, mul_smul_comm, Finset.smul_sum]
+
+/-- An element of the arrow ideal, projected to the corner ending at `v`, is a sum of
+incoming arrows times elements ending at their sources. -/
+theorem exists_eq_sum_ofArrow_mul_of_mem_arrowIdeal [Fintype R]
+    (v : R) [∀ i : R, Fintype (i ⟶ v)] {f : pathAlgebra k R}
+    (hf : f ∈ arrowIdeal k R) :
+    ∃ z : (i : R) → (i ⟶ v) → pathAlgebra k R,
+      (∀ i b, vertexIdempotent k i * z i b = z i b) ∧
+        vertexIdempotent k v * f = ∑ i, ∑ b : i ⟶ v, ofArrow b * z i b := by
+  classical
+  have hf' : f ∈ pathSpan k R 1 :=
+    mem_pathSpan_iff.2 fun p hp => (mem_arrowIdeal_iff.1 hf p hp)
+  clear hf
+  rw [pathSpan_eq_span_image_basis] at hf'
+  induction hf' using Submodule.span_induction with
+  | mem f hf =>
+    obtain ⟨⟨s, t, p⟩, hp, rfl⟩ := hf
+    simp only [Set.mem_ofPred_eq] at hp
+    rw [coe_pathAlgebraBasis]
+    by_cases ht : t = v
+    · subst t
+      obtain ⟨n, hn⟩ : ∃ n, p.length = n + 1 := ⟨p.length - 1, by omega⟩
+      obtain ⟨z, hz, heq⟩ :=
+        exists_eq_sum_ofArrow_mul (ofPath_mem_pathsInto_of_length (k := k) p hn)
+      exact ⟨z, fun i b => vertexIdempotent_mul_of_mem_pathsInto (hz i b),
+        (vertexIdempotent_mul_ofPath p).trans heq⟩
+    · exact ⟨0, by simp, by simp [vertexIdempotent_mul_ofPath_of_ne ⟨s, t, p⟩ (Ne.symm ht)]⟩
+  | zero => exact ⟨0, by simp, by simp⟩
+  | add f g _ _ ihf ihg =>
+    obtain ⟨z, hz, heq⟩ := ihf
+    obtain ⟨z', hz', heq'⟩ := ihg
+    refine ⟨z + z', fun i b => by simp [mul_add, hz, hz'], ?_⟩
+    simp only [mul_add, heq, heq', Pi.add_apply, Finset.sum_add_distrib]
+  | smul c f _ ih =>
+    obtain ⟨z, hz, heq⟩ := ih
+    refine ⟨c • z, fun i b => by simp [hz], ?_⟩
+    simp only [mul_smul_comm, heq, Pi.smul_apply, Finset.smul_sum]
 
 /-- **Uniqueness of the last-arrow decomposition.** A sum `∑_{b : i ⟶ j} b f_b` vanishes exactly
 when each `f_b` is killed by the vertex idempotent at the source of `b`: the paths `q` followed by

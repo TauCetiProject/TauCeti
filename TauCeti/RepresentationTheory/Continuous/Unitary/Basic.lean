@@ -132,7 +132,7 @@ end IsUnitary
 /-- The trivial continuous representation is unitary. -/
 theorem isUnitary_trivial :
     IsUnitary (ContRepresentation.trivial 𝕜 G V) := by
-  intro g v w
+  intro _ v w
   simp
 
 end Monoid

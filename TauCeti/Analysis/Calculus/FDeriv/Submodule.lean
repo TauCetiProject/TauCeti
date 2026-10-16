@@ -6,15 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # Derivatives of maps into a closed subspace
 
-If the increments `f y - f x` of a map lie in a closed subspace `S` for `y` near `x`, that is, if
-`f` takes its values in the affine subspace `f x + S` near `x`, then its derivative at `x` takes
-values in `S`: the difference quotients lie in `S`, and so does their limit. This is what shows
-that the Lie bracket of two vector fields tangent to a fixed subspace is again tangent to it.
+For maps between topological vector spaces over a nontrivially normed field, if the increments
+`f y - f x` lie in a closed subspace `S` for `y` near `x`, that is, if `f` takes its values in the
+affine subspace `f x + S` near `x`, then its derivative at `x` takes values in `S`. This is what
+shows that the Lie bracket of two vector fields tangent to a fixed subspace is again tangent to it.
 -/
 
 public section
@@ -24,24 +23,21 @@ open Filter Topology
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [ContinuousAdd E] [ContinuousSMul 𝕜 E]
+  {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+  [ContinuousAdd F] [ContinuousSMul 𝕜 F]
   {f : E → F} {f' : E →L[𝕜] F} {x : E} {S : Submodule 𝕜 F}
 
 /-- If `f` has derivative `f'` at `x` and its increments `f y - f x` lie in the closed subspace `S`
 for `y` near `x`, then `f'` takes values in `S`. -/
 theorem _root_.HasFDerivAt.apply_mem_of_eventually_sub_mem (hf : HasFDerivAt f f' x)
     (hS : IsClosed (S : Set F)) (hfS : ∀ᶠ y in 𝓝 x, f y - f x ∈ S) (v : E) : f' v ∈ S := by
-  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  have hlim : Tendsto (fun k : ℕ ↦ ‖c ^ k‖) atTop atTop := by
-    simpa only [norm_pow] using tendsto_pow_atTop_atTop_of_one_lt hc
-  refine hS.mem_of_tendsto (hf.lim v hlim) ?_
-  have hsmall : Tendsto (fun k : ℕ ↦ x + (c ^ k)⁻¹ • v) atTop (𝓝 x) := by
-    have h0 : Tendsto (fun k : ℕ ↦ (c ^ k)⁻¹) atTop (𝓝 0) :=
-      tendsto_inv₀_cobounded.comp (tendsto_norm_atTop_iff_cobounded.mp hlim)
-    simpa using tendsto_const_nhds.add (h0.smul_const v)
-  filter_upwards [hsmall.eventually hfS] with k hk
-  exact S.smul_mem _ hk
+  refine hS.mem_of_tendsto (hf.lim v tendsto_norm_cobounded_atTop) ?_
+  have hsmall : Tendsto (fun c : 𝕜 ↦ x + c⁻¹ • v) (Bornology.cobounded 𝕜) (𝓝 x) := by
+    simpa using tendsto_const_nhds.add ((tendsto_inv₀_cobounded (α := 𝕜)).smul_const v)
+  filter_upwards [hsmall.eventually hfS] with c hc
+  exact S.smul_mem c hc
 
 /-- If the increments `f y - f x` lie in the closed subspace `S` for `y` near `x`, then the
 derivative of `f` at `x` takes values in `S`. -/

@@ -67,6 +67,15 @@ def cwEulerChar : ℤ :=
 theorem cwEulerChar_def : cwEulerChar C = ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * Nat.card (cell C n) :=
   (rfl)
 
+/-- The alternating cell count of a complex with no cells in dimensions `n ≥ N` is the finite sum
+`∑_{n < N} (-1)ⁿ · #(n-cells)`. -/
+theorem cwEulerChar_eq_sum_range {N : ℕ} (h : ∀ n, N ≤ n → IsEmpty (cell C n)) :
+    cwEulerChar C = ∑ n ∈ Finset.range N, (-1 : ℤ) ^ n * Nat.card (cell C n) :=
+  finsum_eq_sum_of_support_subset _ fun n hn ↦ by
+    by_contra hN
+    have := h n (by simpa using hN)
+    simp at hn
+
 variable [T2Space X]
 
 section Ring
@@ -164,11 +173,7 @@ theorem eulerChar_cellularChainComplex [RelCWComplex.Finite C] :
         have := hcell i hi
         ModuleCat.finrank_eq_zero_of_isZero
           (by rw [cellularChainComplex_X]; exact isZero_cellularChainGroup C i M)),
-    cwEulerChar_def, finsum_eq_sum_of_support_subset (s := Finset.range n) _ fun i hi ↦ by
-      by_contra h
-      have := hcell i h
-      simp at hi,
-    Finset.mul_sum]
+    cwEulerChar_eq_sum_range C hn, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   let _ := FiniteType.finite_cell (C := C) (D := D) i
   rw [finrank_cellularChainComplex_X]

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Operators
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Basic
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Map
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diamond
 
 /-!
 # Hecke equivariance of the period map
@@ -40,6 +41,7 @@ operators on modular symbols is transferred to the Hecke operators on cusp forms
   operator of a double coset on cusp forms with the transpose of its operator on modular symbols.
 * `TauCeti.ModularSymbols.periodMap_heckeTCuspNat`: the same for the Hecke operators `T_n` at
   level `Γ₁(N)`.
+* `TauCeti.ModularSymbols.periodMap_diamondOpCusp`: the corresponding identity for diamonds.
 
 ## Provenance
 
@@ -107,6 +109,25 @@ theorem periodMap_heckeTCuspNat (N : ℕ) [NeZero N] (n : ℕ) [NeZero n] (hk : 
       heckeSlashCuspFormEnd k (diagCosetGamma1 N n) (out_mem_glpos_of_delta0 N _) f :=
     DFunLike.coe_injective (by rw [coe_heckeTCuspNat, coe_heckeSlashCuspFormEnd])
   rw [h, heckeTSymbol_def, periodMap_heckeSlashCuspFormEnd]
+
+/-- **Diamond equivariance of the period map.** A lift `γ ∈ Γ₀(N)` of the diamond label acts
+on the symbols through its single double coset, and on period functionals by precomposition.
+The identity holds for every lift, without choosing a representative of the label. -/
+theorem periodMap_diamondOpCusp (N : ℕ) [NeZero N] (γ : Gamma0 N) (hk : k = w + 2)
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    periodMap R (Gamma1 N) hk (diamondOpCusp k ((Gamma0Map N).toHomUnits γ) f) =
+      periodMap R (Gamma1 N) hk f ∘ₗ
+        heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N γ)
+          (Delta0_le_intEntries N (diamondCosetGamma1 N γ).out.property) := by
+  rw [← heckeSlashGamma1CuspFormEnd_diamondCosetGamma1 k γ]
+  -- Compare the sealed level-specific and general operators through their slash-sum API.
+  have h : heckeSlashGamma1CuspFormEnd k (diamondCosetGamma1 N γ) f =
+      heckeSlashCuspFormEnd k (diamondCosetGamma1 N γ) (out_mem_glpos_of_delta0 N _) f :=
+    DFunLike.coe_injective (by
+      rw [coe_heckeSlashGamma1CuspFormEnd, coe_heckeSlashCuspFormEnd])
+  rw [h]
+  exact periodMap_heckeSlashCuspFormEnd (R := R) (diamondCosetGamma1 N γ)
+    (out_mem_glpos_of_delta0 N _) _ hk f
 
 end TauCeti.ModularSymbols
 

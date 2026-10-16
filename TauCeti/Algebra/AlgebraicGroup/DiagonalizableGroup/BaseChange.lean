@@ -26,10 +26,6 @@ those maps with characters. The lemmas here spell out the values on the group-li
 `1 ⊗ single g 1`, the inverse map, and compatibility with the contravariant functoriality
 in `G`.
 
-This advances the ReductiveGroups roadmap, Layer 0 ("Base change. `K ⊗[k] A` as a Hopf
-algebra over `K`") and Layer 4 ("Diagonalizable groups and groups of multiplicative type:
-`M ↦ D(M) = Spec k[M]`").
-
 ## Main declarations
 
 * `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv`: the multiplicative equivalence
@@ -177,7 +173,7 @@ theorem baseChangePointsMulEquiv_symm_apply_single_one (χ : G →* Aˣ) (g : G)
 theorem baseChangePointsMulEquiv_mapDomain_scalarTensorBialgEquiv
     (f : WithConv (MonoidAlgebra K G →ₐ[K] A)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G)
-        (AlgHom.mapDomain (A := A)
+        (BialgHom.mapDomain (A := A)
           (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G) :
             K ⊗[k] MonoidAlgebra k G →ₐc[K] MonoidAlgebra K G) f) =
       pointsMulEquiv (R := K) (A := A) (G := G) f := by
@@ -193,13 +189,13 @@ precomposition of characters by `φ`. -/
 theorem baseChangePointsMulEquiv_mapDomain (φ : G →* G')
     (f : WithConv (K ⊗[k] MonoidAlgebra k G' →ₐ[K] A)) :
     baseChangePointsMulEquiv
-        (AlgHom.mapDomain (A := A)
+        (BialgHom.mapDomain (A := A)
           (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K)
             (MonoidAlgebra.mapDomainBialgHom k φ)) f) =
       (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G') f).comp φ := by
   ext g
   simp only [baseChangePointsMulEquiv_apply_coe, MonoidHom.comp_apply,
-    AlgHom.mapDomain_apply_apply, _root_.Bialgebra.TensorProduct.map_tmul,
+    BialgHom.mapDomain_apply_apply, _root_.Bialgebra.TensorProduct.map_tmul,
     _root_.BialgHom.id_apply, MonoidAlgebra.mapDomainBialgHom,
     _root_.BialgHom.ofAlgHom_apply, MonoidAlgebra.mapDomainAlgHom_apply,
     MonoidAlgebra.mapDomain_single]
@@ -207,7 +203,7 @@ theorem baseChangePointsMulEquiv_mapDomain (φ : G →* G')
 /-- Mapping the base-changed point attached to a character is precomposition of that character
 by the homomorphism of character groups. -/
 theorem mapDomain_baseChangePointsMulEquiv_symm_apply (φ : G →* G') (χ : G' →* Aˣ) :
-    AlgHom.mapDomain (A := A)
+    BialgHom.mapDomain (A := A)
         (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K)
           (MonoidAlgebra.mapDomainBialgHom k φ))
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G')).symm χ) =

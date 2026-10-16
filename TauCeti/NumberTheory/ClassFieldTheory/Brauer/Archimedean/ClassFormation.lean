@@ -40,6 +40,18 @@ invariants, rather than merely providing abstract class formations on the same c
   archimedean Brauer invariant after inflation.
 * `TauCeti.ClassFieldTheory.infiniteClassFormationOfIsComplex_artinMap`: every finite-layer Artin
   map at a complex place is zero.
+* `TauCeti.ClassFieldTheory.finite_absoluteGaloisGroup`: the absolute Galois group of every
+  infinite completion is finite.
+* `TauCeti.ClassFieldTheory.subsingleton_fieldAbsoluteGaloisGroup_of_isComplex`,
+  `TauCeti.ClassFieldTheory.natCard_fieldAbsoluteGaloisGroup_of_isReal`: Mathlib's absolute Galois
+  group `Gal(AlgebraicClosure K_w/K_w)` is trivial at a complex place and of order two at a real
+  place.
+* `TauCeti.ClassFieldTheory.sq_eq_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal`,
+  `TauCeti.ClassFieldTheory.eq_of_ne_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal`: at a
+  real place every element of `G_{K_w}^ab` squares to `1`, and any two nontrivial elements of it
+  are equal.
+* `TauCeti.ClassFieldTheory.fieldAbsoluteGaloisGroup_apply_eq_inv_of_isReal`: at a real place the
+  nontrivial automorphism of `AlgebraicClosure K_w` inverts every root of unity.
 
 ## References
 
@@ -339,6 +351,15 @@ theorem subsingleton_absoluteGaloisGroup_of_isComplex (w : InfinitePlace K) (hw 
       (Completion.ringEquivComplexOfIsComplex hw).symm
   infer_instance
 
+/-- The absolute Galois group of an infinite completion is finite: it has order two at a real
+place and is trivial at a complex place. -/
+instance finite_absoluteGaloisGroup (w : InfinitePlace K) :
+    Finite (AbsoluteGaloisGroup w.Completion) := by
+  rcases w.isReal_or_isComplex with hw | hw
+  · exact Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
+  · let _ := subsingleton_absoluteGaloisGroup_of_isComplex w hw
+    infer_instance
+
 /-- **The class formation at a complex place.** The absolute Galois group of the completion is
 trivial, so the units formation carries the canonical class formation with zero invariant maps. -/
 def infiniteClassFormationOfIsComplex (w : InfinitePlace K) (hw : w.IsComplex) :
@@ -410,5 +431,126 @@ theorem infiniteClassFormation_inv (w : InfinitePlace K)
     exact infiniteClassFormationOfIsReal_inv w hw V x
   · rw [infiniteClassFormation_of_isComplex w hw]
     exact infiniteClassFormationOfIsComplex_inv w hw V x
+
+/-! ### Mathlib's absolute Galois group at an infinite place -/
+
+/-- At a complex place `Gal(AlgebraicClosure K_w/K_w)` is trivial. -/
+theorem subsingleton_fieldAbsoluteGaloisGroup_of_isComplex (w : InfinitePlace K)
+    (hw : w.IsComplex) : Subsingleton (Field.absoluteGaloisGroup w.Completion) :=
+  have := subsingleton_absoluteGaloisGroup_of_isComplex w hw
+  (absoluteGaloisGroupRestrictEquiv w.Completion).toEquiv.subsingleton
+
+section Real
+
+variable (w : InfinitePlace K) (hw : w.IsReal)
+include hw
+
+/-- At a real place `Gal(AlgebraicClosure K_w/K_w)` has order two. -/
+theorem natCard_fieldAbsoluteGaloisGroup_of_isReal :
+    Nat.card (Field.absoluteGaloisGroup w.Completion) = 2 := by
+  rw [Nat.card_congr (absoluteGaloisGroupRestrictEquiv w.Completion).toEquiv,
+    natCard_absoluteGaloisGroup_of_isReal w hw]
+
+/-- At a real place an automorphism of `AlgebraicClosure K_w` with trivial class in `G_{K_w}^ab` is
+the identity: `G_{K_w}` has order two, so its closed commutator subgroup is trivial. -/
+theorem eq_one_of_mk_eq_one_of_isReal {σ : Field.absoluteGaloisGroup w.Completion}
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization w.Completion) = 1) : σ = 1 := by
+  have : Fact (Nat.card (Field.absoluteGaloisGroup w.Completion)).Prime :=
+    ⟨natCard_fieldAbsoluteGaloisGroup_of_isReal w hw ▸ Nat.prime_two⟩
+  have : IsCyclic (Field.absoluteGaloisGroup w.Completion) := isCyclic_of_prime_card rfl
+  have hclosure :
+      (commutator (Field.absoluteGaloisGroup w.Completion)).topologicalClosure = ⊥ := by
+    rw [commutator_eq_bot]
+    exact le_bot_iff.mp (Subgroup.topologicalClosure_minimal _ le_rfl isClosed_singleton)
+  have hmem := (QuotientGroup.eq_one_iff σ).mp hσ
+  rwa [hclosure, Subgroup.mem_bot] at hmem
+
+/-- At a real place every element of `G_{K_w}^ab` squares to `1`, since `G_{K_w}` has order two. -/
+theorem sq_eq_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal
+    (y : Field.absoluteGaloisGroupAbelianization w.Completion) : y ^ 2 = 1 := by
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective y
+  rw [← QuotientGroup.mk_pow, ← natCard_fieldAbsoluteGaloisGroup_of_isReal w hw,
+    pow_card_eq_one', QuotientGroup.mk_one]
+
+/-- At a real place any two nontrivial elements of `G_{K_w}^ab` are equal, since `G_{K_w}` has
+order two. -/
+theorem eq_of_ne_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal
+    {a b : Field.absoluteGaloisGroupAbelianization w.Completion} (ha : a ≠ 1) (hb : b ≠ 1) :
+    a = b := by
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective a
+  obtain ⟨τ, rfl⟩ := QuotientGroup.mk_surjective b
+  have hσ : σ ≠ 1 := by
+    rintro rfl
+    exact ha (QuotientGroup.mk_one _)
+  have hτ : τ ≠ 1 := by
+    rintro rfl
+    exact hb (QuotientGroup.mk_one _)
+  rw [((Nat.card_eq_two_iff' 1).mp (natCard_fieldAbsoluteGaloisGroup_of_isReal w hw)).unique hσ hτ]
+
+/-- At a real place an element of `AlgebraicClosure K_w` fixed by a nontrivial automorphism lies in
+`K_w`: that automorphism and the identity are all of `G_{K_w}`, which has order two. -/
+theorem mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal
+    {σ : Gal(AlgebraicClosure w.Completion/w.Completion)} (hσ : σ ≠ 1)
+    {y : AlgebraicClosure w.Completion} (hy : σ y = y) :
+    y ∈ Set.range (algebraMap w.Completion (AlgebraicClosure w.Completion)) := by
+  have := (Completion.extensionEmbedding w).charZero
+  refine IntermediateField.mem_bot.mp ((InfiniteGalois.mem_bot_iff_fixed y).mpr fun τ ↦ ?_)
+  by_cases hτ : τ = 1
+  · rw [hτ, AlgEquiv.one_apply]
+  · -- `Field.absoluteGaloisGroup w.Completion` is by definition
+    -- `Gal(AlgebraicClosure w.Completion/w.Completion)`.
+    rwa [((Nat.card_eq_two_iff' 1).mp (natCard_fieldAbsoluteGaloisGroup_of_isReal w hw)).unique
+      hτ hσ]
+
+/-- At a real place a nontrivial automorphism of `AlgebraicClosure K_w` inverts every root of
+unity: writing `z = a + b i` with `a, b ∈ K_w`, the product `z σ(z) = a² + b²` is a nonnegative root
+of unity in `K_w ≅ ℝ`, hence `1`. -/
+theorem fieldAbsoluteGaloisGroup_apply_eq_inv_of_isReal
+    {σ : Gal(AlgebraicClosure w.Completion/w.Completion)} (hσ : σ ≠ 1) {m : ℕ} (hm : m ≠ 0)
+    {z : AlgebraicClosure w.Completion} (hz : z ^ m = 1) : σ z = z⁻¹ := by
+  let ι := algebraMap w.Completion (AlgebraicClosure w.Completion)
+  have := (Completion.extensionEmbedding w).charZero
+  -- `Field.absoluteGaloisGroup w.Completion` is by definition
+  -- `Gal(AlgebraicClosure w.Completion/w.Completion)`, so the latter has order two.
+  have hcard : Nat.card Gal(AlgebraicClosure w.Completion/w.Completion) = 2 :=
+    natCard_fieldAbsoluteGaloisGroup_of_isReal w hw
+  have hσσ (y : AlgebraicClosure w.Completion) : σ (σ y) = y := by
+    rw [← AlgEquiv.mul_apply, ← sq, ← hcard, pow_card_eq_one', AlgEquiv.one_apply]
+  -- `K_w ≅ ℝ` has no square root of `-1`, but its algebraic closure has one, `i`, with `σ i = -i`.
+  have hnsq (c : w.Completion) : c ^ 2 ≠ -1 := fun hc ↦ by
+    have h := congrArg (Completion.extensionEmbeddingOfIsReal hw) hc
+    rw [map_pow, map_neg, map_one] at h
+    nlinarith [sq_nonneg (Completion.extensionEmbeddingOfIsReal hw c)]
+  obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : AlgebraicClosure w.Completion) two_pos
+  have hσi : σ i = -i := by
+    have h2 : σ i ^ 2 = i ^ 2 := by rw [← map_pow, hi, map_neg, map_one]
+    refine (sq_eq_sq_iff_eq_or_eq_neg.mp h2).resolve_left fun h ↦ ?_
+    obtain ⟨c, hc⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal w hw hσ h
+    exact hnsq c (ι.injective (by rw [map_pow, hc, hi, map_neg, map_one]))
+  have hi0 : i ≠ 0 := by
+    rintro rfl
+    norm_num at hi
+  -- The real and imaginary parts of `z` are fixed by `σ`, so they lie in `K_w`.
+  obtain ⟨a, ha⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal w hw hσ
+    (y := (z + σ z) / 2) (by
+    rw [map_div₀, map_add, hσσ, map_ofNat, add_comm])
+  obtain ⟨b, hb⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal w hw hσ
+    (y := (z - σ z) / (2 * i)) (by
+    rw [map_div₀, map_sub, map_mul, hσσ, map_ofNat, hσi, mul_neg, div_neg, ← neg_div, neg_sub])
+  have hzz : z * σ z = ι (a ^ 2 + b ^ 2) := by
+    rw [map_add, map_pow, map_pow, ha, hb, div_pow, div_pow, mul_pow, hi]
+    ring
+  -- `a² + b²` is a nonnegative root of unity in `K_w`, hence `1`.
+  have hpow : (a ^ 2 + b ^ 2) ^ m = 1 := ι.injective <| by
+    rw [map_pow, ← hzz, mul_pow, ← map_pow, hz, map_one, one_mul, map_one]
+  have hone : Completion.extensionEmbeddingOfIsReal hw (a ^ 2 + b ^ 2) = 1 :=
+    (pow_eq_one_iff_of_nonneg (by simp only [map_add, map_pow]; positivity) hm).mp
+      (by rw [← map_pow, hpow, map_one])
+  have h1 : a ^ 2 + b ^ 2 = 1 :=
+    (Completion.extensionEmbeddingOfIsReal hw).injective (hone.trans (map_one _).symm)
+  rw [h1, map_one] at hzz
+  exact eq_inv_of_mul_eq_one_right hzz
+
+end Real
 
 end TauCeti.ClassFieldTheory

@@ -23,8 +23,9 @@ where `F` is the normalized Schwarz--Christoffel primitive for `a` and `e`, and 
 prevertex to its vertex: `A * vertex i + B = v i`, where `vertex i` is the limit of `F` at `a i`.
 
 The same holds for an unbounded polygonal domain with a vertex at infinity, one which far out
-coincides with an open sector of opening `β * π`, `0 < β < 2`, or with an open half-strip, and
-whose frontier together with the point at infinity is a Jordan curve of the Riemann sphere.  The
+coincides with an open sector of opening `β * π`, `0 < β < 2`, with an open half-strip, or with the
+exterior of a closed half-strip, and whose frontier together with the point at infinity is a
+Jordan curve of the Riemann sphere.  The
 point at infinity of the half-plane is then the prevertex of the vertex at infinity.
 
 ## Main results
@@ -41,6 +42,10 @@ point at infinity of the half-plane is then the prevertex of the vertex at infin
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_of_halfStrip`
   and `TauCeti.exponent_sum_eq_neg_one_of_isJordanCurve_of_halfStrip` -- the same for an unbounded
   polygonal Jordan domain with a half-strip end, whose finite turning exponents sum to `-1`.
+* `exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_of_halfStripExterior`
+  and `TauCeti.exponent_sum_eq_one_of_isJordanCurve_of_halfStripExterior` -- the same for an
+  unbounded polygonal Jordan domain whose end is the exterior of a half-strip, an end of opening
+  `2π`, whose finite turning exponents sum to `1`.
 
 ## References
 
@@ -290,6 +295,71 @@ theorem exponent_sum_eq_neg_one_of_isJordanCurve_of_halfStrip
       hUJ hv hcorner
   exact exponent_sum_eq_neg_one_of_halfStrip_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq
     hfa hfinf hside hcorner hinfty
+
+/-- A set that coincides far out with the exterior of a closed half-strip has an exterior
+point. -/
+private theorem exists_notMem_closure_of_halfStripExterior {U : Set ℂ}
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ ((z - c) / b).re < 0 ∨ ((z - c) / b).im ∉ Icc 0 Real.pi)) :
+    ∃ q, q ∉ closure U := by
+  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
+  exact exists_notMem_closure_of_forall_mem_notMem_halfStrip hb fun z hz hzU h =>
+    ((hU z hz).mp hzU).elim h.1.not_gt fun h' => h' (Ioo_subset_Icc_self h.2)
+
+/-- **The Schwarz--Christoffel theorem for a polygonal Jordan domain whose end is the exterior of
+a half-strip.**  Let `U` be a connected open set whose frontier, together with the point at
+infinity, is a Jordan curve of the Riemann sphere.  Suppose that `U` coincides near each frontier
+point other than the distinct vertices `v i` with an open half-plane, near the vertex `v i` with
+the open sector of opening `(e i + 1) * π` at `v i`, where `e i ∈ (-1, 1)`, and far from a point
+`c` with the exterior of the closed half-strip `{0 ≤ re ((z - c) / b), 0 ≤ im ((z - c) / b) ≤ π}`:
+so `U` has a further vertex at infinity, of opening `2 * π`, between two parallel sides pointing
+the same way.  Then there are distinct real prevertices `a i` and constants `A ≠ 0` and `B` such
+that `z ↦ A * F z + B` maps the upper half-plane bijectively onto `U`, where `F` is the normalized
+Schwarz--Christoffel primitive for the prevertices `a` and the turning exponents `e`, and such
+that the Schwarz--Christoffel vertex at `a i`, the limit of `F` at `a i`, is sent to `v i`.  The
+prevertex of the vertex at infinity is the point at infinity of the half-plane. -/
+theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_of_halfStripExterior
+    {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U)
+    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
+    (hv : Injective v)
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ ((z - c) / b).re < 0 ∨ ((z - c) / b).im ∉ Icc 0 Real.pi)) :
+    ∃ a : ι → ℝ, Injective a ∧ ∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
+      BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
+      ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
+  obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
+    exists_prevertices_of_unbounded_polygon e he hUo hUc
+      (exists_notMem_closure_of_halfStripExterior hinfty) hUJ hv hcorner
+  exact ⟨a, ha, exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn he z₀ ha hfd hfc hfH
+    hfa (eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStripExterior_polygonal_domain a e ha
+      he z₀ hfd hfc hfi hfH.image_eq hfa hfinf hside hcorner hinfty)⟩
+
+/-- **The angle sum of a polygonal Jordan domain whose end is the exterior of a half-strip.**
+Under the hypotheses of
+`exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_of_halfStripExterior`,
+the turning exponents of the finite vertices sum to `1`. -/
+theorem exponent_sum_eq_one_of_isJordanCurve_of_halfStripExterior
+    {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U)
+    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
+    (hv : Injective v)
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ ((z - c) / b).re < 0 ∨ ((z - c) / b).im ∉ Icc 0 Real.pi)) :
+    ∑ i, e i = 1 := by
+  obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
+    exists_prevertices_of_unbounded_polygon e he hUo hUc
+      (exists_notMem_closure_of_halfStripExterior hinfty) hUJ hv hcorner
+  exact exponent_sum_eq_one_of_halfStripExterior_polygonal_domain a e ha he hfd hfc hfi
+    hfH.image_eq hfa hfinf hside hcorner hinfty
 
 end TauCeti
 
