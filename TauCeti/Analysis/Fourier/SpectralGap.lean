@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
+public import TauCeti.Analysis.Fourier.AddCircle
 
 /-!
 # The sharp spectral gap on the circle
@@ -44,30 +44,6 @@ section Interval
 
 variable {a b : ℝ}
 
-/-- The Fourier mode of frequency `1` on `[a, b]` in terms of the cosine and sine of
-`2π t / (b - a)`. -/
-private theorem fourier_one_coe_eq (t : ℝ) :
-    fourier 1 (t : AddCircle (b - a)) =
-      Real.cos (2 * π * t / (b - a)) + Real.sin (2 * π * t / (b - a)) * I := by
-  have : 2 * π * I * ((1 : ℤ) : ℂ) * t / ((b - a : ℝ) : ℂ) =
-      ((2 * π * t / (b - a) : ℝ) : ℂ) * I := by
-    push_cast
-    ring
-  rw [fourier_coe_apply, this, exp_mul_I]
-  simp
-
-/-- The Fourier mode of frequency `-1` on `[a, b]` in terms of the cosine and sine of
-`2π t / (b - a)`. -/
-private theorem fourier_neg_one_coe_eq (t : ℝ) :
-    fourier (-1) (t : AddCircle (b - a)) =
-      Real.cos (2 * π * t / (b - a)) - Real.sin (2 * π * t / (b - a)) * I := by
-  have : 2 * π * I * ((-1 : ℤ) : ℂ) * t / ((b - a : ℝ) : ℂ) =
-      ((-(2 * π * t / (b - a)) : ℝ) : ℂ) * I := by
-    push_cast
-    ring
-  rw [fourier_coe_apply, this, exp_mul_I]
-  simp [sub_eq_add_neg]
-
 /-- A first harmonic on `[a, b]` has no Fourier coefficients outside the frequencies `±1`. -/
 theorem fourierCoeffOn_cos_smul_add_sin_smul (hab : a < b) (u v : ℂ) {n : ℤ}
     (hn₁ : n ≠ 1) (hn₂ : n ≠ -1) :
@@ -83,8 +59,8 @@ theorem fourierCoeffOn_cos_smul_add_sin_smul (hab : a < b) (u v : ℂ) {n : ℤ}
       rw [AddCircle.coe_image_Ioc_eq]
       trivial
     rw [AddCircle.liftIoc_coe_apply ht]
-    simp only [G, ContinuousMap.add_apply, ContinuousMap.smul_apply, fourier_one_coe_eq,
-      fourier_neg_one_coe_eq, real_smul, smul_eq_mul]
+    simp only [G, ContinuousMap.add_apply, ContinuousMap.smul_apply, fourier_one_coe_apply,
+      fourier_neg_one_coe_apply, real_smul, smul_eq_mul]
     linear_combination ((Real.sin (2 * π * t / (b - a)) : ℂ) * v) * I_sq
   have hint (k : ℤ) : Integrable (fourier k : AddCircle (b - a) → ℂ) AddCircle.haarAddCircle :=
     (map_continuous _).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
@@ -126,7 +102,7 @@ theorem exists_cos_smul_add_sin_smul (hab : a < b) {g : ℝ → ℂ}
     · exact (AddCircle.liftIoc_coe_apply (by simp [hlt, ht.2])).symm
   refine ⟨fourierCoeffOn hab g 1 + fourierCoeffOn hab g (-1),
     I * (fourierCoeffOn hab g 1 - fourierCoeffOn hab g (-1)), fun t ht => ?_⟩
-  rw [hGg t ht, hrepr, fourier_one_coe_eq, fourier_neg_one_coe_eq, real_smul, real_smul]
+  rw [hGg t ht, hrepr, fourier_one_coe_apply, fourier_neg_one_coe_apply, real_smul, real_smul]
   ring
 
 end Interval
