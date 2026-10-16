@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.Kummer.Degree
 public import TauCeti.FieldTheory.IntermediateField.RootsOfUnity
 
 import Mathlib.FieldTheory.Relrank
-import TauCeti.Algebra.Group.PowMonoidHom
+import TauCeti.Algebra.Group.PowerClassGroup.Basic
 
 /-!
 # Kummer extensions over an intermediate field
@@ -138,7 +138,8 @@ theorem finrank_eq_relIndex_inf_comap [(powMonoidHom n : Kˣ →* Kˣ).range.IsF
     finrank K L = (powMonoidHom n : Kˣ →* Kˣ).range.relIndex
       (Δ ⊓ (powMonoidHom n : Lˣ →* Lˣ).range.comap (Units.map (algebraMap K L : K →* L))) := by
   set C := (powMonoidHom n : Lˣ →* Lˣ).range.comap (Units.map (algebraMap K L : K →* L))
-  have hPC := (Units.map (algebraMap K L : K →* L)).range_powMonoidHom_le_comap n
+  have hPC := powerSubgroup_le_comap n (Units.map (algebraMap K L : K →* L))
+  simp only [powerSubgroup_eq_range_powMonoidHom] at hPC
   -- The tower `K ≤ L ≤ K(Δ^{1/n})` against `Δ ∩ (Kˣ)ⁿ ≤ Δ ∩ (Lˣ)ⁿ ≤ Δ`.
   have htower := finrank_bot_mul_relfinrank hL
   rw [relfinrank_eq_finrank_of_le hL, finrank_extendScalars_kummerField hroots hL,
