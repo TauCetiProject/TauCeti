@@ -145,6 +145,7 @@ theorem le_refinementParent (h : Q ≤ P) (B : Q.parts) : B.1 ≤ (refinementPar
   (h B.2).choose_spec.2
 
 /-- The coarse parent of `B` is the unique coarse part lying above `B`. -/
+@[simp]
 theorem refinementParent_eq_iff (h : Q ≤ P) {B : Q.parts} {A : P.parts} :
     refinementParent h B = A ↔ B.1 ≤ A.1 := by
   refine ⟨fun hA => hA ▸ le_refinementParent h B, fun hBA => ?_⟩
