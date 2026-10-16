@@ -75,7 +75,7 @@ abbrev MorseChain (f : E → ℝ) := MorseCriticalPoint f →₀ ZMod 2
 
 /-- The middle-level slice representing unparametrized negative-gradient trajectories from `p`
 to `q`. Every nonconstant trajectory crosses this level exactly once. -/
-def morseTrajectorySlice (hf : LipschitzWith K (∇ f)) (p q : E) : Set E :=
+noncomputable def morseTrajectorySlice (hf : LipschitzWith K (∇ f)) (p q : E) : Set E :=
   Flow.unstableSet (negativeGradientFlow f hf) p ∩
     Flow.stableSet (negativeGradientFlow f hf) q ∩
       {z | f z = (f p + f q) / 2}

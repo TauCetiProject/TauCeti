@@ -90,7 +90,8 @@ theorem continuous_upperRightHom {R : Type*} [CommRing R] [TopologicalSpace R] :
     refine continuous_matrix fun i j ↦ ?_
     simp only [SpecialLinearGroup.transvection_coe, Matrix.add_apply]
     fin_cases i <;> fin_cases j <;> simp [continuous_const, continuous_id']
-  exact (continuous_quot_mk.comp (Topology.IsInducing.subtypeVal.continuous_iff.mpr h)).congr
+  exact (continuous_quot_mk.comp
+    (Topology.IsEmbedding.subtypeVal.isInducing.continuous_iff.mpr h)).congr
     fun x ↦ (upperRightHom_apply x).symm
 
 end Matrix.ProjectiveSpecialLinearGroup

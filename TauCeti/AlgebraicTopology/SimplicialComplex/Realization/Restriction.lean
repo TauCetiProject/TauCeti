@@ -50,9 +50,12 @@ def restrictRealizationHomeomorph :
   let e := P.relabelingHomeomorph (Function.Embedding.subtype (· ∈ s)) le_rfl hmap
   let a : {x : Realization (K.restrict s) // x.1.support ∈ P} ≃ₜ
       Realization (K.restrict s) :=
-    (Homeomorph.setCongr (Set.eq_univ_of_forall (support_mem (K.restrict s)))).trans
+    (Homeomorph.setCongr (s := {x : Realization (K.restrict s) | x.1.support ∈ P})
+      (Set.eq_univ_of_forall (support_mem (K.restrict s)))).trans
       (Homeomorph.Set.univ _)
-  exact a.symm.trans (e.trans (Homeomorph.setCongr (Set.ext fun x =>
+  exact a.symm.trans (e.trans (Homeomorph.setCongr
+    (s := {x : Realization K | x.1.support ∈ P.map (Function.Embedding.subtype (· ∈ s))})
+    (t := {x : Realization K | (x.1.support : Set ι) ⊆ s}) (Set.ext fun x =>
     (mem_map_restrict_iff K s x.1.support).trans (and_iff_right (support_mem K x)))))
 
 private theorem restrictRealizationHomeomorph_val (x : Realization (K.restrict s)) :

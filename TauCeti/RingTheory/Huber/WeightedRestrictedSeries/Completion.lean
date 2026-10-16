@@ -398,7 +398,8 @@ private noncomputable def restrictedCompletionPkg (hφ : IsDenseInducing φ) :
 `weightedMapCompletion`. -/
 private theorem coe_compareEquiv_restrictedCompletionPkg (hφ : IsDenseInducing φ) :
     ⇑(Completion.cPkg.compareEquiv (restrictedCompletionPkg (k := k) hφ)) =
-      weightedMapCompletion hφ.continuous isWeightFamily_one_weight isWeightFamily_one_weight
+      weightedMapCompletion (k := k) hφ.continuous
+        isWeightFamily_one_weight isWeightFamily_one_weight
         fun _ ↦ by simp :=
   Completion.ext (Y := restrictedMvPowerSeriesCompletion k B)
     (Completion.cPkg.uniformContinuous_compareEquiv _).continuous

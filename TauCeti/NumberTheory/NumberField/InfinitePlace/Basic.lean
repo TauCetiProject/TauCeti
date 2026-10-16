@@ -26,9 +26,10 @@ field, having only complex infinite places, is then unramified at every infinite
 extension, and in degree `2` it has exactly one such place.
 
 Restricting a real place along a field embedding gives a real place, and the real embedding of the
-restriction is the composite of the embeddings. For an extension `L / k`, every place of `L` lies
-over its restriction to `k`. If `w` lies over `v`, then `w.embedding` and its conjugate restrict to
-`v.embedding` and its conjugate, in one order or the other.
+restriction is the composite of the embeddings. For an extension `L / k`, a place of `L` lies over
+a place `v` of `k` exactly when its restriction to `k` is `v`. If `w` lies over `v`, then
+`w.embedding` and its conjugate restrict to `v.embedding` and its conjugate, in one order or the
+other.
 
 ## Main results
 
@@ -56,6 +57,8 @@ over its restriction to `k`. If `w` lies over `v`, then `w.embedding` and its co
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
   place.
 * `NumberField.InfinitePlace.liesOver_comap`: a place lies over its restriction.
+* `NumberField.InfinitePlace.liesOver_iff_comap_eq`: lying over a place is having it as the
+  restriction.
 * `NumberField.InfinitePlace.LiesOver.trans`: lying over is transitive in a field tower.
 * `NumberField.InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or`: the
   embedding of a place and its conjugate restrict to the embedding of the place below and its
@@ -252,6 +255,13 @@ not the spelling `InfinitePlace.comap` produces, so it is registered here. Const
 instance InfinitePlace.liesOver_comap {k L : Type*} [Field k] [Field L] [Algebra k L]
     (w : InfinitePlace L) : w.LiesOver (w.comap (algebraMap k L)) :=
   ⟨rfl⟩
+
+/-- An infinite place of `L` lies over an infinite place `v` of `k` exactly when its restriction
+to `k` is `v`. -/
+theorem InfinitePlace.liesOver_iff_comap_eq {k L : Type*} [Field k] [Field L] [Algebra k L]
+    {w : InfinitePlace L} {v : InfinitePlace k} :
+    w.LiesOver v ↔ w.comap (algebraMap k L) = v :=
+  ⟨fun _ ↦ InfinitePlace.LiesOver.comap_eq w v, fun h ↦ h ▸ InfinitePlace.liesOver_comap w⟩
 
 /-- Lying over is transitive for infinite places in a field tower. -/
 theorem InfinitePlace.LiesOver.trans {k L M : Type*} [Field k] [Field L] [Field M]

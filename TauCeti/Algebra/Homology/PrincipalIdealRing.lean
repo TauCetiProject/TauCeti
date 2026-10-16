@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.Boundaries
 public import TauCeti.LinearAlgebra.FreeModule.PID
-import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.Algebra.Homology.Split
 
 /-!
 # Complexes of projective modules over a principal ideal domain
@@ -72,14 +72,10 @@ instance isSplitMono_iCycles_of_isPrincipalIdealRing [Module.Projective k (K.X (
     have := Module.Free.of_injective_of_projective_of_isPrincipalIdealRing
       (kernel.ι (K.homologyπ (c.next i)) ≫ K.iCycles (c.next i)).hom
       ((ModuleCat.mono_iff_injective _).mp inferInstance)
-    have := K.epi_toBoundaries h
-    -- `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Bⱼ ⟶ 0` is short exact with projective quotient, hence split
-    have hS : (ShortComplex.mk _ _ (K.iCycles_toBoundaries i (c.next i))).ShortExact :=
-      { exact := ShortComplex.exact_of_g_is_cokernel _ (K.toBoundariesIsCokernel h) }
-    exact .mk' ⟨hS.splittingOfProjective.r, hS.splittingOfProjective.f_r⟩
+    exact K.isSplitMono_iCycles_of_projective_kernel_homologyπ h
   · -- with no differential out of `Kᵢ`, all of `Kᵢ` is cycles
     have := K.isIso_iCycles i (c.next i) rfl (K.shape _ _ h)
-    infer_instance
+    exact IsSplitMono.of_iso _
 
 /-- Over a principal ideal ring without zero divisors, the quotient of a term of a complex of
 modules by its cycles is free when the next term is projective: the differential embeds the

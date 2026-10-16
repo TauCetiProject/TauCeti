@@ -112,7 +112,7 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
     intro x
     by_cases hx : x ∈ tsupport (φ : E → ℝ)
     · rw [hwS hx]
-    · simp [lineDeriv_eq_zero_of_notMem_tsupport φ hx]
+    · simp [lineDeriv_of_notMem_tsupport hx]
   obtain ⟨L, hL⟩ := φ.contDiff.lipschitzWith_of_hasCompactSupport φ.hasCompactSupport (by simp)
   -- For small `t`, the translation moves onto the test function.
   have hEq : ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
@@ -206,7 +206,7 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le {
           (enorm_integral_le_lintegral_enorm _).trans_eq
             (eLpNorm_one_eq_lintegral_enorm (hDmeas.restrict.mul φ.aestronglyMeasurable)).symm
       _ ≤ eLpNorm D 2 (μ.restrict S) * eLpNorm (φ : E → ℝ) 2 (μ.restrict S) := by
-          simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_nnnorm (p := 2) (q := 2) (r := 1)
+          simpa using eLpNorm_le_eLpNorm_mul_eLpNorm (p := 2) (q := 2) (r := 1)
             (· * ·) 1 continuous_mul hDmeas.restrict φ.aestronglyMeasurable
             (Eventually.of_forall fun _ => by simp [nnnorm_mul])
       _ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ :=
