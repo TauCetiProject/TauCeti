@@ -82,7 +82,20 @@ structure TwistingCocycle (𝒜 : ℤ → Submodule R A) (d : A →ₗ[R] A) (P 
 
 namespace TwistingCocycle
 
-variable {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {P : Type uP} [Fintype P] {ind : P → ℤ}
+variable {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {P : Type uP} {ind : P → ℤ}
+
+/-- Over a cohomologically nonpositive algebra, the degree condition alone forces one-sidedness:
+an entry `m x y` with `ind x ≤ ind y` lives in a positive degree, where the algebra vanishes.  This
+is the situation of the cubical chains on a loop space.  No differential and no twisting equation
+is involved. -/
+theorem one_sided_of_nonpos (m : P → P → A) (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1))
+    (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) : ∀ x y, ind x ≤ ind y → m x y = 0 := by
+  intro x y hxy
+  have h := hm x y
+  rw [h𝒜 _ (by omega)] at h
+  exact (Submodule.mem_bot R).1 h
+
+variable [Fintype P]
 
 @[ext]
 theorem ext {m₁ m₂ : TwistingCocycle 𝒜 d P ind} (h : ∀ x y, m₁.m x y = m₂.m x y) : m₁ = m₂ := by
@@ -112,18 +125,6 @@ instance : Zero (TwistingCocycle 𝒜 d P ind) where
 @[simp]
 theorem zero_m (x y : P) : (0 : TwistingCocycle 𝒜 d P ind).m x y = 0 :=
   rfl
-
-omit [Fintype P] in
-/-- Over a cohomologically nonpositive algebra, the degree condition alone forces one-sidedness:
-an entry `m x y` with `ind x ≤ ind y` lives in a positive degree, where the algebra vanishes.  This
-is the situation of the cubical chains on a loop space.  No differential and no twisting equation
-is involved. -/
-theorem one_sided_of_nonpos (m : P → P → A) (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1))
-    (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) : ∀ x y, ind x ≤ ind y → m x y = 0 := by
-  intro x y hxy
-  have h := hm x y
-  rw [h𝒜 _ (by omega)] at h
-  exact (Submodule.mem_bot R).1 h
 
 /-- A twisting cocycle over a cohomologically nonpositive algebra, from the graded matrix and the
 twisting equation alone: one-sidedness is supplied by `one_sided_of_nonpos`. -/

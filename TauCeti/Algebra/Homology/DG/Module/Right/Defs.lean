@@ -32,6 +32,8 @@ a right DG module into a right module over the cohomology algebra.
 
 ## Main results
 
+* `TauCeti.op_smul_mem_of_mem_graded`: right scalar multiplication by a homogeneous element of
+  degree `e` shifts module degrees by `e`.
 * `TauCeti.IsDGRightModule.leibniz_of_map_eq_zero`: the Leibniz rule against an algebra cycle,
   without a homogeneity assumption on the module element.
 * `TauCeti.IsDGRightModule.op_smul_mem_range_of_map_eq_zero`: an algebra cycle preserves module
@@ -56,6 +58,25 @@ open DirectSum MulOpposite
 namespace TauCeti
 
 universe uR uA uM
+
+section GradedSMul
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [Semiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid M] [Module R M] [SMul Aᵐᵒᵖ M]
+  {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜] {ℳ : ℤ → Submodule R M}
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
+/-- A homogeneous element `α` of degree `q`, acted on by a homogeneous `a` of degree `e`, has
+degree `q + e`. -/
+theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ} {α : M}
+    (hα : α ∈ ℳ q) : op a • α ∈ ℳ (q + e) := by
+  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece e := by
+    rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
+    exact ha
+  have := SetLike.GradedSMul.smul_mem hop hα
+  rwa [vadd_eq_add, add_comm] at this
+
+end GradedSMul
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
