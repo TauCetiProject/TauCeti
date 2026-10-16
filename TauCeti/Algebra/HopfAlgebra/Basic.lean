@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 
+import Mathlib.RingTheory.HopfAlgebra.Quotient
+
 /-!
 # Hopf algebra morphisms
 
@@ -29,53 +31,7 @@ Michał Mrugała and Yunzhou Xie.
 
 public section
 
-open Coalgebra WithConv
-
-namespace BialgHom
-
-variable {R A B : Type*} [CommSemiring R]
-variable [Semiring A] [Semiring B] [HopfAlgebra R A] [HopfAlgebra R B]
-
-private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
-    (φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)) =
-      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) := by
-  let f : WithConv (A →ₗ[R] B) := toConv (φ : A →ₗ[R] B)
-  let g : WithConv (A →ₗ[R] B) :=
-    toConv ((φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)))
-  let h : WithConv (A →ₗ[R] B) :=
-    toConv ((HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B))
-  have hφ_alg : (φ : A →ₗ[R] B) = (φ : A →ₐ[R] B).toLinearMap :=
-    (BialgHom.toAlgHom_toLinearMap φ).symm
-  have hφ_coalg : (φ : A →ₗ[R] B) = (φ : A →ₗc[R] B).toLinearMap :=
-    (CoalgHom.toLinearMap_eq_ofClass (φ : A →ₗc[R] B)).symm
-  have hg_left : g * f = 1 := by
-    refine WithConv.ofConv_injective ?_
-    dsimp only [g, f]
-    rw [hφ_alg]
-    have hdistrib :=
-      (LinearMap.algHom_comp_convMul_distrib (φ : A →ₐ[R] B)
-        (toConv (HopfAlgebra.antipode R (A := A)))
-        (toConv (LinearMap.id : A →ₗ[R] A))).symm
-    simpa only [LinearMap.comp_id] using hdistrib.trans (by
-      rw [LinearMap.antipode_mul_id]
-      ext a
-      exact (φ : A →ₐ[R] B).commutes (counit a))
-  have hh_right : f * h = 1 := by
-    refine WithConv.ofConv_injective ?_
-    dsimp only [f, h]
-    rw [hφ_coalg]
-    have hdistrib :=
-      (LinearMap.convMul_comp_coalgHom_distrib
-        (toConv (LinearMap.id : B →ₗ[R] B))
-        (toConv (HopfAlgebra.antipode R (A := B)))
-        (φ : A →ₗc[R] B)).symm
-    simpa only [LinearMap.id_comp] using hdistrib.trans (by
-      rw [LinearMap.id_mul_antipode]
-      ext a
-      exact congr_arg (algebraMap R B) (CoalgHomClass.counit_comp_apply φ a))
-  exact WithConv.toConv_injective (left_inv_eq_right_inv hg_left hh_right)
-
-end BialgHom
+open WithConv
 
 namespace BialgHomClass
 
@@ -89,11 +45,34 @@ about underlying linear maps. -/
 theorem coe_comp_antipode (φ : F) :
     (φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) := by
-  ext a
-  simp only [LinearMap.comp_apply]
-  have h := LinearMap.congr_fun (BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B)) a
-  simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, BialgHom.coe_toLinearMap,
-    BialgHom.coe_coe] using h
+  have hφ : (CoalgHom.ofClass φ).toLinearMap = (φ : A →ₗ[R] B) := by
+    ext a
+    simp
+  apply WithConv.toConv_injective
+  apply left_inv_eq_right_inv (a := toConv (φ : A →ₗ[R] B))
+  · apply WithConv.ofConv_injective
+    calc
+      _ = (AlgHom.ofClass φ).toLinearMap.comp
+          (toConv (HopfAlgebra.antipode R (A := A)) *
+            toConv (LinearMap.id : A →ₗ[R] A)).ofConv := by
+        simpa only [ofConv_toConv, AlgHom.toLinearMap_eq_coe,
+          AlgHomClass.linearMapOfClass_ofClass, LinearMap.comp_id] using
+          (LinearMap.algHom_comp_convMul_distrib (AlgHom.ofClass φ)
+            (toConv (HopfAlgebra.antipode R)) (toConv LinearMap.id)).symm
+      _ = _ := by
+        rw [LinearMap.antipode_mul_id]
+        exact LinearMap.algHom_comp_convOne (AlgHom.ofClass φ)
+  · apply WithConv.ofConv_injective
+    calc
+      _ = (toConv (LinearMap.id : B →ₗ[R] B) *
+          toConv (HopfAlgebra.antipode R (A := B))).ofConv.comp
+          (CoalgHom.ofClass φ).toLinearMap := by
+        simpa only [ofConv_toConv, hφ, LinearMap.id_comp] using
+          (LinearMap.convMul_comp_coalgHom_distrib (toConv LinearMap.id)
+            (toConv (HopfAlgebra.antipode R)) (CoalgHom.ofClass φ)).symm
+      _ = _ := by
+        rw [LinearMap.id_mul_antipode]
+        exact LinearMap.convOne_comp_coalgHom (CoalgHom.ofClass φ)
 
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, pointwise. -/
 @[simp]
