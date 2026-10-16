@@ -140,11 +140,15 @@ theorem moduleCat_δ_homologyπ (i j : ι) (hij : c.Rel i j) (z₃ : S.X₃.cycl
     (hz₁ : (S.f.f j).hom ((S.X₁.iCycles j).hom z₁) = (S.X₂.d i j).hom x₂) :
     (hS.δ i j hij).hom ((S.X₃.homologyπ i).hom z₃) = (S.X₁.homologyπ j).hom z₁ := by
   refine hS.δ_apply' i j hij _ ((S.X₂.pOpcycles i).hom x₂) z₁ ?_ ?_
-  · change (S.X₂.pOpcycles i ≫ HomologicalComplex.opcyclesMap S.g i).hom x₂ =
+  · -- The goal is stated through the forgetful functor to `Ab`, whose action on morphisms is
+    -- definitionally the underlying linear map; `rw` does not see through `forget₂`, so we
+    -- restate it with composites of module morphisms.
+    change (S.X₂.pOpcycles i ≫ HomologicalComplex.opcyclesMap S.g i).hom x₂ =
       (S.X₃.homologyπ i ≫ S.X₃.homologyι i).hom z₃
     rw [HomologicalComplex.p_opcyclesMap, HomologicalComplex.homology_π_ι, ModuleCat.hom_comp,
       ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hx₂]
-  · change (HomologicalComplex.cyclesMap S.f j).hom z₁ =
+  · -- Same as above: restate the goal, which goes through `forget₂`, as a composite.
+    change (HomologicalComplex.cyclesMap S.f j).hom z₁ =
       (S.X₂.pOpcycles i ≫ S.X₂.opcyclesToCycles i j).hom x₂
     rw [HomologicalComplex.pOpcycles_opcyclesToCycles]
     apply S.X₂.moduleCat_iCycles_injective j

@@ -214,6 +214,7 @@ theorem indexGradedPieceComplexXEquiv_indexGradedPieceSingle_f (x : {x : P // in
   indexGradedPieceComplexXEquiv_indexGradedPieceSingleX hM ind x n α
 
 /-- Inserting at `x` and evaluating at `y` is the identity when `x = y` and zero otherwise. -/
+@[reassoc (attr := simp)]
 theorem indexGradedPieceSingle_comp_eval (x y : {x : P // ind x = p}) :
     indexGradedPieceSingle hM ind x ≫ indexGradedPieceEval hM ind y =
       if x = y then 𝟙 _ else 0 := by
@@ -229,6 +230,7 @@ theorem indexGradedPieceSingle_comp_eval (x y : {x : P // ind x = p}) :
 
 /-- The sum over the generators of index `p` of evaluating and inserting is the identity of the
 `p`-th graded piece. -/
+@[simp]
 theorem sum_indexGradedPieceEval_comp_single :
     ∑ x : {x : P // ind x = p}, indexGradedPieceEval hM ind x ≫ indexGradedPieceSingle hM ind x =
       𝟙 (indexGradedPieceComplex hM ind p) := by
