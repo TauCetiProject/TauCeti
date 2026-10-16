@@ -398,13 +398,15 @@ theorem neg_one_pow_card_filter_lt_mul_insert {α R : Type*} [LinearOrder α] [R
       -((-1) ^ ({j ∈ s | j < k}).card * (-1) ^ ({j ∈ s.erase k | j < c}).card) := by
   have hck : c ≠ k := fun h ↦ hc (h ▸ hk)
   rcases hck.lt_or_gt with h | h
-  · simp only [filter_insert, h, ↓reduceIte, filter_erase]
-    rw [card_insert_of_notMem (by simp [hc]),
-      erase_eq_of_notMem (show k ∉ {j ∈ s | j < c} by simp [h.not_gt]),
-      pow_succ, mul_neg_one, mul_neg, ← pow_add, ← pow_add, add_comm]
-  · simp only [filter_insert, h.not_gt, ↓reduceIte, filter_erase]
-    rw [← card_erase_add_one (mem_filter.2 ⟨hk, h⟩),
-      pow_succ, mul_neg_one, neg_mul, ← pow_add, ← pow_add, add_comm]
+  · have hcs : c ∉ {j ∈ s | j < k} := by simp [hc]
+    have hkc : k ∉ {j ∈ s | j < c} := by simp [h.not_gt]
+    simp only [filter_insert, h, ↓reduceIte, card_insert_of_notMem hcs, filter_erase,
+      erase_eq_of_notMem hkc, pow_succ]
+    simp [← pow_add, add_comm]
+  · have hkc : k ∈ {j ∈ s | j < c} := mem_filter.2 ⟨hk, h⟩
+    simp only [filter_insert, h.not_gt, ↓reduceIte, filter_erase, ← card_erase_add_one hkc,
+      pow_succ]
+    simp [← pow_add, add_comm]
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/
