@@ -204,8 +204,12 @@ noncomputable def rootLatticeIsometry :
     apply IntegralLattice.ext
     · rw [ConstructionA.integralLattice_carrier, ConstructionA.zeroLattice_carrier]
     · rw [ConstructionA.integralLattice_form, ConstructionA.zeroLattice_form]
-  exact (IntegralLattice.Isometry.ofEq
-    (IntegralLattice.coordinatePower_a1_eq_smul_unitLattice (Fin 24))).trans
+  -- Match the positive-natural modulus cast in the Construction A isometry's source.
+  have hpower : IntegralLattice.a1.coordinatePower (Fin 24) =
+      ((2 : ℕ+) : ℤ) • IntegralLattice.unitLattice (Fin 24) := by
+    simpa only [PNat.val_ofNat, Nat.cast_ofNat] using
+      IntegralLattice.coordinatePower_a1_eq_smul_unitLattice (Fin 24)
+  exact (IntegralLattice.Isometry.ofEq hpower).trans
     ((ConstructionA.scaledStandardIsometry 2).trans (IntegralLattice.Isometry.ofEq hzero))
 
 /-- The `A₁²⁴` root-lattice identification doubles the standard coordinates. -/
@@ -236,7 +240,7 @@ noncomputable def rootsEquiv :
       all_goals first
         | subst j
           norm_num only [Bool.false_eq_true, ite_false, ite_true,
-            Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi <;>
+            Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi;
             rfl
         | norm_num only [Bool.false_eq_true, ite_false, ite_true,
             Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same,
