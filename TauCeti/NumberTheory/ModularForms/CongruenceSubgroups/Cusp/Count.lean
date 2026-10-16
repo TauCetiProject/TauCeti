@@ -84,8 +84,9 @@ private theorem dvd_sub_of_dvd {g m : ℕ} {c c₁ d c' c₁' d' j : ℤ} (hg : 
     (h : (N : ℤ) ∣ c * d' - c' * d + j * c * c') :
     (Nat.gcd g m : ℤ) ∣ c₁ * d' - c₁' * d := by
   subst hc hc'
-  rw [hN, show (g : ℤ) * c₁ * d' - g * c₁' * d + j * (g * c₁) * (g * c₁') =
-    g * (c₁ * d' - c₁' * d + j * g * c₁ * c₁') by ring] at h
+  have he : (g : ℤ) * c₁ * d' - g * c₁' * d + j * (g * c₁) * (g * c₁') =
+      g * (c₁ * d' - c₁' * d + j * g * c₁ * c₁') := by ring
+  rw [hN, he] at h
   have hm := (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right g m)).trans
     (Int.dvd_of_mul_dvd_mul_left (by exact_mod_cast hg) h)
   have hg' : (Nat.gcd g m : ℤ) ∣ j * g * c₁ * c₁' :=
@@ -133,10 +134,9 @@ private theorem heq_unitOfIsCoprime_div_iff {g g' : ℕ} (hg : g = g') {c d c' d
         (ZMod.unitOfIsCoprime c' hc' / ZMod.unitOfIsCoprime d' hd') ↔
       (Nat.gcd g (N / g) : ℤ) ∣ c * d' - c' * d := by
   subst hg
-  rw [heq_iff_eq, div_eq_div_iff_mul_eq_mul, Units.ext_iff, Units.val_mul, Units.val_mul,
-    ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime,
-    ZMod.coe_unitOfIsCoprime, ← Int.cast_mul, ← Int.cast_mul,
-    ZMod.intCast_eq_intCast_iff_dvd_sub, ← dvd_neg, neg_sub]
+  rw [heq_iff_eq, div_eq_div_iff_mul_eq_mul, Units.ext_iff]
+  simp only [Units.val_mul, ZMod.coe_unitOfIsCoprime, ← Int.cast_mul]
+  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, ← dvd_neg, neg_sub]
 
 variable [NeZero N]
 
@@ -146,10 +146,12 @@ private theorem gcd_pos (c : ℤ) : 0 < Int.gcd c N :=
 private theorem gcd_mem_divisors (c : ℤ) : Int.gcd c N ∈ N.divisors :=
   Nat.mem_divisors.mpr ⟨Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..), NeZero.ne N⟩
 
+/-- Mathlib's `isCoprime_div_gcd_div_gcd` for `c` and `N`, with `N / gcd(c, N)` a natural
+number. -/
 private theorem isCoprime_ediv_gcd (c : ℤ) :
     IsCoprime (c / Int.gcd c N) ((N / Int.gcd c N : ℕ) : ℤ) := by
-  rw [Int.isCoprime_iff_gcd_eq_one, Int.natCast_div]
-  exact Int.gcd_div_gcd_div_gcd (gcd_pos c)
+  rw [Int.natCast_div, Int.coe_gcd]
+  exact isCoprime_div_gcd_div_gcd (by exact_mod_cast NeZero.ne N)
 
 /-- The quotient `c / gcd(c, N)` is a unit modulo `gcd(gcd(c, N), N / gcd(c, N))`. -/
 private theorem isCoprime_ediv_gcd_gcd (c : ℤ) :
@@ -194,7 +196,8 @@ theorem cuspOrbitOfSL2Z_Gamma0_eq_iff (γ γ' : SL(2, ℤ)) :
         of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one, coe_T_zpow]
       convert hj using 1
       ring
-    · rw [show γ⁻¹ * (γ * T ^ (-j) * γ'⁻¹) * γ' = T ^ (-j) by group, coe_T_zpow]
+    · have hT : γ⁻¹ * (γ * T ^ (-j) * γ'⁻¹) * γ' = T ^ (-j) := by group
+      rw [hT, coe_T_zpow]
       rfl
 
 /-! ### Labels of cusps -/
@@ -268,10 +271,10 @@ theorem gamma0CuspLabel_surjective : Function.Surjective (gamma0CuspLabel N) := 
   rw [gamma0CuspLabel]
   refine Sigma.ext rfl (heq_of_eq ?_)
   dsimp only
-  rw [div_eq_iff_eq_mul, Units.ext_iff, Units.val_mul, ZMod.coe_unitOfIsCoprime,
-    ZMod.coe_unitOfIsCoprime, h1, hd, Int.cast_natCast, ZMod.natCast_val,
-    ← ZMod.unitsMap_val (Nat.gcd_dvd_left _ _), hy,
-    Int.cast_one, Units.mul_inv]
+  rw [div_eq_iff_eq_mul, Units.ext_iff]
+  simp only [Units.val_mul, ZMod.coe_unitOfIsCoprime, h1, Int.cast_one]
+  rw [hd, Int.cast_natCast, ZMod.natCast_val, ← ZMod.unitsMap_val (Nat.gcd_dvd_left _ _), hy,
+    Units.mul_inv]
 
 /-- Two matrices have the same label exactly when they represent the same cusp of `Γ₀(N)`. -/
 theorem gamma0CuspLabel_eq_iff (γ γ' : SL(2, ℤ)) :
@@ -319,7 +322,7 @@ theorem card_cuspOrbit_Gamma0 :
     ⟨Nat.gcd_ne_zero_left (Nat.ne_of_gt (Nat.pos_of_mem_divisors g.2))⟩
   rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
-/-- `Γ₀(p)` has two cusps, `∞` and `0`, for a prime `p`. -/
+/-- `Γ₀(p)` has two cusps for a prime `p`. -/
 theorem card_cuspOrbit_Gamma0_of_prime {p : ℕ} [Fact p.Prime] :
     Nat.card ((Gamma0 p).map sl2zToPSL2R).CuspOrbit = 2 := by
   have hp := (Fact.out : p.Prime)

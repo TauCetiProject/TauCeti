@@ -29,16 +29,6 @@ public noncomputable section
 open Matrix Matrix.ProjectiveSpecialLinearGroup MulAction OnePoint Subgroup
 open scoped MatrixGroups
 
-namespace TauCeti
-
-/-- An element of `SL(2, ℤ)` fixes `∞ ∈ OnePoint ℝ` exactly when its lower-left entry vanishes. -/
-theorem sl2zToPSL2R_smul_infty_eq_infty_iff (g : SL(2, ℤ)) :
-    sl2zToPSL2R g • (∞ : OnePoint ℝ) = ∞ ↔ g 1 0 = 0 := by
-  rw [sl2zToPSL2R_apply, mk_smul_infty_eq_infty_iff]
-  simp
-
-end TauCeti
-
 namespace Subgroup
 
 variable (H : Subgroup SL(2, ℤ)) [H.FiniteIndex]
