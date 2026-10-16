@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.Geometry.Symplectic.Finrank
+public import TauCeti.LinearAlgebra.TotallyReal.QuadraticForm
 
 /-!
 # Quadratic forms and almost complex structures
@@ -17,13 +18,13 @@ definite is totally real. It therefore has dimension at most the complex dimensi
 `J`. Applying this to a maximal negative subspace bounds the negative index of inertia of `Q`.
 
 This is the linear-algebraic index estimate behind the Morse-theoretic consequence of strict Levi
-positivity. No compatibility between `J` and an inner product is required.
+positivity. No compatibility between `J` and an inner product is required. The totally-real
+criterion for an arbitrary linear endomorphism is
+`QuadraticForm.isTotallyReal_of_add_comp_posDef` in
+`TauCeti.LinearAlgebra.TotallyReal.QuadraticForm`.
 
 ## Main declarations
 
-* `QuadraticForm.isTotallyReal_of_add_comp_posDef`: a negative subspace is totally real for a
-  linear endomorphism `J` when the sum of a quadratic form and its pullback by `J` is positive
-  definite.
 * `QuadraticForm.finrank_le_complexFinrank_of_add_comp_posDef`: every such negative subspace has
   at most the complex dimension of the ambient space.
 * `QuadraticForm.sigNeg_le_complexFinrank_of_add_comp_posDef`: the negative index of inertia has
@@ -44,35 +45,6 @@ namespace QuadraticForm
 variable {E : Type*} [AddCommGroup E] [Module ℝ E]
 variable (Q : QuadraticForm ℝ E)
 variable {W : Submodule ℝ E}
-
-/-- A negative-definite subspace of `Q` is totally real for a linear endomorphism `J` if
-`Q(v) + Q(Jv)` is positive for every nonzero `v`.
-
-Indeed, a nonzero vector `Jv` in both `W` and `J(W)` would make both `Q(v)` and `Q(Jv)` negative,
-contradicting the positivity assumption. -/
-theorem isTotallyReal_of_add_comp_posDef (J : E →ₗ[ℝ] E)
-    (hQJ : (Q + Q.comp J).PosDef)
-    (hW : ((-Q).restrict W).PosDef) :
-    TauCeti.IsTotallyReal J W := by
-  rw [TauCeti.isTotallyReal_iff, disjoint_iff_inf_le]
-  intro x hx
-  rw [Submodule.mem_bot]
-  obtain ⟨hxW, hxJW⟩ := hx
-  obtain ⟨v, hvW, rfl⟩ := hxJW
-  by_contra hJv
-  have hv : v ≠ 0 := fun hv ↦ hJv (by simp [hv])
-  have hv' : (⟨v, hvW⟩ : W) ≠ 0 := by
-    intro h
-    exact hv (Subtype.ext_iff.mp h)
-  have hJv' : (⟨J v, hxW⟩ : W) ≠ 0 := by
-    intro h
-    exact hJv (Subtype.ext_iff.mp h)
-  have hnegv := hW ⟨v, hvW⟩ hv'
-  have hnegJv := hW ⟨J v, hxW⟩ hJv'
-  have hpos := hQJ v hv
-  simp only [add_apply, QuadraticMap.comp_apply, neg_apply,
-    QuadraticMap.restrict_apply] at hnegv hnegJv hpos
-  linarith
 
 section FiniteDimensional
 
