@@ -497,15 +497,6 @@ theorem TwistingCocycle.mem_range_twistedIndexSubobject_arrow_f_iff (p n : ℤ)
     simp only [m.twistedIndexCochainComplexι_apply, LinearEquiv.apply_symm_apply]
     rfl
 
-/-- The range characterization of a filtration stage with range membership unfolded. -/
-@[simp]
-theorem TwistingCocycle.exists_twistedIndexSubobject_arrow_f_apply_eq_iff (p n : ℤ)
-    (f : (m.twistedCochainComplex dM hM).X n) :
-    (∃ g, ((m.twistedIndexSubobject hM p).arrow.f n).hom g = f) ↔
-      ∀ x, p < ind x →
-        (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 :=
-  LinearMap.mem_range.symm.trans (m.mem_range_twistedIndexSubobject_arrow_f_iff hM p n f)
-
 /-- The subobjects of the twisted complex form an increasing filtration. -/
 theorem TwistingCocycle.twistedIndexSubobject_mono :
     Monotone (m.twistedIndexSubobject hM) := fun _ _ hpq ↦
