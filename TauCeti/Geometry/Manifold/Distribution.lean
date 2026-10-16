@@ -101,11 +101,11 @@ theorem mem_distributionModelFiber
   rfl
 
 /-- On a normed space, transporting a distribution fibre through the canonical tangent-model
-identification leaves the submodule unchanged. Mathlib implements this identification as the
-identity linear map, so the result reduces to `Submodule.map_id`. -/
+identification leaves the submodule unchanged. -/
 theorem distributionModelFiber_eq
     {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) :
     distributionModelFiber D p = D p := by
+  -- Mathlib's canonical tangent-model identification is definitionally the identity linear map.
   unfold distributionModelFiber
   exact Submodule.map_id (D p)
 
