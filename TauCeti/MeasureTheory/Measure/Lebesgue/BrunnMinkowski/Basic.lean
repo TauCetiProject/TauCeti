@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.PrekopaLeindler
+public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Brunn–Minkowski in finite-dimensional Euclidean spaces
@@ -15,10 +16,11 @@ by the sum of the dimension roots of the input volumes. We work with Lebesgue-me
 sets and do not require their sum to be measurable. Nonemptiness is retained even when
 an input has zero volume.
 
-First, indicator functions in the Prékopa–Leindler inequality give the multiplicative
-volume inequality. Measurable subsets of the inputs and a measurable hull of the sum
-allow this argument without assuming that a Minkowski sum is measurable. Rescaling
-positive finite-volume inputs to equal volumes then gives the additive inequality.
+The multiplicative formulation bounds the volume of a convex combination by a weighted
+geometric mean of volumes. The additive formulation bounds its dimension root by a
+weighted sum of dimension roots, for arbitrary nonnegative coefficients. Real-valued
+versions assume finite outer volume of the weighted sum. These inequalities support
+convex isoperimetric estimates and concavity of outer parallel volumes.
 
 ## References
 
@@ -65,15 +67,6 @@ theorem volume_rpow_mul_volume_rpow_le {A B : Set E}
     lintegral_indicator_const hS, one_mul, measure_congr hKv, measure_congr hLv,
     S, measure_toMeasurable, ENNReal.rpow_eq_pow] using key
 
-/-- Dimension-root volume scales linearly under every real dilation, including zero.
-This identity holds for arbitrary sets and infinite outer volumes. -/
-theorem volume_smul_rpow {A : Set E} (hn : Module.finrank ℝ E ≠ 0) (c : ℝ) :
-    volume (c • A) ^ ((Module.finrank ℝ E : ℝ)⁻¹) =
-      ENNReal.ofReal |c| * volume A ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
-  rw [Measure.addHaar_smul, ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
-    abs_pow, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity),
-    Real.pow_rpow_inv_natCast (abs_nonneg c) hn]
-
 /-- The additive lower bound in terms of positive dimension roots of the input volumes. -/
 private theorem volume_pow_add_root_le {A B : Set E}
     (hA : NullMeasurableSet A volume) (hB : NullMeasurableSet B volume)
@@ -108,52 +101,6 @@ private theorem volume_pow_add_root_le {A B : Set E}
     hleft, hright, one_smul, one_smul] at key
   exact key
 
-/-- **Brunn–Minkowski inequality** for nonempty Lebesgue-measurable sets
-in a positive-dimensional real inner product space. The sum has its outer volume and
-need not be measurable or have finite volume. -/
-theorem volume_rpow_add_volume_rpow_le {A B : Set E}
-    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hA : NullMeasurableSet A volume)
-    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume) :
-    volume A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
-      volume B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
-        volume (A + B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
-  have hp : 0 < (Module.finrank ℝ E : ℝ)⁻¹ := by positivity
-  have hAle : volume A ≤ volume (A + B) := by
-    obtain ⟨b, hb⟩ := hBn
-    calc
-      volume A = volume (A + {b}) := by simp
-      _ ≤ volume (A + B) := measure_mono (add_subset_add Subset.rfl (by simpa using hb))
-  have hBle : volume B ≤ volume (A + B) := by
-    obtain ⟨a, ha⟩ := hAn
-    calc
-      volume B = volume ({a} + B) := by simp
-      _ ≤ volume (A + B) := measure_mono (add_subset_add (by simpa using ha) Subset.rfl)
-  by_cases hAfin : volume A = ∞
-  · have hsum : volume (A + B) = ∞ := top_unique (hAfin ▸ hAle)
-    simp [hAfin, hsum, ENNReal.top_rpow_of_pos hp]
-  by_cases hBfin : volume B = ∞
-  · have hsum : volume (A + B) = ∞ := top_unique (hBfin ▸ hBle)
-    simp [hBfin, hsum, ENNReal.top_rpow_of_pos hp]
-  by_cases hAz : volume A = 0
-  · simpa only [hAz, ENNReal.zero_rpow_of_pos hp, zero_add] using
-      ENNReal.rpow_le_rpow hBle hp.le
-  by_cases hBz : volume B = 0
-  · simpa only [hBz, ENNReal.zero_rpow_of_pos hp, add_zero] using
-      ENNReal.rpow_le_rpow hAle hp.le
-  let a := (volume A).toReal ^ ((Module.finrank ℝ E : ℝ)⁻¹)
-  let b := (volume B).toReal ^ ((Module.finrank ℝ E : ℝ)⁻¹)
-  have ha : 0 < a := Real.rpow_pos_of_pos (ENNReal.toReal_pos hAz hAfin) _
-  have hb : 0 < b := Real.rpow_pos_of_pos (ENNReal.toReal_pos hBz hBfin) _
-  have hAv : volume A = ENNReal.ofReal (a ^ Module.finrank ℝ E) := by
-    rw [Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn, ENNReal.ofReal_toReal hAfin]
-  have hBv : volume B = ENNReal.ofReal (b ^ Module.finrank ℝ E) := by
-    rw [Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn, ENNReal.ofReal_toReal hBfin]
-  have key := ENNReal.rpow_le_rpow (volume_pow_add_root_le hA hB ha hb hAv hBv) hp.le
-  rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) hp.le,
-    Real.pow_rpow_inv_natCast (by positivity) hn, ENNReal.ofReal_add ha.le hb.le] at key
-  simpa only [a, b, ← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le,
-    ENNReal.ofReal_toReal hAfin, ENNReal.ofReal_toReal hBfin] using key
-
 /-- Weighted **Brunn–Minkowski inequality** with arbitrary nonnegative coefficients.
 It includes the convex-combination weights `1 - θ, θ` for every `θ ∈ [0,1]`.
 Zero coefficients and infinite input volumes use extended multiplication `0 * ∞ = 0`. -/
@@ -164,26 +111,66 @@ theorem mul_volume_rpow_add_mul_volume_rpow_le {A B : Set E}
     ENNReal.ofReal c * volume A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
       ENNReal.ofReal d * volume B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
         volume (c • A + d • B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
-  simpa only [volume_smul_rpow hn, abs_of_nonneg hc, abs_of_nonneg hd] using
-    volume_rpow_add_volume_rpow_le hn hAn.smul_set
-      (Measure.NullMeasurableSet.const_smul hA c) hBn.smul_set
-      (Measure.NullMeasurableSet.const_smul hB d)
+  -- Apply the volume argument to the dilated sets, retaining zero coefficients.
+  let C := c • A
+  let D := d • B
+  have hC := Measure.NullMeasurableSet.const_smul hA c
+  have hD := Measure.NullMeasurableSet.const_smul hB d
+  suffices h : volume C ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
+      volume D ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
+        volume (C + D) ^ ((Module.finrank ℝ E : ℝ)⁻¹) by
+    simpa only [C, D, volume_smul_rpow hn, abs_of_nonneg hc, abs_of_nonneg hd] using h
+  have hp : 0 < (Module.finrank ℝ E : ℝ)⁻¹ := by positivity
+  have hAle : volume C ≤ volume (C + D) := by
+    obtain ⟨b, hb⟩ := (hBn.smul_set : D.Nonempty)
+    calc
+      volume C = volume (C + {b}) := by simp
+      _ ≤ volume (C + D) := measure_mono (add_subset_add Subset.rfl (by simpa using hb))
+  have hBle : volume D ≤ volume (C + D) := by
+    obtain ⟨a, ha⟩ := (hAn.smul_set : C.Nonempty)
+    calc
+      volume D = volume ({a} + D) := by simp
+      _ ≤ volume (C + D) := measure_mono (add_subset_add (by simpa using ha) Subset.rfl)
+  -- Translation bounds settle infinite and zero volumes.
+  by_cases hAfin : volume C = ∞
+  · have hsum : volume (C + D) = ∞ := top_unique (hAfin ▸ hAle)
+    simp [hAfin, hsum, ENNReal.top_rpow_of_pos hp]
+  by_cases hBfin : volume D = ∞
+  · have hsum : volume (C + D) = ∞ := top_unique (hBfin ▸ hBle)
+    simp [hBfin, hsum, ENNReal.top_rpow_of_pos hp]
+  by_cases hAz : volume C = 0
+  · simpa only [hAz, ENNReal.zero_rpow_of_pos hp, zero_add] using
+      ENNReal.rpow_le_rpow hBle hp.le
+  by_cases hBz : volume D = 0
+  · simpa only [hBz, ENNReal.zero_rpow_of_pos hp, add_zero] using
+      ENNReal.rpow_le_rpow hAle hp.le
+  -- Positive finite volumes admit dimension roots for the rescaling lemma.
+  let a := (volume C).toReal ^ ((Module.finrank ℝ E : ℝ)⁻¹)
+  let b := (volume D).toReal ^ ((Module.finrank ℝ E : ℝ)⁻¹)
+  have ha : 0 < a := Real.rpow_pos_of_pos (ENNReal.toReal_pos hAz hAfin) _
+  have hb : 0 < b := Real.rpow_pos_of_pos (ENNReal.toReal_pos hBz hBfin) _
+  have hAv : volume C = ENNReal.ofReal (a ^ Module.finrank ℝ E) := by
+    rw [Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn, ENNReal.ofReal_toReal hAfin]
+  have hBv : volume D = ENNReal.ofReal (b ^ Module.finrank ℝ E) := by
+    rw [Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn, ENNReal.ofReal_toReal hBfin]
+  have key := ENNReal.rpow_le_rpow (volume_pow_add_root_le hC hD ha hb hAv hBv) hp.le
+  rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) hp.le,
+    Real.pow_rpow_inv_natCast (by positivity) hn, ENNReal.ofReal_add ha.le hb.le] at key
+  simpa only [a, b, ← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le,
+    ENNReal.ofReal_toReal hAfin, ENNReal.ofReal_toReal hBfin] using key
 
-/-- Real-valued **Brunn–Minkowski inequality**. The sum's outer volume must be finite;
-this implies finiteness of both input volumes. -/
-theorem volume_real_rpow_add_volume_real_rpow_le {A B : Set E}
+/-- **Brunn–Minkowski inequality** for nonempty Lebesgue-measurable sets
+in a positive-dimensional real inner product space. The sum has its outer volume and
+need not be measurable or have finite volume. -/
+theorem volume_rpow_add_volume_rpow_le {A B : Set E}
     (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hA : NullMeasurableSet A volume)
-    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume) (hfin : volume (A + B) ≠ ∞) :
-    volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
-      volume.real B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
-        volume.real (A + B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
-  have h := volume_rpow_add_volume_rpow_le hn hAn hA hBn hB
-  have hsum := ENNReal.rpow_ne_top_of_nonneg (by positivity :
-    0 ≤ (Module.finrank ℝ E : ℝ)⁻¹) hfin
-  have hAfin := ne_top_of_le_ne_top hsum (le_self_add.trans h)
-  have hBfin := ne_top_of_le_ne_top hsum (le_add_self.trans h)
-  simpa only [ENNReal.toReal_add hAfin hBfin, ← ENNReal.toReal_rpow, measureReal_def] using
-    ENNReal.toReal_mono hsum h
+    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume) :
+    volume A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
+      volume B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
+        volume (A + B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
+  simpa only [ENNReal.ofReal_one, one_mul, one_smul] using
+    mul_volume_rpow_add_mul_volume_rpow_le hn hAn hA hBn hB
+      (c := 1) (d := 1) zero_le_one zero_le_one
 
 /-- Real-valued weighted **Brunn–Minkowski inequality**. Only the weighted sum is
 required to have finite outer volume: an input with zero coefficient may have infinite volume. -/
@@ -202,5 +189,17 @@ theorem mul_volume_real_rpow_add_mul_volume_real_rpow_le {A B : Set E}
   simpa only [ENNReal.toReal_add hAfin hBfin, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal hc, ENNReal.toReal_ofReal hd, ← ENNReal.toReal_rpow,
     measureReal_def] using ENNReal.toReal_mono hsum h
+
+/-- Real-valued **Brunn–Minkowski inequality**. The sum's outer volume must be finite;
+this implies finiteness of both input volumes. -/
+theorem volume_real_rpow_add_volume_real_rpow_le {A B : Set E}
+    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hA : NullMeasurableSet A volume)
+    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume) (hfin : volume (A + B) ≠ ∞) :
+    volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
+      volume.real B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
+        volume.real (A + B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
+  simpa only [one_mul, one_smul] using
+    mul_volume_real_rpow_add_mul_volume_real_rpow_le hn hAn hA hBn hB
+      (c := 1) (d := 1) zero_le_one zero_le_one (by simpa only [one_smul] using hfin)
 
 end TauCeti
