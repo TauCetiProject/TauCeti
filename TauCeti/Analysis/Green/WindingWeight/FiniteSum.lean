@@ -80,8 +80,7 @@ theorem tsupport_sum_windingWeight_subset
     rw [Finset.sum_congr rfl (fun i hi ↦ congrArg ((w i : ℝ) * ·) (hy i hi)), hsum]
   exact (notMem_tsupport_iff_eventuallyEq.mpr hzero) hz
 
-/-- All traces and the total weighted winding support form a compact subset of the domain
-under the total-index vanishing condition. -/
+/-- Finitely many closed AC traces and their total weighted winding support have compact union. -/
 theorem isCompact_traces_union_tsupport_sum_windingWeight
     (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
     (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i)) :

@@ -56,7 +56,7 @@ theorem green_ac_winding {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {P Q : ℂ
     hγ hAC hab.le hclosed hcl hP' hQ' hcP hcQ hu hd hwconv hindex
     (hdomain.mono fun _ h ↦ h.2) hgreen
   have hi : IntegrableOn (fun z ↦ windingWeight γ a b z * curl P' Q' z) U :=
-    (hγ.integrable_windingWeight_mul_curl hclosed hP' hQ' hcP hcQ).integrableOn
+    (hγ.integrable_windingWeight_mul_curl hclosed hP' hQ').integrableOn
   refine ⟨hγ.intervalIntegrable_circulationFun (hP.continuousOn.mono htrace)
     (hQ.continuousOn.mono htrace), ?_, ?_⟩
   · exact hi.congr (Filter.Eventually.of_forall hw)

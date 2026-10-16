@@ -46,8 +46,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.tsupport_windingWeight_subset
       using hγ.windingWeight_eventuallyEq_of_notMem hclosed hzK
   exact (notMem_tsupport_iff_eventuallyEq.mpr hzero) hz
 
-/-- The trace and winding support fit together in a compact subset of the index-vanishing
-field domain. -/
+/-- The trace and winding support of a closed AC curve have compact union. -/
 theorem _root_.AbsolutelyContinuousOnInterval.isCompact_trace_union_tsupport_windingWeight
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
     IsCompact (γ '' uIcc a b ∪ tsupport (windingWeight γ a b)) :=

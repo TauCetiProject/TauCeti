@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Green.Approximation
 public import TauCeti.Analysis.Green.WindingWeight.FiniteSum
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
 
 /-!
 # Simultaneous polygonal approximation of finite curve families

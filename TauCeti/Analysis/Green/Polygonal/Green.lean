@@ -29,8 +29,8 @@ open MeasureTheory Set
 
 namespace TauCeti.Green
 
-/-- Global winding-weighted Green for a closed raw polygon on a nonuniform subdivision.
-The proof uses a triangle fan centered at the origin, without an arrangement of polygon faces. -/
+/-- Circulation around a closed raw polygon on a nonuniform subdivision equals its
+winding-weighted curl integral. Both the boundary integrand and weighted curl are integrable. -/
 theorem green_polygon_of_subdivision {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
     {s : Fin (N + 1) → ℝ} (hs : StrictMono s) (ha : s 0 = a) (hb : s (Fin.last N) = b)
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
@@ -60,6 +60,8 @@ theorem green_polygon_of_subdivision {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
     rw [hz, Finset.sum_mul]
     apply Finset.sum_congr rfl
     intro i _
+    -- The fan theorem displays the determinant and vertices explicitly; σ, T and F
+    -- abbreviate that same summand in the local integrability argument.
     change σ i * (interior (T i)).indicator (fun _ : ℂ ↦ (1 : ℝ)) z * curl P Q z = F i z
     by_cases hzi : z ∈ interior (T i)
     · simp only [F, indicator_of_mem hzi, mul_one]
@@ -85,7 +87,7 @@ theorem green_polygon_of_subdivision {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
     hP.continuous.continuousOn hQ.continuous.continuousOn
 
 /-- Winding-weighted Green for a closed raw polygonal curve and globally `C¹` fields.
-Both integrabilities and the identity follow from the curve's finite affine subdivision. -/
+The boundary integrand and winding-weighted curl are integrable, and their integrals agree. -/
 theorem green_polygonal {γ : ℝ → ℂ} {a b : ℝ}
     (hpoly : IsPolygonalOnInterval γ a b)
     (hclosed : γ a = γ b) {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :

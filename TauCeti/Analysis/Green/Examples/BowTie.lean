@@ -48,6 +48,7 @@ theorem bowTieCurve_subdivision (i : Fin 4) (t : ℝ)
 theorem isPolygonalOnInterval_bowTieCurve : IsPolygonalOnInterval bowTieCurve 0 4 := by
   refine ⟨4, by decide, (fun i ↦ (i : ℝ)), ?_, by norm_num, by norm_num, ?_⟩
   · intro i j hij
+    -- Expose the underlying natural indices of the Fin-to-real coercions for exact_mod_cast.
     change (i.val : ℝ) < j.val
     exact_mod_cast hij
   · intro i t ht
@@ -102,6 +103,7 @@ private theorem bowTie_index_eq_two_triangles {z : ℂ}
         Contour.windingNumber (triangleCurve 0 Complex.I 1) 0 3 z := by
   have hs : StrictMono (fun i : Fin 5 ↦ (i : ℝ)) := by
     intro i j hij
+    -- Expose the underlying natural indices of the Fin-to-real coercions for exact_mod_cast.
     change (i.val : ℝ) < j.val
     exact_mod_cast hij
   have hseg (i : Fin 4) (t : ℝ) (ht : t ∈ Icc (i.castSucc : ℝ) (i.succ : ℝ)) :
@@ -141,7 +143,8 @@ private theorem bowTie_upper_interior :
       (by simp [Fin.sum_univ_succ])
       (by intro i; fin_cases i <;> simp)
       (by apply Complex.ext <;> simp [Fin.sum_univ_succ])
-  exact interior_mono hsub (hS.interior_eq.symm ▸ (show _ ∈ S from by norm_num [S]))
+  have hpoint : (⟨1 / 2, 3 / 4⟩ : ℂ) ∈ S := by norm_num [S]
+  exact interior_mono hsub (hS.interior_eq.symm ▸ hpoint)
 
 private theorem bowTie_lower_interior :
     (⟨1 / 2, 1 / 4⟩ : ℂ) ∈ interior (convexHull ℝ {0, Complex.I, 1}) := by
@@ -158,7 +161,8 @@ private theorem bowTie_lower_interior :
       (by simp [Fin.sum_univ_succ]; ring)
       (by intro i; fin_cases i <;> simp)
       (by apply Complex.ext <;> simp [Fin.sum_univ_succ])
-  exact interior_mono hsub (hS.interior_eq.symm ▸ (show _ ∈ S from by norm_num [S]))
+  have hpoint : (⟨1 / 2, 1 / 4⟩ : ℂ) ∈ S := by norm_num [S]
+  exact interior_mono hsub (hS.interior_eq.symm ▸ hpoint)
 
 /-- The upper lobe has positive index one at an explicit interior point. -/
 theorem windingNumber_bowTieCurve_upper :
@@ -200,6 +204,7 @@ theorem integral_circulationFun_area_bowTieCurve :
     (∫ t in (0 : ℝ)..4, circulationFun areaP areaQ bowTieCurve t) = 0 := by
   have hs : StrictMono (fun i : Fin 5 ↦ (i : ℝ)) := by
     intro i j hij
+    -- Expose the underlying natural indices of the Fin-to-real coercions for exact_mod_cast.
     change (i.val : ℝ) < j.val
     exact_mod_cast hij
   have hseg (i : Fin 4) (t : ℝ) (ht : t ∈ Icc (i.castSucc : ℝ) (i.succ : ℝ)) :

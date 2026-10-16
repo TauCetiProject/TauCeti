@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
 public import TauCeti.Analysis.Green.WindingWeight.Convergence
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Polygonal approximation preserving an index domain
@@ -26,34 +25,6 @@ open scoped Topology
 namespace TauCeti.Green
 
 variable {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
-
-/-- Uniform approximation of closed AC curves preserves the trace domain and every index outside
-that domain once the approximation is sufficiently close. -/
-theorem _root_.AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl
-    {γn : ℕ → ℝ → ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
-    (hγn : ∀ n, AbsolutelyContinuousOnInterval (γn n) a b)
-    (hclosed : γ a = γ b) (hclosedn : ∀ n, γn n a = γn n b)
-    (hconv : TendstoUniformlyOn γn γ atTop (uIcc a b))
-    (hU : IsOpen U) (htrace : γ '' uIcc a b ⊆ U) :
-    ∀ᶠ n in atTop, γn n '' uIcc a b ⊆ U ∧
-      ∀ z ∉ U, Contour.windingNumber (γn n) a b z = Contour.windingNumber γ a b z := by
-  obtain ⟨ε, hε, hεU⟩ :=
-    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).exists_thickening_subset_open hU htrace
-  filter_upwards [Metric.tendstoUniformlyOn_iff.mp hconv ε hε] with n hn
-  have hnear (t) (ht : t ∈ uIcc a b) : dist (γn n t) (γ t) < ε := by
-    simpa only [dist_comm] using hn t ht
-  constructor
-  · rintro z ⟨t, ht, rfl⟩
-    exact hεU (mem_thickening_iff.mpr ⟨γ t, ⟨t, ht, rfl⟩, hnear t ht⟩)
-  · intro z hz
-    apply AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
-      hγ (hγn n) hclosed (hclosedn n)
-    intro t ht
-    have hdist : ε ≤ dist (γ t) z := by
-      by_contra h
-      exact hz (hεU (mem_thickening_iff.mpr ⟨γ t, ⟨t, ht, rfl⟩,
-        by simpa only [dist_comm] using lt_of_not_ge h⟩))
-    exact (hnear t ht).trans_le hdist
 
 /-- A closed AC curve with index vanishing outside its field domain has closed polygonal
 approximants converging uniformly, in derivative `L¹`, and in winding-weight `L¹`. Eventually

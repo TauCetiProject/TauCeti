@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Order.Interval.Set.Disjoint
+import Mathlib.Analysis.Convex.Segment
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Order.MinMax
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
@@ -98,5 +100,21 @@ theorem comp_affine {γ : ℝ → X} {a b c d : ℝ}
       (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonneg_left hst hm) le_rfl) hmap
   · exact hγ.comp_antitoneOn hc.absolutelyContinuousOnInterval
       (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonpos_left hst hm) le_rfl) hmap
+
+/-- Affine normalization to the unit interval preserves absolute continuity for metric-valued
+curves, including reversed and constant parameter intervals. -/
+theorem comp_lineMap {γ : ℝ → X} {a b : ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    AbsolutelyContinuousOnInterval (γ ∘ AffineMap.lineMap a b) 0 1 := by
+  have hmap : MapsTo (AffineMap.lineMap a b) (uIcc (0 : ℝ) 1) (uIcc a b) := by
+    rw [mapsTo_iff_image_subset, uIcc_of_le zero_le_one,
+      ← segment_eq_image_lineMap, segment_eq_uIcc]
+  rcases le_total a b with hab | hab
+  · exact hγ.comp_monotoneOn
+      ((lipschitzWith_lineMap a b).lipschitzOnWith.absolutelyContinuousOnInterval)
+      ((AffineMap.lineMap_mono hab).monotoneOn _) hmap
+  · exact hγ.comp_antitoneOn
+      ((lipschitzWith_lineMap a b).lipschitzOnWith.absolutelyContinuousOnInterval)
+      ((AffineMap.lineMap_anti hab).antitoneOn _) hmap
 
 end AbsolutelyContinuousOnInterval

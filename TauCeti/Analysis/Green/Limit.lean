@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.WindingWeight.Basic
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Convergence
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Passage to the limit in the two Green integrals
@@ -29,31 +29,6 @@ open scoped Topology
 
 namespace TauCeti.Green
 
-private theorem oneForm_eq_clm (P Q : ℂ → ℝ) :
-    oneForm P Q = fun z ↦ P z • Complex.reCLM + Q z • Complex.imCLM := by
-  ext z v
-  simp [oneForm_apply]
-
-/-- A continuous planar field gives a continuous field of real linear 1-forms. -/
-theorem _root_.Continuous.oneForm {P Q : ℂ → ℝ} (hP : Continuous P) (hQ : Continuous Q) :
-    Continuous (oneForm P Q) := by
-  rw [oneForm_eq_clm]
-  exact (hP.smul continuous_const).add (hQ.smul continuous_const)
-
-private theorem exists_bound_oneForm {P Q : ℂ → ℝ}
-    (hP : Continuous P) (hQ : Continuous Q)
-    (hcP : HasCompactSupport P) (hcQ : HasCompactSupport Q) :
-    ∃ C, ∀ z, ‖oneForm P Q z‖ ≤ C := by
-  obtain ⟨CP, hCP⟩ := hcP.exists_bound_of_continuous hP
-  obtain ⟨CQ, hCQ⟩ := hcQ.exists_bound_of_continuous hQ
-  refine ⟨CP * ‖Complex.reCLM‖ + CQ * ‖Complex.imCLM‖, fun z ↦ ?_⟩
-  rw [oneForm_eq_clm]
-  exact (norm_add_le _ _).trans (by
-    simp only [norm_smul]
-    gcongr
-    · exact hCP z
-    · exact hCQ z)
-
 /-- Uniform convergence of AC curves and derivative `L¹` convergence preserve the actual
 circulation integral of compactly supported continuous planar fields. -/
 theorem _root_.AbsolutelyContinuousOnInterval.tendsto_integral_circulationFun
@@ -72,38 +47,17 @@ theorem _root_.AbsolutelyContinuousOnInterval.tendsto_integral_circulationFun
     hγ.tendsto_integral_oneForm_of_tendstoUniformlyOn hγn hab
       (Continuous.oneForm hP hQ) hC hconv hdconv
 
-/-- Globally real `C¹` fields have continuous curl. -/
-theorem _root_.ContDiff.continuous_curl {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
-    Continuous (curl P Q) := by
-  have heq : curl P Q = fun z ↦ fderiv ℝ Q z 1 - fderiv ℝ P z Complex.I :=
-    rfl
-  rw [heq]
-  exact ((ContinuousLinearMap.apply ℝ ℝ 1).continuous.comp
-    (hQ.continuous_fderiv (by simp))).sub
-      ((ContinuousLinearMap.apply ℝ ℝ Complex.I).continuous.comp
-        (hP.continuous_fderiv (by simp)))
-
-/-- Compact support of the field implies compact support of its curl. -/
-theorem _root_.HasCompactSupport.curl {P Q : ℂ → ℝ}
-    (hcP : HasCompactSupport P) (hcQ : HasCompactSupport Q) : HasCompactSupport (curl P Q) := by
-  have hQ := (hcQ.fderiv ℝ).comp_left (g := fun L : ℂ →L[ℝ] ℝ ↦ L 1) (by simp)
-  have hP := (hcP.fderiv ℝ).comp_left (g := fun L : ℂ →L[ℝ] ℝ ↦ L Complex.I) (by simp)
-  convert hQ.sub hP using 1
-  ext z
-  rfl
-
-/-- The winding-weighted curl of globally `C¹`, compactly supported fields is integrable
-for every closed AC curve. -/
+/-- The winding-weighted curl of globally `C¹` fields is integrable for every closed AC curve. -/
 theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight_mul_curl
     {γ : ℝ → ℂ} {a b : ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
-    {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q)
-    (hcP : HasCompactSupport P) (hcQ : HasCompactSupport Q) :
+    {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
     Integrable (fun z ↦ windingWeight γ a b z * curl P Q z) := by
-  obtain ⟨C, hC⟩ := (HasCompactSupport.curl hcP hcQ).exists_bound_of_continuous
-    (ContDiff.continuous_curl hP hQ)
-  exact (hγ.integrable_windingWeight hclosed).mul_bdd
-    (ContDiff.continuous_curl hP hQ).aestronglyMeasurable (Eventually.of_forall hC)
+  have hc := hγ.hasCompactSupport_windingWeight hclosed
+  apply (integrableOn_iff_integrable_of_support_subset
+    ((support_mul_subset_left _ _).trans (subset_tsupport _))).mp
+  exact (hγ.integrable_windingWeight hclosed).integrableOn.mul_continuousOn
+    (ContDiff.continuous_curl hP hQ).continuousOn hc
 
 /-- Actual winding-weighted curl integrals converge under `L¹` convergence of the weights.
 There is no uniform bound on the winding numbers. -/
