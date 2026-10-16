@@ -217,7 +217,7 @@ private lemma ae_measure_univ_ne_top (h : IsContinuityEquation μ v a b) :
     h.lintegral_measure_univ_lt_top.ne).mono fun _ ht ↦ ht.ne
 
 /-- The `μₜ`-integral of a jointly measurable function is almost everywhere measurable in time. -/
-private lemma aemeasurable_lintegral (h : IsContinuityEquation μ v a b) {f : ℝ → E → ℝ≥0∞}
+theorem aemeasurable_lintegral (h : IsContinuityEquation μ v a b) {f : ℝ → E → ℝ≥0∞}
     (hf : Measurable (uncurry f)) :
     AEMeasurable (fun t ↦ ∫⁻ x, f t x ∂μ t) (volume.restrict (Ioo a b)) := by
   have hm : Measurable fun t ↦ 1 + μ t univ :=
@@ -229,7 +229,7 @@ private lemma aemeasurable_lintegral (h : IsContinuityEquation μ v a b) {f : �
 
 /-- The `μₜ`-integral of a jointly measurable function is almost everywhere strongly measurable in
 time. -/
-private lemma aestronglyMeasurable_integral (h : IsContinuityEquation μ v a b) {f : ℝ → E → ℝ}
+theorem aestronglyMeasurable_integral (h : IsContinuityEquation μ v a b) {f : ℝ → E → ℝ}
     (hf : StronglyMeasurable (uncurry f)) :
     AEStronglyMeasurable (fun t ↦ ∫ x, f t x ∂μ t) (volume.restrict (Ioo a b)) := by
   have hm : Measurable fun t ↦ 1 + μ t univ :=
