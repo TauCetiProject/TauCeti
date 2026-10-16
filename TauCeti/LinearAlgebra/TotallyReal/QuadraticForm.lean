@@ -17,7 +17,8 @@ Let `Q` be a quadratic form over an ordered field and `J` a linear endomorphism.
 definite is totally real for `J`. No almost-complex identity, finite-dimensionality, or inner
 product is required. In finite dimension, `J` is then automatically injective on such a subspace,
 so the subspace has at most half the ambient dimension, and so does the negative index of inertia
-of `Q`.
+of `Q`. The inertia bound applies the subspace bound to the maximal negative-definite subspace
+provided by Mathlib's `QuadraticForm.exists_finrank_eq_sigNeg_and_negDef`.
 
 The complex-dimension consequences for almost complex structures are in
 `TauCeti.Geometry.Symplectic.QuadraticForm`.

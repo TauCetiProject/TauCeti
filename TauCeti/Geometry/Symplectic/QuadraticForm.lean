@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.TotallyReal.QuadraticForm
 Let `Q` be a real quadratic form and `J` an almost complex structure. If
 `Q(v) + Q(Jv)` is positive for every nonzero `v`, then every subspace on which `Q` is negative
 definite is totally real. It therefore has dimension at most the complex dimension determined by
-`J`. Applying this to a maximal negative subspace bounds the negative index of inertia of `Q`.
+`J`. Applying this to the maximal negative-definite subspace provided by Mathlib's
+`QuadraticForm.exists_finrank_eq_sigNeg_and_negDef` bounds the negative index of inertia of `Q`.
 
 This is the linear-algebraic index estimate behind the Morse-theoretic consequence of strict Levi
 positivity. No compatibility between `J` and an inner product is required. The totally-real
