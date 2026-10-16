@@ -188,6 +188,7 @@ theorem affineChart_symm_apply (k : Fin (n + 1)) (z : Fin n → ℂ) :
     (affineChart k).symm z = affineParam k z := (rfl)
 
 /-- On a chart overlap the only restriction is nonvanishing of the new denominator. -/
+@[simp↓]
 theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :
     affineParam k z ∈ affineOpen l ↔ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l ≠ 0 := by
   unfold affineParam
