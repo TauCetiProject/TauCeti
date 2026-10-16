@@ -49,9 +49,9 @@ open scoped AdicCompletionExtension Pointwise
 
 variable {K : Type} [Field K] [NumberField K]
 
-namespace TauCeti.IntermediateField
+namespace IntermediateField
 
-open ClassFieldTheory
+open TauCeti TauCeti.ClassFieldTheory
 
 /-- **A prime-degree Galois extension has a place of full local degree.** If `L/K` is a finite
 Galois subextension of the separable closure and `[L : K]` is prime, then at some finite place
@@ -118,11 +118,11 @@ theorem exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_pr
       rw [hg, HeightOneSpectrum.decompositionHom_algebraMap]
     _ = τ (σ x) := (hτ_apply (σ x)).symm
 
-end TauCeti.IntermediateField
+end IntermediateField
 
-namespace TauCeti.OpenNormalSubgroup
+namespace OpenNormalSubgroup
 
-open ClassFieldTheory
+open TauCeti TauCeti.ClassFieldTheory
 
 /-- **A prime-degree layer has a surjective decomposition map at some finite place.** Let `V` be
 an open normal subgroup of `G_K` whose layer has prime degree. There are a finite place `v` and an
@@ -155,4 +155,4 @@ theorem exists_surjective_quotient_absoluteGaloisGroupMap_of_degree_prime
     _ = e (e.symm q) := congrArg e hg
     _ = q := e.apply_symm_apply q
 
-end TauCeti.OpenNormalSubgroup
+end OpenNormalSubgroup
