@@ -348,7 +348,7 @@ square classes (`TauCeti.padicTwoSquareClassBasis`), the `ZMod 2`-bilinear Hilbe
    5     0   1   0
 ```
 
-that is `(-1, -1) = (2, 5) = −1`, and every other pairing of basis vectors is `+1`. -/
+that is `(-1, -1) = (2, 5) = (5, 2) = −1`, and every other pairing of basis vectors is `+1`. -/
 theorem toMatrix_hilbertSymbolForm_padicTwo :
     LinearMap.BilinForm.toMatrix padicTwoSquareClassBasis (hilbertSymbolForm ℚ_[2]) =
       !![1, 0, 0; 0, 0, 1; 0, 1, 0] := by
