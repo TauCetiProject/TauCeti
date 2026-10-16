@@ -42,7 +42,7 @@ def splitProperClassToProperClass (s : ℕ) :
     SplitProperClass s →
       MulAction.orbitRel.Quotient SL(2, ℤ) (BinaryQuadraticForm ℤ) :=
   Quotient.map' (fun f : primitiveForms ((s : ℤ) ^ 2) ↦ f.val) fun f g h ↦ by
-    simpa only [SubMulAction.orbitRel_of_subMul, Setoid.comap_rel] using h
+    exact SubMulAction.mem_orbit_subMul_iff.mp h
 
 /-- Forgetting the restriction preserves the underlying representative. -/
 @[simp] theorem splitProperClassToProperClass_mk (s : ℕ)
@@ -58,7 +58,7 @@ theorem splitProperClassToProperClass_injective (s : ℕ) :
   intro f g h
   rw [splitProperClassToProperClass_mk, splitProperClassToProperClass_mk] at h
   apply Quotient.sound
-  simpa only [SubMulAction.orbitRel_of_subMul, Setoid.comap_rel] using (Quotient.exact h)
+  exact SubMulAction.mem_orbit_subMul_iff.mpr (Quotient.exact h)
 
 /-- The proper class of the triangular representative with coefficient `c`. -/
 def splitProperClassMk (s : ℕ) (c : ℤ) (hc : IsCoprime (s : ℤ) c) : SplitProperClass s :=
