@@ -149,6 +149,8 @@ end Exactness
 
 section BaseChange
 
+open scoped ChangeOfRings
+
 variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
 
 /-- Global sections of the pushforward along `Spec φ` are the global sections upstairs, with
@@ -219,6 +221,18 @@ theorem unit_tildeFunctorCompPullbackIso_hom_app (M : ModuleCat.{u} R) :
     ((ModuleCat.extendRestrictScalarsAdj φ.hom).comp (tilde.adjunction (R := S))) M
   simp only [Adjunction.comp_unit_app, Functor.comp_map] at this
   exact this
+
+/-- On associated global sections, the affine pullback comparison sends the image of `m`
+under the pullback adjunction unit to the associated section of `1 ⊗ m`. -/
+@[simp]
+theorem tildeFunctorCompPullbackIso_hom_app_unit_toOpen (M : ModuleCat.{u} R) (m : M) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
+    (((tildeFunctorCompPullbackIso φ).hom.app M).val.app (.op ⊤)
+        (((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app (tilde M)).val.app
+          (.op ⊤) (tilde.toOpen M ⊤ m)) =
+      tilde.toOpen ((ModuleCat.extendScalars φ.hom).obj M) ⊤ ((1 : S) ⊗ₜ[R,φ.hom] m)) := by
+  -- The global-section functors and restriction of scalars retain the underlying functions.
+  exact ConcreteCategory.congr_hom (unit_tildeFunctorCompPullbackIso_hom_app φ M) m
 
 end BaseChange
 

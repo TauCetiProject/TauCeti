@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Degree
-public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero
+public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.Basic
 
 /-!
 # The Abel–Jacobi maps land in `Pic⁰`

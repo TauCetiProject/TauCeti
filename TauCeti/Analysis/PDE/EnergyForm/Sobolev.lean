@@ -94,8 +94,8 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
 * `TauCeti.PDE.aestronglyMeasurable_energyFormH1`: for coefficients jointly measurable in a
   parameter and in space, the energy form is a.e. strongly measurable in the parameter.
-* `TauCeti.PDE.energyFormH1_const_eq_setIntegral`: the energy form of a constant principal
-  coefficient with no lower-order terms is the integral of `⟨A ∇u, ∇v⟩`.
+* `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
+  terms is the integral of `⟨a ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
   constant does not change the form.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
@@ -271,6 +271,23 @@ theorem memLp_energyIntegrand_mass_sub_const
   simpa only [sub_zero] using
     (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
 
+/-- A bounded coefficient field with continuously varying matrix bilinear forms has an essentially
+bounded field of drift- and mass-free energy integrands on every open set. -/
+theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
+    (ha : Continuous fun x => matrixBilinearForm (a x)) (U : Opens (EuclideanSpace ℝ ι)) :
+    MemLp (fun x => energyIntegrand (a x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict U) :=
+  memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
+    ((norm_nonneg (matrixBilinearForm (a 0))).trans (hLam 0))
+    (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
+      continuous_of_continuous_matrixBilinearForm ha)
+    aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun x _ eta xi => by
+      simpa [Real.norm_eq_abs] using
+        (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hLam x) le_rfl le_rfl)
+    (fun _ _ => by simp) (fun _ _ => by simp)
+
 variable [mu.IsAddHaarMeasure]
 
 /-- The continuous linear inclusion that forgets the `W^{1,2}` weak-derivative constraint and
@@ -431,14 +448,6 @@ theorem energyFormH1_zero_zero_eq_setIntegral (a : EuclideanSpace ℝ ι → Mat
   rw [energyFormH1_def]
   simp
 
-/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
-matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
-over `Ω`. -/
-theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ => A) 0 0 u v
-      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu :=
-  energyFormH1_zero_zero_eq_setIntegral _ u v
-
 /-- The constant-coefficient energy form of `w ∈ H¹(Ω)` against a test function `ψ` is
 `∑ⱼ ∫ (∂_{cⱼ} ψ) ∂ⱼw`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
 theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu Omega 2)
@@ -457,7 +466,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu
       Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  rw [energyFormH1_const_eq_setIntegral]
+  rw [energyFormH1_zero_zero_eq_setIntegral]
   calc ∫ x in Omega, matrixBilinearForm A
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
       = ∫ x in Omega, ∑ j, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •

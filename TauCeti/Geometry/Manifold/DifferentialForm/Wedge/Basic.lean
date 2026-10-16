@@ -402,15 +402,6 @@ theorem bundleWedgeWith_trivial {F₁ F₂ F₃ : Type*}
       RoughForm.wedgeWith μ φ ψ := by
   simp only [RoughForm.wedgeWith]
 
-/-- Pullback preserves the paired wedge of fixed-coefficient rough forms. -/
-theorem bundleMpullback_roughFormWedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (f : M' → M) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
-    bundleMpullback I' I f (RoughForm.wedgeWith μ φ ψ) =
-      RoughForm.wedgeWith μ (bundleMpullback I' I f φ : RoughForm I' M' F₁ k)
-        (bundleMpullback I' I f ψ : RoughForm I' M' F₂ l) := by
-  simpa only [RoughForm.wedgeWith] using
-    (TauCeti.bundleMpullback_wedgeWith f (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ ψ)
-
 /-- Within-set pullback preserves the paired wedge of fixed-coefficient rough forms. -/
 theorem bundleMpullbackWithin_roughFormWedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (f : M' → M) (s : Set M') (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
@@ -421,15 +412,6 @@ theorem bundleMpullbackWithin_roughFormWedgeWith (μ : F₁ →L[ℝ] F₂ →L[
     (TauCeti.bundleMpullbackWithin_wedgeWith f s (fun _ ↦ μ)
       (fun _ ↦ μ.continuous₂) φ ψ)
 
-/-- Pullback preserves the real-valued rough-form wedge. -/
-theorem bundleMpullback_roughFormWedge (f : M' → M)
-    (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
-    bundleMpullback I' I f (RoughForm.wedge φ ψ) =
-      RoughForm.wedge (bundleMpullback I' I f φ : RoughForm I' M' ℝ k)
-        (bundleMpullback I' I f ψ : RoughForm I' M' ℝ l) := by
-  simpa [RoughForm.wedge] using
-    (bundleMpullback_roughFormWedgeWith (ContinuousLinearMap.mul ℝ ℝ) f φ ψ)
-
 /-- Within-set pullback preserves the real-valued rough-form wedge. -/
 theorem bundleMpullbackWithin_roughFormWedge (f : M' → M) (s : Set M')
     (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
@@ -438,5 +420,36 @@ theorem bundleMpullbackWithin_roughFormWedge (f : M' → M) (s : Set M')
         (bundleMpullbackWithin I' I f s ψ : RoughForm I' M' ℝ l) := by
   simpa [RoughForm.wedge] using
     (bundleMpullbackWithin_roughFormWedgeWith (ContinuousLinearMap.mul ℝ ℝ) f s φ ψ)
+
+/-- Pullback preserves the paired wedge of fixed-coefficient rough forms. -/
+theorem mpullback_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (f : M' → M) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    mpullback I' I f (RoughForm.wedgeWith μ φ ψ) =
+      RoughForm.wedgeWith μ (mpullback I' I f φ : RoughForm I' M' F₁ k)
+        (mpullback I' I f ψ : RoughForm I' M' F₂ l) := by
+  rw [← mpullbackWithin_univ (I := I') (I' := I) f (RoughForm.wedgeWith μ φ ψ),
+    ← mpullbackWithin_univ (I := I') (I' := I) f φ,
+    ← mpullbackWithin_univ (I := I') (I' := I) f ψ]
+  ext x v
+  have hφ : mpullbackWithin I' I f Set.univ φ x = bundleMpullbackWithin I' I f Set.univ φ x := by
+    ext w
+    simp only [mpullbackWithin_apply, bundleMpullbackWithin_apply]
+  have hψ : mpullbackWithin I' I f Set.univ ψ x = bundleMpullbackWithin I' I f Set.univ ψ x := by
+    ext w
+    simp only [mpullbackWithin_apply, bundleMpullbackWithin_apply]
+  rw [RoughForm.wedgeWith_apply', hφ, hψ]
+  simpa only [RoughForm.wedgeWith_apply', mpullbackWithin_apply,
+    bundleMpullbackWithin_apply] using
+    congrArg (fun h ↦ h x v)
+      (bundleMpullbackWithin_roughFormWedgeWith (I := I) (I' := I') μ f Set.univ φ ψ)
+
+/-- Pullback preserves the real-valued rough-form wedge. -/
+theorem mpullback_wedge (f : M' → M)
+    (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
+    mpullback I' I f (RoughForm.wedge φ ψ) =
+      RoughForm.wedge (mpullback I' I f φ : RoughForm I' M' ℝ k)
+        (mpullback I' I f ψ : RoughForm I' M' ℝ l) := by
+  simpa only [RoughForm.wedge] using
+    mpullback_wedgeWith (I := I) (I' := I') (ContinuousLinearMap.mul ℝ ℝ) f φ ψ
 
 end TauCeti
