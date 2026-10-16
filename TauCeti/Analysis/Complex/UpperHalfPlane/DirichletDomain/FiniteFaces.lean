@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Finite
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.UnboundedFaces
 
 /-!
@@ -13,9 +12,9 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.UnboundedF
 
 A finite closed-half-plane description of a Dirichlet domain gives a finite cover of its
 boundary by equality faces (`frontier_dirichletDomain_eq_biUnion_dirichletFace_of_eq_iInter`).
-Every nonempty face in this cover is a single extended geodesic segment
-(`exists_dirichletFace_eq_extGeodesicSegment`): a bounded segment, a ray with one ideal
-endpoint, or a complete geodesic with two ideal endpoints.
+By `exists_dirichletFace_eq_extGeodesicSegment` from the unbounded-face classification, every
+nonempty face in this cover is a single extended geodesic segment: a bounded segment, a ray with
+one ideal endpoint, or a complete geodesic with two ideal endpoints.
 
 Together these results turn finite distance constraints into the finite geodesic boundary data
 needed to enumerate the sides and vertices of a Dirichlet polygon. Redundant constraints are
@@ -62,18 +61,5 @@ theorem frontier_dirichletDomain_eq_biUnion_dirichletFace_of_eq_iInter
         mem_leftHalfPlane_perpBisector_iff (hmove g hg)]
       exact hstrict g hg
   · exact iUnion₂_subset fun g hg ↦ dirichletFace_subset_frontier (hmove g hg).symm
-
-/-- Every nonempty equality face indexed by an element moving the centre is one extended
-geodesic segment. The endpoints may coincide in the bounded singleton case. -/
-theorem exists_dirichletFace_eq_extGeodesicSegment {p : ℍ} {g : G} (hg : g • p ≠ p)
-    (hne : (dirichletFace p g).Nonempty) :
-    ∃ a b : ℍ ⊕ OnePoint ℝ, dirichletFace p g = extGeodesicSegment a b := by
-  by_cases hb : Bornology.IsBounded (dirichletFace p g)
-  · obtain ⟨z, w, hzw⟩ := exists_dirichletFace_eq_geodesicSegment hg hne hb
-    exact ⟨.inl z, .inl w, hzw.trans (extGeodesicSegment_inl_inl z w).symm⟩
-  · rcases exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded hg hne hb with
-      ⟨z, ξ, hzξ⟩ | ⟨ξ, η, -, hξη⟩
-    · exact ⟨.inl z, .inr ξ, hzξ⟩
-    · exact ⟨.inr ξ, .inr η, hξη⟩
 
 end TauCeti.UpperHalfPlane
