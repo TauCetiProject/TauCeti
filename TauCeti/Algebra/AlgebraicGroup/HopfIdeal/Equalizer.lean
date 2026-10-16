@@ -62,6 +62,8 @@ prove uniqueness of pinned isomorphisms, which requires generation by the simple
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti

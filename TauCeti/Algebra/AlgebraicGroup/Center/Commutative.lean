@@ -38,6 +38,8 @@ registered here on the canonical `centerGroupScheme` and bundled as `centerCommG
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat

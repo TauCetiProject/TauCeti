@@ -35,6 +35,8 @@ unipotence of the derived subgroup, rather than just unipotence in ambient repre
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open WithConv
 
 namespace TauCeti

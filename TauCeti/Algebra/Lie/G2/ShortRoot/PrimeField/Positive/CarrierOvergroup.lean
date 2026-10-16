@@ -130,7 +130,7 @@ theorem upperTriangular_le_comapOfSurjective_of_geometricallySolvable_of_le
         (generatedCoordinateMap_surjective k) := by
   let J := I.comapOfSurjective (generatedCoordinateMap k).hom
     (generatedCoordinateMap_surjective k)
-  let e := CommHopfAlgCat.quotientIsoOfSurjective (generatedCoordinateMap k)
+  let e := CommHopfAlgCat.Hom.quotientIsoOfSurjective (generatedCoordinateMap k)
     (generatedCoordinateMap_surjective k) I
   let _ : IsReduced
       (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 7) J) :=

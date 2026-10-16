@@ -28,6 +28,8 @@ represented group-object Yoneda equivalence with the point-level quotient API.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory Opposite
 
 namespace TauCeti.CommHopfAlgCat

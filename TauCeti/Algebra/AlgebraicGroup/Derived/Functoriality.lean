@@ -42,6 +42,8 @@ subgroup schemes.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 open scoped commutatorElement TensorProduct
 
