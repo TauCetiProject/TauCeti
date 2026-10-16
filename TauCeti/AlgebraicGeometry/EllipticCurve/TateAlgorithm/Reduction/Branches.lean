@@ -8,17 +8,17 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Curve
 
 /-!
-# Reduction symbols from Tate's algorithm
+# Good and multiplicative outputs of Tate's algorithm
 
-The canonical `TauCeti.ReductionSymbol` records the possible outputs of Tate's algorithm on a
-minimal Weierstrass equation. The multiplicative branch is classified by the valuation of the
-minimal discriminant: it has symbol `Iₙ`, where `n` is positive. This type is the codomain for
-classifiers that state the output of an individual branch of the algorithm. Under the hypotheses
-of the complete algorithm, the comparison theorems identify each classifier with
-`WeierstrassCurve.reductionSymbol`.
+These simplification rules evaluate the canonical `WeierstrassCurve.reductionSymbol` directly:
+good reduction gives `I₀`, and multiplicative reduction gives `Iₙ` with `n` the local
+minimal-discriminant valuation. Positivity in the multiplicative case is recorded by
+`WeierstrassCurve.localMinimalDiscriminantValuation_pos_of_hasMultiplicativeReduction`.
 
-The symbols and the multiplicative branch follow Tate's algorithm (J. Tate, *Algorithm for
-determining the type of a singular fibre in an elliptic pencil*, LNM 476, 1975).
+## References
+
+* J. Tate, *Algorithm for determining the type of a singular fibre in an elliptic pencil*,
+  LNM 476 (1975).
 -/
 
 public section
@@ -26,55 +26,24 @@ public section
 namespace WeierstrassCurve
 
 variable {R K : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-  [Field K] [Algebra R K] [IsFractionRing R K]
+  [Field K] [Algebra R K] [IsFractionRing R K] [PerfectField (IsLocalRing.ResidueField R)]
 
-/-- **The output of Tate's good-reduction branch** is `I₀`. -/
-def goodReductionSymbol (_W : WeierstrassCurve K)
-    [_hgood : WeierstrassCurve.HasGoodReduction R _W] :
-    TauCeti.ReductionSymbol :=
-  TauCeti.ReductionSymbol.I 0
-
-/-- The simplification rule evaluating the good-reduction symbol to `I₀`. -/
+/-- Tate's canonical output is `I₀` for an equation with good reduction. -/
 @[simp]
-theorem goodReductionSymbol_eq (W : WeierstrassCurve K)
-    [WeierstrassCurve.HasGoodReduction R W] :
-    W.goodReductionSymbol (R := R) = TauCeti.ReductionSymbol.I 0 := (rfl)
-
-/-- **The output of Tate's multiplicative branch**: a curve with multiplicative reduction has
-symbol `Iₙ`, where `n = v(Δ_min)`. The local minimal-discriminant valuation makes the symbol
-independent of the chosen integral equation. -/
-noncomputable def multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic]
-    [_hmult : WeierstrassCurve.HasMultiplicativeReduction R W] : TauCeti.ReductionSymbol :=
-  TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R)
-
-/-- The simplification rule identifying the multiplicative-reduction symbol with `Iₙ`, where
-`n = v(Δ_min)`. -/
-@[simp]
-theorem multiplicativeReductionSymbol_eq (W : WeierstrassCurve K) [W.IsElliptic]
-    [WeierstrassCurve.HasMultiplicativeReduction R W] :
-    W.multiplicativeReductionSymbol (R := R) =
-      TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R) := (rfl)
-
-
-variable [PerfectField (IsLocalRing.ResidueField R)]
-
-/-- Tate's canonical output agrees with the good-reduction branch classifier. -/
-theorem reductionSymbol_eq_goodReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic]
-    [W.HasGoodReduction R] : W.reductionSymbol R = W.goodReductionSymbol (R := R) := by
-  rw [goodReductionSymbol_eq]
+theorem reductionSymbol_eq_I_zero_of_hasGoodReduction (W : WeierstrassCurve K) [W.IsElliptic]
+    [W.HasGoodReduction R] : W.reductionSymbol R = TauCeti.ReductionSymbol.I 0 := by
   exact (reductionSymbol_eq_I_zero_iff W).2
     ((inferInstance : W.HasGoodReduction R).hasGoodReduction_minimal R)
 
-/-- Tate's canonical output agrees with the multiplicative-reduction branch classifier. -/
-theorem reductionSymbol_eq_multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic]
-    [W.HasMultiplicativeReduction R] :
-    W.reductionSymbol R = W.multiplicativeReductionSymbol (R := R) := by
-  rw [multiplicativeReductionSymbol_eq]
+/-- Tate's canonical output at multiplicative reduction has index equal to the
+minimal-discriminant valuation. -/
+@[simp]
+theorem reductionSymbol_eq_I_of_hasMultiplicativeReduction (W : WeierstrassCurve K)
+    [W.IsElliptic] [W.HasMultiplicativeReduction R] :
+    W.reductionSymbol R = TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R) := by
   refine (reductionSymbol_eq_I_iff W _).2 ⟨?_, rfl⟩
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
   rw [hasAdditiveReduction_iff_of_isMinimal_smul (R := R) C hC]
   exact (inferInstance : W.HasMultiplicativeReduction R).not_hasAdditiveReduction R
 
 end WeierstrassCurve
-
-end
