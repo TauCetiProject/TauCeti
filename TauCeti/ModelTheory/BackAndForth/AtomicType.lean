@@ -14,8 +14,8 @@ public import Mathlib.ModelTheory.Basic
 an `n`-tuple. Nullary relations are included, even for the empty tuple. `SameAtomicType`
 expresses agreement on these tests, the initial level of back-and-forth equivalence.
 
-For a relational language these are all atomic formulas. The definitions also make sense for
-arbitrary languages, but ignore function symbols and terms involving them.
+For a relational language these are all atomic formulas. `SameAtomicType` requires a relational
+language so that agreement on these tests is agreement on the full atomic type.
 
 The construction follows the atomic tests in Cameron Freer's
 `cameronfreer/infinitary-logic`, `InfinitaryLogic/Scott/BackAndForth.lean`.
@@ -52,10 +52,11 @@ theorem AtomicIdx.holds_eq (i j : Fin n) (a : Fin n → M) :
 theorem AtomicIdx.holds_rel {k : ℕ} (r : L.Relations k) (f : Fin k → Fin n)
     (a : Fin n → M) : (AtomicIdx.rel r f).Holds a ↔ RelMap r (a ∘ f) := Iff.rfl
 
-/-- Agreement on equality and relation tests. In a relational language this is agreement on
-all atomic formulas, including nullary relations. -/
-def SameAtomicType (a : Fin n → M) (b : Fin n → N) : Prop :=
+/-- Agreement on all atomic formulas of a relational language, including nullary relations. -/
+def SameAtomicType [L.IsRelational] (a : Fin n → M) (b : Fin n → N) : Prop :=
   ∀ i : AtomicIdx L n, i.Holds a ↔ i.Holds b
+
+variable [L.IsRelational]
 
 /-- Atomic-type agreement is pointwise agreement on the atomic tests. -/
 theorem sameAtomicType_def (a : Fin n → M) (b : Fin n → N) :

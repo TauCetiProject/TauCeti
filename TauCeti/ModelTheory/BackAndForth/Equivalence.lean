@@ -19,8 +19,8 @@ empty structures with different nullary relations from becoming equivalent at a 
 
 The equivalence laws and lowering of the ordinal are the basic tools for internal stabilization
 and for the characteristic formulas of tuples. No countability or nonemptiness is assumed.
-As with `SameAtomicType`, function symbols are ignored; for relational languages these are the
-usual back-and-forth relations.
+As with `SameAtomicType`, the language is required to be relational, so the initial level
+compares all atomic formulas.
 
 The recursion follows Cameron Freer's `cameronfreer/infinitary-logic`,
 `InfinitaryLogic/Scott/BackAndForth.lean`. Here the ordinal universe is independent of the
@@ -35,12 +35,12 @@ namespace TauCeti
 
 open FirstOrder Fin
 
-variable {L : Language.{u, v}}
+variable {L : Language.{u, v}} [L.IsRelational]
 variable {M : Type w} {N : Type w'} {P : Type w''}
 variable [L.Structure M] [L.Structure N] [L.Structure P]
 
 /-- Ordinal back-and-forth equivalence of tuples. At successors the previous level is retained,
-in addition to the forth and back requirements. The atomic tests ignore function symbols. -/
+in addition to the forth and back requirements. The language is relational. -/
 noncomputable def BFEquiv (α : Ordinal.{o}) (n : ℕ) (a : Fin n → M) (b : Fin n → N) : Prop :=
   Ordinal.limitRecOn
     (motive := fun _ => (k : ℕ) → (Fin k → M) → (Fin k → N) → Prop) α
@@ -156,6 +156,8 @@ namespace BackAndForthExamples
 
 private abbrev nullaryLanguage : Language :=
   ⟨fun _ => Empty, fun k => PLift (k = 0)⟩
+
+private instance : nullaryLanguage.IsRelational := fun _ => inferInstance
 
 private noncomputable instance : nullaryLanguage.Structure Empty where
   funMap f _ := Empty.elim f
