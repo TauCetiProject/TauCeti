@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.SphereCharts
-import TauCeti.Topology.Covering.Clopen
 
 /-!
 # The map from a filled cover to the sphere
@@ -104,12 +103,12 @@ theorem isProperMap_fillMap : IsProperMap (fillMap p) := by
   let := compactSpace hp hfin
   exact (continuous_fillMap hp hfin).isProperMap
 
-omit hfin in
-/-- Every point of the sphere is hit by the extension of a nonempty covering space. -/
-theorem surjective_fillMap [Nonempty E] : Surjective (fillMap p) := by
+omit hp hfin in
+/-- The extension of a surjective map hits every point of the sphere. -/
+theorem surjective_fillMap (hp : Surjective p) : Surjective (fillMap p) := by
   have hq (q : Puncture) : ∃ y, fillMap p y = q.toOnePoint := by
     let z := q.coord.symm puncturedDiscBasepoint
-    obtain ⟨x, hx⟩ := hp.surjective z
+    obtain ⟨x, hx⟩ := hp z
     let i := (FilledPoint.sigmaEquiv p).symm
       ⟨q, ConnectedComponents.mk
         (⟨x, by simpa only [Set.mem_preimage, hx] using z.2⟩ : p ⁻¹' q.neighborhood)⟩
@@ -122,7 +121,7 @@ theorem surjective_fillMap [Nonempty E] : Surjective (fillMap p) := by
     · subst z; simpa using hq .zero
     by_cases h1 : z = 1
     · subst z; simpa using hq .one
-    obtain ⟨x, hx⟩ := hp.surjective ⟨z, h0, h1⟩
+    obtain ⟨x, hx⟩ := hp ⟨z, h0, h1⟩
     exact ⟨PunctureFilling.incl (chart p) x, by simp [hx]⟩
 
 /-- The unpunctured part of the filled cover is canonically the original covering space. -/
