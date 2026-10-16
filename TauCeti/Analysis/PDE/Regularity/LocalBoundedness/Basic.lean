@@ -128,11 +128,32 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
 
+private theorem ball_half_subset_ball (x₀ : EuclideanSpace ℝ ι) (R : ℝ) :
+    Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R := by
+  rcases le_or_gt 0 R with hR | hR
+  · exact Metric.ball_subset_ball (half_le_self hR)
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
+
 /-! ### De Giorgi's classes and iteration in `L²` -/
 
 section L2
 
 variable [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
+
+private theorem value_restrictL_ae_ball_half_and_setIntegral_comp_eq
+    (u : W1p mu Omega 2) {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
+    (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (f : ℝ → ℝ) :
+    let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+    (W1p.value (W1p.restrictL (U := U) hball u) =ᵐ[mu.restrict (Metric.ball x₀ (R / 2))]
+      W1p.value u) ∧
+      ∫ x in Metric.ball x₀ R, f (W1p.value (W1p.restrictL (U := U) hball u) x) ∂mu =
+        ∫ x in Metric.ball x₀ R, f (W1p.value u x) ∂mu := by
+  let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+  have hw : W1p.value (W1p.restrictL (U := U) hball u) =ᵐ[mu.restrict (Metric.ball x₀ R)]
+      W1p.value u :=
+    W1p.value_restrictL_ae (U := U) hball u
+  exact ⟨ae_restrict_of_ae_restrict_of_subset (ball_half_subset_ball x₀ R) hw,
+    integral_congr_ae (hw.mono fun _ hx => congrArg f hx)⟩
 
 /-- **De Giorgi's energy recursion.** Suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality
 `‖v‖_q ≤ S ‖∇v‖₂` for some exponent `q ≥ 2`. Let `u ∈ H¹(Ω)`, take levels `k < l` with
@@ -782,15 +803,9 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_cacciopp
     exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_eq_ball (mu := mu)
   refine ⟨D, hD, ?_⟩
   intro Omega u k A B x₀ R hball U uU hA hB hR hcacc
-  have hU : U ≤ Omega := hball
-  have hbound := hmain (u := uU) (k := k) rfl hA hB hR hcacc
-  have hw : W1p.value uU =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
-    W1p.value_restrictL_ae hU u
-  have hint : ∫ x in Metric.ball x₀ R, max (W1p.value uU x - k) 0 ^ 2 ∂mu =
-      ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu :=
-    integral_congr_ae (by filter_upwards [hw] with x hx; rw [hx])
-  filter_upwards [hbound, ae_restrict_of_ae_restrict_of_subset
-    (Metric.ball_subset_ball (half_le_self hR.le)) hw] with x hx hwx
+  obtain ⟨hw, hint⟩ := value_restrictL_ae_ball_half_and_setIntegral_comp_eq u hball
+    fun t => max (t - k) 0 ^ 2
+  filter_upwards [hmain (u := uU) (k := k) rfl hA hB hR hcacc, hw] with x hx hwx
   rwa [← hwx, ← hint]
 
 /-- **From one-sided to two-sided local bounds.** If `u ∈ H¹(Ω)` and `-u` both satisfy the
@@ -801,8 +816,8 @@ is `±u ≤ K ‖(±u)⁺‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/
 
 This is how local boundedness of weak subsolutions gives local boundedness of weak solutions of
 linear equations, for which `u` and `-u` are both subsolutions. -/
-theorem ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le {Omega : Opens (EuclideanSpace ℝ ι)}
-    {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R K : ℝ} (hR : 0 < R) (hK : 0 ≤ K)
+theorem ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le
+    {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R K : ℝ} (hK : 0 ≤ K)
     (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
     (hpos : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤
       K * √(∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu))
@@ -828,7 +843,7 @@ theorem ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le {Omega : Opens (Eucl
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hball hneg_ae] with x hx
     rw [hx, Pi.neg_apply, neg_sq]
   have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    (Metric.ball_subset_ball (half_le_self hR.le)).trans hball
+    (ball_half_subset_ball x₀ R).trans hball
   filter_upwards [hpos, hneg, ae_restrict_of_ae_restrict_of_subset hhalf hneg_ae]
     with x hx hx' hxn
   rw [hxn, Pi.neg_apply] at hx'
@@ -933,17 +948,13 @@ theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_forall_
   set U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
   have hU : U ≤ Omega := hball
   have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hw : W1p.value (W1p.restrictL hU u) =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
-    W1p.value_restrictL_ae hU u
+  obtain ⟨hw, hint⟩ := value_restrictL_ae_ball_half_and_setIntegral_comp_eq u hball
+    fun t => max (t - k) 0 ^ 2
   have hbound := hmain hS0 (sq_nonneg (2 * Lam / lam)) le_rfl hS
     ((h.mono_set hball).caccioppoliAbove (ha.mono_measure (Measure.restrict_mono hball le_rfl))
       (energyFormH1_restrictL_nonpos hU hu) k)
     ((Lp.memLp _).sub (memLp_const k)).pos_part hR subset_rfl
-  have hint : ∫ x in Metric.ball x₀ R, max (W1p.value (W1p.restrictL hU u) x - k) 0 ^ 2 ∂mu =
-      ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu :=
-    integral_congr_ae (by filter_upwards [hw] with x hx; rw [hx])
-  filter_upwards [hbound, ae_restrict_of_ae_restrict_of_subset
-    (Metric.ball_subset_ball (half_le_self hR.le)) hw] with x hx hwx
+  filter_upwards [hbound, hw] with x hx hwx
   rw [zero_mul, add_zero] at hx
   rwa [← hwx, ← hint]
 
@@ -1009,7 +1020,7 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
   -- `-u` is a weak solution too.
   have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) = 0 := fun v => by
     rw [energyFormH1_neg_left, hu v, neg_zero]
-  exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le hR (by positivity) hball
+  exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le (by positivity) hball
     (by simpa only [zero_add, sub_zero] using
       hbound (k := 0) h ha (fun v _ => (hu v).le) hR hball)
     (by simpa only [zero_add, sub_zero] using
@@ -1151,7 +1162,9 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
   rw [← hZY]
   nlinarith
 
-variable [mu.IsAddHaarMeasure]
+section L2ToLp
+
+variable [IsFiniteMeasureOnCompacts mu]
 
 /-- **`Lᵖ` local bounds from `L²` local bounds.** Fix `e ≤ 0`, `D` and `0 < p ≤ 2`. There is
 `C > 0`, depending only on these, such that the following holds. Let `w ≥ 0` be square
@@ -1180,9 +1193,7 @@ theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ} (he 
   refine ⟨C₀ * (2 ^ (1 - p / 2) * D') ^ (2 / p) / 4 ^ (2 * e / p), by positivity, ?_⟩
   intro w x₀ R hw0 hw2 H
   rcases le_or_gt R 0 with hR | hR
-  · have hempty : Metric.ball x₀ (R / 2) = ∅ := Metric.ball_eq_empty.2 (by linarith)
-    rw [hempty, Measure.restrict_empty, ae_zero]
-    exact eventually_bot
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
   have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hint : IntegrableOn (fun x => w x ^ 2) (Metric.ball x₀ R) mu := hw2.integrable_sq
@@ -1222,6 +1233,12 @@ theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ} (he 
     Real.div_rpow hR.le (by norm_num), Real.mul_rpow (by positivity) (Real.sqrt_nonneg _),
     Real.sqrt_eq_rpow, ← Real.rpow_mul hJ]
   field_simp
+
+end L2ToLp
+
+section SubsolutionLp
+
+variable [mu.IsAddHaarMeasure]
 
 /-- Transfer of an `L²` local bound for `u` above the level `k` to every `Lᵖ` norm with
 `0 < p ≤ 2`, through `exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball` applied to
@@ -1357,26 +1374,12 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_local_subsolutio
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow (mu := mu)
       (lam := lam) (Lam := Lam) hp hp2
-  refine ⟨D, hD, fun {Omega a u k x₀ R} hball h ha hu => ?_⟩
-  let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
-  have hU : U ≤ Omega := hball
-  let uU : W1p mu U 2 := W1p.restrictL hU u
-  have hlocal := hbound (u := uU) (k := k) h ha hu (by exact Set.Subset.rfl)
-  have hvalue : W1p.value uU =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
-    W1p.value_restrictL_ae hU u
-  have hint : ∫ x in Metric.ball x₀ R, max (W1p.value uU x - k) 0 ^ p ∂mu =
-      ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu := by
-    apply integral_congr_ae
-    filter_upwards [hvalue] with x hx
-    rw [hx]
-  have hhalf : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R :=
-    by
-      by_cases hR : 0 ≤ R
-      · exact Metric.ball_subset_ball (by linarith)
-      · rw [Metric.ball_eq_empty.mpr (by linarith : R / 2 ≤ 0)]
-        exact Set.empty_subset _
-  filter_upwards [hlocal, ae_restrict_of_ae_restrict_of_subset hhalf hvalue] with x hx hv
-  simpa only [hv, hint] using hx
+  refine ⟨D, hD, ?_⟩
+  intro Omega a u k x₀ R hball U uU h ha hu
+  obtain ⟨hw, hint⟩ := value_restrictL_ae_ball_half_and_setIntegral_comp_eq u hball
+    fun t => max (t - k) 0 ^ p
+  filter_upwards [hbound (u := uU) (k := k) h ha hu Subset.rfl, hw] with x hx hwx
+  rwa [← hwx, ← hint]
 
 /-- **The two-sided local bound with hypotheses only on the ball.** A weak solution after
 restriction to `B(x₀, R)` satisfies the scale-invariant absolute-value estimate on its half
@@ -1385,7 +1388,7 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral_of_local_solution
     [Nonempty ι] :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
-      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (_ : 0 < R)
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
       (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))),
       let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
       let uU : W1p mu U 2 := W1p.restrictL hball u
@@ -1397,22 +1400,15 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral_of_local_solution
           √(∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu) := by
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
-  refine ⟨D, hD, fun {Omega a u x₀ R} hR hball h ha hu => ?_⟩
-  let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
-  have hU : U ≤ Omega := hball
-  let uU : W1p mu U 2 := W1p.restrictL hU u
-  have hlocal := hbound (u := uU) h ha hu hR (by exact Set.Subset.rfl)
-  have hvalue : W1p.value uU =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
-    W1p.value_restrictL_ae hU u
-  have hint : ∫ x in Metric.ball x₀ R, W1p.value uU x ^ 2 ∂mu =
-      ∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu := by
-    apply integral_congr_ae
-    filter_upwards [hvalue] with x hx
-    rw [hx]
-  have hhalf : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R :=
-    Metric.ball_subset_ball (by linarith)
-  filter_upwards [hlocal, ae_restrict_of_ae_restrict_of_subset hhalf hvalue] with x hx hv
-  simpa only [hv, hint] using hx
+  refine ⟨D, hD, ?_⟩
+  intro Omega a u x₀ R hball U uU h ha hu
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
+  obtain ⟨hw, hint⟩ := value_restrictL_ae_ball_half_and_setIntegral_comp_eq u hball (· ^ 2)
+  filter_upwards [hbound (u := uU) h ha hu hR Subset.rfl, hw] with x hx hwx
+  rwa [← hwx, ← hint]
+
+end SubsolutionLp
 
 end PDE
 
