@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 
 /-!
 # The topology of finite-dimensional linear automorphisms
@@ -21,6 +22,9 @@ topology on that algebra records both an automorphism and its inverse. Transport
 along Mathlib's `LinearMap.GeneralLinearGroup.generalLinearEquiv` equips linear automorphisms with
 a topological group structure. In particular, continuity into this group is equivalent to
 continuity of both the forward and inverse endomorphisms.
+Conjugation by a linear equivalence `V ≃ₗ[K] W` acts on both the forward and the inverse
+endomorphism by the linear map `LinearEquiv.conj`, so it is continuous between these groups
+(`LinearEquiv.continuous_autCongr`).
 
 Over a field, the endomorphism algebra of a finite-dimensional space is itself finite-dimensional,
 so its module topology is Hausdorff when the field is Hausdorff and locally compact when the field
@@ -131,6 +135,29 @@ theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
 theorem continuous_linearEquiv_toLinearMap :
     Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) :=
   (continuous_linearEquiv_iff.mp (continuous_id : Continuous (fun e : V ≃ₗ[K] V => e))).1
+
+section AutCongr
+
+variable {W : Type*} [AddCommMonoid W] [Module K W]
+
+/-- Conjugation by a linear equivalence is continuous for the forward-and-inverse topologies on
+linear automorphisms: on both the forward and the inverse endomorphism it is the linear map
+`LinearEquiv.conj e`, which is continuous for the module topologies. -/
+@[fun_prop]
+theorem _root_.LinearEquiv.continuous_autCongr (e : V ≃ₗ[K] W) :
+    Continuous (LinearEquiv.autCongr e) := by
+  have : ContinuousAdd (Module.End K W) := IsModuleTopology.toContinuousAdd K _
+  have hconj : Continuous (e.conj : Module.End K V → Module.End K W) :=
+    IsModuleTopology.continuous_of_linearMap e.conj.toLinearMap
+  rw [continuous_linearEquiv_iff]
+  refine ⟨(hconj.comp continuous_linearEquiv_toLinearMap).congr fun f ↦ ?_,
+    (hconj.comp (continuous_linearEquiv_iff.mp continuous_id).2).congr fun f ↦ ?_⟩
+  · ext m
+    simp
+  · ext m
+    simp [LinearEquiv.autCongr_apply]
+
+end AutCongr
 
 section Basis
 
