@@ -104,6 +104,24 @@ noncomputable def universalDrinfeldBasisLocus :
   (X.baseChangeFunctor.obj (X.drinfeldBasisAmbient N)).curve.drinfeldBasisLocus N
     (X.universalDrinfeldBasisHom N)
 
+/-- The universal Drinfeld-basis locus is the Drinfeld-basis locus of the universal
+homomorphism on the base change of `E` to `E[N] ×_S E[N]`. -/
+theorem universalDrinfeldBasisLocus_eq :
+    X.universalDrinfeldBasisLocus N =
+      (X.baseChangeFunctor.obj (X.drinfeldBasisAmbient N)).curve.drinfeldBasisLocus N
+        (X.universalDrinfeldBasisHom N) :=
+  (rfl)
+
+/-- A point `x` of `E[N] ×_S E[N]` factors through the universal Drinfeld-basis locus exactly
+when the universal pair pulls back along `x` to a Drinfeld basis. -/
+theorem universalDrinfeldBasisLocus_le_ker_iff {T : Over X.base}
+    (x : T ⟶ X.drinfeldBasisAmbient N) :
+    X.universalDrinfeldBasisLocus N ≤ x.left.ker ↔
+      (X.baseChangeFunctor.obj T).curve.IsDrinfeldBasis N
+        ((EllipticCurveGeom.pointsPullback (X.baseChangeFunctor.map x).isPullback
+          (X.baseChangeFunctor.map x).zero_total).comp (X.universalDrinfeldBasisHom N)) :=
+  (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff _ _ _).symm
+
 /-- The finite `S`-scheme parametrising Drinfeld bases of `E[N]`: the closed subscheme of
 `E[N] ×_S E[N]` on which the universal pair is a Drinfeld basis. -/
 noncomputable abbrev drinfeldBasisScheme : Over X.base :=
@@ -124,7 +142,7 @@ noncomputable def liftDrinfeldBasisScheme {T : Over X.base} (x : T ⟶ X.drinfel
   Over.homMk
     (IsClosedImmersion.lift (X.universalDrinfeldBasisLocus N).subschemeι x.left (by
       rw [Scheme.IdealSheafData.ker_subschemeι]
-      exact (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff _ _ _).mp hx))
+      exact (X.universalDrinfeldBasisLocus_le_ker_iff N x).mpr hx))
     (by
       dsimp only [drinfeldBasisScheme, Over.mk_hom]
       rw [← Category.assoc, IsClosedImmersion.lift_fac]
@@ -184,11 +202,9 @@ theorem isDrinfeldBasis_gammaStructureOfSchemeHom {T : Over X.base}
     (X.baseChangeFunctor.obj T).curve.IsDrinfeldBasis N
       (gammaStructureOfSchemeHom X y) := by
   let x : T ⟶ X.drinfeldBasisAmbient N := y ≫ X.drinfeldBasisSchemeι N
-  let k := X.baseChangeFunctor.map x
   have heq := (EllObj.pointsPullback_comp_universalDrinfeldBasisHom_eq_iff X N x
     (gammaStructureOfSchemeHom X y)).2 fun a ↦ by simp [x]
-  rw [← heq]
-  apply (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff k.isPullback k.zero_total _).2
+  rw [← heq, ← EllObj.universalDrinfeldBasisLocus_le_ker_iff]
   exact (Scheme.IdealSheafData.ker_subschemeι _).symm.le.trans (y.left.le_ker_comp _)
 
 /-- **`[Γ(N)]`-structures on base changes are points of the Drinfeld-basis scheme.** For an object
