@@ -31,7 +31,7 @@ variable {G₁ G₂ G₃ : Type*}
 The continuity hypothesis is needed because, outside the normed setting, joint continuity gives
 the required continuity of the curried map through the topology of bounded convergence. -/
 noncomputable def pairingFlip (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
-    (hμ : Continuous (fun p : G₁ × G₂ ↦ μ p.1 p.2)) : G₂ →L[ℝ] G₁ →L[ℝ] G₃ :=
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) : G₂ →L[ℝ] G₁ →L[ℝ] G₃ :=
   let μ' : G₂ →ₗ[ℝ] G₁ →L[ℝ] G₃ :=
     { toFun := fun y =>
         ContinuousLinearMap.mk
@@ -41,32 +41,25 @@ noncomputable def pairingFlip (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
           hμ.comp (continuous_id.prodMk continuous_const)
       map_add' := fun y z => by
         ext x
-        simp
+        exact (μ x).map_add y z
       map_smul' := fun c y => by
         ext x
-        simp }
+        exact (μ x).map_smul c y }
   ContinuousLinearMap.mk μ'
-    (ContinuousLinearMap.continuous_of_continuous_uncurry μ' <| by
-      convert hμ.comp (continuous_swap : Continuous
-        (Prod.swap : G₂ × G₁ → G₁ × G₂)) using 1
-      ext p
-      simp [μ', Function.comp_apply])
+    (ContinuousLinearMap.continuous_of_continuous_uncurry μ' (hμ.comp continuous_swap))
 
 omit [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁] in
 @[simp]
 theorem pairingFlip_apply (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
-    (hμ : Continuous (fun p : G₁ × G₂ ↦ μ p.1 p.2)) (x : G₂) (y : G₁) :
-    pairingFlip μ hμ x y = μ y x := by
-  simp [pairingFlip]
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (x : G₂) (y : G₁) :
+    pairingFlip μ hμ x y = μ y x := (rfl)
 
 omit [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁] in
 /-- The flipped pairing is jointly continuous after exchanging the two arguments. -/
 theorem pairingFlip_continuous (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
-    (hμ : Continuous (fun p : G₁ × G₂ ↦ μ p.1 p.2)) :
-    Continuous (fun p : G₂ × G₁ ↦ pairingFlip μ hμ p.1 p.2) := by
-  convert hμ.comp (continuous_swap : Continuous
-    (Prod.swap : G₂ × G₁ → G₁ × G₂)) using 1
-  ext p
-  simp [pairingFlip_apply, Function.comp_apply]
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    Continuous (Function.uncurry fun x y ↦ pairingFlip μ hμ x y) := by
+  simpa only [Function.uncurry_def, Function.comp_def, Prod.swap, pairingFlip_apply]
+    using hμ.comp continuous_swap
 
 end ContinuousLinearMap

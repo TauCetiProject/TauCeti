@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Sheaf
 import Mathlib.Tactic.Abel
-import TauCeti.Topology.KrullDimension
+import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Locally principal Weil divisors on a scheme

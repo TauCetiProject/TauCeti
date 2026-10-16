@@ -165,7 +165,7 @@ theorem add_comp (g h : Hom R C N P) (f : Hom R C M N) :
 theorem comp_add (g : Hom R C N P) (f h : Hom R C M N) :
     comp g (f + h) = comp g f + comp g h := by
   ext m
-  exact map_add g.toLinearMap (f m) (h m)
+  exact map_add g (f m) (h m)
 
 /-- Composition of comodule morphisms is compatible with scalar multiplication in the left
 argument. -/
@@ -181,7 +181,7 @@ argument. -/
 theorem comp_smul (r : R) (g : Hom R C N P) (f : Hom R C M N) :
     comp g (r • f) = r • comp g f := by
   ext m
-  exact map_smul g.toLinearMap r (f m)
+  exact map_smul g r (f m)
 
 /-- Composing the zero morphism on the left gives the zero morphism. -/
 @[simp]
@@ -193,7 +193,7 @@ theorem zero_comp (f : Hom R C M N) : comp (0 : Hom R C N P) f = 0 := by
 @[simp]
 theorem comp_zero (g : Hom R C N P) : comp g (0 : Hom R C M N) = 0 := by
   ext _
-  exact map_zero g.toLinearMap
+  exact map_zero g
 
 end Comp
 

@@ -108,6 +108,12 @@ noncomputable def upperTriangularDefiningIdeal :
     HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) :=
   definingIdeal r ⊔ GeneralLinear.UpperTriangular.definingHopfIdeal ℤ (r + 1)
 
+/-- The upper-triangular carrier ideal imposes both carrier and upper-triangular equations. -/
+theorem upperTriangularDefiningIdeal_def :
+    upperTriangularDefiningIdeal r =
+      definingIdeal r ⊔ GeneralLinear.UpperTriangular.definingHopfIdeal ℤ (r + 1) := by
+  rfl
+
 /-- The carrier defining ideal is contained in the upper-triangular defining ideal. -/
 theorem definingIdeal_le_upperTriangularDefiningIdeal :
     definingIdeal r ≤ upperTriangularDefiningIdeal r := by

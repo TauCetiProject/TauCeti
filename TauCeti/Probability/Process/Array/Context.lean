@@ -33,7 +33,7 @@ open MeasureTheory
 
 namespace TauCeti.Probability
 
-variable {α : Type*} [MeasurableSpace α]
+variable {α : Type*}
 
 /-! ## Cell contexts -/
 
@@ -43,32 +43,28 @@ def cellContext (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
     ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α) :=
   ((fun p => x (e p.1, f p.2), fun b => x (i, f b)), fun a => x (e a, j))
 
-omit [MeasurableSpace α] in
 @[simp]
 theorem cellContext_block_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
     (cellContext e f i j x).1.1 p = x (e p.1, f p.2) :=
   (rfl)
 
-omit [MeasurableSpace α] in
 @[simp]
 theorem cellContext_rowStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (b : ℕ) :
     (cellContext e f i j x).1.2 b = x (i, f b) :=
   (rfl)
 
-omit [MeasurableSpace α] in
 @[simp]
 theorem cellContext_colStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (a : ℕ) :
     (cellContext e f i j x).2 a = x (e a, j) :=
   (rfl)
 
 /-- Reading a cell context from an array is measurable. -/
-theorem measurable_cellContext (e f : ℕ → ℕ) (i j : ℕ) :
+theorem measurable_cellContext [MeasurableSpace α] (e f : ℕ → ℕ) (i j : ℕ) :
     Measurable (cellContext (α := α) e f i j) :=
   ((Measurable.of_eval fun p => measurable_pi_apply (e p.1, f p.2)).prodMk
     (Measurable.of_eval fun b => measurable_pi_apply (i, f b))).prodMk
       (Measurable.of_eval fun a => measurable_pi_apply (e a, j))
 
-omit [MeasurableSpace α] in
 /-- Reindexing while fixing the hidden indices transports the visible cell context to the
 context at the reindexed cell. -/
 theorem cellContext_pairReindex (e f : ℕ → ℕ) (i j : ℕ)
@@ -95,32 +91,28 @@ symmetric. -/
 def offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :=
   (cellContext e e i j x, cellContext e e j i x)
 
-omit [MeasurableSpace α] in
 /-- The first component is the context of the forward directed cell. -/
 @[simp]
 theorem offDiagonalPairContext_fst (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
     (offDiagonalPairContext e i j x).1 = cellContext e e i j x := by
   simp only [offDiagonalPairContext]
 
-omit [MeasurableSpace α] in
 /-- The second component is the context of the reverse directed cell. -/
 @[simp]
 theorem offDiagonalPairContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
     (offDiagonalPairContext e i j x).2 = cellContext e e j i x := by
   simp only [offDiagonalPairContext]
 
-omit [MeasurableSpace α] in
 /-- Reversing the visible vertices swaps their two directed contexts. -/
 theorem offDiagonalPairContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
     offDiagonalPairContext e j i x = (offDiagonalPairContext e i j x).swap := by
   simp only [offDiagonalPairContext, Prod.swap]
 
 /-- Reading the context of an off-diagonal pair is measurable. -/
-theorem measurable_offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) :
+theorem measurable_offDiagonalPairContext [MeasurableSpace α] (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairContext (α := α) e i j) :=
   (measurable_cellContext e e i j).prodMk (measurable_cellContext e e j i)
 
-omit [MeasurableSpace α] in
 /-- A common relabelling fixing the hidden vertices transports the context of a visible pair. -/
 theorem offDiagonalPairContext_pairReindex (e : ℕ → ℕ) (i j : ℕ)
     (perm : Equiv.Perm ℕ) (he : ∀ a, perm (e a) = e a) (x : ℕ × ℕ → α) :
@@ -140,21 +132,18 @@ the hidden vertices and `i`, `j`, other than `(i, j)` and `(j, i)`. -/
 def offDiagonalPairSquareContext (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :=
   (offDiagonalPairContext e i j x, (x (i, i), x (j, j)))
 
-omit [MeasurableSpace α] in
 /-- The first component of the square context is the context of the two directed cells. -/
 @[simp]
 theorem offDiagonalPairSquareContext_fst (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
     (offDiagonalPairSquareContext e i j x).1 = offDiagonalPairContext e i j x :=
   (rfl)
 
-omit [MeasurableSpace α] in
 /-- The second component of the square context is the pair of diagonal entries. -/
 @[simp]
 theorem offDiagonalPairSquareContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
     (offDiagonalPairSquareContext e i j x).2 = (x (i, i), x (j, j)) :=
   (rfl)
 
-omit [MeasurableSpace α] in
 /-- Reversing the visible vertices swaps both the two directed contexts and the two diagonal
 entries of the square context. -/
 theorem offDiagonalPairSquareContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
@@ -163,12 +152,11 @@ theorem offDiagonalPairSquareContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ
   simp only [offDiagonalPairSquareContext, offDiagonalPairContext_swap e i j, Prod.map, Prod.swap]
 
 /-- Reading the square context of an off-diagonal pair is measurable. -/
-theorem measurable_offDiagonalPairSquareContext (e : ℕ → ℕ) (i j : ℕ) :
+theorem measurable_offDiagonalPairSquareContext [MeasurableSpace α] (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairSquareContext (α := α) e i j) :=
   (measurable_offDiagonalPairContext e i j).prodMk
     ((measurable_pi_apply (i, i)).prodMk (measurable_pi_apply (j, j)))
 
-omit [MeasurableSpace α] in
 /-- A common relabelling fixing the hidden vertices transports the square context of a visible
 pair. -/
 theorem offDiagonalPairSquareContext_pairReindex (e : ℕ → ℕ) (i j : ℕ)

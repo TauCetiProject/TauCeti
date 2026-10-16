@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
+public import TauCeti.Topology.EMetricSpace.Rpow
 
 /-!
 # The Wasserstein distance of two measures
@@ -52,8 +53,9 @@ what the gluing lemma consumes.
 * `TauCeti.wassersteinEDist p μ ν` — the infimum of `eLpNorm (fun z ↦ edist z.1 z.2) p π` over the
   couplings `π` of `μ` and `ν`.
 * `TauCeti.HasFiniteMoment p μ` — the `MemLp` finite-moment condition about some basepoint, with
-  `TauCeti.hasFiniteMoment_of_ae_mem_finset` supplying finite moments for finite carriers and
-  `TauCeti.hasFiniteMoment_dirac` for Dirac laws.
+  `TauCeti.hasFiniteMoment_of_ae_mem_finset`, `TauCeti.hasFiniteMoment_of_boundedSpace`, and
+  `TauCeti.hasFiniteMoment_dirac` supplying finite moments for finite carriers, bounded spaces,
+  and Dirac laws.
 
 ## Main statements
 
@@ -107,7 +109,12 @@ what the gluing lemma consumes.
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
   minimizers, `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`, and
   `TauCeti.wassersteinEDist_rpow_le_lintegral` the bound by the transport integral of a single
-  coupling;
+  coupling, and `TauCeti.transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment` the infinite
+  value against a target without finite moment;
+* `TauCeti.edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow` — the split upper bound
+  `K * (edist x₀ x ^ r + edist x₀ y ^ r)` for the cost `edist x y ^ r`, with
+  `TauCeti.HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top` its integrability under a finite
+  `p`-moment;
 * `TauCeti.exists_isCoupling_eLpNorm_eq_wassersteinEDist` — on a Polish metric space and for a
   finite nonzero exponent, between finite measures that admit a coupling, the infimum is attained;
 * `TauCeti.wassersteinEDist_eq_zero_iff` — on a Polish metric space and for a finite nonzero
@@ -357,6 +364,7 @@ theorem wassersteinEDist_add_smul_dirac_le
     _ = eLpNorm f p (τ.map (fun x ↦ (x, x₀))) := by rw [hind]
     _ = eLpNorm (fun x ↦ edist x x₀) p τ :=
         eLpNorm_map_measure hd.aestronglyMeasurable hpair.aemeasurable
+
 
 end Perturbation
 
@@ -666,6 +674,16 @@ theorem hasFiniteMoment_of_ae_mem_finset [OpensMeasurableSpace X] {ν : Measure 
   · filter_upwards [hs] with y hy
     simpa only [enorm_eq_self] using Finset.le_sup (f := fun z ↦ edist x₀ z) hy
 
+/-- On a nonempty bounded pseudometric space, for instance a nonempty compact one, every finite
+measure has finite `p`-moment for every exponent: the ground distance is bounded. -/
+theorem hasFiniteMoment_of_boundedSpace [OpensMeasurableSpace X] [BoundedSpace X] [Nonempty X]
+    (ν : Measure X) [IsFiniteMeasure ν] : HasFiniteMoment p ν := by
+  obtain ⟨C, hC⟩ := Metric.boundedSpace_iff.1 ‹BoundedSpace X›
+  let x₀ : X := Classical.arbitrary X
+  refine hasFiniteMoment_def.2 ⟨x₀, MemLp.of_enorm_bound (C := ENNReal.ofReal C)
+    measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top (.of_forall fun y ↦ ?_)⟩
+  simpa only [enorm_eq_self, edist_dist] using ENNReal.ofReal_le_ofReal (hC x₀ y)
+
 /-- A Dirac law has finite `p`-moment for every exponent: its distance from its atom vanishes
 almost everywhere. -/
 theorem hasFiniteMoment_dirac [OpensMeasurableSpace X] (p : ℝ≥0∞) (x : X) :
@@ -691,6 +709,15 @@ theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
   rw [MemLp, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
       measurable_edist_right.aestronglyMeasurable, lt_top_iff_ne_top]
   simp only [enorm_eq_self]
+
+/-- For a finite nonzero exponent `p`, a finite measure with finite `p`-moment integrates every
+finite multiple of the `p`-th power of the distance to a basepoint to a finite value; this is the
+integrability half of the split upper bound for the cost `edist ^ p`. -/
+theorem HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top [OpensMeasurableSpace X]
+    {ν : Measure X} [IsFiniteMeasure ν] (hν : HasFiniteMoment p ν) (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (x : X) {c : ℝ≥0∞} (hc : c ≠ ∞) : ∫⁻ y, c * edist x y ^ p.toReal ∂ν ≠ ∞ := by
+  rw [lintegral_const_mul' _ _ hc]
+  exact ENNReal.mul_ne_top hc ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x ν).1 hν)
 
 /-- The sum of two finite measures with finite `p`-moments has finite `p`-moment. -/
 theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] {μ ν : Measure X}
@@ -1004,6 +1031,25 @@ theorem wassersteinEDist_one_eq_transportCost (hd : Measurable fun z : X × X �
     wassersteinEDist_eq_transportCost_rpow (X := X) hd one_ne_zero ENNReal.one_ne_top μ ν
 
 end Bridge
+
+section InfiniteMoment
+
+variable [PseudoMetricSpace X]
+
+/-- Without a finite `p`-moment on the target, the transport cost of `edist ^ p` from a law of
+finite `p`-moment is infinite, for `0 < p < ∞`. -/
+theorem transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    {μ ν : Measure X} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hμ : HasFiniteMoment p μ) (hν : ¬HasFiniteMoment p ν) :
+    transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν = ∞ := by
+  have hW : wassersteinEDist p μ ν = ∞ := by
+    by_contra h
+    exact hν ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2 h)
+  rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, hW,
+    ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp)]
+
+end InfiniteMoment
 
 section Polish
 
