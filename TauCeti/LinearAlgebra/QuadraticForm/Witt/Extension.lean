@@ -25,6 +25,8 @@ not split off as orthogonal summands.
 * `QuadraticMap.IsometryEquiv.exists_extension`: Witt's extension theorem.
 * `QuadraticMap.IsometryEquiv.extension`: a chosen extension, with the simplification theorem
   `QuadraticMap.IsometryEquiv.extension_apply` on the original subspace.
+* `QuadraticMap.IsRepresentedBy.exists_equivalent_prod`: a regular form represented by a regular
+  form splits off as an orthogonal summand with a regular complement.
 
 ## References
 
@@ -93,6 +95,22 @@ theorem IsometryEquiv.extension_apply (f : (Q.restrict W).IsometryEquiv (Q.restr
     (hW : (Q.restrict W).Nondegenerate) (x : W) :
     f.extension hW (x : V) = (f x : V) :=
   (f.exists_extension hW).choose_spec x
+
+/-- **A represented regular form splits off.** If a regular form `Q₁` is represented by a regular
+form `Q` on a finite-dimensional space, then `Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which `Q` is
+regular, namely the orthogonal complement of the image of `Q₁`. -/
+theorem IsRepresentedBy.exists_equivalent_prod {V₁ : Type*} [AddCommGroup V₁] [Module K V₁]
+    {Q₁ : QuadraticForm K V₁} (h : Q₁.IsRepresentedBy Q) (hQ₁ : Q₁.Nondegenerate)
+    (hQ : Q.Nondegenerate) :
+    ∃ P : Submodule K V, (Q.restrict P).Nondegenerate ∧ Q.Equivalent (Q₁.prod (Q.restrict P)) := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff Q₁ Q).mp h
+  let e : Q₁.IsometryEquiv (Q.restrict (LinearMap.range f)) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f hf
+      map_app' := hfQ }
+  have hW := e.nondegenerate_iff.mp hQ₁
+  exact ⟨_, hQ.nondegenerate_restrict_orthogonal hW,
+    ⟨(IsometryEquiv.prodRestrictOrthogonal Q _ hW.isCompl_orthogonal).symm.trans
+      (e.symm.prod (IsometryEquiv.refl _))⟩⟩
 
 end QuadraticMap
 
