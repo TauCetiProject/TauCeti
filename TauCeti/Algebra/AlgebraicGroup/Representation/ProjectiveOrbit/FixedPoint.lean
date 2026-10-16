@@ -64,7 +64,7 @@ theorem isAffine_projectiveOrbitScheme_of_isClosed_of_isSolvable
     simpa only [i, U, range_projectiveOrbitι] using horbit
   let j := IsOpenImmersion.lift U.ι i hiU
   let _ : IsClosedImmersion j := by
-    change IsClosedImmersion (IsOpenImmersion.lift U.ι i hiU)
+    dsimp only [j]
     exact MorphismProperty.of_isPullback (P := @IsClosedImmersion)
       (IsOpenImmersion.isPullback_lift_id i U.ι hiU).flip inferInstance
   have hU : IsAffineOpen U := by
@@ -139,13 +139,10 @@ theorem range_projectiveOrbitMap_eq_singleton_of_isClosed_of_isSolvable
     Set.range (projectiveOrbitMap (H := H) m hm) =
       {projectiveOrbitMap (H := H) m hm
         (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H))} := by
-  ext y
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact Set.mem_singleton_iff.mpr
-      (projectiveOrbitMap_eq_identity_of_isClosed_of_isSolvable m hm hclosed x)
-  · rintro rfl
-    exact Set.mem_range_self _
+  let _ : Nonempty (Spec (.of H)) :=
+    ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)⟩
+  exact Set.range_eq_singleton
+    (projectiveOrbitMap_eq_identity_of_isClosed_of_isSolvable m hm hclosed)
 
 /-- Every rational point of a reduced connected solvable affine group preserves the line of a
 vector whose projective orbit is closed. -/
