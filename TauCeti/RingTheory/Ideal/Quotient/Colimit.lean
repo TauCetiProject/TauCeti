@@ -16,6 +16,10 @@ isomorphisms for every algebra in a diagram, the same holds for its colimit. No 
 or nonemptiness assumption on the diagram is needed. This gives the residue-ring
 identification in constructions by colimits of étale neighbourhoods.
 
+Use `TauCeti.quotientAlgebraMap_colimit_bijective I D hD` for bijectivity and
+`TauCeti.quotientColimitEquiv I D hD` for the corresponding algebra equivalence, where
+`hD` gives bijectivity of the canonical residue map at each object of `D`.
+
 The proof constructs compatible residue maps to `R / I` and descends them through the
 colimit. Maps into an algebra annihilated by `I` are unique whenever `R / I → B / IB` is
 surjective.
