@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-public import TauCeti.Topology.Homotopy.IteratedLoopSpace
+public import TauCeti.Topology.Homotopy.GenLoop.Loop
+public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Basic
 
 /-!
 # Iterated loop spaces as spaces of cube loops
@@ -20,7 +20,8 @@ carries the basepoint (the constant iterated loop) to the constant cube loop.
 
 * `TauCeti.BasedTopologicalSpace.iteratedLoopSpaceHomeomorph`:
   `Ω^[k] X ≃ₜ Ω^ (Fin k) X x`, with `iteratedLoopSpaceHomeomorph_zero` and
-  `iteratedLoopSpaceHomeomorph_succ` its defining equations.
+  `iteratedLoopSpaceHomeomorph_succ` its defining equations, and
+  `iteratedLoopSpaceHomeomorph_map` its naturality in `X`.
 -/
 
 public section
@@ -86,6 +87,24 @@ theorem iteratedLoopSpaceHomeomorph_symm_const (k : ℕ) (X : BasedTopologicalSp
       (X.iteratedLoopSpace k).basepoint :=
   (iteratedLoopSpaceHomeomorph k X).symm_apply_eq.2
     (iteratedLoopSpaceHomeomorph_basepoint k X).symm
+
+/-- **Naturality of the cube-loop homeomorphism**: a based map `f` acts on iterated loops
+`Ω^[k] f` and on cube loops by postcomposition compatibly with `iteratedLoopSpaceHomeomorph`. -/
+@[simp]
+theorem iteratedLoopSpaceHomeomorph_map :
+    (k : ℕ) → {X Y : BasedTopologicalSpace.{u}} → (f : Hom X Y) →
+      (γ : (X.iteratedLoopSpace k).carrier) →
+      iteratedLoopSpaceHomeomorph k Y (f.iteratedLoopSpace k γ) =
+        GenLoop.map f.toContinuousMap f.map_basepoint (iteratedLoopSpaceHomeomorph k X γ)
+  | 0, _, _, _, _ => by
+    rw [Hom.iteratedLoopSpace_zero]
+    exact GenLoop.ext _ _ fun _ => by rw [GenLoop.map_apply]; rfl
+  | k + 1, _, _, f, γ => by
+    rw [Hom.iteratedLoopSpace_succ]
+    exact (congrArg (GenLoop.genLoopLoopHomeomorph _ k)
+      (iteratedLoopSpaceHomeomorph_map k f.loopSpace γ)).trans
+        (ContinuousMap.genLoopLoopHomeomorph_map f.toContinuousMap f.map_basepoint
+          f.loopSpace.toContinuousMap (fun γ t => Hom.loopSpace_apply' f γ t) k _)
 
 end BasedTopologicalSpace
 

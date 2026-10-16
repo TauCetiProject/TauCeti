@@ -56,6 +56,11 @@ number fields are the case `A = 𝓞 K`, `B = 𝓞 M`, `C = 𝓞 (M ^ H)`.
 * `Ideal.sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsIntegralClosure_eq_finrank`: the
   fundamental identity `Σ e · f = [M ^ H : K]` indexed by double cosets.
 
+The same canonical API also includes naturality under enlarging the subgroup and equivariance
+under translating the chosen prime, together with the decomposition-group and inertia-group
+formulas evaluated directly on a double coset. Naturality and equivariance only require an
+integrally closed base; the local-invariant formulas require a Dedekind base.
+
 ## References
 
 * [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter I, §9, page 55.
@@ -128,6 +133,37 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_i
         DoubleCoset.mk H _ σ ↔ q.1 = (σ • Q).under C := by
   rw [Equiv.symm_apply_eq, Subtype.ext_iff,
     doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk]
+
+/-- Changing the chosen prime from `Q` to `τ • Q` agrees with right multiplication of
+representatives by `τ`. The action on the integral closure may be any compatible action
+commuting with the base ring, including the canonical restricted Galois action. -/
+theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_smul_mk
+    [SMulCommClass Gal(M/K) A B] (τ σ : Gal(M/K)) :
+    ((τ • Q).doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C
+      (DoubleCoset.mk H _ σ) : Ideal C) =
+      Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C
+        (DoubleCoset.mk H _ (σ * τ)) := by
+  simp only [doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk, mul_smul]
+
+/-- Enlarging the subgroup and contracting to its integral closure give the same prime
+under the integral-closure double-coset bijection. -/
+theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural
+    {H' : Subgroup Gal(M/K)} (h : H ≤ H')
+    (C' : Type*) [CommRing C'] [Algebra A (fixedField H')]
+    [IsScalarTower A K (fixedField H')] [Algebra A C'] [Algebra C' (fixedField H')]
+    [IsScalarTower A C' (fixedField H')] [IsIntegralClosure C' A (fixedField H')]
+    [Algebra C' B] [Algebra C' M] [IsScalarTower A C' B]
+    [IsScalarTower C' (fixedField H') M] [IsScalarTower C' B M]
+    [Algebra C' C] [IsScalarTower C' C B]
+    (q : DoubleCoset.Quotient (H : Set Gal(M/K)) (stabilizer Gal(M/K) Q : Set Gal(M/K))) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H' C'
+        (DoubleCoset.quotientMapOfLELeft h (stabilizer Gal(M/K) Q) q)).1 =
+      (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C q).1.under C' := by
+  induction q using Quotient.inductionOn' with
+  | h σ =>
+    simp only [DoubleCoset.quotientMapOfLELeft_apply_mk,
+      doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk, under_under]
+
 
 end Bijection
 
@@ -222,6 +258,31 @@ theorem sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsIntegralClosure_eq_fin
   rw [finsum_eq_sum_of_fintype, e.sum_comp fun q : p.primesOver C ↦
       q.1.ramificationIdx A * q.1.inertiaDeg A, sum_ramification_inertia_eq_finrank p C,
     IsFractionRing.finrank_eq A K C (fixedField H)]
+
+/-- The local degree of the prime attached to a double coset is the relative index of its
+conjugate decomposition group. Residue separability is not required. -/
+theorem
+    ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_eq_relIndex
+    [Q.IsMaximal]
+    (q : DoubleCoset.Quotient (H : Set Gal(M/K)) (stabilizer Gal(M/K) Q : Set Gal(M/K))) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C q : Ideal C).ramificationIdx A *
+        (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C q : Ideal C).inertiaDeg A =
+      H.relIndex (MulAut.conj q.out • stabilizer Gal(M/K) Q) := by
+  conv_lhs =>
+    rw [← DoubleCoset.out_eq' q, doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk]
+  exact Q.ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex_of_isIntegralClosure H C q.out
+
+/-- Under residue separability, the ramification index of the prime attached to a double
+coset is the relative index of its conjugate inertia group. -/
+theorem ramificationIdx_doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_eq_relIndex_inertia
+    [Q.IsMaximal] [Algebra.IsSeparable (A ⧸ p) (B ⧸ Q)]
+    (q : DoubleCoset.Quotient (H : Set Gal(M/K)) (stabilizer Gal(M/K) Q : Set Gal(M/K))) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C q : Ideal C).ramificationIdx A =
+      H.relIndex (MulAut.conj q.out • Q.inertia Gal(M/K)) := by
+  conv_lhs =>
+    rw [← DoubleCoset.out_eq' q, doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk]
+  exact Q.ramificationIdx_under_smul_eq_relIndex_inertia_of_isIntegralClosure p H C q.out
+
 
 end Dedekind
 

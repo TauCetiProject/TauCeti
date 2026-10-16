@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.FixedField
 import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 
 /-!
@@ -34,7 +36,7 @@ This file reads the law off at the subgroups where the double cosets are explici
   is `1` as soon as `D ≤ H` (`Ideal.inertiaDeg_under_fixedField_eq_one_of_stabilizer_le`), and
   the primes of `𝓞 M` with the
   same contraction to `𝓞 E` as `Q` form the `H`-orbit of `Q`, which is `{Q}` as soon as `H ≤ D`
-  (`Ideal.primesOver_under_fixedField_eq_singleton_of_le_stabilizer`). These are the
+  (`Ideal.primesOver_under_eq_singleton_of_le_stabilizer`). These are the
   double-coset counterparts of the Hilbert-theory statements for an abstract decomposition field,
   Tau Ceti's `TauCeti.IsDecompositionField.ramificationIdx_under_eq_one` and
   `TauCeti.IsDecompositionField.inertiaDeg_under_eq_one`, and Mathlib's
@@ -105,7 +107,8 @@ and the decomposition group `D` of a prime `Q` of `𝓞 M` above `p`, there is e
 theorem card_primesOver_fixedField_eq_one_iff (H : Subgroup (M ≃ₐ[K] M)) :
     Nat.card (p.primesOver (𝓞 ↥(fixedField H))) = 1 ↔
       (H : Set (M ≃ₐ[K] M)) * (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)) = Set.univ := by
-  rw [← card_doubleCosetQuotient_eq_card_primesOver p Q H, Nat.card_eq_one_iff_unique,
+  rw [← Nat.card_congr (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))),
+    Nat.card_eq_one_iff_unique,
     TauCeti.subsingleton_doubleCosetQuotient_iff]
   exact and_iff_left ⟨DoubleCoset.mk H _ 1⟩
 
@@ -163,6 +166,6 @@ theorem primesOver_doubleCosetQuotientEquivPrimesOver_stabilizer_mk_one_eq_singl
       (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q))) (DoubleCoset.mk _ _ 1) :
         Ideal (𝓞 ↥(fixedField (stabilizer (M ≃ₐ[K] M) Q)))).primesOver (𝓞 M) = {Q} := by
   rw [doubleCosetQuotientEquivPrimesOver_mk_one]
-  exact primesOver_under_fixedField_eq_singleton_of_le_stabilizer Q le_rfl
+  exact primesOver_under_eq_singleton_of_le_stabilizer Q (H := stabilizer (M ≃ₐ[K] M) Q) _ le_rfl
 
 end Ideal
