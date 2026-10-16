@@ -129,20 +129,22 @@ noncomputable def coneGradedSplitting :
         Prod.ext (zero_add _) (add_zero _))
 
 /-- The graded retraction is the second product projection on the identified objects. -/
-@[simp]
+-- Compute before `hom_comp` expands the composite and its dependent object types.
+@[simp↓]
 theorem coneGradedSplitting_r :
-    ((eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₁ f))).hom.comp
-        (coneGradedSplitting f).r.hom).comp
-          (eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₂ f)).symm).hom =
+    (eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₂ f)).symm ≫
+        (coneGradedSplitting f).r ≫
+          eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₁ f))).hom =
       LinearMap.snd Aᵐᵒᵖ M N := by
   simp [coneGradedSplitting, coneShortComplex]
 
 /-- The graded section is the first product inclusion on the identified objects. -/
-@[simp]
+-- As for the retraction, preserve the splitting's projection shape until this computation fires.
+@[simp↓]
 theorem coneGradedSplitting_s :
-    ((eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₂ f))).hom.comp
-        (coneGradedSplitting f).s.hom).comp
-          (eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₃ f)).symm).hom =
+    (eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₃ f)).symm ≫
+        (coneGradedSplitting f).s ≫
+          eqToHom (congrArg (forgetDifferential (h := h)).obj (coneShortComplex_X₂ f))).hom =
       LinearMap.inl Aᵐᵒᵖ M N := by
   simp [coneGradedSplitting, coneShortComplex]
 
