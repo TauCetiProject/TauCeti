@@ -34,32 +34,25 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [CharZero F]
 
+/-- Mapping the primitive minimal polynomial to `ℂ` preserves its coefficient sup norm. -/
+private theorem supNorm_map_primitiveMinpoly (x : F) :
+    ((primitiveMinpoly x).map (Int.castRingHom ℂ)).supNorm = (primitiveMinpoly x).supNorm := by
+  simp only [supNorm_eq_iSup, coeff_map, eq_intCast, Complex.norm_intCast, Int.norm_eq_abs]
+
+/-- The rational minimal polynomial has the same degree as the primitive minimal polynomial
+mapped to `ℂ`. -/
+private theorem natDegree_map_primitiveMinpoly (x : F) :
+    ((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree = (minpoly ℚ x).natDegree := by
+  rw [natDegree_map_eq_of_injective (RingHom.injective_int (Int.castRingHom ℂ)),
+    natDegree_primitiveMinpoly]
+
 /-- The naive height is at most the middle binomial coefficient times the Mahler measure. -/
 theorem naiveHeight_le_choose_natDegree_div_two_mul_mahlerMeasure (x : F) :
     naiveHeight x ≤
       (minpoly ℚ x).natDegree.choose ((minpoly ℚ x).natDegree / 2) * mahlerMeasure x := by
-  obtain ⟨i, hi⟩ := (primitiveMinpoly x).exists_eq_supNorm
-  have hdegree : ((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree =
-      (minpoly ℚ x).natDegree := by
-    rw [natDegree_map_eq_of_injective (RingHom.injective_int (Int.castRingHom ℂ)),
-      natDegree_primitiveMinpoly]
-  calc
-    naiveHeight x = ‖(primitiveMinpoly x).coeff i‖ := by rw [naiveHeight_def, hi]
-    _ = ‖((primitiveMinpoly x).map (Int.castRingHom ℂ)).coeff i‖ := by
-      rw [coeff_map]
-      change ‖(primitiveMinpoly x).coeff i‖ = ‖(((primitiveMinpoly x).coeff i : ℤ) : ℂ)‖
-      rw [Complex.norm_intCast, ← Int.norm_eq_abs]
-    _ ≤ ((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree.choose i *
-        ((primitiveMinpoly x).map (Int.castRingHom ℂ)).mahlerMeasure :=
-      ((primitiveMinpoly x).map (Int.castRingHom ℂ)).norm_coeff_le_choose_mul_mahlerMeasure i
-    _ ≤ ((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree.choose
-          (((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree / 2) *
-        ((primitiveMinpoly x).map (Int.castRingHom ℂ)).mahlerMeasure :=
-      mul_le_mul_of_nonneg_right (by exact_mod_cast (Nat.choose_le_middle i
-        ((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree))
-          ((primitiveMinpoly x).map (Int.castRingHom ℂ)).mahlerMeasure_nonneg
-    _ = (minpoly ℚ x).natDegree.choose ((minpoly ℚ x).natDegree / 2) *
-        mahlerMeasure x := by rw [hdegree, mahlerMeasure_def]
+  rw [naiveHeight_def, mahlerMeasure_def, ← supNorm_map_primitiveMinpoly,
+    ← natDegree_map_primitiveMinpoly x]
+  exact supNorm_le_choose_natDegree_div_two_mul_mahlerMeasure _
 
 /-- The naive height is at most `2 ^ d` times the Mahler measure, where `d` is the degree of the
 rational minimal polynomial. -/
@@ -75,29 +68,8 @@ theorem naiveHeight_le_two_pow_mul_mahlerMeasure (x : F) :
 times the square root of one plus the degree of its rational minimal polynomial. -/
 theorem mahlerMeasure_le_sqrt_natDegree_add_one_mul_naiveHeight (x : F) :
     mahlerMeasure x ≤ Real.sqrt ((minpoly ℚ x).natDegree + 1) * naiveHeight x := by
-  have hsup : ((primitiveMinpoly x).map (Int.castRingHom ℂ)).supNorm ≤
-      (primitiveMinpoly x).supNorm := by
-    obtain ⟨i, hi⟩ := ((primitiveMinpoly x).map
-      (Int.castRingHom ℂ)).exists_eq_supNorm
-    rw [hi, coeff_map]
-    change ‖(((primitiveMinpoly x).coeff i : ℤ) : ℂ)‖ ≤ (primitiveMinpoly x).supNorm
-    rw [Complex.norm_intCast, ← Int.norm_eq_abs]
-    exact (primitiveMinpoly x).le_supNorm i
-  have hdegree : ((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree =
-      (minpoly ℚ x).natDegree := by
-    rw [natDegree_map_eq_of_injective (RingHom.injective_int (Int.castRingHom ℂ)),
-      natDegree_primitiveMinpoly]
-  calc
-    mahlerMeasure x = ((primitiveMinpoly x).map (Int.castRingHom ℂ)).mahlerMeasure := by
-      rw [mahlerMeasure_def]
-    _ ≤ Real.sqrt (((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree + 1) *
-        ((primitiveMinpoly x).map (Int.castRingHom ℂ)).supNorm :=
-      ((primitiveMinpoly x).map
-        (Int.castRingHom ℂ)).mahlerMeasure_le_sqrt_natDegree_add_one_mul_supNorm
-    _ ≤ Real.sqrt (((primitiveMinpoly x).map (Int.castRingHom ℂ)).natDegree + 1) *
-        (primitiveMinpoly x).supNorm :=
-      mul_le_mul_of_nonneg_left hsup (Real.sqrt_nonneg _)
-    _ = Real.sqrt ((minpoly ℚ x).natDegree + 1) * naiveHeight x := by
-      rw [hdegree, naiveHeight_def]
+  rw [naiveHeight_def, mahlerMeasure_def, ← supNorm_map_primitiveMinpoly,
+    ← natDegree_map_primitiveMinpoly x]
+  exact mahlerMeasure_le_sqrt_natDegree_add_one_mul_supNorm _
 
 end TauCeti
