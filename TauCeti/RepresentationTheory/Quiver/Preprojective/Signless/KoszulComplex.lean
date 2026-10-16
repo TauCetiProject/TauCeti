@@ -24,7 +24,7 @@ vertex `v` the Koszul complex of the vertex module `S_v` is
 ```
 
 the sum running over the arrows `b` of `R` into `v`. It differs from the Koszul complex of the
-preprojective algebra (`TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex`) only in
+preprojective algebra (`TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex`) only in
 carrying no signs. For the doubled quiver of a finite simple graph `G` the signless algebra is the
 quadratic dual of the quadratic zigzag presentation
 (`TauCeti.quadraticDualQuadraticZigzagEquivSignless`), and so, when `G` is connected with at least

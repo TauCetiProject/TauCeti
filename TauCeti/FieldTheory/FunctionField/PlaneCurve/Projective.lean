@@ -135,7 +135,7 @@ private theorem aeval_eq_zero_of_apply_two_eq_zero [Infinite K] (hG : G.IsHomoge
   · -- The point `(1 : 0 : 0)` is a zero of `t ↦ G(1, t, 0)`, which vanishes for `t ≠ 0`.
     have hR : (aeval ![1, Polynomial.X, 0] G : K[X]) = 0 :=
       Polynomial.eq_zero_of_infinite_isRoot _ <|
-        (Set.finite_singleton (0 : K)).infinite_compl.mono fun t (ht : t ≠ 0) ↦ by
+        (Set.finite_singleton (0 : K)).infinite_compl.mono fun t (ht : t ∈ ({0}ᶜ : Set K)) ↦ by
           rw [Set.mem_ofPred_eq, Polynomial.IsRoot.def, ← Polynomial.coe_aeval_eq_eval,
             ← AlgHom.coe_restrictScalars' k (Polynomial.aeval t), comp_aeval_apply]
           convert h2 ![1, t, 0] rfl ht using 2

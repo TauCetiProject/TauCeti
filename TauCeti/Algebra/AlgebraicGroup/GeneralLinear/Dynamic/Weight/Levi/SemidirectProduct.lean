@@ -273,7 +273,7 @@ private theorem mapPointsFunctor_weightParabolicSemidirectProductCoordinateMap_a
     (g : HopfAlgebra.points (R := R)
       (H := weightParabolicSemidirectProductCoordinateHopfAlgebra R w) A) :
     let x := weightParabolicCategoricalSemidirectPointsMulEquiv R w A g
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (weightParabolicSemidirectProductCoordinateMap R w)).app A g =
         CommHopfAlgCat.quotientPointsHom (weightParabolicCoordinateHopfAlgebra R w)
             (weightUnipotentInParabolicHopfIdeal R w) A
@@ -293,14 +293,14 @@ private theorem mapPointsFunctor_weightParabolicSemidirectProductCoordinateMap_a
   let q : op A ⟶ action.semidirectProduct.toMon.X :=
     (CommHopfAlgCat.grpObjPointsMulEquiv
       (weightParabolicSemidirectProductCoordinateHopfAlgebra R w) (op A)).symm g
-  have hmap : CommHopfAlgCat.grpObjMap
+  have hmap : CommHopfAlgCat.Hom.grpObjMap
       (weightParabolicSemidirectProductCoordinateMap R w) =
       (GrpObj.Action.normalSemidirectMul
         (CommHopfAlgCat.quotientGrpObjInclusion H I)
         (CommHopfAlgCat.quotientGrpObjInclusion H J)).hom.hom := by
     simp only [weightParabolicSemidirectProductCoordinateMap,
       weightParabolicSemidirectProductCoordinateHopfAlgebra]
-    rw [CommHopfAlgCat.grpObjMap_comp]
+    rw [CommHopfAlgCat.Hom.grpObjMap_comp]
     exact CommHopfAlgCat.grpObjMap_productMapOfNormal H I J hI
   have hq : CommHopfAlgCat.grpObjPointsMulEquiv
       (weightParabolicSemidirectProductCoordinateHopfAlgebra R w) (op A) q = g :=
@@ -325,12 +325,12 @@ private theorem mapPointsFunctor_weightParabolicSemidirectProductCoordinateMap_a
   -- its normal-semidirect formula then separates into the two quotient inclusions.
   calc
     _ = CommHopfAlgCat.grpObjPointsMulEquiv H (op A)
-        (q ≫ CommHopfAlgCat.grpObjMap
+        (q ≫ CommHopfAlgCat.Hom.grpObjMap
           (weightParabolicSemidirectProductCoordinateMap R w)) := by
       have hcomp := CommHopfAlgCat.grpObjPointsMulEquiv_comp_grpObjMap
         (weightParabolicSemidirectProductCoordinateMap R w) (op A) q
-      rw [CommHopfAlgCat.mapPointsFunctor_app_apply, hq] at hcomp
-      rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hq] at hcomp
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       exact hcomp.symm
     _ = CommHopfAlgCat.grpObjPointsMulEquiv H (op A)
         (q ≫ (GrpObj.Action.normalSemidirectMul
@@ -361,7 +361,7 @@ theorem weightParabolicSemidirectProductPointsMulEquiv_apply
     (g : HopfAlgebra.points (R := R)
       (H := weightParabolicSemidirectProductCoordinateHopfAlgebra R w) A) :
     weightParabolicSemidirectProductPointsMulEquiv R w A g =
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (weightParabolicSemidirectProductCoordinateMap R w)).app A g := by
   apply (weightParabolicDynamicPointsMulEquiv R w A).injective
   rw [mapPointsFunctor_weightParabolicSemidirectProductCoordinateMap_apply]
@@ -380,7 +380,7 @@ theorem weightParabolicSemidirectProductPointsMulEquiv_apply
 
 private noncomputable instance isIso_mapPointsFunctor_weightParabolicSemidirectProductCoordinateMap
     (w : Fin N → ℤ) :
-    IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (weightParabolicSemidirectProductCoordinateMap R w)) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro A
@@ -414,7 +414,7 @@ noncomputable instance isIso_weightParabolicSemidirectProductCoordinateMap
     (w : Fin N → ℤ) :
     IsIso (weightParabolicSemidirectProductCoordinateMap R w) := by
   let f := weightParabolicSemidirectProductCoordinateMap R w
-  let _ : IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u} f) := by
+  let _ : IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} f) := by
     dsimp only [f]
     exact isIso_mapPointsFunctor_weightParabolicSemidirectProductCoordinateMap R w
   exact CommHopfAlgCat.isIso_of_isIso_mapPointsFunctor f

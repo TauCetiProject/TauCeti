@@ -401,10 +401,12 @@ section Empty
 quotient map is a topological isomorphism. -/
 noncomputable def equivFreeProfiniteGroup :
     presentedProfiniteGroup X (∅ : Set (freeProfiniteGroup X)) ≃ₜ* freeProfiniteGroup X where
-  toFun := lift (ContinuousMonoidHom.id (freeProfiniteGroup X)) fun _ hr ↦ hr.elim
+  toFun := lift (ContinuousMonoidHom.id (freeProfiniteGroup X))
+    fun _ (hr : _ ∈ (∅ : Set (freeProfiniteGroup X))) ↦ hr.elim
   invFun := mk ∅
   left_inv y := by
-    have h : (mk ∅).comp (lift (ContinuousMonoidHom.id (freeProfiniteGroup X)) fun _ hr ↦ hr.elim) =
+    have h : (mk ∅).comp (lift (ContinuousMonoidHom.id (freeProfiniteGroup X))
+          fun _ (hr : _ ∈ (∅ : Set (freeProfiniteGroup X))) ↦ hr.elim) =
         ContinuousMonoidHom.id (presentedProfiniteGroup X ∅) :=
       hom_ext <| ContinuousMonoidHom.ext fun x ↦ by
         simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_mk,
@@ -809,10 +811,12 @@ section Empty
 /-- With no relators, the presented pro-`p` group is the free pro-`p` group: the canonical
 quotient map is a topological isomorphism. -/
 noncomputable def equivFreeProP : presentedProP p X (∅ : Set (freeProP p X)) ≃ₜ* freeProP p X where
-  toFun := lift (ContinuousMonoidHom.id (freeProP p X)) fun _ hr ↦ hr.elim
+  toFun := lift (ContinuousMonoidHom.id (freeProP p X))
+    fun _ (hr : _ ∈ (∅ : Set (freeProP p X))) ↦ hr.elim
   invFun := mk p ∅
   left_inv y := by
-    have h : (mk p ∅).comp (lift (ContinuousMonoidHom.id (freeProP p X)) fun _ hr ↦ hr.elim) =
+    have h : (mk p ∅).comp (lift (ContinuousMonoidHom.id (freeProP p X))
+          fun _ (hr : _ ∈ (∅ : Set (freeProP p X))) ↦ hr.elim) =
         ContinuousMonoidHom.id (presentedProP p X ∅) :=
       hom_ext <| ContinuousMonoidHom.ext fun x ↦ by
         simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_mk,

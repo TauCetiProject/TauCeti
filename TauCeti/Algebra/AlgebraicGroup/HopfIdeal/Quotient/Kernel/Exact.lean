@@ -39,7 +39,8 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
   exactly the functions pulled back from `Q` (`IsShortExact.coinvariants_eq_range`).
 * On `A`-points, for every commutative `R`-algebra `A`, the sequence
   `N(A) → G(A) → Q(A)` is exact at `G(A)` (`IsShortExact.ker_mapPointsFunctor_app_eq_range`),
-  and `N(A) → G(A)` is injective (`mapPointsFunctor_app_injective_of_surjective`). In general
+  and `N(A) → G(A)` is injective
+    (`CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective`). In general
   `G(A) → Q(A)` is surjective only after a faithfully flat extension of `A`; it is surjective when
   `A` is an algebraically closed field and `p` is of finite type
   (`mapPointsFunctor_app_surjective_of_faithfullyFlat`).
@@ -142,7 +143,8 @@ theorem coinvariants_eq_range (h : IsShortExact p i) :
 /-- Exactness on points: for every commutative `R`-algebra `A`, an `A`-point of `G` maps to the
 identity of `Q(A)` exactly when it comes from an `A`-point of `N`. -/
 theorem ker_mapPointsFunctor_app_eq_range (h : IsShortExact p i) (A : CommAlgCat.{w} R) :
-    ((mapPointsFunctor p).app A).hom.ker = ((mapPointsFunctor i).app A).hom.range := by
+    ((CommHopfAlgCat.Hom.mapPointsFunctor p).app A).hom.ker =
+      ((CommHopfAlgCat.Hom.mapPointsFunctor i).app A).hom.range := by
   rw [← HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor i h.surjective A,
     h.kerOfSurjective_eq_kernelHopfIdeal,
     quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor]

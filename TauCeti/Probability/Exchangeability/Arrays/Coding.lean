@@ -53,8 +53,9 @@ a permutation-invariant mixing law (`separatelyExchangeable_iff_exists_coding`).
 ## Implementation
 
 The row process of the coded array is the coded sequence in path space, so its law is the
-de Finetti barycenter of the mixing law (`map_prod_unitIntervalCoding_eq_deFinettiBarycenter` at
-value space `ℕ → α`). Both array symmetries are therefore read off that barycenter: permuting the
+de Finetti barycenter of the mixing law
+(`Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter` at value space `ℕ → α`).
+Both array symmetries are therefore read off that barycenter: permuting the
 rows is exchangeability of the barycenter (`exchangeableLaw_deFinettiBarycenter`), and permuting
 the columns is a coordinatewise pushforward, which by naturality
 (`Measure.map_pi_deFinettiBarycenter`) is the barycenter of the pushed-forward mixing law. Only the
@@ -100,7 +101,7 @@ private theorem map_prod_unitIntervalCoding_array
     ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
         fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2)
       = (Measure.deFinettiBarycenter π).map Function.uncurry := by
-  rw [← map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
+  rw [← Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
     Measure.map_map measurable_uncurry (measurable_unitIntervalCodingPath (α := ℕ → α))]
   refine congrArg (Measure.map · _) ?_
   funext q ⟨i, j⟩
@@ -119,7 +120,7 @@ private theorem map_prod_unitIntervalCoding_array_pairReindex
   have hS : Measurable (permReindex (α := ℕ → α) σ) := measurable_reindex σ
   have hT : Measurable fun x : ℕ → ℕ → α => fun i => permReindex (α := α) τ (x i) :=
     Measurable.of_eval fun i => (measurable_reindex τ).comp (measurable_pi_apply i)
-  rw [← map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
+  rw [← Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
     Measure.map_map hS hR, Measure.map_map hT (hS.comp hR),
     Measure.map_map measurable_uncurry (hT.comp (hS.comp hR))]
   refine congrArg (Measure.map · _) ?_

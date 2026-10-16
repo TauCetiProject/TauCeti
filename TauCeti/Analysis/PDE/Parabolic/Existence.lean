@@ -105,6 +105,8 @@ smooth and compactly supported in `(a, b)`. For the initial value, test it again
   takes the initial value `u₀` modulo `(range ι)ᗮ`.
 * `TauCeti.exists_hasWeakLineDerivOn_gelfandDual`: existence of a weak solution of
   `u' + A(t) u = f`, `u(a) = u₀`, in a Gelfand triple.
+* `TauCeti.exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq`: the same, with the hypotheses and the
+  equation stated for bilinear functionals `B(t)` that agree with `A(t)` for almost every `t`.
 
 ## References
 
@@ -692,6 +694,41 @@ theorem exists_hasWeakLineDerivOn_gelfandDual [CompleteSpace V] [TopologicalSpac
   obtain ⟨w, hw, hae⟩ := hd.exists_continuousOn_ae_eq_of_gelfandDual hu hg
   exact ⟨u, w, hu, hg, hd, hw, hae, ι.gelfandDual_injective hι
     (gelfandDual_eq_of_forall_setIntegral_eq_add_inner hab hA hA_bound hf hu hvar hw hae)⟩
+
+/-- `TauCeti.exists_hasWeakLineDerivOn_gelfandDual` with the operators `A(t)` known only through a
+family of bilinear functionals `B(t)` that they agree with for almost every `t`, as in
+`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq`: measurability, boundedness and
+Gårding's inequality are hypotheses on `B`, and the equation `u' + A(t) u = f` is stated tested
+against every `v ∈ V`, as `u'(t)(v) + B(t)(u(t), v) = f(t)(v)` for almost every `t`. -/
+theorem exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq [CompleteSpace V]
+    [TopologicalSpace.SeparableSpace V] [CompleteSpace H] (hι : DenseRange ι) (hab : a ≤ b)
+    {B : ℝ → V → V → ℝ} (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
+    (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
+    (hΛ : 0 ≤ Λ)
+    (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
+    (hα : 0 < α)
+    (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
+    (hf : MemLp f 2 (volume.restrict (Ioo a b))) (u₀ : H) :
+    ∃ u : ℝ → V, ∃ u' : ℝ → StrongDual ℝ V, ∃ w : ℝ → H,
+      MemLp u 2 (volume.restrict (Ioo a b)) ∧ MemLp u' 2 (volume.restrict (Ioo a b)) ∧
+      HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t => ι.gelfandDual (ι (u t))) u' 1 ∧
+      (∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, u' t v + B t (u t) v = f t v) ∧
+      ContinuousOn w (Icc a b) ∧ (fun t => ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w ∧
+      w a = u₀ := by
+  obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ := exists_hasWeakLineDerivOn_gelfandDual (A := A) hι hab
+    (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
+    (by
+      filter_upwards [hAB, hB_bound] with t hABt hBt
+      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      rw [hABt, mul_assoc]
+      exact hBt u v)
+    hα (by
+      filter_upwards [hAB, hB_garding] with t hABt hBt v
+      rw [hABt]
+      exact hBt v) hf u₀
+  refine ⟨u, fun t => f t - A t (u t), w, hu, hu', hd, ?_, hw, hae, hw₀⟩
+  filter_upwards [hAB] with t hABt v
+  rw [sub_apply, ← hABt, sub_add_cancel]
 
 end WeakSolution
 

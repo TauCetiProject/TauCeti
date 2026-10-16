@@ -151,7 +151,7 @@ theorem baseChange_eq_top_iff_subsingleton (p : Submodule R M) :
   -- `A ⊗ p → A ⊗ M → A ⊗ (M ⧸ p) → 0` is exact, and the first map has range `p.baseChange A`
   have hexact := lTensor_exact A (LinearMap.exact_subtype_mkQ p) p.mkQ_surjective
   have hrange (x : A ⊗[R] M) : x ∈ p.baseChange A ↔ x ∈ LinearMap.range (p.subtype.lTensor A) := by
-    simp [baseChange, LinearMap.baseChange_eq_ltensor]
+    simp [baseChange, LinearMap.baseChange_eq_lTensor]
   refine ⟨fun h ↦ ⟨fun y z ↦ ?_⟩, fun _ ↦ eq_top_iff.mpr fun x _ ↦
     (hrange x).mpr ((hexact x).mp (Subsingleton.elim _ _))⟩
   obtain ⟨y, rfl⟩ := LinearMap.lTensor_surjective A p.mkQ_surjective y
@@ -188,7 +188,7 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
   have he : e.toLinearMap = lTensor A p.mkQ := LinearMap.ext fun y ↦ by
     simp only [e, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
       Submodule.quotEquivOfEqBot_symm_apply, he₀]
-  rw [baseChange_eq_ltensor, ← he]
+  rw [baseChange_eq_lTensor, ← he]
   exact e.bijective
 
 /-- **Finiteness of a base change killing a scalar.** If `r : R` maps to `0` in the `R`-algebra

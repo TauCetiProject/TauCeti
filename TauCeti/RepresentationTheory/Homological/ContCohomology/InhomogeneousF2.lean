@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 
 /-!

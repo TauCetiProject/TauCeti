@@ -43,7 +43,7 @@ noncomputable section
 
 namespace TauCeti.DyadicSqrtFive
 
-open _root_.QuadraticMap ValuativeRel
+open _root_.QuadraticMap _root_.ValuativeRel
 
 private def signIndex (c : Fin 3 → ZMod 2) : Fin 2 :=
   ⟨(c 0).val, ZMod.val_lt _⟩

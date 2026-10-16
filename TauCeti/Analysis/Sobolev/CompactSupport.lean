@@ -99,11 +99,11 @@ theorem HasWeakLineDerivOn.indicator_of_isClosed (h : HasWeakLineDerivOn μ Ω u
         · rw [indicator_of_notMem hxΩ]
           have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
             hxΩ (ψ.tsupport_subset hxψ)
-          simp [lineDeriv_eq_zero_of_notMem_tsupport ψ hxψ v]
+          simp [lineDeriv_of_notMem_tsupport hxψ v]
     · have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
         hxφ (tsupport_mul_subset_right (by rw [hψ, Pi.mul_def] at hxψ; exact hxψ))
-      simp [lineDeriv_eq_zero_of_notMem_tsupport φ hxφ v,
-        lineDeriv_eq_zero_of_notMem_tsupport ψ hxψ v]
+      simp [lineDeriv_of_notMem_tsupport hxφ v,
+        lineDeriv_of_notMem_tsupport hxψ v]
   have hright : (fun x => (φ : E → ℝ) x • (Ω : Set E).indicator u' x) =ᵐ[μ]
       fun x => (ψ : E → ℝ) x • u' x := by
     filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hu'] with x hx
