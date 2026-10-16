@@ -83,6 +83,7 @@ theorem twistedPushforward_simplexChain {n : ℕ} (σ : (TopCat.toSSet.obj Z) _�
       r.down • ιTwistedChainComplex L n ((TopCat.toSSet.map f).app _ σ)
         (L.map (f.hom.pathClass z₀ (TopCat.simplexMap σ (toTopInitialVertex _))) a) := by
   rw [twistedPushforward, chainsDesc_simplexChain]
+  -- The remaining sides agree by the definition of the composite of `ModuleCat` morphisms.
   rfl
 
 /-- The twisted pushforward of a simplex with coefficient `1`, as a morphism of modules. -/
@@ -91,6 +92,7 @@ theorem twistedPushforward_simplexChain_one {n : ℕ} (σ : (TopCat.toSSet.obj Z
       (L.map (f.hom.pathClass z₀ (TopCat.simplexMap σ (toTopInitialVertex _))) ≫
         ιTwistedChainComplex L n ((TopCat.toSSet.map f).app _ σ)).hom := by
   rw [twistedPushforward, chainsDesc_simplexChain, one_smul]
+  -- The remaining sides agree by the definition of the composite of `ModuleCat` morphisms.
   rfl
 
 /-- The coefficient transport of the twisted pushforward composed with the vertex transport of a
@@ -144,8 +146,8 @@ theorem twistedPushforward_d {n : ℕ} (y : ((singularChains (ULift.{v} ℤ)).ob
     (z₀ := z₀) σ)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_sum, ModuleCat.hom_zsmul,
     LinearMap.sum_apply, LinearMap.smul_apply] at hσ
-  change (twistedChainComplex L).d (n + 1) n (twistedPushforward L f z₀ (n + 1) _ a) =
-    twistedPushforward L f z₀ n (((singularChains (ULift.{v} ℤ)).obj Z).d (n + 1) n _) a
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, AddMonoidHom.coe_toIntLinearMap,
+    LinearMap.applyₗ'_apply_apply, LinearMap.toAddMonoidHom_coe]
   rw [twistedPushforward_simplexChain_one, singularChains_d_simplexChain, map_sum,
     LinearMap.sum_apply]
   simp only [map_zsmul, LinearMap.smul_apply, twistedPushforward_simplexChain_one]
@@ -166,8 +168,7 @@ theorem twistedPushforward_map {Z' : TopCat.{v}} [SimplyConnectedSpace Z'] (g : 
       (ULift.{v} ℤ)) ∘ₗ twistedPushforward L (g ≫ f) w₀ n)
     fun σ ↦ ?_
   · exact congrArg (fun φ ↦ φ y) h
-  change twistedPushforward L f z₀ n (((singularChains (ULift.{v} ℤ)).map g).f n _) a =
-    twistedPushforward L (g ≫ f) w₀ n _ (L.map (f.hom.pathClass z₀ (g w₀)) a)
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearMap.applyₗ'_apply_apply]
   rw [singularChains_map_f_simplexChain, twistedPushforward_simplexChain_one,
     twistedPushforward_simplexChain_one]
   have hp : f.hom.pathClass z₀ (TopCat.simplexMap ((TopCat.toSSet.map g).app _ σ)
@@ -197,6 +198,9 @@ theorem twistedChainComplexMap_twistedPushforward {Y : TopCat.{v}}
     (L' := ((LinearMap.applyₗ' ℤ (M := L.obj (FundamentalGroupoid.mk ((f ≫ h) z₀))) a
       ).restrictScalars (ULift.{v} ℤ)) ∘ₗ twistedPushforward L (f ≫ h) z₀ n) fun σ ↦ ?_
   · exact congrArg (fun φ ↦ φ y) hy
+  -- The fibre of the pulled back system at `f z₀` is the fibre of `L` at `h (f z₀)` only by
+  -- definition (`pullback_obj_obj`), so the evaluation in `L'` is not rewritable at `a`; `change`
+  -- states the goal on the two twisted pushforwards, which are typed over that common fibre.
   change (twistedChainComplexMap h L).f n
       (twistedPushforward ((pullback h.hom).obj L) f z₀ n _ a) =
     twistedPushforward L (f ≫ h) z₀ n _ a
@@ -221,8 +225,8 @@ theorem twistedChainComplexCoefficientMap_twistedPushforward
     (L' := ((LinearMap.applyₗ' ℤ (η.app _ a)).restrictScalars (ULift.{v} ℤ)) ∘ₗ
       twistedPushforward K f z₀ n) fun σ ↦ ?_
   · exact congrArg (fun φ ↦ φ y) hy
-  change (twistedChainComplexCoefficientMap η).f n (twistedPushforward L f z₀ n _ a) =
-    twistedPushforward K f z₀ n _ (η.app _ a)
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, AddMonoidHom.coe_toIntLinearMap,
+    LinearMap.applyₗ'_apply_apply, LinearMap.toAddMonoidHom_coe]
   rw [twistedPushforward_simplexChain_one, twistedPushforward_simplexChain_one,
     ← ModuleCat.comp_apply, ← ModuleCat.comp_apply]
   exact congrArg (fun φ ↦ φ.hom a) ((Category.assoc _ _ _).trans
