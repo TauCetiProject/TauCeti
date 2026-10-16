@@ -207,10 +207,10 @@ theorem coe_algebraMap_laurentSeries (f : K⸨X⸩) :
 structure. -/
 instance : IsScalarTower K K⸨X⸩ (puiseuxField K) where
   smul_assoc r f x := by
-    rw [← C_mul_eq_smul, Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, map_mul, mul_assoc]
-    rw [algebraMap_laurentSeries_apply, ← (levelEmbedding K 1).commutes r]
-    congr 1
-    simp [algebraMap_apply']
+    -- `IsScalarTower.of_algHom` is stated for the scalar action `Algebra.toSMul` on `K⸨X⸩`,
+    -- which agrees only propositionally with its coefficientwise action, so first switch to it.
+    rw [← C_mul_eq_smul, ← LaurentSeries.algebraMap_apply, ← Algebra.smul_def]
+    exact (IsScalarTower.of_algHom (levelEmbedding K 1)).smul_assoc r f x
 
 /-- The level-`n` embedding restricted along the expansion `X ↦ X ^ n` is the `K⸨X⸩`-algebra
 map: as a subfield of the Puiseux field, level `n` contains `K⸨X⸩` with `X` acting as
