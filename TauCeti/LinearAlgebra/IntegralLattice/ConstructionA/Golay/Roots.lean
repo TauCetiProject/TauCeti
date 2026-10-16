@@ -116,10 +116,10 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
       funext j <;> by_cases hj : j = i
     · subst j
       simp [hw, h]
-    · simp [hw, h, Pi.single_apply, hj]
+    · simp [hw, h, hj]
     · subst j
       simp [hw, h]
-    · simp [hw, h, Pi.single_apply, hj]
+    · simp [hw, h, hj]
   · rintro ⟨i, rfl | rfl⟩
     · exact norm_coordinateRoot i
     · rw [IntegralLattice.norm_neg]
