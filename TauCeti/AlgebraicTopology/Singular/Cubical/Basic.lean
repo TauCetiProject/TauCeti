@@ -118,6 +118,12 @@ theorem face_apply {n : ℕ} (i : Fin (n + 1)) (t : I) (c : SingularCube X (n + 
   rw [face]
   rfl
 
+/-- A face of a cube takes its values among those of the cube. -/
+theorem range_face_subset {n : ℕ} (i : Fin (n + 1)) (t : I) (c : SingularCube X (n + 1)) :
+    Set.range (face i t c) ⊆ Set.range c := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨_, (face_apply i t c x).symm⟩
+
 /-- The cubical identity: a face of a face, in the other order. -/
 theorem face_face {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) (a b : I)
     (c : SingularCube X (n + 2)) :
@@ -259,6 +265,12 @@ theorem isDegenerate_iff_exists_eq_degeneracy {n : ℕ} {s : SingularCube X (n +
     exact (hi x 0).symm
   · rintro ⟨i, t, rfl⟩
     exact (isDegenerateAt_degeneracy t i).isDegenerate
+
+/-- A constant cube of positive dimension is degenerate. -/
+@[simp]
+theorem isDegenerate_const {n : ℕ} (x : X) :
+    IsDegenerate (ContinuousMap.const (Fin (n + 1) → I) x) :=
+  ⟨0, fun _ _ ↦ rfl⟩
 
 /-- A `0`-cube, a point, is never degenerate. -/
 theorem not_isDegenerate_zero (c : SingularCube X 0) : ¬ IsDegenerate c :=

@@ -104,9 +104,11 @@ private theorem map_mkQ_mkₐ_coact_eq_zero (W : Submodule k M) {w : M} (hw : w 
         (Ideal.Quotient.mkₐ k (Ideal.span (stabilizerGenerators H W))).toLinearMap
         (Comodule.coact (R := k) (C := H) (M := M) w) = 0 := by
   set π := Ideal.Quotient.mkₐ k (Ideal.span (stabilizerGenerators H W))
-  apply tensor_eq_zero_of_forall_lid_rTensor_eq_zero (fun ψ : Module.Dual k (M ⧸ W) ↦ ψ)
+  apply tensor_eq_zero_of_forall_rTensor_eq_zero (fun ψ : Module.Dual k (M ⧸ W) ↦ ψ)
     (fun x hx ↦ (Module.forall_dual_apply_eq_zero_iff k x).mp hx)
   intro ψ
+  apply (TensorProduct.lid k (H ⧸ Ideal.span (stabilizerGenerators H W))).injective
+  simp only [map_zero]
   have hcontract (t : M ⊗[k] H) :
       TensorProduct.lid k (H ⧸ Ideal.span (stabilizerGenerators H W))
           (ψ.rTensor _ (TensorProduct.map W.mkQ π.toLinearMap t)) =
@@ -275,7 +277,7 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
     (W.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv ↔
       (W.baseChange A).map (Comodule.endOfPoint M g.ofConv) = W.baseChange A := by
   have hinv (x : H) : (g⁻¹).ofConv x = g.ofConv (HopfAlgebra.antipode k x) := by
-    rw [WithConv.convInv_def, WithConv.ofConv_toConv, AlgHom.antipodeComp_apply]
+    rw [WithConv.algHom_inv_def, WithConv.ofConv_toConv, AlgHom.antipodeComp_apply]
   rw [stabilizerHopfIdeal_toIdeal, Ideal.span_le]
   constructor
   · intro h

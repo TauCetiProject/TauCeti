@@ -169,6 +169,13 @@ theorem kummerCoeffIncl_kummerCocycle
     rw [toMul_kummerCoeffIncl, toMul_kummerCocycle, toMul_sub, Additive.toMul_smul,
       toMul_ofMul, div_eq_mul_inv]
 
+/-- **The Kummer cocycle vanishes exactly at the automorphisms fixing the chosen root.** -/
+@[simp]
+theorem kummerCocycle_eq_zero_iff
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (g : AbsoluteGaloisGroup K) : kummerCocycle hα g = 0 ↔ g • α = α := by
+  rw [← toMul_eq_one, ← OneMemClass.coe_eq_one, toMul_kummerCocycle, mul_inv_eq_one]
+
 /-- **The Kummer ratio `g ↦ g α / α` is a continuous `1`-cocycle** with values in `μₙ`. -/
 theorem kummerCocycle_mem_Z1
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :

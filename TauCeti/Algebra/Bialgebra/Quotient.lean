@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Quotient
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The universal property of a bialgebra quotient
@@ -38,59 +37,11 @@ Mathlib's quotient bialgebra machinery (`Mathlib.RingTheory.Bialgebra.Quotient`)
 
 public section
 
-open scoped TensorProduct
-
 namespace Bialgebra.Quotient
-
-/-! ### The universal property of a bialgebra quotient by a two-sided coideal
-
-For a two-sided ideal `J` of an `R`-bialgebra `H` whose underlying `R`-submodule is a coideal,
-Mathlib equips `H ⧸ J` with a bialgebra structure (`Mathlib.RingTheory.Bialgebra.Quotient`).
-The lift below is the matching universal property: a bialgebra morphism out of `H` that kills `J`
-factors uniquely through `H ⧸ J`. Only the bialgebra-quotient structure is used, so neither an
-antipode nor a Hopf-algebra structure is required. -/
 
 variable {R H : Type*} [CommRing R] [Ring H] [Bialgebra R H]
 variable (J : Ideal H) [J.IsTwoSided]
 variable {K : Type*} [Semiring K] [Bialgebra R K]
-
--- `TensorProduct.map` and `TensorProduct.map_map` are qualified with `_root_` throughout this
--- section: the ambient `Bialgebra` namespace otherwise resolves `TensorProduct.map` to
--- `Bialgebra.TensorProduct.map`, which expects coalgebra rather than linear maps.
-omit [J.IsTwoSided] in
-private theorem liftBialgHom_kill (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) {h : H} (hh : h ∈ J) :
-    (f : H →ₐ[R] K) h = 0 :=
-  RingHom.mem_ker.mp (hf hh)
-
-private noncomputable abbrev liftBialgHomAlg (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) : H ⧸ J →ₐ[R] K :=
-  Ideal.Quotient.liftₐ J (f : H →ₐ[R] K)
-    fun _ ha => liftBialgHom_kill J f hf ha
-
-private theorem liftBialgHomAlg_mk (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
-    liftBialgHomAlg J f hf (Ideal.Quotient.mkₐ R J h) = f h := by
-  exact AlgHom.congr_fun
-    (Ideal.Quotient.liftₐ_comp J (f : H →ₐ[R] K)
-      fun _ ha => liftBialgHom_kill J f hf ha) h
-
-private theorem liftBialgHomAlg_toLinearMap_comp_mkₐ (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) :
-    (liftBialgHomAlg J f hf).toLinearMap.comp
-      (Ideal.Quotient.mkₐ R J).toLinearMap = f.toLinearMap := by
-  ext h
-  exact liftBialgHomAlg_mk J f hf h
-
-private theorem liftBialgHomAlg_comul_mk (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
-    _root_.TensorProduct.map (liftBialgHomAlg J f hf).toLinearMap
-        (liftBialgHomAlg J f hf).toLinearMap
-        (_root_.TensorProduct.map (Ideal.Quotient.mkₐ R J).toLinearMap
-          (Ideal.Quotient.mkₐ R J).toLinearMap (Coalgebra.comul h)) =
-      Coalgebra.comul (R := R) (f h) := by
-  rw [_root_.TensorProduct.map_map, liftBialgHomAlg_toLinearMap_comp_mkₐ]
-  exact CoalgHomClass.map_comp_comul_apply f h
 
 variable [(J.restrictScalars R).IsCoideal]
 
@@ -104,33 +55,27 @@ quotient bialgebra `H ⧸ J`. -/
 noncomputable def liftBialgHom (f : H →ₐc[R] K)
     (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) : H ⧸ J →ₐc[R] K :=
   BialgHom.ofAlgHom
-    (liftBialgHomAlg J f hf)
+    (Ideal.Quotient.liftₐ J f.toAlgHom
+      fun _ ha ↦ (RingHom.mem_ker (f := f.toAlgHom.toRingHom)).mp (hf ha))
     (by
-      ext q
-      obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R J q
-      rw [AlgHom.comp_apply, liftBialgHomAlg_mk J f hf h, Bialgebra.counitAlgHom_apply,
-        Bialgebra.counitAlgHom_apply]
-      -- After quotient-surjectivity reduction, `BialgHom.ofAlgHom` leaves the same counit
-      -- equality with the two sides presented through different wrapper APIs.
-      change Coalgebra.counit (R := R) (f h) =
-        Coalgebra.counit (R := R) (Ideal.Quotient.mk J h)
-      rw [Bialgebra.Quotient.counit_mk]
-      exact CoalgHomClass.counit_comp_apply f h)
+      apply Ideal.Quotient.algHom_ext R
+      simp only [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp]
+      simpa only [mkBialgHom_toAlgHom] using
+        f.counitAlgHom_comp.trans (mkBialgHom (R := R) J).counitAlgHom_comp.symm)
     (by
-      ext q
-      obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R J q
-      rw [AlgHom.comp_apply, AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
-        liftBialgHomAlg_mk J f hf h, Bialgebra.comulAlgHom_apply, Ideal.Quotient.mkₐ_eq_mk,
-        Bialgebra.Quotient.comul_mk]
-      exact liftBialgHomAlg_comul_mk J f hf h)
+      apply Ideal.Quotient.algHom_ext R
+      simp only [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp]
+      rw [← mkBialgHom_toAlgHom J, ← (mkBialgHom (R := R) J).map_comp_comulAlgHom]
+      rw [← AlgHom.comp_assoc, ← Algebra.TensorProduct.map_comp]
+      simp only [mkBialgHom_toAlgHom, Ideal.Quotient.liftₐ_comp]
+      exact f.map_comp_comulAlgHom)
 
 /-- The quotient lift, evaluated on a quotient class. -/
 @[simp]
 theorem liftBialgHom_mk (f : H →ₐc[R] K)
     (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
     liftBialgHom J f hf (Ideal.Quotient.mk J h) = f h := by
-  rw [liftBialgHom]
-  exact liftBialgHomAlg_mk J f hf h
+  rfl
 
 /-- The quotient lift composed with the quotient map is the original bialgebra morphism. -/
 @[simp]
@@ -148,13 +93,7 @@ theorem liftBialgHom_unique (f : H →ₐc[R] K)
     g = liftBialgHom J f hf := by
   ext q
   obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R J q
-  calc
-    g (Ideal.Quotient.mkₐ R J h)
-        = (g.comp (Bialgebra.Quotient.mkBialgHom J)) h := by
-          rw [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply,
-            Ideal.Quotient.mkₐ_eq_mk (R₁ := R)]
-    _ = f h := BialgHom.congr_fun hg h
-    _ = liftBialgHom J f hf (Ideal.Quotient.mkₐ R J h) :=
-      (liftBialgHom_mk J f hf h).symm
+  simpa only [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply,
+    Ideal.Quotient.mkₐ_eq_mk, liftBialgHom_mk] using BialgHom.congr_fun hg h
 
 end Bialgebra.Quotient

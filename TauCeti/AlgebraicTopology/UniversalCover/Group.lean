@@ -199,8 +199,8 @@ def kerProjHomEquivFundamentalGroup :
     (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≃* FundamentalGroup G 1 :=
   MulEquiv.symm
     { toFun a := ⟨mk 1 a.toPath, mem_ker_projHom.2 rfl⟩
-      invFun z := z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm
-      left_inv a := Path.Homotopic.Quotient.cast_rfl_rfl a
+      invFun z := FundamentalGroup.fromPath (z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm)
+      left_inv a := CategoryTheory.End.ext (Path.Homotopic.Quotient.cast_rfl_rfl a.toPath)
       right_inv z := Subtype.ext <| UniversalCover.ext (mem_ker_projHom.1 z.2).symm
         (Path.Homotopic.Quotient.cast_heq _ _)
       map_mul' a b := Subtype.ext <| UniversalCover.ext (mul_one 1).symm <| by

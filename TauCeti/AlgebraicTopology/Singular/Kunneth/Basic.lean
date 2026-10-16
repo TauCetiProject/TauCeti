@@ -46,15 +46,19 @@ The splitting hypotheses hold in two standard situations.
   `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`.
 * When the cycles split off and the homology modules `Hₚ(X; M)` and `H_q(Y; N)` are projective,
   the projection of the cycles onto the homology splits
-  (`TopCat.isIso_singularHomologyKunneth_of_projective`).  Over a principal ideal domain `k`
-  with projective `M` and `N`, for instance `M = N = k`, the boundaries are submodules of the
-  projective chain modules, so the cycles split off
-  (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`, with
-  `SSet.projective_chainComplex_X`), and this covers spaces whose homology is free, as for
+  (`TopCat.isIso_singularHomologyKunneth_of_projective`).  With projective `M` and `N`, for
+  instance `M = N = k`, the singular chain modules are projective
+  (`SSet.projective_chainComplex_X`), and the cycles split off in two cases.  Over a principal
+  ideal domain the boundaries are submodules of the projective chain modules
+  (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`).  Over any commutative ring
+  they split off once the homology is projective, by induction on the degree
+  (`ChainComplex.isSplitMono_iCycles_of_projective_homology`).  So over any commutative ring the
+  Künneth map is an isomorphism when the homology of `X` and `Y` is projective
+  (`TopCat.isIso_singularHomologyKunneth_of_projective_homology`), for instance free, as for
   products of spheres.
 
-Over a principal ideal domain, with projective coefficients, it follows that `Hₙ(X × Y; M ⊗ N)`
-is free whenever the homology modules of `X` and `Y` are, of finite rank
+Over any commutative ring, with projective coefficients, it follows that `Hₙ(X × Y; M ⊗ N)` is
+free whenever the homology modules of `X` and `Y` are, of finite rank
 `∑_{p + q = n} rank Hₚ(X; M) · rank H_q(Y; N)` when the factors have finite rank.
 
 ## Main definitions and results
@@ -70,12 +74,14 @@ is free whenever the homology modules of `X` and `Y` are, of finite rank
   the singular chain complexes split off, for instance for all coefficient modules over a field.
 * `TopCat.isIso_singularHomologyKunneth_of_projective`: the Künneth theorem when the cycles split
   off and the homology is projective.
+* `TopCat.isIso_singularHomologyKunneth_of_projective_homology`: the Künneth theorem over any
+  commutative ring, for projective coefficients and projective homology.
 * `TopCat.isSplitMono_singularHomologyKunneth`: the Künneth map is a split monomorphism when the
   cycles split off, for instance over a principal ideal domain.
 * `TopCat.singularHomologyKunnethUnitIso`: its form `⨁ Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`
   with coefficients in the ring itself.
 * `TopCat.free_singularHomology_tensor` and `TopCat.finrank_singularHomology_tensor`: the
-  homology of a product of spaces with free homology, over a principal ideal domain.
+  homology of a product of spaces with free homology, over any commutative ring.
 
 ## References
 
@@ -94,10 +100,10 @@ universe w v u
 
 namespace TopCat
 
+section General
+
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
-
-section General
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [CategoryWithHomology C]
   [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
@@ -293,6 +299,24 @@ theorem isIso_singularHomologyKunneth_of_projective (X Y : TopCat.{w}) (M N : Mo
   have (q : ℕ) : Projective (((toSSet.obj Y).chainComplex N).homology q) := hY q
   inferInstance
 
+/-- **The Künneth theorem with projective homology over any commutative ring**: for projective
+coefficient modules `M` and `N`, if the singular homology modules `Hₚ(X; M)` and `H_q(Y; N)` are all
+projective, the Künneth map `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an
+isomorphism.  The singular chain modules are then projective, and so are their cycles, which split
+off (`ChainComplex.isSplitMono_iCycles_of_projective_homology`). -/
+theorem isIso_singularHomologyKunneth_of_projective_homology (X Y : TopCat.{w})
+    (M N : ModuleCat.{w} k) [Module.Projective k M] [Module.Projective k N]
+    [hX : ∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
+    [hY : ∀ q, Projective (((singularHomologyFunctor (ModuleCat.{w} k) q).obj N).obj Y)]
+    (n : ℕ) :
+    IsIso (singularHomologyKunneth X Y M N n) :=
+  -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
+  have (p : ℕ) : Projective (((toSSet.obj X).chainComplex M).homology p) := hX p
+  have (q : ℕ) : Projective (((toSSet.obj Y).chainComplex N).homology q) := hY q
+  have := ChainComplex.isSplitMono_iCycles_of_projective_homology ((toSSet.obj X).chainComplex M)
+  have := ChainComplex.isSplitMono_iCycles_of_projective_homology ((toSSet.obj Y).chainComplex N)
+  isIso_singularHomologyKunneth_of_projective X Y M N n
+
 variable [IsSemisimpleRing k]
 
 /-- **The Künneth isomorphism with coefficients in the ring**:
@@ -323,14 +347,13 @@ end Split
 
 section Free
 
-variable {k : Type w} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k]
+variable {k : Type w} [CommRing k]
   (X Y : TopCat.{w}) (M N : ModuleCat.{w} k) [Module.Projective k M] [Module.Projective k N]
   [∀ p, Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
   [∀ q, Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj N).obj Y)]
 
-/-- Over a principal ideal domain, when the homology of `X` and `Y` is free, the Künneth map
-identifies `Hₙ(X × Y; M ⊗ N)` with the direct sum of the `Hₚ(X; M) ⊗ H_q(Y; N)` with
-`p + q = n`. -/
+/-- When the homology of `X` and `Y` is free, the Künneth map identifies `Hₙ(X × Y; M ⊗ N)` with
+the direct sum of the `Hₚ(X; M) ⊗ H_q(Y; N)` with `p + q = n`. -/
 private def singularHomologyKunnethDirectSumIso (n : ℕ) :
     ModuleCat.of k (DirectSum ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) fun i ↦
       TensorProduct k (((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X)
@@ -340,13 +363,13 @@ private def singularHomologyKunnethDirectSumIso (n : ℕ) :
   (ModuleCat.coprodIsoDirectSum fun i : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ↦
     ((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X ⊗
       ((singularHomologyFunctor (ModuleCat.{w} k) i.1.2).obj N).obj Y).symm ≪≫
-    -- `TopCat.isIso_singularHomologyKunneth_of_projective` is a theorem rather than an instance,
-    -- so it is supplied to `asIso` explicitly.
+    -- `TopCat.isIso_singularHomologyKunneth_of_projective_homology` is a theorem rather than an
+    -- instance, so it is supplied to `asIso` explicitly.
     @asIso _ _ _ _ (singularHomologyKunneth X Y M N n)
-      (isIso_singularHomologyKunneth_of_projective X Y M N n)
+      (isIso_singularHomologyKunneth_of_projective_homology X Y M N n)
 
-/-- Over a principal ideal domain, with projective coefficients, the singular homology of a
-product of spaces with free homology is free. -/
+/-- With projective coefficients, the singular homology of a product of spaces with free homology
+is free. -/
 instance free_singularHomology_tensor (n : ℕ) :
     Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) :=
   .of_equiv (singularHomologyKunnethDirectSumIso X Y M N n).toLinearEquiv
@@ -354,18 +377,18 @@ instance free_singularHomology_tensor (n : ℕ) :
 variable [∀ p, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
   [∀ q, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj N).obj Y)]
 
-/-- Over a principal ideal domain, with projective coefficients, the singular homology of a
-product of spaces with free homology of finite rank has finite rank. -/
+/-- With projective coefficients, the singular homology of a product of spaces with free homology
+of finite rank has finite rank. -/
 instance finite_singularHomology_tensor (n : ℕ) :
     Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) :=
   have : Finite ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) :=
     (Finset.antidiagonal n).finite_toSet.subset fun x hx ↦ by simpa using hx
   .equiv (singularHomologyKunnethDirectSumIso X Y M N n).toLinearEquiv
 
-/-- **The ranks of the homology of a product.**  Over a principal ideal domain, with projective
-coefficients, if `X` and `Y` have free homology of finite rank, then
+/-- **The ranks of the homology of a product.**  Over a nontrivial commutative ring, with
+projective coefficients, if `X` and `Y` have free homology of finite rank, then
 `rank Hₙ(X × Y; M ⊗ N) = ∑_{p + q = n} rank Hₚ(X; M) · rank H_q(Y; N)`, by the Künneth theorem. -/
-theorem finrank_singularHomology_tensor (n : ℕ) :
+theorem finrank_singularHomology_tensor [Nontrivial k] (n : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) =
       ∑ x ∈ Finset.antidiagonal n,
         Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.1).obj M).obj X) *

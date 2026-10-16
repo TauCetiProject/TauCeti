@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.KnotTheory.Slice.Basic
+import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
@@ -28,8 +30,8 @@ As for sliceness (`TauCeti.IsSmoothlySlice`), the knot is a smooth circle embedd
 (`TauCeti.SmoothSliceSurface K`) bundles
 
 * a compact, connected, orientable smooth surface `S` with boundary, modelled on the half-plane
-  `EuclideanHalfSpace 2` (orientability is `TauCeti.Orientable`, the existence of an atlas whose
-  coordinate changes have derivatives of positive determinant);
+  `EuclideanHalfSpace 2` (orientability is `TauCeti.Orientable`, the existence of a
+  tangent orientation, including at boundary points);
 * a smooth embedding `Φ : S → Dⁿ⁺¹` of manifolds with boundary, properly embedded (the preimage
   of the boundary sphere is the boundary of `S`), which carries the boundary of `S` onto the image
   of `K`.
@@ -85,10 +87,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open CategoryTheory AlgebraicTopology Manifold Metric Module Set
 open scoped EuclideanSpace Manifold ContDiff
+
+namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
@@ -114,7 +116,7 @@ structure SmoothSliceSurface (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E)
   /-- The surface is connected. -/
   [connectedSpace : ConnectedSpace carrier]
   /-- The surface is orientable. -/
-  [orientable : Orientable (𝓡∂ 2) ∞ carrier]
+  [orientable : Orientable (𝓡∂ 2) carrier]
   /-- The embedding of the surface into the closed unit ball. -/
   toFun : carrier → closedBall (0 : E) 1
   /-- The surface is smoothly embedded, as a manifold with boundary. -/
@@ -219,7 +221,7 @@ def IsSmoothSliceDisc.toSmoothSliceSurface {Φ : closedBall (0 : ℂ) 1 → clos
   compactSpace := isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
   connectedSpace := isConnected_iff_connectedSpace.1
     ((convex_closedBall 0 1).isConnected (nonempty_closedBall.2 zero_le_one))
-  orientable := orientable_closedBall le_rfl
+  orientable := orientable_closedBall
   toFun := Φ
   isSmoothEmbedding := h.isSmoothEmbedding
   preimage_boundary := h.preimage_boundary

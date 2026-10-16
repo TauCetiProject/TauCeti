@@ -217,7 +217,7 @@ theorem curvatureOperator_add_first
     funext y
     exact map_add (cov σ y) (X y) (X' y)
   rw [curvatureOperator_apply, curvatureOperator_apply, curvatureOperator_apply, einner,
-    cov.isCovariantDerivativeOn.add (hXσd x) (hX'σd x),
+    cov.isCovariantDerivativeOnUniv.add (hXσd x) (hX'σd x),
     mlieBracket_add_left (hXd x) (hX'd x)]
   simp only [Pi.add_apply, map_add, add_apply]
   abel
@@ -256,18 +256,18 @@ theorem curvatureOperator_add_section
   have hinnerY : (fun y ↦ cov (σ + τ) y (Y y)) =
       (fun y ↦ cov σ y (Y y)) + fun y ↦ cov τ y (Y y) := by
     funext y
-    rw [cov.isCovariantDerivativeOn.add (hσd y) (hτd y)]
+    rw [cov.isCovariantDerivativeOnUniv.add (hσd y) (hτd y)]
     rfl
   have hinnerX : (fun y ↦ cov (σ + τ) y (X y)) =
       (fun y ↦ cov σ y (X y)) + fun y ↦ cov τ y (X y) := by
     funext y
-    rw [cov.isCovariantDerivativeOn.add (hσd y) (hτd y)]
+    rw [cov.isCovariantDerivativeOnUniv.add (hσd y) (hτd y)]
     rfl
   simp only [Pi.add_apply]
   rw [curvatureOperator_apply, curvatureOperator_apply, curvatureOperator_apply, hinnerY,
-    hinnerX, cov.isCovariantDerivativeOn.add (hYσd x) (hYτd x),
-    cov.isCovariantDerivativeOn.add (hXσd x) (hXτd x),
-    cov.isCovariantDerivativeOn.add (hσd x) (hτd x)]
+    hinnerX, cov.isCovariantDerivativeOnUniv.add (hYσd x) (hYτd x),
+    cov.isCovariantDerivativeOnUniv.add (hXσd x) (hXτd x),
+    cov.isCovariantDerivativeOnUniv.add (hσd x) (hτd x)]
   simp only [add_apply]
   abel
 
@@ -317,7 +317,7 @@ theorem curvatureOperator_smul_first
     funext y
     exact map_smul (cov σ y) (f y) (X y)
   rw [curvatureOperator_apply, curvatureOperator_apply, einner,
-    cov.isCovariantDerivativeOn.leibniz (hXσd x) (hfd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hXσd x) (hfd x),
     mlieBracket_smul_left (hfd x) (hXd x)]
   simp only [eX, map_smul, map_add, add_apply, ContinuousLinearMap.smulRight_apply]
   -- Fold the expanded vector expressions into local names: rewriting cannot target these
@@ -370,7 +370,7 @@ theorem curvatureOperator_smul_section
   have hinnerX : (fun y ↦ cov (f • σ) y (X y)) =
       f • (fun y ↦ cov σ y (X y)) + gX • σ := by
     funext y
-    have h := cov.isCovariantDerivativeOn.leibniz (hσd y) (hfd y)
+    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
     -- `h` is an equality of continuous linear maps; expose its value at `X y` through the
     -- pointwise `Pi` operations before rewriting by it.
     change cov (f • σ) y (X y) = f y • cov σ y (X y) + gX y • σ y
@@ -379,7 +379,7 @@ theorem curvatureOperator_smul_section
   have hinnerY : (fun y ↦ cov (f • σ) y (Y y)) =
       f • (fun y ↦ cov σ y (Y y)) + gY • σ := by
     funext y
-    have h := cov.isCovariantDerivativeOn.leibniz (hσd y) (hfd y)
+    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
     -- `h` is an equality of continuous linear maps; expose its value at `Y y` through the
     -- pointwise `Pi` operations before rewriting by it.
     change cov (f • σ) y (Y y) = f y • cov σ y (Y y) + gY y • σ y
@@ -397,13 +397,13 @@ theorem curvatureOperator_smul_section
   have hcomm := mvfderiv_mlieBracket (f := f) (V := X) (W := Y) (x := x)
     (hf.contMDiffAt) (by simp) (hXd x) (hYd x)
   rw [curvatureOperator_apply, curvatureOperator_apply, hinnerY, hinnerX,
-    cov.isCovariantDerivativeOn.add (hfYσd x) (hgYσd x),
-    cov.isCovariantDerivativeOn.add (hfXσd x) (hgXσd x),
-    cov.isCovariantDerivativeOn.leibniz (hYσd x) (hfd x),
-    cov.isCovariantDerivativeOn.leibniz (hσd x) (hgYd x),
-    cov.isCovariantDerivativeOn.leibniz (hXσd x) (hfd x),
-    cov.isCovariantDerivativeOn.leibniz (hσd x) (hgXd x),
-    cov.isCovariantDerivativeOn.leibniz (hσd x) (hfd x)]
+    cov.isCovariantDerivativeOnUniv.add (hfYσd x) (hgYσd x),
+    cov.isCovariantDerivativeOnUniv.add (hfXσd x) (hgXσd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hYσd x) (hfd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgYd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hXσd x) (hfd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgXd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hfd x)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
   rw [hcomm]
   simp only [gX, gY]

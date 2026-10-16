@@ -45,7 +45,7 @@ transport is linear for the actions induced by the counit.
 
 ## The exterior convolution product
 
-This file *applies* the exterior convolution product `LinearMap.mulTensor` — two
+This file *applies* the exterior convolution product `WithConv.mulTensor` — two
 convolution linear maps applied legwise on `A ⊗[R] A` and multiplied in the coefficients
 — to counit-valued derivations. The product itself, together with its normalization rules
 (zero, addition, scalars) and its multiplicativity for convolution, is defined generically
@@ -692,7 +692,7 @@ variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Bialgebra R A]
 
 namespace Derivation
 
-open TauCeti TauCeti.LinearMap
+open TauCeti
 
 /-- The Leibniz rule in convolution form: composing a counit-valued derivation with
 the multiplication of `A` is the exterior product against the convolution unit, on

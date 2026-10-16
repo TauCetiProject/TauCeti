@@ -148,6 +148,24 @@ theorem coe_coinvariants :
   ext a
   simp
 
+/-- Left multiplication by an invariant element of a comodule algebra, as a comodule
+endomorphism. -/
+noncomputable def mulLeftHom (a : A) (ha : a ∈ coinvariants R H A) :
+    Comodule.Hom R H A A where
+  toLinearMap := LinearMap.mulLeft R a
+  map_coact := by
+    ext b
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply, coact_mul,
+      mem_coinvariants.1 ha]
+    induction Comodule.coact (R := R) (C := H) b using TensorProduct.inductionOn with
+    | tmul c h => simp
+    | add x y hx hy => rw [map_add, hx, hy, mul_add]
+
+@[simp]
+theorem mulLeftHom_apply (a : A) (ha : a ∈ coinvariants R H A) (b : A) :
+    mulLeftHom a ha b = a * b :=
+  (rfl)
+
 /-- An algebra map `φ : C → A` lands in the coinvariants exactly when it is invariant:
 composing it with the coaction or with `a ↦ a ⊗ 1` gives the same map. -/
 theorem range_le_coinvariants_iff {C : Type x} [Semiring C] [Algebra R C] (φ : C →ₐ[R] A) :

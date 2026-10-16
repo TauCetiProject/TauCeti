@@ -170,8 +170,8 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
     kostantCoordinateCocharacter M b wt A c u ∈
       kostantElementarySubgroup e h ρ M hM hnil A := by
-  let := IsAddTorsionFree.of_module_rat V
-  let := IsAddTorsionFree.of_module_rat (Module.End ℚ V)
+  let := HasUniqueDiv.of_module_rat V
+  let := HasUniqueDiv.of_module_rat (Module.End ℚ V)
   have hEE : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) = 0 := by rw [← pow_two]; exact hsqi
   have hFF : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *

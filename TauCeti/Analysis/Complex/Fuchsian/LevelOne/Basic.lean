@@ -63,7 +63,7 @@ theorem isFundamentalDomain_fdo_psl2zToPSL2RRange :
     IsFundamentalDomain psl2zToPSL2R.range (_root_.ModularGroup.fdo : Set ℍ) volume := by
   simpa only [Set.preimage_id] using
     _root_.ModularGroup.isFundamentalDomain_fdo.preimage_of_equiv
-      (Measure.QuasiMeasurePreserving.id volume)
+      (QuasiMeasurePreserving.id volume)
       (MonoidHom.ofInjective psl2zToPSL2R_injective).bijective
       fun g τ ↦ by
         simp only [id_eq, MonoidHom.ofInjective_apply, Subgroup.smul_def,

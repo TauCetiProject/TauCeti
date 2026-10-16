@@ -30,13 +30,16 @@ concrete p-adic norm and valuation APIs.
   valuation with `Padic.valuation`.
 * `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
   the additive-group uniformity, so completeness arguments can use the canonical group structure.
-* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`.
+* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
+  `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit of it.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
 * `Padic.natCastValuation_eq_padicValNat` identifies the normalized valuation of a natural
   number with `padicValNat`, and `Padic.natCastValuation_self` and
-  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
+  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`; by
+  the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer ring for odd
+  `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a uniformizer of
   `ℚ_[p]`.
@@ -115,6 +118,13 @@ theorem coe_integerRingEquiv_symm_apply (x : ℤ_[p]) :
     (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p]) = x :=
   (rfl)
 
+variable {p} in
+/-- An integer prime to `p` is a unit of the integer ring of `ℚ_[p]`. -/
+theorem isUnit_intCast_integerRing {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) : IsUnit (m : 𝒪[ℚ_[p]]) := by
+  have h : IsUnit (m : ℤ_[p]) := PadicInt.isUnit_iff.2 <| (PadicInt.norm_le_one _).antisymm <|
+    not_lt.1 fun h ↦ hm ((PadicInt.norm_int_lt_one_iff_dvd m).1 h)
+  simpa using h.map (integerRingEquiv p).symm
+
 /-- The integer ring of `ℚ_[p]` is adically complete, via its canonical identification with
 `ℤ_[p]`. -/
 instance integerRingIsAdicComplete :
@@ -185,6 +195,12 @@ theorem natCastValuation_two (hp : p ≠ 2) :
   exact padicValNat.eq_zero_of_not_dvd fun h ↦
     hp ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h)
 
+variable {p} in
+/-- For an odd prime `p`, the integer `2` is a unit of the integer ring of `ℚ_[p]`. -/
+theorem isUnit_two_integerRing (hp : p ≠ 2) : IsUnit (2 : 𝒪[ℚ_[p]]) :=
+  (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
+    (natCastValuation_two p hp)
+
 /-- If `p ≡ 3 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Combined with
 `TauCeti.anisotropic_binary_one_one_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
 over `ℚ_[p]` for such primes. -/
@@ -192,9 +208,7 @@ theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     ¬ IsSquare (-1 : ℚ_[p]) := by
   intro hs0
   have hs : IsSquare (-1 : ℚ_[p]ˣ) := TauCeti.isSquare_units_val_iff.mp hs0
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) :=
-    (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
-      (natCastValuation_two p (by omega))
+  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := isUnit_two_integerRing (by omega)
   have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
     have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
     exact (by simpa using h (by simpa using hs))

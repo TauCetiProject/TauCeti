@@ -38,7 +38,9 @@ The statements are named for their conclusions, per the roadmap: no declaration 
 
 Over a number field `F` the per-factor hypotheses of `fg_point` hold for every curve, and are
 registered as instances: `finite_classGroup_ringOfIntegersFactor` (the class number theorem) and
-`fg_units_ringOfIntegersFactor` (Dirichlet's unit theorem).
+`fg_units_ringOfIntegersFactor` (Dirichlet's unit theorem). The Mordell–Weil theorem itself is
+registered as the instance `moduleFinite_point_of_numberField`, so that `E(K)` is a finite
+`ℤ`-module and its rank is `Module.finrank ℤ E(K)`.
 
 ## Two divergences from the source, both forced by what is already on `main`
 
@@ -144,6 +146,11 @@ theorem fg_point_of_numberField : AddGroup.FG W.Point := by
   have := invertibleOfNonzero (two_ne_zero (α := F))
   obtain ⟨C, hC⟩ := exists_variableChange_isCharNeTwoNF (W := W)
   exact fg_point_of_variableChange (𝓞 F) C
+
+/-- **The Mordell–Weil theorem** as an instance: the group `E(K)` of `K`-rational points of an
+elliptic curve `E` over a number field `K` is a finitely generated `ℤ`-module. -/
+instance moduleFinite_point_of_numberField : Module.Finite ℤ W.Point :=
+  Module.Finite.iff_addGroup_fg.mpr fg_point_of_numberField
 
 end NumberField
 

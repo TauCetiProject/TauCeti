@@ -365,7 +365,7 @@ theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
   intro x y hxy
   apply hinjective
   simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
-    LinearMap.baseChange_eq_ltensor] using hxy
+    LinearMap.baseChange_eq_lTensor] using hxy
 
 namespace TauCeti
 
@@ -410,7 +410,7 @@ theorem toMatrix_orthogonalGroupBaseChange {ι : Type*} [Fintype ι] [DecidableE
       (orthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M).toLinearMap =
       (LinearMap.toMatrix b b (g : M ≃ₗ[R] M).toLinearMap).map (algebraMap R A) := by
   rw [coe_orthogonalGroupBaseChange, LinearEquiv.coe_baseChange]
-  exact b.toMatrix_baseChange_baseChange _
+  exact b.toMatrix_baseChange_baseChange b _
 
 /-- On a pure tensor, base change of an orthogonal automorphism applies the automorphism to the
 second tensor factor. -/

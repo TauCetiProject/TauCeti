@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 import Mathlib.Topology.Algebra.ClopenNhdofOne
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Reciprocity for abelian layers and the lattice of norm subgroups

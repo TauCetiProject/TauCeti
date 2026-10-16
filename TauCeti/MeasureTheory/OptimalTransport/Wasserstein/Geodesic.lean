@@ -49,6 +49,8 @@ segment of `P_p (E)`.
   geodesic space for every `1 ≤ p ≤ ∞`.
 * `TauCeti.WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul`: on a separable Banach
   space, the laws of `(1 - t) • x + t • y` under an optimal coupling form a geodesic segment.
+* `TauCeti.WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling`: for the exponent `2`,
+  the coupling `(x, (1 - t) • x + t • y)₊ γ` of the source with the law at time `t` is optimal.
 * `TauCeti.WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_add_smul`: for
   the exponent `2`, the interpolated plan can be chosen with `∫ ‖x - y‖² dπ = W₂ (μ, ν)²`.
 
@@ -311,6 +313,35 @@ theorem WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul {μ ν : Was
   obtain ⟨γ, hγ, hγt⟩ := WassersteinSpace.exists_isGeodesicSegment_timeMarginal hη h0 h1
     (by rw [hend, hπopt])
   exact ⟨γ, hγ, fun t ht ↦ by rw [hγt ⟨t, ht⟩, hmarg]⟩
+
+omit [Fact (1 ≤ p)] in
+/-- The interpolation of an optimal coupling `γ` of two laws `μ` and `ν` of `P₂(E)` for the
+quadratic cost is a geodesic segment `μ_t` from `μ` to `ν`, and `(x, (1 - t) • x + t • y)₊ γ` is
+an optimal coupling of `μ` and `μ_t`. -/
+theorem WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling {μ ν : WassersteinSpace 2 E}
+    {γ : Measure (E × E)}
+    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
+      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E)) :
+    ∃ c : ℝ → WassersteinSpace 2 E, IsGeodesicSegment c μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
+      IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ))
+        (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2))
+        ((μ : ProbabilityMeasure E) : Measure E) ((c t : ProbabilityMeasure E) : Measure E) := by
+  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
+  have hopt := ((isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero
+    ENNReal.ofNat_ne_top).1 (by simpa using hγ)).2
+  obtain ⟨c, hc, hct⟩ :=
+    WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hγ.toIsCoupling hopt
+  refine ⟨c, hc, fun t ht ↦ WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq ?_ ?_⟩
+  · refine ⟨?_, ?_⟩
+    · rw [Measure.fst_map_prodMk (by fun_prop) (by fun_prop), ← hγ.fst_eq, Measure.fst]
+    · rw [Measure.snd_map_prodMk (by fun_prop) (by fun_prop), hct t ht]
+  · -- The displacement of the new coupling is `t` times that of `γ`.
+    have hpt (z : E × E) : ‖z.1 - ((1 - t) • z.1 + t • z.2)‖ ^ 2 = t ^ 2 * ‖z.1 - z.2‖ ^ 2 := by
+      have : z.1 - ((1 - t) • z.1 + t • z.2) = t • (z.1 - z.2) := by module
+      rw [this, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+    rw [integral_map (by fun_prop) (by fun_prop)]
+    simp only [hpt, integral_const_mul, ← WassersteinSpace.dist_sq_eq_integral hγ,
+      hc.dist_source_apply ht, mul_pow, le_refl]
 
 omit [Fact (1 ≤ p)] in
 /-- **Quadratic linear interpolation.** On a separable Banach space `E`, two laws `μ` and `ν` of

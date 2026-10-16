@@ -8,15 +8,18 @@ module
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
-# Absolute continuity of piecewise `C¹` curves
+# Absolute continuity of complex curves
 
 A piecewise `C¹` curve on a compact parameter interval is Lipschitz there, and hence absolutely
 continuous. The derivative is bounded by `IsPiecewiseC1On.isBounded_image_deriv`; the fundamental
 theorem of calculus off the finite set of breakpoints then bounds every increment of the curve.
 
 The existing contour regularity therefore specializes to absolutely continuous curves.
+For a continuous curve differentiable outside a countable set, integrability of an off-curve
+logarithmic derivative also suffices for absolute continuity.
 -/
 
 public section
@@ -27,6 +30,21 @@ open MeasureTheory Set
 open scoped NNReal
 
 variable {γ : ℝ → ℂ} {a b : ℝ}
+
+/-- A continuous complex curve differentiable off a countable set is absolutely continuous
+if its logarithmic derivative about an avoided point is interval integrable. -/
+theorem _root_.ContinuousOn.absolutelyContinuousOnInterval_of_intervalIntegrable_inv_sub_mul_deriv
+    {w : ℂ} {P : Set ℝ} (hγ : ContinuousOn γ (uIcc a b)) (hP : P.Countable)
+    (hd : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
+    (havoid : ∀ t ∈ uIcc a b, γ t ≠ w)
+    (hi : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
+    AbsolutelyContinuousOnInterval γ a b := by
+  have hderiv : IntervalIntegrable (deriv γ) volume a b := by
+    refine (hi.continuousOn_mul (hγ.sub (continuousOn_const (c := w)))).congr (fun t ht ↦ ?_)
+    dsimp
+    rw [← mul_assoc, mul_inv_cancel₀ (sub_ne_zero.mpr (havoid t (uIoc_subset_uIcc ht))), one_mul]
+  exact hγ.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hd t ht).hasDerivAt) hderiv
 
 /-- A piecewise `C¹` curve is Lipschitz on its compact parameter interval, including across its
 breakpoints. -/
