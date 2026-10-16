@@ -43,6 +43,9 @@ are dual to these corners.
 
 * P. Etingof and C.-H. Eu, *Koszulity and the Hilbert series of preprojective algebras*, Math.
   Res. Lett. 14 (2007), Sections 2 and 3, for the graded corners of the vertex Koszul complex.
+* `TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.Basic`, whose
+  `TauCeti.preprojectiveCorner` and associated corner lemmas are adapted here to the signless
+  preprojective algebra.
 -/
 
 public section
