@@ -113,12 +113,8 @@ private theorem summable_smul_sigma_antidiagonal_of_nonarchimedean {f : A → R}
     (hf : Summable f) (hg : Summable g) :
     Summable fun ij : Σ n : A, Finset.antidiagonal n ↦
       f (ij.2 : A × A).1 • g (ij.2 : A × A).2 :=
-  (show
-    (Summable fun ij : A × A ↦ f ij.1 • g ij.2) ↔
-      Summable fun ij : Σ n : A, Finset.antidiagonal n ↦
-        f (ij.2 : A × A).1 • g (ij.2 : A × A).2
-    from Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff.symm).mp
-      (hf.smul_of_nonarchimedean hg)
+  Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff.mpr
+    (hf.smul_of_nonarchimedean hg)
 
 /-- The antidiagonal scalar Cauchy product of two summable families is summable in a complete
 ultrametric normed module. -/
