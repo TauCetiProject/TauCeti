@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
+public import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 public import TauCeti.Analysis.Calculus.Deriv.Complex
 
 /-!
@@ -80,14 +80,10 @@ theorem intervalIntegrable_circulationFun_segment {p q : ℂ} {P Q : ℂ → ℝ
     have hm : Set.MapsTo (AffineMap.lineMap p q) (Set.Icc (0 : ℝ) 1) (segment ℝ p q) :=
       fun _ ht ↦ (convex_segment p q).lineMap_mem (left_mem_segment ℝ p q)
         (right_mem_segment ℝ p q) ht
-    have hp := hP.comp (by fun_prop) hm
-    have hq := hQ.comp (by fun_prop) hm
     simpa only [oneForm_apply, Pi.add_def, Pi.mul_def, Function.comp_apply] using
-      (hp.mul continuousOn_const).add (hq.mul continuousOn_const)
-  apply (intervalIntegrable_congr_ae ?_).mpr hc
-  rw [uIoc_of_le zero_le_one, ← restrict_Ioo_eq_restrict_Ioc]
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-  rw [curveIntegralFun_def, derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
-  exact circulationFun_eq_oneForm P Q (Path.segment p q).extend t
+      ((hP.comp (by fun_prop) hm).mul continuousOn_const).add
+        ((hQ.comp (by fun_prop) hm).mul continuousOn_const)
+  simpa only [← circulationFun_eq_oneForm] using
+    (curveIntegrable_iff_intervalIntegrable_deriv _ _).mp hc
 
 end TauCeti.Green

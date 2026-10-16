@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Green.GraphIntegral
+public import TauCeti.Analysis.BoxIntegral.IntervalIntegral
 public import Mathlib.Topology.Path
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
 /-!

@@ -19,7 +19,6 @@ use the actual raw-curve derivative and the Henstock integral, without bounded g
 absolute continuity. Constant-coordinate arcs have zero integral in the unused direction.
 Graph reparametrization permits backtracking and unbounded speed, even when exceptional graph
 levels have uncountable preimages under the parametrization.
-
 -/
 
 public section

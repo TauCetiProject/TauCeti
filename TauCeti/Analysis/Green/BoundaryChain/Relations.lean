@@ -82,12 +82,7 @@ inductive NullChain (d : Coordinate) (U : Set ℂ) : BoundaryChain → Prop
   | reverse {p q : ℂ} {γ : Path p q} (hγ : PiecewiseGraphArc d U ⟨p, q, γ⟩) :
       NullChain d U (ofPath γ + ofPath γ.symm)
   | reparam {p q : ℂ} {γ δ : Path p q} (hδ : PiecewiseGraphArc d U ⟨p, q, δ⟩)
-      (θ : ℝ → ℝ) (hθ : ContinuousOn θ (Icc 0 1))
-      (hdθ : ∃ s : Set ℝ, s.Countable ∧ ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ θ t)
-      (hdδ : ∃ s : Set ℝ, s.Countable ∧
-        ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ δ.extend t)
-      (hfib : ∀ t : ℝ, (θ ⁻¹' {t}).Countable) (hmap : MapsTo θ (Icc 0 1) (Icc 0 1))
-      (h0 : θ 0 = 0) (h1 : θ 1 = 1) (he : ∀ t : unitInterval, γ t = δ.extend (θ t)) :
+      (θ : ℝ → ℝ) (h : RegularReparam θ γ δ) :
       NullChain d U (ofPath γ - ofPath δ)
 
 private def nullChainSubgroup (d : Coordinate) (U : Set ℂ) : AddSubgroup BoundaryChain where
@@ -176,12 +171,12 @@ theorem NullChain.integrable_and_integral_eq_zero {d : Coordinate} {U : Set ℂ}
   | reverse hγ =>
     refine ⟨(hγ.integrable hP).add (hγ.symm.integrable hP), ?_⟩
     rw [map_add, integral_ofPath, integral_ofPath, hγ.arcIntegral_symm hP, add_neg_cancel]
-  | reparam hδ θ hθ hdθ hdδ hfib hmap h0 h1 he =>
+  | reparam hδ θ h =>
     refine ⟨?_, ?_⟩
-    · exact ((hδ.reparam θ hθ hdθ hdδ hfib hmap h0 h1 he).integrable hP).sub
+    · exact ((hδ.reparam θ h).integrable hP).sub
         (hδ.integrable hP)
     · rw [map_sub, integral_ofPath, integral_ofPath,
-        hδ.arcIntegral_reparam hθ hdθ hdδ hfib hmap h0 h1 he hP, sub_self]
+        hδ.arcIntegral_reparam h hP, sub_self]
 
 /-- A geometric certificate comparing two boundaries gives equality of their coordinate
 integrals. Integrability transfer is given separately by `NullChain.integrable_iff`. -/

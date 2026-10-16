@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.BoundaryChain.Basic
+public import TauCeti.Analysis.Green.GraphIntegral
 public import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul

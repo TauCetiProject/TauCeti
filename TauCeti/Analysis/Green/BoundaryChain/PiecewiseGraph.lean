@@ -28,6 +28,27 @@ open scoped Topology
 
 namespace TauCeti.Green.BoundaryChain
 
+/-- Regular path reparametrization: countable fibers preserve exceptional-set countability,
+and fixed endpoints preserve orientation. -/
+structure RegularReparam {p q : ℂ} (θ : ℝ → ℝ) (γ δ : Path p q) : Prop where
+  /-- Continuity on the parameter interval. -/
+  continuousOn : ContinuousOn θ (Icc 0 1)
+  /-- Differentiability away from a countable set. -/
+  differentiable : ∃ s : Set ℝ, s.Countable ∧ ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ θ t
+  /-- Regularity of the original extended path. -/
+  differentiable_path : ∃ s : Set ℝ, s.Countable ∧
+    ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ δ.extend t
+  /-- Fibers of the parameter map are countable. -/
+  countable_fibers : ∀ t : ℝ, (θ ⁻¹' {t}).Countable
+  /-- Parameters stay in the path interval. -/
+  mapsTo : MapsTo θ (Icc 0 1) (Icc 0 1)
+  /-- The initial parameter is preserved. -/
+  map_zero : θ 0 = 0
+  /-- The final parameter is preserved. -/
+  map_one : θ 1 = 1
+  /-- The new path follows the old path through the parameter map. -/
+  path_eq : ∀ t : unitInterval, γ t = δ.extend (θ t)
+
 /-- A finite graph-piece presentation of an actual path, including ignored constant-coordinate
 pieces. These certificates contain no integral identities or field assumptions. -/
 inductive PiecewiseGraphArc (d : Coordinate) (U : Set ℂ) : Arc → Prop
@@ -41,12 +62,7 @@ inductive PiecewiseGraphArc (d : Coordinate) (U : Set ℂ) : Arc → Prop
   | symm {p q : ℂ} {γ : Path p q} (hγ : PiecewiseGraphArc d U ⟨p, q, γ⟩) :
       PiecewiseGraphArc d U ⟨q, p, γ.symm⟩
   | reparam {p q : ℂ} {γ δ : Path p q} (hδ : PiecewiseGraphArc d U ⟨p, q, δ⟩)
-      (θ : ℝ → ℝ) (hθ : ContinuousOn θ (Icc 0 1))
-      (hdθ : ∃ s : Set ℝ, s.Countable ∧ ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ θ t)
-      (hdδ : ∃ s : Set ℝ, s.Countable ∧
-        ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ δ.extend t)
-      (hfib : ∀ t : ℝ, (θ ⁻¹' {t}).Countable) (hmap : MapsTo θ (Icc 0 1) (Icc 0 1))
-      (h0 : θ 0 = 0) (h1 : θ 1 = 1) (he : ∀ t : unitInterval, γ t = δ.extend (θ t)) :
+      (θ : ℝ → ℝ) (h : RegularReparam θ γ δ) :
       PiecewiseGraphArc d U ⟨p, q, γ⟩
 
 private def CoordinatePrimitive (d : Coordinate) (P : ℂ → ℝ) (γ : Arc) (F : ℝ → ℝ) : Prop :=
@@ -107,8 +123,8 @@ private theorem CoordinatePrimitive.trans {d : Coordinate} {P : ℂ → ℝ}
       have hd := ((hdF (2 * t) ⟨⟨by linarith [ht.1.1], by linarith⟩, hts⟩).comp t
         ((hasDerivAt_id t).const_mul 2)).congr_of_eventuallyEq hf
       rw [γ.deriv_extend_trans_of_lt_half δ hlt]
-      simpa only [he.self_of_nhds, map_smul, smul_eq_mul, mul_one, one_mul, mul_assoc,
-        mul_comm, mul_left_comm] using hd
+      simp only [he.self_of_nhds, map_smul, smul_eq_mul]
+      convert hd using 1; ring
     · have hgt : 1 / 2 < t := lt_of_le_of_ne (le_of_not_gt hlt) hn.symm
       have htu : 2 * t - 1 ∉ u := fun hm ↦ ht.2 (Or.inl (Or.inr
         ⟨2 * t - 1, hm, by ring⟩))
@@ -119,8 +135,8 @@ private theorem CoordinatePrimitive.trans {d : Coordinate} {P : ℂ → ℝ}
       have hd := (((hdG (2 * t - 1) ⟨⟨by linarith, by linarith [ht.1.2]⟩, htu⟩).comp t
         (((hasDerivAt_id t).const_mul 2).sub_const 1)).const_add (F 1)).congr_of_eventuallyEq hf
       rw [γ.deriv_extend_trans_of_half_lt δ hgt]
-      simpa only [he.self_of_nhds, map_smul, smul_eq_mul, mul_one, one_mul, mul_assoc,
-        mul_comm, mul_left_comm] using hd
+      simp only [he.self_of_nhds, map_smul, smul_eq_mul]
+      convert hd using 1; ring
 
 private theorem CoordinatePrimitive.symm {d : Coordinate} {P : ℂ → ℝ} {p q : ℂ}
     {γ : Path p q} {F : ℝ → ℝ} (hF : CoordinatePrimitive d P ⟨p, q, γ⟩ F) :
@@ -139,13 +155,9 @@ private theorem CoordinatePrimitive.symm {d : Coordinate} {P : ℂ → ℝ} {p q
 private theorem CoordinatePrimitive.reparam {d : Coordinate} {P : ℂ → ℝ}
     {p q : ℂ} {γ δ : Path p q} {F : ℝ → ℝ}
     (hF : CoordinatePrimitive d P ⟨p, q, δ⟩ F)
-    {θ : ℝ → ℝ} (hθ : ContinuousOn θ (Icc 0 1))
-    (hdθ : ∃ s : Set ℝ, s.Countable ∧ ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ θ t)
-    (hdδ : ∃ s : Set ℝ, s.Countable ∧
-      ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ δ.extend t)
-    (hfib : ∀ t : ℝ, (θ ⁻¹' {t}).Countable) (hmap : MapsTo θ (Icc 0 1) (Icc 0 1))
-    (h0 : θ 0 = 0) (he : ∀ t : unitInterval, γ t = δ.extend (θ t)) :
-    ∃ G, CoordinatePrimitive d P ⟨p, q, γ⟩ G ∧ G 1 = F (θ 1) := by
+    {θ : ℝ → ℝ} (h : RegularReparam θ γ δ) :
+    ∃ G, CoordinatePrimitive d P ⟨p, q, γ⟩ G ∧ G 1 = F 1 := by
+  obtain ⟨hθ, hdθ, hdδ, hfib, hmap, h0, h1, he⟩ := h
   obtain ⟨hcF, hF0, s, hs, hdF⟩ := hF
   obtain ⟨u, hu, hdu⟩ := hdθ
   obtain ⟨v, hv, hdv⟩ := hdδ
@@ -184,7 +196,7 @@ private theorem CoordinatePrimitive.reparam {d : Coordinate} {P : ℂ → ℝ}
       rw [hdγ.deriv]
       simp only [map_smul, smul_eq_mul, Function.comp_apply, heγ.self_of_nhds]
       convert hp using 1; ring
-  · rw [Function.comp_apply, heΦ 1 ⟨zero_le_one, le_rfl⟩]
+  · rw [Function.comp_apply, heΦ 1 ⟨zero_le_one, le_rfl⟩, h1]
 
 private theorem CoordinatePrimitive.hasIntegral {d : Coordinate} {P : ℂ → ℝ}
     {γ : Arc} {F : ℝ → ℝ} (h : CoordinatePrimitive d P γ F) :
@@ -216,9 +228,9 @@ private theorem PiecewiseGraphArc.coordinatePrimitive {d : Coordinate} {U : Set 
   | symm hγ ih =>
     obtain ⟨F, hF⟩ := ih
     exact ⟨_, hF.symm⟩
-  | reparam hδ θ hθ hdθ hdδ hfib hmap h0 h1 he ih =>
+  | reparam hδ θ h ih =>
     obtain ⟨F, hF⟩ := ih
-    obtain ⟨G, hG, _⟩ := hF.reparam hθ hdθ hdδ hfib hmap h0 he
+    obtain ⟨G, hG, _⟩ := hF.reparam h
     exact ⟨G, hG⟩
 
 /-- Every finite graph-piece path is genuinely Henstock integrable in its selected coordinate,
@@ -251,18 +263,13 @@ theorem PiecewiseGraphArc.arcIntegral_trans {d : Coordinate} {U : Set ℂ} {p q 
 piecewise graph path. Endpoint preservation fixes its orientation. -/
 theorem PiecewiseGraphArc.arcIntegral_reparam {d : Coordinate} {U : Set ℂ} {p q : ℂ}
     {γ δ : Path p q} (hδ : PiecewiseGraphArc d U ⟨p, q, δ⟩)
-    {θ : ℝ → ℝ} (hθ : ContinuousOn θ (Icc 0 1))
-    (hdθ : ∃ s : Set ℝ, s.Countable ∧ ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ θ t)
-    (hdδ : ∃ s : Set ℝ, s.Countable ∧
-      ∀ t ∈ Ioo 0 1 \ s, DifferentiableAt ℝ δ.extend t)
-    (hfib : ∀ t : ℝ, (θ ⁻¹' {t}).Countable) (hmap : MapsTo θ (Icc 0 1) (Icc 0 1))
-    (h0 : θ 0 = 0) (h1 : θ 1 = 1) (he : ∀ t : unitInterval, γ t = δ.extend (θ t))
+    {θ : ℝ → ℝ} (h : RegularReparam θ γ δ)
     {P : ℂ → ℝ} (hP : ContinuousOn P U) :
     arcIntegral d.proj P ⟨p, q, γ⟩ = arcIntegral d.proj P ⟨p, q, δ⟩ := by
   obtain ⟨F, hF⟩ := hδ.coordinatePrimitive hP
-  obtain ⟨G, hG, hG1⟩ := hF.reparam hθ hdθ hdδ hfib hmap h0 he
+  obtain ⟨G, hG, hG1⟩ := hF.reparam h
   rw [arcIntegral_def, arcIntegral_def, hG.hasIntegral.integral_eq,
-    hF.hasIntegral.integral_eq, hG1, h1]
+    hF.hasIntegral.integral_eq, hG1]
 
 /-- Reversing an actual finite graph-piece path negates its gauge integral. -/
 theorem PiecewiseGraphArc.arcIntegral_symm {d : Coordinate} {U : Set ℂ} {p q : ℂ}

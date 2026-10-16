@@ -60,7 +60,8 @@ theorem integrable_and_integral_boundary (V : Division d D) {P R : ℂ → ℝ}
 /-- Full Green from separate type-I and type-II divisions and geometric comparisons to a
 common boundary. Gauge boundary integrability and integrability of the directional curl are
 conclusions. In particular no equality of boundary integrals is assumed. -/
-theorem green (V : Division .re D) (H : Division .im D) {c : BoundaryChain}
+theorem integrable_and_integral_add_integral_eq_integral_sub
+    (V : Division .re D) (H : Division .im D) {c : BoundaryChain}
     (hV : BoundaryChain.NullChain .re U (V.boundary - c))
     (hH : BoundaryChain.NullChain .im U (H.boundary - c)) (hDU : D ⊆ U)
     {P Q RP RQ : ℂ → ℝ} (hP : ContinuousOn P U) (hQ : ContinuousOn Q U)
@@ -95,7 +96,8 @@ theorem green (V : Division .re D) (H : Division .im D) {c : BoundaryChain}
 
 /-- The Bochner specialization retains genuine integrability of the circulation on every
 supported arc and concludes the identity for Mathlib's existing curve integral. -/
-theorem green_curveIntegral (V : Division .re D) (H : Division .im D) {c : BoundaryChain}
+theorem integrableOn_and_linearCombination_curveIntegral_eq_integral_sub
+    (V : Division .re D) (H : Division .im D) {c : BoundaryChain}
     (hV : BoundaryChain.NullChain .re U (V.boundary - c))
     (hH : BoundaryChain.NullChain .im U (H.boundary - c)) (hDU : D ⊆ U)
     {P Q RP RQ : ℂ → ℝ} (hP : ContinuousOn P U) (hQ : ContinuousOn Q U)
@@ -112,7 +114,7 @@ theorem green_curveIntegral (V : Division .re D) (H : Division .im D) {c : Bound
     IntegrableOn (fun z ↦ RQ z - RP z) D ∧
       Finsupp.linearCombination ℤ (fun γ : Arc ↦ curveIntegral (oneForm P Q) γ.2.2) c =
         ∫ z in D, RQ z - RP z := by
-  have h := green V H hV hH hDU hP hQ hdP hdQ hRP hRQ
+  have h := integrable_and_integral_add_integral_eq_integral_sub V H hV hH hDU hP hQ hdP hdQ hRP hRQ
   exact ⟨h.2.2.1, (BoundaryChain.integral_add_eq_curveIntegral h.1 h.2.1 hc).symm.trans h.2.2.2⟩
 
 end TauCeti.Green.Division
