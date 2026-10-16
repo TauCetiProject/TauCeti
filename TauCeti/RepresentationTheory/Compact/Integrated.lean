@@ -122,32 +122,30 @@ section Integrated
 section
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  (π : ContRepresentation 𝕜 G V)
 
 /-- Conjugation `S ↦ π h⁻¹ ∘ S ∘ π h`, packaged as a continuous linear map on operators. -/
-private noncomputable def conjOp (π : ContRepresentation 𝕜 G V) (h : G) :
-    (V →L[𝕜] V) →L[𝕜] V →L[𝕜] V :=
+private noncomputable def conjOp (h : G) : (V →L[𝕜] V) →L[𝕜] V →L[𝕜] V :=
   (ContinuousLinearMap.compL 𝕜 V V V (π h⁻¹)).comp
     ((ContinuousLinearMap.compL 𝕜 V V V).flip (π h))
 
 /-- `conjOp` is conjugation, unfolded. -/
-private theorem conjOp_apply (π : ContRepresentation 𝕜 G V) (h : G) (S : V →L[𝕜] V) :
+private theorem conjOp_apply (h : G) (S : V →L[𝕜] V) :
     conjOp π h S = (π h⁻¹).comp (S.comp (π h)) := by
   simp [conjOp, ContinuousLinearMap.compL_apply]
 
-variable [TopologicalSpace G]
+variable [TopologicalSpace G] (hπ : Continuous π)
 
 /-- The integrand `g ↦ f g • π g` of the integrated operator, as a continuous map on the group.
 Continuity is where the continuity hypothesis on the representation is used. -/
-private noncomputable def weightFamily (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
-    (f : C(G, 𝕜)) : C(G, V →L[𝕜] V) where
+private noncomputable def weightFamily (f : C(G, 𝕜)) : C(G, V →L[𝕜] V) where
   toFun g := f g • π g
   continuous_toFun := f.continuous.smul hπ
 
 /-- The integrand of the integrated operator, evaluated at a group element. This is the unfolding
 lemma that keeps the proofs below from reaching through `weightFamily`'s definition. -/
 @[simp]
-private theorem weightFamily_apply (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
-    (f : C(G, 𝕜)) (g : G) :
+private theorem weightFamily_apply (f : C(G, 𝕜)) (g : G) :
     weightFamily π hπ f g = f g • π g :=
   (rfl)
 
@@ -155,8 +153,8 @@ variable [IsTopologicalGroup G]
 
 /-- Conjugating the integrand of a class function by the action at `h` conjugates its group
 variable: `π h⁻¹ ∘ (f g • π g) ∘ π h = f (h⁻¹ g h) • π (h⁻¹ g h)`. -/
-private theorem conjOp_comp_weightFamily (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
-    {f : C(G, 𝕜)} (hf : ∀ g h : G, f (h * g * h⁻¹) = f g) (h : G) :
+private theorem conjOp_comp_weightFamily {f : C(G, 𝕜)} (hf : ∀ g h : G, f (h * g * h⁻¹) = f g)
+    (h : G) :
     (conjOp π h : C(V →L[𝕜] V, V →L[𝕜] V)).comp (weightFamily π hπ f)
       = (weightFamily π hπ f).comp (conjMap h) := by
   ext g v
@@ -173,6 +171,10 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
 
+section
+
+variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+
 /-- **The operator by which a continuous scalar function acts on a continuous representation**,
 `∫ g, f g • π g ∂(haarProb G)`.
 
@@ -181,9 +183,10 @@ always defined there: the integrand is continuous and normalized Haar measure is
 assumed complete. The average is taken in the operator space `V →L[𝕜] V`, so it is
 `TauCeti.haarAverage`'s junk value `0` unless that space is complete, which `[CompleteSpace V]`
 supplies; that is why the results below that read the operator's actual value carry it. -/
-noncomputable def integratedOperator (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
-    (f : C(G, 𝕜)) : V →L[𝕜] V :=
+noncomputable def integratedOperator (f : C(G, 𝕜)) : V →L[𝕜] V :=
   haarAverage G (𝕜 := 𝕜) (weightFamily π hπ f)
+
+end
 
 section
 
