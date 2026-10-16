@@ -21,7 +21,8 @@ This functor is essentially surjective in every degree: a shifted complete resol
 a preimage of every Gorenstein-projective module. No full-faithfulness or triangulated
 comparison for the cycle functor is asserted here.
 
-The source is the quotient of the full subcategory of totally acyclic complexes by the
+The source is the quotient of `TauCeti.TotallyAcyclicComplex`, defined in
+`TauCeti.Algebra.Homology.TotallyAcyclic.Basic`, by the
 kernel of its functor to Mathlib's homotopy category. Its inclusion into that homotopy
 category is full and faithful. In particular its morphisms are ordinary chain-homotopy classes,
 without requiring total acyclicity to be invariant under arbitrary homotopy equivalences.
@@ -44,11 +45,6 @@ open CategoryTheory CategoryTheory.Limits HomologicalComplex
 universe v u
 
 namespace TauCeti
-
-/-- The full subcategory of totally acyclic complexes of finite projective modules. -/
-abbrev TotallyAcyclicComplex (A : Type u) [Ring A] :=
-  ObjectProperty.FullSubcategory
-    (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic)
 
 namespace TotallyAcyclicComplex
 
