@@ -39,7 +39,8 @@ abbrev modTwoCoefficientSequence : ShortComplex (ModuleCat.{u} ℤ) :=
       AddEquiv.ulift.toAddMonoidHom).toIntLinearMap
   ShortComplex.mk ((2 : ℤ) • 𝟙 Z) q (by
     ext a
-    simp [q, Z, AddEquiv.ulift, Equiv.ulift, show (2 : ZMod 2) = 0 by decide])
+    have htwo : (2 : ZMod 2) = 0 := by decide
+    simp [q, Z, AddEquiv.ulift, Equiv.ulift, htwo])
 
 /-- Multiplication by two and reduction modulo two form a short exact coefficient sequence,
 including after universe lifting. -/
@@ -54,8 +55,8 @@ theorem modTwoCoefficientSequence_shortExact : modTwoCoefficientSequence.{u}.Sho
         (by simpa [modTwoCoefficientSequence, mul_comm] using hb.symm)⟩
     · rintro ⟨b, rfl⟩
       apply ULift.down_injective
-      simp [modTwoCoefficientSequence, AddEquiv.ulift, Equiv.ulift,
-        show (2 : ZMod 2) = 0 by decide]
+      have htwo : (2 : ZMod 2) = 0 := by decide
+      simp [modTwoCoefficientSequence, AddEquiv.ulift, Equiv.ulift, htwo]
   · intro a b hab
     apply ULift.down_injective
     have hab' := congrArg ULift.down hab
