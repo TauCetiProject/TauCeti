@@ -50,6 +50,8 @@ a genuine positive natural number.
   is separable over the constants.
 * `TauCeti.Place.isSeparable_residueField_of_perfectField`: over a perfect field of constants every
   residue field is separable over the constants.
+* `TauCeti.Place.separable_of_ord_aeval_pos`: if the residue field of `P` is separable over `k`,
+  an irreducible `q` with `q(z)` vanishing at `P`, for `z` regular at `P`, is separable.
 
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
@@ -279,6 +281,27 @@ theorem isSeparable_residueField_of_perfectField [PerfectField k] (hF : IsFuncti
     Algebra.IsSeparable k P.ResidueField :=
   have := P.finiteDimensional_residueField hF
   inferInstance
+
+/-- **A polynomial vanishing at a separable value is separable**: if the residue field of `P` is
+separable over `k`, `z` is regular at `P`, and `q(z)` vanishes at `P` for an irreducible
+`q ∈ k[X]`, then `q` is separable. Up to a unit, `q` is the minimal polynomial over `k` of the
+value of `z` at `P`. -/
+theorem separable_of_ord_aeval_pos [Algebra.IsSeparable k P.ResidueField]
+    {z : F} (hz : 0 ≤ P.ord z) {q : k[X]} (hq : Irreducible q) (hqz : 0 < P.ord (aeval z q)) :
+    q.Separable := by
+  set z' : P.integers := ⟨z, P.mem_integers_iff_ord_nonneg.mpr hz⟩
+  have hcoe : (aeval z' q : F) = aeval z q := (aeval_algebraMap_apply F z' q).symm
+  have hne : (aeval z' q : F) ≠ 0 := fun h ↦ by
+    rw [← hcoe, h, ord_zero] at hqz
+    exact hqz.false
+  -- The value of `z` at `P` is a root of `q`.
+  have hroot : aeval (algebraMap P.integers P.ResidueField z') q = 0 := by
+    rw [aeval_algebraMap_apply, IsLocalRing.ResidueField.algebraMap_eq,
+      P.residue_eq_zero_iff_ord_pos hne, hcoe]
+    exact hqz
+  have hsep := Algebra.IsSeparable.isSeparable k (algebraMap P.integers P.ResidueField z')
+  rw [IsSeparable, ← minpoly.eq_of_irreducible hq hroot] at hsep
+  exact hsep.of_mul_left
 
 end Place
 
