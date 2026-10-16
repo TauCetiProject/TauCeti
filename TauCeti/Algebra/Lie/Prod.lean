@@ -119,8 +119,6 @@ theorem snd_prod (f : P →ₗ⁅R,L⁆ M) (g : P →ₗ⁅R,L⁆ N) :
 
 end LieModuleHom
 
-variable [LieAlgebra R L] [LieModule R L M] [LieModule R L N]
-
 namespace LieModuleEquiv
 
 /-- Swapping the factors is an equivalence of product Lie modules. -/
@@ -128,12 +126,10 @@ def prodComm : (M × N) ≃ₗ⁅R,L⁆ (N × M) where
   __ := LinearEquiv.prodComm R M N
   map_lie' := by simp [lie_prod_apply]
 
-omit [LieAlgebra R L] [LieModule R L M] [LieModule R L N] in
 @[simp]
 theorem prodComm_apply (p : M × N) : prodComm (R := R) (L := L) p = p.swap :=
   LinearEquiv.prodComm_apply R M N p
 
-omit [LieAlgebra R L] [LieModule R L M] [LieModule R L N] in
 @[simp]
 theorem coe_prodComm_apply (p : M × N) :
     ((prodComm (R := R) (L := L) : (M × N) ≃ₗ⁅R,L⁆ (N × M)) :
@@ -141,6 +137,34 @@ theorem coe_prodComm_apply (p : M × N) :
   prodComm_apply p
 
 end LieModuleEquiv
+
+/-- Swapping the factors of a product of Lie modules sends the Lie submodule spanned by `(v, w)` to
+the Lie submodule spanned by `(w, v)`. -/
+@[simp]
+theorem map_lieSpan_diagonal_prodComm {v : M} {w : N} :
+    (LieSubmodule.lieSpan R L {((v, w) : M × N)}).map
+        ((LieModuleEquiv.prodComm (R := R) (L := L) : (M × N) ≃ₗ⁅R,L⁆ (N × M)) :
+          M × N →ₗ⁅R,L⁆ N × M) =
+      LieSubmodule.lieSpan R L {((w, v) : N × M)} := by
+  apply le_antisymm
+  · rw [LieSubmodule.map_le_iff_le_comap, LieSubmodule.lieSpan_le]
+    rintro _ rfl
+    exact LieSubmodule.subset_lieSpan (by simp)
+  · rw [LieSubmodule.lieSpan_le]
+    rintro _ rfl
+    exact (LieSubmodule.mem_map _).mpr
+      ⟨(v, w), LieSubmodule.subset_lieSpan rfl, by simp⟩
+
+/-- Swapping the components of a pair in the Lie submodule spanned by `(v, w)` gives a pair in the
+Lie submodule spanned by `(w, v)`. -/
+theorem prodComm_mem_lieSpan_diagonal {v : M} {w : N}
+    {p : M × N} (hp : p ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)}) :
+    p.swap ∈ LieSubmodule.lieSpan R L {((w, v) : N × M)} := by
+  have hmap := LieSubmodule.mem_map_of_mem
+    (f := ((LieModuleEquiv.prodComm (R := R) (L := L) : (M × N) ≃ₗ⁅R,L⁆ (N × M)) :
+      M × N →ₗ⁅R,L⁆ N × M)) hp
+  rw [map_lieSpan_diagonal_prodComm] at hmap
+  simpa using hmap
 
 end TauCeti
 

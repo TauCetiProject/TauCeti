@@ -103,29 +103,6 @@ private theorem mem_diagonalComapInl {m : M} :
     m ∈ diagonalComapInl K L v w ↔ ((m, 0) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
   by simp only [diagonalComapInl, LieSubmodule.mem_comap, LieModuleHom.inl_apply]
 
-private theorem map_lieSpan_diagonal_prodComm :
-    (LieSubmodule.lieSpan K L {((v, w) : M × N)}).map
-        ((LieModuleEquiv.prodComm (R := K) (L := L) : (M × N) ≃ₗ⁅K,L⁆ (N × M)) :
-          M × N →ₗ⁅K,L⁆ N × M) =
-      LieSubmodule.lieSpan K L {((w, v) : N × M)} := by
-  apply le_antisymm
-  · rw [LieSubmodule.map_le_iff_le_comap, LieSubmodule.lieSpan_le]
-    rintro _ rfl
-    exact LieSubmodule.subset_lieSpan (by simp)
-  · rw [LieSubmodule.lieSpan_le]
-    rintro _ rfl
-    exact (LieSubmodule.mem_map _).mpr
-      ⟨(v, w), LieSubmodule.subset_lieSpan rfl, by simp⟩
-
-private theorem prodComm_mem_lieSpan_diagonal
-    {p : M × N} (hp : p ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)}) :
-    p.swap ∈ LieSubmodule.lieSpan K L {((w, v) : N × M)} := by
-  have hmap := LieSubmodule.mem_map_of_mem
-    (f := ((LieModuleEquiv.prodComm (R := K) (L := L) : (M × N) ≃ₗ⁅K,L⁆ (N × M)) :
-      M × N →ₗ⁅K,L⁆ N × M)) hp
-  rw [map_lieSpan_diagonal_prodComm] at hmap
-  simpa using hmap
-
 /-- If the diagonal submodule contains both factors whole, it is everything. -/
 private theorem lieSpan_diagonal_eq_top_of_eq_top (hl : diagonalComapInl K L v w = ⊤)
     (hr : diagonalComapInr K L v w = ⊤) : LieSubmodule.lieSpan K L {((v, w) : M × N)} = ⊤ := by
