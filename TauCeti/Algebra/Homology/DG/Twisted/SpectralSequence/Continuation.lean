@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Equivalence
-public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
+public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 import TauCeti.Algebra.Homology.ModuleCat.Subobject
@@ -23,7 +23,7 @@ concentrated in cohomological degrees `≤ 0`, since `ν x y` has degree `indQ y
 on a loop space.
 
 The continuation map is then a morphism of filtered complexes, and so induces a morphism of the
-index spectral sequences of `TauCeti.Algebra.Homology.DG.Twisted.Filtration`, compatibly with the
+index spectral sequences (`TauCeti.TwistingCocycle.indexSpectralSequence`), compatibly with the
 Kronecker cocycle and with composition of continuation cocycles.
 
 ## Main definitions
@@ -35,7 +35,7 @@ Kronecker cocycle and with composition of continuation cocycles.
 
 ## Main results
 
-* `TauCeti.continuationMap_mem_indexFiltrationSubmodule`: a matrix with no entries strictly
+* `TauCeti.continuationMap_mem_twistedIndexFiltration`: a matrix with no entries strictly
   increasing the index preserves the index filtration.
 * `TauCeti.ContinuationCocycle.indexSpectralSequenceMap_refl`,
   `TauCeti.ContinuationCocycle.indexSpectralSequenceMap_comp`: functoriality.
@@ -64,11 +64,11 @@ variable {R : Type uR} {A : Type uA} {M : Type uM} [CommSemiring R] [Semiring A]
 
 /-- The continuation map of a matrix with no entries strictly increasing the index preserves the
 index filtration. -/
-theorem continuationMap_mem_indexFiltrationSubmodule (ν : P → Q → A)
+theorem continuationMap_mem_twistedIndexFiltration (ν : P → Q → A)
     (hν : ∀ x y, ind x < indQ y → ν x y = 0) {p : ℤ} {f : P → M}
-    (hf : f ∈ indexFiltrationSubmodule (R := R) ind p) :
-    continuationMap R M ν f ∈ indexFiltrationSubmodule (R := R) indQ p := by
-  rw [mem_indexFiltrationSubmodule_iff] at hf ⊢
+    (hf : f ∈ twistedIndexFiltration (R := R) ind p) :
+    continuationMap R M ν f ∈ twistedIndexFiltration (R := R) indQ p := by
+  rw [mem_twistedIndexFiltration_iff] at hf ⊢
   intro y hy
   rw [continuationMap_apply]
   refine Finset.sum_eq_zero fun x _ ↦ ?_
@@ -123,27 +123,28 @@ variable (hM : IsDGRightModule h ℳ dM)
 
 /-- A continuation cocycle with no entries strictly increasing the index sends each piece of the
 index filtration into the corresponding piece. -/
-theorem factors_indexFiltration (ν : ContinuationCocycle mP mQ)
+theorem factors_twistedIndexSubobject (ν : ContinuationCocycle mP mQ)
     (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) (p : ℤ) :
-    (mQ.indexFiltration dM hM p).Factors
-      ((mP.indexFiltration dM hM p).arrow ≫ ν.continuationHom hM) := by
+    (mQ.twistedIndexSubobject hM p).Factors
+      ((mP.twistedIndexSubobject hM p).arrow ≫ ν.continuationHom hM) := by
   refine HomologicalComplex.factors_of_forall_mem_range _ _ fun n x ↦ ?_
-  rw [mQ.mem_range_indexFiltration_arrow_f_iff, HomologicalComplex.comp_f, ModuleCat.hom_comp,
-    LinearMap.comp_apply, continuationHom_f_apply]
-  refine mem_indexFiltrationSubmodule_iff.1
-    (continuationMap_mem_indexFiltrationSubmodule ν.ν hν (mem_indexFiltrationSubmodule_iff.2 ?_))
-  exact (mP.mem_range_indexFiltration_arrow_f_iff dM hM p n _).1 ⟨x, rfl⟩
+  rw [mQ.mem_range_twistedIndexSubobject_arrow_f_iff, HomologicalComplex.comp_f,
+    ModuleCat.hom_comp, LinearMap.comp_apply, continuationHom_f_apply]
+  refine (mem_twistedIndexFiltration_iff _).1
+    (continuationMap_mem_twistedIndexFiltration ν.ν hν ((mem_twistedIndexFiltration_iff _).2 ?_))
+  exact (mP.mem_range_twistedIndexSubobject_arrow_f_iff hM p n _).1 ⟨x, rfl⟩
 
 /-- **The morphism of filtered complexes of a continuation cocycle**: for a continuation cocycle
 with no entries strictly increasing the index, the continuation map as a morphism between the
 functors of the index filtrations. -/
 noncomputable def indexFiltrationMap (ν : ContinuationCocycle mP mQ)
     (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) :
-    CochainComplex.filtrationFunctor (mP.indexFiltration dM hM)
-        (mP.monotone_indexFiltration dM hM) ⟶
-      CochainComplex.filtrationFunctor (mQ.indexFiltration dM hM)
-        (mQ.monotone_indexFiltration dM hM) :=
-  CochainComplex.filtrationFunctorMap _ _ (ν.continuationHom hM) (ν.factors_indexFiltration hM hν)
+    CochainComplex.filtrationFunctor (mP.twistedIndexSubobject hM)
+        (mP.twistedIndexSubobject_mono hM) ⟶
+      CochainComplex.filtrationFunctor (mQ.twistedIndexSubobject hM)
+        (mQ.twistedIndexSubobject_mono hM) :=
+  CochainComplex.filtrationFunctorMap _ _ (ν.continuationHom hM)
+    (ν.factors_twistedIndexSubobject hM hν)
 
 /-- The components of `indexFiltrationMap` are restrictions of the continuation map. -/
 @[reassoc (attr := simp)]
@@ -151,9 +152,9 @@ theorem indexFiltrationMap_app_comp (ν : ContinuationCocycle mP mQ)
     (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) (a : EInt) :
     (ν.indexFiltrationMap hM hν).app a ≫
         (CochainComplex.filtrationFunctorObjIso _ _ a).hom ≫
-          (CochainComplex.filtrationEInt (mQ.indexFiltration dM hM) a).arrow =
+          (CochainComplex.filtrationEInt (mQ.twistedIndexSubobject hM) a).arrow =
       (CochainComplex.filtrationFunctorObjIso _ _ a).hom ≫
-        (CochainComplex.filtrationEInt (mP.indexFiltration dM hM) a).arrow ≫
+        (CochainComplex.filtrationEInt (mP.twistedIndexSubobject hM) a).arrow ≫
           ν.continuationHom hM :=
   CochainComplex.filtrationFunctorMap_app_comp _ _ a
 
@@ -175,8 +176,8 @@ theorem indexFiltrationMap_comp (ν₁ : ContinuationCocycle mP mQ)
     (ν₁.comp h ν₂).indexFiltrationMap hM hν =
       ν₁.indexFiltrationMap hM hν₁ ≫ ν₂.indexFiltrationMap hM hν₂ := by
   rw [indexFiltrationMap, CochainComplex.filtrationFunctorMap_congr (continuationHom_comp ν₁ ν₂ hM),
-    CochainComplex.filtrationFunctorMap_comp _ _ (ν₁.factors_indexFiltration hM hν₁)
-      (ν₂.factors_indexFiltration hM hν₂)]
+    CochainComplex.filtrationFunctorMap_comp _ _ (ν₁.factors_twistedIndexSubobject hM hν₁)
+      (ν₂.factors_twistedIndexSubobject hM hν₂)]
   rfl
 
 /-- **The morphism of index spectral sequences of a continuation cocycle** with no entries
