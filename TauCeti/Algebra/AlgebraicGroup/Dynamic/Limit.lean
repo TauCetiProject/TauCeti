@@ -48,12 +48,6 @@ noncomputable def parabolicLimitCoordinateMap (l : H →ₐc[R] LaurentPolynomia
   CommHopfAlgCat.homOfPointsMap
     ((parabolicPointsIso l).hom ≫ limitToLeviNatTrans l ≫ leviFunctorIncl l)
 
-private theorem mapPointsFunctor_parabolicLimitCoordinateMap
-    (l : H →ₐc[R] LaurentPolynomial R) :
-    CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} (parabolicLimitCoordinateMap l) =
-      (parabolicPointsIso l).hom ≫ limitToLeviNatTrans l ≫ leviFunctorIncl l :=
-  CommHopfAlgCat.mapPointsFunctor_homOfPointsMap _
-
 /-- The dynamic limit coordinate morphism evaluates the universal constant coefficient on
 the parabolic quotient. -/
 -- The categorical morphism carries sealed object types, so use this formula with `rw`.
@@ -68,7 +62,7 @@ theorem parabolicLimitCoordinateMap_apply (l : H →ₐc[R] LaurentPolynomial R)
   have hm :
       (CommHopfAlgCat.Hom.mapPointsFunctor (parabolicLimitCoordinateMap l)).app A q =
         limit A l ((parabolicPointsIso l).hom.app A q) := by
-    rw [mapPointsFunctor_parabolicLimitCoordinateMap]
+    rw [parabolicLimitCoordinateMap, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
     -- The component has a sealed functor-object domain. Naming that carrier lets the
     -- categorical composition rules apply to the quotient point.
     change (((parabolicPointsIso l).hom ≫ limitToLeviNatTrans l ≫
