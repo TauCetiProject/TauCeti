@@ -153,13 +153,6 @@ section Ultra
 
 variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
-/-- **Minor bound.** Over an ultrametric normed ring with `‖1‖ = 1`, a principal minor is
-bounded by the product of the row bounds over its indices. -/
-theorem norm_principalMinor_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : ∀ i j, ‖A i j‖ ≤ r i)
-    (s : Finset ι) : ‖A.principalMinor s‖ ≤ ∏ i ∈ s, r i := by
-  rw [principalMinor_def, ← prod_coe_sort s r]
-  exact norm_det_le_prod_of_norm_le fun i j ↦ hA i j
-
 /-- **Coefficient bound.** If `r` bounds the rows of `A` and `C ≥ 0` bounds `∏ i ∈ s, r i` for
 every `n`-element set `s`, then `C` bounds the `n`-th coefficient of the principal-minor
 series. No convergence hypothesis is needed. -/
