@@ -44,7 +44,7 @@ noncomputable def normOneUnits : Subgroup (toSubalgebra D hD)ˣ :=
 /-- A unit lies in the norm-one subgroup exactly when its ordinary algebra norm equals one. -/
 @[simp] theorem mem_normOneUnits_iff (u : (toSubalgebra D hD)ˣ) :
     u ∈ normOneUnits D hD ↔ _root_.Algebra.norm ℤ (u : toSubalgebra D hD) = 1 := by
-  change Algebra.normUnits ℤ u = 1 ↔ _
+  rw [normOneUnits, MonoidHom.mem_ker]
   constructor
   · intro h
     simpa only [Algebra.coe_normUnits, Units.val_one] using congrArg Units.val h
@@ -62,9 +62,8 @@ private noncomputable def unitaryToNormOneUnits :
     unitary (QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D) →* normOneUnits D hD :=
   (((Units.map (equivToSubalgebra D hD).toMonoidHom).comp Unitary.toUnits).codRestrict
     (normOneUnits D hD) fun z ↦ by
-      rw [mem_normOneUnits_iff]
-      change _root_.Algebra.norm ℤ (equivToSubalgebra D hD (z : _)) = 1
-      rw [norm_equivToSubalgebra]
+      rw [mem_normOneUnits_iff, MonoidHom.comp_apply, Units.coe_map,
+        Unitary.val_toUnits_apply, norm_equivToSubalgebra]
       exact QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property)
 
 private theorem unitaryToNormOneUnits_bijective :
@@ -393,8 +392,7 @@ theorem card_normOneUnits_sq (s : ℤ) (hs : s ≠ 0) :
       rcases normOneUnits_eq_one_or_neg_one_of_sq s hs u with h | h
       · exact ⟨0, Subtype.ext h.symm⟩
       · exact ⟨1, Subtype.ext h.symm⟩
-  change Nat.card U = 2
-  exact (Nat.card_eq_of_bijective f hf).symm.trans (Nat.card_fin _)
+  simpa only [U] using (Nat.card_eq_of_bijective f hf).symm.trans (Nat.card_fin _)
 
 /-- Nonzero square-discriminant quadratic orders have finite norm-one unit groups. -/
 theorem finite_normOneUnits_sq (s : ℤ) (hs : s ≠ 0) :
@@ -433,10 +431,10 @@ noncomputable def pellToNormOneUnits : Pell.Solution₁ D →* normOneUnits D hD
 @[simp] theorem coe_pellToNormOneUnits (a : Pell.Solution₁ D) :
     (((pellToNormOneUnits D hD a : (toSubalgebra D hD)ˣ) : toSubalgebra D hD) :
       QuadraticAlgebra ℚ (D : ℚ) 0) = ⟨(a.x : ℚ), (a.y : ℚ)⟩ := by
-  change ((equivToSubalgebra D hD
-    (⟨a.x - D * a.y, 2 * a.y⟩ : QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D)) :
-      QuadraticAlgebra ℚ (D : ℚ) 0) = _
-  rw [coe_equivToSubalgebra_apply, lift_apply]
+  rw [pellToNormOneUnits, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    coe_normOneUnitsEquivUnitary_symm, coe_equivToSubalgebra_apply]
+  dsimp only [pellToUnitary]
+  rw [lift_apply]
   ext <;> simp <;> ring
 
 /-- Distinct Pell solutions give distinct units in the order. -/
