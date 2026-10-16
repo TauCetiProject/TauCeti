@@ -17,7 +17,7 @@ with boundary and corners and needs neither finite dimensionality nor completene
 
 The unbundled results assume `C²` section regularity; differentiability of the exterior derivative
 is not a separate hypothesis. A simp theorem gives the square-zero identity for bundled smooth
-forms.
+forms, and `TauCeti.mextDerivₗ_comp_mextDerivₗ` gives the identity for the bundled linear maps.
 
 ## References
 
@@ -85,5 +85,15 @@ theorem SmoothForm.mextDeriv_mextDeriv (φ : SmoothForm I M F k) :
   have hφ := (isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)
   exact TauCeti.mextDeriv_mextDeriv φ.1 ((isSmoothBundleForm_def 2 φ.1).mpr
     (hφ.of_le (by simp)))
+
+variable (I) in
+/-- Successive exterior derivatives compose to zero as linear maps. -/
+@[simp]
+theorem mextDerivₗ_comp_mextDerivₗ (k : ℕ) :
+    (mextDerivₗ I (k + 1)).comp (mextDerivₗ I (M := M) k) = 0 := by
+  ext φ : 1
+  apply Subtype.ext
+  simp only [LinearMap.comp_apply, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv,
+    LinearMap.zero_apply, Submodule.coe_zero]
 
 end TauCeti

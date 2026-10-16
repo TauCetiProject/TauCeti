@@ -29,6 +29,7 @@ In particular it maps smooth `k`-forms to smooth `(k+1)`-forms.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothForms`: the exterior derivative preserves smooth forms.
+* `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth real-valued forms.
 
 ## References
 
@@ -197,5 +198,29 @@ theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
     (hφ : φ ∈ smoothForms I M F k) : mextDeriv φ ∈ smoothForms I M F (k + 1) :=
   mem_smoothForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
     (mem_smoothForms.mp hφ) (by simp)
+
+variable (I) in
+/-- The exterior derivative as a real linear map on smooth real-valued forms. -/
+def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
+    SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1) where
+  toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothForms φ.2⟩
+  map_add' φ ψ := by
+    apply Subtype.ext
+    funext x
+    apply mextDeriv_add
+    · simpa using φ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
+        (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).mdifferentiable
+          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
+    · simpa using ψ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
+        (((isSmoothBundleForm_def ∞ ψ.1).mp (mem_smoothForms.mp ψ.2)).mdifferentiable
+          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
+  map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.1)
+
+variable (I) in
+/-- The bundled derivative has the usual rough exterior derivative as its underlying form. -/
+@[simp]
+theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M ℝ k) :
+    (mextDerivₗ I k φ : RoughForm I M ℝ (k + 1)) = mextDeriv φ.1 :=
+  (rfl)
 
 end TauCeti

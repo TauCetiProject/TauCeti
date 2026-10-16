@@ -17,7 +17,7 @@ complex. Its cohomology is Mathlib's categorical homology, with a concrete linea
 closed forms. This map is surjective and its kernel consists exactly of exact forms; exact
 forms in degree zero are zero.
 
-The construction applies to smooth manifolds with corners and does not require finite
+The construction applies to manifolds of class `C²` with corners and does not require finite
 dimensionality, separation, or completeness of the model space.
 
 ## References
@@ -38,35 +38,7 @@ namespace TauCeti
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M]
-
-/-- The exterior derivative as a real linear map on smooth real-valued forms. -/
-def mextDerivₗ (k : ℕ) : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1) where
-  toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothForms φ.2⟩
-  map_add' φ ψ := by
-    apply Subtype.ext
-    funext x
-    apply mextDeriv_add
-    · simpa using φ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
-        (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).mdifferentiable
-          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
-    · simpa using ψ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
-        (((isSmoothBundleForm_def ∞ ψ.1).mp (mem_smoothForms.mp ψ.2)).mdifferentiable
-          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
-  map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.1)
-
-/-- The bundled derivative has the usual rough exterior derivative as its underlying form. -/
-@[simp]
-theorem mextDerivₗ_apply (k : ℕ) (φ : SmoothForm I M ℝ k) :
-    (mextDerivₗ I k φ : RoughForm I M ℝ (k + 1)) = mextDeriv φ.1 :=
-  (rfl)
-
-/-- Successive exterior derivatives compose to zero as linear maps. -/
-@[simp]
-theorem mextDerivₗ_comp_mextDerivₗ (k : ℕ) :
-    (mextDerivₗ I (k + 1)).comp (mextDerivₗ I (M := M) k) = 0 := by
-  ext φ : 1
-  exact Subtype.ext (SmoothForm.mextDeriv_mextDeriv φ)
+  [IsManifold I 2 M]
 
 variable (M) in
 /-- The nonnegative cochain complex of smooth real-valued differential forms. -/
@@ -173,25 +145,14 @@ private theorem mem_range_toCycles_iff (k : ℕ) (φ : closedForms I M k) :
           ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData.f'.hom ↔
       φ.1 ∈ exactForms I M k := by
   let S := (deRhamComplex I M).sc' (k - 1) k (k + 1)
-  let h := S.moduleCatLeftHomologyData
-  have heval (ψ : S.X₁) : h.i (h.f' ψ) = S.f ψ :=
-    CategoryTheory.congr_fun h.f'_i ψ
-  constructor
-  · rintro ⟨ψ, hψ⟩
-    apply (mem_range_incoming_iff I k φ.1).mp
-    refine ⟨ψ, ?_⟩
-    calc
-      S.f ψ = h.i (h.f' ψ) := (heval ψ).symm
-      _ = h.i (closedFormsEquivKernel I k φ) := congrArg h.i hψ
-      _ = (deRhamComplexXIso I (M := M) k).inv φ.1 := closedFormsEquivKernel_i I k φ
-  · intro hφ
-    obtain ⟨ψ, hψ⟩ := (mem_range_incoming_iff I k φ.1).mpr hφ
-    refine ⟨ψ, ?_⟩
-    apply (ModuleCat.mono_iff_injective h.i).mp inferInstance
-    calc
-      h.i (h.f' ψ) = S.f ψ := heval ψ
-      _ = (deRhamComplexXIso I (M := M) k).inv φ.1 := hψ
-      _ = h.i (closedFormsEquivKernel I k φ) := (closedFormsEquivKernel_i I k φ).symm
+  have hmem : closedFormsEquivKernel I k φ ∈ LinearMap.range S.moduleCatLeftHomologyData.f'.hom ↔
+      S.moduleCatLeftHomologyData.i (closedFormsEquivKernel I k φ) ∈ LinearMap.range S.f.hom := by
+    -- Evaluate the range equation on the kernel carrier with its own module instances.
+    exact Iff.of_eq (congrArg (fun p : Submodule ℝ (LinearMap.ker S.g.hom) ↦
+      (show LinearMap.ker S.g.hom from closedFormsEquivKernel I k φ) ∈ p)
+        (LinearMap.range_codRestrict _ S.f.hom S.moduleCat_zero_apply))
+  rw [closedFormsEquivKernel_i] at hmem
+  exact hmem.trans (mem_range_incoming_iff I k φ.1)
 
 private def concreteHomologyIso (k : ℕ) :
     ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData.H ≅
