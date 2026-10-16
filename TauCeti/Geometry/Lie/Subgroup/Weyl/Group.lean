@@ -19,14 +19,14 @@ normalizer of `K` by `K`, `Subgroup.normalizerQuotient K`. The normalizer acts o
 conjugation (`Subgroup.normalizerMonoidHom`) and, when `G` is a finite-dimensional real Lie
 group, on the Lie algebra `Lie(K)` by the adjoint action. When `K` is commutative both actions
 are trivial on `K`, so they descend to the Weyl group: `Subgroup.normalizerQuotientMulAut` is the
-action on `K` by automorphisms and `TauCeti.Lie.weylAdjointRepresentation` the adjoint
+action on `K` by automorphisms and `Subgroup.weylAdjointRepresentation` the adjoint
 representation on `Lie(K)`. The exponential map of `G` intertwines the two.
 
 ## Main definitions
 
-* `TauCeti.Lie.normalizerAdjointRepresentation`: the adjoint representation of `G` restricted to
+* `Subgroup.normalizerAdjointRepresentation`: the adjoint representation of `G` restricted to
   the normalizer of `K` and to `Lie(K)`.
-* `TauCeti.Lie.weylAdjointRepresentation`: the adjoint representation of the Weyl group of a
+* `Subgroup.weylAdjointRepresentation`: the adjoint representation of the Weyl group of a
   commutative subgroup on its Lie algebra.
 
 ## Main results
@@ -60,7 +60,7 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- **The adjoint representation of the normalizer of `K` on `Lie(K)`**: the adjoint
 representation of `G`, restricted to the normalizer and to the invariant subspace `Lie(K)`. -/
-def normalizerAdjointRepresentation (K : Subgroup G) :
+def _root_.Subgroup.normalizerAdjointRepresentation (K : Subgroup G) :
     Representation ℝ (Subgroup.normalizer (K : Set G))
       (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
   (⟨(lieSubalgebraOfSubgroup (I := I) K).toSubmodule, fun g _ hX => by
@@ -69,42 +69,42 @@ def normalizerAdjointRepresentation (K : Subgroup G) :
       (Subgroup.normalizer (K : Set G)).subtype)).toRepresentation
 
 @[simp]
-theorem coe_normalizerAdjointRepresentation_apply (K : Subgroup G)
+theorem _root_.Subgroup.coe_normalizerAdjointRepresentation_apply (K : Subgroup G)
     (g : Subgroup.normalizer (K : Set G)) (X : (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) :
-    (normalizerAdjointRepresentation (I := I) K g X : LeftInvariantDerivation I G) =
+    (K.normalizerAdjointRepresentation (I := I) g X : LeftInvariantDerivation I G) =
       Ad (I := I) (g : G) X := by
-  rw [normalizerAdjointRepresentation]
+  rw [Subgroup.normalizerAdjointRepresentation]
   refine (Subrepresentation.toRepresentation_apply_coe.mp rfl).symm.trans ?_
   simp [ContRepresentation.toMonoidHom_apply]
 
 /-- **The adjoint representation of the Weyl group of a commutative subgroup on its Lie
 algebra.** -/
-def weylAdjointRepresentation (K : Subgroup G) [IsMulCommutative K] :
+def _root_.Subgroup.weylAdjointRepresentation (K : Subgroup G) [IsMulCommutative K] :
     Representation ℝ K.normalizerQuotient
       (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
-  K.normalizerQuotientLift (normalizerAdjointRepresentation (I := I) K) fun g hg =>
+  K.normalizerQuotientLift (K.normalizerAdjointRepresentation (I := I)) fun g hg =>
     LinearMap.ext fun X => Subtype.ext <| by
-      rw [Module.End.one_apply, coe_normalizerAdjointRepresentation_apply]
+      rw [Module.End.one_apply, Subgroup.coe_normalizerAdjointRepresentation_apply]
       exact Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg X.2
 
 @[simp]
-theorem coe_weylAdjointRepresentation_mk_apply (K : Subgroup G) [IsMulCommutative K]
+theorem _root_.Subgroup.coe_weylAdjointRepresentation_mk_apply (K : Subgroup G) [IsMulCommutative K]
     (g : Subgroup.normalizer (K : Set G)) (X : (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) :
-    (weylAdjointRepresentation (I := I) K (g : K.normalizerQuotient) X :
+    (K.weylAdjointRepresentation (I := I) (g : K.normalizerQuotient) X :
         LeftInvariantDerivation I G) = Ad (I := I) (g : G) X := by
-  simp only [weylAdjointRepresentation, Subgroup.normalizerQuotientLift, QuotientGroup.lift_mk,
-    coe_normalizerAdjointRepresentation_apply]
+  simp only [Subgroup.weylAdjointRepresentation, Subgroup.normalizerQuotientLift,
+    QuotientGroup.lift_mk, Subgroup.coe_normalizerAdjointRepresentation_apply]
 
 /-- **The exponential intertwines the two actions of the Weyl group** of a closed commutative
 subgroup. -/
 theorem lieExp_weylAdjointRepresentation_apply {K : Subgroup G} [IsMulCommutative K]
     (hK : IsClosed (K : Set G)) (w : K.normalizerQuotient)
     (X : (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) :
-    lieExp (I := I) (weylAdjointRepresentation (I := I) K w X : LeftInvariantDerivation I G) =
+    lieExp (I := I) (K.weylAdjointRepresentation (I := I) w X : LeftInvariantDerivation I G) =
       K.normalizerQuotientMulAut w
         ⟨lieExp (I := I) X, lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK X.2⟩ := by
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective w
-  rw [coe_weylAdjointRepresentation_mk_apply, Subgroup.coe_normalizerQuotientMulAut_mk_apply,
-    conj_lieExp]
+  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply,
+    Subgroup.coe_normalizerQuotientMulAut_mk_apply, conj_lieExp]
 
 end TauCeti.Lie
