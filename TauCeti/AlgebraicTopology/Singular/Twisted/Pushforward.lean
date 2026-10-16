@@ -103,6 +103,7 @@ private theorem pathClass_comp_vertexTransport {n : ℕ} (σ : (TopCat.toSSet.ob
         vertexTransport (δ i).op ((TopCat.toSSet.map f).app _ σ) =
       f.hom.pathClass z₀ (TopCat.simplexMap ((TopCat.toSSet.obj Z).δ i σ)
         (toTopInitialVertex _)) := by
+  rw [vertexTransport_eq_pathClass]
   -- `TopCat.simplexMap` of the pushed-forward simplex is `f ∘ TopCat.simplexMap σ` by definition
   -- (`TopCat.simplexMap_app`), which a rewrite cannot expose inside the dependent composite.
   exact (congrArg (f.hom.pathClass z₀ _ ≫ ·)
