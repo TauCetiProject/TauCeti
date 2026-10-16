@@ -22,7 +22,9 @@ vector, and `hp.constantCoeff_eq_zero` records that the constant coefficient van
 positive degree.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
-product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
+product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
+`MvPolynomial.homogeneousComponent_mul_of_right_isHomogeneous`: multiplying by a homogeneous
+polynomial of degree `d` shifts homogeneous components by `d`.
 -/
 
 public section
@@ -101,6 +103,21 @@ theorem constantCoeff_eq_zero {σ R : Type*} [CommSemiring R]
 end MvPolynomial.IsHomogeneous
 
 namespace MvPolynomial
+
+attribute [local instance] gradedAlgebra in
+/-- Multiplying by a polynomial homogeneous of degree `d` shifts homogeneous components by `d`:
+the degree-`n` component of `a * t` is `homogeneousComponent (n - d) a * t` when `d ≤ n`, and
+vanishes otherwise. -/
+theorem homogeneousComponent_mul_of_right_isHomogeneous {σ R : Type*} [CommSemiring R]
+    {t : MvPolynomial σ R} {d : ℕ} (ht : t.IsHomogeneous d) (a : MvPolynomial σ R) (n : ℕ) :
+    homogeneousComponent n (a * t) =
+      if d ≤ n then homogeneousComponent (n - d) a * t else 0 := by
+  have key (φ : MvPolynomial σ R) (i : ℕ) :
+      (DirectSum.decompose (homogeneousSubmodule σ R) φ i : MvPolynomial σ R) =
+        homogeneousComponent i φ :=
+    decomposition.decompose'_apply φ i
+  simpa only [key] using DirectSum.coe_decompose_mul_of_right_mem (homogeneousSubmodule σ R) n
+    (a := a) ((mem_homogeneousSubmodule d t).mpr ht)
 
 variable {σ R : Type*} [CommRing R]
 
