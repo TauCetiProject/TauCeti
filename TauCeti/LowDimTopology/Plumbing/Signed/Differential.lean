@@ -104,8 +104,7 @@ theorem signedLatticeDifferentialOnGenerator_def
 noncomputable def signedLatticeDifferential
     (P : PlumbingGraph V) (k : P.characteristicVectors) :
     (PlumbingCube V →₀ R[X]) →ₗ[R[X]] PlumbingCube V →₀ R[X] :=
-  Finsupp.lsum R[X] fun C =>
-    (LinearMap.id : R[X] →ₗ[R[X]] R[X]).smulRight (P.signedLatticeDifferentialOnGenerator R k C)
+  Finsupp.linearCombination R[X] (P.signedLatticeDifferentialOnGenerator R k)
 
 /-- The oriented lattice differential sends a single cube with coefficient `a` to `a` times its
 oriented weighted sum of codimension-one faces. -/
@@ -114,8 +113,7 @@ theorem signedLatticeDifferential_single
     (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) (a : R[X]) :
     P.signedLatticeDifferential R k (Finsupp.single C a) =
       a • P.signedLatticeDifferentialOnGenerator R k C := by
-  rw [signedLatticeDifferential, Finsupp.lsum_single]
-  rfl
+  rw [signedLatticeDifferential, Finsupp.linearCombination_single]
 
 /-- The oriented lattice differential is the finite linear combination of its values on the
 generators in the support of a chain. -/
@@ -123,8 +121,7 @@ theorem signedLatticeDifferential_apply
     (P : PlumbingGraph V) (k : P.characteristicVectors) (c : PlumbingCube V →₀ R[X]) :
     P.signedLatticeDifferential R k c =
       c.sum fun C a => a • P.signedLatticeDifferentialOnGenerator R k C := by
-  rw [signedLatticeDifferential, Finsupp.lsum_apply]
-  simp [Finsupp.sum, LinearMap.smulRight_apply]
+  rw [signedLatticeDifferential, Finsupp.linearCombination_apply]
 
 /-! ### Cancellation around codimension-two faces -/
 
