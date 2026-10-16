@@ -9,6 +9,8 @@ public import Mathlib.NumberTheory.Real.GoldenRatio
 public import Mathlib.NumberTheory.Transcendental.Liouville.LiouvilleNumber
 public import TauCeti.FieldTheory.Minpoly.Primitive
 public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
+import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.NumberTheory.DiophantineApproximation.Dirichlet
 
 /-!
 # Badly approximable numbers and Littlewood's conjecture
@@ -16,8 +18,9 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
 A real number `ξ` is *badly approximable* if it is irrational and there is `c > 0` with
 `q ‖q ξ‖ ≥ c` for every integer `q ≥ 1`, where `‖x‖ = |x - round x|` is the distance to the
 nearest integer. Equivalently, `|ξ - r| ≥ c / den(r) ^ 2` for every rational `r`
-(`badlyApproximable_iff_forall_ratCast`), so Dirichlet's exponent `2` cannot be improved even by
-a constant factor. Badly approximable numbers have irrationality exponent exactly `2`
+(`badlyApproximable_iff_forall_ratCast`), so for a fixed badly approximable `ξ` the constant in
+Dirichlet's bound `|ξ - p / q| < 1 / q ^ 2` cannot be made arbitrarily small. Badly
+approximable numbers have irrationality exponent exactly `2`
 (`BadlyApproximable.irrationalityExponent_eq`), so they are not Liouville numbers. The property is
 invariant under the rational affine maps `ξ ↦ ξ + r` and `ξ ↦ r ξ` with `r ≠ 0`. Liouville's
 inequality makes every real quadratic irrational badly approximable
@@ -27,8 +30,9 @@ Littlewood's conjecture asserts that `inf_{y ≥ 1} y ‖y α‖ ‖y β‖ = 0`
 open, and is recorded here only as the proposition `LittlewoodConjecture`. It holds for `α`, `β`
 as soon as one of them is not badly approximable (`littlewood_of_not_badlyApproximable`), so it
 reduces to pairs of badly approximable numbers (`littlewoodConjecture_iff_badlyApproximable`).
-Dirichlet's theorem gives the weaker unconditional statement that `y ‖y α‖ ‖y β‖ ≤ 1` for
-infinitely many `y ≥ 1` (`infinite_setOf_mul_le_one`).
+Dirichlet's theorem in nearest-integer form (`infinite_setOf_mul_abs_mul_sub_round_le_one`) gives
+the weaker unconditional statement that `y ‖y α‖ ‖y β‖ ≤ 1` for infinitely many `y ≥ 1`
+(`infinite_setOf_mul_le_one`).
 
 ## Main definitions
 
@@ -53,22 +57,6 @@ namespace TauCeti
 the distance from `x` to the nearest integer. -/
 def BadlyApproximable (ξ : ℝ) : Prop :=
   Irrational ξ ∧ ∃ c > (0 : ℝ), ∀ q : ℕ, 0 < q → c ≤ q * |q * ξ - round (q * ξ)|
-
-/-- The rescaling identity `q |q ξ - m| = q ^ 2 |ξ - m / q|` for `q > 0`. -/
-private lemma mul_abs_mul_sub_eq {q : ℝ} (hq : 0 < q) (ξ m : ℝ) :
-    q * |q * ξ - m| = q ^ 2 * |ξ - m / q| := by
-  rw [show ξ - m / q = (q * ξ - m) / q by field_simp, abs_div, abs_of_pos hq]
-  field_simp
-
-/-- A rational number times a multiple of its denominator is an integer, so it has distance `0`
-from the nearest integer. -/
-private lemma abs_den_mul_sub_round_eq_zero (r : ℚ) (n : ℕ) :
-    |((n * r.den : ℕ) : ℝ) * r - round (((n * r.den : ℕ) : ℝ) * r)| = 0 := by
-  have h : ((n * r.den : ℕ) : ℝ) * r = ((n * r.num : ℤ) : ℝ) := by
-    push_cast
-    rw [mul_assoc]
-    exact congrArg _ (by exact_mod_cast r.den_mul_eq_num)
-  rw [h, round_intCast, sub_self, abs_zero]
 
 /-- The irrationality condition in `BadlyApproximable` is automatic: `ξ` is badly approximable
 exactly when `q ‖q ξ‖` is bounded below by a positive constant for `q ≥ 1`. -/
@@ -97,7 +85,8 @@ theorem badlyApproximable_iff_forall_ratCast {ξ : ℝ} :
   refine ⟨fun ⟨c, hc, h⟩ ↦ ⟨c, hc, fun r ↦ ?_⟩, fun ⟨c, hc, h⟩ ↦ ⟨c, hc, fun q hq ↦ ?_⟩⟩
   · -- Compare with the integer `num r` instead of the nearest integer to `den r * ξ`.
     have hden : (0 : ℝ) < r.den := by exact_mod_cast r.den_pos
-    rw [div_le_iff₀ (by positivity), mul_comm, Rat.cast_def (K := ℝ) r, ← mul_abs_mul_sub_eq hden]
+    rw [div_le_iff₀ (by positivity), mul_comm, Rat.cast_def (K := ℝ) r,
+      ← mul_abs_mul_sub_eq_sq_mul_abs_sub_div hden]
     exact (h r.den r.den_pos).trans
       (mul_le_mul_of_nonneg_left (round_le _ _) hden.le)
   · -- The fraction `round (q ξ) / q` has denominator at most `q`.
@@ -109,7 +98,7 @@ theorem badlyApproximable_iff_forall_ratCast {ξ : ℝ} :
     have hden' : (0 : ℝ) < ((m : ℚ) / q).den := by exact_mod_cast Rat.den_pos _
     have := h ((m : ℚ) / q)
     push_cast at this
-    rw [mul_abs_mul_sub_eq hq', ← div_le_iff₀' (by positivity)]
+    rw [mul_abs_mul_sub_eq_sq_mul_abs_sub_div hq', ← div_le_iff₀' (by positivity)]
     exact (div_le_div_of_nonneg_left hc.le (by positivity)
       (pow_le_pow_left₀ hden'.le (by exact_mod_cast hden) 2)).trans this
 
@@ -131,7 +120,7 @@ theorem BadlyApproximable.not_liouvilleWith {ξ p : ℝ} (h : BadlyApproximable 
     c ≤ n * |n * ξ - round (n * ξ)| := hξ n hn
     _ ≤ n * |n * ξ - m| := mul_le_mul_of_nonneg_left (round_le _ _) hn'.le
     _ = (n : ℝ) ^ (2 : ℝ) * |ξ - m / n| := by
-      rw [mul_abs_mul_sub_eq hn', Real.rpow_two]
+      rw [mul_abs_mul_sub_eq_sq_mul_abs_sub_div hn', Real.rpow_two]
     _ < (n : ℝ) ^ (2 : ℝ) * (n : ℝ) ^ (-s) := by gcongr
     _ = (n : ℝ) ^ (2 - s) := by rw [← Real.rpow_add hn', sub_eq_add_neg]
     _ < c := hnc
@@ -216,7 +205,7 @@ theorem _root_.Irrational.badlyApproximable_of_aeval_eq_zero {ξ : ℝ} (hξ : I
   obtain ⟨b, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hq.ne'
   have key := hAf (round (((b + 1 : ℕ) : ℝ) * ξ)) b
   push_cast at key ⊢
-  rw [inv_le_iff_one_le_mul₀ hA, mul_abs_mul_sub_eq (by linarith)]
+  rw [inv_le_iff_one_le_mul₀ hA, mul_abs_mul_sub_eq_sq_mul_abs_sub_div (by linarith)]
   refine key.trans ?_
   rw [← mul_assoc]
   gcongr
@@ -237,35 +226,6 @@ theorem badlyApproximable_of_natDegree_minpoly_eq_two {ξ : ℝ}
     (by rw [natDegree_primitiveMinpoly, h]) (aeval_primitiveMinpoly hint.isAlgebraic)
 
 /-! ### Littlewood's conjecture -/
-
-/-- **Dirichlet's theorem, nearest-integer form.** For every real `α`, infinitely many natural
-numbers `q ≥ 1` satisfy `q ‖q α‖ ≤ 1`. -/
-theorem infinite_setOf_mul_abs_mul_sub_round_le_one (α : ℝ) :
-    {q : ℕ | 0 < q ∧ q * |q * α - round (q * α)| ≤ 1}.Infinite := by
-  refine Set.infinite_of_forall_exists_gt fun N ↦ ?_
-  by_cases hα : Irrational α
-  · -- The distances `‖k α‖` with `1 ≤ k ≤ N` are positive, so Dirichlet's theorem with a large
-    -- parameter `n` produces some `k > N`.
-    have hpos (k : ℕ) (hk : k ∈ Finset.Icc 1 N) : 0 < |k * α - round (k * α)| :=
-      abs_pos.mpr <| sub_ne_zero.mpr <|
-        (hα.natCast_mul (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hk).1)).ne_int _
-    have hev : ∀ᶠ n : ℕ in atTop,
-        0 < n ∧ ∀ k ∈ Finset.Icc 1 N, 1 / ((n : ℝ) + 1) < |k * α - round (k * α)| :=
-      (eventually_gt_atTop 0).and <| (eventually_all_finset _).mpr fun k hk ↦
-        tendsto_one_div_add_atTop_nhds_zero_nat.eventually (gt_mem_nhds (hpos k hk))
-    obtain ⟨n, hn, hnN⟩ := hev.exists
-    obtain ⟨k, hk, hkn, hkα⟩ := Real.exists_nat_abs_mul_sub_round_le α hn
-    refine ⟨k, ⟨hk, ?_⟩, ?_⟩
-    · calc (k : ℝ) * |k * α - round (k * α)| ≤ n * (1 / (n + 1)) := by gcongr
-        _ ≤ 1 := by rw [mul_one_div, div_le_one (by positivity)]; linarith
-    · by_contra hkN
-      exact (hnN k (Finset.mem_Icc.mpr ⟨hk, not_lt.mp hkN⟩)).not_ge hkα
-  · -- A rational `α = r` has `‖q α‖ = 0` at every multiple `q` of `den r`.
-    obtain ⟨r, rfl⟩ := not_not.mp hα
-    refine ⟨(N + 1) * r.den, ⟨Nat.mul_pos N.succ_pos r.den_pos, ?_⟩, ?_⟩
-    · rw [abs_den_mul_sub_round_eq_zero, mul_zero]
-      exact zero_le_one
-    · exact (Nat.lt_succ_self N).trans_le (Nat.le_mul_of_pos_right _ r.den_pos)
 
 /-- **Littlewood's conjecture**: for all real `α`, `β` and every `ε > 0` there is `y ≥ 1` with
 `y ‖y α‖ ‖y β‖ < ε`, where `‖x‖ = |x - round x|`. This is an open problem; it is recorded as a
