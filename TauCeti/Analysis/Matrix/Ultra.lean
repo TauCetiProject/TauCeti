@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
+public import TauCeti.Algebra.BigOperators.ZPow
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 
 /-!
@@ -104,15 +105,12 @@ theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ :
     {w w' : ι → ℤ} (h : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j)) {k : ℕ} {m : ℤ}
     (hm : ∀ s : Finset ι, s.card = k → m ≤ ∑ i ∈ s, (w i - w' i)) :
     ‖A.charpolyRev.coeff k‖ ≤ σ ^ m := by
-  have hprod (f : ι → ℤ) (s : Finset ι) : ∏ i ∈ s, σ ^ f i = σ ^ ∑ i ∈ s, f i := by
-    induction s using Finset.cons_induction with
-    | empty => simp
-    | cons a s ha ih => rw [prod_cons, sum_cons, ih, zpow_add₀ hσ₀.ne']
   refine norm_coeff_charpolyRev_le (c := fun i ↦ σ ^ w i) (d := fun j ↦ σ ^ (-w' j))
     (fun i j ↦ ?_) (zpow_nonneg hσ₀.le m) fun s hs ↦ ?_
   · rw [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg]
     exact h i j
-  · rw [hprod, hprod, ← zpow_add₀ hσ₀.ne', ← sum_add_distrib]
+  · rw [prod_zpow_eq_zpow_sum₀ s hσ₀.ne', prod_zpow_eq_zpow_sum₀ s hσ₀.ne', ← zpow_add₀ hσ₀.ne',
+      ← sum_add_distrib]
     simp_rw [← sub_eq_add_neg]
     exact zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs)
 
