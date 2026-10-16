@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
+public import TauCeti.InformationTheory.Coding.Elementary.Basic
 public import TauCeti.RepresentationTheory.RestrictScalars
 
 /-!
@@ -36,19 +37,12 @@ namespace TauCeti
 
 variable (K : Type*) [Field K] [NumberField K]
 
-/-- The sum-zero hyperplane in the real functions on the infinite places of `K`. -/
-def unitLogHyperplane : Submodule ℝ (InfinitePlace K → ℝ) :=
-  LinearMap.ker (∑ w : InfinitePlace K, (LinearMap.proj w : (InfinitePlace K → ℝ) →ₗ[ℝ] ℝ))
-
-/-- Membership in the unit logarithmic hyperplane is the product formula in logarithmic form. -/
-@[simp] theorem mem_unitLogHyperplane (x : InfinitePlace K → ℝ) :
-    x ∈ unitLogHyperplane K ↔ ∑ w, x w = 0 := by
-  simp [unitLogHyperplane, LinearMap.sum_apply]
-
-/-- The weighted logarithm of a unit, retaining every infinite place. -/
-def unitLogEmbedding : Additive (𝓞 K)ˣ →+ unitLogHyperplane K where
+/-- The weighted logarithm of a unit, retaining every infinite place. The product formula
+places its image in the sum-zero hyperplane `singleParityCheckCode ℝ (InfinitePlace K)`. -/
+def unitLogEmbedding : Additive (𝓞 K)ˣ →+ singleParityCheckCode ℝ (InfinitePlace K) where
   toFun u := ⟨fun w => (mult w : ℝ) * Real.log (w (u.toMul : K)),
-    (mem_unitLogHyperplane K _).mpr (NumberField.Units.sum_mult_mul_log u.toMul)⟩
+    (mem_singleParityCheckCode ℝ (InfinitePlace K)).mpr
+      (NumberField.Units.sum_mult_mul_log u.toMul)⟩
   map_zero' := by ext w; simp
   map_add' u v := by
     ext w
@@ -65,7 +59,8 @@ def unitLogEmbedding : Additive (𝓞 K)ˣ →+ unitLogHyperplane K where
   rw [NumberField.Units.mem_torsion]
   constructor
   · intro h w
-    exact mult_log_place_eq_zero.mp (congrArg (fun x : unitLogHyperplane K => x.val w) h)
+    exact mult_log_place_eq_zero.mp
+      (congrArg (fun x : singleParityCheckCode ℝ (InfinitePlace K) => x.val w) h)
   · intro h
     ext w
     simp [unitLogEmbedding, h w]
@@ -77,11 +72,11 @@ theorem unitLogEmbedding_ker :
   simp only [AddMonoidHom.mem_ker, unitLogEmbedding_eq_zero_iff, Additive.mem_toAddSubgroup]
 
 /-- The unit logarithmic lattice, as an integral submodule of the sum-zero hyperplane. -/
-def fullUnitLattice : Submodule ℤ (unitLogHyperplane K) :=
+def fullUnitLattice : Submodule ℤ (singleParityCheckCode ℝ (InfinitePlace K)) :=
   (unitLogEmbedding K).toIntLinearMap.range
 
 /-- The full unit lattice is exactly the set of logarithmic images of units. -/
-@[simp] theorem mem_fullUnitLattice (x : unitLogHyperplane K) :
+@[simp] theorem mem_fullUnitLattice (x : singleParityCheckCode ℝ (InfinitePlace K)) :
     x ∈ fullUnitLattice K ↔ ∃ u, unitLogEmbedding K u = x :=
   (Iff.rfl)
 
@@ -89,10 +84,10 @@ def fullUnitLattice : Submodule ℤ (unitLogHyperplane K) :=
 property. The distinguished place is not part of the full logarithmic embedding. -/
 
 open Classical in
-private def unitLogCoordinates : unitLogHyperplane K ≃ₗ[ℝ] logSpace K where
+private def unitLogCoordinates : singleParityCheckCode ℝ (InfinitePlace K) ≃ₗ[ℝ] logSpace K where
   toFun x w := x.val w.val
   invFun x := ⟨fun w => if h : w = w₀ then -∑ v, x v else x ⟨w, h⟩, by
-    rw [mem_unitLogHyperplane, Fintype.sum_eq_add_sum_subtype_ne _ w₀]
+    rw [mem_singleParityCheckCode, Fintype.sum_eq_add_sum_subtype_ne _ w₀]
     simp only [dite_true]
     have heq : (∑ v : {w : InfinitePlace K // w ≠ w₀},
         if h : v.val = w₀ then -∑ v, x v else x ⟨v.val, h⟩) = ∑ v, x v := by
@@ -106,7 +101,7 @@ private def unitLogCoordinates : unitLogHyperplane K ≃ₗ[ℝ] logSpace K wher
     funext w
     by_cases h : w = w₀
     · subst w
-      have hx := (mem_unitLogHyperplane K _).mp x.property
+      have hx := (mem_singleParityCheckCode ℝ (InfinitePlace K)).mp x.property
       rw [Fintype.sum_eq_add_sum_subtype_ne _ w₀] at hx
       simp only [dite_true]
       linarith
@@ -117,7 +112,7 @@ private def unitLogCoordinates : unitLogHyperplane K ≃ₗ[ℝ] logSpace K wher
   map_add' x y := by rfl
   map_smul' a x := by rfl
 
-private theorem unitLogCoordinates_apply (x : unitLogHyperplane K)
+private theorem unitLogCoordinates_apply (x : singleParityCheckCode ℝ (InfinitePlace K))
     (w : {w : InfinitePlace K // w ≠ w₀}) :
     unitLogCoordinates K x w = x.val w.val :=
   (rfl)
@@ -130,7 +125,8 @@ private theorem unitLogCoordinates_embedding (u : Additive (𝓞 K)ˣ) :
 
 open Classical in
 private theorem fullUnitLattice_eq_comap :
-    fullUnitLattice K = ZLattice.comap ℝ (E := logSpace K) (F := unitLogHyperplane K)
+    fullUnitLattice K = ZLattice.comap ℝ (E := logSpace K)
+      (F := singleParityCheckCode ℝ (InfinitePlace K))
       (NumberField.Units.unitLattice K)
       (unitLogCoordinates K).toContinuousLinearEquiv.toLinearMap := by
   ext x
@@ -174,19 +170,21 @@ variable (k : Type*) [Field k] [Algebra k K]
 
 /-- The permutation representation on the logarithmic hyperplane: an automorphism acts by
 pullback along its inverse on infinite places. -/
-def unitLogRepresentation : Representation ℝ Gal(K/k) (unitLogHyperplane K) where
+def unitLogRepresentation :
+    Representation ℝ Gal(K/k) (singleParityCheckCode ℝ (InfinitePlace K)) where
   toFun σ :=
     { toFun x := ⟨fun w => x.val (σ⁻¹ • w), by
-        rw [mem_unitLogHyperplane]
+        rw [mem_singleParityCheckCode]
         exact (Equiv.sum_comp (MulAction.toPerm σ⁻¹) x.val).trans
-          ((mem_unitLogHyperplane K _).mp x.property)⟩
+          ((mem_singleParityCheckCode ℝ (InfinitePlace K)).mp x.property)⟩
       map_add' x y := by rfl
       map_smul' a x := by rfl }
   map_one' := by ext x w; simp
   map_mul' σ τ := by ext x w; simp [mul_smul]
 
 /-- The Galois action on logarithmic vectors is the permutation of their coordinates. -/
-@[simp] theorem unitLogRepresentation_apply (σ : Gal(K/k)) (x : unitLogHyperplane K)
+@[simp] theorem unitLogRepresentation_apply (σ : Gal(K/k))
+    (x : singleParityCheckCode ℝ (InfinitePlace K))
     (w : InfinitePlace K) :
     (unitLogRepresentation K k σ x).val w = x.val (σ⁻¹ • w) :=
   (rfl)
@@ -204,7 +202,7 @@ representation on infinite places. -/
 /-- The full unit lattice is Galois-stable, so it is an integral lattice in the permutation
 representation on the logarithmic hyperplane. -/
 theorem unitLogRepresentation_mem_fullUnitLattice (σ : Gal(K/k))
-    {x : unitLogHyperplane K} (hx : x ∈ fullUnitLattice K) :
+    {x : singleParityCheckCode ℝ (InfinitePlace K)} (hx : x ∈ fullUnitLattice K) :
     unitLogRepresentation K k σ x ∈ fullUnitLattice K := by
   obtain ⟨u, rfl⟩ := (mem_fullUnitLattice K x).mp hx
   exact (mem_fullUnitLattice K _).mpr
