@@ -8,13 +8,16 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 
 /-!
-# The exterior derivative within a set depends only on the germ of the set
+# Locality and linear pullback of the exterior derivative
 
 The exterior derivative `extDerivWithin ω s x` of a differential form on a normed space is the
 alternatization of `fderivWithin 𝕜 ω s x`, so, like the derivative, it only sees the set `s`
 near `x`. These are the exterior-derivative versions of `fderivWithin_congr_set'` and
 `fderivWithin_congr_set`; they are what makes the exterior derivative of forms on manifolds,
 computed in charts, insensitive to the set away from the base point.
+
+`ContinuousLinearMap.extDerivWithin_pullback` also proves naturality under a fixed linear map
+using only within-set differentiability, with no second derivative or interior-density hypothesis.
 -/
 
 public section
@@ -63,6 +66,26 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 lemma extDeriv_eq (ω : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (x : E) :
     extDeriv ω x = ContinuousAlternatingMap.alternatizeUncurryFin ω := by
   simp [extDeriv]
+
+/-- Exterior differentiation commutes with pullback by a continuous linear map, with only
+within-set differentiability of the form. -/
+theorem extDerivWithin_pullback {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    (L : E →L[𝕜] E') {ω : E' → E' [⋀^Fin n]→L[𝕜] F}
+    {s : Set E} {t : Set E'} {x : E} (hs : UniqueDiffWithinAt 𝕜 s x)
+    (hω : DifferentiableWithinAt 𝕜 ω t (L x)) (hL : MapsTo L s t) :
+    extDerivWithin (fun y ↦ (ω (L y)).compContinuousLinearMap L) s x =
+      (extDerivWithin ω t (L x)).compContinuousLinearMap L := by
+  let C := ContinuousAlternatingMap.compContinuousLinearMapCLM (F := F) (ι := Fin n) L
+  have hd := (C.hasFDerivAt.comp_hasFDerivWithinAt x
+    (hω.hasFDerivWithinAt.comp x L.hasFDerivAt.hasFDerivWithinAt hL)).fderivWithin hs
+  change fderivWithin 𝕜 (fun y ↦ (ω (L y)).compContinuousLinearMap L) s x =
+    C.comp ((fderivWithin 𝕜 ω t (L x)).comp L) at hd
+  ext v
+  simp only [extDerivWithin, hd, ContinuousAlternatingMap.alternatizeUncurryFin_apply,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  apply Finset.sum_congr rfl
+  intro i _
+  rfl
 
 end ContinuousLinearMap
 

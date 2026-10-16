@@ -214,6 +214,25 @@ theorem IsSmoothForm.contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
     (hφ.contMDiff x).contMDiffWithinAt
   simpa only [preimage_univ, univ_inter] using hc
 
+/-- Exterior differentiation commutes with finite sums of C1 forms. The differentiability
+hypotheses ensure additivity of the coordinate derivatives. -/
+theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
+    (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I 1 (φ i)) :
+    TauCeti.mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, TauCeti.mextDeriv (φ i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    have hrest := fun j hj ↦ hφ j (Finset.mem_insert_of_mem hj)
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    funext x
+    have hi' := (hφ i (Finset.mem_insert_self i s)).contDiffWithinAt_inChartAt_self x
+    have hs' := (IsSmoothForm.sum φ s hrest).contDiffWithinAt_inChartAt_self x
+    rw [TauCeti.mextDeriv_add
+      (hi'.differentiableWithinAt one_ne_zero) (hs'.differentiableWithinAt one_ne_zero)]
+    exact congrArg (fun ψ : RoughForm I M F (k + 1) ↦ TauCeti.mextDeriv (φ i) x + ψ x)
+      (ih hrest)
+
 /-- A C1 form has C1 coefficients at every point of each preferred chart target on a C2
 manifold. The coordinate cocycle transports both the form and the chart derivative. -/
 theorem IsSmoothForm.contDiffWithinAt_inChartAt [IsManifold I 2 M]
