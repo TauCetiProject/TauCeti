@@ -53,6 +53,8 @@ algebra API together with Mathlib's affine `Spec` and closed-immersion APIs.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti

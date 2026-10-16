@@ -124,23 +124,26 @@ theorem tensorProduct_map_comp_conjugationAlgHom
     Algebra.TensorProduct.map_comp_includeRight]
   apply WithConv.toConv_injective
   simp only [toConv_ofConv]
-  -- Expose precomposition as `mapDomain` so its convolution functoriality can rewrite the target.
-  change _ = AlgHom.mapDomain f (toConv (conjugationAlgHom (R := R) (H := K)))
+  have hpre :
+      BialgHom.mapDomain f (toConv (conjugationAlgHom (R := R) (H := K))) =
+        toConv ((conjugationAlgHom (R := R) (H := K)).comp f.toAlgHom) := by
+    rw [BialgHom.mapDomain_apply, ofConv_toConv]
+  rw [← hpre]
   rw [toConv_conjugationAlgHom, map_mul, map_mul, map_inv]
   have hleft_coe :
       toConv (Algebra.TensorProduct.includeLeft.comp f.toAlgHom) =
-        AlgHom.mapDomain f (toConv (Bialgebra.TensorProduct.includeLeft
+        BialgHom.mapDomain f (toConv (Bialgebra.TensorProduct.includeLeft
           (R := R) (H₁ := K) (H₂ := K)).toAlgHom) := by
     apply WithConv.ofConv_injective
     ext x
-    simp [AlgHom.mapDomain_apply]
+    simp [BialgHom.mapDomain_apply]
   have hright_coe :
       toConv (Algebra.TensorProduct.includeRight.comp f.toAlgHom) =
-        AlgHom.mapDomain f (toConv (Bialgebra.TensorProduct.includeRight
+        BialgHom.mapDomain f (toConv (Bialgebra.TensorProduct.includeRight
           (R := R) (H₁ := K) (H₂ := K)).toAlgHom) := by
     apply WithConv.ofConv_injective
     ext x
-    simp [AlgHom.mapDomain_apply]
+    simp [BialgHom.mapDomain_apply]
   rw [hleft_coe, hright_coe]
 
 /-- The identity point acts trivially by conjugation. This is the pointwise product-map form of

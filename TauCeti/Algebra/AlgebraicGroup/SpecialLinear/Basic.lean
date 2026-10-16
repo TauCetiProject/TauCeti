@@ -313,8 +313,10 @@ theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm
   have hπ : Matrix.SpecialLinearGroup.toGL
       (pointsMulEquiv (R := R) (A := A) n (toConv φ)) =
       GeneralLinear.pointsMulEquiv n
-        (toConv (φ.comp (coordinateMap R n).hom)) :=
-    (pointsMulEquiv_toGL R n _).symm
+        (toConv (φ.comp (coordinateMap R n).hom)) := by
+    have he := (pointsMulEquiv_toGL R n (toConv φ)).symm
+    erw [CommHopfAlgCat.quotientPointsHom_apply] at he
+    exact he
   have hg : Matrix.SpecialLinearGroup.toGL
       (pointsMulEquiv (R := R) (A := A) n
         (AlgHom.mapValue (H := coordinateHopfAlgebra R n) (Algebra.ofId R A) g)) =

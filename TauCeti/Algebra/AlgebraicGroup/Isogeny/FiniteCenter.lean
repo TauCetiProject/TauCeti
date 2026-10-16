@@ -57,18 +57,18 @@ theorem IsIsogeny.map_centerDefiningIdeal_eq {f : H ⟶ K} (hf : IsIsogeny f)
   let _ : IsScalarTower k H K :=
     IsScalarTower.of_algebraMap_eq' f.hom.toAlgHom.comp_algebraMap.symm
   let _ : Module.Finite H K := hf.finite
-  let _ : Module.Finite k (quotient K J) :=
+  let _ : Module.Finite k (_root_.CommHopfAlgCat.quotient K J) :=
     finite_quotient_of_map_algebraMap_le (A := k) (R := H) (B := K)
       (I := (centerDefiningIdeal H).toIdeal) (J := J.toIdeal)
       (by rw [hJ]; exact le_rfl) inferInstance
   let _ : Algebra.Smooth k K :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
   let _ : Algebra.IsGeometricallyReduced k K := isGeometricallyReduced_of_smooth k K
-  let _ : Algebra.Smooth k (quotient K J) :=
+  let _ : Algebra.Smooth k (_root_.CommHopfAlgCat.quotient K J) :=
     (smoothCommHopfAlgProperty_iff _).mp
-      (smoothCommHopfAlgProperty_of_charZero k (quotient K J))
-  let _ : Algebra.IsGeometricallyReduced k (quotient K J) :=
-    isGeometricallyReduced_of_smooth k (quotient K J)
+      (smoothCommHopfAlgProperty_of_charZero k (_root_.CommHopfAlgCat.quotient K J))
+  let _ : Algebra.IsGeometricallyReduced k (_root_.CommHopfAlgCat.quotient K J) :=
+    isGeometricallyReduced_of_smooth k (_root_.CommHopfAlgCat.quotient K J)
   have hcentral : J.IsCentral :=
     hnormal.isCentral_of_finite_of_isGeometricallyReduced (H := FiniteTypeCommHopfAlgCat.of k K) hK
   exact le_antisymm

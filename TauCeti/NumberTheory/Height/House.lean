@@ -7,8 +7,10 @@ module
 
 public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.NumberTheory.Height.MahlerMeasure
+public import TauCeti.NumberTheory.Height.Naive
 
 import Mathlib.Analysis.Complex.IsIntegral
+import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.NumberTheory.NumberField.AdjoinPair
 
 /-!
@@ -51,6 +53,10 @@ of bounded degree and bounded house.
 * `TauCeti.house_le_mahlerMeasure`,
   `TauCeti.mahlerMeasure_le_leadingCoeff_mul_max_one_house_pow`: the comparisons
   `⌈x⌉ ≤ M(x) ≤ a₀ max(1, ⌈x⌉)ᵈ` with the Mahler measure.
+* `TauCeti.naiveHeight_le_two_mul_pow_of_house_le`, `TauCeti.naiveHeight_le_two_mul_house_pow`:
+  an algebraic integer of degree `d` has naive height at most `(2B)ᵈ` whenever its house is at
+  most `B` with `1 ≤ B`; in particular a nonzero algebraic integer satisfies
+  `H(x) ≤ (2 ⌈x⌉)ᵈ`.
 
 ## References
 
@@ -252,6 +258,40 @@ theorem mahlerMeasure_le_leadingCoeff_mul_max_one_house_pow (x : F) :
   refine Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ by positivity) fun z hz ↦ ?_
   gcongr
   exact norm_le_house_of_mem_rootSet (mem_rootSet'.2 (mem_aroots'.1 hz))
+
+/-- An algebraic integer of degree `d` whose house is at most `B`, with `1 ≤ B`, has naive height
+at most `(2B)ᵈ`. -/
+theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {B : ℝ}
+    (hB : 1 ≤ B) (hxB : house x ≤ B) :
+    naiveHeight x ≤ (2 * B) ^ (minpoly ℚ x).natDegree := by
+  have halg : IsAlgebraic ℚ x := (hx.tower_top (A := ℚ)).isAlgebraic
+  have hmon : (primitiveMinpoly x).Monic := by
+    rw [primitiveMinpoly_eq_minpoly_int hx]
+    exact minpoly.monic hx
+  -- The roots of `F_x` in `ℂ` are the conjugates of `x`, so the coefficients of the monic `F_x`,
+  -- elementary symmetric functions of them, satisfy `|aᵢ| ≤ binom(d, i) Bᵈ⁻ⁱ ≤ 2ᵈ Bᵈ`.
+  have hroots : ∀ z ∈ ((primitiveMinpoly x).map (Int.castRingHom ℂ)).roots, ‖z‖ ≤ B := by
+    intro z hz
+    refine (norm_le_house_of_mem_rootSet ?_).trans hxB
+    rw [← rootSet_primitiveMinpoly halg, rootSet_def, Finset.mem_coe, Multiset.mem_toFinset,
+      aroots_def, algebraMap_int_eq]
+    exact hz
+  obtain ⟨i, hi⟩ := (primitiveMinpoly x).exists_eq_supNorm
+  rw [naiveHeight_def, hi, ← natDegree_primitiveMinpoly]
+  have hcoeff := coeff_le_of_roots_le i hmon (IsAlgClosed.splits _) hroots
+  rw [coeff_map, eq_intCast, Complex.norm_intCast, ← Int.norm_eq_abs] at hcoeff
+  set n := (primitiveMinpoly x).natDegree
+  calc ‖(primitiveMinpoly x).coeff i‖ ≤ B ^ (n - i) * n.choose i := hcoeff
+    _ ≤ B ^ n * 2 ^ n := by
+        gcongr
+        · exact Nat.sub_le n i
+        · exact_mod_cast Nat.choose_le_two_pow n i
+    _ = (2 * B) ^ n := by rw [mul_pow, mul_comm]
+
+/-- A nonzero algebraic integer `x` of degree `d` has naive height at most `(2 ⌈x⌉)ᵈ`. -/
+theorem naiveHeight_le_two_mul_house_pow {x : F} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) :
+    naiveHeight x ≤ (2 * house x) ^ (minpoly ℚ x).natDegree :=
+  naiveHeight_le_two_mul_pow_of_house_le hx (one_le_house hx h0) le_rfl
 
 /-! ### Examples -/
 

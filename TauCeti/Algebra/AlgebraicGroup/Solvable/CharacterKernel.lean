@@ -81,19 +81,19 @@ variable {k H : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
 affine group is unipotent. The kernel may be nonreduced. -/
 theorem geometricallyUnipotentPointsCommHopfAlgProperty_characterKernelIdeal :
     geometricallyUnipotentPointsCommHopfAlgProperty k
-      (quotient (_root_.CommHopfAlgCat.of k H)
+      (_root_.CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H)
         (_root_.CommHopfAlgCat.characterKernelIdeal (_root_.CommHopfAlgCat.of k H))) := by
   rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff]
   intro g
   let A := _root_.CommHopfAlgCat.of k H
   let I := _root_.CommHopfAlgCat.characterKernelIdeal A
-  let q := (mkQuotient A I).hom
+  let q := (_root_.CommHopfAlgCat.mkQuotient A I).hom
   apply (HopfAlgebra.isUnipotentPoint_mapDomain_iff_of_surjective q
-    (mkQuotient_surjective A I) g).mp
+    (_root_.CommHopfAlgCat.mkQuotient_surjective A I) g).mp
   rw [HopfAlgebra.isUnipotentPoint_iff_forall_apply_groupLike_eq_one]
   intro x
   have hx : q x = 1 := by
-    have hzero := (mkQuotient_eq_zero_iff A I ((x : H) - 1)).mpr
+    have hzero := (_root_.CommHopfAlgCat.mkQuotient_eq_zero_iff A I ((x : H) - 1)).mpr
       (_root_.CommHopfAlgCat.sub_one_mem_characterKernelIdeal A x)
     simpa only [map_sub, map_one, sub_eq_zero] using hzero
   simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, hx, map_one]

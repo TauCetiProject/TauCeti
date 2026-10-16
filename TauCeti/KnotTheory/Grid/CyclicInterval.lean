@@ -67,6 +67,8 @@ directions before taking products.
 * `TauCeti.Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo`: an interior point cuts a half-open arc
   into two adjacent half-open arcs.
 * `TauCeti.Grid.disjoint_cIco_cIco_of_mem_cIoo`: the two pieces of such a cut are disjoint.
+* `TauCeti.Grid.ite_eq_or_mem_cIoo_eq_add_add`: a cut at two points partitions a closed-end
+  cyclic-order test into three disjoint cases, counted in `ℕ`.
 * `TauCeti.Grid.cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo`: an interior point cuts an open arc
   into two open arcs and the cutting point itself.
 * `TauCeti.Grid.cIoo_subset_cIoo_right_of_mem_cIoo`,
@@ -521,6 +523,17 @@ theorem ite_mem_cIco_eq_add_add {u w s : Fin n} (hs : s ∈ cIco u w) (t : Fin n
         if t ∈ cIoo s w then 1 else 0 := by
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs ⊢
   split_ifs at hs ⊢ <;> omega
+
+/-- Cutting the circle at distinct points `u` and `v` splits the event that `v` lies after `s`
+and at or before `t` into three disjoint cyclic orders. The first two place both `t` and `s`
+on one side of the cut, with `t` before `s`; the third separates them across the cut. -/
+theorem ite_eq_or_mem_cIoo_eq_add_add {u v s t : Fin n} (huv : u ≠ v) (hst : s ≠ t) :
+    (if v = t ∨ v ∈ cIoo s t then 1 else 0 : ℕ) =
+      (if t ∈ cIco u v ∧ s ∈ cIoo t v then 1 else 0) +
+      (if t ∈ cIco v u ∧ s ∈ cIoo t u then 1 else 0) +
+      (if s ∈ cIco u v ∧ t ∈ cIco v u then 1 else 0) := by
+  simp only [mem_cIco, mem_cIoo, Fin.ext_iff] at *
+  split_ifs <;> omega
 
 /-- A point outside the clockwise interval from `a` to `b` is either an endpoint or lies in
 the opposite clockwise interval. -/

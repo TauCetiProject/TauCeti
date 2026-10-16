@@ -33,6 +33,20 @@ theorem addHaar_basisFun (ι : Type*) [Fintype ι] :
     (Pi.basisFun ℝ ι).addHaar = (volume : Measure (ι → ℝ)) := by
   rw [addHaar_def, parallelepiped_basisFun, addHaarMeasure_eq_volume_pi]
 
+/-- The normalized Haar measure of a basis indexed by an empty type has total mass one. -/
+@[simp]
+theorem addHaar_univ_of_isEmpty {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [MeasurableSpace V] [BorelSpace V] [Fintype ι] [IsEmpty ι]
+    (b : Basis ι ℝ V) : b.addHaar Set.univ = 1 := by
+  have : Subsingleton V := b.equivFun.injective.subsingleton
+  have hp : _root_.parallelepiped b = (Set.univ : Set V) := by
+    ext y
+    rw [mem_parallelepiped_iff]
+    simp only [Finset.univ_eq_empty, Finset.sum_empty, Set.mem_univ, iff_true]
+    exact ⟨fun _ ↦ 0, by simp, Subsingleton.elim _ _⟩
+  rw [← hp]
+  exact b.addHaar_self
+
 section ChangeBasis
 
 variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]

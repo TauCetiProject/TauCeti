@@ -47,6 +47,8 @@ the product of two normal unipotent-radical candidates.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory Opposite WithConv
 open scoped CategoryTheory.MonObj
 
