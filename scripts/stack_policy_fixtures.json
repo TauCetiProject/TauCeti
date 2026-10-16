@@ -2,72 +2,393 @@
   "audit_sha256": "0166f82d44bb554405321f20fe6a920d3eadc177acbc1a53e9ece341f0d919a4",
   "detector_revision": "eb2fcf307b3bc93c3ae8c75c1c01d5c3fe3ff6bd",
   "detector_sha256": "08d531cc099d857737fa2bca47a696bac857e98e3291fe04094fc54bd80bfb76",
-  "explicit_prose": {
-    "16130": {
-      "body_lines": [
-        "This PR is stacked on https://github.com/TauCetiProject/TauCeti/pull/15856 \"feat: present rational subsets of the closed disc by polynomials\" and https://github.com/TauCetiProject/TauCeti/pull/16035, both approved and labelled `ready-to-merge`. Until they land, the branch carries their commits rebased onto `main`. The commit specific to this PR is the last one, \"feat: every rational subset of the closed unit disc is a finite union of holed discs\"."
-      ],
-      "head": "c8897d521d6448a721fde38841661cb1e41645a6"
-    },
-    "16613": {
-      "body_lines": [
-        "**Stacked on #16611**: only the last commit (`Cubical/LocalCoefficients/Normalized.lean`) is new."
-      ],
-      "head": "cc9807d1e1a48c7b2b26dc178194215e588a418e"
-    },
-    "16656": {
-      "body_lines": [
-        "This PR is stacked on #16643 (#16632, #15253). Only the last commit is new here."
-      ],
-      "head": "08e330e228096ba58c6642045b37244200d855a0"
-    },
-    "16755": {
-      "body_lines": [
-        "Stacked on #16515; keep draft until dependency lands. Parent head: `14ede099247a63cf3f8084c31257e52b789b383c`."
-      ],
-      "head": "1b93d629ae4d189045b17fa4da89445d821aecaf"
-    }
-  },
   "observed_date": "2026-10-15",
   "results": [
-    {"classification": "unknown", "gap": "explicit parent metadata: HTTP Error 404: Not Found", "index_pr": 16236},
-    {"classification": "unknown", "gap": "head changed while fetching", "head": "ea2d269c192a7aa8d45fb188201daf24674d4351", "index_pr": 15977, "main": "bece8557f54085449517d8acbb28c07e5476a4a9"},
-    {"classification": "unknown", "gap": "head changed while fetching", "head": "3cde2c44ac9f27377784ff050e5e5aa1c422906b", "index_pr": 16035, "main": "bece8557f54085449517d8acbb28c07e5476a4a9"},
-    {"classification": "no-confirmed-stack", "evidence": null, "head": "1f4604928b0b5419a7f5fb768a46ea9af2ba0632", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 12763, "reasons": []},
-    {"classification": "no-confirmed-stack", "evidence": null, "head": "a8786d12c561fed15b97244988d1c5daa21272d4", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 12767, "reasons": []},
-    {"classification": "unknown", "gap": "#12767: body-only direction without complete current parent content", "head": "2f7f73dd160b1e186f2cf923f84011f202e09af7", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 12883},
-    {"classification": "unknown", "gap": "#12763: body-only direction without complete current parent content; #12883: body-only direction without complete current parent content", "head": "be0e7abefdf22844090725c48ad15edbc6c43f56", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 12884},
-    {"classification": "unknown", "gap": "#12763: body-only direction without complete current parent content; #12884: body-only direction without complete current parent content", "head": "1fcd181102eff75d9959af467279df4b6a60788a", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 12885},
-    {"classification": "unknown", "gap": "#12768: body-only direction without complete current parent content; #12769: body-only direction without complete current parent content; #12884: body-only direction without complete current parent content; #12885: body-only direction without complete current parent content", "head": "58e07a43bec42b161a7ad9ee0da59c2d32f3b3c7", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 12886},
-    {"classification": "unknown", "gap": "#13110: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta", "head": "e133b109a01eb4a39d998d2bd84dad3164824d37", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 13100},
-    {"classification": "unknown", "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta", "head": "c54e8dc9c70bc3f154d29a20b62fa7d816134dbd", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 13110},
-    {"classification": "unknown", "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13110: shared ancestry without a confirmed direction/complete parent delta", "head": "9d6b35008872fdb7e3022a3530f9dd992dff148a", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 13117},
-    {"classification": "unknown", "gap": "head changed while fetching", "head": "ea2d269c192a7aa8d45fb188201daf24674d4351", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 15977},
-    {"classification": "unknown", "gap": "#15476: commit patch requires exactly one parent", "head": "5dc90616fb01cedf149eb69126eb9e7dd9e87d44", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 15995},
-    {"classification": "unknown", "gap": "head changed while fetching", "head": "3cde2c44ac9f27377784ff050e5e5aa1c422906b", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16035},
-    {"classification": "no-confirmed-stack", "evidence": null, "head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16099, "reasons": ["#15975: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9", "#15975: no complete unlanded parent delta/commit retained", "#16003: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9", "#16003: no complete unlanded parent delta/commit retained", "#16110: descendant of this child, not a parent", "#16123: descendant of this child, not a parent", "#16132: descendant of this child, not a parent", "#16139: descendant of this child, not a parent"]},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "fead0f3deb76816704252b4727bf05c3d7ef15be", "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a", "kind": "retained-unmerged-commit", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 16099, "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a", "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7", "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"}, "head": "fead0f3deb76816704252b4727bf05c3d7ef15be", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16110, "reasons": []},
-    {"classification": "unknown", "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16137: shared ancestry without a confirmed direction/complete parent delta; #16143: shared ancestry without a confirmed direction/complete parent delta; #16147: shared ancestry without a confirmed direction/complete parent delta; #16155: shared ancestry without a confirmed direction/complete parent delta; #16168: shared ancestry without a confirmed direction/complete parent delta", "head": "72e7f46f113d6f4d5dd449841647f077c384ee95", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16112},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "e15c5dfbfa8fd8372ffc79e2187437003c8acd2e", "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a", "kind": "retained-unmerged-commit", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 16099, "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a", "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7", "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"}, "head": "e15c5dfbfa8fd8372ffc79e2187437003c8acd2e", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16123, "reasons": []},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "34bf92e3ee88334e8731e954766a742f61ea2177", "commit": "72e7f46f113d6f4d5dd449841647f077c384ee95", "kind": "ancestor-head", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 16112, "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95", "patch_base": "336e2775d69b80d1c129a2fb1d67d45cdd17b107", "patch_sha256": "44c3122a6634b9144102a740777f77f309dfa24dcaf3d2a8ffbc345057fffbe7"}, "head": "34bf92e3ee88334e8731e954766a742f61ea2177", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16129, "reasons": ["#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d", "#16082: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9"]},
-    {"classification": "unknown", "gap": "#16035: head changed while fetching", "head": "c8897d521d6448a721fde38841661cb1e41645a6", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16130},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "086915556b455cdd6be431b692c269a79d6bb2e6", "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a", "kind": "retained-unmerged-commit", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 16099, "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a", "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7", "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"}, "head": "086915556b455cdd6be431b692c269a79d6bb2e6", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16132, "reasons": []},
-    {"classification": "unknown", "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content", "head": "a1e09697c71ee3f4dc620571fcfcd7166d38e05a", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16137},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "0e878567d43c2513358641451bd7f408dcd3408c", "commit": "086915556b455cdd6be431b692c269a79d6bb2e6", "kind": "retained-unmerged-commit", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 16132, "parent_head": "086915556b455cdd6be431b692c269a79d6bb2e6", "patch_base": "a1e83cf58e1c3a324622c6b7be55bfa0e7e38873", "patch_sha256": "1961f3487602f42fb21b38cab33b8e7d42afe5e65b0e590d9898e5675f412125"}, "head": "0e878567d43c2513358641451bd7f408dcd3408c", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16139, "reasons": []},
-    {"classification": "unknown", "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16147: shared ancestry without a confirmed direction/complete parent delta; #16155: shared ancestry without a confirmed direction/complete parent delta", "head": "a33ff8ffc89220458cc00e3a8dd80f3eeadcc7bc", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16143},
-    {"classification": "unknown", "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16143: shared ancestry without a confirmed direction/complete parent delta", "head": "7ede66c0b8a4476a5de9d8488e3e9dfebf52bf95", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16147},
-    {"classification": "unknown", "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16143: shared ancestry without a confirmed direction/complete parent delta; #16147: commit patch requires exactly one parent", "head": "c272fecb862f14b62d328e04b9e1eb2e5e6f6b24", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16155},
-    {"classification": "unknown", "gap": "#16148: commit patch requires exactly one parent", "head": "bc6aa60f6f1ed19e590212b320686bacebc9126f", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16164},
-    {"classification": "unknown", "gap": "#16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16143: commit patch requires exactly one parent; #16147: commit patch requires exactly one parent; #16155: commit patch requires exactly one parent", "head": "fa1bea85bfc0073af05653c28bd87febe9c859fa", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16168},
-    {"classification": "unknown", "gap": "#16236: explicit parent absent from bounded index; #16269: body-only direction without complete current parent content", "head": "3a6e07d3b1a92f59ee42fb59a7936bd19785e2ae", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16434},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "cc9807d1e1a48c7b2b26dc178194215e588a418e", "commit": "7d84dbfc0b3a62ab56e1133cd92680f2fc37c418", "kind": "ancestor-head", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 16611, "parent_head": "7d84dbfc0b3a62ab56e1133cd92680f2fc37c418", "patch_base": "f126f31088c0ca651df909ba892bdcb3cfe522f3", "patch_sha256": "ebd0521eb2fd33ecd99ad253a338d7eb81fc3538aa4ec8061b53855d3570fab4"}, "head": "cc9807d1e1a48c7b2b26dc178194215e588a418e", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16613, "reasons": []},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "37383128b6670351ec031b099611d16bfbb1575d", "commit": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894", "kind": "retained-unmerged-commit", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 15253, "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894", "patch_base": "7400dba421b0c3662a22eaee68a6e1c4dde80aa6", "patch_sha256": "24dbadea86d11d91895d367dcf509a78df4f20282a92143342f66dfd5c42622a"}, "head": "37383128b6670351ec031b099611d16bfbb1575d", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16632, "reasons": []},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "d2ec9a3c551f864027baf2a1f1e63eece9d010f8", "commit": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894", "kind": "retained-unmerged-commit", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 15253, "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894", "patch_base": "7400dba421b0c3662a22eaee68a6e1c4dde80aa6", "patch_sha256": "24dbadea86d11d91895d367dcf509a78df4f20282a92143342f66dfd5c42622a"}, "head": "d2ec9a3c551f864027baf2a1f1e63eece9d010f8", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16643, "reasons": []},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "08e330e228096ba58c6642045b37244200d855a0", "commit": "0581399d4bd8f65d35c87c7fee5f670a10b2f55e", "kind": "retained-unmerged-commit", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 15253, "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894", "patch_base": "96192f9340666c5133bb465b16323c855fbb8c0f", "patch_sha256": "30fb8038d09dea00978e098ce89379fa086b49abdfca79b01a88aee3ad69eaed"}, "head": "08e330e228096ba58c6642045b37244200d855a0", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16656, "reasons": []},
-    {"classification": "confirmed-stack", "evidence": {"child_head": "1b93d629ae4d189045b17fa4da89445d821aecaf", "commit": "14ede099247a63cf3f8084c31257e52b789b383c", "kind": "ancestor-head", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "parent": 16515, "parent_head": "14ede099247a63cf3f8084c31257e52b789b383c", "patch_base": "72deee1b215882d059345d906d76b667d9d465ff", "patch_sha256": "61724d0022e384751951b358377dff8d208a61110671d639bbdaa0d7bc57c529"}, "head": "1b93d629ae4d189045b17fa4da89445d821aecaf", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16755, "reasons": []},
-    {"classification": "no-confirmed-stack", "evidence": null, "head": "f891f3a74b3bbf475dbb644a94ca4e9a8fe003a6", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16784, "reasons": ["#16786: descendant of this child, not a parent"]},
-    {"classification": "no-confirmed-stack", "evidence": null, "head": "57106df3d472926d085763b2743cd3c4c91ad53a", "main": "bece8557f54085449517d8acbb28c07e5476a4a9", "pr": 16793, "reasons": []},
-    {"api_bytes": 14544226, "api_calls": 145, "failures": 0, "mode": "dry-run", "selected": 623, "summary": true, "unknowns": 19}
+    {
+      "classification": "unknown",
+      "gap": "explicit parent metadata: HTTP Error 404: Not Found",
+      "index_pr": 16236
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "head": "ea2d269c192a7aa8d45fb188201daf24674d4351",
+      "index_pr": 15977,
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9"
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "head": "3cde2c44ac9f27377784ff050e5e5aa1c422906b",
+      "index_pr": 16035,
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9"
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "1f4604928b0b5419a7f5fb768a46ea9af2ba0632",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 12763,
+      "reasons": []
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "a8786d12c561fed15b97244988d1c5daa21272d4",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 12767,
+      "reasons": []
+    },
+    {
+      "classification": "unknown",
+      "gap": "#12767: body-only direction without complete current parent content",
+      "head": "2f7f73dd160b1e186f2cf923f84011f202e09af7",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 12883
+    },
+    {
+      "classification": "unknown",
+      "gap": "#12763: body-only direction without complete current parent content; #12883: body-only direction without complete current parent content",
+      "head": "be0e7abefdf22844090725c48ad15edbc6c43f56",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 12884
+    },
+    {
+      "classification": "unknown",
+      "gap": "#12763: body-only direction without complete current parent content; #12884: body-only direction without complete current parent content",
+      "head": "1fcd181102eff75d9959af467279df4b6a60788a",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 12885
+    },
+    {
+      "classification": "unknown",
+      "gap": "#12768: body-only direction without complete current parent content; #12769: body-only direction without complete current parent content; #12884: body-only direction without complete current parent content; #12885: body-only direction without complete current parent content",
+      "head": "58e07a43bec42b161a7ad9ee0da59c2d32f3b3c7",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 12886
+    },
+    {
+      "classification": "unknown",
+      "gap": "#13110: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "e133b109a01eb4a39d998d2bd84dad3164824d37",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 13100
+    },
+    {
+      "classification": "unknown",
+      "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "c54e8dc9c70bc3f154d29a20b62fa7d816134dbd",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 13110
+    },
+    {
+      "classification": "unknown",
+      "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13110: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "9d6b35008872fdb7e3022a3530f9dd992dff148a",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 13117
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "head": "ea2d269c192a7aa8d45fb188201daf24674d4351",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 15977
+    },
+    {
+      "classification": "unknown",
+      "gap": "#15476: commit patch requires exactly one parent",
+      "head": "5dc90616fb01cedf149eb69126eb9e7dd9e87d44",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 15995
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "head": "3cde2c44ac9f27377784ff050e5e5aa1c422906b",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16035
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16099,
+      "reasons": [
+        "#15975: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9",
+        "#15975: no complete unlanded parent delta/commit retained",
+        "#16003: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9",
+        "#16003: no complete unlanded parent delta/commit retained",
+        "#16110: descendant of this child, not a parent",
+        "#16123: descendant of this child, not a parent",
+        "#16132: descendant of this child, not a parent",
+        "#16139: descendant of this child, not a parent"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "fead0f3deb76816704252b4727bf05c3d7ef15be",
+        "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "kind": "retained-unmerged-commit",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 16099,
+        "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7",
+        "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"
+      },
+      "head": "fead0f3deb76816704252b4727bf05c3d7ef15be",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16110,
+      "reasons": []
+    },
+    {
+      "classification": "unknown",
+      "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16137: shared ancestry without a confirmed direction/complete parent delta; #16143: shared ancestry without a confirmed direction/complete parent delta; #16147: shared ancestry without a confirmed direction/complete parent delta; #16155: shared ancestry without a confirmed direction/complete parent delta; #16168: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16112
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "e15c5dfbfa8fd8372ffc79e2187437003c8acd2e",
+        "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "kind": "retained-unmerged-commit",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 16099,
+        "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7",
+        "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"
+      },
+      "head": "e15c5dfbfa8fd8372ffc79e2187437003c8acd2e",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16123,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "34bf92e3ee88334e8731e954766a742f61ea2177",
+        "commit": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "kind": "ancestor-head",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 16112,
+        "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "patch_base": "336e2775d69b80d1c129a2fb1d67d45cdd17b107",
+        "patch_sha256": "44c3122a6634b9144102a740777f77f309dfa24dcaf3d2a8ffbc345057fffbe7"
+      },
+      "head": "34bf92e3ee88334e8731e954766a742f61ea2177",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16129,
+      "reasons": [
+        "#15631: aggregate source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: aggregate source equivalent landed at bece8557f54085449517d8acbb28c07e5476a4a9"
+      ]
+    },
+    {
+      "classification": "unknown",
+      "gap": "#16035: head changed while fetching",
+      "head": "c8897d521d6448a721fde38841661cb1e41645a6",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16130
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "086915556b455cdd6be431b692c269a79d6bb2e6",
+        "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "kind": "retained-unmerged-commit",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 16099,
+        "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7",
+        "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"
+      },
+      "head": "086915556b455cdd6be431b692c269a79d6bb2e6",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16132,
+      "reasons": []
+    },
+    {
+      "classification": "unknown",
+      "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content",
+      "head": "a1e09697c71ee3f4dc620571fcfcd7166d38e05a",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16137
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "0e878567d43c2513358641451bd7f408dcd3408c",
+        "commit": "086915556b455cdd6be431b692c269a79d6bb2e6",
+        "kind": "retained-unmerged-commit",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 16132,
+        "parent_head": "086915556b455cdd6be431b692c269a79d6bb2e6",
+        "patch_base": "a1e83cf58e1c3a324622c6b7be55bfa0e7e38873",
+        "patch_sha256": "1961f3487602f42fb21b38cab33b8e7d42afe5e65b0e590d9898e5675f412125"
+      },
+      "head": "0e878567d43c2513358641451bd7f408dcd3408c",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16139,
+      "reasons": []
+    },
+    {
+      "classification": "unknown",
+      "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16147: shared ancestry without a confirmed direction/complete parent delta; #16155: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "a33ff8ffc89220458cc00e3a8dd80f3eeadcc7bc",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16143
+    },
+    {
+      "classification": "unknown",
+      "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16143: shared ancestry without a confirmed direction/complete parent delta",
+      "head": "7ede66c0b8a4476a5de9d8488e3e9dfebf52bf95",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16147
+    },
+    {
+      "classification": "unknown",
+      "gap": "#15631: commit patch requires exactly one parent; #16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16143: shared ancestry without a confirmed direction/complete parent delta; #16147: commit patch requires exactly one parent",
+      "head": "c272fecb862f14b62d328e04b9e1eb2e5e6f6b24",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16155
+    },
+    {
+      "classification": "unknown",
+      "gap": "#16148: commit patch requires exactly one parent",
+      "head": "bc6aa60f6f1ed19e590212b320686bacebc9126f",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16164
+    },
+    {
+      "classification": "unknown",
+      "gap": "#16082: commit patch requires exactly one parent; #16112: body-only direction without complete current parent content; #16129: body-only direction without complete current parent content; #16137: commit patch requires exactly one parent; #16143: commit patch requires exactly one parent; #16147: commit patch requires exactly one parent; #16155: commit patch requires exactly one parent",
+      "head": "fa1bea85bfc0073af05653c28bd87febe9c859fa",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16168
+    },
+    {
+      "classification": "unknown",
+      "gap": "#16236: explicit parent absent from bounded index; #16269: body-only direction without complete current parent content",
+      "head": "3a6e07d3b1a92f59ee42fb59a7936bd19785e2ae",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16434
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "cc9807d1e1a48c7b2b26dc178194215e588a418e",
+        "commit": "7d84dbfc0b3a62ab56e1133cd92680f2fc37c418",
+        "kind": "ancestor-head",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 16611,
+        "parent_head": "7d84dbfc0b3a62ab56e1133cd92680f2fc37c418",
+        "patch_base": "f126f31088c0ca651df909ba892bdcb3cfe522f3",
+        "patch_sha256": "ebd0521eb2fd33ecd99ad253a338d7eb81fc3538aa4ec8061b53855d3570fab4"
+      },
+      "head": "cc9807d1e1a48c7b2b26dc178194215e588a418e",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16613,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "37383128b6670351ec031b099611d16bfbb1575d",
+        "commit": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "kind": "retained-unmerged-commit",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 15253,
+        "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "patch_base": "7400dba421b0c3662a22eaee68a6e1c4dde80aa6",
+        "patch_sha256": "24dbadea86d11d91895d367dcf509a78df4f20282a92143342f66dfd5c42622a"
+      },
+      "head": "37383128b6670351ec031b099611d16bfbb1575d",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16632,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "d2ec9a3c551f864027baf2a1f1e63eece9d010f8",
+        "commit": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "kind": "retained-unmerged-commit",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 15253,
+        "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "patch_base": "7400dba421b0c3662a22eaee68a6e1c4dde80aa6",
+        "patch_sha256": "24dbadea86d11d91895d367dcf509a78df4f20282a92143342f66dfd5c42622a"
+      },
+      "head": "d2ec9a3c551f864027baf2a1f1e63eece9d010f8",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16643,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "08e330e228096ba58c6642045b37244200d855a0",
+        "commit": "0581399d4bd8f65d35c87c7fee5f670a10b2f55e",
+        "kind": "retained-unmerged-commit",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 15253,
+        "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "patch_base": "96192f9340666c5133bb465b16323c855fbb8c0f",
+        "patch_sha256": "30fb8038d09dea00978e098ce89379fa086b49abdfca79b01a88aee3ad69eaed"
+      },
+      "head": "08e330e228096ba58c6642045b37244200d855a0",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16656,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "1b93d629ae4d189045b17fa4da89445d821aecaf",
+        "commit": "14ede099247a63cf3f8084c31257e52b789b383c",
+        "kind": "ancestor-head",
+        "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+        "parent": 16515,
+        "parent_head": "14ede099247a63cf3f8084c31257e52b789b383c",
+        "patch_base": "72deee1b215882d059345d906d76b667d9d465ff",
+        "patch_sha256": "61724d0022e384751951b358377dff8d208a61110671d639bbdaa0d7bc57c529"
+      },
+      "head": "1b93d629ae4d189045b17fa4da89445d821aecaf",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16755,
+      "reasons": []
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "f891f3a74b3bbf475dbb644a94ca4e9a8fe003a6",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16784,
+      "reasons": [
+        "#16786: descendant of this child, not a parent"
+      ]
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "57106df3d472926d085763b2743cd3c4c91ad53a",
+      "main": "bece8557f54085449517d8acbb28c07e5476a4a9",
+      "pr": 16793,
+      "reasons": []
+    },
+    {
+      "api_bytes": 14544226,
+      "api_calls": 145,
+      "failures": 0,
+      "mode": "dry-run",
+      "selected": 623,
+      "summary": true,
+      "unknowns": 19
+    }
   ],
   "schema": "tauceti-no-stack.read-only-fixtures/v1",
   "source": "Canonical GitHub PR API and refs/pull/*/head; no mutations",

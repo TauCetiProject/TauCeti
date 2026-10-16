@@ -49,7 +49,7 @@ variable {K : Type} [Field K] [NumberField K] {L : Type} [Field L] [NumberField 
 `∑_σ σ x` of the representation of `Gal(L/K)` on `I_L` is the idele norm `N_{L/K}(x)`, extended
 back to `L`. -/
 theorem idelesRep_norm_apply (x : idelesRep K L) :
-    Rep.toAdditive ((idelesRep K L).norm.hom x) =
+    Rep.toAdditive ((idelesRep K L).norm.asHom.hom x) =
       Additive.ofMul (ideleExtension K L (ideleNormMap K L (Rep.toAdditive x).toMul)) := by
   apply Additive.toMul.injective
   rw [ideleExtension_ideleNormMap, Rep.norm_apply]
@@ -60,7 +60,7 @@ theorem idelesRep_norm_apply (x : idelesRep K L) :
 exactly when it is an idele norm from `L`. -/
 theorem ideleExtension_mem_range_idelesRep_norm_iff (x : IdeleGroup (𝓞 K) K) :
     Rep.toAdditive.symm (Additive.ofMul (ideleExtension K L x)) ∈
-        LinearMap.range (idelesRep K L).norm.hom.toLinearMap ↔
+        LinearMap.range (idelesRep K L).norm.asHom.hom.toLinearMap ↔
       x ∈ (ideleNormMap K L).toMonoidHom.range := by
   refine ⟨fun ⟨y, hy⟩ ↦ ⟨(Rep.toAdditive y).toMul, ideleExtension_injective K L ?_⟩,
     fun ⟨y, hy⟩ ↦ ⟨Rep.toAdditive.symm (Additive.ofMul y), ?_⟩⟩

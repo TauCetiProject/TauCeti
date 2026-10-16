@@ -46,19 +46,22 @@ theorem exists_abelianizationProPExtension_comparison :
         (abelianizationProPExtension p G W).rightHom (ψ (QuotientGroup.mk x)) = lift g x := by
   let a : ι → G := fun i ↦ (g i).out
   let f := lift a
-  let q := ContinuousMonoidHom.quotientMk W
+  let q := Subgroup.quotientMkContinuousMonoidHom W
   have hqa : (q : G → G ⧸ W) ∘ a = g := by
     funext i
-    exact (ContinuousMonoidHom.quotientMk_apply W (a i)).trans (QuotientGroup.out_eq' (g i))
+    exact (Subgroup.quotientMkContinuousMonoidHom_apply W (a i)).trans (QuotientGroup.out_eq' (g i))
   have hcomp : q.comp f = lift g := (comp_lift q a).trans (congrArg lift hqa)
+  have hcomp_apply (x : freeProfiniteGroup ι) : (f x : G ⧸ W) = lift g x := by
+    simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply, q,
+      Subgroup.quotientMkContinuousMonoidHom_apply] using DFunLike.congr_fun hcomp x
   have hVW : (lift g : freeProfiniteGroup ι →* G ⧸ W).ker ≤ W.comap f.toMonoidHom := by
     intro x hx
     rw [Subgroup.mem_comap, ← QuotientGroup.eq_one_iff]
     have hxone : lift g x = 1 := MonoidHom.mem_ker.mp hx
-    exact (DFunLike.congr_fun hcomp x).trans hxone
+    exact (hcomp_apply x).trans hxone
   refine ⟨abelianizationProPExtensionMap p f.toMonoidHom f.continuous hVW, fun x ↦ ?_⟩
   rw [abelianizationProPExtensionMap_mk, abelianizationProPExtension_rightHom,
     QuotientGroup.mapOfLE_mk]
-  exact DFunLike.congr_fun hcomp x
+  exact hcomp_apply x
 
 end TauCeti.freeProfiniteGroup

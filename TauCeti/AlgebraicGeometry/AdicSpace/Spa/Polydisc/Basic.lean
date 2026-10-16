@@ -112,7 +112,7 @@ variable (k : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A] [Nonarchimedean
 /-- **The closed polydisc of dimension `k` over `A`**: the adic spectrum of the restricted power
 series ring `A⟨T₁, …, Tₖ⟩` with its power-bounded subring as plus ring. Over a complete
 nonarchimedean field this is the closed unit polydisc (Wedhorn, Example 7.57 at `k = 1`). -/
-def closedPolydisc :
+noncomputable def closedPolydisc :
     Set (Spv (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight)) :=
   spa (powerBoundedSubring _)

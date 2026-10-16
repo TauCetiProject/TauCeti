@@ -79,7 +79,7 @@ noncomputable abbrev relationMatrix :
   ConstantForm.relationMatrix R n 1
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   ConstantForm.relationSet R n 1
 
 /-- **The orthogonal Hopf ideal**: the ideal of the coordinate Hopf algebra of `GL n` generated

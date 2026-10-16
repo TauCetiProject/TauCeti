@@ -151,6 +151,19 @@ def HasMarginals (P : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ) : Prop
 @[simp] theorem hasMarginals_def (P : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ) :
     HasMarginals P a b ↔ (∀ i, (∑ j, P i j) = a i) ∧ (∀ j, (∑ i, P i j) = b j) := Iff.rfl
 
+/-- Every entry of a nonnegative matrix is at most its row sum and its column sum. -/
+theorem HasMarginals.apply_le {P : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ}
+    (hP : HasMarginals P a b) (h0 : ∀ i j, 0 ≤ P i j) (i : ι) (j : κ) :
+    P i j ≤ a i ∧ P i j ≤ b j :=
+  ⟨hP.1 i ▸ Finset.single_le_sum (fun j' _ ↦ h0 i j') (Finset.mem_univ j),
+    hP.2 j ▸ Finset.single_le_sum (fun i' _ ↦ h0 i' j) (Finset.mem_univ i)⟩
+
+/-- The row sums and the column sums of a matrix have the same total. -/
+theorem HasMarginals.sum_eq {P : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ}
+    (hP : HasMarginals P a b) : ∑ i, a i = ∑ j, b j := by
+  simp only [← hP.1, ← hP.2]
+  exact Finset.sum_comm
+
 omit [Fintype ι] [Fintype κ] in
 /-- `P` is the diagonal scaling of `K` by the row factors `u` and the column factors `v`, that is
 `P i j = u i * K i j * v j` for all `i` and `j`. -/
@@ -286,8 +299,7 @@ theorem isCompact_setOf_nonneg_hasMarginals (a : ι → ℝ) (b : κ → ℝ) :
   have hbound : ∀ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) → HasMarginals P a b →
       ∀ i j, P i j ≤ A := by
     intro P hP0 hPa i j
-    calc P i j ≤ ∑ k, P i k := Finset.single_le_sum (fun k _ => hP0 i k) (Finset.mem_univ j)
-      _ = a i := hPa.1 i
+    calc P i j ≤ a i := (hPa.apply_le hP0 i j).1
       _ ≤ ∑ k, a k := Finset.single_le_sum
           (fun k _ => by rw [← hPa.1 k]; exact Finset.sum_nonneg fun l _ => hP0 k l)
           (Finset.mem_univ i)
@@ -432,6 +444,51 @@ theorem HasMarginals.add_vecMulVec_of_sum_eq_zero (a : ι → ℝ) (b : κ → �
     have h := congrFun hcol y
     simpa only [Matrix.vecMul_apply_eq_sum, one_mul] using h
 
+/-- Row sums `h` and column sums `k` of the same total, with entries bounded by `δ`, are the
+marginals of a matrix with entries bounded by `3 * δ`, independently of the sizes of `ι` and `κ`:
+the matrix `h i / card κ + k j / card ι - (∑ i, h i) / (card ι * card κ)`.
+
+This is how a perturbation of the marginals of a strictly positive plan is followed by a
+perturbation of the plan that stays nonnegative. -/
+theorem exists_hasMarginals_abs_le [Nonempty ι] [Nonempty κ] {h : ι → ℝ} {k : κ → ℝ}
+    (hhk : ∑ i, h i = ∑ j, k j) {δ : ℝ} (hh : ∀ i, |h i| ≤ δ) (hk : ∀ j, |k j| ≤ δ) :
+    ∃ D : Matrix ι κ ℝ, HasMarginals D h k ∧ ∀ i j, |D i j| ≤ 3 * δ := by
+  have hm : (1 : ℝ) ≤ Fintype.card ι := Nat.one_le_cast.2 Fintype.card_pos
+  have hn : (1 : ℝ) ≤ Fintype.card κ := Nat.one_le_cast.2 Fintype.card_pos
+  have hm0 : (Fintype.card ι : ℝ) ≠ 0 := by positivity
+  have hn0 : (Fintype.card κ : ℝ) ≠ 0 := by positivity
+  have hδ : 0 ≤ δ := (abs_nonneg _).trans (hh (Classical.arbitrary ι))
+  refine ⟨of fun i j ↦ h i / Fintype.card κ + k j / Fintype.card ι -
+      (∑ i', h i') / (Fintype.card ι * Fintype.card κ),
+    (hasMarginals_def _ _ _).2 ⟨fun i ↦ ?_, fun j ↦ ?_⟩, fun i j ↦ ?_⟩
+  · simp only [of_apply, div_eq_mul_inv, Finset.sum_sub_distrib, Finset.sum_add_distrib,
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Finset.sum_mul, ← hhk]
+    field_simp
+    ring
+  · simp only [of_apply, div_eq_mul_inv, Finset.sum_sub_distrib, Finset.sum_add_distrib,
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Finset.sum_mul]
+    field_simp
+    ring
+  · have hS : |∑ i', h i'| ≤ Fintype.card ι * δ :=
+      calc |∑ i', h i'| ≤ ∑ i', |h i'| := Finset.abs_sum_le_sum_abs _ _
+        _ ≤ ∑ _i : ι, δ := Finset.sum_le_sum fun i _ ↦ hh i
+        _ = Fintype.card ι * δ := by simp
+    have h1 : |h i / Fintype.card κ| ≤ δ := by
+      rw [abs_div, Nat.abs_cast, div_le_iff₀ (by linarith)]
+      nlinarith [hh i]
+    have h2 : |k j / Fintype.card ι| ≤ δ := by
+      rw [abs_div, Nat.abs_cast, div_le_iff₀ (by linarith)]
+      nlinarith [hk j]
+    have h3 : |(∑ i', h i') / (Fintype.card ι * Fintype.card κ)| ≤ δ := by
+      have hmn : (0 : ℝ) < Fintype.card ι * Fintype.card κ := by positivity
+      rw [abs_div, abs_of_pos hmn, div_le_iff₀ hmn]
+      nlinarith [mul_le_mul_of_nonneg_left hn
+        (mul_nonneg (by linarith : (0 : ℝ) ≤ Fintype.card ι) hδ)]
+    rw [of_apply]
+    linarith [abs_sub (h i / Fintype.card κ + k j / Fintype.card ι)
+      ((∑ i', h i') / (Fintype.card ι * Fintype.card κ)),
+      abs_add_le (h i / Fintype.card κ) (k j / Fintype.card ι)]
+
 /-! ### The minimiser has the largest support -/
 
 /-- The nonnegative matrices with row sums `a` and column sums `b` form a convex set. -/
@@ -521,9 +578,7 @@ theorem pos_of_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
       relEntropy P K ≤ relEntropy Q K) :
     ∀ i j, 0 < P i j := by
   intro i j
-  have hmass : (∑ i, a i) = ∑ j, b j := by
-    simp_rw [← hPa.1, ← hPa.2]
-    exact Finset.sum_comm
+  have hmass : (∑ i, a i) = ∑ j, b j := hPa.sum_eq
   have hA : 0 < ∑ k, a k := Finset.sum_pos (fun k _ => ha k) ⟨i, Finset.mem_univ i⟩
   have hQ0 : ∀ i j, 0 ≤ a i * (b j * (∑ k, a k)⁻¹) := fun i j =>
     (mul_pos (ha i) (mul_pos (hb j) (inv_pos.mpr hA))).le

@@ -128,7 +128,8 @@ theorem lmapDomain_mem_degenerate {n m : ℕ} {φ : SingularCube X n → Singula
   rw [degenerate_eq_supported] at hg ⊢
   have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R φ) hg
   rw [lmapDomain_supported] at hmap
-  exact supported_mono (Set.image_subset_iff.2 hφ) hmap
+  refine supported_mono ?_ hmap
+  exact Set.image_subset_iff.2 hφ
 
 /-- The push-forward of a degenerate chain is degenerate. -/
 theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}

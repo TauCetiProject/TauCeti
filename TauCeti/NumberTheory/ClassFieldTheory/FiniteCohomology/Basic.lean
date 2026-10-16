@@ -82,12 +82,17 @@ theorem exists_classField_trivializing (hn : (n : F) ≠ 0) (A : GalRep n F)
   have : NeZero (n : F) := ⟨hn⟩
   have : NeZero n := ⟨by rintro rfl; exact hn Nat.cast_zero⟩
   set e := absoluteGaloisGroupRestrictEquiv F
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure F) n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure F) n
   have hopen : IsOpen ({g : AbsoluteGaloisGroup F | ∀ a : A.V, e.symm g • a = a} ∩
       (MulAction.stabilizer (AbsoluteGaloisGroup F) ζ : Set (AbsoluteGaloisGroup F))) := by
     refine IsOpen.inter ?_ (stabilizer_isOpen_of_isIntegral ζ)
     rw [Set.ofPred_forall]
     exact isOpen_iInter_of_finite fun a ↦ (hA.stabilizer_isOpen a).preimage e.symm.continuous
+  -- Instance search does not find zero-dimensionality within its default budget here, so
+  -- assemble it from the Krull topology being Hausdorff, compact and totally disconnected.
+  have : T2Space (AbsoluteGaloisGroup F) := krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup F) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
   obtain ⟨W, hW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen
     ⟨fun a ↦ by rw [map_one, one_smul], MulAction.one_smul ζ⟩
   have hζL : ζ ∈ classField F W := mem_classField.2 fun g hg ↦ (hW hg).2

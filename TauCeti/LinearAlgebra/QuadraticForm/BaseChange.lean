@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Polar
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
@@ -365,7 +365,7 @@ theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
   intro x y hxy
   apply hinjective
   simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
-    LinearMap.baseChange_eq_ltensor] using hxy
+    LinearMap.baseChange_eq_lTensor] using hxy
 
 namespace TauCeti
 
@@ -400,6 +400,24 @@ theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
     (orthogonalGroupBaseChange (A := A) Q g :
       A ⊗[R] M ≃ₗ[A] A ⊗[R] M) = LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
   rfl
+
+/-- The identification of quadratic and polar-bilinear orthogonal groups commutes with scalar
+extension. The equality is stated on the underlying linear equivalences because
+`QuadraticForm.polarBilin_baseChange` identifies the two target bilinear forms propositionally. -/
+theorem coe_orthogonalGroupEquivIsometryGroupPolarBilin_baseChange
+    (Q : _root_.QuadraticForm R M) (g : orthogonalGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    (orthogonalGroupEquivIsometryGroupPolarBilin (Q.baseChange A)
+        ((isUnit_of_invertible (2 : A)).isSMulRegular A)
+        (orthogonalGroupBaseChange (A := A) Q g) : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
+      (BilinForm.isometryGroupBaseChange A Q.polarBilin
+        (orthogonalGroupEquivIsometryGroupPolarBilin Q
+          ((isUnit_of_invertible (2 : R)).isSMulRegular R) g) :
+            A ⊗[R] M ≃ₗ[A] A ⊗[R] M) := by
+  rw [coe_orthogonalGroupEquivIsometryGroupPolarBilin_apply, coe_orthogonalGroupBaseChange,
+    BilinForm.coe_isometryGroupBaseChange,
+    coe_orthogonalGroupEquivIsometryGroupPolarBilin_apply]
 
 /-- The matrix of a scalar-extended orthogonal automorphism in a base-changed basis is obtained
 by applying the algebra map to each entry. -/

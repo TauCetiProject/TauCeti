@@ -86,18 +86,4 @@ theorem map_snd_eq_iff_fintype [Fintype ι] (ν : PMF κ) :
   rw [map_snd_eq_iff]
   simp only [tsum_fintype]
 
-/-- Two independent uniform samples from `Fin 2` differ with probability `1 / 2`. -/
-@[simp]
-theorem uniformOfFintype_fin_two_prod_offDiagonal :
-    ((PMF.uniformOfFintype (Fin 2)).toMeasure.prod
-      (PMF.uniformOfFintype (Fin 2)).toMeasure) {q | q.1 ≠ q.2} = (2 : ℝ≥0∞)⁻¹ := by
-  have h : {q : Fin 2 × Fin 2 | q.1 ≠ q.2} = {(0, 1), (1, 0)} := by
-    ext ⟨i, j⟩
-    fin_cases i <;> fin_cases j <;> simp
-  rw [h, ← singleton_union, measure_union (by simp) (measurableSet_singleton _)]
-  simp only [← singleton_prod_singleton, Measure.prod_prod,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _),
-    PMF.uniformOfFintype_apply, Fintype.card_fin, Nat.cast_ofNat]
-  rw [← mul_two, mul_assoc, ENNReal.inv_mul_cancel (by norm_num) (by norm_num), mul_one]
-
 end PMF

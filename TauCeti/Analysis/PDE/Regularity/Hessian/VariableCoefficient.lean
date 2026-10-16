@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Sobolev
 /-!
 # The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for coefficients of small oscillation
 
-Let `n ≥ 3` and `1 < p < ∞`. For `u ∈ W^{2,p}(ℝⁿ)` write `D²u` for its weak Hessian
+Let `0 < n` and `1 < p < ∞`. For `u ∈ W^{2,p}(ℝⁿ)` write `D²u` for its weak Hessian
 `TauCeti.Wkp.iteratedGradient 1 u`, an `Lᵖ` field of endomorphisms of `ℝⁿ`, so that
 `⟪D²u(x) eᵢ, eⱼ⟫` is the weak second derivative `∂ᵢ∂ⱼu`. This file proves the strong-solution
 estimate for the non-divergence-form operator `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` with coefficients of small
@@ -54,7 +54,7 @@ open scoped ENNReal NNReal InnerProductSpace
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for coefficients of small oscillation.**
-Let `n ≥ 3` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
+Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
 with the following property. Let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, let `s` be a
 closed set, and let `a` be a matrix-valued coefficient with `|aᵢⱼ(x) - Aᵢⱼ| ≤ ε` for almost every
 `x ∈ s`, where `ε ≤ δ λ`. Then every `u ∈ W^{2,p}(ℝⁿ)` vanishing almost everywhere outside `s`
@@ -64,7 +64,7 @@ and solving `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere, with `f ∈
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`. No measurability or continuity
 of `a` is assumed. -/
-theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le (hn : 3 ≤ n)
+theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le (hn : 0 < n)
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -78,8 +78,8 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
         (∀ᵐ x, ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
           EuclideanSpace.single j 1⟫_ℝ = f x) →
         ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq hn hp hp_top
-  have hn0 : (0 : ℝ) < n := by exact_mod_cast (by omega : 0 < n)
+  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq hp hp_top
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
   refine ⟨2 * C, 1 / (2 * (C + 1) * n ^ 2), by positivity,
     fun {A lam} hlam hA {a s ε} hs hε ha u f hu hf => ?_⟩
   set H := Wkp.iteratedGradient 1 u

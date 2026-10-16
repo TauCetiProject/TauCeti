@@ -54,6 +54,8 @@ by the class-group interface and the multiplicative value can be read off from o
   semifield constants.
 * `IsDedekindDomain.HeightOneSpectrum.exists_mem_intValuation_eq_exp_neg_one`: a set generating a
   height one prime contains an element of order of vanishing `1`.
+* `IsDedekindDomain.HeightOneSpectrum.exp_neg_one_le_intValuation_of_squarefree`: in a principal
+  ideal domain, a squarefree element vanishes to order at most `1` at every height one prime.
 
 ## Implementation notes
 
@@ -303,5 +305,14 @@ theorem exists_mem_intValuation_eq_exp_neg_one {s : Set R} (hs : Ideal.span s = 
     exact h r hr (v.intValuation_eq_exp_neg_one_of_mem_of_notMem_sq (hs ▸ Ideal.subset_span hr)
       hr2)
   exact (Ideal.pow_succ_lt_pow v.ne_bot 1).not_ge (by rwa [pow_one])
+
+/-- **A squarefree element of a principal ideal domain vanishes to order at most `1`** at every
+height one prime, by the squarefree multiplicity bound for its principal ideal. -/
+theorem exp_neg_one_le_intValuation_of_squarefree [IsPrincipalIdealRing R] {r : R}
+    (hr : Squarefree r) : WithZero.exp (-1) ≤ v.intValuation r := by
+  apply (v.exp_le_intValuation_iff_emultiplicity_le (n := 1)).mpr
+  have hsf : Squarefree (Ideal.span ({r} : Set R)) := Ideal.squarefree_span_singleton.mpr hr
+  exact ((squarefree_iff_emultiplicity_le_one _).mp hsf v.asIdeal).resolve_right
+    fun h ↦ v.isPrime.ne_top (Ideal.isUnit_iff.mp h)
 
 end IsDedekindDomain.HeightOneSpectrum
