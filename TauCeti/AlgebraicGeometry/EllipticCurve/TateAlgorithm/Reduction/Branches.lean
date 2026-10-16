@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Symbol
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Curve
 
 /-!
 # Reduction symbols from Tate's algorithm
@@ -14,7 +13,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Sy
 The canonical `TauCeti.ReductionSymbol` records the possible outputs of Tate's algorithm on a
 minimal Weierstrass equation. The multiplicative branch is classified by the valuation of the
 minimal discriminant: it has symbol `Iₙ`, where `n` is positive. This type is the codomain for
-classifiers that state the output of an individual branch of the algorithm.
+classifiers that state the output of an individual branch of the algorithm. Under the hypotheses
+of the complete algorithm, the comparison theorems identify each classifier with
+`WeierstrassCurve.reductionSymbol`.
 
 The symbols and the multiplicative branch follow Tate's algorithm (J. Tate, *Algorithm for
 determining the type of a singular fibre in an elliptic pencil*, LNM 476, 1975).
@@ -53,6 +54,26 @@ theorem multiplicativeReductionSymbol_eq (W : WeierstrassCurve K) [W.IsElliptic]
     [WeierstrassCurve.HasMultiplicativeReduction R W] :
     W.multiplicativeReductionSymbol (R := R) =
       TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R) := (rfl)
+
+
+variable [PerfectField (IsLocalRing.ResidueField R)]
+
+/-- Tate's canonical output agrees with the good-reduction branch classifier. -/
+theorem reductionSymbol_eq_goodReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic]
+    [W.HasGoodReduction R] : W.reductionSymbol R = W.goodReductionSymbol (R := R) := by
+  rw [goodReductionSymbol_eq]
+  exact (reductionSymbol_eq_I_zero_iff W).2
+    ((inferInstance : W.HasGoodReduction R).hasGoodReduction_minimal R)
+
+/-- Tate's canonical output agrees with the multiplicative-reduction branch classifier. -/
+theorem reductionSymbol_eq_multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic]
+    [W.HasMultiplicativeReduction R] :
+    W.reductionSymbol R = W.multiplicativeReductionSymbol (R := R) := by
+  rw [multiplicativeReductionSymbol_eq]
+  refine (reductionSymbol_eq_I_iff W _).2 ⟨?_, rfl⟩
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  rw [hasAdditiveReduction_iff_of_isMinimal_smul (R := R) C hC]
+  exact (inferInstance : W.HasMultiplicativeReduction R).not_hasAdditiveReduction R
 
 end WeierstrassCurve
 
