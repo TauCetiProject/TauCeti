@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 
 /-!
 # Regularity of differential forms in charts
@@ -54,6 +55,30 @@ theorem inCoordinates_eq_inChartAt [IsManifold I 1 M] (φ : RoughForm I M F k)
   change φ x (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm
       (range I) (extChartAt I x₀ x) (v i)) = _
   rw [(extChartAt I x₀).left_inv hx]
+
+/-- A differentiable section has a differentiable coordinate expression in the preferred chart,
+with derivatives taken within the inverse image of the subset intersected with the model range. -/
+theorem differentiableWithinAt_inChartAt [IsManifold I 1 M]
+    (φ : RoughForm I M F k) {s : Set M} {x : M}
+    (hφ : MDifferentiableWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) s x) :
+    DifferentiableWithinAt ℝ (φ.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
+      (extChartAt I x x) := by
+  have hc := (mdifferentiableWithinAt_section I φ).mp hφ
+  have hflat := hc.differentiableWithinAt_writtenInExtChartAt
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, Function.comp_def, id_eq,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply] at hflat
+  have heq : (fun z ↦ ContinuousAlternatingMap.inCoordinates E F x
+      ((extChartAt I x).symm z) x ((extChartAt I x).symm z)
+        (φ ((extChartAt I x).symm z))) =ᶠ[𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
+    rw [φ.inCoordinates_eq_inChartAt ((extChartAt I x).map_target hz),
+      (extChartAt I x).right_inv hz]
+  exact hflat.congr_of_eventuallyEq (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
+    (by
+      rw [extChartAt_to_inv]
+      exact (φ.inCoordinates_eq_inChartAt (mem_extChartAt_source x)).symm)
 
 /-- Section regularity within a subset implies flat regularity in the chart centred at the
 point. The derivative set is the inverse image of the subset intersected with the model range. -/

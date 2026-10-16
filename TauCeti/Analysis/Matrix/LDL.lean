@@ -30,7 +30,7 @@ open scoped ComplexOrder Matrix
 
 namespace TauCeti
 
-variable {𝕜 n : Type*} [RCLike 𝕜] [LinearOrder n] [WellFoundedLT n]
+variable {𝕜 n : Type*} [RCLike 𝕜] [LinearOrder n]
   [LocallyFiniteOrderBot n] [Fintype n] {S : Matrix n n 𝕜} (hS : S.PosDef)
 
 /-- The diagonal entries in Mathlib's LDL decomposition of a positive-definite matrix are

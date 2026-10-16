@@ -51,6 +51,7 @@ The coefficient of `Xᵘ` then has as its coefficient of `Xₙ ^ k` the coeffici
 exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivLast_coeff_coeff`).
 This is the form used for Lazard evaluation, where the base variables are eliminated first and
 the last variable is kept.
+
 -/
 
 public section

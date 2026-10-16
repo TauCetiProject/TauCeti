@@ -178,8 +178,9 @@ noncomputable def quotient : InternalGrading R (M ⧸ U) where
   piece p := (G.piece p).map U.mkQ
   isInternal := by
     refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-      (iSupIndep_map_mkQ G.isInternal.submodule_iSupIndep ?_) ?_
-    · exact inf_le_left.trans (le_iSup_inf_piece G U hU)
+      (G.isInternal.submodule_iSupIndep.map_of_ker_inf_iSup_le U.mkQ ?_) ?_
+    · simpa only [Submodule.ker_mkQ] using
+        inf_le_left.trans (le_iSup_inf_piece G U hU)
     · rw [← Submodule.map_iSup, G.isInternal.submodule_iSup_eq_top, Submodule.map_top,
         Submodule.range_mkQ]
 

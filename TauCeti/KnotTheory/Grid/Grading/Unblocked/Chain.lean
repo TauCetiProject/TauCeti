@@ -570,7 +570,7 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
   intro c hc hc'
   have hcompl : c ∈ G.bigradedChainMinusSupported R {g | g.2 ≠ a} :=
     iSup₂_le (fun b hb ↦ G.bigradedChainMinusSupported_mono
-      fun g (hg : g.2 = b) ↦ by simpa [hg] using hb) hc'
+      (S := {g | g.2 = b}) (T := {g | g.2 ≠ a}) fun g (hg : g.2 = b) ↦ by simpa [hg] using hb) hc'
   refine Finsupp.ext fun z ↦ ?_
   rw [Finsupp.zero_apply, ← MvPolynomial.support_eq_empty, Finset.eq_empty_iff_forall_notMem]
   exact fun e he ↦ hcompl z e he (hc z e he)

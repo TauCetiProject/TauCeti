@@ -143,7 +143,7 @@ theorem comapOfSurjective_conjCoordinateIso_inv_le_kostantToralDefiningIdeal
       toConv (AlgHom.id ℤ _)
     let f : WithConv (GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
         MonoidAlgebra ℤ (SplitTorus.characterGroup κ)) :=
-      (CommHopfAlgCat.mapPointsFunctor t).app _ p
+      (CommHopfAlgCat.Hom.mapPointsFunctor t).app _ p
     have hmatrix : GeneralLinear.pointsMulEquiv n f =
         kostantTorusMatrix M b wt (SplitTorus.pointsMulEquiv p) := by
       rw [kostantTorusMatrix_apply]

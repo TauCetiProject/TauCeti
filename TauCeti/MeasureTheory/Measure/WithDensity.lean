@@ -29,6 +29,9 @@ A map that is injective only on part of the line admits the same change of varia
 price of restricting Lebesgue measure to that part and inserting the absolute derivative into the
 weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
 
+Finally, a weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite
+measure finite.
+
 ## Main statements
 
 * `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
@@ -40,6 +43,8 @@ weight. The substitution `x = t ^ 2` on the positive half-line is the case a squ
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
   invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
   constant Jacobian factor.
+* `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
+  with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -146,6 +151,20 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
           map_add_left_eq_self, neg_add_eq_sub]
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- A measure with log-density bounded above almost everywhere against a finite measure is
+finite. -/
+theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hg : AEMeasurable g μ) (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
+    IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (Real.exp (g x))) := by
+  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
+    (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
+    (hgM.mono fun x hx ↦ ?_)).2
+  rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+
+end MeasureTheory
 
 namespace TauCeti.MeasureTheory
 

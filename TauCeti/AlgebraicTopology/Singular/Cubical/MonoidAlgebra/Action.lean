@@ -613,7 +613,7 @@ theorem cubicalChainModuleLinearMap_op_smul (f : C(Y, Y'))
   | lof p c =>
     induction a using DirectSum.induction_on with
     | zero => rw [op_zero, zero_smul, map_zero, zero_smul]
-    | add a a' ha ha' => rw [op_add, add_smul, map_add, ha, ha', add_smul]
+    | add a a' ha ha' => rw [MulOpposite.op_add, add_smul, map_add, ha, ha', add_smul]
     | of q z =>
       rw [← DirectSum.lof_eq_of R, op_lof_smul_cubicalChainModuleLof,
         cubicalChainModuleLinearMap_lof, cubicalChainModuleLinearMap_lof,

@@ -53,7 +53,7 @@ theorem conjugationMap_injective : Function.Injective (conjugationMap n R).hom :
       (CommAlgCat.of R A) := toConv (IsScalarTower.toAlgHom R (coordinateHopfAlgebra n R) A)
   obtain ⟨g, hg⟩ := mapPointsFunctor_conjugationMap_app_surjective n A q
   have h : g.ofConv ((conjugationMap n R).hom (x - y)) = q.ofConv (x - y) :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply_apply
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply
       (conjugationMap n R) (CommAlgCat.of R A) g (x - y)).symm.trans
         (congrArg (fun p ↦ p.ofConv (x - y)) hg)
   simpa only [q, WithConv.ofConv_toConv, IsScalarTower.toAlgHom_apply, hx, map_zero]

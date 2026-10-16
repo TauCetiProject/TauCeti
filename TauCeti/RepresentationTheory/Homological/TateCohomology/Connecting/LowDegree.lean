@@ -81,7 +81,7 @@ theorem δ_neg_one_HNegOneπ {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
       _ = _ := by
         -- The differential at the join is the Tate norm; the two comparison isomorphisms cancel.
         have hn : (chainsIso₀ S.X₂).inv ≫ (tateComplex S.X₂).d (-1) 0 ≫
-            (cochainsIso₀ S.X₂).hom = S.X₂.norm.toModuleCatHom := by
+            (cochainsIso₀ S.X₂).hom = S.X₂.norm.asHom.toModuleCatHom := by
           rw [tateComplex_d_neg_one, Rep.tateNorm]
           simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
         simpa only [ConcreteCategory.comp_apply] using!

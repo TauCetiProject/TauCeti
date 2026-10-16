@@ -20,16 +20,74 @@ Ordinary mathematical APIs and standard Mathlib tactics/registration commands ar
 allowed. This is not an additional mathematical review or a dependency/artifact audit.
 
 Each session uses Luna or Haiku, with complete per-commit diffs and changed-file
-contents, capped at 20 commits and 256 KiB. Individual commits are inspected in
-order: a later revert cannot conceal an earlier dangerous version. Candidate code
-is never executed. The model has no GitHub credential, shell or editing authority;
-trusted Worker code verifies its structured verdict and updates the ref. A finding,
-incomplete review or oversized commit stops the cursor for human attention. Local
-input bundles, transcripts, verdicts and advancement records are retained by the worker.
+contents. Batches contain at most 20 commits with a 2 MiB workload target. A single
+larger commit is inspected alone, without an aggregate byte cap, in the same
+compacting session. Each source blob remains limited to 4 MiB and each model launch
+to 30 minutes. The batching target does not bound the conversation's live context. For larger inputs,
+one narrowly scoped reader exposes only numbered pages of the immutable prepared
+input. Continuation tokens serialize reads. The same conversation may use native
+compaction and re-read pages, then returns one verdict for the entire batch. There
+are no independent partial inspections or combined partial approvals. A pass also
+requires the reader's receipt to cover every page and the verdict to echo the token
+following the last page's contents; delivery alone does not prove understanding.
+Findings and unresolved questions must survive compaction, and the
+reviewer must return incomplete if it cannot finish the inspection.
+
+Individual commits are inspected in order: a later revert cannot conceal an earlier
+dangerous version. Candidate code is never executed. The model has no GitHub
+credential, general filesystem access, shell or editing authority; trusted Worker
+code verifies its structured verdict and updates the ref. A finding, incomplete
+review or unsupported source blob stops the cursor for human attention.
+Provider service errors without a final model answer may be retried without human
+source attestation. The Worker makes at most two automatic retries with backoff,
+resuming the same retained conversation with unchanged source, inspection policy,
+model, tool restrictions and read receipt. Progress notes and all failed requests
+are retained. Findings, incomplete verdicts, malformed answers/streams and
+unauthorized tools cannot be retried as service errors. Exhausted retries leave
+the cursor blocked until a later service recovery; an admin may use the Worker's
+`retry-service --state DIR --reason ...` command to continue the same retained
+inspection. Only a complete pass and confirmed reference update clear that block. Local input bundles, actual launchers/environments/prompts,
+transcripts, read receipts, native Codex
+compaction/usage records, verdicts and advancement records are retained by the worker.
+A recognized pre-inspection commit-budget block from an older planner can be archived and
+replanned when the exact next commit fits the current limits. That does not attest the
+commit or retry a model verdict; source findings and incomplete verdicts still
+require human attention.
 After inspecting every intermediate commit themselves, an admin can use the Worker's
 explicit `attest --through SHA --reason ...` command for an oversized range or to
 resolve a finding. It records human evidence and repeats the same ancestry and
 authority checks. A model re-roll is not a substitute for that review.
+
+An admin's combined audit/bump/progress worker starts an audit only when at least
+20 commits are pending, unless configured otherwise. Each inspection still contains
+at most 20 commits, and the workload target can select fewer. Audit-only workers
+inspect any nonempty backlog. Audit blocks preserve the cursor and release gate,
+while the combined worker can continue bump/progress work.
+
+When private Zulip notifications are configured on the trusted worker, a new source
+finding, incomplete inspection or operational pause sends a direct message to the
+configured recipient with the affected commit range, recorded diagnostic and local
+evidence paths. Repeated alerts for the same blocked range and kind are suppressed
+using durable receipts. Failed delivery backs off and is retried on subsequent audit
+rounds. No GitHub issue is created. The bot credential and configuration path are
+excluded from the isolated reviewer's environment. Without notification configuration,
+reporting remains in the local evidence and worker logs. Failed notification delivery
+does not clear an audit block or prevent unrelated maintenance.
+
+An unexplained `incomplete` answer with an empty findings list, or a paged `pass`
+whose input digest omits only its final character, may receive bounded output repair
+in the same retained Luna conversation. The exact ordered commits and remaining
+schema must validate; paged input must have complete receipt coverage and the correct
+final token. A repaired answer must echo the exact full digest. The response schema
+fixes that digest to prevent copying errors. Earlier source findings and explained
+incomplete verdicts remain binding. The repair preserves all notes and uncertainty;
+only a new complete passing answer can approve the original batch. Service retries
+and repairs share at most three launches per invocation. Each batch permits at most two
+explicit admin `repair-output --state DIR --reason ...` invocation. Failed answers,
+repair counts and recovery kinds are retained in the evidence and ledger. Exhausted
+repairs remain blocked. The original pre-profile incident has a narrowly pinned
+compatibility continuation for its exact reader-context failure; it does not permit
+other explained incomplete verdicts to be retried.
 
 Local blocks are not a shared authorization service. Administrators must not evade
 a finding by changing worker IDs, and should keep admin credentials out of ordinary
@@ -53,5 +111,6 @@ including constructed side-branch releases, remain unchanged and show their hist
 coverage. Constructing new side-branch release commits is no longer an exception.
 
 This policy trusts repository admins and the installed Worker/tag tooling. A
-malicious administrator can edit protections; an AI verdict can miss obfuscated code.
+malicious administrator can edit protections; an AI verdict can miss obfuscated code,
+and conversation compaction can lose inspection details.
 The cursor records a bounded source inspection, not a certification of safety.
