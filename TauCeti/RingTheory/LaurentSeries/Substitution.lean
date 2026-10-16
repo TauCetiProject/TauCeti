@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.Basic
+public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -23,7 +23,8 @@ Writing a Laurent series as `f = X ^ N * f₊` with `N ∈ ℤ` and `f₊ ∈ K�
 `ord (f (φ)) = e * ord f`, so the valuation is raised to the power `e`. In particular the
 substitution is injective and continuous for the valuation topology. Substitutions compose as
 power series do: substituting `φ` and then `ψ` is substituting `φ (ψ)`. The ramified substitution
-`X ↦ X ^ e` is the exponent embedding `n ↦ e * n` of Hahn series.
+`X ↦ X ^ e` is the exponent embedding `n ↦ e * n` of Hahn series. Formal differentiation obeys
+the chain rule `D(f (φ)) = (Df)(φ) Dφ`.
 
 ## Main definitions
 
@@ -37,6 +38,7 @@ power series do: substituting `φ` and then `ψ` is substituting `φ (ψ)`. The 
 * `TauCeti.LaurentSeries.orderTop_substAlgHom`: `ord (f (φ)) = ord φ * ord f`.
 * `TauCeti.LaurentSeries.valuation_substAlgHom`: `v (f (φ)) = v f ^ ord φ`.
 * `TauCeti.LaurentSeries.continuous_substAlgHom`: the substitution is continuous.
+* `TauCeti.LaurentSeries.derivative_substAlgHom`: the chain rule for Laurent substitution.
 * `TauCeti.LaurentSeries.substAlgHom_comp_substAlgHom`: `(f (φ)) (ψ) = f (φ (ψ))`.
 * `TauCeti.LaurentSeries.substAlgHom_X_pow`: the substitution `X ↦ X ^ e` is
   `HahnSeries.embDomainRingHom` along `n ↦ e * n`, with coefficient formulas
@@ -150,6 +152,36 @@ theorem continuous_substAlgHom : Continuous (substAlgHom hφ hφ₀) := by
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (toNat_order_ne_zero hφ hφ₀)
   rw [h, hm, pow_succ]
   exact (mul_le_of_le_one_left' (pow_le_one' hf.2.le m)).trans_lt hf.1
+
+/-- **Chain rule for Laurent series substitution.** The derivative of `f (φ)` is
+`(Df)(φ) * Dφ`. -/
+theorem derivative_substAlgHom (f : K⸨X⸩) :
+    _root_.LaurentSeries.derivative K (substAlgHom hφ hφ₀ f) =
+      substAlgHom hφ hφ₀ (_root_.LaurentSeries.derivative K f) *
+        _root_.LaurentSeries.derivative K (φ : K⸨X⸩) := by
+  have hpow :
+      _root_.LaurentSeries.derivative K ((φ : K⸨X⸩) ^ f.order) =
+        f.order • (φ : K⸨X⸩) ^ (f.order - 1) •
+          _root_.LaurentSeries.derivative K (φ : K⸨X⸩) := by
+    rw [← TauCeti.laurentSeriesDerivation_apply,
+      (TauCeti.laurentSeriesDerivation K).leibniz_zpow,
+      TauCeti.laurentSeriesDerivation_apply]
+  have hseries :
+      _root_.LaurentSeries.derivative K
+          ((f.powerSeriesPart.subst φ : K⟦X⟧) : K⸨X⸩) =
+        (((d⁄dX f.powerSeriesPart).subst φ : K⟦X⟧) : K⸨X⸩) *
+          _root_.LaurentSeries.derivative K (φ : K⸨X⸩) := by
+    rw [← PowerSeries.coe_derivative, PowerSeries.derivative_subst (.of_constantCoeff_zero' hφ),
+      PowerSeries.coe_mul, PowerSeries.coe_derivative]
+  rw [← f.single_order_mul_powerSeriesPart, substAlgHom_single_mul_coe,
+    _root_.LaurentSeries.derivative_mul, hpow, hseries,
+    _root_.LaurentSeries.derivative_single_mul_coe]
+  simp only [map_add, map_mul, substAlgHom_single, substAlgHom_coe]
+  simp only [HahnSeries.C_one, mul_one, smul_eq_mul, zsmul_eq_mul]
+  rw [show HahnSeries.C (f.order : K) = (f.order : K⸨X⸩) by
+    rw [← _root_.LaurentSeries.algebraMap_apply]
+    exact map_intCast _ _]
+  ring
 
 /-- Substituting `φ` and then `ψ` is substituting `φ (ψ)`. The hypotheses on `φ (ψ)` follow from
 those on `φ` and `ψ` (`PowerSeries.constantCoeff_subst_eq_zero`,
