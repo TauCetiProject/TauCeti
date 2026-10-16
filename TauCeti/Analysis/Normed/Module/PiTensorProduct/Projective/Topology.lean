@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm
+public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Seminorm
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
 /-!
