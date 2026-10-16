@@ -1,7 +1,14 @@
 name: pick-runner
 
-# Decides whether a sandboxed job runs on a GitHub-hosted runner or on Namespace. Called as the
-# first job of pr-build.yml and nightly-verify.yml, whose own `runs-on` holds both label sets.
+# Selects dedicated fleet capacity for initial bors staging attempts, or chooses between
+# GitHub-hosted runners and Namespace for ordinary builds. Called by pr-build.yml and
+# nightly-verify.yml; callers interpret the explicit fleet/github outputs in their runs-on.
+#
+# With fleet-staging=true, the picker runs on a small priority Namespace runner rather than
+# waiting for a GitHub-hosted slot. FLEET_CI_ENABLED, a complete inventory from the configured
+# runner group, and an online idle matching runner are all required to answer fleet=true.
+# Disabled routing, missing credentials, unavailable capacity, and subsequent run attempts
+# retain Namespace. The picker reserves no capacity; GitHub makes the actual assignment.
 #
 # The organisation's free plan runs at most 20 GitHub-hosted jobs at once, across every repository
 # in it; the 21st sits queued until a slot frees. Standard GitHub-hosted runners are not billed for
@@ -12,7 +19,7 @@ name: pick-runner
 #
 # There is no API for the plan's current usage, so this counts it: every running hosted job
 # in every repository of the organisation, excluding Namespace and self-hosted jobs. The picker
-# itself occupies one counted slot; its build becomes eligible after it ends. No slot is reserved
+# for ordinary builds occupies one counted slot; its build becomes eligible after it ends. No slot is reserved
 # or transferred, and another job may take the freed slot. A build goes to GitHub only while the
 # count is at most `vars.HOSTED_RUNNER_BUDGET` (default 18). The budget sits below 20 for two
 # reasons: pickers running at the same moment each see the same count and can all choose GitHub,
@@ -29,8 +36,8 @@ name: pick-runner
 # auto-merge key off pr-build's overall conclusion. This job can delay a build by its own runtime
 # but can never stop one.
 #
-# The picker itself needs a GitHub slot. When all 20 are taken it waits for one, and then answers
-# Namespace; the budget's headroom and the churn of short jobs keep that wait short.
+# The ordinary-build picker itself needs a GitHub slot. When all 20 are taken it waits for one,
+# and then answers Namespace; the budget's headroom and churn of short jobs keep that wait short.
 
 on:
   workflow_call:
