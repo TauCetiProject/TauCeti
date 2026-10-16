@@ -17,14 +17,15 @@ A monic polynomial over an arbitrary ring `R` cuts out a relative effective Cart
 the polynomial. Lower coefficients give distinct divisors, and arbitrary change of the
 coefficient ring pulls back the divisor by applying that homomorphism to each coefficient.
 
-Conversely, every closed subscheme of `Spec R[X]` that is finite and flat over `Spec R` of
-constant rank `n` is cut out by a unique monic polynomial of degree `n`; in particular it is a
-relative effective Cartier divisor. Consequently the relative effective Cartier divisors on the
-affine line over `Spec R` that are finite of constant degree `n` over `Spec R` are parameterized by
-the `n` lower coefficients of their monic equations, and this parameterization commutes with every
-change of the coefficient ring. This is the affine-base form of the identification of the
-degree-`n` divisors on the affine line with affine `n`-space. No reducedness, characteristic, or
-separability assumption is imposed, and a constant monic equation gives the empty divisor.
+Conversely, if `R` is nontrivial, every closed subscheme of `Spec R[X]` that is finite and flat
+over `Spec R` of constant rank `n` is cut out by a unique monic polynomial of degree `n`; in
+particular it is a relative effective Cartier divisor. In all cases, the relative effective Cartier
+divisors on the affine line over `Spec R` that are finite of constant degree `n` over `Spec R` are
+parameterized by the `n` lower coefficients of their monic equations, and this parameterization
+commutes with every change of the coefficient ring. This is the affine-base form of the
+identification of the degree-`n` divisors on the affine line with affine `n`-space.
+No reducedness, characteristic, or separability assumption is imposed, and a constant monic
+equation gives the empty divisor.
 
 ## Main declarations
 
