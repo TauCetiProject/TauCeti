@@ -188,6 +188,34 @@ theorem isSemisimplePoint_iff_forall_isSemisimple_endOfPoint
   · intro h M
     exact (isSemisimple_pointAction_iff_endOfPoint g M).mpr (h M)
 
+/-- The scalar-extended action of a base-valued point is semisimple exactly when its action
+on the original comodule is semisimple. -/
+theorem isSemisimple_pointsAction_iff_basePointsRepresentation
+    {k : Type u} [Field k] {H : Type v} [Semiring H] [HopfAlgebra k H]
+    (g : WithConv (H →ₐ[k] k)) (M : FGComoduleCat.{u, v, u} k H) :
+    GeneralLinearGroup.IsSemisimple
+        (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)) ↔
+      Module.End.IsSemisimple (Comodule.basePointsRepresentation (H := H) M g) := by
+  rw [isSemisimple_pointAction_iff_endOfPoint]
+  apply LinearEquiv.isSemisimple_iff (Comodule.endOfPoint M g.ofConv)
+    (Comodule.basePointsRepresentation (H := H) M g) (TensorProduct.lid k M)
+  apply LinearMap.ext
+  intro x
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Comodule.basePointsRepresentation_apply]
+  rw [← TensorProduct.lid_symm_apply]
+  simp
+
+/-- A base-valued point is semisimple exactly when it acts semisimply on every original
+comodule. -/
+theorem isSemisimplePoint_iff_forall_isSemisimple_basePointsRepresentation
+    {k : Type u} [Field k] {H : Type v} [Semiring H] [HopfAlgebra k H]
+    (g : WithConv (H →ₐ[k] k)) :
+    IsSemisimplePoint g ↔ ∀ M : FGComoduleCat.{u, v, u} k H,
+      Module.End.IsSemisimple (Comodule.basePointsRepresentation (H := H) M g) := by
+  rw [isSemisimplePoint_def]
+  exact forall_congr' (isSemisimple_pointsAction_iff_basePointsRepresentation g)
+
 /-- The identity point is semisimple. -/
 @[simp]
 theorem isSemisimplePoint_one :
