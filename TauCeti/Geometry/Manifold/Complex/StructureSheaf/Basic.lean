@@ -114,6 +114,11 @@ theorem mul_apply {U : (Opens (TopCat.of X))ᵒᵖ}
     (f * g) x = f x * g x := (rfl)
 
 @[simp]
+theorem pow_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (f : (holomorphicStructureSheaf I X).obj.obj U) (n : ℕ) (x : ↥(unop U)) :
+    (f ^ n) x = f x ^ n := (map_pow (ContMDiffMap.evalRingHom x) f n)
+
+@[simp]
 theorem neg_apply {U : (Opens (TopCat.of X))ᵒᵖ}
     (f : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
     (-f) x = -f x := (rfl)
