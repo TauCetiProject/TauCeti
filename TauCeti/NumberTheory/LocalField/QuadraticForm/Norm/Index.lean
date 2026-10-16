@@ -59,7 +59,7 @@ theorem quadraticNormSubgroup_index_eq_two_of_unramified_class {Δ : Kˣ}
 /-- There is a nonsquare local radicand whose quadratic norm subgroup has index two. -/
 theorem exists_quadraticNormSubgroup_index_eq_two (h2 : (2 : K) ≠ 0) :
     ∃ Δ : Kˣ, ¬IsSquare Δ ∧ (quadraticNormSubgroup (Δ : K)).index = 2 := by
-  obtain ⟨Δ, hnsq, _, hΔ⟩ := exists_unramified_class h2
+  obtain ⟨Δ, hnsq, -, -, hΔ⟩ := exists_unramified_class h2
   exact ⟨Δ, hnsq, quadraticNormSubgroup_index_eq_two_of_unramified_class hΔ⟩
 
 end TauCeti

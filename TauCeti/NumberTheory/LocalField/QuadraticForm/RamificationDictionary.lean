@@ -205,7 +205,7 @@ theorem unramified_class_iff_even_defectExponent (h2 : (2 : K) ≠ 0) {a : Kˣ} 
     (∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd) ↔ Even d := by
   refine ⟨fun h => even_of_defectExponent_eq hd fun b hb => (h b).mp hb, fun hev => ?_⟩
-  obtain ⟨Δ, hΔsq, -, hΔ⟩ := exists_unramified_class h2
+  obtain ⟨Δ, hΔsq, -, -, hΔ⟩ := exists_unramified_class h2
   obtain ⟨dΔ, hdΔ⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp hΔsq)
   exact unramified_class_of_isSquare_mul (isSquare_mul_of_even_defectExponent h2 hd hdΔ.symm hev
     (even_of_defectExponent_eq hdΔ.symm fun b hb => (hΔ b).mp hb)) hΔ
