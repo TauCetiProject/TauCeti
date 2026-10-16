@@ -156,6 +156,20 @@ def reducedSingularHomologySuccIso (n : ℕ) :
 lemma reducedSingularHomologySuccIso_hom (n : ℕ) :
     (reducedSingularHomologySuccIso R n).hom = reducedSingularHomologyι R (n + 1) := (rfl)
 
+/-- A continuous map induces a monomorphism on singular homology when the reduced homology of
+its source vanishes in that degree. -/
+lemma _root_.TopCat.Hom.mono_singularHomologyMap_of_isZero {X Y : TopCat.{w}} (f : X ⟶ Y)
+    (R : C) {n : ℕ} (h : IsZero ((reducedSingularHomologyFunctor R n).obj X)) :
+    Mono (((singularHomologyFunctor C n).obj R).map f) := by
+  cases n with
+  | zero =>
+    rw [reducedSingularHomologyFunctor_zero_obj] at h
+    have : Mono (X.singularHomology₀ε R) := Preadditive.mono_of_isZero_kernel _ h
+    exact mono_of_mono_fac (singularHomologyMap_singularHomology₀ε R f)
+  | succ n =>
+    have hX := h.of_iso ((reducedSingularHomologySuccIso R n).app X).symm
+    exact ⟨fun g h _ ↦ hX.eq_of_tgt g h⟩
+
 /-- Homotopic continuous maps induce the same map on reduced singular homology. -/
 lemma reducedSingularHomologyFunctor_map_eq_of_homotopy {X Y : TopCat.{w}} {f g : X ⟶ Y}
     (H : TopCat.Homotopy f g) (n : ℕ) :

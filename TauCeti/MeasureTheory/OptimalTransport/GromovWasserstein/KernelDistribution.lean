@@ -81,13 +81,14 @@ theorem kernelDistribution_swap [SFinite μ] (hωX : AEMeasurable ωX (μ.prod �
       (by simpa only [Measure.prod_swap] using hωX) measurable_swap.aemeasurable,
     Measure.prod_swap]
 
-/-- Weakly isomorphic a.e. measurable kernels have the same kernel distribution. -/
-theorem AreWeaklyIsomorphicKernels.kernelDistribution_eq [IsFiniteMeasure μ]
+/-- Weakly isomorphic a.e. measurable kernels have the same kernel distribution when the first
+measure is sigma-finite. -/
+theorem AreWeaklyIsomorphicKernels.kernelDistribution_eq [SigmaFinite μ]
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY)
     (hωX : AEMeasurable ωX (μ.prod μ)) (hωY : AEMeasurable ωY (ν.prod ν)) :
     kernelDistribution μ ωX = kernelDistribution ν ωY := by
   obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure
+  have : SigmaFinite π := hπ.measurePreserving_fst.sigmaFinite
   have hX := hπ.measurePreserving_fst.prod hπ.measurePreserving_fst
   have hY := hπ.measurePreserving_snd.prod hπ.measurePreserving_snd
   rw [kernelDistribution_def, kernelDistribution_def, ← hX.map_eq, ← hY.map_eq]

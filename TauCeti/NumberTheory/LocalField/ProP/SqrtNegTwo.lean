@@ -99,19 +99,24 @@ private def powerBasis : PowerBasis ℚ_[2] RatPadicSqrtNegTwo :=
 
 instance : FiniteDimensional ℚ_[2] RatPadicSqrtNegTwo := powerBasis.finite
 
+-- Use finite dimensionality directly when installing the spectral-norm structures.
+local instance : Algebra.IsAlgebraic ℚ_[2] RatPadicSqrtNegTwo :=
+  Algebra.IsAlgebraic.of_finite ℚ_[2] RatPadicSqrtNegTwo
+
 instance : Algebra.IsSeparable ℚ_[2] RatPadicSqrtNegTwo :=
   Algebra.IsAlgebraic.isSeparable_of_perfectField
 
 instance : CharZero RatPadicSqrtNegTwo :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[2] RatPadicSqrtNegTwo).injective
 
-instance : ValuativeRel RatPadicSqrtNegTwo := finiteExtensionValuativeRel ℚ_[2] RatPadicSqrtNegTwo
+instance : ValuativeRel RatPadicSqrtNegTwo :=
+  algebraicExtensionValuativeRel ℚ_[2] RatPadicSqrtNegTwo
 
 instance : TopologicalSpace RatPadicSqrtNegTwo :=
-  finiteExtensionNormedFieldTopology ℚ_[2] RatPadicSqrtNegTwo
+  algebraicExtensionNormedFieldTopology ℚ_[2] RatPadicSqrtNegTwo
 
 instance : ValuativeExtension ℚ_[2] RatPadicSqrtNegTwo :=
-  finiteExtension_valuativeExtension ℚ_[2] RatPadicSqrtNegTwo
+  algebraicExtension_valuativeExtension ℚ_[2] RatPadicSqrtNegTwo
 
 instance : IsNonarchimedeanLocalField RatPadicSqrtNegTwo :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] RatPadicSqrtNegTwo

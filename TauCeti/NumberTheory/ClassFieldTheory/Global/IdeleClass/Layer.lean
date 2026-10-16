@@ -85,12 +85,12 @@ of the open normal subgroup `V` of `G_K` is `E`, the idele class group `C_E`, th
 `layerGalEquivOfFixedField` (`ideleClassLayerCoeffEquiv_ρ`). -/
 def ideleClassLayerCoeffEquiv :
     (ideleClassRep K E).V ≃ₗ[ℤ] ((NormalLayer.ofOpenNormal V).rep (globalFormation K)).V :=
-  (ideleClassLevelEquiv E hV).toIntLinearEquiv
+  (ideleClassLevelEquiv hV).toIntLinearEquiv
 
 /-- `ideleClassLayerCoeffEquiv` is `ideleClassLevelEquiv`. -/
 @[simp]
 theorem ideleClassLayerCoeffEquiv_apply (c : Additive (IdeleClassGroup (𝓞 E) E)) :
-    ideleClassLayerCoeffEquiv E hV c = ideleClassLevelEquiv E hV c :=
+    ideleClassLayerCoeffEquiv E hV c = ideleClassLevelEquiv hV c :=
   (rfl)
 
 /-- `ideleClassLayerCoeffEquiv` is equivariant: `τ ∈ Gal(E/K)` acts on `C_E` as the class of any
@@ -116,7 +116,7 @@ theorem ideleClassLayerCoeffEquiv_ρ (τ : Gal(E/K)) (c : (ideleClassRep K E).V)
     exact congrArg (fun z : IdeleGroup (𝓞 E) E ↦ Additive.ofMul (z : IdeleClassGroup (𝓞 E) E))
       (GlobalNumberFields.idele_smul_def _ a)
   refine (congrArg (ideleClassLayerCoeffEquiv E hV) hτ).trans (Subtype.ext ?_)
-  exact (ideleClassLevelEquiv_smul E hV (σ : AbsoluteGaloisGroup K) a).trans
+  exact (ideleClassLevelEquiv_smul hV (σ : AbsoluteGaloisGroup K) a).trans
     (NormalLayer.rep_ρ_mk_apply_coe _ _ σ _).symm
 
 /-- `ideleClassLayerCoeffEquiv` and the inverse of `layerGalEquivOfFixedField` form a compatible
@@ -140,6 +140,27 @@ def ideleClassLayerCohomologyEquiv (n : ℕ) :
   (groupCohomology.mapIso (layerGalEquivOfFixedField hV).symm (ideleClassLayerCoeffEquiv E hV)
     (fun τ ↦ LinearMap.ext (ideleClassLayerCoeffEquiv_ρ E hV τ)) n).toLinearEquiv.toAddEquiv.symm
 
+/-- The ordinary layer comparison acts by the functorial cohomology map of the inverse
+coefficient equivalence and the inverse Galois-group comparison. -/
+@[simp]
+theorem ideleClassLayerCohomologyEquiv_apply (n : ℕ)
+    (c : (NormalLayer.ofOpenNormal V).H (globalFormation K) n) :
+    ideleClassLayerCohomologyEquiv E hV n c =
+      (groupCohomology.map (layerGalEquivOfFixedField hV).symm
+        (Rep.ofHom ⟨((ideleClassLayerCoeffEquiv E hV).symm :
+          ((NormalLayer.ofOpenNormal V).rep (globalFormation K)).V →ₗ[ℤ]
+            (ideleClassRep K E).V), fun τ ↦ by
+          ext x
+          apply (ideleClassLayerCoeffEquiv E hV).injective
+          -- Normalize the two presentations of the idele-class action before cancellation.
+          simp only [LinearMap.comp_apply, MonoidHom.comp_apply, LinearEquiv.coe_coe,
+            LinearEquiv.apply_symm_apply]
+          have h := (ideleClassLayerCoeffEquiv_ρ E hV τ
+            ((ideleClassLayerCoeffEquiv E hV).symm x)).symm
+          rw [(ideleClassLayerCoeffEquiv E hV).apply_symm_apply] at h
+          simpa [ideleClassRep, Rep.ofMulDistribMulAction, Rep.of_ρ] using h⟩) n).hom c := by
+  rfl
+
 /-- **The Tate cohomology of a layer of the idele-class formation is the Tate cohomology of the
 idele classes**: if the fixed field of the open normal subgroup `V` of `G_K` is `E`, then
 `\hat{H}ⁿ(G_K ⧸ V, (C_{Kˢ})^V) ≅ \hat{H}ⁿ(Gal(E/K), C_E)` in every integer degree `n`. -/
@@ -147,6 +168,22 @@ def ideleClassLayerTateCohomologyIso (n : ℤ) :
     (NormalLayer.ofOpenNormal V).TateH (globalFormation K) n ≅
       tateCohomology (ideleClassRep K E) n :=
   (TateCohomology.mapIso (isIntertwiningMap_ideleClassLayerCoeffEquiv E hV) n).symm
+
+/-- The forward Tate layer comparison is the map of the inverse compatible pair. -/
+@[simp]
+theorem ideleClassLayerTateCohomologyIso_hom (n : ℤ) :
+    (ideleClassLayerTateCohomologyIso E hV n).hom =
+      TateCohomology.map
+        (Representation.IsIntertwiningMap.symm
+          (isIntertwiningMap_ideleClassLayerCoeffEquiv E hV)) n := by
+  simp [ideleClassLayerTateCohomologyIso]
+
+/-- The inverse Tate layer comparison is the map of the coefficient compatible pair. -/
+@[simp]
+theorem ideleClassLayerTateCohomologyIso_inv (n : ℤ) :
+    (ideleClassLayerTateCohomologyIso E hV n).inv =
+      TateCohomology.map (isIntertwiningMap_ideleClassLayerCoeffEquiv E hV) n := by
+  simp [ideleClassLayerTateCohomologyIso]
 
 include hV in
 /-- **The Herbrand quotient of a layer of the idele-class formation is that of the idele

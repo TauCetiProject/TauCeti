@@ -17,10 +17,6 @@ below the diagonal, so it descends uniquely through the quotient defining the up
 group. Applying relative spectrum gives the inclusion `T → B`, whose composite with `B → GLₙ`
 is the standard diagonal torus.
 
-This supplies the containment of the standard maximal torus in the standard Borel candidate for
-the general-rank `GLₙ` example in Layer 7 of the ReductiveGroups roadmap. It supersedes the
-rank-two-only construction formerly in `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`.
-
 ## Main declarations
 
 * `TauCeti.GeneralLinear.UpperTriangular.diagonalTorusCoordinateMap`: the coordinate morphism
@@ -32,13 +28,13 @@ rank-two-only construction formerly in `TauCeti.Algebra.AlgebraicGroup.GeneralLi
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), Sections 12 and 21.
+* J. S. Milne, *Algebraic Groups* (2017), Chapters 12 and 21.
 * T. A. Springer, *Linear Algebraic Groups*, second edition (1998), Sections 6.2 and 8.1.
 -/
 
 public section
 
-open CategoryTheory WithConv
+open CategoryTheory
 
 namespace TauCeti.GeneralLinear.UpperTriangular
 
@@ -128,7 +124,6 @@ theorem diagonalTorus_comp_inclusion :
   rw [← Category.assoc ((AlgebraicGeometry.hopfSpec _).map _),
     CommHopfAlgCat.hopfSpec_map_comp_quotientSpecι, ← coordinateMap_def,
     coordinateMap_comp_diagonalTorusCoordinateMap]
-  rfl
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
@@ -149,7 +144,7 @@ theorem pointsMulEquiv_diagonalTorusCoordinateMap
     (by simpa only [coordinateMap_def] using coordinateMap_comp_diagonalTorusCoordinateMap R n)
     (CommAlgCat.of R A) f
   rw [GeneralLinear.mapPointsFunctor_diagonalTorusCoordinateMap_app,
-    CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   rw [← pointsMulEquiv_coe, GeneralLinear.pointsMulEquiv_apply, ← h]
 
 end DiagonalTorus

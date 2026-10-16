@@ -8,8 +8,10 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
 
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Classification
 import TauCeti.Data.ZMod.BinaryQuadraticForm
 import TauCeti.Data.ZMod.BinaryQuadraticForm.PlaneCyclic
+import TauCeti.Data.ZMod.BinaryQuadraticForm.TernaryCyclic
 import TauCeti.Data.ZMod.Two
 import TauCeti.Data.ZMod.UnitSquare
 import TauCeti.Data.ZMod.MulCastHom
@@ -34,10 +36,15 @@ The mixed cyclic and rank-two relations replace a `v` summand by `u` while
 multiplying the odd cyclic coefficient by five. A unit square supplies a cyclic
 vector of the required norm; its orthogonal complement has hyperbolic binary form.
 
+Two copies of an odd cyclic form of coefficient `θ` together with a third of
+coefficient `η` split as a rank-two plane and a cyclic form. The congruence
+`θ ≡ η (mod 4)` selects `v` and coefficient `-5η`; `θ ≡ -η (mod 4)` selects
+`u` and coefficient `-η`. Both coordinate changes preserve the half-norm quadratic values.
+
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
-  Proposition 1.8.2(b), (c), (e), (f), (k).
+  Proposition 1.8.2(b), (c), (d), (e), (f), (k).
 -/
 
 public section
@@ -478,5 +485,235 @@ noncomputable def dyadicCyclicProdVSuccIsometryFiveMulProdU (k : ℕ) [NeZero k]
           (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
     exact ⟨(g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm⟩
 
+private def dyadicTernaryCyclicChange (k : ℕ) (r a b c d : ℤ) :
+    ((ZMod (2 ^ k) × ZMod (2 ^ k)) × ZMod (2 ^ k)) →+
+      ((ZMod (2 ^ k) × ZMod (2 ^ k)) × ZMod (2 ^ k)) where
+  toFun x :=
+    (((a : ZMod (2 ^ k)) * x.1.1 + (b : ZMod (2 ^ k)) * x.1.2 + x.2,
+      (c : ZMod (2 ^ k)) * x.1.1 + (d : ZMod (2 ^ k)) * x.1.2 + x.2),
+      ((-r * (a + c) : ℤ) : ZMod (2 ^ k)) * x.1.1 +
+        ((-r * (b + d) : ℤ) : ZMod (2 ^ k)) * x.1.2 + x.2)
+  map_zero' := by simp
+  map_add' x y := by
+    ext <;> simp only [Prod.fst_add, Prod.snd_add] <;> ring
+
+private theorem dyadicTernaryCyclicChange_intCast (k : ℕ) (r a b c d m n z : ℤ) :
+    dyadicTernaryCyclicChange k r a b c d
+      (((m : ZMod (2 ^ k)), (n : ZMod (2 ^ k))), (z : ZMod (2 ^ k))) =
+    ((((a * m + b * n + z : ℤ) : ZMod (2 ^ k)),
+      ((c * m + d * n + z : ℤ) : ZMod (2 ^ k))),
+      ((-r * ((a * m + b * n) + (c * m + d * n)) + z : ℤ) : ZMod (2 ^ k))) := by
+  dsimp [dyadicTernaryCyclicChange]
+  ext <;> push_cast <;> ring
+
+private theorem dyadicCyclic_prod_self_prod_quadratic_intCast (k : ℕ) [NeZero k]
+    (θ η x y z : ℤ) :
+    (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)).quadratic
+        (((x : ZMod (2 ^ k)), (y : ZMod (2 ^ k))), (z : ZMod (2 ^ k))) =
+      ZMod.toRatAddCircle (2 ^ (k + 1))
+        ((θ * x ^ 2 + θ * y ^ 2 + η * z ^ 2 : ℤ) : ZMod (2 ^ (k + 1))) := by
+  rw [ZMod.toRatAddCircle_intCast]
+  -- Unfold the bundled cyclic carriers to use the three concrete residue coordinates.
+  erw [prod_quadratic, prod_quadratic, dyadicCyclic_quadratic_intCast,
+    dyadicCyclic_quadratic_intCast, dyadicCyclic_quadratic_intCast]
+  rw [← AddCircle.coe_add, ← AddCircle.coe_add]
+  congr 1
+  push_cast
+  rw [pow_succ]
+  field_simp
+
+private theorem dyadicTernaryCyclicChange_quadratic_intCast (k : ℕ) [NeZero k]
+    (θ η r a b c d δ : ℤ)
+    (hratio : (η : ZMod (2 ^ (k + 1))) * (r : ZMod (2 ^ (k + 1))) = θ)
+    (hplane : ∀ m n : ZMod (2 ^ (k + 1)),
+      (θ : ZMod (2 ^ (k + 1))) * (a * m + b * n) ^ 2 + θ * (c * m + d * n) ^ 2 +
+        η * (-r * ((a * m + b * n) + (c * m + d * n))) ^ 2 =
+          2 * (δ * m ^ 2 + m * n + δ * n ^ 2))
+    (m n z : ℤ) :
+    (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)).quadratic
+        (dyadicTernaryCyclicChange k r a b c d
+          (((m : ZMod (2 ^ k)), (n : ZMod (2 ^ k))), (z : ZMod (2 ^ k)))) =
+      ZMod.toRatAddCircle (2 ^ (k + 1))
+        ((2 * (δ * m ^ 2 + m * n + δ * n ^ 2) + (2 * θ + η) * z ^ 2 : ℤ) :
+          ZMod (2 ^ (k + 1))) := by
+  erw [dyadicTernaryCyclicChange_intCast, dyadicCyclic_prod_self_prod_quadratic_intCast]
+  congr 1
+  push_cast
+  linear_combination hplane m n -
+    2 * (z : ZMod (2 ^ (k + 1))) * ((a * (m : ZMod (2 ^ (k + 1))) + b * n) +
+      (c * m + d * n)) * hratio
+
+private theorem dyadicV_prod_cyclic_quadratic_intCast (k : ℕ) [NeZero k] (η x y z : ℤ) :
+    ((dyadicV k).prod (dyadicCyclic k η)).quadratic
+        (((x : ZMod (2 ^ k)), (y : ZMod (2 ^ k))), (z : ZMod (2 ^ k))) =
+      ZMod.toRatAddCircle (2 ^ (k + 1))
+        ((2 * (x ^ 2 + x * y + y ^ 2) + η * z ^ 2 : ℤ) : ZMod (2 ^ (k + 1))) := by
+  have hv := ZMod.toRatAddCircle_intCast (2 ^ k) (x ^ 2 + x * y + y ^ 2)
+  simp only [Int.cast_add, Int.cast_pow, Int.cast_mul] at hv
+  rw [ZMod.toRatAddCircle_intCast]
+  erw [prod_quadratic, dyadicV_quadratic, hv, dyadicCyclic_quadratic_intCast]
+  rw [← AddCircle.coe_add]
+  congr 1
+  push_cast
+  rw [pow_succ]
+  field_simp
+  ring
+
+private theorem dyadicU_prod_cyclic_quadratic_intCast (k : ℕ) [NeZero k] (η x y z : ℤ) :
+    ((dyadicU k).prod (dyadicCyclic k η)).quadratic
+        (((x : ZMod (2 ^ k)), (y : ZMod (2 ^ k))), (z : ZMod (2 ^ k))) =
+      ZMod.toRatAddCircle (2 ^ (k + 1))
+        ((2 * x * y + η * z ^ 2 : ℤ) : ZMod (2 ^ (k + 1))) := by
+  have hu := ZMod.toRatAddCircle_intCast (2 ^ k) (x * y)
+  simp only [Int.cast_mul] at hu
+  rw [ZMod.toRatAddCircle_intCast]
+  erw [prod_quadratic, dyadicU_quadratic, hu, dyadicCyclic_quadratic_intCast]
+  rw [← AddCircle.coe_add]
+  congr 1
+  push_cast
+  rw [pow_succ]
+  field_simp
+  ring
+
+private theorem dyadicTernaryCyclicChange_V_quadratic (k : ℕ) [NeZero k]
+    (θ η r a b c d : ℤ)
+    (hratio : (η : ZMod (2 ^ (k + 1))) * (r : ZMod (2 ^ (k + 1))) = θ)
+    (hplane : ∀ m n : ZMod (2 ^ (k + 1)),
+      (θ : ZMod (2 ^ (k + 1))) * (a * m + b * n) ^ 2 + θ * (c * m + d * n) ^ 2 +
+        η * (-r * ((a * m + b * n) + (c * m + d * n))) ^ 2 =
+          2 * (m ^ 2 + m * n + n ^ 2))
+    (x : ((dyadicV k).prod (dyadicCyclic k (2 * θ + η))).carrier) :
+    (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)).quadratic
+        (dyadicTernaryCyclicChange k r a b c d x) =
+      ((dyadicV k).prod (dyadicCyclic k (2 * θ + η))).quadratic x := by
+  rcases x with ⟨⟨m, n⟩, z⟩
+  obtain ⟨m, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) m
+  obtain ⟨n, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) n
+  obtain ⟨z, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) z
+  erw [dyadicTernaryCyclicChange_quadratic_intCast k θ η r a b c d 1 hratio
+    (by simpa only [Int.cast_one, one_mul] using hplane), dyadicV_prod_cyclic_quadratic_intCast]
+  simp only [one_mul]
+
+private theorem dyadicTernaryCyclicChange_U_quadratic (k : ℕ) [NeZero k]
+    (θ η r a b c d : ℤ)
+    (hratio : (η : ZMod (2 ^ (k + 1))) * (r : ZMod (2 ^ (k + 1))) = θ)
+    (hplane : ∀ m n : ZMod (2 ^ (k + 1)),
+      (θ : ZMod (2 ^ (k + 1))) * (a * m + b * n) ^ 2 + θ * (c * m + d * n) ^ 2 +
+        η * (-r * ((a * m + b * n) + (c * m + d * n))) ^ 2 = 2 * m * n)
+    (x : ((dyadicU k).prod (dyadicCyclic k (2 * θ + η))).carrier) :
+    (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)).quadratic
+        (dyadicTernaryCyclicChange k r a b c d x) =
+      ((dyadicU k).prod (dyadicCyclic k (2 * θ + η))).quadratic x := by
+  rcases x with ⟨⟨m, n⟩, z⟩
+  obtain ⟨m, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) m
+  obtain ⟨n, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) n
+  obtain ⟨z, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) z
+  erw [dyadicTernaryCyclicChange_quadratic_intCast k θ η r a b c d 0 hratio
+    (by simpa only [Int.cast_zero, zero_mul, zero_add, add_zero, mul_assoc] using hplane),
+      dyadicU_prod_cyclic_quadratic_intCast]
+  congr 1
+  push_cast
+  ring
+
+private noncomputable def dyadicTernaryCyclicIsometryVOfCoefficients
+    (k : ℕ) [NeZero k] (θ η r a b c d : ℤ) (hη : Odd η)
+    (hratio : (η : ZMod (2 ^ (k + 1))) * (r : ZMod (2 ^ (k + 1))) = θ)
+    (hplane : ∀ m n : ZMod (2 ^ (k + 1)),
+      (θ : ZMod (2 ^ (k + 1))) * (a * m + b * n) ^ 2 + θ * (c * m + d * n) ^ 2 +
+        η * (-r * ((a * m + b * n) + (c * m + d * n))) ^ 2 = 2 * (m ^ 2 + m * n + n ^ 2)) :
+    Isometry (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η))
+      ((dyadicV k).prod (dyadicCyclic k (2 * θ + η))) := by
+  have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
+  let g : Hom ((dyadicV k).prod (dyadicCyclic k (2 * θ + η)))
+      (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)) :=
+    { toLinearMap := (dyadicTernaryCyclicChange k r a b c d).toIntLinearMap
+      map_app' := fun x ↦ by
+        simpa only [LinearMap.toFun_eq_coe, AddMonoidHom.coe_toIntLinearMap] using
+          dyadicTernaryCyclicChange_V_quadratic k θ η r a b c d hratio hplane x }
+  have hsource : ((dyadicV k).prod (dyadicCyclic k (2 * θ + η))).IsNondegenerate :=
+    (isNondegenerate_prod _ _).mpr
+      ⟨isNondegenerate_dyadicV k, (isNondegenerate_dyadicCyclic_iff _ _).mpr hα⟩
+  exact (g.toIsometryOfNondegenerate hsource rfl).symm
+
+private noncomputable def dyadicTernaryCyclicIsometryUOfCoefficients
+    (k : ℕ) [NeZero k] (θ η r a b c d : ℤ) (hη : Odd η)
+    (hratio : (η : ZMod (2 ^ (k + 1))) * (r : ZMod (2 ^ (k + 1))) = θ)
+    (hplane : ∀ m n : ZMod (2 ^ (k + 1)),
+      (θ : ZMod (2 ^ (k + 1))) * (a * m + b * n) ^ 2 + θ * (c * m + d * n) ^ 2 +
+        η * (-r * ((a * m + b * n) + (c * m + d * n))) ^ 2 = 2 * m * n) :
+    Isometry (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η))
+      ((dyadicU k).prod (dyadicCyclic k (2 * θ + η))) := by
+  have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
+  let g : Hom ((dyadicU k).prod (dyadicCyclic k (2 * θ + η)))
+      (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)) :=
+    { toLinearMap := (dyadicTernaryCyclicChange k r a b c d).toIntLinearMap
+      map_app' := fun x ↦ by
+        simpa only [LinearMap.toFun_eq_coe, AddMonoidHom.coe_toIntLinearMap] using
+          dyadicTernaryCyclicChange_U_quadratic k θ η r a b c d hratio hplane x }
+  have hsource : ((dyadicU k).prod (dyadicCyclic k (2 * θ + η))).IsNondegenerate :=
+    (isNondegenerate_prod _ _).mpr
+      ⟨isNondegenerate_dyadicU k, (isNondegenerate_dyadicCyclic_iff _ _).mpr hα⟩
+  exact (g.toIsometryOfNondegenerate hsource rfl).symm
+
+/-- Nikulin's ternary cyclic relation 1.8.2(d) in the half-norm convention:
+when `θ` is congruent to `η` modulo four, two copies of `q_θ(2^k)` and `q_η(2^k)`
+are isometric to `v(2^k)` and `q_{-5 * η}(2^k)`. -/
+noncomputable def dyadicCyclicProdSelfProdIsometryVProdNegFiveMul (k : ℕ) [NeZero k] {θ η : ℤ}
+    (hθ : Odd θ) (hmod : θ ≡ η [ZMOD 4]) :
+    Isometry (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η))
+      ((dyadicV k).prod (dyadicCyclic k (-5 * η))) :=
+  Classical.choice <| by
+    have hη : Odd η := by
+      obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod
+      obtain ⟨s, hs⟩ := hθ
+      refine ⟨s + 2 * e, ?_⟩
+      omega
+    obtain ⟨r, a, b, c, d, hratio, hplane⟩ :=
+      ZMod.BinaryQuadraticForm.exists_ternary_complement_sq_add_mul_add_sq_of_modEq_four
+        k hθ hmod
+    obtain ⟨r, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) r
+    obtain ⟨a, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) a
+    obtain ⟨b, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) b
+    obtain ⟨c, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) c
+    obtain ⟨d, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) d
+    let e := dyadicTernaryCyclicIsometryVOfCoefficients k θ η r a b c d hη hratio hplane
+    have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
+    have hmod8 : 2 * θ + η ≡ -5 * η [ZMOD 8] := by
+      obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod.symm
+      refine Int.modEq_iff_dvd.mpr ⟨-η - e, ?_⟩
+      linear_combination -2 * he
+    let c := dyadicCyclicIsometryOfModEqEight k hα hmod8
+    let e₁ : Isometry (dyadicV k) (dyadicV k) := QuadraticMap.IsometryEquiv.refl _
+    exact ⟨e.trans (e₁.prod c)⟩
+
+/-- Nikulin's ternary cyclic relation 1.8.2(d) in the half-norm convention:
+when `θ` is congruent to `-η` modulo four, two copies of `q_θ(2^k)` and `q_η(2^k)`
+are isometric to `u(2^k)` and `q_{-η}(2^k)`. -/
+noncomputable def dyadicCyclicProdSelfProdIsometryUProdNeg (k : ℕ) [NeZero k] {θ η : ℤ}
+    (hθ : Odd θ) (hmod : θ ≡ -η [ZMOD 4]) :
+    Isometry (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η))
+      ((dyadicU k).prod (dyadicCyclic k (-η))) :=
+  Classical.choice <| by
+    have hη : Odd η := by
+      obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod
+      obtain ⟨s, hs⟩ := hθ
+      refine ⟨-s - 2 * e - 1, ?_⟩
+      omega
+    obtain ⟨r, a, b, c, d, hratio, hplane⟩ :=
+      ZMod.BinaryQuadraticForm.exists_ternary_complement_mul_of_modEq_four_neg k hθ hmod
+    obtain ⟨r, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) r
+    obtain ⟨a, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) a
+    obtain ⟨b, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) b
+    obtain ⟨c, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) c
+    obtain ⟨d, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) d
+    let e := dyadicTernaryCyclicIsometryUOfCoefficients k θ η r a b c d hη hratio hplane
+    have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
+    have hmod8 : 2 * θ + η ≡ -η [ZMOD 8] := by
+      obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod.symm
+      refine Int.modEq_iff_dvd.mpr ⟨-e, ?_⟩
+      linear_combination -2 * he
+    let c := dyadicCyclicIsometryOfModEqEight k hα hmod8
+    let e₁ : Isometry (dyadicU k) (dyadicU k) := QuadraticMap.IsometryEquiv.refl _
+    exact ⟨e.trans (e₁.prod c)⟩
 
 end TauCeti.FiniteQuadraticModule

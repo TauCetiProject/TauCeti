@@ -28,6 +28,9 @@ This turns lower frame bounds into Gram-spectrum bounds and back: the inequality
 `a ‖x‖² ≤ ∑ᵢ ‖⟪vᵢ, x⟫‖²` for all `x` holds exactly when the sorted Gram eigenvalues below
 `finrank 𝕜 E` are at least `a`, provided the family has at least `finrank 𝕜 E` members.
 
+For two finite families `u` and `v`, analysis by `u` after synthesis by `v` is their *overlap
+operator*, whose matrix is `(⟪uᵢ, vⱼ⟫)ᵢⱼ`; on the diagonal it is the Gram operator.
+
 The definitions and the algebraic identities need no finiteness of `E`; the comparisons with
 adjoints and eigenvalues assume `E` finite-dimensional.
 
@@ -39,6 +42,10 @@ adjoints and eigenvalues assume `E` finite-dimensional.
 * `TauCeti.frameOperator`, `TauCeti.gramOperator`: the frame and Gram operators.
 * `TauCeti.gramOperator_eq_toEuclideanLin_gram`: the Gram operator is the Gram matrix acting on
   coefficient space.
+* `TauCeti.overlapOperator`: the overlap operator `a ↦ (⟪uᵢ, ∑ⱼ aⱼ vⱼ⟫)ᵢ` of two families,
+  with matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` (`TauCeti.overlapOperator_eq_toEuclideanLin`); swapping the families
+  gives the adjoint (`TauCeti.adjoint_overlapOperator`), and it is `S_u† S_v`
+  (`TauCeti.adjoint_synthesisMap_comp_synthesisMap`).
 * `TauCeti.isPositive_frameOperator`, `TauCeti.isPositive_gramOperator`: both are positive.
 * `OrthonormalBasis.frameOperator_eq_id`: an orthonormal basis has the identity as frame
   operator.
@@ -182,6 +189,71 @@ theorem isPositive_gramOperator (v : ι → E) : (gramOperator 𝕜 v).IsPositiv
 theorem isSymmetric_gramOperator (v : ι → E) : (gramOperator 𝕜 v).IsSymmetric :=
   (isPositive_gramOperator v).isSymmetric
 
+/-! ### The overlap operator of two families -/
+
+section Overlap
+
+variable {κ : Type*} [Fintype κ]
+
+variable (𝕜) in
+omit [Fintype ι] in
+/-- The overlap operator of finite families `u : ι → E` and `v : κ → E`: analysis by `u` after
+synthesis by `v`, with matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` (`TauCeti.overlapOperator_eq_toEuclideanLin`). On the
+diagonal it is the Gram operator (`TauCeti.overlapOperator_self`). -/
+noncomputable def overlapOperator (u : ι → E) (v : κ → E) :
+    EuclideanSpace 𝕜 κ →ₗ[𝕜] EuclideanSpace 𝕜 ι :=
+  analysisMap 𝕜 u ∘ₗ synthesisMap 𝕜 v
+
+omit [Fintype ι] in
+theorem overlapOperator_def (u : ι → E) (v : κ → E) :
+    overlapOperator 𝕜 u v = analysisMap 𝕜 u ∘ₗ synthesisMap 𝕜 v :=
+  (rfl)
+
+omit [Fintype ι] in
+/-- The `i`-th coordinate of the overlap operator applied to `a` is `∑ⱼ ⟪uᵢ, vⱼ⟫ aⱼ`, the
+matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` acting on the coefficients `a`. -/
+@[simp]
+theorem overlapOperator_apply (u : ι → E) (v : κ → E) (a : EuclideanSpace 𝕜 κ) (i : ι) :
+    overlapOperator 𝕜 u v a i = ∑ j, ⟪u i, v j⟫_𝕜 * a j := by
+  simp [overlapOperator_def, mul_comm]
+
+omit [Fintype ι] in
+/-- The overlap operator sends the `j`-th coordinate vector, scaled by `c`, to `c` times the
+coefficients `(⟪uᵢ, vⱼ⟫)ᵢ` of `vⱼ`. -/
+@[simp]
+theorem overlapOperator_single [DecidableEq κ] (u : ι → E) (v : κ → E) (j : κ) (c : 𝕜) :
+    overlapOperator 𝕜 u v (EuclideanSpace.single j c) = c • analysisMap 𝕜 u (v j) := by
+  rw [overlapOperator_def, LinearMap.comp_apply, synthesisMap_single, map_smul]
+
+omit [Fintype ι] in
+/-- The overlap operator is the matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` acting on coefficient space. -/
+theorem overlapOperator_eq_toEuclideanLin [DecidableEq κ] (u : ι → E) (v : κ → E) :
+    overlapOperator 𝕜 u v = Matrix.toEuclideanLin (Matrix.of fun i j ↦ ⟪u i, v j⟫_𝕜) := by
+  ext a i
+  simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
+
+/-- The overlap operator of a family with itself is its Gram operator. -/
+@[simp]
+theorem overlapOperator_self (v : ι → E) : overlapOperator 𝕜 v v = gramOperator 𝕜 v := by
+  rw [overlapOperator_def, gramOperator_def]
+
+/-- The overlap operators in the two orders are adjoint to each other:
+`⟪O_{v,u} b, a⟫ = ⟪b, O_{u,v} a⟫`. -/
+theorem inner_overlapOperator_left (u : ι → E) (v : κ → E) (b : EuclideanSpace 𝕜 ι)
+    (a : EuclideanSpace 𝕜 κ) :
+    ⟪overlapOperator 𝕜 v u b, a⟫_𝕜 = ⟪b, overlapOperator 𝕜 u v a⟫_𝕜 := by
+  rw [overlapOperator_def, overlapOperator_def, LinearMap.comp_apply, LinearMap.comp_apply,
+    ← inner_synthesisMap_left u b, ← inner_conj_symm (synthesisMap 𝕜 u b),
+    inner_synthesisMap_left v a, inner_conj_symm]
+
+/-- Swapping the two families gives the adjoint overlap operator. -/
+@[simp]
+theorem adjoint_overlapOperator (u : ι → E) (v : κ → E) :
+    LinearMap.adjoint (overlapOperator 𝕜 u v) = overlapOperator 𝕜 v u :=
+  ((LinearMap.eq_adjoint_iff _ _).mpr (inner_overlapOperator_left u v)).symm
+
+end Overlap
+
 /-! ### Adjoints in finite dimension -/
 
 section FiniteDimensional
@@ -209,6 +281,13 @@ theorem frameOperator_eq_adjoint_comp_self (v : ι → E) :
 theorem gramOperator_eq_self_comp_adjoint (v : ι → E) :
     gramOperator 𝕜 v = analysisMap 𝕜 v ∘ₗ LinearMap.adjoint (analysisMap 𝕜 v) := by
   rw [adjoint_analysisMap, gramOperator_def]
+
+/-- In a finite-dimensional space the overlap operator is `S_u† S_v` for the synthesis maps `S_u`
+and `S_v`; for orthonormal families these are the coordinate isometries
+`Orthonormal.synthesisMapIsometry`. -/
+theorem adjoint_synthesisMap_comp_synthesisMap {κ : Type*} [Fintype κ] (u : ι → E) (v : κ → E) :
+    LinearMap.adjoint (synthesisMap 𝕜 u) ∘ₗ synthesisMap 𝕜 v = overlapOperator 𝕜 u v := by
+  rw [adjoint_synthesisMap, overlapOperator_def]
 
 /-! ### Frame bounds and the Gram spectrum -/
 

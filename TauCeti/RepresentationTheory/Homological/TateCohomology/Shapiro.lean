@@ -9,18 +9,18 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
 
 /-!
-# Shapiro's lemma for the Tate cohomology of a finite cyclic group
+# Shapiro's lemma for Tate cohomology
 
-Let `G` be a finite cyclic group, `S` a subgroup of `G` and `A` a representation of `S`. This file
-identifies the Tate cohomology of the coinduced representation `Coind_S^G A` with that of `A`, in
-every integer degree:
+Let `G` be a finite group, `S` a subgroup of `G` and `A` a representation of `S`. This file
+identifies the Tate cohomology of the coinduced representation `Coind_S^G A` with that of `A`:
 
 `H-hat^n(G, Coind_S^G A) ≅ H-hat^n(S, A)`.
 
 Mathlib's Shapiro lemma `groupCohomology.coindIso` gives this for ordinary cohomology, which is
-Tate cohomology in positive degrees. Both `G` and `S` are cyclic, so two-periodicity of Tate
-cohomology (`Rep.FiniteCyclicGroup.periodicIso`) carries every degree to a positive one, on
-both sides at once.
+Tate cohomology in positive degrees, so the isomorphism holds in every positive degree for every
+finite group (`coindIsoPos`). When `G` is cyclic, so is `S`, and two-periodicity of Tate
+cohomology (`Rep.FiniteCyclicGroup.periodicIso`) carries every degree to a positive one, on both
+sides at once (`coindIso`).
 
 This is how the Tate cohomology of a module whose summands are permuted transitively by `G` is
 computed from the stabilizer of one summand: for instance the units of a semi-local algebra
@@ -29,6 +29,8 @@ place above `v`.
 
 ## Main definitions
 
+* `TauCeti.TateCohomology.coindIsoPos`: `H-hat^n(G, Coind_S^G A) ≅ H-hat^n(S, A)` for `G` finite
+  and every positive `n : ℕ`.
 * `TauCeti.TateCohomology.coindIso`: `H-hat^n(G, Coind_S^G A) ≅ H-hat^n(S, A)` for `G` finite
   cyclic and every `n : ℤ`.
 
@@ -47,16 +49,23 @@ open CategoryTheory Rep
 
 namespace TauCeti.TateCohomology
 
-variable {R G : Type u} [CommRing R] [Group G] [Fintype G] [IsCyclic G] (S : Subgroup G)
-  [Fintype S] (A : Rep R S)
+variable {R G : Type u} [CommRing R] [Group G] [Fintype G] (S : Subgroup G) [Fintype S]
+  (A : Rep R S)
+
+/-- **Shapiro's lemma for Tate cohomology in positive degrees.** For a subgroup `S` of a finite
+group `G` and a representation `A` of `S`, the Tate cohomology of the coinduced representation
+`Coind_S^G A` is that of `A`, in every positive degree `n`. -/
+def coindIsoPos (n : ℕ) [NeZero n] : tateCohomology (coind S.subtype A) n ≅ tateCohomology A n :=
+  (_root_.TateCohomology.isoGroupCohomology n).app _ ≪≫ groupCohomology.coindIso A n ≪≫
+    ((_root_.TateCohomology.isoGroupCohomology n).app A).symm
+
+variable [IsCyclic G]
 
 /-- Shapiro's isomorphism in a positive degree `m` congruent to `n` modulo two, transported to
 degree `n` by two-periodicity on both sides. -/
 private def coindIsoOfModEq (n : ℤ) (m : ℕ) [NeZero m] (h : n ≡ m [ZMOD 2]) :
     tateCohomology (coind S.subtype A) n ≅ tateCohomology A n :=
-  Rep.FiniteCyclicGroup.periodicIso _ n m h ≪≫
-    (_root_.TateCohomology.isoGroupCohomology m).app _ ≪≫ groupCohomology.coindIso A m ≪≫
-    ((_root_.TateCohomology.isoGroupCohomology m).app A).symm ≪≫
+  Rep.FiniteCyclicGroup.periodicIso _ n m h ≪≫ coindIsoPos S A m ≪≫
     Rep.FiniteCyclicGroup.periodicIso A m n h.symm
 
 /-- **Shapiro's lemma for Tate cohomology of a finite cyclic group.** For a subgroup `S` of a

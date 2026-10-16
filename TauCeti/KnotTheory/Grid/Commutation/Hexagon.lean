@@ -55,7 +55,8 @@ it vanishes.
 `GridDiagram.hexagonMap` and `GridDiagram.initialHexagonMap` count the empty hexagons of the two
 kinds carrying no `X`-marking, and `GridDiagram.commutationHomotopy` is their sum, the map `H`
 above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is not proved here;
-`Commutation/Homotopy.lean` writes it as an identity between matrix coefficients.
+`GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff` writes it as an identity
+between matrix coefficients.
 
 ## Main definitions
 
@@ -69,7 +70,8 @@ above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is no
   versions: the monomial weights and the matrix coefficients.
 * `TauCeti.GridDiagram.hexagonMap`, `TauCeti.GridDiagram.initialHexagonMap`: the maps
   `GC⁻(G) → GC⁻(G)` counting each kind.
-* `TauCeti.GridDiagram.commutationHomotopy`: their sum.
+* `TauCeti.GridDiagram.commutationHomotopy`: their sum, with matrix coefficients
+  `TauCeti.GridDiagram.commutationHexagonCoefficient`.
 
 ## Main results
 
@@ -82,7 +84,8 @@ above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is no
 * `TauCeti.GridDiagram.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon` and its
   initial version: the rectangle under a hexagon carrying no `X`-marking carries exactly one
   `X`-marking, that of the cut-off column.
-* `TauCeti.GridDiagram.commutationHomotopy_apply_apply`: the matrix coefficients of the
+* `TauCeti.GridDiagram.commutationHomotopy_single_apply` and
+  `TauCeti.GridDiagram.commutationHomotopy_apply_apply`: the matrix coefficients of the
   commutation homotopy.
 
 ## References
@@ -229,6 +232,41 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridHexagonBetween a s s' x y) (G 
     rw [G.mem_XSet] at hp
     exact h p.1 hmem.1.1 hmem.1.2 (hp ▸ hmem.2)
 
+/-- Transfer a hexagon to new endpoint states when its underlying toroidal rectangle is
+unchanged. The turn side and both intersection rows are preserved. -/
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridHexagonBetween a s s' x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridHexagonBetween a s s' u v where
+  toGridRectangleBetween := r
+  right_eq := by
+    have hs := congrArg GridRectangle.right h
+    simpa only [GridRectangleBetween.toGridRectangle_right] using hs.trans P.right_eq
+  lower_mem := by
+    have hb := congrArg GridRectangle.bottom h
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_bottom,
+      GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.bottom_def,
+      GridRectangleBetween.top_def] at hb ht
+    simpa only [hb, ht] using P.lower_mem
+  upper_mem := by
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.top_def] at ht
+    simpa only [ht] using P.upper_mem
+
+/-- The rectangle underlying the transferred hexagon is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridHexagonBetween a s s' x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := (rfl)
+
+/-- The squares covered by a hexagon depend only on its underlying toroidal rectangle. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridHexagonBetween a s s' x y) (Q : GridHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  ext p
+  simp only [mem_coveredSquares, h]
+
 end GridHexagonBetween
 
 /-- The combinatorial shape of a hexagon whose initial side turns at both intersection points, for
@@ -357,6 +395,41 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridInitialHexagonBetween a s s' x
     simp only [coveredSquares, Finset.mem_product, Finset.mem_erase] at hmem
     rw [G.mem_XSet] at hp
     exact h p.1 hmem.1.1 hmem.1.2 (hp ▸ hmem.2)
+
+/-- Transfer a hexagon to new endpoint states when its underlying toroidal rectangle is
+unchanged. The turn side and both intersection rows are preserved. -/
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridInitialHexagonBetween a s s' x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridInitialHexagonBetween a s s' u v where
+  toGridRectangleBetween := r
+  left_eq := by
+    have hs := congrArg GridRectangle.left h
+    simpa only [GridRectangleBetween.toGridRectangle_left] using hs.trans P.left_eq
+  lower_mem := by
+    have hb := congrArg GridRectangle.bottom h
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_bottom,
+      GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.bottom_def,
+      GridRectangleBetween.top_def] at hb ht
+    simpa only [hb, ht] using P.lower_mem
+  upper_mem := by
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.top_def] at ht
+    simpa only [ht] using P.upper_mem
+
+/-- The rectangle underlying the transferred hexagon is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridInitialHexagonBetween a s s' x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := (rfl)
+
+/-- The squares covered by a hexagon depend only on its underlying toroidal rectangle. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridInitialHexagonBetween a s s' x y) (Q : GridInitialHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  ext p
+  simp only [mem_coveredSquares, h]
 
 end GridInitialHexagonBetween
 
@@ -636,6 +709,25 @@ noncomputable def commutationHomotopy (C : ColumnCommutationData G) :
 theorem commutationHomotopy_apply (C : ColumnCommutationData G) (c : GridChainMinus R n) :
     G.commutationHomotopy R C c = G.hexagonMap R C c + G.initialHexagonMap R C c :=
   LinearMap.add_apply _ _ _
+
+/-- The matrix coefficient of the commutation homotopy from `x` to `y`, counting the hexagons
+turning on either side. -/
+noncomputable def commutationHexagonCoefficient (C : ColumnCommutationData G) (x y : GridState n) :
+    MvPolynomial (Fin n) R :=
+  G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y
+
+/-- The commutation hexagon coefficient is the sum of the two turn-side coefficients. -/
+theorem commutationHexagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+    G.commutationHexagonCoefficient R C x y =
+      G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y :=
+  (rfl)
+
+/-- The matrix coefficients of the commutation homotopy are the commutation hexagon
+coefficients. -/
+theorem commutationHomotopy_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
+    G.commutationHomotopy R C (Finsupp.single x 1) y = G.commutationHexagonCoefficient R C x y := by
+  rw [commutationHomotopy_apply, Finsupp.add_apply, hexagonMap_single_apply,
+    initialHexagonMap_single_apply, commutationHexagonCoefficient_def]
 
 /-- The coefficient formula for the commutation homotopy on an arbitrary chain: its matrix
 coefficients are the sums of those of the two hexagon maps. -/

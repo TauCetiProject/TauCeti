@@ -54,6 +54,12 @@ def ofFinite (μ : Measure X) [IsFiniteMeasure μ] : MetricMeasureSpace X where
 theorem reference_ofFinite (μ : Measure X) [IsFiniteMeasure μ] :
     (ofFinite μ).reference = μ := (rfl)
 
+/-- A reference measure finite on bounded sets is locally finite: balls are bounded. -/
+instance instIsLocallyFiniteMeasureReference (M : MetricMeasureSpace X) :
+    IsLocallyFiniteMeasure M.reference :=
+  ⟨fun x ↦ ⟨Metric.ball x 1, Metric.ball_mem_nhds x one_pos,
+    M.finite_bounded _ Metric.isBounded_ball⟩⟩
+
 /-- The topological support of the reference measure. -/
 def support (M : MetricMeasureSpace X) : Set X := M.reference.support
 

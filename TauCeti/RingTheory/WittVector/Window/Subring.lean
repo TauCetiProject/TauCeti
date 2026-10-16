@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.RingOfDefinition
-public import TauCeti.RingTheory.WittVector.IntervalRing
+public import TauCeti.RingTheory.WittVector.IntervalRing.Basic
 
 /-!
 # The window subring of `𝕎 O[1/(p [ϖ])]` and the interval norm
@@ -50,9 +50,9 @@ For the same radii, the integral closure of the window subring in `𝕎 O[1/(p [
 ball of `λ_I`, and so the closure of its image in `B^I` is the unit ball `B^{I,+}`. The plus ring
 `A_U⁺` of a rational localisation is the closure of the image of the integral closure of
 `A⁺[T / s]` (`TauCeti.Huber.PairOfDefinition.completedPlusSubring`). With `A⁺ = 𝕎 O`, this
-equality is the analytic input for identifying the plus ring of the window with `B^{I,+}`; that
-identification still requires transport along the isomorphism between the coordinate ring of the
-window and `B^I`.
+equality is the analytic input for identifying the plus ring of the window with `B^{I,+}`, which
+transporting it along the isomorphism between the coordinate ring of the window and `B^I`
+achieves (`TauCeti.WittVector.map_completedPlusSubring_windowNumerators`).
 
 ## Proof outline
 

@@ -27,11 +27,16 @@ here the target is arbitrary, and the pairs of equal pieces are replaced by the 
 each piece over the target. It is the criterion used to show that a scheme glued from two affine
 charts, such as the two-chart model of an algebraic function field, is separated.
 
+Separated morphisms compose, so a scheme separated over a separated scheme is itself separated;
+in particular a scheme proper over a separated base, such as a field, is a separated scheme.
+
 ## Main results
 
 * `AlgebraicGeometry.IsSeparated.of_openCover`: `f` is separated if each piece of an open cover of
   its source is separated over the target and the pieces meet in closed subschemes of their
   products over the target.
+* `AlgebraicGeometry.Scheme.IsSeparated.of_isSeparated`: the source of a separated morphism to a
+  separated scheme is a separated scheme.
 -/
 
 public section
@@ -68,5 +73,12 @@ theorem IsSeparated.of_openCover (f : X ⟶ S) (𝒰 : X.OpenCover) [∀ i, IsSe
     convert (inferInstance : IsClosedImmersion (pullback.diagonal (𝒰.f i ≫ f))) using 1
     ext <;> simp
   · exact H i j hij
+
+/-- **A scheme separated over a separated scheme is separated.** If `f : X ⟶ S` is separated and
+`S` is a separated scheme, then so is `X`, since `X ⟶ ⊤_ Scheme` factors as `f` followed by the
+separated morphism `S ⟶ ⊤_ Scheme`. For instance, a scheme proper over a field is separated. -/
+theorem Scheme.IsSeparated.of_isSeparated (f : X ⟶ S) [IsSeparated f] [S.IsSeparated] :
+    X.IsSeparated :=
+  ⟨by rw [← terminal.comp_from f]; infer_instance⟩
 
 end AlgebraicGeometry

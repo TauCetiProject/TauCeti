@@ -16,26 +16,26 @@ public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 Let `C` be a relative CW complex in a Hausdorff space `X`, and write `Xᵏ = skeletonLT C (k + 1)`
 for its `k`-skeleton. Let `K` be a compact subset of a finite-dimensional real normed space `E`.
-This file proves that maps `K → X` can be pushed off the cells of dimension greater than
-`dim E`:
+This file proves that maps `K → C` into the complex can be pushed off the cells of dimension
+greater than `dim E`, by homotopies of maps into the complex:
 
-* If `dim E < k` and `f : K → X` lands in `Xᵏ`, then for every `k`-cell `j`, `f` is homotopic,
+* If `dim E < k` and `f : K → C` lands in `Xᵏ`, then for every `k`-cell `j`, `f` is homotopic,
   relative to the points not sent into the open cell `j`, to a map sending the points that `f`
   sends into the open cell `j` into its frontier (`TauCeti.exists_homotopicRel_cellFrontier`).
   This is Hatcher's Lemma 4.10 together with the radial push from the proof of Theorem 4.8.
 * Doing this for the finitely many `k`-cells that the compact image of `f` meets compresses `f`
   into `Xᵏ⁻¹`, relative to the points already sent there
   (`TauCeti.exists_homotopicRel_skeletonLT`).
-* Since the image of `f` lies in some finite skeleton, every map `f : K → X` into the complex is
+* Since the image of `f` lies in some finite skeleton, every map `f : K → C` into the complex is
   homotopic, relative to the points sent into `Xⁿ` with `dim E ≤ n`, to a map into `Xⁿ`
   (`TauCeti.exists_homotopicRel_skeletonLT_finrank`). Applied to a closed `i`-ball with `i ≤ n`,
-  it homotopes every map of pairs `(Dⁱ, Sⁱ⁻¹) → (X, Xⁿ)` relative to `Sⁱ⁻¹` into `Xⁿ`; this is
-  the compression property behind Hatcher's Corollary 4.12, that the pair `(X, Xⁿ)` is
+  it homotopes every map of pairs `(Dⁱ, Sⁱ⁻¹) → (C, Xⁿ)` relative to `Sⁱ⁻¹` into `Xⁿ`; this is
+  the compression property behind Hatcher's Corollary 4.12, that the pair `(C, Xⁿ)` is
   `n`-connected.
 
 These are the steps of the cellular approximation theorem that concern a single cell of the
-domain; the theorem itself follows from them by induction over the cells of the domain using the
-homotopy extension property.
+domain; the theorem itself (`TauCeti.exists_isCellular_homotopicRel`) follows from them by
+induction over the skeleta of the domain using the homotopy extension property.
 
 To push a map off a `k`-cell, read the open cell, which is open in `Xᵏ`, as a chart through the
 inverse of its characteristic map (`TauCeti.openCellChart`).
@@ -68,16 +68,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- **Pushing a map off a cell of higher dimension** (Hatcher, Lemma 4.10 together with the
 radial push from the proof of Theorem 4.8). Let `K` be a compact subset of a real normed space
-of dimension less than `k`, and let `f : K → X` land in the `k`-skeleton `skeletonLT C (k + 1)`.
-For every `k`-cell `j`, `f` is homotopic, relative to the points that `f` does not send into the
-open cell `j`, to a map sending the points that `f` sends into the open cell `j` into its
-frontier. -/
+of dimension less than `k`, and let `f : K → C` land in the `k`-skeleton `skeletonLT C (k + 1)`.
+For every `k`-cell `j`, `f` is homotopic as a map into `C`, relative to the points that `f` does
+not send into the open cell `j`, to a map sending the points that `f` sends into the open cell `j`
+into its frontier. -/
 theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : finrank ℝ E < k)
-    (j : cell C k) (f : C(K, X)) (hf : ∀ x, f x ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :
-    ∃ g : C(K, X), f.HomotopicRel g (f ⁻¹' openCell k j)ᶜ ∧
-      ∀ x, f x ∈ openCell k j → g x ∈ cellFrontier k j := by
+    (j : cell C k) (f : C(K, C))
+    (hf : ∀ x, (f x : X) ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :
+    ∃ g : C(K, C), f.HomotopicRel g {x | (f x : X) ∈ openCell k j}ᶜ ∧
+      ∀ x, (f x : X) ∈ openCell k j → (g x : X) ∈ cellFrontier k j := by
   let f' : C(K, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :=
-    ⟨fun x ↦ ⟨f x, hf x⟩, f.continuous.subtype_mk hf⟩
+    ⟨fun x ↦ ⟨f x, hf x⟩, (continuous_subtype_val.comp f.continuous).subtype_mk hf⟩
   let φ := openCellChart k j
   have hφs : φ.source = Subtype.val ⁻¹' openCell k j := openCellChart_source k j
   have hφt : φ.target = ball 0 1 := openCellChart_target k j
@@ -98,14 +99,14 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
   rw [frontier_closedBall _ one_ne_zero] at hΨε
   obtain ⟨g₂, hg₂, hg₂j, -⟩ := exists_homotopicRel_openCell j Ψ
     (fun t y hy ↦ mem_closedBall_zero_iff.1 (hΨs t y (mem_closedBall_zero_iff.2 hy))) g₁
-    (S := (f ⁻¹' openCell k j)ᶜ) fun x hx ↦ (H₁.fst_eq_snd hx) ▸ hx
-  let val : C((skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X), X) :=
-    ⟨Subtype.val, continuous_subtype_val⟩
-  have h := (ContinuousMap.HomotopicRel.trans ⟨H₁⟩ hg₂).comp_continuousMap val
-  -- Composing `f'` with the inclusion of the skeleton recovers `f`.
-  have hvf : val.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
+    (S := {x | (f x : X) ∈ openCell k j}ᶜ) fun x hx ↦ (H₁.fst_eq_snd hx) ▸ hx
+  let incl : C((skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X), C) :=
+    ⟨fun y ↦ ⟨y, (skeletonLT C _).subset_complex y.2⟩, by fun_prop⟩
+  have h := (ContinuousMap.HomotopicRel.trans ⟨H₁⟩ hg₂).comp_continuousMap incl
+  -- Composing `f'` with the inclusion of the skeleton into the complex recovers `f`.
+  have hvf : incl.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
   rw [hvf] at h
-  refine ⟨val.comp g₂, h, fun x hx ↦ ?_⟩
+  refine ⟨incl.comp g₂, h, fun x hx ↦ ?_⟩
   -- A point sent into the open cell is sent by `g₁` into the open cell, but outside
   -- `φ.symm (ball p ε)`, so the radial push sends it to the frontier.
   have hx₁ : (g₁ x : X) ∈ openCell k j := hg₁ x hx
@@ -119,50 +120,52 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
   exact ⟨_, hΨε _ (ball_subset_closedBall hy) hyε, rfl⟩
 
 /-- **Compressing a map of a low-dimensional compactum into the next lower skeleton.** Let `K` be
-a compact subset of a real normed space of dimension less than `k`. Every map `f : K → X` landing
-in the `k`-skeleton `skeletonLT C (k + 1)` is homotopic, relative to the points that `f` sends
-into the `(k-1)`-skeleton `skeletonLT C k`, to a map into `skeletonLT C k`. -/
+a compact subset of a real normed space of dimension less than `k`. Every map `f : K → C` landing
+in the `k`-skeleton `skeletonLT C (k + 1)` is homotopic as a map into `C`, relative to the points
+that `f` sends into the `(k-1)`-skeleton `skeletonLT C k`, to a map into `skeletonLT C k`. -/
 theorem exists_homotopicRel_skeletonLT {K : Set E} (hK : IsCompact K) (hk : finrank ℝ E < k)
-    (f : C(K, X)) (hf : ∀ x, f x ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :
-    ∃ g : C(K, X), f.HomotopicRel g (f ⁻¹' (skeletonLT C (k : ℕ∞) : Set X)) ∧
-      ∀ x, g x ∈ (skeletonLT C (k : ℕ∞) : Set X) := by
+    (f : C(K, C)) (hf : ∀ x, (f x : X) ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :
+    ∃ g : C(K, C), f.HomotopicRel g {x | (f x : X) ∈ (skeletonLT C (k : ℕ∞) : Set X)} ∧
+      ∀ x, (g x : X) ∈ (skeletonLT C (k : ℕ∞) : Set X) := by
   classical
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   -- The compact image of `f` meets only finitely many open `k`-cells.
-  have hA : {j : cell C k | (range f ∩ openCell k j).Nonempty}.Finite :=
+  have hA : {j : cell C k | (range (fun x ↦ (f x : X)) ∩ openCell k j).Nonempty}.Finite :=
     (finite_setOf_nonempty_inter_openCell_of_isCompact (C := C)
-      (isCompact_range f.continuous)).preimage (f := Sigma.mk k) sigma_mk_injective.injOn
+      (isCompact_range (continuous_subtype_val.comp f.continuous))).preimage (f := Sigma.mk k)
+      sigma_mk_injective.injOn
   -- Push `f` off these cells one at a time, never entering an open `k`-cell that `f` misses.
-  have key (T : Finset (cell C k)) : ∃ g : C(K, X),
-      f.HomotopicRel g (f ⁻¹' (skeletonLT C (k : ℕ∞) : Set X)) ∧
-      (∀ x, g x ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) ∧
-      (∀ x, ∀ j ∈ T, g x ∉ openCell k j) ∧
-      ∀ x (j : cell C k), g x ∈ openCell k j → f x ∈ openCell k j := by
+  have key (T : Finset (cell C k)) : ∃ g : C(K, C),
+      f.HomotopicRel g {x | (f x : X) ∈ (skeletonLT C (k : ℕ∞) : Set X)} ∧
+      (∀ x, (g x : X) ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) ∧
+      (∀ x, ∀ j ∈ T, (g x : X) ∉ openCell k j) ∧
+      ∀ x (j : cell C k), (g x : X) ∈ openCell k j → (f x : X) ∈ openCell k j := by
     induction T using Finset.induction_on with
     | empty => exact ⟨f, .refl f, hf, by simp, fun _ _ h ↦ h⟩
     | insert j T _ ih =>
       obtain ⟨g, hfg, hg, hgT, hgf⟩ := ih
       obtain ⟨g₂, hgg₂, hg₂⟩ := exists_homotopicRel_cellFrontier hK hk j g hg
-      have heq (x) (hx : g x ∉ openCell k j) : g₂ x = g x := (hgg₂.fst_eq_snd hx).symm
-      have hskel (x) (hx : g x ∈ openCell k j) : g₂ x ∈ (skeletonLT C (k : ℕ∞) : Set X) :=
+      have heq (x) (hx : (g x : X) ∉ openCell k j) : g₂ x = g x := (hgg₂.fst_eq_snd hx).symm
+      have hskel (x) (hx : (g x : X) ∈ openCell k j) :
+          (g₂ x : X) ∈ (skeletonLT C (k : ℕ∞) : Set X) :=
         cellFrontier_subset_skeletonLT k j (hg₂ x hx)
-      have hnot (x) (hx : g x ∈ openCell k j) (i : cell C k) : g₂ x ∉ openCell k i :=
+      have hnot (x) (hx : (g x : X) ∈ openCell k j) (i : cell C k) : (g₂ x : X) ∉ openCell k i :=
         (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left (hskel x hx)
       refine ⟨g₂, hfg.trans (hgg₂.mono fun x hx hgx ↦ ?_), fun x ↦ ?_, fun x i hi ↦ ?_,
         fun x i hi ↦ ?_⟩
       · -- A point sent into `skeletonLT C k` is fixed by the first homotopy, so `g` sends it
         -- outside the open cell `j`.
-        rw [mem_preimage, hfg.fst_eq_snd hx] at hx
+        rw [mem_ofPred_eq, hfg.fst_eq_snd hx] at hx
         exact (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left hx hgx
-      · by_cases hx : g x ∈ openCell k j
+      · by_cases hx : (g x : X) ∈ openCell k j
         · exact skeletonLT_mono (by exact_mod_cast k.le_succ) (hskel x hx)
         · exact heq x hx ▸ hg x
-      · by_cases hx : g x ∈ openCell k j
+      · by_cases hx : (g x : X) ∈ openCell k j
         · exact hnot x hx i
         · rw [heq x hx]
           rcases Finset.mem_insert.1 hi with rfl | hi
           exacts [hx, hgT x i hi]
-      · by_cases hx : g x ∈ openCell k j
+      · by_cases hx : (g x : X) ∈ openCell k j
         · exact absurd hi (hnot x hx i)
         · exact hgf x i (heq x hx ▸ hi)
   -- After all of them, the map lies in no open `k`-cell.
@@ -172,17 +175,19 @@ theorem exists_homotopicRel_skeletonLT {K : Set E} (hK : IsCompact K) (hk : finr
 
 /-- **Compressing a map of a compactum into a skeleton of at least its dimension**, the
 compression step of Hatcher's Corollary 4.12. Let `K` be a compact subset of a real normed space
-of dimension at most `n`. Every map `f : K → X` into the complex is homotopic, relative to the
-points that `f` sends into the `n`-skeleton `skeletonLT C (n + 1)`, to a map into
+of dimension at most `n`. Every map `f : K → C` into the complex is homotopic as a map into `C`,
+relative to the points that `f` sends into the `n`-skeleton `skeletonLT C (n + 1)`, to a map into
 `skeletonLT C (n + 1)`. -/
 theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) {n : ℕ}
-    (hn : finrank ℝ E ≤ n) (f : C(K, X)) (hf : ∀ x, f x ∈ C) :
-    ∃ g : C(K, X), f.HomotopicRel g (f ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) ∧
-      ∀ x, g x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
+    (hn : finrank ℝ E ≤ n) (f : C(K, C)) :
+    ∃ g : C(K, C),
+      f.HomotopicRel g {x | (f x : X) ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)} ∧
+      ∀ x, (g x : X) ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   -- The compact image of `f` lies in a finite skeleton; compress it one dimension at a time.
-  obtain ⟨m, hm⟩ := exists_subset_skeletonLT_of_isCompact (C := C) (isCompact_range f.continuous)
-    (range_subset_iff.2 hf)
+  obtain ⟨m, hm⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
+    (isCompact_range (continuous_subtype_val.comp f.continuous))
+    (range_subset_iff.2 fun x ↦ (f x).2)
   induction m generalizing f with
   | zero =>
     exact ⟨f, .refl f, fun x ↦ skeletonLT_mono (by exact_mod_cast Nat.zero_le _) (hm ⟨x, rfl⟩)⟩
@@ -191,13 +196,12 @@ theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) {n
     · exact ⟨f, .refl f, fun x ↦ skeletonLT_mono (by exact_mod_cast hmn) (hm ⟨x, rfl⟩)⟩
     obtain ⟨g₁, hfg₁, hg₁⟩ := exists_homotopicRel_skeletonLT hK (by omega) f
       fun x ↦ hm ⟨x, rfl⟩
-    obtain ⟨g, hg₁g, hg⟩ := ih g₁ (fun x ↦ (skeletonLT C m).subset_complex (hg₁ x))
-      (range_subset_iff.2 hg₁)
+    obtain ⟨g, hg₁g, hg⟩ := ih g₁ (range_subset_iff.2 hg₁)
     have hsub : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) ⊆ (skeletonLT C (m : ℕ∞) : Set X) :=
       skeletonLT_mono (by exact_mod_cast (by omega : n + 1 ≤ m))
     -- Points sent into `skeletonLT C (n + 1)` are fixed by the first compression.
     refine ⟨g, (hfg₁.mono fun x hx ↦ hsub hx).trans (hg₁g.mono fun x hx ↦ ?_), hg⟩
-    rw [mem_preimage, ← hfg₁.fst_eq_snd (hsub hx)]
+    rw [mem_ofPred_eq, ← hfg₁.fst_eq_snd (hsub hx)]
     exact hx
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup
 public import TauCeti.RepresentationTheory.Induction.Character
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic
 import TauCeti.RepresentationTheory.Induction.Permutation
 
 /-!

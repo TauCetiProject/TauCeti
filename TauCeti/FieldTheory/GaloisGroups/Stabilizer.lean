@@ -126,8 +126,8 @@ theorem stabilizer_eq_bot_iff_adjoin_simple_eq_top [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊥ ↔ F⟮(x : p.SplittingField)⟯ = ⊤ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IntermediateField.fixingSubgroup_adjoin_simple]
-      at h
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple,
+      IntermediateField.fixingSubgroup_adjoin_simple] at h
     rw [← IntermediateField.fixedField_stabilizer_eq_adjoin_simple (x : p.SplittingField), h]
     exact IntermediateField.fixedField_bot
   · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
@@ -140,8 +140,8 @@ theorem stabilizer_eq_top_iff_adjoin_simple_eq_bot [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊤ ↔ F⟮(x : p.SplittingField)⟯ = ⊥ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IntermediateField.fixingSubgroup_adjoin_simple]
-      at h
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple,
+      IntermediateField.fixingSubgroup_adjoin_simple] at h
     rw [← IntermediateField.fixedField_stabilizer_eq_adjoin_simple (x : p.SplittingField), h]
     exact IsGalois.fixedField_top
   · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]

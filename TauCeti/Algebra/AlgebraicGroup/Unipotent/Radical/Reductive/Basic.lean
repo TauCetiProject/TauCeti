@@ -30,9 +30,6 @@ ground field is trivial.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§6.45--6.46.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
-
-This connects Layer 5, "The unipotent radical", to the definition of reductivity in Layer 6 of
-the ReductiveGroups roadmap.
 -/
 
 public section

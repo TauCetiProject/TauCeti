@@ -18,6 +18,10 @@ import Mathlib.Algebra.Ring.Subring.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 -- Proof-only: an integer Frobenius makes the curve supersingular.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Subring
+-- Proof-only: the image of an integrally closed ring in `End(W)` is saturated.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Degree
+-- Proof-only: the endomorphism ring of an ordinary curve over a finite field has rank `2`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Ordinary
 
 /-!
 # Complex multiplication
@@ -56,6 +60,9 @@ ordinary curve has geometric complex multiplication through its Frobenius endomo
 
 * `TauCeti.CMAction.hasGeometricCM`: an action of a ring larger than `ℤ` gives geometric complex
   multiplication.
+* `TauCeti.CMAction.surjective_of_finrank_le` and `TauCeti.CMAction.surjective_of_isOrdinary`: an
+  action of an integrally closed ring whose rank is that of the endomorphism ring is onto it; in
+  particular on an ordinary curve over a finite field.
 * `WeierstrassCurve.hasGeometricCM_of_notMem_range_intCast`: so does an endomorphism over `F`
   that is not an integer.
 * `WeierstrassCurve.hasGeometricCM_of_isOrdinary`: an ordinary curve over a finite field has
@@ -198,6 +205,40 @@ theorem hasGeometricCM (ι : CMAction R W) {r : R} (hr : r ∉ Set.range ((↑) 
     W.HasGeometricCM :=
   WeierstrassCurve.hasGeometricCM_of_notMem_range_intCast <|
     ι.apply_mem_range_intCast_iff.not.mpr hr
+
+section IntegrallyClosed
+
+variable {R : Type*} [CommRing R] [IsIntegrallyClosed R]
+
+/-- **An action of an integrally closed ring of full rank is onto the endomorphism ring**: if the
+endomorphism ring of `W` is a finitely generated `ℤ`-module of rank at most that of an integrally
+closed ring `R` acting on `W`, then every endomorphism of `W` comes from `R`. So when the
+endomorphism ring has rank `2`, an action of the ring of integers of an imaginary quadratic field
+is onto it. -/
+theorem surjective_of_finrank_le [Module.Finite ℤ (Hom W W)] (ι : CMAction R W)
+    (h : Module.finrank ℤ (Hom W W) ≤ Module.finrank ℤ R) : Function.Surjective ι := by
+  set g := ι.toRingHom.toAddMonoidHom.toIntLinearMap
+  -- the image of `R` has full rank, so the quotient by it is torsion
+  have hQ : Module.finrank ℤ (Hom W W ⧸ LinearMap.range g) = 0 := by
+    have := (LinearMap.range g).finrank_quotient_add_finrank
+    rw [LinearMap.finrank_range_of_inj (f := g) ι.injective] at this
+    omega
+  intro f
+  obtain ⟨N, hN, hNf⟩ := Module.finrank_eq_zero_iff.1 hQ (Submodule.Quotient.mk f)
+  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hNf
+  obtain ⟨z, hz⟩ := hNf
+  exact Hom.mem_range_of_zsmul_mem_range (ι := ι.toRingHom) ι.injective hN ⟨z, hz⟩
+
+/-- **An ordinary curve over a finite field with complex multiplication by an integrally closed
+ring of rank `2` has exactly that endomorphism ring** (Silverman V.3.1, III.9.4): for instance an
+action of the ring of integers of an imaginary quadratic field is onto the endomorphism ring. -/
+theorem surjective_of_isOrdinary [Finite F] {p : ℕ} [ExpChar F p] {W : WeierstrassCurve F}
+    [W.IsElliptic] (hW : W.IsOrdinary p) (ι : CMAction R W.toAffine)
+    (hR : Module.finrank ℤ R = 2) : Function.Surjective ι :=
+  have := WeierstrassCurve.module_finite_hom_of_isOrdinary hW
+  ι.surjective_of_finrank_le (by rw [WeierstrassCurve.finrank_hom_of_isOrdinary hW, hR])
+
+end IntegrallyClosed
 
 end CMAction
 

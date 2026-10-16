@@ -23,7 +23,8 @@ some `K ≥ 0`. This file proves that such a `φ` satisfies `φ t ≤ c exp (K (
 
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
-`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`).
+`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`) and `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`
+(`TauCeti.integral_exp_mul_le`).
 
 The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
 large when `K < 0`.
@@ -101,5 +102,14 @@ theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
   intervalIntegral.intervalIntegral_pos_of_pos_on
     ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
     (fun _ _ ↦ exp_pos _) hT
+
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`. -/
+theorem integral_exp_mul_le (lam : ℝ) {T : ℝ} (hT : 0 ≤ T) :
+    ∫ r in 0..T, exp (lam * r) ≤ T * exp (|lam| * T) := by
+  have := intervalIntegral.integral_mono_on (g := fun _ ↦ exp (|lam| * T)) hT
+    ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
+    (intervalIntegrable_const (μ := volume)) fun r hr ↦ exp_le_exp.2 <| by
+      nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+  simpa using this
 
 end TauCeti

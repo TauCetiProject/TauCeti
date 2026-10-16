@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.RingTheory.Flat.QuotientRegular
+import TauCeti.Algebra.Regular.SMul
 
 /-!
 # Relative effective Cartier divisors
@@ -42,6 +43,9 @@ the pulled-back divisor on the open subscheme `Spec (Γ(X, U) ⊗[Γ(S, W)] Γ(T
   effective Cartier over every base.
 * `Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_isEffectiveCartier`: over the spectrum of
   a field, every effective Cartier divisor is relative effective Cartier.
+* `Scheme.IdealSheafData.IsRelativeEffectiveCartier.isEffectiveCartier_comap_of_field`: the
+  restriction of a relative effective Cartier divisor to any field-valued fibre is effective
+  Cartier.
 
 ## References
 
@@ -149,8 +153,7 @@ theorem IsRelativeEffectiveCartier.comap {I : X.IdealSheafData}
       (R := Γ(S, W)) ha Γ(T, V)
     let t := (Algebra.TensorProduct.comm Γ(S, W) Γ(T, V) Γ(X, U)).toRingEquiv.trans
       (Scheme.ΓSpecIso (.of (Γ(X, U) ⊗[Γ(S, W)] Γ(T, V)))).symm.commRingCatIsoToRingEquiv
-    exact (Equiv.isSMulRegular_congr (e := t.toEquiv) (r := (1 : Γ(T, V)) ⊗ₜ a)
-      fun b ↦ t.map_mul _ b).mp hreg
+    exact (TauCeti.isSMulRegular_map_iff t _).mpr hreg
   · have hφ : ((pullbackSpecIso Γ(S, W) Γ(X, U) Γ(T, V)).inv ≫ m) ≫ pullback.fst f g =
         Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ hU.fromSpec := by
       simp [m]
@@ -200,5 +203,16 @@ theorem isRelativeEffectiveCartier_iff_isEffectiveCartier [Subsingleton S] [IsIn
     I.IsRelativeEffectiveCartier f ↔ I.IsEffectiveCartier := by
   rw [isRelativeEffectiveCartier_iff]
   exact ⟨And.left, fun h ↦ ⟨h, inferInstance⟩⟩
+
+/-- **Relative effective Cartier divisors restrict to field-valued fibres.** If `I` is a relative
+effective Cartier divisor on `X` over `S` and `g : Spec K ⟶ S` is any morphism from a field, then
+the pullback of `I` to `X ×_S Spec K` is an effective Cartier divisor. In particular this holds
+for every geometric fibre, and it remains true after any extension of its residue field. -/
+theorem IsRelativeEffectiveCartier.isEffectiveCartier_comap_of_field
+    {I : X.IdealSheafData} {f : X ⟶ S} (hI : I.IsRelativeEffectiveCartier f)
+    {K : Type u} [Field K] (g : Spec (CommRingCat.of K) ⟶ S) :
+    (I.comap (pullback.fst f g)).IsEffectiveCartier := by
+  exact (isRelativeEffectiveCartier_iff_isEffectiveCartier
+    (I := I.comap (pullback.fst f g)) (f := pullback.snd f g)).mp (hI.comap g)
 
 end AlgebraicGeometry.Scheme.IdealSheafData

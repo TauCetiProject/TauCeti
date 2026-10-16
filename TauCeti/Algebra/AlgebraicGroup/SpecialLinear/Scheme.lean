@@ -129,7 +129,8 @@ noncomputable def groupSchemePointMulEquiv :
 
 /-- The underlying spectrum map of the scheme point associated to a special-linear algebra
 point. -/
-@[simp]
+-- Not `@[simp]`: `simp` normalizes the point before this equation can apply, so it never fires,
+-- even on its own statement; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     (groupSchemePointMulEquiv n A f).left =
@@ -150,7 +151,7 @@ noncomputable def schemePointsMulEquiv :
 
 /-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
 gives the determinant-one matrix of the underlying algebra point. -/
-@[simp]
+@[simp↓]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     schemePointsMulEquiv n A (groupSchemePointMulEquiv n A q) =

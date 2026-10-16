@@ -199,6 +199,18 @@ theorem betaBoundary_apply (D : Region → ℤ) (p : Point) :
     H.betaBoundary D p = D (H.betaLeft p) - D (H.betaRight p) :=
   (rfl)
 
+/-- The whole surface, the domain with multiplicity one in every region, has no `α`-boundary. -/
+@[simp]
+theorem alphaBoundary_one : H.alphaBoundary 1 = 0 := by
+  ext
+  simp
+
+/-- The whole surface, the domain with multiplicity one in every region, has no `β`-boundary. -/
+@[simp]
+theorem betaBoundary_one : H.betaBoundary 1 = 0 := by
+  ext
+  simp
+
 /-- The boundary of a `1`-chain on the `α`-arcs, indexed by starting points. The arc starting at
 `p` ends at `alphaNext p`, so the coefficient at `q` is that of the arc ending at `q` minus that
 of the arc starting at `q`. -/
@@ -290,6 +302,10 @@ theorem isDomainBetween_iff {x y : H.Generator} {D : Region → ℤ} :
 theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
   simp
 
+/-- The whole surface connects every generator to itself. -/
+theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
+  simp
+
 namespace IsDomainBetween
 
 variable {x y w : H.Generator} {D E : Region → ℤ}
@@ -347,6 +363,15 @@ theorem IsDomainBetween.sub_mem_periodicDomains_iff {x y : H.Generator} {D D' : 
   simp only [mem_periodicDomains_iff, isDomainBetween_iff, map_sub, hD.1, hD.2, Pi.sub_apply,
     sub_eq_zero]
   tauto
+
+/-- In a diagram with a single basepoint `z`, a domain `E` connects a generator to itself exactly
+when `E - n_z(E) Σ` is periodic, where `Σ = 1` is the whole surface. -/
+theorem isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains [Subsingleton Basepoint]
+    (z : Basepoint) {x : H.Generator} {E : Region → ℤ} :
+    H.IsDomainBetween x x E ↔ E - E (H.basepoint z) • 1 ∈ H.periodicDomains := by
+  simp only [mem_periodicDomains_iff, isDomainBetween_iff, sub_self, map_sub, map_zsmul,
+    alphaBoundary_one, betaBoundary_one, smul_zero, sub_zero, Pi.sub_apply, Pi.smul_apply,
+    Pi.one_apply, smul_eq_mul, mul_one, Subsingleton.elim _ z, implies_true, true_and]
 
 variable (H) in
 /-- The supplied region incidence system is weakly admissible when every nonzero periodic domain

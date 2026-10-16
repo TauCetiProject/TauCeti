@@ -27,12 +27,16 @@ type are its `Ω`-points. The `Ω`-points in a fibre of `[n]` over an `Ω`-point
 group of `Ω`-points of `E` killed by `n`, which is finite, and a closed subset of a Jacobson space
 with finitely many closed points is finite.
 
+Consequently the `n`-torsion `E[n]`, the fibre of `[n]` over the zero section, is finite over `S`.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyQuasiFinite_mulBy_left`: multiplication by a
   nonzero integer is locally quasi-finite.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_mulBy_left`: multiplication by a nonzero
   integer is finite.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_torsion_hom`: for `n ≠ 0`, the `n`-torsion
+  `E[n]` is finite over `S`.
 
 ## References
 
@@ -128,5 +132,11 @@ quasi-finite. -/
 theorem isFinite_mulBy_left {n : ℤ} (hn : n ≠ 0) : IsFinite (E.mulBy n).left :=
   have := E.locallyQuasiFinite_mulBy_left hn
   .of_isProper_of_locallyQuasiFinite _
+
+/-- **The `n`-torsion is finite** over the base for `n ≠ 0`: `E[n]` is the base change of the
+finite morphism `[n]` along the zero section. -/
+theorem isFinite_torsion_hom {n : ℤ} (hn : n ≠ 0) : IsFinite (E.torsion n).X.hom :=
+  have := E.isFinite_mulBy_left hn
+  MorphismProperty.of_isPullback (E.isPullback_torsion n) this
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

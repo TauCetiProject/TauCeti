@@ -33,9 +33,7 @@ identity component.  The affine Nullstellensatz then promotes this pointwise sta
 required identity in the tensor square; tensor-product right exactness identifies its kernel with
 `I ⊗ H + H ⊗ I`.
 
-The algebraically closed hypothesis is the natural one for the geometric identity component in
-the reductive-groups roadmap.  Descent of this construction to the ground field and construction
-of the component group are separate steps.
+The algebraically closed hypothesis is the natural one for the geometric identity component.
 
 ## Main declarations
 
@@ -48,11 +46,6 @@ of the component group are separate steps.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This advances Layer 3, "Identity component `G°` and component group `π₀(G)`", of the
-ReductiveGroups roadmap.  The quotient Hopf algebra now gives the identity component over an
-algebraically closed field; descent, geometric connectedness over a general field, and the finite
-étale component group remain.
 -/
 
 public section
@@ -154,9 +147,9 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     [LocallyConnectedSpace (PrimeSpectrum H)] :
     Coalgebra.comul (R := k)
         (1 - PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k H)) ∈
-      HopfIdeal.leftTensorIdeal (R := k) (H := H)
+      Ideal.leftTensorIdeal (R := k) (B := H)
           (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H)
+        Ideal.rightTensorIdeal (R := k) (A := H)
           (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) := by
   let I := PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)
   let e := PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k H)
@@ -174,8 +167,8 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     change 1 - F (Coalgebra.comul (R := k) e) = 0
     rw [ha_eq_one, sub_self]
   have hker_eq : RingHom.ker F.toRingHom =
-      HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
+      Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
+        Ideal.rightTensorIdeal (R := k) (A := H) I := by
     have hqker : RingHom.ker q = I := by
       -- Unfold the local quotient-map abbreviation for Mathlib's kernel theorem.
       change RingHom.ker (Ideal.Quotient.mkₐ k I) = I
@@ -183,7 +176,7 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     -- Unfold the local tensor-square map abbreviation before tensor-product exactness rewrites it.
     change RingHom.ker (Algebra.TensorProduct.map q q) = _
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
-      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q hq hq
+      AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q hq hq
   rwa [hker_eq] at hker
 
 /-- The ideal cutting out the augmentation point's connected component is stable under
@@ -194,9 +187,9 @@ theorem comul_mem_connectedComponentIdeal_augmentationPoint
     letI : LocallyConnectedSpace (PrimeSpectrum H) := inferInstance
     x ∈ PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H) →
       Coalgebra.comul (R := k) x ∈
-        HopfIdeal.leftTensorIdeal (R := k) (H := H)
+        Ideal.leftTensorIdeal (R := k) (B := H)
             (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) ⊔
-          HopfIdeal.rightTensorIdeal (R := k) (H := H)
+          Ideal.rightTensorIdeal (R := k) (A := H)
             (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) := by
   dsimp only
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
@@ -207,8 +200,8 @@ theorem comul_mem_connectedComponentIdeal_augmentationPoint
   -- Expose the local component ideal so its principal-generator characterization can rewrite.
   change x ∈ I at hx
   change Coalgebra.comul (R := k) x ∈
-    HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
-      HopfIdeal.rightTensorIdeal (R := k) (H := H) I
+    Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
+      Ideal.rightTensorIdeal (R := k) (A := H) I
   rw [PrimeSpectrum.mem_connectedComponentIdeal_iff] at hx
   obtain ⟨a, rfl⟩ := hx
   rw [Bialgebra.comul_mul]

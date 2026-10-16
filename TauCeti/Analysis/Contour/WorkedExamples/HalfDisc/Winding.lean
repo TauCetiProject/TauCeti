@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.Basic
 import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The winding numbers of the half-disc contour
@@ -183,10 +184,7 @@ theorem windingNumber_halfDiscBoundary_eq_one {s : ℂ} (him : 0 < s.im) (hs : �
       (fun t _ => (differentiable_circleMap 0 R) t) hderivC_cont.continuousOn
       (fun θ hθ => hslit _ ?_) (fun _ _ => rfl) rfl rfl, hRC, hnRC]
     rw [circleMap_zero_im]
-    have hsin : Real.sin θ ≤ 0 := by
-      rw [← Real.sin_sub_two_pi]
-      exact Real.sin_nonpos_of_nonpos_of_neg_pi_le (by linarith [hθ.2]) (by linarith [hθ.1])
-    exact mul_nonpos_of_nonneg_of_nonpos hR.le hsin
+    exact mul_nonpos_of_nonneg_of_nonpos hR.le (sin_nonpos_of_pi_le_of_le_two_pi hθ.1 hθ.2)
   have hdiam : (∫ t in (-R)..R, (halfDiscBoundary R t - s)⁻¹ * deriv (halfDiscBoundary R) t)
       = Complex.log ((R : ℂ) - s) - Complex.log (-(R : ℂ) - s) := by
     have hofReal : ∀ t : ℝ, HasDerivAt (fun u : ℝ => (u : ℂ)) 1 t := fun t => by

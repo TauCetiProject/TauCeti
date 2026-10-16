@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Homeomorph
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Cone
 public import TauCeti.Topology.PL.Cone
 
 /-!
@@ -20,6 +21,9 @@ the corresponding homeomorphism packaging is in `Star.PL.Homeomorph`.
 The formulas are on the ambient coordinate spaces and agree with the actual `closedStarMap`
 on its whole domain. The ambient complexes and the target vertex type may be infinite.
 Empty links are allowed: their stars consist only of the apex.
+
+The constructions below do not assert that a link map is PL; callers provide ambient formulas and
+their `IsPLOn` proofs.
 
 The construction factors through `TauCeti.coneMap`: remove the apex coordinate and record
 the remaining mass as height, then reinsert the target apex coordinate after coning the
@@ -45,16 +49,6 @@ namespace AbstractSimplicialComplex
 variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
   {K : AbstractSimplicialComplex ι} {L : AbstractSimplicialComplex κ} {v : ι} {w : κ}
 
-/-- Read a star as a cone: delete its apex coordinate and record the remaining mass. -/
-private def starToCone (v : ι) : (ι → ℝ) →ᴬ[ℝ] ((ι → ℝ) × ℝ) :=
-  ((ContinuousLinearMap.id ℝ (ι → ℝ) -
-      (ContinuousLinearMap.proj v).smulRight (Pi.single v 1)).toContinuousAffineMap).prod
-    (ContinuousAffineMap.const ℝ (ι → ℝ) 1 -
-      (ContinuousLinearMap.proj v).toContinuousAffineMap)
-
-private theorem starToCone_apply (v : ι) (x : ι → ℝ) :
-    starToCone v x = (x - x v • Pi.single v 1, 1 - x v) := (rfl)
-
 /-- Reinsert the target apex, whose coordinate is one minus the cone height. -/
 private def coneToStar (w : κ) : ((κ → ℝ) × ℝ) →ᴬ[ℝ] (κ → ℝ) :=
   let apex : κ → ℝ := Pi.single w 1
@@ -66,35 +60,6 @@ private def coneToStar (w : κ) : ((κ → ℝ) × ℝ) →ᴬ[ℝ] (κ → ℝ)
 private theorem coneToStar_apply (w : κ) (p : (κ → ℝ) × ℝ) :
     coneToStar w p = p.1 - p.2 • Pi.single w 1 + Pi.single w 1 := (rfl)
 
-private theorem starToCone_of_lt (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
-    starToCone v (x.1.1 : ι → ℝ) =
-      ((1 - x.1.1 v) •
-        ((starLinkProjection K v
-          ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩).1.1 : ι → ℝ),
-        1 - x.1.1 v) := by
-  rw [starToCone_apply]
-  congr 1
-  ext j
-  by_cases hj : j = v
-  · simp [hj]
-  · simp [starLinkProjection_apply, hj,
-      ← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hx).ne']
-
-private theorem starToCone_of_not_lt (x : closedStarRealization K {v})
-    (hx : ¬x.1.1 v < 1) : starToCone v (x.1.1 : ι → ℝ) = 0 := by
-  have hv : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
-  have he : x.1 = vertex K v := (Realization.eq_vertex_iff K x.1 v).mpr hv
-  rw [starToCone_apply, he]
-  ext j <;> simp [vertex_val, Finsupp.single_apply, Pi.single_apply, eq_comm]
-
-private theorem starToCone_mem (x : closedStarRealization K {v}) :
-    starToCone v (x.1.1 : ι → ℝ) ∈
-      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone := by
-  by_cases hx : x.1.1 v < 1
-  · rw [starToCone_of_lt x hx]
-    exact (smul_mem_cone_iff _ (sub_pos.mpr hx)).mpr (mem_range_self _)
-  · rw [starToCone_of_not_lt x hx]
-    exact zero_mem_cone _
 
 private theorem coneToStar_coneMap_eq
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
@@ -156,5 +121,35 @@ theorem exists_isPLOn_closedStarMap
   obtain ⟨G, hG, heq⟩ := exists_isPiecewiseAffineOn_closedStarMap f F hF
     (hf.isPiecewiseAffineOn_of_isCompact hcoord)
   exact ⟨G, hG.isPLOn, heq⟩
+
+variable {ν : Type*} [DecidableEq ν]
+  {N : AbstractSimplicialComplex ν} {u : ν}
+
+/-- Two piecewise-linear radial closed-star maps compose piecewise linearly.
+
+The returned ambient formula is piecewise linear on the source closed star and agrees there with
+the radial extension of `g ∘ f`. Only compactness of the source link is required.
+-/
+theorem exists_isPLOn_closedStarMap_comp
+    (hK : IsCompact (geometricLink K v))
+    (f : geometricLink K v → geometricLink L w)
+    (g : geometricLink L w → geometricLink N u)
+    (F : (ι → ℝ) → (κ → ℝ))
+    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
+    (hFpl : IsPLOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))))
+    (G : (κ → ℝ) → (ν → ℝ))
+    (hG : ∀ y : geometricLink L w, G (y.1.1 : κ → ℝ) = (g y).1.1)
+    (hGpl : IsPLOn G (range (fun y : geometricLink L w => (y.1.1 : κ → ℝ)))) :
+    ∃ H : (ι → ℝ) → (ν → ℝ),
+      IsPLOn H (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
+        ∀ x : closedStarRealization K {v},
+          H (x.1.1 : ι → ℝ) = (closedStarMap (g ∘ f) x).1.1 := by
+  have hGF : IsPLOn (G ∘ F)
+      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
+    apply hGpl.comp hFpl
+    rintro _ ⟨y, rfl⟩
+    exact ⟨f y, (hF y).symm⟩
+  exact exists_isPLOn_closedStarMap hK (g ∘ f) (G ∘ F)
+    (fun y => by simp [hF, hG]) hGF
 
 end AbstractSimplicialComplex

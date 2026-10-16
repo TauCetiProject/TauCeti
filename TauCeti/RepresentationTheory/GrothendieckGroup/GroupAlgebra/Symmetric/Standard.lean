@@ -55,7 +55,8 @@ variable {α}
 omit [Nonempty α] in
 /-- Inducing the trivial line from any point stabilizer in a finite symmetric group gives
 the natural permutation class, namely the trivial class plus the standard class. -/
-@[simp]
+-- Compute this induction before the general quotient permutation formula.
+@[simp 1100]
 theorem indK0_one_stabilizer_eq_one_add_standard (a : α) :
     letI : Module.Finite k[Equiv.Perm α] (standardRepresentation k α).asModule :=
       Module.Finite.of_restrictScalars_finite k k[Equiv.Perm α] _

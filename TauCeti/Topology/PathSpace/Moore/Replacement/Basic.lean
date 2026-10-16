@@ -39,6 +39,8 @@ act strictly on `F` by `f · ω = Φ (f, ω)(end)`, and transport is strictly eq
 * `TauCeti.MooreReplacement.endpointLiftingFunction p`: the transitive lifting function of `p'`.
 * `TauCeti.MooreReplacement.Fiber p b`: the fibre `F'` of `p'` over `b`, with its right action of
   `MooreLoopSpace B b`.
+* `TauCeti.MooreReplacement.Fiber.map h hh`: the equivariant map of fibres induced by a map `h`
+  over `B`.
 * `TauCeti.MooreLiftingFunction.transport`: transport `F' → F` along a lifting function.
 
 ## Main results
@@ -520,5 +522,52 @@ theorem coe_transportHomotopyEquiv_symm {p : C(E, B)} (Φ : MooreLiftingFunction
   (rfl)
 
 end MooreLiftingFunction
+
+/-! ### Naturality of the fibre in maps over the base -/
+
+namespace MooreReplacement.Fiber
+
+variable {E E' E'' B : Type*} [TopologicalSpace E] [TopologicalSpace E'] [TopologicalSpace E'']
+  [TopologicalSpace B] {p : C(E, B)} {p' : C(E', B)} {p'' : C(E'', B)} {b : B}
+
+/-- The map of fibres of the Moore-path replacements induced by a map `h : E → E'` over `B`:
+`(e, γ) ↦ (h e, γ)`. -/
+def map (h : C(E, E')) (hh : p'.comp h = p) : C(Fiber p b, Fiber p' b) :=
+  ⟨fun x ↦ ⟨MooreReplacement.mk (h x.val.point) x.val.path
+      ((source_path _).trans (DFunLike.congr_fun hh _).symm),
+      (congrArg MoorePath.target (path_mk _ _ _)).trans (target_path_val x)⟩,
+    (continuous_mk (h.continuous.comp (continuous_point.comp continuous_val))
+      (continuous_path.comp continuous_val) _).subtype_mk _⟩
+
+@[simp]
+theorem point_map (h : C(E, E')) (hh : p'.comp h = p) (x : Fiber p b) :
+    (map h hh x).val.point = h x.val.point := by
+  rw [val_eq_subtypeVal]
+  exact point_mk _ _ _
+
+@[simp]
+theorem path_map (h : C(E, E')) (hh : p'.comp h = p) (x : Fiber p b) :
+    (map h hh x).val.path = x.val.path := by
+  rw [val_eq_subtypeVal]
+  exact path_mk _ _ _
+
+/-- The induced map of fibres commutes with the action of the Moore loops. -/
+theorem map_act (h : C(E, E')) (hh : p'.comp h = p) (x : Fiber p b) (ω : MooreLoopSpace B b) :
+    map h hh (x.act ω) = (map h hh x).act ω :=
+  ext (MooreReplacement.ext (by simp) (by simp))
+
+/-- The identity induces the identity of fibres. -/
+@[simp]
+theorem map_id :
+    map (b := b) (ContinuousMap.id E) (ContinuousMap.comp_id p) = ContinuousMap.id _ :=
+  ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp))
+
+/-- A composite of maps over `B` induces the composite of the maps of fibres. -/
+theorem map_comp (h : C(E, E')) (h' : C(E', E'')) (hh : p'.comp h = p) (hh' : p''.comp h' = p') :
+    map (b := b) (h'.comp h) (by rw [← ContinuousMap.comp_assoc, hh', hh]) =
+      (map h' hh').comp (map h hh) :=
+  ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp))
+
+end MooreReplacement.Fiber
 
 end TauCeti

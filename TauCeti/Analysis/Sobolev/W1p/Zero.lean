@@ -159,6 +159,9 @@ noncomputable instance instSeminormedAddCommGroupW1p0 :
 Sobolev subspaces. -/
 noncomputable instance instNormedSpaceW1p0 : NormedSpace ℝ (W1p0 mu Omega p) := inferInstance
 
+/-- The zero-boundary Sobolev space contains the zero function. -/
+instance W1p0.instNonempty : Nonempty (w1p0Submodule mu Omega p) := ⟨0⟩
+
 /-- **The canonical value map of `W^{1,p}_0(Ω)`**, the value component of the Sobolev jet read
 off a zero-boundary function, as a continuous linear map into `Lᵖ(Ω)`. -/
 def W1p0.valueL : W1p0 mu Omega p →L[ℝ] Lp ℝ p (mu.restrict Omega) :=

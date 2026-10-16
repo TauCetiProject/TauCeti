@@ -94,7 +94,7 @@ commutator is bimultiplicative modulo `λ_{j+k+2}`. Computations combining congr
 degrees need these statements modulo an arbitrary coarser term `λ_{n'}`, `n' ≤ n`, as well. -/
 
 /-- A congruence `mk a = mk b * mk c` modulo `λ_n` holds modulo every `λ_{n'}` with `n' ≤ n`. -/
-theorem mk_eq_mk_mul_mk_of_le {a b c : G} {n : ℕ} (n' : ℕ) (h : n' ≤ n)
+theorem mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le {a b c : G} {n : ℕ} (n' : ℕ) (h : n' ≤ n)
     (habc : ((a : G) : G ⧸ pLowerCentralSeries p G n) = (b : G ⧸ _) * (c : G ⧸ _)) :
     ((a : G) : G ⧸ pLowerCentralSeries p G n') = (b : G ⧸ _) * (c : G ⧸ _) := by
   rw [← QuotientGroup.mk_mul] at habc ⊢
@@ -161,8 +161,9 @@ theorem commutatorElement_jacobi_mem_pLowerCentralSeries {i j k : ℕ} {a b c : 
       ((⁅⁅u, v⁆, v * w * v⁻¹⁆ : G) : G ⧸ pLowerCentralSeries p G (i + j + k + 2 + 1)) =
         ⁅⁅u, v⁆, w⁆ := by
     have huv := commutator_mem_pLowerCentralSeries hu hv
-    rw [show v * w * v⁻¹ = ⁅v, w⁆ * w by group, mk_eq_mk_mul_mk_of_le (i + j + k + 2 + 1)
-      (by omega) (mk_commutatorElement_mul_right huv hw _),
+    rw [show v * w * v⁻¹ = ⁅v, w⁆ * w by group,
+      mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le (i + j + k + 2 + 1) (by omega)
+        (mk_commutatorElement_mul_right huv hw _),
       mk_eq_one_of_mem_pLowerCentralSeries_of_le (i + j + k + 2 + 1)
         (commutator_mem_pLowerCentralSeries huv (commutator_mem_pLowerCentralSeries hv hw))
         (by omega), one_mul]
@@ -580,6 +581,26 @@ theorem gradedBracket_gradedMkZero (g h : G) :
         (mem_pLowerCentralSeries_zero p h)⟩ := by
   rw [gradedMkZero, gradedMkZero, gradedBracket_gradedMk]
 
+/-- **The bracket of a degree-zero class with a class in degree `k`**, as the class of the
+commutator in `gr_{k+1}(G)`. -/
+@[simp]
+theorem gradedBracket_gradedMkZero_gradedMk (g : G) {k : ℕ} (y : pLowerCentralSeries p G k) :
+    gradedBracket p G 0 k (gradedMkZero p G g) (gradedMk p G k y) =
+      gradedMk p G (0 + k + 1)
+        ⟨⁅g, (y : G)⁆,
+          commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) y.2⟩ := by
+  rw [gradedMkZero, gradedBracket_gradedMk]
+
+/-- **The bracket of a class in degree `j` with a degree-zero class**, as the class of the
+commutator in `gr_{j+1}(G)`. -/
+@[simp]
+theorem gradedBracket_gradedMk_gradedMkZero {j : ℕ} (x : pLowerCentralSeries p G j) (h : G) :
+    gradedBracket p G j 0 (gradedMk p G j x) (gradedMkZero p G h) =
+      gradedMk p G (j + 0 + 1)
+        ⟨⁅(x : G), h⁆,
+          commutator_mem_pLowerCentralSeries x.2 (mem_pLowerCentralSeries_zero p h)⟩ := by
+  rw [gradedMkZero, gradedBracket_gradedMk]
+
 variable (p G) in
 /-- **The bracket as a `ZMod p`-bilinear map**
 `gr_j(G) →ₗ[ZMod p] gr_k(G) →ₗ[ZMod p] gr_{j+k+1}(G)`: the biadditive bracket
@@ -936,6 +957,15 @@ theorem gradedMap_gradedBracket (f : G →* H) (hf : Continuous f) {j k : ℕ} (
     gradedBracket_gradedMk]
   congr 1
   exact Subtype.ext (map_commutatorElement f _ _)
+
+/-- **Naturality of the bracket of two degree-zero classes**, with its degree written `1`: the
+degree `0 + 0 + 1` of `TauCeti.gradedMap_gradedBracket` does not match a numeral. -/
+@[simp]
+theorem gradedMap_gradedBracket_zero_zero (f : G →* H) (hf : Continuous f)
+    (x y : gradedPiece p G 0) :
+    gradedMap p f hf 1 (gradedBracket p G 0 0 x y) =
+      gradedBracket p H 0 0 (gradedMap p f hf 0 x) (gradedMap p f hf 0 y) :=
+  gradedMap_gradedBracket f hf x y
 
 /-- **Naturality of the `p`-power operator.** -/
 @[simp]

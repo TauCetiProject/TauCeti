@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
-public import TauCeti.LinearAlgebra.RootSystem.EquivInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Permutation actions of Weyl groups

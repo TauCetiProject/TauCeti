@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 
 /-!
@@ -38,6 +39,7 @@ in which the method of acyclic models applies to them.
 * `TauCeti.CubicalChain.normalize_sub_mem_degenerate`: normalization is the identity up to a
   degenerate chain.
 * `TauCeti.NormalizedCubicalChain.mk_toCubicalChain`: the section is a section.
+* the instance that the normalized cubical chains are a projective module.
 * `TauCeti.NormalizedCubicalChain.toCubicalChain_map`: the section is natural.
 
 ## References
@@ -229,6 +231,12 @@ theorem sum_toCubicalChain {n : ℕ} (f : NormalizedCubicalChain X R n) :
   | single c a =>
     rw [Finsupp.sum_single_index (h := fun c a ↦ a • ofCube X R c) (zero_smul R _),
       ofCube_def, ← Submodule.Quotient.mk_smul, smul_single_one]
+
+/-- The normalized cubical chains are a projective module: they are a retract of the free module on
+the cubes, through the section `toCubicalChain` of the quotient map. -/
+instance (n : ℕ) : Module.Projective R (NormalizedCubicalChain X R n) :=
+  Module.Projective.of_split (toCubicalChain X R n) (Submodule.mkQ _)
+    (LinearMap.ext fun x ↦ mk_toCubicalChain R x)
 
 end NormalizedCubicalChain
 

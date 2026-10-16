@@ -43,9 +43,9 @@ theorem peterWeylBlockAveraging_comp_leftRegularLp (model : IrrepModel 𝕜 G) (
   intro f
   simp only [ContinuousLinearMap.comp_apply, peterWeylBlockAveraging_def, leftRegularLp_apply]
   apply convolutionOperator_compMeasurePreserving_mul_left
-  intro x y
+  intro x
   simp only [ContinuousMap.smul_apply, ContinuousMap.star_apply, smul_eq_mul]
-  rw [ContRepresentation.character_mul_comm model.rep model.continuous_rep y x]
+  rw [ContRepresentation.character_mul_comm model.rep model.continuous_rep x g⁻¹]
 
 /-- Character averaging commutes with right translation on an arbitrary compact group. -/
 theorem peterWeylBlockAveraging_comp_rightRegularLp (model : IrrepModel 𝕜 G) (g : G) :

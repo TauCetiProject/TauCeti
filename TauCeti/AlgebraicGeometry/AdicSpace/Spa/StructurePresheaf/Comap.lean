@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality
 
@@ -48,6 +48,8 @@ here.
 * `TauCeti.ValuationSpectrum.presentationLimitComap_id`,
   `TauCeti.ValuationSpectrum.presentationLimitComap_comp`: the components are contravariantly
   functorial in `φ`.
+* `TauCeti.ValuationSpectrum.toPresentationLimit_comp_presentationLimitComap`: for complete
+  Hausdorff `A` and `B`, the components are compatible with the canonical maps from `A` and `B`.
 
 ## References
 
@@ -533,6 +535,51 @@ theorem presentationLimitPresheafComap_comp :
   rfl
 
 end Comp
+
+/-! ### Compatibility with the canonical maps from the coefficient rings -/
+
+section Canonical
+
+variable {A B : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [CompleteSpace A] [T0Space A] [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
+  [IsTopologicalRing B] [CompleteSpace B] [T0Space B] {P : PairOfDefinition A}
+  {P' : PairOfDefinition B} {Aplus : Subring A} {Bplus : Subring B}
+  (φ : A →+* B) (hφ : Continuous φ)
+  (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+  (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+  (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+    (presentationLimitPresheaf P' Bplus))
+
+/-- **The induced morphism is compatible with the canonical maps from `A` and `B`**: for complete
+Hausdorff `A` and `B`, the component at `U` sends the image of `a ∈ A` in `𝒪_{Spa A}(U)` to the
+image of `φ(a)` in `𝒪_{Spa B}(f⁻¹U)`. -/
+@[reassoc]
+theorem toPresentationLimit_comp_presentationLimitComap (U : Opens ↥(spa Aplus)) :
+    toPresentationLimit (P := P) Aplus U ≫
+        presentationLimitComap φ hφ hopen hplus hBplus hsheaf U =
+      ObjectProperty.homMk (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
+          (⟨φ, hφ⟩ : _root_.TopCommRingCat.of A ⟶ _root_.TopCommRingCat.of B) ≫
+          eqToHom (CompleteSeparatedTopCommRingCat.of_obj B).symm) ≫
+        toPresentationLimit Bplus ((Opens.map (spaComapTopHom φ hφ hplus)).obj U) := by
+  refine presentationLimit_hom_ext_of_isSheaf (P := P) φ hφ hopen hplus hsheaf fun i ↦ ?_
+  refine presentationLimit_hom_ext_toPresentation fun m ↦ ?_
+  simp only [Category.assoc, presentationLimitComap_comp_map_comp_π,
+    toPresentationLimit_comp_presentationLimitMap_assoc,
+    toPresentationLimit_comp_πToPresentation_assoc, toPresentationLimit_comp_πToPresentation]
+  -- both sides are morphisms out of `A`; compare them as structure maps followed by base change
+  have eA (p : Presentation P) : p.toCompletionLocObjHom.hom =
+      eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫ p.toCompletionLocTopHom := by
+    rw [Presentation.toCompletionLocObjHom_hom, Presentation.toCompletionLocTopHom_eq]
+  have eB (p : Presentation P') : p.toCompletionLocObjHom.hom =
+      eqToHom (CompleteSeparatedTopCommRingCat.of_obj B) ≫ p.toCompletionLocTopHom := by
+    rw [Presentation.toCompletionLocObjHom_hom, Presentation.toCompletionLocTopHom_eq]
+  apply InducedCategory.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, eA, eB, Category.assoc,
+    Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
+    toCompletionLocTopHom_comp_homOfRationalSubsetSubset, ObjectProperty.homMk_hom,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+
+end Canonical
 
 end TauCeti.ValuationSpectrum
 

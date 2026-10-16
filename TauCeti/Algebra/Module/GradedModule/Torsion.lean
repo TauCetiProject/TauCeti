@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Polynomial.Basic
-public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 public import TauCeti.Algebra.Module.GradedModule.Polynomial
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 import TauCeti.Algebra.Module.GradedModule.DirectSum
@@ -72,7 +71,7 @@ theorem torsion_eq_torsion'_powers_X (hd : d ≠ 0)
     simp only [C_0, sub_zero] at hab hb
     have hb0 : b.coeff 0 ≠ 0 := fun h ↦ hb (X_dvd_iff.mpr h)
     refine ⟨⟨X ^ a.rootMultiplicity 0, ⟨a.rootMultiplicity 0, rfl⟩⟩, ?_⟩
-    apply smul_injective_of_coeff_zero_ne_zero hd hX hb0
+    apply isSMulRegular_of_coeff_zero hd hX (IsSMulRegular.of_ne_zero hb0)
     simp only [Submonoid.smul_def] at hax
     rw [hab, mul_smul, smul_comm] at hax
     simpa only [Submonoid.smul_def, smul_zero] using hax
@@ -161,13 +160,13 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
   have hshift : ∀ ⦃p : ℤ⦄ ⦃x : M⦄,
       x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p + -(d : ℤ)) := by
     simpa only [sub_eq_add_neg] using hX
-  let e₀ := G.homogeneousPart G hshift hshift e 0
+  let e₀ := G.homogeneousPartPolynomial G hshift hshift e 0
   have hT := G.isHomogeneous_torsion hd hX
   have he₀T (x : M) : e₀ x ∈ T := by
     rw [← DirectSum.sum_support_decompose G.piece x, map_sum]
     apply T.sum_mem
     intro p _
-    rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
+    rw [G.homogeneousPartPolynomial_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece x p).property, add_zero]
     exact hT p (heT _)
   let ρ := e₀.codRestrict T he₀T
@@ -180,12 +179,12 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
     conv_rhs => rw [← DirectSum.sum_support_decompose G.piece (x : M)]
     apply Finset.sum_congr rfl
     intro p _
-    rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
+    rw [G.homogeneousPartPolynomial_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece (x : M) p).property, add_zero]
     rw [hefix ⟨_, hT p x.property⟩]
     exact DirectSum.decompose_of_mem_same G.piece
       (DirectSum.decompose G.piece (x : M) p).property
-  refine ⟨_root_.LinearMap.ker e₀, ?_, G.isHomogeneous_homogeneousPart G
+  refine ⟨_root_.LinearMap.ker e₀, ?_, G.isHomogeneous_homogeneousPartPolynomial G
     hshift hshift e 0 |>.isHomogeneous_ker⟩
   rw [← e₀.ker_codRestrict T he₀T]
   exact _root_.LinearMap.isCompl_of_proj hρ

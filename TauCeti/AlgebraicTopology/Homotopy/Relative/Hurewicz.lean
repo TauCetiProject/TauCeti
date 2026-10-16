@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
+public import TauCeti.AlgebraicTopology.Homotopy.Relative.Group
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!
@@ -37,6 +38,13 @@ classes modelled on `I^(Fin (n + 1))`, while `TauCeti.RelHomotopyGroup.ofHomotop
 classes modelled on `I^(Option (Fin n))`; the two are matched by `finSuccEquiv n`, which sends the
 first coordinate to the distinguished coordinate `none`.
 
+In degrees `n + 2 ≥ 2`, where `π_{n+2}(X, A, a₀)` is a group, the relative Hurewicz map is a
+homomorphism (`TauCeti.RelHomotopyGroup.hurewicz_mul`). The product `[q] * [p]` is represented by
+a concatenation of `p` and `q` along a direction of `Iⁿ⁺¹` other than the distinguished one, with
+a slab between them sent to `a₀`, and the pinch identity
+`TauCeti.singularHomologyMap_cubeBoundaryPair_eq_add`, which also gives additivity of the absolute
+Hurewicz map, splits its relative Hurewicz class into those of `p` and `q`.
+
 ## Main declarations
 
 * `TauCeti.RelGenLoop.toCubeBoundaryPairHom`: a relative cube as a map of pairs
@@ -46,6 +54,9 @@ first coordinate to the distinguished coordinate `none`.
   natural by `TauCeti.RelHomotopyGroup.hurewicz_map`.
 * `TauCeti.RelHomotopyGroup.hurewicz_ofHomotopyGroup`: compatibility with the absolute Hurewicz
   map.
+* `TauCeti.RelHomotopyGroup.hurewicz_mul`, `TauCeti.RelHomotopyGroup.hurewiczHom`: the relative
+  Hurewicz map is a homomorphism from `π_{n+2}(X, A, a₀)`, written additively, to the group of
+  morphisms `R ⟶ Hₙ₊₂(X, A; R)`.
 
 ## References
 
@@ -167,6 +178,99 @@ theorem hurewicz_eq_zero_of_mem_range (p : RelGenLoop (Fin n) X)
     (TopCat.ofHom (X.pair.liftSnd (cubeMap p) fun z ↦ hp _))
     (by ext z; exact TopPair.map_liftSnd _ _ z), comp_zero]
 
+/-! ### Additivity -/
+
+/-- The concatenation of `p`, the constant cube and `q` along the direction `i` of `Iⁿ`: `p` is run
+on `tᵢ ≤ 1/4`, the slab `1/4 ≤ tᵢ ≤ 1/2` goes to the base point, and `q` is run on `tᵢ ≥ 1/2`. It
+represents the product `[q] * [p]`. -/
+private def fatTrans (i : Fin n) (p q : RelGenLoop (Fin n) X) : RelGenLoop (Fin n) X :=
+  transAt i (transAt i p const) q
+
+/-- The fat concatenation sends the slab `1/4 ≤ tᵢ ≤ 1/2` to the base point. -/
+private lemma fatTrans_apply_of_le_of_le (i : Fin n) (p q : RelGenLoop (Fin n) X) (s : I)
+    {t : I^(Fin n)} (h₁ : (1 / 4 : ℝ) ≤ t i) (h₂ : (t i : ℝ) ≤ 1 / 2) :
+    fatTrans i p q (s, t) = X.pair.map X.basepoint := by
+  have h₂' : (Set.projIcc 0 1 zero_le_one (2 * (t i : ℝ)) : ℝ) = 2 * t i :=
+    congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨by linarith, by linarith⟩)
+  rw [fatTrans, transAt_apply, ite_eq_left h₂, transAt_apply, Function.update_self, h₂']
+  split_ifs with h
+  · -- On the face `tᵢ = 1/4`, the cube `p` is evaluated on the face `tᵢ = 1` of `Iⁿ`.
+    refine apply_of_mem_boundary p s ⟨i, Or.inr ?_⟩
+    rw [Function.update_self, show 2 * (2 * (t i : ℝ)) = 1 by linarith]
+    exact Set.projIcc_right (h := zero_le_one' ℝ)
+  · exact const_apply _
+
+/-- On the first quarter, reparametrised by `tᵢ ↦ tᵢ / 4`, the fat concatenation is `p`. -/
+private lemma fatTrans_apply_quarter (i : Fin n) (p q : RelGenLoop (Fin n) X) (s : I)
+    (t : I^(Fin n)) :
+    fatTrans i p q (s, Function.update t i (Set.projIcc 0 1 zero_le_one (t i / 4))) =
+      p (s, t) := by
+  have ht := (t i).2
+  -- The arithmetic: both reparametrisations stay in `[0, 1/2]` and compose to the identity.
+  have h₁ : (t i / 4 : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have h₂ : (2 * (t i / 4) : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have h₃ : (2 * (2 * (t i / 4)) : ℝ) = t i := by ring
+  have hc₁ : (t i / 4 : ℝ) ≤ 1 / 2 := by linarith [ht.2]
+  have hc₂ : (2 * (t i / 4) : ℝ) ≤ 1 / 2 := by linarith [ht.2]
+  -- Both concatenations take their first branch, and the coordinate updates collapse.
+  simp only [fatTrans, transAt_apply, Function.update_self, Function.update_idem,
+    Set.projIcc_of_mem _ h₁, Set.projIcc_of_mem _ h₂, h₃, Set.projIcc_val,
+    Function.update_eq_self, hc₁, hc₂, ↓reduceIte]
+
+/-- On the upper half, reparametrised by `tᵢ ↦ (tᵢ + 1) / 2`, the fat concatenation is `q`. -/
+private lemma fatTrans_apply_upperHalf (i : Fin n) (p q : RelGenLoop (Fin n) X) (s : I)
+    (t : I^(Fin n)) :
+    fatTrans i p q (s, Function.update t i (Set.projIcc 0 1 zero_le_one ((t i + 1) / 2))) =
+      q (s, t) := by
+  have ht := (t i).2
+  -- The arithmetic: `tᵢ ↦ (tᵢ + 1) / 2` stays in `[0, 1]` and `tᵢ ↦ 2 tᵢ - 1` inverts it.
+  have h₁ : ((t i + 1) / 2 : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have h₂ : (2 * ((t i + 1) / 2) : ℝ) = t i + 1 := by ring
+  simp only [fatTrans, transAt_apply, Function.update_self, Function.update_idem,
+    Set.projIcc_of_mem _ h₁, h₂, add_sub_cancel_right, Set.projIcc_val, Function.update_eq_self]
+  rcases ht.1.eq_or_lt with h₀ | h₀
+  · -- On the face `tᵢ = 0`, both sides are the base point.
+    have hz : t i = 0 := Subtype.ext h₀.symm
+    have hc : ¬(1 : ℝ) ≤ 1 / 2 := by norm_num
+    simp only [hz, Set.Icc.coe_zero, zero_add, Set.projIcc_right, le_refl, hc,
+      ↓reduceIte, apply_of_mem_boundary q s ⟨i, Or.inl hz⟩]
+    exact const_apply _
+  · -- Otherwise the outer concatenation takes its second branch.
+    have hc : ¬((t i + 1) / 2 : ℝ) ≤ 1 / 2 := by linarith
+    simp only [hc, ↓reduceIte]
+
+/-- The relative Hurewicz class of the fat concatenation of `p` and `q` is the sum of their
+relative Hurewicz classes, by the pinch identity
+`TauCeti.singularHomologyMap_cubeBoundaryPair_eq_add` along the direction of `Iⁿ⁺¹` that
+corresponds to `i`. -/
+private lemma hurewicz_fatTrans (i : Fin n) (p q : RelGenLoop (Fin n) X) :
+    hurewicz R (fatTrans i p q) = hurewicz R p + hurewicz R q := by
+  have hupd (z : I^(Fin (n + 1))) (v : I) :
+      (Function.update z i.succ v 0, Fin.tail (Function.update z i.succ v)) =
+        (z 0, Function.update (Fin.tail z) i v) := by
+    rw [Function.update_of_ne (Fin.succ_ne_zero i).symm, Fin.tail_update_succ]
+  have h := singularHomologyMap_cubeBoundaryPair_eq_add R i.succ
+    (f := toCubeBoundaryPairHom (fatTrans i p q)) (g := toCubeBoundaryPairHom p)
+    (h := toCubeBoundaryPairHom q)
+    (fun z h₁ h₂ ↦ by
+      rw [toCubeBoundaryPairHom_fst_apply, fatTrans_apply_of_le_of_le i p q _ h₁ h₂]
+      exact Set.mem_range_self _)
+    (fun z ↦ by
+      have e := toCubeBoundaryPairHom_fst_apply (fatTrans i p q) (⟨Function.update z.down i.succ
+        (Set.projIcc 0 1 zero_le_one (z.down i.succ / 4))⟩ : (cubeBoundaryPair.{w} (n + 1)).fst)
+      dsimp only at e
+      rw [toCubeBoundaryPairHom_fst_apply, e, hupd]
+      exact (fatTrans_apply_quarter i p q _ _).symm)
+    (fun z ↦ by
+      have e := toCubeBoundaryPairHom_fst_apply (fatTrans i p q) (⟨Function.update z.down i.succ
+        (Set.projIcc 0 1 zero_le_one ((z.down i.succ + 1) / 2))⟩ :
+          (cubeBoundaryPair.{w} (n + 1)).fst)
+      dsimp only at e
+      rw [toCubeBoundaryPairHom_fst_apply, e, hupd]
+      exact (fatTrans_apply_upperHalf i p q _ _).symm)
+    (n + 1)
+  rw [hurewicz_def, hurewicz_def, hurewicz_def, h, Preadditive.comp_add]
+
 end RelGenLoop
 
 namespace RelHomotopyGroup
@@ -198,6 +302,45 @@ theorem hurewicz_default : hurewicz R n (default : RelHomotopyGroup (Fin n) X) =
   refine RelGenLoop.hurewicz_eq_zero_of_mem_range R _ fun y ↦ ?_
   rw [RelGenLoop.const_apply]
   exact Set.mem_range_self _
+
+/-- The relative Hurewicz map sends the identity class to zero. -/
+@[simp]
+theorem hurewicz_one : hurewicz R (n + 1) (1 : RelHomotopyGroup (Fin (n + 1)) X) = 0 := by
+  rw [one_eq_default, hurewicz_default]
+
+/-- **The relative Hurewicz map is additive** in degrees at least two: it sends a product of
+relative homotopy classes to the sum of their relative Hurewicz classes. -/
+@[simp]
+theorem hurewicz_mul (a b : RelHomotopyGroup (Fin (n + 1)) X) :
+    hurewicz R (n + 1) (a * b) = hurewicz R (n + 1) a + hurewicz R (n + 1) b := by
+  obtain ⟨q, rfl⟩ := mk_surjective a
+  obtain ⟨p, rfl⟩ := mk_surjective b
+  -- `[q] * [p]` is the class of the fat concatenation, which runs `p` and then `q`.
+  have hp : mk (RelGenLoop.transAt 0 p RelGenLoop.const) = mk p := by
+    rw [← mul_spec, ← one_def, one_mul]
+  rw [hurewicz_mk, hurewicz_mk, add_comm (RelGenLoop.hurewicz R q),
+    ← RelGenLoop.hurewicz_fatTrans R 0, ← hurewicz_mk, RelGenLoop.fatTrans, ← mul_spec, hp]
+
+/-- The relative Hurewicz map sends the inverse of a class to the negative of its relative
+Hurewicz class. -/
+@[simp]
+theorem hurewicz_inv (a : RelHomotopyGroup (Fin (n + 1)) X) :
+    hurewicz R (n + 1) a⁻¹ = -hurewicz R (n + 1) a :=
+  eq_neg_of_add_eq_zero_left (by rw [← hurewicz_mul, inv_mul_cancel, hurewicz_one])
+
+/-- **The relative Hurewicz homomorphism** `π_{n+2}(X, A, a₀) → (R ⟶ Hₙ₊₂(X, A; R))`, from the
+relative homotopy group, written additively, to the group of morphisms from `R` to relative
+singular homology. -/
+def hurewiczHom :
+    Additive (RelHomotopyGroup (Fin (n + 1)) X) →+ (R ⟶ X.pair.singularHomology R (n + 2)) where
+  toFun a := hurewicz R (n + 1) a.toMul
+  map_zero' := hurewicz_one R n
+  map_add' a b := hurewicz_mul R n a.toMul b.toMul
+
+@[simp]
+lemma hurewiczHom_apply (a : Additive (RelHomotopyGroup (Fin (n + 1)) X)) :
+    hurewiczHom R n a = hurewicz R (n + 1) a.toMul :=
+  (rfl)
 
 /-- The inclusion of pairs `(X, {a₀}) ⟶ (X, A)` of a based pair. -/
 private def basepointPairHom (X : BasedTopPair.{w}) :

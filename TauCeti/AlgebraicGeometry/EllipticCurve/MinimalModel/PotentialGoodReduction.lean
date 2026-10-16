@@ -7,7 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve
+public import TauCeti.AlgebraicGeometry.EllipticCurve.DeuringNormalForm
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.DVRExtension.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
@@ -40,13 +41,19 @@ reduction over `S`, where `Δ` is a unit, and descends integrality from `S` to `
 valuation ring, is integrally closed against every ring dominating it. In particular a curve with
 multiplicative reduction, whose `j`-invariant has a pole, never has potential good reduction.
 
-The sufficient direction is proved when `2` is a unit in `R`. Over a finite separable extension the
-curve takes the Legendre form `y² = x (x - 1) (x + B)`, whose `j`-invariant is
-`256 (B² + B + 1)³ / (B² (B + 1)²)`. If it is integral then so are `B`, `1 / B` and `-1 / (B + 1)`,
-being roots of a monic polynomial with integral coefficients, so the discriminant
-`16 B² (B + 1)²` is a unit at any discrete valuation ring of the extension dominating `R`. In
-residue characteristic `2` the Legendre form is not available and this direction is not proved
-here.
+The sufficient direction holds in every residue characteristic as well, by two normal forms, since
+`2` and `3` cannot both lie in the maximal ideal of `R`. In both cases the curve is first put in the
+normal form over a finite separable extension of `K`, whose `j`-invariant is still integral at a
+discrete valuation ring of the extension dominating `R`.
+
+* When `2` is a unit, the curve takes the Legendre form `y² = x (x - 1) (x + B)`, whose
+  `j`-invariant is `256 (B² + B + 1)³ / (B² (B + 1)²)`. If it is integral then so are `B`, `1 / B`
+  and `-1 / (B + 1)`, being roots of a monic polynomial with integral coefficients, so the
+  discriminant `16 B² (B + 1)²` is a unit.
+* When `3` is a unit, the curve takes the Deuring normal form `y² + axy + y = x³`, whose
+  `j`-invariant is `a³ (a³ - 24)³ / (a³ - 27)`. If it is integral then so is `a`, a root of a monic
+  polynomial with integral coefficients, and the discriminant `a³ - 27` divides `3⁶`, so it is a
+  unit.
 
 ## Main definitions
 
@@ -67,13 +74,16 @@ here.
   reduction gives a nonintegral `j`-invariant, so it is not potentially good.
 * `WeierstrassCurve.hasGoodReduction_freyCurve_one`: a curve `y² = x (x - 1) (x + B)` in Legendre
   form with integral `j`-invariant has good reduction where `2` is a unit.
+* `WeierstrassCurve.hasGoodReduction_deuringNormalForm`: a curve `y² + axy + y = x³` in Deuring
+  normal form with integral `j`-invariant has good reduction where `3` is a unit.
 * `WeierstrassCurve.hasPotentialGoodReduction_of_isInteger_j` and
-  `WeierstrassCurve.hasPotentialGoodReduction_iff_isInteger_j`: when `2` is a unit in `R`, a curve
-  with integral `j`-invariant has potential good reduction, so the criterion is an equivalence.
+  `WeierstrassCurve.hasPotentialGoodReduction_iff_isInteger_j`: a curve with integral
+  `j`-invariant has potential good reduction, so the criterion is an equivalence.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.5.4 and VII.5.5.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.5.4, VII.5.5 and
+  Appendix A, Proposition 1.3.
 * J. Neukirch, *Algebraic Number Theory*, II.4.8.
 -/
 
@@ -263,6 +273,43 @@ theorem hasGoodReduction_freyCurve_one (h2 : IsUnit (2 : R)) {B : K}
   rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_eq_of_baseChange_eq hbase]
   exact ((isElliptic_freyCurve_iff 1 β).mpr ⟨h2, isUnit_one, hβu, hβ1⟩).isUnit
 
+/-! ### The Deuring normal form -/
+
+/-- **A curve in Deuring normal form with integral `j`-invariant has good reduction** over a
+discrete valuation ring in which `3` is a unit. The curve is `y² + axy + y = x³`, that is
+`WeierstrassCurve.deuringNormalForm a` (Silverman, *AEC*, VII.5.5). -/
+theorem hasGoodReduction_deuringNormalForm (h3 : IsUnit (3 : R)) {a : K}
+    [(deuringNormalForm a).IsElliptic]
+    (hj : IsLocalization.IsInteger R (deuringNormalForm a).j) :
+    (deuringNormalForm a).HasGoodReduction R := by
+  -- `j = a³ (a³ - 24)³ / (a³ - 27)` forces `a` into `R`, and then the discriminant `a³ - 27`
+  -- divides `3⁶ = (a³ - 27) (j - a⁹ + 45 a⁶ - 513 a³ - 27)`
+  have hΔ : a ^ 3 - 27 ≠ 0 := ((isElliptic_deuringNormalForm_iff a).mp ‹_›).ne_zero
+  obtain ⟨c, hc⟩ := hj
+  have key : a ^ 3 * (a ^ 3 - 24) ^ 3 = algebraMap R K c * (a ^ 3 - 27) := by
+    rw [hc, deuringNormalForm_j, div_mul_cancel₀ _ hΔ]
+  -- `a` is a root of the monic `X³ (X³ - 24)³ - c (X³ - 27)`, so integral over `R`, hence in `R`
+  have ha : _root_.IsIntegral R a := by
+    open Polynomial in
+    refine ⟨X ^ 3 * (X ^ 3 - 24) ^ 3 - C c * (X ^ 3 - 27), ?_, ?_⟩
+    · monicity!
+    · simp only [eval₂_sub, eval₂_pow, eval₂_mul, eval₂_X, eval₂_C, eval₂_ofNat]
+      rw [key, sub_self]
+  obtain ⟨α, hα⟩ := IsIntegrallyClosed.isIntegral_iff.mp ha
+  -- the discriminant `α³ - 27` divides the unit `3⁶`
+  have hdvd : (α ^ 3 - 27) * (c - (α ^ 9 - 45 * α ^ 6 + 513 * α ^ 3 + 27)) = 3 ^ 6 :=
+    IsFractionRing.injective R K (by
+      simp only [map_mul, map_sub, map_add, map_pow, map_ofNat, hα]
+      linear_combination (-1 : K) * key)
+  have hunit : IsUnit (α ^ 3 - 27) := isUnit_of_mul_isUnit_left (hdvd ▸ h3.pow 6)
+  -- the integral equation `y² + αxy + y = x³` has unit discriminant
+  have hbase : (deuringNormalForm α).baseChange K = deuringNormalForm a := by
+    rw [baseChange, map_deuringNormalForm, hα]
+  have : IsIntegral R (deuringNormalForm a) := ⟨⟨deuringNormalForm α, hbase.symm⟩⟩
+  rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_eq_of_baseChange_eq hbase,
+    deuringNormalForm_Δ]
+  exact hunit
+
 end
 
 variable (R : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {K : Type u} [Field K]
@@ -276,24 +323,19 @@ theorem HasGoodReduction.hasPotentialGoodReduction {W : WeierstrassCurve K}
   rw [WeierstrassCurve.baseChange, Algebra.algebraMap_self, map_id]
   exact h.hasGoodReduction_minimal R
 
-/-- **Integral `j`-invariant gives potential good reduction** (Silverman VII.5.5, the sufficient
-direction) when `2` is a unit in `R`, that is away from residue characteristic `2`.
-
-Over a finite separable extension `L` of `K` the curve takes the Legendre form
-`y² = x (x - 1) (x + B)`
-(`WeierstrassCurve.exists_variableChange_smul_baseChange_eq_freyCurve_one`). Its `j`-invariant is
-still integral at a discrete valuation ring of `L` dominating `R`, and a curve in Legendre form with
-integral `j`-invariant has good reduction there (`WeierstrassCurve.hasGoodReduction_freyCurve_one`).
-Here `R` lives in the universe of `K`, as in
-`WeierstrassCurve.HasGoodReduction.hasPotentialGoodReduction`, since that discrete valuation ring
-is built in the universe of `L`. -/
-theorem hasPotentialGoodReduction_of_isInteger_j {W : WeierstrassCurve K} [W.IsElliptic]
-    (h2 : IsUnit (2 : R)) (hj : IsLocalization.IsInteger R W.j) :
+/-- Potential good reduction from a model over a finite separable extension `L` of `K`. Let
+`C • W_L = W'` over `L`. Suppose that, for every discrete valuation ring `S` of a finite separable
+extension `L'` of `K` dominating `R`, and every `K`-embedding `f : L → L'`, the curve `f W'` has
+good reduction at `S` once its `j`-invariant is integral there. Then an integral `j`-invariant
+gives `W` potential good reduction. -/
+private theorem hasPotentialGoodReduction_of_smul_baseChange_eq {W : WeierstrassCurve K}
+    [W.IsElliptic] (hj : IsLocalization.IsInteger R W.j) {L : Type u} [Field L] [Algebra K L]
+    [FiniteDimensional K L] [Algebra.IsSeparable K L] {C : VariableChange L}
+    {W' : WeierstrassCurve L} [W'.IsElliptic] (hC : C • W.baseChange L = W')
+    (hgood : ∀ (E : TauCeti.FiniteDVRExtension R K) (f : L →ₐ[K] E.extensionField),
+      IsLocalization.IsInteger E.localRing (W'.map (f : L →+* E.extensionField)).j →
+        (W'.map (f : L →+* E.extensionField)).HasGoodReduction E.localRing) :
     W.HasPotentialGoodReduction R := by
-  have h2K : (2 : K) ≠ 0 := by
-    rw [← map_ofNat (algebraMap R K) 2]
-    exact (h2.map _).ne_zero
-  obtain ⟨L, _, _, _, _, C, B, hC⟩ := W.exists_variableChange_smul_baseChange_eq_freyCurve_one h2K
   -- a discrete valuation ring `S` dominating `R`, with fraction field `K`-isomorphic to `L`
   let _ : Algebra R L := ((algebraMap K L).comp (algebraMap R K)).toAlgebra
   have : IsScalarTower R K L := .of_algebraMap_eq' rfl
@@ -303,35 +345,79 @@ theorem hasPotentialGoodReduction_of_isInteger_j {W : WeierstrassCurve K} [W.IsE
   set f : L →ₐ[K] L' := e.symm.toAlgHom
   have hRS : (algebraMap S L').comp (algebraMap R S) = (algebraMap K L').comp (algebraMap R K) :=
     RingHom.ext fun r ↦ by simp only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply]
-  -- transport the Legendre form along `f`
-  have hE : C.map (f : L →+* L') • W.baseChange L' = freyCurve 1 (f B) := by
-    rw [← map_baseChange W f, map_variableChange, hC, map_freyCurve, map_one, RingHom.coe_coe]
+  -- transport the model along `f`
+  have hE : C.map (f : L →+* L') • W.baseChange L' = W'.map (f : L →+* L') := by
+    rw [← map_baseChange W f, map_variableChange, hC]
   have : (W.baseChange L').IsElliptic := by rw [baseChange]; infer_instance
-  have : (freyCurve 1 (f B)).IsElliptic := hE ▸ inferInstance
-  have hjE (W' : WeierstrassCurve L') [W'.IsElliptic]
-      (hW' : C.map (f : L →+* L') • W.baseChange L' = W') : W'.j = algebraMap K L' W.j := by
-    subst hW'
+  have hjE (W'' : WeierstrassCurve L') [W''.IsElliptic]
+      (hW'' : C.map (f : L →+* L') • W.baseChange L' = W'') : W''.j = algebraMap K L' W.j := by
+    subst hW''
     rw [variableChange_j]
     exact map_j W (algebraMap K L')
-  -- the `j`-invariant stays integral at `S`, so the Legendre curve has good reduction there
-  have hjS : IsLocalization.IsInteger S (freyCurve 1 (f B)).j := by
+  -- the `j`-invariant stays integral at `S`, so the transported model has good reduction there
+  have hjS : IsLocalization.IsInteger S (W'.map (f : L →+* L')).j := by
     obtain ⟨r, hr⟩ := hj
     refine ⟨algebraMap R S r, ?_⟩
     rw [hjE _ hE, ← hr, ← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply R K L']
-  have h2S : IsUnit (2 : S) := by
-    rw [← map_ofNat (algebraMap R S) 2]
-    exact h2.map _
-  have hgood := hasGoodReduction_freyCurve_one S h2S hjS
   refine .intro R L' S hRS ?_
   rw [← hasGoodReduction_minimal_smul_iff S (C.map (f : L →+* L')), hE]
-  exact hgood.hasGoodReduction_minimal S
+  exact (hgood E f hjS).hasGoodReduction_minimal S
 
-/-- **The `j`-invariant criterion for potential good reduction** (Silverman VII.5.5) away from
-residue characteristic `2`: an elliptic curve has potential good reduction exactly when its
-`j`-invariant is integral. -/
-theorem hasPotentialGoodReduction_iff_isInteger_j {W : WeierstrassCurve K} [W.IsElliptic]
-    (h2 : IsUnit (2 : R)) : W.HasPotentialGoodReduction R ↔ IsLocalization.IsInteger R W.j :=
-  ⟨(·.isInteger_j), hasPotentialGoodReduction_of_isInteger_j R h2⟩
+/-- **Integral `j`-invariant gives potential good reduction** (Silverman VII.5.5, the sufficient
+direction), in every residue characteristic: an elliptic curve over `K` whose `j`-invariant is
+integral, that is lies in the discrete valuation ring `R`, has potential good reduction.
+
+Here `R` lives in the universe of `K`, as in
+`WeierstrassCurve.HasGoodReduction.hasPotentialGoodReduction`, since the discrete valuation ring
+witnessing the good reduction is built in the universe of a finite extension of `K`. -/
+theorem hasPotentialGoodReduction_of_isInteger_j {W : WeierstrassCurve K} [W.IsElliptic]
+    (hj : IsLocalization.IsInteger R W.j) : W.HasPotentialGoodReduction R := by
+  -- One of `2` and `3` is a unit in `R`. Over a finite separable extension `L` of `K` the curve
+  -- takes the Legendre form `y² = x (x - 1) (x + B)` when `2` is a unit, and the Deuring normal
+  -- form `y² + axy + y = x³` when `3` is a unit. Its `j`-invariant stays integral at a discrete
+  -- valuation ring of `L` dominating `R`, where the normal form then has good reduction.
+  by_cases h2 : IsUnit (2 : R)
+  · -- the Legendre form
+    have h2K : (2 : K) ≠ 0 := by
+      rw [← map_ofNat (algebraMap R K) 2]
+      exact (h2.map _).ne_zero
+    obtain ⟨L, _, _, _, _, C, B, hC⟩ :=
+      W.exists_variableChange_smul_baseChange_eq_freyCurve_one h2K
+    have : (W.baseChange L).IsElliptic := by rw [baseChange]; infer_instance
+    have : (freyCurve 1 B).IsElliptic := hC ▸ inferInstance
+    refine hasPotentialGoodReduction_of_smul_baseChange_eq R hj hC fun E f hjS ↦ ?_
+    have h2S : IsUnit (2 : E.localRing) := by
+      rw [← map_ofNat (algebraMap R E.localRing) 2]
+      exact h2.map _
+    have hB := map_freyCurve 1 B (f : L →+* E.extensionField)
+    rw [map_one] at hB
+    have : (freyCurve 1 ((f : L →+* E.extensionField) B)).IsElliptic := hB ▸ inferInstance
+    simp_rw [hB] at hjS ⊢
+    exact hasGoodReduction_freyCurve_one _ h2S hjS
+  · -- the Deuring normal form, since `1 - 3 = -2` is not a unit
+    have h3 : IsUnit (3 : R) := (IsLocalRing.isUnit_or_isUnit_one_sub_self (3 : R)).resolve_right
+      fun h ↦ h2 (by rw [show (1 : R) - 3 = -2 by norm_num, IsUnit.neg_iff] at h; exact h)
+    have h3K : (3 : K) ≠ 0 := by
+      rw [← map_ofNat (algebraMap R K) 3]
+      exact (h3.map _).ne_zero
+    obtain ⟨L, _, _, _, _, C, a, hC⟩ :=
+      W.exists_variableChange_smul_baseChange_eq_deuringNormalForm h3K
+    have : (W.baseChange L).IsElliptic := by rw [baseChange]; infer_instance
+    have : (deuringNormalForm a).IsElliptic := hC ▸ inferInstance
+    refine hasPotentialGoodReduction_of_smul_baseChange_eq R hj hC fun E f hjS ↦ ?_
+    have h3S : IsUnit (3 : E.localRing) := by
+      rw [← map_ofNat (algebraMap R E.localRing) 3]
+      exact h3.map _
+    have ha := map_deuringNormalForm a (f : L →+* E.extensionField)
+    have : (deuringNormalForm ((f : L →+* E.extensionField) a)).IsElliptic := ha ▸ inferInstance
+    simp_rw [ha] at hjS ⊢
+    exact hasGoodReduction_deuringNormalForm _ h3S hjS
+
+/-- **The `j`-invariant criterion for potential good reduction** (Silverman VII.5.5): an elliptic
+curve has potential good reduction exactly when its `j`-invariant is integral. -/
+theorem hasPotentialGoodReduction_iff_isInteger_j {W : WeierstrassCurve K} [W.IsElliptic] :
+    W.HasPotentialGoodReduction R ↔ IsLocalization.IsInteger R W.j :=
+  ⟨(·.isInteger_j), hasPotentialGoodReduction_of_isInteger_j R⟩
 
 end WeierstrassCurve
 

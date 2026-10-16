@@ -162,7 +162,7 @@ theorem IsRestricted.subst [Finite σ] {a : σ → MvPolynomial τ R}
   refine (norm_coeff_subst_coe_le ha₀ ha₁ f e (half_pos hε).le fun d hd ↦ ?_).trans_lt
     (half_lt_self hε)
   by_contra hlt
-  exact he (Set.mem_biUnion (le_of_not_ge hlt) (MvPolynomial.mem_support_iff.mpr hd))
+  exact he (Set.mem_iUnion₂.mpr ⟨d, le_of_not_ge hlt, MvPolynomial.mem_support_iff.mpr hd⟩)
 
 variable [Finite σ] (a : σ → MvPolynomial τ R) (ha₀ : ∀ s, (a s).constantCoeff = 0)
   (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1)

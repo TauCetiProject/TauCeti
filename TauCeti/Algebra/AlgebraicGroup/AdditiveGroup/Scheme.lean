@@ -44,8 +44,6 @@ affine-space APIs.
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebra`: the symmetric Hopf algebra representing `G_a`.
 * `TauCeti.AdditiveGroup.coordinateAlgEquiv`: its rank-one polynomial presentation.
-* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: its prime spectrum
-  is connected over a domain.
 * `TauCeti.AdditiveGroup.isReduced_coordinateHopfAlgebra`: it is reduced over a reduced ring.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
@@ -127,11 +125,6 @@ instance instSmoothSymmetricAlgebra : Algebra.Smooth R (SymmetricAlgebra R R) :=
   letI : Algebra.Smooth R (MvPolynomial (CoordinateIndex.{u}) R) :=
     ⟨inferInstance, inferInstance⟩
   Algebra.Smooth.of_equiv (coordinateAlgEquiv R).symm
-
-/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
-theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra [IsDomain R] :
-    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra R)) :=
-  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra R R)))
 
 /-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
 algebra on the single generator `x`. -/
@@ -252,7 +245,8 @@ noncomputable def groupSchemePointMulEquiv :
     (coordinateHopfAlgebra R) A (groupScheme_def R)
 
 /-- The underlying map of the spectrum point associated to an algebra point. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     (groupSchemePointMulEquiv A f).left =

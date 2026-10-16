@@ -57,13 +57,14 @@ theorem diagramGraph_graphCartanMatrix : diagramGraph (G.graphCartanMatrix ℤ) 
   · simp only [hij, hij.symm, ne_eq, not_false_eq_true, ↓reduceIte, true_and, G.adj_comm j i]
     split_ifs <;> simp_all
 
-variable {G} [Fintype V]
+variable {G} [Finite V]
 
 /-- **A positive definite graph Cartan matrix is of finite type.** If `2I - A` is positive
 definite over some linear ordered field, then the integer matrix `2I - A` is of finite type. -/
 theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] [StarRing R] [TrivialStar R] (h : (G.graphCartanMatrix R).PosDef) :
     IsFiniteType (G.graphCartanMatrix ℤ) := by
+  have : Fintype V := Fintype.ofFinite V
   refine isFiniteType_of_posDef_map_intCast (fun i ↦ by simp) (fun i j hij ↦ ?_) ?_
   · simp only [graphCartanMatrix_apply, hij, ↓reduceIte]
     split_ifs <;> simp
@@ -85,6 +86,7 @@ theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOr
   rw [← hcast, Rat.coe_castHom, Rat.cast_pos] at hpos
   rwa [star_trivial]
 
+omit [Finite V] in
 /-- **A connected graph of finite type is a simply-laced Dynkin diagram.** If the generalized
 Cartan matrix `2I - A` of a connected simple graph `G` is of finite type, then `G` is isomorphic to
 the diagram of the standard Cartan matrix of a valid Dynkin type, which is of type `A`, `D` or `E`:
@@ -120,7 +122,7 @@ theorem graphCartanMatrix_diagramGraph_cartanMatrix {t : DynkinType}
   have hzero := DynkinType.cartanMatrix_apply_eq_zero_iff_symm t i j
   rcases ht hij with h | h <;> simp [h] at hzero <;> simp [hij, h, hzero]
 
-omit [Fintype V] in
+omit [Finite V] in
 /-- **A graph isomorphic to the diagram of a simply-laced standard Cartan matrix has a positive
 definite `2I - A`.** The matrix `2I - A` of the diagram is the standard Cartan matrix
 (`SimpleGraph.graphCartanMatrix_diagramGraph_cartanMatrix`), which is positive definite, and an
@@ -137,10 +139,9 @@ theorem posDef_graphCartanMatrix_of_iso {t : DynkinType} (ht : t.cartanMatrix.Is
   rw [hrel]
   exact (t.posDef_map_intCast_cartanMatrix_of_isSimplyLaced ht).submatrix φ.injective
 
-omit [Fintype V] in
 /-- **A connected graph has a positive definite `2I - A` exactly when it is a simply-laced Dynkin
 diagram**, that is, isomorphic to the diagram of a valid Dynkin type of type `A`, `D` or `E`. -/
-theorem posDef_graphCartanMatrix_iff [Finite V] (hG : G.Connected) :
+theorem posDef_graphCartanMatrix_iff (hG : G.Connected) :
     (G.graphCartanMatrix ℚ).PosDef ↔ ∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧
       Nonempty (G ≃g diagramGraph t.cartanMatrix) := by
   have := Fintype.ofFinite V

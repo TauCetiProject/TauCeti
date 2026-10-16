@@ -52,7 +52,6 @@ namespace TauCeti
 
 noncomputable section
 
-attribute [local instance] Classical.decEq
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace IsGlHighestWeightVector
