@@ -62,8 +62,7 @@ namespace TauCeti
 
 universe uR uA uP
 
-variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A] in
 /-- A **twisting cocycle** with values in the differential graded algebra `(𝒜, d)`, on the finite
 set `P` of generators graded by `ind`.  The entry `m x y` is the coefficient of `y` in the twisted
 differential of `x`.  It is homogeneous of cohomological degree `ind y - ind x + 1`, the matrix
@@ -82,7 +81,10 @@ structure TwistingCocycle (𝒜 : ℤ → Submodule R A) (d : A →ₗ[R] A) (P 
 
 namespace TwistingCocycle
 
-variable {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {P : Type uP} {ind : P → ℤ}
+section Semiring
+
+variable {R : Type uR} {A : Type uA} [Semiring R] [AddCommMonoid A] [Module R A]
+  {𝒜 : ℤ → Submodule R A} {P : Type uP} {ind : P → ℤ}
 
 /-- Over a cohomologically nonpositive algebra, the degree condition alone forces one-sidedness:
 an entry `m x y` with `ind x ≤ ind y` lives in a positive degree, where the algebra vanishes.  This
@@ -95,7 +97,10 @@ theorem one_sided_of_nonpos (m : P → P → A) (hm : ∀ x y, m x y ∈ 𝒜 (i
   rw [h𝒜 _ (by omega)] at h
   exact (Submodule.mem_bot R).1 h
 
-variable [Fintype P]
+end Semiring
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {P : Type uP} [Fintype P] {ind : P → ℤ}
 
 @[ext]
 theorem ext {m₁ m₂ : TwistingCocycle 𝒜 d P ind} (h : ∀ x y, m₁.m x y = m₂.m x y) : m₁ = m₂ := by
