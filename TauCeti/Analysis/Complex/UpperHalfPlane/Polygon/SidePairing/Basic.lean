@@ -334,6 +334,7 @@ theorem mem_cycle_iff (j i : Fin n) : i ∈ σ.cycle j ↔ ∃ m, σ.next^[m] j 
 
 /-- A vertex `i` is on the cycle through `j` if and only if it is in the same cycle of the
 successor permutation. -/
+@[simp]
 theorem mem_cycle_iff_sameCycle (j i : Fin n) : i ∈ σ.cycle j ↔ σ.next.SameCycle j i := by
   simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
 
