@@ -69,31 +69,22 @@ theorem relativePicardDegreeZeroAddPresheaf_eq :
       relativePicardDegreeZeroFunctor f ⋙ CommGrpCat.toAddCommGrp := by
   rw [relativePicardDegreeZeroAddPresheaf]
 
-/-- A section of the multiplicatively written degree-zero Picard functor, regarded as a section
-of its additive presentation. -/
-def relativePicardDegreeZeroAddPresheafOfMul (T : (Over S)ᵒᵖ)
-    (c : (relativePicardDegreeZeroFunctor f).obj T) :
-    (relativePicardDegreeZeroAddPresheaf f).obj T := by
-  rw [relativePicardDegreeZeroAddPresheaf_eq]
-  exact Additive.ofMul c
+/-- The sections of the additive degree-zero Picard presheaf are the additive presentation of
+the sections of the multiplicatively written degree-zero Picard functor. -/
+def relativePicardDegreeZeroAddPresheafAddEquiv (T : (Over S)ᵒᵖ) :
+    Additive ((relativePicardDegreeZeroFunctor f).obj T) ≃+
+      (relativePicardDegreeZeroAddPresheaf f).obj T :=
+  AddEquiv.refl _
 
 /-- Pullback of a section commutes with changing the degree-zero Picard functor from
 multiplicative to additive notation. -/
 @[simp]
-lemma relativePicardDegreeZeroAddPresheaf_map_ofMul {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
+lemma relativePicardDegreeZeroAddPresheaf_map_addEquiv_ofMul {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
     (c : (relativePicardDegreeZeroFunctor f).obj T) :
     (relativePicardDegreeZeroAddPresheaf f).map φ
-        (relativePicardDegreeZeroAddPresheafOfMul f T c) =
-      relativePicardDegreeZeroAddPresheafOfMul f T'
-        ((relativePicardDegreeZeroFunctor f).map φ c) := by
-  rfl
-
-/-- The multiplicative identity becomes the additive identity under the additive presentation of
-the degree-zero Picard functor. -/
-@[simp]
-lemma relativePicardDegreeZeroAddPresheafOfMul_one (T : (Over S)ᵒᵖ) :
-    relativePicardDegreeZeroAddPresheafOfMul f T 1 = 0 := by
-  rw [relativePicardDegreeZeroAddPresheafOfMul]
+        (relativePicardDegreeZeroAddPresheafAddEquiv f T (Additive.ofMul c)) =
+      relativePicardDegreeZeroAddPresheafAddEquiv f T'
+        (Additive.ofMul ((relativePicardDegreeZeroFunctor f).map φ c)) := by
   rfl
 
 private instance : Mono (Functor.whiskerRight (relativePicardDegreeZeroFunctorι f)
@@ -167,20 +158,20 @@ def relativePicardDegreeZeroToFppfSheafOfMul :
       (relativePicardDegreeZeroFppfSheaf f).obj ⋙ forget AddCommGrpCat where
   app T := TypeCat.ofHom fun c ↦
     (relativePicardDegreeZeroToFppfSheaf f).app T
-      (relativePicardDegreeZeroAddPresheafOfMul f T c)
+      (relativePicardDegreeZeroAddPresheafAddEquiv f T (Additive.ofMul c))
   naturality T T' φ := by
     ext c
     -- Expose the pointwise form hidden by the two forgetful-functor composites.
     change (relativePicardDegreeZeroToFppfSheaf f).app T'
-        (relativePicardDegreeZeroAddPresheafOfMul f T'
-          ((relativePicardDegreeZeroFunctor f).map φ c)) =
+        (relativePicardDegreeZeroAddPresheafAddEquiv f T'
+          (Additive.ofMul ((relativePicardDegreeZeroFunctor f).map φ c))) =
       ((relativePicardDegreeZeroFppfSheaf f).obj.map φ)
         ((relativePicardDegreeZeroToFppfSheaf f).app T
-          (relativePicardDegreeZeroAddPresheafOfMul f T c))
-    rw [← relativePicardDegreeZeroAddPresheaf_map_ofMul]
+          (relativePicardDegreeZeroAddPresheafAddEquiv f T (Additive.ofMul c)))
+    rw [← relativePicardDegreeZeroAddPresheaf_map_addEquiv_ofMul]
     exact ConcreteCategory.congr_hom
       (NatTrans.naturality (relativePicardDegreeZeroToFppfSheaf f) φ)
-      (relativePicardDegreeZeroAddPresheafOfMul f T c)
+      (relativePicardDegreeZeroAddPresheafAddEquiv f T (Additive.ofMul c))
 
 /-- The canonical map from the multiplicative degree-zero Picard presheaf sends a section to the
 sheafification image of the corresponding additive section. -/
@@ -192,7 +183,7 @@ lemma relativePicardDegreeZeroToFppfSheafOfMul_app_apply {T : (Over S)ᵒᵖ}
         (Y := ToType ((relativePicardDegreeZeroFppfSheaf f).obj.obj T))
         ((relativePicardDegreeZeroToFppfSheafOfMul f).app T) c =
       (relativePicardDegreeZeroToFppfSheaf f).app T
-        (relativePicardDegreeZeroAddPresheafOfMul f T c) := by
+        (relativePicardDegreeZeroAddPresheafAddEquiv f T (Additive.ofMul c)) := by
   rw [relativePicardDegreeZeroToFppfSheafOfMul]
   rfl
 

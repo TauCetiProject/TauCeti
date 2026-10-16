@@ -76,9 +76,10 @@ lemma abelJacobiMapOfDegreeToPicZeroFppf_app_apply (d : ℕ) {T : (Over S)ᵒᵖ
         (Y := ToType ((relativePicardDegreeZeroFppfSheaf f).obj.obj T))
         ((abelJacobiMapOfDegreeToPicZeroFppf f hx₀ d).app T) D =
       (relativePicardDegreeZeroToFppfSheaf f).app T
-        (relativePicardDegreeZeroAddPresheafOfMul f T (relativePicardDegreeZeroFunctor.mk f
-          ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).1
-          ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).2)) :=
+        (relativePicardDegreeZeroAddPresheafAddEquiv f T
+          (Additive.ofMul (relativePicardDegreeZeroFunctor.mk f
+            ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).1
+            ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).2))) :=
   by
     rw [abelJacobiMapOfDegreeToPicZeroFppf]
     simp only [NatTrans.comp_app, ConcreteCategory.comp_apply]
@@ -127,7 +128,7 @@ theorem abelJacobiMapToPicZeroFppf_app_basePoint (T : (Over S)ᵒᵖ) :
           ((abelJacobiMapToPicZero f hx₀).app T
             (ULift.up (basePoint hx₀ T.unop))).1 := (congrArg Subtype.val hcomp).symm
       _ = 1 := abelJacobiMapToPicZero_app_basePoint_val f hx₀ T
-  rw [h, relativePicardDegreeZeroAddPresheafOfMul_one, map_zero]
+  rw [h, ofMul_one, map_zero, map_zero]
   rfl
 
 end
