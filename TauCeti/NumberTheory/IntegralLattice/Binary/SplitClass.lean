@@ -57,7 +57,11 @@ def binarySplitProperClass (L : IntegralLattice V) (hV : Module.finrank ℚ V = 
     (hD : L.binaryDiscriminant hV = (s : ℤ) ^ 2) (o : Orientation ℤ L (Fin 2)) :
     BinaryQuadraticForm.splitProperClassToProperClass s (L.binarySplitProperClass hV s hD o) =
       L.binaryProperClass hV o := by
-  rfl
+  let b := (Module.finBasisOfFinrankEq ℤ L
+    (L.finrank_carrier.trans hV)).adjustToOrientation o
+  simpa only [binarySplitProperClass, b,
+    BinaryQuadraticForm.splitProperClassToProperClass_mk] using
+    (L.binaryProperClass_eq_mk b hV o (Basis.orientation_adjustToOrientation _ _)).symm
 
 /-- A binary lattice of primitive discriminant one has the principal split proper class
 in every orientation. -/
@@ -85,7 +89,7 @@ theorem hyperbolicPlane_binarySplitProperClass (o : Orientation ℤ hyperbolicPl
   apply BinaryQuadraticForm.splitProperClassToProperClass_injective 1
   rw [binarySplitProperClass_toProperClass, hyperbolicPlane_binaryProperClass,
     BinaryQuadraticForm.splitProperClassToProperClass_splitProperClassMk]
-  simpa only [BinaryQuadraticForm.splitPrincipalForm_def,
+  simpa only [Nat.cast_one, BinaryQuadraticForm.splitPrincipalForm_def,
     BinaryQuadraticForm.splitTriangularForm_def] using
     (BinaryQuadraticForm.properClass_splitTriangularForm_eq_iff 1 0 1 one_ne_zero).mpr
       (one_dvd _)
