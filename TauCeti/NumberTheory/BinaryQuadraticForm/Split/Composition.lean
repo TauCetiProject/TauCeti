@@ -87,13 +87,9 @@ have the same residue modulo the nonzero square root. -/
   rw [← Quotient.eq, properClass_splitTriangularForm_eq_iff _ _ _
     (Nat.cast_ne_zero.mpr (NeZero.ne s)), ZMod.intCast_eq_intCast_iff_dvd_sub, dvd_sub_comm]
 
-private theorem isCoprime_unit_val (s : ℕ) (u : (ZMod s)ˣ) :
-    IsCoprime (s : ℤ) ((u : ZMod s).val : ℤ) :=
-  (ZMod.val_coe_unit_coprime u).isCoprime.symm
-
 /-- A unit residue gives the proper class of its triangular form. -/
 def splitUnitToProperClass (s : ℕ) (u : (ZMod s)ˣ) : SplitProperClass s :=
-  splitProperClassMk s (u : ZMod s).val (isCoprime_unit_val s u)
+  splitProperClassMk s (u : ZMod s).val (ZMod.val_coe_unit_coprime u).isCoprime.symm
 
 /-- Distinct unit residues give distinct proper classes. -/
 theorem splitUnitToProperClass_injective (s : ℕ) [NeZero s] :
@@ -191,9 +187,9 @@ def splitProperClassModule (s : ℕ) [NeZero s] :
         simp only [Int.cast_natCast, ZMod.natCast_zmod_val, Int.cast_one]
       _ = 1 := splitModule_one s
   map_mul' p q := by
+    have hc := (ZMod.val_coe_unit_coprime (splitProperClassEquivUnits s p)).isCoprime.symm
     rw [map_mul, splitModule_mul _ _ _
-      ((isCoprime_unit_val s (splitProperClassEquivUnits s p)).of_isCoprime_of_dvd_right
-        (Int.gcd_dvd_left _ _))]
+      (hc.of_isCoprime_of_dvd_right (Int.gcd_dvd_left _ _))]
     apply splitModule_eq_of_cast_eq
     simp only [Int.cast_natCast, Int.cast_mul, ZMod.natCast_zmod_val, Units.val_mul]
 
