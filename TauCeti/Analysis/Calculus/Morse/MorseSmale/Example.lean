@@ -189,10 +189,8 @@ theorem fderiv_cosAddHalfSq_eq_zero_iff {z : EuclideanSpace ℝ (Fin 2)} :
 theorem isNondegenerateCriticalPoint_cosAddHalfSq {z : EuclideanSpace ℝ (Fin 2)}
     (hz : fderiv ℝ cosAddHalfSq z = 0) : IsNondegenerateCriticalPoint cosAddHalfSq z := by
   have hc : Real.cos (z 0) ≠ 0 := by
-    intro h
-    have := Real.sin_sq_add_cos_sq (z 0)
-    rw [(fderiv_cosAddHalfSq_eq_zero_iff.1 hz).1, h] at this
-    norm_num at this
+    rcases Real.sin_eq_zero_iff_cos_eq.1 (fderiv_cosAddHalfSq_eq_zero_iff.1 hz).1 with h | h <;>
+      rw [h] <;> norm_num
   refine isNondegenerateCriticalPoint_iff_separatingLeft.2
     ⟨contDiff_cosAddHalfSq.contDiffAt, hz,
       (ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective _).2 fun v w hvw ↦ ?_⟩
@@ -271,9 +269,7 @@ private noncomputable abbrev onAxis (z : EuclideanSpace ℝ (Fin 2)) : Euclidean
 private theorem fderiv_cosAddHalfSq_onAxis {z : EuclideanSpace ℝ (Fin 2)}
     (h : Real.cos (z 0) = 1 ∨ Real.cos (z 0) = -1) : fderiv ℝ cosAddHalfSq (onAxis z) = 0 := by
   refine fderiv_cosAddHalfSq_eq_zero_iff.2 ⟨?_, by simp⟩
-  have := Real.sin_sq_add_cos_sq (z 0)
-  have hs : Real.sin (z 0) ^ 2 = 0 := by rcases h with h | h <;> rw [h] at this <;> linarith
-  simpa using pow_eq_zero_iff (two_ne_zero) |>.1 hs
+  simpa using Real.sin_eq_zero_iff_cos_eq.2 h
 
 /-- At a point with `cos x = -1`, a minimum when it is critical, the Morse index is `0`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2)}
@@ -480,8 +476,7 @@ theorem isMorseSmale_cosAddHalfSq :
   replace hq := hq.fderiv_eq_zero
   have hpc := fderiv_cosAddHalfSq_eq_zero_iff.1 hp
   have hqc := fderiv_cosAddHalfSq_eq_zero_iff.1 hq
-  have hcos : Real.cos (q 0) = 1 ∨ Real.cos (q 0) = -1 :=
-    mul_self_eq_one_iff.1 (by nlinarith [Real.sin_sq_add_cos_sq (q 0), hqc.1])
+  have hcos : Real.cos (q 0) = 1 ∨ Real.cos (q 0) = -1 := Real.sin_eq_zero_iff_cos_eq.1 hqc.1
   rcases hcos with hc | hc
   · -- `q` is a saddle: then `y = q`, and `p = q`.
     have hy0 := apply_zero_eq_of_mem_stableSet hqc.1 hc hys
