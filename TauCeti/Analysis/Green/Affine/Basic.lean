@@ -321,4 +321,21 @@ theorem contDiff_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {n : WithTop ℕ∞
   rw [affineMap_apply]
   rfl
 
+/-- Both coefficients of an affine pullback retain regularity on the preimage domain. -/
+theorem contDiffOn_affinePullback {n : WithTop ℕ∞} {A : ℂ ≃L[ℝ] ℂ} {c : ℂ} {U : Set ℂ}
+    {P Q : ℂ → ℝ} (hP : ContDiffOn ℝ n P U) (hQ : ContDiffOn ℝ n Q U) :
+    ContDiffOn ℝ n (affinePullbackP A c P Q) (affineMap A c ⁻¹' U) ∧
+      ContDiffOn ℝ n (affinePullbackQ A c P Q) (affineMap A c ⁻¹' U) := by
+  have hp := hP.comp (contDiff_affineMap A c).contDiffOn (mapsTo_preimage _ _)
+  have hq := hQ.comp (contDiff_affineMap A c).contDiffOn (mapsTo_preimage _ _)
+  constructor
+  · convert (hp.mul (contDiffOn_const (c := (A 1).re))).add
+      (hq.mul (contDiffOn_const (c := (A 1).im))) using 1
+    ext z
+    exact affinePullbackP_apply A c P Q z
+  · convert (hp.mul (contDiffOn_const (c := (A Complex.I).re))).add
+      (hq.mul (contDiffOn_const (c := (A Complex.I).im))) using 1
+    ext z
+    exact affinePullbackQ_apply A c P Q z
+
 end TauCeti.Green

@@ -26,9 +26,10 @@ open MeasureTheory Set
 namespace TauCeti.Green
 
 /-- Every continuous field has zero circulation around a degenerate ordered triangle.
-The proof uses actual one-dimensional integrals, including arbitrary backtracking. -/
+This includes arbitrary backtracking and repeated vertices. -/
 theorem curveIntegral_triangle_eq_zero_of_det_eq_zero {c p q : ℂ}
-    (hdet : triangleDet c p q = 0) {P Q : ℂ → ℝ} (hP : Continuous P) (hQ : Continuous Q) :
+    (hdet : triangleDet c p q = 0) {P Q : ℂ → ℝ} (hP : ContinuousOn P (convexHull ℝ {c, p, q}))
+    (hQ : ContinuousOn Q (convexHull ℝ {c, p, q})) :
     curveIntegral (oneForm P Q) (Path.segment c p) +
       curveIntegral (oneForm P Q) (Path.segment p q) -
       curveIntegral (oneForm P Q) (Path.segment c q) = 0 := by
@@ -53,16 +54,31 @@ theorem curveIntegral_triangle_eq_zero_of_det_eq_zero {c p q : ℂ}
   rw [← hp, ← hq] at h₂
   rw [← hc, ← hq] at h₃
   rw [h₁, h₂, h₃]
-  have hcont : Continuous (fun t : ℝ ↦ oneForm P Q (c + t • (p - c)) (p - c)) := by
-    simp only [oneForm_apply]
-    fun_prop
-  rw [intervalIntegral.integral_add_adjacent_intervals (hcont.intervalIntegrable 0 1)
-    (hcont.intervalIntegrable 1 r), sub_self]
+  let T : Set ℝ := AffineMap.lineMap c p ⁻¹' convexHull ℝ {c, p, q}
+  have hT : Convex ℝ T := (convex_convexHull ℝ _).affine_preimage (AffineMap.lineMap c p)
+  have hzero : (0 : ℝ) ∈ T := by simp [T, subset_convexHull ℝ _ (by simp : c ∈ {c, p, q})]
+  have hone : (1 : ℝ) ∈ T := by simp [T, subset_convexHull ℝ _ (by simp : p ∈ {c, p, q})]
+  have hr : r ∈ T := by
+    change AffineMap.lineMap c p r ∈ convexHull ℝ {c, p, q}
+    rw [AffineMap.lineMap_apply_module', add_comm, ← hq]
+    exact subset_convexHull ℝ _ (by simp)
+  have hline : Continuous (AffineMap.lineMap c p : ℝ → ℂ) := by fun_prop
+  have hcont : ContinuousOn (fun t : ℝ ↦ oneForm P Q (c + t • (p - c)) (p - c)) T := by
+    have hp := hP.comp hline.continuousOn (mapsTo_preimage _ _)
+    have hq' := hQ.comp hline.continuousOn (mapsTo_preimage _ _)
+    simpa only [oneForm_apply, Function.comp_apply, AffineMap.lineMap_apply_module',
+      add_comm, Pi.add_def, Pi.mul_def] using
+      (hp.mul (continuousOn_const (c := (p - c).re))).add
+        (hq'.mul (continuousOn_const (c := (p - c).im)))
+  rw [intervalIntegral.integral_add_adjacent_intervals
+    (hcont.mono (hT.ordConnected.uIcc_subset hzero hone)).intervalIntegrable
+    (hcont.mono (hT.ordConnected.uIcc_subset hone hr)).intervalIntegrable, sub_self]
 
 /-- Degenerate triangle Green for continuous fields: both the actual circulation and every
 area integral vanish. Area integrability follows from the null convex hull. -/
 theorem green_triangle_of_det_eq_zero {c p q : ℂ} (hdet : triangleDet c p q = 0)
-    {P Q : ℂ → ℝ} (hP : Continuous P) (hQ : Continuous Q) :
+    {P Q : ℂ → ℝ} (hP : ContinuousOn P (convexHull ℝ {c, p, q}))
+    (hQ : ContinuousOn Q (convexHull ℝ {c, p, q})) :
     IntegrableOn (curl P Q) (convexHull ℝ {c, p, q}) ∧
       curveIntegral (oneForm P Q) (Path.segment c p) +
         curveIntegral (oneForm P Q) (Path.segment p q) -
@@ -73,20 +89,22 @@ theorem green_triangle_of_det_eq_zero {c p q : ℂ} (hdet : triangleDet c p q = 
     setIntegral_measure_zero _ harea⟩
   simp [IntegrableOn, Measure.restrict_eq_zero.mpr harea]
 
-/-- Green's theorem for every ordered triangle and globally `C¹` fields, including collinear
-and repeated vertices. The determinant sign agrees with the triangle's winding orientation. -/
-theorem green_triangle (c p q : ℂ) {P Q : ℂ → ℝ}
-    (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
+/-- Green's theorem for every ordered triangle and fields that are `C¹` on an open neighborhood,
+including collinear and repeated vertices. The determinant sign agrees with the triangle's winding
+orientation. -/
+theorem green_triangle (c p q : ℂ) {U : Set ℂ} (hU : IsOpen U)
+    (hTU : convexHull ℝ {c, p, q} ⊆ U) {P Q : ℂ → ℝ}
+    (hP : ContDiffOn ℝ 1 P U) (hQ : ContDiffOn ℝ 1 Q U) :
     IntegrableOn (curl P Q) (convexHull ℝ {c, p, q}) ∧
       curveIntegral (oneForm P Q) (Path.segment c p) +
         curveIntegral (oneForm P Q) (Path.segment p q) -
         curveIntegral (oneForm P Q) (Path.segment c q) =
           Real.sign (triangleDet c p q) * ∫ z in convexHull ℝ {c, p, q}, curl P Q z := by
   by_cases hdet : triangleDet c p q = 0
-  · have h := green_triangle_of_det_eq_zero hdet hP.continuous hQ.continuous
+  · have h := green_triangle_of_det_eq_zero hdet (hP.continuousOn.mono hTU)
+      (hQ.continuousOn.mono hTU)
     exact ⟨h.1, by simpa only [hdet, Real.sign_zero, zero_mul] using h.2.1⟩
-  · have h := green_triangle_of_det_ne_zero hdet isOpen_univ (subset_univ _)
-      hP.contDiffOn hQ.contDiffOn
+  · have h := green_triangle_of_det_ne_zero hdet hU hTU hP hQ
     have hsign : triangleDet c p q / |triangleDet c p q| = Real.sign (triangleDet c p q) := by
       rcases lt_or_gt_of_ne hdet with hn | hp
       · rw [abs_of_neg hn, div_neg, div_self hdet, Real.sign_of_neg hn]

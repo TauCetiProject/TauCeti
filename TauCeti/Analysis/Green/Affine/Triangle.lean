@@ -124,22 +124,6 @@ theorem integral_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠
     integral_affineMap_image _ _ isCompact_standardTriangle.measurableSet,
     det_triangleCoordinates]
 
-private theorem contDiffOn_affinePullback {A : ℂ ≃L[ℝ] ℂ} {c : ℂ} {U : Set ℂ}
-    {P Q : ℂ → ℝ} (hP : ContDiffOn ℝ 1 P U) (hQ : ContDiffOn ℝ 1 Q U) :
-    ContDiffOn ℝ 1 (affinePullbackP A c P Q) (affineMap A c ⁻¹' U) ∧
-      ContDiffOn ℝ 1 (affinePullbackQ A c P Q) (affineMap A c ⁻¹' U) := by
-  have hp := hP.comp (contDiff_affineMap A c).contDiffOn (mapsTo_preimage _ _)
-  have hq := hQ.comp (contDiff_affineMap A c).contDiffOn (mapsTo_preimage _ _)
-  constructor
-  · convert (hp.mul (contDiffOn_const (c := (A 1).re))).add
-      (hq.mul (contDiffOn_const (c := (A 1).im))) using 1
-    ext z
-    exact affinePullbackP_apply A c P Q z
-  · convert (hp.mul (contDiffOn_const (c := (A Complex.I).re))).add
-      (hq.mul (contDiffOn_const (c := (A Complex.I).im))) using 1
-    ext z
-    exact affinePullbackQ_apply A c P Q z
-
 /-- Green's theorem on any nondegenerate ordered triangle. The sign of its orientation is
 `triangleDet / |triangleDet|`, and the area integral uses the usual positive planar volume. -/
 theorem green_triangle_of_det_ne_zero {c p q : ℂ} (hdet : triangleDet c p q ≠ 0)

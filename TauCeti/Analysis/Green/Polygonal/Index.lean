@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Green.Polygonal.Basic
 public import TauCeti.Analysis.Green.Polygonal.Geometry
+import TauCeti.Analysis.Complex.PlaneSeparation.Segment
 public import Mathlib.Basic.Real.Sign
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Bounds
 import TauCeti.Analysis.Contour.Winding.Number.Concat
@@ -17,9 +18,9 @@ import TauCeti.Analysis.Contour.Winding.Continuity
 /-!
 # The winding number of an oriented triangle
 
-The actual contour winding number of the three-edge triangle boundary is one on its interior
-when the ordered determinant is positive. Each edge contributes a real part strictly between zero
-and one half; additivity and integrality identify their sum.
+The triangle winding number is positive or negative on the interior according to the ordered
+orientation and vanishes outside the convex hull, including for degenerate triangles away from
+their edges. These signed certificates supply the triangle indicators in finite fan identities.
 -/
 
 public section
@@ -27,18 +28,6 @@ public section
 open Set MeasureTheory Complex
 
 namespace TauCeti.Green
-
-private theorem edge_avoid {p q z : ℂ} (h : 0 < ((z - p) / (q - p)).im) :
-    z ∉ segment ℝ p q := by
-  have hv : q - p ≠ 0 := by
-    intro he
-    simp only [he, div_zero, Complex.zero_im] at h
-    exact h.false
-  rw [segment_eq_image']
-  rintro ⟨t, _, rfl⟩
-  rw [add_sub_cancel_left, Complex.real_smul, mul_div_cancel_right₀ _ hv,
-    Complex.ofReal_im] at h
-  exact h.false
 
 /-- Away from the three edges, the triangle winding number is the sum of the edge windings. -/
 theorem windingNumber_triangleCurve_eq_sum {c p q z : ℂ}
@@ -128,7 +117,9 @@ theorem windingNumber_triangleCurve_eq_one {c p q z : ℂ} (hdet : 0 < triangleD
   obtain ⟨h₁, h₂, h₃⟩ := interior_edge_heights hdet hz
   have havoid : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c := by
     rintro ((h | h) | h)
-    exacts [edge_avoid h₁ h, edge_avoid h₂ h, edge_avoid h₃ h]
+    exacts [TauCeti.notMem_segment_of_im_div_sub_pos h₁ h,
+      TauCeti.notMem_segment_of_im_div_sub_pos h₂ h,
+      TauCeti.notMem_segment_of_im_div_sub_pos h₃ h]
   obtain ⟨n, hn⟩ := AbsolutelyContinuousOnInterval.exists_int_windingNumber
     (absolutelyContinuousOnInterval_triangleCurve c p q)
     (by simp) (by simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve]
@@ -177,7 +168,9 @@ theorem windingNumber_triangleCurve_eq_neg_one {c p q z : ℂ} (hdet : triangleD
   obtain ⟨h₁, h₂, h₃⟩ := interior_edge_heights hdet' hz'
   have havoid' : z ∉ segment ℝ c q ∪ segment ℝ q p ∪ segment ℝ p c := by
     rintro ((h | h) | h)
-    exacts [edge_avoid h₁ h, edge_avoid h₂ h, edge_avoid h₃ h]
+    exacts [TauCeti.notMem_segment_of_im_div_sub_pos h₁ h,
+      TauCeti.notMem_segment_of_im_div_sub_pos h₂ h,
+      TauCeti.notMem_segment_of_im_div_sub_pos h₃ h]
   have havoid : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c := by
     rwa [← triangle_edges_swap]
   rw [windingNumber_triangleCurve_swap havoid, windingNumber_triangleCurve_eq_one hdet' hz']

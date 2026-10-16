@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Green.Polygonal.Index
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Bounds
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
-import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
@@ -89,11 +89,7 @@ theorem windingNumber_eq_sum_polygon_segments {γ : ℝ → ℂ} {a b : ℝ} {N 
       (hint.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem i.castSucc)))).symm
   simp_rw [hstep]
   have htel : ∑ i : Fin N, (F i.succ - F i.castSucc) = F (Fin.last N) - F 0 := by
-    cases N with
-    | zero => simp
-    | succ n =>
-      have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
-      simpa only [hIic, Fin.succ_last] using Fin.sum_Iic_sub (Fin.last n) F
+    exact Fin.sum_univ_succ_sub_castSucc F
   rw [htel]
   simp only [F, ha, hb, intervalIntegral.integral_same, mul_zero, sub_zero]
   exact hγ.windingNumber_eq_integral hz
@@ -126,12 +122,7 @@ theorem windingNumber_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
     ring
   simp_rw [htriangle]
   have htel : ∑ i : Fin N, (R i.castSucc - R i.succ) = R 0 - R (Fin.last N) := by
-    cases N with
-    | zero => simp
-    | succ n =>
-      have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
-      simpa only [hIic, Fin.succ_last, neg_sub_neg] using
-        Fin.sum_Iic_sub (Fin.last n) (fun i ↦ -R i)
+    exact Fin.sum_univ_castSucc_sub_succ R
   rw [Finset.sum_add_distrib, htel]
   have hR : R (Fin.last N) = R 0 := by simp only [R, ha, hb, hclosed]
   rw [hR, sub_self, add_zero]

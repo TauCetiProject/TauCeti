@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.Polygonal.Basic
-public import Mathlib.Algebra.BigOperators.Intervals
+public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
@@ -99,11 +99,7 @@ theorem integral_circulationFun_eq_polygon {γ : ℝ → ℂ} {a b : ℝ} {N : �
       simpa only [F, add_comm] using
         intervalIntegral.integral_add_adjacent_intervals hleft hcell)
   have htel : ∑ i : Fin N, (F i.succ - F i.castSucc) = F (Fin.last N) - F 0 := by
-    cases N with
-    | zero => simp
-    | succ n =>
-      have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
-      simpa only [hIic, Fin.succ_last] using Fin.sum_Iic_sub (Fin.last n) F
+    exact Fin.sum_univ_succ_sub_castSucc F
   rw [BoundaryChain.polygon_def, map_sum]
   simp only [BoundaryChain.ofPath_def, Finsupp.linearCombination_single, one_smul,
     Function.comp_apply, hstep, htel]

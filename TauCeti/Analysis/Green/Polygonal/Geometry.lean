@@ -76,13 +76,9 @@ theorem im_div_pos_of_mem_interior_convexHull_triangle {p q r z : ℂ} (hpq : q 
     simp
   let F := fun w : ℂ ↦ L (w - p)
   have hconv : Convex ℝ {w : ℂ | 0 ≤ F w} := by
-    intro x hx y hy a b ha hb hab
-    -- Expose half-plane membership to use linearity on the convex combination.
-    change 0 ≤ L (a • x + b • y - p)
-    have he : a • x + b • y - p = a • (x - p) + b • (y - p) := by
-      rw [smul_sub, smul_sub, sub_add_sub_comm, ← add_smul, hab, one_smul]
-    rw [he, map_add, map_smul, map_smul]
-    exact add_nonneg (mul_nonneg ha hx) (mul_nonneg hb hy)
+    simpa only [Set.preimage, Set.mem_ofPred_eq, mem_Ici, ContinuousLinearMap.coe_coe,
+      F, sub_eq_add_neg] using
+      ((convex_Ici (0 : ℝ)).linear_preimage L.toLinearMap).translate_preimage_left (-p)
   have hsubset : convexHull ℝ {p, q, r} ⊆ {w : ℂ | 0 ≤ F w} := by
     apply convexHull_min _ hconv
     intro w hw
@@ -104,22 +100,17 @@ theorem im_div_pos_of_mem_interior_convexHull_triangle {p q r z : ℂ} (hpq : q 
     (interior_mono hsubset hz)
   simpa only [interior_Ici, mem_preimage, mem_Ioi, F, hL] using h
 
-private theorem im_div_combo (p q x y : ℂ) (a b : ℝ) (hab : a + b = 1) :
-    ((a • x + b • y - p) / (q - p)).im =
-      a * ((x - p) / (q - p)).im + b * ((y - p) / (q - p)).im := by
-  have he : a • x + b • y - p = a • (x - p) + b • (y - p) := by
-    rw [smul_sub, smul_sub, sub_add_sub_comm, ← add_smul, hab, one_smul]
-  rw [he, add_div, smul_div_assoc, smul_div_assoc, Complex.add_im,
-    Complex.smul_im, Complex.smul_im]
-  rfl
-
 private theorem interior_triangle_eq_empty_of_height_eq_zero {c p q : ℂ}
     (hpc : p - c ≠ 0) (hq : ((q - c) / (p - c)).im = 0) :
     interior (convexHull ℝ {c, p, q}) = ∅ := by
+  let L : ℂ →L[ℝ] ℝ := Complex.imCLM.comp ((ContinuousLinearMap.mul ℝ ℂ).flip (p - c)⁻¹)
+  have hL (z : ℂ) : L z = (z / (p - c)).im := by
+    simp [L, div_eq_mul_inv]
+    ring
   have hconv : Convex ℝ {z : ℂ | ((z - c) / (p - c)).im = 0} := by
-    intro x hx y hy a b _ _ hab
-    rw [mem_ofPred_eq, im_div_combo c p x y a b hab, hx, hy]
-    simp
+    simpa only [Set.preimage, Set.mem_ofPred_eq, mem_singleton_iff, ContinuousLinearMap.coe_coe, hL,
+      sub_eq_add_neg] using
+      ((convex_singleton (0 : ℝ)).linear_preimage L.toLinearMap).translate_preimage_left (-c)
   have hsub : convexHull ℝ {c, p, q} ⊆ {z : ℂ | ((z - c) / (p - c)).im = 0} := by
     apply convexHull_min _ hconv
     intro z hz

@@ -36,19 +36,11 @@ theorem standardTriangle_def : standardTriangle = convexHull ℝ {0, 1, Complex.
 theorem mem_standardTriangle {z : ℂ} : z ∈ standardTriangle ↔
     0 ≤ z.re ∧ 0 ≤ z.im ∧ z.re + z.im ≤ 1 := by
   let T : Set ℂ := {z | 0 ≤ z.re ∧ 0 ≤ z.im ∧ z.re + z.im ≤ 1}
-  have hconv : Convex ℝ T := by
-    intro z hz w hw a b ha hb hab
-    -- Unfold the local half-plane region before applying coordinate linearity.
-    change 0 ≤ (a • z + b • w).re ∧ 0 ≤ (a • z + b • w).im ∧
-      (a • z + b • w).re + (a • z + b • w).im ≤ 1
-    change 0 ≤ z.re ∧ 0 ≤ z.im ∧ z.re + z.im ≤ 1 at hz
-    change 0 ≤ w.re ∧ 0 ≤ w.im ∧ w.re + w.im ≤ 1 at hw
-    simp only [Complex.add_re, Complex.add_im, Complex.smul_re,
-      Complex.smul_im, smul_eq_mul]
-    exact ⟨add_nonneg (mul_nonneg ha hz.1) (mul_nonneg hb hw.1),
-      add_nonneg (mul_nonneg ha hz.2.1) (mul_nonneg hb hw.2.1), by
-        nlinarith [mul_nonneg ha (sub_nonneg.mpr hz.2.2),
-          mul_nonneg hb (sub_nonneg.mpr hw.2.2)]⟩
+  have hconv : Convex ℝ T :=
+    ((convex_Ici (0 : ℝ)).linear_preimage Complex.reCLM.toLinearMap).inter
+      (((convex_Ici (0 : ℝ)).linear_preimage Complex.imCLM.toLinearMap).inter
+        ((convex_Iic (1 : ℝ)).linear_preimage
+          (Complex.reCLM + Complex.imCLM).toLinearMap))
   constructor
   · intro hz
     exact convexHull_min (s := ({0, 1, Complex.I} : Set ℂ))

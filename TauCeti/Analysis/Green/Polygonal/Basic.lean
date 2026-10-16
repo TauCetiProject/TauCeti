@@ -12,7 +12,7 @@ import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -141,12 +141,7 @@ theorem polygon_def {N : ℕ} (v : Fin (N + 1) → ℂ) : polygon v =
 theorem boundary_polygon {N : ℕ} (v : Fin (N + 1) → ℂ) :
     boundary (polygon v) = Finsupp.single (v (Fin.last N)) 1 - Finsupp.single (v 0) 1 := by
   simp only [polygon, map_sum, boundary_ofPath]
-  cases N with
-  | zero => simp
-  | succ n =>
-    have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
-    simpa only [hIic, Fin.succ_last] using
-      Fin.sum_Iic_sub (Fin.last n) (fun j ↦ Finsupp.single (v j) (1 : ℤ))
+  exact Fin.sum_univ_succ_sub_castSucc (fun j ↦ Finsupp.single (v j) (1 : ℤ))
 
 /-- A triangle fan differs from the polygonal chain only by its two outer radial segments. -/
 theorem sum_triangle {N : ℕ} (v : Fin (N + 1) → ℂ) (c : ℂ) :
@@ -162,12 +157,7 @@ theorem sum_triangle {N : ℕ} (v : Fin (N + 1) → ℂ) (c : ℂ) :
   have htel : (∑ i : Fin N, (ofPath (Path.segment c (v i.castSucc)) -
       ofPath (Path.segment c (v i.succ)))) =
       ofPath (Path.segment c (v 0)) - ofPath (Path.segment c (v (Fin.last N))) := by
-    cases N with
-    | zero => simp
-    | succ n =>
-      have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
-      simpa only [hIic, Fin.succ_last, neg_sub_neg] using
-        Fin.sum_Iic_sub (Fin.last n) (fun i ↦ -ofPath (Path.segment c (v i)))
+    exact Fin.sum_univ_castSucc_sub_succ (fun i ↦ ofPath (Path.segment c (v i)))
   rw [htel]
   simp only [polygon]
   abel
