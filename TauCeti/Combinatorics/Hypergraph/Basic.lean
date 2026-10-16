@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Hypergraph.Basic
-public import Mathlib.Data.Fintype.Powerset
 public import Mathlib.Data.Finset.Slice
 public import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Tactic.Positivity
