@@ -18,16 +18,14 @@ is concentrated on one nonbranching family of geodesics. The condition is weaker
 all geodesics of the carrier to be nonbranching: only paths used by the relevant optimal plans
 are constrained.
 
-This file packages quadratic optimal dynamic plans using the existing endpoint-law and optimal-
-coupling APIs, then defines essential nonbranching. The condition is inherited when the reference
+This file defines essential nonbranching using the quadratic optimal dynamic plans of
+`TauCeti.MeasureTheory.OptimalTransport.DynamicPlan`. The condition is inherited when the reference
 measure is replaced by a measure absolutely continuous with respect to it. If the full family of
 geodesics is nonbranching, every reference measure is essentially nonbranching; in particular this
 holds on strictly convex separable Banach spaces.
 
 ## Main definitions and results
 
-* `MeasureTheory.Measure.IsQuadraticOptimalDynamicPlan`: a dynamic plan concentrated on geodesics
-  whose endpoint law is a quadratic optimal coupling;
 * `TauCeti.MetricMeasureSpace.EssentiallyNonbranching`: essential nonbranching relative to the
   reference measure;
 * `TauCeti.MetricMeasureSpace.EssentiallyNonbranching.of_absolutelyContinuous`: inheritance by an
@@ -49,58 +47,6 @@ noncomputable section
 
 open MeasureTheory Set
 open scoped ENNReal unitInterval
-
-namespace MeasureTheory.Measure
-
-open TauCeti
-
-variable {X : Type*} [MetricSpace X] [MeasurableSpace X]
-
-/-- A **quadratic optimal dynamic plan** from `μ₀` to `μ₁`: a measure on path space concentrated
-on constant-speed geodesics whose endpoint law is an optimal coupling for the squared-distance
-cost. The optimal-coupling field forces the plan to have total mass one when the endpoints are
-probability laws. -/
-structure IsQuadraticOptimalDynamicPlan (η : Measure C(I, X))
-    (μ₀ μ₁ : ProbabilityMeasure X) : Prop where
-  /-- Almost every path of the dynamic plan is a constant-speed geodesic. -/
-  ae_mem_geodesicPaths : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X
-  /-- The joint law of the two endpoints is a quadratic optimal coupling. -/
-  endpointLaw_isOptimalCoupling :
-    IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ (2 : ℝ)) η.endpointLaw
-      (μ₀ : Measure X) (μ₁ : Measure X)
-
-/-- The endpoint law of a quadratic optimal dynamic plan couples its prescribed endpoints. -/
-theorem IsQuadraticOptimalDynamicPlan.endpointLaw_isCoupling {η : Measure C(I, X)}
-    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
-    TauCeti.IsCoupling η.endpointLaw (μ₀ : Measure X) (μ₁ : Measure X) :=
-  hη.endpointLaw_isOptimalCoupling.toIsCoupling
-
-variable [BorelSpace X]
-
-/-- The time-zero marginal of a quadratic optimal dynamic plan is its source law. -/
-theorem IsQuadraticOptimalDynamicPlan.timeMarginal_zero {η : Measure C(I, X)}
-    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
-    η.timeMarginal 0 = (μ₀ : Measure X) := by
-  rw [← fst_endpointLaw, hη.endpointLaw_isCoupling.fst_eq]
-
-/-- The time-one marginal of a quadratic optimal dynamic plan is its target law. -/
-theorem IsQuadraticOptimalDynamicPlan.timeMarginal_one {η : Measure C(I, X)}
-    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
-    η.timeMarginal 1 = (μ₁ : Measure X) := by
-  rw [← snd_endpointLaw, hη.endpointLaw_isCoupling.snd_eq]
-
-/-- A quadratic optimal dynamic plan between probability laws is itself a probability measure on
-path space. -/
-theorem IsQuadraticOptimalDynamicPlan.isProbabilityMeasure {η : Measure C(I, X)}
-    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
-    IsProbabilityMeasure η := by
-  refine ⟨?_⟩
-  have hend : η.endpointLaw univ = 1 := by
-    rw [← hη.endpointLaw_isCoupling.measure_univ_left, measure_univ]
-  rw [endpointLaw_apply η MeasurableSet.univ] at hend
-  simpa using hend
-
-end MeasureTheory.Measure
 
 namespace TauCeti.MetricMeasureSpace
 

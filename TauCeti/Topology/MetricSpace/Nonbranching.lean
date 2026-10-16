@@ -25,8 +25,6 @@ nonbranching of reference measures on such spaces.
 * `Set.IsNonbranchingGeodesics`: a set of geodesic paths in which agreement on a positive initial
   interval forces equality;
 * `Set.IsNonbranchingGeodesics.mono`: every subfamily of a nonbranching family is nonbranching;
-* `TauCeti.eq_segmentPath_of_mem_geodesicPaths`: a geodesic in a strictly convex normed space
-  is its affine segment;
 * `TauCeti.isNonbranchingGeodesics_geodesicPaths`: all geodesics in a strictly convex normed
   space form a nonbranching family.
 
@@ -104,15 +102,6 @@ namespace TauCeti
 section StrictConvex
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
-
-/-- In a strictly convex real normed space, a constant-speed geodesic path is the affine segment
-between its endpoints. -/
-theorem eq_segmentPath_of_mem_geodesicPaths {γ : C(I, E)}
-    (hγ : γ ∈ geodesicPaths E) : γ = segmentPath (γ 0, γ 1) := by
-  ext t
-  rw [segmentPath_apply]
-  simpa only [IccExtend_of_mem _ _ t.property] using
-    (mem_geodesicPaths_iff_isGeodesicSegment.1 hγ).eq_lineMap t.property
 
 /-- The full family of constant-speed geodesics in a strictly convex real normed space is
 nonbranching. -/
