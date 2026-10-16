@@ -1,0 +1,271 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Geometry.Manifold.Diffeomorph
+
+/-!
+# Replacing a boundaryless model by its vector space
+
+`BoundarylessModel I M` carries the topology of `M`, but its charts take values in the
+model vector space `E` rather than in `H`. A chart `c` is replaced by `I ∘ c`.
+The extended charts do not change, and the identity is a diffeomorphism.
+
+This lets constructions stated for self-modelled manifolds apply to arbitrary boundaryless
+models without installing a second atlas on the original manifold. In particular, local
+normal forms and implicit-function constructions can retain their actual coordinates.
+The construction uses `ModelWithCorners.toHomeomorph` to transport chart targets.
+-/
+
+public section
+
+open Function Set
+open scoped ContDiff Manifold
+
+namespace TauCeti
+
+variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+
+/-- A copy of a manifold on which the charts of a boundaryless model `I` take values in its
+vector space. The topology is unchanged; the original manifold retains its original atlas. -/
+@[expose] def BoundarylessModel (_I : ModelWithCorners 𝕜 E H) (M : Type*) := M
+
+namespace BoundarylessModel
+
+variable (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+
+instance : TopologicalSpace (BoundarylessModel I M) := inferInstanceAs (TopologicalSpace M)
+
+/-- The identity homeomorphism to the copy with vector-space-valued charts. -/
+def homeomorph : M ≃ₜ BoundarylessModel I M where
+  toFun := id
+  invFun := id
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := continuous_id
+  continuous_invFun := continuous_id
+
+/-- The carrier map is the identity. This equality is used explicitly: simplifying away the
+homeomorphism would hide the model change from the transport lemmas. -/
+theorem coe_homeomorph : ⇑(homeomorph I M) = id :=
+  (rfl)
+
+/-- The inverse carrier map is also the identity. -/
+theorem coe_homeomorph_symm : ⇑(homeomorph I M).symm = id :=
+  (rfl)
+
+variable {M} [I.Boundaryless]
+
+/-- Replace an `H`-valued chart by its `E`-valued extended coordinates. -/
+def chart (c : OpenPartialHomeomorph M H) : OpenPartialHomeomorph (BoundarylessModel I M) E :=
+  c.trans I.toHomeomorph.toOpenPartialHomeomorph
+
+@[simp]
+theorem chart_apply (c : OpenPartialHomeomorph M H) (y : BoundarylessModel I M) :
+    chart I c y = I (c ((homeomorph I M).symm y)) :=
+  (rfl)
+
+@[simp]
+theorem chart_symm_apply (c : OpenPartialHomeomorph M H) (v : E) :
+    (chart I c).symm v = homeomorph I M (c.symm (I.symm v)) :=
+  (rfl)
+
+@[simp]
+theorem chart_source (c : OpenPartialHomeomorph M H) :
+    (chart I c).source = (homeomorph I M).symm ⁻¹' c.source := by
+  simp only [chart, OpenPartialHomeomorph.trans_source,
+    Homeomorph.toOpenPartialHomeomorph_source, preimage_univ, inter_univ]
+  rfl
+
+@[simp]
+theorem chart_target (c : OpenPartialHomeomorph M H) :
+    (chart I c).target = I.symm ⁻¹' c.target := by
+  simp only [chart, OpenPartialHomeomorph.trans_target,
+    Homeomorph.toOpenPartialHomeomorph_target, univ_inter]
+  rfl
+
+/-- The new chart has exactly the old extended partial equivalence. The carrier and topology
+of the copy are definitionally those of `M`, so the two partial equivalences have the same type. -/
+theorem chart_toPartialEquiv (c : OpenPartialHomeomorph M H) :
+    (chart I c).toPartialEquiv = c.extend I := by
+  apply PartialEquiv.ext
+  · intro x; rfl
+  · intro x; rfl
+  · rw [chart_source, OpenPartialHomeomorph.extend_source, coe_homeomorph_symm]
+    rfl
+
+/-- Return a vector-space-valued chart on the copy to the original model. -/
+def originalChart (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) :
+    OpenPartialHomeomorph M H :=
+  φ.trans I.toHomeomorph.symm.toOpenPartialHomeomorph
+
+/-- Returning a chart to the original model and extending it again recovers the same chart. -/
+@[simp]
+theorem chart_originalChart (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) :
+    chart I (originalChart I φ) = φ := by
+  -- Both sides use the copied topology; expose that carrier for the composition laws.
+  change (φ.trans I.toHomeomorph.symm.toOpenPartialHomeomorph).trans
+    I.toHomeomorph.toOpenPartialHomeomorph = φ
+  simp [OpenPartialHomeomorph.trans_assoc]
+
+/-- Extending an original chart and returning it to its model recovers the original chart. -/
+@[simp]
+theorem originalChart_chart (c : OpenPartialHomeomorph M H) :
+    originalChart I (chart I c) = c := by
+  -- Use the original topology instance throughout the composition.
+  change (c.trans I.toHomeomorph.toOpenPartialHomeomorph).trans
+    I.toHomeomorph.symm.toOpenPartialHomeomorph = c
+  simp [OpenPartialHomeomorph.trans_assoc]
+
+/-- An arbitrary chart on the copy and its corresponding original chart have identical
+extended coordinates, source and target. -/
+theorem originalChart_extend (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) :
+    (originalChart I φ).extend I = φ.toPartialEquiv := by
+  rw [← chart_toPartialEquiv, chart_originalChart]
+
+private theorem chart_trans_mem_contDiffGroupoid_iff (c d : OpenPartialHomeomorph M H)
+    (n : ℕ∞ω) :
+    (chart I c).symm.trans (chart I d) ∈ contDiffGroupoid n 𝓘(𝕜, E) ↔
+      c.symm.trans d ∈ contDiffGroupoid n I := by
+  -- Express both chart compositions on the original carrier so rewriting does not mix
+  -- the original topology instance with its definitionally equal copy.
+  change (c.trans I.toHomeomorph.toOpenPartialHomeomorph).symm.trans
+      (d.trans I.toHomeomorph.toOpenPartialHomeomorph) ∈ contDiffGroupoid n 𝓘(𝕜, E) ↔ _
+  simp [contDiffGroupoid, mem_groupoid_of_pregroupoid, contDiffPregroupoid,
+    I.range_eq_univ, Function.comp_def, ModelWithCorners.toHomeomorph]
+  rfl
+
+variable [ChartedSpace H M]
+
+instance : ChartedSpace E (BoundarylessModel I M) where
+  atlas := chart I '' atlas H M
+  chartAt x := chart I (chartAt H ((homeomorph I M).symm x))
+  mem_chart_source x := by
+    rw [chart_source]
+    exact mem_chart_source H ((homeomorph I M).symm x)
+  chart_mem_atlas x := mem_image_of_mem _ (chart_mem_atlas H _)
+
+/-- The atlas consists of the extended original charts. -/
+theorem atlas_eq : atlas E (BoundarylessModel I M) = chart I '' atlas H M :=
+  (rfl)
+
+/-- Preferred charts are transported without making any new choices. -/
+theorem chartAt_eq (x : BoundarylessModel I M) :
+    chartAt E x = chart I (chartAt H ((homeomorph I M).symm x)) :=
+  (rfl)
+
+/-- The extended preferred chart is unchanged by the model transport. -/
+theorem extChartAt_eq (x : BoundarylessModel I M) :
+    extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) := by
+  rw [extChartAt, chartAt_eq]
+  rw [OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv, PartialEquiv.trans_refl,
+    chart_toPartialEquiv]
+  rfl
+
+/-- Membership in the maximal atlas is preserved by extending a chart to the vector space. -/
+@[simp]
+theorem chart_mem_maximalAtlas_iff (c : OpenPartialHomeomorph M H) (n : ℕ∞ω) :
+    chart I c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n (BoundarylessModel I M) ↔
+      c ∈ IsManifold.maximalAtlas I n M := by
+  simp only [IsManifold.maximalAtlas, mem_maximalAtlas_iff, atlas_eq,
+    forall_mem_image, chart_trans_mem_contDiffGroupoid_iff]
+
+/-- Every maximal chart on the copy corresponds to a maximal chart on the original manifold. -/
+@[simp]
+theorem originalChart_mem_maximalAtlas_iff
+    (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) (n : ℕ∞ω) :
+    originalChart I φ ∈ IsManifold.maximalAtlas I n M ↔
+      φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n (BoundarylessModel I M) := by
+  rw [← chart_mem_maximalAtlas_iff, chart_originalChart]
+
+/-- Replacing a boundaryless model by its vector space preserves manifold regularity. -/
+instance {n : ℕ∞ω} [IsManifold I n M] : IsManifold 𝓘(𝕜, E) n (BoundarylessModel I M) where
+  compatible := by
+    rintro _ _ ⟨c, hc, rfl⟩ ⟨d, hd, rfl⟩
+    exact (chart_trans_mem_contDiffGroupoid_iff I c d n).2
+      ((contDiffGroupoid n I).compatible hc hd)
+
+/-- The identity, as a diffeomorphism from the original model to the self-modelled copy. -/
+def diffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessModel I M) n where
+  toEquiv := (homeomorph I M).toEquiv
+  contMDiff_toFun := by
+    intro x
+    have h := (contMDiff_id : ContMDiff I I n (id : M → M)) x
+    rw [contMDiffAt_iff] at h ⊢
+    rw [extChartAt_eq]
+    convert h using 1 <;> rfl
+  contMDiff_invFun := by
+    intro x
+    have h := (contMDiff_id : ContMDiff I I n (id : M → M)) ((homeomorph I M).symm x)
+    rw [contMDiffAt_iff, I.range_eq_univ] at h
+    rw [contMDiffAt_iff, extChartAt_eq, ModelWithCorners.range_eq_univ]
+    convert h using 1 <;> rfl
+
+/-- The diffeomorphism has the same underlying map as the identity homeomorphism. -/
+@[simp]
+theorem coe_diffeomorph (n : ℕ∞ω) : ⇑(diffeomorph I (M := M) n) = homeomorph I M :=
+  (rfl)
+
+/-- The inverse diffeomorphism has the inverse identity map as its underlying function. -/
+@[simp]
+theorem coe_diffeomorph_symm (n : ℕ∞ω) :
+    ⇑(diffeomorph I (M := M) n).symm = (homeomorph I M).symm :=
+  (rfl)
+
+section Derivatives
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] (J : ModelWithCorners 𝕜 E' H')
+  [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Changing the source model preserves differentiability, even when no manifold regularity
+assumption is imposed on either atlas. -/
+@[simp]
+theorem mdifferentiableAt_source_iff (f : M → N) (x : BoundarylessModel I M) :
+    MDifferentiableAt 𝓘(𝕜, E) J (f ∘ (homeomorph I M).symm) x ↔
+      MDifferentiableAt I J f ((homeomorph I M).symm x) := by
+  rw [mdifferentiableAt_iff, mdifferentiableAt_iff]
+  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
+    ModelWithCorners.range_eq_univ]
+  exact and_congr ((homeomorph I M).symm.comp_continuousAt_iff' f x) Iff.rfl
+
+/-- The source-side derivative comparison, with the tangent spaces identified explicitly
+through their common model vector space. No differentiability hypothesis is needed. -/
+theorem mfderiv_source (f : M → N) (x : BoundarylessModel I M) :
+    mfderiv 𝓘(𝕜, E) J (f ∘ (homeomorph I M).symm) x =
+      mfderiv I J f ((homeomorph I M).symm x) ∘L
+        (tangentSpaceCastModel I ((homeomorph I M).symm x)).symm.toContinuousLinearMap ∘L
+        (tangentSpaceCastModel 𝓘(𝕜, E) x).toContinuousLinearMap := by
+  rw [mfderiv, mdifferentiableAt_source_iff, mfderiv]
+  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
+    ModelWithCorners.range_eq_univ]
+  split_ifs <;> ext v <;> rfl
+
+/-- Changing the target model preserves differentiability. -/
+@[simp]
+theorem mdifferentiableAt_target_iff (f : N → M) (x : N) :
+    MDifferentiableAt J 𝓘(𝕜, E) ((homeomorph I M) ∘ f) x ↔
+      MDifferentiableAt J I f x := by
+  rw [mdifferentiableAt_iff, mdifferentiableAt_iff]
+  simp only [writtenInExtChartAt, comp_apply, extChartAt_eq,
+    Homeomorph.symm_apply_apply]
+  exact and_congr ((homeomorph I M).comp_continuousAt_iff f x) Iff.rfl
+
+/-- The target-side derivative comparison through the common model vector space. -/
+theorem mfderiv_target (f : N → M) (x : N) :
+    mfderiv J 𝓘(𝕜, E) ((homeomorph I M) ∘ f) x =
+      (tangentSpaceCastModel 𝓘(𝕜, E) (homeomorph I M (f x))).symm.toContinuousLinearMap ∘L
+        (tangentSpaceCastModel I (f x)).toContinuousLinearMap ∘L mfderiv J I f x := by
+  rw [mfderiv, mdifferentiableAt_target_iff, mfderiv]
+  simp only [writtenInExtChartAt, comp_apply, extChartAt_eq, Homeomorph.symm_apply_apply]
+  split_ifs <;> ext v <;> rfl
+
+end Derivatives
+
+end BoundarylessModel
+
+end TauCeti
