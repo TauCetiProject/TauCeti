@@ -139,10 +139,6 @@ theorem coe_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
     (levelEmbedding K n f : HahnSeries ℚ K) = ramifiedEmbedding K n f :=
   (rfl)
 
-/-- The level embeddings are injective. -/
-theorem levelEmbedding_injective (n : ℕ+) : Function.Injective (levelEmbedding K n) :=
-  fun _ _ h ↦ ramifiedEmbedding_injective n (congrArg Subtype.val h)
-
 /-- The transition map `X ↦ X ^ d` from level `n` to level `n * d` commutes with the level
 embeddings into the Puiseux field. -/
 @[simp]
