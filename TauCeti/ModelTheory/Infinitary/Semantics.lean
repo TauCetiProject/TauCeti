@@ -23,7 +23,9 @@ finitary formulas.
 
 * `FirstOrder.Language.BoundedFormulaInf.Realize`: realization with free-variable and
   bound-variable valuations.
-* `FirstOrder.Language.FormulaInf.Realize` and `FirstOrder.Language.SentenceInf.Realize`.
+* `FirstOrder.Language.FormulaInf.Realize` and `FirstOrder.Language.SentenceInf.Realize`, with
+  the simp lemmas `FormulaInf.realize_def` and `SentenceInf.realize_def` reducing them to
+  bounded-formula realization.
 
 ## Main results
 
@@ -34,7 +36,6 @@ finitary formulas.
 
 ## References
 
-* `TauCetiRoadmap/InfinitaryLogic/README.md`, Layer 0, Beat 1.
 * Adapted from `Mathlib/ModelTheory/Infinitary/Semantics.lean` in
   `leanprover-community/mathlib4#42758` (Apache 2.0) at commit
   `2264c2c872bb642ab519aa2288d53110f07af37d`. The realization recursion agrees with
@@ -42,7 +43,7 @@ finitary formulas.
   `c69ad137438e2f656dc057db7ec29c30d481f7b4`. The laws for the binary connectives are added here.
 -/
 
-@[expose] public section
+public section
 
 universe u v u' uι w
 
@@ -115,27 +116,27 @@ theorem realize_not {φ : L.BoundedFormulaInf ι α n} :
 
 @[simp]
 theorem realize_top : (⊤ : L.BoundedFormulaInf ι α n).Realize v xs ↔ True := by
-  simp [Top.top, BoundedFormulaInf.verum, BoundedFormulaInf.not, Realize]
+  rw [top_def, realize_not, realize_falsum, not_false_eq_true]
 
 @[simp]
-theorem realize_bot : (⊥ : L.BoundedFormulaInf ι α n).Realize v xs ↔ False :=
-  Iff.rfl
+theorem realize_bot : (⊥ : L.BoundedFormulaInf ι α n).Realize v xs ↔ False := by
+  rw [bot_def, realize_falsum]
 
 @[simp]
 theorem realize_inf {φ ψ : L.BoundedFormulaInf ι α n} :
     (φ ⊓ ψ).Realize v xs ↔ φ.Realize v xs ∧ ψ.Realize v xs := by
-  simp [Min.min, BoundedFormulaInf.not, Realize]
+  simp only [inf_def, realize_not, realize_imp, not_imp, not_not]
 
 @[simp]
 theorem realize_sup {φ ψ : L.BoundedFormulaInf ι α n} :
     (φ ⊔ ψ).Realize v xs ↔ φ.Realize v xs ∨ ψ.Realize v xs := by
-  simp only [max, realize_imp, realize_not]
+  simp only [sup_def, realize_imp, realize_not]
   tauto
 
 @[simp]
 theorem realize_iff {φ ψ : L.BoundedFormulaInf ι α n} :
     (φ.iff ψ).Realize v xs ↔ (φ.Realize v xs ↔ ψ.Realize v xs) := by
-  simp only [BoundedFormulaInf.iff, realize_inf, realize_imp, ← iff_def]
+  simp only [BoundedFormulaInf.iff_def, realize_inf, realize_imp, ← _root_.iff_def]
 
 @[simp]
 theorem realize_ex {φ : L.BoundedFormulaInf ι α (n + 1)} :
@@ -153,14 +154,16 @@ theorem realize_toInf {M : Type w} [L.Structure M] :
       (toInf (ι := ι) φ).Realize v xs ↔ φ.Realize v xs := by
   intro n φ
   induction φ with
-  | falsum | equal | rel => intro v xs; exact Iff.rfl
+  | falsum => intro v xs; simp [BoundedFormula.Realize]
+  | equal => intro v xs; simp [BoundedFormula.Realize]
+  | rel => intro v xs; simp [BoundedFormula.Realize]
   | imp φ ψ ihφ ihψ =>
     intro v xs
-    simpa only [toInf, BoundedFormulaInf.realize_imp, BoundedFormula.realize_imp] using
+    simpa only [toInf_imp, BoundedFormulaInf.realize_imp, BoundedFormula.realize_imp] using
       imp_congr (ihφ v xs) (ihψ v xs)
   | all φ ih =>
     intro v xs
-    simpa only [toInf, BoundedFormulaInf.realize_all, BoundedFormula.realize_all] using
+    simpa only [toInf_all, BoundedFormulaInf.realize_all, BoundedFormula.realize_all] using
       forall_congr' fun y ↦ ih v (Fin.snoc xs y)
 
 end BoundedFormula
@@ -169,26 +172,33 @@ end BoundedFormula
 def FormulaInf.Realize {M : Type w} [L.Structure M] (φ : L.FormulaInf ι α) (v : α → M) : Prop :=
   BoundedFormulaInf.Realize φ v default
 
+/-- A formula is realized when it is realized as a bounded formula with no bound variables, so the
+realization lemmas for bounded formulas apply to formulas. -/
+@[simp]
+theorem FormulaInf.realize_def {M : Type w} [L.Structure M] (φ : L.FormulaInf ι α) (v : α → M) :
+    φ.Realize v ↔ BoundedFormulaInf.Realize φ v default :=
+  Iff.rfl
+
 section AllsExs
 
 variable {M : Type w} [L.Structure M]
 
 @[simp]
 theorem BoundedFormulaInf.realize_alls {φ : L.BoundedFormulaInf ι α n} {v : α → M} :
-    φ.alls.Realize v ↔ ∀ xs : Fin n → M, φ.Realize v xs := by
+    BoundedFormulaInf.Realize φ.alls v default ↔ ∀ xs : Fin n → M, φ.Realize v xs := by
   induction n with
-  | zero => exact Unique.forall_iff.symm
+  | zero => rw [BoundedFormulaInf.alls_zero]; exact Unique.forall_iff.symm
   | succ n ih =>
-    simp only [BoundedFormulaInf.alls, ih, BoundedFormulaInf.realize_all]
+    simp only [BoundedFormulaInf.alls_succ, ih, BoundedFormulaInf.realize_all]
     exact ⟨fun h xs => Fin.snoc_init_self xs ▸ h _ _, fun h xs x => h (Fin.snoc xs x)⟩
 
 @[simp]
 theorem BoundedFormulaInf.realize_exs {φ : L.BoundedFormulaInf ι α n} {v : α → M} :
-    φ.exs.Realize v ↔ ∃ xs : Fin n → M, φ.Realize v xs := by
+    BoundedFormulaInf.Realize φ.exs v default ↔ ∃ xs : Fin n → M, φ.Realize v xs := by
   induction n with
-  | zero => exact Unique.exists_iff.symm
+  | zero => rw [BoundedFormulaInf.exs_zero]; exact Unique.exists_iff.symm
   | succ n ih =>
-    simp only [BoundedFormulaInf.exs, ih, BoundedFormulaInf.realize_ex]
+    simp only [BoundedFormulaInf.exs_succ, ih, BoundedFormulaInf.realize_ex]
     constructor
     · rintro ⟨xs, x, h⟩; exact ⟨_, h⟩
     · rintro ⟨xs, h⟩
@@ -199,6 +209,13 @@ end AllsExs
 /-- Realization of an `L_{∞ω}` sentence in a structure. -/
 def SentenceInf.Realize (φ : L.SentenceInf ι) (M : Type w) [L.Structure M] : Prop :=
   FormulaInf.Realize (M := M) φ Empty.elim
+
+/-- A sentence is realized in a structure when it is realized as a formula under the empty
+valuation of its free variables. -/
+@[simp]
+theorem SentenceInf.realize_def (φ : L.SentenceInf ι) (M : Type w) [L.Structure M] :
+    φ.Realize M ↔ FormulaInf.Realize (M := M) φ Empty.elim :=
+  Iff.rfl
 
 end Language
 

@@ -69,11 +69,11 @@ example (b : Prop) :
     SentenceInf.Realize
         (rel (L := L₀) (l := 0) (cast (by simp [L₀]) ()) Fin.elim0 : L₀.SentenceInf ℕ) Empty ↔
       b := by
-  simp [SentenceInf.Realize, FormulaInf.Realize]
+  simp
 
 example {L : Language.{u, v}} [L.Structure Empty] :
     SentenceInf.Realize (all ⊥ : L.SentenceInf ℕ) Empty := by
-  simp [SentenceInf.Realize, FormulaInf.Realize]
+  simp
 
 /-! ### Nested quantifiers -/
 
@@ -84,6 +84,6 @@ example {M : Type w} [Language.graph.Structure M] :
         (all (rel Language.adj ![Term.var (Sum.inr 0), Term.var (Sum.inr 1)]).ex :
           Language.graph.SentenceInf ℕ) M ↔
       ∀ x : M, ∃ y : M, Structure.RelMap Language.adj ![x, y] := by
-  simp only [SentenceInf.Realize, FormulaInf.Realize, realize_all, realize_ex, realize_rel]
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all, realize_ex, realize_rel]
   refine forall_congr' fun x => exists_congr fun y => Iff.of_eq (congrArg _ (funext fun i => ?_))
   fin_cases i <;> simp [Fin.snoc]

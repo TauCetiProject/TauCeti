@@ -46,7 +46,6 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
 
 ## References
 
-* `TauCetiRoadmap/InfinitaryLogic/README.md`, Layer 0, Beat 1.
 * Adapted from `Mathlib/ModelTheory/Infinitary/Syntax.lean` in
   `leanprover-community/mathlib4#42758` (Apache 2.0) at commit
   `2264c2c872bb642ab519aa2288d53110f07af37d`. The core agrees with `Palomar/Challenge.lean` in
@@ -54,7 +53,7 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
   The binary connectives are added here.
 -/
 
-@[expose] public section
+public section
 
 universe u v u' uι
 
@@ -110,7 +109,7 @@ variable {L} {ι : Type uι} {α : Type u'} {n : ℕ}
 namespace BoundedFormulaInf
 
 /-- The negation of an infinitary formula. -/
-@[match_pattern]
+@[expose, match_pattern]
 protected def not (φ : L.BoundedFormulaInf ι α n) : L.BoundedFormulaInf ι α n :=
   φ.imp .falsum
 
@@ -140,7 +139,7 @@ protected def iff (φ ψ : L.BoundedFormulaInf ι α n) : L.BoundedFormulaInf ι
   φ.imp ψ ⊓ ψ.imp φ
 
 /-- Existential quantification over the last bound variable. -/
-@[match_pattern]
+@[expose, match_pattern]
 protected def ex (φ : L.BoundedFormulaInf ι α (n + 1)) : L.BoundedFormulaInf ι α n :=
   φ.not.all.not
 
@@ -156,6 +155,26 @@ def exs : ∀ {n}, L.BoundedFormulaInf ι α n → L.FormulaInf ι α
   | 0, φ => φ
   | _ + 1, φ => φ.ex.exs
 
+/-! ### Defining equations -/
+
+theorem bot_def : (⊥ : L.BoundedFormulaInf ι α n) = falsum := (rfl)
+
+theorem top_def : (⊤ : L.BoundedFormulaInf ι α n) = BoundedFormulaInf.not falsum := (rfl)
+
+theorem inf_def (φ ψ : L.BoundedFormulaInf ι α n) : φ ⊓ ψ = (φ.imp ψ.not).not := (rfl)
+
+theorem sup_def (φ ψ : L.BoundedFormulaInf ι α n) : φ ⊔ ψ = φ.not.imp ψ := (rfl)
+
+theorem iff_def (φ ψ : L.BoundedFormulaInf ι α n) : φ.iff ψ = φ.imp ψ ⊓ ψ.imp φ := (rfl)
+
+theorem alls_zero (φ : L.BoundedFormulaInf ι α 0) : φ.alls = φ := (rfl)
+
+theorem alls_succ (φ : L.BoundedFormulaInf ι α (n + 1)) : φ.alls = φ.all.alls := (rfl)
+
+theorem exs_zero (φ : L.BoundedFormulaInf ι α 0) : φ.exs = φ := (rfl)
+
+theorem exs_succ (φ : L.BoundedFormulaInf ι α (n + 1)) : φ.exs = φ.ex.exs := (rfl)
+
 end BoundedFormulaInf
 
 namespace BoundedFormula
@@ -169,6 +188,31 @@ def toInf : ∀ {n}, L.BoundedFormula α n → L.BoundedFormulaInf ι α n
   | _, .rel R ts => .rel R ts
   | _, .imp φ ψ => (toInf φ).imp (toInf ψ)
   | _, .all φ => (toInf φ).all
+
+@[simp]
+theorem toInf_falsum :
+    (falsum : L.BoundedFormula α n).toInf = (.falsum : L.BoundedFormulaInf ι α n) :=
+  (rfl)
+
+@[simp]
+theorem toInf_equal (t₁ t₂ : L.Term (α ⊕ Fin n)) :
+    (equal t₁ t₂ : L.BoundedFormula α n).toInf = (.equal t₁ t₂ : L.BoundedFormulaInf ι α n) :=
+  (rfl)
+
+@[simp]
+theorem toInf_rel {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (α ⊕ Fin n)) :
+    (rel R ts : L.BoundedFormula α n).toInf = (.rel R ts : L.BoundedFormulaInf ι α n) :=
+  (rfl)
+
+@[simp]
+theorem toInf_imp (φ ψ : L.BoundedFormula α n) :
+    (φ.imp ψ).toInf = (φ.toInf.imp ψ.toInf : L.BoundedFormulaInf ι α n) :=
+  (rfl)
+
+@[simp]
+theorem toInf_all (φ : L.BoundedFormula α (n + 1)) :
+    φ.all.toInf = (φ.toInf.all : L.BoundedFormulaInf ι α n) :=
+  (rfl)
 
 /-- The embedding of finitary bounded formulas into `L_{ω₁ω}`. -/
 abbrev toOmega (φ : L.BoundedFormula α n) : L.BoundedFormulaω α n :=
