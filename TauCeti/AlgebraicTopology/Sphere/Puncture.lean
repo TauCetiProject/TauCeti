@@ -30,8 +30,6 @@ arbitrary loop off a point, which is done in
 * `Path.homotopic_of_segment_ne_zero`: radial projection of a straight-line
   homotopy between sphere paths.
 * `TauCeti.contractibleSpace_sphere_compl_singleton`: the sphere minus one point is contractible.
-* `TauCeti.compl_singleton_union_compl_singleton_neg`: the complements of two antipodal points
-  cover the sphere.
 * `TauCeti.nullhomotopic_inclusion_sphere_compl_singleton`: the inclusion of the sphere minus a
   point into the sphere is null-homotopic.
 * `Path.homotopic_refl_of_notMem_range`: a loop on the unit sphere omitting a point of
@@ -220,14 +218,6 @@ theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
         rw [coe_normalizeSegmentToSphere_one_left]
         simp only [ContinuousMap.const_apply, Subtype.coe_mk, coe_neg_sphere, normalize_neg,
           normalize_eq_self_of_norm_eq_one hp] }
-
-/-- The complements of two antipodal points cover the unit sphere. -/
-lemma compl_singleton_union_compl_singleton_neg {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] (p : sphere (0 : E) 1) :
-    ({p}ᶜ ∪ {-p}ᶜ : Set (sphere (0 : E) 1)) = Set.univ := by
-  rw [← Set.compl_inter, Set.singleton_inter_of_notMem]
-  · exact Set.compl_empty
-  · exact ne_neg_of_mem_unit_sphere ℝ p
 
 /-- **The inclusion of the unit sphere minus one point into the sphere is null-homotopic.** -/
 theorem nullhomotopic_inclusion_sphere_compl_singleton (p : sphere (0 : E) 1) :

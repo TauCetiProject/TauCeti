@@ -70,7 +70,7 @@ private theorem derivative_commutes (Φ : Isom J Sol) {ε : ℝ}
     (mdifferentiableAt_constantField (0, 0, 1) (Φ p))
     ((tangentSpaceCastModel J p).symm u)
   rw [mpullback_vertical Φ hd,
-    ∇.isCovariantDerivativeOn.smul_const ε (mdifferentiableAt_constantField _ p)] at h
+    ∇.isCovariantDerivativeOnUniv.smul_const ε (mdifferentiableAt_constantField _ p)] at h
   have hread := congrArg (tangentSpaceCastModel J (Φ p)) h
   simp only [smul_apply, map_smul] at hread
   have hc (q : Sol) (v : TangentSpace J q) :

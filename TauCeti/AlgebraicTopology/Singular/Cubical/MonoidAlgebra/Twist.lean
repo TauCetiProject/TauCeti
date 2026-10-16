@@ -112,13 +112,6 @@ theorem twist_ofCube {n : ℕ} (c : SingularCube G n) :
   rw [ofCube_def, twist_mk, CubicalChain.twist_single, _root_.mul_one, ← Submodule.Quotient.mk_smul,
     smul_single_one]
 
-/-- Two linear maps out of the normalized `n`-chains agree if they agree on cubes. -/
-theorem linearMap_ext {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ}
-    {f g : NormalizedCubicalChain G R n →ₗ[R] N}
-    (h : ∀ c : SingularCube G n, f (ofCube G R c) = g (ofCube G R c)) : f = g := by
-  refine Submodule.linearMap_qext _ (Finsupp.lhom_ext' fun c ↦ LinearMap.ext_ring ?_)
-  simpa [ofCube_def] using h c
-
 /-- Twisting is multiplicative in the weight. -/
 theorem twist_comp (w w' : G → R) (n : ℕ) :
     twist w n ∘ₗ twist w' n = twist (w * w') n :=

@@ -6,42 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Symbol
 
 /-!
 # Reduction symbols from Tate's algorithm
 
-`ReductionSymbol` records the possible outputs of Tate's algorithm on a minimal Weierstrass
-equation. The multiplicative branch is classified by the valuation of the minimal discriminant:
-it has symbol `Iₙ`, where `n` is positive. This type is the codomain for classifiers that state the
-output of an individual branch of the algorithm.
+The canonical `TauCeti.ReductionSymbol` records the possible outputs of Tate's algorithm on a
+minimal Weierstrass equation. The multiplicative branch is classified by the valuation of the
+minimal discriminant: it has symbol `Iₙ`, where `n` is positive. This type is the codomain for
+classifiers that state the output of an individual branch of the algorithm.
 
 The symbols and the multiplicative branch follow Tate's algorithm (J. Tate, *Algorithm for
 determining the type of a singular fibre in an elliptic pencil*, LNM 476, 1975).
 -/
 
 public section
-
-/-- The possible reduction symbols in Tate's algorithm for an elliptic curve over a discrete
-valuation ring. `I 0` and `IStar 0` are the symbols `I₀` and `I₀*`; positive indices give `Iₙ` and
-`Iₙ*`, respectively. -/
-inductive TauCeti.ReductionSymbol where
-  /-- Symbol `Iₙ`; `n = 0` means good reduction. -/
-  | I (n : ℕ)
-  /-- Additive reduction, with symbol `II`. -/
-  | II
-  /-- Additive reduction, with symbol `III`. -/
-  | III
-  /-- Additive reduction, with symbol `IV`. -/
-  | IV
-  /-- Symbol `Iₙ*`; `n = 0` gives `I₀*`. -/
-  | IStar (n : ℕ)
-  /-- Additive reduction, with symbol `IV*`. -/
-  | IVStar
-  /-- Additive reduction, with symbol `III*`. -/
-  | IIIStar
-  /-- Additive reduction, with symbol `II*`. -/
-  | IIStar
-  deriving DecidableEq, Repr
 
 namespace WeierstrassCurve
 

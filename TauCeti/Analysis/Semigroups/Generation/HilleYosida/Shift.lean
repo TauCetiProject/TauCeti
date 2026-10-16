@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
-import Mathlib.Tactic.Linarith
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 
 /-!
@@ -40,7 +39,7 @@ noncomputable section
 
 namespace TauCeti.LinearPMap
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- The general `(M, omega)` Hille--Yosida resolvent hypotheses become the exponent-zero
 hypotheses for `A - omega I`.
@@ -58,11 +57,13 @@ theorem hilleYosida_zero_of {A : X →ₗ.[ℝ] X} {M omega : ℝ}
   constructor
   · intro lambda hlambda
     rw [mem_resolventSet_subScalar_iff]
-    exact hres (lambda + omega) (by linarith)
+    exact hres (lambda + omega) (lt_add_of_pos_left omega hlambda)
   · intro n hn lambda hlambda
-    have hmem : lambda + omega ∈ A.resolventSet := hres (lambda + omega) (by linarith)
+    have hmem : lambda + omega ∈ A.resolventSet :=
+      hres (lambda + omega) (lt_add_of_pos_left omega hlambda)
     rw [resolvent_subScalar hmem]
-    simpa only [add_sub_cancel_right] using hbound n hn (lambda + omega) (by linarith)
+    simpa only [add_sub_cancel_right] using
+      hbound n hn (lambda + omega) (lt_add_of_pos_left omega hlambda)
 
 end TauCeti.LinearPMap
 

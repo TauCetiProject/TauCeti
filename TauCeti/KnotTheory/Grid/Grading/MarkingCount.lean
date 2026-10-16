@@ -315,28 +315,9 @@ private theorem sum_pointSet_inter_eq (f : Fin n × Fin n → ℚ) :
 corner: any other covered occupied square would lie strictly inside. -/
 private theorem pointSet_inter_coveredSquares (hR : R.IsEmpty) :
     x.pointSet ∩ R.toGridRectangle.coveredSquares = {(R.left, R.bottom)} := by
-  ext p
-  simp only [Finset.mem_inter, Finset.mem_singleton]
-  constructor
-  · rintro ⟨hx, hsq⟩
-    have hxp : x p.1 = p.2 := (GridState.mem_pointSet x p).mp hx
-    by_contra hne
-    have h1 : p.1 ≠ R.left := by
-      intro h
-      exact hne (Prod.ext h (by simpa only [h, ← R.bottom_def] using hxp.symm))
-    have h2 : p.2 ≠ R.bottom := fun h =>
-      h1 (x.toPerm.injective (hxp.trans (h.trans R.bottom_def)))
-    rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-      GridRectangle.mem_coveredRows] at hsq
-    exact Finset.disjoint_left.mp hR
-      ((R.toGridRectangle.mem_interior p).mpr
-        ⟨Grid.mem_cIoo_of_mem_cIco hsq.1 h1, Grid.mem_cIoo_of_mem_cIco hsq.2 h2⟩) hx
-  · rintro rfl
-    refine ⟨R.left_bottom_mem_source, ?_⟩
-    rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-      GridRectangle.mem_coveredRows]
-    exact ⟨Grid.left_mem_cIco R.left_ne_right,
-      Grid.left_mem_cIco R.bottom_ne_top⟩
+  rw [R.pointSet_inter_coveredSquares_eq_insert,
+    Finset.disjoint_iff_inter_eq_empty.mp hR.symm]
+  simp
 
 /-- The `J`-pairing of the two source corners of a rectangle against each other, minus that of
 the two target corners: it records only how the rectangle wraps around the torus. -/

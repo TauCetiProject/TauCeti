@@ -115,6 +115,19 @@ theorem ofBaseChangeAux_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
   simpa only [toBaseChange_ofBaseChangeAux, Algebra.TensorProduct.includeRight_apply] using
     congrArg (toBaseChange A Q) hxy
 
+/-- The canonical Clifford scalar-extension map commutes with a quadratic isometry. -/
+@[simp]
+theorem _root_.QuadraticMap.Isometry.ofBaseChangeAux_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q')
+    (z : CliffordAlgebra Q) :
+    ofBaseChangeAux A Q' (CliffordAlgebra.map f z) =
+      CliffordAlgebra.map (f.baseChange A) (ofBaseChangeAux A Q z) := by
+  induction z using CliffordAlgebra.induction with
+  | algebraMap r => simp
+  | ι m => simp
+  | add z w hz hw => simp only [map_add, hz, hw]
+  | mul z w hz hw => simp only [map_mul, hz, hw]
+
 section ScalarTower
 
 variable {B : Type x} [CommRing B] [Algebra A B] [Algebra R B] [IsScalarTower R A B]

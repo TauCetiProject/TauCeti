@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 import Mathlib.RingTheory.Finiteness.Cardinality
+import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
@@ -18,8 +19,7 @@ Let `M` be a finite module over a topological ring `A`. Choosing a finite spanni
 presents it as an open quotient of `Aⁿ`, by Mathlib's
 `IsModuleTopology.isOpenQuotientMap_of_surjective`, and so three properties of `A` descend to
 `moduleTopology A M`: first countability, nonarchimedeanness, and — for the canonical right
-uniformity, using Mathlib's completeness of a quotient of a complete first-countable additive
-group — completeness.
+uniformity, by `IsOpenQuotientMap.completeSpace` — completeness.
 
 Each theorem asks of `A` exactly what its proof consumes, and none of them needs `A` to be a
 Huber or a Tate ring. Separatedness is different: it is equivalent to closedness of the kernel of
@@ -43,7 +43,6 @@ topology on `M` from typeclass search.
 public section
 
 open Filter Topology
-open scoped Uniformity
 
 namespace TauCeti
 
@@ -88,21 +87,10 @@ theorem completeSpace_moduleTopology [UniformSpace A] [IsTopologicalRing A]
   let _ : TopologicalSpace M := moduleTopology A M
   let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
   let _ : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
+  have _ : IsModuleTopology A M := inferInstance
   have _ : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
-  have _ : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  obtain ⟨n, S, ⟨e₀⟩⟩ := Module.Finite.exists_fin_quot_equiv A M
-  let Q := (Fin n → A) ⧸ S
-  let _ : UniformSpace Q := IsTopologicalAddGroup.rightUniformSpace Q
-  have _ : IsUniformAddGroup Q := isUniformAddGroup_of_addCommGroup
-  have _ : CompleteSpace Q := QuotientAddGroup.completeSpace_right (Fin n → A) S.toAddSubgroup
-  let eLinear : Q ≃ₗ[A] M := e₀
-  let e : Q ≃L[A] M :=
-    { eLinear with
-      continuous_toFun := IsModuleTopology.continuous_of_linearMap eLinear.toLinearMap
-      continuous_invFun := IsModuleTopology.continuous_of_linearMap eLinear.symm.toLinearMap }
-  have he : IsUniformEmbedding (e : Q → M) :=
-    AddMonoidHom.isUniformEmbedding_of_isEmbedding e.toHomeomorph.isEmbedding
-  exact (completeSpace_congr (e := e.toLinearEquiv.toEquiv) he).mp inferInstance
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A M
+  exact (IsModuleTopology.isOpenQuotientMap_of_surjective hf).completeSpace
 
 end TauCeti
 

@@ -63,10 +63,6 @@ separately.
   Indag. Math. **16** (1954), 369--376.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.3, where
   the finiteness of the string is what makes the multiplicity recursion effective.
-* [Highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 7, whose `freudenthalRHS` is pinned with the note that "the inner sum over `j ≥ 1` is
-  finite because `μ + j • α` leaves the (finite) weight set for large `j`, so it ranges over a
-  finite `Finset`".  That finiteness is what this file supplies.
 -/
 
 public section

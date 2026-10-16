@@ -33,6 +33,11 @@ it is a definition and not an instance; statements about it install it with
 * `TauCeti.ExactStructure.IsFrobenius.stableSuspensionObjIsoShift`: the chosen suspension object
   represents the shift by `1`.
 
+* `TauCeti.ExactStructure.IsFrobenius.commShiftOfIntertwiningStableSuspensionShift`: extend
+  a comparison of stable suspension with an existing target shift to all integral shifts.
+* `TauCeti.ExactStructure.IsFrobenius.commShiftOfIntertwiningStableSuspensionTarget`: extend
+  a comparison between the suspensions of two Frobenius stable categories to their stable shifts.
+
 ## Main results
 
 * `TauCeti.ExactStructure.IsFrobenius.stableSuspensionObjIsoShift_hom_naturality`: the comparison
@@ -67,22 +72,6 @@ stable suspension autoequivalence. -/
 noncomputable def stableHasShift : HasShift E.ProjectiveStableCategory ℤ :=
   hE.stableSuspension.asEquivalence.hasShift
 
-/-- Transport shift compatibility for a stable functor from the suspension-generated shift to
-the chosen stable shift. -/
-@[instance_reducible]
-noncomputable def commShiftOfStableSuspension
-    {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
-    [HasBinaryBiproducts D] {E' : ExactStructure D} (hE' : E'.IsFrobenius)
-    (F : E.ProjectiveStableCategory ⥤ E'.ProjectiveStableCategory)
-    (hF : letI := hE.stableSuspension.asEquivalence.hasShift
-      letI := hE'.stableSuspension.asEquivalence.hasShift
-      F.CommShift ℤ) :
-    letI := hE.stableHasShift
-    letI := hE'.stableHasShift
-    F.CommShift ℤ := by
-  unfold stableHasShift
-  exact hF
-
 /-- The shift by `1` on the stable category of a Frobenius exact structure is stable
 suspension. -/
 noncomputable def stableShiftFunctorOneIso :
@@ -90,24 +79,28 @@ noncomputable def stableShiftFunctorOneIso :
     shiftFunctor E.ProjectiveStableCategory (1 : ℤ) ≅ hE.stableSuspension :=
   hE.stableSuspension.asEquivalence.shiftFunctorOneIso
 
-/-- In degree one, transported stable shift compatibility recovers the supplied suspension
-comparison. -/
-theorem commShiftOfStableSuspension_iso_one
-    {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
-    [HasBinaryBiproducts D] {E' : ExactStructure D} (hE' : E'.IsFrobenius)
-    (F : E.ProjectiveStableCategory ⥤ E'.ProjectiveStableCategory)
-    (α : hE.stableSuspension ⋙ F ≅ F ⋙ hE'.stableSuspension) :
+/-- A functor identifying stable suspension with an existing target shift by one commutes
+coherently with all stable shifts and that target shift. -/
+@[instance_reducible]
+noncomputable def commShiftOfIntertwiningStableSuspensionShift
+    {D : Type u'} [Category.{v'} D] [HasShift D ℤ]
+    (F : E.ProjectiveStableCategory ⥤ D)
+    (α : hE.stableSuspension ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ)) :
     letI := hE.stableHasShift
-    letI := hE'.stableHasShift
-    letI := hE.commShiftOfStableSuspension hE' F
-      (CategoryTheory.Functor.commShiftOfIntertwining F
-        hE.stableSuspension.asEquivalence hE'.stableSuspension.asEquivalence α)
-    F.commShiftIso (1 : ℤ) =
-      Functor.isoWhiskerRight hE.stableShiftFunctorOneIso F ≪≫ α ≪≫
-        Functor.isoWhiskerLeft F hE'.stableShiftFunctorOneIso.symm := by
-  unfold commShiftOfStableSuspension stableShiftFunctorOneIso stableHasShift
-  exact CategoryTheory.Functor.commShiftOfIntertwining_iso_one F
-    hE.stableSuspension.asEquivalence hE'.stableSuspension.asEquivalence α
+    F.CommShift ℤ := by
+  unfold stableHasShift
+  exact Shift.commShiftOfIntertwiningToShift _ hE.stableSuspension.asEquivalence F α
+
+/-- In degree one, stable shift compatibility recovers the supplied suspension comparison. -/
+theorem commShiftOfIntertwiningStableSuspensionShift_iso_one
+    {D : Type u'} [Category.{v'} D] [HasShift D ℤ]
+    (F : E.ProjectiveStableCategory ⥤ D)
+    (α : hE.stableSuspension ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ)) :
+    letI := hE.stableHasShift
+    letI := hE.commShiftOfIntertwiningStableSuspensionShift F α
+    F.commShiftIso (1 : ℤ) = Functor.isoWhiskerRight hE.stableShiftFunctorOneIso F ≪≫ α := by
+  unfold commShiftOfIntertwiningStableSuspensionShift stableHasShift stableShiftFunctorOneIso
+  exact Shift.commShiftOfIntertwiningToShift_iso_one _ hE.stableSuspension.asEquivalence F α
 
 /-- A functor out of the stable category which intertwines stable suspension with an
 autoequivalence `e` of its target commutes coherently with the stable shift and the shift by `ℤ`
@@ -119,8 +112,9 @@ noncomputable def commShiftOfIntertwiningStableSuspension {D : Type u'} [Categor
     letI := hE.stableHasShift
     letI := e.hasShift
     F.CommShift ℤ := by
-  unfold stableHasShift
-  exact CategoryTheory.Functor.commShiftOfIntertwining F hE.stableSuspension.asEquivalence e α
+  letI := e.hasShift
+  exact hE.commShiftOfIntertwiningStableSuspensionShift F
+    (α ≪≫ Functor.isoWhiskerLeft F e.shiftFunctorOneIso.symm)
 
 /-- In degree one, the shift compatibility of a functor intertwining stable suspension with an
 autoequivalence `e` recovers the supplied intertwining isomorphism. -/
@@ -133,9 +127,39 @@ theorem commShiftOfIntertwiningStableSuspension_iso_one {D : Type u'} [Category.
     F.commShiftIso (1 : ℤ) =
       Functor.isoWhiskerRight hE.stableShiftFunctorOneIso F ≪≫ α ≪≫
         Functor.isoWhiskerLeft F e.shiftFunctorOneIso.symm := by
-  unfold commShiftOfIntertwiningStableSuspension stableShiftFunctorOneIso stableHasShift
-  exact CategoryTheory.Functor.commShiftOfIntertwining_iso_one F
-    hE.stableSuspension.asEquivalence e α
+  let := e.hasShift
+  exact hE.commShiftOfIntertwiningStableSuspensionShift_iso_one F
+    (α ≪≫ Functor.isoWhiskerLeft F e.shiftFunctorOneIso.symm)
+
+/-- A functor intertwining two stable suspensions commutes coherently with the stable integral
+shifts on both Frobenius stable categories. -/
+@[instance_reducible]
+noncomputable def commShiftOfIntertwiningStableSuspensionTarget
+    {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+    {E' : ExactStructure D} (hE' : E'.IsFrobenius)
+    (F : E.ProjectiveStableCategory ⥤ E'.ProjectiveStableCategory)
+    (α : hE.stableSuspension ⋙ F ≅ F ⋙ hE'.stableSuspension) :
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    F.CommShift ℤ := by
+  unfold stableHasShift
+  exact hE.commShiftOfIntertwiningStableSuspension hE'.stableSuspension.asEquivalence F α
+
+/-- In degree one, compatibility between stable shifts recovers the supplied suspension
+comparison, using the stable shift identifications on the source and target. -/
+theorem commShiftOfIntertwiningStableSuspensionTarget_iso_one
+    {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+    {E' : ExactStructure D} (hE' : E'.IsFrobenius)
+    (F : E.ProjectiveStableCategory ⥤ E'.ProjectiveStableCategory)
+    (α : hE.stableSuspension ⋙ F ≅ F ⋙ hE'.stableSuspension) :
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI := hE.commShiftOfIntertwiningStableSuspensionTarget hE' F α
+    F.commShiftIso (1 : ℤ) =
+      Functor.isoWhiskerRight hE.stableShiftFunctorOneIso F ≪≫ α ≪≫
+        Functor.isoWhiskerLeft F hE'.stableShiftFunctorOneIso.symm := by
+  unfold commShiftOfIntertwiningStableSuspensionTarget stableHasShift stableShiftFunctorOneIso
+  exact hE.commShiftOfIntertwiningStableSuspension_iso_one hE'.stableSuspension.asEquivalence F α
 
 /-- The shift by `-1` on the stable category of a Frobenius exact structure is the stable loop
 functor. -/

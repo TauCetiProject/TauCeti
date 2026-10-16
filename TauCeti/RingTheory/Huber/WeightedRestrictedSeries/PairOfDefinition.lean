@@ -7,9 +7,11 @@ module
 
 public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 public import Mathlib.Data.Finsupp.Weight
 
 import TauCeti.RingTheory.Huber.OpenIdeal
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenIdeal
 
 /-!
 # `A⟨X⟩_T` is a Huber ring
@@ -66,6 +68,12 @@ completion and need no argument here.
   `TauCeti.Huber.isTateRing_weightedRestrictedSubring`: the two instances. The completed algebra
   `A⟨X₁,…,Xₖ⟩` at the trivial weight inherits both from them by
   synthesis, with no separate result: see the `example`s at the end of the file.
+* `TauCeti.Huber.isWeightBounded_completion_weightedX`: the variables of the completion of
+  `A⟨X⟩_T` satisfy the hypothesis of Wedhorn's Proposition 5.50 relative to the weights `T`, and
+  `TauCeti.Huber.IsBounded.image_algebraMap_completion_weightedRestrictedSubring`: the structure
+  map into it carries bounded sets to bounded sets.
+* `TauCeti.Huber.IsWeightFamily.image_algebraMap_completion`: the image in the completion of
+  `A⟨X⟩_T` of a weight family on `A` is a weight family.
 
 ## Provenance
 
@@ -75,8 +83,9 @@ it bounds, uniformly in the level, the number of generators a decomposition need
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Remark and Definition 5.48 for `A⟨X⟩_T`, Example
-  5.54 for the trivial weight, and Proposition and Definition 6.1 for pairs of definition.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Remark and Definition 5.48 for `A⟨X⟩_T`, Proposition
+  5.50 for the universal property whose hypothesis the variables of its completion satisfy,
+  Example 5.54 for the trivial weight, and Proposition and Definition 6.1 for pairs of definition.
 -/
 
 public section
@@ -128,6 +137,29 @@ theorem exists_sum_eq_of_mem_weightMul_idealImage_succ (P : PairOfDefinition A)
     rw [← hsum, Finset.mul_sum]
     exact Finset.sum_congr rfl fun z _ ↦ by ring
   exact hle hx
+
+/-- A series whose coefficient at `ν` lies in `Tν · I^(n + m ν)`, for a level function `m` with
+finite sublevel sets, is `T`-restricted: the levels force the coefficients into every basic
+neighbourhood outside a finite set.
+
+This is the convergence half of
+`TauCeti.Huber.PairOfDefinition.exists_sum_weightedRingOfDefinitionC_mul`, where `m` comes from
+`TauCeti.Huber.PairOfDefinition.exists_level`. -/
+private theorem isWeightedRestricted_of_coeff_mem_weightMul_idealImage (P : PairOfDefinition A)
+    {T : Fin k → Set A} (n : ℕ) {m : (Fin k →₀ ℕ) → ℕ} (hmfin : ∀ M : ℕ, {ν | m ν < M}.Finite)
+    {s : MvPowerSeries (Fin k) A}
+    (hc : ∀ ν, MvPowerSeries.coeff ν s ∈ weightMul T ν (P.idealImage (n + m ν))) :
+    IsWeightedRestricted T s := by
+  refine isWeightedRestricted_iff.mpr fun U ↦ ?_
+  obtain ⟨M, -, hM⟩ := P.hasBasis_nhds_zero.mem_iff.mp (U.isOpen.mem_nhds U.zero_mem)
+  rw [Filter.eventually_cofinite]
+  refine (hmfin M).subset fun ν hν ↦ ?_
+  simp only [Set.mem_ofPred_eq] at hν ⊢
+  by_contra hle
+  refine hν ?_
+  refine weightMul_mono T ν ?_ (hc ν)
+  exact le_trans (P.idealImage_anti (by omega))
+    fun x hx ↦ SetLike.mem_coe.mp (hM (SetLike.mem_coe.mpr hx))
 
 section Nonarchimedean
 
@@ -270,30 +302,6 @@ private theorem exists_mem_weightedIdeal_coe_eq (P : PairOfDefinition A) (hT : I
     (P.mem_weightedRingOfDefinition hT).mpr <| mem_weightedNhd.mpr fun ν ↦
       weightMul_mono T ν (P.idealImage_le_ringOfDefinition n) (hmem ν)⟩,
     rfl, mem_weightedNhd.mpr hmem⟩
-
-omit [NonarchimedeanRing A] in
-/-- A series whose coefficient at `ν` lies in `Tν · I^(n + m ν)`, for a level function `m` with
-finite sublevel sets, is `T`-restricted: the levels force the coefficients into every basic
-neighbourhood outside a finite set.
-
-This is the convergence half of
-`TauCeti.Huber.PairOfDefinition.exists_sum_weightedRingOfDefinitionC_mul`, where `m` comes from
-`TauCeti.Huber.PairOfDefinition.exists_level`. -/
-private theorem isWeightedRestricted_of_coeff_mem_weightMul_idealImage (P : PairOfDefinition A)
-    (n : ℕ) {m : (Fin k →₀ ℕ) → ℕ} (hmfin : ∀ M : ℕ, {ν | m ν < M}.Finite)
-    {s : MvPowerSeries (Fin k) A}
-    (hc : ∀ ν, MvPowerSeries.coeff ν s ∈ weightMul T ν (P.idealImage (n + m ν))) :
-    IsWeightedRestricted T s := by
-  refine isWeightedRestricted_iff.mpr fun U ↦ ?_
-  obtain ⟨M, -, hM⟩ := P.hasBasis_nhds_zero.mem_iff.mp (U.isOpen.mem_nhds U.zero_mem)
-  rw [Filter.eventually_cofinite]
-  refine (hmfin M).subset fun ν hν ↦ ?_
-  simp only [Set.mem_ofPred_eq] at hν ⊢
-  by_contra hle
-  refine hν ?_
-  refine weightMul_mono T ν ?_ (hc ν)
-  exact le_trans (P.idealImage_anti (by omega))
-    fun x hx ↦ SetLike.mem_coe.mp (hM (SetLike.mem_coe.mpr hx))
 
 /-- **The decomposition of a series.** A series all of whose coefficients meet the `Iⁿ⁺¹` bound is
 a combination, with cofactors in `Iⁿ⟨X⟩_T`, of the constant series attached to a finite generating
@@ -536,7 +544,7 @@ theorem isOpen_map_algebraMap_weightedRestrictedSubring [IsTopologicalRing A] [I
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   refine P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition (P.weighted hT) _ ?_ hJ
   rw [← P.weighted_extendedIdealOfDefinition hT]
-  exact ((P.weighted hT).isOpen_iff_exists_pow_le _).mpr ⟨1, (pow_one _).le⟩
+  exact (P.weighted hT).isOpen_extendedIdealOfDefinition
 
 -- The completed algebra `A⟨X₁,…,Xₖ⟩` — the separated completion of the
 -- trivial-weight `A⟨X⟩_T` — needs no result of its own: the instances above and
@@ -549,5 +557,65 @@ example (k : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRi
     [IsTateRing A] : IsTateRing (restrictedMvPowerSeriesCompletion k A) := inferInstance
 
 end Instances
+
+/-! ### The variables of a completed weighted algebra -/
+
+section Generators
+
+open UniformSpace
+
+variable [IsTopologicalRing A] [IsHuberRing A] {T : Fin k → Set A}
+
+/-- **The structure map into the completion of `A⟨X⟩_T` carries bounded sets to bounded sets**:
+it is the constant series followed by the completion map, and both preserve boundedness. -/
+theorem IsBounded.image_algebraMap_completion_weightedRestrictedSubring (hT : IsWeightFamily T)
+    {S : Set A} (hS : IsBounded S) :
+    IsBounded (algebraMap A (Completion (weightedRestrictedSubring T hT)) '' S) := by
+  have he : (algebraMap A (Completion (weightedRestrictedSubring T hT)) : A → _) =
+      ((↑) : weightedRestrictedSubring T hT → Completion (weightedRestrictedSubring T hT)) ∘
+        weightedC T hT :=
+    funext (algebraMap_completion_weightedRestrictedSubring_apply _ _ hT)
+  rw [he, Set.image_comp]
+  exact isBounded_image_completion_coe_of_isBounded (hS.image_weightedC hT)
+
+/-- **The variables of the completion of `A⟨X⟩_T` satisfy the hypothesis of Wedhorn's universal
+property** relative to the weights `T`: the weighted monomials `t Xᵛ`, `t ∈ Tᵛ`, form a bounded
+subset of the completion. They are the images of those of `A⟨X⟩_T`
+(`TauCeti.Huber.isWeightBounded_weightedX`), and the completion map of a Huber ring preserves
+boundedness. -/
+theorem isWeightBounded_completion_weightedX (hT : IsWeightFamily T) :
+    IsWeightBounded (algebraMap A (Completion (weightedRestrictedSubring T hT))) T
+      fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) := by
+  have h := isBounded_image_completion_coe_of_isBounded
+    ((isWeightBounded_iff _ _ _).mp (isWeightBounded_weightedX hT))
+  rw [Set.image_iUnion] at h
+  refine (isWeightBounded_iff _ _ _).mpr (h.subset (Set.iUnion_mono fun ν ↦ ?_))
+  rw [Set.image_image]
+  refine (Set.image_congr fun t _ ↦ ?_).subset
+  -- the completion map is `⇑Completion.coeRingHom` by definition, a ring homomorphism, so it
+  -- commutes with the weighted monomials
+  have hcoe : ∀ x : weightedRestrictedSubring T hT,
+      (x : Completion (weightedRestrictedSubring T hT)) = Completion.coeRingHom x := fun _ ↦ rfl
+  simp only [algebraMap_completion_weightedRestrictedSubring_apply,
+    algebraMap_weightedRestrictedSubring, hcoe, map_mul, map_prod, map_pow]
+
+/-- **A weight family on `A` has image a weight family in the completion of `A⟨X⟩_T`.** Over a Huber
+ring the weights are admissible exactly when they generate open ideals
+(`TauCeti.Huber.isWeightFamily_iff_isOpen_span`), and the structure map into the completion carries
+open ideals to ideals generating open ideals. This supplies the weights `W` of the iterated algebra
+in the case `W j = algebraMap A B '' V j`. -/
+theorem IsWeightFamily.image_algebraMap_completion (hT : IsWeightFamily T) {m : ℕ}
+    {V : Fin m → Set A} (hV : IsWeightFamily V) :
+    IsWeightFamily fun j ↦ algebraMap A (Completion (weightedRestrictedSubring T hT)) '' V j := by
+  have he : algebraMap A (Completion (weightedRestrictedSubring T hT)) =
+      Completion.coeRingHom.comp (algebraMap A (weightedRestrictedSubring T hT)) :=
+    RingHom.ext (Completion.algebraMap_def _ _)
+  refine isWeightFamily_iff_isOpen_span.mpr fun j ↦ ?_
+  rw [← Ideal.map_span, he, ← Ideal.map_map]
+  exact isOpen_map_coeRingHom
+    (isOpen_map_algebraMap_weightedRestrictedSubring (isWeightFamily_iff_isOpen_span.mp hV j))
+
+end Generators
 
 end TauCeti.Huber

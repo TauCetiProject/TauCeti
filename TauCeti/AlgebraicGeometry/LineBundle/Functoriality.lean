@@ -141,21 +141,12 @@ lemma pullback_mul (f : X ⟶ Y) (a b : LineBundleClass Y) :
     pullback f (a * b) = pullback f a * pullback f b := by
   obtain ⟨L, rfl⟩ := mk_surjective a
   obtain ⟨K, rfl⟩ := mk_surjective b
-  simp only [← mk_tensorProduct, pullback_mk, mk_eq_mk_iff, InvertibleSheaf.tensorProduct_obj,
-    InvertibleSheaf.pullback_obj_obj]
-  -- A line bundle is locally free, hence quasicoherent, so the tensor comparison of pullback is
-  -- invertible; the tensor product of line bundles is identified with the monoidal tensor
-  -- product through `tensorUnderlyingIso`.
-  have : L.obj.IsQuasicoherent :=
-    have : TauCeti.SheafOfModules.IsInvertible (R := Y.ringCatSheaf) L.obj := L.property
-    let F : _root_.SheafOfModules Y.ringCatSheaf := L.obj
-    inferInstanceAs F.IsQuasicoherent
-  exact ⟨(Scheme.Modules.pullback f).mapIso (SheafOfModules.tensorProductIso Y.sheaf L.obj K.obj ≪≫
-      (L.obj.tensorUnderlyingIso K.obj).symm) ≪≫
+  simp only [← mk_tensorProduct, pullback_mk, mk_eq_mk_iff]
+  -- A line bundle is quasicoherent, so the tensor comparison of pullback is invertible.
+  exact ⟨(Scheme.Modules.pullback f).mapIso (InvertibleSheaf.tensorProductObjIso L K) ≪≫
     asIso (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj) ≪≫
-    ((Scheme.Modules.pullback f).obj L.obj).tensorUnderlyingIso
-      ((Scheme.Modules.pullback f).obj K.obj) ≪≫
-    (SheafOfModules.tensorProductIso X.sheaf _ _).symm⟩
+    (InvertibleSheaf.tensorProductObjIso ((InvertibleSheaf.pullback f).obj L)
+      ((InvertibleSheaf.pullback f).obj K)).symm⟩
 
 /-- Pullback of line-bundle classes along a scheme morphism, as a homomorphism of Picard
 groups. -/

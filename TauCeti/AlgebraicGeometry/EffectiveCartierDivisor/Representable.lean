@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.DegreeOne
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Basic
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.One
 public import Mathlib.CategoryTheory.Subfunctor.Image
 
 /-!

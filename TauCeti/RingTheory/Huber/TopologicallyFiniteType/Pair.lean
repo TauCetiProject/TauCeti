@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Completion.Basic
-public import TauCeti.RingTheory.Huber.QuotientMapping
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.QuotientMapping
 
 /-!
 # Morphisms of Huber pairs topologically of finite type
@@ -34,8 +32,6 @@ variables, and hence so is every quotient mapping out of such a pair.
 
 ## Main definitions
 
-* `TauCeti.Huber.Pair.weightedCompletionHom`: the structure map `(A, A⁺) → (A⟨X⟩_T, A⟨X⟩_T⁺)^`
-  into the completed weighted pair.
 * `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType`: Wedhorn Definition 8.42.
 
 ## Main results
@@ -49,14 +45,18 @@ variables, and hence so is every quotient mapping out of such a pair.
 * `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.comp_isQuotientMapping` and
   `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.quotientHom`: the notion is stable under
   composing with a quotient mapping, in particular under passing to a quotient pair.
+* `TauCeti.Huber.Pair.exists_isQuotientMapping_weightedCompletionHom` and
+  `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.exists_isQuotientMapping_one_weight`: over a
+  Tate ring the weights can be removed, so a morphism topologically of finite type is presented
+  by an unweighted completed pair `(A⟨Y₁, …, Yₘ⟩, A⟨Y⟩⁺)`.
 * `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_id` and
   `TauCeti.Huber.Pair.Hom.IsQuotientMapping.isTopologicallyFiniteType`: over a complete Hausdorff
   Huber pair, the identity and every quotient mapping are topologically of finite type.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 7.47, Remark and
-  Definition 8.41, and Definition 8.42.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition 6.34, Lemma 7.47,
+  Remark and Definition 8.41, and Definition 8.42.
 -/
 
 public section
@@ -71,23 +71,6 @@ variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
   {S : Pair A} {U : Pair B} {V : Pair C} {k : ℕ} {T : Fin k → Set A}
-
-variable (S) in
-/-- **The structure map `(A, A⁺) → (A⟨X⟩_T, A⟨X⟩_T⁺)^`** into the completion of the weighted
-restricted power-series pair: the constant series, followed by the completion map. -/
-noncomputable def weightedCompletionHom (hT : IsWeightFamily T) :
-    Hom S (S.weighted hT).completion :=
-  (S.weighted hT).completionHom.comp (S.weightedHom hT)
-
-variable (S) in
-/-- The underlying ring homomorphism of the structure map into the completed weighted pair is the
-structure map of the `A`-algebra `Â⟨X⟩_T`. -/
-@[simp]
-theorem Hom.toRingHom_weightedCompletionHom (hT : IsWeightFamily T) :
-    (S.weightedCompletionHom hT).toRingHom =
-      algebraMap A (Completion (weightedRestrictedSubring T hT)) := by
-  ext a
-  simp [weightedCompletionHom]
 
 namespace Hom
 
@@ -164,6 +147,83 @@ theorem isTopologicallyFiniteType_weightedCompletionHom (hTfin : ∀ i, (T i).Fi
 
 end Presentation
 
+/-! ### Unweighted presentations over a Tate ring -/
+
+section Tate
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+  {S : Pair A} {U : Pair B}
+
+variable (S) in
+/-- **Over a Tate ring a completed weighted pair is a quotient of an unweighted one**: for a
+finite weight family `T`, there is a quotient mapping
+`(A⟨Y₁, …, Yₘ⟩, A⟨Y⟩⁺) → (A⟨X⟩_T, A⟨X⟩_T⁺)^` under `(A, A⁺)`, sending each `Yⱼ` to a weighted
+variable `t Xᵢ`. Pair form of
+`TauCeti.Huber.isStrictlyTopologicallyFiniteType_algebraMap_completion_weightedRestrictedSubring`.
+-/
+theorem exists_isQuotientMapping_weightedCompletionHom {k : ℕ} {T : Fin k → Set A}
+    (hT : IsWeightFamily T) (hTfin : ∀ i, (T i).Finite) :
+    ∃ (m : ℕ) (θ : Hom (S.weighted (isWeightFamily_one_weight (k := m))).completion
+      (S.weighted hT).completion), θ.IsQuotientMapping ∧
+        θ.comp (S.weightedCompletionHom isWeightFamily_one_weight) =
+          S.weightedCompletionHom hT := by
+  obtain ⟨m, idx, t, htT, ht, θ, hθ, hθA, hθX⟩ :=
+    exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion hT hTfin
+  have hθC (a : A) : θ ((weightedC (fun _ : Fin m ↦ ({1} : Set A)) isWeightFamily_one_weight a :
+      weightedRestrictedSubring _ _) : restrictedMvPowerSeriesCompletion m A) =
+        (weightedC T hT a : weightedRestrictedSubring T hT) := by
+    simpa [algebraMap_completion_weightedRestrictedSubring_apply] using
+      congrArg (fun φ : A →+* _ ↦ φ a) hθA
+  -- the generators of the unweighted plus ring: the constants from `A⁺` and the variables
+  have hY : ∀ a ∈ ({1} : Set A), ∀ j,
+      (weightedC (fun _ : Fin m ↦ ({1} : Set A)) isWeightFamily_one_weight a *
+        weightedX _ isWeightFamily_one_weight j : weightedRestrictedSubring _ _) =
+        weightedX _ isWeightFamily_one_weight j := by
+    rintro a rfl j
+    rw [map_one, one_mul]
+  let θ' : Hom (S.weighted (isWeightFamily_one_weight (k := m))).completion
+      (S.weighted hT).completion :=
+    { toRingHom := θ
+      continuous_toRingHom := hθ.continuous
+      map_mem_plus := S.weighted_completion_plus_le_comap _ _ hθ.continuous
+        (fun a ha ↦ by
+          rw [hθC]
+          exact S.weightedC_mem_weighted_completion_plus hT ha)
+        (fun j a ha ↦ by
+          rw [hY a ha j, hθX]
+          exact S.weightedC_mul_weightedX_mem_weighted_completion_plus hT (htT j)) }
+  -- an element of the image of the source plus ring is integral over it
+  have hint : ∀ x ∈ (S.weighted (isWeightFamily_one_weight (k := m))).completion.plus,
+      IsIntegral ((S.weighted (isWeightFamily_one_weight (k := m))).completion.plus.map θ)
+        (θ x) := fun x hx ↦
+    isIntegral_algebraMap (R := (S.weighted _).completion.plus.map θ)
+      (x := ⟨θ x, Subring.mem_map.mpr ⟨x, hx, rfl⟩⟩)
+  refine ⟨m, θ', Hom.isQuotientMapping_of_isIntegral_weighted θ' hθ (fun a ha ↦ ?_)
+    (fun i a ha ↦ ?_), Hom.ext ?_⟩
+  · rw [← hθC]
+    exact hint _ (S.weightedC_mem_weighted_completion_plus _ ha)
+  · obtain ⟨j, rfl, rfl⟩ := ht i a ha
+    rw [← hθX, ← hY 1 rfl j]
+    exact hint _ (S.weightedC_mul_weightedX_mem_weighted_completion_plus _ (Set.mem_singleton 1))
+  · rw [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom,
+      Hom.toRingHom_weightedCompletionHom]
+    exact hθA
+
+/-- **Over a Tate ring a morphism of Huber pairs topologically of finite type has an unweighted
+presentation**: it factors as the structure map into some `(A⟨Y₁, …, Yₘ⟩, A⟨Y⟩⁺)` followed by a
+quotient mapping. Pair form of
+`TauCeti.Huber.IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType`. -/
+theorem Hom.IsTopologicallyFiniteType.exists_isQuotientMapping_one_weight {f : Hom S U}
+    (hf : f.IsTopologicallyFiniteType) :
+    ∃ (m : ℕ) (π : Hom (S.weighted (isWeightFamily_one_weight (k := m))).completion U),
+      π.IsQuotientMapping ∧ π.comp (S.weightedCompletionHom isWeightFamily_one_weight) = f := by
+  obtain ⟨k, T, hTfin, hT, π, hπ, rfl⟩ := isTopologicallyFiniteType_iff.mp hf
+  obtain ⟨m, θ, hθ, hθc⟩ := S.exists_isQuotientMapping_weightedCompletionHom hT hTfin
+  exact ⟨m, π.comp θ, hπ.comp hθ, by rw [comp_assoc, hθc]⟩
+
+end Tate
+
 /-! ### Complete Hausdorff pairs -/
 
 section Complete
@@ -188,11 +248,10 @@ theorem Hom.isTopologicallyFiniteType_id (S : Pair A) :
         finZeroElim }
   -- its extension to the completion has the structure map as a section
   have hsec : ev.extension.comp (S.weightedCompletionHom hT) = Hom.id S := by
-    rw [weightedCompletionHom, ← comp_assoc, Hom.extension_comp_completionHom]
     ext a
-    simp [ev]
+    simp [ev, algebraMap_completion_weightedRestrictedSubring_apply]
   have hinv : Function.LeftInverse ev.extension.toRingHom (S.weightedCompletionHom hT).toRingHom :=
-    fun a ↦ by simp [weightedCompletionHom, ev]
+    fun a ↦ by simp [ev, algebraMap_completion_weightedRestrictedSubring_apply]
   refine ⟨0, T, finZeroElim, hT, ev.extension,
     (Hom.isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral _).mpr ⟨?_, fun a ha ↦ ?_⟩, hsec⟩
   · -- a continuous map with a continuous section is a quotient map, hence open for groups

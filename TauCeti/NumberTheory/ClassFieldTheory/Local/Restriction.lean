@@ -94,8 +94,9 @@ theorem localFormationCoeffEquiv_symm_apply (y : UnitsCoeff E) :
   Additive.toMul.injective (by
     rw [toMul_localFormationCoeffEquiv_symm_apply, toMul_unitsCoeffMapSymm])
 
--- The cocycle computation parallels `inflCocycle2_mapCocycles₂` in
--- `TauCeti.NumberTheory.ClassFieldTheory.Brauer.LayerInvariant`, the conjugation case.
+-- The cocycle computation parallels the conjugation case, the proof of
+-- `NormalLayer.explicitInfl2_conjugateCohomologyIso` in
+-- `TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Inflation`.
 /-- The inflated cocycle of the image of a layer cocycle under a layer isomorphism from a layer
 `V ◁ U` over `E` to a layer `V' ◁ U'` over `K`, whose Galois-group map is induced by the embedding
 `U' → U` inverse to `G_E → G_K` and whose coefficient map is induced by `(Eˢ)ˣ ≃ (Kˢ)ˣ`, is the

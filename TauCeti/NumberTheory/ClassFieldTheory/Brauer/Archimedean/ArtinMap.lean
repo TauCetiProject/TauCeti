@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Archimedean.ClassFormation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.FieldArtinMap
@@ -12,6 +13,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymb
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 
 /-!
@@ -44,8 +47,11 @@ group of `ℂ/ℝ` (`infiniteArtinAt_eq_one_iff_of_isReal`). On roots of unity a
 therefore acts trivially for `x > 0` and by `ζ ↦ ζ⁻¹` for `x < 0`, that is, through the explicit
 real cyclotomic symbol `realCyclotomicSymbol` (`infiniteArtinAt_rootsOfUnity_of_isReal`): the
 nontrivial automorphism of `K_w(i)/K_w` sends `a + b i` to `a - b i`, so `ζ σ(ζ) = a² + b²` is a
-nonnegative root of unity in `K_w ≅ ℝ`. Finally, the archimedean Artin maps are functorial for the
-norm of a finite extension (`infiniteArtinAt_norm`), the archimedean analogue of `artinMap_norm`.
+nonnegative root of unity in `K_w ≅ ℝ`. In particular the `p`-adic cyclotomic character of the
+Artin symbol of a negative element is `-1`
+(`abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg`). Finally, the
+archimedean Artin maps are functorial for the norm of a finite extension
+(`infiniteArtinAt_norm`), the archimedean analogue of `artinMap_norm`.
 
 ## Main definitions
 
@@ -64,6 +70,8 @@ norm of a finite extension (`infiniteArtinAt_norm`), the archimedean analogue of
   the Artin map is the group of positive elements.
 * `TauCeti.ClassFieldTheory.infiniteArtinAt_rootsOfUnity_of_isReal`: at a real place the Artin
   symbol acts on the `m`-th roots of unity through `realCyclotomicSymbol m`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg`:
+  at a real place the cyclotomic character of the Artin symbol of a negative element is `-1`.
 * `TauCeti.ClassFieldTheory.infiniteArtinAt_norm`: norm functoriality of the archimedean Artin
   maps.
 
@@ -258,6 +266,26 @@ theorem infiniteArtinAt_rootsOfUnity_of_isReal (m : ℕ) [NeZero m] (x : w.Compl
         rcases n with _ | n
         · simpa using hz
         · rw [Nat.one_mod_eq_one.mpr (by omega), pow_one]
+
+/-- **The cyclotomic character of the real Artin symbol of a negative element.** At a real place,
+the `p`-adic cyclotomic character of `Art_w(x)` is `-1` for `x < 0`: a lift of the symbol inverts
+every root of unity. -/
+theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg (p : ℕ)
+    [Fact p.Prime] {x : w.Completionˣ}
+    (hx : Completion.extensionEmbeddingOfIsReal hw (x : w.Completion) < 0) :
+    abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w x) = -1 := by
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have : CharZero w.Completion := (Completion.extensionEmbedding w).charZero
+  have : NeZero (p : w.Completion) := ⟨Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero⟩
+  obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (infiniteArtinAt w x)
+  rw [← hσ, abelianizedLocalCyclotomicCharacter_mk, localCyclotomicCharacter_apply]
+  refine cyclotomicCharacter_eq_neg_one p fun n t ht ↦ ?_
+  -- `σ` raises `t` to the power `(-1 : ZMod (p ^ n)).val`, which is `-1` modulo the order of `t`.
+  rw [infiniteArtinAt_rootsOfUnity_of_isReal w hw (p ^ n) x σ hσ ht,
+    realCyclotomicSymbol_of_neg _ _ (by simpa using hx), Units.val_neg, Units.val_one,
+    ← pow_succ]
+  refine orderOf_dvd_iff_pow_eq_one.1 ((orderOf_dvd_of_pow_eq_one ht).trans ?_)
+  rw [← ZMod.natCast_eq_zero_iff, Nat.cast_succ, ZMod.natCast_zmod_val, neg_add_cancel]
 
 end Real
 

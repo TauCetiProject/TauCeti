@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Adjoints of isometric isomorphisms and of `L²` coordinate projections
+# Adjoints of isometric isomorphisms, of `L²` coordinate projections, and norm bounds
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -19,6 +19,12 @@ Two families of adjoints of linear maps between finite-dimensional inner product
   `(e : E →ₗ[𝕜] F)` in which compositions with isometric isomorphisms are usually written;
 * on the `L²` product `WithLp 2 (E × F)`, the coordinate projections `WithLp.fstₗ` and
   `WithLp.sndₗ` are adjoint to the inclusions `x ↦ (x, 0)` and `y ↦ (0, y)` of the two factors.
+
+Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
+(`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
+form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
+If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
+(`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`).
 -/
 
 public section
@@ -60,3 +66,25 @@ theorem adjoint_sndₗ :
   simp [WithLp.prod_inner_apply]
 
 end WithLp
+
+namespace LinearMap
+
+/-- If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`, then also `‖C† y‖ ≤ c * ‖y‖` for every `y`. -/
+theorem norm_adjoint_apply_le {C : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
+    (hC : ∀ x, ‖C x‖ ≤ c * ‖x‖) (y : F) : ‖adjoint C y‖ ≤ c * ‖y‖ := by
+  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.complete 𝕜 F
+  -- The continuous adjoint is an isometry for the operator norm.
+  calc ‖adjoint C y‖ = ‖ContinuousLinearMap.adjoint C.toContinuousLinearMap y‖ := by
+        rw [← adjoint_toContinuousLinearMap, coe_toContinuousLinearMap']
+    _ ≤ c * ‖y‖ := ContinuousLinearMap.le_of_opNorm_le _ (by
+        rw [LinearIsometryEquiv.norm_map]
+        exact C.toContinuousLinearMap.opNorm_le_bound hc hC) y
+
+/-- If a linear map `A` vanishes on `Tᗮ`, then the adjoint of `A` takes values in `T`. -/
+theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : Submodule 𝕜 E}
+    (hA : ∀ x ∈ Tᗮ, A x = 0) (y : F) : adjoint A y ∈ T :=
+  T.orthogonal_orthogonal ▸ Submodule.orthogonal_le (fun x hx ↦ hA x hx)
+    (A.orthogonal_ker ▸ mem_range_self _ y)
+
+end LinearMap

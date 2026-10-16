@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Quiver.Star
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BacktrackRelator
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
@@ -23,7 +24,7 @@ vertex `v` the Koszul complex of the vertex module `S_v` is
 ```
 
 the sum running over the arrows `b` of `R` into `v`. It differs from the Koszul complex of the
-preprojective algebra (`TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex`) only in
+preprojective algebra (`TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex`) only in
 carrying no signs. For the doubled quiver of a finite simple graph `G` the signless algebra is the
 quadratic dual of the quadratic zigzag presentation
 (`TauCeti.quadraticDualQuadraticZigzagEquivSignless`), and so, when `G` is connected with at least
@@ -151,11 +152,8 @@ theorem signlessPreprojectiveMk_ofArrow_mul_eq_zero_iff_of_ne_reverse
     {y : signlessPreprojectiveAlgebra k R}
     (hy : signlessPreprojectiveMk k R (vertexIdempotent k v) * y = y) :
     signlessPreprojectiveMk k R (ofArrow (σ v).2) * y = 0 ↔ y = 0 := by
-  -- The sums over arrows in the relators need finitely many vertices and arrows; the arrows
-  -- `i ⟶ j` embed in the finite star at `i`.
+  -- Choose enumerations for the sums; the finite-star instance supplies finite arrow types.
   let := Fintype.ofFinite R
-  have (i j : R) : Finite (i ⟶ j) :=
-    Finite.of_injective (fun e : i ⟶ j => (Quiver.Star.mk e : Quiver.Star i)) sigma_mk_injective
   let (i j : R) : Fintype (i ⟶ j) := Fintype.ofFinite _
   exact map_ofArrow_mul_eq_zero_iff_of_ne_reverse k (ε := fun _ _ _ => 1) hσ
     (fun _ => isUnit_one) (signlessPreprojectiveRelator_eq_sum_ofArrow_mul_smul k)

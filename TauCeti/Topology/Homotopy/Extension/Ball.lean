@@ -28,18 +28,26 @@ closed unit ball: a null-homotopy is extended from the sphere to the ball, start
 map, and conversely the closed ball is contractible.  This is the criterion for extending a map
 over a cell attached along a sphere.
 
+The retraction also compresses maps of pairs.  If a map `g` of the closed unit ball sending the
+sphere into `B` is homotopic, through such maps, to a map into `B`, then `g` is homotopic relative
+to the sphere to a map into `B`.  This is how vanishing relative homotopy groups give the
+hypothesis of the compression lemma for CW complexes.
+
 ## Main declarations
 
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
 * `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
   null-homotopic exactly when it extends over the closed unit ball.
+* `ContinuousMap.HomotopicWith.exists_homotopicRel_range_subset`: a map of pairs homotopic through
+  maps of pairs to a map into `B` is homotopic relative to the sphere to a map into `B`.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Chapter 0, proof of Proposition 0.16, which retracts `Dⁿ × I` onto `Dⁿ × {0} ∪ ∂Dⁿ × I` by
-  radial projection from the point `(0, 2)`.
+  radial projection from the point `(0, 2)`; Section 4.1, the compression criterion preceding
+  Theorem 4.3, for compressing maps of pairs.
 -/
 
 public section
@@ -189,7 +197,7 @@ end TauCeti
 
 namespace ContinuousMap
 
-open Metric unitInterval
+open Metric Set unitInterval
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {Y : Type*} [TopologicalSpace Y]
 
@@ -222,5 +230,42 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
       exact (hG y).symm
     rw [hg]
     exact ((id_nullhomotopic _).comp_right G).comp_left ι
+
+namespace HomotopicWith
+
+/-- **Compressing a map of pairs relative to the sphere.** Let `g` map the closed unit ball of a
+real seminormed space into `Y`, and let `B ⊆ Y`. If `g` is homotopic, through maps sending the unit
+sphere into `B`, to a map with values in `B`, then `g` is homotopic relative to the unit sphere to
+a map with values in `B`. -/
+theorem exists_homotopicRel_range_subset {B : Set Y} {g g₁ : C(closedBall (0 : E) 1, Y)}
+    (h : g.HomotopicWith g₁ fun f ↦ MapsTo f {x | (x : E) ∈ sphere 0 1} B)
+    (h₁ : range g₁ ⊆ B) :
+    ∃ g' : C(closedBall (0 : E) 1, Y),
+      g.HomotopicRel g' {x | (x : E) ∈ sphere 0 1} ∧ range g' ⊆ B := by
+  -- Run the homotopy backwards, so that it is `g` at time `1` and has values in `B` on the bottom
+  -- face `{0} × D` and on `I × S` of the cylinder `I × D`.  The retraction `r` of the cylinder
+  -- onto these two pieces carries the top face `{1} × D` onto them, fixing `{1} × S`, and the
+  -- homotopy is pulled back along the straight segments from `(1, x)` to `r (1, x)`.
+  obtain ⟨F⟩ := h
+  obtain ⟨r, hr, hr'⟩ :=
+    (TauCeti.hasHomotopyExtensionProperty_sphere_closedBall (E := E)).exists_retraction
+  have hseg (p : I × closedBall (0 : E) 1) :
+      (1 - (p.1 : ℝ)) • (p.2 : E) + (p.1 : ℝ) • ((r (1, p.2)).2 : E) ∈ closedBall (0 : E) 1 :=
+    convex_closedBall (0 : E) 1 p.2.2 (r (1, p.2)).2.2 (sub_nonneg.2 p.1.2.2) p.1.2.1
+      (by ring)
+  have hS {x : closedBall (0 : E) 1} (hx : (x : E) ∈ sphere 0 1) : r (1, x) = (1, x) :=
+    hr' _ (TauCeti.mem_cylinderExtensionDomain_of_mem hx)
+  refine ⟨⟨fun x ↦ F.symm (r (1, x)), by fun_prop⟩,
+    ⟨{ toFun p := F.symm (σ (p.1 * σ (r (1, p.2)).1), ⟨_, hseg p⟩)
+       continuous_toFun := by fun_prop
+       map_zero_left x := by simp [F.symm.apply_one]
+       map_one_left x := by simp
+       prop' t x hx := by simp [hS hx, ← add_smul] }⟩, ?_⟩
+  rintro _ ⟨x, rfl⟩
+  obtain h0 | hs := TauCeti.mem_cylinderExtensionDomain_iff.1 (hr (1, x))
+  · simpa [h0, F.symm.apply_zero] using h₁ (mem_range_self _)
+  · exact F.symm.prop _ hs
+
+end HomotopicWith
 
 end ContinuousMap

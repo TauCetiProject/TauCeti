@@ -160,6 +160,7 @@ discreteness of `C` makes arbitrary set-theoretic lifts of continuous cochains c
 discreteness of `B` makes the retraction onto the image of the inclusion continuous, which is
 what retracts a continuous cochain killed by the projection. Continuity of the two maps is a
 further consequence of it, not data. -/
+@[ext]
 structure DiscreteShortExact (G : Type u) [Monoid G]
     (A : Type vA) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A]
@@ -191,16 +192,6 @@ variable {G : Type u} [Monoid G]
   {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
   {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
   (S : DiscreteShortExact G A B C)
-
-/-- Two short exact sequences with the same inclusion and projection are equal. -/
-@[ext]
-theorem ext {S T : DiscreteShortExact G A B C} (hincl : S.incl = T.incl)
-    (hproj : S.proj = T.proj) : S = T := by
-  cases S
-  cases T
-  cases hincl
-  cases hproj
-  rfl
 
 /-- The composite `A → B → C` vanishes. -/
 @[simp]
@@ -259,9 +250,13 @@ end Basic
 section CanonicalCoefficientMaps
 
 variable {G : Type u} [Monoid G]
-  {A : Type w} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
   {B : Type w} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
-  {C : Type w} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
+
+section Incl
+
+variable
+  {A : Type w} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
   (S : DiscreteShortExact G A B C)
 
 /-- The canonical coefficient map of the bundled inclusion is that of the raw inclusion: the
@@ -272,6 +267,15 @@ theorem ofDiscreteModuleMap_inclDistribMulActionHom :
         (fun g a ↦ map_smul S.inclDistribMulActionHom g a) =
       ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant := (rfl)
 
+end Incl
+
+section Proj
+
+variable
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
+  {C : Type w} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C)
+
 /-- The canonical coefficient map of the bundled projection is that of the raw projection: the
 explicit comparison lemmas are stated for `S.projDistribMulActionHom`, the canonical long exact
 sequence for `S.proj`. -/
@@ -279,6 +283,8 @@ theorem ofDiscreteModuleMap_projDistribMulActionHom :
     ofDiscreteModuleMap S.projDistribMulActionHom.toAddMonoidHom.toIntLinearMap
         (fun g b ↦ map_smul S.projDistribMulActionHom g b) =
       ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant := (rfl)
+
+end Proj
 
 end CanonicalCoefficientMaps
 
@@ -388,8 +394,11 @@ def dual (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulAct
   exact := InternalHom.exact_precomp S.inclDistribMulActionHom S.projDistribMulActionHom
     S.proj_surjective S.exact
 
-/-- **The extension hypothesis of `dual` for a sequence killed by a prime.** If `B` is killed by a
-prime `p`, precomposition with the inclusion of `S` is surjective on internal homs into any `N`. -/
+variable (N : Type vN) [AddCommMonoid N] [DistribMulAction G N] in
+/-- **Extension across the inclusion of a sequence killed by a prime.** If `B` is killed by a
+prime `p`, precomposition with the inclusion of `S` is surjective on internal homs into any
+additive commutative monoid `N` with a distributive `G`-action. For additive group targets, this
+supplies the extension hypothesis of `dual`. -/
 theorem precomp_inclDistribMulActionHom_surjective {p : ℕ} [Fact p.Prime]
     (hB : ∀ b : B, p • b = 0) :
     Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)) :=

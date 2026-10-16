@@ -87,7 +87,7 @@ public section
 
 open CliffordAlgebra Module QuadraticMap
 
-universe u v
+universe u v w
 
 namespace TauCeti.SpinPolarizationData
 
@@ -307,6 +307,33 @@ noncomputable def SpinPolarizationData.evenCliffordEquivEnd :
 theorem SpinPolarizationData.evenCliffordEquivEnd_apply (x : ↥(even Q)) :
     P.evenCliffordEquivEnd hodd x = spinAction Q P x :=
   (congrFun (AlgEquiv.coe_ofBijective _ _) x).trans (evenSpinAction_apply Q P x)
+
+/-- In coordinates for any finite basis of the spinor module, the odd-dimensional even Clifford
+matrix model intertwines the spin representation with matrix-vector multiplication. -/
+theorem SpinPolarizationData.evenCliffordEquivEnd_toMatrix_intertwines_spinRep
+    {i : Type w} [Fintype i] [DecidableEq i]
+    (b : Basis i F (ExteriorAlgebra F P.W)) (g : spinGroup Q) :
+    b.equivFun.toLinearMap.comp (spinRep Q P g) =
+      (Matrix.mulVecLin
+        ((P.evenCliffordEquivEnd hodd).trans (LinearMap.toMatrixAlgEquiv b)
+          (spinGroupToEven Q g))).comp b.equivFun.toLinearMap := by
+  apply LinearMap.ext
+  intro s
+  simp only [LinearMap.comp_apply, spinRep_apply, Matrix.mulVecLin_apply]
+  rw [AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply, coe_spinGroupToEven_apply]
+  have hmatrix :
+      LinearMap.toMatrixAlgEquiv b (spinAction Q P g) =
+        LinearMap.toMatrix b b (spinAction Q P g) := by
+    ext i j
+    rw [LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
+  rw [hmatrix]
+  calc
+    b.equivFun ((spinAction Q P) g s) = b.repr ((spinAction Q P) g s) :=
+      b.equivFun_apply _
+    _ = (LinearMap.toMatrix b b (spinAction Q P g)).mulVec (b.repr s) :=
+      (LinearMap.toMatrix_mulVec_repr b b (spinAction Q P g) s).symm
+    _ = (LinearMap.toMatrix b b (spinAction Q P g)).mulVec (b.equivFun s) := by
+      rw [b.equivFun_apply]
 
 end OperatorForm
 

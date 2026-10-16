@@ -130,6 +130,16 @@ theorem isGradedExtBounded {X Y : C} {N : ℕ} (h : IsGradedExtBoundedBy.{w} e X
 
 end IsGradedExtBoundedBy
 
+variable {e} in
+/-- Finitely many pairs with eventually vanishing graded Ext have a common cohomological
+vanishing bound. -/
+theorem exists_forall_isGradedExtBoundedBy {ι : Type*} [Finite ι] {X Y : ι → C}
+    (h : ∀ i, IsGradedExtBounded.{w} e (X i) (Y i)) :
+    ∃ N, ∀ i, IsGradedExtBoundedBy.{w} e (X i) (Y i) N := by
+  choose N hN using fun i ↦ (h i).exists_bound
+  obtain ⟨M, hM⟩ := (Set.finite_range N).bddAbove
+  exact ⟨M, fun i ↦ (hN i).mono (hM ⟨i, rfl⟩)⟩
+
 /-! ### Admissibility on object properties -/
 
 section Admissibility

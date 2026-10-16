@@ -136,17 +136,15 @@ def toProdDiffeomorph : Sol ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ
 /-- The differential of the global coordinates reads a tangent vector in the model of Sol. -/
 @[simp] theorem mfderiv_toProd_apply (p : Sol) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
-      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v := by
-  exact congrArg (fun L => L v)
-    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
 
 /-- The differential of the inverse global coordinates retains the model vector. -/
 @[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (p : ℝ × ℝ × ℝ)
     (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm p)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm p v) = v := by
-  exact congrArg (fun L => L v)
-    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm p v) = v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
 
 /-- A map linear in Sol's global coordinates has that linear map as its differential,
 read in the canonical model-space tangent identifications. -/
@@ -168,7 +166,7 @@ theorem tangentSpaceCastModel_mfderiv_of_eq_linear (Ψ : Sol → Sol)
   simp only [Function.comp_apply]
   rw [tangentSpaceCastModel_mfderiv_toProd_symm,
     mfderiv_comp_apply p L.differentiableAt.mdifferentiableAt (hf p),
-    L.hasFDerivAt.hasMFDerivAt.mfderiv, mfderiv_toProd_apply]
+    L.mfderiv_eq, mfderiv_toProd_apply]
   rfl
 
 /-! ### The group structure -/

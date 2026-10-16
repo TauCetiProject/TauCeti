@@ -212,7 +212,7 @@ theorem frobeniusHom_eq_map_frobeniusCoordinateMap :
 private theorem pointsMulEquiv_map_frobeniusCoordinateMap
     {B : Type} [CommRing B] [Algebra (ZMod 3) B]
     (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra) (CommAlgCat.of (ZMod 3) B)) :
-    pointsMulEquiv (CommAlgCat.of (ZMod 3) B) (AlgHom.mapDomain frobeniusCoordinateMap.hom q) =
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) B) (BialgHom.mapDomain frobeniusCoordinateMap.hom q) =
       frobenius 1 B (pointsMulEquiv (CommAlgCat.of (ZMod 3) B) q) := by
   apply Subtype.ext
   apply Units.ext
@@ -220,7 +220,7 @@ private theorem pointsMulEquiv_map_frobeniusCoordinateMap
   ext i j
   rw [coe_frobenius_apply, coe_pointsMulEquiv_eq_map_carrierGenericMatrix, Matrix.map_apply,
     Matrix.map_apply, pow_one, ← map_pow, ← frobeniusCoordinateMap_apply]
-  exact AlgHom.mapDomain_apply_apply frobeniusCoordinateMap.hom q (carrierGenericMatrix i j)
+  exact BialgHom.mapDomain_apply_apply frobeniusCoordinateMap.hom q (carrierGenericMatrix i j)
 
 /-- The action induced by `frobeniusHom` on scheme-valued carrier points is the cubic Frobenius
 `frobenius 1` of matrix-valued points. -/

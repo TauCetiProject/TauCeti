@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Polynomial.Basic
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Multiplicities along continuous polynomial sections
@@ -103,3 +104,31 @@ theorem eventually_rootMultiplicity_eq_of_prod [IsDomain R] [T1Space R]
   exact (Finset.sum_eq_sum_iff_of_le hx).1 hxm
 
 end Polynomial
+
+namespace TauCeti.Polynomial
+
+variable {B R ι : Type*} [TopologicalSpace B] [PreconnectedSpace B]
+  [TopologicalSpace R] [CommRing R] [IsTopologicalSemiring R] [IsDomain R] [T1Space R]
+  {F : ι → B → _root_.Polynomial R} {r : B → R} {d : ι → ℕ}
+
+/-- Constant multiplicity along a continuous point in a nonzero finite product forces
+constant multiplicity in each factor on a preconnected base. Only degree bounds are needed;
+the factors need not be coprime. -/
+theorem rootMultiplicity_eq_of_prod (s : Finset ι)
+    (hF : ∀ k ∈ s, ∀ i ≤ d k, Continuous fun x ↦ (F k x).coeff i)
+    (hdeg : ∀ k ∈ s, ∀ x, (F k x).natDegree ≤ d k) (hr : Continuous r)
+    (hne : ∀ k ∈ s, ∀ x, F k x ≠ 0)
+    (hmult : ∀ x y, (∏ k ∈ s, F k x).rootMultiplicity (r x) =
+      (∏ k ∈ s, F k y).rootMultiplicity (r y))
+    (k : ι) (hk : k ∈ s) (x y : B) :
+    (F k x).rootMultiplicity (r x) = (F k y).rootMultiplicity (r y) := by
+  have hl : IsLocallyConstant fun x ↦ (F k x).rootMultiplicity (r x) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).mpr fun x₀ ↦ ?_
+    exact (_root_.Polynomial.eventually_rootMultiplicity_eq_of_prod s
+      (fun k hk i hi ↦ (hF k hk i hi).continuousAt)
+      (fun k hk ↦ .of_forall (hdeg k hk)) hr.continuousAt
+      (fun k hk ↦ hne k hk x₀) (.of_forall fun x ↦ hmult x x₀)).mono
+        fun _ hx ↦ hx k hk
+  exact hl.apply_eq_of_preconnectedSpace x y
+
+end TauCeti.Polynomial

@@ -74,6 +74,17 @@ theorem kostantRootSubgroupMatrix_eq_transvection {A : Type*} [CommRing A]
         (rootTarget r k) (rootTarget_ne_rootSource r k)
         (nilpotencyClass_rep_rootGenerator r k) (rep_rootGenerator_latticeBasis_apply r k) q
 
+/-- A numbered root subgroup point is the elementary transvection from the root source to the root
+target. -/
+-- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
+-- left-hand side first. Consumers rewrite with it by name.
+theorem coe_rootSubgroupPoints_eq_transvectionUnit (k : Fin r ⊕ Fin r) (A : Type*) [CommRing A]
+    (u : Multiplicative A) :
+    (rootSubgroupPoints r k A u : Matrix.GeneralLinearGroup (Fin (r + 1)) A) =
+      TauCeti.transvectionUnit (rootTarget_ne_rootSource r k) (Multiplicative.toAdd u) := by
+  rw [coe_rootSubgroupPoints, kostantRootSubgroupMatrix_eq_transvection,
+    MulEquiv.apply_symm_apply]
+
 private theorem rootCoordinateMap_determinantGroupLike (k : Fin r ⊕ Fin r) :
     (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
