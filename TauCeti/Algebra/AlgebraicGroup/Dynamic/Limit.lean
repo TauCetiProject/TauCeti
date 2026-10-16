@@ -88,7 +88,8 @@ theorem parabolicLimitCoordinateMap_apply (l : H →ₐc[R] LaurentPolynomial R)
 
 /-- On every commutative value algebra, precomposition by the coordinate morphism is
 exactly the dynamic limit of the represented parabolic point. -/
--- The functor-object carrier prevents simp matching; the named formula works with `rw`.
+-- Sealed functor-object carriers prevent this formula from matching even its own LHS with simp.
+-- Use `rw [mapPointsFunctor_parabolicLimitCoordinateMap_app]` in importing modules.
 theorem mapPointsFunctor_parabolicLimitCoordinateMap_app
     (l : H →ₐc[R] LaurentPolynomial R) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R)
