@@ -183,16 +183,8 @@ theorem parabolicTitsSystem_subgroupN :
 simple reflections in the ambient Weyl group. -/
 noncomputable def parabolicWeylGroupMulEquiv :
     (T.parabolicTitsSystem J).WeylGroup ≃* Subgroup.closure (Subtype.val '' J) :=
-  MulEquiv.ofBijective
-    ((T.parabolicWeylHom J).codRestrict (Subgroup.closure (Subtype.val '' J)) (fun w ↦ by
-      rw [← T.range_parabolicWeylHom J]
-      exact ⟨w, rfl⟩))
-    ⟨fun _ _ h ↦ T.parabolicWeylHom_injective J (congrArg Subtype.val h), fun w ↦ by
-      have hw : (w : T.WeylGroup) ∈ (T.parabolicWeylHom J).range := by
-        rw [T.range_parabolicWeylHom]
-        exact w.property
-      obtain ⟨q, hq⟩ := hw
-      exact ⟨q, Subtype.ext hq⟩⟩
+  (MonoidHom.ofInjective (T.parabolicWeylHom_injective J)).trans
+    (MulEquiv.subgroupCongr (T.range_parabolicWeylHom J))
 
 /-- On a normalizer representative, the Weyl-group identification is the ambient quotient
 map. The formula is independent of the representative chosen. -/
