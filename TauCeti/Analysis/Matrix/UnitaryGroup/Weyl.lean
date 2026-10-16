@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.PermutationGL
-import TauCeti.Algebra.Notation.Pi.Basic
 
 /-!
 # The Weyl group of the unitary group
@@ -94,8 +93,8 @@ theorem mem_normalizer_unitaryTorus_iff_toUnits_mem {g : unitaryGroup (Fin n) �
     have hconj := (Subgroup.mem_normalizer_iff.mp hg _).mp (unitaryTorusHom_mem_unitaryTorus z)
     rw [mem_unitaryTorus_iff_toUnits_mem, map_mul, map_mul, map_inv,
       toUnits_unitaryTorusHom] at hconj
-    exact ⟨_, hconj, (unitSphereToUnits_injective (𝕜 := ℂ)).ne
-      (Pi.mulSingle_apply_ne_of_ne_one Circle.exp_pi_ne_one hij)⟩
+    have hz : z i ≠ z j := by simpa [z, Pi.mulSingle_eq_of_ne hij.symm] using Circle.exp_pi_ne_one
+    exact ⟨_, hconj, (unitSphereToUnits_injective (𝕜 := ℂ)).ne hz⟩
   obtain ⟨d, σ, hdσ⟩ := exists_eq_diagGL_mul_permutationGL_of_forall_ne hsep
   rw [hdσ]
   exact (Subgroup.normalizer (diagonalTorus ℂ n : Set (GL (Fin n) ℂ))).mul_mem
