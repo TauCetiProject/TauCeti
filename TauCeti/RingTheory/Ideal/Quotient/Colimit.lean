@@ -40,7 +40,7 @@ variable {R : Type u} [CommRing R] (I : Ideal R)
 by `I` are unique. -/
 theorem algHom_ext_of_quotientAlgebraMap_surjective (B : Type v) [CommRing B] [Algebra R B]
     (hB : Function.Surjective (algebraMap (R ⧸ I) (B ⧸ I.map (algebraMap R B))))
-    {S : Type w} [CommRing S] [Algebra R S]
+    {S : Type w} [Semiring S] [Algebra R S]
     (hI : I ≤ RingHom.ker (algebraMap R S)) (f g : B →ₐ[R] S) : f = g := by
   have kills (a : B →ₐ[R] S) : ∀ b ∈ I.map (algebraMap R B), a b = 0 := by
     intro b hb
@@ -134,6 +134,14 @@ noncomputable def quotientColimitEquiv :
     (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))) (by
       simpa only [IsScalarTower.coe_toAlgHom'] using
         quotientAlgebraMap_colimit_bijective I D hD)
+
+/-- The forward colimit residue equivalence is the canonical residue-algebra map. -/
+@[simp]
+theorem quotientColimitEquiv_toAlgHom :
+    (quotientColimitEquiv I D hD).toAlgHom =
+      IsScalarTower.toAlgHom R (R ⧸ I)
+        (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D))) := by
+  simp [quotientColimitEquiv]
 
 /-- The colimit residue equivalence is the structure map on representatives. -/
 @[simp]
