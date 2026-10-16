@@ -76,25 +76,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-! ### Prefix sums -/
-
-/-- Prefix sums commute with scalar multiplication of the tuple. -/
-@[simp]
-theorem prefixSum_smul (k : ℕ) (c : ℝ) (x : Fin n → ℝ) :
-    prefixSum k (c • x) = c * prefixSum k x := by
-  simp [prefixSum_def, mul_sum]
-
-/-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
-prefix sum of length `k` of `x` is at most that of `y`. -/
-theorem prefixSum_le_of_sum_le {k : ℕ} {x y : Fin n → ℝ} (hsum : ∑ i, x i ≤ ∑ i, y i)
-    (h : ∀ i : Fin n, k ≤ (i : ℕ) → y i ≤ x i) : prefixSum k x ≤ prefixSum k y := by
-  have hx := sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ (i : ℕ) < k) x
-  have hy := sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ (i : ℕ) < k) y
-  have htail : ∑ i : Fin n with ¬i.val < k, y i ≤ ∑ i : Fin n with ¬i.val < k, x i :=
-    sum_le_sum fun i hi ↦ h i (not_lt.1 (mem_filter.1 hi).2)
-  rw [prefixSum_def, prefixSum_def]
-  linarith
-
 /-! ### Weak majorization -/
 
 /-- The antitone nonnegative tuple `x` is *weakly majorized* by the antitone nonnegative tuple

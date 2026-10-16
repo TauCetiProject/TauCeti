@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
@@ -25,7 +26,10 @@ This file contains basic facts about finite partial sums.
   prefix sum of full length is the total sum.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
-* `TauCeti.map_prefixSum`: additive monoid homomorphisms commute with prefix sums.
+* `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and
+  distributive scalar actions commute with prefix sums.
+* `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
+  prefix sums.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a finite sequence whose inclusive partial sums
   all vanish is zero.
 -/
@@ -96,10 +100,28 @@ theorem map_prefixSum {N F : Type*} [AddCommMonoid N] [FunLike F M N] [AddMonoid
     (f : F) (k : ℕ) (x : Fin n → M) : f (prefixSum k x) = prefixSum k fun i ↦ f (x i) :=
   map_sum f x _
 
+/-- Prefix sums commute with scalar multiplication of the tuple. -/
+@[simp]
+theorem prefixSum_smul {R : Type*} [DistribSMul R M] (k : ℕ) (c : R) (x : Fin n → M) :
+    prefixSum k (c • x) = c • prefixSum k x :=
+  (map_prefixSum (DistribSMul.toAddMonoidHom M c) k x).symm
+
 /-- Prefix sums are monotone in the tuple for the coordinatewise order. -/
 theorem prefixSum_mono [PartialOrder M] [IsOrderedAddMonoid M] (k : ℕ) {x y : Fin n → M}
     (h : x ≤ y) : prefixSum k x ≤ prefixSum k y :=
   sum_le_sum fun i _ ↦ h i
+
+/-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
+prefix sum of length `k` of `x` is at most that of `y`. -/
+theorem prefixSum_le_of_sum_le [PartialOrder M] [IsOrderedCancelAddMonoid M] {k : ℕ}
+    {x y : Fin n → M} (hsum : ∑ i, x i ≤ ∑ i, y i) (h : ∀ i : Fin n, k ≤ (i : ℕ) → y i ≤ x i) :
+    prefixSum k x ≤ prefixSum k y := by
+  have htail : ∑ i : Fin n with ¬i.val < k, y i ≤ ∑ i : Fin n with ¬i.val < k, x i :=
+    sum_le_sum fun i hi ↦ h i (not_lt.1 (mem_filter.1 hi).2)
+  rw [← sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ (i : ℕ) < k) x,
+    ← sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ (i : ℕ) < k) y] at hsum
+  rw [prefixSum_def, prefixSum_def]
+  exact le_of_add_le_add_right (hsum.trans (add_le_add le_rfl htail))
 
 /-- Prefix sums of length `k` only see the coordinates below `k`. -/
 theorem prefixSum_congr {k : ℕ} {x y : Fin n → M} (h : ∀ i : Fin n, (i : ℕ) < k → x i = y i) :
