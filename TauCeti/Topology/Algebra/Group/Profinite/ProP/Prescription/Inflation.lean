@@ -79,7 +79,9 @@ namespace ZModTwist
 `G ⧸ N`, because the pulled-back character is `1` on `N`. -/
 theorem smul_eq_self_of_mem {n : G} (hn : n ∈ N)
     (x : ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i) : n • x = x := by
-  have h1 : Subgroup.quotientMkContinuousMonoidHom N n = 1 := (QuotientGroup.eq_one_iff n).2 hn
+  have h1 : Subgroup.quotientMkContinuousMonoidHom N n = 1 := by
+    rw [Subgroup.quotientMkContinuousMonoidHom_apply]
+    exact (QuotientGroup.eq_one_iff n).2 hn
   ext
   simp [val_smul, h1]
 
@@ -158,7 +160,10 @@ theorem explicitInfl1ZModTwist_eq_explicitMap1 :
   -- `erw`: the continuity arguments of `cocyclesMap1_apply` are stated for the coerced additive
   -- homomorphisms, which `rw` and `simp` cannot match against the bundled ones here.
   erw [cocyclesMap1_apply, cocyclesMap1_apply, cocyclesMap1_apply]
-  exact (ZModTwist.compEquiv_apply _ χ i ((c : G ⧸ N → ZModTwist χ i) g)).symm
+  simp only [ContinuousMonoidHom.coe_id, id_eq,
+    Subgroup.quotientMkContinuousMonoidHom_apply]
+  exact (ZModTwist.compEquiv_apply (Subgroup.quotientMkContinuousMonoidHom N) χ i
+    ((c : G ⧸ N → ZModTwist χ i) g)).symm
 
 /-- Twisted inflation is injective. -/
 theorem explicitInfl1ZModTwist_injective : Function.Injective (explicitInfl1ZModTwist N χ i) :=
@@ -182,6 +187,8 @@ theorem explicitCoeff1_reduce_comp_explicitInfl1ZModTwist {j : ℕ} (hij : j ≤
   -- homomorphisms, which `rw` and `simp` cannot match against the bundled equivariant ones here.
   erw [cocyclesMap1_apply, cocyclesMap1_apply, cocyclesMap1_apply, cocyclesMap1_apply,
     cocyclesMap1_apply, cocyclesMap1_apply]
+  simp only [ContinuousMonoidHom.coe_id, id_eq,
+    Subgroup.quotientMkContinuousMonoidHom_apply]
   exact (ZModTwist.val_reduce (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) hij
     ⟨((c : G ⧸ N → ZModTwist χ i) g).val⟩).trans
       (ZModTwist.val_reduce χ hij ((c : G ⧸ N → ZModTwist χ i) g)).symm

@@ -105,7 +105,7 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
-  between the first and last values of a monotone `Fin` family.
+  between the first and last values of any `Fin` family with at least two entries.
 -/
 
 public section
@@ -608,23 +608,21 @@ theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin 
       omega
     exact (not_lt_of_ge (ha hik)) hk.2
 
-/-- A point between the first and last values of a monotone `Fin` family lies between
-consecutive values. -/
+/-- A point between the first and last values of a `Fin` family with at least two entries lies
+between consecutive values. The family need not be monotone. -/
 theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
-    (a : Fin (n + 1) → β) (ha : Monotone a)
-    (hn : n ≠ 0) {x : β} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
+    (a : Fin (n + 1) → β) (hn : n ≠ 0)
+    {x : β} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
     ∃ i : Fin n, x ∈ Set.Icc (a i.castSucc) (a i.succ) := by
-  rcases hx.1.eq_or_lt with h | h
-  · refine ⟨⟨0, Nat.pos_of_ne_zero hn⟩, ?_⟩
-    rw [← h]
-    exact ⟨le_rfl, ha (Fin.zero_le _)⟩
-  · have hx' : x ∈ ⋃ j ∈ Ico 0 (Fin.last n), Ioc (a j) (a (Order.succ j)) := by
-      rw [ha.biUnion_Ico_Ioc_map_succ]
-      exact ⟨h, hx.2⟩
-    simp only [mem_iUnion, mem_Ico] at hx'
-    obtain ⟨j, ⟨-, hj⟩, hxj⟩ := hx'
-    obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
-    exact ⟨i, Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)⟩
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  have h : ∃ i : Fin (n + 1), x ≤ a i.succ := ⟨Fin.last n, hx.2⟩
+  -- Formal source: Mathlib's Fin.find least-index API.
+  refine ⟨Fin.find _ h, ?_, Fin.find_spec h⟩
+  cases hi : Fin.find _ h using Fin.cases with
+  | zero => exact hx.1
+  | succ i =>
+    exact (not_le.mp (Fin.find_min h (j := i.castSucc)
+      (by rw [hi]; exact i.castSucc_lt_succ))).le
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
 theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by

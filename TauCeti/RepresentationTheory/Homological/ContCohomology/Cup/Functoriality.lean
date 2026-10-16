@@ -220,8 +220,33 @@ theorem cup_infl (N : Subgroup G) [N.Normal]
     (ContinuousCohomology.infl N Z (m + n) (Pinv.cup m n a b) :) =
       (P.cup m n (ContinuousCohomology.infl N X m a) (ContinuousCohomology.infl N Y n b) :) := by
   simp only [ContinuousCohomology.infl_def]
-  exact Pinv.cup_map P (Subgroup.quotientMkContinuousMonoidHom N) (TopRep.quotientToInvariantsι X N)
-    (TopRep.quotientToInvariantsι Y N) (TopRep.quotientToInvariantsι Z N) hPinv m n a b
+  refine Pinv.cup_map P (Subgroup.quotientMkContinuousMonoidHom N)
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι X N)
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Y N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι Y N)
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Z N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι Z N) ?_ m n a b
+  intro x y
+  change (TopRep.quotientToInvariantsι Z N).hom
+      ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Z N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom (Pinv.bil x y)) =
+    P.bil ((TopRep.quotientToInvariantsι X N).hom
+      ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom x))
+      ((TopRep.quotientToInvariantsι Y N).hom
+      ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Y N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom y))
+  rw [TopRep.eqToHom_hom_apply (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)),
+    TopRep.eqToHom_hom_apply (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Y N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)),
+    TopRep.eqToHom_hom_apply (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Z N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))]
+  exact hPinv x y
 
 end Instances
 

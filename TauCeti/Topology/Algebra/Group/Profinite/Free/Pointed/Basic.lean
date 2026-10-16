@@ -165,17 +165,19 @@ noncomputable def mk : freeProC C X →ₜ* freeProCPointed C x₀ :=
 
 /-- The canonical quotient map sends an element to its class. -/
 theorem mk_apply (y : freeProC C X) : mk C x₀ y = (y : freeProCPointed C x₀) :=
-  (rfl)
+  Subgroup.quotientMkContinuousMonoidHom_apply (kernel C x₀) y
 
 /-- The canonical quotient map, as a monoid homomorphism, is the quotient projection. -/
 @[simp]
 theorem coe_mk :
     (mk C x₀ : freeProC C X →* freeProCPointed C x₀) = QuotientGroup.mk' (kernel C x₀) :=
-  (rfl)
+  Subgroup.coe_quotientMkContinuousMonoidHom (kernel C x₀)
 
 /-- The canonical quotient map is surjective. -/
-theorem mk_surjective : Function.Surjective (mk C x₀) :=
-  QuotientGroup.mk'_surjective _
+theorem mk_surjective : Function.Surjective (mk C x₀) := by
+  intro q
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+  exact ⟨g, mk_apply C x₀ g⟩
 
 /-- The canonical map from the pointed space to its free pro-`C` group. -/
 noncomputable def of (x : X) : freeProCPointed C x₀ :=
@@ -192,12 +194,14 @@ corresponding point. -/
 @[simp]
 theorem coe_freeProC_of (x : X) :
     ((freeProC.of x : freeProC C X) : freeProCPointed C x₀) = of C x₀ x :=
-  (rfl)
+  (mk_apply C x₀ (freeProC.of x)).symm
 
 /-- The canonical map kills the base point. -/
 @[simp]
-theorem of_basePoint : of C x₀ x₀ = 1 :=
-  (QuotientGroup.eq_one_iff _).mpr ((mem_kernel_iff C x₀).mpr fun _ hU ↦ hU.2)
+theorem of_basePoint : of C x₀ x₀ = 1 := by
+  change mk C x₀ (freeProC.of x₀) = 1
+  rw [mk_apply]
+  exact (QuotientGroup.eq_one_iff _).mpr ((mem_kernel_iff C x₀).mpr fun _ hU ↦ hU.2)
 
 /-- **The canonical map from the pointed space to its free pro-`C` group is continuous.** -/
 theorem continuous_of : Continuous (of C x₀) := by

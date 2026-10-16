@@ -140,8 +140,9 @@ private theorem legPair_resolutionMap_transition {U V : OpenNormalSubgroup G} (h
     -- `G → G ⧸ V → G ⧸ U` is `G → G ⧸ U`
     have hg : continuousFiniteQuotientMap G hVU
         (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup g) =
-          Subgroup.quotientMkContinuousMonoidHom U.toSubgroup g :=
-      continuousFiniteQuotientMap_mk G hVU g
+          Subgroup.quotientMkContinuousMonoidHom U.toSubgroup g := by
+      simpa only [Subgroup.quotientMkContinuousMonoidHom_apply] using
+        continuousFiniteQuotientMap_mk G hVU g
     rw [hg]
     exact legPair_resolutionMap_transition hVU i _
 
@@ -185,7 +186,7 @@ private theorem exists_openNormalSubgroup_resolutionMap_quotientMk_eq :
     have hlift (q : G ⧸ V.toSubgroup) := hU ⟨F' q.out, q.out, rfl⟩ V fun v hv ↦ (hV v hv).2 _
     refine ⟨⟨fun q ↦ (hlift q).choose, continuous_of_discreteTopology⟩,
       ContinuousMap.ext fun g ↦ ?_⟩
-    rw [resolutionMap_succ_apply]
+    rw [resolutionMap_succ_apply, Subgroup.quotientMkContinuousMonoidHom_apply]
     refine ((hlift (g : G ⧸ V.toSubgroup)).choose_spec).trans ?_
     -- the representative of the coset of `g` is `g * v` with `v ∈ V`, and `F' (g * v) = F' g`
     obtain ⟨v, hv⟩ := QuotientGroup.mk_out_eq_mul V.toSubgroup g
@@ -208,10 +209,16 @@ private theorem exists_openNormalSubgroup_cochainsMap_eq (n : ℕ)
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
   apply resolutionMap_injective (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M
     V)
-    QuotientGroup.mk_surjective (legPair_hom_injective V) (n + 1)
+    (fun q ↦ by
+        obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+        exact ⟨g, Subgroup.quotientMkContinuousMonoidHom_apply V.toSubgroup g⟩)
+      (legPair_hom_injective V) (n + 1)
   calc
-    _ = _ := TopRep.hom_comm_apply (resolutionMap
-      (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V) (n + 1)) g F'
+    _ = _ := by
+      simpa only [TopRep.res, TopRep.of_ρ, ContRepresentation.restrict_apply_apply,
+        Subgroup.coe_quotientMkContinuousMonoidHom, QuotientGroup.mk'_apply] using
+        TopRep.hom_comm_apply (resolutionMap
+          (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V) (n + 1)) g F'
     _ = _ := congrArg _ hF'
     _ = _ := F.2 g
     _ = _ := hF'.symm
@@ -262,7 +269,10 @@ theorem exists_continuousFiniteQuotientComparisonApp_eq {n : ℕ}
   have hd : (KU.d n (n + 1)).hom c = 0 := by
     apply cochainsMap_f_injective (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) (legPair G
       M U)
-      QuotientGroup.mk_surjective (legPair_hom_injective U) (n + 1)
+      (fun q ↦ by
+        obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+        exact ⟨g, Subgroup.quotientMkContinuousMonoidHom_apply U.toSubgroup g⟩)
+      (legPair_hom_injective U) (n + 1)
     have h := ConcreteCategory.congr_hom
       ((cochainsMap (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) (legPair G M U)).comm n
         (n + 1)) c
@@ -309,7 +319,10 @@ theorem exists_continuousFiniteQuotientTransition_eq_zero {n : ℕ} (U : OpenNor
   rw [KV.iCycles_toCycles_apply, iCycles_cocyclesMap_apply]
   apply cochainsMap_f_injective (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M
     V)
-    QuotientGroup.mk_surjective (legPair_hom_injective V) n
+    (fun q ↦ by
+        obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+        exact ⟨g, Subgroup.quotientMkContinuousMonoidHom_apply V.toSubgroup g⟩)
+      (legPair_hom_injective V) n
   have h := ConcreteCategory.congr_hom
     ((cochainsMap (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V)).comm m n)
       w'

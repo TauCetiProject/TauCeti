@@ -198,9 +198,17 @@ theorem infl_comp_zeroIso_hom (N : Subgroup G) [N.Normal] (X : TopRep R G) :
       ((zeroIso (TopRep.quotientToInvariants X N)).hom ≫
         TopRep.invariantsResMap (QuotientGroup.mk' N : G →* G ⧸ N)
           (TopRep.quotientToInvariantsι X N) :) := by
-  rw [infl_def]
-  exact map_comp_zeroIso_hom (Subgroup.quotientMkContinuousMonoidHom N)
-    (TopRep.quotientToInvariantsι X N)
+  rw [infl_def, map_comp_zeroIso_hom]
+  congr 1
+  ext v
+  change (TopRep.quotientToInvariantsι X N).hom
+      ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom v.1) =
+    (TopRep.quotientToInvariantsι X N).hom v.1
+  rw [TopRep.eqToHom_hom_apply (congrArg (fun ψ =>
+    TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N))]
+  simp only [cast_eq]
 
 end CompatiblePair
 

@@ -68,8 +68,9 @@ variable (N : Subgroup G) [N.Normal]
 /-- The projection `G → G ⧸ N` and the inclusion `Aᴺ ↪ A` form a compatible pair. -/
 theorem subgroupSubtype_quotientMk_smul (g : G) (a : FixedPoints.subgroup N A) :
     ContinuousMonoidHom.subgroupSubtype _ (Subgroup.quotientMkContinuousMonoidHom N g • a) =
-      g • ContinuousMonoidHom.subgroupSubtype _ a :=
-  coe_quotient_smul_fixedPoints_subgroup g a
+      g • ContinuousMonoidHom.subgroupSubtype _ a := by
+  simpa only [Subgroup.quotientMkContinuousMonoidHom_apply,
+    ContinuousMonoidHom.subgroupSubtype_apply] using coe_quotient_smul_fixedPoints_subgroup g a
 
 /-- **Inflation** `H¹(G ⧸ N, Aᴺ) → H¹(G, A)`: the map induced by the projection `G → G ⧸ N` and the
 inclusion of the fixed points `Aᴺ ↪ A`. -/

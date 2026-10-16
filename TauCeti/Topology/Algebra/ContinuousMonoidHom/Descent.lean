@@ -37,7 +37,7 @@ variable {G Q H : Type*} [Group G] [Group Q] [Monoid H]
 private noncomputable def liftMonoidHomOfIsQuotientMap (p : G →ₜ* Q) (hp : IsQuotientMap p)
     (f : G →ₜ* H) (hf : (p : G →* Q).ker ≤ (f : G →* H).ker) : Q →* H :=
   let e := QuotientGroup.quotientKerEquivOfSurjective (p : G →* Q) hp.surjective
-  let lift := quotientLift (p : G →* Q).ker f hf
+  let lift := quotientLift f (p : G →* Q).ker hf
   lift.toMonoidHom.comp e.symm.toMonoidHom
 
 private theorem liftMonoidHomOfIsQuotientMap_comp_apply (p : G →ₜ* Q) (hp : IsQuotientMap p)
@@ -49,7 +49,7 @@ private theorem liftMonoidHomOfIsQuotientMap_comp_apply (p : G →ₜ* Q) (hp : 
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply
       (p : G →* Q) hp.surjective x
   rw [liftMonoidHomOfIsQuotientMap, MonoidHom.comp_apply, hx]
-  exact quotientLift_mk (p : G →* Q).ker f hf x
+  exact quotientLift_mk f (p : G →* Q).ker hf x
 
 /-- Descend a continuous group homomorphism through a quotient homomorphism whose kernel it
 kills. -/

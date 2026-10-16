@@ -45,8 +45,7 @@ local notation "swap" =>
 
 section Content
 
-variable [UniqueFactorizationMonoid (MvPolynomial (Fin n) R)]
-  [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
+variable [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
 
 /-- The Lazard evaluation of each input is a scalar times the product of powers
 of the Lazard evaluations of its basis factors. The scalar contains the Lazard-evaluated

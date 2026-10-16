@@ -180,9 +180,14 @@ theorem exists_topologicalClosure_closure_range_eq_top_of_bijective_explicitCoef
   let π : freeProfiniteGroup ι →ₜ* Y.E :=
     ψ.comp (Subgroup.quotientMkContinuousMonoidHom _)
   refine ⟨fun i ↦ π (of i), fun i ↦ ?_, ?_⟩
-  · refine (DFunLike.congr_fun hψ (QuotientGroup.mk (of i))).trans ?_
+  · change Y.toGroupExtension.rightHom
+        (ψ (Subgroup.quotientMkContinuousMonoidHom _ (of i))) = g i
+    rw [Subgroup.quotientMkContinuousMonoidHom_apply]
+    refine (DFunLike.congr_fun hψ (QuotientGroup.mk (of i))).trans ?_
     rw [presentationProfiniteExtension_rightHom_mk, lift_of]
-  · have hπ : Function.Surjective π := hψs.comp QuotientGroup.mk_surjective
+  · have hπ : Function.Surjective π := hψs.comp (fun q ↦ by
+      obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
+      exact ⟨x, Subgroup.quotientMkContinuousMonoidHom_apply _ x⟩)
     have hF : (Subgroup.closure (Set.range (of : ι → freeProfiniteGroup ι))).topologicalClosure =
         ⊤ := SetLike.coe_injective <| Subgroup.topologicalClosure_coe.trans
           (dense_closure_range_of ι).closure_eq

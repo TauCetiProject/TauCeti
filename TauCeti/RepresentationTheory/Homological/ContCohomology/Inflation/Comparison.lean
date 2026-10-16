@@ -66,10 +66,21 @@ theorem ofDiscreteModulePair_quotientMk_subtype :
         N.fixedPoints_subtype_quotientMk_smul =
       (TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
           (ofDiscreteModuleQuotient G M N) ≫
-        TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N :=
-  -- Evaluating the restricted morphism and the invariants inclusion reduces to the
-  -- underlying coefficient of `ofDiscreteModuleQuotient`.
-  ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun m ↦ ofDiscreteModuleQuotient_apply G M N m
+        eqToHom (congrArg (fun ψ =>
+          TopRep.res ψ (TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) N))
+            (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+        TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N := by
+  apply ofDiscreteModulePair_eq_of_hom_apply
+  intro m
+  change (TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N).hom
+      ((eqToHom (congrArg (fun ψ =>
+        TopRep.res ψ (TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) N))
+          (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom
+            ((ofDiscreteModuleQuotient G M N).hom m)) = _
+  rw [TopRep.eqToHom_hom_apply]
+  simp only [cast_eq]
+  change ((ofDiscreteModuleQuotient G M N m).1 : M) = (m : M)
+  exact ofDiscreteModuleQuotient_apply G M N m
 
 variable [IsTopologicalGroup G]
 
@@ -93,8 +104,11 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
     (X := ofDiscreteModule ℤ (G ⧸ N) (FixedPoints.addSubgroup N M))
     (Y := TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) N) (Z := ofDiscreteModule ℤ G M)
     (ContinuousMonoidHom.id (G ⧸ N)) (Subgroup.quotientMkContinuousMonoidHom N)
-    (ofDiscreteModuleQuotient G M N) (TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N)
-    n).symm.trans ?_
+    (ofDiscreteModuleQuotient G M N)
+    (eqToHom (congrArg (fun ψ =>
+      TopRep.res ψ (TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N) n).symm.trans ?_
   -- `map_comp` produces the identity composed with the quotient projection.
   -- This is the projection itself by `rfl`.
   exact TauCeti.ContinuousCohomology.map_congr rfl HEq.rfl n

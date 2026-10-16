@@ -86,7 +86,13 @@ noncomputable def inflH1MaximalProP :
             cohomFpLinearEquivContinuousZModDual p (maximalProPQuotient p G) :=
       funext fun x ↦ (LinearEquiv.eq_symm_apply _).2
         (cohomFpLinearEquivContinuousZModDual_cohomFpMap p _ x)
-    rw [h]
+    have hq : Subgroup.quotientMkContinuousMonoidHom (proPKernel p G) =
+        (⟨maximalProPQuotient.mk p G, maximalProPQuotient.continuous_mk p G⟩ :
+          G →ₜ* maximalProPQuotient p G) := by
+      ext x
+      exact (Subgroup.quotientMkContinuousMonoidHom_apply (proPKernel p G) x).trans
+        (maximalProPQuotient.mk_apply p G x).symm
+    rw [h, hq]
     exact (cohomFpLinearEquivContinuousZModDual p G).symm.bijective.comp
       (maximalProPQuotient.continuousZModDualMap_bijective.comp
         (cohomFpLinearEquivContinuousZModDual p (maximalProPQuotient p G)).bijective)

@@ -131,8 +131,10 @@ theorem _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc_mk
     (ψ : G ⧸ pLowerCentralSeries p G (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H (k + 1)) (g : G) :
     ψ.pLowerCentralSeriesDesc (g : G ⧸ pLowerCentralSeries p G k) =
       QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k)
-        (ψ (g : G ⧸ pLowerCentralSeries p G (k + 1))) :=
-  ContinuousMonoidHom.quotientLift_mk _ _ _ g
+        (ψ (g : G ⧸ pLowerCentralSeries p G (k + 1))) := by
+  rw [ContinuousMonoidHom.pLowerCentralSeriesDesc, ContinuousMonoidHom.quotientLift_mk]
+  simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, ContinuousMonoidHom.coe_mk]
 
 /-- The descended homomorphism commutes with the quotient projections. -/
 @[simp]
