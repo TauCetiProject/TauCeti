@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.CoordinatePower
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 
 /-!
