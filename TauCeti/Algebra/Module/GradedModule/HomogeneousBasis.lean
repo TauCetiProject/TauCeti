@@ -18,7 +18,8 @@ graded free: every homogeneous `k[X]`-submodule meeting the torsion submodule tr
 `TauCeti.Algebra.Module.GradedModule.Torsion`, this gives the "tower" half of the structure theorem
 for finitely generated graded `k[X]`-modules: `M` is the direct sum of its torsion submodule and a
 free module on homogeneous generators, one `X`-tower per generator. The decomposition of the
-torsion submodule into homogeneous cyclic summands is not treated here.
+torsion submodule into homogeneous cyclic summands, which completes the structure theorem, is in
+`TauCeti.Algebra.Module.GradedModule.CyclicDecomposition`.
 
 The basis is assembled degree by degree. In degree `p`, the degree-`p` part of the submodule
 contains `X` times its degree-`(p + d)` part, and a `k`-basis of a complement is chosen. Since
