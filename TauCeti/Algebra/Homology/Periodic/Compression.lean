@@ -343,6 +343,20 @@ noncomputable def quotientCompressionIso
   hom_inv_id := by rw [← quotientCompressionMap_comp, e.hom_inv_id, quotientCompressionMap_id]
   inv_hom_id := by rw [← quotientCompressionMap_comp, e.inv_hom_id, quotientCompressionMap_id]
 
+/-- The forward map of `quotientCompressionIso` compresses the forward map of the isomorphism. -/
+@[simp]
+lemma quotientCompressionIso_hom
+    (e : (HomotopyCategory.quotient C _).obj K ≅ (HomotopyCategory.quotient C _).obj L) :
+    (quotientCompressionIso n e).hom = quotientCompressionMap n e.hom :=
+  (rfl)
+
+/-- The inverse of `quotientCompressionIso` compresses the inverse of the isomorphism. -/
+@[simp]
+lemma quotientCompressionIso_inv
+    (e : (HomotopyCategory.quotient C _).obj K ≅ (HomotopyCategory.quotient C _).obj L) :
+    (quotientCompressionIso n e).inv = quotientCompressionMap n e.inv :=
+  (rfl)
+
 open HomotopyCategory.Bounded (rep quotient_obj_rep quotient_obj_rep_quotient_obj)
 
 variable [HasFiniteCoproducts C]
@@ -413,6 +427,33 @@ noncomputable def quotientCompHomotopyCompressionFunctorIso :
         congr 1
         simp [HomotopyCategory.Bounded.quotient_map_hom]
       exact key)
+
+/-- The component of `quotientCompHomotopyCompressionFunctorIso` at a bounded complex is the
+compression of the identification of the class of its underlying complex, after transporting
+along the object equations. -/
+lemma quotientCompHomotopyCompressionFunctorIso_hom_app (K : CochainComplex.Bounded C) :
+    (quotientCompHomotopyCompressionFunctorIso n).hom.app K =
+      eqToHom (homotopyCompressionFunctor_obj n _) ≫
+        quotientCompressionMap n (eqToHom (quotient_obj_rep_quotient_obj K)) ≫
+          eqToHom (congrArg (HomotopyCategory.quotient C _).obj
+            (compressionFunctor_obj n K)).symm := by
+  -- Unfold the component and identify the transports along its definitional object equations
+  -- with identities. Simplification alone cannot eliminate the opaque equality proofs.
+  change quotientCompressionMap n _ = 𝟙 _ ≫ _ ≫ 𝟙 _
+  simp
+
+/-- The inverse component of `quotientCompHomotopyCompressionFunctorIso` at a bounded complex is
+the compression of the inverse identification, after transporting along the object
+equations. -/
+lemma quotientCompHomotopyCompressionFunctorIso_inv_app (K : CochainComplex.Bounded C) :
+    (quotientCompHomotopyCompressionFunctorIso n).inv.app K =
+      eqToHom (congrArg (HomotopyCategory.quotient C _).obj (compressionFunctor_obj n K)) ≫
+        quotientCompressionMap n (eqToHom (quotient_obj_rep_quotient_obj K).symm) ≫
+          eqToHom (homotopyCompressionFunctor_obj n _).symm := by
+  -- Unfold the component and identify the transports along its definitional object equations
+  -- with identities. Simplification alone cannot eliminate the opaque equality proofs.
+  change quotientCompressionMap n _ = 𝟙 _ ≫ _ ≫ 𝟙 _
+  simp
 
 end Homotopy
 
