@@ -403,15 +403,18 @@ private theorem coverIntegral_eq_chartIntegral_of_ae_support
         rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ (c.piece_subset i hx)] at hz ⊢
         simp only [Units.val_one, Int.cast_one, one_mul] at hz
         rw [hz, mul_zero]
+      have hspiece : s i ⊆ c.piece i := inter_subset_left
       have heq := setIntegral_eq_of_subset_of_ae_sdiff_eq_zero (μ := b.addHaar)
         (c.measurableSet_image_piece i).nullMeasurableSet
-        (image_mono (show s i ⊆ c.piece i from inter_subset_left)) hzero
+        (image_mono hspiece) hzero
       exact heq.trans (signed_changeChart l φ b (c.center i) α
         (fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩) (hs i))
     _ = ∫ y, f y ∂b.addHaar := by
       have he := integral_chart_piece_refine l φ hi b α c Subset.rfl
         (by simpa only [extChartAt_source] using
           (chartAt H α).open_source.isChartMeasurable (I := I)) Subset.rfl
+      -- Unfold the local chart e and coefficient f in the refinement identity; the
+      -- original statement names extChartAt and signedInChartAt explicitly.
       change (∫ y in e '' e.source, f y ∂b.addHaar) =
         ∑ i, ∫ y in e '' (e.source ∩ c.piece i), f y ∂b.addHaar at he
       have he' : (∑ i, ∫ y in e '' s i, f y ∂b.addHaar) =
@@ -456,6 +459,8 @@ public theorem IntegrableTopForm.add {φ ψ : RoughForm I M ℝ k}
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   rw [integrableTopForm_iff] at hφ hψ ⊢
+  -- RoughForm has dependent tangent fibres, definitionally the fixed model space E.
+  -- HasCompactSupport.add needs that fixed codomain to infer its function argument.
   refine ⟨HasCompactSupport.add (f := (show M → E [⋀^Fin k]→L[ℝ] ℝ from φ)) hφ.1 hψ.1, hφ.2.1, ?_⟩
   intro b α
   have heq : (φ + ψ).signedInChartAt b α (fun _ ↦ 1) =
@@ -473,6 +478,8 @@ public theorem IntegrableTopForm.zero (b : Module.Basis (Fin k) ℝ E) :
   rw [integrableTopForm_iff]
   have hz : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ)
       (0 : RoughForm I M ℝ k)) := by
+    -- Identify the dependent zero section with a fixed-codomain zero function so that
+    -- the function tsupport_zero simplification can apply.
     change IsCompact (_root_.tsupport (0 : M → E [⋀^Fin k]→L[ℝ] ℝ))
     simp
   refine ⟨hz, ⟨b⟩, ?_⟩
@@ -556,6 +563,8 @@ private theorem integralTopForm_mk [MeasurableSpace E] [BorelSpace E]
   dsimp only
   rw [coverIntegral_basis_eq _ _ b]
   rcases (Manifold.Orientation.mk_eq_mk_iff r l).mp hr with h | h
+  -- Lift uniqueness is phrased for the local abbreviation r, whereas unfolding the
+  -- integral exposes Classical.choose; give rw the explicit chosen-lift equality.
   · rw [show Classical.choose (Manifold.Orientation.mk l).exists_lift = l from h]
   · rw [show Classical.choose (Manifold.Orientation.mk l).exists_lift = l.flip from h,
       coverIntegral_flip]
@@ -615,6 +624,8 @@ public theorem integralTopForm_add_of_integrable [IsManifold I 1 M]
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
   let c := chooseChartCover (I := I) ((_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ∪
     (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) ψ)) (hφ.isCompact.union hψ.isCompact)
+  -- tsupport_add is a fixed-codomain function lemma; identify the tangent fibres
+  -- with the model space to select that function argument.
   rw [integralTopForm_eq_coverIntegral l _ (hφ.add hψ) b c (_root_.tsupport_add
     (show M → E [⋀^Fin k]→L[ℝ] ℝ from φ) ψ),
     integralTopForm_eq_coverIntegral l _ hφ b c subset_union_left,

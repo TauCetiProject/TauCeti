@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import Mathlib.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Direct integration of zero-dimensional forms
@@ -30,45 +31,10 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin
 
 local notation "E" => EuclideanSpace ℝ (Fin 0)
 
-omit [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 M] in
-/-- In a zero-dimensional charted manifold every preferred chart source is a singleton. -/
-theorem extChartAt_source_zeroDim (x : M) :
-    (extChartAt 𝓘(ℝ, E) x).source = {x} := by
-  ext y
-  constructor
-  · intro hy
-    exact (extChartAt 𝓘(ℝ, E) x).injOn hy (mem_extChartAt_source x)
-      (Subsingleton.elim _ _)
-  · rintro rfl
-    exact mem_extChartAt_source y
-
-/-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
-theorem isSmoothForm_zeroDim (g : M → ℝ) :
-    IsSmoothForm 𝓘(ℝ, E) 0 (RoughForm.ofFunction 𝓘(ℝ, E) g) := by
-  rw [isSmoothForm_def]
-  intro x
-  rw [Bundle.contMDiffAt_section x, contMDiffAt_iff_source,
-    contMDiffWithinAt_iff_contDiffWithinAt]
-  have hflat (f : E → E [⋀^Fin 0]→L[ℝ] ℝ) (s : Set E) (z : E) :
-      ContDiffWithinAt ℝ 0 f s z := by
-    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
-    rw [he]
-    exact contDiffWithinAt_const
-  exact hflat _ _ _
-
-private theorem addHaar_univ_zeroDim (b : Module.Basis (Fin 0) ℝ E) : b.addHaar univ = 1 := by
-  have hp : parallelepiped b = (univ : Set E) := by
-    ext y
-    rw [mem_parallelepiped_iff]
-    simp only [Finset.univ_eq_empty, Finset.sum_empty, mem_univ, iff_true]
-    exact ⟨fun _ ↦ 0, by simp, Subsingleton.elim _ _⟩
-  rw [← hp]
-  exact b.addHaar_self
-
-/-- Direct zero-dimensional integration in a chart, with no use of Stokes. -/
+/-- A function supported in a singleton integrates to its value at that point multiplied by
+the tangent orientation sign. Singleton support also supplies compactness. -/
 theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin 0))
-    (g : M → ℝ) (x : M) (hc : IsCompact
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) (RoughForm.ofFunction 𝓘(ℝ, E) g)))
+    (g : M → ℝ) (x : M)
     (hs : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) (RoughForm.ofFunction 𝓘(ℝ, E) g)) ⊆ {x}) :
     integralTopForm o (RoughForm.ofFunction 𝓘(ℝ, E) g) =
       (Orientation.signBasis (o.orientationAt x)
@@ -76,7 +42,10 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
   classical
   obtain ⟨l, rfl⟩ := o.exists_lift
   let b := (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis
-  have hi := (isSmoothForm_zeroDim g).integrableTopForm hc b
+  have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ)
+      (RoughForm.ofFunction 𝓘(ℝ, E) g)) :=
+    isCompact_singleton.of_isClosed_subset (_root_.isClosed_tsupport _) hs
+  have hi := (isSmoothForm_zeroDim (n := 0) g).integrableTopForm hc b
   rw [integralTopForm_eq_chartIntegral l _ hi x
     (by simpa only [extChartAt_source_zeroDim] using hs), l.chartIntegral_eq_integral _ b x]
   have ht (y : E) : y ∈ (extChartAt 𝓘(ℝ, E) x).target := by
@@ -91,7 +60,8 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
     rw [RoughForm.signedInChartAt_apply, dite_eq_left (ht y), RoughForm.inChartAt_ofFunction]
     simp only [hx, ContinuousAlternatingMap.constOfIsEmpty_apply]
   simp_rw [hcoef]
-  rw [integral_const, measureReal_def, addHaar_univ_zeroDim, ENNReal.toReal_one, one_smul,
+  rw [integral_const, measureReal_def, Module.Basis.addHaar_univ_of_isEmpty,
+    ENNReal.toReal_one, one_smul,
     Manifold.Orientation.orientationAt_mk,
     Manifold.OrientationLift.orientationAt_eq, Manifold.OrientationLift.chartOrientation_eq_ite]
   by_cases hsign : l.sign x ⟨x, mem_chart_source E x⟩ = 1
@@ -109,6 +79,8 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
         -(Orientation.signBasis l.modelOrientation b : ℝ) := by
       simpa only [b, Units.val_neg, Int.cast_neg] using
         congrArg (fun u : ℤˣ ↦ (u : ℝ)) (_root_.Orientation.signBasis_neg l.modelOrientation b)
+    -- The orientation on the tangent fibre is definitionally the model orientation on E,
+    -- but rw does not match their inferred module instances. Identify that fibre explicitly.
     change _ = (Orientation.signBasis (-l.modelOrientation) b : ℝ) * g x
     rw [he]
     simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
@@ -116,16 +88,16 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
 
 /-- On a finite zero-dimensional manifold the actual integral is the signed sum of values.
 The signs come from its tangent orientations, and the point masses are normalized to one. -/
-theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M] [T1Space M]
+theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M]
     (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin 0)) (g : M → ℝ) :
     integralTopForm o (RoughForm.ofFunction 𝓘(ℝ, E) g) =
       ∑ x : M, (Orientation.signBasis (o.orientationAt x)
         (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis : ℝ) * g x := by
   classical
+  have : T1Space M := ChartedSpace.t1Space E M
   let δ : M → RoughForm 𝓘(ℝ, E) M ℝ 0 := fun x ↦
     RoughForm.ofFunction 𝓘(ℝ, E) (fun y ↦ if y = x then g x else 0)
   have hs (x : M) : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) (δ x)) ⊆ {x} := by
-    change closure {y | δ x y ≠ 0} ⊆ {x}
     apply closure_minimal _ isClosed_singleton
     intro y hy
     by_contra hn
@@ -133,11 +105,12 @@ theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M] [T1Space M]
     apply hy
     ext v
     simp [δ, RoughForm.ofFunction_apply, hne]
+    rfl
   have hc (x : M) : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) (δ x)) :=
     isCompact_singleton.of_isClosed_subset
     (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) _) (hs x)
   have hi (x : M) : IntegrableTopForm (δ x) :=
-    (isSmoothForm_zeroDim _).integrableTopForm (hc x)
+    (isSmoothForm_zeroDim (n := 0) _).integrableTopForm (hc x)
       (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis
   have he : RoughForm.ofFunction 𝓘(ℝ, E) g = ∑ x : M, δ x := by
     ext y v
@@ -147,7 +120,7 @@ theorem integralTopForm_ofFunction_finite_zeroDim [Fintype M] [T1Space M]
   apply Finset.sum_congr rfl
   intro x _
   have h := integralTopForm_ofFunction_zeroDim o
-    (fun y ↦ if y = x then g x else 0) x (hc x) (hs x)
+    (fun y ↦ if y = x then g x else 0) x (hs x)
   simpa only [δ, ite_true] using h
 
 end TauCeti

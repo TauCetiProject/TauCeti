@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
@@ -197,5 +198,24 @@ theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
     (hφ : φ ∈ smoothForms I M F k) : mextDeriv φ ∈ smoothForms I M F (k + 1) :=
   mem_smoothForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
     (mem_smoothForms.mp hφ) (by simp)
+
+/-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
+theorem isSmoothForm_zeroDim {M : Type*} [TopologicalSpace M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 0)) M]
+    [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 M] {n : WithTop ℕ∞} (g : M → ℝ) :
+    IsSmoothForm 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) n
+      (RoughForm.ofFunction 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) g) := by
+  rw [isSmoothForm_def]
+  intro x
+  rw [Bundle.contMDiffAt_section x, contMDiffAt_iff_source,
+    contMDiffWithinAt_iff_contDiffWithinAt]
+  have hflat (f : EuclideanSpace ℝ (Fin 0) →
+      EuclideanSpace ℝ (Fin 0) [⋀^Fin 0]→L[ℝ] ℝ)
+      (s : Set (EuclideanSpace ℝ (Fin 0))) (z : EuclideanSpace ℝ (Fin 0)) :
+      ContDiffWithinAt ℝ n f s z := by
+    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
+    rw [he]
+    exact contDiffWithinAt_const
+  exact hflat _ _ _
 
 end TauCeti
