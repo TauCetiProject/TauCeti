@@ -77,8 +77,14 @@ theorem isConnected_compl_singleton_of_chartedSpace_complex (p : X) :
   obtain ⟨U, hU, hUp⟩ := isConnected_chart_ball_sdiff_singleton p
   exact isConnected_compl_singleton_of_mem_nhds p hU hUp
 
+end TauCeti
+
+namespace Set.Finite
+
+variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [ConnectedSpace X]
+
 /-- The complement of a finite set in a connected space charted over `ℂ` is connected. -/
-theorem Set.Finite.isConnected_compl_of_chartedSpace_complex {s : Set X} (hs : s.Finite) :
+theorem isConnected_compl_of_chartedSpace_complex {s : Set X} (hs : s.Finite) :
     IsConnected sᶜ := by
   let _ := ChartedSpace.t1Space ℂ X
   induction s, hs using Set.Finite.induction_on with
@@ -91,7 +97,7 @@ theorem Set.Finite.isConnected_compl_of_chartedSpace_complex {s : Set X} (hs : s
       let _ : ChartedSpace ℂ Y := ChartedSpace.comp ℂ X Y
       let p' : Y := ⟨p, by simpa using hp⟩
       have hpunctured : IsConnected ({p'}ᶜ : Set Y) :=
-        isConnected_compl_singleton_of_chartedSpace_complex p'
+        TauCeti.isConnected_compl_singleton_of_chartedSpace_complex p'
       have himage : ((↑) : Y → X) '' ({p'}ᶜ : Set Y) = (insert p s)ᶜ := by
         ext x
         simp [p']
@@ -99,17 +105,17 @@ theorem Set.Finite.isConnected_compl_of_chartedSpace_complex {s : Set X} (hs : s
       exact hpunctured.image ((↑) : Y → X) continuous_subtype_val.continuousOn
 
 /-- The complement of a finite set in a connected space charted over `ℂ` is path-connected. -/
-theorem Set.Finite.isPathConnected_compl_of_chartedSpace_complex {s : Set X} (hs : s.Finite) :
+theorem isPathConnected_compl_of_chartedSpace_complex {s : Set X} (hs : s.Finite) :
     IsPathConnected sᶜ := by
   let _ := ChartedSpace.t1Space ℂ X
   have hsopen : IsOpen (sᶜ : Set X) := hs.isClosed.isOpen_compl
   let Y := ↥sᶜ
-  let _ : ConnectedSpace Y := isConnected_iff_connectedSpace.mp
-    (TauCeti.Set.Finite.isConnected_compl_of_chartedSpace_complex hs)
+  let _ : ConnectedSpace Y :=
+    isConnected_iff_connectedSpace.mp hs.isConnected_compl_of_chartedSpace_complex
   let _ : ChartedSpace X Y := hsopen.isOpenEmbedding_subtypeVal.singletonChartedSpace
   let _ : ChartedSpace ℂ Y := ChartedSpace.comp ℂ X Y
   let _ : LocallyPathConnectedSpace Y := ChartedSpace.locallyPathConnectedSpace ℂ Y
   let _ : PathConnectedSpace Y := PathConnectedSpace.of_locallyPathConnectedSpace
   exact isPathConnected_iff_pathConnectedSpace.mpr inferInstance
 
-end TauCeti
+end Set.Finite

@@ -190,7 +190,7 @@ theorem finite_restrict_preimage_singleton (z : ThricePuncturedSphere) :
 theorem pathConnectedSpace_restrict_source :
     PathConnectedSpace (P.β ⁻¹' range toOnePoint) := by
   rw [← isPathConnected_iff_pathConnectedSpace, range_toOnePoint, preimage_compl]
-  apply TauCeti.Set.Finite.isPathConnected_compl_of_chartedSpace_complex
+  apply Set.Finite.isPathConnected_compl_of_chartedSpace_complex
   refine (((P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).union
     (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ))).union
     (P.β.finite_fiber ∞)).subset ?_
