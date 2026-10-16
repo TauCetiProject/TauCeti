@@ -18,6 +18,10 @@ coefficient window of prescribed length needs when it is read off polynomials th
 
 `TauCeti.degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le` combines two such product bounds
 into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`.
+`Polynomial.natDegree_multiset_prod_X_sub_C_le` bounds the degree of a product of `card s` monic
+linear factors by `card s` over any commutative ring, without the nontriviality that Mathlib's
+`Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
+
 The simp lemma `Polynomial.natDegree_X_pow_sub_X` computes the degree of `X ^ p - X` for
 any ring and any exponent `p > 1`.
 -/
@@ -67,5 +71,15 @@ theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n
       (WithBot.coe_le_coe.mpr (by omega : m - j + n ≤ (m - j) + (n - j) + j))
   · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hB hm).trans_le
       (WithBot.coe_le_coe.mpr (by omega : n - j + m ≤ (m - j) + (n - j) + j))
+
+/-- A product of `card s` monic linear factors has degree at most `card s`; unlike
+`natDegree_multiset_prod_X_sub_C_eq_card`, this needs no nontriviality. -/
+theorem _root_.Polynomial.natDegree_multiset_prod_X_sub_C_le {S : Type*} [CommRing S]
+    (s : Multiset S) : (s.map fun a ↦ X - C a).prod.natDegree ≤ Multiset.card s := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    rw [Multiset.map_cons, Multiset.prod_cons, Multiset.card_cons, add_comm]
+    exact natDegree_mul_le.trans (add_le_add (natDegree_X_sub_C_le a) ih)
 
 end TauCeti
