@@ -38,7 +38,7 @@ on inertia restrict to a class of `L` vanishing on inertia.
   `Gal(Kˢ/K)` is the fixing subgroup of the maximal unramified extension of `K` inside `Kˢ`.
 * `TauCeti.map_inertiaSubgroup_le_fixingSubgroup_iff`: a finite subextension of `Kˢ/K` is
   unramified exactly when the image of `I_K` fixes it.
-* `TauCeti.map_absoluteGaloisGroupMap_inertiaSubgroup_le`: for an extension `L/K` of local
+* `AlgHom.map_absoluteGaloisGroupMap_inertiaSubgroup_le`: for an extension `L/K` of local
   fields, the map `Gal(Lˢ/L) → Gal(Kˢ/K)` along an embedding of separable closures sends the
   inertia subgroup of `L` into that of `K`.
 
@@ -113,7 +113,7 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
 /-- **Inertia along an extension of local fields.** For an extension `L/K` of nonarchimedean local
 fields and a `K`-embedding `τ : Kˢ → Lˢ` of separable closures, the induced map
 `Gal(Lˢ/L) → Gal(Kˢ/K)` sends the inertia subgroup of `L` into that of `K`. -/
-theorem map_absoluteGaloisGroupMap_inertiaSubgroup_le
+theorem _root_.AlgHom.map_absoluteGaloisGroupMap_inertiaSubgroup_le
     (τ : SeparableClosure K →ₐ[K] SeparableClosure L) :
     ((inertiaSubgroup L).map (absoluteGaloisGroupRestrictEquiv L).toMonoidHom).map
         (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K) ≤
@@ -125,6 +125,6 @@ theorem map_absoluteGaloisGroupMap_inertiaSubgroup_le
   rw [IntermediateField.mem_fixingSubgroup_iff]
   -- `τ` carries `K^{ur}` into `L^{ur}`, which `g` fixes.
   exact fun x hx ↦ τ.injective ((absoluteGaloisGroupMap_commutes τ g x).trans
-    (hg _ (map_maximalUnramifiedExtension_le τ ⟨x, hx, rfl⟩)))
+    (hg _ (τ.map_maximalUnramifiedExtension_le ⟨x, hx, rfl⟩)))
 
 end TauCeti

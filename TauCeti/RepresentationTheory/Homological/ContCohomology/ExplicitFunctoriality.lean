@@ -28,7 +28,8 @@ compatible pair it is, so that a theorem proved for a general pair specializes t
 are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
 `explicitCoeff0_eq_explicitMap0`. If `φ : H → G` maps a subgroup `T` into a subgroup `S`, pullback
 along `φ` sends classes restricting to zero on `S` to classes restricting to zero on `T`
-(`explicitRes1_explicitMap1_eq_zero_of_map_le`). The constructions `explicitCoeff1Equiv` and
+(`ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le`). The constructions
+`explicitCoeff1Equiv` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
@@ -640,7 +641,8 @@ of `H` into a subgroup `S` of `G`, then pulling back along a compatible pair `(�
 `H¹(G, M)` whose restriction to `S` vanishes gives a class whose restriction to `T` vanishes. For
 Galois groups of local fields and their inertia subgroups, this says that unramified classes pull
 back to unramified classes. -/
-theorem explicitRes1_explicitMap1_eq_zero_of_map_le {H : Type uH} [Group H] [TopologicalSpace H]
+theorem _root_.ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le
+    {H : Type uH} [Group H] [TopologicalSpace H]
     {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction H N] [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) {S : Subgroup G} {T : Subgroup H}

@@ -70,8 +70,8 @@ theorem torsionRes_mem_unramifiedTorsionCohomology {L : Type*} [Field L] [Valuat
     (hc : c ∈ W.unramifiedTorsionCohomology m) :
     W.torsionRes τ m c ∈ (W⁄L).unramifiedTorsionCohomology m := by
   rw [mem_unramifiedTorsionCohomology_iff, torsionRes_eq_explicitMap1]
-  exact explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _ _
-    (map_absoluteGaloisGroupMap_inertiaSubgroup_le τ) hc
+  exact (absoluteGaloisGroupMap τ).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
+    (τ.map_absoluteGaloisGroupMap_inertiaSubgroup_le) hc
 
 variable [IsIntegral 𝒪[K] W] [(integralModel 𝒪[K] W).IsElliptic]
 

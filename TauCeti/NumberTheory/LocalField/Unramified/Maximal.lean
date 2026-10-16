@@ -53,7 +53,7 @@ Frobenius corresponding to `1`.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq`: for `p ∤ m`, the `m`-th roots of a unit of
   `𝒪[K]` are unramified.
 * `TauCeti.isGalois_maximalUnramifiedExtension`: `K^{ur}` is Galois over `K`.
-* `TauCeti.map_maximalUnramifiedExtension_le`: for an extension `L/K` of local fields, a
+* `AlgHom.map_maximalUnramifiedExtension_le`: for an extension `L/K` of local fields, a
   `K`-algebra map from an extension of `K` to an extension of `L` sends `K^{ur}` into `L^{ur}`.
 * `IntermediateField.le_maximalUnramifiedExtension_iff`: for `Ω` separably closed, a finite
   intermediate field lies in `K^{ur}` exactly when it is unramified over `K`.
@@ -238,7 +238,7 @@ variable {K Ω} in
 /-- **Unramified elements stay unramified in an extension.** For an extension `L/K` of
 nonarchimedean local fields and a `K`-algebra map `τ : Ω → Ω'` into an extension `Ω'` of `L`, the
 image of `K^{ur}` lies in `L^{ur}`. -/
-theorem map_maximalUnramifiedExtension_le {L : Type*} [Field L] [ValuativeRel L]
+theorem _root_.AlgHom.map_maximalUnramifiedExtension_le {L : Type*} [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
     {Ω' : Type*} [Field Ω'] [Algebra K Ω'] [Algebra L Ω'] [IsScalarTower K L Ω']
     (τ : Ω →ₐ[K] Ω') :
