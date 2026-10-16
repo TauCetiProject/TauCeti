@@ -12,13 +12,14 @@ import Mathlib.Tactic.Linarith
 /-!
 # Negative subspaces of quadratic forms are totally real
 
-Let `Q` be a quadratic form over an ordered field and `J` a linear endomorphism. If
+Let `Q` be a quadratic form over an ordered commutative ring and `J` a linear endomorphism. If
 `Q(v) + Q(Jv)` is positive for every nonzero `v`, then every subspace on which `Q` is negative
-definite is totally real for `J`. No almost-complex identity, finite-dimensionality, or inner
-product is required. In finite dimension, `J` is then automatically injective on such a subspace,
-so the subspace has at most half the ambient dimension, and so does the negative index of inertia
-of `Q`. The inertia bound applies the subspace bound to the maximal negative-definite subspace
-provided by Mathlib's `QuadraticForm.exists_finrank_eq_sigNeg_and_negDef`.
+definite is totally real for `J`. No almost-complex identity, finite-dimensionality, division, or
+inner product is required. Over an ordered field in finite dimension, `J` is then automatically
+injective on such a subspace, so the subspace has at most half the ambient dimension, and so does
+the negative index of inertia of `Q`. The inertia bound applies the subspace bound to the maximal
+negative-definite subspace provided by Mathlib's
+`QuadraticForm.exists_finrank_eq_sigNeg_and_negDef`.
 
 The complex-dimension consequences for almost complex structures are in
 `TauCeti.Geometry.Symplectic.QuadraticForm`.
@@ -45,14 +46,16 @@ open Module
 
 namespace QuadraticForm
 
-variable {K E : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-variable [AddCommGroup E] [Module K E]
-variable (Q : QuadraticForm K E)
-variable {W : Submodule K E}
+section CommRing
+
+variable {R E : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable [AddCommGroup E] [Module R E]
+variable (Q : QuadraticForm R E)
+variable {W : Submodule R E}
 
 /-- A negative-definite subspace of `Q` is totally real for a linear endomorphism `J` if
 `Q(v) + Q(Jv)` is positive for every nonzero `v`. -/
-theorem isTotallyReal_of_add_comp_posDef (J : E →ₗ[K] E)
+theorem isTotallyReal_of_add_comp_posDef (J : E →ₗ[R] E)
     (hQJ : (Q + Q.comp J).PosDef)
     (hW : ((-Q).restrict W).PosDef) :
     TauCeti.IsTotallyReal J W := by
@@ -76,9 +79,14 @@ theorem isTotallyReal_of_add_comp_posDef (J : E →ₗ[K] E)
     QuadraticMap.restrict_apply] at hnegv hnegJv hpos
   linarith
 
+end CommRing
+
 section FiniteDimensional
 
-variable [FiniteDimensional K E]
+variable {K E : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable (Q : QuadraticForm K E)
+variable {W : Submodule K E}
 
 /-- Every negative-definite subspace of `Q` has at most half the dimension of `E` if
 `Q(v) + Q(Jv)` is positive for every nonzero `v`, for a linear endomorphism `J`. -/
