@@ -40,6 +40,10 @@ dictionary then lifts `g` to generators of `G_K ⧸ U`
 
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, 2nd ed., proof of
   (7.4.1).
+* Tau Ceti lookahead branch `lookahead/LocalGaloisGroups/exists-generating-tuple-quotient`, split 5:
+  source of the final proof structure and of the helper lemmas
+  `Subgroup.exists_closure_range_eq_top_of_closure_pair_eq_top` and
+  `TauCeti.charP_residueField`.
 -/
 
 public section
