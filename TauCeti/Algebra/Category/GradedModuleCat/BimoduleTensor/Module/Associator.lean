@@ -316,7 +316,7 @@ def bimoduleModuleTensorAssociatorNatIso :
         bimoduleTensor_map_app, bimoduleModuleTensor_map_app,
         bimoduleTensor_obj_obj,
         eqToHom_refl, Category.id_comp, Category.comp_id]
-      simpa only [bimoduleModuleTensorMap_id, bimoduleModuleTensor_obj_obj] using
+      simpa only [bimoduleModuleTensor, bimoduleModuleTensorMap_id] using
         bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P f (𝟙 N) (𝟙 P))
 
 /-- Each forward trifunctor component is the graded associator. -/
