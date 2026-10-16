@@ -209,8 +209,13 @@ instance : affineAtWorstNodalOfRelativeDimensionOne.IsLocal where
     intro r
     have hr := affineAtWorstNodalOfRelativeDimensionOne_postcomp_of_isOpenImmersion
       (f ∣_ Y.basicOpen r.1) (Y.basicOpen r.1).ι (h r)
+    -- By definition of `Scheme.openCoverOfIsOpenCover`, the `r`-th component of the cover is
+    -- the open subscheme `U r = f ⁻¹ᵁ Y.basicOpen r` with map its inclusion `(U r).ι` (see
+    -- `Scheme.openCoverOfIsOpenCover_X` and `Scheme.openCoverOfIsOpenCover_f`). The source
+    -- scheme depends on the component, so we unfold both at once rather than rewriting.
     change affineAtWorstNodalOfRelativeDimensionOne
       ((f ⁻¹ᵁ Y.basicOpen r.1).ι ≫ f)
+    -- `morphismRestrict_ι` identifies this composite with `(f ∣_ Y.basicOpen r) ≫ ι`.
     simpa only [morphismRestrict_ι] using hr
 
 /-- Being at worst nodal of relative dimension one is the affine-local extension of the
