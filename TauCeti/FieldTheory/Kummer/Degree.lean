@@ -301,8 +301,8 @@ theorem exponent_algEquiv_kummerField_dvd :
     | succ k ih => rw [pow_succ, AlgEquiv.mul_apply_div_self_of_pow_eq _ _ hy, ih, pow_succ]
   have hone : (σ y / y) ^ n = 1 := by
     rw [div_pow, ← map_pow, hy, AlgEquiv.commutes, div_self (by simp)]
-  change (σ ^ n) y = y
-  rw [← div_eq_one_iff_eq hy0, hpow, hone]
+  rw [AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, AlgEquiv.one_apply, ← div_eq_one_iff_eq hy0,
+    hpow, hone]
 
 /-- In the Galois group of `K(Δ^{1/n})/K`, an automorphism is determined by how it moves one
 chosen `n`-th root `r a` of each `a ∈ Δ`. -/

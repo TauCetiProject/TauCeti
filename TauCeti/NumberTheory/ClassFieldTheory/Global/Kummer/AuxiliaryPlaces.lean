@@ -105,13 +105,8 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
     let _ : (Q v).LiesOver v.1.asIdeal := hQover v
     exact isArithFrobAt_artinElementAway hab S hur
       (fun hvS ↦ Set.disjoint_left.mp hST' hvS v.2) (Q v)
-  have hrange : Set.range σ = artinElementAway hab S hur '' (T : Set _) := by
-    ext τ
-    constructor
-    · rintro ⟨v, rfl⟩
-      exact ⟨v.1, v.2, rfl⟩
-    · rintro ⟨v, hv, rfl⟩
-      exact ⟨⟨v, hv⟩, rfl⟩
+  have hrange : Set.range σ = artinElementAway hab S hur '' (T : Set _) :=
+    (Set.image_eq_range (artinElementAway hab S hur) (T : Set _)).symm
   have hfix : L.fixingSubgroup = Subgroup.closure (Set.range σ) := by
     rw [hrange, hclosure, AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom,
       L.restrictNormalHom_ker]
