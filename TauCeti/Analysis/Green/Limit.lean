@@ -80,19 +80,6 @@ theorem _root_.AbsolutelyContinuousOnInterval.tendsto_integral_windingWeight_mul
     (hγ.integrable_windingWeight hclosed) (ContDiff.continuous_curl hP hQ).aestronglyMeasurable
     (by simpa only [Real.norm_eq_abs] using Eventually.of_forall hC) hwconv
 
-/-- Index vanishing outside a domain identifies the whole-plane weighted area integral
-with its restriction to that domain. This equality needs no field regularity. -/
-theorem integral_windingWeight_mul_eq_setIntegral {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
-    (hindex : ∀ z ∉ U, Contour.windingNumber γ a b z = 0) (R : ℂ → ℝ) :
-    (∫ z : ℂ, windingWeight γ a b z * R z) =
-      ∫ z in U, windingWeight γ a b z * R z := by
-  symm
-  apply setIntegral_eq_integral_of_forall_compl_eq_zero
-  intro z hz
-  by_cases ht : z ∈ γ '' uIcc a b
-  · rw [windingWeight_eq_zero_of_mem ht, zero_mul]
-  · rw [windingWeight_eq_of_notMem ht, hindex z hz, Complex.zero_re, zero_mul]
-
 /-- The weighted curl integrals over an index-vanishing domain converge when the winding
 weights converge in `L¹`. The approximating indices need vanish outside the domain only
 eventually. -/
