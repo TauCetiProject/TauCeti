@@ -47,6 +47,10 @@ over `ℤ`, so it does not vanish at some point with natural coordinates
   Exercise 3.5, which uses the weights `eⱼ = Bʲ` for `B` larger than all partial degrees.
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), proof of Proposition 6.3.10.
+* The injectivity of the substitution on separated supports and its use for linear independence
+  are adapted from Ralf Stephan's `DiophantineApproximation/GeneralizedWronskian.lean`
+  in [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems), commit
+  `5cff93ceb4b69b2048473301411763febe96bb3f` (Apache 2.0).
 -/
 
 public section

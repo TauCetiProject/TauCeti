@@ -62,6 +62,10 @@ generalized Wronskian.
   Definition 3.3.5 and Theorem 3.3.7.
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), Proposition 6.3.10, whose proof by Kronecker substitution is followed here.
+* The proof plan (separating weights, translated substitution and multilinear expansion of the
+  determinant) is adapted from Ralf Stephan's `DiophantineApproximation/GeneralizedWronskian.lean`
+  in [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems), commit
+  `5cff93ceb4b69b2048473301411763febe96bb3f` (Apache 2.0).
 -/
 
 public section
