@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import Mathlib.RingTheory.TensorProduct.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 
 /-!
 # Base change of endomorphisms of a scalar extension
@@ -275,25 +274,18 @@ theorem distribBaseChange_comp_mapValue (f : A →ₐ[R] B)
         TensorProduct.map (mapValue f φ) (mapValue f ψ) =
       mapValue f χ ∘ₗ
         (TensorProduct.AlgebraTensorModule.distribBaseChange R B M N).symm.toLinearMap := by
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro x y
-  induction x using TensorProduct.inductionOn with
-  | add x₁ x₂ hx₁ hx₂ =>
-      simp only [TensorProduct.add_tmul, map_add, hx₁, hx₂]
-  | tmul b m =>
-      induction y using TensorProduct.inductionOn with
-      | add y₁ y₂ hy₁ hy₂ =>
-          simp only [TensorProduct.tmul_add, map_add, hy₁, hy₂]
-      | tmul c n =>
-          have hmn := LinearMap.congr_fun h
-            (((1 : A) ⊗ₜ[R] m) ⊗ₜ[A] ((1 : A) ⊗ₜ[R] n))
-          simp only [LinearMap.coe_comp, Function.comp_apply, TensorProduct.map_tmul,
-            LinearEquiv.coe_coe,
-            TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, one_mul] at hmn
-          simp only [LinearMap.coe_comp, Function.comp_apply, TensorProduct.map_tmul,
-            LinearEquiv.coe_coe, mapValue_tmul,
-            TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul]
-          rw [← TensorProduct.smul_tmul', TensorProduct.tmul_smul, smul_smul, map_smul,
-            distribBaseChange_symm_rTensor_tmul, hmn]
+  rw [← LinearMap.cancel_right
+    (TensorProduct.AlgebraTensorModule.distribBaseChange R B M N).surjective]
+  apply (LinearMap.liftBaseChangeEquiv B).symm.injective
+  refine TensorProduct.ext' fun m n ↦ ?_
+  have hmn := LinearMap.congr_fun h
+    (((1 : A) ⊗ₜ[R] m) ⊗ₜ[A] ((1 : A) ⊗ₜ[R] n))
+  simp only [LinearMap.comp_apply, TensorProduct.map_tmul, LinearEquiv.coe_coe,
+    TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, one_mul] at hmn
+  simp only [LinearMap.liftBaseChangeEquiv_symm_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, TensorProduct.AlgebraTensorModule.distribBaseChange_tmul,
+    TensorProduct.map_tmul, mapValue_tmul, one_smul,
+    TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, one_mul]
+  rw [distribBaseChange_symm_rTensor_tmul, hmn]
 
 end Module.End
