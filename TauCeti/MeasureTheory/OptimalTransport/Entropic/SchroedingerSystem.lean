@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 import Mathlib.Probability.Moments.Basic
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The Schrödinger system for a bounded kernel
@@ -50,6 +51,8 @@ a different argument and is not proved here.
 
 * `TauCeti.exists_isCoupling_withDensity_exp_add`: the Schrödinger system for a bounded measurable
   kernel has a solution by bounded measurable potentials.
+* `TauCeti.exists_isCoupling_withDensity_exp_add_of_eq_withDensity`: the same system written
+  against a reference measure `R` with density `exp g` against `μ.prod ν`.
 * `TauCeti.IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue`: the Schrödinger
   minimizer for a reference measure with bounded log-density against `μ.prod ν` has a product
   density.
@@ -539,6 +542,27 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
   ext t ht
   rw [hsnd t ht, hc, one_mul]
 
+/-- **The Schrödinger system against a reference measure with bounded log-density.** Let `μ` and
+`ν` be finite measures of equal mass, and let the reference measure `R` have density `exp g`
+against `μ.prod ν`, for a bounded measurable `g`. Then there are bounded measurable potentials `φ`
+and `ψ` such that `exp (φ(x) + ψ(y))` is the density, against `R`, of a coupling of `μ` and
+`ν`. -/
+theorem exists_isCoupling_withDensity_exp_add_of_eq_withDensity [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {R : Measure (X × Y)} (hμν : μ univ = ν univ) (hg : Measurable g)
+    (hgM : ∀ z, |g z| ≤ M)
+    (hR : R = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (Real.exp (g z))) :
+    ∃ (φ : X → ℝ) (ψ : Y → ℝ) (C : ℝ), Measurable φ ∧ Measurable ψ ∧ (∀ x, |φ x| ≤ C) ∧
+      (∀ y, |ψ y| ≤ C) ∧
+      IsCoupling (R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2))) μ ν := by
+  obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ := exists_isCoupling_withDensity_exp_add hμν hg hgM
+  have hRσ : ((μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z))) =
+      R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)) := by
+    rw [hR, ← withDensity_mul _ (by fun_prop) (by fun_prop)]
+    congr 1
+    funext z
+    rw [Pi.mul_apply, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, add_comm (g z)]
+  exact ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hRσ ▸ hσ⟩
+
 /-- **The Schrödinger minimizer has a product density.** Let the reference measure `R` have density
 `exp g` against `μ.prod ν`, for a bounded measurable `g`, and let `μ` be finite. Then a coupling of
 `μ` and `ν` attaining the Schrödinger value has density `exp (φ(x) + ψ(y))` against `R`, for bounded
@@ -555,20 +579,9 @@ theorem IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue
   have := hπ.isFiniteMeasure
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
-    exists_isCoupling_withDensity_exp_add hπ.measure_univ_eq hg hgM
-  have hRσ : ((μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z))) =
-      R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)) := by
-    rw [hR, ← withDensity_mul _ (by fun_prop) (by fun_prop)]
-    congr 1
-    funext z
-    rw [Pi.mul_apply, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, add_comm (g z)]
-  rw [hRσ] at hσ
-  have : IsFiniteMeasure R := by
-    rw [hR]
-    refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound (by fun_prop) (Real.exp M)
-      (ae_of_all _ fun z ↦ ?_)).2
-    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
-    exact (abs_le.1 (hgM z)).2
+    exists_isCoupling_withDensity_exp_add_of_eq_withDensity hπ.measure_univ_eq hg hgM hR
+  have : IsFiniteMeasure R := hR ▸ isFiniteMeasure_withDensity_ofReal_exp hg.aemeasurable
+    (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2)
   have hφi : Integrable φ μ :=
     Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)
   have hψi : Integrable ψ ν :=

@@ -210,6 +210,7 @@ lemma isClopen_patchTopology_basicOpen (f s : A) :
     @IsClopen (Spv A) (patchTopology A) (basicOpen f s) := by
   rw [basicOpen_eq_toPatch_preimage]
   have hcl : IsClopen {g : A × A → Bool | g (f, s) = true ∧ g (s, 0) = false} := by
+    rw [Set.ofPred_and]
     refine IsClopen.inter ?_ ?_
     · exact (isClopen_discrete {true}).preimage (continuous_apply (f, s))
     · exact (isClopen_discrete {false}).preimage (continuous_apply (s, 0))

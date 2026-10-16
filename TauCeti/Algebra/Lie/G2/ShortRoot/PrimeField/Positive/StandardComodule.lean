@@ -58,6 +58,22 @@ def standardCoordinateMap : GeneralLinear.coordinateHopfAlgebra k 7 ⟶
   (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).inv ≫
     CommHopfAlgCat.baseChangeMap (CommHopfAlgCat.mkQuotient _ definingIdeal)
 
+/-- The standard coordinate morphism is the scalar extension of the positive subgroup's
+ambient quotient map, transported through the general-linear coordinate identification. -/
+theorem standardCoordinateMap_def :
+    standardCoordinateMap k =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).inv ≫
+        CommHopfAlgCat.baseChangeMap (CommHopfAlgCat.mkQuotient _ definingIdeal) := by
+  rw [standardCoordinateMap]
+
+/-- The positive subgroup's standard coordinate morphism is surjective. -/
+theorem standardCoordinateMap_surjective :
+    Function.Surjective (standardCoordinateMap k).hom := by
+  simpa only [standardCoordinateMap_def, Iso.symm_hom, Iso.refl_hom, Category.comp_id] using
+    _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso
+      (CommHopfAlgCat.mkQuotient _ definingIdeal) (CommHopfAlgCat.mkQuotient_surjective _ _)
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).symm (Iso.refl _)
+
 /-- Restriction of positive-subgroup coordinates to its weight torus after scalar extension. -/
 def weightTorusCoordinateMap : CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra ⟶
     (DiagonalizableGroup.coordinateRing k (SplitTorus.characterGroup (Fin 2))).obj :=
@@ -125,7 +141,7 @@ theorem rootSubgroupPoints_mulVec_mem
         (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator (.inl i))
   rw [hcomp] at h
   have hmatrix := PrimeField.coe_rootSubgroupPoints_gaPointsMulEquiv (.inl i) k q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply,
     MulEquiv.apply_symm_apply] at hmatrix
   rwa [← hmatrix] at h
 

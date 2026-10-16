@@ -185,13 +185,13 @@ algebra. -/
 lemma mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
     (mapDomain (H₁ := H₁) (H₂ := H₂) φ :
         WithConv (H₂ →ₐ[R] B) →* WithConv (H₁ →ₐ[R] B)).comp
-        (mapValue (H := H₂) χ) =
-      (mapValue (H := H₁) χ).comp
+        (AlgHom.mapValue (H := H₂) χ) =
+      (AlgHom.mapValue (H := H₁) χ).comp
         (mapDomain (H₁ := H₁) (H₂ := H₂) φ :
           WithConv (H₂ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A)) := by
   refine MonoidHom.ext fun f => ?_
-  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapDomain_apply, mapValue_apply,
-    mapDomain_apply, mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapDomain_apply, AlgHom.mapValue_apply,
+    mapDomain_apply, AlgHom.mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
 
 end BialgebraMapValue
 
@@ -204,11 +204,11 @@ variable [CommSemiring A] [Algebra R A]
 algebra-valued point gives the corresponding constant point in the value algebra. -/
 lemma mapValue_algebraOfId (x : WithConv (H₁ →ₐ[R] A))
     (g : WithConv (H₁ →ₐ[R] R)) :
-    mapValue (H := H₁) x.ofConv
-        (mapValue (H := H₁) (Algebra.ofId R H₁) g) =
-      mapValue (H := H₁) (Algebra.ofId R A) g := by
+    AlgHom.mapValue (H := H₁) x.ofConv
+        (AlgHom.mapValue (H := H₁) (Algebra.ofId R H₁) g) =
+      AlgHom.mapValue (H := H₁) (Algebra.ofId R A) g := by
   have h := DFunLike.congr_fun
-    (mapValue_comp (H := H₁) x.ofConv (Algebra.ofId R H₁)) g
+    (AlgHom.mapValue_comp (H := H₁) x.ofConv (Algebra.ofId R H₁)) g
   simpa [Algebra.comp_ofId] using h.symm
 
 end BialgebraConstantPoint
@@ -226,7 +226,7 @@ lemma mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ
     mapDomain (H₁ := H₁) (H₂ := H₂) φ (f⁻¹ : WithConv (H₂ →ₐ[R] A)) h =
       f.ofConv (HopfAlgebra.antipode R (φ h)) := by
   rw [mapDomain_apply_apply]
-  exact convInv_apply f (φ h)
+  exact algHom_inv_apply f (φ h)
 
 end Hopf
 

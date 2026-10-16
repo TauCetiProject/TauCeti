@@ -135,7 +135,7 @@ universe w v u
 namespace TauCeti
 
 -- Fix the scalar field when synthesizing torsion-freeness for the antipodal cover.
-local instance {E : Type*} [AddCommGroup E] [Module ℝ E] : IsAddTorsionFree E :=
+local instance {E : Type*} [AddCommGroup E] [Module ℝ E] : HasUniqueDiv E :=
   .of_isTorsionFree ℝ E
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
@@ -860,7 +860,6 @@ theorem finrank_reducedSingularHomology_sphere [StrongRankCondition k] (d q : �
     exact (reducedSingularHomologyTopCatSphereIso M q).toLinearEquiv.finrank_eq
   · have := ModuleCat.isZero_iff_subsingleton.mp
       (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := d) h)
-    have := nontrivial_of_invariantBasisNumber k
     exact Module.finrank_zero_of_subsingleton
 
 /-- The singular homology of a sphere with coefficients in a free module is free. -/

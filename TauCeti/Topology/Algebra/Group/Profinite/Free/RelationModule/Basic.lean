@@ -45,6 +45,8 @@ homomorphism `f ↦ (x ↦ [s x⁻¹ * f * s (x⁻¹ * π f)⁻¹])` with values
 * `TauCeti.freeProfiniteGroup.foxDerivative`: the Fox derivative `F → ℤ_p[G]^ι` along `lift g`.
 * `TauCeti.freeProfiniteGroup.abelianizationProPEquivRelationModule`: Lyndon's isomorphism
   `R^ab(p) ≃+ relationModule ℤ_[p] G g`.
+* `TauCeti.freeProfiniteGroup.abelianizationProPLinearEquivRelationModule`: Lyndon's isomorphism
+  as a `ℤ_p`-linear equivalence, with scalar multiplication on `R^ab(p)` given by p-adic powers.
 
 ## Main results
 
@@ -569,6 +571,30 @@ theorem abelianizationProPEquivRelationModule_padicPow
     abelianizationProPEquivRelationModule p hg (ofMul (isProP_maximalProPQuotient.padicPow a c)) =
       c • abelianizationProPEquivRelationModule p hg (ofMul a) :=
   Subtype.ext (foxAddHom_padicPow p a c)
+
+/-- Lyndon's isomorphism as a `ℤ_p`-linear equivalence, for the module structure on `R^ab(p)`
+given by p-adic exponentiation. Its underlying map is `abelianizationProPEquivRelationModule`. -/
+noncomputable def abelianizationProPLinearEquivRelationModule :
+    haveI : CompactSpace (lift g : freeProfiniteGroup ι →* G).ker :=
+      isCompact_iff_compactSpace.mp (isClosed_singleton.preimage (lift g).continuous).isCompact
+    letI := (isProP_maximalProPQuotient (p := p)
+      (G := TopologicalAbelianization (lift g : freeProfiniteGroup ι →* G).ker)).module
+    Additive (abelianizationProP p _ (lift g : freeProfiniteGroup ι →* G).ker) ≃ₗ[ℤ_[p]]
+      MonoidAlgebra.relationModule ℤ_[p] G g := by
+  let hA : IsProP p (abelianizationProP p _ (lift g : freeProfiniteGroup ι →* G).ker) :=
+    isProP_maximalProPQuotient
+  letI := hA.module
+  exact (abelianizationProPEquivRelationModule p hg).toLinearEquiv fun c x ↦ by
+    rw [IsProP.module_smul]
+    exact abelianizationProPEquivRelationModule_padicPow p hg x.toMul c
+
+/-- The linear form of Lyndon's isomorphism evaluates as its additive form. -/
+@[simp]
+theorem abelianizationProPLinearEquivRelationModule_apply
+    (x : Additive (abelianizationProP p _ (lift g : freeProfiniteGroup ι →* G).ker)) :
+    abelianizationProPLinearEquivRelationModule p hg x =
+      abelianizationProPEquivRelationModule p hg x :=
+  (rfl)
 
 /-- **Lyndon's isomorphism is equivariant**: conjugation by `f ∈ F` on `R^ab(p)`, through
 `F ⧸ R`, corresponds to multiplication by `lift g f` on the relation module. -/

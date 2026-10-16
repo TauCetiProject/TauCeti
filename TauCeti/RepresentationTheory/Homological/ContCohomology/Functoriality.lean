@@ -152,6 +152,18 @@ theorem map_congr {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGrou
   subst hφ
   rw [eq_of_heq hfg]
 
+variable {R} in
+/-- Two compatible pairs with equal homomorphisms and coefficient maps that agree pointwise induce
+the same map on continuous cohomology: the elementwise form of `map_congr`, for coefficient maps
+over homomorphisms that are only propositionally equal. -/
+theorem map_congr_of_hom_apply {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X : TopRep R G} {Y : TopRep R H} {φ ψ : H →ₜ* G} (hφ : φ = ψ)
+    (f : TopRep.res (φ : H →* G) X ⟶ Y) (g : TopRep.res (ψ : H →* G) X ⟶ Y)
+    (hfg : ∀ x : X, f.hom x = g.hom x) (n : ℕ) :
+    _root_.ContinuousCohomology.map φ f n = _root_.ContinuousCohomology.map ψ g n := by
+  subst hφ
+  rw [TopRep.hom_ext (DFunLike.ext _ _ hfg)]
+
 section CoeffMap
 
 variable {R}
