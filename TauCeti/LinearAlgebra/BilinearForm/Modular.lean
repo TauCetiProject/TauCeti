@@ -285,6 +285,26 @@ theorem isModular_restrict_span_range {ι : Type*} [Fintype ι] [DecidableEq ι]
       simp)
   exact ⟨C, hC, b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
 
+/-- A symmetric binary Gram block scaled by a non-zero-divisor is linearly independent and
+spans a modular submodule when the product of its normalized diagonal entries is a nonunit.
+This is the binary case of the local orthogonal splitting construction. -/
+theorem IsSymm.linearIndependent_and_isModular_restrict_span_pair [IsLocalRing R]
+    (hB : B.IsSymm) {u w : M} {s t : R} (ha : a ∈ nonZeroDivisors R)
+    (huw : B u w = a) (hu : B u u = a * s) (hw : B w w = a * t)
+    (hst : ¬ IsUnit (s * t)) :
+    LinearIndependent R ![u, w] ∧
+      (B.restrict (Submodule.span R (Set.range ![u, w]))).IsModular a := by
+  have hunit : IsUnit (s * t - 1) := by
+    rw [← neg_sub]
+    exact (IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _ (mem_nonunits_iff.mpr hst)).neg
+  let G : Matrix (Fin 2) (Fin 2) R := !![s, 1; 1, t]
+  have hG : ∀ i j, B (![u, w] i) (![u, w] j) = a * G i j := by
+    intro i j
+    fin_cases i <;> fin_cases j <;> simp [G, huw, hu, hw, hB.eq w u]
+  have hdet : IsUnit G.det := by simpa [G, det_fin_two] using hunit
+  exact ⟨linearIndependent_of_isUnit_det ha hG hdet,
+    isModular_restrict_span_range ha hG hdet⟩
+
 /-- **The splitting step of the Jordan decomposition.** Over a local ring, let `B u w` be a
 non-zero-divisor dividing every value of a symmetric form `B`. Then some nonzero submodule of the
 span of `u` and `w` is `B u w`-modular and complementary to its orthogonal complement. No inverse
@@ -312,14 +332,11 @@ theorem IsSymm.exists_isModular_restrict_isCompl_orthogonal [IsLocalRing R] (hB 
   by_cases htu : IsUnit t
   · exact key ![w] !![t] (fun i ↦ by fin_cases i; simp)
       (fun i j ↦ by fin_cases i; fin_cases j; simpa using ht) (by simpa using htu)
-  -- Both `s` and `t` are nonunits, so `s * t - 1` is a unit.
-  have hunit : IsUnit (s * t - 1) := by
-    have h := IsLocalRing.isUnit_one_sub_self_of_mem_nonunits (s * t)
-      (mem_nonunits_iff.mpr fun h ↦ hsu (isUnit_of_mul_isUnit_left h))
-    rw [← neg_sub]
-    exact h.neg
-  refine key ![u, w] !![s, 1; 1, t] (fun i ↦ by fin_cases i <;> simp) (fun i j ↦ ?_)
-    (by simpa [det_fin_two] using hunit)
-  fin_cases i <;> fin_cases j <;> simp [hs, ht, hB.eq w u]
+  obtain ⟨hli, hmod⟩ := hB.linearIndependent_and_isModular_restrict_span_pair
+    hd rfl hs ht (fun h ↦ hsu (isUnit_of_mul_isUnit_left h))
+  refine ⟨_, fun h ↦ hli.ne_zero 0
+    ((Submodule.eq_bot_iff _).mp h _ (Submodule.subset_span (Set.mem_range_self 0))),
+    ?_, hmod, hmod.isCompl_orthogonal hB hd hdvd⟩
+  exact Submodule.span_mono (Set.range_subset_iff.mpr fun i ↦ by fin_cases i <;> simp)
 
 end LinearMap.BilinForm
