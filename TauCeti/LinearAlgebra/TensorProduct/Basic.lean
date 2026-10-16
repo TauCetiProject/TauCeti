@@ -12,7 +12,8 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 # Tensor-product contractions and trace identities
 
 This file defines contraction of a tensor product against a linear functional on its right factor,
-and records its behavior on pure tensors and under tensor-product maps.
+bundled as a linear map in the functional, and records its behavior on pure tensors and under
+tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
 arguments about coactions and weight spaces. It also proves the tensor identity that makes
 the Casimir element of a trace commute with multiplication.
@@ -23,7 +24,9 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
-* `TauCeti.tensorProduct_rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
+  reassociation.
+* `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
 
@@ -46,9 +49,9 @@ variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 
-/-- Apply a linear functional to the right factor of a tensor. -/
-noncomputable def tensorComponent (phi : N →ₗ[R] R) : M ⊗[R] N →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ phi.lTensor M
+/-- Apply a linear functional to the right factor of a tensor, linearly in the functional. -/
+noncomputable def tensorComponent : (N →ₗ[R] R) →ₗ[R] M ⊗[R] N →ₗ[R] M :=
+  (LinearMap.compRight R (TensorProduct.rid R M).toLinearMap).comp (LinearMap.lTensorHom M)
 
 /-- Contraction is the tensor product of the functional with the identity, followed by the
 right tensor unitor. -/
@@ -72,13 +75,6 @@ theorem tensorComponent_map {M' : Type x} {N' : Type y}
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul m n => simp
 
-/-- Contraction by the zero functional is the zero linear map. -/
-@[simp]
-theorem tensorComponent_zero :
-    tensorComponent (R := R) (M := M) (0 : N →ₗ[R] R) = 0 := by
-  refine TensorProduct.ext' fun m n => ?_
-  simp
-
 section
 
 variable {R M N P : Type*} [CommSemiring R]
@@ -99,6 +95,15 @@ theorem tensorComponent_assoc_symm (phi : P →ₗ[R] R) (u : M ⊗[R] (N ⊗[R]
       simp only [TensorProduct.assoc_symm_tmul, LinearMap.tensorComponent_tmul,
         LinearMap.lTensor_tmul, TensorProduct.tmul_smul]
 
+/-- Applying two tensor components successively is contraction by the composed functional
+on the last two factors, after reassociation. -/
+theorem tensorComponent_comp_tensorComponent (phi : N →ₗ[R] R) (psi : P →ₗ[R] R) :
+    tensorComponent (M := M) phi ∘ₗ tensorComponent (M := M ⊗[R] N) psi =
+      tensorComponent (M := M) (phi ∘ₗ tensorComponent psi) ∘ₗ
+        (TensorProduct.assoc R M N P).toLinearMap := by
+  refine TensorProduct.ext_threefold fun m n p ↦ ?_
+  simp [smul_smul]
+
 /-- Applying functionals to both factors is independent of the order of contraction. -/
 theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
     psi ∘ₗ LinearMap.tensorComponent phi =
@@ -109,6 +114,14 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
     mul_comm]
 
 end
+
+/-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
+@[simp]
+theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
+    TensorProduct.rid R N (rTensor R f t) = f (TensorProduct.rid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul m r => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-! ### The Casimir element of a trace
 
@@ -165,18 +178,3 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 end Casimir
 
 end LinearMap
-
-namespace TauCeti
-
-variable {R M N : Type*} [CommSemiring R]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-/-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
-@[simp]
-theorem tensorProduct_rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
-    TensorProduct.rid R N (LinearMap.rTensor R f t) = f (TensorProduct.rid R M t) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul m r => simp
-  | add x y hx hy => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
-
-end TauCeti

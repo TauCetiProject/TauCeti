@@ -67,6 +67,8 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
   standard parabolic subgroup is spelled by an alternating word of its own length.**
 * `CoxeterSystem.wordProd_alternatingWord_eq_comm_iff`: the two alternating words of length `m`
   have the same product exactly when `(s i * s i') ^ m = 1`.
+* `CoxeterSystem.wordProd_alternatingWord_eq_mul_pow`: more precisely, they differ by the factor
+  `(s i * s i') ^ m`.
 * `CoxeterSystem.wordProd_alternatingWord_add_two_mul`: the products of the alternating words
   repeat with period twice the order of `s i * s i'`.
 * `CoxeterSystem.wordProd_alternatingWord_eq_of_isLeftDescent_pair`: **an element of a rank-two
@@ -174,28 +176,26 @@ theorem wordProd_alternatingWord_eq_of_mem_parabolic_pair {i i' : B} {w : W}
   · exact Or.inl (by rw [← h])
   · exact Or.inr (by rw [← h])
 
+/-- **The two alternating words of length `m` differ by the `m`-th power of the rotation.** The
+word alternating between `i` and `i'` and ending with `i'` is the word ending with `i` followed by
+`(s i * s i') ^ m`. -/
+theorem wordProd_alternatingWord_eq_mul_pow (i i' : B) (m : ℕ) :
+    π (alternatingWord i i' m) = π (alternatingWord i' i m) * (s i * s i') ^ m := by
+  induction m generalizing i i' with
+  | zero => simp [alternatingWord]
+  | succ m ih =>
+    -- Conjugating by `s i'` carries the rotation `s i * s i'` to its inverse `s i' * s i`.
+    have hsemi : SemiconjBy (s i') ((s i * s i') ^ m) ((s i' * s i) ^ m) :=
+      SemiconjBy.pow_right (by simp only [SemiconjBy, mul_assoc]) m
+    simp only [alternatingWord_succ, wordProd_concat, ih i' i, pow_succ', mul_assoc,
+      simple_mul_simple_cancel_left, hsemi.eq]
+
 /-- **The two alternating words of length `m` have the same product exactly when the rotation
-`s i * s i'` is killed by `m`.** This is the dihedral arithmetic of a rank-two parabolic subgroup,
-and the only computation in this file. -/
+`s i * s i'` is killed by `m`.** This is the dihedral arithmetic of a rank-two parabolic
+subgroup. -/
 theorem wordProd_alternatingWord_eq_comm_iff (i i' : B) (m : ℕ) :
     π (alternatingWord i i' m) = π (alternatingWord i' i m) ↔ (s i * s i') ^ m = 1 := by
-  have hinv : s i' * s i = (s i * s i')⁻¹ := by
-    rw [mul_inv_rev, cs.inv_simple, cs.inv_simple]
-  rw [cs.prod_alternatingWord_eq_mul_pow, cs.prod_alternatingWord_eq_mul_pow, hinv, inv_pow]
-  rcases Nat.even_or_odd m with hm | hm
-  · obtain ⟨p, hp⟩ := hm
-    have hev : Even m := ⟨p, hp⟩
-    have hdiv : m / 2 = p := by omega
-    have hsum : p + p = m := hp.symm
-    simp only [ite_eq_left hev, one_mul, hdiv]
-    rw [eq_inv_iff_mul_eq_one, ← pow_add, hsum]
-  · obtain ⟨p, hp⟩ := hm
-    have hnot : ¬Even m := by rw [hp]; simp [parity_simps]
-    have hdiv : m / 2 = p := by omega
-    have hsum : p + 1 + p = m := by omega
-    simp only [ite_eq_right hnot, hdiv]
-    rw [← inv_mul_eq_iff_eq_mul, cs.inv_simple, ← mul_assoc, ← pow_succ',
-      eq_inv_iff_mul_eq_one, ← pow_add, hsum]
+  rw [cs.wordProd_alternatingWord_eq_mul_pow, mul_eq_left]
 
 /-- **The products of the alternating words repeat with period twice the order of the rotation
 `s i * s i'`.** Only `(s i * s i') ^ n = 1` is used, so the period may be read off any exponent

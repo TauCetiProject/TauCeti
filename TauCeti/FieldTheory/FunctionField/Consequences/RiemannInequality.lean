@@ -23,8 +23,8 @@ The proof counts sections.  For a divisor `A` of `F₀`, the products `u zᵢ` o
 `F₀`; and they lie in `L(Con A + C)`.  Hence `n ℓ(A) ≤ ℓ(Con A + C)`.  The conorm multiplies
 degrees by `n`, Riemann's theorem bounds `ℓ(A)` below by `deg A + 1 - g(F₀)`, and Riemann–Roch
 evaluates `ℓ(Con A + C)` as `n deg A + deg C + 1 - g(F)` once `deg A` is large; comparing the two
-gives the bound.  The section count is
-`TauCeti.Divisor.card_mul_dim_le_dim_conorm_add` in
+gives the bound.  The section count is the case `k' = k` of
+`TauCeti.Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add` in
 `TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm`.
 
 For `F₀ = k(x)` and `F = k(x, y)`, the powers `1, y, …, y^{m - 1}` with `m = [F : k(x)]` form a
@@ -98,8 +98,8 @@ theorem genus_le_one_add_finrank_mul_genus_sub_one_add_degree (hF : IsFunctionFi
     nlinarith)
   have hcount : (Module.finrank F₀ F : ℤ) * Divisor.dim A ≤
       Divisor.dim (Divisor.conorm k F A + C) := by
-    have h := Divisor.card_mul_dim_le_dim_conorm_add hF b.linearIndependent hb A
-    rw [← Module.finrank_eq_card_basis b] at h
+    have h := Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add hF b.linearIndependent hb A
+    rw [← Module.finrank_eq_card_basis b, Module.finrank_self, one_mul] at h
     exact_mod_cast h
   have hRiemann := Divisor.degree_add_one_sub_genus_le_dim hF₀ A
   rw [hRR, Divisor.degree_add, hdegCon] at hcount

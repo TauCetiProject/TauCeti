@@ -82,10 +82,11 @@ theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
   rfl
 
-variable [NumberField K] [NumberField L]
-
-private def groupedInfiniteAdeles :
-    InfiniteAdeleRing L ≃ₗ[K]
+/-- **Infinite adeles grouped by places of the base field.** The infinite adeles of `L` are the
+product over the infinite places `v` of `K` of the families of components at the places of `L`
+above `v`. -/
+def infiniteAdelePiLiesOverEquiv :
+    InfiniteAdeleRing L ≃+*
       ((v : InfinitePlace K) → (w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion) where
   toFun a _ w := a w.1
   invFun a w := a (w.comap (algebraMap K L)) ⟨w, inferInstance⟩
@@ -96,8 +97,28 @@ private def groupedInfiniteAdeles :
     have h := InfinitePlace.LiesOver.comap_eq w v
     subst v
     rfl
+  map_mul' _ _ := rfl
   map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+
+variable {K L} in
+/-- The family at `v` of a grouped infinite adele consists of its components above `v`. -/
+@[simp]
+theorem infiniteAdelePiLiesOverEquiv_apply (a : InfiniteAdeleRing L) (v : InfinitePlace K)
+    (w : {w : InfinitePlace L // w.LiesOver v}) :
+    infiniteAdelePiLiesOverEquiv K L a v w = a w.1 :=
+  (rfl)
+
+variable {K L} in
+/-- Ungrouping reads the component at a place `w` of `L` off the family at the place below `w`. -/
+@[simp]
+theorem infiniteAdelePiLiesOverEquiv_symm_apply
+    (a : (v : InfinitePlace K) → (w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion)
+    (w : InfinitePlace L) :
+    (infiniteAdelePiLiesOverEquiv K L).symm a w =
+      a (w.comap (algebraMap K L)) ⟨w, inferInstance⟩ :=
+  (rfl)
+
+variable [NumberField K] [NumberField L]
 
 open scoped Classical in
 private def baseChangeLinearEquiv :
@@ -105,7 +126,7 @@ private def baseChangeLinearEquiv :
   (TensorProduct.piLeft K L (fun v : InfinitePlace K ↦ v.Completion)).trans
     ((LinearEquiv.piCongrRight fun v ↦
       (infiniteSemilocalEquiv L v).toLinearEquiv.restrictScalars K).trans
-        (groupedInfiniteAdeles K L).symm)
+        ((infiniteAdelePiLiesOverEquiv K L).toAddEquiv.toLinearEquiv fun _ _ ↦ rfl).symm)
 
 private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
     baseChangeLinearEquiv K L t = infiniteAdeleBaseChangeHom K L t := by

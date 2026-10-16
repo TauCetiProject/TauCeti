@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
-# Minors on a pair of rows and a pair of columns
+# Pair minors and principal minors
 
 A `2 × 2` minor of a matrix is the determinant of the submatrix on an ordered pair of rows and an
 ordered pair of columns. `Matrix.pairMinor` names it, so that a family of such minors can be
@@ -25,9 +25,15 @@ sums over are named without choosing representatives: each is written as the inc
 sign of a minor depends on the order of its two indices, so some such choice is needed for the
 statement to be sign-correct.
 
+A principal minor of a square matrix, indexed by an arbitrary (possibly infinite) type, is the
+determinant of its restriction to the rows and columns indexed by a finite set of indices.
+`Matrix.principalMinor` names it; it is the building block of the principal-minor series
+`det (1 - T A)` in `TauCeti.Analysis.Matrix.CharPowerSeries`.
+
 ## Main definitions
 
 * `Matrix.pairMinor`: the `2 × 2` minor on an ordered row pair and an ordered column pair.
+* `Matrix.principalMinor`: the principal minor on a finite set of indices.
 
 ## Main results
 
@@ -39,6 +45,9 @@ statement to be sign-correct.
   matrix.
 * `Matrix.pairMinor_mul`: Cauchy--Binet, expanding a minor of a product over the increasing pairs
   of the middle index type.
+* `Matrix.principalMinor_empty`: the empty principal minor is `1`.
+* `Matrix.principalMinor_submatrix_equiv`: principal minors are invariant under reindexing the
+  rows and columns by the same equivalence.
 -/
 
 public section
@@ -132,5 +141,33 @@ theorem pairMinor_mul_fin_four (g : Matrix m (Fin 4) R) (h : Matrix (Fin 4) n R)
   simp only [Fin.sum_univ_four, Fin.lt_def]
   norm_num
   ring
+
+section Principal
+
+variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
+
+/-- The principal minor of `A` on a finite set `s` of indices: the determinant of the
+restriction of `A` to the rows and columns indexed by `s`. -/
+def principalMinor (A : Matrix ι ι R) (s : Finset ι) : R :=
+  (A.submatrix (Subtype.val : s → ι) Subtype.val).det
+
+theorem principalMinor_def (A : Matrix ι ι R) (s : Finset ι) :
+    A.principalMinor s = (A.submatrix (Subtype.val : s → ι) Subtype.val).det := (rfl)
+
+@[simp]
+theorem principalMinor_empty (A : Matrix ι ι R) : A.principalMinor ∅ = 1 := by
+  rw [principalMinor_def, det_isEmpty]
+
+/-- Principal minors are invariant under reindexing the rows and columns by the same
+equivalence. -/
+theorem principalMinor_submatrix_equiv (A : Matrix κ κ R) (e : ι ≃ κ) (s : Finset ι) :
+    (A.submatrix e e).principalMinor s = A.principalMinor (s.map e.toEmbedding) := by
+  let g : s ≃ s.map e.toEmbedding := e.subtypeEquiv fun _ ↦ by simp
+  rw [principalMinor_def, principalMinor_def,
+    ← det_submatrix_equiv_self g (A.submatrix Subtype.val Subtype.val), submatrix_submatrix,
+    submatrix_submatrix]
+  exact congrArg det (ext fun i j ↦ by simp [g])
+
+end Principal
 
 end Matrix

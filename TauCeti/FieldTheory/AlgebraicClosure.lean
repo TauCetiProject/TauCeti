@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 
 /-!
 # Relative algebraic closure and extension of scalars to an algebraically closed field
@@ -25,10 +27,21 @@ integral scheme over `k` contains no nontrivial algebraic extension of `k`: ther
 localization of the ring of functions on an affine open of the base change of the scheme to `L`,
 which is integral.
 
+Conversely, exact constants ensure that `K ⊗[k] L` is a domain for every separable algebraic
+extension `L / k`. This follows from
+`TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`, by embedding `L` in an algebraic
+closure of `K`, and Mathlib's `IntermediateField.LinearDisjoint.isDomain`.
+
 ## Main results
 
 * `TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`: if `K ⊗[k] L` is a domain for an
   algebraically closed field `L` over `k`, then `algebraicClosure k K = ⊥`.
+* `TauCeti.isDomain_tensorProduct_of_isIntegrallyClosedIn`: exact constants give a domain after
+  a separable algebraic extension of scalars.
+
+## Reference
+
+H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Section III.6.
 -/
 
 public section
@@ -38,6 +51,21 @@ open scoped TensorProduct
 namespace TauCeti
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
+
+/-- A field with exact constants stays a domain after extending scalars by a separable
+algebraic extension of the constants. -/
+theorem isDomain_tensorProduct_of_isIntegrallyClosedIn (hex : IsIntegrallyClosedIn k K)
+    (L : Type*) [Field L] [Algebra k L] [Algebra.IsSeparable k L] :
+    IsDomain (K ⊗[k] L) := by
+  let e : L →ₐ[k] AlgebraicClosure K := IsAlgClosed.lift
+  algebraize [e.toRingHom]
+  have : IsScalarTower k L (AlgebraicClosure K) :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
+  have h := linearDisjoint_fieldRange_of_isIntegrallyClosedIn
+    (k' := L) (E := AlgebraicClosure K) hex
+  have : IsDomain (e.fieldRange ⊗[k] K) := h.isDomain
+  exact ((Algebra.TensorProduct.congr e.equivFieldRange.symm (AlgEquiv.refl : K ≃ₐ[k] K)).trans
+    (Algebra.TensorProduct.comm k L K)).symm.toMulEquiv.isDomain
 
 /-- If `K ⊗[k] L` is a domain for some algebraically closed field `L` over `k`, then `k` is
 algebraically closed in `K`. -/

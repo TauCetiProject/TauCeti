@@ -93,8 +93,9 @@ private theorem exists_isClosed_continuousOn_kernels
   have hsnd : Continuous (Prod.map Prod.snd Prod.snd : (X × Y) × (X × Y) → Y × Y) := by fun_prop
   refine ⟨Prod.map Prod.fst Prod.fst ⁻¹' K ∩ Prod.map Prod.snd Prod.snd ⁻¹' L,
     (hK.preimage hfst).inter (hL.preimage hsnd), ?_, fun π hπ ↦ ?_⟩
-  · exact (hωK.comp hfst.continuousOn fun _ hq ↦ hq.1).prodMk
-      (hωL.comp hsnd.continuousOn fun _ hq ↦ hq.2)
+  · apply ContinuousOn.prodMk
+    · exact hωK.comp hfst.continuousOn (fun _ hq ↦ hq.1)
+    · exact hωL.comp hsnd.continuousOn (fun _ hq ↦ hq.2)
   · have : IsFiniteMeasure π := hπ.isFiniteMeasure
     rw [compl_inter, ← preimage_compl, ← preimage_compl]
     calc π.prod π (Prod.map Prod.fst Prod.fst ⁻¹' Kᶜ ∪ Prod.map Prod.snd Prod.snd ⁻¹' Lᶜ)

@@ -12,12 +12,10 @@ public import TauCeti.Geometry.Symplectic.Prod.Basic
 /-!
 # Pointwise energy density for maps from the standard complex line
 
-This file adds the first pointwise energy-density bookkeeping for the analytic Heegaard Floer
-roadmap. For a compatible pair `(ω, J)`, the associated metric is
-`g(v, w) = ω(v, J w)`. If a real-linear map `F : ℝ × ℝ → V` is complex-linear, then the
-standard energy density
-`g(F ∂s, F ∂s) + g(F ∂t, F ∂t)` is twice the symplectic area density
-`ω(F ∂s, F ∂t)`.
+This file records pointwise energy-density bookkeeping. For a compatible pair `(ω, J)`, the
+associated metric is `g(v, w) = ω(v, J w)`. If a real-linear map `F : ℝ × ℝ → V` is complex-linear,
+then the standard energy density `g(F ∂s, F ∂s) + g(F ∂t, F ∂t)` is twice the symplectic area
+density `ω(F ∂s, F ∂t)`.
 
 Under a taming symplectic form the density is moreover nondegenerate: it is nonnegative for every
 real-linear map, vanishes exactly for the zero map, and is positive otherwise. The

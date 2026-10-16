@@ -100,7 +100,7 @@ theorem eq_of_comp_indK0_eq_of_cyclic_coprime {M : Type*} [AddCommGroup M] [IsAd
     f = g := by
   obtain ⟨a, ha⟩ := exists_linearCombination_indK0_resK0_eq_natCard_nsmul (k := k) (G := G) p
   refine DFunLike.ext f g fun x ↦ ?_
-  apply nsmul_right_injective (Nat.card_pos (α := G)).ne'
+  refine eq_of_nsmul_eq_nsmul_of_addCommute (Nat.card_pos (α := G)).ne' (.all _ _) ?_
   simp only [← map_nsmul, ← ha x, Finsupp.linearCombination_apply, map_finsuppSum, map_zsmul]
   exact Finsupp.sum_congr fun D _ ↦ by
     rw [← AddMonoidHom.comp_apply f, ← AddMonoidHom.comp_apply g, h D.1 D.2]

@@ -24,7 +24,11 @@ geometric input. Local product charts for the circle projection are constructed 
 stores the fibre and monodromy, while `FibersOverCircle` asserts that such a presentation
 exists.
 
-The quotient projection to `UnitAddCircle` records the circle coordinate of each orbit.
+Functions on the cylinder `F × ℝ` invariant under the integer action descend to the mapping torus
+through `MappingTorus.lift`, its universal property as a quotient.
+
+The quotient projection to `UnitAddCircle` records the circle coordinate of each orbit; the fibre
+over `0` is `MappingTorus.fiber`, the image of the inclusion `MappingTorus.incl`.
 The map `MappingTorus.incl` includes the fibre at height zero.  Moving once around the cylinder
 gives `MappingTorus.monodromyHomotopy`, a homotopy from this inclusion after the monodromy to the
 inclusion itself.
@@ -102,6 +106,12 @@ theorem mk_vadd (φ : F ≃ₜ F) (n : ℤ) (x : F) (t : ℝ) :
   apply Quotient.sound
   exact AddAction.orbitRel_apply.mpr ⟨n, rfl⟩
 
+/-- The quotient identifies φ x at height t + 1 with x at height t: the simp-normal form of
+`mk_vadd` at `n = 1`. -/
+@[simp]
+theorem mk_apply_add_one (φ : F ≃ₜ F) (x : F) (t : ℝ) : mk φ (φ x) (t + 1) = mk φ x t := by
+  simpa using mk_vadd φ 1 x t
+
 /-- Two cylinder points represent the same mapping-torus point exactly when they differ
 by an integer translate in the monodromy orbit and the corresponding height translate. -/
 theorem mk_eq_iff (φ : F ≃ₜ F) {x y : F} {t s : ℝ} :
@@ -137,6 +147,28 @@ theorem isOpenMap_mk (φ : F ≃ₜ F) :
   convert (isOpenMap_quotient_mk'_add (Γ := ℤ) (T := F × ℝ)) using 1
   funext p
   rfl
+
+/-- **The universal property of the mapping torus.** A function on the cylinder `F × ℝ` which is
+invariant under the integer action, `f ((φ ^ n) x, t + n) = f (x, t)`, descends to the mapping
+torus. -/
+def lift {β : Sort*} (φ : F ≃ₜ F) (f : F × ℝ → β)
+    (hf : ∀ (n : ℤ) (x : F) (t : ℝ), f ((φ ^ n) x, t + n) = f (x, t)) : MappingTorus φ → β :=
+  letI : AddAction ℤ (F × ℝ) := MappingTorus.action φ
+  Quotient.lift f fun a b hab ↦ by
+    obtain ⟨n, rfl⟩ := AddAction.mem_orbit_iff.mp hab
+    exact hf n b.1 b.2
+
+@[simp]
+lemma lift_mk {β : Sort*} (φ : F ≃ₜ F) (f : F × ℝ → β)
+    (hf : ∀ (n : ℤ) (x : F) (t : ℝ), f ((φ ^ n) x, t + n) = f (x, t)) (x : F) (t : ℝ) :
+    lift φ f hf (mk φ x t) = f (x, t) := (rfl)
+
+/-- A continuous function on the cylinder descends to a continuous function on the mapping
+torus. -/
+theorem continuous_lift {β : Type*} [TopologicalSpace β] (φ : F ≃ₜ F) {f : F × ℝ → β}
+    (hf : ∀ (n : ℤ) (x : F) (t : ℝ), f ((φ ^ n) x, t + n) = f (x, t)) (hc : Continuous f) :
+    Continuous (lift φ f hf) :=
+  isQuotientMap_quotient_mk'.continuous_iff.mpr hc
 
 /-- The canonical inclusion of the fibre at height zero into its mapping torus. -/
 def incl (φ : F ≃ₜ F) : C(F, MappingTorus φ) :=
@@ -192,6 +224,16 @@ lemma map_comp_incl (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
   ext x
   simp
 
+/-- A map of mapping tori carries the canonical cylinder homotopy to the canonical cylinder
+homotopy of the image point. -/
+-- Rewrite before simplification unfolds the homotopy track to a cylinder representative.
+@[simp↓]
+lemma map_monodromyHomotopy (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
+    (h : Function.Semiconj g φ ψ) (t : unitInterval) (x : F) :
+    map φ ψ g h (monodromyHomotopy φ (t, x)) =
+      monodromyHomotopy ψ (t, g x) := by
+  simpa using congrArg (fun y ↦ mk ψ y (t : ℝ)) (h x)
+
 /-- The map of a mapping torus induced by the identity map is the identity. -/
 @[simp]
 lemma map_id (φ : F ≃ₜ F) :
@@ -237,6 +279,32 @@ theorem continuous_proj (φ : F ≃ₜ F) : Continuous (proj φ) := by
   simpa using
     ((isQuotientMap_quotient_mk' (s := AddAction.orbitRel ℤ (F × ℝ))).continuous_iff.mpr
       ((AddCircle.continuous_mk' (1 : ℝ)).comp continuous_snd))
+
+/-- The fibre of a mapping torus over `0` in the circle. It is the image of the fibre inclusion
+`MappingTorus.incl` (`MappingTorus.range_incl`). -/
+def fiber (φ : F ≃ₜ F) : Set (MappingTorus φ) := proj φ ⁻¹' {0}
+
+@[simp]
+lemma mem_fiber_iff (φ : F ≃ₜ F) {z : MappingTorus φ} : z ∈ fiber φ ↔ proj φ z = 0 := Iff.rfl
+
+/-- The fibre over `0` is closed. -/
+theorem isClosed_fiber (φ : F ≃ₜ F) : IsClosed (fiber φ) :=
+  isClosed_singleton.preimage (continuous_proj φ)
+
+/-- The fibre inclusion lands in the fibre over `0`. -/
+lemma incl_mem_fiber (φ : F ≃ₜ F) (x : F) : incl φ x ∈ fiber φ := by
+  simp
+
+/-- The fibre over `0` is exactly the image of the fibre inclusion. -/
+@[simp]
+theorem range_incl (φ : F ≃ₜ F) : Set.range (incl φ) = fiber φ := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 (incl_mem_fiber φ)) fun z hz ↦ ?_
+  obtain ⟨⟨x, t⟩, rfl⟩ := mk_surjective φ z
+  obtain ⟨n, hn⟩ := (AddCircle.coe_eq_zero_iff 1).1 ((proj_mk φ x t).symm.trans hz)
+  refine ⟨(φ ^ (-n)) x, (mk_eq_iff φ).2 ⟨-n, rfl, ?_⟩⟩
+  simp only [zsmul_eq_mul, mul_one] at hn
+  push_cast
+  linarith
 
 /-- The projection from the mapping torus of a nonempty space onto the circle is surjective. -/
 theorem proj_surjective [Nonempty F] (φ : F ≃ₜ F) : Function.Surjective (proj φ) := by

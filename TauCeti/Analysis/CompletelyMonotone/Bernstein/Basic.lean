@@ -199,7 +199,7 @@ derivative `1`. -/
 theorem isBernsteinFunction_id : IsBernsteinFunction (fun t : ℝ => t) := by
   refine ⟨continuousOn_id, contDiffOn_id, fun t ht => ht, ?_⟩
   have hd : Set.EqOn (deriv (fun t : ℝ => t)) (fun _ => (1 : ℝ)) (Ioi 0) := by
-    intro x hx
+    intro x _
     simp [deriv_id'']
   exact (isCompletelyMonotone_const zero_le_one).isCompletelyMonotoneOnIoi.congr hd
 
@@ -236,7 +236,7 @@ theorem isBernsteinFunction_one_sub_exp_neg_mul {x : ℝ} (hx : 0 ≤ x) :
       ((isCompletelyMonotone_exp_neg_mul hx).smul hx).isCompletelyMonotoneOnIoi
     · have hd : Set.EqOn (deriv (fun t : ℝ => 1 - Real.exp (-x * t)))
           (x • fun t : ℝ => Real.exp (-x * t)) (Ioi 0) := by
-        intro t ht
+        intro t _
         rw [(hderiv t).deriv]
         simp [Pi.smul_apply, smul_eq_mul]
       exact hcm.congr hd

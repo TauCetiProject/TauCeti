@@ -359,14 +359,12 @@ theorem IsSelfIntersectionMinusTwoChain.multiplicity_mul_abs_intersection_self_l
     intro i hi k hk hpos
     obtain ⟨p, hp, rfl⟩ := hmemS.mp hi
     exact hclosed p hp k (fun s hs hks ↦ hk (hmemS.mpr ⟨s, hs, hks.symm⟩)) hpos
-  have h1 : 1 < Fintype.card T.Component := by omega
   have hSu : ∃ k, k ∉ S :=
     exists_notMem_of_card_lt ((Finset.card_image_le.trans (card_range t).le).trans_lt hcard)
   obtain ⟨i, hi, hbound⟩ := hT.exists_forall_multiplicity_mul_weight_mul_le
     ⟨c 0, hmemS.mpr ⟨0, by omega, rfl⟩⟩ hSu hv hrow hclosed'
   obtain ⟨p, hp, rfl⟩ := hmemS.mp hi
   have hj := hbound (c r) (hmemS.mpr ⟨r, hr, rfl⟩)
-  have hg := hT.one_le_arithmeticGenus h1
   have hm : (0 : ℤ) < T.multiplicity (c r) := Int.natCast_pos.mpr (T.multiplicity (c r)).pos
   rw [hc.intersection_self r hr, abs_neg, abs_of_nonneg (by positivity)]
   -- `wᵢvᵢ ≥ W` at the maximizing component, `wⱼvⱼ ≤ 2W` and `vⱼ ≤ 2` at every component
@@ -376,9 +374,6 @@ theorem IsSelfIntersectionMinusTwoChain.multiplicity_mul_abs_intersection_self_l
   have hwj : (T.weight (c r) : ℤ) * chainTest W (c r) ≤ 2 * W := by
     unfold chainTest
     rcases hall r hr with h | h | h <;> split_ifs <;> omega
-  have hvj : chainTest W (c r) ≤ 2 := by
-    unfold chainTest
-    split_ifs <;> omega
   have hvj0 := hv (c r) (hmemS.mpr ⟨r, hr, rfl⟩)
   -- `mⱼW ≤ (6g - 6)vⱼ`, hence `mⱼwⱼvⱼ ≤ 2mⱼW ≤ 2(6g - 6)vⱼ`
   have hmW : (T.multiplicity (c r) : ℤ) * W ≤ (6 * T.arithmeticGenus - 6) * chainTest W (c r) :=
@@ -512,7 +507,6 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
   -- The shorter fork classifications are supplied by `exists_weight_intersection_eq_three`
   -- and `exists_weight_intersection_eq_four`. Use `1` at both leaves and `2` elsewhere.
   obtain ⟨W, hwc, hwb, hedge, hbranch⟩ := hf.exists_weight_intersection_eq hcard
-  have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
   set S := insert branch ((range t).image c) with hS
   have hmemS : ∀ {k}, k ∈ S ↔ k = branch ∨ ∃ s < t, c s = k := by
     intro k
@@ -555,8 +549,6 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
   intro j hj
   have hbj := hbound j hj
   rw [hweight i hi] at hbj
-  have hg := hT.one_le_arithmeticGenus h1
-  have hm : (0 : ℤ) < T.multiplicity j := Int.natCast_pos.mpr (T.multiplicity j).pos
   rw [hselfS j hj, abs_neg, abs_of_nonneg (by positivity)]
   have hvi : 1 ≤ forkTest c t branch i := by
     unfold forkTest
@@ -567,7 +559,8 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
   -- `mⱼW ≤ mⱼWvᵢ ≤ (6g - 6)vⱼ ≤ 2(6g - 6)`
   have h₁ : (T.multiplicity j : ℤ) * W ≤ (T.multiplicity j : ℤ) * W * forkTest c t branch i :=
     le_mul_of_one_le_right (by positivity) hvi
-  have hgenus : (0 : ℤ) ≤ 6 * T.arithmeticGenus - 6 := by linarith
+  have hgenus : (0 : ℤ) ≤ 6 * T.arithmeticGenus - 6 := by
+    linarith [hT.one_le_arithmeticGenus h1]
   have h₂ := mul_le_mul_of_nonneg_left hvj hgenus
   linarith
 

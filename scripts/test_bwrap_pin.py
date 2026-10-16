@@ -3,7 +3,9 @@
 Run with: python3 scripts/test_bwrap_pin.py
 
 pr-build.yml sandboxes untrusted PR sources; pr-profile.yml measures them; nightly-verify.yml
-sandboxes a cache-restored build that imports the artifacts it is judging. All three pin the
+sandboxes a cache-restored build that imports the artifacts it is judging; shadow-audits.yml
+runs isolated research comparisons. The dependency warmer runs only a trusted synthetic fixture,
+using a separate probe policy. All five pin the
 bubblewrap package, its .deb's SHA-256 and the SHA-256 of the binary that .deb installs, and
 any of them would be weakened by trusting a different binary than the others.
 
@@ -33,13 +35,33 @@ WORKFLOWS = (
     ROOT / ".github/workflows/pr-build.yml",
     ROOT / ".github/workflows/pr-profile.yml",
     ROOT / ".github/workflows/nightly-verify.yml",
+    ROOT / ".github/workflows/shadow-audits.yml",
+    ROOT / ".github/workflows/warm-dependencies.yml",
 )
+# Only these workflows run candidate code. The warmer's source-free project and
+# trusted synthetic fixture need neither candidate .lake normalisation nor the
+# candidate-specific self-test ordering checks. Its pins, installer checks and
+# probe invocation still participate in the common checks below.
+CANDIDATE_WORKFLOWS = tuple(w for w in WORKFLOWS if w.name != "warm-dependencies.yml")
+
+
+def sandbox_text(workflow):
+    text = workflow.read_text()
+    if workflow.name == "warm-dependencies.yml":
+        text += "\n" + (ROOT / "scripts/probe_dependency_sandbox.sh").read_text()
+    return text
+
 VER = re.compile(r"^\s*BWRAP_VER:\s*([0-9][0-9A-Za-z.\-+~:]*)\s*$", re.MULTILINE)
 DEB_SHA = re.compile(r"^\s*BWRAP_DEB_SHA256:\s*([0-9a-f]{64})\s*$", re.MULTILINE)
 BIN_SHA = re.compile(r"^\s*BWRAP_SHA256:\s*([0-9a-f]{64})\s*$", re.MULTILINE)
 
 
 class BwrapPin(unittest.TestCase):
+    def test_every_declared_workflow_pin_is_checked(self):
+        declared = {path for path in (ROOT / ".github/workflows").iterdir()
+                    if path.suffix in (".yml", ".yaml") and VER.search(path.read_text())}
+        self.assertEqual(set(WORKFLOWS), declared)
+
     def test_every_sandboxing_workflow_pins_the_same_bwrap(self):
         seen = {}
         for workflow in WORKFLOWS:
@@ -88,7 +110,7 @@ class BwrapPin(unittest.TestCase):
         # `--unshare-all` expands to `--unshare-user-try`, which skips the user namespace
         # rather than failing when it cannot be created. Comparing the namespace inside the
         # sandbox against the host's is what catches that silent degradation.
-        for workflow in WORKFLOWS:
+        for workflow in CANDIDATE_WORKFLOWS:
             with self.subTest(workflow=workflow.name):
                 text = workflow.read_text()
                 self.assertContains("readlink /proc/self/ns/user", text, workflow.name)
@@ -100,6 +122,9 @@ class BwrapPin(unittest.TestCase):
         "pr-build.yml": ("pr",),
         "pr-profile.yml": ("base", "head"),
         "nightly-verify.yml": ("reference",),
+        # The workflow's inline probe mounts only system paths. The research harness
+        # binds resolved artifact roots read-only; it has no writable .lake overlay.
+        "shadow-audits.yml": (),
     }
 
     # Any bwrap invocation must look exactly like this. Anything else is either an unsafe
@@ -135,7 +160,7 @@ class BwrapPin(unittest.TestCase):
         # than failing it. Now every invocation has to be accounted for.
         for workflow in WORKFLOWS:
             with self.subTest(workflow=workflow.name):
-                text = workflow.read_text()
+                text = sandbox_text(workflow)
                 invocations = self._invocations(text)
                 self.assertTrue(invocations, f"{workflow.name}: no bwrap invocation found")
                 for inv in invocations:
@@ -155,7 +180,7 @@ class BwrapPin(unittest.TestCase):
         # only place bwrap creates a mount point inside content the candidate controls. A
         # second such destination would silently invalidate it.
         dest = re.compile(r"--(?:ro-)?bind \S+ \"?(\$PWD/[A-Za-z0-9_.-]+[^\"\s]*)")
-        for workflow in WORKFLOWS:
+        for workflow in CANDIDATE_WORKFLOWS:
             with self.subTest(workflow=workflow.name):
                 for inv in self._invocations(workflow.read_text()):
                     if not inv.startswith(self.SAFE_PREFIX):
@@ -176,14 +201,16 @@ class BwrapPin(unittest.TestCase):
         # Ordering, not mere presence: a self-test placed after the build would satisfy a
         # substring search and prove nothing.
         import yaml
-        for workflow in WORKFLOWS:
+        for workflow in CANDIDATE_WORKFLOWS:
             with self.subTest(workflow=workflow.name):
                 doc = yaml.safe_load(workflow.read_text())
                 names = [str(s.get("name", "")) for job in doc["jobs"].values()
                          for s in job.get("steps", [])]
                 install = [i for i, n in enumerate(names) if "Install bubblewrap" in n]
                 sandboxed = [i for i, n in enumerate(names)
-                             if "under bwrap" in n or "heartbeats" in n or "under bwrap," in n]
+                             if "under bwrap" in n or "heartbeats" in n or "under bwrap," in n
+                             or n in ("Full versus shadow acceptance fixtures",
+                                      "Compare full-library cold and warm shadow passes")]
                 self.assertTrue(install, "no bubblewrap install step")
                 for s in sandboxed:
                     self.assertTrue(any(i < s for i in install),
@@ -204,7 +231,7 @@ class BwrapPin(unittest.TestCase):
         nothing.
         """
         import yaml
-        for workflow in WORKFLOWS:
+        for workflow in CANDIDATE_WORKFLOWS:
             trees = self.TREES[workflow.name]
             doc = yaml.safe_load(workflow.read_text())
             for job_name, job in doc["jobs"].items():

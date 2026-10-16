@@ -140,7 +140,7 @@ private theorem preimage_permReindex_eq_of_measurable_tailFamily
   rw [MeasurableSpace.measurableSet_iSup] at hs
   induction hs with
   | basic u hu =>
-      rcases hu with ⟨k, t, ht, rfl⟩
+      rcases hu with ⟨k, t, _, rfl⟩
       ext x
       simp only [Set.mem_preimage]
       rw [permReindex_apply, hπ k.1 k.2]

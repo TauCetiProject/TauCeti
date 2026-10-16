@@ -220,7 +220,7 @@ private theorem atomRelVanishes_of_forall_le {a c₀ d₀ : ℤ} (par : c₀ % 2
     ring
   · intro hc same anti
     rw [nonnegStrictAnti₄_iff] at anti
-    obtain ⟨-, hdc, hcb, hba⟩ := anti
+    obtain ⟨-, _, hcb, hba⟩ := anti
     obtain ⟨h₁, h₂, h₃⟩ := atomRel_triple_eq_zero rel par
       ⟨by omega, by omega, by omega⟩ le lt hc hcb hba
     refine mem.2 _ ?_
@@ -238,7 +238,7 @@ private theorem atomRelVanishes_of_lt {a c₀ d₀ : ℤ} (par : c₀ % 2 = d₀
     AtomRelVanishes W a b c d := by
   intro same anti
   rw [nonnegStrictAnti₄_iff] at anti
-  obtain ⟨hd, hdc, hcb, hba⟩ := anti
+  obtain ⟨_, hdc, hcb, hba⟩ := anti
   obtain ⟨hda, hdb, hdc'⟩ := same
   have fix₁ (b' c' : ℤ) := (atomRelVanishes_of_forall_le par le lt rel mem b' c').1
   have fix₂ (b' c' : ℤ) := (atomRelVanishes_of_forall_le par le lt rel mem b' c').2
@@ -276,7 +276,7 @@ private theorem atomRelVanishes_of_min {a : ℤ} (one : W 1 ∈ R⁰) (two : W 2
   have lt : a % 2 < a % 2 + 2 := by omega
   have mem := atom_emod_mem_nonZeroDivisors one two (W := W) a
   have hda := same.1
-  obtain ⟨hd, hdc, hcb, hba⟩ := (nonnegStrictAnti₄_iff a b c d).mp anti
+  obtain ⟨hd, hdc, hcb, _⟩ := (nonnegStrictAnti₄_iff a b c d).mp anti
   rcases lt_or_ge (a % 2 + 2) d with hlt | hge
   · exact atomRelVanishes_of_lt par le lt rel mem b c d hlt (by omega) same anti
   have fix := atomRelVanishes_of_forall_le par le lt rel mem b c
@@ -356,8 +356,8 @@ private theorem atomRelVanishes_of_rel (one : W 1 ∈ R⁰) (two : W 2 ∈ R⁰)
     rcases haa.lt_or_eq with hlt | rfl
     · exact ih a' hlt b' _ _
     intro same anti
-    obtain ⟨h0, h1, h2, h3⟩ := (nonnegStrictAnti₄_iff _ _ _ _).mp anti
-    have hpb := same.2.1
+    obtain ⟨_, h1, h2, h3⟩ := (nonnegStrictAnti₄_iff _ _ _ _).mp anti
+    have _ := same.2.1
     -- `b'` and `a'` share a parity and `b' < a'`, so the gap is at least two. A wider gap can be
     -- transferred down to a smaller first index; a gap of exactly two is where the recurrences
     -- live, and is the only place the induction bottoms out.

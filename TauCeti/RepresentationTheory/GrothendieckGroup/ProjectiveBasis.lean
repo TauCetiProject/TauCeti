@@ -215,7 +215,7 @@ private theorem mem_span_of_length_le
     have hT'proj : Module.Projective R T' :=
       Module.Projective.of_split T'.subtype (T'.projectionOnto T hcompl.symm) (by ext x; simp)
     set XT : (finiteProjectiveModules R).FullSubcategory :=
-      ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr ⟨inferInstance, hTproj⟩⟩ with hXTdef
+      ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr ⟨inferInstance, hTproj⟩⟩
     set XT' : (finiteProjectiveModules R).FullSubcategory :=
       ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr ⟨inferInstance, hT'proj⟩⟩ with hXT'def
     have hker : LinearMap.ker (T'.projectionOnto T hcompl.symm) = T := by
@@ -223,7 +223,7 @@ private theorem mem_span_of_length_le
       simp
     have hex : Function.Exact T.subtype (T'.projectionOnto T hcompl.symm) :=
       LinearMap.exact_iff.mpr (by rw [hker, Submodule.range_subtype])
-    set f : XT ⟶ X := ObjectProperty.homMk (ModuleCat.ofHom T.subtype) with hfdef
+    set f : XT ⟶ X := ObjectProperty.homMk (ModuleCat.ofHom T.subtype)
     set g : X ⟶ XT' :=
       ObjectProperty.homMk (ModuleCat.ofHom (T'.projectionOnto T hcompl.symm)) with hgdef
     have hzeroc : f ≫ g = 0 := by

@@ -53,9 +53,9 @@ The reverse containment is false: the twisted fixed points are not in general fi
 either factor, and only the easy half, that a point fixed by both factors is fixed by the
 composite, holds.
 
-Two limitations carry over from the two factors. This is the twisted Frobenius of the *carrier*,
-not of the elementary subgroup its root subgroups generate, and the Geck weights span the root
-lattice rather than, in general, the full character lattice, so this carrier is not yet the simply
+Two limitations carry over from the two factors. This is the twisted Frobenius of the *carrier*, not
+of the elementary subgroup its root subgroups generate, and the Geck weights span the root lattice
+rather than, in general, the full character lattice, so this carrier is not in general the simply
 connected one a finite group of Lie type is built from. Nothing below asserts that any subgroup
 appearing here is finite, is simple, or is a named finite group.
 
@@ -106,20 +106,6 @@ reproved.
   §11.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §§1.15 and
   1.17.
-
-This composes the graph-automorphism and Frobenius halves of the pinning and points targets of
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, and reads the two halves' own relations at
-the composite. The powers separate because the points are functorial in the value ring, which is
-the points target, and the graph factor collapses because a pinned diagram symmetry has finite
-order, which is the pinning target; the fixed subgroup is then the one the points target already
-carries for the untwisted factor, in `TauCeti.DynkinType.map_subtype_fixedSubgroup_geckFrobenius_eq`
-on the carrier and in `TauCeti.Bialgebra.fixedSubgroup_iterateFrobeniusPoints_le_of_dvd` in general.
-The consumers are milestone L1, ordinary and graph-twisted Steinberg maps, of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose `²A`, `²D`, `²E₆` and `³D₄` branches are
-`γ ∘ Frob_q` and whose required relations are that `γ` commutes with `Frob_q` and that `γ` is
-annihilated by `2` or by `3`, and milestone L3, which sets `H_d = fixedSubgroup d.steinberg`.
-Instantiating either at a `ValidLieTypeIndex` needs this carrier to be identified with the simply
-connected form, which is separate Layer 9 work that no statement below anticipates.
 -/
 
 public section

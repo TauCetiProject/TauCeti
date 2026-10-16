@@ -21,9 +21,8 @@ and packages it as a group-valued functor on commutative algebras. The quotient 
 natural in `A`. At every value algebra the resulting group satisfies the quotient universal
 property: a homomorphism out of `G(A)` descends uniquely when it kills `V(I)(A)`.
 
-This is the presheaf quotient that precedes fppf sheafification in Layer 3 of the reductive-groups
-roadmap. It is not asserted to be an fppf sheaf or representable; those are separate downstream
-steps with additional hypotheses.
+This is the presheaf quotient that precedes fppf sheafification. It is not asserted to be an fppf
+sheaf or representable; those are separate downstream steps with additional hypotheses.
 
 ## Main declarations
 

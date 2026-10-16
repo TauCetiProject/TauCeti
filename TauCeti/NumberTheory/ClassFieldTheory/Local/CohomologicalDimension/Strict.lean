@@ -149,8 +149,8 @@ private theorem exists_pow_nsmul_H2_eq_zero (hℓ : IsUnit (ℓ : K))
     rw [← InfiniteGalois.isOpen_iff_finite, hE]
     exact hV
   -- The canonical structure of nonarchimedean local field on `E`.
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
   have hℓE : IsUnit (ℓ : E) := map_natCast (algebraMap K E) ℓ ▸ hℓ.map (algebraMap K E)
   have hfin := finite_pPowerRootsOfUnity (p := ℓ) hℓE.ne_zero

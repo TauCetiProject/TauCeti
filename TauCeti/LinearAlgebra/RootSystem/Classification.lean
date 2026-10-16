@@ -56,10 +56,9 @@ types, where the degree reading fails (`F₄` has a row summing to `-1` and no b
 
 ## References
 
-This is the uniqueness half of `existsUnique_dynkinType`, the classification target of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`; the existence half, which produces a
-valid type in the first place, is independent of it. The coincidences outside the valid ranges are
-those of Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI, §4.
+This is the uniqueness half of `existsUnique_dynkinType`; the existence half, which produces a valid
+type in the first place, is independent of it. The coincidences outside the valid ranges are those
+of Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI, §4.
 -/
 
 public section

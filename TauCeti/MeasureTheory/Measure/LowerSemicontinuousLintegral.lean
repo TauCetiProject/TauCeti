@@ -35,7 +35,7 @@ the value `∞` is allowed on both sides.
   `TauCeti.isClosed_setOfPred_lintegral_le_probabilityMeasure`: the sublevel sets of the pairing
   are closed.
 * `TauCeti.lowerSemicontinuousOn_lintegral_comp`: for `h` lower semicontinuous and `Φ` arbitrary,
-  `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is still lower semicontinuous on a set of probability measures for which
+  `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on a set of finite or probability measures when
   `Φ` is continuous on closed sets of uniformly almost full mass.
 
 ## Implementation notes
@@ -157,16 +157,17 @@ supplies such closed sets whenever the members of `S` share a fixed image under 
 `Φ` factors, as the squares of the couplings of two fixed marginals do. -/
 
 /-- **Lower semicontinuity under a uniform Lusin condition.** Let `h : W → ℝ≥0∞` be lower
-semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of probability measures on `Ω` such that for
+semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of finite measures on `Ω` such that for
 every `ε > 0` some closed set `C`, on which `Φ` is continuous, has complement of mass at most `ε`
 for every member of `S`. If `h ∘ Φ` is almost-everywhere measurable for each member of `S`, then
 `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak topology. -/
-theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
-    {Φ : Ω → W} {S : Set (ProbabilityMeasure Ω)} (hh : LowerSemicontinuous h)
+theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
+    {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
+    {Φ : Ω → W} {S : Set (FiniteMeasure Ω)} (hh : LowerSemicontinuous h)
     (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 →
       ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ ∀ μ ∈ S, (μ : Measure Ω) Cᶜ ≤ ε)
     (hm : ∀ μ ∈ S, AEMeasurable (fun x ↦ h (Φ x)) (μ : Measure Ω)) :
-    LowerSemicontinuousOn (fun μ : ProbabilityMeasure Ω ↦ ∫⁻ x, h (Φ x) ∂(μ : Measure Ω)) S := by
+    LowerSemicontinuousOn (fun μ : FiniteMeasure Ω ↦ ∫⁻ x, h (Φ x) ∂(μ : Measure Ω)) S := by
   classical
   intro μ₀ hμ₀ c hc
   beta_reduce at hc ⊢
@@ -202,7 +203,7 @@ theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h
   have hc'G : c' < ∫⁻ x, G x ∂(μ₀ : Measure Ω) :=
     hc'M.trans_le (lintegral_mono fun x ↦ by by_cases hx : x ∈ C <;> simp [hG_def, hx])
   filter_upwards [nhdsWithin_le_nhds (lowerSemicontinuousAt_iff.mp
-    (lowerSemicontinuous_lintegral_probabilityMeasure hG μ₀) c' hc'G), self_mem_nhdsWithin]
+    (lowerSemicontinuous_lintegral_finiteMeasure hG μ₀) c' hc'G), self_mem_nhdsWithin]
     with μ hμ hμS
   by_contra! hle
   refine (hμ.trans_le ((lintegral_mono hG_le).trans ?_)).false
@@ -212,6 +213,32 @@ theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h
     gcongr
     exact hCS μ hμS
   exact add_le_add hle (hMC.trans ENNReal.mul_div_le)
+
+
+/-- **Lower semicontinuity under a uniform Lusin condition.** Let `h : W → ℝ≥0∞` be lower
+semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of probability measures on `Ω` such that for
+every `ε > 0` some closed set `C`, on which `Φ` is continuous, has complement of mass at most `ε`
+for every member of `S`. If `h ∘ Φ` is almost-everywhere measurable for each member of `S`, then
+`μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak topology. -/
+theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
+    {Φ : Ω → W} {S : Set (ProbabilityMeasure Ω)} (hh : LowerSemicontinuous h)
+    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 →
+      ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ ∀ μ ∈ S, (μ : Measure Ω) Cᶜ ≤ ε)
+    (hm : ∀ μ ∈ S, AEMeasurable (fun x ↦ h (Φ x)) (μ : Measure Ω)) :
+    LowerSemicontinuousOn (fun μ : ProbabilityMeasure Ω ↦ ∫⁻ x, h (Φ x) ∂(μ : Measure Ω)) S := by
+  have hfinite := lowerSemicontinuousOn_lintegral_comp_finiteMeasure
+    (Φ := Φ) (S := ProbabilityMeasure.toFiniteMeasure '' S) hh ?_ ?_
+  · simpa only [Function.comp_def,
+      ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using
+      hfinite.comp ProbabilityMeasure.toFiniteMeasure_continuous.continuousOn
+        (fun μ hμ => ⟨μ, hμ, rfl⟩)
+  · intro ε hε
+    obtain ⟨C, hC, hΦC, hCS⟩ := hΦ ε hε
+    refine ⟨C, hC, hΦC, ?_⟩
+    rintro ν ⟨μ, hμ, rfl⟩
+    simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using hCS μ hμ
+  · rintro ν ⟨μ, hμ, rfl⟩
+    simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using hm μ hμ
 
 end Lusin
 

@@ -324,11 +324,8 @@ theorem heisenbergFunctional_comp_gradedMap (χ ψ : freeProP p Y →ₜ* Multip
         heisenbergFunctional_gradedPow_gradedMkZero]
       rfl)
     fun u v ↦ by
-      rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap]
-      -- The bracket lands in degree `0 + 0 + 1`, which is `1` by evaluation, not syntactically.
-      refine (congrArg (heisenbergFunctional χ ψ) (gradedMap_gradedBracket φ.toMonoidHom
-        φ.continuous (j := 0) (k := 0) _ _)).trans ?_
-      rw [gradedMap_gradedMkZero, gradedMap_gradedMkZero,
+      rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedBracket_zero_zero,
+        gradedMap_gradedMkZero, gradedMap_gradedMkZero,
         heisenbergFunctional_gradedBracket_gradedMkZero,
         heisenbergFunctional_gradedBracket_gradedMkZero]
       rfl

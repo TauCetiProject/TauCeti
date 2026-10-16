@@ -47,10 +47,9 @@ with empty total space over any base, which is
 
 ## References
 
-This is the connectedness dictionary for the alternative lens of Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`. It consumes the classification of covers by
-`π₁(X, x₀)`-sets and Mathlib's `CategoryTheory.PreGaloisCategory.IsConnected`; no Mathlib proof is
-vendored.
+This is the connectedness dictionary for the classification of covers by `π₁(X, x₀)`-sets. It
+consumes that classification and Mathlib's `CategoryTheory.PreGaloisCategory.IsConnected`; no
+Mathlib proof is vendored.
 -/
 
 public section

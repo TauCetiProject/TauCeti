@@ -83,7 +83,6 @@ private theorem tendsto_blockAverage_limitBlock
     Tendsto (fun k ↦ (blockAverage (Finpartition.countablePartition Ω n) (V k) p q : ℝ)) atTop
       (𝓝 (limitBlock V n p q)) := by
   set c : ℝ := (μ.real (p : Set Ω) * μ.real (q : Set Ω))⁻¹
-  have hc0 : 0 ≤ c := by positivity
   have hcauchy :
       CauchySeq fun k ↦ (blockAverage (Finpartition.countablePartition Ω n) (V k) p q : ℝ) := by
     rw [Metric.cauchySeq_iff]

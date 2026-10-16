@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
 import TauCeti.Probability.Exchangeability.PathSpace.Invariant.BlockTransport
-public import TauCeti.Probability.DeFinetti.ViaKoopman.InvariantConditionalLaw
+public import TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw
 import Mathlib.Dynamics.BirkhoffSum.Average
-import TauCeti.Probability.Process.BlockAverage
+import TauCeti.Probability.Process.BlockAverage.Basic
 import TauCeti.Probability.Ergodic.CondExpProjection
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
@@ -31,7 +31,7 @@ adapted from `cameronfreer/exchangeability`: that development carries its own `V
 covering this argument, but the lemmas here are assembled from Tau Ceti's own pieces — the
 invariant block transport of `PathSpace/Invariant/BlockTransport.lean`, the `L¹` mean ergodic
 bridge of `Ergodic/CondExpProjection.lean`, and the invariant conditional law of
-`ViaKoopman/InvariantConditionalLaw.lean`.
+`Process/PathLaw/InvariantConditionalLaw.lean`.
 
 ## References
 

@@ -157,7 +157,6 @@ noncomputable def normalSemidirectMul
     (i : N ⟶ G) [IsMonHom.Normal i] (j : H ⟶ G) [IsMonHom j] :
     let A := normalConjugation i j
     A.semidirectProduct ⟶ Grp.mk G := by
-  let A := normalConjugation i j
   exact yonedaGrpFullyFaithful.preimage (normalSemidirectMulNatTrans i j)
 
 /-- Normal semidirect multiplication sends a generalized point to the product of its two

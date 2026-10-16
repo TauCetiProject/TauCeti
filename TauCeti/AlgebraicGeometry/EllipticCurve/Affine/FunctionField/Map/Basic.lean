@@ -173,7 +173,7 @@ theorem map_algebraMap_ratFunc (z : RatFunc F) :
       IsScalarTower.algebraMap_apply K[X] (W.map f).CoordinateRing (W.map f).FunctionField]
     exact congrArg (algebraMap (W.map f).CoordinateRing (W.map f).FunctionField) hcoord
   induction z using RatFunc.induction_on with
-  | f p q hq =>
+  | f p q _ =>
     rw [RatFunc.coe_mapRingHom_eq_coe_map, RatFunc.map_apply_div]
     simp only [map_div₀, ← IsScalarTower.algebraMap_apply, hpoly, Polynomial.coe_mapRingHom]
 

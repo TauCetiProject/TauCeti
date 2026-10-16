@@ -19,14 +19,8 @@ for functions on `ℝ≥0 × V`. For an additive group `V`, the intended involut
 
 The generic positive-definite-function predicate already captures the finite quadratic-form
 condition. Here we name its BCR specialization by using the local wrapper `BCRPoint V`, whose
-involution is `(t, v) ↦ (t, -v)`, rather than installing a global negation `StarAddMonoid`
-instance on every additive group `V`, which would conflict with Mathlib's ordinary star
-conventions. The result is the named hypothesis needed for the BCR Laplace--Fourier
-representation target in the `OneParameterSemigroups` roadmap.
-
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Objects: the roadmap asks
-for `IsSemigroupGroupPD` as the positive-definite predicate on `ℝ≥0 × V` with involution
-`(t, a)⋆ = (t, -a)`.
+involution is `(t, v) ↦ (t, -v)`, rather than installing a global negation `StarAddMonoid` instance
+on every additive group `V`, which would conflict with Mathlib's ordinary star conventions.
 
 ## Main declarations
 

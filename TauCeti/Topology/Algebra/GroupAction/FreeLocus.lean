@@ -44,6 +44,17 @@ def freeLocus : SubMulAction G X where
 theorem mem_freeLocus {x : X} : x ∈ freeLocus G X ↔ MulAction.stabilizer G x = ⊥ :=
   Iff.rfl
 
+/-- Representatives of the same orbit have equivalent free-locus membership. -/
+theorem mem_freeLocus_iff_of_quotientMk_eq {x y : X}
+    (h : (Quotient.mk (MulAction.orbitRel G X) x : MulAction.orbitRel.Quotient G X) =
+      Quotient.mk (MulAction.orbitRel G X) y) :
+    x ∈ freeLocus G X ↔ y ∈ freeLocus G X := by
+  have hrel : MulAction.orbitRel G X x y := Quotient.exact h
+  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hrel
+  obtain ⟨g, hg⟩ := hrel
+  rw [← hg]
+  exact (freeLocus G X).smul_mem_iff' g
+
 /-- The action restricted to the free locus is free. -/
 instance freeLocus.instIsCancelSMul : IsCancelSMul G (freeLocus G X) := by
   rw [isCancelSMul_iff_stabilizer_eq_bot]

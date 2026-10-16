@@ -60,7 +60,7 @@ from one. -/
     have hcast : (n : R) = ∑ _i ∈ Finset.range n, (1 : R) := by simp
     rw [hcast, ← Finset.sum_sub_distrib]
     apply v.map_sum_lt one_ne_zero
-    intro i hi
+    intro i _
     have h := v.map_pow_sub_pow_le ha.le (le_of_eq v.map_one) i
     simp only [one_pow, mul_one, add_sub_cancel_left] at h
     exact h.trans_lt hx

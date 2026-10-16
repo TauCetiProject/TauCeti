@@ -29,18 +29,14 @@ algebra, and tensor products of flat modules are flat.
   algebra over `ℤ`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantForm_comul` and
   `TauCeti.UniversalEnvelopingAlgebra.kostantForm_counit`: the bundled coalgebra maps are the
-  previously constructed integral restrictions.
+  integral restrictions of the rational coalgebra maps.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantForm_antipode`: the bundled antipode is the
   restriction of the rational universal-enveloping antipode.
 
 ## References
 
-The Hopf order on the Kostant form is standard; see J. E. Humphreys, *Introduction to Lie
-Algebras and Representation Theory*, §26, and J. C. Jantzen, *Representations of Algebraic
-Groups*, II.1. This completes the Hopf-algebra packaging of the Kostant-form prerequisite for the
-explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the `CFSGStatement`
-roadmap.
+The Hopf order on the Kostant form is standard; see J. E. Humphreys, *Introduction to Lie Algebras
+and Representation Theory*, §26, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
 
 public section
@@ -60,7 +56,7 @@ local notation "K" => kostantForm (L := L)
 /-- The module structure on the tensor square of the Kostant form definitionally
 aligned with its algebra structure; both canonical instances have the same action,
 but iterated tensor maps must use one consistently. -/
-local instance kostantTensorModule (e : I → L) (h : J → L) :
+noncomputable local instance kostantTensorModule (e : I → L) (h : J → L) :
     Module ℤ (K e h ⊗[ℤ] K e h) := Algebra.toModule
 
 /-! ## Faithful scalar extension for three tensor factors -/
@@ -80,10 +76,10 @@ private theorem kostantTripleMap_tmul (e : I → L) (h : J → L)
 
 private theorem kostantTripleMap_injective (e : I → L) (h : J → L) :
     Function.Injective (kostantTripleMap e h) := by
-  let : IsAddTorsionFree U := .of_module_rat U
-  let : IsAddTorsionFree (U ⊗[ℚ] U) := .of_module_rat (U ⊗[ℚ] U)
-  let : IsAddTorsionFree (K e h) :=
-    Function.Injective.isAddTorsionFree (K e h).subtype.toAddMonoidHom
+  let : HasUniqueDiv U := .of_module_rat U
+  let : HasUniqueDiv (U ⊗[ℚ] U) := .of_module_rat (U ⊗[ℚ] U)
+  let : HasUniqueDiv (K e h) :=
+    Function.Injective.hasUniqueDiv (K e h).subtype.toAddMonoidHom
       (K e h).subtype_injective
   let : Module.Flat ℤ (K e h) := inferInstance
   let f : K e h →ₗ[ℤ] U := (K e h).subtype.toIntAlgHom.toLinearMap
