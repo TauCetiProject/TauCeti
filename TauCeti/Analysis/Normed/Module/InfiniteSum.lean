@@ -29,6 +29,8 @@ generic module and fiberwise-summation interfaces.
 
 public section
 
+namespace TauCeti
+
 open Filter
 open scoped BigOperators Topology
 
@@ -83,7 +85,7 @@ variable [IsUltrametricDist M] [CompleteSpace M]
 
 /-- In a complete ultrametric normed module, the scalar products of two summable families are
 summable on the product index. -/
-theorem Summable.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g : β → M}
+theorem _root_.Summable.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g : β → M}
     (hf : Summable f) (hg : Summable g) :
     Summable fun ij : α × β ↦ f ij.1 • g ij.2 :=
   (NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero _).mpr <|
@@ -91,8 +93,8 @@ theorem Summable.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g : β �
 
 /-- Scalar multiplication distributes over two infinite sums in a complete ultrametric normed
 module. -/
-theorem HasSum.smul_of_nonarchimedean [T2Space M] {α β : Type*} {f : α → R} {g : β → M} {a : R}
-    {b : M} (hf : HasSum f a) (hg : HasSum g b) :
+theorem _root_.HasSum.smul_of_nonarchimedean [T2Space M] {α β : Type*} {f : α → R}
+    {g : β → M} {a : R} {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) :=
   hf.smul hg (hf.summable.smul_of_nonarchimedean hg.summable)
 
@@ -132,7 +134,7 @@ theorem summable_sum_smul_antidiagonal_of_nonarchimedean {f : A → R} {g : A �
 
 /-- The Cauchy-product formula for the scalar product of two infinite sums, grouped over the
 antidiagonals of an additive index monoid. -/
-protected theorem Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
+protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
     [T2Space M] {f : A → R} {g : A → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
       ∑' n, ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2 := by
@@ -166,7 +168,7 @@ theorem summable_sum_smul_range_of_nonarchimedean {f : ℕ → R} {g : ℕ → M
   exact summable_sum_smul_antidiagonal_of_nonarchimedean hf hg
 
 /-- The natural-number Cauchy-product formula for the scalar product of two infinite sums. -/
-protected theorem Summable.tsum_smul_tsum_eq_tsum_sum_range_of_nonarchimedean
+protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_range_of_nonarchimedean
     [T2Space M] {f : ℕ → R} {g : ℕ → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
       ∑' n, ∑ k ∈ Finset.range (n + 1), f k • g (n - k) := by
@@ -185,5 +187,7 @@ theorem hasSum_sum_smul_range_of_nonarchimedean [T2Space M] {f : ℕ → R} {g :
 end Nat
 
 end Complete
+
+end TauCeti
 
 end
