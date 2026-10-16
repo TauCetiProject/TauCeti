@@ -10,6 +10,7 @@ public import Mathlib.Topology.UnitInterval
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Smooth time maps into the unit interval
@@ -139,5 +140,66 @@ theorem interior_Icc_subset_extChartAt_bot_source :
   rw [extChartAt_source, Icc_chartedSpaceChartAt_of_le_top (z := (⊥ : Icc a b))
     (by simpa only [Icc.coe_bot] using hab.out)]
   exact ht
+
+/-- The preferred interval transition derivative is the product of the two chart signs. -/
+theorem tangentCoordChange_Icc (α β x : Icc a b)
+    (hx : x ∈ (extChartAt (𝓡∂ 1) α).source) :
+    tangentCoordChange (𝓡∂ 1) α β x =
+      ((if (β : ℝ) < b then (1 : ℝ) else -1) *
+        (if (α : ℝ) < b then (1 : ℝ) else -1)) •
+          ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin 1)) := by
+  have hd := hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm α
+    ((extChartAt (𝓡∂ 1) α).map_source hx)
+  let L := (EuclideanSpace.equiv (Fin 1) ℝ).symm.toContinuousLinearMap
+  have hlin (r : ℝ) : L.comp (ContinuousLinearMap.pi
+      (fun _ : Fin 1 ↦ r • EuclideanSpace.proj 0)) =
+        r • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin 1)) := by
+    ext v i
+    rw [Subsingleton.elim i 0]
+    rfl
+  by_cases hβ : (β : ℝ) < b
+  · have hp := hasFDerivWithinAt_pi.mpr (fun _ : Fin 1 ↦ hd.sub_const a)
+    have h := L.hasFDerivAt.comp_hasFDerivWithinAt (extChartAt (𝓡∂ 1) α x) hp
+    have he : (extChartAt (𝓡∂ 1) β ∘ (extChartAt (𝓡∂ 1) α).symm) =
+        fun z ↦ L (fun _ : Fin 1 ↦ ((extChartAt (𝓡∂ 1) α).symm z : ℝ) - a) := by
+      funext z
+      simp only [Function.comp_apply, extChartAt_Icc_apply, hβ, ↓reduceIte]
+      rfl
+    rw [tangentCoordChange_def, he]
+    apply (h.fderivWithin ((𝓡∂ 1).uniqueDiffOn _ (extChartAt_target_subset_range α
+      ((extChartAt (𝓡∂ 1) α).map_source hx)))).trans
+    rw [hlin]
+    simp only [hβ, ↓reduceIte, one_mul]
+  · have hp := hasFDerivWithinAt_pi.mpr (fun _ : Fin 1 ↦ hd.const_sub b)
+    have h := L.hasFDerivAt.comp_hasFDerivWithinAt (extChartAt (𝓡∂ 1) α x) hp
+    have he : (extChartAt (𝓡∂ 1) β ∘ (extChartAt (𝓡∂ 1) α).symm) =
+        fun z ↦ L (fun _ : Fin 1 ↦ b - ((extChartAt (𝓡∂ 1) α).symm z : ℝ)) := by
+      funext z
+      simp only [Function.comp_apply, extChartAt_Icc_apply, hβ, ↓reduceIte]
+      rfl
+    rw [tangentCoordChange_def, he]
+    apply (h.fderivWithin ((𝓡∂ 1).uniqueDiffOn _ (extChartAt_target_subset_range α
+      ((extChartAt (𝓡∂ 1) α).map_source hx)))).trans
+    simp only [hβ, ↓reduceIte, neg_one_mul]
+    rw [← neg_smul, hlin]
+
+/-- The derivative of interval inclusion, identified with the real target model, as an
+invertible continuous linear map. Its own-chart sign changes at the right endpoint. -/
+@[expose]
+noncomputable def subtypeValIccTangentEquiv (x : Icc a b) : TangentSpace (𝓡∂ 1) x ≃L[ℝ] ℝ :=
+  if (x : ℝ) < b then PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)
+  else (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).trans (ContinuousLinearEquiv.neg ℝ)
+
+/-- The tangent equivalence is the actual inclusion derivative, with the canonical real
+model tangent identification on its target. -/
+theorem subtypeValIccTangentEquiv_toContinuousLinearMap (x : Icc a b) :
+    (subtypeValIccTangentEquiv x).toContinuousLinearMap =
+      (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : ℝ)).toContinuousLinearMap.comp
+        (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val x) := by
+  rw [mfderiv_subtypeVal_Icc]
+  ext v
+  by_cases hx : (x : ℝ) < b <;>
+    simp only [subtypeValIccTangentEquiv, hx, ↓reduceIte, one_smul, neg_smul]
+  all_goals rfl
 
 end TauCeti

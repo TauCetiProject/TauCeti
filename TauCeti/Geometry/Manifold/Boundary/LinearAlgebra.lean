@@ -19,7 +19,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace ContinuousLinearMap
+
+open TauCeti
 
 /-- The determinant splits into the normal factor and the boundary restriction determinant. -/
 theorem det_eq_normal_mul_boundary {n : ℕ}
@@ -37,6 +39,8 @@ theorem det_eq_normal_mul_boundary {n : ℕ}
     refine Fin.cases ?_ (fun k ↦ ?_) i <;>
       simp [b, c, EuclideanSpace.basisFun_apply]
   rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix b]
+  -- Fold the chosen matrix T after changing the basis: the expansion theorem matches
+  -- its determinant, while rewriting does not fold a local matrix abbreviation.
   change T.det = _
   rw [Matrix.det_succ_row_zero, Fin.sum_univ_succ]
   have hzero : ∀ j : Fin n, T 0 j.succ = 0 := by
@@ -58,6 +62,12 @@ theorem det_eq_normal_mul_boundary {n : ℕ}
   rw [hp]
   simp [c, OrthonormalBasis.coe_toBasis_repr_apply]
 
+end ContinuousLinearMap
+
+namespace EuclideanSpace
+
+open TauCeti
+
 /-- Expansion in the normal row computes the determinant of an outward-first family. -/
 theorem det_cons_boundary {n : ℕ} (v : EuclideanSpace ℝ (Fin (n + 1)))
     (w : Fin n → EuclideanSpace ℝ (Fin n)) :
@@ -75,4 +85,4 @@ theorem det_cons_boundary {n : ℕ} (v : EuclideanSpace ℝ (Fin (n + 1)))
   ext i j
   simp [Module.Basis.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply]
 
-end TauCeti
+end EuclideanSpace

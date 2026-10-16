@@ -8,12 +8,14 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Integration
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.Boundary.Derivative
+public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Boundary restriction in coordinates
 
 Boundary restriction is pullback along the actual coordinate-zero inclusion in each induced
-chart. This description preserves C1 regularity on a C2 manifold.
+chart. This description preserves arbitrary form regularity on a C1 manifold. Exterior
+differentiation commutes with restriction under the C2/C1 naturality hypotheses.
 -/
 
 public section
@@ -21,24 +23,13 @@ public section
 noncomputable section
 
 open Set Filter
-open scoped Manifold Topology
+open scoped Manifold Topology ContDiff
 
 namespace TauCeti
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-
-private theorem inChartAt_chart_apply [IsManifold I 1 M]
-    (φ : RoughForm I M F k) (α : M) {x : M}
-    (hx : x ∈ (extChartAt I α).source) (v : Fin k → E) :
-    φ.inChartAt α (extChartAt I α x) v =
-      φ x (fun i ↦ tangentCoordChange I α x x (v i)) := by
-  rw [RoughForm.inChartAt_apply]
-  have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
-  rw [← TangentBundle.symmL_trivializationAt hx', TangentBundle.symmL_trivializationAt_eq_core hx']
-  rw [(extChartAt I α).left_inv hx]
-  rfl
 
 section Boundary
 
@@ -66,8 +57,8 @@ theorem inChartAt_boundaryRestriction (φ : RoughForm (𝓡∂ (n + 1)) M F k)
   rw [← hxy, boundaryParam_extChartAt hx]
   ext v
   rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    inChartAt_chart_apply (boundaryRestriction φ) α hx,
-    inChartAt_chart_apply φ (α : M) hx']
+    RoughForm.inChartAt_chart_apply (boundaryRestriction φ) α hx,
+    RoughForm.inChartAt_chart_apply φ (α : M) hx']
   have hbr := boundaryRestriction_apply φ x
     (fun i ↦ tangentCoordChange 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) α x x (v i))
   rw [mfderiv_subtypeVal_boundary] at hbr
@@ -95,18 +86,23 @@ theorem indicator_inChartAt_boundaryRestriction (φ : RoughForm (𝓡∂ (n + 1)
       (fun h ↦ hy ((boundaryParam_mem_extChartAt_target_iff α y).mp h))]
     rfl
 
-/-- A `C¹` form on a `C²` manifold restricts to a `C¹` form on its actual boundary. -/
-theorem IsSmoothForm.boundaryRestriction [IsManifold (𝓡∂ (n + 1)) 2 M]
-    {φ : RoughForm (𝓡∂ (n + 1)) M F k} (hφ : IsSmoothForm (𝓡∂ (n + 1)) 1 φ) :
-    IsSmoothForm 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 (TauCeti.boundaryRestriction φ) := by
+/-- Boundary restriction preserves arbitrary regularity of forms on a `C¹` manifold. -/
+theorem IsSmoothForm.boundaryRestriction {r : WithTop ℕ∞}
+    {φ : RoughForm (𝓡∂ (n + 1)) M F k} (hφ : IsSmoothForm (𝓡∂ (n + 1)) r φ) :
+    IsSmoothForm 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) r (TauCeti.boundaryRestriction φ) := by
   apply IsSmoothForm.of_contDiffWithinAt_inChartAt_self
   intro x
   let p := euclideanHalfSpaceBoundaryParam n
   let C := ContinuousAlternatingMap.compContinuousLinearMapCLM (F := F) (ι := Fin k) p
-  have htarget := (boundaryParam_mem_extChartAt_target_iff x
-    (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x x)).mpr (mem_extChartAt_target x)
+  have hcenter : p (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x x) =
+      extChartAt (𝓡∂ (n + 1)) (x : M) (x : M) :=
+    boundaryParam_extChartAt (mem_extChartAt_source x)
+  have hcoord : ContDiffWithinAt ℝ r (φ.inChartAt (x : M))
+      (range (𝓡∂ (n + 1))) (p (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x x)) := by
+    rw [hcenter]
+    exact hφ.contDiffWithinAt_inChartAt_self (x : M)
   have hd := C.contDiff.contDiffWithinAt.comp _
-    ((hφ.contDiffWithinAt_inChartAt (x : M) htarget).comp _ p.contDiff.contDiffWithinAt
+    (hcoord.comp _ p.contDiff.contDiffWithinAt
       (s := range 𝓘(ℝ, EuclideanSpace ℝ (Fin n)))
       (fun y _ ↦ EuclideanHalfSpace.boundaryParam_mem_range y)) (mapsTo_univ _ _)
   have he : (TauCeti.boundaryRestriction φ).inChartAt x =ᶠ[
@@ -117,6 +113,16 @@ theorem IsSmoothForm.boundaryRestriction [IsManifold (𝓡∂ (n + 1)) 2 M]
       with y hy
     exact inChartAt_boundaryRestriction φ x hy
   exact hd.congr_of_eventuallyEq he (he.self_of_nhdsWithin (by simp))
+
+/-- Exterior differentiation commutes with restriction to the actual boundary. -/
+theorem boundaryRestriction_mextDeriv [IsManifold (𝓡∂ (n + 1)) 2 M]
+    {φ : RoughForm (𝓡∂ (n + 1)) M F k} (hφ : IsSmoothForm (𝓡∂ (n + 1)) 1 φ) :
+    boundaryRestriction (mextDeriv φ) = mextDeriv (boundaryRestriction φ) := by
+  have : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 2
+      ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M (by norm_num : (2 : ℕ∞ω) ≠ 0)
+  simpa only [boundaryRestriction_eq_mpullback] using mpullback_mextDeriv
+    (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := 2) M (by norm_num)).contMDiff
+    ((isSmoothBundleForm_def 1 φ).mpr hφ.contMDiff)
 
 end Boundary
 

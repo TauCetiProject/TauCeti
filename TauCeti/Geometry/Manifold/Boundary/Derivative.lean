@@ -105,6 +105,9 @@ theorem tangentCoordChange_boundary {α β x : (𝓡∂ (n + 1)).boundary M}
   have hd := ((𝓡∂ (n + 1)).contDiffWithinAt_extendCoordChange'
     (IsManifold.chart_mem_maximalAtlas (α : M))
     (IsManifold.chart_mem_maximalAtlas (β : M)) hα' hβ').differentiableWithinAt one_ne_zero
+  -- The maximal-atlas theorem uses extendCoordChange and chart.extend. Identify
+  -- their underlying functions with the named extended-chart composite f so that
+  -- the following rewrite can match the boundary chart image.
   change DifferentiableWithinAt ℝ f (range (𝓡∂ (n + 1)))
     (extChartAt (𝓡∂ (n + 1)) (α : M) (x : M)) at hd
   have hd' := hd.hasFDerivWithinAt
@@ -148,6 +151,8 @@ theorem tangentCoordChange_boundaryParam {α β x : (𝓡∂ (n + 1)).boundary M
   intro v
   apply euclideanHalfSpaceBoundaryParam_proj ?_ |>.symm
   rw [mem_euclideanHalfSpaceBoundary]
+  -- Membership is the zeroth coordinate of the composed projection/transition map;
+  -- unfold that dependent Euclidean-space application before using the normal factor.
   change (tangentCoordChange (𝓡∂ (n + 1)) (α : M) (β : M) (x : M)
     (euclideanHalfSpaceBoundaryParam n v)) 0 = 0
   rw [ha, euclideanHalfSpaceBoundaryParam_apply_zero, mul_zero]
@@ -165,6 +170,6 @@ theorem exists_pos_det_tangentCoordChange_boundary {α β x : (𝓡∂ (n + 1)).
   obtain ⟨a, ha, hA⟩ := tangentCoordChange_normal_pos x.property hα' hβ'
   refine ⟨a, ha, ?_⟩
   rw [tangentCoordChange_boundary hα hβ]
-  exact det_eq_normal_mul_boundary _ hA
+  exact ContinuousLinearMap.det_eq_normal_mul_boundary _ hA
 
 end TauCeti

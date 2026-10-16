@@ -48,7 +48,7 @@ theorem isOutwardPointing_closedBall_radial (x : closedBall (0 : E) 1)
     simpa only [y, I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
       modelWithCornersEuclideanHalfSpace_toFun] using h
   have hfy : f y = (x : E) := by
-    change ((extChartAt I x).symm (extChartAt I x x) : E) = (x : E)
+    dsimp only [f, y, Function.comp_apply]
     rw [(extChartAt I x).left_inv (mem_extChartAt_source x)]
   have hdiff := (contMDiff_subtypeVal_closedBall (n := n + 1) (k := 1)).mdifferentiable
     one_ne_zero x
@@ -83,12 +83,14 @@ theorem isOutwardPointing_closedBall_radial (x : closedBall (0 : E) 1)
     dsimp only [ν]
     rw [neg_apply, smul_apply,
       ContinuousLinearMap.comp_apply]
+    -- The linear-map coercion and the tangent equivalence have the same underlying
+    -- application, but rw does not unfold that coercion before matching the inverse law.
     change -(2 • ⟪(x : E), F (F.symm (x : E))⟫) = -2
     rw [F.apply_symm_apply, real_inner_self_eq_norm_sq, hxnorm]
     norm_num
   rw [hval] at hfactor
-  have hout : (show EuclideanSpace ℝ (Fin (n + 1)) from F.symm (x : E)) 0 < 0 := by
-    change -2 = a * _ at hfactor
+  have hout : (F.symm (x : E) : EuclideanSpace ℝ (Fin (n + 1))) 0 < 0 := by
+    dsimp only [a] at hfactor
     by_contra h
     have := mul_nonneg ha (le_of_not_gt h)
     linarith

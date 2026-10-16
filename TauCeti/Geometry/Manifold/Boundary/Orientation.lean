@@ -67,6 +67,8 @@ theorem isOutwardPointing_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1
     IsOutwardPointing x v ↔ (tangentCoordChange (𝓡∂ (n + 1)) x α x v) 0 < 0 := by
   obtain ⟨a, ha, hnormal⟩ := tangentCoordChange_normal_pos hx (mem_extChartAt_source x) hα
   rw [isOutwardPointing_iff, and_iff_right hx, mfderiv_extChartAt_self]
+  -- The preferred tangent fibre is the model space and fromTangentSpace is its
+  -- identity identification; expose the evaluation before applying the normal factor.
   change (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) v < 0 ↔ _
   exact (smul_neg_iff_of_pos_left ha).symm.trans (iff_of_eq
     (congrArg (fun r : ℝ ↦ r < 0) (hnormal v).symm))
