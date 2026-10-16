@@ -66,4 +66,15 @@ def circleFundamentalClass :
     TopPair.singularHomologyMap circleLoopPairHom (𝟙_ (ModuleCat.{0} R)) 1 ≫
       (singularHomologyIsoOfSubsetSingleton (𝟙_ (ModuleCat.{0} R)) 0 Sphere1.east).inv
 
+/-- **Characteristic equation of the fundamental class of the circle**: it is the relative class of
+the standard `1`-simplex of the interval, pushed along the standard loop as a map of pairs, followed
+by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`. The definition body is not unfolded outside this
+module, so this equation is how consumers reach the composite. -/
+theorem circleFundamentalClass_def :
+    circleFundamentalClass R =
+      cubeRelClass (𝟙_ (ModuleCat.{0} R)) ≫
+        TopPair.singularHomologyMap circleLoopPairHom (𝟙_ (ModuleCat.{0} R)) 1 ≫
+          (singularHomologyIsoOfSubsetSingleton (𝟙_ (ModuleCat.{0} R)) 0 Sphere1.east).inv := by
+  rw [circleFundamentalClass]
+
 end TauCeti

@@ -58,6 +58,13 @@ def evalCircleTop :
     TopCat.of Sphere1 ⊗ TopCat.of (X.iteratedLoopSpace 2).carrier ⟶ TopCat.of X.loopSpace.carrier :=
   TopCat.ofHom (evalCircle X)
 
+/-- The evaluation of spaces `evalCircleTop X` is the bundled evaluation `evalCircle X`. The
+definition body is not unfolded outside this module. -/
+theorem evalCircleTop_def : evalCircleTop X = TopCat.ofHom (evalCircle X) := by
+  rw [evalCircleTop]
+  -- the two sides differ only in how the type product is presented as a `TopCat` object
+  rfl
+
 /-- **The degree-raising map** `β_* : H_p(Ω²X; 𝟙) ⟶ H_n(ΩX; 𝟙)` for `1 + p = n`: the cross product
 with the fundamental class of the circle, followed by the map induced by the evaluation
 `S¹ × Ω²X → ΩX`. -/
@@ -72,6 +79,21 @@ def degreeRaising :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map (λ_ (𝟙_ _)).hom).app _ ≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
       (evalCircleTop X)
+
+/-- **Characteristic equation of the degree-raising map**: `β_*` is the left unitor inverse, the
+fundamental class of the circle, the homology cross product, the coefficient unitor, and the map
+induced by the evaluation `S¹ × Ω²X → ΩX`. The definition body is not unfolded outside this
+module, so this equation is how consumers reach the composite. -/
+theorem degreeRaising_def :
+    degreeRaising R X p n h =
+      (λ_ _).inv ≫ (circleFundamentalClass R ▷ _) ≫
+        TopCat.singularHomologyCross (C := ModuleCat.{0} R) (TopCat.of Sphere1)
+          (TopCat.of (X.iteratedLoopSpace 2).carrier) (𝟙_ _) (𝟙_ _) 1 p n h ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
+          (λ_ (𝟙_ _)).hom).app _ ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
+          (evalCircleTop X) := by
+  rw [degreeRaising]
 
 variable {X} {Y : BasedTopologicalSpace.{0}}
 
@@ -95,7 +117,7 @@ theorem degreeRaising_naturality (f : Hom X Y) :
       degreeRaising R X p n h ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
           (TopCat.ofHom f.loopSpace.toContinuousMap) := by
-  rw [degreeRaising, degreeRaising]
+  rw [degreeRaising_def, degreeRaising_def]
   simp only [Category.assoc]
   have hn := TopCat.singularHomologyCross_naturality (C := ModuleCat.{0} R)
     (𝟙 (TopCat.of Sphere1)) (TopCat.ofHom (f.iteratedLoopSpace 2).toContinuousMap)

@@ -59,6 +59,12 @@ def loopSpace2Homeomorph :
       BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint :=
   (basedMapCircleHomeomorph X.loopSpace).symm
 
+/-- The double-loop homeomorphism is the inverse of `basedMapCircleHomeomorph` of the loop space.
+The definition body is not unfolded outside this module. -/
+theorem loopSpace2Homeomorph_def :
+    loopSpace2Homeomorph X = (basedMapCircleHomeomorph X.loopSpace).symm := by
+  rw [loopSpace2Homeomorph]
+
 /-- A double loop as a map from the circle to the loop space: the underlying map of the based map
 that corresponds to it under `loopSpace2Homeomorph`. -/
 def loopSpace2ToMapCircle :
