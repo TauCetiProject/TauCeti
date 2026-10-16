@@ -102,6 +102,29 @@ noncomputable def presentationLimitAppTop
     TopCommRingCat.isCompleteSeparated.ι.map
       (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).1
 
+/-- The global-sections map of `f : X ⟶ Spa(A, A⁺)` is the component of `f` on the whole space,
+precomposed with the identification of `A` with the global sections of `Spa(A, A⁺)`. -/
+theorem presentationLimitAppTop_def
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) :
+    presentationLimitAppTop P Aplus hAplus hP f =
+      ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
+        TopCommRingCat.isCompleteSeparated.ι.map
+          (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).1 :=
+  (rfl)
+
+/-- The global-sections map of `h ≫ f` is that of `f` followed by restriction of sections
+along `h`. -/
+@[simp]
+theorem presentationLimitAppTop_comp_apply {W : PreAdicSpace.{u}} (h : W ⟶ X)
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (a : A) :
+    presentationLimitAppTop P Aplus hAplus hP (h ≫ f) a =
+      (TopCommRingCat.isCompleteSeparated.ι.map
+        (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map h).op)).1
+        (presentationLimitAppTop P Aplus hAplus hP f a) :=
+  congrArg (fun k ↦ ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k).1 a)
+    ((PreAdicSpace.forgetToPresheafedSpace.op ⋙ PresheafedSpace.Γ ⋙
+      TopCommRingCat.isCompleteSeparated.ι).map_comp f.op h.op)
+
 /-- Precomposing a morphism into `Spa(A, A⁺)` with any morphism `h : W ⟶ X` can only enlarge the
 kernel of its global-sections map, since the global-sections map of `h ≫ f` is that of `f`
 followed by restriction of sections along `h`. -/
@@ -110,15 +133,8 @@ theorem ker_presentationLimitAppTop_le_comp {W : PreAdicSpace.{u}} (h : W ⟶ X)
     RingHom.ker (presentationLimitAppTop P Aplus hAplus hP f) ≤
       RingHom.ker (presentationLimitAppTop P Aplus hAplus hP (h ≫ f)) := by
   intro a ha
-  have hc : presentationLimitAppTop P Aplus hAplus hP (h ≫ f) a =
-      (TopCommRingCat.isCompleteSeparated.ι.map
-        (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map h).op)).1
-        (presentationLimitAppTop P Aplus hAplus hP f a) :=
-    congrArg (fun k ↦ ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k).1 a)
-      ((PreAdicSpace.forgetToPresheafedSpace.op ⋙ PresheafedSpace.Γ ⋙
-        TopCommRingCat.isCompleteSeparated.ι).map_comp f.op h.op)
   rw [RingHom.mem_ker] at ha ⊢
-  rw [hc, ha]
+  rw [presentationLimitAppTop_comp_apply, ha]
   exact map_zero _
 
 end AppTop
@@ -169,6 +185,18 @@ theorem continuous_presentationLimitHomRingHom
   (globalSectionsPullback P Aplus hAplus hP P' Bplus hBplus hP' f).2
 
 /-- For a morphism of complete affinoid pre-adic spectra, the recovered ring homomorphism `A → B`
+is the global-sections map `A → 𝒪(Spa(B, B⁺))` followed by the identification of the global
+sections of `Spa(B, B⁺)` with `B`. -/
+theorem presentationLimitHomRingHom_eq_comp_presentationLimitAppTop
+    (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
+      presentationLimitPreAdicSpace P Aplus hAplus hP) :
+    presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f =
+      (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').hom.1.comp
+        (presentationLimitAppTop P Aplus hAplus hP f) := by
+  rw [presentationLimitHomRingHom_def, Iso.homCongr_apply]
+  rfl
+
+/-- For a morphism of complete affinoid pre-adic spectra, the recovered ring homomorphism `A → B`
 and the global-sections map `A → 𝒪(Spa(B, B⁺))` have the same kernel: they differ by the
 identification of `B` with the global sections of `Spa(B, B⁺)`. -/
 theorem ker_presentationLimitHomRingHom
@@ -176,12 +204,7 @@ theorem ker_presentationLimitHomRingHom
       presentationLimitPreAdicSpace P Aplus hAplus hP) :
     RingHom.ker (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f) =
       RingHom.ker (presentationLimitAppTop P Aplus hAplus hP f) := by
-  have : presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f =
-      (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').hom.1.comp
-        (presentationLimitAppTop P Aplus hAplus hP f) := by
-    rw [presentationLimitHomRingHom_def, Iso.homCongr_apply]
-    rfl
-  rw [this]
+  rw [presentationLimitHomRingHom_eq_comp_presentationLimitAppTop]
   refine RingHom.ker_comp_of_injective _ (Function.LeftInverse.injective (g :=
     (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv.1) fun b ↦ ?_)
   exact Iso.hom_inv_id_apply (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP') b
