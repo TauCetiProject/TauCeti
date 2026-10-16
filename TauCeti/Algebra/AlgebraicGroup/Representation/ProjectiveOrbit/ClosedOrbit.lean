@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LocallyClosed
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Boundary
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Dimension
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.Topology.KrullDimension.Irreducible
@@ -16,39 +17,39 @@ import TauCeti.Topology.KrullDimension.Irreducible
 Let `O` be the orbit of a line `[m]` in the projective space `P(V)` of a finite-dimensional
 representation of an affine group of finite type over an algebraically closed field `k`, that
 is, the full image of the projective orbit morphism. Since `O` is locally closed, its boundary
-`closure O \ O` is closed, and it is stable under every rational translation, as `O` and its
-closure are.
+`closure O \ O` is closed.
 
 If the spectrum of the coordinate Hopf algebra is irreducible, so is `O`, and `O` is a nonempty
 open part of its irreducible closure; hence `O` and `closure O` have the same Krull dimension and
-the boundary, a proper closed subset of `closure O`, has strictly smaller dimension. A closed
-point of the boundary is a line `[m']`, and its whole orbit lies in the boundary: the boundary
-is closed and translation invariant, and the closed points of the group are dense. Hence every
-orbit of a closed point of the boundary has strictly smaller dimension than `O`. A nonempty
-closed subset of the quasi-compact space `P(V)` contains a closed point, so an orbit whose
-dimension is minimal among the orbits of the closed points of its closure has empty boundary,
-that is, it is closed. Over an algebraically closed field, irreducibility of the group follows
-from its connectedness (`CommHopfAlgCat.irreducibleSpace_primeSpectrum_of_connectedSpace`).
+the boundary, a proper closed subset of `closure O`, has strictly smaller dimension. The orbit of
+a line `[m']` in the boundary lies in the boundary
+(`TauCeti.Comodule.closure_range_projectiveOrbitMap_subset_boundary`, in
+`ProjectiveOrbit/Boundary.lean`), so it has strictly smaller dimension than `O`. A nonempty
+closed subset of the quasi-compact space `P(V)` contains a closed point, which is a line, so an
+orbit whose dimension is minimal among the orbits of the lines in its closure has empty boundary,
+that is, it is closed. By induction on the dimension, the closure of every orbit contains a
+closed orbit. Over an algebraically closed field, irreducibility of the group follows from its
+connectedness (`CommHopfAlgCat.irreducibleSpace_primeSpectrum_of_connectedSpace`).
 
 Neither smoothness nor reducedness of the group is assumed.
 
 ## Main declarations
 
-* `TauCeti.Comodule.isClosed_closure_diff_range_projectiveOrbitMap`: the boundary of an orbit
-  is closed.
-* `TauCeti.Comodule.image_projectivePointTranslation_closure_diff_range_projectiveOrbitMap`:
-  the boundary of an orbit is stable under rational translations.
 * `TauCeti.Comodule.isIrreducible_range_projectiveOrbitMap`: the orbit of a line under an
   irreducible group is irreducible.
+* `TauCeti.Comodule.isClosed_closure_diff_range_projectiveOrbitMap`: the boundary of an orbit
+  is closed.
 * `TauCeti.Comodule.topologicalKrullDim_closure_range_projectiveOrbitMap`: an orbit and its
   closure have the same Krull dimension.
-* `TauCeti.Comodule.range_projectiveOrbitMap_subset_of_isClosed`: a closed translation-invariant
-  set containing a line contains its whole orbit.
+* `TauCeti.Comodule.topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt`: the boundary
+  of an orbit has strictly smaller Krull dimension than the orbit.
 * `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_lt`: the orbit of a line in the
   boundary of `O` has strictly smaller Krull dimension than `O`.
 * `TauCeti.Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem_closure`,
   `TauCeti.Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem`: an orbit of minimal
   dimension is closed.
+* `TauCeti.Comodule.exists_isClosed_range_projectiveOrbitMap_subset_closure`: the closure of
+  every orbit contains a closed orbit.
 
 ## References
 
@@ -61,7 +62,7 @@ Neither smoothness nor reducedness of the group is assumed.
 
 public section
 
-open CategoryTheory AlgebraicGeometry WithConv
+open AlgebraicGeometry
 
 namespace TauCeti.Comodule
 
@@ -79,33 +80,6 @@ theorem isIrreducible_range_projectiveOrbitMap [IrreducibleSpace (PrimeSpectrum 
   rw [← Set.image_univ]
   exact (IrreducibleSpace.isIrreducible_univ (PrimeSpectrum H)).image _
     (projectiveOrbitMap (H := H) m hm).continuous.continuousOn
-
-/-- Translation by every base-valued group point maps the closure of the orbit of a line onto
-itself. -/
-theorem image_projectivePointTranslation_closure_range_projectiveOrbitMap
-    (g : WithConv (H →ₐ[R] R)) (m : M) (hm : Module.IsUnimodular R m) :
-    (projectivePointTranslation (M := M) g).hom ''
-        closure (Set.range (projectiveOrbitMap (H := H) m hm)) =
-      closure (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  have he : ⇑(Scheme.homeoOfIso (projectivePointTranslation (M := M) g)) =
-      (projectivePointTranslation (M := M) g).hom :=
-    funext (Scheme.homeoOfIso_apply _)
-  rw [← he, Homeomorph.image_closure, he,
-    image_projectivePointTranslation_range_projectiveOrbitMap]
-
-/-- Translation by every base-valued group point maps the boundary `closure O \ O` of the orbit
-`O` of a line onto itself. -/
-theorem image_projectivePointTranslation_closure_diff_range_projectiveOrbitMap
-    (g : WithConv (H →ₐ[R] R)) (m : M) (hm : Module.IsUnimodular R m) :
-    (projectivePointTranslation (M := M) g).hom ''
-        (closure (Set.range (projectiveOrbitMap (H := H) m hm)) \
-          Set.range (projectiveOrbitMap (H := H) m hm)) =
-      closure (Set.range (projectiveOrbitMap (H := H) m hm)) \
-        Set.range (projectiveOrbitMap (H := H) m hm) := by
-  rw [Set.image_sdiff (f := (projectivePointTranslation (M := M) g).hom)
-      (Scheme.homeoOfIso (projectivePointTranslation (M := M) g)).injective,
-    image_projectivePointTranslation_closure_range_projectiveOrbitMap,
-    image_projectivePointTranslation_range_projectiveOrbitMap]
 
 end CommRing
 
@@ -150,33 +124,10 @@ theorem topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt
   exact ⟨_, subset_closure ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩,
     AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩
 
-/-- A closed subset of projective space that is stable under all rational translations and
-contains a line `[m]` contains the whole orbit of `[m]`, including its nonclosed points. -/
-theorem range_projectiveOrbitMap_subset_of_isClosed (m : M) (hm : Module.IsUnimodular k m)
-    {Z : Set (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)))}
-    (hZ : IsClosed Z) (hZg : ∀ g : WithConv (H →ₐ[k] k),
-      (projectivePointTranslation (M := M) g).hom '' Z ⊆ Z)
-    (hmZ : projectiveOrbitMap (H := H) m hm
-      (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ Z) :
-    Set.range (projectiveOrbitMap (H := H) m hm) ⊆ Z := by
-  have := isJacobsonRing_of_finiteType (A := k) (B := H)
-  -- The closed points of the group are its rational points, whose images are translates of
-  -- `[m]`; they are dense, and the preimage of `Z` is closed.
-  have hpts : closedPoints (Spec (.of H)) ⊆ projectiveOrbitMap (H := H) m hm ⁻¹' Z := by
-    rw [← range_kernelPoint_eq_closedPoints (k := k) (A := H)]
-    rintro _ ⟨g, rfl⟩
-    have h := hZg (toConv g) ⟨_, hmZ, rfl⟩
-    have h1 : (1 : WithConv (H →ₐ[k] k)).ofConv = Bialgebra.counitAlgHom k H := by
-      simp [AlgHom.convOne_def]
-    rwa [← h1, projectivePointTranslation_projectiveOrbitMap_kernelPoint, mul_one] at h
-  have hcl := closure_minimal hpts (hZ.preimage (projectiveOrbitMap (H := H) m hm).continuous)
-  rw [closure_closedPoints] at hcl
-  rintro _ ⟨x, rfl⟩
-  exact hcl (Set.mem_univ x)
-
 /-- **Boundary orbits are smaller.** If the spectrum of the group is irreducible and the line
 `[m']` lies in the boundary `closure O \ O` of the orbit `O` of `[m]`, then the orbit of `[m']`
-has strictly smaller Krull dimension than `O`. -/
+has strictly smaller Krull dimension than `O`. The orbit of `[m']` lies in the boundary by
+`closure_range_projectiveOrbitMap_subset_boundary`. -/
 theorem topologicalKrullDim_range_projectiveOrbitMap_lt [IrreducibleSpace (PrimeSpectrum H)]
     {m m' : M} (hm : Module.IsUnimodular k m) (hm' : Module.IsUnimodular k m')
     (hm'O : projectiveOrbitMap (H := H) m' hm'
@@ -186,10 +137,9 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_lt [IrreducibleSpace (Prime
     topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m' hm')) <
       topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) := by
   refine lt_of_le_of_lt ?_ (topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt m hm)
-  exact (Topology.IsEmbedding.inclusion (range_projectiveOrbitMap_subset_of_isClosed m' hm'
-    (isClosed_closure_diff_range_projectiveOrbitMap m hm)
-    (fun g ↦ (image_projectivePointTranslation_closure_diff_range_projectiveOrbitMap g m hm).le)
-    hm'O)).isInducing.topologicalKrullDim_le
+  exact (Topology.IsEmbedding.inclusion (subset_closure.trans
+    (closure_range_projectiveOrbitMap_subset_boundary m hm m' hm' hm'O))).isInducing
+    |>.topologicalKrullDim_le
 
 /-- **Closed-orbit lemma.** If the spectrum of the group is irreducible and the orbit `O` of a
 line has minimal Krull dimension among the orbits of the lines in its closure, then `O` is
@@ -226,5 +176,32 @@ theorem isClosed_range_projectiveOrbitMap_of_forall_mem [IrreducibleSpace (Prime
     IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) :=
   isClosed_range_projectiveOrbitMap_of_forall_mem_closure m hm fun m' hm' h ↦
     hmin m' hm' (closure_minimal hmZ hZ h)
+
+/-- **Existence of closed orbits.** If the spectrum of the group is irreducible, the closure of
+the orbit of every line contains a closed orbit of a line. The proof is by induction on the
+Krull dimension of the orbit: a nonclosed orbit has a line in its boundary, and the orbit of
+that line is smaller and lies in the boundary. -/
+theorem exists_isClosed_range_projectiveOrbitMap_subset_closure
+    [IrreducibleSpace (PrimeSpectrum H)] (m : M) (hm : Module.IsUnimodular k m) :
+    ∃ (m' : M) (hm' : Module.IsUnimodular k m'),
+      IsClosed (Set.range (projectiveOrbitMap (H := H) m' hm')) ∧
+        Set.range (projectiveOrbitMap (H := H) m' hm') ⊆
+          closure (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  obtain ⟨d, hd⟩ : ∃ d, topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) = d :=
+    ⟨_, rfl⟩
+  induction d using WellFoundedLT.induction generalizing m with
+  | ind d ih =>
+  by_cases hclosed : IsClosed (Set.range (projectiveOrbitMap (H := H) m hm))
+  · exact ⟨m, hm, hclosed, subset_closure⟩
+  -- A nonempty closed subset of projective space contains a closed point, which is a line.
+  obtain ⟨y, hy, hyc⟩ :=
+    (isClosed_closure_diff_range_projectiveOrbitMap m hm).exists_closed_singleton
+      (Set.sdiff_nonempty.mpr (mt closure_subset_iff_isClosed.mp hclosed))
+  obtain ⟨m', hm', rfl⟩ :=
+    (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := H) y).mp hyc
+  obtain ⟨n, hn, hnclosed, hnsub⟩ :=
+    ih _ (hd ▸ topologicalKrullDim_range_projectiveOrbitMap_lt hm hm' hy) m' hm' rfl
+  exact ⟨n, hn, hnclosed, hnsub.trans
+    ((closure_range_projectiveOrbitMap_subset_boundary m hm m' hm' hy).trans Set.sdiff_subset)⟩
 
 end TauCeti.Comodule
