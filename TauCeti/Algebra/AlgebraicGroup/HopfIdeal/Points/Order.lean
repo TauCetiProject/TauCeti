@@ -15,10 +15,9 @@ A Hopf ideal `I` cuts out, on every value algebra `A`, the subgroup of ambient p
 construction: if `I ≤ J`, then every point which kills `J` also kills `I`, so the subgroup
 cut out by `J` is contained in the subgroup cut out by `I`.
 
-This is the point-level order bookkeeping for the Layer 3 ReductiveGroups roadmap item
-"Hopf ideals ↔ closed subgroup schemes". Larger Hopf ideals correspond contravariantly to
-smaller closed subgroup functors, and the inclusion is compatible with functoriality in the
-value algebra.
+This is the point-level order bookkeeping for the correspondence between Hopf ideals and closed
+subgroup schemes. Larger Hopf ideals correspond contravariantly to smaller closed subgroup functors,
+and the inclusion is compatible with functoriality in the value algebra.
 
 ## Main declarations
 

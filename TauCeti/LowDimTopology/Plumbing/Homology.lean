@@ -26,10 +26,10 @@ The construction deliberately uses Mathlib's `ShortComplex` homology API. Thus i
 `cycles`, `homologyπ`, and homology-map interfaces apply directly, without a parallel
 plumbing-specific quotient API.
 
-This is the ungraded total module obtained from all cubical dimensions. The cubical and weight
-gradings, integral signs, the `ℍ⁰` variant, and invariance under Neumann moves are separate later
-stages. As a first computation, the zero-vertex plumbing has zero differential, so its homology is
-canonically isomorphic to its whole chain module.
+This is the ungraded total module obtained from all cubical dimensions; the cubical and weight
+gradings, integral signs, the `ℍ⁰` variant, and invariance under Neumann moves are not treated here.
+For the zero-vertex plumbing the differential is zero, so its homology is canonically isomorphic to
+its whole chain module.
 
 ## Main definitions
 
@@ -49,10 +49,8 @@ canonically isomorphic to its whole chain module.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology `ℍ⁻` as a polynomial module built from lattice points and weight
-functions. The characteristic-two coefficient stage and the weighted cubical differential follow
-A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
+The weighted cubical differential is the characteristic-two reduction of that of A. Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
 public section

@@ -120,7 +120,7 @@ private theorem card_emb_mulByIntIsogeny_le_card_ker {n : ℤ}
     Nat.card (Field.Emb (mulByIntIsogeny W hn).fieldPullback.fieldRange W.FunctionField) ≤
       Nat.card (mulByIntIsogeny W hn).ker := by
   classical
-  set L := (mulByIntIsogeny W hn).fieldPullback.fieldRange with hL
+  set L := (mulByIntIsogeny W hn).fieldPullback.fieldRange
   have hagree : ∀ σ τ : Field.Emb L W.FunctionField, ∀ z ∈ L,
       (σ.restrictScalars F) z = (τ.restrictScalars F) z := by
     intro σ τ z hz
@@ -209,10 +209,11 @@ namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 
-open scoped Classical in
 /-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
-`W⁄K`, is finite for nonzero `n`. -/
-theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
+`W⁄K`, is finite for nonzero `n`. The decidable equality of `K` is an argument, so that the
+statement applies to whichever instance the points are built with; over an extension `F`, apply it
+to the base change `W⁄F`. -/
+theorem finite_torsionBy [DecidableEq K] {n : ℤ} (hn : n ≠ 0) :
     Finite (AddSubgroup.torsionBy W.toAffine.Point n) := by
   have h := W.toAffine.finite_torsionBy hn
   rwa [Affine.baseChange_self] at h

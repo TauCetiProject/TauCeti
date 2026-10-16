@@ -277,9 +277,9 @@ theorem isConnected_sectionSet [TopologicalSpace α] [ConnectedSpace X] {i : Fin
   exact isConnected_range (by fun_prop)
 
 /-- Every sector of a stack of continuous, pointwise strictly ordered functions with values in
-an ordered topological field contains the graph of a continuous function. -/
+an ordered semitopological field contains the graph of a continuous function. -/
 theorem exists_continuous_forall_mem_sectorSet [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    [TopologicalSpace α] [IsTopologicalRing α] (hc : ∀ i, Continuous (θ i))
+    [TopologicalSpace α] [IsSemitopologicalRing α] (hc : ∀ i, Continuous (θ i))
     (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) :
     ∃ σ : X → α, Continuous σ ∧ ∀ x, (x, σ x) ∈ sectorSet θ j := by
   cases k with

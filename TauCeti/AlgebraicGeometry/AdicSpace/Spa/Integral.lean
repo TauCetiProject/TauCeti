@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.RingTheory.Huber.Pair
+import Mathlib.RingTheory.Valuation.Integers
 import TauCeti.RingTheory.Huber.Continuous.ValuativeCriterion
+import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
 # The ring of integral elements is cut out by the points of the adic spectrum
@@ -47,6 +49,8 @@ Wedhorn 7.18(1) does and what this statement consumes.
   `f ∈ A⁺ ↔ ∀ v ∈ Spa(A, A⁺), v(f) ≤ 1`.
 * `TauCeti.ValuationSpectrum.coe_eq_setOf_forall_vle_one` : the same statement as the displayed
   set equality `A⁺ = {a ∈ A : v(a) ≤ 1 for every v ∈ Spa(A, A⁺)}`.
+* `TauCeti.ValuationSpectrum.mem_spa_plusClosure_iff` : the points of `Spa(A, plusClosure X)`
+  are the continuous valuations at most `1` on `X`.
 
 ## References
 
@@ -110,5 +114,21 @@ theorem coe_eq_setOf_forall_vle_one {Aplus : Subring A} (hopen : IsOpen (Aplus :
     [IsIntegrallyClosedIn Aplus A] :
     (Aplus : Set A) = {a | ∀ v ∈ spa Aplus, v.toValuativeRel.vle a 1} :=
   Set.ext fun _ ↦ mem_iff_forall_vle_one hopen
+
+omit [IsTopologicalRing A] [IsHuberRing A] in
+/-- **The points of `Spa(A, plusClosure X)`** are the continuous valuations at most `1` on `X`:
+passing from `X` to the smallest ring of integral elements containing it does not change the
+adic spectrum. A continuous valuation is less than `1` at every topologically nilpotent element,
+and replacing a subring by its integral closure does not change `Spa` (`spa_integralClosure`). -/
+theorem mem_spa_plusClosure_iff (X : Set A) (v : Spv A) :
+    v ∈ spa (plusClosure X) ↔ v.IsContinuous ∧ ∀ a ∈ X, v.toValuativeRel.vle a 1 := by
+  rw [plusClosure_def, spa_integralClosure, mem_spa_iff]
+  -- the elements at which `v` is at most `1` form a subring, its valuation ring
+  have key (y : A) : v.toValuativeRel.vle y 1 ↔ y ∈ v.valuation.integer := by
+    rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff]
+  simp only [key]
+  refine ⟨fun h ↦ ⟨h.1, fun a ha ↦ h.2 a (Subring.subset_closure (Or.inl ha))⟩,
+    fun h ↦ ⟨h.1, Subring.closure_le.mpr (Set.union_subset h.2 fun a ha ↦ ?_)⟩⟩
+  exact (((isContinuous_def v).mp h.1).lt_one_of_isTopologicallyNilpotent ha).le
 
 end TauCeti.ValuationSpectrum

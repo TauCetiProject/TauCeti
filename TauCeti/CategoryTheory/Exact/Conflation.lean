@@ -212,12 +212,39 @@ theorem opEquivalence_functor_obj_obj (E : ConflationClass C)
     (S : E.ConflationCategoryᵒᵖ) :
     ((opEquivalence E).functor.obj S).obj = S.unop.obj.op := (rfl)
 
+/-- The first term of the opposite of a conflation is the opposite of its third term. -/
+theorem opEquivalence_functor_obj_obj_X₁ (E : ConflationClass C) (S : E.ConflationCategoryᵒᵖ) :
+    ((opEquivalence E).functor.obj S).obj.X₁ = Opposite.op S.unop.obj.X₃ := (rfl)
+
+/-- The middle term of the opposite of a conflation is the opposite of its middle term. -/
+theorem opEquivalence_functor_obj_obj_X₂ (E : ConflationClass C) (S : E.ConflationCategoryᵒᵖ) :
+    ((opEquivalence E).functor.obj S).obj.X₂ = Opposite.op S.unop.obj.X₂ := (rfl)
+
+/-- The third term of the opposite of a conflation is the opposite of its first term. -/
+theorem opEquivalence_functor_obj_obj_X₃ (E : ConflationClass C) (S : E.ConflationCategoryᵒᵖ) :
+    ((opEquivalence E).functor.obj S).obj.X₃ = Opposite.op S.unop.obj.X₁ := (rfl)
+
 /-- The underlying short complex obtained by unopposing a conflation reverses the opposite short
 complex again, exchanging its outer terms. -/
 @[simp]
 theorem opEquivalence_inverse_obj_unop_obj (E : ConflationClass C)
     (S : E.op.ConflationCategory) :
     ((opEquivalence E).inverse.obj S).unop.obj = S.obj.unop := (rfl)
+
+/-- The first term of an unopposed conflation is the unopposite of its third term. -/
+theorem opEquivalence_inverse_obj_unop_obj_X₁ (E : ConflationClass C)
+    (S : E.op.ConflationCategory) :
+    ((opEquivalence E).inverse.obj S).unop.obj.X₁ = Opposite.unop S.obj.X₃ := (rfl)
+
+/-- The middle term of an unopposed conflation is the unopposite of its middle term. -/
+theorem opEquivalence_inverse_obj_unop_obj_X₂ (E : ConflationClass C)
+    (S : E.op.ConflationCategory) :
+    ((opEquivalence E).inverse.obj S).unop.obj.X₂ = Opposite.unop S.obj.X₂ := (rfl)
+
+/-- The third term of an unopposed conflation is the unopposite of its first term. -/
+theorem opEquivalence_inverse_obj_unop_obj_X₃ (E : ConflationClass C)
+    (S : E.op.ConflationCategory) :
+    ((opEquivalence E).inverse.obj S).unop.obj.X₃ = Opposite.unop S.obj.X₁ := (rfl)
 
 /-- On morphisms, taking opposites applies `ShortComplex.opMap`, which reverses direction and sends
 `τ₁` to `τ₃.op`. -/
@@ -230,36 +257,30 @@ theorem opEquivalence_functor_map_hom_heq (E : ConflationClass C)
 theorem opEquivalence_functor_map_hom_τ₁ (E : ConflationClass C)
     {S T : E.ConflationCategoryᵒᵖ} (a : S ⟶ T) :
     ((opEquivalence E).functor.map a).hom.τ₁ =
-      eqToHom (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₁) (opEquivalence_functor_obj_obj E S)) ≫
-        a.unop.hom.τ₃.op ≫ eqToHom (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₁)
-          (opEquivalence_functor_obj_obj E T)).symm :=
-  (conj_eqToHom_iff_heq _ _
-    (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₁) (opEquivalence_functor_obj_obj E S))
-    (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₁) (opEquivalence_functor_obj_obj E T))).2 HEq.rfl
+      eqToHom (opEquivalence_functor_obj_obj_X₁ E S) ≫ a.unop.hom.τ₃.op ≫
+        eqToHom (opEquivalence_functor_obj_obj_X₁ E T).symm :=
+  (conj_eqToHom_iff_heq _ _ (opEquivalence_functor_obj_obj_X₁ E S)
+    (opEquivalence_functor_obj_obj_X₁ E T)).2 HEq.rfl
 
 /-- On the middle component, taking opposites sends `τ₂` to `τ₂.op`. -/
 @[simp]
 theorem opEquivalence_functor_map_hom_τ₂ (E : ConflationClass C)
     {S T : E.ConflationCategoryᵒᵖ} (a : S ⟶ T) :
     ((opEquivalence E).functor.map a).hom.τ₂ =
-      eqToHom (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₂) (opEquivalence_functor_obj_obj E S)) ≫
-        a.unop.hom.τ₂.op ≫ eqToHom (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₂)
-          (opEquivalence_functor_obj_obj E T)).symm :=
-  (conj_eqToHom_iff_heq _ _
-    (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₂) (opEquivalence_functor_obj_obj E S))
-    (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₂) (opEquivalence_functor_obj_obj E T))).2 HEq.rfl
+      eqToHom (opEquivalence_functor_obj_obj_X₂ E S) ≫ a.unop.hom.τ₂.op ≫
+        eqToHom (opEquivalence_functor_obj_obj_X₂ E T).symm :=
+  (conj_eqToHom_iff_heq _ _ (opEquivalence_functor_obj_obj_X₂ E S)
+    (opEquivalence_functor_obj_obj_X₂ E T)).2 HEq.rfl
 
 /-- On the third component, taking opposites reverses direction and sends `τ₃` to `τ₁.op`. -/
 @[simp]
 theorem opEquivalence_functor_map_hom_τ₃ (E : ConflationClass C)
     {S T : E.ConflationCategoryᵒᵖ} (a : S ⟶ T) :
     ((opEquivalence E).functor.map a).hom.τ₃ =
-      eqToHom (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₃) (opEquivalence_functor_obj_obj E S)) ≫
-        a.unop.hom.τ₁.op ≫ eqToHom (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₃)
-          (opEquivalence_functor_obj_obj E T)).symm :=
-  (conj_eqToHom_iff_heq _ _
-    (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₃) (opEquivalence_functor_obj_obj E S))
-    (congrArg (fun X : ShortComplex Cᵒᵖ ↦ X.X₃) (opEquivalence_functor_obj_obj E T))).2 HEq.rfl
+      eqToHom (opEquivalence_functor_obj_obj_X₃ E S) ≫ a.unop.hom.τ₁.op ≫
+        eqToHom (opEquivalence_functor_obj_obj_X₃ E T).symm :=
+  (conj_eqToHom_iff_heq _ _ (opEquivalence_functor_obj_obj_X₃ E S)
+    (opEquivalence_functor_obj_obj_X₃ E T)).2 HEq.rfl
 
 /-- On morphisms, unopposing applies `ShortComplex.unopMap`, which reverses direction and sends
 `τ₁` to `τ₃.unop`. -/
@@ -272,36 +293,30 @@ theorem opEquivalence_inverse_map_unop_hom_heq (E : ConflationClass C)
 theorem opEquivalence_inverse_map_unop_hom_τ₁ (E : ConflationClass C)
     {S T : E.op.ConflationCategory} (a : S ⟶ T) :
     ((opEquivalence E).inverse.map a).unop.hom.τ₁ =
-      eqToHom (congrArg (fun X : ShortComplex C ↦ X.X₁) (opEquivalence_inverse_obj_unop_obj E T)) ≫
-        a.hom.τ₃.unop ≫ eqToHom (congrArg (fun X : ShortComplex C ↦ X.X₁)
-          (opEquivalence_inverse_obj_unop_obj E S)).symm :=
-  (conj_eqToHom_iff_heq _ _
-    (congrArg (fun X : ShortComplex C ↦ X.X₁) (opEquivalence_inverse_obj_unop_obj E T))
-    (congrArg (fun X : ShortComplex C ↦ X.X₁) (opEquivalence_inverse_obj_unop_obj E S))).2 HEq.rfl
+      eqToHom (opEquivalence_inverse_obj_unop_obj_X₁ E T) ≫ a.hom.τ₃.unop ≫
+        eqToHom (opEquivalence_inverse_obj_unop_obj_X₁ E S).symm :=
+  (conj_eqToHom_iff_heq _ _ (opEquivalence_inverse_obj_unop_obj_X₁ E T)
+    (opEquivalence_inverse_obj_unop_obj_X₁ E S)).2 HEq.rfl
 
 /-- On the middle component, unopposing sends `τ₂` to `τ₂.unop`. -/
 @[simp]
 theorem opEquivalence_inverse_map_unop_hom_τ₂ (E : ConflationClass C)
     {S T : E.op.ConflationCategory} (a : S ⟶ T) :
     ((opEquivalence E).inverse.map a).unop.hom.τ₂ =
-      eqToHom (congrArg (fun X : ShortComplex C ↦ X.X₂) (opEquivalence_inverse_obj_unop_obj E T)) ≫
-        a.hom.τ₂.unop ≫ eqToHom (congrArg (fun X : ShortComplex C ↦ X.X₂)
-          (opEquivalence_inverse_obj_unop_obj E S)).symm :=
-  (conj_eqToHom_iff_heq _ _
-    (congrArg (fun X : ShortComplex C ↦ X.X₂) (opEquivalence_inverse_obj_unop_obj E T))
-    (congrArg (fun X : ShortComplex C ↦ X.X₂) (opEquivalence_inverse_obj_unop_obj E S))).2 HEq.rfl
+      eqToHom (opEquivalence_inverse_obj_unop_obj_X₂ E T) ≫ a.hom.τ₂.unop ≫
+        eqToHom (opEquivalence_inverse_obj_unop_obj_X₂ E S).symm :=
+  (conj_eqToHom_iff_heq _ _ (opEquivalence_inverse_obj_unop_obj_X₂ E T)
+    (opEquivalence_inverse_obj_unop_obj_X₂ E S)).2 HEq.rfl
 
 /-- On the third component, unopposing reverses direction and sends `τ₃` to `τ₁.unop`. -/
 @[simp]
 theorem opEquivalence_inverse_map_unop_hom_τ₃ (E : ConflationClass C)
     {S T : E.op.ConflationCategory} (a : S ⟶ T) :
     ((opEquivalence E).inverse.map a).unop.hom.τ₃ =
-      eqToHom (congrArg (fun X : ShortComplex C ↦ X.X₃) (opEquivalence_inverse_obj_unop_obj E T)) ≫
-        a.hom.τ₁.unop ≫ eqToHom (congrArg (fun X : ShortComplex C ↦ X.X₃)
-          (opEquivalence_inverse_obj_unop_obj E S)).symm :=
-  (conj_eqToHom_iff_heq _ _
-    (congrArg (fun X : ShortComplex C ↦ X.X₃) (opEquivalence_inverse_obj_unop_obj E T))
-    (congrArg (fun X : ShortComplex C ↦ X.X₃) (opEquivalence_inverse_obj_unop_obj E S))).2 HEq.rfl
+      eqToHom (opEquivalence_inverse_obj_unop_obj_X₃ E T) ≫ a.hom.τ₁.unop ≫
+        eqToHom (opEquivalence_inverse_obj_unop_obj_X₃ E S).symm :=
+  (conj_eqToHom_iff_heq _ _ (opEquivalence_inverse_obj_unop_obj_X₃ E T)
+    (opEquivalence_inverse_obj_unop_obj_X₃ E S)).2 HEq.rfl
 
 end Opposite
 

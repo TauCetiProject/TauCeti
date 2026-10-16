@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.AlmostSplit.Minimal
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Completing minimal almost-split morphisms
@@ -44,12 +45,8 @@ theorem IsRightAlmostSplit.isAlmostSplit_kernelSequence [EnoughProjectives C]
     (hf : IsRightAlmostSplit f) (hY : ¬ Projective Y)
     (hmin : ∀ b : X ⟶ X, b ≫ f = f → IsIso b) :
     (ShortComplex.kernelSequence f).IsAlmostSplit := by
-  have hS : (ShortComplex.kernelSequence f).ShortExact :=
-    { exact := ShortComplex.kernelSequence_exact f
-      -- The kernel-sequence constructor identifies its final map with `f`.
-      epi_g := by simpa only [ShortComplex.kernelSequence] using
-        hf.epi_iff_not_projective.mpr hY }
-  exact hS.isAlmostSplit_of_isRightAlmostSplit hf hmin
+  have : Epi f := hf.epi_iff_not_projective.mpr hY
+  exact (kernelSequence_shortExact f).isAlmostSplit_of_isRightAlmostSplit hf hmin
 
 /-- Taking the cokernel of a left minimal left almost-split morphism from a non-injective
 object gives an almost-split sequence. -/
@@ -57,11 +54,7 @@ theorem IsLeftAlmostSplit.isAlmostSplit_cokernelSequence [EnoughInjectives C]
     (hf : IsLeftAlmostSplit f) (hX : ¬ Injective X)
     (hmin : ∀ b : Y ⟶ Y, f ≫ b = f → IsIso b) :
     (ShortComplex.cokernelSequence f).IsAlmostSplit := by
-  have hS : (ShortComplex.cokernelSequence f).ShortExact :=
-    { exact := ShortComplex.cokernelSequence_exact f
-      -- The cokernel-sequence constructor identifies its initial map with `f`.
-      mono_f := by simpa only [ShortComplex.cokernelSequence] using
-        hf.mono_iff_not_injective.mpr hX }
-  exact hS.isAlmostSplit_of_isLeftAlmostSplit hf hmin
+  have : Mono f := hf.mono_iff_not_injective.mpr hX
+  exact (cokernelSequence_shortExact f).isAlmostSplit_of_isLeftAlmostSplit hf hmin
 
 end TauCeti

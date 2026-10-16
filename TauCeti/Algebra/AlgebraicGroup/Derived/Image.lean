@@ -38,6 +38,8 @@ The construction uses the existing restriction map in
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory TauCeti TauCeti.CommHopfAlgCat
 open scoped TensorProduct
 
@@ -104,7 +106,8 @@ theorem mapPointsFunctor_derivedMap_app_surjective
     [Algebra.FiniteType k H] [Algebra.FiniteType k K] (f : H ⟶ K)
     (hf : Function.Injective f.hom)
     (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] :
-    Function.Surjective ((mapPointsFunctor (derivedMap f)).app (CommAlgCat.of k L)) :=
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor (derivedMap f)).app (CommAlgCat.of
+      k L)) :=
   mapPointsFunctor_app_surjective_of_injective L (derivedMap f) (derivedMap_injective f hf)
 
 section AlgClosed

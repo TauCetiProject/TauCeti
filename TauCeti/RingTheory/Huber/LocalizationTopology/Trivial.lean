@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
 public import TauCeti.RingTheory.Huber.RingOfDefinition
 
 /-!
@@ -37,9 +37,6 @@ identification with `A` likewise does not change `P`.
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_denom_one`: at the denominator `1` the
-  standing hypothesis of the construction is automatic, for every numerator set and every
-  localisation.
 * `TauCeti.Huber.PairOfDefinition.locSubring_denom_one` and
   `TauCeti.Huber.PairOfDefinition.locIdealImage_denom_one`: the candidate ring of definition and
   the basic neighbourhoods of zero are those of `A`.
@@ -75,15 +72,6 @@ variable {A : Type*} [CommRing A]
 section Topological
 
 variable [TopologicalSpace A] (P : PairOfDefinition A) (T : Finset A)
-
-/-- **At the denominator `1` the standing hypothesis is automatic.** Every `b/1` is the image of
-`b`, and the elements of `I` already lie in `A₀ ⊆ D`, so `N = 1` works — for every numerator set
-and every localisation away from `1`. -/
-theorem hasDenominatorPower_denom_one (S : Type*) [CommRing S] [Algebra A S]
-    [IsLocalization.Away (1 : A) S] : HasDenominatorPower P T 1 S := by
-  refine (hasDenominatorPower_iff P T 1 S).mpr ⟨1, fun b _ ↦ ?_⟩
-  rw [← one_mul (b : A), divBy_mul_cancel_left]
-  exact algebraMap_mem_locSubring P T 1 S b.2
 
 variable (hT : ∀ t ∈ T, t ∈ P.ringOfDefinition)
 
@@ -121,6 +109,21 @@ theorem locIdealImage_denom_one (n : ℕ) : locIdealImage P T 1 A n = P.idealIma
     simpa using algebraMap_mem_locIdealImage P T 1 A hy
 
 end Topological
+
+/-- The trivial rational presentation `({1}, 1)`, whose rational subset is the whole spectrum. -/
+noncomputable def Presentation.trivial [TopologicalSpace A] (P : PairOfDefinition A) :
+    Presentation P :=
+  ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩
+
+/-- The numerator set of the trivial presentation is the singleton containing `1`. -/
+@[simp]
+theorem Presentation.trivial_num [TopologicalSpace A] (P : PairOfDefinition A) :
+    (Presentation.trivial P).num = {1} := (rfl)
+
+/-- The denominator of the trivial presentation is `1`. -/
+@[simp]
+theorem Presentation.trivial_den [TopologicalSpace A] (P : PairOfDefinition A) :
+    (Presentation.trivial P).den = 1 := (rfl)
 
 section Topological
 

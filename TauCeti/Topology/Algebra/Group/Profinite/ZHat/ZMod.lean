@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Instances.ZMod
+public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring
 
 /-!
@@ -42,6 +43,8 @@ is `ℤ`, which is not profinite, and no lift exists.
 
 * `TauCeti.zHat.toZMod`: reduction of a profinite integer modulo `n`, a continuous ring
   homomorphism `Additive zHat →+* ZMod n`.
+* `TauCeti.zHat.modSubgroup`, `TauCeti.zHat.modQuotientEquiv`, `TauCeti.zHat.modTransversal`:
+  the open reduction kernel, its finite cyclic quotient, and the canonical residue transversal.
 * `TauCeti.zHat.addLift`: the additive homomorphism into `Additive zHat` assembled from a
   compatible family of additive homomorphisms into the `ZMod n`.
 * `TauCeti.zHat.ringLift`: the ring homomorphism into `Additive zHat` assembled from a compatible
@@ -267,6 +270,89 @@ theorem existsUnique_forall_toZMod_eq (x : ∀ n : ℕ+, ZMod n)
   exact (hb n).trans (Set.mem_iInter.mp ha n).symm
 
 end ToZMod
+
+noncomputable section ModSubgroup
+
+/-- The kernel of reduction modulo `n`, as an open normal subgroup of `ℤ̂`. -/
+def modSubgroup (n : ℕ+) : OpenNormalSubgroup zHat.{u} where
+  toSubgroup := (lift (Multiplicative.ofAdd (1 : ZMod n))).toMonoidHom.ker
+  isOpen' := (isOpen_discrete {1}).preimage (lift _).continuous
+
+/-- Membership in the reduction kernel is vanishing of the residue. -/
+@[simp]
+theorem mem_modSubgroup (n : ℕ+) (x : zHat.{u}) :
+    x ∈ modSubgroup n ↔ toZMod n (Additive.ofMul x) = 0 := by
+  -- Membership in the bundled open subgroup is membership in the kernel of its homomorphism.
+  change (lift (Multiplicative.ofAdd (1 : ZMod n)) : zHat.{u} →ₜ* _) x = 1 ↔ _
+  simp
+
+private theorem reduction_surjective (n : ℕ+) :
+    Function.Surjective (lift (Multiplicative.ofAdd (1 : ZMod n)) :
+      zHat.{u} →ₜ* Multiplicative (ZMod n)) := by
+  intro x
+  refine ⟨gen ^ x.toAdd.val, ?_⟩
+  simp [nsmul_eq_mul]
+
+/-- The quotient by the reduction kernel is the finite cyclic group modulo `n`. -/
+def modQuotientEquiv (n : ℕ+) :
+    zHat.{u} ⧸ (modSubgroup n).toSubgroup ≃* Multiplicative (ZMod n) :=
+  QuotientGroup.quotientKerEquivOfSurjective _ (reduction_surjective n)
+
+/-- The quotient equivalence is reduction modulo `n` on representatives. -/
+@[simp]
+theorem modQuotientEquiv_mk (n : ℕ+) (x : zHat.{u}) :
+    modQuotientEquiv n (QuotientGroup.mk x) =
+      Multiplicative.ofAdd (toZMod n (Additive.ofMul x)) := by
+  exact lift_ofAdd_one_apply x
+
+/-- The reduction kernel has index `n`. -/
+@[simp]
+theorem modSubgroup_index (n : ℕ+) : (modSubgroup.{u} n).toSubgroup.index = n := by
+  rw [Subgroup.index_eq_card, Nat.card_congr (modQuotientEquiv n).toEquiv]
+  simp
+
+/-- The cyclic transversal chooses the least nonnegative exponent representing a coset. -/
+def modTransversal (n : ℕ+) (x : zHat.{u} ⧸ (modSubgroup n).toSubgroup) : zHat.{u} :=
+  gen ^ (modQuotientEquiv n x).toAdd.val
+
+/-- The cyclic transversal represents each coset. -/
+@[simp]
+theorem mk_modTransversal (n : ℕ+) (x : zHat.{u} ⧸ (modSubgroup n).toSubgroup) :
+    QuotientGroup.mk (modTransversal n x) = x := by
+  apply (modQuotientEquiv n).injective
+  simp [modTransversal, toZMod_apply, ← ofAdd_nsmul, nsmul_eq_mul]
+
+/-- In residue coordinates the cyclic transversal uses the least nonnegative exponent. -/
+@[simp]
+theorem modTransversal_modQuotientEquiv_symm (n : ℕ+) (x : Multiplicative (ZMod n)) :
+    modTransversal n ((modQuotientEquiv.{u} n).symm x) = gen ^ x.toAdd.val := by
+  simp [modTransversal]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+private theorem modTransversal_finEquiv (n : ℕ+) (i : Fin n) :
+    modTransversal n ((modQuotientEquiv.{u} n).symm
+      (Multiplicative.ofAdd (ZMod.finEquiv (n : ℕ) i))) = gen ^ (i : ℕ) := by
+  rw [modTransversal_modQuotientEquiv_symm, toAdd_ofAdd, ZMod.finEquiv_apply,
+    ZMod.val_natCast_of_lt i.isLt]
+
+/-- Summing over the cyclic transversal is summing over the generator powers with exponents
+from `0` to `n - 1`. -/
+theorem sum_modTransversal (n : ℕ+) {M : Type v} [AddCommMonoid M]
+    (f : zHat.{u} → M) :
+    ∑ x : zHat.{u} ⧸ (modSubgroup n).toSubgroup, f (modTransversal n x) =
+      ∑ i ∈ Finset.range (n : ℕ), f (gen ^ i) := by
+  classical
+  rw [← Fin.sum_univ_eq_sum_range]
+  let e := (modQuotientEquiv n).toEquiv.trans
+    (Multiplicative.toAdd : Multiplicative (ZMod n) ≃ ZMod n) |>.trans
+      (ZMod.finEquiv (n : ℕ)).symm.toEquiv
+  have he (i : Fin n) : modTransversal n (e.symm i) = gen ^ (i : ℕ) := by
+    exact modTransversal_finEquiv n i
+  exact (Fintype.sum_equiv e.symm (fun i ↦ f (gen ^ (i : ℕ)))
+    (fun x ↦ f (modTransversal n x)) (fun i ↦ congrArg f (he i).symm)).symm
+
+end ModSubgroup
 
 section AddLift
 

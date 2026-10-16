@@ -42,6 +42,8 @@ power series that is additive along `F`.
 
 * `FormalGroup.subst_invariantDifferential_mul_pderiv`: **the invariant differential is
   invariant**, `P(F(X, Y)) · F_X(X, Y) = P(X)`.
+* `FormalGroup.subst_invariantDifferential_mul_pderiv_one`: for commutative `F`, the same in the
+  second variable, `P(F(X, Y)) · F_Y(X, Y) = P(Y)`.
 * `FormalGroup.subst_toPowerSeries_log`: `log_F(F(X, Y)) = log_F(X) + log_F(Y)`.
 * `FormalGroup.subst_subst_toPowerSeries_log`: the same at any pair of power series that can be
   substituted.
@@ -69,14 +71,11 @@ variable {R : Type*} [CommRing R] (F : FormalGroup R)
 private noncomputable abbrev derivZeroX : PowerSeries R :=
   subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)
 
-private theorem hasSubst_zero_X : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) :=
-  hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [PowerSeries.X]
-
 private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZeroX = 1 := by
   have hD : constantCoeff (pderiv 0 F.toPowerSeries) = 1 := by
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_pderiv, _root_.zero_add, F.lin_coeff_X]
     simp
-  have ha := hasSubst_zero_X (R := R)
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
   -- `F_X - 1` has zero constant coefficient, and so does its substitution
   have := constantCoeff_subst_eq_zero ha (fun s ↦ by fin_cases s <;> simp [PowerSeries.X])
     (f := pderiv 0 F.toPowerSeries - 1) (by simp [hD])
@@ -87,7 +86,8 @@ private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZero
 private theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
     (hg : PowerSeries.HasSubst g) :
     PowerSeries.subst g F.derivZeroX = subst ![0, g] (pderiv 0 F.toPowerSeries) := by
-  rw [derivZeroX, PowerSeries.subst_def, subst_comp_subst_apply hasSubst_zero_X hg.const]
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
+  rw [derivZeroX, PowerSeries.subst_def, subst_comp_subst_apply ha hg.const]
   congr 1
   funext s
   fin_cases s
@@ -170,6 +170,27 @@ theorem subst_invariantDifferential_mul_pderiv :
           mul_one]
     _ = _ := by rw [pderiv_mul_subst_derivZeroX, h₁ _ hF, one_mul]
 
+/-- **The invariant differential is invariant in the second variable** for a commutative formal
+group law: `P(F(X, Y)) · F_Y(X, Y) = P(Y)`, where `F_Y` is the partial derivative of `F` in its
+second variable. -/
+theorem subst_invariantDifferential_mul_pderiv_one [F.IsComm] :
+    PowerSeries.subst F.toPowerSeries F.invariantDifferential * pderiv 1 F.toPowerSeries =
+      PowerSeries.subst (X 1) F.invariantDifferential := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  have hsw : HasSubst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.X_X
+  have hc : F.toPowerSeries =
+      subst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) F.toPowerSeries := IsComm.comm
+  -- `F_Y(X, Y) = F_X(Y, X)`, differentiating `F(X, Y) = F(Y, X)` in `Y`
+  have hY : pderiv 1 F.toPowerSeries = subst ![X 1, X 0] (pderiv 0 F.toPowerSeries) := by
+    have := congrArg (pderiv (R := R) 1) hc
+    rw [pderiv_subst hsw] at this
+    simpa [Fin.sum_univ_two, pderiv_X_of_ne] using this
+  -- and the invariance `P(F(X, Y)) · F_X(X, Y) = P(X)` read at `(Y, X)`
+  have := congrArg (subst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R))
+    F.subst_invariantDifferential_mul_pderiv
+  rwa [subst_mul hsw, subst_powerSeriesSubst hsw hF, ← hc, ← hY,
+    subst_powerSeriesSubst hsw (PowerSeries.HasSubst.X 0), subst_X hsw] at this
+
 /-! ### The logarithm -/
 
 variable [Algebra ℚ R]
@@ -215,9 +236,8 @@ theorem subst_toPowerSeries_log :
       PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
-  have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
+  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.zero_X
+  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
   rw [← sub_eq_zero]
   apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero (i := 0)
   -- the derivative in `X` is `P(F(X, Y)) · F_X(X, Y) - P(X) = 0`
@@ -255,7 +275,7 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   refine ⟨fun h ↦ ⟨PowerSeries.coeff 1 g, ?_⟩, ?_⟩
-  · have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
+  · have : HasUniqueDiv R := .of_isTorsionFree ℚ R
     -- `g(0) = g(0) + g(0)`
     have hg₀ : PowerSeries.constantCoeff g = 0 := by
       have := congrArg constantCoeff h
@@ -268,10 +288,10 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
     rw [map_add, PowerSeries.pderiv_subst hF, PowerSeries.pderiv_subst (hX 0),
       PowerSeries.pderiv_subst (hX 1), pderiv_X_self, pderiv_X_of_ne (by decide), mul_one,
       mul_zero, _root_.add_zero] at hd
+    have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
     have := congrArg (subst (![0, PowerSeries.X] : Fin 2 → PowerSeries R)) hd
-    rw [subst_mul hasSubst_zero_X, subst_powerSeriesSubst hasSubst_zero_X hF,
-      subst_powerSeriesSubst hasSubst_zero_X (hX 0), F.zero_add PowerSeries.HasSubst.X',
-      subst_X hasSubst_zero_X, PowerSeries.X_subst] at this
+    rw [subst_mul ha, subst_powerSeriesSubst ha hF, subst_powerSeriesSubst ha (hX 0),
+      F.zero_add PowerSeries.HasSubst.X', subst_X ha, PowerSeries.X_subst] at this
     -- so `g' = g'(0) · P`
     have hg' : PowerSeries.derivative g = PowerSeries.coeff 1 g • F.invariantDifferential := by
       rw [Matrix.cons_val_zero, PowerSeries.subst_zero_eq_C_constantCoeff,

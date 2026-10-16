@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Sites.IsSheafFor
 
 /-!
-# Compatible families over a terminal object, and over a meet-semilattice
+# Compatible families over a terminal object and a meet-semilattice, and local sheaf conditions
 
 For a family of maps `π i : X i ⟶ B` to a terminal object `B`, every pair of maps into two members
 of the family agrees after composing with `π`. So a family of elements `x i ∈ P(X i)` of a presheaf
@@ -23,11 +23,18 @@ between two objects, and two members `X i`, `X j` of a family have the greatest 
 `X i ⊓ X j`. So a family of elements is compatible exactly when the restrictions of `x i` and
 `x j` to `X i ⊓ X j` agree.
 
+The sheaf condition for a presieve on `X` reads a presheaf only at objects mapping to `X`. So a
+natural transformation `P ⟶ P'` that is bijective at those objects carries the sheaf condition
+from `P'` back to `P`, even if `P` and `P'` differ elsewhere. This is how a sheaf condition on an
+open subspace is compared with one on the ambient space.
+
 ## Main results
 
 * `CategoryTheory.Presieve.Arrows.compatible_iff_of_isTerminal`: the characterisation above.
 * `CategoryTheory.Presieve.Arrows.compatible_homOfLE_iff`: compatibility in a meet-semilattice is
   agreement on pairwise meets.
+* `CategoryTheory.Presieve.isSheafFor_of_bijective_app`: the sheaf condition for a presieve on `X`
+  passes back along a natural transformation that is bijective at the objects over `X`.
 -/
 
 public section
@@ -77,3 +84,23 @@ theorem compatible_homOfLE_iff (hY : ∀ i, Y i ≤ B) (x : ∀ i, P.obj (op (Y 
 end SemilatticeInf
 
 end CategoryTheory.Presieve.Arrows
+
+namespace CategoryTheory.Presieve
+
+variable {C : Type u} [Category.{v} C] {P P' : Cᵒᵖ ⥤ Type w}
+
+/-- **The sheaf condition for a presieve on `X` only involves the objects over `X`.** If a natural
+transformation `α : P ⟶ P'` is bijective at every object admitting a morphism to `X`, then `P`
+satisfies the sheaf condition for a presieve `R` on `X` whenever `P'` does. Unlike
+`CategoryTheory.Presieve.isSheafFor_of_nat_equiv`, nothing is assumed away from `X`. -/
+theorem isSheafFor_of_bijective_app (α : P ⟶ P') {X : C} {R : Presieve X}
+    (hα : ∀ ⦃Y : C⦄, (Y ⟶ X) → Function.Bijective (α.app (op Y))) (h : IsSheafFor P' R) :
+    IsSheafFor P R := by
+  intro x hx
+  obtain ⟨t', ht', hu⟩ := h (x.map α) (hx.map α)
+  obtain ⟨t, rfl⟩ := (hα (𝟙 X)).2 t'
+  refine ⟨t, fun Y f hf ↦ (hα f).1 ?_, fun t₁ ht₁ ↦ (hα (𝟙 X)).1 (hu _ (ht₁.map α))⟩
+  rw [NatTrans.naturality_apply]
+  exact ht' f hf
+
+end CategoryTheory.Presieve

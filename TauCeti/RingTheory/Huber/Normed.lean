@@ -18,6 +18,12 @@ sets are bounded in the sense of `TauCeti.Huber.IsBounded`. For a normed divisio
 this identifies the power-bounded elements with the closed unit ball and shows that the ring is
 uniform; for instance `ℚ_[p]` is uniform, and its power-bounded elements are those of `ℤ_[p]`.
 
+In a seminormed ring with a pseudouniformiser the converse holds as well: bounded sets are
+norm-bounded. If the norm is moreover power-multiplicative, `‖x ^ n‖ = ‖x‖ ^ n`, the power-bounded
+elements are again the closed unit ball and the ring is uniform. This applies to rings normed by
+the maximum of finitely many multiplicative norms, such as the interval rings `B^I` of the
+Fargues–Fontaine curve, which are not division rings.
+
 In a seminormed ring every unit of norm less than one is a pseudouniformiser. If the norm is
 moreover ultrametric with `‖1‖ = 1`, the closed unit ball is an open bounded subring, so such
 a ring with a unit of norm less than one is a Tate ring. In particular a nontrivially normed
@@ -31,6 +37,15 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
 * `TauCeti.Huber.IsUniform.of_normedDivisionRing`: normed division rings are uniform.
+* `TauCeti.Huber.isPowerBounded_algebraMap_of_norm_le_one`: in a topological algebra over a
+  nontrivially normed field, scalars of norm at most one are power-bounded.
+* `TauCeti.Huber.IsPseudoUniformizer.isBounded_iff_forall_norm_le`: in a seminormed ring with a
+  pseudouniformiser a set is bounded exactly when it is norm-bounded.
+* `TauCeti.Huber.IsPseudoUniformizer.isPowerBounded_iff_norm_le_one` and
+  `TauCeti.Huber.IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall`: for a
+  power-multiplicative norm and a pseudouniformiser, the power-bounded elements are the closed
+  unit ball.
+* `TauCeti.Huber.IsUniform.of_isPowMul`: such a ring is uniform.
 * `TauCeti.Huber.IsPseudoUniformizer.of_norm_lt_one`: in a seminormed ring a unit of norm less
   than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
@@ -89,6 +104,56 @@ theorem IsPseudoUniformizer.of_norm_lt_one {R : Type*} [SeminormedRing R] {ϖ : 
     (hϖ : IsUnit ϖ) (hϖ1 : ‖ϖ‖ < 1) : IsPseudoUniformizer ϖ :=
   isPseudoUniformizer_iff.mpr ⟨hϖ, tendsto_pow_atTop_nhds_zero_of_norm_lt_one hϖ1⟩
 
+section PowMul
+
+variable {R : Type*} [SeminormedRing R] {ϖ : R}
+
+/-- **In a seminormed ring with a pseudouniformiser the bounded sets are the norm-bounded sets.**
+The pseudouniformiser is needed: the norm `‖f‖ = 2 ^ deg f` on `ℤ[X]` induces the discrete
+topology, in which every set is bounded, but the powers of `X` are not norm-bounded. -/
+theorem IsPseudoUniformizer.isBounded_iff_forall_norm_le (hϖ : IsPseudoUniformizer ϖ)
+    {S : Set R} : IsBounded S ↔ ∃ C, ∀ x ∈ S, ‖x‖ ≤ C := by
+  refine ⟨fun hS ↦ ?_, fun ⟨C, hC⟩ ↦ (isBounded_closedBall_zero C).subset fun x hx ↦
+    mem_closedBall_zero_iff.mpr (hC x hx)⟩
+  obtain ⟨m, hm⟩ := hS.exists_pow_mul_subset hϖ.isTopologicallyNilpotent
+    (Metric.ball_mem_nhds 0 one_pos)
+  obtain ⟨u, hu⟩ := hϖ.isUnit.pow m
+  refine ⟨‖(↑u⁻¹ : R)‖, fun x hx ↦ ?_⟩
+  have hlt : ‖ϖ ^ m * x‖ < 1 := mem_ball_zero_iff.mp (hm (Set.mul_mem_mul rfl hx))
+  calc ‖x‖ = ‖(↑u⁻¹ : R) * (ϖ ^ m * x)‖ := by rw [← hu, Units.inv_mul_cancel_left]
+    _ ≤ ‖(↑u⁻¹ : R)‖ * ‖ϖ ^ m * x‖ := norm_mul_le _ _
+    _ ≤ ‖(↑u⁻¹ : R)‖ := mul_le_of_le_one_right (norm_nonneg _) hlt.le
+
+/-- **For a power-multiplicative norm the power-bounded elements are the closed unit ball**, in a
+seminormed ring with a pseudouniformiser. -/
+theorem IsPseudoUniformizer.isPowerBounded_iff_norm_le_one (hϖ : IsPseudoUniformizer ϖ)
+    (hR : IsPowMul (‖·‖ : R → ℝ)) {x : R} : IsPowerBounded x ↔ ‖x‖ ≤ 1 := by
+  refine ⟨fun hx ↦ ?_, IsPowerBounded.of_norm_le_one⟩
+  obtain ⟨C, hC⟩ := hϖ.isBounded_iff_forall_norm_le.mp (isPowerBounded_iff.mp hx)
+  by_contra! h
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt C h
+  have hle : ‖x‖ ^ (n + 1) ≤ C := hR x n.succ_pos ▸ hC _ ⟨n + 1, rfl⟩
+  exact (hn.trans_le (pow_le_pow_right₀ h.le n.le_succ)).not_ge hle
+
+/-- **A seminormed ring with a pseudouniformiser and a power-multiplicative norm is uniform**: its
+power-bounded elements form the closed unit ball, which is bounded. -/
+theorem IsUniform.of_isPowMul (hϖ : IsPseudoUniformizer ϖ) (hR : IsPowMul (‖·‖ : R → ℝ)) :
+    IsUniform R :=
+  ⟨(isBounded_closedBall_zero (R := R) 1).subset fun _ hx ↦
+    mem_closedBall_zero_iff.mpr ((hϖ.isPowerBounded_iff_norm_le_one hR).mp hx)⟩
+
+/-- **For a power-multiplicative norm the power-bounded subring `R°` is the closed unit ball**, in
+a nonarchimedean seminormed commutative ring with a pseudouniformiser. -/
+theorem IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall {R : Type*}
+    [SeminormedCommRing R] [NonarchimedeanAddGroup R] {ϖ : R} (hϖ : IsPseudoUniformizer ϖ)
+    (hR : IsPowMul (‖·‖ : R → ℝ)) :
+    (powerBoundedSubring R : Set R) = Metric.closedBall 0 1 := by
+  ext x
+  rw [SetLike.mem_coe, mem_powerBoundedSubring, mem_closedBall_zero_iff,
+    hϖ.isPowerBounded_iff_norm_le_one hR]
+
+end PowMul
+
 section NormedDivisionRing
 
 variable {K : Type*} [NormedDivisionRing K]
@@ -125,6 +190,31 @@ theorem isPseudoUniformizer_iff_norm_lt_one {ϖ : K} :
   exact and_congr_right fun _ ↦ tendsto_pow_atTop_nhds_zero_iff_norm_lt_one
 
 end NormedDivisionRing
+
+open Pointwise in
+/-- **Scalars of norm at most one are power-bounded** in a topological algebra over a nontrivially
+normed field. A neighbourhood `U` of zero contains `t • v` for all small scalars `t` and all `v`
+in some neighbourhood `V` of zero, so for a scalar `d` of small norm the neighbourhood `d • V` is
+carried into `U` by every power of `c`. -/
+theorem isPowerBounded_algebraMap_of_norm_le_one {K : Type*} [NontriviallyNormedField K]
+    {A : Type*} [Semiring A] [TopologicalSpace A] [Algebra K A] [ContinuousSMul K A] {c : K}
+    (hc : ‖c‖ ≤ 1) : IsPowerBounded (algebraMap K A c) := by
+  refine isPowerBounded_iff.mpr (isBounded_iff.mpr fun U hU ↦ ?_)
+  have hsmul : Tendsto (fun p : K × A ↦ p.1 • p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
+    simpa [nhds_prod_eq] using (continuous_smul (M := K) (X := A)).tendsto ((0 : K), (0 : A))
+  obtain ⟨W, hW, V, hV, hWV⟩ := mem_prod_iff.mp (hsmul hU)
+  obtain ⟨ε, hε, hεW⟩ := Metric.mem_nhds_iff.mp hW
+  obtain ⟨d, hd₀, hdε⟩ := NormedField.exists_norm_lt K hε
+  refine ⟨d • V, (set_smul_mem_nhds_zero_iff (norm_pos_iff.mp hd₀)).mpr hV, ?_⟩
+  rintro _ ⟨_, ⟨v, hv, rfl⟩, _, ⟨n, rfl⟩, rfl⟩
+  have hmul : d • v * algebraMap K A c ^ n = (c ^ n * d) • v := by
+    rw [← map_pow, ← Algebra.commutes, ← Algebra.smul_def, smul_smul]
+  dsimp only
+  rw [hmul]
+  refine hWV (Set.mk_mem_prod (hεW (mem_ball_zero_iff.mpr ?_)) hv)
+  calc ‖c ^ n * d‖ = ‖c‖ ^ n * ‖d‖ := by rw [norm_mul, norm_pow]
+    _ ≤ 1 * ‖d‖ := by gcongr; exact pow_le_one₀ (norm_nonneg c) hc
+    _ < ε := by rwa [one_mul]
 
 section Ultrametric
 

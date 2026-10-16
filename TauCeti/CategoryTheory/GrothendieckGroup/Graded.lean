@@ -7,8 +7,8 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Graded.Basic
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
-public import TauCeti.CategoryTheory.GrothendieckGroup.Exact
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
+import Mathlib.Algebra.Ring.Periodic
 
 /-!
 # The grading shift on the Grothendieck groups
@@ -17,14 +17,13 @@ The grading shift `{1}` of a graded exact category `TauCeti.GradedExactStructure
 autoequivalence whose functor and inverse are both conflation-exact, so it induces an
 *automorphism* `TauCeti.GradedExactStructure.shiftEquiv` of the exact Grothendieck group,
 sending `[M]` to `[M{1}]`.  Iterating it gives the `ℤ`-action
-`TauCeti.GradedExactStructure.shiftZPow` for which the Laurent-coefficient layer will read
-`[M{n}] = qⁿ [M]`.
+`TauCeti.GradedExactStructure.shiftZPow`, sending `[M]` to `[M{n}]`.
 
-The underlying group of a graded category is not a new object: it is the corresponding ungraded
-`K₀`.  Nothing is redefined here.  The namespaces `TauCeti.SplitK0`, `TauCeti.AbelianK0` and
-`TauCeti.TriangulatedK0` provide the shift actions and graded universal properties for the split,
-abelian and triangulated products, while `TauCeti.GradedExactStructure` provides them for exact
-`K₀`.
+The underlying group of a graded category is not a new object: it is `K₀` of the same category
+with the shift datum forgotten.  Nothing is redefined here.  The namespaces `TauCeti.SplitK0`,
+`TauCeti.AbelianK0` and `TauCeti.TriangulatedK0` provide the shift actions and graded universal
+properties for the split, abelian and triangulated Grothendieck groups, while
+`TauCeti.GradedExactStructure` provides them for exact `K₀`.
 
 The grading shift of a graded exact category is bundled with the exact structure, because the
 exact structure is itself data and the shift has to be compatible with the chosen one.  In the
@@ -63,8 +62,8 @@ triangulated.
 * `TauCeti.TriangulatedK0.shiftZPow_of_shift`: the grading shift and the suspension act on
   triangulated `K₀` by commuting operators, the suspension acting by the sign `(-1)ⁿ`.
 * `TauCeti.TriangulatedK0.shiftZPow_apply_of_iso_shiftFunctor`: a grading shift isomorphic to the
-  suspension acts by `(-1)ⁿ`, so the action factors through the parity of `n`; it is never free,
-  and it is nontrivial whenever some class is not its own negative.
+  suspension acts by `(-1)ⁿ`, so the action factors through the parity of `n`, and it is
+  nontrivial whenever some class is not its own negative.
 * `TauCeti.GradedExactStructure.fromSplit_shiftZPow` and
   `TauCeti.TriangulatedK0.fromSplit_shiftZPow`: the comparisons out of graded split `K₀` are
   equivariant.
@@ -76,10 +75,6 @@ triangulated.
   group, and has no construction of its own.
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II,
   Exercise II.9.15, for the triangulated `K₀` on which the grading shift acts here.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 2, which asks for the graded
-  Grothendieck groups "each carrying the induced `ℤ`-action `[M{n}]` of the shift, with the
-  universal property for invariants equipped with a compatible invertible shift action", and
-  defers the Laurent-module repackaging of that action to Layer 6.
 -/
 
 public section
@@ -402,7 +397,8 @@ theorem lift_shiftEquiv (a : ShiftInvariant E σ) (x : ExactK0 E.toExactStructur
 
 /-- **The universal property of exact `K₀` in the graded setting**: for a fixed automorphism `σ`
 of `G`, conflation-additive invariants compatible with the grading shift through `σ` correspond
-bijectively to the homomorphisms `ExactK0 E →+ G` intertwining the shift with `σ`. -/
+bijectively to the homomorphisms `ExactK0 E.toExactStructure →+ G` intertwining the shift with
+`σ`. -/
 noncomputable def liftEquiv (σ : AddAut G) :
     ShiftInvariant E σ ≃
       {f : ExactK0 E.toExactStructure →+ G // ∀ x, f (E.shiftEquiv x) = σ (f x)} where
@@ -624,22 +620,15 @@ theorem mapEquiv_symm_apply_of_iso_shiftFunctor (h : e.functor ≅ shiftFunctor 
 
 /-- **The `ℤ`-action of a grading shift isomorphic to the suspension is the sign action**,
 `[M{n}] = (-1)ⁿ[M]`.  The generator acts by negation, so the action factors through the parity of
-`n`: it is never free, and it is nontrivial exactly when some class is not its own negative — on
-a `K₀` of exponent two, negation is the identity and the action collapses.  Contrast
-`TauCeti.GradedExactStructure.shiftZPow`, where no such factorization is available, exact `K₀`
-having no suspension to be isomorphic to. -/
+`n`, and it is nontrivial exactly when some class is not its own negative — on a `K₀` of exponent
+two, negation is the identity and the action collapses.  Here the suspension hypothesis forces the
+factorization; nothing forces it for `TauCeti.GradedExactStructure.shiftZPow`, exact `K₀` having
+no suspension. -/
 theorem shiftZPow_apply_of_iso_shiftFunctor (h : e.functor ≅ shiftFunctor C (1 : ℤ)) (n : ℤ)
     (x : TriangulatedK0 C) : shiftZPow e n x = (n.negOnePow : ℤ) • x := by
-  have hpred : ∀ m : ℤ, (m - 1).negOnePow = -m.negOnePow := fun m => by
-    rw [Int.negOnePow_sub, Int.negOnePow_one, mul_neg, mul_one]
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ k ih =>
-    rw [shiftZPow_add_one_apply, ih, mapEquiv_apply_of_iso_shiftFunctor e h, Int.negOnePow_succ,
-      Units.val_neg, neg_zsmul]
-  | pred k ih =>
-    rw [shiftZPow_sub_one_apply, ih, mapEquiv_symm_apply_of_iso_shiftFunctor e h, hpred,
-      Units.val_neg, neg_zsmul]
+  have hp : Function.Antiperiodic (fun k : ℤ => shiftZPow e k x) 1 := fun k => by
+    simp only [shiftZPow_add_one_apply, mapEquiv_apply_of_iso_shiftFunctor e h]
+  simpa using hp.add_zsmul_eq (x := (0 : ℤ)) n
 
 end Shift
 
@@ -741,8 +730,8 @@ variable {e : C ≌ C} [e.functor.CommShift ℤ] [e.functor.IsTriangulated]
   {F : C ⥤ D} [F.CommShift ℤ] [F.IsTriangulated]
 
 /-- **A graded triangulated functor induces a shift-equivariant homomorphism** of triangulated
-Grothendieck groups: the commutation isomorphism with the two grading shifts is exactly what makes
-the square commute.
+Grothendieck groups: the commutation isomorphism with the two grading shifts makes the square
+commute.
 
 The isomorphism is a hypothesis here, where the exact case bundles it into
 `TauCeti.GradedConflationExact`.  That bundling exists because a conflation-exact functor carries
@@ -777,10 +766,8 @@ which commutes with the grading shift induces a homomorphism of triangulated Gro
 sending the class of `M{1}` and the class of `M` to the same element, that is, one invariant under
 the grading shift.
 
-As in the exact case, that invariance is the whole content: no factorization through a quotient of
-`TauCeti.TriangulatedK0` is constructed, because the map from the graded group to the ungraded one
-is not an isomorphism in general, and shift compatibility alone supplies none of the extra
-hypotheses which make it one. -/
+No factorization of this map through the shift coinvariants is constructed for triangulated `K₀`;
+the exact case has one, `TauCeti.LaurentK0.forgetGrading`. -/
 theorem map_shiftEquiv_of_commShift (comm : e.functor ⋙ F ≅ F) (x : TriangulatedK0 C) :
     map F (mapEquiv e x) = map F x := by
   have key : (map F).comp (mapEquiv e).toAddMonoidHom = map F :=

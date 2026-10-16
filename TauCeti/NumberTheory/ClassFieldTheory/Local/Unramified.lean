@@ -41,6 +41,10 @@ Artin map, hence all of `G_K^ab`; the unramified coordinate recovers `n` from su
   uniformizer to arithmetic Frobenius.
 * `TauCeti.ClassFieldTheory.localArtinMap_eq_frobenius_pow_valuation`: the finite local Artin map
   is the normalized-valuation power of arithmetic Frobenius.
+* `TauCeti.ClassFieldTheory.localArtinMap_unit_of_unramified`: units of the valuation ring have
+  trivial finite Artin symbol.
+* `TauCeti.ClassFieldTheory.normResidue_uniformizer`: the norm residue isomorphism sends the class
+  of a uniformizer to arithmetic Frobenius.
 * `TauCeti.ClassFieldTheory.unramifiedCoordinate_artinMap`: the unramified coordinate of the
   absolute local Artin map is normalized valuation.
 * `TauCeti.ClassFieldTheory.mem_inertiaSubgroup_of_mk_eq_artinMap`: a lift of the Artin symbol of
@@ -295,7 +299,6 @@ private theorem layerArtinCharacterCup_eq_layerPeriodicClass
           (Additive.ofMul a))
         (layerFrobeniusCharacter K L ι) = layerPeriodicClass K L ι a := by
   let X := NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)
-  let F := unitsFormation K
   let _ : CommGroup X.Gal := layerCommGroup K L ι
   rw [← groundLevelEquiv_layerGroundInvariant, NormalLayer.artinCharacterCup_apply,
     NormalLayer.zeroTateClass_groundLevelEquiv, ← layerCharacterCupTate, layerCharacterCupTate_eq,
@@ -380,6 +383,21 @@ theorem localArtinMap_eq_frobenius_pow_valuation
     _ = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := by rw [map_zpow]
   apply Additive.toMul.injective
   simpa [f, n] using hfx
+
+/-- **Units have trivial Artin symbol in an unramified extension**: the local Artin symbol of a
+unit of the valuation ring of `K` vanishes, since its normalized valuation is zero. -/
+theorem localArtinMap_unit_of_unramified (ι : L →ₐ[K] SeparableClosure K) {u : Kˣ}
+    (hu : valuation K (u : K) = 1) : localArtinMap K L ι (Additive.ofMul u) = 0 := by
+  rw [localArtinMap_eq_frobenius_pow_valuation, (normalizedValuation_eq_one_iff u).2 hu]
+  simp
+
+/-- **The unramified normalization of the norm residue isomorphism**: it sends the class of a
+uniformizer of `K` to arithmetic Frobenius. This is `localArtinMap_uniformizer` in the
+multiplicative form of finite local reciprocity. -/
+theorem normResidue_uniformizer {π : Kˣ} (hπ : IsUniformizer K π) :
+    normResidue K L (π : Kˣ ⧸ normGroup K L) =
+      Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) := by
+  rw [normResidue_mk K L IsSepClosed.lift, localArtinMap_uniformizer K L _ hπ, toMul_ofMul]
 
 /-! ### The absolute unramified coordinate -/
 

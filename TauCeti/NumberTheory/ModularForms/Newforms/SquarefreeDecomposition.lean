@@ -36,7 +36,7 @@ Adapted from the AINTLIB `LeanModularForms` project (Chris Birkbeck, Apache-2.0,
 theorem `squarefree_decomp_with_lower_level` and its `Miyake467Decomp_*` helpers. The source
 states the decomposition through a bundled `Prop`-valued definition and transports forms across
 equalities of levels; here the conclusion is stated directly and levels are related by
-divisibility (`CuspForm.ofLe`).
+divisibility (`CuspForm.restrict`).
 
 ## References
 
@@ -176,10 +176,10 @@ private theorem exists_qExpansion_coeff_eq_ite_coprime_zero_and_ite_dvd {χ : (Z
   have hdiv : N * q ^ 2 / q ∣ N * (q * l') ^ 2 / q := by
     rw [hNq2q, hNql]
     exact dvd_mul_right _ _
-  refine ⟨h, _root_.CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd hdiv) F,
+  refine ⟨h, _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdiv) F,
     (χ.comp (ZMod.unitsMap hNMq)).comp (ZMod.unitsMap hdiv), hhχ,
-    CuspForm.ofLe_mem_cuspFormCharSpace _ hdiv hF, ?_, hhcoeff,
-    fun n ↦ by rw [hFcoeff n, CuspForm.coe_ofLe]⟩
+    CuspForm.restrict_mem_cuspFormCharSpace _ hdiv hF, ?_, hhcoeff,
+    fun n ↦ by rw [hFcoeff n, CuspForm.coe_restrict]⟩
   simp only [MonoidHom.comp_assoc, ZMod.unitsMap_comp]
 
 omit [NeZero N] in
@@ -199,14 +199,14 @@ private theorem exists_qExpansion_coeff_eq_ite_coprime_and_add {χ : (ZMod N)ˣ 
       ∀ n, (qExpansion 1 f).coeff n = (qExpansion 1 h).coeff n + (qExpansion 1 f').coeff n := by
   have hNM : N ∣ N * q ^ 2 := Nat.dvd_mul_right N _
   set f' : CuspForm ((Gamma1 (N * q ^ 2)).map (mapGL ℝ)) k :=
-    _root_.CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd hNM) f - h with hf'
+    _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hNM) f - h with hf'
   have hcoeff (n : ℕ) : (qExpansion 1 f').coeff n =
       if Nat.Coprime n q then (qExpansion 1 f).coeff n else 0 := by
     rw [hf', FunLike.coe_sub,
       _root_.ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub,
-      CuspForm.coe_ofLe, hhcoeff n]
+      CuspForm.coe_restrict, hhcoeff n]
     split_ifs <;> simp
-  refine ⟨f', Submodule.sub_mem _ (CuspForm.ofLe_mem_cuspFormCharSpace χ hNM hf) hhχ, hcoeff,
+  refine ⟨f', Submodule.sub_mem _ (CuspForm.restrict_mem_cuspFormCharSpace χ hNM hf) hhχ, hcoeff,
     fun n ↦ ?_⟩
   rw [hcoeff n, hhcoeff n]
   split_ifs <;> simp
@@ -265,19 +265,19 @@ private theorem squarefreeDecomposition_mul {m : ℕ}
     have hlev : N * q ^ 2 * l' ^ 2 = N * (q * l') ^ 2 := by ring
     have hlevq (q' : ℕ) : N * q ^ 2 * l' ^ 2 / q' = N * (q * l') ^ 2 / q' := by rw [hlev]
     refine squarefreeDecomposition_of_insert hqp rfl hql' hl'0
-      (fun q' hq' ↦ _root_.CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd (dvd_of_eq (hlevq q')))
-        (F' q' hq'))
+      (fun q' hq' ↦
+        _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (dvd_of_eq (hlevq q')))
+          (F' q' hq'))
       (fun q' hq' ↦ (χ'' q' hq').comp (ZMod.unitsMap (dvd_of_eq (hlevq q')))) ?_ ?_ F χ₁ hF hχ₁
       fun n ↦ ?_
     · intro q' hq'
-      exact CuspForm.ofLe_mem_cuspFormCharSpace _ _ (hF' q' hq')
+      exact CuspForm.restrict_mem_cuspFormCharSpace _ _ (hF' q' hq')
     · intro q' hq'
       have := congrArg (fun ψ ↦ ψ.comp (ZMod.unitsMap (dvd_of_eq hlev))) (hχ'' q' hq')
       simp only [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at this ⊢
       exact this
     · rw [hsplit n, hFcoeff n, hcoeff' n]
-      congr 1
-      exact Finset.sum_congr rfl fun q' _ ↦ by rw [CuspForm.coe_ofLe]
+      simp only [CuspForm.coe_restrict]
 
 /-- **Miyake's Lemma 4.6.7: the squarefree decomposition.** If `f ∈ S_k(Γ₁(N), χ)` vanishes at
 every index coprime to a squarefree `l`, then `a_n(f) = ∑_{q ∈ l.primeFactors, q ∣ n} a_{n/q}(F q)`,
@@ -385,7 +385,7 @@ theorem exists_coe_eq_sum_coe_levelRaise_of_squarefree [NeZero M] {l : ℕ}
   have hM : M ∣ M * l ^ 2 := Nat.dvd_mul_right M _
   -- the difference of the two sides, as a cusp form of level `Γ₁(M l²)`
   set D : CuspForm ((Gamma1 (M * l ^ 2)).map (mapGL ℝ)) k :=
-    _root_.CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd hM) Δ -
+    _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hM) Δ -
       ∑ q ∈ l.primeFactors.attach,
         haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
         CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq
@@ -397,13 +397,13 @@ theorem exists_coe_eq_sum_coe_levelRaise_of_squarefree [NeZero M] {l : ℕ}
     ext n
     rw [hDdef, FunLike.coe_sub,
       ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub,
-      _root_.CuspForm.coe_ofLe, qExpansion_coeff_sum_levelRaise, hcoeff n, map_zero, sub_self]
+      _root_.CuspForm.coe_restrict, qExpansion_coeff_sum_levelRaise, hcoeff n, map_zero, sub_self]
   -- so the difference is zero, by q-expansion injectivity on the underlying modular form
   have hfun : ⇑D = 0 := by
     have hD0 : (D : ModularForm ((Gamma1 (M * l ^ 2)).map (mapGL ℝ)) k) = 0 :=
       (ModularForm.qExpansion_eq_zero_iff one_pos (one_mem_strictPeriods_Gamma1_map _) _).mp hD
     simpa using congrArg (fun f : ModularForm ((Gamma1 (M * l ^ 2)).map (mapGL ℝ)) k ↦ ⇑f) hD0
-  rw [hDdef, FunLike.coe_sub, _root_.CuspForm.coe_ofLe, FunLike.coe_sum] at hfun
+  rw [hDdef, FunLike.coe_sub, _root_.CuspForm.coe_restrict, FunLike.coe_sum] at hfun
   exact sub_eq_zero.mp hfun
 
 end TauCeti

@@ -27,7 +27,8 @@ it is the separately constructed symplectic group scheme.
 ## Main definitions
 
 * `TauCeti.SpStd.groupScheme`: the carrier, cut out of the general linear group by
-  `TauCeti.SpStd.definingIdeal`, with its closed immersion `TauCeti.SpStd.carrierι`.
+  `TauCeti.SpStd.definingIdeal`, with its closed immersion `TauCeti.SpStd.carrierι`, and its
+  coordinate Hopf algebra `TauCeti.SpStd.coordinateHopfAlgebra`.
 * `TauCeti.SpStd.rootSubgroup` and `TauCeti.SpStd.weightTorus`: the numbered root subgroups and
   the split weight torus, each a closed immersion into the carrier.
 * `TauCeti.SpStd.points`, `TauCeti.SpStd.rootSubgroupPoints` and
@@ -93,6 +94,15 @@ theorem groupScheme_def :
         (definingIdeal n) := by
   rw [groupScheme, definingIdeal]
 
+/-- The coordinate Hopf algebra of the full-weight type-`C_(n+1)` carrier: the quotient of
+`O(GL_(2n+2))` whose quotient spectrum is `groupScheme n`. -/
+noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{0} ℤ :=
+  CommHopfAlgCat.quotient (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
+    (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (rootGenerator n)
+      (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
+      (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+      (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n))
+
 /-- The canonical inclusion of the type-`C_(n+1)` carrier into its ambient general linear group. -/
 noncomputable def carrierι :
     groupScheme n ⟶ TauCeti.GeneralLinear.groupScheme ℤ ((n + 1) + (n + 1)) :=
@@ -118,7 +128,7 @@ theorem carrierι_eq_eqToHom_comp_hopfIdealInclusion :
         GeneralLinear.hopfIdealInclusion ℤ ((n + 1) + (n + 1)) (definingIdeal n) := by
   rw [carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
     GeneralLinear.hopfIdealInclusion_def, ← Category.assoc,
-    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm, eqToIso.hom]
+    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm]
 
 /-- The type-`C_(n+1)` carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by
@@ -220,9 +230,19 @@ theorem points_def (A : Type v) [CommRing A] :
   exact TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def
     _ _ _ _ _ _ _ _ A
 
+/-- The points of the type-`C_(n+1)` carrier are the points of the generic Kostant toral closure
+they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup (rootGenerator n)
+        (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
+        (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A := (rfl)
+
 /-- A matrix is a point of the type-`C_(n+1)` carrier exactly when its associated convolution
 point kills the carrier's defining Hopf ideal. -/
-@[simp] theorem mem_points_iff (A : Type v) [CommRing A]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
+theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) :
     g ∈ points n A ↔
       ∀ x ∈ definingIdeal n,
@@ -299,7 +319,8 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion (weightTorus n).hom.h
 /-- The scheme-level pinning equation: conjugation by the weight torus acts on each numbered root
 subgroup through the corresponding row of the type-`C` Cartan matrix, with negative rows on
 lowering generators. -/
-@[simp] theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
+theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)

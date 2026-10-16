@@ -24,10 +24,9 @@ places any coefficient in a finite subcoalgebra. Its restricted regular comodule
 coefficient in its matrix-coefficient algebra, so equality of the two actions there detects
 equality at the chosen coefficient.
 
-This is the injectivity input for the Tannakian reconstruction target in Layer 1 of the
-reductive-groups roadmap: once a point is packaged as a tensor automorphism of the
-scalar-extension fibre functor, its components on finite-dimensional comodules determine the
-point uniquely.
+This is the injectivity input for Tannakian reconstruction: once a point is packaged as a tensor
+automorphism of the scalar-extension fibre functor, its components on finite-dimensional comodules
+determine the point uniquely.
 
 ## Main declarations
 

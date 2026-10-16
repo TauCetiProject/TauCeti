@@ -347,21 +347,22 @@ theorem coe_ideleNorm_ofCompletion (w : InfinitePlace K) (u : w.Completionˣ) :
 
 /-- An idele whose finite coordinates, and those of its inverse, are all integral has finite
 coordinates of norm `1`. -/
-private lemma norm_ideleFiniteCoord_eq_one_of_forall_mem {u : IdeleGroup (𝓞 K) K}
-    (hu : ∀ v : HeightOneSpectrum (𝓞 K),
-      (u : AdeleRing (𝓞 K) K).2 v ∈ v.adicCompletionIntegers K)
-    (hu' : ∀ v : HeightOneSpectrum (𝓞 K),
-      ((u⁻¹ : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K).2 v ∈ v.adicCompletionIntegers K)
+private lemma norm_ideleFiniteCoord_eq_one_of_mem_integralAdeles {u : IdeleGroup (𝓞 K) K}
+    (hu : (u : AdeleRing (𝓞 K) K).2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K)
+    (hu' : ((u⁻¹ : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K).2 ∈
+      FiniteAdeleRing.integralAdeles (𝓞 K) K)
     (v : HeightOneSpectrum (𝓞 K)) :
     ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ = 1 := by
   have h₁ : ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ ≤ 1 :=
     Valued.toNormedField.norm_le_one_iff.mpr <| by
       simpa only [HeightOneSpectrum.coe_ideleFiniteCoord,
-        HeightOneSpectrum.mem_adicCompletionIntegers] using hu v
+        HeightOneSpectrum.mem_adicCompletionIntegers] using
+        FiniteAdeleRing.mem_integralAdeles.mp hu v
   have h₂ : ‖(v.ideleFiniteCoord u⁻¹ : v.adicCompletion K)‖ ≤ 1 :=
     Valued.toNormedField.norm_le_one_iff.mpr <| by
       simpa only [HeightOneSpectrum.coe_ideleFiniteCoord,
-        HeightOneSpectrum.mem_adicCompletionIntegers] using hu' v
+        HeightOneSpectrum.mem_adicCompletionIntegers] using
+        FiniteAdeleRing.mem_integralAdeles.mp hu' v
   have h : ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ *
       ‖(v.ideleFiniteCoord u⁻¹ : v.adicCompletion K)‖ = 1 := by
     rw [← norm_mul, ← Units.val_mul, ← map_mul, mul_inv_cancel, map_one, Units.val_one, norm_one]
@@ -372,10 +373,8 @@ private lemma norm_ideleFiniteCoord_eq_one_of_forall_mem {u : IdeleGroup (𝓞 K
 whose finite coordinates are units of the valuation rings form an open neighbourhood of `1` on
 which every finite factor is `1`. -/
 private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
-  let W : Set (AdeleRing (𝓞 K) K) :=
-    {a | ∀ v : HeightOneSpectrum (𝓞 K), a.2 v ∈ v.adicCompletionIntegers K}
-  have hW : IsOpen W := (RestrictedProduct.isOpen_forall_mem fun v ↦
-    Valued.isOpen_valuationSubring _).preimage continuous_snd
+  let W : Set (AdeleRing (𝓞 K) K) := {a | a.2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K}
+  have hW : IsOpen W := (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
   let U : Set (IdeleGroup (𝓞 K) K) := {u | (u : AdeleRing (𝓞 K) K) ∈ W ∧
     ((u⁻¹ : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K) ∈ W}
   have hU : IsOpen U :=
@@ -388,7 +387,7 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
         (((continuous_apply w).comp continuous_fst).comp Units.continuous_val)
   have hU_eq (u : IdeleGroup (𝓞 K) K) (hu : u ∈ U) :
       ideleNormAux u = ∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord u) := by
-    rw [ideleNormAux, finprod_congr (norm_ideleFiniteCoord_eq_one_of_forall_mem hu.1 hu.2),
+    rw [ideleNormAux, finprod_congr (norm_ideleFiniteCoord_eq_one_of_mem_integralAdeles hu.1 hu.2),
       finprod_one, mul_one]
   refine continuous_iff_continuousAt.mpr fun x ↦ ?_
   have hmul : Continuous fun y : IdeleGroup (𝓞 K) K ↦ x⁻¹ * y := continuous_const.mul continuous_id
@@ -396,8 +395,9 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
     hmul.continuousAt.preimage_mem_nhds <|
       hU.mem_nhds <| by
         rw [inv_mul_cancel]
-        exact ⟨fun v ↦ (v.adicCompletionIntegers K).one_mem,
-          fun v ↦ (v.adicCompletionIntegers K).one_mem⟩
+        exact ⟨(FiniteAdeleRing.integralAdeles (𝓞 K) K).one_mem, by
+          rw [inv_one]
+          exact (FiniteAdeleRing.integralAdeles (𝓞 K) K).one_mem⟩
   refine (((continuous_const (y := ideleNormAux x)).mul (hinf.comp hmul)).continuousAt
     (x := x)).congr ?_
   filter_upwards [hx] with y hy

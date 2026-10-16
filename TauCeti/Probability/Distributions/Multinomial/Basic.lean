@@ -166,7 +166,7 @@ theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : �
   split_ifs with hk
   · rw [Finset.sum_eq_single k]
     · simp
-    · intro b hb hbk
+    · intro b _ hbk
       simp [hbk]
     · intro hmem
       exact (hmem (by simp [Finset.mem_piAntidiag, hk])).elim

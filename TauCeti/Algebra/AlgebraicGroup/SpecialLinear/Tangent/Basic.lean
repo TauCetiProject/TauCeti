@@ -24,9 +24,6 @@ over the dual numbers has matrix `1 + εX`; the first-order part of its determin
 Consequently, the resulting equivalence is linear over the coefficient algebra and preserves the
 convolution and matrix-commutator Lie brackets.
 
-This gives the standard `SLₙ` worked example in the ReductiveGroups roadmap's Layer 2 target on
-the tangent space at the identity / `Lie(G)` and the Lie algebra of a closed subgroup.
-
 ## Main declarations
 
 * `TauCeti.SpecialLinear.mem_lieSubalgebra_definingHopfIdeal_iff`: an ambient tangent derivation

@@ -22,10 +22,7 @@ dφ (Ad(g)(d)) = Ad(g ∘ φ)(dφ(d)).
 ```
 
 This file proves that identity directly from functoriality of convolution and packages it as an
-intertwining identity for the adjoint representations. It synchronizes the differential and
-adjoint-action parts of Layer 2 of the ReductiveGroups roadmap; in particular, it is the
-functoriality needed when tangent Lie algebras of closed subgroups are used inside an ambient
-group.
+intertwining identity for the adjoint representations.
 
 ## Main declarations
 
@@ -87,12 +84,17 @@ theorem derivationComp_adDerivation (φ : A' →ₐc[R] A)
     (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
     derivationComp (B := B) φ (Derivation.adDerivation B g d) =
       Derivation.adDerivation B
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)
+        (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)
         (derivationComp (B := B) φ d) := by
   have mapDomain_inv :
-      (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)⁻¹ =
-        AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ (g⁻¹) :=
-    ((AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ).map_inv g).symm
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)⁻¹ =
+        BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ (g⁻¹) :=
+    ((BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ).map_inv g).symm
+  have mapDomain_toLinearMap :
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g).ofConv.toLinearMap =
+        g.ofConv.toLinearMap.comp φ.toLinearMap := by
+    ext x
+    exact BialgHom.mapDomain_apply_apply (A := Bialgebra.CounitAlgebra R A' B) φ g x
   apply Derivation.ext
   intro a
   apply (Bialgebra.CounitAlgebra.algEquivSelf R A' B).injective
@@ -101,7 +103,8 @@ theorem derivationComp_adDerivation (φ : A' →ₐc[R] A)
     Bialgebra.CounitAlgebra.algEquivSelf_apply,
     Bialgebra.CounitAlgebra.algEquivSelf_apply, convTriple_comp_apply,
     mapDomain_inv, derivationComp_toLinearMap]
-  simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_toLinearMap]
+  rw [mapDomain_toLinearMap]
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_toLinearMap]
   rfl
 
 end TauCeti

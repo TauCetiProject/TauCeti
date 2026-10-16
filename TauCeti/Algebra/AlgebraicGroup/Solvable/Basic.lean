@@ -41,10 +41,6 @@ Lie--Kolchin theory and the construction of the solvable radical.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This begins the "Lie--Kolchin; solvable groups" milestone in Layer 5 of the ReductiveGroups
-roadmap. The scheme-theoretic derived subgroup and its comparison with this geometric-points
-criterion remain to be constructed.
 -/
 
 public section
@@ -93,8 +89,8 @@ instance (k : Type u) [Field k] :
     let e' : H ≃ₐc[k] K := CommHopfAlgCat.ofIso e
     let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) := hH
     exact Group.isSolvable_of_isSolvable_injective
-      (f := (AlgHom.mapDomainMulEquiv (A := AlgebraicClosure k) e').toMonoidHom)
-      (AlgHom.mapDomainMulEquiv (A := AlgebraicClosure k) e').injective
+      (f := (BialgEquiv.mapDomainMulEquiv (A := AlgebraicClosure k) e').toMonoidHom)
+      (BialgEquiv.mapDomainMulEquiv (A := AlgebraicClosure k) e').injective
 
 /-- Geometric-points solvability descends along a surjective coordinate Hopf-algebra morphism.
 
@@ -108,8 +104,8 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_of_surjective
   rw [geometricallySolvablePointsCommHopfAlgProperty_iff] at hH ⊢
   let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) := hH
   exact Group.isSolvable_of_isSolvable_injective
-    (f := AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f hf
+    (f := BialgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom)
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f hf
       (CommAlgCat.of k (AlgebraicClosure k)))
 
 /-- The closed subgroup cut out by a Hopf ideal has solvable geometric points whenever the

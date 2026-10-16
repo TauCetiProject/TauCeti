@@ -23,6 +23,10 @@ to this open union gives the open unit disc as an adic space.  Each member of th
 open affinoid subspace, with the rational-localisation coordinate ring attached to the
 presentation `R({T^(n+1), c}/c)`.
 
+The open unit disc is nevertheless not affinoid. The underlying space of an affinoid pre-adic
+space is spectral, hence quasi-compact, whereas Gauss points of radius close to one escape every
+member of the exhaustion, so the open unit disc is not quasi-compact.
+
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.discExhaustionOpen`: the rational exhaustion members as opens of
@@ -44,6 +48,10 @@ presentation `R({T^(n+1), c}/c)`.
   an open affinoid subspace.
 * `TauCeti.ValuationSpectrum.isAdic_openUnitDiscPreAdicSpace`: the open unit disc is an adic
   space.
+* `TauCeti.ValuationSpectrum.noncompactSpace_openUnitDiscPreAdicSpace`: the underlying space of
+  the open unit disc is not quasi-compact.
+* `TauCeti.ValuationSpectrum.not_isAffinoid_openUnitDiscPreAdicSpace`: the open unit disc is not
+  affinoid.
 
 ## References
 
@@ -192,6 +200,27 @@ noncomputable def openUnitDiscAdicSpace (hc : IsPseudoUniformizer c) : AdicSpace
 theorem openUnitDiscAdicSpace_obj (hc : IsPseudoUniformizer c) :
     (openUnitDiscAdicSpace c P hc).obj = openUnitDiscPreAdicSpace c P hc :=
   (rfl)
+
+omit [CompleteSpace K] [IsTateRing K] in
+/-- **The open unit disc is not quasi-compact.** Its points form the exhaustion union
+`discExhaustionUnion c` inside the closed unit disc, which Gauss points of radius close to one
+prevent from being compact. -/
+instance noncompactSpace_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
+    NoncompactSpace (openUnitDiscPreAdicSpace c P hc) := by
+  obtain ⟨hc₀, hc₁⟩ := isPseudoUniformizer_iff_norm_lt_one.mp hc
+  refine ⟨fun h ↦ not_isCompact_discExhaustionUnion hc₀ hc₁ ?_⟩
+  -- By definition of `PreAdicSpace.restrict`, the points of the open unit disc are the points of
+  -- the open `openUnitDiscOpen c P hc` of the closed disc.
+  have hU : IsCompact (openUnitDiscOpen c P hc : Set (closedPolydiscPreAdicSpace 1 P)) :=
+    isCompact_iff_isCompact_univ.mpr h
+  rwa [coe_openUnitDiscOpen, Homeomorph.isCompact_preimage] at hU
+
+omit [CompleteSpace K] [IsTateRing K] in
+/-- **The open unit disc is not affinoid.** The underlying space of an affinoid pre-adic space
+is spectral, hence quasi-compact, and the open unit disc is not quasi-compact. -/
+theorem not_isAffinoid_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
+    ¬ PreAdicSpace.isAffinoid (openUnitDiscPreAdicSpace c P hc) :=
+  PreAdicSpace.not_isAffinoid_of_noncompactSpace
 
 end TauCeti.ValuationSpectrum
 

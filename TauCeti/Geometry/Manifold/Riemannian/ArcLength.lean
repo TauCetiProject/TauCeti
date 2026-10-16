@@ -136,7 +136,7 @@ theorem exists_unit_speed_reparametrization_Icc {γ : ℝ → M} {a b : ℝ} (ha
   obtain ⟨ψ, hψmono, hψC1, hleft, hright⟩ :=
     exists_contDiff_inverse_intervalIntegral hab.le
       (hγ.continuousOn_norm_curveVelocityWithin hU) fun t ht ↦ norm_pos_iff.2 (hreg t ht)
-  set L := ∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖ with hLdef
+  set L := ∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖
   have hψa : ψ 0 = a := by simpa using hleft a (left_mem_Icc.2 hab.le)
   have hψb : ψ L = b := hleft b (right_mem_Icc.2 hab.le)
   have hL : 0 < L := hψmono.lt_iff_lt.1 (by rw [hψa, hψb]; exact hab)

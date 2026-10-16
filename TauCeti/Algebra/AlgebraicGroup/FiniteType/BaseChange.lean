@@ -18,10 +18,9 @@ This file packages the scalar extension `K ⊗[k] H` of a finite-type commutativ
 Hopf-algebra base-change API is in `CommHopfAlgCatBaseChange`; this file restricts it to the
 finite-type full subcategory, using Mathlib's finite-type base-change instance.
 
-It is the finite-type coordinate-Hopf-algebra wrapper for the ReductiveGroups roadmap Layer 0
-base-change item: geometric notions are studied after replacing the coordinate Hopf algebra
-`H` by `K ⊗[k] H`, and the functor of points of this base-changed object is identified with
-the original points evaluated on `K`-algebras.
+It is the finite-type coordinate-Hopf-algebra wrapper for base change: geometric notions are studied
+after replacing the coordinate Hopf algebra `H` by `K ⊗[k] H`, and the functor of points of this
+base-changed object is identified with the original points evaluated on `K`-algebras.
 
 ## Main declarations
 
@@ -327,8 +326,8 @@ lemma baseChangePointsMulEquiv_mapValue
 lemma baseChangePointsMulEquiv_mapDomain {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
     (φ : H ⟶ L) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) L) A) :
     baseChangePointsMulEquiv (K := K) A H
-        (AlgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
-      AlgHom.mapDomain
+        (BialgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
+      BialgHom.mapDomain
         (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         (toBialgHom φ)
         (baseChangePointsMulEquiv (K := K) A L f) :=
