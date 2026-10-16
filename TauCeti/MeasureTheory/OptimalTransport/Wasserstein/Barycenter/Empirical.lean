@@ -26,6 +26,10 @@ one of its cluster points is a population Wasserstein barycenter. Hence it has a
 subsequence, and it converges outright when the population barycenter is unique. No measurability
 of the selected barycenters is assumed or needed.
 
+The cluster-point characterization needs no properness at all: it is the general
+`TauCeti.isFrechetBarycenter_of_mapClusterPt_empiricalMeasure_ae`, applied verbatim to the separable
+carrier `WassersteinSpace p X`, so it is not restated here.
+
 ## Main statements
 
 * `TauCeti.WassersteinSpace.isCompact_closure_range_of_isFrechetBarycenter_empiricalMeasure_ae`:

@@ -126,6 +126,16 @@ theorem measurable_empiricalMeasureOfFintype :
   simp_rw [← empiricalMeasureOfFintype_toMeasure, empiricalMeasureOfFintype_apply hs]
   fun_prop
 
+/-- A finite empirical population is concentrated on the finite set of its values. -/
+theorem exists_finset_ae_mem_empiricalMeasureOfFintype [MeasurableSingletonClass α]
+    (x : κ → α) :
+    ∃ s : Finset α, ∀ᵐ y ∂(empiricalMeasureOfFintype x : Measure α), y ∈ s := by
+  classical
+  refine ⟨Finset.univ.image x, ?_⟩
+  rw [empiricalMeasureOfFintype_toMeasure, ae_finsetSum_measure_iff]
+  intro i _
+  exact Measure.ae_smul_measure (by simp) _
+
 end FinitePopulation
 
 /-- The empirical probability measure of the first `n + 1` terms of a sequence.
@@ -147,20 +157,8 @@ theorem empiricalMeasure_toMeasure (x : ℕ → α) (n : ℕ) : (empiricalMeasur
 /-- An empirical measure is concentrated on a finite set. -/
 theorem exists_finset_ae_mem_empiricalMeasure [MeasurableSingletonClass α]
     (x : ℕ → α) (n : ℕ) :
-    ∃ s : Finset α, ∀ᵐ y ∂(empiricalMeasure x n : Measure α), y ∈ s := by
-  classical
-  refine ⟨(Finset.range (n + 1)).image x, ?_⟩
-  rw [ae_iff]
-  simp only [empiricalMeasure_toMeasure, Measure.coe_finsetSum, Measure.coe_smul,
-    Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-  simp only [Finset.sum_eq_zero_iff, Finset.mem_range]
-  intro i hi
-  rw [Measure.dirac_apply' _ (by measurability)]
-  simp only [Set.indicator_apply, Pi.one_apply, Set.mem_ofPred_eq]
-  split
-  · rename_i hnot
-    exact (hnot (Finset.mem_image.2 ⟨i, Finset.mem_range.2 hi, rfl⟩)).elim
-  · exact mul_zero _
+    ∃ s : Finset α, ∀ᵐ y ∂(empiricalMeasure x n : Measure α), y ∈ s :=
+  exists_finset_ae_mem_empiricalMeasureOfFintype _
 
 /-- Evaluation of an empirical measure on a measurable set is its empirical frequency. -/
 theorem empiricalMeasure_apply {x : ℕ → α} {n : ℕ} {s : Set α} (hs : MeasurableSet s) :
