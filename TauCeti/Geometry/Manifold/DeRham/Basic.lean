@@ -44,8 +44,8 @@ variable (M) in
 /-- The nonnegative cochain complex of smooth real-valued differential forms. -/
 def deRhamComplex : CochainComplex (ModuleCat ℝ) ℕ :=
   CochainComplex.of (fun k ↦ ModuleCat.of ℝ (SmoothForm I M ℝ k))
-    (fun k ↦ ModuleCat.ofHom (mextDerivₗ I k))
-    (fun k ↦ ModuleCat.hom_ext (mextDerivₗ_comp_mextDerivₗ I k))
+    (fun k ↦ ModuleCat.ofHom (mextDerivₗ I (F := ℝ) k))
+    (fun k ↦ ModuleCat.hom_ext (mextDerivₗ_comp_mextDerivₗ I (F := ℝ) k))
 
 /-- The canonical identification of the degree-`k` object with smooth `k`-forms.
 This isomorphism makes the form carrier available without unfolding the complex. -/
@@ -60,14 +60,14 @@ def deRhamComplexXIso (k : ℕ) :
 @[reassoc]
 theorem deRhamComplex_d (k : ℕ) :
     (deRhamComplex I M).d k (k + 1) ≫ (deRhamComplexXIso I (M := M) (k + 1)).hom =
-      (deRhamComplexXIso I (M := M) k).hom ≫ ModuleCat.ofHom (mextDerivₗ I k) := by
+      (deRhamComplexXIso I (M := M) k).hom ≫ ModuleCat.ofHom (mextDerivₗ I (F := ℝ) k) := by
   dsimp +instances [deRhamComplexXIso, deRhamComplex]
   simp
 
 variable (M) in
 /-- The submodule of smooth forms whose exterior derivative vanishes. -/
 def closedForms (k : ℕ) : Submodule ℝ (SmoothForm I M ℝ k) :=
-  LinearMap.ker (mextDerivₗ I k)
+  LinearMap.ker (mextDerivₗ I (F := ℝ) k)
 
 /-- A smooth form is closed precisely when its exterior derivative vanishes. -/
 @[simp]
@@ -81,7 +81,7 @@ variable (M) in
  degree zero. -/
 def exactForms : (k : ℕ) → Submodule ℝ (SmoothForm I M ℝ k)
   | 0 => ⊥
-  | k + 1 => LinearMap.range (mextDerivₗ I k)
+  | k + 1 => LinearMap.range (mextDerivₗ I (F := ℝ) k)
 
 /-- There are no nonzero exact forms in degree zero. -/
 @[simp]
@@ -90,14 +90,14 @@ theorem exactForms_zero : exactForms I M 0 = ⊥ := (rfl)
 /-- In positive degree, exact forms are the range of the exterior derivative. -/
 @[simp]
 theorem exactForms_succ (k : ℕ) :
-    exactForms I M (k + 1) = LinearMap.range (mextDerivₗ I k) := (rfl)
+    exactForms I M (k + 1) = LinearMap.range (mextDerivₗ I (F := ℝ) k) := (rfl)
 
 /-- An exact smooth form is closed. -/
 theorem exactForms_le_closedForms (k : ℕ) : exactForms I M k ≤ closedForms I M k := by
   cases k with
   | zero => simp
   | succ k =>
-    exact LinearMap.range_le_ker_iff.mpr (mextDerivₗ_comp_mextDerivₗ I k)
+    exact LinearMap.range_le_ker_iff.mpr (mextDerivₗ_comp_mextDerivₗ I (F := ℝ) k)
 
 variable (M) in
 /-- De Rham cohomology is the categorical homology of the de Rham complex. -/

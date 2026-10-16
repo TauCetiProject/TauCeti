@@ -90,7 +90,7 @@ variable (I) in
 /-- Successive exterior derivatives compose to zero as linear maps. -/
 @[simp]
 theorem mextDerivₗ_comp_mextDerivₗ (k : ℕ) :
-    (mextDerivₗ I (k + 1)).comp (mextDerivₗ I (M := M) k) = 0 := by
+    (mextDerivₗ I (k + 1)).comp (mextDerivₗ I (M := M) (F := F) k) = 0 := by
   ext φ : 1
   apply Subtype.ext
   simp only [LinearMap.comp_apply, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv,

@@ -29,7 +29,7 @@ In particular it maps smooth `k`-forms to smooth `(k+1)`-forms.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothForms`: the exterior derivative preserves smooth forms.
-* `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth real-valued forms.
+* `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth fixed-coefficient forms.
 
 ## References
 
@@ -200,9 +200,9 @@ theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
     (mem_smoothForms.mp hφ) (by simp)
 
 variable (I) in
-/-- The exterior derivative as a real linear map on smooth real-valued forms. -/
+/-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
-    SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1) where
+    SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F (k + 1) where
   toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothForms φ.2⟩
   map_add' φ ψ := by
     apply Subtype.ext
@@ -219,8 +219,8 @@ def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
 variable (I) in
 /-- The bundled derivative has the usual rough exterior derivative as its underlying form. -/
 @[simp]
-theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M ℝ k) :
-    (mextDerivₗ I k φ : RoughForm I M ℝ (k + 1)) = mextDeriv φ.1 :=
+theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M F k) :
+    (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.1 :=
   (rfl)
 
 end TauCeti
