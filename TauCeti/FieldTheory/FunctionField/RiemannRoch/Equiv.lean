@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Equiv
+public import TauCeti.FieldTheory.FunctionField.Divisor.Equiv
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 
 /-!
@@ -37,13 +37,6 @@ variable (σ : k ≃+* k') (τ : F ≃+* F')
   (h : ∀ c, τ (algebraMap k F c) = algebraMap k' F' (σ c))
 
 -- Transport rules run before `Finsupp.domCongr_apply` expands the divisor reindexing.
-/-- Transporting a divisor along a semilinear field isomorphism preserves its weighted degree. -/
-@[simp↓]
-theorem Divisor.degree_domCongr_equivOfRingEquiv (D : Divisor k F) :
-    degree (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D) = degree D := by
-  rw [degree_apply, degree_apply, Finsupp.domCongr_apply, Finsupp.sum_equivMapDomain]
-  simp only [Place.degree_equivOfRingEquiv]
-
 /-- A semilinear field isomorphism preserves the valuation bounds defining a Riemann–Roch space. -/
 @[simp↓]
 theorem mem_riemannRochSpace_domCongr_equivOfRingEquiv_iff (D : Divisor k F) (z : F) :

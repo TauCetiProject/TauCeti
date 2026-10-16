@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Examples.AffinePlane
+public import TauCeti.Geometry.Toric.Algebraic.Examples.AffinePlane.Basic
 public import TauCeti.Geometry.Toric.Analytic.Examples.AffineRay
 public import TauCeti.Geometry.Toric.Analytic.Fan.Product.Manifold
 

@@ -40,7 +40,7 @@ theorem exists_eventually_im_normalized_schwarzChristoffelPrimitive_mem_Ioo_of_s
     ∃ c : ℂ, ∀ᶠ z in 𝓝[upperHalfPlaneSet] (p : ℂ),
       ((schwarzChristoffelPrimitive a e z₀ z - c) /
         schwarzChristoffelPrevertexCoefficient a e p).im ∈ Ioo (-ε) (Real.pi + ε) := by
-  obtain ⟨H, r, hr, hH, hformula⟩ :=
+  obtain ⟨H, r, hr, hH, _, hformula⟩ :=
     exists_analyticOnNhd_eq_schwarzChristoffelPrimitive_sub_log_of_sum_eq_neg_one
       a e z₀ p he
   let C := schwarzChristoffelPrevertexCoefficient a e p

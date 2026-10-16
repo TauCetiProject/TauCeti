@@ -113,7 +113,7 @@ theorem mul_integral_norm_fderiv_one_sq_ball_le_mul_deriv
     simp only [D, mem_ofPred_eq, mem_sdiff, mem_closedBall, dist_eq_norm, mem_singleton_iff]
     rw [norm_pos_iff, sub_ne_zero]
     exact and_comm
-  have hclosed := volume.addHaar_closedBall_ae_eq_ball z₀ hr.1
+  have hclosed := volume.addHaar_closedBall_ae_eq_ball z₀ r
   have hae : D =ᵐ[volume] ball z₀ r := by
     rw [hD]
     exact (sdiff_null_ae_eq_self (measure_singleton z₀)).trans hclosed

@@ -358,6 +358,26 @@ theorem simple_zigzagGradedSimple (i : V) : Simple (zigzagGradedSimple k G i) :=
     (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G)
     (zigzagIntegerGrade_zero_le_span k G) i (zigzagVertexIdempotent_ne_zero k G i)
 
+/-- A graded vertex simple is finite-dimensional. -/
+instance (i : V) : Module.Finite k (zigzagGradedSimple k G i) :=
+  have : Module.Finite (nonisolatedZigzagQuotient k G) (zigzagGradedSimple k G i) :=
+    gradedFiniteModules_iff.1 (gradedFiniteModules_zigzagGradedSimple k G i)
+  Module.Finite.trans (nonisolatedZigzagQuotient k G) _
+
+/-- **The graded dimension of `e_j • S_i` is `δ_{ji}`**: the graded vertex simple `S_i` is
+one-dimensional, concentrated in degree zero, and the vertex idempotent `e_j` acts on it by
+`δ_{ji}`. -/
+@[simp]
+theorem smulGradedDimension_zigzagGradedSimple [DecidableEq V] (j i : V) :
+    (zigzagGradedSimple k G i).smulGradedDimension (zigzagVertexIdempotent k G j) =
+      if j = i then 1 else 0 :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  smulGradedDimension_gradedIdempotentHead (fun _ => zigzagIntegerGrade_eq_bot_of_neg k G)
+    (completeOrthogonalIdempotents_zigzagVertexIdempotent k G).toOrthogonalIdempotents
+    (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G)
+    (zigzagIntegerGrade_zero_le_span k G) j i (zigzagVertexIdempotent_ne_zero k G i)
+
 /-- **Every simple finite graded `Z`-module is a shift `S_i{d}` of a graded vertex simple.** -/
 theorem isExhaustiveGradedSimpleFamily_zigzagGradedSimple :
     IsExhaustiveGradedSimpleFamily fun i : V =>

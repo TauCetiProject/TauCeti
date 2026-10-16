@@ -411,6 +411,15 @@ theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
       add_comm γ.length, add_tsub_add_eq_tsub_left]
     exact trans_apply_of_le _ _ _ tsub_le_self
 
+/-- Reversing a continuous family of Moore paths is continuous. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_symm {f : Y → MoorePath X} (hf : Continuous f) :
+    Continuous fun y ↦ (f y).symm := by
+  refine continuous_iff.2 ⟨by simp only [length_symm]; fun_prop, ?_⟩
+  simp only [symm_apply]
+  exact (hf.comp continuous_fst).moorePath_eval
+    (((continuous_length.comp hf).comp continuous_fst).sub continuous_snd)
+
 /-! ### Reparametrization to a given length -/
 
 /-- The Moore path `γ` reparametrized to the length `ℓ`: the path `t ↦ γ (γ.length * t / ℓ)`.
@@ -543,6 +552,21 @@ theorem mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
     γ ∈ pathsBetween A B ↔ γ.source ∈ A ∧ γ.target ∈ B :=
   Iff.rfl
 
+/-- Endpoint evaluation on the Moore path space, taking values in `A × B`. -/
+def endpointsBetween (A B : Set X) : C(pathsBetween A B, A × B) where
+  toFun γ := (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,
+    ⟨γ.val.target, (mem_pathsBetween.mp γ.property).2⟩)
+  continuous_toFun :=
+    ((continuous_source.comp continuous_subtype_val).subtype_mk _).prodMk
+      ((continuous_target.comp continuous_subtype_val).subtype_mk _)
+
+-- Keep endpoint evaluation bundled under `simp` so endpoint-preserving comparison lemmas fire.
+theorem endpointsBetween_apply (A B : Set X) (γ : pathsBetween A B) :
+    endpointsBetween A B γ =
+      (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,
+        ⟨γ.val.target, (mem_pathsBetween.mp γ.property).2⟩) :=
+  (rfl)
+
 /-- The paths between two closed subsets form a closed subspace of the Moore paths. -/
 theorem isClosed_pathsBetween {A B : Set X} (hA : IsClosed A) (hB : IsClosed B) :
     IsClosed (pathsBetween A B) :=
@@ -551,6 +575,16 @@ theorem isClosed_pathsBetween {A B : Set X} (hA : IsClosed A) (hB : IsClosed B) 
 theorem refl_mem_pathsBetween {A B : Set X} {x : X} (hA : x ∈ A) (hB : x ∈ B) :
     refl x ∈ pathsBetween A B :=
   ⟨hA, hB⟩
+
+/-- The constant Moore paths of duration zero, parametrized by `A ∩ B`. -/
+def constantBetween (A B : Set X) : C(↥(A ∩ B), pathsBetween A B) where
+  toFun x := ⟨refl x.val, refl_mem_pathsBetween x.property.1 x.property.2⟩
+  continuous_toFun := (continuous_refl.comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem coe_constantBetween (A B : Set X) (x : ↥(A ∩ B)) :
+    (constantBetween A B x : MoorePath X) = refl x.val :=
+  (rfl)
 
 theorem trans_mem_pathsBetween {A B : Set X} {γ δ : MoorePath X} (hγ : γ.source ∈ A)
     (hδ : δ.target ∈ B) (h : γ.target = δ.source) : γ.trans δ h ∈ pathsBetween A B :=

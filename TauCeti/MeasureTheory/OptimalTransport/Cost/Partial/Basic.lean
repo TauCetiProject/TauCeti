@@ -147,6 +147,26 @@ theorem relaxedTransportCost_le_transportCost :
     relaxedTransportCost c μ ν ≤ transportCost c μ ν :=
   relaxedTransportCost_le fun _ _ ↦ partialTransportCost_le_transportCost
 
+/-- A value that every partial value bounds up to an error linear in the deficit, with an
+arbitrarily small additive slack, lies below the relaxed value. This is how quantitative
+completion and weak-duality estimates pass to the relaxed value. -/
+theorem le_relaxedTransportCost_of_forall_exists_le_add
+    (h : ∀ η : ℝ≥0∞, 0 < η → ∃ C : NNReal, ∀ ε : ℝ≥0∞,
+      a ≤ partialTransportCost c μ ν ε + C * ε + η) :
+    a ≤ relaxedTransportCost c μ ν := by
+  refine ENNReal.le_of_forall_pos_le_add fun η hη _ ↦ ?_
+  have hη' : 0 < (η : ℝ≥0∞) := by exact_mod_cast hη
+  obtain ⟨C, hC⟩ := h _ (ENNReal.half_pos hη'.ne')
+  obtain ⟨δ, hδ, hCδ⟩ := ENNReal.exists_nnreal_pos_mul_lt (a := (C : ℝ≥0∞))
+    ENNReal.coe_ne_top (ENNReal.half_pos hη'.ne').ne'
+  have hδ' : 0 < (δ : ℝ≥0∞) := by exact_mod_cast hδ
+  calc
+    a ≤ partialTransportCost c μ ν δ + C * δ + (η : ℝ≥0∞) / 2 := hC δ
+    _ ≤ relaxedTransportCost c μ ν + (η : ℝ≥0∞) / 2 + (η : ℝ≥0∞) / 2 :=
+      add_le_add (add_le_add (partialTransportCost_le_relaxedTransportCost hδ')
+        (by simpa only [mul_comm] using hCδ.le)) le_rfl
+    _ = relaxedTransportCost c μ ν + η := by rw [add_assoc, ENNReal.add_halves]
+
 /-- The relaxed value is monotone in the cost. -/
 @[gcongr]
 theorem relaxedTransportCost_mono (hcd : c ≤ d) :

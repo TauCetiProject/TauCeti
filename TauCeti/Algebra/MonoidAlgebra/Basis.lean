@@ -21,22 +21,20 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
 
 ## Main statements
 
-* `TauCeti.MonoidAlgebra.basis_repr`: the coordinates of `k[X]` in the standard basis are the
+* `MonoidAlgebra.basis_repr`: the coordinates of `k[X]` in the standard basis are the
   coefficients.
-* `TauCeti.MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply`: the coefficients under the
+* `Module.Dual.coeff_basis_toDualEquiv_symm_apply`: the coefficients under the
   standard-basis dual equivalence are evaluations on basis vectors.
-* `TauCeti.MonoidAlgebra.sumCoords_basis_surjective`: the coefficient sum is surjective when the
+* `MonoidAlgebra.sumCoords_basis_surjective`: the coefficient sum is surjective when the
   index type is nonempty.
 * `MonoidAlgebra.exists_coeff_ne_of_ne_zero_of_sumCoords_eq_zero`: a nonzero vector whose
   coefficients sum to zero has two distinct coefficients if the cardinality is nonzero in the
   scalars and the scalars have no zero divisors.
-* `TauCeti.MonoidAlgebra.ker_sumCoords_basis_eq_span`: its kernel is spanned by differences of
+* `MonoidAlgebra.ker_sumCoords_basis_eq_span`: its kernel is spanned by differences of
   basis vectors from a fixed one.
 -/
 
 public section
-
-namespace TauCeti
 
 /-- The coordinates of `k[X]` in the standard basis are the coefficients. -/
 @[simp]
@@ -48,7 +46,7 @@ open scoped Classical in
 /-- The coefficients of the vector corresponding to a functional under the standard-basis
 identification `k[X] ≃ Hom_k(k[X], k)` are the values of the functional on the basis. -/
 @[simp]
-theorem MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply {k : Type*} [CommSemiring k]
+theorem Module.Dual.coeff_basis_toDualEquiv_symm_apply {k : Type*} [CommSemiring k]
     {X : Type*} [Finite X] (f : Module.Dual k (MonoidAlgebra k X)) (x : X) :
     ((MonoidAlgebra.basis X k).toDualEquiv.symm f).coeff x =
       f (MonoidAlgebra.single x 1) :=
@@ -121,5 +119,3 @@ theorem MonoidAlgebra.ker_sumCoords_basis_eq_span (x₀ : X) :
     simp
 
 end Span
-
-end TauCeti

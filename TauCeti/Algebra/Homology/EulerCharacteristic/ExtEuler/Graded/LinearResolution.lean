@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare
 
 /-!
 # The signed Poincaré polynomial of a linear resolution
@@ -18,7 +18,8 @@ the single monomial `dim Extⁿ(M,N{n}) q⁻ⁿ`.
 
 For an Euler-admissible pair and any uniform cohomological vanishing bound `b`, this gives
 `χ_q(M,N) = ∑ n < b, (-1)ⁿ dim Extⁿ(M,N{n}) q⁻ⁿ`. Equivalently, applying
-`LaurentPolynomial.invert` to `χ_q` evaluates the diagonal Ext Poincaré polynomial at `-q`.
+`LaurentPolynomial.invert` to `χ_q` evaluates the diagonal Ext Poincaré polynomial
+`TauCeti.diagonalExtPoincarePolynomial`, `∑ n < b, dim Extⁿ(M,N{n}) tⁿ`, at `t = -q`.
 This identifies the polynomial substitution and involution used to compare graded Cartan and
 Poincaré matrices. Finiteness and eventual vanishing are explicit hypotheses; a linear resolution
 alone does not imply them.
@@ -116,10 +117,9 @@ theorem IsLinear.invert_gradedExtEuler_eq_eval₂
     (h : IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) M N) {b : ℕ}
     (hb : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) M N b) :
     invert (gradedExtEuler k (GradedModuleCat.shift 𝒜) h) =
-      (∑ n ∈ Finset.range b,
-        Polynomial.monomial n (Module.finrank k (Ext.{w} M (N.shiftObj n) n) : ℤ)).eval₂
-          C (-T 1) := by
-  rw [hr.gradedExtEuler_eq_sum hN h hb, map_sum, Polynomial.eval₂_finsetSum]
+      (diagonalExtPoincarePolynomial.{w} k M N b).eval₂ C (-T 1) := by
+  rw [hr.gradedExtEuler_eq_sum hN h hb, map_sum, diagonalExtPoincarePolynomial_def,
+    Polynomial.eval₂_finsetSum]
   apply Finset.sum_congr rfl
   intro n _
   simp only [map_zsmul, map_mul, invert_C, invert_T, neg_neg,

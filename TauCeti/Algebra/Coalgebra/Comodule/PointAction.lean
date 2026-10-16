@@ -25,8 +25,8 @@ identifies those coefficients in `H`. A finite-dimensional subspace containing t
 
 The representation-level restatements live in
 `TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction`. This criterion is the bridge in the
-Kolchin induction for Layer 5 of the ReductiveGroups roadmap: a common fixed vector obtained from
-the geometric point representation is thereby promoted to a fixed vector of the comodule itself.
+Kolchin induction: a common fixed vector obtained from the geometric point representation is thereby
+promoted to a fixed vector of the comodule itself.
 
 ## Main declarations
 

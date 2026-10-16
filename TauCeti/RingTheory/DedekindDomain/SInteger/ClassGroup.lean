@@ -168,6 +168,13 @@ extension. -/
       QuotientGroup.mk (ClassGroup.mk0 (integerIdealUnder K S I)) := by
   rw [← integer_extendedHom_mk0_idealUnder K S I, integerClassGroupEquiv_extendedHom]
 
+/-- **The `S`-integers have trivial class group exactly when the classes of the primes in `S`
+generate the class group of `R`.** -/
+theorem subsingleton_integer_classGroup_iff :
+    Subsingleton (ClassGroup (S.integer K)) ↔
+      Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤ := by
+  rw [(integerClassGroupEquiv K S).toEquiv.subsingleton_congr, QuotientGroup.subsingleton_iff]
+
 end IsDedekindDomain
 
 end

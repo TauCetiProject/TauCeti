@@ -37,6 +37,8 @@ have the same `c₄` valuation too.
   discriminant is not divisible by `ϖ ^ 12` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
+* `WeierstrassCurve.exists_smul_minimal_eq_of_smul_eq`: Mathlib's chosen minimal equation reaches
+  every equation in its orbit by a change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
   equations are related by a change of variables.
 * `WeierstrassCurve.valuation_Δ_le_of_isMinimal_smul`: no integral model in the orbit of a minimal
@@ -84,9 +86,9 @@ have the same `c₄` valuation too.
 
 `valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul` supply the unit needed for descent.
-Turning that into a change of variables actually *defined* over `R` is the job of
-`WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which also consumes integrality
-of both models. A change of variables defined over `R` is one the reduction can see, and that is
+Turning that into a change of variables actually *defined* over `R` is the job of Mathlib's
+`WeierstrassCurve.variableChange_integral_of_u_integral`, which also consumes integrality of both
+models. A change of variables defined over `R` is one the reduction can see, and that is
 what carries split multiplicativity across.
 
 ## Why this is the useful form
@@ -231,6 +233,13 @@ theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, C • W = W.minimal R :=
   ⟨_, rfl⟩
 
+/-- **Mathlib's chosen minimal equation reaches every equation in its orbit.** If a change of
+variables carries `W` to `W'`, then some change of variables carries `W.minimal R` to `W'`. -/
+theorem exists_smul_minimal_eq_of_smul_eq {W W' : WeierstrassCurve K} (D : VariableChange K)
+    (hD : D • W = W') : ∃ C : VariableChange K, C • W.minimal R = W' := by
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  exact ⟨D * C⁻¹, by rw [mul_smul, ← hC, inv_smul_smul, hD]⟩
+
 /-- The chosen minimal equations of two equations related by a change of variables are themselves
 related by a change of variables. -/
 theorem exists_smul_minimal_eq_minimal (D : VariableChange K) (W : WeierstrassCurve K) :
@@ -314,7 +323,7 @@ theorem valuation_c₄_baseChange_smul (W : WeierstrassCurve K) (C : VariableCha
 /-- **A change of variables defined over `R` preserves minimality**: if `W` is minimal over `R`
 and `C` is a change of variables with coefficients in `R`, then `C • W` is minimal over `R`. With
 `valuation_u_eq_one_of_isMinimal_smul` and
-`VariableChange.exists_baseChange_eq_of_smul_eq` in the other direction, the changes of variables
+`variableChange_integral_of_u_integral` in the other direction, the changes of variables
 between minimal models of an elliptic curve are exactly those defined over `R`. -/
 instance isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
     (C : VariableChange R) : IsMinimal R (C.baseChange K • W) :=
@@ -360,7 +369,7 @@ theorem hasSplitMultiplicativeReduction_baseChange_smul_iff (W : WeierstrassCurv
 /-- **The scaling factor of a change of variables between two minimal models of an elliptic curve
 has valuation `1`.** Over a discrete valuation ring that says `u` is a **unit**: it and its inverse
 are both integral, so such a change of variables is as integral as its coordinates allow. This is
-the hypothesis `VariableChange.exists_baseChange_eq_of_smul_eq` asks for, and hence the step by
+the hypothesis `variableChange_integral_of_u_integral` asks for, and hence the step by
 which a property of the reduction transfers between two minimal models of one curve. -/
 theorem valuation_u_eq_one_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [IsMinimal R W₁]
     [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂) :
@@ -421,7 +430,7 @@ theorem exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul
     (D : VariableChange K) (hD : D • W₁ = W₂) :
     ∃ C : VariableChange R, C.baseChange K = D ∧ C • W₁.integralModel R = W₂.integralModel R := by
   obtain ⟨u₀, hau⟩ := exists_unit_algebraMap_eq_u_of_isMinimal_smul R D hD
-  obtain ⟨C, hC⟩ := exists_baseChange_eq_of_smul_eq R D hD u₀ hau
+  obtain ⟨C, hC⟩ := variableChange_integral_of_u_integral hD hau
   refine ⟨C, hC, (integralModel_eq_of_baseChange_eq ?_).symm⟩
   rw [WeierstrassCurve.baseChange, ← map_variableChange]
   exact (congrArg₂ (· • ·) hC (baseChange_integralModel_eq R W₁)).trans hD
@@ -537,7 +546,7 @@ This is what makes split multiplicative reduction a property of the curve at the
 of the equation presenting it. Mathlib's class is stated through a *chosen* integral model, so the
 transfer is not definitional: it needs `D` to be defined over `R`. Two results combine to give
 that — `valuation_u_eq_one_of_isMinimal_smul` supplies the unit scaling factor, and
-`VariableChange.exists_baseChange_eq_of_smul_eq` turns that unit, with integrality of both models,
+`variableChange_integral_of_u_integral` turns that unit, with integrality of both models,
 into the descent. A form of Silverman, *The Arithmetic of Elliptic Curves*, Remark VII.1.3(b), on
 the uniqueness of minimal models over a discrete valuation ring. -/
 theorem HasSplitMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K}

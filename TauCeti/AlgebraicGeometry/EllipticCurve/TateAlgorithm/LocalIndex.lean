@@ -1,0 +1,440 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
+
+/-!
+# Tate's algorithm: the local index
+
+When Tate's algorithm stops on an integral Weierstrass equation `W` over a discrete valuation ring
+`R` with uniformiser `ϖ` and residue field `k`, it reads off the stopping equation, besides the
+reduction symbol, the **local index** `c`, or Tamagawa number. For complete `R` it is the index
+`[E(K) : E₀(K)]` of the points with nonsingular reduction, and geometrically it counts the
+components of multiplicity one of the special fibre of the minimal regular model that are defined
+over `k` (Silverman, *Advanced Topics*, IV.9, Table 4.1). At the symbols `I₀`, `II`,
+`III`, `III*` and `II*` it is determined by the symbol. At the others it depends on whether a
+polynomial over `k` read off the stopping equation has roots in `k`:
+
+* `Iₙ`, `n ≥ 1`: `c = n` if the tangent quadratic `T² + a₁ T − a₂` splits over `k`, and otherwise
+  `c = gcd(2, n)`;
+* `IV`: `c = 3` if `Y² + (a₃/ϖ) Y − a₆/ϖ²` splits over `k`, and otherwise `c = 1`;
+* `I₀*`: `c = 1 + N`, where `N` is the number of roots in `k` of the residue cubic
+  `P(T) = T³ + (a₂/ϖ) T² + (a₄/ϖ²) T + a₆/ϖ³`;
+* `Iₙ*`, `n ≥ 1`: `c = 4` if the quadratic at which the subprocedure of Step 7 stops splits over
+  `k`, and otherwise `c = 2`. At stage `n = 2k + 1` this is `Y² + (a₃/ϖ^(k+2)) Y − a₆/ϖ^(2k+4)`,
+  and at stage `n = 2k + 2` it is `(a₂/ϖ) X² + (a₄/ϖ^(k+3)) X + a₆/ϖ^(2k+5)`;
+* `IV*`: `c = 3` if `Y² + (a₃/ϖ²) Y − a₆/ϖ⁴` splits over `k`, and otherwise `c = 1`.
+
+As for the stopping conditions (`WeierstrassCurve.IsTateTerminal`), these tests are stated on the
+coefficients of `W` without dividing by `ϖ`, and over any commutative ring. A monic quadratic splits
+as soon as it has one root, and substituting `y = ϖ^m s` turns a root `s` of
+`Y² + (a₃/ϖ^m) Y − a₆/ϖ^(2m)` modulo `ϖ` into a solution `y` of `y² + a₃ y − a₆ ≡ 0` modulo
+`ϖ^(2m+1)` divisible by `ϖ^m`. That is the predicate `WeierstrassCurve.HasTateYRoot`, and
+`WeierstrassCurve.hasTateYRoot_iff` recovers the residue quadratic once the divisibilities of the
+stopping equation are written out; likewise for `WeierstrassCurve.HasTateXRoot` and for the roots
+of the residue cubic, which are counted in `R ⧸ (ϖ)`.
+
+The local index is defined here as a function `W.tateLocalIndex ϖ s` of the equation, the
+uniformiser and the symbol: it is the value Tate's algorithm reports when it stops on `W` with
+symbol `s`. It is not shown here to be independent of the equation on which the algorithm stops,
+nor to equal the index `[E(K) : E₀(K)]`.
+
+## Main definitions
+
+* `WeierstrassCurve.HasTateTangentRoot`: `T² + a₁ T − a₂` has a root modulo `ϖ`.
+* `WeierstrassCurve.HasTateYRoot` and `WeierstrassCurve.HasTateXRoot`: the residue quadratics of
+  Steps 5, 7 and 8 have a root.
+* `WeierstrassCurve.tateCubicRoots`: the roots in `R ⧸ (ϖ)` of the residue cubic of Step 6.
+* `WeierstrassCurve.tateLocalIndex`: the local index Tate's algorithm reports.
+
+## Main results
+
+* `WeierstrassCurve.hasTateTangentRoot_iff_splits`: over a discrete valuation ring, the tangent
+  test is the splitting of `T² + a₁ T − a₂` over the residue field.
+* `WeierstrassCurve.IsTateTerminal.tateLocalIndex_of_hasSplitMultiplicativeReduction` and
+  `WeierstrassCurve.IsTateTerminal.tateLocalIndex_of_not_hasSplitMultiplicativeReduction`: at `Iₙ`
+  on a minimal equation, `c = n` at split and `c = gcd(2, n)` at nonsplit multiplicative reduction.
+* `WeierstrassCurve.hasTateYRoot_iff`, `WeierstrassCurve.hasTateXRoot_iff`,
+  `WeierstrassCurve.mk_mem_tateCubicRoots_iff` and `WeierstrassCurve.mem_tateCubicRoots_iff`: the
+  tests are root conditions for the residue polynomials.
+* `WeierstrassCurve.natCard_tateCubicRoots_le` and
+  `WeierstrassCurve.IsTateTerminal.natCard_tateCubicRoots_le`: the residue cubic has at most three
+  roots.
+* `WeierstrassCurve.tateLocalIndex_pos`,
+  `WeierstrassCurve.IsTateTerminal.tateLocalIndex_le_componentCount` and
+  `WeierstrassCurve.IsTateTerminal.tateLocalIndex_le_four`: `1 ≤ c ≤ m` for the component count
+  `m` of the symbol, and `c ≤ 4` at every additive symbol.
+
+## References
+
+* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, IV.9.
+* J. Tate, *Algorithm for determining the type of a singular fibre in an elliptic pencil*, in
+  *Modular Functions of One Variable IV*, LNM 476 (1975), 33–52.
+-/
+
+public section
+
+namespace WeierstrassCurve
+
+open IsLocalRing Polynomial TauCeti
+
+section CommRing
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (ϖ : R)
+
+/-- **The split test of Step 2 of Tate's algorithm**: the tangent quadratic `T² + a₁ T − a₂` has a
+root modulo `ϖ`. On an equation whose reduction is singular at the origin, its roots are the
+slopes of the tangent lines there. -/
+def HasTateTangentRoot : Prop :=
+  ∃ t : R, ϖ ∣ t ^ 2 + W.a₁ * t - W.a₂
+
+/-- **The quadratic test in `y` at level `m` of Tate's algorithm**: the quadratic
+`Y² + (a₃/ϖ^m) Y − a₆/ϖ^(2m)` has a root modulo `ϖ`, stated without dividing by `ϖ` as the
+existence of `y` divisible by `ϖ^m` with `ϖ^(2m+1) ∣ y² + a₃ y − a₆`. Tate's algorithm applies it
+at Step 5 (`m = 1`), at Step 8 (`m = 2`), and at the odd stages `n = 2k + 1` of Step 7
+(`m = k + 2`). -/
+def HasTateYRoot (m : ℕ) : Prop :=
+  ∃ y : R, ϖ ^ m ∣ y ∧ ϖ ^ (2 * m + 1) ∣ y ^ 2 + W.a₃ * y - W.a₆
+
+/-- **The quadratic test in `x` at level `m` of Tate's algorithm**: the quadratic
+`(a₂/ϖ) X² + (a₄/ϖ^(m+1)) X + a₆/ϖ^(2m+1)` has a root modulo `ϖ`, stated without dividing by `ϖ`
+as the existence of `x` divisible by `ϖ^m` with `ϖ^(2m+2) ∣ a₂ x² + a₄ x + a₆`. Tate's algorithm
+applies it at the even stages `n = 2k + 2` of Step 7 (`m = k + 2`). -/
+def HasTateXRoot (m : ℕ) : Prop :=
+  ∃ x : R, ϖ ^ m ∣ x ∧ ϖ ^ (2 * m + 2) ∣ W.a₂ * x ^ 2 + W.a₄ * x + W.a₆
+
+/-- **The roots of the residue cubic of Step 6 of Tate's algorithm**: the classes `t` modulo `ϖ`
+of the `t₀` with `ϖ⁴ ∣ (ϖ t₀)³ + a₂ (ϖ t₀)² + a₄ (ϖ t₀) + a₆`. On the normal form of Step 6 these
+are the roots of `P(T) = T³ + (a₂/ϖ) T² + (a₄/ϖ²) T + a₆/ϖ³` (`mem_tateCubicRoots_iff`). -/
+def tateCubicRoots : Set (R ⧸ Ideal.span {ϖ}) :=
+  {t | ∃ t₀ : R, Ideal.Quotient.mk _ t₀ = t ∧
+    ϖ ^ 4 ∣ (ϖ * t₀) ^ 3 + W.a₂ * (ϖ * t₀) ^ 2 + W.a₄ * (ϖ * t₀) + W.a₆}
+
+open scoped Classical in
+/-- **The local index reported by Tate's algorithm** when it stops on `W`, with uniformiser `ϖ`, at
+the symbol `s` (Silverman, *Advanced Topics*, IV.9): `1` at `I₀`, `II` and `II*`; `2` at `III`
+and `III*`; at `Iₙ` with `n ≥ 1`, `n` if the tangent quadratic splits and `gcd(2, n)` otherwise; at
+`IV` and `IV*`, `3` or `1` according as the quadratic of Step 5 or Step 8 has a root; at `I₀*`, one
+more than the number of roots of the residue cubic; at `Iₙ*` with `n ≥ 1`, `4` or `2` according as
+the quadratic at which Step 7 stops has a root.
+
+The value is meaningful when `W.IsTateTerminal ϖ s`; it is not shown here to be independent of the
+equation on which the algorithm stops. -/
+noncomputable def tateLocalIndex : ReductionSymbol → ℕ
+  | .I 0 => 1
+  | .I (n + 1) => if W.HasTateTangentRoot ϖ then n + 1 else Nat.gcd 2 (n + 1)
+  | .II => 1
+  | .III => 2
+  | .IV => if W.HasTateYRoot ϖ 1 then 3 else 1
+  | .IStar 0 => 1 + Nat.card (W.tateCubicRoots ϖ)
+  | .IStar (n + 1) =>
+      if (∃ k, n = 2 * k ∧ W.HasTateYRoot ϖ (k + 2)) ∨
+        ∃ k, n = 2 * k + 1 ∧ W.HasTateXRoot ϖ (k + 2) then 4 else 2
+  | .IVStar => if W.HasTateYRoot ϖ 2 then 3 else 1
+  | .IIIStar => 2
+  | .IIStar => 1
+
+variable {W ϖ}
+
+theorem hasTateTangentRoot_def :
+    W.HasTateTangentRoot ϖ ↔ ∃ t : R, ϖ ∣ t ^ 2 + W.a₁ * t - W.a₂ :=
+  Iff.rfl
+
+theorem hasTateYRoot_def {m : ℕ} :
+    W.HasTateYRoot ϖ m ↔ ∃ y : R, ϖ ^ m ∣ y ∧ ϖ ^ (2 * m + 1) ∣ y ^ 2 + W.a₃ * y - W.a₆ :=
+  Iff.rfl
+
+theorem hasTateXRoot_def {m : ℕ} :
+    W.HasTateXRoot ϖ m ↔
+      ∃ x : R, ϖ ^ m ∣ x ∧ ϖ ^ (2 * m + 2) ∣ W.a₂ * x ^ 2 + W.a₄ * x + W.a₆ :=
+  Iff.rfl
+
+theorem mem_tateCubicRoots {t : R ⧸ Ideal.span {ϖ}} :
+    t ∈ W.tateCubicRoots ϖ ↔ ∃ t₀ : R, Ideal.Quotient.mk _ t₀ = t ∧
+      ϖ ^ 4 ∣ (ϖ * t₀) ^ 3 + W.a₂ * (ϖ * t₀) ^ 2 + W.a₄ * (ϖ * t₀) + W.a₆ :=
+  Iff.rfl
+
+@[simp]
+theorem tateLocalIndex_I_zero : W.tateLocalIndex ϖ (.I 0) = 1 :=
+  (rfl)
+
+@[simp]
+theorem tateLocalIndex_I_add_one_of_hasTateTangentRoot (h : W.HasTateTangentRoot ϖ) (n : ℕ) :
+    W.tateLocalIndex ϖ (.I (n + 1)) = n + 1 := by
+  simp [tateLocalIndex, h]
+
+@[simp]
+theorem tateLocalIndex_I_add_one_of_not_hasTateTangentRoot (h : ¬ W.HasTateTangentRoot ϖ)
+    (n : ℕ) : W.tateLocalIndex ϖ (.I (n + 1)) = Nat.gcd 2 (n + 1) := by
+  simp [tateLocalIndex, h]
+
+/-- At `I₁` the local index is `1`, whether or not the tangent quadratic splits. -/
+@[simp]
+theorem tateLocalIndex_I_one : W.tateLocalIndex ϖ (.I 1) = 1 := by
+  simp [tateLocalIndex]
+
+@[simp]
+theorem tateLocalIndex_II : W.tateLocalIndex ϖ .II = 1 :=
+  (rfl)
+
+@[simp]
+theorem tateLocalIndex_III : W.tateLocalIndex ϖ .III = 2 :=
+  (rfl)
+
+@[simp]
+theorem tateLocalIndex_IV_of_hasTateYRoot (h : W.HasTateYRoot ϖ 1) :
+    W.tateLocalIndex ϖ .IV = 3 := by
+  simp [tateLocalIndex, h]
+
+@[simp]
+theorem tateLocalIndex_IV_of_not_hasTateYRoot (h : ¬ W.HasTateYRoot ϖ 1) :
+    W.tateLocalIndex ϖ .IV = 1 := by
+  simp [tateLocalIndex, h]
+
+@[simp]
+theorem tateLocalIndex_IStar_zero :
+    W.tateLocalIndex ϖ (.IStar 0) = 1 + Nat.card (W.tateCubicRoots ϖ) :=
+  (rfl)
+
+/-- At the odd stage `n = 2k + 1` of Step 7, the test is the quadratic in `y` at level `k + 2`. -/
+theorem tateLocalIndex_IStar_odd (k : ℕ) [Decidable (W.HasTateYRoot ϖ (k + 2))] :
+    W.tateLocalIndex ϖ (.IStar (2 * k + 1)) = if W.HasTateYRoot ϖ (k + 2) then 4 else 2 := by
+  have hne (j : ℕ) : 2 * k ≠ 2 * j + 1 := by omega
+  have heq (j : ℕ) : 2 * k = 2 * j ↔ j = k := by omega
+  simp only [tateLocalIndex, hne, false_and, exists_false, or_false, heq, exists_eq_left]
+
+/-- At the even stage `n = 2k + 2` of Step 7, the test is the quadratic in `x` at level
+`k + 2`. -/
+theorem tateLocalIndex_IStar_even (k : ℕ) [Decidable (W.HasTateXRoot ϖ (k + 2))] :
+    W.tateLocalIndex ϖ (.IStar (2 * k + 2)) = if W.HasTateXRoot ϖ (k + 2) then 4 else 2 := by
+  have hne (j : ℕ) : 2 * k + 1 ≠ 2 * j := by omega
+  have heq (j : ℕ) : 2 * k + 1 = 2 * j + 1 ↔ j = k := by omega
+  simp only [tateLocalIndex, hne, false_and, exists_false, false_or, heq, exists_eq_left]
+
+@[simp]
+theorem tateLocalIndex_IVStar_of_hasTateYRoot (h : W.HasTateYRoot ϖ 2) :
+    W.tateLocalIndex ϖ .IVStar = 3 := by
+  simp [tateLocalIndex, h]
+
+@[simp]
+theorem tateLocalIndex_IVStar_of_not_hasTateYRoot (h : ¬ W.HasTateYRoot ϖ 2) :
+    W.tateLocalIndex ϖ .IVStar = 1 := by
+  simp [tateLocalIndex, h]
+
+@[simp]
+theorem tateLocalIndex_IIIStar : W.tateLocalIndex ϖ .IIIStar = 2 :=
+  (rfl)
+
+@[simp]
+theorem tateLocalIndex_IIStar : W.tateLocalIndex ϖ .IIStar = 1 :=
+  (rfl)
+
+/-- **The local index is positive.** -/
+theorem tateLocalIndex_pos (s : ReductionSymbol) : 0 < W.tateLocalIndex ϖ s := by
+  rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _ <;>
+    simp only [tateLocalIndex] <;> (try split_ifs) <;> simp
+
+end CommRing
+
+/-! ### The residue polynomials -/
+
+section Domain
+
+variable {R : Type*} [CommRing R] [IsDomain R] {W : WeierstrassCurve R} {ϖ : R}
+
+/-- **The quadratic test in `y` is a root condition for the residue quadratic.** If
+`a₃ = ϖ^m b₃` and `a₆ = ϖ^(2m) b₆`, then `W.HasTateYRoot ϖ m` says that `Y² + b₃ Y − b₆` has a
+root modulo `ϖ`. -/
+theorem hasTateYRoot_iff (hϖ : ϖ ≠ 0) {m : ℕ} {b₃ b₆ : R} (h₃ : W.a₃ = ϖ ^ m * b₃)
+    (h₆ : W.a₆ = ϖ ^ (2 * m) * b₆) :
+    W.HasTateYRoot ϖ m ↔ ∃ s : R, ϖ ∣ s ^ 2 + b₃ * s - b₆ := by
+  have key (s : R) : (ϖ ^ m * s) ^ 2 + W.a₃ * (ϖ ^ m * s) - W.a₆ =
+      ϖ ^ (2 * m) * (s ^ 2 + b₃ * s - b₆) := by
+    rw [h₃, h₆]; ring
+  have hcancel (z : R) : ϖ ^ (2 * m + 1) ∣ ϖ ^ (2 * m) * z ↔ ϖ ∣ z := by
+    rw [pow_succ, mul_dvd_mul_iff_left (pow_ne_zero _ hϖ)]
+  constructor
+  · rintro ⟨_, ⟨s, rfl⟩, hy⟩
+    exact ⟨s, (hcancel _).1 (key s ▸ hy)⟩
+  · rintro ⟨s, hs⟩
+    exact ⟨ϖ ^ m * s, dvd_mul_right _ _, key s ▸ (hcancel _).2 hs⟩
+
+/-- **The quadratic test in `x` is a root condition for the residue quadratic.** If `a₂ = ϖ b₂`,
+`a₄ = ϖ^(m+1) b₄` and `a₆ = ϖ^(2m+1) b₆`, then `W.HasTateXRoot ϖ m` says that
+`b₂ X² + b₄ X + b₆` has a root modulo `ϖ`. -/
+theorem hasTateXRoot_iff (hϖ : ϖ ≠ 0) {m : ℕ} {b₂ b₄ b₆ : R} (h₂ : W.a₂ = ϖ * b₂)
+    (h₄ : W.a₄ = ϖ ^ (m + 1) * b₄) (h₆ : W.a₆ = ϖ ^ (2 * m + 1) * b₆) :
+    W.HasTateXRoot ϖ m ↔ ∃ s : R, ϖ ∣ b₂ * s ^ 2 + b₄ * s + b₆ := by
+  have key (s : R) : W.a₂ * (ϖ ^ m * s) ^ 2 + W.a₄ * (ϖ ^ m * s) + W.a₆ =
+      ϖ ^ (2 * m + 1) * (b₂ * s ^ 2 + b₄ * s + b₆) := by
+    rw [h₂, h₄, h₆]; ring
+  have hcancel (z : R) : ϖ ^ (2 * m + 2) ∣ ϖ ^ (2 * m + 1) * z ↔ ϖ ∣ z := by
+    rw [pow_succ ϖ (2 * m + 1), mul_dvd_mul_iff_left (pow_ne_zero _ hϖ)]
+  constructor
+  · rintro ⟨_, ⟨s, rfl⟩, hx⟩
+    exact ⟨s, (hcancel _).1 (key s ▸ hx)⟩
+  · rintro ⟨s, hs⟩
+    exact ⟨ϖ ^ m * s, dvd_mul_right _ _, key s ▸ (hcancel _).2 hs⟩
+
+/-- **The residue cubic test on a representative.** If `a₂ = ϖ b₂`, `a₄ = ϖ² b₄` and
+`a₆ = ϖ³ b₆`, as on the normal form of Step 6, then the class of `t₀` is a root of the residue
+cubic exactly when `ϖ ∣ t₀³ + b₂ t₀² + b₄ t₀ + b₆`. -/
+theorem mk_mem_tateCubicRoots_iff (hϖ : ϖ ≠ 0) {b₂ b₄ b₆ : R} (h₂ : W.a₂ = ϖ * b₂)
+    (h₄ : W.a₄ = ϖ ^ 2 * b₄) (h₆ : W.a₆ = ϖ ^ 3 * b₆) (t₀ : R) :
+    Ideal.Quotient.mk _ t₀ ∈ W.tateCubicRoots ϖ ↔ ϖ ∣ t₀ ^ 3 + b₂ * t₀ ^ 2 + b₄ * t₀ + b₆ := by
+  have key (s : R) : ϖ ^ 4 ∣ (ϖ * s) ^ 3 + W.a₂ * (ϖ * s) ^ 2 + W.a₄ * (ϖ * s) + W.a₆ ↔
+      ϖ ∣ s ^ 3 + b₂ * s ^ 2 + b₄ * s + b₆ := by
+    have hexp : (ϖ * s) ^ 3 + ϖ * b₂ * (ϖ * s) ^ 2 + ϖ ^ 2 * b₄ * (ϖ * s) + ϖ ^ 3 * b₆ =
+        ϖ ^ 3 * (s ^ 3 + b₂ * s ^ 2 + b₄ * s + b₆) := by
+      ring
+    rw [h₂, h₄, h₆, hexp, pow_succ ϖ 3, mul_dvd_mul_iff_left (pow_ne_zero _ hϖ)]
+  refine ⟨fun ⟨s, hs, h⟩ ↦ ?_, fun h ↦ ⟨t₀, rfl, (key t₀).2 h⟩⟩
+  -- the test does not depend on the representative
+  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.1 (Ideal.Quotient.eq.1 hs)
+  have hd : t₀ ^ 3 + b₂ * t₀ ^ 2 + b₄ * t₀ + b₆ = (s ^ 3 + b₂ * s ^ 2 + b₄ * s + b₆) -
+      ϖ * c * (s ^ 2 + s * t₀ + t₀ ^ 2 + b₂ * (s + t₀) + b₄) := by
+    rw [← hc]; ring
+  rw [hd]
+  exact dvd_sub ((key s).1 h) (dvd_mul_of_dvd_left (dvd_mul_right _ _) _)
+
+/-- **The roots of the residue cubic.** If `a₂ = ϖ b₂`, `a₄ = ϖ² b₄` and `a₆ = ϖ³ b₆`, as on the
+normal form of Step 6, then `W.tateCubicRoots ϖ` is the set of roots in `R ⧸ (ϖ)` of the cubic
+`T³ + b₂ T² + b₄ T + b₆`. -/
+theorem mem_tateCubicRoots_iff (hϖ : ϖ ≠ 0) {b₂ b₄ b₆ : R} (h₂ : W.a₂ = ϖ * b₂)
+    (h₄ : W.a₄ = ϖ ^ 2 * b₄) (h₆ : W.a₆ = ϖ ^ 3 * b₆) (t : R ⧸ Ideal.span {ϖ}) :
+    t ∈ W.tateCubicRoots ϖ ↔ (X ^ 3 + C (Ideal.Quotient.mk _ b₂) * X ^ 2 +
+      C (Ideal.Quotient.mk _ b₄) * X + C (Ideal.Quotient.mk _ b₆)).IsRoot t := by
+  obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective t
+  rw [mk_mem_tateCubicRoots_iff hϖ h₂ h₄ h₆, ← Ideal.mem_span_singleton,
+    ← Ideal.Quotient.eq_zero_iff_mem, IsRoot.def]
+  simp
+
+/-- **The residue cubic has at most three roots** when `ϖ` is prime and `ϖ ∣ a₂`, `ϖ² ∣ a₄`,
+`ϖ³ ∣ a₆`, as on the normal form of Step 6. -/
+theorem natCard_tateCubicRoots_le (hϖ : Prime ϖ) (h₂ : ϖ ∣ W.a₂) (h₄ : ϖ ^ 2 ∣ W.a₄)
+    (h₆ : ϖ ^ 3 ∣ W.a₆) : Nat.card (W.tateCubicRoots ϖ) ≤ 3 := by
+  classical
+  obtain ⟨b₂, h₂⟩ := h₂
+  obtain ⟨b₄, h₄⟩ := h₄
+  obtain ⟨b₆, h₆⟩ := h₆
+  have : (Ideal.span {ϖ}).IsPrime := (Ideal.span_singleton_prime hϖ.ne_zero).2 hϖ
+  set P : (R ⧸ Ideal.span {ϖ})[X] := X ^ 3 + C (Ideal.Quotient.mk _ b₂) * X ^ 2 +
+    C (Ideal.Quotient.mk _ b₄) * X + C (Ideal.Quotient.mk _ b₆)
+  have hP : P.Monic := by unfold P; monicity!
+  have hdeg : P.natDegree = 3 := by unfold P; compute_degree!
+  have hset : W.tateCubicRoots ϖ = ↑P.roots.toFinset := by
+    ext t
+    rw [mem_tateCubicRoots_iff hϖ.ne_zero h₂ h₄ h₆, Finset.mem_coe, Multiset.mem_toFinset,
+      mem_roots hP.ne_zero]
+  rw [hset, Nat.card_coe_set_eq, Set.ncard_coe_finset]
+  exact (Multiset.toFinset_card_le _).trans (hdeg ▸ card_roots' P)
+
+/-- At `I₀*`, the residue cubic has at most three roots. -/
+theorem IsTateTerminal.natCard_tateCubicRoots_le (hϖ : Prime ϖ)
+    (h : W.IsTateTerminal ϖ (.IStar 0)) : Nat.card (W.tateCubicRoots ϖ) ≤ 3 := by
+  obtain ⟨-, h₂, -, h₄, h₆, -⟩ := isTateTerminal_IStar_zero.1 h
+  exact WeierstrassCurve.natCard_tateCubicRoots_le hϖ h₂ h₄ h₆
+
+/-- **The local index is at most the number of components.** At each symbol `s` at which Tate's
+algorithm stops, the local index is at most the component count `m` of `s`. -/
+theorem IsTateTerminal.tateLocalIndex_le_componentCount (hϖ : Prime ϖ) {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) : W.tateLocalIndex ϖ s ≤ s.componentCount := by
+  rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _
+  · simp
+  · simp only [tateLocalIndex, ReductionSymbol.componentCount_I]
+    split_ifs
+    · exact le_max_right _ _
+    · exact (Nat.le_of_dvd n.succ_pos (Nat.gcd_dvd_right 2 (n + 1))).trans (le_max_right _ _)
+  · simp
+  · simp
+  · simp only [tateLocalIndex, ReductionSymbol.componentCount_IV]
+    split_ifs <;> omega
+  · rw [tateLocalIndex_IStar_zero, ReductionSymbol.componentCount_IStar]
+    have := h.natCard_tateCubicRoots_le hϖ
+    omega
+  · simp only [tateLocalIndex, ReductionSymbol.componentCount_IStar]
+    split_ifs <;> omega
+  · simp only [tateLocalIndex, ReductionSymbol.componentCount_IVStar]
+    split_ifs <;> omega
+  · simp
+  · simp
+
+/-- **The local index is at most `4` at additive reduction.** At each symbol other than the `Iₙ`
+at which Tate's algorithm stops, the local index is at most `4`. -/
+theorem IsTateTerminal.tateLocalIndex_le_four (hϖ : Prime ϖ) {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) (hs : ∀ n, s ≠ .I n) : W.tateLocalIndex ϖ s ≤ 4 := by
+  rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _
+  · exact absurd rfl (hs 0)
+  · exact absurd rfl (hs _)
+  · simp
+  · simp
+  · simp only [tateLocalIndex]
+    split_ifs <;> omega
+  · rw [tateLocalIndex_IStar_zero]
+    have := h.natCard_tateCubicRoots_le hϖ
+    omega
+  · simp only [tateLocalIndex]
+    split_ifs <;> omega
+  · simp only [tateLocalIndex]
+    split_ifs <;> omega
+  · simp
+  · simp
+
+end Domain
+
+/-! ### The split test over a discrete valuation ring -/
+
+section DiscreteValuationRing
+
+variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {W : WeierstrassCurve R} {ϖ : R}
+
+/-- **The tangent test is the splitting of the tangent quadratic over the residue field**: over a
+discrete valuation ring with uniformiser `ϖ`, `T² + a₁ T − a₂` has a root modulo `ϖ` exactly when
+its reduction splits over the residue field. -/
+theorem hasTateTangentRoot_iff_splits (hϖ : Irreducible ϖ) :
+    W.HasTateTangentRoot ϖ ↔
+      (X ^ 2 + C (residue R W.a₁) * X - C (residue R W.a₂)).Splits := by
+  -- `splits_quadratic_iff_exists_root` is stated for `C a * X ^ 2 + C b * X + C c`
+  have hquad : X ^ 2 + C (residue R W.a₁) * X - C (residue R W.a₂) =
+      C 1 * X ^ 2 + C (residue R W.a₁) * X + C (-residue R W.a₂) := by
+    simp [sub_eq_add_neg]
+  rw [hquad, splits_quadratic_iff_exists_root one_ne_zero]
+  constructor
+  · rintro ⟨t, ht⟩
+    refine ⟨residue R t, ?_⟩
+    rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq, ← residue_eq_zero_iff] at ht
+    simpa [sub_eq_add_neg] using ht
+  · rintro ⟨x, hx⟩
+    obtain ⟨t, rfl⟩ := residue_surjective x
+    refine ⟨t, ?_⟩
+    rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq, ← residue_eq_zero_iff]
+    simpa [sub_eq_add_neg] using hx
+
+/-- **At split multiplicative reduction, the local index of `Iₙ` is `n`.** On an equation
+at which Tate's algorithm stops at `Iₙ` with `n ≥ 1`. -/
+theorem IsTateTerminal.tateLocalIndex_of_hasSplitMultiplicativeReduction (hϖ : Irreducible ϖ)
+    {n : ℕ} (h : W.IsTateTerminal ϖ (.I (n + 1)))
+    (hs : (W.baseChange K).HasSplitMultiplicativeReduction R) :
+    W.tateLocalIndex ϖ (.I (n + 1)) = n + 1 :=
+  tateLocalIndex_I_add_one_of_hasTateTangentRoot ((hasTateTangentRoot_iff_splits hϖ).2
+    ((h.hasSplitMultiplicativeReduction_iff hϖ).1 hs)) n
+
+/-- **At nonsplit multiplicative reduction, the local index of `Iₙ` is `gcd(2, n)`.** On an
+equation at which Tate's algorithm stops at `Iₙ` with `n ≥ 1`. -/
+theorem IsTateTerminal.tateLocalIndex_of_not_hasSplitMultiplicativeReduction
+    (hϖ : Irreducible ϖ) {n : ℕ} (h : W.IsTateTerminal ϖ (.I (n + 1)))
+    (hs : ¬ (W.baseChange K).HasSplitMultiplicativeReduction R) :
+    W.tateLocalIndex ϖ (.I (n + 1)) = Nat.gcd 2 (n + 1) :=
+  tateLocalIndex_I_add_one_of_not_hasTateTangentRoot (fun ht ↦ hs
+    ((h.hasSplitMultiplicativeReduction_iff hϖ).2 ((hasTateTangentRoot_iff_splits hϖ).1 ht))) n
+
+end DiscreteValuationRing
+
+end WeierstrassCurve
+
+end

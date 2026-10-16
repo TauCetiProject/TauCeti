@@ -16,7 +16,8 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 Let `H = TauCeti.normalHalfSpace a = {x | a < x.fst}` in the Euclidean product `ℝ × E`. This file
 identifies the functions of zero trace on `H` with the closure of the test functions:
 
-`ker (Tr : H¹(H) → L²(E)) = H¹₀(H)`.
+`ker (Tr : H¹(H) → L²(E)) = H¹₀(H)` and
+`ker (Tr : W^{1,1}(H) → L¹(E)) = W^{1,1}_0(H)`.
 
 The inclusion `H¹₀(H) ⊆ ker Tr` is `TauCeti.W1p.halfSpaceTrace_eq_zero_of_w1p0`, and
 `TauCeti.W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero` says that `Tr u = 0`
@@ -43,6 +44,9 @@ lies in the closed subspace `W^{1,p}_0(H)`.
   extension by zero lies in `W^{1,p}(ℝ × E)`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero` and
   `TauCeti.W1p.ker_halfSpaceTrace`: the kernel of the half-space trace is `H¹₀(H)`.
+
+* `TauCeti.W1p.mem_w1p0Submodule_iff_halfSpaceTraceOne_eq_zero` and
+  `TauCeti.W1p.ker_halfSpaceTraceOne`: the corresponding kernel identification for `W^{1,1}`.
 
 ## References
 
@@ -194,5 +198,23 @@ theorem W1p.ker_halfSpaceTrace (a : ℝ) :
   ext u
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
     W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero]
+
+/-- **Zero `L¹` trace characterizes `W^{1,1}_0` on a half-space.** No square-integrability
+assumption is needed at this endpoint. -/
+@[simp]
+theorem W1p.mem_w1p0Submodule_iff_halfSpaceTraceOne_eq_zero (a : ℝ)
+    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) 1) :
+    u ∈ w1p0Submodule volume (normalHalfSpace (E := E) a) 1 ↔
+      W1p.halfSpaceTraceOne a u = 0 := by
+  rw [W1p.mem_w1p0Submodule_normalHalfSpace_iff ENNReal.one_ne_top a u,
+    W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTraceOne_eq_zero]
+
+/-- The kernel of the `W^{1,1}` half-space trace is the closure of the test functions. -/
+theorem W1p.ker_halfSpaceTraceOne (a : ℝ) :
+    LinearMap.ker (W1p.halfSpaceTraceOne (E := E) a).toLinearMap =
+      (w1p0Submodule volume (normalHalfSpace (E := E) a) 1).toSubmodule := by
+  ext u
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
+    W1p.mem_w1p0Submodule_iff_halfSpaceTraceOne_eq_zero]
 
 end TauCeti

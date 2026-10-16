@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 public import Mathlib.GroupTheory.Coxeter.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Data.List.Sym
-public import Mathlib.Data.Sym.Sym2.Order
+public import Mathlib.Order.Sym2
 
 /-!
 # Auditable Coxeter relator lists

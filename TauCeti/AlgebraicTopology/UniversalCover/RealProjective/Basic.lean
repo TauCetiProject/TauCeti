@@ -40,6 +40,9 @@ provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`.
 * `TauCeti.RealProjectiveSpace.isCoveringMap_mk`: the underlying covering-map statement.
 * `TauCeti.RealProjectiveSpace.instUniqueZero`: `RP⁰` has exactly one point.
 * `TauCeti.RealProjectiveSpace.instPathConnectedSpace`: `RPⁿ` is path-connected for every `n`.
+* `TauCeti.RealProjectiveSpace.instT2Space`: `RPⁿ` is Hausdorff.
+* `TauCeti.RealProjectiveSpace.isOpenQuotientMap_mk`: the projection is an open quotient map.
+* `TauCeti.RealProjectiveSpace.continuousAt_lift`: continuity of lifted functions.
 -/
 
 public section
@@ -241,6 +244,24 @@ theorem isCoveringMap_mk : IsCoveringMap (mk n) :=
 /-- The projection from the unit sphere onto real projective space is open. -/
 theorem isOpenMap_mk : IsOpenMap (mk n) :=
   (isCoveringMap_mk n).isOpenMap
+
+/-- The projection from the unit sphere onto real projective space is an open quotient map. -/
+theorem isOpenQuotientMap_mk : IsOpenQuotientMap (mk n) :=
+  (isQuotientCoveringMap_mk n).isOpenQuotientMap
+
+/-- Real projective space is Hausdorff, as the quotient of the compact Hausdorff unit sphere by
+the properly discontinuous antipodal action. -/
+instance instT2Space : T2Space (RealProjectiveSpace n) :=
+  inferInstanceAs (T2Space (Quotient (MulAction.orbitRel ℤˣ
+    (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))))
+
+/-- The lift of an antipodal-invariant function is continuous at the class of every unit vector
+at which the function is continuous, because the quotient map is open. -/
+theorem continuousAt_lift {α : Type*} [TopologicalSpace α]
+    {f : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 → α} (h : ∀ x, f (-x) = f x)
+    {x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1} (hf : ContinuousAt f x) :
+    ContinuousAt (RealProjectiveSpace.lift n f h) (mk n x) :=
+  (isOpenQuotientMap_mk n).continuousAt_comp_iff.1 hf
 
 end RealProjectiveSpace
 

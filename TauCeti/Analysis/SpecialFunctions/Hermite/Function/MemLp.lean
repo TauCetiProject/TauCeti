@@ -12,9 +12,8 @@ public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 /-!
 # Integrability, `L²` membership, and normalization of the Hermite functions
 
-This file continues the object API for the Hermite functions
-`ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)` (`TauCeti.hermiteFunction`), adding the regularity facts
-the `OrthogonalL2Bases` roadmap's **A2** milestone lists and its **A3** basis construction consumes:
+This file continues the object API for the Hermite functions `ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)`
+(`TauCeti.hermiteFunction`), adding its regularity facts:
 
 * `TauCeti.integrable_hermiteFunction` — every `ψₙ` is integrable against Lebesgue measure;
 * `TauCeti.memLp_two_hermiteFunction` — every `ψₙ` is in `L²(volume)`, the membership the
@@ -69,7 +68,7 @@ theorem eval_hermiteDilated (n : ℕ) (x : ℝ) :
     (hermiteDilated n).eval x = aeval (x * Real.sqrt 2) (hermite n) := by
   rw [hermiteDilated_def, eval_comp, eval_mul, eval_X, eval_C, eval_hermiteℝ, mul_comm]
 
-/-- **Target A2 (`L¹`).** Each Hermite function is integrable against Lebesgue measure: it is a
+/-- **Integrability (`L¹`).** Each Hermite function is integrable against Lebesgue measure: it is a
 polynomial in `x` times the Gaussian envelope `exp(-x²/2)`, the `v = 1` case of
 `integrable_eval_mul_gaussianEnvelope`. -/
 theorem integrable_hermiteFunction (n : ℕ) : Integrable (hermiteFunction n) volume := by
@@ -90,7 +89,7 @@ theorem integrable_hermiteFunction (n : ℕ) : Integrable (hermiteFunction n) vo
   rw [hfun]
   exact h.div_const _
 
-/-- **Target A2 (`L²`).** Each Hermite function lies in `L²(volume)`. Its square is
+/-- **`L²` membership.** Each Hermite function lies in `L²(volume)`. Its square is
 `(Hₙ(x√2))² exp(-x²)` up to the constant `(n!√π)`, integrable by `integrable_eval_mul_exp_neg_sq`,
 and `L²` membership is integrability of the square (`memLp_two_iff_integrable_sq`). This is the
 membership `hermiteFunctionLp` needs to realize `ψₙ` as an element of `Lp ℝ 2 volume`. -/
@@ -126,8 +125,8 @@ private lemma integral_hermiteFunction_zero_mul_self_expanded :
   simp only [gaussianPDFReal]
   rw [div_mul_div_comm, hexp, hden, hv, sub_zero, hpi, htwo, div_one, div_eq_inv_mul]
 
-/-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
-the roadmap's Hermite-function orthonormality target. -/
+/-- The zeroth Hermite function has square integral one. This is the `n = 0` case of the
+orthonormality of the Hermite functions. -/
 lemma integral_hermiteFunction_zero_mul_self :
     ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
   simpa only [hermiteFunction_zero] using integral_hermiteFunction_zero_mul_self_expanded

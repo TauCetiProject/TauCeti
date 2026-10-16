@@ -33,6 +33,9 @@ extension and evaluation operations used to define dynamic parabolic subgroups a
 * `TauCeti.Cocharacter.evalZeroPoint`: evaluation of polynomial-valued points at the origin.
 * `TauCeti.Cocharacter.pointsHom` and `TauCeti.Cocharacter.genericPoint`: the map from
   multiplicative-group points and its generic value.
+* `BialgHom.oppositeCocharacter`: the opposite cocharacter, with its point formulas
+  `TauCeti.Cocharacter.pointsHom_oppositeCocharacter` and
+  `TauCeti.Cocharacter.genericPoint_oppositeCocharacter`.
 * `TauCeti.Cocharacter.mapValue_ofPolyPoint` and `TauCeti.Cocharacter.mapValue_evalZeroPoint`:
   naturality of inclusion and evaluation.
 -/
@@ -40,6 +43,29 @@ extension and evaluation operations used to define dynamic parabolic subgroups a
 public section
 
 open WithConv
+
+namespace BialgHom
+
+variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- The opposite cocharacter, obtained by precomposing the group morphism with `t ↦ t⁻¹`. -/
+noncomputable def oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
+    H →ₐc[R] LaurentPolynomial R :=
+  (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom.comp l
+
+/-- On coordinates the opposite cocharacter inverts the Laurent variable. -/
+@[simp]
+theorem oppositeCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (h : H) :
+    l.oppositeCocharacter h = LaurentPolynomial.invert (l h) := (rfl)
+
+/-- Taking the opposite cocharacter twice recovers the original one. -/
+@[simp]
+theorem oppositeCocharacter_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
+    l.oppositeCocharacter.oppositeCocharacter = l := by
+  ext h : 1
+  simpa only [oppositeCocharacter_apply] using LaurentPolynomial.involutive_invert (l h)
+
+end BialgHom
 
 namespace TauCeti.Cocharacter
 
@@ -133,14 +159,22 @@ convolution-points monoid, presented contravariantly as a bialgebra homomorphism
 morphism `𝔾ₘ → Spec H`. -/
 noncomputable def pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
     Aˣ →* WithConv (H →ₐ[R] A) :=
-  (AlgHom.mapDomain l).comp
+  (BialgHom.mapDomain l).comp
     (MultiplicativeGroup.pointsMulEquiv (R := R) (A := A)).symm.toMonoidHom
 
 /-- A multiplicative-group morphism sends a unit to the `𝔾ₘ`-point precomposed with `l`. -/
 theorem pointsHom_apply (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
-    pointsHom A l u = AlgHom.mapDomain l (toConv (MultiplicativeGroup.point (R := R) u)) := by
+    pointsHom A l u = BialgHom.mapDomain l (toConv (laurentEval (R := R) u)) := by
   rw [pointsHom, MonoidHom.comp_apply]
-  congr 1
+  exact congrArg (BialgHom.mapDomain l)
+    (MultiplicativeGroup.pointsMulEquiv_symm_apply (R := R) u)
+
+/-- The opposite cocharacter evaluates at the inverse unit. -/
+@[simp]
+theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
+    pointsHom A l.oppositeCocharacter u = pointsHom A l u⁻¹ := by
+  ext h
+  simp [pointsHom_apply, BialgHom.mapDomain_apply, laurentEval_invert]
 
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/
@@ -154,12 +188,12 @@ morphism `l` at the tautological unit `T`. For commutative `H`, it is a point of
 monoid scheme `Spec H`. -/
 noncomputable def genericPoint (l : H →ₐc[R] LaurentPolynomial R) :
     WithConv (H →ₐ[R] LaurentPolynomial A) :=
-  pointsHom (LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A)
+  pointsHom (LaurentPolynomial A) l (LaurentPolynomial.genericUnit A)
 
 /-- The generic point is the image of the generic unit `T`. -/
 theorem genericPoint_eq_pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
     genericPoint A l =
-      pointsHom (LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A) := by
+      pointsHom (LaurentPolynomial A) l (LaurentPolynomial.genericUnit A) := by
   rw [genericPoint]
 
 /-! ### Naturality in the value algebra -/
@@ -172,9 +206,9 @@ variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
 theorem mapValue_pointsHom (u : Aˣ) :
     AlgHom.mapValue φ (pointsHom A l u) = pointsHom B l (Units.map φ.toMonoidHom u) := by
   rw [pointsHom_apply, pointsHom_apply, ← MonoidHom.comp_apply,
-    ← AlgHom.mapValue_mapDomain, MonoidHom.comp_apply]
+    ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply]
   congr 1
-  rw [AlgHom.mapValue_apply, MultiplicativeGroup.comp_point]
+  simp [AlgHom.mapValue_apply, comp_laurentEval]
 
 /-- The constant-point inclusion is natural in the value algebra. -/
 theorem mapValue_constPoint (g : WithConv (H →ₐ[R] A)) :
@@ -189,7 +223,7 @@ theorem mapValue_genericPoint :
   rw [genericPoint, genericPoint, mapValue_pointsHom]
   congr 1
   apply Units.ext
-  simp only [Units.coe_map, MultiplicativeGroup.genericUnit_val]
+  simp only [Units.coe_map, LaurentPolynomial.genericUnit_val]
   exact LaurentPolynomial.mapAlgHom_T φ 1
 
 /-- The inclusion of points over the affine line is natural in the value algebra. -/
@@ -210,5 +244,17 @@ theorem mapValue_evalZeroPoint (F : WithConv (H →ₐ[R] Polynomial A)) :
 end Naturality
 
 end Bialgebra
+
+section HopfAlgebra
+
+variable [HopfAlgebra R H]
+
+/-- The generic value of the opposite cocharacter is the inverse generic value. -/
+@[simp]
+theorem genericPoint_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
+    genericPoint A l.oppositeCocharacter = (genericPoint A l)⁻¹ := by
+  simp only [genericPoint_eq_pointsHom, pointsHom_oppositeCocharacter, map_inv]
+
+end HopfAlgebra
 
 end TauCeti.Cocharacter

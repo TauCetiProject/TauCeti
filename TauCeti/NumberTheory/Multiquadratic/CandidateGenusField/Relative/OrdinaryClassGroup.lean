@@ -100,7 +100,7 @@ theorem candidateGenusFieldBaseGenusCharLinearMap_narrowDefect (hd : Squarefree 
   · rw [Int.sign_eq_neg_one_of_neg hP]
     simp [hP]
   · have hP0 : 0 < P.1 := lt_of_le_of_ne (le_of_not_gt hP)
-      ((genusPrimeDiscriminants_spec hd).1 P P.2).isFundamentalDiscriminant.ne_zero.symm
+      ((genusPrimeDiscriminants_spec hd).1 P P.2).isFundamentalDiscr.ne_zero.symm
     rw [Int.sign_eq_one_of_pos hP0]
     simp [hP]
 

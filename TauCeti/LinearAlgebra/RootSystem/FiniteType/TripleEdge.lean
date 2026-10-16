@@ -49,7 +49,7 @@ namespace TauCeti
 
 namespace IsFiniteType
 
-variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
+variable {B : Type*} {A : Matrix B B ℤ}
 
 /-- **A preconnected finite-type diagram containing a triple edge consists only of its endpoints.**
 
@@ -93,7 +93,7 @@ theorem eq_or_eq_of_apply_mul_apply_eq_three (h : IsFiniteType A)
   simpa [H, eq_comm] using hkH
 
 /-- **A preconnected finite-type diagram containing a triple edge has exactly two vertices.** -/
-theorem card_eq_two_of_apply_mul_apply_eq_three (h : IsFiniteType A)
+theorem card_eq_two_of_apply_mul_apply_eq_three [Fintype B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) {i j : B} (hij : A i j * A j i = 3) :
     Fintype.card B = 2 := by
   have hij_ne : i ≠ j := by
@@ -114,6 +114,8 @@ theorem exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three (h : IsFinit
     (hconn : (diagramGraph A).Preconnected) {i j : B} (hij : A i j * A j i = 3) :
     ∃ e : B ≃ Fin DynkinType.G2.rank,
       ∀ x y, A x y = DynkinType.G2.cartanMatrix (e x) (e y) := by
+  have := h.finite
+  have : Fintype B := Fintype.ofFinite B
   have hij_ne : i ≠ j := by
     rintro rfl
     rw [h.apply_self] at hij
@@ -149,8 +151,7 @@ theorem exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three (h : IsFinit
 The right side uses the same simultaneous row-and-column relabelling as `HasCartanType`.  No
 orientation is imposed on the witness edge on the left: reversing its endpoints does not change
 the Cartan product. -/
-theorem exists_apply_mul_apply_eq_three_iff_exists_equiv_cartanMatrix_eq_G2
-    (h : IsFiniteType A)
+theorem exists_apply_mul_apply_eq_three_iff_exists_equiv_cartanMatrix_eq_G2 (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) :
     (∃ i j, A i j * A j i = 3) ↔
       ∃ e : B ≃ Fin DynkinType.G2.rank,

@@ -48,6 +48,8 @@ No signs appear anywhere: `B` is an endomorphism, so the two blocks are never re
   determinant, and then as a resultant.
 * `AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le` — the same resultant read at any degree bound
   for `p`, which `g` being monic makes independent of the bound.
+* `AdjoinRoot.norm_mk_eq_prod_eval` — when `g = ∏ i, (X - C rᵢ)` splits into linear factors,
+  the norm of `mk g p` is the product `∏ i, p rᵢ` of the values of `p` at the roots.
 * `AdjoinRoot.norm_algebraMap_sub_root`, `AdjoinRoot.norm_mk_C_sub_X_add` — the two values that
   resultant algebra reads off it: the norm of `x - θ`, and, when `g` has `x` as a root, the norm
   of the corrected representative `x - θ + q θ` that replaces it. The first is stated in
@@ -313,6 +315,19 @@ theorem norm_mk_eq_resultant_of_natDegree_le (hg : g.Monic) {p : R[X]} {n : ℕ}
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hp
   rw [resultant_add_right_deg _ _ _ _ _ le_rfl, hg.coeff_natDegree, one_pow, one_mul,
     norm_mk_eq_resultant hg]
+
+/-- **The norm on `AdjoinRoot g` for a split `g`.** If `g = ∏ i, (X - C (r i))` is a product of
+linear factors, then the norm of `AdjoinRoot.mk g p` is the product of the values of `p` at the
+roots `r i`. No hypothesis on the base ring is needed: the roots may repeat, and the ring may have
+zero divisors. -/
+theorem norm_mk_eq_prod_eval {ι : Type*} [Fintype ι] {r : ι → R} (hg : g = ∏ i, (X - C (r i)))
+    (p : R[X]) : Algebra.norm R (mk g p) = ∏ i, p.eval (r i) := by
+  nontriviality R
+  rw [norm_mk_eq_resultant (hg ▸ monic_prod_of_monic _ _ fun i _ ↦ monic_X_sub_C (r i))]
+  subst hg
+  rw [resultant_prod_left _ _ _ _ (by simp) le_rfl]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [natDegree_X_sub_C, resultant_X_sub_C_left _ _ _ le_rfl]
 
 /-- **The norm of `x - θ` is `g x`.** Here `θ` is `root g`, the image of `X` in `AdjoinRoot g`,
 and `of g x` is the image of `x`, so the left-hand side is the norm of `x - θ`.

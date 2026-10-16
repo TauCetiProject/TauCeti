@@ -220,6 +220,15 @@ theorem edist_le_frechetRadius_add (x₀ x₁ : X) :
         eLpNorm (fun y ↦ edist x₁ y) p μ :=
       eLpNorm_add_le hp
 
+variable {μ} in
+/-- A Fréchet barycenter lies within twice the Fréchet radius of any center. -/
+theorem IsFrechetBarycenter.edist_le_two_mul_frechetRadius {y : X}
+    (hy : IsFrechetBarycenter p μ y) (z : X) : edist z y ≤ 2 * frechetRadius p μ z :=
+  calc edist z y ≤ frechetRadius p μ z + frechetRadius p μ y := edist_le_frechetRadius_add hp μ z y
+    _ ≤ frechetRadius p μ z + frechetRadius p μ z := by
+      gcongr; exact isFrechetMinimizer_iff.1 (isFrechetBarycenter_iff.1 hy).2 z
+    _ = 2 * frechetRadius p μ z := (two_mul _).symm
+
 end Estimates
 
 section Proper

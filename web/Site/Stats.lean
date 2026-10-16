@@ -30,13 +30,20 @@ private def roadmapCompletionGraphs : Html := {{
            loading="lazy"/>
       <figcaption>"Each lane or layer counts once, including the constituent roadmaps of an umbrella. Partial and unassessed layers receive no completion credit; archived roadmaps count as complete."</figcaption>
     </figure>
-    <figure class="loc-figure">
-      <img class="loc-graph" src="static/roadmap-exhaustion.svg"
-           alt="Estimated time to exhaust roadmap work, with authoring stopped or continued at its recent pace"
-           loading="lazy"/>
-      <figcaption>"Two scenarios: stop adding roadmap work, or continue authoring at the past seven complete days' pace. Estimates use roadmap size and layer counts as separate measures."</figcaption>
-    </figure>
   </div>
+}}
+
+/-- A responsive forecast and a separate disclosure for the calculation. -/
+private def roadmapExhaustion : Html := {{
+  <iframe class="roadmap-exhaustion" src="static/roadmap-exhaustion.html"
+          title="How long until we run out of roadmap work?" loading="lazy"></iframe>
+  <details class="pb-methods">
+    <summary>"How this is estimated"</summary>
+    <p>"We count layers not yet recorded complete. Partial and unassessed layers stay in that count; layers vary in difficulty, and reports can lag the work."</p>
+    <p>"We divide recorded layer completions by the added lines of Lean over the same history, then use the last seven complete days of library growth to estimate the current completion pace. The dates are observations from reports and archival decisions, which can recognize older work in a batch."</p>
+    <p>"The first scenario assumes no new roadmap work is added. The second subtracts the last seven days' net increase in layer count from the estimated completion pace. If new work keeps up with completion, the backlog would not shrink; without enough completion or code-growth history, we cannot estimate a duration."</p>
+    <p>"Neither scenario accounts for the difficulty of the remaining layers or future changes in throughput. Exact histories, inputs and estimates are available in " <a href="static/roadmap-completion.json">"roadmap-completion.json"</a> "."</p>
+  </details>
 }}
 
 /-- The per-roadmap chart: cumulative net lines of Lean, split by the roadmap each
@@ -152,21 +159,8 @@ portion remains in the total. Layer sizes differ, so this is a fraction of goals
 than a fraction of effort. Reports may lag the code, and a changed specification may need
 a new assessment; the [Progress](progress) page shows those individual cases.
 
-The exhaustion estimates ask how much more library growth would consume the recorded
-backlog. We divide completions over recorded roadmap history by the increase in library
-lines over that history, then apply the library's last seven complete days of growth to
-convert the result into days. For roadmap size, completion credit is the specification's
-size when it was archived; for layers, it is when a report first records them done.
-Those dates are approximate observations, not exact implementation dates.
-
-With authoring stopped, the estimate is remaining work divided by inferred daily
-completion. With authoring continuing, we subtract the recent daily increase in total
-roadmap size or layer count from that completion rate. If authoring keeps up with
-completion, there is no exhaustion at that pace. These are rough extrapolations:
-lines and layers are unequal, reports can recognize old work in a batch, and neither
-the remaining difficulty nor future throughput is known. Exact histories, assumptions,
-completion events and estimates are downloadable as
-[`roadmap-completion.json`](static/roadmap-completion.json).
+:::blob roadmapExhaustion
+:::
 
 Which roadmap is all that Lean serving? Every pull request is labelled with the
 roadmap it advances, so we can split the library by roadmap. The chart below stacks

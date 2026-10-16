@@ -37,8 +37,8 @@ Rellich inclusion.
 * `IsCoercive.fredholmAlternative_formPerturbation`: the variational Fredholm alternative.
 
 The construction consumes Mathlib's `IsCompactOperator.hasEigenvalue_or_mem_resolventSet` and
-the Riesz--Schauder kernel theorem
-`IsCompactOperator.finiteDimensional_ker_one_sub`.
+the compact-error kernel theorem
+`ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`.
 
 ## References
 
@@ -123,8 +123,11 @@ theorem finiteDimensional_ker_one_sub_smul_formPerturbationOperator (hB : IsCoer
     FiniteDimensional ℝ
       (LinearMap.ker
         ((1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V) : V →ₗ[ℝ] V)) := by
-  exact IsCompactOperator.finiteDimensional_ker_one_sub
-    ((hB.isCompactOperator_formPerturbationOperator hJ).smul kappa)
+  exact ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate
+    (1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V)
+    (K := kappa • hB.formPerturbationOperator J)
+    ((hB.isCompactOperator_formPerturbationOperator hJ).smul kappa) (C := 1)
+    (fun x ↦ by simpa using norm_le_norm_sub_add x ((kappa • hB.formPerturbationOperator J) x))
 
 /-- **The variational Fredholm alternative.**  For a compact continuous linear map `J`, either the
 homogeneous perturbation of `B` by `κ ⟪J ·, J ·⟫` has a nonzero solution, or every represented

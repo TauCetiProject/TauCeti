@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Associated
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.Tactic
-import TauCeti.RingTheory.DedekindDomain.Ideal
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # Conjugate-transversal ideal families in a Dedekind domain

@@ -282,9 +282,10 @@ theorem schurPoly_eq_det_hsymmInt {σ : Type*} [Fintype σ] [DecidableEq σ] {n 
     (μ : n.Partition) {r : ℕ} (hr : μ.parts.card ≤ r) :
     schurPoly σ R μ =
       (Matrix.of fun i j : Fin r =>
-        hsymmInt σ R (((diagramOf μ).rowLen i : ℤ) - (i : ℕ) + (j : ℕ))).det := by
+        hsymmInt σ R (((YoungDiagram.ofPartition μ).rowLen i : ℤ) - (i : ℕ) + (j : ℕ))).det := by
   rw [schurPoly_eq_rename,
-    diagramSchurPoly_eq_det_hsymmInt _ _ ((colLen_zero_diagramOf μ).trans_le hr), AlgHom.map_det]
+    diagramSchurPoly_eq_det_hsymmInt _ _ ((YoungDiagram.colLen_zero_ofPartition μ).trans_le hr),
+    AlgHom.map_det]
   congr 1
   ext i j : 1
   simp only [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply]

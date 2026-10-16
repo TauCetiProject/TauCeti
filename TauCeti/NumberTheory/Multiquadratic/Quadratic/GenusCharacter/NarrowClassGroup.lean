@@ -86,7 +86,7 @@ theorem genusCharFunCoprimeIdealHom_eq_of_mk0_eq
     change (∏ P ∈ t, P) ≠ 0
     rw [Finset.prod_ne_zero_iff]
     intro P hP
-    exact (hs P (hts hP)).isFundamentalDiscriminant.ne_zero
+    exact (hs P (hts hP)).isFundamentalDiscr.ne_zero
   obtain ⟨A, hAC, hAcop⟩ :=
     NumberField.NarrowClassGroup.exists_mk0_eq_and_isCoprime_absNorm
       (NumberField.NarrowClassGroup.mk0 I.1)⁻¹ hm
@@ -151,7 +151,7 @@ noncomputable def genusCharFunNarrowClassGroupHom
         (by
           rw [Finset.prod_ne_zero_iff]
           intro P hP
-          exact (hs P (hts hP)).isFundamentalDiscriminant.ne_zero))).symm.toMonoidHom
+          exact (hs P (hts hP)).isFundamentalDiscr.ne_zero))).symm.toMonoidHom
 
 /-- The descended genus character evaluates on a coprime ideal as the original ideal character. -/
 @[simp] theorem genusCharFunNarrowClassGroupHom_mk0
@@ -176,7 +176,7 @@ noncomputable def genusCharFunNarrowClassGroupHom
       (genusCharFunCoprimeIdealClassMap_surjective (by
         rw [Finset.prod_ne_zero_iff]
         intro P hP
-        exact (hs P (hts hP)).isFundamentalDiscriminant.ne_zero))
+        exact (hs P (hts hP)).isFundamentalDiscr.ne_zero))
   -- Unfold the quotient definition only far enough to expose its computation map.
   change (Con.ker q).lift χ hχ (e.symm (q I)) = χ I
   have he : e.symm (q I) = (I : (Con.ker q).Quotient) := by
@@ -234,7 +234,7 @@ theorem genusCharFunNarrowClassGroupHom_eq_prod_singleton
   have hm : (∏ P ∈ t, P) ≠ 0 := by
     rw [Finset.prod_ne_zero_iff]
     intro P hP
-    exact (hs P (hts hP)).isFundamentalDiscriminant.ne_zero
+    exact (hs P (hts hP)).isFundamentalDiscr.ne_zero
   obtain ⟨I, hIA, hIcop⟩ :=
     NumberField.NarrowClassGroup.exists_mk0_eq_and_isCoprime_absNorm A hm
   let It : genusCharFunCoprimeIdealSubmonoid (K := K) t := ⟨I, by

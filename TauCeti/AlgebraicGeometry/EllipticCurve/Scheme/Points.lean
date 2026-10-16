@@ -398,7 +398,8 @@ theorem projModelPoint_projModelVariableChangeIso_hom {C : VariableChange R}
   have hF : ((C • W).toProjective.evalHom g hP).comp (variableChangeGradedHom W C).toRingHom =
       W.toProjective.evalHom g hQ := by
     refine Projective.eq_evalHom _ _ _ (RingHom.ext fun r ↦ ?_) (funext fun k ↦ ?_)
-    · simpa [variableChangeGradedHom_apply] using
+    · simpa only [RingHom.comp_apply, GradedRingHom.coe_toRingHom,
+        variableChangeGradedHom_apply, AlgEquiv.commutes] using
         RingHom.congr_fun ((C • W).toProjective.evalHom_comp_algebraMap g hP) r
     · simp [variableChangeGradedHom_apply, Projective.coord, mulVec, dotProduct]
   -- the image of `Xⱼ` under the change of variables takes the unit value `Qⱼ` at `P`

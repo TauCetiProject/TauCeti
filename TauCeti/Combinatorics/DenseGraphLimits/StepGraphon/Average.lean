@@ -40,7 +40,10 @@ contribution.
   integral on every partition rectangle;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_idem` says block averaging is strictly idempotent;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_stepGraphon_apply` verifies that a non-null constant
-  block is recovered exactly.
+  block is recovered exactly, and `TauCeti.DenseGraphLimits.stepGraphonAvg_stepGraphon` that a
+  step graphon on a partition without null parts is its own block average;
+* `TauCeti.DenseGraphLimits.stepGraphonAvg_ofFibers_comap` says that the pullback of a graphon on
+  a finite carrier along a map with non-null fibres is its own block average over those fibres.
 
 ## References
 
@@ -229,6 +232,37 @@ theorem stepGraphonAvg_stepGraphon_apply (P : Finpartition (Set.univ : Set Ω))
       apply setAverage_const
       · simpa [Measure.prod_prod] using mul_ne_zero hp hq
       · exact measure_ne_top _ _
+
+/-- **A step graphon is its own block average** over a partition without null parts.  The
+non-null hypothesis is necessary: the null-cell convention replaces the value on a null rectangle by
+zero. -/
+@[simp]
+theorem stepGraphonAvg_stepGraphon (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p)
+    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p)
+    (hnull : ∀ p ∈ P.parts, μ p ≠ 0) :
+    stepGraphonAvg (μ := μ) P hP (stepGraphon (μ := μ) P hP val hsymm) =
+      stepGraphon (μ := μ) P hP val hsymm := by
+  ext x y
+  have hx := P.indexedPartition.mem_index x
+  have hy := P.indexedPartition.mem_index y
+  rw [stepGraphonAvg_stepGraphon_apply P hP val hsymm (hnull _ (Subtype.property _))
+    (hnull _ (Subtype.property _)) hx hy, stepGraphon_apply P hP val hsymm hx hy]
+
+/-- **The pullback of a graphon on a finite carrier is its own block average** over the fibres of
+the pulling-back map, provided every fibre has positive measure. -/
+@[simp]
+theorem stepGraphonAvg_ofFibers_comap {κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] {ν : Measure κ} [IsProbabilityMeasure ν] (W : Graphon κ ν)
+    {g : Ω → κ} (hg : Measurable g) (hnull : ∀ x, μ (g ⁻¹' {g x}) ≠ 0) :
+    stepGraphonAvg (μ := μ) (Finpartition.ofFibers g)
+        (fun _ hp => Finpartition.measurableSet_of_mem_ofFibers hg hp) (W.comap g hg μ) =
+      W.comap g hg μ := by
+  obtain ⟨val, hsymm, hval⟩ := exists_stepGraphon_ofFibers_eq_comap (μ := μ) W hg
+  rw [← hval]
+  refine stepGraphonAvg_stepGraphon _ _ val hsymm fun p hp => ?_
+  obtain ⟨x, rfl⟩ := Finpartition.mem_ofFibers_parts.1 hp
+  exact hnull x
 
 end DenseGraphLimits
 

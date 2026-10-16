@@ -10,17 +10,10 @@ import json
 import pathlib
 import re
 import subprocess
-import urllib.request
 
-REPO = "TauCetiProject/TauCeti"
-ACTOR_ID = 477956  # kim-em's stable GitHub user ID
-OBSERVATION_URL = "https://bors.taucetiproject.org/repositories/1/active-batches?base=main"
+from bors_observation import REPO, observation, requested_batch, sha, valid_observation
 ALLOWED_ROOT = {"TauCeti.lean", "lake-manifest.json", "lean-toolchain",
                 "docbuild/docs/references.bib"}
-
-
-def sha(value):
-    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) is not None
 
 
 def in_scope(path):
@@ -28,17 +21,9 @@ def in_scope(path):
 
 
 def github(path):
-    return json.loads(subprocess.check_output(["gh", "api", f"repos/{REPO}/{path}"],
+    endpoint = path if path.startswith("/") else f"repos/{REPO}/{path}"
+    return json.loads(subprocess.check_output(["gh", "api", endpoint],
                                              text=True, timeout=45))
-
-
-def observation(batch_id=None):
-    url = OBSERVATION_URL + (f"&batch_id={batch_id}" if batch_id is not None else "")
-    request = urllib.request.Request(url, headers={
-        "Cache-Control": "no-cache", "User-Agent": "TauCetiScopeApproval/1.0"
-    })
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.load(response)
 
 
 def current_pr(pr, head, api):
@@ -58,11 +43,32 @@ def merge_base(data, head, api):
     return base
 
 
-def approved(approvals, pr, head, base):
+def administrator(actor_id, api):
+    """Check effective permissions, including admin access inherited from a team."""
+    if type(actor_id) is not int or actor_id <= 0:
+        return False
+    user = api(f"/user/{actor_id}")
+    if not isinstance(user, dict):
+        raise ValueError("approval actor unavailable")
+    login = user.get("login")
+    if (user.get("id") != actor_id or not isinstance(login, str)
+            or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", login) is None):
+        raise ValueError("approval actor unavailable")
+    permission = api(f"collaborators/{login}/permission")
+    if (not isinstance(permission, dict) or not isinstance(permission.get("user"), dict)
+            or permission["user"].get("id") != actor_id):
+        raise ValueError("approval actor changed during permission lookup")
+    return permission.get("permission") == "admin"
+
+
+def approved(approvals, pr, head, base, api):
     matches = [a for a in approvals if isinstance(a, dict) and a.get("pr") == pr]
-    return len(matches) == 1 and matches[0] == {
-        "pr": pr, "actor_id": ACTOR_ID, "head_sha": head, "merge_base_sha": base
-    }
+    if len(matches) != 1:
+        return False
+    actor_id = matches[0].get("actor_id")
+    return matches[0] == {
+        "pr": pr, "actor_id": actor_id, "head_sha": head, "merge_base_sha": base
+    } and administrator(actor_id, api)
 
 
 def paths(data, api):
@@ -90,19 +96,17 @@ def paths(data, api):
 
 
 def verify(data, head, base, *, pr=None, batch_id=None, combined_paths=None, api=github):
-    if (not sha(head) or not sha(base) or data.get("schema") != "tauceti-bors.observation/v1"
-            or data.get("repo") != REPO or data.get("base") != "main"
+    if (not sha(head) or not sha(base) or not valid_observation(data,"main")
             or not isinstance(data.get("scope_approvals"), list)):
         return False
     approvals = data["scope_approvals"]
     if pr is not None:
         live = current_pr(pr, head, api)
-        return merge_base(live, head, api) == base and approved(approvals, pr, head, base)
+        return merge_base(live, head, api) == base and approved(approvals, pr, head, base, api)
 
-    batch = data.get("requested_batch")
-    if (type(batch_id) is not int or not isinstance(batch, dict) or batch.get("id") != batch_id
-            or batch.get("state") != "running" or batch.get("base") != "main"
-            or batch.get("head_sha") != head or batch.get("base_sha") != base):
+    try:
+        batch = requested_batch(data, head, base, batch_id=batch_id)
+    except ValueError:
         return False
     members = batch.get("members")
     if not isinstance(members, list) or not 0 < len(members) <= 128:
@@ -119,7 +123,7 @@ def verify(data, head, base, *, pr=None, batch_id=None, combined_paths=None, api
         live = current_pr(number, member_head, api)
         member_base = merge_base(live, member_head, api)
         changed = paths(live, api)
-        is_approved = approved(approvals, number, member_head, member_base)
+        is_approved = approved(approvals, number, member_head, member_base, api)
         if any(not in_scope(path) for path in changed) and not is_approved:
             return False
         if is_approved:
@@ -148,7 +152,7 @@ def main():
     except (KeyError, TypeError, ValueError, OSError, subprocess.SubprocessError) as error:
         print(f"bors scope approval unavailable: {type(error).__name__}")
         ok = False
-    print("restricted paths approved by kim-em through bors" if ok else "no valid bors scope approval")
+    print("restricted paths approved by a repository admin through bors" if ok else "no valid bors scope approval")
     return 0 if ok else 1
 
 
