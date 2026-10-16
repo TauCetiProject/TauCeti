@@ -135,6 +135,7 @@ theorem shiftedModuleComplexXEquiv_indexGradedPieceEvalX (x : {x : P // ind x = 
       (indexGradedPieceComplexXEquiv hM ind p n f : {x : P // ind x = p} → M) x := by
   simp only [indexGradedPieceEvalX, LinearMap.coe_comp, LinearEquiv.coe_coe,
     Function.comp_apply, LinearEquiv.apply_symm_apply]
+  -- The remaining equation holds by unfolding the corestriction of the codomain.
   rfl
 
 /-- **The evaluation at a generator** `x` of index `p`, as a morphism of complexes from the `p`-th
@@ -182,6 +183,7 @@ theorem indexGradedPieceComplexXEquiv_indexGradedPieceSingleX (x : {x : P // ind
         {x : P // ind x = p} → M) = Pi.single x (shiftedModuleComplexXEquiv hM p n α : M) := by
   simp only [indexGradedPieceSingleX, LinearMap.coe_comp, LinearEquiv.coe_coe,
     Function.comp_apply, LinearEquiv.apply_symm_apply]
+  -- The remaining equation holds by unfolding the corestriction of the codomain.
   rfl
 
 /-- **The insertion at a generator** `x` of index `p`, as a morphism of complexes from
@@ -284,6 +286,7 @@ insertions at the generators. -/
 theorem indexGradedPieceHomologyIso_inv (n : ℤ) :
     (indexGradedPieceHomologyIso hM ind (p := p) n).inv = ∑ x : {x : P // ind x = p},
       Pi.π _ x ≫ HomologicalComplex.homologyMap (indexGradedPieceSingle hM ind x) n :=
+  -- The inverse is given by this sum in the definition of the isomorphism.
   (rfl)
 
 end Complex

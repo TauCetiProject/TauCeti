@@ -133,6 +133,7 @@ theorem indexGradedPieceComplexXEquiv_indexGradedPieceD1X (q p n : ℤ)
         (indexExtend R M ind p (indexGradedPieceComplexXEquiv hM ind p n f))) := by
   simp only [indexGradedPieceD1X, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
     LinearEquiv.apply_symm_apply]
+  -- The remaining equation holds by unfolding the corestriction of the codomain.
   rfl
 
 /-- The twisted differential of a cycle of the graded piece of index `p = q + 1`, extended by

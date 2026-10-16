@@ -84,6 +84,7 @@ noncomputable def twistedIndexCokernelIsoOfEq (q p : ℤ) (hqp : q + 1 = p) :
 /-- With the standard indices, `twistedIndexCokernelIsoOfEq` is `twistedIndexCokernelIso`. -/
 theorem twistedIndexCokernelIsoOfEq_self (q : ℤ) :
     m.twistedIndexCokernelIsoOfEq hM q (q + 1) rfl = m.twistedIndexCokernelIso dM hM q :=
+  -- The equality `q + 1 = q + 1` is `rfl`, so the transport in the definition reduces.
   (rfl)
 
 /-- The graded-piece isomorphism identifies the cokernel projection with restriction to the
