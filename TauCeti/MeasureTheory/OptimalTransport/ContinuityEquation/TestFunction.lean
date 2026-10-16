@@ -7,8 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -68,12 +66,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   [FiniteDimensional ℝ E] [BorelSpace E] {μ : ℝ → Measure E} {v : ℝ → E → E} {a b : ℝ}
 
 namespace IsContinuityEquation
-
-omit [NormedSpace ℝ E] [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The space-time velocity `(1, w)` has norm at most `1 + ‖w‖`. -/
-private lemma norm_one_prod_le (w : E) : ‖((1 : ℝ), w)‖ ≤ 1 + ‖w‖ := by
-  rw [Prod.norm_def, norm_one]
-  exact max_le (le_add_of_nonneg_right (norm_nonneg w)) (le_add_of_nonneg_left zero_le_one)
 
 /-- For almost every time `t ∈ (a, b)`, the slice `μₜ` is finite and `vₜ` is `μₜ`-integrable. -/
 private lemma ae_isFiniteMeasure_and_integrable (h : IsContinuityEquation μ v a b) :
@@ -185,7 +177,7 @@ theorem integral_integral_fderiv_eq_zero_of_hasCompactSupport (h : IsContinuityE
     (tendsto_const_nhds.congr fun n ↦
       (h.integral_integral_fderiv_eq_zero (hψ n) (hψc n) (hψs n)).symm)
   · -- Mollification does not increase the bound on the derivative.
-    have hw := norm_one_prod_le w
+    have hw : ‖((1 : ℝ), w)‖ ≤ 1 + ‖w‖ := norm_prod_le_iff.2 ⟨by simp, by simp⟩
     have hg (p : ℝ × E) : ‖fderiv ℝ φ p (1, w)‖ ≤ C * (1 + ‖w‖) :=
       ((fderiv ℝ φ p).le_opNorm _).trans
         (mul_le_mul (hC p) hw (norm_nonneg _) hC0)
@@ -201,41 +193,6 @@ theorem integral_integral_fderiv_eq_zero_of_hasCompactSupport (h : IsContinuityE
     exact ContDiffBump.convolution_tendsto_right_of_continuous hrOut
       (hDφ.clm_apply continuous_const) q
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The derivative of the spatially cut-off test function `q ↦ χ (s • q.2) * φ q` at the
-space-time velocity `(1, w)`. -/
-private lemma fderiv_cutoff_mul_apply {χ : E → ℝ} (hχ : Differentiable ℝ χ) {φ : ℝ × E → ℝ}
-    (hφ : Differentiable ℝ φ) (s : ℝ) (q : ℝ × E) (w : E) :
-    fderiv ℝ (fun p : ℝ × E ↦ χ (s • p.2) * φ p) q (1, w) =
-      χ (s • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s • q.2) (s • w) := by
-  have hc : HasFDerivAt (fun p : ℝ × E ↦ χ (s • p.2))
-      ((fderiv ℝ χ (s • q.2)).comp (s • ContinuousLinearMap.snd ℝ ℝ E)) q :=
-    (hχ _).hasFDerivAt.comp q (hasFDerivAt_snd.const_smul s)
-  rw [fderiv_fun_mul hc.differentiableAt (hφ q), hc.fderiv]
-  simp
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- A differentiable function with support in `(a, b) × E` whose derivative is bounded by `C`
-vanishes at the time `a`, hence is bounded by `C * (b - a)`. -/
-private lemma norm_le_mul_sub_of_norm_fderiv_le {φ : ℝ × E → ℝ} (hφ : Differentiable ℝ φ) {C : ℝ}
-    (hC : ∀ q, ‖fderiv ℝ φ q‖ ≤ C) (hφs : tsupport φ ⊆ Ioo a b ×ˢ univ) (hab : a ≤ b)
-    (q : ℝ × E) : ‖φ q‖ ≤ C * (b - a) := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  have hzero {p : ℝ × E} (hp : p.1 ∉ Ioo a b) : φ p = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ hp (hφs h).1
-  by_cases hq : q.1 ∈ Ioo a b
-  · have hq' : q - (a, q.2) = (q.1 - a, 0) := by ext <;> simp
-    have hn : ‖q - (a, q.2)‖ ≤ b - a := by
-      rw [hq', Prod.norm_def, norm_zero, Real.norm_eq_abs, max_eq_left (abs_nonneg _),
-        abs_of_pos (sub_pos.2 hq.1)]
-      linarith [hq.2]
-    have := convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun p _ ↦ hφ p) (fun p _ ↦ hC p)
-      (mem_univ (a, q.2)) (mem_univ q)
-    rw [hzero (p := (a, q.2)) (by simp), sub_zero] at this
-    exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
-  · rw [hzero hq, norm_zero]
-    exact mul_nonneg hC0 (sub_nonneg.2 hab)
-
 /-- **Test functions with bounded derivative.** The continuity equation holds against every `C¹`
 test function `φ` with bounded derivative and support in `(a, b) × E`, with no compactness of the
 support in space. Such a `φ` is bounded, since it vanishes at the time `a`. -/
@@ -249,7 +206,20 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
   have hφd : Differentiable ℝ φ := hφ.differentiable one_ne_zero
   have hzero {q : ℝ × E} (hq : q.1 ∉ Ioo a b) : φ q = 0 :=
     image_eq_zero_of_notMem_tsupport fun h ↦ hq (hφs h).1
-  have hφB := norm_le_mul_sub_of_norm_fderiv_le hφd hC hφs hab.le
+  -- `φ` vanishes at the time `a`, so the mean value inequality bounds it by `C * (b - a)`.
+  have hφB (q : ℝ × E) : ‖φ q‖ ≤ C * (b - a) := by
+    by_cases hq : q.1 ∈ Ioo a b
+    · have hq' : q - (a, q.2) = (q.1 - a, 0) := by ext <;> simp
+      have hn : ‖q - (a, q.2)‖ ≤ b - a := by
+        rw [hq', Prod.norm_def, norm_zero, Real.norm_eq_abs, max_eq_left (abs_nonneg _),
+          abs_of_pos (sub_pos.2 hq.1)]
+        linarith [hq.2]
+      have := convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun p _ ↦ hφd p) (fun p _ ↦ hC p)
+        (mem_univ (a, q.2)) (mem_univ q)
+      rw [hzero (q := (a, q.2)) (by simp), sub_zero] at this
+      exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
+    · rw [hzero hq, norm_zero]
+      exact mul_nonneg hC0 (sub_nonneg.2 hab.le)
   -- The cut-offs `x ↦ χ (s n • x)` with `s n = 1 / (n + 1)`, equal to `1` on `closedBall 0 (n + 1)`
   -- and vanishing outside `ball 0 (2 * (n + 1))`.
   let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
@@ -279,8 +249,13 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
     · simp [ψ, hzero fun h ↦ ht (Ioo_subset_Icc_self h)]
   have hψs (n : ℕ) : tsupport (ψ n) ⊆ Ioo a b ×ˢ univ := tsupport_mul_subset_right.trans hφs
   have hderiv (n : ℕ) (q : ℝ × E) (w : E) : fderiv ℝ (ψ n) q (1, w) =
-      χ (s n • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s n • q.2) (s n • w) :=
-    fderiv_cutoff_mul_apply (χ.contDiff (n := 1)).differentiable_one hφd (s n) q w
+      χ (s n • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s n • q.2) (s n • w) := by
+    have hc : HasFDerivAt (fun p : ℝ × E ↦ χ (s n • p.2))
+        ((fderiv ℝ χ (s n • q.2)).comp (s n • ContinuousLinearMap.snd ℝ ℝ E)) q :=
+      ((χ.contDiff (n := 1)).differentiable_one _).hasFDerivAt.comp q
+        (hasFDerivAt_snd.const_smul (s n))
+    rw [fderiv_fun_mul hc.differentiableAt (hφd q), hc.fderiv]
+    simp
   refine tendsto_nhds_unique
     (h.tendsto_integral_integral_fderiv hψ hψc (φ := φ) (C := C + C * (b - a) * D)
       (fun n q w ↦ ?_) fun q w ↦ ?_)
@@ -291,8 +266,8 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
     have h₁ : ‖χ (s n • q.2) * fderiv ℝ φ q (1, w)‖ ≤ C * (1 + ‖w‖) := by
       rw [norm_mul, Real.norm_of_nonneg χ.nonneg]
       exact (mul_le_of_le_one_left (norm_nonneg _) χ.le_one).trans <|
-        ((fderiv ℝ φ q).le_opNorm _).trans (mul_le_mul (hC q) (norm_one_prod_le w)
-          (norm_nonneg _) hC0)
+        ((fderiv ℝ φ q).le_opNorm _).trans (mul_le_mul (hC q)
+          (norm_prod_le_iff.2 ⟨by simp, by simp⟩) (norm_nonneg _) hC0)
     have hsw : ‖s n • w‖ ≤ 1 + ‖w‖ := by
       rw [norm_smul, Real.norm_of_nonneg (hs0 n).le]
       nlinarith [hs1 n, norm_nonneg w]
