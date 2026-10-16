@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntermediateField
+public import Mathlib.FieldTheory.PurelyInseparable.Tower
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
@@ -17,7 +18,9 @@ containing `k`, with `E` replaced by its compositum `E · k'`. The ambient field
 compositum of `F` and `k'`, expressed by `constantCompositum F k' F' = ⊤`. The constant extension
 may be infinite; in particular this applies to an algebraic closure over a perfect constant
 field. No function-field hypothesis is needed. Without separability or exactness the degree
-`[F : k(x)]` can only drop.
+`[F : k(x)]` can only drop. For a purely inseparable extension of constants, the degree
+`[F : E]` is preserved whenever `F / E` is separable algebraic, without exactness of the constants.
+This uses Mathlib's linear disjointness of separable and purely inseparable extensions.
 
 ## Main results
 
@@ -27,6 +30,8 @@ field. No function-field hypothesis is needed. Without separability or exactness
   `[F' : k'(x)] ≤ [F : k(x)]` for any constant extension, when `F / k(x)` is finite.
 * `TauCeti.finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top`:
   `[F' : E · k'] = [F : E]` for every subfield `E` of `F` containing `k`.
+* `TauCeti.finrank_over_constantCompositum_eq_finrank_of_isPurelyInseparable`:
+  `[F' : E · k'] = [F : E]` for purely inseparable constants and separable algebraic `F / E`.
 * `TauCeti.adjoin_simple_eq_top_of_constantCompositum_eq_top` and
   `TauCeti.minpoly_algebraMap_eq_map_of_constantCompositum_eq_top`: a primitive element `y` of
   `F / E` stays primitive over `E · k'`; when `F / E` is finite, its minimal polynomial
@@ -147,6 +152,40 @@ theorem finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top 
       rfl
   exact (Module.finrank_eq_nat_card_basis b').trans
     (Module.finrank_eq_nat_card_basis b).symm
+
+/-- A purely inseparable constant extension preserves the degree of a separable algebraic
+extension `F / E`. No exactness assumption on the constants is needed. -/
+theorem finrank_over_constantCompositum_eq_finrank_of_isPurelyInseparable {E : Type*}
+    [Field E] [Algebra k E] [Algebra E F] [IsScalarTower k E F] [Algebra E F']
+    [IsScalarTower E F F'] [IsPurelyInseparable k k'] [Algebra.IsSeparable E F]
+    (h : constantCompositum F k' F' = ⊤) :
+    Module.finrank (constantCompositum E k' F') F' = Module.finrank E F := by
+  have : IsScalarTower k E F' := IsScalarTower.of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply E F F', ← IsScalarTower.algebraMap_apply k E F,
+      ← IsScalarTower.algebraMap_apply k F F']
+  let C := constantCompositum E k' F'
+  let : Algebra k' C := constantCompositumAlgebra E k' F'
+  have : IsScalarTower k' C F' := isScalarTower_constantCompositum E k' F'
+  have : IsScalarTower k k' C := isScalarTower_base_constantCompositum k E k' F'
+  have hC : constantCompositum E k' C = ⊤ := (constantCompositum_eq_top_iff E k' F' C).mpr rfl
+  have : IsPurelyInseparable E C := isPurelyInseparable_of_constantCompositum_eq_top (k := k) hC
+  let f := IsScalarTower.toAlgHom E F F'
+  have : Algebra.IsSeparable E f.fieldRange := AlgEquiv.Algebra.isSeparable f.equivFieldRange
+  -- The two fields over `E` are respectively separable and purely inseparable.
+  have hd := f.fieldRange.linearDisjoint_of_isPurelyInseparable_of_isSeparable C
+  have hrank := hd.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  have htop : IntermediateField.adjoin C (f.fieldRange : Set F') = ⊤ := by
+    refine eq_top_iff.mpr fun z _ ↦ ?_
+    have hle : constantCompositum F k' F' ≤
+        (IntermediateField.adjoin C (f.fieldRange : Set F')).toSubfield.toIntermediateField
+          (fun a ↦ IntermediateField.subset_adjoin C _ ⟨a, rfl⟩) := by
+      apply (constantCompositum_le_iff F k' F').mpr
+      intro c
+      exact (IntermediateField.adjoin C (f.fieldRange : Set F')).algebraMap_mem
+        ⟨_, algebraMap_mem_constantCompositum E k' F' c⟩
+    exact hle (h ▸ IntermediateField.mem_top)
+  rw [htop, IntermediateField.rank_top'] at hrank
+  exact (congrArg Cardinal.toNat hrank).trans f.equivFieldRange.toLinearEquiv.finrank_eq.symm
 
 section Subfield
 
