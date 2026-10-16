@@ -114,6 +114,9 @@ abbrev cubeModel (n : ℕ) : TopCat.{u} := TopCat.of (ULift.{u} (Fin n → unitI
 /-- The identity cube of the model, up to the universe lift. -/
 @[expose] def upCube (n : ℕ) : SingularCube (cubeModel.{u} n) n := ⟨ULift.up, continuous_uliftUp⟩
 
+/-- The origin of the model `Iⁿ`. -/
+abbrev cubeModelOrigin (n : ℕ) : cubeModel.{u} n := ULift.up 0
+
 -- Exposed so that the fibre of a local system at `cubeToHom c x` is the fibre at `c x.down` by
 -- definition: the chains of a space with local coefficients are indexed by the points `c 0`.
 /-- A singular cube, as a map from the model. -/

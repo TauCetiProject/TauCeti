@@ -34,7 +34,7 @@ system.
 
 ## Main definitions
 
-* `TauCeti.cubicalToSingularGen n`: the image of the identity cube of the model under the
+* `TauCeti.cubicalToSingularGen k n`: the image of the identity cube of the model under the
   comparison.
 * `TauCeti.LocalCoefficientSystem.twistedCubicalToSingular L n`: the linear map from the cubical
   chains with coefficients in `L` to the simplicial ones.
@@ -44,8 +44,8 @@ system.
 ## Main results
 
 * `TauCeti.LocalCoefficientSystem.twistedCubicalToSingular_ofSubcube`: the image of a subcube.
-* `TauCeti.LocalCoefficientSystem.twistedChainComplexMap_twistedCubicalToSingularMap`,
-  `TauCeti.LocalCoefficientSystem.twistedChainComplexCoefficientMap_twistedCubicalToSingularMap`:
+* `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularMap_naturality`,
+  `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularMap_coefficientMap_naturality`:
   naturality in the space and in the local system.
 
 ## References
@@ -67,57 +67,6 @@ universe u v
 
 namespace TauCeti
 
-/-- The origin of the model `Iⁿ`. -/
-abbrev cubeModelOrigin (n : ℕ) : cubeModel.{v} n := ULift.up 0
-
-/-- The image, under the comparison with simplicial chains, of the identity cube of the model
-`Iⁿ`. -/
-def cubicalToSingularGen (n : ℕ) : ((singularChains (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X n :=
-  ((cubicalToSingular (ULift.{v} ℤ)).app (cubeModel.{v} n)).f n
-    (NormalizedCubicalChain.ofCube (cubeModel.{v} n) (ULift.{v} ℤ) (upCube n))
-
-/-- The image, under the comparison with simplicial chains, of the subcube `upCube n ∘ ι` of the
-model `Iⁿ`. -/
-def cubicalToSingularSubcube (n : ℕ) {m : ℕ} (ι : C(Fin m → I, Fin n → I)) :
-    ((singularChains (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m :=
-  ((cubicalToSingular (ULift.{v} ℤ)).app (cubeModel.{v} n)).f m
-    (NormalizedCubicalChain.ofCube (cubeModel.{v} n) (ULift.{v} ℤ) ((upCube n).comp ι))
-
-/-- The image of the identity cube is the image of its subcube along the identity. -/
-theorem cubicalToSingularSubcube_id (n : ℕ) :
-    cubicalToSingularSubcube.{v} n (ContinuousMap.id (Fin n → I)) = cubicalToSingularGen n :=
-  (rfl)
-
-/-- Pushing forward the image of a subcube of the model along a map from the model is the image of
-the pushed-forward subcube. -/
-theorem singularChains_map_cubicalToSingularSubcube {n m k : ℕ} (ι : C(Fin m → I, Fin n → I))
-    (κ : C(Fin k → I, Fin m → I)) :
-    ((singularChains (ULift.{v} ℤ)).map (cubeToHom ((upCube.{v} n).comp ι))).f k
-        (cubicalToSingularSubcube m κ) =
-      cubicalToSingularSubcube n (ι.comp κ) := by
-  unfold cubicalToSingularSubcube
-  rw [singularChains_map_cubicalToSingular, ← ContinuousMap.comp_assoc,
-    cubeToHom_hom_comp_upCube, ContinuousMap.comp_assoc]
-
-/-- The boundary of the image of the identity cube of the model `Iⁿ⁺¹` is the alternating sum of
-the images of its faces. -/
-theorem singularChains_d_cubicalToSingularGen (n : ℕ) :
-    ((singularChains (ULift.{v} ℤ)).obj (cubeModel.{v} (n + 1))).d (n + 1) n
-        (cubicalToSingularGen (n + 1)) =
-      ∑ i : Fin (n + 1), ((-1 : ℤ) ^ (i : ℕ)) •
-        (cubicalToSingularSubcube.{v} (n + 1) (SingularCube.face i 0 (ContinuousMap.id _)) -
-          cubicalToSingularSubcube.{v} (n + 1) (SingularCube.face i 1 (ContinuousMap.id _))) := by
-  unfold cubicalToSingularGen cubicalToSingularSubcube
-  refine (HomologicalComplex.Hom.comm_apply ((cubicalToSingular (ULift.{v} ℤ)).app _) _ _ _).trans
-    ((congrArg (((cubicalToSingular (ULift.{v} ℤ)).app _).f n).hom
-      (normalizedCubicalChainComplex_obj_d_apply _ n _)).trans ?_)
-  rw [NormalizedCubicalChain.boundary_ofCube]
-  simp only [ULift.smul_def, ULift.pow_down, ULift.neg_down, ULift.one_down,
-    SingularCube.comp_face_id]
-  -- The sums are over the same indices and the comparison is additive.
-  refine (map_sum _ _ _).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-  exact (map_zsmul _ _ _).trans (congrArg _ (map_sub _ _ _))
-
 namespace LocalCoefficientSystem
 
 open SingularCube
@@ -138,22 +87,10 @@ chains with coefficients in `L`: a cube `c` with a coefficient goes to the pushf
 the image of the identity cube of the model. -/
 def twistedCubicalToSingular (n : ℕ) :
     L.TwistedCubicalChain n →ₗ[R] (twistedChainComplex L).X n :=
-  TwistedCubicalChain.desc L fun c ↦ twistedCubePushforward L c n (cubicalToSingularGen n)
+  TwistedCubicalChain.desc L fun c ↦
+    twistedCubePushforward L c n (cubicalToSingularGen (ULift.{v} ℤ) n)
 
 variable {L}
-
-/-- The pushforward along a cube of a simplex of the model, with an integral coefficient: the
-simplex pushed forward along `c`, with the coefficient transported along the path class inside the
-image of `c`. -/
-@[simp]
-theorem twistedCubePushforward_simplexChain {n m : ℕ} (c : SingularCube X n)
-    (t : (TopCat.toSSet.obj (cubeModel.{v} n)) _⦋m⦌) (r : ULift.{v} ℤ)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    twistedCubePushforward L c m (simplexChain t r) a =
-      r.down • ιTwistedChainComplex L m ((TopCat.toSSet.map (cubeToHom c)).app _ t)
-        (L.map ((cubeToHom c).hom.pathClass (cubeModelOrigin n)
-          (TopCat.simplexMap t (SimplexCategory.toTopInitialVertex _))) a) :=
-  twistedPushforward_simplexChain (L := L) (f := cubeToHom c) (z₀ := cubeModelOrigin n) t r a
 
 /-- The pushforward along a cube commutes with the boundaries. -/
 theorem twistedCubePushforward_d {n : ℕ} (c : SingularCube X n) (m : ℕ)
@@ -169,7 +106,7 @@ theorem twistedCubePushforward_d {n : ℕ} (c : SingularCube X n) (m : ℕ)
 theorem twistedCubicalToSingular_ofCube {n : ℕ} (c : SingularCube X n)
     (a : L.obj (FundamentalGroupoid.mk (c 0))) :
     twistedCubicalToSingular L n (TwistedCubicalChain.ofCube L c a) =
-      twistedCubePushforward L c n (cubicalToSingularGen n) a :=
+      twistedCubePushforward L c n (cubicalToSingularGen (ULift.{v} ℤ) n) a :=
   TwistedCubicalChain.desc_ofCube _ c a
 
 /-- **The comparison on a subcube.** The image of a subcube `c ∘ ι` of `c`, with the coefficient
@@ -178,15 +115,16 @@ the model. -/
 theorem twistedCubicalToSingular_ofSubcube {n m : ℕ} (c : SingularCube X n)
     (ι : C(Fin m → I, Fin n → I)) (a : L.obj (FundamentalGroupoid.mk (c 0))) :
     twistedCubicalToSingular L m (TwistedCubicalChain.ofSubcube L c ι a) =
-      twistedCubePushforward L c m (cubicalToSingularSubcube n ι) a := by
+      twistedCubePushforward L c m (cubicalToSingularSubcube (ULift.{v} ℤ) n ι) a := by
   -- the map from the model `Iᵐ` to the model `Iⁿ` underlying the subcube `ι`
   set g : cubeModel.{v} m ⟶ cubeModel.{v} n := cubeToHom ((upCube n).comp ι) with hg
-  have hmap : ((singularChains (ULift.{v} ℤ)).map g).f m (cubicalToSingularGen m) =
-      cubicalToSingularSubcube n ι := by
-    have := singularChains_map_cubicalToSingularSubcube.{v} ι (ContinuousMap.id (Fin m → I))
-    rwa [ContinuousMap.comp_id] at this
+  have hmap : ((singularChains (ULift.{v} ℤ)).map g).f m (cubicalToSingularGen (ULift.{v} ℤ) m) =
+      cubicalToSingularSubcube (ULift.{v} ℤ) n ι := by
+    have := singularChains_map_cubicalToSingularSubcube (ULift.{v} ℤ) ι
+      (ContinuousMap.id (Fin m → I))
+    rwa [ContinuousMap.comp_id, cubicalToSingularSubcube_id] at this
   have key := twistedPushforward_map (L := L) (f := cubeToHom c) (z₀ := cubeModelOrigin n) g
-    (cubeModelOrigin m) (cubicalToSingularGen m) a
+    (cubeModelOrigin m) (cubicalToSingularGen (ULift.{v} ℤ) m) a
   rw [hmap] at key
   rw [TwistedCubicalChain.ofSubcube_apply, twistedCubicalToSingular_ofCube]
   -- The transport inside `c` is the transport inside the image of `c ∘ down`, with `down` the
@@ -197,7 +135,8 @@ theorem twistedCubicalToSingular_ofSubcube {n m : ℕ} (c : SingularCube X n)
     (pathClass_comp c ⟨ULift.down, continuous_uliftDown⟩ (cubeModelOrigin n)
       (g (cubeModelOrigin m))).symm
   exact (congrArg (fun p : FundamentalGroupoid.mk (c 0) ⟶ FundamentalGroupoid.mk (c (ι 0)) ↦
-    twistedPushforward L (cubeToHom (c.comp ι)) (cubeModelOrigin m) m (cubicalToSingularGen m)
+    twistedPushforward L (cubeToHom (c.comp ι)) (cubeModelOrigin m) m
+      (cubicalToSingularGen (ULift.{v} ℤ) m)
       (L.map p a)) hp).trans key.symm
 
 /-- The projection of the cube `Iᵐ⁺¹` forgetting the `i`-th coordinate. -/
@@ -208,17 +147,15 @@ private abbrev forgetCoordinate {m : ℕ} (i : Fin (m + 1)) : C(Fin (m + 1) → 
 private theorem twistedCubePushforward_gen_eq_zero_of_eq_comp {m : ℕ} (s : SingularCube X m)
     (i : Fin (m + 1)) {c : SingularCube X (m + 1)} (hc : c = s.comp (forgetCoordinate i))
     (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    twistedCubePushforward L c (m + 1) (cubicalToSingularGen (m + 1)) a = 0 := by
+    twistedCubePushforward L c (m + 1) (cubicalToSingularGen (ULift.{v} ℤ) (m + 1)) a = 0 := by
   subst hc
   -- the origin of `Iᵐ⁺¹` goes to the origin of `Iᵐ`, so `a` is a coefficient at `s 0`
   have h := twistedCubicalToSingular_ofSubcube (L := L) s (forgetCoordinate i)
     (a : L.obj (FundamentalGroupoid.mk (s 0)))
   have hu : (upCube.{v} m).comp (forgetCoordinate i) = degeneracy (upCube.{v} m) i :=
     ContinuousMap.ext fun x ↦ by rw [degeneracy_apply]; rfl
-  have h0 : cubicalToSingularSubcube.{v} m (forgetCoordinate i) = 0 := by
-    unfold cubicalToSingularSubcube
-    rw [hu, NormalizedCubicalChain.ofCube_eq_zero (ULift.{v} ℤ) (isDegenerate_degeneracy _ _)]
-    exact LinearMap.map_zero _
+  have h0 : cubicalToSingularSubcube (ULift.{v} ℤ) m (forgetCoordinate i) = 0 :=
+    cubicalToSingularSubcube_eq_zero _ (hu ▸ isDegenerate_degeneracy _ _)
   -- The origin goes to the origin, so the transport inside `s` is the identity.
   have hp : pathClass s 0 (forgetCoordinate i 0) = 𝟙 (FundamentalGroupoid.mk (s 0)) :=
     pathClass_self s 0
@@ -237,7 +174,7 @@ private theorem twistedCubePushforward_gen_eq_zero_of_eq_comp {m : ℕ} (s : Sin
 corresponding subcube `upCube ∘ π` of the model is degenerate. -/
 theorem twistedCubePushforward_gen_eq_zero_of_isDegenerate {n : ℕ} {c : SingularCube X n}
     (hc : IsDegenerate c) (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    twistedCubePushforward L c n (cubicalToSingularGen n) a = 0 := by
+    twistedCubePushforward L c n (cubicalToSingularGen (ULift.{v} ℤ) n) a = 0 := by
   cases n with
   | zero => exact (not_isDegenerate_zero c hc).elim
   | succ m =>
@@ -255,8 +192,9 @@ theorem twistedCubicalToSingular_boundary (n : ℕ) (x : L.TwistedCubicalChain (
   | ofCube c a =>
     rw [twistedCubicalToSingular_ofCube, twistedCubePushforward_d,
       singularChains_d_cubicalToSingularGen, TwistedCubicalChain.boundary_ofCube]
-    simp only [map_sum, map_sub, map_zsmul, twistedCubicalToSingular_ofSubcube,
-      LinearMap.sum_apply, LinearMap.sub_apply, LinearMap.smul_apply]
+    simp only [map_sum, map_sub, map_smul, map_zsmul, ULift.smul_def, ULift.pow_down,
+      ULift.neg_down, ULift.one_down, twistedCubicalToSingular_ofSubcube, LinearMap.sum_apply,
+      LinearMap.sub_apply, LinearMap.smul_apply]
 
 variable (L) in
 /-- The comparison from the normalized cubical chains with coefficients in `L` to the simplicial
@@ -273,7 +211,7 @@ def normalizedTwistedCubicalToSingular (n : ℕ) :
 theorem normalizedTwistedCubicalToSingular_ofCube {n : ℕ} (c : SingularCube X n)
     (a : L.obj (FundamentalGroupoid.mk (c 0))) :
     normalizedTwistedCubicalToSingular L n (NormalizedTwistedCubicalChain.ofCube L c a) =
-      twistedCubePushforward L c n (cubicalToSingularGen n) a := by
+      twistedCubePushforward L c n (cubicalToSingularGen (ULift.{v} ℤ) n) a := by
   rw [NormalizedTwistedCubicalChain.ofCube_apply, normalizedTwistedCubicalToSingular,
     Submodule.liftQ_apply, twistedCubicalToSingular_ofCube]
 
@@ -317,7 +255,7 @@ theorem twistedCubicalToSingularMap_f (n : ℕ) :
   rfl
 
 /-- **Naturality in the space** of the comparison chain map. -/
-theorem normalizedTwistedCubicalChainComplexMap_comp_twistedCubicalToSingularMap
+theorem twistedCubicalToSingularMap_naturality
     {Y : TopCat.{v}} (f : X ⟶ Y) (L : LocalCoefficientSystem.{u, v, v} R Y) :
     normalizedTwistedCubicalChainComplexMap f.hom L ≫ twistedCubicalToSingularMap L =
       twistedCubicalToSingularMap ((pullback f.hom).obj L) ≫ twistedChainComplexMap f L := by
@@ -336,10 +274,10 @@ theorem normalizedTwistedCubicalChainComplexMap_comp_twistedCubicalToSingularMap
   -- the cube `f ∘ c` is `c` followed by `f`, as a map from the model
   exact (normalizedTwistedCubicalToSingular_ofCube (L := L) (f.hom.comp c) a).trans
     (twistedChainComplexMap_twistedPushforward (f := cubeToHom c) (z₀ := cubeModelOrigin n) L f
-      (cubicalToSingularGen n) a).symm
+      (cubicalToSingularGen (ULift.{v} ℤ) n) a).symm
 
 /-- **Naturality in the local system** of the comparison chain map. -/
-theorem normalizedTwistedCubicalChainComplexCoefficientMap_comp_twistedCubicalToSingularMap
+theorem twistedCubicalToSingularMap_coefficientMap_naturality
     {K : LocalCoefficientSystem.{u, v, v} R X} (η : L ⟶ K) :
     normalizedTwistedCubicalChainComplexCoefficientMap η ≫ twistedCubicalToSingularMap K =
       twistedCubicalToSingularMap L ≫ twistedChainComplexCoefficientMap η := by
@@ -356,7 +294,7 @@ theorem normalizedTwistedCubicalChainComplexCoefficientMap_comp_twistedCubicalTo
   rw [NormalizedTwistedCubicalChain.coefficientMap_ofCube,
     normalizedTwistedCubicalToSingular_ofCube, normalizedTwistedCubicalToSingular_ofCube]
   exact (twistedChainComplexCoefficientMap_twistedPushforward (f := cubeToHom c)
-    (z₀ := cubeModelOrigin n) η (cubicalToSingularGen n) a).symm
+    (z₀ := cubeModelOrigin n) η (cubicalToSingularGen (ULift.{v} ℤ) n) a).symm
 
 end LocalCoefficientSystem
 
