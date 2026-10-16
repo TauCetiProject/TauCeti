@@ -101,9 +101,12 @@ theorem IsVerticalStrip.rowLen_eq_add_ite (h : IsVerticalStrip μ ν) (i : ℕ) 
 /-- **Vertical strips are the transposes of horizontal strips.**  A skew shape has at most one cell
 in each row exactly when its transpose has at most one cell in each column, which is the interlacing
 condition `YoungDiagram.InterlacedBy`.  So the two relations determine each other, and the reason to
-carry both is one of coordinates: interlacing compares columns, whereas the rows of
-`YoungDiagram.IsVerticalStrip` are what exhibit a vertical strip as an indicator shift of row
-lengths, the form the Pieri rule is computed in. -/
+carry both is one of coordinates.  `YoungDiagram.InterlacedBy` is stated on the adjacent row lengths
+of the two shapes it is given, `μ.rowLen (i + 1) ≤ ν.rowLen i ≤ μ.rowLen i`, and characterizes
+horizontal strips; applied to the transposes, as here, those row lengths are the column lengths of
+`μ` and `ν`.  `YoungDiagram.IsVerticalStrip` compares the row lengths of `μ` and `ν` themselves
+instead, and those are what exhibit a vertical strip as an indicator shift of row lengths, the form
+the Pieri rule is computed in. -/
 theorem isVerticalStrip_iff_interlacedBy_transpose :
     IsVerticalStrip μ ν ↔ InterlacedBy μ.transpose ν.transpose := by
   rw [isVerticalStrip_iff, interlacedBy_iff]
