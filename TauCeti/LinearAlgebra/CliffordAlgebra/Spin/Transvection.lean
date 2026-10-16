@@ -53,6 +53,8 @@ nontrivial unit as soon as `u` and `w` are linearly independent.
   `w ∈ K ∙ u`.
 * `CliffordAlgebra.spinToSpecialOrthogonal_comp_spinTransvectionHom`: the lifts lift
   `QuadraticMap.transvectionHom`.
+* `CliffordAlgebra.spinTransvection_pow`: powers multiply the parameter by the exponent,
+  as for `TauCeti.QuadraticMap.transvection_pow`.
 * `CliffordAlgebra.spinTransvectionHom_injective`: for `u ≠ 0` the lifts form a copy of
   `u^⊥ / K ∙ u` inside the Spin group.
 * `CliffordAlgebra.spinorNorm_transvection` and `CliffordAlgebra.orthogonalSpinorNorm_transvection`:
@@ -424,6 +426,22 @@ theorem spinTransvectionHom_injective (hQ : Q.Nondegenerate) (hu : Q u = 0) (hu�
   refine Function.Injective.of_comp (f := (spinToSpecialOrthogonal Q).toAdditive) ?_
   rw [← AddMonoidHom.coe_comp, spinToSpecialOrthogonal_comp_spinTransvectionHom]
   exact transvectionHom_injective hu (hQ.polarBilin_ne_zero hu₀)
+
+/-- The `n`th power of a canonical Spin transvection lift multiplies its parameter by `n`. -/
+@[simp]
+theorem spinTransvection_pow (hQ : Q.Nondegenerate) (hu : Q u = 0)
+    (huw : polar Q u w = 0) (n : ℕ) :
+    spinTransvection hQ hu huw ^ n = spinTransvection hQ (w := n • w) hu
+      (by simp [← Nat.cast_smul_eq_nsmul K, polar_smul_right, huw]) := by
+  have h := congrArg Additive.toMul
+    (map_nsmul (spinTransvectionHom hQ hu) n
+      (Submodule.Quotient.mk ⟨w, by simpa only [LinearMap.mem_ker, polarBilin_apply_apply]
+        using huw⟩))
+  simp only [← Nat.cast_smul_eq_nsmul K, ← Submodule.Quotient.mk_smul,
+    SetLike.mk_smul_mk, toMul_nsmul] at h
+  rw [toMul_spinTransvectionHom_mk hQ hu (by simp [polar_smul_right, huw]),
+    toMul_spinTransvectionHom_mk hQ hu huw] at h
+  simpa only [Nat.cast_smul_eq_nsmul] using h.symm
 
 variable [FiniteDimensional K V]
 

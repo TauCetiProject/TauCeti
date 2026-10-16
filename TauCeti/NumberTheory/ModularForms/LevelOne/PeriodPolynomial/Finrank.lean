@@ -111,7 +111,7 @@ theorem finrank_ker_one_add_S [CharZero K] (hw : Even w) :
   obtain ⟨m, rfl⟩ := hw
   have hs : (dickson 2 (1 : K) (m + m)).eval 0 = (-1) ^ m := by
     rw [← two_mul]
-    exact dickson_two_one_eval_zero_two_mul m
+    exact dickson_two_eval_zero_two_mul (1 : K) m
   rw [hs] at h
   -- `2 d = w + 1 - (-1) ^ (w / 2)`, according to the parity of `w / 2`
   rcases Nat.even_or_odd m with ⟨i, rfl⟩ | ⟨i, rfl⟩
@@ -195,7 +195,7 @@ theorem periodPolynomials_zero [NeZero (2 : K)] : periodPolynomials K 0 = ⊥ :=
   rw [finrank_homogeneousSubmodule_fin_two] at hle
   have hker : LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))) = ⊥ := by
     rw [← Submodule.finrank_eq_zero]
-    interval_cases hd : finrank K
+    interval_cases _ : finrank K
       (LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))))
     · rfl
     · norm_num at h

@@ -123,8 +123,7 @@ subtraction `0 - 1` doing the work. -/
 theorem finrank_sl :
     finrank R (SpecialLinear.sl n R) = Fintype.card n ^ 2 - 1 := by
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
-  · have : Nontrivial R := nontrivial_of_invariantBasisNumber R
-    simp [Module.finrank_zero_of_subsingleton]
+  · simp [Module.finrank_zero_of_subsingleton]
   · rw [(slEquivFun (R := R) i₀).finrank_eq]
     simp [Fintype.card_subtype_compl, sq]
 

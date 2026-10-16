@@ -36,6 +36,7 @@ and this polynomial is the minimal polynomial of `y` over `K(x)`.
 
 ## Main results
 
+* `TauCeti.IsHermitianCoordinates.transcendental_y`: `y` is transcendental over `K`.
 * `TauCeti.IsHermitianCoordinates.isFunctionField`: `F / K` is an algebraic function field.
 * `TauCeti.IsHermitianCoordinates.mul_ord_y_eq`: `q · ord_P y = (q + 1) · ord_P x` at every pole
   `P` of `x`.
@@ -75,6 +76,13 @@ namespace IsHermitianCoordinates
 
 variable {q : ℕ} {x y : F} (h : IsHermitianCoordinates K q x y)
 include h
+
+/-- The second Hermitian coordinate is transcendental over the constant field. -/
+theorem transcendental_y : Transcendental K y := by
+  intro hy
+  apply h.transcendental_x
+  have hx : IsAlgebraic K (x ^ (q + 1)) := h.equation ▸ (hy.pow q).add hy
+  exact hx.of_pow (by omega)
 
 /-- `y` generates `F` over `K(x)`. -/
 theorem adjoin_adjoin_eq_top : K⟮x⟯⟮y⟯ = ⊤ :=

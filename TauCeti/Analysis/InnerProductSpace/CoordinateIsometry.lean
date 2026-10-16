@@ -75,12 +75,9 @@ theorem familyIsometry_single [DecidableEq ι] (hv : Orthonormal 𝕜 v) (i : ι
 /-- The range of the coordinate isometry of an orthonormal family is the span of the family. -/
 theorem range_familyIsometry (hv : Orthonormal 𝕜 v) :
     LinearMap.range hv.familyIsometry.toLinearMap = Submodule.span 𝕜 (Set.range v) := by
-  rw [← Fintype.range_linearCombination]
-  refine le_antisymm ?_ ?_
-  · rintro _ ⟨x, rfl⟩
-    exact ⟨x, by simp [familyIsometry_apply, Fintype.linearCombination_apply]⟩
-  · rintro _ ⟨x, rfl⟩
-    exact ⟨WithLp.toLp 2 x, by simp [familyIsometry_apply, Fintype.linearCombination_apply]⟩
+  change LinearMap.range
+    (Fintype.linearCombination 𝕜 v ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap) = _
+  rw [LinearEquiv.range_comp, Fintype.range_linearCombination]
 
 /-- The adjoint of the coordinate isometry of an orthonormal family in a complete space is the
 analysis map: its `i`-th coordinate at `y` is `⟪vᵢ, y⟫`. -/
@@ -98,11 +95,10 @@ space is the analysis map: its `i`-th coordinate at `y` is `⟪vᵢ, y⟫`. -/
 @[simp]
 theorem adjoint_toLinearMap_familyIsometry_apply [FiniteDimensional 𝕜 E] (hv : Orthonormal 𝕜 v)
     (y : E) (i : ι) : (LinearMap.adjoint hv.familyIsometry.toLinearMap y) i = ⟪v i, y⟫_𝕜 := by
-  classical
-  have h := EuclideanSpace.inner_single_left i (1 : 𝕜)
-    (LinearMap.adjoint hv.familyIsometry.toLinearMap y)
-  rw [map_one, one_mul, LinearMap.adjoint_inner_right] at h
-  simpa using h.symm
+  have := FiniteDimensional.complete 𝕜 E
+  change (hv.familyIsometry.toContinuousLinearMap.toLinearMap.adjoint y) i = _
+  rw [ContinuousLinearMap.adjoint_toLinearMap]
+  exact hv.adjoint_familyIsometry_apply y i
 
 end Orthonormal
 

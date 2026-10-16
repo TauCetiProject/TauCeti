@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Base change of bialgebra points
@@ -26,6 +27,8 @@ tensor-product Hopf algebra antipode formula, and `AlgHom.liftEquiv`.
 * `TauCeti.AlgHom.baseChangePointsMulEquiv`: the convolution monoid isomorphism between
   `A →ₐ[k] R` and `K ⊗[k] A →ₐ[K] R`. When `A` is a Hopf algebra these are convolution
   groups, so this is automatically an isomorphism of groups.
+* `TauCeti.AlgHom.pointsBaseChange`: base change of base-valued points,
+  `WithConv (A →ₐ[k] k) →* WithConv (K ⊗[k] A →ₐ[K] K)`, as a convolution monoid homomorphism.
 * `TauCeti.AlgHom.baseChangePointsMulEquiv_inv_apply_tmul` and
   `TauCeti.AlgHom.baseChangePointsMulEquiv_symm_inv_apply`: pointwise formulas for
   convolution inverses of base-changed points.
@@ -133,7 +136,7 @@ The `≃*` `AlgHom.baseChangePointsMulEquiv` is automatically a group isomorphis
 lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ (s ⊗ₜ[k] a) =
       s • f.ofConv (antipode k a) := by
-  rw [convInv_apply]
+  rw [algHom_inv_apply]
   simp
 
 /-- Pointwise inverse formula after restricting a base-changed point along `a ↦ 1 ⊗ a`:
@@ -141,7 +144,34 @@ the inverse of `(e.symm f)` has value `f (1 ⊗ S a)` at `a`. -/
 lemma baseChangePointsMulEquiv_symm_inv_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
     (((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹).ofConv a =
       f.ofConv (1 ⊗ₜ[k] antipode k a) := by
-  rw [convInv_apply, baseChangePointsMulEquiv_symm_apply]
+  rw [algHom_inv_apply, baseChangePointsMulEquiv_symm_apply]
+
+end AlgHom
+
+namespace AlgHom
+
+variable {k A : Type*} (K : Type*) [CommSemiring k] [CommSemiring K] [Semiring A] [Algebra k K]
+  [_root_.Bialgebra k A]
+
+/-- Base change of base-valued points along `k → K`: a point `f : A →ₐ[k] k` of a bialgebra gives
+the point `s ⊗ a ↦ s * f a` of `K ⊗[k] A` over `K`. It is a monoid homomorphism for convolution,
+the composite of `AlgHom.mapValue (Algebra.ofId k K)` with `AlgHom.baseChangePointsMulEquiv`. -/
+noncomputable def pointsBaseChange : WithConv (A →ₐ[k] k) →* WithConv (K ⊗[k] A →ₐ[K] K) :=
+  (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)).toMonoidHom.comp
+    (AlgHom.mapValue (Algebra.ofId k K))
+
+/-- The base change of a point `f` sends `s ⊗ a` to `s * f a`. -/
+@[simp]
+lemma pointsBaseChange_apply_tmul (f : WithConv (A →ₐ[k] k)) (s : K) (a : A) :
+    pointsBaseChange K f (s ⊗ₜ[k] a) = s * algebraMap k K (f.ofConv a) := by
+  simp [pointsBaseChange, smul_eq_mul]
+
+/-- The base change of a point `f` is the base change `AlgHom.sectionBaseChange` of the section
+`f` of `Spec A → Spec k`. -/
+lemma ofConv_pointsBaseChange (f : WithConv (A →ₐ[k] k)) :
+    (pointsBaseChange K f).ofConv = f.ofConv.sectionBaseChange K := by
+  ext a
+  simp
 
 end AlgHom
 

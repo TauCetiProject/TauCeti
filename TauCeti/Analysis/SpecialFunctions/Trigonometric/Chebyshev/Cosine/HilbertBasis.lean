@@ -13,9 +13,8 @@ public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.HilbertB
 # The Chebyshev basis as a cosine basis
 
 Transporting `TauCeti.chebyshevTHilbertBasis` across `TauCeti.chebyshevCosineL2Equiv` gives a
-Hilbert basis on the angular interval. Its `n`th vector is the normalized cosine
-`cos (nθ) / √cₙ`, where `c₀ = π` and `cₙ = π / 2` for `n > 0`. This is the unitary-transfer
-statement required by Part C of the `OrthogonalL2Bases` roadmap.
+Hilbert basis on the angular interval. Its `n`th vector is the normalized cosine `cos (nθ) / √cₙ`,
+where `c₀ = π` and `cₙ = π / 2` for `n > 0`.
 
 ## Main declarations
 

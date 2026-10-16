@@ -47,7 +47,9 @@ construction.
 (`MeasurableEquiv.finTwoArrow`, `measurePreserving_finTwoArrow`). `finThreeArrow`
 and `finFourArrow` are the next two cases, identifying `Fin 3 → β` and `Fin 4 → β`
 with the right-nested products `β × β × β` and `β × β × β × β`; under them the product measure
-`Measure.pi fun _ => μ` becomes the iterated product of `μ`.
+`Measure.pi fun _ => μ` becomes the iterated product of `μ`. The paired version,
+`finFourArrowPairPair`, groups alternate coordinates as `((x 0, x 2), (x 1, x 3))` and carries
+the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 
 ## Main statements
 
@@ -62,7 +64,10 @@ with the right-nested products `β × β × β` and `β × β × β × β`; unde
 * `TauCeti.finThreeArrow` and `TauCeti.finFourArrow`, with
   `TauCeti.measurePreserving_finThreeArrow` and `TauCeti.measurePreserving_finFourArrow` — functions
   on `Fin 3` and `Fin 4` as iterated products, carrying `Measure.pi` to the iterated product
-  measure.
+  measure;
+* `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
+  on `Fin 4` as two pairs of alternate coordinates, carrying `Measure.pi` to a product of two
+  product measures.
 
 ## Implementation
 
@@ -269,8 +274,8 @@ theorem finThreeArrow_apply (x : Fin 3 → β) :
 
 /-- The inverse of `finThreeArrow` sends a triple to the corresponding vector. -/
 @[simp]
-theorem finThreeArrow_symm_apply (a b c : β) :
-    finThreeArrow.symm (a, b, c) = ![a, b, c] :=
+theorem finThreeArrow_symm_apply (p : β × β × β) :
+    finThreeArrow.symm p = ![p.1, p.2.1, p.2.2] :=
   finThreeArrow.symm_apply_eq.2 (by simp)
 
 /-- Under `finThreeArrow` the product measure on `Fin 3 → β` is the iterated
@@ -294,8 +299,8 @@ theorem finFourArrow_apply (x : Fin 4 → β) :
 /-- The inverse of `finFourArrow` sends a quadruple to the corresponding
 vector. -/
 @[simp]
-theorem finFourArrow_symm_apply (a b c d : β) :
-    finFourArrow.symm (a, b, c, d) = ![a, b, c, d] :=
+theorem finFourArrow_symm_apply (p : β × β × β × β) :
+    finFourArrow.symm p = ![p.1, p.2.1, p.2.2.1, p.2.2.2] :=
   finFourArrow.symm_apply_eq.2 (by simp)
 
 /-- Under `finFourArrow` the product measure on `Fin 4 → β` is the iterated
@@ -305,6 +310,33 @@ theorem measurePreserving_finFourArrow (μ : Measure β) [SigmaFinite μ] :
       (μ.prod (μ.prod (μ.prod μ))) :=
   ((MeasurePreserving.id μ).prod (measurePreserving_finThreeArrow μ)).comp
     (measurePreserving_piFinSuccAbove (fun _ : Fin 4 => μ) 0)
+
+/-- Functions on `Fin 4` are two pairs of alternate coordinates. -/
+def finFourArrowPairPair : (Fin 4 → β) ≃ᵐ (β × β) × (β × β) :=
+  ((MeasurableEquiv.piCongrLeft (fun _ : Fin 4 => β) (Equiv.swap 1 2)).trans
+    finFourArrow).trans MeasurableEquiv.prodAssoc.symm
+
+/-- `finFourArrowPairPair` groups the zeroth and second coordinates, then the first and third. -/
+@[simp]
+theorem finFourArrowPairPair_apply (x : Fin 4 → β) :
+    finFourArrowPairPair x = ((x 0, x 2), (x 1, x 3)) := by
+  simp [finFourArrowPairPair, finFourArrow_apply, MeasurableEquiv.prodAssoc,
+    MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft_apply, Equiv.swap_apply_def]
+
+/-- The inverse of `finFourArrowPairPair` interleaves the two pairs. -/
+@[simp]
+theorem finFourArrowPairPair_symm_apply (p : (β × β) × (β × β)) :
+    finFourArrowPairPair.symm p = ![p.1.1, p.2.1, p.1.2, p.2.2] :=
+  finFourArrowPairPair.symm_apply_eq.2 (by simp)
+
+/-- Under `finFourArrowPairPair` the product measure on `Fin 4 → β` is
+`(μ ⊗ μ) ⊗ (μ ⊗ μ)`. -/
+theorem measurePreserving_finFourArrowPairPair (μ : Measure β) [SigmaFinite μ] :
+    MeasurePreserving (finFourArrowPairPair (β := β)) (Measure.pi fun _ : Fin 4 => μ)
+      ((μ.prod μ).prod (μ.prod μ)) :=
+  (measurePreserving_prodAssoc μ μ (μ.prod μ)).symm.comp
+    ((measurePreserving_finFourArrow μ).comp
+      (measurePreserving_piCongrLeft (fun _ : Fin 4 => μ) (Equiv.swap 1 2)))
 
 end FinArrow
 

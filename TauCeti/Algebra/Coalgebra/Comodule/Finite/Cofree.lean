@@ -94,7 +94,6 @@ theorem cofree_coact_tmul (m : M) (c : C) :
 
 /-- The inclusion of finitely generated comodules sends `FGComoduleCat.cofree` to
 `ComoduleCat.cofree`. -/
-@[simp]
 theorem incl_cofree : (incl (R := R) (C := C)).obj (cofree (R := R) (C := C) M) =
       ComoduleCat.cofree R C M :=
   rfl

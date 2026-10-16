@@ -14,9 +14,9 @@ This file records the basic orientation-reversal API for the generalized winding
 Reversing the interval orientation negates the single-point Cauchy principal value defining
 `Contour.windingNumber`, so the winding number itself changes sign.
 
-These lemmas are bookkeeping for the roadmap's curve and cycle layer. Cycles are oriented formal
-combinations of curves, and finite decompositions of curves into avoiding pieces and model sectors
-need both concatenation and orientation reversal.
+These lemmas are bookkeeping for curves and cycles. Cycles are oriented formal combinations of
+curves, and finite decompositions of curves into avoiding pieces and model sectors need both
+concatenation and orientation reversal.
 
 ## Main results
 
@@ -28,8 +28,8 @@ need both concatenation and orientation reversal.
 
 ## Provenance
 
-This is routine API around the Hungerbühler--Wasem generalized winding number from the contour
-integration roadmap; no formal source is vendored.
+This is routine API around the Hungerbühler--Wasem generalized winding number; no formal source is
+vendored.
 -/
 
 public section

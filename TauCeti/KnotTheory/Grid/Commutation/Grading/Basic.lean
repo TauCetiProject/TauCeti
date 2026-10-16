@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Components
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Basic
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap
 
 /-!
@@ -21,7 +21,7 @@ state `x` to the sum, over the empty pentagons `P` from `x` carrying no `X`-mark
 their terminal side, of `V^{𝕆 ∩ P} · y` with `y` the target of `P`. This file proves the
 state-grading formulas for pentagons turning on either side. `Grading/Map.lean` uses them to prove
 that both parts and the full commutation map `GridDiagram.commutationMap` have bidegree `(0, 0)`
-for the (`O`-Maslov, Alexander) bigrading of `Grading/UnblockedChain.lean`.
+for the (`O`-Maslov, Alexander) bigrading of `Grading/Unblocked/Chain.lean`.
 
 The grid states of `G` and `G'` are the same permutations, and the comparison rests on two
 grading formulas.

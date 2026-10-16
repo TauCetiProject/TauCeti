@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.Boundaries
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
+import TauCeti.Algebra.Homology.Split
 
 /-!
 # The universal coefficient sequence for cohomology
@@ -26,7 +28,9 @@ monomorphisms and `Zⱼ` is projective. The second map is the Kronecker map
 `TauCeti.Algebra.Homology.Kronecker`). This is the universal coefficient theorem for cohomology.
 Over a hereditary ring, such as a principal ideal domain, these hypotheses hold for a degreewise
 projective complex: the cycles and the boundaries are submodules of projective modules, hence
-projective, and a surjection onto the projective boundaries splits.
+projective, and a surjection onto the projective boundaries splits.  Over a principal ideal domain
+they are found by instance search (`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
+`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`).
 
 The first map is built from the extension class of `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0`. A morphism
 `β : Bⱼ ⟶ Y` gives the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y` of `Hom(X, Y)`, through the corestriction of the
@@ -35,12 +39,19 @@ differential `Xᵢ ⟶ Xⱼ` to the boundaries. Its class depends only on the im
 the identification `TauCeti.homCokernelEquivExt` of `Ext¹(Hⱼ(X), Y)` with `Hom(Bⱼ, Y)` modulo the
 morphisms extending to `Zⱼ`.
 
+For a chain complex indexed by `ℕ` whose terms and homology objects are projective, the
+hypotheses hold in every degree over any ring
+(`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and the `Ext¹` term vanishes, so the
+Kronecker map is bijective.
+
 ## Main declarations
 
 * `TauCeti.ChainComplex.extToHomology`: the map `Ext¹(Hⱼ(X), Y) →ₗ[k] Hⁱ(Hom(X, Y))`,
   characterized by `TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀`.
 * `TauCeti.ChainComplex.extToHomology_injective` and
   `TauCeti.ChainComplex.exact_extToHomology_kronecker`: exactness at the first two places.
+* `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology`: the Kronecker map is
+  bijective for a complex indexed by `ℕ` with projective terms and projective homology.
 
 ## References
 
@@ -183,5 +194,31 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
       X.iCycles_toBoundaries_assoc, zero_comp, comp_zero]
 
 end Ext
+
+section ProjectiveHomology
+
+variable {k : Type*} [CommRing k] [Linear k C] {X : ChainComplex C ℕ} {Y : C}
+  [∀ n, Projective (X.X n)] [∀ n, Projective (X.homology n)]
+
+/-- **The universal coefficient theorem with projective homology**: for a chain complex `X`
+indexed by `ℕ` whose terms and homology objects are all projective, the Kronecker map
+`Hⁿ(Hom(X, Y)) →ₗ[k] (Hₙ(X) ⟶ Y)` is bijective in every degree, for every object `Y`. -/
+theorem kronecker_bijective_of_projective_homology (n : ℕ) :
+    Function.Bijective (kronecker k X Y n) := by
+  cases n with
+  | zero => exact kronecker_bijective_of_isIso 0
+  | succ n =>
+    -- the cycles are projective and split off, so the universal coefficient sequence is exact,
+    -- and its `Ext¹` term vanishes since the homology is projective
+    have := ChainComplex.isSplitMono_iCycles_of_projective_homology X
+    have := ChainComplex.projective_cycles_of_projective_homology X
+    refine ⟨?_, kronecker_surjective_of_isSplitMono _⟩
+    let := HasExt.standard C
+    rw [← LinearMap.ker_eq_bot,
+      (exact_extToHomology_kronecker (k := k) (X := X) (Y := Y) rfl).linearMap_ker_eq,
+      LinearMap.range_eq_bot]
+    exact LinearMap.ext fun e ↦ by rw [Ext.eq_zero_of_projective e, map_zero, LinearMap.zero_apply]
+
+end ProjectiveHomology
 
 end TauCeti.ChainComplex

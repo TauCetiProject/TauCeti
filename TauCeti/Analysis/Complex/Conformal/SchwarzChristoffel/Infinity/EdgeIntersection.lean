@@ -87,7 +87,7 @@ theorem schwarzChristoffelBoundary_injective_of_edge_intersections
   have hmem (x : ℝ) (hx : x ∈ Icc (a 0) (a (Fin.last (n + 1)))) :
       ∃ i : Fin (n + 1),
         B x ∈ (schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc := by
-    obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a ha (Nat.succ_ne_zero n) hx
+    obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a (Nat.succ_ne_zero n) hx
     refine ⟨i, ?_⟩
     rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
       ← schwarzChristoffelBoundary_image_Icc_prevertex a e z₀

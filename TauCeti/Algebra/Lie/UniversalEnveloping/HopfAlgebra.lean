@@ -26,14 +26,7 @@ representations is handled by Mathlib's `Coalgebra.Repr.mul`.
 
 * `TauCeti.UniversalEnvelopingAlgebra.instHopfAlgebra`: the canonical Hopf algebra structure.
 * `TauCeti.UniversalEnvelopingAlgebra.hopfAlgebraStructAntipode_eq_antipode`: the Hopf
-  antipode is the previously constructed universal-enveloping antipode.
-
-## Roadmap
-
-This is a prerequisite for the Chevalley--Demazure construction in Layer 9 of the
-ReductiveGroups roadmap. The Kostant integral form must be stable under comultiplication, counit,
-and antipode before it can supply the integral Hopf data used in that construction; the ambient
-Hopf structure is what those operations restrict from.
+  antipode is `TauCeti.UniversalEnvelopingAlgebra.antipode`.
 
 ## References
 

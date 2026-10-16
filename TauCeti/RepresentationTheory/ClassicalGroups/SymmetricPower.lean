@@ -36,8 +36,6 @@ elementary symmetric polynomial the exterior power gives.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 1, “Symmetric and exterior power representations”.
 * The standard-representation specialization is adapted from the formal template in
   `TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower`.
 -/

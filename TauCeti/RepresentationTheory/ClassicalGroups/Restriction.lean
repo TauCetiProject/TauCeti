@@ -12,18 +12,13 @@ public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 # The standard representation restricted to the special linear group
 
 This file restricts the standard representation of `GL n k` along the canonical inclusion of
-`SL n k`.  It records the action and character formulas in the special-linear presentation,
-which are the input for the volume-preserving part of the classical-groups roadmap.
+`SL n k`. It records the action and character formulas in the special-linear presentation.
 
 ## Main definitions
 
 * `TauCeti.stdSLRep` is the standard representation of `SL n k`.
 * `TauCeti.stdSLFDRep` is its finite-dimensional bundled form.
 * `TauCeti.stdSLDualRep` is its contragredient.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md)
 -/
 
 public section

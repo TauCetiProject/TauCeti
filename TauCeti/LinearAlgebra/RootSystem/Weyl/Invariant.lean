@@ -112,7 +112,7 @@ lemma isWeylInvariant_iff (f : AddMonoidAlgebra ℤ M) :
 
 /-- The zero element is invariant. -/
 theorem isWeylInvariant_zero : IsWeylInvariant P (0 : AddMonoidAlgebra ℤ M) := by
-  intro w x
+  intro _ _
   simp
 
 /-- The unit of `ℤ[M]` is invariant: it sits at the weight `0`, which every Weyl-group element

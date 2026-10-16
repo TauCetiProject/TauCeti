@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Combinatorics.Quiver.PathWeight
@@ -677,6 +678,11 @@ theorem vertexIdempotent_mem_integerGrade_zero (i : Q) :
   rw [← Nat.cast_zero, integerGrade_ofNat]
   exact vertexIdempotent_mem_grade_zero i
 
+/-- **Integer degree `0` is the span of the vertex idempotents.** -/
+theorem integerGrade_zero_eq_span_range_vertexIdempotent :
+    integerGrade k Q 0 = Submodule.span k (Set.range (vertexIdempotent k)) := by
+  rw [← Nat.cast_zero, integerGrade_ofNat, grade_zero_eq_span_range_vertexIdempotent]
+
 /-- The integer-indexed path-length pieces form an internal direct sum. -/
 theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade k Q) :=
   Graded.isInternal_extendByZero (isInternal_grade k Q)
@@ -685,12 +691,55 @@ theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade 
 @[instance_reducible]
 noncomputable def integerGradedAlgebra [Finite Q] : GradedAlgebra (integerGrade k Q) :=
   let _ := gradedAlgebra k Q
-  { (isInternal_integerGrade k Q).chooseDecomposition with
-    one_mem := (integerGrade_ofNat k Q 0).ge SetLike.GradedOne.one_mem
-    mul_mem := fun _ _ _ _ hx hy ↦
-      Graded.mul_mem_extendByZero (fun hx' hy' ↦ SetLike.GradedMul.mul_mem hx' hy') hx hy }
+  Graded.gradedAlgebraExtendByZero (grade k Q)
 
 end IntegerGrade
+
+section OppositeGrade
+
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
+
+/-- Path length on the ordinary opposite path algebra. Reversing multiplication does not
+change degree, and introduces no Koszul sign. -/
+noncomputable def opGrade (n : ℕ) : Submodule k (pathAlgebra k Q)ᵐᵒᵖ :=
+  (grade k Q n).map (MulOpposite.opLinearEquiv k).toLinearMap
+
+/-- An opposite element has the path degree of its underlying element. -/
+@[simp]
+theorem mem_opGrade_iff {n : ℕ} {x : (pathAlgebra k Q)ᵐᵒᵖ} :
+    x ∈ opGrade k Q n ↔ x.unop ∈ grade k Q n := by
+  simp [opGrade]
+
+/-- Multiplication in the ordinary opposite adds path lengths. -/
+instance opGrade.gradedMonoid [Finite Q] : SetLike.GradedMonoid (opGrade k Q) where
+  one_mem := (mem_opGrade_iff k Q).2 (SetLike.one_mem_graded (grade k Q))
+  mul_mem := by
+    intro m n x y hx hy
+    rw [mem_opGrade_iff, MulOpposite.unop_mul, add_comm]
+    exact SetLike.mul_mem_graded ((mem_opGrade_iff k Q).1 hy)
+      ((mem_opGrade_iff k Q).1 hx)
+
+end OppositeGrade
+
+section OppositeGradedAlgebra
+
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
+
+/-- The opposite path-length pieces form an internal direct sum. -/
+theorem isInternal_opGrade [Finite Q] : DirectSum.IsInternal (opGrade k Q) := by
+  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+  · exact LinearMap.iSupIndep_map _ (MulOpposite.opLinearEquiv k).injective
+      (isInternal_grade k Q).submodule_iSupIndep
+  · unfold opGrade
+    rw [← Submodule.map_iSup,
+      (isInternal_grade k Q).submodule_iSup_eq_top, Submodule.map_top]
+    exact LinearMap.range_eq_top.2 (MulOpposite.opLinearEquiv k).surjective
+
+/-- The ordinary opposite path algebra is graded by path length. -/
+noncomputable instance opGrade.gradedAlgebra [Finite Q] : GradedAlgebra (opGrade k Q) :=
+  (isInternal_opGrade k Q).gradedAlgebra
+
+end OppositeGradedAlgebra
 
 end PathAlgebra
 

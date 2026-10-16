@@ -100,7 +100,7 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_one
   set U := schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet
   set hi := (schwarzChristoffelQuadraticConstantAtInfinity a e z₀).im
   set d := Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)
-  set lo := hi + d with hlo
+  set lo := hi + d
   have hgap : lo < hi := by linarith
   set R := max R₁ R₂
   have hUo : IsOpen U :=

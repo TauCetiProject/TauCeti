@@ -17,9 +17,11 @@ public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 For a nonarchimedean local field `K`, `TauCeti.teichmuller 𝒪[K]` is the canonical
 multiplicative section `𝓀[K]ˣ →* 𝒪[K]ˣ`. This file adds its zero-preserving extension
 `teichmullerLift K : 𝓀[K] →*₀ 𝒪[K]`, obtained from Mathlib's `Perfection.teichmuller₀`, and proves
-that the two constructions agree on units. It also records that, for `q = #𝓀[K]` and `f ≠ 0`,
-`q ^ f - 1` is a unit in `𝒪[K]`, and that an exponent prime to the residue characteristic `p` is
-nonzero.
+that the two constructions agree on units. Both lifts are natural along a finite extension `L/K`:
+the inclusion `𝒪[K] → 𝒪[L]` carries the Teichmüller representative of `a ∈ 𝓀[K]` to the
+Teichmüller representative of the image of `a` in `𝓀[L]`. It also records that, for
+`q = #𝓀[K]` and `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`, and that an exponent prime to the
+residue characteristic `p` is nonzero.
 
 ## Main definitions
 
@@ -36,8 +38,11 @@ nonzero.
   when it reduces to `a` and is fixed by the `q`-th power map.
 * `TauCeti.teichmullerLift_unique`: it is the unique zero-preserving multiplicative section of
   reduction.
+* `TauCeti.teichmullerLift_neg_one`: in odd residue characteristic the lift of `-1` is `-1`.
 * `AlgEquiv.smul_teichmullerLift`: local-field automorphisms commute with the
   Teichmüller lift through their residue-field action.
+* `TauCeti.algebraMap_teichmullerLift`: the Teichmüller lift is natural along a finite extension
+  of local fields.
 
 ## References
 
@@ -170,6 +175,14 @@ theorem teichmullerLift_unique (f : 𝓀[K] →*₀ 𝒪[K])
   · simpa [coe_teichmuller_apply] using
       congrArg (fun g : 𝓀[K]ˣ →* 𝒪[K]ˣ ↦ ((g (Units.mk0 a ha) : 𝒪[K]ˣ) : 𝒪[K])) hunits
 
+/-- In odd residue characteristic, the Teichmüller lift of `-1` is `-1`. (In residue
+characteristic `2` the residue `-1` is `1`, whose lift is `1`.) -/
+@[simp]
+theorem teichmullerLift_neg_one (hq : Odd (Nat.card 𝓀[K])) :
+    teichmullerLift K (-1) = -1 := by
+  simpa [coe_teichmuller_apply] using
+    congrArg Units.val (TauCeti.teichmuller_neg_one 𝒪[K] hq)
+
 section Automorphism
 
 variable {K L : Type*}
@@ -191,5 +204,29 @@ theorem _root_.AlgEquiv.smul_teichmullerLift (σ : L ≃ₐ[K] L) (a : 𝓀[L]) 
   · rw [← map_pow, teichmullerLift_pow_natCard]
 
 end Automorphism
+
+section Extension
+
+variable {K L : Type*}
+  [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+
+/-- **Naturality of the Teichmüller lift.** Along a finite extension `L/K` of local fields, the
+Teichmüller representative in `𝒪[K]` of `a ∈ 𝓀[K]` is the Teichmüller representative in `𝒪[L]`
+of the image of `a` in `𝓀[L]`. -/
+@[simp]
+theorem algebraMap_teichmullerLift (a : 𝓀[K]) :
+    algebraMap 𝒪[K] 𝒪[L] (teichmullerLift K a) =
+      teichmullerLift L (algebraMap 𝓀[K] 𝓀[L] a) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  have hmap : ResidueField.map (algebraMap 𝒪[K] 𝒪[L]) a = algebraMap 𝓀[K] 𝓀[L] a := by
+    obtain ⟨b, rfl⟩ := residue_surjective a
+    rw [ResidueField.map_residue, ResidueField.algebraMap_residue]
+  simpa only [Units.coe_map, MonoidHom.coe_ofClass, coe_teichmuller_apply, Units.val_mk0,
+    hmap] using congrArg Units.val (unitsMap_teichmuller (algebraMap 𝒪[K] 𝒪[L]) (Units.mk0 a ha))
+
+end Extension
 
 end TauCeti

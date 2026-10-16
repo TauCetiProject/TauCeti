@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
 # The normalizer quotient of a subgroup
 
 This file packages the algebraic quotient `N(H) / H`, where `N(H)` is the normalizer of a
-subgroup `H ≤ G`. This is the group that occurs in the universal-covers roadmap when the
-deck group of the connected cover associated to `H ≤ π₁(X, x₀)` is identified with
-`N(H) / H`.
+subgroup `H ≤ G`. For a connected covering space associated to `H ≤ π₁(X, x₀)`,
+this quotient identifies its deck transformation group.
 
 The construction is deliberately only a thin local API around Mathlib's `Subgroup.normalizer`,
 `Subgroup.subgroupOf`, and quotient groups. Mathlib already proves that `H` is normal in its
@@ -26,18 +26,14 @@ in the normal case.
 * `Subgroup.normalizerQuotient`: the quotient `N(H) / H`.
 * `Subgroup.normalizerQuotientMk`: the canonical map `N(H) →* N(H) / H`.
 * `Subgroup.normalizerQuotientLift`: the universal property for maps out of
-  `N(H) / H`.
+  `N(H) / H` into any monoid.
 * `Subgroup.normalizerQuotientToQuotientOfNormal`: when `H` is normal in `G`,
   the natural map `N(H) / H →* G / H`.
 * `Subgroup.normalizerQuotientEquivQuotientOfNormal`: when `H` is normal in `G`,
   the normalizer quotient is canonically isomorphic to `G / H`.
+* `Subgroup.normalizerQuotientMulAut`: for a commutative `H`, conjugation by the normalizer
+  descends to an action of `N(H) / H` on `H` by automorphisms.
 
-## References
-
-This supplies the algebraic normalizer-quotient prerequisite named in
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 2: for the cover associated to
-`H ≤ π₁(X, x₀)`, the deck group is `N(H) / H`, and in the regular case `H ◁ π₁(X, x₀)`
-this becomes `π₁(X, x₀) / H`.
 -/
 
 public section
@@ -89,10 +85,10 @@ lemma normalizerQuotientMk_range (H : Subgroup G) : (H.normalizerQuotientMk).ran
   QuotientGroup.range_mk'
     (N := H.subgroupOf (normalizer (H : Set G)))
 
-variable {M : Type*} [Group M]
+variable {M : Type*} [Monoid M]
 
-/-- The universal property of `N(H) / H`: a homomorphism from the normalizer that sends every
-ambient element of `H` to `1` descends to a homomorphism from the normalizer quotient. -/
+/-- The universal property of `N(H) / H`: a homomorphism from the normalizer into a monoid
+that sends every ambient element of `H` to `1` descends to the normalizer quotient. -/
 abbrev normalizerQuotientLift (H : Subgroup G) (φ : normalizer (H : Set G) →* M)
     (hφ : ∀ g : normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
     H.normalizerQuotient →* M :=
@@ -136,19 +132,8 @@ lemma normalizerQuotientLift_injective_iff (H : Subgroup G)
     (hφ : ∀ g : normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
     Function.Injective (H.normalizerQuotientLift φ hφ) ↔
       ∀ g : normalizer (H : Set G), φ g = 1 ↔ (g : G) ∈ H := by
-  rw [QuotientGroup.injective_lift_iff]
-  · constructor
-    · intro hker g
-      constructor
-      · intro hg
-        have : g ∈ H.subgroupOf (normalizer (H : Set G)) := by
-          rw [hker]
-          exact hg
-        exact this
-      · exact hφ g
-    · intro hker
-      ext g
-      exact (hker g).symm
+  rw [QuotientGroup.injective_lift_iff, SetLike.ext_iff]
+  simp only [mem_subgroupOf, MonoidHom.mem_ker, iff_comm]
 
 /-- The quotient equality criterion for representatives in the normalizer, stated in the
 ambient group `G`. -/
@@ -267,5 +252,26 @@ lemma normalizerQuotientEquivQuotientOfNormal_symm_mk (g : G) :
   rfl
 
 end Normal
+
+section MulAut
+
+variable (H : Subgroup G) [IsMulCommutative H]
+
+/-- **Conjugation of a commutative subgroup by its normalizer quotient.** `H` acts trivially on
+itself by conjugation, so `Subgroup.normalizerMonoidHom` descends to `N(H) / H`. -/
+def normalizerQuotientMulAut : H.normalizerQuotient →* MulAut H :=
+  H.normalizerQuotientLift (normalizerMonoidHom H) fun g hg => by
+    ext k
+    have hcomm : (g : G) * k = k * g := congrArg Subtype.val (mul_comm' (⟨(g : G), hg⟩ : H) k)
+    rw [normalizerMonoidHom_apply_apply_coe, MulAut.one_apply, hcomm, mul_inv_cancel_right]
+
+/-- The class of `g ∈ N(H)` acts on `H` by conjugation by `g`. -/
+@[simp]
+lemma coe_normalizerQuotientMulAut_mk_apply (g : normalizer (H : Set G)) (k : H) :
+    ((H.normalizerQuotientMulAut (g : H.normalizerQuotient) k : H) : G) = g * k * (g : G)⁻¹ := by
+  simp only [normalizerQuotientMulAut, normalizerQuotientLift, QuotientGroup.lift_mk,
+    normalizerMonoidHom_apply_apply_coe]
+
+end MulAut
 
 end Subgroup

@@ -126,10 +126,10 @@ theorem mem_basePointFixedSubmodule_of_quotient_coact_eq_tmul_one
   intro n
   obtain ⟨g, hg⟩ := n.2
   have hfixed := Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one m hm' g
-  have hinclude : AlgHom.mapDomain q g =
+  have hinclude : BialgHom.mapDomain q g =
       CommHopfAlgCat.quotientPointsHom A I (CommAlgCat.of R R) g := by
-    rw [CommHopfAlgCat.quotientPointsHom_apply, AlgHom.mapDomain_apply]
-  have hq : AlgHom.mapDomain q g = n.1 := by
+    rw [CommHopfAlgCat.quotientPointsHom_apply, BialgHom.mapDomain_apply]
+  have hq : BialgHom.mapDomain q g = n.1 := by
     exact hinclude.trans hg
   rw [Comodule.basePointsRepresentation_corestrict q g, hq] at hfixed
   exact hfixed
@@ -160,9 +160,9 @@ theorem mem_basePointFixedSubmodule_iff_quotient_coact_eq_tmul_one
   let q : A →ₐc[k] Q := (CommHopfAlgCat.mkQuotient H I).hom
   let _ : Comodule k Q M := Comodule.Corestrict q.toCoalgHom
   have hinclude (g : HopfAlgebra.points (R := k) (H := Q) (CommAlgCat.of k k)) :
-      AlgHom.mapDomain q g =
+      BialgHom.mapDomain q g =
         CommHopfAlgCat.quotientPointsHom H I (CommAlgCat.of k k) g := by
-    rw [CommHopfAlgCat.quotientPointsHom_apply, AlgHom.mapDomain_apply]
+    rw [CommHopfAlgCat.quotientPointsHom_apply, BialgHom.mapDomain_apply]
   constructor
   · intro hm
     have hfixed : ∀ g : HopfAlgebra.points (R := k) (H := Q) (CommAlgCat.of k k),

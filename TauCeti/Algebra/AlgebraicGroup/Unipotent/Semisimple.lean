@@ -24,8 +24,7 @@ infinitesimal group schemes such as `μₚ` and `αₚ` in characteristic `p`.
 The main application is to diagonalizable groups. Every point of a diagonalizable group is
 semisimple, and semisimplicity is reflected by a closed immersion. It follows that every reduced
 finite-type closed subgroup of a diagonalizable group whose geometric points are unipotent is the
-trivial group. This is the rigidity input for the reductive-groups roadmap: once the unipotent
-radical is constructed, it proves that the unipotent radical of a torus is trivial.
+trivial group.
 
 ## Main declarations
 
@@ -40,10 +39,6 @@ radical is constructed, it proves that the unipotent radical of a torus is trivi
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 12.40.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap. It
-supplies the trivial-unipotent-subgroup argument needed to prove that tori are reductive, using
-the geometric unipotence and diagonalizable-group semisimplicity developed in Layers 4 and 5.
 -/
 
 public section

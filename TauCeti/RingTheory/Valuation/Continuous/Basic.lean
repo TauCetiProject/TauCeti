@@ -82,6 +82,8 @@ sets are *literally equal* for equivalent valuations, which is
   continuous ring homomorphism.
 * `Valuation.IsContinuous.of_lt_imp_lt` : a valuation that preserves the strict comparisons and
   the zeros of a continuous valuation is continuous.
+* `Valuation.IsContinuous.isEquiv_of_dense` : two continuous valuations with the same zeros that
+  agree in their comparisons on a dense subset are equivalent.
 * `TauCeti.isClosed_supp_of_isContinuous`: the support of a continuous valuation is closed.
 
 ## References
@@ -197,6 +199,28 @@ theorem IsContinuous.isOpen_le [SeparatelyContinuousAdd A] {v : Valuation A Γ�
   refine isOpen_iff_mem_nhds.mpr fun a ha ↦ ?_
   filter_upwards [hv.sub_lt_mem_nhds a hb] with y hy
   simpa using v.map_add_le hy.le ha
+
+/-- **Continuous valuations are determined on a dense subset.** Two continuous valuations with
+the same zeros that compare the elements of a dense subset `s` in the same way are equivalent. -/
+theorem IsContinuous.isEquiv_of_dense [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    {w : Valuation A Γ₀'} (hv : v.IsContinuous) (hw : w.IsContinuous)
+    (hvw : ∀ a, v a = 0 ↔ w a = 0) {s : Set A} (hs : Dense s)
+    (h : ∀ a ∈ s, ∀ b ∈ s, v a ≤ v b ↔ w a ≤ w b) : v.IsEquiv w := by
+  -- off the support both valuations are locally constant (`IsContinuous.eventually_eq`), so some
+  -- element of `s` has the same value under both
+  have approx (a : A) (ha : v a ≠ 0) : ∃ a' ∈ s, v a' = v a ∧ w a' = w a := by
+    obtain ⟨a', ⟨hva, hwa⟩, ha's⟩ := mem_closure_iff_nhds.mp (hs a) _
+      ((hv.eventually_eq ha).and (hw.eventually_eq ((hvw a).not.mp ha)))
+    exact ⟨a', ha's, hva, hwa⟩
+  intro a b
+  rcases eq_or_ne (v a) 0 with ha | ha
+  · simp [ha, (hvw a).mp ha]
+  rcases eq_or_ne (v b) 0 with hb | hb
+  · simp [hb, (hvw b).mp hb, ha, (hvw a).not.mp ha]
+  obtain ⟨a', ha', hva, hwa⟩ := approx a ha
+  obtain ⟨b', hb', hvb, hwb⟩ := approx b hb
+  rw [← hva, ← hwa, ← hvb, ← hwb]
+  exact h a' ha' b' hb'
 
 /-- **Wedhorn Remark 7.9.** Continuity is inherited along a continuous ring homomorphism. No
 compatibility between the topology and the ring operations is needed on either side: because the

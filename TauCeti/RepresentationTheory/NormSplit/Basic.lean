@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.RepresentationTheory.Equiv
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.RelativeNorm
 
@@ -24,7 +23,8 @@ such prime `p` some subgroup of index prime to `p` has the identity as a norm, t
 
 ## Main statements
 
-* `Representation.norm_linHom_apply`: the norm of the conjugation action on `End_k(V)`.
+* `Representation.norm_linHom_apply`: the norm of the action on linear maps between two
+  representations, including conjugation on `End_k(V)`.
 * `Representation.index_nsmul_id_mem_range_norm_linHom`: if the identity is an `H`-norm, then
   `[G : H]` times the identity is a `G`-norm.
 * `Representation.id_mem_range_norm_linHom_of_forall_prime`: if for every prime divisor `p` of
@@ -45,13 +45,16 @@ universe u
 
 namespace Representation
 
-variable {k G V : Type*} [CommRing k] [Group G] [Fintype G] [AddCommGroup V] [Module k V]
+section Semiring
+
+variable {k G V : Type*} [CommSemiring k] [Group G] [Fintype G] [AddCommMonoid V] [Module k V]
   (ρ : Representation k G V)
 
-/-- The norm of the conjugation action of `G` on `End_k(V)` sends `φ` to
-`x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))`. -/
-theorem norm_linHom_apply (φ : V →ₗ[k] V) (x : V) :
-    (linHom ρ ρ).norm φ x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)) := by
+/-- The norm of the action of `G` on linear maps from `ρ` to `σ` sends `φ` to
+`x ↦ ∑ g, σ g (φ (ρ g⁻¹ x))`. -/
+theorem norm_linHom_apply {W : Type*} [AddCommMonoid W] [Module k W]
+    (σ : Representation k G W) (φ : V →ₗ[k] W) (x : V) :
+    (linHom ρ σ).norm φ x = ∑ g : G, σ g (φ (ρ g⁻¹ x)) := by
   simp [Representation.norm, linHom_apply]
 
 /-- If the identity of `V` is the norm of `φ` for the conjugation action of a subgroup `H`, then
@@ -71,6 +74,11 @@ theorem index_nsmul_id_mem_range_norm_linHom (H : Subgroup G) [Fintype H]
     ← relNorm_apply_of_forall_apply_eq (ρ := linHom ρ ρ) (H := H) hfix, ← hφ]
   congr!
 
+end Semiring
+
+variable {k G V : Type*} [CommSemiring k] [Group G] [Fintype G] [AddCommGroup V] [Module k V]
+  (ρ : Representation k G V)
+
 /-- **The identity is a norm if it is one at every relevant prime.** If for every prime divisor `p`
 of `|G|` the identity of `V` is a norm for the conjugation action of a subgroup of index prime to
 `p`, then it is a norm for the conjugation action of `G`. -/
@@ -79,12 +87,11 @@ theorem id_mem_range_norm_linHom_of_forall_prime
       ∃ (H : Subgroup G) (_ : Fintype H), ¬ p ∣ H.index ∧
       LinearMap.id ∈ LinearMap.range (Representation.norm ((linHom ρ ρ).comp H.subtype))) :
     LinearMap.id ∈ LinearMap.range (linHom ρ ρ).norm := by
-  -- The ideal of integers `n` with `n • id` a norm.
-  let J : Ideal ℤ := ((LinearMap.range (linHom ρ ρ).norm).restrictScalars ℤ).comap
+  -- The additive norm is ℤ-linear even over a semiring; take the ideal of `n` with `n • id` a norm.
+  let J : Ideal ℤ := (LinearMap.range (linHom ρ ρ).norm.toAddMonoidHom.toIntLinearMap).comap
     (LinearMap.toSpanSingleton ℤ _ (LinearMap.id : V →ₗ[k] V))
   have hJ : ∀ n : ℤ, n ∈ J ↔ n • (LinearMap.id : V →ₗ[k] V) ∈
-      LinearMap.range (linHom ρ ρ).norm := fun n ↦ by
-    simp [J]
+      LinearMap.range (linHom ρ ρ).norm := fun _ ↦ Iff.rfl
   obtain ⟨n, hn⟩ := (Submodule.IsPrincipal.principal J)
   have hcard : (Fintype.card G : ℤ) ∈ J := by
     rw [hJ, natCast_zsmul]
@@ -137,21 +144,15 @@ theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Grou
       simp [r]
     calc r.hom (e x) = Finsupp.linearCombination k id (σ x) := LinearMap.congr_fun this (σ x)
       _ = x := LinearMap.congr_fun hσ x
-  let ψ₀ : A.V →ₗ[k] (ι →₀ MonoidAlgebra k G) :=
-    ∑ g : G, (Representation.free k G ι g) ∘ₗ e ∘ₗ φ ∘ₗ A.ρ g⁻¹
-  let s : A ⟶ free k G ι := ofHom <|
-    ψ₀.intertwiningMap_of_isIntertwiningMap (ρ := A.ρ) (σ := Representation.free k G ι)
-      fun h x ↦ by
-        simp only [ψ₀, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply, map_sum]
-        refine Fintype.sum_equiv (Equiv.mulLeft h⁻¹) _ _ fun g ↦ ?_
-        simp only [Equiv.coe_mulLeft, ← Module.End.mul_apply, ← map_mul, mul_inv_rev, inv_inv,
-          mul_inv_cancel_left]
+  let ψ₀ := (Representation.linHom A.ρ (Representation.free k G ι)).norm (e ∘ₗ φ)
+  let s : A ⟶ free k G ι := Representation.linHom.invariantsEquivRepHom A (free k G ι)
+    ⟨ψ₀, fun g ↦ Representation.self_norm_apply _ g _⟩
   refine (Retract.mk s r ?_).projective
   ext x
   -- Expose the underlying linear maps so the formulas for `r` and `ψ₀` can rewrite the retraction.
   change r.hom (ψ₀ x) = x
   conv_rhs => rw [hφ' x]
-  simp only [ψ₀, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply, map_sum]
+  simp only [ψ₀, Representation.norm_linHom_apply, LinearMap.comp_apply, map_sum]
   refine Finset.sum_congr rfl fun g _ ↦ ?_
   conv_rhs => rw [← he (φ (A.ρ g⁻¹ x))]
   exact LinearMap.congr_fun (r.hom.isIntertwining' g) _

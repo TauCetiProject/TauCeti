@@ -22,12 +22,12 @@ transform `MeasureTheory.Lp.fourierTransformₗᵢ` is diagonal in it, with eige
 `n`-th vector. Every `L²` function therefore has its Fourier transform given by the termwise
 rescaling of its Hermite expansion, and the fourth iterate of the transform is the identity.
 
-The basis is assembled by the roadmap's family-agnostic bridge
-`TauCeti.hilbertBasisOfOrthogonalSystem`, exactly as `TauCeti.hermiteHilbertBasis` is, but at the
-Fourier-adapted data: the weight `w(x) = e^{-2πx²}`, whose envelope `√w(x) = e^{-πx²}` is the
-self-dual Gaussian of Mathlib's convention, the exact-degree polynomials `Hₙ(2√π·x)`, and the
-normalization `cₙ = n!√π/√(2π)`. Completeness is the same moment-determinacy mechanism, since a
-Gaussian weight of any width has finite exponential moments.
+The basis is assembled by the family-agnostic bridge `TauCeti.hilbertBasisOfOrthogonalSystem`,
+exactly as `TauCeti.hermiteHilbertBasis` is, but at the Fourier-adapted data: the weight
+`w(x) = e^{-2πx²}`, whose envelope `√w(x) = e^{-πx²}` is the self-dual Gaussian of Mathlib's
+convention, the exact-degree polynomials `Hₙ(2√π·x)`, and the normalization `cₙ = n!√π/√(2π)`.
+Completeness is the same moment-determinacy mechanism, since a Gaussian weight of any width has
+finite exponential moments.
 
 ## Main statements
 
@@ -226,10 +226,10 @@ private theorem memLp_twoPiHermiteDilated_normalized (n : ℕ) :
   memLp_two_bareNormalized (𝕜 := 𝕜) exp_moment_twoPiGaussianWeight
     twoPiHermiteDilated twoPiHermiteNormalization n
 
-/-- **The rescaled Hermite functions are a Hilbert basis of `L²(ℝ)`.** This is the roadmap's
-Hermite basis in the normalization Mathlib's `e^{-2πixξ}` Fourier convention forces: the same
-bridge `TauCeti.hilbertBasisOfOrthogonalSystem`, run at the weight `e^{-2πx²}` and the
-polynomials `Hₙ(2√π·x)`. -/
+/-- **The rescaled Hermite functions are a Hilbert basis of `L²(ℝ)`.** This is the Hermite basis in
+the normalization Mathlib's `e^{-2πixξ}` Fourier convention forces: the same bridge
+`TauCeti.hilbertBasisOfOrthogonalSystem`, run at the weight `e^{-2πx²}` and the polynomials
+`Hₙ(2√π·x)`. -/
 noncomputable def twoPiHermiteHilbertBasis : HilbertBasis ℕ 𝕜 (Lp 𝕜 2 (volume : Measure ℝ)) :=
   hilbertBasisOfOrthogonalSystem (𝕜 := 𝕜) (fun n x => (twoPiHermiteDilated n).eval x)
     (fun x => Real.exp (-(2 * Real.pi * x ^ 2))) twoPiHermiteNormalization

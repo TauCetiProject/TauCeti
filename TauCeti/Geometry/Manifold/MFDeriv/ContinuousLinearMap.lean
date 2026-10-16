@@ -25,6 +25,7 @@ coordinates in two trivializations are related.
 
 For maps on a normed space, it also records how `mvfderiv` acts on vectors given in the
 model space through `NormedSpace.fromTangentSpace`: there it is the Fréchet derivative.
+The precomposing continuous linear map may have any module equipped with a topology as its source.
 -/
 
 public section
@@ -80,13 +81,12 @@ theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F �
 
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
 `L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative
-applied to `L v`. -/
-theorem mvfderiv_comp_fromTangentSpace_symm_comp {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace 𝕜 G] {f : E → F} {z : E} (L : G →L[𝕜] E) :
+applied to `L v`. No norm is required on the source of `L`. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_fromTangentSpace_symm_comp {G : Type*}
+    [TopologicalSpace G] [AddCommMonoid G] [Module 𝕜 G] {f : E → F} {z : E} (L : G →L[𝕜] E) :
     (mvfderiv 𝓘(𝕜, E) f z).comp
         ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) z).symm.toContinuousLinearMap.comp L) =
       (fderiv 𝕜 f z).comp L := by
-  rw [mvfderiv_eq_fderiv]
   ext v
   simp
 

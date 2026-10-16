@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.AdelicSpinorNorm
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.AdelicSpinorNorm.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.Topology.Algebra.RestrictedProduct.Diagonal
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.BaseChange
@@ -139,12 +139,9 @@ theorem finiteAdelicSpinToSpecialOrthogonal_comp_finiteAdelicSpinDiagonal :
     U.finiteAdelicSpinToSpecialOrthogonal.comp U.finiteAdelicSpinDiagonal =
       U.finiteAdelicSpecialOrthogonalDiagonal.comp (CliffordAlgebra.spinToSpecialOrthogonal Q) := by
   ext x p : 2
-  have h := CliffordAlgebra.spinToSpecialOrthogonal_baseChange (A := ℚ_[p]) Q x
-  -- Identify the scalar-extended inverse of two with the canonical `p`-adic instance.
-  rw [Subsingleton.elim ((Invertible.map (algebraMap ℚ ℚ_[p]) 2).copy 2 (map_ofNat _ _).symm)
-    (inferInstance : Invertible (2 : ℚ_[p]))] at h
   simp only [MonoidHom.comp_apply, finiteAdelicSpinToSpecialOrthogonal_apply,
-    finiteAdelicSpinDiagonal_apply, finiteAdelicSpecialOrthogonalDiagonal_apply, h]
+    finiteAdelicSpinDiagonal_apply, finiteAdelicSpecialOrthogonalDiagonal_apply,
+    CliffordAlgebra.spinToSpecialOrthogonal_baseChange]
 
 /-- Pointwise form of `finiteAdelicSpinToSpecialOrthogonal_comp_finiteAdelicSpinDiagonal`. -/
 @[simp]

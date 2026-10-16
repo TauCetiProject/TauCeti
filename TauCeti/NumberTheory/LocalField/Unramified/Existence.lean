@@ -30,7 +30,7 @@ arbitrary extension `Ω`. So when `Ω` is separably closed, such as `AlgebraicCl
 These are the finite levels of the maximal unramified extension of `K`.
 
 The local-field structure carried by an intermediate field is not unique as data, but any two
-structures compatible with `K` agree (`TauCeti.finiteExtensionValuativeRel_eq`). The theorems
+structures compatible with `K` agree (`TauCeti.algebraicExtensionValuativeRel_eq`). The theorems
 below are therefore stated for an arbitrary compatible structure, and
 `TauCeti.existsUnique_isUnramified_finrank_eq` packages the statement for the canonical structure
 of `TauCeti.finiteIntermediateFieldValuativeRel`.
@@ -198,7 +198,7 @@ theorem exists_isPrimitiveRoot_natCard_pow_sub_one [IsSepClosed Ω] {f : ℕ} (h
     (algebraMap K Ω)
   rw [map_natCast, map_natCast] at h
   have : NeZero ((Nat.card 𝓀[K] ^ f - 1 : ℕ) : Ω) := ⟨h.ne_zero⟩
-  exact HasEnoughRootsOfUnity.exists_primitiveRoot Ω _
+  exact HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω _
 
 /-- The unramified extension of degree `f` is a finite extension of `K`. -/
 instance finiteDimensional_unramifiedExtension (f : ℕ) :

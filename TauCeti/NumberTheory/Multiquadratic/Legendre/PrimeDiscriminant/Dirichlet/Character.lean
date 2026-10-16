@@ -134,7 +134,7 @@ theorem isPrimitive_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P)
     intro h
     exact primeDiscriminantChar_ne_one P hP
       ((DirichletCharacter.eq_one_iff_conductor_eq_one).2 h)
-  rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, hp, hodd, hP⟩
+  rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, hp, _, hP⟩
   · -- At an even prime discriminant the character is `χ₄`, `χ₈` or `χ₈'`, whose values at `1`
     -- and at `3`, respectively `5`, are `1` and `-1`.
     rcases hP with rfl | rfl | rfl

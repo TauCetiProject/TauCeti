@@ -10,9 +10,9 @@ public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.Data.Pi.Interval
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
-import Mathlib.Data.Int.SuccPred
+import Mathlib.Order.SuccPred.Int
 import Mathlib.LinearAlgebra.Matrix.Block
-import TauCeti.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!

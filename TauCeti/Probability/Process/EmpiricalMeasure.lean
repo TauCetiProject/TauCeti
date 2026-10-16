@@ -16,8 +16,9 @@ public import Mathlib.Probability.UniformOn
 This file defines the empirical probability measure of a nonempty finite population
 (`empiricalMeasureOfFintype`) and, as its `κ := Fin (n + 1)` case, of the first `n + 1` terms of a
 sequence (`empiricalMeasure`), together with their evaluation, integration, and measurability API.
-The successor indexing is what supplies the `Nonempty` instance for the sequence form, so it needs
-no side condition, and it matches the shape used in limit theorems.
+The API also records that empirical measures have finite support. The successor indexing is what
+supplies the `Nonempty` instance for the sequence form, so it needs no side condition, and it
+matches the shape used in limit theorems.
 
 There is one construction, not two: the sequence form is *defined* as the specialization, so the
 two can never drift apart.
@@ -108,7 +109,7 @@ theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace �
     congr 1
     rw [ENNReal.toReal_inv]
     norm_cast
-  · intro i hi
+  · intro i _
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
 
 /-- The Lebesgue integral against a finite empirical population is the average of the values. -/
@@ -124,6 +125,16 @@ theorem measurable_empiricalMeasureOfFintype :
   refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
   simp_rw [← empiricalMeasureOfFintype_toMeasure, empiricalMeasureOfFintype_apply hs]
   fun_prop
+
+/-- A finite empirical population is concentrated on the finite set of its values. -/
+theorem exists_finset_ae_mem_empiricalMeasureOfFintype [MeasurableSingletonClass α]
+    (x : κ → α) :
+    ∃ s : Finset α, ∀ᵐ y ∂(empiricalMeasureOfFintype x : Measure α), y ∈ s := by
+  classical
+  refine ⟨Finset.univ.image x, ?_⟩
+  rw [empiricalMeasureOfFintype_toMeasure, ae_finsetSum_measure_iff]
+  intro i _
+  exact Measure.ae_smul_measure (by simp) _
 
 end FinitePopulation
 
@@ -143,6 +154,12 @@ theorem empiricalMeasure_toMeasure (x : ℕ → α) (n : ℕ) : (empiricalMeasur
   exact Fin.sum_univ_eq_sum_range
     (fun i => ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ • Measure.dirac (x i)) (n + 1)
 
+/-- An empirical measure is concentrated on a finite set. -/
+theorem exists_finset_ae_mem_empiricalMeasure [MeasurableSingletonClass α]
+    (x : ℕ → α) (n : ℕ) :
+    ∃ s : Finset α, ∀ᵐ y ∂(empiricalMeasure x n : Measure α), y ∈ s :=
+  exists_finset_ae_mem_empiricalMeasureOfFintype _
+
 /-- Evaluation of an empirical measure on a measurable set is its empirical frequency. -/
 theorem empiricalMeasure_apply {x : ℕ → α} {n : ℕ} {s : Set α} (hs : MeasurableSet s) :
     (empiricalMeasure x n : Measure α) s = ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ *
@@ -159,9 +176,9 @@ theorem empiricalMeasure_apply_toReal {x : ℕ → α} {n : ℕ} {s : Set α} (h
   · rw [ENNReal.toReal_natCast, ENNReal.toReal_sum]
     · congr 1
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
-    · intro i hi
+    · intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
 
 omit [MeasurableSpace Ω] in
@@ -173,7 +190,7 @@ theorem empiricalMeasure_process_apply_toReal {X : ℕ → Ω → α} {ω : Ω} 
   rw [empiricalMeasure_apply_toReal hs]
   refine congrArg (fun z : ℝ => ((n + 1 : ℕ) : ℝ)⁻¹ * z) ?_
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   by_cases hxi : X i ω ∈ s <;> simp [hxi]
 
 /-- Integrating against an empirical measure is averaging over the sampled values. -/
@@ -187,7 +204,7 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
     congr 1
     rw [ENNReal.toReal_inv]
     norm_cast
-  · intro i hi
+  · intro i _
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
 
 /-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/

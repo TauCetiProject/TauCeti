@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Divisor.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Ramification
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
+-- Proof-only: Dedekind's different theorem, `e = d + 1` at tame places.
+import TauCeti.FieldTheory.FunctionField.Different.Tame
 
 /-!
 # The different of the function field of an elliptic curve over `F(x)`
@@ -34,6 +36,11 @@ two are rational, as for `y² = x³ - x` over `ℚ`, the different is the sum of
 
 `Diff(F(W) / F(x)) = O + T₁ + T₂ + T₃`.
 
+These four places are then exactly the places ramified over `F(x)`: each has ramification index
+`2`, while every other place has different exponent `0` and is unramified. The ramification index
+comes from Dedekind's different theorem `e = d + 1`, which applies because each of these places is
+rational and `2` is invertible in `F`.
+
 In every characteristic the different has degree `4`, as the Hurwitz genus formula
 `2 · 1 - 2 = 2 · (0 - 2) + deg Diff` requires.
 
@@ -57,6 +64,12 @@ All in the namespace `WeierstrassCurve.Affine`:
   `2y + a₁x + a₃` plus `O`.
 * `different_eq_sum_of_card_eq_four`: away from characteristic two, if four rational points of
   `W` have order dividing two, the different is the sum of their places.
+* `differentExponent_pointEquivDegreeOnePlace_of_card_eq_four`,
+  `differentExponent_eq_zero_of_card_eq_four`,
+  `ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four`,
+  `ramificationIdx_eq_one_of_card_eq_four` and `one_lt_ramificationIdx_iff_of_card_eq_four`: in
+  that case the places of those four points are exactly the ramified places, each with
+  ramification index `2` and different exponent `1`.
 
 ## References
 
@@ -343,6 +356,93 @@ theorem different_eq_sum_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Poin
     norm_num)
   rw [← Finset.add_sum_erase S _ h0, heq, different_eq_zeros_add_of_two_ne_zero h2, add_comm,
     Point.zero_def, coe_pointEquivDegreeOnePlace_zero]
+
+/-- The coefficient of `Diff(F(W) / F(x))` at a place, when the points of order dividing two are
+rational: `1` at the places of the points of `S` and `0` elsewhere. -/
+private theorem differentExponent_eq_ite_of_card_eq_four [DecidableEq (Place F W.FunctionField)]
+    (h2 : (2 : F) ≠ 0) {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4)
+    (P : Place F W.FunctionField) :
+    (Place.differentExponent F (RatFunc F) P : ℤ) =
+      if P ∈ S.image fun T ↦ (pointEquivDegreeOnePlace W T).1 then 1 else 0 := by
+  have hpl : Function.Injective fun T ↦ (pointEquivDegreeOnePlace W T).1 :=
+    Subtype.val_injective.comp (pointEquivDegreeOnePlace W).injective
+  have h := congrArg (WeilDivisor.coeff · P) (different_eq_sum_of_card_eq_four h2 hS hcard)
+  simp only [Divisor.coeff_different] at h
+  rwa [← Finset.sum_image fun _ _ _ _ h ↦ hpl h, WeilDivisor.coeff_sum_ofPoint] at h
+
+/-- **The different exponent at a point of order dividing two**: away from characteristic two, if
+`S` is a set of four rational points of order dividing two, the place of each point of `S` has
+different exponent `1` over `F(x)`. -/
+theorem differentExponent_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F) ≠ 0)
+    {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {T : W.Point}
+    (hT : T ∈ S) :
+    Place.differentExponent F (RatFunc F) (pointEquivDegreeOnePlace W T).1 = 1 := by
+  classical
+  have h := differentExponent_eq_ite_of_card_eq_four h2 hS hcard (pointEquivDegreeOnePlace W T).1
+  simp only [Finset.mem_image_of_mem (fun T ↦ (pointEquivDegreeOnePlace W T).1) hT,
+    ↓reduceIte] at h
+  exact_mod_cast h
+
+/-- **The different exponent away from the points of order dividing two**: away from characteristic
+two, if `S` is a set of four rational points of order dividing two, every place other than the
+places of the points of `S` has different exponent `0` over `F(x)`. -/
+theorem differentExponent_eq_zero_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Point}
+    (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {P : Place F W.FunctionField}
+    (hP : ∀ T ∈ S, (pointEquivDegreeOnePlace W T).1 ≠ P) :
+    Place.differentExponent F (RatFunc F) P = 0 := by
+  classical
+  have h := differentExponent_eq_ite_of_card_eq_four h2 hS hcard P
+  have hmem : P ∉ S.image fun T ↦ (pointEquivDegreeOnePlace W T).1 := by
+    simpa [Finset.mem_image] using hP
+  simp only [hmem, ↓reduceIte] at h
+  exact_mod_cast h
+
+/-- **The ramification index at a point of order dividing two**: away from characteristic two, if
+`S` is a set of four rational points of order dividing two, the place of each point of `S` has
+ramification index `2` over `F(x)`. -/
+theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F) ≠ 0)
+    {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {T : W.Point}
+    (hT : T ∈ S) :
+    Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).1 = 2 := by
+  have he2 := Place.ramificationIdx_le_finrank (RatFunc F) (pointEquivDegreeOnePlace W T).1
+  rw [finrank_functionField] at he2
+  have he1 := Place.ramificationIdx_pos (RatFunc F) (pointEquivDegreeOnePlace W T).1
+  -- The place is rational and `e ≤ 2` is invertible, so it is tame and `e = d + 1 = 2`.
+  have := Place.isSeparable_residueField_of_degree_eq_one _ (pointEquivDegreeOnePlace W T).2
+  have htame : Place.IsTame F (RatFunc F) (pointEquivDegreeOnePlace W T).1 := by
+    refine (Place.isTame_iff_isSeparable_residueField _ _ _).mpr
+      ⟨Algebra.isSeparable_tower_top_of_isSeparable F _ _, ?_⟩
+    rw [← map_natCast (algebraMap F _), _root_.map_ne_zero]
+    interval_cases Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).1
+    · simp
+    · exact_mod_cast h2
+  rw [(Place.ramificationIdx_eq_differentExponent_add_one_iff _ _ _).mpr htame,
+    differentExponent_pointEquivDegreeOnePlace_of_card_eq_four h2 hS hcard hT]
+
+/-- **The unramified places when the points of order dividing two are rational**: away from
+characteristic two, if `S` is a set of four rational points of order dividing two, every place
+of `F(W)` other than the places of the points of `S` is unramified over `F(x)`. -/
+theorem ramificationIdx_eq_one_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Point}
+    (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {P : Place F W.FunctionField}
+    (hP : ∀ T ∈ S, (pointEquivDegreeOnePlace W T).1 ≠ P) :
+    Place.ramificationIdx (RatFunc F) P = 1 := by
+  have hd := differentExponent_eq_zero_of_card_eq_four h2 hS hcard hP
+  have hle := Place.ramificationIdx_le_differentExponent_add_one F (RatFunc F) P
+  have hpos := Place.ramificationIdx_pos (RatFunc F) P
+  omega
+
+/-- **The ramified places when the points of order dividing two are rational**: away from
+characteristic two, if `S` is a set of four rational points of order dividing two, a place of `F(W)`
+is ramified over `F(x)` exactly when it is the place of a point of `S`. -/
+theorem one_lt_ramificationIdx_iff_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Point}
+    (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) (P : Place F W.FunctionField) :
+    1 < Place.ramificationIdx (RatFunc F) P ↔ ∃ T ∈ S, (pointEquivDegreeOnePlace W T).1 = P := by
+  refine ⟨fun he ↦ by_contra fun hT ↦ ?_, fun ⟨T, hT, hTP⟩ ↦ ?_⟩
+  · push Not at hT
+    rw [ramificationIdx_eq_one_of_card_eq_four h2 hS hcard hT] at he
+    exact lt_irrefl 1 he
+  · rw [← hTP, ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four h2 hS hcard hT]
+    norm_num
 
 end TwoNeZero
 
