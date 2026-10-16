@@ -17,7 +17,6 @@ The extended charts do not change, and the identity is a diffeomorphism.
 This lets constructions stated for self-modelled manifolds apply to arbitrary boundaryless
 models without installing a second atlas on the original manifold. In particular, local
 normal forms and implicit-function constructions can retain their actual coordinates.
-The construction uses `ModelWithCorners.toHomeomorph` to transport chart targets.
 -/
 
 public section
@@ -38,6 +37,7 @@ namespace BoundarylessModel
 
 variable (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
 
+/-- The model copy inherits the topology of the original manifold. -/
 instance : TopologicalSpace (BoundarylessModel I M) := inferInstanceAs (TopologicalSpace M)
 
 /-- The identity homeomorphism to the copy with vector-space-valued charts. -/
@@ -49,8 +49,7 @@ def homeomorph : M ≃ₜ BoundarylessModel I M where
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
-/-- The carrier map is the identity. This equality is used explicitly: simplifying away the
-homeomorphism would hide the model change from the transport lemmas. -/
+/-- The carrier map of the homeomorphism is the identity. -/
 theorem coe_homeomorph : ⇑(homeomorph I M) = id :=
   (rfl)
 
@@ -127,20 +126,32 @@ theorem originalChart_extend (φ : OpenPartialHomeomorph (BoundarylessModel I M)
     (originalChart I φ).extend I = φ.toPartialEquiv := by
   rw [← chart_toPartialEquiv, chart_originalChart]
 
+private theorem chart_trans_toPartialEquiv (c d : OpenPartialHomeomorph M H) :
+    ((chart I c).symm.trans (chart I d)).toPartialEquiv = I.extendCoordChange c d := by
+  rw [ModelWithCorners.extendCoordChange, OpenPartialHomeomorph.trans_toPartialEquiv,
+    OpenPartialHomeomorph.symm_toPartialEquiv, chart_toPartialEquiv, chart_toPartialEquiv]
+  rfl
+
 private theorem chart_trans_mem_contDiffGroupoid_iff (c d : OpenPartialHomeomorph M H)
     (n : ℕ∞ω) :
     (chart I c).symm.trans (chart I d) ∈ contDiffGroupoid n 𝓘(𝕜, E) ↔
       c.symm.trans d ∈ contDiffGroupoid n I := by
-  -- Express both chart compositions on the original carrier so rewriting does not mix
-  -- the original topology instance with its definitionally equal copy.
-  change (c.trans I.toHomeomorph.toOpenPartialHomeomorph).symm.trans
-      (d.trans I.toHomeomorph.toOpenPartialHomeomorph) ∈ contDiffGroupoid n 𝓘(𝕜, E) ↔ _
-  simp [contDiffGroupoid, mem_groupoid_of_pregroupoid, contDiffPregroupoid,
-    I.range_eq_univ, Function.comp_def, ModelWithCorners.toHomeomorph]
+  -- Groupoid membership requires smoothness of the forward and inverse coordinate maps.
+  change (ContDiffOn 𝕜 n _ _ ∧ ContDiffOn 𝕜 n _ _) ↔
+    (ContDiffOn 𝕜 n _ _ ∧ ContDiffOn 𝕜 n _ _)
+  simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id,
+    preimage_id_eq, range_id, inter_univ]
+  change (ContDiffOn 𝕜 n ((chart I c).symm.trans (chart I d)).toPartialEquiv
+      ((chart I c).symm.trans (chart I d)).toPartialEquiv.source ∧
+    ContDiffOn 𝕜 n ((chart I d).symm.trans (chart I c)).toPartialEquiv
+      ((chart I d).symm.trans (chart I c)).toPartialEquiv.source) ↔ _
+  rw [chart_trans_toPartialEquiv, chart_trans_toPartialEquiv]
+  simp only [I.extendCoordChange_source, I.image_eq]
   rfl
 
 variable [ChartedSpace H M]
 
+/-- The model copy receives the atlas obtained by extending the original charts to `E`. -/
 instance : ChartedSpace E (BoundarylessModel I M) where
   atlas := chart I '' atlas H M
   chartAt x := chart I (chartAt H ((homeomorph I M).symm x))
@@ -193,17 +204,32 @@ instance {n : ℕ∞ω} [IsManifold I n M] : IsManifold 𝓘(𝕜, E) n (Boundar
 def diffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessModel I M) n where
   toEquiv := (homeomorph I M).toEquiv
   contMDiff_toFun := by
+    change ContMDiff I 𝓘(𝕜, E) n (homeomorph I M)
     intro x
+    have hcoord : writtenInExtChartAt I 𝓘(𝕜, E) x (homeomorph I M) =
+        writtenInExtChartAt I I x id := by
+      simp only [writtenInExtChartAt, extChartAt_eq, Homeomorph.symm_apply_apply]
+      rfl
     have h := (contMDiff_id : ContMDiff I I n (id : M → M)) x
     rw [contMDiffAt_iff] at h ⊢
-    rw [extChartAt_eq]
-    convert h using 1 <;> rfl
+    refine ⟨(homeomorph I M).continuous.continuousAt, ?_⟩
+    change ContDiffWithinAt 𝕜 n (writtenInExtChartAt I 𝓘(𝕜, E) x (homeomorph I M)) _ _
+    rw [hcoord]
+    exact h.2
   contMDiff_invFun := by
+    change ContMDiff 𝓘(𝕜, E) I n (homeomorph I M).symm
     intro x
+    have hcoord : writtenInExtChartAt 𝓘(𝕜, E) I x (homeomorph I M).symm =
+        writtenInExtChartAt I I ((homeomorph I M).symm x) id := by
+      simp only [writtenInExtChartAt, extChartAt_eq]
+      rfl
     have h := (contMDiff_id : ContMDiff I I n (id : M → M)) ((homeomorph I M).symm x)
     rw [contMDiffAt_iff, I.range_eq_univ] at h
-    rw [contMDiffAt_iff, extChartAt_eq, ModelWithCorners.range_eq_univ]
-    convert h using 1 <;> rfl
+    rw [contMDiffAt_iff]
+    refine ⟨(homeomorph I M).symm.continuous.continuousAt, ?_⟩
+    change ContDiffWithinAt 𝕜 n (writtenInExtChartAt 𝓘(𝕜, E) I x (homeomorph I M).symm) _ _
+    rw [hcoord, ModelWithCorners.range_eq_univ, extChartAt_eq]
+    exact h.2
 
 /-- The diffeomorphism has the same underlying map as the identity homeomorphism. -/
 @[simp]
