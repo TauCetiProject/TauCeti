@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Ideal.TensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
-public import Mathlib.Algebra.Module.Torsion.Basic
 
 /-!
 # Annihilators under flat scalar extension
