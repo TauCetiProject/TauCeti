@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Height.Polynomial
+public import TauCeti.NumberTheory.Height.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
 public import TauCeti.Algebra.MvPolynomial.Rename
 public import Mathlib.NumberTheory.Height.NumberField
