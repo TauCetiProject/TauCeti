@@ -20,7 +20,7 @@ one on the entire cone, including the apex. In particular, a PL map on a compact
 base extends to a PL map on its cone.
 
 This supplies the PL regularity needed when extending maps of links to maps of
-vertex stars. The PL extension assumes a compact base in a finite coordinate space.
+vertex stars. The PL extension assumes a compact base in a real coordinate product.
 
 ## References
 
@@ -145,7 +145,7 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s) :
 
 end PiecewiseAffine
 
-variable {ι : Type*} [Finite ι]
+variable {ι : Type*}
   {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
   [IsTopologicalAddGroup F] [ContinuousSMul ℝ F]
   {s : Set (ι → ℝ)} {f : (ι → ℝ) → F}

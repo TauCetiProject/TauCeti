@@ -25,7 +25,9 @@ Its gradient is `(x, -y)`, so its negative-gradient flow is
 
 `φ t (x, y) = (exp (-t) • x, exp t • y)`.
 
-This file constructs that flow and computes its stable and unstable sets exactly.  The stable set
+The explicit flow and its stable and unstable set formulas are defined for real topological
+modules with continuous scalar multiplication; only the expanding factor needs to be Hausdorff.
+The gradient and nondegeneracy statements use real Hilbert spaces.  The stable set
 of the origin is the first coordinate plane and the unstable set is the second coordinate plane.
 Thus the two sets in this normalized linear example are genuine closed linear subspaces, rather
 than only sets defined by asymptotic convergence.  For a general Morse critical point, the metric
@@ -48,8 +50,6 @@ and Hessian determine the corresponding linearized gradient flow and its contrac
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapters 1--2.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -60,9 +60,12 @@ open scoped Gradient
 noncomputable section
 
 variable {Eₛ Eᵤ : Type*}
-  [NormedAddCommGroup Eₛ] [NormedAddCommGroup Eᵤ]
 
 namespace TauCeti
+
+section Quadratic
+
+variable [NormedAddCommGroup Eₛ] [NormedAddCommGroup Eᵤ]
 
 /-- The standard split quadratic function, positive on the first factor and negative on the
 second.  The factor `2⁻¹` normalizes its gradient to `(x, -y)`. -/
@@ -151,12 +154,17 @@ theorem isNondegenerateCriticalPoint_splitQuadratic_zero
   simp [B, BEquiv, half, e, splitQuadratic, WithLp.prod_inner_apply]
   ring
 
-section
+end Quadratic
 
-variable [NormedSpace ℝ Eₛ] [NormedSpace ℝ Eᵤ]
+section Flow
 
-/-- The explicit hyperbolic flow of the split quadratic function.  Its first coordinate contracts
-in forward time and its second coordinate contracts in backward time. -/
+variable [TopologicalSpace Eₛ] [TopologicalSpace Eᵤ]
+  [AddCommGroup Eₛ] [AddCommGroup Eᵤ] [Module ℝ Eₛ] [Module ℝ Eᵤ]
+  [ContinuousSMul ℝ Eₛ] [ContinuousSMul ℝ Eᵤ]
+
+/-- The standard split hyperbolic flow. Its first coordinate contracts in forward time and its
+second coordinate contracts in backward time. On real Hilbert spaces it is the negative-gradient
+flow of `splitQuadratic`. -/
 def splitQuadraticFlow : _root_.Flow ℝ (WithLp 2 (Eₛ × Eᵤ)) where
   toFun t z := WithLp.toLp 2 (Real.exp (-t) • z.fst, Real.exp t • z.snd)
   cont' := by fun_prop
@@ -175,9 +183,13 @@ theorem splitQuadraticFlow_apply (t : ℝ) (z : WithLp 2 (Eₛ × Eᵤ)) :
       WithLp.toLp 2 (Real.exp (-t) • z.fst, Real.exp t • z.snd) :=
   (rfl)
 
-end
+end Flow
 
 end TauCeti
+
+section GradientFlow
+
+variable [NormedAddCommGroup Eₛ] [NormedAddCommGroup Eᵤ]
 
 /-- Every orbit of the explicit split flow solves the negative-gradient equation for
 `TauCeti.splitQuadratic`. -/
@@ -226,70 +238,54 @@ theorem negativeGradientFlow_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerP
 
 end TauCeti
 
-variable [NormedSpace ℝ Eₛ] [NormedSpace ℝ Eᵤ]
+end GradientFlow
+
+section Asymptotics
+
+variable [TopologicalSpace Eₛ] [TopologicalSpace Eᵤ]
+  [AddCommGroup Eₛ] [AddCommGroup Eᵤ] [Module ℝ Eₛ] [Module ℝ Eᵤ]
+  [ContinuousSMul ℝ Eₛ] [ContinuousSMul ℝ Eᵤ]
 
 namespace TauCeti
 
-private theorem tendsto_exp_neg_smul_atTop (x : Eₛ) :
-    Tendsto (fun t : ℝ ↦ Real.exp (-t) • x) atTop (𝓝 0) :=
-  by simpa using Real.tendsto_exp_neg_atTop_nhds_zero.smul_const x
-
-private theorem tendsto_exp_smul_atBot (y : Eᵤ) :
-    Tendsto (fun t : ℝ ↦ Real.exp t • y) atBot (𝓝 0) :=
-  by simpa using Real.tendsto_exp_atBot.smul_const y
-
-private theorem eq_zero_of_tendsto_exp_smul_atTop {y : Eᵤ}
-    (h : Tendsto (fun t : ℝ ↦ Real.exp t • y) atTop (𝓝 0)) : y = 0 := by
-  have h' := Real.tendsto_exp_neg_atTop_nhds_zero.smul h
-  have hy : Tendsto (fun _ : ℝ ↦ y) atTop (𝓝 0) := by
-    convert h' using 1 <;> simp [smul_smul, ← Real.exp_add]
-  exact tendsto_nhds_unique tendsto_const_nhds hy
-
-private theorem eq_zero_of_tendsto_exp_neg_smul_atBot {x : Eₛ}
-    (h : Tendsto (fun t : ℝ ↦ Real.exp (-t) • x) atBot (𝓝 0)) : x = 0 := by
-  have h' := Real.tendsto_exp_atBot.smul h
-  have hx : Tendsto (fun _ : ℝ ↦ x) atBot (𝓝 0) := by
-    convert h' using 1 <;> simp [smul_smul, ← Real.exp_add]
-  exact tendsto_nhds_unique tendsto_const_nhds hx
-
 /-- A point converges to the origin in forward time exactly when its expanding coordinate
 vanishes. -/
-theorem tendsto_splitQuadraticFlow_atTop_nhds_zero_iff (z : WithLp 2 (Eₛ × Eᵤ)) :
+theorem tendsto_splitQuadraticFlow_atTop_nhds_zero_iff [T2Space Eᵤ]
+    (z : WithLp 2 (Eₛ × Eᵤ)) :
     Tendsto (fun t ↦ splitQuadraticFlow t z) atTop (𝓝 0) ↔ z.snd = 0 := by
   constructor
   · intro h
-    exact eq_zero_of_tendsto_exp_smul_atTop
-      (((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.tendsto.comp h).congr'
-        (Eventually.of_forall fun t ↦ by
-          simp only [Function.comp_apply, splitQuadraticFlow_apply, WithLp.sndL_apply,
-            WithLp.toLp_snd]))
+    have hu : Tendsto (fun t : ℝ ↦ Real.exp t • z.snd) atTop (𝓝 0) := by
+      simpa [Function.comp_def] using (WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.tendsto.comp h
+    have hconst : Tendsto (fun _ : ℝ ↦ z.snd) atTop (𝓝 0) := by
+      simpa [smul_smul, ← Real.exp_add] using
+        Real.tendsto_exp_neg_atTop_nhds_zero.smul hu
+    exact tendsto_nhds_unique tendsto_const_nhds hconst
   · intro hz
-    have hzero : Tendsto (fun _ : ℝ ↦ (0 : Eᵤ)) atTop (𝓝 0) := tendsto_const_nhds
-    have hprod := (tendsto_exp_neg_smul_atTop z.fst).prodMk_nhds
-      hzero
-    have hto := (WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).continuousAt.tendsto.comp hprod
-    convert hto using 1
-    · simp [Function.comp_def, hz]
-    · exact congrArg 𝓝 (WithLp.toLp_zero (V := Eₛ × Eᵤ) 2).symm
+    have hs : Tendsto (fun t : ℝ ↦ Real.exp (-t) • z.fst) atTop (𝓝 0) := by
+      simpa using Real.tendsto_exp_neg_atTop_nhds_zero.smul_const z.fst
+    simpa [Function.comp_def, hz, Prod.mk_zero_zero] using
+      (WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).continuousAt.tendsto.comp
+        (hs.prodMk_nhds (tendsto_const_nhds (x := (0 : Eᵤ))))
 
 /-- A point converges to the origin in backward time exactly when its expanding-backward
 coordinate vanishes. -/
-theorem tendsto_splitQuadraticFlow_atBot_nhds_zero_iff (z : WithLp 2 (Eₛ × Eᵤ)) :
+theorem tendsto_splitQuadraticFlow_atBot_nhds_zero_iff [T2Space Eₛ]
+    (z : WithLp 2 (Eₛ × Eᵤ)) :
     Tendsto (fun t ↦ splitQuadraticFlow t z) atBot (𝓝 0) ↔ z.fst = 0 := by
   constructor
   · intro h
-    exact eq_zero_of_tendsto_exp_neg_smul_atBot
-      (((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.tendsto.comp h).congr'
-        (Eventually.of_forall fun t ↦ by
-          simp only [Function.comp_apply, splitQuadraticFlow_apply, WithLp.fstL_apply,
-            WithLp.toLp_fst]))
+    have hs : Tendsto (fun t : ℝ ↦ Real.exp (-t) • z.fst) atBot (𝓝 0) := by
+      simpa [Function.comp_def] using (WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.tendsto.comp h
+    have hconst : Tendsto (fun _ : ℝ ↦ z.fst) atBot (𝓝 0) := by
+      simpa [smul_smul, ← Real.exp_add] using Real.tendsto_exp_atBot.smul hs
+    exact tendsto_nhds_unique tendsto_const_nhds hconst
   · intro hz
-    have hzero : Tendsto (fun _ : ℝ ↦ (0 : Eₛ)) atBot (𝓝 0) := tendsto_const_nhds
-    have hprod := hzero.prodMk_nhds (tendsto_exp_smul_atBot z.snd)
-    have hto := (WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).continuousAt.tendsto.comp hprod
-    convert hto using 1
-    · simp [Function.comp_def, hz]
-    · exact congrArg 𝓝 (WithLp.toLp_zero (V := Eₛ × Eᵤ) 2).symm
+    have hu : Tendsto (fun t : ℝ ↦ Real.exp t • z.snd) atBot (𝓝 0) := by
+      simpa using Real.tendsto_exp_atBot.smul_const z.snd
+    simpa [Function.comp_def, hz, Prod.mk_zero_zero] using
+      (WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).continuousAt.tendsto.comp
+        ((tendsto_const_nhds (x := (0 : Eₛ))).prodMk_nhds hu)
 
 end TauCeti
 
@@ -297,7 +293,7 @@ namespace Flow
 
 /-- The stable set of the split quadratic flow at the origin is the first coordinate plane. -/
 @[simp]
-theorem stableSet_splitQuadraticFlow_zero :
+theorem stableSet_splitQuadraticFlow_zero [T2Space Eᵤ] :
     stableSet (TauCeti.splitQuadraticFlow (Eₛ := Eₛ) (Eᵤ := Eᵤ)) 0 =
       {z : WithLp 2 (Eₛ × Eᵤ) | z.snd = 0} := by
   ext z
@@ -306,7 +302,7 @@ theorem stableSet_splitQuadraticFlow_zero :
 
 /-- The unstable set of the split quadratic flow at the origin is the second coordinate plane. -/
 @[simp]
-theorem unstableSet_splitQuadraticFlow_zero :
+theorem unstableSet_splitQuadraticFlow_zero [T2Space Eₛ] :
     unstableSet (TauCeti.splitQuadraticFlow (Eₛ := Eₛ) (Eᵤ := Eᵤ)) 0 =
       {z : WithLp 2 (Eₛ × Eᵤ) | z.fst = 0} := by
   ext z
@@ -314,5 +310,7 @@ theorem unstableSet_splitQuadraticFlow_zero :
   rfl
 
 end Flow
+
+end Asymptotics
 
 end

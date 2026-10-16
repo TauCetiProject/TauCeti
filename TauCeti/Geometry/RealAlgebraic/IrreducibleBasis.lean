@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis
+public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 import TauCeti.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Nilpotent
@@ -23,7 +23,7 @@ The distinguished variable is coordinate zero, through `MvPolynomial.finSuccEqui
 The content is evaluated at the remaining coordinates. Constant signs for the basis and
 contents transfer to the original family. The statements include zero inputs, vanishing
 contents, and empty bases. The corresponding ambient-order reconstruction and transfer
-are in `TauCeti.RingTheory.MvPolynomial.IrreducibleBasis`.
+are in `TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Basic`.
 
 ## References
 
@@ -38,7 +38,6 @@ open MvPolynomial Polynomial
 namespace Finset.IsIrreducibleBasis
 
 variable {R : Type*} [CommRing R] {n : ℕ}
-  [UniqueFactorizationMonoid (MvPolynomial (Fin n) R)]
   [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) R))}
 

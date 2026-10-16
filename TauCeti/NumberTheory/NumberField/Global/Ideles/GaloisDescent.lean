@@ -28,6 +28,8 @@ Both are the corresponding statements for adeles (`adeleExtension_injective`,
   injective.
 * `TauCeti.GlobalNumberFields.mem_range_ideleExtension_iff`: for `L/K` Galois, an idele of `L`
   is extended from `K` exactly when it is fixed by `Gal(L/K)`.
+* `TauCeti.GlobalNumberFields.ideleClassExtension_bijective`: when `algebraMap K L` is
+  surjective, extension of idele classes is bijective.
 
 ## References
 
@@ -69,5 +71,35 @@ theorem mem_range_ideleExtension_iff [IsGalois K L] {a : IdeleGroup (𝓞 L) L} 
   refine ⟨⟨b, c, hbc, mul_comm c b ▸ hbc⟩, Units.ext ?_⟩
   rw [coe_ideleExtension]
   exact hb
+
+/-- **Extension of idele classes along a surjective `algebraMap` is bijective**: when every
+element of `L` comes from `K`, a principal idele of `L` extended from `K` is the extension of a
+principal idele of `K`, and every idele of `L` is fixed by the trivial group `Gal(L/K)`, so it
+descends to `K`. -/
+theorem ideleClassExtension_bijective (h : Function.Surjective (algebraMap K L)) :
+    Function.Bijective (ideleClassExtension K L) := by
+  refine ⟨(injective_iff_map_eq_one _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · -- A principal idele of `L` extended from `K` is the extension of a principal idele of `K`.
+    induction x using QuotientGroup.induction_on with | H a => ?_
+    rw [ideleClassExtension_mk, QuotientGroup.eq_one_iff] at hx
+    obtain ⟨y, hy⟩ := hx
+    obtain ⟨c, hc⟩ := h y
+    have hc0 : c ≠ 0 := by
+      rintro rfl
+      exact y.ne_zero (by rw [← hc, map_zero])
+    rw [QuotientGroup.eq_one_iff]
+    refine ⟨Units.mk0 c hc0, ideleExtension_injective K L ?_⟩
+    rw [ideleExtension_unitEmbedding, ← hy]
+    exact congrArg _ (Units.ext hc)
+  · -- Every idele of `L` is fixed by the trivial group `Gal(L/K)`, so it descends to `K`.
+    induction x using QuotientGroup.induction_on with | H a => ?_
+    have : IsGalois K L :=
+      IsGalois.of_algEquiv (AlgEquiv.ofBijective (Algebra.ofId K L) ⟨(algebraMap K L).injective, h⟩)
+    have hσ (σ : L ≃ₐ[K] L) : σ = 1 := AlgEquiv.ext fun x ↦ by
+      obtain ⟨c, rfl⟩ := h x
+      exact σ.commutes c
+    obtain ⟨b, hb⟩ := (mem_range_ideleExtension_iff K L (a := a)).2 fun σ ↦ by
+      rw [hσ σ, map_one, RingAut.one_apply]
+    exact ⟨b, by rw [ideleClassExtension_mk, hb]⟩
 
 end TauCeti.GlobalNumberFields

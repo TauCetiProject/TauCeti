@@ -90,10 +90,10 @@ theorem disjoint_disjSum_iff {ρ : Finset (α ⊕ β)} {s : Finset α} {t : Fins
       · have : a' = a := Sum.inl.inj haa'
         subst a'
         exact (Finset.disjoint_left.mp hleft (Finset.mem_toLeft.mpr hxρ)) ha'
-      · rcases h with ⟨b', hb', hab'⟩
+      · rcases h with ⟨b', _, hab'⟩
         cases hab'
     · rcases Finset.mem_disjSum.mp hxst with h | ⟨b', hb', hbb'⟩
-      · rcases h with ⟨a', ha', hab'⟩
+      · rcases h with ⟨a', _, hab'⟩
         cases hab'
       · have : b' = b := Sum.inr.inj hbb'
         subst b'

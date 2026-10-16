@@ -23,8 +23,8 @@ The finite-level action is the bridge from the intrinsic endomorphism ring to ma
 invertible in `F`), `LinearMap.toMatrix` turns each value of `Hom.torsionRepresentation` into a
 matrix after a basis is chosen; this is the matrix representation used in the Weil-pairing proof
 of the Hasse bound. There, `Hom.torsionLinearMap_apply` supplies the point-map hypotheses of
-`TauCeti.Isogeny.weilPairing_eq_degree_nsmul_weilPairing`, which says that a separable isogeny
-scales the Weil pairing by its degree.
+`TauCeti.Isogeny.weilPairing_eq_degree_nsmul_weilPairing`, which says that an isogeny scales the
+Weil pairing by its degree.
 
 ## Main definitions
 

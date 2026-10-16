@@ -21,9 +21,10 @@ of degree `2 - n`, subject to the Stasheff identities on every composable string
 
 The structure is stored as an `A∞` algebra on the total module of morphisms
 `⨁ (X, Y), Hom(X, Y)` with its degreewise grading, whose operations are path-compatible
-(`TauCeti.GradedLinearQuiver.IsPathCompatible`): they send a composable string to a morphism
-between its endpoints, and every other string to zero.  A path-compatible operation is determined
-by its values on composable strings, so this is exactly the data of the operations `mₙ` above.
+along the identity of objects (`TauCeti.GradedLinearQuiver.IsPathCompatible`): they send a
+composable string to a morphism between its endpoints, and every other string to zero.  A
+path-compatible operation is determined by its values on composable strings, so this is exactly the
+data of the operations `mₙ` above.
 The stored law is therefore the square-zero law `b ∘ b = 0` of the suspended bar coderivation of
 the total module, as for `TauCeti.AInfinityAlgebra`.  On a word of morphisms which is not
 composable every term of the Stasheff identities vanishes, so these identities on the total module
@@ -54,6 +55,8 @@ differential squares to zero and satisfies the Leibniz rule
   operations on composable strings.
 * `TauCeti.AInfinityCategory.homDifferential_homDifferential`: the differential squares to zero.
 * `TauCeti.AInfinityCategory.homDifferential_comp`: the Leibniz rule.
+* `TauCeti.AInfinityCategory.comp_assoc_of_m_three_eq_zero`: composition is associative when the
+  ternary operation vanishes.
 
 ## References
 
@@ -81,7 +84,7 @@ structure AInfinityCategory (R : Type w) [CommRing R] (C : Type u)
   /-- Every operation of positive arity sends composable strings to morphisms between their
   endpoints, and other strings to zero.  The nullary operation vanishes, so it is path-compatible
   automatically (`TauCeti.AInfinityCategory.isPathCompatible_m`). -/
-  isPathCompatible_m_of_pos (n : ℕ) (hn : 0 < n) : IsPathCompatible (m n)
+  isPathCompatible_m_of_pos (n : ℕ) (hn : 0 < n) : IsPathCompatible id (m n)
 
 namespace AInfinityCategory
 
@@ -98,7 +101,7 @@ variable (𝒞 : AInfinityCategory R C)
 
 /-- Every operation of an `A∞` category sends composable strings to morphisms between their
 endpoints, and other strings to zero. -/
-theorem isPathCompatible_m (n : ℕ) : IsPathCompatible (𝒞.m n) := by
+theorem isPathCompatible_m (n : ℕ) : IsPathCompatible id (𝒞.m n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [𝒞.m_zero]
     exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
@@ -152,10 +155,13 @@ strings. -/
 theorem ext_pathOperation {𝒞 𝒞' : AInfinityCategory R C}
     (h : ∀ (n : ℕ) (X : Fin (n + 1) → C), 𝒞.pathOperation X = 𝒞'.pathOperation X) :
     𝒞 = 𝒞' := by
-  refine ext <| funext fun n ↦ (𝒞.isPathCompatible_m n).ext (𝒞'.isPathCompatible_m n) fun X x ↦ ?_
+  refine ext <| funext fun n ↦ ?_
+  rcases n with _ | n
+  · rw [𝒞.m_zero, 𝒞'.m_zero]
+  refine (𝒞.isPathCompatible_m _).ext (𝒞'.isPathCompatible_m _) fun X x ↦ ?_
   have e := InternalGrading.multilinearMap_ext
-    (f := (𝒞.m n).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
-    (g := (𝒞'.m n).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+    (f := (𝒞.m (n + 1)).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+    (g := (𝒞'.m (n + 1)).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
     (fun i ↦ grading (R := R) (X i.rev.castSucc) (X i.rev.succ)) fun d y hy ↦ by
       rw [MultilinearMap.compLinearMap_apply, MultilinearMap.compLinearMap_apply,
         ← 𝒞.homInclusion_pathOperation X d fun i ↦ ⟨y i, hy i⟩,
@@ -175,6 +181,21 @@ theorem homDifferential_apply (X Y : C) (f : homModule (R := R) X Y) :
     𝒞.homDifferential X Y f = homProjection X Y (𝒞.m 1 ![homInclusion X Y f]) := by
   rw [homDifferential, LinearMap.comp_apply, LinearMap.comp_apply,
     AInfinityAlgebra.differential_apply]
+
+/-- The Hom differential is the unary operation on a composable string. -/
+theorem homDifferential_eq_m (X : Fin 2 → C)
+    (f : ∀ i : Fin 1, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    𝒞.homDifferential (X 0) (X (Fin.last 1)) (f 0) =
+      homProjection (X 0) (X (Fin.last 1))
+        (𝒞.m 1 fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) := by
+  rw [homDifferential_apply]
+  -- The only input has endpoints X₀ and X₁; enumerate it to identify the literal tuple.
+  have h : (fun i : Fin 1 ↦ homInclusion (R := R) (X i.rev.castSucc) (X i.rev.succ)
+      (f i)) = ![homInclusion (X 0) (X (Fin.last 1)) (f 0)] := by
+    funext i
+    fin_cases i
+    rfl
+  rw [h]
 
 /-- The differential of a morphism, included into the total module, is the unary operation of
 the included morphism. -/
@@ -244,6 +265,20 @@ theorem comp_apply (X Y Z : C) (g : homModule (R := R) Y Z) (f : homModule (R :=
     𝒞.comp X Y Z g f = homProjection X Z (𝒞.m 2 ![homInclusion Y Z g, homInclusion X Y f]) := by
   rw [comp, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, AInfinityAlgebra.mul_apply]
 
+/-- Hom composition is the binary operation on a composable string, in Keller's input order. -/
+theorem comp_eq_m (X : Fin 3 → C)
+    (f : ∀ i : Fin 2, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    𝒞.comp (X 0) (X 1) (X (Fin.last 2)) (f 0) (f 1) =
+      homProjection (X 0) (X (Fin.last 2))
+        (𝒞.m 2 fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) := by
+  rw [comp_apply]
+  -- Reversal puts X₁ ⟶ X₂ first and X₀ ⟶ X₁ second; check both tuple entries explicitly.
+  have h : (fun i : Fin 2 ↦ homInclusion (R := R) (X i.rev.castSucc) (X i.rev.succ)
+      (f i)) = ![homInclusion (X 1) (X (Fin.last 2)) (f 0), homInclusion (X 0) (X 1) (f 1)] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [h]
+
 /-- The composite of two morphisms, included into the total module, is the binary operation of
 the included morphisms. -/
 @[simp]
@@ -285,6 +320,15 @@ theorem homDifferential_comp {X Y Z : C} {p : ℤ} {g : homModule (R := R) Y Z}
   simp only [homInclusion_homDifferential, homInclusion_comp,
     AInfinityAlgebra.differential_apply]
   exact 𝒞.stasheff_arity_two _ _ p (by rwa [𝒞.grading_eq, homInclusion_mem_totalGrading_piece_iff])
+
+/-- **Associativity of composition.** If the ternary operation vanishes, the arity-three Stasheff
+identity says that the composition `m₂` is associative: `(h ∘ g) ∘ f = h ∘ (g ∘ f)`. -/
+theorem comp_assoc_of_m_three_eq_zero (h₃ : 𝒞.m 3 = 0) {W X Y Z : C}
+    (h : homModule (R := R) Y Z) (g : homModule (R := R) X Y) (f : homModule (R := R) W X) :
+    𝒞.comp W X Z (𝒞.comp X Y Z h g) f = 𝒞.comp W Y Z h (𝒞.comp W X Y g f) := by
+  apply homInclusion_injective W Z
+  simp only [homInclusion_comp]
+  exact 𝒞.m_two_assoc_of_m_three_eq_zero h₃ _ _ _
 
 end AInfinityCategory
 

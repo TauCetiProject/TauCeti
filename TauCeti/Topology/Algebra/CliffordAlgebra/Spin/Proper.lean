@@ -9,7 +9,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.OpenMap
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.Norm
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
-public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact
+public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact.Basic
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative

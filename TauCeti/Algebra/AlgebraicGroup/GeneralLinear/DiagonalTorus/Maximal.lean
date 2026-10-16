@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # Maximality of the diagonal torus in the general linear group
@@ -90,7 +91,7 @@ noncomputable def diagonalTorusCoordinateIso :
       DiagonalizableGroup.coordinateRing k
         (SplitTorus.characterGroup (ULift.{u} (Fin n))) :=
   ObjectProperty.isoMk _ <|
-    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
       (diagonalTorusCoordinateMap_surjective k n)
 
 /-- The diagonal-torus quotient isomorphism identifies the quotient morphism with the canonical
@@ -103,7 +104,7 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
           (diagonalTorusDefiningIdeal k n) ≫
         (diagonalTorusCoordinateIso k n).hom =
       ObjectProperty.homMk (diagonalTorusCoordinateMap (R := k) (N := n)) :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
@@ -149,25 +150,11 @@ grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
         (diagonalTorusDefiningIdeal k n) A =
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
   HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 variable [IsAlgClosed k]
-
-private instance instNontrivialUnitsOfInfiniteField {F : Type*} [Field F] [Infinite F] :
-    Nontrivial Fˣ := by
-  let U := {x : F // x ∈ ({0} : Set F)ᶜ}
-  let _ : Infinite U := (Set.toFinite ({0} : Set F)).infinite_compl.to_subtype
-  obtain ⟨x, y, hxy⟩ := exists_pair_ne U
-  refine ⟨Units.mk0 x (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using x.property),
-    Units.mk0 y (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using y.property), ?_⟩
-  intro h
-  apply hxy
-  apply Subtype.ext
-  exact congrArg Units.val h
 
 omit [IsAlgClosed k] in
 private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :
@@ -183,6 +170,23 @@ private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :
   exact congrFun
     ((SplitTorus.pointsMulEquiv (R := k) (A := k)).apply_symm_apply
       (fun j : ULift.{u} (Fin n) ↦ t j.down)) (ULift.up i)
+
+omit [IsAlgClosed k] in
+/-- Every diagonal matrix is the image of a `k`-point cut out by `diagonalTorusDefiningIdeal`. -/
+private theorem diagonalTorus_le_map_quotientPointsSubgroup :
+    TauCeti.diagonalTorus k n ≤
+      (CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
+        (diagonalTorusDefiningIdeal k n) (CommAlgCat.of k k)).map
+          (pointsMulEquiv (R := k) (A := k) n).toMonoidHom := by
+  intro m hm
+  obtain ⟨t, rfl⟩ := mem_diagonalTorus_iff_exists_diagGL.mp hm
+  let q : WithConv
+      (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] k) :=
+    (SplitTorus.pointsMulEquiv (R := k) (A := k)).symm fun i : ULift.{u} (Fin n) ↦ t i.down
+  refine ⟨diagonalTorusPoints (R := k) (N := n) (A := k) q, ?_,
+    pointsMulEquiv_diagonalTorusPoints_symm k n t⟩
+  rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
+  exact ⟨q, mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of k k) q⟩
 
 /-- **The diagonal torus of `GL_n` is maximal among reduced commutative closed subgroup
 schemes over an algebraically closed field.**
@@ -210,44 +214,13 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
   let _ : IsMulCommutative P := Subgroup.map_isMulCommutative GI e.toMonoidHom
   have hDG : GD ≤ GI :=
     CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
-  have hdiagonalP : TauCeti.diagonalTorus k n ≤ P := by
-    intro m hm
-    obtain ⟨t, rfl⟩ := mem_diagonalTorus_iff_exists_diagGL.mp hm
-    let s : ULift.{u} (Fin n) → kˣ := fun i ↦ t i.down
-    let q : WithConv
-        (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] k) :=
-      (SplitTorus.pointsMulEquiv (R := k) (A := k)).symm s
-    let d := diagonalTorusPoints (R := k) (N := n) (A := k) q
-    have hdD : d ∈ GD := by
-      dsimp only [GD, D]
-      rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
-      refine ⟨q, ?_⟩
-      exact mapPointsFunctor_diagonalTorusCoordinateMap_app A q
-    refine ⟨d, hDG hdD, ?_⟩
-    -- Unfold the `e.toMonoidHom` coercion introduced by `Subgroup.map` to the coercion of `e`.
-    change e d = diagGL t
-    simpa only [e, d, q, s] using pointsMulEquiv_diagonalTorusPoints_symm k n t
+  have hle := diagonalTorus_le_map_quotientPointsSubgroup k n
   have hP : P = TauCeti.diagonalTorus k n :=
-    eq_diagonalTorus_of_le_of_isMulCommutative P hdiagonalP
+    eq_diagonalTorus_of_le_of_isMulCommutative P (hle.trans (Subgroup.map_mono hDG))
   have hpoints : GI = GD := by
-    apply le_antisymm
-    · intro g hg
-      have hegP : e g ∈ P := ⟨g, hg, rfl⟩
-      have hegD : e g ∈ TauCeti.diagonalTorus k n := hP ▸ hegP
-      obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp hegD
-      let s : ULift.{u} (Fin n) → kˣ := fun i ↦ t i.down
-      let q : WithConv
-          (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] k) :=
-        (SplitTorus.pointsMulEquiv (R := k) (A := k)).symm s
-      have hdiag : e (diagonalTorusPoints (R := k) (N := n) (A := k) q) = diagGL t := by
-        simpa only [e, q, s] using pointsMulEquiv_diagonalTorusPoints_symm k n t
-      dsimp only [GD, D]
-      rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
-      refine ⟨q, ?_⟩
-      apply e.injective
-      rw [mapPointsFunctor_diagonalTorusCoordinateMap_app]
-      exact hdiag.trans ht
-    · exact hDG
+    refine le_antisymm (fun g hg ↦ ?_) hDG
+    obtain ⟨g', hg', he⟩ := hle (hP ▸ ⟨g, hg, rfl⟩ : e g ∈ TauCeti.diagonalTorus k n)
+    rwa [e.injective he] at hg'
   let _ : IsReduced (CommHopfAlgCat.quotient H D) :=
     HopfIdeal.isReduced_quotient_kerOfSurjective _ (diagonalTorusCoordinateMap_surjective k n)
   exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints

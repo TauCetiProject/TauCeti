@@ -75,9 +75,9 @@ theorem weightEnumerator_sumElim (hC : C.Finite) (hD : D.Finite) :
   rw [TauCeti.weightEnumerator_sumElim_eq_sum hC hD]
   simp only [weightEnumerator_eq_sum hC, weightEnumerator_eq_sum hD, Finset.sum_mul_sum]
   apply Finset.sum_congr rfl
-  intro x hx
+  intro x _
   apply Finset.sum_congr rfl
-  intro y hy
+  intro y _
   have hsub : Fintype.card ι + Fintype.card κ - (hammingNorm x + hammingNorm y) =
       (Fintype.card ι - hammingNorm x) + (Fintype.card κ - hammingNorm y) := by
     have : hammingNorm x ≤ Fintype.card ι := hammingNorm_le_card_fintype

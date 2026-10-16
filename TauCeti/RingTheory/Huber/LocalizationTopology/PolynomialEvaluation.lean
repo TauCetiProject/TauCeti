@@ -153,7 +153,7 @@ theorem exists_aeval_eq_of_mem_locIdealImage (n : ℕ) {x : S}
         obtain ⟨qc, hqc⟩ := exists_aeval_eq_of_mem_locSubring P T s S c.2
         refine ⟨qc * qa, Ideal.mul_mem_left _ _ hqa, ?_⟩
         rw [map_mul, hqc, ha, smul_eq_mul]
-        norm_cast } with hQ
+        norm_cast } with _
   have hQle : locIdeal P T s S ^ n ≤ Q := by
     rw [locIdeal_def, ← Ideal.map_pow, Ideal.map_le_iff_le_comap]
     intro c hc

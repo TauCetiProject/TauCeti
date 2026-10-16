@@ -49,7 +49,7 @@ theorem mul_mem_image_of_mem_map_of_le
       obtain ⟨b, hb, heqb⟩ := hy hc
       exact ⟨a + b, I.add_mem ha hb,
         by simpa only [map_add, mul_add] using congrArg₂ (· + ·) heqa heqb⟩
-  | smul r x hx ih =>
+  | smul r x _ ih =>
       -- Apply the induction hypothesis with `r*c`, which is still in the ideal `C`.
       simpa only [smul_eq_mul, mul_left_comm, mul_assoc] using ih (C.mul_mem_left r hc)
 

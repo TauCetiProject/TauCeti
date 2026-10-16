@@ -77,8 +77,8 @@ theorem exists_forall_eq_inv_mul_transpose_mul (φ : Matrix n n K →ₗ[K] Matr
     rw [h]
     simp [τ]
   refine ⟨g⁻¹, ?_, fun X => by rw [hφg, inv_inv]⟩
-  set C : Matrix n n K := ↑g⁻¹ with hC
-  set D : Matrix n n K := ↑g with hD
+  set C : Matrix n n K := ↑g⁻¹
+  set D : Matrix n n K := ↑g
   have hCD : C * D = 1 := Units.inv_mul g
   -- Involutivity says that `D Cᵀ` commutes with every matrix, so it is a scalar `a`.
   have hcomm : ∀ X, Commute X (D * Cᵀ) := by

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Average
 public import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube
+import TauCeti.Analysis.Normed.Group.InfiniteSum
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # The Calderón–Zygmund decomposition
@@ -22,13 +24,15 @@ where the sum runs over a countable family of pairwise disjoint dyadic cubes `Q`
 * `t < ⨍_Q ‖f‖ ≤ 2ⁿ t` on each cube, and `t |⋃ Q| ≤ ∫_{⋃ Q} ‖f‖`;
 * the **good part** `g` is `f` off the cubes and the average of `f` on each cube, so that
   `‖g‖ ≤ 2ⁿ t` almost everywhere and `‖g‖₁ ≤ ‖f‖₁`;
-* each **bad part** `b_Q` is supported on `Q`, has integral zero, and `‖b_Q‖₁ ≤ 2 ∫_Q ‖f‖`.
+* each **bad part** `b_Q` is supported on `Q`, has integral zero, and `‖b_Q‖₁ ≤ 2 ∫_Q ‖f‖`;
+  if `f ∈ Lᵖ` for a finite `p`, the series `∑_Q b_Q` converges to `f - g` in `Lᵖ`.
 
 It is the device that turns `L²` bounds for singular integral operators into weak type `(1, 1)`
-bounds: the good part is bounded, hence in `L²`, while the bad parts have mean zero on small
-cubes, where the smoothness of the kernel makes them nearly cancel. Together with Marcinkiewicz
-interpolation this gives `Lᵖ` boundedness for `1 < p < 2`; the range `2 < p < ∞` then follows by
-applying the corresponding bounds to the adjoint and using duality.
+bounds (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`): the
+good part is bounded, hence in `L²` with `‖g‖₂² ≤ 2ⁿ t ‖f‖₁`, while the bad parts have mean
+zero on small cubes, where the smoothness of the kernel makes them nearly cancel. Together with
+Marcinkiewicz interpolation this gives `Lᵖ` boundedness for `1 < p < 2`; the range `2 < p < ∞`
+then follows by applying the corresponding bounds to the adjoint and using duality.
 
 The cubes are the maximal dyadic cubes on which the average of `‖f‖` exceeds `t`
 (`TauCeti.calderonZygmundCubes`). They exist because averages over large cubes are small, which
@@ -50,6 +54,9 @@ an arbitrary `g : (ι → ℝ) → ℝ≥0∞` in place of `‖f‖ₑ`.
   `TauCeti.integral_calderonZygmundBad`, `TauCeti.lintegral_enorm_calderonZygmundBad_le`,
   `TauCeti.ae_enorm_calderonZygmundGood_le` and
   `TauCeti.lintegral_enorm_calderonZygmundGood_le`.
+* `TauCeti.sq_eLpNorm_calderonZygmundGood_le`, `TauCeti.memLp_two_calderonZygmundGood`: the good
+  part is in `L²`, with `‖g‖₂² ≤ 2ⁿ t ‖f‖₁`.
+* `TauCeti.hasSum_toLp_calderonZygmundBad`: in `Lᵖ`, `p < ∞`, the bad parts sum to `f - g`.
 
 ## References
 
@@ -118,6 +125,35 @@ theorem setLAverage_le_of_mem_calderonZygmundCubes (hq : q ∈ calderonZygmundCu
     _ = 2 ^ Fintype.card ι * t * volume (dyadicCube q.1 q.2) := by
         rw [volume_dyadicCube_add_one q.1 q.2]
         ring
+
+/-- **Localization.** The Calderón–Zygmund cubes of `g` restricted to a dyadic cube `Q₀`, at a
+height `t` at least the average of `g` over `Q₀`, lie inside `Q₀`: by the nesting of dyadic cubes,
+any other dyadic cube is either disjoint from `Q₀` or contains it, and so has average at most
+`t`. -/
+theorem dyadicCube_subset_of_mem_calderonZygmundCubes_indicator {q₀ : ℤ × (ι → ℤ)}
+    (ht : ⨍⁻ x in dyadicCube q₀.1 q₀.2, g x ∂volume ≤ t)
+    (hq : q ∈ calderonZygmundCubes ((dyadicCube q₀.1 q₀.2).indicator g) t) :
+    dyadicCube q.1 q.2 ⊆ dyadicCube q₀.1 q₀.2 := by
+  set Q₀ := dyadicCube q₀.1 q₀.2
+  set Q := dyadicCube q.1 q.2
+  have hlt := lt_setLAverage_of_mem_calderonZygmundCubes hq
+  have hint : ⨍⁻ x in Q, Q₀.indicator g x ∂volume = (∫⁻ x in Q₀ ∩ Q, g x) / volume Q := by
+    rw [setLAverage_eq, lintegral_indicator (measurableSet_dyadicCube q₀.1 q₀.2),
+      Measure.restrict_restrict (measurableSet_dyadicCube q₀.1 q₀.2)]
+  have hcases : Q ⊆ Q₀ ∨ Q₀ ⊆ Q ∨ Disjoint Q₀ Q := by
+    rcases le_total q.1 q₀.1 with hle | hle
+    · exact (dyadicCube_subset_or_disjoint hle q.2 q₀.2).imp_right fun hd => .inr hd.symm
+    · exact .inr (dyadicCube_subset_or_disjoint hle q₀.2 q.2)
+  rcases hcases with hsub | hsub | hdisj
+  · exact hsub
+  · refine absurd hlt (not_lt.2 (hint ▸ ?_))
+    rw [inter_eq_left.2 hsub]
+    refine le_trans ?_ ht
+    rw [setLAverage_eq]
+    exact ENNReal.div_le_div_left (measure_mono hsub) _
+  · rw [hint, hdisj.inter_eq, Measure.restrict_empty, lintegral_zero_measure,
+      ENNReal.zero_div] at hlt
+    exact absurd hlt not_lt_zero
 
 /-- Distinct Calderón–Zygmund cubes are disjoint. -/
 theorem pairwiseDisjoint_calderonZygmundCubes :
@@ -335,6 +371,88 @@ theorem integrable_calderonZygmundGood (hf : Integrable f) (t : ℝ≥0∞) :
     Integrable (calderonZygmundGood f t) :=
   ⟨aestronglyMeasurable_calderonZygmundGood hf.1 t, hasFiniteIntegral_iff_enorm.2 <|
     (lintegral_enorm_calderonZygmundGood_le f t).trans_lt (hasFiniteIntegral_iff_enorm.1 hf.2)⟩
+
+/-- The bad parts of a function in `Lᵖ` are in `Lᵖ`. -/
+theorem memLp_calderonZygmundBad {p : ℝ≥0∞} (hf : MemLp f p) (q : ℤ × (ι → ℤ)) :
+    MemLp (calderonZygmundBad f q) p := by
+  have : IsFiniteMeasure (volume.restrict (dyadicCube q.1 q.2)) :=
+    isFiniteMeasure_restrict.2 (volume_dyadicCube_ne_top q.1 q.2)
+  rw [calderonZygmundBad,
+    memLp_indicator_iff_restrict (measurableSet_dyadicCube q.1 q.2).nullMeasurableSet]
+  exact hf.restrict _ |>.sub (memLp_const _)
+
+/-- In positive dimension, the square of the `L²` norm of the good part of an integrable `f` at a
+positive height `t` is at most `2ⁿ t ‖f‖₁`: the good part is bounded by `2ⁿ t` and has `L¹` norm at
+most `‖f‖₁`. -/
+theorem sq_eLpNorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht : t ≠ 0) :
+    eLpNorm (calderonZygmundGood f t) 2 volume ^ 2 ≤
+      2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ := by
+  have hg := aestronglyMeasurable_calderonZygmundGood hf.1 t
+  have h := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hg
+  simp only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ENNReal.rpow_two] at h
+  rw [h]
+  calc ∫⁻ x, ‖calderonZygmundGood f t x‖ₑ ^ 2
+      ≤ ∫⁻ x, 2 ^ Fintype.card ι * t * ‖calderonZygmundGood f t x‖ₑ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [ae_enorm_calderonZygmundGood_le hf ht] with x hx
+        rw [sq]
+        gcongr
+    _ = 2 ^ Fintype.card ι * t * ∫⁻ x, ‖calderonZygmundGood f t x‖ₑ :=
+        lintegral_const_mul'' _ hg.enorm
+    _ ≤ 2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ :=
+        mul_le_mul_right (lintegral_enorm_calderonZygmundGood_le f t) _
+
+/-- In positive dimension, the good part of an integrable `f` at a finite positive height is in
+`L²`. -/
+theorem memLp_two_calderonZygmundGood [Nonempty ι] (hf : Integrable f) (ht : t ≠ 0)
+    (ht' : t ≠ ∞) : MemLp (calderonZygmundGood f t) 2 := by
+  have h := (sq_eLpNorm_calderonZygmundGood_le hf ht).trans_lt <|
+    ENNReal.mul_lt_top (ENNReal.mul_lt_top (by simp) ht'.lt_top) hf.2
+  exact memLp_iff.2 ((WithTop.pow_lt_top_iff.1 h).resolve_right two_ne_zero)
+
+/-- At each point at most one bad part is nonzero. -/
+theorem subsingleton_support_calderonZygmundBad (f : (ι → ℝ) → E) (t : ℝ≥0∞) (x : ι → ℝ) :
+    (Function.support fun q : calderonZygmundCubes (‖f ·‖ₑ) t =>
+      calderonZygmundBad f q x).Subsingleton := by
+  have hmem {q : ℤ × (ι → ℤ)} (h : calderonZygmundBad f q x ≠ 0) : x ∈ dyadicCube q.1 q.2 :=
+    by_contra fun hx => h (calderonZygmundBad_of_notMem hx)
+  intro q hq q' hq'
+  by_contra hne
+  exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q.2 q'.2
+    fun h => hne (Subtype.ext h)) (hmem hq) (hmem hq')
+
+/-- If `f` and its good part at height `t` are in `Lᵖ` for a finite `p ≥ 1`, then the bad parts sum
+in `Lᵖ` to `f` minus the good part. -/
+theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) (hf : MemLp f p)
+    (hg : MemLp (calderonZygmundGood f t) p) :
+    HasSum (fun q : calderonZygmundCubes (‖f ·‖ₑ) t => (memLp_calderonZygmundBad hf q.1).toLp _)
+      ((hf.sub hg).toLp (f - calderonZygmundGood f t)) := by
+  set 𝒬 := calderonZygmundCubes (‖f ·‖ₑ) t
+  set F : Finset 𝒬 → (ι → ℝ) → E := fun s x => ∑ q ∈ s, calderonZygmundBad f q x
+  -- Pointwise, `f - g` is the sum of the bad parts, which has at most one nonzero term.
+  have hsum (x : ι → ℝ) : (f - calderonZygmundGood f t) x =
+      ∑' q : 𝒬, calderonZygmundBad f q x := by
+    rw [Pi.sub_apply, ← calderonZygmundGood_add_tsum_calderonZygmundBad f t x, add_sub_cancel_left]
+  have hpt (x : ι → ℝ) := subsingleton_support_calderonZygmundBad f t x
+  have hconv (x : ι → ℝ) : HasSum (fun q : 𝒬 => calderonZygmundBad f q x)
+      (∑' q : 𝒬, calderonZygmundBad f q x) :=
+    (summable_of_hasFiniteSupport (hpt x).finite).hasSum
+  simp only [HasSum, SummationFilter.unconditional_filter]
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
+  refine (tendsto_eLpNorm_sub_of_ae_tendsto (f := F) (C := 1)
+    (zero_lt_one.trans_le Fact.out).ne' hp
+    (.of_forall fun s => Finset.aestronglyMeasurable_fun_sum s fun q _ =>
+      (memLp_calderonZygmundBad hf q.1).aestronglyMeasurable)
+    (hf.sub hg).aestronglyMeasurable (hf.sub hg)
+    (.of_forall fun s => .of_forall fun x => by
+      simpa [F, hsum x] using (hpt x).enorm_sum_sub_tsum_le s)
+    (.of_forall fun x => by
+      simpa [F, hsum x, HasSum, SummationFilter.unconditional_filter] using hconv x)).congr
+    fun s => eLpNorm_congr_ae ?_
+  filter_upwards [Lp.coeFn_finsetSum s fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).toLp _,
+    ae_all_iff.2 fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).coeFn_toLp,
+    (hf.sub hg).coeFn_toLp] with x hx hq hfg
+  simp only [Pi.sub_apply, F, hx, Finset.sum_apply, hq, hfg]
 
 end Decomposition
 

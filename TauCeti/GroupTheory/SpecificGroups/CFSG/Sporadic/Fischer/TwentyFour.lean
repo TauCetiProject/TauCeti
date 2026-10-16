@@ -146,8 +146,8 @@ inspection.
 Every definition here except the abbreviation `TauCeti.Sporadic.Fi24AutomorphismGroup` has its
 body sealed, and each is pinned by a public characteristic equation named after it: the `_def`
 theorems below, the evaluation lemmas
-`TauCeti.Sporadic.fi24AutomorphismCoxeterMatrix_apply`, `TauCeti.Sporadic.fi24TargetGenerator_val`
-and `TauCeti.Sporadic.fi24SchreierFactors_nil`/`_cons`, and the field equations of the presentation
+`TauCeti.Sporadic.fi24AutomorphismCoxeterMatrix_apply` and
+`TauCeti.Sporadic.fi24SchreierFactors_nil`/`_cons`, and the field equations of the presentation
 row ending in `TauCeti.Sporadic.fi24PrimePresentation_relatorLetters`, jointly determine every
 transcribed relation without unfolding a single body.
 
@@ -347,18 +347,6 @@ theorem even_length_of_mem_fi24AutomorphismRelators :
 
 /-! ## Reidemeister--Schreier rewriting -/
 
-/-- The target generator `ax` corresponding to a source generator `x ≠ a`.
-The source index drops by one because `a` itself contributes no target generator. -/
-def fi24TargetGenerator (i : Fin 12) (_h : i.val ≠ 0) : Fin 11 :=
-  ⟨i.val - 1, by omega⟩
-
-/-- The index shift performed by `TauCeti.Sporadic.fi24TargetGenerator`. Since a `Fin 11` is
-determined by its value, this equation determines the map. -/
-@[simp]
-theorem fi24TargetGenerator_val (i : Fin 12) (h : i.val ≠ 0) :
-    (fi24TargetGenerator i h).val = i.val - 1 := by
-  simp only [fi24TargetGenerator]
-
 /-- Rewrite source letters into the Schreier generators `ab` through `al`.
 
 The Boolean records whether the current transversal representative is `a`. Source signs are
@@ -370,9 +358,9 @@ def fi24SchreierFactors : Bool → PresentationWord (Fin 12) → List (Relator (
   | _, [] => []
   | positive, (i, _) :: w =>
       let rest := fi24SchreierFactors (!positive) w
-      if h : i.val = 0 then rest
+      if h : i = 0 then rest
       else
-        let g : Relator (Fin 11) := .gen (fi24TargetGenerator i h)
+        let g : Relator (Fin 11) := .gen (i.pred h)
         (if positive then g else .inv g) :: rest
 
 /-- The empty source word contributes no Schreier factor. -/
@@ -389,10 +377,10 @@ the rewrite of every source word. -/
 theorem fi24SchreierFactors_cons (positive : Bool) (i : Fin 12) (sign : Bool)
     (w : PresentationWord (Fin 12)) :
     fi24SchreierFactors positive ((i, sign) :: w) =
-      if h : i.val = 0 then fi24SchreierFactors (!positive) w
+      if h : i = 0 then fi24SchreierFactors (!positive) w
       else
-        (if positive then .gen (fi24TargetGenerator i h)
-          else .inv (.gen (fi24TargetGenerator i h))) :: fi24SchreierFactors (!positive) w := by
+        (if positive then .gen (i.pred h)
+          else .inv (.gen (i.pred h))) :: fi24SchreierFactors (!positive) w := by
   simp only [fi24SchreierFactors]
 
 /-- Assemble a possibly empty list of Schreier factors as one relator expression: the factors
@@ -428,8 +416,7 @@ private theorem length_foldr_fi24SchreierFactors (positive : Bool)
     rw [fi24SchreierFactors_cons, List.countP_cons]
     by_cases hi : i = 0
     · subst hi; simpa using ih (!positive)
-    · have h : i.val ≠ 0 := fun hv => hi (Fin.ext hv)
-      cases positive <;> simp [h, hi, ih, Nat.add_comm]
+    · cases positive <;> simp [hi, ih, Nat.add_comm]
 
 /-- **The Reidemeister--Schreier rewrite keeps exactly the source letters other than `a`.** The
 distinguished letter `a` is the transversal element, so it contributes no Schreier generator, while
@@ -730,26 +717,16 @@ theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
       hsquare, hsquare, one_mul, one_mul] at hprod
     apply mul_right_cancel (b := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup))
     simpa only [← sq, hsquare] using hprod
-  have edge : ∀ i j : Fin 12, (i, j) ∈ fi24AutomorphismEdges ∨ (j, i) ∈ fi24AutomorphismEdges →
-      i ≠ j →
-      Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
-        Abelianization.of (PresentedGroup.of j) := fun i j hij hne =>
-    step i j (by rw [fi24AutomorphismCoxeterMatrix_apply]; simp [hne, hij])
-  rw [fi24AutomorphismEdges_def] at edge
-  -- Walk the connected diagram `l - k - a - b - c - d - e - f - g - j`, `d - h - i`, back to `a`.
-  have h1 := edge 1 0 (by decide) (by decide)
-  have h2 := (edge 2 1 (by decide) (by decide)).trans h1
-  have h3 := (edge 3 2 (by decide) (by decide)).trans h2
-  have h4 := (edge 4 3 (by decide) (by decide)).trans h3
-  have h5 := (edge 5 4 (by decide) (by decide)).trans h4
-  have h6 := (edge 6 5 (by decide) (by decide)).trans h5
-  have h7 := (edge 7 3 (by decide) (by decide)).trans h3
-  have h8 := (edge 8 7 (by decide) (by decide)).trans h7
-  have h9 := (edge 9 6 (by decide) (by decide)).trans h6
-  have h10 := edge 10 0 (by decide) (by decide)
-  have h11 := (edge 11 10 (by decide) (by decide)).trans h10
-  fin_cases i
-  exacts [rfl, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11]
+  -- Each node other than `a` has a diagram neighbour (Coxeter entry `3`) of smaller index.
+  have hnb : ∀ i : Fin 12, i ≠ 0 → ∃ j < i, fi24AutomorphismCoxeterMatrix i j = 3 := by
+    simp only [fi24AutomorphismCoxeterMatrix_apply, fi24AutomorphismEdges_def]
+    decide
+  induction i using WellFoundedLT.induction with
+  | _ i ih =>
+    rcases eq_or_ne i 0 with rfl | hi
+    · rfl
+    obtain ⟨j, hj, hij⟩ := hnb i hi
+    exact (step i j hij).trans (ih j hj)
 
 /-- The source words the row rewrites: the compiled words of the sixty-six off-diagonal Coxeter
 relators and of the two displayed relations. -/
@@ -852,12 +829,8 @@ private theorem toWord_foldr_fi24SchreierFactors (positive : Bool) (w : Presenta
     by_cases hi : i = 0
     · simp only [hi, ↓reduceDIte, List.nil_append]
       exact ih (!positive)
-    · have hv : i.val ≠ 0 := fun h => hi (Fin.ext h)
-      have ht : fi24TargetGenerator i hv = fi24SchreierEquiv ⟨i, hi⟩ := by
-        rw [fi24SchreierEquiv_apply]
-        ext
-        simp
-      simp only [hv, hi, ↓reduceDIte, List.foldr_cons, Relator.toWord_mul, ih (!positive), ht]
+    · simp only [hi, ↓reduceDIte, List.foldr_cons, Relator.toWord_mul, ih (!positive),
+        ← fi24SchreierEquiv_apply i hi]
       cases positive
       · simp [FreeGroup.invRev]
       · simp

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Differential
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 public import TauCeti.Algebra.Homology.GradedCochainComplex
 
 /-!
@@ -42,12 +42,14 @@ variable {R A M N : Type*} [CommRing R] [Ring A] [Algebra R A]
   {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
 
 -- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.
-local instance : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
+local instance tensorGradedRight :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (InternalGrading.ofDecomposition ℳ).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒩).piece := by
+local instance tensorGradedLeft :
+    SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒩).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
@@ -99,6 +101,19 @@ theorem cochainComplex_X (hM : IsDGRightModule hA ℳ dM)
       ((grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
         (InternalGrading.ofDecomposition 𝒩)).piece p) := by
   rw [cochainComplex, gradedCochainComplex_X]
+
+/-- The degree-`p` differential is the restriction of the balanced tensor differential,
+transported along the canonical identifications of the complex terms. -/
+@[simp]
+theorem cochainComplex_d (hM : IsDGRightModule hA ℳ dM)
+    (hN : IsDGLeftModule hA 𝒩 dN) (p : ℤ) :
+    (cochainComplex hM hN).d p (p + 1) =
+      eqToHom (cochainComplex_X hM hN p) ≫
+        ModuleCat.ofHom ((differential hM hN).restrict
+          (fun _ hz ↦ (isHomogeneous_differential hM hN).map_mem hz)) ≫
+        eqToHom (cochainComplex_X hM hN (p + 1)).symm := by
+  unfold cochainComplex
+  rw [gradedCochainComplex_d]
 
 /-- On a homogeneous element, the complex differential is the balanced tensor differential,
 using the canonical identifications of the complex terms with the grading pieces. -/

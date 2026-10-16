@@ -82,7 +82,7 @@ def centralizerSubalgebraOrderIso :
     apply Subtype.ext
     ext a
     simp only [mem_map, mem_restrictScalars, val_apply]
-    exact ⟨fun ⟨c, hc, hca⟩ ↦ hca ▸ hc,
+    exact ⟨fun ⟨_, hc, hca⟩ ↦ hca ▸ hc,
       fun ha ↦ ⟨⟨a, T.property.2 ha⟩, ha, rfl⟩⟩
   map_rel_iff' := by
     intro T U

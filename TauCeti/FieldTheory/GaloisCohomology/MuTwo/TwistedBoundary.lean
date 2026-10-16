@@ -55,6 +55,7 @@ that of `Tr_*⟨a⟩`.
 ## Main results
 
 * `TauCeti.twistedBoundary_conj`: changing frame by `Q` conjugates the twisted boundary by `Q`.
+* `TauCeti.twistedBoundary_pinDiagonalLift_rootSign`: the boundary of a diagonal root-sign lift.
 * `TauCeti.map_pinLift_galois`: `g(pinLift w) = (−1)^{rootSign √2 g · c(w)} pinLift w`.
 * `TauCeti.twistedBoundary_kummerIndLift`, `TauCeti.twistedBoundaryF2_kummerIndLift`:
   `δ(\tilde{ρ}_a)(g, h) = (−1)^{c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign (σ x) h}` for
@@ -113,6 +114,29 @@ theorem map_pinLift_galois {r2 : SeparableClosure K} (hr2 : r2 ^ 2 = 2)
   rw [Algebra.smul_def, map_pow, map_neg, map_one]
 
 end NeZero
+
+/-! ### Frame changes and sign twists -/
+
+/-- **The twisted boundary of a diagonal lift of Kummer characters is a cup product:** if
+`c₀², c₁² ∈ K`, the twisted boundary of `g ↦ e₁^{rootSign c₀ g} e₂^{rootSign c₁ g}` is
+`(g, h) ↦ (−1)^{rootSign c₁ g · rootSign c₀ h}`, the sign of the cup product of the Kummer
+characters of `c₁²` and `c₀²`. -/
+theorem twistedBoundary_pinDiagonalLift_rootSign {c : Fin 2 → SeparableClosure K}
+    {w : Fin 2 → K} (hc : ∀ i, c i ^ 2 = algebraMap K (SeparableClosure K) (w i))
+    (g h : AbsoluteGaloisGroup K) :
+    twistedBoundary (fun g => pinDiagonalLift fun i => rootSign (c i) g) (g, h) =
+      (-1) ^ (rootSign (c 1) g * rootSign (c 0) h).val := by
+  have hmul : (fun i => rootSign (c i) (g * h)) =
+      (fun i => rootSign (c i) g) + fun i => rootSign (c i) h := funext fun i =>
+    rootSign_mul (g.apply_eq_or_eq_neg_of_sq_eq (hc i)) (h.apply_eq_or_eq_neg_of_sq_eq (hc i))
+  have hD := (isPinLift_pinDiagonalLift (R := SeparableClosure K)
+    fun i => rootSign (c i) (g * h)).mem_orthogonalGroup
+  have hmap : (pinDiagonalLift fun i => rootSign (c i) h).map g =
+      (pinDiagonalLift fun i => rootSign (c i) h : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) :=
+    map_pinDiagonalLift (g : SeparableClosure K →+* SeparableClosure K) _
+  rw [twistedBoundary_apply, hmap, pinDiagonalLift_mul, ← hmul, Matrix.mul_assoc,
+    Matrix.mul_nonsing_inv _ (isUnit_det_of_right_inverse ((mem_orthogonalGroup_iff _ _).1 hD)),
+    Matrix.mul_one]
 
 /-! ### The lift of the Kummer representation -/
 

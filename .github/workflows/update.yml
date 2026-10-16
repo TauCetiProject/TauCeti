@@ -1,134 +1,79 @@
 name: Update Dependencies
 
-# Keeps the mathlib pin moving using the leanprover-community/downstream-reports
-# composite actions (TauCeti is registered as a downstream there). Hourly behavior:
-#   - mathlib compatible: open/update a single "bump to last-known-good" PR.
-#   - mathlib incompatible: open a tracking issue naming the first-known-bad mathlib
-#     commit, plus a fix PR whose manifest is pinned at that commit (a ready-made branch to fix in
-#     place — not for merging as-is), and close the LKG bump PR until resolved.
-# PRs and pushes use the tauceti-review-bot App token so pr-build/review trigger
-# normally. Both update paths preserve Mathlib's `master` nomination and change only the
-# manifest/toolchain pins, so bump-guard can validate and auto-merge them once green.
-
+# Pick a recent fully cached master commit, then keep it fixed while workers repair
+# TauCeti. downstream-reports remains external reporting, never a target selector.
 on:
   schedule:
-  - cron: "17 * * * *"   # consume refreshed reports without waiting a day
+    - cron: "17 * * * *"
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Verify and print the target without publishing"
+        type: boolean
+        default: false
 
-# Serialize branch and issue reconciliation; keep an active bump build running.
 concurrency:
   group: mathlib-bump-reconciliation
   cancel-in-progress: false
 
-env:
-  LKG_BRANCH: hopscotch/lkg-bump
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
-  bump:
+  select:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: read
-      pull-requests: write
+    timeout-minutes: 60
+    outputs:
+      target: ${{ steps.target.outputs.target }}
+      run_id: ${{ steps.target.outputs.run_id }}
+      reconcile: ${{ steps.target.outputs.reconcile }}
     steps:
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
-        id: app-token
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          ref: main
-          fetch-depth: 0
-
-      # Suppress the LKG bump while a regression is active: the only open PR
-      # should be the fix one carrying the first-known-bad manifest pin.
-      - name: Reconcile the report with green main
-        id: fkb
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/bump_report.py
-
-      - name: Bump to latest mathlib
-        id: bump
-        if: steps.fkb.outputs.commit == ''
-        uses: leanprover-community/downstream-reports/.github/actions/bump-to-latest@62750c6a09e73013f9c23c7ee007c612793fe9a2
-        with:
-          preserve-lakefile: true
-          branch: ${{ env.LKG_BRANCH }}
-
-      - name: Open or update PR
-        if: steps.fkb.outputs.commit == '' && steps.bump.outputs.updated == 'true'
-        uses: leanprover-community/downstream-reports/.github/actions/open-bump-pr@62750c6a09e73013f9c23c7ee007c612793fe9a2
-        with:
-          branch: ${{ env.LKG_BRANCH }}
-          title: "chore: ${{ steps.bump.outputs.pr-title }}"
-          message: ${{ steps.bump.outputs.bump-description }}
-          commit-message: ${{ steps.bump.outputs.commit-message }}
-          token: ${{ steps.app-token.outputs.token }}
-          git-user-name: tauceti-review-bot[bot]
-          git-user-email: 290224625+tauceti-review-bot[bot]@users.noreply.github.com
-
-  open-issue:
-    runs-on: ubuntu-latest
-    needs: bump
-    permissions:
-      issues: write
-      contents: write
-      actions: read
-      pull-requests: write
-    steps:
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
-        id: app-token
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
-
-      # Recheck here: main or the published report may have advanced during the bump job.
-      - name: Reconcile the report with green main
-        id: fkb
+          persist-credentials: false
+      - name: Install checksum-verified elan
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/bump_report.py
-
-      - name: Open or update incompatibility issue and fix PR
-        id: track
-        if: steps.fkb.outputs.awaiting_revalidation != 'true'
-        uses: leanprover-community/downstream-reports/.github/actions/track-incompatibility@62750c6a09e73013f9c23c7ee007c612793fe9a2
-        with:
-          open-pr: true
-          preserve-lakefile: true
-          token: ${{ steps.app-token.outputs.token }}
-          git-user-name: tauceti-review-bot[bot]
-          git-user-email: 290224625+tauceti-review-bot[bot]@users.noreply.github.com
-
-      - name: Close the LKG bump PR while a fix PR is open
-        if: steps.track.outputs.pr-action == 'created' || steps.track.outputs.pr-action == 'noop-existing'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          FKB_PR: ${{ steps.track.outputs.pr-number }}
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
         run: |
-          set -euo pipefail
-          lkg_pr=$(gh pr list --state open --head "$LKG_BRANCH" --json number --jq '.[0].number // empty')
-          if [ -z "$lkg_pr" ]; then
-            echo "No open LKG bump PR; nothing to close."
-            exit 0
-          fi
-          gh pr close "$lkg_pr" --comment "Closing in favor of #${FKB_PR}: TauCeti is currently incompatible with the latest mathlib, so attention should go to the PR whose manifest is pinned at the first-known-bad commit. A new last-known-good bump PR will be opened automatically once the incompatibility is resolved."
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Select and verify the newest complete Mathlib cache
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bump_latest.py --select
+
+  publish:
+    needs: select
+    if: needs.select.outputs.reconcile == 'true' && !inputs.dry-run
+    runs-on: ubuntu-latest
+    steps:
+      # No upstream code executes in this job, and the selection job has no App secret.
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          ref: main
+          fetch-depth: 0
+      - name: Publish the fixed-target bump
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET: ${{ needs.select.outputs.target }}
+          RUN_ID: ${{ needs.select.outputs.run_id }}
+        run: python3 scripts/bump_latest.py --publish "$TARGET" --run-id "$RUN_ID"

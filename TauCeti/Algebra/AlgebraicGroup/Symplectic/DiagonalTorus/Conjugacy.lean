@@ -104,7 +104,7 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
     rw [mem_diagonalTorusDefiningIdeal] at hx
     refine (congrArg (fun f ↦ f.ofConv x) hkey).trans ?_
     rw [← mapPointsFunctor_diagonalTorusCoordinateMap_app (A := CommAlgCat.of k Q),
-      CommHopfAlgCat.mapPointsFunctor_app_apply_apply, hx, map_zero]
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, hx, map_zero]
   simpa using HopfIdeal.conjugate_mono g⁻¹ hle
 
 /-- **Split maximal tori of `Sp₂ₘ` are conjugate to the diagonal torus.** A maximal torus of

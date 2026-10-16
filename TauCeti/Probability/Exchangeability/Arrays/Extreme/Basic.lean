@@ -20,9 +20,9 @@ the corner tail, ergodicity of the diagonal finitary relabelling action, and ext
 condition, stated on the law alone for any measurable value space.
 
 The jointly exchangeable probability laws are the invariant probability laws for the diagonal
-finitary action established in `Arrays.Ergodic`. The extreme-point characterisation is the general
-one for a countable group action, `ErgodicSMul.iff_mem_extremePoints`, composed with
-`jointlyDissociated_iff_ergodicSMul`.
+finitary action of `Process.Array.FinitaryAction`, as established in `Arrays.Ergodic`. The
+extreme-point characterisation is the general one for a countable group action,
+`ErgodicSMul.iff_mem_extremePoints`, composed with `jointlyDissociated_iff_ergodicSMul`.
 
 ## Main results
 

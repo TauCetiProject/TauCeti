@@ -39,6 +39,8 @@ size interpretation.
 
 * `fixingSubgroup_shapiroField`: the Shapiro fixed field is fixed exactly by the preimage of `C`.
 * `finrank_shapiroField`: the fixed-field degree is the index of `C`.
+* `index_eq_finrank_of_range_absoluteGaloisGroupExtend_eq_comap`: more generally, the index of `C`
+  is the degree of any finite extension whose absolute Galois group is the preimage of `C`.
 * `range_absoluteGaloisGroupExtend_shapiroFieldEmbedding`: the absolute Galois group of the
   Shapiro fixed field, embedded in `G_F` along `shapiroFieldEmbedding`, is the preimage of `C`.
 * `finrank_ind_eq_finrank_shapiroField_mul`: induction scales coefficient dimension by that degree.
@@ -104,6 +106,17 @@ theorem shapiroOpenSubgroup_index :
     (shapiroOpenSubgroup F V C).toSubgroup.index = C.index := by
   rw [shapiroOpenSubgroup_toSubgroup]
   exact C.index_comap_of_surjective (QuotientGroup.mk'_surjective V.toSubgroup)
+
+variable {F V C} in
+/-- **The index of `C` is the degree of a field whose absolute Galois group is the preimage of
+`C`.** If `L/F` is a finite extension embedded by `σ` and the image of `G_L` in `G_F` is the
+preimage of `C`, then `[G_F / V : C] = [L : F]`. -/
+theorem index_eq_finrank_of_range_absoluteGaloisGroupExtend_eq_comap {L : Type*} [Field L]
+    [Algebra F L] [FiniteDimensional F L] {σ : L →ₐ[F] SeparableClosure F}
+    (hσ : (absoluteGaloisGroupExtend F L σ).range = C.comap (QuotientGroup.mk' V.toSubgroup)) :
+    C.index = Module.finrank F L := by
+  rw [← shapiroOpenSubgroup_index, shapiroOpenSubgroup_toSubgroup, ← hσ,
+    index_range_absoluteGaloisGroupExtend]
 
 /-- The Shapiro fixed field is fixed exactly by the preimage of `C`: the preimage is open, hence
 closed, and infinite Galois theory recovers a closed subgroup from its fixed field. -/

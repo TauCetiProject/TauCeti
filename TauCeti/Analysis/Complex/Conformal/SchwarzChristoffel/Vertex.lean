@@ -182,13 +182,13 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
     exact absurd hy (not_lt.mpr hpim)
   have hnb : (𝓝[upperHalfPlaneSet] p).NeBot := Real.nhdsWithin_upperHalfPlaneSet_neBot (a j)
   obtain ⟨C, hC, hev⟩ := exists_norm_schwarzChristoffelIntegrand_le a e (a j)
-  set T : ℝ := ∑ i with a i = a j, e i with hTdef
+  set T : ℝ := ∑ i with a i = a j, e i
   set u : ℝ := min T 0 with hudef
   have hu : -1 < u := lt_min he (by norm_num)
   have hu0 : u ≤ 0 := min_le_right _ _
   have hu1 : (0 : ℝ) < u + 1 := by linarith
   obtain ⟨r₁, hr₁, hr₁sub⟩ := Metric.mem_nhdsWithin_iff.mp hev
-  set ρ₀ : ℝ := min r₁ 1 with hρ₀def
+  set ρ₀ : ℝ := min r₁ 1
   have hρ₀ : 0 < ρ₀ := lt_min hr₁ zero_lt_one
   have hbd : ∀ y ∈ Metric.ball p ρ₀ ∩ upperHalfPlaneSet,
       ‖schwarzChristoffelIntegrand a e y‖ ≤ C * dist y p ^ u := by
@@ -214,11 +214,10 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
   rw [Metric.cauchy_iff]
   refine ⟨map_neBot, ?_⟩
   intro ε hε
-  set K : ℝ := C * (2 / (u + 1)) with hKdef
+  set K : ℝ := C * (2 / (u + 1))
   have hK : 0 < K := by positivity
   obtain ⟨ρ, hρpos, hρle, hρε⟩ : ∃ ρ, 0 < ρ ∧ ρ ≤ ρ₀ ∧ K * (2 * ρ) ^ (u + 1) < ε := by
     set τ : ℝ := (ε / (2 * K)) ^ (u + 1)⁻¹ with hτdef
-    have hτ : 0 < τ := Real.rpow_pos_of_pos (by positivity) _
     refine ⟨min ρ₀ (τ / 2), lt_min hρ₀ (by positivity), min_le_left _ _, ?_⟩
     have h2ρ : 2 * min ρ₀ (τ / 2) ≤ τ := by
       have := min_le_right ρ₀ (τ / 2)

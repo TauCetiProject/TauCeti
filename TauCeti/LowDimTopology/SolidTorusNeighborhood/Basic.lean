@@ -315,8 +315,6 @@ private theorem exists_normalFrame {f : Circle → ℝ³} (hf : ContMDiff (𝓡 
   clear_value u p n₁
   refine ⟨n₁, fun z => toLp 2 (ofLp (u z) ⨯₃ ofLp (n₁ z)), hcn₁, ?_, fun z => ?_⟩
   · refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i => ?_)
-    have h₁ : Continuous fun z => ofLp (u z) := (PiLp.continuous_ofLp 2 _).comp hcu
-    have h₂ : Continuous fun z => ofLp (n₁ z) := (PiLp.continuous_ofLp 2 _).comp hcn₁
     fin_cases i <;> simp only [cross_apply] <;> fun_prop
   · obtain ⟨hc, huc, hnc, hdecomp⟩ := cross_orthonormal (hu z) (hn₁ z) (hun₁ z)
     refine ⟨hn₁ z, hc, hnc, fun v => ⟨fun hv => hdecomp v ((hnormal z v).mp hv), fun hv => ?_⟩⟩

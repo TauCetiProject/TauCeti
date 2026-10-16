@@ -38,9 +38,6 @@ general base-change theorem for Hopf-ideal quotients gives the result.
 The quotient-transport construction follows
 `TauCeti.SpecialLinear.coordinateHopfAlgebraBaseChangeIso`, replacing its determinant relation
 by the symplectic matrix relations.
-
-This is the scalar-extension compatibility needed before the `Sp₂ₘ` worked example can be
-proved reductive in Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -149,6 +146,21 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
     (definingHopfIdeal R m) (definingHopfIdeal K m)
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m))
     (map_baseChangeHopfIdeal_definingHopfIdeal R K m)
+
+/-- On a pure tensor of a restricted general-linear function, the symplectic base-change
+isomorphism is the general-linear isomorphism followed by restriction. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_tmul_coordinateMap
+    (s : K) (x : GeneralLinear.coordinateHopfAlgebra R (m + m)) :
+    (coordinateHopfAlgebraBaseChangeIso R K m).hom.hom
+        (s ⊗ₜ[R] (coordinateMap R m).hom x) =
+      (coordinateMap K m).hom
+        ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
+          (s ⊗ₜ[R] x)) := by
+  have h := congrArg (fun f ↦ f.hom (s ⊗ₜ[R] x))
+    (baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R K m)
+  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply,
+    CommHopfAlgCat.baseChangeMap_apply_tmul] at h
+  exact h
 
 /-- The finite-type coordinate Hopf algebra of `Sp₂ₘ` commutes with base change. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :

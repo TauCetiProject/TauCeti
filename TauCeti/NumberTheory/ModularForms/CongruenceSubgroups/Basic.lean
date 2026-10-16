@@ -294,6 +294,13 @@ theorem Gamma1_map_le_Gamma1_map_of_dvd {M N : ℕ} (h : M ∣ N) :
     (Gamma1 N).map (mapGL ℝ) ≤ (Gamma1 M).map (mapGL ℝ) :=
   Subgroup.map_mono (Gamma1_le_Gamma1_of_dvd h)
 
+/-- A finite-index subgroup of `SL(2, ℤ)` has finite index in every subgroup of `SL(2, ℤ)` after
+mapping to `GL₂(ℝ)`, so the trace between the two images is defined. This covers, for instance,
+`Γ(N)` in `Γ₁(N)` and `Γ₁(N)` in `Γ₀(N)`. -/
+instance instIsFiniteRelIndexMapMapGL (H K : Subgroup SL(2, ℤ)) [H.FiniteIndex] :
+    (H.map (mapGL ℝ)).IsFiniteRelIndex (K.map (mapGL ℝ)) :=
+  Subgroup.IsFiniteRelIndex.map (mapGL ℝ) Subgroup.isFiniteRelIndex_of_finiteIndex
+
 /-- **`Γ₀(N)` normalizes `Γ₁(N)` after mapping to `GL₂(S)`**, for any commutative ring `S`.
 This is `Gamma0_normalizes_Gamma1` transported along the monoid homomorphism `mapGL S`: the
 conjugate of an integral witness is again one.
@@ -878,3 +885,14 @@ theorem Gamma_mul_eq_inf_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
   rw [← hab.lcm_eq_mul, Gamma_lcm_eq_inf]
 
 end CongruenceSubgroup
+
+namespace TauCeti
+
+/-- At level one, the real general-linear image of `Γ₁(1)` is the full modular group. -/
+@[simp]
+theorem Gamma1_one_map_eq_SL : (CongruenceSubgroup.Gamma1 1).map (mapGL ℝ) = 𝒮ℒ := by
+  have h : CongruenceSubgroup.Gamma1 1 = ⊤ :=
+    top_unique (CongruenceSubgroup.Gamma_one_top ▸ CongruenceSubgroup.Gamma_le_Gamma1 1)
+  simp [h, MonoidHom.range_eq_map]
+
+end TauCeti

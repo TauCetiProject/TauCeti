@@ -38,7 +38,8 @@ and its companions record.
 * `TauCeti.MappingCylinder.incl` and `TauCeti.MappingCylinder.proj`: the inclusion of the source
   and the projection onto the target, with `TauCeti.MappingCylinder.proj_comp_incl` the
   factorization of `f` and `TauCeti.MappingCylinder.isClosedEmbedding_incl`,
-  `TauCeti.MappingCylinder.isClosedEmbedding_mkBase` the closedness of the two subspaces.
+  `TauCeti.MappingCylinder.isClosedEmbedding_mkBase` the closedness of the two subspaces, and
+  `TauCeti.MappingCylinder.inclHomeomorph` the homeomorphism of the source with the bottom face.
 * `TauCeti.MappingCylinder.deformation`: **the mapping cylinder deformation retracts onto its
   base**, with `TauCeti.MappingCylinder.homotopyEquiv` the resulting homotopy equivalence with
   the target.
@@ -321,6 +322,15 @@ theorem isClosedEmbedding_incl : IsClosedEmbedding (incl f) := by
     simp only [Set.mem_preimage, Set.mem_empty_iff_false, iff_false]
     rintro ⟨x, -, hx⟩
     exact mkBase_notMem_range_incl (f := f) y ⟨x, hx⟩
+
+/-- The source of `f` is homeomorphic to the bottom face `range (incl f)` of its mapping
+cylinder. -/
+def inclHomeomorph (f : C(X, Y)) : X ≃ₜ Set.range (incl f) :=
+  (isClosedEmbedding_incl (f := f)).isEmbedding.toHomeomorph
+
+@[simp]
+lemma inclHomeomorph_apply_coe (x : X) : (inclHomeomorph f x : MappingCylinder f) = incl f x :=
+  (rfl)
 
 /-- **The target of `f` is a closed subspace of its mapping cylinder.** -/
 theorem isClosedEmbedding_mkBase : IsClosedEmbedding (mkBase f) := by

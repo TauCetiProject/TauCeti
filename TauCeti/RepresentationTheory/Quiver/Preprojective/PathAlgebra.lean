@@ -152,7 +152,7 @@ variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v + 1} Q
 
 /-- **A quiver whose preprojective algebra is a finite module has no oriented cycle.** -/
 theorem isAcyclic_of_module_finite_preprojectiveAlgebra
-    (h : Module.Finite k (preprojectiveAlgebra k Q)) : Quiver.IsAcyclic Q :=
+    (_ : Module.Finite k (preprojectiveAlgebra k Q)) : Quiver.IsAcyclic Q :=
   isAcyclic_of_module_finite_pathAlgebra k Q
     (Module.Finite.of_surjective (preprojectiveToPathAlgebra k Q).toLinearMap
       (preprojectiveToPathAlgebra_surjective k Q))
@@ -161,7 +161,7 @@ theorem isAcyclic_of_module_finite_preprojectiveAlgebra
 multigraph**: no reorientation of it has an oriented cycle. In particular it has no loop, no two
 arrows joining the same pair of vertices, and no cycle through distinct vertices. -/
 theorem isAcyclic_reorient_of_module_finite_preprojectiveAlgebra
-    (h : Module.Finite k (preprojectiveAlgebra k Q)) (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) :
+    (_ : Module.Finite k (preprojectiveAlgebra k Q)) (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) :
     Quiver.IsAcyclic (Reorient Q σ) :=
   isAcyclic_of_module_finite_preprojectiveAlgebra k
     (Module.Finite.equiv (reorientPreprojectiveAlgebraEquiv k σ).symm.toLinearEquiv)

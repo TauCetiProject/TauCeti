@@ -32,6 +32,11 @@ the residue-field point factors through the zero section.
   `D₊(Xⱼ)` exactly when `j = 1`.
 * `WeierstrassCurve.mem_range_projModelZero_iff` and `WeierstrassCurve.range_projModelZero`: the
   image of the zero section is the complement of the chart `D₊(Z)`.
+* `WeierstrassCurve.isClosedImmersion_projModelZero`: the zero section is a closed immersion.
+* `WeierstrassCurve.ne_projModelZero_iff_mem_basicOpen`: a section of the projective model misses
+  the zero section over a point of the base exactly when it lies on the chart `D₊(Z)` there.
+* `WeierstrassCurve.exists_eq_projModelAffinePoint`: a section missing the zero section over every
+  point of the base is the point `[x : y : 1]` of a solution `(x, y)` of the affine equation.
 * `WeierstrassCurve.preimage_basicOpen_coord_two_le`: under a morphism of projective Weierstrass
   models that carries the zero section to the zero section, the preimage of the chart `D₊(Z)` is
   contained in the chart `D₊(Z)`.
@@ -118,10 +123,8 @@ theorem projModelZero_mem_basicOpen_iff (q : Spec (.of R)) (j : Fin 3) :
     W.projModelZero q ∈ Proj.basicOpen W.toProjective.grading (W.toProjective.coord j) ↔
       j = 1 := by
   -- the zero section has homogeneous coordinates `(0, 1, 0)`; `0` lies in every prime, `1` in none
-  have h1 : (1 : R) ∉ q.asIdeal := (Ideal.ne_top_iff_one _).mp q.isPrime.ne_top
-  rw [← Category.id_comp W.projModelZero, ← Spec.map_id, ← CommRingCat.ofHom_id,
-    W.SpecMap_projModelZero (RingHom.id R), projModelPoint_mem_basicOpen_iff]
-  fin_cases j <;> simp [h1]
+  rw [W.projModelZero_eq_projModelPoint, projModelPoint_mem_basicOpen_iff]
+  fin_cases j <;> simp [q.isPrime.one_notMem]
 
 /-- A point of the projective Weierstrass model lies on the zero section `[0 : 1 : 0]` exactly
 when it does not lie on the standard affine chart `D₊(Z)`. -/
@@ -146,6 +149,48 @@ theorem range_projModelZero :
     Set.range W.projModelZero =
       (Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) : Set W.projModel)ᶜ :=
   Set.ext W.mem_range_projModelZero_iff
+
+/-- The zero section of the projective Weierstrass model is a closed immersion, as is every
+section of a separated morphism. -/
+instance isClosedImmersion_projModelZero : IsClosedImmersion W.projModelZero := by
+  have : IsClosedImmersion (W.projModelZero ≫ W.projModelOver) := by
+    rw [W.projModelZero_projModelOver]
+    infer_instance
+  exact IsClosedImmersion.of_comp W.projModelZero W.projModelOver
+
+variable {W} in
+/-- A section `P` of the projective model meets the zero section over a point `s` of `Spec R`
+exactly when it does not lie on the chart `D₊(Z)` over `s`. -/
+theorem ne_projModelZero_iff_mem_basicOpen {P : Spec (.of R) ⟶ W.projModel}
+    (hP : P ≫ W.projModelOver = 𝟙 _) (s : Spec (.of R)) :
+    P s ≠ W.projModelZero s ↔
+      P s ∈ Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) := by
+  refine ⟨fun hs ↦ ?_, fun hs h0 ↦ ?_⟩
+  · -- off `D₊(Z)`, `P s` lies on the zero section, over the same point `s` of the base
+    by_contra hZ
+    obtain ⟨t, ht⟩ := (W.mem_range_projModelZero_iff _).mpr hZ
+    have hts : t = s := by
+      have := congrArg W.projModelOver ht
+      rwa [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, projModelZero_projModelOver,
+        hP] at this
+    exact hs (hts ▸ ht.symm)
+  · rw [h0, projModelZero_mem_basicOpen_iff] at hs
+    exact absurd hs (by decide)
+
+variable {W} in
+/-- **A section missing the zero section is a point `[x : y : 1]`.** A section of the projective
+model over `Spec R` which meets the zero section over no point of `Spec R` is the point
+`[x : y : 1]` of a solution `(x, y)` of the affine Weierstrass equation over `R`. -/
+theorem exists_eq_projModelAffinePoint {P : Spec (.of R) ⟶ W.projModel}
+    (hP : P ≫ W.projModelOver = 𝟙 _) (hP0 : ∀ s, P s ≠ W.projModelZero s) :
+    ∃ (x y : R) (h : W.toAffine.Equation x y), P = W.projModelAffinePoint h := by
+  obtain ⟨Q, hQ, hQ2, rfl⟩ := W.exists_eq_projModelPoint_of_forall_mem_basicOpen
+    (g := RingHom.id R) (i := 2) (by rw [hP, CommRingCat.ofHom_id, Spec.map_id])
+    fun s ↦ (ne_projModelZero_iff_mem_basicOpen hP s).mp (hP0 s)
+  have hQ' : Q = ![Q 0, Q 1, 1] := funext fun k ↦ by fin_cases k <;> simp [hQ2]
+  refine ⟨Q 0, Q 1, (Projective.equation_some (W' := W.toProjective) _ _).mp (hQ' ▸ hQ), ?_⟩
+  rw [projModelAffinePoint_def, projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp [hQ2])]
+  exact ⟨rfl, hQ'⟩
 
 variable {W} {W' : WeierstrassCurve R}
 
@@ -184,7 +229,7 @@ instance an isomorphism. For a ring homomorphism `g : R →+* S` and a solution 
 Weierstrass equation of `W.map g` whose third coordinate is a unit, `f` sends the point with
 homogeneous coordinates `P` to the point with homogeneous coordinates `Q`, along `g`, for some
 solution `Q` of the projective Weierstrass equation of `W'.map g` whose third coordinate is `1`.
-Such a `Q` is unique (`projModelPoint_eq_projModelPoint_iff`). -/
+Such a `Q` is unique (`projModelPoint_eq_projModelPoint_iff_of_apply_eq`). -/
 theorem exists_projModelPoint_comp_eq_projModelPoint {f : W.projModel ⟶ W'.projModel}
     (hf : W.projModelZero ≫ f = W'.projModelZero) (hinj : Function.Injective f)
     (hfo : f ≫ W'.projModelOver = W.projModelOver) {S : Type u} [CommRing S] {g : R →+* S}

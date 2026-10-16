@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.Submanifold.Polynomial
 public import TauCeti.Geometry.RealAlgebraic.Stack.Discriminant.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Chart
 public import TauCeti.Geometry.RealAlgebraic.Stack.Analytic

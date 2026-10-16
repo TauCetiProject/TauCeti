@@ -101,7 +101,8 @@ private theorem exists_graph_straightening
     (0 : (𝕜 × (Fin n → 𝕜)) →L[𝕜] 𝕜).prod (ContinuousLinearMap.snd 𝕜 𝕜 (Fin n → 𝕜))
   let G : (𝕜 × (Fin n → 𝕜)) → (𝕜 × (Fin n → 𝕜)) := fun v ↦ (g v.2, 0)
   have hG : ContinuousOn G (P.range ∩ Prod.snd ⁻¹' e.source) :=
-    (hg.continuousOn.comp continuous_snd.continuousOn fun _ hv ↦ hv.2).prodMk
+    (hg.continuousOn.comp (continuous_snd.continuousOn
+      (s := (P.range : Set (𝕜 × (Fin n → 𝕜))) ∩ Prod.snd ⁻¹' e.source)) fun _ hv ↦ hv.2).prodMk
       continuousOn_const
   have hPG : ∀ v ∈ (P.range : Set (𝕜 × (Fin n → 𝕜))) ∩ Prod.snd ⁻¹' e.source,
       P (G v) = 0 := by

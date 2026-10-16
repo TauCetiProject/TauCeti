@@ -93,13 +93,13 @@ private theorem sub_algebraMap_mem_ratFundamentalDomain_unique (a : 𝔸[ℚ]) {
     rw [Rat.cast_sub, abs_lt]
     constructor <;> linarith [hqinf.1, hqinf.2, hrinf.1, hrinf.2]
   apply sub_eq_zero.mp
-  apply eq_zero_of_forall_norm_lt_one_of_forall_mem_adicCompletionIntegers
+  apply eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles
   · intro w
     -- The completion's field coercion uses `WithAbs`, whereas rational casts use its ring API.
     change ‖(WithAbs.toAbs w.1 (q - r) : w.Completion)‖ < 1
     rw [InfinitePlace.Completion.norm_coe]
     simpa using hinf
-  · intro v
+  · refine FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_
     have hv := sub_mem (hrfin v) (hqfin v)
     -- Expose the finite components of the product synonym before the local additive calculation.
     change (a.2 v - algebraMap ℚ (v.adicCompletion ℚ) r) -
