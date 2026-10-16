@@ -274,6 +274,7 @@ theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
   rw [iCycles_toCycles, Iso.hom_inv_id_apply]
 
 /-- A cyclic cocycle has zero cohomology class exactly when it is a cyclic coboundary. -/
+@[simp]
 theorem mk_eq_zero_iff (n : ℕ) (φ : cyclicCocycles R A M n) :
     mk R A M n φ = 0 ↔ (φ : cyclicCochains R A M n) ∈ cyclicCoboundaries R A M n := by
   let K := cyclicCochainComplex R A M
