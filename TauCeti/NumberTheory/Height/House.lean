@@ -57,6 +57,8 @@ of bounded degree and bounded house.
   an algebraic integer of degree `d` has naive height at most `(2B)ᵈ` whenever its house is at
   most `B` with `1 ≤ B`; in particular a nonzero algebraic integer satisfies
   `H(x) ≤ (2 ⌈x⌉)ᵈ`.
+* `NumberField.house_natCast_mul_pow_mul_pow_le`: the house of `c bⁿ αʲ` in a number field is
+  at most `(2 b max(1, ⌈α⌉))ⁿ` when `c ≤ 2ⁿ` and `j ≤ n`.
 
 ## References
 
@@ -292,6 +294,20 @@ theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {
 theorem naiveHeight_le_two_mul_house_pow {x : F} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) :
     naiveHeight x ≤ (2 * house x) ^ (minpoly ℚ x).natDegree :=
   naiveHeight_le_two_mul_pow_of_house_le hx (one_le_house hx h0) le_rfl
+
+/-- In a number field, the house of `c b ^ n α ^ j` is at most `(2 b max(1, ⌈α⌉)) ^ n` when
+`c ≤ 2 ^ n` and `j ≤ n`. -/
+theorem _root_.NumberField.house_natCast_mul_pow_mul_pow_le {K : Type*} [Field K]
+    [NumberField K] (α : K) {b c j n : ℕ} (hc : c ≤ 2 ^ n) (hj : j ≤ n) :
+    NumberField.house ((c : K) * ((b : K) ^ n * α ^ j)) ≤
+      (2 * b * max 1 (NumberField.house α)) ^ n := by
+  have hα : NumberField.house α ^ j ≤ max 1 (NumberField.house α) ^ n :=
+    (pow_le_pow_left₀ (NumberField.house_nonneg α) (le_max_right _ _) j).trans
+      (pow_le_pow_right₀ (le_max_left _ _) hj)
+  rw [← Nat.cast_pow, NumberField.house_nat_mul, NumberField.house_nat_mul,
+    NumberField.house_pow, mul_pow, mul_pow, Nat.cast_pow, mul_assoc]
+  exact mul_le_mul (by exact_mod_cast hc) (mul_le_mul_of_nonneg_left hα (by positivity))
+    (mul_nonneg (by positivity) (pow_nonneg (NumberField.house_nonneg α) j)) (by positivity)
 
 /-! ### Examples -/
 

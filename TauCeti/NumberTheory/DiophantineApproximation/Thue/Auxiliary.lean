@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.OfFn
+public import TauCeti.Algebra.Polynomial.OfFn
 public import TauCeti.Analysis.Polynomial.L1Norm
 public import TauCeti.NumberTheory.Height.House
 public import TauCeti.NumberTheory.NumberField.SiegelsLemma
+public import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Thue's auxiliary polynomials
@@ -47,40 +48,7 @@ open scoped IntermediateField
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] [DecidableEq R]
-
-/-- `(X - t) ^ r` divides the polynomial with coefficient vector `f` if and only if its Taylor
-coefficients of order `< r` at `t` vanish. -/
-private theorem X_sub_C_pow_dvd_ofFn_iff (t : R) (r : ℕ) {n : ℕ} (f : Fin n → R) :
-    (X - C t) ^ r ∣ ofFn n f ↔
-      ∀ k < r, ∑ i : Fin n, f i * (t ^ ((i : ℕ) - k) * ((i : ℕ).choose k : R)) = 0 := by
-  rw [ofFn_eq_sum_monomial, X_sub_C_pow_dvd_iff, X_pow_dvd_iff]
-  refine forall₂_congr fun k _ ↦ ?_
-  simp [← C_mul_X_pow_eq_monomial, finsetSum_coeff, coeff_X_add_C_pow]
-
 variable {K : Type*} [Field K]
-
-/-- If `b α` is integral, then so is `b ^ n α ^ j` for `j ≤ n`. -/
-private theorem isIntegral_natCast_pow_mul_pow {α : K} {b : ℕ}
-    (hbα : IsIntegral ℤ ((b : K) * α)) {j n : ℕ} (hj : j ≤ n) :
-    IsIntegral ℤ ((b : K) ^ n * α ^ j) := by
-  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hj
-  rw [show (b : K) ^ (j + l) * α ^ j = (b : K) ^ l * ((b : K) * α) ^ j by ring]
-  exact ((isIntegral_natCast b).pow l).mul (hbα.pow j)
-
-/-- The house of `c b ^ n α ^ j` is at most `(2 b max(1, ⌈α⌉)) ^ n` when `c ≤ 2 ^ n` and
-`j ≤ n`. -/
-private theorem house_natCast_mul_pow_mul_pow_le [NumberField K] (α : K) {b c j n : ℕ}
-    (hc : c ≤ 2 ^ n) (hj : j ≤ n) :
-    NumberField.house ((c : K) * ((b : K) ^ n * α ^ j)) ≤
-      (2 * b * max 1 (NumberField.house α)) ^ n := by
-  have hα : NumberField.house α ^ j ≤ max 1 (NumberField.house α) ^ n :=
-    (pow_le_pow_left₀ (NumberField.house_nonneg α) (le_max_right _ _) j).trans
-      (pow_le_pow_right₀ (le_max_left _ _) hj)
-  rw [← Nat.cast_pow, NumberField.house_nat_mul, NumberField.house_nat_mul,
-    NumberField.house_pow, mul_pow, mul_pow, Nat.cast_pow, mul_assoc]
-  exact mul_le_mul (by exact_mod_cast hc) (mul_le_mul_of_nonneg_left hα (by positivity))
-    (mul_nonneg (by positivity) (pow_nonneg (NumberField.house_nonneg α) j)) (by positivity)
 
 /-- Thue's auxiliary polynomials over a number field `K` of degree `d`, for any `m` with
 `d r < 2 (m + 1)`, with the coefficient bound of Siegel's lemma. -/
