@@ -92,18 +92,20 @@ theorem isPositive_sinAngleOperator : (U.sinAngleOperator V).IsPositive :=
 /-- The square of the cosine angle operator is the compression `P_U P_V P_U`. -/
 theorem cosAngleOperator_sq :
     U.cosAngleOperator V ^ 2 = U.starProjection * V.starProjection * U.starProjection := by
+  -- `|P_V P_U|² = (P_V P_U)† (P_V P_U)`, which collapses to `P_U P_V P_U` since `P_V` is a
+  -- self-adjoint idempotent.
   rw [sq, ContinuousLinearMap.mul_def, cosAngleOperator, modulus_comp_modulus, cosThetaMap_def,
-    adjoint_comp, (isSelfAdjoint_starProjection U).adjoint_eq,
-    (isSelfAdjoint_starProjection V).adjoint_eq]
-  simp only [← ContinuousLinearMap.mul_def, mul_assoc]
-  rw [← mul_assoc V.starProjection, V.isIdempotentElem_starProjection.eq]
+    adjoint_comp]
+  simp [(isSelfAdjoint_starProjection _).adjoint_eq, ← ContinuousLinearMap.mul_def, mul_assoc,
+    V.isIdempotentElem_starProjection.mul_self_mul]
 
 /-- The square of the sine angle operator is the square of the difference of the projections. -/
 theorem sinAngleOperator_sq :
     U.sinAngleOperator V ^ 2 = (U.starProjection - V.starProjection) ^ 2 := by
-  rw [sq, sq, ContinuousLinearMap.mul_def, sinAngleOperator, modulus_comp_modulus,
-    ((isSelfAdjoint_starProjection U).sub (isSelfAdjoint_starProjection V)).adjoint_eq,
-    ContinuousLinearMap.mul_def]
+  -- `|T|² = T† T`, and `T = P_U - P_V` is self-adjoint.
+  simpa only [sinAngleOperator_def, sq, ← ContinuousLinearMap.mul_def,
+    ((isSelfAdjoint_starProjection U).sub (isSelfAdjoint_starProjection V)).adjoint_eq] using
+    (U.starProjection - V.starProjection).modulus_comp_modulus
 
 @[simp]
 theorem norm_cosAngleOperator_apply (x : E) :
@@ -195,48 +197,37 @@ theorem cosAngleOperator_self : U.cosAngleOperator U = U.starProjection := by
 theorem cosAngleOperator_mul_starProjection :
     U.cosAngleOperator V * U.starProjection = U.cosAngleOperator V := by
   ext x
-  rw [ContinuousLinearMap.mul_def, comp_apply, ← sub_eq_zero, ← map_sub, ← norm_eq_zero,
-    norm_cosAngleOperator_apply, map_sub,
-    starProjection_eq_self_iff.2 (U.starProjection_apply_mem x), sub_self, map_zero, norm_zero]
+  -- `x - P_U x ∈ Uᗮ` lies in the kernel `ker (P_V P_U)` of `|P_V P_U|`.
+  have hx : x - U.starProjection x ∈ (U.cosAngleOperator V).ker := by
+    rw [mem_ker_cosAngleOperator]
+    simp [starProjection_eq_self_iff.2 (U.starProjection_apply_mem x)]
+  rw [LinearMap.mem_ker, coe_coe, map_sub, sub_eq_zero] at hx
+  exact hx.symm
 
 /-- The cosine angle operator takes values in `U`: `P_U |P_V P_U| = |P_V P_U|`. -/
 @[simp]
 theorem starProjection_mul_cosAngleOperator :
     U.starProjection * U.cosAngleOperator V = U.cosAngleOperator V := by
-  have h := congrArg adjoint (U.cosAngleOperator_mul_starProjection V)
-  rwa [← star_eq_adjoint, star_mul, star_eq_adjoint, star_eq_adjoint,
-    (isSelfAdjoint_starProjection U).adjoint_eq,
-    (U.isPositive_cosAngleOperator V).isSelfAdjoint.adjoint_eq] at h
-
-omit [CompleteSpace E] in
-/-- Compressing `(P_U - P_V)²` to `U` from either side gives `P_U - P_U P_V P_U`. -/
-private theorem sub_sq_mul_starProjection :
-    (U.starProjection - V.starProjection) ^ 2 * U.starProjection =
-      U.starProjection - U.starProjection * V.starProjection * U.starProjection ∧
-    U.starProjection * (U.starProjection - V.starProjection) ^ 2 =
-      U.starProjection - U.starProjection * V.starProjection * U.starProjection := by
-  have hP := U.isIdempotentElem_starProjection.eq
-  have hQ := V.isIdempotentElem_starProjection.eq
-  have hP' : ∀ T : E →L[𝕜] E, U.starProjection * (U.starProjection * T) = U.starProjection * T :=
-    fun T ↦ by rw [← mul_assoc, hP]
-  constructor <;>
-  · simp only [sq, sub_mul, mul_sub, mul_assoc, hP, hQ, hP']
-    abel
+  -- Take adjoints in `|P_V P_U| P_U = |P_V P_U|`; both factors are self-adjoint.
+  simpa only [star_mul, (isSelfAdjoint_starProjection U).star_eq,
+    (U.isPositive_cosAngleOperator V).isSelfAdjoint.star_eq] using
+    congrArg star (U.cosAngleOperator_mul_starProjection V)
 
 /-- The sine angle operator commutes with the projection onto `U`. -/
 theorem commute_starProjection_sinAngleOperator :
     Commute U.starProjection (U.sinAngleOperator V) := by
   refine commute_modulus_of_commute ?_
   rw [((isSelfAdjoint_starProjection U).sub (isSelfAdjoint_starProjection V)).adjoint_eq,
-    ← ContinuousLinearMap.mul_def, ← sq, commute_iff_eq, (U.sub_sq_mul_starProjection V).1,
-    (U.sub_sq_mul_starProjection V).2]
+    ← ContinuousLinearMap.mul_def, ← sq, commute_iff_eq,
+    starProjection_sub_starProjection_sq_mul_starProjection,
+    starProjection_mul_starProjection_sub_starProjection_sq]
 
 /-- **Pythagorean identity.** On `U`, the squares of the cosine and sine angle operators add up
 to the identity: `|P_V P_U|² + |P_U - P_V|² P_U = P_U`. -/
 theorem cosAngleOperator_sq_add_sinAngleOperator_sq_mul_starProjection :
     U.cosAngleOperator V ^ 2 + U.sinAngleOperator V ^ 2 * U.starProjection = U.starProjection := by
-  rw [cosAngleOperator_sq, sinAngleOperator_sq, (U.sub_sq_mul_starProjection V).1,
-    add_sub_cancel]
+  rw [cosAngleOperator_sq, sinAngleOperator_sq,
+    starProjection_sub_starProjection_sq_mul_starProjection, add_sub_cancel]
 
 /-- The compression of the sine angle operator to `U` is the modulus of the directed sine map:
 `|P_U - P_V| P_U = |P_{Vᗮ} P_U|`. -/
@@ -244,7 +235,6 @@ theorem sinAngleOperator_mul_starProjection :
     U.sinAngleOperator V * U.starProjection = (U.sinThetaMap V).modulus := by
   have hc := U.commute_starProjection_sinAngleOperator V
   have hP := U.isIdempotentElem_starProjection.eq
-  have hQ := Vᗮ.isIdempotentElem_starProjection.eq
   -- `|P_U - P_V| P_U = P_U |P_U - P_V| P_U` is positive and squares to `P_U P_{Vᗮ} P_U`.
   have hconj : U.sinAngleOperator V * U.starProjection =
       U.starProjection * (U.sinAngleOperator V * U.starProjection) := by
@@ -254,12 +244,14 @@ theorem sinAngleOperator_mul_starProjection :
     rw [sq, mul_assoc, ← mul_assoc U.starProjection, hc.eq]
     simp only [mul_assoc, hP]
   refine eq_modulus_iff.2 ⟨hconj ▸ (U.isPositive_sinAngleOperator V).conj_starProjection U, ?_⟩
-  rw [← ContinuousLinearMap.mul_def, hsq, sinAngleOperator_sq, (U.sub_sq_mul_starProjection V).1,
-    sinThetaMap_def, adjoint_comp, (isSelfAdjoint_starProjection U).adjoint_eq,
-    (isSelfAdjoint_starProjection Vᗮ).adjoint_eq]
-  simp only [← ContinuousLinearMap.mul_def, mul_assoc]
-  rw [← mul_assoc Vᗮ.starProjection, hQ, starProjection_orthogonal' V, sub_mul, one_mul, mul_sub,
-    hP]
+  -- `|P_{Vᗮ} P_U|` is the cosine angle operator of `(U, Vᗮ)`, so both sides square to
+  -- `P_U P_{Vᗮ} P_U = P_U - P_U P_V P_U`.
+  have hgram : (U.sinThetaMap V)† ∘L U.sinThetaMap V = U.cosAngleOperator Vᗮ ^ 2 := by
+    rw [sq, ContinuousLinearMap.mul_def, cosAngleOperator, modulus_comp_modulus, cosThetaMap_def,
+      sinThetaMap_def]
+  rw [hgram, cosAngleOperator_sq, ← ContinuousLinearMap.mul_def, hsq, sinAngleOperator_sq,
+    starProjection_sub_starProjection_sq_mul_starProjection, starProjection_orthogonal' V]
+  simp [sub_mul, mul_sub, hP]
 
 /-- The cosine and sine angle operators commute. -/
 theorem commute_cosAngleOperator_sinAngleOperator :
