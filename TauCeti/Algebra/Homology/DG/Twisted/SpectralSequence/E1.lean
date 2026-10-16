@@ -142,6 +142,7 @@ def indexGradedPieceGrading (ℳ : ℤ → Submodule R M) (ind : P → ℤ) (p n
   twistedTotalGrading ℳ ind n ⊓ indexGradedPieceSubmodule ind p
 
 /-- Membership in `indexGradedPieceGrading`. -/
+@[simp]
 theorem mem_indexGradedPieceGrading_iff {ℳ : ℤ → Submodule R M} {p n : ℤ} {f : P → M} :
     f ∈ indexGradedPieceGrading ℳ ind p n ↔
       f ∈ twistedTotalGrading ℳ ind n ∧ f ∈ indexGradedPieceSubmodule (R := R) ind p :=
@@ -185,7 +186,8 @@ theorem twistedDifferential_zero_mem_indexGradedPieceGrading
   refine ⟨mem_twistedTotalGrading_iff.2 fun y ↦ ?_,
     mem_indexGradedPieceSubmodule_iff.2 fun y hy ↦ ?_⟩
   · have hy := hdM.map_mem (mem_twistedTotalGrading_iff.1 hf.1 y)
-    rw [show n + ind y + 1 = n + 1 + ind y by ring] at hy
+    have hdeg : n + ind y + 1 = n + 1 + ind y := by ring
+    rw [hdeg] at hy
     simpa using hy
   · rw [twistedDifferential_apply, mem_indexGradedPieceSubmodule_iff.1 hf.2 y hy, map_zero]
     simp
@@ -325,7 +327,8 @@ noncomputable def indexGradedPieceShortComplex :
     have hq := (m.mem_range_twistedIndexSubobject_arrow_f_iff hM q n _).1 ⟨x, rfl⟩
     refine (indexRestrict_eq_zero_iff (R := R) ((mem_twistedIndexFiltration_iff _).2
       fun y hy ↦ hq y (by omega))).2 ?_
-    rw [show p - 1 = q by omega, mem_twistedIndexFiltration_iff]
+    have hpq : p - 1 = q := by omega
+    rw [hpq, mem_twistedIndexFiltration_iff]
     exact hq)
 
 /-- Every element of the `p`-th graded piece is the restriction of the element of the `p`-th piece
@@ -368,7 +371,8 @@ theorem indexGradedPieceShortComplex_shortExact :
       (by rw [hx₀, map_zero, ZeroMemClass.coe_zero])
     have hq := (indexRestrict_eq_zero_iff (R := R) ((mem_twistedIndexFiltration_iff _).2
       ((m.mem_range_twistedIndexSubobject_arrow_f_iff hM p n _).1 ⟨x, rfl⟩))).1 hx'
-    rw [show p - 1 = q by omega, mem_twistedIndexFiltration_iff] at hq
+    have hpq : p - 1 = q := by omega
+    rw [hpq, mem_twistedIndexFiltration_iff] at hq
     obtain ⟨w, hw⟩ := (m.mem_range_twistedIndexSubobject_arrow_f_iff hM q n _).2 hq
     exact ⟨w, hinj p ((arrow_f_indexFiltrationOfLE_apply m hM q p hqp n w).trans hw)⟩
   · exact hinj q ((arrow_f_indexFiltrationOfLE_apply m hM q p hqp n x).symm.trans
