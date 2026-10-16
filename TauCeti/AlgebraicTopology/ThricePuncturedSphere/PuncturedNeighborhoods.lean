@@ -435,6 +435,7 @@ theorem coordInv_inf : coordInv inf = fun w => 2 / w :=
 
 /-- Applying the inverse puncture coordinate to the coordinate of a point recovers its affine
 complex coordinate. -/
+@[simp]
 theorem coordInv_coord (q : Puncture) (y : q.neighborhood) :
     coordInv q (q.coord y) = ((y : ThricePuncturedSphere) : ℂ) := by
   cases q <;> simp [coordInv]
