@@ -92,6 +92,20 @@ def twistedCubicalToSingular (n : ℕ) :
 
 variable {L}
 
+/-- The evaluation formula of the pushforward along a cube on a simplex `t` of the model with an
+integral coefficient: the simplex pushed forward along `c`, with the coefficient transported along
+the path class inside the image of `c`.  The definition of `twistedCubePushforward` is not
+unfolded outside this file, so this is the way to evaluate it on generators. -/
+@[simp]
+theorem twistedCubePushforward_simplexChain {n m : ℕ} (c : SingularCube X n)
+    (t : (TopCat.toSSet.obj (cubeModel.{v} n)) _⦋m⦌) (r : ULift.{v} ℤ)
+    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
+    twistedCubePushforward L c m (simplexChain t r) a =
+      r.down • ιTwistedChainComplex L m ((TopCat.toSSet.map (cubeToHom c)).app _ t)
+        (L.map ((cubeToHom c).hom.pathClass (cubeModelOrigin n)
+          (TopCat.simplexMap t (SimplexCategory.toTopInitialVertex _))) a) :=
+  twistedPushforward_simplexChain (L := L) (f := cubeToHom c) (z₀ := cubeModelOrigin n) t r a
+
 /-- The pushforward along a cube commutes with the boundaries. -/
 theorem twistedCubePushforward_d {n : ℕ} (c : SingularCube X n) (m : ℕ)
     (y : ((singularChains (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X (m + 1))
