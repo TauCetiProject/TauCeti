@@ -37,9 +37,9 @@ noncomputable section
 open Set Topology
 open scoped unitInterval Topology.Homotopy
 
-namespace TauCeti
-
 universe u v
+
+namespace TauCeti
 
 variable {ι : Type u} {A : ι → Type v}
 
@@ -150,18 +150,6 @@ private theorem infinite_nonempty_const_nat (G : Type u) [Nonempty G] :
     {_i : ℕ | Nonempty G}.Infinite :=
   Set.infinite_univ.mono fun _ _ => inferInstance
 
-namespace ContinuousMap
-
-variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
-
-/-- Every map from a compact space to Milnor's countable join is nullhomotopic. -/
-theorem nullhomotopic_to_universalGSpace {G : Type u} [Nonempty G]
-    (f : C(X, universalGSpace G)) : f.Nullhomotopic :=
-  nullhomotopic_to_indexedJoin f (isCompact_range f.continuous)
-    (infinite_nonempty_const_nat G)
-
-end ContinuousMap
-
 /-- Milnor's countable join of a nonempty type is simply connected. -/
 instance instSimplyConnectedSpaceUniversalGSpace (G : Type u) [Nonempty G] :
     SimplyConnectedSpace (universalGSpace G) :=
@@ -175,3 +163,17 @@ theorem subsingleton_homotopyGroup_universalGSpace (G : Type u) [Nonempty G]
     (infinite_nonempty_const_nat G) (Fin (n + 1)) x
 
 end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti
+
+variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
+
+/-- Every map from a compact space to Milnor's countable join is nullhomotopic. -/
+theorem nullhomotopic_to_universalGSpace {G : Type u} [Nonempty G]
+    (f : C(X, universalGSpace G)) : f.Nullhomotopic :=
+  nullhomotopic_to_indexedJoin f (isCompact_range f.continuous)
+    (infinite_nonempty_const_nat G)
+
+end ContinuousMap

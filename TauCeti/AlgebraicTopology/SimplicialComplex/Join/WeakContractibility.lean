@@ -20,9 +20,9 @@ finite restriction into a cone.  This gives a nullhomotopy of the map inside the
 
 * `TauCeti.isCone_restrict_indexedJoin_insert`: adjoining a vertex over a fresh index makes a
   finite vertex restriction of an indexed join a cone.
-* `TauCeti.ContinuousMap.exists_homotopy_to_const_to_indexedJoin`: every map with compact image
+* `ContinuousMap.exists_homotopy_to_const_to_indexedJoin`: every map with compact image
   to such an indexed join contracts in a way that preserves its fibers.
-* `TauCeti.ContinuousMap.nullhomotopic_to_indexedJoin`: the resulting nullhomotopy statement.
+* `ContinuousMap.nullhomotopic_to_indexedJoin`: the resulting nullhomotopy statement.
 -/
 
 public section
@@ -32,14 +32,14 @@ noncomputable section
 open Set Topology
 open AbstractSimplicialComplex
 
-namespace TauCeti
-
 universe u v w
 
 variable {ι : Type u} {A : ι → Type v}
 
 attribute [local instance] Classical.decEq
 attribute [-instance] Sigma.instDecidableEqSigma instDecidableEqSigma
+
+namespace TauCeti
 
 private def restrictSubsetMap (K : AbstractSimplicialComplex (Σ i, A i))
     {s t : Set (Σ i, A i)} (hst : s ⊆ t) :
@@ -111,7 +111,11 @@ theorem isCone_restrict_indexedJoin_insert (V : Finset (Σ i, A i)) (i : ι) (a 
         exact Finset.mem_image.mpr ⟨w, hw, hwv'⟩
     · exact hσ.2 hx hy hxy
 
+end TauCeti
+
 namespace ContinuousMap
+
+open TauCeti
 
 variable {X : Type w} [TopologicalSpace X]
 
@@ -192,5 +196,3 @@ theorem nullhomotopic_to_indexedJoin
   exact ⟨y, ⟨H⟩⟩
 
 end ContinuousMap
-
-end TauCeti
