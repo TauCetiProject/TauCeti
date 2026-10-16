@@ -38,6 +38,9 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
   is quasi-compact.
 * `TauCeti.spectralSpace_of_isEmbedding` : a subset of the range of an embedding is spectral as
   soon as its preimage is — the transport step of any "prove it on a subspace" argument.
+* `Topology.IsOpenEmbedding.isSpectralMap` : an open embedding from a compact space into a
+  quasiseparated space is spectral.
+* `TauCeti.spectralSpace_univ` : the full subspace of a spectral space is spectral.
 
 ## References
 
@@ -105,6 +108,19 @@ theorem spectralSpace_of_isEmbedding {f : X → Y} (hf : Topology.IsEmbedding f)
   -- Transfer compactness along it, then spectrality; a homeomorphism is an open embedding.
   have : CompactSpace S := e.compactSpace
   exact e.symm.isOpenEmbedding.spectralSpace
+
+/-- An open embedding from a compact space to a quasiseparated space is spectral. -/
+theorem _root_.Topology.IsOpenEmbedding.isSpectralMap [CompactSpace X] [QuasiSeparatedSpace Y]
+    {f : X → Y} (hf : Topology.IsOpenEmbedding f) : IsSpectralMap f := by
+  refine ⟨hf.continuous, fun s hso hsc ↦ ?_⟩
+  rw [hf.isEmbedding.isCompact_iff, image_preimage_eq_inter_range]
+  exact hsc.inter_of_isOpen (by simpa only [image_univ] using isCompact_univ.image hf.continuous)
+    hso hf.isOpen_range
+
+/-- The full subspace of a spectral space is spectral. -/
+theorem spectralSpace_univ [SpectralSpace X] : SpectralSpace (Set.univ : Set X) := by
+  let _ : CompactSpace (univ : Set X) := (Homeomorph.Set.univ X).symm.compactSpace
+  exact isOpen_univ.isOpenEmbedding_subtypeVal.spectralSpace
 
 end TauCeti
 
