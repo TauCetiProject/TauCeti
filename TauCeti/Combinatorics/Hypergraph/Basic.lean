@@ -146,6 +146,10 @@ over the number `(card V).choose r` of possible edges. It is `0` when `card V < 
 def edgeDensity [Fintype V] (H : UniformHypergraph r V) : ℚ :=
   (#H.edges : ℚ) / ((Fintype.card V).choose r : ℚ)
 
+/-- The edge density is the number of edges over the number of possible edges. -/
+theorem edgeDensity_def [Fintype V] (H : UniformHypergraph r V) :
+    H.edgeDensity = (#H.edges : ℚ) / ((Fintype.card V).choose r : ℚ) := (rfl)
+
 /-- The edge density is nonnegative. -/
 theorem edgeDensity_nonneg [Fintype V] (H : UniformHypergraph r V) : 0 ≤ H.edgeDensity := by
   unfold edgeDensity
